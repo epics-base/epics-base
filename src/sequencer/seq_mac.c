@@ -5,8 +5,12 @@
 
 	$Id$
 	DESCRIPTION: Macro routines for Sequencer.
+	The macro table contains name & value pairs.  These are both pointers
+	to strings.
 
 	ENVIRONMENT: VxWorks
+
+	HISTORY:
 ***************************************************************************/
 #include	"seq.h"
 
@@ -27,20 +31,25 @@ LOCAL MACRO *seqMacTblGet();
 
 /*#define	DEBUG*/
 
-/* seqMacTblInit - initialize macro table */
-seqMacTblInit(mac_ptr)
-MACRO	*mac_ptr;
+/* 
+ *seqMacTblInit - initialize macro the table.
+ */
+seqMacTblInit(pMac)
+MACRO	*pMac;
 {
 	int	i;
 
-	for (i = 0 ; i < MAX_MACROS; i++, mac_ptr++)
+	for (i = 0 ; i < MAX_MACROS; i++, pMac++)
 	{
-		mac_ptr->name = NULL;
-		mac_ptr->value = NULL;
+		pMac->name = NULL;
+		pMac->value = NULL;
 	}
 }	
 
-/* seqMacEval - substitute macro value into a string */
+/* 
+ *seqMacEval - substitute macro value into a string containing:
+ * ....{mac_name}....
+ */
 seqMacEval(pInStr, pOutStr, maxChar, macTbl)
 char	*pInStr;
 char	*pOutStr;
@@ -93,8 +102,9 @@ MACRO	*macTbl;
 	}
 	*pOutStr == 0;
 }
-
-/* seqMacValGet - given macro name, return pointer to its value */
+/* 
+ * seqMacValGet - given macro name, return pointer to its value.
+ */
 char	*seqMacValGet(macName, macNameLth, macTbl)
 char	*macName;
 int	macNameLth;
@@ -116,7 +126,8 @@ MACRO	*macTbl;
 	return NULL;
 }
 
-/* Return number of characters in a macro name */
+/*
+ * macNameLth() - Return number of characters in a macro name */
 LOCAL int macNameLth(pstr)
 char	*pstr;
 {
@@ -130,14 +141,15 @@ char	*pstr;
 	}
 	return nchar;
 }
-/* seqMacParse - parse the macro definition string and build
-the macro table (name/value pairs). Returns number of macros parsed.
-Assumes the table may already contain entries (values may be changed).
-String for name and value are allocated dynamically from pool.
-*/
-int seqMacParse(pMacStr, sp_ptr)
+/*
+ * seqMacParse - parse the macro definition string and build
+ * the macro table (name/value pairs). Returns number of macros parsed.
+ * Assumes the table may already contain entries (values may be changed).
+ * String for name and value are allocated dynamically from pool.
+ */
+int seqMacParse(pMacStr, pSP)
 char		*pMacStr;	/* macro definition string */
-SPROG		*sp_ptr;
+SPROG		*pSP;
 {
 	int		nMac, nChar;
 	char		*skipBlanks();
@@ -145,7 +157,7 @@ SPROG		*sp_ptr;
 	MACRO		*pMacTbl;	/* macro tbl entry */
 	char		*name, *value;
 
-	macTbl = sp_ptr->mac_ptr;
+	macTbl = pSP->mac_ptr;
 	for ( ;; )
 	{
 		/* Skip blanks */
@@ -156,7 +168,7 @@ SPROG		*sp_ptr;
 		nChar = seqMacParseName(pMacStr);
 		if (nChar == 0)
 			break; /* finished or error */
-		name = seqAlloc(sp_ptr, nChar+1);
+		name = seqAlloc(pSP, nChar+1);
 		if (name == NULL)
 			break;
 		bcopy(pMacStr, name, nChar);
@@ -190,7 +202,7 @@ SPROG		*sp_ptr;
 		nChar = seqMacParseValue(pMacStr);
 		if (nChar == 0)
 			break;
-		value = seqAlloc(sp_ptr, nChar+1);
+		value = seqAlloc(pSP, nChar+1);
 		if (value == NULL)
 			break;
 		bcopy(pMacStr, value, nChar);
@@ -214,7 +226,9 @@ SPROG		*sp_ptr;
 		return -1;
 }
 
-
+/*
+ * seqMacParseName() - Parse a macro name from the input string.
+ */
 LOCAL int seqMacParseName(pStr)
 char	*pStr;
 {
@@ -235,7 +249,9 @@ char	*pStr;
 	return nChar;
 }
 
-LOCAL int seqMacParseValue(pStr)
+/*
+ * seqMacParseValue() - Parse a macro value from the input string.
+ */LOCAL int seqMacParseValue(pStr)
 char	*pStr;
 {
 	int	nChar;
@@ -258,8 +274,10 @@ char	*pChar;
 	return	pChar;
 }
 
-/* seqMacTblGet - find a match for the specified name, otherwise
-return an empty slot in macro table */
+/*
+ * seqMacTblGet - find a match for the specified name, otherwise
+ * return an empty slot in macro table.
+ */
 LOCAL MACRO *seqMacTblGet(name, macTbl)
 char	*name;	/* macro name */
 MACRO	*macTbl;

@@ -28,6 +28,7 @@
  * Modification Log:
  * -----------------
  * .01 07-03-91  ajk	.
+ * .02 12-11-91  ajk	Cosmetic changes (comments & names)
  */
 
 #include	"seq.h"
@@ -43,41 +44,46 @@ LOCAL void *getPtrToValue();
 
 #define		MACRO_STR_LEN	(MAX_STRING_SIZE+1)
 
-/* Connect to the database channels through channel access */
-seq_connect(sp_ptr)
-SPROG		*sp_ptr;
+/*
+ * seq_connect() - Connect to all database channels through channel access.
+ */
+seq_connect(pSP)
+SPROG		*pSP;
 {
-	CHAN		*db_ptr;
+	CHAN		*pDB;
 	int		status, i;
 	MACRO		*macro_tbl;
-	extern		seq_conn_handler();
+	extern		VOID seq_conn_handler();
 
 	/* Initialize CA task */
 	ca_task_initialize();
 
-	sp_ptr->conn_count = 0;
-	macro_tbl = sp_ptr->mac_ptr;
+	pSP->conn_count = 0;
+	macro_tbl = pSP->mac_ptr;
 
-	/* Search for all channels */
-	db_ptr = sp_ptr->channels;
-	for (i = 0; i < sp_ptr->nchan; i++)
+	/*
+	 * For each channel: substitute macros, connect to db,
+	 * & isssue monitor (if monitor request flaf is TRUE).
+	 */
+	pDB = pSP->channels;
+	for (i = 0; i < pSP->nchan; i++)
 	{
 		/* Do macro substitution on channel name */
-		db_ptr->db_name = seqAlloc(sp_ptr, MACRO_STR_LEN);
-		seqMacEval(db_ptr->db_uname, db_ptr->db_name, MACRO_STR_LEN,
+		pDB->db_name = seqAlloc(pSP, MACRO_STR_LEN);
+		seqMacEval(pDB->db_uname, pDB->db_name, MACRO_STR_LEN,
 		 macro_tbl);
 #ifdef	DEBUG
-		printf("connect to \"%s\"\n", db_ptr->db_name);
+		printf("connect to \"%s\"\n", pDB->db_name);
 #endif	DEBUG
 		/* Connect to it */
 		status = ca_build_and_connect(
-			db_ptr->db_name,	/* DB channel name */
+			pDB->db_name,		/* DB channel name */
 			TYPENOTCONN,		/* Don't get initial value */
 			0,			/* get count (n/a) */
-			&(db_ptr->chid),	/* ptr to chid */
+			&(pDB->chid),		/* ptr to chid */
 			0,			/* ptr to value (n/a) */
 			seq_conn_handler,	/* connection handler routine */
-			db_ptr);		/* user ptr is CHAN structure */
+			pDB);			/* user ptr is CHAN structure */
 		if (status != ECA_NORMAL)
 		{
 			SEVCHK(status, "ca_search");
@@ -85,166 +91,179 @@ SPROG		*sp_ptr;
 			return -1;
 		}
 		/* Clear monitor indicator */
-		db_ptr->monitored = FALSE;
+		pDB->monitored = FALSE;
 
-		/* Issue monitor requests */
-		if (db_ptr->mon_flag)
+		/*
+		 * Issue monitor request
+		 */
+		if (pDB->mon_flag)
 		{
-			seq_pvMonitor(sp_ptr, 0, db_ptr);
+			seq_pvMonitor(pSP, 0, pDB);
 		}
-		db_ptr++;
+		pDB++;
 	}
 	ca_flush_io();
 
-	if (sp_ptr->conn_flag)
+	if (pSP->conn_flag)
 	{	/* Wait for all connections to complete */
-		while (sp_ptr->conn_count < sp_ptr->nchan)
+		while (pSP->conn_count < pSP->nchan)
 			taskDelay(30);
 	}
 
 	return 0;
 }
-/* Channel access events (monitors) come here */
+/*
+ * seq_event_handler() - Channel access events (monitors) come here.
+ * args points to CA event handler argument structure.  args.usr contains
+ * a pointer to the channel structure (CHAN *).
+ */
 VOID seq_event_handler(args)
 struct	event_handler_args args;
 {
-	SPROG			*sp_ptr;
-	CHAN			*db_ptr;
+	SPROG			*pSP;
+	CHAN			*pDB;
 	struct dbr_sts_char	*dbr_sts_ptr;
-	void			*value_ptr;
+	void			*pVal;
 	int			i, nbytes;
 
 	/* User arg is ptr to db channel structure */
-	db_ptr = (CHAN *)args.usr;
+	pDB = (CHAN *)args.usr;
 
 	/* Copy value returned into user variable */
-	value_ptr = getPtrToValue(
-		(union db_access_val *)args.dbr, db_ptr->get_type);
-	nbytes = db_ptr->size * db_ptr->count;
-	bcopy(value_ptr, db_ptr->var, nbytes);
+	pVal = getPtrToValue((union db_access_val *)args.dbr, pDB->get_type);
+	nbytes = pDB->size * pDB->count;
+	bcopy(pVal, pDB->var, nbytes);
 
 	/* Copy status & severity */
 	dbr_sts_ptr = (struct dbr_sts_char *)args.dbr;
-	db_ptr->status = dbr_sts_ptr->status;
-	db_ptr->severity = dbr_sts_ptr->severity;
+	pDB->status = dbr_sts_ptr->status;
+	pDB->severity = dbr_sts_ptr->severity;
 
 	/* Process event handling in each state set */
-	sp_ptr = db_ptr->sprog;	/* State program that owns this db entry */
+	pSP = pDB->sprog;	/* State program that owns this db entry */
 
 	/* Wake up each state set that is waiting for event processing */
-	seq_efSet(sp_ptr, 0, db_ptr->index + 1);
+	seq_efSet(pSP, 0, pDB->index + 1);
 
 	return;
 }
-/* Sequencer connection handler:
-	Called each time a connection is established or broken */
+/*
+ * seq_conn_handler() - Sequencer connection handler.
+ * Called each time a connection is established or broken.
+ */
 VOID seq_conn_handler(args)
 struct connection_handler_args	args;
 {
-	CHAN		*db_ptr;
-	SPROG		*sp_ptr;
+	CHAN		*pDB;
+	SPROG		*pSP;
 
-
-	/* user argument (from ca_search() */
-	db_ptr = (CHAN *)ca_puser(args.chid);
+	/* User argument is db ptr (specified at ca_search() ) */
+	pDB = (CHAN *)ca_puser(args.chid);
 
 	/* State program that owns this db entry */
-	sp_ptr = db_ptr->sprog;
+	pSP = pDB->sprog;
 
 	/* Check for connected */
 	if (ca_field_type(args.chid) == TYPENOTCONN)
 	{
-		db_ptr->connected = FALSE;
-		sp_ptr->conn_count--;
-		seq_log(sp_ptr, "Channel \"%s\" disconnected\n", db_ptr->db_name);
+		pDB->connected = FALSE;
+		pSP->conn_count--;
+		seq_log(pSP, "Channel \"%s\" disconnected\n", pDB->db_name);
 	}
 	else
 	{
-		db_ptr->connected = TRUE;
-		sp_ptr->conn_count++;
-		seq_log(sp_ptr, "Channel \"%s\" connected\n", db_ptr->db_name);
-		if (db_ptr->count > ca_element_count(args.chid))
+		pDB->connected = TRUE;
+		pSP->conn_count++;
+		seq_log(pSP, "Channel \"%s\" connected\n", pDB->db_name);
+		if (pDB->count > ca_element_count(args.chid))
 		{
-			db_ptr->count = ca_element_count(args.chid);
-			seq_log(sp_ptr, "\"%s\": reset count to %d\n",
-			 db_ptr->db_name, db_ptr->count);
+			pDB->count = ca_element_count(args.chid);
+			seq_log(pSP, "\"%s\": reset count to %d\n",
+			 pDB->db_name, pDB->count);
 		}
 	}
 
 	/* Wake up each state set that is waiting for event processing */
-	seq_efSet(sp_ptr, 0, 0);
+	seq_efSet(pSP, 0, 0);
 	
 	return;
 }
 
-/* Wake up each state set that is waiting for event processing */
-VOID seq_efSet(sp_ptr, dummy, ev_flag)
-SPROG		*sp_ptr;
+/*
+ * seq_efSet() - Set an event flag.  The result is to wake up each state
+ * set that is waiting for event processing.
+ */
+VOID seq_efSet(pSP, dummy, ev_flag)
+SPROG		*pSP;
 int		dummy;
 int		ev_flag;	/* event flag */
 {
-	SSCB		*ss_ptr;
+	SSCB		*pSS;
 	int		nss;
 
-	ss_ptr = sp_ptr->sscb;
+	pSS = pSP->sscb;
 	/* For all state sets: */
-	for (nss = 0; nss < sp_ptr->nss; nss++, ss_ptr++)
+	for (nss = 0; nss < pSP->nss; nss++, pSS++)
 	{
 		/* Apply resource lock */
-		semTake(sp_ptr->caSemId, WAIT_FOREVER);
+		semTake(pSP->caSemId, WAIT_FOREVER);
 
 		/* Test for possible event trig based on bit mask for this state */
-		if ( (ev_flag == 0) || bitTest(ss_ptr->pMask, ev_flag) )
+		if ( (ev_flag == 0) || bitTest(pSS->pMask, ev_flag) )
 		{
-			bitSet(ss_ptr->events, ev_flag);
-			semGive(ss_ptr->syncSemId); /* wake up the ss task */
+			bitSet(pSS->events, ev_flag);
+			semGive(pSS->syncSemId); /* wake up the ss task */
 		}
 
 		/* Unlock resource */
-		semGive(sp_ptr->caSemId);
+		semGive(pSP->caSemId);
 	}
 }
 
-/* Test event flag against outstanding events */
-seq_efTest(sp_ptr, ss_ptr, ev_flag)
-SPROG		*sp_ptr;
-SSCB		*ss_ptr;
+/*
+ * seq_efTest() - Test event flag against outstanding events.
+ */
+seq_efTest(pSP, pSS, ev_flag)
+SPROG		*pSP;
+SSCB		*pSS;
 int		ev_flag;	/* event flag */
 {
-	return bitTest(ss_ptr->events, ev_flag);
+	return bitTest(pSS->events, ev_flag);
 }
-/* Get DB value (uses channel access) */
-seq_pvGet(sp_ptr, ss_ptr, db_ptr)
-SPROG	*sp_ptr;	/* ptr to state program */
-SSCB	*ss_ptr;	/* ptr to current state set */
-CHAN	*db_ptr;	/* ptr to channel struct */
+/*
+ * seq_pvGet() - Get DB value (uses channel access).
+ */
+seq_pvGet(pSP, pSS, pDB)
+SPROG	*pSP;	/* ptr to state program */
+SSCB	*pSS;	/* ptr to current state set */
+CHAN	*pDB;	/* ptr to channel struct */
 {
 	int		status, sem_status;
-	extern		seq_callback_handler();
+	extern		VOID seq_callback_handler();
 
 	/* Check for channel connected */
-	if (!db_ptr->connected)
+	if (!pDB->connected)
 		return ECA_DISCONN;
 
 	/* Flag this pvGet() as not completed */
-	db_ptr->get_complete = 0;
+	pDB->get_complete = FALSE;
 
 	/* If synchronous pvGet then clear the pvGet pend semaphore */
-	if (!sp_ptr->async_flag)
+	if (!pSP->async_flag)
 	{
-		db_ptr->getSemId = ss_ptr->getSemId;
-		semTake(ss_ptr->getSemId, NO_WAIT);
+		pDB->getSemId = pSS->getSemId;
+		semTake(pSS->getSemId, NO_WAIT);
 	}
 
 	/* Perform the CA get operation with a callback routine specified */
 	status = ca_array_get_callback(
-			db_ptr->get_type,	/* db request type */
-			db_ptr->count,		/* element count */
-			db_ptr->chid,		/* chid */
+			pDB->get_type,		/* db request type */
+			pDB->count,		/* element count */
+			pDB->chid,		/* chid */
 			seq_callback_handler,	/* callback handler */
-			db_ptr);		/* user arg */
+			pDB);			/* user arg */
 
-	if (sp_ptr->async_flag || (status != ECA_NORMAL) )
+	if (pSP->async_flag || (status != ECA_NORMAL) )
 		return status;
 
 	/* Synchronous pvGet() */
@@ -252,49 +271,52 @@ CHAN	*db_ptr;	/* ptr to channel struct */
 	ca_flush_io();
 
 	/* Wait for completion (10s timeout) */	
-	sem_status = semTake(ss_ptr->getSemId, 600);
+	sem_status = semTake(pSS->getSemId, 600);
 	if (sem_status == ERROR)
 		status = ECA_TIMEOUT;
         
 	return status;
 }
 
-/* Sequencer callback handler - called when a "get" completes */
-seq_callback_handler(args)
+/*
+ * seq_callback_handler() - Sequencer callback handler.
+ * Called when a "get" completes.
+ * args.usr points to the db structure (CHAN *) for tis channel.
+ */
+VOID seq_callback_handler(args)
 struct event_handler_args	args;
 {
-	SPROG			*sp_ptr;
-	CHAN			*db_ptr;
+	SPROG			*pSP;
+	CHAN			*pDB;
 	struct dbr_sts_char	*dbr_sts_ptr;
 	int			i, nbytes;
-	void			*value_ptr;
+	void			*pVal;
 
 	/* User arg is ptr to db channel structure */
-	db_ptr = (CHAN *)args.usr;
+	pDB = (CHAN *)args.usr;
 
 	/* Copy value returned into user variable */
-	value_ptr = getPtrToValue(
-		(union db_access_val *)args.dbr, db_ptr->get_type);
-	nbytes = db_ptr->size * db_ptr->count;
-	bcopy(value_ptr, db_ptr->var, nbytes);
+	pVal = getPtrToValue((union db_access_val *)args.dbr, pDB->get_type);
+	nbytes = pDB->size * pDB->count;
+	bcopy(pVal, pDB->var, nbytes);
 
 	/* Copy status & severity */
 	dbr_sts_ptr = (struct dbr_sts_char *)args.dbr;
-	db_ptr->status = dbr_sts_ptr->status;
-	db_ptr->severity = dbr_sts_ptr->severity;
+	pDB->status = dbr_sts_ptr->status;
+	pDB->severity = dbr_sts_ptr->severity;
 
 	/* Set get complete flag */
-	db_ptr->get_complete = TRUE;
+	pDB->get_complete = TRUE;
 
 	/* Wake up each state set that is waiting for event processing) */
-	sp_ptr = db_ptr->sprog;	/* State program that owns this db entry */
-	seq_efSet(sp_ptr, 0, db_ptr->index + 1);
+	pSP = pDB->sprog;	/* State program that owns this db entry */
+	seq_efSet(pSP, 0, pDB->index + 1);
 
 	/* If syncronous pvGet then notify pending state set */
-	if (!sp_ptr->async_flag)
-		semGive(db_ptr->getSemId);
+	if (!pSP->async_flag)
+		semGive(pDB->getSemId);
 
-	return 0;
+	return;
 }
 
 /* Flush requests */
@@ -303,92 +325,100 @@ VOID seq_pvFlush()
 	ca_flush_io();
 }	
 
-/* Put DB value (uses channel access) */
-seq_pvPut(sp_ptr, ss_ptr, db_ptr)
-SPROG	*sp_ptr;	/* ptr to state program */
-SSCB	*ss_ptr;	/* ptr to current state set */
-CHAN	*db_ptr;	/* ptr to channel struct */
+/*
+ * seq_pvPut() - Put DB value (uses channel access).
+ */
+seq_pvPut(pSP, pSS, pDB)
+SPROG	*pSP;	/* ptr to state program */
+SSCB	*pSS;	/* ptr to current state set */
+CHAN	*pDB;	/* ptr to channel struct */
 {
 	int	status;
 
-	if (!db_ptr->connected)
+	if (!pDB->connected)
 		return ECA_DISCONN;
 
-	status = ca_array_put(db_ptr->put_type, db_ptr->count,
-	 db_ptr->chid, db_ptr->var);
+	status = ca_array_put(pDB->put_type, pDB->count,
+	 pDB->chid, pDB->var);
 	if (status != ECA_NORMAL)
 	{
-		seq_log(sp_ptr, "pvPut on \"%s\" failed (%d)\n",
-		 db_ptr->db_name, status);
-		seq_log(sp_ptr, "  put_type=%d\n", db_ptr->put_type);
-		seq_log(sp_ptr, "  size=%d, count=%d\n", db_ptr->size, db_ptr->count);
+		seq_log(pSP, "pvPut on \"%s\" failed (%d)\n",
+		 pDB->db_name, status);
+		seq_log(pSP, "  put_type=%d\n", pDB->put_type);
+		seq_log(pSP, "  size=%d, count=%d\n", pDB->size, pDB->count);
 	}
 
 	return status;
 }
-/* Initiate a monitor on a channel */
-seq_pvMonitor(sp_ptr, ss_ptr, db_ptr)
-SPROG	*sp_ptr;	/* ptr to state program */
-SSCB	*ss_ptr;	/* ptr to current state set */
-CHAN	*db_ptr;	/* ptr to channel struct */
+/*
+ * seq_pvMonitor() - Initiate a monitor on a channel.
+ */
+seq_pvMonitor(pSP, pSS, pDB)
+SPROG	*pSP;	/* ptr to state program */
+SSCB	*pSS;	/* ptr to current state set */
+CHAN	*pDB;	/* ptr to channel struct */
 {
 	int		status;
-	extern		seq_event_handler();
+	extern		VOID seq_event_handler();
 
 #ifdef	DEBUG
-	printf("monitor \"%s\"\n", db_ptr->db_name);
+	printf("monitor \"%s\"\n", pDB->db_name);
 #endif	DEBUG
 
-	if (db_ptr->monitored)
-		return -1;
+	if (pDB->monitored)
+		return;
 
 	status = ca_add_array_event(
-		 db_ptr->get_type,	/* requested type */
-		 db_ptr->count,		/* element count */
-		 db_ptr->chid,		/* chid */
+		 pDB->get_type,		/* requested type */
+		 pDB->count,		/* element count */
+		 pDB->chid,		/* chid */
 		 seq_event_handler,	/* function to call */
-		 db_ptr,		/* user arg (db struct) */
-		 db_ptr->delta,		/* pos. delta value */
-		 db_ptr->delta,		/* neg. delta value */
-		 db_ptr->timeout,	/* timeout */
-		 &db_ptr->evid);	/* where to put event id */
+		 pDB,			/* user arg (db struct) */
+		 pDB->delta,		/* pos. delta value */
+		 pDB->delta,		/* neg. delta value */
+		 pDB->timeout,		/* timeout */
+		 &pDB->evid);		/* where to put event id */
 
 	if (status != ECA_NORMAL)
 	{
 		SEVCHK(status, "ca_add_array_event");
 		ca_task_exit();	/* this is serious */
-		return -1;
+		return;
 	}
 	ca_flush_io();
 
-	db_ptr->monitored = TRUE;
-	return 0;
+	pDB->monitored = TRUE;
+	return;
 }
 
-/* Cancel a monitor */
-seq_pvStopMonitor(sp_ptr, ss_ptr, db_ptr)
-SPROG	*sp_ptr;	/* ptr to state program */
-SSCB	*ss_ptr;	/* ptr to current state set */
-CHAN	*db_ptr;	/* ptr to channel struct */
+/*
+ * seq_pvStopMonitor() - Cancel a monitor
+ */
+seq_pvStopMonitor(pSP, pSS, pDB)
+SPROG	*pSP;	/* ptr to state program */
+SSCB	*pSS;	/* ptr to current state set */
+CHAN	*pDB;	/* ptr to channel struct */
 {
 	int		status;
 
-	if (!db_ptr->monitored)
+	if (!pDB->monitored)
 		return -1;
 
-	status = ca_clear_event(db_ptr->evid);
+	status = ca_clear_event(pDB->evid);
 	if (status != ECA_NORMAL)
 	{
 		SEVCHK(status, "ca_clear_event");
 		return status;
 	}
 
-	db_ptr->monitored = FALSE;
+	pDB->monitored = FALSE;
 
 	return status;
 }
 
-/* Given ptr to value structure & type, return ptr to value */
+/* 
+ * getPtr() - Given ptr to value structure & type, return ptr to value.
+ */
 LOCAL void *getPtrToValue(pBuf, dbrType)
 union db_access_val *pBuf;
 chtype	dbrType;

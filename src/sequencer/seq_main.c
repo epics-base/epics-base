@@ -13,13 +13,16 @@
 	HISTORY:
 23apr91,ajk	Fixed problem with state program invoking the sequencer.
 01jul91,ajk	Added ANSI functional prototypes.
-05jul91,ajk	Changed semCreate() in three places to semBCreate() or
-		semMCreate().  Modified semTake() second param. to WAIT_FOREVER.
+05jul91,ajk	Changed semCreate() in three places to semBCreate.
+		Modified semTake() second param. to WAIT_FOREVER.
 		These provide VX5.0 compatability.  
 16aug91,ajk	Improved "magic number" error message.
-25oct91,ajk	Code to create semaphores "ss_ptr->getSemId" was left out.
+25oct91,ajk	Code to create semaphores "pSS->getSemId" was left out.
 		Added this code to init_sscb().
 25nov91,ajk	Removed obsolete seqLog() code dealing with global locking.
+04dec91,ajk	Implemented state program linked list, eliminating need for
+		task variables.
+11dec91,ajk	Cleaned up comments.
 ***************************************************************************/
 /*#define	DEBUG	1*/
 
@@ -44,39 +47,42 @@ LOCAL	VOID seq_logInit();
 
 #define	SCRATCH_SIZE	(MAX_MACROS*(MAX_STRING_SIZE+1)*12)
 
-/*#define		DEBUG*/
-
-/*	The following variable points to the area allocated for the
-	parent state program and its corresponding state sets.
-	It is declared a "task variable" and is shared by only these
-	tasks.
-	It is also used as a flag to indicate that the "taskDeleteHookAdd()"
+/*	The following variable is a flag to indicate that the "taskDeleteHookAdd()"
 	routine has been called (we only want to do that once after VxWorks boots).
 */
-SPROG	*seq_task_ptr = NULL;
+int	seqDeleteHookAdded = FALSE;
 
-/* User-callable routine to initiate a state program */
-int seq(sp_ptr_orig, macro_def, stack_size)
-SPROG		*sp_ptr_orig;	/* ptr to original state program table */
-char		*macro_def;	/* macro def'n string */
-int		stack_size;	/* stack size */
+/*
+ * seq: User-callable routine to initiate a state program.
+ * Usage:  seq(<pSP>, <macros string>, <stack size>)
+ *	pSP is the ptr to the state program structure.
+ *	Example:  seq(&myprog, "logfile=mylog", 0)
+ * When called from the shell, the 2nd & 3rd parameters are optional.
+ *
+ * Creates the initial state program task and returns its task id.
+ * Most initialization is performed here.
+ */
+int seq(pSP_orig, macro_def, stack_size)
+SPROG		*pSP_orig;	/* ptr to original state program table */
+char		*macro_def;	/* optional macro def'n string */
+int		stack_size;	/* optional stack size (bytes) */
 {
-	int		status;
-	extern		sequencer(), sprog_delete();
+	int		tid;
+	extern		sequencer();	/* Sequencer task entry point */
+	extern		sprog_delete();	/* Task delete routine */
 	extern char	*seqVersion;
-	SPROG		*sp_ptr, *alloc_task_area();
-	extern SPROG	*seq_task_ptr;
+	SPROG		*pSP, *alloc_task_area();
 	char		*seqMacValGet(), *pname, *pvalue, *ptask_name;
 
 	/* If no parameters specified, print version info. */
-	if (sp_ptr_orig == 0)
+	if (pSP_orig == 0)
 	{
 		printf("%s\n", seqVersion);
 		return 0;
 	}
 
 	/* Check for correct state program format */
-	if (sp_ptr_orig->magic != MAGIC)
+	if (pSP_orig->magic != MAGIC)
 	{	/* Oops */
 		logMsg("Illegal magic number in state program.\n");
 		logMsg(" - Possible mismatch between SNC & SEQ versions\n");
@@ -85,44 +91,44 @@ int		stack_size;	/* stack size */
 	}
 
 #ifdef	DEBUG
-	print_sp_info(sp_ptr_orig);
+	print_sp_info(pSP_orig);
 #endif	DEBUG
 
 	/* Specify a routine to run at task delete */
-	if (seq_task_ptr == NULL)
+	if (!seqDeleteHookAdded)
 	{
 		taskDeleteHookAdd(sprog_delete);
-		seq_task_ptr = (SPROG *)ERROR;
+		seqDeleteHookAdded = TRUE;
 	}
 
 	/* Allocate a contiguous space for all dynamic structures */
-	sp_ptr = alloc_task_area(sp_ptr_orig);
+	pSP = alloc_task_area(pSP_orig);
 
 	/* Make a private copy of original structures (but change pointers!) */
-	if (sp_ptr_orig->reent_flag)
-		copy_sprog(sp_ptr_orig, sp_ptr);
+	if (pSP_orig->reent_flag)
+		copy_sprog(pSP_orig, pSP);
 
 	/* Initialize state program block */
-	init_sprog(sp_ptr);
+	init_sprog(pSP);
 
 	/* Initialize state set control blocks */
-	init_sscb(sp_ptr);
+	init_sscb(pSP);
 
 	/* Initialize the macro definition table */
-	seqMacTblInit(sp_ptr->mac_ptr);	/* Init macro table */
+	seqMacTblInit(pSP->mac_ptr);	/* Init macro table */
 
 	/* Parse the macro definitions from the "program" statement */
-	seqMacParse(sp_ptr->params, sp_ptr);
+	seqMacParse(pSP->params, pSP);
 
 	/* Parse the macro definitions from the command line */
-	seqMacParse(macro_def, sp_ptr);
+	seqMacParse(macro_def, pSP);
 
 	/* Initialize sequencer logging */
-	seq_logInit(sp_ptr);
+	seq_logInit(pSP);
 
 	/* Specify stack size */
 	pname = "stack";
-	pvalue = seqMacValGet(pname, strlen(pname), sp_ptr->mac_ptr);
+	pvalue = seqMacValGet(pname, strlen(pname), pSP->mac_ptr);
 	if (pvalue != NULL && strlen(pvalue) > 0)
 	{
 		sscanf(pvalue, "%d", &stack_size);
@@ -132,84 +138,52 @@ int		stack_size;	/* stack size */
 
 	/* Specify task name */
 	pname = "name";
-	pvalue = seqMacValGet(pname, strlen(pname), sp_ptr->mac_ptr);
+	pvalue = seqMacValGet(pname, strlen(pname), pSP->mac_ptr);
 	if (pvalue != NULL && strlen(pvalue) > 0)
 		ptask_name = pvalue;
 	else
-		ptask_name = sp_ptr->name;
+		ptask_name = pSP->name;
 
-	/* Spawn the sequencer main task */
-	seq_log(sp_ptr, "Spawning state program \"%s\", task name = \"%s\"\n",
-	 sp_ptr->name, ptask_name);
+	/* Spawn the initial sequencer task */
+	tid = taskSpawn(ptask_name, SPAWN_PRIORITY, SPAWN_OPTIONS,
+	 stack_size, sequencer, pSP, stack_size, ptask_name);
 
-	status = taskSpawn(ptask_name, SPAWN_PRIORITY, SPAWN_OPTIONS,
-	 stack_size, sequencer, sp_ptr, stack_size, ptask_name);
-	seq_log(sp_ptr, "  Task id = %d = 0x%x\n", status, status);
+	seq_log(pSP, "Spawning state program \"%s\", task name = \"%s\"\n",
+	 pSP->name, ptask_name);
+	seq_log(pSP, "  Task id = %d = 0x%x\n", tid, tid);
 
-	return status;
+	return tid;
 }
 
-#ifdef	DEBUG
-print_sp_info(sp_ptr)
-SPROG		*sp_ptr;
-{
-	int		nss, nstates;
-	STATE		*st_ptr;
-	SSCB		*ss_ptr;
-
-	printf("State Program: \"%s\"\n", sp_ptr->name);
-	printf("  sp_ptr=%d=0x%x\n", sp_ptr, sp_ptr);
-	printf("  sp_ptr=%d=0x%x\n", sp_ptr, sp_ptr);
-	printf("  task id=%d=0x%x\n", sp_ptr->task_id, sp_ptr->task_id);
-	printf("  task pri=%d\n", sp_ptr->task_priority);
-	printf("  number of state sets=%d\n", sp_ptr->nss);
-	printf("  number of channels=%d\n", sp_ptr->nchan);
-	printf("  async flag=%d, debug flag=%d, reent flag=%d\n",
-	 sp_ptr->async_flag, sp_ptr->debug_flag, sp_ptr->reent_flag);
-
-	ss_ptr = sp_ptr->sscb;
-	for (nss = 0; nss < sp_ptr->nss; nss++, ss_ptr++)
-	{
-		printf("  State Set: \"%s\"\n", ss_ptr->name);
-		printf("  Num states=\"%d\"\n", ss_ptr->num_states);
-		printf("  State names:\n");
-		st_ptr = ss_ptr->states;
-		for (nstates = 0; nstates < ss_ptr->num_states; nstates++)
-		{
-			printf("    \"%s\"\n", st_ptr->name);
-			st_ptr++;
-		}
-	}
-	return 0;
-}
-#endif	DEBUG
-/* Allocate a single block for all dynamic structures.  The size allocated
-   will depend on whether or not the reentrant flag is set.
-  The pointer to the allocated area is saved for task delete hook routine.
-*/
-LOCAL SPROG *alloc_task_area(sp_ptr_orig)
-SPROG	*sp_ptr_orig;	/* original state program structure */
+/*
+ * ALLOC_TASK_AREA
+ * Allocate a single block for all dynamic structures.  The size allocated
+ * will depend on whether or not the reentrant flag is set.
+ * The pointer to the allocated area is saved for task delete hook routine.
+ */
+LOCAL SPROG *alloc_task_area(pSP_orig)
+SPROG	*pSP_orig;	/* original state program structure */
 {
 	int		size, nss, nstates, nchannels, user_size,
 			prog_size, ss_size, state_size, chan_size, mac_size, scr_size;
-	SPROG		*sp_ptr_new;	/* ptr to new state program struct */
+	SPROG		*pSP_new;	/* ptr to new state program struct */
 	char		*dyn_ptr, *dyn_ptr_start; /* ptr to allocated area */
 
-	nss = sp_ptr_orig->nss;
-	nstates = sp_ptr_orig->nstates;
-	nchannels = sp_ptr_orig->nchan;
+	nss = pSP_orig->nss;
+	nstates = pSP_orig->nstates;
+	nchannels = pSP_orig->nchan;
 
 	/* Calc. # of bytes to allocate for all structures */
 	prog_size = sizeof(SPROG);
 	ss_size = nss*sizeof(SSCB);
 	state_size = nstates*sizeof(STATE);
 	chan_size = nchannels*sizeof(CHAN);
-	user_size = sp_ptr_orig->user_size;
+	user_size = pSP_orig->user_size;
 	mac_size = MAX_MACROS*sizeof(MACRO);
 	scr_size = SCRATCH_SIZE;
 
 	/* Total # bytes to allocate */
-	if (sp_ptr_orig->reent_flag)
+	if (pSP_orig->reent_flag)
 	{
 		size = prog_size + ss_size + state_size +
 		 chan_size + user_size + mac_size + scr_size;
@@ -234,212 +208,265 @@ SPROG	*sp_ptr_orig;	/* original state program structure */
 #endif	DEBUG
 
 	/* Set ptrs in the PROG structure */
-	if (sp_ptr_orig->reent_flag)
+	if (pSP_orig->reent_flag)
 	{	/* Reentry flag set: create a new structures */
-		sp_ptr_new = (SPROG *)dyn_ptr;
+		pSP_new = (SPROG *)dyn_ptr;
 
 		/* Copy the SPROG struct contents */
-		*sp_ptr_new = *sp_ptr_orig;
+		*pSP_new = *pSP_orig;
 
 		/* Allocate space for the other structures */
 		dyn_ptr += prog_size;
-		sp_ptr_new->sscb = (SSCB *)dyn_ptr;
+		pSP_new->sscb = (SSCB *)dyn_ptr;
 		dyn_ptr += ss_size;
-		sp_ptr_new->states = (STATE *)dyn_ptr;
+		pSP_new->states = (STATE *)dyn_ptr;
 		dyn_ptr += state_size;
-		sp_ptr_new->channels = (CHAN *)dyn_ptr;
+		pSP_new->channels = (CHAN *)dyn_ptr;
 		dyn_ptr += chan_size;
-		sp_ptr_new->user_area = (char *)dyn_ptr;
+		pSP_new->user_area = (char *)dyn_ptr;
 		dyn_ptr += user_size;
 	}
 	else
 	{	/* Reentry flag not set: keep original structures */
-		sp_ptr_new = sp_ptr_orig;
+		pSP_new = pSP_orig;
 	}
 	/* Create dynamic structures for macros and scratch area */
-	sp_ptr_new->mac_ptr = (MACRO *)dyn_ptr;
+	pSP_new->mac_ptr = (MACRO *)dyn_ptr;
 	dyn_ptr += mac_size;
-	sp_ptr_new->scr_ptr = (char *)dyn_ptr;
-	sp_ptr_new->scr_nleft = scr_size;
+	pSP_new->scr_ptr = (char *)dyn_ptr;
+	pSP_new->scr_nleft = scr_size;
 
 	/* Save ptr to allocated area so we can free it at task delete */
-	sp_ptr_new->dyn_ptr = dyn_ptr_start;
+	pSP_new->dyn_ptr = dyn_ptr_start;
 
-	return sp_ptr_new;
+	return pSP_new;
 }
-/* Copy the SSCB, STATE, and CHAN structures into this task.
-Note: we have to change the pointers in the SPROG struct, user variables,
- and all SSCB structs */
-LOCAL VOID copy_sprog(sp_ptr_orig, sp_ptr)
-SPROG		*sp_ptr_orig;	/* original ptr to program struct */
-SPROG		*sp_ptr;	/* new ptr */
+/*
+ * Copy the SSCB, STATE, and CHAN structures into this task's dynamic structures.
+ * Note: we have to change some pointers in the SPROG struct, user variables,
+ * and all SSCB structs.
+ */
+LOCAL VOID copy_sprog(pSP_orig, pSP)
+SPROG		*pSP_orig;	/* original ptr to program struct */
+SPROG		*pSP;	/* new ptr */
 {
-	SSCB		*ss_ptr, *ss_ptr_orig;
-	STATE		*st_ptr, *st_ptr_orig;
-	CHAN		*db_ptr, *db_ptr_orig;
+	SSCB		*pSS, *pSS_orig;
+	STATE		*pST, *pST_orig;
+	CHAN		*pDB, *pDB_orig;
 	int		nss, nstates, nchan;
 	char		*var_ptr;
 
 	/* Ptr to 1-st SSCB in original SPROG */
-	ss_ptr_orig = sp_ptr_orig->sscb;
+	pSS_orig = pSP_orig->sscb;
 
 	/* Ptr to 1-st SSCB in new SPROG */
-	ss_ptr = sp_ptr->sscb;
+	pSS = pSP->sscb;
 
 	/* Copy structures for each state set */
-	st_ptr = sp_ptr->states;
-	for (nss = 0; nss < sp_ptr->nss; nss++)
+	pST = pSP->states;
+	for (nss = 0; nss < pSP->nss; nss++)
 	{
-		*ss_ptr = *ss_ptr_orig;	/* copy SSCB */
-		ss_ptr->states = st_ptr; /* new ptr to 1-st STATE */
-		st_ptr_orig = ss_ptr_orig->states;
-		for (nstates = 0; nstates < ss_ptr->num_states; nstates++)
+		*pSS = *pSS_orig;	/* copy SSCB */
+		pSS->states = pST; /* new ptr to 1-st STATE */
+		pST_orig = pSS_orig->states;
+		for (nstates = 0; nstates < pSS->num_states; nstates++)
 		{
-			*st_ptr = *st_ptr_orig; /* copy STATE struct */
-			st_ptr++;
-			st_ptr_orig++;
+			*pST = *pST_orig; /* copy STATE struct */
+			pST++;
+			pST_orig++;
 		}
-		ss_ptr++;
-		ss_ptr_orig++;
+		pSS++;
+		pSS_orig++;
 	}
 
 	/* Copy database channel structures */
-	db_ptr = sp_ptr->channels;
-	db_ptr_orig = sp_ptr_orig->channels;
-	var_ptr = sp_ptr->user_area;
-	for (nchan = 0; nchan < sp_ptr->nchan; nchan++)
+	pDB = pSP->channels;
+	pDB_orig = pSP_orig->channels;
+	var_ptr = pSP->user_area;
+	for (nchan = 0; nchan < pSP->nchan; nchan++)
 	{
-		*db_ptr = *db_ptr_orig;
+		*pDB = *pDB_orig;
 
 		/* Reset ptr to SPROG structure */
-		db_ptr->sprog = sp_ptr;
+		pDB->sprog = pSP;
 
 		/* Convert offset to address of the user variable */
-		db_ptr->var += (int)var_ptr;
+		pDB->var += (int)var_ptr;
 
-		db_ptr++;
-		db_ptr_orig++;
+		pDB++;
+		pDB_orig++;
 	}
 
 	/* Note:  user area is not copied; it should be all zeros */
 
 	return;
 }
-/* Initialize state program block */
-LOCAL VOID init_sprog(sp_ptr)
-SPROG	*sp_ptr;
+/*
+ * Initialize the state program block
+ */
+LOCAL VOID init_sprog(pSP)
+SPROG	*pSP;
 {
 	/* Semaphore for resource locking on CA events */
-	sp_ptr->caSemId = semMCreate(SEM_INVERSION_SAFE | SEM_DELETE_SAFE);
+	pSP->caSemId = semBCreate(SEM_Q_FIFO, SEM_FULL);
+	if (pSP->caSemId == NULL)
+	{
+		logMsg("can't create caSemId\n");
+		return;
+	}
 
-	sp_ptr->task_is_deleted = FALSE;
-	sp_ptr->logFd = 0;
+	pSP->task_is_deleted = FALSE;
+	pSP->logFd = 0;
 
 	return;
 }
 
-/* Initialize state set control blocks */
-LOCAL VOID init_sscb(sp_ptr)
-SPROG	*sp_ptr;
+/*
+ * Initialize the state set control blocks
+ */
+LOCAL VOID init_sscb(pSP)
+SPROG	*pSP;
 {
-	SSCB	*ss_ptr;
+	SSCB	*pSS;
 	int	nss, i;
 
-	ss_ptr = sp_ptr->sscb;
-	for (nss = 0; nss < sp_ptr->nss; nss++, ss_ptr++)
+	pSS = pSP->sscb;
+	for (nss = 0; nss < pSP->nss; nss++, pSS++)
 	{
-		ss_ptr->task_id = 0;
+		pSS->task_id = 0;
 		/* Create a binary semaphore for synchronizing events in a SS */
-		ss_ptr->syncSemId = semBCreate(SEM_Q_PRIORITY | SEM_DELETE_SAFE);
+		pSS->syncSemId = semBCreate(SEM_Q_FIFO, SEM_FULL);
+		if (pSS->syncSemId == NULL)
+		{
+			logMsg("can't create syncSemId\n");
+			return;
+		}
 
 		/* Create a binary semaphore for pvGet() synconizing */
-		if (!sp_ptr->async_flag)
-			ss_ptr->getSemId =
-			 semBCreate(SEM_Q_PRIORITY | SEM_DELETE_SAFE);
+		if (!pSP->async_flag)
+		{
+			pSS->getSemId =
+			 semBCreate(SEM_Q_FIFO, SEM_FULL);
+			if (pSS->getSemId == NULL)
+			{
+				logMsg("can't create getSemId\n");
+				return;
+			}
 
-		ss_ptr->current_state = 0; /* initial state */
-		ss_ptr->next_state = 0;
-		ss_ptr->action_complete = TRUE;
+		}
+
+		pSS->current_state = 0; /* initial state */
+		pSS->next_state = 0;
+		pSS->action_complete = TRUE;
 		for (i = 0; i < NWRDS; i++)
-			ss_ptr->events[i] = 0;		/* clear events */
+			pSS->events[i] = 0;		/* clear events */
 	}
 	return;
 }
 
-/* Allocate memory from scratch area (always round up to even no. bytes) */
-char *seqAlloc(sp_ptr, nChar)
-SPROG		*sp_ptr;
+/*
+ * seqAlloc: Allocate memory from the program scratch area.
+ * Always round up to even no. bytes.
+ */
+char *seqAlloc(pSP, nChar)
+SPROG		*pSP;
 int		nChar;
 {
 	char	*pStr;
 
-	pStr = sp_ptr->scr_ptr;
+	pStr = pSP->scr_ptr;
 	/* round to even no. bytes */
 	if ((nChar & 1) != 0)
 		nChar++;
-	if (sp_ptr->scr_nleft >= nChar)
+	if (pSP->scr_nleft >= nChar)
 	{
-		sp_ptr->scr_ptr += nChar;
-		sp_ptr->scr_nleft -= nChar;
+		pSP->scr_ptr += nChar;
+		pSP->scr_nleft -= nChar;
 		return pStr;
 	}
 	else
 		return NULL;
 }
-/* Initialize logging */
-LOCAL VOID seq_logInit(sp_ptr)
-SPROG		*sp_ptr;
+/*
+ * Initialize logging
+ */
+LOCAL VOID seq_logInit(pSP)
+SPROG		*pSP;
 {
 	char		*pname, *pvalue, *seqMacValGet();
 	int		fd;
 
 	/* Create a logging resource locking semaphore */
-	sp_ptr->logSemId = semMCreate(SEM_INVERSION_SAFE | SEM_DELETE_SAFE);
-	sp_ptr->logFd = ioGlobalStdGet(1); /* default fd is std out */
+	pSP->logSemId = semBCreate(SEM_Q_FIFO, SEM_FULL);
+	if (pSP->logSemId == NULL)
+	{
+		logMsg("can't create logSemId\n");
+		return;
+	}
+	pSP->logFd = ioGlobalStdGet(1); /* default fd is std out */
 
 	/* Check for logfile spec. */
 	pname = "logfile";
-	pvalue = seqMacValGet(pname, strlen(pname), sp_ptr->mac_ptr);
+	pvalue = seqMacValGet(pname, strlen(pname), pSP->mac_ptr);
 	if (pvalue != NULL && strlen(pvalue) > 0)
 	{	/* Create & open file for write only */
+		delete(pvalue);
 		fd = open(pvalue, O_CREAT | O_WRONLY, 0664);
 		if (fd != ERROR)
-			sp_ptr->logFd = fd;
+			pSP->logFd = fd;
 		printf("logfile=%s, fd=%d\n", pvalue, fd);
 	}
 }
-
-/* Log a message to the console or a file with time of day and task id */
+/*
+ * seqLog
+ * Log a message to the console or a file with time of day and task id.
+ * The format looks like "mytask 12/13/91 10:07:43: <user's message>".
+ */
 #include	"tsDefs.h"
-VOID seq_log(sp_ptr, fmt, arg1, arg2, arg3, arg4, arg5, arg6)
-SPROG		*sp_ptr;
+#define	LOG_BFR_SIZE	200
+
+VOID seq_log(pSP, fmt, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8)
+SPROG		*pSP;
 char		*fmt;		/* format string */
-int		arg1, arg2, arg3, arg4, arg5, arg6; /* arguments */
+int		arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8; /* arguments */
 {
-	int		fd;
+	int		fd, count, status;
 	TS_STAMP	timeStamp;
-	char		timeBfr[28];
+	char		logBfr[LOG_BFR_SIZE], *pBfr;
+
+	pBfr = logBfr;
+
+	/* Enter taskname */
+	count = sprintf(pBfr, "%s ", taskName(taskIdSelf()) );
+	pBfr += count - 1;
 
 	/* Get time of day */
 	tsLocalTime(&timeStamp);	/* time stamp format */
 
-	/* Convert to mm/dd/yy hh:mm:ss.nano-sec */
-	tsStampToText(&timeStamp, TS_TEXT_MMDDYY, timeBfr);
-	/* Truncate the .nano-secs part */
-	timeBfr[17] = 0;
+	/* Convert to text format: "mm/dd/yy hh:mm:ss.nano-sec" */
+	tsStampToText(&timeStamp, TS_TEXT_MMDDYY, pBfr);
+	/* We're going to truncate the ".nano-sec" part */
+	pBfr += 17;
 
-	/* Lock seq_log resource */
-	semTake(sp_ptr->logSemId, WAIT_FOREVER);
+	/* Insert ": " */
+	*pBfr++ = ':';
+	*pBfr++ = ' ';
 
-	/* Print the message: e.g. "10:23:28 T13: ...." */
-	fd = sp_ptr->logFd;
-	fdprintf(fd, "%s %s: ", taskName(taskIdSelf()), &timeBfr[9]);
-	fdprintf(fd, fmt, arg1, arg2, arg3, arg4, arg5, arg6);
+	/* Append the user's msg to the buffer */
+	count = sprintf(pBfr, fmt, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
+	pBfr += count - 1;
 
-	/* Unlock the resource */
-	semGive(sp_ptr->logSemId);
+	/* Write the msg */
+	fd = pSP->logFd;
+	count = pBfr - logBfr + 1;
+	status = write(fd, logBfr, count);
+	if (status != count)
+	{
+		logMsg("Log file error: fd=%d, status=%d\n", fd, status);
+		return;
+	}
 
-	/* If NSF file then flush the buffer */
+	/* If this is an NSF file flush the buffer */
 	if (fd != ioGlobalStdGet(1) )
 	{
 		ioctl(fd, FIOSYNC);
@@ -448,36 +475,46 @@ int		arg1, arg2, arg3, arg4, arg5, arg6; /* arguments */
 	return;
 }
 
-/* seqLog() - State program interface to seq_log() */
-VOID seqLog(fmt, arg1, arg2, arg3, arg4, arg5, arg6)
+/*
+ * seqLog() - State program interface to seq_log().
+ * Does not require ptr to state program block.
+ */
+STATUS seqLog(fmt, arg1,arg2, arg3, arg4, arg5, arg6, arg7, arg8)
 char		*fmt;		/* format string */
-int		arg1, arg2, arg3, arg4, arg5, arg6; /* arguments */
+int		arg1,arg2, arg3, arg4, arg5, arg6, arg7, arg8; /* arguments */
 {
-	extern SPROG		*seq_task_ptr;
+	SPROG		*pSP, *seqFindProg();
 
-	if (seq_task_ptr == (SPROG *)ERROR)
-		return;
-	seq_log(seq_task_ptr, fmt, arg1, arg2, arg3, arg4, arg5, arg6);
+	pSP = seqFindProg(taskIdSelf());
+	if (pSP == NULL)
+		return ERROR;
+
+	seq_log(pSP, fmt, arg1,arg2, arg3, arg4, arg5, arg6, arg7, arg8);
+	return OK;
 }
-
-/* seq_flagGet: get the value of a flag ("-" -> FALSE; "+" -> TRUE) */
-BOOL seq_flagGet(sp_ptr, flag)
-SPROG		*sp_ptr;
+/*
+ * seq_flagGet: return the value of an option flag.
+ * FALSE means "-" and TRUE means "+".
+ */
+BOOL seq_flagGet(pSP, flag)
+SPROG		*pSP;
 char		*flag; /* one of the snc flags as a strign (e.g. "a") */
 {
 	switch (flag[0])
 	{
-	    case 'a': return sp_ptr->async_flag;
-	    case 'c': return sp_ptr->conn_flag;
-	    case 'd': return sp_ptr->debug_flag;
-	    case 'r': return sp_ptr->reent_flag;
+	    case 'a': return pSP->async_flag;
+	    case 'c': return pSP->conn_flag;
+	    case 'd': return pSP->debug_flag;
+	    case 'r': return pSP->reent_flag;
 	    default:  return FALSE;
 	}
 }
 
-#ifdef	VX4
-/* Fake Vx5.0 semaphore creation */
-SEM_ID semMCreate(flags)
+#ifndef	V5_vxWorks
+/*
+ * Fake Vx5.0 binary semaphore creation.
+ */
+SEM_ID semBCreate(flags)
 int		flags;
 {
 	SEM_ID		semId;
@@ -487,13 +524,40 @@ int		flags;
 	semGive(semId);
 	return(semId);
 }
-SEM_ID semBCreate(flags)
-int		flags;
+#endif	V5_vxWorks
+
+#ifdef	DEBUG
+/* Debug only:  print state program info. */
+print_sp_info(pSP)
+SPROG		*pSP;
 {
-	SEM_ID		semId;
+	int		nss, nstates;
+	STATE		*pST;
+	SSCB		*pSS;
 
-	semId = semCreate();
-	semInit(semId);
-	return(semId);
+	printf("State Program: \"%s\"\n", pSP->name);
+	printf("  pSP=%d=0x%x\n", pSP, pSP);
+	printf("  pSP=%d=0x%x\n", pSP, pSP);
+	printf("  task id=%d=0x%x\n", pSP->task_id, pSP->task_id);
+	printf("  task pri=%d\n", pSP->task_priority);
+	printf("  number of state sets=%d\n", pSP->nss);
+	printf("  number of channels=%d\n", pSP->nchan);
+	printf("  async flag=%d, debug flag=%d, reent flag=%d\n",
+	 pSP->async_flag, pSP->debug_flag, pSP->reent_flag);
+
+	pSS = pSP->sscb;
+	for (nss = 0; nss < pSP->nss; nss++, pSS++)
+	{
+		printf("  State Set: \"%s\"\n", pSS->name);
+		printf("  Num states=\"%d\"\n", pSS->num_states);
+		printf("  State names:\n");
+		pST = pSS->states;
+		for (nstates = 0; nstates < pSS->num_states; nstates++)
+		{
+			printf("    \"%s\"\n", pST->name);
+			pST++;
+		}
+	}
+	return 0;
 }
-#endif	VX4
+#endif	DEBUG

@@ -2,3 +2,5 @@
 ### 3 Apr. 1991  (MDA)	moved seq.c to seq_main.c  for consistency with 
 ###			snc, and for ease of use in Imakefiles...
 ###
+### 03jan92,ajk		s_*.c files are VxWorks version 5 compatable.
+###

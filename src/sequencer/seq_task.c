@@ -8,9 +8,11 @@
 	state sets.
 
 	ENVIRONMENT: VxWorks
-
-	HISTORY:
-10dec91,ajk	removed "if ( .... );" bug in function sequencer().
+	HISTORY
+04dec91,ajk	Implemented linked list of state programs, eliminating task
+		variables.
+11dec91,ajk	Made cosmetic changes and cleaned up comments.
+19dec91,ajk	Changed algoritm in get_timeout().
 ***************************************************************************/
 
 #include	"seq.h"
@@ -28,188 +30,205 @@ LOCAL	long get_timeout();
 
 #define	MAX_TIMEOUT	(1<<30) /* like 2 years */
 
-/* Sequencer main task entry point */
-sequencer(sp_ptr, stack_size, ptask_name)
-SPROG		*sp_ptr;	/* ptr to original (global) state program table */
+/*
+ * sequencer() - Sequencer main task entry point.
+ *  */
+sequencer(pSP, stack_size, ptask_name)
+SPROG		*pSP;	/* ptr to original (global) state program table */
 int		stack_size;	/* stack size */
 char		*ptask_name;	/* Parent task name */
 {
-	extern SPROG	*seq_task_ptr;
-	SSCB		*ss_ptr;
-	STATE		*st_ptr;
+	SSCB		*pSS;
+	STATE		*pST;
 	int		nss, task_id;
 	char		task_name[TASK_NAME_SIZE+10];
-	extern		ss_entry();
+	extern		VOID ss_entry();
 
-	sp_ptr->task_id = taskIdSelf(); /* my task id */
+	pSP->task_id = taskIdSelf(); /* my task id */
 
-	/* Make "seq_task_ptr" a task variable */
-	if (taskVarAdd(sp_ptr->task_id, &seq_task_ptr) != OK)
-	{
-		seq_log(sp_ptr, "%s: taskVarAdd failed\n", sp_ptr->name);
-		return -1;
-	}
-	seq_task_ptr = sp_ptr;
+	/* Add the program to the state program list */
+	seqAddProg(pSP);
 
-	/* Initilaize state set to first task, and set event mask */
-	ss_ptr = sp_ptr->sscb;
-	for (nss = 0; nss < sp_ptr->nss; nss++, ss_ptr++)
-	{
-		st_ptr = ss_ptr->states;
-		ss_ptr->current_state = 0;
-		ss_ptr->pMask = (st_ptr->eventMask);
-	}
+	/*
+	 * Connect to database channels & initiate monitor requests.
+	 * Returns here immediately if "connect" option is not set (-c),
+	 * otherwise, waits for all channels to connect (+c).
+	 */
+	seq_connect(pSP);
 
-	/* Connect to database channels & initiate monitor requests.
-	   Returns here immediately if "connect" switch is not set */
-	seq_connect(sp_ptr);
-
-	/* Create the state set tasks */
+	/* Additional state set task names are derived from the first ss */
 	if (strlen(ptask_name) > TASK_NAME_SIZE)
 		ptask_name[TASK_NAME_SIZE] = 0;
 
-	ss_ptr = sp_ptr->sscb + 1;
-	for (nss = 1; nss < sp_ptr->nss; nss++, ss_ptr++)
+	/* Create each additional state set task */
+	pSS = pSP->sscb + 1;
+	for (nss = 1; nss < pSP->nss; nss++, pSS++)
 	{
 		/* Form task name from program name + state set number */
 		sprintf(task_name, "%s_%d", ptask_name, nss);
 
 		/* Spawn the task */
-		task_id = taskSpawn(task_name,
-		 SPAWN_PRIORITY+ss_ptr->task_priority,
-		 SPAWN_OPTIONS, stack_size, ss_entry, sp_ptr, ss_ptr);
+		task_id = taskSpawn(
+		  task_name,				/* task name */
+		  SPAWN_PRIORITY+pSS->task_priority,	/* priority */
+		  SPAWN_OPTIONS,			/* task options */
+		  stack_size,				/* stack size */
+		  ss_entry,				/* entry point */
+		  pSP, pSS);				/* pass 2 parameters */
 
-		seq_log(sp_ptr, "Spawning task %d: \"%s\"\n", task_id, task_name);
+		seq_log(pSP, "Spawning task %d: \"%s\"\n", task_id, task_name);
 	}
 
-	/* Main task handles first state set */
-	ss_entry(sp_ptr, sp_ptr->sscb);
+	/* First state set jumps directly to entry point */
+	ss_entry(pSP, pSP->sscb);
 }
-/* Task entry point for state sets */
-/* Provides main loop for state set processing (common, re-entrant code) */
-VOID ss_entry(sp_ptr, ss_ptr)
-SPROG	*sp_ptr;
-SSCB	*ss_ptr;
+/*
+ * ss_entry() - Task entry point for all state sets.
+ * Provides the main loop for state set processing.
+ */
+VOID ss_entry(pSP, pSS)
+SPROG	*pSP;
+SSCB	*pSS;
 {
 	BOOL		ev_trig;
-	STATE		*st_ptr, *st_pNext;
+	STATE		*pST, *pStNext;
 	long		delay;
 	int		i;
-	char		*var_ptr;
+	char		*pVar;
+
+	pSS->task_id = taskIdSelf();
 
 	/* Initialize all tasks except the main task */
-	ss_ptr->task_id = taskIdSelf();
-	if (ss_ptr->task_id != sp_ptr->task_id)
-		ss_task_init(sp_ptr, ss_ptr);
+	if (pSS->task_id != pSP->task_id)
+		ss_task_init(pSP, pSS);
 
-	var_ptr = sp_ptr->user_area;
-	st_ptr = ss_ptr->states;
+	/* Initilaize state set to enter the first state */
+	pST = pSS->states;
+	pSS->current_state = 0;
 
-	/* Main loop */
+	/* Use the event mask for this state */
+	pSS->pMask = (pST->eventMask);
+
+	/* Local ptr to user variables (for reentrant code only) */
+	pVar = pSP->user_area;
+
+	/*
+	 * ============= Main loop ==============
+	 */
 	while (1)
 	{
 		/* Clear event bits */
-		semTake(sp_ptr->caSemId, WAIT_FOREVER); /* Lock CA event update */
+		semTake(pSP->caSemId, WAIT_FOREVER); /* Lock CA event update */
 		for (i = 0; i < NWRDS; i++)
-			ss_ptr->events[i] = 0;
-		semGive(sp_ptr->caSemId); /* Unlock CA event update */
+			pSS->events[i] = 0;
+		semGive(pSP->caSemId); /* Unlock CA event update */
 
-		ss_ptr->time = tickGet(); /* record time we entered this state */
+		pSS->time = tickGet(); /* record time we entered this state */
 
 		/* Call delay function to set up delays */
-		ss_ptr->ndelay = 0;
-		st_ptr->delay_func(sp_ptr, ss_ptr, var_ptr);
+		pSS->ndelay = 0;
+		pST->delay_func(pSP, pSS, pVar);
 
-		/* On 1-st pass fall thru w/o wake up */
-		semGive(ss_ptr->syncSemId);
+		/* Generate a phoney event.
+		 * This guarantees that a when() is always executed at
+		 * least once when a state is entered. */
+		semGive(pSS->syncSemId);
 
-		/* Loop until an event is triggered */
+		/*
+		 * Loop until an event is triggered, i.e. when()
+		 * returns TRUE.
+		 */
 		do {
 			/* Wake up on CA event, event flag, or expired time delay */
-			delay = get_timeout(ss_ptr);
-			semTake(ss_ptr->syncSemId, delay);
+			delay = get_timeout(pSS);
+			if (delay > 0)
+				semTake(pSS->syncSemId, delay);
 
 			/* Apply resource lock: any new events coming in will
 			   be deferred until next state is entered */
-			semTake(sp_ptr->caSemId, WAIT_FOREVER);
+			semTake(pSP->caSemId, WAIT_FOREVER);
 
-			/* Call event function to check for event trigger */
-			ev_trig = st_ptr->event_func(sp_ptr, ss_ptr, var_ptr);
+			/* Call the event function to check for an event trigger.
+			 * Everything inside the when() statement is executed.
+			 */
+			ev_trig = pST->event_func(pSP, pSS, pVar);
 
 			/* Unlock CA resource */
-			semGive(sp_ptr->caSemId);
+			semGive(pSP->caSemId);
 
 		} while (!ev_trig);
-		/* Event triggered */
+		/*
+		 * An event triggered:
+		 * execute the action statements and enter the new state.
+		 */
 
 		/* Change event mask ptr for next state */
-		st_pNext = ss_ptr->states + ss_ptr->next_state;
-		ss_ptr->pMask = (st_pNext->eventMask);
+		pStNext = pSS->states + pSS->next_state;
+		pSS->pMask = (pStNext->eventMask);
 
 		/* Execute the action for this event */
-		ss_ptr->action_complete = FALSE;
-		st_ptr->action_func(sp_ptr, ss_ptr, var_ptr);
+		pSS->action_complete = FALSE;
+		pST->action_func(pSP, pSS, pVar);
 
 		/* Flush any outstanding DB requests */
 		ca_flush_io();
 
 		/* Change to next state */
-		ss_ptr->prev_state = ss_ptr->current_state;
-		ss_ptr->current_state = ss_ptr->next_state;
-		st_ptr = ss_ptr->states + ss_ptr->current_state;
-		ss_ptr->action_complete = TRUE;
+		pSS->prev_state = pSS->current_state;
+		pSS->current_state = pSS->next_state;
+		pST = pSS->states + pSS->current_state;
+		pSS->action_complete = TRUE;
 	}
 }
 /* Initialize state-set tasks */
-LOCAL VOID ss_task_init(sp_ptr, ss_ptr)
-SPROG	*sp_ptr;
-SSCB	*ss_ptr;
+LOCAL VOID ss_task_init(pSP, pSS)
+SPROG	*pSP;
+SSCB	*pSS;
 {
-	extern SPROG	*seq_task_ptr;
-
-
-	/* Import task variable context from main task */
-	taskVarAdd(ss_ptr->task_id, &seq_task_ptr);
-	seq_task_ptr = sp_ptr;
-
-	/* Import Channel Access context from main task */
-	ca_import(sp_ptr->task_id);
+	/* Import Channel Access context from the main task */
+	ca_import(pSP->task_id);
 
 	return;
 }
 /* Return time-out for delay() */
-LOCAL long get_timeout(ss_ptr)
-SSCB	*ss_ptr;
+LOCAL long get_timeout(pSS)
+SSCB	*pSS;
 {
 	int		ndelay;
-	long		timeout;	/* min. expiration clock time */
+	long		timeout, timeoutMin;	/* expiration clock time */
 	long		delay;		/* min. delay (tics) */
 
-	if (ss_ptr->ndelay == 0)
+	if (pSS->ndelay == 0)
 		return MAX_TIMEOUT;
 
-	timeout = MAX_TIMEOUT; /* start with largest timeout */
+	timeoutMin = MAX_TIMEOUT; /* start with largest timeout */
 
 	/* Find the minimum abs. timeout (0 means already expired) */
-	for (ndelay = 0; ndelay < ss_ptr->ndelay; ndelay++)
+	for (ndelay = 0; ndelay < pSS->ndelay; ndelay++)
 	{
-		if ((ss_ptr->timeout[ndelay] != 0) &&
-		    (ss_ptr->timeout[ndelay] < timeout) )
-			timeout = (long)ss_ptr->timeout[ndelay];
+		timeout = pSS->timeout[ndelay];
+		if (timeout == 0)
+			continue;	/* already expired */
+		if (pSS->time >= timeout)
+		{	/* just expired */
+			timeoutMin = pSS->time;
+			pSS->timeout[ndelay] = 0; /* mark as expired */
+		}
+		else if (timeout < timeoutMin)
+		{
+			timeoutMin = timeout;
+		}
 	}
 
-	/* Convert timeout to delay */
-	delay = timeout - tickGet();
-	if (delay <= 0)
-		return NO_WAIT;
-	else
-		return delay;
+	/* Convert minimum timeout to delay */
+	delay = timeoutMin - tickGet();
+	return delay;
 }
 /* Set-up for delay() on entering a state.  This routine is called
 by the state program for each delay in the "when" statement  */
-VOID seq_start_delay(sp_ptr, ss_ptr, delay_id, delay)
-SPROG	*sp_ptr;
-SSCB	*ss_ptr;
+VOID seq_start_delay(pSP, pSS, delay_id, delay)
+SPROG	*pSP;
+SSCB	*pSS;
 int	delay_id;		/* delay id */
 float	delay;
 {
@@ -218,25 +237,25 @@ float	delay;
 	/* Note: the following 2 lines could be combined, but doing so produces
 	 * the undefined symbol "Mund", which is not in VxWorks library */
 	td_tics = delay*60.0;
-	ss_ptr->timeout[delay_id] = ss_ptr->time + td_tics;
+	pSS->timeout[delay_id] = pSS->time + td_tics;
 	delay_id += 1;
-	if (delay_id > ss_ptr->ndelay)
-		ss_ptr->ndelay = delay_id;
+	if (delay_id > pSS->ndelay)
+		pSS->ndelay = delay_id;
 	return;
 }
 
 /* Test for time-out expired */
-BOOL seq_test_delay(sp_ptr, ss_ptr, delay_id)
-SPROG	*sp_ptr;
-SSCB	*ss_ptr;
+BOOL seq_test_delay(pSP, pSS, delay_id)
+SPROG	*pSP;
+SSCB	*pSS;
 int	delay_id;
 {
-	if (ss_ptr->timeout[delay_id] == 0)
+	if (pSS->timeout[delay_id] == 0)
 		return TRUE; /* previously expired t-o */
 
-	if (tickGet() >= ss_ptr->timeout[delay_id])
+	if (tickGet() >= pSS->timeout[delay_id])
 	{
-		ss_ptr->timeout[delay_id] = 0; /* mark as expired */
+		pSS->timeout[delay_id] = 0; /* mark as expired */
 		return TRUE;
 	}
 	return FALSE;
@@ -251,91 +270,103 @@ int	delay_id;
  * 5.  Return, causing self to be deleted.
  *
  * This task is run whenever ANY task in the system is deleted.
- * Therefore, we have to check the task variable "seq_task_ptr"
- * to see if it's one of ours.
+ * Therefore, we have to check the task belongs to a state program.
  * With VxWorks 5.0 we need to change references to the TCBX to handle
  * the Wind kernel.
  */
+#ifdef	V5_vxWorks
+sprog_delete(tid)
+int		tid;
+{
+	int		nss, tid_ss;
+	SPROG		*pSP, *seqFindProg();
+	SSCB		*pSS;
+
+#else
 sprog_delete(pTcbX)
 TCBX	*pTcbX;	/* ptr to TCB of task to be deleted */
 {
-	int		tid, nss, val, tid_ss;
-	SPROG		*sp_ptr;
-	SSCB		*ss_ptr;
-	extern SPROG	*seq_task_ptr;
+	int		tid, nss, tid_ss;
+	SPROG		*pSP, *seqFindProg();
+	SSCB		*pSS;
 
 	tid = pTcbX->taskId;
-	/* Note: seq_task_ptr is a task variable */
-	val = taskVarGet(tid, &seq_task_ptr);
-	if (val == ERROR)
-		return 0; /* not one of our tasks */
+#endif
+	pSP = seqFindProg(tid);
+	if (pSP == NULL)
+		return; /* not a state program task */
 
-	sp_ptr = (SPROG *)val;
-	logMsg("Delete %s: sp_ptr=%d=0x%x, tid=%d\n",
-	 sp_ptr->name, sp_ptr, sp_ptr, tid);
+	logMsg("Delete %s: pSP=%d=0x%x, tid=%d\n",
+	 pSP->name, pSP, pSP, tid);
 
 	/* Is this a real sequencer task? */
-	if (sp_ptr->magic != MAGIC)
+	if (pSP->magic != MAGIC)
 	{
 		logMsg("  Not main state program task\n");
 		return -1;
 	}
 
 	/* Suspend all state set tasks except self */
-	ss_ptr = sp_ptr->sscb;
-	for (nss = 0; nss < sp_ptr->nss; nss++, ss_ptr++)
+	pSS = pSP->sscb;
+	logMsg("   Suspending state set tasks:\n");
+	for (nss = 0; nss < pSP->nss; nss++, pSS++)
 	{
-		tid_ss = ss_ptr->task_id;
+		tid_ss = pSS->task_id;
 		if ( (tid_ss > 0) && (tid != tid_ss) )
 		{
-			logMsg("   suspend ss task: tid=%d\n", tid_ss);
+			logMsg("    suspend task: tid=%d\n", tid_ss);
 			taskSuspend(tid_ss);
 		}
 	}
 
-	/* Call user exit routine */
-	sp_ptr->exit_func(sp_ptr, sp_ptr->user_area);
-
-	/* Close the log file */
-	if (sp_ptr->logFd > 0 && sp_ptr->logFd != ioGlobalStdGet(1))
+	/* Call user exit routine (only if task has run) */
+	if (pSP->sscb->task_id > 0)
 	{
-		logMsg("Closing log fd=%d\n", sp_ptr->logFd);
-		close(sp_ptr->logFd);
-		sp_ptr->logFd = ioGlobalStdGet(1);
+		logMsg("   Call exit function\n");
+		pSP->exit_func(pSP, pSP->user_area);
 	}
 
-	/* Delete state set tasks (except self) & delete their semaphores */
-	ss_ptr = sp_ptr->sscb;
-	for (nss = 0; nss < sp_ptr->nss; nss++, ss_ptr++)
+	/* Close the log file */
+	if (pSP->logFd > 0 && pSP->logFd != ioGlobalStdGet(1))
 	{
-		tid_ss = ss_ptr->task_id;
+		logMsg("Closing log fd=%d\n", pSP->logFd);
+		close(pSP->logFd);
+		pSP->logFd = ioGlobalStdGet(1);
+	}
+
+	/* Remove the state program from the state program list */
+	seqDelProg(pSP);
+
+	/* Delete state set tasks (except self) & delete their semaphores */
+	pSS = pSP->sscb;
+	for (nss = 0; nss < pSP->nss; nss++, pSS++)
+	{
+		tid_ss = pSS->task_id;
 		if ( tid_ss > 0)
 		{
-			if (tid != tid_ss)
+			if ( (tid != tid_ss) && (tid_ss > 0) )
 			{
 				logMsg("   delete ss task: tid=%d\n", tid_ss);
-				taskVarSet(tid_ss, &seq_task_ptr, ERROR);
 				taskDelete(tid_ss);
 			}
-			semDelete(ss_ptr->syncSemId);
-			if (!sp_ptr->async_flag)
-				semDelete(ss_ptr->getSemId);
+			semDelete(pSS->syncSemId);
+			if (!pSP->async_flag)
+				semDelete(pSS->getSemId);
 		}
 	}
 
 	/* Delete program-wide semaphores */
-	semDelete(sp_ptr->caSemId);
-	/****semDelete(sp_ptr->logSemId);****/
+	semDelete(pSP->caSemId);
 
 	/* Free the memory that was allocated for the task area */
-	logMsg("free sp_ptr->dyn_ptr=0x%x\n", sp_ptr->dyn_ptr);
+	logMsg("free pSP->dyn_ptr=0x%x\n", pSP->dyn_ptr);
 	taskDelay(5);
-	free(sp_ptr->dyn_ptr);
+	free(pSP->dyn_ptr);
 	
 	return 0;
 }
-/* VxWorks Version 4.02 only */
-#ifdef	VX4
+/* VxWorks Version 4 only */
+#ifndef	V5_vxWorks
 
 /* seq_semTake - take semaphore:
  * VxWorks semTake() with timeout added. (emulates VxWorks 5.0)
@@ -353,4 +384,4 @@ long		timeout;	/* timeout in tics */
 	else
 		vrtxPend(&semId->count, timeout, &dummy);
 }
-#endif	VX4
+#endif	V5_vxWorks

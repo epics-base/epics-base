@@ -29,6 +29,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.22  1997/06/13 09:14:23  jhill
+ * connect/search proto changes
+ *
  * Revision 1.21  1997/04/10 19:26:17  jhill
  * asynch connect, faster connect, ...
  *
@@ -162,8 +165,15 @@ char *localUserName()
 
 	pName = getlogin();
 	if(!pName){
-		pName = getpwuid(getuid())->pw_name;
-		if(!pName){
+		struct passwd *p;
+		p = getpwuid(getuid());
+		if (p) {
+			pName = p->pw_name;
+			if (!pName) {
+				pName = "";
+			}
+		}
+		else {
 			pName = "";
 		}
 	}

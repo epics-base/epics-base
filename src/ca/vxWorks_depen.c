@@ -384,8 +384,6 @@ int cac_os_depen_init(struct CA_STATIC *pcas)
 	pcas->ca_tid = taskIdSelf();
 	pcas->ca_client_lock = semMCreate(SEM_DELETE_SAFE);
 	assert(pcas->ca_client_lock);
-	pcas->ca_event_lock = semMCreate(SEM_DELETE_SAFE);
-	assert(pcas->ca_event_lock);
 	pcas->ca_putNotifyLock = semMCreate(SEM_DELETE_SAFE);
 	assert(pcas->ca_putNotifyLock);
 	pcas->ca_io_done_sem = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
@@ -569,7 +567,6 @@ LOCAL int cac_os_depen_exit_tid (struct CA_STATIC *pcas, int tid)
 	 * can use them.
 	 */
 	assert(semDelete(pcas->ca_client_lock)==OK);
-	assert(semDelete(pcas->ca_event_lock)==OK);
 	assert(semDelete(pcas->ca_putNotifyLock)==OK);
 	assert(semDelete(pcas->ca_io_done_sem)==OK);
 	assert(semDelete(pcas->ca_blockSem)==OK);
@@ -577,7 +574,7 @@ LOCAL int cac_os_depen_exit_tid (struct CA_STATIC *pcas, int tid)
 	ca_static = NULL;
 	free ((char *)pcas);
 
-        return ECA_NORMAL;
+	return ECA_NORMAL;
 }
 
 
@@ -878,9 +875,9 @@ LOCAL void ca_extra_event_labor(void *pArg)
                         args.status = ECA_NORMAL;
                 }
 
-                LOCKEVENTS;
+		    semTake(pcas->ca_client_lock, WAIT_FOREVER);
                 (*ppnb->caUserCallback) (args);
-                UNLOCKEVENTS;
+		    semGive(pcas->ca_client_lock);
 
                 ppnb->busy = FALSE;
         }
@@ -898,7 +895,6 @@ LOCAL void ca_extra_event_labor(void *pArg)
 			0,
 			0);
         }
-
 }
 
 

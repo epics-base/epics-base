@@ -276,10 +276,8 @@ typedef struct timeval ca_time;
 /*
  * these control the duration and period of name resolution
  * broadcasts
- *
- * MAXCONNTRIES must be less than the number of bits in type long
  */
-#define MAXCONNTRIES 		30	/* N conn retries on unchanged net */
+#define MAXCONNTRIES 		100	/* N conn retries on unchanged net */
 
 /*
  * A prime number works best here (see comment in retrySearchRequest()
@@ -384,13 +382,12 @@ typedef struct caclient_put_notify{
 #define nextFastBucketId (ca_static->ca_nextFastBucketId)
 
 #if defined(vxWorks)
-#       define io_done_sem      (ca_static->ca_io_done_sem)
+#	define io_done_sem      (ca_static->ca_io_done_sem)
 #	define evuser		(ca_static->ca_evuser)
 #	define client_lock	(ca_static->ca_client_lock)
-#	define event_lock	(ca_static->ca_event_lock)
 #	define local_chidlist	(ca_static->ca_local_chidlist)
 #	define lcl_buff_list	(ca_static->ca_lcl_buff_list)
-#	define event_tid	(ca_static->ca_event_tid)
+#	define lock_tid	(ca_static->ca_lock_tid)
 #endif
 
 /*
@@ -482,6 +479,7 @@ typedef struct ioc_in_use{
 	unsigned 		claimsPending:1; 
 	unsigned		recvPending:1;
 	unsigned		pushPending:1;
+	unsigned		beaconAnomaly:1;
 }IIU;
 
 /*
@@ -517,11 +515,11 @@ struct  CA_STATIC {
 	ELLLIST		fdInfoFreeList;
 	ELLLIST		fdInfoList;
 	ca_time		currentTime;
+	ca_time		programBeginTime;
 	ca_time		ca_conn_next_retry;
 	ca_time		ca_conn_retry_delay;
 	ca_time		ca_last_repeater_try;
 	ca_real		ca_connectTMO;
-	ca_time		programBeginTime;
 	IIU		*ca_piiuCast;
 	void		(*ca_exception_func)
 				(struct exception_handler_args);
@@ -563,7 +561,6 @@ struct  CA_STATIC {
 	SEM_ID		ca_io_done_sem;
 	SEM_ID		ca_blockSem;
 	SEM_ID		ca_client_lock; 
-	SEM_ID		ca_event_lock; /* dont allow events to preempt */
 	SEM_ID		ca_putNotifyLock;
 	ELLLIST		ca_local_chidlist;
 	ELLLIST		ca_lcl_buff_list;
@@ -571,7 +568,7 @@ struct  CA_STATIC {
 	ELLLIST		ca_taskVarList;
 	void		*ca_evuser;
 	void		*ca_dbMonixFreeList;
-	int		ca_event_tid;
+	int		ca_lock_tid;
 	int		ca_tid;
     	int		recv_tid;
 #endif
@@ -697,7 +694,7 @@ const struct sockaddr_in	*pina, /* only used by TCP connections */
 int                     	net_proto
 );
 
-void caSetupBCastAddrList (ELLLIST *pList, SOCKET sock, unsigned port);
+void caSetupBCastAddrList (ELLLIST *pList, SOCKET sock, unsigned short port);
 
 int ca_os_independent_init (void);
 
@@ -732,7 +729,7 @@ void genLocalExcepWFL(long stat, char *ctx,
 	char *pFile, unsigned line);
 #define genLocalExcep(STAT, PCTX) \
 genLocalExcepWFL (STAT, PCTX, __FILE__, __LINE__)
-void cac_reconnect_channel(ciu chan);
+void cac_reconnect_channel(caResId id);
 void retryPendingClaims(IIU *piiu);
 void cacSetRetryInterval(unsigned retryNo);
 void addToChanList(ciu chan, IIU *piiu);

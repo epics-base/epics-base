@@ -66,35 +66,28 @@ static char *os_depenhSccsId = "$Id$";
 #	define CA_OS_CONFIGURED
 #endif /*VMS*/
 
-#ifdef WIN32
+#ifdef _WIN32
 #	define CA_OS_CONFIGURED
-#endif /*WIN32*/
+#endif /*_WIN32*/
 
 #ifndef CA_OS_CONFIGURED
-#error Please define one of vxWorks, UNIX, VMS, or WIN32 
+#error Please define one of vxWorks, UNIX, VMS, or _WIN32 
 #endif
 
 #if defined(vxWorks)
 #  	define POST_IO_EV semGive(io_done_sem)
-#	define VXTASKIDNONE	0
-#  	define LOCK 		semTake(client_lock, WAIT_FOREVER);
-#  	define UNLOCK  	semGive(client_lock);
-#	define LOCKEVENTS \
-	{semTake(event_lock, WAIT_FOREVER); event_tid=(int)taskIdCurrent;}
-#  	define UNLOCKEVENTS \
-	{event_tid=VXTASKIDNONE; semGive(event_lock);}
-#	define EVENTLOCKTEST \
-(((int)taskIdCurrent)==event_tid || ca_static->recv_tid == (int)taskIdCurrent)
-#	define VXTHISTASKID 	taskIdSelf()
-#	define abort() 		taskSuspend(VXTHISTASKID)
+#	define VXTASKIDNONE 0
+#  	define LOCK {semTake(client_lock, WAIT_FOREVER); lock_tid=(int)taskIdCurrent;}
+#  	define UNLOCK {lock_tid=VXTASKIDNONE; semGive(client_lock);}
+#	define EVENTLOCKTEST (lock_tid==(int)taskIdCurrent)
+#	define VXTHISTASKID taskIdSelf()
+#	define abort() taskSuspend(VXTHISTASKID)
 #endif
 
 #if defined(UNIX)
 #  	define POST_IO_EV 
 #  	define LOCK
 #  	define UNLOCK  
-#  	define LOCKEVENTS
-#  	define UNLOCKEVENTS
 #	define EVENTLOCKTEST	(post_msg_active)
 #endif
 
@@ -102,19 +95,15 @@ static char *os_depenhSccsId = "$Id$";
 #  	define POST_IO_EV 
 #	define LOCK
 #	define UNLOCK
-#  	define LOCKEVENTS
-#  	define UNLOCKEVENTS
 #	define EVENTLOCKTEST	(post_msg_active)
 #endif
 
-#ifdef WIN32 
+#ifdef _WIN32 
 #	define POST_IO_EV
 #  	define LOCK
 #  	define UNLOCK  
-#  	define LOCKEVENTS
-#  	define UNLOCKEVENTS
 #	define EVENTLOCKTEST	(post_msg_active)
-#endif /*WIN32*/
+#endif /*_WIN32*/
 
 #endif /* INCos_depenh */
 

@@ -75,8 +75,8 @@
 
 #include "iocinf.h"
 
-#ifndef WIN32
-#error This source is specific to WIN32 
+#ifndef _WIN32
+#error This source is specific to _WIN32 
 #endif
 
 long offset_time;  /* time diff (sec) between 1970 and when windows started */
@@ -306,7 +306,7 @@ int local_addr (SOCKET s, struct sockaddr_in *plcladdr)
  * 	LOCK should be applied here for (pList)
  * 	(this is also called from the server)
  */
-void caDiscoverInterfaces(ELLLIST *pList, SOCKET socket, int port,
+void caDiscoverInterfaces(ELLLIST *pList, SOCKET socket, unsigned short port,
 	struct in_addr matchAddr)
 {
 	struct in_addr bcast_addr;

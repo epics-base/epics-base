@@ -80,7 +80,7 @@ int cac_select_io(struct timeval *ptimeout, int flags)
 			continue;
 		}
 
-#ifdef WIN32
+#ifdef _WIN32
 		/* Under WIN32, FD_SETSIZE is the number of sockets,
 		 * not the max. file descriptor value that you may select() !
 		 *
@@ -151,16 +151,11 @@ int cac_select_io(struct timeval *ptimeout, int flags)
 		status = 0;
 	}
 	else {
-#		if defined(__hpux)
-#			define HPCAST (int *)
-#		else
-#			define HPCAST
-#		endif
 		status = select(
 				maxfd+1,
-				HPCAST &pfdi->readMask,
-				HPCAST &pfdi->writeMask,
-				HPCAST NULL,
+				&pfdi->readMask,
+				&pfdi->writeMask,
+				NULL,
 				&autoTimeOut);
 		if (status<0) {
 			int errnoCpy = SOCKERRNO;

@@ -253,6 +253,7 @@ const struct in_addr  	*pnet_addr
 
 	case CA_PROTO_ECHO:
 		piiu->echoPending = FALSE;
+		piiu->beaconAnomaly = FALSE;
 		break;
 
 	case CA_PROTO_WRITE_NOTIFY:
@@ -266,8 +267,8 @@ const struct in_addr  	*pnet_addr
 		monix = (miu) bucketLookupItemUnsignedId(
 				pFastBucket, 
 				&piiu->curMsg.m_available);
-		UNLOCK;
 		if(!monix){
+			UNLOCK;
 			break;
 		}
 
@@ -290,11 +291,8 @@ const struct in_addr  	*pnet_addr
 			 */
 			args.status = ntohl(piiu->curMsg.m_cid); 
 
-			LOCKEVENTS;
 			(*monix->usr_func) (args);
-			UNLOCKEVENTS;
 		}
-		LOCK;
 		ellDelete(&pend_write_list, &monix->node);
 		caIOBlockFree(monix);
 		UNLOCK;
@@ -314,8 +312,8 @@ const struct in_addr  	*pnet_addr
 		monix = (miu) bucketLookupItemUnsignedId(
 				pFastBucket, 
 				&piiu->curMsg.m_available);
-		UNLOCK;
 		if(!monix){
+			UNLOCK;
 			break;
 		}
 
@@ -332,18 +330,18 @@ const struct in_addr  	*pnet_addr
 			 * format to host format
 			 *
 			 */
-#                     	ifdef CONVERSION_REQUIRED 
-                               if (piiu->curMsg.m_type<NELEMENTS(cac_dbr_cvrt)) {
-                                       (*cac_dbr_cvrt[piiu->curMsg.m_type])(
-                                               piiu->pCurData, 
-                                               piiu->pCurData, 
-                                               FALSE,
-                                               piiu->curMsg.m_count);
-                               }
-                               else {
-                                       piiu->curMsg.m_cid = htonl(ECA_BADTYPE);
-                               }
-#                     	endif
+#			ifdef CONVERSION_REQUIRED 
+			if (piiu->curMsg.m_type<NELEMENTS(cac_dbr_cvrt)) {
+				(*cac_dbr_cvrt[piiu->curMsg.m_type])(
+				     piiu->pCurData, 
+				     piiu->pCurData, 
+				     FALSE,
+				     piiu->curMsg.m_count);
+			}
+			else {
+				piiu->curMsg.m_cid = htonl(ECA_BADTYPE);
+			}
+#			endif
 
 			args.usr = (void *) monix->usr_arg;
 			args.chid = monix->chan;
@@ -365,11 +363,8 @@ const struct in_addr  	*pnet_addr
 				args.status = ECA_NORMAL;
 			}
 
-			LOCKEVENTS;
 			(*monix->usr_func) (args);
-			UNLOCKEVENTS;
 		}
-		LOCK;
 		ellDelete(&pend_read_list, &monix->node);
 		caIOBlockFree(monix);
 		UNLOCK;
@@ -388,44 +383,43 @@ const struct in_addr  	*pnet_addr
 		monix = (miu) bucketLookupItemUnsignedId(
 				pFastBucket, 
 				&piiu->curMsg.m_available);
-		UNLOCK;
 		if(!monix){
+			UNLOCK;
 			break;
 		}
-
 
 		/*
 		 * m_postsize = 0  is a confirmation of a
 		 * monitor cancel
 		 */
 		if (!piiu->curMsg.m_postsize) {
-			LOCK;
 			pChan = (ciu) monix->chan; /* discard const */
 			ellDelete(&pChan->eventq, &monix->node);
 			caIOBlockFree(monix);
 			UNLOCK;
-
 			break;
 		}
 		/* only call if not disabled */
-		if (!monix->usr_func)
+		if (!monix->usr_func) {
+			UNLOCK;
 			break;
+		}
 
 		/*
 		 * convert the data buffer from net
 		 * format to host format
 		 */
-#               ifdef CONVERSION_REQUIRED 
-                       if (piiu->curMsg.m_type<NELEMENTS(cac_dbr_cvrt)) {
-                               (*cac_dbr_cvrt[piiu->curMsg.m_type])(
-                                       piiu->pCurData, 
-                                       piiu->pCurData, 
-                                       FALSE,
-                                       piiu->curMsg.m_count);
-                       }
-                       else {
-                               piiu->curMsg.m_cid = htonl(ECA_BADTYPE);
-                       }
+#		ifdef CONVERSION_REQUIRED 
+			if (piiu->curMsg.m_type<NELEMENTS(cac_dbr_cvrt)) {
+				 (*cac_dbr_cvrt[piiu->curMsg.m_type])(
+					   piiu->pCurData, 
+					   piiu->pCurData, 
+					   FALSE,
+					   piiu->curMsg.m_count);
+			}
+			else {
+				 piiu->curMsg.m_cid = htonl(ECA_BADTYPE);
+			}
 #		endif
 
 		/*
@@ -456,10 +450,8 @@ const struct in_addr  	*pnet_addr
 		}
 
 		/* call their handler */
-		LOCKEVENTS;
 		(*monix->usr_func) (args);
-		UNLOCKEVENTS;
-
+		UNLOCK;
 		break;
 	}
 	case CA_PROTO_READ:
@@ -473,8 +465,8 @@ const struct in_addr  	*pnet_addr
 		pIOBlock = (miu) bucketLookupItemUnsignedId(
 					pFastBucket, 
 					&piiu->curMsg.m_available);
-		UNLOCK;
 		if(!pIOBlock){
+			UNLOCK;
 			break;
 		}
 
@@ -487,28 +479,28 @@ const struct in_addr  	*pnet_addr
 			 * convert the data buffer from net
 			 * format to host format
 			 */
-                       	if (piiu->curMsg.m_type <= (unsigned) LAST_BUFFER_TYPE) {
+			if (piiu->curMsg.m_type <= (unsigned) LAST_BUFFER_TYPE) {
 #				ifdef CONVERSION_REQUIRED 
-                                       (*cac_dbr_cvrt[piiu->curMsg.m_type])(
-                                               piiu->pCurData, 
-                                               (void *) pIOBlock->usr_arg, 
-                                               FALSE,
-                                               piiu->curMsg.m_count);
+					(*cac_dbr_cvrt[piiu->curMsg.m_type])(
+					     piiu->pCurData, 
+					     (void *) pIOBlock->usr_arg, 
+					     FALSE,
+					     piiu->curMsg.m_count);
 #				else
-                                       if (piiu->curMsg.m_type == DBR_STRING &&
-                                               piiu->curMsg.m_count == 1u) {
-                                               strcpy ((char *)pIOBlock->usr_arg,
-                                                       piiu->pCurData);
-                                       }
-                                       else {
-                                               memcpy(
-                                                       (char *)pIOBlock->usr_arg,
-                                                       piiu->pCurData,
-                                                       dbr_size_n (
-                                                               piiu->curMsg.m_type, 
-                                                               piiu->curMsg.m_count)
-                                                       );
-                                       }
+					if (piiu->curMsg.m_type == DBR_STRING &&
+					     piiu->curMsg.m_count == 1u) {
+					     strcpy ((char *)pIOBlock->usr_arg,
+							 piiu->pCurData);
+					}
+					else {
+					     memcpy(
+							 (char *)pIOBlock->usr_arg,
+							 piiu->pCurData,
+							 dbr_size_n (
+								   piiu->curMsg.m_type, 
+								   piiu->curMsg.m_count)
+							 );
+					}
 #				endif
 				/*
 				 * decrement the outstanding IO count
@@ -516,7 +508,6 @@ const struct in_addr  	*pnet_addr
 				CLRPENDRECV;
 			}
 		}
-		LOCK;
 		ellDelete(&pend_read_list, &pIOBlock->node);
 		caIOBlockFree(pIOBlock);
 		UNLOCK;
@@ -582,14 +573,13 @@ const struct in_addr  	*pnet_addr
 
 	case CA_PROTO_ERROR:
 	{
-		ELLLIST		*pList = NULL;
-		miu		monix;
-		char		nameBuf[64];
-		char           	context[255];
-		caHdr  		*req = piiu->pCurData;
-		int             op;
+		ELLLIST *pList = NULL;
+		miu monix;
+		char nameBuf[64];
+		char context[255];
+		caHdr *req = piiu->pCurData;
+		int op;
 		struct exception_handler_args args;
-
 
 		/*
 		 * dont process the message if they have
@@ -683,7 +673,7 @@ const struct in_addr  	*pnet_addr
 
 		args.chid = bucketLookupItemUnsignedId
 				(pSlowBucket, &piiu->curMsg.m_cid);
-		UNLOCK;
+
 		args.usr = (void *) ca_static->ca_exception_arg;
 		args.type = ntohs (req->m_type);	
 		args.count = ntohs (req->m_count);
@@ -691,9 +681,8 @@ const struct in_addr  	*pnet_addr
 		args.op = op;
 		args.ctx = context;
 
-		LOCKEVENTS;
 		(*ca_static->ca_exception_func) (args);
-		UNLOCKEVENTS;
+		UNLOCK;
 		break;
 	}
 	case CA_PROTO_ACCESS_RIGHTS:
@@ -727,27 +716,9 @@ const struct in_addr  	*pnet_addr
 		break;
 	}
 	case CA_PROTO_CLAIM_CIU:
-	{
-		ciu	chan;
-
-		LOCK;
-		chan = (ciu) bucketLookupItemUnsignedId(
-				pSlowBucket, &piiu->curMsg.m_cid);
-		UNLOCK;
-		if(!chan){
-			/*
-			 * end up here if they delete the channel
-			 * prior to connecting
-			 */
-			break;
-		}
-
-		if (CA_V44(CA_PROTOCOL_VERSION,piiu->minor_version_number)) {
-        		chan->id.sid = piiu->curMsg.m_available;
-		}
-		cac_reconnect_channel(chan);
+		cac_reconnect_channel(piiu->curMsg.m_cid);
 		break;
-	}
+
 	case CA_PROTO_CLAIM_CIU_FAILED:
 	case CA_PROTO_SERVER_DISCONN:
 		verifyChanAndDisconnect(piiu, cs_conn);
@@ -998,39 +969,54 @@ const struct in_addr	*pnet_addr
 	 * If this fails then we will wait for the
 	 * next search response.
 	 */
-        chan->id.sid = piiu->curMsg.m_cid;
-	UNLOCK
+	chan->id.sid = piiu->curMsg.m_cid;
+
 	issue_claim_channel(chan);
+	UNLOCK
 }
 
 
 /*
  * cac_reconnect_channel()
- *
- * LOCK must _not_ be applied
  */
-void cac_reconnect_channel(ciu chan)
+void cac_reconnect_channel(caResId cid)
 {
-	IIU			*piiu = (IIU *) chan->piiu;
-      	evid			pevent;
-	enum channel_state	prev_cs;
-	int			v41;
+	IIU *piiu;
+	evid pevent;
+	enum channel_state prev_cs;
+	int v41;
+	ciu chan;
+
+	LOCK;
+	chan = (ciu) bucketLookupItemUnsignedId(pSlowBucket, &cid);
+	/*
+	 * this test will fail if they delete the channel
+	 * prior to the reply from the claim message
+	 */
+	if (!chan) {
+		UNLOCK;
+		return;
+	}
+
+	piiu = (IIU *) chan->piiu;
 
 	prev_cs = chan->state;
 	if (prev_cs == cs_conn) {
 		ca_printf("CAC: Ignored conn resp to conn chan CID=%u SID=%u?\n",
 			chan->cid, chan->id.sid);
+		UNLOCK;
 		return;
 	}
 
-	LOCK;
-
 	v41 = CA_V41(CA_PROTOCOL_VERSION, piiu->minor_version_number);
 
-        /*	Update rmt chid fields from caHdr fields	*/
-        chan->type  = piiu->curMsg.m_type;      
-        chan->count = piiu->curMsg.m_count;      
+	if (CA_V44(CA_PROTOCOL_VERSION, piiu->minor_version_number)) {
+		chan->id.sid = piiu->curMsg.m_available;
+	}
 
+	/* Update rmt chid fields from caHdr fields */
+	chan->type  = piiu->curMsg.m_type;      
+	chan->count = piiu->curMsg.m_count;      
 
 	/*
 	 * set state to cs_conn before caling 
@@ -1064,8 +1050,6 @@ void cac_reconnect_channel(ciu chan)
 	    		ca_request_event(pevent);
  	}
 
-      	UNLOCK;
-
 	/*
 	 * if less than v4.1 then the server will never
 	 * send access rights and we know that there
@@ -1080,14 +1064,14 @@ void cac_reconnect_channel(ciu chan)
 		(*chan->pAccessRightsFunc)(args);
 	}
 
-      	if(chan->pConnFunc){
+	if(chan->pConnFunc){
 		struct connection_handler_args	args;
 
 		args.chid = chan;
 		args.op = CA_OP_CONN_UP;
-		LOCKEVENTS;
+		
         	(*chan->pConnFunc)(args);
-		UNLOCKEVENTS;
+		
 	}
 	else if(prev_cs==cs_never_conn){
           	/*  
@@ -1095,5 +1079,6 @@ void cac_reconnect_channel(ciu chan)
 		 */
           	CLRPENDRECV;
 	}
-}
+      UNLOCK;
+}	
 

@@ -63,6 +63,9 @@
  *			datagram socket (and watching for ECONNREFUSED)
  *
  * $Log$
+ * Revision 1.39  1997/04/23 17:05:09  jhill
+ * pc port changes
+ *
  * Revision 1.38  1996/11/02 00:51:04  jhill
  * many pc port, const in API, and other changes
  *
@@ -124,13 +127,13 @@ LOCAL void fanOut(struct sockaddr_in *pFrom, const char *pMsg, unsigned msgSize)
  */
 void ca_repeater()
 {
-  	int			status;
-  	int			size;
-  	SOCKET			sock;
-	struct sockaddr_in	from;
-  	struct sockaddr_in	local;
-  	int			from_size = sizeof from;
-	unsigned short		port;
+  	int status;
+  	int size;
+  	SOCKET sock;
+	struct sockaddr_in from;
+  	struct sockaddr_in local;
+  	int from_size = sizeof from;
+	unsigned short port;
 
 	port = caFetchPortConfig(
 		&EPICS_CA_REPEATER_PORT, 

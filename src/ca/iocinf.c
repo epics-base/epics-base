@@ -113,6 +113,7 @@ static char *sccsId = "@(#) $Id$";
 #define		CA_GLBLSOURCE
 #include	"iocinf.h"
 #include	"net_convert.h"
+#include	"ipAddrToA.h"
 
 LOCAL void 	tcp_recv_msg(struct ioc_in_use *piiu);
 LOCAL void 	cac_connect_iiu(struct ioc_in_use *piiu);
@@ -226,6 +227,7 @@ int				net_proto
 	piiu->claimsPending = FALSE;
 	piiu->recvPending = FALSE;
 	piiu->pushPending = FALSE;
+	piiu->beaconAnomaly = FALSE;
 
   	switch(piiu->sock_proto)
   	{
@@ -506,9 +508,7 @@ int				net_proto
 
 
   	if (fd_register_func) {
-		LOCKEVENTS;
 		(*fd_register_func)((void *)fd_register_arg, sock, TRUE);
-		UNLOCKEVENTS;
 	}
 
 	/*
@@ -647,7 +647,7 @@ LOCAL void cac_connect_iiu (struct ioc_in_use *piiu)
 /*
  * caSetupBCastAddrList()
  */
-void caSetupBCastAddrList (ELLLIST *pList, SOCKET sock, unsigned port)
+void caSetupBCastAddrList (ELLLIST *pList, SOCKET sock, unsigned short port)
 {
 	char			*pstr;
 	char			yesno[32u];
@@ -1325,11 +1325,8 @@ LOCAL void ca_process_udp(struct ioc_in_use *piiu)
 
 
 /*
- *
  *	CLOSE_IOC()
- *
  *	set an iiu in the disconnected state
- *
  *
  */
 LOCAL void close_ioc (IIU *piiu)
@@ -1364,7 +1361,7 @@ LOCAL void close_ioc (IIU *piiu)
 		chanDisconnectCount = ellCount(&piiu->chidlist);
 
 		/*
-		 * remove IOC from the hash table
+		 * remove IOC from the beacon hash table
 		 */
 		pNode = (caAddrNode *) piiu->destAddr.node.next;
 		assert (pNode);
@@ -1391,9 +1388,7 @@ LOCAL void close_ioc (IIU *piiu)
 	}
 
   	if (fd_register_func) {
-		LOCKEVENTS;
 		(*fd_register_func) ((void *)fd_register_arg, piiu->sock_chan, FALSE);
-		UNLOCKEVENTS;
 	}
 
   	status = socket_close (piiu->sock_chan);
@@ -1424,10 +1419,10 @@ LOCAL void close_ioc (IIU *piiu)
 
 /*
  * cacDisconnectChannel()
- * (LOCK must be applied when calling this routine)
  */
 void cacDisconnectChannel(ciu chix, enum channel_state state)
 {
+	LOCK;
 
 	chix->type = TYPENOTCONN;
 	chix->count = 0u;
@@ -1453,7 +1448,6 @@ void cacDisconnectChannel(ciu chix, enum channel_state state)
 		caIOBlockListFree (&pend_write_list, chix, 
 				TRUE, ECA_DISCONN);
 
-		LOCKEVENTS;
 		if (chix->pConnFunc) {
 			struct connection_handler_args 	args;
 
@@ -1468,7 +1462,6 @@ void cacDisconnectChannel(ciu chix, enum channel_state state)
 			args.ar = chix->ar;
 			(*chix->pAccessRightsFunc) (args);
 		}
-		UNLOCKEVENTS;
 	}
 	removeFromChanList(chix);
 	/*
@@ -1477,6 +1470,7 @@ void cacDisconnectChannel(ciu chix, enum channel_state state)
 	assert (piiuCast);
 	addToChanList(chix, piiuCast);
 	cacSetRetryInterval(0u);
+	UNLOCK;
 }
 
 
@@ -1762,20 +1756,20 @@ char *localHostName()
  * caAddConfiguredAddr()
  */
 void caAddConfiguredAddr(ELLLIST *pList, const ENV_PARAM *pEnv, 
-	SOCKET socket, int port)
+	SOCKET socket, unsigned short port)
 {
-        caAddrNode      *pNode;
-        const char      *pStr;
-        const char      *pToken;
-	caAddr		addr;
-	caAddr		localAddr;
-	char		buf[32u]; /* large enough to hold an IP address */
-	int		status;
+	caAddrNode *pNode;
+	const char *pStr;
+	const char *pToken;
+	caAddr addr;
+	caAddr localAddr;
+	char buf[32u]; /* large enough to hold an IP address */
+	int status;
 
-        pStr = envGetConfigParamPtr(pEnv);
-        if(!pStr){
-                return;
-        }
+	pStr = envGetConfigParamPtr(pEnv);
+	if(!pStr){
+		return;
+	}
 
 	/*
 	 * obtain a local address
@@ -1785,29 +1779,25 @@ void caAddConfiguredAddr(ELLLIST *pList, const ENV_PARAM *pEnv,
 		return;
 	}
 
-        while( (pToken = getToken(&pStr, buf, sizeof(buf))) ){
-      		memset((char *)&addr,0,sizeof(addr));
-		addr.in.sin_family = AF_INET;
-  		addr.in.sin_port = htons(port);
-                addr.in.sin_addr.s_addr = inet_addr(pToken);
-                if (addr.in.sin_addr.s_addr == ~0ul) {
-                        ca_printf( 
-				"%s: Parsing '%s'\n",
-                                __FILE__,
-                                pEnv->name);
-                        ca_printf( 
-				"\tBad internet address format: '%s'\n",
-                                pToken);
+	while( (pToken = getToken(&pStr, buf, sizeof(buf))) ){
+		status = aToIPAddr(pToken, port, &addr.in);
+		if (status<0) {
+			ca_printf( 
+			"%s: Parsing '%s'\n",
+				  __FILE__,
+				  pEnv->name);
+			ca_printf( 
+			"\tBad internet address format: '%s'\n",
+				  pToken);
 			continue;
 		}
-
-                pNode = (caAddrNode *) calloc(1,sizeof(*pNode));
-                if(pNode){
-                	pNode->destAddr.in = addr.in;
-                	pNode->srcAddr.in = localAddr.in;
-                	ellAdd(pList, &pNode->node);
-                }
-        }
+		pNode = (caAddrNode *) calloc(1,sizeof(*pNode));
+		if(pNode){
+			pNode->destAddr.in = addr.in;
+			pNode->srcAddr.in = localAddr.in;
+			ellAdd(pList, &pNode->node);
+		}
+	}
 
 	return;
 }

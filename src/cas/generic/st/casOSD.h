@@ -48,7 +48,6 @@ class casDGReadReg;
 // casDGIntfOS
 //
 class casDGIntfOS : public casDGIntfIO {
-	friend class casDGReadReg;
 public:
 	casDGIntfOS(casDGClient &client);
 	virtual ~casDGIntfOS();
@@ -94,8 +93,6 @@ class casStreamIOWakeup;
 // casStreamOS
 //
 class casStreamOS : public casStreamIO {
-	friend class casStreamReadReg;
-	friend class casStreamWriteReg;
 	friend class casStreamEvWakeup;
 	friend class casStreamIOWakeup;
 public:
@@ -151,7 +148,7 @@ public:
 	//
 	casProcCond processInput();
 
-	void sendBlockSignal() {}
+	void sendBlockSignal();
 
 	void eventSignal();
 	void eventFlush();

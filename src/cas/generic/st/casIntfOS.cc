@@ -44,9 +44,11 @@ caStatus casIntfOS::init(const caNetAddr &addrIn, casDGClient &dgClientIn,
 
 	this->setNonBlocking();
 
-	this->pRdReg = new casServerReg(*this);
-	if (!this->pRdReg) {
-		return S_cas_noMemory;
+	if (this->pRdReg==NULL) {
+		this->pRdReg = new casServerReg(*this);
+		if (this->pRdReg==NULL) {
+			return S_cas_noMemory;
+		}
 	}
 	
 	return S_cas_success;
@@ -86,6 +88,5 @@ void casServerReg::callBack()
 //
 casServerReg::~casServerReg()
 {
-	this->os.pRdReg = NULL;
 }
 

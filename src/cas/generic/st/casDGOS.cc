@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  1998/07/08 15:38:10  jhill
+ * fixed lost monitors during flow control problem
+ *
  * Revision 1.4  1997/08/05 00:47:19  jhill
  * fixed warnings
  *
@@ -97,6 +100,14 @@ void casDGEvWakeup::expire()
 		//
 		return;
 	}
+}
+
+//
+// casDGOS::sendBlockSignal()
+// (not inline because its virtual)
+//
+void casDGOS::sendBlockSignal() 
+{
 }
 
 //

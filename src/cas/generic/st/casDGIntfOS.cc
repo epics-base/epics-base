@@ -29,7 +29,6 @@ private:
 	void callBack ();
 };
 
-
 //
 // casDGIntfOS::casDGIntfOS()
 //
@@ -39,7 +38,6 @@ casDGIntfOS::casDGIntfOS(casDGClient &clientIn) :
 {
 }
 
-
 //
 // casDGIntfOS::~casDGIntfOS()
 //
@@ -61,15 +59,16 @@ void casDGIntfOS::show(unsigned level) const
 	}
 }
 
-
 /*
  * casDGIntfOS::start()
  */
 caStatus casDGIntfOS::start()
 {
-	this->pRdReg = new casDGReadReg (*this);
-	if (!this->pRdReg) {
-		return S_cas_noMemory;
+	if (this->pRdReg==NULL) {
+		this->pRdReg = new casDGReadReg (*this);
+		if (this->pRdReg==NULL) {
+			return S_cas_noMemory;
+		}
 	}
 	return S_cas_success;
 }
@@ -79,8 +78,16 @@ caStatus casDGIntfOS::start()
 //
 void casDGReadReg::callBack()
 {
-	assert (os.pRdReg);
-	os.processDG();
+	this->os.recvCB();
+}
+
+//
+// casDGIntfOS::recvCB()
+//
+void casDGIntfOS::recvCB()
+{
+	assert (this->pRdReg);
+	this->processDG();
 }
 
 //
@@ -88,7 +95,6 @@ void casDGReadReg::callBack()
 //
 casDGReadReg::~casDGReadReg()
 {
-	this->os.pRdReg = NULL;
 }
 
 //

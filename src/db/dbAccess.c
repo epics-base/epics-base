@@ -670,7 +670,7 @@ long dbGetLinkValue(struct link	*plink, short dbrType, void *pbuffer,
 	    precord->pact = pact;
 	    if(status) return(status);
 	}
-	if(ppv_link->pvlMask&pvlOptMS)
+	if(ppv_link->pvlMask&pvlOptMS && precord!= paddr->precord)
 	    recGblSetSevr(precord,LINK_ALARM,paddr->precord->sevr);
 
 	if(ppv_link->getCvt && ppv_link->lastGetdbrType==dbrType) {
@@ -780,6 +780,7 @@ long dbGetField( DBADDR	*paddr,short dbrType,void *pbuffer,
 		}
 		if(options && (*options))
 			getOptions(paddr,(void **)&pbuf,options,pflin);
+		if(nRequest && *nRequest==0) goto done;
 		dbInitEntry(pdbbase,&dbEntry);
 		if(status = dbFindRecord(&dbEntry,precord->name)) goto done;
 		if(status = dbFindField(&dbEntry,pfldDes->name)) goto done;

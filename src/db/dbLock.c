@@ -319,6 +319,7 @@ void dbLockSetMerge(dbCommon *pfirst,dbCommon *psecond)
     lockSet	*p1lockSet;
     lockSet	*p2lockSet;
 
+    if(pfirst==psecond) return;
     p1lockSet = p1lockRecord->plockSet;
     p2lockSet = p2lockRecord->plockSet;
     if(!p1lockSet) {

@@ -4346,7 +4346,8 @@ static long putEnumEnum(
  DBR_LONG,        DBR_ULONG,       DBR_FLOAT,       DBR_DOUBLE,      DBR_ENUM
  ***************************************************************************/
 
-epicsShareDef long (*dbGetConvertRoutine[DBF_DEVICE+1][DBR_ENUM+1])() = {
+epicsShareDef long (*dbGetConvertRoutine[DBF_DEVICE+1][DBR_ENUM+1])
+    (struct dbAddr *paddr, void *pbuffer, long nRequest, long no_elements, long offset) = {
 
 /* source is a DBF_STRING		*/
 {getStringString, getStringChar,   getStringUchar,  getStringShort,  getStringUshort,

@@ -56,6 +56,8 @@
  *	.17 joh 08-21-92	cleaned up A24/A32 MXI setup	
  *	.18 joh 08-26-92	dont return error if a make or model
  *				has already been registered
+ *	.19 joh	09-03-92	Use the correct routine in NIVXI
+ *				for CPU030 trigger routing
  *
  * To do
  * -----
@@ -102,7 +104,7 @@
  *	vxi_init_ignore_list	find addresses of default int handlers
  *	vxi_vec_inuse		test for int vector in use
  *	vxi_find_offset		find LA for a DC device to assume
- *	continuemxi_map			mat the addresses on a MXI bus extender
+ *	mxi_map			mat the addresses on a MXI bus extender
  *	vxi_find_mxi_devices	search for and open mxi bus repeaters
  *	map_mxi_inward		map from a VXI crate towards the RM
  *	vxi_address_config	setup A24 and A32 offsets
@@ -132,8 +134,8 @@
 
 static char *sccsId = "$Id$\t$Date$";
 
-#include <vme.h>
 #include <vxWorks.h>
+#include <vme.h>
 #ifdef V5_vxWorks
 #	include <iv.h>
 #else
@@ -238,6 +240,14 @@ char		epvxiSymbolTableMakeIdString[] = "%03x";
 #define EPVXI_MAX_SYMBOLS  	(1<<EPVXI_MAX_SYMBOLS_LOG2) 
 #define EPVXI_MAX_SYMBOL_LENGTH (sizeof(epvxiSymbolTableDeviceIdString)+10) 
 
+/*
+ * NIVXI trigger routing
+ *
+ */
+#define TRIG_LINE_TTL_BASE         (0)
+#define TRIG_LINE_ECL_BASE         (8)
+#define TRIG_LINE_FPIN             (40)
+#define TRIG_LINE_FPOUT            (41)
 
 /* forward references */
 int 	vxi_find_slot0(
@@ -417,21 +427,21 @@ epvxiResman(void)
 	 */
 	{
 		UTINY		type;
-		char 		*pEPICS_VXI_LA_COUNT;
+		unsigned char 	*pEPICS_VXI_LA_COUNT;
 
 		status = symFindByName(
 				sysSymTbl,
 				"_EPICS_VXI_LA_COUNT",	
-				&pEPICS_VXI_LA_COUNT,
+				&(char *)pEPICS_VXI_LA_COUNT,
 				&type);
 		if(status == OK){
-			EPICS_VXI_LA_COUNT = (unsigned) pEPICS_VXI_LA_COUNT;
+			EPICS_VXI_LA_COUNT = *pEPICS_VXI_LA_COUNT;
 		}
 		else{
 			EPICS_VXI_LA_COUNT = 0xff;
 		}
 	}
-printf("LA count %d\n", EPICS_VXI_LA_COUNT);
+
 	/*
  	 * clip the EPICS logical address range
 	 */
@@ -1509,7 +1519,7 @@ vxi_reset_dc(void)
 	struct vxi_csr_w	*pcr;
 	struct vxi_csr_r	*psr;
 
-	for(addr=0; addr<last_la; addr++){
+	for(addr=0; addr<=last_la; addr++){
 
 		psr = (struct vxi_csr_r *) VXIBASE(addr);
 		pcr = (struct vxi_csr_w *) psr;
@@ -1560,7 +1570,7 @@ unsigned 	current_addr
 	static unsigned		open_addr;
 	unsigned		dynamic;
 
-	for(addr=0; addr<last_la; addr++){
+	for(addr=0; addr<=last_la; addr++){
 
 	  	status = vxMemProbe(	VXIBASE(addr),
 					READ,
@@ -2656,6 +2666,7 @@ unsigned	io_map		/* bits 0-5  correspond to trig 0-5	*/
         struct vxi_csr          *pcsr;
 	char			mask;
 	int			status;
+	int			i;
 
 	plac = epvxiLibDeviceList[la];
 	if(plac){
@@ -2676,16 +2687,49 @@ unsigned	io_map		/* bits 0-5  correspond to trig 0-5	*/
 	/*
 	 * CPU030 trigger routing
 	 */
-	if(pnivxi_func[(unsigned)e_MapECLtrig] && 
+	if(pnivxi_func[(unsigned)e_MapTrigToTrig] && 
 			pnivxi_func[(unsigned)e_GetMyLA]){
 		if(la == (*pnivxi_func[(unsigned)e_GetMyLA])()){
-	 		status = (*pnivxi_func[(unsigned)e_MapECLtrig])(
-					la, 
-					enable_map, 
-					~io_map);
-			if(status >= 0){
-                		return VXI_SUCCESS;
-			}	
+			
+			for(	i=0;
+				i<VXI_N_ECL_TRIGGERS;
+				enable_map = enable_map >> 1,
+					io_map = io_map >> 1,
+					i++){
+
+				int	(*pfunc)();
+				int	src;
+				int	dest;
+				
+				if(!(enable_map&1)){
+					continue;
+				}
+
+				if(io_map&1){
+					src = TRIG_LINE_FPOUT;
+					dest = TRIG_LINE_ECL_BASE + i;
+				}
+				else{
+					src = TRIG_LINE_FPIN;
+					dest = TRIG_LINE_ECL_BASE + i;
+				}
+
+				pfunc = pnivxi_func[(unsigned)e_MapTrigToTrig];
+	 			status = (*pfunc)(
+						la, 
+						src, 
+						dest,
+						0);
+				if(status < 0){
+					logMsg(	"%s: NI030 ECL trig map fail %d %d\n", 
+						__FILE__,
+						la,
+						status);
+					return VXI_BAD_TRIG_IO;
+				}	
+
+			}
+                	return VXI_SUCCESS;
 		}
 	}
 
@@ -2760,6 +2804,7 @@ unsigned	io_map		/* bits 0-5  correspond to trig 0-5	*/
         struct vxi_csr          *pcsr;
 	unsigned		mask;
 	int			status;
+	int			i;
 
 	plac = epvxiLibDeviceList[la];
 	if(plac){
@@ -2780,16 +2825,49 @@ unsigned	io_map		/* bits 0-5  correspond to trig 0-5	*/
 	/*
 	 * NI CPU030 trigger routing 
 	 */
-	if(pnivxi_func[(unsigned)e_MapTTLtrig] && 
+	if(pnivxi_func[(unsigned)e_MapTrigToTrig] && 
 			pnivxi_func[(unsigned)e_GetMyLA]){
 		if(la == (*pnivxi_func[(unsigned)e_GetMyLA])()){
-	 		status = (*pnivxi_func[(unsigned)e_MapTTLtrig])(
-					la, 
-					enable_map, 
-					~io_map);
-			if(status >= 0){
-                		return VXI_SUCCESS;
-			}	
+			
+			for(	i=0;
+				i<VXI_N_TTL_TRIGGERS;
+				enable_map = enable_map >> 1,
+					io_map = io_map >> 1,
+					i++){
+
+				int	(*pfunc)();
+				int	src;
+				int	dest;
+				
+				if(!(enable_map&1)){
+					continue;
+				}
+
+				if(io_map&1){
+					src = TRIG_LINE_FPOUT;
+					dest = TRIG_LINE_TTL_BASE + i;
+				}
+				else{
+					src = TRIG_LINE_FPIN;
+					dest = TRIG_LINE_TTL_BASE + i;
+				}
+
+				pfunc = pnivxi_func[(unsigned)e_MapTrigToTrig];
+	 			status = (*pfunc)(
+						la, 
+						src, 
+						dest,
+						0);
+				if(status < 0){
+					logMsg(	"%s: NI030 TTL trig map fail %d %d\n", 
+						__FILE__,
+						la,
+						status);
+					return VXI_BAD_TRIG_IO;
+				}	
+
+			}
+                	return VXI_SUCCESS;
 		}
 	}
 

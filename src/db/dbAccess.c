@@ -650,7 +650,7 @@ long epicsShareAPI dbNameToAddr(const char *pname,DBADDR *paddr)
 	dbFldDes	*pflddes;
 
     if((pname == NULL) || (*pname == '\0'))
-        return 0;
+        return S_db_notFound;
         if(!pdbbase) return(S_db_notFound);
 	dbInitEntry(pdbbase,&dbEntry);
 	status = dbFindRecord(&dbEntry,pname);

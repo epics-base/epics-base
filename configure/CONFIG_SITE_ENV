@@ -19,10 +19,12 @@
 #  Site-specific environment settings
 
 # Time service:
-# EPICS_TS_MIN_WEST the local time difference from GMT.
+# EPICS_TIMEZONE needed for vxWorks
+# EPICS_TIMEZONE=<name>::<minutesWest>:<start daylight>:<end daylight>
+# eg TIMEZONE=US/Central::360:040102:100102
 # EPICS_TS_NTP_INET ntp or Unix time server ip addr.
 
-EPICS_TS_MIN_WEST=360
+EPICS_TIMEZONE=US/Central::360:040102:100102
 EPICS_TS_NTP_INET=
 
 

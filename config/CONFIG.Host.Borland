@@ -15,7 +15,7 @@ CPLUSPLUS = CCC
 #
 WINLINK = ilink32
 
-RCCMD = brcc32 -l0x409  -fo$@ $<
+RCCMD = brcc32 -i . -i .. -i $(INSTALL_INCLUDE) -i $(EPICS_BASE_INCLUDE) -fo $@ $<
 
 ARCMD = tlib $@
 

@@ -300,6 +300,9 @@ ifdef LIBRARY
 ifdef LIBOBJS
 LIBTARGETS += $(LIBNAME) $(INSTALL_LIBS)
 
+LIBNAME_RCS=$(foreach lib, $(basename $(LIBRARY)), $(RCS) $($(lib)_RCS) $($(lib)_RCS_$(ARCH_CLASS)))
+LIBNAME_RESS=$(addsuffix $(RES), $(basename $(LIBNAME_RCS)))
+
 ifneq ($(words $(DLL_LIBS)), $(words $(DLL_DEPLIBS)))
 #  If invalid library names, don't make DLL file
 SHARED_LIBRARIES = NO
@@ -677,12 +680,12 @@ endif
 endif
 
 ifeq ($(HOST_ARCH),Borland)
-$(DLL_LINK_LIBNAME) $(SHRLIBNAME): $(LIBOBJS)
-	$(LINK.shrlib) $(LIBOBJS) , $@ ,,$(LINKLIBS) $(subst /,\\,$(DLL_LDLIBS))
+$(DLL_LINK_LIBNAME) $(SHRLIBNAME): $(LIBOBJS) $(LIBNAME_RESS)
+	$(LINK.shrlib) $(LIBOBJS) , $@ ,,$(LINKLIBS) $(subst /,\\,$(DLL_LDLIBS)), $(DLL_DEF_FLAG), $(LIBNAME_RESS)
 
 else
-$(DLL_LINK_LIBNAME) $(SHRLIBNAME): $(LIBOBJS)
-	$(LINK.shrlib) $(LIBOBJS) $(DLL_LDLIBS)
+$(DLL_LINK_LIBNAME) $(SHRLIBNAME): $(LIBOBJS) $(LIBNAME_RESS)
+	$(LINK.shrlib) $(LIBOBJS) $(DLL_LDLIBS) $(LIBNAME_RESS)
 
 endif
 ifeq ($(HOST_ARCH),Borland)

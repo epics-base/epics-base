@@ -3,6 +3,9 @@
 
 /*
  * $Log$
+ * Revision 1.29  1996/06/12 20:04:51  winans
+ * Added better debugging code to the initXX logic.
+ *
  * Revision 1.28  1996/06/06 14:35:41  winans
  * Fixed external reference to GPIB driver's DRVET
  *
@@ -1950,7 +1953,15 @@ struct gpibDpvt *pdpvt;
 
     /* go access board with this message, unless convert was unsuccessful */
     /* NOTE the use of val instead of rval for the EFASTO operation index! */
-    if ((cnvrtStat == ERROR) || (devGpibLib_xxGpibWork(pdpvt, pCmd->type, pmbbo->val) == ERROR))
+    /* P1 will be max number of P3 strings*/
+    if(pCmd->P3 && (pCmd->P1<=0)) {/*determine max number of P3 strings*/
+        int i=0;
+        while(pCmd->P3[i] !=NULL) i++;
+        pCmd->P1 = i;
+    }
+    if(pmbbo->val >= pCmd->P1) cnvrtStat = ERROR;
+    if( (cnvrtStat == ERROR)
+     || (devGpibLib_xxGpibWork(pdpvt, pCmd->type, pmbbo->val) == ERROR))
     {
 	devGpibLib_setPvSevr(pmbbo,WRITE_ALARM,VALID_ALARM);
     }

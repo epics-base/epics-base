@@ -32,6 +32,7 @@
  * -----------------
  * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
  * .02	03-13-92	jba	ANSI C changes
+ * .03  10-10-92        jba     replaced code with recGblGetLinkValue call
  *      ...
  */
 
@@ -103,36 +104,12 @@ static long init_record(pmbbi)
 static long read_mbbi(pmbbi)
     struct mbbiRecord	*pmbbi;
 {
-    long status,options,nRequest;
+    long status,options=0,nRequest=1;
 
-    /* mbbi.inp must be a CONSTANT or a DB_LINK or a CA_LINK*/
-    switch (pmbbi->inp.type) {
-    case (CONSTANT) :
-        break;
-    case (DB_LINK) :
-        options=0;
-        nRequest=1;
-        status = dbGetLink(&(pmbbi->inp.value.db_link),(struct dbCommon *)pmbbi,DBR_USHORT,
-                &(pmbbi->val),&options,&nRequest);
-        if(status!=0) {
-                recGblSetSevr(pmbbi,LINK_ALARM,INVALID_ALARM);
-        } else pmbbi->udf = FALSE;
-        break;
-    case (CA_LINK) :
-        if (dbCaGetLink(&(pmbbi->inp)))
-        {
-            recGblSetSevr(pmbbi,LINK_ALARM,INVALID_ALARM);
-        } 
-        else 
-            pmbbi->udf = FALSE;
-        break;
-    default :
-        if(recGblSetSevr(pmbbi,SOFT_ALARM,INVALID_ALARM)){
-                if(pmbbi->stat!=SOFT_ALARM) {
-                        recGblRecordError(S_db_badField,(void *)pmbbi,
-			    "devMbbiSoft (read_mbbi) Illegal INP field");
-                }
-        }
-    }
+    status = recGblGetLinkValue(&(pmbbi->inp),(void *)pmbbi,DBR_USHORT,&(pmbbi->val),
+              &options,&nRequest);
+
+    if(RTN_SUCCESS(status)) pmbbi->udf=FALSE;
+
     return(2);
 }

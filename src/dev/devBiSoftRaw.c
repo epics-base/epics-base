@@ -32,7 +32,8 @@
  * -----------------
  * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
  * .02  02-05-92	jba	Changed function arguments from paddr to precord 
- * .02	03-13-92	jba	ANSI C changes
+ * .03	03-13-92	jba	ANSI C changes
+ * .04  10-10-92        jba     replaced code with recGblGetLinkValue call
  *      ...
  */
 
@@ -102,36 +103,10 @@ static long init_record(pbi)
 static long read_bi(pbi)
     struct biRecord	*pbi;
 {
-    long status,options,nRequest;
+    long status,options=0,nRequest=1;
 
-    /* bi.inp must be a CONSTANT or a DB_LINK or a CA_LINK*/
-    switch (pbi->inp.type) {
-    case (CONSTANT) :
-        break;
-    case (DB_LINK) :
-        options=0;
-        nRequest=1;
-        status = dbGetLink(&(pbi->inp.value.db_link),(struct dbCommon *)pbi,DBR_ULONG,
-                &pbi->rval,&options,&nRequest);
-        if(status!=0) {
-                recGblSetSevr(pbi,LINK_ALARM,INVALID_ALARM);
-        }
-        break;
-    case (CA_LINK) :
-        if (dbCaGetLink(&(pbi->inp)))
-        {
-            recGblSetSevr(pbi,LINK_ALARM,INVALID_ALARM);
-        } 
-        else 
-            pbi->udf = FALSE;
-        break;
-    default :
-        if(recGblSetSevr(pbi,SOFT_ALARM,INVALID_ALARM)){
-                if(pbi->stat!=SOFT_ALARM) {
-                        recGblRecordError(S_db_badField,(void *)pbi,
-			    "devBiSoftRaw (read_bi) Illegal INP field");
-                }
-        }
-    }
+    status = recGblGetLinkValue(&(pbi->inp),(void *)pbi,DBR_ULONG,&(pbi->rval),
+              &options,&nRequest);
+
     return(0);
 }

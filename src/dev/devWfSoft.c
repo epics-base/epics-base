@@ -32,6 +32,7 @@
  * -----------------
  * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
  * .02	03-13-92	jba	ANSI C changes
+ * .03  10-10-92        jba     replaced code with recGblGetLinkValue call
  *      ...
  */
 
@@ -100,36 +101,12 @@ static long init_record(pwf)
 static long read_wf(pwf)
     struct waveformRecord	*pwf;
 {
-    long options,nRequest;
+    long status,options=0,nRequest;
 
-    /* wf.inp must be a CONSTANT or a DB_LINK or a CA_LINK*/
-    switch (pwf->inp.type) {
-    case (CONSTANT) :
-	break;
-    case (DB_LINK) :
-	options=0;
-	nRequest=pwf->nelm;
-	if(dbGetLink(&(pwf->inp.value.db_link),(struct dbCommon *)pwf,pwf->ftvl,
-		pwf->bptr,&options,&nRequest)!=0){
-                       recGblSetSevr(pwf,LINK_ALARM,INVALID_ALARM);
-                }
-	pwf->nord = nRequest;
-	break;
-    case (CA_LINK) :
-        if (dbCaGetLink(&(pwf->inp)))
-        {
-            recGblSetSevr(pwf,LINK_ALARM,INVALID_ALARM);
-        } 
-        else 
-            pwf->udf = FALSE;
-	break;
-    default :
-        if(recGblSetSevr(pwf,SOFT_ALARM,INVALID_ALARM)){
-		if(pwf->stat!=SOFT_ALARM) {
-			recGblRecordError(S_db_badField,(void *)pwf,
-			    "devWfSoft (read_wf) Illegal INP field");
-		}
-	}
-    }
+    nRequest=pwf->nelm;
+    status = recGblGetLinkValue(&(pwf->inp),(void *)pwf,pwf->ftvl,pwf->bptr,
+              &options,&nRequest);
+    pwf->nord = nRequest;
+
     return(0);
 }

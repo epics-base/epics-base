@@ -33,6 +33,7 @@
  * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
  * .02  03-04-92        jba     Added special_linconv 
  * .03	03-13-92	jba	ANSI C changes
+ * .04  10-10-92        jba     replaced code with recGblGetLinkValue call
  * 	...
  */
 
@@ -105,38 +106,11 @@ static long init_record(pai)
 static long read_ai(pai)
     struct aiRecord	*pai;
 {
-    long status,options,nRequest;
+    long status,options=0,nRequest=1;
 
-    /* ai.inp must be a CONSTANT or a DB_LINK or a CA_LINK*/
-    switch (pai->inp.type) {
-    case (CONSTANT) :
-	break;
-    case (DB_LINK) :
-	options=0;
-	nRequest=1;
-	status = dbGetLink(&(pai->inp.value.db_link),(struct dbCommon *)pai,DBR_LONG,
-		&(pai->rval),&options,&nRequest);
-        if(status!=0) {
-                recGblSetSevr(pai,LINK_ALARM,INVALID_ALARM);
-        }
+    status = recGblGetLinkValue(&(pai->inp),(void *)pai,DBR_LONG,&(pai->rval),
+              &options,&nRequest);
 
-	break;
-    case (CA_LINK) :
-        if (dbCaGetLink(&(pai->inp)))
-        {
-            recGblSetSevr(pai,LINK_ALARM,INVALID_ALARM);
-        } 
-        else 
-            pai->udf = FALSE;
-	break;
-    default :
-        if(recGblSetSevr(pai,SOFT_ALARM,INVALID_ALARM)){
-		if(pai->stat!=SOFT_ALARM) {
-			recGblRecordError(S_db_badField,(void *)pai,
-			   "devAiSoftRaw (read_ai) Illegal INP field");
-		}
-	}
-    }
     return(0);
 }
 

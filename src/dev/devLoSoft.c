@@ -31,6 +31,7 @@
  * -----------------
  * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
  * .02	03-13-92	jba	ANSI C changes
+ * .03  10-10-92        jba     replaced code with recGblGetLinkValue call
 */
 
 #include	<vxWorks.h>
@@ -88,31 +89,12 @@ long status;
 static long write_longout(plongout)
     struct longoutRecord	*plongout;
 {
-    long status,options,nrequest;
+    long status,nRequest=1;
 
-    /* longout.out must be a CONSTANT or a DB_LINK or a CA_LINK*/
-    switch (plongout->out.type) {
-    case (CONSTANT) :
-	break;
-    case (DB_LINK) :
-	status = dbPutLink(&plongout->out.value.db_link,(struct dbCommon *)plongout,DBR_LONG,
-	               &plongout->val,1L);
-        if(status!=0) {
-                recGblSetSevr(plongout,LINK_ALARM,INVALID_ALARM);
-        }
-	break;
-    case (CA_LINK) :
-        options = 0L;
-        nrequest = 1L;
-        status = dbCaPutLink(&(plongout->out), &options, &nrequest);
-	break;
-    default :
-        if(recGblSetSevr(plongout,SOFT_ALARM,INVALID_ALARM)){
-		if(plongout->stat!=SOFT_ALARM) {
-			recGblRecordError(S_db_badField,(void *)plongout,
-			    "devLoSoft (write_longout) Illegal OUT field");
-		}
-	}
-    }
+    status = recGblPutLinkValue(&(plongout->out),(void *)plongout,DBR_LONG,&(plongout->val),
+              &nRequest);
+
+    if(RTN_SUCCESS(status)) plongout->udf=FALSE;
+
     return(0);
 }

@@ -32,7 +32,8 @@
  * -----------------
  * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
  * .02	03-13-92	jba	ANSI C changes
- * .04  04-01-92        jba     Changed return of init_record to dont convert
+ * .03  04-01-92        jba     Changed return of init_record to dont convert
+ * .04  10-10-92        jba     replaced code with recGblGetLinkValue call
  *      ...
  */
 
@@ -94,31 +95,12 @@ struct mbboRecord *pmbbo;
 static long write_mbbo(pmbbo)
     struct mbboRecord	*pmbbo;
 {
-    long status,options,nrequest;
+    long status,nRequest=1;
 
-    /* mbbo.out must be a CONSTANT or a DB_LINK or a CA_LINK*/
-    switch (pmbbo->out.type) {
-    case (CONSTANT) :
-        break;
-    case (DB_LINK) :
-        status = dbPutLink(&pmbbo->out.value.db_link,(struct dbCommon *)pmbbo,DBR_USHORT,
-                &pmbbo->val,1L);
-        if(status!=0) {
-                recGblSetSevr(pmbbo,LINK_ALARM,INVALID_ALARM);
-        }
-        break;
-    case (CA_LINK) :
-        options = 0L;
-        nrequest = 1L;
-        status = dbCaPutLink(&(pmbbo->out), &options, &nrequest);
-        break;
-    default :
-        if(recGblSetSevr(pmbbo,SOFT_ALARM,INVALID_ALARM)){
-                if(pmbbo->stat!=SOFT_ALARM) {
-                        recGblRecordError(S_db_badField,(void *)pmbbo,
-			    "devMbboSoft (write_mbbo) Illegal OUT field");
-                }
-        }
-    }
+    status = recGblPutLinkValue(&(pmbbo->out),(void *)pmbbo,DBR_USHORT,&(pmbbo->val),
+              &nRequest);
+
+    if(RTN_SUCCESS(status)) pmbbo->udf=FALSE;
+
     return(0);
 }

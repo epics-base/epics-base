@@ -31,6 +31,7 @@
  * -----------------
  * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
  * .02	03-13-92	jba	ANSI C changes
+ * .03  10-10-92        jba     replaced code with recGblGetLinkValue call
  *      ...
  */
 
@@ -89,30 +90,11 @@ long status;
 static long write_pt(ppt)
     struct pulseTrainRecord	*ppt;
 {
-    long status,options,nrequest;
+    long status,nRequest=1;
 
-    /* pt.out must be a CONSTANT or a DB_LINK or a CA_LINK*/
-    switch (ppt->out.type) {
-    case (CONSTANT) :
-        break;
-    case (DB_LINK) :
-        status = dbPutLink(&ppt->out.value.db_link,(struct dbCommon *)ppt,DBR_SHORT,&ppt->val,1L);
-        if(status!=0) {
-                recGblSetSevr(ppt,LINK_ALARM,INVALID_ALARM);
-        } else ppt->udf=FALSE;
-        break;
-    case (CA_LINK) :
-        options = 0L;
-        nrequest = 1L;
-        status = dbCaPutLink(&(ppt->out), &options, &nrequest);
-        break;
-    default :
-        if(recGblSetSevr(ppt,WRITE_ALARM,INVALID_ALARM)){
-                if(ppt->stat!=SOFT_ALARM) {
-                        recGblRecordError(S_db_badField,(void *)ppt,
-			    "devPtSoft (write_pt) Illegal OUT field");
-                }
-        }
-    }
+    status = recGblPutLinkValue(&(ppt->out),(void *)ppt,DBR_SHORT,&(ppt->val),&nRequest);
+
+    if(RTN_SUCCESS(status)) ppt->udf=FALSE;
+
     return(0);
 }

@@ -31,6 +31,7 @@
  * -----------------
  * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
  * .02	03-13-92	jba	ANSI C changes
+ * .03  10-10-92        jba     replaced code with recGblGetLinkValue call
 */
 
 
@@ -99,36 +100,12 @@ static long init_record(plongin)
 static long read_longin(plongin)
     struct longinRecord	*plongin;
 {
-    long status=0,options,nRequest;
+    long status,options=0,nRequest=1;
 
-    /* longin.inp must be a CONSTANT or a DB_LINK or a CA_LINK*/
-    switch (plongin->inp.type) {
-    case (CONSTANT) :
-        break;
-    case (DB_LINK) :
-        options=0;
-        nRequest=1;
-        status = dbGetLink(&(plongin->inp.value.db_link),(struct dbCommon *)plongin,DBR_LONG,
-               &plongin->val,&options,&nRequest);
-        if(status!=0) {
-                recGblSetSevr(plongin,LINK_ALARM,INVALID_ALARM);
-        } else plongin->udf = FALSE;
-        break;
-    case (CA_LINK) :
-        if (dbCaGetLink(&(plongin->inp)))
-        {
-            recGblSetSevr(plongin,LINK_ALARM,INVALID_ALARM);
-        } 
-        else 
-            plongin->udf = FALSE;
-        break;
-    default :
-        if(recGblSetSevr(plongin,SOFT_ALARM,INVALID_ALARM)){
-                if(plongin->stat!=SOFT_ALARM) {
-                        recGblRecordError(S_db_badField,(void *)plongin,
-			    "devLiSoft (read_longin) Illegal INP field");
-                }
-        }
-    }
+    status = recGblGetLinkValue(&(plongin->inp),(void *)plongin,DBR_LONG,&(plongin->val),
+              &options,&nRequest);
+
+    if(RTN_SUCCESS(status)) plongin->udf=FALSE;
+
     return(status);
 }

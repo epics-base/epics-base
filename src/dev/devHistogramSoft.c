@@ -97,35 +97,10 @@ static long init_record(phistogram)
 static long read_histogram(phistogram)
     struct histogramRecord	*phistogram;
 {
-    long status,options,nRequest;
+    long status,options=0,nRequest=1;
 
-    /* histogram.svl must be a CONSTANT or a DB_LINK or a CA_LINK*/
-    switch (phistogram->svl.type) {
-    case (CONSTANT) :
-	break;
-    case (DB_LINK) :
-	options=0;
-	nRequest=1;
-	status = dbGetLink(&(phistogram->svl.value.db_link),(struct dbCommon *)phistogram,DBR_DOUBLE,
-		&(phistogram->sgnl),&options,&nRequest);
-	if(status!=0) {
-		if(phistogram->nsev<INVALID_ALARM) {
-			phistogram->nsev = INVALID_ALARM;
-			phistogram->nsta = LINK_ALARM;
-		}
-	}
-	break;
-    case (CA_LINK) :
-	break;
-    default :
-	if(phistogram->nsev<INVALID_ALARM) {
-		phistogram->nsev = INVALID_ALARM;
-		phistogram->nsta = SOFT_ALARM;
-		if(phistogram->stat!=SOFT_ALARM) {
-			recGblRecordError(S_db_badField,(void *)phistogram,
-			    "devHistogramSoft (read_histogram) Illegal SVL field");
-		}
-	}
-    }
+    status = recGblGetLinkValue(&(phistogram->svl),(void *)phistogram,DBR_DOUBLE,&(phistogram->sgnl),
+              &options,&nRequest);
+
     return(0); /*add count*/
 }

@@ -31,6 +31,7 @@
  * -----------------
  * .00  12-13-91        jba     Initial definition
  * .02	03-13-92	jba	ANSI C changes
+ * .03  10-10-92        jba     replaced code with recGblGetLinkValue call
 */
 
 
@@ -101,36 +102,12 @@ static long init_record(pevent)
 static long read_event(pevent)
     struct eventRecord	*pevent;
 {
-    long status=0,options,nRequest;
+    long status,options=0,nRequest=1;
 
-    /* event.inp must be a CONSTANT or a DB_LINK or a CA_LINK*/
-    switch (pevent->inp.type) {
-    case (CONSTANT) :
-        break;
-    case (DB_LINK) :
-        options=0;
-        nRequest=1;
-        status = dbGetLink(&(pevent->inp.value.db_link),(struct dbCommon *)pevent,DBR_USHORT,
-                &pevent->val,&options,&nRequest);
-        if(status!=0) {
-                recGblSetSevr(pevent,LINK_ALARM,INVALID_ALARM);
-        } else pevent->udf = FALSE;
-        break;
-    case (CA_LINK) :
-        if (dbCaGetLink(&(pevent->inp)))
-        {
-            recGblSetSevr(pevent,LINK_ALARM,INVALID_ALARM);
-        } 
-        else 
-            pevent->udf = FALSE;
-        break;
-    default :
-        if(recGblSetSevr(pevent,SOFT_ALARM,INVALID_ALARM)){
-                if(pevent->stat!=SOFT_ALARM) {
-                        recGblRecordError(S_db_badField,(void *)pevent,
-			    "devEventSoft (read_event) Illegal INP field");
-                }
-        }
-    }
+    status = recGblGetLinkValue(&(pevent->inp),(void *)pevent,DBR_USHORT,&(pevent->val),
+              &options,&nRequest);
+
+    if(RTN_SUCCESS(status)) pevent->udf=FALSE;
+
     return(status);
 }

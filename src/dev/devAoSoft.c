@@ -34,6 +34,7 @@
  * .02  02-05-92	jba	Changed function arguments from paddr to precord 
  * .03	03-13-92	jba	ANSI C changes
  * .04	04-01-92	jba	Changed return of init_record to dont convert
+ * .05  10-10-92        jba     replaced code with recGblGetLinkValue call
  *      ...
  */
 
@@ -95,34 +96,9 @@ struct aoRecord *pao;
 static long write_ao(pao)
     struct aoRecord	*pao;
 {
-    long status;
-/* added for Channel Access Links */
-long options;
-long nrequest;
+    long status,nRequest=1;
 
-    /* ao.out must be a CONSTANT or a DB_LINK or a CA_LINK*/
-    switch (pao->out.type) {
-    case (CONSTANT) :
-	break;
-    case (DB_LINK) :
-	status = dbPutLink(&pao->out.value.db_link,(struct dbCommon *)pao,DBR_DOUBLE,
-		&pao->oval,1L);
-        if(status!=0) {
-                recGblSetSevr(pao,LINK_ALARM,INVALID_ALARM);
-        }
-	break;
-    case (CA_LINK) :
-        options = 0L;
-        nrequest = 1L;
-        status = dbCaPutLink(&(pao->out), &options, &nrequest);
-	break;
-    default :
-        if(recGblSetSevr(pao,SOFT_ALARM,INVALID_ALARM)){
-		if(pao->stat!=SOFT_ALARM) {
-			recGblRecordError(S_db_badField,(void *)pao,
-			   "devAoSoft (write_ao) Illegal OUT field");
-		}
-	}
-    }
-    return(0);
+    status = recGblPutLinkValue(&(pao->out),(void *)pao,DBR_DOUBLE,&(pao->oval),&nRequest);
+
+    return(status);
 }

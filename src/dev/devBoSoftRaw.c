@@ -30,6 +30,7 @@
  * Modification Log:
  * -----------------
  * .01  03-28-92        jba     Initial version
+ * .02  10-10-92        jba     replaced code with recGblGetLinkValue call
  *      ...
  */
 
@@ -90,31 +91,9 @@ long status;
 static long write_bo(pbo)
     struct boRecord	*pbo;
 {
-    long status,options,nrequest;
+    long status,nRequest=1;
 
-    /* bo.out must be a CONSTANT or a DB_LINK or a CA_LINK*/
-    switch (pbo->out.type) {
-    case (CONSTANT) :
-        break;
-    case (DB_LINK) :
-        status = dbPutLink(&pbo->out.value.db_link,(struct dbCommon *)pbo,DBR_ULONG,
-                &pbo->rval,1L);
-        if(status!=0) {
-                recGblSetSevr(pbo,LINK_ALARM,INVALID_ALARM);
-        }
-        break;
-    case (CA_LINK) :
-        options = 0L;
-        nrequest = 1L;
-        status = dbCaPutLink(&(pbo->out), &options, &nrequest);
-        break;
-    default :
-        if(recGblSetSevr(pbo,SOFT_ALARM,INVALID_ALARM)){
-                if(pbo->stat!=SOFT_ALARM) {
-                        recGblRecordError(S_db_badField,(void *)pbo,
-			    "devBoSoftRaw (write_bo) Illegal OUT field");
-                }
-        }
-    }
-    return(0);
+    status = recGblPutLinkValue(&(pbo->out),(void *)pbo,DBR_ULONG,&(pbo->rval),&nRequest);
+
+    return(status);
 }

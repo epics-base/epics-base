@@ -40,6 +40,7 @@
  *			replacing the destination list
  *	.08 joh 021492	cleaned up terminate_one_client()
  *	.09 joh 022092	print free list statistics in client_stat()
+ *	.10 joh 022592	print more statistics in client_stat()
  */
 
 #include <vxWorks.h>
@@ -294,6 +295,7 @@ struct client *client;
 	char			*pproto;
 	unsigned long 		current;
 	unsigned long 		delay;
+	unsigned long		bytes_reserved;
 	char			*state[] = {"up", "down"};
 
 	if(client->proto == IPPROTO_UDP){
@@ -320,6 +322,16 @@ struct client *client;
 		client->tid,
 		delay/sysClkRateGet());
 
+	bytes_reserved = 0;
+	bytes_reserved += sizeof(struct client);
+	pciu = (struct channel_in_use *) client->addrq.node.next;
+	while (pciu){
+		bytes_reserved += sizeof(struct channel_in_use);
+		bytes_reserved += 
+			(sizeof(struct event_ext)+db_sizeof_event_block())*
+				lstCount(&pciu->eventq);
+		pciu = (struct channel_in_use *) lstNext(pciu);
+	}
 
 
 
@@ -331,7 +343,8 @@ struct client *client;
 	       	(psaddr->sin_addr.s_addr & 0x000000ff),
 	       	psaddr->sin_port,
 		state[client->disconnect?1:0]);
-	printf("\tChannel count %d\n", lstCount(&client->addrq));
+	printf(	"\tChannel count %d\n", lstCount(&client->addrq));
+	printf(	"\t%d bytes allocated\n", bytes_reserved);
 
 	pciu = (struct channel_in_use *) client->addrq.node.next;
 	while (pciu){

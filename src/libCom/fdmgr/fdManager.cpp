@@ -38,6 +38,9 @@
 
 epicsShareDef fdManager fileDescriptorManager;
 
+const unsigned mSecPerSec = 1000u;
+const unsigned uSecPerSec = 1000u * mSecPerSec;
+
 //
 // fdManager::fdManager()
 //
@@ -117,8 +120,8 @@ epicsShareFunc void fdManager::process (double delay)
         ++iter;
     }
 
-    tv.tv_sec = static_cast<long> (minDelay);
-    tv.tv_usec = static_cast<long> ((minDelay-tv.tv_sec)*epicsTime::uSecPerSec);
+    tv.tv_sec = static_cast<long> ( minDelay );
+    tv.tv_usec = static_cast<long> ( (minDelay-tv.tv_sec) * uSecPerSec );
 
     /*
      * win32 requires this (others will

@@ -31,6 +31,8 @@
  
 static const fdRegType fdiToFdRegType[] = {fdrRead, fdrWrite, fdrException};
 static const unsigned fdiToFdRegTypeNElements = sizeof (fdiToFdRegType) / sizeof (fdiToFdRegType[0]);
+const unsigned mSecPerSec = 1000u;
+const unsigned uSecPerSec = 1000u * mSecPerSec;
 
 class fdRegForOldFdmgr : public fdReg {
 public:
@@ -171,7 +173,7 @@ extern "C" epicsShareFunc fdctx * epicsShareAPI fdmgr_init (void)
 extern "C" epicsShareFunc fdmgrAlarmId epicsShareAPI fdmgr_add_timeout (
     fdctx *pfdctx, struct timeval *ptimeout, pCallBackFDMgr pFunc, void *pParam)
 {
-    double delay = ptimeout->tv_sec + ptimeout->tv_usec / static_cast <const double> (epicsTime::uSecPerSec);
+    double delay = ptimeout->tv_sec + ptimeout->tv_usec / static_cast <const double> (uSecPerSec);
     oldFdmgr *pfdm = static_cast <oldFdmgr *> (pfdctx);
     timerForOldFdmgr *pTimer;
     unsigned id = fdmgrNoAlarm;
@@ -298,7 +300,7 @@ extern "C" epicsShareFunc int epicsShareAPI fdmgr_clear_callback ( // X aCC 361
 extern "C" epicsShareFunc int epicsShareAPI fdmgr_pend_event (fdctx *pfdctx, struct timeval *ptimeout)
 {
     oldFdmgr *pfdm = static_cast <oldFdmgr *> (pfdctx);
-    double delay = ptimeout->tv_sec + ptimeout->tv_usec / static_cast <const double> (epicsTime::uSecPerSec);
+    double delay = ptimeout->tv_sec + ptimeout->tv_usec / static_cast <const double> (uSecPerSec);
 
     try {
         pfdm->process (delay);

@@ -1,8 +1,9 @@
-/* gpibInteract.c */
-/* share/src/devOpt  $Id$ */
+/* devGpibInteract.c */
+/* share/src/devOpt/ $Id$ */
 /*
- *      Author: Ned D. Arnold
- *      Date:   06/19/91
+ *      Author:			John Winans
+ *	Origional Author:	Ned D. Arnold
+ *      Date:			9/23/91
  *
  *      Experimental Physics and Industrial Control System (EPICS)
  *
@@ -86,6 +87,10 @@ struct gpibIntCmd {
   char	resp[MAX_MSG_LENGTH+32];/* place for response if a GPIB read */
   long	count;          	/* used for counting */
   char	busy;			/* used by timing routine */
+
+  int	linkId;			/* link number */
+  int	linkType;		/* GPIB_IO or BBGPIB_IO */
+  int	bug;			/* bug# if BBGPIB_IO linkType */
 };
 
 #define	LIST_SIZE	10
@@ -243,6 +248,9 @@ timingStudy()
 
   startTime = tickGet();	/* time the looping started */
 
+  (*(drvGpib.ioctl))(pCmd[i]->linkType, pCmd[i]->linkId, pCmd[i]->bug, IBGENLINK, 0, NULL);
+  (*(drvGpib.ioctl))(pCmd[i]->linkType, pCmd[i]->linkId, pCmd[i]->bug, IBGETLINK, 0, &(pCmd[i]->head.pibLink));
+
   while(reps)
   {
     for(i=0; i<LIST_SIZE && reps; i++)
@@ -253,7 +261,7 @@ timingStudy()
         {
 	  pCmd[i]->count++;
 	  pCmd[i]->busy = 1;	/* mark the xact as busy */
-          (*(drvGpib.qGpibReq))(GPIB_IO, pCmd[i]->head.link, pCmd[i], 2);
+          (*(drvGpib.qGpibReq))(pCmd[i], IB_Q_LOW);
 	  reps--;
 	  if (reps%10000 == 0)
 	  {
@@ -320,7 +328,9 @@ sendMsg()
   replyIsBack = FALSE;
   ticks = 0;
 
-  (*(drvGpib.qGpibReq))(GPIB_IO, pCmd->head.link, pCmd, 2); /* queue the msg */
+  (*(drvGpib.ioctl))(pCmd->linkType, pCmd->linkId, pCmd->bug, IBGENLINK, 0, NULL);
+  (*(drvGpib.ioctl))(pCmd->linkType, pCmd->linkId, pCmd->bug, IBGETLINK, 0, &(pCmd->head.pibLink));
+  (*(drvGpib.qGpibReq))(pCmd, IB_Q_LOW); /* queue the msg */
 
   while (!replyIsBack && (ticks < maxTicks))      /* wait for reply msg */
   {
@@ -350,7 +360,7 @@ int     status;
   switch (pCmd->type) {
     case 'w':
     case 'W':         /* write the message to the GPIB listen adrs */
-      status =(*(drvGpib.writeIb))(GPIB_IO, pCmd->head.link, 0, pCmd->head.device, pCmd->cmd, strlen(pCmd->cmd));
+      status =(*(drvGpib.writeIb))(pCmd->head.pibLink, pCmd->head.device, pCmd->cmd, strlen(pCmd->cmd));
       if (status == ERROR)
 	strcpy(pCmd->resp, "GPIB TIMEOUT (while talking)");
       else
@@ -358,7 +368,7 @@ int     status;
       break;
     case 'r':
     case 'R':               /* write the command string */
-      status = (*(drvGpib.writeIb))(GPIB_IO, pCmd->head.link, 0, pCmd->head.device, pCmd->cmd, strlen(pCmd->cmd));
+      status = (*(drvGpib.writeIb))(pCmd->head.pibLink, pCmd->head.device, pCmd->cmd, strlen(pCmd->cmd));
       if (status == ERROR)
       {
         strcpy(pCmd->resp, "GPIB TIMEOUT (while talking)");
@@ -366,7 +376,7 @@ int     status;
       }
       /* read the instrument  */
       pCmd->resp[0] = 0;          /* clear response string */
-      status = (*(drvGpib.readIb))(GPIB_IO, pCmd->head.link, 0, pCmd->head.device, pCmd->resp, MAX_MSG_LENGTH);
+      status = (*(drvGpib.readIb))(pCmd->head.pibLink, pCmd->head.device, pCmd->resp, MAX_MSG_LENGTH);
 
       if (status == ERROR)
       {
@@ -424,9 +434,23 @@ configMsg()
  * entered value
  */
 
-  printf("\nenter Enter GPIB Link # [%2.2d] > ", (int) pCmd->head.link);
+  printf("Enter the Link Type (5 = GPIB, 13 = BBGPIB) [%d]: ", pCmd->linkType);
   if (getInt(&inInt) == 1)
-    pCmd->head.link = inInt;
+    if (inInt == 1)
+      pCmd->linkType = GPIB_IO;
+    else
+      pCmd->linkType = BBGPIB_IO;
+
+  printf("\nenter Enter Link # [%2.2d] > ", (int) pCmd->linkId);
+  if (getInt(&inInt) == 1)
+    pCmd->linkId = inInt;
+
+  if (pCmd->linkType == BBGPIB_IO)
+  {
+    printf("Enter the bug number [%d]: ", pCmd->bug);
+    if (getInt(&inInt) == 1)
+      pCmd->bug = inInt;
+  }
 
   printf("\nenter GPIB Node # [%2.2d] > ", pCmd->head.device);
   if (getInt(&inInt) == 1)
@@ -563,8 +587,8 @@ int msgNum;
   struct gpibIntCmd *pCmd = &gpibIntCmds[msgNum];
 
   printf("\nMessage #%1.1d : ", msgNum);
-  printf("Link=%2.2d Adrs=%2.2d Type=%c\n",
-        (int)pCmd->head.link, pCmd->head.device, pCmd->type);
+  printf("LinkType=%d bug=%d Link=%d Adrs=%d Type=%c\n",
+        pCmd->linkType, pCmd->bug, pCmd->linkId, pCmd->head.device, pCmd->type);
   printf("             Command String  : %.40s\n", pCmd->cmd);
   printf("             Response String : %.40s\n", pCmd->resp);
 }

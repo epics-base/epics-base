@@ -34,6 +34,8 @@ typedef int                     SOCKET;
 #define SOCKERRNO               errno
 #define SOCKERRSTR(ERRNO_IN)    (strerror(ERRNO_IN))
 #define socket_close(S)         close(S)
+#define SD_BOTH 2
+
 /*
  * it is quite lame on WRS's part to assume that
  * a ptr is always the same as an int

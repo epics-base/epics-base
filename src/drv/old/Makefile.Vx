@@ -19,6 +19,7 @@ INC += drvGpibErr.h
 INC += drvHiDEOSGpib.h
 INC += drvRs232.h
 INC += drvTy232.h
+INC += steppermotor.h
 
 SRCS.c += ../module_types.c
 SRCS.c += ../drvBB232.c

@@ -24,9 +24,10 @@ int main ( int argc, char **argv )
 
 
     if ( argc < 2 || argc > 6 ) {
-        printf ( 
-"usage: %s <PV name> [progress logging level] [channel count] [repetition count] [enable preemptive callback]\n", 
-			argv[0] );
+        printf ("usage: %s <PV name> [progress logging level] [channel count] "
+                "[repetition count] [enable preemptive callback]\n", 
+                argv[0] );
+        return 1;        
     }
 
     if ( argc >= 3 ) {

@@ -159,6 +159,9 @@ clean::
 	@$(RM) *.i *$(OBJ) *.a $(PRODNAME) $(TESTPRODNAME) $(LIBNAME) $(SHRLIBNAME)\
 	$(INC) *$(RES) $(TARGETS) $(DBDINSTALL) \
 	*.out MakefileInclude
+ifdef MUNCH
+	@$(RM) $(MUNCHNAME) ctdt.c ctdt.o
+endif
 ifdef BAF
 	@$(RM) $(PROD_BAF) $(LIB_BAF_IOC) $(LIB_BAF_HOST) *$(BOF)
 endif

@@ -58,6 +58,10 @@ LIBSRCS += dbCa.c
 LIBSRCS += initHooks.c 
 LIBSRCS += dbcar.c 
 LIBSRCS += cvtBpt.c 
+LIBSRCS += dbServiceIO.cpp
+LIBSRCS += dbChannelIO.cpp 
+LIBSRCS += dbPutNotifyIO.cpp 
+LIBSRCS += dbSubscriptionIO.cpp 
 
 OBJS_IOC += iocInit
 

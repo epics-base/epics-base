@@ -25,7 +25,7 @@ INSTALL_DBS=$(DBDINSTALL:%=$(INSTALL_DBD)/%)\
               $(RECTYPES:%.h=$(INSTALL_DBD)/%.dbd)\
               $(MENUS:%.h=$(INSTALL_DBD)/%.dbd)
 
-INSTALL_DBDEXPAND=$(DBDEXPAND:%=$(INSTALL_DBD)/%)
+INSTALL_DBDNAME=$(DBDNAME:%=$(INSTALL_DBD)/%)
 
 all:: install
 
@@ -40,7 +40,7 @@ install:: inc build $(INSTALL_INCREC)\
          $(INSTALL_LIBS) $(TARGETS) $(INSTALL_PROD) $(INSTALL_MANS)\
          $(INSTALL_DOCS) $(INSTALL_SCRIPTS)\
          $(INSTALL_INSTALLS) $(INSTALL_DBS) $(INSTALL_BPTS)\
-         $(INSTALL_DBDEXPAND)
+         $(INSTALL_DBDNAME)
 
 depends:: $(SRCS.c) $(SRCS.cc)
 ifdef SRCS
@@ -126,10 +126,11 @@ bpt%.dbd: bpt%.data
 	$(RM) $@
 	$(EPICS_BASE)/bin/$(HOST_ARCH)/makeBpt $<
 
-%.dbd: ../%.dbd
-	$(RM) $@
+$(DBDNAME): $(DBDEXPAND)
+	@echo expanding dbd
+	@$(RM) $@
 	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbExpand\
-		$(USER_DBDFLAGS) $< > $(<F)
+		$(USER_DBDFLAGS) $< > $@
 
 %.1:%
 	$(RM) $(<F)

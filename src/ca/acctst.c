@@ -2427,6 +2427,7 @@ void verifyImmediateTearDown ( const char * pName, unsigned interestLevel )
         status = ca_put ( DBR_DOUBLE, chan, & value );
         SEVCHK ( status, "immediate tear down channel put failed" );
         ca_task_exit ();
+        epicsThreadSleep ( 1e-15 );
         if ( i % 100 == 0 ) {
             showProgress ( interestLevel );
         }

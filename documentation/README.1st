@@ -4,7 +4,7 @@ README
 
                            EPICS base
 
-                      Release 3.14.0beta1
+                      Release 3.14.0beta2
 
 What is EPICS base?
 
@@ -407,7 +407,7 @@ Example application and extension
      Instructions for building and executing the 3.14 example application
      can be found in the section "Example Application" of Chapter 2, "New
      Features for 3.14", in the  "IOC Application Developer's Guide
-     R3.14.0beta1". The "Example Application" section briefly explains
+     R3.14.0beta2". The "Example Application" section briefly explains
      how to create and build an example application in a user created <top>
      directory. It also explains how to run the example application on a
      vxWorks ioc or a host system and run an example channel access client

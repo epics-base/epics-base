@@ -95,7 +95,15 @@ void cac_mux_io(struct timeval  *ptimeout)
  */
 void cac_block_for_io_completion(struct timeval *pTV)
 {
-	cac_mux_io(pTV);
+	cac_mux_io (pTV);
+}
+
+/*
+ * cac_block_for_sg_completion()
+ */
+void cac_block_for_sg_completion(CASG *pcasg, struct timeval *pTV)
+{
+	cac_mux_io (pTV);
 }
 
 
@@ -118,12 +126,6 @@ void os_specific_sg_delete(CASG *pcasg)
 }
 
 
-void cac_block_for_sg_completion(CASG *pcasg, struct timeval *pTV)
-{
-	cac_mux_io(pTV);
-}
-
-
 /*
  * CAC_ADD_TASK_VARIABLE()
  */
@@ -140,17 +142,36 @@ int cac_add_task_variable(struct ca_static *ca_temp)
 int cac_os_depen_init(struct ca_static *pcas)
 {
         int 			status;
+	struct sigaction	sa;
 
 	ca_static = pcas;
 
 	/*
 	 * dont allow disconnect to terminate process
-	 * when running in UNIX enviroment
+	 * when running in UNIX environment
 	 *
 	 * allow error to be returned to sendto()
 	 * instead of handling disconnect at interrupt
 	 */
-	signal(SIGPIPE,SIG_IGN);
+	status = sigaction(SIGPIPE, NULL, &sa);
+	if (status==0) {
+		if (sa.sa_handler == SIG_DFL) {
+			sa.sa_handler = SIG_IGN;
+			status = sigaction(SIGPIPE, &sa, NULL);
+			if (status) {
+				ca_printf(
+				"%s: Error from signal replace was \"%s\"\n",
+				__FILE__,
+				strerror(MYERRNO));
+			}
+		}
+	}
+	else {
+		ca_printf(
+		"%s: Error from signal query was \"%s\"\n",
+		__FILE__,
+		strerror(MYERRNO));
+	}
 
 	status = ca_os_independent_init ();
 

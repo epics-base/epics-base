@@ -50,6 +50,9 @@
  * .16  02-28-92	jba	ANSI C changes
  * .17  04-10-92        jba     pact now used to test for asyn processing, not status
  * .18  04-18-92        jba     removed process from dev init_record parms
+ * .19  07-15-92        jba     changed VALID_ALARM to INVALID alarm
+ * .20  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
+ * .21  08-13-92        jba     Added simulation processing
  */
 
 #include	<vxWorks.h>
@@ -113,8 +116,9 @@ struct bidset { /* binary input dset */
 	DEVSUPFUN	read_bi;/*(0,2)=> success and convert, don't convert)*/
                         /* if convert then raw value stored in rval */
 };
-void alarm();
-void monitor();
+static void alarm();
+static void monitor();
+static long readValue();
 
 static long init_record(pbi,pass)
     struct biRecord	*pbi;
@@ -125,13 +129,47 @@ static long init_record(pbi,pass)
 
     if (pass==0) return(0);
 
+    /* bi.siml must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
+    switch (pbi->siml.type) {
+    case (CONSTANT) :
+        pbi->simm = pbi->siml.value.value;
+        break;
+    case (PV_LINK) :
+        status = dbCaAddInlink(&(pbi->siml), (void *) pbi, "SIMM");
+	if(status) return(status);
+	break;
+    case (DB_LINK) :
+        break;
+    default :
+        recGblRecordError(S_db_badField,(void *)pbi,
+                "bi: init_record Illegal SIML field");
+        return(S_db_badField);
+    }
+
+    /* bi.siol must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
+    switch (pbi->siol.type) {
+    case (CONSTANT) :
+        pbi->sval = pbi->siol.value.value;
+        break;
+    case (PV_LINK) :
+        status = dbCaAddInlink(&(pbi->siol), (void *) pbi, "SVAL");
+	if(status) return(status);
+	break;
+    case (DB_LINK) :
+        break;
+    default :
+        recGblRecordError(S_db_badField,(void *)pbi,
+                "bi: init_record Illegal SIOL field");
+        return(S_db_badField);
+    }
+
     if(!(pdset = (struct bidset *)(pbi->dset))) {
-	recGblRecordError(S_dev_noDSET,pbi,"bi: init_record");
+	recGblRecordError(S_dev_noDSET,(void *)pbi,"bi: init_record");
 	return(S_dev_noDSET);
     }
     /* must have read_bi function defined */
     if( (pdset->number < 5) || (pdset->read_bi == NULL) ) {
-	recGblRecordError(S_dev_missingSup,pbi,"bi: init_record");
+	recGblRecordError(S_dev_missingSup,(void *)pbi,"bi: init_record");
 	return(S_dev_missingSup);
     }
     if( pdset->init_record ) {
@@ -149,11 +187,11 @@ static long process(pbi)
 
 	if( (pdset==NULL) || (pdset->read_bi==NULL) ) {
 		pbi->pact=TRUE;
-		recGblRecordError(S_dev_missingSup,pbi,"read_bi");
+		recGblRecordError(S_dev_missingSup,(void *)pbi,"read_bi");
 		return(S_dev_missingSup);
 	}
 
-	status=(*pdset->read_bi)(pbi); /* read the new value */
+	status=readValue(pbi); /* read the new value */
 	/* check if device support set pact */
 	if ( !pact && pbi->pact ) return(0);
 	pbi->pact = TRUE;
@@ -170,7 +208,7 @@ static long process(pbi)
 	/* check event list */
 	monitor(pbi);
 	/* process the forward scan link record */
-	if (pbi->flnk.type==DB_LINK) dbScanPassive(((struct dbAddr *)pbi->flnk.value.db_link.pdbAddr)->precord);
+	recGblFwdLink(pbi);
 
 	pbi->pact=FALSE;
 	return(status);
@@ -236,7 +274,7 @@ static void alarm(pbi)
 
 
         if(pbi->udf == TRUE){
-                recGblSetSevr(pbi,UDF_ALARM,VALID_ALARM);
+                recGblSetSevr(pbi,UDF_ALARM,INVALID_ALARM);
                 return;
         }
 
@@ -291,4 +329,43 @@ static void monitor(pbi)
 		pbi->oraw = pbi->rval;
 	}
 	return;
+}
+
+static long readValue(pbi)
+	struct biRecord	*pbi;
+{
+	long		status;
+        struct bidset 	*pdset = (struct bidset *) (pbi->dset);
+	long            nRequest=1;
+
+	if (pbi->pact == TRUE){
+		status=(*pdset->read_bi)(pbi);
+		return(status);
+	}
+
+	status=recGblGetLinkValue(&(pbi->siml),
+		(void *)pbi,DBR_ENUM,&(pbi->simm),&nRequest);
+	if (status)
+		return(status);
+
+	if (pbi->simm == NO){
+		status=(*pdset->read_bi)(pbi);
+		return(status);
+	}
+	if (pbi->simm == YES){
+		status=recGblGetLinkValue(&(pbi->siol),
+				(void *)pbi,DBR_USHORT,&(pbi->sval),&nRequest);
+		if (status==0){
+			pbi->val=pbi->sval;
+			pbi->udf=FALSE;
+		}
+                status=2; /* dont convert */
+	} else {
+		status=-1;
+		recGblSetSevr(pbi,SOFT_ALARM,INVALID_ALARM);
+		return(status);
+	}
+        recGblSetSevr(pbi,SIMM_ALARM,pbi->sims);
+
+	return(status);
 }

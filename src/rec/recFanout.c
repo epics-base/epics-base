@@ -42,6 +42,8 @@
  * .11  02-05-92	jba	Changed function arguments from paddr to precord 
  * .12  02-05-92	jba	Added FWD scan link 
  * .13  02-28-92	jba	ANSI C changes
+ * .14  07-15-92        jba     changed VALID_ALARM to INVALID alarm
+ * .15  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
  */
 
 #include        <vxWorks.h>
@@ -99,9 +101,6 @@ struct rset fanoutRSET={
 #define SELECT_ALL  0
 #define SELECTED 1
 #define SELECT_MASK 2
-/* Added for Channel Access Links */
-long dbCaAddInlink();
-long dbCaGetLink();
 
 
 static long init_record(pfanout,pass)
@@ -146,14 +145,14 @@ static long process(pfanout)
          status=dbGetLink(&(pfanout->sell.value.db_link),(struct dbCommon *)pfanout,DBR_USHORT,
          &(pfanout->seln),&options,&nRequest);
          if(status!=0) {
-		recGblSetSevr(pfanout,LINK_ALARM,VALID_ALARM);
+		recGblSetSevr(pfanout,LINK_ALARM,INVALID_ALARM);
          }
     }
     if (pfanout->sell.type == CA_LINK)
     {
 	status = dbCaGetLink(&(pfanout->sell));
          if(status!=0) {
-		recGblSetSevr(pfanout,LINK_ALARM,VALID_ALARM);
+		recGblSetSevr(pfanout,LINK_ALARM,INVALID_ALARM);
          }
     }
 
@@ -174,7 +173,7 @@ static long process(pfanout)
         break;
     case (SELECTED):
         if(pfanout->seln<0 || pfanout->seln>6) {
-		recGblSetSevr(pfanout,SOFT_ALARM,VALID_ALARM);
+		recGblSetSevr(pfanout,SOFT_ALARM,INVALID_ALARM);
             break;
         }
         if(pfanout->seln==0) {
@@ -189,7 +188,7 @@ static long process(pfanout)
             break;
         }
         if(pfanout->seln<0 || pfanout->seln>63 ) {
-            recGblSetSevr(pfanout,SOFT_ALARM,VALID_ALARM);
+            recGblSetSevr(pfanout,SOFT_ALARM,INVALID_ALARM);
             break;
         }
         plink=&(pfanout->lnk1);
@@ -200,7 +199,7 @@ static long process(pfanout)
         }
         break;
     default:
-        recGblSetSevr(pfanout,SOFT_ALARM,VALID_ALARM);
+        recGblSetSevr(pfanout,SOFT_ALARM,INVALID_ALARM);
     }
     pfanout->udf=FALSE;
     tsLocalTime(&pfanout->time);
@@ -212,8 +211,7 @@ static long process(pfanout)
         db_post_events(pfanout,&pfanout->sevr,DBE_VALUE);
     }
     /* process the forward scan link record */
-    if (pfanout->flnk.type==DB_LINK)
-		dbScanPassive(((struct dbAddr *)pfanout->flnk.value.db_link.pdbAddr)->precord);
+    recGblFwdLink(pfanout);
 
     pfanout->pact=FALSE;
     return(0);

@@ -64,6 +64,10 @@
  * .22  02-28-92	jba	ANSI C changes
  * .23  06-02-92        jba     changed graphic/control limits for hihi,high,low,lolo
  * .24  06-16-92        jba     Increased dim of rpbuf to hold double constants in expression
+ * .25  07-15-92        jba     changed VALID_ALARM to INVALID alarm
+ * .26  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
+ * .27  07-21-92        jba     changed alarm limits for non val related fields
+ * .28  08-06-92        jba     New algorithm for calculating analog alarms
  */
 
 #include	<vxWorks.h>
@@ -120,16 +124,12 @@ struct rset calcRSET={
 	get_control_double,
 	get_alarm_double };
 
-void alarm();
-void monitor();
-long calcPerform();
-long postfix();
-int fetch_values();
-/* Added for Channel Access Links */
-long dbCaAddInlink();
-long dbCaGetLink();
-#define ARG_MAX 12
+static void alarm();
+static void monitor();
+static int fetch_values();
 
+
+#define ARG_MAX 12
  /* Fldnames should have as many as ARG_MAX */
  static char Fldnames[ARG_MAX][FLDNAME_SZ] =
      {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"};
@@ -172,7 +172,7 @@ static long process(pcalc)
 	pcalc->pact = TRUE;
 	if(fetch_values(pcalc)==0) {
 		if(calcPerform(&pcalc->a,&pcalc->val,pcalc->rpcl)) {
-			recGblSetSevr(pcalc,CALC_ALARM,VALID_ALARM);
+			recGblSetSevr(pcalc,CALC_ALARM,INVALID_ALARM);
 		} else pcalc->udf = FALSE;
 	}
 	tsLocalTime(&pcalc->time);
@@ -181,7 +181,7 @@ static long process(pcalc)
 	/* check event list */
 	monitor(pcalc);
 	/* process the forward scan link record */
-	if (pcalc->flnk.type==DB_LINK) dbScanPassive(((struct dbAddr *)pcalc->flnk.value.db_link.pdbAddr)->precord);
+	recGblFwdLink(pcalc);
 	pcalc->pact = FALSE;
 	return(0);
 }
@@ -305,10 +305,12 @@ static long get_alarm_double(paddr,pad)
 {
     struct calcRecord	*pcalc=(struct calcRecord *)paddr->precord;
 
-    pad->upper_alarm_limit = pcalc->hihi;
-    pad->upper_warning_limit = pcalc->high;
-    pad->lower_warning_limit = pcalc->low;
-    pad->lower_alarm_limit = pcalc->lolo;
+    if(paddr->pfield==(void *)&pcalc->val){
+         pad->upper_alarm_limit = pcalc->hihi;
+         pad->upper_warning_limit = pcalc->high;
+         pad->lower_warning_limit = pcalc->low;
+         pad->lower_alarm_limit = pcalc->lolo;
+    } else recGblGetAlarmDouble(paddr,pad);
     return(0);
 }
 
@@ -316,42 +318,45 @@ static long get_alarm_double(paddr,pad)
 static void alarm(pcalc)
     struct calcRecord	*pcalc;
 {
-	double	ftemp;
-	double	val=pcalc->val;
+	double		val;
+	float		hyst, lalm, hihi, high, low, lolo;
+	unsigned short	hhsv, llsv, hsv, lsv;
 
-	if(pcalc->udf == TRUE ) {
-		recGblSetSevr(pcalc,UDF_ALARM,VALID_ALARM);
+	if(pcalc->udf == TRUE ){
+ 		recGblSetSevr(pcalc,UDF_ALARM,INVALID_ALARM);
 		return;
 	}
-        /* if difference is not > hysterisis use lalm not val */
-        ftemp = pcalc->lalm - pcalc->val;
-        if(ftemp<0.0) ftemp = -ftemp;
-        if (ftemp < pcalc->hyst) val=pcalc->lalm;
+	hihi = pcalc->hihi; lolo = pcalc->lolo; high = pcalc->high; low = pcalc->low;
+	hhsv = pcalc->hhsv; llsv = pcalc->llsv; hsv = pcalc->hsv; lsv = pcalc->lsv;
+	val = pcalc->val; hyst = pcalc->hyst; lalm = pcalc->lalm;
 
-        /* alarm condition hihi */
-        if (val > pcalc->hihi && recGblSetSevr(pcalc,HIHI_ALARM,pcalc->hhsv)){
-                pcalc->lalm = val;
-                return;
-        }
+	/* alarm condition hihi */
+	if (hhsv && (val >= hihi || ((lalm==hihi) && (val >= hihi-hyst)))){
+	        if (recGblSetSevr(pcalc,HIHI_ALARM,pcalc->hhsv)) pcalc->lalm = hihi;
+		return;
+	}
 
-        /* alarm condition lolo */
-        if (val < pcalc->lolo && recGblSetSevr(pcalc,LOLO_ALARM,pcalc->llsv)){
-                pcalc->lalm = val;
-                return;
-        }
+	/* alarm condition lolo */
+	if (llsv && (val <= lolo || ((lalm==lolo) && (val <= lolo+hyst)))){
+	        if (recGblSetSevr(pcalc,LOLO_ALARM,pcalc->llsv)) pcalc->lalm = lolo;
+		return;
+	}
 
-        /* alarm condition high */
-        if (val > pcalc->high && recGblSetSevr(pcalc,HIGH_ALARM,pcalc->hsv)){
-                pcalc->lalm = val;
-                return;
-        }
+	/* alarm condition high */
+	if (hsv && (val >= high || ((lalm==high) && (val >= high-hyst)))){
+	        if (recGblSetSevr(pcalc,HIGH_ALARM,pcalc->hsv)) pcalc->lalm = high;
+		return;
+	}
 
-        /* alarm condition low */
-        if (val < pcalc->low && recGblSetSevr(pcalc,LOW_ALARM,pcalc->lsv)){
-                pcalc->lalm = val;
-                return;
-        }
-        return;
+	/* alarm condition low */
+	if (lsv && (val <= low || ((lalm==low) && (val <= low+hyst)))){
+	        if (recGblSetSevr(pcalc,LOW_ALARM,pcalc->lsv)) pcalc->lalm = low;
+		return;
+	}
+
+	/* we get here only if val is out of alarm by at least hyst */
+	pcalc->lalm = val;
+	return;
 }
 
 static void monitor(pcalc)
@@ -424,7 +429,7 @@ struct calcRecord *pcalc;
                 {
                     if (dbCaGetLink(plink))
 		    {
-			recGblSetSevr(pcalc,LINK_ALARM,VALID_ALARM);
+			recGblSetSevr(pcalc,LINK_ALARM,INVALID_ALARM);
 			return(-1);
 		    } /* endif */
                 }
@@ -436,7 +441,7 @@ struct calcRecord *pcalc;
                         nRequest=1;
 			status = dbGetLink(&plink->value.db_link,(struct dbCommon *)pcalc,DBR_DOUBLE, pvalue,&options,&nRequest);
                         if(status!=0) {
-                                recGblSetSevr(pcalc,LINK_ALARM,VALID_ALARM);
+                                recGblSetSevr(pcalc,LINK_ALARM,INVALID_ALARM);
                                 return(-1);
                         }
                     } /* endif */

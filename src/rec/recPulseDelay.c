@@ -36,6 +36,7 @@
  * .05  04-10-92        jba     pact now used to test for asyn processing, not status
  * .06  04-18-92        jba     removed process from dev init_record parms
  * .07  06-02-92        jba     changed graphic/control limits for dly,odly,wide,owid
+ * .08  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
  */ 
 
 #include     <vxWorks.h>
@@ -101,7 +102,7 @@ struct pddset { /* pulseDelay input dset */
      DEVSUPFUN     get_ioint_info;
      DEVSUPFUN     write_pd;/*(-1,0)=>(failure,success*/
 };
-void monitor();
+static void monitor();
 
 static long init_record(ppd,pass)
     struct pulseDelayRecord	*ppd;
@@ -114,13 +115,13 @@ static long init_record(ppd,pass)
 
     /* must have device support */
     if(!(pdset = (struct pddset *)(ppd->dset))) {
-         recGblRecordError(S_dev_noDSET,ppd,"pd: init_record");
+         recGblRecordError(S_dev_noDSET,(void *)ppd,"pd: init_record");
          return(S_dev_noDSET);
     }
 
     /* must have write_pd functions defined */
     if( (pdset->number < 5) || (pdset->write_pd == NULL) ) {
-         recGblRecordError(S_dev_missingSup,ppd,"pd: write_pd");
+         recGblRecordError(S_dev_missingSup,(void *)ppd,"pd: write_pd");
          return(S_dev_missingSup);
     }
     /* call device support init_record */
@@ -140,7 +141,7 @@ static long process(ppd)
     /* must have  write_pd functions defined */
     if( (pdset==NULL) || (pdset->write_pd==NULL) ) {
          ppd->pact=TRUE;
-         recGblRecordError(S_dev_missingSup,ppd,"write_pd");
+         recGblRecordError(S_dev_missingSup,(void *)ppd,"write_pd");
          return(S_dev_missingSup);
     }
 
@@ -157,7 +158,7 @@ static long process(ppd)
      monitor(ppd);
 
      /* process the forward scan link record */
-     if (ppd->flnk.type==DB_LINK) dbScanPassive(((struct dbAddr *)ppd->flnk.value.db_link.pdbAddr)->precord);
+     recGblFwdLink(ppd);
 
      ppd->pact=FALSE;
      return(status);

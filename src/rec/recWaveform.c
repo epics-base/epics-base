@@ -55,6 +55,8 @@
  * .15  02-28-92	jba	ANSI C changes
  * .16  04-10-92        jba     pact now used to test for asyn processing, not status
  * .17  04-18-92        jba     removed process from dev init_record parms
+ * .18  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
+ * .19  08-14-92        jba     Added simulation processing
  */
 
 #include	<vxWorks.h>
@@ -124,8 +126,9 @@ struct wfdset { /* waveform dset */
 
 /*sizes of field types*/
 static int sizeofTypes[] = {0,1,1,2,2,4,4,4,8,2};
-void monitor();
 
+static void monitor();
+static long readValue();
 
 /*Following from timing system          */
 extern unsigned int     gts_trigger_counter;
@@ -149,14 +152,49 @@ static long init_record(pwf,pass)
 	pwf->nord = 0;
 	return(0);
     }
+
+    /* wf.siml must be a CONSTANT or a PV_LINK or a DB_LINK */
+    switch (pwf->siml.type) {
+    case (CONSTANT) :
+        pwf->simm = pwf->siml.value.value;
+        break;
+    case (PV_LINK) :
+        status = dbCaAddInlink(&(pwf->siml), (void *) pwf, "SIMM");
+        if(status) return(status);
+        break;
+    case (DB_LINK) :
+        break;
+    default :
+        recGblRecordError(S_db_badField,(void *)pwf,
+                "wf: init_record Illegal SIML field");
+        return(S_db_badField);
+    }
+
+    /* wf.siol must be a CONSTANT or a PV_LINK or a DB_LINK */
+    switch (pwf->siol.type) {
+    case (CONSTANT) :
+        pwf->nord = 0;
+        break;
+    case (PV_LINK) :
+        status = dbCaAddInlink(&(pwf->siol), (void *) pwf, "VAL");
+        if(status) return(status);
+        break;
+    case (DB_LINK) :
+        break;
+    default :
+        recGblRecordError(S_db_badField,(void *)pwf,
+                "wf: init_record Illegal SIOL field");
+        return(S_db_badField);
+    }
+
     /* must have dset defined */
     if(!(pdset = (struct wfdset *)(pwf->dset))) {
-        recGblRecordError(S_dev_noDSET,pwf,"wf: init_record");
+        recGblRecordError(S_dev_noDSET,(void *)pwf,"wf: init_record");
         return(S_dev_noDSET);
     }
     /* must have read_wf function defined */
     if( (pdset->number < 5) || (pdset->read_wf == NULL) ) {
-        recGblRecordError(S_dev_missingSup,pwf,"wf: init_record");
+        recGblRecordError(S_dev_missingSup,(void *)pwf,"wf: init_record");
         return(S_dev_missingSup);
     }
     if( pdset->init_record ) {
@@ -174,14 +212,14 @@ static long process(pwf)
 
         if( (pdset==NULL) || (pdset->read_wf==NULL) ) {
                 pwf->pact=TRUE;
-                recGblRecordError(S_dev_missingSup,pwf,"read_wf");
+                recGblRecordError(S_dev_missingSup,(void *)pwf,"read_wf");
                 return(S_dev_missingSup);
         }
         /* event throttling */
         if (pwf->scan == SCAN_IO_EVENT){
                 if ((pwf->evnt != 0)  && (gts_trigger_counter != 0)){
                         if ((gts_trigger_counter % pwf->evnt) != 0){
-        			status=(*pdset->read_wf)(pwf);
+	                        status=readValue(pwf);
                                 return(0);
                         }
                 }
@@ -189,7 +227,7 @@ static long process(pwf)
 
 	if ( pact && pwf->busy ) return(0);
 
-        status=(*pdset->read_wf)(pwf); /* read the new value */
+	status=readValue(pwf); /* read the new value */
 	/* check if device support set pact */
 	if ( !pact && pwf->pact ) return(0);
         pwf->pact = TRUE;
@@ -199,7 +237,7 @@ static long process(pwf)
 
 	monitor(pwf);
         /* process the forward scan link record */
-        if (pwf->flnk.type==DB_LINK) dbScanPassive(((struct dbAddr *)pwf->flnk.value.db_link.pdbAddr)->precord);
+        recGblFwdLink(pwf);
 
         pwf->pact=FALSE;
         return(0);
@@ -325,3 +363,44 @@ static void monitor(pwf)
 	return;
 
 }
+
+static long readValue(pwf)
+        struct waveformRecord *pwf;
+{
+        long            status;
+        struct wfdset   *pdset = (struct wfdset *) (pwf->dset);
+	long            nRequest=1;
+
+
+        if (pwf->pact == TRUE){
+                status=(*pdset->read_wf)(pwf);
+                return(status);
+        }
+
+        status=recGblGetLinkValue(&(pwf->siml),
+                (void *)pwf,DBR_ENUM,&(pwf->simm),&nRequest);
+        if (status)
+                return(status);
+
+        if (pwf->simm == NO){
+                status=(*pdset->read_wf)(pwf);
+                return(status);
+        }
+        if (pwf->simm == YES){
+        	nRequest=pwf->nelm;
+                status=recGblGetLinkValue(&(pwf->siol),
+                                (void *)pwf,pwf->ftvl,&(pwf->bptr),&nRequest);
+        	pwf->nord = nRequest;
+                if (status==0){
+                         pwf->udf=FALSE;
+                }
+        } else {
+                status=-1;
+                recGblSetSevr(pwf,SOFT_ALARM,INVALID_ALARM);
+                return(status);
+        }
+        recGblSetSevr(pwf,SIMM_ALARM,pwf->sims);
+
+        return(status);
+}
+

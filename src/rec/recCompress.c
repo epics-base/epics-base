@@ -53,6 +53,8 @@
  * .13  02-28-92        jba     Changed get_precision,get_graphic_double,get_control_double
  * .14  02-28-92	jba	ANSI C changes
  * .15  06-02-92        jba     changed graphic/control limits for hil,ilil 
+ * .16  07-15-92        jba     changed VALID_ALARM to INVALID alarm
+ * .17  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
  */
 
 #include	<vxWorks.h>
@@ -116,12 +118,13 @@ struct rset compressRSET={
 #define compressNTO1AVG  2
 #define AVERAGE  3
 #define CIRBUF   4
-void alarm();
-void monitor();
-void put_value();
-int compress_array();
-int compress_scalar();
-int array_average();
+
+static void monitor();
+static void put_value();
+static int compress_array();
+static int compress_scalar();
+static int array_average();
+
 
 static long init_record(pcompress,pass)
     struct compressRecord	*pcompress;
@@ -155,7 +158,7 @@ static long process(pcompress)
 	if (pcompress->inp.type != DB_LINK) {
 		status=0;
 	}else if (pcompress->wptr == NULL) {
-		recGblSetSevr(pcompress,READ_ALARM,VALID_ALARM);
+		recGblSetSevr(pcompress,READ_ALARM,INVALID_ALARM);
 		status=0;
 	} else {
 		struct dbAddr	*pdbAddr =
@@ -165,8 +168,8 @@ static long process(pcompress)
 		int			alg=pcompress->alg;
 
 		if(dbGetLink(&pcompress->inp.value.db_link,(struct dbCommon *)pcompress,
-			DBR_DOUBLE,pcompress->wptr,&options,&no_elements)!=0){
-				recGblSetSevr(pcompress,LINK_ALARM,VALID_ALARM);
+			DBF_DOUBLE,pcompress->wptr,&options,&no_elements)!=0){
+				recGblSetSevr(pcompress,LINK_ALARM,INVALID_ALARM);
                         }
 
 		if(alg==AVERAGE) {
@@ -187,10 +190,8 @@ static long process(pcompress)
 		tsLocalTime(&pcompress->time);	
 		monitor(pcompress);
 		/* process the forward scan link record */
-		if (pcompress->flnk.type==DB_LINK) 
-                        dbScanPassive(((struct dbAddr *)pcompress->flnk.value.db_link.pdbAddr)->precord);
-	}
-
+		recGblFwdLink(pcompress);
+       }
 	pcompress->pact=FALSE;
 	return(0);
 }

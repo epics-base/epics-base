@@ -64,6 +64,11 @@
  * .24  04-10-92	jba	pact now used to test for asyn processing, not status
  * .25  04-18-92        jba     removed process from dev init_record parms
  * .26  06-02-92        jba     changed graphic/control limits for hihi,high,low,lolo
+ * .28  07-15-92        jba     changed VALID_ALARM to INVALID alarm
+ * .29  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
+ * .30  07-21-92        jba     changed alarm limits for non val related fields
+ * .31  08-06-92        jba     New algorithm for calculating analog alarms
+ * .32  08-13-92        jba     Added simulation processing
  */
 
 #include	<vxWorks.h>
@@ -73,6 +78,7 @@
 #include	<string.h>
 
 #include	<alarm.h>
+#include	<cvtTable.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
 #include	<dbScan.h>
@@ -101,7 +107,7 @@ static long get_precision();
 static long get_graphic_double();
 static long get_control_double();
 static long get_alarm_double();
-
+ 
 struct rset aiRSET={
 	RSETNUMBER,
 	report,
@@ -137,10 +143,10 @@ struct aidset { /* analog input dset */
 /*Following from timing system		*/
 extern unsigned int     gts_trigger_counter;
 
-void alarm();
-void convert();
-long cvtRawToEngBpt();
-void monitor();
+static void alarm();
+static void convert();
+static void monitor();
+static long readValue();
 
 static long init_record(pai,pass)
     struct aiRecord	*pai;
@@ -151,13 +157,47 @@ static long init_record(pai,pass)
 
     if (pass==0) return(0);
 
+    /* ai.siml must be a CONSTANT or a PV_LINK or a DB_LINK */
+    switch (pai->siml.type) {
+    case (CONSTANT) :
+        pai->simm = pai->siml.value.value;
+        break;
+    case (PV_LINK) :
+        status = dbCaAddInlink(&(pai->siml), (void *) pai, "SIMM");
+	if(status) return(status);
+	break;
+    case (DB_LINK) :
+        break;
+    default :
+        recGblRecordError(S_db_badField,(void *)pai,
+                "ai: init_record Illegal SIML field");
+        return(S_db_badField);
+    }
+
+    /* ai.siol must be a CONSTANT or a PV_LINK or a DB_LINK */
+    switch (pai->siol.type) {
+    case (CONSTANT) :
+        pai->sval = pai->siol.value.value;
+        break;
+    case (PV_LINK) :
+        status = dbCaAddInlink(&(pai->siol), (void *) pai, "SVAL");
+	if(status) return(status);
+	break;
+    case (DB_LINK) :
+        break;
+    default :
+        recGblRecordError(S_db_badField,(void *)pai,
+                "ai: init_record Illegal SIOL field");
+        return(S_db_badField);
+    }
+
     if(!(pdset = (struct aidset *)(pai->dset))) {
-	recGblRecordError(S_dev_noDSET,pai,"ai: init_record");
+	recGblRecordError(S_dev_noDSET,(void *)pai,"ai: init_record");
 	return(S_dev_noDSET);
     }
     /* must have read_ai function defined */
     if( (pdset->number < 6) || (pdset->read_ai == NULL) ) {
-	recGblRecordError(S_dev_missingSup,pai,"ai: init_record");
+	recGblRecordError(S_dev_missingSup,(void *)pai,"ai: init_record");
 	return(S_dev_missingSup);
     }
     pai->init = TRUE;
@@ -177,7 +217,7 @@ static long process(pai)
 
 	if( (pdset==NULL) || (pdset->read_ai==NULL) ) {
 		pai->pact=TRUE;
-		recGblRecordError(S_dev_missingSup,pai,"read_ai");
+		recGblRecordError(S_dev_missingSup,(void *)pai,"read_ai");
 		return(S_dev_missingSup);
 	}
 
@@ -190,7 +230,7 @@ static long process(pai)
                 }
         }
 
-	status=(*pdset->read_ai)(pai); /* read the new value */
+	status=readValue(pai); /* read the new value */
 	/* check if device support set pact */
 	if ( !pact && pai->pact ) return(0);
 	pai->pact = TRUE;
@@ -204,7 +244,7 @@ static long process(pai)
 	/* check event list */
 	monitor(pai);
 	/* process the forward scan link record */
-	if (pai->flnk.type==DB_LINK) dbScanPassive(((struct dbAddr *)pai->flnk.value.db_link.pdbAddr)->precord);
+        recGblFwdLink(pai);
 
 	pai->init=FALSE;
 	pai->pact=FALSE;
@@ -306,51 +346,56 @@ static long get_alarm_double(paddr,pad)
 {
     struct aiRecord	*pai=(struct aiRecord *)paddr->precord;
 
-    pad->upper_alarm_limit = pai->hihi;
-    pad->upper_warning_limit = pai->high;
-    pad->lower_warning_limit = pai->low;
-    pad->lower_alarm_limit = pai->lolo;
+    if(paddr->pfield==(void *)&pai->val){
+         pad->upper_alarm_limit = pai->hihi;
+         pad->upper_warning_limit = pai->high;
+         pad->lower_warning_limit = pai->low;
+         pad->lower_alarm_limit = pai->lolo;
+    } else recGblGetAlarmDouble(paddr,pad);
     return(0);
 }
 
 static void alarm(pai)
     struct aiRecord	*pai;
 {
-	double	ftemp;
-	double	val=pai->val;
+	double		val;
+	float		hyst, lalm, hihi, high, low, lolo;
+	unsigned short	hhsv, llsv, hsv, lsv;
 
 	if(pai->udf == TRUE ){
- 		recGblSetSevr(pai,UDF_ALARM,VALID_ALARM);
+ 		recGblSetSevr(pai,UDF_ALARM,INVALID_ALARM);
 		return;
 	}
-	/* if difference is not > hysterisis use lalm not val */
-	ftemp = pai->lalm - pai->val;
-	if(ftemp<0.0) ftemp = -ftemp;
-	if (ftemp < pai->hyst) val=pai->lalm;
+	hihi = pai->hihi; lolo = pai->lolo; high = pai->high; low = pai->low;
+	hhsv = pai->hhsv; llsv = pai->llsv; hsv = pai->hsv; lsv = pai->lsv;
+	val = pai->val; hyst = pai->hyst; lalm = pai->lalm;
 
 	/* alarm condition hihi */
-	if (val > pai->hihi && recGblSetSevr(pai,HIHI_ALARM,pai->hhsv)){
-		pai->lalm = val;
+	if (hhsv && (val >= hihi || ((lalm==hihi) && (val >= hihi-hyst)))){
+	        if (recGblSetSevr(pai,HIHI_ALARM,pai->hhsv)) pai->lalm = hihi;
 		return;
 	}
 
 	/* alarm condition lolo */
-	if (val < pai->lolo && recGblSetSevr(pai,LOLO_ALARM,pai->llsv)){
-		pai->lalm = val;
+	if (llsv && (val <= lolo || ((lalm==lolo) && (val <= lolo+hyst)))){
+	        if (recGblSetSevr(pai,LOLO_ALARM,pai->llsv)) pai->lalm = lolo;
 		return;
 	}
 
 	/* alarm condition high */
-	if (val > pai->high && recGblSetSevr(pai,HIGH_ALARM,pai->hsv)){
-		pai->lalm = val;
+	if (hsv && (val >= high || ((lalm==high) && (val >= high-hyst)))){
+	        if (recGblSetSevr(pai,HIGH_ALARM,pai->hsv)) pai->lalm = high;
 		return;
 	}
 
 	/* alarm condition low */
-	if (val < pai->low && recGblSetSevr(pai,LOW_ALARM,pai->lsv)){
-		pai->lalm = val;
+	if (lsv && (val <= low || ((lalm==low) && (val <= low+hyst)))){
+	        if (recGblSetSevr(pai,LOW_ALARM,pai->lsv)) pai->lalm = low;
 		return;
 	}
+
+	/* we get here only if val is out of alarm by at least hyst */
+	pai->lalm = val;
 	return;
 }
 
@@ -375,8 +420,8 @@ struct aiRecord	*pai;
 		val = (val * pai->eslo) + pai->egul;
 	}
 	else { /* must use breakpoint table */
-                if (cvtRawToEngBpt(&val,pai->linr,pai->init,&pai->pbrk,&pai->lbrk)!=0) {
-                      recGblSetSevr(pai,SOFT_ALARM,VALID_ALARM);
+                if (cvtRawToEngBpt(&val,pai->linr,pai->init,(void *)&pai->pbrk,&pai->lbrk)!=0) {
+                      recGblSetSevr(pai,SOFT_ALARM,INVALID_ALARM);
                 }
 	}
 
@@ -440,4 +485,43 @@ static void monitor(pai)
 		}
 	}
 	return;
+}
+
+static long readValue(pai)
+	struct aiRecord	*pai;
+{
+	long		status;
+        struct aidset 	*pdset = (struct aidset *) (pai->dset);
+	long            nRequest=1;
+
+	if (pai->pact == TRUE){
+		status=(*pdset->read_ai)(pai);
+		return(status);
+	}
+
+	status=recGblGetLinkValue(&(pai->siml),
+		(void *)pai,DBR_ENUM,&(pai->simm),&nRequest);
+	if (status)
+		return(status);
+
+	if (pai->simm == NO){
+		status=(*pdset->read_ai)(pai);
+		return(status);
+	}
+	if (pai->simm == YES){
+		status=recGblGetLinkValue(&(pai->siol),
+				(void *)pai,DBR_DOUBLE,&(pai->sval),&nRequest);
+		if (status==0){
+			 pai->val=pai->sval;
+			 pai->udf=FALSE;
+		}
+                status=2; /* dont convert */
+	} else {
+		status=-1;
+		recGblSetSevr(pai,SOFT_ALARM,INVALID_ALARM);
+		return(status);
+	}
+        recGblSetSevr(pai,SIMM_ALARM,pai->sims);
+
+	return(status);
 }

@@ -35,6 +35,10 @@
  * .04  02-28-92	jba	ANSI C changes
  * .05  04-10-92        jba     pact now used to test for asyn processing, not status
  * .06  04-18-92        jba     removed process from dev init_record parms
+ * .07  07-15-92        jba     changed VALID_ALARM to INVALID alarm
+ * .08  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
+ * .09  08-14-92        jba     Added simulation processing
+ * .10  08-19-92        jba     Added code for invalid alarm output action
  */ 
 
 
@@ -100,10 +104,8 @@ struct stringoutdset { /* stringout input dset */
 	DEVSUPFUN	get_ioint_info;
 	DEVSUPFUN	write_stringout;/*(-1,0)=>(failure,success)*/
 };
-void monitor();
-/* Added for Channel Access Links */
-long dbCaAddInlink();
-long dbCaGetLink();
+static void monitor();
+static long writeValue();
 
 
 static long init_record(pstringout,pass)
@@ -115,13 +117,36 @@ static long init_record(pstringout,pass)
 
     if (pass==0) return(0);
 
+    /* stringout.siml must be a CONSTANT or a PV_LINK or a DB_LINK */
+    switch (pstringout->siml.type) {
+    case (CONSTANT) :
+        pstringout->simm = pstringout->siml.value.value;
+        break;
+    case (PV_LINK) :
+        status = dbCaAddInlink(&(pstringout->siml), (void *) pstringout, "SIMM");
+	if(status) return(status);
+	break;
+    case (DB_LINK) :
+        break;
+    default :
+        recGblRecordError(S_db_badField,(void *)pstringout,
+                "stringout: init_record Illegal SIML field");
+        return(S_db_badField);
+    }
+
+    /* stringout.siol may be a PV_LINK */
+    if (pstringout->siol.type == PV_LINK){
+        status = dbCaAddOutlink(&(pstringout->siol), (void *) pstringout, "VAL");
+	if(status) return(status);
+    }
+
     if(!(pdset = (struct stringoutdset *)(pstringout->dset))) {
-	recGblRecordError(S_dev_noDSET,pstringout,"stringout: init_record");
+	recGblRecordError(S_dev_noDSET,(void *)pstringout,"stringout: init_record");
 	return(S_dev_noDSET);
     }
     /* must have  write_stringout functions defined */
     if( (pdset->number < 5) || (pdset->write_stringout == NULL) ) {
-	recGblRecordError(S_dev_missingSup,pstringout,"stringout: init_record");
+	recGblRecordError(S_dev_missingSup,(void *)pstringout,"stringout: init_record");
 	return(S_dev_missingSup);
     }
     /* get the initial value dol is a constant*/
@@ -152,7 +177,7 @@ static long process(pstringout)
 
 	if( (pdset==NULL) || (pdset->write_stringout==NULL) ) {
 		pstringout->pact=TRUE;
-		recGblRecordError(S_dev_missingSup,pstringout,"write_stringout");
+		recGblRecordError(S_dev_missingSup,(void *)pstringout,"write_stringout");
 		return(S_dev_missingSup);
 	}
         if (!pstringout->pact) {
@@ -166,7 +191,7 @@ static long process(pstringout)
 				DBR_STRING,pstringout->val,&options,&nRequest);
 			pstringout->pact = FALSE;
 			if(!status==0){
-				recGblSetSevr(pstringout,LINK_ALARM,VALID_ALARM);
+				recGblSetSevr(pstringout,LINK_ALARM,INVALID_ALARM);
 			} else pstringout->udf=FALSE;
 		}
 		if((pstringout->dol.type == CA_LINK) && (pstringout->omsl == CLOSED_LOOP)){
@@ -174,14 +199,38 @@ static long process(pstringout)
 			status = dbCaGetLink(&(pstringout->dol));
 			pstringout->pact = FALSE;
 			if(!status==0){
-				recGblSetSevr(pstringout,LINK_ALARM,VALID_ALARM);
+				recGblSetSevr(pstringout,LINK_ALARM,INVALID_ALARM);
 			} else pstringout->udf=FALSE;
 		} /* endif */
 	}
 
-	if(status==0) {
-		status=(*pdset->write_stringout)(pstringout); /* write the new value */
-	}
+        if(pstringout->udf == TRUE ){
+                recGblSetSevr(pstringout,UDF_ALARM,INVALID_ALARM);
+                return(-1);
+        }
+
+        if (pstringout->nsev < INVALID_ALARM )
+                status=writeValue(pstringout); /* write the new value */
+        else {
+                switch (pstringout->ivoa) {
+                    case (IVOA_CONTINUE) :
+                        status=writeValue(pstringout); /* write the new value */
+                        break;
+                    case (IVOA_NO_OUTPUT) :
+                        break;
+                    case (IVOA_OUTPUT_IVOV) :
+                        if(pstringout->pact == FALSE){
+                                strcpy(pstringout->val,pstringout->ivov);
+                        }
+                        status=writeValue(pstringout); /* write the new value */
+                        break;
+                    default :
+                        status=-1;
+                        recGblRecordError(S_db_badField,(void *)pstringout,
+                                "ao:process Illegal IVOA field");
+                }
+        }
+
 	/* check if device support set pact */
 	if ( !pact && pstringout->pact ) return(0);
 	pstringout->pact = TRUE;
@@ -192,8 +241,7 @@ static long process(pstringout)
 	monitor(pstringout);
 
 	/* process the forward scan link record */
-	if (pstringout->flnk.type==DB_LINK)
-		dbScanPassive(((struct dbAddr *)pstringout->flnk.value.db_link.pdbAddr)->precord);
+	recGblFwdLink(pstringout);
 
 	pstringout->pact=FALSE;
 	return(status);
@@ -236,4 +284,38 @@ static void monitor(pstringout)
 	strncpy(pstringout->oval,pstringout->val,sizeof(pstringout->val));
     }
     return;
+}
+
+static long writeValue(pstringout)
+	struct stringoutRecord	*pstringout;
+{
+	long		status;
+        struct stringoutdset 	*pdset = (struct stringoutdset *) (pstringout->dset);
+	long            nRequest=1;
+
+	if (pstringout->pact == TRUE){
+		status=(*pdset->write_stringout)(pstringout);
+		return(status);
+	}
+
+	status=recGblGetLinkValue(&(pstringout->siml),
+		(void *)pstringout,DBR_ENUM,&(pstringout->simm),&nRequest);
+	if (status)
+		return(status);
+
+	if (pstringout->simm == NO){
+		status=(*pdset->write_stringout)(pstringout);
+		return(status);
+	}
+	if (pstringout->simm == YES){
+		status=recGblPutLinkValue(&(pstringout->siol),
+				(void *)pstringout,DBR_STRING,pstringout->val,&nRequest);
+	} else {
+		status=-1;
+		recGblSetSevr(pstringout,SOFT_ALARM,INVALID_ALARM);
+		return(status);
+	}
+        recGblSetSevr(pstringout,SIMM_ALARM,pstringout->sims);
+
+	return(status);
 }

@@ -34,6 +34,7 @@
  * .02  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
  * .03  02-05-92	jba	Changed function arguments from paddr to precord 
  * .04  02-28-92	jba	ANSI C changes
+ * .05  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
  */
 
 #include	<vxWorks.h>
@@ -89,7 +90,7 @@ struct rset stateRSET={
 	get_control_double,
 	get_alarm_double };
 
-void monitor();
+static void monitor();
 
 static long process(pstate)
 	struct stateRecord	*pstate;
@@ -100,7 +101,7 @@ static long process(pstate)
 	tsLocalTime(&pstate->time);
 	monitor(pstate);
         /* process the forward scan link record */
-        if (pstate->flnk.type==DB_LINK) dbScanPassive(((struct dbAddr *)pstate->flnk.value.db_link.pdbAddr)->precord);
+        recGblFwdLink(pstate);
         pstate->pact=FALSE;
 	return(0);
 }

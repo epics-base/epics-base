@@ -35,6 +35,12 @@
  * .04  04-10-92        jba     pact now used to test for asyn processing, not status
  * .05  04-18-92        jba     removed process from dev init_record parms
  * .06  06-02-92        jba     changed graphic/control limits for hihi,high,low,lolo
+ * .07  07-15-92        jba     changed VALID_ALARM to INVALID alarm
+ * .08  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
+ * .09  07-21-92        jba     changed alarm limits for non val related fields
+ * .10  08-06-92        jba     New algorithm for calculating analog alarms
+ * .11  08-14-92        jba     Added simulation processing
+ * .12  08-19-92        jba     Added code for invalid alarm output action
  */ 
 
 
@@ -101,12 +107,9 @@ struct longoutdset { /* longout input dset */
 	DEVSUPFUN	get_ioint_info;
 	DEVSUPFUN	write_longout;/*(-1,0)=>(failure,success*/
 };
-void alarm();
-int convert();
-void monitor();
-/* Added for Channel Access Links */
-long dbCaAddInlink();
-long dbCaGetLink();
+static void alarm();
+static void monitor();
+static long writeValue();
 
 
 static long init_record(plongout,pass)
@@ -118,13 +121,36 @@ static long init_record(plongout,pass)
 
     if (pass==0) return(0);
 
+    /* longout.siml must be a CONSTANT or a PV_LINK or a DB_LINK */
+    switch (plongout->siml.type) {
+    case (CONSTANT) :
+        plongout->simm = plongout->siml.value.value;
+        break;
+    case (PV_LINK) :
+        status = dbCaAddInlink(&(plongout->siml), (void *) plongout, "SIMM");
+	if(status) return(status);
+	break;
+    case (DB_LINK) :
+        break;
+    default :
+        recGblRecordError(S_db_badField,(void *)plongout,
+                "longout: init_record Illegal SIML field");
+        return(S_db_badField);
+    }
+
+    /* longout.siol may be a PV_LINK */
+    if (plongout->siol.type == PV_LINK){
+        status = dbCaAddOutlink(&(plongout->siol), (void *) plongout, "VAL");
+	if(status) return(status);
+    }
+
     if(!(pdset = (struct longoutdset *)(plongout->dset))) {
-	recGblRecordError(S_dev_noDSET,plongout,"longout: init_record");
+	recGblRecordError(S_dev_noDSET,(void *)plongout,"longout: init_record");
 	return(S_dev_noDSET);
     }
     /* must have  write_longout functions defined */
     if( (pdset->number < 5) || (pdset->write_longout == NULL) ) {
-	recGblRecordError(S_dev_missingSup,plongout,"longout: init_record");
+	recGblRecordError(S_dev_missingSup,(void *)plongout,"longout: init_record");
 	return(S_dev_missingSup);
     }
     /* get the initial value dol is a constant*/
@@ -153,7 +179,7 @@ static long process(plongout)
 
 	if( (pdset==NULL) || (pdset->write_longout==NULL) ) {
 		plongout->pact=TRUE;
-		recGblRecordError(S_dev_missingSup,plongout,"write_longout");
+		recGblRecordError(S_dev_missingSup,(void *)plongout,"write_longout");
 		return(S_dev_missingSup);
 	}
         if (!plongout->pact) {
@@ -166,7 +192,7 @@ static long process(plongout)
 				DBR_LONG,&plongout->val,&options,&nRequest);
 			plongout->pact = FALSE;
 			if(status!=0){
-				recGblSetSevr(plongout,LINK_ALARM,VALID_ALARM);
+				recGblSetSevr(plongout,LINK_ALARM,INVALID_ALARM);
 			} else plongout->udf=FALSE;
 		}
 		if((plongout->dol.type == CA_LINK) && (plongout->omsl == CLOSED_LOOP)){
@@ -174,14 +200,36 @@ static long process(plongout)
 			status = dbCaGetLink(&(plongout->dol));
 			plongout->pact = FALSE;
 			if(status!=0){
-				recGblSetSevr(plongout,LINK_ALARM,VALID_ALARM);
+				recGblSetSevr(plongout,LINK_ALARM,INVALID_ALARM);
 			} else plongout->udf=FALSE;
 		}
 	}
 
-	if(status==0) {
-		status=(*pdset->write_longout)(plongout); /* write the new value */
-	}
+	/* check for alarms */
+	alarm(plongout);
+
+        if (plongout->nsev < INVALID_ALARM )
+                status=writeValue(plongout); /* write the new value */
+        else {
+                switch (plongout->ivoa) {
+                    case (IVOA_CONTINUE) :
+                        status=writeValue(plongout); /* write the new value */
+                        break;
+                    case (IVOA_NO_OUTPUT) :
+                        break;
+                    case (IVOA_OUTPUT_IVOV) :
+                        if(plongout->pact == FALSE){
+                                plongout->val=plongout->ivov;
+                        }
+                        status=writeValue(plongout); /* write the new value */
+                        break;
+                    default :
+                        status=-1;
+                        recGblRecordError(S_db_badField,(void *)plongout,
+                                "ao:process Illegal IVOA field");
+                }
+        }
+
 	/* check if device support set pact */
 	if ( !pact && plongout->pact ) return(0);
 	plongout->pact = TRUE;
@@ -194,7 +242,7 @@ static long process(plongout)
 	monitor(plongout);
 
 	/* process the forward scan link record */
-	if (plongout->flnk.type==DB_LINK) dbScanPassive(((struct dbAddr *)plongout->flnk.value.db_link.pdbAddr)->precord);
+	recGblFwdLink(plongout);
 
 	plongout->pact=FALSE;
 	return(status);
@@ -259,54 +307,57 @@ static long get_alarm_double(paddr,pad)
 {
     struct longoutRecord	*plongout=(struct longoutRecord *)paddr->precord;
 
-    pad->upper_alarm_limit = plongout->hihi;
-    pad->upper_warning_limit = plongout->high;
-    pad->lower_warning_limit = plongout->low;
-    pad->lower_alarm_limit = plongout->lolo;
+    if(paddr->pfield==(void *)&plongout->val){
+         pad->upper_alarm_limit = plongout->hihi;
+         pad->upper_warning_limit = plongout->high;
+         pad->lower_warning_limit = plongout->low;
+         pad->lower_alarm_limit = plongout->lolo;
+    } else recGblGetAlarmDouble(paddr,pad);
     return(0);
 }
-
 
 static void alarm(plongout)
     struct longoutRecord	*plongout;
 {
-	long	ftemp;
-	long	val=plongout->val;
+	double		val;
+	float		hyst, lalm, hihi, high, low, lolo;
+	unsigned short	hhsv, llsv, hsv, lsv;
 
-        if(plongout->udf == TRUE ){
-		recGblSetSevr(plongout,UDF_ALARM,VALID_ALARM);
-                return;
-        }
+	if(plongout->udf == TRUE ){
+ 		recGblSetSevr(plongout,UDF_ALARM,INVALID_ALARM);
+		return;
+	}
+	hihi = plongout->hihi; lolo = plongout->lolo; high = plongout->high; low = plongout->low;
+	hhsv = plongout->hhsv; llsv = plongout->llsv; hsv = plongout->hsv; lsv = plongout->lsv;
+	val = plongout->val; hyst = plongout->hyst; lalm = plongout->lalm;
 
-        /* if difference is not > hysterisis use lalm not val */
-        ftemp = plongout->lalm - plongout->val;
-        if(ftemp<0) ftemp = -ftemp;
-        if (ftemp < plongout->hyst) val=plongout->lalm;
+	/* alarm condition hihi */
+	if (hhsv && (val >= hihi || ((lalm==hihi) && (val >= hihi-hyst)))){
+	        if (recGblSetSevr(plongout,HIHI_ALARM,plongout->hhsv)) plongout->lalm = hihi;
+		return;
+	}
 
-        /* alarm condition hihi */
-        if (val > plongout->hihi && recGblSetSevr(plongout,HIHI_ALARM,plongout->hhsv)){
-                plongout->lalm = val;
-                return;
-        }
+	/* alarm condition lolo */
+	if (llsv && (val <= lolo || ((lalm==lolo) && (val <= lolo+hyst)))){
+	        if (recGblSetSevr(plongout,LOLO_ALARM,plongout->llsv)) plongout->lalm = lolo;
+		return;
+	}
 
-        /* alarm condition lolo */
-        if (val < plongout->lolo && recGblSetSevr(plongout,LOLO_ALARM,plongout->llsv)){
-                plongout->lalm = val;
-                return;
-        }
+	/* alarm condition high */
+	if (hsv && (val >= high || ((lalm==high) && (val >= high-hyst)))){
+	        if (recGblSetSevr(plongout,HIGH_ALARM,plongout->hsv)) plongout->lalm = high;
+		return;
+	}
 
-        /* alarm condition high */
-        if (val > plongout->high && recGblSetSevr(plongout,HIGH_ALARM,plongout->hsv)){
-                plongout->lalm = val;
-                return;
-        }
+	/* alarm condition low */
+	if (lsv && (val <= low || ((lalm==low) && (val <= low+hyst)))){
+	        if (recGblSetSevr(plongout,LOW_ALARM,plongout->lsv)) plongout->lalm = low;
+		return;
+	}
 
-        /* alarm condition low */
-        if (val < plongout->low && recGblSetSevr(plongout,LOW_ALARM,plongout->lsv)){
-                plongout->lalm = val;
-                return;
-        }
-        return;
+	/* we get here only if val is out of alarm by at least hyst */
+	plongout->lalm = val;
+	return;
 }
 
 static void monitor(plongout)
@@ -355,4 +406,38 @@ static void monitor(plongout)
                 db_post_events(plongout,&plongout->val,monitor_mask);
 	}
 	return;
+}
+
+static long writeValue(plongout)
+	struct longoutRecord	*plongout;
+{
+	long		status;
+        struct longoutdset 	*pdset = (struct longoutdset *) (plongout->dset);
+	long            nRequest=1;
+
+	if (plongout->pact == TRUE){
+		status=(*pdset->write_longout)(plongout);
+		return(status);
+	}
+
+	status=recGblGetLinkValue(&(plongout->siml),
+		(void *)plongout,DBR_ENUM,&(plongout->simm),&nRequest);
+	if (status)
+		return(status);
+
+	if (plongout->simm == NO){
+		status=(*pdset->write_longout)(plongout);
+		return(status);
+	}
+	if (plongout->simm == YES){
+		status=recGblPutLinkValue(&(plongout->siol),
+				(void *)plongout,DBR_LONG,&(plongout->val),&nRequest);
+	} else {
+		status=-1;
+		recGblSetSevr(plongout,SOFT_ALARM,INVALID_ALARM);
+		return(status);
+	}
+        recGblSetSevr(plongout,SIMM_ALARM,plongout->sims);
+
+	return(status);
 }

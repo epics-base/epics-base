@@ -34,6 +34,9 @@
  * .03  02-28-92	jba	ANSI C changes
  * .04  04-10-92        jba     pact now used to test for asyn processing, not status
  * .05  04-18-92        jba     removed process from dev init_record parms
+ * .06  07-15-92        jba     changed VALID_ALARM to INVALID alarm
+ * .07  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
+ * .08  08-13-92        jba     Added simulation processing
  */
 
 #include     <vxWorks.h>
@@ -116,12 +119,14 @@ struct callback {
      void (*process)();
 };
 
+/*
 void callbackRequest();
-void monitor();
+*/
 
-void convert();
-long  add_count();
-long  clear_histogram();
+static long add_count();
+static long clear_histogram();
+static void monitor();
+static long readValue();
 
 static void wdCallback(pcallback)
      struct callback *pcallback;
@@ -155,7 +160,7 @@ static long init_record(phistogram,pass)
      long status;
      struct callback *pcallback=(struct callback *)(phistogram->wdog);
      float         wait_time;
-     void (*process)();
+     void (*process)()=NULL;
 
      if (pass==0){
 
@@ -189,14 +194,48 @@ static long init_record(phistogram,pass)
           wdStart(pcallback->wd_id,wait_time,callbackRequest,(int)pcallback);
      }
 
+    /* histogram.siml must be a CONSTANT or a PV_LINK or a DB_LINK */
+    switch (phistogram->siml.type) {
+    case (CONSTANT) :
+        phistogram->simm = phistogram->siml.value.value;
+        break;
+    case (PV_LINK) :
+        status = dbCaAddInlink(&(phistogram->siml), (void *) phistogram, "SIMM");
+        if(status) return(status);
+        break;
+    case (DB_LINK) :
+        break;
+    default :
+        recGblRecordError(S_db_badField,(void *)phistogram,
+                "histogram: init_record Illegal SIML field");
+        return(S_db_badField);
+    }
+
+    /* histogram.siol must be a CONSTANT or a PV_LINK or a DB_LINK */
+    switch (phistogram->siol.type) {
+    case (CONSTANT) :
+        phistogram->sval = phistogram->siol.value.value;
+        break;
+    case (PV_LINK) :
+        status = dbCaAddInlink(&(phistogram->siol), (void *) phistogram, "SVAL");
+        if(status) return(status);
+        break;
+    case (DB_LINK) :
+        break;
+    default :
+        recGblRecordError(S_db_badField,(void *)phistogram,
+                "histogram: init_record Illegal SIOL field");
+        return(S_db_badField);
+    }
+
      /* must have device support defined */
      if(!(pdset = (struct histogramdset *)(phistogram->dset))) {
-          recGblRecordError(S_dev_noDSET,phistogram,"histogram: init_record");
+          recGblRecordError(S_dev_noDSET,(void *)phistogram,"histogram: init_record");
           return(S_dev_noDSET);
      }
      /* must have read_histogram function defined */
      if( (pdset->number < 6) || (pdset->read_histogram == NULL) ) {
-          recGblRecordError(S_dev_missingSup,phistogram,"histogram: init_record");
+          recGblRecordError(S_dev_missingSup,(void *)phistogram,"histogram: init_record");
           return(S_dev_missingSup);
      }
      /* call device support init_record */
@@ -215,11 +254,11 @@ static long process(phistogram)
 
      if( (pdset==NULL) || (pdset->read_histogram==NULL) ) {
           phistogram->pact=TRUE;
-          recGblRecordError(S_dev_missingSup,phistogram,"read_histogram");
+          recGblRecordError(S_dev_missingSup,(void *)phistogram,"read_histogram");
           return(S_dev_missingSup);
      }
 
-     status=(*pdset->read_histogram)(phistogram);
+     status=readValue(phistogram); /* read the new value */
      /* check if device support set pact */
      if ( !pact && phistogram->pact ) return(0);
      phistogram->pact = TRUE;
@@ -233,7 +272,7 @@ static long process(phistogram)
      monitor(phistogram);
 
      /* process the forward scan link record */
-     if (phistogram->flnk.type==DB_LINK) dbScanPassive(((struct dbAddr *)phistogram->flnk.value.db_link.pdbAddr)->precord);
+     recGblFwdLink(phistogram);
 
      phistogram->pact=FALSE;
      return(status);
@@ -362,9 +401,9 @@ static long add_count(phistogram)
      if(phistogram->csta==FALSE) return(0);
 
      if(phistogram->llim >= phistogram->ulim) {
-               if (phistogram->nsev<VALID_ALARM) {
+               if (phistogram->nsev<INVALID_ALARM) {
                     phistogram->stat = SOFT_ALARM;
-                    phistogram->sevr = VALID_ALARM;
+                    phistogram->sevr = INVALID_ALARM;
                     return(-1);
                }
      }
@@ -393,4 +432,41 @@ static long clear_histogram(phistogram)
      phistogram->udf=FALSE;
 
      return(0);
+}
+
+static long readValue(phistogram)
+        struct histogramRecord *phistogram;
+{
+        long            status;
+        struct histogramdset   *pdset = (struct histogramdset *) (phistogram->dset);
+	long            nRequest=1;
+
+        if (phistogram->pact == TRUE){
+                status=(*pdset->read_histogram)(phistogram);
+                return(status);
+        }
+
+        status=recGblGetLinkValue(&(phistogram->siml),
+                (void *)phistogram,DBR_ENUM,&(phistogram->simm),&nRequest);
+        if (status)
+                return(status);
+
+        if (phistogram->simm == NO){
+                status=(*pdset->read_histogram)(phistogram);
+                return(status);
+        }
+        if (phistogram->simm == YES){
+                status=recGblGetLinkValue(&(phistogram->siol),
+                                (void *)phistogram,DBR_DOUBLE,&(phistogram->sval),&nRequest);
+                if (status==0){
+                         phistogram->sgnl=phistogram->sval;
+                }
+        } else {
+                status=-1;
+                recGblSetSevr(phistogram,SOFT_ALARM,INVALID_ALARM);
+                return(status);
+        }
+        recGblSetSevr(phistogram,SIMM_ALARM,phistogram->sims);
+
+        return(status);
 }

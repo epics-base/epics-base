@@ -46,6 +46,8 @@
  * .13  12-12-91        jba     Set cmd to zero in io-interrupt processing
  * .14  02-05-92	jba	Changed function arguments from paddr to precord 
  * .15  02-28-92	jba	ANSI C changes
+ * .16  07-15-92        jba     changed VALID_ALARM to INVALID alarm
+ * .17  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
  */
 
 #include	<vxWorks.h>
@@ -101,10 +103,6 @@ struct rset timerRSET={
 	get_graphic_double,
 	get_control_double,
 	get_alarm_double };
-
-/* Added for Channel Access Links */
-long dbCaAddInlink();
-long dbCaGetLink();
 
 /* because the driver does all the work just declare device support here*/
 static long get_ioint_info();
@@ -178,7 +176,7 @@ static long process(ptimer)
         /* check event list */
         monitor(ptimer);
         /* process the forward scan link record */
-        if (ptimer->flnk.type==DB_LINK) dbScanPassive(((struct dbAddr *)ptimer->flnk.value.db_link.pdbAddr)->precord);
+        recGblFwdLink(ptimer);
 
         ptimer->pact=FALSE;
         return(0);
@@ -299,7 +297,7 @@ struct timerRecord	*ptimer;
 		status = dbGetLink(&(ptimer->torg.value.db_link),(struct dbCommon *)ptimer,DBR_FLOAT,
                 &(ptimer->trdl),&options,&nRequest);
                 if(status!=0){
-                       recGblSetSevr(ptimer,LINK_ALARM,VALID_ALARM);
+                       recGblSetSevr(ptimer,LINK_ALARM,INVALID_ALARM);
                        return;
                 }
         }
@@ -308,12 +306,12 @@ struct timerRecord	*ptimer;
 	    status = dbCaGetLink(&(ptimer->torg));
 	    if(status!=0)
 	    {
-	       recGblSetSevr(ptimer,LINK_ALARM,VALID_ALARM);
+	       recGblSetSevr(ptimer,LINK_ALARM,INVALID_ALARM);
 	       return;
 	    } /* endif */
         } /* endif */
 	if (ptimer->out.type != VME_IO) {
-                recGblSetSevr(ptimer,WRITE_ALARM,VALID_ALARM);
+                recGblSetSevr(ptimer,WRITE_ALARM,INVALID_ALARM);
 		return;
 	}
 	pvmeio = (struct vmeio *)(&ptimer->out.value);
@@ -340,7 +338,7 @@ struct timerRecord	*ptimer;
 	  ((ptimer->tevt == 0)?0:post_event),	/* addr of event post routine */
 	  (int)ptimer->tevt)		/* event to post on trigger */
 	    != 0){
-                recGblSetSevr(ptimer,WRITE_ALARM,VALID_ALARM);
+                recGblSetSevr(ptimer,WRITE_ALARM,INVALID_ALARM);
 	}
 	return;
 }
@@ -362,7 +360,7 @@ struct timerRecord	*ptimer;
 
 	/* initiate the write */
 	if (ptimer->out.type != VME_IO) {
-		recGblRecordError(S_dev_badOutType,ptimer,"read_timer");
+		recGblRecordError(S_dev_badOutType,(void *)ptimer,"read_timer");
 		return;
 	}
 

@@ -34,6 +34,8 @@
  * .03  02-28-92	jba	ANSI C changes
  * .04  04-10-92        jba     pact now used to test for asyn processing, not status
  * .05  04-18-92        jba     removed process from dev init_record parms
+ * .06  07-15-92        jba     changed VALID_ALARM to INVALID alarm
+ * .07  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
  */ 
 
 #include     <vxWorks.h>
@@ -110,10 +112,7 @@ struct pcdset { /* pulseCounter input dset */
 #define CTR_STOP        3
 #define CTR_SETUP       4
 
-void monitor();
-/* Added for Channel Access Links */
-long dbCaAddInlink();
-long dbCaGetLink();
+static void monitor();
 
 
 static long init_record(ppc,pass)
@@ -127,7 +126,7 @@ static long init_record(ppc,pass)
 
     /* must have device support */
     if(!(pdset = (struct pcdset *)(ppc->dset))) {
-         recGblRecordError(S_dev_noDSET,ppc,"pc: init_record");
+         recGblRecordError(S_dev_noDSET,(void *)ppc,"pc: init_record");
          return(S_dev_noDSET);
     }
     /* get the gate value if sgl is a constant*/
@@ -143,7 +142,7 @@ static long init_record(ppc,pass)
 
     /* must have cmd_pc functions defined */
     if( (pdset->number < 5) || (pdset->cmd_pc == NULL) ) {
-         recGblRecordError(S_dev_missingSup,ppc,"pc: cmd_pc");
+         recGblRecordError(S_dev_missingSup,(void *)ppc,"pc: cmd_pc");
          return(S_dev_missingSup);
     }
     /* call device support init_record */
@@ -165,7 +164,7 @@ static long process(ppc)
     /* must have  cmd_pc functions defined */
     if( (pdset==NULL) || (pdset->cmd_pc==NULL) ) {
          ppc->pact=TRUE;
-         recGblRecordError(S_dev_missingSup,ppc,"cmd_pc");
+         recGblRecordError(S_dev_missingSup,(void *)ppc,"cmd_pc");
          return(S_dev_missingSup);
     }
 
@@ -179,7 +178,7 @@ static long process(ppc)
                    &ppc->sgv,&options,&nRequest);
               ppc->pact = FALSE;
               if(status!=0) {
-                  recGblSetSevr(ppc,LINK_ALARM,VALID_ALARM);
+                  recGblSetSevr(ppc,LINK_ALARM,INVALID_ALARM);
               }
          }
          if (ppc->sgl.type == CA_LINK){
@@ -187,10 +186,10 @@ static long process(ppc)
               status=dbCaGetLink(&(ppc->sgl));
               ppc->pact = FALSE;
               if(status!=0) {
-                  recGblSetSevr(ppc,LINK_ALARM,VALID_ALARM);
+                  recGblSetSevr(ppc,LINK_ALARM,INVALID_ALARM);
               }
          }
-         if(status=0){
+         if(status==0){
               if(ppc->sgv != ppc->osgv){ /* soft gate changed */
                    save=ppc->cmd;
                    if(ppc->sgv!=0){
@@ -202,7 +201,7 @@ static long process(ppc)
                    ppc->cmd=save;
                    ppc->osgv=ppc->sgv;
                    if(status!=0) {
-                       recGblSetSevr(ppc,SOFT_ALARM,VALID_ALARM);
+                       recGblSetSevr(ppc,SOFT_ALARM,INVALID_ALARM);
                    }
               }
          }
@@ -226,7 +225,7 @@ static long process(ppc)
      monitor(ppc);
 
      /* process the forward scan link record */
-     if (ppc->flnk.type==DB_LINK) dbScanPassive(((struct dbAddr *)ppc->flnk.value.db_link.pdbAddr)->precord);
+     recGblFwdLink(ppc);
 
      ppc->pact=FALSE;
      return(status);

@@ -36,6 +36,10 @@
  * .04  02-28-92        jba     Changed get_precision,get_graphic_double,get_control_double
  * .05  02-28-92	jba	ANSI C changes
  * .06  06-02-92        jba     changed graphic/control limits for hihi,high,low,lolo
+ * .07  07-15-92        jba     changed VALID_ALARM to INVALID alarm
+ * .08  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
+ * .09  07-21-92        jba     changed alarm limits for non val related fields
+ * .10  08-06-92        jba     New algorithm for calculating analog alarms
  */
 
 #include	<vxWorks.h>
@@ -94,12 +98,9 @@ struct rset pidRSET={
 	get_alarm_double };
 
 
-void alarm();
-void monitor();
-long do_pid();
-/* Added for Channel Access Links */
-long dbCaAddInlink();
-long dbCaGetLink();
+static void alarm();
+static void monitor();
+static long do_pid();
 
 
 static long init_record(ppid,pass)
@@ -146,7 +147,7 @@ static long process(ppid)
 	monitor(ppid);
 
 	/* process the forward scan link record */
-	if (ppid->flnk.type==DB_LINK) dbScanPassive(((struct dbAddr *)ppid->flnk.value.db_link.pdbAddr)->precord);
+	recGblFwdLink(ppid);
 
 	ppid->pact=FALSE;
 	return(status);
@@ -233,49 +234,57 @@ static long get_alarm_double(paddr,pad)
 {
     struct pidRecord	*ppid=(struct pidRecord *)paddr->precord;
 
-    pad->upper_alarm_limit = ppid->hihi;
-    pad->upper_warning_limit = ppid->high;
-    pad->lower_warning_limit = ppid->low;
-    pad->lower_alarm_limit = ppid->lolo;
+    if(paddr->pfield==(void *)&ppid->val){
+         pad->upper_alarm_limit = ppid->hihi;
+         pad->upper_warning_limit = ppid->high;
+         pad->lower_warning_limit = ppid->low;
+         pad->lower_alarm_limit = ppid->lolo;
+    } else recGblGetAlarmDouble(paddr,pad);
     return(0);
 }
-
 
 static void alarm(ppid)
     struct pidRecord	*ppid;
 {
-	float	ftemp;
-	float	val=ppid->val;
+	double		val;
+	float		hyst, lalm, hihi, high, low, lolo;
+	unsigned short	hhsv, llsv, hsv, lsv;
 
-        /* if difference is not > hysterisis use lalm not val */
-        ftemp = ppid->lalm - ppid->val;
-        if(ftemp<0.0) ftemp = -ftemp;
-        if (ftemp < ppid->hyst) val=ppid->lalm;
+	if(ppid->udf == TRUE ){
+ 		recGblSetSevr(ppid,UDF_ALARM,INVALID_ALARM);
+		return;
+	}
+	hihi = ppid->hihi; lolo = ppid->lolo; high = ppid->high; low = ppid->low;
+	hhsv = ppid->hhsv; llsv = ppid->llsv; hsv = ppid->hsv; lsv = ppid->lsv;
+	val = ppid->val; hyst = ppid->hyst; lalm = ppid->lalm;
 
-        /* alarm condition hihi */
-        if (val > ppid->hihi && recGblSetSevr(ppid,HIHI_ALARM,ppid->hhsv)){
-                ppid->lalm = val;
-                return;
-        }
+	/* alarm condition hihi */
+	if (hhsv && (val >= hihi || ((lalm==hihi) && (val >= hihi-hyst)))){
+	        if (recGblSetSevr(ppid,HIHI_ALARM,ppid->hhsv)) ppid->lalm = hihi;
+		return;
+	}
 
-        /* alarm condition lolo */
-        if (val < ppid->lolo && recGblSetSevr(ppid,LOLO_ALARM,ppid->llsv)){
-                ppid->lalm = val;
-                return;
-        }
+	/* alarm condition lolo */
+	if (llsv && (val <= lolo || ((lalm==lolo) && (val <= lolo+hyst)))){
+	        if (recGblSetSevr(ppid,LOLO_ALARM,ppid->llsv)) ppid->lalm = lolo;
+		return;
+	}
 
-        /* alarm condition high */
-        if (val > ppid->high && recGblSetSevr(ppid,HIGH_ALARM,ppid->hsv)){
-                ppid->lalm = val;
-                return;
-        }
+	/* alarm condition high */
+	if (hsv && (val >= high || ((lalm==high) && (val >= high-hyst)))){
+	        if (recGblSetSevr(ppid,HIGH_ALARM,ppid->hsv)) ppid->lalm = high;
+		return;
+	}
 
-        /* alarm condition low */
-        if (val < ppid->low && recGblSetSevr(ppid,LOW_ALARM,ppid->lsv)){
-                ppid->lalm = val;
-                return;
-        }
-        return;
+	/* alarm condition low */
+	if (lsv && (val <= low || ((lalm==low) && (val <= low+hyst)))){
+	        if (recGblSetSevr(ppid,LOW_ALARM,ppid->lsv)) ppid->lalm = low;
+		return;
+	}
+
+	/* we get here only if val is out of alarm by at least hyst */
+	ppid->lalm = val;
+	return;
 }
 
 static void monitor(ppid)
@@ -379,13 +388,13 @@ struct pidRecord     *ppid;
 
         /* fetch the controlled value */
         if (ppid->cvl.type != DB_LINK) { /* nothing to control*/
-                if (recGblSetSevr(ppid,SOFT_ALARM,VALID_ALARM)) return(0);
+                if (recGblSetSevr(ppid,SOFT_ALARM,INVALID_ALARM)) return(0);
 	}
         options=0;
         nRequest=1;
         if(dbGetLink(&(ppid->cvl.value.db_link),(struct dbCommon *)ppid,DBR_FLOAT,
 	&cval,&options,&nRequest)!=NULL) {
-                recGblSetSevr(ppid,LINK_ALARM,VALID_ALARM);
+                recGblSetSevr(ppid,LINK_ALARM,INVALID_ALARM);
                 return(0);
         }
         /* fetch the setpoint */
@@ -394,19 +403,19 @@ struct pidRecord     *ppid;
         	nRequest=1;
         	if(dbGetLink(&(ppid->stpl.value.db_link),(struct dbCommon *)ppid,DBR_FLOAT,
 		&(ppid->val),&options,&nRequest)!=NULL) {
-                        recGblSetSevr(ppid,LINK_ALARM,VALID_ALARM);
+                        recGblSetSevr(ppid,LINK_ALARM,INVALID_ALARM);
                         return(0);
                 } else ppid->udf=FALSE;
         }
         if(ppid->stpl.type == CA_LINK && ppid->smsl == CLOSED_LOOP){
                 if(dbCaGetLink(&(ppid->stpl))!=NULL) {
-                        recGblSetSevr(ppid,LINK_ALARM,VALID_ALARM);
+                        recGblSetSevr(ppid,LINK_ALARM,INVALID_ALARM);
                         return(0);
                 } else ppid->udf=FALSE;
         }
 	val = ppid->val;
 	if (ppid->udf == TRUE ) {
-                recGblSetSevr(ppid,UDF_ALARM,VALID_ALARM);
+                recGblSetSevr(ppid,UDF_ALARM,INVALID_ALARM);
                 return(0);
 	}
 

@@ -68,7 +68,7 @@
  * .25  08-28-91        lrd     add open circuit detect on limit switches
  * .26  09-16-91        lrd     fix IALG not 0 and SCAN not Passive - The motor
  *                              would continually attempt to initialize
- * .27  12-09-91        lrd     new INVALID severity for errors that invalidate
+ * .27  12-09-91        lrd     new ININVALID severity for errors that invalidate
  *                              the results
  * .28  12-17-91        lrd     changed the MDEL and ADEL deadbands so
  *                              the range for exceeding the deadband includes
@@ -84,6 +84,9 @@
 				Make motor move whenever VAL field accessed
  * .27  04-08-92	mrk	break out device support
  * .28  04-18-92        jba     removed process from dev init_record parms
+ * .29  07-15-92        jba     changed VALID_ALARM to INVALID alarm
+ * .30  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
+ * .31  07-21-92        jba     changed alarm limits for non val related fields
  */
 
 #include	<vxWorks.h>
@@ -158,18 +161,13 @@ struct smdset {
 #define POSITIVE_LIMIT 1
 #define NEGATIVE_LIMIT 2
 
-void alarm();
-void monitor();
-void smcb_callback();
-void init_sm();
-void convert_sm();
-void positional_sm();
-void velocity_sm();
-void sm_get_position();
-/* Added for Channel Access Links */
-long dbCaAddInlink();
-long dbCaGetLink();
-
+static void alarm();
+static void monitor();
+static void smcb_callback();
+static void init_sm();
+static void positional_sm();
+static void velocity_sm();
+static void sm_get_position();
 
 
 static long init_record(psm,pass)
@@ -182,12 +180,12 @@ static long init_record(psm,pass)
     if (pass==0) return(0);
 
     if(!(pdset = (struct smdset *)(psm->dset))) {
-        recGblRecordError(S_dev_noDSET,psm,"sm: init_record");
+        recGblRecordError(S_dev_noDSET,(void *)psm,"sm: init_record");
         return(S_dev_noDSET);
     }
     /* must have sm_command function defined */
     if( (pdset->number < 5) || (pdset->sm_command == NULL) ) {
-        recGblRecordError(S_dev_missingSup,psm,"sm: init_record");
+        recGblRecordError(S_dev_missingSup,(void *)psm,"sm: init_record");
         return(S_dev_missingSup);
     }
     if( pdset->init_record ) {
@@ -213,11 +211,10 @@ static long process(psm)
 	struct steppermotorRecord	*psm;
 {
 	struct smdset   *pdset = (struct smdset *)(psm->dset);
-	long             status;
 
         if( (pdset==NULL) || (pdset->sm_command==NULL) ) {
                 psm->pact=TRUE;
-                recGblRecordError(S_dev_missingSup,psm,"sm_command");
+                recGblRecordError(S_dev_missingSup,(void *)psm,"sm_command");
                 return(S_dev_missingSup);
         }
 	/* intialize the stepper motor record when the init bit is 0 */
@@ -241,7 +238,7 @@ static long process(psm)
 	monitor(psm);
 
 	/* process the forward scan link record */
-	if (psm->flnk.type==DB_LINK) dbScanPassive(((struct dbAddr *)psm->flnk.value.db_link.pdbAddr)->precord);
+	recGblFwdLink(psm);
 
 	psm->pact=FALSE;
 	return(0);
@@ -348,10 +345,16 @@ static long get_alarm_double(paddr,pad)
 {
     struct steppermotorRecord	*psm=(struct steppermotorRecord *)paddr->precord;
 
-    pad->upper_alarm_limit = psm->hihi;
-    pad->upper_warning_limit = psm->high;
-    pad->lower_warning_limit = psm->low;
-    pad->lower_alarm_limit = psm->lolo;
+    if(paddr->pfield==(void *)&psm->val
+    || paddr->pfield==(void *)&psm->mpos
+    || paddr->pfield==(void *)&psm->rbv
+    || paddr->pfield==(void *)&psm->epos
+    || paddr->pfield==(void *)&psm->lval){
+         pad->upper_alarm_limit = psm->hihi;
+         pad->upper_warning_limit = psm->high;
+         pad->lower_warning_limit = psm->low;
+         pad->lower_alarm_limit = psm->lolo;
+    } else recGblGetAlarmDouble(paddr,pad);
     return(0);
 }
 
@@ -534,7 +537,7 @@ struct steppermotorRecord	*psm;
         recGblResetSevr(psm,stat,sevr,nsta,nsev);
 	post_events = FALSE;
 	if (psm->mccw && psm->mcw){                    /* limits disconnected */
-		recGblSetSevr(psm,WRITE_ALARM,VALID_ALARM);
+		recGblSetSevr(psm,WRITE_ALARM,INVALID_ALARM);
 		post_events = TRUE;
 	}else if ((psm->ccw == 0) || (psm->cw == 0)){  /* limit violation */
 		recGblSetSevr(psm,HW_LIMIT_ALARM,psm->hlsv);
@@ -592,7 +595,7 @@ struct steppermotorRecord	*psm;
 
 			    /* move motor */
 			    if ((*pdset->sm_command)(psm,SM_MOVE,psm->rval-psm->rrbv,0) < 0){
-				    recGblSetSevr(psm,WRITE_ALARM,VALID_ALARM);
+				    recGblSetSevr(psm,WRITE_ALARM,INVALID_ALARM);
 			    } else {
 			        psm->rcnt++;
 			        if (psm->mlis.count){
@@ -647,7 +650,7 @@ struct steppermotorRecord      *psm;
 	/* initialize the motor */
 	/* set mode - first command checks card present */
 	if ((*pdset->sm_command)(psm,SM_MODE,psm->mode,0) < 0){
-		recGblSetSevr(psm,WRITE_ALARM,VALID_ALARM);
+		recGblSetSevr(psm,WRITE_ALARM,INVALID_ALARM);
 		psm->init = 1;
 		return;
 	}
@@ -680,7 +683,7 @@ struct steppermotorRecord      *psm;
 			status = (*pdset->sm_command)(psm,SM_READ,0,0);
 		}
 		if (status < 0){
-			recGblSetSevr(psm,WRITE_ALARM,VALID_ALARM);
+			recGblSetSevr(psm,WRITE_ALARM,INVALID_ALARM);
 			return;
 		}
 		psm->init = -1;
@@ -751,13 +754,13 @@ struct steppermotorRecord	*psm;
 
 		if(dbGetLink(&(psm->dol.value.db_link),(struct dbCommon *)psm,DBR_FLOAT,
 			&(psm->val),&options,&nRequest)){
-			recGblSetSevr(psm,LINK_ALARM,VALID_ALARM);
+			recGblSetSevr(psm,LINK_ALARM,INVALID_ALARM);
 			return;
 		} else psm->udf = FALSE;
 	    }
             if (psm->dol.type == CA_LINK){
                 if(dbCaGetLink(&(psm->dol))){
-                        recGblSetSevr(psm,LINK_ALARM,VALID_ALARM);
+                        recGblSetSevr(psm,LINK_ALARM,INVALID_ALARM);
                         return;
                 } else psm->udf = FALSE;
             }
@@ -793,7 +796,7 @@ struct steppermotorRecord	*psm;
 		}
 	        /* move motor */
 		if ((*pdset->sm_command)(psm,SM_MOVE,psm->rval-psm->rrbv,0) < 0){
-			recGblSetSevr(psm,WRITE_ALARM,VALID_ALARM);
+			recGblSetSevr(psm,WRITE_ALARM,INVALID_ALARM);
 		}
 	}
 
@@ -820,13 +823,13 @@ struct steppermotorRecord	*psm;
 
 		if(dbGetLink(&(psm->dol.value.db_link),(struct dbCommon *)psm,DBR_FLOAT,
 			&(psm->val),&options,&nRequest)) {
-			recGblSetSevr(psm,LINK_ALARM,VALID_ALARM);
+			recGblSetSevr(psm,LINK_ALARM,INVALID_ALARM);
 			return;
 		} else psm->udf=FALSE;
 	    }
 	    if (psm->dol.type == CA_LINK){
 		if(dbCaGetLink(&(psm->dol))){
-			recGblSetSevr(psm,LINK_ALARM,VALID_ALARM);
+			recGblSetSevr(psm,LINK_ALARM,INVALID_ALARM);
 			return;
 		} else psm->udf=FALSE;
 	    }
@@ -861,7 +864,7 @@ struct steppermotorRecord	*psm;
 	
 			/*the last arg of next call is check for direction */
 			if((*pdset->sm_command)(psm,SM_MOTION,1,(psm->val < 0))){
-				recGblSetSevr(psm,WRITE_ALARM,VALID_ALARM);
+				recGblSetSevr(psm,WRITE_ALARM,INVALID_ALARM);
 				return;
 			}
 			psm->cvel = 0;
@@ -910,7 +913,7 @@ struct steppermotorRecord	*psm;
 	if (reset == 0)	psm->init = 1;
 	if(dbGetLink(&(psm->rdbl.value.db_link),(struct dbCommon *)psm,DBR_FLOAT,
 		&new_pos,&options,&nRequest)){
-		recGblSetSevr(psm,READ_ALARM,VALID_ALARM);
+		recGblSetSevr(psm,READ_ALARM,INVALID_ALARM);
 		psm->init = reset;
 		return;
 	}

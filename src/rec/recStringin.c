@@ -34,6 +34,8 @@
  * .03  02-28-92	jba	ANSI C changes
  * .04  04-10-92        jba     pact now used to test for asyn processing, not status
  * .05  04-18-92        jba     removed process from dev init_record parms
+ * .06  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
+ * .07  08-13-92        jba     Added simulation processing
  */
 
 
@@ -99,7 +101,9 @@ struct stringindset { /* stringin input dset */
 	DEVSUPFUN	get_ioint_info;
 	DEVSUPFUN	read_stringin; /*returns: (-1,0)=>(failure,success)*/
 };
-void monitor();
+static void monitor();
+static long readValue();
+
 
 static long init_record(pstringin,pass)
     struct stringinRecord	*pstringin;
@@ -110,13 +114,49 @@ static long init_record(pstringin,pass)
 
     if (pass==0) return(0);
 
+    /* stringin.siml must be a CONSTANT or a PV_LINK or a DB_LINK */
+    switch (pstringin->siml.type) {
+    case (CONSTANT) :
+        pstringin->simm = pstringin->siml.value.value;
+        break;
+    case (PV_LINK) :
+        status = dbCaAddInlink(&(pstringin->siml), (void *) pstringin, "SIMM");
+	if(status) return(status);
+	break;
+    case (DB_LINK) :
+        break;
+    default :
+        recGblRecordError(S_db_badField,(void *)pstringin,
+                "stringin: init_record Illegal SIML field");
+        return(S_db_badField);
+    }
+
+    /* stringin.siol must be a CONSTANT or a PV_LINK or a DB_LINK */
+    switch (pstringin->siol.type) {
+    case (CONSTANT) :
+        if (pstringin->siol.value.value!=0.0 ){
+                 sprintf(pstringin->sval,"%-14.7g",pstringin->siol.value.value);
+        }
+        break;
+    case (PV_LINK) :
+        status = dbCaAddInlink(&(pstringin->siol), (void *) pstringin, "SVAL");
+	if(status) return(status);
+	break;
+    case (DB_LINK) :
+        break;
+    default :
+        recGblRecordError(S_db_badField,(void *)pstringin,
+                "stringin: init_record Illegal SIOL field");
+        return(S_db_badField);
+    }
+
     if(!(pdset = (struct stringindset *)(pstringin->dset))) {
-	recGblRecordError(S_dev_noDSET,pstringin,"stringin: init_record");
+	recGblRecordError(S_dev_noDSET,(void *)pstringin,"stringin: init_record");
 	return(S_dev_noDSET);
     }
     /* must have read_stringin function defined */
     if( (pdset->number < 5) || (pdset->read_stringin == NULL) ) {
-	recGblRecordError(S_dev_missingSup,pstringin,"stringin: init_record");
+	recGblRecordError(S_dev_missingSup,(void *)pstringin,"stringin: init_record");
 	return(S_dev_missingSup);
     }
     if( pdset->init_record ) {
@@ -134,11 +174,11 @@ static long process(pstringin)
 
 	if( (pdset==NULL) || (pdset->read_stringin==NULL) ) {
 		pstringin->pact=TRUE;
-		recGblRecordError(S_dev_missingSup,pstringin,"read_stringin");
+		recGblRecordError(S_dev_missingSup,(void *)pstringin,"read_stringin");
 		return(S_dev_missingSup);
 	}
 
-	status=(*pdset->read_stringin)(pstringin); /* read the new value */
+	status=readValue(pstringin); /* read the new value */
 	/* check if device support set pact */
 	if ( !pact && pstringin->pact ) return(0);
 	pstringin->pact = TRUE;
@@ -147,10 +187,8 @@ static long process(pstringin)
 
 	/* check event list */
 	monitor(pstringin);
-
 	/* process the forward scan link record */
-	if (pstringin->flnk.type==DB_LINK)
-		dbScanPassive(((struct dbAddr *)pstringin->flnk.value.db_link.pdbAddr)->precord);
+	recGblFwdLink(pstringin);
 
 	pstringin->pact=FALSE;
 	return(status);
@@ -194,4 +232,43 @@ static void monitor(pstringin)
 	strncpy(pstringin->oval,pstringin->val,sizeof(pstringin->val));
     }
     return;
+}
+
+static long readValue(pstringin)
+	struct stringinRecord	*pstringin;
+{
+	long		status;
+        struct stringindset 	*pdset = (struct stringindset *) (pstringin->dset);
+	long            nRequest=1;
+
+
+	if (pstringin->pact == TRUE){
+		status=(*pdset->read_stringin)(pstringin);
+		return(status);
+	}
+
+	status=recGblGetLinkValue(&(pstringin->siml),
+		(void *)pstringin,DBR_ENUM,&(pstringin->simm),&nRequest);
+	if (status)
+		return(status);
+
+	if (pstringin->simm == NO){
+		status=(*pdset->read_stringin)(pstringin);
+		return(status);
+	}
+	if (pstringin->simm == YES){
+		status=recGblGetLinkValue(&(pstringin->siol),
+				(void *)pstringin,DBR_STRING,pstringin->sval,&nRequest);
+		if (status==0){
+			strcpy(pstringin->val,pstringin->sval);
+			pstringin->udf=FALSE;
+		}
+	} else {
+		status=-1;
+		recGblSetSevr(pstringin,SOFT_ALARM,INVALID_ALARM);
+		return(status);
+	}
+        recGblSetSevr(pstringin,SIMM_ALARM,pstringin->sims);
+
+	return(status);
 }

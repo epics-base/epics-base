@@ -36,6 +36,11 @@
  * .05  04-10-92        jba     pact now used to test for asyn processing, not status
  * .06  04-18-92        jba     removed process from dev init_record parms
  * .07  06-02-92        jba     changed graphic/control limits for hihi,high,low,lolo
+ * .08  07-15-92        jba     changed VALID_ALARM to INVALID alarm
+ * .09  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
+ * .10  07-21-92        jba     changed alarm limits for non val related fields
+ * .11  08-06-92        jba     New algorithm for calculating analog alarms
+ * .12  08-13-92        jba     Added simulation processing
  */
 
 
@@ -102,8 +107,10 @@ struct longindset { /* longin input dset */
 	DEVSUPFUN	get_ioint_info;
 	DEVSUPFUN	read_longin; /*returns: (-1,0)=>(failure,success)*/
 };
-void alarm();
-void monitor();
+static void alarm();
+static void monitor();
+static long readValue();
+
 
 static long init_record(plongin,pass)
     struct longinRecord	*plongin;
@@ -114,13 +121,47 @@ static long init_record(plongin,pass)
 
     if (pass==0) return(0);
 
+    /* longin.siml must be a CONSTANT or a PV_LINK or a DB_LINK */
+    switch (plongin->siml.type) {
+    case (CONSTANT) :
+        plongin->simm = plongin->siml.value.value;
+        break;
+    case (PV_LINK) :
+        status = dbCaAddInlink(&(plongin->siml), (void *) plongin, "SIMM");
+	if(status) return(status);
+	break;
+    case (DB_LINK) :
+        break;
+    default :
+        recGblRecordError(S_db_badField,(void *)plongin,
+                "longin: init_record Illegal SIML field");
+        return(S_db_badField);
+    }
+
+    /* longin.siol must be a CONSTANT or a PV_LINK or a DB_LINK */
+    switch (plongin->siol.type) {
+    case (CONSTANT) :
+        plongin->sval = plongin->siol.value.value;
+        break;
+    case (PV_LINK) :
+        status = dbCaAddInlink(&(plongin->siol), (void *) plongin, "SVAL");
+	if(status) return(status);
+	break;
+    case (DB_LINK) :
+        break;
+    default :
+        recGblRecordError(S_db_badField,(void *)plongin,
+                "longin: init_record Illegal SIOL field");
+        return(S_db_badField);
+    }
+
     if(!(pdset = (struct longindset *)(plongin->dset))) {
-	recGblRecordError(S_dev_noDSET,plongin,"longin: init_record");
+	recGblRecordError(S_dev_noDSET,(void *)plongin,"longin: init_record");
 	return(S_dev_noDSET);
     }
     /* must have read_longin function defined */
     if( (pdset->number < 5) || (pdset->read_longin == NULL) ) {
-	recGblRecordError(S_dev_missingSup,plongin,"longin: init_record");
+	recGblRecordError(S_dev_missingSup,(void *)plongin,"longin: init_record");
 	return(S_dev_missingSup);
     }
     if( pdset->init_record ) {
@@ -138,11 +179,11 @@ static long process(plongin)
 
 	if( (pdset==NULL) || (pdset->read_longin==NULL) ) {
 		plongin->pact=TRUE;
-		recGblRecordError(S_dev_missingSup,plongin,"read_longin");
+		recGblRecordError(S_dev_missingSup,(void *)plongin,"read_longin");
 		return(S_dev_missingSup);
 	}
 
-	status=(*pdset->read_longin)(plongin); /* read the new value */
+	status=readValue(plongin); /* read the new value */
 	/* check if device support set pact */
 	if ( !pact && plongin->pact ) return(0);
 	plongin->pact = TRUE;
@@ -153,9 +194,8 @@ static long process(plongin)
 	alarm(plongin);
 	/* check event list */
 	monitor(plongin);
-
 	/* process the forward scan link record */
-	if (plongin->flnk.type==DB_LINK) dbScanPassive(((struct dbAddr *)plongin->flnk.value.db_link.pdbAddr)->precord);
+	recGblFwdLink(plongin);
 
 	plongin->pact=FALSE;
 	return(status);
@@ -223,52 +263,57 @@ static long get_alarm_double(paddr,pad)
 {
     struct longinRecord	*plongin=(struct longinRecord *)paddr->precord;
 
-    pad->upper_alarm_limit = plongin->hihi;
-    pad->upper_warning_limit = plongin->high;
-    pad->lower_warning_limit = plongin->low;
-    pad->lower_alarm_limit = plongin->lolo;
+    if(paddr->pfield==(void *)&plongin->val){
+         pad->upper_alarm_limit = plongin->hihi;
+         pad->upper_warning_limit = plongin->high;
+         pad->lower_warning_limit = plongin->low;
+         pad->lower_alarm_limit = plongin->lolo;
+    } else recGblGetAlarmDouble(paddr,pad);
     return(0);
 }
 
 static void alarm(plongin)
     struct longinRecord	*plongin;
 {
-	long	ftemp;
-	long	val=plongin->val;
+	double		val;
+	float		hyst, lalm, hihi, high, low, lolo;
+	unsigned short	hhsv, llsv, hsv, lsv;
 
 	if(plongin->udf == TRUE ){
-		recGblSetSevr(plongin,UDF_ALARM,VALID_ALARM);
+ 		recGblSetSevr(plongin,UDF_ALARM,INVALID_ALARM);
 		return;
 	}
-	/* if difference is not > hysterisis use lalm not val */
-	ftemp = plongin->lalm - plongin->val;
-	if(ftemp<0) ftemp = -ftemp;
-	if (ftemp < plongin->hyst) val=plongin->lalm;
+	hihi = plongin->hihi; lolo = plongin->lolo; high = plongin->high; low = plongin->low;
+	hhsv = plongin->hhsv; llsv = plongin->llsv; hsv = plongin->hsv; lsv = plongin->lsv;
+	val = plongin->val; hyst = plongin->hyst; lalm = plongin->lalm;
 
-        /* alarm condition hihi */
-        if (val > plongin->hihi && recGblSetSevr(plongin,HIHI_ALARM,plongin->hhsv)){
-                plongin->lalm = val;
-                return;
-        }
+	/* alarm condition hihi */
+	if (hhsv && (val >= hihi || ((lalm==hihi) && (val >= hihi-hyst)))){
+	        if (recGblSetSevr(plongin,HIHI_ALARM,plongin->hhsv)) plongin->lalm = hihi;
+		return;
+	}
 
-        /* alarm condition lolo */
-        if (val < plongin->lolo && recGblSetSevr(plongin,LOLO_ALARM,plongin->llsv)){
-                plongin->lalm = val;
-                return;
-        }
+	/* alarm condition lolo */
+	if (llsv && (val <= lolo || ((lalm==lolo) && (val <= lolo+hyst)))){
+	        if (recGblSetSevr(plongin,LOLO_ALARM,plongin->llsv)) plongin->lalm = lolo;
+		return;
+	}
 
-        /* alarm condition high */
-        if (val > plongin->high && recGblSetSevr(plongin,HIGH_ALARM,plongin->hsv)){
-                plongin->lalm = val;
-                return;
-        }
+	/* alarm condition high */
+	if (hsv && (val >= high || ((lalm==high) && (val >= high-hyst)))){
+	        if (recGblSetSevr(plongin,HIGH_ALARM,plongin->hsv)) plongin->lalm = high;
+		return;
+	}
 
-        /* alarm condition low */
-        if (val < plongin->low && recGblSetSevr(plongin,LOW_ALARM,plongin->lsv)){
-                plongin->lalm = val;
-                return;
-        }
-        return;
+	/* alarm condition low */
+	if (lsv && (val <= low || ((lalm==low) && (val <= low+hyst)))){
+	        if (recGblSetSevr(plongin,LOW_ALARM,plongin->lsv)) plongin->lalm = low;
+		return;
+	}
+
+	/* we get here only if val is out of alarm by at least hyst */
+	plongin->lalm = val;
+	return;
 }
 
 static void monitor(plongin)
@@ -317,4 +362,42 @@ static void monitor(plongin)
 		db_post_events(plongin,&plongin->val,monitor_mask);
 	}
 	return;
+}
+
+static long readValue(plongin)
+	struct longinRecord	*plongin;
+{
+	long		status;
+        struct longindset 	*pdset = (struct longindset *) (plongin->dset);
+	long            nRequest=1;
+
+	if (plongin->pact == TRUE){
+		status=(*pdset->read_longin)(plongin);
+		return(status);
+	}
+
+	status=recGblGetLinkValue(&(plongin->siml),
+		(void *)plongin,DBR_ENUM,&(plongin->simm),&nRequest);
+	if (status)
+		return(status);
+
+	if (plongin->simm == NO){
+		status=(*pdset->read_longin)(plongin);
+		return(status);
+	}
+	if (plongin->simm == YES){
+		status=recGblGetLinkValue(&(plongin->siol),
+				(void *)plongin,DBR_LONG,&(plongin->sval),&nRequest);
+		if (status==0){
+			plongin->val=plongin->sval;
+			plongin->udf=FALSE;
+		}
+	} else {
+		status=-1;
+		recGblSetSevr(plongin,SOFT_ALARM,INVALID_ALARM);
+		return(status);
+	}
+        recGblSetSevr(plongin,SIMM_ALARM,plongin->sims);
+
+	return(status);
 }

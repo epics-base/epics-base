@@ -37,6 +37,8 @@
  * .06  04-10-92        jba     pact now used to test for asyn processing, not status
  * .07  04-18-92        jba     removed process from dev init_record parms
  * .08  06-02-92        jba     changed graphic/control limits for per,oper
+ * .09  07-15-92        jba     changed VALID_ALARM to INVALID alarm
+ * .10  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
  */ 
 
 #include     <vxWorks.h>
@@ -113,10 +115,7 @@ struct ptdset { /* pulseTrain input dset */
 #define CTR_STOP        3
 #define CTR_SETUP       4
 
-void monitor();
-/* Added for Channel Access Links */
-long dbCaAddInlink();
-long dbCaGetLink();
+static void monitor();
 
 
 static long init_record(ppt,pass)
@@ -130,7 +129,7 @@ static long init_record(ppt,pass)
 
     /* must have device support */
     if(!(pdset = (struct ptdset *)(ppt->dset))) {
-         recGblRecordError(S_dev_noDSET,ppt,"pt: init_record");
+         recGblRecordError(S_dev_noDSET,(void *)ppt,"pt: init_record");
          return(S_dev_noDSET);
     }
     /* get the gate value if sgl is a constant*/
@@ -146,7 +145,7 @@ static long init_record(ppt,pass)
 
     /* must have write_pt functions defined */
     if( (pdset->number < 5) || (pdset->write_pt == NULL) ) {
-         recGblRecordError(S_dev_missingSup,ppt,"pt: write_pt");
+         recGblRecordError(S_dev_missingSup,(void *)ppt,"pt: write_pt");
          return(S_dev_missingSup);
     }
     /* call device support init_record */
@@ -169,7 +168,7 @@ static long process(ppt)
     /* must have  write_pt functions defined */
     if( (pdset==NULL) || (pdset->write_pt==NULL) ) {
          ppt->pact=TRUE;
-         recGblRecordError(S_dev_missingSup,ppt,"write_pt");
+         recGblRecordError(S_dev_missingSup,(void *)ppt,"write_pt");
          return(S_dev_missingSup);
     }
 
@@ -183,7 +182,7 @@ static long process(ppt)
                    &ppt->sgv,&options,&nRequest);
               ppt->pact = FALSE;
               if(status!=0) {
-                  recGblSetSevr(ppt,LINK_ALARM,VALID_ALARM);
+                  recGblSetSevr(ppt,LINK_ALARM,INVALID_ALARM);
               }
          }
          if (ppt->sgl.type == CA_LINK){
@@ -191,7 +190,7 @@ static long process(ppt)
               status=dbCaGetLink(&(ppt->sgl));
               ppt->pact = FALSE;
               if(status!=0) {
-                  recGblSetSevr(ppt,LINK_ALARM,VALID_ALARM);
+                  recGblSetSevr(ppt,LINK_ALARM,INVALID_ALARM);
               }
          }
          if(status=0){
@@ -203,7 +202,7 @@ static long process(ppt)
 			status=(*pdset->write_pt)(ppt);
                         ppt->dcy=save;
                    	if(status!=0) {
-                            recGblSetSevr(ppt,WRITE_ALARM,VALID_ALARM);
+                            recGblSetSevr(ppt,WRITE_ALARM,INVALID_ALARM);
                         }
                    }
                    ppt->osgv=ppt->sgv;
@@ -227,7 +226,7 @@ static long process(ppt)
      monitor(ppt);
 
      /* process the forward scan link record */
-     if (ppt->flnk.type==DB_LINK) dbScanPassive(((struct dbAddr *)ppt->flnk.value.db_link.pdbAddr)->precord);
+     recGblFwdLink(ppt);
 
      ppt->pact=FALSE;
      return(status);

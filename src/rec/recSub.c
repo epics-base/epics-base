@@ -38,6 +38,11 @@
  * .06  02-28-92	jba	ANSI C changes
  * .07  04-10-92        jba     pact now used to test for asyn processing, not status
  * .08  06-02-92        jba     changed graphic/control limits for hihi,high,low,lolo
+ * .09  07-15-92        jba     changed VALID_ALARM to INVALID alarm
+ * .10  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
+ * .11  07-21-92        jba     changed alarm limits for non val related fields
+ * .12  08-06-92        jba     New algorithm for calculating analog alarms
+ * .13  08-06-92        jba     monitor now posts events for changes in a-l
  */
 
 #include	<vxWorks.h>
@@ -96,16 +101,12 @@ struct rset subRSET={
 	get_control_double,
 	get_alarm_double };
 
+static void alarm();
+static long do_sub();
+static long fetch_values();
+static void monitor();
+
 #define ARG_MAX 12
-void alarm();
-void monitor();
-long do_sub();
-long fetch_values();
-/* Added for Channel Access Links */
-long dbCaAddInlink();
-long dbCaGetLink();
-#define ARG_MAX 12
- 
  /* Fldnames should have as many as ARG_MAX */
  static char Fldnames[ARG_MAX][FLDNAME_SZ] =
      {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"};
@@ -145,7 +146,7 @@ static long init_record(psub,pass)
     strcat(temp,psub->inam);
     ret = symFindByName(sysSymTbl,temp,(void *)&psub->sadr,(void *)&sub_type);
     if ((ret !=OK) || ((sub_type & N_TEXT) == 0)){
-	recGblRecordError(S_db_BadSub,psub,"recSub(init_record)");
+	recGblRecordError(S_db_BadSub,(void *)psub,"recSub(init_record)");
 	return(S_db_BadSub);
     }
 
@@ -162,7 +163,7 @@ static long init_record(psub,pass)
     strcat(temp,psub->snam);
     ret = symFindByName(sysSymTbl,temp,(void *)&psub->sadr,(void *)&sub_type);
     if ((ret < 0) || ((sub_type & N_TEXT) == 0)){
-	recGblRecordError(S_db_BadSub,psub,"recSub(init_record)");
+	recGblRecordError(S_db_BadSub,(void *)psub,"recSub(init_record)");
 	return(S_db_BadSub);
     }
     psub->styp = sub_type;
@@ -188,7 +189,7 @@ static long process(psub)
         /* check event list */
         monitor(psub);
         /* process the forward scan link record */
-        if (psub->flnk.type==DB_LINK) dbScanPassive(((struct dbAddr *)psub->flnk.value.db_link.pdbAddr)->precord);
+        recGblFwdLink(psub);
         psub->pact = FALSE;
         return(0);
 }
@@ -290,53 +291,57 @@ static long get_alarm_double(paddr,pad)
 {
     struct subRecord	*psub=(struct subRecord *)paddr->precord;
 
-    pad->upper_alarm_limit = psub->hihi;
-    pad->upper_warning_limit = psub->high;
-    pad->lower_warning_limit = psub->low;
-    pad->lower_alarm_limit = psub->lolo;
+    if(paddr->pfield==(void *)&psub->val){
+         pad->upper_alarm_limit = psub->hihi;
+         pad->upper_warning_limit = psub->high;
+         pad->lower_warning_limit = psub->low;
+         pad->lower_alarm_limit = psub->lolo;
+    } else recGblGetAlarmDouble(paddr,pad);
     return(0);
 }
-
 
 static void alarm(psub)
     struct subRecord	*psub;
 {
-	double	ftemp;
-	double	val=psub->val;
+	double		val;
+	float		hyst, lalm, hihi, high, low, lolo;
+	unsigned short	hhsv, llsv, hsv, lsv;
 
-        /* undefined condition */
-	if(psub->udf == TRUE) {
-                if(recGblSetSevr(psub,UDF_ALARM,VALID_ALARM)) return;
-        }
-        /* if difference is not > hysterisis use lalm not val */
-        ftemp = psub->lalm - psub->val;
-        if(ftemp<0.0) ftemp = -ftemp;
-        if (ftemp < psub->hyst) val=psub->lalm;
+	if(psub->udf == TRUE ){
+ 		recGblSetSevr(psub,UDF_ALARM,INVALID_ALARM);
+		return;
+	}
+	hihi = psub->hihi; lolo = psub->lolo; high = psub->high; low = psub->low;
+	hhsv = psub->hhsv; llsv = psub->llsv; hsv = psub->hsv; lsv = psub->lsv;
+	val = psub->val; hyst = psub->hyst; lalm = psub->lalm;
 
-        /* alarm condition hihi */
-        if (val > psub->hihi && recGblSetSevr(psub,HIHI_ALARM,psub->hhsv)){
-                psub->lalm = val;
-                return;
-        }
+	/* alarm condition hihi */
+	if (hhsv && (val >= hihi || ((lalm==hihi) && (val >= hihi-hyst)))){
+	        if (recGblSetSevr(psub,HIHI_ALARM,psub->hhsv)) psub->lalm = hihi;
+		return;
+	}
 
-        /* alarm condition lolo */
-        if (val < psub->lolo && recGblSetSevr(psub,LOLO_ALARM,psub->llsv)){
-                psub->lalm = val;
-                return;
-        }
+	/* alarm condition lolo */
+	if (llsv && (val <= lolo || ((lalm==lolo) && (val <= lolo+hyst)))){
+	        if (recGblSetSevr(psub,LOLO_ALARM,psub->llsv)) psub->lalm = lolo;
+		return;
+	}
 
-        /* alarm condition high */
-        if (val > psub->high && recGblSetSevr(psub,HIGH_ALARM,psub->hsv)){
-                psub->lalm = val;
-                return;
-        }
+	/* alarm condition high */
+	if (hsv && (val >= high || ((lalm==high) && (val >= high-hyst)))){
+	        if (recGblSetSevr(psub,HIGH_ALARM,psub->hsv)) psub->lalm = high;
+		return;
+	}
 
-        /* alarm condition low */
-        if (val < psub->low && recGblSetSevr(psub,LOW_ALARM,psub->lsv)){
-                psub->lalm = val;
-                return;
-        }
-        return;
+	/* alarm condition low */
+	if (lsv && (val <= low || ((lalm==low) && (val <= low+hyst)))){
+	        if (recGblSetSevr(psub,LOW_ALARM,psub->lsv)) psub->lalm = low;
+		return;
+	}
+
+	/* we get here only if val is out of alarm by at least hyst */
+	psub->lalm = val;
+	return;
 }
 
 static void monitor(psub)
@@ -383,14 +388,14 @@ static void monitor(psub)
         /* send out monitors connected to the value field */
         if (monitor_mask){
                 db_post_events(psub,&psub->val,monitor_mask);
-		/* check all input fields for changes*/
-		for(i=0, pnew=&psub->a, pprev=&psub->la; i<ARG_MAX; i++, pnew++, pprev++) {
-			if(*pnew != *pprev) {
-				db_post_events(psub,pnew,monitor_mask|DBE_VALUE);
-				*pprev = *pnew;
-			}
-		}
         }
+	/* check all input fields for changes*/
+	for(i=0, pnew=&psub->a, pprev=&psub->la; i<ARG_MAX; i++, pnew++, pprev++) {
+		if(*pnew != *pprev) {
+			db_post_events(psub,pnew,monitor_mask|DBE_VALUE);
+			*pprev = *pnew;
+		}
+	}
         return;
 }
 
@@ -408,7 +413,7 @@ struct subRecord *psub;
 		{
                     if (dbCaGetLink(plink))
                     {
-                        recGblSetSevr(psub,LINK_ALARM,VALID_ALARM);
+                        recGblSetSevr(psub,LINK_ALARM,INVALID_ALARM);
                         return(-1);
                     } /* endif */
 		}
@@ -421,7 +426,7 @@ struct subRecord *psub;
 			status=dbGetLink(&plink->value.db_link,(struct dbCommon *)psub,DBR_DOUBLE,
 				pvalue,&options,&nRequest);
 			if(status!=0) {
-				recGblSetSevr(psub,LINK_ALARM,VALID_ALARM);
+				recGblSetSevr(psub,LINK_ALARM,INVALID_ALARM);
 				return(-1);
 			}
 		    } /* endif */
@@ -440,7 +445,7 @@ struct subRecord *psub;  /* pointer to subroutine record  */
 	/* call the subroutine */
 	psubroutine = (FUNCPTR)(psub->sadr);
 	if(psubroutine==NULL) {
-               	recGblSetSevr(psub,BAD_SUB_ALARM,VALID_ALARM);
+               	recGblSetSevr(psub,BAD_SUB_ALARM,INVALID_ALARM);
 		return(0);
 	}
 	status = psubroutine(psub);

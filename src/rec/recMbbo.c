@@ -54,6 +54,10 @@
  * .19  02-28-92	jba	ANSI C changes
  * .20  04-10-92        jba     pact now used to test for asyn processing, not status
  * .21  04-18-92        jba     removed process from dev init_record parms
+ * .22  07-15-92        jba     changed VALID_ALARM to INVALID alarm
+ * .23  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
+ * .24  08-14-92        jba     Added simulation processing
+ * .25  08-19-92        jba     Added code for invalid alarm output action
  */
 
 #include	<vxWorks.h>
@@ -121,8 +125,10 @@ struct mbbodset { /* multi bit binary output dset */
 };
 
 
-void alarm();
-void monitor();
+static void alarm();
+static void convert();
+static void monitor();
+static long writeValue();
 
 
 static void init_common(pmbbo)
@@ -153,13 +159,36 @@ static long init_record(pmbbo,pass)
 
     if (pass==0) return(0);
 
+    /* mbbo.siml must be a CONSTANT or a PV_LINK or a DB_LINK */
+    switch (pmbbo->siml.type) {
+    case (CONSTANT) :
+        pmbbo->simm = pmbbo->siml.value.value;
+        break;
+    case (PV_LINK) :
+        status = dbCaAddInlink(&(pmbbo->siml), (void *) pmbbo, "SIMM");
+	if(status) return(status);
+	break;
+    case (DB_LINK) :
+        break;
+    default :
+        recGblRecordError(S_db_badField,(void *)pmbbo,
+                "mbbo: init_record Illegal SIML field");
+        return(S_db_badField);
+    }
+
+    /* mbbo.siol may be a PV_LINK */
+    if (pmbbo->siol.type == PV_LINK){
+        status = dbCaAddOutlink(&(pmbbo->siol), (void *) pmbbo, "VAL");
+	if(status) return(status);
+    }
+
     if(!(pdset = (struct mbbodset *)(pmbbo->dset))) {
-	recGblRecordError(S_dev_noDSET,pmbbo,"mbbo: init_record");
+	recGblRecordError(S_dev_noDSET,(void *)pmbbo,"mbbo: init_record");
 	return(S_dev_noDSET);
     }
     /* must have write_mbbo function defined */
     if( (pdset->number < 5) || (pdset->write_mbbo == NULL) ) {
-	recGblRecordError(S_dev_missingSup,pmbbo,"mbbo: init_record");
+	recGblRecordError(S_dev_missingSup,(void *)pmbbo,"mbbo: init_record");
 	return(S_dev_missingSup);
     }
     if (pmbbo->dol.type == CONSTANT){
@@ -214,7 +243,7 @@ static long process(pmbbo)
 
     if( (pdset==NULL) || (pdset->write_mbbo==NULL) ) {
 	pmbbo->pact=TRUE;
-	recGblRecordError(S_dev_missingSup,pmbbo,"write_mbbo");
+	recGblRecordError(S_dev_missingSup,(void *)pmbbo,"write_mbbo");
 	return(S_dev_missingSup);
     }
 
@@ -233,40 +262,54 @@ static long process(pmbbo)
 		pmbbo->val= val;
 		pmbbo->udf= FALSE;
 	    } else {
-		recGblSetSevr(pmbbo,LINK_ALARM,VALID_ALARM);
-		goto DONT_WRITE;
+		recGblSetSevr(pmbbo,LINK_ALARM,INVALID_ALARM);
+		goto CONTINUE;
 	    }
 	}
 	if(pmbbo->udf==TRUE) {
-		recGblSetSevr(pmbbo,UDF_ALARM,VALID_ALARM);
-		goto DONT_WRITE;
+		recGblSetSevr(pmbbo,UDF_ALARM,INVALID_ALARM);
+		goto CONTINUE;
 	}
-	if(pmbbo->sdef) {
-	    unsigned long *pvalues = &(pmbbo->zrvl);
-
-	    if(pmbbo->val>15) {
-		recGblSetSevr(pmbbo,SOFT_ALARM,VALID_ALARM);
-		goto DONT_WRITE;
-	    }
-	    pmbbo->rval = pvalues[pmbbo->val];
-	} else pmbbo->rval = (unsigned long)(pmbbo->val);
-	if(pmbbo->shft>0) pmbbo->rval <<= pmbbo->shft;
+	/* convert val to rval */
+	convert(pmbbo);
     }
 
-    status=(*pdset->write_mbbo)(pmbbo); /* write the new value */
-DONT_WRITE:
+CONTINUE:
+    /* check for alarms */
+    alarm(pmbbo);
+
+    if (pmbbo->nsev < INVALID_ALARM )
+            status=writeValue(pmbbo); /* write the new value */
+    else {
+            switch (pmbbo->ivoa) {
+                case (IVOA_CONTINUE) :
+                    status=writeValue(pmbbo); /* write the new value */
+                    break;
+                case (IVOA_NO_OUTPUT) :
+                    break;
+                case (IVOA_OUTPUT_IVOV) :
+                    if (pmbbo->pact == FALSE){
+			pmbbo->val=pmbbo->ivov;
+			convert(pmbbo);
+		    }
+                    status=writeValue(pmbbo); /* write the new value */
+                    break;
+                default :
+                    status=-1;
+                    recGblRecordError(S_db_badField,(void *)pmbbo,
+                            "ao:process Illegal IVOA field");
+            }
+    }
+
     /* check if device support set pact */
     if ( !pact && pmbbo->pact ) return(0);
     pmbbo->pact = TRUE;
 
     tsLocalTime(&pmbbo->time);
-    /* check for alarms */
-    alarm(pmbbo);
     /* check event list */
     monitor(pmbbo);
     /* process the forward scan link record */
-    if(pmbbo->flnk.type==DB_LINK)
-	dbScanPassive(((struct dbAddr *)pmbbo->flnk.value.db_link.pdbAddr)->precord);
+    recGblFwdLink(pmbbo);
     pmbbo->pact=FALSE;
     return(status);
 }
@@ -420,4 +463,59 @@ static void monitor(pmbbo)
                 pmbbo->orbv = pmbbo->rbv;
         }
         return;
+}
+
+static void convert(pmbbo)
+	struct mbboRecord  *pmbbo;
+{
+	unsigned long *pvalues = &(pmbbo->zrvl);
+
+	/* convert val to rval */
+	if(pmbbo->sdef) {
+
+	    if(pmbbo->val>15) {
+		recGblSetSevr(pmbbo,SOFT_ALARM,INVALID_ALARM);
+		return;
+	    }
+	    pmbbo->rval = pvalues[pmbbo->val];
+	} else pmbbo->rval = (unsigned long)(pmbbo->val);
+	if(pmbbo->shft>0) pmbbo->rval <<= pmbbo->shft;
+
+	return;
+}
+
+
+
+static long writeValue(pmbbo)
+	struct mbboRecord	*pmbbo;
+{
+	long		status;
+        struct mbbodset 	*pdset = (struct mbbodset *) (pmbbo->dset);
+	long            nRequest=1;
+
+	if (pmbbo->pact == TRUE){
+		status=(*pdset->write_mbbo)(pmbbo);
+		return(status);
+	}
+
+	status=recGblGetLinkValue(&(pmbbo->siml),
+		(void *)pmbbo,DBR_ENUM,&(pmbbo->simm),&nRequest);
+	if (status)
+		return(status);
+
+	if (pmbbo->simm == NO){
+		status=(*pdset->write_mbbo)(pmbbo);
+		return(status);
+	}
+	if (pmbbo->simm == YES){
+		status=recGblPutLinkValue(&(pmbbo->siol),
+				(void *)pmbbo,DBR_USHORT,&(pmbbo->val),&nRequest);
+	} else {
+		status=-1;
+		recGblSetSevr(pmbbo,SOFT_ALARM,INVALID_ALARM);
+		return(status);
+	}
+        recGblSetSevr(pmbbo,SIMM_ALARM,pmbbo->sims);
+
+	return(status);
 }

@@ -58,6 +58,10 @@
  * .22  03-03-92	jba	Changed callback handling
  * .23  04-10-92        jba     pact now used to test for asyn processing, not status
  * .24  04-18-92        jba     removed process from dev init_record parms
+ * .25  07-15-92        jba     changed VALID_ALARM to INVALID alarm
+ * .26  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
+ * .27  08-14-92        jba     Added simulation processing
+ * .28  08-19-92        jba     Added code for invalid alarm output action
  */
 
 #include	<vxWorks.h>
@@ -135,11 +139,11 @@ struct callback {
         WDOG_ID wd_id;
 };
 
+static void alarm();
+static void monitor();
+static long writeValue();
+
 void callbackRequest();
-void alarm();
-void monitor();
-
-
 
 static void myCallback(pcallback)
     struct callback *pcallback;
@@ -164,13 +168,36 @@ static long init_record(pbo,pass)
 
     if (pass==0) return(0);
 
+    /* bo.siml must be a CONSTANT or a PV_LINK or a DB_LINK */
+    switch (pbo->siml.type) {
+    case (CONSTANT) :
+        pbo->simm = pbo->siml.value.value;
+        break;
+    case (PV_LINK) :
+        status = dbCaAddInlink(&(pbo->siml), (void *) pbo, "SIMM");
+	if(status) return(status);
+	break;
+    case (DB_LINK) :
+        break;
+    default :
+        recGblRecordError(S_db_badField,(void *)pbo,
+                "bo: init_record Illegal SIML field");
+        return(S_db_badField);
+    }
+
+    /* bo.siol may be a PV_LINK */
+    if (pbo->siol.type == PV_LINK){
+        status = dbCaAddOutlink(&(pbo->siol), (void *) pbo, "VAL");
+	if(status) return(status);
+    }
+
     if(!(pdset = (struct bodset *)(pbo->dset))) {
-	recGblRecordError(S_dev_noDSET,pbo,"bo: init_record");
+	recGblRecordError(S_dev_noDSET,(void *)pbo,"bo: init_record");
 	return(S_dev_noDSET);
     }
     /* must have  write_bo functions defined */
     if( (pdset->number < 5) || (pdset->write_bo == NULL) ) {
-	recGblRecordError(S_dev_missingSup,pbo,"bo: init_record");
+	recGblRecordError(S_dev_missingSup,(void *)pbo,"bo: init_record");
 	return(S_dev_missingSup);
     }
     /* get the initial value */
@@ -205,7 +232,7 @@ static long process(pbo)
 
 	if( (pdset==NULL) || (pdset->write_bo==NULL) ) {
 		pbo->pact=TRUE;
-		recGblRecordError(S_dev_missingSup,pbo,"write_bo");
+		recGblRecordError(S_dev_missingSup,(void *)pbo,"write_bo");
 		return(S_dev_missingSup);
 	}
         if (!pbo->pact) {
@@ -222,17 +249,47 @@ static long process(pbo)
 				pbo->val = val;
 				pbo->udf = FALSE;
 			}else {
-       				recGblSetSevr(pbo,LINK_ALARM,VALID_ALARM);
+       				recGblSetSevr(pbo,LINK_ALARM,INVALID_ALARM);
 			}
 		}
+
+		/* convert val to rval */
 		if ( pbo->mask != 0 ) {
 			if(pbo->val==0) pbo->rval = 0;
 			else pbo->rval = pbo->mask;
 		} else pbo->rval = (unsigned long)pbo->val;
 	}
-	if(status==0) {
-	     status=(*pdset->write_bo)(pbo); /* write the new value */
- 	}
+
+	/* check for alarms */
+	alarm(pbo);
+
+        if (pbo->nsev < INVALID_ALARM )
+                status=writeValue(pbo); /* write the new value */
+        else {
+                switch (pbo->ivoa) {
+                    case (IVOA_CONTINUE) :
+                        status=writeValue(pbo); /* write the new value */
+                        break;
+                    case (IVOA_NO_OUTPUT) :
+                        break;
+                    case (IVOA_OUTPUT_IVOV) :
+                        if(pbo->pact == FALSE){
+				/* convert val to rval */
+                                pbo->val=pbo->ivov;
+				if ( pbo->mask != 0 ) {
+					if(pbo->val==0) pbo->rval = 0;
+					else pbo->rval = pbo->mask;
+				} else pbo->rval = (unsigned long)pbo->val;
+			}
+                        status=writeValue(pbo); /* write the new value */
+                        break;
+                    default :
+                        status=-1;
+                        recGblRecordError(S_db_badField,(void *)pbo,
+                                "ao:process Illegal IVOA field");
+                }
+        }
+
 	/* check if device support set pact */
 	if ( !pact && pbo->pact ) return(0);
 	pbo->pact = TRUE;
@@ -246,12 +303,10 @@ static long process(pbo)
                 callbackSetPriority(pbo->prio,pcallback);
                	wdStart(pcallback->wd_id,wait_time,callbackRequest,(int)pcallback);
 	}
-	/* check for alarms */
-	alarm(pbo);
 	/* check event list */
 	monitor(pbo);
 	/* process the forward scan link record */
-	if (pbo->flnk.type==DB_LINK) dbScanPassive(((struct dbAddr *)pbo->flnk.value.db_link.pdbAddr)->precord);
+	recGblFwdLink(pbo);
 
 	pbo->pact=FALSE;
 	return(status);
@@ -316,7 +371,7 @@ static void alarm(pbo)
 
         /* check for udf alarm */
         if(pbo->udf == TRUE ){
-			recGblSetSevr(pbo,UDF_ALARM,VALID_ALARM);
+			recGblSetSevr(pbo,UDF_ALARM,INVALID_ALARM);
         }
 
         /* check for  state alarm */
@@ -373,4 +428,38 @@ static void monitor(pbo)
 		pbo->orbv = pbo->rbv;
 	}
         return;
+}
+
+static long writeValue(pbo)
+	struct boRecord	*pbo;
+{
+	long		status;
+        struct bodset 	*pdset = (struct bodset *) (pbo->dset);
+	long            nRequest=1;
+
+	if (pbo->pact == TRUE){
+		status=(*pdset->write_bo)(pbo);
+		return(status);
+	}
+
+	status=recGblGetLinkValue(&(pbo->siml),
+		(void *)pbo,DBR_ENUM,&(pbo->simm),&nRequest);
+	if (status)
+		return(status);
+
+	if (pbo->simm == NO){
+		status=(*pdset->write_bo)(pbo);
+		return(status);
+	}
+	if (pbo->simm == YES){
+		status=recGblPutLinkValue(&(pbo->siol),
+				(void *)pbo,DBR_USHORT,&(pbo->val),&nRequest);
+	} else {
+		status=-1;
+		recGblSetSevr(pbo,SOFT_ALARM,INVALID_ALARM);
+		return(status);
+	}
+        recGblSetSevr(pbo,SIMM_ALARM,pbo->sims);
+
+	return(status);
 }

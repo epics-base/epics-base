@@ -1,6 +1,6 @@
-/* osi/osiFindGlobalSymbol.c */
+/* osi/os/default/epicsFindGlobalSymbol.c */
 
 #define epicsExportSharedSymbols
-#include "osiFindGlobalSymbol.h"
+#include "epicsFindGlobalSymbol.h"
 
-epicsShareFunc void * epicsShareAPI osiFindGlobalSymbol(const char *name) { return 0;}
+epicsShareFunc void * epicsShareAPI epicsFindGlobalSymbol(const char *name) { return 0;}

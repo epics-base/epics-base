@@ -451,7 +451,8 @@ ioEventTask()
         semTake(&ioEventSem);
 
        /* process requests in the command ring buffer */
-        while (rngBufGet(ioEventQ,pintr_event,INTR_EVENT_SZ) == INTR_EVENT_SZ){
+        while (rngNBytes(ioEventQ)>=INTR_EVENT_SZ){
+                rngBufGet(ioEventQ,pintr_event,INTR_EVENT_SZ);
 		/* find the event list */
 		event_index = 0;
 		pio_event_list = &io_event_lists[0];
@@ -541,7 +542,8 @@ eventTask()
         semTake(&eventSem);
 
        /* process requests in the command ring buffer */
-        while (rngBufGet(eventQ,&event,sizeof(short)) == sizeof(short)){
+        while (rngNBytes(ioEventQ)>=sizeof(short)){
+                rngBufGet(eventQ,&event,sizeof(short));
 
 		/* find the event list */
 		event_index = 0;
@@ -656,7 +658,8 @@ callbackTask(){
 callbackRequest(pcallback)
     struct callback *pcallback;
 {
-    if(rngBufPut(callbackQ,&pcallback,sizeof(pcallback))!=sizeof(pcallback)) {
+    if(rngNBytes(ioEventQ)>=sizeof(pcallback)) {
+        rngBufPut(callbackQ,&pcallback,sizeof(pcallback));
 	logMsg("callbackQ full\n");
     } else {
 	semGive(&callbackSem);

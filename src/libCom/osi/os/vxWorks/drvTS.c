@@ -1107,18 +1107,18 @@ TSgetBroadcastAddr() - use the libCom/osi/osiSock.h calls
 long TSgetBroadcastAddr(int soc, struct sockaddr* sin)
 {
     ELLLIST         tmpList;
-    osiIntfAddrNode *pNode;
+    osiSockAddrNode *pNode;
 
     ellInit ( &tmpList );
-    osiSockDiscoverInterfaceAddresses ( &tmpList,soc,(const osiSockAddr*)sin);
+    osiSockDiscoverBroadcastAddresses ( &tmpList,soc,(const osiSockAddr*)sin);
     /* take first */
-    pNode = (osiIntfAddrNode *)ellFirst(&tmpList);
+    pNode = (osiSockAddrNode *)ellFirst(&tmpList);
     if(!pNode) {
         printf("no broadcast address found\n"); return -1;
     }
-    memcpy((char*)sin,(char*)&pNode->allPointsAddr,sizeof(struct sockaddr));
+    memcpy((char*)sin,(char*)&pNode->addr,sizeof(struct sockaddr));
     /* cleanup */
-    while((pNode = (osiIntfAddrNode *)ellFirst(&tmpList))) {
+    while((pNode = (osiSockAddrNode *)ellFirst(&tmpList))) {
         ellDelete(&tmpList,(ELLNODE *)pNode);
         free(pNode);
     }

@@ -29,6 +29,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.37  1998/05/08 00:20:56  jhill
+ * added missing call to freeListCleanup()
+ *
  * Revision 1.36  1998/05/05 16:07:59  jhill
  * Use lock macros and task variable in ca_extra_event_labor()
  *
@@ -666,29 +669,6 @@ char *localUserName()
 	pTmp[length-1] = '\0';
 
 	return pTmp;
-}
-
-
-
-/*
- * caHostFromInetAddr()
- */
-void caHostFromInetAddr(
-const struct in_addr 	*pnet_addr, 
-char 			*pBuf, 
-unsigned 		size)
-{
-        char    str[INET_ADDR_LEN];
-
-	inet_ntoa_b(*pnet_addr, str);
-
-        /*
-         * force null termination
-         */
-        strncpy(pBuf, str, size-1);
-        pBuf[size-1] = '\0';
-
-        return;
 }
 
 /*

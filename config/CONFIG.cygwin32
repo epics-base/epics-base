@@ -62,12 +62,14 @@ LD_FLAGS_ANSI = $($(ANSI)_LD_FLAGS)
 LD_FLAGS_STRICT = $($(ANSI)_LD_FLAGS)
 CCOMPILER_LDFLAGS = $(LD_FLAGS_$(CMPLR))
 
-G++_NORMAL_INVOKE_W_NO = $(G++) -ansi -pedantic -w
-G++_NORMAL_INVOKE_W_YES = $(G++) -ansi -pedantic -Wall
+G++_TEMPL_INST_FLAG = -DEXPL_TEMPL 
+G++_NORMAL_INVOKE_W_NO = $(G++) -ansi -pedantic -w $(G++_TEMPL_INST_FLAG)
+G++_NORMAL_INVOKE_W_YES = $(G++) -ansi -pedantic -Wall $(G++_TEMPL_INST_FLAG)
 G++_STRICT_INVOKE_W_YES = $(G++) -ansi -pedantic -Wtraditional -Wall \
       -Wmissing-prototypes -Woverloaded-virtual \
       -Wwrite-strings -Wconversion -Wstrict-prototypes\
-      -Wpointer-arith -Winline
+      -Wpointer-arith -Winline $(G++_TEMPL_INST_FLAG)
+
 
 CXX_NORMAL = $($(CPLUSPLUS)_NORMAL_INVOKE_W_$(UNIX_WARN))
 CXX_STRICT = $($(CPLUSPLUS)_STRICT_INVOKE_W_YES)

@@ -40,10 +40,10 @@ int main ( int argc, char **argv )
         aBoolean = 0;
     }
 	if ( aBoolean ) {
-		preempt = ca_disable_preemptive_callback;
+		preempt = ca_enable_preemptive_callback;
 	}
 	else {
-		preempt = ca_enable_preemptive_callback;
+		preempt = ca_disable_preemptive_callback;
 	}
 
     acctst ( argv[1], channelCount, repetitionCount, preempt );

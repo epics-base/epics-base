@@ -15,6 +15,22 @@
 </center>
 
 <center>
+<h2>Changes since 3.14.2</h2>
+</center>
+
+<p><strong>epicsMessageQueue</strong></p>
+<p>The epicsMessageQueue API has been changed.  All functions and methods
+to receive a message now have an additional argument which specifies the size
+of the receiver buffer.  The receive functions/methods return -1 and the
+received message is discarded if the received message will not fit in the
+buffer.
+See the Application Developer's Guide (libCom OSI) for details.</p>
+<p>
+This is an incompatible change.  All R3.14.2 applications which use
+epicsMessageQueue must be modified before they can be compiled and
+used with R3.14.3</p>
+
+<center>
 <h2>Changes since 3.14.1</h2>
 </center>
 

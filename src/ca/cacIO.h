@@ -95,9 +95,9 @@ public:
     bool writePermit () const;
     bool operatorConfirmationRequest () const;
 private:
-    unsigned f_readPermit:1;
-    unsigned f_writePermit:1;
-    unsigned f_operatorConfirmationRequest:1;
+    bool f_readPermit:1;
+    bool f_writePermit:1;
+    bool f_operatorConfirmationRequest:1;
 };
 
 class epicsShareClass cacChannelNotify {
@@ -266,17 +266,17 @@ inline void caAccessRights::clrOperatorConfirmationRequest ()
 
 inline bool caAccessRights::readPermit () const
 {
-    return static_cast < bool > ( this->f_readPermit );
+    return this->f_readPermit;
 }
 
 inline bool caAccessRights::writePermit () const
 {
-    return static_cast < bool > ( this->f_writePermit );
+    return this->f_writePermit;
 }
 
 inline bool caAccessRights::operatorConfirmationRequest () const
 {
-    return static_cast < bool > ( this->f_operatorConfirmationRequest );
+    return this->f_operatorConfirmationRequest;
 }
 
 #endif // ifndef cacIOh

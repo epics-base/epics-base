@@ -170,6 +170,7 @@ epicsShareFunc void epicsShareAPI freeListCleanup(void *pvt)
 	free(phead);
 	phead = pnext;
     }
+    semMutexDestroy(pfl->lock);
     free(pvt);
 }
 

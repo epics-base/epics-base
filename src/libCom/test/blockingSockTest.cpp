@@ -210,7 +210,6 @@ void blockingSockTest ()
     //addr.ia.sin_addr.s_addr = epicsHTON32 ( 0x80A5A07F ); 
     addr.ia.sin_port = epicsHTON16 ( 5064 ); // CA
 
-    server srv ( addr );
     clientCircuit client ( addr );
 
     epicsThreadSleep ( 1.0 );
@@ -256,3 +255,4 @@ void blockingSockTest ()
     printf ( "The epicsSocketSystemCallInterruptMechanismQuery() function returns\n\"%s\".\n",
         pStr );
 }
+

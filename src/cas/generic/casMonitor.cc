@@ -108,36 +108,43 @@ void casMonitor::push ( const smartConstGDDPointer & pNewValue )
 		|| client.eventSysIsFull ();
 	casMonEvent * pLog;
 	if ( ! full ) {
-        pLog = & client.casMonEventFactory ( *this, pNewValue );
-		if ( pLog ) {
+        try {
+            // I should get rid of this try block by implementing a no 
+            // throw version of the free list alloc
+            pLog = & client.casMonEventFactory ( *this, pNewValue );
 			this->nPend++; // X aCC 818
-		}
+        }
+        catch ( ... ) {
+            pLog = 0;
+        }
 	}
 	else {
-		pLog = NULL;
+		pLog = 0;
 	}
 	
 	if ( this->ovf ) {
 		if ( pLog ) {
-			//
 			// swap values
-			// (ugly - but avoids purify ukn sym type problem)
-			// (better to create a temp event object)
-			//
-			smartConstGDDPointer pValue = this->overFlowEvent.getValue ();
-            if ( ! pValue ) {
-                assert ( 0 );
+			smartConstGDDPointer pOldValue = this->overFlowEvent.getValue ();
+            if ( ! pOldValue ) {
+                assert ( 0 ); // due to limitations in class smartConstGDDPointer
             }
-			this->overFlowEvent = *pLog;
-			pLog->assign ( *this, pValue );
+            // copy old OVF value into the new entry which must remain
+            // ordered in the queue where the OVF entry was before
+			pLog->assign ( *this, pOldValue );
+            // copy new value into OVF event entry which must be last
+			this->overFlowEvent.assign ( *this, *pNewValue ); 
+            // this inserts it out of order, but this is fixed below when the 
+            // overflow event is removed from the queue 
 			client.insertEventQueue ( *pLog, this->overFlowEvent );
 		}
 		else {
-			//
-			// replace the value with the current one
-			//
+			// replace the old OVF value with the current one
 			this->overFlowEvent.assign ( *this, pNewValue );
 		}
+        // remove OVF entry (with its new value) from the queue so
+        // that it ends up properly ordered at the back of the
+        // queue
 		client.removeFromEventQueue ( this->overFlowEvent );
 		pLog = & this->overFlowEvent;
 	}

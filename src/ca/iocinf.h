@@ -20,6 +20,7 @@
 /*	.09 111891 joh	added event task id for vxWorks			*/
 /*	.10 111991 joh	mobe IODONESUB macro to service.c		*/
 /*	.11 031692 joh	added declaration for post_msg()		*/
+/*	.12 031892 joh	initial rebroadcast delay is now a #define	*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -107,8 +108,9 @@ struct pending_io_event{
   void			*io_done_arg;
 };
 
-typedef unsigned long	ca_time;
-#define CA_RETRY_PERIOD	5		/* sec to next keepalive */
+typedef unsigned long ca_time;
+#define CA_RETRY_PERIOD	5		/* int sec to next keepalive */
+#define CA_RECAST_DELAY	1		/* initial int sec to next recast */
 #define CA_CURRENT_TIME 0
 
 #define MAX_CONTIGUOUS_MSG_COUNT 2

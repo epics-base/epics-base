@@ -31,6 +31,7 @@
  * Modification Log:
  * -----------------
  * nnn mm-dd-yy          nnn     Comment
+ * .02  05-18-92        rcz     New database access
  */
 #include     <vxWorks.h>
 #include     <types.h>
@@ -39,6 +40,9 @@
 
 #include     <cvtTable.h>
 #include     <dbAccess.h>
+#include     <dbBase.h>
+
+extern struct dbBase *pdbBase;
 
 
 
@@ -56,15 +60,16 @@ long cvtRawToEngBpt(pval,linr,init,ppbrk,plbrk)
      struct brkInt   *pnxtInt;
      short            lbrk;
      int              number;
+     struct arrBrkTable *pcvtTable;
 
      if(linr < 2) return(-1);
      if(init==TRUE) { /*must find breakpoint table*/
-         if( !cvtTable || (cvtTable->number < linr)
-         ||  (!(cvtTable->papBrkTable[linr]))) {
+         if( !(pcvtTable=pdbBase->pcvtTable) || (pcvtTable->number < linr)
+         ||  (!(pcvtTable->papBrkTable[linr]))) {
                  errMessage(S_db_badField,"Breakpoint Table not Found");
                  return(S_db_badField);
          }
-         *ppbrk = (caddr_t)(cvtTable->papBrkTable[linr]);
+         *ppbrk = (caddr_t)(pcvtTable->papBrkTable[linr]);
          /* Just start at the beginning */
          *plbrk=0;
      }
@@ -113,16 +118,17 @@ long cvtEngToRawBpt(pval,linr,init,ppbrk,plbrk)
      struct brkInt   *pnxtInt;
      short         lbrk;
      int         number;
+     struct arrBrkTable *pcvtTable;
 
 
      if(linr < 2) return(-1);
      if(init==TRUE) { /*must find breakpoint table*/
-         if( !cvtTable || (cvtTable->number < linr)
-         ||  (!(cvtTable->papBrkTable[linr]))) {
+         if( !(pcvtTable=pdbBase->pcvtTable) || (pcvtTable->number < linr)
+         ||  (!(pcvtTable->papBrkTable[linr]))) {
                  errMessage(S_db_badField,"Breakpoint Table not Found");
                  return(S_db_badField);
          }
-         *ppbrk = (caddr_t)(cvtTable->papBrkTable[linr]);
+         *ppbrk = (caddr_t)(pcvtTable->papBrkTable[linr]);
          /* Just start at the beginning */
          *plbrk=0;
      }

@@ -41,7 +41,7 @@ volatile int callbackRestart=FALSE;
 static int priorityValue[NUM_CALLBACK_PRIORITIES] = {0,1,2};
 
 /* forward references */
-static void wdCallback(int *ind); /*callback from taskwd*/
+static void wdCallback(void *ind); /*callback from taskwd*/
 static void start(int ind); /*start or restart a callbackTask*/
 
 /*public routines */
@@ -135,13 +135,13 @@ static void start(int ind)
 	errMessage(0,"Failed to spawn a callback task");
 	return;
     }
-    taskwdInsert(callbackTaskId[ind],wdCallback,&priorityValue[ind]);
+    taskwdInsert(callbackTaskId[ind],wdCallback,(void *)&priorityValue[ind]);
 }
 
 
-static void wdCallback(int *pind)
+static void wdCallback(void *pind)
 {
-    int ind = *pind;
+    int ind = *(int *)pind;
     taskwdRemove(callbackTaskId[ind]);
     if(!callbackRestart)return;
     threadDestroy(callbackTaskId[ind]);

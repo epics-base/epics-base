@@ -47,9 +47,10 @@
  *                        are saved in recPvtStruct. Restored when FFO set to 0.
  * .09  02-02-95  nda     fixed order of posting monitors to be what people
  *                        expect (i.e. .cpt, .pxdv, .dxcv)
+ * .10  02-10-95  nda     fixed on-the-fly so 1st step is to end position
  */
 
-#define VERSION 1.09
+#define VERSION 1.10
 
 
 
@@ -937,6 +938,7 @@ struct scanRecord *pscan;
 {
   struct recPvtStruct *precPvt = (struct recPvtStruct *)pscan->rpvt;
   long  status;
+  long  nRequest = 1;
   long  options = 0;
 
   pscan->cpt = 0;
@@ -1106,8 +1108,8 @@ struct scanRecord *pscan;
                 pscan->p1dv = pscan->p1pa[pscan->cpt];
             } 
             else {
-                /* this is on-the-fly, so set to second position */
-                pscan->p1dv = pscan->p1sp + pscan->p1si;
+                /* this is on-the-fly, so set to end position */
+                pscan->p1dv = pscan->p1ep;
                 pscan->p1pa[pscan->cpt] = pscan->p1dv;
             }
             if(pscan->p2sm == REC_SCAN_MO_LIN) {
@@ -1118,8 +1120,8 @@ struct scanRecord *pscan;
                 pscan->p2dv = pscan->p2pa[pscan->cpt];
             } 
             else {
-                /* this is on-the-fly, so set to second position */
-                pscan->p2dv = pscan->p2sp + pscan->p2si;
+                /* this is on-the-fly, so set to end position */
+                pscan->p2dv = pscan->p2ep;
                 pscan->p2pa[pscan->cpt] = pscan->p2dv;
             }
             if(pscan->p3sm == REC_SCAN_MO_LIN) {
@@ -1130,8 +1132,8 @@ struct scanRecord *pscan;
                 pscan->p3dv = pscan->p3pa[pscan->cpt];
             } 
             else {
-                /* this is on-the-fly, so set to second position */
-                pscan->p3dv = pscan->p3sp + pscan->p3si;
+                /* this is on-the-fly, so set to end position */
+                pscan->p3dv = pscan->p3ep;
                 pscan->p3pa[pscan->cpt] = pscan->p3dv;
             }
             if(pscan->p4sm == REC_SCAN_MO_LIN) {
@@ -1142,8 +1144,8 @@ struct scanRecord *pscan;
                 pscan->p4dv = pscan->p4pa[pscan->cpt];
             } 
             else {
-                /* this is on-the-fly, so set to second position */
-                pscan->p4dv = pscan->p4sp + pscan->p4si;
+                /* this is on-the-fly, so set to end position */
+                pscan->p4dv = pscan->p4ep;
                 pscan->p4pa[pscan->cpt] = pscan->p4dv;
             }
 
@@ -1249,6 +1251,7 @@ void doPuts(precPvt)
    struct recPvtStruct *precPvt;
 {
 static long status;
+static long nRequest = 1;
 
   if(scanRecDebug > 4) {
       printf("DoPuts; phase = %d\n", (int)precPvt->phase); 

@@ -25,10 +25,6 @@
 #   if _MSC_VER >= 1200
 #       define NETIO_PLACEMENT_DELETE
 #   endif
-#elif defined (__GNUC__) && 0
-#   if __GNUC__>2 || ( __GNUC__==2 && __GNUC_MINOR_>=96 )
-#	    define NETIO_PLACEMENT_DELETE
-#   endif
 #else
 #   define NETIO_PLACEMENT_DELETE
 #endif
@@ -89,6 +85,8 @@ private:
     netSubscription ( nciu &chan, unsigned type, arrayElementCount count, 
         unsigned mask, cacStateNotify &notify );
     class netSubscription * isSubscription ();
+    void * operator new ( size_t );
+    void operator delete ( void * );
     void * operator new ( size_t, 
         tsFreeList < class netSubscription, 1024, epicsMutexNOOP > & );
 #   if defined ( NETIO_PLACEMENT_DELETE )
@@ -98,12 +96,6 @@ private:
     netSubscription ( const netSubscription & );
     netSubscription & operator = ( const netSubscription & );
     ~netSubscription ();
-#   if defined (_MSC_VER) && _MSC_VER <= 1300 
-        void operator delete ( void * ); // avoid visual c++ 7 bug
-#   endif
-#   if __GNUC__==2 && __GNUC_MINOR_<=96 
-        void operator delete ( void *, size_t ); // avoid gnu g++ bug
-#   endif
 };
 
 class netReadNotifyIO : public baseNMIU {
@@ -122,6 +114,8 @@ public:
 private:
     cacReadNotify & notify;
     netReadNotifyIO ( nciu & chan, cacReadNotify & notify );
+    void * operator new ( size_t );
+    void operator delete ( void * );
     void * operator new ( size_t, 
         tsFreeList < class netReadNotifyIO, 1024, epicsMutexNOOP > & );
 #   if defined ( NETIO_PLACEMENT_DELETE )
@@ -131,12 +125,6 @@ private:
     ~netReadNotifyIO ();
     netReadNotifyIO ( const netReadNotifyIO & );
     netReadNotifyIO & operator = ( const netReadNotifyIO & );
-#   if defined (_MSC_VER) && _MSC_VER <= 1300
-        void operator delete ( void * ); // avoid visual c++ 7 bug
-#   endif
-#   if __GNUC__==2 && __GNUC_MINOR_<=96 
-        void operator delete ( void *, size_t ); // avoid gnu g++ bug
-#   endif
 };
 
 class netWriteNotifyIO : public baseNMIU {
@@ -155,6 +143,8 @@ public:
 private:
     cacWriteNotify &notify;
     netWriteNotifyIO ( nciu &chan, cacWriteNotify &notify );
+    void * operator new ( size_t );
+    void operator delete ( void * );
     void * operator new ( size_t, 
         tsFreeList < class netWriteNotifyIO, 1024, epicsMutexNOOP > & );
 #   if defined ( NETIO_PLACEMENT_DELETE )
@@ -164,12 +154,6 @@ private:
     netWriteNotifyIO ( const netWriteNotifyIO & );
     netWriteNotifyIO & operator = ( const netWriteNotifyIO & );
     ~netWriteNotifyIO ();
-#   if defined (_MSC_VER) && _MSC_VER <= 1300
-        void operator delete ( void * ); // avoid visual c++ 7 bug
-#   endif
-#   if __GNUC__==2 && __GNUC_MINOR_<=96 
-        void operator delete ( void *, size_t ); // avoid gnu g++ bug
-#   endif
 };
 
 inline ca_uint32_t baseNMIU::getID () const
@@ -186,6 +170,24 @@ inline void * netSubscription::operator new ( size_t size,
     tsFreeList < class netSubscription, 1024, epicsMutexNOOP > &freeList )
 {
     return freeList.allocate ( size );
+}
+
+#if defined ( NETIO_PLACEMENT_DELETE )
+    inline void netSubscription::operator delete ( void *pCadaver, 
+        tsFreeList < class netSubscription, 1024, epicsMutexNOOP > &freeList )
+    {
+        freeList.release ( pCadaver, sizeof ( netSubscription ) );
+    }
+#endif
+
+inline void * netSubscription::operator new ( size_t sizeIn )
+{
+    return ::operator new ( sizeIn );
+}
+
+inline void netSubscription::operator delete ( void * p )
+{
+    ::operator delete ( p );
 }
 
 inline netSubscription * netSubscription::factory ( 
@@ -231,6 +233,24 @@ inline void * netReadNotifyIO::operator new ( size_t size,
     return freeList.allocate ( size );
 }
 
+#if defined ( NETIO_PLACEMENT_DELETE )
+    inline void netReadNotifyIO::operator delete ( void *pCadaver, 
+        tsFreeList < class netReadNotifyIO, 1024, epicsMutexNOOP > &freeList )
+    {
+        freeList.release ( pCadaver, sizeof ( netWriteNotifyIO ) );
+    }
+#endif
+
+inline void * netReadNotifyIO::operator new ( size_t sizeIn )
+{
+    return ::operator new ( sizeIn );
+}
+
+inline void netReadNotifyIO::operator delete ( void * p )
+{
+    ::operator delete ( p );
+}
+
 inline netWriteNotifyIO * netWriteNotifyIO::factory ( 
     tsFreeList < class netWriteNotifyIO, 1024, epicsMutexNOOP > &freeList, 
     nciu &chan, cacWriteNotify &notify )
@@ -242,6 +262,24 @@ inline void * netWriteNotifyIO::operator new ( size_t size,
         tsFreeList < class netWriteNotifyIO, 1024, epicsMutexNOOP > &freeList )
 { 
     return freeList.allocate ( size );
+}
+
+#if defined ( NETIO_PLACEMENT_DELETE )
+    inline void netWriteNotifyIO::operator delete ( void *pCadaver, 
+        tsFreeList < class netWriteNotifyIO, 1024, epicsMutexNOOP > &freeList )
+    {
+        freeList.release ( pCadaver, sizeof ( netWriteNotifyIO ) );
+    }
+#endif
+
+inline void * netWriteNotifyIO::operator new ( size_t sizeIn )
+{
+    return ::operator new ( sizeIn );
+}
+
+inline void netWriteNotifyIO::operator delete ( void * p )
+{
+    ::operator delete ( p );
 }
 
 #endif // ifdef netIOh

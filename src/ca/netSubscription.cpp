@@ -82,32 +82,8 @@ void netSubscription::completion ( unsigned typeIn,
     this->notify.current ( typeIn, countIn, pDataIn );
 }
 
-// NOTE: The constructor for netSubscription::netSubscription() currently does
-// not throw an exception, but we should eventually have placement delete
-// defined for class netSubscription when compilers support this so that 
-// there is no possibility of a leak if there was an exception in
-// a future version of netSubscription::netSubscription()
-#if defined ( NETIO_PLACEMENT_DELETE )
-    void netSubscription::operator delete ( void *pCadaver, 
-        tsFreeList < class netSubscription, 1024, epicsMutexNOOP > &freeList )
-    {
-        freeList.release ( pCadaver, sizeof ( netSubscription ) );
-    }
-#endif
 
-#   if defined (_MSC_VER) && _MSC_VER <= 1300
-    void netSubscription::operator delete ( void * ) // avoid visual c++ 7 bug
-    {
-        throw std::logic_error ( "bogus operator delete called?" );
-    }
-#   endif
 
-#   if __GNUC__==2 && __GNUC_MINOR_<=96 
-    void netSubscription::operator delete ( void *, size_t ) // avoid gnu g++ bug
-    {
-        throw std::logic_error ( "bogus operator delete called?" );
-    }
-#   endif
 
 
 

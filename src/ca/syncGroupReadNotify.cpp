@@ -104,6 +104,16 @@ void syncGroupReadNotify::show ( unsigned level ) const
     }
 }
 
+void * syncGroupReadNotify::operator new ( size_t sizeIn )
+{
+    return ::operator new ( sizeIn );
+}
+
+void syncGroupReadNotify::operator delete ( void * p )
+{
+    ::operator delete ( p );
+}
+
 void * syncGroupReadNotify::operator new ( size_t size, 
     tsFreeList < class syncGroupReadNotify, 128, epicsMutexNOOP > & freeList )
 {
@@ -117,18 +127,3 @@ void syncGroupReadNotify::operator delete ( void *pCadaver,
     freeList.release ( pCadaver, sizeof ( syncGroupReadNotify ) );
 }
 #endif
-
-#   if defined (_MSC_VER) && _MSC_VER <= 1300
-    void syncGroupReadNotify::operator delete ( void * ) // avoid visual c++ 7 bug
-    {
-        throw std::logic_error ( "bogus operator delete called?" );
-    }
-#   endif
-
-#   if __GNUC__==2 && __GNUC_MINOR_<=96 
-    void syncGroupReadNotify::operator delete ( void *, size_t ) // avoid gnu g++ bug
-    {
-        throw std::logic_error ( "bogus operator delete called?" );
-    }
-#   endif
-

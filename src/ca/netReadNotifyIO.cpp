@@ -64,31 +64,3 @@ void netReadNotifyIO::completion ( unsigned type,
     this->notify.completion ( type, count, pData );
 }
 
-// NOTE: The constructor for netReadNotifyIO::netReadNotifyIO() currently does
-// not throw an exception, but we should eventually have placement delete
-// defined for class netReadNotifyIO when compilers support this so that 
-// there is no possibility of a leak if there was an exception in
-// a future version of netReadNotifyIO::netReadNotifyIO()
-#if defined ( NETIO_PLACEMENT_DELETE )
-    void netReadNotifyIO::operator delete ( void *pCadaver, 
-        tsFreeList < class netReadNotifyIO, 1024, epicsMutexNOOP > & freeList ) {
-        freeList.release ( pCadaver, sizeof ( netReadNotifyIO ) );
-    }
-#endif
-
-#   if defined (_MSC_VER) && _MSC_VER <= 1300
-    void netReadNotifyIO::operator delete ( void * ) // avoid visual c++ 7 bug
-    {
-        throw std::logic_error ( "bogus operator delete called?" );
-    }
-#   endif
-
-#   if __GNUC__==2 && __GNUC_MINOR_<=96 
-    void netReadNotifyIO::operator delete ( void *, size_t ) // avoid gnu g++ bug
-    {
-        throw std::logic_error ( "bogus operator delete called?" );
-    }
-#   endif
-
-
-

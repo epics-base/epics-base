@@ -89,6 +89,8 @@ protected:
 private:
     void *pValue;
     syncGroupReadNotify ( struct CASG &sgIn, chid, void *pValueIn );
+    void * operator new ( size_t );
+    void operator delete ( void * );
     void * operator new ( size_t, 
         tsFreeList < class syncGroupReadNotify, 128, epicsMutexNOOP > & );
 #   if defined ( CASG_PLACEMENT_DELETE )
@@ -101,12 +103,6 @@ private:
         int status, const char *pContext, unsigned type, arrayElementCount count );
 	syncGroupReadNotify ( const syncGroupReadNotify & );
 	syncGroupReadNotify & operator = ( const syncGroupReadNotify & );
-#   if defined (_MSC_VER) && _MSC_VER <= 1300
-        void operator delete ( void * ); // avoid visual c++ 7 bug
-#   endif
-#   if __GNUC__==2 && __GNUC_MINOR_<=96 
-        void operator delete ( void *, size_t ); // avoid gnu g++ bug
-#   endif
 };
 
 class syncGroupWriteNotify : public syncGroupNotify, public cacWriteNotify {
@@ -123,6 +119,8 @@ protected:
 private:
     void *pValue;
     syncGroupWriteNotify  ( struct CASG &, chid );
+    void * operator new ( size_t );
+    void operator delete ( void * );
     void * operator new ( size_t, 
         tsFreeList < class syncGroupWriteNotify, 128, epicsMutexNOOP > & );
 #   if defined ( CASG_PLACEMENT_DELETE )
@@ -134,12 +132,6 @@ private:
 		unsigned type, arrayElementCount count );
 	syncGroupWriteNotify ( const syncGroupWriteNotify & );
 	syncGroupWriteNotify & operator = ( const syncGroupWriteNotify & );
-#   if defined (_MSC_VER) && _MSC_VER <= 1300
-        void operator delete ( void * ); // avoid visual c++ 7 bug
-#   endif
-#   if __GNUC__==2 && __GNUC_MINOR_<=96 
-        void operator delete ( void *, size_t ); // avoid gnu g++ bug
-#   endif
 };
 
 struct oldCAC;

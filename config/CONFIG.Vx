@@ -95,7 +95,22 @@ OP_SYS_LDLIBS =
 #--------------------------------------------------
 # Optimization flag overrides
 GCC_OPT_YES = -O2 -fstrength-reduce
+GCC_OPT_NO =
 G++_OPT_YES = -O2 -fstrength-reduce
+G++_OPT_NO =
+
+OPT_CFLAGS = $($(ANSI)_OPT_$(VX_OPT))
+OPT_CXXFLAGS = $($(CPLUSPLUS)_OPT_$(VX_OPT))
+
+#--------------------------------------------------
+# Warning flag overrides
+GCC_WARN_YES = -Wall
+GCC_WARN_NO = -w
+G++_WARN_YES = -Wall
+G++_WARN_NO = -w
+
+WARN_CFLAGS = $($(ANSI)_WARN_$(VX_WARN))
+WARN_CXXFLAGS = $($(CPLUSPLUS)_WARN_$(VX_WARN))
 
 #--------------------------------------------------
 # Link definitions

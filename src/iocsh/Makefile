@@ -49,6 +49,7 @@ LIBSRCS += asTestRegister.c
 LIBSRCS += envRegister.c
 LIBSRCS += iocUtil.c
 LIBSRCS += iocCoreLimitsRegister.c
+LIBSRCS += systemCommandRegister.c
 LIBSRCS += registryRegister.c
 
 LIBRARY_IOC = iocsh

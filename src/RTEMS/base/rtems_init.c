@@ -26,6 +26,7 @@
 #include <rtems/stackchk.h>
 #include <rtems/rtems_bsdnet.h>
 #include <rtems/imfs.h>
+#include <bsp.h>
 
 #include <epicsThread.h>
 #include <errlog.h>
@@ -36,8 +37,7 @@
 /*
  * Architecture-dependent routines
  */
-#if defined(__mcpu32__)
-#include <m68360.h>
+#if defined(__mcpu32__) || defined(__mcf528x__)
 static void
 logReset (void)
 {
@@ -46,10 +46,16 @@ logReset (void)
     const char *cp;
     char cbuf[80];
 
+#if defined(__mcpu32__)
     rsr = m360.rsr;
+    m360.rsr = ~0;
+#else
+    rsr = MCF5282_RESET_RSR;
+#endif
     for (i = 0, bit = 0x80 ; bit != 0 ; bit >>= 1) {
         if (rsr & bit) {
             switch (bit) {
+#if defined(__mcpu32__)
             case 0x80:  cp = "RESETH*";         break;
             case 0x40:  cp = "POWER-UP";        break;
             case 0x20:  cp = "WATCHDOG";        break;
@@ -57,6 +63,15 @@ logReset (void)
             case 0x04:  cp = "LOST CLOCK";      break;
             case 0x02:  cp = "RESET";           break;
             case 0x01:  cp = "RESETS*";         break;
+#else
+            case MCF5282_RESET_RSR_LVD:  cp = "Low-voltage detect"; break;
+            case MCF5282_RESET_RSR_SOFT: cp = "Software reset";     break;
+            case MCF5282_RESET_RSR_WDR:  cp = "Watchdog reset";     break;
+            case MCF5282_RESET_RSR_POR:  cp = "Power-on reset";     break;
+            case MCF5282_RESET_RSR_EXT:  cp = "External reset";     break;
+            case MCF5282_RESET_RSR_LOC:  cp = "Loss of clock";      break;
+            case MCF5282_RESET_RSR_LOL:  cp = "Loss of lock";       break;
+#endif
             default:    cp = "??";              break;
             }
             i += sprintf (cbuf+i, cp); 
@@ -68,7 +83,6 @@ logReset (void)
         }
     }
     errlogPrintf ("Startup after %s.\n", cbuf);
-    m360.rsr = ~0;
 }
 
 #else
@@ -404,6 +418,11 @@ Init (rtems_task_argument ignored)
      * Get configuration
      */
     rtems_clock_get (RTEMS_CLOCK_GET_TICKS_PER_SECOND, &ticksPerSecond);
+
+    /*
+     * Explain why we're here
+     */
+    logReset();
 
     /*
      * Architecture-specific hooks

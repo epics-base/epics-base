@@ -114,7 +114,7 @@ epicsTimeLoadTimeInit::epicsTimeLoadTimeInit ()
 
         epicsEpoch = mktime (&tmEpicsEpoch);
         assert (epicsEpoch!=(time_t)-1);
-        this->epicsEpochOffset = difftime (epicsEpoch, ansiEpoch) - secWest;
+        this->epicsEpochOffset = difftime ( epicsEpoch, ansiEpoch ) - secWest;
     }
 
     if ( this->time_tSecPerTick == 1.0 && this->epicsEpochOffset <= ULONG_MAX &&

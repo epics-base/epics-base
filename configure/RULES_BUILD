@@ -184,7 +184,7 @@ $(DIRECTORY_TARGETS) :
 
 $(TESTPRODNAME) $(PRODNAME):%$(EXE): $(PRODUCT_OBJS) $(PROD_RESS) $(PROD_DEPLIBS)
 	@$(RM) $@
-	$(PURIFY_$(OS_CLASS)) $(LINK.cpp)
+	$(DEBUGCMD) $(LINK.cpp)
 
 # object libs for R3.13 vxWorks compatibility only
 $(OBJLIBNAME):%$(OBJ): $(OBJLIB_LD_OBJS)

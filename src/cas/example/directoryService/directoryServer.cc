@@ -6,18 +6,6 @@
 #include "directoryServer.h"
 #include "tsMinMax.h"
 
-#if defined ( _MSC_VER )
-#   pragma warning ( push )
-#   pragma warning ( disable: 4660 )
-#endif
-
-template class tsSLNode<pvEntry>;
-template class resTable<pvEntry, stringId>;
-
-#if defined ( _MSC_VER )
-#   pragma warning ( pop )
-#endif
-
 const pvInfo *pvInfo::pFirst;
 
 //

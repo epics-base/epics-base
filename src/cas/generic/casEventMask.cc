@@ -34,17 +34,6 @@
 
 #include "server.h"
 
-#if defined ( _MSC_VER )
-#   pragma warning ( push )
-#   pragma warning ( disable: 4660 )
-#endif
-
-template class tsSLNode < casEventMaskEntry >;
-
-#if defined ( _MSC_VER )
-#   pragma warning ( pop )
-#endif
-
 #ifdef TEST
 main ()
 {

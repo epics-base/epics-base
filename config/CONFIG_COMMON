@@ -43,6 +43,7 @@ ELEX = $(EPICS_BASE)/bin/$(HOST_ARCH)/e_flex -S$(EPICS_BASE_INCLUDE)/flex.skel.s
 
 # install from EPICS
 INSTALL = $(EPICS_BASE)/bin/$(HOST_ARCH)/installEpics
+INSTALL_PRODUCT = $(INSTALL)
 
 # dbtools from EPICS
 

@@ -1,18 +1,16 @@
 
 # BUILD_TYPE
 #   Currently either Vx or Unix
-BUILD_TYPE = Unix
+BUILD_TYPE = Vx
 
 # For Vx directories of form:
 #
 #   $(VX_DIR)/$(HOST_ARCH).$(ARCH_CLASS)/bin
 #
-# And configuration files:
-#
-#   CONFIG_SITE.Vx.68k  -or-  CONFIG_SITE.Unix.alpha
-#
-ARCH_CLASS = alpha
+ARCH_CLASS = 68k
+
+include $(EPICS_BASE)/config/CONFIG.$(BUILD_TYPE).$(ARCH_CLASS)
 
 # Architecture specific build flags
-ARCH_DEP_LDLIBS = 
+ARCH_DEP_CFLAGS = -DCPU=MC68030 -m68030 -DCPU_FAMILY=MC680X0
  

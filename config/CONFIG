@@ -14,23 +14,14 @@ include $(EPICS_BASE)/config/CONFIG_COMMON
 ifdef T_A
  
 #  Architecture specific definitions
-#   BUILD_TYPE and ARCH_CLASS are defined
-#   in this file.
 #
-include $(EPICS_BASE)/config/CONFIG_ARCH.$(T_A)
- 
- 
-#  Site-specific "class" definitions
+include $(EPICS_BASE)/config/CONFIG.$(T_A)
 #
-include $(EPICS_BASE)/config/CONFIG_SITE.$(BUILD_TYPE).$(ARCH_CLASS)
- 
-#  Definitions common to a "class" of architectures
-#
-include $(EPICS_BASE)/config/CONFIG.$(BUILD_TYPE).$(ARCH_CLASS)
+include $(EPICS_BASE)/config/CONFIG_SITE.$(T_A)
  
 endif
  
-#  All EPICS options other than BUILD_TYPE, and ARCH_CLASS
+#  All EPICS options other than BUILD_TYPE
 #   may be overridden here.
 #
 # EXAMPLES

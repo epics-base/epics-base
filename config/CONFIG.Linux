@@ -7,6 +7,10 @@
 #   (with warning flags built in)
 #  Paths to compilers
 
+# BUILD_TYPE
+#   Currently either Vx or Unix
+BUILD_TYPE = Unix
+ 
 GCC = gcc
 ACC = acc
 SUNCC = cc
@@ -63,14 +67,12 @@ UNIX_INCLUDES = -I. -I.. -I$(EPICS_BASE_INCLUDE)
 # Operating system flags
 OP_SYS_FLAGS = -DUNIX 
  
-ifdef SPECIAL_LANG
-SPECIAL_LDFLAGS = -L$(SPECIAL_LANG)
-endif
 UNIX_LDFLAGS = -L$(EPICS_BASE_LIB)
 UNIX_LDLIBS = -lm 
  
 ARCH_DEP_CFLAGS = -D_X86_ -Dlinux
 ARCH_DEP_CCFLAGS = $(ARCH_DEP_CFLAGS)
+
 UNIX_CFLAGS = $(UNIX_SFLAGS) $(USR_INCLUDES) $(UNIX_INCLUDES) $(OP_SYS_FLAGS)
  
 UNIX_CCFLAGS = $(UNIX_CFLAGS)

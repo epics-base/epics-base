@@ -1,35 +1,33 @@
-# CONFIG.Unix.hp700
+#
+# $Id$: CONFIG.Unix.solaris,v $
 #
 #  This file is maintained by the EPICS community.
 
+# BUILD_TYPE
+#   Currently either Vx or Unix
+BUILD_TYPE = Unix
+ 
 # Compiler and utility invocation (supply path to compiler here)
 #   (with warning flags built in)
 #  Paths to compilers
 GCC = gcc
-ACC = cc -Aa
-HPACC = cc -Aa
-HPCC = cc -Ac
-TRADCC = cc
+ACC = $(SPARCWORKS)/bin/cc
+# SUNCC doesn't exist under Solaris
+
 AR = ar
-RANLIB = ranlib
+RANLIB =
 YACC = $(EYACC)
 LEX = $(ELEX)
-G++ = g++
-CCC = CC
+G++ = /opt/gnu/bin/g++
+CCC = /opt/SUNWspro/bin/CC
 
-ACC_ANSI_INVOKE_W_NO = $(ACC) -w
-ACC_ANSI_INVOKE_W_YES = $(ACC)
-ACC_TRAD_INVOKE_W_NO = $(TRADCC) -w
-ACC_TRAD_INVOKE_W_YES = $(TRADCC)
-ACC_STRICT_INVOKE_W_NO = $(ACC) -w
-ACC_STRICT_INVOKE_W_YES = $(ACC)
-HPACC_ANSI_INVOKE_W_NO = $(HPACC) -w 
-HPACC_ANSI_INVOKE_W_YES = $(HPACC)
-HPCC_TRAD_INVOKE_W_NO = $(HPCC) -w
-HPCC_TRAD_INVOKE_W_YES = $(HPCC)
-HPACC_STRICT_INVOKE_W_NO = $(HPACC) -w
-HPACC_STRICT_INVOKE_W_YES = $(HPACC)
-
+ACC_ANSI_INVOKE_W_NO = $(ACC) -Xa -w
+ACC_ANSI_INVOKE_W_YES = $(ACC) -Xa
+ACC_STRICT_INVOKE_W_YES = $(ACC) -Xc -v
+ACC_TRAD_INVOKE_W_NO = $(ACC) -Xs -w
+ACC_TRAD_INVOKE_W_YES = $(ACC) -Xs
+SUNCC_TRAD_INVOKE_W_NO = $(ACC_TRAD_INVOKE_W_NO)
+SUNCC_TRAD_INVOKE_W_YES = $(ACC_TRAD_INVOKE_W_YES)
 GCC_ANSI_INVOKE_W_NO = $(GCC) -ansi -w
 GCC_ANSI_INVOKE_W_YES = $(GCC) -ansi
 GCC_STRICT_INVOKE_W_YES = $(GCC) -ansi -Wall -pedantic
@@ -42,9 +40,12 @@ C_STRICT = $($(ANSI)_STRICT_INVOKE_W_YES)
 CC = $(C_$(CMPLR))
 
 # Static Build options
-ACC_SFLAGS_YES= -Wl,-a,archive
+#ACC_SFLAGS_YES= -dn
+ACC_SFLAGS_YES= -Bstatic
+ACC_SLIBS_YES= -lw -lintl -Bdynamic -ldl -Bstatic -lXext -lX
+ACC_SLIBS_NO=
 ACC_SFLAGS_NO=
-CC_SFLAGS_YES= -Wl,-a,archive
+CC_SFLAGS_YES= -dn
 CC_SFLAGS_NO=
 GCC_SFLAGS_YES= -static
 GCC_SFLAGS_NO=
@@ -53,6 +54,11 @@ SF_OLD = $($(STANDARD)_SFLAGS_$(STATIC_BUILD))
 SF_ANSI = $($(ANSI)_SFLAGS_$(STATIC_BUILD))
 SF_STRICT = $(SF_ANSI)
 UNIX_SFLAGS = $(SF_$(CMPLR))
+ 
+SL_OLD = $($(STANDARD)_SLIBS_$(STATIC_BUILD))
+SL_ANSI = $($(ANSI)_SLIBS_$(STATIC_BUILD))
+SL_STRICT = $(SL_ANSI)
+UNIX_SLIBS = $(SL_$(CMPLR))
  
 # Optimization
 OPTIM_YES = -O
@@ -65,14 +71,18 @@ UNIX_INCLUDES = -I. -I.. -I$(EPICS_BASE_INCLUDE)
 # Operating system flags
 OP_SYS_FLAGS = -DUNIX
  
-SPECIAL_LDFLAGS = 
 UNIX_LDFLAGS = -L$(EPICS_BASE_LIB)
-UNIX_LDLIBS = -lm
+UNIX_LDLIBS = $(UNIX_SLIBS) -lm
  
-ARCH_DEP_CFLAGS = -D_HPUX_SOURCE -DHP_UX
+# Architecture specific build flags
+ARCH_DEP_CFLAGS = -DSOLARIS 
 ARCH_DEP_CCFLAGS = $(ARCH_DEP_CFLAGS)
-
-UNIX_CFLAGS = $(UNIX_SFLAGS) $(USR_INCLUDES) $(UNIX_INCLUDES) $(OP_SYS_FLAGS)
+ARCH_DEP_LDLIBS = -lsocket -lnsl
+# -lsocket     needed by libca.a
+# -lnsl        needed by libca.a 
+ 
+UNIX_CFLAGS = $(UNIX_SFLAGS) $(UNIX_INCLUDES) $(USR_INCLUDES) $(OP_SYS_FLAGS)
+ 
 UNIX_CCFLAGS = $(UNIX_CFLAGS)
  
 # Target specific flags
@@ -86,19 +96,19 @@ TARGET_SNCFLAGS = $($(basename $@)_SNCFLAGS)
 CFLAGS = $(UNIX_OPT_FLAGS) $(TARGET_CFLAGS) $(USR_CFLAGS) $(ARCH_DEP_CFLAGS) $(UNIX_CFLAGS)
 CCFLAGS = $(UNIX_OPT_FLAGS) $(TARGET_CCFLAGS) $(USR_CCFLAGS) $(ARCH_DEP_CCFLAGS) $(UNIX_CCFLAGS)
 CPPFLAGS += $(TARGET_CPPFLAGS) $(USR_CPPFLAGS)
-CXXFLAGS = $(CCFLAGS)
-CXX =$($(CPLUSPLUS))
 
-ARFLAGS = rv
+# GNU make likes CXX instead of CCC
+CXXFLAGS = $(CCFLAGS)
+CXX = $(CCC)
 
 LDFLAGS = $(SPECIAL_LDFLAGS) $(TARGET_LDFLAGS) $(USR_LDFLAGS) $(ARCH_DEP_LDFLAGS) $(UNIX_LDFLAGS)
 LDLIBS = $(TARGET_LDLIBS) $(USR_LDLIBS) $(ARCH_DEP_LDLIBS) $(UNIX_LDLIBS)
  
-# Override defaults
+# Override SUN defaults
 COMPILE.c = $(CC) $(CFLAGS) $(CPPFLAGS) -c
 COMPILE.cc = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -c
 LINK.c = $(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
 LINK.cc = $(CXX) $(CCFLAGS) $(CPPFLAGS) $(LDFLAGS)
-DEPEND_RULE.c = @echo echo no DEPENDS_RULE.c defined in CONFIG.Unix.hp700
-DEPEND_RULE.cc = @echo echo no DEPENDS_RULE.cc defined in CONFIG.Unix.hp700
 
+DEPENDS_RULE.c = -$(COMPILE.c) -xM $(SRCS.c) >> .DEPENDS
+DEPENDS_RULE.cc = @echo no DEPENDS_RULE.cc defined in CONFIG.Unix.solaris

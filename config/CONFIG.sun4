@@ -1,30 +1,39 @@
-# CONFIG.Unix.alpha
+#
+# $Id$
 #
 #  This file is maintained by the EPICS community.
 
+# BUILD_TYPE
+#   Currently either Vx or Unix
+BUILD_TYPE = Unix
+ 
 # Compiler and utility invocation (supply path to compiler here)
 #   (with warning flags built in)
 #  Paths to compilers
-GCC = gcc
-ACC = cc -std
-TRADCC = cc -traditional
+GCC = gcc 
+ACC = /usr/lang/acc
+SUNCC = cc
 AR = ar
+ARFLAGS = r
 RANLIB = ranlib
+RANLIBFLAGS = -t
 YACC = $(EYACC)
 LEX = $(ELEX)
 G++ = g++
-CCC = CC
+CCC = /usr/lang/CC
 
 ACC_ANSI_INVOKE_W_NO = $(ACC) -w
-ACC_ANSI_INVOKE_W_YES = $(ACC)
-ACC_STRICT_INVOKE_W_YES = $(ACC) -stdl -w
-ACC_STRICT_INVOKE_W_NO = $(ACC) -stdl
-ACC_TRAD_INVOKE_W_NO = $(ACC) -w
-ACC_TRAD_INVOKE_W_YES = $(ACC)
-GCC_ANSI_INVOKE_W_NO = $(GCC) -ansi -w
-GCC_ANSI_INVOKE_W_YES = $(GCC) -ansi
-GCC_STRICT_INVOKE_W_NO = $(GCC) -ansi -pedantic
-GCC_STRICT_INVOKE_W_YES = $(GCC) -ansi -Wall -pedantic
+ACC_ANSI_INVOKE_W_YES = $(ACC) -Xa
+ACC_TRAD_INVOKE_W_NO = $(ACC) -Xs -w
+ACC_TRAD_INVOKE_W_YES = $(ACC) -Xs
+ACC_STRICT_INVOKE_W_NO = $(ACC) -Xc -w
+ACC_STRICT_INVOKE_W_YES = $(ACC) -Xc -vc
+SUNCC_TRAD_INVOKE_W_NO = $(SUNCC) -w
+SUNCC_TRAD_INVOKE_W_YES = $(SUNCC)
+GCC_ANSI_INVOKE_W_NO = $(GCC) -ansi -w -D__USE_FIXED_PROTOTYPES__
+GCC_ANSI_INVOKE_W_YES = $(GCC) -ansi -D__USE_FIXED_PROTOTYPES__
+GCC_STRICT_INVOKE_W_NO = $(GCC) -ansi -pedantic -D__USE_FIXED_PROTOTYPES__
+GCC_STRICT_INVOKE_W_YES = $(GCC) -ansi -Wall -pedantic -D__USE_FIXED_PROTOTYPES__
 GCC_TRAD_INVOKE_W_NO = $(GCC) -traditional -w
 GCC_TRAD_INVOKE_W_YES = $(GCC) -traditional
  
@@ -34,10 +43,10 @@ C_STRICT = $($(ANSI)_STRICT_INVOKE_W_YES)
 CC = $(C_$(CMPLR))
 
 # Static Build options
-ACC_SFLAGS_YES= -non_shared
-ACC_SFLAGS_NO= -call_shared
-CC_SFLAGS_YES= -non_shared
-CC_SFLAGS_NO= -call_shared
+ACC_SFLAGS_YES= -Bstatic
+ACC_SFLAGS_NO=
+CC_SFLAGS_YES= -Bstatic
+CC_SFLAGS_NO=
 GCC_SFLAGS_YES= -static
 GCC_SFLAGS_NO=
 
@@ -57,11 +66,24 @@ UNIX_INCLUDES = -I. -I.. -I$(EPICS_BASE_INCLUDE)
 # Operating system flags
 OP_SYS_FLAGS = -DUNIX
  
-SPECIAL_LDFLAGS = 
+
 UNIX_LDFLAGS = -L$(EPICS_BASE_LIB)
+
+#
+# The three nested if stmnts here document the fact that current
+# organization here requires that we must use gcc for
+# all compilation or not at all (no mixed compiler compilation)
+#
 UNIX_LDLIBS = -lm
- 
-ARCH_DEP_CFLAGS = -D_OSF_SOURCE -DLITTLE_ENDIAN
+#ifeq ($(ANSI), GCC)
+#ifeq ($(STANDARD), GCC)
+#ifeq ($(CPLUSPLUS), G++)
+UNIX_LDLIBS += -liberty
+#endif
+#endif
+#endif
+
+ARCH_DEP_CFLAGS = -DSUNOS4
 ARCH_DEP_CCFLAGS = $(ARCH_DEP_CFLAGS)
 UNIX_CFLAGS = $(UNIX_SFLAGS) $(USR_INCLUDES) $(UNIX_INCLUDES) $(OP_SYS_FLAGS)
  
@@ -78,18 +100,19 @@ TARGET_SNCFLAGS = $($(basename $@)_SNCFLAGS)
 CFLAGS = $(UNIX_OPT_FLAGS) $(TARGET_CFLAGS) $(USR_CFLAGS) $(ARCH_DEP_CFLAGS) $(UNIX_CFLAGS)
 CCFLAGS = $(UNIX_OPT_FLAGS) $(TARGET_CCFLAGS) $(USR_CCFLAGS) $(ARCH_DEP_CCFLAGS) $(UNIX_CCFLAGS)
 CPPFLAGS += $(TARGET_CPPFLAGS) $(USR_CPPFLAGS)
+
+# GNU make likes CXX instead of CCC
 CXXFLAGS = $(CCFLAGS)
 CXX =$($(CPLUSPLUS))
 
 LDFLAGS = $(SPECIAL_LDFLAGS) $(TARGET_LDFLAGS) $(USR_LDFLAGS) $(ARCH_DEP_LDFLAGS) $(UNIX_LDFLAGS)
 LDLIBS = $(TARGET_LDLIBS) $(USR_LDLIBS) $(ARCH_DEP_LDLIBS) $(UNIX_LDLIBS)
  
-# Override defaults
+# Override SUN defaults
 COMPILE.c = $(CC) $(CFLAGS) $(CPPFLAGS) -c
 COMPILE.cc = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -c
 LINK.c = $(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
 LINK.cc = $(CXX) $(CCFLAGS) $(CPPFLAGS) $(LDFLAGS)
 
-DEPEND_RULE.c = @echo echo no DEPENDS_RULE.c defined in CONFIG.Unix.alpha
-DEPEND_RULE.cc = @echo echo no DEPENDS_RULE.cc defined in CONFIG.Unix.alpha
-
+DEPENDS_RULE.c = -$(COMPILE.c) -M $(SRCS.c) >> .DEPENDS
+DEPENDS_RULE.cc = @echo no DEPENDS_RULE.cc defined in CONFIG.Unix.sun4

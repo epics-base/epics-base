@@ -252,14 +252,14 @@ char		*pname,
 char		*pvalue
 )
 {
-	short			shortvalue;
-	long			longvalue;
-	float			floatvalue;
-	unsigned char		charvalue;
-	double			doublevalue;
+	dbr_short_t			shortvalue;
+	dbr_long_t			longvalue;
+	dbr_float_t			floatvalue;
+	dbr_char_t			charvalue;
+	dbr_double_t		doublevalue;
 	unsigned long		ntries = 10ul;
-	int			status;
-	chid			chan_id;
+	int					status;
+	chid				chan_id;
 
 	if (((*pname < ' ') || (*pname > 'z'))
 	  || ((*pvalue < ' ') || (*pvalue > 'z'))){
@@ -310,7 +310,7 @@ char		*pvalue
 				&shortvalue);
 		SEVCHK(status, NULL);
 		verify_value(chan_id, DBR_ENUM);
-		charvalue=shortvalue;
+		charvalue=(dbr_char_t)shortvalue;
 		status = ca_put(
 				DBR_CHAR, 
 				chan_id, 

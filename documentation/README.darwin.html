@@ -75,7 +75,7 @@ AppleScript events to other applications on the OS X machine.
  *    - Add exampleAppleScriptRecord.m to the application SRCS.
  *    - Add -framework Foundation to the application LDFLAGS.
  * 2) Add the following line to the application database description:
- *      function(exampleAppleScriptProcess)
+ *      registrar(registerExampleAppleScript)
  * 3) Add a record to the application database:
  *      record(sub,"setVolume")
  *      {
@@ -83,15 +83,17 @@ AppleScript events to other applications on the OS X machine.
  *      }
  */
 #import &lt;Foundation/Foundation.h&gt;
+#include &lt;registryFunction.h&gt;
 #include &lt;subRecord.h&gt;
 #include &lt;alarm.h&gt;
 #include &lt;errlog.h&gt;
 #include &lt;recGbl.h&gt;
+#include &lt;epicsExport.h&gt;
 
 /*
  * Shim between EPICS and NSAppleScript class.
  */
-long
+static long
 exampleAppleScriptProcess(struct subRecord *psub)
  {
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
@@ -109,6 +111,16 @@ exampleAppleScriptProcess(struct subRecord *psub)
     [pool release];
     return 0;
 }
+
+static registryFunctionRef subRef[] = {
+    {"exampleAppleScriptProcess",(REGISTRYFUNCTION)exampleAppleScriptProcess}
+};
+
+void registerExampleAppleScript(void)
+{
+    registryFunctionRefAdd(subRef,NELEMENTS(subRef));
+}
+epicsExportRegistrar(registerExampleAppleScript);
 
 
 ==============================================================================

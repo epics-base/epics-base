@@ -7,7 +7,7 @@
 # JBA test override values
 #GNU_DIR=/home/phoebus/JBA/gnu
 #VX_INCLUDE=$(GNU_DIR)/$(GNU_TARGET)/include
-#GCC = $(GNU_BIN)/$(GNU_TARGET_PREFIX)gcc$(CMPLR_SUFFIX)
-#G++ = $(GNU_BIN)/$(GNU_TARGET_PREFIX)gcc$(CMPLR_SUFFIX)
+#GCC = $(GNU_BIN)/$(CMPLR_PREFIX)gcc$(CMPLR_SUFFIX)
+#G++ = $(GNU_BIN)/$(CMPLR_PREFIX)gcc$(CMPLR_SUFFIX)
 #MUNCH = echo "  " 
 

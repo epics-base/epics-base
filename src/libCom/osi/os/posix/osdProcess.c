@@ -21,6 +21,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <limits.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -61,9 +62,7 @@ epicsShareFunc osiGetUserNameReturn epicsShareAPI osiGetUserName (char *pBuf, un
 epicsShareFunc osiSpawnDetachedProcessReturn epicsShareAPI osiSpawnDetachedProcess 
     (const char *pProcessName, const char *pBaseExecutableName)
 {
-    int     status;
-    int     fd;
-    int     maxfd;
+    int status;
     
     /*
      * create a duplicate process

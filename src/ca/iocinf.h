@@ -872,7 +872,7 @@ protected:
     const unsigned magic;
     cacChannel::ioid id;
     bool idIsValid;
-    ~syncGroupNotify ();  
+    virtual ~syncGroupNotify ();  
 };
 
 class syncGroupReadNotify : public syncGroupNotify, public cacDataNotify {
@@ -940,7 +940,7 @@ public:
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
 protected:
-    ~CASG ();
+    virtual ~CASG ();
 private:
     tsDLList < syncGroupNotify > ioList;
     epicsMutex mutable mutex;

@@ -99,7 +99,7 @@ class cacServiceList : private osiMutex {
 public:
     epicsShareFunc cacServiceList ();
     epicsShareFunc void registerService ( cacServiceIO &service );
-    epicsShareFunc bool createChannel (const char *pName, cacChannel &chan);
+    epicsShareFunc cacChannelIO * createChannelIO (const char *pName, cacChannel &chan);
 private:
     tsDLList <cacServiceIO> services;
 };

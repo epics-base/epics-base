@@ -209,6 +209,9 @@ public:
     static void * operator new ( size_t size );
     static void operator delete ( void *pCadaver, size_t size );
 
+    int subscriptionMsg ( unsigned subscriptionId, 
+        unsigned typeIn, unsigned long countIn, unsigned short maskIn );
+
     tsDLList
       <class baseNMIU>  eventq;
     class netiiu        *piiu;
@@ -227,7 +230,7 @@ private:
     unsigned            f_fullyConstructed:1;
     static tsFreeList < class nciu, 1024 > freeList;
     ~nciu (); // force pool allocation
-    int nciu::issuePut ( ca_uint16_t cmd, unsigned id, chtype type, 
+    int issuePut ( ca_uint16_t cmd, unsigned id, chtype type, 
                      unsigned long count, const void *pvalue );
 };
 
@@ -391,7 +394,7 @@ public:
 class netiiu : public baseIIU {
 public:
     netiiu (class cac *pcac);
-    ~netiiu ();
+    virtual ~netiiu ();
     void show (unsigned level) const;
 
     virtual bool compareIfTCP (nciu &chan, const sockaddr_in &) const = 0;
@@ -456,7 +459,7 @@ private:
 class udpiiu : public netiiu {
 public:
     udpiiu (cac *pcac);
-    ~udpiiu ();
+    virtual ~udpiiu ();
     void shutdown ();
     void hostName ( char *pBuf, unsigned bufLength ) const;
     bool ca_v42_ok () const;
@@ -718,7 +721,7 @@ private:
 class cac : public caClient {
 public:
     cac ();
-    ~cac ();
+    virtual ~cac ();
     void safeDestroyNMIU (unsigned id);
     void processRecvBacklog ();
     void flush ();
@@ -756,7 +759,7 @@ public:
     void installCASG (CASG &);
     void uninstallCASG (CASG &);
     void registerService ( cacServiceIO &service );
-    bool createChannel (const char *name_str, cacChannel &chan);
+    bool createChannelIO (const char *name_str, cacChannel &chan);
 
     osiTimerQueue           timerQueue;
     ELLLIST                 activeCASGOP;

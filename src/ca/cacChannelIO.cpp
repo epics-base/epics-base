@@ -16,7 +16,6 @@
 cacChannelIO::cacChannelIO ( cacChannel &chanIn ) :
     chan ( chanIn ) 
 {
-    chan.attachIO ( *this );
 }
 
 cacChannelIO::~cacChannelIO ()

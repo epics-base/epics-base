@@ -632,7 +632,7 @@ int cac::pendPrivate (double timeout, int early)
 
     this->flush ();
 
-    if (this->pndrecvcnt==0u && early) {
+    if ( this->pndrecvcnt == 0u && early ) {
         return ECA_NORMAL;
     }
    
@@ -785,12 +785,18 @@ void cac::registerService ( cacServiceIO &service )
     this->services.registerService ( service );
 }
 
-bool cac::createChannel (const char *pName, cacChannel &chan)
+bool cac::createChannelIO (const char *pName, cacChannel &chan)
 {
-    if ( this->services.createChannel (pName, chan) ) {
+    cacChannelIO *pIO;
+
+    pIO = this->services.createChannelIO ( pName, chan );
+    if ( pIO ) {
+        chan.attachIO ( *pIO );
         return true;
     }
-    if ( cacGlobalServiceList.createChannel (pName, chan) ) {
+    pIO = cacGlobalServiceList.createChannelIO ( pName, chan );
+    if ( pIO ) {
+        chan.attachIO ( *pIO );
         return true;
     }
     if ( ! this->pudpiiu ) {
@@ -806,6 +812,7 @@ bool cac::createChannel (const char *pName, cacChannel &chan)
             return false;
         }
         else {
+            chan.attachIO ( *pNetChan );
             return true;
         }
     }

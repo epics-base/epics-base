@@ -53,51 +53,8 @@ void netSubscription::destroy()
 
 int netSubscription::subscriptionMsg ()
 {
-    unsigned long tmpCount;
-    struct monops msg;
-    ca_float32_t p_delta;
-    ca_float32_t n_delta;
-    ca_float32_t tmo;
-
-    /*
-     * clip to the native count and set to the native count if they
-     * specify zero
-     */
-    if ( this->count > this->chan.nativeElementCount () ){
-        tmpCount = this->chan.nativeElementCount ();
-    }
-    else {
-        tmpCount = this->count;
-    }
-
-    /*
-     * dont allow overflow when converting to ca_uint16_t
-     */
-    if ( tmpCount > 0xffff ) {
-        tmpCount = 0xffff;
-    }
-
-    /* msg header    */
-    msg.m_header.m_cmmd = htons (CA_PROTO_EVENT_ADD);
-    msg.m_header.m_available = this->id;
-    msg.m_header.m_dataType = 
-   	htons ( static_cast <ca_uint16_t> (this->type) );
-    msg.m_header.m_count = 
-        htons ( static_cast <ca_uint16_t> ( tmpCount ) );
-    msg.m_header.m_cid = this->chan.sid;
-    msg.m_header.m_postsize = sizeof ( msg.m_info );
-
-    /* msg body  */
-    p_delta = 0.0;
-    n_delta = 0.0;
-    tmo = 0.0;
-    dbr_htonf (&p_delta, &msg.m_info.m_hval);
-    dbr_htonf (&n_delta, &msg.m_info.m_lval);
-    dbr_htonf (&tmo, &msg.m_info.m_toval);
-    msg.m_info.m_mask = htons (this->mask);
-    msg.m_info.m_pad = 0; /* allow future use */    
-
-    return this->chan.piiu->pushStreamMsg (&msg.m_header, &msg.m_info, true);
+    return this->chan.subscriptionMsg ( this->id, this->type, 
+        this->count, this->mask );
 }
 
 void netSubscription::disconnect ( const char * /* pHostName */ )

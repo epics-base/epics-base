@@ -30,7 +30,7 @@ void cacServiceList::registerService ( cacServiceIO &service )
     this->unlock ();
 }
 
-bool cacServiceList::createChannel (const char *pName, cacChannel &chan)
+cacChannelIO * cacServiceList::createChannelIO (const char *pName, cacChannel &chan)
 {
     cacChannelIO *pChanIO = 0;
 
@@ -45,11 +45,6 @@ bool cacServiceList::createChannel (const char *pName, cacChannel &chan)
     }
     this->unlock ();
 
-    if ( pChanIO ) {
-        return true;
-    }
-    else {
-        return false;
-    }
+    return pChanIO;
 }
 

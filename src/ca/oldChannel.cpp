@@ -168,5 +168,3 @@ void oldChannel::operator delete ( void *pCadaver, size_t size )
 {
     oldChannel::freeList.release ( pCadaver, size );
 }
-
-

@@ -497,7 +497,7 @@ int nciu::write (unsigned type, unsigned long countIn, const void *pValue, cacNo
 
     UNLOCK (this->piiu->pcas);
 
-    status = this->issuePut (CA_PROTO_WRITE_NOTIFY, id, 
+    status = this->issuePut (CA_PROTO_WRITE_NOTIFY, newId, 
 		type, countIn, pValue);
     if ( status != ECA_NORMAL ) {
         /*
@@ -567,10 +567,10 @@ unsigned long nciu::nativeElementCount () const
 
 channel_state nciu::state () const
 {
-    if (this->f_connected) {
+    if ( this->f_connected ) {
         return cs_conn;
     }
-    else if (this->previousConn) {
+    else if ( this->previousConn ) {
         return cs_prev_conn;
     }
     else {
@@ -839,4 +839,60 @@ void nciu::decrementOutstandingIO ()
 void nciu::decrementOutstandingIO ( unsigned seqNumber )
 {
     this->piiu->pcas->decrementOutstandingIO ( seqNumber );
+}
+
+int nciu::subscriptionMsg ( unsigned subscriptionId, unsigned typeIn, 
+                           unsigned long countIn, unsigned short maskIn)
+{
+    int status;
+    struct monops msg;
+    ca_float32_t p_delta;
+    ca_float32_t n_delta;
+    ca_float32_t tmo;
+
+    /*
+     * clip to the native count and set to the native count if they
+     * specify zero
+     */
+    if ( countIn > this->count ){
+        countIn = this->count;
+    }
+
+    /*
+     * dont allow overflow when converting to ca_uint16_t
+     */
+    if ( countIn > 0xffff ) {
+        countIn = 0xffff;
+    }
+
+    /* msg header    */
+    msg.m_header.m_cmmd = htons ( CA_PROTO_EVENT_ADD );
+    msg.m_header.m_available = subscriptionId;
+    msg.m_header.m_dataType = 
+   	    htons ( static_cast <ca_uint16_t> ( typeIn ) );
+    msg.m_header.m_count = 
+        htons ( static_cast <ca_uint16_t> ( countIn ) );
+    msg.m_header.m_cid = this->sid;
+    msg.m_header.m_postsize = sizeof ( msg.m_info );
+
+    /* msg body  */
+    p_delta = 0.0;
+    n_delta = 0.0;
+    tmo = 0.0;
+    dbr_htonf ( &p_delta, &msg.m_info.m_hval );
+    dbr_htonf ( &n_delta, &msg.m_info.m_lval );
+    dbr_htonf ( &tmo, &msg.m_info.m_toval );
+    msg.m_info.m_mask = htons ( maskIn );
+    msg.m_info.m_pad = 0; /* allow future use */    
+
+    LOCK ( this->piiu->pcas );
+    if ( this->f_connected ) {
+        status = this->piiu->pushStreamMsg ( &msg.m_header, &msg.m_info, true );
+    }
+    else {
+        status = ECA_NORMAL;
+    }
+    UNLOCK ( this->piiu->pcas );
+
+    return status;
 }

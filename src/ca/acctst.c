@@ -93,64 +93,56 @@ int acctst (char *pname)
     char            pstring[NUM][MAX_STRING_SIZE];
     unsigned    monCount=0u;
 
-    SEVCHK(ca_task_initialize(), "Unable to initialize");
+    SEVCHK ( ca_task_initialize(), "Unable to initialize" );
 
     conn_cb_count = 0;
 
-    printf("begin\n");
+    printf ( "begin\n" );
 
-    printf("CA Client V%s\n", ca_version());
+    printf ( "CA Client V%s\n", ca_version () );
 
     /*
      * CA pend event delay accuracy test
      * (CA asssumes that search requests can be sent
      * at least every 25 mS on all supported os)
      */
-    pend_event_delay_test(1.0);
-    pend_event_delay_test(0.1);
-    pend_event_delay_test(0.25); 
+    pend_event_delay_test ( 1.0 );
+    pend_event_delay_test ( 0.1 );
+    pend_event_delay_test ( 0.25 ); 
 
     /*
      * verify that we dont print a disconnect message when 
      * we delete the last channel
      * (this fails if we see a disconnect message)
      */
-    status = ca_search( pname, &chix3);
-    SEVCHK(status, NULL);
-    status = ca_pend_io(1000.0);
-    SEVCHK(status, NULL);
-    status = ca_clear_channel(chix3);
-    SEVCHK(status, NULL);
+    status = ca_search ( pname, &chix3 );
+    SEVCHK ( status, NULL );
+    status = ca_pend_io ( 1000.0 );
+    SEVCHK ( status, NULL );
+    status = ca_clear_channel ( chix3 );
+    SEVCHK ( status, NULL );
 
     /*
      * verify lots of disconnects 
      * verify channel connected state variables
      */
-    printf("Connect/disconnect test");
-    fflush(stdout);
-    for (i = 0; i < 10; i++) {
+    printf ( "Connect/disconnect test" );
+    fflush ( stdout );
+    for ( i = 0; i < 10; i++ ) {
 
-        status = ca_search(
-                pname,
-                &chix3);
+        status = ca_search ( pname, &chix3 );
         SEVCHK(status, NULL);
 
-        status = ca_search(
-                pname,
-                &chix4);
+        status = ca_search ( pname, &chix4 );
         SEVCHK(status, NULL);
 
-        status = ca_search(
-                pname,
-                &chix2);
+        status = ca_search ( pname, &chix2 );
         SEVCHK(status, NULL);
 
-        status = ca_search(
-                pname,
-                &chix1);
+        status = ca_search ( pname, &chix1 );
         SEVCHK(status, NULL);
 
-        if (ca_test_io() == ECA_IOINPROGRESS) {
+        if ( ca_test_io() == ECA_IOINPROGRESS ) {
             assert(INVALID_DB_REQ(ca_field_type(chix1)) == TRUE);
             assert(INVALID_DB_REQ(ca_field_type(chix2)) == TRUE);
             assert(INVALID_DB_REQ(ca_field_type(chix3)) == TRUE);
@@ -208,6 +200,14 @@ int acctst (char *pname)
      * verify clear before connect
      */
     status = ca_search ( pname, &chix4 );
+    SEVCHK ( status, NULL );
+
+    /* 
+     * verify that NULL 
+     * evid does not cause failure 
+     */
+    status = ca_add_event ( DBR_FLOAT, 
+            chix4, EVENT_ROUTINE, NULL, NULL );
     SEVCHK ( status, NULL );
 
     status = ca_clear_channel ( chix4 );
@@ -615,34 +615,34 @@ int acctst (char *pname)
      * verify we dont jam up on many uninterrupted
      * put callback solicitations
      */
-    if(ca_write_access(chix1) && ca_v42_ok(chix1)){
-        unsigned    count=0u;
-        printf ("Performing multiple put callback test...");
-        fflush (stdout);
-        for(i=0; i<10000; i++){
+    if ( ca_write_access (chix1) && ca_v42_ok (chix1) ) {
+        unsigned count = 0u;
+        printf ( "Performing multiple put callback test..." );
+        fflush ( stdout );
+        for ( i=0; i<10000; i++ ) {
             dbr_float_t fval = 3.3F;
             status = ca_array_put_callback (
                     DBR_FLOAT, 1, chix1, &fval,
-                    null_event, &count);
-            SEVCHK (status, NULL);
+                    null_event, &count );
+            SEVCHK ( status, NULL );
         }
-        SEVCHK(ca_flush_io(), NULL);
-        while (count<10000u) {
-            ca_pend_event(1.0);
-            printf("waiting...");
-            fflush(stdout);
+        SEVCHK ( ca_flush_io (), NULL );
+        while ( count < 10000u ) {
+            ca_pend_event ( 1.0 );
+            printf ( "waiting..." );
+            fflush ( stdout );
         }
 
-        printf("done.\n");
+        printf ( "done.\n" );
     }
-    else{
-        printf("Skipped multiple put cb test - no write access\n");
+    else {
+        printf ( "Skipped multiple put cb test - no write access\n" );
     }
 
     /*
      * verify that we detect that a large string has been written
      */
-    if(ca_write_access(chix1)){
+    if ( ca_write_access (chix1) ) {
         dbr_string_t    stimStr;
         dbr_string_t    respStr;
         memset(stimStr, 'a', sizeof(stimStr));

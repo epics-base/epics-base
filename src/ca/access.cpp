@@ -234,11 +234,12 @@ int epicsShareAPI ca_search_and_connect (const char *name_str, chid *chanptr,
         return ECA_ALLOCMEM;
     }
 
-    if ( pcac->createChannel ( name_str, *pChan ) ) {
+    if ( pcac->createChannelIO ( name_str, *pChan ) ) {
         *chanptr = pChan;
         return ECA_NORMAL;
     }
     else {
+        pChan->destroy ();
         return ECA_ALLOCMEM;
     }
 }
@@ -380,7 +381,9 @@ int epicsShareAPI ca_add_masked_array_event (chtype type, unsigned long count, c
 
     status = pChan->subscribe ( type, count, mask, *pSubsr );
     if ( status == ECA_NORMAL ) {
-        if(monixptr) *monixptr = pSubsr;
+        if ( monixptr ) {
+            *monixptr = pSubsr;
+        }
     }
 
     return status;

@@ -49,7 +49,6 @@ void callbackTest(void)
 
     taskwdInit();
     errlogInit(4096);
-    errVerbose=1;
     callbackInit();
     for(i=0; i<ncallbacks ; i++) {
         nowait[i] = calloc(1,sizeof(myPvt));

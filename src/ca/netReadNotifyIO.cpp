@@ -1,5 +1,5 @@
-
-/*  $Id$
+/*
+ *  $Id$
  *
  *                    L O S  A L A M O S
  *              Los Alamos National Laboratory
@@ -27,7 +27,7 @@ netReadNotifyIO::~netReadNotifyIO ()
 {
 }
 
-void netReadNotifyIO::show ( unsigned level ) const
+void netReadNotifyIO::show ( unsigned /* level */ ) const
 {
     ::printf ( "read notify IO at %p\n", 
         static_cast < const void * > ( this ) );

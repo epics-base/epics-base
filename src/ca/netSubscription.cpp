@@ -1,5 +1,5 @@
-
-/*  $Id$
+/*
+ *  $Id$
  *
  *                    L O S  A L A M O S
  *              Los Alamos National Laboratory
@@ -49,7 +49,7 @@ class netSubscription * netSubscription::isSubscription ()
     return this;
 }
 
-void netSubscription::show ( unsigned level ) const
+void netSubscription::show ( unsigned /* level */ ) const
 {
     ::printf ( "event subscription IO at %p, type %s, element count %lu, mask %u\n", 
         static_cast < const void * > ( this ), 

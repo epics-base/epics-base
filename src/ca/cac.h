@@ -1,4 +1,3 @@
-
 /*  
  *  $Id$
  *
@@ -88,7 +87,7 @@ private:
     epicsMutex mutex;
 };
 
-class cacDisconnectChannelPrivate {
+class cacDisconnectChannelPrivate { // X aCC 655
 public:
     virtual void disconnectChannel ( 
         epicsGuard < callbackMutex > &, 

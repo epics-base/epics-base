@@ -1,4 +1,3 @@
-
 /*  
  *  $Id$
  *
@@ -33,7 +32,7 @@
 #   define NETIO_PLACEMENT_DELETE
 #endif
 
-class baseNMIU : public tsDLNode < baseNMIU >, 
+class baseNMIU : public tsDLNode < baseNMIU >, // X aCC 655
         public chronIntIdRes < baseNMIU > {
 public:
     baseNMIU ( nciu &chan );

@@ -201,6 +201,7 @@ inline bool comBuf::push ( const epicsInt16 & value )
         static_cast < epicsUInt8 > ( value >> 8u );
     this->buf[this->nextWriteIndex++] = 
         static_cast < epicsUInt8 > ( value >> 0u );
+    return true;
 }
 
 inline bool comBuf::push ( const epicsUInt16 & value )

@@ -528,9 +528,9 @@ bool udpiiu::noopAction ( epicsGuard < callbackMutex > &,
     return true;
 }
 
-bool udpiiu::searchRespAction ( epicsGuard < callbackMutex > & cbLocker,
-                                const caHdr &msg, // X aCC 361
-                                const osiSockAddr &addr, const epicsTime &currentTime )
+bool udpiiu::searchRespAction ( // X aCC 361
+        epicsGuard < callbackMutex > & cbLocker, const caHdr &msg,
+        const osiSockAddr &addr, const epicsTime &currentTime )
 {
     osiSockAddr serverAddr;
     unsigned minorVersion;

@@ -1405,9 +1405,10 @@ bool cac::readExcep ( epicsGuard < callbackMutex > &, tcpiiu &,
     return true;
 }
 
-bool cac::writeExcep ( epicsGuard < callbackMutex > &cbLocker, tcpiiu &, 
-                      const caHdrLargeArray &hdr, 
-                      const char *pCtx, unsigned status )
+bool cac::writeExcep ( epicsGuard < callbackMutex > &cbLocker, // X aCC 431
+                       tcpiiu &,
+                       const caHdrLargeArray &hdr, 
+                       const char *pCtx, unsigned status )
 {
     nciu * pChan = this->chanTable.lookup ( hdr.m_available );
     if ( pChan ) {
@@ -1475,8 +1476,9 @@ bool cac::exceptionRespAction ( epicsGuard < callbackMutex > & cbMutexIn, tcpiiu
     return ( this->*pStub ) ( cbMutexIn, iiu, req, pCtx, hdr.m_available );
 }
 
-bool cac::accessRightsRespAction ( epicsGuard < callbackMutex > & cbGuard, tcpiiu &, 
-                       const caHdrLargeArray &hdr, void * /* pMsgBdy */ )
+bool cac::accessRightsRespAction (
+        epicsGuard < callbackMutex > & cbGuard, tcpiiu &, // X aCC 431
+        const caHdrLargeArray &hdr, void * /* pMsgBdy */ )
 {
     nciu * pChan;
     {
@@ -1503,8 +1505,9 @@ bool cac::accessRightsRespAction ( epicsGuard < callbackMutex > & cbGuard, tcpii
     return true;
 }
 
-bool cac::claimCIURespAction ( epicsGuard < callbackMutex > &cbGuard, tcpiiu & iiu, 
-           const caHdrLargeArray & hdr, void * /*pMsgBdy */ )
+bool cac::claimCIURespAction (
+        epicsGuard < callbackMutex > &cbGuard, tcpiiu & iiu, // X aCC 431
+        const caHdrLargeArray & hdr, void * /* pMsgBdy */ )
 {
     nciu * pChan;
 
@@ -1553,9 +1556,10 @@ bool cac::verifyAndDisconnectChan (
     return true;
 }
 
-void cac::disconnectChannel ( epicsGuard < callbackMutex > & cbLocker,
-                                    epicsGuard < cacMutex > & locker,
-                                    nciu & chan )
+void cac::disconnectChannel (
+        epicsGuard < callbackMutex > & cbLocker, // X aCC 431
+        epicsGuard < cacMutex > & locker,
+        nciu & chan )
 {
     this->disconnectAllIO ( locker, chan, true );
     chan.disconnect ( *this->pudpiiu );

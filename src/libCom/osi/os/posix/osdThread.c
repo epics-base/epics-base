@@ -383,11 +383,11 @@ static epicsThreadOSD *createImplicit(void)
 {
     epicsThreadOSD *pthreadInfo;
     char name[64];
-    int tid;
+    pthread_t tid;
     int status;
 
     tid = pthread_self();
-    sprintf(name, "non-EPICS_%d", tid);
+    sprintf(name, "non-EPICS_%d", (int)tid);
     pthreadInfo = create_threadInfo(name);
     pthreadInfo->tid = tid;
     pthreadInfo->osiPriority = 0;

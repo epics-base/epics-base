@@ -56,7 +56,7 @@ typedef aitUint32 gddAppFuncTableStatus;
 #endif
 
 //
-// template class gddAppFuncTable<PV>
+// class gddAppFuncTable<PV>
 //
 template <class PV> 
 class gddAppFuncTable {

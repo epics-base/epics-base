@@ -10,7 +10,7 @@ int main ( int argc, char **argv )
     unsigned repetitionCount;
 
     if ( argc < 2 || argc > 4 ) {
-        printf ( "usage: %s <chan name> [channel count] [repetition count]\n", argv[0] );
+        printf ( "usage: %s <PV name> [channel count] [repetition count]\n", argv[0] );
     }
 
     if ( argc >= 3 ) {

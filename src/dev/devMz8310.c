@@ -71,16 +71,16 @@
 #include	<pulseTrainRecord.h>
 #include	<choicePulseTrain.h>
 /* Create the dsets for devMz8310 */
-long report();
-long init();
-long init_pc();
-long init_pd();
-long init_pt();
-long get_ioint_info();
-long cmd_pc();
-long write_pd();
-long write_pt();
-long cmd_pc();
+static long report();
+static long init();
+static long init_pc();
+static long init_pd();
+static long init_pt();
+static long get_ioint_info();
+static long cmd_pc();
+static long write_pd();
+static long write_pt();
+static long cmd_pc();
 typedef struct {
 	long		number;
 	DEVSUPFUN	report;
@@ -95,7 +95,7 @@ MZDSET devPdMz8310=	{ 5,   NULL, NULL, init_pd,            NULL, write_pd};
 MZDSET devPtMz8310=	{ 5,   NULL, NULL, init_pt,            NULL, write_pt};
 
 /*forward references			*/
-void mz8310_int_service(IOSCANPVT);
+static void mz8310_int_service(IOSCANPVT);
 
 volatile int mz8310Debug=0;
 

@@ -1151,7 +1151,8 @@ void cac::disconnectAllIO ( nciu & chan, bool enableCallbacks )
     while ( pNetIO.valid() ) {
         tsDLIterBD<baseNMIU> pNext = pNetIO;
         pNext++;
-        if ( ! pNetIO->isSubscription () ) {
+        bool isSubscr = pNetIO->isSubscription() ? true : false;
+        if ( ! isSubscr ) {
             // no use after disconnected - so uninstall it
             this->ioTable.remove ( *pNetIO );
             chan.cacPrivateListOfIO::eventq.remove ( *pNetIO );
@@ -1162,6 +1163,15 @@ void cac::disconnectAllIO ( nciu & chan, bool enableCallbacks )
                 // callbacks are locked at a higher level
                 pNetIO->exception ( ECA_DISCONN, buf );
             }
+        }
+        if ( enableCallbacks ) {
+            epicsAutoMutexRelease unlocker ( this->mutex );
+            char buf[128];
+            sprintf ( buf, "host = %100s", chan.pHostName() );
+            // callbacks are locked at a higher level
+            pNetIO->exception ( ECA_DISCONN, buf );
+        }
+        if ( ! isSubscr ) {
             pNetIO->destroy ( *this );
         }
         pNetIO = pNext;
@@ -1174,7 +1184,7 @@ void cac::destroyAllIO ( nciu & chan )
     if ( ! epicsThreadPrivateGet ( caClientCallbackThreadId ) &&
         this->enablePreemptiveCallback  ) {
         // force any callbacks in progress to complete
-        // before deleteing the IO
+        // before deleting the IO
         epicsAutoMutex autoMutex ( this->callbackMutex );
         this->privateDestroyAllIO ( chan );
     }
@@ -1193,6 +1203,7 @@ void cac::privateDestroyAllIO ( nciu & chan )
         if ( pSubscr ) {
             chan.getPIIU()->subscriptionCancelRequest ( chan, *pSubscr );
         }
+        pIO->exception ( ECA_CHANDESTROY, chan.pName() );
         pIO->destroy ( *this );
     }        
 }

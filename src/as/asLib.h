@@ -119,9 +119,15 @@ int asDumpHash(void);
 #define ASMAXINP 12
 #ifdef vxWorks
 #include <fast_lock.h>
-extern FAST_LOCK asLock;
-extern int asLockInit;
+#else
+/*This only works in a single threaded environment */
+#define FAST_LOCK int
+#define FASTLOCKINIT(PFAST_LOCK)
+#define FASTLOCK(PFAST_LOCK)
+#define FASTUNLOCK(PFAST_LOCK)
 #endif	
+extern int asLockInit;
+extern FAST_LOCK asLock;
 extern int asActive;
 /* definition of access rights*/
 typedef enum{asNOACCESS,asREAD,asWRITE} asAccessRights;

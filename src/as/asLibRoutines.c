@@ -229,22 +229,16 @@ long asChangeGroup(ASMEMBERPVT *asMemberPvt,char *newAsgName)
     if(!asActive) return(S_asLib_asNotActive);
     pasgmember = *asMemberPvt;
     if(!pasgmember) return(S_asLib_badMember);
-#ifdef vxWorks
     FASTLOCK(&asLock);
-#endif
     if(pasgmember->pasg) {
 	ellDelete(&pasgmember->pasg->memberList,(ELLNODE *)pasgmember);
     } else {
 	errMessage(-1,"Logic error in asChangeGroup");
-#ifdef vxWorks
 	FASTUNLOCK(&asLock);
-#endif
 	exit(-1);
     }
     status = asAddMember(asMemberPvt,newAsgName);
-#ifdef vxWorks
     FASTUNLOCK(&asLock);
-#endif
     return(status);
 }
 
@@ -283,14 +277,10 @@ long asAddClient(ASCLIENTPVT *pasClientPvt,ASMEMBERPVT asMemberPvt,
     pasgclient->level = asl;
     pasgclient->user = user;
     pasgclient->host = host;
-#ifdef vxWorks
     FASTLOCK(&asLock);
-#endif
     ellAdd(&pasgmember->clientList,(ELLNODE *)pasgclient);
     status = asCompute(pasgclient);
-#ifdef vxWorks
     FASTUNLOCK(&asLock);
-#endif
     return(status);
 }
 
@@ -304,13 +294,9 @@ long asChangeClient(ASCLIENTPVT asClientPvt,int asl,char *user,char *host)
     pasgclient->level = asl;
     pasgclient->user = user;
     pasgclient->host = host;
-#ifdef vxWorks
     FASTLOCK(&asLock);
-#endif
     status = asCompute(pasgclient);
-#ifdef vxWorks
     FASTUNLOCK(&asLock);
-#endif
     return(status);
 }
 
@@ -321,21 +307,15 @@ long asRemoveClient(ASCLIENTPVT *asClientPvt)
 
     if(!asActive) return(S_asLib_asNotActive);
     if(!pasgclient) return(S_asLib_badClient);
-#ifdef vxWorks
     FASTLOCK(&asLock);
-#endif
     pasgMember = pasgclient->pasgMember;
     if(!pasgMember) {
 	errMessage(-1,"asRemoveClient: No ASGMEMBER");
-#ifdef vxWorks
 	FASTUNLOCK(&asLock);
-#endif
 	return(-1);
     }
     ellDelete(&pasgMember->clientList,(ELLNODE *)pasgclient);
-#ifdef vxWorks
     FASTUNLOCK(&asLock);
-#endif
     freeListFree(freeListPvt,pasgclient);
     *asClientPvt = NULL;
     return(0);
@@ -346,14 +326,12 @@ long asRegisterClientCallback(ASCLIENTPVT asClientPvt,
 {
     ASGCLIENT	*pasgclient = asClientPvt;
 
-#ifdef vxWorks
     if(!asActive) return(S_asLib_asNotActive);
     if(!pasgclient) return(S_asLib_badClient);
     FASTLOCK(&asLock);
     pasgclient->pcallback = pcallback;
     (*pasgclient->pcallback)(pasgclient,asClientCOAR);
     FASTUNLOCK(&asLock);
-#endif
     return(0);
 }
 
@@ -452,7 +430,7 @@ long asCompute(ASCLIENTPVT asClientPvt)
 
 	    pasguag = (ASGUAG *)ellFirst(&pasgrule->uagList);
 	    while(pasguag) {
-		if(puag = pasguag->puag) {
+		if((puag = pasguag->puag)) {
 		    pgphentry = gphFind(pasbase->phash,pasgclient->user,puag);
 		    if(pgphentry) goto check_hag;
 		}
@@ -468,7 +446,7 @@ check_hag:
 
 	    pasghag = (ASGHAG *)ellFirst(&pasgrule->hagList);
 	    while(pasghag) {
-		if(phag = pasghag->phag) {
+		if((phag = pasghag->phag)) {
 		    pgphentry=gphFind(pasbase->phash,pasgclient->host,phag);
 		    if(pgphentry) goto check_calc;
 		}

@@ -1,7 +1,9 @@
 integer	[0-9]
 name	[a-zA-Z0-9_\.]
 pvname  [a-zA-Z0-9_\-:\.\[\]<>;]
-string   [a-zA-Z0-9_\,\./\*#\[\]%: ;!|\'\-&\(\)@\?\+<>=\$]
+notquote [^\"]
+escapequote \\\"
+string {notquote}|{escapequote}
 
 %{
 static ASINPUTFUNCPTR *my_yyinput;

@@ -157,7 +157,7 @@ READONLY char   *ca_message_text[]
 "Could not perform a database event add for that channel",
 "Count requested inappropriate for that channel",
 "The supplied string has improper format",
-"Network connection lost",
+"Virtual circuit disconnect",
 "Identical process variable name on multiple servers",
 "The CA routine called is inappropriate for use within an event handler",
 "Database value get for that channel failed during channel search",

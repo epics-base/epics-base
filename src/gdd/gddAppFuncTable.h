@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.10  1999/04/30 00:11:12  jhill
+ * removed redundant code
+ *
  * Revision 1.9  1998/05/06 21:40:02  jhill
  * updated for g++ 2.8.1
  *
@@ -108,7 +111,7 @@ public:
 		}
 	}
 
-#if __GNUC__ == 2 && __GNUC_MINOR__ <= 7
+#if defined(__GNUC__) && (__GNUC__<2 || (__GNUC__==2 && __GNUC_MINOR__<=7))
 	//
 	// This is required by gnu g++ 2.7.2, but produces the following warning under 
 	// g++ 2.8.1. Unfortunately, the parenthesis in gddAppFuncTablePMF_t below are 

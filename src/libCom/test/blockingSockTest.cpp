@@ -67,7 +67,7 @@ void blockingSockTest ()
             }
         }
     }
-    printf ( "Local os behaves like \"%s\"\n", pStr );
+    printf ( "The local OS behaves like \"%s\".\n", pStr );
     pStr = "esscimqi_?????";
     switch ( epicsSocketSystemCallInterruptMechanismQuery() ) {
     case esscimqi_socketCloseRequired:
@@ -80,6 +80,6 @@ void blockingSockTest ()
         pStr = "esscimqi_socketSigAlarmRequired";
         break;
     }
-    printf ( "epicsSocketSystemCallInterruptMechanismQuery() returns\n\"%s\"\n",
+    printf ( "The epicsSocketSystemCallInterruptMechanismQuery() function returns\n\"%s\".\n",
         pStr );
 }

@@ -1,5 +1,6 @@
+/* $Id$ */
 /************************************************************************/
-/*									*/
+/* 									*/
 /*	        	      L O S  A L A M O S			*/
 /*		        Los Alamos National Laboratory			*/
 /*		         Los Alamos, New Mexico 87545			*/
@@ -28,6 +29,7 @@
 /*	.12 110194 joh	improved search scheduling			*/
 /*			(dont send all chans in a block)		*/
 /*									*/
+/* $Log$								*/
 /*_begin								*/
 /************************************************************************/
 /*									*/
@@ -535,7 +537,7 @@ bhe *createBeaconHashEntry(const struct in_addr *pnet_addr)
 	 * start the average at zero
 	 */
 	pBHE->averagePeriod = 0.0;
-	cac_gettimeval(&pBHE->timeStamp);
+	pBHE->timeStamp = ca_static->currentTime;
 
 	/*
 	 * install in the hash table

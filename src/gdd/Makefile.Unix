@@ -5,6 +5,9 @@
 # $Id$
 #
 # $Log$
+# Revision 1.6  1996/07/03 00:02:55  jhill
+# use ./aitGen and ./genApps per Janet's request
+#
 # Revision 1.5  1996/06/28 19:17:31  jhill
 # took out purify etc - also include dbMapper
 #
@@ -53,6 +56,8 @@ LIBNAME = libgdd.a
 
 TARGETS = dbMapper.o
 
+include $(TOP)/config/RULES.Unix
+
 # cannot generate dependencies for aitConvert automatically
 
 aitConvert.o: aitConvert.cc aitConvert.h aitConvertGenerated.cc aitTypes.h
@@ -78,5 +83,4 @@ genApps: genApps.o $(LIBOBJS)
 clean::
 	/bin/rm -f aitConvertGenerated.cc aitGen genApps
 
-include $(TOP)/config/RULES.Unix
 

@@ -29,6 +29,8 @@ static void handle_requests(BS* bs);
 static void handle_reclist(BS* bs);
 static void handle_applist(BS* bs);
 static void handle_recdump(BS* bs);
+static void handle_spylist(BS* bs);
+static void handle_tasklist(BS* bs);
 void PVS_test_server(BS* bs);
 
 static char* names = (char*)NULL;
@@ -302,17 +304,39 @@ static void handle_requests(BS* bs)
 	}
 }
 
-void PVS_test_server(BS* bs)
+/* --------------------------------------------------------------- */
+
+struct dbnode
 {
-	printf("PVS_test_server invoked\n");
-	BSsendHeader(bs,BS_Done,0);
-}
+	char* name;
+	struct dbnode* next;
+};
+typedef struct dbnode DBNODE;
+
+extern DBNODE* DbApplList;
 
 void handle_applist(BS* bs)
 {
-	printf("AppList server invoked\n");
+	DBNODE* n;
+	int size,len;
+
+	len=0;
+	for(n=DbApplList;n;n=n->next)
+	{
+		len=strlen(n->name)+1;
+
+		if(BSsendHeader(bs,PVS_Data,len)<0)
+			printf("PVSserver: data cmd failed\n");
+		else
+		{
+			if(BSsendData(bs,n->name,len)<0)
+				printf("PVSserver: data send failed\n");
+		}
+	}
 	BSsendHeader(bs,BS_Done,0);
 }
+
+/* --------------------------------------------------------------- */
 
 void handle_recdump(BS* bs)
 {
@@ -320,3 +344,18 @@ void handle_recdump(BS* bs)
 	BSsendHeader(bs,BS_Done,0);
 }
 
+void PVS_test_server(BS* bs)
+{
+	printf("PVS_test_server invoked\n");
+	BSsendHeader(bs,BS_Done,0);
+}
+
+void handle_spylist(BS* bs)
+{
+	printf("PVS spy list server invoked\n");
+}
+
+void handle_tasklist(BS* bs)
+{
+	printf("PVS task list server invoked\n");
+}

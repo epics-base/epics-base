@@ -21,24 +21,6 @@ static PVSNODE* ioc_list = (PVSNODE*)NULL;
 static int read_pvs(BSDATA* info,int serv,char* sname);
 
 #ifndef PVS_SERVER_PROG
-#ifdef RDBLS
-int main(int argc,char** argv)
-{
-	BSDATA info;
-	int rc;
-
-	if(argc<2)
-	{
-		fprintf(stderr,"usage: %s IOC-ip-address\n",argv[0]);
-		return -1;
-	}
-
-	BSsetAddress(&info,argv[1]);
-	rc=read_pvs(&info,PVS_RecList,(char*)NULL);
-	if(rc<0) fprintf(stderr,"read of data failed horribly\n");
-	return 0;
-}
-#else
 int main(int argc,char** argv)
 {
 	BSDATA info;
@@ -64,7 +46,6 @@ int main(int argc,char** argv)
 
 	return 0;
 }
-#endif
 #else
 int main(int argc,char** argv)
 {
@@ -184,7 +165,7 @@ static int read_pvs(BSDATA* info,int serv,char* sname)
 
 	BSgetAddressPort(info,ip_from,&port);
 
-	printf("IOC %s starting\n",ip_from);
+	/* printf("IOC %s starting\n",ip_from); */
 
 	/* verify ioc not already added */
 	if(access(ip_from,F_OK)==0)

@@ -637,17 +637,12 @@ int BSsetAddress(BSDATA* info, char* ip_addr)
 	struct sockaddr_in* sin = (struct sockaddr_in*)&(info->sin);
 	unsigned long addr;
 
-	sin->sin_family=AF_INET;
-
 #ifndef vxWorks
 	/* Deal with the name -vs- IP number issue. */
 	if (isdigit(ip_addr[0]))
 	{
 #endif
-		if((addr=inet_addr(ip_addr))==-1)
-			return -1;
-		else
-			memcpy((char*)&(sin->sin_addr),(char*)&addr,sizeof(addr));
+		if((addr=inet_addr(ip_addr))==-1) return -1;
 #ifndef vxWorks
 	}
 	else
@@ -656,6 +651,9 @@ int BSsetAddress(BSDATA* info, char* ip_addr)
 		memcpy((char*)&addr,pHostent->h_addr,sizeof(addr));
 	}
 #endif
+
+	sin->sin_family=AF_INET;
+	memcpy((char*)&(sin->sin_addr),(char*)&addr,sizeof(addr));
 
 	return 0;
 }

@@ -11,13 +11,13 @@ LEXOPT = -L
 
 SRCS.c = ../dbVarSub.c dbLoadTemplate_lex.c dbLoadTemplate.c \
 		dbLoadRecords_lex.c dbLoadRecords.c \
-		../BSlib.c ../PVSserver.c
+		../BSlib.c ../PVSserver.c ../rdbapplist.c ../rdbls.o
 
 VAR_OBJS =  dbVarSub.o dbLoadTemplate.o dbLoadRecords.o 
-OBJS =  $(VAR_OBJS) BSlib.o PVSserver.o
+OBJS =  $(VAR_OBJS) BSlib.o PVSserver.o rdbapplist.o rdbls.o
 
-PROD = subtool dbLoadTemplate
-TARGETS = PVSserver rdbls
+PROD = subtool dbLoadTemplate rdbls rdbapplist
+TARGETS = PVSserver
 
 include $(EPICS)/config/RULES.Unix
 
@@ -27,17 +27,17 @@ dbLoadRecords.o: dbLoadRecords_lex.c
 PVSserver: PVSserver.o BSlib.o
 	$(LINK.c) $(ARCH_DEP_LDLIBS) $(LDFLAGS) -o $@ $^
 
-rdbls.o: ../PVSserver.c
-	$(COMPILE.c) $(CFLAGS) -DRDBLS -o $@ $<
+rdbls: rdbls.o BSlib.o
+	$(LINK.c) $(ARCH_DEP_LDLIBS) $(LDFLAGS) -o $@ $^
+
+rdbapplist: rdbapplist.o BSlib.o
+	$(LINK.c) $(ARCH_DEP_LDLIBS) $(LDFLAGS) -o $@ $^
 
 subtool.o: dbLoadTemplate.c dbLoadTemplate_lex.c
 	$(COMPILE.c) $(CFLAGS) -DSUB_TOOL -o $@ $<
 
 subtool: subtool.o dbVarSub.o
 	$(LINK.c) $(CFLAGS) -DSUB_TOOL -o $@ $^ -s
-
-rdbls: rdbls.o BSlib.o
-	$(LINK.c) $(ARCH_DEP_LDLIBS) $(LDFLAGS) -DRDBLS -o $@ $^ -s
 
 dbLoadTemplate: $(VAR_OBJS) 
 	$(LINK.c) -o $@ $^ $(LDLIBS) -lDb

@@ -27,13 +27,13 @@ $(OBDIR)/snc_lex.c: snc_lex.l $(OBDIR)/y.tab.h
 	/bin/rm -f $(OBDIR)/snc_lex.c
 	lex snc_lex.l
 	/bin/mv lex.yy.c $(OBDIR)/snc_lex.c
-	/bin/rm y.tab.h
 
 $(OBDIR)/snc.c $(OBDIR)/y.tab.h: snc.y
-	/bin/rm -f $(OBDIR)/snc.c y.tab.c $(OBDIR)/y.tab.h $(OBDIR)/y.output
+	/bin/rm -f $(OBDIR)/snc.c $(OBDIR)/y.tab.h $(OBDIR)/y.output
+	/bin/rm -f y.tab.c y.tab.h y.output
 	yacc -d -v snc.y
 	/bin/mv y.tab.c $(OBDIR)/snc.c
-	/bin/cp y.tab.h $(OBDIR)
+	/bin/mv y.tab.h $(OBDIR)
 	/bin/mv y.output $(OBDIR)
 
 $(OBDIR)/sncVersion.o: $(OBDIR)/sncVersion.c
@@ -49,5 +49,6 @@ $(OBDIR)/snc.o: $(OBDIR)/snc.c
 
 $(OBDIR)/snc_lex.o: $(OBDIR)/snc_lex.c
 	$(COMPILE.c) -o $@ $<
+	/bin/rm y.tab.h
 
 include $(EPICS)/config/RULES.Unix

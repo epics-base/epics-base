@@ -47,6 +47,9 @@
 /*			address in use so that test works on UNIX	*/
 /*			kernels that support multicast			*/
 /* $Log$
+ * Revision 1.79  1998/06/17 00:39:05  jhill
+ * fixed problem where beta 12 briefly didnt communicate with old CA repeaters
+ *
  * Revision 1.78  1998/06/16 01:16:09  jhill
  * allow saturated clients to poll/use new consolodated IP address routines in libCom/clean up when a server and client delete the PV simultaneously
  *
@@ -1360,11 +1363,12 @@ LOCAL void ca_process_udp(struct ioc_in_use *piiu)
 					(char *)(pmsglog+1),
 					pmsglog->nbytes);
 				if(status != OK || piiu->curMsgBytes){
-					ca_printf(
-					"%s: bad UDP msg from port=%d addr=%s\n",
-					__FILE__,
-					ntohs(pmsglog->addr.sin_port),
-					inet_ntoa(pmsglog->addr.sin_addr));
+					char buf[64];
+
+					ipAddrToA (&pmsglog->addr, buf, sizeof(buf));
+
+					ca_printf("%s: bad UDP msg from %s\n", __FILE__, buf);
+
 					/*
 					 * resync the ring buffer
 					 * (discard existing messages)
@@ -1954,12 +1958,13 @@ void caPrintAddrList(ELLLIST *pList)
         printf("Channel Access Address List\n");
         pNode = (caAddrNode *) ellFirst(pList);
         while(pNode){
+				char buf[64];
                 if(pNode->destAddr.sa.sa_family != AF_INET){
                         printf("<addr entry not in internet format>");
                         continue;
                 }
-                printf(	"%s\n", 
-			inet_ntoa(pNode->destAddr.in.sin_addr));
+				ipAddrToA (&pNode->destAddr.in, buf, sizeof(buf));
+                printf(	"%s\n", buf);
 
                 pNode = (caAddrNode *) ellNext(&pNode->node);
         }

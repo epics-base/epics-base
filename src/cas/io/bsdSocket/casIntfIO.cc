@@ -6,6 +6,9 @@
 //
 //
 // $Log$
+// Revision 1.6  1998/06/16 02:35:51  jhill
+// use aToIPAddr and auto attach to winsock if its a static build
+//
 // Revision 1.5  1998/05/29 20:08:21  jhill
 // use new sock ioctl() typedef
 //
@@ -99,12 +102,12 @@ caStatus casIntfIO::init(const caNetAddr &addrIn, casDGClient &dgClientIn,
 				sizeof(this->addr));
 		}
 		if (status<0) {
+			char buf[64];
+			ipAddrToA (&this->addr, buf, sizeof(buf));
 			errPrintf(S_cas_bindFail,
 				__FILE__, __LINE__,
-				"- bind TCP IP addr=%s port=%u failed because %s",
-				inet_ntoa(this->addr.sin_addr),
-				ntohs(this->addr.sin_port),
-				SOCKERRSTR);
+				"- bind TCP IP addr=%s failed because %s",
+				buf, SOCKERRSTR);
 			return S_cas_bindFail;
 		}
 	}

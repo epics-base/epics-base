@@ -55,7 +55,7 @@ static char *sccsId = "@(#) $Id$";
 #include <inetLib.h>
 
 #include "server.h"
-
+#include "bsdSocketResource.h"
 
 
 /*
@@ -149,8 +149,7 @@ int		lock_needed;
 				int	anerrno;
 				char	buf[64];
 
-				buf[0u] = '\0';
-				inet_ntoa_b(pclient->addr.sin_addr, buf);
+				ipAddrToA (&pclient->addr, buf, sizeof(buf));
 
 				anerrno = errnoGet();
 

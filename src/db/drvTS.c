@@ -12,6 +12,9 @@ of this distribution.
 **********************************************************************/
 /*
  * $Log$
+ * Revision 1.25  1998/06/16 03:20:35  jhill
+ * use aToIPAddr()
+ *
  * Revision 1.24  1998/06/04 19:21:14  wlupton
  * changed to use symFindByNameEPICS
  *
@@ -331,6 +334,8 @@ unsigned long TSepochEpicsToUnix(struct timespec* ts)
 */
 long TSreport()
 {
+	char buf[64];
+
 	switch(TSdata.type)
 	{
 	case TS_direct_master:  TSprintf("Direct timing master\n"); break;
@@ -362,10 +367,10 @@ long TSreport()
 	TSprintf("Total events supported = %d\n",TSdata.total_events);
 	TSprintf("Request Time Out = %lu milliseconds\n",TSdata.time_out);
 
-	TSprintf("Broadcast address: %s\n",
-		inet_ntoa(((struct sockaddr_in*)&TSdata.hunt)->sin_addr));
-	TSprintf("Master address: %s\n",
-		inet_ntoa(((struct sockaddr_in*)&TSdata.master)->sin_addr));
+	ipAddrToA ((struct sockaddr_in*)&TSdata.hunt, buf, sizeof(buf));
+	TSprintf("Broadcast address: %s\n", buf);
+	ipAddrToA ((struct sockaddr_in*)&TSdata.master, buf, sizeof(buf));
+	TSprintf("Master address: %s\n", buf);
 
 	if(TSdata.UserRequestedType)
 		TSprintf("\nForced to not use the event system\n");

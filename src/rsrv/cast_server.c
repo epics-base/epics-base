@@ -82,6 +82,7 @@ static char	*sccsId = "@(#) $Id$";
 #include "envDefs.h"
 #include "freeList.h"
 #include "server.h"
+#include "bsdSocketResource.h"
 
 	
 LOCAL void clean_addrq();
@@ -202,7 +203,7 @@ int cast_server(void)
 		NULL);
   	if(status==ERROR){
     		logMsg("CAS: couldnt start up online notify task because \"%s\"\n",
-				strerror(errnoGet()),
+				(int) /* sic */ strerror(errnoGet()),
 				NULL,
 				NULL,
 				NULL,
@@ -277,11 +278,11 @@ int cast_server(void)
 				NULL,
 				NULL,
 				NULL);
-			inet_ntoa_b (prsrv_cast_client->addr.sin_addr, 
-				buf);
-       			logMsg(	"CAS: from addr %s, port %d \n", 
+				ipAddrToA (&prsrv_cast_client->addr, buf, sizeof(buf));
+
+       			logMsg(	"CAS: from addr %s \n", 
 				(int)buf,
-				ntohs(prsrv_cast_client->addr.sin_port),
+				NULL,
 				NULL,
 				NULL,
 				NULL,

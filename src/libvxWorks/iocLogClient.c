@@ -33,6 +33,9 @@
  * .01 joh 081591	Added epics env config
  * .02 joh 011995	Allow stdio also	
  * $Log$
+ * Revision 1.18  1998/02/06 00:51:42  jhill
+ * deleted extra include of assert.h
+ *
  * Revision 1.17  1998/01/20 21:29:13  mrk
  * Change for new errlog implementation
  *
@@ -73,6 +76,7 @@
 #include "errlog.h"
 #include "envDefs.h"
 #include "task_params.h"
+#include "bsdSocketResource.h"
 
 #ifndef LOCAL
 #define LOCAL static
@@ -224,11 +228,11 @@ LOCAL int iocLogAttach(void)
 		if (iocLogTries==0U && iocLogFD==ERROR) {
 			char name[INET_ADDR_LEN];
 
-			inet_ntoa_b(addr.sin_addr, name);
+			ipAddrToA (&addr, name, sizeof(name));
+
 			printf(
-	"iocLogClient: unable to connect to %s port %d because \"%s\"\n", 
+	"iocLogClient: unable to connect to %s because \"%s\"\n", 
 				name,
-				addr.sin_port,
 				strerror(errno));
 		}
 		iocLogTries++;

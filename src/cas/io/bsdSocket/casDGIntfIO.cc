@@ -181,9 +181,12 @@ caStatus casDGIntfIO::init(const caNetAddr &addr, unsigned connectWithThisPortIn
 					(struct sockaddr *)&serverAddr,
 					sizeof (serverAddr));
 	if (status<0) {
+		char buf[64];
+		ipAddrToA (&serverAddr, buf, sizeof(buf));
 		errPrintf(S_cas_bindFail,
-			__FILE__, __LINE__, "- bind UDP IP addr=%s port=%u failed because %s",
-			inet_ntoa(serverAddr.sin_addr), (unsigned) this->dgPort, SOCKERRSTR);
+			__FILE__, __LINE__, "- bind UDP IP addr=%s failed because %s",
+			buf, SOCKERRSTR);
+
 		return S_cas_bindFail;
 	}
 

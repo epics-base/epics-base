@@ -64,6 +64,7 @@ static char *sccsId = "@(#) $Id$";
 #include "task_params.h"
 #include "db_access.h"
 #include "server.h"
+#include "bsdSocketResource.h"
 
 
 /*
@@ -204,6 +205,7 @@ FAST int 		sock;
 	}
 
   	if(CASDEBUG>0){
+		char buf[64];
     		logMsg(	"CAS: Recieved connection request\n",
 			NULL,
 			NULL,
@@ -211,9 +213,10 @@ FAST int 		sock;
 			NULL,
 			NULL,
 			NULL);
-   		logMsg(	"from addr %s, port %d \n", 
-			(int) inet_ntoa (client->addr.sin_addr), 
-			ntohs (client->addr.sin_port),
+		ipAddrToA (&client->addr, buf, sizeof(buf));
+   		logMsg(	"from addr %s\n", 
+			(int) /* sic */ buf, 
+			NULL,
 			NULL,
 			NULL,
 			NULL,

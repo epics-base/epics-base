@@ -10,6 +10,7 @@
 cd topbin
 ld < exampleLibrary
 threadInit()
+TSinit()
 
 cd top
 dbLoadDatabase("dbd/exampleApp.dbd")
@@ -19,5 +20,6 @@ dbLoadRecords("db/dbExample2.db","user=mrk,no=1,scan=1 second")
 dbLoadRecords("db/dbExample2.db","user=mrk,no=2,scan=2 second")
 dbLoadRecords("db/dbExample2.db","user=mrk,no=3,scan=5 second")
 
+cd startup
 iocInit
 #seq &snctest

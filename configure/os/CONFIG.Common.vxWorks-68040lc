@@ -16,5 +16,5 @@ CMPLR_SUFFIX = 68k
 ARCH_CLASS = 68k
 
 # Architecture specific build flags
-ARCH_DEP_CPPFLAGS = -DCPU=MC68040
+ARCH_DEP_CPPFLAGS = -DCPU=MC68LC040
 ARCH_DEP_CFLAGS = -msoft-float

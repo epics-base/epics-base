@@ -103,6 +103,7 @@ SRCS.c += ../devAB1771IR.c
 SRCS.c += ../devAB1771IXE.c
 SRCS.c += ../devAB1771OFE.c
 SRCS.c += ../devABBINARY.c
+SRCS.c += ../devABStatus.c
 SRCS.c += ../devMpc.c
 
 #	OBJS += devAaiCamac.o
@@ -203,6 +204,7 @@ OBJS += devAB1771IR.o
 OBJS += devAB1771IXE.o
 OBJS += devAB1771OFE.o
 OBJS += devABBINARY.o
+OBJS += devABStatus.o
 OBJS += devMpc.o
 
 PROD = devSup

@@ -239,7 +239,16 @@ cvtArg (const char *filename, int lineno, char *arg, iocshArgBuf *argBuf, const 
     switch (piocshArg->type) {
     case iocshArgInt:
         if (arg && *arg) {
+            errno = 0;
             argBuf->ival = strtol (arg, &endp, 0);
+            if (errno == ERANGE) {
+                errno = 0;
+                argBuf->ival = strtoul (arg, &endp, 0);
+                if (errno == ERANGE) {
+                    showError (filename, lineno, "Integer `%s' out of range", arg);
+                    return 0;
+                }
+            }
             if (*endp) {
                 showError (filename, lineno, "Illegal integer `%s'", arg);
                 return 0;

@@ -50,7 +50,6 @@ epicsShareExtern osiTimerQueue osiDefaultTimerQueue;
  * osiTimer
  */
 class osiTimer : public tsDLNode<osiTimer> {
-friend class osiTimerQueue;
 public:
     class noDelaySpecified {}; /* exception */
     class noMemory {}; /* exception */
@@ -140,8 +139,9 @@ public:
 	epicsShareFunc virtual ~osiTimer ();
 
 private:
-
-	enum state {statePending, stateExpired, stateIdle, stateLimbo};
+    friend class osiTimerQueue;
+	enum state {statePending, stateExpired, stateIdle, 
+        numberOfTimerLists, stateLimbo};
 
 	osiTime exp; /* experation time */
 	state curState; /* current state */
@@ -169,9 +169,7 @@ private:
     osiMutex mutex;
     osiEvent rescheduleEvent;
     osiEvent exitEvent;
-	tsDLList <osiTimer> idle;
-	tsDLList <osiTimer> pending;	
-	tsDLList <osiTimer> expired;
+    tsDLList <osiTimer> timerLists [osiTimer::numberOfTimerLists];
 	osiTimer *pExpireTmr;
     class osiTimerThread *pMgrThread;
     unsigned mgrThreadPriority;

@@ -91,7 +91,7 @@ osiTimer::osiTimer (osiTimerQueue & queueIn) :
 curState (osiTimer::stateIdle), queue (queueIn) 
 {
     this->queue.mutex.lock ();
-	this->queue.idle.add (*this);
+	this->queue.timerLists[stateIdle].add (*this);
     this->queue.mutex.unlock ();
 }
 
@@ -104,7 +104,7 @@ osiTimer::osiTimer () :
 curState (osiTimer::stateIdle), queue (osiDefaultTimerQueue) 
 {
     this->queue.mutex.lock ();
-	this->queue.idle.add (*this);
+	this->queue.timerLists[stateIdle].add (*this);
     this->queue.mutex.unlock ();
 }
 
@@ -126,20 +126,7 @@ osiTimer::~osiTimer()
     if (this == this->queue.pExpireTmr) {
 		this->queue.pExpireTmr = 0;
 	}
-	switch (this->curState) {
-	case statePending:
-		this->queue.pending.remove (*this);
-		break;
-	case stateExpired:
-		this->queue.expired.remove (*this);
-		break;
-	case stateIdle:
-		this->queue.idle.remove (*this);
-		break;
-	default:
-        errlogPrintf ("observed osiTimer is in undefined state?\n");
-        break;
-	}
+    this->queue.timerLists[this->curState].remove(*this);
     this->curState = stateLimbo;
     this->queue.mutex.unlock ();
 }
@@ -163,21 +150,10 @@ void osiTimer::cancel ()
     if (this == this->queue.pExpireTmr) {
 		this->queue.pExpireTmr = 0;
 	}
-	switch (this->curState) {
-	case statePending:
-		this->queue.pending.remove (*this);
-        this->queue.idle.add (*this);
-		break;
-	case stateExpired:
-		this->queue.expired.remove (*this);
-        this->queue.idle.add (*this);
-		break;
-	case stateIdle:
-		break;
-	default:
-        errlogPrintf ("observed osiTimer is in undefined state?\n");
-        break;
-	}
+
+    this->queue.timerLists[this->curState].remove (*this);
+    this->curState = stateIdle;
+    this->queue.timerLists[stateIdle].add (*this);
 
     this->queue.mutex.unlock ();
 
@@ -217,32 +193,19 @@ void osiTimer::reschedule (double newDelay)
     if (this == this->queue.pExpireTmr) {
 		this->queue.pExpireTmr = 0;
 	}
-	switch (this->curState) {
-	case statePending:
-		this->queue.pending.remove (*this);
-		break;
-	case stateExpired:
-		this->queue.expired.remove (*this);
-		break;
-	case stateIdle:
-		this->queue.idle.remove (*this);
-		break;
-	default:
-        errlogPrintf ("observed osiTimer is in undefined state?\n");
-        break;
-	}
+    this->queue.timerLists[this->curState].remove (*this);
     this->curState = stateLimbo;
     this->arm (newDelay);
     this->queue.mutex.unlock ();
 }
 
 //
-// osiTimer::arm()
-// NOTE: The osiTimer lock is properly applied externally to this routine
-// when it is needed.
+// osiTimer::arm ()
 //
 void osiTimer::arm (double initialDelay)
 {
+    bool first;
+
 #	ifdef DEBUG
 	unsigned preemptCount=0u;
 #	endif
@@ -274,20 +237,22 @@ void osiTimer::arm (double initialDelay)
 	//
 	// **** this should use a binary tree ????
 	//
-	tsDLIterBD<osiTimer> iter = this->queue.pending.last ();
+	tsDLIterBD<osiTimer> iter = this->queue.timerLists[statePending].last ();
 	while (1) {
 		if ( iter == tsDLIterBD<osiTimer>::eol () ) {
 			//
 			// add to the beginning of the list
 			//
-			this->queue.pending.push (*this);
+			this->queue.timerLists[statePending].push (*this);
+            first = true;
 			break;
 		}
 		if ( iter->exp <= this->exp ) {
 			//
 			// add after the item found that expires earlier
 			//
-			this->queue.pending.insertAfter (*this, *iter);
+			this->queue.timerLists[statePending].insertAfter (*this, *iter);
+            first = false;
 			break;
 		}
 #		ifdef DEBUG
@@ -314,7 +279,9 @@ void osiTimer::arm (double initialDelay)
 
     this->queue.mutex.unlock ();
 
-    this->queue.rescheduleEvent.signal ();
+    if (first) {
+        this->queue.rescheduleEvent.signal ();
+    }
 }
 
 //
@@ -379,30 +346,29 @@ double osiTimer::timeRemaining () const
 {
     double delay;
 
-    if ( this->curState == stateLimbo ) {
-        errlogPrintf ("time remaning fetched on a osiTimer with no queue?\n");
-        return DBL_MAX; // queue was destroyed
-    }
 
     this->queue.mutex.lock ();
     switch (this->curState) {
     case statePending:
-        {
-	        double remaining = this->exp - osiTime::getCurrent();
-	        if ( remaining > 0.0 ) {
-		        delay = remaining;
-	        }
-	        else {
-		        delay = 0.0;
-	        }
-            break;
-        }
+	    delay = this->exp - osiTime::getCurrent();
+	    if ( delay < 0.0 ) {
+		    delay = 0.0;
+	    }
+        break;
+
     case stateIdle:
         delay = DBL_MAX;
         break;
+
     case stateExpired:
         delay = 0.0;
         break;
+
+    case stateLimbo:
+        errlogPrintf ("time remaning fetched on a osiTimer with no queue?\n");
+        delay = DBL_MAX; // queue was destroyed
+        break;
+
     default:
         errlogPrintf ("saw osiTimer in undefined state\n");
         delay = DBL_MAX;
@@ -454,7 +420,7 @@ osiTimerQueue::~osiTimerQueue()
 	//
 	// destroy any unexpired timers
 	//
-	while ( ( pTmr = this->pending.get () ) ) {	
+    while ( ( pTmr = this->timerLists[osiTimer::statePending].get () ) ) {	
 		pTmr->curState = osiTimer::stateLimbo;
 		pTmr->destroy ();
 	}
@@ -462,7 +428,7 @@ osiTimerQueue::~osiTimerQueue()
 	//
 	// destroy any expired timers
 	//
-	while ( (pTmr = this->expired.get()) ) {	
+	while ( (pTmr = this->timerLists[osiTimer::stateExpired].get()) ) {	
 		pTmr->curState = osiTimer::stateLimbo;
 		pTmr->destroy ();
 	}
@@ -501,7 +467,7 @@ double osiTimerQueue::delayToFirstExpire () const
 
     this->mutex.lock ();
 
-	pTmr = this->pending.first ();
+    pTmr = this->timerLists[osiTimer::statePending].first ();
 	if (pTmr) {
 		delay = pTmr->timeRemaining ();
 	}
@@ -538,16 +504,16 @@ void osiTimerQueue::process ()
 	this->inProcess = true;
 	
 
-	tsDLIterBD<osiTimer> iter = this->pending.first ();
+	tsDLIterBD<osiTimer> iter = this->timerLists[osiTimer::statePending].first ();
 	while ( iter != tsDLIterBD<osiTimer>::eol () ) {	
 		if (iter->exp >= cur) {
 			break;
 		}
 		tsDLIterBD<osiTimer> tmp = iter;
 		++tmp;
-		this->pending.remove(*iter);
+		this->timerLists[osiTimer::statePending].remove(*iter);
 		iter->curState = osiTimer::stateExpired;
-		this->expired.add(*iter);
+		this->timerLists[osiTimer::stateExpired].add(*iter);
 		iter = tmp;
 	}
 	
@@ -555,10 +521,10 @@ void osiTimerQueue::process ()
 	// I am careful to prevent problems if they access the
 	// above list while in an "expire()" call back
 	//
-	while ( ( pTmr = this->expired.get () ) ) {
+	while ( ( pTmr = this->timerLists[osiTimer::stateExpired].get () ) ) {
 		
 		pTmr->curState = osiTimer::stateIdle;
-		this->idle.add (*pTmr);
+		this->timerLists[osiTimer::stateIdle].add (*pTmr);
 
 		//
 		// Tag current tmr so that we
@@ -584,7 +550,7 @@ void osiTimerQueue::process ()
 
 		if ( this->pExpireTmr == pTmr ) {
 			if ( pTmr->again () ) {
-		        this->idle.remove (*pTmr);
+                this->timerLists[osiTimer::stateIdle].remove (*pTmr);
 				pTmr->arm (pTmr->delay());
 			}
 			else {
@@ -610,8 +576,9 @@ void osiTimerQueue::show(unsigned level) const
 {
     this->mutex.lock();
 	printf("osiTimerQueue with %u items pending and %u items expired\n",
-		this->pending.count(), this->expired.count());
-	tsDLIterBD<osiTimer> iter(this->pending.first());
+		this->timerLists[osiTimer::statePending].count(), 
+        this->timerLists[osiTimer::stateExpired].count());
+    tsDLIterBD<osiTimer> iter(this->timerLists[osiTimer::statePending].first());
 	while ( iter!=tsDLIterBD<osiTimer>::eol() ) {	
 		iter->show(level);
 		++iter;

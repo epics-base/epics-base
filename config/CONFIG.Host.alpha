@@ -8,7 +8,7 @@ ARCH_CLASS = alpha
 # Include definitions common to all Unix archs
 include $(EPICS_BASE)/config/CONFIG.Host.UnixCommon
 
-AR = ar -rc
+AR = ar
 
 # Configure OS vendor C compiler
 ACC = cc
@@ -23,7 +23,7 @@ ACC_SFLAGS_YES= -non_shared
 ACC_SFLAGS_NO= -call_shared
 ACC_SLIBS_YES =
 ACC_SLIBS_NO=
-ACC_SHRLIB_CFLAGS_YES =
+ACC_SHRLIB_CFLAGS_YES = -shared
 ACC_SHRLIB_LDFLAGS_YES =
 
 # Configure OS vendor C++ compiler

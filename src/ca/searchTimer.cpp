@@ -287,14 +287,14 @@ epicsTimerNotify::expireStatus searchTimer::expire ( const epicsTime & currentTi
             else {
                 this->framesPerTry += 1.0 / this->framesPerTry;
             }
-            debugPrintf ( ("Increasing frame count to %u t=%u r=%u\n", 
+            debugPrintf ( ("Increasing frame count to %g t=%u r=%u\n", 
                 this->framesPerTry, this->searchAttempts, this->searchResponses) );
         }
     }
     else  {
         this->framesPerTryCongestThresh = this->framesPerTry / 2.0;
         this->framesPerTry = 1u;
-        debugPrintf ( ("Congestion detected - set frames per try to %u t=%u r=%u\n", 
+        debugPrintf ( ("Congestion detected - set frames per try to %g t=%u r=%u\n", 
             this->framesPerTry, this->searchAttempts, this->searchResponses) );
     }
 #endif

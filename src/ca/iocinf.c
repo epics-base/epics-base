@@ -39,6 +39,8 @@
 /*	072792	joh	better messages					*/
 /*	101692	joh	defensive coding against unexpected errno's	*/
 /*      120992	GeG	support  VMS/UCX		                */
+/*	091493	joh	init send retry count when each recv and at	*/
+/*			at connect					*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -478,6 +480,7 @@ struct ioc_in_use		*piiu;
     		}
 	}
 
+	piiu->send_retry_count = SEND_RETRY_COUNT_INIT;
   	piiu->recv->stk = 0;
   	piiu->conn_up = TRUE;
 	piiu->active = FALSE;

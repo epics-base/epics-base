@@ -12,9 +12,6 @@
 #include <math.h>
 #include <time.h>
 #include <limits.h>
-#ifndef assert // allow other versions of assert
-#include <assert.h>
-#endif
 
 //
 // WIN32
@@ -87,7 +84,9 @@ void osiTime::synchronize()
 		// All CPUs running win32 currently have HR
 		// counters (Intel and Mips processors do)
 		//
-		assert (QueryPerformanceFrequency (&parm)!=0);
+		if (QueryPerformanceFrequency (&parm)==0) {
+            throw unableToFetchCurrentTime ();
+		}
 		perf_freq = parm.QuadPart;
 
 		//
@@ -287,8 +286,10 @@ struct tm *gmtime_r (const time_t *pAnsiTime, struct tm *pTM)
 	}
 
 	win32Success = SetThreadPriority (thisThread, oldPriority);
-	assert (win32Success);
-	
+	if (!win32Success) {
+        throw osiTime::internalFailure();
+    }
+
 	return p;
 }
 
@@ -320,7 +321,9 @@ struct tm *localtime_r (const time_t *pAnsiTime, struct tm *pTM)
 	}
 
 	win32Success = SetThreadPriority (thisThread, oldPriority);
-	assert (win32Success);
+	if (!win32Success) {
+        throw osiTime::internalFailure ();
+    }
 	
 	return p;
 }

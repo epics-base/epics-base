@@ -382,7 +382,6 @@ threadBoolStatus threadLowestPriorityLevelAbove(
     if(diff<0) diff = -diff;
     if(diff>1 && diff <100) newPriority += 100/(diff+1);
 #endif /* _POSIX_THREAD_PRIORITY_SCHEDULING */
-    newPriority = priority + 1;
     if (newPriority <= 99) {
         *pPriorityJustAbove = newPriority;
         return tbsSuccess;
@@ -459,11 +458,18 @@ void threadShow(threadId id,unsigned int level)
     threadInfo *pthreadInfo = (threadInfo *)id;
 
     if(!id) {
-	printf ("            NAME       ID      PRI    STATE     WAIT\n");
+	printf ("            NAME       ID   OSIPRI   OSSPRI    STATE\n");
     }
     else {
-	printf("%16.16s %8x %8d %8.8s\n", pthreadInfo->name,(threadId)
-	       pthreadInfo,pthreadInfo->osiPriority,pthreadInfo->
+        struct sched_param param;
+        int policy;
+        int status;
+        int priority;
+
+        status = pthread_getschedparam(pthreadInfo->tid,&policy,&param);
+        priority = (status ? 0 : param.sched_priority);
+	printf("%16.16s %8x %8d %8d %8.8s\n", pthreadInfo->name,(threadId)
+	       pthreadInfo,pthreadInfo->osiPriority,priority,pthreadInfo->
 		     isSuspended?"SUSPEND":"OK");
 	if(level>0)
 	    ; /* more info */

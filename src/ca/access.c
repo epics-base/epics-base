@@ -29,6 +29,7 @@
 /*			additions, added better string bounds checking	*/
 /*	060591	joh	delinting					*/
 /*	061391	joh	RISC alignment in outgoing messages		*/
+/*	070191	joh	allways use memcpy in ca_put			*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -1220,22 +1221,7 @@ register void 			*pvalue;
       		(char *) pvalue += size_of_one;
     	}
 #else
-	/* in line is a little faster */
-	if(postcnt==sizeof(long)){
-		*(long *)pdest = *(long *)pvalue;
-	}
-	else if(postcnt==sizeof(short)){
-		*(short *)pdest = *(short *)pvalue;
-	}
-	else if(postcnt==sizeof(char)){
-		*(char *)pdest = *(char *)pvalue;
-	}
-	else if(postcnt==sizeof(double)){
-		*(double *)pdest = *(double *)pvalue;
-	}
-	else{
-          	memcpy(pdest,pvalue,postcnt);
-	}
+        memcpy(pdest,pvalue,postcnt);
 #endif
 
     	mptr->m_cmmd 		= htons(IOC_WRITE);

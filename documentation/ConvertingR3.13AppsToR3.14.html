@@ -38,7 +38,8 @@ Create a new R3.14 application</h3>
 <blockquote><tt>mkdir &lt;top></tt>
 <br><tt>cd &lt;top></tt>
 <br><tt>&lt;full path to R3.14.0beta2 base>/bin/&lt;host_arch>/makeBaseApp.pl
--t example example</tt></blockquote>
+-t example example</tt><tt></tt>
+<p><tt>You can remove the newly created exampleApp directory now.</tt></blockquote>
 
 <h3>
 Copy all *App and iocBoot directories and files to the new &lt;top> directory</h3>
@@ -94,8 +95,7 @@ Modify the Makefiles in &lt;top>/*App/src directories.</h3>
 <br>to&nbsp;&nbsp;&nbsp;&nbsp; <tt>include $(TOP)/configure/RULES</tt>
 <p>Change&nbsp;&nbsp;&nbsp;&nbsp; <tt>PROD_LIBS = &lt;name></tt>
 <br>to&nbsp;&nbsp;&nbsp;&nbsp;<tt> &lt;prod name>_LIBS = dbStaticHost</tt>
-<br>where&nbsp; <tt>&lt;prod name></tt> is a specifified product to be
-built.
+<br>where&nbsp; <tt>&lt;prod name></tt> is a specified product to be built.
 <p>Change&nbsp; library name <tt>Db</tt> to <tt>dbStaticHost.</tt>
 <br>Change<tt> PROD_LIBS = Db</tt>
 <br>to&nbsp;<tt> &lt;prodname>_LIBS += dbStaticHost</tt>
@@ -136,7 +136,7 @@ lines
 <p>Add the lines
 <blockquote># &lt;name>_registerRecordDeviceDriver.cpp will be created
 from &lt;name>.dbd
-<br>&lt;name>_SRCS += example_registerRecordDeviceDriver.cpp
+<br>&lt;name>_SRCS += &lt;name>_registerRecordDeviceDriver.cpp
 <p>#The following adds support from base/src/vxWorks
 <br>&lt;name>_OBJS_vxWorks += $(EPICS_BASE_BIN)/vxComLibrary
 <p><tt>#&lt;name>_LIBS += seq</tt>
@@ -204,15 +204,18 @@ Change&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <tt>ld &lt; &lt;libname>Lib</tt>
 <br>to&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <tt>ld &lt; &lt;libname>.munch</tt>
 <p>Change&nbsp; load statements&nbsp; for db and dbd files from
 <blockquote><tt>cd startup</tt>
-<br><tt>dbLoadDatabase("../../dbd/exampleApp.dbd")</tt>
-<br><tt>dbLoadRecords("../../db/dbExample1.db","user=jba")</tt>
-<br><tt>dbLoadRecords("../../db/dbExample2.db")</tt></blockquote>
+<br><tt>dbLoadDatabase("../../dbd/&lt;name>App.dbd")</tt></blockquote>
 to
 <blockquote><tt>cd top</tt>
-<br><tt>dbLoadDatabase("dbd/example.dbd")</tt>
-<br><tt>registerRecordDeviceDriver(pdbbase)</tt>
-<br><tt>dbLoadRecords("db/dbExample1.db","user=jba")</tt>
-<br><tt>dbLoadRecords("db/dbExample2.db")</tt></blockquote>
+<br><tt>dbLoadDatabase("dbd/&lt;name>.dbd")</tt>
+<br><tt></tt>&nbsp;</blockquote>
+<tt>Add the following line immediately after the dbLoadDatabase lines.</tt>
+<blockquote><tt>registerRecordDeviceDriver(pdbbase)</tt></blockquote>
+<tt>Change all</tt>
+<blockquote><tt>dbLoadRecords("../../db/&lt;name>.db)</tt></blockquote>
+<tt>lines to</tt>
+<blockquote><tt>dbLoadRecords("db/&lt;name>.db)</tt>
+<br><tt></tt>&nbsp;</blockquote>
 </blockquote>
 
 <h3>

@@ -30,6 +30,9 @@
  * 	Modification Log:
  * 	-----------------
  * 	$Log$
+ * 	Revision 1.1.1.1  1996/06/20 00:28:16  jhill
+ * 	ca server installation
+ *
  *
  * TODO:
  * .03  document new event types for limits change etc
@@ -84,7 +87,7 @@
 typedef aitUint32 caStatus;
 
 #include <casEventMask.h>
-#include <casInternal.h>
+#include <../src/cas/generic/casInternal.h>
 
 /*
  * ===========================================================

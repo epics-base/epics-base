@@ -11,6 +11,9 @@
 
 VALID_BUILDS = Host Ioc
 
+# convert UNIX path to native path
+PATH_FILTER = $(subst /,\\,$(1))
+
 #-------------------------------------------------------
 
 #
@@ -58,13 +61,19 @@ WARN_CFLAGS_NO =  /W1
 #
 # /Ox maximum optimizations
 # /MD use MSVCRT (run-time as DLL, multi-thread support)
-OPT_CFLAGS_YES = /Ox
+# /GL whole program optimization
+OPT_CFLAGS_YES = /Ox /GL
 
 #
+# /Zi generate program database for debugging information
 # /Z7 include debugging info in object files
 # /Fr create source browser file
 # /GZ catch bugs occurring only in optimized code
-OPT_CFLAGS_NO = /Z7 /GZ /DEPICS_FREELIST_DEBUG /D_CRTDBG_MAP_ALLOC
+# /D_CRTDBG_MAP_ALLOC
+OPT_CFLAGS_NO = /Zi /DEPICS_FREELIST_DEBUG 
+
+# specify object file name and location
+OBJ_CFLAG = /Fo
 
 #
 # the following options are required when
@@ -110,18 +119,23 @@ CONFORM_CXXFLAGS_STRICT = /nologo /D__STDC__=0 /GX /GR
 # /W<N> use warning level N
 # (maximum lint level warnings at level 4)
 WARN_CXXFLAGS_YES = /W3
-#WARN_CXXFLAGS_YES = /W4
 WARN_CXXFLAGS_NO =  /W1
 
 #
 # /Ox maximum optimizations
-OPT_CXXFLAGS_YES = /Ox
+# /GL whole program optimization
+OPT_CXXFLAGS_YES = /Ox /GL
 
 #
+# /Zi generate program database for debugging information
 # /Z7 include debugging info in object files
 # /Fr create source browser file
 # /GZ catch bugs occurring only in optimized code
-OPT_CXXFLAGS_NO = /Z7 /GZ /DEPICS_FREELIST_DEBUG /D_CRTDBG_MAP_ALLOC
+# /D_CRTDBG_MAP_ALLOC
+OPT_CXXFLAGS_NO = /Zi /DEPICS_FREELIST_DEBUG 
+
+# specify object file name and location
+OBJ_CXXFLAG = /Fo
 
 #
 # the following options are required when
@@ -142,9 +156,9 @@ STATIC_LDLIBS_YES=ws2_32.lib advapi32.lib user32.lib kernel32.lib winmm.lib
 STATIC_LDLIBS_NO= 
 
 # add /profile here to run the ms profiler
-LINK_OPT_FLAGS_YES = /WARN:3 /incremental:no /opt:ref\
-/release $(PROD_VERSION:%=/version:%)
-LINK_OPT_FLAGS_NO = /WARN:3 /debug 
+# /LTCG - whole program optimization
+LINK_OPT_FLAGS_YES = /LTCG /incremental:no /opt:ref /release $(PROD_VERSION:%=/version:%)
+LINK_OPT_FLAGS_NO = /debug /incremental:no /fixed:no
 OPT_LDFLAGS = $(LINK_OPT_FLAGS_$(HOST_OPT))
 
 ARCH_DEP_CFLAGS=
@@ -217,7 +231,6 @@ LDCMD =  $(CCC) /Fo $@ $^
 SHRLIB_SUFFIX=.dll
 SHRLIBNAME_YES = $(BUILD_LIBRARY:%=%$(SHRLIB_SUFFIX))
 
-
 #
 # Under WIN32 we have the unique situation where the DLL link creates the
 # DLL link library xxx.lib and we need to be very careful to avoid replacing
@@ -249,7 +262,7 @@ PROD_LDLIBS = $($*_DEPLIBS) $(PROD_DEPLIBS) \
 		$($*_SYS_LIBS:%=%.lib) $(SYS_PROD_LIBS:%=%.lib)
 
 #--------------------------------------------------
-#Libraries dependancy definitions
+# Libraries dependancy definitions
 
 #	EPICS libs that we need to link the DLL with
 #	(it isnt necessary to rebuild the dll if these change)

@@ -715,8 +715,9 @@ void tcpiiu::show ( unsigned level ) const
     epicsAutoMutex locker ( this->pCAC()->mutexRef() );
     char buf[256];
     this->pHostNameCache->hostName ( buf, sizeof ( buf ) );
-    ::printf ( "Virtual circuit to \"%s\" at version %s state %u\n", 
-        buf, CA_VERSION_STRING ( this->minorProtocolVersion ), this->state );
+    ::printf ( "Virtual circuit to \"%s\" at version V%u.%u state %u\n", 
+        buf, CA_MAJOR_PROTOCOL_REVISION,
+        this->minorProtocolVersion, this->state );
     if ( level > 1u ) {
         this->netiiu::show ( level - 1u );
     }

@@ -54,11 +54,10 @@ static char *os_depenhSccsId = "$Id$";
 #	include <net/if.h>
 #	include <arpa/inet.h>
 #	include <netdb.h>
-/* ioctl.h fetches in these under BSD and
- * SVR4 and they dont exist under linux so I 
- * took them out - joh 100695
- */
-#	if 0 
+	/*
+	 * normally these are included by ioctl.h
+	 */
+#	ifdef SOLARIS 
 #		include <sys/filio.h>
 #		include <sys/sockio.h>
 #	endif

@@ -23,6 +23,7 @@ vpath bpt%.data $(USR_VPATH) $(GENERIC_SRC_DIRS) $(COMMON_DIR)
 # dbExpand
 INSTALL_DBDFLAGS += -I $(INSTALL_LOCATION)/dbd
 DBDFLAGS = $(USR_DBDFLAGS) -I . -I .. $(INSTALL_DBDFLAGS) $(RELEASE_DBDFLAGS)
+DBFLAGS = $($*_DBFLAGS) $(USR_DBFLAGS) -I. $(GENERIC_SRC_INCLUDES)
 
 #####################################################  Targets
 
@@ -260,7 +261,15 @@ $(COMMON_DIR)/%.db$(RAW): %.substitutions
 	@echo "$@:$(TEMPLATE_FILENAME)" >> $@$(DEP)
 	@echo "Inflating database from $<"
 	@$(RM) $@
-	$(MSI) -S$< $(TEMPLATE_FILENAME) > msi.tmp
+	$(MSI) $(DBFLAGS) -S$< $(TEMPLATE_FILENAME) > msi.tmp
+	$(MV) msi.tmp $@
+
+$(COMMON_DIR)/%.db$(RAW): %.template
+	@$(RM) $@$(DEP)
+	@$(DBDDEPENDS_CMD)
+	@echo "Inflating database from $<"
+	@$(RM) $@
+	$(MSI) $(DBFLAGS)  $< > msi.tmp
 	$(MV) msi.tmp $@
 
 # dbst based database optimization

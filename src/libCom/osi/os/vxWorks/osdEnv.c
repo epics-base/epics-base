@@ -13,9 +13,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <envLib.h>
 
 #include <errlog.h>
-#include <envDefs.h>
 #include <cantProceed.h>
 
 #define epicsExportSharedSymbols

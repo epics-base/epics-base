@@ -54,11 +54,13 @@ epicsShareFunc void * epicsShareAPI dbCalloc(size_t nobj,size_t size);
 #include "dbCa.h"
 #include "dbCaPvt.h"
 
-static ELLLIST workList;    /* Work list for dbCaTask */
-static epicsMutexId workListLock; /*Mutual exclusions semaphores for workList*/
-static epicsEventId workListEvent; /*wakeup event for dbCaTask*/
-static int removesOutstanding = 0;
-static int removesOutstandingWarning = 10000;
+#define STATIC static
+
+STATIC ELLLIST workList;    /* Work list for dbCaTask */
+STATIC epicsMutexId workListLock; /*Mutual exclusions semaphores for workList*/
+STATIC epicsEventId workListEvent; /*wakeup event for dbCaTask*/
+STATIC int removesOutstanding = 0;
+STATIC int removesOutstandingWarning = 10000;
 
 void dbCaTask(void); /*The Channel Access Task*/
 extern void dbServiceIOInit();
@@ -100,8 +102,8 @@ extern void dbServiceIOInit();
  *      epicsMutexMustLock(pca->lock);
  *      pca->plink = 0;
  *      plink->value.pv_link.pvt = 0;
- *      addAction(pca,CA_CLEAR_CHANNEL);
  *      epicsMutexUnlock(pca->lock);
+ *      addAction(pca,CA_CLEAR_CHANNEL);
  *
  *   dbCaTask issues a ca_clear_channel and then frees the caLink.
  *
@@ -111,7 +113,7 @@ extern void dbServiceIOInit();
  *  
 */
 
-static void addAction(caLink *pca, short link_action)
+STATIC void addAction(caLink *pca, short link_action)
 { 
     int callAdd = FALSE;
 
@@ -125,13 +127,18 @@ static void addAction(caLink *pca, short link_action)
     }
     if(link_action&CA_CLEAR_CHANNEL) {
         if(++removesOutstanding>=removesOutstandingWarning) {
-            printf("dbCa: Warning removesOutstanding %d\n",removesOutstanding);
+            errlogPrintf("dbCa: Warning removesOutstanding %d\n",removesOutstanding);
+        }
+        while(removesOutstanding>=removesOutstandingWarning) {
+            epicsMutexUnlock(workListLock);
+            epicsThreadSleep(1.0);
+            epicsMutexMustLock(workListLock);
         }
     }
     pca->link_action |= link_action;
     if(callAdd) ellAdd(&workList,&pca->node);
-    if(callAdd) epicsEventSignal(workListEvent);
     epicsMutexUnlock(workListLock); /*Give it back immediately*/
+    if(callAdd) epicsEventSignal(workListEvent);
 }
 
 void epicsShareAPI dbCaLinkInit(void)
@@ -150,6 +157,7 @@ void epicsShareAPI dbCaAddLink( struct link *plink)
     caLink *pca;
     char *pvname;
 
+    assert(!plink->value.pv_link.pvt);
     pca = (caLink*)dbCalloc(1,sizeof(caLink));
     pca->lock = epicsMutexMustCreate();
     epicsMutexMustLock(pca->lock);
@@ -172,8 +180,9 @@ void epicsShareAPI dbCaRemoveLink( struct link *plink)
     epicsMutexMustLock(pca->lock);
     pca->plink = 0;
     plink->value.pv_link.pvt = 0;
-    addAction(pca,CA_CLEAR_CHANNEL);
+    /*Must unlock before addAction. Otherwise dbCaTask might free first*/
     epicsMutexUnlock(pca->lock);
+    addAction(pca,CA_CLEAR_CHANNEL);
 }
 
 long epicsShareAPI dbCaGetLink(struct link *plink,short dbrType, void *pdest,
@@ -215,6 +224,7 @@ long epicsShareAPI dbCaGetLink(struct link *plink,short dbrType, void *pdest,
     }
     if(!nelements || *nelements == 1){
         pconvert= dbFastGetConvertRoutine[dbDBRoldToDBFnew[pca->dbrType]][dbrType];
+       assert(pca->pgetNative);
        (*(pconvert))(pca->pgetNative, pdest, 0);
     } else {
         unsigned long ntoget = *nelements;
@@ -225,6 +235,7 @@ long epicsShareAPI dbCaGetLink(struct link *plink,short dbrType, void *pdest,
         pconvert = dbGetConvertRoutine[dbDBRoldToDBFnew[pca->dbrType]][dbrType];
         memset((void *)&dbAddr,0,sizeof(dbAddr));
         dbAddr.pfield = pca->pgetNative;
+        assert(dbAddr.pfield);
         /*Following will only be used for pca->dbrType == DBR_STRING*/
         dbAddr.field_size = MAX_STRING_SIZE;
         /*Ignore error return*/
@@ -294,119 +305,25 @@ long epicsShareAPI dbCaPutLink(struct link *plink,short dbrType,
     return(status);
 }
 
-long epicsShareAPI dbCaGetAttributes(const struct link *plink,
-    void (*callback)(void *usrPvt),void *usrPvt)
-{
-    caLink    *pca;
-    long    status = 0;
-    short    link_action = 0;
-    caAttributes *pcaAttributes;
+#define pcaGetCheck \
+    assert(plink); \
+    if(plink->type!=CA_LINK) return(-1); \
+    pca = (caLink *)plink->value.pv_link.pvt; \
+    assert(pca); \
+    epicsMutexMustLock(pca->lock); \
+    if(!pca->isConnected) { \
+        epicsMutexUnlock(pca->lock); \
+        return(-1); \
+    } 
 
-    assert(plink);
-    if(plink->type!=CA_LINK) return(-1);
-    pca = (caLink *)plink->value.pv_link.pvt;
-    assert(pca);
-    epicsMutexMustLock(pca->lock);
-    if(!pca->isConnected || !pca->hasWriteAccess) {
-        epicsMutexUnlock(pca->lock);
-        return(-1);
-    }
-    if(pca->pcaAttributes) {
-        epicsMutexUnlock(pca->lock);
-        return(-1);
-    }
-    pcaAttributes = dbCalloc(1,sizeof(caAttributes));
-    pcaAttributes->callback = callback;
-    pcaAttributes->usrPvt = usrPvt;
-    pca->pcaAttributes = pcaAttributes;
-    link_action |= CA_GET_ATTRIBUTES;
-    addAction(pca,link_action);
-    epicsMutexUnlock(pca->lock);
-    return(status);
-}
-
-caAttributes *getpcaAttributes(const struct link *plink)
-{
-    caLink    *pca;
-
-    if(!plink || (plink->type!=CA_LINK)) return(NULL);
-    pca = (caLink *)plink->value.pv_link.pvt;
-    if(!pca->isConnected) return(NULL);
-    return(pca->pcaAttributes);
-}
-
-long epicsShareAPI dbCaGetControlLimits(
-    const struct link *plink,double *low, double *high)
-{
-    caAttributes *pcaAttributes;
-
-    pcaAttributes = getpcaAttributes(plink);
-    if(!pcaAttributes) return(-1);
-    *low = pcaAttributes->data.lower_ctrl_limit;
-    *high = pcaAttributes->data.upper_ctrl_limit;
-    return(0);
-}
-
-long epicsShareAPI dbCaGetGraphicLimits(
-    const struct link *plink,double *low, double *high)
-{
-    caAttributes *pcaAttributes;
-
-    pcaAttributes = getpcaAttributes(plink);
-    if(!pcaAttributes) return(-1);
-    *low = pcaAttributes->data.lower_disp_limit;
-    *high = pcaAttributes->data.upper_disp_limit;
-    return(0);
-}
-
-long epicsShareAPI dbCaGetAlarmLimits(
-    const struct link *plink,
-    double *lolo, double *low, double *high, double *hihi)
-{
-    caAttributes *pcaAttributes;
-
-    pcaAttributes = getpcaAttributes(plink);
-    if(!pcaAttributes) return(-1);
-    *lolo = pcaAttributes->data.lower_alarm_limit;
-    *low = pcaAttributes->data.lower_warning_limit;
-    *high = pcaAttributes->data.upper_warning_limit;
-    *hihi = pcaAttributes->data.upper_alarm_limit;
-    return(0);
-}
-
-long epicsShareAPI dbCaGetPrecision(
-    const struct link *plink,short *precision)
-{
-    caAttributes *pcaAttributes;
-
-    pcaAttributes = getpcaAttributes(plink);
-    if(!pcaAttributes) return(-1);
-    *precision = pcaAttributes->data.precision;
-    return(0);
-}
-
-long epicsShareAPI dbCaGetUnits(
-    const struct link *plink,char *units,int unitsSize)
-{
-    caAttributes *pcaAttributes;
-
-    pcaAttributes = getpcaAttributes(plink);
-    if(!pcaAttributes) return(-1);
-    strncpy(units,pcaAttributes->data.units,unitsSize);
-    units[unitsSize-1] = 0;
-    return(0);
-}
-
 long epicsShareAPI dbCaGetNelements(
     const struct link *plink,long *nelements)
 {
     caLink    *pca;
 
-    if(!plink) return(-1);
-    if(plink->type != CA_LINK) return(-1);
-    pca = (caLink *)plink->value.pv_link.pvt;
-    if(!pca->isConnected) return(-1);
+    pcaGetCheck
     *nelements = pca->nelements;
+    epicsMutexUnlock(pca->lock);
     return(0);
 }
 
@@ -415,11 +332,9 @@ long epicsShareAPI dbCaGetSevr(
 {
     caLink    *pca;
 
-    if(!plink) return(-1);
-    if(plink->type != CA_LINK) return(-1);
-    pca = (caLink *)plink->value.pv_link.pvt;
-    if(!pca->isConnected) return(-1);
+    pcaGetCheck
     *severity = pca->sevr;
+    epicsMutexUnlock(pca->lock);
     return(0);
 }
 
@@ -428,11 +343,9 @@ long epicsShareAPI dbCaGetTimeStamp(
 {
     caLink    *pca;
 
-    if(!plink) return(-1);
-    if(plink->type != CA_LINK) return(-1);
-    pca = (caLink *)plink->value.pv_link.pvt;
-    if(!pca->isConnected) return(-1);
+    pcaGetCheck
     memcpy(pstamp,&pca->timeStamp,sizeof(epicsTimeStamp));
+    epicsMutexUnlock(pca->lock);
     return(0);
 }
 
@@ -454,19 +367,113 @@ int epicsShareAPI dbCaGetLinkDBFtype(
     const struct link *plink)
 {
     caLink    *pca;
+    short     type;
 
-    if(!plink) return(-1);
-    if(plink->type != CA_LINK) return(-1);
+    pcaGetCheck
+    type = dbDBRoldToDBFnew[pca->dbrType];
+    epicsMutexUnlock(pca->lock);
+    return(type);
+}
+
+long epicsShareAPI dbCaGetAttributes(const struct link *plink,
+    void (*callback)(void *usrPvt),void *usrPvt)
+{
+    caLink    *pca;
+    int gotAttributes;
+
+    assert(plink);
+    if(plink->type!=CA_LINK) return(-1);
     pca = (caLink *)plink->value.pv_link.pvt;
-    if(!pca) return(-1);
-    if(!pca->chid) return(-1);
-    if(pca->isConnected) 
-        return(dbDBRoldToDBFnew[ca_field_type(pca->chid)]);
-    return(-1);
+    assert(pca);
+    epicsMutexMustLock(pca->lock);
+    pca->callback = callback;
+    pca->userPvt = usrPvt;
+    gotAttributes = pca->gotAttributes;
+    epicsMutexUnlock(pca->lock);
+    if(gotAttributes) (*pca->callback)(pca->userPvt);
+    return(0);
 }
 
+long epicsShareAPI dbCaGetControlLimits(
+    const struct link *plink,double *low, double *high)
+{
+    caLink    *pca;
+    int       gotAttributes;
+
+    pcaGetCheck
+    gotAttributes = pca->gotAttributes;
+    if(gotAttributes) {
+        *low = pca->controlLimits[0];
+        *high = pca->controlLimits[1];
+    }
+    epicsMutexUnlock(pca->lock); 
+    return(gotAttributes ? 0 : -1);
+}
+
+long epicsShareAPI dbCaGetGraphicLimits(
+    const struct link *plink,double *low, double *high)
+{
+    caLink    *pca;
+    int       gotAttributes;
+
+    pcaGetCheck
+    gotAttributes = pca->gotAttributes;
+    if(gotAttributes) {
+        *low = pca->displayLimits[0];
+        *high = pca->displayLimits[1];
+    }
+    epicsMutexUnlock(pca->lock); 
+    return(gotAttributes ? 0 : -1);
+}
 
-static void exceptionCallback(struct exception_handler_args args)
+long epicsShareAPI dbCaGetAlarmLimits(
+    const struct link *plink,
+    double *lolo, double *low, double *high, double *hihi)
+{
+    caLink    *pca;
+    int       gotAttributes;
+
+    pcaGetCheck
+    gotAttributes = pca->gotAttributes;
+    if(gotAttributes) {
+        *lolo = pca->alarmLimits[0];
+        *low = pca->alarmLimits[1];
+        *high = pca->alarmLimits[2];
+        *hihi = pca->alarmLimits[3];
+    }
+    epicsMutexUnlock(pca->lock); 
+    return(gotAttributes ? 0 : -1);
+}
+
+long epicsShareAPI dbCaGetPrecision(
+    const struct link *plink,short *precision)
+{
+    caLink    *pca;
+    int       gotAttributes;
+
+    pcaGetCheck
+    gotAttributes = pca->gotAttributes;
+    if(gotAttributes) *precision = pca->precision;
+    epicsMutexUnlock(pca->lock); 
+    return(gotAttributes ? 0 : -1);
+}
+
+long epicsShareAPI dbCaGetUnits(
+    const struct link *plink,char *units,int unitsSize)
+{
+    caLink    *pca;
+    int       gotAttributes;
+
+    pcaGetCheck
+    gotAttributes = pca->gotAttributes;
+    if(unitsSize>sizeof(pca->units)) unitsSize = sizeof(pca->units);
+    if(gotAttributes) strncpy(units,pca->units,unitsSize);
+    units[unitsSize-1] = 0;
+    epicsMutexUnlock(pca->lock); 
+    return(gotAttributes ? 0 : -1);
+}
+
+STATIC void exceptionCallback(struct exception_handler_args args)
 {
     chid    chid = args.chid;
     long        stat = args.stat; /* Channel access status code*/
@@ -500,7 +507,7 @@ static void exceptionCallback(struct exception_handler_args args)
         (writeAccess ? "writeAccess" : "noWriteAccess"));
 }
 
-static void eventCallback(struct event_handler_args arg)
+STATIC void eventCallback(struct event_handler_args arg)
 {
     caLink   *pca = (caLink *)arg.usr;
     DBLINK   *plink;
@@ -527,6 +534,7 @@ static void eventCallback(struct event_handler_args arg)
     assert(arg.dbr);
     size = arg.count * dbr_value_size[arg.type];
     if((arg.type==DBR_TIME_STRING) && (ca_field_type(pca->chid)==DBR_ENUM)) {
+        assert(pca->pgetString);
         memcpy(pca->pgetString,dbr_value_ptr(arg.dbr,arg.type),size);
         pca->gotInString = TRUE;
     } else switch (arg.type){
@@ -537,6 +545,7 @@ static void eventCallback(struct event_handler_args arg)
     case DBR_TIME_CHAR:
     case DBR_TIME_LONG:
     case DBR_TIME_DOUBLE:
+        assert(pca->pgetNative);
         memcpy(pca->pgetNative,dbr_value_ptr(arg.dbr,arg.type),size);
         pca->gotInNative = TRUE;
         break;
@@ -558,29 +567,37 @@ done:
     epicsMutexUnlock(pca->lock);
 }
 
-static void getAttribEventCallback(struct event_handler_args arg)
+STATIC void getAttribEventCallback(struct event_handler_args arg)
 {
     caLink        *pca = (caLink *)arg.usr;
     struct link	  *plink;
-    const struct dbr_ctrl_double  *dbr;
-    caAttributes  *pcaAttributes = NULL;
+    struct dbr_ctrl_double  *pdbr;
 
     assert(pca);
     epicsMutexMustLock(pca->lock);
     plink = pca->plink;
-    if(!plink) goto done;
+    if(!plink) {
+        epicsMutexUnlock(pca->lock);
+        return;
+    }
     assert(arg.dbr);
-    dbr = arg.dbr;
-    pcaAttributes = pca->pcaAttributes;
-    if(!pcaAttributes) goto done;
-    pcaAttributes->data = *dbr; /*copy entire structure*/
-    pcaAttributes->gotData = TRUE;
-    (pcaAttributes->callback)(pcaAttributes->usrPvt);
-done:
+    pdbr = (struct dbr_ctrl_double *)arg.dbr;
+    pca->gotAttributes = TRUE;
+    pca->controlLimits[0] = pdbr->lower_ctrl_limit;
+    pca->controlLimits[1] = pdbr->upper_ctrl_limit;
+    pca->displayLimits[0] = pdbr->lower_disp_limit;
+    pca->displayLimits[1] = pdbr->upper_disp_limit;
+    pca->alarmLimits[0] = pdbr->lower_alarm_limit;
+    pca->alarmLimits[1] = pdbr->lower_warning_limit;
+    pca->alarmLimits[2] = pdbr->upper_warning_limit;
+    pca->alarmLimits[3] = pdbr->upper_alarm_limit;
+    pca->precision = pdbr->precision;
+    memcpy(pca->units,pdbr->units,MAX_UNITS_SIZE);
     epicsMutexUnlock(pca->lock);
+    if(pca->callback) (*pca->callback)(pca->userPvt);
 }
 
-static void accessRightsCallback(struct access_rights_handler_args arg)
+STATIC void accessRightsCallback(struct access_rights_handler_args arg)
 {
     caLink        *pca = (caLink *)ca_puser(arg.chid);
     struct link	*plink;
@@ -606,7 +623,7 @@ done:
     epicsMutexUnlock(pca->lock);
 }
 
-static void connectionCallback(struct connection_handler_args arg)
+STATIC void connectionCallback(struct connection_handler_args arg)
 {
     caLink    *pca;
     short    link_action = 0;
@@ -665,7 +682,8 @@ static void connectionCallback(struct connection_handler_args arg)
     if((plink->value.pv_link.pvlMask & pvlOptOutString) && (pca->gotOutString)){
         link_action |= CA_WRITE_STRING;
     }
-    if(pca->pcaAttributes) link_action |= CA_GET_ATTRIBUTES;
+    pca->gotAttributes = 0;
+    link_action |= CA_GET_ATTRIBUTES;
 done:
     if(link_action) addAction(pca,link_action);
     epicsMutexUnlock(pca->lock);
@@ -698,25 +716,18 @@ void dbCaTask()
             pca->link_action = 0;
             if(link_action&CA_CLEAR_CHANNEL) --removesOutstanding;
             epicsMutexUnlock(workListLock); /*Give it back immediately*/
-            epicsMutexMustLock(pca->lock);
             if(link_action&CA_CLEAR_CHANNEL) {/*This must be first*/
-                /*must lock/unlock so that dbCaRemove can unlock*/
-                epicsMutexUnlock(pca->lock);
                 if(pca->chid) ca_clear_channel(pca->chid);    
-                epicsMutexMustLock(pca->lock);
                 free(pca->pgetNative);
                 free(pca->pputNative);
                 free(pca->pgetString);
                 free(pca->pputString);
-                free(pca->pcaAttributes);
                 free(pca->pvname);
-                epicsMutexUnlock(pca->lock);
                 epicsMutexDestroy(pca->lock);
                 free(pca);
                 continue; /*No other link_action makes sense*/
             }
             if(link_action&CA_CONNECT) {
-                epicsMutexUnlock(pca->lock);
                 status = ca_create_channel(
                       pca->pvname,connectionCallback,(void *)pca,
                       CA_PRIORITY_DB_LINKS, &(pca->chid));
@@ -732,53 +743,56 @@ void dbCaTask()
                     ca_message(status));
                 continue; /*Other options must wait until connect*/
             }
-            if(ca_state(pca->chid) != cs_conn) {
-                epicsMutexUnlock(pca->lock);
-                continue;
-            }
+            if(ca_state(pca->chid) != cs_conn) continue;
             if(link_action&CA_WRITE_NATIVE) {
-                epicsMutexUnlock(pca->lock);
+                assert(pca->pputNative);
                 status = ca_array_put(
                     pca->dbrType,pca->nelements,
                     pca->chid,pca->pputNative);
+                epicsMutexMustLock(pca->lock);
                 if(status==ECA_NORMAL) pca->newOutNative = FALSE;
+                epicsMutexUnlock(pca->lock);
             }
             if(link_action&CA_WRITE_STRING) {
-                epicsMutexUnlock(pca->lock);
+                assert(pca->pputString);
                 status = ca_array_put(
                     DBR_STRING,1,
                     pca->chid,pca->pputString);
+                epicsMutexMustLock(pca->lock);
                 if(status==ECA_NORMAL) pca->newOutString = FALSE;
+                epicsMutexUnlock(pca->lock);
+            }
+            /*CA_GET_ATTRIBUTES before CA_MONITOR so that attributes available
+             * before the first monitor callback                              */
+            if(link_action&CA_GET_ATTRIBUTES) {
+                status = ca_get_callback(DBR_CTRL_DOUBLE,
+                    pca->chid,getAttribEventCallback,pca);
+                if(status!=ECA_NORMAL)
+                    errlogPrintf("dbCaTask ca_add_array_event %s\n",
+                    ca_message(status));
             }
             if(link_action&CA_MONITOR_NATIVE) {
                 short  element_size;
     
                 element_size = dbr_value_size[ca_field_type(pca->chid)];
+                epicsMutexMustLock(pca->lock);
                 pca->pgetNative = dbCalloc(pca->nelements,element_size);
                 epicsMutexUnlock(pca->lock);
                 status = ca_add_array_event(
-                ca_field_type(pca->chid)+DBR_TIME_STRING,
-                ca_element_count(pca->chid),
-                pca->chid, eventCallback,pca,0.0,0.0,0.0,
-                0);
+                    ca_field_type(pca->chid)+DBR_TIME_STRING,
+                    ca_element_count(pca->chid),
+                    pca->chid, eventCallback,pca,0.0,0.0,0.0,0);
                 if(status!=ECA_NORMAL)
                     errlogPrintf("dbCaTask ca_add_array_event %s\n",
                     ca_message(status));
             }
             if(link_action&CA_MONITOR_STRING) {
+                epicsMutexMustLock(pca->lock);
                 pca->pgetString = dbCalloc(MAX_STRING_SIZE,sizeof(char));
                 epicsMutexUnlock(pca->lock);
                 status = ca_add_array_event(DBR_TIME_STRING,1,
                     pca->chid, eventCallback,pca,0.0,0.0,0.0,
                     0);
-                if(status!=ECA_NORMAL)
-                    errlogPrintf("dbCaTask ca_add_array_event %s\n",
-                    ca_message(status));
-            }
-            if(link_action&CA_GET_ATTRIBUTES) {
-                epicsMutexUnlock(pca->lock);
-                status = ca_get_callback(DBR_CTRL_DOUBLE,
-                    pca->chid,getAttribEventCallback,pca);
                 if(status!=ECA_NORMAL)
                     errlogPrintf("dbCaTask ca_add_array_event %s\n",
                     ca_message(status));

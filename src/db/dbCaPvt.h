@@ -35,14 +35,6 @@ of this distribution.
 #define	CA_MONITOR_STRING		0x20
 #define	CA_GET_ATTRIBUTES		0x40
 
-typedef struct caAttributes
-{
-    void (*callback)(void *usrPvt);
- struct dbr_ctrl_double	data;
-	void		*usrPvt;
-	int		gotData;
-}caAttributes;
-
 typedef struct caLink
 {
 	ELLNODE		node;
@@ -51,25 +43,38 @@ typedef struct caLink
         char		*pvname;
 	chid 		chid;
 	short		link_action;
+        /* The following have new values after each data event*/
 	unsigned short	sevr;
 	epicsTimeStamp	timeStamp;
+        /* The following have values after connection*/
+	short		dbrType;
+	long		nelements;
+        char		hasReadAccess;
+        char		hasWriteAccess;
+        char            isConnected;
+	char		gotFirstConnection;
+        /* The following are for access to additional attributes*/
+        char            gotAttributes;
+        void            (*callback)(void *usrPvt);
+        void            *userPvt;
+        /* The following have values after getAttribEventCallback*/
+        double          controlLimits[2];
+        double          displayLimits[2];
+        double          alarmLimits[4];
+        short           precision;
+        char            units[MAX_UNITS_SIZE];  /* units of value */
+        /* The following are for handling data*/
 	void 		*pgetNative;
-	void		*pputNative;
 	char		*pgetString;
+	void		*pputNative;
 	char		*pputString;
-	caAttributes	*pcaAttributes;
 	char		gotInNative;
-	char		gotOutNative;
 	char		gotInString;
+	char		gotOutNative;
 	char		gotOutString;
 	char		newOutNative;
 	char		newOutString;
-        int             isConnected;
-	short		dbrType;
-	long		nelements;
-        short		hasReadAccess;
-        short		hasWriteAccess;
-	char		gotFirstConnection;
+        /* The following are for dbcar*/
 	unsigned long	nDisconnect;
 	unsigned long	nNoWrite; /*only modified by dbCaPutLink*/
 }caLink;

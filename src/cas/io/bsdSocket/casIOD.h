@@ -28,6 +28,7 @@
 #include "tsFreeList.h"
 #include "osiSock.h"
 #include "inetAddrID.h"
+#include "cxxCompilerDependencies.h"
 
 #ifdef ipIgnoreEntryEpicsExportSharedSymbols
 #   define epicsExportSharedSymbols
@@ -40,15 +41,15 @@ void hostNameFromIPAddr ( const class caNetAddr * pAddr,
 class ipIgnoreEntry : public tsSLNode < ipIgnoreEntry > {
 public:
     ipIgnoreEntry ( unsigned ipAddr );
-    void destroy ();
     void show ( unsigned level ) const;
     bool operator == ( const ipIgnoreEntry & ) const;
     resTableIndex hash () const;
     void * operator new ( size_t size, 
         tsFreeList < class ipIgnoreEntry, 128 > & );
+#   ifdef CXX_PLACEMENT_DELETE
     void operator delete ( void *, 
         tsFreeList < class ipIgnoreEntry, 128 > & );
-
+#   endif
 private:
     unsigned ipAddr;
 	ipIgnoreEntry ( const ipIgnoreEntry & );

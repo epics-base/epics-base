@@ -39,8 +39,8 @@
 #include "dbChannelIO.h"
 #include "dbPutNotifyBlocker.h"
 
-dbChannelIO::dbChannelIO ( cacChannelNotify &notify, 
-    const dbAddr &addrIn, dbServiceIO &serviceIO ) :
+dbChannelIO::dbChannelIO ( cacChannelNotify & notify, 
+    const dbAddr & addrIn, dbServiceIO & serviceIO ) :
     cacChannel ( notify ), serviceIO ( serviceIO ), 
     addr ( addrIn )
 {
@@ -55,6 +55,14 @@ dbChannelIO::~dbChannelIO ()
 {
     this->serviceIO.destroyAllIO ( *this );
 }
+
+void dbChannelIO::destroy () 
+{
+    this->serviceIO.destroyChannel ( *this );
+    // dont access this pointer after above call because
+    // object nolonger exists
+}
+
 
 cacChannel::ioStatus dbChannelIO::read ( unsigned type, 
      unsigned long count, cacReadNotify &notify, ioid * ) 
@@ -121,7 +129,21 @@ void dbChannelIO::show ( unsigned level ) const
     }
 }
 
-void dbChannelIO::operator delete ( void *pCadaver )
+void * dbChannelIO::operator new ( size_t size, 
+    tsFreeList < dbChannelIO > & freeList )
+{
+    return freeList.allocate ( size );
+}
+
+#   ifdef CXX_PLACEMENT_DELETE
+void dbChannelIO::operator delete ( void *pCadaver, 
+    tsFreeList < dbChannelIO > & freeList )
+{
+    freeList.release ( pCadaver );
+}
+#endif
+
+void dbChannelIO::operator delete ( void * )
 {
     // Visual C++ .net appears to require operator delete if
     // placement operator delete is defined? I smell a ms rat

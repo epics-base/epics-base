@@ -29,47 +29,35 @@
 
 #include "ipAddrToAsciiAsynchronous.h"
 #include "tsFreeList.h"
-#include "epicsMutex.h"
 #include "cxxCompilerDependencies.h"
 
-class cac;
-class callbackMutex;
+class callbackForMultiplyDefinedPV {
+public:
+    virtual ~callbackForMultiplyDefinedPV () = 0;
+    virtual void pvMultiplyDefinedNotify ( 
+        class msgForMultiplyDefinedPV &, const char * pChannelName, 
+        const char * pAcc, const char * pRej ) = 0;
+};
 
 class msgForMultiplyDefinedPV : public ipAddrToAsciiAsynchronous {
 public:
-    msgForMultiplyDefinedPV ( callbackMutex &,
-        cac & cacRefIn, const char * pChannelName, const char * pAcc, 
-        const osiSockAddr & rej );
-    msgForMultiplyDefinedPV ( const osiSockAddr &addr, ipAddrToAsciiEngine &engine );
+    msgForMultiplyDefinedPV ( callbackForMultiplyDefinedPV &, 
+        const char * pChannelName, const char * pAcc, const osiSockAddr & rej );
+    //msgForMultiplyDefinedPV ( const osiSockAddr &addr, ipAddrToAsciiEngine &engine );
     void * operator new ( size_t size, tsFreeList < class msgForMultiplyDefinedPV, 16 > & );
 #   ifdef CXX_PLACEMENT_DELETE
     void operator delete ( void *, tsFreeList < class msgForMultiplyDefinedPV, 16 > & );
 #   endif
 private:
-    void ioCompletionNotify ( const char *pHostName );
     char acc[64];
     char channel[64];
-    cac & cacRef;
-    callbackMutex & mutex;
+    callbackForMultiplyDefinedPV & cb;
+    void ioCompletionNotify ( const char *pHostName );
 	msgForMultiplyDefinedPV ( const msgForMultiplyDefinedPV & );
 	msgForMultiplyDefinedPV & operator = ( const msgForMultiplyDefinedPV & );
     void * operator new ( size_t size );
     void operator delete ( void * );
 };
-
-inline void * msgForMultiplyDefinedPV::operator new ( size_t size, 
-    tsFreeList < class msgForMultiplyDefinedPV, 16 > & freeList )
-{
-    return freeList.allocate ( size );
-}
-
-#ifdef CXX_PLACEMENT_DELETE
-inline void msgForMultiplyDefinedPV::operator delete ( void *pCadaver, 
-    tsFreeList < class msgForMultiplyDefinedPV, 16 > & freeList )
-{
-    freeList.release ( pCadaver, sizeof ( msgForMultiplyDefinedPV ) );
-}
-#endif
 
 #endif // ifdef msgForMultiplyDefinedPVh
 

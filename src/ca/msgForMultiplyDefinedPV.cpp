@@ -37,10 +37,9 @@
 #undef epicsExportSharedSymbols
 
 msgForMultiplyDefinedPV::msgForMultiplyDefinedPV ( 
-    callbackMutex & mutexIn, cac & cacRefIn, 
-    const char * pChannelName, const char * pAcc, const osiSockAddr &rej ) :
-    ipAddrToAsciiAsynchronous ( rej ), cacRef ( cacRefIn ),
-    mutex ( mutexIn )
+    callbackForMultiplyDefinedPV & cbIn, const char * pChannelName, 
+    const char * pAcc, const osiSockAddr &rej ) :
+    ipAddrToAsciiAsynchronous ( rej ), cb ( cbIn )
 {
     strncpy ( this->acc, pAcc, sizeof ( this->acc ) );
     this->acc[ sizeof ( this->acc ) - 1 ] = '\0';
@@ -50,17 +49,26 @@ msgForMultiplyDefinedPV::msgForMultiplyDefinedPV (
 
 void msgForMultiplyDefinedPV::ioCompletionNotify ( const char * pHostNameRej )
 {
-    char buf[256];
-    sprintf ( buf, "Channel: \"%.64s\", Connecting to: %.64s, Ignored: %.64s",
-            this->channel, this->acc, pHostNameRej );
-    {
-        epicsGuard < callbackMutex > cbGuard ( this->mutex );
-        genLocalExcep ( cbGuard, this->cacRef, ECA_DBLCHNL, buf );
-    }
-    delete this;
+    this->cb.pvMultiplyDefinedNotify ( *this, this->channel, this->acc, pHostNameRej );
+    // dont touch this pointer after cb interfaces is called above because 
+    // this object may no-longer exist!
 }
 
-void msgForMultiplyDefinedPV::operator delete ( void *pCadaver )
+void * msgForMultiplyDefinedPV::operator new ( size_t size, 
+    tsFreeList < class msgForMultiplyDefinedPV, 16 > & freeList )
+{
+    return freeList.allocate ( size );
+}
+
+#ifdef CXX_PLACEMENT_DELETE
+void msgForMultiplyDefinedPV::operator delete ( void *pCadaver, 
+    tsFreeList < class msgForMultiplyDefinedPV, 16 > & freeList )
+{
+    freeList.release ( pCadaver, sizeof ( msgForMultiplyDefinedPV ) );
+}
+#endif
+
+void msgForMultiplyDefinedPV::operator delete ( void * )
 {
     // Visual C++ .net appears to require operator delete if
     // placement operator delete is defined? I smell a ms rat
@@ -70,4 +78,9 @@ void msgForMultiplyDefinedPV::operator delete ( void *pCadaver )
     errlogPrintf ( "%s:%d this compiler is confused about placement delete - memory was probably leaked",
         __FILE__, __LINE__ );
 }
+
+callbackForMultiplyDefinedPV::~callbackForMultiplyDefinedPV ()
+{
+}
+
 

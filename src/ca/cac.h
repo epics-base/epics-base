@@ -33,6 +33,7 @@
 
 #include "cxxCompilerDependencies.h"
 #include "ipAddrToAsciiAsynchronous.h"
+#include "msgForMultiplyDefinedPV.h"
 #include "epicsTimer.h"
 #include "epicsEvent.h"
 #include "freeList.h"
@@ -111,7 +112,8 @@ public:
         epicsGuard < cacMutex > &, nciu & chan ) = 0;
 };
 
-class cac : private cacRecycle, private cacDisconnectChannelPrivate
+class cac : private cacRecycle, private cacDisconnectChannelPrivate,
+    private callbackForMultiplyDefinedPV
 {
 public:
     cac ( cacNotify &, bool enablePreemptiveCallbackIn );
@@ -128,8 +130,6 @@ public:
     epicsGuard < callbackMutex > callbackGuardFactory ();
     bool executeResponse ( epicsGuard < callbackMutex > &, tcpiiu &, 
         caHdrLargeArray &, char *pMsgBody );
-    void ioCancel ( nciu &chan, const cacChannel::ioid &id );
-    void ioShow ( const cacChannel::ioid &id, unsigned level ) const;
 
     // channel routines
     bool lookupChannelAndTransferToTCP ( 
@@ -145,15 +145,17 @@ public:
     void registerService ( cacService &service );
     void initiateConnect ( nciu & );
 
-    // IO request stubs
+    // IO requests
     void writeRequest ( nciu &, unsigned type, 
-        unsigned nElem, const void *pValue );
+        arrayElementCount nElem, const void * pValue );
     cacChannel::ioid writeNotifyRequest ( nciu &, unsigned type, 
-        unsigned nElem, const void *pValue, cacWriteNotify & );
+        arrayElementCount nElem, const void *pValue, cacWriteNotify & );
     cacChannel::ioid readNotifyRequest ( nciu &, unsigned type, 
-        unsigned nElem, cacReadNotify & );
+        arrayElementCount nElem, cacReadNotify & );
     cacChannel::ioid subscriptionRequest ( nciu &, unsigned type, 
         arrayElementCount nElem, unsigned mask, cacStateNotify & );
+	void ioCancel ( nciu &  chan, const cacChannel::ioid & id );
+    void ioShow ( const cacChannel::ioid &id, unsigned level ) const;
 
     // sync group routines
     CASG * lookupCASG ( unsigned id );
@@ -169,7 +171,6 @@ public:
     void show ( unsigned level ) const;
     int printf ( const char *pformat, ... ) const;
     int vPrintf ( const char *pformat, va_list args ) const;
-    void ipAddrToAsciiAsynchronousRequestInstall ( ipAddrToAsciiAsynchronous & request );
     void signal ( int ca_status, const char *pfilenm, 
                      int lineno, const char *pFormat, ... );
     void vSignal ( int ca_status, const char *pfilenm, 
@@ -275,6 +276,9 @@ private:
     void ioExceptionNotify ( unsigned id, int status, 
         const char *pContext, unsigned type, arrayElementCount count );
 
+    void pvMultiplyDefinedNotify ( msgForMultiplyDefinedPV & mfmdpv, 
+        const char * pChannelName, const char * pAcc, const char * pRej );
+
     void ioCompletionNotifyAndDestroy ( unsigned id );
     void ioCompletionNotifyAndDestroy ( unsigned id, 
         unsigned type, arrayElementCount count, const void *pData );
@@ -339,11 +343,6 @@ private:
 inline const char * cac::userNamePointer () const
 {
     return this->pUserName;
-}
-
-inline void cac::ipAddrToAsciiAsynchronousRequestInstall ( ipAddrToAsciiAsynchronous & request )
-{
-    request.ioInitiate ( this->ipToAEngine );
 }
 
 inline unsigned cac::getInitializingThreadsPriority () const

@@ -61,11 +61,6 @@ dbPutNotifyBlocker::~dbPutNotifyBlocker ()
     }
 }
 
-void dbPutNotifyBlocker::destroy ()
-{
-    delete this;
-}
-
 void dbPutNotifyBlocker::cancel ()
 {
     if ( this->pn.paddr ) {
@@ -187,7 +182,21 @@ dbSubscriptionIO * dbPutNotifyBlocker::isSubscription ()
     return 0;
 }
 
-void dbPutNotifyBlocker::operator delete ( void * pCadaver )
+void * dbPutNotifyBlocker::operator new ( size_t size, 
+    tsFreeList < dbPutNotifyBlocker > & freeList )
+{
+    return freeList.allocate ( size );
+}
+
+#   ifdef CXX_PLACEMENT_DELETE
+void dbPutNotifyBlocker::operator delete ( void *pCadaver, 
+    tsFreeList < dbPutNotifyBlocker > & freeList )
+{
+    freeList.release ( pCadaver );
+}
+#   endif
+
+void dbPutNotifyBlocker::operator delete ( void * )
 {
     // Visual C++ .net appears to require operator delete if
     // placement operator delete is defined? I smell a ms rat

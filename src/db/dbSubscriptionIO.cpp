@@ -60,11 +60,6 @@ dbSubscriptionIO::~dbSubscriptionIO ()
     this->unsubscribe ();
 }
 
-void dbSubscriptionIO::destroy ()
-{
-    delete this;
-}
-
 void dbSubscriptionIO::unsubscribe ()
 {
     if ( this->es ) {
@@ -79,7 +74,7 @@ void dbSubscriptionIO::channelDeleteException ()
         this->chan.pName(), this->type, this->count );
 }
 
-void dbSubscriptionIO::operator delete ( void * pCadaver )
+void dbSubscriptionIO::operator delete ( void * )
 {
     // Visual C++ .net appears to require operator delete if
     // placement operator delete is defined? I smell a ms rat
@@ -96,11 +91,13 @@ void * dbSubscriptionIO::operator new ( size_t size,
     return freeList.allocate ( size );
 }
 
+#ifdef CXX_PLACEMENT_DELETE
 void dbSubscriptionIO::operator delete ( void * pCadaver, 
         tsFreeList < dbSubscriptionIO > & freeList )
 {
     freeList.release ( pCadaver );
 }
+#endif
 
 extern "C" void dbSubscriptionEventCallback ( void *pPrivate, struct dbAddr * /* paddr */,
 	int /* eventsRemaining */, struct db_field_log *pfl )

@@ -100,6 +100,12 @@ cacChannel *dbServiceIO::createChannel ( // X aCC 361
     }
 }
 
+void dbServiceIO::destroyChannel ( dbChannelIO & chan )
+{
+    chan.~dbChannelIO ();
+    this->dbChannelIOFreeList.release ( & chan );
+}
+
 void dbServiceIO::callStateNotify ( struct dbAddr & addr, 
         unsigned type, unsigned long count, 
         const struct db_field_log * pfl, 
@@ -243,28 +249,32 @@ void dbServiceIO::destroyAllIO ( dbChannelIO & chan )
         // If they call ioCancel() here it will be ignored
         // because the IO has been unregistered above.
         pIO->channelDeleteException ();
-        pIO->destroy ();
+        pIO->~dbSubscriptionIO ();
+        this->dbSubscriptionIOFreeList.release ( pIO );
     }
     if ( chan.dbServicePrivateListOfIO::pBlocker ) {
-        chan.dbServicePrivateListOfIO::pBlocker->destroy ();
+        chan.dbServicePrivateListOfIO::pBlocker->~dbPutNotifyBlocker ();
+        this->dbPutNotifyBlockerFreeList.release ( chan.dbServicePrivateListOfIO::pBlocker );
+        chan.dbServicePrivateListOfIO::pBlocker = 0;
     }
 }
 
 void dbServiceIO::ioCancel ( dbChannelIO & chan, const cacChannel::ioid &id )
 {
     epicsGuard < epicsMutex > locker ( this->mutex );
-    dbBaseIO *pIO = this->ioTable.remove ( id );
+    dbBaseIO * pIO = this->ioTable.remove ( id );
     if ( pIO ) {
         dbSubscriptionIO *pSIO = pIO->isSubscription ();
         if ( pSIO ) {
             chan.dbServicePrivateListOfIO::eventq.remove ( *pSIO );
-            pIO->destroy ();
+            pSIO->~dbSubscriptionIO ();
+            this->dbSubscriptionIOFreeList.release ( pSIO );
         }
         else if ( pIO == chan.dbServicePrivateListOfIO::pBlocker ) {
             chan.dbServicePrivateListOfIO::pBlocker->cancel ();
         }
         else {
-            errlogPrintf ( "dbServiceIO::ioCancel() unrecognized IO was probably leaked\n" );
+            errlogPrintf ( "dbServiceIO::ioCancel() unrecognized IO was probably leaked or not canceled\n" );
         }
     }
 }

@@ -30,10 +30,22 @@
 #ifndef dbChannelIOh
 #define dbChannelIOh
 
+#ifdef epicsExportSharedSymbols
+#   define dbChannelIOh_restore_epicsExportSharedSymbols
+#   undef epicsExportSharedSymbols
+#endif
+
+#include "cxxCompilerDependencies.h"
+
+#ifdef dbChannelIOh_restore_epicsExportSharedSymbols
+#   define epicsExportSharedSymbols
+#endif
+
 class dbChannelIO : public cacChannel, public dbServicePrivateListOfIO {
 public:
     dbChannelIO ( cacChannelNotify &notify, 
         const dbAddr &addr, dbServiceIO &serviceIO );
+    ~dbChannelIO ();
     void destroy ();
     void callReadNotify ( unsigned type, unsigned long count, 
             cacReadNotify &notify );
@@ -42,9 +54,9 @@ public:
     void show ( unsigned level ) const;
     const char *pName () const;
     void * operator new ( size_t size, tsFreeList < dbChannelIO > & );
+#   ifdef CXX_PLACEMENT_DELETE
     void operator delete ( void *, tsFreeList < dbChannelIO > & );
-protected:
-    ~dbChannelIO (); // allocate only from pool
+#   endif
 private:
     dbServiceIO & serviceIO;
     dbAddr addr;
@@ -74,23 +86,6 @@ inline unsigned long dbChannelIO::nativeElementCount () const
         return static_cast < unsigned long > ( this->addr.no_elements );
     }
     return 0u;
-}
-
-inline void dbChannelIO::destroy () 
-{
-    delete this;
-}
-
-inline void * dbChannelIO::operator new ( size_t size, 
-    tsFreeList < dbChannelIO > & freeList )
-{
-    return freeList.allocate ( size );
-}
-
-inline void dbChannelIO::operator delete ( void *pCadaver, 
-    tsFreeList < dbChannelIO > & freeList )
-{
-    freeList.release ( pCadaver );
 }
 
 inline const char *dbChannelIO::pName () const 

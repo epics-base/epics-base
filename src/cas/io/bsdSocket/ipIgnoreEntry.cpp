@@ -44,7 +44,26 @@ resTableIndex ipIgnoreEntry::hash () const
         inetAddrMaxIndexBitWidth, this->ipAddr );
 }
 
-void ipIgnoreEntry::operator delete ( void * pCadaver )
+ipIgnoreEntry::ipIgnoreEntry ( unsigned ipAddrIn ) :
+    ipAddr ( ipAddrIn )
+{
+}
+
+void * ipIgnoreEntry::operator new ( size_t size, 
+        tsFreeList < class ipIgnoreEntry, 128 > & freeList )
+{
+    return freeList.allocate ( size );
+}
+
+#ifdef CXX_PLACEMENT_DELETE
+void ipIgnoreEntry::operator delete ( void * pCadaver, 
+        tsFreeList < class ipIgnoreEntry, 128 > & freeList )
+{
+    freeList.release ( pCadaver );
+}
+#endif
+
+void ipIgnoreEntry::operator delete ( void * )
 {
     // Visual C++ .net appears to require operator delete if
     // placement operator delete is defined? I smell a ms rat

@@ -32,31 +32,28 @@
 #undef epicsExportSharedSymbols
 #endif
 
-#include "shareLib.h"
-
 #include "tsFreeList.h"
+#include "cxxCompilerDependencies.h"
 
 #ifdef dbPutNotifyBlockerh_restore_epicsExportSharedSymbols
 #define epicsExportSharedSymbols
 #endif
 
-#include "shareLib.h"
-
 class dbPutNotifyBlocker : public dbBaseIO {
 public:
     dbPutNotifyBlocker ();
+    virtual ~dbPutNotifyBlocker ();
     void initiatePutNotify ( epicsGuard < epicsMutex > & locker, 
             cacWriteNotify & notify, struct dbAddr & addr, 
             unsigned type, unsigned long count, const void * pValue );
     void cancel ();
     void show ( unsigned level ) const;
-    void destroy ();
     void * operator new ( size_t size, 
         tsFreeList < dbPutNotifyBlocker > & );
+#   ifdef CXX_PLACEMENT_DELETE
     void operator delete ( void *, 
         tsFreeList < dbPutNotifyBlocker > & );
-protected:
-    virtual ~dbPutNotifyBlocker ();
+#   endif
 private:
     putNotify pn;
     //
@@ -86,18 +83,6 @@ private:
     void * operator new ( size_t size );
     void operator delete ( void * );
 };
-
-inline void * dbPutNotifyBlocker::operator new ( size_t size, 
-    tsFreeList < dbPutNotifyBlocker > & freeList )
-{
-    return freeList.allocate ( size );
-}
-
-inline void dbPutNotifyBlocker::operator delete ( void *pCadaver, 
-    tsFreeList < dbPutNotifyBlocker > & freeList )
-{
-    freeList.release ( pCadaver );
-}
 
 #endif // ifndef dbPutNotifyBlockerh
 

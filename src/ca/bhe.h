@@ -83,8 +83,6 @@ private:
 	bhe & operator = ( const bhe & );
     void * operator new ( size_t size );
     epicsShareFunc void operator delete ( void * );
-    void * operator new [] ( size_t size );
-    void operator delete [] ( void * );
 };
 
 // using a wrapper class around the free list avoids

@@ -38,12 +38,12 @@
 #include "tsFreeList.h"
 #include "resourceLib.h"
 #include "cacIO.h"
+#include "cxxCompilerDependencies.h"
 
 #ifdef dbCACh_restore_epicsExportSharedSymbols
 #   define epicsExportSharedSymbols
 #   include "shareLib.h"
 #endif
-
 
 #include "db_access.h"
 #include "dbNotify.h"
@@ -65,7 +65,6 @@ class dbBaseIO                  //  X aCC 655
     : public chronIntIdRes < dbBaseIO > {
 public:
     virtual dbSubscriptionIO * isSubscription () = 0;
-    virtual void destroy () = 0;
     virtual void show ( unsigned level ) const = 0;
 	dbBaseIO ();
 	dbBaseIO ( const dbBaseIO & );
@@ -79,14 +78,14 @@ class dbSubscriptionIO : public tsDLNode <dbSubscriptionIO>, public dbBaseIO {
 public:
     dbSubscriptionIO ( dbServiceIO &, dbChannelIO &, struct dbAddr &, cacStateNotify &, 
         unsigned type, unsigned long count, unsigned mask, dbEventCtx );
-    void destroy ();
+    virtual ~dbSubscriptionIO ();
     void unsubscribe ();
     void channelDeleteException ();
     void show ( unsigned level ) const;
     void * operator new ( size_t size, tsFreeList < dbSubscriptionIO > & );
+#   ifdef CXX_PLACEMENT_DELETE
     void operator delete ( void *, tsFreeList < dbSubscriptionIO > & );
-protected:
-    virtual ~dbSubscriptionIO ();
+#   endif
 private:
     cacStateNotify & notify;
     dbChannelIO & chan;
@@ -110,7 +109,7 @@ public:
     dbServicePrivateListOfIO ();
 private:
     tsDLList < dbSubscriptionIO > eventq;
-    dbPutNotifyBlocker *pBlocker;
+    dbPutNotifyBlocker * pBlocker;
     friend class dbServiceIO;
 	dbServicePrivateListOfIO ( const dbServicePrivateListOfIO & );
 	dbServicePrivateListOfIO & operator = ( const dbServicePrivateListOfIO & );
@@ -139,6 +138,7 @@ public:
     virtual ~dbServiceIO ();
     cacChannel * createChannel ( const char *pName, 
             cacChannelNotify &, cacChannel::priLev );
+    void destroyChannel ( dbChannelIO & );
     void callReadNotify ( struct dbAddr &addr, unsigned type, unsigned long count, 
             cacReadNotify &notify );
     void callStateNotify ( struct dbAddr &addr, unsigned type, unsigned long count, 

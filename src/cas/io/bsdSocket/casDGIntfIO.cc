@@ -266,7 +266,12 @@ casDGIntfIO::~casDGIntfIO()
         free ( pnode );
     }
 
-    this->ignoreTable.traverse ( & ipIgnoreEntry::destroy );
+    tsSLList < ipIgnoreEntry > tmp;
+    this->ignoreTable.removeAll ( tmp );
+    while ( ipIgnoreEntry * pEntry = tmp.get() ) {
+        pEntry->~ipIgnoreEntry ();
+        this->ipIgnoreEntryFreeList.release ( pEntry );
+    }
     
     osiSockRelease ();
 }

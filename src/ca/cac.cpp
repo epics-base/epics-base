@@ -538,9 +538,8 @@ bool cac::lookupChannelAndTransferToTCP (
                 char acc[64];
                 pChan->getPIIU()->hostName ( acc, sizeof ( acc ) );
                 msgForMultiplyDefinedPV * pMsg = new ( this->mdpvFreeList )
-                    msgForMultiplyDefinedPV ( 
-                        this->cbMutex, *this, pChan->pName (), acc, addr );
-                this->ipAddrToAsciiAsynchronousRequestInstall ( *pMsg );
+                    msgForMultiplyDefinedPV ( *this, pChan->pName (), acc, addr );
+                pMsg->ioInitiate ( this->ipToAEngine );
             }
             return true;
         }
@@ -759,7 +758,7 @@ void cac::flushIfRequired ( epicsGuard < cacMutex > & guard, netiiu & iiu )
     }
 }
 
-void cac::writeRequest ( nciu & chan, unsigned type, unsigned nElem, const void * pValue )
+void cac::writeRequest ( nciu & chan, unsigned type, arrayElementCount nElem, const void * pValue )
 {
     epicsGuard < cacMutex > guard ( this->mutex );
     this->flushIfRequired ( guard, *chan.getPIIU() );
@@ -767,8 +766,8 @@ void cac::writeRequest ( nciu & chan, unsigned type, unsigned nElem, const void 
 }
 
 cacChannel::ioid 
-cac::writeNotifyRequest ( nciu &chan, unsigned type, // X aCC 361
-                          unsigned nElem, const void *pValue, cacWriteNotify &notifyIn )
+cac::writeNotifyRequest ( nciu & chan, unsigned type, // X aCC 361
+                          arrayElementCount nElem, const void * pValue, cacWriteNotify & notifyIn )
 {
     epicsGuard < cacMutex > guard ( this->mutex );
     autoPtrRecycle  < netWriteNotifyIO > pIO ( this->ioTable, chan.cacPrivateListOfIO::eventq,
@@ -782,8 +781,8 @@ cac::writeNotifyRequest ( nciu &chan, unsigned type, // X aCC 361
 }
 
 cacChannel::ioid
-cac::readNotifyRequest ( nciu &chan, unsigned type, // X aCC 361
-                         unsigned nElem, cacReadNotify &notifyIn )
+cac::readNotifyRequest ( nciu & chan, unsigned type, // X aCC 361
+                         arrayElementCount nElem, cacReadNotify & notifyIn )
 {
     epicsGuard < cacMutex > guard ( this->mutex );
     autoPtrRecycle  < netReadNotifyIO > pIO ( this->ioTable,
@@ -796,8 +795,8 @@ cac::readNotifyRequest ( nciu &chan, unsigned type, // X aCC 361
     return pIO.release()->getId ();
 }
 
-void cac::ioCancel ( nciu &chan, const cacChannel::ioid & idIn )
-{   
+void cac::ioCancel ( nciu &  chan, const cacChannel::ioid & idIn )
+{
     baseNMIU * pmiu;
 
     // unistall the IO object so that a receive thread will not find it,
@@ -1596,4 +1595,20 @@ void cacComBufMemoryManager::release ( void * pCadaver ) epics_throws (())
 {
     return this->freeList.release ( pCadaver );
 }
+
+void cac::pvMultiplyDefinedNotify ( msgForMultiplyDefinedPV & mfmdpv, 
+    const char * pChannelName, const char * pAcc, const char * pRej )
+{
+    char buf[256];
+    sprintf ( buf, "Channel: \"%.64s\", Connecting to: %.64s, Ignored: %.64s",
+            pChannelName, pAcc, pRej );
+    {
+        epicsGuard < callbackMutex > cbGuard ( this->cbMutex );
+        this->exception ( cbGuard, ECA_DBLCHNL, buf, __FILE__, __LINE__ );
+    }
+    mfmdpv.~msgForMultiplyDefinedPV ();
+    this->mdpvFreeList.release ( & mfmdpv );
+}
+
+
 

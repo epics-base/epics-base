@@ -27,6 +27,7 @@
  *
  * Modification Log:
  * -----------------
+ *  .02 04-19-94	jrw	Added value fields and monitors on them
  *  .01	09-21-92	jrw	created
  */
 #include	<vxWorks.h>
@@ -252,7 +253,7 @@ struct seqRecord *pseq;
   plink = (struct linkDesc *)(&(pseq->dly1));
   while (lmask)
   {
-    if ((lmask & 1) && (plink->lnk.type == DB_LINK))
+    if ((lmask & 1) && ((plink->lnk.type == DB_LINK)||(plink->dol.type == DB_LINK)))
     {
       pcb->plinks[pcb->index] = plink;
       pcb->index++;
@@ -332,13 +333,16 @@ static long
 asyncFinish(pseq)
 struct seqRecord *pseq;
 {
-  unsigned short stat, sevr, nsta, nsev;
+  unsigned short MonitorMask;
 
   if (seqRecDebug > 5)
     printf("asyncFinish(%s) completing processing\n", pseq->name);
   pseq->udf = FALSE;
  
-  recGblResetAlarms(pseq);
+  MonitorMask = recGblResetAlarms(pseq);
+
+  if (MonitorMask)
+    db_post_events(pseq, &pseq->val, MonitorMask);
 
   /* process the forward scan link record */
   recGblFwdLink(pseq);
@@ -407,6 +411,19 @@ CALLBACK *pCallback;
   }
   /* Dump the value to the destination field */
   recGblPutLinkValue(&(pcb->plinks[pcb->index]->lnk), (void *)pseq, DBR_DOUBLE, &myDouble, &nRequest);
+
+  if (myDouble != pcb->plinks[pcb->index]->dov)
+  {
+    if (seqRecDebug > 0)
+      printf("link %d changed from %f to %f\n", pcb->index, pcb->plinks[pcb->index]->dov, myDouble);
+    pcb->plinks[pcb->index]->dov = myDouble;
+    db_post_events(pseq, &pcb->plinks[pcb->index]->dov, DBE_VALUE);
+  }
+  else
+  {
+    if (seqRecDebug > 0)
+      printf("link %d not changed... %f\n", pcb->index, myDouble);
+  }
 
   /* Find the 'next' link-seq that is ready for processing. */
   pcb->index++;

@@ -370,7 +370,7 @@ long dbGetLink(pdblink,pdest,dbrType,pbuffer,options,nRequest)
 	if(pdblink->maximize_sevr) {
 		struct dbCommon *pfrom=(struct dbCommon*)(paddr->precord);
 
-		if(pfrom->sevr>pdest->sevr) {
+		if(pfrom->sevr>pdest->nsev) {
 			pdest->nsev = pfrom->sevr;
 			pdest->nsta = LINK_ALARM;
 		}
@@ -394,7 +394,7 @@ long dbPutLink(pdblink,psource,dbrType,pbuffer,nRequest)
 	if(pdblink->maximize_sevr) {
 		struct dbCommon *pto=(struct dbCommon*)(paddr->precord);
 
-		if(pto->sevr<psource->sevr) {
+		if(pto->nsev<psource->sevr) {
 			pto->nsev = psource->sevr;
 			pto->nsta = LINK_ALARM;
 		}

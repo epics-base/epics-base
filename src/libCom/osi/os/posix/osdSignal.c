@@ -20,8 +20,8 @@
 
 typedef void ( *pSigFunc ) ( int );
 
-static pSigFunc pReplacedSigPipeFunc;
-static pSigFunc pReplacedSigUrgFunc;
+static pSigFunc pReplacedSigPipeFunc = 0;
+static pSigFunc pReplacedSigUrgFunc = 0;
 
 /*
  * localInstallSigPipeIgnore ()
@@ -36,20 +36,22 @@ static void localInstallSigIgnore ( int signalIn, pSigFunc pNewFunc,
                                    pSigFunc * pReplacedFunc )
 {
     pSigFunc sigRet;
+    struct sigaction newAction;
+    struct sigaction oldAction;
+    int status;
 
-    sigRet = signal ( signalIn, pNewFunc );
-    if ( sigRet == SIG_ERR ) {
-        fprintf (stderr, "%s replace of SIGPIPE failed beacuse %s\n", 
-            __FILE__, strerror(errno));
+    newAction.sa_handler = pNewFunc;
+    sigemptyset ( & newAction.sa_mask );
+    newAction.sa_flags = 0;
+    status = sigaction ( signalIn, & newAction, & oldAction );
+    if ( status < 0 ) {
+        fprintf ( stderr, "%s: ignore install for signal %d failed beacuse %s\n", 
+            __FILE__, signalIn, strerror ( errno ) );
     }
-    else if ( sigRet != SIG_DFL && sigRet != SIG_IGN ) {
-        *pReplacedFunc = sigRet;
-        /*
-         * no infinite loops 
-         */
-        if ( *pReplacedFunc == pNewFunc ) {
-            *pReplacedFunc = NULL;
-        }
+    else if (   oldAction.sa_handler != SIG_DFL && 
+                oldAction.sa_handler != SIG_IGN &&
+                oldAction.sa_handler != pNewFunc ) {
+        *pReplacedFunc = oldAction.sa_handler;
     }
 }
 
@@ -63,12 +65,6 @@ static void ignoreSigPipe ( int signal )
     if ( pReplacedSigPipeFunc ) {
         ( *pReplacedSigPipeFunc ) ( signal );
     }
-    /*
-     * some versios of unix reset to SIG_DFL
-     * each time that the signal occurs
-     */
-    localInstallSigIgnore ( signal, 
-        ignoreSigPipe, & pReplacedSigPipeFunc );
 }
 
 /*
@@ -81,12 +77,6 @@ static void ignoreSigUrg ( int signal )
     if ( pReplacedSigUrgFunc ) {
         ( *pReplacedSigUrgFunc ) ( signal );
     }
-    /*
-     * some versions of unix reset to SIG_DFL
-     * each time that the signal occurs
-     */
-    localInstallSigIgnore ( signal, 
-        ignoreSigUrg, & pReplacedSigUrgFunc );
 }
 
 /*
@@ -94,24 +84,14 @@ static void ignoreSigUrg ( int signal )
  */
 epicsShareFunc void epicsShareAPI epicsSignalInstallSigPipeIgnore (void)
 {
-    static int init;
-    if ( init ) {
-        return;
-    }
     localInstallSigIgnore ( SIGPIPE, 
         ignoreSigPipe, & pReplacedSigPipeFunc );
-    init = 1;
 }
 
 epicsShareFunc void epicsShareAPI epicsSignalInstallSigUrgIgnore ( void ) 
 {
-    static int init;
-    if ( init ) {
-        return;
-    }
     localInstallSigIgnore ( SIGURG, 
         ignoreSigUrg, & pReplacedSigUrgFunc );
-    init = 1;
 }
 
 epicsShareFunc void epicsShareAPI epicsSignalRaiseSigUrg 
@@ -121,7 +101,7 @@ epicsShareFunc void epicsShareAPI epicsSignalRaiseSigUrg
     pthread_t id = epicsThreadGetPosixThreadId ( threadId );
     status = pthread_kill ( SIGURG, id );
     if ( status ) {
-        errlogPrintf ( "Failed to send signal to thread. Status = \"%s\"\n", 
+        errlogPrintf ( "Failed to send SIGURG signal to thread. Status = \"%s\"\n", 
             strerror ( status ) );
     }
 }

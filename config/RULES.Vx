@@ -235,8 +235,9 @@ endif
 ifdef DBDEXPAND
 $(DBDNAME): ../$(DBDEXPAND)
 	@echo Expanding dbd
-	@$(RM) $@
-	$(EPICS_BASE_HOST_BIN)/dbExpand$(EXE) $(DBDFLAGS) $< > $@
+	@$(RM) $@ $@-new
+	$(EPICS_BASE_HOST_BIN)/dbExpand$(EXE) $(DBDFLAGS) $< > $@-new
+	@$(MV) $@-new $@
 endif
 
 $(LIBNAME): $(LIBOBJS)

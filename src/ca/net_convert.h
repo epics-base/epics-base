@@ -41,7 +41,7 @@ extern "C" {
 #if defined(VAX) 
 #	define CA_FLOAT_MIT
 #	define CA_LITTLE_ENDIAN
-#elif defined(_M_IX86)
+#elif defined(_M_IX86) || defined(_X86_)
 #	define CA_FLOAT_IEEE
 #	define CA_LITTLE_ENDIAN
 #elif (defined(__ALPHA) && defined(VMS) || defined(__alpha)) && defined(VMS)

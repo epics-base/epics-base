@@ -27,6 +27,9 @@
  * Modification Log: 
  * -----------------
  * $Log$
+ * Revision 1.9  1997/05/01 19:57:09  jhill
+ * updated dll keywords
+ *
  * Revision 1.8  1997/04/10 19:45:15  jhill
  * API changes and include with  not <>
  *
@@ -52,10 +55,11 @@
 #include <string.h>
 #include <errno.h>
 
-#define epicsExportSharedSymbols
-#include "epicsAssert.h"
+#include "dbDefs.h"
 #include "epicsPrint.h"
 #include "epicsVersion.h"
+#define epicsExportSharedSymbols
+#include "epicsAssert.h"
 
 
 /*

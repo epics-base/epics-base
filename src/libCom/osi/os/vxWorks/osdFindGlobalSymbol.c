@@ -8,8 +8,8 @@
 #include <sysSymTbl.h>
 
 #include "dbmf.h"
-#include "osiFindGlobalSymbol.h"
-void *osiFindGlobalSymbol(const char *name)
+#include "epicsFindGlobalSymbol.h"
+void *epicsFindGlobalSymbol(const char *name)
 {
     STATUS status;
     SYM_TYPE type;

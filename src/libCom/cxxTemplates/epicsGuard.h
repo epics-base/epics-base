@@ -25,12 +25,12 @@ template < class T > class epicsGuardRelease;
 template < class T >
 class epicsGuard {
 public:
-    epicsGuard ( T & );
     epicsGuard ( const epicsGuard & ); 
+    epicsGuard ( T & );
     ~epicsGuard ();
 private:
     T & targetMutex;
-    // epicsGuard & operator = ( const epicsGuard & ); visual c++ warning bug
+    epicsGuard & operator = ( const epicsGuard & ); 
     friend class epicsGuardRelease < T >;
 };
 
@@ -43,14 +43,14 @@ public:
     ~epicsGuardRelease ();
 private:
     epicsGuard < T > & guard;
-    // epicsGuardRelease ( const epicsGuardRelease & ); visual c++ warning bug
-    // epicsGuardRelease & operator = ( const epicsGuardRelease & ); visual c++ warning bug
+    epicsGuardRelease ( const epicsGuardRelease & ); 
+    epicsGuardRelease & operator = ( const epicsGuardRelease & ); 
 };
 
+// same interface as epicsMutex
 class epicsMutexNOOP {
 public:
     void lock ();
-    bool lock ( double timeOut );
     bool tryLock ();
     void unlock ();
     void show ( unsigned level ) const;
@@ -91,7 +91,6 @@ inline epicsGuardRelease < T > :: ~epicsGuardRelease ()
 }
 
 inline void epicsMutexNOOP::lock () {}
-inline bool epicsMutexNOOP::lock ( double ) { return true; }
 inline bool epicsMutexNOOP::tryLock () { return true; }
 inline void epicsMutexNOOP::unlock () {}
 inline void epicsMutexNOOP::show ( unsigned ) const {}

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.12  1999/08/07 00:55:35  jhill
+ * solaris compiler issues
+ *
  * Revision 1.11  1999/08/04 23:53:20  jhill
  * elimated init flag and init routine
  *
@@ -137,7 +140,7 @@ casEventMask casEventRegistry::registerEvent(const char *pName)
 	// NOTE: pName outlives id here
 	// (so the refString option is ok)
 	//
-	stringIdentifier <16,8> id (pName, stringId::refString);
+	stringIdentifier <16,8> id (pName, stringIdentifier <16,8>::refString);
 	casEventMaskEntry       *pEntry;
 	casEventMask            mask;
 

@@ -12,9 +12,9 @@ value	[a-zA-Z0-9_\,\^~\./\*#\[\]%: ;!|\'\-&\(\)@\?\+<>=\$\{\}]
 "field"	    { return(FIELD); }
 "grecord"    { return(RECORD); }
 "record"    { return(RECORD); }
-"container" {  return(CONTAINER); }
 "database"  {  return(DATABASE); }
 "nowhere"   {  return(NOWHERE); }
+"application"   {  return(APPL); }
 
 \"{value}*\"    { yylval.Str=(char *)malloc(strlen(yytext)+1); strcpy(yylval.Str,yytext+1); yylval.Str[strlen(yylval.Str)-1] = '\0'; return(VALUE); }
 

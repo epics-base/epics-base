@@ -49,6 +49,17 @@ static char subst_buffer[VAR_MAX_SUB_SIZE];
 static int subst_used;
 static int line_num;
 
+struct db_app_node
+{
+	char* name;
+	struct db_app_node* next;
+};
+typedef struct db_app_node DB_APP_NODE;
+
+DB_APP_NODE* DbApplList=(DB_APP_NODE*)NULL;
+static DB_APP_NODE* DbCurrentListHead=(DB_APP_NODE*)NULL;
+static DB_APP_NODE* DbCurrentListTail=(DB_APP_NODE*)NULL;
+
 static int yyerror();
 static void sub_pvname(char*,char*);
 
@@ -65,8 +76,9 @@ extern struct dbBase *pdbBase;
 %token <Str> WORD VALUE 
 %token <Str> FIELD
 %left O_BRACE C_BRACE O_PAREN C_PAREN
-%left DATABASE CONTAINER RECORD
-%left NOWHERE 
+%left DATABASE RECORD
+%left NOWHERE
+%token APPL
 
 %union
 {
@@ -105,18 +117,39 @@ n_body: O_BRACE records C_BRACE
 	;
 
 db_components: /* null */
-	| db_components container
+	| db_components applic
 	| db_components record
 	;
 
-container: CONTAINER c_head c_body
-	;
+applic: APPL O_PAREN VALUE C_PAREN
+	{
+		DB_APP_NODE* an=(DB_APP_NODE*)malloc(sizeof(DB_APP_NODE*));
 
-c_head: O_PAREN WORD C_PAREN
-	{ free($2); }
-	;
+		if(subst_used)
+		{
+			strcpy(subst_buffer,$<Str>3);
+			if(dbDoSubst(subst_buffer,sizeof(subst_buffer),NULL)!=0)
+				fprintf(stderr,"dbDoSubst failed\n");
+#ifdef vxWorks
+			an->name=strdup(subst_buffer);
+			free($3);
+#else
+			printf("\napplication(\"%s\")\n",subst_buffer);
+#endif
+		}
+		else
+		{
+#ifdef vxWorks
+			an->name=$<Str>3;
+#else
+			printf("\napplication(\"%s\")\n",$<Str>3);
+#endif
+		}
+		if(DbCurrentListHead==(DB_APP_NODE*)NULL) DbCurrentListTail=an;
 
-c_body: O_BRACE db_components C_BRACE
+		an->next=DbCurrentListHead;
+		DbCurrentListHead=an;
+	}
 	;
 
 records: /* null */
@@ -190,13 +223,24 @@ field:	FIELD O_PAREN WORD COMMA VALUE C_PAREN
 static int yyerror(str)
 char  *str;
 { fprintf(stderr,"db file parse, Error line %d : %s\n",line_num, yytext); }
+
+#ifdef vxWorks
+static char* strdup(char* x)
+{
+	char* c;
+	c=(char*)malloc(strlen(x)+1);
+	strcpy(c,x);
+	return c;
+}
+#endif
  
 static int is_not_inited = 1;
  
-int dbLoadRecords(char* pfilename, char* pattern, char* container)
+int dbLoadRecords(char* pfilename, char* pattern)
 {
 	FILE* fp;
 	long status;
+	DB_APP_NODE* an;
 
 #ifdef vxWorks
 	if(pdbBase==NULL)
@@ -243,6 +287,21 @@ int dbLoadRecords(char* pfilename, char* pattern, char* container)
 	if(subst_used) dbFreeSubst();
 
 	fclose(fp);
+
+	if(DbCurrentListHead==(DB_APP_NODE*)NULL)
+	{
+		/* set up a default list to put on the master application list */
+		DbCurrentListHead=(DB_APP_NODE*)malloc(sizeof(DB_APP_NODE));
+		DbCurrentListTail=DbCurrentListHead;
+		DbCurrentListHead->name=strdup(pfilename);
+		DbCurrentListHead->next=(DB_APP_NODE*)NULL;
+	}
+
+	DbCurrentListTail->next=DbApplList;
+	DbApplList=DbCurrentListHead;
+	DbCurrentListHead=(DB_APP_NODE*)NULL;
+	DbCurrentListTail=(DB_APP_NODE*)NULL;
+
 	return 0;
 }
 
@@ -276,3 +335,14 @@ static void sub_pvname(char* type, char* name)
 		}
 }
 
+#ifdef vxWorks
+int dbAppList()
+{
+	DB_APP_NODE* an;
+
+	for(an=DbApplList;an;an=an->next)
+		printf("%s\n",an->name);
+
+	return 0;
+}
+#endif

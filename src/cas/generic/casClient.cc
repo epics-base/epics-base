@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.1.1.1  1996/06/20 00:28:14  jhill
+ * ca server installation
+ *
  *
  */
 
@@ -197,7 +200,7 @@ caStatus casClient::processMsg()
 	unsigned	bytesLeft;
 	int            	status;
 	const caHdr 	*mp;
-	caHdr 		msg;
+	const char	*rawMP;
 
 	/*
 	 * parse all any pending messages 
@@ -209,31 +212,27 @@ caStatus casClient::processMsg()
 			return S_cas_partialMessage;
 		}
 
-		mp = (caHdr *) this->inBuf::msgPtr();
-		this->ctx.setMsg(mp);
-		this->ctx.setData((void *)(mp+1u));
+		rawMP = this->inBuf::msgPtr();
+		this->ctx.setMsg(rawMP);
 
-		/*
-		 * convert to local byte order
-		 */
-		msg.m_cmmd = ntohs (mp->m_cmmd);
-		msg.m_postsize = ntohs (mp->m_postsize);
-		msg.m_type = ntohs (mp->m_type);
-		msg.m_count = ntohs (mp->m_count);
-		msg.m_cid = ntohl (mp->m_cid);
-		msg.m_available = ntohl (mp->m_available);
+		//
+		// get pointer to msg copy in local byte order
+		//
+		mp = this->ctx.getMsg();
 
-		msgsize = msg.m_postsize + sizeof(*mp);
+		msgsize = mp->m_postsize + sizeof(*mp);
 
 		if (msgsize > bytesLeft) { 
 			return S_cas_partialMessage;
 		}
 
+		this->ctx.setData((void *)(rawMP+sizeof(*mp)));
+
 		if (this->getCAS().getDebugLevel()> 2u) {
-			this->dumpMsg(&msg, (void *)(mp+1));
+			this->dumpMsg(mp, (void *)(mp+1));
 		}
 
-		if (msg.m_cmmd >= NELEMENTS(casClient::msgHandlers)){
+		if (mp->m_cmmd >= NELEMENTS(casClient::msgHandlers)){
 			return this->uknownMessageAction ();
 		}
 

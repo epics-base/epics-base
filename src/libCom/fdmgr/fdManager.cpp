@@ -52,19 +52,6 @@
 #include "fdManager.h"
 #include "locationException.h"
 
-#if defined ( _MSC_VER )
-#   pragma warning ( push )
-#   pragma warning ( disable: 4660 )
-#endif
-
-template class tsSLNode < fdReg >;
-template class intId < unsigned int, 8, 32 >;
-template class resTable < fdReg, fdRegId >;
-
-#if defined ( _MSC_VER )
-#   pragma warning ( pop )
-#endif
-
 epicsShareDef fdManager fileDescriptorManager;
 
 //

@@ -1,12 +1,12 @@
 /*
- * RTEMS osiSock.h
+ * RTEMS osdSock.h
  *	$Id$
  *      Author: W. Eric Norum
  *              eric@cls.usask.ca
  *              (306) 966-6055
  */
-#ifndef osiSockH
-#define osiSockH
+#ifndef osdSockH
+#define osdSockH
 
 #ifdef __cplusplus
 extern "C" {
@@ -66,4 +66,4 @@ int  select(int  n,  fd_set  *readfds,  fd_set  *writefds, fd_set *exceptfds, st
 #define       INADDR_LOOPBACK         (u_long)0x7F000001
 #endif
 
-#endif /*osiSockH*/
+#endif /*osdSockH*/

@@ -2,8 +2,8 @@
  * sunos 4 specific socket include
  */
 
-#ifndef osiSockH
-#define osiSockH
+#ifndef osdSockH
+#define osdSockH
 
 /*
  * done in two ifdef steps so that we will remain compatible with
@@ -128,5 +128,5 @@ typedef int osiSockIoctl_t;
 #define SOCK_EPIPE EPIPE
 #define SOCK_EMFILE EMFILE
 
-#endif /*osiSockH*/
+#endif /*osdSockH*/
 

@@ -2,8 +2,8 @@
  * vxWorks specific socket include
  */
 
-#ifndef osiSockH
-#define osiSockH
+#ifndef osdSockH
+#define osdSockH
 
 #ifdef __cplusplus
 extern "C" {
@@ -62,6 +62,6 @@ typedef int osiSockIoctl_t;
 #define INADDR_LOOPBACK 0x7F000001
 #endif
 
-#endif /*osiSockH*/
+#endif /*osdSockH*/
  
 

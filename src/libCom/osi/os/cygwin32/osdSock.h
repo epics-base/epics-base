@@ -3,8 +3,8 @@
  */
 
 
-#ifndef osiSockH
-#define osiSockH
+#ifndef osdSockH
+#define osdSockH
 
 #ifdef __cplusplus
 extern "C" {
@@ -80,5 +80,5 @@ typedef int osiSockIoctl_t;
 #define SOCK_EPIPE EPIPE
 #define SOCK_EMFILE EMFILE
 
-#endif /*osiSockH*/
+#endif /*osdSockH*/
 

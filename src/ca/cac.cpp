@@ -25,6 +25,7 @@
 
 #include "epicsMemory.h"
 #include "epicsGuard.h"
+#include "epicsVersion.h"
 #include "osiProcess.h"
 #include "osiSigPipeIgnore.h"
 #include "envDefs.h"
@@ -43,7 +44,7 @@
 #include "bhe.h"
 #include "net_convert.h"
 
-static char *id="@(#) $Id$";
+static const char *id = "@(#) " EPICS_VERSION_STRING ", CA Portable Server Library" __DATE__;
 
 // TCP response dispatch table
 const cac::pProtoStubTCP cac::tcpJumpTableCAC [] = 

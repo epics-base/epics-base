@@ -1568,7 +1568,7 @@ LOCAL int write_notify_action ( caHdrLargeArray *mp, const void *pPayload,
           FALSE,       /* net -> host format */
           mp->m_count);
 #else
-    memcpy(pciu->pPutNotify->dbPutNotify.pbuffer, pPayLoad, size);
+    memcpy(pciu->pPutNotify->dbPutNotify.pbuffer, pPayload, size);
 #endif
     status = dbPutNotifyMapType(&pciu->pPutNotify->dbPutNotify, mp->m_dataType);
     if(status){

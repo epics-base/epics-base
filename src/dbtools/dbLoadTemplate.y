@@ -390,6 +390,7 @@ static int sub_it()
 		    fprintf(stderr,"dbLoadTemplate macCreateHandle error\n");
 		    exit(1);
 		}
+		macSuppressWarning(macHandle,TRUE);
 		macParseDefns(macHandle,sub_collect,&macPairs);
 		if(macPairs == NULL) {
 		    macDeleteHandle(macHandle);

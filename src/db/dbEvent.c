@@ -155,7 +155,7 @@ int db_event_list(char *name)
 		printf(" ev que %x\n",pevent->ev_que);
 		printf(" ev user %x\n",pevent->ev_que->evuser);
 #endif
-		printf(	"task %x select %x pfield %x behind by %d\n",
+		printf(	"task %x select %x pfield %x behind by %ld\n",
 			pevent->ev_que->evuser->taskid,
 			pevent->select,
 			(unsigned int) pevent->paddr->pfield,

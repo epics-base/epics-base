@@ -191,7 +191,7 @@ void dbScanLock(dbCommon *precord)
     if(!(plockRecord= precord->lset)) {
 	epicsPrintf("dbScanLock plockRecord is NULL record %s\n",
 	    precord->name);
-	threadSuspend(threadGetIdSelf());
+	threadSuspend();
     }
     while(TRUE) {
         while(changingLockSets) threadSleep(.05);

@@ -14,6 +14,9 @@ of this distribution.
 /* Modification Log:
  * -----------------
  *  $Log$
+ *  Revision 1.14  2000/01/27 19:46:40  mrk
+ *  semId => semBinaryId and semMutexId
+ *
  *  Revision 1.13  2000/01/24 20:58:12  mrk
  *  new way to build
  *
@@ -813,7 +816,7 @@ int dbBkpt(struct dbCommon *precord)
       */
       semMutexGive(bkpt_stack_sem);
       dbScanUnlock(precord);
-      threadSuspend(0);
+      threadSuspend();
       dbScanLock(precord);
       semMutexMustTake(bkpt_stack_sem);
    }

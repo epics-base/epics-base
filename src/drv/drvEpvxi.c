@@ -96,7 +96,6 @@
  * 	Code Portions
  *
  * local
- *	vxi_find_slot0		Find the slot 0 module if present
  *	vxi_find_slot		given a VXI modules addr find its slot
  *	vxi_init_ignore_list	init list of interrupt handlers to ignore
  *	vxi_vec_inuse		check to see if vector is in use
@@ -151,12 +150,12 @@ static char *sccsId = "$Id$\t$Date$";
 #include <sysSymTbl.h>
 #include <memLib.h>
 #include <taskLib.h>
-#include <stdarg.h>
 #include <sysLib.h>
 #include <logLib.h>
 #include <intLib.h>
 #include <tickLib.h>
 #include <stdioLib.h>
+#include <string.h>
 
 #define SRCepvxiLib	/* allocate externals here */
 #include <drvEpvxi.h>
@@ -256,9 +255,6 @@ char	epvxiSymbolTableMakeIdString[] = "%03x";
 #define TRIG_LINE_FPOUT            (41)
 
 /* forward references */
-LOCAL EPVXISTAT 	vxi_find_slot0(
-	VXIE 		*pvxie
-);
 LOCAL EPVXISTAT 	vxi_alloc_la(
 	VXIE		*pvxie,
 	unsigned	count,
@@ -927,7 +923,7 @@ enum ext_type	type
 
 	pnewvxie = (VXIE *) calloc(1, sizeof(*pnewvxie));
 	if(!pnewvxie){
-		errMessage(S_epvxi_noMemory, "MXI device ignored\n");
+		errMessage(S_epvxi_noMemory, "MXI device ignored");
 		return NULL;
 	}
 
@@ -1001,7 +997,7 @@ enum laPass	pass
 		else{
 			/*
 			 * if it has not been seen before we know
-			 * its an MXI device
+			 * its a MXI device
 			 */
 			status = open_vxi_device(pvxie, addr);
 			if(status){
@@ -1142,21 +1138,25 @@ unsigned	la
 	if(status){
 		errMessage(
 			status, 
-			"VXI resman: no access to SC device\n");
+			"VXI resman: no access to SC device");
 		errMessage(
 			status, 
-			"VXI resman: without MXI LA window overlap.\n");
-		errMessage(	
+			"VXI resman: without MXI LA window overlap.");
+		errPrintf(	
 			status, 
-			"VXI resman: SC device LA=0X%X\n", 
+			__FILE__,
+			__LINE__,
+			"VXI resman: SC device LA=0X%X", 
 			la);
-		errMessage(
+		errPrintf(
 			status, 
-			"VXI resman: extender LA=0X%X\n", 
+			__FILE__,
+			__LINE__,
+			"VXI resman: extender LA=0X%X", 
 			pvxie->la);
 		errMessage(
 			status, 
-			"VXI resman: SC device ignored\n");
+			"VXI resman: SC device ignored");
 		return status;	
 	}
 
@@ -1177,8 +1177,10 @@ unsigned	la
 	pvxie->la_mapped = TRUE;
 
 	if(vxi_vec_inuse(la)){
-		errMessage(
+		errPrintf(
 			S_epvxi_badConfig,
+			__FILE__,
+			__LINE__,
 			"SC VXI device at allocated int vec=0x%X",
 			la);
 		epvxiSetDeviceOffline(la);
@@ -1314,9 +1316,11 @@ LOCAL void vxi_record_topology(void)
 
 			if(VXISLOT0MODEL(pdevice)){
 				if((*pplac)->slot!=0){
-					errMessage(	
+					errPrintf(	
 						S_epvxi_badConfig,
-			"VXI slot 0 found in slot %d? LA=0x%X\n", 
+						__FILE__,
+						__LINE__,
+			"VXI slot 0 found in slot %d? LA=0x%X", 
 						(*pplac)->slot,
 						la);
 				}
@@ -1354,20 +1358,16 @@ VXIE		*pvxie
 	 * dont move DC devices if SC device at address 0xff
 	 */
 	if(epvxiLibDeviceList[VXIDYNAMICADDR]){
-		errMessage(
+		errPrintf(
 			S_epvxi_badConfig,
-			"VXI SC device recorded at dynamic address 0x%X\n",
+			__FILE__,
+			__LINE__,
+			"VXI SC device recorded at dynamic address 0x%X",
 			VXIDYNAMICADDR);
 		errMessage(
 			S_epvxi_badConfig,
-			"VXI DC devices ignored\n");
+			"VXI DC devices ignored");
 		return;
-	}
-
-	pvxisz = (VXISZ *) crateList.node.next; 
-	while(pvxisz){
-		CLRMODID(pvxisz);
-		pvxisz = (VXISZ *) pvxisz->node.next;
 	}
 
 	pcsr = VXIBASE(VXIDYNAMICADDR);
@@ -1376,13 +1376,15 @@ VXIE		*pvxie
 				sizeof(id),
 				&id);
   	if(status == OK){
-		errMessage(
+		errPrintf(
 			S_epvxi_badConfig,
-			"VXI SC device at dynamic address 0x%X\n",
+			__FILE__,
+			__LINE__,
+			"VXI SC device at dynamic address 0x%X",
 			VXIDYNAMICADDR);
 		errMessage(
 			S_epvxi_badConfig,
-			"VXI DC devices ignored\n");
+			"VXI DC devices ignored");
 		return;
 	}
 
@@ -1406,10 +1408,12 @@ VXIE		*pvxie
 		if(status){
 			errMessage(
 				status,
-		"VXI resman: unanchored DC VXI device block doesnt fit\n");
-			errMessage(
+		"VXI resman: unanchored DC VXI device block doesnt fit");
+			errPrintf(
 				status,
-		"VXI resman: %d DC VXI devices in extender LA=0X%X ignored\n",
+				__FILE__,
+				__LINE__,
+		"VXI resman: %d DC VXI devices in extender LA=0X%X ignored",
 				nDC,
 				pvxie->la);
 			return;
@@ -1454,10 +1458,12 @@ VXIE		*pvxie
 					if(status){
 						errMessage(
 							status,
-		"VXI: DC VXI device doesnt fit\n");
-						errMessage(
+		"VXI: DC VXI device doesnt fit");
+						errPrintf(
+							__FILE__,
+							__LINE__,
 							status,
-		"VXI: DC VXI device in extender LA=0X%X ignored\n",
+		"VXI: DC VXI device in extender LA=0X%X ignored",
 							pvxie->la);
 						continue;
 					}
@@ -1467,17 +1473,23 @@ VXIE		*pvxie
 						pvxie, 
 						offset);
 				if(status){
-					errMessage(
+					errPrintf(
 						status,
-			"VXI resman: DC dev assign to LA=0X%X failed\n",
+						__FILE__,
+						__LINE__,
+			"VXI resman: DC dev assign to LA=0X%X failed",
 						offset);
-					errMessage(
+					errPrintf(
 						status,
-			"VXI resman: Slot Zero LA=0X%X\n",
+						__FILE__,
+						__LINE__,
+			"VXI resman: Slot Zero LA=0X%X",
 						pvxisz->la);
-					errMessage(
+					errPrintf(
 						status,
-			"VXI resman: DC VXI device ignored\n");
+						__FILE__,
+						__LINE__,
+			"VXI resman: DC VXI device ignored");
 					continue;
 				}
 				if(prealloc){
@@ -1516,12 +1528,6 @@ unsigned	*pCount
 		status = S_epvxi_badConfig;
 		errMessage(status, "SC device at DC address");
 		return status;
-	}
-
-	pvxisz = (VXISZ *) crateList.node.next; 
-	while(pvxisz){
-		CLRMODID(pvxisz);
-		pvxisz = (VXISZ *) pvxisz->node.next;
 	}
 
 	pcsr = VXIBASE(VXIDYNAMICADDR);
@@ -1601,8 +1607,10 @@ unsigned	la
 	 */
 	if(VXICLASS(pcsr) != VXI_REGISTER_DEVICE){
 		if(!VXIMXI(pcsr)){
-			errMessage(
+			errPrintf(
 				S_epvxi_badConfig,
+				__FILE__,
+				__LINE__,
 "Only register based slot 0 devices currently supported LA=0x%X",
 				la);
 			return;
@@ -1633,10 +1641,17 @@ unsigned	la
 
 	ellAdd(&crateList, &pvxisz->node);
 
+	/*
+	 * force the slot zero device into a known state
+	 */
+	CLRMODID(pvxisz);
+
 	if(!epvxiLibDeviceList[la]){
 		status = open_vxi_device(pvxie, la);
 		if(status){
-			errMessage(
+			errPrintf(
+				__FILE__,
+				__LINE__,
 				status,
 				"attempted slot zero device open la=0X%X",
 				la);
@@ -1698,7 +1713,7 @@ VXIE	*pvxie
 		status = S_epvxi_internal;
 		errMessage(
 			status, 
-			"VXI resman: NI cpu030 init failed\n");
+			"VXI resman: NI cpu030 init failed");
                 return status;
         }
 
@@ -1708,7 +1723,7 @@ VXIE	*pvxie
 			status = S_epvxi_internal;
 			errMessage(
 				status, 
-               			"NIVXI library init failed\n");
+               			"NIVXI library init failed");
 	                return status;
        	 	}
 #	endif
@@ -1722,7 +1737,7 @@ VXIE	*pvxie
 		status = S_epvxi_internal;
 		errMessage(
 			status, 
-                	"vxi resman: CPU030 model type read failed\n");
+                	"vxi resman: CPU030 model type read failed");
                 return status;
         }
 
@@ -2123,8 +2138,10 @@ unsigned	servant_area
 	last_sla = servant_area+commander_la;
 
 	if(last_sla >= NELEMENTS(epvxiLibDeviceList)){
-		errMessage(	
+		errPrintf(	
 			S_epvxi_internal,
+			__FILE__,
+			__LINE__,
 			"VXI resman: Clipping servant area (LA=0x%X)",
 			commander_la);
 		last_sla = NELEMENTS(epvxiLibDeviceList)-1;
@@ -2161,8 +2178,10 @@ unsigned	servant_area
 					(unsigned long)MBC_GRANT_DEVICE | sla,
 					&response);
 			if(status){
-				errMessage(
+				errPrintf(
 					status,
+					__FILE__,
+					__LINE__,
 					"VXI resman: GD failed (LA=0x%X)",
 					sla);
 			}
@@ -2178,9 +2197,11 @@ unsigned	servant_area
 					(unsigned long)MBC_READ_SERVANT_AREA,
 					&response);
 			if(status){
-				errMessage(
+				errPrintf(
 					status,
-					"VXI resman: RSA failed (LA=0x%X)\n",
+					__FILE__,
+					__LINE__,
+					"VXI resman: RSA failed (LA=0x%X)",
 					sla);
 			}
 			else{
@@ -2251,18 +2272,22 @@ LOCAL void vxi_begin_normal_operation(void)
 		}
 		status = epvxiCmdQuery(la, cmd, &resp); 
 		if(status){
-			errMessage(
+			errPrintf(
 				status,
-	"VXI resman: beg nml op cmd failed LA=0x%X (reason=%d)\n",
+				__FILE__,
+				__LINE__,
+	"VXI resman: Device rejected BEGIN_NORMAL_OPERATION LA=0x%X (reason=%d)",
 				la,
 				status);
 		}
 		else if(
 			MBR_STATUS(resp)!=MBR_STATUS_SUCCESS ||
 			MBR_BNO_STATE(resp)!=MBR_BNO_STATE_NO){
-			errMessage(
+			errPrintf(
 				S_epvxi_msgDeviceFailure,
-	"VXI resman: beg nml op cmd failed LA=0x%X (status=%x) (state=%x)\n",
+				__FILE__,
+				__LINE__,
+	"VXI resman: Device rejected BEGIN_NORMAL_OPERATION LA=0x%X (status=%x) (state=%x)",
 				la,
 				MBR_STATUS(resp),
 				MBR_BNO_STATE(resp));
@@ -2292,7 +2317,7 @@ LOCAL void vxi_begin_normal_operation(void)
                 	if(status){
 				errMessage(
 					status,
-                        		"vxi resman: rsa failed\n");
+                        		"vxi resman: rsa failed");
 			}
 			else{
 				sa = sa & MBR_READ_SERVANT_AREA_MASK;
@@ -2363,9 +2388,11 @@ unsigned 	la
 
 	pcsr = VXIBASE(la);
 
-	errMessage(	
+	errPrintf(	
 		S_epvxi_badConfig,
-		"WARNING: VXI device placed off line %c(LA=0x%X)\n",
+		__FILE__,
+		__LINE__,
+		"WARNING: VXI device placed off line %c(LA=0x%X)",
 		BELL,
 		la);
 
@@ -2550,8 +2577,10 @@ VXIE	*pvxie
 			 */
 			size = VXIA24MEMSIZE(m);
 			if(size>A24_size){
-				errMessage(
+				errPrintf(
 					S_epvxi_badConfig,
+					__FILE__,
+					__LINE__,
 	"VXI A24 device does not fit Request=%d Avail=%d LA=0X%X",
 					size,
 					A24_size,
@@ -2580,8 +2609,10 @@ VXIE	*pvxie
 			 */
 			size = VXIA32MEMSIZE(m);
 			if(size>A32_size){
-				errMessage(
+				errPrintf(
 					S_epvxi_badConfig,
+					__FILE__,
+					__LINE__,
 	"VXI A32 device does not fit Request=%d Avail=%d LA=0X%X",
 					size,
 					A32_size,
@@ -3234,8 +3265,10 @@ unsigned	io_map		/* bits 0-5  correspond to trig 0-5	*/
 						0);
 				if(status < 0){
 					status = S_epvxi_badTrigIO;
-					errMessage(
+					errPrintf(
 						status,
+						__FILE__,
+						__LINE__,
 				"NI CPU030 ECL trig map fail LA=0X%X", 
 						la);
 					return status;
@@ -3301,8 +3334,10 @@ unsigned	io_map		/* bits 0-5  correspond to trig 0-5	*/
 	}
 
 	status = S_epvxi_uknDevice;
-	errMessage(
+	errPrintf(
 		status,
+		__FILE__,
+		__LINE__,
 		"failed to map ECL trigger for (la=0x%X)", 
 		la);
         return status;
@@ -3373,8 +3408,10 @@ unsigned	io_map		/* bits 0-5  correspond to trig 0-5	*/
 						0);
 				if(status < 0){
 					status = S_epvxi_badTrigIO;
-					errMessage(	
+					errPrintf(	
 						status,
+						__FILE__,
+						__LINE__,
 				"NI030 TTL trig map fail LA=0X%X", 
 						la);
 					return status;
@@ -3422,8 +3459,10 @@ unsigned	io_map		/* bits 0-5  correspond to trig 0-5	*/
 	}
 
 	status = S_epvxi_uknDevice;
-	errMessage(
+	errPrintf(
 		status,
+		__FILE__,
+		__LINE__,
 		"Failed to map TTL trigger for (LA=%x%X)", 
 		la);
         return status;
@@ -3874,9 +3913,11 @@ LOCAL void vxi_allocate_int_lines(void)
 				(unsigned long)MBC_READ_PROTOCOL,
 				&resp);
 		if(status){
-			errMessage(
+			errPrintf(
 				status,
-				"Device rejected READ_PROTOCOL (LA=0x%X)\n",
+				__FILE__,
+				__LINE__,
+				"Device rejected READ_PROTOCOL (LA=0x%X)",
 				la);
 			continue;
 		}
@@ -3892,8 +3933,10 @@ LOCAL void vxi_allocate_int_lines(void)
 				cmd,
 				&resp);
 		if(status){
-			errMessage( 
+			errPrintf( 
 				status,
+				__FILE__,
+				__LINE__,
 			"Device rejected READ_INTERRUPTERS (LA=0x%X)",
 				la);
 			continue;
@@ -3909,15 +3952,19 @@ LOCAL void vxi_allocate_int_lines(void)
 					cmd,
 					&resp);
 			if(status){
-				errMessage(
+				errPrintf(
 					status,
+					__FILE__,
+					__LINE__,
 					"Device rejected ASSIGN_INT(LA=0x%X)",
 					la);
 				continue;
 			}
 			if(MBR_STATUS(resp) != MBR_STATUS_SUCCESS){
-				errMessage( 
+				errPrintf( 
 					S_epvxi_msgDeviceFailure,
+					__FILE__,
+					__LINE__,
 					"ASSIGN_INT failed (LA=0x%X)",
 					la);
 				continue;
@@ -4226,8 +4273,10 @@ LOCAL void epvxiRegisterCommonMakeNames(void)
 			vxi_vi[i].make,
 			vxi_vi[i].pvendor_name);
 		if(status){
-			errMessage(
+			errPrintf(
 				S_epvxi_internal,
+				__FILE__,
+				__LINE__,
 				"Failed to regster make name %s", 
 				vxi_vi[i].pvendor_name);
 		}

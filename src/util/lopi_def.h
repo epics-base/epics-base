@@ -29,16 +29,16 @@
  * .02	07-03-91	rac	eliminate some gcc warnings
  */
 
-#include <vxWorks.h> 
-#include <stdioLib.h>
-#include <ioLib.h>
+#include <vxWorks.h>
+#include <stdioLib.h> 
+#include <ioLib.h> 
+#include <taskLib.h>
+#include <semLib.h> 
+#include <strLib.h> 
+#include <os_depen.h> 
 #include <ctype.h>
 #include <db_access.h>
 #include <cadef.h>
-#include <taskLib.h>
-#include <semLib.h>
-#include <strLib.h>
-#include <os_depen.h>
 
 
 VOID lopi_init();
@@ -59,7 +59,7 @@ VOID get_value();
 VOID blank_fill();
 VOID mv_cursor();
 char *skipblanks();
-int fgetline();
+int getline();
 VOID lopi_conn_handler();
 VOID lopi_exception_handler();
 VOID add_ctl();
@@ -91,6 +91,7 @@ int to_short();
 #define DELETE '\177'
 #define BLANK ' '
 #define UNDERSC '_'
+#define MINUS '-'
 #define COLON ':'
 #define TILDE '~'
 #define ASTER '*'    /* Legal text character. */
@@ -105,19 +106,19 @@ int to_short();
 
 /* VT220 Escape secquences */
 
-#define CLEAR_SCREEN printf("%c", '\33');  \
-                     printf("%s","[2J");   
-#define INIT_CURSOR  printf("%c", '\33');    \
-                     printf("%s", "[?25h"); 
-#define ERASE_LINE printf("%c",ESC); \
-                   printf("%s","[2K");
-#define ESCAPE printf("%c",'\33');       
-#define REVERSE_VIDEO  printf("%s","[7;5m");
-#define ATR_OFF printf("%s","[0m");
+#define CLEAR_SCREEN fdprintf(lopi_fd,"%c", '\33');  \
+                     fdprintf(lopi_fd,"%s","[2J");   
+#define INIT_CURSOR  fdprintf(lopi_fd,"%c", '\33');    \
+                     fdprintf(lopi_fd,"%s", "[?25h"); 
+#define ERASE_LINE fdprintf(lopi_fd,"%c",ESC); \
+                   fdprintf(lopi_fd,"%s","[2K");
+#define ESCAPE fdprintf(lopi_fd,"%c",'\33');       
+#define REVERSE_VIDEO  fdprintf(lopi_fd,"%s","[7;5m");
+#define ATR_OFF fdprintf(lopi_fd,"%s","[0m");
 
 #define CTL  1
 #define MON 0
-#define DEBUG 0
+#define DEBUG 0 
 #define OFF  0
 #define ON   1
 #define NO_CMD "\0"
@@ -133,7 +134,6 @@ int to_short();
 #define MAX_LIN_LEN 80       /* Maximum number of characters in a line of a 
                                 display file. */
 #define BUFF_SIZE 10
-#define SHELL_ID 7 
 #define MAX_SCREEN_HEIGHT 24
 #define MAX_SCREEN_WIDTH 78 
 #define CHAN_NM_SIZE 40

@@ -29,6 +29,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.16  1995/08/22  00:27:55  jhill
+ * added cvs style mod log
+ *
  *
  *	NOTES:
  *	1) Need to fix if the OP is on a FD that
@@ -520,7 +523,7 @@ LOCAL void io_complete(struct event_handler_args args)
  	 * Update the user's variable
 	 * (if its a get)
 	 */
-	if(pcasgop->pValue){
+	if(pcasgop->pValue && args.dbr){
 		size = dbr_size_n(args.type, args.count);
 		memcpy(pcasgop->pValue, args.dbr, size);
 	}

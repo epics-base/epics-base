@@ -9,7 +9,6 @@ include $(EPICS)/config/CONFIG_BASE
 USR_CFLAGS = -fshared-data -fvolatile -mnobitfield -traditional
 
 SRCS.c += ../module_types.c
-#   SRCS.c += ../drvAb.c
 SRCS.c += ../drvAt5Vxi.c
 SRCS.c += ../drvBB232.c
 SRCS.c += ../drvBb902.c
@@ -43,7 +42,6 @@ SRCS.c += ../drvXy240.c
 SRCS.c += ../drvXy566.c
 
 TARGETS += module_types.o
-#   TARGETS += drvAb.o
 TARGETS += drvAt5Vxi.o
 TARGETS += drvBB232.o
 TARGETS += drvBb902.o

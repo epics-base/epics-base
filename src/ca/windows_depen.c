@@ -32,6 +32,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.36  1998/04/13 19:14:36  jhill
+ * fixed task variable problem
+ *
  * Revision 1.35  1998/04/10 23:00:57  jhill
  * link with user32 lib under WIN32
  *
@@ -61,6 +64,9 @@
  *
  * Revision 1.19  1995/11/29  19:15:42  jhill
  * added $Log$
+ * added Revision 1.36  1998/04/13 19:14:36  jhill
+ * added fixed task variable problem
+ * added
  * added Revision 1.35  1998/04/10 23:00:57  jhill
  * added link with user32 lib under WIN32
  * added
@@ -192,13 +198,7 @@ int epicsShareAPI ca_task_initialize(void)
 	}
 
 	status = ca_os_independent_init ();
-	if (status) {
-		return status;
-	}
-
-	/* DllMain does most OS dependent init & cleanup */
-	status = ca_os_independent_init ();
-	if (status!=ECA_NORMAL) {
+	if (status != ECA_NORMAL) {
 		return status;
 	}
 

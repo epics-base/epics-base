@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.6  1996/11/02 01:07:17  jhill
+ * many improvements
+ *
  * Revision 1.5  1996/09/04 19:57:06  jhill
  * string id resource now copies id
  *
@@ -68,6 +71,10 @@ typedef	unsigned 	resTableIndex;
 //
 // class T must derive class ID
 //
+// NOTE: Classes installed into this table should have
+// a virtual destructor so that the delete in ~resTable() will
+// work correctly.
+//
 template <class T, class ID>
 class resTable {
 public:
@@ -80,9 +87,9 @@ public:
 
 	~resTable() 
 	{
-		assert (this->nInUse == 0u);
-
 		if (this->pTable) {
+			this->destroyAllEntries();
+			assert (this->nInUse == 0u);
 			delete [] this->pTable;
 		}
 	}

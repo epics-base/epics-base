@@ -30,6 +30,9 @@
  *
  * History
  * $Log$
+ * Revision 1.1  1996/11/02 01:07:48  jhill
+ * installed
+ *
  *
  *	NOTES:
  *	.01 Storage for identifier must persist until an item is deleted
@@ -82,9 +85,27 @@ void resTable<T,ID>::destroyAllEntries()
 	while (pList<&this->pTable[this->hashIdMask+1]) {
 		tsSLIter<T> iter(*pList);
 		T *pItem;
-		while ( (pItem = iter()) ) {
-			iter.remove();
+		T *pNextItem;
+
+		pItem = iter();
+		while (pItem) {
+			pNextItem = iter();
 			delete pItem;
+			pItem = pNextItem;
+		}
+		//
+		// Check to see if a defective class is
+		// installed that does not remove itself
+		// from the table when it is destroyed.
+		//
+		iter.reset();
+		while ( (pItem=iter()) ) {
+			fprintf(stderr, 
+"Warning: Defective class still in resTable<T,ID> after it was destroyed\n");
+			//
+			// remove defective class
+			//
+			iter.remove();
 			this->nInUse--;
 		}
 		pList++;

@@ -388,7 +388,10 @@ dbEventSubscription epicsShareAPI db_add_event (
     pevent->pLastLog =  NULL; /* not yet in the queue */
     pevent->callBackInProgress = FALSE;
 
-    ev_que->quota +=    EVENTENTRIES;
+    LOCKEVQUE(ev_que);
+    ev_que->quota += EVENTENTRIES;
+    UNLOCKEVQUE(ev_que);
+    
     pevent->ev_que =    ev_que;
 
     /*
@@ -891,7 +894,7 @@ LOCAL void event_task (void *pParm)
         }
 
         for ( ev_que = &evUser->firstque; ev_que; 
-                ev_que = ev_que->nextque) {
+                ev_que = ev_que->nextque ) {
             event_read (ev_que);
         }
 

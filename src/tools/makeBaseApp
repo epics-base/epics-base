@@ -212,7 +212,6 @@ do
 		
 		$(LIBNAME): ../baseLIBOBJS
 		$(DBDNAME): ../base.dbd ../APPNAMEInclude.dbd
-		$(DBDNAME): $(RECTYPES:%.h=%.dbd)
 
 	END
 	cat > src/Makefile.Unix <<-\END

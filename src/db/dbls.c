@@ -273,6 +273,7 @@ int getRecTypeSel()
     }
     return(0);
 }				/* end of getRecTypeSel */
+static
 int getSelection(pcomtab)
     struct PRTAB   *pcomtab;
 {

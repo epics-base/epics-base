@@ -47,7 +47,7 @@ of this distribution.
 #include "epicsTime.h"
 
 #define STATIC static
-#define STATIC
+
 /*structure attached to ppnr field of each record*/
 typedef struct putNotifyRecord {
     ellCheckNode  waitNode;
@@ -182,7 +182,7 @@ STATIC void notifyCallback(CALLBACK *pcallback)
 epicsMutexMustLock(notifyLock);
     (*ppn->userCallback)(ppn);
     /*This ppn no longer owns record. No need to dbScanLock*/
-#ifdef 0
+#if 0
     epicsMutexMustLock(notifyLock);
 #endif
     ppn->state = putNotifyNotActive;

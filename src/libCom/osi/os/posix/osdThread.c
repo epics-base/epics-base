@@ -183,25 +183,11 @@ void threadOnceOsd(threadOnceId *id, void (*func)(void *), void *arg)
     checkStatusQuit(status,"pthread_once","threadOnce");
 
     semMutexMustTake(onceMutex);
-    switch (id->state) {
-    case 0:
-	id->state = -1;
-	id->mutex = semMutexMustCreate();
-	semMutexMustTake(id->mutex);
-	semMutexGive(onceMutex);
-	func(arg);
-	id->state = 1;
-	semMutexGive(id->mutex);
-	break;
-    case -1:
-	semMutexGive(onceMutex);
-	semMutexMustTake(id->mutex);
-	semMutexGive(id->mutex);
-	break;
-    default:
-	semMutexGive(onceMutex);
-	break;
+    if (*id == 0) {
+    	func(arg);
+    	*id = 1;
     }
+    semMutexGive(onceMutex);
 }
 
 static void * start_routine(void *arg)

@@ -77,7 +77,7 @@ void threadOnceOsd(threadOnceId *id, void (*func)(void *), void *arg)
 {
     /* not a good implementation (no guarantee that func() has finished before
        the next task calls this routine); see the Posix implementation */
-    if(vxTas(&id->state))
+    if(vxTas(*id))
 	func(arg);
 }
 

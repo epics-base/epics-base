@@ -361,25 +361,11 @@ void threadOnceOsd(threadOnceId *id, void(*func)(void *), void *arg)
 		rtems_task_mode(mode, RTEMS_PREEMPT_MASK, &mode);
 	}
 	semMutexMustTake(onceMutex);
-	switch (id->state) {
-	case 0:
-		id->state = -1;
-		id->sem = semMutexMustCreate();
-		semMutexMustTake(id->sem);
-		semMutexGive(onceMutex);
+	if (*id == 0) {
 		func(arg);
-		id->state = 1;
-		semBinaryGive(id->sem);
-		break;
-	case -1:
-		semMutexGive(onceMutex);
-		semBinaryMustTake(id->sem);
-		semBinaryGive(id->sem);
-		break;
-	default:
-		semMutexGive(onceMutex);
-		break;
+		*id = 1;
 	}
+	semMutexGive(onceMutex);
 }
 
 /*

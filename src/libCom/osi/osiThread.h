@@ -34,11 +34,9 @@ typedef enum {
 epicsShareFunc unsigned int epicsShareAPI threadGetStackSize(threadStackSizeClass size);
 
 /* threadOnce is a macro for efficiency (calls threadOnceOsd) */
-typedef struct {
-    int state; semMutexId mutex;
-} threadOnceId;
+typedef int threadOnceId;
 
-#define OSITHREAD_ONCE_INIT {0,0}
+#define OSITHREAD_ONCE_INIT 0
 
 epicsShareFunc void epicsShareAPI threadOnceOsd(
     threadOnceId *id, void (*func)(void *), void *arg);
@@ -46,7 +44,7 @@ epicsShareFunc void epicsShareAPI threadOnceOsd(
 #define threadOnce(id,func,arg) \
     do { \
 	threadOnceId *idCopy =(id); \
-	if((idCopy->state) <= 0) \
+	if(*idCopy == 0) \
 	    threadOnceOsd(idCopy,func,arg); \
     } while(0)
 

@@ -13,9 +13,9 @@ of this distribution.
 
 #include "dbBase.h"
 #include "devSup.h"
+#include "registry.h"
 #define epicsExportSharedSymbols
 #include "registryDeviceSupport.h"
-#include "registry.h"
 
 const char *deviceSupport = "device support";
 static void *registryID = (void *)&deviceSupport;

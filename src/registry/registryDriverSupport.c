@@ -13,9 +13,9 @@ of this distribution.
 
 #include "dbBase.h"
 #include "drvSup.h"
+#include "registry.h"
 #define epicsExportSharedSymbols
 #include "registryDriverSupport.h"
-#include "registry.h"
 
 const char *driverSupport = "driver support";
 static void *registryID = (void *)&driverSupport;

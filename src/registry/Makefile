@@ -5,9 +5,10 @@ include $(TOP)/configure/CONFIG
 #
 
 INC += registry.h
+INC += registryRecordType.h
 INC += registryDeviceSupport.h
 INC += registryDriverSupport.h
-INC += registryRecordType.h
+INC += registryFunction.h
 
 
 #       general contents of library on all platforms
@@ -23,6 +24,7 @@ LIBSRCS += registry.c
 LIBSRCS += registryRecordType.c
 LIBSRCS += registryDeviceSupport.c
 LIBSRCS += registryDriverSupport.c
+LIBSRCS += registryFunction.c
 
 LIBRARY_IOC = registryIoc
 registryIoc_DLL_LIBS  = Com

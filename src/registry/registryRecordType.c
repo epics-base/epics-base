@@ -12,9 +12,9 @@ of this distribution.
 #include <stddef.h>
 
 #include "dbBase.h"
+#include "registry.h"
 #define epicsExportSharedSymbols
 #include "registryRecordType.h"
-#include "registry.h"
 
 const char *recordType = "record type";
 static void *registryID = (void *)&recordType;

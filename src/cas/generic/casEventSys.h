@@ -127,6 +127,8 @@ private:
         casCoreClient &, 
         epicsGuard < casClientMutex > &,
         epicsGuard < evSysMutex > & );
+    casEventPurgeEv & operator = ( const casEventPurgeEv & ); 
+    casEventPurgeEv ( const casEventPurgeEv & ); 
 };
 
 //

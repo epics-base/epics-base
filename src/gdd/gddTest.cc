@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.7  1997/04/23 17:13:05  jhill
+// fixed export of symbols from WIN32 DLL
+//
 // Revision 1.6  1996/12/20 13:11:42  jbk
 // More strings yet printed now
 //
@@ -74,7 +77,7 @@ void gdd::dumpInfo(void)
 
 	prt_tot=sz_elem>max?max:sz_elem;
 
-	fprintf(stderr,"----------dump This=%8.8x---------\n",(unsigned int)this);
+	fprintf(stderr,"----------dump This=%p---------\n", this);
 	fprintf(stderr," dimension=%d ",(int)dimension());
 	fprintf(stderr,"app-type=%d ",(int)applicationType());
 
@@ -235,9 +238,9 @@ void gdd::dumpInfo(void)
 	if(!isScalar())
 	{
 		if(destruct)
-			fprintf(stderr," destructor=%8.8x\n",(int)destruct);
+			fprintf(stderr," destructor=%p\n", destruct);
 		else
-			fprintf(stderr," destructor=NULL\n",(int)destruct);
+			fprintf(stderr," destructor=NULL\n");
 	}
 
 	for(i=0;i<dimension();i++)

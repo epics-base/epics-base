@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.21  1997/04/23 17:12:57  jhill
+// fixed export of symbols from WIN32 DLL
+//
 // Revision 1.20  1997/03/21 01:56:01  jbk
 // *** empty log message ***
 //
@@ -834,8 +837,8 @@ int gdd::flattenDDs(gddContainer* dd, void* buf, size_t size)
 gddStatus gdd::convertOffsetsToAddress(void)
 {
 	aitUint8* pdd = (aitUint8*)this;
-	aitUint32 bnds = (aitUint32)(bounds);
-	aitUint32 dp = (aitUint32)(dataPointer());
+	unsigned long bnds = (unsigned long)(bounds);
+	unsigned long dp = (unsigned long)(dataPointer());
 	gdd* tdd;
 	gddContainer* cdd;
 	gddCursor cur;
@@ -853,7 +856,7 @@ gddStatus gdd::convertOffsetsToAddress(void)
 
 		for(tdd=cur.first();tdd;tdd=cur.next())
 		{
-			if(tdd->next()) tdd->setNext((gdd*)(pdd+(aitUint32)tdd->next()));
+			if(tdd->next()) tdd->setNext((gdd*)(pdd+(unsigned long)tdd->next()));
 			tdd->convertOffsetsToAddress();
 		}
 	}

@@ -5,6 +5,9 @@
 // $Id$
 //
 // $Log$
+// Revision 1.6  1997/04/23 17:12:54  jhill
+// fixed export of symbols from WIN32 DLL
+//
 // Revision 1.5  1996/08/23 20:29:34  jbk
 // completed fixes for the aitString and fixed string management
 //
@@ -42,8 +45,8 @@ void aitString::dump(const char* p) const
 
 void aitString::dump(void) const
 {
-	fprintf(stderr,"this=%8.8x ",(int)this);
-	if(str) fprintf(stderr,"string=%8.8x<%s>, ",(int)str,str);
+	fprintf(stderr,"this=%p ", this);
+	if(str) fprintf(stderr,"string=%p<%s>, ",str,str);
 	else	fprintf(stderr,"no string present, ");
 	fprintf(stderr,"length=%d, ",(int)len);
 	if(type==aitStrConst) fprintf(stderr,"type=Constant\n");

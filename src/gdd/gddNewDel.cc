@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.1  1996/06/25 19:11:45  jbk
+// new in EPICS base
+//
 //
 
 // *Revision 1.2  1996/06/24 03:15:37  jbk
@@ -11,6 +14,7 @@
 // *Revision 1.1  1996/05/31 13:15:31  jbk
 // *add new stuff
 
+#define epicsExportSharedSymbols
 #include "gddNewDel.h"
 #include <stdio.h>
 

@@ -7,6 +7,9 @@ static char *sccsId = "@(#) $Id$";
 
 /*
  * $Log$
+ * Revision 1.46  1997/06/13 09:14:09  jhill
+ * connect/search proto changes
+ *
  * Revision 1.45  1997/04/29 06:07:16  jhill
  * local host connect compatible
  *
@@ -490,7 +493,7 @@ int doacctst(char *pname)
 				iter = (unsigned long) (FLT_MAX/fabs(incr));
 			}
 			else {
-				iter = 10.0;
+				iter = 10ul;
 			}
 			floatTest(chix1, base, incr, epsil, iter);
 		}
@@ -501,7 +504,7 @@ int doacctst(char *pname)
 				iter = (unsigned long) (FLT_MAX/fabs(incr));
 			}
 			else {
-				iter = 10.0;
+				iter = 10ul;
 			}
 			floatTest(chix1, base, incr, epsil, iter);
 		}
@@ -512,7 +515,7 @@ int doacctst(char *pname)
 				iter = (unsigned long) (FLT_MAX/fabs(incr));
 			}
 			else {
-				iter = 10.0;
+				iter = 10ul;
 			}
 			floatTest(chix1, base, incr, epsil, iter);
 		}
@@ -542,7 +545,7 @@ int doacctst(char *pname)
 				iter = (unsigned long) (DBL_MAX/fabs(incr));
 			}
 			else {
-				iter = 10.0;
+				iter = 10ul;
 			}
 			doubleTest(chix1, base, incr, epsil, iter);
 		}
@@ -553,7 +556,7 @@ int doacctst(char *pname)
 				iter = (unsigned long) (DBL_MAX/fabs(incr));
 			}
 			else {
-				iter = 10.0;
+				iter = 10ul;
 			}
 			doubleTest(chix1, base, incr, epsil, iter);
 		}
@@ -564,7 +567,7 @@ int doacctst(char *pname)
 				iter = (unsigned long) (DBL_MAX/fabs(incr));
 			}
 			else {
-				iter = 10.0;
+				iter = 10ul;
 			}
 			doubleTest(chix1, base, incr, epsil, iter);
 		}
@@ -856,7 +859,7 @@ int doacctst(char *pname)
 				pT1 = pWF;
 				pEF = &pWF[ca_element_count(chix1)];
 				while(pT1<pEF) {
-					*pT1++ = rand();
+					*pT1++ = (float) rand();
 				}
 				status = ca_array_put(
 						DBR_FLOAT, 

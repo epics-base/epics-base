@@ -23,7 +23,6 @@ INC += aitHelpers.h
 INC += dbMapper.h
 INC += gddAppTable.h
 INC += gddAppFuncTable.h
-INC += gddAppFuncTable.cc
 INC += gddApps.h
 
 LIBSRCS := gdd.cc gddTest.cc gddAppTable.cc gddNewDel.cc \

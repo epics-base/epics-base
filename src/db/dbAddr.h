@@ -3,11 +3,11 @@
 #define dbAddrh
 
 #ifdef __cplusplus
-//
-// for brain dead C++ compilers
-//
-struct dbCommon;
-struct putNotify;
+	//
+	// for brain dead C++ compilers
+	//
+	struct dbCommon;
+	struct putNotify;
 #endif
 
 typedef struct dbAddr{

@@ -7,10 +7,14 @@
  *
  * $Id$
  * $Log$
+ * Revision 1.1  1997/03/21 01:56:10  jbk
+ * *** empty log message ***
+ *
  *
  */
 
 #include "aitTypes.h"
+#include "shareLib.h"
 
 // ------------------------- semaphores ---------------------------
 
@@ -25,7 +29,7 @@ typedef enum { gddSemEmpty, gddSemFull } gddSemType;
 
 // Semaphores default to "Full"
 
-class gddSemaphore
+class epicsShareClass gddSemaphore
 {
 public:
 	gddSemaphore(void);

@@ -65,7 +65,7 @@ typedef struct pnWaitNode {
 /*Local routines*/
 static void restartAdd(PUTNOTIFY *ppnto, PUTNOTIFY *ppnfrom);
 static void waitAdd(struct dbCommon *precord,PUTNOTIFY *ppn);
-static long doPutNotify(PUTNOTIFY *ppn);
+static long putNotifyPvt(PUTNOTIFY *ppn);
 static void notifyCallback(CALLBACK *pcallback);
 static void notifyCancel(PUTNOTIFY *ppn);
 static void issueCallback(PUTNOTIFY *ppn);
@@ -150,12 +150,12 @@ long epicsShareAPI dbPutNotify(PUTNOTIFY *ppn)
     dbScanLock(precord);
     ellInit(&ppn->restartList);
     memset(&ppn->restartNode,'\0',sizeof(PNRESTARTNODE));
-    status = doPutNotify(ppn);
+    status = putNotifyPvt(ppn);
     dbScanUnlock(precord);
     return(status);
 }
 
-static long doPutNotify(PUTNOTIFY *ppn)
+static long putNotifyPvt(PUTNOTIFY *ppn)
 {
     struct dbAddr *paddr = ppn->paddr;
     short	dbrType = ppn->dbrType;
@@ -234,13 +234,18 @@ static void notifyCallback(CALLBACK *pcallback)
 	return;
     }
     if(ppn->callbackState==callbackActive) {
-	if(ppn->restart) {
-	    doPutNotify(ppn);
-	    dbScanUnlock(precord);
-	} else {
-	    dbScanUnlock(precord);
-	    (ppn->userCallback)(ppn);
-	}
+        if(ppn->restart) {
+            putNotifyPvt(ppn);
+            dbScanUnlock(precord);
+        } else {
+            dbScanUnlock(precord);
+            (ppn->userCallback)(ppn);
+        }
+        dbScanLock(precord);
+        if(ppn->waitForCallback)
+            epicsEventSignal((epicsEventId)ppn->waitForCallback);
+        ppn->callbackState = callbackNotActive;
+        dbScanUnlock(precord);
     } else {
         dbScanUnlock(precord);
     }

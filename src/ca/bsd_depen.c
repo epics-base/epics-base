@@ -184,7 +184,7 @@ int cac_select_io (struct timeval *ptimeout, int flags)
 				 * we are getting behind
 				 */
 				if (piiu->sock_proto==IPPROTO_TCP) {
-					if (ptimeout->tv_sec==0 || ptimeout->tv_usec==0) {
+					if (ptimeout->tv_sec==0 && ptimeout->tv_usec==0) {
 						flow_control_on(piiu);
 					}
 				}

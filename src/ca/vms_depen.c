@@ -32,6 +32,9 @@
  * 	cjm 20-Nov-95 Add code for gettimeofday
  *
  * $Log$
+ * Revision 1.20  1996/07/02 23:04:07  jhill
+ * took &tz out of gettimeofday()
+ *
  * Revision 1.19  1995/12/19  19:35:24  jhill
  * -cjm 20-Nov-95 Add code for gettimeofday
  *
@@ -47,19 +50,15 @@
 /*
  * VMS includes
  */
-#include <stsdef.h>
 #include <ssdef.h>
+#include <stsdef.h>
+#include <iodef.h>
+#include <psldef.h>
+#include <prcdef.h>
 #include <jpidef.h>
+#include <descrip.h>
 
 #include "iocinf.h"
-
-#ifdef UCX
-#include "ucx.h"
-#endif
-
-#if 0
-#define CONNECTION_TIMER_ID 56
-#endif
 
 
 /*

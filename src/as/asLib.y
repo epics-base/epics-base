@@ -1,5 +1,6 @@
 %{
 static int yyerror();
+static int yy_start;
 static int myParse();
 #include "asLibRoutines.c"
 static int line_num=1;
@@ -225,8 +226,9 @@ static int myParse(ASINPUTFUNCPTR inputfunction)
     my_yyinput = &inputfunction;
     if (!FirstFlag) {
 	line_num=1;
+	yyreset(NULL);
 	yyrestart(NULL);
-  	FirstFlag = 0;
     }
+    FirstFlag = 0;
     return(yyparse());
 }

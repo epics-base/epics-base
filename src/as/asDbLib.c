@@ -1,34 +1,59 @@
-/* share/src/as/dbAsLib.c	*/
+/* share/src/as/asDbLib.c */
 /* share/src/as $Id$ */
-/*
- *      Author:  Marty Kraimer
- *      Date:    02-11-94
- *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
+/* Author:  Marty Kraimer Date:    02-11-94*/
+/*****************************************************************
+                          COPYRIGHT NOTIFICATION
+*****************************************************************
+
+THE FOLLOWING IS A NOTICE OF COPYRIGHT, AVAILABILITY OF THE CODE,
+AND DISCLAIMER WHICH MUST BE INCLUDED IN THE PROLOGUE OF THE CODE
+AND IN ALL SOURCE LISTINGS OF THE CODE.
+ 
+(C)  COPYRIGHT 1993 UNIVERSITY OF CHICAGO
+ 
+Argonne National Laboratory (ANL), with facilities in the States of 
+Illinois and Idaho, is owned by the United States Government, and
+operated by the University of Chicago under provision of a contract
+with the Department of Energy.
+
+Portions of this material resulted from work developed under a U.S.
+Government contract and are subject to the following license:  For
+a period of five years from March 30, 1993, the Government is
+granted for itself and others acting on its behalf a paid-up,
+nonexclusive, irrevocable worldwide license in this computer
+software to reproduce, prepare derivative works, and perform
+publicly and display publicly.  With the approval of DOE, this
+period may be renewed for two additional five year periods. 
+Following the expiration of this period or periods, the Government
+is granted for itself and others acting on its behalf, a paid-up,
+nonexclusive, irrevocable worldwide license in this computer
+software to reproduce, prepare derivative works, distribute copies
+to the public, perform publicly and display publicly, and to permit
+others to do so.
+
+*****************************************************************
+                                DISCLAIMER
+*****************************************************************
+
+NEITHER THE UNITED STATES GOVERNMENT NOR ANY AGENCY THEREOF, NOR
+THE UNIVERSITY OF CHICAGO, NOR ANY OF THEIR EMPLOYEES OR OFFICERS,
+MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LEGAL
+LIABILITY OR RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS, OR
+USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT, OR PROCESS
+DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE PRIVATELY
+OWNED RIGHTS.  
+
+*****************************************************************
+LICENSING INQUIRIES MAY BE DIRECTED TO THE INDUSTRIAL TECHNOLOGY
+DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
  *
  * Modification Log:
  * -----------------
  * .01  02-11-94	mrk	Initial Implementation
  */
+
+#include <vxWorks.h>
+#include <taskLib.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -38,19 +63,26 @@
 #include <asLib.h>
 #include <asDbLib.h>
 #include <dbCommon.h>
+#include <recSup.h>
+#include <subRecord.h>
+#include <task_params.h>
 
 extern struct dbBase *pdbBase;
 static FILE *stream;
 
 #define BUF_SIZE 100
-static char *my_buffer;
-static char *my_buffer_ptr=NULL;
+static char	*my_buffer;
+static char	*my_buffer_ptr=NULL;
+static char	*pacf=NULL;
+FAST_LOCK	asLock;
+int		asLockInit=TRUE;
+static int	initTaskId=0;
 
 static int my_yyinput(char *buf, int max_size)
 {
     int	l,n;
     
-    if(!my_buffer_ptr || *my_buffer_ptr==0) {
+    if(*my_buffer_ptr==0) {
 	if(fgets(my_buffer,BUF_SIZE,stream)==NULL) return(0);
 	my_buffer_ptr = my_buffer;
     }
@@ -87,38 +119,92 @@ static long asDbAddRecords(void)
     return(0);
 }
 
-int asInit(char *filename)
+int asSetFilename(char *acf)
+{
+    if(asLockInit) {
+	FASTLOCKINIT(&asLock);
+	asLockInit = FALSE;
+    }
+    FASTLOCK(&asLock);
+    if(pacf) free ((void *)pacf);
+    pacf = calloc(1,strlen(acf)+1);
+    if(!pacf) {
+	errMessage(0,"asSetFilename calloc failure");
+	FASTUNLOCK(&asLock);
+	return(-1);
+    }
+    strcpy(pacf,acf);
+    FASTUNLOCK(&asLock);
+    return(0);
+}
+
+static void asInitTask(void)
 {
     long status;
 
-    my_buffer = malloc(BUF_SIZE);
+    if(asLockInit) {
+	FASTLOCKINIT(&asLock);
+	asLockInit = FALSE;
+    }
+    FASTLOCK(&asLock);
+    asCaStop();
+    my_buffer = calloc(1,BUF_SIZE);
+    my_buffer_ptr = my_buffer;
     if(!my_buffer) {
 	errMessage(0,"asInit malloc failure");
-	return(-1);
+	FASTUNLOCK(&asLock);
+	return;
     }
-    stream = fopen(filename,"r");
+    stream = fopen(pacf,"r");
     if(!stream) {
 	errMessage(0,"asInit failure");
-	return(-1);
+	FASTUNLOCK(&asLock);
+	return;
     }
     status = asInitialize(my_yyinput);
     if(fclose(stream)==EOF) errMessage(0,"asInit fclose failure");
     free((void *)my_buffer);
     asDbAddRecords();
+    asCaStart();
+    taskDelay(60);
+    asComputeAllAsg();
+    FASTUNLOCK(&asLock);
+    initTaskId = 0;
+    status = taskDelete(taskIdSelf());
+    if(status!=OK) errMessage(0,"asInitTask: taskDelete Failure");
+}
+
+int asInit(void)
+{
+    long status;
+
+    if(!pacf) return(0);
+    if(initTaskId) {
+	errMessage(-1,"asInit: asInitTask already active");
+	return(-1);
+    }
+    initTaskId = taskSpawn("asInitTask",CA_CLIENT_PRI-1,VX_FP_TASK,CA_CLIENT_STACK,
+	(FUNCPTR)asInitTask,0,0,0,0,0,0,0,0,0,0);
+    if(initTaskId==ERROR) {
+	errMessage(0,"asInit: taskSpawn Error");
+	initTaskId = 0;
+    }
     return(0);
 }
 
-void static myMemberCallback(ASMEMBERPVT memPvt)
+/*Interface to subroutine record*/
+long asSubInit(struct subRecord *precord,int pass)
 {
-    struct dbCommon	*precord;
-
-    precord = asGetMemberPvt(memPvt);
-    if(precord) printf(" Record:%s",precord->name);
+    return(0);
 }
 
-int asdbdump(void)
+long asSubProcess(struct subRecord *precord)
 {
-    asDump(myMemberCallback,NULL);
+    if(precord->val!=1.0) return(0);
+    asInit();
+    db_post_events(precord,&precord->val,DBE_VALUE);
+    precord->val=0.0;
+    db_post_events(precord,&precord->val,DBE_VALUE);
     return(0);
 }
 
@@ -164,4 +250,51 @@ int astac(char *pname,char *user,char *location)
 	return(1);
     }
     return(0);
+}
+
+static char *asAccessName[] = {"NONE","READ","WRITE"};
+void static myMemberCallback(ASMEMBERPVT memPvt)
+{
+    struct dbCommon	*precord;
+
+    precord = asGetMemberPvt(memPvt);
+    if(precord) printf(" Record:%s",precord->name);
+}
+
+int asdbdump(void)
+{
+    FASTLOCK(&asLock);
+    asDump(myMemberCallback,NULL,1);
+    FASTUNLOCK(&asLock);
+    return(0);
+}
+
+int aspuag(char *uagname)
+{
+
+    FASTLOCK(&asLock);
+    asDumpUag(uagname);
+    FASTUNLOCK(&asLock);
+    return(0);
+}
+
+int asplag(char *lagname)
+{
+    FASTLOCK(&asLock);
+    asDumpLag(lagname);
+    FASTUNLOCK(&asLock);
+}
+
+int asplev(char *asgname)
+{
+    FASTLOCK(&asLock);
+    asDumpLev(asgname);
+    FASTUNLOCK(&asLock);
+}
+
+int aspmem(char *asgname,int clients)
+{
+    FASTLOCK(&asLock);
+    asDumpMem(asgname,myMemberCallback,clients);
+    FASTUNLOCK(&asLock);
 }

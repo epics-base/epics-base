@@ -1,42 +1,63 @@
 /* share/src/as/asCa.c	*/
 /* share/src/as $Id$ */
-/*
- *      Author:  Marty Kraimer
- *      Date:    10-15-93
- *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
+/* Author:  Marty Kraimer Date:    10-15-93 */
+/*****************************************************************
+                          COPYRIGHT NOTIFICATION
+*****************************************************************
+
+THE FOLLOWING IS A NOTICE OF COPYRIGHT, AVAILABILITY OF THE CODE,
+AND DISCLAIMER WHICH MUST BE INCLUDED IN THE PROLOGUE OF THE CODE
+AND IN ALL SOURCE LISTINGS OF THE CODE.
+ 
+(C)  COPYRIGHT 1993 UNIVERSITY OF CHICAGO
+ 
+Argonne National Laboratory (ANL), with facilities in the States of 
+Illinois and Idaho, is owned by the United States Government, and
+operated by the University of Chicago under provision of a contract
+with the Department of Energy.
+
+Portions of this material resulted from work developed under a U.S.
+Government contract and are subject to the following license:  For
+a period of five years from March 30, 1993, the Government is
+granted for itself and others acting on its behalf a paid-up,
+nonexclusive, irrevocable worldwide license in this computer
+software to reproduce, prepare derivative works, and perform
+publicly and display publicly.  With the approval of DOE, this
+period may be renewed for two additional five year periods. 
+Following the expiration of this period or periods, the Government
+is granted for itself and others acting on its behalf, a paid-up,
+nonexclusive, irrevocable worldwide license in this computer
+software to reproduce, prepare derivative works, distribute copies
+to the public, perform publicly and display publicly, and to permit
+others to do so.
+
+*****************************************************************
+                                DISCLAIMER
+*****************************************************************
+
+NEITHER THE UNITED STATES GOVERNMENT NOR ANY AGENCY THEREOF, NOR
+THE UNIVERSITY OF CHICAGO, NOR ANY OF THEIR EMPLOYEES OR OFFICERS,
+MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LEGAL
+LIABILITY OR RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS, OR
+USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT, OR PROCESS
+DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE PRIVATELY
+OWNED RIGHTS.  
+
+*****************************************************************
+LICENSING INQUIRIES MAY BE DIRECTED TO THE INDUSTRIAL TECHNOLOGY
+DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
  *
  * Modification Log:
  * -----------------
  * .01  03-22-94	mrk	Initial Implementation
  */
 
+#include <vxWorks.h>
+#include <taskLib.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdio.h>
-#ifdef vxWorks
-#include <taskLib.h>
-#endif
 #include <dbDefs.h>
 #include <asLib.h>
 #include <cadef.h>
@@ -44,38 +65,35 @@
 #include <caeventmask.h>
 #include <calink.h>
 #include <task_params.h>
+#include <alarm.h>
 
-static ASBASE *pasbase=NULL;
-static int taskid;
+static int taskid=0;
+static int caInitializing=FALSE;
+extern ASBASE *pasbase;
 
 typedef struct {
     struct dbr_sts_double rtndata;
-    chid		mychid;
-    evid		myevid;
-    int			gotEvent;
+    chid		chid;
+    evid		evid;
 } CAPVT;
 
 void connectCallback(struct connection_handler_args cha)
 {
-    chid		chid=cha.chid;
+    chid		chid = cha.chid;
     ASGINP		*pasginp = (ASGINP *)ca_puser(chid);
-    ASG			*pasg = (ASG *)pasginp->pasg;;
-    int			inpOk=TRUE;
+    ASG			*pasg = (ASG *)pasginp->pasg;
     CAPVT		*pcapvt;
     enum channel_state	state;
 
     pasginp = (ASGINP *)ellFirst(&pasg->inpList);
-    while(pasginp) {
-	pcapvt = pasginp->capvt;
-	if(ca_state(pcapvt->chid)!=cs_conn) {
-	    inpOk = FALSE;
-	    pcapvt->gotEvent = FALSE;
+    pcapvt = pasginp->capvt;
+    if(ca_state(pcapvt->chid)!=cs_conn) {
+	pasg->inpBad |= (1<<pasginp->inpIndex);
+	if(!caInitializing) {
+	    FASTLOCK(&asLock);
+	    asComputeAsg(pasg);
+	    FASTUNLOCK(&asLock);
 	}
-	pasginp = (ASGINP *)ellNext((ELLNODE *)pasginp);
-    }
-    if(!inpOk && pasg->inpOk) {
-	pasg->inpOk = FALSE;
-	asComputeAsg(pasg);
     }
 }
 
@@ -83,64 +101,83 @@ void eventCallback(struct event_handler_args eha)
 {
     ASGINP		*pasginp = (ASGINP *)eha.usr;
     CAPVT		*pcapvt = (CAPVT *)pasginp->capvt;
-    ASG			*pasg = (ASG *)pasginp->pasg;;
+    ASG			*pasg = (ASG *)pasginp->pasg;
     int			inpOk=TRUE;
     enum channel_state	state;
     struct dbr_sts_double *pdata = eha.dbr;
 
     
     pcapvt->rtndata = *pdata; /*structure copy*/
-    pcapvt->gotEvent = TRUE;
-    pasg->pavalue[pasginp->inpIndex] = pdata->value;
-    pasginp = (ASGINP *)ellFirst(&pasg->inpList);
-    while(pasginp) {
-	pcapvt = pasginp->capvt;
-	if(ca_state(pcapvt->chid)!=cs_conn) {
-	    inpOk = FALSE;
-	    pcapvt->gotEvent = FALSE;
-	}
-	pasginp = (ASGINP *)ellNext((ELLNODE *)pasginp);
+    if(pdata->severity==INVALID_ALARM) {
+	pasg->inpBad |= (1<<pasginp->inpIndex);
+    } else {
+	pasg->inpBad &= ~((1<<pasginp->inpIndex));
+        pasg->pavalue[pasginp->inpIndex] = pdata->value;
     }
-    if(!inpOk && pasg->inpOk) {
-	pasg->inpOk = FALSE;
+    if(!caInitializing) {
+	FASTLOCK(&asLock);
 	asComputeAsg(pasg);
+	FASTUNLOCK(&asLock);
     }
 }
 
-static asCaInit(
+static void asCaTask(void)
+{
     ASG		*pasg;
     ASGINP	*pasginp;
-    CAINP	*pcapvt;
+    CAPVT	*pcapvt;
 
     SEVCHK(ca_task_initialize(),"ca_task_initialize");
+    caInitializing = TRUE;
     pasg = (ASG *)ellFirst(&pasbase->asgList);
     while(pasg) {
-	pasg->inpOk = FALSE;
 	pasginp = (ASGINP *)ellFirst(&pasg->inpList);
 	while(pasginp) {
+	    pasg->inpBad |= (1<<pasginp->inpIndex);
 	    pcapvt = pasginp->capvt = asCalloc(1,sizeof(CAPVT));
 	    SEVCHK(ca_build_and_connect(pasginp->inp,TYPENOTCONN,0,
-		&pcapvt->mychid,0,connectCallback,pasginp),
+		&pcapvt->chid,0,connectCallback,pasginp),
 		"ca_build_and_connect");
-	    SEVCHK(ca_add_event(DBR_STATUS_DOUBLE,pcapvt->mychid,
-		eventCallback,pasginp,&pcapvt->myevid),
+	    SEVCHK(ca_add_event(DBR_STS_DOUBLE,pcapvt->chid,
+		eventCallback,pasginp,&pcapvt->evid),
 		"ca_add_event");
 	    pasginp = (ASGINP *)ellNext((ELLNODE *)pasginp);
 	}
 	pasg = (ASG *)ellNext((ELLNODE *)pasg);
     }
+    caInitializing = FALSE;
     SEVCHK(ca_pend_event(0.0),"ca_pend_event");
+    exit(-1);
 }
     
 
-void asCaStart(ASBASE *ptemp)
+void asCaStart(void)
 {
-    pasbase = ptemp;
-    taskid = taskSpawn("asCa",CA_CLIENT_PRI,VX_FP_TASK,CA_CLIENT_STACK,
-	(FUNCPTR)asCaInit,0,0,0,0,0,0,0,0,0,0);
+    taskid = taskSpawn("asCa",CA_CLIENT_PRI-1,VX_FP_TASK,CA_CLIENT_STACK,
+	(FUNCPTR)asCaTask,0,0,0,0,0,0,0,0,0,0);
+    if(taskid==ERROR) errMessage(0,"asCaStart: taskSpawn Failure\n");
 }
 
-static asCaStop(void)
+void asCaStop(void)
 {
-    taskDelete(taskid);
-    
+    ASG		*pasg;
+    ASGINP	*pasginp;
+    CAPVT	*pcapvt;
+    STATUS	status;
+
+    if(taskid==0 || taskid==ERROR) return;
+    status = taskDelete(taskid);
+    if(status!=OK) errMessage(0,"asCaStop: taskDelete Failure\n");
+    while(taskIdVerify(taskid)==OK) {
+	taskDelay(5);
+    }
+    pasg = (ASG *)ellFirst(&pasbase->asgList);
+    while(pasg) {
+	pasginp = (ASGINP *)ellFirst(&pasg->inpList);
+	while(pasginp) {
+	    free(pasginp->capvt);
+	    pasginp = (ASGINP *)ellNext((ELLNODE *)pasginp);
+	}
+	pasg = (ASG *)ellNext((ELLNODE *)pasg);
+    }
+}

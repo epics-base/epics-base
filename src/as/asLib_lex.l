@@ -7,6 +7,14 @@ string   [a-zA-Z0-9_\,\./\*#\[\]%: ;!|\'\-&\(\)@\?\+<>=\$]
 static ASINPUTFUNCPTR *my_yyinput;
 #undef YY_INPUT
 #define YY_INPUT(b,r,ms) (r=(*my_yyinput)(b,ms))
+
+yyreset()
+{
+	line_num=1;
+	BEGIN INITIAL;
+	return(0);
+}
+
 %}
 
 %%

@@ -35,8 +35,11 @@
  *			channel in use block
  *	.04 joh 071591	added ticks at last io to the client structure
  *	.05 joh	103191	moved lock from msg buf to client structure
+ *	.06 joh	050692	added declaration for cac_send_heartbeat()
+ *	.07 joh 022492	added get flag to the event ext block
  *
  */
+
 #ifndef INCLfast_lockh
 #include <fast_lock.h>
 #endif
@@ -103,6 +106,7 @@ struct client			*client;
 char				modified;	/* mod & ev flw ctrl enbl */
 char				send_lock;	/* lock send buffer */
 unsigned			size;		/* for speed */
+char				get;		/* T: get F: monitor */
 };
 
 
@@ -161,3 +165,4 @@ void		cas_send_msg();
 struct extmsg 	*cas_alloc_msg();
 void		rsrv_online_notify_task();
 struct client 	*create_udp_client();
+void		cac_send_heartbeat();

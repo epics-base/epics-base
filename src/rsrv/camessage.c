@@ -42,6 +42,8 @@
  *	.08 joh	021492	use lstFind() to verify chanel in clear_channel()
  *	.09 joh 031692	dont send exeception to the client if bad msg
  *			detected- just disconnect instead
+ *	.10 joh	050692	added new routine - cas_send_heartbeat()
+ *	.11 joh 062492	dont allow flow control to turn off gets
  */
 
 #include <vxWorks.h>
@@ -141,6 +143,7 @@ camessage(client, recv)
 			pevext->size = (mp->m_count - 1) 
 				* dbr_value_size[mp->m_type] +
 				dbr_size[mp->m_type];
+			pevext->get = FALSE;
 
 			status = db_add_event(client->evuser,
 					      MPTOPADDR(mp),
@@ -219,6 +222,7 @@ camessage(client, recv)
 				pevext->mp = mp;
 				pevext->client = client;
 				pevext->send_lock = TRUE;
+				pevext->get = TRUE;
 				if (mp->m_count == 1)
 					pevext->size = dbr_size[mp->m_type];
 				else
@@ -279,6 +283,7 @@ camessage(client, recv)
 						if (pevext->modified) {
 							evext = *pevext;
 							evext.send_lock = FALSE;
+							evext.get = TRUE;
 							read_reply(
 								&evext, 
 								MPTOPADDR(&pevext->msg), 
@@ -507,8 +512,9 @@ void		*pfl;
 
 	/*
 	 * If flow control is on set modified and send for later
+ 	 * (only if this is not a get)
 	 */
-	if (client->eventsoff) {
+	if (client->eventsoff && !pevext->get) {
 		pevext->modified = TRUE;
 		return;
 	}
@@ -679,6 +685,7 @@ build_reply(mp, client)
 			evext.client = client;
 			evext.send_lock = FALSE;
 			evext.size = size;
+			evext.get = TRUE;
 
 			/*
 			 * Arguments to this routine organized in favor of
@@ -825,3 +832,31 @@ FAST struct extmsg *mp;
   	if(mp->m_cmmd==IOC_WRITE && mp->m_type==DBF_STRING)
     		logMsg("CAS: The string written: %s \n",mp+1);
 }
+
+
+
+/*
+ *
+ *      cac_send_heartbeat()
+ *
+ *	lock must be applied while in this routine
+ */
+void
+cas_send_heartbeat(pc)
+struct client	*pc;
+{
+        FAST struct extmsg 	*reply;
+
+        reply = (struct extmsg *) ALLOC_MSG(pc, 0);
+        if(!reply){
+                taskSuspend(0);
+	}
+
+	*reply = nill_msg;
+        reply->m_cmmd = IOC_NOOP;
+
+        END_MSG(pc);
+
+        return;
+}
+

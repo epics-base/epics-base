@@ -659,7 +659,7 @@ long epicsShareAPI dbior(char	*pdrvName,int type)
     for(pdrvSup = (drvSup *)ellFirst(&pdbbase->drvList); pdrvSup;
     pdrvSup = (drvSup *)ellNext(&pdrvSup->node)) {
 	pname = pdrvSup->name;
-	if(pdrvName!=NULL && (strcmp(pdrvName,pname)!=0)) continue;
+	if(pdrvName!=NULL && *pdrvName!='\0' && (strcmp(pdrvName,pname)!=0)) continue;
 	pdrvet = pdrvSup->pdrvet ;
 	if(pdrvet==NULL) {
 		printf("No driver entry table is present for %s\n",pname);
@@ -680,7 +680,7 @@ long epicsShareAPI dbior(char	*pdrvName,int type)
 	pdevSup = (devSup *)ellNext(&pdevSup->node)) {
 	    if(!(pdset = pdevSup->pdset)) continue;
 	    if(!(pname = pdevSup->name)) continue;
-	    if(pdrvName!=NULL && (strcmp(pdrvName,pname)!=0)) continue;
+	    if(pdrvName!=NULL && *pdrvName!='\0' && (strcmp(pdrvName,pname)!=0)) continue;
 	    if(pdset->report!=NULL) {
 		printf("Device Support: %s\n",pname);
 		(*pdset->report)(type);

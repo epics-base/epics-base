@@ -112,7 +112,7 @@ static char *os_depenhSccsId = "$Id$";
 #endif /*VMS*/
 
 #ifndef CA_OS_CONFIGURED
-#       error Please define one of vxWorks, UNIX or VMS
+/* #       error Please define one of vxWorks, UNIX or VMS */
 #endif
 
 #ifndef NULL

@@ -7,6 +7,9 @@ static char *sccsId = "@(#) $Id$";
 
 /*
  * $Log$
+ * Revision 1.31  1995/10/12  01:30:28  jhill
+ * improved the test
+ *
  * Revision 1.30  1995/09/29  21:47:58  jhill
  * MS windows changes
  *
@@ -129,9 +132,9 @@ int doacctst(char *pname)
 	{
 		TS_STAMP	end_time;
 		TS_STAMP	start_time;
-		dbr_double_t		delay;
-		dbr_double_t		request = 0.5;
-		dbr_double_t		accuracy;
+		dbr_double_t	delay;
+		dbr_double_t	request = 0.5;
+		dbr_double_t	accuracy;
 
 		tsLocalTime(&start_time);
 		status = ca_pend_event(request);
@@ -567,10 +570,39 @@ int doacctst(char *pname)
 			conn_cb_count);
 	}
 
-	printf("-- Put/Gets done- waiting for Events --\n");
-	status = ca_pend_event(1000.0);
-	if (status != ECA_TIMEOUT) {
-		SEVCHK(status, NULL);
+	{
+		TS_STAMP	end_time;
+		TS_STAMP	start_time;
+		dbr_double_t	delay;
+		dbr_double_t	request = 15.0;
+		dbr_double_t	accuracy;
+
+		tsLocalTime(&start_time);
+		printf("waiting for events for %f sec\n", request);
+		status = ca_pend_event(request);
+		if (status != ECA_TIMEOUT) {
+			SEVCHK(status, NULL);
+		}
+		tsLocalTime(&end_time);
+		TsDiffAsDouble(&delay,&end_time,&start_time);
+		accuracy = 100.0*(delay-request)/request;
+		printf("CA pend event delay accuracy = %f %%\n",
+			accuracy);
+		assert (abs(accuracy) < 10.0);
+	}
+
+	{
+		TS_STAMP	end_time;
+		TS_STAMP	start_time;
+		dbr_double_t	delay;
+
+		tsLocalTime(&start_time);
+		printf("entering ca_task_exit()\n");
+		status = ca_task_exit();
+		SEVCHK(status,NULL);
+		tsLocalTime(&end_time);
+		TsDiffAsDouble(&delay,&end_time,&start_time);
+		printf("in ca_task_exit() for %f sec\n", delay);
 	}
 
 	if (ptr){
@@ -585,9 +617,6 @@ int doacctst(char *pname)
 	if (pgrfloat) {
 		free(pgrfloat);
 	}
-
-	status = ca_task_exit();
-	SEVCHK(status,NULL);
 
 	return(0);
 }
@@ -652,8 +681,10 @@ void null_event(struct event_handler_args args)
 	dbr_double_t	fval = 3.8;
 	int		status;
 
+#if 0
 	status = ca_put (DBR_DOUBLE, args.chid, &fval);
 	SEVCHK (status, NULL);
+#endif
 
 	if (i++ > 1000) {
 		printf("1000 occurred\n");

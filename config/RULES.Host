@@ -40,6 +40,7 @@ vpath %.c $(USER_VPATH) ../os/$(ARCH_CLASS) ../os/generic ..
 vpath %.cc $(USER_VPATH) ../os/$(ARCH_CLASS) ../os/generic ..
 vpath %.cpp $(USER_VPATH) ../os/$(ARCH_CLASS) ../os/generic ..
 vpath %.rc $(USER_VPATH) ../os/$(ARCH_CLASS) ../os/generic ..
+vpath %.jar $(USER_VPATH) ..
 
 #	check for add-on CFLAGS and CXXFLAGS
 #
@@ -234,7 +235,7 @@ endif
 #	(convenience for extensions and applications)
 ifneq ($(EPICS_BASE),$(TOP))
 ifneq ($(EPICS_BASE),$(INSTALL_LOCATION))
-EPICS_INCLUDES += -I$(EPICS_BASE_INCLUDE) -I$(EPICS_BASE_INCLUDE)/os/$(OS_CLASS)
+EPICS_INCLUDES += -I$(EPICS_BASE_INCLUDE)/os/$(OS_CLASS) -I$(EPICS_BASE_INCLUDE)
 EPICS_DBDFLAGS += -I $(EPICS_BASE)/dbd
 endif
 endif
@@ -417,7 +418,7 @@ endif
 PRODNAME_OBJS+=$(addsuffix $(OBJ), $(basename $(PRODNAME_SRCS)))
 PRODNAME_RESS+=$(addsuffix $(RES), $(basename $(PRODNAME_RCS)))
 
-ifeq ($(HOST_ARCH),Borland)
+ifdef BORLANDC
 $(PRODNAME): $(PRODNAME_OBJS) $(PRODNAME_RESS)
 	@$(RM) $@
 	$(PRODNAME_LINKER) $(PRODNAME_OBJS) , $@ ,,$(LINKLIBS) $(subst /,\\,$(LDLIBS)),, $(PRODNAME_RESS)
@@ -474,21 +475,31 @@ TESTCLASSES += $(subst .java,.class,$(TESTJAVA))
 INSTALL_CLASSES =$(CLASSES:%=$(INSTALL_JAVA)/$(PACKAGE)/%)
 INSTALL_JAR =$(JAR:%=$(INSTALL_JAVA)/%)
 
+ifeq ($(strip $(JAVADOC)),YES)
+DIRECTORY_TARGETS += $(INSTALL_HTML)
+INSTALL_JAVADOC = $(CLASSES:%.class=$(INSTALL_HTML)/%.html)
+ifdef PACKAGE
+DIRECTORY_TARGETS += $(INSTALL_HTML)/$(PACKAGE)
+INSTALL_JAVADOC = $(CLASSES:%.class=$(INSTALL_HTML)/$(PACKAGE)/$(PACKAGE)/%.html)
+endif
+endif
+
 JAR_OPTIONS = cvf
 ifdef MANIFEST
 JAR_OPTIONS = cvmf
 endif
-JAR_DEPFILES +=  $(wildcard $(JAR_INPUT) $(addsuffix /*,$(JAR_INPUT)))
+#JAR_DEPFILES +=  $(wildcard $(JAR_INPUT) $(addsuffix /*,$(JAR_INPUT)))
+JAR_DEPFILES +=  $(JAR_INPUT)
 
 $(DIRECTORY_TARGETS) :
 	$(MKDIR) $@
 
 build:: $(TESTCLASSES) $(JAR)
 
-buildInstall :: $(DIRECTORY_TARGETS) $(INSTALL_CLASSES) $(INSTALL_JAR)
+buildInstall :: $(DIRECTORY_TARGETS) $(INSTALL_CLASSES) $(INSTALL_JAR) $(INSTALL_JAVADOC)
 
 clean::
-	@$(RM) $(TESTCLASSES) $(JAR)
+	@$(RM) $(TESTCLASSES) $(JAR) $(INSTALL_CLASSES) $(INSTALL_JAVADOC)
 
 %.class:%.java
 	@echo Creating java class file $@
@@ -500,6 +511,11 @@ $(INSTALL_JAVA)/$(PACKAGE)/%.class:%.java
 	@$(RM) $@
 	$(JAVACCMD) -d $(INSTALL_JAVA) $<
 
+$(INSTALL_JAVADOC):$(JAVA)
+	@echo Creating javadoc html files $@
+	@$(RM) $@
+	$(JAVADOCCMD) -d $(INSTALL_HTML)/$(PACKAGE) $(PACKAGE) 
+
 $(JAR):%.jar:  $(JAR_DEPFILES)
 	@echo Creating java jar file $@
 	@$(RM) $@
@@ -507,12 +523,12 @@ $(JAR):%.jar:  $(JAR_DEPFILES)
 
 $(INSTALL_JAVA)/%.jar: %.jar
 	@echo "Installing jar file $@"
-	$(INSTALL) -d -m 644 $< $(@D)
+	@$(INSTALL) -d -m 644 $< $(@D)
 
 $(PACKAGE)_%.h:$(INSTALL_JAVA)/$(PACKAGE)/%.class
 	$(JAVAHCMD) $(PACKAGE).$*
 
-.PRECIOUS: $(INSTALL_CLASSES)
+.PRECIOUS: $(INSTALL_CLASSES) $(INSTALL_JAVADOC)
 
 #---------------------------------------------------------------
 #---------------------------------------------------------------
@@ -536,7 +552,7 @@ ifneq ($(strip $(LIBSRCS) $(SRCS) $(COND_PROD_SRCS) $(SRCS.c) $(SRCS.cc)),)
 	$(DEPENDS_RULE)
 endif
 
-ifeq ($(HOST_ARCH),Borland)
+ifdef BORLANDC
 %$(EXE): %.c
 	@$(RM) $@
 	$(COMPILE.c)  $<
@@ -645,7 +661,7 @@ endif
 %.db: ../%.edf
 	$(E2DB) $(E2DB_SYSFLAGS) $(E2DB_FLAGS) $<
 
-%.edf: ../%.sch
+%.edf: ../%.sch $(DEPSCHS)
 	@if [ ! -f cad.rc -a -r ../cad.rc ] ; then ln -s ../cad.rc ; fi
 	$(SCH2EDIF) $(SCH2EDIF_SYSFLAGS) $(SCH2EDIF_FLAGS) $<
 
@@ -713,7 +729,7 @@ $(DBDNAME): ../base.dbd
 endif
 endif
 
-ifeq ($(HOST_ARCH),Borland)
+ifdef BORLANDC
 $(DLL_LINK_LIBNAME) $(SHRLIBNAME): $(LIBOBJS) $(LIBNAME_RESS)
 	$(LINK.shrlib) $(LIBOBJS) , $@ ,,$(LINKLIBS) $(subst /,\\,$(DLL_LDLIBS)), $(DLL_DEF_FLAG), $(LIBNAME_RESS)
 
@@ -722,7 +738,7 @@ $(DLL_LINK_LIBNAME) $(SHRLIBNAME): $(LIBOBJS) $(LIBNAME_RESS)
 	$(LINK.shrlib) $(LIBOBJS) $(DLL_LDLIBS) $(LIBNAME_RESS)
 
 endif
-ifeq ($(HOST_ARCH),Borland)
+ifdef BORLANDC
 # rule for lib (archive of object files) creation
 $(LIBNAME): $(LIBOBJS)
 	$(RM) $@
@@ -764,7 +780,7 @@ $(INSTALL_LIB)/%.lib: %.lib
 
 $(INSTALL_SHRLIB)/lib%: lib%
 	@echo "Installing library $@"
-	@$(INSTALL) -d -m 555 $< $(INSTALL_SHRLIB)
+	@$(INSTALL_LIBRARY) -d -m 555 $< $(INSTALL_SHRLIB)
 ifdef SHRLIB_VERSION
 	@$(RM) $(@:%.$(SHRLIB_VERSION)=%)
 	ln -s $< $(@:%.$(SHRLIB_VERSION)=%) 

@@ -1,6 +1,6 @@
 # $Id$
 #
-#	Rules for making things specified in Makefile.Host
+#	Rules for making things specified in Makefile
 #
 #	Some rules for filename-massage are system specific
 #	and have "ifdefs" here instead of using definitions
@@ -451,5 +451,5 @@ endif
 
 endif # T_A defined
 
-#	EOF RULES.Host
+#	EOF RULES_BUILD
 

@@ -84,7 +84,7 @@ struct hpe1368a_config{
 LOCAL int hpe1368aDriverId;
 
 LOCAL void hpe1368a_int_service(unsigned la);
-LOCAL void hpe1368a_init_card(unsigned la);
+LOCAL void hpe1368a_init_card(unsigned la, void *pArg);
 LOCAL void hpe1368a_stat(unsigned la, int level);
 
 struct {
@@ -140,7 +140,7 @@ hpe1368aStat hpe1368a_init(void)
  * initialize single at5vxi card
  *
  */
-LOCAL void hpe1368a_init_card(unsigned la)
+LOCAL void hpe1368a_init_card(unsigned la, void *pArg)
 {
         hpe1368aStat		r0;
         struct hpe1368a_config	*pc;

@@ -100,7 +100,7 @@ void hpe1445aLogErrorsWithLineno(unsigned la, int lineno);
  * For Driver Internal Use
  *
  */
-LOCAL void 	hpe1445aInitCard(unsigned la);
+LOCAL void 	hpe1445aInitCard(unsigned la, void *pArg);
 LOCAL hpe1445aStat	hpe1445aReset(unsigned la);
 LOCAL hpe1445aStat	logEntireError(unsigned la, int lineno);
 LOCAL hpe1445aStat	hpe1445aActivateWaveformLocked(unsigned la, char *pWaveformName,
@@ -290,7 +290,8 @@ hpe1445aStat hpe1445aInit(void)
  */
 LOCAL
 void hpe1445aInitCard(
-unsigned 	la
+unsigned 	la,
+void		*pArg
 )
 {
         hpe1445aStat		s;

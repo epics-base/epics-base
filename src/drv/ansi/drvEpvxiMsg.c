@@ -104,7 +104,7 @@ int	msgCommanderLA = (-1);
  */
 LOCAL void 	set_la(
 	unsigned	la,
-	unsigned	*pla
+	void		*pLA
 );
 
 LOCAL void 	vxiMsgInt(
@@ -1217,9 +1217,10 @@ void	vxiHP1404MsgSignalSetup(
  */
 LOCAL void 	set_la(
 unsigned	la,
-unsigned	*pla
+void		*pArg
 )
 {
+	unsigned	*pla = (unsigned *) pArg;
 	*pla = la;
 }
 

@@ -83,7 +83,8 @@ struct hpE1404_config{
 	epvxiFetchPConfig((LA), hpE1404DriverID, (PC))
 
 LOCAL void 	hpE1404InitLA(
-	unsigned	la
+	unsigned	la,
+	void		*pArg
 );
 
 LOCAL int	hpE1404ShutDown(
@@ -91,7 +92,8 @@ LOCAL int	hpE1404ShutDown(
 );
 
 LOCAL void 	hpE1404ShutDownLA(
-	unsigned 		la
+	unsigned 		la,
+	void			*pArg
 );
 
 LOCAL void      hpE1404IOReport(
@@ -213,7 +215,8 @@ LOCAL int	hpE1404ShutDown(void)
  */
 LOCAL
 void 	hpE1404ShutDownLA(
-	unsigned 		la
+	unsigned 		la,
+	void			*pArg
 )
 {
         struct vxi_csr  	*pcsr;
@@ -231,7 +234,8 @@ void 	hpE1404ShutDownLA(
  */
 LOCAL 
 void 	hpE1404InitLA(
-	unsigned	la
+	unsigned	la,
+	void		*pArg
 )
 {
 	struct hpE1404_config	*pc;

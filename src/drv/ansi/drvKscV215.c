@@ -117,7 +117,7 @@ struct KscV215_A24{
 #ifdef INTERRUPTS
 LOCAL void KscV215_int_service(unsigned la);
 #endif
-LOCAL void KscV215_init_card(unsigned la);
+LOCAL void KscV215_init_card(unsigned la, void *pArg);
 
 LOCAL void KscV215_stat(
 unsigned 	la,
@@ -182,7 +182,7 @@ kscV215Stat	KscV215Init(void)
  * initialize single at5vxi card
  *
  */
-LOCAL void KscV215_init_card(unsigned la)
+LOCAL void KscV215_init_card(unsigned la, void *pArg)
 {
         kscV215Stat		status;
 	int			i;

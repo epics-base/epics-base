@@ -1,1 +1,1 @@
-BUILD_ARCHS=sun4 mv167
+BUILD_ARCHS=sun4 mv167 mv147

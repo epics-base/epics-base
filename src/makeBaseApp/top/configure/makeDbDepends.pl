@@ -3,9 +3,9 @@ eval 'exec perl -S $0 ${1+"$@"}'  # -*- Mode: perl -*-
 
 # Called from within the object directory.
 # Searches the .substitutions files (from the command line) for
-# "file xxx {" entries to create a .DEPENDS file
+# "file xxx {" entries to create a DEPENDS file
 
-open(OUT, ">.DEPENDS") or die "Cannot open .DEPENDS: $!";
+open(OUT, ">DEPENDS") or die "Cannot open DEPENDS: $!";
 
 foreach $file (@ARGV) {
     open(IN, "<$file") or die "Cannot open $file: $!";

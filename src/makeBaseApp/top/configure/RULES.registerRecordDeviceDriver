@@ -3,3 +3,6 @@ registerRecordDeviceDriver.o: registerRecordDeviceDriver.c
 registerRecordDeviceDriver.c: $(INSTALL_DBD)/$(DBDNAME)
 	$(RM) registerRecordDeviceDriver.c
 	$(PERL) $(EPICS_BASE_HOST_BIN)/registerRecordDeviceDriver.pl $(INSTALL_DBD)/$(DBDNAME) > registerRecordDeviceDriver.c
+
+clean::
+	@$(RM) registerRecordDeviceDriver.c

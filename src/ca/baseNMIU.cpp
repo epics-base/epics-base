@@ -13,8 +13,8 @@
 #include "iocinf.h"
 #include "nciu_IL.h"
 
-baseNMIU::baseNMIU ( nciu &chanIn ) : 
-    chan ( chanIn )
+baseNMIU::baseNMIU ( cacNotify &notifyIn, nciu &chanIn ) : 
+    cacNotifyIO ( notifyIn ), chan ( chanIn )
 {
 }
 
@@ -22,8 +22,17 @@ baseNMIU::~baseNMIU ()
 {
 }
 
-void baseNMIU::destroy ()
+// this is typically called by the user via cacNotifyIO
+void baseNMIU::cancel ()
 {
+    unsigned i = 0u;
+    while ( ! this->chan.getPIIU ()->uninstallIO ( *this ) ) {
+        if ( i++ > 1000u ) {
+            ca_printf ( "CAC: unable to destroy IO\n" );
+            break;
+        }
+    }
+    this->ioCancelRequest ();
     delete this;
 }
 
@@ -38,5 +47,13 @@ void baseNMIU::show ( unsigned /* level */ ) const
         static_cast <const void *> ( this ), this->chan.pName () );
 }
 
+cacChannelIO & baseNMIU::channelIO () const
+{
+    return this->chan;
+}
+
+void baseNMIU::ioCancelRequest ()
+{
+}
 
 

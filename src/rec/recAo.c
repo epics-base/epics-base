@@ -362,6 +362,10 @@ static int convert(pao)
 		nRequest=1;
 		save_pact = pao->pact;
 		pao->pact = TRUE;
+		/* don't allow dbputs to val field */
+ 		if(pao->pval<=0.0 || pao->pval>udfDtest){
+			pao->val=pao->pval;
+		}
                 status = dbGetLink(&pao->dol.value.db_link,pao,DBR_DOUBLE,
 			&value,&options,&nRequest);
 		pao->pact = save_pact;
@@ -389,6 +393,7 @@ static int convert(pao)
         	else if (value < pao->drvl) value = pao->drvl;
 	}
 	pao->val = value;
+	pao->pval = value;
 
 	if(pao->oval>0.0 && pao->oval<udfDtest) pao->oval = value;
 	/* now set value equal to desired output value */

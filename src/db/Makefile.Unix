@@ -21,7 +21,5 @@ PROD =
 
 all :: $(LIBNAME) $(PROD)
 
-install: $(EPICS_BASE_LIB)/$(T_ARCH)/libDb.a
-
 include $(EPICS)/config/RULES
 

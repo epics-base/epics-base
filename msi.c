@@ -104,10 +104,12 @@ int main(int argc,char **argv)
 	        fprintf(stderr,"no template file\n");
 	        usageExit();
             }
+            macPushScope(macPvt);
 	    while((pval = substituteGetReplacements(substitutePvt))){
 	        addMacroReplacements(macPvt,pval);
 	        makeSubstitutions(inputPvt,macPvt,filename);
 	    }
+            macPopScope(macPvt);
         }
         substituteDestruct(substitutePvt);
     }

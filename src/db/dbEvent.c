@@ -191,6 +191,7 @@ struct event_user
 
   bfill(evuser, sizeof(*evuser), NULL);
   evuser->firstque.evuser = evuser;
+  FASTLOCKINIT(&(evuser->firstque.writelock));
 /*
   init_event_que(&evuser->firstevent);
 
@@ -291,6 +292,7 @@ register struct event_block	*pevent; /* ptr to event blk (not required) */
       tmp_que->evuser = evuser;
       ev_que->nextque = tmp_que;
       ev_que = tmp_que;
+      FASTLOCKINIT(&(ev_que->writelock));
       break;
     }
     ev_que = ev_que->nextque;

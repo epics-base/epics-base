@@ -118,6 +118,8 @@
 #include	<recSup.h>
 #include	<special.h>
 
+long jba_debug=0;
+
 long dbPut();
 
 #define MAX_LOCK 10
@@ -208,10 +210,16 @@ long dbProcess(paddr)
 	struct dbCommon *precord=(struct dbCommon *)(paddr->precord);
 	long		status;
     
+	if (jba_debug)
+	printf ("-------------------------%s dbProcess entered -----------------\n",precord->name);
+
 	/* If already active dont process */
 	if(precord->pact) {
 	        struct rset     *prset;
 		struct valueDes valueDes;
+
+	if (jba_debug)
+	printf ("-------------------------%s already active -----------------\n",precord->name);
 
 		/* raise scan alarm after MAX_LOCK times */
 		if(precord->stat==SCAN_ALARM) return(0);
@@ -249,6 +257,9 @@ long dbProcess(paddr)
 	/* if disabled just return success */
 	if(precord->disa == precord->disv) {
 
+	if (jba_debug)
+	printf ("-------------------------%s is disabled -----------------\n",precord->name);
+
 		return(0);
 	}
 
@@ -261,6 +272,9 @@ long dbProcess(paddr)
 
 	/* process record */
 	status = (*prset->process)(paddr);
+
+	if (jba_debug)
+	printf ("-------------------------%s processed ------------------------\n",precord->name);
 
 	return(status);
 
@@ -3488,11 +3502,11 @@ long		no_elements;
 long		offset;
 {
     double  *pdest=(double *)paddr->pfield;
-    float  value;
+    double  value;
 
     if(nRequest==1 && offset==0) {
 	if(sscanf(pbuffer,"%lf",&value) == 1) {
-		*pdest = (double)value;
+		*pdest = value;
 		return(0);
 	}
     }
@@ -3506,17 +3520,15 @@ long		nRequest;
 long		no_elements;
 long		offset;
 {
-    unsigned short  *pdest=( unsigned short *)paddr->pfield;
-    unsigned short  value;
+    struct rset *prset;
+    short       record_type=(paddr->record_type);
+    long        status;
 
-    if(nRequest==1 && offset==0) {
-        if(sscanf(pbuffer,"%hu",&value) == 1) {
-                *pdest = value;
-                return(0);
-        }
-        else return(-1);
-    }
-    return(-1);
+    if((prset=GET_PRSET(record_type)) && (prset->put_enum_str))
+        return( (*prset->put_enum_str)(paddr,pbuffer) );
+    status=S_db_noRSET;
+    recGblRecSupError(status,paddr,"dbPutField","put_enum_str");
+    return(S_db_badDbrtype);
 }
 
 static long putStringGchoice(paddr,pbuffer,nRequest,no_elements,offset)
@@ -5014,7 +5026,7 @@ long		offset;
     else
 	status=S_db_precision;
     if(!RTN_SUCCESS(status)) {
-	recGblRecSupError(status,paddr,"db_put_field","get_precision");
+	recGblRecSupError(status,paddr,"dbPutField","get_precision");
 	return(status);
     }
 
@@ -5255,7 +5267,7 @@ long		offset;
     else
 	status=S_db_precision;
     if(!RTN_SUCCESS(status)) {
-	recGblRecSupError(status,paddr,"db_put_field","get_precision");
+	recGblRecSupError(status,paddr,"dbPutField","get_precision");
 	return(status);
     }
 

@@ -188,6 +188,16 @@
 #include	<taskParams.h>
 #include	<module_types.h>
 
+/* local routines */
+static int  add_to_periodic_list();
+static int  add_to_io_event_list();
+static int  add_to_event_list();
+static int  delete_from_periodic_list();
+static int  delete_from_io_event_list();
+static int  delete_from_event_list();
+static long get_io_info();
+
+
 
 
 typedef	unsigned long TIME;

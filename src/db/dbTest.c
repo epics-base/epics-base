@@ -1047,7 +1047,7 @@ static int dbpr_report(pname, paddr, interest_level, pMsgBuff, tab_size)
 		if(n>(sizeof(temp_buf)-2)/2) n = (sizeof(temp_buf)-2)/2;
 		for (i=0; i<n; i++, (ptemp_buf+=2), pchar++) {
 			value = *((unsigned char *)pchar);
-			sprintf(ptemp_buf,"%-2.2x",value);
+			sprintf(ptemp_buf,"%02x",value);
 		}
 		*ptemp_buf = 0;
 		sprintf(pmsg, "%s: %s", pfield_name,temp_buf);

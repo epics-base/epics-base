@@ -49,7 +49,6 @@ char * pfilename;
 	logMsg("iocInit can only be called once\n");
 	return(-1);
     }
-    initialized = TRUE;
     if(status=initBusController()) {
 	logMsg("iocInit aborting because initBusController failed\n");
 	return(-1);
@@ -58,9 +57,11 @@ char * pfilename;
 	logMsg("iocInit aborting because sdrLoad failed\n");
 	return(-1);
     }
+    initialized = TRUE;
     logMsg("sdrLoad completed\n");
-    /* enable interrupt level 5 */
+    /* enable interrupt level 5 and 6 */
     sysIntEnable(5);
+    sysIntEnable(6);
     if(initDrvSup()==0) logMsg("Drivers Initialized\n");
     if(initRecSup()==0) logMsg("Record Support Initialized\n");
     if(initDevSup()==0) logMsg("Device Support Initialized\n");

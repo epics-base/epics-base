@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.2  1996/07/09 23:01:04  jhill
+ * added new operators
+ *
  * Revision 1.1  1996/06/26 22:14:11  jhill
  * added new src files
  *
@@ -113,9 +116,9 @@ public:
 	void get(long &secOut, long &nSecOut) const
 	{
 		assert(this->sec <= LONG_MAX);
-		secOut = this->sec;
+		secOut = (long) this->sec;
 		assert(this->nSec <= LONG_MAX);
-		nSecOut = this->nSec;
+		nSecOut = (long) this->nSec;
 	}
 	void get(unsigned long &secOut, unsigned long &nSecOut) const
 	{
@@ -125,6 +128,16 @@ public:
 	void get(unsigned &secOut, unsigned &nSecOut) const
 	{
 		secOut = this->sec;
+		nSecOut = this->nSec;
+	}
+	//
+	// for the goofy vxWorks 5.2 time spec
+	// (which has unsigned sec and long nano-sec)
+	//
+	void get(unsigned long &secOut, long &nSecOut) const
+	{
+		secOut = this->sec;
+		assert(this->nSec <= LONG_MAX);
 		nSecOut = this->nSec;
 	}
 

@@ -394,6 +394,9 @@ int epicsShareAPI ca_add_masked_array_event ( chtype type, unsigned long count, 
             *monixptr = pSubsr;
         }
     }
+    else {
+        pSubsr->destroy ();
+    }
 
     return status;
 }

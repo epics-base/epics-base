@@ -100,6 +100,11 @@ void ca_repeater()
   	int				from_size = sizeof from;
   	struct one_client		*pclient;
   	struct one_client		*pnxtclient;
+	short				port;
+
+	port = caFetchPortConfig(
+		&EPICS_CA_REPEATER_PORT, 
+		CA_REPEATER_PORT);
 
 	ellInit(&client_list);
 
@@ -113,7 +118,7 @@ void ca_repeater()
       	memset((char *)&bd, 0, sizeof(bd));
       	bd.sin_family = AF_INET;
       	bd.sin_addr.s_addr = INADDR_ANY;	
-     	bd.sin_port = htons(CA_CLIENT_PORT);	
+     	bd.sin_port = htons(port);	
       	status = bind(sock, (struct sockaddr *)&bd, sizeof(bd));
      	if(status<0){
 		if(MYERRNO != EADDRINUSE){

@@ -190,7 +190,8 @@ int			net_proto
 		}
   		pNode->destAddr.inetAddr.sin_family = AF_INET;
 		pNode->destAddr.inetAddr.sin_addr = *pnet_addr;
-  		pNode->destAddr.inetAddr.sin_port = htons(CA_SERVER_PORT);
+  		pNode->destAddr.inetAddr.sin_port = 
+			htons (ca_static->ca_server_port);
 		ellAdd(&piiu->destAddr, &pNode->node);
 		piiu->recvBytes = tcp_recv_msg; 
 		piiu->sendBytes = cac_tcp_send_msg_piiu; 
@@ -426,21 +427,13 @@ int			net_proto
       		}
 
 		/*
-		 * LOCK is for piiu->destAddr list
-		 * (lock outside because this is used by the server also)
+		 * load user and auto configured
+		 * broadcast address list
 		 */
-		LOCK;
-		caDiscoverInterfaces(
-			&piiu->destAddr,
-			sock,
-			CA_SERVER_PORT);
-		UNLOCK;
-
-		caAddConfiguredAddr(
+		caSetupBCastAddrList(
 			&piiu->destAddr, 
-			&EPICS_CA_ADDR_LIST,
-			sock,
-			CA_SERVER_PORT);
+			sock, 
+			ca_static->ca_server_port);
 
 		cacRingBufferInit(&piiu->recv, sizeof(piiu->send.buf));
 		cacRingBufferInit(&piiu->send, min(MAX_UDP, 
@@ -482,6 +475,58 @@ int			net_proto
   	return ECA_NORMAL;
 }
 
+
+/*
+ * caSetupBCastAddrList()
+ */
+void caSetupBCastAddrList (ELLLIST *pList, SOCKET sock, unsigned port)
+{
+	char			*pstr;
+	ENV_PARAM		yesno;
+	int			yes;
+
+	/*
+	 * dont load the list twice
+	 */
+	assert (ellCount(pList)==0);
+
+	/*
+	 * Check to see if the user has disabled
+	 * initializing the search b-cast list
+	 * from the interfaces found.
+	 */
+	yes = TRUE;
+	pstr = envGetConfigParam (
+			&EPICS_CA_AUTO_ADDR_LIST,		
+			sizeof(yesno.dflt),
+			yesno.dflt);
+	if (pstr) {
+			if (strstr(pstr,"no")||strstr(pstr,"NO")) {
+			yes = FALSE;
+		}
+	}
+
+	/*
+	 * LOCK is for piiu->destAddr list
+	 * (lock outside because this is used by the server also)
+	 */
+	if (yes) {
+		caDiscoverInterfaces(
+			pList,
+			sock,
+			port);
+	}
+
+	caAddConfiguredAddr(
+		pList, 
+		&EPICS_CA_ADDR_LIST,
+		sock,
+		port);
+
+	if (ellCount(pList)==0) {
+		ca_signal (ECA_NOSEARCHADDR, NULL);
+	}
+}
 
 
 /*
@@ -529,7 +574,7 @@ void notify_ca_repeater()
 		memset((char *)&msg, 0, sizeof(msg));
 		msg.m_cmmd = htons(REPEATER_REGISTER);
 		msg.m_available = saddr.sin_addr.s_addr;
-      		saddr.sin_port = htons(CA_CLIENT_PORT);	
+      		saddr.sin_port = htons(ca_static->ca_repeater_port);	
 		/*
 		 * Intentionally sending a zero length message here
 		 * until most CA repeater daemons have been restarted
@@ -1097,116 +1142,116 @@ void close_ioc (struct ioc_in_use *piiu)
 	/*
 	 * dont close twice
 	 */
-  	if(piiu->sock_chan == INVALID_SOCKET){
-		return;
-	}
+  	assert (piiu->sock_chan!=INVALID_SOCKET);
 
 	LOCK;
 
-	ellDelete(&iiuList, &piiu->node);
+	ellDelete (&iiuList, &piiu->node);
 
 	/*
 	 * attempt to clear out messages in recv queue
 	 */
-	(*piiu->procInput)(piiu);
+	(*piiu->procInput) (piiu);
 
-	if(piiu == piiuCast){
+
+	if (piiu == piiuCast) {
 		piiuCast = NULL;
 	}
-
-	/*
-	 * Mark all of their channels disconnected
-	 * prior to calling handlers incase the
-	 * handler tries to use a channel before
-	 * I mark it disconnected.
-	 */
-  	chix = (chid) &piiu->chidlist.node.next;
-  	while(chix = (chid) chix->node.next){
-    		chix->type = TYPENOTCONN;
-    		chix->count = 0;
-    		chix->state = cs_prev_conn;
-    		chix->id.sid = ~0L;
-		chix->ar.read_access = FALSE;
-		chix->ar.write_access = FALSE;
+	else {
 		/*
-		 * try to reconnect
+		 * remove IOC from the hash table
 		 */
-		chix->retry = 0;
-  	}
+		pNode = (caAddrNode *) piiu->destAddr.node.next;
+		assert (pNode);
+		removeBeaconInetAddr (&pNode->destAddr.inetAddr.sin_addr);
+
+		/*
+		 * Mark all of their channels disconnected
+		 * prior to calling handlers incase the
+		 * handler tries to use a channel before
+		 * I mark it disconnected.
+		 */
+		chix = (chid) &piiu->chidlist.node.next;
+		while (chix = (chid) chix->node.next) {
+			chix->type = TYPENOTCONN;
+			chix->count = 0;
+			chix->state = cs_prev_conn;
+			chix->id.sid = ~0L;
+			chix->ar.read_access = FALSE;
+			chix->ar.write_access = FALSE;
+			/*
+			 * try to reconnect
+			 */
+			chix->retry = 0;
+		}
+
+		if (piiu->chidlist.count) {
+			ca_signal (ECA_DISCONN,piiu->host_name_str);
+		}
+
+		/*
+		 * call their connection handler as required
+		 */
+		chix = (chid) &piiu->chidlist.node.next;
+		while (chix = (chid) chix->node.next) {
+			LOCKEVENTS;
+			if (chix->pConnFunc) {
+				struct connection_handler_args 	args;
+
+				args.chid = chix;
+				args.op = CA_OP_CONN_DOWN;
+				(*chix->pConnFunc) (args);
+			}
+			if (chix->pAccessRightsFunc) {
+				struct access_rights_handler_args 	args;
+
+				args.chid = chix;
+				args.ar = chix->ar;
+				(*chix->pAccessRightsFunc) (args);
+			}
+			UNLOCKEVENTS;
+			chix->piiu = piiuCast;
+		}
+
+		/*
+		 * move all channels to the broadcast IIU
+		 *
+		 * if we loose the broadcast IIU its a severe error
+		 */
+		assert (piiuCast);
+		ellConcat (&piiuCast->chidlist, &piiu->chidlist);
+  		assert (piiu->chidlist.count==0);
+	}
 
 	/*
 	 * Try to reconnect
 	 */
 	ca_static->ca_search_retry = 0;
 
-	if(piiu->chidlist.count){
-		ca_signal(ECA_DISCONN,piiu->host_name_str);
-	}
-
-	/*
-	 * remove IOC from the hash table
-	 */
-	pNode = (caAddrNode *) piiu->destAddr.node.next;
-	assert(pNode);
-	removeBeaconInetAddr(&pNode->destAddr.inetAddr.sin_addr);
-
-	/*
-	 * call their connection handler as required
-	 */
-  	chix = (chid) &piiu->chidlist.node.next;
-  	while(chix = (chid) chix->node.next){
+  	if (fd_register_func) {
 		LOCKEVENTS;
-    		if(chix->pConnFunc){
-  			struct connection_handler_args 	args;
-
-			args.chid = chix;
-			args.op = CA_OP_CONN_DOWN;
-      			(*chix->pConnFunc)(args);
-    		}
-    		if(chix->pAccessRightsFunc){
-  			struct access_rights_handler_args 	args;
-
-			args.chid = chix;
-			args.ar = chix->ar;
-      			(*chix->pAccessRightsFunc)(args);
-		}
-		UNLOCKEVENTS;
-		chix->piiu = piiuCast;
-  	}
-
-	/*
-	 * move all channels to the broadcast IIU
-	 *
-	 * if we loose the broadcast IIU its a severe error
-	 */
-	assert(piiuCast);
-	ellConcat(&piiuCast->chidlist, &piiu->chidlist);
-
-  	assert(piiu->chidlist.count==0);
-
-  	if(fd_register_func){
-		LOCKEVENTS;
-		(*fd_register_func)(fd_register_arg, piiu->sock_chan, FALSE);
+		(*fd_register_func) (fd_register_arg, piiu->sock_chan, FALSE);
 		UNLOCKEVENTS;
 	}
 
-  	status = socket_close(piiu->sock_chan);
-	assert(status == 0);
+  	status = socket_close (piiu->sock_chan);
+	assert (status == 0);
 
 	/*
 	 * free message body cache
 	 */
-	if(piiu->pCurData){
-		free(piiu->pCurData);
+	if (piiu->pCurData) {
+		free (piiu->pCurData);
 		piiu->pCurData = NULL;
 		piiu->curDataMax = 0;
 	}
 
   	piiu->sock_chan = INVALID_SOCKET;
 
-	ellFree(&piiu->destAddr);
+	ellFree (&piiu->destAddr);
 
-	free(piiu);
+	free (piiu);
+
 	UNLOCK;
 }
 
@@ -1258,7 +1303,7 @@ int repeater_installed()
       	memset((char *)&bd,0,sizeof bd);
       	bd.sin_family = AF_INET;
       	bd.sin_addr.s_addr = INADDR_ANY;	
-     	bd.sin_port = htons(CA_CLIENT_PORT);	
+     	bd.sin_port = htons(ca_static->ca_repeater_port);	
       	status = bind(	sock, 
 			(struct sockaddr *) &bd, 
 			sizeof bd);
@@ -1603,5 +1648,38 @@ void caPrintAddrList(ELLLIST *pList)
 
                 pNode = (caAddrNode *) ellNext(&pNode->node);
         }
+}
+
+
+/*
+ * caFetchPortConfig()
+ */
+unsigned caFetchPortConfig(ENV_PARAM *pEnv, unsigned defaultPort)
+{
+	long		longStatus;
+	long		port;
+
+	longStatus = envGetLongConfigParam(pEnv, &port);
+	if (longStatus!=0) {
+		port = defaultPort;
+		ca_printf ("EPICS \"%s\" integer fetch failed\n", pEnv->name);
+		ca_printf ("setting \"%s\" = %ld\n", pEnv->name, port);
+	}
+
+	/*
+	 * Thus must be a server port that will fit in a signed
+	 * short
+	 */
+	if (port <= IPPORT_USERRESERVED || port>SHRT_MAX) {
+		ca_printf ("EPICS \"%s\" out of range\n", pEnv->name);
+		/*
+		 * Quit if the port is wrong due CA coding error
+		 */
+		assert (port != defaultPort);
+		port = defaultPort;
+		ca_printf ("Setting \"%s\" = %ld\n", pEnv->name, port);
+	}
+
+	return port;
 }
 

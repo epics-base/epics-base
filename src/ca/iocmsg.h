@@ -50,9 +50,15 @@ HDRVERSIONID(iocmsgh, "@(#) $Id$ CA version 4.4")
 #define CA_V44(MAJOR,MINOR)	( 0 )
 #endif 
 
+/*
+ * NOTE: These port numbers are only used if the CA repeater and 
+ * CA server port numbers cant be obtained from the EPICS 
+ * environment variables "EPICS_CA_REPEATER_PORT" and
+ * "EPICS_CA_SERVER_PORT"
+ */
 #define	CA_PORT_BASE		IPPORT_USERRESERVED + 56
 #define CA_SERVER_PORT		(CA_PORT_BASE+CA_PROTOCOL_VERSION*2)
-#define CA_CLIENT_PORT		(CA_PORT_BASE+CA_PROTOCOL_VERSION*2+1)
+#define CA_REPEATER_PORT	(CA_PORT_BASE+CA_PROTOCOL_VERSION*2+1)
 
 #define MAX_UDP			1024
 #define MAX_TCP			(MAX_UDP*16) /* so waveforms fit */

@@ -11,10 +11,9 @@ SRCS.c = \
 
 OBJS = \
 	iocinf.o access.o test_event.o service.o flow_control.o \
-	repeater.o conn.o syncgrp.o if_depen.o bsd_depen.o vxWorks_depen.o \
-	acctst.o
+	repeater.o conn.o syncgrp.o if_depen.o bsd_depen.o vxWorks_depen.o 
 
-PROD = caLib acctst.o
+PROD = caLib 
 
 include $(EPICS)/config/RULES.Vx
 

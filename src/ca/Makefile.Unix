@@ -25,7 +25,7 @@ LIBOBJS = \
 
 LIBNAME = libca.a
 
-PROD = caRepeater acctst
+PROD = caRepeater 
 
 
 include $(EPICS)/config/RULES.Unix

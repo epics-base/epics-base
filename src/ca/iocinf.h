@@ -84,6 +84,7 @@ HDRVERSIONID(iocinfh, "$Id$")
 #include <string.h>
 #include <signal.h>
 #include <stdlib.h>
+#include <limits.h>
 
 
 /*
@@ -198,9 +199,12 @@ extern const ca_time CA_CURRENT_TIME;
  * long we will wait for an echo reply before we
  * give up and flag the connection for disconnect
  * - CA_ECHO_TIMEOUT.
+ *
+ * CA_CONN_VERIFY_PERIOD is normally obtained from an
+ * EPICS environment variable.
  */
-#define CA_ECHO_TIMEOUT		5	/* (sec) disconn if no echo reply tmo */ 
-#define CA_CONN_VERIFY_PERIOD	30	/* (sec) how often to request echo */
+#define CA_ECHO_TIMEOUT		5.0	/* (sec) disconn no echo reply tmo */ 
+#define CA_CONN_VERIFY_PERIOD	30.0	/* (sec) how often to request echo */
 
 /*
  * only used when communicating with old servers
@@ -208,7 +212,7 @@ extern const ca_time CA_CURRENT_TIME;
 #define CA_RETRY_PERIOD		5	/* int sec to next keepalive */
 
 #define N_REPEATER_TRIES_PRIOR_TO_MSG	50
-#define REPEATER_TRY_PERIOD		(0.1)
+#define REPEATER_TRY_PERIOD		(0.1) 
 
 #ifdef vxWorks
 typedef struct caclient_put_notify{
@@ -396,6 +400,7 @@ struct  ca_static{
 	ca_time		ca_conn_next_retry;
 	ca_time		ca_conn_retry_delay;
 	ca_time		ca_last_repeater_try;
+	ca_real		ca_connectTMO;
 	long		ca_pndrecvcnt;
 	unsigned long	ca_nextSlowBucketId;
 	unsigned long	ca_nextFastBucketId;
@@ -416,6 +421,8 @@ struct  ca_static{
 	bhe		*ca_beaconHash[BHT_INET_ADDR_MASK+1];
 	unsigned	ca_repeater_tries;
 	unsigned	ca_search_retry; /* search retry seq number */
+	unsigned short	ca_server_port;
+	unsigned short	ca_repeater_port;
 	char		ca_sprintf_buf[256];
 	unsigned 	ca_post_msg_active:1; 
 	unsigned 	ca_manage_conn_active:1; 
@@ -494,7 +501,7 @@ int	ca_request_event(evid monix);
 void 	ca_busy_message(struct ioc_in_use *piiu);
 void	ca_ready_message(struct ioc_in_use *piiu);
 void	noop_msg(struct ioc_in_use *piiu);
-void	echo_request(struct ioc_in_use *piiu);
+int 	echo_request(struct ioc_in_use *piiu, ca_time *pCurrentTime);
 void 	issue_claim_channel(struct ioc_in_use *piiu, chid pchan);
 void 	issue_identify_client(struct ioc_in_use *piiu);
 void 	issue_client_host_name(struct ioc_in_use *piiu);
@@ -554,6 +561,8 @@ int                     net_proto
 );
 
 int ca_check_for_fp(void);
+
+void caSetupBCastAddrList (ELLLIST *pList, SOCKET sock, unsigned port);
 
 int ca_os_independent_init (void);
 

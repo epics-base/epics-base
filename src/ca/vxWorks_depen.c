@@ -419,7 +419,7 @@ LOCAL int cac_os_depen_exit_tid (struct ca_static *pcas, int tid)
 
 	/*
 	 * stop the socket recv task
-	 * (only after we get the LOCK here)
+	 * !! only after we get the LOCK here !!
 	 */
 	if (taskIdVerify (pcas->recv_tid)==OK) {
 		taskwdRemove (pcas->recv_tid);
@@ -439,7 +439,11 @@ LOCAL int cac_os_depen_exit_tid (struct ca_static *pcas, int tid)
 	/*
 	 * Cancel all local events
 	 * (and put call backs)
+	 *
+	 * !! temp release lock so that the event task
+	 * 	can finish !!
 	 */
+	UNLOCK;
 	chix = (chid) & pcas->ca_local_chidlist.node;
 	while (chix = (chid) chix->node.next) {
 		while (monix = (evid) ellGet(&chix->eventq)) {
@@ -457,7 +461,7 @@ LOCAL int cac_os_depen_exit_tid (struct ca_static *pcas, int tid)
 			free (ppn);
 		}
 	}
-
+	LOCK;
 
 	/*
 	 * set ca_static for access.c

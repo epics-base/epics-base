@@ -90,7 +90,7 @@ void manage_conn(int silent)
                 piiu;
                 piiu = (IIU *) piiu->node.next){
 
-                if(piiu == piiuCast || !piiu->conn_up){
+                if (piiu == piiuCast || !piiu->conn_up) {
                         continue;
                 }
 
@@ -98,11 +98,11 @@ void manage_conn(int silent)
 		 * mark connection for shutdown if outgoing messages
 		 * are not accepted by TCP/IP for several seconds
 		 */
-		if(piiu->sendPending){
+		if (piiu->sendPending) {
 			delay = cac_time_diff (
 					&current, 
 					&piiu->timeAtSendBlock); 
-			if(delay > CA_CONN_VERIFY_PERIOD){
+			if (delay>ca_static->ca_connectTMO) {
 				TAG_CONN_DOWN(piiu);
 				continue;
 			}
@@ -143,18 +143,11 @@ void manage_conn(int silent)
 			}
 		}
 		else{
-			int 	sendBytesAvailable;
-
-			sendBytesAvailable = 
-				cacRingBufferWriteSize(&piiu->send, TRUE);
 			delay = cac_time_diff (
 					&current,
 					&piiu->timeAtLastRecv);
-			if(delay>CA_CONN_VERIFY_PERIOD &&
-				sendBytesAvailable>sizeof(struct extmsg)){
-				piiu->echoPending = TRUE;
-				piiu->timeAtEchoRequest = current;
-				echo_request(piiu);
+			if (delay>ca_static->ca_connectTMO) {
+				echo_request(piiu, &current);
 			}
 		}
 
@@ -594,29 +587,29 @@ bhe *lookupBeaconInetAddr(struct in_addr *pnet_addr)
  *
  * LOCK must be applied
  */
-void removeBeaconInetAddr(struct in_addr *pnet_addr)
+void removeBeaconInetAddr (struct in_addr *pnet_addr)
 {
 	bhe		*pBHE;
 	bhe		**ppBHE;
 	unsigned	index;
 
-	index = ntohl(pnet_addr->s_addr);
+	index = ntohl (pnet_addr->s_addr);
 	index &= BHT_INET_ADDR_MASK;
 
-	assert(index<NELEMENTS(ca_static->ca_beaconHash));
+	assert (index<NELEMENTS(ca_static->ca_beaconHash));
 
 	ppBHE = &ca_static->ca_beaconHash[index];
 	pBHE = *ppBHE;
-	while(pBHE){
-		if(pBHE->inetAddr.s_addr == pnet_addr->s_addr){
+	while (pBHE) {
+		if (pBHE->inetAddr.s_addr == pnet_addr->s_addr) {
 			*ppBHE = pBHE->pNext;
-			free(pBHE);
+			free (pBHE);
 			return;
 		}
 		ppBHE = &pBHE->pNext;
 		pBHE = *ppBHE;
 	}
-	assert(0);
+	assert (0);
 }
 
 

@@ -481,7 +481,8 @@ int APIENTRY ca_task_initialize(void)
  */
 int ca_os_independent_init (void)
 {
-	unsigned		sec;
+	unsigned	sec;
+	long		status;
 
 	ca_static->ca_exception_func = ca_default_exception_handler;
 	ca_static->ca_exception_arg = NULL;
@@ -530,6 +531,27 @@ int ca_os_independent_init (void)
 	ca_static->ca_pFastBucket = 
 		bucketCreate(CLIENT_HASH_TBL_SIZE);
 	assert(ca_static->ca_pFastBucket);
+
+	status = envGetDoubleConfigParam (
+			&EPICS_CA_CONN_TMO, 
+			&ca_static->ca_connectTMO);
+	if (status) {
+		ca_static->ca_connectTMO = 
+			CA_CONN_VERIFY_PERIOD;
+		ca_printf (
+			"EPICS \"%s\" float fetch failed\n",
+			EPICS_CA_CONN_TMO.name);
+		ca_printf (
+			"Setting \"%s\" = %f\n",
+			EPICS_CA_CONN_TMO.name,
+			ca_static->ca_connectTMO);
+	}
+
+	ca_static->ca_repeater_port = 
+		caFetchPortConfig(&EPICS_CA_REPEATER_PORT, CA_REPEATER_PORT);
+
+	ca_static->ca_server_port = 
+		caFetchPortConfig(&EPICS_CA_SERVER_PORT, CA_SERVER_PORT);
 
 	if (repeater_installed()==FALSE) {
 		ca_spawn_repeater();
@@ -2539,7 +2561,7 @@ void clearChannelResources(unsigned id)
 			ca_static->ca_pSlowBucket, &chix->cid);
 	assert (status == BUCKET_SUCCESS);
 	free (chix);
-	if (!piiu->chidlist.count){
+	if (piiu!=piiuCast && !piiu->chidlist.count){
 		TAG_CONN_DOWN(piiu);
 	}
 
@@ -2911,20 +2933,30 @@ void ca_ready_message(struct ioc_in_use *piiu)
  * echo_request (lock must be on)
  * 
  */
-void echo_request(struct ioc_in_use *piiu)
+int echo_request(struct ioc_in_use *piiu, ca_time *pCurrentTime)
 {
-	struct extmsg  	hdr;
+	int		status;
+	struct extmsg  	*phdr;
 
-	hdr.m_cmmd = htons(IOC_ECHO);
-	hdr.m_type = htons(0);
-	hdr.m_count = htons(0);
-	hdr.m_cid = htons(0);
-	hdr.m_available = htons(0);
-	hdr.m_postsize = 0;
+	status = cac_alloc_msg_no_flush (piiu, sizeof(*phdr), &phdr);
+	if (status) {
+		return status;
+	}
+
+	phdr->m_cmmd = htons(IOC_ECHO);
+	phdr->m_type = htons(0);
+	phdr->m_count = htons(0);
+	phdr->m_cid = htons(0);
+	phdr->m_available = htons(0);
+	phdr->m_postsize = 0;
+
+	CAC_ADD_MSG(piiu);
 	
-	cac_push_msg(piiu, &hdr, NULL);
-
+	piiu->echoPending = TRUE;
 	piiu->send_needed = TRUE;
+	piiu->timeAtEchoRequest = *pCurrentTime;
+
+	return ECA_NORMAL;
 }
 
 

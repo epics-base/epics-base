@@ -980,8 +980,8 @@ void cac::writeRequest ( nciu &chan, unsigned type, unsigned nElem, const void *
 }
 
 cacChannel::ioid 
-cac::writeNotifyRequest ( nciu &chan, unsigned type, unsigned nElem, // X aCC 361
-                          const void *pValue, cacWriteNotify &notifyIn )
+cac::writeNotifyRequest ( nciu &chan, unsigned type, // X aCC 361
+                          unsigned nElem, const void *pValue, cacWriteNotify &notifyIn )
 {
     epicsAutoMutex autoMutex ( this->mutex );
     autoPtrRecycle  < netWriteNotifyIO > pIO ( this->ioTable, chan.cacPrivateListOfIO::eventq,

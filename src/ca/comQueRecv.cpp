@@ -1,15 +1,14 @@
-
 /*  
  *  $Id$
  *
- *                              
+ *
  *                    L O S  A L A M O S
  *              Los Alamos National Laboratory
  *               Los Alamos, New Mexico 87545
- *                                  
+ *
  *  Copyright, 1986, The Regents of the University of California.
- *                                  
- *           
+ *
+ *
  *	Author Jeffrey O. Hill
  *	johill@lanl.gov
  */
@@ -136,8 +135,8 @@ epicsUInt16 comQueRecv::popUInt16 ()
         }
         else {
             // split between buffers runs slower
-            tmp  = static_cast <epicsUInt16> ( this->popUInt8() << 8u ); 
-            tmp |= static_cast <epicsUInt16> ( this->popUInt8() << 0u );
+            tmp  = this->popUInt8() << 8u; // X aCC 818
+            tmp |= this->popUInt8() << 0u; // X aCC 818
         }
         return tmp;
     }

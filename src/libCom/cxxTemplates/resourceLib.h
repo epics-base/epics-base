@@ -273,7 +273,7 @@ inline unsigned resTable<T,ID>::resTableBitMask ( const unsigned nBits )
 // remove a res from the resTable
 //
 template <class T, class ID>
-T * resTable<T,ID>::remove ( const ID &idIn )
+T * resTable<T,ID>::remove ( const ID &idIn ) // X aCC 361
 {
     if ( this->pTable ) {
         // search list for idIn and remove the first match
@@ -306,7 +306,7 @@ T * resTable<T,ID>::remove ( const ID &idIn )
 // resTable::lookup ()
 //
 template <class T, class ID>
-inline T * resTable<T,ID>::lookup ( const ID &idIn ) const
+inline T * resTable<T,ID>::lookup ( const ID &idIn ) const // X aCC 361
 {
     if ( this->pTable ) {
         tsSLList<T> & list = this->pTable [ this->hash ( idIn ) ];
@@ -475,7 +475,7 @@ inline unsigned resTable<T,ID>::numEntriesInstalled () const
 }
 
 template <class T, class ID>
-inline unsigned resTable<T,ID>::tableSize () const
+inline unsigned resTable<T,ID>::tableSize () const // X aCC 361
 {
     if ( this->pTable ) {
         return ( this->hashIxMask + 1 ) + this->nextSplitIndex;

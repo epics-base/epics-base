@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.6  1996/12/06 22:36:29  jhill
+ * use destroyInProgress flag now functional nativeCount()
+ *
  * Revision 1.5  1996/11/02 00:54:30  jhill
  * many improvements
  *
@@ -195,7 +198,7 @@ void outBuf::commitMsg ()
 	mp->m_cid = htonl (mp->m_cid);
 	mp->m_available = htonl (mp->m_available);
 
-    	this->stack += sizeof(caHdr) + extSize;
+	this->stack += sizeof(caHdr) + extSize;
 	assert (this->stack <= this->bufSize);
 
 	this->mutex.osiUnlock();

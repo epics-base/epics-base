@@ -51,6 +51,7 @@
  * -----------------
  * .01	 1-04-96	rc	Created using existing Allen Bradley device
  *				support as a model
+ * .02   6-17-96	rc	Mods to make -Wall -pedantic not complain
  * 	...
  */
 
@@ -184,6 +185,7 @@
 #include        <semLib.h>
 #include        <msgQLib.h>
 #include        <vwModNum.h>
+#include        <errnoLib.h>
 
 #include	<dbDefs.h>
 #include        <taskwd.h>
@@ -195,18 +197,19 @@
 #include	<devSup.h>
 #include	<link.h>
 #include	<drvAb.h>
+#include        <epicsPrint.h>
 #include        <steppermotor.h>
 #include        <steppermotorRecord.h>
 
-#define Function(function)   static const char FN[] = (function)
+#define Function(function)   static const char FN[] = (function);
 #define MASK(bit)            (1 << (bit))
 #define wSizeOf(thing)       (sizeof(thing) / sizeof(short))
 
 #define Printf  if (Hstp1Dbg) Hstp1Printf
 #ifdef DBG
-#  define Dbg(cmd)  {cmd;}
+#  define Dbg(cmd)  cmd
 #else
-#  define Dbg(cmd)  {}
+#  define Dbg(cmd)
 #endif
 
 
@@ -432,6 +435,13 @@ static void  StateCfgClr  (Hstp1Pvt *, void *);
 static void  StateJog     (Hstp1Pvt *, void *);
 static void  StatePsetEnc (Hstp1Pvt *, void *);
 
+static void  ProcessAction (Hstp1Pvt *, int, int, int);
+static void  StateCfgRead  (Hstp1Pvt *, void *);
+static void  StateCmdRead  (Hstp1Pvt *, void *);
+static void  Hstp1ScanTask (Hstp1Blk *);
+static void  Hstp1RespTask (Hstp1Blk *);
+static void  Hstp1Callback (void *);
+
 static int   Hstp1Read    (Hstp1Pvt *, void *, int);
 static int   Hstp1Write   (Hstp1Pvt *, void *, int);
 static int   Hstp1Clear   (Hstp1Pvt *);
@@ -458,7 +468,8 @@ static void Hstp1Callback (void *drvPvt)
    nothing
 */
 {
-  Function ("Hstp1Callback");
+  Function ("Hstp1Callback")
+
   Hstp1Pvt      *hstp1;
 
 
@@ -530,7 +541,7 @@ static long command (SmRecord *rec,
    -------
    0 (success) or -1 (failure) */
 {
-  Function ("command");
+  Function ("command")
 
   Hstp1Pvt   *hstp1 = (Hstp1Pvt *) rec->dpvt;
   int         send  = FALSE;
@@ -556,8 +567,6 @@ static long command (SmRecord *rec,
       char           *prm = rec->out.value.abio.parm;
       short           cfgCsr[2];
       long            startSpd;
-      register short  coarseSpd;
-      register short  fineSpd;
 
       Dbg (Printf (FN, "SM_MODE - prm = |%s|, len = %u", prm, strlen (prm)));
 
@@ -566,8 +575,9 @@ static long command (SmRecord *rec,
       {
         char buf[HSTP1_K_BUFSIZE];
 
-        recGblRecordError (S_db_badField, (void *) rec, Hstp1Sprintf (buf, FN, "
-\tSM_MODE - Bad or missing record parm field"));
+        recGblRecordError (S_db_badField, (void *) rec,
+                           Hstp1Sprintf (buf, FN,
+"\tSM_MODE - Bad or missing record parm field"));
         return (-1);
       }
 
@@ -630,7 +640,7 @@ static long command (SmRecord *rec,
 
     case SM_CALLBACK:                   /* Set recSup call-back routine & arg */
       if (hstp1->recCb != 0) return (-1);
-      hstp1->recCb    = (void *) arg1;
+      hstp1->recCb    = (int (*) ()) arg1;
       hstp1->recCbArg = (void *) arg2;
       break;
 
@@ -650,7 +660,11 @@ static long command (SmRecord *rec,
   /* Send a message to the scan task and wake it up */
   if (send)
   {
-    Hstp1Msg   msg = {func, arg1, arg2};
+    Hstp1Msg   msg;
+
+    msg.func = func;
+    msg.arg1 = arg1;
+    msg.arg2 = arg2;
 
     /* Throttle EPICS if rate of messages overflows queue */
     if (msgQSend (hstp1->cmdQue, (char *) &msg, sizeof (msg),
@@ -706,13 +720,10 @@ static void Hstp1ScanTask (Hstp1Blk *hstp1Blk)
    doesn't
 */
 {
-  Function ("Hstp1ScanTask");
+  Function ("Hstp1ScanTask")
 
-  static void ProcessAction (Hstp1Pvt *, short, int, int);
-
-  Hstp1Pvt  *hstp1;
-  int        hstp1Active;
-  int        msgCnt;
+  int          hstp1Active;
+  int          msgCnt;
 
 
   Dbg (Printf (FN, "starting, hstp1Blk = %08x", hstp1Blk));
@@ -783,9 +794,9 @@ static void Hstp1ScanTask (Hstp1Blk *hstp1Blk)
 
 
 static void ProcessAction (Hstp1Pvt *hstp1,
-                          int       func,
-                          int       arg1,
-                          int       arg2)
+                           int       func,
+                           int       arg1,
+                           int       arg2)
 /*
    Description
    -----------
@@ -804,7 +815,7 @@ static void ProcessAction (Hstp1Pvt *hstp1,
    nothing
 */
 {
-  Function ("ProcessAction");
+  Dbg (Function ("ProcessAction"))
 
 
   /* Set up device registers */
@@ -836,8 +847,8 @@ static void ProcessAction (Hstp1Pvt *hstp1,
       cmd->accel   = arg2;
       cmd->decel   = arg2;
 
-      Dbg (Printf (FN, "SM_VELOCITY -
-arg1 = %i, coarse = %hi, fine = %hi, arg2 = %i",
+      Dbg (Printf (FN,
+"SM_VELOCITY -\narg1 = %i, coarse = %hi, fine = %hi, arg2 = %i",
                  arg1, cmd->vel.msw, cmd->vel.lsw, arg2));
 
       /* Free the controller for the next command */
@@ -967,7 +978,7 @@ static void Hstp1RespTask (Hstp1Blk   *hstp1Blk)
    doesn't
 */
 {
-  Function ("Hstp1RespTask");
+  Function ("Hstp1RespTask")
 
   abStatus     status;
   Hstp1Pvt    *hstp1 = NULL;
@@ -1015,10 +1026,6 @@ static void Hstp1RespTask (Hstp1Blk   *hstp1Blk)
 static void StateRead (Hstp1Pvt *hstp1,
                        void     *arg)
 {
-  static void StateCfgRead (Hstp1Pvt *, void *);
-  static void StateCmdRead (Hstp1Pvt *, void *);
-
-
   /* Determine what we're looking at and copy it to the right place */
   if (hstp1->rdBuf.cfg.cfg & HSTP1_M_CFGCMD)
   {
@@ -1037,14 +1044,14 @@ static void StateRead (Hstp1Pvt *hstp1,
 static void StateCfgRead (Hstp1Pvt *hstp1,
                           void     *arg)
 {
-  Function ("StateCfgRead");
+  Dbg (Function ("StateCfgRead"))
 
   Hstp1CfgIn  *cfg = &hstp1->cfg.in;
   Hstp1CmdOut  cmd = {0, 0, {0, 0}, {0, 0}, 0, 0};
 
 
   Dbg (Printf (FN, "cfg = %04x, lvl = %04x, spd = %h04x, %h04x",
-             cfg->cfg, cfg->actLvl, cfg->startSpd.msw, cfg->startSpd.lsw));
+               cfg->cfg, cfg->actLvl, cfg->startSpd.msw, cfg->startSpd.lsw));
 
   /* Handle errors */
   if (!(cfg->cfg & HSTP1_M_MODOK) || (cfg->cfg & HSTP1_M_CFGERR))
@@ -1067,7 +1074,7 @@ static void StateCfgRead (Hstp1Pvt *hstp1,
 static void StateCmdRead (Hstp1Pvt *hstp1,
                           void     *arg)
 {
-  Function ("StateCmdRead");
+  Dbg (Function ("StateCmdRead"))
 
   Hstp1CmdIn  *cmd      = &hstp1->cmd.in;
   MotorData   *md       = &hstp1->motorData;
@@ -1218,7 +1225,7 @@ static void StateCmdRead (Hstp1Pvt *hstp1,
 static void StateWrite (Hstp1Pvt *hstp1,
                         void     *arg)
 {
-  Function ("StateWrite");
+  Dbg (Function ("StateWrite"))
 
 
   /* Free the controller */
@@ -1236,7 +1243,7 @@ static void StateWrite (Hstp1Pvt *hstp1,
 static void StateCfgClr (Hstp1Pvt *hstp1,
                          void     *arg)
 {
-  Function ("StateCfgClr");
+  Dbg (Function ("StateCfgClr"))
 
   Dbg (Printf (FN, "State going to Read"));
   hstp1->stateFn = StateRead;
@@ -1248,7 +1255,7 @@ static void StateCfgClr (Hstp1Pvt *hstp1,
 static void StateJog (Hstp1Pvt *hstp1,
                       void     *arg)
 {
-  Function ("StateJog");
+  Dbg (Function ("StateJog"))
 
   static Hstp1CmdOut clear = {0, 0, {0, 0}, {0, 0}, 0, 0};
 
@@ -1265,7 +1272,7 @@ static void StateJog (Hstp1Pvt *hstp1,
 static void StatePsetEnc (Hstp1Pvt *hstp1,
                           void     *arg)
 {
-  Function ("StatePsetEnc");
+  Dbg (Function ("StatePsetEnc"))
 
   Dbg (Printf (FN, "State going to Write"));
   hstp1->stateFn = StateWrite;
@@ -1296,7 +1303,7 @@ static int Hstp1Write (Hstp1Pvt  *hstp1,
                        void      *msg,
                        int        msgLen)
 {
-  Function ("Hstp1Write");
+  Dbg (Function ("Hstp1Write"))
 
   register int  loopCount = sysClkRateGet () / 3;
   abStatus      status;
@@ -1328,7 +1335,7 @@ static int Hstp1Read (Hstp1Pvt  *hstp1,
                       void      *msg,
                       int        msgLen)
 {
-  Function ("Hstp1Read");
+  Dbg (Function ("Hstp1Read"))
 
   register int  loopCount = sysClkRateGet () / 3;
   abStatus      status;
@@ -1375,10 +1382,7 @@ static long initialize (int   after)
    0 (zero)
 */
 {
-  Function ("initialize");
-
-  static void   Hstp1ScanTask (Hstp1Blk *);
-  static void   Hstp1RespTask (Hstp1Blk *);
+  Function ("initialize")
 
   Hstp1Blk     *hstp1Blk = Hstp1;
 
@@ -1489,9 +1493,7 @@ static long initRecord (SmRecord *rec)
    0 or S_db_badField
 */
 {
-  Function ("initRecord");
-
-  static void    Hstp1Callback (void *);
+  Function ("initRecord")
 
   struct abio   *abio;
   Hstp1Pvt      *hstp1;
@@ -1515,8 +1517,8 @@ static long initRecord (SmRecord *rec)
     char  buf[HSTP1_K_BUFSIZE];
 
     stat = S_db_badField;
-    recGblRecordError (stat, (void *) rec, Hstp1Sprintf (buf, FN, "
-\tregisterCard: slot %hu already used", abio->card));
+    recGblRecordError (stat, (void *) rec,
+                       Hstp1Sprintf (buf, FN, "\tregisterCard: slot %hu already used", abio->card));
   }
   break;
 
@@ -1537,8 +1539,8 @@ static long initRecord (SmRecord *rec)
       char  buf[HSTP1_K_BUFSIZE];
 
       stat = S_db_badField;
-      recGblRecordError (stat, (void *) rec, Hstp1Sprintf (buf, FN, "
-\tallocSem semBCreate failed"));
+      recGblRecordError (stat, (void *) rec,
+                         Hstp1Sprintf (buf, FN, "\tallocSem semBCreate failed"));
       break;
     }
 
@@ -1549,8 +1551,8 @@ static long initRecord (SmRecord *rec)
       char  buf[HSTP1_K_BUFSIZE];
 
       stat = S_db_badField;
-      recGblRecordError (stat, (void *) rec, Hstp1Sprintf (buf, FN, "
-\tcmdQue msgQCreate failed"));
+      recGblRecordError (stat, (void *) rec,
+                         Hstp1Sprintf (buf, FN, "\tcmdQue msgQCreate failed"));
       break;
     }
 
@@ -1564,8 +1566,9 @@ static long initRecord (SmRecord *rec)
     char  buf[HSTP1_K_BUFSIZE];
 
     stat = S_db_badField;
-    recGblRecordError (stat, (void *) rec, Hstp1Sprintf (buf, FN, "
-\tregisterCard error: %s", abStatusMessage[status]));
+    recGblRecordError (stat, (void *) rec,
+                       Hstp1Sprintf (buf, FN, "\tregisterCard error: %s",
+                                     abStatusMessage[status]));
   }
   break;
   }
@@ -1600,16 +1603,16 @@ static long report (int level)
     struct abio       *abio   = (struct abio *) &(hstp1->rec->out.value);
     register char     *active = hstp1->active ? "" : "not ";
 
-    epicsPrintf ("
-AB SM: 1746-HSTP1: link/adapter/card = %u/%u/%u is %sactive\n",
+    epicsPrintf (
+"\nAB SM: 1746-HSTP1: link/adapter/card = %u/%u/%u is %sactive\n",
                  abio->link, abio->adapter, abio->card, active);
     if (level > 0)
     {
       register MotorData  *md      = &hstp1->motorData;
 
-      epicsPrintf ("\tCW limit = %d\tCCW limit = %d\tMoving = %d\tConstant Velocity = %d
-\tDirection = %d\tVelocity = %d p/sec\tAccel = %d p/sec/sec
-\tEncoder Position = %d\tMotor Position = %d\n",
+      epicsPrintf ("\tCW limit = %d\tCCW limit = %d\tMoving = %d\tConstant Velocity = %d"
+"\n\tDirection = %d\tVelocity = %d p/sec\tAccel = %d p/sec/sec"
+"\n\tEncoder Position = %d\tMotor Position = %d\n",
                    md->cw_limit, md->ccw_limit, md->moving,
                    md->constant_velocity,
                    md->direction, md->velocity, md->accel,
@@ -1621,15 +1624,15 @@ AB SM: 1746-HSTP1: link/adapter/card = %u/%u/%u is %sactive\n",
       register Hstp1CmdIn    *in      = &hstp1->cmd.in;
       register Hstp1CmdOut   *out     = &hstp1->cmd.out;
 
-      epicsPrintf ("
-HSTP1 %s registers:\tOutput\t\tInput
-\tWord 0\t\t\t %h04x\t\t %h04x
-\tWord 1\t\t\t\t\t %h04x
-\tPosition\t\t %6d\t\t %6d
-\tEncoder position\t\t\t %4d
-\tVelocity\t\t %4u
-\tAcceleration\t\t %4hd
-\tDeceleration\t\t %4hd\n",
+      epicsPrintf (
+"\nHSTP1 %s registers:\tOutput\t\tInput"
+"\n\tWord 0\t\t\t %h04x\t\t %h04x"
+"\n\tWord 1\t\t\t\t\t %h04x"
+"\n\tPosition\t\t %6d\t\t %6d"
+"\n\tEncoder position\t\t\t %4d"
+"\n\tVelocity\t\t %4u"
+"\n\tAcceleration\t\t %4hd"
+"\n\tDeceleration\t\t %4hd\n",
                    "Command",
                    out->cmd, in->status[0],
                    in->status[1],
@@ -1644,11 +1647,11 @@ HSTP1 %s registers:\tOutput\t\tInput
       register Hstp1CfgIn    *in     = &hstp1->cfg.in;
       register Hstp1CfgOut   *out    = &hstp1->cfg.out;
 
-      epicsPrintf ("
-HSTP1 %s registers:\tOutput\t\tInput
-\tWord 0\t\t\t %04x\t\t %04x
-\tWord 1\t\t\t %04x\t\t %04x
-\tStarting speed\t\t %4d\t\t %4d\n",
+      epicsPrintf (
+"\nHSTP1 %s registers:\tOutput\t\tInput"
+"\n\tWord 0\t\t\t %04x\t\t %04x"
+"\n\tWord 1\t\t\t %04x\t\t %04x"
+"\n\tStarting speed\t\t %4d\t\t %4d\n",
                    "Configuration",
                    out->cfg, in->cfg,
                    out->actLvl, in->actLvl,
@@ -1697,3 +1700,4 @@ static int Hstp1Printf (const char *fn, char *fmt, ...)
   va_start (var, fmt);
   return (epicsVprintf (fmtBuf, var));
 }
+

@@ -74,7 +74,12 @@ static char *sccsId = "@(#) $Id$";
 #include 	"net_convert.h"
 #include 	"bsdSocketResource.h"
 
-LOCAL int cacMsg(
+LOCAL int cacMsgTCP(
+struct ioc_in_use 	*piiu,
+const struct sockaddr_in  	*pnet_addr
+);
+
+LOCAL int cacMsgUDP(
 struct ioc_in_use 	*piiu,
 const struct sockaddr_in  	*pnet_addr
 );
@@ -221,11 +226,15 @@ unsigned long		blockSize
 			blockSize -= size;
 		}	
 
-
 		/*
  		 * execute the response message
 		 */
-		status = cacMsg(piiu, pnet_addr);
+        if (piiu == ca_static->ca_piiuCast) {
+            status = cacMsgUDP (piiu, pnet_addr);
+        }
+        else {
+            status = cacMsgTCP (piiu, pnet_addr);
+        }
 		piiu->curMsgBytes = 0;
 		piiu->curDataBytes = 0;
 		if(status != OK){
@@ -237,9 +246,9 @@ unsigned long		blockSize
 
 
 /*
- * cacMsg()
+ * cacMsgTCP()
  */
-LOCAL int cacMsg(
+LOCAL int cacMsgTCP(
 struct ioc_in_use 	*piiu,
 const struct sockaddr_in  	*pnet_addr
 )
@@ -514,58 +523,9 @@ const struct sockaddr_in  	*pnet_addr
 		UNLOCK;
 		break;
 	}
-	case CA_PROTO_SEARCH:
-		perform_claim_channel(piiu, pnet_addr);
-		break;
 
 	case CA_PROTO_READ_SYNC:
 		piiu->read_seq++;
-		break;
-
-	case CA_PROTO_RSRV_IS_UP:
-		LOCK;
-		{
-			struct sockaddr_in ina;
-			
-			/* 
-			 * this allows a fan-out server to potentially
-			 * insert the true address of a server 
-			 *
-			 * (servers always set this
-			 * field to one of the ip addresses of the host)
-			 * (clients always expect that this
-			 * field is set to the server's IP address).
-			 */
-			ina.sin_family = AF_INET;
-			if (piiu->curMsg.m_available != htonl(INADDR_ANY)) {
-				ina.sin_addr.s_addr = piiu->curMsg.m_available;
-			}
-			else {
-				ina.sin_addr = pnet_addr->sin_addr;
-			}
-			if (piiu->curMsg.m_count != 0) {
-				ina.sin_port = htons (piiu->curMsg.m_count);
-			}
-			else {
-				/*
-				 * old servers dont supply this and the
-				 * default port must be assumed
-				 */
-				ina.sin_port = htons (ca_static->ca_server_port);
-			}
-			mark_server_available(&ina);
-		}
-		UNLOCK;
-		break;
-
-	case REPEATER_CONFIRM:
-		ca_static->ca_repeater_contacted = TRUE;
-#ifdef DEBUG
-		ca_printf("CAC: repeater confirmation recv\n");
-#endif
-		break;
-
-	case CA_PROTO_NOT_FOUND:
 		break;
 
 	case CA_PROTO_CLEAR_CHANNEL:
@@ -725,7 +685,78 @@ const struct sockaddr_in  	*pnet_addr
 		verifyChanAndDisconnect(piiu, cs_conn);
 		break;
 	default:
-		ca_printf("CAC: post_msg(): Corrupt cmd in msg %x\n", 
+		ca_printf("CAC: post_msg(): Corrupt TCP cmd in msg %x\n", 
+			piiu->curMsg.m_cmmd);
+
+		return ERROR;
+	}
+
+	return OK;
+}
+
+/*
+ * cacMsgUDP()
+ */
+LOCAL int cacMsgUDP(
+struct ioc_in_use 	*piiu,
+const struct sockaddr_in  	*pnet_addr
+)
+{
+
+	switch (piiu->curMsg.m_cmmd) {
+
+	case CA_PROTO_SEARCH:
+		perform_claim_channel(piiu, pnet_addr);
+		break;
+
+	case CA_PROTO_NOT_FOUND:
+		break;
+
+	case CA_PROTO_RSRV_IS_UP:
+		LOCK;
+		{
+			struct sockaddr_in ina;
+			
+			/* 
+			 * this allows a fan-out server to potentially
+			 * insert the true address of a server 
+			 *
+			 * (servers always set this
+			 * field to one of the ip addresses of the host)
+			 * (clients always expect that this
+			 * field is set to the server's IP address).
+			 */
+			ina.sin_family = AF_INET;
+			if (piiu->curMsg.m_available != htonl(INADDR_ANY)) {
+				ina.sin_addr.s_addr = piiu->curMsg.m_available;
+			}
+			else {
+				ina.sin_addr = pnet_addr->sin_addr;
+			}
+			if (piiu->curMsg.m_count != 0) {
+				ina.sin_port = htons (piiu->curMsg.m_count);
+			}
+			else {
+				/*
+				 * old servers dont supply this and the
+				 * default port must be assumed
+				 */
+				ina.sin_port = htons (ca_static->ca_server_port);
+			}
+			mark_server_available(&ina);
+		}
+		UNLOCK;
+		break;
+
+	case REPEATER_CONFIRM:
+		ca_static->ca_repeater_contacted = TRUE;
+#ifdef DEBUG
+		ca_printf("CAC: repeater confirmation recv\n");
+#endif
+		break;
+
+	default:
+		ca_printf("CAC: post_msg(): Corrupt cmd in UDP msg %x\n", 
 			piiu->curMsg.m_cmmd);
 
 		return ERROR;

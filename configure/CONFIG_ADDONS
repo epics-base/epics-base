@@ -104,6 +104,22 @@ LIBSRCS+=$(LIBSRCS_DEFAULT)
 endif
 endif
 
+ifneq ($(strip $(SRCS_$(OS_CLASS))),)
+SRCS += $(subst -nil-,,$(SRCS_$(OS_CLASS)))
+else
+ifdef SRCS_DEFAULT
+SRCS+=$(SRCS_DEFAULT)
+endif
+endif
+
+ifneq ($(strip $(PROD_SRCS_$(OS_CLASS))),)
+PROD_SRCS += $(subst -nil-,,$(PROD_SRCS_$(OS_CLASS)))
+else
+ifdef PROD_SRCS_DEFAULT
+PROD_SRCS+=$(PROD_SRCS_DEFAULT)
+endif
+endif
+
 ifneq ($(strip $(BIN_INSTALLS_$(OS_CLASS))),)
 BIN_INSTALLS+=$(subst -nil-,,$(BIN_INSTALLS_$(OS_CLASS)))
 else

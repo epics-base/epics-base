@@ -43,7 +43,7 @@ void exScalarPV::scan()
 	this->currentTime = osiTime::getCurrent();
 
 	pDD = new gddScalar (gddAppType_value, aitEnumFloat32);
-	if (pDD==NULL) {
+	if ( ! pDD.valid () ) {
 		return;
 	}
 
@@ -54,7 +54,7 @@ void exScalarPV::scan()
 	assert (!gddStatus);
 
 	radians = (rand () * 2.0 * myPI)/RAND_MAX;
-	if (this->pValue!=NULL) {
+	if ( this->pValue.valid () ) {
 		this->pValue->getConvert(newValue);
 	}
 	else {

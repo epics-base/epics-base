@@ -315,7 +315,7 @@ public:
 	// sane clients will require only one or two monitors 
 	// per channel)
 	//
-	casMonitor *findMonitor (const caResId clientIdIn);
+	tsDLIterBD <casMonitor> findMonitor (const caResId clientIdIn);
 
 	casPVI &getPVI () const 
 	{

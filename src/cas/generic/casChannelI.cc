@@ -59,30 +59,28 @@ casChannelI::~casChannelI()
     //
     // cancel any pending asynchronous IO 
     //
-    tsDLIterBD<casAsyncIOI> iterAIO(this->ioInProgList.first());
-    while ( iterAIO!=tsDLIterBD<casAsyncIOI>::eol() ) {
+    tsDLIterBD<casAsyncIOI> iterAIO ( this->ioInProgList.first () );
+    while ( iterAIO.valid () ) {
         //
         // destructor removes from this list
         //
         tsDLIterBD<casAsyncIOI> tmpAIO = iterAIO;
         ++tmpAIO;
-        iterAIO->serverDestroy();
+        iterAIO->serverDestroy ();
         iterAIO = tmpAIO;
     }
     
     //
     // cancel the monitors 
     //
-    tsDLIterBD<casMonitor> iterMon (this->monitorList.first());
-    while ( iterMon!=tsDLIterBD<casMonitor>::eol() ) {
-        casMonitor *pMonitor;
+    tsDLIterBD <casMonitor> iterMon ( this->monitorList.first () );
+    while ( iterMon.valid () ) {
         //
         // destructor removes from this list
         //
-        tsDLIterBD<casMonitor> tmpMon = iterMon;
-        pMonitor = tmpMon;
+        tsDLIterBD <casMonitor> tmpMon = iterMon;
         ++tmpMon;
-        delete pMonitor;
+        iterMon->destroy ();
         iterMon = tmpMon;
     }
     
@@ -106,8 +104,8 @@ void casChannelI::clearOutstandingReads()
     //
     // cancel any pending asynchronous IO 
     //
-	tsDLIterBD<casAsyncIOI> iterIO(this->ioInProgList.first());
-	while (iterIO!=tsDLIterBD<casAsyncIOI>::eol() ) {
+	tsDLIterBD <casAsyncIOI> iterIO ( this->ioInProgList.first () );
+	while ( iterIO.valid () ) {
 		//
 		// destructor removes from this list
 		//
@@ -128,12 +126,12 @@ void casChannelI::show(unsigned level) const
 	this->lock();
 
 	tsDLIterBD<casMonitor> iter(this->monitorList.first());
-	if ( iter!=tsDLIterBD<casMonitor>::eol() ) {
+	if ( iter.valid () ) {
 		printf("List of CA events (monitors) for \"%s\".\n",
 			this->pv.getName());
 	}
-	while ( iter!=tsDLIterBD<casMonitor>::eol() ) {
-		iter->show(level);
+	while ( iter.valid () ) {
+		iter->show ( level );
 		++iter;
 	}
 

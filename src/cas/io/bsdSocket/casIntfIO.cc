@@ -26,7 +26,7 @@ casIntfIO::casIntfIO (const caNetAddr &addrIn) :
 	int status;
 	int addrSize;
 
-	if (!bsdSockAttach()) {
+	if ( ! osiSockAttach () ) {
 		throw S_cas_internal;
 	}
 
@@ -117,7 +117,7 @@ casIntfIO::~casIntfIO()
 		socket_close(this->sock);
 	}
 
-	bsdSockRelease();
+	osiSockRelease ();
 }
 
 //

@@ -136,7 +136,7 @@ inline void casPVI::postEvent (const casEventMask &select, const smartConstGDDPo
 
 	this->lock();
 	tsDLIterBD<casPVListChan> iter(this->chanList.first());
-    while ( iter != tsDLIterBD<casPVListChan>::eol() ) {
+    while ( iter.valid () ) {
 		iter->postEvent(select, pEvent);
 		++iter;
 	}

@@ -96,7 +96,7 @@ casStrmClient::~casStrmClient()
 	// delete all channel attached
 	//
 	tsDLIterBD<casChannelI> iter(this->chanList.first());
-	while (iter!=tsDLIterBD<casChannelI>::eol()) {
+	while ( iter.valid () ) {
 		//
 		// destroying the channel removes it from the list
 		//
@@ -510,7 +510,7 @@ static smartGDDPointer createDBRDD (unsigned dbrType, aitIndex dbrCount)
 	aitUint32 valIndex;
 	aitUint32 gddStatus;
 	aitUint16 appType;
-    smartGDDPointer pVal;
+    gdd *pVal;
 	
 	/*
 	 * DBR type has already been checked, but it is possible
@@ -529,17 +529,17 @@ static smartGDDPointer createDBRDD (unsigned dbrType, aitIndex dbrCount)
 	// create the descriptor
 	//
 	pDescRet = gddApplicationTypeTable::app_table.getDD (appType);
-	if (!pDescRet) {
+	if ( ! pDescRet.valid () ) {
 		return pDescRet;
 	}
 	
-	if (pDescRet->isContainer()) {
+	if ( pDescRet->isContainer () ) {
 		
 		//
 		// unable to change the bounds on the managed GDD that is
 		// returned for DBR types
 		//
-		if (dbrCount>1 ) {
+		if ( dbrCount > 1 ) {
 			pDescRet = (gdd *) new gdd (*pDescRet);
 			//
 			// smart pointer class maintains the ref count from here down
@@ -554,30 +554,30 @@ static smartGDDPointer createDBRDD (unsigned dbrType, aitIndex dbrCount)
 		gddStatus = 
 			gddApplicationTypeTable::app_table.mapAppToIndex
 			(appType, gddAppType_value, valIndex);
-		if (gddStatus) {
+		if ( gddStatus ) {
 			pDescRet = NULL;
 			return pDescRet;
 		}
-		pVal = pDescRet->getDD (valIndex);
-		if (!pVal) {
+		pVal = pDescRet->getDD ( valIndex );
+		if ( ! pVal ) {
             pDescRet = NULL;
 			return pDescRet;
 		}
 	}
 	else {
-		pVal = pDescRet;
+		pVal = & ( *pDescRet );
 	}
 	
-	if (pVal->isScalar()) {
+	if ( pVal->isScalar () ) {
 		if (dbrCount<=1u) {
-			return S_cas_success;
+			return pDescRet;
 		}
 		
 		//
 		// scalar and managed (and need to set the bounds)
 		//	=> out of luck (cant modify bounds)
 		//
-		if (pDescRet->isManaged()) {
+		if ( pDescRet->isManaged () ) {
 			pDescRet = NULL;
 			return pDescRet;
 		}
@@ -586,27 +586,27 @@ static smartGDDPointer createDBRDD (unsigned dbrType, aitIndex dbrCount)
 		// convert to atomic
 		//
 		gddBounds bds;
-		bds.setSize(dbrCount);
-		bds.setFirst(0u);
-		pVal->setDimension(1u, &bds);
+		bds.setSize ( dbrCount );
+		bds.setFirst ( 0u );
+		pVal->setDimension ( 1u, &bds );
 	}
-	else if (pVal->isAtomic()) {
-		const gddBounds* pB = pVal->getBounds();
+	else if ( pVal->isAtomic () ) {
+		const gddBounds* pB = pVal->getBounds ();
 		aitIndex bound = dbrCount;
 		unsigned dim;
 		int modAllowed;
 		
-		if (pDescRet->isManaged() || pDescRet->isFlat()) {
+		if ( pDescRet->isManaged () || pDescRet->isFlat () ) {
 			modAllowed = FALSE;
 		}
 		else {
 			modAllowed = TRUE;
 		}
 		
-		for (dim=0u; dim<(unsigned)pVal->dimension(); dim++) {
-			if (pB[dim].first()!=0u && pB[dim].size()!=bound) {
-				if (modAllowed) {
-					pVal->setBound(dim, 0u, bound);
+		for ( dim=0u; dim < (unsigned) pVal->dimension (); dim++ ) {
+			if ( pB[dim].first () != 0u && pB[dim].size() != bound ) {
+				if ( modAllowed ) {
+					pVal->setBound( dim, 0u, bound );
 				}
 				else {
 					pDescRet = NULL;
@@ -976,7 +976,7 @@ caStatus casStrmClient::hostNameAction()
 	this->pHostName = pMalloc;
 
 	tsDLIterBD<casChannelI> iter(this->chanList.first());
-	while ( iter!=tsDLIterBD<casChannelI>::eol() ) {
+	while ( iter.valid () ) {
 		iter->setOwner(this->pUserName, this->pHostName);
 		++iter;
 	}
@@ -1023,9 +1023,9 @@ caStatus casStrmClient::clientNameAction()
 	}
 	this->pUserName = pMalloc;
 
-	tsDLIterBD<casChannelI>	iter(this->chanList.first());
-	while ( iter!=tsDLIterBD<casChannelI>::eol() ) {
-		iter->setOwner(this->pUserName, this->pHostName);
+	tsDLIterBD <casChannelI>	iter ( this->chanList.first () );
+	while ( iter.valid () ) {
+		iter->setOwner ( this->pUserName, this->pHostName );
 		++iter;
 	}
 	this->unlock();
@@ -1499,7 +1499,6 @@ caStatus casStrmClient::eventCancelAction ()
 	void		*dp = this->ctx.getData ();
 	casChannelI *pciu;
 	caHdr		*reply;
-	casMonitor	*pMon;
 	int 	status;
 	
 	/*
@@ -1520,8 +1519,8 @@ caStatus casStrmClient::eventCancelAction ()
 	/*
 	 * verify the event (monitor)
 	 */
-	pMon = pciu->findMonitor (mp->m_available);
-	if (!pMon) {
+    tsDLIterBD < casMonitor >	pMon = pciu->findMonitor ( mp->m_available );
+	if ( ! pMon.valid () ) {
 		//
 		// this indicates client or server library corruption
 		//
@@ -1545,7 +1544,7 @@ caStatus casStrmClient::eventCancelAction ()
 	
 	this->commitMsg ();
 	
-	delete pMon;
+	pMon->destroy ();
 	
 	return S_cas_success;
 }
@@ -1621,8 +1620,8 @@ caStatus casStrmClient::readSyncAction()
 	//
 	this->lock();
 	tsDLIterBD<casChannelI> iter(this->chanList.first());
-	while ( iter!=tsDLIterBD<casChannelI>::eol() ) {
-		iter->clearOutstandingReads();
+	while ( iter.valid () ) {
+		iter->clearOutstandingReads ();
 		++iter;
 	}
 	this->unlock();
@@ -1928,7 +1927,7 @@ caStatus casStrmClient::read (smartGDDPointer &pDescRet)
 	caStatus        status;
 
 	pDescRet = createDBRDD (pHdr->m_dataType, pHdr->m_count);
-	if (!pDescRet) {
+	if ( ! pDescRet ) {
 		return S_cas_noMemory;
 	}
 

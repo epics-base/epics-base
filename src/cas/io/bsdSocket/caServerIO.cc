@@ -10,7 +10,7 @@
 #include "server.h"
 #include "osiSigPipeIgnore.h"
 
-static char *getToken(const char **ppString, char *pBuf, unsigned bufSIze);
+static char *getToken (const char **ppString, char *pBuf, unsigned bufSIze);
 
 int caServerIO::staticInitialized;
 
@@ -19,7 +19,7 @@ int caServerIO::staticInitialized;
 //
 caServerIO::caServerIO ()
 {
-	if (!bsdSockAttach()) {
+	if ( ! osiSockAttach () ) {
 		throw S_cas_internal;
 	}
 
@@ -118,7 +118,7 @@ void caServerIO::locateInterfaces ()
 //
 caServerIO::~caServerIO()
 {
-	bsdSockRelease();
+	osiSockRelease();
 }
 
 //

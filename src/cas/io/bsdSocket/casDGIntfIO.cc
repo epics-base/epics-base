@@ -51,7 +51,7 @@ casDGIntfIO::casDGIntfIO (caServerI &serverIn, const caNetAddr &addr,
     
     ellInit(&this->beaconAddrList);
     
-    if (!bsdSockAttach()) {
+    if ( ! osiSockAttach () ) {
         throw S_cas_internal;
     }
     
@@ -202,17 +202,21 @@ casDGIntfIO::casDGIntfIO (caServerI &serverIn, const caNetAddr &addr,
 //
 casDGIntfIO::~casDGIntfIO()
 {
-    if (this->sock!=INVALID_SOCKET) {
-        socket_close(this->sock);
+    if ( this->sock != INVALID_SOCKET ) {
+        socket_close ( this->sock );
     }
 
-    if (this->bcastRecvSock!=INVALID_SOCKET) {
-        socket_close(this->bcastRecvSock);
+    if ( this->bcastRecvSock != INVALID_SOCKET ) {
+        socket_close ( this->bcastRecvSock );
+    }
+
+    if ( this->beaconSock != INVALID_SOCKET ) {
+        socket_close ( this->beaconSock );
     }
     
-    ellFree(&this->beaconAddrList);
+    ellFree ( &this->beaconAddrList );
     
-    bsdSockRelease();
+    osiSockRelease ();
 }
 
 //
@@ -366,8 +370,6 @@ void casDGIntfIO::sendBeaconIO (char &msg, unsigned length, aitUint16 &portField
             }
             else if (addr.sa.sa_family==AF_INET) {
                 addrField = addr.ia.sin_addr.s_addr;
-
-printf ("sending beacon specifying port %u addr %x\n", portField, addr.ia.sin_addr.s_addr);
 
                 status = sendto (this->beaconSock, &msg, length, 0, 
                     &pAddr->addr.sa, sizeof(pAddr->addr.sa));
@@ -527,7 +529,7 @@ SOCKET casDGIntfIO::makeSockDG ()
     status = setsockopt(
         newSock,
         SOL_SOCKET,
-s        SO_REUSEADDR,
+        SO_REUSEADDR,
         (char *) &yes,
         sizeof (yes));
     if (status<0) {

@@ -62,13 +62,13 @@ casCoreClient::~casCoreClient()
 	//
 	// cancel any pending asynchronous IO
 	//
-	while (iterIO!=tsDLIterBD<casAsyncIOI>::eol()) {
+	while ( iterIO.valid () ) {
 		//
 		// destructor removes from this list
 		//
-		tsDLIterBD<casAsyncIOI> tmpIO = iterIO;
+		tsDLIterBD <casAsyncIOI> tmpIO = iterIO;
 		++tmpIO;
-        iterIO->serverDestroy();
+        iterIO->serverDestroy ();
 		iterIO = tmpIO;
 	}
 

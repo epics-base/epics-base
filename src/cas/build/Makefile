@@ -4,15 +4,20 @@ SRC := $(CAS)/generic
 CA := $(CAS)/../ca
 IOSRC := $(CAS)/io/bsdSocket
 STSRC := $(SRC)/st
-USER_VPATH := $(SRC) $(STSRC) $(IOSRC)
+USR_VPATH := $(SRC) $(STSRC) $(IOSRC)
 
 include $(TOP)/configure/CONFIG
 
-SRC_DIRS += $(CAS)/generic $(CAS)/singleThread
+SRC_DIRS += $(CAS)/generic 
 
 # sometimes it's good to have different C/C++ flags, not now:
 USR_CFLAGS = -I$(SRC) -I$(IOSRC) -I$(STSRC) -I$(CA) -DcaNetAddrSock
 USR_CXXFLAGS = $(USR_CFLAGS)
+
+INC += casdef.h
+INC += casEventMask.h
+INC += casInternal.h
+INC += caNetAddr.h
 
 LIBSRCS += caServer.cc
 LIBSRCS += caServerI.cc

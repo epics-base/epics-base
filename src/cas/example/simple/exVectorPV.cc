@@ -70,7 +70,7 @@ void exVectorPV::scan()
  
 	pDD = new gddAtomic (gddAppType_value, aitEnumFloat32, 
 			1u, this->info.getElementCount());
-	if (pDD==NULL) {
+	if ( ! pDD.valid () ) {
 		return;
 	}
  
@@ -105,7 +105,7 @@ void exVectorPV::scan()
 	// current value
 	//
 	pCF=NULL;
-	if (this->pValue!=NULL) {
+	if ( this->pValue.valid () ) {
 		if (this->pValue->dimension()==1u) {
 			const gddBounds *pB = this->pValue->getBounds();
 			if (pB[0u].size()==this->info.getElementCount()) {
@@ -208,7 +208,7 @@ caStatus exVectorPV::updateValue(gdd &valueIn)
 		//
 		pNewValue = new gddAtomic (gddAppType_value, aitEnumFloat32, 
 			1u, this->info.getElementCount());
-		if (pNewValue==NULL) {
+		if ( ! pNewValue.valid () ) {
 			return S_casApp_noMemory;
 		}
 		
@@ -223,9 +223,9 @@ caStatus exVectorPV::updateValue(gdd &valueIn)
 		// copy over the old values if they exist
 		// (or initialize all elements to zero)
 		//
-		if (this->pValue!=NULL) {
-			gdds = pNewValue->copy(this->pValue);
-			if (gdds) {
+		if ( this->pValue.valid () ) {
+			gdds = pNewValue->copy( &(*this->pValue) );
+			if ( gdds ) {
 				return S_cas_noConvert;
 			}
 		}

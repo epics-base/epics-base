@@ -82,7 +82,7 @@ caStatus exPV::update(gdd &valueIn)
 #	endif
 
 	cas = this->updateValue (valueIn);
-	if (cas || this->pValue==NULL) {
+	if ( cas || ( ! this->pValue.valid() ) ) {
 		return cas;
 	}
 
@@ -200,7 +200,7 @@ void exPV::interestDelete()
 void exPV::show(unsigned level) const
 {
 	if (level>1u) {
-		if (this->pValue!=NULL) {
+		if ( this->pValue.valid () ) {
 			printf("exPV: cond=%d\n", this->pValue->getStat());
 			printf("exPV: sevr=%d\n", this->pValue->getSevr());
 			printf("exPV: value=%f\n", (double) *this->pValue);
@@ -321,11 +321,11 @@ caStatus exPV::getValue(gdd &value)
 {
 	caStatus status;
 
-	if (this->pValue!=NULL) {
+	if ( this->pValue.valid () ) {
 		gddStatus gdds;
 
 		gdds = gddApplicationTypeTable::
-			app_table.smartCopy(&value, this->pValue);
+			app_table.smartCopy (&value, & (*this->pValue) );
 		if (gdds) {
 			status = S_cas_noConvert;	
 		}

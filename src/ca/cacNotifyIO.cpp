@@ -30,24 +30,3 @@ void cacNotifyIO::destroy ()
 {
     delete this;
 }
-
-void cacNotifyIO::completionNotify ()
-{
-    this->notify.completionNotify ();
-}
-
-void cacNotifyIO::completionNotify ( unsigned type, unsigned long count, const void *pData )
-{
-    this->notify.completionNotify ( type, count, pData );
-}
-
-void cacNotifyIO::exceptionNotify ( int status, const char *pContext )
-{
-    this->notify.exceptionNotify ( status, pContext );
-}
-
-void cacNotifyIO::exceptionNotify ( int status, const char *pContext, unsigned type, unsigned long count )
-{
-    this->notify.exceptionNotify ( status, pContext, type, count );
-}
-

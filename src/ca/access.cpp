@@ -346,12 +346,13 @@ int epicsShareAPI ca_add_exception_event ( caExceptionHandler *pfunc, void *arg 
 /*
  *  ca_add_masked_array_event
  */
-int epicsShareAPI ca_add_masked_array_event ( chtype type, unsigned long count, chid pChan, 
+int epicsShareAPI ca_add_masked_array_event ( 
+        chtype type, unsigned long count, chid pChan, 
         caEventCallBackFunc *pCallBack, void *pCallBackArg, 
         ca_real, ca_real, ca_real, 
         evid *monixptr, long mask )
 {
-    static const long maskMask = USHRT_MAX;
+    static const long maskMask = 0xffff;
     oldSubscription *pSubsr;
     int status;
 

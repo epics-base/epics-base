@@ -16,6 +16,7 @@
 #include "addrList.h"
 #include "inetAddrID_IL.h"
 #include "netiiu_IL.h"
+#include "cac_IL.h"
 
 typedef void (*pProtoStubUDP) (udpiiu *piiu, caHdr *pMsg, const struct sockaddr_in *pnet_addr);
 
@@ -291,7 +292,7 @@ bool udpiiu::repeaterInstalled ()
 // udpiiu::udpiiu ()
 //
 udpiiu::udpiiu ( cac &cac ) :
-    netiiu ( cac ), shutdownCmd ( false ), sockCloseCompleted ( false )
+    netiiu ( &cac ), shutdownCmd ( false ), sockCloseCompleted ( false )
 {
     static const unsigned short PORT_ANY = 0u;
     osiSockAddr addr;
@@ -367,23 +368,22 @@ udpiiu::udpiiu ( cac &cac ) :
     ellInit ( &this->dest );
     configureChannelAccessAddressList ( &this->dest, this->sock, this->serverPort );
     if ( ellCount ( &this->dest ) == 0 ) {
-        genLocalExcep ( this->clientCtx (), ECA_NOSEARCHADDR, NULL );
+        genLocalExcep ( *this->pCAC (), ECA_NOSEARCHADDR, NULL );
     }
   
     {
-        unsigned priorityOfSelf = threadGetPrioritySelf ();
         unsigned priorityOfRecv;
-        threadId tid;
         threadBoolStatus tbs;
 
-        tbs  = threadLowestPriorityLevelAbove ( priorityOfSelf, &priorityOfRecv );
+        tbs  = threadLowestPriorityLevelAbove ( 
+            this->pCAC ()->getInitializingThreadsPriority (), &priorityOfRecv );
         if ( tbs != tbsSuccess ) {
-            priorityOfRecv = priorityOfSelf;
+            priorityOfRecv = this->pCAC ()->getInitializingThreadsPriority ();
         }
 
-        tid = threadCreate ( "CAC-UDP", priorityOfRecv,
+        this->recvThreadId = threadCreate ( "CAC-UDP", priorityOfRecv,
                 threadGetStackSize (threadStackMedium), cacRecvThreadUDP, this );
-        if (tid==0) {
+        if ( this->recvThreadId == 0 ) {
             ca_printf ("CA: unable to create UDP receive thread\n");
             semBinaryDestroy (this->recvThreadExitSignal);
             socket_close (this->sock);
@@ -424,8 +424,6 @@ udpiiu::~udpiiu ()
     // closes the udp socket and waits for its recv thread to exit
     this->shutdown ();
 
-    this->detachAllChan ();
-
     semBinaryDestroy ( this->recvThreadExitSignal );
 
     ellFree ( &this->dest );
@@ -440,10 +438,13 @@ udpiiu::~udpiiu ()
  */
 void udpiiu::shutdown ()
 {
-    this->lock ();
-    bool laborNeeded = ! this->shutdownCmd;
-    this->shutdownCmd = true;
-    this->unlock ();
+    bool laborNeeded;
+
+    {
+        osiAutoMutex autoMutex ( this->mutex );
+        laborNeeded = ! this->shutdownCmd;
+        this->shutdownCmd = true;
+    }
 
     if ( laborNeeded ) {
         int status;
@@ -559,12 +560,12 @@ void udpiiu::searchRespAction ( const caHdr &msg, const osiSockAddr &addr )
     }
 
     if ( CA_V42 ( CA_PROTOCOL_VERSION, minorVersion ) ) {
-        this->clientCtx ().lookupChannelAndTransferToTCP 
+        this->pCAC ()->lookupChannelAndTransferToTCP 
             ( msg.m_available, msg.m_cid, USHRT_MAX, 0, 
             minorVersion, serverAddr );
     }
     else {
-        this->clientCtx ().lookupChannelAndTransferToTCP 
+        this->pCAC ()->lookupChannelAndTransferToTCP 
             ( msg.m_available, msg.m_cid, msg.m_dataType, 
                 minorVersion, msg.m_count, serverAddr );
     }
@@ -610,14 +611,14 @@ void udpiiu::beaconAction ( const caHdr &msg, const osiSockAddr &net_addr )
         ina.sin_port = htons ( this->serverPort );
     }
 
-    this->clientCtx ().beaconNotify ( ina );
+    this->pCAC ()->beaconNotify ( ina );
 
     return;
 }
 
 void udpiiu::repeaterAckAction ( const caHdr &,  const osiSockAddr &)
 {
-    this->clientCtx ().repeaterSubscribeConfirmNotify ();
+    this->pCAC ()->repeaterSubscribeConfirmNotify ();
 }
 
 void udpiiu::notHereRespAction ( const caHdr &,  const osiSockAddr &)
@@ -709,19 +710,6 @@ int udpiiu::postMsg ( const osiSockAddr &net_addr,
     return ECA_NORMAL;
 }
 
-void udpiiu::hostName ( char *pBuf, unsigned bufLength ) const
-{
-    if ( bufLength ) {
-        strncpy ( pBuf, this->pHostName (), bufLength );
-        pBuf[bufLength - 1u] = '\0';
-    }
-}
-
-const char * udpiiu::pHostName () const
-{
-    return "<disconnected>";
-}
-
 /*
  *  udpiiu::pushDatagramMsg ()
  */ 
@@ -740,10 +728,9 @@ bool udpiiu::pushDatagramMsg ( const caHdr &msg, const void *pExt, ca_uint16_t e
         return false;
     }
 
-    this->lock ();
+    osiAutoMutex autoMutex ( this->mutex );
 
     if ( msgsize + this->nBytesInXmitBuf > sizeof ( this->xmitBuf ) ) {
-        this->unlock ();
         return false;
     }
 
@@ -757,8 +744,6 @@ bool udpiiu::pushDatagramMsg ( const caHdr &msg, const void *pExt, ca_uint16_t e
     pbufmsg->m_postsize = htons ( allignedExtSize );
     this->nBytesInXmitBuf += msgsize;
 
-    this->unlock ();
-
     return true;
 }
 
@@ -769,10 +754,9 @@ void udpiiu::flush ()
 {
     osiSockAddrNode  *pNode;
 
-    this->lock ();
+    osiAutoMutex autoMutex ( this->mutex );
 
     if ( this->nBytesInXmitBuf == 0u ) {
-        this->unlock ();
         return;
     }
 
@@ -825,8 +809,6 @@ void udpiiu::flush ()
     }
 
     this->nBytesInXmitBuf = 0u;
-
-    this->unlock ();
 }
 
 SOCKET udpiiu::getSock () const
@@ -836,7 +818,7 @@ SOCKET udpiiu::getSock () const
 
 void udpiiu::show ( unsigned level ) const
 {
-    this->lock ();
+    osiAutoMutex autoMutex ( this->mutex );
     printf ( "Datagram IO circuit (and disconnected channel repository)\n");
     if ( level > 1u ) {
         this->netiiu::show ( level - 1u );
@@ -853,6 +835,9 @@ void udpiiu::show ( unsigned level ) const
         printf ( "\trecv thread exit signal:\n" );
         semBinaryShow ( this->recvThreadExitSignal, level-3u );
     }
-    this->unlock ();
 }
 
+bool udpiiu::isCurrentThread () const
+{
+    return ( this->recvThreadId == threadGetIdSelf () );
+}

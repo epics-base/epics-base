@@ -18,8 +18,8 @@ tsFreeList < class netReadCopyIO, 1024 > netReadCopyIO::freeList;
 
 netReadCopyIO::netReadCopyIO ( nciu &chanIn, unsigned typeIn, unsigned long countIn, 
                               void *pValueIn, unsigned seqNumberIn ) :
-    baseNMIU (chanIn), type (typeIn), count (countIn), 
-    pValue (pValueIn), seqNumber (seqNumberIn)
+    baseNMIU ( chanIn ), type ( typeIn ), count ( countIn ), 
+    pValue ( pValueIn ), seqNumber ( seqNumberIn )
 {
     chanIn.incrementOutstandingIO ();
 }

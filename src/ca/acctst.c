@@ -349,10 +349,10 @@ void verifyBlockingConnect ( appChan *pChans, unsigned chanCount, unsigned repet
          * verify that connections to IOC's that are 
          * not in use are dropped
          */
-        if ( ca_get_ioc_connection_count() != 0u ) {
+        if ( ca_get_ioc_connection_count () != 0u ) {
             ca_pend_event ( 1.0 );
             j=0;
-            while ( ca_get_ioc_connection_count() != 0u ) {
+            while ( ca_get_ioc_connection_count () != 0u ) {
                 printf ( "-" );
                 ca_pend_event ( 1.0 );
                 assert ( ++j < 100 );

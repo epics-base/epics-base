@@ -16,13 +16,22 @@
 #include "inetAddrID_IL.h"
 #include "bhe_IL.h"
 #include "tcpiiu_IL.h"
-#include "claimMsgCache_IL.h"
 #include "cac_IL.h"
+#include "comBuf_IL.h"
 #include "comQueSend_IL.h"
 #include "netiiu_IL.h"
+#include "nciu_IL.h"
+#include "baseNMIU_IL.h"
+#include "netWriteNotifyIO_IL.h"
+#include "netReadCopyIO_IL.h"
+#include "netReadNotifyIO_IL.h"
+#include "netSubscription_IL.h"
 
-const caHdr cacnullmsg = {
-    0,0,0,0,0,0
+// nill message pad bytes
+static const char nillBytes [] = 
+{ 
+    0, 0, 0, 0,
+    0, 0, 0, 0
 };
 
 // TCP protocol jump table
@@ -58,8 +67,6 @@ const tcpiiu::pProtoStubTCP tcpiiu::tcpJumpTableCAC [] =
     &tcpiiu::verifyAndDisconnectChan
 };
 
-tsFreeList < class tcpiiu, 16 > tcpiiu::freeList;
-
 #ifdef DEBUG
 #   define debugPrintf(argsInParen) printf argsInParen
 #else
@@ -77,55 +84,6 @@ const static char nullBuff[32] = {
     0,0
 };
 
-/*
- * tcpiiu::connect ()
- */
-void tcpiiu::connect ()
-{
-    int status;
-        
-    /* 
-     * attempt to connect to a CA server
-     */
-    this->armSendWatchdog ();
-    while ( ! this->sockCloseCompleted ) {
-        int errnoCpy;
-
-        osiSockAddr addr = this->ipToA.address ();
-        status = ::connect ( this->sock, &addr.sa,
-                sizeof ( addr.sa ) );
-        if ( status == 0 ) {
-            this->cancelSendWatchdog ();
-            // put the iiu into the connected state
-            this->state = iiu_connected;
-            // start connection activity watchdog
-            this->connectNotify (); 
-            return;
-        }
-
-        errnoCpy = SOCKERRNO;
-
-        if ( errnoCpy == SOCK_EINTR ) {
-            if ( this->state == iiu_disconnected ) {
-                return;
-            }
-            else {
-                continue;
-            }
-        }
-        else if ( errnoCpy == SOCK_SHUTDOWN ) {
-            return;
-        }
-        else {  
-            this->cancelSendWatchdog ();
-            ca_printf ( "Unable to connect because %d=\"%s\"\n", 
-                errnoCpy, SOCKERRSTR ( errnoCpy ) );
-            this->cleanShutdown ();
-            return;
-        }
-    }
-}
-
 //
 //  cacSendThreadTCP ()
 //
@@ -134,7 +92,7 @@ void tcpiiu::connect ()
 extern "C" void cacSendThreadTCP ( void *pParam )
 {
     tcpiiu *piiu = ( tcpiiu * ) pParam;
-    claimMsgCache cache ( CA_V44 ( CA_PROTOCOL_VERSION, piiu->minorProtocolVersionNumber ) );
+    //claimMsgCache cache ( CA_V44 ( CA_PROTOCOL_VERSION, piiu->minorProtocolVersion ) );
     bool laborNeeded;
 
     while ( true ) {
@@ -145,30 +103,26 @@ extern "C" void cacSendThreadTCP ( void *pParam )
             break;
         }
 
-        piiu->lock ();
-        laborNeeded = piiu->claimsPending;
-        piiu->claimsPending = false;
-        piiu->unlock ();
-        if ( laborNeeded ) {
-            piiu->sendPendingClaims ( 
-                CA_V42 ( CA_PROTOCOL_VERSION, piiu->minorProtocolVersionNumber ), cache );
-            piiu->flushPending = true;
+        {
+            osiAutoMutex autoMutex ( piiu->mutex );
+            laborNeeded = piiu->busyStateDetected != piiu->flowControlActive;
         }
 
-        piiu->lock ();
-        laborNeeded = piiu->busyStateDetected != piiu->flowControlActive;
-        piiu->unlock ();            
         if ( laborNeeded ) {
             if ( piiu->flowControlActive ) {
-                piiu->comQueSend::disableFlowControlRequest ();
-                piiu->flowControlActive = false;
+                int status = piiu->disableFlowControlRequest ();
+                if ( status == ECA_NORMAL ) {
+                    piiu->flowControlActive = false;
+                }
 #               if defined ( DEBUG )
                     printf ( "fc off\n" );
 #               endif
             }
             else {
-                piiu->comQueSend::enableFlowControlRequest ();
-                piiu->flowControlActive = true;
+                int status = piiu->enableFlowControlRequest ();
+                if ( status == ECA_NORMAL ) {
+                    piiu->flowControlActive = true;
+                }
 #               if defined ( DEBUG )
                     printf ( "fc on\n" );
 #               endif
@@ -176,25 +130,27 @@ extern "C" void cacSendThreadTCP ( void *pParam )
             piiu->flushPending = true;
         }
 
-        piiu->lock ();
-        laborNeeded = piiu->echoRequestPending;
-        piiu->echoRequestPending = false;
-        piiu->unlock ();
+        {
+            osiAutoMutex autoMutex ( piiu->mutex );
+            laborNeeded = piiu->echoRequestPending;
+            piiu->echoRequestPending = false;
+        }
 
         if ( laborNeeded ) {
-            if ( CA_V43 ( CA_PROTOCOL_VERSION, piiu->minorProtocolVersionNumber ) ) {
-                piiu->comQueSend::echoRequest ();
+            if ( CA_V43 ( CA_PROTOCOL_VERSION, piiu->minorProtocolVersion ) ) {
+                piiu->echoRequest ();
             }
             else {
-                piiu->comQueSend::noopRequest ();
+                piiu->noopRequest ();
             }
             piiu->flushPending = true;
         }
 
-        piiu->lock ();
-        laborNeeded = piiu->flushPending;
-        piiu->flushPending = false;
-        piiu->unlock ();
+        {
+            osiAutoMutex autoMutex ( piiu->mutex );
+            laborNeeded = piiu->flushPending;
+            piiu->flushPending = false;
+        }
 
         if ( laborNeeded ) {
             if ( ! piiu->flushToWire ( false ) ) {
@@ -207,7 +163,7 @@ extern "C" void cacSendThreadTCP ( void *pParam )
 }
 
 unsigned tcpiiu::sendBytes ( const void *pBuf, 
-                            unsigned nBytesInBuf, bool enablePreemptionDuringFlush  )
+                            unsigned nBytesInBuf )
 {
     int status;
     unsigned nBytes;
@@ -217,10 +173,6 @@ unsigned tcpiiu::sendBytes ( const void *pBuf,
     }
 
     assert ( nBytesInBuf <= INT_MAX );
-
-    if ( enablePreemptionDuringFlush ) {
-        this->clientCtx ().enableCallbackPreemption ();
-    }
 
     this->armSendWatchdog ();
 
@@ -261,10 +213,6 @@ unsigned tcpiiu::sendBytes ( const void *pBuf,
     }
 
     this->cancelSendWatchdog ();
-
-    if ( enablePreemptionDuringFlush ) {
-        this->clientCtx ().disableCallbackPreemption ();
-    }
 
     return nBytes;
 }
@@ -320,20 +268,21 @@ unsigned tcpiiu::recvBytes ( void *pBuf, unsigned nBytesInBuf )
     assert ( static_cast <unsigned> ( status ) <= nBytesInBuf );
     totalBytes = static_cast <unsigned> ( status );
 
-    this->lock ();
-    if ( nBytesInBuf == totalBytes ) {
-        if ( this->contigRecvMsgCount >= contiguousMsgCountWhichTriggersFlowControl ) {
-            this->busyStateDetected = true;
+    {
+        osiAutoMutex autoMutex ( this->mutex );
+        if ( nBytesInBuf == totalBytes ) {
+            if ( this->contigRecvMsgCount >= contiguousMsgCountWhichTriggersFlowControl ) {
+                this->busyStateDetected = true;
+            }
+            else { 
+                this->contigRecvMsgCount++;
+            }
         }
-        else { 
-            this->contigRecvMsgCount++;
+        else {
+            this->contigRecvMsgCount = 0u;
+            this->busyStateDetected = false;
         }
     }
-    else {
-        this->contigRecvMsgCount = 0u;
-        this->busyStateDetected = false;
-    }
-    this->unlock ();
     
     this->messageArrivalNotify (); // reschedule connection activity watchdog
 
@@ -343,95 +292,194 @@ unsigned tcpiiu::recvBytes ( void *pBuf, unsigned nBytesInBuf )
 /*
  *  cacRecvThreadTCP ()
  */
-extern "C" void cacRecvThreadTCP (void *pParam)
+extern "C" void cacRecvThreadTCP ( void *pParam )
 {
-    tcpiiu *piiu = (tcpiiu *) pParam;
+    tcpiiu *piiu = ( tcpiiu * ) pParam;
 
     piiu->connect ();
-    if ( piiu->state == iiu_connected ) {
-        unsigned priorityOfSelf = threadGetPrioritySelf ();
-        unsigned priorityOfSend;
-        threadBoolStatus tbs;
-        threadId tid;
 
-        tbs  = threadLowestPriorityLevelAbove ( priorityOfSelf, &priorityOfSend );
-        if ( tbs != tbsSuccess ) {
-            priorityOfSend = priorityOfSelf;
-        }
-        tid = threadCreate ( "CAC-TCP-send", priorityOfSend,
-                threadGetStackSize ( threadStackMedium ), cacSendThreadTCP, piiu );
-        if ( tid ) {
-            while ( piiu->state == iiu_connected ) {
-                if ( piiu->comQueRecv::occupiedBytes () >= 0x4000 ) {
-                    semBinaryMustTake ( piiu->recvThreadRingBufferSpaceAvailableSignal );
-                }
-                else {
-                    unsigned nBytesIn = piiu->fillFromWire ();
-                    if ( nBytesIn ) {
-                        piiu->recvMessagePending = true;
-                        piiu->clientCtx ().signalRecvActivity ();
-                    }
-                }
+    {
+        osiAutoMutex autoMutex ( piiu->mutex );
+        if ( piiu->state == iiu_connected ) {
+            unsigned priorityOfSend;
+            threadBoolStatus tbs;
+            threadId tid;
+
+            tbs  = threadLowestPriorityLevelAbove ( piiu->pCAC ()->getInitializingThreadsPriority (), &priorityOfSend );
+            if ( tbs != tbsSuccess ) {
+                priorityOfSend = piiu->pCAC ()->getInitializingThreadsPriority ();
+            }
+            tid = threadCreate ( "CAC-TCP-send", priorityOfSend,
+                    threadGetStackSize ( threadStackMedium ), cacSendThreadTCP, piiu );
+            if ( ! tid ) {
+                semBinaryGive ( piiu->recvThreadExitSignal );
+                semBinaryGive ( piiu->sendThreadExitSignal );
+                piiu->cleanShutdown ();
+                return;
             }
         }
         else {
+            semBinaryGive ( piiu->recvThreadExitSignal );
             semBinaryGive ( piiu->sendThreadExitSignal );
             piiu->cleanShutdown ();
+            return;
         }
     }
-    else {
-        semBinaryGive ( piiu->sendThreadExitSignal );
+
+    while ( piiu->state == iiu_connected ) {
+        unsigned nBytes;
+        {
+            osiAutoMutex autoMutex ( piiu->mutex );
+            nBytes = piiu->recvQue.occupiedBytes ();
+        }
+        if ( nBytes >= 0x4000 ) {
+            semBinaryMustTake ( piiu->recvThreadRingBufferSpaceAvailableSignal );
+        }
+        else {
+            comBuf * pComBuf = new comBuf;
+            if ( pComBuf ) {
+                unsigned nBytesIn = pComBuf->fillFromWire ( *piiu );
+                if ( nBytesIn ) {
+                    osiAutoMutex autoMutex ( piiu->mutex );
+                    piiu->recvQue.pushLastComBufReceived ( *pComBuf );
+                    piiu->pCAC ()->signalRecvActivity ();
+                }
+                else {
+                    pComBuf->destroy ();
+                }
+            }
+            else {
+                // no way to be informed when memory is available
+                threadSleep ( 0.5 );
+            }
+        }
     }
+
     semBinaryGive ( piiu->recvThreadExitSignal );
 }
 
 //
 // tcpiiu::tcpiiu ()
 //
-tcpiiu::tcpiiu ( cac &cac, const osiSockAddr &addrIn, 
-        unsigned minorVersion, class bhe &bheIn,
-        double connectionTimeout, osiTimerQueue &timerQueue,
-        ipAddrToAsciiEngine &engineIn ) :
-    tcpRecvWatchdog ( connectionTimeout, timerQueue, CA_V43 (CA_PROTOCOL_VERSION, minorVersion ) ),
+tcpiiu::tcpiiu ( cac &cac, double connectionTimeout, osiTimerQueue &timerQueue ) :
+    tcpRecvWatchdog ( connectionTimeout, timerQueue ),
     tcpSendWatchdog ( connectionTimeout, timerQueue ),
-    netiiu ( cac ),
-    ipToA ( addrIn, engineIn ),
-    bhe ( bheIn ),
+    netiiu ( &cac ),
+    ioTable ( 1024 ),
+    sendQue ( *this ),
+    pHostNameCache ( 0 ),
+    curDataMax ( 0ul ),
+    pBHE ( 0 ),
+    pCurData ( 0 ),
+    minorProtocolVersion ( 0u ),
+    state ( iiu_connecting ),
+    sock ( INVALID_SOCKET ),
     contigRecvMsgCount ( 0u ),
     busyStateDetected ( false ),
     flowControlActive ( false ),
-    recvMessagePending ( false ),
+    echoRequestPending ( false ),
     flushPending ( false ),
     msgHeaderAvailable ( false ),
-    claimsPending ( false ),
     sockCloseCompleted ( false )
 {
-    SOCKET newSocket;
-    int status;
-    int flag;
+    this->addr.sa.sa_family = AF_UNSPEC;
 
-    newSocket = socket ( AF_INET, SOCK_STREAM, IPPROTO_TCP );
-    if ( newSocket == INVALID_SOCKET ) {
-        ca_printf ("CAC: unable to create virtual circuit because \"%s\"\n",
-            SOCKERRSTR (SOCKERRNO));
+    this->sendThreadExitSignal = semBinaryCreate (semEmpty);
+    if ( ! this->sendThreadExitSignal ) {
+        ca_printf ("CA: unable to create CA client send thread exit semaphore\n");
         this->fullyConstructedFlag = false;
         return;
     }
 
+    this->recvThreadExitSignal = semBinaryCreate (semEmpty);
+    if ( ! this->recvThreadExitSignal ) {
+        ca_printf ("CA: unable to create CA client send thread exit semaphore\n");
+        semBinaryDestroy (this->sendThreadExitSignal);
+        this->fullyConstructedFlag = false;
+        return;
+    }
+
+    this->sendThreadFlushSignal = semBinaryCreate ( semEmpty );
+    if ( ! this->sendThreadFlushSignal ) {
+        ca_printf ("CA: unable to create sendThreadFlushSignal object\n");
+        semBinaryDestroy (this->sendThreadExitSignal);
+        this->fullyConstructedFlag = false;
+        return;
+    }
+
+    this->recvThreadRingBufferSpaceAvailableSignal = semBinaryCreate ( semEmpty );
+    if ( ! this->recvThreadRingBufferSpaceAvailableSignal ) {
+        ca_printf ("CA: unable to create recvThreadRingBufferSpaceAvailableSignal object\n");
+        semBinaryDestroy (this->sendThreadExitSignal);
+        semBinaryDestroy (this->sendThreadFlushSignal);
+        this->fullyConstructedFlag = false;
+        return;
+    }
+
+    this->fullyConstructedFlag = true;
+}
+
+/*
+ * tcpiiu::initiateConnect ()
+ */
+bool tcpiiu::initiateConnect ( const osiSockAddr &addrIn, unsigned minorVersion, 
+                              class bhe &bhe, ipAddrToAsciiEngine &engineIn )
+{
+    unsigned priorityOfSelf = threadGetPrioritySelf ();
+    unsigned priorityOfRecv;
+    threadBoolStatus tbs;
+    threadId tid;
+    int status;
+    int flag;
+
+    osiAutoMutex autoMutex ( this->mutex );
+
+    this->addr = addrIn;
+
+    this->pHostNameCache = new hostNameCache ( addrIn, engineIn );
+    if ( ! this->pHostNameCache ) {
+        return false;
+    }
+    
+    this->pBHE = &bhe;
+    bhe.bindToIIU ( *this );
+
+    this->state = iiu_connecting;
+    this->minorProtocolVersion = minorVersion;
+
+    this->contigRecvMsgCount = 0u;
+    this->busyStateDetected = false;
+    this->flowControlActive = false;
+    this->echoRequestPending = false;
+    this->flushPending = false;
+    this->msgHeaderAvailable = false;
+    this->sockCloseCompleted = false;
+
+    // first message informs server of user and host name of client
+    this->userNameSetRequest ();
+    this->hostNameSetRequest ();
+
+    this->sock = socket ( AF_INET, SOCK_STREAM, IPPROTO_TCP );
+    if ( this->sock == INVALID_SOCKET ) {
+        ca_printf ( "CAC: unable to create virtual circuit because \"%s\"\n",
+            SOCKERRSTR ( SOCKERRNO ) );
+        return false;
+    }
+
     flag = TRUE;
-    status = setsockopt ( newSocket, IPPROTO_TCP, TCP_NODELAY,
-                (char *)&flag, sizeof(flag) );
-    if (status < 0) {
+    status = setsockopt ( this->sock, IPPROTO_TCP, TCP_NODELAY,
+                (char *) &flag, sizeof ( flag ) );
+    if ( status < 0 ) {
         ca_printf ("CAC: problems setting socket option TCP_NODELAY = \"%s\"\n",
             SOCKERRSTR (SOCKERRNO));
     }
 
     flag = TRUE;
-    status = setsockopt ( newSocket , SOL_SOCKET, SO_KEEPALIVE,
-                (char *)&flag, sizeof (flag) );
-    if (status < 0) {
-        ca_printf ("CAC: problems setting socket option SO_KEEPALIVE = \"%s\"\n",
-            SOCKERRSTR (SOCKERRNO));
+    status = setsockopt ( this->sock , SOL_SOCKET, SO_KEEPALIVE,
+                ( char * ) &flag, sizeof ( flag ) );
+    if ( status < 0 ) {
+        ca_printf ( "CAC: problems setting socket option SO_KEEPALIVE = \"%s\"\n",
+            SOCKERRSTR ( SOCKERRNO ) );
     }
 
 #if 0
@@ -443,104 +491,92 @@ tcpiiu::tcpiiu ( cac &cac, const osiSockAddr &addrIn,
          * if this change is made joh 11-10-98
          */        
         i = MAX_MSG_SIZE;
-        status = setsockopt ( newSocket, SOL_SOCKET, SO_SNDBUF,
-                (char *)&i, sizeof (i) );
+        status = setsockopt ( this->sock, SOL_SOCKET, SO_SNDBUF,
+                ( char * ) &i, sizeof ( i ) );
         if (status < 0) {
             ca_printf ("CAC: problems setting socket option SO_SNDBUF = \"%s\"\n",
-                SOCKERRSTR (SOCKERRNO));
+                SOCKERRSTR ( SOCKERRNO ) );
         }
         i = MAX_MSG_SIZE;
-        status = setsockopt (newSocket, SOL_SOCKET, SO_RCVBUF,
-                (char *)&i, sizeof (i) );
-        if (status < 0) {
+        status = setsockopt ( this->sock, SOL_SOCKET, SO_RCVBUF,
+                ( char * ) &i, sizeof ( i ) );
+        if ( status < 0 ) {
             ca_printf ("CAC: problems setting socket option SO_RCVBUF = \"%s\"\n",
                 SOCKERRSTR (SOCKERRNO));
         }
     }
 #endif
 
-    this->sock = newSocket;
-    this->minorProtocolVersionNumber = minorVersion;
-    this->echoRequestPending = false;
-    this->curDataMax = 0ul;
-    memset ( (void *) &this->curMsg, '\0', sizeof (this->curMsg) );
-    this->pCurData = 0;
+    memset ( (void *) &this->curMsg, '\0', sizeof ( this->curMsg ) );
 
-    /*
-     * TCP starts out in the connecting state and later transitions
-     * to the connected state 
+    tbs  = threadHighestPriorityLevelBelow ( this->pCAC ()->getInitializingThreadsPriority (), &priorityOfRecv );
+    if ( tbs != tbsSuccess ) {
+        priorityOfRecv = this->pCAC ()->getInitializingThreadsPriority ();
+    }
+
+    tid = threadCreate ("CAC-TCP-recv", priorityOfRecv,
+            threadGetStackSize (threadStackMedium), cacRecvThreadTCP, this);
+    if ( tid == 0 ) {
+        ca_printf ("CA: unable to create CA client receive thread\n");
+        socket_close ( this->sock );
+        return false;
+    }
+    return true;
+}
+
+/*
+ * tcpiiu::connect ()
+ */
+void tcpiiu::connect ()
+{
+    /* 
+     * attempt to connect to a CA server
      */
-    this->state = iiu_connecting;
+    this->armSendWatchdog ();
+    while ( ! this->sockCloseCompleted ) {
 
-    this->sendThreadExitSignal = semBinaryCreate (semEmpty);
-    if ( ! this->sendThreadExitSignal ) {
-        ca_printf ("CA: unable to create CA client send thread exit semaphore\n");
-        socket_close ( newSocket );
-        this->fullyConstructedFlag = false;
-        return;
-    }
+        int status = ::connect ( this->sock, &this->addr.sa, sizeof ( addr.sa ) );
 
-    this->recvThreadExitSignal = semBinaryCreate (semEmpty);
-    if ( ! this->recvThreadExitSignal ) {
-        ca_printf ("CA: unable to create CA client send thread exit semaphore\n");
-        semBinaryDestroy (this->sendThreadExitSignal);
-        socket_close ( newSocket );
-        this->fullyConstructedFlag = false;
-        return;
-    }
+        if ( status == 0 ) {
 
-    this->sendThreadFlushSignal = semBinaryCreate ( semEmpty );
-    if ( ! this->sendThreadFlushSignal ) {
-        ca_printf ("CA: unable to create sendThreadFlushSignal object\n");
-        semBinaryDestroy (this->sendThreadExitSignal);
-        socket_close ( newSocket );
-        this->fullyConstructedFlag = false;
-        return;
-    }
+            this->cancelSendWatchdog ();
 
-    this->recvThreadRingBufferSpaceAvailableSignal = semBinaryCreate ( semEmpty );
-    if ( ! this->recvThreadRingBufferSpaceAvailableSignal ) {
-        ca_printf ("CA: unable to create recvThreadRingBufferSpaceAvailableSignal object\n");
-        semBinaryDestroy (this->sendThreadExitSignal);
-        semBinaryDestroy (this->sendThreadFlushSignal);
-        socket_close ( newSocket );
-        this->fullyConstructedFlag = false;
-        return;
-    }
+            osiAutoMutex autoMutex ( this->mutex );
 
-    this->userNameSetMsg ();
+            if ( this->state == iiu_connecting ) {
+                // put the iiu into the connected state
+                this->state = iiu_connected;
 
-    this->hostNameSetMsg ();
+                // start connection activity watchdog
+                this->connectNotify (); 
+            }
 
-    {
-        unsigned priorityOfSelf = threadGetPrioritySelf ();
-        unsigned priorityOfRecv;
-        threadBoolStatus tbs;
-        threadId tid;
-
-        tbs  = threadHighestPriorityLevelBelow (priorityOfSelf, &priorityOfRecv);
-        if ( tbs != tbsSuccess ) {
-            priorityOfRecv = priorityOfSelf;
+            return;
         }
 
-        tid = threadCreate ("CAC-TCP-recv", priorityOfRecv,
-                threadGetStackSize (threadStackMedium), cacRecvThreadTCP, this);
-        if ( tid == 0 ) {
-            ca_printf ("CA: unable to create CA client receive thread\n");
-            semBinaryDestroy (this->recvThreadExitSignal);
-            semBinaryDestroy (this->sendThreadExitSignal);
-            socket_close ( newSocket );
-            semBinaryDestroy (this->sendThreadFlushSignal);
-            semBinaryDestroy (this->recvThreadRingBufferSpaceAvailableSignal);
-            this->fullyConstructedFlag = false;
+        int errnoCpy = SOCKERRNO;
+
+        if ( errnoCpy == SOCK_EINTR ) {
+            if ( this->state != iiu_connecting ) {
+                this->cancelSendWatchdog ();
+                return;
+            }
+            else {
+                continue;
+            }
+        }
+        else if ( errnoCpy == SOCK_SHUTDOWN ) {
+            this->cancelSendWatchdog ();
+            return;
+        }
+        else {  
+            this->cancelSendWatchdog ();
+            ca_printf ( "Unable to connect because %d=\"%s\"\n", 
+                errnoCpy, SOCKERRSTR ( errnoCpy ) );
+            this->cleanShutdown ();
             return;
         }
     }
-
-    bhe.bindToIIU ( *this );
-    cac.installIIU ( *this );
-
-    this->fullyConstructedFlag = true;
 }
 
 /*
@@ -551,9 +587,9 @@ void tcpiiu::cleanShutdown ()
     this->cancelSendWatchdog ();
     this->cancelRecvWatchdog ();
 
-    this->lock ();
-    if ( this->state != iiu_disconnected ) {
-        this->state = iiu_disconnected;
+    osiAutoMutex autoMutex ( this->mutex );
+
+    if ( this->state == iiu_connected ) {
         int status = ::shutdown ( this->sock, SD_BOTH );
         if ( status ) {
             errlogPrintf ("CAC TCP socket shutdown error was %s\n", 
@@ -565,13 +601,28 @@ void tcpiiu::cleanShutdown ()
             }
             else {
                 this->sockCloseCompleted = true;
+                this->state = iiu_disconnected;
             }
         }
-        semBinaryGive ( this->sendThreadFlushSignal );
-        semBinaryGive ( this->recvThreadRingBufferSpaceAvailableSignal );
-        this->clientCtx ().signalRecvActivity ();
+        else {
+            this->state = iiu_disconnected;
+        }
+
     }
-    this->unlock ();
+    else if ( this->state == iiu_connecting ) {
+        int status = socket_close ( this->sock );
+        if ( status ) {
+            errlogPrintf ("CAC TCP socket close error was %s\n", 
+                SOCKERRSTR (SOCKERRNO) );
+        }
+        else {
+            this->sockCloseCompleted = true;
+            this->state = iiu_disconnected;
+        }
+    }
+    semBinaryGive ( this->sendThreadFlushSignal );
+    semBinaryGive ( this->recvThreadRingBufferSpaceAvailableSignal );
+    this->pCAC ()->signalRecvActivity ();
 }
 
 /*
@@ -582,10 +633,9 @@ void tcpiiu::forcedShutdown ()
     this->cancelSendWatchdog ();
     this->cancelRecvWatchdog ();
 
-    this->lock ();
+    osiAutoMutex autoMutex ( this->mutex );
+
     if ( this->state != iiu_disconnected ) {
-        this->state = iiu_disconnected;
- 
         // force abortive shutdown sequence (discard outstanding sends
         // and receives
         struct linger tmpLinger;
@@ -604,37 +654,31 @@ void tcpiiu::forcedShutdown ()
                 SOCKERRSTR (SOCKERRNO) );
         }
         else {
+            this->state = iiu_disconnected;
             this->sockCloseCompleted = true;
         }
-
-        semBinaryGive ( this->sendThreadFlushSignal );
-        semBinaryGive ( this->recvThreadRingBufferSpaceAvailableSignal );
-        this->clientCtx ().signalRecvActivity ();
     }
-    this->unlock ();
+
+    semBinaryGive ( this->sendThreadFlushSignal );
+    semBinaryGive ( this->recvThreadRingBufferSpaceAvailableSignal );
+    this->pCAC ()->signalRecvActivity ();
 }
 
-
-//
-// tcpiiu::~tcpiiu ()
-//
-tcpiiu::~tcpiiu ()
+void tcpiiu::disconnect ()
 {
-    if ( ! this->fullyConstructedFlag ) {
-        return;
-    }
-
-    this->fullyConstructedFlag = false;
-
-    this->clientCtx ().removeIIU ( *this );
+    assert ( this->fullyConstructedFlag );
 
     if ( this->channelCount () ) {
         char hostNameTmp[64];
-        this->ipToA.hostName ( hostNameTmp, sizeof ( hostNameTmp ) );
-        genLocalExcep ( this->clientCtx (), ECA_DISCONN, hostNameTmp );
+        this->hostName ( hostNameTmp, sizeof ( hostNameTmp ) );
+        assert ( this->pCAC () );
+        genLocalExcep ( *this->pCAC (), ECA_DISCONN, hostNameTmp );
     }
 
-    this->disconnectAllChan ();
+    {
+        osiAutoMutex autoMutex ( this->mutex );
+        this->ioTable.destroyAllEntries ();
+    }
 
     this->cleanShutdown ();
 
@@ -684,24 +728,63 @@ tcpiiu::~tcpiiu ()
         }
     }
 
-    semBinaryDestroy ( this->sendThreadExitSignal );
-    semBinaryDestroy ( this->recvThreadExitSignal );
-    semBinaryDestroy ( this->sendThreadFlushSignal );
-    semBinaryDestroy ( this->recvThreadRingBufferSpaceAvailableSignal );
-
-    /*
-     * free message body cache
-     */
-    if ( this->pCurData ) {
-        free ( this->pCurData );
-    }
-
     if ( ! this->sockCloseCompleted ) {
         int status = socket_close ( this->sock );
         if ( status ) {
             errlogPrintf ("CAC TCP socket close error was %s\n", 
                 SOCKERRSTR ( SOCKERRNO ) );
         }
+        else {
+            this->sockCloseCompleted = true;
+        }
+    }
+
+    /*
+     * free message body cache
+     */
+    {
+        osiAutoMutex autoMutex ( this->mutex );
+
+        if ( this->pCurData ) {
+            free ( this->pCurData );
+            this->pCurData = 0;
+            this->curDataMax = 0u;
+        }
+
+        this->addr.sa.sa_family = AF_UNSPEC;
+
+        this->minorProtocolVersion = 0u;
+        if ( this->pHostNameCache ) {
+            this->pHostNameCache->destroy ();
+            this->pHostNameCache = 0;
+        }
+        this->pBHE = 0;
+        this->sendQue.clear ();
+        this->recvQue.clear ();
+    }
+}
+
+
+//
+// tcpiiu::~tcpiiu ()
+//
+tcpiiu::~tcpiiu ()
+{
+    if ( ! this->fullyConstructedFlag ) {
+        return;
+    }
+
+    semBinaryDestroy ( this->sendThreadExitSignal );
+    semBinaryDestroy ( this->recvThreadExitSignal );
+    semBinaryDestroy ( this->sendThreadFlushSignal );
+    semBinaryDestroy ( this->recvThreadRingBufferSpaceAvailableSignal );
+
+    if ( this->pHostNameCache ) {
+        this->pHostNameCache->destroy ();
+    }
+
+    if ( this->pBHE ) {
+        this->pBHE->destroy ();
     }
 }
 
@@ -710,27 +793,62 @@ void tcpiiu::suicide ()
     delete this;
 }
 
-bool tcpiiu::connectionInProgress ( const char *pChannelName, const osiSockAddr &addr ) const
+bool tcpiiu::isVirtaulCircuit ( const char *pChannelName, const osiSockAddr &addrIn ) const
 {
-    if ( ! this->ipToA.identicalAddress ( addr ) ) {
+    osiSockAddr addrTmp = this->addr;
+
+    if ( addrTmp.sa.sa_family == AF_UNSPEC ) {
+        return false;
+    }
+
+    bool match;
+
+    if ( addrTmp.sa.sa_family != addrIn.sa.sa_family ) {
+        match = false;
+    }
+    else if ( addrTmp.sa.sa_family != AF_INET ) {
+        match = false;
+    }
+    else if ( addrTmp.ia.sin_addr.s_addr !=  addrIn.ia.sin_addr.s_addr ) {
+        match = false;
+    }
+    else if ( addrTmp.ia.sin_port !=  addrIn.ia.sin_port ) { 
+        match = false;
+    }
+    else {
+        match = true;
+    }
+
+    if ( ! match ) {
+        osiAutoMutex autoMutex ( this->mutex );
         char acc[64];
-        this->ipToA.hostName ( acc, sizeof ( acc ) );
-        msgForMultiplyDefinedPV *pMsg = new msgForMultiplyDefinedPV ( 
-            this->clientCtx (), pChannelName, acc, addr );
-        if ( pMsg ) {
-            this->clientCtx ().ipAddrToAsciiAsynchronousRequestInstall ( *pMsg );
+        if ( this->pHostNameCache ) {
+            this->pHostNameCache->hostName ( acc, sizeof ( acc ) );
+            assert ( this->pCAC () );
+            msgForMultiplyDefinedPV *pMsg = new msgForMultiplyDefinedPV ( 
+                *this->pCAC (), pChannelName, acc, addr );
+            if ( pMsg ) {
+                this->pCAC ()->ipAddrToAsciiAsynchronousRequestInstall ( *pMsg );
+            }
         }
     }
+
     return true;
 }
 
 void tcpiiu::show ( unsigned level ) const
 {
-    this->lock ();
+    osiAutoMutex autoMuext ( this->mutex );
     char buf[256];
-    this->ipToA.hostName ( buf, sizeof ( buf ) );
+    if ( this->pHostNameCache ) {
+        this->pHostNameCache->hostName ( buf, sizeof ( buf ) );
+    }
+    else {
+        strncpy ( buf, "<disconnected>", sizeof ( buf ) );
+        buf [ sizeof ( buf ) - 1 ] = '\0';
+    }
     printf ( "Virtual circuit to \"%s\" at version %u.%u state %u\n", 
-        buf, CA_PROTOCOL_VERSION, this->minorProtocolVersionNumber,
+        buf, CA_PROTOCOL_VERSION, this->minorProtocolVersion,
         this->state );
     if ( level > 1u ) {
         this->netiiu::show ( level - 1u );
@@ -753,44 +871,187 @@ void tcpiiu::show ( unsigned level ) const
         semBinaryShow ( this->recvThreadExitSignal, level-3u );
         printf ( "\tfully constructed bool %u\n", this->fullyConstructedFlag );
         printf ("\techo pending bool = %u\n", this->echoRequestPending );
-        printf ("\treceive message pending bool = %u\n", this->recvMessagePending );
         printf ("\tflush pending bool = %u\n", this->flushPending );
         printf ("\treceive message header available bool = %u\n", this->msgHeaderAvailable );
-        this->bhe.show ( level - 3u );
+        if ( this->pBHE ) {
+            this->pBHE->show ( level - 3u );
+        }
+        ::printf ( "IO identifier hash table:\n" );
+        this->ioTable.show ( level - 3u );
     }
-    this->unlock ();
 }
 
-void tcpiiu::echoRequest ()
+bool tcpiiu::setEchoRequestPending ()
 {
-    this->lock ();
-    this->echoRequestPending = true;
-    this->unlock ();
+    {
+        osiAutoMutex autoMuext ( this->mutex );
+        this->echoRequestPending = true;
+    }
     this->flush ();
+    if ( CA_V43 (CA_PROTOCOL_VERSION, this->minorProtocolVersion ) ) {
+        // we send an echo
+        return true;
+    }
+    else {
+        // we send a NOOP
+        return false;
+    }
 }
 
 /*
- * tcpiiu::hostNameSetMsg ()
+ * tcpiiu::hostNameSetRequest ()
  */
-void tcpiiu::hostNameSetMsg ()
+int tcpiiu::hostNameSetRequest ()
 {
-    if ( ! CA_V41 ( CA_PROTOCOL_VERSION, this->minorProtocolVersionNumber ) ) {
-        return;
+    if ( ! CA_V41 ( CA_PROTOCOL_VERSION, this->minorProtocolVersion ) ) {
+        return ECA_NORMAL;
     }
 
-    this->comQueSend::hostNameSetRequest ( localHostNameAtLoadTime.pointer () );
+    const char *pName = localHostNameAtLoadTime.pointer ();
+    unsigned size = strlen ( pName ) + 1u;
+    unsigned postSize = CA_MESSAGE_ALIGN ( size );
+    assert ( postSize < 0xffff );
+
+    if ( this->sendQue.flushThreshold ( postSize + 16u ) ) {
+        this->flush ();
+    }
+
+    osiAutoMutex autoMutex ( this->mutex );
+
+    int status = this->sendQue.reserveSpace ( postSize + 16u );
+    if ( status == ECA_NORMAL ) {
+        this->sendQue.pushUInt16 ( CA_PROTO_HOST_NAME ); // cmd
+        this->sendQue.pushUInt16 ( postSize ); // postsize
+        this->sendQue.pushUInt16 ( 0u ); // dataType
+        this->sendQue.pushUInt16 ( 0u ); // count
+        this->sendQue.pushUInt32 ( static_cast <ca_uint32_t> ( 0u ) ); // cid
+        this->sendQue.pushUInt32 ( static_cast <ca_uint32_t> ( 0u ) ); // available 
+
+        this->sendQue.pushString ( pName, size );
+        this->sendQue.pushString ( nillBytes, postSize - size );
+    }
+
+    return status;
 }
 
 /*
- * tcpiiu::userNameSetMsg ()
+ * tcpiiu::userNameSetRequest ()
  */
-void tcpiiu::userNameSetMsg ()
+int tcpiiu::userNameSetRequest ()
 {
-    if ( ! CA_V41 ( CA_PROTOCOL_VERSION, this->minorProtocolVersionNumber ) ) {
-        return;
+    if ( ! CA_V41 ( CA_PROTOCOL_VERSION, this->minorProtocolVersion ) ) {
+        return ECA_NORMAL;
     }
 
-    this->comQueSend::userNameSetRequest ( this->clientCtx ().userNamePointer () );
+    const char *pName = this->pCAC ()->userNamePointer ();
+    unsigned size = strlen ( pName ) + 1u;
+    unsigned postSize = CA_MESSAGE_ALIGN ( size );
+    assert ( postSize < 0xffff );
+
+    if ( this->sendQue.flushThreshold ( postSize + 16u ) ) {
+        this->flush ();
+    }
+
+    osiAutoMutex autoMutex ( this->mutex );
+
+    int status = this->sendQue.reserveSpace ( postSize + 16u );
+    if ( status == ECA_NORMAL ) {
+        this->sendQue.pushUInt16 ( CA_PROTO_CLIENT_NAME ); // cmd
+        this->sendQue.pushUInt16 ( postSize ); // postsize
+        this->sendQue.pushUInt16 ( 0u ); // dataType
+        this->sendQue.pushUInt16 ( 0u ); // count
+        this->sendQue.pushUInt32 ( 0u ); // cid
+        this->sendQue.pushUInt32 ( 0u ); // available 
+
+        this->sendQue.pushString ( pName, size );
+        this->sendQue.pushString ( nillBytes, postSize - size );
+    }
+
+    return status;
+}
+
+int tcpiiu::disableFlowControlRequest ()
+{
+    if ( this->sendQue.flushThreshold ( 16u ) ) {
+        this->flush ();
+    }
+
+    osiAutoMutex autoMutex ( this->mutex );
+
+    int status = this->sendQue.reserveSpace ( 16u );
+    if ( status == ECA_NORMAL ) {
+        this->sendQue.pushUInt16 ( CA_PROTO_EVENTS_ON ); // cmd
+        this->sendQue.pushUInt16 ( 0u ); // postsize
+        this->sendQue.pushUInt16 ( 0u ); // dataType
+        this->sendQue.pushUInt16 ( 0u ); // count
+        this->sendQue.pushUInt32 ( 0u ); // cid
+        this->sendQue.pushUInt32 ( 0u ); // available 
+    }
+
+    return status;
+}
+
+int tcpiiu::enableFlowControlRequest ()
+{
+    if ( this->sendQue.flushThreshold ( 16u ) ) {
+        this->flush ();
+    }
+
+    osiAutoMutex autoMutex ( this->mutex );
+
+    int status = this->sendQue.reserveSpace ( 16u );
+    if ( status == ECA_NORMAL ) {
+        this->sendQue.pushUInt16 ( CA_PROTO_EVENTS_OFF ); // cmd
+        this->sendQue.pushUInt16 ( 0u ); // postsize
+        this->sendQue.pushUInt16 ( 0u ); // dataType
+        this->sendQue.pushUInt16 ( 0u ); // count
+        this->sendQue.pushUInt32 ( 0u ); // cid
+        this->sendQue.pushUInt32 ( 0u ); // available 
+    }
+
+    return status;
+}
+
+int tcpiiu::noopRequest ()
+{
+    if ( this->sendQue.flushThreshold ( 16u ) ) {
+        this->flush ();
+    }
+
+    osiAutoMutex autoMutex ( this->mutex );
+
+    int status = this->sendQue.reserveSpace ( 16u );
+    if ( status == ECA_NORMAL ) {
+        this->sendQue.pushUInt16 ( CA_PROTO_NOOP ); // cmd
+        this->sendQue.pushUInt16 ( 0u ); // postsize
+        this->sendQue.pushUInt16 ( 0u ); // dataType
+        this->sendQue.pushUInt16 ( 0u ); // count
+        this->sendQue.pushUInt32 ( 0u ); // cid
+        this->sendQue.pushUInt32 ( 0u ); // available 
+    }
+
+    return status;
+}
+
+int tcpiiu::echoRequest ()
+{
+    if ( this->sendQue.flushThreshold ( 16u ) ) {
+        this->flush ();
+    }
+
+    osiAutoMutex autoMutex ( this->mutex );
+
+    int status = this->sendQue.reserveSpace ( 16u );
+    if ( status == ECA_NORMAL ) {
+        this->sendQue.pushUInt16 ( CA_PROTO_ECHO ); // cmd
+        this->sendQue.pushUInt16 ( 0u ); // postsize
+        this->sendQue.pushUInt16 ( 0u ); // dataType
+        this->sendQue.pushUInt16 ( 0u ); // count
+        this->sendQue.pushUInt32 ( 0u ); // cid
+        this->sendQue.pushUInt32 ( 0u ); // available 
+    }
+
+    return status;
 }
 
 void tcpiiu::noopAction ()
@@ -807,10 +1068,10 @@ void tcpiiu::writeNotifyRespAction ()
 {
     int status = this->curMsg.m_cid;
     if ( status == ECA_NORMAL ) {
-        this->clientCtx ().ioCompletionNotifyAndDestroy ( this->curMsg.m_available );
+        this->ioCompletionNotifyAndDestroy ( this->curMsg.m_available );
     }
     else {
-        this->clientCtx ().ioExceptionNotifyAndDestroy ( this->curMsg.m_available, 
+        this->ioExceptionNotifyAndDestroy ( this->curMsg.m_available, 
                     status, "write notify request rejected" );
     }
 }
@@ -839,7 +1100,7 @@ void tcpiiu::readNotifyRespAction ()
      * read notify status starting
      * with CA V4.1
      */
-    v41 = CA_V41 ( CA_PROTOCOL_VERSION, this->minorProtocolVersionNumber );
+    v41 = CA_V41 ( CA_PROTOCOL_VERSION, this->minorProtocolVersion );
     if (v41) {
         status = this->curMsg.m_cid;
     }
@@ -848,11 +1109,11 @@ void tcpiiu::readNotifyRespAction ()
     }
 
     if ( status == ECA_NORMAL ) {
-        this->clientCtx ().ioCompletionNotifyAndDestroy ( this->curMsg.m_available,
+        this->ioCompletionNotifyAndDestroy ( this->curMsg.m_available,
             this->curMsg.m_dataType, this->curMsg.m_count, this->pCurData );
     }
     else {
-        this->clientCtx ().ioExceptionNotifyAndDestroy ( this->curMsg.m_available,
+        this->ioExceptionNotifyAndDestroy ( this->curMsg.m_available,
             status, "read failed", this->curMsg.m_dataType, this->curMsg.m_count );
     }
 }
@@ -868,7 +1129,9 @@ void tcpiiu::eventRespAction ()
      * not find a matching IO block
      */
     if ( ! this->curMsg.m_postsize ) {
-        this->clientCtx ().ioDestroy ( this->curMsg.m_available );
+        this->mutex.lock ();
+        this->ioTable.remove ( this->curMsg.m_available );
+        this->mutex.unlock ();
         return;
     }
 
@@ -892,7 +1155,7 @@ void tcpiiu::eventRespAction ()
      * read notify status starting
      * with CA V4.1
      */
-    v41 = CA_V41 ( CA_PROTOCOL_VERSION, this->minorProtocolVersionNumber );
+    v41 = CA_V41 ( CA_PROTOCOL_VERSION, this->minorProtocolVersion );
     if (v41) {
         status = this->curMsg.m_cid;
     }
@@ -900,11 +1163,11 @@ void tcpiiu::eventRespAction ()
         status = ECA_NORMAL;
     }
     if ( status == ECA_NORMAL ) {
-        this->clientCtx ().ioCompletionNotify ( this->curMsg.m_available,
+        this->ioCompletionNotify ( this->curMsg.m_available,
             this->curMsg.m_dataType, this->curMsg.m_count, this->pCurData );
     }
     else {
-        this->clientCtx ().ioExceptionNotify ( this->curMsg.m_available,
+        this->ioExceptionNotify ( this->curMsg.m_available,
                 status, "subscription update failed", 
                 this->curMsg.m_dataType, this->curMsg.m_count );
     }
@@ -912,13 +1175,13 @@ void tcpiiu::eventRespAction ()
 
 void tcpiiu::readRespAction ()
 {
-    this->clientCtx ().ioCompletionNotifyAndDestroy ( this->curMsg.m_available,
+    this->ioCompletionNotifyAndDestroy ( this->curMsg.m_available,
         this->curMsg.m_dataType, this->curMsg.m_count, this->pCurData );
 }
 
 void tcpiiu::clearChannelRespAction ()
 {
-    this->clientCtx ().channelDestroy ( this->curMsg.m_available );
+    this->pCAC ()->channelDestroy ( this->curMsg.m_available );
 }
 
 void tcpiiu::exceptionRespAction ()
@@ -927,46 +1190,55 @@ void tcpiiu::exceptionRespAction ()
     char hostName[64];
     caHdr *req = (caHdr *) this->pCurData;
 
-    this->ipToA.hostName ( hostName, sizeof ( hostName ) );
-    if ( this->curMsg.m_postsize > sizeof (caHdr) ) {
-        sprintf ( context, "detected by: %s for: %s", 
-            hostName, (char *)(req+1) );
-    }
-    else{
-        sprintf ( context, "detected by: %s", hostName );
+    {
+        osiAutoMutex autoMutex ( this->mutex );
+
+        if ( this->pHostNameCache ) {
+            this->pHostNameCache->hostName ( hostName, sizeof ( hostName ) );
+            if ( this->curMsg.m_postsize > sizeof (caHdr) ) {
+                sprintf ( context, "detected by: %s for: %s", 
+                    hostName, (char *)(req+1) );
+            }
+            else{
+                sprintf ( context, "for: %s", (char *) ( req + 1 ) );
+            }
+        }
+        else {
+            sprintf ( context, "for: %s", (char *) ( req + 1 ) );
+        }
     }
 
     switch ( ntohs ( req->m_cmmd ) ) {
     case CA_PROTO_READ_NOTIFY:
-        this->clientCtx ().ioExceptionNotifyAndDestroy ( ntohl (req->m_available), 
+        this->ioExceptionNotifyAndDestroy ( ntohl (req->m_available), 
             ntohl (this->curMsg.m_available), context, 
             ntohs (req->m_dataType), ntohs (req->m_count) );
         break;
     case CA_PROTO_READ:
-        this->clientCtx ().ioExceptionNotifyAndDestroy ( ntohl (req->m_available), 
+        this->ioExceptionNotifyAndDestroy ( ntohl (req->m_available), 
             ntohl (this->curMsg.m_available), context, 
             ntohs (req->m_dataType), ntohs (req->m_count) );
         break;
     case CA_PROTO_WRITE_NOTIFY:
-        this->clientCtx ().ioExceptionNotifyAndDestroy ( ntohl (req->m_available), 
+        this->ioExceptionNotifyAndDestroy ( ntohl (req->m_available), 
             ntohl (this->curMsg.m_available), context, 
             ntohs (req->m_dataType), ntohs (req->m_count) );
         break;
     case CA_PROTO_WRITE:
-        this->clientCtx ().exceptionNotify ( ntohl ( this->curMsg.m_available), 
+        this->pCAC ()->exceptionNotify ( ntohl ( this->curMsg.m_available), 
                 context, ntohs (req->m_dataType), ntohs (req->m_count), __FILE__, __LINE__);
         break;
     case CA_PROTO_EVENT_ADD:
-        this->clientCtx ().ioExceptionNotify ( ntohl (req->m_available), 
+        this->ioExceptionNotify ( ntohl (req->m_available), 
             ntohl (this->curMsg.m_available), context, 
             ntohs (req->m_dataType), ntohs (req->m_count) );
         break;
     case CA_PROTO_EVENT_CANCEL:
-        this->clientCtx ().ioExceptionNotifyAndDestroy ( ntohl (req->m_available), 
+        this->ioExceptionNotifyAndDestroy ( ntohl (req->m_available), 
             ntohl (this->curMsg.m_available), context );
         break;
     default:
-        this->clientCtx ().exceptionNotify (ntohl (this->curMsg.m_available), 
+        this->pCAC ()->exceptionNotify (ntohl (this->curMsg.m_available), 
             context, __FILE__, __LINE__);
         break;
     }
@@ -982,115 +1254,140 @@ void tcpiiu::accessRightsRespAction ()
     arBitField.read_access = ( ar & CA_PROTO_ACCESS_RIGHT_READ ) ? 1 : 0;
     arBitField.write_access = ( ar & CA_PROTO_ACCESS_RIGHT_WRITE ) ? 1 : 0;
 
-    this->clientCtx ().accessRightsNotify ( this->curMsg.m_cid, arBitField );
+    this->pCAC ()->accessRightsNotify ( this->curMsg.m_cid, arBitField );
 }
 
 void tcpiiu::claimCIURespAction ()
 {
-    this->clientCtx ().connectChannel ( this->ca_v44_ok (), this->curMsg.m_cid, 
+    this->pCAC ()->connectChannel ( this->ca_v44_ok (), this->curMsg.m_cid, 
         this->curMsg.m_dataType, this->curMsg.m_count, this->curMsg.m_available );
 }
 
 void tcpiiu::verifyAndDisconnectChan ()
 {
-    this->clientCtx ().disconnectChannel ( this->curMsg.m_cid );
+    this->pCAC ()->disconnectChannel ( this->curMsg.m_cid );
 }
 
 void tcpiiu::badTCPRespAction ()
 {
     char hostName[64];
-    this->ipToA.hostName ( hostName, sizeof ( hostName ) );
-    ca_printf ( "CAC: Bad response code in TCP message from %s was %u\n", 
-        hostName, this->curMsg.m_cmmd);
+    bool hostNameInit;
+    {
+        osiAutoMutex autoMutex ( this->mutex );
+        if ( this->pHostNameCache ) {
+            this->pHostNameCache->hostName ( hostName, sizeof ( hostName ) );
+            hostNameInit = true;
+        }
+        else {
+            hostNameInit = false;
+        }
+    }
+
+    if ( hostNameInit ) {
+        ca_printf ( "CAC: Bad response code in TCP message from %s was %u\n", 
+            hostName, this->curMsg.m_cmmd);
+    }
+    else {
+        ca_printf ( "CAC: Bad response code in TCP message was %u\n", 
+            this->curMsg.m_cmmd);
+    }
 }
 
 /*
- * post_tcp_msg ()
+ * tcpiiu::processIncoming ()
  */
-void tcpiiu::postMsg ()
+void tcpiiu::processIncoming ()
 {
     while ( 1 ) {
 
         //
         // fetch a complete message header
         //
-        if ( ! this->msgHeaderAvailable ) {
-            this->msgHeaderAvailable = this->copyOutBytes ( &this->curMsg, sizeof ( this->curMsg ) );
+        {
+            osiAutoMutex autoMutex ( this->mutex );
+
             if ( ! this->msgHeaderAvailable ) {
-                return;
+
+                this->msgHeaderAvailable = this->recvQue.copyOutBytes ( 
+                    &this->curMsg, sizeof ( this->curMsg ) );
+
+                if ( ! this->msgHeaderAvailable ) {
+                    return;
+                }
+
+                //
+                // fix endian of bytes 
+                //
+                this->curMsg.m_cmmd = ntohs ( this->curMsg.m_cmmd );
+                this->curMsg.m_postsize = ntohs ( this->curMsg.m_postsize );
+                this->curMsg.m_dataType = ntohs ( this->curMsg.m_dataType );
+                this->curMsg.m_count = ntohs ( this->curMsg.m_count );
+                this->curMsg.m_cid = ntohl ( this->curMsg.m_cid );
+                this->curMsg.m_available = ntohl ( this->curMsg.m_available );
+
+                debugPrintf (
+                    ( "%s Cmd=%3d Type=%3d Count=%4d Size=%4d",
+                    this->pHostName (),
+                    this->curMsg.m_cmmd,
+                    this->curMsg.m_dataType,
+                    this->curMsg.m_count,
+                    this->curMsg.m_postsize) );
+
+                debugPrintf (
+                    ( " Avail=%8x Cid=%6d\n",
+                    this->curMsg.m_available,
+                    this->curMsg.m_cid) );
             }
-            
-            semBinaryGive ( this->recvThreadRingBufferSpaceAvailableSignal );
 
             //
-            // fix endian of bytes 
+            // dont allow huge msg body until
+            // the client library supports it
             //
-            this->curMsg.m_cmmd = ntohs ( this->curMsg.m_cmmd );
-            this->curMsg.m_postsize = ntohs ( this->curMsg.m_postsize );
-            this->curMsg.m_dataType = ntohs ( this->curMsg.m_dataType );
-            this->curMsg.m_count = ntohs ( this->curMsg.m_count );
-            this->curMsg.m_cid = ntohl ( this->curMsg.m_cid );
-            this->curMsg.m_available = ntohl ( this->curMsg.m_available );
-#if 0
-            ca_printf (
-                "%s Cmd=%3d Type=%3d Count=%4d Size=%4d",
-                this->host_name_str,
-                this->curMsg.m_cmmd,
-                this->curMsg.m_dataType,
-                this->curMsg.m_count,
-                this->curMsg.m_postsize);
-            ca_printf (
-                " Avail=%8x Cid=%6d\n",
-                this->curMsg.m_available,
-                this->curMsg.m_cid);
-#endif
-        }
-
-        //
-        // dont allow huge msg body until
-        // the client library supports it
-        //
-        if ( this->curMsg.m_postsize > (unsigned) MAX_TCP ) {
-            this->msgHeaderAvailable = false;
-            ca_printf ("CAC: message body was too large (disconnecting)\n");
-            this->cleanShutdown ();
-            return;
-        }
-
-        //
-        // make sure we have a large enough message body cache
-        //
-        if ( this->curMsg.m_postsize > this->curDataMax ) {
-            void *pData;
-            size_t cacheSize;
-
-            /* 
-             * scalar DBR_STRING is sometimes clipped to the
-             * actual string size so make sure this cache is
-             * as large as one DBR_STRING so they will
-             * not page fault if they read MAX_STRING_SIZE
-             * bytes (instead of the actual string size).
-             */
-            cacheSize = max ( this->curMsg.m_postsize * 2u, MAX_STRING_SIZE );
-            pData = (void *) calloc (1u, cacheSize);
-            if ( ! pData ) {
-                ca_printf ("CAC: not enough memory for message body cache (disconnecting)\n");
+            if ( this->curMsg.m_postsize > ( unsigned ) MAX_TCP ) {
+                this->msgHeaderAvailable = false;
+                ca_printf ( "CAC: message body was too large ( disconnecting )\n" );
                 this->cleanShutdown ();
                 return;
             }
-            if (this->pCurData) {
-                free (this->pCurData);
+
+            //
+            // make sure we have a large enough message body cache
+            //
+            if ( this->curMsg.m_postsize > this->curDataMax ) {
+                void *pData;
+                size_t cacheSize;
+
+                /* 
+                 * scalar DBR_STRING is sometimes clipped to the
+                 * actual string size so make sure this cache is
+                 * as large as one DBR_STRING so they will
+                 * not page fault if they read MAX_STRING_SIZE
+                 * bytes (instead of the actual string size).
+                 */
+                cacheSize = max ( this->curMsg.m_postsize * 2u, MAX_STRING_SIZE );
+                pData = (void *) calloc (1u, cacheSize);
+                if ( ! pData ) {
+                    ca_printf ("CAC: not enough memory for message body cache (disconnecting)\n");
+                    this->cleanShutdown ();
+                    return;
+                }
+                if ( this->pCurData ) {
+                    free ( this->pCurData );
+                }
+                this->pCurData = pData;
+                this->curDataMax = this->curMsg.m_postsize;
             }
-            this->pCurData = pData;
-            this->curDataMax = this->curMsg.m_postsize;
-        }
 
-        bool msgBodyAvailable = this->copyOutBytes ( this->pCurData, this->curMsg.m_postsize );
-        if ( ! msgBodyAvailable ) {
-            return;
-        }
+            if ( this->curMsg.m_postsize > 0u ) {
+                bool msgBodyAvailable = this->recvQue.copyOutBytes ( 
+                            this->pCurData, this->curMsg.m_postsize );
+                if ( ! msgBodyAvailable ) {
+                    return;
+                }
+            }
 
-        semBinaryGive ( this->recvThreadRingBufferSpaceAvailableSignal );
+            semBinaryGive ( this->recvThreadRingBufferSpaceAvailableSignal );
+        }
 
         /*
          * execute the response message
@@ -1118,62 +1415,388 @@ inline int tcpiiu::requestStubStatus ()
     }
 }
 
-int tcpiiu::writeRequest ( unsigned serverId, unsigned type, unsigned nElem, const void *pValue )
+int tcpiiu::writeRequest ( nciu &chan, unsigned type, unsigned nElem, const void *pValue )
 {
-    return this->comQueSend::writeRequest ( serverId, type,  nElem,  pValue );
-}
+    bufferReservoir reservoir;
+    unsigned size, postcnt;
+    bool stringOptim;
 
-int tcpiiu::writeNotifyRequest ( unsigned ioId, unsigned serverId, unsigned type, unsigned nElem, const void *pValue )
-{
-    if ( this->ca_v41_ok () ) {
-        return this->comQueSend::writeNotifyRequest ( ioId, serverId, type,  nElem,  pValue );
+    if ( ! this->sendQue.dbr_type_ok ( type ) ) {
+        return ECA_BADTYPE;
+    }
+
+    if ( nElem > 0xffff) {
+        return ECA_BADCOUNT;
+    }
+
+    if ( type == DBR_STRING && nElem == 1 ) {
+        char *pstr = (char *) pValue;
+        size = strlen ( pstr ) +1;
+        stringOptim = true;
     }
     else {
+        size = dbr_size_n ( type, nElem );
+        stringOptim = false;
+    }
+
+    postcnt = CA_MESSAGE_ALIGN ( size );
+    if ( postcnt > 0xffff ) {
+        return ECA_BADCOUNT;
+    }
+
+    if ( this->sendQue.flushThreshold ( postcnt + 16u ) ) {
+        this->flushToWire ( true );
+    }
+
+    osiAutoMutex autoMutex ( this->mutex );
+
+    int status = this->sendQue.reserveSpace ( postcnt + 16u );
+    if ( status == ECA_NORMAL ) {
+        if ( ! chan.verifyConnected ( *this ) ) {
+            status = ECA_DISCONNCHID;
+        }
+        else {
+            this->sendQue.pushUInt16 ( CA_PROTO_WRITE ); // cmd
+            this->sendQue.pushUInt16 ( postcnt ); // postsize
+            this->sendQue.pushUInt16 ( type ); // dataType
+            this->sendQue.pushUInt16 ( nElem ); // count
+            this->sendQue.pushUInt32 ( chan.getSID () ); // cid
+            this->sendQue.pushUInt32 ( ~0UL ); // available 
+            if ( stringOptim ) {
+                this->sendQue.pushString ( static_cast < const char * > ( pValue ), size );  
+            }
+            else {
+                this->sendQue.push_dbr_type ( type, pValue, nElem );  
+            }
+            this->sendQue.pushString ( nillBytes, postcnt - size );
+        }
+    }
+
+    return status;
+}
+
+int tcpiiu::writeNotifyRequest ( nciu &chan, cacNotify &notify, unsigned type,  
+                                unsigned nElem, const void *pValue )
+{
+    ca_uint32_t size, postcnt;
+    bool stringOptim;
+
+    if ( ! this->ca_v41_ok () ) {
         return ECA_NOSUPPORT;
     }
-}
 
-int tcpiiu::readCopyRequest ( unsigned ioId, unsigned serverId, unsigned type, unsigned nElem )
-{
-    return this->comQueSend::readCopyRequest ( ioId, serverId, type,  nElem );
-}
-
-int tcpiiu::readNotifyRequest ( unsigned ioId, unsigned serverId, unsigned type, unsigned nElem )
-{
-    return this->comQueSend::readNotifyRequest ( ioId, serverId, type,  nElem );
-}
-
-int tcpiiu::createChannelRequest ( unsigned clientId, const char *pName, unsigned nameLength )
-{
-    return this->comQueSend::createChannelRequest ( clientId, pName, nameLength );
-}
-
-int tcpiiu::clearChannelRequest ( unsigned clientId, unsigned serverId )
-{
-    return this->comQueSend::clearChannelRequest ( clientId, serverId );
-}
-
-int tcpiiu::subscriptionRequest ( unsigned ioId, unsigned serverId, unsigned type, 
-                                 unsigned nElem, unsigned mask, bool enablePreemptionDuringFlush  )
-{
-    return this->comQueSend::subscriptionRequest ( ioId, serverId, type, nElem, 
-                        mask, enablePreemptionDuringFlush );
-}
-
-int tcpiiu::subscriptionCancelRequest ( unsigned ioId, unsigned serverId, unsigned type, unsigned nElem )
-{
-    return this->comQueSend::subscriptionCancelRequest ( ioId, serverId, type, nElem );
-}
-
-void tcpiiu::processIncomingAndDestroySelfIfDisconnected ()
-{
-    if ( this->state == iiu_disconnected ) {
-        this->suicide ();
+    if ( ! this->sendQue.dbr_type_ok ( type ) ) {
+        return ECA_BADTYPE;
     }
-    else if ( this->recvMessagePending ) {
-        this->recvMessagePending = false;
-        this->postMsg ();
+
+    if ( nElem > 0xffff ) {
+        return ECA_BADCOUNT;
     }
+
+    if ( type == DBR_STRING && nElem == 1 ) {
+        char *pstr = (char *) pValue;
+        size = strlen ( pstr ) +1;
+        stringOptim = true;
+    }
+    else {
+        size = dbr_size_n ( type, nElem );
+        stringOptim = false;
+    }
+    postcnt = CA_MESSAGE_ALIGN ( size );
+    if ( postcnt > 0xffff ) {
+        return ECA_BADCOUNT;
+    }
+
+    if ( this->sendQue.flushThreshold ( postcnt + 16u ) ) {
+        this->flushToWire ( true );
+    }
+
+    osiAutoMutex autoMutex ( this->mutex );
+
+    int status = this->sendQue.reserveSpace ( postcnt + 16u );
+    if ( status == ECA_NORMAL ) {
+        if ( ! chan.verifyConnected ( *this ) ) {
+            status = ECA_DISCONNCHID;
+        }
+        else {
+            netWriteNotifyIO * pIO = new netWriteNotifyIO ( chan, notify );
+            if ( ! pIO ) {
+                status = ECA_ALLOCMEM;
+            }
+            else {
+                this->ioTable.add ( *pIO );
+                chan.tcpiiuPrivateListOfIO::eventq.add ( *pIO );
+                this->sendQue.pushUInt16 ( CA_PROTO_WRITE_NOTIFY ); // cmd
+                this->sendQue.pushUInt16 ( postcnt ); // postsize
+                this->sendQue.pushUInt16 ( type ); // dataType
+                this->sendQue.pushUInt16 ( nElem ); // count
+                this->sendQue.pushUInt32 ( chan.getSID () ); // cid
+                this->sendQue.pushUInt32 ( pIO->getID () ); // available 
+                if ( stringOptim ) {
+                    this->sendQue.pushString ( static_cast < const char * > ( pValue ), size );  
+                }
+                else {
+                    this->sendQue.push_dbr_type ( type, pValue, nElem );  
+                }
+                this->sendQue.pushString ( nillBytes, postcnt - size );
+            }
+        }
+    }
+
+    return status;
+}
+
+int tcpiiu::readCopyRequest ( nciu &chan, unsigned type, unsigned nElem, void *pValue )
+{
+    if ( nElem > 0xffff) {
+        return ECA_BADCOUNT;
+    }
+    if ( type > 0xffff) {
+        return ECA_BADTYPE;
+    }
+
+    if ( this->sendQue.flushThreshold ( 16u ) ) {
+        this->flushToWire ( true );
+    }
+
+    osiAutoMutex autoMutex ( this->mutex );
+
+    int status = this->sendQue.reserveSpace ( 16u );
+    if ( status == ECA_NORMAL ) {
+        if ( ! chan.verifyConnected ( *this ) ) {
+            status = ECA_DISCONNCHID;
+        }
+        else {
+            netReadCopyIO *pIO = new netReadCopyIO ( chan, type, nElem, pValue, 
+                        this->pCAC ()->readSequenceOfOutstandingIO () );
+            if ( ! pIO ) {
+                status = ECA_ALLOCMEM;
+            }
+            else {
+                this->ioTable.add ( *pIO );
+                chan.tcpiiuPrivateListOfIO::eventq.add ( *pIO );
+                this->sendQue.pushUInt16 ( CA_PROTO_READ ); // cmd
+                this->sendQue.pushUInt16 ( 0u ); // postsize
+                this->sendQue.pushUInt16 ( type ); // dataType
+                this->sendQue.pushUInt16 ( nElem ); // count
+                this->sendQue.pushUInt32 ( chan.getSID () ); // cid
+                this->sendQue.pushUInt32 ( pIO->getID () ); // available 
+            }
+        }
+    }
+
+    return status;
+}
+
+int tcpiiu::readNotifyRequest ( nciu &chan, cacNotify &notify, 
+                               unsigned type, unsigned nElem )
+{
+    if ( nElem > 0xffff) {
+        return ECA_BADCOUNT;
+    }
+    if ( type > 0xffff) {
+        return ECA_BADTYPE;
+    }
+
+    if ( this->sendQue.flushThreshold ( 16u ) ) {
+        this->flushToWire ( true );
+    }
+
+    osiAutoMutex autoMutex ( this->mutex );
+
+    int status = this->sendQue.reserveSpace ( 16u );
+    if ( status == ECA_NORMAL ) {
+        if ( ! chan.verifyConnected ( *this ) ) {
+            status = ECA_DISCONNCHID;
+        }
+        else {
+            netReadNotifyIO *pIO = new netReadNotifyIO ( chan, notify );
+            if ( ! pIO ) {
+                status = ECA_ALLOCMEM;
+            }
+            else {
+                this->ioTable.add ( *pIO );
+                chan.tcpiiuPrivateListOfIO::eventq.add ( *pIO );
+                this->sendQue.pushUInt16 ( CA_PROTO_READ_NOTIFY ); // cmd
+                this->sendQue.pushUInt16 ( 0u ); // postsize
+                this->sendQue.pushUInt16 ( type ); // dataType
+                this->sendQue.pushUInt16 ( nElem ); // count
+                this->sendQue.pushUInt32 ( chan.getSID () ); // cid
+                this->sendQue.pushUInt32 ( pIO->getID () ); // available 
+            }
+        }
+    }
+
+    return status;
+}
+
+int tcpiiu::createChannelRequest ( nciu &chan )
+{
+    const char *pName;
+    unsigned nameLength;
+    ca_uint32_t identity;
+    if ( this->ca_v44_ok () ) {
+        identity = chan.getCID ();
+        pName = chan.pName ();
+        nameLength = chan.nameLen ();
+    }
+    else {
+        identity = chan.getSID ();
+        pName = 0;
+        nameLength = 0u;
+    }
+
+    unsigned postCnt = CA_MESSAGE_ALIGN ( nameLength );
+
+    if ( postCnt > 0xffff ) {
+        return ECA_INTERNAL;
+    }
+
+    if ( this->sendQue.flushThreshold ( postCnt + 16u ) ) {
+        this->flush ();
+    }
+
+    osiAutoMutex autoMutex ( this->mutex );
+
+    int status = this->sendQue.reserveSpace ( postCnt + 16u );
+    if ( status == ECA_NORMAL ) {
+        if ( ! chan.verifyIIU ( *this ) ) {
+            status = ECA_DISCONNCHID;
+        }
+        else {
+            this->sendQue.pushUInt16 ( CA_PROTO_CLAIM_CIU ); // cmd
+            this->sendQue.pushUInt16 ( postCnt ); // postsize
+            this->sendQue.pushUInt16 ( 0u ); // dataType
+            this->sendQue.pushUInt16 ( 0u ); // count
+            this->sendQue.pushUInt32 ( identity ); // cid
+            //
+            // The available field is used (abused)
+            // here to communicate the minor version number
+            // starting with CA 4.1.
+            //
+            this->sendQue.pushUInt32 ( CA_MINOR_VERSION ); // available 
+            if ( nameLength ) {
+                this->sendQue.pushString ( pName, nameLength );
+            }
+            if ( postCnt > nameLength ) {
+                this->sendQue.pushString ( nillBytes, postCnt - nameLength );
+            }
+        }
+    }
+
+    return status;
+}
+
+int tcpiiu::clearChannelRequest ( nciu &chan )
+{
+    if ( this->sendQue.flushThreshold ( 16u ) ) {
+        this->flushToWire ( true );
+    }
+
+    osiAutoMutex autoMutex ( this->mutex );
+
+    int status = this->sendQue.reserveSpace ( 16u );
+    if ( status == ECA_NORMAL ) {
+        if ( ! chan.verifyConnected ( *this ) ) {
+            status = ECA_DISCONNCHID;
+        }
+        else {
+            baseNMIU *pNMIU;
+            while ( pNMIU = chan.tcpiiuPrivateListOfIO::eventq.get () ) {
+                this->ioTable.remove ( *pNMIU );
+                pNMIU->subscriptionCancelMsg ();
+                delete pNMIU;
+            }
+            this->sendQue.pushUInt16 ( CA_PROTO_CLEAR_CHANNEL ); // cmd
+            this->sendQue.pushUInt16 ( 0u ); // postsize
+            this->sendQue.pushUInt16 ( 0u ); // dataType
+            this->sendQue.pushUInt16 ( 0u ); // count
+            this->sendQue.pushUInt32 ( chan.getSID () ); // cid
+            this->sendQue.pushUInt32 ( chan.getCID () ); // available 
+        }
+    }
+
+    return status;
+}
+
+int tcpiiu::subscriptionRequest ( netSubscription &subscr, bool userThread )
+{
+    if ( subscr.getCount () > 0xffff ) {
+        return ECA_BADCOUNT;
+    }
+
+    if ( subscr.getType () > 0xffff ) {
+        return ECA_BADTYPE;
+    }
+
+    if ( subscr.getMask () > 0xffff ) {
+        return ECA_BADMASK;
+    }
+
+    if ( this->sendQue.flushThreshold ( 32u ) ) {
+        if ( userThread ) {
+            this->flushToWire ( true );
+        }
+        else {
+            this->flush ();
+        }
+    }
+
+    osiAutoMutex autoMutex ( this->mutex );
+
+    int status = this->sendQue.reserveSpace ( 32u );
+    if ( status == ECA_NORMAL ) {
+        if ( ! subscr.channel ().verifyConnected ( *this ) ) {
+            status = ECA_NORMAL;
+        }
+        else {
+            this->ioTable.add ( subscr );
+            subscr.channel ().tcpiiuPrivateListOfIO::eventq.add ( subscr );
+
+            // header
+            this->sendQue.pushUInt16 ( CA_PROTO_EVENT_ADD ); // cmd
+            this->sendQue.pushUInt16 ( 16u ); // postsize
+            this->sendQue.pushUInt16 ( static_cast < ca_uint16_t > ( subscr.getType () ) ); // dataType
+            this->sendQue.pushUInt16 ( static_cast < ca_uint16_t > ( subscr.getCount () ) ); // count
+            this->sendQue.pushUInt32 ( subscr.channel ().getSID () ); // cid
+            this->sendQue.pushUInt32 ( subscr.getID () ); // available 
+
+            // extension
+            this->sendQue.pushFloat32 ( 0.0 ); // m_lval
+            this->sendQue.pushFloat32 ( 0.0 ); // m_hval
+            this->sendQue.pushFloat32 ( 0.0 ); // m_toval
+            this->sendQue.pushUInt16 ( static_cast < ca_uint16_t > ( subscr.getMask () ) ); // m_mask
+            this->sendQue.pushUInt16 ( 0u ); // m_pad
+        }
+    }
+
+    return status;
+}
+
+int tcpiiu::subscriptionCancelRequest ( netSubscription &subscr )
+{
+    if ( this->sendQue.flushThreshold ( 16u ) ) {
+        this->flushToWire ( true );
+    }
+
+    osiAutoMutex autoMutex ( this->mutex );
+
+    int status = this->sendQue.reserveSpace ( 16u );
+    if ( status == ECA_NORMAL ) {
+        if ( ! subscr.channel ().verifyConnected ( *this ) ) {
+            status = ECA_DISCONNCHID;
+        }
+        else {
+            this->sendQue.pushUInt16 ( CA_PROTO_EVENT_CANCEL ); // cmd
+            this->sendQue.pushUInt16 ( 0u ); // postsize
+            this->sendQue.pushUInt16 ( static_cast < ca_uint16_t > ( subscr.getType () ) ); // dataType
+            this->sendQue.pushUInt16 ( static_cast < ca_uint16_t > ( subscr.getCount () ) ); // count
+            this->sendQue.pushUInt32 ( subscr.channel ().getSID () ); // cid
+            this->sendQue.pushUInt32 ( subscr.getID () ); // available
+        }
+    }
+
+    return status;
 }
 
 void tcpiiu::lastChannelDetachNotify ()
@@ -1181,32 +1804,187 @@ void tcpiiu::lastChannelDetachNotify ()
     this->cleanShutdown ();
 }
 
-void tcpiiu::installChannelPendingClaim ( nciu &chan )
+bool tcpiiu::flushToWire ( bool userThread )
 {
-    chan.attachChanToIIU ( *this );
-    this->lock ();
-    this->claimsPending = true;
-    this->unlock ();
-    // wake up send thread which ultimately sends the claim message
-    semBinaryGive ( this->sendThreadFlushSignal );
-}
+    bool success = true;
 
-// the recv thread is not permitted to flush as this
-// can result in a push / pull deadlock on the TCP pipe.
-// Instead the recv thread scheduals the flush with the 
-// send thread which runs at a higher priority than the 
-// send thread.
-bool tcpiiu::flushToWirePermit ()
-{
-    if ( this->clientCtx ().currentThreadIsRecvProcessThread () ) {
-        this->lock ();
-        this->flushPending = true;
-        this->unlock ();
-        semBinaryGive ( this->sendThreadFlushSignal );
-        return false;
-    }
-    else {
+    // the recv thread is not permitted to flush as this
+    // can result in a push / pull deadlock on the TCP pipe,
+    // but in that case we still schedual the flush through 
+    // the higher priority send thread
+    if ( ! pCAC ()->flushPermit () ) {
+        this->flush ();
         return true;
     }
+
+    // only one thread at a time can perform a flush. Nevertheless,
+    // the primary lock must not be held while sending in order
+    // to prevent push pull deadlocks
+    osiAutoMutex autoFlushMutex ( this->flushMutex );
+
+    if ( userThread ) {
+        this->pCAC ()->enableCallbackPreemption ();
+    }
+
+    while ( true ) {
+        comBuf * pBuf;
+
+        {
+            osiAutoMutex autoMutex ( this->mutex );
+            pBuf = this->sendQue.popNextComBufToSend ();
+        }
+
+        if ( ! pBuf ) {
+            break;
+        }
+
+        success = pBuf->flushToWire ( *this );
+
+        pBuf->destroy ();
+
+        if ( ! success ) {
+            osiAutoMutex autoMutex ( this->mutex );
+            while ( ( pBuf = this->sendQue.popNextComBufToSend () ) ) {
+                pBuf->destroy ();
+            }
+            break; 
+        }
+    }
+
+    if ( userThread ) {
+        this->pCAC ()->disableCallbackPreemption ();
+    }
+
+    return success;
 }
 
+void tcpiiu::ioCompletionNotify ( unsigned id, unsigned type, 
+                              unsigned long count, const void *pData )
+{
+    osiAutoMutex autoMutex ( this->mutex );
+    baseNMIU * pmiu = this->ioTable.lookup ( id );
+    if ( pmiu ) {
+        pmiu->completionNotify ( type, count, pData );
+    }
+}
+
+void tcpiiu::ioExceptionNotify ( unsigned id, int status, const char *pContext )
+{
+    osiAutoMutex autoMutex ( this->mutex );
+    baseNMIU * pmiu = this->ioTable.lookup ( id );
+    if ( pmiu ) {
+        pmiu->exceptionNotify ( status, pContext );
+    }
+}
+
+void tcpiiu::ioExceptionNotify ( unsigned id, int status, 
+                   const char *pContext, unsigned type, unsigned long count )
+{
+    osiAutoMutex autoMutex ( this->mutex );
+    baseNMIU * pmiu = this->ioTable.lookup ( id );
+    if ( pmiu ) {
+        pmiu->exceptionNotify ( status, pContext, type, count );
+    }
+}
+
+void tcpiiu::ioCompletionNotifyAndDestroy ( unsigned id )
+{
+    baseNMIU * pmiu;
+
+    {
+        osiAutoMutex autoMutex ( this->mutex );
+        pmiu = this->ioTable.remove ( id );
+        if ( pmiu ) {
+            pmiu->channel ().tcpiiuPrivateListOfIO::eventq.remove ( *pmiu );
+        }
+    }
+
+    if ( pmiu ) {
+        pmiu->completionNotify ();
+        delete pmiu; 
+    }
+}
+
+void tcpiiu::ioCompletionNotifyAndDestroy ( unsigned id, 
+                        unsigned type, unsigned long count, const void *pData )
+{
+    baseNMIU * pmiu;
+
+    {
+        osiAutoMutex autoMutex ( this->mutex );
+        pmiu = this->ioTable.remove ( id );
+        if ( pmiu ) {
+            pmiu->channel ().tcpiiuPrivateListOfIO::eventq.remove ( *pmiu );
+        }
+    }
+
+    if ( pmiu ) {
+        pmiu->completionNotify ( type, count, pData );
+        delete pmiu;
+    }
+}
+
+void tcpiiu::ioExceptionNotifyAndDestroy ( unsigned id, int status, const char *pContext )
+{
+    baseNMIU * pmiu;
+
+    {
+        osiAutoMutex autoMutex ( this->mutex );
+        pmiu = this->ioTable.remove ( id );
+        if ( pmiu ) {
+            pmiu->channel ().tcpiiuPrivateListOfIO::eventq.remove ( *pmiu );
+        }
+    }
+
+    if ( pmiu ) {
+        pmiu->exceptionNotify ( status, pContext );
+        delete pmiu;
+    }
+}
+
+void tcpiiu::ioExceptionNotifyAndDestroy ( unsigned id, int status, 
+                        const char *pContext, unsigned type, unsigned long count )
+{
+    baseNMIU * pmiu;
+
+    {
+        osiAutoMutex autoMutex ( this->mutex );
+        pmiu = this->ioTable.remove ( id );
+        if ( pmiu ) {
+            pmiu->channel ().tcpiiuPrivateListOfIO::eventq.remove ( *pmiu );
+        }
+    }
+
+    if ( pmiu ) {
+        pmiu->exceptionNotify ( status, pContext, type, count );
+        delete pmiu; 
+    }
+}
+
+
+// resubscribe for monitors from this channel
+void tcpiiu::subscribeAllIO ( nciu &chan )
+{
+    osiAutoMutex autoMutex ( this->mutex );
+    if ( chan.verifyConnected ( *this ) ) {
+        tsDLIterBD < baseNMIU > iter = chan.tcpiiuPrivateListOfIO::eventq.first ();
+        while ( iter.valid () ) {
+            iter->subscriptionMsg ();
+            iter++;
+        }
+    }
+}
+
+// cancel IO operations and monitor subscriptions
+void tcpiiu::disconnectAllIO ( nciu &chan )
+{
+    osiAutoMutex autoMutex ( this->mutex );
+    if ( chan.verifyConnected ( *this ) ) {
+        tsDLIterBD < baseNMIU > iter = chan.tcpiiuPrivateListOfIO::eventq.first ();
+        while ( iter.valid () ) {
+            tsDLIterBD < baseNMIU > next = iter.itemAfter ();
+            iter->disconnect ( this->pHostName () );
+            iter = next;
+        }
+    }
+}

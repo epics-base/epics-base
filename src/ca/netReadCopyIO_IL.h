@@ -18,26 +18,6 @@
 #ifndef netReadCopyIO_ILh
 #define netReadCopyIO_ILh
 
-//
-// we need to be careful about exporting a raw IO
-// pointer because the IO object may be deleted 
-// at any time when the channel disconnects or the
-// IO completes
-//
-inline bool netReadCopyIO::factory ( nciu &chan, unsigned type, 
-    unsigned long count, void *pValue, unsigned seqNumber, unsigned &id )
-{
-    netReadCopyIO *pIO = new netReadCopyIO ( chan, 
-        type, count, pValue, seqNumber );
-    if ( pIO ) {
-        id = pIO->getId ();
-        return true;
-    }
-    else {
-        return false;
-    }
-}
-
 inline void * netReadCopyIO::operator new ( size_t size )
 {
     return netReadCopyIO::freeList.allocate ( size );

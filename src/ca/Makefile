@@ -50,10 +50,11 @@ LIBSRCS += syncGroupNotify.cpp
 LIBSRCS += localHostName.cpp
 LIBSRCS += comQueRecv.cpp
 LIBSRCS += comQueSend.cpp
-LIBSRCS += cacPrivateListOfIO.cpp
+LIBSRCS += tcpiiuPrivateListOfIO.cpp
 LIBSRCS += hostNameCache.cpp
 LIBSRCS += ioCounter.cpp
 LIBSRCS += msgForMultiplyDefinedPV.cpp
+LIBSRCS += limboiiu.cpp
 
 LIBRARY=ca
 

@@ -93,9 +93,10 @@ public:
     void operator delete ( void *pCadaver, size_t size );
 
 private:
-    oldChannel          &chan;
+    oldChannel &chan;
+
     caEventCallBackFunc *pFunc;
-    void                *pPrivate;
+    void *pPrivate;
 
     void completionNotify ( unsigned type, unsigned long count, const void *pData );
     void exceptionNotify ( int status, const char *pContext );

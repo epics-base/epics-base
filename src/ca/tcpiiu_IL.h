@@ -16,36 +16,27 @@
  *	505 665 1831
  */
 
-inline osiSockAddr tcpiiu::address () const
-{
-    return this->ipToA.address ();
-}
-
-inline void * tcpiiu::operator new (size_t size)
-{ 
-    return tcpiiu::freeList.allocate (size);
-}
-
-inline void tcpiiu::operator delete (void *pCadaver, size_t size)
-{ 
-    tcpiiu::freeList.release (pCadaver,size);
-}
-
 inline bool tcpiiu::fullyConstructed () const
 {
     return this->fullyConstructedFlag;
 }
 
 inline void tcpiiu::hostName ( char *pBuf, unsigned bufLength ) const
-{
-    this->ipToA.hostName ( pBuf, bufLength );
+{   
+    osiAutoMutex autoMutex ( this->mutex );
+    if ( this->pHostNameCache ) {
+        this->pHostNameCache->hostName ( pBuf, bufLength );
+    }
+    else {
+        netiiu::hostName ( pBuf, bufLength );
+    }
 }
 
 // deprecated - please dont use
 inline const char * tcpiiu::pHostName () const
 {
     static char nameBuf [128];
-    this->ipToA.hostName ( nameBuf, sizeof ( nameBuf ) );
+    this->hostName ( nameBuf, sizeof ( nameBuf ) );
     return nameBuf; // ouch !!
 }
 
@@ -56,25 +47,26 @@ inline SOCKET tcpiiu::getSock () const
 
 inline void tcpiiu::flush ()
 {
-    this->lock ();
-    this->flushPending = true;
-    this->unlock ();
+    {
+        osiAutoMutex autoMutex ( this->mutex );
+        this->flushPending = true;
+    }
     semBinaryGive ( this->sendThreadFlushSignal );
 }
 
 inline bool tcpiiu::ca_v44_ok () const
 {
-    return CA_V44 ( CA_PROTOCOL_VERSION, this->minorProtocolVersionNumber );
+    return CA_V44 ( CA_PROTOCOL_VERSION, this->minorProtocolVersion );
 }
 
 inline bool tcpiiu::ca_v42_ok () const
 {
-    return CA_V42 ( CA_PROTOCOL_VERSION, this->minorProtocolVersionNumber );
+    return CA_V42 ( CA_PROTOCOL_VERSION, this->minorProtocolVersion );
 }
 
 inline bool tcpiiu::ca_v41_ok () const
 {
-    return CA_V41 ( CA_PROTOCOL_VERSION, this->minorProtocolVersionNumber );
+    return CA_V41 ( CA_PROTOCOL_VERSION, this->minorProtocolVersion );
 }
 
 inline bool tcpiiu::alive () const
@@ -87,3 +79,9 @@ inline bool tcpiiu::alive () const
         return false;
     }
 }
+
+inline bhe * tcpiiu::getBHE () const
+{
+    return this->pBHE;
+}
+

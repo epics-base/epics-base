@@ -15,12 +15,12 @@
  *	505 665 1831
  */
 
-#ifndef netiiu_ILh
-#define netiiu_ILh
+#include "iocinf.h"
 
-inline cac * netiiu::pCAC () const
+limboiiu limboIIU;
+
+limboiiu::limboiiu () : netiiu ( 0 )
 {
-    return this->pClientCtx;
 }
 
-#endif // netiiu_ILh
+

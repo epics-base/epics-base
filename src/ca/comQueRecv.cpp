@@ -17,36 +17,42 @@
 #include "iocinf.h"
 #include "comBuf_IL.h"
 
+comQueRecv::comQueRecv ()
+{
+}
+
 comQueRecv::~comQueRecv ()
+{
+    this->clear ();
+}
+
+void comQueRecv::clear ()
 {
     comBuf *pBuf;
 
-    this->mutex.lock ();
     while ( ( pBuf = this->bufs.get () ) ) {
         pBuf->destroy ();
     }
-    this->mutex.unlock ();
 }
 
 unsigned comQueRecv::occupiedBytes () const
 {
-    this->mutex.lock ();
-
     unsigned count = this->bufs.count ();
     unsigned nBytes;
-    if ( count >= 2u ) {
-        nBytes = this->bufs.first ()->occupiedBytes ();
-        nBytes += this->bufs.last ()->occupiedBytes ();
-        nBytes += ( count - 2u ) * comBuf::maxBytes ();
+
+    if ( count == 0u ) {
+        nBytes = 0u;
     }
     else if ( count == 1u ) {
         nBytes = this->bufs.first ()->occupiedBytes ();
     }
     else {
-        nBytes = 0u;
+        // this requires the compress operation in 
+        // copyIn ( comBuf & bufIn )
+        nBytes = this->bufs.first ()->occupiedBytes ();
+        nBytes += this->bufs.last ()->occupiedBytes ();
+        nBytes += ( count - 2u ) * comBuf::maxBytes ();
     }
-
-    this->mutex.unlock ();
 
     return nBytes;
 }
@@ -55,11 +61,8 @@ bool comQueRecv::copyOutBytes ( void *pBuf, unsigned nBytes )
 {
     char *pCharBuf = static_cast < char * > ( pBuf );
 
-    this->mutex.lock ();
-
     // dont return partial message
     if ( nBytes > this->occupiedBytes () ) {
-        this->mutex.unlock ();
         return false;
     }
 
@@ -74,40 +77,22 @@ bool comQueRecv::copyOutBytes ( void *pBuf, unsigned nBytes )
         }
     }
 
-    this->mutex.unlock ();
-
     return true;
 }
 
-unsigned comQueRecv::fillFromWire ()
+void comQueRecv::pushLastComBufReceived ( comBuf & bufIn )
 {
-    // this approach requires that only one thread performs fill
-    // but its advantage is that the lock is not held while filling
-
-    comBuf *pComBuf = new comBuf;
-    if ( ! pComBuf ) {
-        // no way to be informed when memory is available
-        threadSleep ( 0.5 );
-        return 0u;
-    }
-
-    unsigned nNewBytes = pComBuf->fillFromWire ( *this );
-
-    this->mutex.lock ();
-
     comBuf *pLastBuf = this->bufs.last ();
     if ( pLastBuf ) {
-        pLastBuf->copyIn ( *pComBuf );
+        pLastBuf->copyIn ( bufIn );
     }
-    if ( pComBuf->occupiedBytes () ) {
-        this->bufs.add ( *pComBuf );
+    if ( bufIn.occupiedBytes () ) {
+        // move occupied bytes to the start of the buffer
+        bufIn.compress ();
+        this->bufs.add ( bufIn );
     }
     else {
-        pComBuf->destroy ();
+        bufIn.destroy ();
     }
-
-    this->mutex.unlock ();
-
-    return nNewBytes;
 }
 

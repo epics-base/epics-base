@@ -66,12 +66,14 @@ inline bool comBuf::copyInAllBytes ( const void *pBuf, unsigned nBytes )
 
 inline unsigned comBuf::copyInBytes ( const void *pBuf, unsigned nBytes )
 {
-    unsigned available = this->unoccupiedBytes ();
-    if ( nBytes > available ) {
-        nBytes = available;
+    if ( nBytes > 0u ) {
+        unsigned available = this->unoccupiedBytes ();
+        if ( nBytes > available ) {
+            nBytes = available;
+        }
+        memcpy ( &this->buf[this->nextWriteIndex], pBuf, nBytes);
+        this->nextWriteIndex += nBytes;
     }
-    memcpy ( &this->buf[this->nextWriteIndex], pBuf, nBytes);
-    this->nextWriteIndex += nBytes;
     return nBytes;
 }
 
@@ -119,11 +121,22 @@ inline unsigned comBuf::maxBytes ()
     return comBufSize;
 }
 
-inline bool comBuf::flushToWire ( class comQueSend &que, bool enablePreemptionDuringFlush )
+inline void comBuf::compress ()
+{
+    if ( this->nextReadIndex > 0u ) {
+        memmove ( this->buf, &this->buf[this->nextReadIndex], 
+            this->nextWriteIndex - this->nextReadIndex );
+        this->nextWriteIndex -= this->nextReadIndex;
+        this->nextReadIndex = 0u;
+    }
+}
+
+inline bool comBuf::flushToWire ( wireSendAdapter &wire )
 {
     unsigned occupied = this->occupiedBytes ();
     while ( occupied ) {
-        unsigned nBytes = que.sendBytes ( &this->buf[this->nextReadIndex], occupied, enablePreemptionDuringFlush );
+        unsigned nBytes = wire.sendBytes ( &this->buf[this->nextReadIndex], 
+                occupied );
         if ( nBytes == 0u ) {
             this->nextReadIndex = this->nextWriteIndex;
             return false;
@@ -134,9 +147,9 @@ inline bool comBuf::flushToWire ( class comQueSend &que, bool enablePreemptionDu
     return true;
 }
 
-inline unsigned comBuf::fillFromWire ( class comQueRecv &que )
+inline unsigned comBuf::fillFromWire ( wireRecvAdapter &wire )
 {
-    unsigned nNewBytes = que.recvBytes ( &this->buf[this->nextWriteIndex], 
+    unsigned nNewBytes = wire.recvBytes ( &this->buf[this->nextWriteIndex], 
                     sizeof ( this->buf ) - this->nextWriteIndex );
     this->nextWriteIndex += nNewBytes;
     return nNewBytes;

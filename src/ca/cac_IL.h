@@ -49,3 +49,9 @@ inline void cac::ipAddrToAsciiAsynchronousRequestInstall ( ipAddrToAsciiAsynchro
     request.ioInitiate ( this->ipToAEngine );
 }
 
+inline unsigned cac::getInitializingThreadsPriority () const
+{
+    return this->initializingThreadsPriority;
+}
+
+

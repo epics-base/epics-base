@@ -15,12 +15,6 @@
  *	505 665 1831
  */
 
-#ifndef netiiu_ILh
-#define netiiu_ILh
 
-inline cac * netiiu::pCAC () const
-{
-    return this->pClientCtx;
-}
 
-#endif // netiiu_ILh
+

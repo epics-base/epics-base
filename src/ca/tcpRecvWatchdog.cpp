@@ -13,10 +13,9 @@
 #include "iocinf.h"
 
 tcpRecvWatchdog::tcpRecvWatchdog 
-    ( double periodIn, osiTimerQueue & queueIn, bool echoProtocolAcceptedIn ) :
+    ( double periodIn, osiTimerQueue & queueIn ) :
             osiTimer ( queueIn ),
     period ( periodIn ),
-    echoProtocolAccepted ( echoProtocolAcceptedIn ),
     responsePending ( false ),
     beaconAnomaly ( true )
 {
@@ -37,10 +36,7 @@ void tcpRecvWatchdog::expire ()
         this->forcedShutdown ();
     }
     else {
-        this->echoRequest ();
-        if ( this->echoProtocolAccepted ) {
-            this->responsePending = true;
-        }
+        this->responsePending = this->setEchoRequestPending ();
     }
 }
 
@@ -112,9 +108,5 @@ void tcpRecvWatchdog::show ( unsigned level ) const
     if ( level > 0u ) {
         printf ( "\tresponse pending boolean %u, beacon anomaly boolean %u\n",
             this->responsePending, this->beaconAnomaly );
-    }
-    if ( level > 1u ) {
-        printf ( "\techo protocol accepted boolean %u\n",
-            this->echoProtocolAccepted );
     }
 }

@@ -10,11 +10,15 @@
  *  Author: Jeff Hill
  */
 
+#include <limits.h>
+
 #include "iocinf.h"
 #include "netiiu_IL.h"
 #include "nciu_IL.h"
 
-#include "claimMsgCache_IL.h"
+netiiu::netiiu ( cac *pClientCtxIn ) : pClientCtx ( pClientCtxIn )
+{
+}
 
 netiiu::~netiiu ()
 {
@@ -23,7 +27,8 @@ netiiu::~netiiu ()
 
 void netiiu::show ( unsigned level ) const
 {
-    this->lock ();
+    osiAutoMutex autoMutex ( this->mutex );
+
     printf ( "network IO base class\n" );
     if ( level > 1 ) {
         tsDLIterConstBD < nciu > pChan ( this->channelList.first () );
@@ -33,10 +38,9 @@ void netiiu::show ( unsigned level ) const
         }
     }
     if ( level > 2u ) {
-        printf ("\tcac pointer %p\n", &this->cacRef );
+        printf ( "\tcac pointer %p\n", this->pClientCtx );
         this->mutex.show ( level - 2u );
     }
-    this->unlock ();
 }
 
 unsigned netiiu::channelCount () const
@@ -44,69 +48,79 @@ unsigned netiiu::channelCount () const
     return this->channelList.count ();
 }
 
-void netiiu::lock () const
+// cac lock must also be applied when
+// calling this
+void netiiu::attachChannel ( nciu &chan )
 {
-    this->mutex.lock ();
+    osiAutoMutex autoMutex ( this->mutex );
+    this->channelList.add ( chan );
 }
 
-void netiiu::unlock () const
+// cac lock must also be applied when
+// calling this
+void netiiu::detachChannel ( nciu &chan )
 {
-    this->mutex.unlock ();
-}
-
-void netiiu::detachAllChan ()
-{
-    this->lock ();
-    tsDLIterBD <nciu> chan ( this->channelList.first () );
-    while ( chan.valid () ) {
-        tsDLIterBD <nciu> next = chan.itemAfter ();
-        chan->detachChanFromIIU ();
-        chan = next;
+    {
+        osiAutoMutex autoMutex ( this->mutex );
+        this->channelList.remove ( chan );
+        if ( this->channelList.count () == 0u ) {
+            this->lastChannelDetachNotify ();
+        }
     }
-    this->unlock ();
 }
 
-void netiiu::disconnectAllChan ()
+// cac lock must also be applied when
+// calling this
+void netiiu::disconnectAllChan ( netiiu & newiiu )
 {
-    this->lock ();
-    tsDLIterBD <nciu> chan ( this->channelList.first () );
-    while ( chan.valid () ) {
-        tsDLIterBD <nciu> next = chan.itemAfter ();
-        chan->disconnect ();
-        chan = next;
+    tsDLList < nciu > list;
+
+    {
+        osiAutoMutex autoMutex ( this->mutex );
+        tsDLIterBD < nciu > chan ( this->channelList.first () );
+        while ( chan.valid () ) {
+            tsDLIterBD < nciu > next = chan.itemAfter ();
+            this->clearChannelRequest ( *chan );
+            this->channelList.remove ( *chan );
+            chan->disconnect ( newiiu );
+            list.add ( *chan );
+            chan = next;
+        }
     }
-    this->unlock ();
+
+    {
+        osiAutoMutex autoMutex ( newiiu.mutex );
+        newiiu.channelList.add ( list );
+    }
 }
 
 void netiiu::connectTimeoutNotify ()
 {
-    this->lock ();
-    tsDLIterBD <nciu> chan ( this->channelList.first () );
+    osiAutoMutex autoMutex ( this->mutex );
+    tsDLIterBD < nciu > chan ( this->channelList.first () );
     while ( chan.valid () ) {
         chan->connectTimeoutNotify ();
         chan++;
     }
-    this->unlock ();
 }
 
 void netiiu::resetChannelRetryCounts ()
 {
-    this->lock ();
-    tsDLIterBD <nciu> chan ( this->channelList.first () );
+    osiAutoMutex autoMutex ( this->mutex );
+    tsDLIterBD < nciu > chan ( this->channelList.first () );
     while ( chan.valid () ) {
         chan->resetRetryCount ();
         chan++;
     }
-    this->unlock ();
 }
 
 bool netiiu::searchMsg ( unsigned short retrySeqNumber, unsigned &retryNoForThisChannel )
 {
     bool status;
 
-    this->lock ();
+    osiAutoMutex autoMutex ( this->mutex );
 
-    tsDLIterBD <nciu> chan = this->channelList.first ();
+    tsDLIterBD < nciu > chan = this->channelList.first ();
     if ( chan.valid () ) {
         status = chan->searchMsg ( retrySeqNumber, retryNoForThisChannel );
         if ( status ) {
@@ -118,50 +132,8 @@ bool netiiu::searchMsg ( unsigned short retrySeqNumber, unsigned &retryNoForThis
         status = false;
     }
 
-    this->unlock ();
 
     return status;
-}
-
-//
-// considerable extra effort is taken in this routine to 
-// guarantee that the lock is not held while blocking 
-// in ::send () for buffer space.
-//
-void netiiu::sendPendingClaims ( bool v42Ok, claimMsgCache &cache )
-{
-    while ( 1 ) {
-        this->lock ();
-        tsDLIterBD < nciu > chan ( this->channelList.first () );
-        if ( ! chan.valid () ) {
-            this->unlock ();
-            return;
-        }
-        if ( chan->claimSent () ) {
-            this->unlock ();
-            return;
-        }
-        if ( ! chan->setClaimMsgCache ( cache ) ) {
-            this->unlock ();
-            return;
-        }
-        // move channel to the end of the list so that it
-        // will not be considered again for a claim message
-        this->channelList.remove ( *chan );
-        this->channelList.add ( *chan );
-        this->unlock ();
-        
-        int status = cache.deliverMsg ( *this );
-        if ( status != ECA_NORMAL ) {
-            // this indicates diconnect condition 
-            // therefore no cleanup required
-            return;
-        }
-
-        if ( ! v42Ok ) {
-            cache.connectChannel ( this->cacRef );
-        }
-    }
 }
 
 bool netiiu::ca_v42_ok () const
@@ -179,7 +151,7 @@ bool netiiu::pushDatagramMsg ( const caHdr &, const void *, ca_uint16_t )
     return false;
 }
 
-bool netiiu::connectionInProgress ( const char *, const osiSockAddr & ) const
+bool netiiu::isVirtaulCircuit ( const char *, const osiSockAddr & ) const
 {
     return false;
 }
@@ -188,44 +160,63 @@ void netiiu::lastChannelDetachNotify ()
 {
 }
 
-int netiiu::writeRequest ( unsigned, unsigned, unsigned, const void * )
+int netiiu::writeRequest ( nciu &, unsigned, unsigned, const void * )
 {
     return ECA_DISCONNCHID;
 }
 
-int netiiu::writeNotifyRequest ( unsigned, unsigned, unsigned, unsigned, const void * )
+int netiiu::writeNotifyRequest ( nciu &, cacNotify &, unsigned, unsigned, const void * )
 {
     return ECA_DISCONNCHID;
 }
 
-int netiiu::readCopyRequest ( unsigned, unsigned, unsigned, unsigned )
+int netiiu::readCopyRequest ( nciu &, unsigned, unsigned, void * )
 {
     return ECA_DISCONNCHID;
 }
 
-int netiiu::readNotifyRequest ( unsigned, unsigned, unsigned, unsigned )
+int netiiu::readNotifyRequest ( nciu &, cacNotify &, unsigned, unsigned )
 {
     return ECA_DISCONNCHID;
 }
 
-int netiiu::createChannelRequest ( unsigned, const char *, unsigned )
+int netiiu::createChannelRequest ( nciu & )
 {
     return ECA_DISCONNCHID;
 }
 
-int netiiu::clearChannelRequest ( unsigned, unsigned )
+int netiiu::clearChannelRequest ( nciu & )
 {
     return ECA_DISCONNCHID;
 }
 
-int netiiu::subscriptionRequest ( unsigned, unsigned, unsigned, unsigned, unsigned, bool )
+int netiiu::subscriptionRequest ( netSubscription &, bool )
+{
+    return ECA_NORMAL;
+}
+
+int netiiu::subscriptionCancelRequest ( netSubscription & )
 {
     return ECA_DISCONNCHID;
 }
 
-int netiiu::subscriptionCancelRequest ( unsigned, unsigned, unsigned, unsigned )
+void netiiu::hostName ( char *pBuf, unsigned bufLength ) const
 {
-    return ECA_DISCONNCHID;
+    if ( bufLength ) {
+        strncpy ( pBuf, this->pHostName (), bufLength );
+        pBuf[bufLength - 1u] = '\0';
+    }
 }
 
+const char * netiiu::pHostName () const
+{
+    return "<disconnected>";
+}
 
+void netiiu::disconnectAllIO ( nciu & )
+{
+}
+
+void netiiu::subscribeAllIO ( nciu & )
+{
+}

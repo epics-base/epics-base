@@ -31,48 +31,47 @@
 
 tsFreeList < class nciu, 1024 > nciu::freeList;
 
-nciu::nciu ( cac &cacIn, cacChannel &chanIn, const char *pNameIn ) :
-    cacChannelIO ( chanIn ), cacPrivateListOfIO ( cacIn )
-{
-    static const caar defaultAccessRights = { false, false };
-    size_t strcnt;
+static const caar defaultAccessRights = { false, false };
 
-    strcnt = strlen ( pNameIn ) + 1;
+nciu::nciu ( cac &cacIn, netiiu &iiuIn, cacChannel &chanIn, 
+            const char *pNameIn ) :
+    cacChannelIO ( chanIn ), 
+    cacCtx ( cacIn ),
+    ar ( defaultAccessRights ),
+    count ( 0 ),
+    piiu ( &iiuIn ),
+    sid ( UINT_MAX ),
+    retry ( 0u ),
+    retrySeqNo ( 0u ),
+    nameLength ( strlen ( pNameIn ) + 1 ),
+    typeCode ( USHRT_MAX ),
+    f_connected ( false ),
+    f_fullyConstructed ( true ),
+    f_previousConn ( false ),
+    f_claimSent ( false )
+{
     // second constraint is imposed by size field in protocol header
-    if ( strcnt > MAX_UDP_SEND - sizeof ( caHdr ) || strcnt > 0xffff ) {
+    if ( this->nameLength > MAX_UDP_SEND - sizeof ( caHdr ) || this->nameLength > 0xffff ) {
         throwWithLocation ( caErrorCode ( ECA_STRTOBIG ) );
     }
 
-    this->pNameStr = new char [ strcnt ];
+    this->pNameStr = new char [ this->nameLength ];
     if ( ! this->pNameStr ) {
         this->f_fullyConstructed = false;
         return;
     }
     strcpy ( this->pNameStr, pNameIn );
-
-    this->piiu = 0u;
-    this->typeCode = USHRT_MAX; /* invalid initial type    */
-    this->count = 0;    /* invalid initial count     */
-    this->sid = UINT_MAX; /* invalid initial server id     */
-    this->ar = defaultAccessRights;
-    this->nameLength = strcnt;
-    this->f_previousConn = false;
-    this->f_connected = false;
-    this->f_fullyConstructed = true;
-    this->f_claimSent = false;
-    this->retry = 0u;
-    this->retrySeqNo = 0u;
-    this->ptrLockCount = 0u;
-    this->ptrUnlockWaitCount = 0u;
-
-    this->cacCtx.registerChannel ( *this );
-
-    this->cacCtx.installDisconnectedChannel ( *this );
-
-    chanIn.attachIO ( *this );
 }
 
 void nciu::destroy ()
+{
+    // this occurs here so that it happens when
+    // a lock is not applied
+    this->piiu->clearChannelRequest ( *this );
+    this->cacCtx.destroyNCIU ( *this );
+}
+
+void nciu::cacDestroy ()
 {
     delete this;
 }
@@ -87,29 +86,11 @@ nciu::~nciu ()
     // this calls virtual functions in the cacChannelIO base
     this->ioReleaseNotify ();
 
-    this->destroyAllIO ();
-
-    this->lockPIIU ();
-
-    if ( this->f_connected && this->piiu ) {
-        this->piiu->clearChannelRequest ( this->getId (), this->sid );
-    }
-
-    this->unlockPIIU ();
-    
-    this->detachChanFromIIU ();
-
-
-    this->cacCtx.unregisterChannel ( *this );
-
     delete [] this->pNameStr;
 }
 
 int nciu::read ( unsigned type, unsigned long countIn, cacNotify &notify )
 {
-    int status;
-    unsigned idCopy;
-
     //
     // fail out if their arguments are invalid
     //
@@ -129,33 +110,11 @@ int nciu::read ( unsigned type, unsigned long countIn, cacNotify &notify )
         countIn = this->count;
     }
     
-    bool success = netReadNotifyIO::factory ( *this, notify, idCopy );
-    if ( ! success ) {
-        return ECA_ALLOCMEM;
-    }
-
-    this->lockPIIU ();
-    if ( this->piiu ) {
-        status = this->piiu->readNotifyRequest ( idCopy, this->sid, type, countIn );
-    }
-    else {
-        status = ECA_DISCONNCHID;
-    }
-    this->unlockPIIU ();
-
-    if ( status != ECA_NORMAL ) {
-        this->cacCtx.ioDestroy ( id );
-    }
-
-    return status;
+    return this->piiu->readNotifyRequest ( *this, notify, type, countIn );
 }
 
 int nciu::read ( unsigned type, unsigned long countIn, void *pValue )
 {
-    unsigned idCopy;
-    bool success;
-    int status;
-
     /* 
      * fail out if channel isnt connected or arguments are 
      * otherwise invalid
@@ -176,26 +135,7 @@ int nciu::read ( unsigned type, unsigned long countIn, void *pValue )
         countIn = this->count;
     }
 
-    success = netReadCopyIO::factory ( *this, type, countIn, pValue, 
-                this->readSequence (), idCopy );
-    if ( ! success ) {
-        return ECA_ALLOCMEM;
-    }
-
-    this->lockPIIU ();
-    if ( this->piiu ) {
-        status = this->piiu->readCopyRequest ( idCopy, this->sid, type, countIn );
-    }
-    else {
-        status = ECA_DISCONNCHID;
-    }
-    this->unlockPIIU ();
-
-    if ( status != ECA_NORMAL ) {
-        this->cacCtx.ioDestroy ( id );
-    }
-
-    return status;
+    return this->piiu->readCopyRequest ( *this, type, countIn, pValue );
 }
 
 /*
@@ -246,20 +186,11 @@ int nciu::write ( unsigned type, unsigned long countIn, const void *pValue )
         }
     }
 
-    this->lockPIIU ();
-    if ( this->piiu ) {
-        status = this->piiu->writeRequest ( this->sid, type, countIn, pValue );
-    }
-    else {
-        status = ECA_DISCONNCHID;
-    }
-    this->unlockPIIU ();
-    return status;
+    return this->piiu->writeRequest ( *this, type, countIn, pValue );
 }
 
 int nciu::write ( unsigned type, unsigned long countIn, const void *pValue, cacNotify &notify )
 {
-    ca_uint32_t newId; 
     int status;
 
     // check this first so thet get a decent diagnostic
@@ -282,33 +213,7 @@ int nciu::write ( unsigned type, unsigned long countIn, const void *pValue, cacN
         }
     }
 
-    // dont use monix pointer because monix could be deleted
-    // when the channel disconnects or when the IO completes
-    bool success = netWriteNotifyIO::factory ( *this, notify, newId );
-    if ( ! success ) {
-        return ECA_ALLOCMEM;
-    }
-
-    this->lockPIIU ();
-
-    if ( this->piiu  )  {
-        status = this->piiu->writeNotifyRequest ( newId, this->sid, type, countIn, pValue );
-    }
-    else {
-        status = ECA_DISCONNCHID;
-    }
-
-    this->unlockPIIU ();
-
-    if ( status != ECA_NORMAL ) {
-        /*
-         * we need to be careful about touching the monix
-         * pointer after the lock has been released
-         */
-        this->cacCtx.ioDestroy ( newId );
-    }
-
-    return status;
+    return this->piiu->writeNotifyRequest ( *this, notify, type, countIn, pValue );
 }
 
 void nciu::connect ( unsigned nativeType, 
@@ -355,7 +260,7 @@ void nciu::connect ( unsigned nativeType,
     this->unlock ();
 
     // resubscribe for monitors from this channel 
-    this->subscribeAllIO ();
+    this->piiu->subscribeAllIO ( *this );
 
     this->connectNotify ();
 
@@ -370,14 +275,17 @@ void nciu::connect ( unsigned nativeType,
     }
 }
 
-void nciu::disconnect ()
+void nciu::disconnect ( netiiu &newiiu )
 {
     char hostNameBuf[64];
-    this->hostName ( hostNameBuf, sizeof (hostNameBuf) );
+    this->hostName ( hostNameBuf, sizeof ( hostNameBuf ) );
     bool wasConnected;
+
+    this->piiu->disconnectAllIO ( *this );
 
     this->lock ();
 
+    this->piiu = &newiiu;
     this->retry = 0u;
     this->typeCode = USHRT_MAX;
     this->count = 0u;
@@ -396,17 +304,15 @@ void nciu::disconnect ()
 
     this->unlock ();
 
-
     if ( wasConnected ) {
         /*
          * look for events that have an event cancel in progress
          */
-        disconnectAllIO ( hostNameBuf );
         this->disconnectNotify ();
         this->accessRightsNotify ( this->ar );
     }
 
-    this->cacCtx.installDisconnectedChannel ( *this );
+    this->resetRetryCount ();
 }
 
 /*
@@ -423,18 +329,8 @@ bool nciu::searchMsg ( unsigned short retrySeqNumber, unsigned &retryNoForThisCh
     msg.m_count = htons ( CA_MINOR_VERSION );
     msg.m_cid = this->getId ();
 
-    this->lockPIIU ();
-
-    if ( this->piiu ) {
-        status = this->piiu->pushDatagramMsg ( msg, 
-                this->pNameStr, this->nameLength );
-    }
-    else {
-        status = false;
-    }
-
-    this->unlockPIIU ();
-
+    status = this->piiu->pushDatagramMsg ( msg, 
+            this->pNameStr, this->nameLength );
     if ( status ) {
         //
         // increment the number of times we have tried 
@@ -455,94 +351,17 @@ bool nciu::searchMsg ( unsigned short retrySeqNumber, unsigned &retryNoForThisCh
     return status;
 }
 
-int nciu::subscriptionMsg ( unsigned subscriptionId, unsigned typeIn, 
-                           unsigned long countIn, unsigned short maskIn,
-                           bool enablePreemptionDuringFlush )
+int nciu::subscriptionMsg ( netSubscription &subscr, bool userThread  )
 {
     int status;
-
-    /*
-     * clip to the native count and set to the native count if they
-     * specify zero
-     */
-    if ( countIn > this->count ){
-        countIn = this->count;
-    }
-
     if ( this->f_connected ) {
-        this->lockPIIU ();
-        if ( this->piiu ) {
-            status = this->piiu->subscriptionRequest ( subscriptionId, this->sid, 
-                typeIn, countIn, maskIn, enablePreemptionDuringFlush );
-        }
-        else {
-            status = ECA_NORMAL;
-        }
-        this->unlockPIIU ();
+        status = this->piiu->subscriptionRequest ( subscr, userThread );
     }
     else {
         status = ECA_NORMAL;
     }
 
     return status;
-}
-
-void nciu::attachChanToIIU ( netiiu &iiu )
-{
-    this->lockPIIU ();
-
-    if ( this->piiu ) {
-        this->piiu->mutex.lock ();
-        this->piiu->channelList.remove ( *this );
-        if ( this->piiu->channelList.count () == 0u ) {
-            this->piiu->lastChannelDetachNotify ();
-        }
-        this->piiu->mutex.unlock ();
-    }
-
-    this->unlockPIIU ();
-
-    this->lock ();
-    while ( this->ptrLockCount ) {
-        this->unlock ();
-        this->cacCtx.nciuPrivate::ptrLockReleaseWakeup.wait ();
-        this->lock ();
-    }
-    this->piiu = &iiu;
-    this->unlock ();
-
-    iiu.mutex.lock ();
-
-    // add to the front of the list so that search requests 
-    // for new channels will be sent first and so that
-    // channels lacking a claim message prior to connecting
-    // are located
-    iiu.channelList.push ( *this );
-
-    iiu.mutex.unlock ();
-}
-
-void nciu::detachChanFromIIU ()
-{
-    this->lockPIIU ();
-    if ( this->piiu ) {
-        this->piiu->mutex.lock ();
-        this->piiu->channelList.remove ( *this );
-        if ( this->piiu->channelList.count () == 0u ) {
-            this->piiu->lastChannelDetachNotify ();
-        }
-        this->piiu->mutex.unlock ();
-    }   
-    this->unlockPIIU ();
-
-    this->lock ();
-    while ( this->ptrLockCount ) {
-        this->unlock ();
-        this->cacCtx.nciuPrivate::ptrLockReleaseWakeup.wait ();
-        this->lock ();
-    }
-    this->piiu = 0u;
-    this->unlock ();
 }
 
 void nciu::incrementOutstandingIO ()
@@ -577,15 +396,7 @@ unsigned nciu::readSequence () const
 
 void nciu::hostName ( char *pBuf, unsigned bufLength ) const
 {   
-    this->lockPIIU ();
-    if ( this->piiu ) {
-        this->piiu->hostName ( pBuf, bufLength );
-    }
-    else {
-        strncpy (pBuf, "<disconnected>", bufLength);
-        pBuf[bufLength-1] = '\0';
-    }
-    this->unlockPIIU ();
+    this->piiu->hostName ( pBuf, bufLength );
 }
 
 // deprecated - please do not use, this is _not_ thread safe
@@ -675,21 +486,38 @@ const char *nciu::pName () const
     return this->pNameStr;
 }
 
+unsigned nciu::nameLen () const
+{
+    return this->nameLength;
+}
+
 unsigned nciu::searchAttempts () const
 {
     return this->retry;
 }
 
-int nciu::subscribe ( unsigned type, unsigned long countIn, 
+int nciu::createChannelRequest ()
+{
+    int status = this->piiu->createChannelRequest ( *this );
+    if ( status == ECA_NORMAL ) {
+        this->f_claimSent = true;
+    }
+    return status;
+}
+
+int nciu::subscribe ( unsigned type, unsigned long nElem, 
                          unsigned mask, cacNotify &notify )
 {
-    unsigned idCopy;
-    bool success = netSubscription::factory ( *this, type, countIn, 
-        static_cast <unsigned short> (mask), notify, idCopy );
-    if ( success ) {
-        return ECA_NORMAL;
+    netSubscription *pSubcr = new netSubscription ( *this, 
+        type, nElem, mask, notify );
+    if ( pSubcr ) {
+        int status = this->piiu->subscriptionRequest ( *pSubcr, true );
+        if ( status != ECA_NORMAL ) {
+            pSubcr->destroy ();
+        }
+        return status;
     }
-    else  {
+    else {
         return ECA_ALLOCMEM;
     }
 }
@@ -718,8 +546,8 @@ void nciu::show ( unsigned level ) const
     }
 
     if ( level > 2u ) {
-        printf ( "\tnetwork IO pointer=%p, ptr lock count=%u, ptr unlock wait count=%u\n", 
-            this->piiu, this->ptrLockCount, this->ptrUnlockWaitCount );
+        printf ( "\tnetwork IO pointer=%p\n", 
+            this->piiu );
         printf ( "\tserver identifier %u\n", this->sid );
         printf ( "\tsearch retry number=%u, search retry sequence number=%u\n", 
             this->retry, this->retrySeqNo );
@@ -728,31 +556,4 @@ void nciu::show ( unsigned level ) const
     }
 }
 
-bool nciu::setClaimMsgCache ( claimMsgCache &cache )
-{
-    cache.clientId = this->id;
-    cache.serverId = this->sid;
-    if ( cache.v44 ) {
-        unsigned len = strlen ( this->pNameStr ) + 1u;
-        if ( cache.bufLen < len ) {
-            unsigned newBufLen = 2 * len;
-            char *pNewStr = new char [ newBufLen ];
-            if ( pNewStr ) {
-                delete [] cache.pStr;
-                cache.pStr = pNewStr;
-                cache.bufLen = newBufLen;
-            }
-            else {
-                return false;
-            }
-        }
-        strcpy ( cache.pStr, this->pNameStr );
-        cache.currentStrLen = len;
-    }
-    else {
-        cache.currentStrLen = 0u;
-    }
-    this->f_claimSent = true;
-    return true;
-}
 

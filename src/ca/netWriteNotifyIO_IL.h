@@ -34,16 +34,16 @@ inline void netWriteNotifyIO::operator delete ( void *pCadaver, size_t size )
 // at any time when the channel disconnects or the
 // IO completes
 //
-inline bool netWriteNotifyIO::factory ( nciu &chan, cacNotify &notify, ca_uint32_t &id )
-{
-    netWriteNotifyIO *pIO = new netWriteNotifyIO ( chan, notify );
-    if ( pIO ) {
-        id = pIO->getId ();
-        return true;
-    }
-    else {
-        return false;
-    }
-}
+//inline bool netWriteNotifyIO::factory ( nciu &chan, cacNotify &notify, ca_uint32_t &id )
+//{
+//    netWriteNotifyIO *pIO = new netWriteNotifyIO ( chan, notify );
+//    if ( pIO ) {
+//       id = pIO->getId ();
+//        return true;
+//    }
+//    else {
+//        return false;
+//    }
+//}
 
 

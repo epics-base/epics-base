@@ -70,3 +70,4 @@ void oldSubscription::operator delete ( void *pCadaver, size_t size )
 {
     oldSubscription::freeList.release ( pCadaver, size );
 }
+

@@ -13,29 +13,13 @@
 #include "iocinf.h"
 #include "nciu_IL.h"
 
-osiMutex baseNMIU::mutex;
-
 baseNMIU::baseNMIU ( nciu &chanIn ) : 
-    chan ( chanIn ), attachedToChannel ( true )
+    chan ( chanIn )
 {
-    chanIn.ioInstall ( *this );
 }
 
 baseNMIU::~baseNMIU ()
 {
-    this->uninstallFromChannel ();
-}
-
-void baseNMIU::uninstallFromChannel ()
-{
-    this->mutex.lock ();
-    bool attached = this->attachedToChannel;
-    this->attachedToChannel = false;
-    this->mutex.unlock ();
-
-    if ( attached ) {
-        this->chan.ioUninstall ( *this );
-    }
 }
 
 void baseNMIU::destroy ()
@@ -48,8 +32,15 @@ int baseNMIU::subscriptionMsg ()
     return ECA_NORMAL;
 }
 
+void baseNMIU::subscriptionCancelMsg ()
+{
+}
+
 void baseNMIU::show ( unsigned /* level */ ) const
 {
     printf ( "CA IO primitive at %p for channel %s\n", 
         this, this->chan.pName () );
 }
+
+
+

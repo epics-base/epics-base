@@ -15,12 +15,17 @@
  *	505 665 1831
  */
 
-#ifndef netiiu_ILh
-#define netiiu_ILh
+#ifndef baseNMIU_ILh
+#define baseNMIU_ILh
 
-inline cac * netiiu::pCAC () const
+inline ca_uint32_t baseNMIU::getID () const
 {
-    return this->pClientCtx;
+    return this->id;
 }
 
-#endif // netiiu_ILh
+inline nciu & baseNMIU::channel ()
+{
+    return this->chan;
+}
+
+#endif // baseNMIU

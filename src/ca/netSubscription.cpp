@@ -12,33 +12,36 @@
 
 #include "iocinf.h"
 #include "netSubscription_IL.h"
+#include "cacNotifyIO_IL.h"
 #include "nciu_IL.h"
 
 tsFreeList < class netSubscription, 1024 > netSubscription::freeList;
 
-netSubscription::netSubscription ( nciu &chan, chtype typeIn, unsigned long countIn, 
-    unsigned short maskIn, cacNotify &notifyIn ) :
+netSubscription::netSubscription ( nciu &chan, unsigned typeIn, unsigned long countIn, 
+        unsigned maskIn, cacNotify &notifyIn ) :
     cacNotifyIO ( notifyIn ), baseNMIU ( chan ), 
-    type ( typeIn ), count ( countIn ), mask ( maskIn )
+    count ( countIn ), type ( typeIn ), mask ( maskIn )
 {
-    this->chan.subscriptionMsg ( this->getId (), this->type, 
-        this->count, this->mask, true );
 }
 
 netSubscription::~netSubscription () 
 {
-    this->chan.subscriptionCancelMsg ( this->getId () );
+    this->chan.subscriptionCancelMsg ( *this );
 }
 
-void netSubscription::destroy()
+void netSubscription::destroy ()
 {
     delete this;
 }
 
 int netSubscription::subscriptionMsg ()
 {
-    return this->chan.subscriptionMsg ( this->getId (), this->type, 
-        this->count, this->mask, false );
+    return this->chan.subscriptionMsg ( *this, false );
+}
+
+void netSubscription::subscriptionCancelMsg ()
+{
+    this->chan.subscriptionCancelMsg ( *this );
 }
 
 void netSubscription::disconnect ( const char * /* pHostName */ )

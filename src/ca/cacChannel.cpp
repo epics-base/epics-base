@@ -86,7 +86,7 @@ int cacChannel::subscribe ( unsigned type, unsigned long count,
 {
     cacChannelIO *pIO = this->pChannelIO;
     if ( pIO ) {
-        return pIO->subscribe (type, count, mask, notify);
+        return pIO->subscribe ( type, count, mask, notify );
     }
     else {
         return ECA_DISCONNCHID;

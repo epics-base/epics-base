@@ -185,8 +185,6 @@ public:
     cacMutex & mutexRef ();
     void attachToClientCtx ();
     void selfTest () const;
-    void notifyNewFD ( epicsGuard < callbackMutex > &, SOCKET ) const;
-    void notifyDestroyFD ( epicsGuard < callbackMutex > &, SOCKET ) const;
     bool preemptiveCallbakIsEnabled () const;
     double beaconPeriod ( const nciu & chan ) const;
     static unsigned lowestPriorityLevelAbove ( unsigned priority );
@@ -194,7 +192,8 @@ public:
     void initiateAbortShutdown ( tcpiiu & );
     void disconnectNotify ( tcpiiu & );
     void uninstallIIU ( tcpiiu & ); 
-    void signalRecvThreadActivity ();
+    void messageArrivalNotify ();
+    void messageProcessingCompleteNotify ();
 
 private:
     localHostName hostNameCache;

@@ -625,7 +625,7 @@ bool cac::lookupChannelAndTransferToTCP (
     }
 
     if ( newIIU ) {
-        piiu->start ( cbGuard );
+        piiu->start ();
     }
 
     return true;
@@ -1497,16 +1497,6 @@ void cac::selfTest () const
     this->beaconTable.verify ();
 }
 
-void cac::notifyNewFD ( epicsGuard < callbackMutex > &, SOCKET sock ) const
-{
-    this->notify.fdWasCreated ( sock );
-}
-
-void cac::notifyDestroyFD ( epicsGuard < callbackMutex > &, SOCKET sock ) const
-{
-    this->notify.fdWasDestroyed ( sock );
-}
-
 void cac::disconnectNotify ( tcpiiu & iiu )
 {
     epicsGuard < cacMutex > guard ( this->mutex );
@@ -1620,34 +1610,15 @@ void cac::pvMultiplyDefinedNotify ( msgForMultiplyDefinedPV & mfmdpv,
 void cac::waitUntilNoRecvThreadsPending ()
 {
     if ( ! this->preemptiveCallbackEnabled ) {
-        {
-            fd_set mask;
-            FD_ZERO ( & mask );
-            SOCKET maxFD = 0;
-            epicsGuard < cacMutex > guard ( this->mutex );
-            tsDLIter < tcpiiu > iter = this->serverList.firstIter ();
-            if ( this->pudpiiu ) {
-                this->pudpiiu->fdMaskSet ( mask, maxFD );
-            }
-            while ( iter.valid() ) {
-                iter->fdMaskSet ( mask, maxFD );
-                iter++;
-            }
-
-            struct timeval delay = { 0, 0 };
-            int status = select ( maxFD+1, & mask, 0, 0, & delay );
-            if ( status <= 0 ) {
-                return;
-            }
-            this->nRecvThreadsPending = 
-                static_cast < unsigned > ( status );
+        epicsGuard < cacMutex > guard ( this->mutex );
+        while ( this->nRecvThreadsPending > 0 ) {
+            epicsGuardRelease < cacMutex > unguard ( guard );
+            this->recvThreadActivityComplete.wait ( 30.0 );
         }
-
-        this->recvThreadActivityComplete.wait ( 0.1 );
     }
 }
 
-void cac::signalRecvThreadActivity ()
+void cac::messageProcessingCompleteNotify ()
 {
     if ( ! this->preemptiveCallbackEnabled ) {
         bool signalNeeded = false;
@@ -1669,5 +1640,13 @@ void cac::signalRecvThreadActivity ()
     }
 }
 
+void cac::messageArrivalNotify ()
+{
+    if ( ! this->preemptiveCallbackEnabled ) {
+        epicsGuard < cacMutex > guard ( this->mutex );
+        this->nRecvThreadsPending++;
+    }
+    this->notify.messageArrivalNotify ();
+}
 
 

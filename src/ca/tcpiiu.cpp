@@ -123,9 +123,8 @@ void tcpSendThread::run ()
     this->iiu.sendDog.cancel ();
 
     {
-        epicsGuard < callbackMutex > cbGuard ( this->cbMutex ); 
         epicsGuard < cacMutex > guard ( this->iiu.cacRef.mutexRef() );
-        this->iiu.shutdown ( cbGuard, guard );
+        this->iiu.shutdown ( guard );
     }
 
     // wakeup user threads blocking for send backlog to be reduced
@@ -310,20 +309,9 @@ void tcpRecvThread::run ()
             // file manager call backs works correctly. This does not 
             // appear to impact performance.
             //
-            unsigned nBytesIn;
-            if ( this->iiu.cacRef.preemptiveCallbakIsEnabled() ) {
-                nBytesIn = pComBuf->fillFromWire ( this->iiu );
-                if ( nBytesIn == 0u ) {
-                    continue;
-                }
-            }
-            else {
-                this->iiu.blockUntilBytesArePendingInOS ();
-                nBytesIn = 0u;
-                if ( this->iiu.state != tcpiiu::iiucs_connected &&
-                    this->iiu.state != tcpiiu::iiucs_clean_shutdown ) {
-                    break;
-                }
+            unsigned nBytesIn = pComBuf->fillFromWire ( this->iiu );
+            if ( nBytesIn == 0u ) {
+                continue;
             }
 
             // reschedule connection activity watchdog
@@ -333,18 +321,12 @@ void tcpRecvThread::run ()
             // - it take also the callback lock
             this->iiu.recvDog.messageArrivalNotify (); 
 
+            this->iiu.cacRef.messageArrivalNotify ();
+
             // only one recv thread at a time may call callbacks
             // - pendEvent() blocks until threads waiting for
             // this lock get a chance to run
             epicsGuard < callbackMutex > guard ( this->cbMutex );
-
-            if ( ! this->iiu.cacRef.preemptiveCallbakIsEnabled() ) {
-                nBytesIn = pComBuf->fillFromWire ( this->iiu );
-                if ( this->iiu.state != tcpiiu::iiucs_connected &&
-                    this->iiu.state != tcpiiu::iiucs_clean_shutdown ) {
-                    break;
-                }
-            }
 
             // force the receive watchdog to be reset every 5 frames
             unsigned contiguousFrameCount = 0;
@@ -381,7 +363,7 @@ void tcpRecvThread::run ()
 
                 nBytesIn = pComBuf->fillFromWire ( this->iiu );
             }
-            this->iiu.cacRef.signalRecvThreadActivity ();
+            this->iiu.cacRef.messageProcessingCompleteNotify ();
         }
 
         if ( pComBuf ) {
@@ -398,9 +380,8 @@ void tcpRecvThread::run ()
     // until it receives its blocking socket call interrupt 
     // signal.
     {
-        epicsGuard < callbackMutex > cbGuard ( this->cbMutex ); 
         epicsGuard < cacMutex > guard ( this->iiu.cacRef.mutexRef() );
-        this->iiu.shutdown ( cbGuard, guard );
+        this->iiu.shutdown ( guard );
     }
 }
 
@@ -547,10 +528,9 @@ tcpiiu::tcpiiu ( cac & cac, callbackMutex & cbMutex, double connectionTimeout,
 
 // this must always be called by the udp thread when it holds 
 // the callback lock.
-void tcpiiu::start ( epicsGuard < callbackMutex > & cbGuard )
+void tcpiiu::start ()
 {
     this->recvThread.start ();
-    this->cacRef.notifyNewFD ( cbGuard, this->sock );
 }
 
 /*
@@ -634,19 +614,14 @@ void tcpiiu::initiateAbortShutdown ( epicsGuard < callbackMutex > & cbGuard,
         }
         this->discardingPendingData = true;
     }
-    this->shutdown ( cbGuard, guard );
+    this->shutdown ( guard );
 }
 
-void tcpiiu::shutdown ( epicsGuard < callbackMutex > & cbGuard, 
-                                    epicsGuard <cacMutex > & guard )
+void tcpiiu::shutdown ( epicsGuard <cacMutex > & guard )
 {
     iiu_conn_state oldState = this->state;
     if ( oldState != iiucs_abort_shutdown ) {
         this->state = iiucs_abort_shutdown;
-        {
-            epicsGuardRelease < cacMutex > guardRelease ( guard );
-            this->cacRef.notifyDestroyFD ( cbGuard, this->sock );
-        }
 
         //
         // on HPUX close() and shutdown() are not enough so we must also

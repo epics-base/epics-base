@@ -99,7 +99,6 @@ public:
     bool pushDatagramMsg ( const caHdr &hdr, const void *pExt, ca_uint16_t extsize);
     void shutdown ();
     double roundTripDelayEstimate () const;
-    void fdMaskSet ( fd_set & mask, SOCKET & maxFD ) const;
 
     // exceptions
     class noSocket {};
@@ -121,9 +120,9 @@ private:
     SOCKET sock;
     epics_auto_ptr < class searchTimer > pSearchTmr;
     epics_auto_ptr < class repeaterSubscribeTimer > pRepeaterSubscribeTmr;
-    unsigned short repeaterPort;
-    unsigned short serverPort;
-    unsigned short localPort;
+    ca_uint16_t repeaterPort;
+    ca_uint16_t serverPort;
+    ca_uint16_t localPort;
     bool shutdownCmd;
     bool rtteActive;
     bool lastReceivedSeqNoIsValid;
@@ -221,12 +220,6 @@ inline ca_uint32_t udpiiu::datagramSeqNumber () const
 inline double udpiiu::roundTripDelayEstimate () const
 {
     return this->rtteMean;
-}
-
-inline void udpiiu::fdMaskSet ( fd_set & mask, SOCKET & maxFD ) const
-{
-    maxFD = tsMax ( this->sock, maxFD );
-    FD_SET ( this->sock, & mask );
 }
 
 #endif // udpiiuh

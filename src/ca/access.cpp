@@ -315,6 +315,23 @@ int epicsShareAPI ca_create_channel (
         return caStatus;
     }
 
+    {
+        CAFDHANDLER * pFunc = 0;
+        void * pArg = 0;
+        {
+            epicsGuard < ca_client_context_mutex > 
+                autoMutex ( pcac->mutex );
+            if ( pcac->fdRegFuncNeedsToBeCalled ) {
+                pFunc = pcac->fdRegFunc;
+                pArg = pcac->fdRegArg;
+                pcac->fdRegFuncNeedsToBeCalled = false;
+            }
+        }
+        if ( pFunc ) {
+            ( *pFunc ) ( pArg, pcac->sock, true );
+        }
+    }
+
     try {
         oldChannelNotify * pChanNotify = 
             new ( pcac->oldChannelNotifyFreeList ) 
@@ -432,8 +449,9 @@ int epicsShareAPI ca_array_get_callback ( chtype type,
         }
         unsigned tmpType = static_cast < unsigned > ( type );
 
-        autoPtrDestroy < getCallback > pNotify 
-            ( new ( pChan->getClientCtx().getCallbackFreeList )
+        autoPtrFreeList < getCallback > pNotify 
+            ( pChan->getClientCtx().getCallbackFreeList,
+            new ( pChan->getClientCtx().getCallbackFreeList )
                 getCallback ( *pChan, pfunc, arg ) );
         pChan->read ( tmpType, count, *pNotify );
         pNotify.release ();
@@ -911,7 +929,7 @@ void epicsShareAPI ca_signal_formated ( long ca_status, const char *pfilenm,
  *
  */
 // extern "C"
-int epicsShareAPI ca_add_fd_registration (CAFDHANDLER *func, void *arg)
+int epicsShareAPI ca_add_fd_registration ( CAFDHANDLER * func, void * arg )
 {
     ca_client_context *pcac;
     int caStatus = fetchClientContext ( &pcac );

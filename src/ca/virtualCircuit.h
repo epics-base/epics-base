@@ -95,7 +95,7 @@ public:
         comBufMemoryManager &, unsigned minorVersion, ipAddrToAsciiEngine & engineIn,
         const cacChannel::priLev & priorityIn );
     ~tcpiiu ();
-    void start ( epicsGuard < callbackMutex > & );
+    void start ();
     void initiateCleanShutdown ( epicsGuard < cacMutex > & );
     void initiateAbortShutdown ( epicsGuard < callbackMutex > &, 
                                     epicsGuard <cacMutex > & ); 
@@ -133,8 +133,6 @@ public:
     void uninstallChan ( epicsGuard < cacMutex > &, nciu & chan );
 
     bool bytesArePendingInOS () const;
-
-    void fdMaskSet ( fd_set &, SOCKET & maxFd ) const;
 
 private:
     hostNameCache hostNameCacheInstance;
@@ -181,8 +179,7 @@ private:
     void connect ();
     const char * pHostName () const;
     void blockUntilBytesArePendingInOS ();
-    void shutdown ( epicsGuard < callbackMutex > &, 
-                                    epicsGuard <cacMutex > & ); 
+    void shutdown ( epicsGuard <cacMutex > & ); 
 
     // send protocol stubs
     void echoRequest ( epicsGuard < cacMutex > & );
@@ -248,12 +245,6 @@ inline void tcpiiu::flushIfRecvProcessRequested ()
 inline unsigned tcpiiu::channelCount ()
 {
     return this->channelList.count ();
-}
-
-inline void tcpiiu::fdMaskSet ( fd_set & mask, SOCKET & maxFD ) const
-{
-    maxFD = tsMax ( this->sock, maxFD );
-    FD_SET ( this->sock, & mask );
 }
 
 inline void tcpRecvThread::interruptSocketRecv ()

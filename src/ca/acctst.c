@@ -30,6 +30,7 @@
 #include "envDefs.h"
 #include "caDiagnostics.h"
 #include "cadef.h"
+#include "fdmgr.h"
 
 #ifndef min
 #define min(A,B) ((A)>(B)?(B):(A))
@@ -2214,23 +2215,28 @@ void monitorUpdateTest ( chid chan, unsigned interestLevel )
     showProgressEnd ( interestLevel );
 } 
 
-void verifyReasonableBeaconPeriod ( chid chan )
+void verifyReasonableBeaconPeriod ( chid chan, unsigned interestLevel )
 {
-    double beaconPeriod;
+    if ( ca_get_ioc_connection_count () > 0 ) {
+        double beaconPeriod;
 
-    assert ( ca_get_ioc_connection_count () > 0 );
+        showProgressBegin ( "verifyReasonableBeaconPeriod", interestLevel );
 
-    printf ( "Beacon anomalies detected since program start %u\n",
-        ca_beacon_anomaly_count () );
 
-    beaconPeriod = ca_beacon_period ( chan );
-    assert ( beaconPeriod >= 0.0 );
+        printf ( "Beacon anomalies detected since program start %u\n",
+            ca_beacon_anomaly_count () );
 
-    printf ( "Estimated beacon period for channel %s = %f sec.\n", 
-        ca_name ( chan ), beaconPeriod );
+        beaconPeriod = ca_beacon_period ( chan );
+        assert ( beaconPeriod >= 0.0 );
+
+        printf ( "Estimated beacon period for channel %s = %f sec.\n", 
+            ca_name ( chan ), beaconPeriod );
+
+        showProgressEnd ( interestLevel );
+    }
 }
 
-void verifyOldPend ( unsigned interestLevel)
+void verifyOldPend ( unsigned interestLevel )
 {
     int status;
 
@@ -2371,6 +2377,106 @@ void eventClearAndMultipleMonitorTest ( chid chan, unsigned interestLevel )
     monitorUpdateTest ( chan, interestLevel );
 }
 
+void fdcb ( void * parg )
+{
+    ca_poll ();
+}
+
+void fdRegCB ( void * parg, int fd, int opened )
+{
+    int status;
+
+    fdctx * mgrCtx = ( fdctx * ) parg;
+    if ( opened ) {
+        status = fdmgr_add_callback ( 
+            mgrCtx, fd, fdi_read, fdcb, 0 );
+        assert ( status >= 0 );
+    }
+    else {
+        status = fdmgr_clear_callback ( 
+            mgrCtx, fd, fdi_read );
+        assert ( status >= 0 );
+    }
+}
+
+void fdManagerVerify ( const char * pName, unsigned interestLevel )
+{
+    int status;
+    fdctx * mgrCtx;
+    struct timeval tmo;
+    chid newChan;
+    evid subscription;
+    unsigned repCount = 0u;
+    unsigned eventCount = 0u;
+    epicsTimeStamp begin, end;
+    
+    mgrCtx = fdmgr_init ();
+    assert ( mgrCtx );
+
+    showProgressBegin ( "fdManagerVerify", interestLevel );
+
+    status = ca_add_fd_registration ( fdRegCB, mgrCtx );
+    assert ( status == ECA_NORMAL );
+
+    status = ca_create_channel ( pName, 0, 0, 0, & newChan );
+    assert ( status == ECA_NORMAL );
+
+    while ( ca_state ( newChan ) != cs_conn ) {
+        tmo.tv_sec = 6000;
+        tmo.tv_usec = 0;
+        status = fdmgr_pend_event ( mgrCtx, & tmo );
+        assert ( status >= 0 );
+    }
+
+    status = ca_add_event ( DBR_FLOAT, newChan, 
+        nUpdatesTester, & eventCount,  & subscription );
+    assert ( status == ECA_NORMAL );
+
+    status = ca_flush_io ();
+    assert ( status == ECA_NORMAL );
+
+    while ( eventCount < 1 ) {
+        tmo.tv_sec = 6000;
+        tmo.tv_usec = 0;
+        status = fdmgr_pend_event ( mgrCtx, & tmo );
+        assert ( status >= 0 );
+    }
+
+    status = ca_clear_event ( subscription );
+    assert ( status == ECA_NORMAL );
+
+    status = ca_flush_io ();
+    assert ( status == ECA_NORMAL );
+
+    // look for infinite loop in fd manager schedualing
+    epicsTimeGetCurrent ( & begin );
+    eventCount = 0u;
+    while ( 1 ) {
+        double delay;
+        tmo.tv_sec = 1;
+        tmo.tv_usec = 0;
+        status = fdmgr_pend_event ( mgrCtx, & tmo );
+        assert ( status >= 0 );
+        epicsTimeGetCurrent ( & end );
+        delay = epicsTimeDiffInSeconds ( & end, & begin );
+        if ( delay >= 1.0 ) {
+            break;
+        }
+        assert ( eventCount++ < 100 );
+    }
+
+    status = ca_clear_channel ( newChan );
+    assert ( status == ECA_NORMAL );
+
+    status = ca_add_fd_registration ( 0, 0 );
+    assert ( status == ECA_NORMAL );
+
+    status = fdmgr_delete ( mgrCtx );
+    assert ( status >= 0 );
+
+    showProgressEnd ( interestLevel );
+}
+
 int acctst ( char *pName, unsigned interestLevel, unsigned channelCount, 
 			unsigned repetitionCount, enum ca_preemptive_callback_select select )
 {
@@ -2459,6 +2565,9 @@ int acctst ( char *pName, unsigned interestLevel, unsigned channelCount,
     verifyHighThroughputReadCallback ( chan, interestLevel );
     verifyHighThroughputWriteCallback ( chan, interestLevel );
     verifyBadString ( chan, interestLevel );
+    if ( select != ca_enable_preemptive_callback ) {
+        fdManagerVerify ( pName, interestLevel ); 
+    }
 
     /*
      * CA pend event delay accuracy test
@@ -2485,7 +2594,7 @@ int acctst ( char *pName, unsigned interestLevel, unsigned channelCount,
     verifyBlockingConnect ( pChans, channelCount, repetitionCount, interestLevel );
     verifyClear ( pChans, interestLevel );
 
-    verifyReasonableBeaconPeriod ( chan );
+    verifyReasonableBeaconPeriod ( chan, interestLevel );
 
     /*
      * Verify that we can do IO with the new types for ALH

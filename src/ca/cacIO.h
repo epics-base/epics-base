@@ -213,16 +213,15 @@ class cacNotify { // X aCC 655
 public:
     virtual ~cacNotify () = 0;
 // we should probably have a different vf for each type of exception ????
-    virtual void exception ( int status, const char *pContext, 
-        const char *pFileName, unsigned lineNo ) = 0;
+    virtual void exception ( int status, const char * pContext, 
+        const char * pFileName, unsigned lineNo ) = 0;
 // perhaps this should be phased out in deference to the exception mechanism
     virtual int vPrintf ( const char *pformat, va_list args ) const = 0;
-// this should probably be phased out (its not OS independent)
-    virtual void fdWasCreated ( int fd ) = 0;
-    virtual void fdWasDestroyed ( int fd ) = 0;
 // backwards compatibility
     virtual void attachToClientCtx () = 0;
-    virtual void blockForEventAndEnableCallbacks ( class epicsEvent & event, double timeout ) = 0;
+    virtual void blockForEventAndEnableCallbacks ( 
+        class epicsEvent & event, const double & timeout ) = 0;
+    virtual void messageArrivalNotify () = 0;
 };
 
 class cacService : public tsDLNode < cacService > { // X aCC 655

@@ -33,6 +33,7 @@
 #endif
 
 #include "tsFreeList.h"
+#include "epicsMemory.h"
 #include "cxxCompilerDependencies.h"
 
 #ifdef oldAccessh_restore_epicsExportSharedSymbols
@@ -146,7 +147,6 @@ public:
     getCallback ( oldChannelNotify &chanIn, 
         caEventCallBackFunc *pFunc, void *pPrivate );
     ~getCallback (); 
-    void destroy ();
     void * operator new ( size_t size, 
         tsFreeList < class getCallback, 1024 > & );
     epicsPlacementDeleteOperator (( void *, 
@@ -250,10 +250,11 @@ public:
     void exception ( int status, const char *pContext,
         const char *pFileName, unsigned lineNo, oldChannelNotify &chan, 
         unsigned type, arrayElementCount count, unsigned op );
+    void blockForEventAndEnableCallbacks ( 
+        epicsEvent & event, const double & timeout );
     CASG * lookupCASG ( unsigned id );
     void installCASG ( CASG & );
     void uninstallCASG ( CASG & );
-    void blockForEventAndEnableCallbacks ( epicsEvent & event, double timeout );
     void selfTest ();
 // perhaps these should be eliminated in deference to the exception mechanism
     int printf ( const char *pformat, ... ) const;
@@ -267,6 +268,9 @@ public:
     void destroyGetCallback ( getCallback & );
     void destroyPutCallback ( putCallback & );
     void destroySubscription ( oldSubscription & );
+
+    // exceptions
+    class noSocket {};
 private:
     tsFreeList < struct oldChannelNotify, 1024 > oldChannelNotifyFreeList;
     tsFreeList < class getCopy, 1024 > getCopyFreeList;
@@ -276,18 +280,21 @@ private:
     tsFreeList < struct CASG, 128 > casgFreeList;
     mutable ca_client_context_mutex mutex; 
     epicsEvent ioDone;
-    cac & clientCtx;
-    epicsGuard < callbackMutex > * pCallbackGuard;
+    epics_auto_ptr < cac > pClientCtx;
+    epics_auto_ptr < epicsGuard < callbackMutex > > pCallbackGuard;
     caExceptionHandler * ca_exception_func;
     void * ca_exception_arg;
     caPrintfFunc * pVPrintfFunc;
     CAFDHANDLER * fdRegFunc;
-    void  * fdRegArg;
+    void * fdRegArg;
+    SOCKET sock;
     unsigned pndRecvCnt;
     unsigned ioSeqNo;
-// this should probably be phased out (its not OS independent)
-    void fdWasCreated ( int fd );
-    void fdWasDestroyed ( int fd );
+    ca_uint16_t localPort;
+    bool fdRegFuncNeedsToBeCalled;
+    bool noWakeupSincePend;
+
+    void messageArrivalNotify ();
     void attachToClientCtx ();
 	ca_client_context ( const ca_client_context & );
 	ca_client_context & operator = ( const ca_client_context & );
@@ -497,11 +504,6 @@ inline void putCallback::operator delete ( void * pCadaver,
 }
 #endif
 
-inline void getCallback::destroy ()
-{
-    delete this;
-}
-
 inline void * getCallback::operator new ( size_t size, 
     tsFreeList < class getCallback, 1024 > & freeList )
 {
@@ -518,60 +520,60 @@ inline void getCallback::operator delete ( void *pCadaver,
 
 inline void ca_client_context::registerService ( cacService &service )
 {
-    this->clientCtx.registerService ( service );
+    this->pClientCtx->registerService ( service );
 }
 
 inline cacChannel & ca_client_context::createChannel ( const char * name_str, 
              oldChannelNotify & chan, cacChannel::priLev pri )
 {
-    return this->clientCtx.createChannel ( name_str, chan, pri );
+    return this->pClientCtx->createChannel ( name_str, chan, pri );
 }
 
 inline void ca_client_context::flushRequest ()
 {
-    this->clientCtx.flushRequest ();
+    this->pClientCtx->flushRequest ();
 }
 
 inline unsigned ca_client_context::connectionCount () const
 {
-    return this->clientCtx.connectionCount ();
+    return this->pClientCtx->connectionCount ();
 }
 
 inline unsigned ca_client_context::beaconAnomaliesSinceProgramStart () const
 {
-    return this->clientCtx.beaconAnomaliesSinceProgramStart ();
+    return this->pClientCtx->beaconAnomaliesSinceProgramStart ();
 }
 
 inline CASG * ca_client_context::lookupCASG ( unsigned id )
 {
-    return this->clientCtx.lookupCASG ( id );
+    return this->pClientCtx->lookupCASG ( id );
 }
 
 inline void ca_client_context::installCASG ( CASG &sg )
 {
-    this->clientCtx.installCASG ( sg );
+    this->pClientCtx->installCASG ( sg );
 }
 
 inline void ca_client_context::uninstallCASG ( CASG &sg )
 {
-    this->clientCtx.uninstallCASG ( sg );
+    this->pClientCtx->uninstallCASG ( sg );
 }
 
 inline void ca_client_context::vSignal ( int ca_status, const char *pfilenm, 
                      int lineno, const char *pFormat, va_list args )
 {
-    this->clientCtx.vSignal ( ca_status, pfilenm, 
+    this->pClientCtx->vSignal ( ca_status, pfilenm, 
                      lineno, pFormat, args );
 }
 
 inline void ca_client_context::selfTest ()
 {
-    this->clientCtx.selfTest ();
+    this->pClientCtx->selfTest ();
 }
 
 inline bool ca_client_context::preemptiveCallbakIsEnabled () const
 {
-    return this->clientCtx.preemptiveCallbakIsEnabled ();
+    return this->pClientCtx->preemptiveCallbakIsEnabled ();
 }
 
 inline bool ca_client_context::ioComplete () const
@@ -587,7 +589,7 @@ inline unsigned ca_client_context::sequenceNumberOfOutstandingIO () const
 
 inline epicsGuard < callbackMutex > ca_client_context::callbackGuardFactory ()
 {
-    return this->clientCtx.callbackGuardFactory ();
+    return this->pClientCtx->callbackGuardFactory ();
 }
 
 inline void ca_client_context_mutex::lock ()

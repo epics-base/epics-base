@@ -135,10 +135,8 @@ udpiiu::udpiiu ( epicsTimerQueueActive & timerQueue, callbackMutex & cbMutex, ca
     }
 #endif
 
-    /*
-     * force a bind to an unconstrained address because we may end
-     * up receiving first
-     */
+    // force a bind to an unconstrained address so we can obtain
+    // the local port number below
     memset ( (char *)&addr, 0 , sizeof (addr) );
     addr.ia.sin_family = AF_INET;
     addr.ia.sin_addr.s_addr = epicsHTON32 (INADDR_ANY); 
@@ -241,31 +239,16 @@ void udpiiu::shutdown ()
 void udpiiu::recvMsg ( callbackMutex & cbMutex )
 {
     osiSockAddr src;
-    int status;
+    osiSocklen_t src_size = sizeof ( src );
+    int status = recvfrom ( this->sock, 
+        this->recvBuf, sizeof ( this->recvBuf ), 0,
+        & src.sa, & src_size );
 
-    if ( this->cacRef.preemptiveCallbakIsEnabled() ) {
-        osiSocklen_t src_size = sizeof ( src );
-        status = recvfrom ( this->sock, this->recvBuf, sizeof ( this->recvBuf ), 0,
-                            &src.sa, &src_size );
-    }
-    else {
-        // peek first at the message so that file descriptor managers will wake up
-        // in single threaded applications
-        osiSocklen_t src_size = sizeof ( src );
-        char peek;
-        recvfrom ( this->sock, & peek, sizeof ( peek ), MSG_PEEK,
-                            &src.sa, &src_size );
-        status = 0;
-    }
+    this->cacRef.messageArrivalNotify ();
 
     {
         epicsGuard < callbackMutex > guard ( cbMutex );
 
-        if ( ! this->cacRef.preemptiveCallbakIsEnabled() ) {
-            osiSocklen_t src_size = sizeof ( src );
-            status = recvfrom ( this->sock, this->recvBuf, sizeof ( this->recvBuf ), 0,
-                            &src.sa, &src_size );
-        }
         if ( status <= 0 ) {
 
             if ( status == 0 ) {
@@ -303,7 +286,8 @@ void udpiiu::recvMsg ( callbackMutex & cbMutex )
                 (arrayElementCount) status, epicsTime::getCurrent() );
         }
     }
-    return;
+
+    this->cacRef.messageProcessingCompleteNotify ();
 }
 
 udpRecvThread::udpRecvThread ( udpiiu & iiuIn, callbackMutex & cbMutexIn,
@@ -331,7 +315,6 @@ void udpRecvThread::run ()
 
     {
         epicsGuard < callbackMutex > cbGuard ( this->cbMutex );
-        this->iiu.cacRef.notifyNewFD ( cbGuard, this->iiu.sock );
         if ( ellCount ( & this->iiu.dest ) == 0 ) { // X aCC 392
             genLocalExcep ( cbGuard, this->iiu.cacRef, ECA_NOSEARCHADDR, NULL );
         }
@@ -340,13 +323,7 @@ void udpRecvThread::run ()
 
     do {
         this->iiu.recvMsg ( this->cbMutex );
-        this->iiu.cacRef.signalRecvThreadActivity ();
     } while ( ! this->iiu.shutdownCmd );
-
-    {
-        epicsGuard < callbackMutex > cbGuard ( this->cbMutex );
-        this->iiu.cacRef.notifyDestroyFD ( cbGuard, this->iiu.sock );
-    }
 }
 
 /*

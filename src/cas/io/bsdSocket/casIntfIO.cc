@@ -159,37 +159,38 @@ casStreamOS *casIntfIO::newStreamClient(caServerI &cas) const
     osiSocklen_t length;
     casStreamOS	*pOS;
     
-    length = ( osiSocklen_t ) sizeof(newAddr);
-    newSock = accept(this->sock, &newAddr, &length);
+    length = ( osiSocklen_t ) sizeof ( newAddr );
+    newSock = accept ( this->sock, & newAddr, & length );
     if ( newSock == INVALID_SOCKET ) {
         int errnoCpy = SOCKERRNO;
-        if ( errnoCpy!=SOCK_EWOULDBLOCK && ! oneMsgFlag ) {
-            errlogPrintf ("CAS: %s accept error \"%s\"\n",
-                __FILE__,SOCKERRSTR(errnoCpy));
+        if ( errnoCpy != SOCK_EWOULDBLOCK && ! oneMsgFlag ) {
+            errlogPrintf ( "CAS: %s accept error \"%s\"\n",
+                __FILE__,SOCKERRSTR ( errnoCpy ) );
             oneMsgFlag = true;
         }
         return NULL;
     }
-    else if ( sizeof (newAddr) > (size_t) length ) {
-        socket_close(newSock);
-        errlogPrintf("CAS: accept returned bad address len?\n");
+    else if ( sizeof ( newAddr ) > (size_t) length ) {
+        socket_close ( newSock );
+        errlogPrintf ( "CAS: accept returned bad address len?\n" );
         return NULL;
     }
     oneMsgFlag = false;
     ioArgsToNewStreamIO args;
     args.addr = newAddr;
     args.sock = newSock;
-    pOS = new casStreamOS(cas, args);
-    if (!pOS) {
-        errMessage(S_cas_noMemory, "unable to create data structures for a new client");
-        socket_close(newSock);
+    pOS = new casStreamOS ( cas, args );
+    if ( ! pOS ) {
+        errMessage ( S_cas_noMemory, 
+            "unable to create data structures for a new client" );
+        socket_close ( newSock );
     }
     else {
-        if ( cas.getDebugLevel()>0u) {
+        if ( cas.getDebugLevel() > 0u ) {
             char pName[64u];
             
-            pOS->hostName (pName, sizeof (pName));
-            errlogPrintf("CAS: allocated client object for \"%s\"\n", pName);
+            pOS->hostName ( pName, sizeof (pName) );
+            errlogPrintf ( "CAS: allocated client object for \"%s\"\n", pName );
         }
     }
     return pOS;

@@ -595,8 +595,8 @@ casProcCond casStreamOS::processInput() // X aCC 361
 		return casProcOk;
 	}
 	else {
-		errMessage (status,
-	"unexpected problem with client's input - forcing disconnect");
+		errMessage ( status,
+	"- unexpected problem with client's input - forcing disconnect");
 		return casProcDisconnect;
 	}
 }

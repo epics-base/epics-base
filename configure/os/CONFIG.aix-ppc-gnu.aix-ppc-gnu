@@ -17,6 +17,6 @@ AR = ar
 ARFLAGS = rcv
 RANLIB = ranlib -t
 
-SHRLIB_LDFLAGS = -shared 
-LOADABLE_SHRLIB_LDFLAGS = -shared
+SHRLIB_LDFLAGS = -shared  -fPIC
+LOADABLE_SHRLIB_LDFLAGS = -shared -fPIC
 

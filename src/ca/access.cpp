@@ -317,6 +317,11 @@ extern "C" int epicsShareAPI ca_array_get ( chtype type,
         pNotify->cancel ();
         return ECA_NOTINSERVICE;
     }
+    catch ( cacChannel::requestTimedOut & )
+    {
+        pNotify->cancel ();
+        return ECA_TIMEOUT;
+    }
     catch ( std::bad_alloc & )
     {
         pNotify->cancel ();
@@ -380,6 +385,10 @@ extern "C" int epicsShareAPI ca_array_get_callback ( chtype type,
     {
         return ECA_NOTINSERVICE;
     }
+    catch ( cacChannel::requestTimedOut & )
+    {
+        return ECA_TIMEOUT;
+    }
     catch ( std::bad_alloc & )
     {
         return ECA_ALLOCMEM;
@@ -439,6 +448,10 @@ extern "C" int epicsShareAPI ca_array_put_callback ( chtype type, arrayElementCo
     {
         return ECA_NOTINSERVICE;
     }
+    catch ( cacChannel::requestTimedOut & )
+    {
+        return ECA_TIMEOUT;
+    }
     catch ( std::bad_alloc & )
     {
         return ECA_ALLOCMEM;
@@ -487,6 +500,10 @@ extern "C" int epicsShareAPI ca_array_put ( chtype type, arrayElementCount count
     catch ( cacChannel::unsupportedByService & )
     {
         return ECA_NOTINSERVICE;
+    }
+    catch ( cacChannel::requestTimedOut & )
+    {
+        return ECA_TIMEOUT;
     }
     catch ( std::bad_alloc & )
     {
@@ -564,17 +581,18 @@ extern "C" int epicsShareAPI ca_add_masked_array_event (
 
     try {
         autoPtrDestroy < oldSubscription > pSubsr
-            ( new oldSubscription  ( 
-            *pChan, tmpType, count, mask, pCallBack, pCallBackArg ) );
-        if ( ! pSubsr.get () ) {
+            ( new oldSubscription  ( *pChan, pCallBack, pCallBackArg ) );
+        if ( pSubsr.get () ) {
+            evid pTmp = pSubsr.release ();
+            if ( monixptr ) {
+                *monixptr = pTmp;
+            }
+            pTmp->begin ( tmpType, count, mask );
+            return ECA_NORMAL;
+        }
+        else {
             return ECA_ALLOCMEM;
         }
-
-        evid pTmp = pSubsr.release ();
-        if ( monixptr ) {
-            *monixptr = pTmp;
-        }
-        return ECA_NORMAL;
     }
     catch ( cacChannel::badType & )
     {

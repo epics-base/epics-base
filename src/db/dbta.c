@@ -96,7 +96,7 @@ char **argv;
 	while(!status) {
 	    int generate_nl;
 
-	    printf("\nPV: %s     Type: %s (atdb)",dbGetRecordName(pdbentry),rectype);
+	    printf("\nPV: %s     Type: %s",dbGetRecordName(pdbentry),rectype);
 	    printf("\n");
 	    generate_nl=FALSE;
 	    status = dbFirstFielddes(pdbentry,TRUE);
@@ -114,7 +114,10 @@ char **argv;
 		}
 		status=dbNextFielddes(pdbentry,TRUE);
 	    }
-	    printf("\f\n");
+	    if(oldshortform)
+	    	printf("\f\n");
+	    else
+		printf("\n$$end\n");
 	    status = dbNextRecord(pdbentry);
 	}
 	status = dbNextRecdes(pdbentry);

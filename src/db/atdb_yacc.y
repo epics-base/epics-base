@@ -71,6 +71,16 @@ header: PV WORD TYPE WORD WORD
 	if(status) printMessage("dbCreateRecord");
 }
 
+header: PV WORD TYPE WORD 
+{
+	strcpy(rectype,$4);
+	strcpy(recname,$2);
+	status = dbFindRecdes(pdbentry,rectype);
+	if(status) printMessage("dbFindRecdes");
+	status = dbCreateRecord(pdbentry,recname);
+	if(status) printMessage("dbCreateRecord");
+}
+
 fields: field
 	| fields field
 	;

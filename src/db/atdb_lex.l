@@ -22,7 +22,6 @@ yyreset()
 ^"PV:"		{ return(PV); }
 "Type:" 	{ return(TYPE); }
 		{ return(CLOSE); }
-\n		{ line_num++; return(CLOSE); }
 "$$end"		{ return(CLOSE); }
 
 {d}+		{ yylval.Str=(char *)malloc(strlen(yytext)+1);

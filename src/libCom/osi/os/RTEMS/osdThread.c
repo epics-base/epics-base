@@ -306,7 +306,7 @@ const char *threadGetNameSelf(void)
     return v->name;
 }
 
-void threadGetName(threadId id, char *name,size_t size)
+void threadGetName (threadId id, char *name, size_t size)
 {
     rtems_id tid = (rtems_id)id;
     rtems_status_code sc;
@@ -324,6 +324,62 @@ void threadGetName(threadId id, char *name,size_t size)
 	*name = '\0';
     }
     taskVarUnlock ();
+}
+
+threadId threadGetId (const char *name)
+{
+    struct taskVar *v;
+    rtems_id tid = 0;
+
+    /*
+     * Linear search is good enough since this routine
+     * is invoked only by command-line calls.
+     */
+    taskVarLock ();
+    for (v = taskVarHead ; v != NULL ; v = v->forw) {
+	if (strcmp (name, v->name) == 0) {
+	    tid = v->id;
+	    break;
+	} 
+    }
+    taskVarUnlock ();
+    return (threadId)tid;
+}
+
+/*
+ * Ensure func() is run only once.
+ */
+void threadOnceOsd(threadOnceId *id, void(*func)(void *), void *arg)
+{
+	rtems_mode mode;
+	static semMutexId onceMutex;
+
+	if (!onceMutex) {
+		rtems_task_mode(RTEMS_NO_PREEMPT, RTEMS_PREEMPT_MASK, &mode);
+		if(!onceMutex)
+			onceMutex = semMutexMustCreate();
+		rtems_task_mode(mode, RTEMS_PREEMPT_MASK, &mode);
+	}
+	semMutexMustTake(onceMutex);
+	switch (id->state) {
+	case 0:
+		id->state = -1;
+		id->sem = semMutexMustCreate();
+		semMutexMustTake(id->sem);
+		semMutexGive(onceMutex);
+		func(arg);
+		id->state = 1;
+		semBinaryGive(id->sem);
+		break;
+	case -1:
+		semMutexGive(onceMutex);
+		semBinaryMustTake(id->sem);
+		semBinaryGive(id->sem);
+		break;
+	default:
+		semMutexGive(onceMutex);
+		break;
+	}
 }
 
 /*

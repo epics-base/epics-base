@@ -20,6 +20,7 @@ YACC = $(EYACC)
 LEX = $(ELEX)
 G++ = /opt/gnu/bin/g++
 CCC = /opt/SUNWspro/bin/CC
+MV = mv
 RMDIR = rm -rf
 MKDIR = mkdir
 

@@ -21,6 +21,7 @@ YACC = $(EYACC)
 LEX = $(ELEX)
 G++ = g++
 CCC = /usr/lang/CC
+MV = mv
 RMDIR = rm -rf
 MKDIR = mkdir
 

@@ -18,6 +18,7 @@ YACC = $(EYACC)
 LEX = $(ELEX)
 G++ = g++
 CCC = CC
+MV = mv
 RMDIR = rm -rf
 MKDIR = mkdir
 

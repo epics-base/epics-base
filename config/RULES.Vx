@@ -138,7 +138,7 @@ clean::
 	$(RM) $(<F).nr
 	ln -s $<
 	$(MANGEN) -s $(<F)
-	mv $(<F).nr $(<F).1
+	$(MV) $(<F).nr $(<F).1
 
 
 $(INSTALL_DBD)/%: %

@@ -84,20 +84,20 @@ $(TARGETS) $(PROD): $(DEPLIBS)
 	$(YACC) $(YACCOPT) $<
 	@if [ -f y.tab.c ]; \
 		then \
-			echo "/bin/mv y.tab.c $*.c"; \
-			/bin/mv y.tab.c $*.c; \
+			echo "$(MV) y.tab.c $*.c"; \
+			$(MV) y.tab.c $*.c; \
 	fi
 	@if [ -f y.tab.h ]; \
 		then \
-			echo "/bin/mv y.tab.h $*.h"; \
-			/bin/mv y.tab.h $*.h; \
+			echo "$(MV) y.tab.h $*.h"; \
+			$(MV) y.tab.h $*.h; \
 	fi
 
 %.c: ../%.l
 	$(RM) lex.yy.c
 	$(LEX) $(LEXOPT) $<
 	$(RM) $@
-	/bin/mv lex.yy.c $@
+	$(MV) lex.yy.c $@
 
 #state notation language rule
 %.c: ../%.st
@@ -130,7 +130,7 @@ $(TARGETS) $(PROD): $(DEPLIBS)
 	$(RM) $(<F).nr
 	ln -s $<
 	$(MANGEN) -s $(<F)
-	mv $(<F).nr $(<F).1
+	$(MV) $(<F).nr $(<F).1
 
 # Mangen Rule:
 %.1:../%
@@ -138,7 +138,7 @@ $(TARGETS) $(PROD): $(DEPLIBS)
 	$(RM) $(<F).nr
 	ln -s $<
 	$(MANGEN) -s $(<F)
-	mv $(<F).nr $(<F).1
+	$(MV) $(<F).nr $(<F).1
 
 $(LIBNAME): $(LIBOBJS)
 	@echo Building library $@

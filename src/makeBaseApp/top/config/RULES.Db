@@ -5,15 +5,22 @@ DBEXPAND	= $(EPICS_BASE_HOST_BIN)/dbExpand
 DBST		= dbst
 MAKEDBDEPENDS	= perl $(TOP)/config/makeDbDepends.pl
 REPLACEVAR	= perl $(TOP)/config/replaceVAR.pl
+ifndef WIN32
+TOUCH		= touch
+else
+TOUCH		= type NUL >>
+endif
 
 INSTALL_BPTS = $(BPTS:%= $(INSTALL_DBD)/%)
 INSTALL_DBS = $(DBDINSTALL:%= $(INSTALL_DBD)/%)
 INSTALL_DBDNAME = $(DBDNAME:%= $(INSTALL_DBD)/%)
 INSTALL_DATA=$(INSTALLDB:%=$(INSTALL_DB)/%)
 
+DIRECTORY_TARGETS = $(INSTALL_DB) $(INSTALL_DBD)
+
 all::	install
 
-inc::	$(INSTALL_DBS)
+inc::	$(DIRECTORY_TARGETS) $(INSTALL_DBS)
 
 rebuild:: clean install
 
@@ -23,19 +30,24 @@ buildInstall:: build $(INSTALL_BPTS) $(INSTALL_DATA)
 
 clean::
 	@echo "Cleaning"
-	@$(RM) $(DB) $(DBDNAME) *.template *.substitutions *.db.raw *.edf esiread.cnf
+	@$(RM) $(DB) $(DBDNAME) *.template *.substitutions *.db.raw \
+	*.db-stamp *.edf esiread.cnf
+
+$(DIRECTORY_TARGETS):
+	$(MKDIR) $@
+
 
 ##################################################### "Foreign" templates
 
-TEMPLATE_LINKS = $(filter-out $(notdir $(USES_TEMPLATE)), $(USES_TEMPLATE))
-TEMPLATE_FILES = $(filter     $(notdir $(USES_TEMPLATE)), $(USES_TEMPLATE))
-DB_FROM_SOURCE = $(filter $(notdir $(wildcard ../*.db)), $(DB))
-DB_NOT_FROM_SOURCE = $(filter-out $(DB_FROM_SOURCE), $(filter %.db, $(DB)))
+TEMPLATE_LINKS	= $(filter-out $(notdir $(USES_TEMPLATE)), $(USES_TEMPLATE))
+TEMPLATE_FILES	= $(filter     $(notdir $(USES_TEMPLATE)), $(USES_TEMPLATE))
+DB_STAMP	= $(patsubst %.db, %.db-stamp, $(DB))
+DB_REALTARGET	= $(patsubst %.db-stamp, %.db, $@)
 
 ifneq '$(TEMPLATE_LINKS)' ''
 build:: $(notdir $(TEMPLATE_LINKS))
 endif
-build:: $(INSTALL_DBDNAME) $(TEMPLATE_FILES) $(DB)
+build:: $(INSTALL_DBD) $(INSTALL_DBDNAME) $(TEMPLATE_FILES) $(DB_STAMP)
 
 $(notdir $(TEMPLATE_LINKS)): %.template:
 ifndef WIN32
@@ -48,9 +60,9 @@ endif
 
 ##################################################### Inflated or plain databases
 
-$(INSTALL_DB)/%.db: %.db
+$(INSTALL_DB)/%.db: %.db-stamp
 	@echo "Installing database $@"
-	@$(INSTALL) -d -m 644 $< $(@D)
+	@$(INSTALL) -m 644 $(patsubst %.db-stamp, %.db, $<) $(@D)
 
 # Must have DBDNAME defined to use dbst optimization
 ifndef DBDNAME
@@ -60,18 +72,24 @@ endif
 # dbst based database optimization
 ifeq '$(DB_OPT)' 'YES'
 .PRECIOUS: %.db.raw
-%.db: %.db.raw $(INSTALL_DBD)/$(DBDNAME)
+%.db-stamp: %.db.raw $(INSTALL_DBD)/$(DBDNAME)
 	@echo "Optimizing database $@"
-	$(DBST) $(INSTALL_DBD)/$(DBDNAME) $< -d > $@
-$(DB_NOT_FROM_SOURCE): %.db: %.t.db.raw $(INSTALL_DBD)/$(DBDNAME)
+	$(DBST) $(INSTALL_DBD)/$(DBDNAME) $< -d > $(DB_REALTARGET)
+	@$(TOUCH) $@
+%.db-stamp: %.t.db.raw $(INSTALL_DBD)/$(DBDNAME)
 	@echo "Optimizing database $@"
-	$(DBST) $(INSTALL_DBD)/$(DBDNAME) $< -d > $@
+	$(DBST) $(INSTALL_DBD)/$(DBDNAME) $< -d > $(DB_REALTARGET)
+	@$(TOUCH) $@
 else
-# NO optimization => move it!
-%.db: %.db.raw
-	@$(MV) $< $@
-$(DB_NOT_FROM_SOURCE): %.db: %.t.db.raw
-	@$(MV) $< $@
+# NO optimization => move it and keep a stamp
+%.db-stamp: %.db.raw
+	@$(MV) $< $(DB_REALTARGET)
+	@$(TOUCH) $@
+	@$(TOUCH) $<
+%.db-stamp: %.t.db.raw
+	@$(MV) $< $(DB_REALTARGET)
+	@$(TOUCH) $@
+	@$(TOUCH) $<
 endif
 
 %.t.db.raw: %.substitutions
@@ -89,12 +107,9 @@ endif
 
 $(INSTALL_DB)/%.substitutions: %.substitutions
 	@echo "Installing $@"
-	@$(INSTALL) -d -m 644 $(@F) $(@D)
+	@$(INSTALL) -m 644 $(@F) $(@D)
 
-%.substitutions: %.subst
-	@$(MV) $< $@
-
-%.subst: ../%.substitutions
+%.substitutions: ../%.substitutions
 	@$(CP) $< $@
 
 ifdef CREATESUBSTITUTIONS
@@ -110,12 +125,9 @@ endif
 # Installed template files (dbLoadTemplate() on IOC side)
 $(INSTALL_DB)/%.template: %.template
 	@echo "Installing $@"
-	@$(INSTALL) -d -m 644 $(@F) $(@D)
+	@$(INSTALL) -m 644 $(@F) $(@D)
 
-%.template: %.templ
-	@$(MV) $< $@
-
-%.templ: ../%.template
+%.template: ../%.template
 	@$(CP) $< $@
 
 %.template: %.edf
@@ -125,7 +137,7 @@ $(INSTALL_DB)/%.template: %.template
 
 ##################################################### Flat databases
 
-$(addsuffix .raw,$(DB_FROM_SOURCE)): %.db.raw: ../%.db
+%.db.raw: ../%.db
 	$(CP) $< $@
 
 %.db.raw: %.edf
@@ -137,11 +149,11 @@ $(addsuffix .raw,$(DB_FROM_SOURCE)): %.db.raw: ../%.db
 
 $(INSTALL_DBD)/%: %
 	@echo "Installing $@"
-	@$(INSTALL) -d -m 644 $< $(@D)
+	@$(INSTALL) -m 644 $< $(@D)
 
 $(INSTALL_DBD)/%: ../%
 	@echo "Installing $@"
-	@$(INSTALL) -d -m 644 $< $(@D)
+	@$(INSTALL) -m 644 $< $(@D)
 
 bpt%.dbd: ../bpt%.data
 	$(RM) $@
@@ -158,6 +170,6 @@ endif
 
 .DEPENDS: $(filter $(patsubst %.db, %.substitutions, $(DB)), $(wildcard *.substitutions))
 	@echo "Making template database dependencies"
-	@$(MAKEDBDEPENDS) $<
+	@$(MAKEDBDEPENDS) $^
 
 -include .DEPENDS

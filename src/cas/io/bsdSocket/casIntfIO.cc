@@ -6,6 +6,9 @@
 //
 //
 // $Log$
+// Revision 1.5  1998/05/29 20:08:21  jhill
+// use new sock ioctl() typedef
+//
 // Revision 1.4  1998/02/05 23:11:16  jhill
 // use osiSock macros
 //
@@ -21,6 +24,7 @@
 //
 
 #include "server.h"
+#include "bsdSocketResource.h"
 
 //
 // 5 appears to be a TCP/IP built in maximum
@@ -49,11 +53,16 @@ caStatus casIntfIO::init(const caNetAddr &addrIn, casDGClient &dgClientIn,
 	caStatus stat;
 	int addrSize;
 
+	if (!bsdSockAttach()) {
+		return S_cas_internal;
+	}
+
 	/*
 	 * Setup the server socket
 	 */
 	this->sock = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (this->sock==INVALID_SOCKET) {
+		printf("No socket error was %s\n", SOCKERRSTR);
 		return S_cas_noFD;
 	}
 
@@ -184,6 +193,8 @@ casIntfIO::~casIntfIO()
 	if (this->pBCastUDP) {
 		delete this->pBCastUDP;
 	}
+
+	bsdSockRelease();
 }
 
 //

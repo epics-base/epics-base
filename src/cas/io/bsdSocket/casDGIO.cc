@@ -30,7 +30,7 @@
 
 #include "server.h"
 #include "dgInBufIL.h" // in line func for dgInBuf
-#include "ipAddrToA.h"
+#include "bsdSocketResource.h"
 
 casDGIO::~casDGIO()
 {

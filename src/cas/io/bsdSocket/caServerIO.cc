@@ -5,6 +5,9 @@
 //
 //
 // $Log$
+// Revision 1.8  1998/05/29 20:08:20  jhill
+// use new sock ioctl() typedef
+//
 // Revision 1.7  1997/08/05 00:47:22  jhill
 // fixed warnings
 //
@@ -33,6 +36,7 @@
 #include "server.h"
 #include "sigPipeIgnore.h"
 #include "addrList.h"
+#include "bsdSocketResource.h"
 
 static char *getToken(const char **ppString, char *pBuf, unsigned bufSIze);
 
@@ -43,6 +47,7 @@ int caServerIO::staticInitialized;
 //
 caServerIO::~caServerIO()
 {
+	bsdSockRelease();
 }
 
 //
@@ -72,6 +77,10 @@ caStatus caServerIO::init(caServerI &cas)
 	unsigned short port;
 	struct sockaddr_in saddr;
 	int autoBeaconAddr;
+
+	if (!bsdSockAttach()) {
+		return S_cas_internal;
+	}
 
 	caServerIO::staticInit();
 
@@ -119,14 +128,16 @@ caStatus caServerIO::init(caServerI &cas)
 		int configAddrOnceFlag = TRUE;
 		stat = S_cas_noInterface; 
 		while ( (pToken = getToken(&pStr, buf, sizeof(buf))) ) {
-			saddr.sin_addr.s_addr = inet_addr(pToken);
-			if (saddr.sin_addr.s_addr == ~0ul) {
+			int status;
+
+			status = aToIPAddr (pToken, 0u, &saddr);
+			if (status) {
 				ca_printf(
 					"%s: Parsing '%s'\n",
 					__FILE__,
 					EPICS_CAS_INTF_ADDR_LIST.name);
 				ca_printf(
-					"\tBad internet address format: '%s'\n",
+					"\tBad internet address or host name: '%s'\n",
 					pToken);
 				continue;
 			}

@@ -35,7 +35,7 @@
 //
 
 #include "server.h"
-#include "ipAddrToA.h"
+#include "bsdSocketResource.h"
 #include "addrList.h"
 
 //
@@ -64,6 +64,10 @@ caStatus casDGIntfIO::init(const caNetAddr &addr, unsigned connectWithThisPortIn
 	int status;
 	unsigned short beaconPort;
 	ELLLIST BCastAddrList;
+
+	if (!bsdSockAttach()) {
+		return S_cas_internal;
+	}
 
 	if (pAltOutIn) {
 		this->pAltOutIO = pAltOutIn;
@@ -220,11 +224,13 @@ caStatus casDGIntfIO::init(const caNetAddr &addr, unsigned connectWithThisPortIn
 //
 casDGIntfIO::~casDGIntfIO()
 {
-        if(this->sock!=INVALID_SOCKET){
-                socket_close(this->sock);
-        }
+    if(this->sock!=INVALID_SOCKET){
+            socket_close(this->sock);
+    }
 
 	ellFree(&this->beaconAddrList);
+
+	bsdSockRelease();
 }
 
 //

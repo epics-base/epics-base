@@ -5,6 +5,9 @@
 //
 //
 // $Log$
+// Revision 1.15  1998/05/29 20:08:21  jhill
+// use new sock ioctl() typedef
+//
 // Revision 1.14  1998/02/05 23:12:01  jhill
 // use osiSock macros
 //
@@ -53,7 +56,7 @@
 //
 
 #include "server.h"
-#include "ipAddrToA.h"
+#include "bsdSocketResource.h"
 
 
 //
@@ -73,71 +76,71 @@ casStreamIO::casStreamIO(caServerI &cas, const ioArgsToNewStreamIO &args) :
 //
 caStatus casStreamIO::init() 
 {
-	int 	yes = TRUE;
+	int yes = TRUE;
 	int	status;
 	int i;
 
-        /*
-         * see TCP(4P) this seems to make unsollicited single events much
-         * faster. I take care of queue up as load increases.
-         */
-        status = setsockopt(
-                                this->sock,
-                                IPPROTO_TCP,
-                                TCP_NODELAY,
-                                (char *)&yes,
-                                sizeof(yes));
-        if (status<0) {
+	/*
+	 * see TCP(4P) this seems to make unsollicited single events much
+	 * faster. I take care of queue up as load increases.
+	 */
+	status = setsockopt(
+							this->sock,
+							IPPROTO_TCP,
+							TCP_NODELAY,
+							(char *)&yes,
+							sizeof(yes));
+	if (status<0) {
 		ca_printf(
 			"CAS: %s TCP_NODELAY option set failed %s\n",
 			__FILE__, SOCKERRSTR);
 		return S_cas_internal;
-        }
+	}
 
-        /*
-         * turn on KEEPALIVE so if the client crashes
-         * this task will find out and exit
-         */
-        status = setsockopt(
-                        sock,
-                        SOL_SOCKET,
-                        SO_KEEPALIVE,
-                        (char *)&yes,
-                        sizeof(yes));
-        if (status<0) {
+	/*
+	 * turn on KEEPALIVE so if the client crashes
+	 * this task will find out and exit
+	 */
+	status = setsockopt(
+					sock,
+					SOL_SOCKET,
+					SO_KEEPALIVE,
+					(char *)&yes,
+					sizeof(yes));
+	if (status<0) {
 		ca_printf(
 			"CAS: %s SO_KEEPALIVE option set failed %s\n",
 			__FILE__, SOCKERRSTR);
 		return S_cas_internal;
-        }
+	}
 
 
-        /*
-         * set TCP buffer sizes to be synergistic
-         * with CA internal buffering
-         */
-        i = MAX_MSG_SIZE;
-        status = setsockopt(
-                        sock,
-                        SOL_SOCKET,
-                        SO_SNDBUF,
-                        (char *)&i,
-                        sizeof(i));
-        if(status < 0){
-                ca_printf("CAS: SO_SNDBUF set failed\n");
-		return S_cas_internal;
-        }
-        i = MAX_MSG_SIZE;
-        status = setsockopt(
-                        sock,
-                        SOL_SOCKET,
-                        SO_RCVBUF,
-                        (char *)&i,
-                        sizeof(i));
-        if(status < 0){
-                ca_printf("CAS: SO_RCVBUF set failed\n");
-		return S_cas_internal;
-        }
+	/*
+	 * set TCP buffer sizes to be synergistic
+	 * with CA internal buffering
+	 */
+	i = MAX_MSG_SIZE;
+	status = setsockopt(
+					sock,
+					SOL_SOCKET,
+					SO_SNDBUF,
+					(char *)&i,
+					sizeof(i));
+	if(status < 0){
+			ca_printf("CAS: SO_SNDBUF set failed\n");
+	return S_cas_internal;
+	}
+	i = MAX_MSG_SIZE;
+	status = setsockopt(
+					sock,
+					SOL_SOCKET,
+					SO_RCVBUF,
+					(char *)&i,
+					sizeof(i));
+	if(status < 0){
+			ca_printf("CAS: SO_RCVBUF set failed\n");
+	return S_cas_internal;
+	}
 
 	this->sockState = casOnLine;
 

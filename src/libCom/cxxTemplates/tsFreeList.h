@@ -119,7 +119,7 @@ inline void * tsFreeList < T, N, DEBUG_LEVEL >::allocate ( size_t size )
         this->pFreeList = p->pNext;
     }
     else {
-        p = allocateFromNewChunk ();
+        p = this->allocateFromNewChunk ();
     }
 
     this->unlock ();
@@ -137,7 +137,7 @@ tsFreeListItem < T, DEBUG_LEVEL > * tsFreeList < T, N, DEBUG_LEVEL >::allocateFr
     //}
 
     tsFreeListChunk < T, N, DEBUG_LEVEL > *pChunk = new ( tsFreeListChunk < T, N, DEBUG_LEVEL > );
-    if ( ! pChunk) {
+    if ( ! pChunk ) {
         return 0;
     }
 

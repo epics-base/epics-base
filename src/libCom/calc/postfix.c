@@ -247,6 +247,7 @@ static struct expression_element	elements[] = {
 {"<=",		3,	3,	BINARY_OPERATOR,LESS_OR_EQ},/* less or equal to*/
 {"<",		3,	3,	BINARY_OPERATOR,LESS_THAN}, /* less than */
 {"#",		3,	3,	BINARY_OPERATOR,NOT_EQ}, /* not equal */
+{"==",		3,	3,	BINARY_OPERATOR,EQUAL}, /* equal */
 {"=",		3,	3,	BINARY_OPERATOR,EQUAL}, /* equal */
 {""}
 };

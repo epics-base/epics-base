@@ -251,12 +251,12 @@ bool udpiiu::repeaterInstalled ()
 {
     bool                installed = false;
     int                 status;
-    SOCKET              sock;
+    SOCKET              tmpSock;
     struct sockaddr_in  bd;
     int                 flag;
 
-    sock = socket ( AF_INET, SOCK_DGRAM, IPPROTO_UDP );
-    if ( sock == INVALID_SOCKET ) {
+    tmpSock = socket ( AF_INET, SOCK_DGRAM, IPPROTO_UDP );
+    if ( tmpSock == INVALID_SOCKET ) {
         return installed;
     }
 
@@ -264,7 +264,7 @@ bool udpiiu::repeaterInstalled ()
     bd.sin_family = AF_INET;
     bd.sin_addr.s_addr = htonl ( INADDR_ANY ); 
     bd.sin_port = htons ( this->repeaterPort );   
-    status = bind ( sock, (struct sockaddr *) &bd, sizeof ( bd ) );
+    status = bind ( tmpSock, (struct sockaddr *) &bd, sizeof ( bd ) );
     if ( status < 0 ) {
         if ( SOCKERRNO == SOCK_EADDRINUSE ) {
             installed = true;
@@ -276,13 +276,13 @@ bool udpiiu::repeaterInstalled ()
      * this works on kernels that support multicast
      */
     flag = TRUE;
-    status = setsockopt ( sock, SOL_SOCKET, SO_REUSEADDR, 
+    status = setsockopt ( tmpSock, SOL_SOCKET, SO_REUSEADDR, 
                 (char *)&flag, sizeof ( flag ) );
-    if (status<0) {
+    if ( status < 0 ) {
         ca_printf ( "CAC: set socket option reuseaddr set failed\n");
     }
 
-    socket_close ( sock );
+    socket_close ( tmpSock );
 
     return installed;
 }

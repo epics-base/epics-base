@@ -1,6 +1,5 @@
 
 /* drvMz8310.c */
-/* mz8310_driver.c */
 /* share/src/drv $Id$ */
 /* 
  * Routines specific to the MZ8310 Low level routines for the AMD STC in
@@ -46,6 +45,7 @@
  * joh	04-28-92	added arguments to MACROS which had hidden
  *			parameters
  *  bg	06-25-92	combined drvMz8310.c and mz8310_driver.c
+ *  bg	06-26-92	Added level to mz8310_io_report.
  */
 
 /* drvMz8310.c -  Driver Support Routines for Mz8310 */
@@ -82,9 +82,10 @@ static long report(fp)
     FILE	*fp;
 {
     int card;
+    int level;
 
     for(card=0; card<tm_num_cards[MZ8310]; card++) 
-	mz8310_io_report(card);
+	mz8310_io_report(card,level);
 }
 
 static long init()

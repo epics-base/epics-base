@@ -41,7 +41,6 @@
 #   pragma warning ( disable:4660 )
 #endif
 
-template class tsFreeList < bhe, 256 >;
 template class resTable < nciu, chronIntId >;
 template class chronIntIdResTable < nciu >;
 template class resTable < baseNMIU, chronIntId >;
@@ -50,6 +49,7 @@ template class resTable < CASG, chronIntId >;
 template class chronIntIdResTable < CASG >;
 template class resTable < bhe, inetAddrID >;
 template class resTable < tcpiiu, caServerID >;
+template class tsFreeList < bhe, 0x100 >;
 template class tsFreeList < netReadNotifyIO, 1024, epicsMutexNOOP >;
 template class tsFreeList < netWriteNotifyIO, 1024, epicsMutexNOOP >;
 template class tsFreeList < netSubscription, 1024, epicsMutexNOOP >;
@@ -61,11 +61,13 @@ template class tsFreeList < getCallback, 1024 >;
 template class tsFreeList < getCopy, 1024 >;
 template class tsFreeList < hostNameCache, 16 >;
 template class tsFreeList < msgForMultiplyDefinedPV, 16 >;
-template class tsFreeList < class nciu, 1024 >;
+template class tsFreeList < nciu, 1024 >;
 template class tsFreeList < oldChannelNotify, 1024 >;
 template class tsFreeList < oldSubscription, 1024 >;
-template class tsFreeList < class putCallback, 1024 >;
+template class tsFreeList < putCallback, 1024 >;
 template class tsFreeList < repeaterClient, 0x20 >;
+template class epicsSingleton <cacServiceList>;
+template class epicsSingleton <localHostName>;
 
 #ifdef _MSC_VER
 #   pragma warning ( pop )

@@ -560,7 +560,7 @@ epicsShareFunc void epicsShareAPI threadOnceOsd (
     if ( ! win32ThreadInitOK ) {
         threadInit ();
         if ( ! win32ThreadInitOK ) {
-            return NULL;
+            return;
         }
     }
 

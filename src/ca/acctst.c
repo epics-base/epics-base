@@ -1704,7 +1704,7 @@ void arrayWriteNotify ( struct event_handler_args args )
     arrayWriteNotifyComplete = 1;
 }
 
-void arrayTest ( const char *pName, chid chan, unsigned maxArrayBytes )
+void arrayTest ( chid chan, unsigned maxArrayBytes )
 {
     dbr_double_t *pRF, *pWF;
     unsigned i;
@@ -1841,10 +1841,23 @@ void arrayTest ( const char *pName, chid chan, unsigned maxArrayBytes )
         SEVCHK ( status, "exception notify install failed" );
     }
 
-    /* 
-     * verify that unequal send/recv buffer sizes work
-     * (a bug related to this test was detected in early R3.14)
-     */
+    free ( pRF );
+    free ( pWF );
+
+    showProgressEnd ();
+}
+
+/* 
+ * verify that unequal send/recv buffer sizes work
+ * (a bug related to this test was detected in early R3.14)
+ *
+ * this test must be run when no other channels are connected
+ */
+void unequalServerBufferSizeTest ( const char *pName )
+{
+    dbr_double_t *pRF, *pWF;
+    int status;
+
     {
         chid newChan;
 
@@ -1852,7 +1865,20 @@ void arrayTest ( const char *pName, chid chan, unsigned maxArrayBytes )
         assert ( status == ECA_NORMAL );
         status = ca_pend_io ( 100.0 );
         assert ( status == ECA_NORMAL );
-        assert ( ca_element_count ( newChan ) == ca_element_count ( chan ) );
+
+        if ( ! ca_write_access ( newChan ) ) {
+            printf ( "skipping unequal buffer size test - no write access\n" );
+            status = ca_clear_channel ( newChan );
+            assert ( status == ECA_NORMAL );
+            return;
+        }
+
+        pRF = (dbr_double_t *) calloc ( ca_element_count (newChan), sizeof (*pRF) );
+        assert ( pRF != NULL );
+
+        pWF = (dbr_double_t *) calloc ( ca_element_count (newChan), sizeof (*pWF) );
+        assert ( pWF != NULL );
+
         status = ca_array_get ( DBR_DOUBLE, ca_element_count ( newChan ), 
                     newChan, pRF ); 
         status = ca_pend_io ( 100.0 );
@@ -1864,7 +1890,6 @@ void arrayTest ( const char *pName, chid chan, unsigned maxArrayBytes )
         assert ( status == ECA_NORMAL );
         status = ca_pend_io ( 100.0 );
         assert ( status == ECA_NORMAL );
-        assert ( ca_element_count ( newChan ) == ca_element_count ( chan ) );
         status = ca_array_put ( DBR_DOUBLE, ca_element_count ( newChan ), 
                     newChan, pWF ); 
         status = ca_array_get ( DBR_DOUBLE, 1, 
@@ -1877,8 +1902,6 @@ void arrayTest ( const char *pName, chid chan, unsigned maxArrayBytes )
 
     free ( pRF );
     free ( pWF );
-
-    showProgressEnd ();
 }
 
 /*
@@ -1967,20 +1990,20 @@ void updateTestEvent ( struct event_handler_args args )
     pET->count++;
 }
 
-dbr_float_t performMonitorUpdateTestPattern ( unsigned iter )
+dbr_float_t monitorUpdateTestPattern ( unsigned iter )
 {
     return ( (float) iter ) * 10.12345f + 10.7f;
 }
 
 
 /*
- * performMonitorUpdateTest
+ * monitorUpdateTest
  *
  * 1) verify we can add many monitors at once
  * 2) verify that under heavy load the last monitor
  *      returned is the last modification sent
  */
-void performMonitorUpdateTest ( chid chan )
+void monitorUpdateTest ( chid chan )
 {
     eventTest       test[100];
     dbr_float_t     temp, getResp;
@@ -2064,7 +2087,7 @@ void performMonitorUpdateTest ( chid chan )
         } 
 
         for ( j = 0; j <= i; j++ ) {
-            temp = performMonitorUpdateTestPattern ( j );
+            temp = monitorUpdateTestPattern ( j );
             SEVCHK ( ca_put ( DBR_FLOAT, chan, &temp ), NULL );
         }
 
@@ -2107,7 +2130,7 @@ void performMonitorUpdateTest ( chid chan )
                 assert ( tries++ < 500 );
                 if ( tries % 50 == 0 ) {
                     for ( j = 0; j <= i; j++ ) {
-                        dbr_float_t pat = performMonitorUpdateTestPattern ( j );
+                        dbr_float_t pat = monitorUpdateTestPattern ( j );
                         if ( pat == test[0].lastValue ) {
                             break;
                         }
@@ -2277,6 +2300,15 @@ void verifyImmediateTearDown ()
     ca_task_exit ();
 }
 
+/*
+ * keeping these tests together detects a bug
+ */
+void eventClearAndMultipleMonitorTest ( chid chan )
+{
+    eventClearTest ( chan );
+    monitorUpdateTest ( chan );
+}
+
 int acctst ( char *pName, unsigned channelCount, 
 			unsigned repetitionCount, enum ca_preemptive_callback_select select )
 {
@@ -2309,6 +2341,9 @@ int acctst ( char *pName, unsigned channelCount,
     connections = ca_get_ioc_connection_count ();
     assert ( connections == 0u );
 
+    /* this test must be run when no channels are connected */
+    unequalServerBufferSizeTest ( pName );
+
     status = ca_search ( pName, &chan );
     SEVCHK ( status, NULL );
     assert ( strcmp ( pName, ca_name (chan) ) == 0 );
@@ -2329,7 +2364,7 @@ int acctst ( char *pName, unsigned channelCount,
     verifyTimeStamps ( chan );
     verifyOldPend ();
     exceptionTest ( chan );
-    arrayTest ( pName, chan, maxArrayBytes ); 
+    arrayTest ( chan, maxArrayBytes ); 
     verifyMonitorSubscriptionFlushIO ( chan );
     monitorSubscriptionFirstUpdateTest ( pName, chan );
     performGrEnumTest ( chan );
@@ -2344,8 +2379,7 @@ int acctst ( char *pName, unsigned channelCount,
     multiSubscriptionDeleteTest ( chan );
     singleSubscriptionDeleteTest ( chan );
     channelClearWithEventTrafficTest ( pName );
-    eventClearTest ( chan );
-    performMonitorUpdateTest ( chan );
+    eventClearAndMultipleMonitorTest ( chan );
     verifyHighThroughputRead ( chan );
     verifyHighThroughputWrite ( chan );
     verifyHighThroughputReadCallback ( chan );

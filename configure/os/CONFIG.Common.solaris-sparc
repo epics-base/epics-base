@@ -30,9 +30,9 @@ ARCH_DEP_CPPFLAGS = -DSOLARIS
 # socket and nsl needed by libca.a
 ARCH_DEP_LDLIBS += -lsocket -lnsl
 
-####  -R does not work unless full path name are specified
-#### use loader's -R option
-####DEPLIB_LDFLAGS += $(sort $(DEPLIB_DIRS:%=-R%))
+#  -R does not work unless full path names are specified
+# use loader's -R option
+DEPLIB_LDFLAGS += $(sort $(DEPLIB_DIRS:%=-R%))
 
 ifdef CROSS
    GNU_TARGET=sparc-sun-solaris2

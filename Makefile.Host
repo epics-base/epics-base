@@ -4,6 +4,8 @@ include $(TOP)/config/CONFIG_EXTENSIONS
 
 PROD_LIBS += Com
 
+HTMLS += msi.html
+
 SRCS.c= ../msi.c
 PROD = msi
 

@@ -1,0 +1,240 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 5.5.1 sun4u) [Netscape]">
+</HEAD>
+<BODY>
+
+<H1>
+msi: Macro Substitution and Include Tool</H1>
+Marty Kraimer
+<BR>Argonne National Laboratory - Advanced Photon Source
+<BR>Original: December 1997
+<H2>
+Introduction</H2>
+msi is a general purpose macro substitution/include tool. It accepts as
+input an ascii template file. It looks for lines containing two reserved
+command names: include and substitute. It also looks for and performs substitutions
+on macros of the form $(var) and ${var}. It uses the macLib, an epics base
+library created by William Lupton, to perform the substitutions.
+
+<P>msi also allows substitutions to be specified via a separate substitution
+file. This substitution file has the same format as the substitution file
+accepted by&nbsp; subtool, which is provided with epics base. Subtool,
+however, does not support include files.
+<BR>&nbsp;
+<H2>
+Command Syntax:</H2>
+
+<PRE>msi -V -Idir -Msub -Ssubfile template</PRE>
+NOTE: All parameters are optional and a space is optional between&nbsp;
+-I, -M, and -S&nbsp; and the&nbsp; associated value. Output is written
+to stdout.
+
+<P>Where:
+
+<P><TT>-V</TT>
+<UL>If this parameter is specified then an error message is generated for
+all undefined macros.</UL>
+<TT>-I dir</TT>
+<UL>This parameter, which may be repeated, specifies a search path for
+include commands. For example:</UL>
+
+<DD>
+<TT>&nbsp;&nbsp;&nbsp; msi -I "/home/phoebus/MRK/examples:." -I".." template</TT></DD>
+
+<DD>
+specifies the search path:</DD>
+
+<DD>
+<TT>&nbsp;&nbsp;&nbsp; /home/phoebus/MRK/examples:.:..</TT></DD>
+
+<BR>-M substitutions
+<UL>This parameter, which may be repeated, specifies marco substitutions.
+For example:</UL>
+
+<DD>
+<TT>&nbsp;&nbsp;&nbsp; msi -M "a=aval,b=bval" -M"c=cval" template</TT></DD>
+
+<UL>specifies that in the template file each occurrence of:</UL>
+
+<UL>
+<DD>
+$(a) or ${a} is replaced by aval</DD>
+
+<DD>
+$(b) or ${b} is replaced by bval</DD>
+
+<DD>
+$(c) or ${c} is replaced by cval</DD>
+
+<BR>Note that substitutions may also be specified in the template file
+and via an optional substitution file.</UL>
+-S subfile
+<UL>The substitution file. See below for format.</UL>
+template
+<UL>The input file. If no file is specified then input is taken from stdin,
+i.e. msi can be used as a filter. See below for a description of commands
+that can be imbedded in the template file.</UL>
+NOTE: Just issuing the command:
+<PRE>&nbsp;&nbsp;&nbsp; msi</PRE>
+
+<UL>Is a valid command, i.e. no options and the input file is&nbsp; stdin.
+To see the usage just issue the command with an invalid switch. For example:
+<PRE>msi -?</PRE>
+</UL>
+
+<H2>
+Template File Format</H2>
+This file contains the text to be read and written to stdout after macro
+substitution is performed. If no file is given then input is read from
+stdin. In addition the file can have lines containing include and substitute
+commands. The format of these commands are:
+<PRE>&nbsp;&nbsp;&nbsp; include "file"</PRE>
+
+<PRE>&nbsp;&nbsp;&nbsp; substitute "var=value,var=value,..."</PRE>
+For example let the command be:
+<PRE>&nbsp;&nbsp;&nbsp; msi template</PRE>
+and file includeFile contain:
+<PRE>&nbsp;&nbsp;&nbsp; first name is ${first}
+&nbsp;&nbsp;&nbsp; family name is ${family}</PRE>
+and template is
+<BR>&nbsp;
+<PRE>&nbsp;&nbsp;&nbsp; substitute "first=Marty,family=Kraimer"
+&nbsp;&nbsp;&nbsp; include "includeFile"
+&nbsp;&nbsp;&nbsp; substitute "first=Irma,family=Kraimer"
+&nbsp;&nbsp;&nbsp; include "includeFile"</PRE>
+then the following is written to stdout.
+<PRE>&nbsp;&nbsp;&nbsp; first name is Marty
+&nbsp;&nbsp;&nbsp; family name is Kraimer
+&nbsp;&nbsp;&nbsp; first name is Irma
+&nbsp;&nbsp;&nbsp; family name is Kraimer</PRE>
+
+<H2>
+Substitution File Format</H2>
+The optional substitution file has two formats: regular and pattern. Lets
+discuss&nbsp; each separately
+
+<P>regular format:
+<DD>
+{var1=value1,var2=value2,...}</DD>
+
+<DD>
+{var1=value1,var2=value2,...}</DD>
+
+<DD>
+...</DD>
+
+<BR>After reading each set of replacements within braces,&nbsp;&nbsp; the
+template file is read and macro substitution performed.
+
+<P>pattern&nbsp; format:
+<DD>
+pattern {var1,var2,...}</DD>
+
+<DD>
+{value1,value2,...}</DD>
+
+<DD>
+{value1,value2,...}</DD>
+
+<H3>
+Regular substitution example</H3>
+Let the command be:
+<PRE>&nbsp;&nbsp;&nbsp; msi -S substitute template</PRE>
+and the template file
+<PRE>&nbsp;&nbsp;&nbsp; first name is ${first}
+&nbsp;&nbsp;&nbsp; family name is ${family}</PRE>
+and file substitute
+<PRE>&nbsp;&nbsp;&nbsp; {first=Marty,family=Kraimer}
+&nbsp;&nbsp;&nbsp; {first=Irma,family=Kraimer}</PRE>
+then the following is written to stdout.
+<PRE>&nbsp;&nbsp;&nbsp; first name is Marty
+&nbsp;&nbsp;&nbsp; family name is Kraimer
+&nbsp;&nbsp;&nbsp; first name is Irma
+&nbsp;&nbsp;&nbsp; family name is Kraimer</PRE>
+
+<H3>
+Pattern substitution example</H3>
+Let the command be:
+<PRE>&nbsp;&nbsp;&nbsp; msi -S pattern template</PRE>
+and pattern file
+<PRE>&nbsp;&nbsp;&nbsp; pattern {first,last}
+&nbsp;&nbsp;&nbsp; {first=Marty,family=Kraimer}
+&nbsp;&nbsp;&nbsp; {first=Irma,family=Kraimer}</PRE>
+then the following is written to stdout.
+<PRE>&nbsp;&nbsp;&nbsp; first name is Marty
+&nbsp;&nbsp;&nbsp; family name is Kraimer
+&nbsp;&nbsp;&nbsp; first name is Irma
+&nbsp;&nbsp;&nbsp; family name is Kraimer</PRE>
+
+<H2>
+Some Details</H2>
+Building msi
+<UL>msi is built as a normal extensions product. It should be built with
+base version 3.13.0beta11 or later.</UL>
+
+<DT>
+Line length limits</DT>
+
+<UL>All buffers containing input or output lines are set for a maximum
+line length of 1024. Longer input or output lines will cause msi to fail.</UL>
+macLib
+<UL>Currently the only macLib documentation is in macLibNOTES and macLibREADME
+which are in base/src/libCom.</UL>
+template file syntax
+<UL>except for lines containing include or substitute commands each line
+is just passed to macLib. Lines containing these commands MUST be of the
+form:</UL>
+
+<PRE>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; include "&lt;file name>"</PRE>
+
+<PRE>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; or</PRE>
+
+<PRE>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; substitute "&lt;substitutions>"</PRE>
+
+<UL>White space is allowed before and after the command and after the quoted
+string. If imbedded quotes are needed the \ character can be used as an
+escape character. For example:</UL>
+
+<PRE>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; substitute "a=\"val\""</PRE>
+
+<UL>specifies the substitution</UL>
+
+<PRE>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; a=val</PRE>
+
+<UL>If a line does have the above syntax it is just passed to macLib for
+processing without any notification. Thus the input line:</UL>
+
+<PRE>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; include "myfile" #include file</PRE>
+
+<UL>would just be passed to macLib, i.e. it would NOT be considered an
+include command.</UL>
+substitution&nbsp; file syntax
+<UL>A comment line may appear anywhere and is just ignored. A comment line
+is any line beginning with the character #, which MUST be the very first
+character of the comment line.
+
+<P>For items within braces separators may be given between items. A separator
+is either white space or a comma. White space is any of the following:
+space, formfeed, newline, carriage return, tab, vertical tab.
+
+<P>Each item within braces can be an alphanumeric token or a quoted string.
+The characters \" can be used for imbedded quotes. The rules for non quoted
+strings are actually more relaxed but any item that is not an alphanumeric
+string should be given as a quoted string.
+
+<P>Thus
+<PRE>&nbsp;&nbsp;&nbsp; {a=aa b=bb c="\"cc\""}</PRE>
+and
+<PRE>&nbsp;&nbsp;&nbsp; {a=aa,b=bb,c="\"cc\""}</PRE>
+and
+<PRE>&nbsp;&nbsp;&nbsp; {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; a="aa"
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; b="bb",
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; c="\"cc\""
+&nbsp;&nbsp;&nbsp; }</PRE>
+are all equivalent.</UL>
+
+</BODY>
+</HTML>

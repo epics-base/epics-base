@@ -7,6 +7,10 @@
 #       The order of the following declarations will be retained
 #       within those definitions.
 #
+# If you don't want to install into $(TOP) then
+# define INSTALL_LOCATION_APP here
+#INSTALL_LOCATION_APP=<fullpathname>
+#
 # Add your declarations here
 
 TEMPLATE_TOP=_TEMPLATE_TOP_

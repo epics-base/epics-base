@@ -26,3 +26,11 @@ xRecvStatus dgInBuf::xRecv (char *pBufIn, bufSizeT nBytesToRecv,
         return stat;
 }
 
+//
+// dgInBuf::getSender()
+//
+caAddr dgInBuf::getSender() const
+{
+        return this->from.get();
+}
+

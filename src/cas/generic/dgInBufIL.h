@@ -14,14 +14,6 @@ inline dgInBuf::dgInBuf (osiMutex &mutexIn, unsigned bufSizeIn) :
 }
 
 //
-// dgInBuf::getSender()
-//
-inline const caAddr dgInBuf::getSender() const
-{
-	return this->from.get();
-}
-
-//
 // dgInBuf::hasAddress()
 //
 inline int dgInBuf::hasAddress() const

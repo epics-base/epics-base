@@ -30,7 +30,7 @@
 #  	...
 #
 
-all: bld_errSym dlsource eddsource seqsource devtestsource
+all: bld_errSym dlsource eddsource seqsource 
 
 bld_errSym:
 	cd libUnix; 	sh blderrSymTbl

@@ -192,7 +192,7 @@ READONLY char	*ca_message_text[]
 "A monitor by that id cant be found",
 "Remote channel has new network address",
 "New or resumed network connection",
-"Attempt to import from a task without a CA context failed",
+"Specified task isnt a member of a CA context",
 "Attempt to use defunct CA feature failed",
 "The supplied string is empty",
 "Unable to spawn the CA repeater thread- auto reconnect will fail",

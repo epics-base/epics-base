@@ -29,6 +29,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.23  1996/08/05 19:18:56  jhill
+ * better msg for lack of fp
+ *
  * Revision 1.22  1996/06/19 17:59:31  jhill
  * many 3.13 beta changes
  *
@@ -669,8 +672,26 @@ int ca_import(int tid)
  */
 int ca_import_cancel(int tid)
 {
-        int     status;
-        TVIU    *ptviu;
+        int 			status;
+        TVIU    		*ptviu;
+        struct ca_static 	*pcas;
+
+	if (tid == taskIdSelf()) {
+		pcas = NULL;
+	}
+	else {
+		pcas = ca_static;
+	}
+
+	/*
+	 * Attempt to attach to the specified context
+	 */
+	ca_static = (struct ca_static *) 
+		taskVarGet(tid, (int *)&ca_static);
+	if (ca_static == (struct ca_static *) ERROR){
+		ca_static = pcas;
+		return ECA_NOCACTX;
+	}
 
         LOCK;
         ptviu = (TVIU *) ellFirst(&ca_static->ca_taskVarList);
@@ -682,15 +703,19 @@ int ca_import_cancel(int tid)
         }
 
         if(!ptviu){
+		ca_static = pcas;
         	UNLOCK;
                 return ECA_NOCACTX;
         }
 
         ellDelete(&ca_static->ca_taskVarList, &ptviu->node);
+	free(ptviu);
         UNLOCK;
 
         status = taskVarDelete(tid, (void *)&ca_static);
         assert (status == OK);
+
+	ca_static = pcas;
 
         return ECA_NORMAL;
 }

@@ -62,7 +62,6 @@
 #include	<stdioLib.h>
 #include	<lstLib.h>
 #include	<string.h>
-#include	<memLib.h>
 #include	<wdLib.h>
 
 #include	<alarm.h>

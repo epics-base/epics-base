@@ -677,7 +677,7 @@ void tcpiiu::disconnect ()
 
     {
         osiAutoMutex autoMutex ( this->mutex );
-        this->ioTable.destroyAllEntries ();
+        this->ioTable.traverse ( baseNMIU::destroy );
     }
 
     this->cleanShutdown ();
@@ -783,9 +783,7 @@ tcpiiu::~tcpiiu ()
         this->pHostNameCache->destroy ();
     }
 
-    if ( this->pBHE ) {
-        this->pBHE->destroy ();
-    }
+    // this->pBHE lifetime management is handled by the class that creates this object
 }
 
 void tcpiiu::suicide ()

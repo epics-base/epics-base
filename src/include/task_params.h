@@ -81,8 +81,8 @@
 #define CA_CLIENT_PRI	180	/* Channel Access clients */
 #define CA_REPEATER_PRI	181	/* Channel Access repeater */
 #define	ERRLOG_PRI 	CA_REPEATER_PRI /*error logger task*/      
-#define CAST_SRVR_PRI	182	/* Channel Access broadcast server */
-#define CA_ONLINE_PRI	183	/* Channel Access server online notify */
+#define CA_ONLINE_PRI	182	/* Channel Access server online notify */
+#define CAST_SRVR_PRI	183	/* Channel Access broadcast server */
 #define TASKWD_PRI      200     /* Watchdog Scan Task - runs every 6 seconds */
 #define SMIOTEST_PRI    205     /* Stepper Mtr in/out test - runs every .1 sec */
 #define SMROTTEST_PRI   205     /* Stepper Mtr rotate test - runs every .1 sec */

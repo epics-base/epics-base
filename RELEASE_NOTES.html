@@ -7,7 +7,20 @@
 </title>
 </head>
 <body>
-
+<center>
+<h1>
+EPICS Release base 3.14.0beta1</h1></center>
+<h2>Changes since alpha2</h2>
+All changes for release 3.13.5 that also apply to 3.14 have been made.
+<p>
+<b>devAiSoftRaw and devAoSoftRaw</b>
+</p>
+<p>
+A new state is defined for the LINR field. The name is "SLOPE",
+which allows any device type to be used with manual settings of
+the EOFF and ESLO fields.  With this setting, the device support's
+special_linconv() routine is only called when LINR=LINEAR.
+</p>
 <center>
 <h1>
 EPICS Release base 3.14.0alpha2</h1></center>

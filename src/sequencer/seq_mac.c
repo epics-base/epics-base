@@ -53,6 +53,7 @@ MACRO	*pMac;
 seqMacEval(pInStr, pOutStr, maxChar, macTbl)
 char	*pInStr;
 char	*pOutStr;
+int	maxChar;
 MACRO	*macTbl;
 {
 	char		*pMacVal, *pTmp;
@@ -100,7 +101,8 @@ MACRO	*macTbl;
 		printf("OutStr=%s\n", pTmp);
 #endif
 	}
-	*pOutStr == 0;
+	/* lrd - was: *pOutStr == 0; */
+	*pOutStr = 0;
 }
 /* 
  * seqMacValGet - given macro name, return pointer to its value.

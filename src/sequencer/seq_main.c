@@ -157,7 +157,7 @@ int		stack_size;	/* optional stack size (bytes) */
 
 	/* Spawn the initial sequencer task */
 	tid = taskSpawn(ptask_name, SPAWN_PRIORITY, SPAWN_OPTIONS,
-	 stack_size, sequencer, pSP, stack_size, ptask_name);
+	 stack_size, sequencer, (int)pSP, stack_size, (int)ptask_name,0,0,0,0,0,0,0);
 
 	seq_log(pSP, "Spawning state program \"%s\", task name = \"%s\"\n",
 	 pSP->name, ptask_name);

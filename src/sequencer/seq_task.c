@@ -83,8 +83,10 @@ char		*ptask_name;	/* Parent task name */
 		  SPAWN_PRIORITY+pSS->task_priority,	/* priority */
 		  SPAWN_OPTIONS,			/* task options */
 		  stack_size,				/* stack size */
-		  ss_entry,				/* entry point */
-		  pSP, pSS);				/* pass 2 parameters */
+		  (int)ss_entry,			/* entry point */
+		  (int)pSP,
+		  (int)pSS,				/* pass 2 parameters */
+		  0,0,0,0,0,0,0,0);
 
 		seq_log(pSP, "Spawning task %d: \"%s\"\n", task_id, task_name);
 	}
@@ -308,7 +310,7 @@ TCBX	*pTcbX;	/* ptr to TCB of task to be deleted */
 #endif
 	pSP = seqFindProg(tid);
 	if (pSP == NULL)
-		return; /* not a state program task */
+		return(0); /* not a state program task */
 
 	logMsg("Delete %s: pSP=%d=0x%x, tid=%d\n",
 	 pSP->name, pSP, pSP, tid);

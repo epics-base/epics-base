@@ -80,7 +80,6 @@ FAST int 		sock;
   	FAST int		status;
 	FAST struct client 	*client;
     	int 			true = TRUE;
-	int			i;
 
 	client = NULL;
 

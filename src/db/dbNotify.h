@@ -25,11 +25,18 @@ of this distribution.
 	struct putNotify;
     extern "C" {
 #endif
-
+
 typedef struct ellCheckNode{
     ELLNODE node;
     int     isOnList;
 }ellCheckNode;
+
+typedef enum {
+    putNotifyOK,
+    putNotifyCanceled,
+    putNotifyBlocked,
+    putNotifyError
+}putNotifyStatus;
 
 typedef struct putNotify{
         ellCheckNode    restartNode;
@@ -41,16 +48,17 @@ typedef struct putNotify{
         short           dbrType;        /*database request type*/
         void            *usrPvt;        /*for private use of user*/
         /*The following is status of request. Set by dbNotify */
-        long            status;
+        putNotifyStatus status;
         /*The following are private to dbNotify */
         short           state;
+        short           requestCancel;
         int		ntimesActive;   /*number of times found pact=true*/
         CALLBACK        callback;
 }putNotify;
 
-/* dbPutNotify ans dbNotifyCancel are the routines called by user*/
+/* dbPutNotify and dbNotifyCancel are the routines called by user*/
 /* The user is normally channel access client or server               */
-epicsShareFunc long epicsShareAPI dbPutNotify(putNotify *pputNotify);
+epicsShareFunc void epicsShareAPI dbPutNotify(putNotify *pputNotify);
 epicsShareFunc void epicsShareAPI dbNotifyCancel(putNotify *pputNotify);
 
 /*dbPutNotifyMapType convience function for old database access*/
@@ -82,8 +90,7 @@ epicsShareFunc int epicsShareAPI dbNotifyDump(void);
  * until the putCallbacl is complete. The use can call dbNotifyCancel
  * to cancel the operation. 
  *    
- * dbPutNotify always returns S_db_Pending. The user callback is called
- * when the operation is completed.
+ * The user callback is called when the operation is completed.
  *
  * The other global routines (dbNotifyAdd and dbNotifyCompletion) are called by:
  *
@@ -113,7 +120,7 @@ epicsShareFunc int epicsShareAPI dbNotifyDump(void);
  *
  * When a putNotify becomes the owner of a record, it trys up to three times
  * to find PACT false. If on the third try it finds the record active,
- * it gives up and calls the userCallback with status S_db_Blocked.
+ * it gives up and calls the userCallback with status putNotifyBlocked.
  *
  * When a putNotify calls dbProcess, each record that is processed 
  * is added to a waitList. The only exception is that if it finds

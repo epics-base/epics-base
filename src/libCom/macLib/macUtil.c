@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "errlog.h"
 
 #define epicsExportSharedSymbols
 #include "macLib.h"
@@ -239,7 +240,7 @@ epicsShareAPI macParseDefns(
 
     /* error exit */
 error:
-    macErrMessage0( -1, "macParseDefns: failed to allocate memory" );
+    errlogPrintf( "macParseDefns: failed to allocate memory\n" );
     if ( ptr != NULL ) free( ptr );
     if ( end != NULL ) free( end );
     if ( del != NULL ) free( ( char * ) del );

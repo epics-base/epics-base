@@ -21,8 +21,6 @@
  * EPICS include files needed by this file
  */
 #include "ellLib.h"
-#include "epicsPrint.h"
-#include "errMdef.h"
 #include "shareLib.h"
 
 #ifdef __cplusplus
@@ -49,21 +47,6 @@ extern "C" {
  * Maximum size of macro name or value string (simpler to make fixed)
  */
 #define MAC_SIZE 256
-
-/*
- * Macros passing __FILE__ and __LINE__ to what will be macErrPrintf()
- */
-#define macErrMessage0( _status, _format ) \
-        errPrintf( _status, __FILE__, __LINE__, _format )
-
-#define macErrMessage1( _status, _format, _arg1 ) \
-        errPrintf( _status, __FILE__, __LINE__, _format, _arg1 )
-
-#define macErrMessage2( _status, _format, _arg1, _arg2 ) \
-        errPrintf( _status, __FILE__, __LINE__, _format, _arg1, _arg2 )
-
-#define macErrMessage3( _status, _format, _arg1, _arg2, _arg3 ) \
-        errPrintf( _status, __FILE__, __LINE__, _format, _arg1, _arg2, _arg3 )
 
 /*
  * Special characters
@@ -103,7 +86,8 @@ typedef struct {
  */
 typedef struct mac_entry {
     ELLNODE     node;           /* prev and next pointers */
-    char        *name;          /* macro name */
+    char        *name;          /* entry name */
+    char        *type;          /* entry type */
     char        *rawval;        /* raw (unexpanded) value */
     char        *value;         /* expanded macro value */
     long        length;         /* length of value */

@@ -24,11 +24,13 @@ macEnvExpand(const char *str)
 {
     MAC_HANDLE *handle;
     static char *pairs[] = { "", "environ", NULL, NULL };
+    long status;
     int destCapacity = 200;
     char *dest = NULL; 
     int n;
 
-    assert(macCreateHandle(&handle, pairs) == 0);
+    status = macCreateHandle(&handle, pairs);
+    assert(status == 0);
     do {
         destCapacity *= 2;
         /*
@@ -36,7 +38,8 @@ macEnvExpand(const char *str)
          * bother copying the contents if realloc needs to move the buffer
          */
         free(dest);
-        assert((dest = malloc(destCapacity)) != 0);
+        dest = malloc(destCapacity);
+        assert(dest != 0);
         n = macExpandString(handle, str, dest, destCapacity);
     } while (n >= (destCapacity - 1));
     if (n < 0) {
@@ -48,6 +51,7 @@ macEnvExpand(const char *str)
         if (unused >= 20)
             dest = realloc(dest, n);
     }
-    assert(macDeleteHandle(handle) == 0);
+    status = macDeleteHandle(handle);
+    assert(status == 0);
     return dest;
 }

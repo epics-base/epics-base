@@ -45,6 +45,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "errlog.h"
 
 #define epicsExportSharedSymbols
 #include "dbmf.h"
@@ -66,6 +67,7 @@ static void       delete( MAC_HANDLE *handle, MAC_ENTRY *entry );
 static long       expand( MAC_HANDLE *handle );
 static void       trans ( MAC_HANDLE *handle, MAC_ENTRY *entry, long level,
                         char *term, const char **rawval, char **value, char *valend );
+static void cpy2val(const char *src, char **value, char *valend);
 
 /*
  * Flag bits
@@ -110,7 +112,7 @@ epicsShareAPI macCreateHandle(
     /* allocate macro substitution context */
     handle = ( MAC_HANDLE * ) dbmfMalloc( sizeof( MAC_HANDLE ) );
     if ( handle == NULL ) {
-        macErrMessage0( -1, "macCreateHandle: failed to allocate context" );
+        errlogPrintf( "macCreateHandle: failed to allocate context\n" );
         return -1;
     }
 
@@ -177,7 +179,7 @@ epicsShareAPI macExpandString(
 
     /* check handle */
     if ( handle == NULL || handle->magic != MAC_MAGIC ) {
-        macErrMessage0( -1, "macExpandString: NULL or invalid handle\n" );
+        errlogPrintf( "macExpandString: NULL or invalid handle\n" );
         return -1;
     }
 
@@ -187,10 +189,11 @@ epicsShareAPI macExpandString(
 
     /* expand raw values if necessary */
     if ( expand( handle ) < 0 )
-        macErrMessage0( -1, "macExpandString: failed to expand raw values" );
+        errlogPrintf( "macExpandString: failed to expand raw values\n" );
 
-    /* fill in necessary fields in fake macro entry struncture */
-    entry.name  = "<string>";
+    /* fill in necessary fields in fake macro entry structure */
+    entry.name  = (char *) src;
+    entry.type  = "string";
     entry.error = FALSE;
 
     /* expand the string */
@@ -226,12 +229,12 @@ epicsShareAPI macPutValue(
 
     /* check handle */
     if ( handle == NULL || handle->magic != MAC_MAGIC ) {
-        macErrMessage0( -1, "macPutValue: NULL or invalid handle\n" );
+        errlogPrintf( "macPutValue: NULL or invalid handle\n" );
         return -1;
     }
 
     if ( handle->debug & 1 )
-        epicsPrintf( "macPutValue( %s, %s )\n", name, value ? value : "NULL" );
+        printf( "macPutValue( %s, %s )\n", name, value ? value : "NULL" );
 
     /* handle NULL value case: if name was found, delete entry (may be
        several entries at different scoping levels) */
@@ -249,15 +252,17 @@ epicsShareAPI macPutValue(
     if ( entry == NULL || entry->level < handle->level ) {
         entry = create( handle, name, FALSE );
         if ( entry == NULL ) {
-            macErrMessage2( -1, "macPutValue: failed to create macro %s = %s",
+            errlogPrintf( "macPutValue: failed to create macro %s = %s\n",
                             name, value );
             return -1;
+        } else {
+            entry->type = "macro";
         }
     }
 
     /* copy raw value */
     if ( rawval( handle, entry, value ) == NULL ) {
-        macErrMessage2( -1, "macPutValue: failed to copy macro %s = %s",
+        errlogPrintf( "macPutValue: failed to copy macro %s = %s\n",
                         name, value ) ;
         return -1;
     }
@@ -286,13 +291,13 @@ epicsShareAPI macGetValue(
 
     /* check handle */
     if ( handle == NULL || handle->magic != MAC_MAGIC ) {
-        macErrMessage0( -1, "macGetValue: NULL or invalid handle\n" );
+        errlogPrintf( "macGetValue: NULL or invalid handle\n" );
         return -1;
     }
 
     /* debug output */
     if ( handle->debug & 1 )
-        epicsPrintf( "macGetValue( %s )\n", name );
+        printf( "macGetValue( %s )\n", name );
 
     /* look up macro name */
     entry = lookup( handle, name, FALSE );
@@ -312,7 +317,7 @@ epicsShareAPI macGetValue(
     /* expand raw values if necessary; if fail (can only fail because of
        memory allocation failure), return same as if not found */
     if ( expand( handle ) < 0 ) {
-        macErrMessage0( -1, "macGetValue: failed to expand raw values" );
+        errlogPrintf( "macGetValue: failed to expand raw values\n" );
         strncpy( value, name, maxlen );
         return ( value[maxlen-1] == '\0' ) ? - (long) strlen( name ) : -maxlen;
     }
@@ -337,7 +342,7 @@ epicsShareAPI macDeleteHandle(
 
     /* check handle */
     if ( handle == NULL || handle->magic != MAC_MAGIC ) {
-        macErrMessage0( -1, "macDeleteHandle: NULL or invalid handle\n" );
+        errlogPrintf( "macDeleteHandle: NULL or invalid handle\n" );
         return -1;
     }
 
@@ -369,7 +374,7 @@ epicsShareAPI macPushScope(
 
     /* check handle */
     if ( handle == NULL || handle->magic != MAC_MAGIC ) {
-        macErrMessage0( -1, "macPushScope: NULL or invalid handle\n" );
+        errlogPrintf( "macPushScope: NULL or invalid handle\n" );
         return -1;
     }
 
@@ -384,8 +389,10 @@ epicsShareAPI macPushScope(
     entry = create( handle, "<scope>", TRUE );
     if ( entry == NULL ) {
         handle->level--;
-        macErrMessage0( -1, "macPushScope: failed to push scope" );
+        errlogPrintf( "macPushScope: failed to push scope\n" );
         return -1;
+    } else {
+        entry->type = "scope marker";
     }
 
     return 0;
@@ -402,7 +409,7 @@ epicsShareAPI macPopScope(
 
     /* check handle */
     if ( handle == NULL || handle->magic != MAC_MAGIC ) {
-        macErrMessage0( -1, "macPopScope: NULL or invalid handle\n" );
+        errlogPrintf( "macPopScope: NULL or invalid handle\n" );
         return -1;
     }
 
@@ -412,14 +419,14 @@ epicsShareAPI macPopScope(
 
     /* check scoping level isn't already zero */
     if ( handle->level == 0 ) {
-        macErrMessage0( -1, "macPopScope: no scope to pop" );
+        errlogPrintf( "macPopScope: no scope to pop\n" );
         return -1;
     }
 
     /* look up most recent scope entry */
     entry = lookup( handle, "<scope>", TRUE );
     if ( entry == NULL ) {
-        macErrMessage0( -1, "macPopScope: no scope to pop" );
+        errlogPrintf( "macPopScope: no scope to pop\n" );
         return -1;
     }
 
@@ -447,25 +454,25 @@ epicsShareAPI macReportMacros(
 
     /* check handle */
     if ( handle == NULL || handle->magic != MAC_MAGIC ) {
-        macErrMessage0( -1, "macReportMacros: NULL or invalid handle\n" );
+        errlogPrintf( "macReportMacros: NULL or invalid handle\n" );
         return -1;
     }
 
     /* expand raw values if necessary; report but ignore failure */
     if ( expand( handle ) < 0 )
-        macErrMessage0( -1, "macGetValue: failed to expand raw values" );
+        errlogPrintf( "macGetValue: failed to expand raw values\n" );
 
     /* loop through macros, reporting names and values */
-    epicsPrintf( format, "e", "name", "rawval", "value" );
-    epicsPrintf( format, "-", "----", "------", "-----" );
+    printf( format, "e", "name", "rawval", "value" );
+    printf( format, "-", "----", "------", "-----" );
     for ( entry = first( handle ); entry != NULL; entry = next( entry ) ) {
 
         /* differentiate between "special" (scope marker) and ordinary
            entries */
         if ( entry->special )
-            epicsPrintf( format, "s", "----", "------", "-----" );
+            printf( format, "s", "----", "------", "-----" );
         else
-            epicsPrintf( format, entry->error ? "*" : " ", entry->name,
+            printf( format, entry->error ? "*" : " ", entry->name,
                          entry->rawval ? entry->rawval : "",
                          entry->value  ? entry->value  : "");
     }
@@ -522,6 +529,7 @@ static MAC_ENTRY *create( MAC_HANDLE *handle, const char *name, long special )
             entry = NULL;
         }
         else {
+            entry->type    = "";
             entry->rawval  = NULL;
             entry->value   = NULL;
             entry->length  = 0;
@@ -551,11 +559,13 @@ static MAC_ENTRY *lookup( MAC_HANDLE *handle, const char *name, long special )
         if ( strcmp( name, entry->name ) == 0 )
             break;
     }
-    if ( (special == FALSE) && (entry == NULL) && (handle->flags & FLAG_USE_ENVIRONMENT) ) {
+    if ( (special == FALSE) && (entry == NULL) &&
+         (handle->flags & FLAG_USE_ENVIRONMENT) ) {
         char *value = getenv(name);
         if (value) {
             entry = create( handle, name, FALSE );
             if ( entry ) {
+                entry->type = "environment variable";
                 if ( rawval( handle, entry, value ) == NULL )
                     entry = NULL;
             }
@@ -614,7 +624,7 @@ static long expand( MAC_HANDLE *handle )
     for ( entry = first( handle ); entry != NULL; entry = next( entry ) ) {
 
         if ( handle->debug & 2 )
-            epicsPrintf( "\nexpand %s = %s\n", entry->name,
+            printf( "\nexpand %s = %s\n", entry->name,
                 entry->rawval ? entry->rawval : "" );
 
         if ( entry->value == NULL ) {
@@ -667,7 +677,7 @@ static void trans( MAC_HANDLE *handle, MAC_ENTRY *entry, long level,
 
     /* debug output */
     if ( handle->debug & 2 )
-        epicsPrintf( "trans-> level = %ld, maxlen = %4d, discard = %s, "
+        printf( "trans-> level = %ld, maxlen = %4d, discard = %s, "
         "rawval = %s\n", level, valend - *value, discard ? "T" : "F", *rawval );
 
     /* initially not in quotes */
@@ -707,7 +717,7 @@ static void trans( MAC_HANDLE *handle, MAC_ENTRY *entry, long level,
             }
 
             /* ensure string remains properly terminated */
-            if ( v < valend ) *v   = '\0';
+            if ( v <= valend ) *v   = '\0';
         }
 
         /* macro reference */
@@ -715,7 +725,7 @@ static void trans( MAC_HANDLE *handle, MAC_ENTRY *entry, long level,
 
             /* step over '$(' or '${' */
             r++;
-            macEnd = ( *r == '(' ) ? ")" : "}";
+            macEnd = ( *r == '(' ) ? "=)" : "=}";
             r++;
 
             /* translate name (may contain macro references); truncated
@@ -725,30 +735,59 @@ static void trans( MAC_HANDLE *handle, MAC_ENTRY *entry, long level,
             trans( handle, entry, level + 1, macEnd, &r, &n2, n2 + MAC_SIZE );
             name2[MAC_SIZE] = '\0';
 
-            /* look up resultant name; if not there, set error flag and
-               copy reference */
+            /* look up the translated name */
             if ( ( entry2 = lookup( handle, name2, FALSE ) ) == NULL ) {
-                if ( (handle->flags & FLAG_SUPPRESS_WARNINGS) == 0 ) {
-                    entry->error = TRUE;
-                    macErrMessage2( -1, "%s: %s referenced but undefined",
-                                entry->name, name2 );
+                /* not found */
+                if ( *r == '=' ) {
+                    /* there is a default value, translate that instead */
+                    ++r;
+                    trans( handle, entry, level + 1, ++macEnd, &r, &v, valend );
+                } else {
+                    /* flag the warning and insert $(name) */
+                    if ( (handle->flags & FLAG_SUPPRESS_WARNINGS) == 0 ) {
+                        entry->error = TRUE;
+                        errlogPrintf( "macLib: macro %s is undefined (expanding %s %s)\n",
+                                    name2, entry->type, entry->name );
+                    }
+                    if ( v < valend ) *v++ = '$';
+                    if ( v < valend ) *v++ = '(';
+                    cpy2val( name2, &v, valend );
+                    if ( v < valend ) *v++ = ')';
                 }
-                sprintf( v, "$(%s)", name2 ); v += strlen( v );
+                continue;
             }
 
-            /* check for recursive reference; if so, set error flag and
-               copy reference */
-            else if ( entry2->visited ) {
+            /* if reference is recursive, flag an error and insert $(name) */
+            if ( entry2->visited ) {
                 entry->error = TRUE;
-                macErrMessage2( -1, "%s: %s referenced recursively",
-                                entry->name, entry2->name );
-                sprintf( v, "$(%s)", name2 ); v += strlen( v );
+                errlogPrintf( "macLib: %s %s is recursive (expanding %s %s)\n",
+                              entry->type, entry->name,
+                              entry2->type, entry2->name );
+                if ( v < valend ) *v++ = '$';
+                if ( v < valend ) *v++ = '(';
+                cpy2val( name2, &v, valend );
+                if ( v < valend ) *v++ = ')';
+                continue;
+            }
+
+            /* translate but discard any default value, supressing warnings */
+            if ( *r == '=' ) {
+                MAC_ENTRY dflt;
+                int flags = handle->flags;
+                
+                ++r;
+                handle->flags |= FLAG_SUPPRESS_WARNINGS;
+                dflt.name = name2;
+                dflt.type = "default value";
+                dflt.error = FALSE;
+                trans( handle, &dflt, level + 1, ++macEnd, &r, &v, v);
+                handle->flags = flags;
             }
 
             /* if all expanded values are valid (not "dirty") copy the
                value directly */
-            else if ( !handle->dirty ) {
-                strcpy( v, entry2->value ); v += strlen( v );
+            if ( !handle->dirty ) {
+                cpy2val( entry2->value, &v, valend );
             }
 
             /* otherwise, translate raw value */
@@ -763,7 +802,7 @@ static void trans( MAC_HANDLE *handle, MAC_ENTRY *entry, long level,
 
     /* debug output */
     if ( handle->debug & 2 )
-        epicsPrintf( "<-trans level = %ld, length = %4d, value  = %s\n",
+        printf( "<-trans level = %ld, length = %4d, value  = %s\n",
                      level, v - *value, *value );
 
     /* update pointers to next characters to scan in raw value and to fill
@@ -773,6 +812,17 @@ static void trans( MAC_HANDLE *handle, MAC_ENTRY *entry, long level,
     *value  = v;
 
     return;
+}
+
+/*
+ * Copy a string, honoring the 'end of destination string' pointer
+ */
+static void cpy2val(const char *src, char **value, char *valend)
+{
+    char *v = *value;
+    while ((v < valend) && (*v++ = *src++)) {}
+    *v = '\0';
+    *value = v;
 }
 
 /*

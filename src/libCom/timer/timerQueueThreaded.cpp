@@ -42,10 +42,10 @@ epicsTimerQueueThreaded &epicsTimerQueueThreaded::create ( bool okToShare, int t
 
 tsFreeList < class timerQueueThreaded, 0x8 > timerQueueThreaded::freeList;
 
-timerQueueThreaded::timerQueueThreaded ( unsigned priority ) :
-    thread ( *this, "epicsTimerQueue",
+timerQueueThreaded::timerQueueThreaded ( bool okToShareIn, unsigned priority ) :
+    queue ( *this ), thread ( *this, "epicsTimerQueue",
         epicsThreadGetStackSize ( epicsThreadStackMedium ), priority ),
-    queue ( *this ), exitFlag ( false ), terminateFlag ( false )
+    okToShare (okToShareIn), exitFlag ( false ), terminateFlag ( false )
 {
     this->thread.start ();
 }
@@ -59,11 +59,6 @@ timerQueueThreaded::~timerQueueThreaded ()
     }
     // in case other threads are waiting here also
     this->exitEvent.signal ();
-}
-
-int timerQueueThreaded::threadPriority () const
-{
-    return thread.getPriority ();
 }
 
 void timerQueueThreaded::release ()

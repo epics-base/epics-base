@@ -105,12 +105,13 @@ class timerQueueThreaded : public epicsTimerQueueThreaded,
     public timerQueueThreadedMgrPrivate,
     public tsDLNode < timerQueueThreaded > {
 public:
-    timerQueueThreaded ( unsigned priority );
+    timerQueueThreaded ( bool okToShare, unsigned priority );
     epicsTimer & createTimer ( epicsTimerNotify & );
     void show ( unsigned int level ) const;
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
     void release ();
+    bool sharingOK () const;
     int threadPriority () const;
 protected:
     ~timerQueueThreaded ();
@@ -119,6 +120,7 @@ private:
     epicsEvent rescheduleEvent;
     epicsEvent exitEvent;
     epicsThread thread;
+    bool okToShare;
     bool exitFlag;
     bool terminateFlag;
     void run ();
@@ -134,7 +136,8 @@ public:
     void release ( timerQueueThreaded & );
 private:
     epicsMutex mutex;
-    tsDLList < timerQueueThreaded > queueList;
+    tsDLList < timerQueueThreaded > sharedQueueList;
+    tsDLList < timerQueueThreaded > privateQueueList;
 };
 
 inline void * timer::operator new ( size_t size )
@@ -159,6 +162,16 @@ inline double timer::privateDelayToFirstExpire () const
     else {
         return -DBL_MAX;
     }
+}
+
+inline bool timerQueueThreaded::sharingOK () const
+{
+    return this->okToShare;
+}
+
+inline int timerQueueThreaded::threadPriority () const
+{
+    return thread.getPriority ();
 }
 
 inline void * timerQueueThreaded::operator new ( size_t size )

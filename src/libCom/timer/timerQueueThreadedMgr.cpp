@@ -36,7 +36,11 @@
 timerQueueThreadedMgr::~timerQueueThreadedMgr ()
 {
     epicsAutoMutex locker ( this->mutex );
-    while ( timerQueueThreaded * pQ = this->queueList.get () ) {
+    while ( timerQueueThreaded * pQ = this->sharedQueueList.get () ) {
+        timerQueueThreadedMgrPrivate *pPriv = pQ;
+        delete pPriv;
+    }
+    while ( timerQueueThreaded * pQ = this->privateQueueList.get () ) {
         timerQueueThreadedMgrPrivate *pPriv = pQ;
         delete pPriv;
     }
@@ -46,20 +50,27 @@ timerQueueThreaded & timerQueueThreadedMgr::create (
         bool okToShare, int threadPriority )
 {
     epicsAutoMutex locker ( this->mutex );
-    tsDLIterBD < timerQueueThreaded > iter = this->queueList.firstIter ();
-    while ( iter.valid () ) {
-        if ( iter->threadPriority () == threadPriority ) {
-            assert ( iter->timerQueueThreadedMgrPrivate::referenceCount < UINT_MAX );
-            iter->timerQueueThreadedMgrPrivate::referenceCount++;
-            return *iter;
+    if ( okToShare ) {
+        tsDLIterBD < timerQueueThreaded > iter = this->sharedQueueList.firstIter ();
+        while ( iter.valid () ) {
+            if ( iter->threadPriority () == threadPriority ) {
+                assert ( iter->timerQueueThreadedMgrPrivate::referenceCount < UINT_MAX );
+                iter->timerQueueThreadedMgrPrivate::referenceCount++;
+                return *iter;
+            }
         }
     }
-    timerQueueThreaded *pQueue = new timerQueueThreaded ( threadPriority );
+    timerQueueThreaded *pQueue = new timerQueueThreaded ( okToShare, threadPriority );
     if ( ! pQueue ) {
         throwWithLocation ( timer::noMemory () );
     }
     pQueue->timerQueueThreadedMgrPrivate::referenceCount = 1u;
-    this->queueList.add ( *pQueue );
+    if ( okToShare ) {
+        this->sharedQueueList.add ( *pQueue );
+    }
+    else {
+        this->privateQueueList.add ( *pQueue );
+    }
     return *pQueue;
 }
 
@@ -69,7 +80,12 @@ void timerQueueThreadedMgr::release ( timerQueueThreaded &queue )
     assert ( queue.timerQueueThreadedMgrPrivate::referenceCount > 0u );
     queue.timerQueueThreadedMgrPrivate::referenceCount--;
     if ( queue.timerQueueThreadedMgrPrivate::referenceCount == 0u ) {
-        this->queueList.remove ( queue );
+        if ( queue.sharingOK () ) {
+            this->sharedQueueList.remove ( queue );
+        }
+        else {
+            this->privateQueueList.remove ( queue );
+        }
         timerQueueThreadedMgrPrivate *pPriv = &queue;
         delete pPriv;
     }

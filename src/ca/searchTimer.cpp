@@ -42,10 +42,12 @@ static const double maxSearchPeriod = 5.0; // seconds
 //
 // searchTimer::searchTimer ()
 //
-searchTimer::searchTimer ( udpiiu & iiuIn, epicsTimerQueue & queueIn ) :
+searchTimer::searchTimer ( udpiiu & iiuIn, 
+        epicsTimerQueue & queueIn, udpMutex & mutexIn ) :
     period ( 1e9 ),
     timer ( queueIn.createTimer () ),
     iiu ( iiuIn ),
+    mutex ( mutexIn ),
     framesPerTry ( initialTriesPerFrame ),
     framesPerTryCongestThresh ( UINT_MAX ),
     minRetry ( 0 ),
@@ -64,29 +66,34 @@ searchTimer::~searchTimer ()
     this->timer.destroy ();
 }
 
-void searchTimer::newChannleNotify ( 
-    const epicsTime & currentTime, bool firstChannel )
+void searchTimer::newChannelNotify ( 
+    epicsGuard < udpMutex > & guard, const epicsTime & currentTime, bool firstChannel )
 {
     if ( firstChannel ) {
+        this->recomputeTimerPeriod ( guard, 0 );
+        double newPeriod = this->period;
         {
-            epicsGuard < searchTimerMutex > locker ( this->mutex );
-            this->recomputeTimerPeriod ( 0 );
+            // avoid timer cancel block deadlock
+            epicsGuardRelease < udpMutex > unguard ( guard );
+            this->timer.start ( *this, currentTime + newPeriod );
         }
-        this->timer.start ( *this, currentTime + this->period );
     }
     else {
-        this->recomputeTimerPeriodAndStartTimer ( currentTime, 0, 0.0 );
+        this->recomputeTimerPeriodAndStartTimer ( guard, currentTime, 0, 0.0 );
     }
 }
 
 void searchTimer::beaconAnomalyNotify ( 
+    epicsGuard < udpMutex > & guard, 
     const epicsTime & currentTime, const double & delay )
 {
-    this->recomputeTimerPeriodAndStartTimer ( currentTime, beaconAnomalyRetrySetpoint, delay );
+    this->recomputeTimerPeriodAndStartTimer ( 
+        guard, currentTime, beaconAnomalyRetrySetpoint, delay );
 }
 
 // lock must be applied
-void searchTimer::recomputeTimerPeriod ( unsigned minRetryNew )
+void searchTimer::recomputeTimerPeriod ( 
+    epicsGuard < udpMutex > & guard, unsigned minRetryNew )
 {
     this->minRetry = minRetryNew;
 
@@ -94,43 +101,48 @@ void searchTimer::recomputeTimerPeriod ( unsigned minRetryNew )
         ( tsMin ( this->minRetry, maxSearchTries + 1u ) );
 
     unsigned idelay = 1u << tsMin ( retry, CHAR_BIT * sizeof ( idelay ) - 1u );
-    this->period = idelay * this->iiu.roundTripDelayEstimate() * 2.0; /* sec */ 
+    this->period = idelay * this->iiu.roundTripDelayEstimate ( guard ) * 2.0; /* sec */ 
     this->period = tsMin ( maxSearchPeriod, this->period );
     this->period = tsMax ( minSearchPeriod, this->period );
 }
 
-void searchTimer::recomputeTimerPeriodAndStartTimer ( 
+void searchTimer::recomputeTimerPeriodAndStartTimer ( epicsGuard < udpMutex > & guard,
     const epicsTime & currentTime, unsigned minRetryNew, const double & initialDelay )
 {
-    bool start = false;
-    double totalDelay = initialDelay;
-
-    epicsGuard < searchTimerMutex > locker ( this->mutex );
-
-    if ( this->iiu.channelCount() == 0 || this->minRetry <= minRetryNew  ) {
+    if ( this->iiu.channelCount ( guard ) == 0  ) {
         return; 
     }
 
-    double oldPeriod = this->period;
+    bool start = false;
+    double totalDelay = initialDelay;
+    {
+        if ( this->minRetry <= minRetryNew  ) {
+            return; 
+        }
 
-    this->recomputeTimerPeriod ( minRetryNew );
+        double oldPeriod = this->period;
 
-    totalDelay += this->period;
+        this->recomputeTimerPeriod ( guard, minRetryNew );
 
-    if ( totalDelay < oldPeriod ) {
-        epicsTimer::expireInfo info = this->timer.getExpireInfo ();
-        if ( info.active ) {
-            double delay = currentTime - info.expireTime;
-            if ( delay > totalDelay ) {
+        totalDelay += this->period;
+
+        if ( totalDelay < oldPeriod ) {
+            epicsTimer::expireInfo info = this->timer.getExpireInfo ();
+            if ( info.active ) {
+                double delay = info.expireTime - currentTime;
+                if ( delay > totalDelay ) {
+                    start = true;
+                }
+            }
+            else {
                 start = true;
             }
-        }
-        else {
-            start = true;
         }
     }
 
     if ( start ) {
+        // avoid timer cancel block deadlock
+        epicsGuardRelease < udpMutex > unguard ( guard );
         this->timer.start ( *this, currentTime + totalDelay );
     }
     debugPrintf ( ( "changed search period to %f sec\n", this->period ) );
@@ -143,14 +155,15 @@ void searchTimer::recomputeTimerPeriodAndStartTimer (
 // at least one response. However, dont reset this delay if we
 // get a delayed response to an old search request.
 //
-void searchTimer::notifySearchResponse ( ca_uint32_t respDatagramSeqNo, 
-                     bool seqNumberIsValid, const epicsTime & currentTime )
+void searchTimer::notifySearchResponse ( epicsGuard < udpMutex > & guard,
+    ca_uint32_t respDatagramSeqNo, bool seqNumberIsValid, const epicsTime & currentTime )
 {
+    if ( this->iiu.channelCount ( guard ) == 0 ) {
+        return;
+    }
+
     bool reschedualNeeded = false;
-
-    if ( this->iiu.channelCount() > 0 ) {
-        epicsGuard < searchTimerMutex > locker ( this->mutex );
-
+    {
         if ( seqNumberIsValid ) {
             if ( this->dgSeqNoAtTimerExpireBegin <= respDatagramSeqNo && 
                     this->dgSeqNoAtTimerExpireEnd >= respDatagramSeqNo ) {
@@ -179,6 +192,9 @@ void searchTimer::notifySearchResponse ( ca_uint32_t respDatagramSeqNo,
 #       endif
         // debugPrintf ( ( "Response set timer delay to zero. ts=%s\n", 
         //    buf ) );
+
+        // avoid timer cancel block deadlock
+        epicsGuardRelease < udpMutex > unguard ( guard );
         this->timer.start ( *this, currentTime );
     }
 }
@@ -188,10 +204,11 @@ void searchTimer::notifySearchResponse ( ca_uint32_t respDatagramSeqNo,
 //
 epicsTimerNotify::expireStatus searchTimer::expire ( const epicsTime & currentTime ) // X aCC 361
 {
+    epicsGuard < udpMutex > guard ( this->mutex );
+
     // check to see if there is nothing to do here 
-    if ( this->iiu.channelCount () == 0 ) {
+    if ( this->iiu.channelCount ( guard ) == 0 ) {
         debugPrintf ( ( "all channels located - search timer terminating\n" ) );
-        epicsGuard < searchTimerMutex > locker ( this->mutex );
         this->period = DBL_MAX;
         return noRestart;
     }   
@@ -259,7 +276,7 @@ epicsTimerNotify::expireStatus searchTimer::expire ( const epicsTime & currentTi
         this->searchResponsesThisPass = UINT_MAX;
     }
 
-    this->dgSeqNoAtTimerExpireBegin = this->iiu.datagramSeqNumber ();
+    this->dgSeqNoAtTimerExpireBegin = this->iiu.datagramSeqNumber ( guard );
 
     this->searchAttempts = 0;
     this->searchResponses = 0;
@@ -269,11 +286,11 @@ epicsTimerNotify::expireStatus searchTimer::expire ( const epicsTime & currentTi
     while ( true ) {
             
         // check to see if we have reached the end of the list
-        if ( this->searchAttemptsThisPass >= this->iiu.channelCount () ) {
+        if ( this->searchAttemptsThisPass >= this->iiu.channelCount ( guard ) ) {
             // if we are making some progress then dont increase the 
             // delay between search requests
             if ( this->searchResponsesThisPass == 0u ) {
-                this->recomputeTimerPeriod ( this->minRetryThisPass );
+                this->recomputeTimerPeriod ( guard, this->minRetryThisPass );
             }
         
             this->minRetryThisPass = UINT_MAX;
@@ -285,17 +302,15 @@ epicsTimerNotify::expireStatus searchTimer::expire ( const epicsTime & currentTi
         }
     
         unsigned retryNoForThisChannel;
-        if ( ! this->iiu.searchMsg ( retryNoForThisChannel ) ) {
+        if ( ! this->iiu.searchMsg ( guard, retryNoForThisChannel ) ) {
             nFrameSent++;
         
             if ( nFrameSent >= this->framesPerTry ) {
                 break;
             }
-
-            this->dgSeqNoAtTimerExpireEnd = this->iiu.datagramSeqNumber ();
-            this->iiu.datagramFlush ( currentTime );
-       
-            if ( ! this->iiu.searchMsg ( retryNoForThisChannel ) ) {
+            this->dgSeqNoAtTimerExpireEnd = this->iiu.datagramSeqNumber ( guard );
+            this->iiu.datagramFlush ( guard, currentTime );
+            if ( ! this->iiu.searchMsg ( guard, retryNoForThisChannel ) ) {
                 break;
             }
          }
@@ -314,7 +329,7 @@ epicsTimerNotify::expireStatus searchTimer::expire ( const epicsTime & currentTi
         //
         // dont send any of the channels twice within one try
         //
-       if ( nChanSent >= this->iiu.channelCount () ) {
+       if ( nChanSent >= this->iiu.channelCount ( guard ) ) {
             //
             // add one to nFrameSent because there may be 
             // one more partial frame to be sent
@@ -335,9 +350,9 @@ epicsTimerNotify::expireStatus searchTimer::expire ( const epicsTime & currentTi
     }
 
     // flush out the search request buffer
-    this->iiu.datagramFlush ( currentTime );
+    this->iiu.datagramFlush ( guard, currentTime );
 
-    this->dgSeqNoAtTimerExpireEnd = this->iiu.datagramSeqNumber () - 1u;
+    this->dgSeqNoAtTimerExpireEnd = this->iiu.datagramSeqNumber ( guard ) - 1u;
 
 #   ifdef DEBUG
         char buf[64];
@@ -347,19 +362,16 @@ epicsTimerNotify::expireStatus searchTimer::expire ( const epicsTime & currentTi
             nFrameSent, this->period, buf ) );
 #   endif
 
-    if ( this->iiu.channelCount () == 0 ) {
+    if ( this->iiu.channelCount ( guard ) == 0 ) {
         debugPrintf ( ( "all channels connected\n" ) );
-        epicsGuard < searchTimerMutex > locker ( this->mutex );
         this->period = DBL_MAX;
         return noRestart;
     }
     else if ( this->minRetry < maxSearchTries ) {
-        epicsGuard < searchTimerMutex > locker ( this->mutex );
         return expireStatus ( restart, this->period );
     }
     else {
         debugPrintf ( ( "maximum search tries exceeded - giving up\n" ) );
-        epicsGuard < searchTimerMutex > locker ( this->mutex );
         this->period = DBL_MAX;
         return noRestart;
     }

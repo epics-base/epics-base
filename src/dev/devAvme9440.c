@@ -281,7 +281,7 @@ STATIC int devAvme9440Report()
 	{
 		if (cards[LinkNum].card != NULL)
 		{
-			printf("    Link %02.2d at 0x%4.4X, IRQ 0x%2.2X, input %04.4X, output %04.4X\n", 
+			printf("    Link %02.2d at 0x%4.4X, IRQ 0x%2.2X, input 0x%04.4X, output 0x%04.4X\n", 
 					LinkNum, 
 					CardBase, 
 					IntVec, 

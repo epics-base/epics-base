@@ -480,6 +480,15 @@ static void helpCallFunc(const ioccrfArgBuf *)
 {
 }
 
+/* comment */
+static const ioccrfArg commentArg0 = { "newline-terminated comment",ioccrfArgInt};
+static const ioccrfArg *commentArgs[1] = {&commentArg0};
+static const ioccrfFuncDef commentFuncDef =
+    {"#",1,commentArgs};
+static void commentCallFunc(const ioccrfArgBuf *)
+{
+}
+
 /* exit */
 static const ioccrfFuncDef exitFuncDef =
     {"exit",0,0};
@@ -490,6 +499,7 @@ static void exitCallFunc(const ioccrfArgBuf *)
 static void localRegister (void)
 {
     ioccrfRegister(&helpFuncDef,helpCallFunc);
+    ioccrfRegister(&commentFuncDef,helpCallFunc);
     ioccrfRegister(&exitFuncDef,exitCallFunc);
 }
 

@@ -64,7 +64,7 @@ void ipAddrToA (const struct sockaddr_in *pInetAddr,
 	 * (__SUNPRO_CC supplies this file but g++ does not supply 
 	 * an ansi protottype)
 	 */
-	unsigned long inet_addr (char *);
+	unsigned long inet_addr (const char *);
 	char * inet_ntoa (struct in_addr in);
 
 	/*

@@ -39,6 +39,7 @@
  *			and the server.
  *	.06 joh	110491	lock added for IOC_CLAIM_CIU command
  *	.07 joh	021292	Better diagnostics
+ *	.08 joh	021492	use lstFind() to verify chanel in clear_channel()
  */
 
 #include <vxWorks.h>
@@ -347,10 +348,8 @@ struct client  *client;
 {
         FAST struct extmsg *reply;
         FAST struct event_ext *pevext;
-        FAST int        status;
         struct channel_in_use *pciu;
-        struct channel_in_use *ptmpciu;
-        LIST           *peventq;
+        FAST int        status;
 
         /*
          *
@@ -358,31 +357,25 @@ struct client  *client;
          *
          */
         pciu = (struct channel_in_use *) mp->m_pciu;
-        ptmpciu = (struct channel_in_use *) client->addrq.node.next;
-        while (ptmpciu){
-                if(ptmpciu == pciu){
-                        break;
-                }
-                ptmpciu = (struct channel_in_use *) ptmpciu->node.next;
-        }
-        if(!ptmpciu){
+ 	status = lstFind(
+			&client->addrq, 
+			mp->m_pciu);
+	if(status < 0){
                 logMsg("CAS: Attempt to delete nonexistent channel ignored\n");
                 return;
         }
 
-        peventq = &pciu->eventq;
-	for (pevext = (struct event_ext *) peventq->node.next;
-	     pevext;
-	     pevext = (struct event_ext *) pevext->node.next) {
-		status = db_cancel_event(pevext + 1);
-		if (status == ERROR)
-			taskSuspend(0);
-		lstDelete(peventq, pevext);
+        while (pevext = (struct event_ext *) lstGet(&pciu->eventq)) {
 
+		status = db_cancel_event(pevext + 1);
+		if (status == ERROR){
+			taskSuspend(0);
+		}
 		FASTLOCK(&rsrv_free_eventq_lck);
 		lstAdd(&rsrv_free_eventq, pevext);
 		FASTUNLOCK(&rsrv_free_eventq_lck);
-	}
+        }
+
 
 	/*
 	 * send delete confirmed message
@@ -424,10 +417,9 @@ event_cancel_reply(mp, client)
 {
 	FAST struct extmsg *reply;
 	FAST struct event_ext *pevext;
-	FAST int        status;
 	LIST           *peventq =
 	&((struct channel_in_use *) mp->m_pciu)->eventq;
-
+	FAST int        status;
 
 	for (pevext = (struct event_ext *) peventq->node.next;
 	     pevext;

@@ -30,7 +30,7 @@ template <class T> class tsDLIter;
 // a node in a doubly linked list containing entries of type T
 // ( class T must publicly derive from class tsDLNode<T> )
 //
-template <class T>
+template < class T >
 class tsDLNode {
 public:
     tsDLNode ();
@@ -50,7 +50,7 @@ private:
 // a doubly linked list containing entries of type T
 // ( class T must publicly derive from class tsDLNode<T> )
 //
-template <class T>
+template < class T >
 class tsDLList {
 public:
     tsDLList (); // create empty list

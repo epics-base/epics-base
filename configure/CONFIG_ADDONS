@@ -152,6 +152,14 @@ OBJS_HOST+=$(OBJS_HOST_DEFAULT)
 endif
 endif
 
+ifneq ($(strip $(LIBOBJS_$(OS_CLASS))),)
+LIBOBJS+=$(subst -nil-,,$(LIBOBJS_$(OS_CLASS)))
+else
+ifneq (,$(strip $(LIBOBJS_DEFAULT)))
+LIBOBJS+=$(LIBOBJS_DEFAULT)
+endif
+endif
+
 ifneq ($(strip $(LIBRARY_$(OS_CLASS))),)
 LIBRARY+=$(subst -nil-,,$(LIBRARY_$(OS_CLASS)))
 else

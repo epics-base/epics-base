@@ -4,29 +4,9 @@
 # EPICS Makefile For Subdirectory Recursions
 #    by Matthew Needes and Mike Bordua
 #
-# $Log$
-# Revision 1.13  1994/09/09  17:32:29  jba
-# Cleanup of files
-#
-# Revision 1.12  1994/09/08  17:25:41  mcn
-# Changed clean to tools/Clean.  Added "uninstall" dependency.
-#
-# Revision 1.11  1994/09/07  19:15:19  jba
-# Modified to eork with extensions and do depends
-#
-# Revision 1.10  1994/08/21  00:55:52  mcn
-# New stuff.
-#
-# Revision 1.9  1994/08/19  15:38:03  mcn
-# Dependencies are now generated with a "make release".
-#
-# Revision 1.8  1994/08/12  18:51:28  mcn
-# Added Log and/or Id.
-#
-#
 
-EPICS=..
-include $(EPICS)/config/CONFIG_BASE
+TOP=.
+include $(TOP)/src/config/CONFIG_BASE
 
 all: build
 
@@ -34,7 +14,7 @@ build: dirs
 	@(for DIR in ${DIRS};						\
 		do							\
 			TMP=`pwd`; echo "${T_A}: $@: $$DIR";	 	\
-			cd $$DIR/O.${T_A}; ${MAKE} ${MFLAGS} $@;	\
+			cd $$DIR/O.${T_A}; ${MAKE} $@ ; \
 			cd $$TMP;					\
 		done)
 
@@ -42,7 +22,7 @@ install: dirs
 	@(for DIR in ${DIRS};						\
 		do							\
 			TMP=`pwd`; echo "${T_A}: $@: $$DIR";	 	\
-			cd $$DIR/O.${T_A}; ${MAKE} ${MFLAGS} $@;	\
+			cd $$DIR/O.${T_A}; ${MAKE} $@ ; \
 			cd $$TMP;					\
 		done)
 
@@ -50,7 +30,7 @@ depends: dirs
 	@(for DIR in ${DIRS};						\
 		do							\
 			TMP=`pwd`; echo "${T_A}: $@: $$DIR";	 	\
-			cd $$DIR/O.${T_A}; ${MAKE} ${MFLAGS} $@;	\
+			cd $$DIR/O.${T_A}; ${MAKE} $@ ; \
 			cd $$TMP;					\
 		done)
 
@@ -64,10 +44,9 @@ dirs:
 				test -d O.${T_A} || \
 				mkdir O.${T_A}; \
 				test -f O.${T_A}/Makefile || \
-				ln -s ../Makefile.${BUILD_TYPE} O.${T_A}/Makefile \
-					> /dev/null 2> /dev/null; \
-				test -f O.${T_A}/Target.include || \
-					echo "T_A=${T_A}" > O.${T_A}/Target.include; \
+					( echo "T_A=${T_A}" > O.${T_A}/Makefile; \
+					echo "include ../Makefile.${BUILD_TYPE}" \
+						>> O.${T_A}/Makefile;); \
 				test -f O.${T_A}/.DEPENDS || \
 					touch O.${T_A}/.DEPENDS; \
 				fi ; \

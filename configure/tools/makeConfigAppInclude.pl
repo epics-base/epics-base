@@ -23,6 +23,7 @@ foreach $file (@files) {
     while ($line = <IN>) {
         next if ( $line =~ /\s*#/ );
 	chomp($line);
+		$line =~ s/[ 	]//g; # remove blanks and tabs
         $_ = $line;
         #the following looks for
         # prefix = $(macro)post

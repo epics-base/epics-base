@@ -210,7 +210,7 @@ char *localUserName()
 	if(!pName){
 		pName = getpwuid(getuid())->pw_name;
 		if(!pName){
-			return NULL;
+			pName = "";
 		}
 	}
 

@@ -2,8 +2,8 @@
 include $(EPICS_BASE)/configure/RULES_DIRS
 buildInstall: cdCommands
 
-cdCommands: Makefile $(TOP)/configure/makeIocCdCommands.pl $(TOP)/configure/CONFIG
-	$(PERL) $(TOP)/configure/makeIocCdCommands.pl $(ARCH) $(IOCS_APPL_TOP)
+cdCommands: Makefile $(TOOLS)/makeIocCdCommands.pl $(TOP)/configure/CONFIG
+	$(PERL) $(TOOLS)/makeIocCdCommands.pl $(ARCH) $(IOCS_APPL_TOP)
 
 clean:
 	@$(RM) cdCommands

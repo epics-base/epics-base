@@ -27,6 +27,7 @@
  * -----------------
  * .00	02-03-90	rac	initial version
  * .01	06-18-91	rac	installed in SCCS
+ * .02	06-28-91	rac	don't do lwp_fpset for sun4
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -129,6 +130,7 @@
 
 	if (lwp_create(&threadId, entryAddress, prio, 0, lwp_newstk(), 10,
 		    a1, a2, a3, a4, a5, a6, a7, a8, a9, a10) == 0) {
+#ifndef sun4
 	    if (options & VX_STDIO) {
 		if (lwp_libcset(threadId) != 0) {
 		    printf("couldn't do lwp_libcset for %s\n", name);
@@ -143,6 +145,9 @@
 		    assertAlways(0);
 		}
 	    }
+#else
+	    ;	/* no action for sun4 */
+#endif
 	}    
 	else {
 	    printf("couldn't do lwp_create for %s\n", name);

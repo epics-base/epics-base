@@ -58,7 +58,7 @@ epicsShareFunc void epicsShareAPI epicsThreadOnceOsd(
     epicsThreadOnceId *id, EPICSTHREADFUNC, void *arg);
 
 #define epicsThreadOnce(id,func,arg) \
-if(*(id)<=0) epicsThreadOnceOsd((id),(func),(arg))
+epicsThreadOnceOsd((id),(func),(arg))
 
 epicsShareFunc void epicsShareAPI epicsThreadExitMain(void);
 

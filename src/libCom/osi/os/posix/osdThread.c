@@ -61,7 +61,7 @@ static pthread_mutex_t onceLock;
 static pthread_mutex_t listLock;
 static ELLLIST pthreadList;
 static commonAttr *pcommonAttr = 0;
-static int epicsThreadInitCalled = 0;
+static int epicsThreadOnceCalled = 0;
 
 #define checkStatus(status,message) \
 if((status))  {\
@@ -260,6 +260,7 @@ static void once(void)
     checkStatusQuit(status,"pthread_mutex_unlock","epicsThreadInit");
     status = atexit(myAtExit);
     checkStatusOnce(status,"atexit");
+    epicsThreadOnceCalled = 1;
 }
 
 static void * start_routine(void *arg)
@@ -288,7 +289,6 @@ static void epicsThreadInit(void)
 {
     static pthread_once_t once_control = PTHREAD_ONCE_INIT;
     int status = pthread_once(&once_control,once);
-    epicsThreadInitCalled = 1;
     checkStatusQuit(status,"pthread_once","epicsThreadInit");
 }
 
@@ -303,7 +303,6 @@ static void epicsThreadInit(void)
 
 unsigned int epicsThreadGetStackSize (epicsThreadStackSizeClass stackSizeClass)
 {
-    if(!epicsThreadInitCalled) epicsThreadInit();
 #if ! defined (_POSIX_THREAD_ATTR_STACKSIZE)
     return 0;
 #elif defined (OSITHREAD_USE_DEFAULT_STACK)
@@ -329,7 +328,7 @@ unsigned int epicsThreadGetStackSize (epicsThreadStackSizeClass stackSizeClass)
 void epicsThreadOnceOsd(epicsThreadOnceId *id, void (*func)(void *), void *arg)
 {
     int status;
-    if(!epicsThreadInitCalled) epicsThreadInit();
+    epicsThreadInit();
     status = pthread_mutex_lock(&onceLock);
     if(status) {
         fprintf(stderr,"epicsThreadOnceOsd epicsMutexLock failed.\n");
@@ -357,7 +356,7 @@ epicsThreadId epicsThreadCreate(const char *name,
     epicsThreadOSD *pthreadInfo;
     int status;
 
-    if(!epicsThreadInitCalled) epicsThreadInit();
+    epicsThreadInit();
     assert(pcommonAttr);
     pthreadInfo = init_threadInfo(name,priority,stackSize,funptr,parm);
     status = pthread_create(&pthreadInfo->tid,&pthreadInfo->attr,
@@ -413,7 +412,7 @@ void epicsThreadSuspendSelf(void)
 {
     epicsThreadOSD *pthreadInfo;
 
-    if(!epicsThreadInitCalled) epicsThreadInit();
+    assert(epicsThreadOnceCalled);
     pthreadInfo = (epicsThreadOSD *)pthread_getspecific(getpthreadInfo);
     if(pthreadInfo==NULL)
         pthreadInfo = createImplicit();
@@ -423,7 +422,7 @@ void epicsThreadSuspendSelf(void)
 
 void epicsThreadResume(epicsThreadOSD *pthreadInfo)
 {
-    if(!epicsThreadInitCalled) epicsThreadInit();
+    assert(epicsThreadOnceCalled);
     pthreadInfo->isSuspended = 0;
     epicsEventSignal(pthreadInfo->suspendEvent);
 }
@@ -432,7 +431,7 @@ void epicsThreadExitMain(void)
 {
     epicsThreadOSD *pthreadInfo;
 
-    if(!epicsThreadInitCalled) epicsThreadInit();
+    epicsThreadInit();
     pthreadInfo = (epicsThreadOSD *)pthread_getspecific(getpthreadInfo);
     if(pthreadInfo==NULL)
         pthreadInfo = createImplicit();
@@ -448,13 +447,13 @@ void epicsThreadExitMain(void)
 
 unsigned int epicsThreadGetPriority(epicsThreadId pthreadInfo)
 {
-    if(!epicsThreadInitCalled) epicsThreadInit();
+    assert(epicsThreadOnceCalled);
     return(pthreadInfo->osiPriority);
 }
 
 unsigned int epicsThreadGetPrioritySelf(void)
 {
-    if(!epicsThreadInitCalled) epicsThreadInit();
+    assert(epicsThreadOnceCalled);
     return(epicsThreadGetPriority(epicsThreadGetIdSelf()));
 }
 
@@ -464,7 +463,7 @@ void epicsThreadSetPriority(epicsThreadId pthreadInfo,unsigned int priority)
     int status;
 #endif /* _POSIX_THREAD_PRIORITY_SCHEDULING */
 
-    if(!epicsThreadInitCalled) epicsThreadInit();
+    assert(epicsThreadOnceCalled);
     assert(pthreadInfo);
     pthreadInfo->osiPriority = priority;
 #if defined (_POSIX_THREAD_PRIORITY_SCHEDULING) 
@@ -515,12 +514,15 @@ epicsThreadBooleanStatus epicsThreadLowestPriorityLevelAbove(
 
 int epicsThreadIsEqual(epicsThreadId p1, epicsThreadId p2)
 {
-    if(!epicsThreadInitCalled) epicsThreadInit();
+    assert(epicsThreadOnceCalled);
+    assert(p1);
+    assert(p2);
     return(pthread_equal(p1->tid,p2->tid));
 }
 
 int epicsThreadIsSuspended(epicsThreadId pthreadInfo) {
-    if(!epicsThreadInitCalled) epicsThreadInit();
+    assert(epicsThreadOnceCalled);
+    assert(pthreadInfo);
     return(pthreadInfo->isSuspended ? 1 : 0);
 }
 
@@ -539,7 +541,7 @@ void epicsThreadSleep(double seconds)
 epicsThreadId epicsThreadGetIdSelf(void) {
     epicsThreadOSD *pthreadInfo;
 
-    if(!epicsThreadInitCalled) epicsThreadInit();
+    assert(epicsThreadOnceCalled);
     pthreadInfo = (epicsThreadOSD *)pthread_getspecific(getpthreadInfo);
     if(pthreadInfo==NULL)
         pthreadInfo = createImplicit();
@@ -555,7 +557,7 @@ pthread_t epicsThreadGetPosixThreadId ( epicsThreadId threadId )
 epicsThreadId epicsThreadGetId(const char *name) {
     epicsThreadOSD *pthreadInfo;
     int status;
-    if(!epicsThreadInitCalled) epicsThreadInit();
+    assert(epicsThreadOnceCalled);
     status = pthread_mutex_lock(&listLock);
     checkStatusQuit(status,"pthread_mutex_lock","epicsThreadGetId");
     pthreadInfo=(epicsThreadOSD *)ellFirst(&pthreadList);
@@ -573,7 +575,7 @@ const char *epicsThreadGetNameSelf()
 {
     epicsThreadOSD *pthreadInfo;
 
-    if(!epicsThreadInitCalled) epicsThreadInit();
+    assert(epicsThreadOnceCalled);
     pthreadInfo = (epicsThreadOSD *)pthread_getspecific(getpthreadInfo);
     if(pthreadInfo==NULL)
         pthreadInfo = createImplicit();
@@ -582,7 +584,7 @@ const char *epicsThreadGetNameSelf()
 
 void epicsThreadGetName(epicsThreadId pthreadInfo, char *name, size_t size)
 {
-    if(!epicsThreadInitCalled) epicsThreadInit();
+    assert(epicsThreadOnceCalled);
     strncpy(name, pthreadInfo->name, size-1);
     name[size-1] = '\0';
 }
@@ -614,7 +616,7 @@ void epicsThreadShowAll(unsigned int level)
     epicsThreadOSD *pthreadInfo;
     int status;
 
-    if(!epicsThreadInitCalled) epicsThreadInit();
+    epicsThreadInit();
     epicsThreadShow(0,level);
     status = pthread_mutex_lock(&listLock);
     checkStatusQuit(status,"pthread_mutex_lock","epicsThreadShowAll");
@@ -637,6 +639,7 @@ void epicsThreadShow(epicsThreadId showThread, unsigned int level)
         showThreadInfo(0,level);
         return;
     }
+    epicsThreadInit();
     status = pthread_mutex_lock(&listLock);
     checkStatusQuit(status,"pthread_mutex_lock","epicsThreadShowAll");
     pthreadInfo=(epicsThreadOSD *)ellFirst(&pthreadList);
@@ -660,7 +663,7 @@ epicsThreadPrivateId epicsThreadPrivateCreate(void)
     pthread_key_t *key;
     int status;
 
-    if(!epicsThreadInitCalled) epicsThreadInit();
+    epicsThreadInit();
     key = callocMustSucceed(1,sizeof(pthread_key_t),"epicsThreadPrivateCreate");
     status = pthread_key_create(key,0);
     checkStatusQuit(status,"pthread_key_create","epicsThreadPrivateCreate");
@@ -672,7 +675,7 @@ void epicsThreadPrivateDelete(epicsThreadPrivateId id)
     pthread_key_t *key = (pthread_key_t *)id;
     int status;
 
-    if(!epicsThreadInitCalled) epicsThreadInit();
+    assert(epicsThreadOnceCalled);
     status = pthread_key_delete(*key);
     checkStatusQuit(status,"pthread_key_delete","epicsThreadPrivateDelete");
 }
@@ -682,7 +685,7 @@ void epicsThreadPrivateSet (epicsThreadPrivateId id, void *value)
     pthread_key_t *key = (pthread_key_t *)id;
     int status;
 
-    if(!epicsThreadInitCalled) epicsThreadInit();
+    assert(epicsThreadOnceCalled);
     if(errVerbose && !value)
         errlogPrintf("epicsThreadPrivateSet: setting value of 0\n");
     status = pthread_setspecific(*key,value);
@@ -694,6 +697,7 @@ void *epicsThreadPrivateGet(epicsThreadPrivateId id)
     pthread_key_t *key = (pthread_key_t *)id;
     void *value;
 
+    assert(epicsThreadOnceCalled);
     value = pthread_getspecific(*key);
     if(errVerbose && !value)
         errlogPrintf("epicsThreadPrivateGet: pthread_getspecific returned 0\n");

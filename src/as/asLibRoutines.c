@@ -170,8 +170,9 @@ long asAddMember(ASMEMBERPVT *pasMemberPvt,char *asgName)
 {
     ASGMEMBER	*pasgmember;
     ASG		*pgroup;
+    ASGCLIENT	*pasgclient;
 
-    if(!asActive) return(0);
+    if(!asActive) return(S_asLib_asNotActive);
     if(*pasMemberPvt) {
 	pasgmember = *pasMemberPvt;
     } else {
@@ -196,6 +197,11 @@ long asAddMember(ASMEMBERPVT *pasMemberPvt,char *asgName)
 got_it:
     pasgmember->pasg = pgroup;
     ellAdd(&pgroup->memberList,(ELLNODE *)pasgmember);
+    pasgclient = (ASGCLIENT *)ellFirst(&pasgmember->clientList);
+    while(pasgclient) {
+	asCompute((ASCLIENTPVT)pasgclient);
+	pasgclient = (ASGCLIENT *)ellNext((ELLNODE *)pasgclient);
+    }
     return(0);
 }
 
@@ -203,8 +209,9 @@ long asRemoveMember(ASMEMBERPVT *asMemberPvt)
 {
     ASGMEMBER	*pasgmember;
 
-    if(!asActive) return(0);
+    if(!asActive) return(S_asLib_asNotActive);
     pasgmember = *asMemberPvt;
+    if(!pasgmember) return(S_asLib_badMember);
     if(ellCount(&pasgmember->clientList)>0) return(S_asLib_clientsExist);
     if(pasgmember->pasg) {
 	ellDelete(&pasgmember->pasg->memberList,(ELLNODE *)pasgmember);
@@ -222,11 +229,12 @@ long asChangeGroup(ASMEMBERPVT *asMemberPvt,char *newAsgName)
     ASGMEMBER	*pasgmember;
     long	status;
 
-    if(!asActive) return(0);
+    if(!asActive) return(S_asLib_asNotActive);
+    pasgmember = *asMemberPvt;
+    if(!pasgmember) return(S_asLib_badMember);
 #ifdef vxWorks
     FASTLOCK(&asLock);
 #endif
-    pasgmember = *asMemberPvt;
     if(pasgmember->pasg) {
 	ellDelete(&pasgmember->pasg->memberList,(ELLNODE *)pasgmember);
     } else {
@@ -255,9 +263,11 @@ void *asGetMemberPvt(ASMEMBERPVT asMemberPvt)
 void asPutMemberPvt(ASMEMBERPVT asMemberPvt,void *userPvt)
 {
     ASGMEMBER	*pasgmember = asMemberPvt;
+
     if(!asActive) return;
     if(!pasgmember) return;
     pasgmember->userPvt = userPvt;
+    return;
 }
 
 long asAddClient(ASCLIENTPVT *pasClientPvt,ASMEMBERPVT asMemberPvt,
@@ -265,9 +275,12 @@ long asAddClient(ASCLIENTPVT *pasClientPvt,ASMEMBERPVT asMemberPvt,
 {
     ASGMEMBER	*pasgmember = asMemberPvt;
     ASGCLIENT	*pasgclient;
+
     long	status;
-    if(!asActive) return(0);
+    if(!asActive) return(S_asLib_asNotActive);
+    if(!pasgmember) return(S_asLib_badMember);
     pasgclient = freeListCalloc(freeListPvt);
+    if(!pasgclient) return(S_asLib_noMemory);
     *pasClientPvt = pasgclient;
     pasgclient->pasgMember = asMemberPvt;
     pasgclient->level = asl;
@@ -289,7 +302,8 @@ long asChangeClient(ASCLIENTPVT asClientPvt,int asl,char *user,char *host)
     ASGCLIENT	*pasgclient = asClientPvt;
     long	status;
 
-    if(!asActive) return(0);
+    if(!asActive) return(S_asLib_asNotActive);
+    if(!pasgclient) return(S_asLib_badClient);
     pasgclient->level = asl;
     pasgclient->user = user;
     pasgclient->host = host;
@@ -308,8 +322,8 @@ long asRemoveClient(ASCLIENTPVT *asClientPvt)
     ASGCLIENT	*pasgclient = *asClientPvt;
     ASGMEMBER	*pasgMember;
 
-    if(!asActive) return(0);
-    if(!pasgclient) return(0);
+    if(!asActive) return(S_asLib_asNotActive);
+    if(!pasgclient) return(S_asLib_badClient);
 #ifdef vxWorks
     FASTLOCK(&asLock);
 #endif
@@ -330,17 +344,20 @@ long asRemoveClient(ASCLIENTPVT *asClientPvt)
     return(0);
 }
 
-void asRegisterClientCallback(ASCLIENTPVT asClientPvt,
+long asRegisterClientCallback(ASCLIENTPVT asClientPvt,
 	ASCLIENTCALLBACK pcallback)
 {
     ASGCLIENT	*pasgclient = asClientPvt;
 
 #ifdef vxWorks
+    if(!asActive) return(S_asLib_asNotActive);
+    if(!pasgclient) return(S_asLib_badClient);
     FASTLOCK(&asLock);
     pasgclient->pcallback = pcallback;
     (*pasgclient->pcallback)(pasgclient,asClientCOAR);
     FASTUNLOCK(&asLock);
 #endif
+    return(0);
 }
 
 void *asGetClientPvt(ASCLIENTPVT asClientPvt)
@@ -364,6 +381,7 @@ long asComputeAllAsg(void)
 {
     ASG         *pasg;
 
+    if(!asActive) return(S_asLib_asNotActive);
     pasg = (ASG *)ellFirst(&pasbase->asgList);
     while(pasg) {
 	asComputeAsg(pasg);
@@ -378,7 +396,7 @@ long asComputeAsg(ASG *pasg)
     ASGMEMBER	*pasgmember;
     ASGCLIENT	*pasgclient;
 
-    if(!asActive) return(0);
+    if(!asActive) return(S_asLib_asNotActive);
     pasgrule = (ASGRULE *)ellFirst(&pasg->ruleList);
     while(pasgrule) {
 	double	result;
@@ -412,13 +430,19 @@ long asCompute(ASCLIENTPVT asClientPvt)
 {
     asAccessRights	access=asNOACCESS;
     ASGCLIENT		*pasgclient = asClientPvt;
-    ASGMEMBER		*pasgMember = pasgclient->pasgMember;
-    ASG			*pasg = pasgMember->pasg;
+    ASGMEMBER		*pasgMember;
+    ASG			*pasg;
     ASGRULE		*pasgrule;
-    asAccessRights	oldaccess=pasgclient->access;
+    asAccessRights	oldaccess;
     GPHENTRY		*pgphentry;
 
-    if(!pasg) return(0);
+    if(!asActive) return(S_asLib_asNotActive);
+    if(!pasgclient) return(S_asLib_badClient);
+    pasgMember = pasgclient->pasgMember;
+    if(!pasgMember) return(S_asLib_badMember);
+    pasg = pasgMember->pasg;
+    if(!pasg) return(S_asLib_badAsg);
+    oldaccess=pasgclient->access;
     pasgrule = (ASGRULE *)ellFirst(&pasg->ruleList);
     while(pasgrule) {
 	if(access == asWRITE) break;
@@ -791,7 +815,9 @@ int asDumpMem(char *asgname,void (*memcallback)(ASMEMBERPVT),int clients)
 
 int asDumpHash(void)
 {
+    if(!asActive) return(0);
     gphDump(pasbase->phash);
+    return(0);
 }
 
 /*Start of private routines*/

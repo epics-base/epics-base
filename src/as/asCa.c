@@ -69,8 +69,8 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #include <task_params.h>
 #include <alarm.h>
 
-static int taskid=0;
-static int caInitializing=FALSE;
+LOCAL int taskid=0;
+LOCAL int caInitializing=FALSE;
 extern ASBASE *pasbase;
 
 typedef struct {
@@ -79,7 +79,29 @@ typedef struct {
     evid		evid;
 } CAPVT;
 
-static void connectCallback(struct connection_handler_args cha)
+LOCAL void accessRightsCallback(struct access_rights_handler_args arha)
+{
+    chid		chid = arha.chid;
+    ASGINP		*pasginp;
+    ASG			*pasg;
+    CAPVT		*pcapvt;
+    int			Ilocked=FALSE;
+
+    if(!caInitializing) {
+	FASTLOCK(&asLock);
+	Ilocked = TRUE;
+    }
+    pasginp = (ASGINP *)ca_puser(chid);
+    pasg = (ASG *)pasginp->pasg;
+    pcapvt = pasginp->capvt;
+    if(!ca_read_access(chid)) {
+	pasg->inpBad |= (1<<pasginp->inpIndex);
+	if(!caInitializing) asComputeAsg(pasg);
+    } /*eventCallback will set inpBad false*/
+    if(Ilocked) FASTUNLOCK(&asLock);
+}
+
+LOCAL void connectCallback(struct connection_handler_args cha)
 {
     chid		chid = cha.chid;
     ASGINP		*pasginp;
@@ -100,8 +122,8 @@ static void connectCallback(struct connection_handler_args cha)
     } /*eventCallback will set inpBad false*/
     if(Ilocked) FASTUNLOCK(&asLock);
 }
-
-static void eventCallback(struct event_handler_args eha)
+
+LOCAL void eventCallback(struct event_handler_args eha)
 {
     ASGINP		*pasginp;
     CAPVT		*pcapvt;
@@ -129,7 +151,7 @@ static void eventCallback(struct event_handler_args eha)
     if(Ilocked) FASTUNLOCK(&asLock);
 }
 
-static void asCaTask(void)
+LOCAL void asCaTask(void)
 {
     ASG		*pasg;
     ASGINP	*pasginp;
@@ -149,6 +171,9 @@ static void asCaTask(void)
 	    SEVCHK(ca_build_and_connect(pasginp->inp,TYPENOTCONN,0,
 		&pcapvt->chid,0,connectCallback,pasginp),
 		"ca_build_and_connect");
+	    /*Note calls accessRightsCallback immediately called for local Pvs*/
+	    SEVCHK(ca_replace_access_rights_event(pcapvt->chid,accessRightsCallback),
+		"ca_replace_access_rights_event");
 	    /*Note calls eventCallback immediately called for local Pvs*/
 	    SEVCHK(ca_add_event(DBR_STS_DOUBLE,pcapvt->chid,
 		eventCallback,pasginp,&pcapvt->evid),

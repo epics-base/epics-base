@@ -72,11 +72,11 @@ extern struct dbBase *pdbBase;
 static FILE *stream;
 
 #define BUF_SIZE 100
+FAST_LOCK	asLock;
 static char	*my_buffer;
 static char	*my_buffer_ptr=NULL;
 static char	*pacf=NULL;
-FAST_LOCK	asLock;
-int		asLockInit=TRUE;
+static int	asLockInit=TRUE;
 static int	initTaskId=0;
 
 
@@ -143,6 +143,44 @@ int asSetFilename(char *acf)
     return(0);
 }
 
+static long asInitCommon(void)
+{
+    long	status;
+    char	buffer[BUF_SIZE];
+
+    if(!pacf) return(0);
+    if(asLockInit) {
+	FASTLOCKINIT(&asLock);
+	asLockInit = FALSE;
+    }
+    FASTLOCK(&asLock);
+    if(asActive)asCaStop();
+    buffer[0] = 0;
+    my_buffer = buffer;
+    my_buffer_ptr = my_buffer;
+    stream = fopen(pacf,"r");
+    if(!stream) {
+	errMessage(0,"asInit failure");
+	FASTUNLOCK(&asLock);
+	return(-1);
+    }
+    status = asInitialize(my_yyinput);
+    if(fclose(stream)==EOF) errMessage(0,"asInit fclose failure");
+    if(asActive) {
+	asDbAddRecords();
+	asCaStart();
+    }
+    FASTUNLOCK(&asLock);
+    return(status);
+}
+
+int asInit(void)
+{
+
+    asInitCommon();
+    return(0);
+}
+
 static void wdCallback(ASDBCALLBACK *pcallback)
 {
     pcallback->status = S_asLib_InitFailed;
@@ -154,35 +192,7 @@ static void asInitTask(ASDBCALLBACK *pcallback)
     long status;
 
     taskwdInsert(taskIdSelf(),wdCallback,pcallback);
-    if(asLockInit) {
-	FASTLOCKINIT(&asLock);
-	asLockInit = FALSE;
-    }
-    if(asActive)asCaStop();
-    FASTLOCK(&asLock);
-    my_buffer = calloc(1,BUF_SIZE);
-    my_buffer_ptr = my_buffer;
-    if(!my_buffer) {
-	errMessage(0,"asInit malloc failure");
-	FASTUNLOCK(&asLock);
-	taskwdRemove(taskIdSelf());
-	return;
-    }
-    stream = fopen(pacf,"r");
-    if(!stream) {
-	errMessage(0,"asInit failure");
-	FASTUNLOCK(&asLock);
-	taskwdRemove(taskIdSelf());
-	return;
-    }
-    status = asInitialize(my_yyinput);
-    if(fclose(stream)==EOF) errMessage(0,"asInit fclose failure");
-    free((void *)my_buffer);
-    if(asActive) {
-	asDbAddRecords();
-	asCaStart();
-    }
-    FASTUNLOCK(&asLock);
+    status = asInitCommon();
     taskwdRemove(taskIdSelf());
     initTaskId = 0;
     if(pcallback) {
@@ -190,10 +200,10 @@ static void asInitTask(ASDBCALLBACK *pcallback)
 	callbackRequest(&pcallback->callback);
     }
     status = taskDelete(taskIdSelf());
-    if(status!=OK) errMessage(0,"asInitTask: taskDelete Failure");
+    if(status) errMessage(0,"asInitTask: taskDelete Failure");
 }
-
-int asInit(ASDBCALLBACK *pcallback)
+
+int asInitAsyn(ASDBCALLBACK *pcallback)
 {
 
     if(!pacf) return(0);
@@ -255,7 +265,7 @@ long asSubProcess(struct subRecord *precord)
     if(!precord->pact && precord->val==1.0)  {
 	db_post_events(precord,&precord->val,DBE_VALUE);
 	callbackSetPriority(precord->prio,&pcallback->callback);
-	asInit(pcallback);
+	asInitAsyn(pcallback);
 	precord->pact=TRUE;
 	return(1);
     }

@@ -8,6 +8,7 @@ extern "C" {
 #include <stddef.h>
 
 #include "shareLib.h"
+#include "osiSem.h"
 
 typedef void (*THREADFUNC)(void *parm);
 
@@ -32,8 +33,22 @@ typedef enum {
 
 epicsShareFunc unsigned int epicsShareAPI threadGetStackSize(threadStackSizeClass size);
 
-/* threadOnceId is defined in osdThread.h; threadOnce() is defined after
-   osdThread.h has been included */
+/* threadOnce is a macro for efficiency (calls threadOnceOsd) */
+typedef struct {
+    int state; semMutexId mutex;
+} threadOnceId;
+
+#define OSITHREAD_ONCE_INIT {0,0}
+
+epicsShareFunc void epicsShareAPI threadOnceOsd(
+    threadOnceId *id, void (*func)(void *), void *arg);
+
+#define threadOnce(id,func,arg) \
+    do { \
+	threadOnceId *idCopy =(id); \
+	if((idCopy->state) <= 0) \
+	    threadOnceOsd(idCopy,func,arg); \
+    } while(0)
 
 typedef void *threadId;
 epicsShareFunc threadId epicsShareAPI threadCreate(const char *name,
@@ -49,6 +64,7 @@ epicsShareFunc int epicsShareAPI threadIsReady(threadId id);
 epicsShareFunc int epicsShareAPI threadIsSuspended(threadId id);
 epicsShareFunc void epicsShareAPI threadSleep(double seconds);
 epicsShareFunc threadId epicsShareAPI threadGetIdSelf(void);
+epicsShareFunc threadId epicsShareAPI threadGetId(const char *name);
 
 epicsShareFunc const char * epicsShareAPI threadGetNameSelf(void);
 
@@ -114,9 +130,6 @@ private:
 #endif /* __cplusplus */
 
 #include "osdThread.h"
-
-epicsShareFunc void epicsShareAPI threadOnce(
-    threadOnceId *id, void (*func)(void *), void *arg);
 
 #ifdef __cplusplus
 

@@ -73,9 +73,11 @@ epicsShareFunc unsigned int epicsShareAPI threadGetStackSize (threadStackSizeCla
     return stackSizeTable[stackSizeClass];
 }
 
-void threadOnce(threadOnceId *id, void (*func)(void *), void *arg)
+void threadOnceOsd(threadOnceId *id, void (*func)(void *), void *arg)
 {
-    if(vxTas(id))
+    /* not a good implementation (no guarantee that func() has finished before
+       the next task calls this routine); see the Posix implementation */
+    if(vxTas(&id->state))
 	func(arg);
 }
 
@@ -172,6 +174,12 @@ threadId threadGetIdSelf(void)
     return((threadId)taskIdSelf());
 }
 
+threadId threadGetId(const char *name)
+{
+    int tid = taskNameToId((char *)name);
+    return((threadId)(tid==ERROR?0:tid));
+}
+
 const char *threadGetNameSelf (void)
 {
     return taskName(taskIdSelf());
@@ -197,7 +205,6 @@ void threadGetName (threadId id, char *name, size_t size)
  * The algorithm allows for threadPrivateCreate being called after
  * the first call to threadPrivateSet.
  */
-
 threadPrivateId threadPrivateCreate()
 {
     return((void *)++nthreadPrivate);
@@ -210,9 +217,9 @@ void threadPrivateDelete(threadPrivateId id)
 }
 
 /*
- *note that it is not necessary to have mutex for following
- *because they must be called by the same thread
-*/
+ * Note that it is not necessary to have mutex for following
+ * because they must be called by the same thread
+ */
 void threadPrivateSet (threadPrivateId id, void *pvt)
 {
     int indpthreadPrivate = (int)id;

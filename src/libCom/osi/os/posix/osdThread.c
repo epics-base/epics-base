@@ -175,7 +175,7 @@ static void once(void)
     semMutexGive(listMutex);
 }
 
-void threadOnce(threadOnceId *id, void (*func)(void *), void *arg)
+void threadOnceOsd(threadOnceId *id, void (*func)(void *), void *arg)
 {
     int status;
 
@@ -183,15 +183,24 @@ void threadOnce(threadOnceId *id, void (*func)(void *), void *arg)
     checkStatusQuit(status,"pthread_once","threadOnce");
 
     semMutexMustTake(onceMutex);
-    if(!(*id))
-    {
-	*id = 1;
+    switch (id->state) {
+    case 0:
+	id->state = -1;
+	id->mutex = semMutexMustCreate();
+	semMutexMustTake(id->mutex);
 	semMutexGive(onceMutex);
 	func(arg);
-    }
-    else
-    {
+	id->state = 1;
+	semMutexGive(id->mutex);
+	break;
+    case -1:
 	semMutexGive(onceMutex);
+	semMutexMustTake(id->mutex);
+	semMutexGive(id->mutex);
+	break;
+    default:
+	semMutexGive(onceMutex);
+	break;
     }
 }
 
@@ -350,6 +359,22 @@ threadId threadGetIdSelf(void) {
     return((threadId)pthreadInfo);
 }
 
+threadId threadGetId(const char *name) {
+    threadInfo *pthreadInfo;
+    int status;
+
+    status = pthread_once(&once_control,once);
+    checkStatusQuit(status,"pthread_once","threadGetId");
+
+    semMutexMustTake(listMutex);
+    for(pthreadInfo=(threadInfo *)ellFirst(&pthreadList); pthreadInfo;
+	pthreadInfo=(threadInfo *)ellNext((ELLNODE *)pthreadInfo)) {
+	if(strcmp(name,pthreadInfo->name) == 0) break;
+    }
+    semMutexGive(listMutex);
+    return((threadId)pthreadInfo);
+}
+
 const char *threadGetNameSelf()
 {
     threadInfo *pthreadInfo;
@@ -378,6 +403,8 @@ void threadShow (void)
     int status;
 
     status = pthread_once(&once_control,once);
+    checkStatusQuit(status,"pthread_once","threadShow");
+
     errlogPrintf ("        NAME       ID      PRI    STATE     WAIT\n");
     semMutexMustTake(listMutex);
     for(pthreadInfo=(threadInfo *)ellFirst(&pthreadList); pthreadInfo;

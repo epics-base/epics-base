@@ -1,13 +1,8 @@
 
-#include <sys/types.h>
-#include <sys/time.h>
-
 //
-// for sunos4
+// should move the time stuff into a different header
 //
-extern "C" {
-int gettimeofday (struct timeval *tp, struct timezone *tzp);
-}
+#include <osiSock.h>
 
 #define epicsExportSharedSymbols
 #include "osiTime.h"

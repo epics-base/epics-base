@@ -42,7 +42,7 @@ clean ::
 	$(RMDIR) $(addprefix O.,$(BUILD_ARCHS)) O.Common
 
 clean$(DIVIDER)% :: 
-	$(RMDIR) O.$* O.Common
+	$(RMDIR) O.$*
 
 .PHONY : $(buildActionTargets)
 .PHONY : $(buildActionArchTargets)

@@ -32,9 +32,10 @@ extern "C" void cacNoopAccesRightsHandler ( struct access_rights_handler_args )
 {
 }
 
-oldChannelNotify::oldChannelNotify ( oldCAC &cacIn, const char *pName, 
-                                    caCh *pConnCallBackIn, void *pPrivateIn ) :
-    io ( cacIn.createChannel ( pName, *this ) ), cacCtx ( cacIn ),
+oldChannelNotify::oldChannelNotify ( oldCAC & cacIn, const char *pName, 
+        caCh * pConnCallBackIn, void * pPrivateIn, capri priority ) :
+    io ( cacIn.createChannel ( pName, *this, priority ) ), 
+    cacCtx ( cacIn ), 
     pConnCallBack ( pConnCallBackIn ? pConnCallBackIn : cacNoopConnHandler ), 
     pPrivate ( pPrivateIn ), pAccessRightsFunc ( cacNoopAccesRightsHandler )
 {

@@ -1,4 +1,3 @@
-
 /*  
  *  $Id$
  *
@@ -124,7 +123,7 @@ public:
 //
 class epicsShareClass cacChannel {
 public:
-    typedef unsigned char priLev;
+    typedef unsigned priLev;
     static const priLev priorityMax;
     static const priLev priorityMin;
     static const priLev priorityDefault;

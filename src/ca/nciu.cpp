@@ -1,5 +1,5 @@
-
-/*  $Id$
+/*
+ *  $Id$
  *
  *                    L O S  A L A M O S
  *              Los Alamos National Laboratory
@@ -58,7 +58,7 @@ nciu::nciu ( cac & cacIn, netiiu & iiuIn, cacChannelNotify & chanIn,
     retrySeqNo ( 0u ),
     nameLength ( static_cast <ca_uint16_t> ( strlen ( pNameIn ) + 1 ) ),
     typeCode ( USHRT_MAX ),
-    priority ( pri ),
+    priority ( static_cast <ca_uint8_t> ( pri ) ),
     f_connected ( false ),
     f_previousConn ( false ),
     f_claimSent ( false ),

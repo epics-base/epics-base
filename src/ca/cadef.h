@@ -235,7 +235,7 @@ typedef double				ca_real;
 
 
 /* argument passed to event handlers and callback handlers		*/
-struct	event_handler_args{
+typedef struct	event_handler_args{
 	void		*usr;	/* User argument supplied when event added 	*/
 	struct channel_in_use
 			*chid;	/* Channel id					*/
@@ -243,7 +243,7 @@ struct	event_handler_args{
 	long		count;	/* the element count of the item returned	*/
 	READONLY void	*dbr;	/* Pointer to the value returned		*/
 	int		status;	/* CA Status of the op from server - CA V4.1	*/
-};
+}evargs;
 
 struct pending_event{
   	ELLNODE		node;	/* list ptrs */
@@ -289,8 +289,7 @@ struct	exception_handler_args{
 	unsigned	lineNo; /* source file line number */
 };
 
-
-
+typedef unsigned CA_SYNC_GID;
 
 /*
  *
@@ -305,6 +304,20 @@ struct	exception_handler_args{
 #define CA_OP_OTHER 		5
 #define CA_OP_CONN_UP 		6
 #define CA_OP_CONN_DOWN 	7
+
+/*
+ * provides efficient test and display of channel access errors
+ */
+#define		SEVCHK(CA_ERROR_CODE, MESSAGE_STRING) \
+{ \
+	int ca_unique_status_name  = (CA_ERROR_CODE); \
+	if(!(ca_unique_status_name & CA_M_SUCCESS)) \
+		ca_signal_with_file_and_lineno( \
+			ca_unique_status_name, \
+			(MESSAGE_STRING), \
+			__FILE__, \
+			__LINE__); \
+}
 
 #ifdef CAC_ANSI_FUNC_PROTO
 
@@ -641,10 +654,9 @@ epicsShareFunc int epicsShareAPI ca_array_get_callback
 /*	NOTES:								*/
 /*	1)	Evid may be omited by passing a NULL pointer		*/
 /*									*/
-/*	2)	AN array count of zero specifies the native db count	*/ 
+/*	2)	An array count of zero specifies the native db count	*/ 
 /*									*/
 /************************************************************************/
-typedef struct event_handler_args  evargs;
 
 /*
  * ca_add_event ()
@@ -828,20 +840,6 @@ epicsShareFunc void epicsShareAPI ca_signal_with_file_and_lineno
 );
 
 /*
- * provides efficient test and display of channel access errors
- */
-#define		SEVCHK(CA_ERROR_CODE, MESSAGE_STRING) \
-{ \
-	int ca_unique_status_name  = (CA_ERROR_CODE); \
-	if(!(ca_unique_status_name & CA_M_SUCCESS)) \
-		ca_signal_with_file_and_lineno( \
-			ca_unique_status_name, \
-			(MESSAGE_STRING), \
-			__FILE__, \
-			__LINE__); \
-}
-
-/*
  * ca_host_name_function()
  *
  * channel	R	channel identifier
@@ -910,7 +908,6 @@ int ca_import_cancel(int tid);
  * IO operations are initiated then the programmer is free to
  * block for IO completion within any one of the groups as needed.
  */
-typedef unsigned CA_SYNC_GID;
 
 /*
  * ca_sg_create()

@@ -203,29 +203,20 @@ void MakeStringFuncFrom(int i,int j,int k)
 	/* assumes that void* d in an array of char pointers of length c */
 	/* takes numeric data from source j and convert it to string in dest i */
 
-	pr(dfd,"static int %s%s%s(void* d,const void* s,aitIndex c, const gddEnumStringTable *)\n",
+	pr(dfd,"static int %s%s%s(void* d,const void* s,aitIndex c, const gddEnumStringTable * pEST)\n",
 		table_type[k],&(aitName[i])[3],&(aitName[j])[3]);
 	pr(dfd,"{\n");
-	pr(dfd,"\taitIndex i;\n");
-	pr(dfd,"\tint status=0;\n");
 	pr(dfd,"\tchar temp[AIT_FIXED_STRING_SIZE];\n");
 	pr(dfd,"\taitString* out=(aitString*)d;\n");
 	pr(dfd,"\t%s* in=(%s*)s;\n",aitName[j],aitName[j]);
-
-	pr(dfd,"\tfor(i=0;i<c;i++) {\n");
-	pr(dfd,"\t\tint nChar;\n");
-	pr(dfd,"\t\tnChar = sprintf(temp, \"%%%s\",in[i]);\n",
-			aitPrintf[j]);
-	pr(dfd,"\t\tif (nChar>=0) {\n");
-	pr(dfd,"\t\t\tstatus += nChar;\n");
-	pr(dfd,"\t\t\tout[i].copy(temp);\n");
-	pr(dfd,"\t\t}\n");
-	pr(dfd,"\t\telse {\n");
-	pr(dfd,"\t\t\treturn -1;\n");
-	pr(dfd,"\t\t}\n");
-	pr(dfd,"\t}\n");
-	pr(dfd,"\treturn status;\n");
-	pr(dfd,"}\n");
+	pr(dfd,"\tfor(aitIndex i=0;i<c;i++) {\n");
+    pr(dfd,"\t\tif ( putDoubleToString ( in[i], pEST, temp, AIT_FIXED_STRING_SIZE ) ) {\n");
+    pr(dfd,"\t\t\tout[i].copy ( temp );\n");
+    pr(dfd,"\t\t}\n");
+    pr(dfd,"\t\telse {\n");
+    pr(dfd,"\t\t\treturn -1;\n");
+    pr(dfd,"\t\t}\n");
+	pr(dfd,"\t}\n\treturn c*AIT_FIXED_STRING_SIZE;\n}\n");
 }
 
 void MakeStringFuncTo(int i,int j,int k)
@@ -233,46 +224,26 @@ void MakeStringFuncTo(int i,int j,int k)
 	/* assumes that void* d in an array of char pointers of length c */
 	/* takes string data from source j and convert it to numeric in dest i */
 
-	pr(dfd,"static int %s%s%s(void* d,const void* s,aitIndex c, const gddEnumStringTable *)\n",
+	pr(dfd,"static int %s%s%s(void* d,const void* s,aitIndex c, const gddEnumStringTable *pEST)\n",
 		table_type[k],&(aitName[i])[3],&(aitName[j])[3]);
 	pr(dfd,"{\n");
-	pr(dfd,"\taitIndex i;\n");
 	pr(dfd,"\taitString* in=(aitString*)s;\n");
 	pr(dfd,"\t%s* out=(%s*)d;\n",aitName[i],aitName[i]);
-
-	pr(dfd,"\tfor(i=0;i<c;i++) {\n");
-	pr(dfd,"\t\tif(in[i].string()) {\n");
-	pr(dfd,"\t\t\tint j;\n");
-	pr(dfd,"\t\t\tdouble ftmp;\n");
-
-	pr(dfd,"\t\t\tj = sscanf(in[i],\"%%lf\",&ftmp);\n");
-	pr(dfd,"\t\t\tif (j==1) {\n");
-	pr(dfd,"\t\t\t\tif (ftmp>=%g && ftmp<=%g) {\n",
+	pr(dfd,"\tfor(aitIndex i=0;i<c;i++) {\n");
+    pr(dfd,"\t\tdouble ftmp;\n");
+    pr(dfd,"\t\tif ( getStringAsDouble (in[i].string(), pEST, ftmp) ) {\n");
+	pr(dfd,"\t\t\tif (ftmp>=%g && ftmp<=%g) {\n",
 			aitMin[i], aitMax[i]);
-	pr(dfd,"\t\t\t\t\tout[i] = (%s) ftmp;\n", aitName[i]);
-	pr(dfd,"\t\t\t\t}\n");
-	pr(dfd,"\t\t\t\telse {\n");
-	pr(dfd,"\t\t\t\t\treturn -1;\n");
-	pr(dfd,"\t\t\t\t}\n");
+	pr(dfd,"\t\t\t\tout[i] = (%s) ftmp;\n", aitName[i]);
 	pr(dfd,"\t\t\t}\n");
 	pr(dfd,"\t\t\telse {\n");
-	pr(dfd,"\t\t\t\tunsigned long itmp;\n");
-	pr(dfd,"\t\t\t\tj = sscanf(in[i],\"%%lx\",&itmp);\n");
-	pr(dfd,"\t\t\t\tif (j==1) {\n");
-	pr(dfd,"\t\t\t\t\tif (%g<=(double)itmp && %g>=(double)itmp) {\n",
-			aitMin[i], aitMax[i]);
-	pr(dfd,"\t\t\t\t\t\tout[i] = (%s) itmp;\n", aitName[i]);
-	pr(dfd,"\t\t\t\t\t}\n");
-	pr(dfd,"\t\t\t\t\telse {\n");
-	pr(dfd,"\t\t\t\t\t\treturn -1;\n");
-	pr(dfd,"\t\t\t\t\t}\n");
-	pr(dfd,"\t\t\t\t}\n");
-	pr(dfd,"\t\t\t\telse {\n");
-	pr(dfd,"\t\t\t\t\treturn -1;\n");
-	pr(dfd,"\t\t\t\t}\n");
+	pr(dfd,"\t\t\t\treturn -1;\n");
 	pr(dfd,"\t\t\t}\n");
-	pr(dfd,"\t\t}\n");
-	pr(dfd,"\t}\n");
+    pr(dfd,"\t\t}\n");
+    pr(dfd,"\t\telse {\n");
+    pr(dfd,"\t\t\treturn -1;\n");
+    pr(dfd,"\t\t}\n");
+    pr(dfd,"\t}\n");
 	pr(dfd,"\treturn (int) (sizeof(%s)*c);\n}\n", aitName[i]);
 }
 
@@ -281,36 +252,16 @@ void MakeFStringFuncFrom(int i,int j,int k)
 	/* assumes that void* d in an array of char pointers of length c */
 	/* takes numeric data from source j and convert it to string in dest i */
 
-	pr(dfd,"static int %s%s%s(void* d,const void* s,aitIndex c, const gddEnumStringTable *)\n",
+	pr(dfd,"static int %s%s%s(void* d,const void* s,aitIndex c, const gddEnumStringTable * pEST)\n",
 		table_type[k],&(aitName[i])[3],&(aitName[j])[3]);
 	pr(dfd,"{\n");
-	pr(dfd,"\taitIndex i;\n");
 	pr(dfd,"\taitFixedString* out=(aitFixedString*)d;\n");
 	pr(dfd,"\t%s* in=(%s*)s;\n",aitName[j],aitName[j]);
 
-#if 0
-	if(j==aitEnumInt8)
-	{
-		pr(dfd,"\n\t// assume source s is string if count c is 1\n");
-		pr(dfd,"\n\tif(c==1) {\n");
-		pr(dfd,"\t\tstrcpy(out->fixed_string,(char*)in);\n");
-		pr(dfd,"\t\treturn;\n");
-		pr(dfd,"\t}\n\n");
-	}
-#endif
-
-	pr(dfd,"\tfor(i=0;i<c;i++) {\n");
-	pr(dfd,"\t\tint nChar;\n");
-	pr(dfd,"\t\tnChar = sprintf(out[i].fixed_string, \"%%%s\",in[i]);\n",
-				aitPrintf[j]);
-	pr(dfd,"\t\tif (nChar>=0) {\n");
-	pr(dfd,"\t\t\tnChar = min(nChar,AIT_FIXED_STRING_SIZE-1)+1;\n");
-	pr(dfd,"\t\t\t/* shuts up purify */\n");
-	pr(dfd,"\t\t\tmemset(&out[i].fixed_string[nChar],\'\\0\',AIT_FIXED_STRING_SIZE-nChar);\n");
-	pr(dfd,"\t\t}\n");
-	pr(dfd,"\t\telse {\n");
-	pr(dfd,"\t\t\treturn -1;\n");
-	pr(dfd,"\t\t}\n");
+	pr(dfd,"\tfor(aitIndex i=0;i<c;i++) {\n");
+    pr(dfd,"\t\tif ( ! putDoubleToString ( in[i], pEST, out[i].fixed_string, AIT_FIXED_STRING_SIZE ) ) {\n");
+    pr(dfd,"\t\t\treturn -1;\n");
+    pr(dfd,"\t\t}\n");
 	pr(dfd,"\t}\n\treturn c*AIT_FIXED_STRING_SIZE;\n}\n");
 }
 
@@ -318,19 +269,14 @@ void MakeFStringFuncTo(int i,int j,int k)
 {
 	/* assumes that void* d in an array of char pointers of length c */
 	/* takes string data from source j and convert it to numeric in dest i */
-	pr(dfd,"static int %s%s%s(void* d,const void* s,aitIndex c, const gddEnumStringTable *)\n",
+	pr(dfd,"static int %s%s%s(void* d,const void* s,aitIndex c, const gddEnumStringTable *pEST)\n",
 		table_type[k],&(aitName[i])[3],&(aitName[j])[3]);
 	pr(dfd,"{\n");
-	pr(dfd,"\taitIndex i;\n");
 	pr(dfd,"\taitFixedString* in=(aitFixedString*)s;\n");
 	pr(dfd,"\t%s* out=(%s*)d;\n",aitName[i],aitName[i]);
-
-	pr(dfd,"\tfor(i=0;i<c;i++) {\n");
-	pr(dfd,"\t\tint j;\n");
-	pr(dfd,"\t\tdouble ftmp;\n");
-
-	pr(dfd,"\t\tj = sscanf(in[i].fixed_string,\"%%lf\",&ftmp);\n");
-	pr(dfd,"\t\tif (j==1) {\n");
+	pr(dfd,"\tfor(aitIndex i=0;i<c;i++) {\n");
+    pr(dfd,"\t\tdouble ftmp;\n");
+    pr(dfd,"\t\tif ( getStringAsDouble (in[i].fixed_string, pEST, ftmp) ) {\n");
 	pr(dfd,"\t\t\tif (ftmp>=%g && ftmp<=%g) {\n",
 			aitMin[i], aitMax[i]);
 	pr(dfd,"\t\t\t\tout[i] = (%s) ftmp;\n", aitName[i]);
@@ -338,24 +284,11 @@ void MakeFStringFuncTo(int i,int j,int k)
 	pr(dfd,"\t\t\telse {\n");
 	pr(dfd,"\t\t\t\treturn -1;\n");
 	pr(dfd,"\t\t\t}\n");
-	pr(dfd,"\t\t}\n");
-	pr(dfd,"\t\telse {\n");
-	pr(dfd,"\t\t\tunsigned long itmp;\n");
-	pr(dfd,"\t\t\tj = sscanf(in[i].fixed_string,\"%%lx\",&itmp);\n");
-	pr(dfd,"\t\t\tif (j==1) {\n");
-	pr(dfd,"\t\t\t\tif (%g<=(double)itmp && %g>=(double)itmp) {\n",
-			aitMin[i], aitMax[i]);
-	pr(dfd,"\t\t\t\t\tout[i] = (%s) itmp;\n", aitName[i]);
-	pr(dfd,"\t\t\t\t}\n");
-	pr(dfd,"\t\t\t\telse {\n");
-	pr(dfd,"\t\t\t\t\treturn -1;\n");
-	pr(dfd,"\t\t\t\t}\n");
-	pr(dfd,"\t\t\t}\n");
-	pr(dfd,"\t\t\telse {\n");
-	pr(dfd,"\t\t\t\treturn -1;\n");
-	pr(dfd,"\t\t\t}\n");
-	pr(dfd,"\t\t}\n");
-	pr(dfd,"\t}\n");
+    pr(dfd,"\t\t}\n");
+    pr(dfd,"\t\telse {\n");
+    pr(dfd,"\t\t\treturn -1;\n");
+    pr(dfd,"\t\t}\n");
+    pr(dfd,"\t}\n");
 	pr(dfd,"\treturn (int) (sizeof(%s)*c);\n}\n", aitName[i]);
 }
 

@@ -26,7 +26,6 @@ SRC_DIRS += $(LIBCOM)/ring
 INC += epicsRingPointer.h
 INC += epicsRingBytes.h
 INC += epicsReadline.h
-INC += osdReadline.h
 SRCS += epicsRingPointer.cpp
 SRCS += epicsRingBytes.c
 SRCS += epicsReadline.c

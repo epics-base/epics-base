@@ -436,10 +436,18 @@ configMsg()
 
   printf("Enter the Link Type (5 = GPIB, 13 = BBGPIB) [%d]: ", pCmd->linkType);
   if (getInt(&inInt) == 1)
-    if (inInt == 1)
+  {
+    if(inInt == 5)
       pCmd->linkType = GPIB_IO;
-    else
+    else if (inInt == 13)
       pCmd->linkType = BBGPIB_IO;
+    else
+    {
+      printf("Invalid link Type %d specified\n", pCmd->linkType);
+      return(ERROR);
+    }
+  }
+
 
   printf("\nenter Enter Link # [%2.2d] > ", (int) pCmd->linkId);
   if (getInt(&inInt) == 1)
@@ -469,6 +477,7 @@ configMsg()
   pCmd->resp[0]= 0;       /* clear response string */
   
   showGpibMsg(msgNum);
+  return(ERROR);
 }
 
 /*

@@ -1782,7 +1782,6 @@ void cac::preemptiveCallbackUnlock ()
         epicsAutoMutex autoMutex ( this->mutex );
         assert ( this->recvThreadsPendingCount > 0 );
         this->recvThreadsPendingCount--;
-        unsigned noThreadsWaiting;
         if ( this->pCallbackLocker ) {
             if ( this->recvThreadsPendingCount == 1u ) {
                 signalRequired = true;
@@ -1790,6 +1789,9 @@ void cac::preemptiveCallbackUnlock ()
             else {
                 signalRequired = false;
             }
+        }
+        else {
+            signalRequired = false;
         }
     }
     if ( signalRequired ) {

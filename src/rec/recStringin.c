@@ -32,6 +32,7 @@
  * .01  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
  * .02  02-05-92	jba	Changed function arguments from paddr to precord 
  * .03  02-28-92	jba	ANSI C changes
+ * .04  04-10-92        jba     pact now used to test for asyn processing, not status
  */
 
 
@@ -95,7 +96,7 @@ struct stringindset { /* stringin input dset */
 	DEVSUPFUN	init;
 	DEVSUPFUN	init_record; /*returns: (-1,0)=>(failure,success)*/
 	DEVSUPFUN	get_ioint_info;
-	DEVSUPFUN	read_stringin;/*(0,1)=> success, async */
+	DEVSUPFUN	read_stringin; /*returns: (-1,0)=>(failure,success)*/
 };
 void monitor();
 
@@ -125,6 +126,7 @@ static long process(pstringin)
 {
 	struct stringindset	*pdset = (struct stringindset *)(pstringin->dset);
 	long		 status;
+	unsigned char    pact=pstringin->pact;
 
 	if( (pdset==NULL) || (pdset->read_stringin==NULL) ) {
 		pstringin->pact=TRUE;
@@ -133,10 +135,9 @@ static long process(pstringin)
 	}
 
 	status=(*pdset->read_stringin)(pstringin); /* read the new value */
+	/* check if device support set pact */
+	if ( !pact && pstringin->pact ) return(0);
 	pstringin->pact = TRUE;
-
-	/* status is one if an asynchronous record is being processed*/
-	if (status==1) return(0);
 
 	tsLocalTime(&pstringin->time);
 

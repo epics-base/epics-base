@@ -33,6 +33,7 @@
  * .02  02-05-92	jba	Changed function arguments from paddr to precord 
  * .03  02-28-92        jba     Changed get_precision,get_graphic_double,get_control_double
  * .04  02-28-92	jba	ANSI C changes
+ * .05  04-10-92        jba     pact now used to test for asyn processing, not status
  */ 
 
 #include     <vxWorks.h>
@@ -96,7 +97,7 @@ struct pddset { /* pulseDelay input dset */
      DEVSUPFUN     init;
      DEVSUPFUN     init_record; /*returns: (-1,0)=>(failure,success)*/
      DEVSUPFUN     get_ioint_info;
-     DEVSUPFUN     write_pd;/*(-1,0,1)=>(failure,success,don't Continue*/
+     DEVSUPFUN     write_pd;/*(-1,0)=>(failure,success*/
 };
 void monitor();
 
@@ -129,6 +130,7 @@ static long process(ppd)
 {
     struct pddset     *pdset = (struct pddset *)(ppd->dset);
     long           status=0;
+    unsigned char    pact=ppd->pact;
 
     /* must have  write_pd functions defined */
     if( (pdset==NULL) || (pdset->write_pd==NULL) ) {
@@ -139,10 +141,9 @@ static long process(ppd)
 
      if (status==0) status=(*pdset->write_pd)(ppd); /* write the new value */
 
+     /* check if device support set pact */
+     if ( !pact && ppd->pact ) return(0);
      ppd->pact = TRUE;
-
-     /* status is one if an asynchronous record is being processed*/
-     if (status==1) return(0);
 
      ppd->udf=FALSE;
      tsLocalTime(&ppd->time);

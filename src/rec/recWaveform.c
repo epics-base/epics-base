@@ -53,6 +53,7 @@
  * .13  02-05-92	jba	Changed function arguments from paddr to precord 
  * .14  02-28-92        jba     Changed get_precision,get_graphic_double,get_control_double
  * .15  02-28-92	jba	ANSI C changes
+ * .16  04-10-92        jba     pact now used to test for asyn processing, not status
  */
 
 #include	<vxWorks.h>
@@ -117,8 +118,7 @@ struct wfdset { /* waveform dset */
         DEVSUPFUN       init;
         DEVSUPFUN       init_record; /*returns: (-1,0)=>(failure,success)*/
         DEVSUPFUN       get_ioint_info;
-        DEVSUPFUN       read_wf;/*(0,1)=> success and */
-                        /*(convert,don't continue)*/
+        DEVSUPFUN       read_wf; /*returns: (-1,0)=>(failure,success)*/
 };
 
 /*sizes of field types*/
@@ -168,6 +168,7 @@ static long process(pwf)
 {
         struct wfdset   *pdset = (struct wfdset *)(pwf->dset);
 	long		 status;
+	unsigned char    pact=pwf->pact;
 
         if( (pdset==NULL) || (pdset->read_wf==NULL) ) {
                 pwf->pact=TRUE;
@@ -184,11 +185,13 @@ static long process(pwf)
                 }
         }
 
-        /*pact must not be set true until read_wf completes*/
+	if ( pact && pwf->busy ) return(0);
+
         status=(*pdset->read_wf)(pwf); /* read the new value */
+	/* check if device support set pact */
+	if ( !pact && pwf->pact ) return(0);
         pwf->pact = TRUE;
-        /* status is one if an asynchronous record is being processed*/
-        if(status==1) return(0);
+
 	pwf->udf=FALSE;
 	tsLocalTime(&pwf->time);
 

@@ -33,6 +33,7 @@
  * .02  02-05-92	jba	Changed function arguments from paddr to precord 
  * .03  02-28-92        jba     Changed get_precision,get_graphic_double,get_control_double
  * .04  02-28-92	jba	ANSI C changes
+ * .04  04-10-92        jba     pact now used to test for asyn processing, not status
  */
 
 
@@ -97,7 +98,7 @@ struct longindset { /* longin input dset */
 	DEVSUPFUN	init;
 	DEVSUPFUN	init_record; /*returns: (-1,0)=>(failure,success)*/
 	DEVSUPFUN	get_ioint_info;
-	DEVSUPFUN	read_longin;/*(0,1)=> success, async */
+	DEVSUPFUN	read_longin; /*returns: (-1,0)=>(failure,success)*/
 };
 void alarm();
 void monitor();
@@ -128,6 +129,7 @@ static long process(plongin)
 {
 	struct longindset	*pdset = (struct longindset *)(plongin->dset);
 	long		 status;
+	unsigned char    pact=plongin->pact;
 
 	if( (pdset==NULL) || (pdset->read_longin==NULL) ) {
 		plongin->pact=TRUE;
@@ -136,10 +138,9 @@ static long process(plongin)
 	}
 
 	status=(*pdset->read_longin)(plongin); /* read the new value */
+	/* check if device support set pact */
+	if ( !pact && plongin->pact ) return(0);
 	plongin->pact = TRUE;
-
-        /* status is one if an asynchronous record is being processed*/
-        if (status==1) return(0);
 
 	tsLocalTime(&plongin->time);
 

@@ -34,6 +34,7 @@
  * .03  02-05-92	jba	Changed function arguments from paddr to precord 
  * .04  02-28-92        jba     Changed get_precision,get_graphic_double,get_control_double
  * .05  02-28-92	jba	ANSI C changes
+ * .06  04-10-92        jba     pact now used to test for asyn processing, not status
  */ 
 
 #include     <vxWorks.h>
@@ -97,7 +98,7 @@ struct ptdset { /* pulseTrain input dset */
      DEVSUPFUN     init;
      DEVSUPFUN     init_record; /*returns: (-1,0)=>(failure,success)*/
      DEVSUPFUN     get_ioint_info;
-     DEVSUPFUN     write_pt;/*(-1,0,1)=>(failure,success,don't Continue*/
+     DEVSUPFUN     write_pt;/*(-1,0)=>(failure,success)*/
 };
 
 /* def for gsrc field */
@@ -147,6 +148,7 @@ static long process(ppt)
     long              status=0;
     long              options,nRequest;
     double            save;
+    unsigned char    pact=ppt->pact;
 
 
     /* must have  write_pt functions defined */
@@ -189,10 +191,10 @@ static long process(ppt)
      if (status==0 && (ppt->gsrc!=SOFTWARE || ppt->sgv!=0))
 	status=(*pdset->write_pt)(ppt);
 
+     /* check if device support set pact */
+     if ( !pact && ppt->pact ) return(0);
      ppt->pact = TRUE;
 
-     /* status is one if an asynchronous record is being processed*/
-     if (status==1) return(0);
      if(status==-1)status = 0;
 
      ppt->udf=FALSE;

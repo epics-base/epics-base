@@ -32,6 +32,7 @@
  * .01  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
  * .02  02-05-92	jba	Changed function arguments from paddr to precord 
  * .03  02-28-92	jba	ANSI C changes
+ * .04  04-10-92        jba     pact now used to test for asyn processing, not status
  */ 
 
 #include     <vxWorks.h>
@@ -95,7 +96,7 @@ struct pcdset { /* pulseCounter input dset */
      DEVSUPFUN     init;
      DEVSUPFUN     init_record; /*returns: (-1,0)=>(failure,success)*/
      DEVSUPFUN     get_ioint_info;
-     DEVSUPFUN     cmd_pc;/*(-1,0,1)=>(failure,success,don't Continue*/
+     DEVSUPFUN     cmd_pc;/*(-1,0)=>(failure,success*/
 };
 
 /* def for gsrc field */
@@ -145,6 +146,7 @@ static long process(ppc)
     long           status=0;
     long             options,nRequest;
     unsigned short   save;
+    unsigned char    pact=ppc->pact;
 
     /* must have  cmd_pc functions defined */
     if( (pdset==NULL) || (pdset->cmd_pc==NULL) ) {
@@ -191,10 +193,9 @@ static long process(ppc)
      }
      if (status==0) status=(*pdset->cmd_pc)(ppc);
 
+     /* check if device support set pact */
+     if ( !pact && ppc->pact ) return(0);
      ppc->pact = TRUE;
-
-     /* status is one if an asynchronous record is being processed*/
-     if (status==1) return(0);
 
      ppc->udf=FALSE;
      tsLocalTime(&ppc->time);

@@ -56,6 +56,7 @@
  * .20  02-05-92	jba	Changed function arguments from paddr to precord 
  * .21  02-28-92	jba	ANSI C changes
  * .22  03-03-92	jba	Changed callback handling
+ * .23  04-10-92        jba     pact now used to test for asyn processing, not status
  */
 
 #include	<vxWorks.h>
@@ -122,7 +123,7 @@ struct bodset { /* binary output dset */
 	DEVSUPFUN	init;
 	DEVSUPFUN	init_record;  /*returns:(0,2)=>(success,success no convert*/
 	DEVSUPFUN	get_ioint_info;
-	DEVSUPFUN	write_bo;/*returns: (-1,0,1)=>(failure,success,don't continue)*/
+	DEVSUPFUN	write_bo;/*returns: (-1,0)=>(failure,success)*/
 };
 
 
@@ -196,6 +197,7 @@ static long process(pbo)
 	struct bodset	*pdset = (struct bodset *)(pbo->dset);
 	long		 status=0;
 	int		wait_time;
+	unsigned char    pact=pbo->pact;
 
 	if( (pdset==NULL) || (pdset->write_bo==NULL) ) {
 		pbo->pact=TRUE;
@@ -222,14 +224,15 @@ static long process(pbo)
 		if ( pbo->mask != 0 ) {
 			if(pbo->val==0) pbo->rval = 0;
 			else pbo->rval = pbo->mask;
-		}
+		} else pbo->rval = (unsigned long)pbo->val;
 	}
 	if(status==0) {
 	     status=(*pdset->write_bo)(pbo); /* write the new value */
  	}
+	/* check if device support set pact */
+	if ( !pact && pbo->pact ) return(0);
 	pbo->pact = TRUE;
-	/* status is one if an asynchronous record is being processed*/
-	if(status==1) return(0);
+
 	tsLocalTime(&pbo->time);
 	wait_time = (int)((pbo->high) * vxTicksPerSecond); /* seconds to ticks */
 	if(pbo->val==1 && wait_time>0) {

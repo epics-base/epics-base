@@ -31,6 +31,7 @@
  * -----------------
  4 .00  12-13-91        jba     Initial definition
  * .01  02-28-92	jba	ANSI C changes
+ * .02  04-10-92        jba     pact now used to test for asyn processing, not status
  */
 
 #include	<vxWorks.h>
@@ -46,7 +47,6 @@
 #include	<devSup.h>
 #include	<errMdef.h>
 #include	<recSup.h>
-#include	<module_types.h>
 #include	<eventRecord.h>
 
 /* Create RSET - Record Support Entry Table*/
@@ -94,7 +94,7 @@ struct eventdset { /* event input dset */
 	DEVSUPFUN	init;
 	DEVSUPFUN	init_record; /*returns: (-1,0)=>(failure,success)*/
 	DEVSUPFUN	get_ioint_info;
-	DEVSUPFUN	read_event;/*(0,1)=> success, async */
+	DEVSUPFUN	read_event;/*(0)=> success */
 };
 void monitor();
 
@@ -114,13 +114,13 @@ static long process(pevent)
 {
 	struct eventdset	*pdset = (struct eventdset *)(pevent->dset);
 	long		 status=0;
+	unsigned char    pact=pevent->pact;
 
 	if((pdset!=NULL) && (pdset->number >= 5) && pdset->read_event ) 
 		status=(*pdset->read_event)(pevent); /* read the new value */
+	/* check if device support set pact */
+	if ( !pact && pevent->pact ) return(0);
 	pevent->pact = TRUE;
-
-	/* status is one if an asynchronous record is being processed*/
-	if (status==1) return(0);
  
 	if(pevent->val>0) post_event((int)pevent->val);
 

@@ -61,6 +61,7 @@
  * .21  02-05-92	jba	Changed function arguments from paddr to precord 
  * .22  02-28-92	jba	Changed get_precision,get_graphic_double,get_control_double
  * .23  02-28-92	jba	ANSI C changes
+ * .24  04-10-92	jba	pact now used to test for asyn processing, not status
  */
 
 #include	<vxWorks.h>
@@ -125,8 +126,7 @@ struct aidset { /* analog input dset */
 	DEVSUPFUN	init;
 	DEVSUPFUN	init_record; /*returns: (-1,0)=>(failure,success)*/
 	DEVSUPFUN	get_ioint_info;
-	DEVSUPFUN	read_ai;/*(0,1,2)=> success and */
-			/*(convert,don't continue, don't convert)*/
+	DEVSUPFUN	read_ai;/*(0,2)=> success and convert,don't convert)*/
 			/* if convert then raw value stored in rval */
 	DEVSUPFUN	special_linconv;
 };
@@ -168,6 +168,7 @@ static long process(pai)
 {
 	struct aidset	*pdset = (struct aidset *)(pai->dset);
 	long		 status;
+	unsigned char    pact=pai->pact;
 
 	if( (pdset==NULL) || (pdset->read_ai==NULL) ) {
 		pai->pact=TRUE;
@@ -184,11 +185,11 @@ static long process(pai)
                 }
         }
 
-	/*pact must not be set true until read_ai is called*/
 	status=(*pdset->read_ai)(pai); /* read the new value */
+	/* check if device support set pact */
+	if ( !pact && pai->pact ) return(0);
 	pai->pact = TRUE;
-	/* status is one if an asynchronous record is being processed*/
-	if (status==1) return(0);
+
 	tsLocalTime(&pai->time);
 	if (status==0) convert(pai);
 	else if (status==2) status=0;

@@ -36,7 +36,7 @@
  * .04  02-05-92	jba	Changed function arguments from paddr to precord 
  * .05  02-28-92        jba     Changed get_precision,get_graphic_double,get_control_double
  * .06  02-28-92	jba	ANSI C changes
-
+ * .07  04-10-92        jba     pact now used to test for asyn processing, not status
  */
 
 #include	<vxWorks.h>
@@ -125,7 +125,7 @@ static long init_record(psub)
 	strcpy(temp,"_");
     }
     strcat(temp,psub->inam);
-    ret = symFindByName(sysSymTbl,temp,&psub->sadr,(void *)&sub_type);
+    ret = symFindByName(sysSymTbl,temp,(void *)&psub->sadr,(void *)&sub_type);
     if ((ret !=OK) || ((sub_type & N_TEXT) == 0)){
 	recGblRecordError(S_db_BadSub,psub,"recSub(init_record)");
 	return(S_db_BadSub);
@@ -142,7 +142,7 @@ static long init_record(psub)
     	strcpy(temp,"_");
     }
     strcat(temp,psub->snam);
-    ret = symFindByName(sysSymTbl,temp,&psub->sadr,(void *)&sub_type);
+    ret = symFindByName(sysSymTbl,temp,(void *)&psub->sadr,(void *)&sub_type);
     if ((ret < 0) || ((sub_type & N_TEXT) == 0)){
 	recGblRecordError(S_db_BadSub,psub,"recSub(init_record)");
 	return(S_db_BadSub);

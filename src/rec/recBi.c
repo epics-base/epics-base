@@ -48,6 +48,7 @@
  * .14  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
  * .15  02-05-92	jba	Changed function arguments from paddr to precord 
  * .16  02-28-92	jba	ANSI C changes
+ * .17  04-10-92        jba     pact now used to test for asyn processing, not status
  */
 
 #include	<vxWorks.h>
@@ -108,8 +109,7 @@ struct bidset { /* binary input dset */
 	DEVSUPFUN	init;
 	DEVSUPFUN	init_record; /*returns: (-1,0)=>(failure,success)*/
 	DEVSUPFUN	get_ioint_info;
-	DEVSUPFUN	read_bi;/*(0,1,2)=> success and */
-                        /*(convert,don't continue, don't convert)*/
+	DEVSUPFUN	read_bi;/*(0,2)=> success and convert, don't convert)*/
                         /* if convert then raw value stored in rval */
 };
 void alarm();
@@ -141,6 +141,7 @@ static long process(pbi)
 {
 	struct bidset	*pdset = (struct bidset *)(pbi->dset);
 	long		 status;
+	unsigned char    pact=pbi->pact;
 
 	if( (pdset==NULL) || (pdset->read_bi==NULL) ) {
 		pbi->pact=TRUE;
@@ -149,9 +150,10 @@ static long process(pbi)
 	}
 
 	status=(*pdset->read_bi)(pbi); /* read the new value */
+	/* check if device support set pact */
+	if ( !pact && pbi->pact ) return(0);
 	pbi->pact = TRUE;
-	/* status is one if an asynchronous record is being processed*/
-	if (status==1) return(0);
+
 	tsLocalTime(&pbi->time);
 	if(status==0) { /* convert rval to val */
 		if(pbi->rval==0) pbi->val =0;

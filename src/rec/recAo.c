@@ -55,6 +55,7 @@
  * .22  02-05-92	jba	Changed function arguments from paddr to precord 
  * .23  02-28-92        jba     Changed get_precision,get_graphic_double,get_control_double
  * .24  02-28-92	jba	ANSI C changes
+ * .25  04-10-92        jba     pact now used to test for asyn processing, not status
  */
 
 #include	<vxWorks.h>
@@ -118,8 +119,7 @@ struct aodset { /* analog input dset */
 	DEVSUPFUN	init;
 	DEVSUPFUN	init_record; /*returns: (0,2)=>(success,success no convert)*/
 	DEVSUPFUN	get_ioint_info;
-	DEVSUPFUN	write_ao;/*(0,1)=>success and */
-			/*(continue, don`t continue) */
+	DEVSUPFUN	write_ao;/*(0)=>(success ) */
 	DEVSUPFUN	special_linconv;
 };
 
@@ -193,6 +193,7 @@ static long process(pao)
 {
 	struct aodset	*pdset = (struct aodset *)(pao->dset);
 	long		 status=0;
+	unsigned char    pact=pao->pact;
 
 	if( (pdset==NULL) || (pdset->write_ao==NULL) ) {
 		pao->pact=TRUE;
@@ -205,8 +206,10 @@ static long process(pao)
 	} else {
 		status=(*pdset->write_ao)(pao);
 	}
+	/* check if device support set pact */
+	if ( !pact && pao->pact ) return(0);
 	pao->pact = TRUE;
-	if(status==1) return(0);
+
 	tsLocalTime(&pao->time);
 
 	/* check for alarms */

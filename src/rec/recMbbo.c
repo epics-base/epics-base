@@ -52,6 +52,7 @@
  * .17  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
  * .18  02-05-92	jba	Changed function arguments from paddr to precord 
  * .19  02-28-92	jba	ANSI C changes
+ * .20  04-10-92        jba     pact now used to test for asyn processing, not status
  */
 
 #include	<vxWorks.h>
@@ -115,7 +116,7 @@ struct mbbodset { /* multi bit binary output dset */
 	DEVSUPFUN	init;
 	DEVSUPFUN	init_record;  /*returns: (0,2)=>(success,success no convert)*/
 	DEVSUPFUN	get_ioint_info;
-	DEVSUPFUN	write_mbbo;/*(0,1)=>(success,don't Continue*/
+	DEVSUPFUN	write_mbbo; /*returns: (0,2)=>(success,success no convert)*/
 };
 
 
@@ -205,6 +206,7 @@ static long process(pmbbo)
 {
     struct mbbodset	*pdset = (struct mbbodset *)(pmbbo->dset);
     long		status=0;
+    unsigned char    pact=pmbbo->pact;
 
     if( (pdset==NULL) || (pdset->write_mbbo==NULL) ) {
 	pmbbo->pact=TRUE;
@@ -249,10 +251,10 @@ static long process(pmbbo)
 
     status=(*pdset->write_mbbo)(pmbbo); /* write the new value */
 DONT_WRITE:
+    /* check if device support set pact */
+    if ( !pact && pmbbo->pact ) return(0);
     pmbbo->pact = TRUE;
 
-    /* status is one if an asynchronous record is being processed*/
-    if(status==1) return(0);
     tsLocalTime(&pmbbo->time);
     /* check for alarms */
     alarm(pmbbo);

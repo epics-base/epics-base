@@ -32,6 +32,7 @@
  * .01  10-14-91        jba     Added dev sup  crtl fld and wd timer
  * .02  02-05-92	jba	Changed function arguments from paddr to precord 
  * .03  02-28-92	jba	ANSI C changes
+ * .04  04-10-92        jba     pact now used to test for asyn processing, not status
  */
 
 #include     <vxWorks.h>
@@ -100,8 +101,7 @@ struct histogramdset { /* histogram input dset */
      DEVSUPFUN     init;
      DEVSUPFUN     init_record; /*returns: (-1,0)=>(failure,success)*/
      DEVSUPFUN     get_ioint_info;
-     DEVSUPFUN     read_histogram;/*(0,1,2)=> success and */
-               /*(add_count,don't continue, don't add_count)*/
+     DEVSUPFUN     read_histogram;/*(0,2)=> success and add_count, don't add_count)*/
                /* if add_count then sgnl added to array */
      DEVSUPFUN     special_linconv;
 };
@@ -157,6 +157,7 @@ static long init_record(phistogram)
 
      /* This routine may get called twice. Once by cvt_dbaddr. Once by iocInit*/
 
+     pcallback->process = process;
      if(phistogram->wdog==NULL && phistogram->sdel!=0) {
           /* initialize a watchdog timer */
           pcallback = (struct callback *)(calloc(1,sizeof(struct callback)));
@@ -168,7 +169,6 @@ static long init_record(phistogram)
                exit(1);
           }
           pcallback->wd_id = wdCreate();
-          pcallback->process = process;
  
           /* start new watchdog timer on monitor */
           wait_time = (float)(phistogram->sdel * vxTicksPerSecond);
@@ -206,6 +206,7 @@ static long process(phistogram)
 {
      struct histogramdset     *pdset = (struct histogramdset *)(phistogram->dset);
      long           status;
+     unsigned char    pact=phistogram->pact;
 
      if( (pdset==NULL) || (pdset->read_histogram==NULL) ) {
           phistogram->pact=TRUE;
@@ -213,12 +214,10 @@ static long process(phistogram)
           return(S_dev_missingSup);
      }
 
-     /*pact must not be set true until read_histogram is called*/
      status=(*pdset->read_histogram)(phistogram);
+     /* check if device support set pact */
+     if ( !pact && phistogram->pact ) return(0);
      phistogram->pact = TRUE;
-
-     /* status is one if an asynchronous record is being processed*/
-     if (status==1) return(0);
 
      tsLocalTime(&phistogram->time);
 

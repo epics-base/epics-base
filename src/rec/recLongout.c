@@ -32,6 +32,7 @@
  * .01  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
  * .02  02-05-92	jba	Changed function arguments from paddr to precord 
  * .03  02-28-92	jba	ANSI C changes
+ * .04  04-10-92        jba     pact now used to test for asyn processing, not status
  */ 
 
 
@@ -96,7 +97,7 @@ struct longoutdset { /* longout input dset */
 	DEVSUPFUN	init;
 	DEVSUPFUN	init_record; /*returns: (-1,0)=>(failure,success)*/
 	DEVSUPFUN	get_ioint_info;
-	DEVSUPFUN	write_longout;/*(-1,0,1)=>(failure,success,don't Continue*/
+	DEVSUPFUN	write_longout;/*(-1,0)=>(failure,success*/
 };
 void alarm();
 int convert();
@@ -133,6 +134,7 @@ static long process(plongout)
 {
 	struct longoutdset	*pdset = (struct longoutdset *)(plongout->dset);
 	long		 status=0;
+	unsigned char    pact=plongout->pact;
 
 	if( (pdset==NULL) || (pdset->write_longout==NULL) ) {
 		plongout->pact=TRUE;
@@ -157,10 +159,9 @@ static long process(plongout)
 	if(status==0) {
 		status=(*pdset->write_longout)(plongout); /* write the new value */
 	}
+	/* check if device support set pact */
+	if ( !pact && plongout->pact ) return(0);
 	plongout->pact = TRUE;
-
-	/* status is one if an asynchronous record is being processed*/
-	if (status==1) return(0);
 
 	tsLocalTime(&plongout->time);
 

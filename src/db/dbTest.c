@@ -235,6 +235,7 @@ long dbl(char	*ptypeName)
 got_it:
     for(rectype=beg; rectype<=end; rectype++) {
 	if(!(precLoc=GET_PRECLOC(precHeader,rectype))) continue;
+	if(!precLoc->preclist) continue;
 	for(precNode=(RECNODE *)ellFirst(precLoc->preclist);
 	    precNode; precNode = (RECNODE *)ellNext(&precNode->node)) {
 		precord = precNode->precord;
@@ -678,6 +679,7 @@ long dblls(int	lockset)
     printf(" lset  lcnt  disv  disa  pact\n");
     for(rectype=beg; rectype<=end; rectype++) {
         if(!(precLoc=GET_PRECLOC(precHeader,rectype))) continue;
+	if(!precLoc->preclist) continue;
         for(precNode=(RECNODE *)ellFirst(precLoc->preclist);
             precNode; precNode = (RECNODE *)ellNext(&precNode->node)) {
                 precord = precNode->precord;

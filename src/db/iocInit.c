@@ -380,6 +380,7 @@ static long initDatabase(void)
     }
     for(i=0; i< (precHeader->number); i++) {
 	if(!(precLoc = precHeader->papRecLoc[i]))continue;
+	if(!precLoc->preclist) continue;
 	prset = GET_PRSET(precSup,i);
 	precTypDes = precDes->papRecTypDes[i];
 	pdevSup = GET_PDEVSUP(pdbBase->precDevSup,i);
@@ -415,6 +416,7 @@ static long initDatabase(void)
     /* Second pass to resolve links*/
     for(i=0; i< (precHeader->number); i++) {
 	if(!(precLoc = precHeader->papRecLoc[i]))continue;
+	if(!precLoc->preclist) continue;
 	precTypDes = precDes->papRecTypDes[i];
 	for(precNode=(RECNODE *)ellFirst(precLoc->preclist);
 	    precNode; precNode = (RECNODE *)ellNext(&precNode->node)) {
@@ -466,6 +468,7 @@ static long initDatabase(void)
     /* Call init_record for second time */
     for(i=0; i< (precHeader->number); i++) {
 	if(!(precLoc = precHeader->papRecLoc[i]))continue;
+	if(!precLoc->preclist) continue;
 	if(!(prset=GET_PRSET(precSup,i))) continue;
 	precTypDes = precDes->papRecTypDes[i];
 	for(precNode=(RECNODE *)ellFirst(precLoc->preclist);
@@ -503,6 +506,7 @@ static void createLockSets(void)
     if(!(precDes = pdbBase->precDes)) return;
     for(i=0; i< (precHeader->number); i++) {
 	if(!(precLoc = precHeader->papRecLoc[i]))continue;
+	if(!precLoc->preclist) continue;
 	precTypDes = precDes->papRecTypDes[i];
 	for(precNode=(RECNODE *)ellFirst(precLoc->preclist);
 	precNode; precNode = (RECNODE *)ellNext(&precNode->node)) {
@@ -594,6 +598,7 @@ static long initialProcess(void)
     if(!(precHeader = pdbBase->precHeader)) return(0);
     for(i=0; i< (precHeader->number); i++) {
 	if(!(precLoc = precHeader->papRecLoc[i]))continue;
+	if(!precLoc->preclist) continue;
 	for(precNode=(RECNODE *)ellFirst(precLoc->preclist);
 	    precNode; precNode = (RECNODE *)ellNext(&precNode->node)) {
 		precord = precNode->precord;

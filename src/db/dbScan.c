@@ -401,6 +401,7 @@ static void initPeriodic()
 	/* look for first record */
 	for (i=0; i<precHeader->number; i++) {
 		if((precLoc=precHeader->papRecLoc[i])==NULL) continue;
+		if(!precLoc->preclist) continue;
 		for(precNode=(RECNODE *)ellFirst(precLoc->preclist);
 		precNode; precNode = (RECNODE *)ellNext(&precNode->node)) {
 			precord = precNode->precord;
@@ -623,6 +624,7 @@ static void buildScanLists(void)
 	/* look through all of the database records and place them on lists */
 	for (i=0; i<precHeader->number; i++) {
 		if((precLoc=precHeader->papRecLoc[i])==NULL) continue;
+		if(!precLoc->preclist) continue;
 		for(precNode=(RECNODE *)ellFirst(precLoc->preclist);
 		precNode; precNode = (RECNODE *)ellNext(&precNode->node)) {
 			precord = precNode->precord;

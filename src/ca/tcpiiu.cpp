@@ -919,7 +919,7 @@ void tcpiiu::versionMessage ( epicsGuard < cacMutex > &,
 
     this->sendQue.beginMsg ();
     this->sendQue.pushUInt16 ( CA_PROTO_VERSION ); // cmd
-    this->sendQue.pushUInt16 ( 0u ); // postsize ( old possize field )
+    this->sendQue.pushUInt16 ( 0u ); // old postsize field
     this->sendQue.pushUInt16 ( static_cast <ca_uint16_t> ( priority ) ); // old dataType field
     this->sendQue.pushUInt16 ( CA_MINOR_PROTOCOL_REVISION ); // old count field
     this->sendQue.pushUInt32 ( 0u ); // ( old cid field )

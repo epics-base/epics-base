@@ -73,6 +73,10 @@
 
 #include	<drvGpibInterface.h>
 
+#ifndef INVALID_ALARM
+#define INVALID_ALARM VALID_ALARM
+#endif
+
 extern struct drvGpibSet drvGpib;	/* entry points to driver functions */
 
 long init_dev_sup();
@@ -720,7 +724,7 @@ struct aiRecord	*pai;
       logMsg("read_ai with PACT = 0\n");
     if((*(drvGpib.qGpibReq))(pdpvt->linkType, pdpvt->head.link, pdpvt, pCmd->pri) == ERROR)
     {
-      setPvSevr(pai,MAJOR_ALARM,VALID_ALARM);
+      setPvSevr(pai,MAJOR_ALARM,INVALID_ALARM);
       return(0);
     }
     return(1);
@@ -750,7 +754,7 @@ struct aoRecord	*pao;
   {		/* put pointer to dvpt field on ring buffer */
     if((*(drvGpib.qGpibReq))(pdpvt->linkType, pdpvt->head.link, pdpvt, pCmd->pri) == ERROR)
     {
-      setPvSevr(pao,WRITE_ALARM,VALID_ALARM);
+      setPvSevr(pao,WRITE_ALARM,INVALID_ALARM);
       return(0);
     }
     return(1);
@@ -781,7 +785,7 @@ struct stringinRecord	*pstringin;
       logMsg("read_stringin with PACT = 0\n");
     if((*(drvGpib.qGpibReq))(pdpvt->linkType, pdpvt->head.link, pdpvt, pCmd->pri) == ERROR)
     {
-      setPvSevr(pstringin,MAJOR_ALARM,VALID_ALARM);
+      setPvSevr(pstringin,MAJOR_ALARM,INVALID_ALARM);
       return(0);
     }
     return(1);
@@ -812,7 +816,7 @@ struct stringoutRecord	*pstringout;
   {		/* put pointer to dvpt field on ring buffer */
     if((*(drvGpib.qGpibReq))(pdpvt->linkType, pdpvt->head.link, pdpvt, pCmd->pri) == ERROR)
     {
-      setPvSevr(pstringout,WRITE_ALARM,VALID_ALARM);
+      setPvSevr(pstringout,WRITE_ALARM,INVALID_ALARM);
       return(0);
     }
     return(1);
@@ -838,7 +842,7 @@ struct biRecord	*pbi;
   {		/* put pointer to dvpt field on ring buffer */
     if((*(drvGpib.qGpibReq))(pdpvt->linkType, pdpvt->head.link, pdpvt, pCmd->pri) == ERROR)
     {
-      setPvSevr(pbi,READ_ALARM,VALID_ALARM);
+      setPvSevr(pbi,READ_ALARM,INVALID_ALARM);
       return(0);
     }
     return(1);
@@ -865,7 +869,7 @@ struct boRecord	*pbo;
   {		/* put pointer to dvpt field on ring buffer */
     if((*(drvGpib.qGpibReq))(pdpvt->linkType, pdpvt->head.link, pdpvt, pCmd->pri) == ERROR)
     {
-      setPvSevr(pbo,WRITE_ALARM,VALID_ALARM);
+      setPvSevr(pbo,WRITE_ALARM,INVALID_ALARM);
       return(0);
     }
     return(1);
@@ -900,7 +904,7 @@ struct hvpsDpvt *pdpvt;
   {
     if(HvpsDebug)
       logMsg("aiGpibWork: error in xxGpibWork ...\n");
-    setPvSevr(pai,READ_ALARM,VALID_ALARM);
+    setPvSevr(pai,READ_ALARM,INVALID_ALARM);
   }
   else        /* interpret response that came back */
   {       /* call convert routine, if defined */
@@ -921,7 +925,7 @@ struct hvpsDpvt *pdpvt;
       }
       else	/* sscanf did not find or assign the parameter */
       {
-        setPvSevr(pai,READ_ALARM,VALID_ALARM);
+        setPvSevr(pai,READ_ALARM,INVALID_ALARM);
       }
     }
   }    
@@ -948,7 +952,7 @@ struct hvpsDpvt *pdpvt;
   {
     if(HvpsDebug)
       logMsg("stringinGpibWork: error in xxGpibWork ...\n");
-     setPvSevr(pstringin,READ_ALARM,VALID_ALARM);
+     setPvSevr(pstringin,READ_ALARM,INVALID_ALARM);
   }
   else        /* interpret response that came back */
   {       /* call convert routine, if defined */
@@ -998,12 +1002,12 @@ struct hvpsDpvt *pdpvt;
   /* go access board with this message, unless convert was unsuccessful */
   if ((cnvrtStat == ERROR) || (xxGpibWork(pdpvt) == ERROR)) 
   {
-     setPvSevr(pao,WRITE_ALARM,VALID_ALARM);
+     setPvSevr(pao,WRITE_ALARM,INVALID_ALARM);
   }
   else if(pdpvt->rsp[0] == NAK) 
   {
     pCmd->sta = &pdpvt->rsp[1]; 
-    setPvSevr(pao,WRITE_ALARM,VALID_ALARM);
+    setPvSevr(pao,WRITE_ALARM,INVALID_ALARM);
   } 
   else
   {
@@ -1041,7 +1045,7 @@ struct hvpsDpvt *pdpvt;
   /* go access board with this message, unless convert was unsuccessful */
   if ((cnvrtStat == ERROR) || (xxGpibWork(pdpvt) == ERROR)) 
   {
-    setPvSevr(pstringout,WRITE_ALARM,VALID_ALARM);
+    setPvSevr(pstringout,WRITE_ALARM,INVALID_ALARM);
   }
   if(HvpsDebug)
     logMsg("aiGpibWork: calling process ...\n");
@@ -1065,7 +1069,7 @@ struct hvpsDpvt *pdpvt;
 
   if (xxGpibWork(pdpvt) == ERROR) 
   {
-    setPvSevr(pbi,READ_ALARM,VALID_ALARM);
+    setPvSevr(pbi,READ_ALARM,INVALID_ALARM);
   }
   else   	/* interpret response that came back */   
   {	/* call convert routine, if defined */
@@ -1100,7 +1104,7 @@ struct hvpsDpvt *pdpvt;
         else 
         {
            pbi->udf = TRUE;
-           setPvSevr(pbi,READ_ALARM,VALID_ALARM);
+           setPvSevr(pbi,READ_ALARM,INVALID_ALARM);
         }
       }
       else  /* interpret msg with predefined format and write into .rval */
@@ -1112,7 +1116,7 @@ struct hvpsDpvt *pdpvt;
 	}
 	else	/* sscanf did not find or assign the parameter */
         {
-	  setPvSevr(pbi,READ_ALARM,VALID_ALARM);
+	  setPvSevr(pbi,READ_ALARM,INVALID_ALARM);
         }
       }/*else*/
     }/*else*/
@@ -1407,7 +1411,7 @@ char	**P3;
 	{
 	for(i=0;i<=13;i++) meteredData.data[i] = UNDEFINED;
 	meteredData.acknak = NAK;
-	setPvSevr(pai,MAJOR_ALARM,VALID_ALARM);
+	setPvSevr(pai,MAJOR_ALARM,INVALID_ALARM);
 	}
 }
 	
@@ -1423,7 +1427,7 @@ char	**P3;
 
     pai->udf = FALSE;
     pai->val = pMsg->data[P1];
-    if(pMsg->acknak == NAK) setPvSevr(pai,MAJOR_ALARM,VALID_ALARM);
+    if(pMsg->acknak == NAK) setPvSevr(pai,MAJOR_ALARM,INVALID_ALARM);
 }
 
 static int inStatus(pdpvt,P1,P2,P3)
@@ -1448,7 +1452,7 @@ char	**P3;
 	{
         if(HvpsDebug) logMsg("inStatus entered with NAK\n");
 	statusData.acknak = NAK;
-	setPvSevr(pbi,MAJOR_ALARM,VALID_ALARM);
+	setPvSevr(pbi,MAJOR_ALARM,INVALID_ALARM);
 	}
 }
 
@@ -1463,7 +1467,7 @@ char	**P3;
 
     pbi->udf = FALSE;
     pbi->val = ( (pMsg->data[P1]) & P2 ) ? 1:0;
-    if(pMsg->acknak == NAK) setPvSevr(pbi,MAJOR_ALARM,VALID_ALARM);
+    if(pMsg->acknak == NAK) setPvSevr(pbi,MAJOR_ALARM,INVALID_ALARM);
 }
 
 static int inOnTimers(pdpvt,P1,P2,P3)
@@ -1493,7 +1497,7 @@ char	**P3;
         pdpvt->rsp[pCmd->rspLen] = '\0';
 
 	onTimerData.acknak = NAK;
-	setPvSevr(pai,MAJOR_ALARM,VALID_ALARM);
+	setPvSevr(pai,MAJOR_ALARM,INVALID_ALARM);
 	}
 }
 
@@ -1508,7 +1512,7 @@ char	**P3;
 
     pai->udf = FALSE;
     pai->val = pMsg->data[P1];
-    if(pMsg->acknak == NAK) setPvSevr(pai,MAJOR_ALARM,VALID_ALARM);
+    if(pMsg->acknak == NAK) setPvSevr(pai,MAJOR_ALARM,INVALID_ALARM);
 }
 
 
@@ -1539,7 +1543,7 @@ char	**P3;
         pdpvt->rsp[pCmd->rspLen] = '\0';
 
 	countsData.acknak = NAK;
-	setPvSevr(pai,MAJOR_ALARM,VALID_ALARM);
+	setPvSevr(pai,MAJOR_ALARM,INVALID_ALARM);
 	}
 }
 
@@ -1554,7 +1558,7 @@ static int getInCounts(pdpvt,P1,P2,P3)
 
     pai->udf = FALSE;
     pai->val = pMsg->data[P1];
-    if(pMsg->acknak == NAK) setPvSevr(pai,MAJOR_ALARM,VALID_ALARM);
+    if(pMsg->acknak == NAK) setPvSevr(pai,MAJOR_ALARM,INVALID_ALARM);
 }
 
 static int inSetpt(pdpvt,P1,P2,P3)
@@ -1583,7 +1587,7 @@ static int inSetpt(pdpvt,P1,P2,P3)
         pdpvt->rsp[pCmd->rspLen] = '\0';
 
         pCmd->sta = pdpvt->rsp; 
-	setPvSevr(pai,MAJOR_ALARM,VALID_ALARM);
+	setPvSevr(pai,MAJOR_ALARM,INVALID_ALARM);
 	}
 }
 

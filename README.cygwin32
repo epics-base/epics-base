@@ -1,29 +1,26 @@
 Compiling EPICS on cygwin32 (Windows95/NT)
----------------------------------------
+------------------------------------------
 
 Right now this port of EPICS to cygwin32 it is possible to
- 
-* compile all of EPICS base except c++ files using Cygnus' beta18
-  release of the GNU-win32 tools.
+compile the EPICS base for the cygwin32 Host using Cygnus' beta19
+release of the GNU-win32 tools.
  
 To build EPICS on Win95 or NT using cygwin32, we need
 
-        EPICS base distribution, R3.12.0.beta9 or later, available
+        EPICS base distribution, R3.12.0.beta12 or later, available
            from http://aps.anl.gov/...
         Cygnus's latest gnu-win32 distribution, available from 
-           http://www.cygnus.com/misc/gnu-win32/ (release b18 or later)
-        WindRiver Systems Tornado ( for the vxWorks header files and the
-            vxWorks and vxWorks.sym files) (version 1.1 or later)
+           http://www.cygnus.com/misc/gnu-win32/ (release b19 or later)
         Perl,version 5.003 or later, available from 
             http://www.perl.org/CPAN/ports/win32/
 
 Optional items 
-    CVS, version 1.9 or later, available from
+        CVS, version 1.9 or later, available from
             http:/download.cyclic.com 
                   windows-nt  - cvs-1.9.10.tar.gz
                                 patch.exe
                                 win32gnu.dll
-    vim ( Vi IMproved), version 4.5 or later, available from
+        vim ( Vi IMproved), version 4.5 or later, available from
            http://www.cygnus.com/misc/gnu-win32/ 
         
 
@@ -33,13 +30,11 @@ BUILD INSTRUCTIONS
 
 1) Install the gnu-win32 binary release
 ---------------------------------------
-    Download the whole release to get the developemnt tools 
+    Download the whole release, cdk.exe, to get the developemnt tools 
+
+    First move out of the way any older versions of gnuwin32
 
     Run cdk.exe and follow the install instructions.
-    Install the release into c:\usr\local instead of the 
-    default directory (<systemdrive>:\gnuwin32\b18)
-    (The following steps assume that the install location is
-        c:\usr\local)
 
     Don't forget to create a \tmp dir and setup the \bin dir.
      (Create a \temp dir if you install cvs.)
@@ -47,47 +42,46 @@ BUILD INSTRUCTIONS
         mkdir \temp
         mkdir \bin
         cd \bin
-        copy \usr\local\H-i386-cygwin32\bin\bash.exe sh.exe
+        copy C:\cygnus\b19\H-i386-cygwin32\bin\sh.exe sh.exe
 
-        
+   Install the b19.1 bug fix update to the Cygwin32 library.
+
+   (Optional: Install the GNU-WIN32 compiler replacement from
+    the ECGS project)
+
 2) Install the perl distribution
 --------------------------------
-        pw32i304.exe    (Execute and follow instructions)
+        pw32i316.exe    (Execute and follow instructions)
 
 3) Install the epics base distribution
 --------------------------------------
-
         mkdir <epicsBaseReleaseDir>
         chdir <epicsBaseReleaseDir>
-        cp <dirname>\<basereleasename>.Tar.gz .
-        gunzip -d <basereleasename>.Tar.gz
-        tar xvf <basereleasename>.Tar
+        cp <dirname>\<basereleasename>.gz .
+        gunzip -d <basereleasename>.gz
         chmod +w -R *
 
-4) Set environment variables and path
--------------------------------------
-        cd <epicsBaseReleaseDir>
+4) Set environment variables and path using base/cygwin32.bat
+-------------------------------------------------------------
+        <edit cygwin32.bat changing paths if necessary>
+        cd <epicsBaseReleaseDir>/base
         cygwin32.bat
 
-5) Install tornado
-------------------
-
-6) Set site specific parms in epics base/config files
+5) Set site specific parms in epics base/config files
 -----------------------------------------------------
+	cd <epicsBaseReleaseDir>/base/config
+	<edit CONFIG_SITE* files>
 
-7) Build epics base
+6) Build epics base
 -------------------
-
-        cd <epicsBaseReleaseDir>
+        cd <epicsBaseReleaseDir>/base
         make
 
-8) Create an EPICS application area
------------------------------------
-
+7) Create an EPICS application area (note forward slashes on perl cmd)
+---------------------------------------------------------------------
         mkdir <epicsappdir>
         cd <epicsappdir>
-        <epicsBaseReleaseDir>\bin\cygwin32\makeBaseApp     <epicsBaseReleaseDir>
-
-
+        perl <epicsBaseReleaseDir>/bin/cygwin32/makeBaseApp -l
+        perl <epicsBaseReleaseDir>/bin/cygwin32/makeBaseApp -t example example
 
 

@@ -7,8 +7,6 @@ ifdef INSTALL_LOCATION_APP
 INSTALL_LOCATION = $(INSTALL_LOCATION_APP)
 endif
 
-USER_DBDFLAGS += -I. -I.. -I$(EPICS_BASE)/dbd
-
 ifdef T_A
 -include $(TOP)/config/O.$(T_A)/CONFIG_APP_INCLUDE
 endif

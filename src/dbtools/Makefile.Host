@@ -7,6 +7,11 @@ include $(TOP)/config/CONFIG_BASE
 YACCOPT := -l
 LEXOPT  := -L
 
+# This is ugly, but it is the only way I could get it to work
+ifeq ($(T_A),alpha) 
+CMPLR=OLD
+endif
+
 #	includes and manual pages to install:
 #
 INC     := dbVarSub.h

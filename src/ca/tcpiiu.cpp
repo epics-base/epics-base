@@ -302,9 +302,6 @@ void tcpRecvThread::run ()
         comBuf * pComBuf = new ( this->iiu.comBufMemMgr ) comBuf;
         while ( this->iiu.state == tcpiiu::iiucs_connected ||
                 this->iiu.state == tcpiiu::iiucs_clean_shutdown ) {
-            if ( ! pComBuf ) {
-                pComBuf = new ( this->iiu.comBufMemMgr ) comBuf;
-            }
 
             //
             // We leave the bytes pending and fetch them after
@@ -358,8 +355,7 @@ void tcpRecvThread::run ()
 
             // force the receive watchdog to be reset every 5 frames
             unsigned contiguousFrameCount = 0;
-            while ( contiguousFrameCount++ < 5 ) {
-
+            while ( true ) {
                 if ( nBytesIn == pComBuf->capacityBytes () ) {
                     if ( this->iiu.contigRecvMsgCount >= 
                         contiguousMsgCountWhichTriggersFlowControl ) {
@@ -376,7 +372,7 @@ void tcpRecvThread::run ()
                 this->iiu.unacknowledgedSendBytes = 0u;
 
                 this->iiu.recvQue.pushLastComBufReceived ( *pComBuf );
-                pComBuf = 0;
+                pComBuf = new ( this->iiu.comBufMemMgr ) comBuf;
 
                 // execute receive labor
                 bool protocolOK = this->iiu.processIncoming ( guard );
@@ -389,8 +385,9 @@ void tcpRecvThread::run ()
                     break;
                 }
 
-                // allocate a new com buf
-                pComBuf = new ( this->iiu.comBufMemMgr ) comBuf;
+                if ( ++contiguousFrameCount >= 5 ) {
+                    break;
+                }
 
                 nBytesIn = pComBuf->fillFromWire ( this->iiu );
                 if ( nBytesIn == 0u ) {
@@ -1345,7 +1342,7 @@ void tcpiiu::flushRequest ()
 
 void tcpiiu::blockUntilBytesArePendingInOS ()
 {
-#if 0
+#if 1
     FD_SET readBits;
     FD_ZERO ( & readBits );
     while ( this->state == tcpiiu::iiucs_connected ) {
@@ -1415,7 +1412,7 @@ void tcpiiu::blockUntilBytesArePendingInOS ()
 
 bool tcpiiu::bytesArePendingInOS () const
 {
-#if 0
+#if 1
     FD_SET readBits;
     FD_ZERO ( & readBits );
     FD_SET ( this->sock, & readBits );

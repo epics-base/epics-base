@@ -1,6 +1,9 @@
 /* epicsMutexTest.c */
 
-/* Author:  Marty Kraimer Date:    26JAN2000 */
+/* 
+ * Author:  Marty Kraimer Date:    26JAN2000 
+ *          Jeff HIll (added mutex performance test )
+ */
 
 /********************COPYRIGHT NOTIFICATION**********************************
 This software was developed under a United States Government license
@@ -16,6 +19,7 @@ of this distribution.
 #include <errno.h>
 #include <time.h>
 
+#include "epicsTime.h"
 #include "epicsThread.h"
 #include "epicsMutex.h"
 #include "errlog.h"
@@ -52,6 +56,55 @@ static void mutexThread(void *arg)
     }
 }
 
+inline void lockPair ( epicsMutex &mutex )
+{
+    mutex.lock ();
+    mutex.unlock ();
+}
+
+inline void tenLockPairs ( epicsMutex &mutex )
+{
+    lockPair ( mutex );
+    lockPair ( mutex );
+    lockPair ( mutex );
+    lockPair ( mutex );
+    lockPair ( mutex );
+    lockPair ( mutex );
+    lockPair ( mutex );
+    lockPair ( mutex );
+    lockPair ( mutex );
+    lockPair ( mutex );
+}
+
+inline void tenLockPairsSquared ( epicsMutex &mutex )
+{
+    tenLockPairs ( mutex );
+    tenLockPairs ( mutex );
+    tenLockPairs ( mutex );
+    tenLockPairs ( mutex );
+    tenLockPairs ( mutex );
+    tenLockPairs ( mutex );
+    tenLockPairs ( mutex );
+    tenLockPairs ( mutex );
+    tenLockPairs ( mutex );
+    tenLockPairs ( mutex );
+}
+
+void epicsMutexPerformance ()
+{
+    epicsMutex mutex;
+
+    epicsTime begin = epicsTime::getCurrent ();
+    static const unsigned N = 1000;
+    for ( unsigned i = 0; i < N; i++ ) {
+        tenLockPairsSquared ( mutex );
+    }
+    double delay = epicsTime::getCurrent () -  begin;
+    delay /= N * 100u; // convert to timer per lock pair
+    delay *= 1e6; // convert to micro seconds
+    printf ( "One lock pair completes in %f micro sec\n", delay );
+}
+
 extern "C" void epicsMutexTest(int nthreads,int verbose)
 {
     unsigned int stackSize;
@@ -64,6 +117,8 @@ extern "C" void epicsMutexTest(int nthreads,int verbose)
     int status;
     time_t tp;
     int errVerboseSave = errVerbose;
+
+    epicsMutexPerformance ();
 
     errVerbose = verbose;
     mutex = epicsMutexMustCreate();

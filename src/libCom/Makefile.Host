@@ -36,6 +36,7 @@ INC += epicsString.h
 INC += truncateFile.h
 INC += adjustment.h
 INC += postfix.h
+INC += sCalcPostfix.h
 
 #	For WIN32 we supply getopt as part of libCom:
 INC_WIN32 := getopt.h
@@ -47,7 +48,6 @@ INC_WIN32 := getopt.h
 #	2) where to find the sources: ., ./os/<ARCH_CLASS>, ./os/generic, ...
 #
 LIBSRCS += bucketLib.c
-LIBSRCS += calcPerform.c
 LIBSRCS += cvtFast.c
 LIBSRCS += ellLib.c
 LIBSRCS += envSubr.c
@@ -60,6 +60,10 @@ LIBSRCS += freeListLib.c
 LIBSRCS += gpHashLib.c
 LIBSRCS += memDebugLib.c
 LIBSRCS += postfix.c
+LIBSRCS += calcPerform.c
+LIBSRCS += sCalcPostfix.c
+LIBSRCS += sCalcPerform.c
+LIBSRCS += sCalcPostfix.c
 LIBSRCS += realpath.c
 LIBSRCS += tsSubr.c
 LIBSRCS += assertUNIX.c

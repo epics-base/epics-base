@@ -124,12 +124,12 @@ sub configAppInclude {
     }
     while (($app, $path) = each %apps) {
         next unless (-d "$path/include");
-	print OUT "INSTALL_INCLUDES += -I\$($app)/include\n";
-	print OUT "INSTALL_INCLUDES += -I\$($app)/include/os/\$(OS_CLASS)\n";
+	print OUT "RELEASE_INCLUDES += -I\$($app)/include/os/\$(OS_CLASS)\n";
+	print OUT "RELEASE_INCLUDES += -I\$($app)/include\n";
     }
     while (($app, $path) = each %apps) {
         next unless (-d "$path/dbd");
-        print OUT "INSTALL_DBDFLAGS += -I \$($app)/dbd\n";
+        print OUT "RELEASE_DBDFLAGS += -I \$($app)/dbd\n";
     }
     close OUT;
 }

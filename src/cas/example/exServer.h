@@ -77,29 +77,6 @@ private:
 
 class exPV;
 
-//
-// exServer
-//
-class exServer : public caServer {
-public:
-	exServer(unsigned pvMaxNameLength, unsigned pvCountEstimate=0x3ff,
-			unsigned maxSimultaneousIO=1u);
-        void show (unsigned level);
-        caStatus pvExistTest (const casCtx &ctxIn, const char *pPVName, 
-				gdd &canonicalPVName);
-        casPV *createPV (const casCtx &ctxIn, const char *pPVName);
-
-	static const pvInfo *findPV(const char *pName);
-
-	static gddAppFuncTableStatus read(exPV &pv, gdd &value) 
-	{
-		return exServer::ft.read(pv, value);
-	}
-private:
-	static const pvInfo pvList[];
-	static gddAppFuncTable<exPV> ft;
-};
-
 
 //
 // exScanTimer
@@ -189,6 +166,29 @@ protected:
 	aitBool			interest;
 private:
 	static osiTime		currentTime;
+};
+
+//
+// exServer
+//
+class exServer : public caServer {
+public:
+	exServer(unsigned pvMaxNameLength, unsigned pvCountEstimate=0x3ff,
+			unsigned maxSimultaneousIO=1u);
+        void show (unsigned level);
+        caStatus pvExistTest (const casCtx &ctxIn, const char *pPVName, 
+				gdd &canonicalPVName);
+        casPV *createPV (const casCtx &ctxIn, const char *pPVName);
+
+	static const pvInfo *findPV(const char *pName);
+
+	static gddAppFuncTableStatus read(exPV &pv, gdd &value) 
+	{
+		return exServer::ft.read(pv, value);
+	}
+private:
+	static const pvInfo pvList[];
+	static gddAppFuncTable<exPV> ft;
 };
 
 //

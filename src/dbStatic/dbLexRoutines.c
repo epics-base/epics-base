@@ -203,11 +203,14 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
 	}
     }
     my_buffer = dbCalloc(MY_BUFFER_SIZE,sizeof(char));
-    macHandle = NULL;
+    ellInit(&inputFileList);
+    ellInit(&tempList);
+    freeListInitPvt(&freeListPvt,sizeof(tempListNode),100);
     if(substitutions) {
 	if(macCreateHandle(&macHandle,NULL)) {
 	    epicsPrintf("macCreateHandle error\n");
-	    return(-1);
+            status = -1;
+	    goto cleanup;
 	}
 	macParseDefns(macHandle,(char *)substitutions,&macPairs);
 	if(macPairs ==NULL) {
@@ -219,27 +222,23 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
 	    mac_input_buffer = dbCalloc(MY_BUFFER_SIZE,sizeof(char));
 	}
     }
-    ellInit(&inputFileList);
-    ellInit(&tempList);
-    freeListInitPvt(&freeListPvt,sizeof(tempListNode),100);
     pinputFile = dbCalloc(1,sizeof(inputFile));
     if(filename) {
 	pinputFile->filename = macEnvExpand(filename);
     }
     if(!fp) {
-	FILE	*fp;
+	FILE	*fp1;
 
-	if(pinputFile->filename) pinputFile->path = dbOpenFile(pdbbase,pinputFile->filename,&fp);
-	if(!pinputFile->filename || !fp) {
+	if(pinputFile->filename) pinputFile->path = dbOpenFile(pdbbase,pinputFile->filename,&fp1);
+	if(!pinputFile->filename || !fp1) {
 	    errPrintf(0,__FILE__, __LINE__,
 		"dbRead opening file %s",pinputFile->filename);
-	    free((void *)my_buffer);
-	    freeListCleanup(freeListPvt);
 	    free((void *)pinputFile->filename);
 	    free((void *)pinputFile);
-	    return(-1);
+            status = -1;
+            goto cleanup;
 	}
-	pinputFile->fp = fp;
+	pinputFile->fp = fp1;
     } else {
 	pinputFile->fp = fp;
     }
@@ -252,14 +251,6 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
     if(status) {
 	fprintf(stderr,"db_parse returned %ld\n",status);
     }
-    if(macHandle) {
-	macDeleteHandle(macHandle);
-	macHandle = NULL;
-	free((void *)mac_input_buffer);
-    }
-    freeListCleanup(freeListPvt);
-    free((void *)my_buffer);
-    freeInputFileList();
     dbFreePath(pdbbase);
     if(!status) { /*add RTYP and VERS as an attribute */
 	DBENTRY	dbEntry;
@@ -283,6 +274,16 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
 	}
 	dbFinishEntry(pdbEntry);
     }
+cleanup:
+    if(macHandle) macDeleteHandle(macHandle);
+    macHandle = NULL;
+    if(mac_input_buffer) free((void *)mac_input_buffer);
+    mac_input_buffer = NULL;
+    if(freeListPvt) freeListCleanup(freeListPvt);
+    freeListPvt = NULL;
+    if(my_buffer) free((void *)my_buffer);
+    my_buffer = NULL;
+    freeInputFileList();
     return(status);
 }
 

@@ -88,10 +88,11 @@ int fetchClientContext ( oldCAC **ppcac )
  */
 extern "C" int epicsShareAPI ca_task_initialize ( void )
 {
-    return ca_context_create ( false );
+    return ca_context_create ( false, 32768 );
 }
 
-extern "C" int epicsShareAPI ca_context_create ( int preemptiveCallBackEnable )
+extern "C" int epicsShareAPI ca_context_create ( 
+                  int preemptiveCallBackEnable, unsigned maxNumberOfChannels )
 {
     oldCAC *pcac;
 
@@ -106,7 +107,7 @@ extern "C" int epicsShareAPI ca_context_create ( int preemptiveCallBackEnable )
 		return ECA_NORMAL;
 	}
 
-    pcac = new oldCAC ( preemptiveCallBackEnable ? true : false );
+    pcac = new oldCAC ( preemptiveCallBackEnable ? true : false, maxNumberOfChannels );
 	if ( ! pcac ) {
 		return ECA_ALLOCMEM;
 	}
@@ -271,37 +272,46 @@ extern "C" int epicsShareAPI ca_array_get ( chtype type,
     }
     catch ( cacChannel::badString & )
     {
+        pNotify->cancel ();
         return ECA_BADSTR;
     }
     catch ( cacChannel::badType & )
     {
+        pNotify->cancel ();
         return ECA_BADTYPE;
     }
     catch ( cacChannel::outOfBounds & )
     {
+        pNotify->cancel ();
         return ECA_BADCOUNT;
     }
     catch ( cacChannel::noReadAccess & )
     {
+        pNotify->cancel ();
         return ECA_NORDACCESS;
     }
     catch ( cacChannel::notConnected & )
     {
+        pNotify->cancel ();
         return ECA_DISCONN;
     }
     catch ( cacChannel::unsupportedByService & )
     {
+        pNotify->cancel ();
         return ECA_NOTINSERVICE;
     }
     catch ( std::bad_alloc & )
     {
+        pNotify->cancel ();
         return ECA_ALLOCMEM;
     }
     catch ( cacChannel::msgBodyCacheTooSmall ) {
+        pNotify->cancel ();
         return ECA_TOLARGE;
     }
     catch ( ... )
     {
+        pNotify->cancel ();
         return ECA_GETFAIL;
     }
 }

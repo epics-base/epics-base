@@ -26,9 +26,18 @@
 #ifndef msgForMultiplyDefinedPVh
 #define msgForMultiplyDefinedPVh
 
+#ifdef epicsExportSharedSymbols
+#   define msgForMultiplyDefinedPVh_epicsExportSharedSymbols
+#   undef epicsExportSharedSymbols
+#endif
+
 #include "ipAddrToAsciiAsynchronous.h"
 #include "tsFreeList.h"
 #include "compilerDependencies.h"
+
+#ifdef msgForMultiplyDefinedPVh_epicsExportSharedSymbols
+#   define epicsExportSharedSymbols
+#endif
 
 class callbackForMultiplyDefinedPV { // X aCC 655
 public:

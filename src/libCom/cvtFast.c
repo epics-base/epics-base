@@ -1,5 +1,5 @@
-/* cvtFast.h*/
-/* share/src/libCom @(#)cvtFast.c	1.2     1/12/93 */
+/* cvtFast.c */
+/* share/src/libCom $Id$ */
 /* Very efficient routines to convert numbers to strings
  *      Author: Bob Dalesio wrote cvtFloatToString (called FF_TO_STR)
  *			Code is same for cvtDoubleToString
@@ -43,6 +43,7 @@
  *				calls to gcvt, etc.
  */
 #include <stdlib.h>
+#include <limits.h>		/* XPG2/XPG3/POSIX.1/FIPS151-1/ANSI-C */
 #include <cvtFast.h>
 
 /*
@@ -496,11 +497,11 @@ int cvtCharToString(
 	return((int)(pdest-startAddr));
     }
     if(source<0) {
-	*pdest++ = '-';
-	if(source == -128) {
-	    strcpy(pdest,"128");
-	    return((int)(pdest-startAddr));
+	if(source == CHAR_MIN) {
+	    sprintf(pdest,"%d",CHAR_MIN);
+	    return((int)strlen(pdest));
 	}
+	*pdest++ = '-';
 	source = -source;
     }
     val = source;
@@ -560,11 +561,11 @@ int cvtShortToString(
 	return((int)(pdest-startAddr));
     }
     if(source<0) {
-	*pdest++ = '-';
-	if(source == -32768) {
-	    strcpy(pdest,"32768");
-	    return((int)(pdest-startAddr));
+	if(source == SHRT_MIN) {
+	    sprintf(pdest,"%d",SHRT_MIN);
+	    return((int)(strlen(pdest)));
 	}
+	*pdest++ = '-';
 	source = -source;
     }
     val = source;
@@ -624,11 +625,11 @@ int cvtLongToString(
 	return((int)(pdest-startAddr));
     }
     if(source<0) {
-	*pdest++ = '-';
-	if(source == -2147483648) {
-	    strcpy(pdest,"2147483648");
-	    return((int)(pdest-startAddr));
+	if(source == LONG_MIN) {
+	    sprintf(pdest,"%d",LONG_MIN);
+	    return((int)strlen(pdest));
 	}
+	*pdest++ = '-';
 	source = -source;
     }
     val = source;
@@ -694,11 +695,11 @@ int cvtLongToHexString(
 	return((int)(pdest-startAddr));
     }
     if(source<0) {
-	*pdest++ = '-';
-	if(source == -2147483648) {
-	    strcpy(pdest,"80000000");
-	    return((int)(pdest-startAddr));
+	if(source == LONG_MIN) {
+	    sprintf(pdest,"%x",LONG_MIN);
+	    return((int)strlen(pdest));
 	}
+	*pdest++ = '-';
 	source = -source;
     }
     val = source;
@@ -730,11 +731,11 @@ int cvtLongToOctalString(
 	return((int)(pdest-startAddr));
     }
     if(source<0) {
-	*pdest++ = '-';
-	if(source == -2147483648) {
-	    strcpy(pdest,"20000000000");
-	    return((int)(pdest-startAddr));
+	if(source == LONG_MIN) {
+	    sprintf(pdest,"%o",LONG_MIN);
+	    return((int)strlen(pdest));
 	}
+	*pdest++ = '-';
 	source = -source;
     }
     val = source;

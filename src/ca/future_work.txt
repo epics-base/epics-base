@@ -3,7 +3,6 @@ Potential upgrades to Channel Access
 
 o generalized access to abstract data
 o use multicast for broadcasting and ax the repeater
-o large arrays
 o improve client API
 o improve security
 o name service (wildcard queries)

@@ -377,18 +377,10 @@ Init (rtems_task_argument ignored)
 #if defined(__i386__)
     initRemoteGdb(ticksPerSecond);
 #endif
-#if defined(HAVE_PPCBUG)
-    {
-    extern void setBootConfigFromPPCBUGNVRAM(void);
-    setBootConfigFromPPCBUGNVRAM();
+    if (rtems_bsdnet_config.bootp == NULL) {
+        extern void setBootConfigFromNVRAM(void);
+        setBootConfigFromNVRAM();
     }
-#endif
-#if defined(HAVE_MOTLOAD)
-    {
-    extern void setBootConfigFromMOTLOADNVRAM(void);
-    setBootConfigFromMOTLOADNVRAM();
-    }
-#endif
 
     /*
      * Override RTEMS configuration
@@ -403,8 +395,15 @@ Init (rtems_task_argument ignored)
      */
     initConsole ();
     putenv ("TERM=xterm");
-    putenv ("IOCSH_PS1=epics> ");
     putenv ("IOCSH_HISTSIZE=20");
+    if (rtems_bsdnet_config.hostname) {
+        char *cp = mustMalloc(strlen(rtems_bsdnet_config.hostname)+15, "iocsh prompt");
+        sprintf(cp, "IOCSH_PS1=%s> ", rtems_bsdnet_config.hostname);
+        putenv (cp);
+    }
+    else {
+        putenv ("IOCSH_PS1=epics> ");
+    }
 
     /*
      * Start network

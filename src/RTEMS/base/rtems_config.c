@@ -48,7 +48,7 @@ rtems_task Init (rtems_task_argument argument);
 
 #define CONFIGURE_APPLICATION_NEEDS_CONSOLE_DRIVER
 #define CONFIGURE_APPLICATION_NEEDS_CLOCK_DRIVER
-#ifndef __mc68040__  /* MVME167 doesn't have RTC code 'yet' */
+#if !defined(__mc68040__) && !defined(__mcf5200__)  /* don't have RTC code */
 #define CONFIGURE_APPLICATION_NEEDS_RTC_DRIVER
 #endif
 

@@ -67,7 +67,6 @@ int	silent;
 	int 		sendBytesPending;
 	int 		sendBytesAvailable;
 	int 		stmo;
-	int 		rtmo;
 
 	current = time(NULL);
 
@@ -83,25 +82,17 @@ int	silent;
                         continue;
                 }
 
-		stmo = (current-piiu->timeAtLastSend)>CA_RETRY_PERIOD;
 		sendBytesPending = cacRingBufferReadSize(&piiu->send, TRUE);
-
-		/* 
-		 * mark connection for shutdown if outgoing messages
-		 * are not accepted by TCP/IP for several seconds
-		 */
-		if(sendBytesPending && stmo){
-			piiu->conn_up = FALSE;
-		}
-
-		rtmo = (current-piiu->timeAtLastRecv)>CA_RETRY_PERIOD;
 		sendBytesAvailable = cacRingBufferWriteSize(&piiu->send, TRUE);
 
 		/*
 		 * remain backwards compatible with old servers
 		 */
 		if(!CA_V43(CA_PROTOCOL_VERSION, piiu->minor_version_number)){
-			if(stmo && rtmo && !sendBytesPending){
+			int	rtmo;
+
+			rtmo = (current-piiu->timeAtLastRecv)>CA_RETRY_PERIOD;
+			if(rtmo && !sendBytesPending){
 				noop_msg(piiu);
 			}
 			continue;

@@ -39,7 +39,7 @@ public:
     epicsSingleton ();
     ~epicsSingleton ();
 
-    // inline func def required by visual c++ 7
+    // inline mf def for class within a template required by visual c++ 7
     class reference {
     public:
         reference ( TYPE & tIn ) epicsThrows (()) :
@@ -102,8 +102,9 @@ inline epicsSingleton<TYPE>::~epicsSingleton ()
 
 epicsShareFunc epicsMutex & epicsSingletonPrivateMutex ();
 
+// borland 5.5 is unable to build this function optimized it it is inline
 template < class TYPE >
-inline typename epicsSingleton<TYPE>::reference epicsSingleton<TYPE>::getReference ()
+typename epicsSingleton<TYPE>::reference epicsSingleton<TYPE>::getReference ()
 {
     {
         epicsGuard < epicsMutex > guard ( epicsSingletonPrivateMutex() );

@@ -28,9 +28,13 @@
  */
 
 #ifdef vxWorks
-#include <vxWorks.h>
-#include <rebootLib.h>
-#include <logLib.h>
+#   include <vxWorks.h>
+#   include <rebootLib.h>
+#   include <logLib.h>
+#endif
+
+#ifdef _WIN32
+#   include <io.h>
 #endif
 
 /*
@@ -413,7 +417,11 @@ LOCAL void logClientConnect (logClient *pClient)
 #   endif
     
     pClient->connectCount++;
-    pClient->file = fdopen (pClient->sock, "a");
+#ifdef _WIN32
+    pClient->file = fdopen ( _open_osfhandle ( pClient->sock, 0 ), "a");
+#else
+    pClient->file = fdopen ( pClient->sock, "a" );
+#endif
     if (!pClient->file) {
         logClientReset (pClient);
         epicsThreadSleep (10.0);

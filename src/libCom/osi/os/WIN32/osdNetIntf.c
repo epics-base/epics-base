@@ -135,8 +135,6 @@ epicsShareFunc osiSockAddr epicsShareAPI osiLocalAddr ( SOCKET socket )
 epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
      (ELLLIST *pList, SOCKET socket, const osiSockAddr *pMatchAddr)
 {
-	struct sockaddr_in 	*pInetAddr;
-	struct sockaddr_in 	*pInetNetMask;
 	int             	status;
 	INTERFACE_INFO      *pIfinfo;
 	INTERFACE_INFO      *pIfinfoList;
@@ -184,9 +182,6 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
 		if (pIfinfo->iiFlags & IFF_LOOPBACK) {
 			continue;
 		}
-
-		pInetAddr = (struct sockaddr_in *) &pIfinfo->iiAddress;
-		pInetNetMask = (struct sockaddr_in *) &pIfinfo->iiNetmask;
 
 		/*
 		 * work around WS2 bug

@@ -29,7 +29,7 @@ ipAddrToAsciiEngine::ipAddrToAsciiEngine ( const char *pName ) :
 
 ipAddrToAsciiEngine::~ipAddrToAsciiEngine ()
 {
-    ipAddrToAsciiAsynchronous * pItem = this->labor.first ();
+    ipAddrToAsciiAsynchronous * pItem;
 
     this->exitFlag = true;
     this->event.signal ();

@@ -87,7 +87,9 @@ tsFreeList < T, N, DEBUG_LEVEL >::~tsFreeList ()
     while ( ( pChunk = this->pChunkList ) ) {
         this->pChunkList = this->pChunkList->pNext;
         delete pChunk;
-        nChunks++;
+        if ( DEBUG_LEVEL > 0u ) {
+            nChunks++;
+        }
     }
 
     this->unlock();

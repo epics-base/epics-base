@@ -575,8 +575,8 @@ inline resTableIter<T,ID>::resTableIter (const resTable<T,ID> &tableIn) :
 //
 // resTableIter<T,ID>::next ()
 //
-template <class T, class ID>
-inline T * resTableIter<T,ID>::next ()
+template <class T, class ID> 
+T * resTableIter<T,ID>::next ()
 {
     if ( this->iter.valid () ) {
         T *p = & (*this->iter);

@@ -39,7 +39,7 @@
 // performance counter last value, ticks per sec,
 // and its offset from the EPICS epoch.
 // 
-static LONGLONG perf_last, perf_freq, perf_offset;
+static LONGLONG perf_last, perf_freq;
 
 //
 // divide the offset into seconds and

@@ -37,9 +37,6 @@ typedef struct win32ThreadParam {
     char isSuspended;
 } win32ThreadParam;
 
-static win32ThreadParam anonymousThreadParm = 
-    {0, 0, 0, "anonymous", 0, 0};
-
 static DWORD tlsIndexWIN32 = 0xFFFFFFFF;
 
 typedef struct osdThreadPrivate {
@@ -558,8 +555,6 @@ epicsShareFunc void epicsShareAPI epicsThreadShow (epicsThreadId id, unsigned le
 epicsShareFunc void epicsShareAPI epicsThreadOnceOsd (
     epicsThreadOnceId *id, void (*func)(void *), void *arg)
 {
-
-    win32ThreadParam *pParm = (win32ThreadParam *) id;
     BOOL success;
     DWORD stat;
 

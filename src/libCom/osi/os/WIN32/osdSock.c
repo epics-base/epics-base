@@ -184,7 +184,6 @@ epicsShareFunc int epicsShareAPI hostToIPAddr
 epicsShareFunc const char * epicsShareAPI convertSocketErrorToString (int errnoIn)
 {
 	static char errString[128];
-	static int init = 0;
 
 	/*
 	 * unfortunately, this does not work ...

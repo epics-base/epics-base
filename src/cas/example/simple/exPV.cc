@@ -11,9 +11,9 @@ osiTime exPV::currentTime;
 // exPV::exPV()
 //
 exPV::exPV (caServer &casIn, pvInfo &setup, aitBool preCreateFlag, aitBool scanOnIn) : 
+	casPV(casIn),
 	pValue(NULL),
 	info(setup),
-	casPV(casIn),
 	interest(aitFalse),
 	preCreate(preCreateFlag),
 	scanOn(scanOnIn)
@@ -108,6 +108,14 @@ caStatus exPV::update(gdd &valueIn)
 	}
 
 	return S_casApp_success;
+}
+
+//
+// exScanTimer::~exScanTimer ()
+//
+exScanTimer::~exScanTimer ()
+{
+	pv.pScanTimer = NULL;
 }
 
 //

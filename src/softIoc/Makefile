@@ -18,7 +18,8 @@ PROD_IOC_vxWorks = -nil-
 DBD += softIoc.dbd
 softIoc_DBD += base.dbd
 
-USR_CXXFLAGS += -DEPICS_BASE=$(shell $(PERL) ../absPath.pl $(INSTALL_LOCATION))
+ABS_INSTALL_DIR = $(shell $(PERL) $(TOOLS)/fullPathName.pl $(INSTALL_LOCATION))
+USR_CXXFLAGS += -DEPICS_BASE=$(ABS_INSTALL_DIR)
 
 softIoc_SRCS += softIoc_registerRecordDeviceDriver.cpp
 softIoc_SRCS += softMain.cpp

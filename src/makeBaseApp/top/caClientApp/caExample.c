@@ -6,7 +6,7 @@
 
 #include "cadef.h"
 
-main(int argc,char **argv)
+int main(int argc,char **argv)
 {
     double	data;
     chid	mychid;

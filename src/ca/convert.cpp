@@ -31,7 +31,7 @@
 #include	<string.h>
 
 #include	"iocinf.h"
-#include	"net_convert.h"
+
 #if defined(VMS)
 #include	<cvt$routines.h>
 #include	<cvtdef.h>

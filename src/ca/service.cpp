@@ -13,7 +13,6 @@
  */
 
 #include    "iocinf.h"
-#include    "net_convert.h"
 
 #ifdef CONVERSION_REQUIRED 
 extern CACVRTFUNC *cac_dbr_cvrt[];

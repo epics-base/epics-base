@@ -267,6 +267,7 @@ int	link;
 {
   char	trash;
   int	j;
+  int	lockKey;
 
 
   if (bbDebug)
@@ -304,8 +305,10 @@ int	link;
   }
 
   /* set the interrupt vector */
+  lockKey = intLock();
   xvmeRegs->stat_ctl = 0;          /* disable all interupts */
   xvmeRegs->int_vec = BB_IVEC_BASE + (link*4);/* set the int vector */
+  intUnlock(lockKey);
 
   semGive(pXvmeLink[link]->rxInt);	/* Tell xvmeRxTask to Re-enable interrupts */
 

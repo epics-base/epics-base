@@ -1,5 +1,4 @@
 #RELEASE Location of external products
 EPICS_BASE=_EPICS_BASE_
 TEMPLATE_TOP=_TEMPLATE_TOP_
-SHARE=_EPICS_BASE__shareR1.0
-#SHARE=
+MSI=/usr/local/epics/extensions/bin/$(HOST_ARCH)/msi

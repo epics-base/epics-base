@@ -1,6 +1,5 @@
 #RULES.Db
 MAKEBPT		= $(EPICS_BASE_HOST_BIN)/makeBpt$(EXE)
-DBLOADTEMPLATE	= $(EPICS_BASE_HOST_BIN)/dbLoadTemplate$(EXE)
 DBEXPAND	= $(EPICS_BASE_HOST_BIN)/dbExpand$(EXE)
 DBST		= dbst
 MAKEDBDEPENDS	= $(PERL) $(TOP)/config/makeDbDepends.pl
@@ -89,7 +88,7 @@ endif
 %.t.db.raw: %.substitutions
 	@echo "Inflating database from $<"
 	@$(RM) $@
-	@$(DBLOADTEMPLATE) $< > $@
+	@$(MSI) -S $<  > $@
 
 ##################################################### CapFast filter
 

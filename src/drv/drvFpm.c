@@ -92,7 +92,6 @@ static char *sccsId = "$Id$\t$Date$";
 
 
 /* general constants */
-#define FPM_ADD0	0xffdd00	/* card 0 base address */
 #define FPM_INTLEV	5		/* interrupt level */
 
 /* control register bit definitions */

@@ -135,6 +135,17 @@ extern "C" void cacRecvThreadUDP (void *pParam)
  */
 void udpiiu::repeaterRegistrationMessage ( unsigned attemptNumber )
 {
+    caRepeaterRegistrationMessage ( this->sock, this->repeaterPort, attemptNumber );
+}
+
+/*
+ *  caRepeaterRegistrationMessage ()
+ *
+ *  register with the repeater 
+ */
+epicsShareFunc void epicsShareAPI caRepeaterRegistrationMessage ( 
+           SOCKET sock, unsigned repeaterPort, unsigned attemptNumber )
+{
     caHdr msg;
     osiSockAddr saddr;
     int status;
@@ -159,7 +170,7 @@ void udpiiu::repeaterRegistrationMessage ( unsigned attemptNumber )
      * by local address (the first non-loopback address found)
      */
     if ( attemptNumber & 1 ) {
-        saddr = osiLocalAddr ( this->sock );
+        saddr = osiLocalAddr ( sock );
         if ( saddr.sa.sa_family != AF_INET ) {
             /*
              * use the loop back address to communicate with the CA repeater
@@ -169,16 +180,16 @@ void udpiiu::repeaterRegistrationMessage ( unsigned attemptNumber )
              */
             saddr.ia.sin_family = AF_INET;
             saddr.ia.sin_addr.s_addr = htonl ( INADDR_LOOPBACK );
-            saddr.ia.sin_port = htons ( this->repeaterPort );   
+            saddr.ia.sin_port = htons ( repeaterPort );   
         }
         else {
-            saddr.ia.sin_port = htons ( this->repeaterPort );   
+            saddr.ia.sin_port = htons ( repeaterPort );   
         }
     }
     else {
         saddr.ia.sin_family = AF_INET;
         saddr.ia.sin_addr.s_addr = htonl ( INADDR_LOOPBACK );
-        saddr.ia.sin_port = htons ( this->repeaterPort );   
+        saddr.ia.sin_port = htons ( repeaterPort );   
     }
 
     memset ( (char *) &msg, 0, sizeof (msg) );
@@ -208,7 +219,7 @@ void udpiiu::repeaterRegistrationMessage ( unsigned attemptNumber )
         len = 0;
 #   endif 
 
-    status = sendto ( this->sock, (char *) &msg, len,  
+    status = sendto ( sock, (char *) &msg, len,  
                 0, (struct sockaddr *) &saddr, sizeof ( saddr ) );
     if ( status < 0 ) {
         int errnoCpy = SOCKERRNO;
@@ -225,7 +236,7 @@ void udpiiu::repeaterRegistrationMessage ( unsigned attemptNumber )
 }
 
 /*
- *  repeater_installed ()
+ *  caStartRepeaterIfNotInstalled ()
  *
  *  Test for the repeater already installed
  *
@@ -248,28 +259,35 @@ void udpiiu::repeaterRegistrationMessage ( unsigned attemptNumber )
  *
  *  072392 - problem solved by using SO_REUSEADDR
  */
-bool udpiiu::repeaterInstalled ()
+epicsShareFunc void epicsShareAPI caStartRepeaterIfNotInstalled ( unsigned repeaterPort )
 {
-    bool                installed = false;
-    int                 status;
-    SOCKET              tmpSock;
-    struct sockaddr_in  bd;
-    int                 flag;
+    bool installed = false;
+    int status;
+    SOCKET tmpSock;
+    struct sockaddr_in bd;
+    int flag;
 
-    tmpSock = socket ( AF_INET, SOCK_DGRAM, IPPROTO_UDP );
-    if ( tmpSock == INVALID_SOCKET ) {
-        return installed;
-    }
-
-    memset ( (char *) &bd, 0, sizeof ( bd ) );
-    bd.sin_family = AF_INET;
-    bd.sin_addr.s_addr = htonl ( INADDR_ANY ); 
-    bd.sin_port = htons ( this->repeaterPort );   
-    status = bind ( tmpSock, (struct sockaddr *) &bd, sizeof ( bd ) );
-    if ( status < 0 ) {
-        if ( SOCKERRNO == SOCK_EADDRINUSE ) {
-            installed = true;
+    if ( repeaterPort <= 0xffff ) {
+        tmpSock = socket ( AF_INET, SOCK_DGRAM, IPPROTO_UDP );
+        if ( tmpSock != INVALID_SOCKET ) {
+            ca_uint16_t port = static_cast < ca_uint16_t > ( repeaterPort );
+            memset ( (char *) &bd, 0, sizeof ( bd ) );
+            bd.sin_family = AF_INET;
+            bd.sin_addr.s_addr = htonl ( INADDR_ANY ); 
+            bd.sin_port = htons ( port );   
+            status = bind ( tmpSock, (struct sockaddr *) &bd, sizeof ( bd ) );
+            if ( status < 0 ) {
+                if ( SOCKERRNO == SOCK_EADDRINUSE ) {
+                    installed = true;
+                }
+                else {
+                    ca_printf ( "caStartRepeaterIfNotInstalled () : bind failed\n");
+                }
+            }
         }
+    }
+    else {
+        ca_printf ( "caStartRepeaterIfNotInstalled () : strange repeater port specified\n");
     }
 
     /*
@@ -278,14 +296,36 @@ bool udpiiu::repeaterInstalled ()
      */
     flag = TRUE;
     status = setsockopt ( tmpSock, SOL_SOCKET, SO_REUSEADDR, 
-                (char *)&flag, sizeof ( flag ) );
+                (char *) &flag, sizeof ( flag ) );
     if ( status < 0 ) {
-        ca_printf ( "CAC: set socket option reuseaddr set failed\n");
+        ca_printf ( "caStartRepeaterIfNotInstalled () : set socket option reuseaddr set failed\n");
     }
 
     socket_close ( tmpSock );
 
-    return installed;
+    if ( ! installed ) {
+        osiSpawnDetachedProcessReturn osptr;
+        
+	    /*
+	     * This is not called if the repeater is known to be 
+	     * already running. (in the event of a race condition 
+	     * the 2nd repeater exits when unable to attach to the 
+	     * repeater's port)
+	     */
+        osptr = osiSpawnDetachedProcess ( "CA Repeater", "caRepeater" );
+        if ( osptr == osiSpawnDetachedProcessNoSupport ) {
+            threadId tid;
+
+            tid = threadCreate ( "CAC-repeater", threadPriorityLow,
+                    threadGetStackSize (threadStackMedium), caRepeaterThread, 0);
+            if ( tid == 0 ) {
+                ca_printf ("caStartRepeaterIfNotInstalled : unable to create CA repeater daemon thread\n");
+            }
+        }
+        else if ( osptr == osiSpawnDetachedProcessFail ) {
+            ca_printf ( "caStartRepeaterIfNotInstalled (): unable to start CA repeater daemon detached process\n" );
+        }
+    }
 }
 
 //
@@ -391,29 +431,7 @@ udpiiu::udpiiu ( cac &cac ) :
         }
     }
 
-    if ( ! this->repeaterInstalled () ) {
-        osiSpawnDetachedProcessReturn osptr;
-        
-	    /*
-	     * This is not called if the repeater is known to be 
-	     * already running. (in the event of a race condition 
-	     * the 2nd repeater exits when unable to attach to the 
-	     * repeater's port)
-	     */
-        osptr = osiSpawnDetachedProcess ( "CA Repeater", "caRepeater" );
-        if ( osptr == osiSpawnDetachedProcessNoSupport ) {
-            threadId tid;
-
-            tid = threadCreate ( "CAC-repeater", threadPriorityLow,
-                    threadGetStackSize (threadStackMedium), caRepeaterThread, 0);
-            if ( tid == 0 ) {
-                ca_printf ("CA: unable to create CA repeater daemon thread\n");
-            }
-        }
-        else if ( osptr == osiSpawnDetachedProcessFail ) {
-            ca_printf ( "CA: unable to start CA repeater daemon detached process\n" );
-        }
-    }
+    caStartRepeaterIfNotInstalled ( this->repeaterPort );
 }
 
 /*
@@ -594,12 +612,7 @@ void udpiiu::beaconAction ( const caHdr &msg, const osiSockAddr &net_addr )
      * then it is the overriding IP address of the server.
      */
     ina.sin_family = AF_INET;
-    if ( msg.m_available != htonl (INADDR_ANY) ) {
-        ina.sin_addr.s_addr = msg.m_available;
-    }
-    else {
-        ina.sin_addr = net_addr.ia.sin_addr;
-    }
+    ina.sin_addr.s_addr = msg.m_available;
     if ( msg.m_count != 0 ) {
         ina.sin_port = htons ( msg.m_count );
     }

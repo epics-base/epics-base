@@ -30,8 +30,6 @@
 
 epicsThreadPrivateId caClientContextId;
 
-epicsThreadPrivateId cacRecursionLock;
-
 static epicsThreadOnceId caClientContextIdOnce = EPICS_THREAD_ONCE_INIT;
 
 extern "C" void ca_client_exit_handler ()
@@ -56,8 +54,6 @@ extern "C" void ca_init_client_context ( void * )
  */
 int fetchClientContext ( cac **ppcac )
 {
-    int status;
-
     if ( caClientContextId == 0 ) {
         epicsThreadOnce ( &caClientContextIdOnce, ca_init_client_context, 0 );
         if ( caClientContextId == 0 ) {
@@ -65,6 +61,7 @@ int fetchClientContext ( cac **ppcac )
         }
     }
 
+    int status;
     *ppcac = ( cac * ) epicsThreadPrivateGet ( caClientContextId );
     if ( *ppcac ) {
         status = ECA_NORMAL;
@@ -229,10 +226,8 @@ extern "C" int epicsShareAPI ca_search_and_connect (
     const char *name_str, chid *chanptr,
     caCh *conn_func, void *puser )
 {
-    int caStatus;
     cac *pcac;
-
-    caStatus = fetchClientContext ( &pcac );
+    int caStatus = fetchClientContext ( &pcac );
     if ( caStatus != ECA_NORMAL ) {
         return caStatus;
     }
@@ -267,7 +262,23 @@ extern "C" int epicsShareAPI ca_search_and_connect (
 extern "C" int epicsShareAPI ca_array_get ( chtype type, 
             unsigned long count, chid pChan, void *pValue )
 {
-    return pChan->read ( type, count, pValue );
+    cac *pcac;
+    int caStatus = fetchClientContext ( &pcac );
+    if ( caStatus != ECA_NORMAL ) {
+        return caStatus;
+    }
+
+    getCopy *pNotify = new getCopy ( *pcac, type, count, pValue );
+    if ( ! pNotify ) {
+        return ECA_ALLOCMEM;
+    }
+
+    int status = pChan->read ( type, count, *pNotify );
+    if ( status != ECA_NORMAL ) {
+        pNotify->release ();
+    }
+
+    return status;
 }
 
 /*
@@ -352,9 +363,7 @@ extern "C" int epicsShareAPI ca_replace_access_rights_event ( chid pChan, caArh 
 extern "C" int epicsShareAPI ca_add_exception_event ( caExceptionHandler *pfunc, void *arg )
 {
     cac *pcac;
-    int caStatus;
-
-    caStatus = fetchClientContext ( &pcac );
+    int caStatus = fetchClientContext ( &pcac );
     if ( caStatus != ECA_NORMAL ) {
         return caStatus;
     }
@@ -425,23 +434,11 @@ extern "C" int epicsShareAPI ca_add_masked_array_event (
 }
 
 /*
- *
  *  ca_clear_event ()
- *
- *  Cancel an outstanding event for a channel.
- *
- *  NOTE: returns before operation completes in the server 
- *  (and the client). 
- *  This is a good reason not to allow them to make the monix 
- *  block as part of a larger structure.
- *  Nevertheless the caller is gauranteed that his specified
- *  event is disabled and therefore will not run (from this source)
- *  after leaving this routine.
- *
  */
 extern "C" int epicsShareAPI ca_clear_event ( evid pMon )
 {
-    pMon->destroy ();
+    pMon->cancel ();
     return ECA_NORMAL;
 }
 
@@ -455,24 +452,36 @@ extern "C" chid epicsShareAPI ca_evid_to_chid ( evid pMon )
  */
 extern "C" int epicsShareAPI ca_clear_channel ( chid pChan )
 {
-    pChan->destroy ();
+    delete pChan;
     return ECA_NORMAL;
 }
 
 /*
- * ca_pend ()
+ * ca_pend_event ()
  */
-extern "C" int epicsShareAPI ca_pend (ca_real timeout, int early)
+extern "C" int epicsShareAPI ca_pend_event (ca_real timeout)
 {
     cac *pcac;
-    int status;
-
-    status = fetchClientContext ( &pcac );
+    int status = fetchClientContext ( &pcac );
     if ( status != ECA_NORMAL ) {
         return status;
     }
 
-    return pcac->pend ( timeout, early );
+    return pcac->pendEvent ( timeout );
+}
+
+/*
+ * ca_pend_io ()
+ */
+extern "C" int epicsShareAPI ca_pend_io (ca_real timeout)
+{
+    cac *pcac;
+    int status = fetchClientContext ( &pcac );
+    if ( status != ECA_NORMAL ) {
+        return status;
+    }
+
+    return pcac->pendIO ( timeout );
 }
 
 /*
@@ -480,10 +489,8 @@ extern "C" int epicsShareAPI ca_pend (ca_real timeout, int early)
  */ 
 extern "C" int epicsShareAPI ca_flush_io ()
 {
-    int caStatus;
     cac *pcac;
-
-    caStatus = fetchClientContext (&pcac);
+    int caStatus = fetchClientContext (&pcac);
     if ( caStatus != ECA_NORMAL ) {
         return caStatus;
     }
@@ -498,10 +505,8 @@ extern "C" int epicsShareAPI ca_flush_io ()
  */
 extern "C" int epicsShareAPI ca_test_io ()
 {
-    int caStatus;
     cac *pcac;
-
-    caStatus = fetchClientContext ( &pcac );
+    int caStatus = fetchClientContext ( &pcac );
     if ( caStatus != ECA_NORMAL ) {
         return caStatus;
     }
@@ -622,9 +627,7 @@ extern "C" void epicsShareAPI ca_signal_formated ( long ca_status, const char *p
 extern "C" int epicsShareAPI ca_add_fd_registration (CAFDHANDLER *func, void *arg)
 {
     cac *pcac;
-    int caStatus;
-
-    caStatus = fetchClientContext ( &pcac );
+    int caStatus = fetchClientContext ( &pcac );
     if ( caStatus != ECA_NORMAL ) {
         return caStatus;
     }
@@ -672,10 +675,8 @@ extern "C" const char * epicsShareAPI ca_version()
  */
 extern "C" int epicsShareAPI ca_replace_printf_handler (caPrintfFunc *ca_printf_func)
 {
-    cac     *pcac;
-    int     caStatus;
-
-    caStatus = fetchClientContext (&pcac);
+    cac *pcac;
+    int caStatus = fetchClientContext (&pcac);
     if ( caStatus != ECA_NORMAL ) {
         return caStatus;
     }
@@ -769,8 +770,7 @@ extern "C" epicsShareFunc void * epicsShareAPI ca_puser (chid pChan)
  */
 extern "C" epicsShareFunc unsigned epicsShareAPI ca_read_access (chid pChan)
 {
-    caar ar = pChan->accessRights ();
-    if ( ar.read_access ) {
+    if ( pChan->accessRights ().read_access ) {
         return true;
     }
     else {
@@ -783,8 +783,7 @@ extern "C" epicsShareFunc unsigned epicsShareAPI ca_read_access (chid pChan)
  */
 extern "C" epicsShareFunc unsigned epicsShareAPI ca_write_access (chid pChan)
 {
-    caar ar = pChan->accessRights ();
-    if ( ar.write_access ) {
+    if ( pChan->accessRights ().write_access ) {
         return true;
     }
     else {
@@ -819,9 +818,7 @@ extern "C" epicsShareFunc double epicsShareAPI ca_beacon_period ( chid pChan )
 extern "C" unsigned epicsShareAPI ca_get_ioc_connection_count () 
 {
     cac *pcac;
-    int caStatus;
-
-    caStatus = fetchClientContext (&pcac);
+    int caStatus = fetchClientContext (&pcac);
     if ( caStatus != ECA_NORMAL ) {
         return caStatus;
     }
@@ -839,9 +836,7 @@ extern "C" epicsShareFunc int epicsShareAPI ca_channel_status ( epicsThreadId /*
 extern "C" epicsShareFunc int epicsShareAPI ca_client_status ( unsigned level )
 {
     cac *pcac;
-    int caStatus;
-
-    caStatus = fetchClientContext ( &pcac );
+    int caStatus = fetchClientContext ( &pcac );
     if ( caStatus != ECA_NORMAL ) {
         return caStatus;
     }

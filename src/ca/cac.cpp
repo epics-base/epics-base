@@ -19,25 +19,9 @@
 #include "bhe_IL.h"
 #include "tcpiiu_IL.h"
 #include "nciu_IL.h"
-#include "ioCounter_IL.h"
 #include "comQueSend_IL.h"
 #include "recvProcessThread_IL.h"
-
-extern "C" void cacRecursionLockExitHandler ()
-{
-    if ( cacRecursionLock ) {
-        epicsThreadPrivateDelete ( cacRecursionLock );
-        cacRecursionLock = 0;
-    }
-}
-
-extern "C" void cacInitRecursionLock ( void * )
-{
-    cacRecursionLock = epicsThreadPrivateCreate ();
-    if ( cacRecursionLock ) {
-        atexit ( cacRecursionLockExitHandler );
-    }
-}
+#include "netiiu_IL.h"
 
 //
 // cac::cac ()
@@ -58,12 +42,6 @@ cac::cac ( bool enablePreemptiveCallbackIn ) :
 	long status;
     static epicsThreadOnceId once = EPICS_THREAD_ONCE_INIT;
     unsigned abovePriority;
-
-    epicsThreadOnce ( &once, cacInitRecursionLock, 0 );
-
-    if ( cacRecursionLock == 0 ) {
-        throwWithLocation ( caErrorCode (ECA_ALLOCMEM) );
-    }
 
 	if ( ! osiSockAttach () ) {
         throwWithLocation ( caErrorCode (ECA_INTERNAL) );
@@ -312,7 +290,7 @@ void cac::show ( unsigned level ) const
         if ( this->pudpiiu ) {
             this->pudpiiu->show ( level - 2u );
         }
-        this->showOutstandingIO ( level - 2u );
+        this->ioCounter.show ( level - 2u );
     }
 
     if ( level > 2u ) {
@@ -437,103 +415,78 @@ void cac::beaconNotify ( const inetAddrID &addr )
 #   endif
 }
 
-int cac::pend ( double timeout, int early )
+int cac::pendIO ( const double &timeout )
 {
-    int status;
-    void *p;
-
-    /*
-     * dont allow recursion
-     */
-    p = epicsThreadPrivateGet ( cacRecursionLock );
-    if ( p ) {
+    // prevent recursion nightmares by disabling calls to 
+    // pendIO () from within a CA callback
+    if ( this->pRecvProcThread->isCurrentThread () ) {
         return ECA_EVDISALLOW;
     }
 
-    epicsThreadPrivateSet ( cacRecursionLock, &cacRecursionLock );
-
     this->enableCallbackPreemption ();
 
-    status = this->pendPrivate ( timeout, early );
+    this->flush ();
+   
+    int status = ECA_NORMAL;
+    epicsTime beg_time = epicsTime::getCurrent ();
+    double remaining;
+    if ( timeout == 0.0 ) {
+        remaining = 60.0;
+    }
+    else{
+        remaining = timeout;
+    }    
+    while ( this->ioCounter.currentCount () > 0 ) {
+        if ( remaining < CAC_SIGNIFICANT_SELECT_DELAY ) {
+            status = ECA_TIMEOUT;
+            break;
+        }
+        this->ioCounter.waitForCompletion ( remaining );
+        if ( timeout != 0.0 ) {
+            double delay = epicsTime::getCurrent () - beg_time;
+            remaining = timeout - delay;
+        }    
+    }
+
+    this->ioCounter.cleanUp ();
+    if ( this->pudpiiu ) {
+        this->pudpiiu->connectTimeoutNotify ();
+    }
 
     this->disableCallbackPreemption ();
-
-    epicsThreadPrivateSet ( cacRecursionLock, NULL );
 
     return status;
 }
 
-/*
- * cac::pendPrivate ()
- */
-int cac::pendPrivate (double timeout, int early)
+int cac::pendEvent ( const double &timeout )
 {
-    epicsTime cur_time;
-    epicsTime beg_time;
-    double delay;
+    // prevent recursion nightmares by disabling calls to 
+    // pendIO () from within a CA callback
+    if ( this->pRecvProcThread->isCurrentThread () ) {
+        return ECA_EVDISALLOW;
+    }
+
+    this->enableCallbackPreemption ();
 
     this->flush ();
 
-    if ( this->currentOutstandingIOCount () == 0u && early ) {
-        return ECA_NORMAL;
-    }
-   
-    if ( timeout < 0.0 ) {
-        if ( early ) {
-            this->cleanUpOutstandingIO ();
-            if ( this->pudpiiu ) {
-                this->pudpiiu->connectTimeoutNotify ();
-            }
-        }
-        return ECA_TIMEOUT;
-    }
-
-    beg_time = cur_time = epicsTime::getCurrent ();
-
-    delay = 0.0;
-    while ( true ) {
-        ca_real  remaining;
-        
-        if ( timeout == 0.0 ) {
-            remaining = 60.0;
-        }
-        else{
-            remaining = timeout - delay;
-
-            /*
-             * If we are not waiting for any significant delay
-             * then force the delay to zero so that we avoid
-             * scheduling delays (which can be substantial
-             * on some os)
-             */
-            if ( remaining <= CAC_SIGNIFICANT_SELECT_DELAY ) {
-                if ( early ) {
-                    this->cleanUpOutstandingIO ();
-                    if ( this->pudpiiu ) {
-                        this->pudpiiu->connectTimeoutNotify ();
-                    }
-                }
-                return ECA_TIMEOUT;
-            }
-        }    
-        
-        this->waitForCompletionOfIO ( remaining );
-
-        if ( this->currentOutstandingIOCount () == 0 && early ) {
-            return ECA_NORMAL;
-        }
- 
-        cur_time = epicsTime::getCurrent ();
-
-        if ( timeout != 0.0 ) {
-            delay = cur_time - beg_time;
+    if ( timeout == 0.0 ) {
+        while ( true ) {
+            epicsThreadSleep ( 60.0 );
         }
     }
+    else if ( timeout >= CAC_SIGNIFICANT_SELECT_DELAY ) {
+        epicsThreadSleep ( timeout );
+    }
+
+    this->disableCallbackPreemption ();
+
+    return ECA_TIMEOUT;
 }
 
 bool cac::ioComplete () const
 {
-    if ( this->currentOutstandingIOCount () == 0u ) {
+    if ( this->ioCounter.currentCount () == 0u ) {
         return true;
     }
     else{
@@ -550,7 +503,7 @@ void cac::accessRightsNotify ( unsigned id, const caar &ar )
     }
 }
 
-void cac::connectChannel ( bool v44Ok, unsigned id, 
+bool cac::connectChannel ( bool v44Ok, unsigned id, 
           unsigned nativeType, unsigned long nativeCount, unsigned sid )
 {
     epicsAutoMutex autoMutex ( this->defaultMutex );
@@ -564,16 +517,24 @@ void cac::connectChannel ( bool v44Ok, unsigned id,
             sidTmp = pChan->getSID ();
         }
         pChan->connect ( nativeType, nativeCount, sidTmp );
+        return true;
+    }
+    else {
+        return false;
     }
 }
 
 // this is to only be used by early protocol revisions
-void cac::connectChannel ( unsigned id )
+bool cac::connectChannel ( unsigned id )
 {
     epicsAutoMutex autoMutex ( this->defaultMutex );
     nciu * pChan = this->chanTable.lookup ( id );
     if ( pChan ) {
         pChan->connect ();
+        return true;
+    }
+    else {
+        return false;
     }
 }
 
@@ -635,9 +596,9 @@ cacChannelIO * cac::createChannelIO ( const char *pName, cacChannelNotify &chan 
 {
     cacChannelIO *pIO;
 
-    pIO = this->services.createChannelIO ( pName, *this, chan );
+    pIO = this->services.createChannelIO ( pName, chan );
     if ( ! pIO ) {
-        pIO = cacGlobalServiceList.createChannelIO ( pName, *this, chan );
+        pIO = cacGlobalServiceList.createChannelIO ( pName, chan );
         if ( ! pIO ) {
             if ( ! this->pudpiiu || ! this->pSearchTmr ) {
                 if ( ! this->setupUDP () ) {
@@ -647,7 +608,7 @@ cacChannelIO * cac::createChannelIO ( const char *pName, cacChannelNotify &chan 
             nciu *pNetChan = new nciu ( *this, limboIIU, chan, pName );
             if ( pNetChan ) {
                 if ( ! pNetChan->fullyConstructed () ) {
-                    pNetChan->destroy ();
+                    delete static_cast < cacChannelIO * > ( pNetChan );
                     return 0;
                 }
                 else {
@@ -662,7 +623,7 @@ cacChannelIO * cac::createChannelIO ( const char *pName, cacChannelNotify &chan 
     return pIO;
 }
 
-void cac::installNetworkChannel ( nciu &chan, netiiu *&piiu )
+void cac::installNetworkChannel ( nciu & chan, netiiu * & piiu )
 {
     epicsAutoMutex autoMutex ( this->defaultMutex );
     this->chanTable.add ( chan );
@@ -787,14 +748,14 @@ void cac::replaceErrLogHandler ( caPrintfFunc *ca_printf_func )
     }
 }
 
-void cac::lookupChannelAndTransferToTCP ( unsigned cid, unsigned sid, 
+bool cac::lookupChannelAndTransferToTCP ( unsigned cid, unsigned sid, 
              unsigned typeCode, unsigned long count, 
              unsigned minorVersionNumber, const osiSockAddr &addr )
 {
     unsigned  retrySeqNumber;
 
     if ( addr.sa.sa_family != AF_INET ) {
-        return;
+        return false;
     }
 
     {
@@ -808,7 +769,7 @@ void cac::lookupChannelAndTransferToTCP ( unsigned cid, unsigned sid,
          */
         chan = this->chanTable.lookup ( cid );
         if ( ! chan ) {
-            return;
+            return true;
         }
 
         retrySeqNumber = chan->getRetrySeqNo ();
@@ -817,7 +778,7 @@ void cac::lookupChannelAndTransferToTCP ( unsigned cid, unsigned sid,
          * Ignore duplicate search replies
          */
         if ( chan->isAttachedToVirtaulCircuit ( addr ) ) {
-            return;
+            return true;
         }
 
         /*
@@ -829,7 +790,7 @@ void cac::lookupChannelAndTransferToTCP ( unsigned cid, unsigned sid,
             piiu = pBHE->getIIU ();
             if ( piiu ) {
                 if ( ! piiu->alive () ) {
-                    return;
+                    return true;
                 }
             }
         }
@@ -838,11 +799,11 @@ void cac::lookupChannelAndTransferToTCP ( unsigned cid, unsigned sid,
             if ( pBHE ) {
                 if ( this->beaconTable.add ( *pBHE ) < 0 ) {
                     pBHE->destroy ();
-                    return;
+                    return true;
                 }
             }
             else {
-                return;
+                return true;
             }
             piiu = 0;
         }
@@ -852,7 +813,7 @@ void cac::lookupChannelAndTransferToTCP ( unsigned cid, unsigned sid,
             if ( ! piiu ) {
                 piiu = new tcpiiu ( *this, this->connTMO, *this->pTimerQueue );
                 if ( ! piiu ) {
-                    return;
+                    return true;
                 }
             }
             if ( piiu->fullyConstructed () ) {
@@ -861,12 +822,12 @@ void cac::lookupChannelAndTransferToTCP ( unsigned cid, unsigned sid,
                             *pBHE, this->ipToAEngine ) ) {
                     this->iiuList.remove ( *piiu  );
                     this->iiuListLimbo.add ( *piiu );
-                    return;
+                    return true;
                 }
             }
             else {
                 delete piiu;
-                return;
+                return true;
             }
         }
 
@@ -888,7 +849,7 @@ void cac::lookupChannelAndTransferToTCP ( unsigned cid, unsigned sid,
         this->pSearchTmr->notifySearchResponse ( retrySeqNumber );
     }
 
-    return;
+    return true;
 }
 
 void cac::uninstallChannel ( nciu & chan )

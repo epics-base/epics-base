@@ -10,13 +10,13 @@
 #ifndef epicsThreadh
 #define epicsThreadh
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <stddef.h>
 
 #include "shareLib.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef void (*EPICSTHREADFUNC)(void *parm);
 

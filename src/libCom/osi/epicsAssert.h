@@ -18,11 +18,11 @@
 #ifndef assertEPICS 
 #define assertEPICS 
 
+#include "shareLib.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "shareLib.h"
 
 #undef assert
 

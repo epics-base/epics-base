@@ -42,15 +42,12 @@
  */
 #include "dbDefs.h"
 #include "osiSock.h"
-#include "osiPoolStatus.h"
 #include "errlog.h"
 #include "envDefs.h"
 #include "addrList.h"
 #include "taskwd.h"
 
 #include "server.h"
-
-int casSufficentSpaceInPool = TRUE;
 
 /*
  * forcePort ()
@@ -86,8 +83,6 @@ int rsrv_online_notify_task()
     unsigned short      port;
     ca_uint32_t         beaconCounter = 0;
     
-    casSufficentSpaceInPool = osiSufficentSpaceInPool ();
-
     taskwdInsert (epicsThreadGetIdSelf(),NULL,NULL);
     
     longStatus = envGetDoubleConfigParam (
@@ -158,14 +153,7 @@ int rsrv_online_notify_task()
         printChannelAccessAddressList (&beaconAddrList);
 #   endif
     
-    while (TRUE) {
-        
-        /*
-         * check to see if we are running low on memory
-         * and disable new channels if so
-         */
-        casSufficentSpaceInPool = osiSufficentSpaceInPool ();
-  
+    while (TRUE) {  
         pNode = (osiSockAddrNode *) ellFirst (&beaconAddrList);
         while (pNode) {
             char buf[64];

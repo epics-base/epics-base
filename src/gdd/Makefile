@@ -47,6 +47,8 @@ genApps_SRCS = genApps.cc $(AITGENSRCS)
 aitGen_SRCS = aitTypes.c aitGen.c
 PROD_HOST = aitGen genApps
 
+aitConvert_OPT_RTEMS-pc386 = NO
+
 gdd_RCS_WIN32 = gdd.rc
 
 include $(TOP)/configure/RULES

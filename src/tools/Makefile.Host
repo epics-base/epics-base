@@ -8,7 +8,7 @@ include $(TOP)/config/CONFIG_BASE
 #
 #	WIN32 also uses rm.pl, cp.pl, mkdir.pl, rmdir.pl
 #	byt they are called from here, not installed
-SCRIPTS       := installEpics.pl makeBaseApp.pl makeBaseApp
+SCRIPTS       := installEpics.pl makeBaseApp.pl makeBaseApp installEpics
 
 #	Before anything is done, installEpics has to be in place.
 #	The first action in a full build & install is 'make inc.host',

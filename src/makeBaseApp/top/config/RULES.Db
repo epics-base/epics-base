@@ -1,10 +1,10 @@
 #RULES.Db
-MAKEBPT		= $(EPICS_BASE_HOST_BIN)/makeBpt
-DBLOADTEMPLATE	= $(EPICS_BASE_HOST_BIN)/dbLoadTemplate
-DBEXPAND	= $(EPICS_BASE_HOST_BIN)/dbExpand
+MAKEBPT		= $(EPICS_BASE_HOST_BIN)/makeBpt$(EXE)
+DBLOADTEMPLATE	= $(EPICS_BASE_HOST_BIN)/dbLoadTemplate$(EXE)
+DBEXPAND	= $(EPICS_BASE_HOST_BIN)/dbExpand$(EXE)
 DBST		= dbst
-MAKEDBDEPENDS	= perl $(TOP)/config/makeDbDepends.pl
-REPLACEVAR	= perl $(TOP)/config/replaceVAR.pl
+MAKEDBDEPENDS	= $(PERL) $(TOP)/config/makeDbDepends.pl
+REPLACEVAR	= $(PERL) $(TOP)/config/replaceVAR.pl
 ifndef WIN32
 TOUCH		= touch
 else
@@ -16,11 +16,9 @@ INSTALL_DBS = $(DBDINSTALL:%= $(INSTALL_DBD)/%)
 INSTALL_DBDNAME = $(DBDNAME:%= $(INSTALL_DBD)/%)
 INSTALL_DATA=$(INSTALLDB:%=$(INSTALL_DB)/%)
 
-DIRECTORY_TARGETS = $(INSTALL_DB) $(INSTALL_DBD)
-
 all::	install
 
-inc::	$(DIRECTORY_TARGETS) $(INSTALL_DBS)
+inc::	$(INSTALL_DBS)
 
 rebuild:: clean install
 
@@ -33,10 +31,6 @@ clean::
 	@$(RM) $(DB) $(DBDNAME) *.template *.substitutions *.db.raw \
 	*.db-stamp *.edf esiread.cnf
 
-$(DIRECTORY_TARGETS):
-	$(MKDIR) $@
-
-
 ##################################################### "Foreign" templates
 
 TEMPLATE_LINKS	= $(filter-out $(notdir $(USES_TEMPLATE)), $(USES_TEMPLATE))
@@ -47,7 +41,7 @@ DB_REALTARGET	= $(patsubst %.db-stamp, %.db, $@)
 ifneq '$(TEMPLATE_LINKS)' ''
 build:: $(notdir $(TEMPLATE_LINKS))
 endif
-build:: $(INSTALL_DBD) $(INSTALL_DBDNAME) $(TEMPLATE_FILES) $(DB_STAMP)
+build:: $(INSTALL_DBDNAME) $(TEMPLATE_FILES) $(DB_STAMP)
 
 $(notdir $(TEMPLATE_LINKS)): %.template:
 ifndef WIN32
@@ -62,7 +56,7 @@ endif
 
 $(INSTALL_DB)/%.db: %.db-stamp
 	@echo "Installing database $@"
-	@$(INSTALL) -m 644 $(patsubst %.db-stamp, %.db, $<) $(@D)
+	@$(INSTALL) -d -m 644 $(patsubst %.db-stamp, %.db, $<) $(@D)
 
 # Must have DBDNAME defined to use dbst optimization
 ifndef DBDNAME
@@ -107,7 +101,7 @@ endif
 
 $(INSTALL_DB)/%.substitutions: %.substitutions
 	@echo "Installing $@"
-	@$(INSTALL) -m 644 $(@F) $(@D)
+	@$(INSTALL) -d -m 644 $(@F) $(@D)
 
 %.substitutions: ../%.substitutions
 	@$(CP) $< $@
@@ -125,7 +119,7 @@ endif
 # Installed template files (dbLoadTemplate() on IOC side)
 $(INSTALL_DB)/%.template: %.template
 	@echo "Installing $@"
-	@$(INSTALL) -m 644 $(@F) $(@D)
+	@$(INSTALL) -d -m 644 $(@F) $(@D)
 
 %.template: ../%.template
 	@$(CP) $< $@
@@ -149,11 +143,11 @@ $(INSTALL_DB)/%.template: %.template
 
 $(INSTALL_DBD)/%: %
 	@echo "Installing $@"
-	@$(INSTALL) -m 644 $< $(@D)
+	@$(INSTALL) -d -m 644 $< $(@D)
 
 $(INSTALL_DBD)/%: ../%
 	@echo "Installing $@"
-	@$(INSTALL) -m 644 $< $(@D)
+	@$(INSTALL) -d -m 644 $< $(@D)
 
 bpt%.dbd: ../bpt%.data
 	$(RM) $@
@@ -168,8 +162,8 @@ endif
 
 ##################################################### Dependencies
 
-.DEPENDS: $(filter $(patsubst %.db, %.substitutions, $(DB)), $(wildcard *.substitutions))
+DEPENDS: $(filter $(patsubst %.db, %.substitutions, $(DB)), $(wildcard *.substitutions))
 	@echo "Making template database dependencies"
 	@$(MAKEDBDEPENDS) $^
 
--include .DEPENDS
+-include DEPENDS

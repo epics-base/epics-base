@@ -36,6 +36,9 @@ while(<INP>) {
         /registrar\s*\(\s*(\w+)/;
         $registrar[$numberRegistrar++] = $1;
     }
+    if (/variable\s*\(\s*(\w+)/) {
+        push @variables, $1;
+    }
 }
 close(INP) or die "$! closing file";
 # beginning of generated routine
@@ -137,6 +140,18 @@ if($numberRegistrar>0) {
     for ($i=0; $i<$numberRegistrar; $i++) {
 	print "epicsShareExtern void (*p$registrar[$i])(void);\n";
     }
+    print "\n";
+}
+
+if (@variables) {
+    foreach $var (@variables) {
+        print "epicsShareExtern int *p$var;\n";
+    }
+    print "static struct iocshVarDef vardefs[] = {\n";
+    foreach $var (@variables) {
+        print "\t{\"$var\", iocshArgInt, (void *)p$var},\n";
+    }
+    print "\t{NULL, iocshArgInt, NULL}\n};\n\n";
 }
 
 #Now actual registration code.
@@ -200,6 +215,10 @@ if($numberRegistrar>0) {
     for($i=0; $i< $numberRegistrar;  $i++ ) {
         print "    (*p$registrar[$i])();\n";
     }
+}
+
+if (@variables) {
+    print "    iocshRegisterVariable(vardefs);\n";
 }
 print << "END" ;
     return(0);

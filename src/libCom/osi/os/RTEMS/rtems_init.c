@@ -20,13 +20,13 @@
 #include <syslog.h>
 #include <rtems.h>
 #include <rtems/error.h>
+#include <rtems/stackchk.h>
 #include <rtems/rtems_bsdnet.h>
 #include <rtems/tftp.h>
 
 #include <epicsThread.h>
 #include <logClient.h>
 #include <iocsh.h>
-#include <dbStaticLib.h>
 
 static void logReset (void);
 

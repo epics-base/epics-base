@@ -107,6 +107,7 @@ sub readRelease {
 	chomp;
 	s/\r$//;		# Shouldn't need this, but sometimes...
 	s/\s*#.*$//;		# Remove trailing comments
+	s/\s+$//;		# Remove trailing whitespace
         next if /^\s*$/;	# Skip blank lines
 	
 	# Expand all already-defined macros in the line:
@@ -157,22 +158,22 @@ sub configAppInclude {
 	foreach $app (@includes) {
             $path = $macros{$app};
 	    next unless (-d "$path/bin/$hostarch");
-	    print OUT "${app}_HOST_BIN = \$($app)/bin/\$(EPICS_HOST_ARCH)\n";
+	    print OUT "${app}_HOST_BIN = \$(strip \$($app))/bin/\$(EPICS_HOST_ARCH)\n";
 	}
 	foreach $app (@includes) {
             $path = $macros{$app};
 	    next unless (-d "$path/lib/$hostarch");
-	    print OUT "${app}_HOST_LIB = \$($app)/bin/\$(EPICS_HOST_ARCH)\n";
+	    print OUT "${app}_HOST_LIB = \$(strip \$($app))/bin/\$(EPICS_HOST_ARCH)\n";
 	}
 	foreach $app (@includes) {
             $path = $macros{$app};
             next unless (-d "$path/bin/$arch");
-	    print OUT "${app}_BIN = \$($app)/bin/$arch\n";
+	    print OUT "${app}_BIN = \$(strip \$($app))/bin/$arch\n";
 	}
 	foreach $app (@includes) {
             $path = $macros{$app};
             next unless (-d "$path/lib/$arch");
-	    print OUT "${app}_LIB = \$($app)/lib/$arch\n";
+	    print OUT "${app}_LIB = \$(strip \$($app))/lib/$arch\n";
 	}
 	# We can't just include TOP in the foreach list:
 	# 1. The lib directory probably doesn't exist yet, and
@@ -188,13 +189,13 @@ sub configAppInclude {
     foreach $app (@includes) {
         $path = $macros{$app};
         next unless (-d "$path/include");
-	print OUT "RELEASE_INCLUDES += -I\$($app)/include/os/\$(OS_CLASS)\n";
-	print OUT "RELEASE_INCLUDES += -I\$($app)/include\n";
+	print OUT "RELEASE_INCLUDES += -I\$(strip \$($app))/include/os/\$(OS_CLASS)\n";
+	print OUT "RELEASE_INCLUDES += -I\$(strip \$($app))/include\n";
     }
     foreach $app (@includes) {
         $path = $macros{$app};
         next unless (-d "$path/dbd");
-        print OUT "RELEASE_DBDFLAGS += -I \$($app)/dbd\n";
+        print OUT "RELEASE_DBDFLAGS += -I \$(strip \$($app))/dbd\n";
     }
     close OUT;
 }
@@ -210,7 +211,7 @@ sub rulesInclude {
     foreach $app (@includes) {
         $path = $macros{$app};
         next unless (-r "$path/configure/RULES_BUILD");
-	print OUT "-include \$($app)/configure/RULES_BUILD\n";
+	print OUT "-include \$(strip \$($app))/configure/RULES_BUILD\n";
     }
     close OUT;
 }

@@ -82,7 +82,7 @@ Expr		*ssp; /* Parent state set */
 	printf("\n/* Action function for state \"%s\" in state set \"%s\" */\n",
 	 sp->value, ssp->value);
 	/* action function declaration with ss_ptr as parameter */
-	printf("static A_%s_%s(sprog, ss_ptr, var_ptr)\n", ssp->value, sp->value);
+	printf("static void A_%s_%s(sprog, ss_ptr, var_ptr)\n", ssp->value, sp->value);
 	printf("SPROG\t*sprog;\n");
 	printf("SSCB\t*ss_ptr;\n");
 	printf("struct UserVar\t*var_ptr;\n{\n");
@@ -122,7 +122,7 @@ Expr		*ssp;
 
 	printf("\n/* Event function for state \"%s\" in state set \"%s\" */\n",
 	 sp->value, ssp->value);
-	printf("static E_%s_%s(sprog, ss_ptr, var_ptr)\n", ssp->value, sp->value);
+	printf("static int E_%s_%s(sprog, ss_ptr, var_ptr)\n", ssp->value, sp->value);
 	printf("SPROG\t*sprog;\n");
 	printf("SSCB\t*ss_ptr;\n");
 	printf("struct UserVar\t*var_ptr;\n{\n");
@@ -184,7 +184,7 @@ Expr		*ssp;
 
 	printf("\n/* Delay function for state \"%s\" in state set \"%s\" */\n",
 	 sp->value, ssp->value);
-	printf("static D_%s_%s(sprog, ss_ptr, var_ptr)\n", ssp->value, sp->value);
+	printf("static void D_%s_%s(sprog, ss_ptr, var_ptr)\n", ssp->value, sp->value);
 	printf("SPROG\t*sprog;\n");
 	printf("SSCB\t*ss_ptr;\n");
 	printf("struct UserVar\t*var_ptr;\n{\n");
@@ -507,7 +507,7 @@ gen_exit_handler()
 	Expr		*ep;
 
 	printf("/* Exit handler */\n");
-	printf("static exit_handler(sprog, var_ptr)\n");
+	printf("static void exit_handler(sprog, var_ptr)\n");
 	printf("SPROG\t*sprog;\n");
 	printf("struct UserVar\t*var_ptr;\n{\n");
 	for (ep = exit_code_list; ep != 0; ep = ep->next)

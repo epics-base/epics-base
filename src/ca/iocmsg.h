@@ -1,4 +1,5 @@
 #ifndef __IOCMSG__
+/* $Id$ */
 /*
  *	History
  * 	.01 01xx90 joh	removed status field in favor of a independent m_cmmd- 
@@ -23,6 +24,7 @@
  *	.09 050594 joh	New command added for CA V4.3 - repeater fanout register 
  *
  *	.10 050594 joh	New command added for CA V4.3 - wakeup the server
+ * $Log$
  */
 
 #define __IOCMSG__

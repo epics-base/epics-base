@@ -4,6 +4,9 @@
 //
 //
 // $Log$
+// Revision 1.13  1998/05/29 20:22:44  jhill
+// made hashing routine portable
+//
 // Revision 1.12  1998/02/05 21:12:09  jhill
 // removed questionable inline
 //
@@ -62,6 +65,8 @@
 #define instantiateRecourceLib
 #include "osiTimer.h"
 #include "fdManager.h"
+#include "osiSleep.h"
+#include "bsdSocketResource.h"
  
 //
 // if the compiler supports explicit instantiation of
@@ -90,6 +95,8 @@ epicsShareDef fdManager fileDescriptorManager;
 epicsShareFunc fdManager::fdManager()
 {
 	size_t	i;
+
+	assert (bsdSockAttach());
 
 	for (i=0u; i<sizeof(this->fdSets)/sizeof(this->fdSets[0u]); i++) {
 		FD_ZERO(&this->fdSets[i]);
@@ -120,6 +127,7 @@ epicsShareFunc fdManager::~fdManager()
 		pReg->state = fdrLimbo;
 		pReg->destroy();
 	}
+	bsdSockRelease();
 }
 
 //
@@ -135,6 +143,7 @@ epicsShareFunc void fdManager::process (const osiTime &delay)
 	fdReg *pReg;
 	struct timeval tv;
 	int status;
+	int ioPending = 0;
 
 	//
 	// no recursion 
@@ -163,11 +172,32 @@ epicsShareFunc void fdManager::process (const osiTime &delay)
 
 	for (iter=this->regList.first(); iter!=eol; ++iter) {
 		FD_SET(iter->getFD(), &this->fdSets[iter->getType()]); 
+		ioPending = 1;
 	}
+
 	tv.tv_sec = minDelay.getSecTruncToLong ();
 	tv.tv_usec = minDelay.getUSecTruncToLong ();
-	status = select (this->maxFD, &this->fdSets[fdrRead], 
-		&this->fdSets[fdrWrite], &this->fdSets[fdrExcp], &tv);
+
+	/*
+ 	 * win32 requires this (others will
+	 * run faster with this installed)
+	 */
+	if (!ioPending) {
+		/*
+		 * recover from subtle differences between
+		 * windows sockets and UNIX sockets implementation
+		 * of select()
+		 */
+		if (tv.tv_sec!=0 || tv.tv_usec!=0) {
+			osiSleep (tv.tv_sec, tv.tv_usec);
+		}
+		status = 0;
+	}
+	else {
+		status = select (this->maxFD, &this->fdSets[fdrRead], 
+			&this->fdSets[fdrWrite], &this->fdSets[fdrExcp], &tv);
+	}
+
 	staticTimerQueue.process();
 	if (status==0) {
 		this->processInProg = 0;
@@ -215,7 +245,13 @@ epicsShareFunc void fdManager::process (const osiTime &delay)
 		//
 		this->pCBReg = pReg;
 		pReg->callBack();
-		if (this->pCBReg == pReg) {
+		if (this->pCBReg != NULL) {
+			//
+			// check only after we see that it is non-null so
+			// that we dont trigger bounds-checker dangling pointer 
+			// error
+			//
+			assert (this->pCBReg==pReg);
 			this->pCBReg = 0;
 			if (pReg->onceOnly) {
 				pReg->destroy();
@@ -224,12 +260,6 @@ epicsShareFunc void fdManager::process (const osiTime &delay)
 				this->regList.add(*pReg);
 				pReg->state = fdrPending;
 			}
-		}
-		else {
-			//
-			// no recursive calls  to process allowed
-			//
-			assert(this->pCBReg == 0);
 		}
 	}
 	this->processInProg = 0;
@@ -317,8 +347,8 @@ epicsShareFunc void fdManager::installReg (fdReg &reg)
 {
 	int status;
 
-       	this->maxFD = fdManagerMaxInt(this->maxFD, reg.getFD()+1);
-       	this->regList.add(reg);
+	this->maxFD = fdManagerMaxInt(this->maxFD, reg.getFD()+1);
+	this->regList.add(reg);
 	reg.state = fdrPending;
 	status = this->fdTbl.add(reg);
 	if (status) {

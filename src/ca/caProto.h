@@ -169,7 +169,7 @@ typedef ca_uint32_t	caResId;
 typedef struct	ca_hdr {
 	ca_uint16_t	m_cmmd;		/* operation to be performed */
 	ca_uint16_t	m_postsize;	/* size of message extension */	
-	ca_uint16_t	m_type;		/* operation data type */ 
+	ca_uint16_t	m_dataType; /* operation data type */ 
 	ca_uint16_t	m_count;	/* operation data count */
 	ca_uint32_t	m_cid;		/* channel identifier */
 	ca_uint32_t	m_available;	/* undefined message location for use

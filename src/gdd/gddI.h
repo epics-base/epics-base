@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.7  1999/08/10 17:23:55  jhill
+ * moved inlines in order to eliminate g++ warnings
+ *
  * Revision 1.6  1999/08/05 22:48:44  jhill
  * removed knowledge of class osiTime, and made ref/unref mf const
  *
@@ -665,16 +668,6 @@ inline gdd::operator aitUint8(void) const	{ aitUint8 d; get(d); return d; }
 inline gdd::operator aitInt8(void) const	{ aitInt8 d; get(d); return d; }
 inline gdd::operator aitString(void) const	{ aitString d; get(d); return d; }
 
-inline gdd & gdd::operator [] (aitIndex index)
-{ 
-	return *this->getDD(index); 
-}
-
-inline const gdd & gdd::operator [] (aitIndex index) const
-{ 
-	return *this->getDD(index); 
-}
-
 inline gdd & gdd::operator [] (int index)
 { 
 	assert (index>=0);
@@ -710,5 +703,15 @@ inline const gdd* gdd::getDD(aitIndex index, const gddArray*& dd) const
 
 inline const gdd* gdd::getDD(aitIndex index, const gddContainer*& dd) const
 	{ return (const gdd*)(dd=(const gddContainer*)indexDD(index)); }
+
+inline gdd & gdd::operator [] (aitIndex index)
+{ 
+	return *this->getDD(index); 
+}
+
+inline const gdd & gdd::operator [] (aitIndex index) const
+{ 
+	return *this->getDD(index); 
+}
 
 #endif

@@ -7,9 +7,6 @@
 # Sites may override these definitions in CONFIG_SITE.solaris-x86.solaris-x86
 #-------------------------------------------------------
 
-# Include definitions common to all Unix target archs
-include $(CONFIG)/os/CONFIG.Common.UnixCommon
-
 SPARCWORKS = /opt/SUNWspro
 
 CC = $(SPARCWORKS)/bin/cc
@@ -22,6 +19,8 @@ LD = ld -r
 
 #Prepare the object code for profiling with prof. (YES or NO)
 PROFILE=NO
+#Prepare the object code for profiling with gprof. (YES or NO)
+GPROF=NO
 
 # Configure OS vendor C compiler
 CONFORM_CFLAGS_ANSI = -Xa -v
@@ -36,8 +35,8 @@ OPT_CFLAGS_YES = -xO4
 OPT_CFLAGS_NO = -g
 
 # Configure OS vendor C++ compiler
-CONFORM_CXXFLAGS_NORMAL = 
-CONFORM_CXXFLAGS_STRICT = 
+CONFORM_CXXFLAGS_NORMAL =
+CONFORM_CXXFLAGS_STRICT =
 PROF_CXXFLAGS_YES = -p
 GPROF_CXXFLAGS_YES = -xpg
 CODE_CXXFLAGS = $(PROF_CXXFLAGS_$(PROFILE)) $(GPROF_CXXFLAGS_$(GPROF))
@@ -46,13 +45,16 @@ WARN_CXXFLAGS_NO =
 OPT_CXXFLAGS_YES = -O
 OPT_CXXFLAGS_NO = -g
 
+CODE_LDFLAGS = $(PROF_CXXFLAGS_$(PROFILE)) $(GPROF_CXXFLAGS_$(GPROF))
+
 STATIC_LDFLAGS_YES= -Bstatic
 STATIC_LDFLAGS_NO=
 STATIC_LDLIBS_YES= -Bdynamic
 STATIC_LDLIBS_NO=
 
-SHRLIB_LDFLAGS = -z defs -KPIC -G -h $@
-LOADABLE_SHRLIB_LDFLAGS = -KPIC -G -h $@
+SHRLIB_CFLAGS = -KPIC
+SHRLIB_LDFLAGS += -z defs -G -h $@ -z text
+LOADABLE_SHRLIB_LDFLAGS += -G -h $@ -z text
 
 OP_SYS_LDFLAGS += -z ignore -z combreloc -z lazyload
 

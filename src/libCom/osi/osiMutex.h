@@ -95,3 +95,4 @@ inline void osiMutex::show (unsigned level) const
 {
     semMutexShow (this->id, level);
 }
+

@@ -18,10 +18,9 @@
 
 #ifdef __cplusplus
 extern "C" {
-typedef long (*RECSUPFUN) (void *);      /* ptr to record support function*/
-#else
-typedef long (*RECSUPFUN) ();      /* ptr to record support function*/
 #endif
+
+typedef long (*RECSUPFUN) ();      /* ptr to record support function*/
 
 typedef struct rset {	/* record support entry table */
 	long		number;		/*number of support routines	*/

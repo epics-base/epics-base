@@ -56,5 +56,7 @@ OBJS_IOC += epicsExceptionTest
 #fdmgrTest_SRCS += fdmgrTest.c
 #PROD_HOST += fdmgrTest
 
+PROD_RTEMS = $(PROD_HOST)
+
 include $(TOP)/configure/RULES
 

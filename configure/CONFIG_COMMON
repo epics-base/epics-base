@@ -142,10 +142,10 @@ JAR =
 
 TARGET_OBJS =  $($*_LDOBJS) $(addsuffix $(OBJ),$(basename $($*_OBJS)))
 
-PRODUCT_OBJS = $(addsuffix $(OBJ),$(basename $(SRCS) $(PROD_SRCS) $(PROD_OBJS)))
+PRODUCT_OBJS = $(addsuffix $(OBJ),$(basename $(SRCS) $(USR_SRCS) $(PROD_SRCS) $(PROD_OBJS)))
 PROD_LD_OBJS = $(LDOBJS) $(TARGET_OBJS) $(PRODUCT_OBJS)
 
-LIBRARY_OBJS = $(addsuffix $(OBJ),$(basename $(SRCS) $(LIB_SRCS) $(LIBSRCS) $(LIB_OBJS)))
+LIBRARY_OBJS = $(addsuffix $(OBJ),$(basename $(SRCS) $(USR_SRCS) $(LIB_SRCS) $(LIBSRCS) $(LIB_OBJS)))
 LIBRARY_LD_OBJS = $(LDOBJS) $(TARGET_OBJS) $(LIBRARY_OBJS)
 
 #--------------------------------------------------
@@ -299,7 +299,7 @@ HDEPENDS_CMD  = $(HDEPENDS_CMD_$(HDEPENDS))
 # depends definition
 
 TARGET_SRCS = $(foreach name, $(TESTPROD) $(PROD) $(LIBRARY), $($(name)_SRCS))
-SRC_FILES =  $(LIB_SRCS) $(LIBSRCS) $(SRCS) $(PROD_SRCS) $(TARGET_SRCS)
+SRC_FILES =  $(LIB_SRCS) $(LIBSRCS) $(SRCS) $(USR_SRCS) $(PROD_SRCS) $(TARGET_SRCS)
 HDEPENDS_FILES_YES = $(addsuffix $(DEP),$(notdir $(basename $(SRC_FILES))))
 HDEPENDS_FILES  = $(HDEPENDS_FILES_$(HDEPENDS))
 

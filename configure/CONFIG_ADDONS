@@ -41,6 +41,7 @@
 #	USR_CXXFLAGS	C++ flags
 #	USR_CPPFLAGS	c preprocesser flags
 #	INC		include-files to install
+#	USR_SRCS	source files for building library and prod
 #	LIBSRCS		source files for building library
 #	LIB_SRCS	source files for building library
 #	SHRLIB_LIBS	libs needed by shared LIBRARY
@@ -157,6 +158,14 @@ SRCS += $(subst -nil-,,$(SRCS_$(OS_CLASS)))
 else
 ifdef SRCS_DEFAULT
 SRCS+=$(SRCS_DEFAULT)
+endif
+endif
+
+ifneq ($(strip $(USR_SRCS_$(OS_CLASS))),)
+USR_SRCS += $(subst -nil-,,$(USR_SRCS_$(OS_CLASS)))
+else
+ifdef USR_SRCS_DEFAULT
+USR_SRCS+=$(USR_SRCS_DEFAULT)
 endif
 endif
 

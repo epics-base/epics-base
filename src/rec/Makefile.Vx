@@ -94,6 +94,8 @@ SRCS.c += ../waveformRecord.c
 
 LIBOBJS = $(SRCS.c:../%.c=%.o)
 
+PROD = $(LIBOBJS)
+
 LIBNAME = recSup
 
 include $(EPICS)/config/RULES.Vx

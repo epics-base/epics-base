@@ -66,7 +66,6 @@
 #include	<dbStaticLib.h>
 
 extern struct dbBase *pdbBase;
-extern volatile int interruptAccept;
 
 /* SCAN ONCE */
 #define ONCE_QUEUE_SIZE 256
@@ -146,7 +145,7 @@ long scanInit()
 void post_event(int event)
 {
 	unsigned char evnt;
-	int status;
+	static int newOverflow=TRUE;
 
 	if (!interruptAccept) return;     /* not awake yet */
 	if(event<0 || event>=MAX_EVENTS) {
@@ -156,14 +155,13 @@ void post_event(int event)
 	evnt = (unsigned)event;
 	/*multiple writers can exist. Thus if evnt is ever changed to use*/
 	/*something bigger than a character interrupts will have to be blocked*/
-	if(rngBufPut(eventQ,(void *)&evnt,sizeof(unsigned char))!=sizeof(unsigned char))
-	    errMessage(0,"rngBufPut overflow in post_event");
-	if((status=semGive(eventSem))!=OK){
-/*semGive randomly returns garbage value*/
-/*
-   		 errMessage(0,"semGive returned error in post_event");
-*/
-        }
+	if(rngBufPut(eventQ,(void *)&evnt,sizeof(unsigned char))!=sizeof(unsigned char)) {
+	    if(newOverflow) errMessage(0,"rngBufPut overflow in post_event");
+	    newOverflow = FALSE;
+	} else {
+	    newOverflow = TRUE;
+	}
+	semGive(eventSem);
 }
 
 
@@ -382,8 +380,14 @@ void scanIoRequest(IOSCANPVT pioscanpvt)
 
 void scanOnce(void *precord)
 {
-    if(rngBufPut(onceQ,(void *)&precord,sizeof(precord))!=sizeof(precord))
-	errMessage(0,"rngBufPut overflow in scanOnce");
+    static int newOverflow=TRUE;
+
+    if(rngBufPut(onceQ,(void *)&precord,sizeof(precord))!=sizeof(precord)) {
+	if(newOverflow)errMessage(0,"rngBufPut overflow in scanOnce");
+	newOverflow = FALSE;
+    }else {
+	newOverflow = TRUE;
+    }
     semGive(onceSem);
 }
 
@@ -598,7 +602,7 @@ static void printList(struct scan_list *psl,char *message)
     struct scan_element *pse;
 
     FASTLOCK(&psl->lock);
-    (void *)pse = ellFirst(&psl->list);
+    pse = (struct scan_element *)ellFirst(&psl->list);
     FASTUNLOCK(&psl->lock);
     if(pse==NULL) return;
     printf("%s\n",message);
@@ -610,7 +614,7 @@ static void printList(struct scan_list *psl,char *message)
 	    printf("Returning because list changed while processing.");
 	    return;
 	}
-	(void *)pse = ellNext((void *)pse);
+	pse = (struct scan_element *)ellNext((void *)pse);
 	FASTUNLOCK(&psl->lock);
     }
 }
@@ -624,9 +628,9 @@ static void scanList(struct scan_list *psl)
 
     FASTLOCK(&psl->lock);
 	psl->modified = FALSE;
-	(void *)pse = ellFirst(&psl->list);
+	pse = (struct scan_element *)ellFirst(&psl->list);
 	prev = NULL;
-	(void *)next = ellNext((void *)pse);
+	next = (struct scan_element *)ellNext((void *)pse);
     FASTUNLOCK(&psl->lock);
     while(pse!=NULL) {
 	struct dbCommon *precord = pse->precord;
@@ -637,27 +641,27 @@ static void scanList(struct scan_list *psl)
 	FASTLOCK(&psl->lock);
 	    if(!psl->modified) {
 		prev = pse;
-		(void *)pse = ellNext((void *)pse);
-		if(pse!=NULL) (void *)next = ellNext((void *)pse);
+		pse = (struct scan_element *)ellNext((void *)pse);
+		if(pse!=NULL)next = (struct scan_element *)ellNext((void *)pse);
 	    } else if (pse->pscan_list==psl) {
 		/*This scan element is still in same scan list*/
 		prev = pse;
-		(void *)pse = ellNext((void *)pse);
-		if(pse!=NULL) (void *)next = ellNext((void *)pse);
+		pse = (struct scan_element *)ellNext((void *)pse);
+		if(pse!=NULL)next = (struct scan_element *)ellNext((void *)pse);
 		psl->modified = FALSE;
 	    } else if (prev!=NULL && prev->pscan_list==psl) {
 		/*Previous scan element is still in same scan list*/
-		(void *)pse = ellNext((void *)prev);
+		pse = (struct scan_element *)ellNext((void *)prev);
 		if(pse!=NULL) {
-		    (void *)prev = ellPrevious((void *)pse);
-		    (void *)next = ellNext((void *)pse);
+		    prev = (struct scan_element *)ellPrevious((void *)pse);
+		    next = (struct scan_element *)ellNext((void *)pse);
 		}
 		psl->modified = FALSE;
 	    } else if (next!=NULL && next->pscan_list==psl) {
 		/*Next scan element is still in same scan list*/
 		pse = next;
-		(void *)prev = ellPrevious((void *)pse);
-		(void *)next = ellNext((void *)pse);
+		prev = (struct scan_element *)ellPrevious((void *)pse);
+		next = (struct scan_element *)ellNext((void *)pse);
 		psl->modified = FALSE;
 	    } else {
 		/*Too many changes. Just wait till next period*/
@@ -703,17 +707,17 @@ static void addToList(struct dbCommon *precord,struct scan_list *psl)
 	if(pse==NULL) {
 		pse = dbCalloc(1,sizeof(struct scan_element));
 		precord->spvt = (void *)pse;
-		(void *)pse->precord = precord;
+		pse->precord = precord;
 	}
 	pse ->pscan_list = psl;
-	(void *)ptemp = ellFirst(&psl->list);
+	ptemp = (struct scan_element *)ellFirst(&psl->list);
 	while(ptemp!=NULL) {
 		if(ptemp->precord->phas>precord->phas) {
 			ellInsert(&psl->list,
 				ellPrevious((void *)ptemp),(void *)pse);
 			break;
 		}
-		(void *)ptemp = ellNext((void *)ptemp);
+		ptemp = (struct scan_element *)ellNext((void *)ptemp);
 	}
 	if(ptemp==NULL) ellAdd(&psl->list,(void *)pse);
 	psl->modified = TRUE;

@@ -61,8 +61,14 @@
 
 
 #ifdef vxWorks
-#define nint(value) (value>=0 ? (int)((value)+.5) : (int)((value)-.5))
-#define exp10(value) (exp(value * log(10.)))
+# define nint(value) (value>=0 ? (int)((value)+.5) : (int)((value)-.5))
+# define exp10(value) (exp(value * log(10.)))
+#else
+/* really nint and exp10 aren't ANSI-C or POSIX */
+# ifndef sun
+#  define nint(value) (value>=0 ? (int)((value)+.5) : (int)((value)-.5))
+#  define exp10(value) (exp(value * log(10.)))
+# endif
 #endif
 
 #if 0

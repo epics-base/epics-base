@@ -69,6 +69,8 @@
 #   include <ctype.h>
 #   include <sys/types.h>	/* for 'select' operations */
 #   include <sys/time.h>	/* for 'select' operations */
+
+#   include <sys/resource.h>
 #endif
 
 #include <genDefs.h>
@@ -146,6 +148,7 @@ CX_CMD	**ppCxCmd;	/* I pointer to pointer to command context */
     fd_set      fdSet;          /* set of fd's to watch with select */
     int         fdSetWidth;     /* width of select bit mask */
     struct timeval fdSetTimeout;/* timeout interval for select */
+    struct rlimit rlp;
 #endif
     CX_CMD	*pCxCmd=*ppCxCmd;/* pointer to command context */
     int		i;
@@ -161,7 +164,12 @@ CX_CMD	**ppCxCmd;	/* I pointer to pointer to command context */
 	}
 
 #ifndef vxWorks
+/* MDA - use getrlimit since getdtablesize() is obsolete
 	fdSetWidth = getdtablesize();
+*/
+	getrlimit(RLIMIT_NOFILE,&rlp);
+	fdSetWidth = rlp.rlim_cur;
+
 	fdSetTimeout.tv_sec = 0;
 	fdSetTimeout.tv_usec = 0;
 	FD_ZERO(&fdSet);

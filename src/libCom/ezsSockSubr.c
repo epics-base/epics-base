@@ -519,7 +519,10 @@ int	seconds;	/* I number of seconds (added to usec) to sleep */
 int	usec;		/* I number of micro-sec (added to sec) to sleep */
 {
 #ifndef vxWorks
+    sleep((unsigned int)seconds);
+/* MDA - usleep isn't POSIX 
     usleep((unsigned)(seconds*1000000 + usec));
+*/
 #else
     int		ticks;
     static int ticksPerSec=0;

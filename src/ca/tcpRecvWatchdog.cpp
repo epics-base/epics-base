@@ -45,6 +45,11 @@ epicsTimerNotify::expireStatus
 tcpRecvWatchdog::expire ( const epicsTime & /* currentTime */ ) // X aCC 361
 {
     if ( this->responsePending ) {
+        if ( this->iiu.bytesArePendingInOS() ) {
+            this->cacRef.printf ( 
+"Warning: non-preemptive CA client application has incoming messages pending, but it does not called ca_pend_event()\n" );
+            return expireStatus ( restart, this->period );
+        }
         this->cancel ();
 #       ifdef DEBUG
             char hostName[128];
@@ -108,7 +113,10 @@ void tcpRecvWatchdog::messageArrivalNotify ()
 //
 void tcpRecvWatchdog::sendBacklogProgressNotify ()
 {
-    this->beaconAnomaly = false;
+    // We dont set "beaconAnomaly" to be false here because, after we see a
+    // beacon anomaly (which could be transiently detecting a reboot) we will 
+    // not trust the beacon as an indicator of a healthy server until we 
+    // receive at least one message from the server.
     this->responsePending = false;
     this->timer.start ( *this, this->period );
     debugPrintf ( ("saw heavy send backlog - reseting TCP recv watchdog\n") );

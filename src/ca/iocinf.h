@@ -301,6 +301,7 @@ public:
     void operator delete ( void *pCadaver, size_t size );
 
     int subscriptionMsg ( netSubscription &, bool userThread );
+    void unistallSubscription ( netSubscription & );
     void resetRetryCount ();
     unsigned getRetrySeqNo () const;
     void accessRightsStateChange ( const caar &arIn );
@@ -344,15 +345,15 @@ class baseNMIU : public tsDLNode < baseNMIU >,
 public:
     baseNMIU ( nciu &chan );
     virtual ~baseNMIU () = 0;
-    ca_uint32_t getID () const;
     virtual void completionNotify () = 0;
     virtual void completionNotify ( unsigned type, unsigned long count, const void *pData ) = 0;
     virtual void exceptionNotify ( int status, const char *pContext ) = 0;
     virtual void exceptionNotify ( int status, const char *pContext, unsigned type, unsigned long count ) = 0;
-    virtual void disconnect ( const char *pHostName ) = 0;
+    virtual bool isSubscription () const;
     virtual void show ( unsigned level ) const;
     virtual int subscriptionMsg ();
     virtual void subscriptionCancelMsg ();
+    ca_uint32_t getID () const;
     nciu & channel ();
     void destroy ();
 protected:
@@ -363,7 +364,6 @@ class netSubscription : private cacNotifyIO, public baseNMIU  {
 public:
     netSubscription ( nciu &chan, unsigned type, unsigned long count, 
         unsigned mask, cacNotify &notify );
-    void disconnect ( const char *pHostName );
     void show ( unsigned level ) const;
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
@@ -382,6 +382,7 @@ private:
     void exceptionNotify ( int status, const char *pContext, unsigned type, unsigned long count );
     int subscriptionMsg ();
     void subscriptionCancelMsg ();
+    bool isSubscription () const;
     ~netSubscription ();
     static tsFreeList < class netSubscription, 1024 > freeList;
 };
@@ -390,7 +391,6 @@ class netReadCopyIO : public baseNMIU {
 public:
     netReadCopyIO ( nciu &chan, unsigned type, unsigned long count, 
                               void *pValue, unsigned seqNumber );
-    void disconnect ( const char *pHostName );
     void show ( unsigned level ) const;
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
@@ -411,7 +411,6 @@ private:
 class netReadNotifyIO : public cacNotifyIO, public baseNMIU {
 public:
     netReadNotifyIO ( nciu &chan, cacNotify &notify );
-    void disconnect ( const char *pHostName );
     void show ( unsigned level ) const;
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
@@ -428,7 +427,6 @@ private:
 class netWriteNotifyIO : public cacNotifyIO, public baseNMIU {
 public:
     netWriteNotifyIO ( nciu &chan, cacNotify &notify );
-    void disconnect ( const char *pHostName );
     void show ( unsigned level ) const;
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
@@ -515,6 +513,7 @@ public:
     virtual int readNotifyRequest ( nciu &, cacNotify &, unsigned type, unsigned nElem );
     virtual int subscriptionRequest ( netSubscription &subscr, bool userThread );
     virtual int subscriptionCancelRequest ( netSubscription &subscr  );
+    virtual void unistallSubscription ( nciu &chan, netSubscription &subscr );
     virtual void subscribeAllIO ( nciu &chan );
     virtual int createChannelRequest ( nciu & );
     virtual void disconnectAllIO ( nciu &chan );
@@ -754,6 +753,7 @@ public:
     int clearChannelRequest ( nciu & );
     int subscriptionRequest ( netSubscription &subscr, bool userThread );
     int subscriptionCancelRequest ( netSubscription &subscr  );
+    void unistallSubscription ( nciu &chan, netSubscription &subscr );
 
     void hostName ( char *pBuf, unsigned bufLength ) const;
     const char * pHostName () const; // deprecated - please do not use

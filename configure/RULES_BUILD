@@ -857,6 +857,7 @@ inc::
 rebuild::
 install::
 clean::
+depends::
 
 endif #BUILD
 endif #T_A

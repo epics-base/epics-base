@@ -42,7 +42,7 @@ GNU_DIR = $(VX_DIR)/host/$(WIND_HOST_TYPE)
 
 #-------------------------------------------------------
 # Command definition overrides
-GCC_LD = $(GNU_BIN)/$(GNU_TARGET_PREFIX)ld$(CMPLR_SUFFIX) -r
+GCC_LD = $(GNU_BIN)/$(CMPLR_PREFIX)ld$(CMPLR_SUFFIX) -r
 
 # use ld  partial linking not ar to create libraries)
 GCC_AR = $(GCC_LD)
@@ -51,7 +51,7 @@ GCC_RANLIB =
 
 #--------------------------------------------------
 # C++ host processing
-NM = $(GNU_BIN)/$(GNU_TARGET_PREFIX)nm$(CMPLR_SUFFIX)
+NM = $(GNU_BIN)/$(CMPLR_PREFIX)nm$(CMPLR_SUFFIX)
 ifneq ($(wildcard $(GNU_BIN)/munch.tcl),)
 #tornado2
 export WIND_BASE = $(VX_DIR)
@@ -62,7 +62,7 @@ endif
 MUNCH = $(GNU_BIN)/wtxtcl$(HOSTEXE) $(GNU_BIN)/munch.tcl -asm $(ARCH_CLASS)
 else
 #tornado101
-MUNCH = $(GNU_BIN)/$(GNU_TARGET_PREFIX)munch$(EXE)
+MUNCH = $(GNU_BIN)/$(CMPLR_PREFIX)munch$(EXE)
 endif
 
 #-------------------------------------------------------

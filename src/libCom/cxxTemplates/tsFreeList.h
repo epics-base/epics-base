@@ -69,8 +69,9 @@
 #   pragma warning ( disable : 4291 )  
 #endif
 
-template < class T, unsigned DEBUG_LEVEL > union tsFreeListItem;
-template < class T, unsigned N = 0x400, unsigned DEBUG_LEVEL = 0u >
+template < class T, unsigned DEBUG_LEVEL > 
+    union tsFreeListItem;
+template < class T, unsigned N, unsigned DEBUG_LEVEL> 
     struct tsFreeListChunk;
 
 template < class T, unsigned N = 0x400, unsigned DEBUG_LEVEL = 0u >

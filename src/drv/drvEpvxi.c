@@ -1,5 +1,7 @@
 /*
- *	share/src/drv $Id$	
+ *	drvEpvxi.c
+ *
+ *	share/src/drv/$Id$
  * 	Routines for the VXI device support and resource management.
  *
  *
@@ -58,6 +60,12 @@
  *				has already been registered
  *	.19 joh	09-03-92	Use the correct routine in NIVXI
  *				for CPU030 trigger routing
+ *	.20 joh	09-30-92	split epvxiOpen() into epvxiOpen() and
+ *				epvxiDeviceVerify()
+ *	.21 joh	10-30-92	NI CPU030 trigger routing was failing
+ *				due to no entry for the 030 in the resman 
+ *				tables - it cant see itself in A16.
+ *				A work around was installed.
  *
  * To do
  * -----
@@ -2463,38 +2471,74 @@ unsigned long	driverConfigSize,
 void		(*pio_report_func)()
 )
 {
-	VXICSR		*pcsr;
 	VXIDI		*pvxidi;
 	void		*pconfig;
-#ifdef V5_vxWorks
-	UINT16		device_status;
-#else
-	unsigned short	device_status;
-#endif
-	int	status;
+	int		status;
 
-	if(la > NELEMENTS(epvxiLibDeviceList)){
-		return VXI_BAD_LA;
-	}
 
 	if(vxiDriverID == UNINITIALIZED_DRIVER_ID){
 		return VXI_NOT_OWNER;
 	}
 
+	status = epvxiDeviceVerify(la);
+	if(status<0){
+		return status;
+	}
+
 	pvxidi = epvxiLibDeviceList[la];
 	
-	if(pvxidi){
-		if(pvxidi->driverID == vxiDriverID){
-			return VXI_DEVICE_OPEN;
-		}
-		else if(pvxidi->driverID != NO_DRIVER_ATTACHED_ID){
-			return VXI_NOT_OWNER;
-		}
+	if(pvxidi->driverID == vxiDriverID){
+		return VXI_DEVICE_OPEN;
+	}
+	else if(pvxidi->driverID != NO_DRIVER_ATTACHED_ID){
+		return VXI_NOT_OWNER;
+	}
+
+	if(driverConfigSize){
+		pconfig = (void *)calloc(1,driverConfigSize);
+		if(!pconfig){
+			return VXI_NO_MEMORY;
+        	}
+		pvxidi->pDriverConfig = pconfig;
 	}
 	else{
+		pvxidi->pDriverConfig = NULL;
+	}
+
+	pvxidi->pio_report_func = pio_report_func;
+
+	pvxidi->driverID = vxiDriverID;
+
+	return VXI_SUCCESS;
+}
+
+
+/*
+ *
+ * epvxiDeviceVerify()
+ *
+ *
+ */
+int epvxiDeviceVerify(unsigned la)
+{
+	int		status;
+	VXICSR		*pcsr;
+	VXIDI		*pvxidi;
+#	ifdef V5_vxWorks
+	UINT16		device_status;
+#	else
+	unsigned short	device_status;
+#	endif
+
+	if(la > NELEMENTS(epvxiLibDeviceList)){
+		return VXI_BAD_LA;
+	}
+
+	pvxidi = epvxiLibDeviceList[la];
+	if(!pvxidi){
 		return VXI_UKN_DEVICE;
 	}
-	
+
 	/*
 	 * verify that the device exists
 	 * and check the self test in memory
@@ -2512,21 +2556,6 @@ void		(*pio_report_func)()
 	if(!VXIPASSEDSTATUS(device_status)){
 		return VXI_SELF_TEST_FAILED;
 	}	
-
-	if(driverConfigSize){
-		pconfig = (void *)calloc(1,driverConfigSize);
-		if(!pconfig){
-			return VXI_NO_MEMORY;
-        	}
-		pvxidi->pDriverConfig = pconfig;
-	}
-	else{
-		pvxidi->pDriverConfig = NULL;
-	}
-
-	pvxidi->pio_report_func = pio_report_func;
-
-	pvxidi->driverID = vxiDriverID;
 
 	return VXI_SUCCESS;
 }
@@ -2668,22 +2697,6 @@ unsigned	io_map		/* bits 0-5  correspond to trig 0-5	*/
 	int			status;
 	int			i;
 
-	plac = epvxiLibDeviceList[la];
-	if(plac){
-		if(!plac->st_passed){
-			return VXI_SELF_TEST_FAILED;
-		}
-	}
-	else{
-		return VXI_NO_DEVICE;
-	}
-
-	mask = (1<<VXI_N_ECL_TRIGGERS)-1;
-
-	if((enable_map|io_map) & (~mask)){
-		return VXI_BAD_TRIGGER;
-	}
-
 	/*
 	 * CPU030 trigger routing
 	 */
@@ -2732,6 +2745,23 @@ unsigned	io_map		/* bits 0-5  correspond to trig 0-5	*/
                 	return VXI_SUCCESS;
 		}
 	}
+
+	plac = epvxiLibDeviceList[la];
+	if(plac){
+		if(!plac->st_passed){
+			return VXI_SELF_TEST_FAILED;
+		}
+	}
+	else{
+		return VXI_NO_DEVICE;
+	}
+
+	mask = (1<<VXI_N_ECL_TRIGGERS)-1;
+
+	if((enable_map|io_map) & (~mask)){
+		return VXI_BAD_TRIGGER;
+	}
+
 
         pcsr = VXIBASE(la);
 
@@ -2806,22 +2836,6 @@ unsigned	io_map		/* bits 0-5  correspond to trig 0-5	*/
 	int			status;
 	int			i;
 
-	plac = epvxiLibDeviceList[la];
-	if(plac){
-		if(!plac->st_passed){
-			return VXI_SELF_TEST_FAILED;
-		}
-	}
-	else{
-		return VXI_NO_DEVICE;
-	}
-
-	mask = (1<<VXI_N_TTL_TRIGGERS)-1;
-
-	if(enable_map&mask || io_map&mask){
-		return VXI_BAD_TRIGGER;
-	}
-
 	/*
 	 * NI CPU030 trigger routing 
 	 */
@@ -2870,6 +2884,23 @@ unsigned	io_map		/* bits 0-5  correspond to trig 0-5	*/
                 	return VXI_SUCCESS;
 		}
 	}
+
+	plac = epvxiLibDeviceList[la];
+	if(plac){
+		if(!plac->st_passed){
+			return VXI_SELF_TEST_FAILED;
+		}
+	}
+	else{
+		return VXI_NO_DEVICE;
+	}
+
+	mask = (1<<VXI_N_TTL_TRIGGERS)-1;
+
+	if(enable_map&mask || io_map&mask){
+		return VXI_BAD_TRIGGER;
+	}
+
 
         pcsr = VXIBASE(la);
 

@@ -256,12 +256,44 @@ void epicsThreadCleanupWIN32 ()
 }
 
 /*
+ * this voodo copied directly from example in visual c++ 7 documentation
+ *
+ * Usage: SetThreadName (-1, "MainThread");
+ */
+void SetThreadName( DWORD dwThreadID, LPCSTR szThreadName )
+{
+    typedef struct tagTHREADNAME_INFO
+    {
+        DWORD dwType; // must be 0x1000
+        LPCSTR szName; // pointer to name (in user addr space)
+        DWORD dwThreadID; // thread ID (-1=caller thread)
+        DWORD dwFlags; // reserved for future use, must be zero
+    } THREADNAME_INFO;
+    THREADNAME_INFO info;
+    info.dwType = 0x1000;
+    info.szName = szThreadName;
+    info.dwThreadID = dwThreadID;
+    info.dwFlags = 0;
+
+    __try
+    {
+        RaiseException ( 0x406D1388, 0, 
+            sizeof(info)/sizeof(DWORD), (DWORD*)&info );
+    }
+    __except ( EXCEPTION_CONTINUE_EXECUTION )
+    {
+    }
+}
+
+/*
  * epicsWin32ThreadEntry()
  */
 static unsigned WINAPI epicsWin32ThreadEntry ( LPVOID lpParameter )
 {
     win32ThreadParam *pParm = (win32ThreadParam *) lpParameter;
     BOOL success;
+
+    SetThreadName ( pParm->id, pParm->pName );
 
     success = TlsSetValue ( tlsIndexThreadLibraryEPICS, pParm );
     if ( success ) {
@@ -273,7 +305,7 @@ static unsigned WINAPI epicsWin32ThreadEntry ( LPVOID lpParameter )
      */
     epicsParmCleanupWIN32 ( pParm );
 
-    return ( (unsigned) success ); /* this indirectly closes the thread handle */
+    return ( ( unsigned ) success ); /* this indirectly closes the thread handle */
 }
 
 /*
@@ -730,8 +762,7 @@ epicsShareFunc void epicsShareAPI epicsThreadOnceOsd (
 {
     BOOL success;
     DWORD stat;
-    int doit;
-
+    
     if ( ! win32ThreadInitOK ) {
         epicsThreadInit ();
         assert ( win32ThreadInitOK );

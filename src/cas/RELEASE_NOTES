@@ -62,4 +62,59 @@ new API:
 o The server tool must now use one of class casAsyncReadIO, casAsyncWriteIO, or
 casAsyncPVExistIO in place of casAsyncIO. See "casdef.h". 
 
+**** API Change ****
+o Virtual function prototype change:
+Before: "aitEnum casPV::bestExternalType()"
+After: "aitEnum casPV::bestExternalType() const"
+
+**** API Change ****
+o The following virtual functions were added to casPV:
+        //
+        // Returns the maximum bounding box for all present and
+        // future data stored within the PV.
+        //
+        // The routine "dimension()" returns the maximum
+        // number of dimensions in the hypercube (0=scaler,
+        // 1=array, 2=plane, 3=cube ...}.
+        //
+        // The routine "maxBound(dimension)" returns the
+        // maximum length of a particular dimension of the
+        // hypercube as follows:
+        //
+        //      dim equal to    0       1       3       ...
+        //      -------------------------------------------
+        // hypercube
+        // type
+        // ---------
+        //
+        // array                array
+        //                      length
+        //
+        // plane                x       y
+        //
+        // cube                 x       y       z
+        //
+        // .
+        // .
+        // .
+        //
+        // The default (base) "dimension()" returns zero (scaler).
+        // The default (base) "maxBound()" returns scaler bounds
+        // for all dimensions.
+        //
+        // Clients will see that the PV's data is scaler if
+        // these routines are not supplied in the derived class.
+        //
+        // If the "dimension" argument to maxBounds() is set to
+        // zero then the bound on the first dimension is being
+        // fetched. If the "dimension" argument to maxBound() is
+        // set to one then the bound on the second dimension
+        // are being fetched...
+        //
+        virtual unsigned maxDimension() const; // return zero if scaler
+        virtual aitIndex maxBound (unsigned dimension) const;
+
+The defaults in base class casPV implement identical behavior
+to the past if these routines are not supplied by the derived
+class.
 

@@ -73,6 +73,7 @@ static long init_record(pmbbi)
     default :
 	recGblRecordError(S_db_badField,(void *)pmbbi,
 		"devMbbiTestAsyn (init_record) Illegal INP field");
+        pmbbi->pact=TRUE;
 	return(S_db_badField);
     }
     return(0);

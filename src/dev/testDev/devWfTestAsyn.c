@@ -72,6 +72,7 @@ static long init_record(pwf)
     default :
 	recGblRecordError(S_db_badField,(void *)pwf,
 		"devWfTestAsyn (init_record) Illegal INP field");
+	pwf->pact=TRUE;
 	return(S_db_badField);
     }
     return(0);

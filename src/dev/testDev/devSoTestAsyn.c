@@ -71,6 +71,7 @@ static long init_record(pstringout)
     default :
 	recGblRecordError(S_db_badField,(void *)pstringout,
 		"devSoTestAsyn (init_record) Illegal OUT field");
+        pstringout->pact=TRUE;
 	return(S_db_badField);
     }
     return(0);

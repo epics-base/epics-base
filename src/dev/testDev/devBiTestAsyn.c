@@ -73,6 +73,7 @@ static long init_record(pbi)
     default :
 	recGblRecordError(S_db_badField,(void *)pbi,
 		"devBiTestAsyn (init_record) Illegal INP field");
+        pbi->pact=TRUE;
 	return(S_db_badField);
     }
     return(0);

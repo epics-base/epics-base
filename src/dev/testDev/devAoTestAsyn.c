@@ -72,6 +72,7 @@ static long init_record(pao)
     default :
 	recGblRecordError(S_db_badField,(void *)pao,
 		"devAoTestAsyn (init_record) Illegal OUT field");
+	pao->pact=TRUE;
 	return(S_db_badField);
     }
     return(2);

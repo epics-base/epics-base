@@ -69,6 +69,7 @@ static long init_record(phistogram)
     default :
 	recGblRecordError(S_db_badField,(void *)phistogram,
 	    "devHistogramTestAsyn (init_record) Illegal SVL field");
+        phistogram->pact=TRUE;
 	return(S_db_badField);
     }
     return(0);

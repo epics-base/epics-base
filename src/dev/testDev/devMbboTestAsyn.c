@@ -72,6 +72,7 @@ static long init_record(pmbbo)
     default :
 	recGblRecordError(S_db_badField,(void *)pmbbo,
 	    "devMbboTestAsyn (init_record) Illegal OUT field");
+        pmbbo->pact=TRUE;
 	return(S_db_badField);
     }
     return(2);

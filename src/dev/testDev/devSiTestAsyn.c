@@ -72,6 +72,7 @@ static long init_record(pstringin)
     default :
 	recGblRecordError(S_db_badField,(void *)pstringin,
 		"devSiTestAsyn (init_record) Illegal INP field");
+        pstringin->pact=TRUE;
 	return(S_db_badField);
     }
     return(0);

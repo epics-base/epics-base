@@ -60,6 +60,7 @@ static long init_record(struct aiRecord *pai)
     default :
         recGblRecordError(S_db_badField,(void *)pai,
             "devAiTestAsyn (init_record) Illegal INP field");
+        pai->pact=TRUE;
         return(S_db_badField);
     }
     return(0);

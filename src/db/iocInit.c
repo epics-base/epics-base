@@ -291,8 +291,9 @@ long initDatabase()
 			if(dbNameToAddr(name,&dbAddr) == 0) {
 			    /* show that refered to record has link. */
 			    /* See determine lock set below.*/
-			    if(plink->value.pv_link.process_passive
-				&& dbAddr.no_elements<=1)
+			    if( pfldDes->field_type!=DBF_INLINK
+				|| plink->value.pv_link.process_passive
+				|| dbAddr.no_elements>1 )
 			    	((struct dbCommon *)(dbAddr.precord))->lset= -1;
 			    plink->type = DB_LINK;
 			    plink->value.db_link.pdbAddr =
@@ -325,7 +326,7 @@ long initDatabase()
     /* Now determine lock sets*/
     /* When each record is examined lset has one of the following values
      * -1   Record is not in a set and at least one following record refers
-     *      to this record && no_elements<=1 && process_passive
+     *      to this record unless INLINK && no_elements<=1 && !process_passive
      *  0   record is not in a set and no following records refer to it.
      * >0   Record is already in a set
      */
@@ -380,8 +381,9 @@ long addToSet(precord,record_type,lookAhead,i,j,lset)
 	plink = (struct link *)((char *)precord + pfldDes->offset);
 	if(plink->type != DB_LINK) continue;
 	pdbAddr = (struct dbAddr *)(plink->value.db_link.pdbAddr);
-	if(!(plink->value.db_link.process_passive) || (pdbAddr->no_elements>1))
-		continue;
+	if( pfldDes->field_type==DBF_INLINK
+	    && !(plink->value.db_link.process_passive)
+	    && pdbAddr->no_elements<=1) continue;
 	pk = (struct dbCommon *)(pdbAddr->precord);
 	if(pk->lset > 0){
 		if(pk->lset == lset) continue; /*already in lock set*/
@@ -416,8 +418,9 @@ long addToSet(precord,record_type,lookAhead,i,j,lset)
 		    plink = (struct link *)((char *)pn + pfldDes->offset);
 		    if(plink->type != DB_LINK) continue;
 		    pdbAddr = (struct dbAddr *)(plink->value.db_link.pdbAddr);
-		    if(!(plink->value.db_link.process_passive)
-			|| (pdbAddr->no_elements>1)) continue;
+		    if( pfldDes->field_type==DBF_INLINK
+		        && !(plink->value.db_link.process_passive)
+			&& pdbAddr->no_elements<=1 ) continue;
 		    pk = (struct dbCommon *)(pdbAddr->precord);
 		    if(pk != precord) continue;
 		    if(pn->lset > 0) {

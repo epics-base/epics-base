@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.3  1996/12/06 22:32:10  jhill
+ * force virtual destructor
+ *
  * Revision 1.2  1996/11/02 00:54:11  jhill
  * many improvements
  *
@@ -44,10 +47,7 @@
 
 #include "resourceLib.h"
  
-
-class casEventMaskEntry;
 class casEventRegistry;
-
 
 class casEventMask {
         friend inline casEventMask operator| (const casEventMask &lhs, 
@@ -90,20 +90,6 @@ private:
         unsigned mask;
 };
 
-class casEventMaskEntry : public tsSLNode<casEventMaskEntry>, 
-	public casEventMask, public stringId {
-public:
-	casEventMaskEntry (casEventMask maskIn, const char *pName) : 
-		casEventMask (maskIn), stringId (pName)	{}
-	virtual ~casEventMaskEntry();
-	void show (unsigned level) 
-	{
-		this->casEventMask::show(level);
-		this->stringId::show(level);
-	}
-private:
-};
- 
 inline casEventMask operator| (const casEventMask &lhs, const casEventMask &rhs)
 {
         casEventMask result;

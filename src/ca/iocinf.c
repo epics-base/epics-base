@@ -48,6 +48,9 @@
 /*			kernels that support multicast			*/
 /*
  * $Log$
+ * Revision 1.84.4.2  2001/03/06 00:32:45  jhill
+ * fixed R3.13 for Linux's new socklen_t
+ *
  * Revision 1.84.4.1  1999/07/15 20:50:23  jhill
  * fixed infinite loop when ENOBUFS returned by sendto()
  *
@@ -1291,6 +1294,16 @@ LOCAL void udp_recv_msg(struct ioc_in_use *piiu)
 				UNLOCK;
        				return;
 			}
+#               endif
+#               ifdef _WIN32
+			        /*
+			         * Avoid ECONNRESET from disconnected socket bug
+			         * in win32
+			         */
+			        if (SOCKERRNO==SOCK_ECONNRESET) {
+				        UNLOCK;
+       				        return;
+			        }
 #               endif
 		ca_printf("Unexpected UDP failure %s\n", SOCKERRSTR);
     	}

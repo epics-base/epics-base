@@ -34,7 +34,72 @@
 #include <logClient.h>
 #include <iocsh.h>
 
-static void logReset (void);
+/*
+ * Architecture-dependent routines
+ */
+#ifdef __mcpu32__
+#include <m68360.h>
+static void
+logReset (void)
+{
+    int bit, rsr;
+    int i;
+    const char *cp;
+    char cbuf[80];
+
+    rsr = m360.rsr;
+    for (i = 0, bit = 0x80 ; bit != 0 ; bit >>= 1) {
+        if (rsr & bit) {
+            switch (bit) {
+            case 0x80:  cp = "RESETH*";         break;
+            case 0x40:  cp = "POWER-UP";        break;
+            case 0x20:  cp = "WATCHDOG";        break;
+            case 0x10:  cp = "DOUBLE FAULT";    break;
+            case 0x04:  cp = "LOST CLOCK";      break;
+            case 0x02:  cp = "RESET";           break;
+            case 0x01:  cp = "RESETS*";         break;
+            default:    cp = "??";              break;
+            }
+            i += sprintf (cbuf+i, cp); 
+            rsr &= ~bit;
+            if (rsr)
+                i += sprintf (cbuf+i, ", "); 
+            else
+                break;
+        }
+    }
+    syslog (LOG_NOTICE, "Startup after %s.", cbuf);
+    printf ("Startup after %s.\n", cbuf);
+    m360.rsr = ~0;
+}
+
+#else
+
+static void
+logReset (void)
+{
+    syslog (LOG_NOTICE, "Started.");
+}
+#endif
+
+#ifdef __i386__
+/*
+ * Remote debugger support
+ *
+ * i386-rtems-gdb -b 38400 example(binary from EPICS build -- not netbootable image!)
+ * (gdb) target remote /dev/ttyS0
+ */
+int enableRemoteDebugging = 0;  /* Global so gdb can set before download */
+static void
+initRemoteGdb(int ticksPerSecond)
+{
+    if (enableRemoteDebugging) {
+        init_remote_gdb();
+        rtems_task_wake_after(ticksPerSecond);
+        breakpoint();
+    }
+}
+#endif
 
 /*
  ***********************************************************************
@@ -208,6 +273,13 @@ Init (rtems_task_argument ignored)
     rtems_clock_get (RTEMS_CLOCK_GET_TICKS_PER_SECOND, &ticksPerSecond);
 
     /*
+     * Architecture-specific hooks
+     */
+#if defined(__i386__)
+    initRemoteGdb(ticksPerSecond);
+#endif
+
+    /*
      * Create a reasonable environment
      */
     initConsole ();
@@ -260,53 +332,3 @@ Init (rtems_task_argument ignored)
     printf ("***** IOC application terminating *****\n");
     exit (i);
 }
-
-/*
- * Architecture-dependent routines
- */
-#ifdef __mcpu32__
-
-#include <m68360.h>
-static void
-logReset (void)
-{
-    int bit, rsr;
-    int i;
-    const char *cp;
-    char cbuf[80];
-
-    rsr = m360.rsr;
-    for (i = 0, bit = 0x80 ; bit != 0 ; bit >>= 1) {
-        if (rsr & bit) {
-            switch (bit) {
-            case 0x80:  cp = "RESETH*";         break;
-            case 0x40:  cp = "POWER-UP";        break;
-            case 0x20:  cp = "WATCHDOG";        break;
-            case 0x10:  cp = "DOUBLE FAULT";    break;
-            case 0x04:  cp = "LOST CLOCK";      break;
-            case 0x02:  cp = "RESET";           break;
-            case 0x01:  cp = "RESETS*";         break;
-            default:    cp = "??";              break;
-            }
-            i += sprintf (cbuf+i, cp); 
-            rsr &= ~bit;
-            if (rsr)
-                i += sprintf (cbuf+i, ", "); 
-            else
-                break;
-        }
-    }
-    syslog (LOG_NOTICE, "Startup after %s.", cbuf);
-    printf ("Startup after %s.\n", cbuf);
-    m360.rsr = ~0;
-}
-
-#else
-
-static void
-logReset (void)
-{
-    syslog (LOG_NOTICE, "Started.");
-}
-
-#endif

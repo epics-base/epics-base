@@ -86,7 +86,8 @@ caStatus exPV::update(gdd &valueIn)
 		return cas;
 	}
 
-	this->pValue->setTimeStamp (&this->currentTime);
+	aitTimeStamp ts = this->currentTime;
+	this->pValue->setTimeStamp (&ts);
 	this->pValue->setStat (epicsAlarmNone);
 	this->pValue->setSevr (epicsSevNone);
 
@@ -120,15 +121,15 @@ void exScanTimer::expire ()
 //
 // exScanTimer::again()
 //
-osiBool exScanTimer::again() const
+bool exScanTimer::again() const
 {
-	return osiTrue;
+	return true;
 }
 
 //
 // exScanTimer::delay()
 //
-const osiTime exScanTimer::delay() const
+double exScanTimer::delay() const
 {
 	return pv.getScanPeriod();
 }
@@ -223,10 +224,11 @@ void exPV::initFT()
 			return;
 	}
 
-	exPV::ft.installReadFunc ("status", &exPV::getStatus);
-	exPV::ft.installReadFunc ("severity", &exPV::getSeverity);
-	exPV::ft.installReadFunc ("seconds", &exPV::getSeconds);
-	exPV::ft.installReadFunc ("nanoseconds", &exPV::getNanoseconds);
+	//
+	// time stamp, status, and severity are extracted from the
+	// GDD associated with the "value" application type.
+	//
+	exPV::ft.installReadFunc ("value", &exPV::getValue);
 	exPV::ft.installReadFunc ("precision", &exPV::getPrecision);
 	exPV::ft.installReadFunc ("graphicHigh", &exPV::getHighLimit);
 	exPV::ft.installReadFunc ("graphicLow", &exPV::getLowLimit);
@@ -237,80 +239,9 @@ void exPV::initFT()
 	exPV::ft.installReadFunc ("alarmHighWarning", &exPV::getHighLimit);
 	exPV::ft.installReadFunc ("alarmLowWarning", &exPV::getLowLimit);
 	exPV::ft.installReadFunc ("units", &exPV::getUnits);
-	exPV::ft.installReadFunc ("value", &exPV::getValue);
 	exPV::ft.installReadFunc ("enums", &exPV::getEnums);
 
 	exPV::hasBeenInitialized = 1;
-}
-
-//
-// exPV::getStatus()
-//
-caStatus exPV::getStatus(gdd &value)
-{
-	if (this->pValue!=NULL) {
-		value.put(this->pValue->getStat());
-	}
-	else {
-		value.put((aitUint16)epicsAlarmUDF);
-	}
-	return S_cas_success;
-}
-
-//
-// exPV::getSeverity()
-//
-caStatus exPV::getSeverity(gdd &value)
-{
-	if (this->pValue!=NULL) {
-		value.put(this->pValue->getSevr());
-	}
-	else {
-		value.put((aitUint16)epicsSevInvalid);
-	}
-	return S_cas_success;
-}
-
-//
-// exPV::getSeconds()
-//
-caStatus exPV::getSeconds(gdd &value)
-{
-	osiTime ts;
-	aitUint32 sec;
-
-	if (this->pValue!=NULL) {
-		this->pValue->getTimeStamp (&ts);
-	}
-	else {
-		ts = osiTime::getCurrent();
-	}
-
-	sec = ts.getSec();
-	value.put (sec);
-
-	return S_cas_success;
-}
-
-//
-// exPV::getNanoseconds()
-//
-caStatus exPV::getNanoseconds(gdd &value)
-{
-	osiTime ts;
-	aitUint32 nSec;
-
-	if (this->pValue!=NULL) {
-		this->pValue->getTimeStamp (&ts);
-	}
-	else {
-		ts = osiTime::getCurrent();
-	}
-
-	nSec = ts.getNSec();
-	value.put (nSec);
-
-	return S_cas_success;
 }
 
 //

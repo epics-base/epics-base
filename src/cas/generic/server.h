@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.5  1996/07/24 22:00:50  jhill
+ * added pushOnToEventQueue()
+ *
  * Revision 1.4  1996/07/09 22:51:14  jhill
  * store copy of msg in ctx
  *
@@ -322,7 +325,7 @@ private:
 // ndim == 0 => scaler
 // otherwise pIndexArray points to an array of ndim items
 //
-#define nDimScaler 0U
+#define nDimScalar 0U
 class casCtx {
 public:
 	casCtx() : 
@@ -808,7 +811,7 @@ private:
         caStatus channelCreateFailed (const caHdr *mp, caStatus createStatus);
 
 	caStatus writeArrayData();
-	caStatus writeScalerData();
+	caStatus writeScalarData();
 	caStatus writeString();
 };
 

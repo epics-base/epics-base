@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.5  1996/07/09 22:53:33  jhill
+ * init stat and sev in gdd
+ *
  * Revision 1.4  1996/07/01 19:56:14  jhill
  * one last update prior to first release
  *
@@ -1346,7 +1349,7 @@ caStatus casStrmClient::write()
 		status = this->writeArrayData();
 	}
 	else {
-		status = this->writeScalerData();
+		status = this->writeScalarData();
 	}
 
 	(*pPV)->endTransaction();
@@ -1356,9 +1359,9 @@ caStatus casStrmClient::write()
 
 
 //
-// casStrmClient::writeScalerData()
+// casStrmClient::writeScalarData()
 //
-caStatus casStrmClient::writeScalerData()
+caStatus casStrmClient::writeScalarData()
 {
 	gdd *pDD;
 	const caHdr *pHdr = this->ctx.getMsg();
@@ -1371,7 +1374,7 @@ caStatus casStrmClient::writeScalerData()
 		return S_cas_badType;
 	}
 
-	pDD = new gddScaler (gddAppType_value, type);
+	pDD = new gddScalar (gddAppType_value, type);
 	if (!pDD) {
 		return S_cas_noMemory;
 	}

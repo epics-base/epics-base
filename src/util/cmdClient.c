@@ -471,7 +471,7 @@ CX_CMD	**ppCxCmd;	/* IO ptr to pointer to command context */
 	    }
 	    else {
 		prompt = (*ppCxCmd)->prompt;
-		(*ppCxCmd)->prompt = "are you sure? ";
+		(*ppCxCmd)->prompt = "stop the server (y/n) ? ";
 		cmdRead(ppCxCmd, &pglCmdclCtx->cmdclInTaskInfo.stop);
 		if ((*ppCxCmd)->line[0] == 'y' || (*ppCxCmd)->line[0] == 'Y')
 		    (void)strcpy((*ppCxCmd)->line, "quit\n");

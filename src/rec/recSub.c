@@ -43,6 +43,7 @@
  * .11  07-21-92        jba     changed alarm limits for non val related fields
  * .12  08-06-92        jba     New algorithm for calculating analog alarms
  * .13  08-06-92        jba     monitor now posts events for changes in a-l
+ * .14  10-10-92        jba     replaced code with recGblGetLinkValue call
  */
 
 #include	<vxWorks.h>
@@ -404,33 +405,14 @@ struct subRecord *psub;
 {
         struct link     *plink; /* structure of the link field  */
         double           *pvalue;
-        long            options,nRequest;
+        long            options=0,nRequest=1;
         int             i;
 	long		status;
 
         for(i=0, plink=&psub->inpa, pvalue=&psub->a; i<ARG_MAX; i++, plink++, pvalue++) {
-		if (plink->type==CA_LINK)
-		{
-                    if (dbCaGetLink(plink))
-                    {
-                        recGblSetSevr(psub,LINK_ALARM,INVALID_ALARM);
-                        return(-1);
-                    } /* endif */
-		}
-		else
-		{
-		    if(plink->type==DB_LINK) 
-		    {
-			options=0;
-			nRequest=1;
-			status=dbGetLink(&plink->value.db_link,(struct dbCommon *)psub,DBR_DOUBLE,
-				pvalue,&options,&nRequest);
-			if(status!=0) {
-				recGblSetSevr(psub,LINK_ALARM,INVALID_ALARM);
-				return(-1);
-			}
-		    } /* endif */
-		} /* endif */
+		status=recGblGetLinkValue(plink,(void *)psub,DBR_DOUBLE,
+			pvalue,&options,&nRequest);
+		if (!RTN_SUCCESS(status)) return(-1);
         }
         return(0);
 }

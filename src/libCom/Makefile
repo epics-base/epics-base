@@ -161,6 +161,7 @@ SRCS += osdFindSymbol.c
 SRCS += osdInterrupt.c
 SRCS += osdPoolStatus.c
 SRCS += osdEnv.c
+osdEnv_CFLAGS_WIN32= -U__STDC__
 
 SRCS += osdThread.c
 SRCS += osdMutex.c

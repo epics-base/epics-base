@@ -146,6 +146,16 @@ static void dbPvdDumpCallFunc(const iocshArgBuf *args)
     dbPvdDump(pdbbase,args[1].ival);
 }
 
+/* dbReportDeviceConfig */
+static const iocshArg dbReportDeviceConfigArg0 = { "pdbbase",iocshArgPdbbase};
+static const iocshArg dbReportDeviceConfigArg1 = { "verbose",iocshArgInt};
+static const iocshArg * const dbReportDeviceConfigArgs[2] = {&dbReportDeviceConfigArg0,&dbReportDeviceConfigArg1};
+static const iocshFuncDef dbReportDeviceConfigFuncDef = {"dbReportDeviceConfig",2,dbReportDeviceConfigArgs};
+static void dbReportDeviceConfigCallFunc(const iocshArgBuf *args)
+{
+    dbReportDeviceConfig(pdbbase,args[1].ival);
+}
+
 void epicsShareAPI dbStaticRegister(void)
 {
     iocshRegister(&dbDumpPathFuncDef,dbDumpPathCallFunc);
@@ -156,7 +166,9 @@ void epicsShareAPI dbStaticRegister(void)
     iocshRegister(&dbDumpDeviceFuncDef,dbDumpDeviceCallFunc);
     iocshRegister(&dbDumpDriverFuncDef,dbDumpDriverCallFunc);
     iocshRegister(&dbDumpRegistrarFuncDef,dbDumpRegistrarCallFunc);
+    iocshRegister(&dbDumpFunctionFuncDef,dbDumpFunctionCallFunc);
     iocshRegister(&dbDumpVariableFuncDef,dbDumpVariableCallFunc);
     iocshRegister(&dbDumpBreaktableFuncDef,dbDumpBreaktableCallFunc);
     iocshRegister(&dbPvdDumpFuncDef,dbPvdDumpCallFunc);
+    iocshRegister(&dbReportDeviceConfigFuncDef,dbReportDeviceConfigCallFunc);
 }

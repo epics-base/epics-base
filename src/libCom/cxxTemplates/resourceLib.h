@@ -728,13 +728,13 @@ inline resTable<T,ID> & resTable<T,ID>::operator = ( const resTable & )
 }
 
 template <class T, class ID>
-resTableIterConst < T, ID > resTable<T,ID>::firstIter () const
+inline resTableIterConst < T, ID > resTable<T,ID>::firstIter () const
 {
     return resTableIterConst < T, ID > ( *this );
 }
 
 template <class T, class ID>
-resTableIter < T, ID > resTable<T,ID>::firstIter ()
+inline resTableIter < T, ID > resTable<T,ID>::firstIter ()
 {
     return resTableIter < T, ID > ( *this );
 }
@@ -758,7 +758,7 @@ inline resTableIter<T,ID>::resTableIter () :
 } 
 
 template < class T, class ID >
-void resTableIter<T,ID>::findNextEntry () 
+inline void resTableIter<T,ID>::findNextEntry () 
 {
     if ( this->pResTable ) {
         while ( this->index < this->pResTable->tableSize() ) {
@@ -852,7 +852,7 @@ inline resTableIterConst<T,ID>::resTableIterConst () :
 } 
 
 template < class T, class ID >
-void resTableIterConst<T,ID>::findNextEntry () 
+inline void resTableIterConst<T,ID>::findNextEntry () 
 {
     if ( this->pResTable ) {
         while ( this->index < this->pResTable->tableSize() ) {

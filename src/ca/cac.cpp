@@ -851,7 +851,12 @@ void cac::uninstallChannelPrivate ( nciu & chan )
     assert ( pChan = &chan );
     // flush prior to taking the callback lock
     this->flushIfRequired ( *chan.getPIIU() );
-    chan.getPIIU()->clearChannelRequest ( chan );
+    // if the claim reply has not returned yet then we will issue
+    // the clear chhannel request to the server when the claim reply
+    // arrives and there is no matching nciu in the client
+    if ( pChan->connected() ) {
+        chan.getPIIU()->clearChannelRequest ( chan.getSID(), chan.getCID() );
+    }
     chan.getPIIU()->detachChannel ( chan );
 }
 
@@ -956,7 +961,7 @@ void cac::ioCancel ( nciu &chan, const cacChannel::ioid &id )
     }
 }
 
-void cac::ioCancelPrivate ( nciu &chan, const cacChannel::ioid &id )
+void cac::ioCancelPrivate ( nciu & chan, const cacChannel::ioid & id )
 {   
     epicsAutoMutex autoMutex ( this->mutex );
     baseNMIU * pmiu = this->ioTable.remove ( id );
@@ -965,7 +970,9 @@ void cac::ioCancelPrivate ( nciu &chan, const cacChannel::ioid &id )
         class netSubscription *pSubscr = pmiu->isSubscription ();
         if ( pSubscr ) {
             this->flushIfRequired ( *chan.getPIIU() );
-            chan.getPIIU()->subscriptionCancelRequest ( chan, *pSubscr );
+            if ( chan.connected() ) {
+                chan.getPIIU()->subscriptionCancelRequest ( chan, *pSubscr );  
+            }
         }
         pmiu->destroy ( *this );
     }
@@ -1217,7 +1224,9 @@ void cac::privateDestroyAllIO ( nciu & chan )
         this->ioTable.remove ( *pIO );
         class netSubscription *pSubscr = pIO->isSubscription ();
         if ( pSubscr ) {
-            chan.getPIIU()->subscriptionCancelRequest ( chan, *pSubscr );
+            if ( chan.connected() ) {
+                chan.getPIIU()->subscriptionCancelRequest ( chan, *pSubscr );
+            }
         }
         {
             epicsAutoMutexRelease autoMutexRelease ( this->mutex );
@@ -1334,9 +1343,8 @@ bool cac::eventRespAction ( tcpiiu &iiu, const caHdrLargeArray &hdr, void *pMsgB
     int caStatus;
 
     /*
-     * m_postsize = 0 used to be a confirmation, but is
-     * now a noop because the IO block is immediately
-     * deleted
+     * m_postsize = 0 used to be a subscription cancel confirmation, 
+     * but is now a noop because the IO block is immediately deleted
      */
     if ( ! hdr.m_postsize ) {
         return true;
@@ -1510,8 +1518,8 @@ bool cac::accessRightsRespAction ( tcpiiu &, const caHdrLargeArray &hdr, void * 
     return true;
 }
 
-bool cac::claimCIURespAction ( tcpiiu &iiu, 
-                              const caHdrLargeArray &hdr, void * /*pMsgBdy */ )
+bool cac::claimCIURespAction ( tcpiiu & iiu, 
+           const caHdrLargeArray & hdr, void * /*pMsgBdy */ )
 {
     nciu * pChan;
 
@@ -1528,6 +1536,11 @@ bool cac::claimCIURespAction ( tcpiiu &iiu,
             }
             pChan->connect ( hdr.m_dataType, hdr.m_count, sidTmp, iiu.ca_v41_ok() );
             this->connectAllIO ( *pChan );
+        }
+        else if ( iiu.ca_v44_ok() ) {
+            // this indicates a claim response for a resource that does
+            // not exist in the client - so just remove it from the server
+            iiu.clearChannelRequest ( hdr.m_available, hdr.m_cid );
         }
     }
     // the callback lock is taken when a channel is unistalled or when
@@ -1550,13 +1563,16 @@ bool cac::verifyAndDisconnectChan ( tcpiiu & /* iiu */,
             return true;
         }
         this->disconnectAllIO ( *pChan, true );
-        this->pSearchTmr->resetPeriod ( 0.0 );
+        pChan->disconnect ( limboIIU );
+        {
+            epicsAutoMutexRelease autoMutexRelease ( this->mutex );
+            pChan->connectStateNotify ();
+            pChan->accessRightsNotify ();
+        }
         pChan->disconnect ( *this->pudpiiu );
         this->pudpiiu->attachChannel ( *pChan );
+        this->pSearchTmr->resetPeriod ( 0.0 );
     }
-
-    pChan->connectStateNotify ();
-    pChan->accessRightsNotify ();
 
     return true;
 }
@@ -1746,29 +1762,32 @@ void cac::uninstallIIU ( tcpiiu & iiu )
             pBHE->unregisterIIU ( iiu );
         }
     }
+    
+    // dont allow any channels to jump back onto
+    // this iiu while the lock is removed below
+    this->serverTable.remove ( iiu );
+
     assert ( this->pudpiiu );
     tsDLList < nciu > tmpList;
     iiu.uninstallAllChan ( tmpList );
     while ( nciu *pChan = tmpList.get () ) {
         this->disconnectAllIO ( *pChan, true );
-        pChan->disconnect ( *this->pudpiiu );
-        this->pudpiiu->attachChannel ( *pChan );
+        pChan->disconnect ( limboIIU );
         {
             epicsAutoMutexRelease autoMutexRelease ( this->mutex );
             pChan->connectStateNotify ();
             pChan->accessRightsNotify ();
         }
+        pChan->disconnect ( *this->pudpiiu );
+        this->pudpiiu->attachChannel ( *pChan );
     }
-
-    this->pSearchTmr->resetPeriod ( 0.0 );
-
-    this->serverTable.remove ( iiu );
 
     iiu.destroy ();
 
+    this->pSearchTmr->resetPeriod ( 0.0 );
+
     // signal iiu uninstal event so that cac can properly shut down
     this->iiuUninstal.signal();
-
 }
 
 void cac::preemptiveCallbackLock ()

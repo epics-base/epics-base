@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.1  1996/06/26 22:14:11  jhill
+ * added new src files
+ *
  * Revision 1.2  1996/06/21 02:03:40  jhill
  * added stdio.h include
  *
@@ -58,6 +61,12 @@ class osiTime {
 	static friend osiTime operator- 
 		(const osiTime &lhs, const osiTime &rhs);
 	static friend int operator>= 
+		(const osiTime &lhs, const osiTime &rhs);
+	static friend int operator> 
+		(const osiTime &lhs, const osiTime &rhs);
+	static friend int operator<=
+		(const osiTime &lhs, const osiTime &rhs);
+	static friend int operator< 
 		(const osiTime &lhs, const osiTime &rhs);
 public:
 	osiTime () : sec(0u), nSec(0u) {}
@@ -190,7 +199,53 @@ inline osiTime osiTime::operator-= (const osiTime &rhs)
 	return *this;
 }
 
-inline int operator>= (const osiTime &lhs, const osiTime &rhs)
+inline int operator <= (const osiTime &lhs, const osiTime &rhs)
+{
+	int	rc;
+//
+// Sun's CC -O generates bad code when this was rearranged 
+//
+	if (lhs.sec<rhs.sec) {
+		rc = 1;
+	}
+	else if (lhs.sec>rhs.sec) {
+		rc = 0;
+	}
+	else {
+		if (lhs.nSec<=rhs.nSec) {
+			rc = 1;
+		}
+		else {
+			rc = 0;
+		}
+	}
+	return rc;
+}
+
+inline int operator < (const osiTime &lhs, const osiTime &rhs)
+{
+	int	rc;
+//
+// Sun's CC -O generates bad code when this was rearranged 
+//
+	if (lhs.sec<rhs.sec) {
+		rc = 1;
+	}
+	else if (lhs.sec>rhs.sec) {
+		rc = 0;
+	}
+	else {
+		if (lhs.nSec<rhs.nSec) {
+			rc = 1;
+		}
+		else {
+			rc = 0;
+		}
+	}
+	return rc;
+}
+
+inline int operator >= (const osiTime &lhs, const osiTime &rhs)
 {
 	int	rc;
 //
@@ -218,6 +273,29 @@ inline int operator>= (const osiTime &lhs, const osiTime &rhs)
 	}
 	else {
 		if (lhs.nSec>=rhs.nSec) {
+			rc = 1;
+		}
+		else {
+			rc = 0;
+		}
+	}
+	return rc;
+}
+
+inline int operator > (const osiTime &lhs, const osiTime &rhs)
+{
+	int	rc;
+//
+// Sun's CC -O generates bad code when this was rearranged 
+//
+	if (lhs.sec>rhs.sec) {
+		rc = 1;
+	}
+	else if (lhs.sec<rhs.sec) {
+		rc = 0;
+	}
+	else {
+		if (lhs.nSec>rhs.nSec) {
 			rc = 1;
 		}
 		else {

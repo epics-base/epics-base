@@ -62,6 +62,12 @@
  *
  *
  * $Log$
+ * Revision 1.27  1994/12/14  22:29:14  winans
+ * Removed DMAC command chaining structure(s) from the ibLink
+ * structure so they can be malloc'd seperately.  This keeps
+ * the usage of A24 space restricted to ONLY those structures
+ * that have to be there.
+ *
  * Revision 1.26  1994/12/12  16:03:00  winans
  * Rewrote the init code so that it always returns a zero (don't kill the
  * startup.cmd file.)  It is possible that this could cause some confusion
@@ -151,11 +157,11 @@ STATIC	char	*ram_base;		/* Base of the ram on the CPU board */
 STATIC  int timeoutSquelch = 0;	/* Used to quiet timeout msgs during polling */
 
 /* DMA timing bus error problem debugging in niPhysIo */
-int     ibDmaDebug = 0;         /* Turns on DMA debug messages from this driver */
-int     ibDmaTimingError = 0;           /* count "bad memProbes"/call of niPhysIo */
-int     ibDmaTimingErrorTotal = 0;      /* count total "bad memProbes" in niPhysIo */
-int     ibDmaMaxError = 0 ;             /* max # bad calls per call of niPhysIo */
-STATIC char     testWrite;              /* test char to write to 1014 card */
+int	ibDmaDebug = 0;			/* Turns on DMA debug messages from this driver */
+int	ibDmaTimingError = 0;	/* count "bad memProbes"/call of niPhysIo */
+int	ibDmaTimingErrorTotal = 0;	/* count total "bad memProbes" in niPhysIo */
+int	ibDmaMaxError = 0;		/* max # bad calls per call of niPhysIo */
+STATIC char     testWrite;	/* test char to write to 1014 card */
 
 
 /******************************************************************************
@@ -221,12 +227,7 @@ struct	niLink {
   WDOG_ID	watchDogId;	/* watchdog for timeouts */
   struct	ibregs	*ibregs;/* pointer to board registers */
 
-#if 0
-  char		cc_byte;
-  struct	cc_ary	cc_array;
-#else
   DmaStuffStruct *DmaStuff;
-#endif
 
   char		r_isr1;
   char		r_isr2;
@@ -1094,6 +1095,7 @@ int	time;		/* time to wait on the DMA operation */
   else
     b->ch1.ccr = D_EINT;
 
+#ifdef INCLUDE_LANL_DMA_TIMING_CHECKER
    /*************************************************************************
    *    DMAC BUS ERROR CATCH
    * The following lines are included because of a possible VME protocol
@@ -1115,9 +1117,11 @@ int	time;		/* time to wait on the DMA operation */
     logMsg("DMA timing: error = %d, total = %d, max = %d\n",
         ibDmaTimingError, ibDmaTimingErrorTotal, ibDmaMaxError);
   /***************************************************************************/
+#endif
 
   b->ch0.ccr = D_SRT;
 
+#ifdef INCLUDE_LANL_DMA_TIMING_CHECKER
    /****************************
    *    DMAC BUS ERROR CATCH
    *****************************/
@@ -1131,6 +1135,7 @@ int	time;		/* time to wait on the DMA operation */
     logMsg("DMA timing: error = %d, total = %d, max = %d\n",
         ibDmaTimingError, ibDmaTimingErrorTotal, ibDmaMaxError);
   /***************************************************************************/
+#endif
 
   b->imr2 = w_imr2;				/* this must be done last */
 
@@ -2041,102 +2046,6 @@ int     length; 	/* number of bytes to write out from the data buffer */
   return(ERROR);
 }
 
-#ifdef INCLUDE_HIDEOS_INTERFACE
-/******************************************************************************
- *
- * Interface functions for HiDEOS access.
- *
- ******************************************************************************/
-/******************************************************************************
- *
- * Read up to <length> bytes into <*buffer>.
- *
- ******************************************************************************/
-STATIC int
-HideosGpibRead(struct ibLink *pibLink, int device, char *buffer, int length, int time)
-{
-	logMsg("HideosGpibRead() entered\n");
-	return(bytes read | error);
-}
-/******************************************************************************
- *
- * Write <length> bytes from <*buffer> in data mode.
- *
- ******************************************************************************/
-STATIC int
-HideosGpibWrite(struct ibLink *pibLink, int device, char *buffer, int length, int time)
-{
-	logMsg("HideosGpibWrite() entered\n");
-	return(bytes sent | error);
-}
-/******************************************************************************
- *
- * Write <length> bytes from <*buffer> in command mode.
- *
- ******************************************************************************/
-STATIC int
-HideosGpibCmd(struct ibLink *pibLink, char *buffer, int length)
-{
-	logMsg("HideosGpibCmd() entered\n");
-	return(bytes sent | error);
-}
-/******************************************************************************
- *
- * Verify that the given GPIB port exists.
- *
- ******************************************************************************/
-STATIC int
-HideosGpibCheckLink(int link, int bug)
-{
-	logMsg("HideosGpibCheckLink() entered\n");
-	return(OK | ERROR);
-}
-/******************************************************************************
- *
- * Prevent SRQs from being polled on a given GPIB port.
- *
- ******************************************************************************/
-STATIC int
-HideosGpibSrqPollInhibit(int link, int bug, int gpibAddr)
-{
-	logMsg("HideosGpibSrqPollInhibit() entered -- NOT SUPPORTED YET\n");
-	return(ERROR);
-}
-/******************************************************************************
- *
- * Generate a GPIB link for a HiDEOS port.
- *
- ******************************************************************************/
-STATIC int
-HideosGpibGenLink(int link, int bug)
-{
-	logMsg("HideosGpibGenLink() entered\n");
-	return(ibLinkStart() | ERROR);
-}
-/******************************************************************************
- *
- * Handle a GPIB IOCTL call.
- *
- ******************************************************************************/
-STATIC int
-HideosGpibIoctl(int link, int bug, int cmd, int v, caddr_t p)
-{
-	logMsg("HideosGpibIoctl() entered\n");
-	return(OK | ERROR);
-}
-/******************************************************************************
- *
- * Given the port information, return a link structure.
- *
- ******************************************************************************/
-struct	bbIbLink *
-HideosGpibFindLink(int link, int bug)
-{
-	logMsg("HideosGpibFindLink() entered\n");
-	return(bbIbLink* | NULL);
-}
-#endif
-
 /******************************************************************************
  *
  * These are the BitBus architecture specific functions.
@@ -2674,9 +2583,9 @@ IBHistDump(int type, int link, int bug)
 }
 #endif
 
-#if 1
+#if 0
 /* A way to stop the CPU when idle... run from shell at prio 250 */
-BigFFT()
+cpuStopperThingy()
 {
   while (1)
   	asm(" stop #0x3000");

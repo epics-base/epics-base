@@ -64,6 +64,13 @@
 #include "virtualCircuit.h"
 #include "db_access.h" // for dbr_short_t etc
 
+// nill message alignment pad bytes
+const char cacNillBytes [] = 
+{ 
+    0, 0, 0, 0,
+    0, 0, 0, 0
+};
+
 comQueSend::comQueSend ( wireSendAdapter & wireIn ) :
     wire ( wireIn ), nBytesPending ( 0u )
 {
@@ -102,32 +109,32 @@ void comQueSend::clearUncommitted ()
 
 void comQueSend::copy_dbr_string ( const void *pValue, unsigned nElem )
 {
-    this->copyIn ( static_cast <const dbr_string_t *> ( pValue ), nElem );
+    this->push ( static_cast <const dbr_string_t *> ( pValue ), nElem );
 }
 
 void comQueSend::copy_dbr_short ( const void *pValue, unsigned nElem )
 {
-    this->copyIn ( static_cast <const dbr_short_t *> ( pValue ), nElem );
+    this->push ( static_cast <const dbr_short_t *> ( pValue ), nElem );
 }
 
 void comQueSend::copy_dbr_float ( const void *pValue, unsigned nElem )
 {
-    this->copyIn ( static_cast <const dbr_float_t *> ( pValue ), nElem );
+    this->push ( static_cast <const dbr_float_t *> ( pValue ), nElem );
 }
 
 void comQueSend::copy_dbr_char ( const void *pValue, unsigned nElem )
 {
-    this->copyIn ( static_cast <const dbr_char_t *> ( pValue ), nElem );
+    this->push ( static_cast <const dbr_char_t *> ( pValue ), nElem );
 }
 
 void comQueSend::copy_dbr_long ( const void *pValue, unsigned nElem )
 {
-    this->copyIn ( static_cast <const dbr_long_t *> ( pValue ), nElem );
+    this->push ( static_cast <const dbr_long_t *> ( pValue ), nElem );
 }
 
 void comQueSend::copy_dbr_double ( const void *pValue, unsigned nElem )
 {
-    this->copyIn ( static_cast <const dbr_double_t *> ( pValue ), nElem );
+    this->push ( static_cast <const dbr_double_t *> ( pValue ), nElem );
 }
 
 const comQueSend::copyFunc_t comQueSend::dbrCopyVector [39] = {
@@ -198,3 +205,90 @@ void comQueRecv::popString ( epicsOldString *pStr )
         pStr[0][i] = this->popInt8 ();
     }
 }
+
+void comQueSend::commitMsg ()
+{
+    while ( this->pFirstUncommited.valid() ) {
+        this->nBytesPending += this->pFirstUncommited->uncommittedBytes ();
+        this->pFirstUncommited->commitIncomming ();
+        this->pFirstUncommited++;
+    }
+}
+
+void comQueSend::insertRequestHeader (
+    ca_uint16_t request, ca_uint32_t payloadSize, 
+    ca_uint16_t dataType, ca_uint32_t nElem, ca_uint32_t cid, 
+    ca_uint32_t requestDependent, bool v49Ok )
+{
+    this->beginMsg ();
+    if ( payloadSize < 0xffff && nElem < 0xffff ) {
+        this->pushUInt16 ( request ); 
+        this->pushUInt16 ( static_cast < ca_uint16_t > ( payloadSize ) ); 
+        this->pushUInt16 ( dataType ); 
+        this->pushUInt16 ( static_cast < ca_uint16_t > ( nElem ) ); 
+        this->pushUInt32 ( cid ); 
+        this->pushUInt32 ( requestDependent );  
+    }
+    else if ( v49Ok ) {
+        this->pushUInt16 ( request ); 
+        this->pushUInt16 ( 0xffff ); 
+        this->pushUInt16 ( dataType ); 
+        this->pushUInt16 ( 0u ); 
+        this->pushUInt32 ( cid ); 
+        this->pushUInt32 ( requestDependent );  
+        this->pushUInt32 ( payloadSize ); 
+        this->pushUInt32 ( nElem ); 
+    }
+    else {
+        throw cacChannel::outOfBounds ();
+    }
+}
+
+void comQueSend::insertRequestWithPayLoad (
+    ca_uint16_t request, unsigned dataType, ca_uint32_t nElem, 
+    ca_uint32_t cid, ca_uint32_t requestDependent, const void * pPayload,
+    bool v49Ok )
+{
+    if ( ! this->dbr_type_ok ( dataType ) ) {
+        throw cacChannel::badType();
+    }
+    ca_uint32_t size;
+    bool stringOptim;
+    if ( dataType == DBR_STRING && nElem == 1 ) {
+        const char *pStr = static_cast < const char * >  ( pPayload );
+        size = strlen ( pStr ) + 1u;
+        if ( size > MAX_STRING_SIZE ) {
+            throw cacChannel::outOfBounds();
+        }
+        stringOptim = true;
+    }
+    else {
+        unsigned maxBytes;
+        if ( v49Ok ) {
+            maxBytes = 0xffffffff;
+        }
+        else {
+            maxBytes = MAX_TCP - 16u; // allow space for protocol header
+        }
+        unsigned maxElem = ( maxBytes - dbr_size[dataType] ) / dbr_value_size[dataType];
+        if ( nElem >= maxElem ) {
+            throw cacChannel::outOfBounds();
+        }
+        size = dbr_size_n ( dataType, nElem );
+        stringOptim = false;
+    }
+    ca_uint32_t payloadSize = CA_MESSAGE_ALIGN ( size );
+    this->insertRequestHeader ( request, payloadSize, 
+        static_cast <ca_uint16_t> ( dataType ), 
+        nElem, cid, requestDependent, v49Ok );
+    if ( stringOptim ) {
+        this->pushString ( static_cast < const char * > ( pPayload ), size );  
+    }
+    else {
+        this->push_dbr_type ( dataType, pPayload, nElem );  
+    }
+    // set pad bytes to nill
+    this->pushString ( cacNillBytes, payloadSize - size );
+    this->commitMsg ();
+}
+

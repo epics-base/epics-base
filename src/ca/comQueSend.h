@@ -44,6 +44,14 @@ public:
     void pushUInt32 ( const ca_uint32_t value );
     void pushFloat32 ( const ca_float32_t value );
     void pushString ( const char *pVal, unsigned nChar );
+    void insertRequestHeader (
+        ca_uint16_t request, ca_uint32_t payloadSize, 
+        ca_uint16_t dataType, ca_uint32_t nElem, ca_uint32_t cid, 
+        ca_uint32_t requestDependent, bool v49Ok );
+    void insertRequestWithPayLoad (
+        ca_uint16_t request, unsigned dataType, ca_uint32_t nElem, 
+        ca_uint32_t cid, ca_uint32_t requestDependent, const void * pPayload,
+        bool v49Ok );
     void push_dbr_type ( unsigned type, const void *pVal, unsigned nElem );
     comBuf * popNextComBufToSend ();
 private:
@@ -68,19 +76,19 @@ private:
     // class member template function definition
     //
     template < class T >
-    inline void copyIn ( const T *pVal, const unsigned nElem )
+    inline void push ( const T *pVal, const unsigned nElem )
     {
         comBuf * pLastBuf = this->bufs.last ();
         unsigned nCopied;
         if ( pLastBuf ) {
-            nCopied = pLastBuf->copyIn ( pVal, nElem );
+            nCopied = pLastBuf->push ( pVal, nElem );
         }
         else {
             nCopied = 0u;
         }
         while ( nElem > nCopied ) {
             comBuf * pComBuf = new comBuf;
-            unsigned nNew = pComBuf->copyIn ( &pVal[nCopied], nElem - nCopied );
+            unsigned nNew = pComBuf->push ( &pVal[nCopied], nElem - nCopied );
             nCopied += nNew;
             this->bufs.add ( *pComBuf );
             if ( ! this->pFirstUncommited.valid() ) {
@@ -94,25 +102,26 @@ private:
     // class member template function definition
     //
     template < class T >
-    inline void copyIn ( const T &val )
+    inline void push ( const T & val )
     {
-        comBuf *pComBuf = this->bufs.last ();
+        comBuf * pComBuf = this->bufs.last ();
         if ( pComBuf ) {
-            if ( pComBuf->copyIn ( &val, 1u ) >= 1u ) {
+            if ( pComBuf->push ( val ) ) {
                 return;
             }
         }
         pComBuf = new comBuf;
-        assert ( pComBuf->copyIn ( &val, 1u ) == 1u );
+        assert ( pComBuf->push ( val ) );
         this->bufs.add ( *pComBuf );
         if ( ! this->pFirstUncommited.valid() ) {
             this->pFirstUncommited = this->bufs.lastIter ();
         }
-        return;
     }
 	comQueSend ( const comQueSend & );
 	comQueSend & operator = ( const comQueSend & );
 };
+
+extern const char cacNillBytes[];
 
 inline bool comQueSend::dbr_type_ok ( unsigned type )
 {
@@ -127,22 +136,22 @@ inline bool comQueSend::dbr_type_ok ( unsigned type )
 
 inline void comQueSend::pushUInt16 ( const ca_uint16_t value )
 {
-    this->copyIn ( value );
+    this->push ( value );
 }
 
 inline void comQueSend::pushUInt32 ( const ca_uint32_t value )
 {
-    this->copyIn ( value );
+    this->push ( value );
 }
 
 inline void comQueSend::pushFloat32 ( const ca_float32_t value )
 {
-    this->copyIn ( value );
+    this->push ( value );
 }
 
 inline void comQueSend::pushString ( const char *pVal, unsigned nChar )
 {
-    this->copyIn ( pVal, nChar );
+    this->push ( pVal, nChar );
 }
 
 // it is assumed that dbr_type_ok() was called prior to calling this routine
@@ -173,15 +182,6 @@ inline void comQueSend::beginMsg ()
         this->clearUncommitted ();
     }
     this->pFirstUncommited = this->bufs.lastIter ();
-}
-
-inline void comQueSend::commitMsg ()
-{
-    while ( this->pFirstUncommited.valid() ) {
-        this->nBytesPending += this->pFirstUncommited->uncommittedBytes ();
-        this->pFirstUncommited->commitIncomming ();
-        this->pFirstUncommited++;
-    }
 }
 
 #endif // ifndef comQueSendh

@@ -75,7 +75,7 @@
 #define SNDBEG(STRUCTURE) \
 SND_BEG(STRUCTURE, &iiu[chix->iocix])
 
-#define SND_BEG(STRUCTURE, PIIU)\
+#define SND_BEG(STRUCTURE, PIIU) \
 LOCK SND_BEG_NOLOCK(STRUCTURE,PIIU)
 
 #define SND_BEG_NOLOCK(STRUCTURE,PIIU) \
@@ -124,8 +124,8 @@ LOCK SNDBEG_VARIABLE_NOLOCK(POSTSIZE)
     return ECA_BADCHID; \
 }
 
-#define INITCHK\
-if(!ca_static)\
+#define INITCHK \
+if(!ca_static) \
   ca_task_initialize();
 
 

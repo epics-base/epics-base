@@ -71,6 +71,9 @@
  *			we eliminate delete ambiguity (chance of the same
  *			being reused).
  * $Log$
+ * Revision 1.26  1997/08/05 00:37:02  jhill
+ * removed warnings
+ *
  * Revision 1.25  1997/06/25 05:45:51  jhill
  * cleaned up pc port
  *
@@ -262,19 +265,19 @@ epicsShareFunc fdctx * epicsShareAPI fdmgr_init(void)
 	}
 
 #	if defined(vxWorks)
-		pfdctx->lock = semMCreate (SEM_DELETE_SAFE);
+		pfdctx->lock = semMCreate (SEM_DELETE_SAFE|SEM_INVERSION_SAFE|SEM_Q_PRIORITY);
 		if (pfdctx->lock == NULL){
 			return NULL;
 		}
-		pfdctx->fdmgr_pend_event_lock = semMCreate (SEM_DELETE_SAFE);
+		pfdctx->fdmgr_pend_event_lock = semMCreate (SEM_DELETE_SAFE|SEM_INVERSION_SAFE|SEM_Q_PRIORITY);
 		if (pfdctx->fdmgr_pend_event_lock == NULL){
 			return NULL;
 		}
-		pfdctx->expired_alarm_lock = semMCreate (SEM_DELETE_SAFE);
+		pfdctx->expired_alarm_lock = semMCreate (SEM_DELETE_SAFE|SEM_INVERSION_SAFE|SEM_Q_PRIORITY);
 		if (pfdctx->expired_alarm_lock == NULL) {
 			return NULL;
 		}
-		pfdctx->fd_handler_lock = semMCreate (SEM_DELETE_SAFE);
+		pfdctx->fd_handler_lock = semMCreate (SEM_DELETE_SAFE|SEM_INVERSION_SAFE|SEM_Q_PRIORITY);
 		if (pfdctx->fd_handler_lock == NULL) {
 			return NULL;
 		}
@@ -843,9 +846,9 @@ struct timeval 			*ptimeout
 		return labor_performed;
 	}
 	else if(status < 0){
-		if(SOCKERRNO == EINTR)
+		if(SOCKERRNO == SOCK_EINTR)
 			;
-		else if(SOCKERRNO == EINVAL)
+		else if(SOCKERRNO == SOCK_EINVAL)
 			fdmgrPrintf(	
 				"fdmgr: bad select args ? %d %d %d\n",
 				pfdctx->maxfd,
@@ -854,7 +857,7 @@ struct timeval 			*ptimeout
 		else
 			fdmgrPrintf(	
 				"fdmgr: error from select %d=%s\n",
-				SOCKERRNO, strerror(SOCKERRNO));
+				SOCKERRNO, SOCKERRSTR);
 
 		return labor_performed;
 	}

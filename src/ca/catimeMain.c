@@ -1,5 +1,6 @@
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "caDiagnostics.h"
 
@@ -7,7 +8,7 @@ static const unsigned defaultIterations = 10000u;
 
 int main(int argc, char **argv)
 {
-    const char *pUsage = "<channel name> [<channel count> [<if 2nd arg present append number to pv name>]]";
+    const char *pUsage = "<channel name> [<channel count> [<if 3rd arg present append number to pv name>]]";
 
     if ( argc > 1 ) {
         char *pname = argv[1];

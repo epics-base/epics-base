@@ -95,13 +95,12 @@ casProcCond casEventSys::process ()
 	casProcCond	cond = casProcOk;
 	unsigned long nAccepted = 0u;
 
-    {
-
 	while ( ! this->dontProcess ) {
+        casEvent * pEvent;
 
         {
             epicsGuard < epicsMutex > guard ( this->mutex );
-		    casEvent * pEvent = this->eventLogQue.get ();
+		    pEvent = this->eventLogQue.get ();
         }
 
 		if ( pEvent == NULL ) {

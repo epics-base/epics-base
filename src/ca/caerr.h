@@ -143,6 +143,7 @@
 #define ECA_CHANDESTROY     DEFMSG(CA_K_WARNING,   55)
 #define ECA_BADPRIORITY     DEFMSG(CA_K_ERROR,     56)
 #define ECA_NOTTHREADED     DEFMSG(CA_K_ERROR,     57)
+#define ECA_OLDCLIENT       DEFMSG(CA_K_WARNING,   58)
 
 #ifndef CA_ERROR_GLBLSOURCE
 epicsShareExtern READONLY char  *ca_message_text[];
@@ -160,7 +161,7 @@ READONLY char   *ca_message_text[]
 "Unable to allocate additional dynamic memory",
 "Unknown IO channel",
 "Record field specified inappropriate for channel specified",
-"The requested transfer is greater than available memory or EPICS_CA_MAX_ARRAY_BYTES",
+"The requested data transfer is greater than available memory or EPICS_CA_MAX_ARRAY_BYTES",
 
 "User specified timeout on IO operation expired",
 "Sorry, that feature is planned but not supported at this time",
@@ -186,7 +187,7 @@ READONLY char   *ca_message_text[]
 "Unable to initialize without the vxWorks VX_FP_TASK task option set",
 "Event queue overflow has prevented first pass event after event add",
 
-"bad event subscription identifier",
+"Bad event subscription identifier",
 "Remote channel has new network address",
 "New or resumed network connection",
 "Specified task isnt a member of a CA context",
@@ -216,10 +217,10 @@ READONLY char   *ca_message_text[]
 "Thread is already attached to a client context",
 "No support in service",
 
-"User destroyed channel"
-"Priority out of range"
-"Preemptive callback not enabled - additional threads may not join"
-
+"User destroyed channel",
+"Priority out of range",
+"Preemptive callback not enabled - additional threads may not join",
+"Client's protocol revision does not support transfers exceeding 16k bytes"
 };
 #endif
 

@@ -248,7 +248,7 @@ cac::~cac ()
     {
         epicsGuard < callbackMutex > cbGuard ( this->cbMutex );
         epicsGuard < cacMutex > guard ( this->mutex );
-        resTableIter < tcpiiu, caServerID > iter = this->serverTable.firstIter ();
+        tsDLIter < tcpiiu > iter = this->serverList.firstIter ();
         while ( iter.valid() ) {
             // this causes a clean shutdown to occur
             iter->removeAllChannels ( cbGuard, guard, *this );
@@ -262,7 +262,7 @@ cac::~cac ()
     // this will block for oustanding sends to go out so dont 
     // hold a lock while waiting
     //
-    while ( this->serverTable.numEntriesInstalled() ) {
+    while ( this->serverList.count() ) {
         this->iiuUninstall.wait ();
     }
 
@@ -323,13 +323,17 @@ unsigned cac::highestPriorityLevelBelow ( unsigned priority )
 void cac::flushRequest ()
 {
     epicsGuard < cacMutex > guard ( this->mutex );
-    this->serverTable.traverse ( & tcpiiu::flushRequest );
+    tsDLIter < tcpiiu > iter = this->serverList.firstIter ();
+    while ( iter.valid() ) {
+        iter->flushRequest ();
+        iter++;
+    }
 }
 
 unsigned cac::connectionCount () const
 {
     epicsGuard < cacMutex > guard ( this->mutex );
-    return this->serverTable.numEntriesInstalled ();
+    return this->serverList.count ();
 }
 
 void cac::show ( unsigned level ) const
@@ -567,7 +571,8 @@ bool cac::lookupChannelAndTransferToTCP (
                     }
                 }
                 this->serverTable.add ( *pnewiiu );
-                pBHE->registerIIU ( *pnewiiu );
+                this->serverList.add ( *pnewiiu );
+                pBHE->registerIIU ( *pnewiiu, currentTime );
                 piiu = pnewiiu.release ();
                 newIIU = true;
             }
@@ -1538,7 +1543,7 @@ void cac::privateUninstallIIU ( epicsGuard < callbackMutex > & cbGuard, tcpiiu &
     osiSockAddr addr = iiu.getNetworkAddress();
     if ( addr.sa.sa_family == AF_INET ) {
         inetAddrID tmp ( addr.ia );
-        bhe *pBHE = this->beaconTable.lookup ( tmp );
+        bhe * pBHE = this->beaconTable.lookup ( tmp );
         if ( pBHE ) {
             pBHE->unregisterIIU ( iiu );
         }
@@ -1548,6 +1553,7 @@ void cac::privateUninstallIIU ( epicsGuard < callbackMutex > & cbGuard, tcpiiu &
     iiu.removeAllChannels ( cbGuard, guard, *this );
 
     this->serverTable.remove ( iiu );
+    this->serverList.remove ( iiu );
 
     // signal iiu uninstal event so that cac can properly shut down
     this->iiuUninstall.signal();

@@ -56,6 +56,7 @@
 #include	<devSup.h>
 #include	<rec/dbCommon.h>
 #include	<sdrHeader.h>
+#include	<drvTS.h>
 
 extern struct dbBase *pdbBase;
 
@@ -338,19 +339,25 @@ void recGblFwdLink(void *precord)
     pdbc->putf = FALSE;
 }
 
-void recGblGetTimeStamp(void *precord)
+
+void recGblGetTimeStamp(void* prec)
 {
-    struct dbCommon *pdbc = precord;
-    long	status;
-    long	nRequest=1;
-    long	options=0;
-
-    if(pdbc->tsel.type!=CONSTANT)
-    	recGblGetLinkValue(&(pdbc->tsel),precord,
-		DBF_SHORT,&(pdbc->tse),&options,&nRequest);
-    /* the following call must be changed for new event system*/
-    tsLocalTime(&pdbc->time);
+    struct dbCommon* pr = (struct dbCommon*)prec;
+    long status;
+    long nRequest=1;
+    long options=0;
+ 
+    if(pr->tsel.type!=CONSTANT)
+    {
+        recGblGetLinkValue(&(pr->tsel),(void*)pr,
+            DBR_SHORT,&(pr->tse),&options,&nRequest);
+ 
+        TSgetTimeStamp(pr->tse,(struct timespec*)&pr->time);
+    }
+    else
+        TSgetTimeStamp(pr->tsel.value.value,(struct timespec*)&pr->time);
 }
+
 
 static void getConRangeValue(field_type,range,plimit)
      short            field_type;
@@ -447,7 +454,7 @@ double		*prangeValue;
                 return;
         }
         /* get &dbAddr for range VAR field */
-        name[PVNAME_SZ+1] = 0;
+        name[PVNAME_SZ] = 0;
         strncpy(name,precord->name,PVNAME_SZ);
 	n=strlen(name);
 	for(i=n; (i>0 && name[i]==' '); i--) name[i]=0;

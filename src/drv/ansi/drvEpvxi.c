@@ -2507,7 +2507,7 @@ unsigned	servant_area
 			}
 			else{
 				printf(
-					"VXI resman: gd resp %x\n",
+					"VXI resman: gd resp %lx\n",
 					response);
 			}
 		}
@@ -2842,7 +2842,7 @@ VXIE	*pvxie
 	A32_size = pvxie->A32_size;
 
 	psubvxie = (VXIE *) &pvxie->extenders.node;
-	while(psubvxie = (VXIE *) ellNext((ELLNODE *)psubvxie)){
+	while( (psubvxie = (VXIE *) ellNext((ELLNODE *)psubvxie)) ){
 
 		psubvxie->A24_base = A24_base;
 		psubvxie->A24_size = A24_size;
@@ -3235,7 +3235,7 @@ EPVXISTAT epvxiDeviceList(void)
 			if(pmxidi->msg_dev_online){
 				printf("msg online, ");
 			}
-			printf("driver ID %d, ", pmxidi->driverID);
+			printf("driver ID %ld, ", pmxidi->driverID);
 			if(taskIdVerify(pmxidi->taskID)>=0){
 				printf(	"opened by task %s, ", 
 					taskName(pmxidi->taskID));
@@ -4577,19 +4577,19 @@ LOCAL void epvxiExtenderPrint(VXIE *pvxie)
 	}
 
 	if(pvxie->A24_mapped){
-		printf("\tA24 window base=0x%08X size=0x%08X\n",
+		printf("\tA24 window base=0x%08lX size=0x%08lX\n",
 			pvxie->A24_base,
 			pvxie->A24_size);
 	}
 
 	if(pvxie->A32_mapped){
-		printf("\tA32 window base=0x%08X size=0x%08X\n",
+		printf("\tA32 window base=0x%08lX size=0x%08lX\n",
 			pvxie->A32_base,
 			pvxie->A32_size);
 	}
 
 	psubvxie = (VXIE *) &pvxie->extenders.node;
-	while(psubvxie = (VXIE *) ellNext((ELLNODE *)psubvxie)){
+	while( (psubvxie = (VXIE *) ellNext((ELLNODE *)psubvxie)) ){
 		epvxiExtenderPrint(psubvxie);
 	}
 }

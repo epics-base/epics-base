@@ -40,6 +40,7 @@ static char	*sccsId = "@(#)drvHpe1445a.c	1.5\t8/27/93";
 #include <vxWorks.h>
 #include <stdioLib.h>
 #include <taskLib.h>
+#include <string.h>
 
 #include <module_types.h>
 #include <fast_lock.h>
@@ -1004,14 +1005,13 @@ unsigned long		npoints
 		return s;
 	}
 
-
-	sprintf(pc->buf, "source:list:segment:define %u", npoints);
+	sprintf(pc->buf, "source:list:segment:define %lu", npoints);
 	s = hpe1445aWrite(la, pc->buf); 
 	if(s){
 		return s;
 	}
 	sprintf(	pc->buf, 
-			"source:arbitrary:download VXI,%s%s,%d", 
+			"source:arbitrary:download VXI,%s%s,%lu", 
 			SEGMENT_NAME_PREFIX,
 			pWaveformName,
 			npoints);

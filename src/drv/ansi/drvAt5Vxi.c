@@ -1130,7 +1130,7 @@ void 	at5vxi_stat(
 
 		work = ((uint32_t)pdd->bio[1]) << (sizeof(uint16_t)*NBBY);	
 		work |= pdd->bio[0];
-		printf("\tBIO: value %x\n", work);
+		printf("\tBIO: value %lx\n", (unsigned long) work);
 	}
 
 	for(channel=0; channel<NELEMENTS(pconfig->tv); channel++){

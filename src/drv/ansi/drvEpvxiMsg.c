@@ -47,6 +47,8 @@
 
 static char	*sccsId = "@(#)drvEpvxiMsg.c	1.15\t8/27/93";
 
+#include <string.h>
+
 #include <vxWorks.h>
 #include <iv.h>
 #include <semLib.h>
@@ -204,8 +206,8 @@ EPVXISTAT vxi_msg_test(
 		return status;
 	}
 
-	buf[count] = NULL;
-	printf("%s %d\n", buf,count);
+	buf[count] = '\0';
+	printf("%s %ld\n", buf,count);
 
 	status = epvxiWrite(la, "*TST?", 5, &count, epvxiWriteOptNone);
 	if(status != VXI_SUCCESS){
@@ -216,8 +218,8 @@ EPVXISTAT vxi_msg_test(
 		return status;
 	}
 
-	buf[count] = NULL;
-	printf("%s %d\n", buf, count);
+	buf[count] = '\0';
+	printf("%s %ld\n", buf, count);
 
 	return VXI_SUCCESS;
 }
@@ -246,7 +248,7 @@ EPVXISTAT	vxi_msg_print_id(
 		return status;
 	}
 
-        buf[count] = NULL;
+        buf[count] = '\0';
         printf(" %s ", buf);
 
         return VXI_SUCCESS;
@@ -336,7 +338,7 @@ unsigned long	cmd
 	}
 
 	if(pvximdi->trace){
-		printf( "VXI Trace: (la=0X%X) Cmd   -> %x\n",
+		printf( "VXI Trace: (la=0X%X) Cmd   -> %lx\n",
 			la,
 			cmd);
 	}
@@ -392,7 +394,7 @@ unsigned long	*presp
 	}
 
 	if(pvximdi->trace){
-		printf( "VXI Trace: (la=0X%X) Query -> %x\n",
+		printf( "VXI Trace: (la=0X%X) Query -> %lx\n",
 			la,
 			*presp);
 	}
@@ -706,7 +708,7 @@ EPVXISTAT 	epvxiReadSlowHandshake(
 	/*
 	 * append the NULL
 	 */
-	*pbuf = NULL;
+	*pbuf = '\0';
 
 	if(function_status == S_epvxi_protocolError){
 		return fetch_protocol_error(la);
@@ -1059,7 +1061,7 @@ printf("mb device has response gen\n");
 			resp);
 		return VXI_SUCCESS;
 	}
-printf("sent ctrl resp (la=%d) (cmd=%x)\n", la, cmd);
+printf("sent ctrl resp (la=%d) (cmd=%lx)\n", la, cmd);
 
 printf("synchronized msg based device is ready!\n");
 
@@ -1256,7 +1258,7 @@ LOCAL EPVXISTAT 	vxiAttemptAsyncModeControl(
 				la);
 			return status;
 		}
-printf("sent id cmdr (la=0X%X) (cmd=%x)\n", la, tmpcmd);
+printf("sent id cmdr (la=0X%X) (cmd=%lx)\n", la, tmpcmd);
 	}
 
 	status = epvxiCmdQuery(
@@ -1285,7 +1287,7 @@ printf("sent id cmdr (la=0X%X) (cmd=%x)\n", la, tmpcmd);
 			resp);
 		return status;
 	}
-printf("sent asynch mode control (la=%d) (cmd=%x)\n",la,cmd);
+printf("sent asynch mode control (la=%d) (cmd=%lx)\n",la,cmd);
 
 
 	if(cmd & MBC_AMC_RESP_INT_ENABLE){
@@ -1500,11 +1502,11 @@ void 	vxiMsgInt(
 		logMsg (	
 	"%s: vxiMsgInt(): msg int to ukn or closed dev\n",
 			(int)__FILE__,
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL);
+			0,
+			0,
+			0,
+			0,
+			0);
 	}
 }
 
@@ -1526,10 +1528,10 @@ int16_t	signal
 		logMsg(	"%s: VXI event was ignored %x\n", 
 			(int)__FILE__,
 			signal,
-			NULL,
-			NULL,
-			NULL,
-			NULL);
+			0,
+			0,
+			0,
+			0);
 	}
 	else{
 		vxiMsgInt(signal_la);

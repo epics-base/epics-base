@@ -23,12 +23,16 @@
  *		Advanced Photon Source
  *		Argonne National Laboratory
  *
+
  * Modification Log:
  * -----------------
  * .01	02-26-91         bg     Changed cursor to move only to controls.
  * .02	07-03-91	rac	changed to use "lopi" rather than "bw"
+ * .02	08-14-91	 bg	Added error message for no file available
+                                for a display. 
+ * .03	mm-dd-yy	iii	Comment
+ * 	...
  */
-
 
 #include "lopi_def.h"
 
@@ -108,6 +112,7 @@ static int err_fd;         /* Fd to which logMsg will write during the course of
                      subroutine. */ 
 static int lopi_fd;          /* File descriptor for serial port. */
 struct except_node *except_ptr;
+extern shellTaskId;
 
 VOID lopi() 
 
@@ -136,7 +141,7 @@ VOID lopi()
                     key_buff,&screen,val_in);
 
   /* Suspend shell to allow lopi the use of the keyboard. */
-  taskSuspend(SHELL_ID);
+  taskSuspend(shellTaskId);
   }
  
 /**********************************************************************************/
@@ -184,7 +189,6 @@ static VOID lopi_init(screen,que_num,pdata_flg,k_buff,val_in)
 
     /* Open a file descriptor for the serial terminal.
        Set it to raw mode. */
-
     logFdSet(err_fd);
     lopi_fd = open("/tyCo/0",UPDATE,0);
     status = ioctl(lopi_fd,FIOSETOPTIONS,OPT_RAW);
@@ -298,7 +302,7 @@ static VOID lopi_init(screen,que_num,pdata_flg,k_buff,val_in)
           display = OFF;
           CLEAR_SCREEN   
           status = ioctl(lopi_fd,FIOSETOPTIONS,OPT_TERMINAL);
-          taskResume(SHELL_ID);
+          taskResume(shellTaskId);
          } 
        
        else if ((selected >= 0) && (selected < n_lines))
@@ -308,7 +312,9 @@ static VOID lopi_init(screen,que_num,pdata_flg,k_buff,val_in)
           CLEAR_SCREEN   
           display_file(wind_array,selected,screen,que_num,pdata_flg,k_buff,val_in);
           selected = NOTHING_SELECTED;
+          semTake(key_sem);
           *screen = OFF;
+          semGive(key_sem);
          }  
       
      }  /* End while display. */
@@ -430,14 +436,14 @@ static VOID create_menu(menu,nlines)
       } 
 
 
-/*********************************************************************************/
+/***********************************************************************************/
 /*    Gets keystrokes from the screen,translates them to lopi opi commands and     */
 /* puts them in a buffer which is read by lopi, display_file and display_monitors. */
-/* Reads up arrow,down arrow,right arrow, left arrow, F6, F7 and carriage        */
-/* return. When it reads an escape it calls get_esc_seq to complete the job of   */
-/* getting the escape sequence from the screen and translating it into a lopi opi  */
-/* command.                                                                      */
-/*********************************************************************************/
+/* Reads up arrow,down arrow,right arrow, left arrow, F6, F7 and carriage          */
+/* return. When it reads an escape it calls get_esc_seq to complete the job of     */
+/* getting the escape sequence from the screen and translating it into a lopi      */
+/* command.                                                                        */
+/***********************************************************************************/
 
 static VOID get_key(cue_num,k_buff,pScreen,val_in)
 
@@ -473,7 +479,6 @@ static VOID get_key(cue_num,k_buff,pScreen,val_in)
            the buffer has been read.If an escape is reached continue to read
            input until one of the supported escape sequences has been completed.
            Convert those keystrokes to a code and return it. */
-
        nmbr = read(lopi_fd,&ltr,1);
 
        do
@@ -545,6 +550,7 @@ static VOID get_key(cue_num,k_buff,pScreen,val_in)
        if ((*in_ptr) == NULL) 
          in_ptr = k_buff; 
        nmbr = read(lopi_fd,&ltr,1); 
+       taskDelay(1);
       }  /* End do while. */
      while ((*cue_num) <= (BUFF_SIZE -1) );  /* Exit this loop if buffer is filled. */ 
 
@@ -607,14 +613,14 @@ static char get_esc_seq()
 /*****************************************************************************/
 static VOID make_box()
   {
-   char str[MAX_LIN_LEN];
+   char str[MAX_STRING_SIZE];
    short row = BEG_BOX; 
    short col = BEG_BOX;
 
-   strcpy(str, "************************************************************************");
+   strcpy(str, "***************************************");
    mv_cursor(&row,&col,str);
    row+=2;
-   strcpy(str, "************************************************************************");
+   strcpy(str, "***************************************");
    row = END_BOX;
    mv_cursor(&row,&col,str);
    row--;
@@ -644,7 +650,7 @@ static VOID get_value(val_in)
     char txt_str[MAX_STRING_SIZE];
 
     blank_fill(val_in,MAX_STRING_SIZE);
-    strcpy(val_in, "* Enter value:                                                         *");
+    strcpy(val_in, "* Enter value:                        *");
     mv_cursor(&row,&col,val_in);     
     col = 16;
     blank_fill(val_in,MAX_STRING_SIZE);
@@ -661,7 +667,7 @@ static VOID get_value(val_in)
       {
        /* If value is legal enter it in value array. */ 
 
-       if (( isalpha(numb)) ||  (isdigit(numb)) || (numb == DOT))  
+       if (( isalpha(numb)) || (isdigit(numb)) || (numb == DOT) || (numb == MINUS )) 
          {
           *chr_ptr = numb; 
           chr_ptr++;
@@ -711,39 +717,6 @@ static VOID blank_fill(chr_array,chr_size)
    chr_array[chr_size -1] = NULL;
    
   } 
-/**************************************************************************************/ 
-/*  Takes the character array passed to it and fills it with blanks and terminates it */
-/* with a NULL. If chr_size is 0 the function does nothing.  If chr_size is 1, the    */
-/* NULL is placed in the first position in the array. If chr_size is greater than the */
-/* array size, the array will be filled with blanks and a NULL will be placed in the  */
-/* last space of the array.                                                           */
-/**************************************************************************************/ 
- 
-/* static VOID blank_fill(chr_array,chr_size)
-   char chr_array[MAX_LIN_LEN];
-   short chr_size;
-  {
-   short row= 0,col = 0;
-   short c_ctr = 0; Index  to array being filled. 
-
-   if (strlen(chr_array) < chr_size)
-     chr_size = strlen(chr_array);
-   if (chr_size <= 0) 
-      return;
-   else if (chr_size == 1)
-     {
-      chr_array[0] = NULL; 
-      return;
-     }
-   else
-     {
-      while(c_ctr < (chr_size - 1))
-      chr_array[c_ctr++] = BLANK;
-      chr_array[chr_size -1] = NULL;
-      return;
-     }
-   
-  } */
 
 /****************************************************************************/ 
 /* Moves cursor to row and column passed to it.  Prints a string after the  */
@@ -844,8 +817,10 @@ static int fgetline(disp_ln,d_fp)
    int disp_ctr;  /* Counters. */
    for (disp_ctr = 0; disp_ctr < nfiles; disp_ctr++) 
      { 
-      if ((disp_fp = fopen(disp_files[disp_ctr], "r")) == NULL) 
+      if ((disp_fp = fopen(disp_files[disp_ctr], "r")) == NULL){
          printf("Can't open %s \n", disp_files[disp_ctr]);
+         disp_array[disp_ctr] = NULL;
+      }
       else
         {
          disp_array[disp_ctr] = win_alloc();
@@ -883,8 +858,10 @@ static int fgetline(disp_ln,d_fp)
         } /*  End else. */
 
      }  /* End for.*/ 
-      /* if (DEBUG) 
-       read_disp_lst(wind_array,n_lines); */    
+
+     /* it(DEBUG)
+        read_disp_lst(wind_array,n_lines); */     
+
   }         /* End get_displays */
 
 
@@ -985,7 +962,7 @@ static struct window_node *win_alloc()
 /*  points to the new node.                                                  */
 /*****************************************************************************/
 
-  static add_ctl(win_array,win_ctr,c_line)
+static add_ctl(win_array,win_ctr,c_line)
     struct window_node *win_array[MAX_DISP_NUM]; 
     short win_ctr; /* Counters. */
     char *c_line;
@@ -1118,7 +1095,7 @@ static struct window_node *win_alloc()
 /* node.                                                                            */
 /************************************************************************************/
 
-  static add_mon(win_array,win_ctr,m_line)
+static  add_mon(win_array,win_ctr,m_line)
     struct window_node *win_array[MAX_DISP_NUM]; 
     short win_ctr; /* Counters. */
     char *m_line;
@@ -1228,7 +1205,7 @@ static struct window_node *win_alloc()
 /* node.                                                                            */
 /************************************************************************************/
 
-  static add_txt(win_array,win_ctr,t_line)
+static add_txt(win_array,win_ctr,t_line)
     struct window_node *win_array[MAX_DISP_NUM]; 
     short win_ctr; /* Counters. */
     char *t_line;
@@ -1360,9 +1337,6 @@ static char *skip_to_digit(pstr)
          }
        else
         pstr++;
-        if (DEBUG)
-           printf("In skip_to_digit string %s \n",pstr);
-
       }
 
    return (NULL);
@@ -1405,57 +1379,61 @@ int nfiles;
  lopi_j = 1;
  for (lopi_i = 0; lopi_i < nfiles; lopi_i++)
     {
-     ctl_ptr = wnd_array[lopi_i]->c_head;
-     if (ctl_ptr->next->l_crn_row == LIST_END )
-        printf("Ctl list for display %d is empty.\n",lopi_i);
-     else
-       {
-         ctl_ptr = ctl_ptr->next;
-         while (ctl_ptr->next->l_crn_row != LIST_END)
-          {
-           printf("Display %d: Node %d\n",lopi_i,lopi_j);
-           printf("wnd_array[%d]->c_head->chan = %s \n",lopi_i,ctl_ptr->chan); 
-           printf("wnd_array[%d]->c_head->l_crn_row = %d \n",lopi_i,ctl_ptr->l_crn_row); 
-           printf("wnd_array[%d]->c_head->l_crn_col = %d \n",lopi_i,ctl_ptr->l_crn_col); 
-           lopi_j++; 
-           ctl_ptr = ctl_ptr->next;
-          } 
-        }  
-      lopi_j = 1; 
-     mon_ptr = wnd_array[lopi_i]->m_head;
-     if (mon_ptr == NULL)
-        printf("Mon list for display %d is empty.\n",lopi_i);
-     else
-       {
-        while (mon_ptr != NULL)
-          {
-           printf("Display %d: Node %d\n",lopi_i,lopi_j);
-           printf("wnd_array[%d]->m_head->chan = %s \n",lopi_i,mon_ptr->chan); 
-           printf("wnd_array[%d]->m_head->l_crn_row = %d \n",lopi_i,mon_ptr->l_crn_row); 
-           printf("wnd_array[%d]->m_head->l_crn_col = %d \n",lopi_i,mon_ptr->l_crn_col); 
-           lopi_j++; 
-           mon_ptr = mon_ptr->next;
-          } 
-        }
-      lopi_j = 1;
-     txt_ptr = wnd_array[lopi_i]->t_head;
-     if (txt_ptr == NULL)
-        printf("Txt list for display %d is empty.\n",lopi_i);
-     else
-       {
-        while (txt_ptr != NULL)
-          {
-           printf("Display %d: Node %d\n",lopi_i,lopi_j);
-           printf("wnd_array[%d]->t_head->txt_str = %s \n",lopi_i,txt_ptr->txt_str); 
-           printf("wnd_array[%d]->t_head->l_crn_row = %d \n",lopi_i,txt_ptr->l_crn_row); 
-           printf("wnd_array[%d]->t_head->l_crn_col = %d \n",lopi_i,txt_ptr->l_crn_col); 
+       if (wind_array[lopi_i] != NULL)
+         {
+          ctl_ptr = wnd_array[lopi_i]->c_head;
+          if ((ctl_ptr == NULL) || (ctl_ptr->next->l_crn_row == LIST_END ))
+            printf("Ctl list for display %d is empty.\n",lopi_i);
+          else
+           {
+            ctl_ptr = ctl_ptr->next;
+            while (ctl_ptr->l_crn_row != LIST_END)
+             {
+              printf("Display %d: Node %d\n",lopi_i,lopi_j);
+              printf("wnd_array[%d]->c_head->chan = %s \n",lopi_i,ctl_ptr->chan); 
+              printf("wnd_array[%d]->c_head->l_crn_row = %d \n",lopi_i,ctl_ptr->l_crn_row); 
+              printf("wnd_array[%d]->c_head->l_crn_col = %d \n",lopi_i,ctl_ptr->l_crn_col); 
+              lopi_j++; 
+              ctl_ptr = ctl_ptr->next;
+             } 
+           }  
+        
+           lopi_j = 1; 
+           mon_ptr = wnd_array[lopi_i]->m_head;
+           if (mon_ptr == NULL)
+             printf("Mon list for display %d is empty.\n",lopi_i);
+           else
+            {
+             while (mon_ptr != NULL)
+              {
+               printf("Display %d: Node %d\n",lopi_i,lopi_j);
+               printf("wnd_array[%d]->m_head->chan = %s \n",lopi_i,mon_ptr->chan); 
+               printf("wnd_array[%d]->m_head->l_crn_row = %d \n",lopi_i,mon_ptr->l_crn_row); 
+               printf("wnd_array[%d]->m_head->l_crn_col = %d \n",lopi_i,mon_ptr->l_crn_col); 
+               lopi_j++; 
+               mon_ptr = mon_ptr->next;
+              } 
+            }
+           lopi_j = 1;
+          txt_ptr = wnd_array[lopi_i]->t_head;
+          if (txt_ptr == NULL)
+            printf("Txt list for display %d is empty.\n",lopi_i);
+          else
+            {
+          while (txt_ptr != NULL)
+            {
+             printf("Display %d: Node %d\n",lopi_i,lopi_j);
+             printf("wnd_array[%d]->t_head->txt_str = %s \n",lopi_i,txt_ptr->txt_str); 
+             printf("wnd_array[%d]->t_head->l_crn_row = %d \n",lopi_i,txt_ptr->l_crn_row); 
+             printf("wnd_array[%d]->t_head->l_crn_col = %d \n",lopi_i,txt_ptr->l_crn_col); 
            lopi_j++; 
            txt_ptr = txt_ptr->next;
           } 
         }
-      lopi_j = 1; 
      }
-}
+      lopi_j = 1; 
+   }
+}  
  
 
 /***************************************************************************************/
@@ -1506,9 +1484,9 @@ static display_file(disp_array,selected,screen_up,data_num,pdata_flg,k_buff,val_
    short cur_mv;       /* Flag to indicate that arrow keys are being struck */
    {
     char *w_ptr; /* Pointer to next available space for writing. */
-    struct mon_node *c_ptr; 
-    struct mon_node *m_ptr;
-    struct txt_node *t_ptr;
+    struct mon_node *c_ptr = NULL; 
+    struct mon_node *m_ptr = NULL;
+    struct txt_node *t_ptr = NULL;
     char txt_str[MAX_LIN_LEN];
     char prefix[MAX_LIN_LEN];  
     int nmbr; 
@@ -1530,43 +1508,72 @@ static display_file(disp_array,selected,screen_up,data_num,pdata_flg,k_buff,val_
 
     trow = 0; /* trow and tcol store cursor position for diagnostic messages only. */
     trow = 0; 
+ 
+    /* If a non existant screen has been selected, print error message. */
 
-    /* If a screen with no data has been selected, exit. */
-
-    m_ptr = disp_array[selected]->m_head;
-    c_ptr = disp_array[selected]->c_head;
-    t_ptr = disp_array[selected]->t_head;
-
-    if ((c_ptr == NULL) && (m_ptr == NULL) 
-        && ( t_ptr == NULL) )
+    if ( disp_array[selected] == NULL )
       {
+       trow++;
+       tcol = 0;
+       mv_cursor(&trow,&tcol,"Found no display file for this display.");
+       trow++;
+       taskDelay(30); 
        selected = NOTHING_SELECTED;
-       screen_up = OFF;
+       *screen_up = OFF;
        w_ptr = k_buff;
        (*data_num) = 0; 
       }
-    /* Otherwise put up text and initialize the monitors.  */ 
-
-    else
+    else 
       {
-       display_text(disp_array,selected);
-       init = ON;
-       display_monitors(disp_array,selected,screen_up,pdata_flg,&init,&cur_mv,except_ptr);
-       init = OFF;
-      }
-    
-    /* Place cursor on upper first control screen. */
+       trow++;
+       tcol = 0;
+       m_ptr = disp_array[selected]->m_head;
+       c_ptr = disp_array[selected]->c_head;
+       t_ptr = disp_array[selected]->t_head;
+       /* If a screen with no data has been selected, exit. */
 
-    if (c_ptr->next->l_crn_row != LIST_END)
-       c_ptr = c_ptr->next;
-    krow = c_ptr->l_crn_row;
-    kcol = c_ptr->l_crn_col;
-    mv_cursor(&krow,&kcol,NO_CMD); 
+       if ((c_ptr == NULL) && (m_ptr == NULL) 
+         && ( t_ptr == NULL))
+         {
+          trow++;
+          tcol = 0;
+          mv_cursor(&trow,&tcol,"Found nothing in this file.");
+          taskDelay(60);
+          selected = NOTHING_SELECTED;
+          *screen_up = OFF;
+          w_ptr = k_buff;
+          (*data_num) = 0; 
+         }
+       else
+         {
+          /* Otherwise put up text and initialize the monitors.  */ 
+           if(t_ptr != NULL);
+              display_text(disp_array,selected);
+           init = ON;
+           if ((m_ptr != NULL) || (c_ptr != NULL))
+             {
+              semTake(mon_sem);
+              display_monitors(disp_array,selected,screen_up,pdata_flg,&init,&cur_mv,except_ptr);
+              semGive(mon_sem);
+             }
+           init = OFF;
+    
+          /* Place cursor on position of first control . */
+           
+           if ((c_ptr != NULL) && (c_ptr->next->l_crn_row != LIST_END)) 
+            {
+              c_ptr = c_ptr->next; 
+              krow = c_ptr->l_crn_row;
+              kcol = c_ptr->l_crn_col;
+              mv_cursor(&krow,&kcol,NO_CMD); 
+            }
+         }
+      }
 
     while (*screen_up == ON)  
       {
 
-       /* If there is something in the buffer it will be consumed 
+       /* If there is something in the buffer it will lopi consumed 
           until it is used up. */  
        
 
@@ -1593,7 +1600,7 @@ static display_file(disp_array,selected,screen_up,data_num,pdata_flg,k_buff,val_
                put_value(c_ptr,val_in); 
                break;
              case U_ARROW:
-               if (c_ptr->prev->l_crn_row != LIST_END)
+               if ( (c_ptr!= NULL) && (c_ptr->prev->l_crn_row != LIST_END))
                  { 
                   c_ptr = c_ptr->prev;
                   krow = c_ptr->l_crn_row;
@@ -1615,7 +1622,7 @@ static display_file(disp_array,selected,screen_up,data_num,pdata_flg,k_buff,val_
                semGive(key_sem);
                break;
              case D_ARROW:
-               if (c_ptr->next->l_crn_row != LIST_END)
+               if ((c_ptr != NULL)&&(c_ptr->next->l_crn_row != LIST_END))
                  { 
                   c_ptr = c_ptr->next;
                   krow = c_ptr->l_crn_row;
@@ -1629,7 +1636,6 @@ static display_file(disp_array,selected,screen_up,data_num,pdata_flg,k_buff,val_
                   kcol = c_ptr->l_crn_col;
                   mv_cursor(&krow,&kcol,NO_CMD);
                  }
-               mv_cursor(&krow,&kcol,NO_CMD);
                semTake(key_sem);
                w_ptr++;
                (*data_num)--;
@@ -1657,13 +1663,19 @@ static display_file(disp_array,selected,screen_up,data_num,pdata_flg,k_buff,val_
     
       if (*pdata_flg)
         {
+         semTake(mon_sem);
          display_monitors(disp_array,selected,screen_up,pdata_flg,&init,&cur_mv,except_ptr); 
+         semGive(mon_sem);
          mv_cursor(&krow,&kcol,NO_CMD);
         } 
 
   } /*  end while screen up. */
 
-  stop_monitors(disp_array,selected);
+  if (disp_array[selected]  != NULL) 
+   {
+        stop_monitors(disp_array,selected); 
+   } 
+
 }
 
 static VOID display_monitors(disp_array,m_select,screen,pdata_flg,init,cur_mv,except_ptr)
@@ -1677,7 +1689,7 @@ static VOID display_monitors(disp_array,m_select,screen,pdata_flg,init,cur_mv,ex
    {
     short mon_row,mon_col; /* Local variable used to move cursor to position where update is
                             required.  After update, cursor will always be returned to the
-                            position where keyboard entry cursor is located.  */
+                            esition where keyboard entry cursor is located.  */
     short trow = 1;short tcol = 0;
     int status;
     chtype type = TYPENOTCONN;
@@ -1688,10 +1700,7 @@ static VOID display_monitors(disp_array,m_select,screen,pdata_flg,init,cur_mv,ex
     mon_row = 0;
     mon_col = 0;
     mon_ptr =  disp_array[m_select]->m_head;
-    ctl_ptr =  disp_array[m_select]->c_head;
-    if (ctl_ptr->next->l_crn_row != LIST_END)
-       ctl_ptr = ctl_ptr->next;
-
+    
     if (*init)     
       {
        SEVCHK(ca_task_initialize(),"Unable to initialize.");
@@ -1703,29 +1712,32 @@ static VOID display_monitors(disp_array,m_select,screen,pdata_flg,init,cur_mv,ex
        bzero(except_ptr->msg,(sizeof(except_ptr->msg))); 
 
 
-        while (ctl_ptr->l_crn_row != LIST_END)
-         { 
-          ctl_ptr->ev_ptr = ev_alloc();
-          ctl_ptr->ev_ptr->data_flg = NO_NEW_DATA;
-          ctl_ptr->conn_flg = CA_OP_CONN_DOWN;
-          mon_row = ctl_ptr->l_crn_row;
-          mon_col = ctl_ptr->l_crn_col;
-          ctl_ptr->prev_size = 4;
+       ctl_ptr =  disp_array[m_select]->c_head;
+       if ((ctl_ptr != NULL) && (ctl_ptr->next->l_crn_row != LIST_END)){
+          ctl_ptr = ctl_ptr->next;
+          while (ctl_ptr->l_crn_row != LIST_END)
+           { 
+            ctl_ptr->ev_ptr = ev_alloc();
+            ctl_ptr->ev_ptr->data_flg = NO_NEW_DATA;
+            ctl_ptr->conn_flg = CA_OP_CONN_DOWN;
+            mon_row = ctl_ptr->l_crn_row;
+            mon_col = ctl_ptr->l_crn_col;
+            ctl_ptr->prev_size = 4;
       
-         /* Put up a row of x's where monitor is to be displayed. */
+           /* Put up a row of x's where monitor is to be displayed. */
 
-         ESCAPE
-         REVERSE_VIDEO
-         strcpy(ctl_ptr->ev_ptr->str,"   "); 
-         mv_cursor(&mon_row,&mon_col,ctl_ptr->ev_ptr->str); 
-         ESCAPE
-         ATR_OFF
-         status = ca_build_and_connect(ctl_ptr->chan,TYPENOTCONN,0,&ctl_ptr->chan_id,
+           ESCAPE
+           REVERSE_VIDEO
+           strcpy(ctl_ptr->ev_ptr->str,"   "); 
+           mv_cursor(&mon_row,&mon_col,ctl_ptr->ev_ptr->str); 
+           ESCAPE
+           ATR_OFF
+           status = ca_build_and_connect(ctl_ptr->chan,TYPENOTCONN,0,&ctl_ptr->chan_id,
                   NULL,lopi_conn_handler,ctl_ptr);
-         SEVCHK(status,NULL);  
-         if (DEBUG)
+           SEVCHK(status,NULL);  
            logMsg("build_and_connect for %s, status = %d\n",ctl_ptr->chan,status);
-         ctl_ptr = ctl_ptr->next;
+           ctl_ptr = ctl_ptr->next;
+          }
         }
 
         while (mon_ptr != NULL)
@@ -1747,8 +1759,8 @@ static VOID display_monitors(disp_array,m_select,screen,pdata_flg,init,cur_mv,ex
           ATR_OFF
           status = ca_build_and_connect(mon_ptr->chan,TYPENOTCONN,0,&mon_ptr->chan_id,
                    NULL,lopi_conn_handler,mon_ptr);
-          if(DEBUG)
-             logMsg("build_and_connect for %s, status = %d\n",mon_ptr->chan,status);
+          
+          logMsg("build_and_connect for %s, status = %d\n",mon_ptr->chan,status);
           mon_ptr = mon_ptr->next;
          }    
 
@@ -1762,8 +1774,9 @@ static VOID display_monitors(disp_array,m_select,screen,pdata_flg,init,cur_mv,ex
           if (status != ECA_NORMAL)
              logMsg("Message:%d\n",ca_message_text[CA_EXTRACT_MSG_NO(status)]);
           type = ca_field_type(mon_ptr->chan_id);
+
           if (DEBUG)
-             logMsg("Added event for %s,status = %d,type = %d\n",mon_ptr->chan,status,type);   
+            logMsg("Added event for %s,status = %d,type = %d\n",mon_ptr->chan,status,type);   
 
          /* If channel is found display data if channel is up. Display error messae if channel 
           is down. */  
@@ -1809,63 +1822,66 @@ static VOID display_monitors(disp_array,m_select,screen,pdata_flg,init,cur_mv,ex
        mon_ptr = mon_ptr->next;
       }  
 
-        if (disp_array[m_select]->c_head->next->l_crn_row != LIST_END)
+        if((ctl_ptr != NULL) && (disp_array[m_select]->c_head->next->l_crn_row != LIST_END))
+          {  
            ctl_ptr = disp_array[m_select]->c_head->next;
 
-        while (ctl_ptr->l_crn_row  != LIST_END)
-         { 
-          status = ca_add_event(DBR_STS_STRING,ctl_ptr->chan_id,lopi_ev_handler, ctl_ptr->ev_ptr,NULL);      
-          if (status != ECA_NORMAL)
-             logMsg("Message:%s\n",ca_message_text[CA_EXTRACT_MSG_NO(status)]);
-          type = ca_field_type(ctl_ptr->chan_id);
-          logMsg("Added event for %s,status = %d,type = %d\n",ctl_ptr->chan,status,type);  
+           while (ctl_ptr->l_crn_row  != LIST_END)
+            { 
+             status = ca_add_event(DBR_STS_STRING,ctl_ptr->chan_id,lopi_ev_handler, ctl_ptr->ev_ptr,NULL);      
+             if (status != ECA_NORMAL)
+                logMsg("Message:%s\n",ca_message_text[CA_EXTRACT_MSG_NO(status)]);
+             type = ca_field_type(ctl_ptr->chan_id);
+             if (DEBUG)
+               logMsg("Added event for %s,status = %d,type = %d\n",ctl_ptr->chan,status,type);  
 
-          /* If channel is connected, display data if channel is up.  Display error message if
-            channel is down. */
+             /* If channel is connected, display data if channel is up.  Display error message if
+                channel is down. */
 
 
-          if ((type = (ca_field_type(ctl_ptr->chan_id))) !=  TYPENOTCONN)
-            {
-            if (ctl_ptr->conn_flg == CA_OP_CONN_UP)
+             if ((type = (ca_field_type(ctl_ptr->chan_id))) !=  TYPENOTCONN)
                {
-                mon_row = ctl_ptr->l_crn_row; 
-                mon_col = ctl_ptr->l_crn_col;
-                if (ctl_ptr->prev_size > strlen(ctl_ptr->ev_ptr->str)) 
-                  {
-                   blank_fill(txt_str,ctl_ptr->prev_size);
-                   mv_cursor(&mon_row,&mon_col,txt_str);
-                  }  
-                mv_cursor(&mon_row,&mon_col,ctl_ptr->ev_ptr->str);
-                ctl_ptr->prev_size = strlen(ctl_ptr->ev_ptr->str); 
-               }
-
-             else if (ctl_ptr->conn_flg == CA_OP_CONN_DOWN)
-               {
-                ESCAPE
-                REVERSE_VIDEO
-                strcpy(txt_str,"CHAN DOWN");
-                mv_cursor(&mon_row,&mon_col,txt_str); 
-                ESCAPE
-                ATR_OFF
-               }
-             else
-               {
-                ESCAPE
-                REVERSE_VIDEO
-                strcpy(txt_str,"UNDEF");
-                mv_cursor(&mon_row,&mon_col,txt_str); 
-                ESCAPE
-                ATR_OFF
-               }
-            } 
+                if (ctl_ptr->conn_flg == CA_OP_CONN_UP)
+                 {
+                  mon_row = ctl_ptr->l_crn_row; 
+                  mon_col = ctl_ptr->l_crn_col;
+                  if (ctl_ptr->prev_size > strlen(ctl_ptr->ev_ptr->str)) 
+                    {
+                     blank_fill(txt_str,ctl_ptr->prev_size);
+                     mv_cursor(&mon_row,&mon_col,txt_str);
+                    }  
+                  mv_cursor(&mon_row,&mon_col,ctl_ptr->ev_ptr->str);
+                  ctl_ptr->prev_size = strlen(ctl_ptr->ev_ptr->str); 
+                 }
+                else if (ctl_ptr->conn_flg == CA_OP_CONN_DOWN)
+                 {
+                  ESCAPE
+                  REVERSE_VIDEO
+                  strcpy(txt_str,"CHAN DOWN");
+                  mv_cursor(&mon_row,&mon_col,txt_str); 
+                  ESCAPE
+                  ATR_OFF
+                 }
+                else
+                 {
+                  ESCAPE
+                  REVERSE_VIDEO
+                  strcpy(txt_str,"UNDEF");
+                  mv_cursor(&mon_row,&mon_col,txt_str); 
+                  ESCAPE
+                  ATR_OFF
+                 }
+             } /* If type is not TYPENOTCONN. */
       
-      /* If channel was never connected, display appropriate message. */ 
+            /* If channel was never connected, display appropriate message. */ 
 
 
-          ctl_ptr = ctl_ptr->next;
-         } /* End if ctl_ptr not equal to LIST END*/    
+             ctl_ptr = ctl_ptr->next;
+            } /* End while ctl_ptr not equal to LIST END*/    
+
+       } /* End if ctl_ptr != NULL etc. */
     
-          status = ca_flush_io(); 
+         status = ca_flush_io(); 
          SEVCHK(status,NULL);
     
          if  (except_ptr->flg)
@@ -1883,23 +1899,9 @@ static VOID display_monitors(disp_array,m_select,screen,pdata_flg,init,cur_mv,ex
        {
         mon_ptr =  disp_array[m_select]->m_head;
  
-        semTake(mon_sem);
         while (mon_ptr != NULL) 
           { 
-          if (*cur_mv  == ON)
-             {
-               mon_row = mon_ptr->l_crn_row; 
-               mon_col = mon_ptr->l_crn_col;
-               if (mon_ptr->prev_size > (strlen(mon_ptr->ev_ptr->str))) 
-                 {
-                  blank_fill(txt_str,mon_ptr->prev_size);
-                  mv_cursor(&mon_row,&mon_col,txt_str); 
-                 }  
-               mon_ptr->prev_size = strlen(mon_ptr->ev_ptr->str);
-               mv_cursor(&mon_row,&mon_col,mon_ptr->ev_ptr->str);
-               mon_ptr = mon_ptr->next;
-             }
-           else if ((mon_ptr->ev_ptr->data_flg) && (mon_ptr->conn_flg == CA_OP_CONN_UP))
+           if ((mon_ptr->ev_ptr->data_flg) && (mon_ptr->conn_flg == CA_OP_CONN_UP))
              {
               mon_row = mon_ptr->l_crn_row; 
               mon_col = mon_ptr->l_crn_col;
@@ -1929,62 +1931,63 @@ static VOID display_monitors(disp_array,m_select,screen,pdata_flg,init,cur_mv,ex
            else
              mon_ptr = mon_ptr->next;
     
-          }
+          } 
 
-        if (disp_array[m_select]->c_head->next->l_crn_row != LIST_END)
+        if ((ctl_ptr != NULL) && (disp_array[m_select]->c_head->next->l_crn_row != LIST_END))
+          {
            ctl_ptr = disp_array[m_select]->c_head->next;
 
-        while (ctl_ptr->l_crn_row != LIST_END)
-          { 
-            if (*cur_mv == ON)
-              {
-               mon_row = ctl_ptr->l_crn_row; 
-               mon_col = ctl_ptr->l_crn_col;
-               if (ctl_ptr->prev_size > (strlen(ctl_ptr->ev_ptr->str))) 
+           while (ctl_ptr->l_crn_row != LIST_END)
+             { 
+              if (*cur_mv == ON)
+               {
+                mon_row = ctl_ptr->l_crn_row; 
+                mon_col = ctl_ptr->l_crn_col;
+                if (ctl_ptr->prev_size > (strlen(ctl_ptr->ev_ptr->str))) 
                  {
                   blank_fill(txt_str,ctl_ptr->prev_size);
                   mv_cursor(&mon_row,&mon_col,txt_str); 
                  }  
-               mon_ptr->prev_size = strlen(ctl_ptr->ev_ptr->str);
-               mv_cursor(&mon_row,&mon_col,ctl_ptr->ev_ptr->str);
+                 mon_ptr->prev_size = strlen(ctl_ptr->ev_ptr->str);
+                 mv_cursor(&mon_row,&mon_col,ctl_ptr->ev_ptr->str);
+                 ctl_ptr = ctl_ptr->next;
+               } 
+             else  if ((ctl_ptr->ev_ptr->data_flg) && (ctl_ptr->conn_flg == CA_OP_CONN_UP))
+               {
+                mon_row = ctl_ptr->l_crn_row; 
+                mon_col = ctl_ptr->l_crn_col;
+                ctl_ptr->ev_ptr->data_flg = NO_NEW_DATA;
+                if (ctl_ptr->prev_size > strlen(ctl_ptr->ev_ptr->str)) 
+                  {
+                   blank_fill(txt_str,ctl_ptr->prev_size );
+                   mv_cursor(&mon_row,&mon_col,txt_str);
+                  } 
+                ctl_ptr->prev_size =(strlen(ctl_ptr->ev_ptr->str)) + 2; 
+                mv_cursor(&mon_row,&mon_col,ctl_ptr->ev_ptr->str); 
+                ctl_ptr = ctl_ptr->next;
+               }
+             else if (ctl_ptr->conn_flg == CA_OP_CONN_DOWN)
+               {
+                mon_row = ctl_ptr->l_crn_row; 
+                mon_col = ctl_ptr->l_crn_col;
+                ESCAPE
+                REVERSE_VIDEO
+                strcpy(txt_str,"CHAN DOWN");
+                mv_cursor(&mon_row,&mon_col,txt_str); 
+                ESCAPE
+                ATR_OFF
+                ctl_ptr->prev_size = 10;
+                ctl_ptr = ctl_ptr->next;
+               }
+             else
                ctl_ptr = ctl_ptr->next;
-              }
-           else if ((ctl_ptr->ev_ptr->data_flg) && (ctl_ptr->conn_flg == CA_OP_CONN_UP))
-             {
-              mon_row = ctl_ptr->l_crn_row; 
-              mon_col = ctl_ptr->l_crn_col;
-              ctl_ptr->ev_ptr->data_flg = NO_NEW_DATA;
-              if (ctl_ptr->prev_size > strlen(ctl_ptr->ev_ptr->str)) 
-                {
-                 blank_fill(txt_str,ctl_ptr->prev_size );
-                 mv_cursor(&mon_row,&mon_col,txt_str);
-                } 
-              ctl_ptr->prev_size =(strlen(ctl_ptr->ev_ptr->str)) + 2; 
-              mv_cursor(&mon_row,&mon_col,ctl_ptr->ev_ptr->str); 
-              ctl_ptr = ctl_ptr->next;
-             }
-            else if (ctl_ptr->conn_flg == CA_OP_CONN_DOWN)
-             {
-              mon_row = ctl_ptr->l_crn_row; 
-              mon_col = ctl_ptr->l_crn_col;
-              ESCAPE
-              REVERSE_VIDEO
-              strcpy(txt_str,"CHAN DOWN");
-              mv_cursor(&mon_row,&mon_col,txt_str); 
-              ESCAPE
-              ATR_OFF
-              ctl_ptr->prev_size = 10;
-              ctl_ptr = ctl_ptr->next;
-             }
-            else
-             ctl_ptr = ctl_ptr->next;
-          }
+            } /* End while ctl_ptr != LIST_END. */
+          } /* End if ctl_ptr != NULL etc. */
           
 
         *cur_mv  = OFF;
         *pdata_flg = NO_NEW_DATA ; 
 
-      semGive(mon_sem);   
       if  (except_ptr->flg)
         {
          lopi_signal(except_ptr->status,except_ptr->msg); 
@@ -2008,12 +2011,11 @@ static VOID stop_monitors(disp_array,m_select)
   {
    struct mon_node *mon_ptr, *ctl_ptr;
 
-   mon_ptr =  disp_array[m_select]->m_head;
-   if (disp_array[m_select]->c_head->next->l_crn_row != LIST_END)
-     ctl_ptr = disp_array[m_select]->c_head->next;
+
 
      /* Free channel access resources. */
 
+    mon_ptr =  disp_array[m_select]->m_head;
     semTake(mon_sem);        
 
     while (mon_ptr != NULL) 
@@ -2022,17 +2024,23 @@ static VOID stop_monitors(disp_array,m_select)
        mon_ptr = mon_ptr->next; 
       } 
 
+   ctl_ptr =  disp_array[m_select]->c_head;
+
+   if ((ctl_ptr != NULL) && (disp_array[m_select]->c_head->next->l_crn_row != LIST_END))
+    {
+     ctl_ptr = disp_array[m_select]->c_head->next;
      while (ctl_ptr->l_crn_row != LIST_END)
       {
        ca_clear_channel(ctl_ptr->chan_id);           
        ctl_ptr = ctl_ptr->next;
       } 
+    } 
 
      /* Exit channel access. */ 
 
      ca_flush_io(); 
 
-     semGive(mon_sem);   
+     semGive(mon_sem);    
 
      /* Initialize monitor pointer to the head of the monitor linked list
              in order to move through linked list freeing memory. */
@@ -2045,23 +2053,27 @@ static VOID stop_monitors(disp_array,m_select)
         free(mon_ptr->ev_ptr);
         mon_ptr->ev_ptr = NULL;
         mon_ptr = mon_ptr->next;
-       }
+       } 
  
      /* Initialize control pointer to the head of the control linked list
        in order to move through the list freeing memory. */ 
 
 
-     if (disp_array[m_select]->c_head->next->l_crn_row != LIST_END)
-       ctl_ptr = disp_array[m_select]->c_head->next;
+  ctl_ptr =  disp_array[m_select]->c_head;
+
+    if ((ctl_ptr != NULL) && (disp_array[m_select]->c_head->next->l_crn_row != LIST_END)){
+      ctl_ptr = disp_array[m_select]->c_head->next;
 
      while (ctl_ptr->l_crn_row != LIST_END)
         {
          free(ctl_ptr->ev_ptr);
-         mon_ptr->ev_ptr = NULL;
+         ctl_ptr->ev_ptr = NULL;
          ctl_ptr = ctl_ptr->next;
         }
+    }
       semGive(mon_sem);
-
+ 
+ 
  }
 
 /*************************************************************************************/
@@ -2071,7 +2083,7 @@ static VOID stop_monitors(disp_array,m_select)
 
 
 
-static VOID lopi_ev_handler(lopi_arg)
+VOID lopi_ev_handler(lopi_arg)
   struct event_handler_args lopi_arg; 
    {
     struct dbr_sts_string *sts_str_ptr;
@@ -2091,9 +2103,9 @@ static VOID lopi_ev_handler(lopi_arg)
    mptr = (struct mon_node *)ca_puser(lopi_arg.chid); 
    nm_ptr =(char *)(ca_name(lopi_arg.chid));
    semTake(mon_sem);
-   if(DEBUG)
-      logMsg("Ev hand for CA:%s, BW:%s\n",nm_ptr,mptr->chan); 
-    if ((data_flg = strncmp(ev_ptr->str,sts_str_ptr->value,12) != 0))
+   if (DEBUG)   
+     logMsg("Ev hand for CA:%s, BW:%s\n",nm_ptr,mptr->chan); 
+   if ((data_flg = strncmp(ev_ptr->str,sts_str_ptr->value,12) != 0))
       {
         strncpy(ev_ptr->str, sts_str_ptr->value,12); 
         ev_ptr->str[12] = NULL;
@@ -2107,7 +2119,7 @@ static VOID lopi_ev_handler(lopi_arg)
 /*  events in the server.                                                            */  
 /*************************************************************************************/
 
-  static VOID lopi_exception_handler(lopi_except_arg)
+  VOID lopi_exception_handler(lopi_except_arg)
   struct exception_handler_args lopi_except_arg; 
    {
     struct except_node *except_ptr;
@@ -2125,7 +2137,7 @@ static VOID lopi_ev_handler(lopi_arg)
 /*  changes in the connection status channels.                                       */  
 /*************************************************************************************/
 
-static VOID lopi_conn_handler(lopi_connect_arg)
+VOID lopi_conn_handler(lopi_connect_arg)
   struct connection_handler_args lopi_connect_arg; 
    {
     struct mon_node *pmon;
@@ -2157,7 +2169,7 @@ static VOID lopi_conn_handler(lopi_connect_arg)
 /*  Frees memory allocated by lopi.c                                                   */
 /*************************************************************************************/
 
-static free_mem(disp_array,dmenu,nlines,except_ptr)
+free_mem(disp_array,dmenu,nlines,except_ptr)
    struct window_node *disp_array[MAX_DISP_NUM];
    int nlines;
    char *dmenu[MXMENU];    
@@ -2203,12 +2215,14 @@ static free_mem(disp_array,dmenu,nlines,except_ptr)
 /* points to.                                                                   */
 /********************************************************************************/
 
-static put_value(c_ptr,val_in)
+put_value(c_ptr,val_in)
   char val_in[MAX_STRING_SIZE];  /* Array containing value to be put. */
   struct mon_node *c_ptr;     /* Pointer to record of channel to which value is to
                                  be passes. */
   {
    status =  ca_put(DBR_STRING,c_ptr->chan_id,((void *)val_in)); 
+   if (DEBUG)
+     logMsg("Putting %s to %s\n",val_in,c_ptr->chan);
    status = ca_flush_io(); 
    if (status != ECA_NORMAL)
       logMsg("Message:%s\n",ca_message_text[CA_EXTRACT_MSG_NO(status)]);

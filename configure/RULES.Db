@@ -13,6 +13,7 @@
 
 vpath %.dbd $(USR_VPATH) $(GENERIC_SRC_DIRS) $(dir $(DBD)) $(COMMON_DIR)
 vpath %.db $(USR_VPATH) $(GENERIC_SRC_DIRS) $(dir $(DB)) $(COMMON_DIR)
+vpath %.vdb $(USR_VPATH) $(GENERIC_SRC_DIRS) $(dir $(DB)) $(COMMON_DIR)
 vpath %.substitutions $(USR_VPATH) $(GENERIC_SRC_DIRS) $(COMMON_DIR)
 vpath %.template $(USR_VPATH) $(GENERIC_SRC_DIRS) $(COMMON_DIR)
 vpath bpt%.data $(USR_VPATH) $(GENERIC_SRC_DIRS) $(COMMON_DIR)
@@ -57,7 +58,8 @@ TEMPLATE1=$(patsubst %0,%,$(patsubst %1,%,$(patsubst %2,%,$(patsubst %3,%,$(pats
 TEMPLATE2=$(patsubst %0,%,$(patsubst %1,%,$(patsubst %2,%,$(patsubst %3,%,$(patsubst %4,%, \
           $(patsubst %5,%,$(patsubst %6,%,$(patsubst %7,%,$(patsubst %8,%,$(patsubst %9,%, \
           $(TEMPLATE1)))))))))))
-TEMPLATE_FILENAME=$(addsuffix .template,$(addprefix ../,$(TEMPLATE2)))
+TEMPLATE3=$(addsuffix .template,$(addprefix ../,$(TEMPLATE2)))
+TEMPLATE_FILENAME=$(firstword $(wildcard ../$*.template) $(TEMPLATE3))
 
 # dbst based database optimization
 ifeq '$(DB_OPT)' 'YES'
@@ -176,7 +178,7 @@ $(INSTALL_DB)/%.template: %.template
 	@echo "Installing db file $@"
 	@$(INSTALL) -d -m 644 $< $(@D)
 
-.PRECIOUS: $(DB:%.db=$(COMMON_DIR)/%.template)
+.PRECIOUS: $(COMMON_DIR)/%.template
 
 ##################################################### INC files
 

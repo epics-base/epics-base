@@ -165,7 +165,7 @@ void CASG::reset ()
 
 void CASG::show ( unsigned level) const
 {
-    printf ("Sync Group: id=%u, magic=%lu, opPend=%lu, seqNo=%lu\n",
+    printf ("Sync Group: id=%u, magic=%u, opPend=%lu, seqNo=%lu\n",
         this->getId (), this->magic, this->opPendCount, this->seqNo);
 
     if ( level ) {

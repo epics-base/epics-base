@@ -15,7 +15,7 @@
 tsFreeList < class netReadNotifyIO, 1024 > netReadNotifyIO::freeList;
 
 netReadNotifyIO::netReadNotifyIO ( nciu &chan, cacNotify &notifyIn ) :
-    baseNMIU ( chan ), cacNotifyIO ( notifyIn )
+    cacNotifyIO ( notifyIn ), baseNMIU ( chan )
 {
 }
 

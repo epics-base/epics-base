@@ -16,8 +16,8 @@ tsFreeList < class netSubscription, 1024 > netSubscription::freeList;
 
 netSubscription::netSubscription ( nciu &chan, chtype typeIn, unsigned long countIn, 
     unsigned short maskIn, cacNotify &notifyIn ) :
-    baseNMIU (chan), cacNotifyIO (notifyIn),
-    mask (maskIn), type (typeIn), count (countIn)
+    cacNotifyIO (notifyIn), baseNMIU (chan), 
+    type (typeIn), count (countIn), mask (maskIn)
 {
 }
 

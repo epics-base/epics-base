@@ -32,7 +32,7 @@
 // }
 //
 // If you wish to force use of the new operator, then declare your class's 
-// destructor as a private member function.
+// destructor as a protected member function.
 //
 
 #include <stdio.h>

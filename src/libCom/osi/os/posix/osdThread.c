@@ -88,7 +88,9 @@ static void myAtExit(void)
     semMutexMustTake(listMutex);
     pthreadInfo=(threadInfo *)ellFirst(&pthreadList);
     while(pthreadInfo) {
-        pthread_cancel(pthreadInfo->tid);
+        if(pthreadInfo->createFunc){// dont cancel main thread
+            pthread_cancel(pthreadInfo->tid);
+        }
         pthreadInfo=(threadInfo *)ellNext(&pthreadInfo->node);
     }
     semMutexGive(listMutex);

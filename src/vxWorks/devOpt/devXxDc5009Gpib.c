@@ -42,8 +42,8 @@
 #define	DSET_LO		devLoDc5009Gpib
 #define	DSET_BI		devBiDc5009Gpib
 #define	DSET_BO		devBoDc5009Gpib
-#define	DSET_MBBO	devMbbiDc5009Gpib
-#define	DSET_MBBI	devMbboDc5009Gpib
+#define	DSET_MBBO	devMbboDc5009Gpib
+#define	DSET_MBBI	devMbbiDc5009Gpib
 #define	DSET_SI		devSiDc5009Gpib
 #define	DSET_SO		devSoDc5009Gpib
 
@@ -219,8 +219,8 @@ static struct gpibCmd gpibCmds[] =
   {&DSET_BO, GPIBCMD, IB_Q_HIGH, "init", NULL, 0, 32,
   NULL, 0, 0, NULL, &initNames, -1},
 
-    /* Param 1, allow user to generate SRQs by pressing the ID button */
-  {&DSET_BO, GPIBEFASTO, IB_Q_HIGH, "user on", NULL, 0, 32,
+    /* Param 1, set ability to generate SRQs by pressing the ID button */
+  {&DSET_BO, GPIBEFASTO, IB_Q_HIGH, NULL, NULL, 0, 32,
   NULL, 0, 0, userOffOn, &offOn, -1},
 
     /* Param 2, dissallow user-gen'd SRQs */
@@ -235,11 +235,11 @@ static struct gpibCmd gpibCmds[] =
   {&DSET_AI, GPIBREAD, IB_Q_LOW, "err?", "ERR %lf", 0, 32,
   NULL, 0, 0, NULL, NULL, -1},
 
-    /* Param 5 */
+    /* Param 5 read the user button status */
   {&DSET_BI, GPIBEFASTI, IB_Q_HIGH, "user?", NULL, 0, 32,
   NULL, 0, 0, userOffOn, &offOn, -1},
 
-   /* Param 6 */
+   /* Param 6 send a reading from the display */
   {&DSET_AI, GPIBREAD, IB_Q_LOW, "send", "%lf", 0, 32,
   NULL, 0, 0, NULL, NULL, -1}
 };
@@ -292,15 +292,13 @@ struct  devGpibParmBlock devSupParms = {
  * - the MAGIC_SRQ_PARM command is a GPIBREADW command.
  * - the device generates unsolicited SRQs while processing GPIBREADW commands.
  *
- * In general, this function will have to be heavily modified for each device
+ * In general, this function will have to be modified for each device
  * type that SRQs are to be supported.  This is because the serial poll byte
  * format varies from device to device.
  *
  ******************************************************************************/
 
-#define	DC5009_CMDERR	97
-#define	DC5009_EXEERR	98
-#define	DC5009_INTERR	99
+#define	DC5009_GOODBITS	0xef	/* I only care about these bits */
 
 #define	DC5009_PON	65	/* power just turned on */
 #define DC5009_OPC	66	/* operation just completed */
@@ -315,7 +313,7 @@ int		srqStatus;	/* The poll response from the device */
   if (Dc5009Debug || ibSrqDebug)
     logMsg("srqHandler(0x%08.8X, 0x%02.2X): called\n", phwpvt, srqStatus);
 
-  switch (srqStatus & 0xef) {
+  switch (srqStatus & DC5009_GOODBITS) {
   case DC5009_OPC:
 
     /* Invoke the command-type specific SRQ handler */

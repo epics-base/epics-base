@@ -47,6 +47,7 @@ extern int exit_osi_time ();
 
 BOOL WINAPI DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 {
+	WSADATA WsaData;
 	switch (dwReason) 
 	{
 	case DLL_PROCESS_ATTACH:
@@ -61,9 +62,19 @@ BOOL WINAPI DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 #endif	 		
 		if (init_osi_time ())
 			return FALSE;
+		/*
+		 * for use of select() by the fd managers
+		 */
+		if (WSAStartup(MAKEWORD(2,0), &WsaData) != 0) {
+			WSACleanup();
+			fprintf(stderr,"libCom unable to init winsock\n");
+			return FALSE;
+		}
 		break;
 	case DLL_PROCESS_DETACH:
 		exit_osi_time ();
+		if (WSACleanup()!=0)
+			return FALSE;
 		break;
 	}
 

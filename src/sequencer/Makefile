@@ -23,7 +23,8 @@ SRCS += gen_tables.c
 SRCS += sncVersion.c
 SRCS += snc.c
 
-PROD += snc
+PROD_DEFAULT += snc
+PROD_vxWorks +=
 
 seq_CFLAGS =
 
@@ -31,7 +32,7 @@ seq_SRCS = \
 	seq_main.c seq_ca.c seq_qry.c seq_task.c \
 	seq_mac.c seq_prog.c seq_if.c seqVersion.c
 
-IOC_LIBRARY_vxWorks = seq
+LIBRARY_vxWorks = seq
 
 include $(TOP)/configure/RULES_BUILD
 

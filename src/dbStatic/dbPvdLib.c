@@ -84,7 +84,7 @@ static unsigned short hash( char *pname, int length)
     return((ind1<<dbPvdHashTableShift) ^ ind0);
 }
 
-int dbPvdTableSize(DBBASE *pdbbase,int size)
+int dbPvdTableSize(int size)
 {
     int		i;
 

@@ -3,7 +3,7 @@ string   [a-zA-Z0-9_\,\./\*#\[\]%: ;!|\'\-&\(\)@\?\+<>=\$\t]
 
 %{
 #undef YY_INPUT
-#define YY_INPUT(b,r,ms) (r=(*dbAscii_yyinput)(b,ms))
+#define YY_INPUT(b,r,ms) (r=(*db_yyinput)(b,ms))
 
 static int yyreset(void)
 {
@@ -17,6 +17,7 @@ static int yyreset(void)
 
 "include"	{return(tokenINCLUDE);}
 "path"		{return(tokenPATH);}
+"addpath"	{return(tokenADDPATH);}
 "menu"		{return(tokenMENU);}
 "choice"	{return(tokenCHOICE);}
 "recordtype"	{return(tokenRECORDTYPE);}

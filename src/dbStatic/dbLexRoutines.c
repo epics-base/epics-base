@@ -1,4 +1,4 @@
-/* dbAsciiRoutines.c	*/
+/* dbLexRoutines.c	*/
 /* Author:  Marty Kraimer Date:    13JUL95*/
 /*****************************************************************
                           COPYRIGHT NOTIFICATION
@@ -45,33 +45,33 @@ static void yyerrorAbort(char *str);
 static void allocTemp(void *pvoid);
 static void *popFirstTemp(void);
 static void *getLastTemp(void);
-static int dbAscii_yyinput(char *buf,int max_size);
-static void dbAsciiIncludePrint(FILE *fp);
-static void dbAsciiPath(char *path);
-static void dbAsciiIncludeNew(char *include_file);
-static void dbAsciiMenuHead(char *name);
-static void dbAsciiMenuChoice(char *name,char *value);
-static void dbAsciiMenuBody(void);
+static int db_yyinput(char *buf,int max_size);
+static void dbIncludePrint(FILE *fp);
+static void dbPathCmd(char *path);
+static void dbAddPathCmd(char *path);
+static void dbIncludeNew(char *include_file);
+static void dbMenuHead(char *name);
+static void dbMenuChoice(char *name,char *value);
+static void dbMenuBody(void);
 
-static void dbAsciiRecordtypeHead(char *name);
-static void dbAsciiRecordtypeBody(void);
-static void dbAsciiRecordtypeFieldHead(char *name,char *type);
-static void dbAsciiRecordtypeFieldItem(char *name,char *value);
+static void dbRecordtypeHead(char *name);
+static void dbRecordtypeBody(void);
+static void dbRecordtypeFieldHead(char *name,char *type);
+static void dbRecordtypeFieldItem(char *name,char *value);
 
-static void dbAsciiDevice(char *recordtype,char *linktype,
+static void dbDevice(char *recordtype,char *linktype,
 	char *dsetname,char *choicestring);
-static void dbAsciiDriver(char *name);
+static void dbDriver(char *name);
 
-static void dbAsciiBreakHead(char *name);
-static void dbAsciiBreakItem(char *value);
-static void dbAsciiBreakBody(void);
+static void dbBreakHead(char *name);
+static void dbBreakItem(char *value);
+static void dbBreakBody(void);
 
-static void dbAsciiRecordHead(char *rectype,char*name);
-static void dbAsciiRecordField(char *name,char *value);
-static void dbAsciiRecordBody(void);
+static void dbRecordHead(char *rectype,char*name);
+static void dbRecordField(char *name,char *value);
+static void dbRecordBody(void);
 
 /*private declarations*/
-static int firstTime = TRUE;
 #define MY_BUFFER_SIZE 1024
 static char *my_buffer=NULL;
 static char *my_buffer_ptr=NULL;
@@ -132,52 +132,84 @@ static void *getLastTemp(void)
     return(ptempListNode->item);
 }
 
-static long dbAsciiReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp)
+static char *dbOpenFile(DBBASE *pdbbase,const char *filename,FILE **fp)
+{
+    ELLLIST	*ppathList = (ELLLIST *)pdbbase->pathPvt;
+    dbPathNode	*pdbPathNode;
+    char	*fullfilename;
+
+    *fp = 0;
+    if(!filename) return(0);
+    if(!ppathList
+    || (ellCount(ppathList)==0)
+    || filename[0]=='/'
+    || (filename[0]=='.' && (filename[1]=='.' || filename[1]=='/')) ) {
+	*fp = fopen(filename,"r");
+	return(0);
+    }
+    pdbPathNode = (dbPathNode *)ellFirst(ppathList);
+    while(pdbPathNode) {
+	fullfilename = dbCalloc(strlen(filename)+strlen(pdbPathNode->directory)
+	    +2,sizeof(char));
+	strcpy(fullfilename,pdbPathNode->directory);
+	strcat(fullfilename,"/");
+	strcat(fullfilename,filename);
+	*fp = fopen(fullfilename,"r");
+	free((void *)fullfilename);
+	if(*fp) return(pdbPathNode->directory);
+	pdbPathNode = (dbPathNode *)ellNext(&pdbPathNode->node);
+    }
+    return(0);
+}
+
+static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
+	const char *path)
 {
     long	status;
     inputFile	*pinputFile;
+    char	*penv;
     
+    if(*ppdbbase == 0) *ppdbbase = dbAllocBase();
+    pdbbase = *ppdbbase;
+    if(path) {
+	dbPath(pdbbase,path);
+    } else {
+	penv = getenv("EPICS_DB_INCLUDE_PATH");
+	if(penv) {
+	    dbPath(pdbbase,penv);
+	} else {
+	    dbPath(pdbbase,".");
+	}
+    }
     my_buffer = dbCalloc(MY_BUFFER_SIZE,sizeof(char));
-    if(firstTime) {
-	ellInit(&inputFileList);
-	ellInit(&tempList);
-	freeListInitPvt(&freeListPvt,sizeof(tempListNode),5);
-	firstTime = FALSE;
-    }
-    pinputFile = (inputFile *)ellLast(&inputFileList);
-    while(pinputFile) {
-	fclose(pinputFile->fp);
-	free((void *)pinputFile->filename);
-	free((void *)pinputFile->path);
-	ellDelete(&inputFileList,(ELLNODE *)pinputFile);
-	free((void *)pinputFile);
-	pinputFile = (inputFile *)ellLast(&inputFileList);
-    }
+    ellInit(&inputFileList);
+    ellInit(&tempList);
+    freeListInitPvt(&freeListPvt,sizeof(tempListNode),5);
     pinputFile = dbCalloc(1,sizeof(inputFile));
     if(filename) {
 	pinputFile->filename = dbCalloc(strlen(filename)+1,sizeof(char));
 	strcpy(pinputFile->filename,filename);
     }
     if(!fp) {
-	if(!filename || !(fp = fopen(filename,"r"))) {
+	FILE	*fp;
+
+	if(filename) pinputFile->path = dbOpenFile(pdbbase,filename,&fp);
+	if(!filename || !fp) {
 	    errPrintf(0,__FILE__, __LINE__,
-		"dbAsciiRead opening file %s\n",filename);
-	    free((void *)pinputFile);
+		"dbRead opening file %s",filename);
 	    free((void *)my_buffer);
+	    freeListCleanup(freeListPvt);
+	    free((void *)pinputFile);
 	    return(-1);
 	}
+	pinputFile->fp = fp;
+    } else {
+	pinputFile->fp = fp;
     }
-    pinputFile->fp = fp;
     pinputFile->line_num = 0;
     pinputFileNow = pinputFile;
     my_buffer[0] = '\0';
     my_buffer_ptr = my_buffer;
-    if(*ppdbbase) {
-	pdbbase = *ppdbbase;
-    } else {
-	pdbbase = dbAllocBase();
-	*ppdbbase = pdbbase;
-    }
     ellAdd(&inputFileList,&pinputFile->node);
     status = pvt_yy_parse();
     if(status) {
@@ -185,28 +217,25 @@ static long dbAsciiReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp)
     }
     freeListCleanup(freeListPvt);
     free((void *)my_buffer);
-    firstTime = TRUE;
     return(0);
 }
 
-long dbAsciiRead(DBBASE **ppdbbase,const char *filename)
-{return (dbAsciiReadCOM(ppdbbase,filename,0));}
+long dbReadDatabase(DBBASE **ppdbbase,const char *filename,const char *path)
+{return (dbReadCOM(ppdbbase,filename,0,path));}
 
-long dbAsciiReadFP(DBBASE **ppdbbase,FILE *fp)
-{return (dbAsciiReadCOM(ppdbbase,0,fp));}
+long dbReadDatabaseFP(DBBASE **ppdbbase,FILE *fp,const char *path)
+{return (dbReadCOM(ppdbbase,0,fp,path));}
 
-static int dbAscii_yyinput(char *buf, int max_size)
+static int db_yyinput(char *buf, int max_size)
 {
     int	l,n;
     
     if(*my_buffer_ptr==0) {
 	while(fgets(my_buffer,MY_BUFFER_SIZE,pinputFileNow->fp)==NULL) {
-
 	    if(fclose(pinputFileNow->fp)) 
 		errPrintf(0,__FILE__, __LINE__,
-			"Closing file %s\n",pinputFileNow->filename);
+			"Closing file %s",pinputFileNow->filename);
 	    free((void *)pinputFileNow->filename);
-	    free((void *)pinputFileNow->path);
 	    ellDelete(&inputFileList,(ELLNODE *)pinputFileNow);
 	    free((void *)pinputFileNow);
 	    pinputFileNow = (inputFile *)ellLast(&inputFileList);
@@ -223,21 +252,21 @@ static int dbAscii_yyinput(char *buf, int max_size)
     return(n);
 }
 
-static void dbAsciiIncludePrint(FILE *fp)
+static void dbIncludePrint(FILE *fp)
 {
     inputFile *pinputFile = pinputFileNow;
 
     fprintf(fp,"input line: %s",my_buffer);
     while(pinputFile) {
 	if(pinputFile->filename) {
-	    fprintf(fp,"   in file: ");
+	    fprintf(fp,"   in:");
 	    if(pinputFile->path)
-	        fprintf(fp," path \"%s\"",pinputFile->path);
-	    fprintf(fp,"%s",pinputFile->filename);
+	        fprintf(fp," path \"%s\" ",pinputFile->path);
+	    fprintf(fp," file %s",pinputFile->filename);
 	} else {
-	    fprintf(fp,"     stdin:");
+	    fprintf(fp,"stdin:");
 	    if(pinputFile->path)
-	        fprintf(fp," path \"%s\"",pinputFile->path);
+	        fprintf(fp," path \"%s\" ",pinputFile->path);
 	}
 	fprintf(fp," line %d\n",pinputFile->line_num);
 	pinputFile = (inputFile *)ellPrevious(&pinputFile->node);
@@ -246,104 +275,59 @@ static void dbAsciiIncludePrint(FILE *fp)
     return;
 }
 
-static void dbAsciiPath(char *path)
+static void dbPathCmd(char *path)
 {
-    pinputFileNow->path = path;
+    dbPath(pdbbase,path);
+    free((void *)path);
+}
+
+static void dbAddPathCmd(char *path)
+{
+    dbAddPath(pdbbase,path);
+    free((void *)path);
 }
 
-static void dbAsciiIncludeNew(char *filename)
+static void dbIncludeNew(char *filename)
 {
-    inputFile	*newfile;
     inputFile	*pinputFile;
-    inputFile	*pinputFileFirst;
     FILE	*fp;
-    char	*currentPath;
-    char	*newCurrentPath;
-    int		lenPathAndFilename = 0;
-    int		lenstr;
 
-    newfile = dbCalloc(1,sizeof(inputFile));
-    newfile->filename = dbCalloc(strlen(filename)+1,sizeof(char));
-    strcpy(newfile->filename,filename);
-    /*search backward for first path starting with / */
-    pinputFile = (inputFile *)ellLast(&inputFileList);
-    while(pinputFile) {
-	if(pinputFile->path) {
-	    if(pinputFile->path[0]=='/') break;
-	}
-	pinputFile = (inputFile *)ellPrevious(&pinputFile->node);
-    }
-    if(!pinputFile) pinputFile=(inputFile *)ellFirst(&inputFileList);
-    pinputFileFirst = pinputFile;
-    while(pinputFile) {
-	if(pinputFile->path) {
-	    lenstr = strlen(pinputFile->path);
-	    lenPathAndFilename += lenstr;
-	    if(pinputFile->path[lenstr-1] != '/') lenPathAndFilename++;
-	}
-	pinputFile = (inputFile *)ellNext(&pinputFile->node);
-    }
-    lenPathAndFilename +=  strlen(filename) + 1;
-    currentPath = dbCalloc(lenPathAndFilename,sizeof(char));
-    pinputFile = pinputFileFirst;
-    while(pinputFile) {
-	if(pinputFile->path) {
-	    strcat(currentPath,pinputFile->path);
-	    lenstr = strlen(pinputFile->path);
-	    if(pinputFile->path[lenstr-1] != '/') strcat(currentPath,"/");
-	}
-	pinputFile = (inputFile *)ellNext(&pinputFile->node);
-    }
-    strcat(currentPath,filename);
-    fp = fopen(currentPath,"r");
-    if(!fp) { /*Try preceeding path with ./rec */
-	newCurrentPath = dbCalloc(
-	    (strlen("./rec/") + strlen(currentPath) + 1),sizeof(char));
-	strcpy(newCurrentPath,"./rec/");
-	strcat(newCurrentPath,currentPath);
-	fp = fopen(newCurrentPath,"r");
-	free((void *)newCurrentPath);
-    }
-    if(!fp) { /*Try preceeding path with ./base/rec */
-	newCurrentPath = dbCalloc(
-	    (strlen("./base/rec/") + strlen(currentPath) + 1),sizeof(char));
-	strcpy(newCurrentPath,"./base/rec/");
-	strcat(newCurrentPath,currentPath);
-	fp = fopen(newCurrentPath,"r");
-	free((void *)newCurrentPath);
-    }
+    pinputFile = dbCalloc(1,sizeof(inputFile));
+    pinputFile->path = dbOpenFile(pdbbase,filename,&fp);
     if(!fp) {
 	errPrintf(0,__FILE__, __LINE__,
-		"dbAsciiIncludeNew opening file %s\n",currentPath);
+		"dbIncludeNew opening file %s",filename);
 	yyerror(NULL);
 	free((void *)filename);
-	free((void *)newfile);
+	free((void *)pinputFile);
 	return;
     }
-    free((void *)currentPath);
+    pinputFile->filename = dbCalloc(strlen(filename)+1,sizeof(char));
+    strcpy(pinputFile->filename,filename);
     free((void *)filename);
-    newfile->fp = fp;
-    ellAdd(&inputFileList,&newfile->node);
-    pinputFileNow = newfile;
+    pinputFile->fp = fp;
+    ellAdd(&inputFileList,&pinputFile->node);
+    pinputFileNow = pinputFile;
 }
 
-static void dbAsciiMenuHead(char *name)
+static void dbMenuHead(char *name)
 {
     dbMenu		*pdbMenu;
     GPHENTRY		*pgphentry;
 
     pgphentry = gphFind(pdbbase->pgpHash,name,&pdbbase->menuList);
     if(pgphentry) {
-	yyerror("Duplicate menu ignored");
 	duplicate = TRUE;
+	free((void *)name);
+	return;
     }
     pdbMenu = dbCalloc(1,sizeof(dbMenu));
     pdbMenu->name = name;
-    if(ellCount(&tempList)) yyerrorAbort("dbAsciiMenuHead: tempList not empty");
+    if(ellCount(&tempList)) yyerrorAbort("dbMenuHead: tempList not empty");
     allocTemp(pdbMenu);
 }
 
-static void dbAsciiMenuChoice(char *name,char *value)
+static void dbMenuChoice(char *name,char *value)
 {
     if(duplicate) {
 	free((void *)name);
@@ -354,7 +338,7 @@ static void dbAsciiMenuChoice(char *name,char *value)
     allocTemp(value);
 }
 
-static void dbAsciiMenuBody(void)
+static void dbMenuBody(void)
 {
     dbMenu		*pnewMenu;
     dbMenu		*pMenu;
@@ -374,7 +358,7 @@ static void dbAsciiMenuBody(void)
 	pnewMenu->papChoiceName[i] = (char *)popFirstTemp();
 	pnewMenu->papChoiceValue[i] = (char *)popFirstTemp();
     }
-    if(ellCount(&tempList)) yyerrorAbort("dbAsciiMenuBody: tempList not empty");
+    if(ellCount(&tempList)) yyerrorAbort("dbMenuBody: tempList not empty");
     /* Add menu in sorted order */
     pMenu = (dbMenu *)ellFirst(&pdbbase->menuList);
     while(pMenu && strcmp(pMenu->name,pnewMenu->name) >0 )
@@ -391,24 +375,25 @@ static void dbAsciiMenuBody(void)
     }
 }
 
-static void dbAsciiRecordtypeHead(char *name)
+static void dbRecordtypeHead(char *name)
 {
     dbRecDes		*pdbRecDes;
     GPHENTRY		*pgphentry;
 
     pgphentry = gphFind(pdbbase->pgpHash,name,&pdbbase->recDesList);
     if(pgphentry) {
-	yyerror("Duplicate recordtype ignored");
 	duplicate = TRUE;
+	free((void *)name);
+	return;
     }
     pdbRecDes = dbCalloc(1,sizeof(dbRecDes));
     pdbRecDes->name = name;
     if(ellCount(&tempList))
-	yyerrorAbort("dbAsciiRecordtypeHead tempList not empty");
+	yyerrorAbort("dbRecordtypeHead tempList not empty");
     allocTemp(pdbRecDes);
 }
 
-static void dbAsciiRecordtypeFieldHead(char *name,char *type)
+static void dbRecordtypeFieldHead(char *name,char *type)
 {
     dbFldDes		*pdbFldDes;
     int			i;
@@ -433,7 +418,7 @@ static void dbAsciiRecordtypeFieldHead(char *name,char *type)
     yyerrorAbort("Illegal Field Type");
 }
 
-static void dbAsciiRecordtypeFieldItem(char *name,char *value)
+static void dbRecordtypeFieldItem(char *name,char *value)
 {
     dbFldDes		*pdbFldDes;
     
@@ -549,7 +534,7 @@ static void dbAsciiRecordtypeFieldItem(char *name,char *value)
     }
 }
 
-static void dbAsciiRecordtypeBody(void)
+static void dbRecordtypeBody(void)
 {
     dbRecDes		*pdbRecDes;
     dbFldDes		*pdbFldDes;
@@ -587,7 +572,7 @@ static void dbAsciiRecordtypeBody(void)
 	    fprintf(stderr,"recordtype(%s).%s extra not specified\n",
 		pdbRecDes->name,pdbFldDes->name);
     }
-    if(ellCount(&tempList)) yyerrorAbort("dbAsciiMenuBody: tempList not empty");
+    if(ellCount(&tempList)) yyerrorAbort("dbMenuBody: tempList not empty");
     pdbRecDes->no_prompt = no_prompt;
     pdbRecDes->no_links = no_links;
     pdbRecDes->link_ind = dbCalloc(no_prompt,sizeof(short));
@@ -632,7 +617,7 @@ static void dbAsciiRecordtypeBody(void)
     dbGetRecordtypeSizeOffset(pdbRecDes);
 }
 
-static void dbAsciiDevice(char *recordtype,char *linktype,
+static void dbDevice(char *recordtype,char *linktype,
 	char *dsetname,char *choicestring)
 {
     devSup	*pdevSup;
@@ -643,6 +628,10 @@ static void dbAsciiDevice(char *recordtype,char *linktype,
     pgphentry = gphFind(pdbbase->pgpHash,recordtype,&pdbbase->recDesList);
     if(!pgphentry) {
 	yyerror(" record type not found");
+	free((void *)recordtype);
+	free((void *)linktype);
+	free((void *)dsetname);
+	free((void *)choicestring);
 	return;
     }
     free(recordtype);
@@ -661,7 +650,6 @@ static void dbAsciiDevice(char *recordtype,char *linktype,
     pdbRecDes = (dbRecDes *)pgphentry->userPvt;
     pgphentry = gphFind(pdbbase->pgpHash,choicestring,&pdbRecDes->devList);
     if(pgphentry) {
-	yyerror("Duplicate Device Support ignored");
 	free((void *)dsetname);
 	free((void *)choicestring);
 	return;
@@ -678,15 +666,15 @@ static void dbAsciiDevice(char *recordtype,char *linktype,
     }
     ellAdd(&pdbRecDes->devList,&pdevSup->node);
 }
-
-static void dbAsciiDriver(char *name)
+
+static void dbDriver(char *name)
 {
     drvSup	*pdrvSup;
     GPHENTRY	*pgphentry;
 
     pgphentry = gphFind(pdbbase->pgpHash,name,&pdbbase->drvList);
     if(pgphentry) {
-	yyerror("Duplicate driver ignored");
+	free((void *)name);
 	return;
     }
     pdrvSup = dbCalloc(1,sizeof(drvSup));
@@ -699,22 +687,23 @@ static void dbAsciiDriver(char *name)
     ellAdd(&pdbbase->drvList,&pdrvSup->node);
 }
 
-static void dbAsciiBreakHead(char *name)
+static void dbBreakHead(char *name)
 {
     brkTable	*pbrkTable;
     GPHENTRY	*pgphentry;
 
     pgphentry = gphFind(pdbbase->pgpHash,name,&pdbbase->bptList);
     if(pgphentry) {
-	yyerror("Duplicate breakpoint table ignored");
 	duplicate = TRUE;
+	free((void *)name);
+	return;
     }
     pbrkTable = dbCalloc(1,sizeof(brkTable));
     pbrkTable->name = name;
-    if(ellCount(&tempList)) yyerrorAbort("dbAsciiBreakHead:tempList not empty");    allocTemp(pbrkTable);
+    if(ellCount(&tempList)) yyerrorAbort("dbBreakHead:tempList not empty");    allocTemp(pbrkTable);
 }
 
-static void dbAsciiBreakItem(char *value)
+static void dbBreakItem(char *value)
 {
     if(duplicate) {
 	free((void *)value);
@@ -722,8 +711,8 @@ static void dbAsciiBreakItem(char *value)
     }
     allocTemp(value);
 }
-
-static void dbAsciiBreakBody(void)
+
+static void dbBreakBody(void)
 {
     brkTable		*pnewbrkTable;
     brkTable		*pbrkTable;
@@ -738,7 +727,7 @@ static void dbAsciiBreakBody(void)
     pnewbrkTable = (brkTable *)popFirstTemp();
     pnewbrkTable->number = number = ellCount(&tempList)/2;
     if(number*2 != ellCount(&tempList))
-	yyerrorAbort("dbAsciiBreakBody: Odd number of values");
+	yyerrorAbort("dbBreakBody: Odd number of values");
     pnewbrkTable->papBrkInt = dbCalloc(number,sizeof(brkInt));
     for(i=0; i<number; i++) {
 	double	raw,eng;
@@ -748,7 +737,7 @@ static void dbAsciiBreakBody(void)
 	praw = (char *)popFirstTemp();
 	peng = (char *)popFirstTemp();
 	if((sscanf(praw,"%lf",&raw)!=1) || (sscanf(peng,"%lf",&eng)!=1) ) {
-	    yyerrorAbort("dbAsciibrkTable: Illegal table value");
+	    yyerrorAbort("dbbrkTable: Illegal table value");
 	}
 	free((void *)praw);
 	free((void *)peng);
@@ -788,14 +777,14 @@ static void dbAsciiBreakBody(void)
     if(!pbrkTable) ellAdd(&pdbbase->bptList,&pnewbrkTable->node);
 }
 
-static void dbAsciiRecordHead(char *rectype,char *name)
+static void dbRecordHead(char *rectype,char *name)
 {
     DBENTRY		*pdbentry;
     long		status;
 
     pdbentry = dbAllocEntry(pdbbase);
     if(ellCount(&tempList))
-	yyerrorAbort("dbAsciiRecordHead: tempList not empty");
+	yyerrorAbort("dbRecordHead: tempList not empty");
     allocTemp(pdbentry);
     status = dbFindRecdes(pdbentry,rectype);
     if(status) {
@@ -805,9 +794,11 @@ static void dbAsciiRecordHead(char *rectype,char *name)
     }
     /*Duplicate records ok. Thus dont check return status.*/
     dbCreateRecord(pdbentry,name);
+    free((void *)rectype);
+    free((void *)name);
 }
 
-static void dbAsciiRecordField(char *name,char *value)
+static void dbRecordField(char *name,char *value)
 {
     DBENTRY		*pdbentry;
     tempListNode	*ptempListNode;
@@ -827,14 +818,16 @@ static void dbAsciiRecordField(char *name,char *value)
 	yyerror(NULL);
 	return;
     }
+    free((void *)name);
+    free((void *)value);
 }
 
-static void dbAsciiRecordBody(void)
+static void dbRecordBody(void)
 {
     DBENTRY	*pdbentry;
 
     pdbentry = (DBENTRY *)popFirstTemp();
     if(ellCount(&tempList))
-	yyerrorAbort("dbAsciiRecordBody: tempList not empty");
+	yyerrorAbort("dbRecordBody: tempList not empty");
     dbFreeEntry(pdbentry);
 }

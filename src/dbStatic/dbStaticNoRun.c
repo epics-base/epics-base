@@ -48,13 +48,13 @@ long dbAllocRecord(DBENTRY *pdbentry,char *precordName)
 	switch(pflddes->field_type) {
 	case DBF_STRING:
 	    if(pflddes->size <= 0) {
-		epicsPrintf("size=0 for %s.%s\n",precdes->name,pflddes->name);
+		fprintf(stderr,"size=0 for %s.%s\n",precdes->name,pflddes->name);
 		pflddes->size = 1;
 	    }
 	    papField[i] = dbCalloc(pflddes->size,sizeof(char));
 	    if(pflddes->initial)  {
 		if(strlen(pflddes->initial) >= pflddes->size) {
-		    epicsPrintf("initial size > size for %s.%s\n",
+		    fprintf(stderr,"initial size > size for %s.%s\n",
 			precdes->name,pflddes->name);
 		} else {
 		    strcpy((char *)papField[i],pflddes->initial);
@@ -97,7 +97,7 @@ long dbAllocRecord(DBENTRY *pdbentry,char *precordName)
 	case DBF_NOACCESS:
 	    break;
 	default:
-	    epicsPrintf("dbAllocRecord: Illegal field type\n");
+	    fprintf(stderr,"dbAllocRecord: Illegal field type\n");
 	}
     }
     pstr = (char *)papField[0];

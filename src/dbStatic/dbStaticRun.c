@@ -38,7 +38,6 @@ of this distribution.
 #include <devSup.h>
 #include <drvSup.h>
 #include <recSup.h>
-#include <cvtTable.h>
 #include <special.h>
 
 static char hex_digit_to_ascii[16]={'0','1','2','3','4','5','6','7','8','9',

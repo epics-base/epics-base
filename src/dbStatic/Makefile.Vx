@@ -7,13 +7,13 @@ USR_CFLAGS = -ansi
 VX_WARN_YES = -Wall -pedantic
 
 SRCS.c = \
-	dbAsciiYacc.c \
+	dbYacc.c \
 	../dbPvdLib.c\
 	../dbStaticRun.c\
 	../dbStaticLib.c
 
 OBJSdbLib = \
-	dbAsciiYacc.o\
+	dbYacc.o\
 	dbPvdLib.o\
 	dbStaticRun.o\
 	dbStaticLib.o
@@ -22,11 +22,11 @@ PROD = dbStaticLib
 
 include $(EPICS)/config/RULES.Vx
 
-# Extra rule since dbAsciiRoutines.c is included in dbAsciiYacc.c
-dbAsciiYacc.o: dbAsciiLex.c ../dbAsciiRoutines.c
+# Extra rule since dbLexRoutines.c is included in dbYacc.c
+dbYacc.o: dbLex.c ../dbLexRoutines.c
 
 clean::
-	@$(RM) dbAsciiLex.c dbAsciiYacc.c
+	@$(RM) dbLex.c dbYacc.c
 
 dbStaticLib: $(OBJSdbLib)
 	$(RM) $@

@@ -45,7 +45,6 @@ of this distribution.
 #include <dbStaticPvt.h>
 #include <devSup.h>
 #include <drvSup.h>
-#include <cvtTable.h>
 #include <special.h>
 #include <gpHash.h>
 #include <guigroup.h>
@@ -134,6 +133,23 @@ static char **promptAddr[VXI_IO+1];
 static int formlines[VXI_IO+1];
 
 /* internal routines*/
+static void dbFreePath(DBBASE *pdbbase) {
+    ELLLIST	*ppathList;
+    dbPathNode	*pdbPathNode;
+
+    if(!pdbbase) return;
+    ppathList = (ELLLIST *)pdbbase->pathPvt;
+    if(!ppathList) return;
+    while(pdbPathNode = (dbPathNode *)ellFirst(ppathList)) {
+	ellDelete(ppathList,&pdbPathNode->node);
+	free((void *)pdbPathNode->directory);
+	free((void *)pdbPathNode);
+    }
+    free((void *)ppathList);
+    pdbbase->pathPvt = 0;
+    return;
+}
+
 static void initForms(void)
 {
 	static int	firstTime=TRUE;
@@ -298,7 +314,7 @@ void dbFreeBase(dbBase *pdbbase)
 	pdbRecordNode = (dbRecordNode *)ellFirst(&pdbRecDes->recList);
 	while(pdbRecordNode) {
 	    pdbRecordNodeNext = (dbRecordNode *)ellNext(&pdbRecordNode->node);
-	    if(dbFindRecord(&dbentry,pdbRecordNode->recordname))
+	    if(!dbFindRecord(&dbentry,pdbRecordNode->recordname))
 		dbDeleteRecord(&dbentry);
 	    pdbRecordNode = pdbRecordNodeNext;
 	}
@@ -379,6 +395,7 @@ void dbFreeBase(dbBase *pdbbase)
     }
     gphFreeMem(pdbbase->pgpHash);
     dbPvdFreeMem(pdbbase);
+    dbFreePath(pdbbase);
     free((void *)pdbbase);
     return;
 }
@@ -423,15 +440,68 @@ DBENTRY *dbCopyEntry(DBENTRY *pdbentry)
 
 long dbRead(DBBASE *pdbbase,FILE *fp)
 {
-    return(dbAsciiReadFP(&pdbbase,fp));
+    return(dbReadDatabaseFP(&pdbbase,fp,0));
 }
 long dbWrite(DBBASE *pdbbase,FILE *fpdctsdr,FILE *fp)
 {
-    epicsPrintf("dbWrite obsolete. It does NOTHING\n");
+    fprintf(stderr,"dbWrite obsolete. It does NOTHING\n");
     return(-1);
 }
+
+long dbPath(DBBASE *pdbbase,const char *path)
+{
+    if(!pdbbase) return(-1);
+    dbFreePath(pdbbase);
+    return(dbAddPath(pdbbase,path));
+}
 
-long dbWriteRecords(DBBASE *pdbbase,FILE *fp,char *precdesname,int level)
+long dbAddPath(DBBASE *pdbbase,const char *path)
+{
+    ELLLIST	*ppathList;
+    dbPathNode	*pdbPathNode;
+    const char	*pcolon;
+    const char	*pdir;
+    int		len;
+
+    if(!pdbbase) return(-1);
+    ppathList = (ELLLIST *)pdbbase->pathPvt;
+    if(!ppathList) {
+	ppathList= dbCalloc(1,sizeof(ELLLIST));
+	ellInit(ppathList);
+	pdbbase->pathPvt = (void *)ppathList;
+    }
+    pdir = path;
+    while(pdir) {
+	if(*pdir == ':') {
+	    pdir++;
+	    continue;
+	}
+	pdbPathNode = (dbPathNode *)dbCalloc(1,sizeof(dbPathNode));
+	ellAdd(ppathList,&pdbPathNode->node);
+	pcolon = strchr(pdir,':');
+	len = (pcolon ? (pcolon - pdir) : strlen(pdir));
+	pdbPathNode->directory = (char *)dbCalloc(1,len + 1);
+	strncpy(pdbPathNode->directory,pdir,len);
+	pdir = (pcolon ? (pcolon+1) : 0);
+    }
+    return(0);
+}
+
+long dbWriteRecord(DBBASE *ppdbbase,const char *filename,
+	char *precdesname,int level)
+{
+    FILE	*outFile;
+
+    outFile = fopen(filename,"w");
+    if(!outFile) {
+	errPrintf(0,__FILE__,__LINE__,"Error opening %s\n",filename);
+	return(-1);
+    }
+    dbWriteRecordFP(ppdbbase,outFile,precdesname,level);
+    return(fclose(outFile));
+}
+
+long dbWriteRecordFP(DBBASE *pdbbase,FILE *fp,char *precdesname,int level)
 {
     DBENTRY	dbentry;
     DBENTRY	*pdbentry=&dbentry;
@@ -440,18 +510,24 @@ long dbWriteRecords(DBBASE *pdbbase,FILE *fp,char *precdesname,int level)
 
     dctonly = ((level>1) ? FALSE : TRUE);
     dbInitEntry(pdbbase,pdbentry);
-    if(!precdesname)
+    if(!precdesname) {
 	status = dbFirstRecdes(pdbentry);
-    else
+	if(status) {
+	    fprintf(stderr,"dbWriteRecordFP: No record descriptions\n");
+	    return(status);
+	}
+    } else {
 	status = dbFindRecdes(pdbentry,precdesname);
-    if(status) {
-	fprintf(stderr,"No record description\n");
-	return(status);
+	if(status) {
+	    fprintf(stderr,"dbWriteRecordFP: No record description for %s\n",
+		precdesname);
+	    return(status);
+	}
     }
     while(!status) {
 	status = dbFirstRecord(pdbentry);
 	while(!status) {
-	    fprintf(fp,"record(%s,%s) {\n",
+	    fprintf(fp,"record(%s,\"%s\") {\n",
 		dbGetRecdesName(pdbentry),dbGetRecordName(pdbentry));
 	    status = dbFirstFielddes(pdbentry,dctonly);
 	    while(!status) {
@@ -471,15 +547,31 @@ long dbWriteRecords(DBBASE *pdbbase,FILE *fp,char *precdesname,int level)
     return(0);
 }
 
-void dbWriteMenu(DBBASE *pdbbase,char *menuName)
+long dbWriteMenu(DBBASE *ppdbbase,const char *filename,char *menuName)
+{
+    FILE	*outFile;
+
+    outFile = fopen(filename,"w");
+    if(!outFile) {
+	errPrintf(0,__FILE__,__LINE__,"Error opening %s\n",filename);
+	return(-1);
+    }
+    dbWriteMenuFP(ppdbbase,outFile,menuName);
+    if(fclose(outFile)) {
+	errPrintf(0,__FILE__,__LINE__,"Error closing %s\n",filename);
+    }
+    return(0);
+}
+
+long dbWriteMenuFP(DBBASE *pdbbase,FILE *fp,char *menuName)
 {
     dbMenu	*pdbMenu;
     int		gotMatch;
     int		i;
 
     if(!pdbbase) {
-	printf("pdbbase not specified\n");
-	return;
+	fprintf(stderr,"pdbbase not specified\n");
+	return(-1);
     }
     pdbMenu = (dbMenu *)ellFirst(&pdbbase->menuList);
     while(pdbMenu) {
@@ -489,19 +581,36 @@ void dbWriteMenu(DBBASE *pdbbase,char *menuName)
 	    gotMatch=TRUE;
 	}
 	if(gotMatch) {
-	    fprintf(stdout,"menu(%s) {\n",pdbMenu->name);
+	    fprintf(fp,"menu(%s) {\n",pdbMenu->name);
 	    for(i=0; i<pdbMenu->nChoice; i++) {
-		fprintf(stdout,"\tchoice(%s,\"%s\")\n",pdbMenu->papChoiceName[i],
+		fprintf(fp,"\tchoice(%s,\"%s\")\n",pdbMenu->papChoiceName[i],
 		    pdbMenu->papChoiceValue[i]);
 	    }
-	    fprintf(stdout,"}\n");
+	    fprintf(fp,"}\n");
 	    if(menuName) break;
 	}
 	pdbMenu = (dbMenu *)ellNext(&pdbMenu->node);
     }
+    return(0);
 }
 
-void dbWriteRecDes(DBBASE *pdbbase,char *recdesName)
+long dbWriteRecDes(DBBASE *pdbbase,const char *filename,char *recdesName)
+{
+    FILE	*outFile;
+
+    outFile = fopen(filename,"w");
+    if(!outFile) {
+	errPrintf(0,__FILE__,__LINE__,"Error opening %s\n",filename);
+	return(-1);
+    }
+    dbWriteRecDesFP(pdbbase,outFile,recdesName);
+    if(fclose(outFile)) {
+	errPrintf(0,__FILE__,__LINE__,"Error closing %s\n",filename);
+    }
+    return(0);
+}
+
+long dbWriteRecDesFP(DBBASE *pdbbase,FILE *fp,char *recdesName)
 {
     dbRecDes	*pdbRecDes;
     dbFldDes	*pdbFldDes;
@@ -509,8 +618,8 @@ void dbWriteRecDes(DBBASE *pdbbase,char *recdesName)
     int		i;
 
     if(!pdbbase) {
-	printf("pdbbase not specified\n");
-	return;
+	fprintf(stderr,"pdbbase not specified\n");
+	return(-1);
     }
     for(pdbRecDes = (dbRecDes *)ellFirst(&pdbbase->recDesList);
     pdbRecDes; pdbRecDes = (dbRecDes *)ellNext(&pdbRecDes->node)) {
@@ -520,27 +629,28 @@ void dbWriteRecDes(DBBASE *pdbbase,char *recdesName)
 	    gotMatch=TRUE;
 	}
 	if(!gotMatch) continue;
-	fprintf(stdout,"recordtype(%s) {\n",pdbRecDes->name);
+	fprintf(fp,"recordtype(%s) {\n",pdbRecDes->name);
 	for(i=0; i<pdbRecDes->no_fields; i++) {
 	    int	j;
 
 	    pdbFldDes = pdbRecDes->papFldDes[i];
-	    fprintf(stdout,"\tfield(%s,",pdbFldDes->name);
+	    fprintf(fp,"\tfield(%s,",pdbFldDes->name);
 	    for(j=0; j<DBF_NTYPES; j++) {
 		if(pamapdbfType[j].value == pdbFldDes->field_type) break;
 	    }
 	    if(j>=DBF_NTYPES)
-		printf("\t     field_type: %d\n", pdbFldDes->field_type);
+		fprintf(stderr,"\t     field_type: %d\n",
+			pdbFldDes->field_type);
 	    else
-		fprintf(stdout,"%s) {\n",pamapdbfType[j].strvalue);
+		fprintf(fp,"%s) {\n",pamapdbfType[j].strvalue);
 	    if(pdbFldDes->prompt)
-		fprintf(stdout,"\t\tprompt(\"%s\")\n",pdbFldDes->prompt);
+		fprintf(fp,"\t\tprompt(\"%s\")\n",pdbFldDes->prompt);
 	    if(pdbFldDes->initial)
-		fprintf(stdout,"\t\tinitial(\"%s\")\n",pdbFldDes->initial);
+		fprintf(fp,"\t\tinitial(\"%s\")\n",pdbFldDes->initial);
 	    if(pdbFldDes->promptgroup) {
 		for(j=0; j<GUI_NTYPES; j++) {
 		    if(pamapguiGroup[j].value == pdbFldDes->promptgroup) {
-			fprintf(stdout,"\t\tpromptgroup(%s)\n",
+			fprintf(fp,"\t\tpromptgroup(%s)\n",
 				pamapguiGroup[j].strvalue);
 			break;
 		    }
@@ -549,45 +659,62 @@ void dbWriteRecDes(DBBASE *pdbbase,char *recdesName)
 	    if(pdbFldDes->special) {
 		for(j=0; j<SPC_NTYPES; j++) {
 		    if(pamapspcType[j].value == pdbFldDes->special) {
-			fprintf(stdout,"\t\tspecial(%s)\n",
+			fprintf(fp,"\t\tspecial(%s)\n",
 				pamapspcType[j].strvalue);
 			break;
 		    }
 		}
 	    }
 	    if(pdbFldDes->extra)
-		fprintf(stdout,"\t\textra(\"%s\")\n",pdbFldDes->extra);
+		fprintf(fp,"\t\textra(\"%s\")\n",pdbFldDes->extra);
 	    if(pdbFldDes->field_type==DBF_MENU) {
 		if(pdbFldDes->ftPvt)
-		    fprintf(stdout,"\t\tmenu(%s)\n",
+		    fprintf(fp,"\t\tmenu(%s)\n",
 			((dbMenu *)pdbFldDes->ftPvt)->name);
 		else
-		    printf("\t\t  menu: NOT FOUND\n");
+		   fprintf(stderr,"\t\t  menu: NOT FOUND\n");
 	    }
 	    if(pdbFldDes->field_type==DBF_STRING) {
-		fprintf(stdout,"\t\tsize(%d)\n",
+		fprintf(fp,"\t\tsize(%d)\n",
 		    pdbFldDes->size);
 	    }
-	    if(pdbFldDes->process_passive) fprintf(stdout,"\t\tpp(TRUE)\n");
-	    if(pdbFldDes->base) fprintf(stdout,"\t\tbase(HEX)\n");
+	    if(pdbFldDes->process_passive) fprintf(fp,"\t\tpp(TRUE)\n");
+	    if(pdbFldDes->base) fprintf(fp,"\t\tbase(HEX)\n");
 	    if(pdbFldDes->interest)
-		fprintf(stdout,"\t\tinterest(%d)\n",pdbFldDes->interest);
-	    if(!pdbFldDes->as_level) fprintf(stdout,"\t\tasl(ASL0)\n");
-	    fprintf(stdout,"\t}\n");
+		fprintf(fp,"\t\tinterest(%d)\n",pdbFldDes->interest);
+	    if(!pdbFldDes->as_level) fprintf(fp,"\t\tasl(ASL0)\n");
+	    fprintf(fp,"\t}\n");
 	}
-	fprintf(stdout,"}\n");
+	fprintf(fp,"}\n");
 	if(recdesName) break;
     }
+    return(0);
 }
 
-void dbWriteDevice(DBBASE *pdbbase)
+long dbWriteDevice(DBBASE *pdbbase,const char *filename)
+{
+    FILE	*outFile;
+
+    outFile = fopen(filename,"w");
+    if(!outFile) {
+	errPrintf(0,__FILE__,__LINE__,"Error opening %s\n",filename);
+	return(-1);
+    }
+    dbWriteDeviceFP(pdbbase,outFile);
+    if(fclose(outFile)) {
+	errPrintf(0,__FILE__,__LINE__,"Error closing %s\n",filename);
+    }
+    return(0);
+}
+
+long dbWriteDeviceFP(DBBASE *pdbbase,FILE *fp)
 {
     dbRecDes	*pdbRecDes;
     devSup	*pdevSup;
 
     if(!pdbbase) {
-	printf("pdbbase not specified\n");
-	return;
+	fprintf(stderr,"dbWriteDeviceFP: pdbbase not specified\n");
+	return(-1);
     }
     for(pdbRecDes = (dbRecDes *)ellFirst(&pdbbase->recDesList);
     pdbRecDes; pdbRecDes = (dbRecDes *)ellNext(&pdbRecDes->node)) {
@@ -599,29 +726,47 @@ void dbWriteDevice(DBBASE *pdbbase)
 		if(pamaplinkType[j].value==pdevSup->link_type) break;
 	    }
 	    if(j>=LINK_NTYPES) {
-		fprintf(stdout,"link_type not valid\n");
+		fprintf(fp,"link_type not valid\n");
 		continue;
 	    }
-	    fprintf(stdout,"device(%s,%s,%s,\"%s\")\n",
+	    fprintf(fp,"device(%s,%s,%s,\"%s\")\n",
 		pdbRecDes->name,
 		pamaplinkType[j].strvalue,
 		pdevSup->name,pdevSup->choice);
 	}
     }
+    return(0);
 }
 
-void dbWriteDriver(DBBASE *pdbbase)
+long dbWriteDriver(DBBASE *pdbbase,const char *filename)
+{
+    FILE	*outFile;
+
+    outFile = fopen(filename,"w");
+    if(!outFile) {
+	errPrintf(0,__FILE__,__LINE__,"Error opening %s\n",filename);
+	return(-1);
+    }
+    dbWriteDriverFP(pdbbase,outFile);
+    if(fclose(outFile)) {
+	errPrintf(0,__FILE__,__LINE__,"Error closing %s\n",filename);
+    }
+    return(0);
+}
+
+long dbWriteDriverFP(DBBASE *pdbbase,FILE *fp)
 {
     drvSup	*pdrvSup;
 
     if(!pdbbase) {
-	printf("pdbbase not specified\n");
-	return;
+	fprintf(stderr,"pdbbase not specified\n");
+	return(-1);
     }
     for(pdrvSup = (drvSup *)ellFirst(&pdbbase->drvList);
     pdrvSup; pdrvSup = (drvSup *)ellNext(&pdrvSup->node)) {
-	fprintf(stdout,"driver(%s)\n",pdrvSup->name);
+	fprintf(fp,"driver(%s)\n",pdrvSup->name);
     }
+    return(0);
 }
 
 long dbFindRecdes(DBENTRY *pdbentry,char *rectype)
@@ -714,10 +859,10 @@ long dbDeleteRecord(DBENTRY *pdbentry)
     long		status;
 
     if (!precnode) return (S_dbLib_recNotFound);
-    if(status = dbFreeRecord(pdbentry)) return(status);
     preclist = &precdes->recList;
     ellDelete(preclist,&precnode->node);
     dbPvdDelete(pdbbase,precnode);
+    if(status = dbFreeRecord(pdbentry)) return(status);
     free((void *)precnode);
     pdbentry->precnode = NULL;
     return (0);
@@ -746,6 +891,11 @@ long dbFindRecord(DBENTRY *pdbentry,char *precordName)
     pdbentry->precdes = ppvdNode->precdes;
     if(*precordName++=='.') return(dbFindField(pdbentry, precordName));
     return (0);
+}
+
+int dbFoundField(DBENTRY *pdbentry)
+{
+    return((pdbentry->pfield) ? TRUE : FALSE);
 }
 
 long dbFirstRecord(DBENTRY *pdbentry)
@@ -2479,34 +2629,22 @@ long dbGetPvlink(DBENTRY *pdbentry,int *pp,int *ms,char *pvname)
     }
 }
 
-void dbDumpMenu(DBBASE *pdbbase,char *menuName)
+void dbDumpRecord(dbBase *pdbbase,char *precdesname,int level)
 {
-    dbMenu	*pdbMenu;
-    int		gotMatch;
-    int		i;
-
     if(!pdbbase) {
 	printf("pdbbase not specified\n");
 	return;
     }
-    pdbMenu = (dbMenu *)ellFirst(&pdbbase->menuList);
-    while(pdbMenu) {
-	if(menuName) {
-	    gotMatch = (strcmp(menuName,pdbMenu->name)==0) ? TRUE : FALSE;
-	}else {
-	    gotMatch=TRUE;
-	}
-	if(gotMatch) {
-	    printf("menu(%s) {\n",pdbMenu->name);
-	    for(i=0; i<pdbMenu->nChoice; i++) {
-		printf("\tchoice(%s,%s)\n",pdbMenu->papChoiceName[i],
-		    pdbMenu->papChoiceValue[i]);
-	    }
-	    printf("}\n");
-	    if(menuName) break;
-	}
-	pdbMenu = (dbMenu *)ellNext(&pdbMenu->node);
+    dbWriteRecordFP(pdbbase,stdout,precdesname,level);
+}
+
+void dbDumpMenu(DBBASE *pdbbase,char *menuName)
+{
+    if(!pdbbase) {
+	printf("pdbbase not specified\n");
+	return;
     }
+    dbWriteMenuFP(pdbbase,stdout,menuName);
 }
 
 void dbDumpRecDes(DBBASE *pdbbase,char *recdesName)
@@ -2661,25 +2799,11 @@ void dbDumpDevice(DBBASE *pdbbase,char *recdesName)
 
 void dbDumpDriver(DBBASE *pdbbase)
 {
-    drvSup	*pdrvSup;
-
     if(!pdbbase) {
 	printf("pdbbase not specified\n");
 	return;
     }
-    for(pdrvSup = (drvSup *)ellFirst(&pdbbase->drvList);
-    pdrvSup; pdrvSup = (drvSup *)ellNext(&pdrvSup->node)) {
-	printf("%s(%p)\n",pdrvSup->name,pdrvSup->pdrvet);
-    }
-}
-
-void dbDumpRecords(dbBase *pdbbase,char *precdesname,int levl)
-{
-    if(!pdbbase) {
-	printf("pdbbase not specified\n");
-	return;
-    }
-    dbWriteRecords(pdbbase,stdout,precdesname,levl);
+    dbWriteDriverFP(pdbbase,stdout);
 }
 
 static char *bus[VXI_IO+1] = {"","","VME","CAMAC","AB",

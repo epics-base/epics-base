@@ -1,4 +1,4 @@
-/* dbAsciiToRecordtypeH.c */
+/* dbToRecordtypeH.c */
 /*	Author: Marty Kraimer	Date: 11Sep95	*/
 /*****************************************************************
                           COPYRIGHT NOTIFICATION
@@ -30,6 +30,8 @@ DBBASE *pdbbase = NULL;
 
 int main(int argc,char **argv)
 {
+    int		arg,strip;
+    char	*path=0;
     long	status;
     char	*outFilename;
     char	*pext;
@@ -41,8 +43,22 @@ int main(int argc,char **argv)
     int		isdbCommonRecord = FALSE;
     char	*plastSlash;
 
+    /*Look for path, i.e. -I path or -Ipath*/
+    for(arg=1; arg<argc; arg++) {
+	if(strncmp(argv[arg],"-I",2)!=0) continue;
+	if(strlen(argv[arg])==2) {
+	    path = argv[arg+1];
+	    strip = 2;
+	} else {
+	    path = argv[arg] + 2;
+	    strip = 1;
+	}
+	argc -= strip;
+	for(i=arg; i<argc; i++) argv[i] = argv[i + strip];
+	break;
+    }
     if(argc!=2) {
-	fprintf(stderr,"usage: dbAsciiToMenuH file.ascii\n");
+	fprintf(stderr,"usage: dbToRecordtypeH -Ipath file.db\n");
 	exit(-1);
     }
     /*remove path so that outFile is created where program is executed*/
@@ -50,9 +66,9 @@ int main(int argc,char **argv)
     plastSlash = (plastSlash ? plastSlash+1 : argv[1]);
     outFilename = dbCalloc(1,strlen(plastSlash)+1);
     strcpy(outFilename,plastSlash);
-    pext = strstr(outFilename,".ascii");
+    pext = strstr(outFilename,".db");
     if(!pext) {
-	fprintf(stderr,"Input file MUST have .ascii extension\n");
+	fprintf(stderr,"Input file MUST have .db extension\n");
 	exit(-1);
     }
     strcpy(pext,".h");
@@ -67,9 +83,9 @@ int main(int argc,char **argv)
     }
     pdbbase = dbAllocBase();
     pdbbase->ignoreMissingMenus = TRUE;
-    status = dbAsciiRead(&pdbbase,argv[1]);
+    status = dbReadDatabase(&pdbbase,argv[1],path);
     if(status)  {
-	epicsPrintf("Terminal error For input file %s\n",argv[1]);
+	fprintf(stderr,"Terminal error For input file %s\n",argv[1]);
 	exit(-1);
     }
     fprintf(outFile,"#include <vxWorks.h>\n");

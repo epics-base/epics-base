@@ -47,6 +47,12 @@ long dbPutStringNum(DBENTRY *pdbentry,char *pstring);
 
 void dbGetRecordtypeSizeOffset(dbRecDes *pdbRecDes);
 
+/* The following is for path */
+typedef struct dbPathNode {
+	ELLNODE		node;
+	char		*directory;
+} dbPathNode;
+
 /*The following are in dbPvdLib.c*/
 /*directory*/
 typedef struct{
@@ -54,7 +60,8 @@ typedef struct{
 	dbRecDes	*precdes;
 	dbRecordNode	*precnode;
 }PVDENTRY;
-int dbPvdTableSize(DBBASE *pdbbase,int size);
+int dbPvdTableSize(int size);
+extern int dbDebug;
 void	dbPvdInitPvt(DBBASE *pdbbase);
 PVDENTRY *dbPvdFind(DBBASE *pdbbase,char *name,int lenname);
 PVDENTRY *dbPvdAdd(DBBASE *pdbbase,dbRecDes *precdes,dbRecordNode *precnode);

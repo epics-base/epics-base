@@ -13,37 +13,45 @@ DEPLIBS_BASE = $(EPICS_BASE_LIB)
 DEPLIBS = ./libDb.a\
 	$(DEPLIBS_BASE)/libCom.a
 
+INC += alarm.h
+INC += alarmString.h
+INC += dbBase.h
+INC += dbFldTypes.h
+INC += dbStaticLib.h
+INC += link.h
+INC += special.h
+INC += guigroup.h
 
 SRCS.c = \
-	dbAsciiYacc.c \
-	../dbAsciiTest.c\
-	../dbAsciiExpand.c\
+	dbYacc.c \
+	../dbReadTest.c\
+	../dbExpandInclude.c\
 	../dbPvdLib.c\
 	../dbStaticNoRun.c\
 	../dbStaticLib.c\
-	../dbAsciiToMenuH.c\
-	../dbAsciiToRecordtypeH.c
+	../dbToMenuH.c\
+	../dbToRecordtypeH.c
 
 OBJS = \
-	dbAsciiTest.o\
-	dbAsciiExpand.o\
-	dbAsciiToMenuH.o\
-	dbAsciiToRecordtypeH.o
+	dbReadTest.o\
+	dbExpandInclude.o\
+	dbToMenuH.o\
+	dbToRecordtypeH.o
 
-LIBOBJS = dbStaticLib.o dbAsciiYacc.o dbPvdLib.o dbStaticNoRun.o 
+LIBOBJS = dbStaticLib.o dbYacc.o dbPvdLib.o dbStaticNoRun.o 
 LIBNAME = libDb.a
 
 PROD = \
-	dbAsciiTest\
-	dbAsciiExpand\
-	dbAsciiToMenuH\
-	dbAsciiToRecordtypeH
+	dbReadTest\
+	dbExpandInclude\
+	dbToMenuH\
+	dbToRecordtypeH
 
 include $(EPICS)/config/RULES.Unix
 
-# Extra rule since dbAsciiRoutines.c is included in dbAsciiYacc.c
-dbAsciiYacc.o: dbAsciiLex.c ../dbAsciiRoutines.c
+# Extra rule since dbLexRoutines.c is included in dbYacc.c
+dbYacc.o: dbLex.c ../dbLexRoutines.c
 
 clean::
-	@$(RM) dbAsciiLex.c dbAsciiYacc.c 
+	@$(RM) dbLex.c dbYacc.c 
 

@@ -50,8 +50,10 @@
 #include	<symLib.h>
 #include	<sysSymTbl.h>	/* for sysSymTbl*/
 #include	<a_out.h>	/* for N_TEXT */
+#include	<stdarg.h>
 #include	<stdioLib.h>
 #include	<string.h>
+#include	<logLib.h>
 
 #include	<sdrHeader.h>
 #include	<fast_lock.h>
@@ -90,7 +92,7 @@ long initialProcess();
 long getResources();
 
 
-iocInit(pfilename,pResourceFilename)
+int iocInit(pfilename,pResourceFilename)
 char * pfilename;
 char * pResourceFilename;
 {
@@ -203,7 +205,7 @@ static long initRecSup()
     nbytes = sizeof(struct recSup) + dbRecType->number*sizeof(void *);
     recSup = calloc(1,nbytes);
     recSup->number = dbRecType->number;
-    (long)recSup->papRset = (long)recSup + (long)sizeof(struct recSup);
+    recSup->papRset = (void *)((long)recSup + (long)sizeof(struct recSup));
     for(i=0; i< (recSup->number); i++) {
 	if(dbRecType->papName[i] == NULL)continue;
 	strcpy(name,"_");
@@ -546,8 +548,8 @@ static char    *cvt_str[] = {
 static long getResources(fname) /* Resource Definition File interpreter */
     char           *fname;
 {
-    int             fd;
-    int             fd2;
+    FILE            *fp;
+    FILE            *fp2;
     int             len;
     int             len2;
     int             lineNum = 0;
@@ -569,7 +571,7 @@ static long getResources(fname) /* Resource Definition File interpreter */
     float           n_float;
     double          n_double;
      if (sdrSum) {
- 	if ((fd2 = open("default.sdrSum", READ, 0x0)) < 0) {
+ 	if ((fp2 = fopen("default.sdrSum", "r")) == 0) {
  	    errMessage(-1L, "WARNING WARNING WARNING WARNING WARNING WARNING WARNING");
  	    errMessage(-1L, "WARNING WARNING WARNING WARNING WARNING WARNING WARNING");
  	    errMessage(-1L, "Can't open default.sdrSum file.  Please invoke getrel");
@@ -577,8 +579,8 @@ static long getResources(fname) /* Resource Definition File interpreter */
  	    errMessage(-1L, "WARNING WARNING WARNING WARNING WARNING WARNING WARNING");
  	    return (-1);
  	}
- 	fioRdString(fd2, buff, MAX);
- 	close(fd2);
+ 	fgets( buff, MAX, fp2);
+ 	fclose(fp2);
  	len2 = strlen(sdrSum->allSdrSums);
  
  	if ((strncmp(sdrSum->allSdrSums, buff, len2)) != SAME) {
@@ -595,11 +597,12 @@ static long getResources(fname) /* Resource Definition File interpreter */
  	logMsg("Skipping Check for an out-of-date database\n");
      }
     if (!fname) return (0);
-    if ((fd = open(fname, READ, 0x0)) < 0) {
+    if ((fp = fopen(fname, "r")) == 0) {
 	errMessage(-1L, "getResources: No such Resource file");
 	return (-1);
     }
-    while ((len = fioRdString(fd, buff, MAX)) != EOF) {
+    while ( fgets( buff, MAX, fp) != NULL) {
+	len = strlen(buff);
 	lineNum++;
 	if (len < 2)
 	    goto CLEAR;
@@ -615,7 +618,7 @@ static long getResources(fname) /* Resource Definition File interpreter */
 	    }
 	}
 	/* extract the 3 fields as strings */
-	if ((sscanf(buff, "%s %s %[^\n]", s1, s2, s3)) != 3) {
+	if ((sscanf(buff, "%s %s %s", s1, s2, s3)) != 3) {
 	    sprintf(message,
 		    "getResources: Not enough fields - line=%d", lineNum);
 	    errMessage(-1L, message);
@@ -744,6 +747,6 @@ CLEAR:	memset(buff, '\0',  MAX);
 	memset(s2, '\0', MAX);
 	memset(s3, '\0', MAX);
     }
-    close(fd);
+    fclose(fp);
     return (0);
 }

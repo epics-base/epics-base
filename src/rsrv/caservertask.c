@@ -320,7 +320,8 @@ LOCAL void log_one_client (struct client *client, unsigned level)
     send_delay = epicsTimeDiffInSeconds(&current,&client->time_at_last_send);
     recv_delay = epicsTimeDiffInSeconds(&current,&client->time_at_last_recv);
 
-    printf ( "%s(%s): User=\"%s\", V%u.%u, Channel Count=%d Priority=%u\n", 
+    printf ( "%s %s(%s): User=\"%s\", V%u.%u, %d Channels, Priority=%u\n", 
+        pproto,
         clientHostName,
         client->pHostName ? client->pHostName : "",
         client->pUserName ? client->pUserName : "",
@@ -329,8 +330,8 @@ LOCAL void log_one_client (struct client *client, unsigned level)
         ellCount(&client->addrq),
         client->priority );
     if (level>=1) {
-        printf ("\tTask Id=%p, Protocol=%3s, Socket FD=%d\n", (void *) client->tid,
-            pproto, client->sock); 
+        printf ("\tTask Id=%p, Socket FD=%d\n", 
+            (void *) client->tid, client->sock); 
         printf( 
         "\tSecs since last send %6.2f, Secs since last receive %6.2f\n", 
             send_delay, recv_delay);
@@ -410,7 +411,10 @@ void epicsShareAPI casr (unsigned level)
 
     LOCK_CLIENTQ
     client = (struct client *) ellNext ( &clientQ.node );
-    if (!client) {
+    if (client) {
+        printf("Connected circuits:\n");
+    }
+    else {
         printf("No clients connected.\n");
     }
     while (client) {
@@ -422,6 +426,7 @@ void epicsShareAPI casr (unsigned level)
     UNLOCK_CLIENTQ
 
     if (level>=2 && prsrv_cast_client) {
+        printf( "UDP Server:\n" );
         log_one_client(prsrv_cast_client, level);
     }
     

@@ -40,6 +40,7 @@
  *			the buffer in vxi_read()
  *	.03 joh 060292	Added debug mode
  *	.04 joh	072992	added signal register for the HP1404
+ * 	.05 joh 082592	added arg to epvxiRead() and epvxiWrite()
  *
  */
 
@@ -94,21 +95,86 @@ unsigned long	vxiMsgLibDriverId = UNINITIALIZED_DRIVER_ID;
 /*
  * local functions
  */
-void 	set_la();
-void 	vxiMsgInt();
-void	signalHandler();
-int	epvxiReadSlowHandshake();
-int	epvxiReadFastHandshake();
-int	vxiMsgClose();
-int	vxiMsgOpen();
-int	vxiMsgSignalSetup();
-int	vxiCPU030MsgSignalSetup();
-int	vxiHP1404MsgSignalSetup();
-int	vxiAttemptAsyncModeControl();
-int	vxiMsgSync();
-int	fetch_protocol_error();
+void 	set_la(
+	int	la,
+	int	*pla
+);
+
+void 	vxiMsgInt(
+	unsigned 	la
+);
+
+void 	signalHandler(
+	unsigned short	signal
+);
+
+int 	epvxiReadSlowHandshake(
+	unsigned        la,
+	char            *pbuf,
+	unsigned long	count,
+	unsigned long	*pread_count,
+	unsigned long	option
+);
+
+int 	epvxiReadFastHandshake(
+	unsigned	la,
+	char		*pbuf,
+	unsigned long	count,
+	unsigned long	*pread_count,
+	unsigned long	option
+);
+
+int 	vxiMsgClose(
+	unsigned        la
+);
+
+int 	vxiMsgOpen(
+	unsigned	la
+);
+
+int 	vxiMsgSignalSetup(
+	void
+);
+
+int 	vxiCPU030MsgSignalSetup(
+	void
+);
+
+int 	vxiHP1404MsgSignalSetup(
+	void
+);
+
+int 	vxiAttemptAsyncModeControl(
+	unsigned	la,
+	unsigned long	cmd
+);
+
+int 	vxiMsgSync(
+	unsigned	la,
+	unsigned	resp_mask,
+	unsigned	resp_state,
+	int		override_err
+);
+
+int 	fetch_protocol_error(
+	unsigned	la
+);
 
 
+/*
+ * should be in a header
+ */
+int	vxi_msg_test(
+	unsigned	la
+);
+
+int	vxi_msg_print_id(
+	unsigned	la
+);
+
+int 	vxi_msg_test_protocol_error(
+	unsigned	la
+);
 
 
 /*
@@ -116,18 +182,19 @@ int	fetch_protocol_error();
  * vxi_msg_test()
  *
  */
-vxi_msg_test(la)
-unsigned	la;
+vxi_msg_test(
+	unsigned	la
+)
 {
 	char		buf[512];
 	unsigned long	count;
 	int		status;
 
-	status = epvxiWrite(la, "*IDN?", (unsigned long)5, &count);
+	status = epvxiWrite(la, "*IDN?", 5, &count, epvxiWriteOptNone);
 	if(status != VXI_SUCCESS){
 		return status;
 	}
-	status = epvxiRead(la, buf, (unsigned long)sizeof(buf)-1, &count);
+	status = epvxiRead(la, buf, sizeof(buf)-1, &count, epvxiReadOptNone);
 	if(status != VXI_SUCCESS){
 		return status;
 	}
@@ -135,11 +202,11 @@ unsigned	la;
 	buf[count] = NULL;
 	printf("%s %d\n", buf,count);
 
-	status = epvxiWrite(la, "*TST?", (unsigned long)5, &count);
+	status = epvxiWrite(la, "*TST?", 5, &count, epvxiWriteOptNone);
 	if(status != VXI_SUCCESS){
 		return status;
 	}
-	status = epvxiRead(la, buf, (unsigned long)sizeof(buf)-1, &count);
+	status = epvxiRead(la, buf, sizeof(buf)-1, &count, epvxiReadOptNone);
 	if(status != VXI_SUCCESS){
 		return status;
 	}
@@ -156,19 +223,20 @@ unsigned	la;
  * vxi_msg_print_id
  *
  */
-vxi_msg_print_id(la)
-unsigned	la;
+int	vxi_msg_print_id(
+	unsigned	la
+)
 {
         char    	buf[32];
         unsigned long	count;
 	char		*pcmd = "*IDN?";
 	int		status;
 
-        status = epvxiWrite(la, pcmd, (unsigned long) strlen(pcmd), &count);
+        status = epvxiWrite(la, pcmd, strlen(pcmd), &count, epvxiWriteOptNone);
 	if(status != VXI_SUCCESS){
 		return status;
 	}
-        status = epvxiRead(la, buf, (unsigned long)sizeof(buf)-1, &count);
+        status = epvxiRead(la, buf, sizeof(buf)-1, &count, epvxiReadOptNone);
 	if(status != VXI_SUCCESS){
 		return status;
 	}
@@ -185,9 +253,9 @@ unsigned	la;
  *  vxi_msg_test_protocol_error
  *
  */
-int
-vxi_msg_test_protocol_error(la)
-unsigned	la;
+int 	vxi_msg_test_protocol_error(
+	unsigned	la
+)
 {
 	unsigned long	resp;
 	int		i;
@@ -368,7 +436,8 @@ epvxiRead(
 unsigned	la,
 char		*pbuf,
 unsigned long	count,
-unsigned long	*pread_count
+unsigned long	*pread_count,
+unsigned long	option
 )
 {
 	VXIMDI			*pvximdi;
@@ -392,7 +461,8 @@ unsigned long	*pread_count
 					la, 
 					pbuf, 
 					count, 
-					pread_count);
+					pread_count,
+					option);
 		}
 		else{
 #	endif
@@ -400,7 +470,8 @@ unsigned long	*pread_count
 					la, 
 					pbuf, 
 					count, 
-					pread_count);
+					pread_count,
+					option);
 #	ifdef FASTHANDSHAKE
 		}
 #	endif
@@ -428,12 +499,14 @@ unsigned long	*pread_count
  *	if a card with fast handshake s found to exist
  *
  */
-LOCAL int
-epvxiReadFastHandshake(la, pbuf, count, pread_count)
-unsigned	la;
-char		*pbuf;
-unsigned long	count;
-unsigned long	*pread_count;
+LOCAL 
+int 	epvxiReadFastHandshake(
+	unsigned	la,
+	char		*pbuf,
+	unsigned long	count,
+	unsigned long	*pread_count,
+	unsigned long	option
+)
 {
         struct vxi_csr		*pcsr;
 	VXIMDI			*pvximdi;
@@ -543,12 +616,14 @@ exit:
 /*
  * epvxiReadSlowHandshake()
  */
-LOCAL int
-epvxiReadSlowHandshake(la, pbuf, count, pread_count)
-unsigned        la;
-char            *pbuf;
-unsigned long	count;
-unsigned long	*pread_count;
+LOCAL 
+int 	epvxiReadSlowHandshake(
+	unsigned        la,
+	char            *pbuf,
+	unsigned long	count,
+	unsigned long	*pread_count,
+	unsigned long	option
+)
 {
 	VXIMDI			*pvximdi;
         struct vxi_csr		*pcsr;
@@ -640,19 +715,22 @@ exit:
 
 /*
  * epvxiWrite()
+ * (set the end bit on the last byte sent)
  */
 int
 epvxiWrite(
 unsigned        la,
 char            *pbuf,
 unsigned long	count,
-unsigned long	*pwrite_count 
+unsigned long	*pwrite_count,
+unsigned long	option	
 )
 {
 	VXIMDI			*pvximdi;
        	struct vxi_csr		*pcsr;
 	int			i;
 	short			cmd;
+	short 			extra;
 	int			status;
 	char			*pstr;
 
@@ -669,7 +747,14 @@ unsigned long	*pwrite_count
 
 	FASTLOCK(&pvximdi->lck);
 	pstr = pbuf;
+	if(option&epvxiWriteOptPartialMsg){
+		extra = 0;
+	}
+	else{
+		extra = MBC_END;
+	}
 	for(i=0; i<count; i++){
+
                 /*
                  * wait for handshake
                  */
@@ -683,7 +768,7 @@ unsigned long	*pwrite_count
 			goto exit;
 		}
 		if(i == count-1){
-			cmd = MBC_END | MBC_BA | *pstr;
+			cmd = extra | MBC_BA | *pstr;
 		}
 		else{
 			cmd = MBC_BA | *pstr;
@@ -787,9 +872,10 @@ int		enable;
  *
  *
  */
-LOCAL int
-vxiMsgClose(la)
-unsigned        la;
+LOCAL 
+int vxiMsgClose(
+unsigned        la
+)
 {
 	int		status;
 	VXIMDI		*pvximdi;
@@ -820,9 +906,10 @@ unsigned        la;
  *
  *
  */
-LOCAL int
-vxiMsgOpen(la)
-unsigned	la;
+LOCAL 
+int 	vxiMsgOpen(
+	unsigned	la
+)
 {
 	int 		status;
 	VXIMDI		*pvximdi;
@@ -848,7 +935,7 @@ unsigned	la;
 
 	pvximdi = epvxiPConfig(la, vxiMsgLibDriverId, VXIMDI *);
 	if(!pvximdi){
-		abort();
+		abort(0);
 	}
 
 	if(!vxiMsgSignalInit){
@@ -995,8 +1082,10 @@ logMsg("synchronized msg based device is ready!\n");
  *
  *
  */
-LOCAL int
-vxiMsgSignalSetup()
+LOCAL 
+int 	vxiMsgSignalSetup(
+	void
+)
 {
 	int status;
 
@@ -1022,8 +1111,10 @@ vxiMsgSignalSetup()
  *
  *
  */
-LOCAL int
-vxiCPU030MsgSignalSetup()
+LOCAL 
+int 	vxiCPU030MsgSignalSetup(
+	void
+)
 {
 	int	niMsgLA;
 	int	status;
@@ -1076,8 +1167,10 @@ logMsg("vxiCPU030MsgSignalSetup() done\n");
  *
  *
  */
-LOCAL int
-vxiHP1404MsgSignalSetup()
+LOCAL 
+int 	vxiHP1404MsgSignalSetup(
+	void
+)
 {
 	epvxiDeviceSearchPattern	dsp;
 	int				hpMsgLA = -1;
@@ -1119,10 +1212,11 @@ vxiHP1404MsgSignalSetup()
  *
  *
  */
-LOCAL void
-set_la(la, pla)
-int	la;
-int	*pla;
+LOCAL 
+void 	set_la(
+	int	la,
+	int	*pla
+)
 {
 	*pla = la;
 }
@@ -1134,10 +1228,11 @@ int	*pla;
  *
  *
  */
-LOCAL int
-vxiAttemptAsyncModeControl(la, cmd)
-unsigned	la;
-unsigned long	cmd;
+LOCAL 
+int 	vxiAttemptAsyncModeControl(
+	unsigned	la,
+	unsigned long	cmd
+)
 {
 	int 		status;
 	unsigned long	resp;
@@ -1204,12 +1299,13 @@ logMsg("connected to interrupt (la=%d)\n", la);
  *
  *
  */
-LOCAL int
-vxiMsgSync(la, resp_mask, resp_state, override_err)
-unsigned	la;
-unsigned	resp_mask;
-unsigned	resp_state;
-int		override_err;
+LOCAL 
+int 	vxiMsgSync(
+	unsigned	la,
+	unsigned	resp_mask,
+	unsigned	resp_state,
+	int		override_err
+)
 {
 	VXIMDI		*pvximdi;
 	struct vxi_csr	*pcsr;
@@ -1300,9 +1396,10 @@ int		override_err;
  * fetch_protocol_error
  *
  */
-LOCAL int 
-fetch_protocol_error(la)
-unsigned	la;
+LOCAL 
+int 	fetch_protocol_error(
+	unsigned	la
+)
 {
 	VXIMDI		*pvximdi;
 	unsigned long	error;
@@ -1369,9 +1466,10 @@ unsigned	la;
  *
  *
  */
-LOCAL void
-vxiMsgInt(la)
-unsigned la;
+LOCAL 
+void 	vxiMsgInt(
+	unsigned 	la
+)
 {
 	VXIMDI		*pvximdi;
 	int		status;
@@ -1404,9 +1502,10 @@ unsigned la;
 /*
  * signalHandler
  */
-void
-signalHandler(signal)
-unsigned short	signal;
+LOCAL
+void signalHandler(
+	unsigned short	signal
+)
 {
 	unsigned 	signal_la;
 

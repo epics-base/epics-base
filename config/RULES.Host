@@ -28,6 +28,7 @@
 #	to break several times.
 #	vpath, of course, has the disadvantage that we need explicit rules
 #	for scripts or similar os-specific filed which have _no_ suffix...
+vpath %.h $(USER_VPATH)   
 vpath %.c $(USER_VPATH) ../os/$(ARCH_CLASS) ../os/generic ..
 vpath %.cc $(USER_VPATH) ../os/$(ARCH_CLASS) ../os/generic ..
 #	This prevents base/src/include/*.h from being installed. Why??
@@ -171,14 +172,25 @@ endif
 endif
 
 #	adjust executables
-ifdef PROD
-PROD := $(addsuffix $(EXE), $(PROD))
-endif
-
 ifdef TESTPROD
 TESTPROD := $(addsuffix $(EXE), $(TESTPROD))
 endif
 
+#	adjust executables
+ifdef PROD
+PROD := $(addsuffix $(EXE), $(PROD))
+endif
+
+#---------------------------------------------------------------
+#	if we are not building base add base includes and ld dirs
+#	(convenience for extensions and applications)
+ifneq ($(EPICS_BASE),$(TOP))
+ifneq ($(EPICS_BASE),$(INSTALL_LOCATION))
+EPICS_INCLUDES += -I$(EPICS_BASE_INCLUDE) -I$(EPICS_BASE_INCLUDE)/os/$(OS_CLASS)
+endif
+endif
+
+#---------------------------------------------------------------
 #	----------------------------------------------------
 #	create names (lists) for installed things
 #	----------------------------------------------------
@@ -186,15 +198,12 @@ endif
 #	each list starts with the destination directory name(s)
 #	to make sure it's there
 
-INSTALL_PROD= $(PROD:%= $(INSTALL_BIN)/%)
-
-#	DLLs (only defined on WIN32) are like executables:
-ifdef DLLNAME
-INSTALL_DLLS=$(DLLNAME:%=$(INSTALL_BIN)/%)
-endif
 
 INCREC +=$(RECTYPES) $(MENUS)
+
+INSTALL_PROD= $(PROD:%= $(INSTALL_BIN)/%)
 INSTALL_LIBS= $(LIBNAME:%=$(INSTALL_LIB)/%)
+INSTALL_DLLS=$(DLLNAME:%=$(INSTALL_BIN)/%)
 INSTALL_TCLLIBS=$(TCLLIBNAME:%=$(INSTALL_TCLLIB)/%)
 INSTALL_TCLINDEX=$(TCLINDEX:%=$(INSTALL_TCLLIB)/%)
 
@@ -236,6 +245,7 @@ ifdef TEMPLATES_DIR
 DIRECTORY_TARGETS += $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)
 endif
 
+#---------------------------------------------------------------
 #	if there are no objects LIBOBJS to include
 #	in this library (may be for e.g. base/src/libCompat
 #	on some archs), don't define (and build) any library!
@@ -256,9 +266,16 @@ else # LIBTYPE=SHARED
 LIBTARGETS += $(LIBNAME) $(INSTALL_LIBS)
 endif # LIBTYPE=SHARED
 endif # LIBOBJS
+
+#
+# by default the libraries used when linking the DLL are just
+# PROD_LIBS ans SYS_PROD_LIBS minus the DLL name
+DLL_LIBS = $(subst $(LIBRARY),, $(PROD_LIBS))
+
 endif # LIBRARY
 
-#	Main target
+#---------------------------------------------------------------
+#	Main targets
 #
 all::	install
 
@@ -283,58 +300,70 @@ buildInstall :: build $(TARGETS) $(INSTALL_LOCATION_BIN) \
 	$(INSTALL_DBDNAME) $(INSTALL_INCREC) \
 	$(INSTALL_TCLLIBS) $(INSTALL_TCLINDEX)
 
-depends:: $(LIBSRCS) $(SRCS)
+depends:: $(LIBSRCS) $(SRCS) 
 	$(RM) .DEPENDS
 	touch .DEPENDS
-ifdef $(SRCS.c)
-	$(DEPENDS_RULE.c)
-endif
-ifdef $(SRCS.cc)
-	$(DEPENDS_RULE.cc)
-endif
-
+	$(DEPENDS_RULE)
 
 clean::
 	@echo "Cleaning"
 	@$(RM) *.i *$(OBJ) *.a $(PROD) $(TESTPROD) $(LIBNAME) $(INC)
 
-
-# PROD dependanies
-# Do not put dependancy files on an implicit rule line
-$(PROD): $(PRODDEPLIBS)
-
-
 $(DIRECTORY_TARGETS) :
 	$(MKDIR) $@
 
-#  The order of the following dependencies is
-#  VERY IMPORTANT !!!!
 
-#	If you want to break this on WIN32, please forget
-#	that $(COMPILE.cc) is like $(COMPILE.c) for WIN32
-#	except the first one ends in -Tp to select 'C++'.
+#---------------------------------------------------------------
+#	Products
 #
-#	EPICS uses .cc for C++, which is not recognized
-#	by MS Visual C++, so -Tp has to be directly in front of
-#	the source file.
-#	-> put the source file directly after $(COMPILE.cc),
+ifdef PROD
 
-#	explicit list of source files given for PROD ?
-#	(otherwise implicit rules  .c -> $(EXE), .cc -> $(EXE)
-ifdef SRCS
+COND_PROD_SRCS=$(foreach prod, $(basename $(PROD)), $($(prod)_SRCS))
+COND_PROD_LIBS=$(foreach prod, $(basename $(PROD)), $($(prod)_LIBS))
 
-ifeq ($(findstring cc,$(suffix $(SRCS))),cc)
-PROD_LINKER = $(LINK.cc)
-else
-PROD_LINKER = $(LINK.c)
+ifeq ($(COND_PROD_SRCS) $(COND_PROD_LIBS)x,x)
+PRODNAME=$(PROD)
+PRODNAME_SRCS=$(SRCS) $(PROD_SRCS)
 endif
 
-PROD_OBJS=$(addsuffix $(OBJ), $(basename $(SRCS)))
+ifdef PRODNAME
 
-$(PROD): $(PROD_OBJS)
+$(PRODNAME): $(PROD_DEPLIBS) $(PRODNAME_DEPLIBS)
+
+ifdef PRODNAME_SRCS
+ifeq ($(findstring cc,$(suffix $(PRODNAME_SRCS))),cc)
+PRODNAME_LINKER = $(LINK.cc)
+else
+PRODNAME_LINKER = $(LINK.c)
+endif
+PRODNAME_OBJS=$(addsuffix $(OBJ), $(basename $(PRODNAME_SRCS)))
+
+$(PRODNAME): $(PRODNAME_OBJS)
 	@$(RM) $@
-	$(PROD_LINKER) $(PROD_OBJS) $(LDLIBS)
-endif 
+	$(PRODNAME_LINKER) $(PRODNAME_OBJS) $(LDLIBS)
+
+endif  # ifdef PRODNAME_SRCS
+
+else # PRODNAME not defined
+
+# We have to use the product's true dependancies and
+# call make again to determine if product should be rebuilt
+
+PROD_OBJS=$(addsuffix $(OBJ), $(basename $(SRCS)))
+COND_PROD_OBJS=$(addsuffix $(OBJ), $(basename $(COND_PROD_SRCS)))
+
+$(PROD): $(PROD_OBJS) $(COND_PROD_OBJS) $(PROD_DEPLIBS) $(COND_PROD_DEPLIBS)
+	$(MAKE) $@ PRODNAME="$@" \
+	PRODNAME_SRCS="$(SRCS) $($(basename $@)_SRCS)" \
+	PRODNAME_LIBS="$($(basename $@)_LIBS)"
+
+endif  #ifdef PRODNAME
+
+endif  #ifdef PROD
+
+#---------------------------------------------------------------
+#	Test Products
+#
 
 #	explicit list of source files given for TESTPROD ?
 #	(otherwise implicit rule  .c -> $(OBJ) -> $(EXE)
@@ -353,6 +382,7 @@ $(TESTPROD): $(TESTPROD_OBJS) $(PRODDEPLIBS)
 	$(TESTPROD_LINKER) $(TESTPROD_OBJS) $(LDLIBS)
 endif
 
+#---------------------------------------------------------------
 #	Generic Rules for 'simple' targets that
 #	can be generated from a single source with same basename.
 #
@@ -363,6 +393,10 @@ endif
 #	Hint: The $(subst...) construct removes the .c or .cc
 #	      as well as the '../' from the filename and adds $(OBJ):
 #	      e.g.  $< = '../abc.c'   ->  'abc.o'
+#
+#  The order of the following rules is
+#  VERY IMPORTANT !!!!
+
 %$(EXE): %.c
 	@$(RM) $@
 	$(COMPILE.c)  $<
@@ -461,35 +495,34 @@ $(INSTALL_DBD)/%: ../%
  
 %Record.h: %Record.dbd
 	$(RM) $@
-	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToRecordtypeH \
+	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToRecordtypeH$(EXE) \
 	        $(USER_DBDFLAGS)  $<
  
 %Record.h: ../%Record.dbd
 	$(RM) $@
-	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToRecordtypeH \
+	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToRecordtypeH$(EXE) \
 	        $(USER_DBDFLAGS)  $<
  
 menu%.h: menu%.dbd
 	$(RM) $@
-	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToMenuH $<
+	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToMenuH$(EXE) $<
  
 menu%.h: ../menu%.dbd
 	$(RM) $@
-	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToMenuH $<
+	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToMenuH$(EXE) $<
  
 bpt%.dbd: bpt%.data
 	$(RM) $@
-	$(EPICS_BASE)/bin/$(HOST_ARCH)/makeBpt $<
+	$(EPICS_BASE)/bin/$(HOST_ARCH)/makeBpt$(EXE) $<
  
 bpt%.dbd: ../bpt%.data
 	$(RM) $@
-	$(EPICS_BASE)/bin/$(HOST_ARCH)/makeBpt $<
+	$(EPICS_BASE)/bin/$(HOST_ARCH)/makeBpt$(EXE) $<
  
 $(DBDNAME): ../$(DBDEXPAND)
 	@echo expanding dbd
 	@$(RM) $@
-	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbExpand\
-		$(USER_DBDFLAGS) $< > $@
+	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbExpand$(EXE) $(USER_DBDFLAGS) $< > $@
 
 # rule for shareable (DLL- dynamic link library) creation
 $(DLLNAME): $(LIBOBJS)
@@ -500,9 +533,7 @@ $(LIBNAME): $(LIBOBJS)
 	$(RM) $@
 	$(ARCMD) $(LIBOBJS)
 ifdef RANLIB
-ifeq ($(RANLIB), $(wildcard $(RANLIB)))
 	$(RANLIB) $@;
-endif # RANLIB image exists
 endif # RANLIB
 
 $(INSTALL_BIN)/%: ../os/$(ARCH_CLASS)/%
@@ -520,9 +551,9 @@ $(INSTALL_BIN)/%: ../%
 $(INSTALL_LIB)/%.a: %.a
 	@echo "Installing library $@"
 	@$(INSTALL) -m 644 $< $(INSTALL_LIB)
-	@if [ ! -z "$(RANLIB)" ] ; then\
-		$(RANLIB) $(RANLIBFLAGS) $@; \
-	fi
+ifdef RANLIB
+	$(RANLIB) $(RANLIBFLAGS) $@
+endif # RANLIB
 
 $(INSTALL_LIB)/%.lib: %.lib
 	@echo "Installing library $@"

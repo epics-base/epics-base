@@ -32,10 +32,6 @@ INSTALL_DBD                 = $(INSTALL_LOCATION)/dbd
 INSTALL_CONFIG              = $(INSTALL_LOCATION)/config
 
 EPICS_BASE_INCLUDE      = $(EPICS_BASE)/include
-EPICS_BASE_DBD          = $(EPICS_BASE)/dbd
-
-EPICS_EXTENSIONS_INCLUDE      = $(EPICS_EXTENSIONS)/include
-EPICS_EXTENSIONS_TEMPLATES    = $(EPICS_EXTENSIONS)/templates
 
 DIVIDER = .
 
@@ -45,9 +41,11 @@ EPICS_BASE_HOST_BIN = $(EPICS_BASE)/bin/$(HOST_ARCH)
 # private versions of lex/yacc from EPICS
 EYACC = $(EPICS_BASE_HOST_BIN)/antelope$(EXE)
 ELEX = $(EPICS_BASE_HOST_BIN)/e_flex$(EXE) -S$(EPICS_BASE_INCLUDE)/flex.skel.static
+YACC  = $(EYACC)
+LEX   = $(ELEX)
 
 # Default for perl if it's on the PATH,
-# otherwise override this in e.g. CONFIG_SITE
+# otherwise override this in CONFIG_SITE or CONFIG_SITE.<host_arch>
 PERL=perl
 
 # install from EPICS
@@ -57,7 +55,7 @@ INSTALL_PRODUCT = $(INSTALL)
 # dbtools from EPICS
 
 # state notation language compiler (installed from base/src/sequencer)
-SNC = $(EPICS_BASE_HOST_BIN)/snc
+SNC = $(EPICS_BASE_HOST_BIN)/snc$(EXE)
 
 ifdef T_A
 
@@ -68,15 +66,162 @@ INSTALL_BIN                 = $(INSTALL_LOCATION_BIN)/$(T_A)
 EPICS_BASE_LIB          = $(EPICS_BASE)/lib/$(T_A)
 EPICS_BASE_BIN          = $(EPICS_BASE)/bin/$(T_A)
 
-EPICS_EXTENSIONS_LIB          = $(EPICS_EXTENSIONS)/lib/$(T_A)
-EPICS_EXTENSIONS_BIN          = $(EPICS_EXTENSIONS)/bin/$(T_A)
+#--------------------------------------------------
+# GNU compiler defaults
 
-VX_IMAGE = $(VX_CONFIG_DIR)/$(T_A)/vxWorks
-VX_IMAGE_SYM = $(VX_CONFIG_DIR)/$(T_A)/vxWorks.sym
+GCC_ANSI = $(GCC) -ansi
+GCC_STRICT = $(GCC) -ansi -pedantic
+GCC_TRAD = $(GCC) -traditional
+GCC_WARN_YES = -Wall
+GCC_WARN_NO = -w
+GCC_OPT_YES = -O
+GCC_OPT_NO = -g
+GCC_SFLAGS_YES = -static
+GCC_SFLAGS_NO =
+GCC_SLIBS_YES =
+GCC_SLIBS_NO =
 
-# location of installed vxWorks image
-EPICS_VX_IMAGE = $(EPICS_BASE_BIN)/vxWorks
-EPICS_VX_IMAGE_SYM = $(EPICS_BASE_BIN)/vxWorks.sym
+G++_NORMAL = $(G++) -ansi -pedantic
+G++_STRICT = $(G++) -ansi -pedantic -Wtraditional
+G++_TRAD = $(G++) -traditional
+G++_TEMPL_INST_FLAG = -DEXPL_TEMPL
+G++_WARN_YES = -Wall \
+      -Wmissing-prototypes -Woverloaded-virtual \
+      -Wwrite-strings -Wconversion -Wstrict-prototypes\
+      -Wpointer-arith -Winline
+G++_WARN_NO = -w
+G++_OPT_YES = -O
+G++_OPT_NO = -g
+G++_SFLAGS_YES = -static
+G++_SFLAGS_NO =
+G++_SLIBS_YES =
+G++_SLIBS_NO =
+G++_DEPENDS_FLAG = -MM
+
+
+#--------------------------------------------------
+# by default the libraries used when linking the DLL are just
+# PROD_LIBS ans SYS_PROD_LIBS minus the DLL name
+DLL_LIBS = $(subst $(LIBRARY),, $(PROD_LIBS))
+
+
+#--------------------------------------------------
+# C compiler
+
+CC = $($(ANSI)_$(CMPLR))
+ 
+#--------------------------------------------------
+# C++ compiler
+
+CXX = $($(CPLUSPLUS)_$(CXXCMPLR))
+
+#---------------------------------------------------------------
+# Architecture dependent options (solaris,sun4,mv167,...)
+ARCH_DEP_CFLAGS =
+ARCH_DEP_CXXFLAGS = $(ARCH_DEP_CFLAGS)
+ARCH_DEP_LDFLAGS =
+ARCH_DEP_LDLIBS =
+
+#---------------------------------------------------------------
+# Operating system dependent options (Unix,Vx,WIN32...)
+OP_SYS_CFLAGS =
+OP_SYS_LDFLAGS =
+OP_SYS_INCLUDES =
+OP_SYS_LDLIBS =
+
+#--------------------------------------------------
+# SOURCE* used by WIN32 only
+SOURCE_CFLAG =
+SOURCE_CXXCFLAG =
+
+#--------------------------------------------------
+# Makefile specific options
+USR_INCLUDES =
+USR_CFLAGS =
+USR_CXXFLAGS =
+USR_LDFLAGS =
+USR_LDLIBS =
+USR_CPPFLAGS =
+
+#--------------------------------------------------
+# Target specific options
+TARGET_INCLUDES = $($(basename $@)_INCLUDES)
+TARGET_CFLAGS = $($(basename $@)_CFLAGS)
+TARGET_CXXFLAGS = $($(basename $@)_CXXFLAGS)
+TARGET_LDFLAGS = $($(basename $@)_LDFLAGS)
+TARGET_CPPFLAGS = $($(basename $@)_CPPFLAGS)
+TARGET_SNCFLAGS = $($(basename $@)_SNCFLAGS)
+
+#--------------------------------------------------
+# Depends flag
+DEPENDS_FLAG = $($(CPLUSPLUS)_DEPENDS_FLAG)
+ 
+#--------------------------------------------------
+# C++ template flag option
+TEMPL_INST_CXXFLAG = $($(CPLUSPLUS)_TEMPL_INST_FLAG)
+ 
+#--------------------------------------------------
+# Epics includes (CONFIG.Vx will override OS_CLASS)
+OS_CLASS = $(ARCH_CLASS)
+EPICS_INCLUDES = -I$(INSTALL_INCLUDE) -I$(INSTALL_INCLUDE)/os/$(OS_CLASS)
+
+#--------------------------------------------------
+# Warnings flags  (CONFIG.Vx will override)
+WARN_CFLAGS = $($(ANSI)_WARN_$(HOST_WARN))
+WARN_CXXFLAGS = $($(CPLUSPLUS)_WARN_$(HOST_WARN))
+
+#--------------------------------------------------
+# Optimization flags  (CONFIG.Vx will override)
+OPT_CFLAGS = $($(ANSI)_OPT_$(HOST_OPT))
+OPT_CXXFLAGS = $($(CPLUSPLUS)_OPT_$(HOST_OPT))
+OPT_LDFLAGS =
+ 
+#--------------------------------------------------
+# Static build options
+STATIC_CFLAGS = $($(ANSI)_SFLAGS_$(STATIC_BUILD))
+STATIC_CXXCFLAGS = $($(CPLUSPLUS)_SFLAGS_$(STATIC_BUILD))
+STATIC_LDLIBS = $($(ANSI)_SLIBS_$(STATIC_BUILD))
+ 
+#--------------------------------------------------
+############# Link definitions
+#############LINK.c = $(LD) $(LDFLAGS) -o
+#############LINK.cc = $(LD_CXX) $(LDFLAGS) -o
+
+#--------------------------------------------------
+# ar definition default
+ARCMD = $(AR) $(ARFLAGS) $@
+ 
+#--------------------------------------------------
+# depends definition 
+DEPENDS_RULE = -$(COMPILE.cc) $(DEPENDS_FLAG) $^ > .DEPENDS
+
+#--------------------------------------------------
+#--------------------------------------------------
+
+# Include files
+
+INCLUDES = -I. -I.. $(USR_INCLUDES) $(TARGET_INCLUDES) $(EPICS_INCLUDES) $(OP_SYS_INCLUDES)
+
+CFLAGS = $(OPT_CFLAGS) $(DEBUG_CFLAGS) $(WARN_CFLAGS) $(TARGET_CFLAGS)\
+ $(USR_CFLAGS) $(ARCH_DEP_CFLAGS) $(STATIC_CFLAGS) $(OP_SYS_CFLAGS) $(INCLUDES)
+
+CXXFLAGS = $(OPT_CXXFLAGS) $(DEBUG_CXXFLAGS) $(WARN_CXXFLAGS) $(TARGET_CXXFLAGS)\
+ $(USR_CXXFLAGS) $(ARCH_DEP_CXXFLAGS) $(STATIC_CXXCFLAGS)\
+ $(OP_SYS_CFLAGS) $(TEMPL_INST_CXXFLAG) $(INCLUDES)
+
+LDFLAGS = $(OPT_LDFLAGS) $(TARGET_LDFLAGS) $(USR_LDFLAGS)\
+ $(ARCH_DEP_LDFLAGS) $(STATIC_LDFLAGS) $(OP_SYS_LDFLAGS)
+
+LDLIBS = $(USR_LDLIBS) $(ARCH_DEP_LDLIBS)\
+ $(STATIC_LDLIBS) $(OP_SYS_LDLIBS)
+
+CPPFLAGS += $(TARGET_CPPFLAGS) $(USR_CPPFLAGS)
+
+CPPSNCFLAGS = $(INCLUDES)
+
+# Build compile line here
+COMPILE.c = $(CC) $(CFLAGS) $(CPPFLAGS) -c $(SOURCE_FLAG)
+COMPILE.cc = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -c $(SOURCE_CXXFLAG)
 
 endif
 

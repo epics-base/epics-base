@@ -93,21 +93,6 @@ LIBSRCS_BSD     = -nil-
 #	On WIN32, SHARED results in a DLL, others may ignore this.
 LIBTYPE=SHARED
 
-#	Ugly but necessary for WIN32:
-#	If LIBRARY is build as a dll, it may need other libraries
-#	to link with that you specify here.
-#	(because a dll is similar to a program:
-#	 all references have to be resolved)
-#
-#	If there is a file ../$(LIBRARY).def, it will
-#	be used as the dll-def-file on WIN32
-#
-#	We need this flag because
-#	1) you may not use a def file ('proper' code needs no def files)
-#	2) you may have one and still not want a DLL (for testing etc.)
-#	
-DLL_LIBS=some_dll
-
 #	Library to build:
 #	lib$(LIBRARY).a  or   ..dll/..exp/..lib
 #
@@ -122,7 +107,12 @@ LIBRARY=libname
 #	if SRCS is undefined, it defaults to $(PROD).c 
 SRCS=a.c b.c c.c
 
-#	EPICS libs needed to link PROD and TESTPROD
+#	EPICS libs needed to link PROD, TESTPROD and sharable library
+#
+#	note that DLL_LIBS (the libraries needed to link a shareable
+#	library) is created by default from the PROD/SYS libraries specified 
+#	below minus the name of the sharable library (LIBRARY)
+#	
 #
 # for all systems:
 PROD_LIBS         = Com Ca
@@ -130,7 +120,7 @@ PROD_LIBS         = Com Ca
 PROD_LIBS_DEFAULT = mathlib
 PROD_LIBS_WIN32   = -nil-
 
-#	system libs needed to link PROD and TESTPROD
+#	system libs needed to link PROD, TESTPROD and sharable library
 #
 # for all systems:
 SYS_PROD_LIBS     = m

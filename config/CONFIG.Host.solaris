@@ -1,0 +1,56 @@
+# CONFIG.Host.solaris
+#
+#  This file is maintained by the EPICS community.
+#  Sites may override these definitions in CONFIG_SITE.Host.solaris
+
+ARCH_CLASS = solaris
+
+# Include definitions common to all Unix archs
+include $(EPICS_BASE)/config/CONFIG.Host.UnixCommon
+
+#
+# required by sun's C++ compiler
+#
+AR = ar
+_AR = $(AR) $(ARFLAGS)
+G++_AR = $(_AR)
+CCC_AR = $(CCC) -xar -o
+ARCMD = $($(CPLUSPLUS)_AR) $@
+
+RANLIB =
+
+SPARCWORKS = /opt/SUNWspro
+
+# Configure OS vendor C compiler
+ACC = $(SPARCWORKS)/bin/cc
+ACC_ANSI = $(ACC) -Xa
+ACC_STRICT = $(ACC) -Xc -v
+ACC_TRAD = $(ACC) -Xs
+ACC_WARN_YES = 
+ACC_WARN_NO =  -w
+ACC_OPT_YES =  -O
+ACC_OPT_NO = -g
+ACC_SFLAGS_YES= -Bstatic
+ACC_SFLAGS_NO=
+ACC_SLIBS_YES= -lw -lintl -Bdynamic -ldl -Bstatic -lXext -lX
+ACC_SLIBS_NO=
+
+# Configure OS vendor C++ compiler
+CCC = $(SPARCWORKS)/bin/CC
+CCC_NORMAL = $(CCC) +p
+CCC_STRICT = $(CCC) +p
+CCC_TEMPL_INST_FLAG =
+CCC_WARN_YES = +w
+CCC_WARN_NO = 
+CCC_OPT_YES =  -O
+CCC_OPT_NO = -g
+CCC_SFLAGS_YES= -Bstatic
+CCC_SFLAGS_NO=
+CCC_SLIBS_YES= -lw -lintl -Bdynamic -ldl -Bstatic -lXext -lX
+CCC_SLIBS_NO=
+CCC_DEPENDS_FLAG = -xM1
+ 
+ARCH_DEP_CFLAGS = -DSOLARIS 
+# socket and nsl needed by libca.a
+ARCH_DEP_LDLIBS = -lsocket -lnsl
+

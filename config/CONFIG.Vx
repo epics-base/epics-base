@@ -1,0 +1,106 @@
+# $Id$
+#
+# This file contains definitions for Vx builds
+
+#--------------------------------------------------
+# operating system class (include/os/<os_class>)
+OS_CLASS = vxWorks
+
+#--------------------------------------------------
+# vxWorks directory definitions
+
+# The definitions VX_DIR, VX_GNU, GNU_DIR and GNU_LIB
+# can be overridden for specific host architectures
+# by creating a CONFIG_SITE.Vx.<host_arch> file with
+# the override definitions.
+ 
+# Tornado directory definitions
+VX_CONFIG_DIR_YES = $(VX_DIR)/target/config
+VX_INCLUDE_YES = $(VX_DIR)/target/h
+VX_GNU_YES = $(VX_DIR)/host/$(WIND_HOST_TYPE)
+VX_GNU_BIN_YES = $(VX_GNU)/bin
+VX_GNU_LIB_YES = $(VX_GNU)/lib
+
+# pre Torando directory definitions
+VX_CONFIG_DIR_NO = $(VX_DIR)/config
+VX_INCLUDE_NO = $(VX_DIR)/h
+VX_GNU_NO = $(VX_DIR)/../vxgccV2.2.3.1
+VX_GNU_BIN_NO = $(VX_GNU)/$(HOST_ARCH).$(ARCH_CLASS)/bin
+VX_GNU_LIB_NO = $(VX_GNU)/$(HOST_ARCH).$(ARCH_CLASS)/lib
+ 
+# directory definitions
+VX_DIR = $(VX_DIR_$(TORNADO))
+VX_CONFIG_DIR = $(VX_CONFIG_DIR_$(TORNADO))
+VX_INCLUDE = $(VX_INCLUDE_$(TORNADO))
+VX_GNU = $(VX_GNU_$(TORNADO))
+GNU_BIN = $(VX_GNU_BIN_$(TORNADO))
+GNU_LIB = $(VX_GNU_LIB_$(TORNADO))
+
+#--------------------------------------------------
+# Tornado command definitions
+
+GCC = $(GNU_BIN)/cc$(CMPLR_SUFFIX) -B$(GNU_LIB)/gcc-lib/ -nostdinc
+G++ = $(GNU_BIN)/cc$(CMPLR_SUFFIX) -B$(GNU_LIB)/gcc-lib/ -nostdinc
+
+CPLUSPLUS_YES = G++
+AR_YES = $(GNU_BIN)/ar$(CMPLR_SUFFIX)
+CPP_YES = $(GNU_BIN)/cpp$(CMPLR_SUFFIX) -nostdinc
+RANLIB_YES = $(GNU_BIN)/ranlib$(CMPLR_SUFFIX)
+LD_YES = $(GNU_BIN)/ld$(CMPLR_SUFFIX) -r
+
+#--------------------------------------------------
+# Pre Tornado C++ crosscompiler definitions
+# These are pre tornado definitions for Hideos builds (defined for 68k only)
+CCC = $(GNU_DIR)/bin/sun3-g++ -B$(GNU_DIR)/lib/gcc-lib/ -nostdinc -DEXPL_TEMPL
+
+CPLUSPLUS_NO = CCC
+AR_NO = $(GNU_DIR)/bin/sun3-ar
+CPP_NO = $(GNU_DIR)/bin/sun3-cpp
+LD_NO = $(GNU_DIR)/bin/sun3-ld $(OLD_ARCH_DEP_LDFLAGS) -r
+RANLIB_NO = $(GNU_DIR)/bin/sun3-ranlib
+
+CCC_NORMAL = $(CCC) $(OLD_ARCH_DEP_CFLAGS)
+CCC_STRICT = $(CCC) -ansi -pedantic -Wtraditional $(OLD_ARCH_DEP_CFLAGS)
+CCC_TRAD = $(CCC) -traditional $(OLD_ARCH_DEP_CFLAGS)
+CCC_TEMPL_INST_FLAG =
+CCC_WARN_YES = -Wall
+CCC_WARN_NO = -w
+CCC_OPT_YES = -O2 -fstrength-reduce
+CCC_OPT_NO =
+CCC_DEPENDS_FLAG = -MM
+CPU = 68000
+OS = VXWORKS
+OLD_ARCH_DEP_CFLAGS = --no-builtin -Wa,"-m68040" -DOS_EQ_$(OS) \
+	-DBOARD_EQ_$(BOARD) -DCPU_EQ_$(CPU) -DBOARD=$(BOARD)
+OLD_ARCH_DEP_LDFLAGS = -Ur -N -T$(EPICS_BASE_BIN)/vxldscript.MRI
+
+#--------------------------------------------------
+# C compiler definitions  
+ANSI = GCC
+#####CMPLR = ANSI
+
+#--------------------------------------------------
+# Command definitions
+CPLUSPLUS = $(CPLUSPLUS_$(TORNADO))
+AR = $(AR_$(TORNADO))
+CPP = $(CPP_$(TORNADO))
+RANLIB = $(RANLIB_$(TORNADO))
+LD = $(LD_$(TORNADO))
+
+#--------------------------------------------------
+# Operating system flags
+OP_SYS_INCLUDES = -I$(VX_INCLUDE)
+OP_SYS_CFLAGS = -DvxWorks -DV5_vxWorks -fno-builtin 
+OP_SYS_LDFLAGS =
+OP_SYS_LDLIBS =
+
+#--------------------------------------------------
+# Optimization flag overrides
+GCC_OPT_YES = -O2 -fstrength-reduce
+G++_OPT_YES = -O2 -fstrength-reduce
+
+#--------------------------------------------------
+# Link definitions
+LINK.c = $(LD) $(LDFLAGS) -o
+LINK.cc = $(LD_CXX) $(LDFLAGS) -o
+

@@ -72,6 +72,6 @@ include $(TOP)/config/RULES.Vx
 
 dbCommon.h: ../dbCommonRecord.dbd ../dbCommon.dbd
 	$(RM) $@
-	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToRecordtypeH \
+	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToRecordtypeH$(EXE) \
 		$(USER_DBDFLAGS) $<
 

@@ -1,5 +1,5 @@
 #RULES.Db
-SUBTOOL = $(EPICS_BASE_BIN)/subtool
+SUBTOOL = $(EPICS_BASE_HOST_BIN)/subtool
 PREFIX=$(shell echo $* | sed -e 's-[0-9]--g' | sed -e 's-\.db--g')
 ARCHS += $(BUILD_ARCHS) host cross
 ACTIONS += clean inc depends buildInstall build

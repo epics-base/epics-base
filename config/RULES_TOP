@@ -4,12 +4,13 @@
 
 include $(TOP)/config/RULES_DIRS
 
-uninstall::
+uninstall$(DIVIDER)%::
 	@$(RMDIR)  rec.bak rec
-	@$(RMDIR) $(INSTALL_LOCATION_BIN) $(INSTALL_LOCATION_LIB) \
+	@$(RMDIR) $(INSTALL_LOCATION_BIN)/$* $(INSTALL_LOCATION_LIB)/$* \
 		$(INSTALL_LOCATION)/dbd $(INSTALL_MAN) $(INSTALL_INCLUDE) \
-		$(INSTALL_DOC) $(INSTALL_DBD) $(INSTALL_TEMPLATES) \
 		$(INSTALL_HTML)
+
+uninstall:: $(addprefix uninstall$(DIVIDER),$(BUILD_ARCHS))
 
 tar:
 	@DIRNAME=$(notdir $(shell pwd)); \

@@ -1,0 +1,11 @@
+#
+# $Id$
+#
+# Site Specific Configuration Information
+# Only the local epics system manager should modify this file
+
+# APS overrides of definitions 
+
+GCC = /opt/gnu/bin/gcc
+G++ = /opt/gnu/bin/g++
+

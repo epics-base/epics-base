@@ -1,0 +1,27 @@
+# CONFIG.Host.cygwin32
+#
+#  This file is maintained by the EPICS community.
+#  Sites may override these definitions in CONFIG_SITE.Host.cygwin32
+
+ARCH_CLASS = cygwin32
+
+# cygwin32 is a unix-like arch
+# include definitions common to all Unix archs
+include $(EPICS_BASE)/config/CONFIG.Host.UnixCommon
+
+EXE=.exe
+
+#==========================
+# These are overrides of ANSI and CPLUSPLUS values in CONFIG_SITE
+# since OS vendor compilers ACC and CCC are not defined here for cygwin32
+ANSI=GCC
+# c++ code won't build with b19
+CPLUSPLUS=
+#==========================
+# Fix for cygwin32 beta17.1 includes
+#OP_SYS_INCLUDES += /usr/local/include/g++
+#==========================
+ 
+ARCH_DEP_CFLAGS = -DCYGWIN32
+ARCH_DEP_LDLIBS = -lm
+

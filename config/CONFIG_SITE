@@ -47,50 +47,36 @@ CROSS_COMPILER_TARGET_ARCHS=mv167
 #  uncomment the following line and specify them.
 #
 #CROSS_COMPILER_HOST_ARCHS=sun4
+CROSS_COMPILER_HOST_ARCHS=solaris sun4
 
 #  Vx release Tornado?
 #        must be either YES or NO
 TORNADO=YES
+#TORNADO=NO
  
-#  VxWorks directory
-#VX_DIR=$(VW)
-#VX_DIR=/usr/local/vw/vxV51.mm
-#VX_DIR=/usr/local/vw/vxV52/vw
-#VX_DIR=c:/Tornado/target
- 
-#For TORNADO=NO
-#VX_DIR=/usr/local/vw/vxV52p1/vw
-#VX_GNU = $(VX_DIR)/../vxgccV2.2.3.1
- 
-#For TORNADO=YES
-VX_DIR = /usr/local/vw/tornado101
-VX_GNU = $(VX_DIR)/host/$(WIND_HOST_TYPE)
+#  VxWorks directory for TORNADO=YES
+VX_DIR_YES = /usr/local/vw/tornado101
 
-WIND_BASE = $(VX_DIR)
-WIND_HOST_TYPE = sun4-solaris2
+#  VxWorks directory for TORNADO=NO
+#VX_DIR_NO=$(VW)
+#VX_DIR_NO=/usr/local/vw/vxV51.mm
+#VX_DIR_NO=/usr/local/vw/vxV52/vw
+#VX_DIR_NO=c:/Tornado/target
+VX_DIR_NO=/usr/local/vw/vxV52p1/vw
  
-#  Gnu directory for g++ crosscompiler
+#  Gnu directory for TORNADO=NO g++ crosscompiler
+#  used by applications for hideos builds only
 #GNU_DIR = $(LOCAL_GNU)
 GNU_DIR = /usr/local/hideos/gnu_install-2.7.2
-GNU_BIN = $(GNU_DIR)/bin
-GNU_LIB = $(GNU_DIR)/lib
 
-#  Client ANSI Compiler
-#   GCC     (gcc -ansi)
-#   ACC     (acc)
-#   HPACC   (cc -Aa)
+#  Client ANSI C Compiler (for Host builds)
+#   GCC     (gcc -ansi) GNU
+#   ACC     (acc)       OS VENDOR
+#   HPACC   (cc -Aa)    OTHER VENDOR 
 #ANSI=HPACC
 ANSI=ACC
  
-#  Client Standard C Compiler choice
-#   GCC     (gcc -traditional)
-#   ACC     (acc -Xs)
-#   SUNCC   (cc)
-#   HPCC    (cc -Ac)
-#STANDARD=HPCC
-STANDARD=ACC
- 
-#  C++ Compiler 
+#  C++ Compiler (for Host builds)
 #   G++     (g++)   GNU C++
 #   CCC     (CC)    OS VENDOR C++
 #CPLUSPLUS=G++
@@ -98,13 +84,26 @@ STANDARD=ACC
 #CPLUSPLUS=	# use this if site does not have C++ compiler
 CPLUSPLUS=CCC
 
+# Default ANSI level, individual Makefiles will override
+#  if they cannot support ANSI compilation.
+#   STRICT -  ANSI C - force warning flags
+#   ANSI   -  ANSI C
+#   OLD    -  Standard C - Not appropriate here.
+CMPLR=ANSI
+
+# Default C++ compiler ANSI level
+#   STRICT -  ANSI C++ force strict warning flags
+#   NORMAL -  ANSI C++ optional warning flags
+#   Individual Makefiles may override
+CXXCMPLR=NORMAL
+ 
 #  Build client objects statically ?
 #        must be either YES or NO
 STATIC_BUILD=NO
 
 #  Unix Optimization
 #	must be either YES or NO
-UNIX_OPT=YES
+HOST_OPT=YES
 
 #  VxWorks Optimization
 #	must be either YES or NO
@@ -112,7 +111,7 @@ VX_OPT=YES
  
 #  Generate Verbose Compiler Warnings for Unix
 #	must be either YES or NO
-UNIX_WARN=YES
+HOST_WARN=YES
 
 #  Generate Verbose Compiler Warnings for VxWorks
 #	must be either YES or NO

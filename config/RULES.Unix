@@ -206,8 +206,7 @@ bpt%.dbd: ../bpt%.data
 $(DBDNAME): ../$(DBDEXPAND)
 	@echo expanding dbd
 	@$(RM) $@
-	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbExpand\
-		$(USER_DBDFLAGS) $< > $@
+	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbExpand $(USER_DBDFLAGS) $< > $@
 
 $(LIBNAME): $(LIBOBJS)
 	@echo Building library $@

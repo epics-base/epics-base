@@ -1,0 +1,19 @@
+#  CONFIG_HOST_ARCH.WIN32
+#
+
+EXE=.exe
+
+CP   =$(PERL) $(EPICS_BASE_HOST_BIN)/cp.pl
+MV   =$(PERL) $(EPICS_BASE_HOST_BIN)/mv.pl
+RM   =$(PERL) $(EPICS_BASE_HOST_BIN)/rm.pl -f
+MKDIR=$(PERL) $(EPICS_BASE_HOST_BIN)/mkdir.pl
+RMDIR=$(PERL) $(EPICS_BASE_HOST_BIN)/rm.pl -rf
+CHMOD=echo
+WHAT=echo
+ECHO=echo
+
+WIND_HOST_TYPE = 
+ 
+# 	Use std path variables from ms
+HOME = $(HOMEDRIVE)$(HOMEPATH)
+

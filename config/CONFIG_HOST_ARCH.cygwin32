@@ -1,0 +1,18 @@
+# CONFIG_HOST_ARCH.cygwin32
+#
+# This file is maintained by the EPICS community.
+
+# Include definitions common to all Unix archs
+-include $(EPICS_BASE)/config/CONFIG_HOST_ARCH.UnixCommon
+
+EXE=.exe
+
+TORNADO=YES
+
+#==========================
+# inc for gdd won't build with b19
+CPLUSPLUS=
+#==========================
+
+WIND_HOST_TYPE = cygwin32
+

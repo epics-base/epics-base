@@ -1,0 +1,15 @@
+
+#  CONFIG.Vx.niCpu030
+#
+# This file is maintained by the EPICS community.
+
+# Vx GNU cross compiler suffix
+CMPLR_SUFFIX = 68k
+ 
+# For Vx directories of form:
+#   $(VX_DIR)/$(HOST_ARCH).$(ARCH_CLASS)/bin
+ARCH_CLASS = 68k
+
+# Architecture specific build flags
+ARCH_DEP_CFLAGS = -DCPU=MC68030 -m68030 -DCPU_FAMILY=MC680X0
+ 

@@ -23,12 +23,12 @@ archPart = $(word 2, $(subst $(DIVIDER), ,$@))
 hostArchs = $(HOST_ARCH)
 hostActionArchTargets = $(foreach x, $(ACTIONS),\
 		$(foreach arch,$(hostArchs), $(x)$(DIVIDER)$(arch)))
-ifeq (Makefile.$(BUILD_TYPE), $(wildcard Makefile.$(BUILD_TYPE)))
+ifeq (Makefile.Host, $(wildcard Makefile.Host))
 hostDirs = $(addprefix O.,$(hostArchs))
 $(hostActionArchTargets) : $(hostDirs)
-	$(MAKE) -C O.$(archPart) -f ../Makefile.$(BUILD_TYPE) T_A=$(archPart) $(actionPart)
+	$(MAKE) -C O.$(archPart) -f ../Makefile.Host T_A=$(archPart) BUILD_TYPE=Host $(actionPart)
 $(hostArchs) : % : O.% 
-	$(MAKE) -C O.$@ -f ../Makefile.$(BUILD_TYPE) T_A=$@ 
+	$(MAKE) -C O.$@ -f ../Makefile.Host T_A=$@ BUILD_TYPE=Host
 else
 $(hostActionArchTargets) :
 $(hostArchs) :
@@ -43,16 +43,16 @@ crossActionArchTargets = $(foreach x, $(ACTIONS), \
 ifeq (Makefile.Vx, $(wildcard Makefile.Vx))
 crossDirs = $(addprefix O.,$(crossArchs))
 $(crossActionArchTargets) : $(crossDirs)
-	$(MAKE) -C O.$(archPart) -f ../Makefile.Vx T_A=$(archPart) $(actionPart)
+	$(MAKE) -C O.$(archPart) -f ../Makefile.Vx T_A=$(archPart) BUILD_TYPE=Vx $(actionPart)
 $(crossArchs) : % : O.%
-	$(MAKE) -C O.$@ -f ../Makefile.Vx T_A=$@
+	$(MAKE) -C O.$@ -f ../Makefile.Vx T_A=$@ BUILD_TYPE=Vx
 else
 $(crossActionArchTargets) :
 $(crossArchs) : 
 endif
 
 $(hostDirs) : 
-	$(PERL) $(EPICS_BASE_HOST_BIN)/makeMakefile.pl $@ $(BUILD_TYPE)
+	$(PERL) $(EPICS_BASE_HOST_BIN)/makeMakefile.pl $@ Host
 
 $(crossDirs) : 
 	$(PERL) $(EPICS_BASE_HOST_BIN)/makeMakefile.pl $@ Vx

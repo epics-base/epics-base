@@ -1,0 +1,20 @@
+# CONFIG.Vx.frc5ce
+
+# Vx GNU cross compiler suffix
+CMPLR_SUFFIX = sparc
+ 
+# For Vx directories of form:
+#   $(VX_DIR)/$(HOST_ARCH).$(ARCH_CLASS)/bin
+ARCH_CLASS = sparc
+
+# Architecture specific build flags
+ARCH_DEP_CFLAGS = -DCPU=SPARC -DCPU_FAMILY=SPARC
+# Removed -O2 [24/12/96 PMM]
+OLD_ARCH_DEP_CXXFLAGS = -fno-builtin -ansi -pipe -nostdinc -DCPU=SPARC \
+                      -DVXWORKS -Dsigned= -Dvolatile= +V  
+
+# Definitions for pre Tornado c++ builds
+CCC = CENTERLINE
+CCC_NORMAL = $(VX_DIR)/bin/sun4/CCsparc
+CCC_STRICT = $(VX_DIR)/bin/sun4/CCsparc
+

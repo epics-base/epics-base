@@ -1,0 +1,79 @@
+# CONFIG.Host.UnixCommon
+#
+#  Contains definitions common to all Unix archs
+#
+#  This file is maintained by the EPICS community.
+#  Sites may override these definitions in CONFIG_SITE.Host.UnixCommon
+ 
+
+#-------------------------------------------------------
+#	adjust names of libraries to build
+#
+# <lib> ->  lib<lib>.a
+LIBNAME = $(LIBRARY:%=lib%.a)
+
+#-------------------------------------------------------
+#     EPICS libs that we need to link the DLL with
+DLL_DEPLIBS = $(DLL_LIBS:%=$(firstword $(%_DIR) $(EPICS_BASE_LIB))/lib%.a)
+DLL_LDLIBS = $(DLL_DEPLIBS) $(SYS_PROD_LIBS:%=lib%.a) $(OP_SYS_LDLIBS)
+  $(ARCH_DEP_LDLIBS)
+
+#-------------------------------------------------------
+#	A NOOP on all UNIX systems that dont implement
+#	shared libraries
+#
+#DLLNAME = lib$(LIBRARY).???
+LINK.dll = echo share lib build for UNIX archictecture is a NOOP
+
+#-------------------------------------------------------
+# Unix command definitions
+
+CPP = cpp
+RANLIB = ranlib
+LD = ld -r
+
+# GNU compilers
+GCC = gcc
+G++ = g++
+
+#-------------------------------------------------------
+# Unix suffix definitions
+EXE =
+OBJ = .o
+
+#--------------------------------------------------
+# Dependancy definitions
+COND_PROD_DEPLIBS = $(foreach prod,$(PROD), $(foreach lib, $($(basename $(prod))_LIBS),$(firstword $($(lib)_DIR) $(EPICS_BASE_LIB))/lib$(lib).a))
+PRODNAME_DEPLIBS = $(foreach lib,$(PRODNAME_LIBS),$(firstword $($(lib)_DIR) $(EPICS_BASE_LIB))/lib$(lib).a)
+PROD_DEPLIBS = $(foreach lib,$(PROD_LIBS),$(firstword $($(lib)_DIR) $(EPICS_BASE_LIB))/lib$(lib).a)
+
+USR_DEPLIBS = $(foreach lib,$(USR_LIBS),$(firstword $($(lib)_DIR) $(EPICS_BASE_LIB))/lib$(lib).a)
+
+#--------------------------------------------------
+# Determine ld flags
+USR_DIRS = $(dir $(PRODNAME_DEPLIBS)) $(dir $(PROD_DEPLIBS))\
+ $(dir $(USR_DEPLIBS))
+USR_LDFLAGS += $(sort $(USR_DIRS:%=-L%))
+
+# Determine ld libs
+USR_LDLIBS = $(PRODNAME_LIBS:%=-l%) $(PROD_LIBS:%=-l%) $(USR_LIBS:%=-l%)\
+ $(SYS_PROD_LIBS:%=-l%)
+
+#USR_LDLIBS = $(PRODNAME_DEPLIBS:%=-L%) $(PROD_DEPLIBS:%=-L%) $(USR_DEPLIBS)\
+# $(USR_XLDLIBS)
+
+#--------------------------------------------------
+# Operating system definitions
+OP_SYS_INCLUDES =
+OP_SYS_CFLAGS = -DUNIX 
+OP_SYS_LDFLAGS =
+OP_SYS_LDLIBS = -lm
+
+#--------------------------------------------------
+# Link definitions
+LINK.c = $(CC) -o $@ $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
+LINK.cc = $(CXX) -o $@ $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS)
+ 
+#--------------------------------------------------
+# Allow site overrides
+-include $(EPICS_BASE)/config/CONFIG_SITE.Host.UnixCommon

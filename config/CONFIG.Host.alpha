@@ -1,0 +1,44 @@
+# CONFIG.Host.alpha
+#
+#  This file is maintained by the EPICS community.
+#  Sites may override these definitions in CONFIG_SITE.Host.alpha
+
+ARCH_CLASS = alpha
+
+# Include definitions common to all Unix archs
+include $(EPICS_BASE)/config/CONFIG.Host.UnixCommon
+
+AR = ar -rc
+
+# Configure OS vendor C compiler
+ACC = cc
+ACC_ANSI = $(ACC) -std
+ACC_STRICT = $(ACC) -std1
+ACC_TRAD = $(ACC) -std0
+ACC_WARN_YES = 
+ACC_WARN_NO =  -w
+ACC_OPT_YES =  -O
+ACC_OPT_NO = -g
+ACC_SFLAGS_YES= -non_shared
+ACC_SFLAGS_NO= -call_shared
+ACC_SLIBS_YES =
+ACC_SLIBS_NO=
+
+# Configure OS vendor C++ compiler
+CCC = cxx
+CCC_NORMAL = $(CCC)
+CCC_STRICT = $(CCC)
+CCC_TEMPL_INST_FLAG = -DEXPL_TEMPL
+CCC_WARN_YES =
+CCC_WARN_NO =
+CCC_OPT_YES =  -O
+CCC_OPT_NO = -g
+CCC_SFLAGS_YES=
+CCC_SFLAGS_NO=
+CCC_SLIBS_YES =
+CCC_SLIBS_NO=
+CCC_DEPENDS_FLAG =
+
+ARCH_DEP_CFLAGS = -D_OSF_SOURCE
+ARCH_DEP_LDLIBS = -lnsl
+

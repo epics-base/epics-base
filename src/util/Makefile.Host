@@ -13,9 +13,11 @@ PROD_LIBS         := ca Com
 SYS_PROD_LIBS_WIN32 := ws2_32
 
 PROD_DEFAULT := ca_test iocLogServer startCArepeater
-PROD_solaris := ca_test iocLogServer startCArepeater S99logServer S99caRepeater 
 PROD_WIN32   := ca_test iocLogServer
 
+ifeq ($(T_A),solaris)
+SCRIPTS := S99logServer S99caRepeater 
+endif
 
 include $(TOP)/config/RULES.Host
  

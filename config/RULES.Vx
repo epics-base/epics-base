@@ -30,6 +30,14 @@ DIRECTORY_TARGETS = $(INSTALL_INCLUDE) $(INSTALL_DOC) $(INSTALL_DBD) \
 	$(INSTALL_LOCATION_BIN) $(INSTALL_BIN) \
 	$(MAN_DIRECTORY_TARGETS) $(INSTALL_MAN)
 
+#       if we are not building base add base includes
+#
+ifneq ($(EPICS_BASE),$(TOP))
+ifneq ($(EPICS_BASE),$(INSTALL_LOCATION))
+EPICS_INCLUDES += -I$(EPICS_BASE_INCLUDE) -I$(EPICS_BASE_INCLUDE)/os/$(OS_CLASS)
+endif
+endif
+
 all:: install 
 
 rebuild:: clean install
@@ -60,16 +68,9 @@ buildInstall :: binInstalls
 endif
 
 depends:: $(SRCS.c) $(SRCS.cc)
-ifdef SRCS
-	echo you have a SRCS in your Makefile
-	exit 2
-endif
-ifdef SRCS.c
-	$(DEPENDS_RULE.c)
-endif
-ifdef SRCS.cc
-	$(DEPENDS_RULE.cc)
-endif
+	$(RM) .DEPENDS
+	touch .DEPENDS
+	$(DEPENDS_RULE)
 
 clean::
 	@echo "Cleaning"
@@ -84,11 +85,11 @@ $(DIRECTORY_TARGETS) :
 
 %: %.o
 	$(RM) $@
-	$(LINK.c) $@ $< $(LDLIBS)
+	$(LINK.c)$@ $< $(LDLIBS)
 
 #$(PROD): $(OBJS)
 #	$(RM) $@
-#	$(LINK.c) $@ $(OBJS)
+#	$(LINK.c)$@ $(OBJS)
 
 %.o: %.c
 	$(RM) $@
@@ -172,6 +173,7 @@ binInstalls:  $(BIN_INSTALLS)
 
 $(INSTALL_DBD)/%: % 
 	@echo "Installing $@"
+	@echo "Installing $@"
 	@$(INSTALL) -m 644 $< $(INSTALL_DBD)
 
 $(INSTALL_DBD)/%: ../% 
@@ -180,35 +182,34 @@ $(INSTALL_DBD)/%: ../%
 
 %Record.h: %Record.dbd
 	$(RM) $@
-	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToRecordtypeH \
+	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToRecordtypeH$(EXE) \
 		$(USER_DBDFLAGS)  $<
 
 %Record.h: ../%Record.dbd
 	$(RM) $@
-	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToRecordtypeH \
+	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToRecordtypeH$(EXE) \
 		$(USER_DBDFLAGS)  $<
 
 menu%.h: menu%.dbd
 	$(RM) $@
-	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToMenuH $<
+	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToMenuH$(EXE) $<
 
 menu%.h: ../menu%.dbd
 	$(RM) $@
-	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToMenuH $<
+	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToMenuH$(EXE) $<
 
 bpt%.dbd: bpt%.data
 	$(RM) $@
-	$(EPICS_BASE)/bin/$(HOST_ARCH)/makeBpt $<
+	$(EPICS_BASE)/bin/$(HOST_ARCH)/makeBpt$(EXE) $<
 
 bpt%.dbd: ../bpt%.data
 	$(RM) $@
-	$(EPICS_BASE)/bin/$(HOST_ARCH)/makeBpt $<
+	$(EPICS_BASE)/bin/$(HOST_ARCH)/makeBpt$(EXE) $<
 
 $(DBDNAME): ../$(DBDEXPAND)
 	@echo expanding dbd
 	@$(RM) $@
-	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbExpand\
-		$(USER_DBDFLAGS) $< > $@
+	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbExpand$(EXE) $(USER_DBDFLAGS) $< > $@
 
 $(LIBNAME): $(LIBOBJS)
 	@echo Building library $@
@@ -218,7 +219,7 @@ $(LIBNAME): $(LIBOBJS)
 $(LIBNAME_CXX): $(LIBOBJS_CXX)
 	@echo Building CXX library $@
 	@$(RM) $@
-	$(LINK.cc) $@ $(LIBOBJS_CXX) $(CXXLDLIBS)
+	$(LINK.cc) $@ $(LIBOBJS_CXX) $(LDLIBS)
 
 $(INSTALL_BIN)/%: % 
 	@echo "Installing $@"
@@ -279,6 +280,7 @@ $(INSTALL_HTML)/$(HTMLS_DIR)/%: ../%
 ifneq (,$(wildcard ../baseLIBOBJS))
 $(LIBNAME): ../baseLIBOBJS
 endif
-$(LIBNAME): ../Makefile.Vx
+#=====> ????  the following line causes a rebuild every time
+#=====> $(LIBNAME): ../Makefile.Vx
 $(DBDNAME): ../base.dbd $(RECTYPES:%.h=../%.dbd)
 

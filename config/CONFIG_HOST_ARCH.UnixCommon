@@ -1,0 +1,13 @@
+
+#  CONFIG_HOST_ARCH.UnixCommon
+#
+
+# Unix command definitions
+CP = cp
+MV = mv
+RM = rm -f
+MKDIR = mkdir
+RMDIR = rm -rf
+CHMOD = "/bin/chmod"
+WHAT = what
+

@@ -413,6 +413,7 @@ sub GetUser {
     # add to this list if new possibilities arise,
     # currently it's UNIX and WIN32:
     $user = $ENV{USER} || $ENV{USERNAME} || Win32::LoginName();
+    $user =~ s/\s+//g;   # Bl**dy Windows stupidity...
 
     unless ($user) {
 	print "Strange, I cannot figure out your user name!\n";

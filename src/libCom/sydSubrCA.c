@@ -354,7 +354,6 @@ struct event_handler_args arg;
     long	stat;
     int		i, i1, j;
     long	inStatus;
-    unsigned long roundTemp;
     union db_access_val *pBuf;
 
     pCh = arg.chid;
@@ -371,17 +370,9 @@ struct event_handler_args arg;
     if (!dbr_type_is_TIME(arg.type))
 	return;
 
-    if (pSspec->roundNsec > 0) {
-	roundTemp = pBuf->tfltval.stamp.nsec;
-	roundTemp = ( (roundTemp + pSspec->roundNsec/2) /
-				pSspec->roundNsec ) * pSspec->roundNsec;
-	if (roundTemp < 1000000000)
-	    pBuf->tfltval.stamp.nsec = roundTemp;
-	else {
-	    pBuf->tfltval.stamp.nsec = roundTemp - 1000000000;
-	    pBuf->tfltval.stamp.secPastEpoch += 1;;
-	}
-    }
+    if (pSspec->roundNsec > 0)
+	sydTsRound(&pBuf->tfltval.stamp, pSspec->roundNsec);
+
     if (pSChan->lastInBuf == pSChan->firstInBuf &&
 		pBuf->tfltval.stamp.secPastEpoch != 0) {
 	if (pSspec->refTs.secPastEpoch == 0 ||

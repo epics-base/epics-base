@@ -1,5 +1,8 @@
 /* $Id$
  * $Log$
+ * Revision 1.8  1998/11/23 23:49:29  jhill
+ * added build date to corerelease()
+ *
  * Revision 1.7  1997/04/30 19:12:25  mrk
  * Fix compiler warning messages
  *
@@ -30,9 +33,10 @@
     char *epicsRelease1 = epicsReleaseVersion;
 int coreRelease()
 {
-    printf("############################################################################\n");
-    printf("###  %s\n", epicsRelease, epicsRelease1);
-    printf("###  Build date %s\n", __DATE__);
-    printf("############################################################################\n");
+    printf ("############################################################################\n");
+    printf ("###  %s\n", epicsRelease);
+    printf ("###  %s\n", epicsRelease1);
+    printf ("###  @(#)Built date %s\n", __DATE__);
+    printf ("############################################################################\n");
     return(0);
 }

@@ -286,7 +286,7 @@ void udpiiu::shutdown (
     {
         epicsGuardRelease < epicsMutex > unguard ( guard );
         {
-            epicsGuardRelease < epicsMutex > unguard ( cbGuard );
+            epicsGuardRelease < epicsMutex > cbUnguard ( cbGuard );
 
             if ( ! this->recvThread.exitWait ( 0.0 ) ) {
                 unsigned tries = 0u;

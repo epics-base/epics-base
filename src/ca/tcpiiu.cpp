@@ -850,7 +850,7 @@ void tcpiiu::unresponsiveCircuitNotify (
         {
             epicsGuardRelease < epicsMutex > unguard ( guard );
             {
-                epicsGuardRelease < epicsMutex > unguard ( cbGuard );
+                epicsGuardRelease < epicsMutex > cbUnguard ( cbGuard );
                 this->recvDog.cancel ();
                 this->sendDog.cancel ();
             }

@@ -40,7 +40,7 @@
 #include "dbChannelIO.h"
 #include "db_access_routines.h"
 
-dbSubscriptionIO::dbSubscriptionIO ( dbServiceIO & serviceIO, dbChannelIO & chanIO, 
+dbSubscriptionIO::dbSubscriptionIO ( dbServiceIO & /* serviceIO */, dbChannelIO & chanIO, 
     dbAddr & addr, cacStateNotify & notifyIn, unsigned typeIn, unsigned long countIn, 
     unsigned maskIn, dbEventCtx ctx ) :
     notify ( notifyIn ), chan ( chanIO ), es ( 0 ), 

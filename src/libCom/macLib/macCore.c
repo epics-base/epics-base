@@ -623,7 +623,7 @@ static void trans( MAC_HANDLE *handle, MAC_ENTRY *entry, long level,
 
     /* debug output */
     if ( handle->debug & 2 )
-	epicsPrintf( "trans-> level = %d, maxlen = %4d, discard = %s, "
+	epicsPrintf( "trans-> level = %ld, maxlen = %4d, discard = %s, "
 	"rawval = %s\n", level, valend - *value, discard ? "T" : "F", *rawval );
 
     /* initially not in quotes */
@@ -717,7 +717,7 @@ static void trans( MAC_HANDLE *handle, MAC_ENTRY *entry, long level,
 
     /* debug output */
     if ( handle->debug & 2 )
-	epicsPrintf( "<-trans level = %d, length = %4d, value  = %s\n",
+	epicsPrintf( "<-trans level = %ld, length = %4d, value  = %s\n",
 		     level, v - *value, *value );
 
     /* update pointers to next characters to scan in raw value and to fill
@@ -743,6 +743,9 @@ char *Strdup( char *string )
 }
 
 /* $Log$
+ * Revision 1.2  1996/09/16 21:07:10  jhill
+ * fixed warnings
+ *
  * Revision 1.1  1996/07/10 14:49:48  mrk
  * added macLib
  *

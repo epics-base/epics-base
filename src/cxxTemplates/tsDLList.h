@@ -427,9 +427,15 @@ public:
 	    this->tsDLIter<T>::reset(listIn);
 	}
 
-	T * operator () ();
+	T * operator () ()
+	{
+	    return this->tsDLIter<T>::prev();
+	}
 
-	T * prev ();
+	T * prev ()
+	{
+	    return this->tsDLIter<T>::prev();
+	}
 
 	T * last()
 	{
@@ -721,24 +727,6 @@ void tsDLBwdIter<T>::remove ()
 		//
 		pMutableList->remove(*pCur);
 	}
-}
-
-//
-// tsDLBwdIter<T>::operator () ()
-//
-template <class T>
-inline T * tsDLBwdIter<T>::operator () ()
-{
-	return this->tsDLIter<T>::prev();
-}
-
-//
-// tsDLBwdIter<T>::prev () 
-//
-template <class T>
-inline T * tsDLBwdIter<T>::prev () 
-{
-	return this->tsDLIter<T>::prev();
 }
 
 //

@@ -94,7 +94,7 @@ void netiiu::flushRequestIfAboveEarlyThreshold ( epicsGuard < cacMutex > & )
 }
 
 void netiiu::blockUntilSendBacklogIsReasonable 
-    ( epicsGuard < callbackMutex > *, epicsGuard < cacMutex > & )
+    ( cacNotify &, epicsGuard < cacMutex > & )
 {
 }
 
@@ -103,8 +103,8 @@ void netiiu::requestRecvProcessPostponedFlush ()
     return;
 }
 
-void netiiu::uninstallChannel ( epicsGuard < callbackMutex > &, 
-                               epicsGuard < cacMutex > &, nciu & )
+class tcpiiu * netiiu::uninstallChanAndReturnDestroyPtr 
+            ( epicsGuard < cacMutex > &, nciu & )
 {
     throw cacChannel::notConnected();
 }

@@ -1,0 +1,8 @@
+
+TOP = ../../../..
+include $(TOP)/config/CONFIG_BASE
+
+INC := casdef.h casInternal.h casEventMask.h 
+
+include $(TOP)/config/RULES.Host
+

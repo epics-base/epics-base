@@ -5,3 +5,6 @@ BUILD_CLASS = CROSS
 ANSI = GCC
 CPLUSPLUS = G++
 
+CROSS_INCLUDES = $(addprefix -I,$(GNU_INCLUDE_DIR))
+CROSS_LDFLAGS = $(addprefix -L,$(GNU_LIB_DIR))
+

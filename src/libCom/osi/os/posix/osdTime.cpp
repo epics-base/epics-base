@@ -23,7 +23,7 @@ extern "C" epicsShareFunc int epicsShareAPI tsStampGetCurrent (TS_STAMP *pDest)
             return tsStampERROR;
         }
         *pDest = osiTime (ts);
-        return tsStampERROR;
+        return tsStampOK;
 #   else
     	int status;
     	struct timeval tv;
@@ -33,7 +33,7 @@ extern "C" epicsShareFunc int epicsShareAPI tsStampGetCurrent (TS_STAMP *pDest)
             return tsStampERROR;
         }
     	*pDest = osiTime (tv); 
-        return tsStampERROR;
+        return tsStampOK;
 #   endif
 }
 

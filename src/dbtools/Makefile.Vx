@@ -7,12 +7,12 @@ SRCS = \
 	dbVarSub.c $(OBDIR)/dbLoadTemplate.c $(OBDIR)/dbLoadRecords.c
 
 OBJS = \
+
+LIBOBJS = \
 	$(OBDIR)/dbVarSub.o $(OBDIR)/dbLoadTemplate.o \
 	$(OBDIR)/dbLoadRecords.o
 
-LIBOBJS =
-
-PROD = $(OBDIR)/dbSubs
+LIBNAME = dbSubs
 
 depends: $(OBDIR)/dbLoadTemplate.c $(OBDIR)/dbLoadRecords.c
 

@@ -7,14 +7,14 @@ SRCS = \
 	caserverio.c caservertask.c camsgtask.c camessage.c \
 	rsrv_init.c cast_server.c online_notify.c globalsource.c
 
-OBJS = \
+OBJS =
+
+LIBOBJS = \
 	$(OBDIR)/caserverio.o $(OBDIR)/caservertask.o \
 	$(OBDIR)/camsgtask.o $(OBDIR)/camessage.o \
 	$(OBDIR)/rsrv_init.o $(OBDIR)/cast_server.o \
 	$(OBDIR)/online_notify.o
 
-LIBOBJS =
-
-PROD = dbgLib
+LIBNAME = dbgLib
 
 include $(EPICS)/config/RULES.Vx

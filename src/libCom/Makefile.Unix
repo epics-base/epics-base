@@ -1,9 +1,9 @@
 EPICS = ../../..
 include $(EPICS)/config/CONFIG
 
-USR_CFLAGS = -DACCESS_SECURITY -D_NO_PROTO
+USR_CFLAGS = -D_NO_PROTO
 
-CC = acc -Xs
+
 CC = acc -Xt
 
 SRCS = \
@@ -31,6 +31,9 @@ LIBOBJS = \
 
 LIBNAME = libCom.a
 
+TARGET = \
+	$(OBDIR)/cvtTest $(OBDIR)/tsTest $(OBDIR)/sydTest
+
 depends: bld_errSym
 
 bld_errSym: $(OBDIR)/errSymTbl.c $(OBDIR)/errInc.o
@@ -39,5 +42,14 @@ $(OBDIR)/errSymTbl.c $(OBDIR)/errInc.o:
 	@/bin/rm -f errInc.o
 	@$(EPICS_BASE)/tools/blderrSymTbl
 	@/bin/mv errSymTbl.c errInc.o $(OBDIR)
+
+$(OBDIR)/cvtTest: $(OBDIR)/cvtNumbers.o
+	$(LINK.c) -o $@ $? -lCom -lDb -lCom -lm -s
+
+$(OBDIR)/tsTest: $(OBDIR)/tsSubr.o
+	$(LINK.c) -o $@ $? -lCom -lDb -lCom -lm -s
+
+$(OBDIR)/sydTest: $(OBDIR)/sydSubr.o
+	$(LINK.c) -o $@ $? -lCom -lca -lDb -lCom -lm -s
 
 include $(EPICS)/config/RULES.Unix

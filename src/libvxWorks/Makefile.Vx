@@ -7,10 +7,10 @@ SRCS = \
 	iocLogClient.c veclist.c
 
 OBJS = \
-	$(OBDIR)/veclist.o $(OBDIR)/iocLogClient.o
 
 LIBOBJS = \
+	$(OBDIR)/veclist.o $(OBDIR)/iocLogClient.o
 
-PROD = $(OBDIR)/vxComLib
+LIBNAME = vxComLib
 
 include $(EPICS)/config/RULES.Vx

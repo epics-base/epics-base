@@ -25,13 +25,15 @@ OBJS = \
 	$(OBDIR)/recListProg.o $(OBDIR)/recordTest.o \
 	$(OBDIR)/startCArepeater.o $(OBDIR)/sydPlot.o
 
-PROD = \
+LIBOBJS =
+
+TARGETS = \
 	$(OBDIR)/apCreateShadow $(OBDIR)/apStatusSync $(OBDIR)/bfRing \
 	$(OBDIR)/ca_test $(OBDIR)/calcTest $(OBDIR)/checkDvlNode \
 	$(OBDIR)/cmdClient $(OBDIR)/extrDoc $(OBDIR)/iocLogServer \
 	$(OBDIR)/racPrint $(OBDIR)/recListProg $(OBDIR)/recordTest \
 	$(OBDIR)/startCArepeater
 
-all :: $(PROD)
+#all :: $(PROD)
 
-include $(EPICS)/config/RULES
+include $(EPICS)/config/RULES.Unix

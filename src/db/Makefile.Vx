@@ -9,6 +9,8 @@ SRCS = \
 	dbCaLink.c dbCaDblink.c devLib.c initHooks.c
 
 OBJS = \
+
+LIBOBJS = \
 	$(OBDIR)/dbAccess.o $(OBDIR)/dbBkpt.o $(OBDIR)/dbFastLinkConv.o \
 	$(OBDIR)/dbLink.o $(OBDIR)/dbStaticLib.o $(OBDIR)/iocInit.o \
 	$(OBDIR)/drvTS.o $(OBDIR)/dbScan.o $(OBDIR)/dbEvent.o \
@@ -17,9 +19,7 @@ OBJS = \
 	$(OBDIR)/taskwd.o $(OBDIR)/dbCaLink.o $(OBDIR)/dbCaDblink.o \
 	$(OBDIR)/devLib.o
 
-LIBOBJS =
-
-PROD = $(OBDIR)/dbLib
+LIBNAME = dbLib
 
 TARGET = $(OBDIR)/initHooks.o
 

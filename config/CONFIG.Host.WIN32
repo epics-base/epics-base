@@ -212,6 +212,10 @@ PROD_DEPLIBS = $(foreach lib,$(PROD_LIBS),$(firstword $($(lib)_DIR) $(EPICS_BASE
 
 USR_DEPLIBS = $(foreach lib,$(USR_LIBS),$(firstword $($(lib)_DIR) $(EPICS_BASE_LIB))/$(lib).lib)
 
+# by default the libraries used when linking the DLL are just
+# PROD_LIBS ans SYS_PROD_LIBS minus the DLL name
+DLL_LIBS = $(subst $(LIBRARY),, $(PROD_LIBS))
+ 
 #
 #	EPICS libs that we need to link the DLL with
 #	(it isnt necessary to rebuild the dll if these change)
@@ -222,7 +226,7 @@ USR_LDLIBS = $(PRODNAME_DEPLIBS) $(PROD_DEPLIBS) $(USR_DEPLIBS) $(SYS_PROD_LIBS:
 DLL_LDLIBS = $(DLL_DEPLIBS) $(SYS_PROD_LIBS:%=%.lib) $(OP_SYS_LDLIBS)
 
 LINK.c = $(WINLINK) -nologo $(LDFLAGS) -out:$@
-LINK.cc = $(LINK.c)
+LINK.cc = $(WINLINK) -nologo $(LDFLAGS) -out:$@
 
 #--------------------------------------------------
 # Determine ld flags

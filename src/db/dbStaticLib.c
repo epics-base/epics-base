@@ -1651,7 +1651,7 @@ char *pstring;
 		    plink->value.vmeio.parm[0] = 0;
 		    if(end = strchr(pstr,'@')) {
 		        pstr = end + 1;
-		        sscanf(pstr,"%31s",&plink->value.vmeio.parm[0]);
+			strcpy(&plink->value.vmeio.parm[0],pstr);
 		    }
 		}
 		break;
@@ -1678,7 +1678,7 @@ char *pstring;
 		    plink->value.camacio.parm[0] = 0;
 		    if(end = strchr(pstr,'@')) {
 		        pstr = end + 1;
-		        sscanf(pstr,"%25s",&plink->value.camacio.parm[0]);
+			strcpy(&plink->value.camacio.parm[0],pstr);
 		    }
 		}
 		break;
@@ -1708,7 +1708,7 @@ char *pstring;
 		    plink->value.abio.parm[0] = 0;
 		    if(end = strchr(pstr,'@')) {
 		        pstr = end + 1;
-		        sscanf(pstr,"%25s",&plink->value.abio.parm[0]);
+			strcpy(&plink->value.abio.parm[0],pstr);
 		    }
 		}
 		break;
@@ -1726,7 +1726,7 @@ char *pstring;
 		    plink->value.gpibio.parm[0] = 0;
 		    if(end = strchr(pstr,'@')) {
 		        pstr = end + 1;
-		        sscanf(pstr,"%31s",&plink->value.gpibio.parm[0]);
+			strcpy(&plink->value.gpibio.parm[0],pstr);
 		    }
 		}
 		break;
@@ -1758,7 +1758,7 @@ char *pstring;
 		    plink->value.bitbusio.parm[0] = 0;
 		    if(end = strchr(pstr,'@')) {
 		        pstr = end + 1;
-		        sscanf(pstr,"%31s",&plink->value.bitbusio.parm[0]);
+			strcpy(&plink->value.bitbusio.parm[0],pstr);
 		    }
 		}
 		break;
@@ -1786,7 +1786,7 @@ char *pstring;
 		    plink->value.bbgpibio.parm[0] = 0;
 		    if(end = strchr(pstr,'@')) {
 		        pstr = end + 1;
-		        sscanf(pstr,"%31s",&plink->value.bbgpibio.parm[0]);
+			strcpy(&plink->value.bbgpibio.parm[0],pstr);
 		    }
 		}
 		break;
@@ -1819,7 +1819,7 @@ char *pstring;
 		    plink->value.vxiio.parm[0] = 0;
 		    if(end = strchr(pstr,'@')) {
 		        pstr = end + 1;
-		        sscanf(pstr,"%27s",&plink->value.vxiio.parm[0]);
+			strcpy(&plink->value.vxiio.parm[0],pstr);
 		    }
 		}
 		break;
@@ -1829,7 +1829,7 @@ char *pstring;
 		    plink->value.instio.string[0] = 0;
 		    if(end = strchr(pstr,'@')) {
 		        pstr = end + 1;
-		        sscanf(pstr,"%35s",&plink->value.instio.string[0]);
+			strcpy(&plink->value.instio.string[0],pstr);
 		    }
 		}
 		break;

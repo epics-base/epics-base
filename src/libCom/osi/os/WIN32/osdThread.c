@@ -120,15 +120,17 @@ static void threadCleanupWIN32 ( void )
     win32ThreadParam * pParm;
 
     WaitForSingleObject ( win32ThreadGlobalMutex, INFINITE );
+
     while ( pParm = ( win32ThreadParam * ) ellFirst ( & threadList ) ) {
         epicsParmCleanupWIN32 ( pParm );
     }
-    ReleaseMutex ( win32ThreadGlobalMutex );
 
     if ( tlsIndexThreadLibraryEPICS != 0xFFFFFFFF ) {
         TlsFree ( tlsIndexThreadLibraryEPICS );
         tlsIndexThreadLibraryEPICS = 0xFFFFFFFF;
     }
+
+    ReleaseMutex ( win32ThreadGlobalMutex );
 
     if ( win32ThreadGlobalMutex ) {
         CloseHandle ( win32ThreadGlobalMutex );
@@ -733,6 +735,27 @@ epicsShareFunc void epicsShareAPI epicsThreadSleep ( double seconds )
         }
     }
     Sleep ( milliSecDelay );
+}
+
+/*
+ * epicsThreadGetIdSelf ()
+ */
+double epicsShareAPI epicsThreadSleepQuantum ()
+{
+    static const double secPerTick = 100e-9;
+    DWORD adjustment;
+    DWORD delay;
+    BOOL disabled;
+    BOOL success;
+
+    success = GetSystemTimeAdjustment (
+        & adjustment, & delay, & disabled );
+    if ( success ) {
+        return delay * secPerTick;
+    }
+    else {
+        return 0.0;
+    }
 }
 
 /*

@@ -29,6 +29,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.16  1995/10/12  01:35:28  jhill
+ * Moved cac_mux_io() to iocinf.c
+ *
  * Revision 1.15  1995/08/22  00:22:07  jhill
  * Dont recompute connection timers if the time stamp hasnt changed
  *
@@ -223,11 +226,11 @@ void ca_spawn_repeater()
 	 * if here
 	 */
 	pImageName = "caRepeater";
-	status = execlp(pImageName, NULL);
+	status = execlp(pImageName, pImageName, NULL);
 	if(status<0){	
 		ca_printf("!!WARNING!!\n");
 		ca_printf("The executable \"%s\" couldnt be located\n", pImageName);
-		ca_printf("because - %s\n", strerror(MYERRNO));
+		ca_printf("because of errno = \"%s\"\n", strerror(MYERRNO));
 		ca_printf("You may need to modify your PATH environment variable.\n");
 		ca_printf("Creating CA repeater with fork() system call.\n");
 		ca_printf("Repeater will inherit parents process name and resources.\n");

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.28  1999/04/30 15:46:54  jhill
+ * deal with situation where bounds on managed DD must be modified
+ *
  * Revision 1.27  1998/12/19 00:04:52  jhill
  * renamed createPV() to pvAttach()
  *
@@ -458,14 +461,36 @@ caStatus casStrmClient::readNotifyResponse (casChannelI *pChan,
 	caStatus ecaStatus;
 
 	if (completionStatus!=S_cas_success) {
-		errMessage(completionStatus, 
-			"<= get callback failure detail not passed to client");
 		ecaStatus = ECA_GETFAIL;
 	}
 	else {
 		ecaStatus = ECA_NORMAL;
 	}
-	return this->readNotifyResponseECA_XXX(pChan, msg, pDesc, ecaStatus);
+	ecaStatus = this->readNotifyResponseECA_XXX(pChan, msg, pDesc, ecaStatus);
+	if (ecaStatus) {
+		return ecaStatus;
+	}
+
+	//
+	// send independent warning exception to the client so that they
+	// will see the error string associated with this error code 
+	// since the error string cant be sent with the get call back 
+	// response (hopefully this is useful information)
+	//
+	// order is very important here because it determines that the get 
+	// call back response is always sent, and that this warning exception
+	// message will be sent at most one time (in rare instances it will
+	// not be sent, but at least it will not be sent multiple times).
+	// The message is logged to the console in the rare situations when
+	// we are unable to send.
+	//
+	if (completionStatus!=S_cas_success) {
+		ecaStatus = this->sendErrWithEpicsStatus (&msg, completionStatus, ECA_NOCONVERT);
+		if (ecaStatus) {
+			errMessage (completionStatus, "<= get callback failure detail not passed to client");
+		}
+	}
+	return S_cas_success;
 }
 
 //
@@ -832,11 +857,34 @@ caStatus casStrmClient::writeNotifyResponse(
 		ecaStatus = ECA_NORMAL;
 	}
 	else {
-		errMessage (completionStatus, "<= put callback failure detail not passed to client");
 		ecaStatus = ECA_PUTFAIL;	
 	}
 
-	return this->casStrmClient::writeNotifyResponseECA_XXX(msg, ecaStatus);
+	ecaStatus = this->casStrmClient::writeNotifyResponseECA_XXX(msg, ecaStatus);
+	if (ecaStatus) {
+		return ecaStatus;
+	}
+
+	//
+	// send independent warning exception to the client so that they
+	// will see the error string associated with this error code 
+	// since the error string cant be sent with the put call back 
+	// response (hopefully this is useful information)
+	//
+	// order is very important here because it determines that the put 
+	// call back response is always sent, and that this warning exception
+	// message will be sent at most one time. In rare instances it will
+	// not be sent, but at least it will not be sent multiple times.
+	// The message is logged to the console in the rare situations when
+	// we are unable to send.
+	//
+	if (completionStatus!=S_cas_success) {
+		ecaStatus = this->sendErrWithEpicsStatus (&msg, completionStatus, ECA_NOCONVERT);
+		if (ecaStatus) {
+			errMessage (completionStatus, "<= put callback failure detail not passed to client");
+		}
+	}
+	return S_cas_success;
 }
 
 /* 
@@ -1811,6 +1859,10 @@ caStatus casStrmClient::writeArrayData()
 		return S_cas_noMemory;
 	}
 
+	//
+	// ok to use the default gddDestructor here because
+	// an array of characters was allocated above
+	//
 	pDestructor = new gddDestructor;
 	if (!pDestructor) {
 		delete [] pData;

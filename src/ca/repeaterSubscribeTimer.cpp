@@ -79,6 +79,8 @@ epicsTimerNotify::expireStatus repeaterSubscribeTimer::
 
 void repeaterSubscribeTimer::show ( unsigned /* level */ ) const
 {
+    ::printf ( "repeater subscribe timer: attempts=%u registered=%u once=%u\n",
+        this->attempts, this->registered, this->once );
 }
 
 void repeaterSubscribeTimer::confirmNotify ()

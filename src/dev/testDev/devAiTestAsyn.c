@@ -74,6 +74,7 @@ static long read_ai(struct aiRecord *pai)
         printf("Completed asynchronous processing: %s\n",pai->name);
         return(2); /* don`t convert*/
     } 
+    if(pai->disv<=0) return(2);
     printf("Starting asynchronous processing: %s\n",pai->name);
     pai->pact=TRUE;
     callbackRequestDelayed(pcallback,pai->disv);

@@ -25,6 +25,7 @@ casIntfIO::casIntfIO (const caNetAddr &addrIn) :
 	int yes = TRUE;
 	int status;
 	int addrSize;
+    bool portChange;
 
 	if ( ! osiSockAttach () ) {
 		throw S_cas_internal;
@@ -40,20 +41,28 @@ casIntfIO::casIntfIO (const caNetAddr &addrIn) :
 	}
 
 	/*
-	 * release the port in case we exit early
+	 * Allows immediate reuse of the port in case we exit early
+     *
+     * Note: WINSOCK appears to assign a different functionality for 
+     * SO_REUSEADDR compared to other OS. With WINSOCK SO_REUSEADDR indicates 
+     * that other servers can bind to the same TCP port on the same host!
+     * Also, servers are always enabled to reuse a port immediately after 
+     * they exit.
 	 */
-	status = setsockopt (
-					this->sock,
-					SOL_SOCKET,
-					SO_REUSEADDR,
-					(char *) &yes,
-					sizeof (yes));
-	if (status<0) {
-		errlogPrintf("CAS: server set SO_REUSEADDR failed? %s\n",
-			SOCKERRSTR(SOCKERRNO));
-        socket_close (this->sock);
-		throw S_cas_internal;
-	}
+#   ifndef SO_REUSEADDR_DOES_NOT_RELEASE_TCP_PORT
+	    status = setsockopt (
+					    this->sock,
+					    SOL_SOCKET,
+					    SO_REUSEADDR,
+					    (char *) &yes,
+					    sizeof (yes));
+	    if (status<0) {
+		    errlogPrintf("CAS: server set SO_REUSEADDR failed? %s\n",
+			    SOCKERRSTR(SOCKERRNO));
+            socket_close (this->sock);
+		    throw S_cas_internal;
+	    }
+#   endif
 
 	status = bind(this->sock,(sockaddr *) &this->addr,
 					sizeof(this->addr));
@@ -82,7 +91,11 @@ casIntfIO::casIntfIO (const caNetAddr &addrIn) :
             socket_close (this->sock);
 			throw S_cas_bindFail;
 		}
+        portChange = true;
 	}
+    else {
+        portChange = false;
+    }
 
 	addrSize = sizeof (this->addr);
 	status = getsockname (this->sock, 
@@ -99,6 +112,14 @@ casIntfIO::casIntfIO (const caNetAddr &addrIn) :
 	// address and port number later
 	//
     assert (this->addr.sin_family == AF_INET);
+
+    if ( portChange ) {
+        errlogPrintf ( "cas warning: Configured TCP port was unavailable.\n");
+        errlogPrintf ( "cas warning: Using dynamically assigned port %hu\n", 
+            ntohs (this->addr.sin_port) );
+        errlogPrintf ( "cas warning: Depending on your IP kernel\n" );
+        errlogPrintf ( "cas warning: this server may not be reachable with unicast\n" );
+    }
 
     status = listen(this->sock, caServerConnectPendQueueSize);
     if(status < 0) {

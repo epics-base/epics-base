@@ -19,20 +19,20 @@ of this distribution.
 #include "osiInterrupt.h"
 #include "osiRing.h"
 
-
 typedef struct ringPvt {
-    int size;
-    int nextGet;
     int nextPut;
-    int isFull;
+    int nextGet;
+    int size;
     char *buffer;
 }ringPvt;
+
 
 epicsShareFunc ringId  epicsShareAPI ringCreate(int size)
 {
-    ringPvt *pring = callocMustSucceed(1,sizeof(ringPvt),"ringCreate");
-    pring->size = size;
-    pring->buffer = callocMustSucceed(size,sizeof(char),"ringCreate");
+    ringPvt *pring = mallocMustSucceed(sizeof(ringPvt),"ringCreate");
+    pring->size = size + 1;
+    pring->buffer = mallocMustSucceed(pring->size,"ringCreate");
+    pring->nextGet = pring->nextPut = 0;
     return((void *)pring);
 }
 
@@ -46,145 +46,126 @@ epicsShareFunc void epicsShareAPI ringDelete(ringId id)
 epicsShareFunc int epicsShareAPI ringGet(ringId id, char *value,int nbytes)
 {
     ringPvt *pring = (ringPvt *)id;
-    int nextGet = pring->nextGet;
-    int nextPut = pring->nextPut;
-    int size = pring->size;
-    int nToGet;
-    int lockKey;
+    int count;
 
-    if(nextGet < nextPut) {
-        if(nbytes > (nextPut - nextGet)) return(0);
-        memcpy(value,&pring->buffer[nextGet],nbytes);
-        nextGet += nbytes;
-        if(nextGet>=size) nextGet = 0;
-        lockKey = interruptLock();
-        pring->nextGet = nextGet;
-        pring->isFull = 0;
-        interruptUnlock(lockKey);
-        return(nbytes);
+    if (pring->nextGet <= pring->nextPut) {
+        count = pring->nextPut - pring->nextGet;
+        if (count < nbytes)
+            nbytes = count;
+        memcpy (value, &pring->buffer[pring->nextGet], nbytes);
+        pring->nextGet += nbytes;
     }
-    if(nextGet==nextPut && !pring->isFull ) return(0);
-    if(nbytes > (nextPut + (size - nextGet))) return(0);
-    nToGet = size - nextGet;
-    if(nToGet>nbytes) nToGet = nbytes;
-    memcpy(value,&pring->buffer[nextGet],nToGet);
-    value += nToGet;
-    nextGet += nToGet;
-    nToGet = nbytes - nToGet;
-    if(nToGet>0) {
-        nextGet = 0;
-        memcpy(value,&pring->buffer[0],nToGet);
-        nextGet += nToGet;
-    } 
-    if(nextGet>=size) nextGet = 0;
-    lockKey = interruptLock();
-    pring->nextGet = nextGet;
-    pring->isFull = 0;
-    interruptUnlock(lockKey);
-    return(nbytes);
+    else {
+        int nextGet;
+        count = pring->size - pring->nextGet;
+        if (count > nbytes)
+            count = nbytes;
+        memcpy (value, &pring->buffer[pring->nextGet], count);
+        if ((nextGet = pring->nextGet + count) == pring->size) {
+            int nLeft = nbytes - count;
+            if (nLeft > pring->nextPut)
+                nLeft = pring->nextPut;
+            memcpy (value+count, &pring->buffer[0], nLeft);
+            pring->nextGet = nLeft;
+            nbytes = count + nLeft;
+        }
+        else {
+            nbytes = count;
+            pring->nextGet = nextGet;
+        }
+    }
+    return nbytes;
 }
 
 epicsShareFunc int epicsShareAPI ringPut(ringId id, char *value,int nbytes)
 {
     ringPvt *pring = (ringPvt *)id;
-    int nextGet = pring->nextGet;
-    int nextPut = pring->nextPut;
-    int size = pring->size;
-    int nToPut;
-    int lockKey;
+    int count;
 
-    if(nextPut < nextGet) {
-        if(nbytes > (nextGet - nextPut)) return(0);
-        memcpy(&pring->buffer[nextPut],value,nbytes);
-        nextPut += nbytes;
-        if(nextPut>=size) nextPut = 0;
-        lockKey = interruptLock();
-        pring->nextPut = nextPut;
-        if(nextPut==nextGet) pring->isFull = 1;
-        interruptUnlock(lockKey);
-        return(nbytes);
+    if (pring->nextPut < pring->nextGet) {
+        count = pring->nextGet - pring->nextPut - 1;
+        if (nbytes > count)
+            nbytes = count;
+        memcpy (&pring->buffer[pring->nextPut], value, nbytes);
+        pring->nextPut += nbytes;
     }
-    if(nextGet==nextPut && pring->isFull ) return(0);
-    if(nbytes > (nextGet + (size - nextPut))) return(0);
-    nToPut = size - nextPut;
-    if(nToPut>nbytes) nToPut = nbytes;
-    memcpy(&pring->buffer[nextPut],value,nToPut);
-    value += nToPut;
-    nextPut += nToPut;
-    nToPut = nbytes - nToPut;
-    if(nToPut>0) {
-        nextPut = 0;
-        memcpy(&pring->buffer[0],value,nToPut);
-        nextPut += nToPut;
+    else if (pring->nextGet == 0) {
+        count = pring->size - pring->nextPut - 1;
+        if (nbytes > count)
+            nbytes = count;
+        memcpy (&pring->buffer[pring->nextPut], value, nbytes);
+        pring->nextPut += nbytes;
     }
-    if(nextPut>=size) nextPut = 0;
-    lockKey = interruptLock();
-    pring->nextPut = nextPut;
-    if(nextPut==nextGet) pring->isFull = 1;
-    interruptUnlock(lockKey);
-    return(nbytes);
+    else {
+        int nextPut;
+        count = pring->size - pring->nextPut;
+        if (count > nbytes)
+            count = nbytes;
+        memcpy (&pring->buffer[pring->nextPut], value, count);
+        if ((nextPut = pring->nextPut + count) == pring->size) {
+            int nLeft = nbytes - count;
+            if (nLeft > (pring->nextGet - 1))
+                nLeft = pring->nextGet - 1;
+            memcpy (&pring->buffer[0], value+count, nLeft);
+            pring->nextPut = nLeft;
+            nbytes = count + nLeft;
+        }
+        else {
+            nbytes = count;
+            pring->nextPut = nextPut;
+        }
+    }
+    return nbytes;
 }
 
 epicsShareFunc void epicsShareAPI ringFlush(ringId id)
 {
     ringPvt *pring = (ringPvt *)id;
-    int lockKey;
 
-    lockKey = interruptLock();
     pring->nextGet = pring->nextPut = 0;
-    pring->isFull = 0;
-    interruptUnlock(lockKey);
 }
 
 epicsShareFunc int epicsShareAPI ringFreeBytes(ringId id)
 {
     ringPvt *pring = (ringPvt *)id;
     int n;
-    int lockKey;
 
-    lockKey = interruptLock();
-    n = pring->nextGet - pring->nextPut;
-    if(n<=0) n += pring->size;
-    if(pring->isFull) n = 0;
-    interruptUnlock(lockKey);
-    return(n);
+    n = pring->nextGet - pring->nextPut - 1;
+    if (n < 0)
+    	n += pring->size;
+    return n;
 }
 
 epicsShareFunc int epicsShareAPI ringUsedBytes(ringId id)
 {
     ringPvt *pring = (ringPvt *)id;
     int n;
-    int lockKey;
 
-    lockKey = interruptLock();
     n = pring->nextPut - pring->nextGet;
-    if(n<0) n += pring->size;
-    if(pring->isFull) n = pring->size;
-    interruptUnlock(lockKey);
-    return(n);
+    if (n < 0)
+    	n += pring->size;
+    return n;
 }
 
 epicsShareFunc int epicsShareAPI ringSize(ringId id)
 {
     ringPvt *pring = (ringPvt *)id;
-    return(pring->size);
+
+    return pring->size - 1;
 }
 
 epicsShareFunc int epicsShareAPI ringIsEmpty(ringId id)
 {
     ringPvt *pring = (ringPvt *)id;
-    int lockKey;
-    int result;
 
-    lockKey = interruptLock();
-    result = (pring->nextGet==pring->nextPut && !pring->isFull) ? TRUE : FALSE;
-    interruptUnlock(lockKey);
-    return(result);
+    return (pring->nextPut == pring->nextGet);
 }
 
 epicsShareFunc int epicsShareAPI ringIsFull(ringId id)
 {
     ringPvt *pring = (ringPvt *)id;
+    int count;
 
-    return(pring->isFull);
+    count = (pring->nextPut - pring->nextGet) + 1;
+    return ((count == 0) || (count == pring->size));
 }

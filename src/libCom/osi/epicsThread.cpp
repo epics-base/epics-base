@@ -13,7 +13,7 @@
 #include "epicsThread.h"
 
 void epicsThreadRunable::stop() {};
-void epicsThreadRunable::show(unsigned int) {};
+void epicsThreadRunable::show(unsigned int) const {};
 
 void epicsThreadCallEntryPoint ( void *pPvt )
 {

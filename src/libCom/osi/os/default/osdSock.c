@@ -129,28 +129,4 @@ epicsShareFunc int epicsShareAPI hostToIPAddr
 	return ret;
 }
 
-/*
- * typically the shutdown() function will wake up threads blocking in TCP recv()
- * and this is a more graceful way to shutdown
- */
-epicsShareFunc enum osiSockShutdownReturn epicsShareAPI osiSocketShutdown ( SOCKET sock )
-{
-    int status;
-    status = shutdown ( sock, SD_BOTH );
-    if ( status ) {
-        errlogPrintf ( "TCP socket shutdown error (for shutdown purposes) was %s\n", 
-            SOCKERRSTR (SOCKERRNO) );
-        status = socket_close ( sock );
-        if ( status ) {
-            errlogPrintf ("TCP socket close error (for shutdown purposes) was %s\n", 
-                SOCKERRSTR (SOCKERRNO) );
-            return ossrSocketNoChange;
-        }
-        else {
-            return ossrSocketClosed;
-        }
-    }
-    else { 
-        return ossrSocketShutdown;
-    }
-}
+

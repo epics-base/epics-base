@@ -30,54 +30,6 @@
 #include "cacIO.h"
 #undef epicsExportSharedSymbols
 
-class ioCounterNet {
-public:
-    ioCounterNet ();
-    void increment ();
-    void decrement ();
-    void decrement ( unsigned seqNumber );
-    unsigned sequenceNumber () const;
-    unsigned currentCount () const;
-    void cleanUp ();
-    void show ( unsigned level ) const;
-    void waitForCompletion ( double delaySec );
-private:
-    unsigned pndrecvcnt;
-    unsigned readSeq;
-    epicsMutex mutex;
-    epicsEvent ioDone;
-};
-
-class recvProcessThread : public epicsThreadRunable {
-public:
-    recvProcessThread ( class cac *pcacIn );
-    virtual ~recvProcessThread ();
-    void run ();
-    void enable ();
-    void disable ();
-    void signalActivity ();
-    bool isCurrentThread () const;
-    void show ( unsigned level ) const;
-private:
-    //
-    // The additional complexity associated with
-    // "processingDone" event and the "processing" flag
-    // avoid complex locking hierarchy constraints
-    // and therefore reduces the chance of creating
-    // a deadlock window during code maintenance.
-    //
-    epicsThread thread;
-    epicsEvent recvActivity;
-    class cac *pcac;
-    epicsEvent exit;
-    epicsEvent processingDone;
-    mutable epicsMutex mutex;
-    unsigned enableRefCount;
-    unsigned blockingForCompletion;
-    bool processing;
-    bool shutDown;
-};
-
 class netWriteNotifyIO;
 class netReadNotifyIO;
 class netSubscription;
@@ -96,7 +48,7 @@ struct CASG;
 class inetAddrID;
 struct caHdrLargeArray;
 
-class cac : private cacRecycle
+class cac : private cacRecycle, private epicsThreadRunable
 {
 public:
     cac ( cacNotify &, bool enablePreemptiveCallback = false );
@@ -185,7 +137,6 @@ public:
     void releaseLargeBufferTCP ( char * );
 
 private:
-    ioCounterNet            ioCounter;
     ipAddrToAsciiEngine     ipToAEngine;
     cacServiceList          services;
     tsDLList < tcpiiu >     iiuList;
@@ -210,28 +161,42 @@ private:
     double                  connTMO;
     mutable epicsMutex      mutex; 
     epicsEvent              notifyCompletionEvent;
+    epicsEvent              recvProcessActivityEvent;
+    epicsEvent              recvProcessCompletion;
+    epicsEvent              recvProcessThreadExit;
+    epicsEvent              ioDone;
     epicsTimerQueueActive   *pTimerQueue;
     char                    *pUserName;
-    recvProcessThread       *pRecvProcThread;
+    epicsThread             *pRecvProcThread;
     class udpiiu            *pudpiiu;
     class searchTimer       *pSearchTmr;
     class repeaterSubscribeTimer  
                             *pRepeaterSubscribeTmr;
     void                    *tcpSmallRecvBufFreeList;
     void                    *tcpLargeRecvBufFreeList;
+    epicsThread             *pRecvProcessThread;
     cacNotify               &notify;
     unsigned                ioNotifyInProgressId;
     unsigned                initializingThreadsPriority;
     unsigned                threadsBlockingOnNotifyCompletion;
     unsigned                maxRecvBytesTCP;
+    unsigned                recvProcessEnableRefCount;
+    unsigned                recvProcessCompletionNBlockers;
+    unsigned                pndRecvCnt;
+    unsigned                readSeq;
     bool                    enablePreemptiveCallback;
     bool                    ioInProgress;
+    bool                    recvProcessInProgress;
+    bool                    recvProcessThreadExitRequest;
+
+    void run ();
     bool setupUDP ();
     void flushIfRequired ( nciu & ); // lock must be applied
     void recycleReadNotifyIO ( netReadNotifyIO &io );
     void recycleWriteNotifyIO ( netWriteNotifyIO &io );
     void recycleSubscription ( netSubscription &io );
-
+    bool recvProcessThreadIsCurrentThread () const;
+    void startRecvProcessThread ();
     void ioCompletionNotify ( unsigned id, unsigned type, 
         arrayElementCount count, const void *pData );
     void ioExceptionNotify ( unsigned id, 
@@ -300,24 +265,9 @@ inline unsigned cac::getInitializingThreadsPriority () const
     return this->initializingThreadsPriority;
 }
 
-inline void cac::incrementOutstandingIO ()
-{
-    this->ioCounter.increment ();
-}
-
-inline void cac::decrementOutstandingIO ()
-{
-    this->ioCounter.decrement ();
-}
-
-inline void cac::decrementOutstandingIO ( unsigned sequenceNo )
-{
-    this->ioCounter.decrement ( sequenceNo );
-}
-
 inline unsigned cac::sequenceNumberOfOutstandingIO () const
 {
-    return this->ioCounter.sequenceNumber ();
+    return this->readSeq;
 }
 
 inline epicsMutex & cac::mutexRef ()
@@ -366,9 +316,24 @@ inline void cac::releaseLargeBufferTCP ( char *pBuf )
     freeListFree ( this->tcpLargeRecvBufFreeList, pBuf );
 }
 
-inline bool recvProcessThread::isCurrentThread () const
+inline bool cac::recvProcessThreadIsCurrentThread () const
 {
-    return this->thread.isCurrentThread ();
+    if ( this->pRecvProcessThread ) {
+        return this->pRecvProcessThread->isCurrentThread();
+    }
+    else {
+        return false;
+    }
+}
+
+inline bool cac::ioComplete () const
+{
+    return ( this->pndRecvCnt == 0u );
+}
+
+inline void cac::signalRecvActivity ()
+{
+    this->recvProcessActivityEvent.signal ();
 }
 
 #endif // ifdef cach

@@ -22,7 +22,6 @@ LIBSRCS += cacWriteNotify.cpp
 LIBSRCS += cacStateNotify.cpp
 LIBSRCS += cacServiceList.cpp
 LIBSRCS += access.cpp
-LIBSRCS += recvProcessThread.cpp
 LIBSRCS += iocinf.cpp
 LIBSRCS += convert.cpp
 LIBSRCS += test_event.cpp
@@ -57,7 +56,6 @@ LIBSRCS += comQueRecv.cpp
 LIBSRCS += comQueSend.cpp
 LIBSRCS += comBuf.cpp
 LIBSRCS += hostNameCache.cpp
-LIBSRCS += ioCounterNet.cpp
 LIBSRCS += msgForMultiplyDefinedPV.cpp
 LIBSRCS += limboiiu.cpp
 

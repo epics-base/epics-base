@@ -110,13 +110,20 @@ cac::cac ( cacNotify &notifyIn, bool enablePreemptiveCallbackIn ) :
     pRepeaterSubscribeTmr ( 0 ),
     tcpSmallRecvBufFreeList ( 0 ),
     tcpLargeRecvBufFreeList ( 0 ),
+    pRecvProcessThread ( 0 ),
     notify ( notifyIn ),
     ioNotifyInProgressId ( 0 ),
     initializingThreadsPriority ( epicsThreadGetPrioritySelf () ),
     threadsBlockingOnNotifyCompletion ( 0u ),
     maxRecvBytesTCP ( MAX_TCP ),
+    recvProcessEnableRefCount ( 0u ),
+    recvProcessCompletionNBlockers ( 0u ),
+    pndRecvCnt ( 0u ), 
+    readSeq ( 0u ),
     enablePreemptiveCallback ( enablePreemptiveCallbackIn ),
-    ioInProgress ( false )
+    ioInProgress ( false ),
+    recvProcessInProgress ( false ),
+    recvProcessThreadExitRequest ( false )
 {
 	long status;
     unsigned abovePriority;
@@ -204,37 +211,19 @@ cac::cac ( cacNotify &notifyIn, bool enablePreemptiveCallbackIn ) :
         freeListCleanup ( this->tcpLargeRecvBufFreeList );
         throwWithLocation ( caErrorCode ( ECA_ALLOCMEM ) );
     }
-
-    //
-    // unfortunately, this must be created here in the 
-    // constructor, and not on demand (only when it is needed)
-    // because the enable reference count must be 
-    // maintained whenever this object exists.
-    //
-    this->pRecvProcThread = new recvProcessThread ( this );
-    if ( ! this->pRecvProcThread ) {
-        this->pTimerQueue->release ();
-        free ( this->pUserName );
-        freeListCleanup ( this->tcpSmallRecvBufFreeList );
-        freeListCleanup ( this->tcpLargeRecvBufFreeList );
-        throwWithLocation ( caErrorCode ( ECA_ALLOCMEM ) );
-    }
-    else if ( this->enablePreemptiveCallback ) {
-        // only after this->pRecvProcThread is valid
-        this->enableCallbackPreemption ();
-    }
 }
 
 cac::~cac ()
 {
-    this->enableCallbackPreemption ();
-
     //
     // make certain that process thread isnt deleting 
     // tcpiiu objects at the same that this thread is
     //
     if ( this->pRecvProcThread ) {
-        this->pRecvProcThread->disable ();
+        this->recvProcessThreadExitRequest = true;
+        this->recvProcessActivityEvent.signal ();
+        this->recvProcessThreadExit.wait ();
+        delete this->pRecvProcThread;
     }
 
     {
@@ -263,7 +252,6 @@ cac::~cac ()
         piiu->destroy ();
     }
 
-    delete this->pRecvProcThread;
     delete this->pRepeaterSubscribeTmr;
     delete this->pSearchTmr;
 
@@ -302,12 +290,11 @@ cac::~cac ()
     this->pTimerQueue->release ();
 }
 
+// lock must be applied
 void cac::processRecvBacklog ()
 {
     tsDLList < tcpiiu > deadIIU;
     {
-        epicsAutoMutex autoMutex ( this->mutex );
-
         tsDLIterBD < tcpiiu > piiu = this->iiuList.firstIter ();
         while ( piiu.valid () ) {
             tsDLIterBD < tcpiiu > pNext = piiu;
@@ -351,13 +338,13 @@ void cac::processRecvBacklog ()
 	    }
     }
     if ( deadIIU.count() ) {
-        while ( tcpiiu *piiu = deadIIU.get() ) {
-            piiu->destroy ();
-        }
         {
-            epicsAutoMutex autoMutex ( this->mutex );
-            this->pSearchTmr->resetPeriod ( 0.0 );
+            epicsAutoMutex autoRelease ( this->mutex );
+            while ( tcpiiu *piiu = deadIIU.get() ) {
+                piiu->destroy ();
+            }
         }
+        this->pSearchTmr->resetPeriod ( 0.0 );
     }
 }
 
@@ -384,11 +371,12 @@ void cac::show ( unsigned level ) const
 {
     epicsAutoMutex autoMutex2 ( this->mutex );
 
-    ::printf ( "Channel Access Client Context at %p for user %s\n", 
-        static_cast <const void *> ( this ), this->pUserName );
+    ::printf ( "Channel Access Client Context at %p for user %s %s\n", 
+        static_cast <const void *> ( this ), this->pUserName,
+        this->recvProcessInProgress ? "busy" : "idle" );
     if ( level > 0u ) {
         tsDLIterConstBD < tcpiiu > piiu = this->iiuList.firstIter ();
-        while ( piiu.valid () ) {
+        while ( piiu.valid() ) {
             piiu->show ( level - 1u );
             piiu++;
 	    }
@@ -404,7 +392,8 @@ void cac::show ( unsigned level ) const
         if ( this->pudpiiu ) {
             this->pudpiiu->show ( level - 2u );
         }
-        this->ioCounter.show ( level - 2u );
+        ::printf ( "\tthere are %u unsatisfied IO operations blocking ca_pend_io()\n",
+                this->pndRecvCnt );
     }
 
     if ( level > 2u ) {
@@ -422,10 +411,6 @@ void cac::show ( unsigned level ) const
             ::printf ( "Timer queue:\n" );
             this->pTimerQueue->show ( level - 3u );
         }
-        if ( this->pRecvProcThread ) {
-            ::printf ( "incoming messages processing thread:\n" );
-            this->pRecvProcThread->show ( level - 3u );
-        }
         if ( this->pSearchTmr ) {
             ::printf ( "search message timer:\n" );
             this->pSearchTmr->show ( level - 3u );
@@ -436,18 +421,29 @@ void cac::show ( unsigned level ) const
         }
         ::printf ( "IP address to name conversion engine:\n" );
         this->ipToAEngine.show ( level - 3u );
+        ::printf ( "recv process enable count %u\n", 
+            this->recvProcessEnableRefCount );
+        ::printf ( "recv process blocking for completion count %u\n", 
+            this->recvProcessCompletionNBlockers );
+        ::printf ( "\trecv process shutdown command boolean %u\n", 
+            this->recvProcessThreadExitRequest );
+        ::printf ( "\tthe current read sequence number is %u\n",
+                this->readSeq );
     }
 
     if ( level > 3u ) {
         ::printf ( "Default mutex:\n");
         this->mutex.show ( level - 4u );
-    }
-}
-
-void cac::signalRecvActivity ()
-{
-    if ( this->pRecvProcThread ) {
-        this->pRecvProcThread->signalActivity ();
+        ::printf ( "Receive process activity event:\n" );
+        this->recvProcessActivityEvent.show ( level - 3u );
+        ::printf ( "Receive process exit event:\n" );
+        this->recvProcessThreadExit.show ( level - 3u );
+        ::printf ( "Receive processing done event:\n" );
+        this->recvProcessCompletion.show ( level - 3u );
+        ::printf ( "IO done event:\n");
+        this->ioDone.show ( level - 3u );
+        ::printf ( "mutex:\n" );
+        this->mutex.show ( level - 3u );
     }
 }
 
@@ -527,7 +523,7 @@ int cac::pendIO ( const double &timeout )
 {
     // prevent recursion nightmares by disabling calls to 
     // pendIO () from within a CA callback
-    if ( this->pRecvProcThread->isCurrentThread () ) {
+    if ( this->recvProcessThreadIsCurrentThread () ) {
         return ECA_EVDISALLOW;
     }
 
@@ -544,21 +540,22 @@ int cac::pendIO ( const double &timeout )
     else{
         remaining = timeout;
     }    
-    while ( this->ioCounter.currentCount () > 0 ) {
+    while ( this->pndRecvCnt > 0 ) {
         if ( remaining < CAC_SIGNIFICANT_SELECT_DELAY ) {
             status = ECA_TIMEOUT;
             break;
         }
-        this->ioCounter.waitForCompletion ( remaining );
+        this->ioDone.wait ( remaining );
         if ( timeout != 0.0 ) {
             double delay = epicsTime::getCurrent () - beg_time;
             remaining = timeout - delay;
         }    
     }
 
-    this->ioCounter.cleanUp ();
     {
         epicsAutoMutex autoMutex ( this->mutex );
+        this->readSeq++;
+        this->pndRecvCnt = 0u;
         if ( this->pudpiiu ) {
             this->pudpiiu->connectTimeoutNotify ();
         }
@@ -573,7 +570,7 @@ int cac::pendEvent ( const double &timeout )
 {
     // prevent recursion nightmares by disabling calls to 
     // pendIO () from within a CA callback
-    if ( this->pRecvProcThread->isCurrentThread () ) {
+    if ( this->recvProcessThreadIsCurrentThread () ) {
         return ECA_EVDISALLOW;
     }
 
@@ -593,16 +590,6 @@ int cac::pendEvent ( const double &timeout )
     this->disableCallbackPreemption ();
 
     return ECA_TIMEOUT;
-}
-
-bool cac::ioComplete () const
-{
-    if ( this->ioCounter.currentCount () == 0u ) {
-        return true;
-    }
-    else{
-        return false;
-    }
 }
 
 // this is to only be used by early protocol revisions
@@ -648,6 +635,63 @@ void cac::registerService ( cacService &service )
     this->services.registerService ( service );
 }
 
+void cac::startRecvProcessThread ()
+{
+    bool newThread = false;
+    {
+        epicsAutoMutex epicsMutex ( this->mutex );
+        if ( ! this->pRecvProcessThread ) {
+            this->pRecvProcessThread = new epicsThread ( *this, "CAC-recv-process",
+                epicsThreadGetStackSize ( epicsThreadStackSmall ), 
+                this->getInitializingThreadsPriority () );
+            if ( ! this->pRecvProcessThread ) {
+                throw std::bad_alloc ();
+            }
+            this->pRecvProcessThread->start ();
+            newThread = true;
+        }
+    }
+    if ( this->enablePreemptiveCallback && newThread ) {
+        this->enableCallbackPreemption ();
+    }
+}
+
+// this is the recv process thread entry point
+void cac::run ()
+{
+    epicsAutoMutex autoMutex ( this->mutex );
+
+    this->attachToClientCtx ();
+
+    while ( ! this->recvProcessThreadExitRequest ) {
+
+        {
+            if ( this->recvProcessEnableRefCount ) {
+                this->recvProcessInProgress = true;
+            }
+        }
+
+        if ( this->recvProcessInProgress ) {
+            this->processRecvBacklog ();
+        }
+
+        bool signalNeeded;
+        {
+            this->recvProcessInProgress = false;
+            signalNeeded = this->recvProcessCompletionNBlockers > 0u;
+        }
+        
+        {
+            epicsAutoMutexRelease autoRelease ( this->mutex );
+            if ( signalNeeded ) {
+                this->recvProcessCompletion.signal ();
+            }
+            this->recvProcessActivityEvent.wait ();
+        }
+    }
+    this->recvProcessThreadExit.signal ();
+}
+
 cacChannel & cac::createChannel ( const char *pName, cacChannelNotify &chan )
 {
     cacChannel *pIO;
@@ -664,6 +708,7 @@ cacChannel & cac::createChannel ( const char *pName, cacChannelNotify &chan )
             epics_auto_ptr < cacChannel > pNetChan 
                 ( new nciu ( *this, limboIIU, chan, pName ) );
             if ( pNetChan.get() ) {
+                this->startRecvProcessThread ();
                 return *pNetChan.release ();
             }
             else {
@@ -717,15 +762,54 @@ bool cac::setupUDP ()
 
 void cac::enableCallbackPreemption ()
 {
-    if ( this->pRecvProcThread ) {
-        this->pRecvProcThread->enable ();
+    unsigned copy;
+    {
+        epicsAutoMutex autoMutex ( this->mutex );
+        assert ( this->recvProcessEnableRefCount < UINT_MAX );
+        copy = this->recvProcessEnableRefCount;
+        this->recvProcessEnableRefCount++;
+    }
+    if ( copy == 0u ) {
+        this->recvProcessActivityEvent.signal ();
     }
 }
 
 void cac::disableCallbackPreemption ()
 {
-    if ( this->pRecvProcThread ) {
-        this->pRecvProcThread->disable ();
+    bool wakeupNeeded;
+
+    {
+        epicsAutoMutex autoMutex ( this->mutex );
+
+        if ( ! this->recvProcessInProgress ) {
+            assert ( this->recvProcessEnableRefCount != 0u );
+            this->recvProcessEnableRefCount--;
+            return;
+        }
+        else {
+            this->recvProcessCompletionNBlockers++;
+        }
+    }
+
+    while ( true ) {
+        this->recvProcessCompletion.wait ();
+
+        {
+            epicsAutoMutex autoMutex ( this->mutex );
+
+            if ( ! this->recvProcessInProgress ) {
+                assert ( this->recvProcessEnableRefCount > 0u );
+                this->recvProcessEnableRefCount--;
+                assert ( this->recvProcessCompletionNBlockers > 0u );
+                this->recvProcessCompletionNBlockers--;
+                wakeupNeeded = this->recvProcessCompletionNBlockers > 0u;
+                break;
+            }
+        }
+    }
+
+    if ( wakeupNeeded ) {
+        this->recvProcessCompletion.signal ();
     }
 }
 
@@ -864,7 +948,7 @@ void cac::flushIfRequired ( nciu &chan )
         // locking hierarchy reasons.
         bool blockPermit = true;
         if ( this->pRecvProcThread ) {
-            if ( this->pRecvProcThread->isCurrentThread () ) {
+            if ( this->recvProcessThreadIsCurrentThread () ) {
                 blockPermit = false;
             }
         }
@@ -1600,3 +1684,68 @@ void cac::vSignal ( int ca_status, const char *pfilenm,
     this->printf ( "..................................................................\n" );
 }
 
+void cac::incrementOutstandingIO ()
+{
+    epicsAutoMutex locker ( this->mutex );
+    if ( this->pndRecvCnt < UINT_MAX ) {
+        this->pndRecvCnt++;
+    }
+    else {
+        throwWithLocation ( caErrorCode (ECA_INTERNAL) );
+    }
+}
+
+void cac::decrementOutstandingIO ()
+{
+    bool signalNeeded;
+
+    {
+        epicsAutoMutex locker ( this->mutex ); 
+        if ( this->pndRecvCnt > 0u ) {
+            this->pndRecvCnt--;
+            if ( this->pndRecvCnt == 0u ) {
+                signalNeeded = true;
+            }
+            else {
+                signalNeeded = false;
+            }
+        }
+        else {
+            signalNeeded = true;
+        }
+    }
+
+    if ( signalNeeded ) {
+        this->ioDone.signal ();
+    }
+}
+
+void cac::decrementOutstandingIO ( unsigned sequenceNo )
+{
+    bool signalNeeded;
+
+    {
+        epicsAutoMutex locker ( this->mutex );
+        if ( this->readSeq == sequenceNo ) {
+            if ( this->pndRecvCnt > 0u ) {
+                this->pndRecvCnt--;
+                if ( this->pndRecvCnt == 0u ) {
+                    signalNeeded = true;
+                }
+                else {
+                    signalNeeded = false;
+                }
+            }
+            else {
+                signalNeeded = true;
+            }
+        }
+        else {
+            signalNeeded = false;
+        }
+    }
+
+    if ( signalNeeded ) {
+        this->ioDone.signal ();
+    }
+}

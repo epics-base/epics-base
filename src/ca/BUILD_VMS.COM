@@ -50,6 +50,7 @@ $ define /nolog tcp multinet_root:[multinet.include]
 $!
 $! Compile the functions and test programs
 $! Define symbol for the CC command
+$ call list_define
 $ call set_cc_command
 $ if (p1 .nes. "")
 $ then
@@ -69,14 +70,14 @@ TEST_EVENT, -
 BSD_DEPEN, - 
 IF_DEPEN, - 
 VMS_DEPEN, -
-ELLLIB, - 
-BUCKETLIB, -
-ENVSUBR, -
-TSSUBR, -
+[-.libcom]ELLLIB, -
+[-.libcom]BUCKETLIB, -
+[-.libcom]ENVSUBR, -
+[-.libcom]TSSUBR, -
 NEXTFIELDSUBR, -
 ASSERTUNIX, -
-ENVDATA, -
-CATIME, - 
+[-.libcom]ENVDATA, -
+[-.ca]CATIME, - 
 ACCTST 
 $ endif
 $
@@ -136,12 +137,19 @@ $ then
 $! turn of no prototype messages because MULTINET does not
 $! supply prototypes.
 $ cc_command:== cc /warn=(disable=IMPLICITFUNC)/float=d_float -
-	/include=([], [-.include], [-.libcom]) -
-	/define=("MULTINET=1")
+/define=("__STDC__=1", "MULTINET=1") -
+/include=([], [-.include], [-.include.os.vms], [-.libcom], [-.db]) 
 $ else
-$ cc_command:== cc /include=([], [-.include], [-.libcom]) -
-	/define=("__STDC__=1", "MULTINET=1") 
+$ cc_command:== cc /define=("__STDC__=1", "MULTINET=1") 'listing' -
+/include=([], [-.include], [-.include.os.vms], [-.libcom], [-.db]) 
 $ endif
+$
 $ endsubroutine
+$ list_define: subroutine
+$ listing == ""
+$ if p1 .eqs. "L" then listing == "/lis=list.lis /sho=incl"
+$ endsubroutine
+$
 $! ************************************************************
+
 

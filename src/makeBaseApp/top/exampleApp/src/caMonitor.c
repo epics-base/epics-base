@@ -70,8 +70,9 @@ static void eventCallback(struct event_handler_args eha)
     }
 }
 
-int caMonitor(char *filename)
+int main(int argc,char **argv)
 {
+    char *filename;
     int		npv = 0; 
     MYNODE	*pmynode[MAX_PV];
     char	*pname[MAX_PV];
@@ -80,6 +81,11 @@ int caMonitor(char *filename)
     char	*pstr;
     FILE	*fp;
 
+    if(argc != 2) {
+        fprintf(stderr,"usage: caMonitor filename\n");
+        exit(1);
+    }
+    filename = argv[1];
     fp = fopen(filename,"r");
     if(!fp) {
         perror("fopen failed");

@@ -8,13 +8,18 @@ include $(TOP)/configure/CONFIG
 #USR_CFLAGS += 
 
 PROD_HOST += caExample
-
 caExample_SRCS	+= caExample.c
 caExample_LIBS	+= ca
 caExample_LIBS	+= Com
 
+PROD_HOST += caMonitor
+caMonitor_SRCS	+= caMonitor.c
+caMonitor_LIBS	+= ca
+caMonitor_LIBS	+= Com
+
 ca_DIR           = $(EPICS_BASE_LIB)
 Com_DIR          = $(EPICS_BASE_LIB)
+
 
 #=============================
 
@@ -30,7 +35,6 @@ PROD_IOC = example
 
 example_SRCS += xxxRecord.c
 example_SRCS += devXxxSoft.c
-example_SRCS += caMonitor.c
 
 # <name>_registerRecordDeviceDriver.cpp will be created from <name>.dbd
 example_SRCS += example_registerRecordDeviceDriver.cpp

@@ -1,17 +1,19 @@
 Compiling EPICS on WIN32 (Windows95/NT)
 ---------------------------------------
 
-	-kuk- 11/18/96	questions & comments please
-			mailto:kasemir@atdiv.lanl.gov
+Original port of EPICS base to WIN32 (Windows95/NT)
+was done by Kay-Uwe Kasemir 11/96
+
+questions & comments please mail to johill@lanl.gov
 
 0) what you will get
 --------------------
 
 Right now this port of EPICS to WIN32 should allow you to
 
-* compile almost all EPICS base using Tornado, MS Visual C
-  and some additional tools: gnumake, a UNIX-like shell, awk, sed, ...
-  (See below where to get these.)
+* compile almost all of EPICS base using {Tornado, MS Visual C, perl,
+  GNU make} (only {MS Visual C, perl, GNU make} if you prefer
+  to compile only the host portions of EPICS base).
 * load EPICS on a PC IOC (486, pentium),
   load simple databases
   (no drivers/devices for real I/O available, yet.
@@ -30,73 +32,41 @@ Right now this port of EPICS to WIN32 should allow you to
 To compiler EPICS on WIN32, we need
 
 	WindRiver Systems Tornado (used: 1.0)
-	Microsoft Visual C       (used: 4.0)
+	Microsoft Visual C        (used: 4.0)
 
 and some tools:
 
-	a Unix-like shell
-	gnumake
-	basename
-	date
-	mv
-	touch
-	sort
+	gnu make
+	perl
 
-All the above except. the shell are available 'on the net'
+The perl interpreter and gnu make are available 'on the net'
 as sources which compile with MS Visual C++.
 If you cannot/don't want to find them, contact me, please!
-
-I could not find a shell that's fully operational.
-The best one seems to be the Cygnus bash for WIN32, though it
-still has errors and doesn't come with sources that compile
-under MS VC++.
-I use a small self-written shell called knts,
-again: Contact me if you need it.
-
-* The final solution to make the shell, basename, date, ...
-* obsolete:
-* Use 
-* 1) no shell scripts
-* 2) Perl which is available for Unix and WIN32
-
-In addition we need some binaries that I have no sources
-for, yet, but that come with Tornado if and only if you
-INSTALL THE FULL PACKAGE (!)
-Including the 'WTX Test Suite i386/i486'
-(under "Select Sub-components" when installing Tornado)
-
-You should find in your <Tornado>/host/x86-win32/bin dir:
-
-	awk, cat, cp, rm, mkdir
-
-(There is also a bash and a GNU-make which are really poor,
- and WindRiver told me that they do not consider to support
- those in the future, so I no longer use them.)
 
 2) set environment variables
 ----------------------------
 
 Your path should include:
-- The EPICS-binaries that we are about to build in base/bin/WIN32
-- The NTtools that you've built in step 1
+- The EPICS-binaries that we are about to build in <EPICS>base/bin/WIN32
 - The System (for me it's in NT40...)
 - The MS Visual C compiler binaries
-- The Tornado binaries
 
 Check with e.g.:
 
-/users/kay/Src/epics/nttools >echo $Path
-c:\users\kay\src\epics\base\bin\WIN32;c:\users\kay\src\epics\NTtools\bin;C:\NT40
-\system32;C:\NT40;c:\msdev\bin;C:\users\Tornado\host\x86-win32\bin
+>echo %Path%
+C:\WINNT35.0\system32;
+C:\WINNT35.0;
+c:\msdev\bin;
+c:\perl5\bin;
+c:\make-3.75\WinRel;
+c:\epics\base\bin\win32 
 
-On NT, $Path is defined by the operatin system, on Win95, it's $PATH instead.
-knts tries to use PATH and falls back on Path,
-what should wok on both systems.
+On NT, "Path" is defined by the operatin system, on Win95, it's "PATH" instead.
 
 MS Visual C and Tornado should be installed properly with
 these env. variables set:
 
-WIND_BASE=c:\usersTornado
+WIND_BASE=c:\Tornado
 WIND_HOST_TYPE=x86-win32
 
 This way the EPICS makesystem can locate Tornado 
@@ -116,6 +86,7 @@ For EPICS, set:
 
 #	select host arch to build:
 HOST_ARCH=WIN32
+HOME=???  # if you use $(HOME)/EPICS_CONFIG
 
 EPICS_CA_ADDR_LIST              128.165.32.255	(addr of WIN32 host)
 EPICS_CA_AUTO_CA_ADDR_LIST	NO
@@ -126,20 +97,13 @@ EPICS_CA_SERVER_PORT		5064
 EPICS_TS_MIN_WEST		420		(Germany: -120)
 
 
-To debug knts, set KNTS to 5:
-KNTS=5
-export KNTS
-
-You should do this, however, only if you really want the debugging info.
-
-
 3) building EPICS
 -----------------
 
 Prepare apx. 2 ltr. Tee and type:
 
 	cd <epics>/base
-	gnumake
+	make 
 
 Watch for errors and send them to me.
 

@@ -64,6 +64,7 @@
  * .28  03-10-92        jba     added multiple conditional expressions ?
  * .29  04-01-92        jba     allowed floating pt constants in expression
  * .30  05-01-92        jba     flt pt constant string replaced with double in postfix
+ * .31  08-21-92        jba     ANSI c changes
 >
  */
 
@@ -92,8 +93,9 @@
  */
 
 #ifdef vxWorks
+#   include <vxWorks.h>
+#   include <fioLib.h>
 #   include <stdioLib.h>
-extern int printf();
 #else
 #   include <stdio.h>
 #endif
@@ -122,7 +124,6 @@ char   *post;
 	int 		inexttop;	/* ineteger next to top value 	*/
 	short 		cond_flag;	/* conditional else flag	*/
 	short 		got_if;
-	short 		status;
 
 	/* initialize flag  */
 	cond_flag = NOT_SET;

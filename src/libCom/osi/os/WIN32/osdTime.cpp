@@ -82,6 +82,11 @@ static void osdTimeInit ( void * )
 {
     pCurrentTime = new currentTime ();
 
+    // set here to avoid recursion problems
+    osdTimeInitSuccess = true;
+
+    pCurrentTime->startPLL ();
+
     // self test FILETIME conversion only if
     // its a debug build
 #   if defined ( _DEBUG )
@@ -94,11 +99,6 @@ static void osdTimeInit ( void * )
         assert ( diff <= 100e-9 );
     }
 #   endif
-
-    // set here to avoid recursion problems
-    osdTimeInitSuccess = true;
-
-    pCurrentTime->startPLL ();
 }
 
 //

@@ -16,12 +16,24 @@ of this distribution.
 
 #include <vxWorks.h>
 #include <taskLib.h>
+#include <taskVarLib.h>
 #include <sysLib.h>
 
 #include "errlog.h"
 #include "ellLib.h"
 #include "osiThread.h"
 #include "cantProceed.h"
+#include "epicsAssert.h"
+
+/* definitions for implementation of threadPrivate */ 
+typedef struct threadPrivateInfo {
+    int nthreadPrivate;
+    void **papTSD; /*pointer to array of pointers to thread specific data*/
+}threadPrivateInfo;
+
+static threadPrivateInfo *pthreadPrivateInfo = 0;
+static int npthreadPrivate = 0;
+static void threadPrivateInit(int tid);
 
 /* Just map osi 0 to 99 into vx 100 to 199 */
 /* remember that for vxWorks lower number means higher priority */
@@ -84,6 +96,7 @@ threadId threadCreate(const char *name,
         errlogPrintf("threadCreate taskSpawn failure for %s\n",name);
         return(0);
     }
+    threadPrivateInit(tid);
     return((threadId)tid);
 }
 
@@ -131,12 +144,6 @@ int threadIsEqual(threadId id1, threadId id2)
     return((id1==id2) ? 1 : 0);
 }
 
-int threadIsReady(threadId id)
-{
-    int tid = (int)id;
-    return((int)taskIsReady(tid));
-}
-
 int threadIsSuspended(threadId id)
 {
     int tid = (int)id;
@@ -154,4 +161,64 @@ void threadSleep(double seconds)
 threadId threadGetIdSelf(void)
 {
     return((threadId)taskIdSelf());
+}
+
+/* The following algorithm was thought of by Andrew Johnson APS/ASD .
+ * The basic idea is to use a single vxWorks task variable.
+ * The task variable is pthreadPrivateInfo.
+ * The variable papTSD is an array of pointers to the TSD.
+ * The array size is equal to the number of threadVarIds created
+ * when threadPrivateSet is called.
+ * The algorithm allows for threadPrivateCreate being called after
+ * the first call to threadPrivateSet.
+ */
+
+
+threadVarId threadPrivateCreate()
+{
+    return((void *)++npthreadPrivate);
+}
+
+void threadPrivateDelete(threadVarId id)
+{
+    /*not safe to delete anything*/
+    return;
+}
+
+static void threadPrivateInit(int tid)
+{
+    taskVarAdd(tid,(int *)&pthreadPrivateInfo);
+    pthreadPrivateInfo = callocMustSucceed(
+            1,sizeof(threadPrivateInfo),"threadPrivateSet");
+    pthreadPrivateInfo->nthreadPrivate = 1;
+    pthreadPrivateInfo->papTSD = callocMustSucceed(
+        pthreadPrivateInfo->nthreadPrivate,
+        sizeof(void *),"threadPrivateInit");
+    taskVarSet(tid,(int *)&pthreadPrivateInfo,(int)pthreadPrivateInfo);
+}
+
+/*
+ *note that it is not necessary to have mutex for following
+ *because they must be called by the same thread
+*/
+void threadPrivateSet (threadVarId id, void *pvt)
+{
+    int indpthreadPrivate = (int)id;
+
+    if(pthreadPrivateInfo->nthreadPrivate <= indpthreadPrivate) {
+        pthreadPrivateInfo->papTSD = realloc(pthreadPrivateInfo->papTSD,
+            (indpthreadPrivate+1)*sizeof(void *));
+        if(!pthreadPrivateInfo->papTSD)
+            cantProceed("threadPrivateSet calloc failed\n");
+        pthreadPrivateInfo->nthreadPrivate = indpthreadPrivate+1;
+    }
+    pthreadPrivateInfo->papTSD[indpthreadPrivate] = pvt;
+    cantProceed("threadPrivateSet calloc failed\n");
+}
+
+void *threadPrivateGet(threadVarId id)
+{
+    int indpthreadPrivate = (int)id;
+    assert(pthreadPrivateInfo);
+    return(pthreadPrivateInfo->papTSD[indpthreadPrivate]);
 }

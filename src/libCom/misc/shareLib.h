@@ -36,11 +36,23 @@
  *  #include <in_this_dll_but_not_implemented_here.h>
  *  #include <what_I_implement_here.h>
  *
- * The point is: define epicsExportSharedSymbols exacly and only
+ * The point is: define epicsExportSharedSymbols exactly and only
  * right before you include the prototypes for what you implement!
  * Then include shareLib.h again because this is where they get changed.
  * This time the epicsShare... macros expand to
  *  "export this from the DLL that we are building". (again only on WIN32)
+ *
+ * NOTE:
+ * If what_I_implement_here.h includes header files for routines that
+ * are not implemented in the DLL, then you will need to force these
+ * header files to be included before setting epicsExportSharedSymbols,
+ * including shareLib.h, and including what_I_implement_here.h. Since
+ * all well written header files have "ifdef" guards against multiple inclusion
+ * this is only a matter of "preincluding" the headers for these DLL
+ * imports before epicsExportSharedSymbols is defined. This
+ * is admittedly a bit of a mess, but is fortunately only the concern of
+ * persons who are adding routines to a library, and will have no impact
+ * on persons using routines out of a library.
  *
  *	8-22-96 -kuk-
  */

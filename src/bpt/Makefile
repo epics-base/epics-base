@@ -22,4 +22,4 @@ PROD += makeBpt
 
 include $(TOP)/configure/RULES
 
-$(BPTS): $(INSTALL_PROD)
+$(INSTALL_BPTS): $(INSTALL_PROD)

@@ -325,7 +325,7 @@ private:
 // ndim == 0 => scaler
 // otherwise pIndexArray points to an array of ndim items
 //
-#define nDimScalar 0U
+#define nDimScaler 0U
 class casCtx {
 public:
 	casCtx() : 
@@ -811,7 +811,7 @@ private:
         caStatus channelCreateFailed (const caHdr *mp, caStatus createStatus);
 
 	caStatus writeArrayData();
-	caStatus writeScalarData();
+	caStatus writeScalerData();
 	caStatus writeString();
 };
 
@@ -853,6 +853,10 @@ public:
 	}
 
 	void destroy();
+
+protected:
+	void process();
+
 private:
 	void ioBlockedSignal(); // dummy
 

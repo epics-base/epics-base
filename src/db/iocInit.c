@@ -79,7 +79,8 @@ of this distribution.
 #include "errMdef.h"
 #include "recSup.h"
 #include "envDefs.h"
-epicsShareFunc int epicsShareAPI rsrv_init (void);
+#include "rsrv.h"
+#include "epicsRelease.h"
 epicsShareFunc int epicsShareAPI asInit (void);
 #include "dbStaticLib.h"
 #include "db_access_routines.h"

@@ -15,8 +15,22 @@
  *	505 665 1831
  */
 
-#ifndef autoPtrRecycleILh
-#define autoPtrRecycleILh
+#ifndef autoPtrRecycleh
+#define autoPtrRecycleh
+
+template < class T >
+class autoPtrRecycle {
+public:
+    autoPtrRecycle ( cacRecycle &, T * );
+    ~autoPtrRecycle ();
+    T & operator * () const;
+    T * operator -> () const;
+    T * get () const;
+    T * release ();
+private:
+    T *p;
+    cacRecycle &r;
+};
 
 template < class T >
 inline autoPtrRecycle<T>::autoPtrRecycle ( cacRecycle &rIn, T *pIn ) :
@@ -57,4 +71,4 @@ inline T * autoPtrRecycle<T>::release ()
     return pTmp;
 }
 
-#endif // #ifdef autoPtrRecycleILh
+#endif // #ifdef autoPtrRecycleh

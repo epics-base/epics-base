@@ -2,8 +2,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
+
 #include "cadef.h"
-#include "epicsAssert.h"
 #include "epicsTime.h"
 
 static unsigned channelCount = 0u;

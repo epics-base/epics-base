@@ -15,16 +15,12 @@
 /*
  * EPICS
  */
+#define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 #include "epicsAssert.h"
 #include "epicsTime.h"
 #include "envDefs.h"
-
-/*
- * CA 
- */
-#include "cadef.h"
-
 #include "caDiagnostics.h"
+#include "cadef.h"
 
 #ifndef min
 #define min(A,B) ((A)>(B)?(B):(A))

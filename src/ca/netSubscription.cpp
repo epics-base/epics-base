@@ -10,14 +10,20 @@
  *  Author: Jeff Hill
  */
 
+#define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
+
 #include "iocinf.h"
-#include "netSubscription_IL.h"
-#include "nciu_IL.h"
-#include "baseNMIU_IL.h"
+#include "nciu.h"
+#include "netIO.h"
+#include "cac.h"
+
+#define epicsExportSharedSymbols
+#include "db_access.h" // for dbf_type_to_text
+#undef epicsExportSharedSymbols
 
 netSubscription::netSubscription ( nciu &chan, 
         unsigned typeIn, unsigned long countIn, 
-        unsigned maskIn, cacDataNotify &notifyIn ) :
+        unsigned maskIn, cacStateNotify &notifyIn ) :
     baseNMIU ( chan ), count ( countIn ), 
     notify ( notifyIn ), type ( typeIn ), mask ( maskIn )
 {
@@ -40,7 +46,7 @@ class netSubscription * netSubscription::isSubscription ()
 
 void netSubscription::show ( unsigned level ) const
 {
-    printf ( "event subscription IO at %p, type %s, element count %lu, mask %u\n", 
+    ::printf ( "event subscription IO at %p, type %s, element count %lu, mask %u\n", 
         static_cast < const void * > ( this ), 
         dbf_type_to_text ( static_cast < int > ( this->type ) ), 
         this->count, this->mask );
@@ -62,7 +68,7 @@ void netSubscription::exception ( int status, const char *pContext )
 void netSubscription::completion ( unsigned typeIn, 
     unsigned long countIn, const void *pDataIn )
 {
-    this->notify.completion ( typeIn, countIn, pDataIn );
+    this->notify.current ( typeIn, countIn, pDataIn );
 }
 
 void netSubscription::exception ( int status, 

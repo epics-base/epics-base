@@ -10,6 +10,23 @@
  *  Author: Jeff Hill
  */
 
+#ifndef inetAddrIDh
+#define inetAddrIDh
+
+#include "resourceLib.h"
+#include "osiSock.h"
+
+class inetAddrID {
+public:
+    inetAddrID ( const struct sockaddr_in &addrIn );
+    bool operator == ( const inetAddrID & ) const;
+    resTableIndex hash ( unsigned nBitsHashIndex ) const;
+    static unsigned maxIndexBitWidth ();
+    static unsigned minIndexBitWidth ();
+private:
+    const struct sockaddr_in addr;
+};
+
 inline inetAddrID::inetAddrID ( const struct sockaddr_in &addrIn ) :
     addr (addrIn)
 {
@@ -42,4 +59,7 @@ inline unsigned inetAddrID::minIndexBitWidth ()
 {
     return 8u;
 }
+
+#endif // ifdef inetAddrID
+
 

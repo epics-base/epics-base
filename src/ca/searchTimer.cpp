@@ -10,10 +10,18 @@
  *  Author: Jeff Hill
  */
 
+#include <limits.h>
+
+#define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
+
 #include "tsMinMax.h"
 
 #include "iocinf.h"
-#include "netiiu_IL.h"
+#include "searchTimer.h"
+
+#define epicsExportSharedSymbols
+#include "udpiiu.h"
+#undef epicsExportSharedSymbols
 
 //
 // searchTimer::searchTimer ()

@@ -12,7 +12,14 @@
  *
  */
 
+#define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
+
 #include "iocinf.h"
+#include "repeaterSubscribeTimer.h"
+
+#define epicsExportSharedSymbols
+#include "udpiiu.h"
+#undef epicsExportSharedSymbols
 
 repeaterSubscribeTimer::repeaterSubscribeTimer ( udpiiu &iiuIn, epicsTimerQueue &queueIn ) :
     timer ( queueIn.createTimer ( *this ) ), iiu ( iiuIn ), 
@@ -30,9 +37,9 @@ epicsTimerNotify::expireStatus repeaterSubscribeTimer::expire ()
 {
     static const unsigned nTriesToMsg = 50;
     if ( this->attempts > nTriesToMsg && ! this->once ) {
-        ca_printf (
+        this->iiu.printf (
     "Unable to contact CA repeater after %u tries\n", nTriesToMsg);
-        ca_printf (
+        this->iiu.printf (
     "Silence this message by starting a CA repeater daemon\n");
         this->once = true;
     }

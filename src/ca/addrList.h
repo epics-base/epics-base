@@ -1,5 +1,8 @@
 
+#ifndef addrListh
+#define addrListh
 
+#include "shareLib.h"
 #include "envDefs.h"  
 
 #ifdef __cplusplus
@@ -22,3 +25,4 @@ epicsShareFunc void epicsShareAPI removeDuplicatesAddresses
 }
 #endif
 
+#endif addrListh // ifndef addrListh

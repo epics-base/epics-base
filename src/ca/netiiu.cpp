@@ -13,10 +13,12 @@
 #include <limits.h>
 #include <float.h>
 
+#define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
+
 #include "iocinf.h"
-#include "netiiu_IL.h"
-#include "nciu_IL.h"
-#include "baseNMIU_IL.h"
+#include "cac.h"
+#include "netiiu.h"
+#include "netIO.h"
 
 netiiu::netiiu ( cac *pClientCtxIn ) : pClientCtx ( pClientCtxIn )
 {
@@ -28,7 +30,7 @@ netiiu::~netiiu ()
 
 void netiiu::show ( unsigned level ) const
 {
-    printf ( "network IO base class\n" );
+    ::printf ( "network IO base class\n" );
     if ( level > 1 ) {
         tsDLIterConstBD < nciu > pChan = this->channelList.firstIter ();
 	    while ( pChan.valid () ) {
@@ -37,7 +39,7 @@ void netiiu::show ( unsigned level ) const
         }
     }
     if ( level > 2u ) {
-        printf ( "\tcac pointer %p\n", 
+        ::printf ( "\tcac pointer %p\n", 
             static_cast <void *> ( this->pClientCtx ) );
     }
 }
@@ -191,4 +193,18 @@ void netiiu::flushRequestIfAboveEarlyThreshold ()
 
 void netiiu::blockUntilSendBacklogIsReasonable ( epicsMutex & )
 {
+}
+
+int netiiu::printf ( const char *pformat, ... )
+{
+    va_list theArgs;
+    int status;
+
+    va_start ( theArgs, pformat );
+    
+    status = this->pClientCtx->vPrintf ( pformat, theArgs );
+    
+    va_end ( theArgs );
+    
+    return status;
 }

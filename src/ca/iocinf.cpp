@@ -10,10 +10,17 @@
  *  Author: Jeff Hill
  */
 
+#define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
+
+#include "envdefs.h"
+#include "epicsAssert.h"
 #include "locationException.h"
 
-#include "iocinf.h"
+#define epicsExportSharedSymbols
 #include "addrList.h"
+#undef epicsExportSharedSymbols
+
+#include "iocinf.h"
 
 /*
  * getToken()
@@ -49,8 +56,8 @@ static char *getToken ( const char **ppString, char *pBuf, unsigned bufSIze )
 /*
  * addAddrToChannelAccessAddressList ()
  */
-epicsShareFunc void epicsShareAPI addAddrToChannelAccessAddressList 
-    (ELLLIST *pList, const ENV_PARAM *pEnv, unsigned short port)
+extern "C" void epicsShareAPI addAddrToChannelAccessAddressList 
+    ( ELLLIST *pList, const ENV_PARAM *pEnv, unsigned short port )
 {
     osiSockAddrNode *pNewNode;
     const char *pStr;
@@ -67,14 +74,14 @@ epicsShareFunc void epicsShareAPI addAddrToChannelAccessAddressList
     while ( ( pToken = getToken (&pStr, buf, sizeof (buf) ) ) ) {
         status = aToIPAddr ( pToken, port, &addr );
         if (status<0) {
-            ca_printf ("%s: Parsing '%s'\n", __FILE__, pEnv->name);
-            ca_printf ("\tBad internet address or host name: '%s'\n", pToken);
+            fprintf ( stderr, "%s: Parsing '%s'\n", __FILE__, pEnv->name);
+            fprintf ( stderr, "\tBad internet address or host name: '%s'\n", pToken);
             continue;
         }
 
         pNewNode = (osiSockAddrNode *) calloc (1, sizeof(*pNewNode));
         if (pNewNode==NULL) {
-            ca_printf ("addAddrToChannelAccessAddressList(): no memory available for configuration\n");
+            fprintf ( stderr, "addAddrToChannelAccessAddressList(): no memory available for configuration\n");
             return;
         }
 
@@ -93,7 +100,7 @@ epicsShareFunc void epicsShareAPI addAddrToChannelAccessAddressList
 /*
  * removeDuplicatesAddresses ()
  */
-epicsShareFunc void epicsShareAPI removeDuplicatesAddresses 
+extern "C" void epicsShareAPI removeDuplicatesAddresses 
     ( ELLLIST *pDestList, ELLLIST *pSrcList )
 {
     osiSockAddrNode *pNode;
@@ -113,7 +120,7 @@ epicsShareFunc void epicsShareAPI removeDuplicatesAddresses
                     if ( exorAddr == 0u && pNode->addr.ia.sin_port == pTmpNode->addr.ia.sin_port) {
                         char buf[64];
                         ipAddrToDottedIP ( &pNode->addr.ia, buf, sizeof (buf) );
-                        ca_printf ( "Warning: Duplicate EPICS CA Address list entry \"%s\" discarded\n", buf );
+                        fprintf ( stderr, "Warning: Duplicate EPICS CA Address list entry \"%s\" discarded\n", buf );
                         free (pNode);
                         pNode = NULL;
                         break;
@@ -134,16 +141,16 @@ epicsShareFunc void epicsShareAPI removeDuplicatesAddresses
 /*
  * forcePort ()
  */
-static void  forcePort (ELLLIST *pList, unsigned short port)
+static void  forcePort ( ELLLIST *pList, unsigned short port )
 {
     osiSockAddrNode *pNode;
 
-    pNode  = (osiSockAddrNode *) ellFirst ( pList );
+    pNode  = ( osiSockAddrNode * ) ellFirst ( pList );
     while ( pNode ) {
         if ( pNode->addr.sa.sa_family == AF_INET ) {
             pNode->addr.ia.sin_port = htons (port);
         }
-        pNode = (osiSockAddrNode *) ellNext ( &pNode->node );
+        pNode = ( osiSockAddrNode * ) ellNext ( &pNode->node );
     }
 }
 
@@ -151,7 +158,7 @@ static void  forcePort (ELLLIST *pList, unsigned short port)
 /*
  * configureChannelAccessAddressList ()
  */
-epicsShareFunc void epicsShareAPI configureChannelAccessAddressList 
+extern "C" void epicsShareAPI configureChannelAccessAddressList 
         ( ELLLIST *pList, SOCKET sock, unsigned short port )
 {
     ELLLIST         tmpList;
@@ -219,16 +226,16 @@ epicsShareFunc void epicsShareAPI configureChannelAccessAddressList
 /*
  * printChannelAccessAddressList ()
  */
-epicsShareFunc void epicsShareAPI printChannelAccessAddressList ( const ELLLIST *pList )
+extern "C" void epicsShareAPI printChannelAccessAddressList ( const ELLLIST *pList )
 {
     osiSockAddrNode *pNode;
 
-    printf ( "Channel Access Address List\n" );
+    ::printf ( "Channel Access Address List\n" );
     pNode = (osiSockAddrNode *) ellFirst ( pList );
     while (pNode) {
         char buf[64];
         ipAddrToA ( &pNode->addr.ia, buf, sizeof ( buf ) );
-        printf ( "%s\n", buf );
+        ::printf ( "%s\n", buf );
         pNode = (osiSockAddrNode *) ellNext ( &pNode->node );
     }
 }

@@ -15,8 +15,15 @@
  *	505 665 1831
  */
 
+#define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
+
 #include "iocinf.h"
-#include "msgForMultiplyDefinedPV_IL.h"
+#include "msgForMultiplyDefinedPV.h"
+#include "cac.h"
+
+#define epicsExportSharedSymbols
+#include "caerr.h" // for ECA_DBLCHNL
+#undef epicsExportSharedSymbols
 
 tsFreeList < class msgForMultiplyDefinedPV, 16 > msgForMultiplyDefinedPV::freeList;
 epicsMutex msgForMultiplyDefinedPV::freeListMutex;

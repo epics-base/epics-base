@@ -15,14 +15,16 @@
  *	505 665 1831
  */
 
+#define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
+
 #include "iocinf.h"
 #include "oldAccess.h"
-#include "cac_IL.h"
+#include "cac.h"
 
 tsFreeList < class getCopy, 1024 > getCopy::freeList;
 epicsMutex getCopy::freeListMutex;
 
-getCopy::getCopy ( cac &cacCtxIn, unsigned typeIn, 
+getCopy::getCopy ( oldCAC &cacCtxIn, unsigned typeIn, 
         unsigned long countIn, void *pValueIn ) :
     count ( countIn ), cacCtx ( cacCtxIn ), pValue ( pValueIn ), 
         readSeq ( cacCtxIn.sequenceNumberOfOutstandingIO () ), type ( typeIn )
@@ -60,10 +62,10 @@ void getCopy::exception (
 void getCopy::show ( unsigned level ) const
 {
     int tmpType = static_cast <int> ( this->type );
-    printf ( "read copy IO at %p, type %s, element count %lu\n", 
+    ::printf ( "read copy IO at %p, type %s, element count %lu\n", 
         static_cast <const void *> ( this ), dbf_type_to_text ( tmpType ), this->count );
     if ( level > 0u ) {
-        printf ( "\tsequence number %u, user's storage %p\n",
+        ::printf ( "\tsequence number %u, user's storage %p\n",
             this->readSeq, static_cast <const void *> ( this->pValue ) );
     }
 }

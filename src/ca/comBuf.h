@@ -14,12 +14,68 @@
  *	johill@lanl.gov
  */
 
-#ifndef comBuf_ILh
-#define comBuf_ILh
+#ifndef comBufh
+#define comBufh
+
+#include <string.h>
 
 #include "epicsAssert.h"
 #include "epicsTypes.h"
+#include "tsFreeList.h"
+#include "tsDLList.h"
 #include "osiWireFormat.h"
+
+static const unsigned comBufSize = 0x4000;
+
+class wireSendAdapter {
+public:
+    virtual unsigned sendBytes ( const void *pBuf, 
+        unsigned nBytesInBuf ) = 0;
+};
+
+class wireRecvAdapter {
+public:
+    virtual unsigned recvBytes ( void *pBuf, 
+        unsigned nBytesInBuf ) = 0;
+};
+
+class comBuf : public tsDLNode < comBuf > {
+public:
+    comBuf ();
+    void destroy ();
+    unsigned unoccupiedBytes () const;
+    unsigned occupiedBytes () const;
+    void compress ();
+    static unsigned capacityBytes ();
+    unsigned copyInBytes ( const void *pBuf, unsigned nBytes );
+    unsigned copyIn ( comBuf & );
+    unsigned copyIn ( const epicsInt8 *pValue, unsigned nElem );
+    unsigned copyIn ( const epicsUInt8 *pValue, unsigned nElem );
+    unsigned copyIn ( const epicsInt16 *pValue, unsigned nElem );
+    unsigned copyIn ( const epicsUInt16 *pValue, unsigned nElem );
+    unsigned copyIn ( const epicsInt32 *pValue, unsigned nElem );
+    unsigned copyIn ( const epicsUInt32 *pValue, unsigned nElem );
+    unsigned copyIn ( const epicsFloat32 *pValue, unsigned nElem );
+    unsigned copyIn ( const epicsFloat64 *pValue, unsigned nElem );
+    unsigned copyIn ( const epicsOldString *pValue, unsigned nElem );
+    bool copyInAllBytes ( const void *pBuf, unsigned nBytes );
+    unsigned copyOutBytes ( void *pBuf, unsigned nBytes );
+    bool copyOutAllBytes ( void *pBuf, unsigned nBytes );
+    unsigned removeBytes ( unsigned nBytes );
+    void * operator new ( size_t size );
+    void operator delete ( void *pCadaver, size_t size );
+    bool flushToWire ( wireSendAdapter & );
+    unsigned fillFromWire ( wireRecvAdapter & );
+protected:
+    ~comBuf ();
+private:
+    unsigned nextWriteIndex;
+    unsigned nextReadIndex;
+    unsigned char buf [ comBufSize ]; // optimal for 100 Mb Ethernet LAN MTU
+    unsigned clipNElem ( unsigned elemSize, unsigned nElem );
+    static tsFreeList < class comBuf, 0x20 > freeList;
+    static epicsMutex freeListMutex;
+};
 
 inline comBuf::comBuf () : nextWriteIndex ( 0u ), nextReadIndex ( 0u )
 {
@@ -233,4 +289,4 @@ inline unsigned comBuf::copyIn ( const epicsFloat64 *pValue, unsigned nElem )
     return nElem;
 }
 
-#endif // comBuf_ILh
+#endif // comBuf

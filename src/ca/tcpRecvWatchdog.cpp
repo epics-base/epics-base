@@ -10,7 +10,10 @@
  *  Author: Jeff Hill
  */
 
+#define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
+
 #include "iocinf.h"
+#include "virtualCircuit.h"
 
 //
 // the recv watchdog timer is active when this object is created
@@ -34,7 +37,7 @@ epicsTimerNotify::expireStatus tcpRecvWatchdog::expire ()
         this->cancel ();
         char hostName[128];
         this->iiu.hostName ( hostName, sizeof (hostName) );
-        ca_printf ( "CA server \"%s\" unresponsive after %g inactive sec - disconnecting.\n", 
+        this->iiu.printf ( "CA server \"%s\" unresponsive after %g inactive sec - disconnecting.\n", 
             hostName, this->period );
         this->iiu.forcedShutdown ();
         return noRestart;
@@ -89,10 +92,10 @@ void tcpRecvWatchdog::cancel ()
 
 void tcpRecvWatchdog::show ( unsigned level ) const
 {
-    printf ( "Receive virtual circuit watchdog at %p, period %f\n",
+    ::printf ( "Receive virtual circuit watchdog at %p, period %f\n",
         static_cast <const void *> ( this ), this->period );
     if ( level > 0u ) {
-        printf ( "\tresponse pending boolean %u, beacon anomaly boolean %u\n",
+        ::printf ( "\tresponse pending boolean %u, beacon anomaly boolean %u\n",
             this->responsePending, this->beaconAnomaly );
     }
 }

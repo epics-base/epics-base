@@ -15,6 +15,9 @@
  *	505 665 1831
  */
 
+#ifndef cacIOh
+#define cacIOh
+
 //
 // Open Issues
 // -----------
@@ -33,6 +36,8 @@
 //
 //
 
+#include <stdarg.h>
+
 #include "tsDLList.h"
 #include "epicsMutex.h"
 
@@ -41,19 +46,30 @@
 class cacChannel;
 
 // this should not be passing caerr.h status to the exception callback
-class epicsShareClass cacNotify {
+class epicsShareClass cacWriteNotify {
 public:
-    virtual ~cacNotify () = 0;
+    virtual ~cacWriteNotify () = 0;
     virtual void completion () = 0;
     virtual void exception ( int status, const char *pContext ) = 0;
 };
 
 // 1) this should not be passing caerr.h status to the exception callback
-// 2) obviously the data should be passed here using the new data access API
-class epicsShareClass cacDataNotify {
+// 2) needless-to-say the data should be passed here using the new data access API
+class epicsShareClass cacReadNotify {
 public:
-    virtual ~cacDataNotify () = 0;
+    virtual ~cacReadNotify () = 0;
     virtual void completion ( unsigned type, 
+        unsigned long count, const void *pData ) = 0;
+    virtual void exception ( int status, 
+        const char *pContext, unsigned type, unsigned long count ) = 0;
+};
+
+// 1) this should not be passing caerr.h status to the exception callback
+// 2) needless-to-say the data should be passed here using the new data access API
+class epicsShareClass cacStateNotify {
+public:
+    virtual ~cacStateNotify () = 0;
+    virtual void current ( unsigned type, 
         unsigned long count, const void *pData ) = 0;
     virtual void exception ( int status, 
         const char *pContext, unsigned type, unsigned long count ) = 0;
@@ -83,12 +99,11 @@ private:
 class epicsShareClass cacChannelNotify {
 public:
     virtual ~cacChannelNotify () = 0;
-// is it useful to pass the channel IO here ?????
-    virtual void connectNotify ( cacChannel & );
-    virtual void disconnectNotify ( cacChannel & );
-    virtual void accessRightsNotify ( cacChannel &, const caAccessRights & );
-    virtual void exception ( cacChannel &, int status, const char *pContext );
-    // not for public consumption -- can we get rid of this
+    virtual void connectNotify () = 0;
+    virtual void disconnectNotify () = 0;
+    virtual void accessRightsNotify ( const caAccessRights & ) = 0;
+    virtual void exception ( int status, const char *pContext ) = 0;
+    // not for public consumption -- can we get rid of this ????
     virtual bool includeFirstConnectInCountOfOutstandingIO () const;
 };
 
@@ -113,11 +128,11 @@ public:
     virtual void write ( unsigned type, unsigned long count, 
         const void *pValue ) = 0;
     virtual ioStatus read ( unsigned type, unsigned long count, 
-        cacDataNotify &, ioid * = 0 ) = 0;
+        cacReadNotify &, ioid * = 0 ) = 0;
     virtual ioStatus write ( unsigned type, unsigned long count, 
-        const void *pValue, cacNotify &, ioid * = 0 ) = 0;
+        const void *pValue, cacWriteNotify &, ioid * = 0 ) = 0;
     virtual void subscribe ( unsigned type, unsigned long count, 
-        unsigned mask, cacDataNotify &, ioid * = 0 ) = 0;
+        unsigned mask, cacStateNotify &, ioid * = 0 ) = 0;
     virtual void ioCancel ( const ioid & ) = 0;
     virtual void ioShow ( const ioid &, unsigned level ) const = 0;
     virtual short nativeType () const = 0;
@@ -146,6 +161,22 @@ public:
 
 private:
     cacChannelNotify & callback;
+};
+
+class cacNotify {
+public:
+    virtual ~cacNotify () = 0;
+// exception mechanism needs to be designed
+    virtual void exception ( int status, const char *pContext,
+        const char *pFileName, unsigned lineNo ) = 0;
+    virtual void exception ( int status, const char *pContext,
+        unsigned type, unsigned long count, 
+        const char *pFileName, unsigned lineNo ) = 0;
+// perhaps this should be phased out in deference to the exception mechanism
+    virtual int vPrintf ( const char *pformat, va_list args ) = 0;
+// this should probably be phased out (its not OS independent)
+    virtual void fdWasCreated ( int fd ) = 0;
+    virtual void fdWasDestroyed ( int fd ) = 0;
 };
 
 struct cacService : public tsDLNode < cacService > {
@@ -229,3 +260,5 @@ inline bool caAccessRights::operatorConfirmationRequest () const
 {
     return this->f_operatorConfirmationRequest;
 }
+
+#endif // ifndef cacIOh

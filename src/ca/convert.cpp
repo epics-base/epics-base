@@ -14,9 +14,15 @@
  *
  */
 
-#include    <string.h>
+#include <string.h>
 
-#include    "iocinf.h"
+#include "osiSock.h"
+
+#include "iocinf.h"
+#include "caProto.h"
+
+#define epicsExportSharedSymbols
+#include "net_convert.h"
 
 #if defined(VMS)
 #include    <cvt$routines.h>
@@ -40,7 +46,6 @@
 #define dbr_ntohl(A)    (ntohl(A))
 #define dbr_htons(A)    (htons(A))
 #define dbr_htonl(A)    (htonl(A))
-
 
 /*
  *  CVRT_STRING()
@@ -938,7 +943,7 @@ unsigned long   num         /* number of values     */
 
     pDest->status           = dbr_ntohs(pSrc->status);
     pDest->severity         = dbr_ntohs(pSrc->severity);
-    pDest->no_str           = dbr_ntohs(pSrc->no_str);
+    pDest->no_str           = dbr_ntohs(pSrc->no_str); 
     memcpy((void *)pDest->strs,(void *)pSrc->strs,sizeof(pSrc->strs));
 
     if (num == 1)   /* single value */
@@ -1706,7 +1711,6 @@ epicsShareDef CACVRTFUNC *cac_dbr_cvrt[] = {
     cvrt_stsack_string,
     cvrt_string
 };
-
 
 #endif /* CONVERSION_REQUIRED */
 

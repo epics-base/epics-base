@@ -16,26 +16,12 @@
 
 #include "iocinf.h"
 
+#define epicsExportSharedSymbols
+#include "cacIO.h"
+#undef epicsExportSharedSymbols
+
 cacChannelNotify::~cacChannelNotify () 
 {
-}
-
-void cacChannelNotify::connectNotify ( cacChannel & )
-{
-}
-
-void cacChannelNotify::disconnectNotify ( cacChannel & )
-{
-}
-
-void cacChannelNotify::accessRightsNotify ( cacChannel &, const caAccessRights & )
-{
-}
-
-void cacChannelNotify::exception ( cacChannel &io, int status, const char *pContext )
-{
-    ca_signal_formated ( status, __FILE__, __LINE__, "channel=%s context=\"%s\"\n", 
-        io.pHostName (), pContext );
 }
 
 bool cacChannelNotify::includeFirstConnectInCountOfOutstandingIO () const

@@ -10,25 +10,29 @@
  *  Author: Jeff Hill
  */
 
-#include "epicsMemory.h"
+#define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
+#include "epicsMemory.h"
 #include "osiProcess.h"
 #include "osiSigPipeIgnore.h"
+#include "envdefs.h"
 
 #include "iocinf.h"
-#include "cac_IL.h"
-#include "inetAddrID_IL.h"
-#include "bhe_IL.h"
-#include "tcpiiu_IL.h"
-#include "nciu_IL.h"
-#include "comQueSend_IL.h"
-#include "recvProcessThread_IL.h"
-#include "netiiu_IL.h"
-#include "baseNMIU_IL.h"
-#include "netWriteNotifyIO_IL.h"
-#include "netReadNotifyIO_IL.h"
-#include "netSubscription_IL.h"
-#include "autoPtrRecycle_IL.h"
+#include "cac.h"
+#include "inetAddrID.h"
+#include "virtualCircuit.h"
+#include "netIO.h"
+#include "syncGroup.h"
+#include "nciu.h"
+#include "autoPtrRecycle.h"
+#include "searchTimer.h"
+#include "repeaterSubscribeTimer.h"
+
+#define epicsExportSharedSymbols
+#include "udpiiu.h"
+#include "bhe.h"
+#include "net_convert.h"
+#undef epicsExportSharedSymbols
 
 // TCP protocol jump table
 const cac::pProtoStubTCP cac::tcpJumpTableCAC [] = 
@@ -66,17 +70,16 @@ const cac::pProtoStubTCP cac::tcpJumpTableCAC [] =
 //
 // cac::cac ()
 //
-cac::cac ( bool enablePreemptiveCallbackIn ) :
+cac::cac ( cacNotify &notifyIn, bool enablePreemptiveCallbackIn ) :
     ipToAEngine ( "caIPAddrToAsciiEngine" ), 
     chanTable ( 1024 ),
     ioTable ( 1024 ),
     sgTable ( 128 ),
     beaconTable ( 1024 ),
-    fdRegFunc ( 0 ),
-    fdRegArg ( 0 ),
     pudpiiu ( 0 ),
     pSearchTmr ( 0 ),
     pRepeaterSubscribeTmr ( 0 ),
+    notify ( notifyIn ),
     ioNotifyInProgressId ( 0 ),
     initializingThreadsPriority ( epicsThreadGetPrioritySelf () ),
     threadsBlockingOnNotifyCompletion ( 0u ),
@@ -98,10 +101,6 @@ cac::cac ( bool enablePreemptiveCallbackIn ) :
             abovePriority = this->initializingThreadsPriority;
         }
     }
-
-    this->pVPrintfFunc = errlogVprintf;
-    this->ca_exception_func = ca_default_exception_handler;
-    this->ca_exception_arg = NULL;
 
     installSigPipeIgnore ();
 
@@ -127,8 +126,8 @@ cac::cac ( bool enablePreemptiveCallbackIn ) :
     status = envGetDoubleConfigParam ( &EPICS_CA_CONN_TMO, &this->connTMO );
     if ( status ) {
         this->connTMO = CA_CONN_VERIFY_PERIOD;
-        ca_printf ( "EPICS \"%s\" double fetch failed\n", EPICS_CA_CONN_TMO.name);
-        ca_printf ( "Defaulting \"%s\" = %f\n", EPICS_CA_CONN_TMO.name, this->connTMO);
+        this->printf ( "EPICS \"%s\" double fetch failed\n", EPICS_CA_CONN_TMO.name);
+        this->printf ( "Defaulting \"%s\" = %f\n", EPICS_CA_CONN_TMO.name, this->connTMO);
     }
 
     this->pTimerQueue = & epicsTimerQueueActive::allocate ( false, abovePriority );
@@ -209,8 +208,8 @@ cac::~cac ()
         }
     }
 
-    if ( ! this->enablePreemptiveCallback && this->fdRegFunc ) {
-        this->pudpiiu->fdDestroyNotify ( this->fdRegFunc, this->fdRegArg );
+    if ( ! this->enablePreemptiveCallback ) {
+        this->notify.fdWasDestroyed ( this->pudpiiu->getSock() );
     }
     delete this->pudpiiu;
     delete this->pUserName;
@@ -231,56 +230,62 @@ cac::~cac ()
 
 void cac::processRecvBacklog ()
 {
-    epicsAutoMutex autoMutex ( this->mutex );
+    tsDLList < tcpiiu > deadIIU;
+    {
+        epicsAutoMutex autoMutex ( this->mutex );
 
-    tsDLIterBD < tcpiiu > piiu = this->iiuList.firstIter ();
-    while ( piiu.valid () ) {
-        tsDLIterBD < tcpiiu > pNext = piiu;
-        pNext++;
+        tsDLIterBD < tcpiiu > piiu = this->iiuList.firstIter ();
+        while ( piiu.valid () ) {
+            tsDLIterBD < tcpiiu > pNext = piiu;
+            pNext++;
 
-        if ( ! piiu->alive () ) {
-            assert ( this->pudpiiu && this->pSearchTmr );
+            if ( ! piiu->alive () ) {
+                assert ( this->pudpiiu && this->pSearchTmr );
 
-            bhe *pBHE = piiu->getBHE ();
-            if ( pBHE ) {
-                this->beaconTable.remove ( *pBHE );
-                pBHE->destroy ();
+                bhe *pBHE = piiu->getBHE ();
+                if ( pBHE ) {
+                    this->beaconTable.remove ( *pBHE );
+                    pBHE->destroy ();
+                }
+
+                if ( piiu->channelCount () ) {
+                    char hostNameTmp[64];
+                    piiu->hostName ( hostNameTmp, sizeof ( hostNameTmp ) );
+                    genLocalExcep ( *this, ECA_DISCONN, hostNameTmp );
+                }
+
+                piiu->disconnectAllChan ( *this->pudpiiu );
+
+                // make certain that:
+                // 1) this is called from the appropriate thread
+                // 2) lock is not held while in call back
+                if ( ! this->enablePreemptiveCallback ) {
+                    epicsAutoMutexRelease autoRelease ( this->mutex );
+                    this->notify.fdWasDestroyed ( piiu->getSock() );
+                }
+                this->iiuList.remove ( *piiu );
+                deadIIU.add ( *piiu ); // postpone destroy and avoid deadlock
+            }
+            else {
+                // make certain that:
+                // 1) this is called from the appropriate thread
+                // 2) lock is not held while in call back
+                if ( piiu->trueOnceOnly() && ! this->enablePreemptiveCallback ) {
+                    epicsAutoMutexRelease autoRelease ( this->mutex );
+                    this->notify.fdWasCreated ( piiu->getSock() );
+                }
+                piiu->processIncoming ();
             }
 
-            if ( piiu->channelCount () ) {
-                char hostNameTmp[64];
-                piiu->hostName ( hostNameTmp, sizeof ( hostNameTmp ) );
-                genLocalExcep ( *this, ECA_DISCONN, hostNameTmp );
-            }
-
-            piiu->disconnectAllChan ( *this->pudpiiu );
-
-            // make certain that:
-            // 1) this is called from the appropriate thread
-            // 2) lock is not held while in call back
-            if ( ! this->enablePreemptiveCallback && this->fdRegFunc ) {
-                CAFDHANDLER *func = this->fdRegFunc;
-                void *arg = this->fdRegArg;
-                epicsAutoMutexRelease autoRelease ( mutex );
-                piiu->fdDestroyNotify ( func, arg );
-            }
-            this->iiuList.remove ( *piiu );
+            piiu = pNext;
+	    }
+    }
+    if ( deadIIU.count() ) {
+        this->pSearchTmr->resetPeriod ( CA_RECAST_DELAY );
+        while ( tcpiiu *piiu = deadIIU.get() ) {
             piiu->destroy ();
-
-            this->pSearchTmr->resetPeriod ( CA_RECAST_DELAY );
         }
-        else {
-            // make certain that:
-            // 1) this is called from the appropriate thread
-            // 2) lock is not held while in call back
-            if ( ! this->enablePreemptiveCallback &&  this->fdRegFunc ) {
-                piiu->fdCreateNotify ( this->mutex, this->fdRegFunc, this->fdRegArg );
-            }
-            piiu->processIncoming ();
-        }
-
-        piiu = pNext;
-	}
+    }
 }
 
 //
@@ -571,20 +576,6 @@ CASG * cac::lookupCASG ( unsigned id )
     return psg;
 }
 
-void cac::exception ( int status, const char *pContext,
-    const char *pFileName, unsigned lineNo )
-{
-    ca_signal_with_file_and_lineno ( status, pContext, pFileName, lineNo );
-}
-
-void cac::exception ( int status, const char *pContext,
-    unsigned type, unsigned long count, 
-    const char *pFileName, unsigned lineNo )
-{
-    ca_signal_formated ( status, pFileName, lineNo, "%s type=%d count=%ld\n", 
-        pContext, type, count );
-}
-
 void cac::registerService ( cacService &service )
 {
     this->services.registerService ( service );
@@ -634,11 +625,9 @@ bool cac::setupUDP ()
         if ( ! this->pudpiiu ) {
             return false;
         }
-        if ( ! this->enablePreemptiveCallback && this->fdRegFunc ) {
-            CAFDHANDLER *func = this->fdRegFunc;
-            void *arg = this->fdRegArg;
+        if ( ! this->enablePreemptiveCallback ) {
             epicsAutoMutexRelease autoRelease ( this->mutex );
-            this->pudpiiu->fdCreateNotify ( func, arg );
+            this->notify.fdWasCreated ( this->pudpiiu->getSock() );
         }
     }
 
@@ -659,13 +648,6 @@ bool cac::setupUDP ()
     return true;
 }
 
-void cac::registerForFileDescriptorCallBack ( CAFDHANDLER *pFunc, void *pArg )
-{
-    epicsAutoMutex autoMutex ( this->mutex );
-    this->fdRegFunc = pFunc;
-    this->fdRegArg = pArg;
-}
-
 void cac::enableCallbackPreemption ()
 {
     if ( this->pRecvProcThread ) {
@@ -680,67 +662,10 @@ void cac::disableCallbackPreemption ()
     }
 }
 
-void cac::changeExceptionEvent ( caExceptionHandler *pfunc, void *arg )
-{
-    epicsAutoMutex autoMutex ( this->mutex );
-    if ( pfunc ) {
-        this->ca_exception_func = pfunc;
-        this->ca_exception_arg = arg;
-    }
-    else {
-        this->ca_exception_func = ca_default_exception_handler;
-        this->ca_exception_arg = NULL;
-    }
-}
-
-//
-// cac::genLocalExcepWFL ()
-// (generate local exception with file and line number)
-//
-void cac::genLocalExcepWFL (long stat, const char *ctx, const char *pFile, unsigned lineNo)
-{
-    struct exception_handler_args args;
-    caExceptionHandler *pExceptionFunc;
-
-    /*
-     * NOOP if they disable exceptions
-     */
-    if ( this->ca_exception_func ) {
-        args.chid = NULL;
-        args.type = -1;
-        args.count = 0u;
-        args.addr = NULL;
-        args.stat = stat;
-        args.op = CA_OP_OTHER;
-        args.ctx = ctx;
-        args.pFile = pFile;
-        args.lineNo = lineNo;
-
-        {
-            epicsAutoMutex autoMutex ( this->mutex );
-            pExceptionFunc = this->ca_exception_func;
-            args.usr = this->ca_exception_arg;
-        }
-
-        (*pExceptionFunc) (args);
-    }
-}
-
 void cac::repeaterSubscribeConfirmNotify ()
 {
     if ( this->pRepeaterSubscribeTmr ) {
         this->pRepeaterSubscribeTmr->confirmNotify ();
-    }
-}
-
-void cac::replaceErrLogHandler ( caPrintfFunc *ca_printf_func )
-{
-    epicsAutoMutex autoMutex ( this->mutex );
-    if ( ca_printf_func ) {
-        this->pVPrintfFunc = ca_printf_func;
-    }
-    else {
-        this->pVPrintfFunc = epicsVprintf;
     }
 }
 
@@ -771,7 +696,7 @@ bool cac::lookupChannelAndTransferToTCP ( unsigned cid, unsigned sid,
         /*
          * Ignore duplicate search replies
          */
-        if ( chan->isAttachedToVirtaulCircuit ( addr ) ) {
+        if ( chan->getPIIU()->isVirtaulCircuit( chan->pName(), addr ) ) {
             return true;
         }
 
@@ -906,7 +831,7 @@ void cac::writeRequest ( nciu &chan, unsigned type, unsigned nElem, const void *
 }
 
 cacChannel::ioid cac::writeNotifyRequest ( nciu &chan, unsigned type, unsigned nElem, 
-                                    const void *pValue, cacNotify &notify )
+                                    const void *pValue, cacWriteNotify &notify )
 {
     epicsAutoMutex autoMutex ( this->mutex );
     autoPtrRecycle  < netWriteNotifyIO > pIO ( *this, netWriteNotifyIO::factory ( 
@@ -924,7 +849,7 @@ cacChannel::ioid cac::writeNotifyRequest ( nciu &chan, unsigned type, unsigned n
     }
 }
 
-cacChannel::ioid cac::readNotifyRequest ( nciu &chan, unsigned type, unsigned nElem, cacDataNotify &notify )
+cacChannel::ioid cac::readNotifyRequest ( nciu &chan, unsigned type, unsigned nElem, cacReadNotify &notify )
 {
     epicsAutoMutex autoMutex ( this->mutex );
     autoPtrRecycle  < netReadNotifyIO > pIO ( *this, netReadNotifyIO::factory ( 
@@ -1228,7 +1153,7 @@ void cac::recycleSubscription ( netSubscription &io )
 }
 
 cacChannel::ioid cac::subscriptionRequest ( nciu &chan, unsigned type, 
-    unsigned long nElem, unsigned mask, cacDataNotify &notify )
+    unsigned long nElem, unsigned mask, cacStateNotify &notify )
 {
     epicsAutoMutex autoMutex ( this->mutex );
     autoPtrRecycle  < netSubscription > pIO ( *this, netSubscription::factory ( 
@@ -1459,7 +1384,7 @@ bool cac::badTCPRespAction ( tcpiiu &iiu, const caHdr &hdr, void * /* pMsgBdy */
 {
     char hostName[64];
     iiu.hostName ( hostName, sizeof(hostName) );
-    ca_printf ( "CAC: Undecipherable TCP message ( bad response type %u ) from %s\n", 
+    this->printf ( "CAC: Undecipherable TCP message ( bad response type %u ) from %s\n", 
         hdr.m_cmmd, hostName );
     return false;
 }

@@ -79,12 +79,21 @@ of this distribution.
 #ifndef INCLdb_accessh
 #define INCLdb_accessh
 
-
 #include <stddef.h>
 
-#include "shareLib.h"
+#ifdef epicsExportSharedSymbols
+#   define INCLdb_accessh_epicsExportSharedSymbols
+#   undef epicsExportSharedSymbols
+#endif
+
 #include "epicsTypes.h"
 #include "epicsTime.h"
+
+#ifdef INCLdb_accessh_epicsExportSharedSymbols
+#   define epicsExportSharedSymbols
+#endif
+
+#include "shareLib.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -11,21 +11,21 @@
  *  Author: Jeff Hill
  */
 
-#include "iocinf.h"
+#define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
-#include "inetAddrID_IL.h"
-#include "bhe_IL.h"
-#include "tcpiiu_IL.h"
-#include "cac_IL.h"
-#include "comBuf_IL.h"
-#include "comQueSend_IL.h"
-#include "netiiu_IL.h"
-#include "nciu_IL.h"
-#include "baseNMIU_IL.h"
-#include "netWriteNotifyIO_IL.h"
-#include "netReadNotifyIO_IL.h"
-#include "netSubscription_IL.h"
+#include "iocinf.h"
+#include "virtualCircuit.h"
+#include "inetAddrID.h"
+#include "cac.h"
+#include "netiiu.h"
+#include "netIO.h"
+#include "msgForMultiplyDefinedPV.h"
+#include "localHostName.h"
+
+#define epicsExportSharedSymbols
 #include "net_convert.h"
+#include "bhe.h"
+#undef epicsExportSharedSymbols
 
 // nill message alignment pad bytes
 static const char nillBytes [] = 
@@ -131,7 +131,7 @@ unsigned tcpiiu::sendBytes ( const void *pBuf,
 
             if ( localError != SOCK_EPIPE && localError != SOCK_ECONNRESET &&
                 localError != SOCK_ETIMEDOUT && localError != SOCK_ECONNABORTED ) {
-                ca_printf ("CAC: unexpected TCP send error: %s\n", SOCKERRSTR (localError) );
+                this->printf ( "CAC: unexpected TCP send error: %s\n", SOCKERRSTR (localError) );
             }
 
             this->cleanShutdown ();
@@ -181,7 +181,7 @@ unsigned tcpiiu::recvBytes ( void *pBuf, unsigned nBytesInBuf )
         {
             char name[64];
             this->hostName ( name, sizeof ( name ) );
-            ca_printf ( "Disconnecting from CA server %s because: %s\n", 
+            this->printf ( "Disconnecting from CA server %s because: %s\n", 
                 name, SOCKERRSTR ( localErrno ) );
         }
 
@@ -317,21 +317,21 @@ tcpiiu::tcpiiu ( cac &cac, double connectionTimeout, epicsTimerQueue &timerQueue
     echoRequestPending ( false ),
     msgHeaderAvailable ( false ),
     sockCloseCompleted ( false ),
-    fdRegCallbackNeeded ( true ),
+    f_trueOnceOnly ( true ),
     earlyFlush ( false )
 {
     this->addr.sa.sa_family = AF_UNSPEC;
 
     this->sendThreadExitSignal = epicsEventCreate ( epicsEventEmpty );
     if ( ! this->sendThreadExitSignal ) {
-        ca_printf ("CA: unable to create CA client send thread exit semaphore\n");
+        this->printf ("CA: unable to create CA client send thread exit semaphore\n");
         this->fullyConstructedFlag = false;
         return;
     }
 
     this->recvThreadExitSignal = epicsEventCreate ( epicsEventEmpty );
     if ( ! this->recvThreadExitSignal ) {
-        ca_printf ("CA: unable to create CA client send thread exit semaphore\n");
+        this->printf ("CA: unable to create CA client send thread exit semaphore\n");
         epicsEventDestroy (this->sendThreadExitSignal);
         this->fullyConstructedFlag = false;
         return;
@@ -339,7 +339,7 @@ tcpiiu::tcpiiu ( cac &cac, double connectionTimeout, epicsTimerQueue &timerQueue
 
     this->sendThreadFlushSignal = epicsEventCreate ( epicsEventEmpty );
     if ( ! this->sendThreadFlushSignal ) {
-        ca_printf ("CA: unable to create sendThreadFlushSignal object\n");
+        this->printf ("CA: unable to create sendThreadFlushSignal object\n");
         epicsEventDestroy (this->sendThreadExitSignal);
         this->fullyConstructedFlag = false;
         return;
@@ -347,7 +347,7 @@ tcpiiu::tcpiiu ( cac &cac, double connectionTimeout, epicsTimerQueue &timerQueue
 
     this->flushBlockSignal = epicsEventCreate ( epicsEventEmpty );
     if ( ! this->flushBlockSignal ) {
-        ca_printf ("CA: unable to create flushBlockSignal object\n");
+        this->printf ("CA: unable to create flushBlockSignal object\n");
         epicsEventDestroy (this->sendThreadExitSignal);
         epicsEventDestroy (this->sendThreadFlushSignal);
         this->fullyConstructedFlag = false;
@@ -356,7 +356,7 @@ tcpiiu::tcpiiu ( cac &cac, double connectionTimeout, epicsTimerQueue &timerQueue
 
     this->recvThreadRingBufferSpaceAvailableSignal = epicsEventCreate ( epicsEventEmpty );
     if ( ! this->recvThreadRingBufferSpaceAvailableSignal ) {
-        ca_printf ("CA: unable to create recvThreadRingBufferSpaceAvailableSignal object\n");
+        this->printf ("CA: unable to create recvThreadRingBufferSpaceAvailableSignal object\n");
         epicsEventDestroy (this->sendThreadExitSignal);
         epicsEventDestroy (this->sendThreadFlushSignal);
         epicsEventDestroy (this->flushBlockSignal);
@@ -405,7 +405,7 @@ bool tcpiiu::initiateConnect ( const osiSockAddr &addrIn, unsigned minorVersion,
 
     this->sock = socket ( AF_INET, SOCK_STREAM, IPPROTO_TCP );
     if ( this->sock == INVALID_SOCKET ) {
-        ca_printf ( "CAC: unable to create virtual circuit because \"%s\"\n",
+        this->printf ( "CAC: unable to create virtual circuit because \"%s\"\n",
             SOCKERRSTR ( SOCKERRNO ) );
         return false;
     }
@@ -414,7 +414,7 @@ bool tcpiiu::initiateConnect ( const osiSockAddr &addrIn, unsigned minorVersion,
     status = setsockopt ( this->sock, IPPROTO_TCP, TCP_NODELAY,
                 (char *) &flag, sizeof ( flag ) );
     if ( status < 0 ) {
-        ca_printf ("CAC: problems setting socket option TCP_NODELAY = \"%s\"\n",
+        this->printf ("CAC: problems setting socket option TCP_NODELAY = \"%s\"\n",
             SOCKERRSTR (SOCKERRNO));
     }
 
@@ -422,7 +422,7 @@ bool tcpiiu::initiateConnect ( const osiSockAddr &addrIn, unsigned minorVersion,
     status = setsockopt ( this->sock , SOL_SOCKET, SO_KEEPALIVE,
                 ( char * ) &flag, sizeof ( flag ) );
     if ( status < 0 ) {
-        ca_printf ( "CAC: problems setting socket option SO_KEEPALIVE = \"%s\"\n",
+        this->printf ( "CAC: problems setting socket option SO_KEEPALIVE = \"%s\"\n",
             SOCKERRSTR ( SOCKERRNO ) );
     }
 
@@ -438,14 +438,14 @@ bool tcpiiu::initiateConnect ( const osiSockAddr &addrIn, unsigned minorVersion,
         status = setsockopt ( this->sock, SOL_SOCKET, SO_SNDBUF,
                 ( char * ) &i, sizeof ( i ) );
         if (status < 0) {
-            ca_printf ("CAC: problems setting socket option SO_SNDBUF = \"%s\"\n",
+            this->printf ("CAC: problems setting socket option SO_SNDBUF = \"%s\"\n",
                 SOCKERRSTR ( SOCKERRNO ) );
         }
         i = MAX_MSG_SIZE;
         status = setsockopt ( this->sock, SOL_SOCKET, SO_RCVBUF,
                 ( char * ) &i, sizeof ( i ) );
         if ( status < 0 ) {
-            ca_printf ("CAC: problems setting socket option SO_RCVBUF = \"%s\"\n",
+            this->printf ("CAC: problems setting socket option SO_RCVBUF = \"%s\"\n",
                 SOCKERRSTR (SOCKERRNO));
         }
     }
@@ -461,7 +461,7 @@ bool tcpiiu::initiateConnect ( const osiSockAddr &addrIn, unsigned minorVersion,
     tid = epicsThreadCreate ("CAC-TCP-recv", priorityOfRecv,
             epicsThreadGetStackSize (epicsThreadStackMedium), cacRecvThreadTCP, this);
     if ( tid == 0 ) {
-        ca_printf ("CA: unable to create CA client receive thread\n");
+        this->printf ("CA: unable to create CA client receive thread\n");
         socket_close ( this->sock );
         return false;
     }
@@ -516,7 +516,7 @@ void tcpiiu::connect ()
         }
         else {  
             this->sendDog.cancel ();
-            ca_printf ( "Unable to connect because %d=\"%s\"\n", 
+            this->printf ( "Unable to connect because %d=\"%s\"\n", 
                 errnoCpy, SOCKERRSTR ( errnoCpy ) );
             this->cleanShutdown ();
             return;
@@ -699,7 +699,6 @@ tcpiiu::~tcpiiu ()
         this->sendQue.clear ();
         this->recvQue.clear ();
     }
-    this->fdRegCallbackNeeded = true;
 
     // wakeup user threads blocking for send backlog to be reduced
     // and wait for them to stop using this IIU
@@ -778,31 +777,31 @@ void tcpiiu::show ( unsigned level ) const
         strncpy ( buf, "<disconnected>", sizeof ( buf ) );
         buf [ sizeof ( buf ) - 1 ] = '\0';
     }
-    printf ( "Virtual circuit to \"%s\" at version %u.%u state %u\n", 
+    ::printf ( "Virtual circuit to \"%s\" at version %u.%u state %u\n", 
         buf, CA_PROTOCOL_VERSION, this->minorProtocolVersion,
         this->state );
     if ( level > 1u ) {
         this->netiiu::show ( level - 1u );
     }
     if ( level > 2u ) {
-        printf ( "\tcurrent data cache pointer = %p current data cache size = %lu\n",
+        ::printf ( "\tcurrent data cache pointer = %p current data cache size = %lu\n",
             static_cast < void * > ( this->pCurData ), this->curDataMax );
-        printf ( "\tcontiguous receive message count=%u, busy detect bool=%u, flow control bool=%u\n", 
+        ::printf ( "\tcontiguous receive message count=%u, busy detect bool=%u, flow control bool=%u\n", 
             this->contigRecvMsgCount, this->busyStateDetected, this->flowControlActive );
     }
     if ( level > 3u ) {
-        printf ( "\tvirtual circuit socket identifier %d\n", this->sock );
-        printf ( "\tsend thread flush signal:\n" );
+        ::printf ( "\tvirtual circuit socket identifier %d\n", this->sock );
+        ::printf ( "\tsend thread flush signal:\n" );
         epicsEventShow ( this->sendThreadFlushSignal, level-3u );
-        printf ( "\trecv thread buffer space available signal:\n" );
+        ::printf ( "\trecv thread buffer space available signal:\n" );
         epicsEventShow ( this->recvThreadRingBufferSpaceAvailableSignal, level-3u );
-        printf ( "\tsend thread exit signal:\n" );
+        ::printf ( "\tsend thread exit signal:\n" );
         epicsEventShow ( this->sendThreadExitSignal, level-3u );
-        printf ( "\trecv thread exit signal:\n" );
+        ::printf ( "\trecv thread exit signal:\n" );
         epicsEventShow ( this->recvThreadExitSignal, level-3u );
-        printf ( "\tfully constructed bool %u\n", this->fullyConstructedFlag );
-        printf ("\techo pending bool = %u\n", this->echoRequestPending );
-        printf ("\treceive message header available bool = %u\n", this->msgHeaderAvailable );
+        ::printf ( "\tfully constructed bool %u\n", this->fullyConstructedFlag );
+        ::printf ("\techo pending bool = %u\n", this->echoRequestPending );
+        ::printf ("\treceive message header available bool = %u\n", this->msgHeaderAvailable );
         if ( this->pBHE ) {
             this->pBHE->show ( level - 3u );
         }
@@ -1011,7 +1010,7 @@ void tcpiiu::processIncoming ()
         //
         if ( this->curMsg.m_postsize > ( unsigned ) MAX_TCP ) {
             this->msgHeaderAvailable = false;
-            ca_printf ( "CAC: message body was too large ( disconnecting )\n" );
+            this->printf ( "CAC: message body was too large ( disconnecting )\n" );
             this->cleanShutdown ();
             return;
         }
@@ -1035,7 +1034,7 @@ void tcpiiu::processIncoming ()
 
             char *pData = new char [cacheSize];
             if ( ! pData ) {
-                ca_printf ("CAC: not enough memory for message body cache (disconnecting)\n");
+                this->printf ("CAC: not enough memory for message body cache (disconnecting)\n");
                 this->cleanShutdown ();
                 return;
             }

@@ -57,8 +57,14 @@
 //
 //
 
+#define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
+
 #include "iocinf.h"
-#include "comQueSend_IL.h"
+#include "virtualCircuit.h"
+
+#define epicsExportSharedSymbols
+#include "db_access.h" // for dbr_short_t etc
+#undef epicsExportSharedSymbols
 
 tsFreeList < class comBuf, 0x20 > comBuf::freeList;
 epicsMutex comBuf::freeListMutex;

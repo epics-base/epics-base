@@ -10,9 +10,11 @@
  *  Author: Jeff Hill
  */
 
+#define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
+
 #include "iocinf.h"
-#include "nciu_IL.h"
-#include "baseNMIU_IL.h"
+#include "nciu.h"
+#include "netIO.h"
 
 baseNMIU::baseNMIU ( nciu &chanIn ) : 
     chan ( chanIn )
@@ -30,7 +32,7 @@ class netSubscription * baseNMIU::isSubscription ()
 
 void baseNMIU::show ( unsigned /* level */ ) const
 {
-    printf ( "CA IO primitive at %p\n", 
+    ::printf ( "CA IO primitive at %p\n", 
         static_cast <const void *> ( this ) );
 }
 

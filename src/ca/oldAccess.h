@@ -15,9 +15,21 @@
  *	505 665 1831
  */
 
+#ifndef oldAccessh
+#define oldAccessh
+
+#include "tsFreeList.h"
+
+#include "cac.h"
+
+#define epicsExportSharedSymbols
+#include "cacIO.h"
+#include "cadef.h"
+#undef epicsExportSharedSymbols
+
 struct oldChannelNotify : public cacChannelNotify {
 public:
-    oldChannelNotify ( cac &, const char *pName, caCh *pConnCallBackIn, void *pPrivateIn );
+    oldChannelNotify ( class oldCAC &, const char *pName, caCh *pConnCallBackIn, void *pPrivateIn );
     void destroy ();
     bool ioAttachOK ();
     void setPrivatePointer ( void * );
@@ -33,7 +45,7 @@ public:
     void initiateConnect ();
     void read ( 
         unsigned type, unsigned long count, 
-        cacDataNotify &notify, cacChannel::ioid *pId = 0 );
+        cacReadNotify &notify, cacChannel::ioid *pId = 0 );
     void read ( 
         unsigned type, unsigned long count, 
         void *pValue );
@@ -42,10 +54,10 @@ public:
         const void *pValue );
     void write ( 
         unsigned type, unsigned long count, const void *pValue, 
-        cacNotify &, cacChannel::ioid *pId = 0 );
+        cacWriteNotify &, cacChannel::ioid *pId = 0 );
     void subscribe ( 
         unsigned type, unsigned long count, unsigned mask, 
-        cacDataNotify &, cacChannel::ioid & );
+        cacStateNotify &, cacChannel::ioid & );
     void ioCancel ( const cacChannel::ioid & );
     void ioShow ( const cacChannel::ioid &, unsigned level ) const;
     short nativeType () const;
@@ -65,17 +77,18 @@ private:
     caCh *pConnCallBack;
     void *pPrivate;
     caArh *pAccessRightsFunc;
-    void connectNotify ( cacChannel &chan );
-    void disconnectNotify ( cacChannel &chan );
-    void accessRightsNotify ( cacChannel &chan, const caAccessRights & );
+    void connectNotify ();
+    void disconnectNotify ();
+    void accessRightsNotify ( const caAccessRights & );
+    void exception ( int status, const char *pContext );
     bool includeFirstConnectInCountOfOutstandingIO () const;
     static tsFreeList < struct oldChannelNotify, 1024 > freeList;
     static epicsMutex freeListMutex;
 };
 
-class getCopy : public cacDataNotify {
+class getCopy : public cacReadNotify {
 public:
-    getCopy ( cac &cacCtx, unsigned type, 
+    getCopy ( oldCAC &cacCtx, unsigned type, 
         unsigned long count, void *pValue );
     void destroy ();
     void show ( unsigned level ) const;
@@ -85,7 +98,7 @@ protected:
     ~getCopy (); // allocate only out of pool
 private:
     unsigned long count;
-    cac &cacCtx;
+    oldCAC &cacCtx;
     void *pValue;
     unsigned readSeq;
     unsigned type;
@@ -97,7 +110,7 @@ private:
     static epicsMutex freeListMutex;
 };
 
-class getCallback : public cacDataNotify {
+class getCallback : public cacReadNotify {
 public:
     getCallback ( oldChannelNotify &chanIn, 
         caEventCallBackFunc *pFunc, void *pPrivate );
@@ -118,7 +131,7 @@ private:
     static epicsMutex freeListMutex;
 };
 
-class putCallback : public cacNotify {
+class putCallback : public cacWriteNotify {
 public:
     putCallback ( oldChannelNotify &, 
         caEventCallBackFunc *pFunc, void *pPrivate );
@@ -138,7 +151,7 @@ private:
     static epicsMutex freeListMutex;
 };
 
-struct oldSubscription : public cacDataNotify {
+struct oldSubscription : public cacStateNotify {
 public:
     oldSubscription ( 
         oldChannelNotify &,
@@ -157,13 +170,60 @@ private:
     caEventCallBackFunc *pFunc;
     void *pPrivate;
     bool subscribed;
-    void completion (
+    void current (
         unsigned type, unsigned long count, const void *pData );
     void exception (
         int status, const char *pContext, unsigned type, unsigned long count );
     static tsFreeList < struct oldSubscription, 1024 > freeList;
     static epicsMutex freeListMutex;
 };
+
+class oldCAC : public cacNotify
+{
+public:
+    oldCAC ( bool enablePreemptiveCallback = false );
+    virtual ~oldCAC ();
+    void changeExceptionEvent ( caExceptionHandler *pfunc, void *arg );
+    void registerForFileDescriptorCallBack ( CAFDHANDLER *pFunc, void *pArg );
+    void replaceErrLogHandler ( caPrintfFunc *ca_printf_func );
+    void registerService ( cacService &service );
+    cacChannel & createChannel ( const char *name_str, oldChannelNotify &chan );
+    void flushRequest ();
+    int pendIO ( const double &timeout );
+    int pendEvent ( const double &timeout );
+    bool ioComplete () const;
+    void show ( unsigned level ) const;
+    unsigned connectionCount () const;
+    unsigned sequenceNumberOfOutstandingIO () const;
+    void incrementOutstandingIO ();
+    void decrementOutstandingIO ( unsigned sequenceNo );
+    void exception ( int status, const char *pContext,
+        const char *pFileName, unsigned lineNo );
+    void exception ( int status, const char *pContext,
+        unsigned type, unsigned long count, 
+        const char *pFileName, unsigned lineNo );
+// perhaps these should be eliminated in deference to the exception mechanism
+    int printf ( const char *pformat, ... );
+    int vPrintf ( const char *pformat, va_list args );
+    CASG * lookupCASG ( unsigned id );
+    void installCASG ( CASG & );
+    void uninstallCASG ( CASG & );
+    void enableCallbackPreemption ();
+    void disableCallbackPreemption ();
+private:
+    cac & clientCtx;
+    mutable epicsMutex mutex; 
+    caExceptionHandler *ca_exception_func;
+    void *ca_exception_arg;
+    caPrintfFunc *pVPrintfFunc;
+    CAFDHANDLER *fdRegFunc;
+    void *fdRegArg;
+// this should probably be phased out (its not OS independent)
+    void fdWasCreated ( int fd );
+    void fdWasDestroyed ( int fd );
+};
+
+int fetchClientContext ( oldCAC **ppcac );
 
 inline bool oldChannelNotify::ioAttachOK ()
 {
@@ -191,7 +251,7 @@ inline void oldChannelNotify::initiateConnect ()
 }
 
 inline void oldChannelNotify::read ( unsigned type, unsigned long count, 
-                        cacDataNotify &notify, cacChannel::ioid *pId )
+                        cacReadNotify &notify, cacChannel::ioid *pId )
 {
     this->io.read ( type, count, notify, pId );
 }
@@ -203,13 +263,13 @@ inline void oldChannelNotify::write ( unsigned type,
 }
 
 inline void oldChannelNotify::write ( unsigned type, unsigned long count, 
-                 const void *pValue, cacNotify &notify, cacChannel::ioid *pId )
+                 const void *pValue, cacWriteNotify &notify, cacChannel::ioid *pId )
 {
     this->io.write ( type, count, pValue, notify, pId );
 }
 
 inline void oldChannelNotify::subscribe ( unsigned type, 
-    unsigned long count, unsigned mask, cacDataNotify &notify,
+    unsigned long count, unsigned mask, cacStateNotify &notify,
     cacChannel::ioid &idOut)
 {
     this->io.subscribe ( type, count, mask, notify, &idOut );
@@ -361,3 +421,80 @@ inline void getCallback::operator delete ( void *pCadaver, size_t size )
     epicsAutoMutex locker ( getCallback::freeListMutex );
     getCallback::freeList.release ( pCadaver, size );
 }
+
+inline void oldCAC::registerService ( cacService &service )
+{
+    this->clientCtx.registerService ( service );
+}
+
+inline cacChannel & oldCAC::createChannel ( const char *name_str, oldChannelNotify &chan )
+{
+    return this->clientCtx.createChannel ( name_str, chan );
+}
+
+inline int oldCAC::pendIO ( const double &timeout )
+{
+    return this->clientCtx.pendIO ( timeout );
+}
+
+inline int oldCAC::pendEvent ( const double &timeout )
+{
+    return this->clientCtx.pendEvent ( timeout );
+}
+
+inline void oldCAC::flushRequest ()
+{
+    this->clientCtx.flushRequest ();
+}
+
+inline bool oldCAC::ioComplete () const
+{
+    return this->clientCtx.ioComplete ();
+}
+
+inline unsigned oldCAC::connectionCount () const
+{
+    return this->clientCtx.connectionCount ();
+}
+
+inline unsigned oldCAC::sequenceNumberOfOutstandingIO () const
+{
+    return this->clientCtx.sequenceNumberOfOutstandingIO ();
+}
+
+inline void oldCAC::incrementOutstandingIO ()
+{
+    this->clientCtx.incrementOutstandingIO ();
+}
+
+inline void oldCAC::decrementOutstandingIO ( unsigned sequenceNo )
+{
+    this->clientCtx.decrementOutstandingIO ( sequenceNo );
+}
+
+inline CASG * oldCAC::lookupCASG ( unsigned id )
+{
+    return this->clientCtx.lookupCASG ( id );
+}
+
+inline void oldCAC::installCASG ( CASG &sg )
+{
+    this->clientCtx.installCASG ( sg );
+}
+
+inline void oldCAC::uninstallCASG ( CASG &sg )
+{
+    this->clientCtx.uninstallCASG ( sg );
+}
+
+inline void oldCAC::enableCallbackPreemption ()
+{
+    this->clientCtx.enableCallbackPreemption ();
+}
+
+inline void oldCAC::disableCallbackPreemption ()
+{
+    this->clientCtx.disableCallbackPreemption ();
+}
+
+#endif // ifndef oldAccessh

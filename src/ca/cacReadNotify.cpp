@@ -12,6 +12,10 @@
 
 #include "iocinf.h"
 
-cacDataNotify::~cacDataNotify ()
+#define epicsExportSharedSymbols
+#include "cacIO.h"
+#undef epicsExportSharedSymbols
+
+cacReadNotify::~cacReadNotify ()
 {
 }

@@ -10,6 +10,11 @@
  *  Author: Jeff Hill
  */
 
+#ifndef localHostNameh
+#define localHostNameh
+
+#include <string>
+
 class localHostName {
 public:
     localHostName ();
@@ -42,4 +47,7 @@ inline const char * localHostName::pointer () const
 {
     return this->cache;
 }
+
+#endif // ifndef localHostNameh
+
 

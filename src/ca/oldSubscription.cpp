@@ -21,7 +21,7 @@ oldSubscription::~oldSubscription ()
     this->chan.ioCancel ( this->id );
 }
 
-void oldSubscription::completion (  
+void oldSubscription::current (  
     unsigned type, unsigned long count, const void *pData)
 {
     struct event_handler_args args;

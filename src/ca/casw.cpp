@@ -12,9 +12,13 @@
 
 #include <stdio.h>
 
-#include "iocinf.h"
-#include "bhe_IL.h"
-#include "inetAddrID_IL.h"
+#define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
+
+#include "envDefs.h" 
+
+#include "bhe.h"
+#include "udpiiu.h"
+#include "inetAddrID.h"
 
 int main ( int, char ** )
 {

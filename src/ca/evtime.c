@@ -1,8 +1,9 @@
 
 #include <stdio.h>
-#include "cadef.h"
+
 #include "dbDefs.h"
 #include "epicsTime.h"
+#include "cadef.h"
 
 void event_handler (struct event_handler_args args);
 int evtime (char *pname);

@@ -10,13 +10,20 @@
  *  Author: Jeff Hill
  */
 
+#define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
+
+#include "envdefs.h"
 #include "osiProcess.h"
 
-#include "iocinf.h"
+#define epicsExportSharedSymbols
 #include "addrList.h"
-#include "inetAddrID_IL.h"
-#include "netiiu_IL.h"
-#include "cac_IL.h"
+#include "caerr.h" // for ECA_NOSEARCHADDR
+#include "udpiiu.h"
+#undef epicsExportSharedSymbols
+
+#include "iocinf.h"
+#include "inetAddrID.h"
+#include "cac.h"
 
 // UDP protocol dispatch table
 const udpiiu::pProtoStubUDP udpiiu::udpJumpTableCAC [] = 
@@ -60,7 +67,7 @@ udpiiu::udpiiu ( cac &cac ) :
 
     this->sock = socket ( AF_INET, SOCK_DGRAM, IPPROTO_UDP );
     if ( this->sock == INVALID_SOCKET ) {
-        ca_printf ("CAC: unable to create datagram socket because = \"%s\"\n",
+        this->printf ("CAC: unable to create datagram socket because = \"%s\"\n",
             SOCKERRSTR (SOCKERRNO));
         throwWithLocation ( noSocket () );
     }
@@ -68,7 +75,7 @@ udpiiu::udpiiu ( cac &cac ) :
     status = setsockopt ( this->sock, SOL_SOCKET, SO_BROADCAST, 
                 (char *) &boolValue, sizeof ( boolValue ) );
     if ( status < 0 ) {
-        ca_printf ("CAC: IP broadcasting enable failed because = \"%s\"\n",
+        this->printf ("CAC: IP broadcasting enable failed because = \"%s\"\n",
             SOCKERRSTR ( SOCKERRNO ) );
     }
 
@@ -84,7 +91,7 @@ udpiiu::udpiiu ( cac &cac ) :
         status = setsockopt ( this->sock, SOL_SOCKET, SO_RCVBUF,
                 (char *)&size, sizeof (size) );
         if (status<0) {
-            ca_printf ("CAC: unable to set socket option SO_RCVBUF because \"%s\"\n",
+            this->printf ("CAC: unable to set socket option SO_RCVBUF because \"%s\"\n",
                 SOCKERRSTR (SOCKERRNO));
         }
     }
@@ -101,7 +108,7 @@ udpiiu::udpiiu ( cac &cac ) :
     status = bind (this->sock, &addr.sa, sizeof (addr) );
     if ( status < 0 ) {
         socket_close (this->sock);
-        ca_printf ("CAC: unable to bind to an unconstrained address because = \"%s\"\n",
+        this->printf ("CAC: unable to bind to an unconstrained address because = \"%s\"\n",
             SOCKERRSTR (SOCKERRNO));
         throwWithLocation ( noSocket () );
     }
@@ -154,7 +161,7 @@ udpiiu::udpiiu ( cac &cac ) :
         this->recvThreadId = epicsThreadCreate ( "CAC-UDP", priorityOfRecv,
                 epicsThreadGetStackSize (epicsThreadStackMedium), cacRecvThreadUDP, this );
         if ( this->recvThreadId == 0 ) {
-            ca_printf ("CA: unable to create UDP receive thread\n");
+            this->printf ("CA: unable to create UDP receive thread\n");
             epicsEventDestroy (this->recvThreadExitSignal);
             socket_close (this->sock);
             throwWithLocation ( noMemory () );
@@ -221,7 +228,7 @@ void udpiiu::recvMsg ()
                 return;
             }
 #       endif
-        ca_printf ( "Unexpected UDP recv error was \"%s\"\n", 
+        this->printf ( "Unexpected UDP recv error was \"%s\"\n", 
             SOCKERRSTR (errnoCpy) );
     }
     else if ( status > 0 ) {
@@ -258,7 +265,7 @@ void udpiiu::repeaterRegistrationMessage ( unsigned attemptNumber )
  *
  *  register with the repeater 
  */
-epicsShareFunc void epicsShareAPI caRepeaterRegistrationMessage ( 
+void epicsShareAPI caRepeaterRegistrationMessage ( 
            SOCKET sock, unsigned repeaterPort, unsigned attemptNumber )
 {
     caHdr msg;
@@ -339,7 +346,7 @@ epicsShareFunc void epicsShareAPI caRepeaterRegistrationMessage (
         if (    errnoCpy != SOCK_EINTR && 
                 errnoCpy != SOCK_ECONNREFUSED && 
                 errnoCpy != SOCK_ECONNRESET ) {
-            ca_printf ( "CAC: error sending registration message to CA repeater daemon was \"%s\"\n", 
+            fprintf ( stderr, "error sending registration message to CA repeater daemon was \"%s\"\n", 
                 SOCKERRSTR ( errnoCpy ) );
         }
     }
@@ -369,7 +376,7 @@ epicsShareFunc void epicsShareAPI caRepeaterRegistrationMessage (
  *
  *  072392 - problem solved by using SO_REUSEADDR
  */
-epicsShareFunc void epicsShareAPI caStartRepeaterIfNotInstalled ( unsigned repeaterPort )
+void epicsShareAPI caStartRepeaterIfNotInstalled ( unsigned repeaterPort )
 {
     bool installed = false;
     int status;
@@ -378,7 +385,7 @@ epicsShareFunc void epicsShareAPI caStartRepeaterIfNotInstalled ( unsigned repea
     int flag;
 
     if ( repeaterPort > 0xffff ) {
-        ca_printf ( "caStartRepeaterIfNotInstalled () : strange repeater port specified\n");
+        fprintf ( stderr, "caStartRepeaterIfNotInstalled () : strange repeater port specified\n" );
         return;
     }
 
@@ -395,7 +402,7 @@ epicsShareFunc void epicsShareAPI caStartRepeaterIfNotInstalled ( unsigned repea
                 installed = true;
             }
             else {
-                ca_printf ( "caStartRepeaterIfNotInstalled () : bind failed\n");
+                fprintf ( stderr, "caStartRepeaterIfNotInstalled () : bind failed\n" );
             }
         }
     }
@@ -408,7 +415,7 @@ epicsShareFunc void epicsShareAPI caStartRepeaterIfNotInstalled ( unsigned repea
     status = setsockopt ( tmpSock, SOL_SOCKET, SO_REUSEADDR, 
                 (char *) &flag, sizeof ( flag ) );
     if ( status < 0 ) {
-        ca_printf ( "caStartRepeaterIfNotInstalled () : set socket option reuseaddr set failed\n");
+        fprintf ( stderr, "caStartRepeaterIfNotInstalled () : set socket option reuseaddr set failed\n" );
     }
 
     socket_close ( tmpSock );
@@ -427,13 +434,13 @@ epicsShareFunc void epicsShareAPI caStartRepeaterIfNotInstalled ( unsigned repea
             epicsThreadId tid;
 
             tid = epicsThreadCreate ( "CAC-repeater", epicsThreadPriorityLow,
-                    epicsThreadGetStackSize (epicsThreadStackMedium), caRepeaterThread, 0);
+                    epicsThreadGetStackSize ( epicsThreadStackMedium ), caRepeaterThread, 0);
             if ( tid == 0 ) {
-                ca_printf ("caStartRepeaterIfNotInstalled : unable to create CA repeater daemon thread\n");
+                fprintf ( stderr, "caStartRepeaterIfNotInstalled : unable to create CA repeater daemon thread\n" );
             }
         }
         else if ( osptr == osiSpawnDetachedProcessFail ) {
-            ca_printf ( "caStartRepeaterIfNotInstalled (): unable to start CA repeater daemon detached process\n" );
+            fprintf ( stderr, "caStartRepeaterIfNotInstalled (): unable to start CA repeater daemon detached process\n" );
         }
     }
 }
@@ -482,7 +489,7 @@ bool udpiiu::badUDPRespAction ( const caHdr &msg, const osiSockAddr &netAddr )
 {
     char buf[64];
     sockAddrToDottedIP ( &netAddr.sa, buf, sizeof ( buf ) );
-    ca_printf ( "CAC: undecipherable ( bad msg code %u ) UDP message from %s\n", 
+    this->printf ( "CAC: undecipherable ( bad msg code %u ) UDP message from %s\n", 
                 msg.m_cmmd, buf );
     return false;
 }
@@ -636,7 +643,7 @@ void udpiiu::postMsg ( const osiSockAddr &net_addr,
         if ( blockSize < sizeof ( *pCurMsg ) ) {
             char buf[64];
             sockAddrToDottedIP ( &net_addr.sa, buf, sizeof ( buf ) );
-            ca_printf (
+            this->printf (
                 "%s: undecipherable (too small) UDP msg from %s ignored\n", __FILE__, 
                             buf );
             return;
@@ -671,7 +678,7 @@ void udpiiu::postMsg ( const osiSockAddr &net_addr,
         if ( size > blockSize ) {
             char buf[64];
             sockAddrToDottedIP ( &net_addr.sa, buf, sizeof ( buf ) );
-            ca_printf (
+            this->printf (
                 "%s: undecipherable (payload too small) UDP msg from %s ignored\n", __FILE__, 
                             buf );
             return;
@@ -691,7 +698,7 @@ void udpiiu::postMsg ( const osiSockAddr &net_addr,
         if ( ! success ) {
             char buf[256];
             sockAddrToDottedIP ( &net_addr.sa, buf, sizeof ( buf ) );
-            ca_printf ( "CAC: undecipherable UDP message from %s\n", buf );
+            this->printf ( "CAC: undecipherable UDP message from %s\n", buf );
             return;
         }
 
@@ -753,7 +760,7 @@ void udpiiu::datagramFlush ()
                 &pNode->addr.sa, sizeof ( pNode->addr.sa ) );
         if ( status != (int) this->nBytesInXmitBuf ) {
             if ( status >= 0 ) {
-                ca_printf ( "CAC: UDP sendto () call returned strange xmit count?\n" );
+                this->printf ( "CAC: UDP sendto () call returned strange xmit count?\n" );
                 break;
             }
             else {
@@ -781,7 +788,7 @@ void udpiiu::datagramFlush ()
 
                     sockAddrToDottedIP ( &pNode->addr.sa, buf, sizeof ( buf ) );
 
-                    ca_printf (
+                    this->printf (
                         "CAC: error = \"%s\" sending UDP msg to %s\n",
                         SOCKERRSTR ( localErrno ), buf);
                     break;
@@ -796,20 +803,20 @@ void udpiiu::datagramFlush ()
 
 void udpiiu::show ( unsigned level ) const
 {
-    printf ( "Datagram IO circuit (and disconnected channel repository)\n");
+    ::printf ( "Datagram IO circuit (and disconnected channel repository)\n");
     if ( level > 1u ) {
         this->netiiu::show ( level - 1u );
     }
     if ( level > 2u ) {
-        printf ("\trepeater port %u\n", this->repeaterPort );
-        printf ("\tdefault server port %u\n", this->serverPort );
+        ::printf ("\trepeater port %u\n", this->repeaterPort );
+        ::printf ("\tdefault server port %u\n", this->serverPort );
         printChannelAccessAddressList ( &this->dest );
     }
     if ( level > 3u ) {
-        printf ("\tsocket identifier %d\n", this->sock );
-        printf ("\tbytes in xmit buffer %u\n", this->nBytesInXmitBuf );
-        printf ("\tshut down command bool %u\n", this->shutdownCmd );
-        printf ( "\trecv thread exit signal:\n" );
+        ::printf ("\tsocket identifier %d\n", this->sock );
+        ::printf ("\tbytes in xmit buffer %u\n", this->nBytesInXmitBuf );
+        ::printf ("\tshut down command bool %u\n", this->shutdownCmd );
+        ::printf ( "\trecv thread exit signal:\n" );
         epicsEventShow ( this->recvThreadExitSignal, level-3u );
     }
 }

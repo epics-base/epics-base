@@ -16,10 +16,12 @@
 #include <float.h>
 #include <limits.h>
 
+#define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
+
 #include "epicsAssert.h"
+#include "epicsTime.h"
 #include "cadef.h"
 #include "caProto.h"
-#include "epicsTime.h"
 
 #include "caDiagnostics.h"
 

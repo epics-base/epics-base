@@ -10,9 +10,14 @@
  *  Author: Jeff Hill
  */
 
+#define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
+
 #include "iocinf.h"
-#include "bhe_IL.h"
-#include "tcpiiu_IL.h"
+#include "virtualCircuit.h"
+
+#define epicsExportSharedSymbols
+#include "bhe.h"
+#undef epicsExportSharedSymbols 
 
 tsFreeList < class bhe, 1024 > bhe::freeList;
 epicsMutex bhe::freeListMutex;
@@ -66,7 +71,7 @@ bool bhe::updatePeriod ( epicsTime programBeginTime )
      */
     currentPeriod = current - this->timeStamp;
     if ( this->averagePeriod < 0.0 ) {
-        ca_real totalRunningTime;
+        double totalRunningTime;
 
         if ( this->piiu ) {
             this->piiu->beaconAnomalyNotify ();
@@ -160,10 +165,10 @@ bool bhe::updatePeriod ( epicsTime programBeginTime )
 
 void bhe::show ( unsigned level ) const
 {
-    printf ( "CA beacon hash entry at %p with average period %f\n", 
+    ::printf ( "CA beacon hash entry at %p with average period %f\n", 
         static_cast <const void *> ( this ), this->averagePeriod );
     if ( level > 0u ) {
-        printf ( "network IO pointer %p\n", 
+        ::printf ( "network IO pointer %p\n", 
             static_cast <void *> ( this->piiu ) );
     }
 }

@@ -16,8 +16,14 @@
  *
  */
 
+#define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
+
 #include "iocinf.h"
-#include "cac_IL.h"
+#include "cac.h"
+
+#define epicsExportSharedSymbols
+#include "cadef.h"
+#undef epicsExportSharedSymbols
 
 recvProcessThread::recvProcessThread (cac *pcacIn) :
     thread ( *this, "CAC-recv-process",
@@ -135,24 +141,24 @@ void recvProcessThread::signalActivity ()
 void recvProcessThread::show ( unsigned level ) const
 {
     epicsAutoMutex autoMutex ( this->mutex );
-    printf ( "CA receive processing thread at %p state=%s\n", 
+    ::printf ( "CA receive processing thread at %p state=%s\n", 
         static_cast <const void *> ( this ),  this->processing ? "busy" : "idle");
     if ( level > 0u ) {
-        printf ( "enable count %u\n", this->enableRefCount );
-        printf ( "blocking for completion count %u\n", this->blockingForCompletion );
+        ::printf ( "enable count %u\n", this->enableRefCount );
+        ::printf ( "blocking for completion count %u\n", this->blockingForCompletion );
     }
     if ( level > 1u ) {
-        printf ( "\tCA client at %p\n", static_cast < void * > ( this->pcac ) );
-        printf ( "\tshutdown command boolean %u\n", this->shutDown );
+        ::printf ( "\tCA client at %p\n", static_cast < void * > ( this->pcac ) );
+        ::printf ( "\tshutdown command boolean %u\n", this->shutDown );
     }
     if ( level > 2u ) {
-        printf ( "Receive activity event:\n" );
+        ::printf ( "Receive activity event:\n" );
         this->recvActivity.show ( level - 3u );
-        printf ( "exit event:\n" );
+        ::printf ( "exit event:\n" );
         this->exit.show ( level - 3u );
-        printf ( "processing done event:\n" );
+        ::printf ( "processing done event:\n" );
         this->processingDone.show ( level - 3u );
-        printf ( "mutex:\n" );
+        ::printf ( "mutex:\n" );
         this->mutex.show ( level - 3u );
     }
 }

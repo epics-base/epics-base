@@ -15,8 +15,11 @@
  *	505 665 1831
  */
 
+#define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
+
 #include "iocinf.h"
 #include "oldAccess.h"
+#include "cac.h"
 
 tsFreeList < struct oldChannelNotify, 1024 > oldChannelNotify::freeList;
 epicsMutex oldChannelNotify::freeListMutex;
@@ -29,7 +32,7 @@ extern "C" void cacNoopAccesRightsHandler ( struct access_rights_handler_args )
 {
 }
 
-oldChannelNotify::oldChannelNotify ( cac &cacIn, const char *pName, 
+oldChannelNotify::oldChannelNotify ( oldCAC &cacIn, const char *pName, 
                                     caCh *pConnCallBackIn, void *pPrivateIn ) :
     io ( cacIn.createChannel ( pName, *this ) ),
     pConnCallBack ( pConnCallBackIn ? pConnCallBackIn : cacNoopConnHandler ), 
@@ -80,7 +83,7 @@ int oldChannelNotify::replaceAccessRightsEvent ( caArh *pfunc )
     return ECA_NORMAL;
 }
 
-void oldChannelNotify::connectNotify ( cacChannel & )
+void oldChannelNotify::connectNotify ()
 {
     struct connection_handler_args  args;
     args.chid = this;
@@ -88,7 +91,7 @@ void oldChannelNotify::connectNotify ( cacChannel & )
     ( *this->pConnCallBack ) ( args );
 }
 
-void oldChannelNotify::disconnectNotify ( cacChannel & )
+void oldChannelNotify::disconnectNotify ()
 {
     struct connection_handler_args args;
     args.chid = this;
@@ -96,13 +99,18 @@ void oldChannelNotify::disconnectNotify ( cacChannel & )
     ( *this->pConnCallBack ) ( args );
 }
 
-void oldChannelNotify::accessRightsNotify ( cacChannel &, const caAccessRights &ar )
+void oldChannelNotify::accessRightsNotify ( const caAccessRights &ar )
 {
     struct access_rights_handler_args args;
     args.chid = this;
     args.ar.read_access = ar.readPermit();
     args.ar.write_access = ar.writePermit();
     ( *this->pAccessRightsFunc ) ( args );
+}
+
+void oldChannelNotify::exception ( int status, const char *pContext )
+{
+    ca_signal ( status, pContext );
 }
 
 bool oldChannelNotify::includeFirstConnectInCountOfOutstandingIO () const

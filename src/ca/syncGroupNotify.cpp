@@ -28,7 +28,10 @@
  *
  */
 
+#define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
+
 #include "iocinf.h"
+#include "syncGroup.h"
 #include "oldAccess.h"
 
 syncGroupNotify::syncGroupNotify ( CASG &sgIn, chid chanIn ) :
@@ -46,7 +49,7 @@ syncGroupNotify::~syncGroupNotify ()
 
 void syncGroupNotify::show ( unsigned /* level */ ) const
 {
-    printf ( "pending sg op: chan=%s magic=%u sg=%p\n",
+    ::printf ( "pending sg op: chan=%s magic=%u sg=%p\n",
          this->chan->pName(), this->magic, 
          static_cast <void *> ( &this->sg ) );
 }

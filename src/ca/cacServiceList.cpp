@@ -17,6 +17,10 @@
 
 #include "iocinf.h"
 
+#define epicsExportSharedSymbols
+#include "cacIO.h"
+#undef epicsExportSharedSymbols
+
 epicsShareDef cacServiceList cacGlobalServiceList;
 
 void cacServiceList::registerService ( cacService &service )

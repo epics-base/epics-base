@@ -27,14 +27,18 @@
  *
  */
 
+#define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
+
 #include "iocinf.h"
+#include "syncGroup.h"
 #include "oldAccess.h"
 #include "autoPtrDestroy.h"
+#include "cac.h"
 
 tsFreeList < struct CASG, 128 > CASG::freeList;
 epicsMutex CASG::freeListMutex;
 
-CASG::CASG ( cac &cacIn ) :
+CASG::CASG ( oldCAC &cacIn ) :
     client ( cacIn ), magic ( CASG_MAGIC )
 {
     client.installCASG ( *this );
@@ -53,7 +57,7 @@ CASG::~CASG ()
         this->magic = 0;
     }
     else {
-        ca_printf ("cac: attempt to destroy invalid sync group ignored\n");
+        this->printf ("cac: attempt to destroy invalid sync group ignored\n");
     }
 }
 
@@ -132,7 +136,7 @@ void CASG::reset ()
 
 void CASG::show ( unsigned level ) const
 {
-    printf ( "Sync Group: id=%u, magic=%u, opPend=%u\n",
+    ::printf ( "Sync Group: id=%u, magic=%u, opPend=%u\n",
         this->getId (), this->magic, this->ioList.count () );
     if ( level ) {
         epicsAutoMutex locker ( this->mutex );
@@ -281,4 +285,19 @@ void CASG::operator delete (void *pCadaver, size_t size)
     epicsAutoMutex locker ( CASG::freeListMutex );
     CASG::freeList.release ( pCadaver, size );
 }
+
+int CASG::printf ( const char *pformat, ... )
+{
+    va_list theArgs;
+    int status;
+
+    va_start ( theArgs, pformat );
+    
+    status = this->client.vPrintf ( pformat, theArgs );
+    
+    va_end ( theArgs );
+    
+    return status;
+}
+
 

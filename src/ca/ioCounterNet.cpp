@@ -15,7 +15,16 @@
  *	505 665 1831
  */
 
+#include <limits.h>
+
+#define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
+
 #include "iocinf.h"
+#include "cac.h"
+
+#define epicsExportSharedSymbols
+#include "caerr.h" // for CA_INTERNAL
+#undef epicsExportSharedSymbols
 
 ioCounterNet::ioCounterNet () : pndrecvcnt ( 0u ), readSeq ( 0u )
 {
@@ -111,16 +120,16 @@ void ioCounterNet::decrement ( unsigned seqNumber )
 
 void ioCounterNet::show ( unsigned level ) const
 {
-    printf ( "ioCounterNet at %p\n", 
+    ::printf ( "ioCounterNet at %p\n", 
         static_cast <const void *> ( this ) );
-    printf ( "\tthere are %u unsatisfied IO operations blocking ca_pend_io()\n",
+    ::printf ( "\tthere are %u unsatisfied IO operations blocking ca_pend_io()\n",
             this->pndrecvcnt );
     if ( level > 0u ) {
-        printf ( "\tthe current read sequence number is %u\n",
+        ::printf ( "\tthe current read sequence number is %u\n",
                 this->readSeq );
     }
     if ( level > 1u ) {
-        printf ( "IO done event:\n");
+        ::printf ( "IO done event:\n");
         this->ioDone.show ( level - 2u );
     }
 }

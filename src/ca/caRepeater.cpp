@@ -21,15 +21,15 @@
  *
  */
 
-#include "epicsAssert.h"
-#include "shareLib.h"
+#define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
-epicsShareFunc void epicsShareAPI ca_repeater (void);
+#include "epicsAssert.h"
+#include "udpiiu.h"
 
 int main()
 {
     ca_repeater ();
-    assert (0);
-    return (0);
+    assert ( 0 );
+    return ( 0 );
 }
 

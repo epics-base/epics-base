@@ -13,7 +13,14 @@
 
 #include <float.h>
 
+#define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
+
 #include "iocinf.h"
+#include "localHostName.h"
+
+#define epicsExportSharedSymbols
+#include "cacIO.h"
+#undef epicsExportSharedSymbols
 
 cacChannel::~cacChannel ()
 {

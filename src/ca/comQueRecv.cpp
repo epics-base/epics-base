@@ -14,8 +14,10 @@
  *	johill@lanl.gov
  */
 
+#define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
+
 #include "iocinf.h"
-#include "comBuf_IL.h"
+#include "virtualCircuit.h"
 
 comQueRecv::comQueRecv ()
 {

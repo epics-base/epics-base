@@ -28,7 +28,10 @@
  *
  */
 
+#define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
+
 #include "iocinf.h"
+#include "syncGroup.h"
 #include "oldAccess.h"
 
 syncGroupWriteNotify::syncGroupWriteNotify ( CASG &sgIn, chid pChan, unsigned type, 
@@ -61,7 +64,7 @@ syncGroupWriteNotify::~syncGroupWriteNotify ()
 void syncGroupWriteNotify::completion ()
 {
     if ( this->magic != CASG_MAGIC ) {
-        ca_printf ("cac: sync group io_complete(): bad sync grp op magic number?\n");
+        this->sg.printf ( "cac: sync group io_complete(): bad sync grp op magic number?\n" );
         return;
     }
 
@@ -84,7 +87,7 @@ void syncGroupWriteNotify::exception (
 
 void syncGroupWriteNotify::show ( unsigned level ) const
 {
-    printf ( "pending write sg op\n" );
+    ::printf ( "pending write sg op\n" );
     if ( level > 0u ) {
         this->syncGroupNotify::show ( level - 1u );
     }

@@ -10,12 +10,14 @@
  *  Author: Jeff Hill
  */
 
-#include "iocinf.h"
-#include "netReadNotifyIO_IL.h"
-#include "nciu_IL.h"
-#include "baseNMIU_IL.h"
+#define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
-netReadNotifyIO::netReadNotifyIO ( nciu &chan, cacDataNotify &notify ) :
+#include "iocinf.h"
+#include "nciu.h"
+#include "netIO.h"
+#include "cac.h"
+
+netReadNotifyIO::netReadNotifyIO ( nciu &chan, cacReadNotify &notify ) :
     baseNMIU ( chan ), notify ( notify )
 {
 }
@@ -26,7 +28,7 @@ netReadNotifyIO::~netReadNotifyIO ()
 
 void netReadNotifyIO::show ( unsigned level ) const
 {
-    printf ( "read notify IO at %p\n", 
+    ::printf ( "read notify IO at %p\n", 
         static_cast < const void * > ( this ) );
     if ( level > 0u ) {
         this->baseNMIU::show ( level - 1u );

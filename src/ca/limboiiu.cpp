@@ -15,7 +15,10 @@
  *	505 665 1831
  */
 
+#define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
+
 #include "iocinf.h"
+#include "netiiu.h"
 
 limboiiu limboIIU;
 

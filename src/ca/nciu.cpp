@@ -21,13 +21,17 @@
 
 #include <new>
 
-#include "iocinf.h"
+#define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
-#include "nciu_IL.h"
-#include "netReadNotifyIO_IL.h"
-#include "netWriteNotifyIO_IL.h"
-#include "netSubscription_IL.h"
-#include "cac_IL.h"
+#include "iocinf.h"
+#include "netIO.h"
+#include "cac.h"
+
+#define epicsExportSharedSymbols
+#include "udpiiu.h"
+#include "cadef.h" // for ECA_STRTOBIG and TYPENOTCONN etc
+#include "db_access.h" // for INVALID_DB_REQ
+#undef epicsExportSharedSymbols
 
 tsFreeList < class nciu, 1024 > nciu::freeList;
 epicsMutex nciu::freeListMutex;
@@ -82,14 +86,14 @@ void nciu::connect ( unsigned nativeType,
     bool v41Ok;
 
     if ( ! this->f_claimSent ) {
-        ca_printf (
+        this->cacCtx.printf (
             "CAC: Ignored conn resp to chan lacking virtual circuit CID=%u SID=%u?\n",
             this->getId (), sidIn );
         return;
     }
 
     if ( this->f_connected ) {
-        ca_printf (
+        this->cacCtx.printf (
             "CAC: Ignored conn resp to conn chan CID=%u SID=%u?\n",
             this->getId (), sidIn );
         return;
@@ -127,7 +131,7 @@ void nciu::connect ( unsigned nativeType,
     // resubscribe for monitors from this channel 
     this->cacCtx.connectAllIO ( *this );
 
-    this->notify().connectNotify ( *this );
+    this->notify().connectNotify ();
 
     /*
      * if less than v4.1 then the server will never
@@ -136,7 +140,7 @@ void nciu::connect ( unsigned nativeType,
      * their call back here
      */
     if ( ! v41Ok ) {
-        this->notify().accessRightsNotify ( *this, this->accessRightState );
+        this->notify().accessRightsNotify ( this->accessRightState );
     }
 }
 
@@ -167,8 +171,8 @@ void nciu::disconnect ( netiiu &newiiu )
         /*
          * look for events that have an event cancel in progress
          */
-        this->notify().disconnectNotify ( *this );
-        this->notify().accessRightsNotify ( *this, this->accessRightState );
+        this->notify().disconnectNotify ();
+        this->notify().accessRightsNotify ( this->accessRightState );
     }
 
     this->resetRetryCount ();
@@ -223,7 +227,7 @@ void nciu::createChannelRequest ()
 }
 
 cacChannel::ioStatus nciu::read ( unsigned type, unsigned long countIn, 
-                     cacDataNotify &notify, ioid *pId )
+                     cacReadNotify &notify, ioid *pId )
 {
     //
     // fail out if their arguments are invalid
@@ -284,7 +288,7 @@ void nciu::write ( unsigned type,
 }
 
 cacChannel::ioStatus nciu::write ( unsigned type, unsigned long countIn, 
-                        const void *pValue, cacNotify &notify, ioid *pId )
+                        const void *pValue, cacWriteNotify &notify, ioid *pId )
 {
     if ( ! this->accessRightState.writePermit() ) {
         throw noWriteAccess();
@@ -306,7 +310,7 @@ cacChannel::ioStatus nciu::write ( unsigned type, unsigned long countIn,
 }
 
 void nciu::subscribe ( unsigned type, unsigned long nElem, 
-                         unsigned mask, cacDataNotify &notify, ioid *pId )
+                         unsigned mask, cacStateNotify &notify, ioid *pId )
 {
     if ( INVALID_DB_REQ(type) ) {
         throw badType();
@@ -434,32 +438,32 @@ void nciu::show ( unsigned level ) const
     if ( this->f_connected ) {
         char hostNameTmp [256];
         this->hostName ( hostNameTmp, sizeof ( hostNameTmp ) );
-        printf ( "Channel \"%s\", connected to server %s", 
+        ::printf ( "Channel \"%s\", connected to server %s", 
             this->pNameStr, hostNameTmp );
         if ( level > 1u ) {
             int tmpTypeCode = static_cast < int > ( this->typeCode );
-            printf ( ", native type %s, native element count %u",
+            ::printf ( ", native type %s, native element count %u",
                 dbf_type_to_text ( tmpTypeCode ), this->count );
-            printf ( ", %sread access, %swrite access", 
+            ::printf ( ", %sread access, %swrite access", 
                 this->accessRightState.readPermit() ? "" : "no ", 
                 this->accessRightState.writePermit() ? "" : "no ");
         }
-        printf ( "\n" );
+        ::printf ( "\n" );
     }
     else if ( this->f_previousConn ) {
-        printf ( "Channel \"%s\" (previously connected to a server)\n", this->pNameStr );
+        ::printf ( "Channel \"%s\" (previously connected to a server)\n", this->pNameStr );
     }
     else {
-        printf ( "Channel \"%s\" (unable to locate server)\n", this->pNameStr );
+        ::printf ( "Channel \"%s\" (unable to locate server)\n", this->pNameStr );
     }
 
     if ( level > 2u ) {
-        printf ( "\tnetwork IO pointer = %p\n", 
+        ::printf ( "\tnetwork IO pointer = %p\n", 
             static_cast <void *> ( this->piiu ) );
-        printf ( "\tserver identifier %u\n", this->sid );
-        printf ( "\tsearch retry number=%u, search retry sequence number=%u\n", 
+        ::printf ( "\tserver identifier %u\n", this->sid );
+        ::printf ( "\tsearch retry number=%u, search retry sequence number=%u\n", 
             this->retry, this->retrySeqNo );
-        printf ( "\tname length=%u\n", this->nameLength );
+        ::printf ( "\tname length=%u\n", this->nameLength );
     }
 }
 

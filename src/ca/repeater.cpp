@@ -54,8 +54,19 @@
  * 
  */
 
-#include    "iocinf.h"
-#include    "taskwd.h"
+#define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
+
+#include "tsDLList.h"
+#include "envdefs.h"
+#include "tsFreeList.h"
+
+#include "iocinf.h"
+#include "caProto.h"
+#include "taskwd.h"
+
+#define epicsExportSharedSymbols
+#include "udpiiu.h"
+#undef epicsExportSharedSymbols
 
 /*
  * one socket per client so we will get the ECONNREFUSED
@@ -141,8 +152,7 @@ LOCAL makeSocketReturn makeSocket ( unsigned short port, bool reuseAddr )
                         (char *) &flag, sizeof (flag) );
             if ( status < 0 ) {
                 int errnoCpy = SOCKERRNO;
-                ca_printf (
-            "%s: set socket option failed because \"%s\"\n", 
+                fprintf ( stderr, "%s: set socket option failed because \"%s\"\n", 
                         __FILE__, SOCKERRSTR(errnoCpy));
             }
         }
@@ -166,7 +176,7 @@ bool repeaterClient::connect ()
 
     msr = makeSocket ( PORT_ANY, false );
     if ( msr.sock == INVALID_SOCKET ) {
-        ca_printf ( "%s: no client sock because %d=\"%s\"\n",
+        fprintf ( stderr, "%s: no client sock because %d=\"%s\"\n",
                 __FILE__, msr.errNumber, msr.pErrStr );
         return false;
     }
@@ -177,8 +187,7 @@ bool repeaterClient::connect ()
     if ( status < 0 ) {
         int errnoCpy = SOCKERRNO;
 
-        ca_printf (
-            "%s: unable to connect client sock because \"%s\"\n",
+        fprintf ( stderr, "%s: unable to connect client sock because \"%s\"\n",
             __FILE__, SOCKERRSTR ( errnoCpy ) );
         return false;
     }
@@ -204,7 +213,7 @@ bool repeaterClient::sendConfirm ()
         return false;
     }
     else {
-        ca_printf ( "CA Repeater: confirm err was \"%s\"\n",
+        fprintf ( stderr, "CA Repeater: confirm err was \"%s\"\n",
                 SOCKERRSTR (SOCKERRNO) );
         return false;
     }
@@ -297,8 +306,7 @@ bool repeaterClient::verify ()
          * win sock does not set SOCKERRNO when this fails
          */
         if ( msr.errNumber != SOCK_EADDRINUSE ) {
-            ca_printf (
-"CA Repeater: bind test err was %d=\"%s\"\n", 
+            fprintf ( stderr, "CA Repeater: bind test err was %d=\"%s\"\n", 
                 msr.errNumber, msr.pErrStr );
         }
         return true;
@@ -375,7 +383,7 @@ LOCAL void register_new_client ( osiSockAddr &from )
         if ( ! init ) {
             msr = makeSocket ( PORT_ANY, true );
             if ( msr.sock == INVALID_SOCKET ) {
-                ca_printf ( "%s: Unable to create repeater bind test socket because %d=\"%s\"\n",
+                fprintf ( stderr, "%s: Unable to create repeater bind test socket because %d=\"%s\"\n",
                     __FILE__, msr.errNumber, msr.pErrStr );
             }
             else {
@@ -425,7 +433,7 @@ LOCAL void register_new_client ( osiSockAddr &from )
     else {
         pNewClient = new repeaterClient ( from );
         if ( ! pNewClient ) {
-            ca_printf ( "%s: no memory for new client\n", __FILE__ );
+            fprintf ( stderr, "%s: no memory for new client\n", __FILE__ );
             return;
         }
         if ( ! pNewClient->connect () ) {
@@ -470,9 +478,9 @@ LOCAL void register_new_client ( osiSockAddr &from )
 
 
 /*
- *  ca_repeater()
+ *  ca_repeater ()
  */
-void epicsShareAPI ca_repeater ()
+void ca_repeater () 
 {
     int size;
     SOCKET sock;
@@ -494,7 +502,7 @@ void epicsShareAPI ca_repeater ()
             debugPrintf ( ( "CA Repeater: exiting because a repeater is already running\n" ) );
             exit (0);
         }
-        ca_printf("%s: Unable to create repeater socket because %d=\"%s\" - fatal\n",
+        fprintf ( stderr, "%s: Unable to create repeater socket because %d=\"%s\" - fatal\n",
             __FILE__, msr.errNumber, msr.pErrStr);
         osiSockRelease ();
         exit(0);
@@ -519,8 +527,8 @@ void epicsShareAPI ca_repeater ()
                     continue;
                 }
 #           endif
-            ca_printf ("CA Repeater: unexpected UDP recv err: %s\n",
-                SOCKERRSTR(errnoCpy));
+            fprintf ( stderr, "CA Repeater: unexpected UDP recv err: %s\n",
+                SOCKERRSTR (errnoCpy) );
             continue;
         }
 

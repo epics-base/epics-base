@@ -16,7 +16,6 @@
 #ifndef INCLcadefh
 #define INCLcadefh
 
-
 /*
  * done in two ifdef steps so that we will remain compatible with
  * traditional C
@@ -37,7 +36,17 @@
 #   endif
 #endif
 
-#include "epicsThread.h"
+#ifdef epicsExportSharedSymbols
+#   define INCLcadefh_accessh_epicsExportSharedSymbols
+#   undef epicsExportSharedSymbols
+#endif
+
+#   include "epicsThread.h"
+
+#ifdef INCLcadefh_accessh_epicsExportSharedSymbols
+#   define epicsExportSharedSymbols
+#endif
+
 #include "shareLib.h"
 #include "caerr.h"
 #include "db_access.h"
@@ -85,7 +94,6 @@ typedef void caArh ();
 /*  The conversion routine to call for each type    */
 #define VALID_TYPE(TYPE)  (((unsigned short)TYPE)<=LAST_BUFFER_TYPE)
 
-
 /* 
  * Arguments passed to event handlers and get/put call back handlers.   
  *
@@ -109,13 +117,12 @@ typedef void caEventCallBackFunc (struct event_handler_args);
 typedef void caEventCallBackFunc ();
 #endif /*CAC_ANSI_FUNC_PROTO*/
 
-
 epicsShareFunc void epicsShareAPI ca_test_event
-    (
+(
 #ifdef CAC_ANSI_FUNC_PROTO 
     struct event_handler_args
 #endif /*CAC_ANSI_FUNC_PROTO*/
-    );
+);
 
 /* Format for the arguments to user exception handlers          */
 struct exception_handler_args {
@@ -644,7 +651,7 @@ epicsShareFunc int epicsShareAPI ca_clear_event
  * timeOut  R   wait for this delay in seconds
  */
 epicsShareFunc int epicsShareAPI ca_pend_event (ca_real timeOut);
-#define ca_poll() ca_pend_event((1e-12))
+#define ca_poll() ca_pend_event( ( 1e-12 ) )
 
 /*
  * ca_pend_io()
@@ -1028,5 +1035,5 @@ ca_sg_array_put(gid, type, 1u, chan, pValue)
 /*
  * no additions below this endif
  */
-#endif /* INCLcadefh */
+#endif /* ifndef INCLcadefh */
 

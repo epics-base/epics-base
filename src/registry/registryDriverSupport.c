@@ -13,8 +13,8 @@ of this distribution.
 
 #include "dbBase.h"
 #include "drvSup.h"
-#include "registry.h"
 #define epicsExportSharedSymbols
+#include "registry.h"
 #include "registryDriverSupport.h"
 
 const char *driverSupport = "driver support";

@@ -33,20 +33,18 @@
  * 28apr92,ajk	Implemented new event flag mode.
  * 21may92,ajk	Will periodically announce number of connected channels
  *		if waiting form some to connect.
+ * 17feb93,ajk	Implemented code to allow sharing of a single CA task by
+ *		all state programs.  Added seq_disconnect() and ca_import_cancel().
+		DB name resolution was moved to seq_main.c.
+ * 19feb93,ajk	Added patched version of VxWorks 5.02b taskVarDelete().
  */
 
+#define		ANSI
 #include	"seq.h"
 
-#ifdef	ANSI
-LOCAL void *getPtrToValue(union db_access_val *, chtype);
-#else
-LOCAL void *getPtrToValue();
-#endif
-
+LOCAL VOID *getPtrToValue(union db_access_val *, chtype);
 
 /*#define		DEBUG*/
-
-#define		MACRO_STR_LEN	(MAX_STRING_SIZE+1)
 
 /*
  * seq_connect() - Connect to all database channels through channel access.
@@ -56,14 +54,10 @@ SPROG		*pSP;
 {
 	CHAN		*pDB;
 	int		status, i;
-	MACRO		*macro_tbl;
 	extern		VOID seq_conn_handler();
-
-	/* Initialize CA task */
-	ca_task_initialize();
+	extern int	seqInitialTaskId;
 
 	pSP->conn_count = 0;
-	macro_tbl = pSP->mac_ptr;
 
 	/*
 	 * For each channel: substitute macros, connect to db,
@@ -72,10 +66,6 @@ SPROG		*pSP;
 	pDB = pSP->channels;
 	for (i = 0; i < pSP->nchan; i++)
 	{
-		/* Do macro substitution on channel name */
-		pDB->db_name = seqAlloc(pSP, MACRO_STR_LEN);
-		seqMacEval(pDB->db_uname, pDB->db_name, MACRO_STR_LEN,
-		 macro_tbl);
 #ifdef	DEBUG
 		printf("connect to \"%s\"\n", pDB->db_name);
 #endif	DEBUG
@@ -107,23 +97,6 @@ SPROG		*pSP;
 		pDB++;
 	}
 	ca_flush_io();
-
-	if (pSP->options & OPT_CONN)
-	{	/* Wait for all connections to complete ("+c" option) */
-		for (i = 1; pSP->conn_count < pSP->nchan; i++)
-		{
-			if (i <= 2)
-				taskDelay(6); /* 1-st 2 times we delay 0.1 sec */
-			else
-				taskDelay(30); /* thereafter we delay 0.5 sec */
-			/* Log a message after about 5 sec
-			 * or about every 50 sec thereafter */
-			if (i == 12 || (i % 100) == 0)
-				logMsg("%d of %d channels connected\n",
-				 pSP->conn_count, pSP->nchan);
-		}
-	}
-
 	return 0;
 }
 /*
@@ -161,6 +134,55 @@ struct	event_handler_args args;
 
 	return;
 }
+/*	Disconnect all database channels */
+seq_disconnect(pSP)
+SPROG		*pSP;
+{
+	CHAN		*pDB;
+	STATUS		status;
+	int		i;
+	extern int	seqAuxTaskId;
+
+	/* Did we already disconnect? */
+	if (pSP->conn_count < 0)
+		return 0;
+
+	/* Import Channel Access context from the auxillary seq. task */
+	ca_import(seqAuxTaskId);
+
+	pDB = pSP->channels;
+	for (i = 0; i < pSP->nchan; i++)
+	{
+#ifdef	DEBUG
+		printf("disconnect \"%s\"\n", pDB->db_name);
+#endif	DEBUG
+		/* Disconnect this channel */
+		status = ca_clear_channel(pDB->chid);
+
+		if (status != ECA_NORMAL)
+		{
+			SEVCHK(status, "ca_clear_chan");
+			ca_task_exit();
+			return -1;
+		}
+
+		/* Clear monitor & connect indicators */
+		pDB->monitored = FALSE;
+		pDB->connected = FALSE;
+
+		pDB++;
+	}
+
+	pSP->conn_count = -1; /* flag to indicate all disconnected */
+
+	ca_flush_io();
+
+	/* Cancel CA import */
+	ca_import_cancel(taskIdSelf());
+
+	return 0;
+}
+
 /*
  * seq_conn_handler() - Sequencer connection handler.
  * Called each time a connection is established or broken.
@@ -456,7 +478,7 @@ CHAN	*pDB;	/* ptr to channel struct */
 /* 
  * getPtr() - Given ptr to value structure & type, return ptr to value.
  */
-LOCAL void *getPtrToValue(pBuf, dbrType)
+LOCAL VOID *getPtrToValue(pBuf, dbrType)
 union db_access_val *pBuf;
 chtype	dbrType;
 {
@@ -484,4 +506,75 @@ chtype	dbrType;
 	default:		return NULL;
     }
 }
+#include "memLib.h"
+#include "taskVarLib.h"
+#include "taskLib.h"
+/*******************************************************************************
+* P A  T C H E D  5.02b -- allows call from taskDeleteHook routine -- ajk
+* taskVarDelete - remove a task variable from a task
+*
+* This routine removes the specified task variable from the calling
+* task's context.  The private value of that variable is lost.
+*
+* RETURNS
+* OK, or
+* ERROR if the calling task does not own the specified task variable.
+*
+* SEE ALSO: taskVarAdd(2), taskVarGet(2), taskVarSet(2)
+*/
 
+LOCAL STATUS taskVarDelete (tid, pVar)
+    int tid;	/* task id whose task variable is to be retrieved */
+    int *pVar;	/* pointer to task variable to be removed from task */
+
+    {
+    FAST TASK_VAR **ppTaskVar;		/* ptr to ptr to next node */
+    FAST TASK_VAR *pTaskVar;
+    WIND_TCB *pTcb = (WIND_TCB *)tid;	/* P A T C H -- ajk 19feb93*/
+
+    if (pTcb == NULL)			/* check that task is valid */
+	return (ERROR);
+
+    /* find descriptor for specified task variable */
+
+    for (ppTaskVar = &pTcb->pTaskVar;
+	 *ppTaskVar != NULL;
+	 ppTaskVar = &((*ppTaskVar)->next))
+	{
+	pTaskVar = *ppTaskVar;
+
+	if (pTaskVar->address == pVar)
+	    {
+	    /* if active task, replace background value */
+
+	    if (taskIdCurrent == pTcb)
+		*pVar = pTaskVar->value;
+
+	    *ppTaskVar = pTaskVar->next;/* delete variable from list */
+
+	    free ((char *)pTaskVar);	/* free storage of deleted cell */
+
+	    return (OK);
+	    }
+	}
+
+    /* specified address is not a task variable for specified task */
+
+    errnoSet (S_taskLib_TASK_VAR_NOT_FOUND);
+    return (ERROR);
+    }
+/* Temporary routine to cancel ca_import() -- THIS SHOULD GO INTO CHANNEL ACCESS! */
+ca_import_cancel(tid)
+int		tid;
+{
+	extern int	ca_static;
+	int		status;
+
+	status = taskVarDelete(tid, &ca_static);
+	if (status != OK)
+	{
+		logMsg("Seq: taskVarDelete failed for tid = 0x%x\n", tid);
+	}
+
+	return status;
+}

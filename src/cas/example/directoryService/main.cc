@@ -39,7 +39,7 @@ extern int main (int argc, const char **argv)
 		if (sscanf(argv[i], "-d %u", &debugLevel)==1) {
 			continue;
 		}
-		if (sscanf(argv[i],"-t %f", &executionTime)==1) {
+		if (sscanf(argv[i],"-t %lf", &executionTime)==1) {
 			forever = aitFalse;
 			continue;
 		}

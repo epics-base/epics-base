@@ -18,8 +18,6 @@
 #include "netiiu_IL.h"
 #include "cac_IL.h"
 
-typedef void (*pProtoStubUDP) (udpiiu *piiu, caHdr *pMsg, const struct sockaddr_in *pnet_addr);
-
 // UDP protocol dispatch table
 const udpiiu::pProtoStubUDP udpiiu::udpJumpTableCAC [] = 
 {
@@ -41,292 +39,7 @@ const udpiiu::pProtoStubUDP udpiiu::udpJumpTableCAC [] =
     &udpiiu::badUDPRespAction,
     &udpiiu::badUDPRespAction,
     &udpiiu::repeaterAckAction,
-    &udpiiu::badUDPRespAction,
-    &udpiiu::badUDPRespAction,
-    &udpiiu::badUDPRespAction,
-    &udpiiu::badUDPRespAction,
-    &udpiiu::badUDPRespAction,
-    &udpiiu::badUDPRespAction,
-    &udpiiu::badUDPRespAction,
-    &udpiiu::badUDPRespAction,
-    &udpiiu::badUDPRespAction,
-    &udpiiu::badUDPRespAction
 };
-
-//
-//  udpiiu::recvMsg ()
-//
-void udpiiu::recvMsg ()
-{
-    osiSockAddr src;
-    osiSocklen_t src_size = sizeof (src);
-    int status;
-
-    status = recvfrom ( this->sock, this->recvBuf, sizeof ( this->recvBuf ), 0,
-                        &src.sa, &src_size );
-    if ( status <= 0 ) {
-
-        if ( status == 0 ) {
-            return;
-        }
-
-        int errnoCpy = SOCKERRNO;
-
-        if ( errnoCpy == SOCK_SHUTDOWN ) {
-            return;
-        }
-        if ( errnoCpy == SOCK_ENOTSOCK ) {
-            return;
-        }
-        if ( errnoCpy == SOCK_EBADF ) {
-            return;
-        }
-        if ( errnoCpy == SOCK_EINTR ) {
-            return;
-        }
-#       ifdef linux
-            /*
-             * Avoid spurious ECONNREFUSED bug
-             * in linux
-             */
-            if ( errnoCpy == SOCK_ECONNREFUSED ) {
-                return;
-            }
-#       endif
-        ca_printf ( "Unexpected UDP recv error was \"%s\"\n", 
-            SOCKERRSTR (errnoCpy) );
-    }
-    else if ( status > 0 ) {
-        status = this->postMsg ( src,
-                    this->recvBuf, (unsigned long) status );
-        if ( status != ECA_NORMAL ) {
-            char buf[64];
-
-            sockAddrToDottedIP ( &src.sa, buf, sizeof ( buf ) );
-
-            ca_printf (
-                "%s: bad UDP msg from %s because \"%s\"\n", __FILE__, 
-                            buf, ca_message (status) );
-            return;
-        }
-    }
-    
-    return;
-}
-
-/*
- *  cacRecvThreadUDP ()
- */
-extern "C" void cacRecvThreadUDP (void *pParam)
-{
-    udpiiu *piiu = (udpiiu *) pParam;
-
-    do {
-        piiu->recvMsg ();
-    } while ( ! piiu->shutdownCmd );
-
-    epicsEventSignal ( piiu->recvThreadExitSignal );
-}
-
-/*
- *  udpiiu::repeaterRegistrationMessage ()
- *
- *  register with the repeater 
- */
-void udpiiu::repeaterRegistrationMessage ( unsigned attemptNumber )
-{
-    caRepeaterRegistrationMessage ( this->sock, this->repeaterPort, attemptNumber );
-}
-
-/*
- *  caRepeaterRegistrationMessage ()
- *
- *  register with the repeater 
- */
-epicsShareFunc void epicsShareAPI caRepeaterRegistrationMessage ( 
-           SOCKET sock, unsigned repeaterPort, unsigned attemptNumber )
-{
-    caHdr msg;
-    osiSockAddr saddr;
-    int status;
-    int len;
-
-    /*
-     * In 3.13 beta 11 and before the CA repeater calls local_addr() 
-     * to determine a local address and does not allow registration 
-     * messages originating from other addresses. In these 
-     * releases local_addr() returned the address of the first enabled
-     * interface found, and this address may or may not have been the loop
-     * back address. Starting with 3.13 beta 12 local_addr() was
-     * changed to always return the address of the first enabled 
-     * non-loopback interface because a valid non-loopback local
-     * address is required in the beacon messages. Therefore, to 
-     * guarantee compatibility with past versions of the repeater
-     * we alternate between the address returned by local_addr()
-     * and the loopback address here.
-     *
-     * CA repeaters in R3.13 beta 12 and higher allow
-     * either the loopback address or the address returned
-     * by local address (the first non-loopback address found)
-     */
-    if ( attemptNumber & 1 ) {
-        saddr = osiLocalAddr ( sock );
-        if ( saddr.sa.sa_family != AF_INET ) {
-            /*
-             * use the loop back address to communicate with the CA repeater
-             * if this os does not have interface query capabilities
-             *
-             * this will only work with 3.13 beta 12 CA repeaters or later
-             */
-            saddr.ia.sin_family = AF_INET;
-            saddr.ia.sin_addr.s_addr = htonl ( INADDR_LOOPBACK );
-            saddr.ia.sin_port = htons ( repeaterPort );   
-        }
-        else {
-            saddr.ia.sin_port = htons ( repeaterPort );   
-        }
-    }
-    else {
-        saddr.ia.sin_family = AF_INET;
-        saddr.ia.sin_addr.s_addr = htonl ( INADDR_LOOPBACK );
-        saddr.ia.sin_port = htons ( repeaterPort );   
-    }
-
-    memset ( (char *) &msg, 0, sizeof (msg) );
-    msg.m_cmmd = htons ( REPEATER_REGISTER );
-    msg.m_available = saddr.ia.sin_addr.s_addr;
-
-    /*
-     * Intentionally sending a zero length message here
-     * until most CA repeater daemons have been restarted
-     * (and only then will accept the above protocol)
-     * (repeaters began accepting this protocol
-     * starting with EPICS 3.12)
-     *
-     * SOLARIS will not accept a zero length message
-     * and we are just porting there for 3.12 so we will use the 
-     * new protocol for 3.12
-     *
-     * recent versions of UCX will not accept a zero 
-     * length message and we will assume that folks
-     * using newer versions of UCX have rebooted (and
-     * therefore restarted the CA repeater - and therefore
-     * moved it to an EPICS release that accepts this protocol)
-     */
-#   if defined ( DOES_NOT_ACCEPT_ZERO_LENGTH_UDP )
-        len = sizeof (msg);
-#   else 
-        len = 0;
-#   endif 
-
-    status = sendto ( sock, (char *) &msg, len,  
-                0, (struct sockaddr *) &saddr, sizeof ( saddr ) );
-    if ( status < 0 ) {
-        int errnoCpy = SOCKERRNO;
-        if ( errnoCpy != SOCK_EINTR && 
-            /*
-             * This is returned from Linux when
-             * the repeater isnt running
-             */
-            errnoCpy != SOCK_ECONNREFUSED ) {
-            ca_printf ( "CAC: error sending to repeater was \"%s\"\n", 
-                SOCKERRSTR (errnoCpy) );
-        }
-    }
-}
-
-/*
- *  caStartRepeaterIfNotInstalled ()
- *
- *  Test for the repeater already installed
- *
- *  NOTE: potential race condition here can result
- *  in two copies of the repeater being spawned
- *  however the repeater detects this, prints a message,
- *  and lets the other task start the repeater.
- *
- *  QUESTION: is there a better way to test for a port in use? 
- *  ANSWER: none that I can find.
- *
- *  Problems with checking for the repeater installed
- *  by attempting to bind a socket to its address
- *  and port.
- *
- *  1) Closed socket may not release the bound port
- *  before the repeater wakes up and tries to grab it.
- *  Attempting to bind the open socket to another port
- *  also does not work.
- *
- *  072392 - problem solved by using SO_REUSEADDR
- */
-epicsShareFunc void epicsShareAPI caStartRepeaterIfNotInstalled ( unsigned repeaterPort )
-{
-    bool installed = false;
-    int status;
-    SOCKET tmpSock;
-    struct sockaddr_in bd;
-    int flag;
-
-    if ( repeaterPort > 0xffff ) {
-        ca_printf ( "caStartRepeaterIfNotInstalled () : strange repeater port specified\n");
-        return;
-    }
-
-    tmpSock = socket ( AF_INET, SOCK_DGRAM, IPPROTO_UDP );
-    if ( tmpSock != INVALID_SOCKET ) {
-        ca_uint16_t port = static_cast < ca_uint16_t > ( repeaterPort );
-        memset ( (char *) &bd, 0, sizeof ( bd ) );
-        bd.sin_family = AF_INET;
-        bd.sin_addr.s_addr = htonl ( INADDR_ANY ); 
-        bd.sin_port = htons ( port );   
-        status = bind ( tmpSock, (struct sockaddr *) &bd, sizeof ( bd ) );
-        if ( status < 0 ) {
-            if ( SOCKERRNO == SOCK_EADDRINUSE ) {
-                installed = true;
-            }
-            else {
-                ca_printf ( "caStartRepeaterIfNotInstalled () : bind failed\n");
-            }
-        }
-    }
-
-    /*
-     * turn on reuse only after the test so that
-     * this works on kernels that support multicast
-     */
-    flag = TRUE;
-    status = setsockopt ( tmpSock, SOL_SOCKET, SO_REUSEADDR, 
-                (char *) &flag, sizeof ( flag ) );
-    if ( status < 0 ) {
-        ca_printf ( "caStartRepeaterIfNotInstalled () : set socket option reuseaddr set failed\n");
-    }
-
-    socket_close ( tmpSock );
-
-    if ( ! installed ) {
-        osiSpawnDetachedProcessReturn osptr;
-        
-	    /*
-	     * This is not called if the repeater is known to be 
-	     * already running. (in the event of a race condition 
-	     * the 2nd repeater exits when unable to attach to the 
-	     * repeater's port)
-	     */
-        osptr = osiSpawnDetachedProcess ( "CA Repeater", "caRepeater" );
-        if ( osptr == osiSpawnDetachedProcessNoSupport ) {
-            epicsThreadId tid;
-
-            tid = epicsThreadCreate ( "CAC-repeater", epicsThreadPriorityLow,
-                    epicsThreadGetStackSize (epicsThreadStackMedium), caRepeaterThread, 0);
-            if ( tid == 0 ) {
-                ca_printf ("caStartRepeaterIfNotInstalled : unable to create CA repeater daemon thread\n");
-            }
-        }
-        else if ( osptr == osiSpawnDetachedProcessFail ) {
-            ca_printf ( "caStartRepeaterIfNotInstalled (): unable to start CA repeater daemon detached process\n" );
-        }
-    }
-}
 
 //
 // udpiiu::udpiiu ()
@@ -336,11 +49,11 @@ udpiiu::udpiiu ( cac &cac ) :
 {
     static const unsigned short PORT_ANY = 0u;
     osiSockAddr addr;
-    int boolValue = TRUE;
+    int boolValue = true;
     int status;
 
     this->repeaterPort = 
-        envGetInetPortConfigParam (&EPICS_CA_REPEATER_PORT, CA_REPEATER_PORT);
+        envGetInetPortConfigParam ( &EPICS_CA_REPEATER_PORT, CA_REPEATER_PORT );
 
     this->serverPort = 
         envGetInetPortConfigParam ( &EPICS_CA_SERVER_PORT, CA_SERVER_PORT );
@@ -353,10 +66,10 @@ udpiiu::udpiiu ( cac &cac ) :
     }
 
     status = setsockopt ( this->sock, SOL_SOCKET, SO_BROADCAST, 
-                (char *) &boolValue, sizeof (boolValue) );
-    if (status<0) {
-        ca_printf ("CAC: unable to enable IP broadcasting because = \"%s\"\n",
-            SOCKERRSTR (SOCKERRNO));
+                (char *) &boolValue, sizeof ( boolValue ) );
+    if ( status < 0 ) {
+        ca_printf ("CAC: IP broadcasting enable failed because = \"%s\"\n",
+            SOCKERRSTR ( SOCKERRNO ) );
     }
 
 #if 0
@@ -454,7 +167,7 @@ udpiiu::udpiiu ( cac &cac ) :
     void *fdRegArg;
     this->pCAC ()->getFDRegCallback ( fdRegFunc, fdRegArg );
     if ( fdRegFunc ) {
-        ( *fdRegFunc ) ( fdRegArg, this->sock, TRUE );
+        ( *fdRegFunc ) ( fdRegArg, this->sock, true );
     }    
 }
 
@@ -474,7 +187,7 @@ udpiiu::~udpiiu ()
     void *fdRegArg;
     this->pCAC ()->getFDRegCallback ( fdRegFunc, fdRegArg );
     if ( fdRegFunc ) {
-        ( *fdRegFunc ) ( fdRegArg, this->sock, FALSE );
+        ( *fdRegFunc ) ( fdRegArg, this->sock, false );
     }    
     
     if ( ! this->sockCloseCompleted ) {
@@ -482,77 +195,326 @@ udpiiu::~udpiiu ()
     }
 }
 
-/*
- *  udpiiu::shutdown ()
- */
-void udpiiu::shutdown ()
+//
+//  udpiiu::recvMsg ()
+//
+void udpiiu::recvMsg ()
 {
-    bool laborNeeded;
+    osiSockAddr src;
+    osiSocklen_t src_size = sizeof ( src );
+    int status;
 
-    {
-        epicsAutoMutex autoMutex ( this->mutex );
-        laborNeeded = ! this->shutdownCmd;
-        this->shutdownCmd = true;
-    }
+    status = recvfrom ( this->sock, this->recvBuf, sizeof ( this->recvBuf ), 0,
+                        &src.sa, &src_size );
+    if ( status <= 0 ) {
 
-    if ( laborNeeded ) {
-        int status;
-        osiSockAddr addr;
-
-        caHdr msg;
-        msg.m_cmmd = htons ( CA_PROTO_NOOP );
-        msg.m_available = htonl ( 0u );
-        msg.m_dataType = htons ( 0u );
-        msg.m_count = htons ( 0u );
-        msg.m_cid = htonl ( 0u );
-        msg.m_postsize = htons ( 0u );
-
-        addr.ia.sin_family = AF_INET;
-        addr.ia.sin_addr.s_addr = htonl ( INADDR_LOOPBACK );
-        addr.ia.sin_port = htons ( this->localPort );
-
-        // send a wakeup msg so the UDP recv thread will exit
-        status = sendto ( this->sock, reinterpret_cast < const char * > ( &msg ),  
-                sizeof (msg), 0, &addr.sa, sizeof ( addr.sa ) );
-        if ( status < 0 ) {
-            // this knocks the UDP input thread out of recv ()
-            // on all os except linux
-            status = socket_close ( this->sock );
-            if ( status ) {
-                errlogPrintf ("CAC UDP socket close error was %s\n", 
-                    SOCKERRSTR ( SOCKERRNO ) );
-            }
-            else {
-                this->sockCloseCompleted = true;
-            }
+        if ( status == 0 ) {
+            return;
         }
 
-        // wait for recv threads to exit
-        epicsEventMustWait ( this->recvThreadExitSignal );
+        int errnoCpy = SOCKERRNO;
+
+        if ( errnoCpy == SOCK_SHUTDOWN ) {
+            return;
+        }
+        if ( errnoCpy == SOCK_ENOTSOCK ) {
+            return;
+        }
+        if ( errnoCpy == SOCK_EBADF ) {
+            return;
+        }
+        if ( errnoCpy == SOCK_EINTR ) {
+            return;
+        }
+#       ifdef linux
+            /*
+             * Avoid spurious ECONNREFUSED bug
+             * in linux
+             */
+            if ( errnoCpy == SOCK_ECONNREFUSED ) {
+                return;
+            }
+#       endif
+        ca_printf ( "Unexpected UDP recv error was \"%s\"\n", 
+            SOCKERRSTR (errnoCpy) );
     }
-}
-
-void udpiiu::badUDPRespAction ( const caHdr &msg, const osiSockAddr &netAddr )
-{
-    char buf[256];
-    sockAddrToDottedIP ( &netAddr.sa, buf, sizeof ( buf ) );
-    ca_printf ( "CAC: Bad response code in UDP message from %s was %u\n", 
-        buf, msg.m_cmmd);
-}
-
-void udpiiu::noopAction ( const caHdr &, const osiSockAddr & )
-{
+    else if ( status > 0 ) {
+        this->postMsg ( src,
+                    this->recvBuf, (unsigned long) status );
+    }
     return;
 }
 
-void udpiiu::searchRespAction ( const caHdr &msg, const osiSockAddr &addr )
+/*
+ *  cacRecvThreadUDP ()
+ */
+extern "C" void cacRecvThreadUDP ( void *pParam )
+{
+    udpiiu *piiu = (udpiiu *) pParam;
+    do {
+        piiu->recvMsg ();
+    } while ( ! piiu->shutdownCmd );
+    epicsEventSignal ( piiu->recvThreadExitSignal );
+}
+
+/*
+ *  udpiiu::repeaterRegistrationMessage ()
+ *
+ *  register with the repeater 
+ */
+void udpiiu::repeaterRegistrationMessage ( unsigned attemptNumber )
+{
+    caRepeaterRegistrationMessage ( this->sock, this->repeaterPort, attemptNumber );
+}
+
+/*
+ *  caRepeaterRegistrationMessage ()
+ *
+ *  register with the repeater 
+ */
+epicsShareFunc void epicsShareAPI caRepeaterRegistrationMessage ( 
+           SOCKET sock, unsigned repeaterPort, unsigned attemptNumber )
+{
+    caHdr msg;
+    osiSockAddr saddr;
+    int status;
+    int len;
+
+    /*
+     * In 3.13 beta 11 and before the CA repeater calls local_addr() 
+     * to determine a local address and does not allow registration 
+     * messages originating from other addresses. In these 
+     * releases local_addr() returned the address of the first enabled
+     * interface found, and this address may or may not have been the loop
+     * back address. Starting with 3.13 beta 12 local_addr() was
+     * changed to always return the address of the first enabled 
+     * non-loopback interface because a valid non-loopback local
+     * address is required in the beacon messages. Therefore, to 
+     * guarantee compatibility with past versions of the repeater
+     * we alternate between the address returned by local_addr()
+     * and the loopback address here.
+     *
+     * CA repeaters in R3.13 beta 12 and higher allow
+     * either the loopback address or the address returned
+     * by local address (the first non-loopback address found)
+     */
+    if ( attemptNumber & 1 ) {
+        saddr = osiLocalAddr ( sock );
+        if ( saddr.sa.sa_family != AF_INET ) {
+            /*
+             * use the loop back address to communicate with the CA repeater
+             * if this os does not have interface query capabilities
+             *
+             * this will only work with 3.13 beta 12 CA repeaters or later
+             */
+            saddr.ia.sin_family = AF_INET;
+            saddr.ia.sin_addr.s_addr = htonl ( INADDR_LOOPBACK );
+            saddr.ia.sin_port = htons ( repeaterPort );   
+        }
+        else {
+            saddr.ia.sin_port = htons ( repeaterPort );   
+        }
+    }
+    else {
+        saddr.ia.sin_family = AF_INET;
+        saddr.ia.sin_addr.s_addr = htonl ( INADDR_LOOPBACK );
+        saddr.ia.sin_port = htons ( repeaterPort );   
+    }
+
+    memset ( (char *) &msg, 0, sizeof (msg) );
+    msg.m_cmmd = htons ( REPEATER_REGISTER );
+    msg.m_available = saddr.ia.sin_addr.s_addr;
+
+    /*
+     * Intentionally sending a zero length message here
+     * until most CA repeater daemons have been restarted
+     * (and only then will they accept the above protocol)
+     * (repeaters began accepting this protocol
+     * starting with EPICS 3.12)
+     */
+#   if defined ( DOES_NOT_ACCEPT_ZERO_LENGTH_UDP )
+        len = sizeof (msg);
+#   else 
+        len = 0;
+#   endif 
+
+    status = sendto ( sock, (char *) &msg, len,  
+                0, (struct sockaddr *) &saddr, sizeof ( saddr ) );
+    if ( status < 0 ) {
+        int errnoCpy = SOCKERRNO;
+        /*
+         * Different OS return different codes when the repeater isnt running.
+         * Its ok to supress these messages because I print another warning message
+         * if we time out registerring with the repeater.
+         *
+         * Linux returns SOCK_ECONNREFUSED
+         * Windows 2000 returns SOCK_ECONNRESET
+         */
+        if (    errnoCpy != SOCK_EINTR && 
+                errnoCpy != SOCK_ECONNREFUSED && 
+                errnoCpy != SOCK_ECONNRESET ) {
+            ca_printf ( "CAC: error sending registration message to CA repeater daemon was \"%s\"\n", 
+                SOCKERRSTR ( errnoCpy ) );
+        }
+    }
+}
+
+/*
+ *  caStartRepeaterIfNotInstalled ()
+ *
+ *  Test for the repeater already installed
+ *
+ *  NOTE: potential race condition here can result
+ *  in two copies of the repeater being spawned
+ *  however the repeater detects this, prints a message,
+ *  and lets the other task start the repeater.
+ *
+ *  QUESTION: is there a better way to test for a port in use? 
+ *  ANSWER: none that I can find.
+ *
+ *  Problems with checking for the repeater installed
+ *  by attempting to bind a socket to its address
+ *  and port.
+ *
+ *  1) Closed socket may not release the bound port
+ *  before the repeater wakes up and tries to grab it.
+ *  Attempting to bind the open socket to another port
+ *  also does not work.
+ *
+ *  072392 - problem solved by using SO_REUSEADDR
+ */
+epicsShareFunc void epicsShareAPI caStartRepeaterIfNotInstalled ( unsigned repeaterPort )
+{
+    bool installed = false;
+    int status;
+    SOCKET tmpSock;
+    struct sockaddr_in bd;
+    int flag;
+
+    if ( repeaterPort > 0xffff ) {
+        ca_printf ( "caStartRepeaterIfNotInstalled () : strange repeater port specified\n");
+        return;
+    }
+
+    tmpSock = socket ( AF_INET, SOCK_DGRAM, IPPROTO_UDP );
+    if ( tmpSock != INVALID_SOCKET ) {
+        ca_uint16_t port = static_cast < ca_uint16_t > ( repeaterPort );
+        memset ( (char *) &bd, 0, sizeof ( bd ) );
+        bd.sin_family = AF_INET;
+        bd.sin_addr.s_addr = htonl ( INADDR_ANY ); 
+        bd.sin_port = htons ( port );   
+        status = bind ( tmpSock, (struct sockaddr *) &bd, sizeof ( bd ) );
+        if ( status < 0 ) {
+            if ( SOCKERRNO == SOCK_EADDRINUSE ) {
+                installed = true;
+            }
+            else {
+                ca_printf ( "caStartRepeaterIfNotInstalled () : bind failed\n");
+            }
+        }
+    }
+
+    /*
+     * turn on reuse only after the test so that
+     * this works on kernels that support multicast
+     */
+    flag = true;
+    status = setsockopt ( tmpSock, SOL_SOCKET, SO_REUSEADDR, 
+                (char *) &flag, sizeof ( flag ) );
+    if ( status < 0 ) {
+        ca_printf ( "caStartRepeaterIfNotInstalled () : set socket option reuseaddr set failed\n");
+    }
+
+    socket_close ( tmpSock );
+
+    if ( ! installed ) {
+        
+	    /*
+	     * This is not called if the repeater is known to be 
+	     * already running. (in the event of a race condition 
+	     * the 2nd repeater exits when unable to attach to the 
+	     * repeater's port)
+	     */
+        osiSpawnDetachedProcessReturn osptr = 
+            osiSpawnDetachedProcess ( "CA Repeater", "caRepeater" );
+        if ( osptr == osiSpawnDetachedProcessNoSupport ) {
+            epicsThreadId tid;
+
+            tid = epicsThreadCreate ( "CAC-repeater", epicsThreadPriorityLow,
+                    epicsThreadGetStackSize (epicsThreadStackMedium), caRepeaterThread, 0);
+            if ( tid == 0 ) {
+                ca_printf ("caStartRepeaterIfNotInstalled : unable to create CA repeater daemon thread\n");
+            }
+        }
+        else if ( osptr == osiSpawnDetachedProcessFail ) {
+            ca_printf ( "caStartRepeaterIfNotInstalled (): unable to start CA repeater daemon detached process\n" );
+        }
+    }
+}
+
+void udpiiu::shutdown ()
+{
+    {
+        epicsAutoMutex autoMutex ( this->mutex );
+        if ( this->shutdownCmd ) {
+            return;
+        }
+        this->shutdownCmd = true;
+    }
+
+    caHdr msg;
+    msg.m_cmmd = htons ( CA_PROTO_NOOP );
+    msg.m_available = htonl ( 0u );
+    msg.m_dataType = htons ( 0u );
+    msg.m_count = htons ( 0u );
+    msg.m_cid = htonl ( 0u );
+    msg.m_postsize = htons ( 0u );
+
+    osiSockAddr addr;
+    addr.ia.sin_family = AF_INET;
+    addr.ia.sin_addr.s_addr = htonl ( INADDR_LOOPBACK );
+    addr.ia.sin_port = htons ( this->localPort );
+
+    // send a wakeup msg so the UDP recv thread will exit
+    int status = sendto ( this->sock, reinterpret_cast < const char * > ( &msg ),  
+            sizeof (msg), 0, &addr.sa, sizeof ( addr.sa ) );
+    if ( status < 0 ) {
+        // this knocks the UDP input thread out of recv ()
+        // on all os except linux
+        status = socket_close ( this->sock );
+        if ( status == 0 ) {
+            this->sockCloseCompleted = true;
+        }
+        else {
+            errlogPrintf ("CAC UDP socket close error was %s\n", 
+                SOCKERRSTR ( SOCKERRNO ) );
+        }
+    }
+
+    // wait for recv threads to exit
+    epicsEventMustWait ( this->recvThreadExitSignal );
+}
+
+bool udpiiu::badUDPRespAction ( const caHdr &msg, const osiSockAddr &netAddr )
+{
+    ca_printf ( "CAC: undecipherable ( bad msg code %u ) UDP message\n", 
+                msg.m_cmmd );
+    return false;
+}
+
+bool udpiiu::noopAction ( const caHdr &, const osiSockAddr & )
+{
+    return true;
+}
+
+bool udpiiu::searchRespAction ( const caHdr &msg, const osiSockAddr &addr )
 {
     osiSockAddr serverAddr;
     unsigned minorVersion;
     ca_uint16_t *pMinorVersion;
 
     if ( addr.sa.sa_family != AF_INET ) {
-        return;
+        return false;
     }
 
     /*
@@ -573,7 +535,7 @@ void udpiiu::searchRespAction ( const caHdr &msg, const osiSockAddr &addr )
      * so that we can have multiple servers on one host
      */
     serverAddr.ia.sin_family = AF_INET;
-    if ( CA_V48 (CA_PROTOCOL_VERSION,minorVersion) ) {
+    if ( CA_V48 ( CA_PROTOCOL_VERSION,minorVersion ) ) {
         if ( msg.m_cid != INADDR_BROADCAST ) {
             /*
              * Leave address in network byte order (m_cid has not been 
@@ -596,23 +558,23 @@ void udpiiu::searchRespAction ( const caHdr &msg, const osiSockAddr &addr )
     }
 
     if ( CA_V42 ( CA_PROTOCOL_VERSION, minorVersion ) ) {
-        this->pCAC ()->lookupChannelAndTransferToTCP 
+        return this->pCAC ()->lookupChannelAndTransferToTCP 
             ( msg.m_available, msg.m_cid, USHRT_MAX, 
                 0, minorVersion, serverAddr );
     }
     else {
-        this->pCAC ()->lookupChannelAndTransferToTCP 
+        return this->pCAC ()->lookupChannelAndTransferToTCP 
             ( msg.m_available, msg.m_cid, msg.m_dataType, 
                 msg.m_count, minorVersion, serverAddr );
     }
 }
 
-void udpiiu::beaconAction ( const caHdr &msg, const osiSockAddr &net_addr )
+bool udpiiu::beaconAction ( const caHdr &msg, const osiSockAddr &net_addr )
 {
     struct sockaddr_in ina;
 
     if ( net_addr.sa.sa_family != AF_INET ) {
-        return;
+        return false;
     }
 
     /* 
@@ -644,20 +606,21 @@ void udpiiu::beaconAction ( const caHdr &msg, const osiSockAddr &net_addr )
 
     this->pCAC ()->beaconNotify ( ina );
 
-    return;
+    return true;
 }
 
-void udpiiu::repeaterAckAction ( const caHdr &,  const osiSockAddr &)
+bool udpiiu::repeaterAckAction ( const caHdr &,  const osiSockAddr &)
 {
     this->pCAC ()->repeaterSubscribeConfirmNotify ();
+    return true;
 }
 
-void udpiiu::notHereRespAction ( const caHdr &,  const osiSockAddr &)
+bool udpiiu::notHereRespAction ( const caHdr &,  const osiSockAddr &)
 {
-    return;
+    return true;
 }
 
-void udpiiu::exceptionRespAction ( const caHdr &msg, const osiSockAddr &net_addr )
+bool udpiiu::exceptionRespAction ( const caHdr &msg, const osiSockAddr &net_addr )
 {
     const caHdr &reqMsg = * ( &msg + 1 );
     char name[64];
@@ -674,14 +637,10 @@ void udpiiu::exceptionRespAction ( const caHdr &msg, const osiSockAddr &net_addr
             ca_message ( htonl ( msg.m_available ) ), name );
     }
 
-    return;
+    return true;
 }
 
-
-/*
- * post_udp_msg ()
- */
-int udpiiu::postMsg ( const osiSockAddr &net_addr, 
+void udpiiu::postMsg ( const osiSockAddr &net_addr, 
               char *pInBuf, unsigned long blockSize )
 {
     caHdr *pCurMsg;
@@ -690,10 +649,15 @@ int udpiiu::postMsg ( const osiSockAddr &net_addr,
         unsigned long size;
 
         if ( blockSize < sizeof ( *pCurMsg ) ) {
-            return ECA_TOLARGE;
+            char buf[64];
+            sockAddrToDottedIP ( &net_addr.sa, buf, sizeof ( buf ) );
+            ca_printf (
+                "%s: undecipherable (too small) UDP msg from %s ignored\n", __FILE__, 
+                            buf );
+            return;
         }
 
-        pCurMsg = reinterpret_cast <caHdr *> ( pInBuf );
+        pCurMsg = reinterpret_cast < caHdr * > ( pInBuf );
 
         /* 
          * fix endian of bytes 
@@ -720,25 +684,35 @@ int udpiiu::postMsg ( const osiSockAddr &net_addr,
          * dont allow msg body extending beyond frame boundary
          */
         if ( size > blockSize ) {
-            return ECA_TOLARGE;
+            char buf[64];
+            sockAddrToDottedIP ( &net_addr.sa, buf, sizeof ( buf ) );
+            ca_printf (
+                "%s: undecipherable (payload too small) UDP msg from %s ignored\n", __FILE__, 
+                            buf );
+            return;
         }
 
         /*
          * execute the response message
          */
-        pProtoStubUDP      pStub;
-        if ( pCurMsg->m_cmmd >= NELEMENTS ( udpJumpTableCAC ) ) {
-            pStub = &udpiiu::badUDPRespAction;
-        }
-        else {
+        pProtoStubUDP pStub;
+        if ( pCurMsg->m_cmmd < NELEMENTS ( udpJumpTableCAC ) ) {
             pStub = udpJumpTableCAC [pCurMsg->m_cmmd];
         }
-        (this->*pStub) ( *pCurMsg, net_addr);
+        else {
+            pStub = &udpiiu::badUDPRespAction;
+        }
+        bool success = ( this->*pStub ) ( *pCurMsg, net_addr );
+        if ( ! success ) {
+            char buf[256];
+            sockAddrToDottedIP ( &net_addr.sa, buf, sizeof ( buf ) );
+            ca_printf ( "CAC: undecipherable UDP message from %s\n", buf );
+            return;
+        }
 
         blockSize -= size;
         pInBuf += size;;
     }
-    return ECA_NORMAL;
 }
 
 /*
@@ -767,7 +741,7 @@ bool udpiiu::pushDatagramMsg ( const caHdr &msg, const void *pExt, ca_uint16_t e
 
     pbufmsg = (caHdr *) &this->xmitBuf[this->nBytesInXmitBuf];
     *pbufmsg = msg;
-    memcpy ( pbufmsg+1, pExt, extsize );
+    memcpy ( pbufmsg + 1, pExt, extsize );
     if ( extsize != allignedExtSize ) {
         char *pDest = (char *) ( pbufmsg + 1 );
         memset ( pDest + extsize, '\0', allignedExtSize - extsize );

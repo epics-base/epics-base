@@ -45,11 +45,6 @@ void netiiu::show ( unsigned level ) const
     }
 }
 
-unsigned netiiu::channelCount () const
-{
-    return this->channelList.count ();
-}
-
 // cac lock must also be applied when
 // calling this
 void netiiu::attachChannel ( nciu &chan )
@@ -115,7 +110,7 @@ bool netiiu::destroyAllIO ( nciu &chan )
         }
     }
     while ( baseNMIU *pIO = eventQ.get () ) {
-        pIO->destroy ();
+        delete pIO;
     }
     return true;
 }
@@ -142,23 +137,24 @@ void netiiu::resetChannelRetryCounts ()
 
 bool netiiu::searchMsg ( unsigned short retrySeqNumber, unsigned &retryNoForThisChannel )
 {
-    bool status;
+    bool success;
 
     epicsAutoMutex autoMutex ( this->mutex );
 
-    nciu *pChan = this->channelList.first ();
-    if ( pChan ) {
-        status = pChan->searchMsg ( retrySeqNumber, retryNoForThisChannel );
-        if ( status ) {
-            this->channelList.remove ( *pChan );
+    if ( nciu *pChan = this->channelList.get () ) {
+        success = pChan->searchMsg ( retrySeqNumber, retryNoForThisChannel );
+        if ( success ) {
             this->channelList.add ( *pChan );
+        }
+        else {
+            this->channelList.push ( *pChan );
         }
     }
     else {
-        status = false;
+        success = false;
     }
 
-    return status;
+    return success;
 }
 
 bool netiiu::ca_v42_ok () const
@@ -195,11 +191,6 @@ int netiiu::writeNotifyRequest ( nciu &, cacNotify &, unsigned, unsigned, const 
     return ECA_DISCONNCHID;
 }
 
-int netiiu::readCopyRequest ( nciu &, unsigned, unsigned, void * )
-{
-    return ECA_DISCONNCHID;
-}
-
 int netiiu::readNotifyRequest ( nciu &, cacNotify &, unsigned, unsigned )
 {
     return ECA_DISCONNCHID;
@@ -226,9 +217,6 @@ void netiiu::subscriptionCancelRequest ( netSubscription &, bool )
 
 int netiiu::installSubscription ( netSubscription &subscr )
 {
-    // we must install the subscription first on the channel so that 
-    // proper installation is guaranteed to occur if a connect occurs 
-    // beteen these two steps
     {
         epicsAutoMutex autoMutex ( this->mutex );
         subscr.channel ().tcpiiuPrivateListOfIO::eventq.add ( subscr );
@@ -265,11 +253,11 @@ void netiiu::connectAllIO ( nciu & )
 bool netiiu::uninstallIO ( baseNMIU &io )
 {
     epicsAutoMutex autoMutex ( this->mutex );
-    if ( ! io.channel ().verifyIIU ( *this ) ) {
-        return false;
+    if ( io.channel ().verifyIIU ( *this ) ) {
+        io.channel ().tcpiiuPrivateListOfIO::eventq.remove ( io );
+        return true;
     }
-    io.channel ().tcpiiuPrivateListOfIO::eventq.remove ( io );
-    return true;
+    return false;
 }
 
 double netiiu::beaconPeriod () const

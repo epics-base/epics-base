@@ -20,26 +20,16 @@
 // nciu inline member functions
 //
 
-#include "ioCounter_IL.h"
-
 inline void * nciu::operator new ( size_t size )
 { 
+    epicsAutoMutex locker ( nciu::freeListMutex );
     return nciu::freeList.allocate ( size );
 }
 
 inline void nciu::operator delete ( void *pCadaver, size_t size )
 { 
+    epicsAutoMutex locker ( nciu::freeListMutex );
     nciu::freeList.release ( pCadaver, size );
-}
-
-inline void nciu::lock () const
-{
-    this->cacCtx.nciuPrivate::mutex.lock ();
-}
-
-inline void nciu::unlock () const
-{
-    this->cacCtx.nciuPrivate::mutex.unlock ();
 }
 
 inline bool nciu::fullyConstructed () const
@@ -59,8 +49,11 @@ inline void nciu::resetRetryCount ()
 
 inline void nciu::accessRightsStateChange ( const caar &arIn )
 {
-    this->ar = arIn;
-    this->notify ().accessRightsNotify ( *this, this->ar );
+    {
+        epicsAutoMutex locker ( this->cacCtx.nciuPrivate::mutex );
+        this->accessRightState = arIn;
+    }
+    this->notify ().accessRightsNotify ( *this, arIn );
 }
 
 inline ca_uint32_t nciu::getSID () const
@@ -104,14 +97,13 @@ inline void nciu::connect ()
 inline void nciu::searchReplySetUp ( netiiu &iiu, unsigned sidIn, 
     unsigned typeIn, unsigned long countIn )
 {
-    this->lock ();
+    epicsAutoMutex locker ( this->cacCtx.nciuPrivate::mutex );
     this->piiu = &iiu;
     this->typeCode = typeIn;      
     this->count = countIn;
     this->sid = sidIn;
-    this->ar.read_access = true;
-    this->ar.write_access = true;
-    this->unlock ();
+    this->accessRightState.read_access = true;
+    this->accessRightState.write_access = true;
 }
 
 inline bool nciu::connected () const
@@ -129,19 +121,4 @@ inline netiiu * nciu::getPIIU ()
     return this->piiu;
 }
 
-inline cac & nciu::getCAC ()
-{
-    return this->cacCtx;
-}
-
-
-inline void nciu::incrementOutstandingIO ( unsigned seqNumber )
-{
-    this->cacCtx.incrementOutstandingIO ( seqNumber );
-}
-
-inline void nciu::decrementOutstandingIO ( unsigned seqNumber )
-{
-    this->cacCtx.decrementOutstandingIO ( seqNumber );
-}
 

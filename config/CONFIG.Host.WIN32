@@ -65,8 +65,8 @@ ACC_OPT_NO = /Zi /Fr
 # /MTd static multithreaded C RTL (debug version)
 # /MD multithreaded C RTL in DLL
 # /MDd multithreaded C RTL in DLL (debug version)
-VISC_EPICS_DLL_NO = 
-VISC_EPICS_DLL_YES = -DEPICS_DLL
+VISC_EPICS_DLL_NO = -DEPICS_DLL_NO
+VISC_EPICS_DLL_YES = 
 VISC_EPICS_DLL = $(VISC_EPICS_DLL_$(SHARED_LIBRARIES))
 VISC_SFLAGS_DEBUG_NO = d
 VISC_SFLAGS_DEBUG_YES =

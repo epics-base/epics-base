@@ -198,7 +198,7 @@ setBootConfigFromNVRAM(void)
 static char *
 env(const char *parm, const char *defaultValue)
 {
-    const char *cp = uC5282_getbenv(parm);
+    const char *cp = bsp_getbenv(parm);
 
     if (!cp) {
         if (!defaultValue)

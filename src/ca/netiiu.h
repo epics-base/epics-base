@@ -24,90 +24,72 @@
 class netWriteNotifyIO;
 class netReadNotifyIO;
 class netSubscription;
+class cacMutex;
 union osiSockAddr;
 
 class cac;
+class callbackMutex;
 
 class netiiu {
 public:
-    netiiu ( cac * );
     virtual ~netiiu ();
-    void show ( unsigned level ) const;
-    unsigned channelCount () const;
-    void connectTimeoutNotify ();
-    bool searchMsg ( unsigned short retrySeqNumber, unsigned &retryNoForThisChannel );
-    void resetChannelRetryCounts ();
-    void attachChannel ( nciu &chan );
-    void detachChannel ( epicsGuard < class callbackMutex > & cbLocker, nciu &chan );
-    nciu * firstChannel ();
-    int printf ( const char *pformat, ... );
-    virtual void hostName (char *pBuf, unsigned bufLength) const;
-    virtual const char * pHostName () const; // deprecated - please do not use
-    virtual bool ca_v42_ok () const;
-    virtual bool pushDatagramMsg ( const caHdr &hdr, const void *pExt, ca_uint16_t extsize);
-    virtual void writeRequest ( nciu &, unsigned type, unsigned nElem, const void *pValue );
-    virtual void writeNotifyRequest ( nciu &, netWriteNotifyIO &, unsigned type, unsigned nElem, const void *pValue );
-    virtual void readNotifyRequest ( nciu &, netReadNotifyIO &, unsigned type, unsigned nElem );
-    virtual void createChannelRequest ( nciu & );
-    virtual void clearChannelRequest ( ca_uint32_t sid, ca_uint32_t cid );
-    virtual void subscriptionRequest ( nciu &, netSubscription &subscr );
-    virtual void subscriptionCancelRequest ( nciu & chan, netSubscription & subscr );
-    virtual void flushRequest ();
-    virtual bool flushBlockThreshold () const;
-    virtual void flushRequestIfAboveEarlyThreshold ();
+    virtual void hostName ( char *pBuf, unsigned bufLength ) const = 0;
+    virtual const char * pHostName () const = 0; // deprecated - please do not use
+    virtual bool ca_v42_ok () const = 0;
+    virtual void writeRequest ( epicsGuard < cacMutex > &, nciu &, 
+                    unsigned type, unsigned nElem, const void *pValue ) = 0;
+    virtual void writeNotifyRequest ( epicsGuard < cacMutex > &, 
+                    nciu &, netWriteNotifyIO &, 
+                    unsigned type, unsigned nElem, const void *pValue ) = 0;
+    virtual void readNotifyRequest ( epicsGuard < cacMutex > &, nciu &, 
+                    netReadNotifyIO &, unsigned type, unsigned nElem ) = 0;
+    virtual void clearChannelRequest ( epicsGuard < cacMutex > &, 
+                    ca_uint32_t sid, ca_uint32_t cid ) = 0;
+    virtual void subscriptionRequest ( epicsGuard < cacMutex > &, 
+                    nciu &, netSubscription &subscr ) = 0;
+    virtual void subscriptionCancelRequest ( epicsGuard < cacMutex > &, 
+                    nciu & chan, netSubscription & subscr ) = 0;
+    virtual void flushRequest () = 0;
+    virtual bool flushBlockThreshold ( epicsGuard < cacMutex > & ) const = 0;
+    virtual void flushRequestIfAboveEarlyThreshold ( epicsGuard < cacMutex > & ) = 0;
     virtual void blockUntilSendBacklogIsReasonable 
-        ( epicsGuard < callbackMutex > *, epicsGuard < epicsMutex > & );
-    virtual void requestRecvProcessPostponedFlush ();
-    virtual osiSockAddr getNetworkAddress () const;
-protected:
-    cac * pCAC () const;
-private:
-    tsDLList < nciu > channelList;
-    cac *pClientCtx;
-    virtual void lastChannelDetachNotify ( epicsGuard < class callbackMutex > & cbLocker );
-	netiiu ( const netiiu & );
-	netiiu & operator = ( const netiiu & );
+        ( epicsGuard < callbackMutex > *, epicsGuard < cacMutex > & ) = 0;
+    virtual void requestRecvProcessPostponedFlush () = 0;
+    virtual osiSockAddr getNetworkAddress () const = 0;
+    virtual void uninstallChannel ( epicsGuard < callbackMutex > &,
+        epicsGuard < cacMutex > &, nciu & ) = 0;
 };
 
 class limboiiu : public netiiu { // X aCC 655
 public:
     limboiiu ();
 private:
+    void hostName ( char *pBuf, unsigned bufLength ) const;
+    const char * pHostName () const; // deprecated - please do not use
+    bool ca_v42_ok () const;
+    void writeRequest ( epicsGuard < cacMutex > &, nciu &, 
+                    unsigned type, unsigned nElem, const void *pValue );
+    void writeNotifyRequest ( epicsGuard < cacMutex > &, nciu &, netWriteNotifyIO &, 
+                    unsigned type, unsigned nElem, const void *pValue );
+    void readNotifyRequest ( epicsGuard < cacMutex > &, nciu &, netReadNotifyIO &, 
+                    unsigned type, unsigned nElem );
+    void clearChannelRequest ( epicsGuard < cacMutex > &, 
+                    ca_uint32_t sid, ca_uint32_t cid );
+    void subscriptionRequest ( epicsGuard < cacMutex > &, nciu &, 
+                    netSubscription &subscr );
+    void subscriptionCancelRequest ( epicsGuard < cacMutex > &, 
+                    nciu & chan, netSubscription & subscr );
+    void flushRequest ();
+    bool flushBlockThreshold ( epicsGuard < cacMutex > & ) const;
+    void flushRequestIfAboveEarlyThreshold ( epicsGuard < cacMutex > & );
+    void blockUntilSendBacklogIsReasonable 
+        ( epicsGuard < callbackMutex > *, epicsGuard < cacMutex > & );
+    void requestRecvProcessPostponedFlush ();
+    osiSockAddr getNetworkAddress () const;
+    void uninstallChannel ( epicsGuard < callbackMutex > &,
+        epicsGuard < cacMutex > &, nciu & );
 	limboiiu ( const limboiiu & );
 	limboiiu & operator = ( const limboiiu & );
 };
-
-extern limboiiu limboIIU;
-
-inline cac * netiiu::pCAC () const
-{
-    return this->pClientCtx;
-}
-
-inline unsigned netiiu::channelCount () const
-{
-    return this->channelList.count ();
-}
-
-// cac lock must also be applied when calling this
-inline void netiiu::attachChannel ( class nciu &chan )
-{
-    this->channelList.add ( chan );
-}
-
-// cac lock must also be applied when calling this
-inline void netiiu::detachChannel ( 
-    epicsGuard < callbackMutex > & cbLocker, class nciu & chan )
-{
-    this->channelList.remove ( chan );
-    if ( this->channelList.count () == 0u ) {
-        this->lastChannelDetachNotify ( cbLocker );
-    }
-}
-
-inline nciu * netiiu::firstChannel ()
-{
-    return this->channelList.first ();
-}
 
 #endif // netiiuh

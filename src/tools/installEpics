@@ -17,17 +17,18 @@ USAGE="Usage:
      directory      Destination directory
 "
 # get command line options
-set -- `getopt m:g:o:csd $*`
-for i 
+while getopts m:g:o:csd OPT
 do
-	case $i in
-	-m)             MODE=$2; shift 2;;
-	-g | -o)        echo "$USAGE"; echo "$i not implemented"; shift 2;;
-	-c | -s)        echo "$USAGE"; echo "$i not implemented"; shift;;
-	-d)             CREATE_DIR=1;shift;;
-	--)             shift; break;;
+
+	case $OPT in
+	m)            MODE=$OPTARG;;
+	g | o)        echo "$USAGE"; echo "$i $OPTARG not implemented";;
+	c | s)        echo "$USAGE"; echo "$i not implemented";;
+	d)            CREATE_DIR=1;;
+	--)           break;;
 	esac
 done
+shift `expr $OPTIND - 1`
 
 # at least two args required
 if [ $# -lt 2 ]
@@ -85,11 +86,11 @@ do
 	fi
 	if [ "${TEST}x" = "x" ] ; then 
 		#echo "Installing ${FILEBASENAME}"
-		/bin/rm -f ${INSTALL_DIR}/${FILEBASENAME}
-		/bin/cp -p ${FILE} ${INSTALL_DIR}/${FILEBASENAME}
-		/bin/chmod ${MODE} ${INSTALL_DIR}/${FILEBASENAME}
+		rm -f ${INSTALL_DIR}/${FILEBASENAME}
+		cp -p ${FILE} ${INSTALL_DIR}/${FILEBASENAME}
+		chmod ${MODE} ${INSTALL_DIR}/${FILEBASENAME}
 	else 
-			echo "${INSTALL_DIR}/${FILEBASENAME} is up to date"
+		echo "${INSTALL_DIR}/${FILEBASENAME} is up to date"
 	fi
 done
 

@@ -1,5 +1,8 @@
 /* $Id$
  * $Log$
+ * Revision 1.3  1994/07/17  10:37:48  bordua
+ * Changed to use epicsReleaseVersion as a string.
+ *
  * Revision 1.2  1994/07/17  08:26:28  bordua
  * Changed epicsVersion to epicsReleaseVersion.
  *
@@ -13,5 +16,5 @@
     char *epicsRelease1 = epicsReleaseVersion;
 coreRelease()
 {
-    printf("############################################################################\n###  %s\n###%s\n############################################################################\n", epicsRelease, epicsRelease1);
+    printf("############################################################################\n###  %s\n###  %s\n############################################################################\n", epicsRelease, epicsRelease1);
 }

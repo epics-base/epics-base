@@ -46,37 +46,37 @@ main ()
         clock_t diff;
         double delay;
 	
-	tree.insert(a);
-	list.add(a);
+	tree.insert (a);
+	list.add (a);
 
 	for (i=0u; i<LOOPCOUNT; i++) {
 		pA = new A;
-		assert(pA);
-		tree.insert(*pA);
-		list.add(*pA);
+		assert (pA);
+		tree.insert (*pA);
+		list.add (*pA);
 	}
 
-	clk = clock();
+	clk = clock ();
 	for (i=0u; i<LOOPCOUNT; i++) {
-		assert(tree.verify(a));
+		assert ( tree.verify(a) );
 	}
-	diff = clock() - clk;
+	diff = clock () - clk;
         delay = diff;
         delay = delay/CLOCKS_PER_SEC;
         delay = delay/LOOPCOUNT;
-        printf("delay = %15.10f\n", delay);
+        printf ("delay = %15.10f\n", delay);
 
-	clk = clock();
-	while ( (pA = list.get()) ) {
-		assert(tree.remove(*pA));
+	clk = clock ();
+	while ( ( pA = list.get () ) ) {
+		assert (tree.remove(*pA));
 	}
-	diff = clock() - clk;
+	diff = clock () - clk;
         delay = diff;
         delay = delay/CLOCKS_PER_SEC;
         delay = delay/LOOPCOUNT;
-        printf("delay = %15.10f\n", delay);
+        printf ("delay = %15.10f\n", delay);
 
-	tree.traverse(A::show);
+	tree.traverse (&A::show);
 
 	return 0;
 }

@@ -220,7 +220,7 @@ LOCAL void req_server (void *pParm)
 /*
  * rsrv_init ()
  */
-epicsShareFunc int epicsShareAPI rsrv_init (void)
+int epicsShareAPI rsrv_init (void)
 {
     epicsThreadBooleanStatus tbs;
     unsigned priorityOfConnectDaemon;

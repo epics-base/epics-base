@@ -67,7 +67,10 @@ void caServerIO::locateInterfaces ()
 
 	memset ((char *)&saddr,0,sizeof(saddr));
 
-	pStr = envGetConfigParam(&EPICS_CA_AUTO_ADDR_LIST, sizeof(buf), buf);
+    pStr = envGetConfigParam(&EPICS_CAS_AUTO_BEACON_ADDR_LIST, sizeof(buf), buf);
+    if ( ! pStr ) {
+	    pStr = envGetConfigParam(&EPICS_CA_AUTO_ADDR_LIST, sizeof(buf), buf);
+    }
 	if (pStr) {
 		if (strstr(pStr,"no")||strstr(pStr,"NO")) {
 			autoBeaconAddr = false;
@@ -77,7 +80,7 @@ void caServerIO::locateInterfaces ()
 		}
 		else {
 			fprintf(stderr, 
-		"CAS: EPICS_CA_AUTO_ADDR_LIST = \"%s\"? Assuming \"YES\"\n", pStr);
+		"CAS: EPICS_CA(S)_AUTO_ADDR_LIST = \"%s\"? Assuming \"YES\"\n", pStr);
 			autoBeaconAddr = true;
 		}
 	}

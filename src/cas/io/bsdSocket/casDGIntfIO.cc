@@ -82,8 +82,14 @@ casDGIntfIO::casDGIntfIO (caServerI &serverIn, const caNetAddr &addr,
         this->dgPort = envGetInetPortConfigParam (&EPICS_CA_SERVER_PORT, 
             static_cast <unsigned short> (CA_SERVER_PORT));
     }
-    beaconPort = envGetInetPortConfigParam (&EPICS_CA_REPEATER_PORT, 
-        static_cast <unsigned short> (CA_REPEATER_PORT));
+    if (envGetConfigParamPtr(&EPICS_CAS_BEACON_PORT)) {
+        beaconPort = envGetInetPortConfigParam (&EPICS_CAS_BEACON_PORT, 
+            static_cast <unsigned short> (CA_REPEATER_PORT));
+    }
+    else {
+        beaconPort = envGetInetPortConfigParam (&EPICS_CA_REPEATER_PORT, 
+            static_cast <unsigned short> (CA_REPEATER_PORT));
+    }
 
     //
     // set up the primary address of the server

@@ -63,14 +63,20 @@ caServerI::caServerI (caServer &tool) :
     this->valueEvent = registerEvent ("value");
 	this->logEvent = registerEvent ("log");
 	this->alarmEvent = registerEvent ("alarm");
-	
-	status = envGetDoubleConfigParam (&EPICS_CA_BEACON_PERIOD, &maxPeriod);
-	if (status || maxPeriod<=0.0) {
+
+
+    if ( envGetConfigParamPtr ( & EPICS_CAS_BEACON_PERIOD ) ) {
+        status = envGetDoubleConfigParam ( & EPICS_CAS_BEACON_PERIOD, & maxPeriod );
+    }
+    else {
+        status = envGetDoubleConfigParam ( & EPICS_CA_BEACON_PERIOD, & maxPeriod );
+    }
+	if ( status || maxPeriod <= 0.0 ) {
 		this->maxBeaconInterval = CAServerMaxBeaconPeriod;
 		errlogPrintf (
-			"EPICS \"%s\" float fetch failed\n", EPICS_CA_BEACON_PERIOD.name);
+			"EPICS \"%s\" float fetch failed\n", EPICS_CAS_BEACON_PERIOD.name );
 		errlogPrintf (
-			"Setting \"%s\" = %f\n", EPICS_CA_BEACON_PERIOD.name, 
+			"Setting \"%s\" = %f\n", EPICS_CAS_BEACON_PERIOD.name, 
 			this->maxBeaconInterval);
 	}
 	else {

@@ -139,8 +139,8 @@ public:
 		osiTimer(delayIn), pv(pvIn) {}
 	~exScanTimer();
 	void expire ();
-	osiBool again() const;
-	const osiTime delay() const;
+	bool again() const;
+	double delay() const;
 	const char *name() const;
 private:
 	exPV	&pv;
@@ -200,7 +200,7 @@ public:
 	// If no one is watching scan the PV with 10.0
 	// times the specified period
 	//
-	const float getScanPeriod()
+	const double getScanPeriod()
 	{
 		double curPeriod;
 
@@ -208,7 +208,7 @@ public:
 		if (!this->interest) {
 			curPeriod *= 10.0L;
 		}
-		return (float) curPeriod;
+		return curPeriod;
 	}
 
 	caStatus read (const casCtx &, gdd &protoIn);
@@ -255,10 +255,6 @@ private:
 	//
 	// Std PV Attribute fetch support
 	//
-	gddAppFuncTableStatus getStatus(gdd &value);
-	gddAppFuncTableStatus getSeverity(gdd &value);
-	gddAppFuncTableStatus getSeconds(gdd &value);
-	gddAppFuncTableStatus getNanoseconds(gdd &value);
 	gddAppFuncTableStatus getPrecision(gdd &value);
 	gddAppFuncTableStatus getHighLimit(gdd &value);
 	gddAppFuncTableStatus getLowLimit(gdd &value);
@@ -410,7 +406,7 @@ private:
 //
 class exOSITimer : public osiTimer {
 public:
-	exOSITimer (double delay) : osiTimer(osiTime(delay)) {}
+	exOSITimer (double delay) : osiTimer(delay) {}
 
 	//
 	// this is a noop that postpones the timer expiration

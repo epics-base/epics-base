@@ -45,33 +45,21 @@ pvInfo exServer::billy (2.0, "billy", 10.0f, -10.0f, excasIoAsync, 1u);
 // exServer::exServer()
 //
 exServer::exServer(const char * const pvPrefix, unsigned aliasCount, aitBool scanOnIn) : 
-	caServer(NELEMENTS(this->pvList)+2u),
-	simultAsychIOCount(0u),
-	scanOn(scanOnIn)
+	caServer (NELEMENTS(this->pvList)+2u),
+    stringResTbl (NELEMENTS(this->pvList)*(aliasCount+1u)+2u),
+	simultAsychIOCount (0u),
+	scanOn (scanOnIn)
 {
 	unsigned i;
 	exPV *pPV;
 	pvInfo *pPVI;
 	pvInfo *pPVAfter = 
 		&exServer::pvList[NELEMENTS(exServer::pvList)];
-	int resLibStatus;
 	char pvAlias[256];
 	const char * const pNameFmtStr = "%.100s%.20s";
 	const char * const pAliasFmtStr = "%.100s%.20s%u";
 
 	exPV::initFT();
-
-	//
-	// hash table size may need adjustment here?
-	//
-	resLibStatus = this->stringResTbl.init(NELEMENTS(this->pvList)*(aliasCount+1u)+2u);
-	if (resLibStatus) {
-		fprintf(stderr, "CAS: string resource id table init failed\n");
-		//
-		// should throw an exception once this is portable
-		//
-		assert(resLibStatus==0);
-	}
 
 	//
 	// pre-create all of the simple PVs that this server will export

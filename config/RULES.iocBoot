@@ -1,11 +1,12 @@
 #RULES.iocBoot
-buildInstall: nfs.cmd
+buildInstall:: nfs.cmd
 
 nfs.cmd: nfsCommands
+	@echo "Creating $@"
 	@$(RM) $@ 
-	$(CP) $< $@
-	echo cd \"`\pwd`\" >> $@
+	@$(CP) $< $@
+	@echo cd \"`\pwd`\" >> $@
 
-clean:
+clean::
 	@$(RM) nfs.cmd
 

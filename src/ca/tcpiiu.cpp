@@ -26,6 +26,7 @@
 #include "netReadCopyIO_IL.h"
 #include "netReadNotifyIO_IL.h"
 #include "netSubscription_IL.h"
+#include "ioCounter_IL.h"
 
 // nill message pad bytes
 static const char nillBytes [] = 
@@ -425,7 +426,6 @@ tcpiiu::tcpiiu ( cac &cac, double connectionTimeout, osiTimerQueue &timerQueue )
 bool tcpiiu::initiateConnect ( const osiSockAddr &addrIn, unsigned minorVersion, 
                               class bhe &bhe, ipAddrToAsciiEngine &engineIn )
 {
-    unsigned priorityOfSelf = threadGetPrioritySelf ();
     unsigned priorityOfRecv;
     threadBoolStatus tbs;
     threadId tid;
@@ -1702,7 +1702,7 @@ int tcpiiu::clearChannelRequest ( nciu &chan )
         }
         else {
             baseNMIU *pNMIU;
-            while ( pNMIU = chan.tcpiiuPrivateListOfIO::eventq.get () ) {
+            while ( ( pNMIU = chan.tcpiiuPrivateListOfIO::eventq.get () ) ) {
                 this->ioTable.remove ( *pNMIU );
                 pNMIU->subscriptionCancelMsg ();
                 delete pNMIU;

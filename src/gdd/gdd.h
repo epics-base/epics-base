@@ -503,7 +503,6 @@ private:
 	aitUint8 flags;
 
     static epicsMutex * pGlobalMutex;
-    static staticInit ();
 	const gdd* indexDD (aitIndex index) const;
 };
 

@@ -82,11 +82,6 @@ static void gddStaticInit ( void * p )
     *pMutex = new epicsMutex ();
 }
 
-gdd::staticInit () 
-{
-    epicsThreadOnce ( & gddOnce, gddStaticInit, & gdd::pGlobalMutex );
-}
-
 gdd::gdd(int app, aitEnum prim, int dimen)
 {
 	init(app,prim,dimen);
@@ -100,7 +95,7 @@ gdd::gdd(int app, aitEnum prim, int dimen, aitUint32* val)
 
 void gdd::init(int app, aitEnum prim, int dimen)
 {
-    gdd::staticInit ();
+    epicsThreadOnce ( & gddOnce, gddStaticInit, & gdd::pGlobalMutex );
 	setApplType(app);
 	//
 	// joh - we intentionally dont call setPrimType()

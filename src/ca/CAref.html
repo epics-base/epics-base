@@ -132,6 +132,8 @@ height="31" width="88"></a></p>
     Common</a></li>
   <li><a href="#Calling">Calling CA Functions from the vxWorks Shell
     Thread</a></li>
+  <li><a href="#Calling1">Calling CA Functions from POSIX signal
+  handlers</a></li>
 </ul>
 
 <h3>Functionality Index&nbsp;</h3>
@@ -1648,6 +1650,13 @@ which vary between OS and even between different versions of the same OS.</p>
     monitor subscriptions associated with stale connections which will
     rapidly increase the number of dedicated mbufs to the quota available for
     each circuit.</li>
+  <li>When sites switch to the vxWorks 5.4 IP kernel they frequently run into
+    network pool exhaustion problems. This may be because the original
+    vxWorks IP kernel expanded the network pool as needed at runtime while
+    the new kernel's pool is statically configured at compile time, and does
+    <em>not</em> expand as needed at runtime. Also, at certain sites problems
+    related to vxWorks network driver pool exhaustion have also been reported
+    (this can also result in ENOBUF diagnostic messages).</li>
 </ul>
 
 <h4>Related Diagnostics</h4>
@@ -1659,7 +1668,7 @@ which vary between OS and even between different versions of the same OS.</p>
     mbuf based protocol control blocks have been consumed. The vxWorks
     commands (availability depending on vxWorks version) mbufShow,
     netStackSysPoolShow, and netStackDataPoolShow indicate how much space
-    remains in the mbuf pool.</li>
+    remains in the network stack pool.</li>
   <li>The RTEMS command "netstat [interest level]" displays network
     information including mbuf consumption statistics.</li>
 </ul>
@@ -2177,6 +2186,13 @@ questionable practice for the following reasons.</p>
     EPICS R3.14 the user must call ca_context_destroy or ca_task_exit to
     clean up on vxWorks. This is the same behavior as on all other OS.</li>
 </ul>
+
+<h3><a name="Calling1" id="Calling1">Calling CA Functions from POSIX signal
+handlers</a></h3>
+
+<p>As you might expect, it isnt safe to call the CA client library from a
+POSIX signal handler. Likewise, it isnt safe to call the CA client library
+from interrupt context.</p>
 
 <h2><a name="Function Call Reference"></a>Function Call Reference</h2>
 

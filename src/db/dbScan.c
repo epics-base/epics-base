@@ -399,6 +399,7 @@ periodicScanTask()
 				plist->scan_index = 0;
 				plist->pscan = plist->psets[0];
 				disableListScan[list] = TRUE;
+				break;
 			}else if (plist->index >= NUM_RECS_PER_SET){
 				plist->index = 0;
 				plist->set++;
@@ -1060,7 +1061,7 @@ short			list_index;
 	/* adjust the list information */
 	lists[list_index].num_records++;
 	lists[list_index].num_scan = 
-	  (lists[list_index].num_records / periods_to_complete[list_index]) + 1;
+	  ((lists[list_index].num_records - 1) / periods_to_complete[list_index]) + 1;
 	lists[list_index].pscan = lists[list_index].psets[0];
 	lists[list_index].scan_index = 0;
 	lists[list_index].index = 0;

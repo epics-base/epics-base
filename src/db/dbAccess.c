@@ -207,7 +207,6 @@ long dbProcess(paddr)
 	struct dbCommon *precord=(struct dbCommon *)(paddr->precord);
 	long		status;
 	
-
 	/* If already active dont process */
 	if(precord->pact) {
 	        struct rset     *prset;
@@ -215,7 +214,7 @@ long dbProcess(paddr)
 
 		/* raise scan alarm after MAX_LOCK times */
 		if(precord->stat==SCAN_ALARM) return(0);
-		if(precord->lcnt++ <=MAX_LOCK) return(0);
+		if(precord->lcnt++ !=MAX_LOCK) return(0);
 		precord->sevr = MAJOR_ALARM;
 		precord->stat = SCAN_ALARM;
 		precord->nsev = 0;
@@ -239,7 +238,7 @@ long dbProcess(paddr)
 		long	options=0;
 		long	nRequest=1;
 
-		(status = dbGetLink(precord->sdis.value.db_link,precord,
+		(status = dbGetLink(&precord->sdis.value.db_link,precord,
 			DBR_SHORT,(caddr_t)(&(precord->disa)),&options,&nRequest));
 		if(!RTN_SUCCESS(status)) {
 			recGblDbaddrError(status,paddr,"dbProcess");
@@ -247,7 +246,10 @@ long dbProcess(paddr)
 	    	}
 	}
 	/* if disabled just return success */
-	if(precord->disa == precord->disv) return(0);
+	if(precord->disa == precord->disv) {
+
+		return(0);
+	}
 
 	/* locate record processing routine */
 	if(!(prset=GET_PRSET(paddr->record_type)) || !(prset->process)) {
@@ -258,6 +260,8 @@ long dbProcess(paddr)
 
 	/* process record */
 	status = (*prset->process)(paddr);
+
+
 	return(status);
 
 }

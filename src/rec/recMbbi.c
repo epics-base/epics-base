@@ -267,7 +267,7 @@ static void alarm(pmbbi)
 	unsigned short *severities;
 	short		val=pmbbi->val;
 
-	if(val = pmbbi->lalm) return;
+	if(val == pmbbi->lalm) return;
 	pmbbi->lalm = val;
 
         /* check for  state alarm */

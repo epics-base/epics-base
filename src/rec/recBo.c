@@ -134,7 +134,7 @@ static void myCallback(pcallback)
     struct boRecord *pbo = (struct boRecord *)(pcallback->dbAddr.precord);
 
     dbScanLock(pbo);
-    pbo->val = 1;
+    pbo->val = 0;
     (void)process(&(pcallback->dbAddr));
     dbScanUnlock(pbo); 
 }

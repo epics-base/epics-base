@@ -42,19 +42,15 @@ extern "C" {
 
 #define DLLLIB_USE_MACROS
 
-struct ELLNODE {
+typedef struct ELLNODE {
   struct ELLNODE  *next;
   struct ELLNODE  *previous;
-};
-typedef struct ELLNODE ELLNODE;
+}ELLNODE;
 
-struct ELLLIST {
+typedef struct ELLLIST {
   ELLNODE  node;
   int   count;
-};
-typedef struct ELLLIST ELLLIST;
-
-#if defined(__STDC__) || defined(__cplusplus)
+}ELLLIST;
 
 #ifdef DLLLIB_USE_MACROS
 
@@ -94,49 +90,6 @@ epicsShareFunc ELLNODE * epicsShareAPI ellNStep (ELLNODE *pNode, int nStep);
 epicsShareFunc int  epicsShareAPI ellFind (ELLLIST *pList, ELLNODE *pNode);
 epicsShareFunc void epicsShareAPI ellFree (ELLLIST *pList);
 epicsShareFunc void epicsShareAPI ellVerify (ELLLIST *pList);
-
-#else				/*__STDC__*/
-
-#ifdef DLLLIB_USE_MACROS
-
-#define ellInit(PLIST)	{ ((ELLLIST *)(PLIST))->node.next = NULL;\
-			  ((ELLLIST *)(PLIST))->node.previous = NULL;\
-			  ((ELLLIST *)(PLIST))->count = 0; }
-
-#define ellCount(PLIST)		(((ELLLIST *)(PLIST))->count)
-
-#define	ellFirst(PLIST)		(((ELLLIST *)(PLIST))->node.next)
-
-#define ellLast(PLIST)		(((ELLLIST *)(PLIST))->node.previous)
-
-#define ellNext(PNODE)		(((ELLNODE *)(PNODE))->next)
-
-#define	ellPrevious(PNODE)	(((ELLNODE *)(PNODE))->previous)
-
-#else				/*DLLLIB_USE_MACROS*/
-
-epicsShareFunc void epicsShareAPI ellInit ();
-epicsShareFunc int epicsShareAPI ellCount ();
-epicsShareFunc ELLNODE epicsShareAPI *ellFirst ();
-epicsShareFunc ELLNODE epicsShareAPI *ellNext ();
-epicsShareFunc ELLNODE epicsShareAPI *ellLast ();
-epicsShareFunc ELLNODE epicsShareAPI *ellPrevious ();
-
-#endif				/*DLLLIB_USE_MACROS*/
-
-epicsShareFunc void epicsShareAPI ellAdd ();
-epicsShareFunc void epicsShareAPI ellConcat ();
-epicsShareFunc void epicsShareAPI ellDelete ();
-epicsShareFunc void epicsShareAPI ellExtract ();
-epicsShareFunc ELLNODE * epicsShareAPI ellGet ();
-epicsShareFunc void epicsShareAPI ellInsert ();
-epicsShareFunc ELLNODE * epicsShareAPI ellNth ();
-epicsShareFunc ELLNODE * epicsShareAPI ellNStep ();
-epicsShareFunc int epicsShareAPI ellFind ();
-epicsShareFunc void epicsShareAPI ellFree ();
-epicsShareFunc void ellVerify ();
-
-#endif				/*__STDC__*/
 
 #ifdef __cplusplus
 }

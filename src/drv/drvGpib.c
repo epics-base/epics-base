@@ -209,17 +209,17 @@ reportGpib()
     {
       if (pNiLink[i])
       {
-        logMsg("Link %d (address 0x%08.8X) present and initialized.\n", i, pNiLink[i]->ibregs);
+        printf("Link %d (address 0x%08.8X) present and initialized.\n", i, pNiLink[i]->ibregs);
       }
       else
       {
-        logMsg("Link %d not installed.\n", i);
+        printf("Link %d not installed.\n", i);
       }
     }
   }
   else
   {
-    logMsg("Gpib driver has not yet been initialized.\n");
+    printf("Gpib driver has not yet been initialized.\n");
   }
   return(OK);
 }
@@ -248,7 +248,7 @@ initGpib()
 
   if (init_called)
   {
-    logMsg("initGpib(): Gpib devices already initialized!\n");
+    printf("initGpib(): Gpib devices already initialized!\n");
     return(ERROR);
   }
 
@@ -291,7 +291,7 @@ initGpib()
       if ((pNiLink[i] = (struct niLink *) malloc(sizeof(struct niLink))) == NULL)
       { /* This better never happen! */
         /* errMsg( BUG -- figure out how to use this thing ); */
-	logMsg("Can't malloc memory for NI-link data structures!\n");
+	printf("Can't malloc memory for NI-link data structures!\n");
         return(ERROR);
       }
 
@@ -553,7 +553,7 @@ int	prio;
     semGive(pNiLink[link]->ibLink.linkEventSem);
     break;
   default:		/* invalid priority */
-    logMsg("invalid priority requested in call to qgpibreq(%d, %08.8X, %d)\n", link, pdpvt, prio);
+    printf("invalid priority requested in call to qgpibreq(%d, %08.8X, %d)\n", link, pdpvt, prio);
     return(ERROR);
   }
   if (ibDebug)
@@ -611,7 +611,7 @@ int     length;
       if (!(tooLong--))
       {
 	/* errMsg() */
-	logMsg("niGpibCmd(%d, 0x%08.8X, %d): Timeout writing command >%s<\n", link, buffer, length, buffer);
+	printf("niGpibCmd(%d, 0x%08.8X, %d): Timeout writing command >%s<\n", link, buffer, length, buffer);
 	pNiLink[link]->ibregs->auxmr = AUX_GTS;
 	return(ERROR);
       }
@@ -637,7 +637,7 @@ int     length;
     }
   }
   /* errMsg() */
-  logMsg("niGpibCmd(%d, 0x%08.8X, %d): Timeout after writing command >%s<\n", link, buffer, length, buffer);
+  printf("niGpibCmd(%d, 0x%08.8X, %d): Timeout after writing command >%s<\n", link, buffer, length, buffer);
   pNiLink[link]->ibregs->auxmr = AUX_GTS;
   return(ERROR);
 }
@@ -901,7 +901,7 @@ int	length;		/* number of bytes to transfer */
   if ((b->ch0.csr & D_ERR) || (b->ch1.csr & D_ERR))
   {
     /* errMsg() */
-    logMsg("DMAC error initialization on link %d.\n", link);
+    printf("DMAC error initialization on link %d.\n", link);
     return (ERROR);
   }
   if (cnt)
@@ -937,7 +937,7 @@ int	length;		/* number of bytes to transfer */
     pNiLink[link]->ibregs->ch1.csr = D_CLEAR;
     /* errMsg() */
     if (!timeoutSquelch)
-      logMsg("TIMEOUT GPIB DEVICE on link %d\n", link);
+      printf("TIMEOUT GPIB DEVICE on link %d\n", link);
   }
   else
   {
@@ -945,12 +945,12 @@ int	length;		/* number of bytes to transfer */
     status = OK;
     if (b->ch0.csr & D_ERR)
     {
-      logMsg("DMAC error on link %d, channel 0 = %x\n", link, b->ch0.cer);
+      printf("DMAC error on link %d, channel 0 = %x\n", link, b->ch0.cer);
       status = ERROR;
     }
     if (b->ch1.csr & D_ERR)
     {
-      logMsg("DMAC error on link %d, channel 1 = %x\n", link, b->ch1.cer);
+      printf("DMAC error on link %d, channel 1 = %x\n", link, b->ch1.cer);
       status = ERROR;
     }
   }
@@ -999,7 +999,7 @@ int	gpibAddr;
 {
     if (niCheckLink(link) == ERROR)
     {
-      logMsg("drvGpib: niSrqPollInhibit(%d, %d): invalid link number specified\n", link, gpibAddr);
+      printf("drvGpib: niSrqPollInhibit(%d, %d): invalid link number specified\n", link, gpibAddr);
       return(ERROR);
     }
     pollInhibit[link][gpibAddr] = 1;	/* mark it as inhibited */
@@ -1166,7 +1166,7 @@ struct	ibLink *plink;
   /* Start a task to manage the link */
   if (taskSpawn("gpibLink", 46, VX_FP_TASK|VX_STDIO, 2000, ibLinkTask, plink, plink->linkId) == ERROR)
   {
-    logMsg("ibLinkStart(): failed to start link task for link %d\n", plink->linkId);
+    printf("ibLinkStart(): failed to start link task for link %d\n", plink->linkId);
     return(ERROR);
   }
   return(OK);
@@ -1272,7 +1272,7 @@ int		link;
       }
       else
       {
-	logMsg("ibLinkTask(%d, %d): got an SRQ, but have no pollable devices!\n", plink->linkType, link);
+	printf("ibLinkTask(%d, %d): got an SRQ, but have no pollable devices!\n", plink->linkType, link);
       }
       /* The srqIntFlag should still be set if the SRQ line is again/still */
       /* active, otherwise we have a possible srq interrupt processing */
@@ -1369,7 +1369,7 @@ int		verbose;	/* set to 1 if should log any errors */
   if (readIb(plink->linkType, plink->linkId, plink->bug, gpibAddr, pollResult, sizeof(pollResult)) == ERROR)
   {
     if(verbose)
-      logMsg("pollIb(%d, %d): data read error\n", plink->linkId, gpibAddr);
+      printf("pollIb(%d, %d): data read error\n", plink->linkId, gpibAddr);
     status = ERROR;
   }
   else
@@ -1514,7 +1514,7 @@ int     gpibAddr;       /* the device address the handler is for */
     return(bbSrqPollInhibit(link, bug, gpibAddr));
   }
 
-  logMsg("drvGpib: srqPollInhibit(%d, %d, %d, %d): invalid link type specified\n", linkType, link, bug, gpibAddr);
+  printf("drvGpib: srqPollInhibit(%d, %d, %d, %d): invalid link type specified\n", linkType, link, bug, gpibAddr);
   return(ERROR);
 }
 
@@ -1543,7 +1543,7 @@ caddr_t	parm;		/* so caller can have a parm passed back */
   {
     if (checkLink(linkType, linkId, bug) == ERROR)
     {
-      logMsg("drvGpib: registerSrqCallback(): invalid link number specified\n");
+      printf("drvGpib: registerSrqCallback(): invalid link number specified\n");
       return(ERROR);
     }
     (pNiLink[linkId]->ibLink.srqHandler)[gpibAddr] = handler;
@@ -1557,7 +1557,7 @@ caddr_t	parm;		/* so caller can have a parm passed back */
     return(bbRegisterSrqCallback(linkId, bug, gpibAddr, handler, parm));
   }
 
-  logMsg("drvGpib: registerSrqCallback(%d, %d, %d, %d, 0x%08.8X, %d): invalid link type specified\n", linkType, linkId, bug, gpibAddr, handler, parm);
+  printf("drvGpib: registerSrqCallback(%d, %d, %d, %d, 0x%08.8X, %d): invalid link type specified\n", linkType, linkId, bug, gpibAddr, handler, parm);
   return(ERROR);
 }
 
@@ -1754,7 +1754,7 @@ int     link;
 char    *buffer;
 int     length;
 {
-  logMsg("Read attempted to a bitbus->gpib link\n");
+  printf("Read attempted to a bitbus->gpib link\n");
   return(ERROR);
 }
 
@@ -1764,7 +1764,7 @@ int     link;
 char    *buffer;
 int     length;
 {
-  logMsg("Write attempted to a bitbus->gpib link\n");
+  printf("Write attempted to a bitbus->gpib link\n");
   return(ERROR);
 }
 
@@ -1774,7 +1774,7 @@ int     link;
 char    *buffer;
 int     length;
 {
-  logMsg("Command write sent to a bitbus->gpib link\n");
+  printf("Command write sent to a bitbus->gpib link\n");
   return(ERROR);
 }
 
@@ -1783,7 +1783,7 @@ bbCheckLink(link, bug)
 int	link;
 int	bug;
 {
-  logMsg("bbCheckLink called for link %d, bug %d\n", link, bug);
+  printf("bbCheckLink called for link %d, bug %d\n", link, bug);
   return(ERROR);
 }
 
@@ -1793,7 +1793,7 @@ int	link;
 int	bug;
 int	gpibAddr;
 {
-  logMsg("bbSrqPollInhibit called for link %d, bug %d, device %d\n", link, bug, gpibAddr);
+  printf("bbSrqPollInhibit called for link %d, bug %d, device %d\n", link, bug, gpibAddr);
   return(ERROR);
 }
 
@@ -1805,7 +1805,7 @@ int	gpibAddr;
 int     (*handler)();
 caddr_t	parm;
 {
-  logMsg("bbRegisterSrqCallback called for link %d, bug %d, device %d\n", 
+  printf("bbRegisterSrqCallback called for link %d, bug %d, device %d\n", 
 		link, bug, gpibAddr);
   return(ERROR);
 }
@@ -1849,7 +1849,7 @@ int	bug;
 
   if ((bbLink = (struct bbLink *) malloc(sizeof(struct bbLink))) == NULL)
   {
-    logMsg("bbGenLink(%d, %d): can't malloc memory for link structure\n", link, bug);
+    printf("bbGenLink(%d, %d): can't malloc memory for link structure\n", link, bug);
     return(ERROR);
   }
 
@@ -1883,7 +1883,7 @@ int     v;
 
   if (cmd != IBGENLINK && bbCheckLink(link, -1) == ERROR)
   {
-    logMsg("bbGpibIoctl(%d, %d, %d, %08.8X): invalid link specified\n", link, bug, cmd, v);
+    printf("bbGpibIoctl(%d, %d, %d, %08.8X): invalid link specified\n", link, bug, cmd, v);
     return(ERROR);
   }
 
@@ -1902,7 +1902,7 @@ int     v;
     stat = bbGenLink(link, bug);
     break;
   default:
-    logMsg("bbGpibIoctl(%d, %d, %d, %08.8X): invalid command requested\n", link, bug, cmd, v);
+    printf("bbGpibIoctl(%d, %d, %d, %08.8X): invalid command requested\n", link, bug, cmd, v);
   }
 
   return(stat);
@@ -1921,6 +1921,6 @@ int	link;
 struct	dpvtGpibHead *pdpvt;
 int	prio;
 {
-  logMsg("bbQGpibReq called for a bitbug->gpib link\n");
+  printf("bbQGpibReq called for a bitbug->gpib link\n");
   return(ERROR);
 }

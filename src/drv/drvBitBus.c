@@ -120,7 +120,7 @@ reportBB()
 {
   int	i;
 
-  logMsg("Debugging flag is set to %d\n", bbDebug);
+  printf("Debugging flag is set to %d\n", bbDebug);
 
   if (init_called)
   {
@@ -128,17 +128,17 @@ reportBB()
     {
       if (pBbLink[i])
       {
-        logMsg("Link %d (address 0x%08.8X) present and initialized.\n", i, pXvmeLink[i]->bbRegs);
+        printf("Link %d (address 0x%08.8X) present and initialized.\n", i, pXvmeLink[i]->bbRegs);
       }
       else
       {
-        logMsg("Link %d not installed.\n", i);
+        printf("Link %d not installed.\n", i);
       }
     }
   }
   else
   {
-    logMsg("BB driver has not yet been initialized.\n");
+    printf("BB driver has not yet been initialized.\n");
   }
   return(OK);
 }
@@ -161,7 +161,7 @@ initBB()
 
   if (init_called)
   {
-    logMsg("initBB(): BB devices already initialized!\n");
+    printf("initBB(): BB devices already initialized!\n");
     return(ERROR);
   }
   /* figure out where the short address space is */
@@ -173,11 +173,11 @@ initBB()
 
   if (bbDebug)
   {
-    logMsg("BB driver package initializing\n");
-    logMsg("short_base       0x%08.8X\n", short_base);
-    logMsg("ram_base         0x%08.8X\n", ram_base);
-    logMsg("BB_SHORT_OFF     0x%08.8X\n", BB_SHORT_OFF);
-    logMsg("BB_NUM_LINKS     0x%08.8X\n", BB_NUM_LINKS);
+    printf("BB driver package initializing\n");
+    printf("short_base       0x%08.8X\n", short_base);
+    printf("ram_base         0x%08.8X\n", ram_base);
+    printf("BB_SHORT_OFF     0x%08.8X\n", BB_SHORT_OFF);
+    printf("BB_NUM_LINKS     0x%08.8X\n", BB_NUM_LINKS);
   }
 
   probeValue = XVME_RESET;
@@ -191,7 +191,7 @@ initBB()
       pBbLink[i] = (struct bbLink *) NULL;
 
       if (bbDebug)
-	logMsg("Probing of address 0x%08.8X failed\n", pXvmeRegs);
+	printf("Probing of address 0x%08.8X failed\n", pXvmeRegs);
     }
     else
     { /* BB board found... reserve space for structures */
@@ -199,13 +199,13 @@ initBB()
       xvmeReset(pXvmeRegs, i);		/* finish resetting the xvme module */
 
       if (bbDebug)
-	logMsg("BB card found at address 0x%08.8X\n", pXvmeRegs);
+	printf("BB card found at address 0x%08.8X\n", pXvmeRegs);
 
       if ((pBbLink[i] = (struct bbLink *) malloc(sizeof(struct bbLink))) == NULL
 )
       { /* This better never happen! */
         /* errMsg( BUG -- figure out how to use this thing ); */
-        logMsg("Can't malloc memory for link data structures!\n");
+        printf("Can't malloc memory for link data structures!\n");
         return(ERROR);
       }
       pBbLink[i]->linkType = BITBUS_IO;	/* spec'd in link.h */
@@ -230,7 +230,7 @@ initBB()
       if ((pXvmeLink[i] = (struct xvmeLink *) malloc(sizeof(struct xvmeLink))) == NULL)
       {
         /* errMsg( BUG -- figure out how to use this thing ); */
-        logMsg("Can't malloc memory for link data structures!\n");
+        printf("Can't malloc memory for link data structures!\n");
         return(ERROR);
       }
 
@@ -257,7 +257,7 @@ initBB()
       /* start a task to manage the link */
       if (taskSpawn("bbLink", 46, VX_FP_TASK|VX_STDIO, 2000, xvmeLinkTask, i) == ERROR)
       {
-        logMsg("initBB: failed to start link task for link %d\n", i);
+        printf("initBB: failed to start link task for link %d\n", i);
         /*errMsg()*/
       }
     }
@@ -285,7 +285,7 @@ int	link;
 
 
   if (bbDebug)
-    logMsg("xvmeReset(%08.8X, %d): Resetting xvme module\n", xvmeRegs, link);
+    printf("xvmeReset(%08.8X, %d): Resetting xvme module\n", xvmeRegs, link);
 
   xvmeRegs->fifo_stat = XVME_RESET;	/* assert the reset pulse */
   taskDelay(1);
@@ -298,7 +298,7 @@ int	link;
 
   if (!j)
   {
-    logMsg("xvmeReset(%d): Command buffer will not clear after reset!\n", link);
+    printf("xvmeReset(%d): Command buffer will not clear after reset!\n", link);
     return(ERROR);
   }
 
@@ -308,13 +308,13 @@ int	link;
 
   if (!j)
   {
-    logMsg("xvmeReset(%d): Data buffer will not clear after reset!\n", link);
+    printf("xvmeReset(%d): Data buffer will not clear after reset!\n", link);
     return(ERROR);
   }
 
   if ((xvmeRegs->fifo_stat & XVME_FSVALID) != XVME_FSIDLE)
   {
-    logMsg("xvmeReset(%d): XVME board not returning to idle status after reset!\n", link);
+    printf("xvmeReset(%d): XVME board not returning to idle status after reset!\n", link);
     return(ERROR);
   }
   return(OK);
@@ -599,7 +599,7 @@ int	link;
   int			prio;
 
   if (bbDebug)
-    logMsg("xvmeLinkTask started for link %d\n", link);
+    printf("xvmeLinkTask started for link %d\n", link);
 
   plink = pBbLink[link];
 
@@ -611,12 +611,12 @@ int	link;
     FASTLOCK(&(plink->linkEventSem));
 
     if (bbDebug)
-      logMsg("xvmeLinkTask(%d): got an event\n", link);
+      printf("xvmeLinkTask(%d): got an event\n", link);
 
     if (pXvmeLink[link]->watchDogFlag)
     { /* Time to age the busy list members */
       if (bbDebug)
-	logMsg("xvmeLinkTask(%d): (Watchdog) checking busy list\n", link);
+	printf("xvmeLinkTask(%d): (Watchdog) checking busy list\n", link);
 
       pXvmeLink[link]->watchDogFlag = 0;
 
@@ -629,20 +629,20 @@ int	link;
       {
 	pnode->ageLimit--;
         if(bbDebug)
-          logMsg("xvmeLinkTask(%d): (Watchdog) node 0x%08.8X.ageLimit=%d\n", link, pnode, pnode->ageLimit);
+          printf("xvmeLinkTask(%d): (Watchdog) node 0x%08.8X.ageLimit=%d\n", link, pnode, pnode->ageLimit);
 	if (pnode->ageLimit <= 0)
 	{ /* This node has been on the busy list for too long */
 	  npnode = (struct dpvtBitBusHead *) lstNext(pnode);
 	  if ((intMask & XVME_TX_INT) && (pXvmeLink[link]->txDpvtHead == pnode))
 	  { /* Uh oh... Transmitter is stuck while sending this xact */
-            logMsg("xvmeLinkTask(%d): transmitter looks stuck, link dead\n", link);
+            printf("xvmeLinkTask(%d): transmitter looks stuck, link dead\n", link);
 	    taskDelay(60);	/* waste some time /
             /* BUG -- This should probably reset the xvme card here */
 	  }
 	  else
 	  { /* Get rid of the request and set error status etc... */
 	    lstDelete(&(plink->busyList), pnode);
-	    logMsg("xvmeLinkTask(%d): TIMEOUT on xact 0x%08.8X\n", link, pnode);
+	    printf("xvmeLinkTask(%d): TIMEOUT on xact 0x%08.8X\n", link, pnode);
             pnode->status = BB_TIMEOUT;
 	    (plink->deviceStatus[pnode->txMsg->node])--; /* fix node status */
 	    if(pnode->finishProc != NULL)
@@ -664,7 +664,7 @@ int	link;
       { /* the rcvr is busy on something... check it out too */
         if (--(pXvmeLink[link]->rxDpvtHead->ageLimit) < 0)
 	{ /* old, but busy... and we even gave it an extra tick.  Rcvr stuck. */
-	  logMsg("xvmeLinkTask(%d): receiver looks stuck, link dead\n", link);
+	  printf("xvmeLinkTask(%d): receiver looks stuck, link dead\n", link);
 	  taskDelay(60);
           /* BUG -- This should probably reset the xvme card */
 	}
@@ -673,7 +673,7 @@ int	link;
       if (lstCount(&(plink->busyList))) /* If list not empty, start watch dog */
       {
 	if (bbDebug)
-	  logMsg("xvmeLinkTask(%d): restarting watch dog timer\n", link);
+	  printf("xvmeLinkTask(%d): restarting watch dog timer\n", link);
         wdStart(pXvmeLink[link]->watchDogId, BB_WD_INTERVAL, xvmeTmoHandler, link);
       }
 
@@ -706,7 +706,7 @@ int	link;
 	  FASTUNLOCK(&(plink->queue[prio].sem));
     
           if (bbDebug)
-            logMsg("xvmeLinkTask(%d): got xact, pnode= 0x%08.8X\n", link, pnode);
+            printf("xvmeLinkTask(%d): got xact, pnode= 0x%08.8X\n", link, pnode);
     
           /* Count the outstanding messages */
           (plink->deviceStatus[pnode->txMsg->node])++;
@@ -763,7 +763,7 @@ int     prio;
   FASTUNLOCK(&(pBbLink[link]->linkEventSem));
 
   if (bbDebug)
-    logMsg("qbbreq(%d, 0x%08.8X, %d): transaction queued\n", link, pdpvt, prio);
+    printf("qbbreq(%d, 0x%08.8X, %d): transaction queued\n", link, pdpvt, prio);
 
   return(OK);
 }

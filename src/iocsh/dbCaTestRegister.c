@@ -28,7 +28,7 @@ void dbcarCallFunc(ioccrfArg **args)
 }
 
 
-void epicsShareAPI dbCaTestRegisterInit(void)
+void epicsShareAPI dbCaTestRegister(void)
 {
     ioccrfRegister(&dbcarFuncDef,dbcarCallFunc);
 }

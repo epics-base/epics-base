@@ -1,4 +1,4 @@
-/* dbAccessRegisterInit.h */
+/* dbAccessRegister.h */
 /* Author:  Marty Kraimer Date: 27APR2000 */
 
 /********************COPYRIGHT NOTIFICATION**********************************
@@ -7,8 +7,8 @@ described on the COPYRIGHT_UniversityOfChicago file included as part
 of this distribution.
 ****************************************************************************/
 
-#ifndef INCdbAccessRegisterInitH
-#define INCdbAccessRegisterInitH
+#ifndef INCdbAccessRegisterH
+#define INCdbAccessRegisterH
 
 #include "shareLib.h"
 
@@ -16,10 +16,10 @@ of this distribution.
 extern "C" {
 #endif
 
-epicsShareFunc void epicsShareAPI dbAccessRegisterInit(void);
+epicsShareFunc void epicsShareAPI dbAccessRegister(void);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /*INCdbAccessRegisterInitH*/
+#endif /*INCdbAccessRegisterH*/

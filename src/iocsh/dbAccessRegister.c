@@ -71,7 +71,7 @@ void iocInitCallFunc(ioccrfArg **args)
     iocInit();
 }
 
-void epicsShareAPI dbAccessRegisterInit(void)
+void epicsShareAPI dbAccessRegister(void)
 {
     ioccrfRegister(&dbLoadDatabaseFuncDef,dbLoadDatabaseCallFunc);
     ioccrfRegister(&dbLoadRecordsFuncDef,dbLoadRecordsCallFunc);

@@ -102,7 +102,7 @@ ioccrfArg *dbhcrArgs[1] = {&dbhcrArg0};
 ioccrfFuncDef dbhcrFuncDef = {"dbhcr",1,dbhcrArgs};
 void dbhcrCallFunc(ioccrfArg **args) { dbhcr((char *)args[0]->value);}
 
-void epicsShareAPI dbTestRegisterInit(void)
+void epicsShareAPI dbTestRegister(void)
 {
     ioccrfRegister(&dbaFuncDef,dbaCallFunc);
     ioccrfRegister(&dblFuncDef,dblCallFunc);

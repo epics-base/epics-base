@@ -1,4 +1,4 @@
-/* dbCaTestRegisterInit.h */
+/* dbCaTestRegister.h */
 /* Author:  Marty Kraimer Date: 27APR2000 */
 
 /********************COPYRIGHT NOTIFICATION**********************************
@@ -7,8 +7,8 @@ described on the COPYRIGHT_UniversityOfChicago file included as part
 of this distribution.
 ****************************************************************************/
 
-#ifndef INCdbCaTestRegisterInitH
-#define INCdbCaTestRegisterInitH
+#ifndef INCdbCaTestRegisterH
+#define INCdbCaTestRegisterH
 
 #include "shareLib.h"
 
@@ -16,10 +16,10 @@ of this distribution.
 extern "C" {
 #endif
 
-epicsShareFunc void epicsShareAPI dbCaTestRegisterInit(void);
+epicsShareFunc void epicsShareAPI dbCaTestRegister(void);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /*INCdbCaTestRegisterInitH*/
+#endif /*INCdbCaTestRegisterH*/

@@ -128,6 +128,8 @@ void dbChannelIO::operator delete ( void *pCadaver )
     // because if I declare placement new and delete, but
     // comment out the placement delete definition there are
     // no undefined symbols.
+    errlogPrintf ( "%s:%d this compiler is confused about placement delete - memory was probably leaked",
+        __FILE__, __LINE__ );
 }
 
 

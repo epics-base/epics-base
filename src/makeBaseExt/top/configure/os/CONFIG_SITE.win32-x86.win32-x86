@@ -73,9 +73,6 @@ endif
 MOTIF_LIB = $(X11_LIB)
 MOTIF_INC = $(X11_INC)
 
-JAVA_DIR = c:\\jdk1.3
-JAVA_INC = $(JAVA_DIR)/include
-
 TCL = c:\\Tcl
 TK_LIB = $(TCL)/lib
 TK_INC = $(TCL)/include
@@ -109,3 +106,4 @@ ZLIB_CFLAG = -DzLib
 ZLIB_PROD_LIB = z
 z_DIR = $(EPICS_EXTENSIONS_LIB)
 
+JAVA_DIR=c:/j2sdk1.4.1_01

@@ -57,12 +57,6 @@ IDL = /usr/local/idl
 #  IDL=$(IDL)/external/rpc is the sun4 version
 IDLRPC = $(IDL)/external/rpc.solaris
 
-# sun 5.4
-#JAVA_DIR=/opt/local/java
-# sun 5.6
-JAVA_DIR=/usr/java
-JAVA_INC=$(JAVA_DIR)/include
-
 ZLIB_PREFIX = /usr/local/oag
 ZLIB = $(notdir $(wildcard $(ZLIB_PREFIX)/lib/libz.a))
 ifeq ($(ZLIB) , libz.a)
@@ -79,3 +73,7 @@ ZLIB_PROD_LIB =
 z_DIR=
 endif
 
+PYTHON_DIR=/opt/local/lib/python2.2
+PYTHON_INCLUDE=/opt/local/include/python2.2
+
+JAVA_DIR=/usr/java

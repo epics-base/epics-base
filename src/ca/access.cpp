@@ -698,7 +698,7 @@ cac::cac ()
     }
 
     this->ca_server_port = 
-        caFetchPortConfig (this, &EPICS_CA_SERVER_PORT, CA_SERVER_PORT);
+        envGetInetPortConfigParam (&EPICS_CA_SERVER_PORT, CA_SERVER_PORT);
 
     threadPrivateSet (caClientContextId, (void *) this);
 }
@@ -3589,9 +3589,9 @@ epicsShareDef const char *db_field_text[] = {
     "DBF_DOUBLE"
 };
 
-epicsShareDef const char    *dbf_text_invalid = "DBF_invalid";
+epicsShareDef const char *dbf_text_invalid = "DBF_invalid";
 
-epicsShareDef const short   dbf_text_dim = (sizeof dbf_text)/(sizeof (char *));
+epicsShareDef const short dbf_text_dim = (sizeof dbf_text)/(sizeof (char *));
 
 epicsShareDef const char *dbr_text[LAST_BUFFER_TYPE+1] = {
     "DBR_STRING",
@@ -3635,6 +3635,6 @@ epicsShareDef const char *dbr_text[LAST_BUFFER_TYPE+1] = {
     "DBR_CLASS_NAME"
 };
 
-epicsShareDef const char *  dbr_text_invalid = "DBR_invalid";
-epicsShareDef const short   dbr_text_dim = (sizeof dbr_text) / (sizeof (char *)) + 1;
+epicsShareDef const char *dbr_text_invalid = "DBR_invalid";
+epicsShareDef const short dbr_text_dim = (sizeof dbr_text) / (sizeof (char *)) + 1;
 

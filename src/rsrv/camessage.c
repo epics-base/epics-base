@@ -2251,7 +2251,7 @@ int camessage ( struct client *client )
     unsigned nmsg = 0;
     unsigned msgsize;
     unsigned bytes_left;
-    int status;
+    int status = RSRV_ERROR;
     
     if ( ! pCaBucket ) {
         pCaBucket = bucketCreate(CAS_HASH_TABLE_SIZE);
@@ -2283,8 +2283,10 @@ int camessage ( struct client *client )
 
         /* wait for at least a complete caHdr */
         bytes_left = client->recv.cnt - client->recv.stk;
-        if ( bytes_left < sizeof(*mp) )
-            return RSRV_OK;
+        if ( bytes_left < sizeof(*mp) ) {
+            status = RSRV_OK;
+            break;
+        }
         
         mp = (caHdr *) &client->recv.buf[client->recv.stk];
         msg.m_cmmd      = ntohs ( mp->m_cmmd );
@@ -2296,8 +2298,10 @@ int camessage ( struct client *client )
 
         if ( CA_V49(client->minor_version_number) && msg.m_postsize == 0xffff  ) {
             ca_uint32_t *pLW = ( ca_uint32_t * ) ( mp + 1 );
-            if ( bytes_left < sizeof(*mp) + 2 * sizeof(*pLW) )
-                return RSRV_OK;
+            if ( bytes_left < sizeof(*mp) + 2 * sizeof(*pLW) ) {
+                status = RSRV_OK;
+                break;
+            }
             msg.m_postsize  = ntohl ( pLW[0] );
             msg.m_count     = ntohl ( pLW[1] );
             msgsize = msg.m_postsize + sizeof(*mp) + 2 * sizeof ( *pLW );
@@ -2326,7 +2330,8 @@ int camessage ( struct client *client )
                 assert ( msgsize >= bytes_left );
                 client->recvBytesToDrain = msgsize - bytes_left;
                 client->recv.stk = client->recv.cnt;
-                return RSRV_OK;  
+                status = RSRV_OK;
+                break;
             }
         }
 
@@ -2334,7 +2339,8 @@ int camessage ( struct client *client )
          * wait for complete message body
          */
         if ( msgsize > bytes_left ) {
-            return RSRV_OK;
+            status = RSRV_OK;
+            break;
         }
                
         nmsg++;
@@ -2346,18 +2352,21 @@ int camessage ( struct client *client )
             if ( msg.m_cmmd < NELEMENTS ( udpJumpTable ) ) {
                 status = ( *udpJumpTable[msg.m_cmmd] )( &msg, pBody, client );
                 if (status!=RSRV_OK) {
-                    return RSRV_ERROR;
+                    status = RSRV_ERROR;
+                    break;
                 }
             }
             else {
-                return bad_udp_cmd_action ( &msg, pBody, client );
+                status = bad_udp_cmd_action ( &msg, pBody, client );
+                break;
             }
         }
         else {
             if ( msg.m_cmmd < NELEMENTS(tcpJumpTable) ) {
                 status = ( *tcpJumpTable[msg.m_cmmd] ) ( &msg, pBody, client );
                 if ( status != RSRV_OK ) {
-                    return RSRV_ERROR;
+                    status = RSRV_ERROR;
+                    break;
                 }
             }
             else {
@@ -2368,7 +2377,7 @@ int camessage ( struct client *client )
         client->recv.stk += msgsize;
     }
     
-    return RSRV_OK;
+    return status;
 }
 
 /*

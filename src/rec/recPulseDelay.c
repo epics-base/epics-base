@@ -38,6 +38,7 @@
  * .07  06-02-92        jba     changed graphic/control limits for dly,odly,wide,owid
  * .08  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
  * .09  09-16-92        jba     replaced code with calls to recGblGetLinkvalue
+ * .10  10-20-92        jbk     added get_enum funcs, allowed defaults in fields
  */ 
 
 #include     <vxWorks.h>
@@ -67,9 +68,9 @@ static long get_value();
 #define put_array_info NULL
 #define get_units NULL
 static long get_precision();
-#define get_enum_str NULL
-#define get_enum_strs NULL
-#define put_enum_str NULL
+long get_enum_str();
+long get_enum_strs();
+long put_enum_str();
 static long get_graphic_double();
 static long get_control_double();
 #define get_alarm_double NULL
@@ -102,6 +103,7 @@ struct pddset { /* pulseDelay input dset */
      DEVSUPFUN     init_record; /*returns: (-1,0)=>(failure,success)*/
      DEVSUPFUN     get_ioint_info;
      DEVSUPFUN     write_pd;/*(-1,0)=>(failure,success*/
+     DEVSUPFUN     get_enum;
 };
 static void monitor();
 
@@ -129,7 +131,8 @@ static long init_record(ppd,pass)
     /* get the soft trigger value if stl is a constant*/
     if(ppd->stl.type==CONSTANT)
     {
-        ppd->stv=ppd->stl.value.value;
+	if(ppd->stl.value.value!=0)
+            ppd->stv=ppd->stl.value.value;
     }
  
     if(ppd->stl.type==PV_LINK)
@@ -141,7 +144,8 @@ static long init_record(ppd,pass)
     /* get the soft gate value if glnk is a constant*/
     if(ppd->glnk.type==CONSTANT)
     {
-        ppd->gate=ppd->glnk.value.value;
+	if(ppd->stl.value.value!=0)
+            ppd->gate=ppd->glnk.value.value;
     }
  
     if(ppd->glnk.type==PV_LINK)
@@ -282,6 +286,66 @@ static long get_graphic_double(paddr,pgd)
     return(0);
 }
 
+static long get_enum_str(struct dbAddr *paddr,char *p)
+{
+    struct pulseDelayRecord *ppd=(struct pulseDelayRecord *)paddr->precord;
+
+    if(paddr->pfield==(void *)&ppd->hts)
+    {
+	sprintf(p,"%d",ppd->hts);
+    }
+    else
+    {
+	strcpy(p,"No string");
+    }
+
+    return(0);
+}
+
+static long get_enum_strs(struct dbAddr *paddr,struct dbr_enumStrs *p)
+{
+    struct pulseDelayRecord *ppd=(struct pulseDelayRecord *)paddr->precord;
+    struct pddset *pdset;
+	     
+    pdset=(struct pddset *)(ppd->dset);
+
+    if(paddr->pfield==(void *)&ppd->hts)
+    {
+   	if( (pdset->number >= 6) && (pdset->get_enum != NULL) )
+    	{
+     		(*pdset->get_enum)(paddr,p);
+	}
+	else
+	{
+		strcpy(p[0],"none available");
+		p->no_str=1;
+	}
+    }
+    else
+    {
+	strcpy(p[0],"No string");
+	p->no_str=1;
+    }
+
+    return(0);
+}
+
+static long put_enum_str(struct dbAddr *paddr,char *p)
+{
+    struct pulseDelayRecord *ppd=(struct pulseDelayRecord *)paddr->precord;
+
+    if(paddr->pfield==(void *)&ppd->hts)
+    {
+	if(sscanf(p,"%i",&ppd->hts)<=0)
+		return(S_db_badChoice);
+    }
+    else
+    {
+	return(S_db_badChoice);
+    }
+
+    return(0);
+}
 static long get_control_double(paddr,pcd)
     struct dbAddr *paddr;
     struct dbr_ctrlDouble *pcd;

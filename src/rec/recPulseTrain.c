@@ -136,8 +136,10 @@ static long init_record(ppt,pass)
          return(S_dev_noDSET);
     }
     /* get the hgv value if sgl is a constant*/
-    if (ppt->sgl.type == CONSTANT ){
-         ppt->hgv = ppt->sgl.value.value;
+    if (ppt->sgl.type == CONSTANT )
+    {
+	 if(ppt->sgl.value.value!=0)
+             ppt->hgv = ppt->sgl.value.value;
     }
 
     if (ppt->sgl.type == PV_LINK )

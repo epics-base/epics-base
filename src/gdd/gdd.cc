@@ -17,6 +17,8 @@
 #include <stdlib.h>
 #include <stdarg.h>
 
+#include <stdexcept>
+
 #define epicsExportSharedSymbols
 #include "gdd.h"
 
@@ -195,7 +197,15 @@ void gdd::setDimension(int d, const gddBounds* bnds)
 
 	if(dim!=d)
 	{
-		freeBounds();
+        if ( dim != 0 ) {
+            if ( isFlat() || isManaged() ) {
+                throw std::logic_error ( 
+                    "sorry: cant change the bounds on an atomic, managed or flat gdd" );
+            }
+
+		    freeBounds();
+        }
+
         //
         // joh 05-28-02
         // added code to set a nill data pointer if gdd changes from scalar to vector
@@ -1168,7 +1178,6 @@ gddStatus gdd::putRef(const gdd*)
 
 gddStatus gdd::put(const gdd* dd)
 {
-    gddStatus rc=0;
     aitTimeStamp ts;
     aitUint8* arr;
     size_t sz;
@@ -1177,9 +1186,10 @@ gddStatus gdd::put(const gdd* dd)
     if(isContainer() || dd->isContainer())
     {
         gddAutoPrint("gdd::put(const gdd*)",gddErrorNotSupported);
-        rc = gddErrorNotSupported;
+        return gddErrorNotSupported;
     }
-    else if(isScalar() && dd->isScalar())
+    
+    if(isScalar() && dd->isScalar())
     {
         // this is the simple case - just make this scalar look like the other
         this->set(dd->primitiveType(),dd->dataVoid());
@@ -1188,156 +1198,129 @@ gddStatus gdd::put(const gdd* dd)
     {
         this->set(dd->primitiveType(),dd->dataPointer());
     }
+    // at this point this GDD must be atomic or scalar
+    // and the src gdd is atomic
+    else if ( this->dimension() > 1 || dd->dimension() > 1 )
+    {
+        // sorry, no support currently for multidimensional arrays
+        return gddErrorOutOfBounds;
+    }
+    // now both dd must be single dimensional atomic
     else {
-        //at this point this GDD must be atomic
+        aitUint32 srcFirst;
+        aitUint32 srcElemCount;
+        if ( dd->isScalar() ) {
+            srcFirst = 0;
+            srcElemCount = 1;
+        }
+        else {
+            srcFirst = dd->getBounds()->first();
+            srcElemCount = dd->getBounds()->size();
+        }
+
+        //
+        // clip to lower limit of source
+        //
+        aitUint32 srcCopyFirst;
+        if ( this->getBounds()->first () > srcFirst ) {
+            srcCopyFirst = this->getBounds()->first();
+        }
+        else {
+            srcCopyFirst = srcFirst;
+        }
         
-        if(dataPointer()==NULL)
+        //
+        // clip to upper limit of source
+        //
+        aitUint32 srcCopySize;
+        const aitUint32 unusedSrcBelow = srcCopyFirst - srcFirst;
+        if ( dd->getBounds()->size() <= unusedSrcBelow ) {
+            return gddErrorOutOfBounds;
+        }
+
+        aitUint32 srcAvailSize = srcElemCount - unusedSrcBelow;
+        if ( srcAvailSize > this->getBounds()->size() ) {
+            srcCopySize = this->getBounds()->size();
+        }
+        else {
+            srcCopySize = srcAvailSize;
+        }
+
+        if(dataVoid()==NULL)
         {
-            if(isFlat() || isManaged())
-            {
-                gddAutoPrint("gdd::put(const gdd*)",gddErrorNotAllowed);
-                rc=gddErrorNotAllowed;
+            if (primitiveType()==aitEnumInvalid) {
+                setPrimType (dd->primitiveType());
             }
-            else
-            {
-                setPrimType(dd->primitiveType());
-                sz=describedDataSizeBytes();
-                
-                // allocate a data buffer for the user
-                if((arr=new aitUint8[sz]))
-                {
-                    destruct=new gddAitUint8Destructor;
-                    if (destruct!=NULL) {
-                        destruct->reference();
-                        setData(arr);
-                    }
-                    else {
-                        free (arr);
-                        gddAutoPrint("gdd::copyData(const gdd*)",gddErrorNewFailed);
-                        rc=gddErrorNewFailed;
-                    }
+            sz=srcCopySize * aitSize[primitiveType()];
+            
+            // allocate a data buffer for the user
+            arr=new aitUint8[sz];
+            if( ! arr ) {
+                return gddErrorNewFailed;
+            }
+            destruct=new gddAitUint8Destructor;
+            if (destruct!=NULL) {
+                destruct->reference();
+                setData(arr);
+            }
+            else {
+                free (arr);
+                gddAutoPrint("gdd::copyData(const gdd*)",gddErrorNewFailed);
+                return gddErrorNewFailed;
+            }
+
+            // the rule is that if storage is not preaalocated then its ok
+            // for the dest bounds to shrink to match the original dest 
+            // bounds intersection with the source data bounds
+            for ( unsigned i = 0; i < this->dimension(); i++ ) {
+                if ( i == 0 ) {
+                    this->setBound ( i, srcCopyFirst, srcCopySize );
                 }
-                else
-                {
-                    gddAutoPrint("gdd::copyData(const gdd*)",gddErrorNewFailed);
-                    rc=gddErrorNewFailed;
+                else {
+                    this->setBound ( i, 0, 1 );
                 }
             }
+        }
+
+        aitUint8* pDst = (aitUint8*) this->dataPointer();
+        assert ( srcCopyFirst >= this->getBounds()->first() );
+        const aitUint32 unusedDstLow = srcCopyFirst - this->getBounds()->first();
+        if ( unusedDstLow > 0 ) {
+            //
+            // zero portions that dont match
+            // (should eventually throw an exception ?
+            //
+            aitUint32 byteCount = aitSize[primitiveType()] * unusedDstLow;
+            memset (pDst, '\0', byteCount);
+            pDst += byteCount;
         }
         
-        if (rc==0) {
-            if(dd->isScalar())
-            {
-                //
-                // joh - added code to at least get one dimensional arrays correct
-                //
-                // !!!! this code currently only works correctly with one
-                // !!!! dimensional arrays.
-                //
-                if ( this->getBounds()->first () == 0 && this->getBounds()->size () > 0) {
-                    
-                    aitUint8* pDst = (aitUint8*) this->dataPointer();
-                    
-                    aitConvert (this->primitiveType(), pDst, 
-                        dd->primitiveType(), dd->dataVoid(), 1);
-                    
-                    const aitUint32 unusedDstHigh = this->getBounds()->size() - 1;
-                    if ( unusedDstHigh > 0 ) {
-                        pDst += aitSize[primitiveType()];
-                        
-                        //
-                        // zero portions that dont match
-                        // (should eventually throw an exception ?
-                        //
-                        aitUint32 byteCount = aitSize[primitiveType()] * unusedDstHigh;
-                        memset (pDst, '\0', byteCount);
-                    }
-                }
-                //
-                // should eventually throw an exception in the else case here
-                //
-            }
-            else // both dd and this must be atomic
-            {
-                //
-                // joh - added code to at least get one dimensional arrays correct
-                //
-                // !!!! this code currently only works correctly with one
-                // !!!! dimensional arrays.
-                //
-                aitUint32 srcCopyFirst;
-                aitUint32 srcCopySize;
-                
-                //
-                // clip to lower limit of source
-                //
-                if ( this->getBounds()->first () > dd->getBounds()->first() ) {
-                    srcCopyFirst = this->getBounds()->first();
-                }
-                else {
-                    srcCopyFirst = dd->getBounds()->first();
-                }
-                
-                //
-                // clip to upper limit of source
-                //
-                const aitUint32 unusedSrcBelow = srcCopyFirst - dd->getBounds()->first();
-                if ( dd->getBounds()->size() <= unusedSrcBelow ) {
-                    srcCopySize = 0;
-                }
-                else {
-                    aitUint32 srcAvailSize = dd->getBounds()->size() - unusedSrcBelow;
-                    if ( srcAvailSize > this->getBounds()->size() ) {
-                        srcCopySize = this->getBounds()->size();
-                    }
-                    else {
-                        srcCopySize = srcAvailSize;
-                    }
-                }
-                
-                if (srcCopySize>0) {
-                    
-                    aitUint8* pDst = (aitUint8*) this->dataPointer();
-                    assert ( srcCopyFirst >= this->getBounds()->first() );
-                    const aitUint32 unusedDstLow = srcCopyFirst - this->getBounds()->first();
-                    if ( unusedDstLow > 0 ) {
-                        //
-                        // zero portions that dont match
-                        // (should eventually throw an exception ?
-                        //
-                        aitUint32 byteCount = aitSize[primitiveType()] * unusedDstLow;
-                        memset (pDst, '\0', byteCount);
-                        pDst += byteCount;
-                    }
-                    
-                    aitUint8* pSrc = (aitUint8*) dd->dataPointer();
-                    pSrc += aitSize[primitiveType()] * unusedSrcBelow;
-                    aitConvert (this->primitiveType(), pDst, 
-                        dd->primitiveType(), pSrc, srcCopySize);
-                    
-                    assert ( this->getBounds()->size() >= srcCopySize + unusedDstLow );
-                    const aitUint32 unusedDstHigh = this->getBounds()->size() - ( srcCopySize + unusedDstLow );
-                    if ( unusedDstHigh > 0 ) {
-                        pDst += aitSize[primitiveType()] * srcCopySize;
-                        //
-                        // zero portions that dont match
-                        // (should eventually throw an exception ?
-                        //
-                        aitUint32 byteCount = aitSize[primitiveType()] * unusedDstHigh;
-                        memset (pDst, '\0', byteCount);
-                    }
-                }
-            }
+        aitUint8* pSrc = (aitUint8*) dd->dataPointer();
+        pSrc += aitSize[primitiveType()] * unusedSrcBelow;
+        int gddStatus = aitConvert (this->primitiveType(), pDst, 
+            dd->primitiveType(), pSrc, srcCopySize);
+        if ( gddStatus < 0 ) {
+            return gddErrorTypeMismatch;
+        }
+        
+        assert ( this->getBounds()->size() >= srcCopySize + unusedDstLow );
+        const aitUint32 unusedDstHigh = this->getBounds()->size() - ( srcCopySize + unusedDstLow );
+        if ( unusedDstHigh > 0 ) {
+            pDst += aitSize[primitiveType()] * srcCopySize;
+            //
+            // zero portions that dont match
+            // (should eventually throw an exception ?
+            //
+            aitUint32 byteCount = aitSize[primitiveType()] * unusedDstHigh;
+            memset (pDst, '\0', byteCount);
         }
     }
     
-    if (rc==0) {
-        setStatSevr(dd->getStat(),dd->getSevr());
-        dd->getTimeStamp(&ts);
-        setTimeStamp(&ts);
-    }
+    setStatSevr(dd->getStat(),dd->getSevr());
+    dd->getTimeStamp(&ts);
+    setTimeStamp(&ts);
     
-    return rc;
+    return 0; // success
 }
 
 size_t gdd::outHeader(void* buf,aitUint32 bufsize) const
@@ -1612,7 +1595,15 @@ void gdd::setPrimType (aitEnum t)
 	//
 	else if(isAtomic())
 	{
+        if (dataPointer()) {
+			destruct->destroy(dataPointer());
+		    destruct=NULL;
+			memset (&this->data, '\0', sizeof(this->data));
+        }
 	}
+    else if(isContainer()) {
+        this->clear();
+    }
 
 	//
 	// I (joh) assume that something needs to be done when

@@ -431,8 +431,6 @@ public:
 
 	void removeAsyncIO ( casAsyncIOI & ioIn );
 
-	casRes * lookupRes ( const caResId &idIn, casResType type );
-
 	caServerI & getCAS () const;
 
     void lock ();
@@ -487,8 +485,6 @@ public:
     void enableEvents ();
     void disableEvents ();
     bool eventSysIsFull ();
-	void installMonitor ();
-	void removeMonitor ();
 
 	void setDestroyPending ();
 
@@ -499,9 +495,9 @@ public:
         const unsigned type, 
         const casEventMask & );
     void destroyMonitor ( casMonitor & );
-
     caStatus casMonitorCallBack ( casMonitor &,
         const smartConstGDDPointer & );
+	casMonitor * lookupMonitor ( const caResId &idIn );
 
 protected:
     epicsMutex mutex;
@@ -532,10 +528,7 @@ public:
 
 	ca_uint16_t protocolRevision() const {return this->minor_version_number;}
 
-	//
-	// find the channel associated with a resource id
-	//
-	casChannelI * resIdToChannel (const caResId &id);
+	casChannelI * lookupChannel ( const caResId &id );
 
 	virtual void hostName ( char *pBuf, unsigned bufSize ) const = 0;
 
@@ -879,49 +872,28 @@ public:
 	caServerI ( caServer &tool );
 	~caServerI ();
 
-	//
-	// find the channel associated with a resource id
-	//
-	casChannelI *resIdToChannel (const caResId &id);
-
-	//
-	// find the PV associated with a resource id
-	//
-	casPVI *resIdToPV (const caResId &id);
-
 	void installClient (casStrmClient *pClient);
-
 	void removeClient (casStrmClient *pClient);
 
-	//
-	// is there space for a new channel
-	//
 	bool roomForNewChannel() const;
 
 	unsigned getDebugLevel() const { return debugLevel; }
-	inline void setDebugLevel (unsigned debugLevelIn);
+	inline void setDebugLevel ( unsigned debugLevelIn );
 
-	void show (unsigned level) const;
+	void show ( unsigned level ) const;
 
-	casRes *lookupRes (const caResId &idIn, casResType type);
+	casMonitor * lookupMonitor ( const caResId &idIn );
+	casChannelI * lookupChannel ( const caResId &idIn );
 
 	caServer *getAdapter ();
 
 	void installItem ( casRes & res );
-
 	casRes * removeItem ( casRes & res );
 
-	//
-	// call virtual function in the interface class
-	//
 	caServer * operator -> ();
 
 	void connectCB (casIntfOS &);
 
-    //
-	// common event masks 
-	// (what is currently used by the CA clients)
-	//
 	casEventMask valueEventMask() const; // DBE_VALUE registerEvent("value")
 	casEventMask logEventMask() const; 	// DBE_LOG registerEvent("log") 
 	casEventMask alarmEventMask() const; // DBE_ALARM registerEvent("alarm") 
@@ -961,9 +933,6 @@ private:
     unsigned nEventsProcessed; 
     unsigned nEventsPosted; 
 
-    //
-    // predefined event types
-    //
     casEventMask valueEvent; // DBE_VALUE registerEvent("value")
 	casEventMask logEvent; 	// DBE_LOG registerEvent("log") 
 	casEventMask alarmEvent; // DBE_ALARM registerEvent("alarm")

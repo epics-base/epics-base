@@ -119,8 +119,8 @@ caStatus casStrmClient::verifyRequest (casChannelI *&pChan)
 	//
 	// channel exists for this resource id ?
 	//
-	pChan = this->resIdToChannel(mp->m_cid);
-	if (!pChan) {
+	pChan = this->lookupChannel ( mp->m_cid );
+	if ( ! pChan ) {
 		return ECA_BADCHID;
 	}
 
@@ -1324,7 +1324,7 @@ caStatus casStrmClient::clearChannelAction ()
 	/*
 	 * Verify the channel
 	 */
-	pciu = this->resIdToChannel ( mp->m_cid );
+	pciu = this->lookupChannel ( mp->m_cid );
 	if ( pciu == NULL ) {
 		/*
 		 * it is possible that the channel delete arrives just 
@@ -1376,7 +1376,7 @@ caStatus casStrmClient::eventCancelAction ()
 	/*
 	 * Verify the channel
 	 */
-	casChannelI *pciu = this->resIdToChannel ( mp->m_cid );
+	casChannelI * pciu = this->lookupChannel ( mp->m_cid );
 	if ( ! pciu ) {
 		/*
 		 * it is possible that the event delete arrives just 

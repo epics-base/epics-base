@@ -54,20 +54,19 @@ casClient::casClient ( caServerI & serverInternal,
 //
 // find the channel associated with a resource id
 //
-casChannelI *casClient::resIdToChannel(const caResId &idIn)
+casChannelI * casClient::lookupChannel ( const caResId & idIn )
 {
-	casChannelI *pChan;
-
 	//
 	// look up the id in a hash table
 	//
-	pChan = this->ctx.getServer()->resIdToChannel(idIn);
+	casChannelI * pChan = 
+        this->ctx.getServer()->lookupChannel ( idIn );
 
 	//
 	// update the context
 	//
-	this->ctx.setChannel(pChan);
-	if (!pChan) {
+	this->ctx.setChannel ( pChan );
+	if ( ! pChan ) {
 		return NULL;
 	}
 
@@ -75,14 +74,14 @@ casChannelI *casClient::resIdToChannel(const caResId &idIn)
 	// If the channel isnt attached to this client then
 	// something has gone wrong
 	//
-	if (&pChan->getClient()!=this) {
+	if ( &pChan->getClient() != this ) {
 		return NULL;
 	}
 
 	//
 	// update the context
 	//
-	this->ctx.setPV(&pChan->getPVI());
+	this->ctx.setPV ( &pChan->getPVI() );
 	return pChan;
 }
 
@@ -468,7 +467,7 @@ caStatus casClient::sendErr ( const caHdrLargeArray *curp, const int reportedSta
 		    /*
 		    * Verify the channel
 		    */
-            casChannelI * pciu = this->resIdToChannel ( curp->m_cid );
+            casChannelI * pciu = this->lookupChannel ( curp->m_cid );
 		    if ( pciu ) {
 			    cid = pciu->getCID();
 		    }
@@ -596,7 +595,7 @@ void casClient::dumpMsg ( const caHdrLargeArray *mp,
     char pName[64u];
     this->hostName (pName, sizeof (pName));
 
-    casChannelI * pciu = this->resIdToChannel(mp->m_cid);
+    casChannelI * pciu = this->lookupChannel ( mp->m_cid );
 
     char pPVName[64u];
     if (pciu) {

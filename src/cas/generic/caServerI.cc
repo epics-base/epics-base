@@ -180,6 +180,44 @@ void caServerI::generateBeaconAnomaly ()
 }
 
 //
+// caServerI::lookupMonitor ()
+//
+casMonitor * caServerI::lookupMonitor ( const caResId &idIn )
+{
+    chronIntId tmpId ( idIn );
+
+	epicsGuard < epicsMutex > locker ( this->mutex );
+    casRes * pRes = this->chronIntIdResTable<casRes>::lookup ( tmpId );
+	if ( pRes ) {
+		if ( pRes->resourceType() == casMonitorT ) {
+            // ok to avoid overhead of dynamic cast here because
+            // type code was checked above
+            return static_cast < casMonitor * > ( pRes );
+		}
+	}
+	return 0;
+}
+
+//
+// caServerI::lookupChannel ()
+//
+casChannelI * caServerI::lookupChannel ( const caResId &idIn )
+{
+    chronIntId tmpId ( idIn );
+
+	epicsGuard < epicsMutex > locker ( this->mutex );
+    casRes * pRes = this->chronIntIdResTable<casRes>::lookup ( tmpId );
+	if ( pRes ) {
+		if ( pRes->resourceType() == casChanT ) {
+            // ok to avoid overhead of dynamic cast here because
+            // type code was checked above
+            return static_cast < casChannelI * > ( pRes );
+		}
+	}
+	return 0;
+}
+
+//
 // caServerI::show()
 //
 void caServerI::show (unsigned level) const

@@ -34,10 +34,7 @@ caStatus casMonEvent::cbFunc ( casCoreClient & client )
     // ignore this event if it is stale and there is
     // no call back object associated with it
     //
-	// safe to cast because we have checked the type code 
-	//
-	casMonitor * pMon = static_cast < casMonitor * > 
-        ( client.lookupRes ( this->id, casMonitorT ) );
+	casMonitor * pMon = client.lookupMonitor ( this->id );
     if ( ! pMon ) {
         // we know this isnt an overflow event because those are
         // removed from the queue when the casMonitor object is

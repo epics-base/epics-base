@@ -121,14 +121,9 @@ inline bool casCoreClient::eventSysIsFull ()
     return this->eventSys.full ();
 }
 
-inline void casCoreClient::installMonitor ()
+inline casMonitor * casCoreClient::lookupMonitor ( const caResId & idIn )
 {
-    this->eventSys.installMonitor ();
-}
-
-inline void casCoreClient::removeMonitor ()
-{    
-    this->eventSys.removeMonitor ();
+    return this->ctx.getServer()->lookupMonitor ( idIn );
 }
 
 #endif // casCoreClientIL_h

@@ -47,39 +47,6 @@ inline caServer * caServerI::operator -> ()
 }
 
 //
-// caServerI::lookupRes()
-//
-inline casRes *caServerI::lookupRes(const caResId &idIn, casResType type)
-{
-    chronIntId tmpId (idIn);
-
-	epicsGuard < epicsMutex > locker ( this->mutex );
-    casRes *pRes = this->chronIntIdResTable<casRes>::lookup ( tmpId );
-	if ( pRes ) {
-		if ( pRes->resourceType() != type ) {
-			pRes = NULL;
-		}
-	}
-	return pRes;
-}
-
-//
-// find the channel associated with a resource id
-//
-inline casChannelI *caServerI::resIdToChannel(const caResId &idIn)
-{
-    casRes *pRes;
-
-    pRes = this->lookupRes(idIn, casChanT);
-
-    //
-    // safe to cast because we have checked the type code above
-    // (and we know that casChannelI derived from casRes)
-    //
-    return (casChannelI *) pRes;
-}
-
-//
 // caServerI::installItem()
 //
 inline void caServerI::installItem(casRes &res)

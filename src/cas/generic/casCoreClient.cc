@@ -182,14 +182,6 @@ ca_uint16_t casCoreClient::protocolRevision() const
     return 0;
 }
 
-//
-// casCoreClient::lookupRes()
-//
-casRes * casCoreClient::lookupRes (const caResId &idIn, casResType type)
-{
-	return this->ctx.getServer()->lookupRes(idIn, type);
-}
-
 // this is a pure virtual function, but we nevertheless need a  
 // noop to be called if they post events when a channel is being 
 // destroyed when we are in the casStrmClient destructor
@@ -215,13 +207,13 @@ casMonitor & casCoreClient::monitorFactory (
             type, mask, 
             this->mutex,
             *this );
-	this->installMonitor ();
+    this->eventSys.installMonitor ();
     return mon;
 }
 
 void casCoreClient::destroyMonitor ( casMonitor & mon )
 {
-    this->removeMonitor ();
+    this->eventSys.removeMonitor ();
     this->ctx.getServer()->casMonitorDestroy ( mon );
 }
 

@@ -7,13 +7,14 @@
 #include "epicsSignal.h"
 
 static SOCKET s;
-static bool wakeup = false;
+static bool blockingSockWakeup = false;
 
 void socketJoltTest ( void * )
 {
+    epicsSignalInstallSigAlarmIgnore ();
     char buf [1];
     int status = recv ( s, buf, (int) sizeof ( buf ), 0 );
-    wakeup = true;
+    blockingSockWakeup = true;
 }
 
 void blockingSockTest ()
@@ -33,30 +34,32 @@ void blockingSockTest ()
     int status = bind ( s, &bd.sa, sizeof ( bd ) );
     assert ( status == 0 );
 
-    wakeup = false;
-    epicsThreadId id = epicsThreadCreate ( "Socket Jolt Test", epicsThreadPriorityMedium, 
-        epicsThreadGetStackSize(epicsThreadStackMedium), socketJoltTest, 0 );
+    blockingSockWakeup = false;
+    epicsThreadId id = epicsThreadCreate ( 
+        "Socket Jolt Test", epicsThreadPriorityMedium, 
+        epicsThreadGetStackSize(epicsThreadStackMedium), 
+        socketJoltTest, 0 );
 
     epicsThreadSleep ( 1.0 );
-    assert ( ! wakeup );
+    assert ( ! blockingSockWakeup );
 
     epicsSignalRaiseSigAlarm ( id );
     epicsThreadSleep ( 1.0 );
     char * pStr = "esscimqi_?????";
-    if ( wakeup ) {
+    if ( blockingSockWakeup ) {
         pStr = "esscimqi_socketSigAlarmRequired";
     }
     else {
         status = shutdown ( s, SHUT_RDWR );
         assert ( status == 0 );
         epicsThreadSleep ( 1.0 );
-        if ( wakeup ) {
+        if ( blockingSockWakeup ) {
             pStr = "esscimqi_socketBothShutdownRequired";
         }
         else {
             epicsSocketDestroy ( s );
             epicsThreadSleep ( 1.0 );
-            if ( wakeup ) {
+            if ( blockingSockWakeup ) {
                 pStr = "esscimqi_socketCloseRequired";
             }
             else {

@@ -35,6 +35,7 @@
  *	.03 joh 071291	changes to avoid confusion when a rebooted
  *			client uses the same port number
  *	.04 joh 080591	changed printf() to a logMsg()
+ *	.05 joh 082091	tick stamp init in create_udp_client()
  *
  *	Improvements
  *	------------
@@ -57,7 +58,7 @@
 #include <server.h>
 
 	
-void 		clean_addrq();
+void 	clean_addrq();
 
 
 
@@ -112,7 +113,6 @@ cast_server()
     		taskSuspend(0);
   	}
 
-
   	/* tell clients we are on line again */
   	status = taskSpawn(
 		CA_ONLINE_NAME,
@@ -160,7 +160,7 @@ cast_server()
 		prsrv_cast_client->recv.cnt = status;
 		prsrv_cast_client->recv.stk = 0;
 
-    		if(MPDEBUG==2){
+    		if(CASDEBUG>1){
        			logMsg(	"cast_server(): msg of %d bytes\n", 
 				prsrv_cast_client->recv.cnt);
        			logMsg(	"from addr %x, port %x \n", 
@@ -188,7 +188,7 @@ cast_server()
 		}
 
 
-    		if(MPDEBUG==3)
+    		if(CASDEBUG>2)
       			count = prsrv_cast_client->addrq.count;
 
 		/*
@@ -210,7 +210,7 @@ cast_server()
 		}
 
 		if(prsrv_cast_client->addrq.count){
-      			if(MPDEBUG==3){
+      			if(CASDEBUG>2){
         			logMsg(	"Fnd %d name matches (%d tot)\n",
 					prsrv_cast_client->addrq.count-count,
 					prsrv_cast_client->addrq.count);
@@ -279,9 +279,11 @@ struct client *pclient;
 	}
 
 	if(ndelete){
+#ifdef DEBUG
 		logMsg(	"%d CA channels have expired after %d sec\n",
 			ndelete,
 			maxdelay / sysClkRateGet());
+#endif
 	}
 }
 
@@ -310,15 +312,16 @@ unsigned sock;
       		}
 	}
 
-      	if(MPDEBUG==3)
+      	if(CASDEBUG>2)
         	logMsg(	"cast_server(): Creating new udp client\n");
 
-	/*    
-      	The following inits to zero done instead of a bfill since
-      	the send and recv buffers are large and don't need initialization.
-
-      	bfill(client, sizeof(*client), NULL);
-	*/     
+ 	/*
+	 * The following inits to zero done instead of a bfill since the send
+	 * and recv buffers are large and don't need initialization.
+	 * 
+	 * bfill(client, sizeof(*client), NULL);
+	 */
+   
       	lstInit(&client->addrq);
   	bfill(&client->addr, sizeof(client->addr), 0);
       	client->tid = taskIdSelf();
@@ -329,15 +332,15 @@ unsigned sock;
       	client->evuser = NULL;
       	client->eventsoff = FALSE;
 	client->disconnect = FALSE;	/* for TCP only */
-
+	client->ticks_at_last_io = tickGet();
       	client->proto = IPPROTO_UDP;
+      	client->sock = sock;
+
       	client->send.maxstk = MAX_UDP-sizeof(client->recv.cnt);
       	FASTLOCKINIT(&client->send.lock);
 
       	client->recv.maxstk = MAX_UDP;
       	FASTLOCKINIT(&client->recv.lock);
-
-      	client->sock = sock;
 
       	return client;
 }
@@ -355,7 +358,7 @@ struct client 	*client;
 unsigned	sock;
 {
 
-  	if(MPDEBUG==3)
+  	if(CASDEBUG>2)
     		logMsg("cast_server(): converting udp client to tcp\n");
 
   	client->proto 		= IPPROTO_TCP;

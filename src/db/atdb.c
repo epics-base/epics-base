@@ -40,7 +40,13 @@
 DBBASE	*pdbbase;
 DBENTRY	*pdbentry;
 
+#ifdef __STDC__
 main(int argc,char **argv)
+#else
+main(argc,argv)
+int argc;
+char **argv;
+#endif /*__STDC__*/
 {
     FILE    	*fpdctsdr;
     FILE	*fp;

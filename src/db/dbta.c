@@ -39,9 +39,19 @@
 #include <dbStaticLib.h>
 DBBASE	*pdbbase;
 
+#ifdef __STDC__
 void parse_command_line_args(int, char **, int *, int *, char **);
+#else
+void parse_command_line_args();
+#endif /*__STDC__*/
 
+#ifdef __STDC__
 int main(int argc,char **argv)
+#else
+int main(argc,argv)
+int argc;
+char **argv;
+#endif /*__STDC__*/
 {
     DBENTRY	*pdbentry;
     FILE	*fp;
@@ -115,8 +125,17 @@ int main(int argc,char **argv)
     return(0);
 }
 
+#ifdef __STDC__
 void parse_command_line_args(int argc, char **argv,int *verbose,
 	int *oldshortform, char **dbname)
+#else
+void parse_command_line_args(argc,argv,verbose,oldshortform,dbname)
+int argc;
+char **argv;
+int *verbose;
+int *oldshortform;
+char **dbname;
+#endif /*__STDC__*/
 {
     extern char *optarg; /* needed for getopt() */
     extern int optind;   /* needed for getopt() */

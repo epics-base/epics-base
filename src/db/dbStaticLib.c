@@ -44,7 +44,6 @@
 #include <errMdef.h>
 #include <lstLib.h>
 #include <dbDefs.h>
-#include <link.h>
 #include <sdrHeader.h>
 #include <cvtFast.h>
 #include <dbStaticLib.h>
@@ -116,8 +115,8 @@ static char *promptBBGPIB_IO[] = {
 static char *promptVXI_IO[] = {
 	"     Dynamic?",
 	"DYN    frame:",
-	"DYN    slot :"
-	"STATIC   la :"
+	"DYN    slot :",
+	"STATIC   la :",
 	"        parm:"};
 static char **promptAddr[VXI_IO+1] = {
 	promptCONSTANT,promptPV_LINK,promptVME_IO,
@@ -133,8 +132,16 @@ static int formlines[VXI_IO+1] = {
 
 
 /* internal routines*/
+#ifdef __STDC__
 static void entryErrMessage(DBENTRY *pdbentry,long status,char *mess)
 {
+#else
+static void entryErrMessage(pdbentry,status,mess)
+DBENTRY *pdbentry;
+long status;
+char *mess;
+{
+#endif /*__STDC__*/
     char		message[200];
     char		*pmessage=&message[0];
     DBBASE		*pdbbase = pdbentry->pdbbase;
@@ -162,8 +169,14 @@ static void entryErrMessage(DBENTRY *pdbentry,long status,char *mess)
     errMessage(status,pmessage);
 }
 
+#ifdef __STDC__
 static void zeroDbentry(DBENTRY *pdbentry)
 {
+#else
+static void zeroDbentry(pdbentry)
+DBENTRY *pdbentry;
+{
+#endif /*__STDC__*/
     /*NOTE that pdbbase, message, and formpvt MUST NOT be set to NULL*/
     pdbentry->precnode=NULL;
     pdbentry->pflddes=NULL;
@@ -172,7 +185,12 @@ static void zeroDbentry(DBENTRY *pdbentry)
     pdbentry->indfield=0;
 }
 
+#ifdef __STDC__
 static char *getpMessage(DBENTRY *pdbentry)
+#else
+static char *getpMessage(pdbentry)
+DBENTRY *pdbentry;
+#endif /*__STDC__*/
 {
     if(!pdbentry->message) pdbentry->message = dbCalloc(1,messagesize);
     return(pdbentry->message);
@@ -181,7 +199,13 @@ static char *getpMessage(DBENTRY *pdbentry)
 static char hex_digit_to_ascii[16]={'0','1','2','3','4','5','6','7','8','9',
 		'a','b','c','d','e','f'};
 
+#ifdef __STDC__
 static void ulongToHexString(unsigned long source,char *pdest)
+#else
+static void ulongToHexString(source,pdest)
+unsigned long source;
+char *pdest;
+#endif /*__STDC__*/
 {
     unsigned long  val,temp;
     char  digit[10];
@@ -207,7 +231,14 @@ static void ulongToHexString(unsigned long source,char *pdest)
 
 static double delta[2]={1e-6,1e-15};
 static int precision[2]={6,14};
+#ifdef __STDC__
 static void realToString(double value,char *preturn,int isdouble)
+#else
+static void realToString(value,preturn,isdouble)
+double value;
+char *preturn;
+int isdouble;
+#endif /*__STDC__*/
 {
     long	intval;
     double	diff,absvalue;
@@ -275,20 +306,38 @@ static void realToString(double value,char *preturn,int isdouble)
     return;
 }
 
+#ifdef __STDC__
 static void floatToString(float value,char *preturn)
+#else
+static void floatToString(value,preturn)
+float value;
+char *preturn;
+#endif /*__STDC__*/
 {
     realToString((double)value,preturn,0);
     return;
 }
 
+#ifdef __STDC__
 static void doubleToString(double value,char *preturn)
+#else
+static void doubleToString(value,preturn)
+double value;
+char *preturn;
+#endif /*__STDC__*/
 {
     realToString(value,preturn,1);
     return;
 }
 
 /* Beginning of Public Routines */
+#ifdef __STDC__
 void *dbCalloc(size_t nobj,size_t size)
+#else
+void *dbCalloc(nobj,size)
+size_t nobj;
+size_t size;
+#endif /*__STDC__*/
 {
     void *p;
 
@@ -301,7 +350,12 @@ void *dbCalloc(size_t nobj,size_t size)
 #endif
     return(NULL);
 }
+#ifdef __STDC__
 void *dbMalloc(size_t size)
+#else
+void *dbMalloc(size)
+size_t size;
+#endif /*__STDC__*/
 {
     void *p;
 
@@ -315,7 +369,11 @@ void *dbMalloc(size_t size)
     return(NULL);
 }
 
+#ifdef __STDC__
 DBBASE *dbAllocBase(void)
+#else
+DBBASE *dbAllocBase()
+#endif /*__STDC__*/
 {
     DBBASE	*pdbbase;
 
@@ -324,7 +382,12 @@ DBBASE *dbAllocBase(void)
     return (pdbbase);
 }
 
+#ifdef __STDC__
 void dbFreeBase(DBBASE *pdbbase)
+#else
+void dbFreeBase(pdbbase)
+DBBASE *pdbbase;
+#endif /*__STDC__*/
 {
     LIST          **ppvd = (LIST **) pdbbase->ppvd;
     struct recType *precType = (struct recType *) pdbbase->precType;
@@ -391,7 +454,12 @@ void dbFreeBase(DBBASE *pdbbase)
     return;
 }
 
+#ifdef __STDC__
 DBENTRY *dbAllocEntry(DBBASE *pdbbase)
+#else
+DBENTRY *dbAllocEntry(pdbbase)
+DBBASE *pdbbase;
+#endif /*__STDC__*/
 {
     DBENTRY *pdbentry;
 
@@ -400,26 +468,47 @@ DBENTRY *dbAllocEntry(DBBASE *pdbbase)
     return(pdbentry);
 }
 
+#ifdef __STDC__
 void dbFreeEntry(DBENTRY *pdbentry)
+#else
+void dbFreeEntry(pdbentry)
+DBENTRY *pdbentry;
+#endif /*__STDC__*/
 {
     if(pdbentry->message) free((void *)pdbentry->message);
     if(pdbentry->formpvt) dbFreeForm(pdbentry);
     free((void *)pdbentry);
 }
 
+#ifdef __STDC__
 void dbInitEntry(DBBASE *pdbbase,DBENTRY *pdbentry)
+#else
+void dbInitEntry(pdbbase,pdbentry)
+DBBASE *pdbbase;
+DBENTRY *pdbentry;
+#endif /*__STDC__*/
 {
     memset((char *)pdbentry,'\0',sizeof(DBENTRY));
     pdbentry->pdbbase = pdbbase;
 }
 
+#ifdef __STDC__
 void dbFinishEntry(DBENTRY *pdbentry)
+#else
+void dbFinishEntry(pdbentry)
+DBENTRY *pdbentry;
+#endif /*__STDC__*/
 {
     if(pdbentry->message) free((void *)pdbentry->message);
     if(pdbentry->formpvt) dbFreeForm(pdbentry);
 }
 
+#ifdef __STDC__
 DBENTRY *dbCopyEntry(DBENTRY *pdbentry)
+#else
+DBENTRY *dbCopyEntry(pdbentry)
+DBENTRY *pdbentry;
+#endif /*__STDC__*/
 {
     DBENTRY *pnew;
 
@@ -429,7 +518,13 @@ DBENTRY *dbCopyEntry(DBENTRY *pdbentry)
     return(pnew);
 }
 
+#ifdef __STDC__
 long dbFindRecdes(DBENTRY *pdbentry,char *rectype)
+#else
+long dbFindRecdes(pdbentry,rectype)
+DBENTRY *pdbentry;
+char *rectype;
+#endif /*__STDC__*/
 {
     DBBASE		*pdbbase=pdbentry->pdbbase;
     struct recType	*precType = pdbbase->precType;
@@ -445,7 +540,12 @@ long dbFindRecdes(DBENTRY *pdbentry,char *rectype)
     return(S_dbLib_recdesNotFound);
 }
 
+#ifdef __STDC__
 long dbFirstRecdes(DBENTRY *pdbentry)
+#else
+long dbFirstRecdes(pdbentry)
+DBENTRY *pdbentry;
+#endif /*__STDC__*/
 {
 
     zeroDbentry(pdbentry);
@@ -454,7 +554,12 @@ long dbFirstRecdes(DBENTRY *pdbentry)
     return(0);
 }
 
+#ifdef __STDC__
 long dbNextRecdes(DBENTRY *pdbentry)
+#else
+long dbNextRecdes(pdbentry)
+DBENTRY *pdbentry;
+#endif /*__STDC__*/
 {
     DBBASE		*pdbbase=pdbentry->pdbbase;
     short		record_type = pdbentry->record_type;
@@ -466,7 +571,12 @@ long dbNextRecdes(DBENTRY *pdbentry)
     return(0);
 }
 
+#ifdef __STDC__
 char *dbGetRecdesName(DBENTRY *pdbentry)
+#else
+char *dbGetRecdesName(pdbentry)
+DBENTRY *pdbentry;
+#endif /*__STDC__*/
 {
     DBBASE	*pdbbase=pdbentry->pdbbase;
     short	record_type = pdbentry->record_type;
@@ -474,7 +584,12 @@ char *dbGetRecdesName(DBENTRY *pdbentry)
     return(GET_PRECNAME(pdbbase->precType,record_type));
 }
 
+#ifdef __STDC__
 int dbGetNRecdes(DBENTRY *pdbentry)
+#else
+int dbGetNRecdes(pdbentry)
+DBENTRY *pdbentry;
+#endif /*__STDC__*/
 {
     DBBASE		*pdbbase=pdbentry->pdbbase;
     struct recType	*precType = pdbbase->precType;
@@ -482,13 +597,26 @@ int dbGetNRecdes(DBENTRY *pdbentry)
     return(precType->number - 1);
 }
 
+#ifdef __STDC__
 long dbCopyRecdes(DBENTRY *from,DBENTRY *to)
+#else
+long dbCopyRecdes(from,to)
+DBENTRY *from;
+DBENTRY *to;
+#endif /*__STDC__*/
 {
     errMessage(-1,"dbCopyRecdes not implemented");
     return(-1);
 }
 
-static void init_record(struct dbBase *pdbbase, void *precord, short record_type)
+#ifdef __STDC__
+static void init_record(DBBASE *pdbbase, void *precord, short record_type)
+#else
+static void init_record(pdbbase, precord, record_type)
+DBBASE *pdbbase;
+void *precord;
+short record_type;
+#endif /*__STDC__*/
 {
     struct recDes  	*precDes = pdbbase->precDes;
     struct recTypDes 	*precTypDes;
@@ -548,7 +676,13 @@ static void init_record(struct dbBase *pdbbase, void *precord, short record_type
     return;
 }
 
+#ifdef __STDC__
 long dbCreateRecord(DBENTRY *pdbentry,char *precordName)
+#else
+long dbCreateRecord(pdbentry,precordName)
+DBENTRY *pdbentry;
+char *precordName;
+#endif /*__STDC__*/
 {
     DBBASE		*pdbbase = pdbentry->pdbbase;
     int			record_type = pdbentry->record_type;
@@ -601,7 +735,12 @@ long dbCreateRecord(DBENTRY *pdbentry,char *precordName)
     return (0);
 }
 
+#ifdef __STDC__
 long dbDeleteRecord(DBENTRY *pdbentry)
+#else
+long dbDeleteRecord(pdbentry)
+DBENTRY *pdbentry;
+#endif /*__STDC__*/
 {
     DBBASE		*pdbbase = pdbentry->pdbbase;
     int			record_type = pdbentry->record_type;
@@ -619,7 +758,13 @@ long dbDeleteRecord(DBENTRY *pdbentry)
     return (0);
 }
 
+#ifdef __STDC__
 long dbFindRecord(DBENTRY *pdbentry,char *precordName)
+#else
+long dbFindRecord(pdbentry,precordName)
+DBENTRY *pdbentry;
+char *precordName;
+#endif /*__STDC__*/
 {
     DBBASE	*pdbbase = pdbentry->pdbbase;
     int         lenName=0;
@@ -644,7 +789,12 @@ long dbFindRecord(DBENTRY *pdbentry,char *precordName)
     return (0);
 }
 
+#ifdef __STDC__
 long dbFirstRecord(DBENTRY *pdbentry)
+#else
+long dbFirstRecord(pdbentry)
+DBENTRY *pdbentry;
+#endif /*__STDC__*/
 {
     short		record_type = pdbentry->record_type;
     DBBASE		*pdbbase = pdbentry->pdbbase;
@@ -663,7 +813,12 @@ long dbFirstRecord(DBENTRY *pdbentry)
     return(0);
 }
 
+#ifdef __STDC__
 long dbNextRecord(DBENTRY *pdbentry)
+#else
+long dbNextRecord(pdbentry)
+DBENTRY *pdbentry;
+#endif /*__STDC__*/
 {
     RECNODE	*precnode=pdbentry->precnode;
     long	status=0;
@@ -676,7 +831,12 @@ long dbNextRecord(DBENTRY *pdbentry)
     return(status);
 }
 
+#ifdef __STDC__
 int dbGetNRecords(DBENTRY *pdbentry)
+#else
+int dbGetNRecords(pdbentry)
+DBENTRY *pdbentry;
+#endif /*__STDC__*/
 {
     short		record_type = pdbentry->record_type;
     DBBASE		*pdbbase = pdbentry->pdbbase;
@@ -690,7 +850,12 @@ int dbGetNRecords(DBENTRY *pdbentry)
     return(lstCount(precLoc->preclist));
 }
 
+#ifdef __STDC__
 char *dbGetRecordName(DBENTRY *pdbentry)
+#else
+char *dbGetRecordName(pdbentry)
+DBENTRY *pdbentry;
+#endif /*__STDC__*/
 {
     RECNODE	*precnode=pdbentry->precnode;
 
@@ -698,13 +863,25 @@ char *dbGetRecordName(DBENTRY *pdbentry)
     return((char *)precnode->precord);
 }
 
+#ifdef __STDC__
 long dbCopyRecord(DBENTRY *from,DBENTRY *to)
+#else
+long dbCopyRecord(from,to)
+DBENTRY *from;
+DBENTRY *to;
+#endif /*__STDC__*/
 {
     errMessage(-1,"dbCopyRecord not implemented");
     return(-1);
 }
 
+#ifdef __STDC__
 long dbRenameRecord(DBENTRY *pdbentry,char *newName)
+#else
+long dbRenameRecord(pdbentry,newName)
+DBENTRY *pdbentry;
+char *newName;
+#endif /*__STDC__*/
 {
     DBBASE		*pdbbase = pdbentry->pdbbase;
     short		record_type = pdbentry->record_type;
@@ -734,9 +911,15 @@ long dbRenameRecord(DBENTRY *pdbentry,char *newName)
     return(0);
 }
 
+#ifdef __STDC__
 long dbFindField(DBENTRY *pdbentry,char *pfieldName)
+#else
+long dbFindField(pdbentry,pfieldName)
+DBENTRY *pdbentry;
+char *pfieldName;
+#endif /*__STDC__*/
 {
-    struct dbBase 	*pdbbase = pdbentry->pdbbase;
+    DBBASE 		*pdbbase = pdbentry->pdbbase;
     RECNODE		*precnode = pdbentry->precnode;
     char		*precord;
     struct recDes  	*precDes = pdbbase->precDes;
@@ -795,9 +978,15 @@ long dbFindField(DBENTRY *pdbentry,char *pfieldName)
     }
 }
 
+#ifdef __STDC__
 long dbFirstFielddes(DBENTRY *pdbentry,int dctonly)
+#else
+long dbFirstFielddes(pdbentry,dctonly)
+DBENTRY *pdbentry;
+int dctonly;
+#endif /*__STDC__*/
 {
-    struct dbBase 	*pdbbase = pdbentry->pdbbase;
+    DBBASE 		*pdbbase = pdbentry->pdbbase;
     struct recDes  	*precDes = pdbbase->precDes;
     RECNODE		*precnode = pdbentry->precnode;
     short           	record_type = pdbentry->record_type;
@@ -830,9 +1019,15 @@ long dbFirstFielddes(DBENTRY *pdbentry,int dctonly)
     }
 }
 
+#ifdef __STDC__
 long dbNextFielddes(DBENTRY *pdbentry,int dctonly)
+#else
+long dbNextFielddes(pdbentry,dctonly)
+DBENTRY *pdbentry;
+int dctonly;
+#endif /*__STDC__*/
 {
-    struct dbBase 	*pdbbase = pdbentry->pdbbase;
+    DBBASE 		*pdbbase = pdbentry->pdbbase;
     struct recDes  	*precDes = pdbbase->precDes;
     RECNODE		*precnode = pdbentry->precnode;
     short           	record_type = pdbentry->record_type;
@@ -866,7 +1061,12 @@ long dbNextFielddes(DBENTRY *pdbentry,int dctonly)
     }
 }
 
+#ifdef __STDC__
 int  dbGetFieldType(DBENTRY *pdbentry)
+#else
+int  dbGetFieldType(pdbentry)
+DBENTRY *pdbentry;
+#endif /*__STDC__*/
 {
     struct fldDes  	*pflddes = pdbentry->pflddes;
     long		status;
@@ -879,9 +1079,15 @@ int  dbGetFieldType(DBENTRY *pdbentry)
     return(mapDBFtoDCT[pflddes->field_type]);
 }
 
+#ifdef __STDC__
 int dbGetNFields(DBENTRY *pdbentry,int dctonly)
+#else
+int dbGetNFields(pdbentry,dctonly)
+DBENTRY *pdbentry;
+int dctonly;
+#endif /*__STDC__*/
 {
-    struct dbBase 	*pdbbase = pdbentry->pdbbase;
+    DBBASE 		*pdbbase = pdbentry->pdbbase;
     struct recDes  	*precDes = pdbbase->precDes;
     short           	record_type = pdbentry->record_type;
     struct recTypDes 	*precTypDes;
@@ -904,7 +1110,12 @@ int dbGetNFields(DBENTRY *pdbentry,int dctonly)
     return(n);
 }
 
+#ifdef __STDC__
 char *dbGetFieldName(DBENTRY *pdbentry)
+#else
+char *dbGetFieldName(pdbentry)
+DBENTRY *pdbentry;
+#endif /*__STDC__*/
 {
     struct fldDes  	*pflddes = pdbentry->pflddes;
 
@@ -912,7 +1123,12 @@ char *dbGetFieldName(DBENTRY *pdbentry)
     return(&pflddes->fldname[0]);
 }
 
+#ifdef __STDC__
 char *dbGetPrompt(DBENTRY *pdbentry)
+#else
+char *dbGetPrompt(pdbentry)
+DBENTRY *pdbentry;
+#endif /*__STDC__*/
 {
     struct fldDes  	*pflddes = pdbentry->pflddes;
 
@@ -920,9 +1136,14 @@ char *dbGetPrompt(DBENTRY *pdbentry)
     return(&pflddes->prompt[0]);
 }
 
+#ifdef __STDC__
 char *dbGetString(DBENTRY *pdbentry)
+#else
+char *dbGetString(pdbentry)
+DBENTRY *pdbentry;
+#endif /*__STDC__*/
 {
-    struct dbBase 	*pdbbase = pdbentry->pdbbase;
+    DBBASE 		*pdbbase = pdbentry->pdbbase;
     struct fldDes  	*pflddes = pdbentry->pflddes;
     void		*pfield = pdbentry->pfield;
     char		*message;
@@ -1118,7 +1339,13 @@ char *dbGetString(DBENTRY *pdbentry)
 }
 
 /* utility routines used by dbPutString */
+#ifdef __STDC__
 static long checkDevChoice(DBENTRY *pdbentry, long link_type)
+#else
+static long checkDevChoice(pdbentry, link_type)
+DBENTRY *pdbentry;
+long link_type;
+#endif /*__STDC__*/
 {
     struct fldDes  	*savepflddes = pdbentry->pflddes;
     void		*savepfield = pdbentry->pfield;
@@ -1151,9 +1378,15 @@ clean_up:
     return(status);
 }
 
+#ifdef __STDC__
 long dbPutString(DBENTRY *pdbentry,char *pstring)
+#else
+long dbPutString(pdbentry,pstring)
+DBENTRY *pdbentry;
+char *pstring;
+#endif /*__STDC__*/
 {
-    struct dbBase 	*pdbbase = pdbentry->pdbbase;
+    DBBASE 		*pdbbase = pdbentry->pdbbase;
     struct fldDes  	*pflddes = pdbentry->pflddes;
     void		*pfield = pdbentry->pfield;
     long		status=0;
@@ -1407,7 +1640,7 @@ long dbPutString(DBENTRY *pdbentry,char *pstring)
 		    plink->value.gpibio.parm[0] = 0;
 		    if(!(end = strchr(pstr,'@'))) {
 		        pstr = end + 1;
-		        sscanf(pstr,"%s",&plink->value.gpibio.parm);
+		        sscanf(pstr,"%s",&plink->value.gpibio.parm[0]);
 		    }
 		}
 		break;
@@ -1431,7 +1664,7 @@ long dbPutString(DBENTRY *pdbentry,char *pstring)
 		    plink->value.bitbusio.parm[0] = 0;
 		    if(!(end = strchr(pstr,'@'))) {
 		        pstr = end + 1;
-		        sscanf(pstr,"%s",&plink->value.bitbusio.parm);
+		        sscanf(pstr,"%s",&plink->value.bitbusio.parm[0]);
 		    }
 		}
 		break;
@@ -1452,7 +1685,7 @@ long dbPutString(DBENTRY *pdbentry,char *pstring)
 		    plink->value.bbgpibio.parm[0] = 0;
 		    if(!(end = strchr(pstr,'@'))) {
 		        pstr = end + 1;
-		        sscanf(pstr,"%s",&plink->value.bbgpibio.parm);
+		        sscanf(pstr,"%s",&plink->value.bbgpibio.parm[0]);
 		    }
 		}
 		break;
@@ -1478,12 +1711,12 @@ long dbPutString(DBENTRY *pdbentry,char *pstring)
 		    }
 		    if(!(end = strchr(pstr,'@'))) {
 		        pstr = end + 1;
-		        sscanf(pstr,"%s",&plink->value.gpibio.parm);
+		        sscanf(pstr,"%s",&plink->value.gpibio.parm[0]);
 		    }
 		}
 		break;
 	    case INST_IO: {
-		    sscanf(pstr,"%s",&plink->value.gpibio.parm);
+		    sscanf(pstr,"%s",&plink->value.gpibio.parm[0]);
 		}
 		break;
 	    }
@@ -1495,9 +1728,15 @@ long dbPutString(DBENTRY *pdbentry,char *pstring)
     return(status);
 }
 
+#ifdef __STDC__
 char *dbVerify(DBENTRY *pdbentry,char *pstring)
+#else
+char *dbVerify(pdbentry,pstring)
+DBENTRY *pdbentry;
+char *pstring;
+#endif /*__STDC__*/
 {
-    struct dbBase 	*pdbbase = pdbentry->pdbbase;
+    DBBASE 		*pdbbase = pdbentry->pdbbase;
     struct fldDes  	*pflddes = pdbentry->pflddes;
     void		*pfield = pdbentry->pfield;
     char		*message;
@@ -1685,7 +1924,12 @@ char *dbVerify(DBENTRY *pdbentry,char *pstring)
     return (message);
 }
 
+#ifdef __STDC__
 char *dbGetRange(DBENTRY *pdbentry)
+#else
+char *dbGetRange(pdbentry)
+DBENTRY *pdbentry;
+#endif /*__STDC__*/
 {
     struct fldDes  	*pflddes = pdbentry->pflddes;
     char		*message;
@@ -1717,7 +1961,12 @@ char *dbGetRange(DBENTRY *pdbentry)
     return (message);
 }
 
+#ifdef __STDC__
 int  dbIsDefaultValue(DBENTRY *pdbentry)
+#else
+int  dbIsDefaultValue(pdbentry)
+DBENTRY *pdbentry;
+#endif /*__STDC__*/
 {
     struct fldDes  	*pflddes = pdbentry->pflddes;
     void           	*pfield = pdbentry->pfield;
@@ -1758,9 +2007,14 @@ int  dbIsDefaultValue(DBENTRY *pdbentry)
     return(FALSE);
 }
 
+#ifdef __STDC__
 char   **dbGetChoices(DBENTRY *pdbentry)
+#else
+char   **dbGetChoices(pdbentry)
+DBENTRY *pdbentry;
+#endif /*__STDC__*/
 {
-    struct dbBase 	*pdbbase = pdbentry->pdbbase;
+    DBBASE 		*pdbbase = pdbentry->pdbbase;
     struct fldDes  	*pflddes = pdbentry->pflddes;
     void		*pfield = pdbentry->pfield;
     unsigned char 	cvttype;
@@ -1807,7 +2061,12 @@ char   **dbGetChoices(DBENTRY *pdbentry)
     }
 }
 
+#ifdef __STDC__
 int dbGetMenuIndex(DBENTRY *pdbentry)
+#else
+int dbGetMenuIndex(pdbentry)
+DBENTRY *pdbentry;
+#endif /*__STDC__*/
 {
     struct fldDes  	*pflddes = pdbentry->pflddes;
     void		*pfield = pdbentry->pfield;
@@ -1824,9 +2083,15 @@ int dbGetMenuIndex(DBENTRY *pdbentry)
     return(-1);
 }
 
+#ifdef __STDC__
 long dbPutMenuIndex(DBENTRY *pdbentry,int index)
+#else
+long dbPutMenuIndex(pdbentry,index)
+DBENTRY *pdbentry;
+int index;
+#endif /*__STDC__*/
 {
-    struct dbBase 	*pdbbase = pdbentry->pdbbase;
+    DBBASE 		*pdbbase = pdbentry->pdbbase;
     struct fldDes  	*pflddes = pdbentry->pflddes;
     unsigned short	*pfield = pdbentry->pfield;
 
@@ -1882,9 +2147,14 @@ long dbPutMenuIndex(DBENTRY *pdbentry,int index)
     return (S_dbLib_badField);
 }
 
+#ifdef __STDC__
 int dbGetNMenuChoices(DBENTRY *pdbentry)
+#else
+int dbGetNMenuChoices(pdbentry)
+DBENTRY *pdbentry;
+#endif /*__STDC__*/
 {
-    struct dbBase 	*pdbbase = pdbentry->pdbbase;
+    DBBASE 		*pdbbase = pdbentry->pdbbase;
     struct fldDes  	*pflddes = pdbentry->pflddes;
 
     if(!pflddes) return(-1);
@@ -1927,14 +2197,25 @@ int dbGetNMenuChoices(DBENTRY *pdbentry)
     return (-1);
 }
 
+#ifdef __STDC__
 long dbCopyMenu(DBENTRY *from,DBENTRY *to)
+#else
+long dbCopyMenu(from,to)
+DBENTRY *from;
+DBENTRY *to;
+#endif /*__STDC__*/
 {
 
     errMessage(-1,"dbCopyMenu not implemented");
     return(-1);
 }
 
+#ifdef __STDC__
 int dbAllocForm(DBENTRY *pdbentry)
+#else
+int dbAllocForm(pdbentry)
+DBENTRY *pdbentry;
+#endif /*__STDC__*/
 {
     struct fldDes  	*pflddes = pdbentry->pflddes;
     void		*pfield = pdbentry->pfield;
@@ -1979,13 +2260,23 @@ int dbAllocForm(DBENTRY *pdbentry)
     return(nlines);
 }
 
+#ifdef __STDC__
 long  dbFreeForm(DBENTRY *pdbentry)
+#else
+long  dbFreeForm(pdbentry)
+DBENTRY *pdbentry;
+#endif /*__STDC__*/
 {
     if(pdbentry->formpvt) free(pdbentry->formpvt);
     return(0);
 }
 
+#ifdef __STDC__
 char  **dbGetFormPrompt(DBENTRY *pdbentry)
+#else
+char  **dbGetFormPrompt(pdbentry)
+DBENTRY *pdbentry;
+#endif /*__STDC__*/
 {
     struct form *pform = pdbentry->formpvt;
 
@@ -1993,7 +2284,12 @@ char  **dbGetFormPrompt(DBENTRY *pdbentry)
     return(pform->prompt);
 }
 
+#ifdef __STDC__
 char  **dbGetFormValue(DBENTRY *pdbentry)
+#else
+char  **dbGetFormValue(pdbentry)
+DBENTRY *pdbentry;
+#endif /*__STDC__*/
 {
     struct form *pform = pdbentry->formpvt;
     DBLINK	*plink;
@@ -2097,7 +2393,13 @@ char  **dbGetFormValue(DBENTRY *pdbentry)
     return(pform->value);
 }
 
+#ifdef __STDC__
 long  dbPutForm(DBENTRY *pdbentry,char **value)
+#else
+long  dbPutForm(pdbentry,value)
+DBENTRY *pdbentry;
+char **value;
+#endif /*__STDC__*/
 {
     struct form *pform = pdbentry->formpvt;
     DBLINK	*plink;
@@ -2322,7 +2624,13 @@ long  dbPutForm(DBENTRY *pdbentry,char **value)
     return(0);
 }
 
+#ifdef __STDC__
 char  **dbVerifyForm(DBENTRY *pdbentry,char **value)
+#else
+char  **dbVerifyForm(pdbentry,value)
+DBENTRY *pdbentry;
+char **value;
+#endif /*__STDC__*/
 {
     struct form *pform = pdbentry->formpvt;
     DBLINK	*plink;
@@ -2340,7 +2648,12 @@ char  **dbVerifyForm(DBENTRY *pdbentry,char **value)
     return(NULL);
 }
 
+#ifdef __STDC__
 int dbGetNLinks(DBENTRY *pdbentry)
+#else
+int dbGetNLinks(pdbentry)
+DBENTRY *pdbentry;
+#endif /*__STDC__*/
 {
     DBBASE		*pdbbase = pdbentry->pdbbase;
     int			record_type = pdbentry->record_type;
@@ -2354,7 +2667,13 @@ int dbGetNLinks(DBENTRY *pdbentry)
     return((int)precTypDes->no_links);
 }
 
+#ifdef __STDC__
 long dbGetLinkField(DBENTRY *pdbentry,int index)
+#else
+long dbGetLinkField(pdbentry,index)
+DBENTRY *pdbentry;
+int index;
+#endif /*__STDC__*/
 {
     DBBASE		*pdbbase = pdbentry->pdbbase;
     RECNODE		*precnode = pdbentry->precnode;
@@ -2375,7 +2694,12 @@ long dbGetLinkField(DBENTRY *pdbentry,int index)
     return(0);
 }
 
+#ifdef __STDC__
 int dbGetLinkType(DBENTRY *pdbentry)
+#else
+int dbGetLinkType(pdbentry)
+DBENTRY *pdbentry;
+#endif /*__STDC__*/
 {
     struct fldDes	*pflddes = pdbentry->pflddes;
     DBLINK		*plink = (DBLINK *)pdbentry->pfield;
@@ -2406,7 +2730,12 @@ int dbGetLinkType(DBENTRY *pdbentry)
     return(-1);
 }
 
+#ifdef __STDC__
 long dbCvtLinkToConstant(DBENTRY *pdbentry)
+#else
+long dbCvtLinkToConstant(pdbentry)
+DBENTRY *pdbentry;
+#endif /*__STDC__*/
 {
     struct fldDes	*pflddes = pdbentry->pflddes;
     DBLINK		*plink = (DBLINK *)pdbentry->pfield;;
@@ -2426,7 +2755,12 @@ long dbCvtLinkToConstant(DBENTRY *pdbentry)
     return(S_dbLib_badLink);
 }
 
+#ifdef __STDC__
 long dbCvtLinkToPvlink(DBENTRY *pdbentry)
+#else
+long dbCvtLinkToPvlink(pdbentry)
+DBENTRY *pdbentry;
+#endif /*__STDC__*/
 {
     struct fldDes	*pflddes = pdbentry->pflddes;
     DBLINK		*plink = (DBLINK *)pdbentry->pfield;;
@@ -2449,7 +2783,15 @@ long dbCvtLinkToPvlink(DBENTRY *pdbentry)
     return(S_dbLib_badLink);
 }
 
+#ifdef __STDC__
 long dbPutPvlink(DBENTRY *pdbentry,int pp,int ms,char *pvname)
+#else
+long dbPutPvlink(pdbentry,pp,ms,pvname)
+DBENTRY *pdbentry;
+int pp;
+int ms;
+char *pvname;
+#endif /*__STDC__*/
 {
     struct fldDes	*pflddes = pdbentry->pflddes;
     DBLINK		*plink = (DBLINK *)pdbentry->pfield;
@@ -2490,7 +2832,15 @@ long dbPutPvlink(DBENTRY *pdbentry,int pp,int ms,char *pvname)
     return(S_dbLib_badLink);
 }
 
+#ifdef __STDC__
 long dbGetPvlink(DBENTRY *pdbentry,int *pp,int *ms,char *pvname)
+#else
+long dbGetPvlink(pdbentry,pp,ms,pvname)
+DBENTRY *pdbentry;
+int *pp;
+int *ms;
+char *pvname;
+#endif /*__STDC__*/
 {
     struct fldDes	*pflddes = pdbentry->pflddes;
     DBLINK		*plink = (DBLINK *)pdbentry->pfield;
@@ -2520,7 +2870,14 @@ long dbGetPvlink(DBENTRY *pdbentry,int *pp,int *ms,char *pvname)
     return(S_dbLib_badLink);
 }
 
+#ifdef __STDC__
 void dbDumpRecords(DBBASE *pdbbase,char *precdesname,int modOnly)
+#else
+void dbDumpRecords(pdbbase,precdesname,modOnly)
+DBBASE *pdbbase;
+char *precdesname;
+int modOnly;
+#endif /*__STDC__*/
 {
     DBENTRY	dbentry;
     DBENTRY	*pdbentry=&dbentry;
@@ -2651,7 +3008,13 @@ static          (*adj_fun[SDR_NTYPES]) ();
 static struct sdrHeader sdrHeader; /* place to read in SDR headers */
 
 /*Convert an offset value to an address */
+#ifdef __STDC__
 static void *cvtOffsetToAddr(void *pbase,void *poff)
+#else
+static void *cvtOffsetToAddr(pbase,poff)
+void *pbase;
+void *poff;
+#endif /*__STDC__*/
 {
     long   offset;
     void   **poffset= (void **)&offset;
@@ -2660,7 +3023,13 @@ static void *cvtOffsetToAddr(void *pbase,void *poff)
     return((void *)((char *)pbase + offset));
 }
 
+#ifdef __STDC__
 long dbRead(DBBASE *pdbbase,FILE *fp)
+#else
+long dbRead(pdbbase,fp)
+DBBASE *pdbbase;
+FILE *fp;
+#endif /*__STDC__*/
 {
     int             job_type = 999;
     char           *ptmp = NULL;
@@ -2744,9 +3113,13 @@ long dbRead(DBBASE *pdbbase,FILE *fp)
  * 
  */
 static int 
+#ifdef __STDC__
+adj_dbRecType(char *ptmp, DBBASE *pdbbase)
+#else
 adj_dbRecType(ptmp, pdbbase)
-    char           *ptmp;
-    struct dbBase  *pdbbase;
+    char    *ptmp;
+    DBBASE  *pdbbase;
+#endif /*__STDC__*/
 {
     struct recType 	*precType = NULL;
     struct recHeader	*precHeader;
@@ -2780,9 +3153,13 @@ adj_dbRecType(ptmp, pdbbase)
  *
  */
 static int
+#ifdef __STDC__
+adj_dbRecords(char *ptmp,DBBASE *pdbbase)
+#else
 adj_dbRecords(ptmp, pdbbase)
     char           *ptmp;
-    struct dbBase  *pdbbase;
+    DBBASE  *pdbbase;
+#endif /*__STDC__*/
 {
     DBENTRY         dbEntry;
     struct recType *precType = (struct recType *) pdbbase->precType;
@@ -2850,9 +3227,13 @@ adj_dbRecords(ptmp, pdbbase)
  *
  */
 static int
+#ifdef __STDC__
+adj_dbRecDes(char *ptmp, DBBASE *pdbbase)
+#else
 adj_dbRecDes(ptmp, pdbbase)
     char           *ptmp;
-    struct dbBase  *pdbbase;
+    DBBASE  *pdbbase;
+#endif /*__STDC__*/
 {
     struct recDes 	*precDes = (struct recDes*)pdbbase->precDes;
     struct recHeader	*precHeader = (struct recHeader *) pdbbase->precHeader;
@@ -2909,9 +3290,13 @@ adj_dbRecDes(ptmp, pdbbase)
  *
  */
 static int
+#ifdef __STDC__
+adj_choiceGbl(char *ptmp, DBBASE *pdbbase)
+#else
 adj_choiceGbl(ptmp, pdbbase)
     char           *ptmp;
-    struct dbBase  *pdbbase;
+    DBBASE  *pdbbase;
+#endif /*__STDC__*/
 {
     struct arrChoiceSet *pchoiceGbl = NULL;
     int			i,j;
@@ -2948,9 +3333,13 @@ adj_choiceGbl(ptmp, pdbbase)
  *
  */
 static int
+#ifdef __STDC__
+adj_choiceCvt(char *ptmp, DBBASE *pdbbase)
+#else
 adj_choiceCvt(ptmp, pdbbase)
     char           *ptmp;
-    struct dbBase  *pdbbase;
+    DBBASE  *pdbbase;
+#endif /*__STDC__*/
 {
     struct choiceSet *pchoiceCvt = NULL;
     int		     i;
@@ -2979,9 +3368,13 @@ adj_choiceCvt(ptmp, pdbbase)
  *
  */
 static int
+#ifdef __STDC__
+adj_choiceRec(char *ptmp, DBBASE *pdbbase)
+#else
 adj_choiceRec(ptmp, pdbbase)
     char           *ptmp;
-    struct dbBase  *pdbbase;
+    DBBASE  *pdbbase;
+#endif /*__STDC__*/
 {
     struct choiceRec *pchoiceRec = NULL;
     struct recType 	*precType = pdbbase->precType;
@@ -3038,9 +3431,13 @@ adj_choiceRec(ptmp, pdbbase)
  *
  */
 static int
+#ifdef __STDC__
+adj_choiceDev(char *ptmp, DBBASE *pdbbase)
+#else
 adj_choiceDev(ptmp, pdbbase)
     char           *ptmp;
-    struct dbBase  *pdbbase;
+    DBBASE  *pdbbase;
+#endif /*__STDC__*/
 {
     struct devChoiceRec *pchoiceDev = (struct devChoiceRec*)pdbbase->pchoiceDev;
     struct recType *precType = (struct recType*)pdbbase->precType;
@@ -3090,9 +3487,13 @@ adj_choiceDev(ptmp, pdbbase)
  *
  */
 static int
+#ifdef __STDC__
+adj_devSup(char *ptmp, DBBASE *pdbbase)
+#else
 adj_devSup(ptmp, pdbbase)
     char           *ptmp;
-    struct dbBase  *pdbbase;
+    DBBASE  *pdbbase;
+#endif /*__STDC__*/
 {
     struct recDevSup *precDevSup = (struct recDevSup*)pdbbase->precDevSup;
     struct recType *precType = (struct recType*)pdbbase->precType;
@@ -3140,9 +3541,13 @@ adj_devSup(ptmp, pdbbase)
  *
  */
 static int
+#ifdef __STDC__
+adj_cvtTable(char *ptmp, DBBASE *pdbbase)
+#else
 adj_cvtTable(ptmp, pdbbase)
     char           *ptmp;
-    struct dbBase  *pdbbase;
+    DBBASE  *pdbbase;
+#endif /*__STDC__*/
 {
     struct arrBrkTable *pcvtTable = (struct arrBrkTable*) pdbbase->pcvtTable;
     int			i,j;
@@ -3179,9 +3584,13 @@ adj_cvtTable(ptmp, pdbbase)
  *
  */
 static int
+#ifdef __STDC__
+adj_drvSup(char *ptmp, DBBASE *pdbbase)
+#else
 adj_drvSup(ptmp, pdbbase)
     char           *ptmp;
-    struct dbBase  *pdbbase;
+    DBBASE  *pdbbase;
+#endif /*__STDC__*/
 {
     struct drvSup *pdrvSup = (struct drvSup*)pdbbase->pdrvSup;
     int		  i;
@@ -3209,9 +3618,13 @@ adj_drvSup(ptmp, pdbbase)
  *
  */
 static int
+#ifdef __STDC__
+adj_recSup(char *ptmp, DBBASE *pdbbase)
+#else
 adj_recSup(ptmp, pdbbase)
     char           *ptmp;
-    struct dbBase  *pdbbase;
+    DBBASE  *pdbbase;
+#endif /*__STDC__*/
 {
 
 /* NOTE: this function never entered - iocInit creates rset's */
@@ -3226,9 +3639,13 @@ adj_recSup(ptmp, pdbbase)
  *
  */
 static int
+#ifdef __STDC__
+adj_sdrSum(char *ptmp, DBBASE *pdbbase)
+#else
 adj_sdrSum(ptmp, pdbbase)
     char           *ptmp;
-    struct dbBase  *pdbbase;
+    DBBASE  *pdbbase;
+#endif /*__STDC__*/
 {
     struct sdrSum  *psdrSum = (struct sdrSum*)pdbbase->psdrSum;
 
@@ -3252,9 +3669,13 @@ adj_sdrSum(ptmp, pdbbase)
  *
  */
 static int
+#ifdef __STDC__
+adj_dbPvd(char *ptmp, DBBASE *pdbbase)
+#else
 adj_dbPvd(ptmp, pdbbase)
     char           *ptmp;
-    struct dbBase  *pdbbase;
+    DBBASE  *pdbbase;
+#endif /*__STDC__*/
 {
     /*  skip pvd if present - this function will eventually go away */
     free(ptmp);
@@ -3267,7 +3688,12 @@ adj_dbPvd(ptmp, pdbbase)
  * Inititialize dbBase and precHeader
  *
  */
-static int initadj_fun(struct dbBase *pdbbase)
+#ifdef __STDC__
+static int initadj_fun(DBBASE *pdbbase)
+#else
+static int initadj_fun(pdbbase)
+DBBASE *pdbbase;
+#endif /*__STDC__*/
 {
     int             i;
 
@@ -3294,7 +3720,12 @@ static int initadj_fun(struct dbBase *pdbbase)
 
 /*generate devChoiceSet.papChoice			*/
 /* If papDevChoiceSet[i] is NULL then set DTYP to noprompt*/
+#ifdef __STDC__
 static void post_adj_devSup(DBBASE *pdbbase) 
+#else
+static void post_adj_devSup(pdbbase)
+DBBASE *pdbbase;
+#endif /*__STDC__*/
 {
     struct devChoiceRec *pchoiceDev=pdbbase->pchoiceDev;
     struct devChoiceSet *pdevChoiceSet;
@@ -3327,7 +3758,14 @@ static void post_adj_devSup(DBBASE *pdbbase)
     return;
 }
 
+#ifdef __STDC__
 long dbWrite(DBBASE *pdbbase,FILE *fpdctsdr,FILE *fp)
+#else
+long dbWrite(pdbbase,fpdctsdr,fp)
+DBBASE *pdbbase;
+FILE *fpdctsdr;
+FILE *fp;
+#endif /*__STDC__*/
 {
     RECNODE        *precnode;
     LIST           *preclist;
@@ -3435,7 +3873,13 @@ static unsigned char T1[256] = {
  75,107,169,138,195,184, 70, 90, 61,166,  7,244,165,108,219, 51,
 };
 
+#ifdef __STDC__
 static unsigned short hash( char *pname, int length)
+#else
+static unsigned short hash( pname, length)
+char *pname;
+int length;
+#endif /*__STDC__*/
 {
     unsigned short h=0;
     unsigned short hret;
@@ -3451,7 +3895,12 @@ static unsigned short hash( char *pname, int length)
     return(hret + *h1);
 }
 
+#ifdef __STDC__
 void    dbPvdInitPvt(DBBASE *pdbbase)
+#else
+void    dbPvdInitPvt(pdbbase)
+DBBASE *pdbbase;
+#endif /*__STDC__*/
 {
     LIST **ppvd;
 
@@ -3460,7 +3909,14 @@ void    dbPvdInitPvt(DBBASE *pdbbase)
     return;
 }
 
+#ifdef __STDC__
 PVDENTRY *dbPvdFind(DBBASE *pdbbase,char *name,int lenName)
+#else
+PVDENTRY *dbPvdFind(pdbbase,name,lenName)
+DBBASE *pdbbase;
+char *name;
+int lenName;
+#endif /*__STDC__*/
 {
     unsigned short  hashInd;
     LIST          **ppvd = (LIST **) pdbbase->ppvd;
@@ -3478,7 +3934,14 @@ PVDENTRY *dbPvdFind(DBBASE *pdbbase,char *name,int lenName)
     return (NULL);
 }
 
+#ifdef __STDC__
 PVDENTRY *dbPvdAdd(DBBASE *pdbbase,unsigned short record_type,RECNODE *precnode)
+#else
+PVDENTRY *dbPvdAdd(pdbbase,record_type,precnode)
+DBBASE *pdbbase;
+unsigned short record_type;
+RECNODE *precnode;
+#endif /*__STDC__*/
 {
     unsigned short  hashInd;
     LIST          **ppvd = (LIST **) pdbbase->ppvd;
@@ -3506,7 +3969,13 @@ PVDENTRY *dbPvdAdd(DBBASE *pdbbase,unsigned short record_type,RECNODE *precnode)
     return (ppvdNode);
 }
 
+#ifdef __STDC__
 void dbPvdDelete(DBBASE *pdbbase,RECNODE *precnode)
+#else
+void dbPvdDelete(pdbbase,precnode)
+DBBASE *pdbbase;
+RECNODE *precnode;
+#endif /*__STDC__*/
 {
     char	*name=(char *)precnode->precord;
     unsigned short  hashInd;
@@ -3531,7 +4000,12 @@ void dbPvdDelete(DBBASE *pdbbase,RECNODE *precnode)
     return;
 }
 
+#ifdef __STDC__
 void dbPvdFreeMem(DBBASE *pdbbase)
+#else
+void dbPvdFreeMem(pdbbase)
+DBBASE *pdbbase;
+#endif /*__STDC__*/
 {
     unsigned short  hashInd;
     LIST          **ppvd = (LIST **) pdbbase->ppvd;
@@ -3555,7 +4029,12 @@ void dbPvdFreeMem(DBBASE *pdbbase)
     free((void *)ppvd);
 }
 
+#ifdef __STDC__
 void dbDumpPvd(DBBASE *pdbbase)
+#else
+void dbDumpPvd(pdbbase)
+DBBASE *pdbbase;
+#endif /*__STDC__*/
 {
     unsigned short  hashInd;
     LIST          **ppvd = (LIST **) pdbbase->ppvd;

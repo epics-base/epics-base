@@ -113,7 +113,7 @@ public:
 	// most server tools will use this
 	pvExistReturn ( pvExistReturnEnum s = pverDoesNotExistHere );
 	// directory service server tools will use this (see caNetAddr.h)
-	pvExistReturn ( const caNetAddr & addressIn );
+	pvExistReturn ( const caNetAddr & );
     ~pvExistReturn ();
 	const pvExistReturn & operator = ( pvExistReturnEnum rhs );
 	const pvExistReturn & operator = ( const caNetAddr & rhs );

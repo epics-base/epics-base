@@ -540,7 +540,6 @@ int epicsShareAPI ca_array_put ( chtype type, arrayElementCount count,
 int epicsShareAPI ca_change_connection_event ( chid pChan, caCh *pfunc )
 {
     return pChan->changeConnCallBack ( pfunc );
-    return ECA_INTERNAL;
 }
 
 /*

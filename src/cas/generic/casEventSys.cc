@@ -235,7 +235,7 @@ void casEventSys::eventSignal()
 // this is a pure virtual function, but we nevertheless need a  
 // noop to be called if they call this when we are in the 
 // casStrmClient destructor
-caStatus casEventSys::disconnectChan (caResId id)
+caStatus casEventSys::disconnectChan ( caResId )
 {
     return S_cas_success;
 }

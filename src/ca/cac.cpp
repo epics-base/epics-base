@@ -431,10 +431,10 @@ void cac::uninstallCASG ( CASG & sg )
     this->sgTable.remove ( sg );
 }
 
-CASG * cac::lookupCASG ( unsigned id )
+CASG * cac::lookupCASG ( unsigned idIn )
 {
     epicsGuard < cacMutex > guard ( this->mutex );
-    CASG * psg = this->sgTable.lookup ( id );
+    CASG * psg = this->sgTable.lookup ( idIn );
     if ( psg ) {
         if ( ! psg->verify () ) {
             psg = 0;
@@ -443,7 +443,7 @@ CASG * cac::lookupCASG ( unsigned id )
     return psg;
 }
 
-void cac::registerService ( cacService &service )
+void cac::registerService ( cacService & service )
 {
     this->services.registerService ( service );
 }
@@ -781,7 +781,7 @@ cac::readNotifyRequest ( nciu &chan, unsigned type, // X aCC 361
     return pIO.release()->getId ();
 }
 
-void cac::ioCancel ( nciu &chan, const cacChannel::ioid &id )
+void cac::ioCancel ( nciu &chan, const cacChannel::ioid & idIn )
 {   
     baseNMIU * pmiu;
 
@@ -790,7 +790,7 @@ void cac::ioCancel ( nciu &chan, const cacChannel::ioid &id )
     // in deadlock
     {
         epicsGuard < cacMutex > guard ( this->mutex );
-        pmiu = this->ioTable.remove ( id );
+        pmiu = this->ioTable.remove ( idIn );
         if ( ! pmiu ) {
             return;
         }
@@ -818,23 +818,23 @@ void cac::ioCancel ( nciu &chan, const cacChannel::ioid &id )
     }
 }
 
-void cac::ioShow ( const cacChannel::ioid &id, unsigned level ) const
+void cac::ioShow ( const cacChannel::ioid & idIn, unsigned level ) const
 {
     epicsGuard < cacMutex > autoMutex ( this->mutex );
-    baseNMIU * pmiu = this->ioTable.lookup ( id );
+    baseNMIU * pmiu = this->ioTable.lookup ( idIn );
     if ( pmiu ) {
         pmiu->show ( level );
     }
 }
 
-void cac::ioCompletionNotify ( unsigned id, unsigned type, 
+void cac::ioCompletionNotify ( unsigned idIn, unsigned type, 
                               arrayElementCount count, const void *pData )
 {
     baseNMIU * pmiu;
     
     {
         epicsGuard < cacMutex > autoMutex ( this->mutex );
-        pmiu = this->ioTable.lookup ( id );
+        pmiu = this->ioTable.lookup ( idIn );
         if ( ! pmiu ) {
             return;
         }
@@ -849,12 +849,12 @@ void cac::ioCompletionNotify ( unsigned id, unsigned type,
     pmiu->completion ( type, count, pData );
 }
 
-void cac::ioExceptionNotify ( unsigned id, int status, const char *pContext )
+void cac::ioExceptionNotify ( unsigned idIn, int status, const char *pContext )
 {
     baseNMIU * pmiu;
     {
         epicsGuard < cacMutex > autoMutex ( this->mutex );
-        pmiu = this->ioTable.lookup ( id );
+        pmiu = this->ioTable.lookup ( idIn );
     }
 
     if ( ! pmiu ) {
@@ -871,14 +871,14 @@ void cac::ioExceptionNotify ( unsigned id, int status, const char *pContext )
     pmiu->exception ( status, pContext );
 }
 
-void cac::ioExceptionNotify ( unsigned id, int status, 
+void cac::ioExceptionNotify ( unsigned idIn, int status, 
                    const char *pContext, unsigned type, arrayElementCount count )
 {
     baseNMIU * pmiu;
     
     {
         epicsGuard < cacMutex > autoMutex ( this->mutex );
-        pmiu = this->ioTable.lookup ( id );
+        pmiu = this->ioTable.lookup ( idIn );
         if ( ! pmiu ) {
             return;
         }
@@ -893,10 +893,10 @@ void cac::ioExceptionNotify ( unsigned id, int status,
     pmiu->exception ( status, pContext, type, count );
 }
 
-void cac::ioCompletionNotifyAndDestroy ( unsigned id )
+void cac::ioCompletionNotifyAndDestroy ( unsigned idIn )
 {
     epicsGuard < cacMutex > autoMutex ( this->mutex );
-    baseNMIU * pmiu = this->ioTable.remove ( id );
+    baseNMIU * pmiu = this->ioTable.remove ( idIn );
     if ( ! pmiu ) {
         return;
     }
@@ -917,11 +917,11 @@ void cac::ioCompletionNotifyAndDestroy ( unsigned id )
     pmiu->destroy ( *this );
 }
 
-void cac::ioCompletionNotifyAndDestroy ( unsigned id, 
+void cac::ioCompletionNotifyAndDestroy ( unsigned idIn, 
     unsigned type, arrayElementCount count, const void *pData )
 {
     epicsGuard < cacMutex > autoMutex ( this->mutex );
-    baseNMIU * pmiu = this->ioTable.remove ( id );
+    baseNMIU * pmiu = this->ioTable.remove ( idIn );
     if ( ! pmiu ) {
         return;
     }
@@ -941,11 +941,11 @@ void cac::ioCompletionNotifyAndDestroy ( unsigned id,
     pmiu->destroy ( *this );
 }
 
-void cac::ioExceptionNotifyAndDestroy ( unsigned id, int status, 
+void cac::ioExceptionNotifyAndDestroy ( unsigned idIn, int status, 
                                        const char *pContext )
 {
     epicsGuard < cacMutex > autoMutex ( this->mutex );
-    baseNMIU * pmiu = this->ioTable.remove ( id );
+    baseNMIU * pmiu = this->ioTable.remove ( idIn );
     if ( ! pmiu ) {
         return;
     }
@@ -965,11 +965,11 @@ void cac::ioExceptionNotifyAndDestroy ( unsigned id, int status,
     pmiu->destroy ( *this );
 }
 
-void cac::ioExceptionNotifyAndDestroy ( unsigned id, int status, 
+void cac::ioExceptionNotifyAndDestroy ( unsigned idIn, int status, 
                         const char *pContext, unsigned type, arrayElementCount count )
 {
     epicsGuard < cacMutex > autoMutex ( this->mutex );
-    baseNMIU * pmiu = this->ioTable.remove ( id );
+    baseNMIU * pmiu = this->ioTable.remove ( idIn );
     if ( ! pmiu ) {
         return;
     }

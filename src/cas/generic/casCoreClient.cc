@@ -92,7 +92,7 @@ void casCoreClient::show (unsigned level) const
 //
 caStatus casCoreClient::asyncSearchResponse (
 		const caNetAddr &, const caHdrLargeArray &, const pvExistReturn &,
-        ca_uint16_t protocolRevision, ca_uint32_t sequenceNumber )
+        ca_uint16_t, ca_uint32_t )
 {
 	return S_casApp_noSupport;
 }
@@ -135,7 +135,7 @@ caStatus casCoreClient::enumPostponedCreateChanResponse ( casChannelI &,
 	return S_casApp_noSupport;
 }
 caStatus casCoreClient::channelCreateFailedResp ( const caHdrLargeArray &, 
-    caStatus createStatus )
+    caStatus )
 {
 	return S_casApp_noSupport;
 }
@@ -143,7 +143,7 @@ caStatus casCoreClient::channelCreateFailedResp ( const caHdrLargeArray &,
 //
 // casCoreClient::installChannel()
 //
-void casCoreClient::installChannel (casChannelI &)
+void casCoreClient::installChannel ( casChannelI & )
 {
 	assert (0); // dont install channels on the wrong type of client
 }
@@ -151,7 +151,7 @@ void casCoreClient::installChannel (casChannelI &)
 //
 // casCoreClient::removeChannel()
 //
-void casCoreClient::removeChannel (casChannelI &)
+void casCoreClient::removeChannel ( casChannelI & )
 {
 	assert (0); // dont install channels on the wrong type of client
 }

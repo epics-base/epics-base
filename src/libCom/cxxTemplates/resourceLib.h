@@ -293,7 +293,7 @@ inline unsigned resTable<T,ID>::resTableBitMask ( const unsigned nBits )
 // remove a res from the resTable
 //
 template <class T, class ID>
-T * resTable<T,ID>::remove ( const ID &idIn ) // X aCC 361
+T * resTable<T,ID>::remove ( const ID & idIn ) // X aCC 361
 {
     if ( this->pTable ) {
         // search list for idIn and remove the first match
@@ -301,8 +301,8 @@ T * resTable<T,ID>::remove ( const ID &idIn ) // X aCC 361
         tsSLIter <T> pItem = list.firstIter ();
         T *pPrev = 0;
         while ( pItem.valid () ) {
-            const ID & id = *pItem;
-            if ( id == idIn ) {
+            const ID & idOfItem = *pItem;
+            if ( idOfItem == idIn ) {
                 if ( pPrev ) {
                     list.remove ( *pPrev );
                 }
@@ -337,7 +337,7 @@ void resTable<T,ID>::removeAll ( tsSLList<T> & destination )
 // resTable::lookup ()
 //
 template <class T, class ID>
-inline T * resTable<T,ID>::lookup ( const ID &idIn ) const // X aCC 361
+inline T * resTable<T,ID>::lookup ( const ID & idIn ) const // X aCC 361
 {
     if ( this->pTable ) {
         tsSLList<T> & list = this->pTable [ this->hash ( idIn ) ];
@@ -669,8 +669,8 @@ T * resTable<T,ID>::find ( tsSLList<T> &list, const ID &idIn ) const
 {
     tsSLIter <T> pItem = list.firstIter ();
     while ( pItem.valid () ) {
-        const ID &id = *pItem;
-        if ( id == idIn ) {
+        const ID & idOfItem = *pItem;
+        if ( idOfItem == idIn ) {
             break;
         }
         pItem++;

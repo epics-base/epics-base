@@ -830,7 +830,9 @@ bool tcpiiu::processIncoming ( epicsGuard < callbackMutex > & guard )
         this->msgHeaderAvailable = false;
         this->curDataBytes = 0u;
     }
-    return false;               // to make compiler happy...
+#   if defined ( __HP_aCC ) && _HP_aCC <= 033300
+        return false; // to make hpux compiler happy...
+#   endif
 }
 
 /*
@@ -1177,7 +1179,9 @@ bool tcpiiu::flush ()
             return false;
         }
     }
-    return false; // happy compiler
+#   if defined ( __HP_aCC ) && _HP_aCC <= 033300
+        return false; // to make hpux compiler happy...
+#   endif
 }
 
 // ~tcpiiu() will not return while this->blockingForFlush is greater than zero

@@ -23,7 +23,7 @@
 //
 // casChannelI::casChannelI()
 //
-casChannelI::casChannelI ( const casCtx & ctx ) :
+casChannelI::casChannelI ( const casCtx & ) :
 		pClient ( 0 ), pPV ( 0 ), cid ( 0xffffffff ),
 		accessRightsEvPending ( false )
 {

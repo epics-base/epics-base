@@ -12,7 +12,7 @@ include $(TOP)/configure/CONFIG
 DIRS += include
 DIRS += cxxTemplates
 DIRS += toolsComm
-#DIRS += makeBaseApp
+DIRS += makeBaseApp
 DIRS += osi
 DIRS += libCom
 DIRS += dbStatic

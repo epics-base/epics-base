@@ -33,7 +33,7 @@
 #       define CXX_THROW_SPECIFICATION
 #   endif
 #elif defined ( __HP_aCC ) 
-#   if _HP_aCC > 033300
+#   if _HP_aCC > 33300
 #       define CXX_PLACEMENT_DELETE
 #   endif
 #   define CXX_THROW_SPECIFICATION

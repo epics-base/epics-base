@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.5  1998/06/16 02:18:53  jhill
+ * use smart gdd ptr
+ *
  * Revision 1.4  1997/08/05 00:47:01  jhill
  * fixed warnings
  *
@@ -80,8 +83,6 @@ epicsShareFunc casAsyncRdIOI::casAsyncRdIOI(const casCtx &ctx, casAsyncReadIO &i
 //
 casAsyncRdIOI::~casAsyncRdIOI()
 {
-	int gddStatus;
-	
 	this->lock();
 
 	this->chan.removeAsyncIO(*this);
@@ -95,8 +96,6 @@ casAsyncRdIOI::~casAsyncRdIOI()
 epicsShareFunc caStatus casAsyncRdIOI::postIOCompletion(caStatus completionStatusIn,
 				gdd &valueRead)
 {
-	int gddStatus;
-
 	this->lock();
 	this->pDD = &valueRead;
 	this->unlock();

@@ -7,11 +7,13 @@ USR_INCLUDES = -I../../ca
 USR_CFLAGS = -UUNIX
 
 SRCS.c =  ../caserverio.c ../caservertask.c ../camsgtask.c ../camessage.c \
-	../rsrv_init.c ../cast_server.c ../online_notify.c ../globalsource.c
+	../rsrv_init.c ../cast_server.c ../online_notify.c ../globalsource.c \
+	../client_stat_summary.c
 
 OBJS = \
 	caserverio.o caservertask.o camsgtask.o camessage.o \
-	rsrv_init.o cast_server.o online_notify.o globalsource.o
+	rsrv_init.o cast_server.o online_notify.o globalsource.o \
+	client_stat_summary.o
 
 PROD = rsrvLib
 

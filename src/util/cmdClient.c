@@ -1,14 +1,40 @@
-/****************************************************************************
-			GTA PROJECT   AT division
-
-	Copyright, 1990, The Regents of the University of California
-		      Los Alamos National Laboratory
-
-	FILE PATH:	cmdClient.c
-	ENVIRONMENT:	SunOS, VxWorks
-	MAKE OPTIONS:
-	SCCS VERSION:	$Id$
-*+/mod***********************************************************************
+/*	$Id$
+ *	Author:	Roger A. Cole
+ *	Date:	11-26-90
+ *
+ *	Experimental Physics and Industrial Control System (EPICS)
+ *
+ *	Copyright 1991, the Regents of the University of California,
+ *	and the University of Chicago Board of Governors.
+ *
+ *	This software was produced under  U.S. Government contracts:
+ *	(W-7405-ENG-36) at the Los Alamos National Laboratory,
+ *	and (W-31-109-ENG-38) at Argonne National Laboratory.
+ *
+ *	Initial development by:
+ *		The Controls and Automation Group (AT-8)
+ *		Ground Test Accelerator
+ *		Accelerator Technology Division
+ *		Los Alamos National Laboratory
+ *
+ *	Co-developed with
+ *		The Controls and Computing Group
+ *		Accelerator Systems Division
+ *		Advanced Photon Source
+ *		Argonne National Laboratory
+ *
+ * Modification Log:
+ * -----------------
+ * .01	11-26-90	rac	initial version
+ * .02	07-30-91	rac	installed in SCCS
+ *
+ * make options
+ *	-DvxWorks	makes a version for VxWorks
+ *	-DNDEBUG	don't compile assert() checking
+ *      -DDEBUG         compile various debug code, including checks on
+ *                      malloc'd memory
+ */
+/*+/mod***********************************************************************
 * TITLE	cmdClient.c - general purpose client for command-based servers
 *
 * DESCRIPTION
@@ -32,13 +58,7 @@
 * o	this program should use tasks.h to establish priorities, stack
 *	sizes, etc.
 * o	not all signals are caught
-*-
-* Modification History
-* version   date    programmer   comments
-* ------- -------- ------------ -----------------------------------
-* 1.1     11/26/90 R. Cole      initial version
-*
-*****************************************************************************/
+*-***************************************************************************/
 #include <genDefs.h>
 #include <genTasks.h>
 #include <cmdDefs.h>

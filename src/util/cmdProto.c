@@ -26,7 +26,7 @@
  * Modification Log:
  * -----------------
  * .01	10-24-90	rac	initial version
- * .02	mm-dd-yy	rac	version 1.0, installed in SCCS
+ * .02	07-30-91	rac	installed in SCCS; changed to use EPICS_ENV..
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -78,7 +78,7 @@
 *		any commands needing an individual help topic, then a
 *		specific HELP_TOPIC will have to be defined.
 *	If you're using sockets, assign a port number in <ports.h>, and
-*		change IPPORT_CMD_PROTO to the IPPORT_xxx you've chosen.
+*		change glZzzIPPort to the IPPORT_xxx you've chosen.
 *
 *	SunOS
 *	o   link with genLib.a
@@ -103,8 +103,8 @@
 #include <genDefs.h>
 #include <genTasks.h>
 #include <cmdDefs.h>
+#include <envDefs.h>
 #include <ezsSockSubr.h>
-#include <ports.h>
 #include <cadef.h>
 
 #ifdef vxWorks
@@ -193,6 +193,7 @@ static CX_CMD	*pglZzzCxCmd=NULL;
 static ZZZ_CTX	glZzzCtx;
 static ZZZ_CTX	*pglZzzCtx=NULL;
 static char	*glZzzId="zzz 11/27/90";
+static int	glZzzIPPort;
 
 
 #ifndef vxWorks
@@ -269,7 +270,11 @@ char	*option;	/* I NULL, "hostName", or "server" */
 	    (void)printf("can't operate as client under VxWorks\n");
 #else
 	    char	portText[10];
-	    (void)sprintf(portText, "%d", IPPORT_CMD_PROTO);
+	    if (envGetConfigParam(&EPICS_CMD_PROTO_PORT, 10, portText) == NULL) {
+		printf("error getting %s\n", EPICS_CMD_PROTO_PORT.name);
+		return ERROR;
+	    }
+	    sscanf(portText, "%d", &glZzzIPPort);
 	    execl("cmdClient", "cmdClient", option, portText, (char *)0);
 	    (void)printf("couldn't exec to cmdClient\n");
 #endif
@@ -763,7 +768,7 @@ CX_CMD	**ppCxCmd;	/* IO ptr to pointer to command context */
 /*-----------------------------------------------------------------------------
 *	establish a socket to use to listen for potential clients to connect
 *----------------------------------------------------------------------------*/
-    if (ezsCreateListenSocket(&pglZzzCtx->listenSock, IPPORT_CMD_PROTO) != 0) {
+    if (ezsCreateListenSocket(&pglZzzCtx->listenSock, glZzzIPPort) != 0) {
 	perror("create listen socket");
 	goto zzzListenTaskWrapup;
     }

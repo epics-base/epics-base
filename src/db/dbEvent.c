@@ -941,14 +941,10 @@ LOCAL void event_task (void *pParm)
 /*
  * DB_START_EVENTS()
  */
-int db_start_events (
-     struct event_user   *evUser,
-     char                *taskname,  /* defaulted if NULL */
-     int                 (*init_func)(threadId),
-     threadId            init_func_arg,
-     int                 priority_offset
-     )
+int db_start_events (dbEventCtx ctx, char *taskname, int (*init_func)(threadId), 
+                     threadId init_func_arg, int priority_offset)
 {
+     struct event_user *evUser = (struct event_user *) ctx;
      int     taskpri;
      
      semMutexMustTake (evUser->firstque.writelock);
@@ -984,8 +980,10 @@ int db_start_events (
 /*
  * db_event_flow_ctrl_mode_on()
  */
-void db_event_flow_ctrl_mode_on (struct event_user *evUser)
+void db_event_flow_ctrl_mode_on (dbEventCtx ctx)
 {
+    struct event_user *evUser = (struct event_user *) ctx;
+
     evUser->flowCtrlMode = TRUE;
     /* 
      * notify the event handler task
@@ -999,8 +997,10 @@ void db_event_flow_ctrl_mode_on (struct event_user *evUser)
 /*
  * db_event_flow_ctrl_mode_off()
  */
-void db_event_flow_ctrl_mode_off (struct event_user *evUser)
+void db_event_flow_ctrl_mode_off (dbEventCtx ctx)
 {
+    struct event_user *evUser = (struct event_user *) ctx;
+
     evUser->flowCtrlMode = FALSE;
     /* 
      * notify the event handler task

@@ -1,5 +1,8 @@
 /* $Id$
  * $Log$
+ * Revision 1.7  1997/04/30 19:12:25  mrk
+ * Fix compiler warning messages
+ *
  * Revision 1.6  1995/02/13  16:46:04  jba
  * Removed date from epicsRelease.
  *
@@ -27,6 +30,9 @@
     char *epicsRelease1 = epicsReleaseVersion;
 int coreRelease()
 {
-    printf("############################################################################\n###  %s\n###  %s\n############################################################################\n", epicsRelease, epicsRelease1);
+    printf("############################################################################\n");
+    printf("###  %s\n", epicsRelease, epicsRelease1);
+    printf("###  Build date %s\n", __DATE__);
+    printf("############################################################################\n");
     return(0);
 }

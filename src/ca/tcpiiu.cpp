@@ -28,13 +28,6 @@
 #include "net_convert.h"
 #include "bhe.h"
 
-// nill message alignment pad bytes
-static const char nillBytes [] = 
-{ 
-    0, 0, 0, 0,
-    0, 0, 0, 0
-};
-
 tcpSendThread::tcpSendThread ( class tcpiiu & iiuIn,
     const char * pName, unsigned stackSize, unsigned priority ) :
         iiu ( iiuIn ), thread ( *this, pName, stackSize, priority )
@@ -830,35 +823,6 @@ bool tcpiiu::processIncoming ( epicsGuard < callbackMutex > & guard )
     return false;               // to make compiler happy...
 }
 
-inline void insertRequestHeader (
-    comQueSend &sendQue, ca_uint16_t request, ca_uint32_t payloadSize, 
-    ca_uint16_t dataType, ca_uint32_t nElem, ca_uint32_t cid, 
-    ca_uint32_t requestDependent, bool v49Ok )
-{
-    sendQue.beginMsg ();
-    if ( payloadSize < 0xffff && nElem < 0xffff ) {
-        sendQue.pushUInt16 ( request ); 
-        sendQue.pushUInt16 ( static_cast < ca_uint16_t > ( payloadSize ) ); 
-        sendQue.pushUInt16 ( dataType ); 
-        sendQue.pushUInt16 ( static_cast < ca_uint16_t > ( nElem ) ); 
-        sendQue.pushUInt32 ( cid ); 
-        sendQue.pushUInt32 ( requestDependent );  
-    }
-    else if ( v49Ok ) {
-        sendQue.pushUInt16 ( request ); 
-        sendQue.pushUInt16 ( 0xffff ); 
-        sendQue.pushUInt16 ( dataType ); 
-        sendQue.pushUInt16 ( 0u ); 
-        sendQue.pushUInt32 ( cid ); 
-        sendQue.pushUInt32 ( requestDependent );  
-        sendQue.pushUInt32 ( payloadSize ); 
-        sendQue.pushUInt32 ( nElem ); 
-    }
-    else {
-        throw cacChannel::outOfBounds ();
-    }
-}
-
 /*
  * tcpiiu::hostNameSetRequest ()
  */
@@ -885,7 +849,7 @@ void tcpiiu::hostNameSetRequest ( epicsGuard < cacMutex > & )
     this->sendQue.pushUInt32 ( 0u ); // cid
     this->sendQue.pushUInt32 ( 0u ); // available 
     this->sendQue.pushString ( pName, size );
-    this->sendQue.pushString ( nillBytes, postSize - size );
+    this->sendQue.pushString ( cacNillBytes, postSize - size );
     this->sendQue.commitMsg ();
 }
 
@@ -915,7 +879,7 @@ void tcpiiu::userNameSetRequest ( epicsGuard < cacMutex > & )
     this->sendQue.pushUInt32 ( 0u ); // cid
     this->sendQue.pushUInt32 ( 0u ); // available 
     this->sendQue.pushString ( pName, size );
-    this->sendQue.pushString ( nillBytes, postSize - size );
+    this->sendQue.pushString ( cacNillBytes, postSize - size );
     this->sendQue.commitMsg ();
 }
 
@@ -983,62 +947,13 @@ void tcpiiu::echoRequest ( epicsGuard < cacMutex > & )
     this->sendQue.commitMsg ();
 }
 
-inline void insertRequestWithPayLoad (
-    comQueSend &sendQue, ca_uint16_t request,  
-    unsigned dataType, ca_uint32_t nElem, ca_uint32_t cid, 
-    ca_uint32_t requestDependent, const void *pPayload,
-    bool v49Ok )
-{
-    if ( ! sendQue.dbr_type_ok ( dataType ) ) {
-        throw cacChannel::badType();
-    }
-    ca_uint32_t size;
-    bool stringOptim;
-    if ( dataType == DBR_STRING && nElem == 1 ) {
-        const char *pStr = static_cast < const char * >  ( pPayload );
-        size = strlen ( pStr ) + 1u;
-        if ( size > MAX_STRING_SIZE ) {
-            throw cacChannel::outOfBounds();
-        }
-        stringOptim = true;
-    }
-    else {
-        unsigned maxBytes;
-        if ( v49Ok ) {
-            maxBytes = 0xffffffff;
-        }
-        else {
-            maxBytes = MAX_TCP - 16u; // allow space for protocol header
-        }
-        unsigned maxElem = ( maxBytes - dbr_size[dataType] ) / dbr_value_size[dataType];
-        if ( nElem >= maxElem ) {
-            throw cacChannel::outOfBounds();
-        }
-        size = dbr_size_n ( dataType, nElem );
-        stringOptim = false;
-    }
-    ca_uint32_t payloadSize = CA_MESSAGE_ALIGN ( size );
-    insertRequestHeader ( sendQue, request, payloadSize, 
-        static_cast <ca_uint16_t> ( dataType ), 
-        nElem, cid, requestDependent, v49Ok );
-    if ( stringOptim ) {
-        sendQue.pushString ( static_cast < const char * > ( pPayload ), size );  
-    }
-    else {
-        sendQue.push_dbr_type ( dataType, pPayload, nElem );  
-    }
-    // set pad bytes to nill
-    sendQue.pushString ( nillBytes, payloadSize - size );
-    sendQue.commitMsg ();
-}
-
 void tcpiiu::writeRequest ( epicsGuard < cacMutex > &,
                 nciu &chan, unsigned type, unsigned nElem, const void *pValue )
 {
     if ( ! chan.connected () ) {
         throw cacChannel::notConnected();
     }
-    insertRequestWithPayLoad ( this->sendQue, CA_PROTO_WRITE,  
+    this->sendQue.insertRequestWithPayLoad ( CA_PROTO_WRITE,  
         type, nElem, chan.getSID(), chan.getCID(), pValue,
         CA_V49 ( this->minorProtocolVersion ) );
 }
@@ -1054,13 +969,13 @@ void tcpiiu::writeNotifyRequest ( epicsGuard < cacMutex > &,
     if ( ! this->ca_v41_ok () ) {
         throw cacChannel::unsupportedByService();
     }
-    insertRequestWithPayLoad ( this->sendQue, CA_PROTO_WRITE_NOTIFY,  
+    this->sendQue.insertRequestWithPayLoad ( CA_PROTO_WRITE_NOTIFY,  
         type, nElem, chan.getSID(), io.getID(), pValue,
         CA_V49 ( this->minorProtocolVersion ) );
 }
 
 void tcpiiu::readNotifyRequest ( epicsGuard < cacMutex > &, 
-                               nciu &chan, netReadNotifyIO &io, 
+                               nciu & chan, netReadNotifyIO & io, 
                                unsigned dataType, unsigned nElem )
 {
     if ( ! chan.connected () ) {
@@ -1083,7 +998,7 @@ void tcpiiu::readNotifyRequest ( epicsGuard < cacMutex > &,
     if ( nElem > maxElem ) {
         throw cacChannel::msgBodyCacheTooSmall ();
     }
-    insertRequestHeader ( this->sendQue, 
+    this->sendQue.insertRequestHeader ( 
         CA_PROTO_READ_NOTIFY, 0u, 
         static_cast < ca_uint16_t > ( dataType ), 
         nElem, chan.getSID(), io.getID(), 
@@ -1129,7 +1044,7 @@ void tcpiiu::createChannelRequest ( nciu & chan )
         this->sendQue.pushString ( pName, nameLength );
     }
     if ( postCnt > nameLength ) {
-        this->sendQue.pushString ( nillBytes, postCnt - nameLength );
+        this->sendQue.pushString ( cacNillBytes, postCnt - nameLength );
     }
     this->sendQue.commitMsg ();
 }
@@ -1175,7 +1090,7 @@ void tcpiiu::subscriptionRequest ( epicsGuard < cacMutex > &,
     if ( nElem > maxElem ) {
         throw cacChannel::msgBodyCacheTooSmall ();
     }
-    insertRequestHeader ( this->sendQue, 
+    this->sendQue.insertRequestHeader ( 
         CA_PROTO_EVENT_ADD, 16u, 
         static_cast < ca_uint16_t > ( dataType ), 
         nElem, chan.getSID(), subscr.getID(), 
@@ -1193,7 +1108,7 @@ void tcpiiu::subscriptionRequest ( epicsGuard < cacMutex > &,
 void tcpiiu::subscriptionCancelRequest ( epicsGuard < cacMutex > &,
                              nciu & chan, netSubscription & subscr )
 {
-    insertRequestHeader ( this->sendQue, 
+    this->sendQue.insertRequestHeader ( 
         CA_PROTO_EVENT_CANCEL, 0u, 
         static_cast < ca_uint16_t > ( subscr.getType() ), 
         static_cast < ca_uint16_t > ( subscr.getCount() ), 

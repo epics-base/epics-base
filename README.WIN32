@@ -35,7 +35,7 @@ To compile EPICS on WIN32, we need
 
 and some tools:
 
-	gnu make - www.gnu.org
+	gnu make - www.gnu.org (we used 3.76)
 	perl - www.perl.org (we used 5.003)
 
 The perl interpreter and gnu make are available 'on the net'
@@ -82,6 +82,18 @@ HOST_ARCH=WIN32			(used by the make system)
 
 (Setting env. vars. is different: for NT, use Settings/System,
 for Win95 use autoexec.bat)
+
+When setting paths in the EPICS CONFIG files:
+
+	** Note that that each "\" in any path variables
+		must be replaced with a "\\" (this is because GNU make treats
+		all "\" characters as line continuation)
+
+	** Note that that each space in any file name or 
+        path name variable must be replaced with 
+        a "\ " (this is because GNU make treats all " " seperated
+        input as independent tokins in the input stream.
+
 
 3) building EPICS
 -----------------
@@ -132,17 +144,17 @@ o General infomation on EPICS IOC application development can be found in
 	the "EPICS IOC Application Developers Guide". To see all of the options 
 	supported by makeBaseApp.pl type "perl c:\epics\bin\win32\makeBaseApp.pl"
 
-5) EPICS GNU make makefiles can be executed from within a visual C++ "makefile"
+5) EPICS GNU make makefiles can be executed from within a Visual C++ "makefile"
 style project. This allows EPICS programs to be developed directly inside of
 the visual C++ environment. To do this create a "makefile" project and place your 
 gnu make command in the build configuration (accessed from the project/sttings menu). 
-You will also need to add perl, GNU make, and epics into the executable search path 
-(from the tools/options menu). I have not so far determined how to configure visual
-C++ so that it is possible to double click on the compiler error messages generated
-within an EPICS "makefile" style project and have visual C++ immediately position the
-cursor on the corresponding line in the source (as is normally the case in the
-visual C++ environement). If you solve this problem please forward the details
-to johill@lanl.gov.
+You will also need to add GNU make and <EPICS>/bin/win32 into the Visual C++ 
+executable search path (from the tools/options menu). I have not so far determined 
+how to configure visual C++ so that it is possible to double click on the compiler 
+error messages generated within an EPICS "makefile" style project and have visual 
+C++ immediately position the cursor on the corresponding line in the source (as is 
+normally the case in the visual C++ environement). If you solve this problem please 
+forward the details to johill@lanl.gov.
 
 Good luck !
 

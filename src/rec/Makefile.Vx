@@ -25,7 +25,6 @@ SRCS.c = \
 	../recMbbiDirect.c\
 	../recMbbo.c\
 	../recMbboDirect.c\
-	../recPal.c\
 	../recPermissive.c\
 	../recPid.c\
 	../recPulseCounter.c\
@@ -40,11 +39,12 @@ SRCS.c = \
 	../recStringout.c\
 	../recSub.c\
 	../recSubArray.c\
-	../recSwitch.c\
 	../recTimer.c\
 	../recWaveform.c\
 	../recWait.c\
 	../caMonitor.c
+#	../recPal.c\
+#	../recSwitch.c\
 #	../recGsub.c\
 #	../recAai.c\
 #	../recAao.c
@@ -74,11 +74,9 @@ OBJS = \
 	recMbboDirect.o\
 	recStringout.o\
 	recEr.o\
-	recPal.o\
 	recSub.o\
 	recErevent.o\
 	recPermissive.o\
-	recSwitch.o\
 	recEvent.o\
 	recPid.o\
 	recTimer.o\
@@ -92,6 +90,8 @@ OBJS = \
 	recMbbiDirect.o\
 	recMbboDirect.o\
 	caMonitor.o
+#	recPal.o\
+#	recSwitch.o\
 #	recGsub.o\
 #	recAai.o\
 #	recAao.o\

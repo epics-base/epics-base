@@ -41,11 +41,11 @@
 /*
  * WINDOWS also has a "CALLBACK" type def
  */
-#ifdef WIN32
+#ifdef _WIN32
 #	ifdef CALLBACK
 #		undef CALLBACK
 #	endif /*CALLBACK*/
-#endif /*WIN32*/
+#endif /*_WIN32*/
 
 #define NUM_CALLBACK_PRIORITIES 3
 #define priorityLow     0

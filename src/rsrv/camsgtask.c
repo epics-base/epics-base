@@ -34,6 +34,8 @@
  *			partial messages
  *	.04 joh	071191	changes to recover from UDP port reuse
  *			by rebooted clients
+ *	.05 joh	110691	print nil recv disconnect message only
+ *			if debug is on
  */
 
 #include <vxWorks.h>
@@ -160,7 +162,9 @@ FAST int 		sock;
 				sizeof(client->recv.buf)-client->recv.cnt, 
 				0);
 		if (nchars==0){
-			logMsg("camsgtask: nill message disconnect\n");
+  			if(CASDEBUG>0){
+				logMsg("camsgtask: nill message disconnect\n");
+			}
 			break;
 		}
 		else if(nchars<=0){

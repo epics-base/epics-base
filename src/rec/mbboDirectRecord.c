@@ -117,18 +117,9 @@ static long init_record(pmbboDirect,pass)
 
     if (pass==0) return(0);
 
-    /* mbbo.siml must be a CONSTANT or a PV_LINK or a DB_LINK */
-    switch (pmbboDirect->siml.type) {
-    case (CONSTANT) :
+    /* mbboDirect.siml must be a CONSTANT or a PV_LINK or a DB_LINK */
+    if (pmbboDirect->siml.type == CONSTANT) {
 	recGblInitConstantLink(&pmbboDirect->siml,DBF_USHORT,&pmbboDirect->simm);
-        break;
-    case (PV_LINK) :
-    case (DB_LINK) :
-        break;
-    default :
-        recGblRecordError(S_db_badField,(void *)pmbboDirect,
-                "mbboDirect: init_record Illegal SIML field");
-        return(S_db_badField);
     }
 
     if(!(pdset = (struct mbbodset *)(pmbboDirect->dset))) {
@@ -141,7 +132,8 @@ static long init_record(pmbboDirect,pass)
 	return(S_dev_missingSup);
     }
     if (pmbboDirect->dol.type == CONSTANT){
-	recGblInitConstantLink(&pmbboDirect->dol,DBF_USHORT,&pmbboDirect->val);
+	if(recGblInitConstantLink(&pmbboDirect->dol,DBF_USHORT,&pmbboDirect->val))
+        pmbboDirect->udf = FALSE;
     }
     /* initialize mask*/
     pmbboDirect->mask = 0;
@@ -177,7 +169,7 @@ static long process(pmbboDirect)
     }
 
     if (!pmbboDirect->pact) {
-	if(pmbboDirect->dol.type==DB_LINK && pmbboDirect->omsl==CLOSED_LOOP){
+	if(pmbboDirect->dol.type!=CONSTANT && pmbboDirect->omsl==CLOSED_LOOP){
 	    long status;
 	    unsigned short val;
 
@@ -186,6 +178,7 @@ static long process(pmbboDirect)
 	    pmbboDirect->pact = FALSE;
 	    if(status==0) {
 		pmbboDirect->val= val;
+		pmbboDirect->udf= FALSE;
 	    }
 	}
 	/* convert val to rval */

@@ -593,32 +593,15 @@ static long initSiml(pwait)
 struct waitRecord   *pwait;
 { 
     long status;
+
     /* wait.siml must be a CONSTANT or a PV_LINK or a DB_LINK */
-    switch (pwait->siml.type) {
-    case (CONSTANT) :
+    if (pwait->siml.type == CONSTANT) {
 	recGblInitConstantLink(&pwait->siml,DBF_USHORT,&pwait->simm);
-        break;
-    case (PV_LINK) :
-    case (DB_LINK) :
-        break;
-    default :
-        recGblRecordError(S_db_badField,(void *)pwait,
-                "wait: init_record Illegal SIML field");
-        return(S_db_badField);
     }
 
     /* wait.siol must be a CONSTANT or a PV_LINK or a DB_LINK */
-    switch (pwait->siol.type) {
-    case (CONSTANT) :
+    if (pwait->siol.type == CONSTANT) {
 	recGblInitConstantLink(&pwait->siol,DBF_DOUBLE,&pwait->sval);
-        break;
-    case (PV_LINK) :
-    case (DB_LINK) :
-        break;
-    default :
-        recGblRecordError(S_db_badField,(void *)pwait,
-                "wait: init_record Illegal SIOL field");
-        return(S_db_badField);
     }
 
     return(0);

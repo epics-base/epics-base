@@ -3,16 +3,16 @@
 <head>
    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
    <meta name="Author" content="jba">
-   <meta name="GENERATOR" content="Mozilla/4.76 [en] (X11; U; SunOS 5.8 sun4u) [Netscape]">
+   <meta name="GENERATOR" content="Mozilla/4.77 [en] (X11; U; SunOS 5.8 sun4u) [Netscape]">
 </head>
 <body>
 
 <center>
 <h2>
-Converting an EPICS R3.13 application to R3.14.0alpha3</h2></center>
+Converting an EPICS R3.13 application to R3.14.0.beta1</h2></center>
 
 <p><br>This document describes how to convert a R3.13 vxWorks application
-so that it builds with release R3.14.0alpha3.&nbsp; It describes procedures
+so that it builds with release R3.14.0beta1.&nbsp; It describes procedures
 such that:
 <ul>
 <li>
@@ -37,7 +37,7 @@ Create a new R3.14 application</h3>
 
 <blockquote><tt>mkdir &lt;top></tt>
 <br><tt>cd &lt;top></tt>
-<br><tt>&lt;full path to R3.14.0alpha3 base>/bin/&lt;host_arch>/makeBaseApp.pl
+<br><tt>&lt;full path to R3.14.0beta1 base>/bin/&lt;host_arch>/makeBaseApp.pl
 -t example example</tt></blockquote>
 
 <h3>
@@ -55,7 +55,7 @@ TEMPLATES_TOP from old application RELEASE file.
 <br>If sequence programs (*.st or *.stt files) exist in your application,
 add the SNCSEQ location definition for the R3.14 seq external module
 <blockquote><tt>SNCSEQ =&lt;full path to seq module top></tt></blockquote>
-The R3.14 seq module must exist and be built with EPICS base R3.14.0alpha3.</blockquote>
+The R3.14 seq module must exist and be built with EPICS base R3.14.0beta1.</blockquote>
 
 <h3>
 Modify the Makefiles in &lt;top>/*App directories.</h3>
@@ -117,12 +117,12 @@ built.
 and the TOP definition.</blockquote>
 
 <blockquote>Change&nbsp;&nbsp;&nbsp;&nbsp; <tt>LIBNAME = &lt;libname>Lib</tt>
-<br>to&nbsp;&nbsp;&nbsp;&nbsp; <tt>PROD_vxWorks = &lt;libname></tt><tt></tt>
+<br>to&nbsp;&nbsp;&nbsp;&nbsp; <tt>PROD_vxWorks = &lt;libname></tt>
 <p>Remove line&nbsp;<tt> -include ../baseLIBOBJS</tt>
-<p>Remove&nbsp; line&nbsp;&nbsp;&nbsp; <tt>INSTALLS = iocCore seq</tt><tt></tt>
+<p>Remove&nbsp; line&nbsp;&nbsp;&nbsp; <tt>INSTALLS = iocCore seq</tt>
 <p>Change all <tt>SRCS.c += ../&lt;name>.c </tt>lines
 <br>to&nbsp;&nbsp; <font face="Arial,Helvetica">&lt;prodname>_SRCS += &lt;name>.c</font>
-<br>if the source files exist in the current directory.<tt></tt>
+<br>if the source files exist in the current directory.
 <p>Change all <tt>*OBJS += &lt;name>.o</tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 lines
 <br>to&nbsp;&nbsp; <font face="Arial,Helvetica">&lt;prodname>_SRCS += &lt;name>.c</font>
@@ -131,12 +131,12 @@ lines
 <p>Change&nbsp;&nbsp;&nbsp; <tt>LIBOBJS += &lt;seq_program_name>.o</tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 lines
 <br>to&nbsp;&nbsp; <tt>&lt;prodname>_SRCS += &lt;seq_program_name>.stt</tt>
-<br>or&nbsp; <tt>&lt;prodname>_SRCS += &lt;seq_program_name>.st</tt><tt></tt>
+<br>or&nbsp; <tt>&lt;prodname>_SRCS += &lt;seq_program_name>.st</tt>
 <p>Add the lines
 <blockquote><tt>#&lt;name>_LIBS += seq</tt>
 <br><tt>#&lt;name>_LIBS += pv</tt>
 <br><tt>#seq_DIR&nbsp;&nbsp;&nbsp; = $(SNCSEQ_LIB)</tt>
-<br><tt>#pv_DIR&nbsp;&nbsp;&nbsp;&nbsp; = $(SNCSEQ_LIB)</tt><tt></tt>
+<br><tt>#pv_DIR&nbsp;&nbsp;&nbsp;&nbsp; = $(SNCSEQ_LIB)</tt>
 <p><tt>&lt;name>_LIBS += recIoc</tt>
 <br><tt>&lt;name>_LIBS += softDevIoc</tt>
 <br><tt>&lt;name>_LIBS += testDevIoc</tt>
@@ -172,7 +172,7 @@ Modify the Makefiles in &lt;top>/iocBoot/ioc* directories.</h3>
 <br>to&nbsp;&nbsp;&nbsp;&nbsp; <tt>include $(TOP)/configure/CONFIG</tt>
 <p>Change <tt>include ARCH = &lt;old arch specification e.g. mv167></tt>
 <br>to&nbsp;&nbsp;&nbsp;&nbsp; <tt>include ARCH = &lt;new arch specificatio
-e.g. vxWorks-68040></tt><tt></tt>
+e.g. vxWorks-68040></tt>
 <p>Change <tt>include $(TOP)/config/RULES.ioc</tt>
 <br>to&nbsp;&nbsp;&nbsp;&nbsp; <tt>include $(TOP)/configure/RULES.ioc</tt>
 <p>Add the following rule at the end of the Makefile.

@@ -10,10 +10,9 @@ INC += dbVarSub.h
 
 SRCS.c = ../dbVarSub.c dbLoadTemplate_lex.c dbLoadTemplate.c \
 		dbLoadRecords_lex.c dbLoadRecords.c \
-		../BSlib.c ../PVSserver.c ../rdbapplist.c ../rdbls.o
+		../BSlib.c ../PVSserver.c ../rdbapplist.c ../rdbls.c
 
 VAR_OBJS =  dbVarSub.o dbLoadTemplate.o dbLoadRecords.o 
-OBJS =  $(VAR_OBJS) PVSserver.o rdbapplist.o rdbls.o
 
 LIBOBJS = BSlib.o
 LIBNAME = BSlib.a

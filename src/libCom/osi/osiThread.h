@@ -44,7 +44,7 @@ epicsShareFunc void epicsShareAPI threadOnceOsd(
 #define threadOnce(id,func,arg) \
     do { \
 	threadOnceId *idCopy =(id); \
-	if(*idCopy == 0) \
+	if(*idCopy <= 0) \
 	    threadOnceOsd(idCopy,func,arg); \
     } while(0)
 

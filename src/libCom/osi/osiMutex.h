@@ -30,6 +30,16 @@ private:
     mutable semMutexId id;
 };
 
+// Automatically applies and releases the mutex.
+// This is for use in situations where C++ exceptions are possible.
+class osiAutoMutex {
+public:
+    osiAutoMutex ( osiMutex & );
+    ~osiAutoMutex ();
+private:
+    osiMutex &mutex;
+};
+
 inline osiMutex::osiMutex ()
 {
     this->id = semMutexCreate ();
@@ -92,6 +102,17 @@ inline void osiMutex::unlock () const
 inline void osiMutex::show (unsigned level) const
 {
     semMutexShow (this->id, level);
+}
+
+inline osiAutoMutex::osiAutoMutex ( osiMutex &mutexIn ) :
+    mutex ( mutexIn )
+{
+    this->mutex.lock ();
+}
+
+inline osiAutoMutex::~osiAutoMutex ()
+{
+    this->mutex.unlock ();
 }
 
 #endif /* osiMutexh */

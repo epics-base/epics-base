@@ -2,7 +2,7 @@ Compiling EPICS and Building IOC Applications on HPUX 11 (hpux-parisc)
 ======================================================================
 
 Please mail questions, comments, corrections, additional examples, etc.
-to Ralph.Lange@mail.bessy.de
+to Ralph.Lange@bessy.de
 
 NOTE: 3.14 will ONLY compile on HPUX 11 systems. HPUX 10 does not have
       the necessary posix thread support and will never ever be

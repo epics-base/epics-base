@@ -93,6 +93,7 @@ void oldChannel::connectNotify ()
         struct connection_handler_args  args;
         args.chid = this;
         args.op = CA_OP_CONN_UP;
+
         (*pCCB) (args);
     }
     else {

@@ -513,7 +513,7 @@ udpiiu::udpiiu (cac *pcac) :
 	     * repeater's port)
 	     */
         osptr = osiSpawnDetachedProcess ("CA Repeater", "caRepeater");
-        if (osptr==osiSpawnDetachedProcessNoSupport) {
+        if ( osptr == osiSpawnDetachedProcessNoSupport ) {
             unsigned priorityOfSelf = threadGetPrioritySelf ();
             unsigned priorityOfRepeater;
             threadId tid;

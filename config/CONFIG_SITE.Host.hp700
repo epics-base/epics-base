@@ -8,7 +8,7 @@
 SHARED_LIBRARIES=YES
 
 # where we expect to find shared libraries if not found elsewhere
-DEFAULT_SHRLIB_SEARCH_PATH = /cs/op/lib/R$(EPICS_VERSION).$(EPICS_REVISION).$(EPICS_MODIFICATION).$(EPICS_UPDATE_NAME)$(EPICS_UPDATE_LEVEL):$(INSTALL_LIB)
+DEFAULT_SHRLIB_SEARCH_PATH = /cs/lib/R$(EPICS_VERSION).$(EPICS_REVISION).$(EPICS_MODIFICATION).$(EPICS_UPDATE_NAME)$(EPICS_UPDATE_LEVEL):$(INSTALL_LIB)
 
 #No special action should be required to build or use shared libraries.
 #However, when a new shared library is built using the above configuration,

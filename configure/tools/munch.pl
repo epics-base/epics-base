@@ -18,18 +18,16 @@ eval 'exec perl -S $0 ${1+"$@"}'  # -*- Mode: perl -*-
 
 while ($line = <STDIN>)
 {
-	chomp $line;
+    chomp $line;
     next if ($line =~ /__?GLOBAL_.F.+/);
     next if ($line =~ /__?GLOBAL_.I._GLOBAL_.D.+/);
     if ($line =~ /__?GLOBAL_.D.+/) {
         ($adr,$type,$name) = split ' ',$line,3;
-        chop $name;
         $name =~ s/^__/_/;
         @dtorlist = (@dtorlist,$name);
     };
     if ($line =~ /__?GLOBAL_.I.+/) {
         ($adr,$type,$name) = split ' ',$line,3;
-        chop $name;
         $name =~ s/^__/_/;
         @ctorlist = (@ctorlist,$name);
     };

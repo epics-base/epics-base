@@ -12,7 +12,6 @@
 
 #include "iocinf.h"
 #include "oldAccess.h"
-#include "oldChannelNotify_IL.h"
 
 tsFreeList < struct oldSubscription, 1024 > oldSubscription::freeList;
 epicsMutex oldSubscription::freeListMutex;

@@ -30,7 +30,6 @@
 
 #include "iocinf.h"
 #include "oldAccess.h"
-#include "oldChannelNotify_IL.h"
 
 syncGroupNotify::syncGroupNotify ( CASG &sgIn, chid chanIn ) :
     chan ( chanIn ), sg ( sgIn ), 

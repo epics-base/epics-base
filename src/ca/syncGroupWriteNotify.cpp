@@ -30,7 +30,6 @@
 
 #include "iocinf.h"
 #include "oldAccess.h"
-#include "oldChannelNotify_IL.h"
 
 syncGroupWriteNotify::syncGroupWriteNotify ( CASG &sgIn, chid pChan, unsigned type, 
                        unsigned long count, const void *pValueIn  ) :

@@ -28,7 +28,6 @@
 #include "cac_IL.h"
 #include "baseNMIU_IL.h"
 #include "autoPtrDestroy.h"
-#include "oldChannelNotify_IL.h"
 
 epicsThreadPrivateId caClientContextId;
 

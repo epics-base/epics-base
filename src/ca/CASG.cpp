@@ -30,7 +30,6 @@
 #include "iocinf.h"
 #include "oldAccess.h"
 #include "autoPtrDestroy.h"
-#include "oldChannelNotify_IL.h"
 
 tsFreeList < struct CASG, 128 > CASG::freeList;
 epicsMutex CASG::freeListMutex;

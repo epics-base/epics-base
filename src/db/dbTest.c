@@ -128,7 +128,7 @@ long epicsShareAPI dbl(char	*precordTypename,char *filename,char *fields)
             fprintf(stderr,"%s could not be created\n",filename);
             return(0);
         }
-        stream = fdopen(fd,"w+");
+        stream = fdopen(fd,"w");
         if(stream==NULL) {
             fprintf(stderr,"%s could not be opened for output\n",filename);
             return(0);
@@ -707,7 +707,7 @@ int epicsShareAPI dbhcr(char *filename)
             fprintf(stderr,"%s could not be created\n",filename);
             return(0);
         }
-        stream = fdopen(fd,"w+");
+        stream = fdopen(fd,"w");
         if(stream==NULL) {
             fprintf(stderr,"%s could not be opened for output\n",filename);
             return(0);

@@ -137,7 +137,7 @@ if($numberFunctions>0) {
     for ($i=0; $i<$numberFunctions; $i++) {
 	print "extern \"C\" void $function[$i](void);\n";
     }
-    print "\nstatic char *functionNames[$numberFunctions] = {\n";
+    print "\nstatic const char *functionNames[$numberFunctions] = {\n";
     for ($i=0; $i<$numberFunctions; $i++) {
         print "    \"$function[$i]\"";
         if($i < $numberFunctions-1) { print ",";}

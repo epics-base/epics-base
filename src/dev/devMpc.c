@@ -53,6 +53,9 @@
  *****************************************************************
  *
  * $Log$
+ * Revision 1.1  1995/03/31  15:03:32  winans
+ * Machine protection system interface card
+ *
  *
  * 00:
  * HBI OSC AND3 AND2 AND1 OUT2 OUT1 OUT x x x x T2 T1 RR TEST
@@ -583,10 +586,10 @@ STATIC long MpcInit(int flag)
 				cards[Card].Doggie = wdCreate();
 				wdStart(cards[Card].Doggie, MPC_DOG_POLL_RATE, (FUNCPTR)MpcDogWatcher, (int)(&cards[Card]));
 #endif	
-			}
 #ifdef MPC_USE_IRQS
 			sysIntEnable(cards[Card].VMEintLevel);
 #endif
+			}
 		}
 	}
 	return(OK);

@@ -11,9 +11,6 @@ DEPLIBS = ./libAs.a\
 	  $(DEPLIBS_BASE)/libCom.a\
 	  $(DEPLIBS_BASE)/libDb.a
 
-LEX = $(ELEX)
-YACC = $(EYACC)
-
 SRCS.c = ../ascheck.c asLib.c
 OBJS = ascheck.o
 LIBOBJS = asLib.o

@@ -9,8 +9,8 @@ else  #T_A
 MAKEBPT		= $(EPICS_BASE_HOST_BIN)/makeBpt$(HOSTEXE)
 DBEXPAND	= $(EPICS_BASE_HOST_BIN)/dbExpand$(HOSTEXE)
 DBST		= dbst
-MAKEDBDEPENDS	= $(PERL) $(TOP)/configure/makeDbDepends.pl
-REPLACEVAR	= $(PERL) $(TOP)/configure/replaceVAR.pl
+MAKEDBDEPENDS	= $(PERL) $(CONFIG)/makeDbDepends.pl
+REPLACEVAR	= $(PERL) $(CONFIG)/replaceVAR.pl
 
 INSTALL_BPTS = $(BPTS:%= $(INSTALL_DBD)/%)
 INSTALL_DBS = $(DBDINSTALL:%= $(INSTALL_DBD)/%)

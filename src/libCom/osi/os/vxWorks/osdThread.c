@@ -40,6 +40,9 @@
 static const unsigned stackSizeTable[epicsThreadStackBig+1] = 
    {4000*ARCH_STACK_FACTOR, 6000*ARCH_STACK_FACTOR, 11000*ARCH_STACK_FACTOR};
 
+/*The following is just to force atReboot to be loaded*/
+extern int atRebootExtern;
+static int *patRebootExtern = &atRebootExtern;
 
 /* definitions for implementation of epicsThreadPrivate */
 static void **papTSD = 0;

@@ -30,6 +30,9 @@
 /*			(dont send all chans in a block)		*/
 /*									*/
 /* $Log$
+ * Revision 1.39  1997/06/13 09:14:15  jhill
+ * connect/search proto changes
+ *
  * Revision 1.38  1997/04/10 19:26:09  jhill
  * asynch connect, faster connect, ...
  *
@@ -85,8 +88,8 @@ LOCAL unsigned bhtHashIP(const struct sockaddr_in *pina);
  */
 void manage_conn()
 {
-	IIU		*piiu;
-	ca_real		delay;
+	IIU *piiu;
+	ca_real delay;
 
 	/*
 	 * prevent recursion
@@ -97,18 +100,17 @@ void manage_conn()
 
 	ca_static->ca_manage_conn_active = TRUE;
 
-        /*
-         * issue connection heartbeat
+	/*
+	 * issue connection heartbeat
 	 * (if we dont see a beacon)
-         */
-        LOCK;
-        for(    piiu = (IIU *) iiuList.node.next;
-                piiu;
-                piiu = (IIU *) piiu->node.next){
+	 */
+	LOCK;
+	for(piiu = (IIU *) iiuList.node.next;
+		    piiu; piiu = (IIU *) piiu->node.next){
 
-                if (piiu==piiuCast || piiu->state!=iiu_connected) {
-                        continue;
-                }
+		if (piiu==piiuCast || piiu->state!=iiu_connected) {
+			continue;
+		}
 
 		/* 
 		 * mark connection for shutdown if outgoing messages
@@ -166,9 +168,8 @@ void manage_conn()
 				echo_request(piiu, &ca_static->currentTime);
 			}
 		}
-
-        }
-        UNLOCK;
+	}
+	UNLOCK;
 
 	/*
 	 * try to attach to the repeater if we havent yet
@@ -418,22 +419,28 @@ printf("sent %u at cur sec=%u cur usec=%u delay sec=%u delay usec = %u\n",
  */
 void cacSetRetryInterval(unsigned retryNo)
 {
-	long	idelay;
+	unsigned idelay;
 	ca_real	delay;
+
+	/*
+	 * set the retry number
+	 */
+	ca_static->ca_search_retry = min(retryNo, MAXCONNTRIES+1u);
 
 	/*
 	 * set the retry interval
 	 */
-	retryNo = min(retryNo, CHAR_BIT*sizeof(idelay)-1);
-	ca_static->ca_search_retry = retryNo;
-	idelay = 1;
-	idelay = idelay << ca_static->ca_search_retry;
+	idelay = 1u << min(ca_static->ca_search_retry, 
+					CHAR_BIT*sizeof(idelay)-1u);
 	delay = idelay * CA_RECAST_DELAY; /* sec */	
+	/*
+	 * place upper limit on the retry delay
+	 */
 	delay = min (CA_RECAST_PERIOD, delay);
-	idelay = (long) delay;
-	ca_static->ca_conn_retry_delay.tv_sec = idelay;
+	ca_static->ca_conn_retry_delay.tv_sec = (long) delay;
 	ca_static->ca_conn_retry_delay.tv_usec = 
-		(long) ((delay-idelay)*USEC_PER_SEC);
+		(long) ((delay-ca_static->ca_conn_retry_delay.tv_sec)
+			* USEC_PER_SEC);
 #if 0 
 	printf ("new search period is %u sec %u usec\n",
 			ca_static->ca_conn_retry_delay.tv_sec,
@@ -492,117 +499,145 @@ void mark_server_available(const struct sockaddr_in *pnet_addr)
 	 * look for it in the hash table
 	 */
 	pBHE = lookupBeaconInetAddr(pnet_addr);
-	if(!pBHE){
+	if (pBHE) {
+
 		/*
-		 * wait until 2nd beacon is seen before deciding
+		 * if we have seen the beacon before ignore it
+		 * (unless there is an unusual change in its period)
+		 */
+		if (pBHE->timeStamp.tv_sec==0 && pBHE->timeStamp.tv_usec==0) {
+			/* 
+			 * this is the 1st beacon seen - the beacon time stamp
+			 * was not initialized during BHE create because
+			 * a TCP/IP connection created the beacon.
+			 * (nothing to do but set the beacon time stamp and return)
+			 */
+			pBHE->timeStamp = ca_static->currentTime;
+		}
+		else {
+			/*
+			 * compute the beacon period (if we have seen at least two beacons)
+			 */
+			currentPeriod = cac_time_diff (
+						&ca_static->currentTime, 
+						&pBHE->timeStamp); 
+			if (pBHE->averagePeriod<0.0) {
+				ca_real totalRunningTime;
+
+				/*
+				 * this is the 2nd beacon seen. We cant tell about
+				 * the change in period at this point so we just
+				 * initialize the average period and return.
+				 */
+				pBHE->averagePeriod = currentPeriod;
+
+				/*
+				 * ignore beacons seen for the first time shortly after
+				 * init, but do not ignore beacons arriving with a short
+				 * period because the IOC was rebooted soon after the 
+				 * client starts up.
+				 */
+				totalRunningTime = cac_time_diff (
+								&pBHE->timeStamp,
+								&ca_static->programBeginTime); 
+				if (currentPeriod<=totalRunningTime) {
+					netChange = TRUE;
+#					ifdef DEBUG
+						ca_printf(	
+							"new server at %x period=%f running time to first beacon=%f\n", 
+							pnet_addr->sin_addr.s_addr,
+							currentPeriod,
+							totalRunningTime
+							);
+#					endif
+				}
+			}
+			else {
+
+				/*
+				 * Is this an IOC seen because of a restored
+				 * network segment? 
+				 */
+				if (currentPeriod >= pBHE->averagePeriod*2.0) {
+
+					if (pBHE->piiu) {
+						/* 
+						 * trigger on any missing beacon 
+						 * if connected to this server
+						 */
+						pBHE->piiu->beaconAnomaly = TRUE;
+					}
+
+					if (currentPeriod >= pBHE->averagePeriod*4.0) {
+						/* 
+						 * trigger on any 3 contiguous missing beacons 
+						 * if not connected to this server
+						 */
+						netChange = TRUE;
+					}
+				}
+
+
+#				ifdef 	DEBUG
+					if (netChange) {
+						ca_printf(	
+							"net resume seen %x cur=%f avg=%f\n", 
+							pnet_addr->sin_addr.s_addr,
+							currentPeriod, 
+							pBHE->averagePeriod);
+					}
+#				endif
+				/*
+				 * Is this an IOC seen because of an IOC reboot
+				 * (beacon come at a higher rate just after the
+				 * IOC reboots). Lower tolarance here because we
+				 * dont have to worry about lost beacons.
+				 */
+				if (currentPeriod <= pBHE->averagePeriod * 0.80) {
+#					ifdef DEBUG
+						ca_printf(
+							"reboot seen %x cur=%f avg=%f\n", 
+							pnet_addr->sin_addr.s_addr,
+							currentPeriod, 
+							pBHE->averagePeriod);
+#					endif
+					netChange = TRUE;
+					if (pBHE->piiu) {
+						pBHE->piiu->beaconAnomaly = TRUE;
+					}
+				}
+
+				/*
+				 * update a running average period
+				 */
+				pBHE->averagePeriod = currentPeriod*0.125 + pBHE->averagePeriod*0.875;
+			}
+
+			/*
+			 * update beacon time stamp 
+			 */
+			pBHE->timeStamp = ca_static->currentTime;
+		}
+		/*
+		 * update state of health for active virtual circuits 
+		 * (only if we are not suspicious about past beacon changes
+		 * until the next echo reply)
+		 */
+		if (pBHE->piiu) {
+			if (!pBHE->piiu->beaconAnomaly) {
+					pBHE->piiu->timeAtLastRecv = ca_static->currentTime;
+			}
+		}
+	}
+	else {
+		/*
+		 * This is the first beacon seen from this server.
+		 * Wait until 2nd beacon is seen before deciding
 		 * if it is a new server (or just the first
 		 * time that we have seen a server's beacon
 		 * shortly after the program started up)
 		 */
 		createBeaconHashEntry(pnet_addr, TRUE);
-		UNLOCK;
-		return;
-	}
-
-	/*
-	 * if we have seen the beacon before ignore it
-	 * (unless there is an unusual change in its period)
-	 */
-
-	/*
-	 * compute the beacon period (if we have seen at least two beacons)
-	 */
-	if (pBHE->timeStamp.tv_sec==0 && pBHE->timeStamp.tv_usec==0) {
-		/* 
-		 * this is the 1st beacon seen
-		 * (nothing to do but set the beacon time stamp)
-		 */
-		pBHE->timeStamp = ca_static->currentTime;
-		UNLOCK;
-		return;
-	}
-	else {
-		currentPeriod = cac_time_diff (
-					&ca_static->currentTime, 
-					&pBHE->timeStamp); 
-		if (pBHE->averagePeriod<0.0) {
-			ca_real totRunningTime;
-			/* 
-			 * this is the 2nd beacon seen
-			 * (init the average period)
-			 */
-			totRunningTime = cac_time_diff (
-						&pBHE->timeStamp, 
-						&ca_static->programBeginTime); 
-			pBHE->averagePeriod = currentPeriod;
-			if (currentPeriod<=totRunningTime) {
-				/*
-				 * this is a beacon seen for the first 
-				 * time because the host was reinitialized 
-				 * or because a network link was restored
-				 *
-				 * this is not a beacon seen for the first 
-				 * time just after program init
-				 */
-				netChange = TRUE;
-#ifdef 	DEBUG
-				ca_printf(	
-					"new server at %x cur=%f avg=%f\n", 
-					pnet_addr->sin_addr.s_addr,
-					currentPeriod, 
-					pBHE->averagePeriod);
-#endif
-			}
-		}
-		else {
-			/*
-			 * this is any other beacon
-			 * (update a running average)
-			 */
-			pBHE->averagePeriod += currentPeriod;
-			pBHE->averagePeriod /= 2.0;
-
-			/*
-			 * is this an IOC seen because of a restored
-			 * network segment
-			 */
-			if ((currentPeriod/4.0)>=pBHE->averagePeriod) {
-#ifdef 	DEBUG
-				ca_printf(	
-					"net resume seen %x cur=%f avg=%f\n", 
-					pnet_addr->sin_addr.s_addr,
-					currentPeriod, 
-					pBHE->averagePeriod);
-#endif
-				netChange = TRUE;
-			}
-
-			/*
-			 * is this an IOC seen because of an IOC reboot
-			 */
-			if ((pBHE->averagePeriod/2.0)>=currentPeriod) {
-#ifdef DEBUG
-				ca_printf(
-					"reboot seen %x cur=%f avg=%f\n", 
-					pnet_addr->sin_addr.s_addr,
-					currentPeriod, 
-					pBHE->averagePeriod);
-#endif
-				netChange = TRUE;
-			}
-		}
-
-		/*
-		 * update beacon time stamp 
-		 */
-		pBHE->timeStamp = ca_static->currentTime;
-	}
-
-	/*
-	 * update state of health for active virtual circuits 
-	 */
-	if(pBHE->piiu){
-		pBHE->piiu->timeAtLastRecv = ca_static->currentTime;
 	}
 
 	if(!netChange){
@@ -720,7 +755,7 @@ bhe *createBeaconHashEntry(const struct sockaddr_in *pina, unsigned sawBeacon)
 	 * and not in response to a beacon then sawBeacon
 	 * is false and we set the beacon time stamp to
 	 * zero (so we can correctly compute the period
-	 beacon at * between the 1st and 2nd beacons)
+	 * between the 1st and 2nd beacons)
 	 */
 	if (sawBeacon) {
 		pBHE->timeStamp = ca_static->currentTime;
@@ -857,16 +892,18 @@ void retryPendingClaims(IIU *piiu)
 	chid chan;
 	int status;
 
+	LOCK;
 	while ( (chan= (ciu) ellFirst (&piiu->chidlist)) ) {
 		if (!chan->claimPending) {
 			piiu->claimsPending = FALSE;
-			return;
+			break;
 		}
 		status = issue_claim_channel(chan);
 		if (status!=ECA_NORMAL) {
-			return;
+			break;
 		}
 	}
+	UNLOCK;
 }
 
 /*

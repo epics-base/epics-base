@@ -675,11 +675,18 @@ LOCAL void write_notify_call_back(PUTNOTIFY *ppn)
 	 * is an internal failure
 	 */
 	pciu = (struct channel_in_use *) ppn->usrPvt;
-	if(!pciu){
-		taskSuspend(0);
-	}
-	if(!pciu->pPutNotify){
-		taskSuspend(0);
+	assert(pciu);
+	assert(pciu->pPutNotify);
+
+	if(!pciu->pPutNotify->busy){
+		logMsg("Double DB put notify call back!!\n",
+				NULL,
+				NULL,
+				NULL,
+				NULL,
+				NULL,
+				NULL);
+		return;
 	}
 
 	pclient = pciu->client;
@@ -777,6 +784,9 @@ void write_notify_reply(void *pArg)
 		END_MSG(pClient);
 		ppnb->busy = FALSE;
 	}
+
+	cas_send_msg(pClient,FALSE);
+
 	SEND_UNLOCK(pClient);
 
 	/*
@@ -880,7 +890,7 @@ struct client  *client
 	}
 
 	status = dbPutNotify(&pciu->pPutNotify->dbPutNotify);
-	if(status){
+	if(status && status != S_db_Pending){
 		/*
 		 * let the call back take care of failure
 		 * even if it is immediate
@@ -1542,15 +1552,6 @@ struct client  *client
 	unsigned long		sid;
 
 
-	/*
-	 * set true if max memory block drops below MAX_BLOCK_THRESHOLD
-	 */
-	if(casDontAllowSearchReplies){
-		SEND_LOCK(client);
-		send_err(mp, ECA_ALLOCMEM, client, "below MAX_BLOCK_THRESHOLD");
-		SEND_UNLOCK(client);
-		return;
-	}
 
 	/* Exit quickly if channel not on this node */
 	status = db_name_to_addr(
@@ -1570,6 +1571,19 @@ struct client  *client
 		return;
 	}
 
+	/*
+	 * set true if max memory block drops below MAX_BLOCK_THRESHOLD
+	 */
+	if(casDontAllowSearchReplies){
+		SEND_LOCK(client);
+		send_err(mp, 
+			ECA_ALLOCMEM, 
+			client, 
+			"Server memory exhausted");
+		SEND_UNLOCK(client);
+		return;
+	}
+
 
 	/* get block off free list if possible */
 	FASTLOCK(&rsrv_free_addrq_lck);
@@ -1579,7 +1593,10 @@ struct client  *client
 		pchannel = (struct channel_in_use *) malloc(sizeof(*pchannel));
 		if (!pchannel) {
 			SEND_LOCK(client);
-			send_err(mp, ECA_ALLOCMEM, client, RECORD_NAME(&tmp_addr));
+			send_err(mp, 
+				ECA_ALLOCMEM, 
+				client, 
+				RECORD_NAME(&tmp_addr));
 			SEND_UNLOCK(client);
 			return;
 		}
@@ -1737,7 +1754,6 @@ char           *pformat,
 	case IOC_EVENT_CANCEL:
 	case IOC_READ:
 	case IOC_READ_NOTIFY:
-	case IOC_SEARCH:
 	case IOC_WRITE:
 	case IOC_WRITE_NOTIFY:
 	        /*
@@ -1752,6 +1768,10 @@ char           *pformat,
 		else{
 			reply->m_cid = ~0L;
 		}
+		break;
+
+	case IOC_SEARCH:
+		reply->m_cid = curp->m_cid;
 		break;
 
 	case IOC_EVENTS_ON:

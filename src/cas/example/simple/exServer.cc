@@ -26,7 +26,10 @@ pvInfo exServer::pvList[] = {
     pvInfo (1.0e-1, "janet", 10.0f, 0.0f, aitEnumFloat64, excasIoAsync, 1u),
     pvInfo (2.0, "freddy", 10.0f, -10.0f, aitEnumFloat64, excasIoAsync, 1u),
     pvInfo (2.0, "alan", 10.0f, -10.0f, aitEnumFloat64, excasIoSync, 100u),
-    pvInfo (20.0, "albert", 10.0f, -10.0f, aitEnumFloat64, excasIoSync, 1000u)
+    pvInfo (20.0, "albert", 10.0f, -10.0f, aitEnumFloat64, excasIoSync, 1000u),
+    pvInfo (-1.0, "boot", 10.0f, -10.0f, aitEnumEnum16, excasIoSync, 1u),
+    pvInfo (-1.0, "booty", 10.0f, -10.0f, aitEnumEnum16, excasIoAsync, 1u),
+    pvInfo (-1.0, "bill", 10.0f, -10.0f, aitEnumFloat64, excasIoSync, 1u)
 };
 
 const unsigned exServer::pvListNElem = NELEMENTS (exServer::pvList);
@@ -34,11 +37,8 @@ const unsigned exServer::pvListNElem = NELEMENTS (exServer::pvList);
 //
 // static on-the-fly PVs
 //
-pvInfo exServer::bill (-1.0, "bill", 10.0f, -10.0f, aitEnumFloat64, excasIoSync, 1u);
 pvInfo exServer::billy (-1.0, "billy", 10.0f, -10.0f, aitEnumFloat64, excasIoAsync, 1u);
 pvInfo exServer::bloaty (-1.0, "bloaty", 10.0f, -10.0f, aitEnumFloat64, excasIoSync, 100000u);
-pvInfo exServer::boot (-1.0, "boot", 10.0f, -10.0f, aitEnumEnum16, excasIoSync, 1u);
-pvInfo exServer::booty (-1.0, "booty", 10.0f, -10.0f, aitEnumEnum16, excasIoAsync, 1u);
 
 //
 // exServer::exServer()
@@ -89,16 +89,10 @@ exServer::exServer ( const char * const pvPrefix,
     // Install create on-the-fly PVs 
     // into the PV name hash table
     //
-    sprintf ( pvAlias, pNameFmtStr, pvPrefix, bill.getName() );
-    this->installAliasName ( bill, pvAlias );
     sprintf ( pvAlias, pNameFmtStr, pvPrefix, billy.getName() );
     this->installAliasName ( billy, pvAlias );
     sprintf ( pvAlias, pNameFmtStr, pvPrefix, bloaty.getName() );
     this->installAliasName ( bloaty, pvAlias );
-    sprintf ( pvAlias, pNameFmtStr, pvPrefix, boot.getName() );
-    this->installAliasName ( boot, pvAlias );
-    sprintf ( pvAlias, pNameFmtStr, pvPrefix, booty.getName() );
-    this->installAliasName ( booty, pvAlias );
 }
 
 //

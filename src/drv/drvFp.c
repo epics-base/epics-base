@@ -48,6 +48,7 @@
  * .09 joh 071092	added io_report routine
  * .10 joh 071092	added scan task wakeup from ISR	 
  * .11 joh 071092	moved ivec allocation to module_types.h
+ * .12 joh 072792	added soft reboot int disable
  */
 
 
@@ -59,8 +60,9 @@
  *		fp_init  	Finds and initializes fast protect cards
  *		fp_driver 	System interface to FP10S modules
  *		fp_int		Interrupt service routine
- *		fp_en		Enables/disables interrupts
+ *		fp_en		Enables/disables interrupts (toggles)
  *		fp_mode		Sets interrupt reporting mode
+ * 		fp_reboot	Clean up for soft reboots
  *
  * Diagnostic Routines:
  *
@@ -95,7 +97,7 @@
 #include "module_types.h"
 
 /* general constants */
-#define FP_INTLEV	5		/* interrupt level 5 (HKV2F BCL) */
+#define FP_INTLEV	5		/* interrupt level */
 #define FP_BUFSIZ	8		/* input buffer size */
 
 /* csr bit definitions */
@@ -162,6 +164,8 @@ LOCAL
 int fp_num;				/* # of fast protect cards found -1 */
 LOCAL
 SEM_ID fp_semid;			/* semaphore for monitor task */
+
+void	fp_reboot();
 
 /*
  * fp_int
@@ -244,6 +248,11 @@ fp_init(addr)
 	return -4;
  }
 
+ status = rebootHookAdd(fp_reboot);
+ if(status<0){
+	logMsg("%s: reboot hook add failed\n", __FILE__);
+ }
+
  for (i = 0; (i < bi_num_cards[AT8_FP10S_BI]) && (vxMemProbe(ptr,READ,2,&junk) == OK);
       i++,ptr++)
   {
@@ -288,10 +297,36 @@ fp_init(addr)
   return -3;
  return i;				/* return # found */
 }
+
+
+/*
+ *
+ * fp_reboot()
+ *
+ * turn off interrupts to avoid ctrl X reboot problems
+ */
+LOCAL
+void	fp_reboot()
+{
+ 	int i;
+
+ 	for (i = 0; i < bi_num_cards[AT8_FP10S_BI]; i++){
+
+		if(!fp[i].fptr){
+			continue;
+		}
+
+		fp[i].fptr->csr &= ~CSR_IEN;
+	}
+}
+
+
+
 /*
  * fp_en
  *
  * interrupt enable/disable
+ * (toggles the interrupt enable - joh)
  *
  */
 fp_en(card)

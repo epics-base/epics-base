@@ -49,6 +49,7 @@
  *			the users can adjust the number of cards without
  *			recompilation
  * .10 joh 071092	moved ivec allocation to module_types.h
+ * .11 joh 072792       added soft reboot int disable
  *
  *
  * Routines:
@@ -56,6 +57,7 @@
  *		fpm_init	Finds and initializes FP10M cards
  *		fpm_driver	System interface to FP10M modules
  *		fpm_read	Carrier control readback
+ *		fpm_reboot	clean up before soft reboots
  *
  * Daignostic Routines
  *		fpm_en		Enables/disables interrupts (diagnostic enable)
@@ -143,6 +145,8 @@ struct fpm_rec *fpm;		/* fast protect control structure */
 LOCAL
 int fpm_num;				/* # cards found - 1 */
 
+void 	fpm_reboot();
+
 /*
  * fpm_int
  *
@@ -202,6 +206,11 @@ fpm_init(addr)
         return -4;
  }
 
+ status = rebootHookAdd(fpm_reboot);
+ if(status<0){
+        logMsg("%s: reboot hook add failed\n", __FILE__);
+ }
+
  for (i = 0; (i < bo_num_cards[AT8_FP10M_BO]) && (vxMemProbe(ptr,READ,2,&junk) == OK);
       i++,ptr++)
   {
@@ -227,10 +236,34 @@ fpm_init(addr)
  fpm_num = i - 1;		/* record last card # */
  return i;			/* return # cards found */
 }
+
+
+/*
+ *
+ * fpm_reboot()
+ *
+ * turn off interrupts to avoid ctrl X reboot problems
+ */
+LOCAL
+void    fpm_reboot()
+{
+        int i;
+
+        for (i = 0; i < bi_num_cards[AT8_FP10S_BI]; i++){
+
+                if(!fpm[i].fmptr){
+                        continue;
+                }
+
+                fpm[i].fmptr->cr &= ~CR_IEN;
+        }
+}
+
 /*
  * fpm_en
  *
  * interrupt enable/disable
+ * (toggles the int enable state - joh)
  *
  */
 fpm_en(card)

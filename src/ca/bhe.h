@@ -67,6 +67,7 @@ public:
     epicsShareFunc double period ( epicsGuard < epicsMutex > & ) const;
     epicsShareFunc epicsTime updateTime ( epicsGuard < epicsMutex > & ) const;
     epicsShareFunc void show ( unsigned level ) const;
+    epicsShareFunc void show ( epicsGuard < epicsMutex > &, unsigned /* level */ ) const;
     epicsShareFunc void registerIIU ( epicsGuard < epicsMutex > &, tcpiiu & );
     epicsShareFunc void unregisterIIU ( epicsGuard < epicsMutex > &, tcpiiu & );
     epicsShareFunc void * operator new ( size_t size, bheMemoryManager & );

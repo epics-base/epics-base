@@ -277,7 +277,6 @@ public:
 	//
 	// stringId() constructor
 	//
-
 	stringId (const char * idIn, allocationType typeIn=copyString);
     ~ stringId();
 
@@ -758,7 +757,7 @@ inline resTableIndex intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::hash (unsigned /* 
 //
 #ifdef instantiateRecourceLib
 stringId::stringId (const char *idIn, allocationType typeIn) :
-	allocType (typeIn), pStr (idIn)
+	allocType (typeIn)
 {
 	if (typeIn==copyString) {
 		unsigned nChars = strlen (idIn) + 1u;
@@ -853,7 +852,7 @@ stringId::~stringId()
 			// is the same as deleting a pointer to 
 			// "const char" on all compilers
 			//
-			delete [] (char *) this->pStr;
+			delete [] const_cast<char *>(this->pStr);
 		}
 	}
 }
@@ -876,7 +875,10 @@ stringId::~stringId()
 //
 resTableIndex stringId::hash(unsigned nBitsIndex) const
 {
-	if (this->pStr==NULL) {
+    const unsigned char *pUStr = 
+        reinterpret_cast<const unsigned char *>(this->pStr);
+
+	if (pUStr==NULL) {
 		return 0u;
 	}
 
@@ -884,7 +886,7 @@ resTableIndex stringId::hash(unsigned nBitsIndex) const
 	unsigned h1 = 0u;
 	unsigned c;
 	unsigned i;
-	for (i=0u; (c = this->pStr[i]); i++) {
+	for (i=0u; (c = pUStr[i]); i++) {
 		//
 		// odd 
 		//
@@ -903,7 +905,7 @@ resTableIndex stringId::hash(unsigned nBitsIndex) const
 	// does not work well for more than 65k entries ?
 	// (because some indexes in the table will not be produced)
 	//
-	if (nBitsIndex>=8u) {
+	if (nBitsIndex>8u) {
 		h1 = h1 << (nBitsIndex-8u);
 	}
 	return h1 ^ h0;

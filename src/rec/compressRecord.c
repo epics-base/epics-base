@@ -142,7 +142,7 @@ static long init_record(pcompress,pass)
 	}
         return(0);
     }
-    if(pcompress->wptr==NULL && pcompress->inp.type==DB_LINK) {
+    if(pcompress->wptr==NULL && pcompress->inp.type!==CONSTANT) {
 	 struct dbAddr *pdbAddr =
 		(struct dbAddr *)(pcompress->inp.value.pv_link.pvt);
 
@@ -159,7 +159,7 @@ static long process(pcompress)
 
 	pcompress->pact = TRUE;
 
-	if (pcompress->inp.type != DB_LINK) {
+	if (pcompress->inp.type == CONSTANT) {
 		status=0;
 	}else if (pcompress->wptr == NULL) {
 		recGblSetSevr(pcompress,READ_ALARM,INVALID_ALARM);

@@ -99,6 +99,9 @@
 /************************************************************************/
 /*
  * $Log$
+ * Revision 1.102  1998/04/13 19:14:33  jhill
+ * fixed task variable problem
+ *
  * Revision 1.101  1998/03/12 20:39:05  jhill
  * fixed problem where 3.13.beta11 unable to connect to 3.11 with correct native type
  *
@@ -260,7 +263,7 @@ static char *sccsId = "@(#) $Id$";
 #define CHIXCHK(CHIX) \
 { \
 	if( (CHIX)->state != cs_conn || INVALID_DB_REQ((CHIX)->privType) ){ \
-		return ECA_BADCHID; \
+		return ECA_DISCONNCHID; \
 	} \
 }
 
@@ -420,7 +423,7 @@ const void		*pext
 			 * cant be completed
 			 */
 			if (piiu->state!=iiu_connected) {
-				return ECA_BADCHID;
+				return ECA_DISCONNCHID;
 			}
 
 			LD_CA_TIME (cac_fetch_poll_period(), &itimeout);
@@ -1490,7 +1493,7 @@ LOCAL int issue_get_callback(evid monix, unsigned cmmd)
 	 * (it will be sent once connected)
   	 */
 	if (chix->state != cs_conn) {
-		return ECA_BADCHID;
+		return ECA_DISCONNCHID;
 	}
 
 	/*
@@ -2248,7 +2251,7 @@ int ca_request_event(evid monix)
 	 * (it will be sent once connected)
   	 */
 	if(chix->state != cs_conn){
-		return ECA_BADCHID;
+		return ECA_DISCONNCHID;
 	}
 
 	/*
@@ -2554,13 +2557,16 @@ int epicsShareAPI ca_clear_channel (chid pChan)
 	caCh			*pold_ch;
 	enum channel_state	old_chan_state;
 
-	pChan = bucketLookupItemUnsignedId
-				(ca_static->ca_pSlowBucket, &pChan->cid);
-	if (pChan == NULL) {
-		return ECA_BADCHID;
+	if (pChan->piiu) {
+		pChan = bucketLookupItemUnsignedId
+					(ca_static->ca_pSlowBucket, &pChan->cid);
+		if (pChan == NULL) {
+			return ECA_BADCHID;
+		}
 	}
-
-	LOOSECHIXCHK(pChan);
+	else {
+		LOOSECHIXCHK(pChan);
+	}
 
 	/* disable their further use of deallocated channel */
 	pChan->privType = TYPENOTINUSE;
@@ -2747,8 +2753,8 @@ int epicsShareAPI ca_pend (ca_real timeout, int early)
 
   	INITCHK;
 
-	if(EVENTLOCKTEST){
-    		return ECA_EVDISALLOW;
+	if (EVENTLOCKTEST) {
+		return ECA_EVDISALLOW;
 	}
 
 	cac_gettimeval (&ca_static->currentTime);

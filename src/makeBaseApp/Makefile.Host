@@ -18,8 +18,7 @@ TEMPLATES += top/config/RULES_ARCHS
 TEMPLATES += top/config/RULES_DIRS
 TEMPLATES += top/config/RULES_TOP
 TEMPLATES += top/config/makeDbDepends.pl
-TEMPLATES += top/config/makeIocCdCommands.pl
-TEMPLATES += top/config/makeConfigAppInclude.pl
+TEMPLATES += top/config/convertRelease.pl
 TEMPLATES += top/config/replaceVAR.pl
 
 TEMPLATES += top/exampleApp/Makefile

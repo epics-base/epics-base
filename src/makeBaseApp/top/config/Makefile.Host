@@ -5,16 +5,17 @@
 TOP=../..
 include $(TOP)/config/CONFIG_APP
 
-TARGETS = CONFIG_APP_INCLUDE
+TARGETS = checkRelease CONFIG_APP_INCLUDE
 
 include $(TOP)/config/RULES.Host
 
 inc:: $(TARGETS)
 
-ifeq ($(wildcard $(TOP)/config/RELEASE.$(HOST_ARCH)),$(TOP)/config/RELEASE.$(HOST_ARCH))
-CONFIG_APP_INCLUDE: $(TOP)/config/RELEASE.$(HOST_ARCH)
-endif
+CONFIG_APP_INCLUDE: $(wildcard $(TOP)/config/RELEASE*) $(TOP)/config/CONFIG_APP
+	$(PERL) $(TOP)/config/convertRelease.pl $@
 
-CONFIG_APP_INCLUDE: $(TOP)/config/RELEASE $(TOP)/config/CONFIG_APP
-	$(RM) $@
-	@$(PERL) $(TOP)/config/makeConfigAppInclude.pl $(T_A) $@ $(TOP)
+checkRelease:
+	$(PERL) $(TOP)/config/convertRelease.pl $@
+
+.PHONY :: checkRelease
+

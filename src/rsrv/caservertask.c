@@ -348,10 +348,14 @@ LOCAL void log_one_client (struct client *client, unsigned level)
         "\tSecs since last send %6.2f, Secs since last receive %6.2f\n", 
             send_delay, recv_delay);
         printf( 
-        "\tUnprocessed request bytes=%u, Undelivered response bytes=%u, State=%s\n", 
+        "\tUnprocessed request bytes=%u, Undelivered response bytes=%u\n", 
             client->send.stk,
-            client->recv.cnt - client->recv.stk,
-            state[client->disconnect?1:0]); 
+            client->recv.cnt - client->recv.stk ); 
+        printf( 
+        "\tState=%s%s%s\n", 
+            state[client->disconnect?1:0],
+            client->send.type == mbtLargeTCP ? " jumbo-send-buf" : "",
+            client->recv.type == mbtLargeTCP ? " jumbo-recv-buf" : "");
     }
 
     if (level>=2u) {
@@ -445,13 +449,19 @@ void epicsShareAPI casr (unsigned level)
                     freeListItemsAvail (rsrvChanFreeList);
         bytes_reserved += sizeof(struct event_ext) *
                     freeListItemsAvail (rsrvEventFreeList);
+        bytes_reserved += MAX_TCP * 
+                    freeListItemsAvail ( rsrvSmallBufFreeListTCP );
+        bytes_reserved += rsrvSizeofLargeBufTCP * 
+                    freeListItemsAvail ( rsrvLargeBufFreeListTCP );
         printf( "There are currently %u bytes on the server's free list\n",
             bytes_reserved);
-        printf( "%u client(s), %u channel(s), and %u event(s) (monitors)\n",
+        printf( "%u client(s), %u channel(s), %u event(s) (monitors)\n",
             freeListItemsAvail (rsrvClientFreeList),
             freeListItemsAvail (rsrvChanFreeList),
             freeListItemsAvail (rsrvEventFreeList));
-
+        printf( "%u small buffers (%u bytes ea), and %u jumbo buffers (%u bytes ea)\n",
+            freeListItemsAvail ( rsrvSmallBufFreeListTCP ), MAX_TCP,
+            freeListItemsAvail (rsrvLargeBufFreeListTCP), rsrvSizeofLargeBufTCP );
         if(pCaBucket){
             printf( "The server's resource id conversion table:\n");
             LOCK_CLIENTQ;
@@ -486,24 +496,27 @@ void destroy_client ( struct client *client )
     }
 
     if ( client->proto == IPPROTO_TCP ) {
-        if ( client->send.type == mbtSmallTCP ) {
-            if ( client->send.buf ) {
+        if ( client->send.buf ) {
+            if ( client->send.type == mbtSmallTCP ) {
                 freeListFree ( rsrvSmallBufFreeListTCP,  client->send.buf );
             }
-            if ( client->recv.buf ) {
-                freeListFree ( rsrvSmallBufFreeListTCP,  client->recv.buf );
-            }
-        }
-        else if ( client->send.type == mbtLargeTCP ) {
-            if ( client->send.buf ) {
+            else if ( client->send.type == mbtLargeTCP ) {
                 freeListFree ( rsrvLargeBufFreeListTCP,  client->send.buf );
             }
-            if ( client->recv.buf ) {
-                freeListFree ( rsrvLargeBufFreeListTCP,  client->recv.buf );
+            else {
+                errlogPrintf ( "Currupt send buffer type code during cleanup?\n" );
             }
         }
-        else {
-            errlogPrintf ( "Currupt buffer type code during cleanup?\n" );
+        if ( client->recv.buf ) {
+            if ( client->recv.type == mbtSmallTCP ) {
+                freeListFree ( rsrvSmallBufFreeListTCP,  client->recv.buf );
+            }
+            else if ( client->send.type == mbtLargeTCP ) {
+                freeListFree ( rsrvLargeBufFreeListTCP,  client->recv.buf );
+            }
+            else {
+                errlogPrintf ( "Currupt recv buffer type code during cleanup?\n" );
+            }
         }
     }
     else if ( client->proto == IPPROTO_UDP ) {
@@ -689,9 +702,11 @@ void casAttachThreadToClient ( struct client *pClient )
 
 void casExpandSendBuffer ( struct client *pClient, ca_uint32_t size )
 {
-    if ( pClient->send.type == mbtSmallTCP && rsrvSizeofLargeBufTCP > MAX_TCP ) {
+    if ( pClient->send.type == mbtSmallTCP && rsrvSizeofLargeBufTCP > MAX_TCP 
+            && size <= rsrvSizeofLargeBufTCP ) {
         char *pNewBuf = ( char * ) freeListCalloc ( rsrvLargeBufFreeListTCP );
         memcpy ( pNewBuf, pClient->send.buf, pClient->send.stk );
+        freeListFree ( rsrvSmallBufFreeListTCP,  pClient->send.buf );
         pClient->send.buf = pNewBuf;
         pClient->send.maxstk = rsrvSizeofLargeBufTCP;
         pClient->send.type = mbtLargeTCP;
@@ -700,10 +715,12 @@ void casExpandSendBuffer ( struct client *pClient, ca_uint32_t size )
 
 void casExpandRecvBuffer ( struct client *pClient, ca_uint32_t size )
 {
-    if ( pClient->recv.type == mbtSmallTCP && rsrvSizeofLargeBufTCP > MAX_TCP ) {
+    if ( pClient->recv.type == mbtSmallTCP && rsrvSizeofLargeBufTCP > MAX_TCP
+            && size <= rsrvSizeofLargeBufTCP) {
         char *pNewBuf = ( char * ) freeListCalloc ( rsrvLargeBufFreeListTCP );
         assert ( pClient->recv.cnt >= pClient->recv.stk );
         memcpy ( pNewBuf, &pClient->recv.buf[pClient->recv.stk], pClient->recv.cnt - pClient->recv.stk );
+        freeListFree ( rsrvSmallBufFreeListTCP,  pClient->recv.buf );
         pClient->recv.buf = pNewBuf;
         pClient->recv.cnt = pClient->recv.cnt - pClient->recv.stk;
         pClient->recv.stk = 0u;

@@ -28,7 +28,6 @@ of this distribution.
 #include "epicsEvent.h"
 #include "epicsMutex.h"
 #include "epicsThread.h"
-#include "callback.h"
 #include "errlog.h"
 #include "errMdef.h"
 #include "dbBase.h"
@@ -37,6 +36,7 @@ of this distribution.
 #include "link.h"
 #include "dbCommon.h"
 #define epicsExportSharedSymbols
+#include "callback.h"
 #include "dbAddr.h"
 #include "dbScan.h"
 #include "dbLock.h"

@@ -89,6 +89,7 @@
  * .31  07-21-92        jba     changed alarm limits for non val related fields
  * .32  10-10-92        jba     replaced code for get of VAL from DOL with recGblGetLinkValue
  * .33  01-05-93        jbk     force recalc of velo and accel each time rec processed
+ * .34  07-20-93        jbk     fixed accel of zero causing divide by zero
  */
 
 #include	<vxWorks.h>
@@ -631,7 +632,10 @@ struct steppermotorRecord      *psm;
 	short		status=0;
 
 	/* acceleration is in terms of seconds to reach velocity */
-	acceleration = (1/psm->accl) * psm->velo * psm->mres;
+	if(psm->accl!=0)
+		acceleration = (1/psm->accl) * psm->velo * psm->mres;
+	else
+		acceleration = 0;
 
 	/* velocity is in terms of revolutions per second */
 	velocity = psm->velo * psm->mres;
@@ -713,7 +717,11 @@ struct steppermotorRecord	*psm;
         /* set the velocity and acceleration */
 	/* jbk change for allowing mres to change */
 /*      if ((psm->velo != psm->lvel) || (psm->lacc != psm->accl)){ */
-                acceleration = (1/psm->accl) * psm->velo * psm->mres;
+				if(psm->accl!=0)
+                	acceleration = (1/psm->accl) * psm->velo * psm->mres;
+				else
+					acceleration = 0;
+
                 velocity = psm->velo * psm->mres;
                 (*pdset->sm_command)(psm,SM_VELOCITY,velocity,acceleration);
                 psm->lvel = psm->velo;
@@ -820,7 +828,10 @@ struct steppermotorRecord	*psm;
 			/* acceleration */
 			chng_vel = psm->velo - psm->val;
 			if (chng_vel < 0) chng_vel = -chng_vel;
-			acceleration = (1/psm->accl) * chng_vel * psm->mres;
+			if(psm->accl!=0)
+				acceleration = (1/psm->accl) * chng_vel * psm->mres;
+			else
+				acceleration = 0;
 
 			/* velocity */
 			psm->velo = psm->val;

@@ -19,13 +19,13 @@
 extern CACVRTFUNC *cac_dbr_cvrt[];
 #endif /*CONVERSION_REQUIRED*/
 
-typedef void (*pProtoStubTCP) (tcpiiu *piiu, const struct sockaddr_in *pnet_addr);
+typedef void (*pProtoStubTCP) (tcpiiu *piiu);
 typedef void (*pProtoStubUDP) (udpiiu *piiu, const struct sockaddr_in *pnet_addr);
 
 /*
  * tcp_noop_action ()
  */
-LOCAL void tcp_noop_action (tcpiiu *piiu, const struct sockaddr_in *pnet_addr)
+LOCAL void tcp_noop_action (tcpiiu *piiu)
 {
     return;
 }
@@ -33,7 +33,7 @@ LOCAL void tcp_noop_action (tcpiiu *piiu, const struct sockaddr_in *pnet_addr)
 /*
  * udp_noop_action ()
  */
-LOCAL void udp_noop_action (udpiiu *piiu, const struct sockaddr_in *pnet_addr)
+LOCAL void udp_noop_action (udpiiu * /* piiu */, const struct sockaddr_in * /* pnet_addr */)
 {
     return;
 }
@@ -42,7 +42,7 @@ LOCAL void udp_noop_action (udpiiu *piiu, const struct sockaddr_in *pnet_addr)
 /*
  * echo_resp_action ()
  */
-LOCAL void echo_resp_action (tcpiiu *piiu, const struct sockaddr_in *pnet_addr)
+LOCAL void echo_resp_action (tcpiiu *piiu)
 {
     piiu->echoPending = FALSE;
     piiu->beaconAnomaly = FALSE;
@@ -52,7 +52,7 @@ LOCAL void echo_resp_action (tcpiiu *piiu, const struct sockaddr_in *pnet_addr)
 /*
  * write_notify_resp_action ()
  */
-LOCAL void write_notify_resp_action (tcpiiu *piiu, const struct sockaddr_in *pnet_addr)
+LOCAL void write_notify_resp_action (tcpiiu *piiu)
 {
     struct event_handler_args args;
     nmiu *monix;
@@ -98,7 +98,7 @@ LOCAL void write_notify_resp_action (tcpiiu *piiu, const struct sockaddr_in *pne
 /*
  * read_notify_resp_action ()
  */
-LOCAL void read_notify_resp_action (tcpiiu *piiu, const struct sockaddr_in *pnet_addr)
+LOCAL void read_notify_resp_action (tcpiiu *piiu)
 {
     nmiu *monix;
     struct event_handler_args args;
@@ -170,7 +170,7 @@ LOCAL void read_notify_resp_action (tcpiiu *piiu, const struct sockaddr_in *pnet
 /*
  * event_resp_action ()
  */
-LOCAL void event_resp_action (tcpiiu *piiu, const struct sockaddr_in *pnet_addr)
+LOCAL void event_resp_action (tcpiiu *piiu)
 {
     struct event_handler_args args;
     nmiu *monix;
@@ -258,7 +258,7 @@ LOCAL void event_resp_action (tcpiiu *piiu, const struct sockaddr_in *pnet_addr)
 /*
  * read_resp_action ()
  */
-LOCAL void read_resp_action (tcpiiu *piiu, const struct sockaddr_in *pnet_addr)
+LOCAL void read_resp_action (tcpiiu *piiu)
 {
     nmiu *pIOBlock;
 
@@ -292,8 +292,8 @@ LOCAL void read_resp_action (tcpiiu *piiu, const struct sockaddr_in *pnet_addr)
 #               else
                 if (piiu->niiu.curMsg.m_dataType == DBR_STRING &&
                      piiu->niiu.curMsg.m_count == 1u) {
-                     strcpy ((char *)pIOBlock->miu.usr_arg,
-                         piiu->niiu.pCurData);
+                     strcpy ( (char *) pIOBlock->miu.usr_arg,
+                         (char *) piiu->niiu.pCurData );
                 }
                 else {
                      memcpy(
@@ -474,7 +474,7 @@ LOCAL void search_resp_action (udpiiu *piiu, const struct sockaddr_in *pnet_addr
 /*
  * read_sync_resp_action ()
  */
-LOCAL void read_sync_resp_action (tcpiiu *piiu, const struct sockaddr_in *pnet_addr)
+LOCAL void read_sync_resp_action (tcpiiu *piiu)
 {
     piiu->read_seq++;
     return;
@@ -550,7 +550,7 @@ LOCAL void not_here_resp_action (udpiiu *piiu, const struct sockaddr_in *pnet_ad
 /*
  * clear_channel_resp_action ()
  */
-LOCAL void clear_channel_resp_action (tcpiiu *piiu, const struct sockaddr_in *pnet_addr)
+LOCAL void clear_channel_resp_action (tcpiiu * /* piiu */)
 {
     /* presently a noop */
     return;
@@ -559,11 +559,10 @@ LOCAL void clear_channel_resp_action (tcpiiu *piiu, const struct sockaddr_in *pn
 /*
  * exception_resp_action ()
  */
-LOCAL void exception_resp_action (tcpiiu *piiu, const struct sockaddr_in *pnet_addr)
+LOCAL void exception_resp_action (tcpiiu *piiu)
 {
     nmiu *monix;
     nciu *pChan;
-    char nameBuf[64];
     char context[255];
     caHdr *req = (caHdr *) piiu->niiu.pCurData;
     int op;
@@ -577,13 +576,12 @@ LOCAL void exception_resp_action (tcpiiu *piiu, const struct sockaddr_in *pnet_a
         return;
     }
 
-    ipAddrToA (pnet_addr, nameBuf, sizeof(nameBuf));
     if (piiu->niiu.curMsg.m_postsize > sizeof(caHdr)){
         sprintf (context, "detected by: %s for: %s", 
-            nameBuf, (char *)(req+1));
+            piiu->host_name_str, (char *)(req+1));
     }
     else{
-        sprintf(context, "detected by: %s", nameBuf);
+        sprintf (context, "detected by: %s", piiu->host_name_str);
     }
 
     /*
@@ -666,7 +664,7 @@ LOCAL void exception_resp_action (tcpiiu *piiu, const struct sockaddr_in *pnet_a
 /*
  * access_rights_resp_action ()
  */
-LOCAL void access_rights_resp_action (tcpiiu *piiu, const struct sockaddr_in *pnet_addr)
+LOCAL void access_rights_resp_action (tcpiiu *piiu)
 {
     int ar;
     nciu *chan;
@@ -701,7 +699,7 @@ LOCAL void access_rights_resp_action (tcpiiu *piiu, const struct sockaddr_in *pn
 /*
  * claim_ciu_resp_action ()
  */
-LOCAL void claim_ciu_resp_action (tcpiiu *piiu, const struct sockaddr_in *pnet_addr)
+LOCAL void claim_ciu_resp_action (tcpiiu *piiu)
 {
     cac_reconnect_channel (piiu, piiu->niiu.curMsg.m_cid, 
         piiu->niiu.curMsg.m_dataType, piiu->niiu.curMsg.m_count);
@@ -711,7 +709,7 @@ LOCAL void claim_ciu_resp_action (tcpiiu *piiu, const struct sockaddr_in *pnet_a
 /*
  * verifyAndDisconnectChan ()
  */
-LOCAL void verifyAndDisconnectChan (tcpiiu *piiu, const struct sockaddr_in *pnet_addr)
+LOCAL void verifyAndDisconnectChan (tcpiiu *piiu)
 {
     nciu *chan;
 
@@ -742,7 +740,7 @@ LOCAL void verifyAndDisconnectChan (tcpiiu *piiu, const struct sockaddr_in *pnet
 /*
  * bad_tcp_resp_action ()
  */
-LOCAL void bad_tcp_resp_action (tcpiiu *piiu, const struct sockaddr_in *pnet_addr)
+LOCAL void bad_tcp_resp_action (tcpiiu *piiu)
 {
     ca_printf (piiu->niiu.iiu.pcas, "CAC: Bad response code in TCP message = %u\n", 
         piiu->niiu.curMsg.m_cmmd);
@@ -937,7 +935,7 @@ LOCAL const pProtoStubUDP udpJumpTableCAC[] =
 int post_msg (netIIU *piiu, const struct sockaddr_in *pnet_addr, 
               char *pInBuf, unsigned long blockSize)
 {
-    unsigned long   size;
+    unsigned long size;
 
     while (blockSize) {
 
@@ -1004,7 +1002,7 @@ int post_msg (netIIU *piiu, const struct sockaddr_in *pnet_addr,
          */
         if (piiu->curMsg.m_postsize>piiu->curDataMax) {
             void *pCurData;
-            size_t size;
+            size_t cacheSize;
 
             /* 
              * scalar DBR_STRING is sometimes clipped to the
@@ -1013,13 +1011,13 @@ int post_msg (netIIU *piiu, const struct sockaddr_in *pnet_addr,
              * not page fault if they read MAX_STRING_SIZE
              * bytes (instead of the actual string size).
              */
-            size = max(piiu->curMsg.m_postsize,MAX_STRING_SIZE);
-            pCurData = (void *) calloc(1u, size);
-            if(!pCurData){
+            cacheSize = max (piiu->curMsg.m_postsize, MAX_STRING_SIZE);
+            pCurData = (void *) calloc(1u, cacheSize);
+            if (!pCurData) {
                 return ECA_ALLOCMEM;
             }
-            if(piiu->pCurData){
-                free(piiu->pCurData);
+            if (piiu->pCurData) {
+                free (piiu->pCurData);
             }
             piiu->pCurData = pCurData;
             piiu->curDataMax = piiu->curMsg.m_postsize;
@@ -1071,7 +1069,7 @@ int post_msg (netIIU *piiu, const struct sockaddr_in *pnet_addr,
             else {
                 pStub = tcpJumpTableCAC [piiu->curMsg.m_cmmd];
             }
-            (*pStub) (iiuToTCPIIU(&piiu->iiu), pnet_addr);
+            (*pStub) (iiuToTCPIIU(&piiu->iiu));
         }
          
         piiu->curMsgBytes = 0;

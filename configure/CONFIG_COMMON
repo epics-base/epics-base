@@ -196,11 +196,11 @@ USR_DBDFLAGS =
 USR_ARFLAGS =
 
 # Target specific options
-TARGET_INCLUDES = $($(basename $@)_INCLUDES_$(T_A)) $($(basename $@)_INCLUDES)
-TARGET_CFLAGS = $($(basename $@)_CFLAGS_$(T_A)) $($(basename $@)_CFLAGS)
-TARGET_CXXFLAGS = $($(basename $@)_CXXFLAGS_$(T_A)) $($(basename $@)_CXXFLAGS)
-TARGET_LDFLAGS = $($(basename $@)_LDFLAGS_$(T_A)) $($(basename $@)_LDFLAGS)
-TARGET_CPPFLAGS = $($(basename $@)_CPPFLAGS_$(T_A)) $($(basename $@)_CPPFLAGS)
+TARGET_INCLUDES = $($(basename $@)_INCLUDES_$(T_A))
+TARGET_CFLAGS = $($(basename $@)_CFLAGS_$(T_A))
+TARGET_CXXFLAGS = $($(basename $@)_CXXFLAGS_$(T_A))
+TARGET_LDFLAGS = $($(basename $@)_LDFLAGS_$(T_A))
+TARGET_CPPFLAGS = $($(basename $@)_CPPFLAGS_$(T_A))
 
 TARGET_INCLUDES += $($(basename $@)_INCLUDES_$(OS_CLASS)) $($(basename $@)_INCLUDES)
 TARGET_CFLAGS += $($(basename $@)_CFLAGS_$(OS_CLASS)) $($(basename $@)_CFLAGS)

@@ -40,14 +40,14 @@
 #define LOCAL static
 #endif /* LOCAL */
 
-/* BUFFER_EXTRA_BYTES is set equal to BUFFER_SIZE because
-   on vxWorks vsnprintf is not implemented. Thus vxWorks
+/* BUFFER_EXTRA_BYTES is set equal to MAX_MESSAGE_SIZE in case
+   an os cant implement vsnprintf. Such an os
    is subject to buffer overflow. Allocating an additional
-   BUFFER_SIZE bytes will at least make this less likely
+   BUFFER_EXTRA_BYTES bytes will at least make this less likely
 */
 #define BUFFER_SIZE 1280
-#define BUFFER_EXTRA_BYTES BUFFER_SIZE
 #define MAX_MESSAGE_SIZE 256
+#define BUFFER_EXTRA_BYTES MAX_MESSAGE_SIZE
 #define TRUNCATE_SIZE 80
 #define MAX_ALIGNMENT 8
 

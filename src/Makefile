@@ -11,6 +11,7 @@ include $(TOP)/configure/CONFIG
 #
 DIRS += toolsComm
 DIRS += makeBaseApp
+DIRS += makeBaseExt
 DIRS += libCom
 DIRS += libCom/test
 DIRS += ca

@@ -122,14 +122,14 @@ caStatus casCoreClient::channelCreateFailedResp (
 {
 	return S_casApp_noSupport;
 }
-caStatus casCoreClient::channelDestroyEvent ( 
+caStatus casCoreClient::channelDestroyEventNotify ( 
     epicsGuard < casClientMutex > &, 
     casChannelI * const, ca_uint32_t )
 {
 	return S_casApp_noSupport;
 }
 
-void casCoreClient::casChannelDestroyNotify ( 
+void casCoreClient::casChannelDestroyFromInterfaceNotify ( 
     casChannelI &, bool immediatedSestroyNeeded )
 {
     assert ( 0 );

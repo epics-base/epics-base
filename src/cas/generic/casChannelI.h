@@ -34,7 +34,7 @@ public:
     casChannelI ( casCoreClient & clientIn, casChannel & chanIn, 
         casPVI & pvIn, ca_uint32_t cidIn );
 	~casChannelI ();
-    void casChannelDestroyNotify ( bool immediateUninstall );
+    void casChannelDestroyFromInterfaceNotify ( bool immediateUninstall );
 	const caResId getCID ();
 	const caResId getSID ();
     void uninstallFromPV ( casEventSys & eventSys );
@@ -135,11 +135,11 @@ inline void casChannelI::uninstallIO ( casAsyncIOI & io )
     this->pv.uninstallIO ( this->ioList, io );
 }
 
-inline void casChannelI::casChannelDestroyNotify ( 
+inline void casChannelI::casChannelDestroyFromInterfaceNotify ( 
             bool immediateUninstall )
 {
     if ( ! this->serverDeletePending ) {
-        this->client().casChannelDestroyNotify ( 
+        this->client().casChannelDestroyFromInterfaceNotify ( 
             *this, immediateUninstall );
     }
 }

@@ -127,7 +127,7 @@ private:
         casChannelI & chan, const caHdrLargeArray & hdr, unsigned dbrType );
 	caStatus channelCreateFailedResp ( epicsGuard < casClientMutex > &,
         const caHdrLargeArray &, const caStatus createStatus );
-    caStatus channelDestroyEvent ( 
+    caStatus channelDestroyEventNotify ( 
         epicsGuard < casClientMutex > & guard, 
         casChannelI * const pChan, ca_uint32_t sid );
 	caStatus accessRightsResponse ( 
@@ -160,7 +160,7 @@ private:
         epicsGuard < casClientMutex > & guard, const caHdrLargeArray * mp,
         const void	* dp, const int cacStatus, const char * pFileName, 
         const unsigned lineno, const unsigned idIn );
-    void casChannelDestroyNotify ( casChannelI & chan, 
+    void casChannelDestroyFromInterfaceNotify ( casChannelI & chan, 
         bool immediatedSestroyNeeded );
 
 	casStrmClient ( const casStrmClient & );

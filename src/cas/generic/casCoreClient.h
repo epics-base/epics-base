@@ -85,10 +85,10 @@ public:
 	virtual caStatus channelCreateFailedResp ( 
         epicsGuard < casClientMutex > &,
         const caHdrLargeArray &, const caStatus createStatus );
-    virtual caStatus channelDestroyEvent ( 
+    virtual caStatus channelDestroyEventNotify ( 
         epicsGuard < casClientMutex > & guard, 
         casChannelI * const pChan, ca_uint32_t sid );
-    virtual void casChannelDestroyNotify ( 
+    virtual void casChannelDestroyFromInterfaceNotify ( 
        casChannelI & chan, bool immediateDestroyNeeded );
 
 	virtual ca_uint16_t protocolRevision () const = 0;

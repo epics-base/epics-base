@@ -46,7 +46,7 @@ public:
     chanIntfForPV ( class casCoreClient & );
     virtual ~chanIntfForPV ();
     class casCoreClient & client () const;
-    virtual void casChannelDestroyNotify ( bool immediateUninstall ) = 0;
+    virtual void casChannelDestroyFromInterfaceNotify ( bool immediateUninstall ) = 0;
     void installMonitor ( casPVI & pv, casMonitor & mon );
     casMonitor * removeMonitor ( casPVI &, ca_uint32_t monId );
     void removeSelfFromPV ( casPVI &, 

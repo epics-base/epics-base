@@ -1041,7 +1041,7 @@ caStatus casStrmClient::writeNotifyResponse ( epicsGuard < casClientMutex > & gu
  * casStrmClient::writeNotifyResponseECA_XXX()
  */
 caStatus casStrmClient::writeNotifyResponseECA_XXX (
-	epicsGuard < casClientMutex > & guard, 
+	epicsGuard < casClientMutex > &, 
     const caHdrLargeArray & msg, const caStatus ecaStatus )
 {
     caStatus status = out.copyInHeader ( msg.m_cmmd, 0,
@@ -1644,8 +1644,8 @@ caStatus casStrmClient::clearChannelAction (
 // disconnect message to the client and destroy the 
 // channel.
 //
-caStatus casStrmClient::channelDestroyEvent ( 
-    epicsGuard < casClientMutex > & guard, 
+caStatus casStrmClient::channelDestroyEventNotify ( 
+    epicsGuard < casClientMutex > &, 
     casChannelI * const pChan, ca_uint32_t sid )
 {
     casChannelI * pChanFound;
@@ -1685,11 +1685,11 @@ caStatus casStrmClient::channelDestroyEvent (
     return S_cas_success;
 }
 
-// casStrmClient::casChannelDestroyNotify()
+// casStrmClient::casChannelDestroyFromInterfaceNotify()
 // immediateUninstallNeeded is false when we must avoid 
 // taking the lock insituations where we would compromise 
 // the lock hierarchy
-void casStrmClient::casChannelDestroyNotify ( 
+void casStrmClient::casChannelDestroyFromInterfaceNotify ( 
     casChannelI & chan, bool immediateUninstallNeeded )
 {
     if ( immediateUninstallNeeded ) {

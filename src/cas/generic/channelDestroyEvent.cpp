@@ -25,7 +25,7 @@ caStatus channelDestroyEvent::cbFunc (
     epicsGuard < casClientMutex > & clientGuard,
     epicsGuard < evSysMutex > & )
 {
-    caStatus status = client.channelDestroyEvent ( 
+    caStatus status = client.channelDestroyEventNotify ( 
         clientGuard, this->pChan, this->sid );
     if ( status != S_cas_sendBlocked ) {
         delete this;

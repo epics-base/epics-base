@@ -35,7 +35,6 @@ example_SRCS += caMonitor.c
 example_SRCS += example_registerRecordDeviceDriver.cpp
 example_SRCS_DEFAULT += exampleMain.c
 example_SRCS_vxWorks += -nil-
-example_LDFLAGS_vxWorks += -u _iocInit
 
 #The following adds drvTS support for vxWorks
 #example_OBJS_vxWorks += $(EPICS_BASE_BIN)/drvTS

@@ -21,21 +21,29 @@ struct outStr_s {
 
 static STATUS outRoutine(char *buffer, int nchars, int outarg) {
     struct outStr_s *poutStr = (struct outStr_s *) outarg;
-    int len = min(poutStr->free, nchars);
+    int free = poutStr->free;
+    int len;
     
-    if(len<=0) return ERROR;
-    strncat(poutStr->str, buffer, len);
-    poutStr->free -= nchars;
-    
+    if(free<=0) { /*let fioFormatV continue to count length*/
+        return OK;
+    } else if(free==1) {
+        len = 1;
+    } else { /* free>1 */
+        len = min(free-1, nchars);
+        strncpy(poutStr->str, buffer, len);
+        poutStr->str += len;
+    }
+    poutStr->free -= len;
+    /*make sure final string is null terminated*/
+    *poutStr->str = 0;
     return OK;
 }
 
 int epicsVsnprintf(char *str, size_t size, const char *format, va_list ap) {
     struct outStr_s outStr;
     
-    *str = '\0';
     outStr.str = str;
-    outStr.free = size-1;
+    outStr.free = size;
     return fioFormatV(format, ap, outRoutine, (int) &outStr);
 }
 

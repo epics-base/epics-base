@@ -62,26 +62,27 @@
 #include	<vxLib.h>
 #include	<tickLib.h>
 
-#include	<fast_lock.h>
-#include	<cvtFast.h>
-#include	<alarm.h>
-#include	<dbDefs.h>
-#include	<dbBase.h>
-#include	<dbAccess.h>
-#include	<dbStaticLib.h>
-#include	<dbConvert.h>
-#include	<dbBkpt.h>
-#include	<dbScan.h>
-#include	<dbCommon.h>
-#include	<dbLock.h>
-#include	<dbFldTypes.h>
-#include	<dbEvent.h>
-#include	<db_field_log.h>
-#include	<errMdef.h>
-#include	<recSup.h>
-#include	<recGbl.h>
-#include	<special.h>
-#include	<asLib.h>
+#include	"dbDefs.h"
+#include	"errlog.h"
+#include	"fast_lock.h"
+#include	"cvtFast.h"
+#include	"alarm.h"
+#include	"dbBase.h"
+#include	"dbAccess.h"
+#include	"dbStaticLib.h"
+#include	"dbConvert.h"
+#include	"dbBkpt.h"
+#include	"dbScan.h"
+#include	"dbCommon.h"
+#include	"dbLock.h"
+#include	"dbFldTypes.h"
+#include	"dbEvent.h"
+#include	"db_field_log.h"
+#include	"errMdef.h"
+#include	"recSup.h"
+#include	"recGbl.h"
+#include	"special.h"
+#include	"asLib.h"
 
 extern struct dbBase *pdbbase;
 extern long lset_stack_not_empty;
@@ -550,7 +551,7 @@ long dbProcess(dbCommon *precord)
 		if (precord->sevr>=INVALID_ALARM) goto all_done;
 		recGblSetSevr(precord, SCAN_ALARM, INVALID_ALARM);
 		monitor_mask = recGblResetAlarms(precord);
-		monitor_mask |= DBE_VALUE;
+		monitor_mask |= DBE_VALUE|DBE_LOG;
 		pdbFldDes = pdbRecordType->papFldDes[pdbRecordType->indvalFlddes];
 		db_post_events(precord,
 			(void *)(((char *)precord) + pdbFldDes->offset),
@@ -629,6 +630,7 @@ long dbNameToAddr(const char *pname,DBADDR *paddr)
 	struct rset	*prset;
 	dbFldDes	*pflddes;
 
+        if(!pdbbase) return(S_db_notFound);
 	dbInitEntry(pdbbase,&dbEntry);
 	if(status = dbFindRecord(&dbEntry,pname)) return(status);
 	paddr->precord = dbEntry.precnode->precord;
@@ -1038,7 +1040,7 @@ long dbPutField(DBADDR *paddr,short dbrType,const void *pbuffer,long  nRequest)
 			    }
 			}
 		}
-    		db_post_events(precord,plink,DBE_VALUE);
+    		db_post_events(precord,plink,DBE_VALUE|DBE_LOG);
 		dbFinishEntry(&dbEntry);
 done:
 		dbLockSetGblUnlock();
@@ -1167,7 +1169,7 @@ long dbPut(DBADDR *paddr,short dbrType,const void *pbuffer,long nRequest)
 	if (isValueField) precord->udf=FALSE;
 	if(precord->mlis.count &&
 	(!isValueField || (!pfldDes->process_passive)))
-		db_post_events(precord,paddr->pfield,DBE_VALUE);
+		db_post_events(precord,paddr->pfield,DBE_VALUE|DBE_LOG);
 
 	return(status);
 }

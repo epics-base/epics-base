@@ -281,7 +281,6 @@ static void * start_routine(void *arg)
 
     (*pthreadInfo->createFunc)(pthreadInfo->createArg);
 
-printf("Thread %s %d done\n", pthreadInfo->name, pthreadInfo->tid);
     free_threadInfo(pthreadInfo);
     return(0);
 }
@@ -369,23 +368,45 @@ epicsThreadId epicsThreadCreate(const char *name,
 }
 
 /*
+ * Cleanup routine for threads not created by epicsThreadCreate().
+ */
+static void nonEPICSthreadCleanup(void *arg)
+{
+    epicsThreadOSD *pthreadInfo = (epicsThreadOSD *)arg;
+
+    free(pthreadInfo->name);
+    free(pthreadInfo);
+}
+
+/*
  * Create dummy context for threads not created by epicsThreadCreate().
- * To avoid memory leaks, a single structure is shared by all non-EPICS
- * threads.
  */
 static epicsThreadOSD *createImplicit(void)
 {
-    static epicsThreadOSD *pthreadInfo;
+    epicsThreadOSD *pthreadInfo;
+    char name[64];
+    int tid;
     int status;
 
-    status = pthread_mutex_lock(&listLock);
-    checkStatusQuit(status,"pthread_mutex_lock","createImplicit");
-    if (pthreadInfo == NULL) {
-        pthreadInfo = create_threadInfo("non-EPICS");
-        pthreadInfo->tid = -1;
+    tid = pthread_self();
+    sprintf(name, "non-EPICS_%d", tid);
+    pthreadInfo = create_threadInfo(name);
+    pthreadInfo->tid = tid;
+    pthreadInfo->osiPriority = 0;
+#if defined (_POSIX_THREAD_PRIORITY_SCHEDULING) 
+    {
+    struct sched_param param;
+    int policy;
+    int priority = 0;
+    if(pthread_getschedparam(tid,&policy,&param) == 0)
+        pthreadInfo->osiPriority =
+                 (param.sched_priority - pcommonAttr->minPriority) * 100.0 /
+                    (pcommonAttr->maxPriority - pcommonAttr->minPriority + 1);
     }
-    status = pthread_mutex_unlock(&listLock);
-    checkStatusQuit(status,"pthread_mutex_unlock","createImplicit");
+#endif /* _POSIX_THREAD_PRIORITY_SCHEDULING */
+    status = pthread_setspecific(getpthreadInfo,(void *)pthreadInfo);
+    checkStatusQuit(status,"pthread_setspecific","createImplicit");
+/*    pthread_cleanup_push(nonEPICSthreadCleanup, pthreadInfo); */
     return pthreadInfo;
 }
 

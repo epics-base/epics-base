@@ -8,22 +8,19 @@ include $(TOP)/configure/CONFIG
 #DB_OPT = YES
 
 #----------------------------------------------------
-#  Optimization needs the name of the appropriate
-#  dbd file (compare with ../src/Makefile.Vx)
-#DBDNAME = exampleApp.dbd
+# Create and install (or just install) dbd files
+# <name>.dbd will be created from <name>Include.dbd
+#DBD += example.dbd
 
 #----------------------------------------------------
-# Add databases, templates, substitutions like this
+# Create and install (or just install)
+# databases, templates, substitutions like this
 DB += dbExample1.db dbExample2.db
 
 #----------------------------------------------------
 # Declare template files which do not show up in DB
 #USES_TEMPLATE += dbExample2.template
 
-#----------------------------------------------------
-# The following line is for local dbd expansion
-#DBDEXPAND = exampleInclude.dbd
-
-include $(TOP)/configure/RULES.Db
+include $(TOP)/configure/RULES
 #----------------------------------------
 #  ADD RULES AFTER THIS LINE

@@ -255,10 +255,10 @@ void exPV::show(unsigned level)
 caStatus exPV::getStatus(gdd &value)
 {
 	if (this->pValue) {
-		value.putConvert(this->pValue->getStat());
+		value.put(this->pValue->getStat());
 	}
 	else {
-		value.putConvert(epicsAlarmUDF);
+		value.put((aitUint16)epicsAlarmUDF);
 	}
 	return S_cas_success;
 }
@@ -269,10 +269,10 @@ caStatus exPV::getStatus(gdd &value)
 caStatus exPV::getSeverity(gdd &value)
 {
 	if (this->pValue) {
-		value.putConvert(this->pValue->getSevr());
+		value.put(this->pValue->getSevr());
 	}
 	else {
-		value.putConvert(epicsSevInvalid);
+		value.put((aitUint16)epicsSevInvalid);
 	}
 	return S_cas_success;
 }
@@ -299,7 +299,7 @@ inline aitTimeStamp exPV::getTS()
 caStatus exPV::getSeconds(gdd &value)
 {
 	aitUint32 sec (this->getTS().tv_sec);
-	value.putConvert (sec);
+	value.put(sec);
 	return S_cas_success;
 }
 
@@ -309,7 +309,7 @@ caStatus exPV::getSeconds(gdd &value)
 caStatus exPV::getNanoseconds(gdd &value)
 {
 	aitUint32 nsec (this->getTS().tv_nsec);
-	value.putConvert (nsec);
+	value.put(nsec);
 	return S_cas_success;
 }
 
@@ -318,7 +318,7 @@ caStatus exPV::getNanoseconds(gdd &value)
 //
 caStatus exPV::getPrecision(gdd &prec)
 {
-	prec.putConvert(4u);
+	prec.put(4u);
 	return S_cas_success;
 }
 
@@ -327,7 +327,7 @@ caStatus exPV::getPrecision(gdd &prec)
 //
 caStatus exPV::getHighLimit(gdd &value)
 {
-	value.putConvert(info.getHopr());
+	value.put(info.getHopr());
 	return S_cas_success;
 }
 
@@ -336,7 +336,7 @@ caStatus exPV::getHighLimit(gdd &value)
 //
 caStatus exPV::getLowLimit(gdd &value)
 {
-	value.putConvert(info.getLopr());
+	value.put(info.getLopr());
 	return S_cas_success;
 }
 

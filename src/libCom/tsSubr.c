@@ -27,6 +27,7 @@
  * -----------------
  * .00	08-09-90	rac	initial version
  * .01	06-18-91	rac	installed in SCCS
+ * .02	07-20-91	rac	use EPICS_TS_MIN_WEST to override TS_MIN_WEST
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -83,6 +84,10 @@
 *	times', thus making it impossible to represent times on the first
 *	day of the epoch as a time stamp.
 *
+* NOTES
+* 1.	The environment variable EPICS_TS_MIN_WEST overrides the default
+*	time zone established by TS_MIN_WEST in tsDefs.h
+*
 * SEE ALSO
 *	tsDefs.h	contains definitions needed to use these routines,
 *			as well as configuration information
@@ -108,7 +113,8 @@
 #ifndef INC_genDefs_h
 #   include <genDefs.h>		/* provides assert() */
 #endif
-#define TS_TEXT_GLBLSOURCE
+#include <envDefs.h>
+#define TS_PRIVATE_DATA
 #include <tsDefs.h>
 
 static int daysInMonth[] =    {31,28,31,30, 31, 30, 31, 31, 30, 31, 30, 31};
@@ -407,6 +413,16 @@ int	dayOfWeek;	/* I day of week for dayYear */
 *	9/10/90 10:23:06.940 plus 80432.9 (equivalent to 22:20:32.900)
 *	produces 9/11/90 8:43:39.839999999 rather than ...840, as desired.
 *
+* EXAMPLE
+* 1.	Compute the time stamp corresponding to 2 hours past the present
+*	time and date.
+*
+*	TS_STAMP	now, later;
+*	double		twoHours=7200.;
+*
+*	tsLocalTime(&now);
+*	TsAddDouble(&later, &now, twoHours);
+*
 *-*/
 void
 tsAddDouble(pSum, pStamp, dbl)
@@ -452,6 +468,27 @@ double	dbl;		/* I number of seconds to add */
 * RETURNS
 *	see description above
 *
+* EXAMPLES
+* 1.	Compare two time stamps.
+*	TS_STAMP	stamp1, stamp2;
+*
+*	if ((i=tsCmpStamps(&stamp1, &stamp2)) == 0)
+*	    printf("stamps are equal\n");
+*	else if (i < 0)
+*	    printf("first stamp is earlier\n");
+*	else
+*	    printf("first stamp is later\n");
+*
+* 2.	Compare two time stamps.
+*	TS_STAMP	stamp1, stamp2;
+*
+*	if (TsCmpStampsEQ(&stamp1, &stamp2))
+*	    printf("stamps are equal\n");
+*	else if (TsCmpStampsLT(&stamp1, &stamp2))
+*	    printf("first stamp is earlier\n");
+*	else
+*	    printf("first stamp is later\n");
+*
 *-*/
 int
 tsCmpStamps(pStamp1, pStamp2)
@@ -496,6 +533,12 @@ TS_STAMP *pStamp2;	/* pointer to second stamp */
 *	must be taken that *pStamp1 is >= *pStamp2 for TsDiffAsStamp().  (For
 *	TsDiffAsDouble(), this restriction doesn't apply.)
 *
+* EXAMPLES
+* 1.	Compute the difference in seconds between two time stamps.
+*	TS_STAMP	stamp1, stamp2;
+*
+*	printf("difference is %f sec.\n", TsDiffAsDouble(&stamp1, &stamp2);
+*
 *-*/
 
 /*+/subr**********************************************************************
@@ -513,6 +556,12 @@ TS_STAMP *pStamp2;	/* pointer to second stamp */
 * BUGS
 * o	For SunOS, local system time is truncated at milli-seconds--i.e.,
 *	micro-seconds are ignored.
+*
+* EXAMPLES
+* 1.	Get the local time as a time stamp.
+*	TS_STAMP	now;
+*
+*	tsLocalTime(&now);
 *
 *-*/
 long
@@ -559,7 +608,7 @@ void tsStampToLocalZone();
 * NAME	tsStampToLocal - convert time stamp to local time
 *
 * DESCRIPTION
-*	Converts a GTACS time stamp into a tsDetail structure for local
+*	Converts an EPICS time stamp into a tsDetail structure for local
 *	time, taking daylight savings time into consideration.
 *
 * RETURNS
@@ -569,9 +618,9 @@ void tsStampToLocalZone();
 * o	doesn't handle 0 time stamps for time zones west of Greenwich
 *
 *-*/
-void
+static void
 tsStampToLocal(stamp, pT)
-TS_STAMP	stamp;	/* I GTACS time stamp to convert */
+TS_STAMP	stamp;	/* I EPICS time stamp to convert */
 struct tsDetail *pT;	/* O pointer to time structure for conversion */
 {
     int		dstBegin;	/* day DST begins */
@@ -623,10 +672,32 @@ struct tsDetail *pT;	/* O pointer to time structure for conversion */
     return;
 }
 
+static int needToInitMinWest=1;
+static int tsMinWest=TS_MIN_WEST;
 
-void
+static tsInitMinWest()
+{
+    char	env[80];
+    int		error=0;
+
+    if (envGetConfigParam(&EPICS_TS_MIN_WEST, 80, env) != NULL) {
+	if (sscanf(env, "%d", &tsMinWest) != 1)
+	    error = 1;
+	if (tsMinWest > 1380 && tsMinWest < -1380)
+	    error = 1;
+	if (error) {
+	    (void)printf(
+"tsSubr: illegal value for %s:%s\n\
+tsSubr: default value of %d will be used\n",
+EPICS_TS_MIN_WEST.name, env, tsMinWest);
+	}
+    }
+    needToInitMinWest = 0;
+}
+
+static void
 tsStampToLocalZone(pStamp, pT)
-TS_STAMP	*pStamp;/* pointer to GTACS time stamp to convert */
+TS_STAMP	*pStamp;/* pointer to EPICS time stamp to convert */
 struct tsDetail *pT;	/* pointer to time structure for conversion */
 {
     int		ndays;		/* number of days in this month or year */
@@ -634,15 +705,18 @@ struct tsDetail *pT;	/* pointer to time structure for conversion */
     int		days;		/* temp for count of days */
     int		hms;		/* left over hours, min, sec in stamp */
 
+    if (needToInitMinWest)
+	tsInitMinWest();
+
     assert(pStamp != NULL);
-    assert(pStamp->secPastEpoch >= TS_MIN_WEST * 60);
+    assert(pStamp->secPastEpoch >= tsMinWest * 60);
     assert(pT != NULL);
 
 /*----------------------------------------------------------------------------
 *    move the time stamp from GMT to local time, then break it down into its
 *    component parts
 *----------------------------------------------------------------------------*/
-    secPastEpoch = pStamp->secPastEpoch - TS_MIN_WEST * 60;
+    secPastEpoch = pStamp->secPastEpoch - tsMinWest * 60;
     hms = secPastEpoch % 86400;
     days = secPastEpoch / 86400;
     pT->seconds = hms % 60;
@@ -688,7 +762,7 @@ struct tsDetail *pT;	/* pointer to time structure for conversion */
 * NAME	tsStampToText - convert a time stamp to text
 *
 * DESCRIPTION
-*	A GTACS standard time stamp is converted to text.  The text
+*	A EPICS standard time stamp is converted to text.  The text
 *	contains the time stamp's representation in the local time zone,
 *	taking daylight savings time into account.
 *
@@ -723,6 +797,14 @@ struct tsDetail *pT;	/* pointer to time structure for conversion */
 *	UNIX routine wasn't particularly portable to VxWorks.  Second, the
 *	UNIX routine wasn't re-entrant.  And, last, the UNIX routine didn't
 *	provide special handling for "time repeating itself".
+*
+* EXAMPLES
+* 1.	Get the local time as a time stamp and print it.
+*	TS_STAMP	now;
+*	char		nowText[28];
+*
+*	tsLocalTime(&now);
+*	printf("time is %s\n", tsStampToText(&now, TS_TEXT_MMDDYY, nowText));
 *
 *-*/
 char *
@@ -780,7 +862,7 @@ char	*textBuffer;	/* O buffer to receive text */
 * NAME	tsTextToStamp - convert text time and date into a time stamp
 *
 * DESCRIPTION
-*	A text string is scanned to produce a GTACS standard time stamp.
+*	A text string is scanned to produce an EPICS standard time stamp.
 *	The text can contain either a time and date (in the local time zone)
 *	or a `delta' time from the present local time and date.
 *
@@ -838,6 +920,13 @@ char	*textBuffer;	/* O buffer to receive text */
 * o	-time isn't implemented yet
 * o	only a single daylight savings time `rule' can be specified
 *
+* EXAMPLES
+* 1.	Get the time stamp equivalent of a text time
+*	char		text[]="7/4/91 8:15:30";
+*	TS_STAMP	equiv;
+*
+*	tsTextToStamp(&equiv, &text);
+*
 *-*/
 long
 tsTextToStamp(pStamp, pText)
@@ -857,6 +946,9 @@ char	**pText;	/* IO ptr to ptr to string containing time and date */
     int		dstBegin;	/* day DST begins */
     int		dstEnd;		/* day DST ends */
     int		dst;		/* (0, 1) for DST (isn't, is) in effect */
+
+    if (needToInitMinWest)
+	tsInitMinWest();
 
     assert(pStamp != NULL);
     assert(pText != NULL);
@@ -1107,7 +1199,7 @@ char	**pText;	/* IO ptr to ptr to string containing time and date */
 	}
 	if (dst)
 	    stamp.secPastEpoch -= TS_DST_HRS_ADD * 3600;
-	stamp.secPastEpoch += TS_MIN_WEST*60;
+	stamp.secPastEpoch += tsMinWest*60;
     }
 
     *pStamp = stamp;
@@ -1118,14 +1210,22 @@ char	**pText;	/* IO ptr to ptr to string containing time and date */
 * NAME	tsTimeTextToStamp - convert text time into a time stamp
 *
 * DESCRIPTION
-*	A text string is scanned to produce a GTACS standard time stamp.
+*	A text string is scanned to produce an EPICS standard time stamp.
 *	The text must contain a time representation as described for
 *	tsTextToStamp().  (If either 'd' or 's' occurs in the text time,
-*	it is ignored.)
+*	it is ignored.)  (Since EPICS time stamps are unsigned, the text
+*	may not be signed.)
 *
 * RETURNS
 *	S_ts_OK, or
 *	S_ts_inputTextError	if the text isn't in a legal form
+*
+* EXAMPLES
+* 1.	Get the time stamp equivalent for an elapsed time.
+*	char		text[]="15:31:22.888";
+*	TS_STAMP	equiv;
+*
+*	tsTimeTextToStamp(&equiv, &text);
 *
 *-*/
 long

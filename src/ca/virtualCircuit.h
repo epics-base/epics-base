@@ -115,15 +115,10 @@ private:
     bool recvProcessPostponedFlush;
 
     void shutdown ( bool discardPendingMessages );
-
+    void stopThreads ();
     bool processIncoming ();
-
     unsigned sendBytes ( const void *pBuf, unsigned nBytesInBuf );
     unsigned recvBytes ( void *pBuf, unsigned nBytesInBuf );
-
-    friend void cacSendThreadTCP ( void *pParam );
-    friend void cacRecvThreadTCP ( void *pParam );
-
     void lastChannelDetachNotify ();
 
     // send protocol stubs
@@ -142,6 +137,9 @@ private:
     void subscriptionCancelRequest ( nciu &, netSubscription &subscr );
     void flushIfRecvProcessRequested ();
     bool flush (); // only to be called by the send thread
+
+    friend void cacSendThreadTCP ( void *pParam );
+    friend void cacRecvThreadTCP ( void *pParam );
 };
 
 inline void tcpiiu::flushRequest ()

@@ -12,6 +12,9 @@
  *		   identification as MACRO ISR problem. 
  *	.02 022195 Compiler warnings fixed
  *	$Log$
+ * Revision 1.13  1995/08/12  01:12:37  jhill
+ * doc
+ *
  */
 
 /*
@@ -69,7 +72,7 @@ int veclist(int all)
 	int		cRoutine;
 	void		*pparam;
 	int		status;
-	int		i;
+	unsigned	i;
 
   	for(vec=0; vec<NVEC; vec++){
     		proutine = intVecGet((FUNCPTR *)INUM_TO_IVEC(vec));
@@ -209,7 +212,7 @@ LOCAL
 void *fetch_pointer(unsigned char *plow_byte)
 {
 	union pointer	p;
-	int		i;
+	size_t		i;
 
 	for(i=0; i < sizeof(p); i++){
 		p.char_overlay.byte[i] = plow_byte[i];

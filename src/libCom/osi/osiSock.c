@@ -118,19 +118,26 @@ unsigned epicsShareAPI ipAddrToA (
 /*
  * sockAddrToDottedIP () 
  */
-unsigned epicsShareAPI sockAddrToDottedIP 
-			( const struct sockaddr *paddr, char *pBuf, unsigned bufSize )
+unsigned epicsShareAPI sockAddrToDottedIP ( 
+    const struct sockaddr * paddr, char * pBuf, unsigned bufSize )
 {
 	if ( paddr->sa_family != AF_INET ) {
-		strncpy ( pBuf, "<Ukn Addr Type>", bufSize - 1 );
-		/*
-		 * force null termination
-		 */
-		pBuf[bufSize-1] = '\0';
+        const char * pErrStr = "<Ukn Addr Type>";
+        unsigned errStrLen = strlen ( pErrStr );
+        if ( errStrLen < bufSize ) {
+            strcpy ( pBuf, pErrStr );
+            return errStrLen;
+        }
+        else {
+            unsigned reducedSize = bufSize - 1u;
+            strncpy ( pBuf, pErrStr, reducedSize );
+		    pBuf[reducedSize] = '\0';
+            return reducedSize;
+        }
 	}
 	else {
         const struct sockaddr_in *paddr_in = ( const struct sockaddr_in * ) paddr;
-        ipAddrToDottedIP ( paddr_in, pBuf, bufSize );
+        return ipAddrToDottedIP ( paddr_in, pBuf, bufSize );
     }
 }
 

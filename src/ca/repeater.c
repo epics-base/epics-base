@@ -29,19 +29,13 @@
  *	E-mail: johill@lanl.gov
  *
  *	PURPOSE:
- *	Broadcasts fan out over the LAN, but UDP does not allow
- *	two processes on the same machine to get the same broadcast.
- *	This code extends the broadcast model from the net to within
- *	the OS.
+ *	Broadcasts fan out over the LAN, but old IP kernels do not allow
+ *	two processes on the same machine to get the same broadcast
+ *	(and modern IP kernels do not allow two processes on the same machine
+ *	to receive the same unicast).
  *
- *	NOTES:
- *
- *	This server does not gaurantee the reliability of 
- *	fanned out broadcasts in keeping with the nature of 
- *	broadcasts. Therefore, CA retransmitts lost msgs.
- *
- *	UDP datagrams delivered between two processes on the same 
- *	machine dont travel over the LAN.
+ *	This code fans out UDP messages sent to the CA repeater port
+ *	to all CA client processes that have subscribed.
  *
  *
  * 	Modification Log:
@@ -63,6 +57,9 @@
  *			datagram socket (and watching for ECONNREFUSED)
  *
  * $Log$
+ * Revision 1.42  1998/02/27 01:04:03  jhill
+ * fixed benign WIN32 message from overwritten errno
+ *
  * Revision 1.41  1998/02/05 22:34:33  jhill
  * dont delete client if send returns ECONNREFUSED
  *

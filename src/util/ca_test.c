@@ -65,8 +65,8 @@ LOCAL int ca_test(char *pname, char *pvalue);
 LOCAL int cagft(char *pname);
 LOCAL void printit(struct  event_handler_args args);
 LOCAL int capft(char *pname, char *pvalue);
-LOCAL void verify(chid chan_id, int type);
-LOCAL void print_returned(short type, char *pbuffer, short count);
+LOCAL void verify_value(chid chan_id, chtype type);
+LOCAL void print_returned(chtype type, void *pbuffer, unsigned count);
 
 static long	outstanding;
 
@@ -280,7 +280,7 @@ char		*pvalue
 			chan_id, 
 			pvalue);
 	SEVCHK(status, NULL);
-	verify(chan_id, DBR_STRING);
+	verify_value(chan_id, DBR_STRING);
 
 	if(ca_field_type(chan_id)==0)goto skip_rest;
 
@@ -293,20 +293,20 @@ char		*pvalue
 				chan_id, 
 				&shortvalue);
 		SEVCHK(status, NULL);
-		verify(chan_id, DBR_SHORT);
+		verify_value(chan_id, DBR_SHORT);
 		status = ca_put(
 				DBR_ENUM, 
 				chan_id, 
 				&shortvalue);
 		SEVCHK(status, NULL);
-		verify(chan_id, DBR_ENUM);
+		verify_value(chan_id, DBR_ENUM);
 		charvalue=shortvalue;
 		status = ca_put(
 				DBR_CHAR, 
 				chan_id, 
 				&charvalue);
 		SEVCHK(status, NULL);
-		verify(chan_id, DBR_CHAR);
+		verify_value(chan_id, DBR_CHAR);
 	}
 	if(sscanf(pvalue,"%ld",&longvalue)==1) {
 		/*
@@ -317,7 +317,7 @@ char		*pvalue
 				chan_id, 
 				&longvalue);
 		SEVCHK(status, NULL);
-		verify(chan_id, DBR_LONG);
+		verify_value(chan_id, DBR_LONG);
 	}
 	if(sscanf(pvalue,"%f",&floatvalue)==1) {
 		/*
@@ -328,7 +328,7 @@ char		*pvalue
 				chan_id, 
 				&floatvalue);
 		SEVCHK(status, NULL);
-		verify(chan_id, DBR_FLOAT);
+		verify_value(chan_id, DBR_FLOAT);
 	}
 	if(sscanf(pvalue,"%lf",&doublevalue)==1) {
 		/*
@@ -339,7 +339,7 @@ char		*pvalue
 				chan_id, 
 				&doublevalue);
 		SEVCHK(status, NULL);
-		verify(chan_id, DBR_DOUBLE);
+		verify_value(chan_id, DBR_DOUBLE);
 	}
 
 skip_rest:
@@ -364,11 +364,11 @@ skip_rest:
 
 
 /*
- * VERIFY
+ * VERIFY_VALUE
  *
  * initiate print out the values in a database access interface structure
  */
-LOCAL void verify(chid chan_id, int type)
+LOCAL void verify_value(chid chan_id, chtype type)
 {
 	int status;
 
@@ -395,22 +395,26 @@ LOCAL void verify(chid chan_id, int type)
  *
  * switches over the range of CA data types and reports the value
  */
-LOCAL void print_returned(short type, char *pbuffer, short count)
+LOCAL void print_returned(chtype type, void *pbuffer, unsigned count)
 {
-    short i;
+    unsigned	i;
 
     printf("%s\t",dbr_text[type]);
     switch(type){
 	case (DBR_STRING):
-		for(i=0; i<count && *pbuffer!=0; i++) {
+	{
+		dbr_string_t	*pString = (dbr_string_t *) pbuffer;
+
+		for(i=0; i<count && (*pString)[0]!='\0'; i++) {
 			if(count!=1 && (i%5 == 0)) printf("\n");
-			printf("%s ",pbuffer);
-			pbuffer += MAX_STRING_SIZE;
+			printf("%s ", *pString);
+			pString++;
 		}
 		break;
+	}
 	case (DBR_SHORT):
 	{
-		short *pvalue = (short *)pbuffer;
+		dbr_short_t *pvalue = (dbr_short_t *)pbuffer;
 		for (i = 0; i < count; i++,pvalue++){
 			if(count!=1 && (i%10 == 0)) printf("\n");
 			printf("%d ",*(short *)pvalue);
@@ -419,7 +423,7 @@ LOCAL void print_returned(short type, char *pbuffer, short count)
 	}
 	case (DBR_ENUM):
 	{
-		unsigned short *pvalue = (unsigned short *)pbuffer;
+		dbr_enum_t *pvalue = (dbr_enum_t *)pbuffer;
 		for (i = 0; i < count; i++,pvalue++){
 			if(count!=1 && (i%10 == 0)) printf("\n");
 			printf("%d ",*pvalue);
@@ -428,7 +432,7 @@ LOCAL void print_returned(short type, char *pbuffer, short count)
 	}
 	case (DBR_FLOAT):
 	{
-		float *pvalue = (float *)pbuffer;
+		dbr_float_t *pvalue = (dbr_float_t *)pbuffer;
 		for (i = 0; i < count; i++,pvalue++){
 			if(count!=1 && (i%10 == 0)) printf("\n");
 			printf("%6.4f ",*(float *)pvalue);
@@ -437,18 +441,17 @@ LOCAL void print_returned(short type, char *pbuffer, short count)
 	}
 	case (DBR_CHAR):
 	{
-		int	value;
+		dbr_char_t 	*pvalue = (dbr_char_t *) pbuffer;
 
-		for (i = 0; i < count; i++,pbuffer++){
+		for (i = 0; i < count; i++,pvalue++){
 			if(count!=1 && (i%10 == 0)) printf("\n");
-			value = *(unsigned char *)pbuffer;
-			printf("%d ",value);
+			printf("%u ",*pvalue);
 		}
 		break;
 	}
 	case (DBR_LONG):
 	{
-		long *pvalue = (long *)pbuffer;
+		dbr_long_t *pvalue = (dbr_long_t *)pbuffer;
 		for (i = 0; i < count; i++,pvalue++){
 			if(count!=1 && (i%10 == 0)) printf("\n");
 			printf("0x%x ",*pvalue);
@@ -457,7 +460,7 @@ LOCAL void print_returned(short type, char *pbuffer, short count)
 	}
 	case (DBR_DOUBLE):
 	{
-		double *pvalue = (double *)pbuffer;
+		dbr_double_t *pvalue = (dbr_double_t *)pbuffer;
 		for (i = 0; i < count; i++,pvalue++){
 			if(count!=1 && (i%10 == 0)) printf("\n");
 			printf("%6.4f ",(float)(*pvalue));
@@ -478,12 +481,12 @@ LOCAL void print_returned(short type, char *pbuffer, short count)
 	{
 		struct dbr_sts_enum *pvalue
 		  = (struct dbr_sts_enum *)pbuffer;
-		unsigned short *pshort = &pvalue->value;
+		dbr_enum_t *pEnum = &pvalue->value;
 		printf("%2d %2d",pvalue->status,pvalue->severity);
 		if(count==1) printf("\tValue: ");
-		for (i = 0; i < count; i++,pshort++){
+		for (i = 0; i < count; i++,pEnum++){
 			if(count!=1 && (i%10 == 0)) printf("\n");
-			printf("%d ",*pshort);
+			printf("%u ",*pEnum);
 		}
 		break;
 	}
@@ -491,12 +494,12 @@ LOCAL void print_returned(short type, char *pbuffer, short count)
 	{
 		struct dbr_sts_short *pvalue
 		  = (struct dbr_sts_short *)pbuffer;
-		short *pshort = &pvalue->value;
+		dbr_short_t *pshort = &pvalue->value;
 		printf("%2d %2d",pvalue->status,pvalue->severity);
 		if(count==1) printf("\tValue: ");
 		for (i = 0; i < count; i++,pshort++){
 			if(count!=1 && (i%10 == 0)) printf("\n");
-			printf("%d ",*pshort);
+			printf("%u ",*pshort);
 		}
 		break;
 	}
@@ -504,7 +507,7 @@ LOCAL void print_returned(short type, char *pbuffer, short count)
 	{
 		struct dbr_sts_float *pvalue
 		  = (struct dbr_sts_float *)pbuffer;
-		float *pfloat = &pvalue->value;
+		dbr_float_t *pfloat = &pvalue->value;
 		printf("%2d %2d",pvalue->status,pvalue->severity);
 		if(count==1) printf("\tValue: ");
 		for (i = 0; i < count; i++,pfloat++){
@@ -517,15 +520,13 @@ LOCAL void print_returned(short type, char *pbuffer, short count)
 	{
 		struct dbr_sts_char *pvalue
 		  = (struct dbr_sts_char *)pbuffer;
-		unsigned char *pchar = &pvalue->value;
-		short value;
+		dbr_char_t *pchar = &pvalue->value;
 
 		printf("%2d %2d",pvalue->status,pvalue->severity);
 		if(count==1) printf("\tValue: ");
 		for (i = 0; i < count; i++,pchar++){
 			if(count!=1 && (i%10 == 0)) printf("\n");
-			value=*pchar;
-			printf("%d ",value);
+			printf("%u ", *pchar);
 		}
 		break;
 	}
@@ -546,7 +547,7 @@ LOCAL void print_returned(short type, char *pbuffer, short count)
 	{
 		struct dbr_sts_double *pvalue
 		  = (struct dbr_sts_double *)pbuffer;
-		double *pdouble = &pvalue->value;
+		dbr_double_t *pdouble = &pvalue->value;
 		printf("%2d %2d",pvalue->status,pvalue->severity);
 		if(count==1) printf("\tValue: ");
 		for (i = 0; i < count; i++,pdouble++){
@@ -570,7 +571,7 @@ LOCAL void print_returned(short type, char *pbuffer, short count)
 	{
 		struct dbr_time_enum *pvalue
 		  = (struct dbr_time_enum *)pbuffer;
-		unsigned short *pshort = &pvalue->value;
+		dbr_enum_t *pshort = &pvalue->value;
 		printf("%2d %2d",pvalue->status,pvalue->severity);
 		printf("\tTimeStamp: %lx %lx",
 			pvalue->stamp.secPastEpoch, pvalue->stamp.nsec);
@@ -585,7 +586,7 @@ LOCAL void print_returned(short type, char *pbuffer, short count)
 	{
 		struct dbr_time_short *pvalue
 		  = (struct dbr_time_short *)pbuffer;
-		short *pshort = &pvalue->value;
+		dbr_short_t *pshort = &pvalue->value;
 		printf("%2d %2d",pvalue->status,pvalue->severity);
 		printf("\tTimeStamp: %lx %lx",
 			pvalue->stamp.secPastEpoch, pvalue->stamp.nsec);
@@ -600,7 +601,7 @@ LOCAL void print_returned(short type, char *pbuffer, short count)
 	{
 		struct dbr_time_float *pvalue
 		  = (struct dbr_time_float *)pbuffer;
-		float *pfloat = &pvalue->value;
+		dbr_float_t *pfloat = &pvalue->value;
 		printf("%2d %2d",pvalue->status,pvalue->severity);
 		printf("\tTimeStamp: %lx %lx",
 			pvalue->stamp.secPastEpoch, pvalue->stamp.nsec);
@@ -615,7 +616,7 @@ LOCAL void print_returned(short type, char *pbuffer, short count)
 	{
 		struct dbr_time_char *pvalue
 		  = (struct dbr_time_char *)pbuffer;
-		unsigned char *pchar = &pvalue->value;
+		dbr_char_t *pchar = &pvalue->value;
 		printf("%2d %2d",pvalue->status,pvalue->severity);
 		printf("\tTimeStamp: %lx %lx",
 			pvalue->stamp.secPastEpoch, pvalue->stamp.nsec);
@@ -645,7 +646,7 @@ LOCAL void print_returned(short type, char *pbuffer, short count)
 	{
 		struct dbr_time_double *pvalue
 		  = (struct dbr_time_double *)pbuffer;
-		double *pdouble = &pvalue->value;
+		dbr_double_t *pdouble = &pvalue->value;
 		printf("%2d %2d",pvalue->status,pvalue->severity);
 		printf("\tTimeStamp: %lx %lx",
 			pvalue->stamp.secPastEpoch, pvalue->stamp.nsec);
@@ -660,7 +661,7 @@ LOCAL void print_returned(short type, char *pbuffer, short count)
 	{
 		struct dbr_gr_short *pvalue
 		  = (struct dbr_gr_short *)pbuffer;
-		short *pshort = &pvalue->value;
+		dbr_short_t *pshort = &pvalue->value;
 		printf("%2d %2d %.8s",pvalue->status,pvalue->severity,
 			pvalue->units);
 		printf("\n\t%8d %8d %8d %8d %8d %8d",
@@ -678,7 +679,7 @@ LOCAL void print_returned(short type, char *pbuffer, short count)
 	{
 		struct dbr_gr_float *pvalue
 		  = (struct dbr_gr_float *)pbuffer;
-		float *pfloat = &pvalue->value;
+		dbr_float_t *pfloat = &pvalue->value;
 		printf("%2d %2d %.8s",pvalue->status,pvalue->severity,
 			pvalue->units);
 		printf(" %3d\n\t%8.3f %8.3f %8.3f %8.3f %8.3f %8.3f",
@@ -712,7 +713,7 @@ LOCAL void print_returned(short type, char *pbuffer, short count)
 	{
 		struct dbr_gr_char *pvalue
 		  = (struct dbr_gr_char *)pbuffer;
-		unsigned char *pchar = &pvalue->value;
+		dbr_char_t *pchar = &pvalue->value;
 		printf("%2d %2d %.8s",pvalue->status,pvalue->severity,
 			pvalue->units);
 		printf("\n\t%8d %8d %8d %8d %8d %8d",
@@ -722,7 +723,7 @@ LOCAL void print_returned(short type, char *pbuffer, short count)
 		if(count==1) printf("\tValue: ");
 		for (i = 0; i < count; i++,pchar++){
 			if(count!=1 && (i%10 == 0)) printf("\n");
-			printf("%d ",(short)(*pchar));
+			printf("%u ",*pchar);
 		}
 		break;
 	}
@@ -748,7 +749,7 @@ LOCAL void print_returned(short type, char *pbuffer, short count)
 	{
 		struct dbr_gr_double *pvalue
 		  = (struct dbr_gr_double *)pbuffer;
-		double *pdouble = &pvalue->value;
+		dbr_double_t *pdouble = &pvalue->value;
 		printf("%2d %2d %.8s",pvalue->status,pvalue->severity,
 			pvalue->units);
 		printf(" %3d\n\t%8.3f %8.3f %8.3f %8.3f %8.3f %8.3f",
@@ -770,7 +771,7 @@ LOCAL void print_returned(short type, char *pbuffer, short count)
 	{
 		struct dbr_ctrl_short *pvalue
 		  = (struct dbr_ctrl_short *)pbuffer;
-		short *pshort = &pvalue->value;
+		dbr_short_t *pshort = &pvalue->value;
 		printf("%2d %2d %.8s",pvalue->status,pvalue->severity,
 			pvalue->units);
 		printf("\n\t%8d %8d %8d %8d %8d %8d",
@@ -790,7 +791,7 @@ LOCAL void print_returned(short type, char *pbuffer, short count)
 	{
 		struct dbr_ctrl_float *pvalue
 		  = (struct dbr_ctrl_float *)pbuffer;
-		float *pfloat = &pvalue->value;
+		dbr_float_t *pfloat = &pvalue->value;
 		printf("%2d %2d %.8s",pvalue->status,pvalue->severity,
 			pvalue->units);
 		printf(" %3d\n\t%8.3f %8.3f %8.3f %8.3f %8.3f %8.3f",
@@ -811,7 +812,7 @@ LOCAL void print_returned(short type, char *pbuffer, short count)
 	{
 		struct dbr_ctrl_char *pvalue
 		  = (struct dbr_ctrl_char *)pbuffer;
-		unsigned char *pchar = &pvalue->value;
+		dbr_char_t *pchar = &pvalue->value;
 		printf("%2d %2d %.8s",pvalue->status,pvalue->severity,
 			pvalue->units);
 		printf("\n\t%8d %8d %8d %8d %8d %8d",
@@ -851,7 +852,7 @@ LOCAL void print_returned(short type, char *pbuffer, short count)
 	{
 		struct dbr_ctrl_double *pvalue
 		  = (struct dbr_ctrl_double *)pbuffer;
-		double *pdouble = &pvalue->value;
+		dbr_double_t *pdouble = &pvalue->value;
 		printf("%2d %2d %.8s",pvalue->status,pvalue->severity,
 			pvalue->units);
 		printf(" %3d\n\t%8.3f %8.3f %8.3f %8.3f %8.3f %8.3f",

@@ -1252,11 +1252,11 @@ void acctstExceptionNotify ( struct exception_handler_args args )
     acctstExceptionCount++;
 }
 
-static unsigned arrayReadExceptionNotifyComplete = 0;
-void arrayReadExceptionNotify ( struct event_handler_args args )
+static unsigned arrayEventExceptionNotifyComplete = 0;
+void arrayEventExceptionNotify ( struct event_handler_args args )
 {
     if ( args.status != ECA_NORMAL ) {
-        arrayReadExceptionNotifyComplete = 1;
+        arrayEventExceptionNotifyComplete = 1;
     }
 }
 void exceptionTest ( chid chan )
@@ -1266,7 +1266,7 @@ void exceptionTest ( chid chan )
     showProgressBegin ();
 
     /*
-     * force a read exception to occur
+     * force a get exception to occur
      */
     {
         dbr_put_ackt_t *pRS;
@@ -1280,6 +1280,7 @@ void exceptionTest ( chid chan )
         status = ca_array_get ( DBR_PUT_ACKT, 
             ca_element_count (chan), chan, pRS ); 
         SEVCHK  ( status, "array read request failed" );
+        ca_pend_io ( 1e-5 );
         ca_pend_event ( 0.1 );
         while ( acctstExceptionCount < 1u ) {
             printf ( "." );
@@ -1292,18 +1293,34 @@ void exceptionTest ( chid chan )
     }
 
     /*
+     * force a get call back exception to occur
+     */
+    {
+        arrayEventExceptionNotifyComplete = 0u;
+        status = ca_array_get_callback ( DBR_PUT_ACKT, 
+            ca_element_count (chan), chan, arrayEventExceptionNotify, 0 ); 
+        SEVCHK  ( status, "array read request failed" );
+        ca_pend_event ( 0.1 );
+        while ( ! arrayEventExceptionNotifyComplete ) {
+            printf ( "." );
+            fflush ( stdout );
+            ca_pend_event ( 0.5 );
+        }
+    }
+
+    /*
      * force a subscription exception to occur
      */
     {
         evid id;
 
-        arrayReadExceptionNotifyComplete = 0u;
+        arrayEventExceptionNotifyComplete = 0u;
         status = ca_add_array_event ( DBR_PUT_ACKT, ca_element_count ( chan ), 
-                        chan, arrayReadExceptionNotify, 0, 0.0, 0.0, 0.0, &id ); 
+                        chan, arrayEventExceptionNotify, 0, 0.0, 0.0, 0.0, &id ); 
         SEVCHK ( status, "array subscription notify install failed" );
 
         ca_pend_event ( 0.1 );
-        while ( ! arrayReadExceptionNotifyComplete ) {
+        while ( ! arrayEventExceptionNotifyComplete ) {
             printf ( "." );
             fflush ( stdout );
             ca_pend_event ( 0.5 );
@@ -1313,9 +1330,8 @@ void exceptionTest ( chid chan )
     }
 
     /*
-     * force a write exception to occur
+     * force a put exception to occur
      */
-    /* this does not cause db_put_field() to return -1 */
     {
         dbr_string_t *pWS;
         unsigned i;
@@ -1331,7 +1347,7 @@ void exceptionTest ( chid chan )
         }
         status = ca_array_put ( DBR_STRING, 
             ca_element_count (chan), chan, pWS ); 
-        SEVCHK  ( status, "array write request failed" );
+        SEVCHK  ( status, "array put request failed" );
 
         ca_pend_event ( 0.1 );
         while ( acctstExceptionCount < 1u ) {
@@ -1343,6 +1359,34 @@ void exceptionTest ( chid chan )
         SEVCHK ( status, "exception notify install failed" );
         free ( pWS );
     }
+
+    /*
+     * force a put callback exception to occur
+     */
+    {
+        dbr_string_t *pWS;
+        unsigned i;
+
+        pWS = malloc ( ca_element_count (chan) * MAX_STRING_SIZE );
+        assert ( pWS );
+        for ( i = 0; i < ca_element_count (chan); i++ ) {
+            strcpy ( pWS[i], "@#$%" );
+        }
+        arrayEventExceptionNotifyComplete = 0u;
+        status = ca_array_put_callback ( DBR_STRING, 
+            ca_element_count (chan), chan, pWS,
+            arrayEventExceptionNotify, 0); 
+        SEVCHK  ( status, "array put callback request failed" );
+
+        ca_pend_event ( 0.1 );
+        while ( ! arrayEventExceptionNotifyComplete ) {
+            printf ( "." );
+            fflush ( stdout );
+            ca_pend_event ( 0.5 );
+        }
+        free ( pWS );
+    }
+
     showProgressEnd ();
 }
 
@@ -1470,6 +1514,16 @@ void arrayTest ( chid chan )
     }
     status = ca_clear_event ( id );
     SEVCHK ( status, "clear event request failed" );
+
+    /*
+     * a get request should fail when the array size is
+     * too large
+     */
+    {
+        status = ca_array_get ( DBR_DOUBLE, 
+            ca_element_count (chan)+1, chan, pRF ); 
+        assert ( status == ECA_BADCOUNT );
+    }
 
     free ( pRF );
     free ( pWF );

@@ -2,25 +2,9 @@
 #include <stdio.h>
 #include <time.h>
 
-#ifdef _WIN32
-#include <winsock.h>
-#endif
-
 #include "osiTime.h"
 #include "osiThread.h"
 #include "epicsAssert.h"
-
-#ifndef CLOCK_REALTIME
-
-	//
-	// this is part of the POSIX RT standard but some OS 
-	// still do not define this in time.h 
-	//
-	struct timespec {
-		time_t tv_sec; /* seconds since some epoch */
-		long tv_nsec; /* nanoseconds within the second */
-	};
-#endif
 
 
 int main ()
@@ -32,7 +16,7 @@ int main ()
 	struct timespec ts;
 	struct tm tmAnsi;
 	tm_nano_sec ansiDate;
-	char stampText[128];
+    unsigned long nanoSec;
 	double diff;
 
 	for (i=0; i<iter; i++) {
@@ -49,8 +33,9 @@ int main ()
 	ansiDate = begin;
 	ts = begin;
 
-	tsStampToText (&stamp, TS_TEXT_MMDDYY, stampText);
-	printf ("TS_STAMP = %s\n", stampText);
+    tsStampToTM (&tmAnsi, &nanoSec, &stamp);
+	printf ("TS_STAMP = %s %lu nSec \n", asctime(&tmAnsi), nanoSec);
+
 	printf ("struct tm = %s %f\n", asctime(&ansiDate.ansi_tm), 
 		ansiDate.nSec/(double)osiTime::nSecPerSec);
 	tmAnsi = *localtime (&ts.tv_sec);

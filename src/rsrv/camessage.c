@@ -164,6 +164,11 @@ ASCLIENTPVT ascpvt,
 asClientStatus type
 );
 
+LOCAL void no_read_access_event(
+struct client  		*client,
+struct event_ext 	*pevext
+);
+
 LOCAL unsigned long	bucketID;
 
 
@@ -255,10 +260,11 @@ struct message_buffer *recv
 				break;
 			}
 
-			evext.mp = mp;
+			evext.msg = *mp;
 			evext.pciu = pciu;
 			evext.send_lock = TRUE;
 			evext.get = TRUE;
+			evext.pdbev = NULL;
 			evext.size = dbr_size_n(mp->m_type, mp->m_count);
 
 			/*
@@ -569,7 +575,9 @@ struct client  *client
 		&prsrv_cast_client->addrq, 
 		&pciu->node);
 	UNLOCK_CLIENT(prsrv_cast_client);
+
 	pciu->client = client;
+
 	LOCK_CLIENT(client);
 	ellAdd(&client->addrq, &pciu->node);
 	UNLOCK_CLIENT(client);
@@ -582,6 +590,13 @@ struct client  *client
 	 */
 	pciu->client->minor_version_number = mp->m_available;
 
+	/*
+	 * register for asynch updates of access rights changes
+	 * (only after the lock is released, we are added to 
+	 * the correct client, and the clients version is
+	 * known)
+	 */
+	asRegisterClientCallback(pciu->asClientPVT, casAccessRightsCB);
 }
 
 
@@ -935,21 +950,36 @@ struct client  *client
 	}
 	memset(pevext,0,size);
 	pevext->msg = *mp;
-	pevext->mp = &pevext->msg;	/* for speed- see
-					 * IOC_READ */
 	pevext->pciu = pciu;
 	pevext->send_lock = TRUE;
 	pevext->size = dbr_size_n(mp->m_type, mp->m_count);
+	pevext->mask = ((struct monops *) mp)->m_info.m_mask;
 	pevext->get = FALSE;
+
+	LOCK_CLIENT(client);
+	ellAdd(	&pciu->eventq, &pevext->node);
+	UNLOCK_CLIENT(client);
+
+	/*
+	 * dont set up the event if no read access
+	 */
+	if(!asCheckGet(pciu->asClientPVT)){
+		pevext->pdbev = NULL;
+		no_read_access_event(client, pevext);
+		return;
+	}
+
+	pevext->pdbev = (struct event_block *)(pevext+1);
 
 	status = db_add_event(
 			client->evuser,
 		      	&pciu->addr,
 		      	read_reply,
 		      	pevext,
-	   (unsigned) ((struct monops *) mp)->m_info.m_mask,
-  	   (struct event_block *)(pevext+1));
+	   		pevext->mask,
+			pevext->pdbev);
 	if (status == ERROR) {
+		pevext->pdbev = NULL;
 		LOCK_CLIENT(client);
 		send_err(
 			mp, 
@@ -957,20 +987,8 @@ struct client  *client
 			client, 
 			RECORD_NAME(&pciu->addr));
 		UNLOCK_CLIENT(client);
-		FASTLOCK(&rsrv_free_eventq_lck);
-		ellAdd(&rsrv_free_eventq, &pevext->node);
-		FASTUNLOCK(&rsrv_free_eventq_lck);
 		return;
 	}
-
-	/*
-	 * Only add to the list if we can get enough
-	 * memory. If not, attempts to delete it 
-	 * from the client will cause a warning message
-	 * to be printed since it will not be found on
-	 * the list.
-	 */
-	ellAdd(	&pciu->eventq, &pevext->node);
 
 	/*
 	 * always send it once at event add
@@ -998,7 +1016,7 @@ struct client  *client
 	 * messages sent by the server).
 	 */
 
-	db_post_single_event((struct event_block *)(pevext+1));
+	db_post_single_event(pevext->pdbev);
 
 	return;
 }
@@ -1016,10 +1034,10 @@ struct extmsg *mp,
 struct client  *client
 )
 {
-        FAST struct extmsg *reply;
-        FAST struct event_ext *pevext;
+        struct extmsg *reply;
+        struct event_ext *pevext;
         struct channel_in_use *pciu;
-        FAST int        status;
+        int        status;
 
         /*
          *
@@ -1041,11 +1059,18 @@ struct client  *client
 		}
 	}
 
-        while (pevext = (struct event_ext *) ellGet(&pciu->eventq)) {
+        while (TRUE){
+		LOCK_CLIENT(client);
+		pevext = (struct event_ext *) ellGet(&pciu->eventq);
+		UNLOCK_CLIENT(client);
 
-		status = db_cancel_event((struct event_block *)(pevext+1));
-		if (status){
-			taskSuspend(0);
+		if(!pevext){
+			break;
+		}
+
+		if(pevext->pdbev){
+			status = db_cancel_event(pevext->pdbev);
+			assert(status == OK);
 		}
 		FASTLOCK(&rsrv_free_eventq_lck);
 		ellAdd(&rsrv_free_eventq, &pevext->node);
@@ -1111,11 +1136,10 @@ struct extmsg *mp,
 struct client  *client
 )
 {
-	struct extmsg *reply;
-	struct event_ext *pevext;
-	ELLLIST           *peventq; 
-	int        status;
-        struct channel_in_use *pciu;
+        struct channel_in_use 	*pciu;
+	struct extmsg 		*reply;
+	struct event_ext 	*pevext;
+	int        		status;
 
         /*
          *
@@ -1127,46 +1151,60 @@ struct client  *client
 		logBadId(client, mp);
 		return;
 	}
-	peventq = &pciu->eventq;
 
-	for (pevext = (struct event_ext *) peventq->node.next;
-	     pevext;
-	     pevext = (struct event_ext *) pevext->node.next)
-		if (pevext->msg.m_available == mp->m_available) {
-			status = db_cancel_event((struct event_block *)(pevext+1));
-			if (status == ERROR)
-				taskSuspend(0);
-			ellDelete(peventq, &pevext->node);
-
-			/*
-			 * send delete confirmed message
-			 */
-			LOCK_CLIENT(client);
-			reply = (struct extmsg *) ALLOC_MSG(client, 0);
-			if (!reply) {
-				UNLOCK_CLIENT(client);
-				taskSuspend(0);
-			}
-			*reply = pevext->msg;
-			reply->m_postsize = 0;
-
-			END_MSG(client);
-			UNLOCK_CLIENT(client);
-
-			FASTLOCK(&rsrv_free_eventq_lck);
-			ellAdd(&rsrv_free_eventq, &pevext->node);
-			FASTUNLOCK(&rsrv_free_eventq_lck);
-
-			return;
-		}
 	/*
-	 * Not Found- return an error message
+	 * search events on this channel for a match
+	 * (there are usually very few monitors per channel)
 	 */
 	LOCK_CLIENT(client);
-	send_err(mp, ECA_BADMONID, client, RECORD_NAME(&pciu->addr));
+	for (pevext = (struct event_ext *) ellFirst(&pciu->eventq);
+	     pevext;
+	     pevext = (struct event_ext *) ellNext(&pevext->node)){
+
+		if (pevext->msg.m_available == mp->m_available) {
+			ellDelete(&pciu->eventq, &pevext->node);
+			break;
+		}
+	}
 	UNLOCK_CLIENT(client);
 
-	return;
+	/*
+	 * Not Found- return an exception event 
+	 */
+	if(!pevext){
+		LOCK_CLIENT(client);
+		send_err(mp, ECA_BADMONID, client, RECORD_NAME(&pciu->addr));
+		UNLOCK_CLIENT(client);
+		return;
+	}
+
+
+	/*
+	 * cancel monitor activity in progress
+	 */
+	if(pevext->pdbev){
+		status = db_cancel_event(pevext->pdbev);
+		assert(status == OK);
+	}
+
+	/*
+	 * send delete confirmed message
+	 */
+	LOCK_CLIENT(client);
+	reply = (struct extmsg *) ALLOC_MSG(client, 0);
+	if (!reply) {
+		UNLOCK_CLIENT(client);
+		assert(0);
+	}
+	*reply = pevext->msg;
+	reply->m_postsize = 0;
+
+	END_MSG(client);
+	UNLOCK_CLIENT(client);
+
+	FASTLOCK(&rsrv_free_eventq_lck);
+	ellAdd(&rsrv_free_eventq, &pevext->node);
+	FASTUNLOCK(&rsrv_free_eventq_lck);
 }
 
 
@@ -1185,7 +1223,6 @@ db_field_log		*pfl
 )
 {
 	struct event_ext *pevext = pArg;
-	struct extmsg *mp = pevext->mp;
 	struct client *client = pevext->pciu->client;
         struct channel_in_use *pciu = pevext->pciu;
 	struct extmsg *reply;
@@ -1206,18 +1243,18 @@ db_field_log		*pfl
 
 	reply = (struct extmsg *) ALLOC_MSG(client, pevext->size);
 	if (!reply) {
-		send_err(mp, ECA_TOLARGE, client, RECORD_NAME(paddr));
+		send_err(&pevext->msg, ECA_TOLARGE, client, RECORD_NAME(paddr));
+		if (!eventsRemaining)
+			cas_send_msg(client,!pevext->send_lock);
 		if (pevext->send_lock)
 			UNLOCK_CLIENT(client);
-		if (!eventsRemaining)
-			cas_send_msg(client,FALSE);
 		return;
 	}
 
 	/* 
 	 * setup response message
 	 */
-	*reply = *mp;
+	*reply = pevext->msg;
 	reply->m_postsize = pevext->size;
 	reply->m_cid = (unsigned long)pciu->cid;
 
@@ -1226,52 +1263,37 @@ db_field_log		*pfl
 	 */
 	v41 = CA_V41(CA_PROTOCOL_VERSION,client->minor_version_number);
 	if(!asCheckGet(pciu->asClientPVT)){
-		if(v41){
-			status = ECA_NORDACCESS;
-		}
-		else{
-			status = ECA_GETFAIL;
-		}
-
-		/*
-		 * I cant wait to redesign this protocol from scratch!
-		 */
-		if(!v41||reply->m_cmmd==IOC_READ||reply->m_cmmd==IOC_READ_BUILD){
+		if(reply->m_cmmd==IOC_READ||
+			reply->m_cmmd==IOC_READ_BUILD){
+			if(v41){
+				status = ECA_NORDACCESS;
+			}
+			else{
+				status = ECA_GETFAIL;
+			}
 			/*
 			 * old client & plain get & search/get
 			 * continue to return an exception
 			 * on failure
 			 */
-			send_err(mp, status, client, RECORD_NAME(paddr));
+			send_err(&pevext->msg, status, 
+				client, RECORD_NAME(paddr));
 		}
 		else{
-			/*
-			 * New clients recv the status of the
-			 * operation directly to the
-			 * event/put/get callback.
-			 *
-			 * Fetched value is zerod in case they
-			 * use it even when the status indicates 
-			 * failure.
-			 *
-			 * The m_cid field in the protocol
-			 * header is abused to carry the status
-			 */
-			bzero((char *)(reply+1), pevext->size);
-			reply->m_cid = status;
-			END_MSG(client);
+			no_read_access_event(client, pevext);
 		}
-		if (pevext->send_lock)
-			UNLOCK_CLIENT(client);
 		if (!eventsRemaining)
-			cas_send_msg(client,FALSE);
+			cas_send_msg(client,!pevext->send_lock);
+		if (pevext->send_lock){
+			UNLOCK_CLIENT(client);
+		}
 		return;
 	}
 	status = db_get_field(
 			      paddr,
-			      mp->m_type,
+			      pevext->msg.m_type,
 			      reply + 1,
-			      mp->m_count,
+			      pevext->msg.m_count,
 			      pfl);
 	if (status < 0) {
 		/*
@@ -1283,8 +1305,8 @@ db_field_log		*pfl
 			 * continue to return an exception
 			 * on failure
 			 */
-			send_err(mp, ECA_GETFAIL, client, RECORD_NAME(paddr));
-			log_header(mp, 0);
+			send_err(&pevext->msg, ECA_GETFAIL, client, RECORD_NAME(paddr));
+			log_header(&pevext->msg, 0);
 		}
 		else{
 			/*
@@ -1326,7 +1348,8 @@ db_field_log		*pfl
 		 * force string message size to be the true size rounded to even
 		 * boundary
 		 */
-		if (mp->m_type == DBR_STRING && mp->m_count == 1) {
+		if (pevext->msg.m_type == DBR_STRING 
+			&& pevext->msg.m_count == 1) {
 			/* add 1 so that the string terminator will be shipped */
 			strcnt = strlen((char *)(reply + 1)) + 1;
 			reply->m_postsize = strcnt;
@@ -1340,12 +1363,72 @@ db_field_log		*pfl
 	 * them up like db requests when the OPI does not keep up.
 	 */
 	if (!eventsRemaining)
-		cas_send_msg(client,FALSE);
+		cas_send_msg(client,!pevext->send_lock);
 
 	if (pevext->send_lock)
 		UNLOCK_CLIENT(client);
 
 	return;
+}
+
+
+/*
+ * no_read_access_event()
+ *
+ * !! LOCK needs to applied by caller !!
+ *
+ * substantial complication introduced here by the need for backwards
+ * compatibility
+ */
+LOCAL void no_read_access_event(
+struct client  		*client,
+struct event_ext 	*pevext
+)
+{
+	struct extmsg 	*reply;
+	int 		v41;
+
+	v41 = CA_V41(CA_PROTOCOL_VERSION,client->minor_version_number);
+
+	/*
+	 * continue to return an exception
+	 * on failure to pre v41 clients
+	 */
+	if(!v41){
+		send_err(
+			&pevext->msg, 
+			ECA_GETFAIL, 
+			client, 
+			RECORD_NAME(&pevext->pciu->addr));
+		return;
+	}
+
+	reply = (struct extmsg *) ALLOC_MSG(client, pevext->size);
+	if (!reply) {
+		send_err(
+			&pevext->msg, 
+			ECA_TOLARGE, 
+			client, 
+			RECORD_NAME(&pevext->pciu->addr));
+		return;
+	}
+	else{
+		/*
+		 * New clients recv the status of the
+		 * operation directly to the
+		 * event/put/get callback.
+		 *
+		 * Fetched value is zerod in case they
+		 * use it even when the status indicates 
+		 * failure.
+		 *
+		 * The m_cid field in the protocol
+		 * header is abused to carry the status
+		 */
+		bzero((char *)(reply+1), pevext->size);
+		reply->m_cid = ECA_NORDACCESS;
+		END_MSG(client);
+	}
 }
 
 
@@ -1388,7 +1471,6 @@ struct extmsg *mp,
 struct client  *client
 )
 {
-	ELLLIST			*addrq = &client->addrq;
 	struct extmsg 		*search_reply;
 	struct extmsg 		*get_reply;
 	unsigned short		*pMinorVersion;
@@ -1454,10 +1536,29 @@ struct client  *client
 		LOCK_CLIENT(client);
 		send_err(mp, ECA_ALLOCMEM, client, "No room for security table");
 		UNLOCK_CLIENT(client);
-		free(pchannel);
+		FASTLOCK(&rsrv_free_addrq_lck);
+		ellAdd(&rsrv_free_addrq, &pchannel->node);
+		FASTUNLOCK(&rsrv_free_addrq_lck);
 		return;
 	}
-	asRegisterClientCallback(pchannel->asClientPVT, casAccessRightsCB);
+	asPutClientPvt(pchannel->asClientPVT, pchannel);
+
+	/*
+	 * Existing build() interface to the client does not provide mechanism
+	 * to inform them that the channel connected but the value
+	 * couldnt be fetched so search/get combined op
+	 * to no read access channel not allowed.
+	 */
+	if (mp->m_cmmd == IOC_BUILD && !asCheckGet(pchannel->asClientPVT)) {
+		LOCK_CLIENT(client);
+		send_err(mp, ECA_NORDACCESS, client, RECORD_NAME(&tmp_addr));
+		UNLOCK_CLIENT(client);
+		asRemoveClient(&pchannel->asClientPVT);
+		FASTLOCK(&rsrv_free_addrq_lck);
+		ellAdd(&rsrv_free_addrq, &pchannel->node);
+		FASTUNLOCK(&rsrv_free_addrq_lck);
+		return;
+	}
 
 	/*
 	 * allocate a server id and enter the channel pointer
@@ -1473,7 +1574,9 @@ struct client  *client
 		send_err(mp, ECA_ALLOCMEM, client, "No room for hash table");
 		UNLOCK_CLIENT(client);
 		asRemoveClient(&pchannel->asClientPVT);
-		free(pchannel);
+		FASTLOCK(&rsrv_free_addrq_lck);
+		ellAdd(&rsrv_free_addrq, &pchannel->node);
+		FASTUNLOCK(&rsrv_free_addrq_lck);
 		return;
 	}
 
@@ -1485,9 +1588,9 @@ struct client  *client
 
 
 	if (mp->m_cmmd == IOC_BUILD) {
-		FAST short      type = (mp + 1)->m_type;
-		FAST unsigned int count = (mp + 1)->m_count;
-		FAST unsigned int size;
+		short      type = (mp + 1)->m_type;
+		unsigned int count = (mp + 1)->m_count;
+		unsigned int size;
 
 		/*
 		 * must be large enough to hold both the search and the build-get
@@ -1511,16 +1614,24 @@ struct client  *client
 					pchannel->sid, 
 					pchannel);
 			FASTUNLOCK(&rsrv_free_addrq_lck);
-			free(pchannel);
+			FASTLOCK(&rsrv_free_addrq_lck);
+			ellAdd(&rsrv_free_addrq, &pchannel->node);
+			FASTUNLOCK(&rsrv_free_addrq_lck);
 			return;
 		} else {
 			struct event_ext evext;
 
-			evext.mp = mp + 1;
 			evext.pciu = pchannel;
-			evext.mp->m_cid = sid;
+			evext.msg = *(mp+1);
+			/*
+			 * this allows extra build replies 
+			 * to be dicarded
+			 */
+			evext.msg.m_cmmd = IOC_READ_BUILD;
+			evext.msg.m_cid = sid;
 			evext.send_lock = FALSE;
 			evext.size = dbr_size_n(type, count);
+			evext.pdbev = NULL;
 			evext.get = TRUE;
 
 			/*
@@ -1531,12 +1642,6 @@ struct client  *client
 			 * is not flushed once each call.
 			 */
 			read_reply(&evext, &tmp_addr, TRUE, NULL);
-
-			/*
-			 * this allows extra build replies 
-			 * to be dicarded
-			 */
-			get_reply->m_cmmd = IOC_READ_BUILD;
 		}
 	}
 	search_reply = (struct extmsg *) 
@@ -1563,7 +1668,7 @@ struct client  *client
 	END_MSG(client);
 
 	/* store the addr block on the cast queue until it is claimed */
-	ellAdd(addrq, &pchannel->node);
+	ellAdd(&client->addrq, &pchannel->node);
 
 	UNLOCK_CLIENT(client);
 
@@ -1781,13 +1886,99 @@ LOCAL struct channel_in_use *MPTOPCIU(struct extmsg *mp)
 /*
  * casAccessRightsCB()
  *
+ * If access right state changes then inform the client.
+ *
  */
 LOCAL void casAccessRightsCB(ASCLIENTPVT ascpvt, asClientStatus type)
 {
+	struct client		*pclient;
+	struct channel_in_use 	*pciu;
+        struct extmsg 		*reply;
+	struct event_ext	*pevext;
+	int			status;
+	unsigned		ar;
+	int			v41;
+
+	pciu = asGetClientPvt(ascpvt);
+	if(!pciu){
+		printf("casAccessRightsCB() without channel pointer ??\n");
+		return;
+	}
+	pclient = pciu->client;
+	assert(pclient);
+	v41 = CA_V41(CA_PROTOCOL_VERSION,pclient->minor_version_number);
+
 	switch(type)
 	{
 	case asClientCOAR:
+		/*
+		 * noop if this is an old client
+		 */
+		if(!v41){
+			break;
+		}
+
+		ar = 0; /* none */
+		if(asCheckGet(ascpvt)){
+			ar |= CA_ACCESS_RIGHT_READ;
+		}
+		if(asCheckPut(ascpvt)){
+			ar |= CA_ACCESS_RIGHT_WRITE;
+		}
+
+		LOCK_CLIENT(pclient);
+        	reply = (struct extmsg *)ALLOC_MSG(pclient, 0);
+		assert(reply);
+
+		*reply = nill_msg;
+        	reply->m_cmmd = IOC_ACCESS_RIGHTS;
+		reply->m_cid = pciu->cid;
+		reply->m_available = ar;
+
+        	END_MSG(pclient);
+
+		/*
+		 * Update all event call backs 
+		 */
+		for (pevext = (struct event_ext *) ellFirst(&pciu->eventq);
+		     pevext;
+		     pevext = (struct event_ext *) ellNext(&pevext->node)){
+
+			if(pevext->pdbev && !(ar&CA_ACCESS_RIGHT_READ)){
+				status = db_cancel_event(pevext->pdbev);
+				assert(status == OK);
+				pevext->pdbev = NULL;
+			}
+			else if(!pevext->pdbev && ar&CA_ACCESS_RIGHT_READ){
+				pevext->pdbev = 
+					(struct event_block *)(pevext+1);
+
+				status = db_add_event(
+						pclient->evuser,
+		    				&pciu->addr,
+		      				read_reply,
+		      				pevext,
+	   					pevext->mask,
+						pevext->pdbev);
+				if (status == ERROR) {
+					pevext->pdbev = NULL;
+						send_err(
+							&pevext->msg, 
+							ECA_ADDFAIL, 
+							pclient, 
+							RECORD_NAME(&pciu->addr));
+				}
+			}
+
+			if(pevext->pdbev){
+				db_post_single_event(pevext->pdbev);
+			}
+		}
+
+		UNLOCK_CLIENT(pclient);
+
 		break;
+
 	default:
 		break;
 	}

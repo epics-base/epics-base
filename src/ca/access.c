@@ -280,10 +280,12 @@ void			*pext;
 {
 	struct extmsg	msg;
 	unsigned long	bytesAvailable;
+	unsigned long	actualextsize;
 	unsigned long	extsize;
 	unsigned long	bytesSent;
 
 	msg = *pmsg;
+	actualextsize = pmsg->m_postsize;
 	extsize = CA_MESSAGE_ALIGN(pmsg->m_postsize);
 	msg.m_postsize = htons(extsize);
 
@@ -342,8 +344,26 @@ void			*pext;
 	bytesSent = cacRingBufferWrite(
 				&piiu->send, 
 				pext, 
-				extsize);
-	assert(bytesSent == extsize);
+				actualextsize);
+	assert(bytesSent == actualextsize);
+	/*
+	 * force pad bytes at the end of the message to nill
+	 * if present
+	 */
+	{
+		static 	nullBuff[32];
+		int	n;
+
+		n = extsize-actualextsize;
+		if(n){
+			assert(n<=sizeof(nullBuff));
+			bytesSent = cacRingBufferWrite(
+					&piiu->send, 
+					nullBuff, 
+					n);
+			assert(bytesSent == n);
+		}
+	}
 
 	UNLOCK;
 
@@ -1557,6 +1577,10 @@ void 		*pvalue
 	if (INVALID_DB_REQ(type))
 		return ECA_BADTYPE;
 
+	if(!chix->ar.read_access){
+		return ECA_NORDACCESS;
+	}
+
 	if (count > chix->count)
 		return ECA_BADCOUNT;
 
@@ -1633,6 +1657,9 @@ int ca_array_get_callback
 	if (count > chix->count)
 		return ECA_BADCOUNT;
 
+	if(!chix->ar.read_access){
+		return ECA_NORDACCESS;
+	}
 
 #ifdef vxWorks
 	if (!chix->piiu) {
@@ -1767,6 +1794,10 @@ void				*usrarg;
 	 */
   	if(INVALID_DB_FIELD(type))
     		return ECA_BADTYPE;
+
+	if(!chix->ar.write_access){
+		return ECA_NOWTACCESS;
+	}
 
 	/*
 	 * check for valid count
@@ -2053,6 +2084,10 @@ void 				*pvalue;
 	 */
   	if(INVALID_DB_FIELD(type))
     		return ECA_BADTYPE;
+
+	if(!chix->ar.write_access){
+		return ECA_NOWTACCESS;
+	}
 
 	/*
 	 * check for valid count

@@ -1425,8 +1425,9 @@ struct ioc_in_use	*piiu;
     		chix->count = 0;
     		chix->state = cs_prev_conn;
     		chix->id.sid = ~0L;
+		chix->ar.read_access = FALSE;
+		chix->ar.write_access = FALSE;
   	}
-
 
 	/*
 	 * remove IOC from the hash table
@@ -1460,18 +1461,18 @@ struct ioc_in_use	*piiu;
   	chix = (chid) &piiu->chidlist.node.next;
   	while(chix = (chid) chix->node.next){
 		LOCKEVENTS;
-    		if(chix->access_rights_func){
-  			struct access_rights_handler_args args;
-			args.chid = chix;
-			args.ar = chix->ar;
-      			(*chix->access_rights_func)(args);
-		}
     		if(chix->connection_func){
   			struct connection_handler_args args;
 			args.chid = chix;
 			args.op = CA_OP_CONN_DOWN;
       			(*chix->connection_func)(args);
     		}
+    		if(chix->access_rights_func){
+  			struct access_rights_handler_args args;
+			args.chid = chix;
+			args.ar = chix->ar;
+      			(*chix->access_rights_func)(args);
+		}
 		UNLOCKEVENTS;
 		chix->piiu = piiuCast;
   	}

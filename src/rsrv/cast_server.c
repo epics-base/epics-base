@@ -56,7 +56,7 @@
  * 	pend which could lock up the cast server.
  */
 
-static char	*sccsId = "@(#)cast_server.c	1.17\t8/5/93";
+static char	*sccsId = "$Id$";
 
 #include <vxWorks.h>
 #include <ellLib.h>
@@ -253,7 +253,7 @@ int cast_server(void)
     		}
 
     		if(CASDEBUG>2)
-      			count = prsrv_cast_client->addrq.count;
+      			count = ellCount(&prsrv_cast_client->addrq);
 
     		status = camessage(
 				prsrv_cast_client, 
@@ -273,11 +273,12 @@ int cast_server(void)
 			}
 		}
 
-		if(prsrv_cast_client->addrq.count){
-      			if(CASDEBUG>2){
+      		if(CASDEBUG>2){
+			if(ellCount(&prsrv_cast_client->addrq)){
         			logMsg(	"CAS: Fnd %d name matches (%d tot)\n",
-					prsrv_cast_client->addrq.count-count,
-					prsrv_cast_client->addrq.count,
+					ellCount(&prsrv_cast_client->addrq)
+						-count,
+					ellCount(&prsrv_cast_client->addrq),
 					NULL,
 					NULL,
 					NULL,

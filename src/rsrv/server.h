@@ -125,9 +125,10 @@ struct channel_in_use{
 struct event_ext{
 ELLNODE				node;
 struct extmsg			msg;
-struct extmsg			*mp;		/* for speed (IOC_READ) */		
 struct channel_in_use		*pciu;
+struct event_block		*pdbev;		/* ptr to db event block */
 unsigned			size;		/* for speed */
+unsigned			mask;
 char				modified;	/* mod & ev flw ctrl enbl */
 char				send_lock;	/* lock send buffer */
 char				get;		/* T: get F: monitor */
@@ -157,10 +158,14 @@ GLBLTYPE struct client		*prsrv_cast_client;
 GLBLTYPE BUCKET            	*pCaBucket;
 
 #define LOCK_CLIENT(CLIENT)\
-FASTLOCK(&(CLIENT)->lock);
+{\
+FASTLOCK(&(CLIENT)->lock);\
+}
 
 #define UNLOCK_CLIENT(CLIENT)\
-FASTUNLOCK(&(CLIENT)->lock);
+{ \
+FASTUNLOCK(&(CLIENT)->lock);\
+}
 
 #define EXTMSGPTR(CLIENT)\
  ((struct extmsg *) &(CLIENT)->send.buf[(CLIENT)->send.stk])
@@ -177,9 +182,9 @@ FASTUNLOCK(&(CLIENT)->lock);
   (CLIENT)->send.stk += sizeof(struct extmsg) + EXTMSGPTR(CLIENT)->m_postsize
 
 
-#define LOCK_CLIENTQ	FASTLOCK(&clientQlock)
+#define LOCK_CLIENTQ	FASTLOCK(&clientQlock);
 
-#define UNLOCK_CLIENTQ	FASTUNLOCK(&clientQlock)
+#define UNLOCK_CLIENTQ	FASTUNLOCK(&clientQlock);
 
 struct client	*existing_client();
 int		camsgtask();

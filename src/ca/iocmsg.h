@@ -59,6 +59,7 @@ static char	*iocmsghSccsId = "$Id$ CA version 4.1";
 #define IOC_WRITE_NOTIFY	19	/* notify after write chan value */
 #define IOC_CLIENT_NAME		20	/* CA V4.1 identify client */
 #define IOC_HOST_NAME		21	/* CA V4.1 identify client */
+#define IOC_ACCESS_RIGHTS	22	/* CA V4.1 asynch access rights chg */
 
 /*
  * for use with build and search and not_found (if search fails and
@@ -78,6 +79,14 @@ static char	*iocmsghSccsId = "$Id$ CA version 4.1";
 /* size of object in bytes rounded up to nearest short word */
 #define	BI_ROUND(A)	((((unsigned long)A)+1)>>1)
 #define	BI_SIZEOF(A)	(BI_ROUND(sizeof(A)))
+
+/*
+ * For communicating access rights to the clients
+ *
+ * (placed in m_available hdr field of IOC_ACCESS_RIGHTS cmmd
+ */
+#define CA_ACCESS_RIGHT_READ	(1<<0)
+#define CA_ACCESS_RIGHT_WRITE	(1<<1)
 
 /*
  * Required Message Alignment 

@@ -45,23 +45,24 @@
  */
 
 static char *sccsId = "$Id$";
+#include <stdio.h>
+#include <assert.h>
+#include <unistd.h>
 
 #include <vxWorks.h>
-#include <ellLib.h>
 #include <taskLib.h>
 #include <types.h>
 #include <sockLib.h>
 #include <socket.h>
 #include <in.h>
-#include <unistd.h>
 #include <logLib.h>
 #include <string.h>
 #include <usrLib.h>
 #include <errnoLib.h>
-#include <stdio.h>
 #include <tickLib.h>
 #include <sysLib.h>
 
+#include <ellLib.h>
 #include <taskwd.h>
 #include <db_access.h>
 #include <task_params.h>
@@ -272,8 +273,14 @@ LOCAL int terminate_one_client(struct client *client)
 		}
 	}
 
-	pciu = (struct channel_in_use *) & client->addrq;
-	while (pciu = (struct channel_in_use *) pciu->node.next){
+	while(TRUE){
+		LOCK_CLIENT(client);
+		pciu = (struct channel_in_use *) ellGet(&client->addrq);
+		UNLOCK_CLIENT(client);
+		if(!pciu){
+			break;
+		}
+
 		/*
 		 * put notify in progress needs to be deleted
 		 */
@@ -283,19 +290,27 @@ LOCAL int terminate_one_client(struct client *client)
 			}
 		}
 
-		while (pevext = (struct event_ext *) ellGet(&pciu->eventq)) {
+		while (TRUE){
+			/*
+			 * AS state change could be using this list
+			 */
+			LOCK_CLIENT(client);
+			pevext = (struct event_ext *) ellGet(&pciu->eventq);
+			UNLOCK_CLIENT(client);
+			if(!pevext){
+				break;
+			}
 
-			status = db_cancel_event(
-					(struct event_block *)(pevext + 1));
-			if (status)
-				taskSuspend(0);
+			if(pevext->pdbev){
+				status = db_cancel_event(pevext->pdbev);
+				assert(status == OK);
+			}
 			FASTLOCK(&rsrv_free_eventq_lck);
 			ellAdd(&rsrv_free_eventq, &pevext->node);
 			FASTUNLOCK(&rsrv_free_eventq_lck);
 		}
 		status = db_flush_extra_labor_event(client->evuser);
-		if (status)
-			taskSuspend(0);
+		assert(status==OK);
 		if(pciu->pPutNotify){
 			free(pciu->pPutNotify);
 		}
@@ -322,6 +337,14 @@ LOCAL int terminate_one_client(struct client *client)
 				NULL,
 				NULL);
 		}
+
+		/*
+		 * place per channel block onto the
+		 * free list
+		 */
+		FASTLOCK(&rsrv_free_addrq_lck);
+		ellAdd(&rsrv_free_addrq, &pciu->node);
+		FASTUNLOCK(&rsrv_free_addrq_lck);
 	}
 
 	if (client->evuser) {
@@ -337,13 +360,6 @@ LOCAL int terminate_one_client(struct client *client)
 			NULL,
 			NULL,
 			NULL);
-
-	/* free dbaddr str */
-	FASTLOCK(&rsrv_free_addrq_lck);
-	ellConcat(
-		&rsrv_free_addrq,
-		&client->addrq);
-	FASTUNLOCK(&rsrv_free_addrq_lck);
 
 	if(FASTLOCKFREE(&client->putNotifyLock)<0){
 		logMsg("CAS: couldnt free sem\n",
@@ -448,6 +464,7 @@ int client_stat(void)
  */
 LOCAL void log_one_client(struct client *client)
 {
+	int			i;
 	struct channel_in_use	*pciu;
 	struct sockaddr_in 	*psaddr;
 	char			*pproto;
@@ -487,6 +504,7 @@ LOCAL void log_one_client(struct client *client)
 
 	bytes_reserved = 0;
 	bytes_reserved += sizeof(struct client);
+	LOCK_CLIENT(client);
 	pciu = (struct channel_in_use *) client->addrq.node.next;
 	while (pciu){
 		bytes_reserved += sizeof(struct channel_in_use);
@@ -499,6 +517,7 @@ LOCAL void log_one_client(struct client *client)
 		}
 		pciu = (struct channel_in_use *) ellNext(&pciu->node);
 	}
+	UNLOCK_CLIENT(client);
 
 	psaddr = &client->addr;
 	printf("\tRemote address %u.%u.%u.%u Remote port %d state=%s\n",
@@ -511,13 +530,21 @@ LOCAL void log_one_client(struct client *client)
 	printf(	"\tChannel count %d\n", ellCount(&client->addrq));
 	printf(	"\t%d bytes allocated\n", bytes_reserved);
 
+	LOCK_CLIENT(client);
 	pciu = (struct channel_in_use *) client->addrq.node.next;
+	i=0;
 	while (pciu){
-		printf(	"\t%s(%d) ", 
+		printf(	"\t%s(%d%c%c)", 
 			pciu->addr.precord,
-			pciu->eventq.count);
+			ellCount(&pciu->eventq),
+			asCheckGet(pciu->asClientPVT)?'r':'-',
+			asCheckPut(pciu->asClientPVT)?'w':'-');
 		pciu = (struct channel_in_use *) ellNext(&pciu->node);
+		if( ++i % 3 == 0){
+			printf("\n");
+		}
 	}
+	UNLOCK_CLIENT(client);
 
 	printf("\n");
 

@@ -648,6 +648,29 @@ struct in_addr  	*pnet_addr;
 		UNLOCKEVENTS;
 		break;
 	}
+	case IOC_ACCESS_RIGHTS:
+	{
+		int	ar;
+		chid	chan;
+
+		LOCK;
+		chan = bucketLookupItem(pBucket, piiu->curMsg.m_cid);
+		UNLOCK;
+		assert(chan);
+
+		ar = ntohl(piiu->curMsg.m_available);
+		chan->ar.read_access = (ar&CA_ACCESS_RIGHT_READ)?1:0;
+		chan->ar.write_access = (ar&CA_ACCESS_RIGHT_WRITE)?1:0;
+
+		if (chan->access_rights_func) {
+			struct access_rights_handler_args args;
+
+			args.chid = chan;
+			args.ar = chan->ar;
+			(*chan->access_rights_func) (args);
+		}
+		break;
+	}
 	default:
 		ca_printf("CAC: post_msg(): Corrupt cmd in msg %x\n", 
 			piiu->curMsg.m_cmmd);
@@ -683,6 +706,7 @@ struct in_addr		*pnet_addr;
 	IIU			*allocpiiu;
 	IIU			*chpiiu;
 	unsigned short		*pMinorVersion;
+	int			v41;
 
 	/*
 	 * ignore broadcast replies for deleted channels
@@ -759,6 +783,18 @@ struct in_addr		*pnet_addr;
         chan->id.sid = piiu->curMsg.m_cid;
 
 	/*
+	 * Assume that we have access once connected briefly
+	 * until the server is able to tell us the correct
+	 * state for backwards compatibility.
+	 *
+	 * Their access rights call back does not get
+	 * called for the first time until the information 
+	 * arrives however.
+	 */
+	chan->ar.read_access = TRUE;
+	chan->ar.write_access = TRUE;
+
+	/*
 	 * Starting with CA V4.1 the minor version number
 	 * is appended to the end of each search reply.
 	 * This value is ignored by earlier clients.
@@ -770,6 +806,10 @@ struct in_addr		*pnet_addr;
 	else{
 		allocpiiu->minor_version_number = CA_UKN_MINOR_VERSION;
 	}
+
+	v41 = CA_V41(
+			CA_PROTOCOL_VERSION, 
+			allocpiiu->minor_version_number);
 
         if(chpiiu != allocpiiu){
 
@@ -848,6 +888,20 @@ struct in_addr		*pnet_addr;
 	else if(prev_cs==cs_never_conn){
           	/* decrement the outstanding IO count */
           	CLRPENDRECV(TRUE);
+	}
+
+	/*
+	 * if less than v4.1 then the server will never
+	 * send access rights so we know that there
+	 * will always be access and call their call back
+	 * here
+	 */
+	if (chan->access_rights_func && !v41) {
+		struct access_rights_handler_args args;
+
+		args.chid = chan;
+		args.ar = chan->ar;
+		(*chan->access_rights_func) (args);
 	}
 
 	UNLOCK;

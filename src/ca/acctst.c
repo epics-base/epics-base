@@ -210,6 +210,10 @@ char *pname;
 				    NULL,
 				    CONN_ROUTINE,
 				    NULL), NULL);
+#if 0
+	status = ca_replace_access_rights_event(chix1, ar_event);
+	SEVCHK(status,NULL);
+#endif
 
 	status = ca_pend_io(1000.0);
 	SEVCHK(status, NULL);
@@ -237,6 +241,10 @@ char *pname;
 #ifdef VMS
 	lib$init_timer();
 #endif /*VMS*/
+
+	printf("Read Access=%d Write Access=%d\n", 
+		ca_read_access(chix1),
+		ca_write_access(chix1));
 
 	/*
 	 * verify we dont jam up on many uninterrupted
@@ -453,7 +461,7 @@ char *pname;
 	assert(conn_get_cb_count == 3);
 
 	printf("-- Put/Gets done- waiting for Events --\n");
-	status = ca_pend_event(2000.0);
+	status = ca_pend_event(10.0);
 	if (status == ECA_TIMEOUT) {
 
 		free(ptr);

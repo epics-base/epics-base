@@ -22,6 +22,7 @@ of this distribution.
 	//
 	struct dbCommon;
 	struct putNotify;
+    extern "C" {
 #endif
 
 typedef struct pnRestartNode {
@@ -71,5 +72,9 @@ epicsShareFunc long epicsShareAPI dbPutNotifyInitiate (
     void (*callback)(void *), void *usrPvt, dbPutNotifyID *pID);
 
 epicsShareFunc void epicsShareAPI dbPutNotifyDestroy (dbPutNotifyID idIn);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /*INCdbNotifyh*/

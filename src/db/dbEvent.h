@@ -32,6 +32,9 @@
 
 #include "shareLib.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 epicsShareFunc int epicsShareAPI db_event_list (
     const char *name, unsigned level);
@@ -72,6 +75,10 @@ epicsShareFunc void epicsShareAPI db_event_disable (dbEventSubscription es);
 
 #define DB_EVENT_OK 0
 #define DB_EVENT_ERROR (-1)
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /*INCLdbEventh*/
 

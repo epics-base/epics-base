@@ -20,6 +20,10 @@ of this distribution.
 
 #include "shareLib.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 epicsShareFunc void epicsShareAPI dbScanLock(struct dbCommon *precord);
 epicsShareFunc void epicsShareAPI dbScanUnlock(struct dbCommon *precord);
 epicsShareFunc unsigned long epicsShareAPI dbLockGetLockId(
@@ -38,5 +42,9 @@ epicsShareFunc void epicsShareAPI dbLockSetRecordLock(struct dbCommon *precord);
 epicsShareFunc long epicsShareAPI dblsr(char *recordname,int level);
 /* If recordname NULL then all records*/
 /* level = (0,1,2) (lock set state, + recordname, +DB links) */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /*INCdbLockh*/

@@ -1,132 +1,241 @@
-<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<!DOCTYPE html public "-//w3c//dtd html 4.0 transitional//en">
 <html>
 <head>
-   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-   <meta name="Author" content="jba">
-   <meta name="GENERATOR" content="Mozilla/4.76 [en] (X11; U; SunOS 5.8 sun4u) [Netscape]">
+  <title></title>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="Author" content="jba">
 </head>
+
 <body>
 
 <center>
-<h2>
-Building EPICS R3.13 extensions with R3.14 base</h2></center>
+<h2>Building EPICS R3.13 extensions with R3.14.0beta2 base</h2>
+</center>
 
-<p><br>EPICS R3.13 extensions have both a Makefile and a Makefile.Host
-in the build directories and the EPICS R3.13 extension tree has an extensions/config
-directory.
-<h3>
-Preliminary steps for all extensions</h3>
+<p><br>
+EPICS R3.13 extensions have both a Makefile and a Makefile.Host in the build
+directories and the EPICS R3.13 extension tree has an extensions/config
+directory.</p>
 
-<blockquote>
-<li>
-Download the latest version (10/25/00) of the extensions/config files,
-extensionsConfig.tar.gz,&nbsp; from the APS EPICS www page.</li>
-
-<li>
-Make certain that you have set the HOST_ARCH environment variable.</li>
-
-<li>
-Set EPICS_BASE in extensions/config/RELEASE to the full path location of
-a built R3.14 base.</li>
-
-<li>
-BASE_3_14 is now defined in the base/config/CONFIG_BASE_VERSION.&nbsp;
-The commented BASE_3_14 definition can be removed from extensions/config/RELEASE.</li>
-</blockquote>
-
-<h3>
-Building downloaded APS distribution extensions with base R3.14</h3>
+<h3>Preliminary steps for all extensions</h3>
 
 <blockquote>
-<li>
-Download the latest version (10/25/00) of extensions distributed from the
-APS EPICS www page. The latest versions of the extensions should build
-with both R3.13 and R3.14. Note that the order of building extensions is
-important, i.e. some extensions depend on other extensions being built
-first. The extensions/config/CONFIG_EXTENSIONS file contains notes on extension
-dependancies and contains a definition of DIRS (used by extensions/src/Makefile)
-with the proper order for building the APS distributed extensions.</li>
-
-<li>
-Executing gnumake at the root level of the extensions tree or in the src
-directory should build the APS extensions in the proper order.</li>
+  <ul>
+    <li>Download the latest version of the extensions/config files,
+      extensionsConfig.tar.gz,  from the APS EPICS www page.</li>
+    <li>Make certain that you have set the HOST_ARCH environment
+    variable.</li>
+    <li>Set EPICS_BASE in extensions/config/RELEASE to the full path location
+      of a built R3.14 base.</li>
+    <li>BASE_3_14 is now defined in the base/config/CONFIG_BASE_VERSION.  The
+      commented BASE_3_14 definition can be removed from
+      extensions/config/RELEASE.</li>
+  </ul>
 </blockquote>
 
-<h3>
-Building your extensions with base R3.14</h3>
+<h3>Building downloaded APS distribution extensions with base R3.14</h3>
 
 <blockquote>
-<li>
-<b>Library Db renamed</b></li>
-
-<br>Library Db has been renamed to dbStaticHost in EPICS base R3.14. In
-some extensions lib Db is not used and Db can be removed from the USR_LIBS
-(or PROD_LIBS) line. If the library is needed ( you get unresolved items
-after removing Db), the following lines should be added to Makefile.Host.
-<blockquote><tt>ifdef BASE_3_14</tt>
-<br><tt>USR_LIBS += dbStaticHost</tt>
-<br><tt>dbStaticHost_DIR = $(EPICS_BASE_LIB)</tt>
-<br><tt>else</tt>
-<br><tt>USR_LIBS += Db</tt>
-<br><tt>Db_DIR = $(EPICS_BASE_LIB)</tt>
-<br><tt>endif</tt></blockquote>
-
-<li>
-<b>Target architecture specifications changed</b></li>
-
-<br>Since target architecture specifications have been changed (solaris
-to solaris-sparc, win32 to win32-x86, ...) Makefile.Host references to
-and tests on T_A have to be changed.&nbsp; In most cases T_A can be replaced
-by OS_CLASS.&nbsp; Since HOST_ARCH will eventually be phased out, it would
-be a good idea to change any Makefile.Host references to HOST_ARCH to OS_CLASS
-if possible.
-<br>For example change
-<blockquote><tt>ifeq ($(T_A),solaris)</tt>
-<br><tt>RPCFLAGS = -K -1</tt>
-<br><tt>endif</tt></blockquote>
-to
-<blockquote><tt>ifeq ($(OS_CLASS),solaris)</tt>
-<br><tt>RPCFLAGS = -K -1</tt>
-<br><tt>endif</tt></blockquote>
-
-<li>
-<b>New ca_set_puser</b></li>
-
-<br>Statements of the form: <tt>ca_puser(chid) = xyz</tt>; should to be
-changed to:&nbsp; <tt>ca_set_puser(chid,xyz)</tt>;
-<br>&nbsp;
-<li>
-<b>Extern C around includes</b></li>
-
-<br>Remove any extern "C" braces around #includes of EPICS base header
-files.
-<br>For example change
-<blockquote><tt>extern "C" {</tt>
-<br><tt>#include "cadefs.h"</tt>
-<br><tt>} /* end extern C */</tt></blockquote>
-to
-<blockquote><tt>#include "cadefs.h"</tt></blockquote>
-
-<li>
-<b>Infrequently used R3.13 timestamp functions unbundled from base</b></li>
-
-<br>Some infrequently used R3.13 timestamp functions and macro definitions
-have been removed from EPICS base and now exist in a library, ts, created
-and installed in the ar extension.&nbsp; The only ANL distributed extension
-that uses these unbundled functions and macros&nbsp; is cau. The two R3.13
-functions tsStampToText and tsLocalTime along with the definitions TS_TEXT_MONDDYYYY
-and TS_TEXT_MMDDYY have been retained in R3.14 for extension compatibility
-purposes.
-<br>If your extension gets undefines for TS_* usage and ts* function calls
-when built with R3.14, you must obtain and build the ar extension. Add
-an #include for tsSubr.h to your extension source code and add library
-ts to PROD_LIBS or USR_LIBS in your Makefile.Host as follows:
-<blockquote><tt>#include "tsSubr.h"</tt>
-<p><tt>ifdef BASE_3_14</tt>
-<br><tt>PROD_LIBS += ts</tt>
-<br><tt>ts_DIR = $(EPICS_EXTENSIONS_LIB)</tt>
-<br><tt>endif</tt></blockquote>
+  <ul>
+    <li>Download the latest version of extensions distributed from the APS
+      EPICS www page. The latest versions of the extensions should build with
+      both R3.13 and R3.14. Note that the order of building extensions is
+      important, i.e. some extensions depend on other extensions being built
+      first. The extensions/config/CONFIG_EXTENSIONS file contains notes on
+      extension dependencies and contains a definition of DIRS (used by
+      extensions/src/Makefile) with the proper order for building the APS
+      distributed extensions.</li>
+    <li>Executing gnumake at the root level of the extensions tree or in the
+      src directory should build the APS extensions in the proper order.</li>
+  </ul>
 </blockquote>
 
+<h3>Building your extensions with base R3.14</h3>
+
+<blockquote>
+  <ul>
+    <li><b>Library Db renamed</b></li>
+  </ul>
+  <br>
+
+
+  <p>Library Db has been renamed to dbStaticHost in EPICS base R3.14. In some
+  extensions lib Db is not used and Db can be removed from the USR_LIBS (or
+  PROD_LIBS) line. If the library is needed ( you get unresolved items after
+  removing Db), the following lines should be added to Makefile.Host.</p>
+
+  <blockquote>
+    <tt>ifdef BASE_3_14</tt> <br>
+    <tt>USR_LIBS += dbStaticHost</tt> <br>
+    <tt>dbStaticHost_DIR = $(EPICS_BASE_LIB)</tt> <br>
+    <tt>else</tt> <br>
+    <tt>USR_LIBS += Db</tt> <br>
+    <tt>Db_DIR = $(EPICS_BASE_LIB)</tt> <br>
+    <tt>endif</tt></blockquote>
+  <ul>
+    <li><b>Library dbStaticHost names changed</b></li>
+  </ul>
+  <br>
+
+
+  <p>Library functions have been renamed.  If there are calls with old db
+  names, add the following lines</p>
+
+  <blockquote>
+    <tt>#if  EPICS_REVISION &amp;&amp; EPICS_REVISION == 13</tt> <br>
+    <tt>#define dbFindRecordType    dbFindRecdes</tt> <br>
+    <tt>#define dbGetNRecordTypes   dbGetNRecdes</tt> <br>
+    <tt>#define dbNextRecordType    dbNextRecdes</tt> <br>
+    <tt>#define dbFirstField        dbFirstFielddes</tt> <br>
+    <tt>#define dbGetRecordTypeName dbGetRecdesName</tt> <br>
+    <tt>#define dbFirstRecordType   dbFirstRecdes</tt> <br>
+    <tt>#define dbNextField         dbNextFielddes</tt> <br>
+    <tt>#define dbGetMenuChoices    dbGetChoices</tt><tt></tt>
+
+    <p><tt>long dbReadDatabaseFP(</tt> <br>
+    <tt>    DBBASE **ppdbbase,FILE *fp, const char *path,const char
+    *substitutions)</tt> <br>
+    <tt>{</tt> <br>
+    <tt>     return(dbRead(*ppdbbase,fp));</tt> <br>
+    <tt>}</tt> <br>
+    <tt>#endif</tt></p>
+  </blockquote>
+  and  change the the old names and function calls to the R3.14 versions:
+
+  <blockquote>
+    <tt>dbFindRecdes         =&gt;  dbFindRecordType</tt> <br>
+    <tt>dbGetNRecdes         =&gt;  dbGetNRecordTypes</tt> <br>
+    <tt>dbNextRecdes         =&gt;  dbNextRecordType</tt> <br>
+    <tt>dbFirstFielddes      =&gt;  dbFirstField</tt> <br>
+    <tt>dbGetRecdesName      =&gt;  dbGetRecordTypeName</tt> <br>
+    <tt>dbFirstRecdes        =&gt;  dbFirstRecordType</tt> <br>
+    <tt>dbNextFielddes       =&gt;  dbNextField</tt> <br>
+    <tt>dbGetChoices         =&gt;  dbGetMenuChoices</tt> <br>
+    <tt>dbRead(pdbbase,fp)   =&gt;  dbReadDatabaseFP(&amp;pdbbase,fp,0,0)</tt>
+
+    <p></p>
+  </blockquote>
+  <ul>
+    <li><b>Target architecture specifications changed</b></li>
+  </ul>
+  <br>
+
+
+  <p>Since target architecture specifications have been changed (solaris to
+  solaris-sparc, win32 to win32-x86, ...) Makefile.Host references to and
+  tests on T_A have to be changed.  In most cases T_A can be replaced by
+  OS_CLASS.  Since HOST_ARCH will eventually be phased out, it would be a
+  good idea to change any Makefile.Host references to HOST_ARCH to OS_CLASS
+  if possible. <br>
+  For example change</p>
+
+  <blockquote>
+    <tt>ifeq ($(T_A),solaris)</tt> <br>
+    <tt>RPCFLAGS = -K -1</tt> <br>
+    <tt>endif</tt></blockquote>
+  to
+
+  <blockquote>
+    <tt>ifeq ($(OS_CLASS),solaris)</tt> <br>
+    <tt>RPCFLAGS = -K -1</tt> <br>
+    <tt>endif</tt></blockquote>
+  <ul>
+    <li><b>New ca_set_puser</b></li>
+  </ul>
+  <br>
+
+
+  <p>Statements of the form: <tt>ca_puser(chid) = xyz</tt>; should to be
+  changed to:  <tt>ca_set_puser(chid,xyz)</tt>; <br>
+   </p>
+  <ul>
+    <li><b>Extern C around includes</b></li>
+  </ul>
+  <br>
+
+
+  <p>Remove any extern "C" braces around #includes of EPICS base header
+  files. <br>
+  For example change</p>
+
+  <blockquote>
+    <tt>extern "C" {</tt> <br>
+    <tt>#include "cadefs.h"</tt> <br>
+    <tt>} /* end extern C */</tt></blockquote>
+  to
+
+  <blockquote>
+    <tt>#include "cadefs.h"</tt></blockquote>
+  <ul>
+    <li><b>Infrequently used R3.13 timestamp functions unbundled from
+    base</b></li>
+  </ul>
+  <br>
+
+
+  <p>Some infrequently used R3.13 timestamp functions and macro definitions
+  have been removed from EPICS base and now exist in a library, ts, created
+  and installed in the ar extension.  The only ANL distributed extension that
+  uses these unbundled functions and macros  is cau. The two R3.13 functions
+  tsStampToText and tsLocalTime along with the definitions TS_TEXT_MONDDYYYY
+  and TS_TEXT_MMDDYY have been retained in R3.14 for extension compatibility
+  purposes. <br>
+  If your extension gets undefines for TS_* usage and ts* function calls when
+  built with R3.14, you must obtain and build the ar extension. Add an
+  #include for tsSubr.h to your extension source code and add library ts to
+  PROD_LIBS or USR_LIBS in your Makefile.Host as follows:</p>
+
+  <blockquote>
+    <tt>#include "tsSubr.h"</tt>
+
+    <p><tt>ifdef BASE_3_14</tt> <br>
+    <tt>PROD_LIBS += ts</tt> <br>
+    <tt>ts_DIR = $(EPICS_EXTENSIONS_LIB)</tt> <br>
+    <tt>endif</tt></p>
+  </blockquote>
+  <ul>
+    <li><b>No Field name length restriction</b></li>
+  </ul>
+
+  <p><br>
+  The length restriction to database record names no longer exists in R3.14
+  so the the <tt>FLDNAME_SZ macro definition was removed.from dbDefs.h. 
+  Extensions whichstill have a field name restriction should add the field
+  name size definition to their code until they are updated.</tt></p>
+
+  <blockquote>
+    <tt>#ifndef FLDNAME_SZ</tt> <br>
+    <tt>#define FLDNAME_SZ 4  /*Field Name Size*/</tt> <br>
+    <tt>#endif</tt></blockquote>
+  <ul>
+    <li><b>Some EPICS base version macros removed</b></li>
+  </ul>
+
+  <p><br>
+  The EPICS base version macros that start with "BASE_" have been removed
+  from epicsVersion.h. Extensions should now use only the existing macros
+  which start with "EPICS_".</p>
+</blockquote>
+
+<blockquote>
+
+  <blockquote>
+    <tt></tt><font face="Arial,Helvetica">BASE_VERSION         
+            =&gt;  EPICS_VERSION</font> <br>
+    <font face="Arial,Helvetica">BASE_REVISION                  =&gt; 
+    EPICS_REVISION</font> <br>
+    <font face="Arial,Helvetica">BASE_MODIFICATION       =&gt; </font><font
+    face="Arial,Helvetica">  EPICS_MODIFICATION</font> <br>
+    <font face="Arial,Helvetica">BASE_UPDATE_NAME       =&gt; 
+    EPICS_UPDATE_NAME</font> <br>
+    <font face="Arial,Helvetica">BASE_UPDATE_LEVEL       =&gt;  
+    EPICS_UPDATE_LEVEL</font> <br>
+    <font face="Arial,Helvetica">BASE_VERSION_STRING   =&gt; 
+    EPICS_VERSION_STRING</font></blockquote>
+</blockquote>
+
+<p></p>
+
+<p></p>
 </body>
 </html>

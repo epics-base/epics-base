@@ -119,6 +119,7 @@ endif
 ##################################################### CapFast filter
 
 $(COMMON_DIR)/%.edf: ../%.sch $(DEPSCHS) 
+	@$(RM) $@
 	@if [ ! -f cad.rc -a -r ../cad.rc ] ; then ln -s ../cad.rc ; fi
 	$(SCH2EDIF) $(SCH2EDIF_SYSFLAGS) $(SCH2EDIF_FLAGS) $<
 
@@ -128,6 +129,7 @@ $(COMMON_DIR)/%.edf: ../%.sch $(DEPSCHS)
 
 ifdef CREATESUBSTITUTIONS
 $(COMMON_DIR)/%.substitutions:
+	@$(RM) $@
 	@$(CREATESUBSTITUTIONS) $(COMMON_DIR)/$*
 endif
 
@@ -136,6 +138,7 @@ endif
 ##################################################### Template files
 
 $(COMMON_DIR)/%.template: %.edf 
+	@$(RM) $@
 	$(E2DB) $(E2DB_SYSFLAGS) $(E2DB_FLAGS) -n $@.VAR $<
 	@$(REPLACEVAR) < $@.VAR > $@
 	@$(RM) $@.VAR
@@ -189,10 +192,12 @@ $(COMMON_DIR)/%.db$(RAW): %.substitutions %.template
 ifeq '$(DB_OPT)' 'YES'
 
 $(COMMON_DIR)/%.db$(RAW): %.db 
+	@$(RM) $@
 	$(CP) $< $@
 
 $(COMMON_DIR)/%.db: $(COMMON_DIR)/%.db$(RAW)
 	@echo "Optimizing database $@"
+	@$(RM) $@
 	$(DBST) . $< -d > $@
 
 RAW=.raw

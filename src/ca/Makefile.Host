@@ -55,4 +55,10 @@ TESTPROD := catime acctst
 
 include $(TOP)/config/RULES.Host
 
+pcatime : catime.o $(PRODDEPLIBS)
+	$(PURIFY) $(LINK.c) catime.o $(LDLIBS)
+
+pacctst : acctst.o $(PRODDEPLIBS)
+	$(PURIFY) $(LINK.c) acctst.o $(LDLIBS)
+
 #	EOF Makefile.Host

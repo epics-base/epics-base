@@ -25,6 +25,9 @@
 #-----------------------------------------------------------------------
 
 use Getopt::Std;
+use Text::Wrap;
+
+$Text::Wrap::columns = 76;
 
 my $version = 'mkmf.pl,v 1.5 2002/03/25 21:33:24 jba Exp $ ';
 my $endline = $/;
@@ -80,38 +83,23 @@ sub printList{
 
    my $old_handle = select(DEPENDS);
 
-#Limit lines to 80 characters
-# a dot marks the end of the format
-format DEPENDS_FMT =
-^<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\~
-$line
-.
-
-format TARGETS_FMT =
-^<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<:~
-$line
-.
-
    print "# DO NOT EDIT: This file created by $version\n\n";
 
    local $: = " \t\n"; # remove hyphen from word boundary defaults
 
-   $~ = DEPENDS_FMT;
    $line = "$objFile : @includes";
-   while ( length $line > 78 ) {
-      write ;
-   }
-   print $line unless $line eq '';
+   $fmtline = wrap ("", "  ", $line);
+   $fmtline =~ s/\n/ \\\n/mg;
+   print $fmtline;
+
    print "\n\n";
    print "#Depend files must be targets to avoid 'No rule to make target ...' errors\n";
 
-   $~ = TARGETS_FMT;
-   $line = "@includes";
-   while ( length $line > 78 ) {
-      write ;
+   #$line = "@includes";
+   foreach $file (@includes) {
+       print "$file :\n";
    }
-   print "$line :" unless $line eq '';
-   
+
    select($old_handle) ; # in this case, STDOUT
 }
 

@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.6  1999/08/05 22:48:44  jhill
+ * removed knowledge of class osiTime, and made ref/unref mf const
+ *
  * Revision 1.5  1999/05/10 23:42:25  jhill
  * fixed many const releated problems
  *
@@ -333,6 +336,100 @@ inline void gdd::putRef(const aitString* v, gddDestructor* d)
 inline void gdd::putRef(const aitFixedString* v,gddDestructor* d)
 	{ adjust(d, (void*)v, aitEnumFixedString); markConstant(); }
 
+// ---------------------get(pointer) functions--------------------------
+inline void gdd::get(void* d) const {
+	if(isScalar())
+		aitConvert(primitiveType(),d,primitiveType(),dataAddress(),1);
+	else
+		aitConvert(primitiveType(),d,primitiveType(),dataPointer(),
+			getDataSizeElements());
+}
+inline void gdd::get(void* d,aitEnum e) const {
+	if(isScalar())
+		aitConvert(e,d,primitiveType(),dataAddress(),1);
+	else
+		aitConvert(e,d,primitiveType(),dataPointer(),getDataSizeElements());
+}
+inline void gdd::get(aitFloat64* d) const
+{
+	if(isScalar())
+		aitConvert(aitEnumFloat64,d,primitiveType(),dataAddress(),1);
+	else
+		aitConvert(aitEnumFloat64,d,primitiveType(),dataPointer(),
+			getDataSizeElements());
+}
+inline void gdd::get(aitFloat32* d) const {
+	if(isScalar())
+		aitConvert(aitEnumFloat32,d,primitiveType(),dataAddress(),1);
+	else
+		aitConvert(aitEnumFloat32,d,primitiveType(),dataPointer(),
+			getDataSizeElements());
+}
+inline void gdd::get(aitUint32* d) const {
+	if(isScalar())
+		aitConvert(aitEnumUint32,d,primitiveType(),dataAddress(),1);
+	else
+		aitConvert(aitEnumUint32,d,primitiveType(),dataPointer(),
+			getDataSizeElements());
+}
+inline void gdd::get(aitInt32* d) const {
+	if(isScalar())
+		aitConvert(aitEnumInt32,d,primitiveType(),dataAddress(),1);
+	else
+		aitConvert(aitEnumInt32,d,primitiveType(),dataPointer(),
+			getDataSizeElements());
+}
+inline void gdd::get(aitUint16* d) const {
+	if(isScalar())
+		aitConvert(aitEnumUint16,d,primitiveType(),dataAddress(),1);
+	else
+		aitConvert(aitEnumUint16,d,primitiveType(),dataPointer(),
+			getDataSizeElements());
+}
+inline void gdd::get(aitInt16* d) const {
+	if(isScalar())
+		aitConvert(aitEnumInt16,d,primitiveType(),dataAddress(),1);
+	else
+		aitConvert(aitEnumInt16,d,primitiveType(),dataPointer(),
+			getDataSizeElements());
+}
+inline void gdd::get(aitUint8* d) const {
+	if(isScalar())
+		aitConvert(aitEnumUint8,d,primitiveType(),dataAddress(),1);
+	else
+		aitConvert(aitEnumUint8,d,primitiveType(),dataPointer(),
+			getDataSizeElements());
+}
+inline void gdd::get(aitString* d) const {
+	if(isScalar())
+		aitConvert(aitEnumString,d,primitiveType(),dataAddress(),1);
+	else
+		aitConvert(aitEnumString,d,primitiveType(),dataPointer(),
+			getDataSizeElements());
+}
+inline void gdd::get(aitFixedString* d) const {
+	if(isScalar())
+		aitConvert(aitEnumFixedString,d,primitiveType(),dataAddress(),1);
+	else
+		aitConvert(aitEnumFixedString,d,primitiveType(),dataPointer(),
+			getDataSizeElements());
+}
+
+// special case for string scalar to aitInt8 array!
+inline void gdd::get(aitInt8* d) const
+{
+	if(primitiveType()==aitEnumString && dim==0)
+	{
+		aitString* str = (aitString*)dataAddress();
+		strcpy((char*)d,str->string());
+	}
+	else if(primitiveType()==aitEnumFixedString && dim==0)
+		strcpy((char*)d,data.FString->fixed_string);
+	else
+		aitConvert(aitEnumInt8,d,primitiveType(),dataPointer(),
+			getDataSizeElements());
+}
+
 // -------------------getConvert(scalar) functions ----------------------
 inline void gdd::getConvert(aitFloat64& d) const	{ get(&d, aitEnumFloat64); }
 inline void gdd::getConvert(aitFloat32& d) const	{ get(&d, aitEnumFloat32); }
@@ -444,100 +541,6 @@ inline gddStatus gdd::put(aitType* d) {
 	if(isScalar()) { data=*d; }
 	else { rc=gddErrorNotAllowed; gddAutoPrint("gdd:put()",rc); }
 	return rc;
-}
-
-// ---------------------get(pointer) functions--------------------------
-inline void gdd::get(void* d) const {
-	if(isScalar())
-		aitConvert(primitiveType(),d,primitiveType(),dataAddress(),1);
-	else
-		aitConvert(primitiveType(),d,primitiveType(),dataPointer(),
-			getDataSizeElements());
-}
-inline void gdd::get(void* d,aitEnum e) const {
-	if(isScalar())
-		aitConvert(e,d,primitiveType(),dataAddress(),1);
-	else
-		aitConvert(e,d,primitiveType(),dataPointer(),getDataSizeElements());
-}
-inline void gdd::get(aitFloat64* d) const
-{
-	if(isScalar())
-		aitConvert(aitEnumFloat64,d,primitiveType(),dataAddress(),1);
-	else
-		aitConvert(aitEnumFloat64,d,primitiveType(),dataPointer(),
-			getDataSizeElements());
-}
-inline void gdd::get(aitFloat32* d) const {
-	if(isScalar())
-		aitConvert(aitEnumFloat32,d,primitiveType(),dataAddress(),1);
-	else
-		aitConvert(aitEnumFloat32,d,primitiveType(),dataPointer(),
-			getDataSizeElements());
-}
-inline void gdd::get(aitUint32* d) const {
-	if(isScalar())
-		aitConvert(aitEnumUint32,d,primitiveType(),dataAddress(),1);
-	else
-		aitConvert(aitEnumUint32,d,primitiveType(),dataPointer(),
-			getDataSizeElements());
-}
-inline void gdd::get(aitInt32* d) const {
-	if(isScalar())
-		aitConvert(aitEnumInt32,d,primitiveType(),dataAddress(),1);
-	else
-		aitConvert(aitEnumInt32,d,primitiveType(),dataPointer(),
-			getDataSizeElements());
-}
-inline void gdd::get(aitUint16* d) const {
-	if(isScalar())
-		aitConvert(aitEnumUint16,d,primitiveType(),dataAddress(),1);
-	else
-		aitConvert(aitEnumUint16,d,primitiveType(),dataPointer(),
-			getDataSizeElements());
-}
-inline void gdd::get(aitInt16* d) const {
-	if(isScalar())
-		aitConvert(aitEnumInt16,d,primitiveType(),dataAddress(),1);
-	else
-		aitConvert(aitEnumInt16,d,primitiveType(),dataPointer(),
-			getDataSizeElements());
-}
-inline void gdd::get(aitUint8* d) const {
-	if(isScalar())
-		aitConvert(aitEnumUint8,d,primitiveType(),dataAddress(),1);
-	else
-		aitConvert(aitEnumUint8,d,primitiveType(),dataPointer(),
-			getDataSizeElements());
-}
-inline void gdd::get(aitString* d) const {
-	if(isScalar())
-		aitConvert(aitEnumString,d,primitiveType(),dataAddress(),1);
-	else
-		aitConvert(aitEnumString,d,primitiveType(),dataPointer(),
-			getDataSizeElements());
-}
-inline void gdd::get(aitFixedString* d) const {
-	if(isScalar())
-		aitConvert(aitEnumFixedString,d,primitiveType(),dataAddress(),1);
-	else
-		aitConvert(aitEnumFixedString,d,primitiveType(),dataPointer(),
-			getDataSizeElements());
-}
-
-// special case for string scalar to aitInt8 array!
-inline void gdd::get(aitInt8* d) const
-{
-	if(primitiveType()==aitEnumString && dim==0)
-	{
-		aitString* str = (aitString*)dataAddress();
-		strcpy((char*)d,str->string());
-	}
-	else if(primitiveType()==aitEnumFixedString && dim==0)
-		strcpy((char*)d,data.FString->fixed_string);
-	else
-		aitConvert(aitEnumInt8,d,primitiveType(),dataPointer(),
-			getDataSizeElements());
 }
 
 // ------------------get(scalar) functions-----------------

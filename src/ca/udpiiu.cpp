@@ -170,7 +170,7 @@ udpiiu::udpiiu ( epicsTimerQueueActive & timerQueue, callbackMutex & cbMutex, ca
  */
 udpiiu::~udpiiu ()
 {
-    bool closeCompleted = false;
+    this->shutdown ();
 
     static limboiiu limboIIU;
     while ( nciu * pChan = this->channelList.get () ) {
@@ -178,26 +178,31 @@ udpiiu::~udpiiu ()
         pChan->disconnect ( limboIIU );
     }
 
-    this->shutdownCmd = true;
-
-    this->wakeupMsg ();
-
-    // wait for recv threads to exit
-    static const double shutdownDelay = 15.0;
-    while ( ! this->recvThread.exitWait ( shutdownDelay ) ) {
-        // this knocks the UDP input thread out of recv ()
-        // on all os except linux
-        if ( ! closeCompleted ) {
-            socket_close ( this->sock );
-            closeCompleted = true;
-        }
-        fprintf ( stderr, "cac: timing out waiting for UDP thread shutdown\n" );
-    }
- 
     ellFree ( & this->dest );
     
-    if ( ! closeCompleted ) {
-        socket_close ( this->sock );
+    socket_close ( this->sock );
+}
+
+void udpiiu::shutdown ()
+{
+    if ( ! this->recvThread.exitWait ( 0.0 ) ) {
+        unsigned tries = 0u;
+
+        this->shutdownCmd = true;
+
+        this->wakeupMsg ();
+
+        // wait for recv threads to exit
+        double shutdownDelay = 1.0;
+        while ( ! this->recvThread.exitWait ( shutdownDelay ) ) {
+            this->wakeupMsg ();
+            if ( shutdownDelay < 16.0 ) {
+                shutdownDelay += shutdownDelay;
+            }
+            if ( ++tries > 3 ) {
+                fprintf ( stderr, "cac: timing out waiting for UDP thread shutdown\n" );
+            }
+        }
     }
 }
 

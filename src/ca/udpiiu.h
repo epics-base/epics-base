@@ -90,6 +90,7 @@ public:
     unsigned channelCount ();
     class tcpiiu * uninstallChanAndReturnDestroyPtr ( epicsGuard < cacMutex > &, nciu & );
     bool pushDatagramMsg ( const caHdr &hdr, const void *pExt, ca_uint16_t extsize);
+    void shutdown ();
 
     // exceptions
     class noSocket {};

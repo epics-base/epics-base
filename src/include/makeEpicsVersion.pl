@@ -18,6 +18,7 @@ open VARS, $ARGV[0] or die "Cannot get variables from $ARGV[0]";
 
 while (<VARS>)
 {
+	s/\s+$//;  # remove trailing white space and carriage return
 	if (/EPICS_VERSION=(.*)/)	{ $ver = $1; }
 	if (/EPICS_REVISION=(.*)/)	{ $rev = $1; }
 	if (/EPICS_MODIFICATION=(.*)/)	{ $mod = $1; }

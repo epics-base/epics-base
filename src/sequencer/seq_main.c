@@ -52,6 +52,8 @@
 ***************************************************************************/
 /*#define	DEBUG	1*/
 
+#include 	<string.h>
+
 #include	"seqCom.h"
 #include	"seq.h"
 #include	"taskLib.h"
@@ -164,7 +166,7 @@ long			stack_size;	/* optional stack size (bytes) */
 	pValue = seqMacValGet(pSP->pMacros, "stack");
 	if (pValue != NULL && strlen(pValue) > 0)
 	{
-		sscanf(pValue, "%d", &stack_size);
+		sscanf(pValue, "%ld", &stack_size);
 	}
 	if (stack_size < SPAWN_STACK_SIZE/2)
 		stack_size = SPAWN_STACK_SIZE/2;
@@ -185,7 +187,7 @@ long			stack_size;	/* optional stack size (bytes) */
 	pValue = seqMacValGet(pSP->pMacros, "priority");
 	if (pValue != NULL && strlen(pValue) > 0)
 	{
-		sscanf(pValue, "%d", &(pSP->taskPriority));
+		sscanf(pValue, "%ld", &(pSP->taskPriority));
 	}
 	if (pSP->taskPriority < SPAWN_PRIORITY)
 		pSP->taskPriority = SPAWN_PRIORITY;
@@ -462,40 +464,64 @@ LOCAL	struct typeMap {
 	short	size;
 	short	offset;
 } typeMap[] = {
+	{
 	"char",   DBR_CHAR,   DBR_TIME_CHAR,
-	sizeof (char),   OFFSET(struct dbr_time_char,   value),
+	sizeof (char),   OFFSET(struct dbr_time_char,   value)
+	},
 
+	{
 	"short",  DBR_SHORT,  DBR_TIME_SHORT,
-	sizeof (short),  OFFSET(struct dbr_time_short,  value),
+	sizeof (short),  OFFSET(struct dbr_time_short,  value)
+	},
 
+	{
 	"int",    DBR_LONG,   DBR_TIME_LONG,
-	sizeof (long),   OFFSET(struct dbr_time_long,   value),
+	sizeof (long),   OFFSET(struct dbr_time_long,   value)
+	},
 
+	{
 	"long",   DBR_LONG,   DBR_TIME_LONG,
-	sizeof (long),   OFFSET(struct dbr_time_long,   value),
+	sizeof (long),   OFFSET(struct dbr_time_long,   value)
+	},
 
+	{
 	"unsigned char",   DBR_CHAR,   DBR_TIME_CHAR,
-	sizeof (char),   OFFSET(struct dbr_time_char,   value),
+	sizeof (char),   OFFSET(struct dbr_time_char,   value)
+	},
 
+	{
 	"unsigned short",  DBR_SHORT,  DBR_TIME_SHORT,
-	sizeof (short),  OFFSET(struct dbr_time_short,  value),
+	sizeof (short),  OFFSET(struct dbr_time_short,  value)
+	},
 
+	{
 	"unsigned int",    DBR_LONG,   DBR_TIME_LONG,
-	sizeof (long),   OFFSET(struct dbr_time_long,   value),
+	sizeof (long),   OFFSET(struct dbr_time_long,   value)
+	},
 
+	{
 	"unsigned long",   DBR_LONG,   DBR_TIME_LONG,
-	sizeof (long),   OFFSET(struct dbr_time_long,   value),
+	sizeof (long),   OFFSET(struct dbr_time_long,   value)
+	},
 
+	{
 	"float",  DBR_FLOAT,  DBR_TIME_FLOAT,
-	sizeof (float),  OFFSET(struct dbr_time_float,  value),
+	sizeof (float),  OFFSET(struct dbr_time_float,  value)
+	},
 
+	{
 	"double", DBR_DOUBLE, DBR_TIME_DOUBLE,
-	sizeof (double), OFFSET(struct dbr_time_double, value),
+	sizeof (double), OFFSET(struct dbr_time_double, value)
+	},
 
+	{
 	"string", DBR_STRING, DBR_TIME_STRING,
-	MAX_STRING_SIZE, OFFSET(struct dbr_time_string, value[0]),
+	MAX_STRING_SIZE, OFFSET(struct dbr_time_string, value[0])
+	},
 
+	{
 	0, 0, 0, 0, 0
+	}
 };
 
 LOCAL VOID selectDBtype(pUserType, pGetType, pPutType, pSize, pOffset)

@@ -24,7 +24,7 @@
 
 #include "shareLib.h"
 
-typedef char                aitInt8;
+typedef signed char         aitInt8;
 typedef unsigned char       aitUint8;
 typedef short               aitInt16;
 typedef unsigned short      aitUint16;

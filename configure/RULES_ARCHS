@@ -37,10 +37,10 @@ $(buildDirs) :
 # special clean rule
 #
 clean ::
-	$(RMDIR) $(addsuffix *,$(addprefix O.,$(BUILD_ARCHS)))
+	$(RMDIR) $(addprefix O.,$(BUILD_ARCHS))
 
 clean$(DIVIDER)% :: 
-	$(RMDIR) O.$**
+	$(RMDIR) O.$*
 
 .PHONY : $(buildActionTargets)
 .PHONY : $(buildActionArchTargets)

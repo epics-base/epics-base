@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.24  1999/05/07 20:01:00  jhill
+// fixed missing const
+//
 // Revision 1.23  1999/05/03 17:33:01  jhill
 // derive from gddDestructor so that same form of new and delete are used
 //
@@ -213,7 +216,7 @@ static gdd* mapStringToGdd(void* v,aitIndex count) {
 static int mapGddToString(void* vd, aitIndex count, const gdd& dd) {
 	aitFixedString* db = (aitFixedString*)vd;
 	aitIndex sz = dd.getDataSizeElements();
-	void* v=dd.dataVoid();
+	const void* v = dd.dataVoid();
 	int status;
 
 	if (count<=sz) {
@@ -254,7 +257,7 @@ static gdd* mapShortToGdd(void* v,aitIndex count) {
 static int mapGddToShort(void* vd, aitIndex count, const gdd &dd) {
 	dbr_short_t* sv = (dbr_short_t*)vd;
     aitIndex sz = dd.getDataSizeElements();
-	void* v=dd.dataVoid();
+	const void * v=dd.dataVoid();
 	int status;
 
 	if (count==sz) {
@@ -295,7 +298,7 @@ static gdd* mapFloatToGdd(void* v,aitIndex count) {
 static int mapGddToFloat(void* vd, aitIndex count, const gdd& dd) {
 	dbr_float_t* sv = (dbr_float_t*)vd;
     aitIndex sz=dd.getDataSizeElements();
-	void* v=dd.dataVoid();
+	const void * v = dd.dataVoid();
 	int status;
 
 	if (count==sz) {
@@ -336,7 +339,7 @@ static gdd* mapEnumToGdd(void* v,aitIndex count) {
 static int mapGddToEnum(void* vd, aitIndex count, const gdd& dd) {
 	dbr_enum_t* sv = (dbr_enum_t*)vd;
     aitIndex sz=dd.getDataSizeElements();
-	void* v=dd.dataVoid();
+	const void* v = dd.dataVoid();
 	int status;
 
 	if (count==sz) {
@@ -377,7 +380,7 @@ static gdd* mapCharToGdd(void* v,aitIndex count) {
 static int mapGddToChar(void* vd, aitIndex count, const gdd& dd) {
 	dbr_char_t* sv = (dbr_char_t*)vd;
     aitIndex sz=dd.getDataSizeElements();
-	void* v=dd.dataVoid();
+	const void* v = dd.dataVoid();
 	int status;
 
 	if (count==sz) {
@@ -418,7 +421,7 @@ static gdd* mapLongToGdd(void* v,aitIndex count) {
 static int mapGddToLong(void* vd, aitIndex count, const gdd& dd) {
 	dbr_long_t* sv = (dbr_long_t*)vd;
     aitIndex sz=dd.getDataSizeElements();
-	void* v=dd.dataVoid();
+	const void* v = dd.dataVoid();
 	int status;
 
 	if (count==sz) {
@@ -459,7 +462,7 @@ static gdd* mapDoubleToGdd(void* v,aitIndex count) {
 static int mapGddToDouble(void* vd, aitIndex count, const gdd& dd) {
 	dbr_double_t* sv = (dbr_double_t*)vd;
     aitIndex sz=dd.getDataSizeElements();
-	void* v=dd.dataVoid();
+	const void* v = dd.dataVoid();
 	int status;
 
 	if (count==sz) {
@@ -634,7 +637,7 @@ static gdd* mapTimeStringToGdd(void* v,aitIndex count)
 	}
 
 	dd->setStatSevr(db->status,db->severity);
-	dd->setTimeStamp((aitTimeStamp*)&db->stamp);
+	dd->setTimeStamp(&db->stamp);
 	return dd;
 }
 
@@ -644,7 +647,7 @@ static int mapTimeGddToString(void* v, aitIndex count, const gdd& dd)
 	aitFixedString* dbv = (aitFixedString*)db->value;
 
 	dd.getStatSevr(db->status,db->severity);
-	dd.getTimeStamp((aitTimeStamp*)&db->stamp);
+	dd.getTimeStamp(&db->stamp);
 	return mapGddToString(dbv, count, dd);
 }
 
@@ -653,7 +656,7 @@ static gdd* mapTimeShortToGdd(void* v,aitIndex count)
 	dbr_time_short* dbv = (dbr_time_short*)v;
 	gdd* dd=mapShortToGdd(&dbv->value,count);
 	dd->setStatSevr(dbv->status,dbv->severity);
-	dd->setTimeStamp((aitTimeStamp*)&dbv->stamp);
+	dd->setTimeStamp(&dbv->stamp);
 	return dd;
 }
 
@@ -661,7 +664,7 @@ static int mapTimeGddToShort(void* v, aitIndex count, const gdd& dd)
 {
 	dbr_time_short* dbv = (dbr_time_short*)v;
 	dd.getStatSevr(dbv->status,dbv->severity);
-	dd.getTimeStamp((aitTimeStamp*)&dbv->stamp);
+	dd.getTimeStamp(&dbv->stamp);
 	dbv->RISC_pad = 0; // shut up purify
 	return mapGddToShort(&dbv->value,count,dd);
 }
@@ -671,7 +674,7 @@ static gdd* mapTimeFloatToGdd(void* v,aitIndex count)
 	dbr_time_float* dbv = (dbr_time_float*)v;
 	gdd* dd=mapFloatToGdd(&dbv->value,count);
 	dd->setStatSevr(dbv->status,dbv->severity);
-	dd->setTimeStamp((aitTimeStamp*)&dbv->stamp);
+	dd->setTimeStamp(&dbv->stamp);
 	return dd;
 }
 
@@ -679,7 +682,7 @@ static int mapTimeGddToFloat(void* v, aitIndex count, const gdd& dd)
 {
 	dbr_time_float* dbv = (dbr_time_float*)v;
 	dd.getStatSevr(dbv->status,dbv->severity);
-	dd.getTimeStamp((aitTimeStamp*)&dbv->stamp);
+	dd.getTimeStamp(&dbv->stamp);
 	return mapGddToFloat(&dbv->value,count,dd);
 }
 
@@ -688,7 +691,7 @@ static gdd* mapTimeEnumToGdd(void* v,aitIndex count)
 	dbr_time_enum* dbv = (dbr_time_enum*)v;
 	gdd* dd=mapEnumToGdd(&dbv->value,count);
 	dd->setStatSevr(dbv->status,dbv->severity);
-	dd->setTimeStamp((aitTimeStamp*)&dbv->stamp);
+	dd->setTimeStamp(&dbv->stamp);
 	return dd;
 }
 
@@ -696,7 +699,7 @@ static int mapTimeGddToEnum(void* v, aitIndex count, const gdd& dd)
 {
 	dbr_time_enum* dbv = (dbr_time_enum*)v;
 	dd.getStatSevr(dbv->status,dbv->severity);
-	dd.getTimeStamp((aitTimeStamp*)&dbv->stamp);
+	dd.getTimeStamp(&dbv->stamp);
 	dbv->RISC_pad = 0; // shut up purify
 	return mapGddToEnum(&dbv->value,count,dd);
 }
@@ -706,7 +709,7 @@ static gdd* mapTimeCharToGdd(void* v,aitIndex count)
 	dbr_time_char* dbv = (dbr_time_char*)v;
 	gdd* dd=mapCharToGdd(&dbv->value,count);
 	dd->setStatSevr(dbv->status,dbv->severity);
-	dd->setTimeStamp((aitTimeStamp*)&dbv->stamp);
+	dd->setTimeStamp(&dbv->stamp);
 	return dd;
 }
 
@@ -714,7 +717,7 @@ static int mapTimeGddToChar(void* v, aitIndex count, const gdd& dd)
 {
 	dbr_time_char* dbv = (dbr_time_char*)v;
 	dd.getStatSevr(dbv->status,dbv->severity);
-	dd.getTimeStamp((aitTimeStamp*)&dbv->stamp);
+	dd.getTimeStamp(&dbv->stamp);
 	dbv->RISC_pad0 = 0; // shut up purify
 	dbv->RISC_pad1 = '\0'; // shut up purify
 	return mapGddToChar(&dbv->value,count,dd);
@@ -725,7 +728,7 @@ static gdd* mapTimeLongToGdd(void* v,aitIndex count)
 	dbr_time_long* dbv = (dbr_time_long*)v;
 	gdd* dd=mapLongToGdd(&dbv->value,count);
 	dd->setStatSevr(dbv->status,dbv->severity);
-	dd->setTimeStamp((aitTimeStamp*)&dbv->stamp);
+	dd->setTimeStamp(&dbv->stamp);
 	return dd;
 }
 
@@ -733,7 +736,7 @@ static int mapTimeGddToLong(void* v, aitIndex count, const gdd& dd)
 {
 	dbr_time_long* dbv = (dbr_time_long*)v;
 	dd.getStatSevr(dbv->status,dbv->severity);
-	dd.getTimeStamp((aitTimeStamp*)&dbv->stamp);
+	dd.getTimeStamp(&dbv->stamp);
 	return mapGddToLong(&dbv->value,count,dd);
 }
 
@@ -742,7 +745,7 @@ static gdd* mapTimeDoubleToGdd(void* v,aitIndex count)
 	dbr_time_double* dbv = (dbr_time_double*)v;
 	gdd* dd=mapDoubleToGdd(&dbv->value,count);
 	dd->setStatSevr(dbv->status,dbv->severity);
-	dd->setTimeStamp((aitTimeStamp*)&dbv->stamp);
+	dd->setTimeStamp(&dbv->stamp);
 	return dd;
 }
 
@@ -750,7 +753,7 @@ static int mapTimeGddToDouble(void* v, aitIndex count, const gdd& dd)
 {
 	dbr_time_double* dbv = (dbr_time_double*)v;
 	dd.getStatSevr(dbv->status,dbv->severity);
-	dd.getTimeStamp((aitTimeStamp*)&dbv->stamp);
+	dd.getTimeStamp(&dbv->stamp);
 	dbv->RISC_pad = 0; // shut up purify
 	return mapGddToDouble(&dbv->value,count,dd);
 }

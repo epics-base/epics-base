@@ -3,6 +3,8 @@
 #
 #  This file is maintained by the EPICS community.
 
+include $(EPICS_BASE)/config/CONFIG.unix
+
 # BUILD_TYPE
 #   Currently either Vx or Host
 BUILD_TYPE = Host
@@ -23,7 +25,7 @@ AR = ar
 _AR = $(AR) $(ARFLAGS)
 G++_AR = $(_AR)
 CCC_AR = $(CCC) -xar -o
-ARCMD = $($(CPLUSPLUS)_AR)
+ARCMD = $($(CPLUSPLUS)_AR) $@
 
 RANLIB =
 YACC = $(EYACC)
@@ -49,6 +51,7 @@ ACC_TRAD_INVOKE_W_NO = $(ACC) -Xs -w
 ACC_TRAD_INVOKE_W_YES = $(ACC) -Xs
 ACC_LD_FLAGS = 
 ACC_LD_LIBS =
+
 SUNCC_TRAD_INVOKE_W_NO = $(ACC_TRAD_INVOKE_W_NO)
 SUNCC_TRAD_INVOKE_W_YES = $(ACC_TRAD_INVOKE_W_YES)
 GCC_ANSI_INVOKE_W_NO = $(GCC) -ansi -w
@@ -166,3 +169,4 @@ LINK.cc = $(CXX) -o $@ $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS)
 
 DEPENDS_RULE.c = -$(COMPILE.c) -xM $(SRCS.c) > .DEPENDS
 DEPENDS_RULE.cc = -$(COMPILE.cc) -xM $(SRCS.cc) >> .DEPENDS
+

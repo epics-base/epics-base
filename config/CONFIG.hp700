@@ -2,6 +2,8 @@
 #
 #  This file is maintained by the EPICS community.
 
+include $(EPICS_BASE)/config/CONFIG.unix
+
 # BUILD_TYPE
 #   Currently either Vx or Unix
 BUILD_TYPE = Host
@@ -17,7 +19,7 @@ HPACC = cc -Aa
 HPCC = cc -Ac
 TRADCC = cc
 AR = ar 
-ARCMD = $(AR) $(ARFLAGS)
+ARCMD = $(AR) $(ARFLAGS) $@
 
 RANLIB = ranlib
 YACC = $(EYACC)

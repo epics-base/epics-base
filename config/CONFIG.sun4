@@ -3,6 +3,8 @@
 #
 #  This file is maintained by the EPICS community.
 
+include $(EPICS_BASE)/config/CONFIG.unix
+
 # BUILD_TYPE
 #   Currently either Vx or Host
 
@@ -44,9 +46,9 @@ OBJ=.o
 ARFLAGS = r
 AR = ar
 _AR = $(AR) $(ARFLAGS)
-G++_AR = $(_AR) 
-CCC_AR = $(CCC) -xar -o 
-ARCMD = $($(CPLUSPLUS)_AR)
+G++_AR = $(_AR)
+CCC_AR = $(CCC) -xar -o
+ARCMD = $($(CPLUSPLUS)_AR) $@
 
 ACC_ANSI_INVOKE_W_NO = $(ACC) -Xa -w
 ACC_ANSI_INVOKE_W_YES = $(ACC) -Xa

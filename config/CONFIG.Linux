@@ -3,6 +3,8 @@
 #
 #  This file is maintained by the EPICS community.
 
+include $(EPICS_BASE)/config/CONFIG.unix
+
 # Compiler and utility invocation (supply path to compiler here)
 #   (with warning flags built in)
 #  Paths to compilers
@@ -19,7 +21,7 @@ ACC = acc
 AR = ar 
 _AR = $(AR) $(ARFLAGS)
 ARFLAGS = r
-ARCMD = $(AR) $(ARFLAGS)
+ARCMD = $(AR) $(ARFLAGS) $@
 
 RANLIB = ranlib
 RANLIBFLAGS = -t

@@ -27,7 +27,7 @@ OBJ=.o
 AR = ar
 _AR = $(AR) $(ARFLAGS)
 G++_AR = $(_AR)
-ARCMD = $($(CPLUSPLUS)_AR)
+ARCMD = $($(CPLUSPLUS)_AR) $@
 
 RANLIB = ranlib
 YACC = $(EYACC)

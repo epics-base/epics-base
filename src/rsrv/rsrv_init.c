@@ -33,7 +33,6 @@
 static char *sccsId = "@(#) $Id$";
 
 #include <vxWorks.h>
-#include "ellLib.h"
 #include <taskLib.h>
 #include <types.h>
 #include <socket.h>
@@ -41,14 +40,15 @@ static char *sccsId = "@(#) $Id$";
 #include <errnoLib.h>
 #include <usrLib.h>
 
+#include "ellLib.h"
 #include "dbDefs.h"
 #include "db_access.h"
 #include "task_params.h"
 #include "freeList.h"
 #include "server.h"
 
-#define DELETE_TASK(TID)\
-if(taskIdVerify(TID)==OK)taskDelete(TID);
+#define DELETE_TASK(NAME)\
+if(taskNameToId(NAME)!=ERROR)taskDelete(taskNameToId(NAME));
 
 
 /*
@@ -67,9 +67,9 @@ int rsrv_init()
 	prsrv_cast_client = NULL;
 	pCaBucket = NULL;
 
-	DELETE_TASK(taskNameToId(CAST_SRVR_NAME));
-	DELETE_TASK(taskNameToId(REQ_SRVR_NAME));
-	DELETE_TASK(taskNameToId(CA_ONLINE_NAME));
+	DELETE_TASK(CAST_SRVR_NAME);
+	DELETE_TASK(REQ_SRVR_NAME);
+	DELETE_TASK(CA_ONLINE_NAME);
 
 	taskSpawn(REQ_SRVR_NAME,
 		  REQ_SRVR_PRI,

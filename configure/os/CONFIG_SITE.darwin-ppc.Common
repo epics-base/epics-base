@@ -7,11 +7,6 @@
 #-------------------------------------------------------
  
 #
-# Where the fink packages are installed
-#
-FINK_DIR=/sw
-
-#
 # Shared libraries work fine on Darwin
 #
 SHARED_LIBRARIES=YES

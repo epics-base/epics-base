@@ -28,20 +28,30 @@ OP_SYS_CFLAGS += -fno-common
 CPPSNCFLAGS += -no-cpp-precomp
 
 #
-# Need to get some fink-installed packages
+# The following two definitions enable the use of DarwinPorts packages.
 #
-OP_SYS_CPPFLAGS += -I$(FINK_DIR)/include
-OP_SYS_LDFLAGS += -L$(FINK_DIR)/lib
+OP_SYS_CPPFLAGS += -I/opt/local/include
+OP_SYS_LDFLAGS += -L/opt/local/lib
+
+#
+# The following two definitions enable the use of Fink packages.
+#
+OP_SYS_CPPFLAGS += -I/sw/include
+OP_SYS_LDFLAGS += -L/sw/lib
+
+#
+# Libraries for command-line editing.
+#
+LDLIBS_LIBTECLA = -ltecla_r -lncurses
+LDLIBS_READLINE = -lreadline
 
 #
 # Command-line input support
 #
-# Install the fink libtecla1 package and uncomment the
+# Install the DarwinPorts or Fink libtecla1 package and uncomment the
 # following line to use libtecla command-line editing:
 #COMMANDLINE_LIBRARY=LIBTECLA
-# or install the fink readline package and uncomment the
+# or install the DarwinPorts or Fink readline package and uncomment the
 # following line to use GNU readline command-line editing:
 #COMMANDLINE_LIBRARY=READLINE
 
-LDLIBS_LIBTECLA = -ltecla_r -lncurses
-LDLIBS_READLINE = -lreadline

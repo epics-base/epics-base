@@ -50,7 +50,8 @@ template <class T>
 class tsDLNode {
 public:
     tsDLNode ();
-    tsDLNode <T> operator = ( const tsDLNode<T> & ) const;
+    tsDLNode ( const tsDLNode<T> & );
+    const tsDLNode <T> & operator = ( const tsDLNode<T> & );
 private:
     T *pNext;
     T *pPrev;
@@ -60,7 +61,6 @@ private:
     friend class tsDLIter<T>; // deprecated
     friend class tsDLFwdIter<T>; // deprecated
     friend class tsDLBwdIter<T>; // deprecated
-    tsDLNode ( const tsDLNode<T> & );
 };
 
 //
@@ -163,6 +163,10 @@ private:
 template <class T>
 inline tsDLNode<T>::tsDLNode() : pNext(0), pPrev(0) {}
 
+template <class T>
+inline tsDLNode<T>::tsDLNode ( const tsDLNode<T> & ) :  
+    pNext (0), pPrev(0) {}
+
 //
 // tsDLNode<T>::operator = ()
 //
@@ -170,9 +174,9 @@ inline tsDLNode<T>::tsDLNode() : pNext(0), pPrev(0) {}
 // do _not_ change the node pointers
 //
 template <class T>
-inline tsDLNode<T> tsDLNode<T>::operator = (const tsDLNode<T> &) const 
+inline const tsDLNode<T> & tsDLNode<T>::operator = ( const tsDLNode<T> & ) 
 { 
-    return tsDLNode<T>(); 
+    return * this; 
 }
 
 //////////////////////////////////////

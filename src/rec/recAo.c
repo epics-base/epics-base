@@ -503,7 +503,7 @@ static void convert(pao,pvalue)
         } else if (pao->linr == 1){
               if (pao->eslo == 0.0) pao->rval = 0;
               else {
-                   pao->rval = (value - pao->egul) / pao->eslo;
+                   pao->rval = (value - pao->egul) / pao->eslo + .5;
                    pao->rval -= pao->roff;
               }
         }else{

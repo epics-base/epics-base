@@ -8,7 +8,6 @@
 
 # ORNL SNS overrides for cross compilers
 #VX_DIR_YES = /opt/tornado20/
-#VX_CONFIG_DIR_YES = $(VX_DIR)/target/config
 #VX_INCLUDE_YES = /usr/local/crossgcc/m68k/m68k-wrs-vxworks/sys-include
 #VX_GNU_YES = /usr/local/crossgcc/m68k/
 #VX_GNU_BIN_YES = $(VX_GNU)/bin

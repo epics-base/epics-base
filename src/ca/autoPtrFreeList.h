@@ -39,10 +39,10 @@
 #   define epicsExportSharedSymbols
 #endif
 
-template < class T >
+template < class T, unsigned N = 0x400, class MUTEX = epicsMutex >
 class autoPtrFreeList {
 public:
-    autoPtrFreeList ( tsFreeList < T > &, T * );
+    autoPtrFreeList ( tsFreeList < T, N, MUTEX > &, T * );
     ~autoPtrFreeList ();
     T & operator * () const;
     T * operator -> () const;
@@ -50,18 +50,19 @@ public:
     T * release ();
 private:
     T * p;
-    tsFreeList < T > & freeList;
+    tsFreeList < T, N, MUTEX > & freeList;
     // not implemented
     autoPtrFreeList & operator = ( const autoPtrFreeList & );
-    autoPtrFreeList ( const autoPtrFreeList<T> & );
+    autoPtrFreeList ( const autoPtrFreeList < T, N, MUTEX > & );
 };
 
-template < class T >
-inline autoPtrFreeList<T>::autoPtrFreeList ( tsFreeList < T > & freeListIn, T * pIn ) :
+template < class T, unsigned N, class MUTEX >
+inline autoPtrFreeList < T, N, MUTEX >::autoPtrFreeList ( 
+    tsFreeList < T, N, MUTEX > & freeListIn, T * pIn ) :
     p ( pIn ), freeList ( freeListIn ) {}
 
-template < class T >
-inline autoPtrFreeList<T>::~autoPtrFreeList ()
+template < class T, unsigned N, class MUTEX >
+inline autoPtrFreeList < T, N, MUTEX >::~autoPtrFreeList ()
 {
     if ( this->p ) {
         this->p->~T();
@@ -75,26 +76,26 @@ inline autoPtrFreeList<T>::~autoPtrFreeList ()
     }
 }
 
-template < class T >
-inline T & autoPtrFreeList<T>::operator * () const
+template < class T, unsigned N, class MUTEX >
+inline T & autoPtrFreeList < T, N, MUTEX >::operator * () const
 {
     return * this->p;
 }
 
-template < class T >
-inline T * autoPtrFreeList<T>::operator -> () const
+template < class T, unsigned N, class MUTEX >
+inline T * autoPtrFreeList < T, N, MUTEX >::operator -> () const
 {
     return this->p;
 }
 
-template < class T >
-inline T * autoPtrFreeList<T>::get () const
+template < class T, unsigned N, class MUTEX >
+inline T * autoPtrFreeList < T, N, MUTEX >::get () const
 {
     return this->p;
 }
 
-template < class T >
-inline T * autoPtrFreeList<T>::release ()
+template < class T, unsigned N, class MUTEX >
+inline T * autoPtrFreeList < T, N, MUTEX >::release ()
 {
     T *pTmp = this->p;
     this->p = 0;

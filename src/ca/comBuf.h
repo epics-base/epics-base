@@ -223,11 +223,9 @@ inline unsigned comBuf::unoccupiedElem ( unsigned elemSize, unsigned nElem )
 {
     unsigned avail = this->unoccupiedBytes ();
     if ( elemSize * nElem > avail ) {
-        return avail / elemSize;
+       return avail / elemSize;
     }
-    else {
-        return nElem;
-    }
+    return nElem;
 }
 
 inline unsigned comBuf::copyIn ( const epicsInt8 *pValue, unsigned nElem )
@@ -333,9 +331,7 @@ inline unsigned comBuf::occupiedElem ( unsigned elemSize, unsigned nElem )
     if ( elemSize * nElem > avail ) {
         return avail / elemSize;
     }
-    else {
-        return nElem;
-    }
+    return nElem;
 }
 
 inline epicsUInt8 comBuf::popUInt8 ()
@@ -343,17 +339,16 @@ inline epicsUInt8 comBuf::popUInt8 ()
     if ( this->occupiedBytes () ) {
         return this->buf[ this->nextReadIndex++ ];
     }
-    else {
-        throw insufficentBytesAvailable ();
-    }
+    throw insufficentBytesAvailable ();
+    return 0;                                  // Make compiler happy
 }
 
 inline comBuf::statusPopUInt16 comBuf::popUInt16 ()
 {
     statusPopUInt16 tmp;
     if ( this->occupiedBytes () >= 2u ) {
-        tmp.val  = this->buf[ this->nextReadIndex++ ] << 8u;
-        tmp.val |= this->buf[ this->nextReadIndex++ ] << 0u;
+        tmp.val  = static_cast < epicsUInt16 > ( this->buf[ this->nextReadIndex++ ] << 8u );
+        tmp.val |= static_cast < epicsUInt16 > ( this->buf[ this->nextReadIndex++ ] << 0u );
         tmp.success = true;
     }
     else {

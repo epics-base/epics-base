@@ -31,7 +31,7 @@ int epicsTimeTest (void)
 
         epicsTime end = epicsTime::getCurrent();
 
-        double diff = end - begin;
+        const double diff = end - begin;
 
         if (iTimes == 0) {
             printf ("Time per call to epicsTime::getCurrent() "
@@ -99,7 +99,7 @@ int epicsTimeTest (void)
             printf ("#%3d: Failed begin!=end\n",iTimes);
             errors += 1;
         }
-	double diff2 = end - begin;
+	const double diff2 = end - begin;
         if (!(diff2==diff)) {
             printf ("#%3d: Failed end-begin==diff by %g\n",
                     iTimes, fabs(diff2-diff));

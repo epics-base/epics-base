@@ -12,6 +12,9 @@
 #         install because the release.% syntax is illegal.
 #
 # $Log$
+# Revision 1.26  1996/01/25 21:37:09  mrk
+# uninstall base/man
+#
 # Revision 1.25  1996/01/25 21:29:42  mrk
 # base/rec=>base/db base/include now installed
 #
@@ -64,39 +67,29 @@ include $(EPICS)/config/CONFIG
 all: install
 
 build:
-	@(for ARCH in ${BUILD_ARCHS};					\
-		do							\
-			ARCH_TYPE=$$ARCH				\
-			${MAKE} ${MFLAGS} $@.$$ARCH;			\
-		done)
+	@(for ARCH in ${BUILD_ARCHS}; do    \
+		${MAKE} $@.$${ARCH}; \
+	done)
 
 install:
-	@(for ARCH in ${BUILD_ARCHS};					\
-		do							\
-			ARCH_TYPE=$$ARCH				\
-			${MAKE} ${MFLAGS} $@.$$ARCH;			\
-		done)
+	@(for ARCH in ${BUILD_ARCHS}; do    \
+		${MAKE} $@.$${ARCH}; \
+	done)
 
 depends:
-	@(for ARCH in ${BUILD_ARCHS};					\
-		do							\
-			ARCH_TYPE=$$ARCH				\
-			${MAKE} ${MFLAGS} $@.$$ARCH;			\
-		done)
+	@(for ARCH in ${BUILD_ARCHS}; do    \
+		${MAKE} $@.$${ARCH}; \
+	done)
 
 clean:
-	@(for ARCH in ${BUILD_ARCHS};					\
-		do							\
-			ARCH_TYPE=$$ARCH				\
-			${MAKE} ${MFLAGS} $@.$$ARCH;			\
-		done)
+	@(for ARCH in ${BUILD_ARCHS}; do    \
+		${MAKE} $@.$${ARCH}; \
+	done)
 
 uninstall:
-	@(for ARCH in ${BUILD_ARCHS};					\
-		do							\
-			ARCH_TYPE=$$ARCH				\
-			${MAKE} ${MFLAGS} $@.$$ARCH;			\
-		done)
+	@(for ARCH in ${BUILD_ARCHS}; do    \
+		${MAKE} $@.$${ARCH}; \
+	done)
 
 release: 
 	@echo TOP: Creating Release...
@@ -151,4 +144,6 @@ uninstall.%:
 clean.%:
 	@echo "TOP: Cleaning $* "
 	@find src -type d -name "O.$*" -prune -exec rm -rf {} \;
+
+
 

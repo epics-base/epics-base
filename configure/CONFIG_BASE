@@ -96,7 +96,7 @@ LEX   = $(ELEX)
 ifndef ADL2DL
 # Tool from R3.14 extensions bin, R3.13 extensions bin, or user path
 ADL2DL = $(firstword $(wildcard $(EPICS_EXTENSIONS_HOST_BIN)/adl2dl \
-         $(EPICS_EXTENSIONS)/bin/$(HOST_OS_CLASS)/adl2dl) adl2dl)
+         $(EPICS_EXTENSIONS)/bin/$(HOST_ARCH)/adl2dl) adl2dl)
 endif
 
 # sch2edif compiler and flags
@@ -110,7 +110,7 @@ SCH2EDIF_FLAGS =
 ifndef E2DB
 # Tool from R3.14 extensions bin, R3.13 extensions bin, or user path
 E2DB = $(firstword $(wildcard $(EPICS_EXTENSIONS_HOST_BIN)/e2db \
-         $(EPICS_EXTENSIONS)/bin/$(HOST_OS_CLASS)/e2db) e2db)
+         $(EPICS_EXTENSIONS)/bin/$(HOST_ARCH)/e2db) e2db)
 endif
 E2DB_SYSFLAGS = -ate -d $(EPICS_EXTENSIONS)/templates/capfast/edb.def
 E2DB_FLAGS =
@@ -119,14 +119,14 @@ E2DB_FLAGS =
 ifndef DBST
 # Tool from R3.14 extensions bin, R3.13 extensions bin, or user path
 DBST = $(firstword $(wildcard $(EPICS_EXTENSIONS_HOST_BIN)/dbst \
-         $(EPICS_EXTENSIONS)/bin/$(HOST_OS_CLASS)/dbst) dbst)
+         $(EPICS_EXTENSIONS)/bin/$(HOST_ARCH)/dbst) dbst)
 endif
 
 #msi
 ifndef MSI
 # Tool from R3.14 extensions bin, R3.13 extensions bin, or user path
 MSI = $(firstword $(wildcard $(EPICS_EXTENSIONS_HOST_BIN)/msi$(HOSTEXE) \
-         $(EPICS_EXTENSIONS)/bin/$(HOST_OS_CLASS)/msi$(HOSTEXE)) msi$(HOSTEXE))
+         $(EPICS_EXTENSIONS)/bin/$(HOST_ARCH)/msi$(HOSTEXE)) msi$(HOSTEXE))
 endif
 
 

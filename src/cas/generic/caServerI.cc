@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.13  1998/10/27 18:28:19  jhill
+ * fixed warnings
+ *
  * Revision 1.12  1998/10/23 00:28:19  jhill
  * fixed HP-UX warnings
  *
@@ -74,7 +77,14 @@
 #include "server.h"
 #include "casCtxIL.h" // casCtx in line func
 
-static const osiTime CAServerMaxBeaconPeriod (5.0 /* sec */);
+//
+// the maximum beacon period if EPICS_CA_BEACON_PERIOD isnt available
+//
+static const osiTime CAServerMaxBeaconPeriod (15.0 /* sec */);
+
+//
+// the initial beacon period
+//
 static const osiTime CAServerMinBeaconPeriod (1.0e-3 /* sec */);
 
 
@@ -162,9 +172,10 @@ debugLevel (0u),
 pvCountEstimate (nPV<100u?100u:nPV), 
 haveBeenInitialized (FALSE)
 {
-	caStatus	status;
-	int 	resLibStatus;
-	
+	caStatus status;
+	int resLibStatus;
+	double maxPeriod;
+
 	assert (&adapter != NULL);
 	
 	if (this->osiMutex::init ()) {
@@ -207,11 +218,23 @@ haveBeenInitialized (FALSE)
 	resLibStatus = this->uintResTable<casRes>::init
 		(this->pvCountEstimate*2u);
 	if (resLibStatus) {
-		errMessage (S_cas_noMemory, 
-			"integer resource id table init failed");
+		errMessage (S_cas_noMemory, "integer resource id table init failed");
 		return;
 	}
-	
+
+	status = envGetDoubleConfigParam (&EPICS_CA_BEACON_PERIOD, &maxPeriod);
+	if (status || maxPeriod<=0.0) {
+		this->maxBeaconInterval = CAServerMaxBeaconPeriod;
+		ca_printf (
+			"EPICS \"%s\" float fetch failed\n", EPICS_CA_BEACON_PERIOD.name);
+		ca_printf (
+			"Setting \"%s\" = %f\n", EPICS_CA_BEACON_PERIOD.name, 
+					(double) this->maxBeaconInterval);
+	}
+	else {
+		this->maxBeaconInterval = maxPeriod;
+	}
+
 	this->haveBeenInitialized = TRUE;
 	return;
 }
@@ -306,14 +329,14 @@ void caServerI::advanceBeaconPeriod()
 	//
 	// return if we are already at the plateau
 	//
-	if (this->beaconPeriod >= CAServerMaxBeaconPeriod) {
+	if (this->beaconPeriod >= this->maxBeaconInterval) {
 		return;
 	}
 
 	this->beaconPeriod += this->beaconPeriod;
 
-	if (this->beaconPeriod >= CAServerMaxBeaconPeriod) {
-		this->beaconPeriod = CAServerMaxBeaconPeriod;
+	if (this->beaconPeriod >= this->maxBeaconInterval) {
+		this->beaconPeriod = this->maxBeaconInterval;
 	}
 }
 

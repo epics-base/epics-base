@@ -29,6 +29,11 @@
  *
  * History
  * $Log$
+ * Revision 1.29  1998/10/28 23:51:01  jhill
+ * server nolonger throws exception when a poorly formed get/put call back
+ * request arrives. Instead a get/put call back response is sent which includes
+ * unsuccessful status
+ *
  * Revision 1.28  1998/10/27 18:28:20  jhill
  * fixed warnings
  *
@@ -963,6 +968,7 @@ private:
 	//casCtx				ctx;
 	tsDLList<casStrmClient>		clientList;
 	tsDLList<casIntfOS>		intfList;
+	osiTime				maxBeaconInterval;
 	osiTime 			beaconPeriod;
 	caServer			&adapter;
 	unsigned 			debugLevel;

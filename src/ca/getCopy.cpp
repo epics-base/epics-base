@@ -65,9 +65,9 @@ void getCopy::exceptionNotify ( cacChannelIO &chan,
 }
 
 void getCopy::exceptionNotify ( cacChannelIO &chan, 
-    int status, const char *pContext, unsigned type, unsigned long count )
+    int status, const char *pContext, unsigned typeIn, unsigned long countIn )
 {
-    this->cacNotify::exceptionNotify ( chan, status, pContext, type, count );
+    this->cacNotify::exceptionNotify ( chan, status, pContext, typeIn, countIn );
 }
 
 void getCopy::show ( unsigned level ) const

@@ -43,7 +43,7 @@
 
 #include "epicsVersion.h"
 #define epicsExportSharedSymbols
-#include "bsdSocketResource.h"
+#include "osiSock.h"
 
 #ifndef _WIN32
 #error This source is specific to WIN32 

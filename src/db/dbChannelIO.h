@@ -60,6 +60,8 @@ public:
         tsFreeList < dbChannelIO, 256, epicsMutexNOOP > & );
     epicsPlacementDeleteOperator (( void *, 
         tsFreeList < dbChannelIO, 256, epicsMutexNOOP > & ))
+protected:
+    ~dbChannelIO ();
 private:
     epicsMutex & mutex;
     dbContext & serviceIO;
@@ -90,7 +92,6 @@ private:
 	dbChannelIO & operator = ( const dbChannelIO & );
     void * operator new ( size_t size );
     void operator delete ( void * );
-    ~dbChannelIO ();
 };
 
 

@@ -105,6 +105,8 @@ public:
         tsFreeList < struct oldChannelNotify, 1024, epicsMutexNOOP > & );
     epicsPlacementDeleteOperator (( void * , 
         tsFreeList < struct oldChannelNotify, 1024, epicsMutexNOOP > & ))
+protected:
+    ~oldChannelNotify ();
 private:
     ca_client_context & cacCtx;
     cacChannel & io;
@@ -114,7 +116,6 @@ private:
     unsigned ioSeqNo;
     bool currentlyConnected;
     bool prevConnected;
-    ~oldChannelNotify ();
     void connectNotify ( epicsGuard < epicsMutex > & );
     void disconnectNotify ( epicsGuard < epicsMutex > & );
     void serviceShutdownNotify ();

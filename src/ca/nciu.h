@@ -142,6 +142,9 @@ public:
         epicsGuard < epicsMutex > &, epicsGuard < epicsMutex > & );
     bool connected ( epicsGuard < epicsMutex > & ) const;
 
+protected:
+    ~nciu ();
+
 private:
     tsDLList < class baseNMIU > eventq;
     caAccessRights accessRightState;
@@ -154,7 +157,6 @@ private:
     unsigned short nameLength; // channel name length
     ca_uint16_t typeCode;
     ca_uint8_t priority; 
-    ~nciu ();
     virtual void destroy (
         epicsGuard < epicsMutex > & callbackControlGuard, 
         epicsGuard < epicsMutex > & mutualExclusionGuard );

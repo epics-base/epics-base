@@ -43,7 +43,7 @@
 dbChannelIO::dbChannelIO ( 
     epicsMutex & mutexIn, cacChannelNotify & notify, 
     const dbAddr & addrIn, dbContext & serviceIO ) :
-    mutex ( mutexIn ), cacChannel ( notify ), serviceIO ( serviceIO ), 
+    cacChannel ( notify ), mutex ( mutexIn ), serviceIO ( serviceIO ), 
     addr ( addrIn )
 {
 }

@@ -137,6 +137,7 @@ BI()
     printf("Select a function:\n");     /* main menu */
     printf("  'C' to configure send message content\n");
     printf("  'D' to display transmit & receive messages\n");
+    printf("  'P' to ping all Bitbus device addresses\n");
     printf("  'S' to send & receive a message one time\n");
     printf("  'T' to do timing on messages\n");
     printf("  'R' to turn on the BB debugging flag\n");
@@ -152,6 +153,11 @@ BI()
     case 'C':
       configMsg();
       break;
+
+    case 'p':
+    case 'P':	/* ping all the bug addresses */
+       pingEm();
+       break;
 
     case 's':
     case 'S':       /* one shot: send one message */
@@ -335,6 +341,56 @@ struct dpvtBitBusHead *pdpvt;
   replyIsBack = TRUE;
   FASTUNLOCK(&msgReply);
   return(0);
+}
+static int
+pingEm()
+{
+  struct dpvtBitBusHead    pdpvt;
+  char			str[100];
+  int			inInt;
+
+  pdpvt.finishProc = bbWork;
+  pdpvt.priority = 0;
+
+  pdpvt.next = NULL;
+  pdpvt.prev = NULL;
+  pdpvt.txMsg.data = (unsigned char *)malloc(BB_MAX_DAT_LEN);
+  pdpvt.txMsg.length = 15;
+  pdpvt.txMsg.route = 0x40;
+  pdpvt.rxMsg.data = (unsigned char *)malloc(BB_MAX_DAT_LEN);
+  pdpvt.rxMsg.length = 7;
+  pdpvt.psyncSem = NULL;
+  pdpvt.rxMaxLen = BB_MAX_MSG_LENGTH;
+
+  /* build a "send ID's" message */
+
+  printf("Enter BB Link (hex) [00]: ");
+  gets(str);
+  if (sscanf(str, "%x", &inInt) == 1)
+    pdpvt.link = inInt;
+  else
+    pdpvt.link = 0;
+  
+  pdpvt.txMsg.tasks = 0;
+  pdpvt.txMsg.cmd = 3;
+  pdpvt.txMsg.node = 0;
+
+  while (pdpvt.txMsg.node < 255)
+  {
+    pdpvt.ageLimit = 10;
+    if ((*(drvBitBus.qReq))(&(pdpvt), BB_Q_HIGH) == ERROR)
+      return(ERROR);
+
+    FASTLOCK(&msgReply);	/* wait for response to return */
+    if (pdpvt.rxMsg.cmd == 0)
+    {
+      printf("response message:\n");
+      showBbMsg(&(pdpvt.rxMsg));
+    }
+    pdpvt.txMsg.node++;
+  }
+
+  return(OK);
 }
 
 /*--------------------------------------------------------------------

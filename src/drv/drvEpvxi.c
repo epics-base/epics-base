@@ -72,22 +72,22 @@
  *      .24 joh 07-12-93       	Record the task id when opening a device 
  *	.25 joh 07-21-93	Improved DC device allocation in MXI
  *				environment
- *
- * To do
- * -----
- *	.01	Should this module prevent two triggers from driving
- *		the same front panel connector at once?
- *
+ *	.26 joh 11-10-93	Now configures multiple DC devices per slot.
+ *				Blocked address devices are preallocated
+ *				where possible. Independently addressed
+ *				multiple devices per slot are allocated on 
+ *				demand.
  *
  * RM unfinished items	
  * -------------------
- *	1. does not handle multiple dc in one slot
- *	2. does not handle blocked address devices
- *	3. Assigning the cmdr/serv hierarchy from within a DC res man
+ *	1. Assigning the cmdr/serv hierarchy from within a DC res man
  *	   needs to be revisited
+ *	2. Should this module prevent two triggers from driving
+ *	   the same front panel connector at once?
  *
  *
  * NOTES 
+ * -----
  *
  *
  */
@@ -383,6 +383,17 @@ LOCAL void 	mxi_io_report(
 );
 LOCAL 	EPVXISTAT	vxi_la_occupied(
 	unsigned 	la
+);
+LOCAL unsigned slot_la_count(
+	struct vxi_csr *pcsr
+);
+LOCAL EPVXISTAT vxi_assign_dc_addresses(
+	VXIE		*pvxie,
+	struct vxi_csr	*pcsr,
+	int		preallocm,
+	unsigned	*pOffset,
+	VXISZ		*pvxisz,
+	int		slot
 );
 	
 
@@ -974,49 +985,69 @@ enum laPass	pass
 	EPVXISTAT	status;
 	VXIE		*pnewvxie;
 
+	/*
+	 * open all new MXI devices now
+	 * so that we dont confuse them with
+	 * SC devices when a MXI's window is 
+	 * completely open.
+	 *
+	 * If we attempt to communicate with a 
+	 * MXI device while another MXI device 
+	 * at the same level has its window open 
+	 * all the way we see VME bus conflicts.
+	 */
        	for(addr=first_la; addr<=last_la; addr++){
 
 		pvxidi = epvxiLibDeviceList[addr];
-               	if(pvxidi){
-			/*
-			 * dont bother with
-			 * devices that are 
-			 * not extenders
-			 * here
-			 */
-			if(!pvxidi->pvxieSelf){
-				continue;
-			}
-			/*
-			 * if it is an extender dont
-			 * configure it unless
-			 * it is a child of the 
-			 * current parent
-			 */
-			if(pvxidi->pvxie != pvxie){
-				continue;
-			}
-		}
-		else{
+		if(!pvxidi){
 			/*
 			 * if it has not been seen before we know
 			 * its a MXI device
 			 */
 			status = open_vxi_device(pvxie, addr);
-			if(status){
-				continue;
+			if(status==VXI_SUCCESS){
+				open_mxi_device(
+						addr, 
+						pvxie, 
+						ext_export_vxi_onto_mxi);
 			}
 		}
+	}
 
-		pmxi_new = VXIBASE(addr);
+	/*
+	 * now step through and open up all MXI devices found
+	 */
+       	for(addr=first_la; addr<=last_la; addr++){
 
-		pnewvxie = open_mxi_device(
-				addr, 
-				pvxie, 
-				ext_export_vxi_onto_mxi);
+		pvxidi = epvxiLibDeviceList[addr];
+		
+               	if(!pvxidi){
+			continue;
+		}
+
+		pnewvxie = pvxidi->pvxieSelf;
+
+		/*
+		 * dont bother with
+		 * devices that are 
+		 * not extenders
+		 * here
+		 */
 		if(!pnewvxie){
 			continue;
 		}
+
+		/*
+		 * if it is an extender dont
+		 * configure it unless
+		 * it is a child of the 
+		 * current parent
+		 */
+		if(pvxidi->pvxie != pvxie){
+			continue;
+		}
+
+		pmxi_new = VXIBASE(addr);
 
 		/*
 		 * open the address window inward for all device
@@ -1026,17 +1057,6 @@ enum laPass	pass
 		pmxi_new->dir.w.dd.mxi.la_window =
 			1 | (1<<NVXIADDRBITS);
 
-/*
- * Makes NI MXI hardware bug go away?
- */
-#if 0
-{
-	int16_t		tmp;
-
-	tmp = pmxi_new->dir.w.dd.mxi.la_window;
-	tmp = pmxi_new->dir.w.dd.mxi.control; 
-}
-#endif
 		mxi_map(pnewvxie, pass);	
 		
 		/*
@@ -1108,7 +1128,7 @@ enum laPass	pass
 					}
 					pvxisz = next;
 				}
-#			endif REMOVE_UNUSED_SLOT_ZERO_DEVICES
+#			endif /*REMOVE_UNUSED_SLOT_ZERO_DEVICES*/
 		}
 	}
 	return VXI_SUCCESS;
@@ -1463,67 +1483,138 @@ VXIE		*pvxie
 		 */
 		if(pvxisz->pvxie == pvxie || pvxisz->la == pvxie->la){
 			for(slot=0;slot<NVXISLOTS;slot++){
+				int currentPrealloc;
+
 				SETMODID(pvxisz, slot);
-
-				status = vxMemProbe(	
-						(char *)pcsr,
-						READ,
-						sizeof(id),
-						(char *)&id);
-				if(status<0){
-					continue;
-				}
-
-				if(!prealloc){
-					status = vxi_alloc_la(
+				/*
+				 * if there are multiple independently
+				 * addressed LAs in the slot then I have
+				 * no clean way to determine ahead of
+				 * time there number so I abandon
+				 * preallocation of space after the first
+				 * iteration. This does not apply to
+				 * multiple blocked address devices
+				 * per slot however.
+				 */
+				currentPrealloc = prealloc;
+				while(TRUE){
+					/*
+					 * loop here in case there
+					 * are multiple independently
+					 * addressed devices at this slot
+					 */
+					status = vxi_assign_dc_addresses(
 							pvxie,
-							1,
-							&offset);
-					if(status){
-						errMessage(
-							status,
-		"VXI: DC VXI device doesnt fit");
-						errPrintf(
-							status,
-							__FILE__,
-							__LINE__,
-		"VXI: DC VXI device in extender LA=0X%X ignored",
-							pvxie->la);
-						continue;
+							pcsr,
+							currentPrealloc,
+							&offset,
+							pvxisz,
+							slot);
+					if(status != VXI_SUCCESS){
+						break;
 					}
-				}
-				pcsr->dir.w.addr = offset;
-				status = open_vxi_device(
-						pvxie, 
-						offset);
-				if(status){
-					errPrintf(
-						status,
-						__FILE__,
-						__LINE__,
-			"VXI resman: DC dev assign to LA=0X%X failed",
-						offset);
-					errPrintf(
-						status,
-						__FILE__,
-						__LINE__,
-			"VXI resman: Slot Zero LA=0X%X",
-						pvxisz->la);
-					errPrintf(
-						status,
-						__FILE__,
-						__LINE__,
-			"VXI resman: DC VXI device ignored");
-					continue;
-				}
-				if(prealloc){
-					offset++;
+					currentPrealloc = FALSE;
 				}
 			}
 			CLRMODID(pvxisz);
 		}
 		pvxisz = (VXISZ *) pvxisz->node.next;
 	}
+}
+
+
+/*
+ * vxi_assign_dc_addresses()
+ */
+LOCAL EPVXISTAT vxi_assign_dc_addresses(
+VXIE		*pvxie,
+struct vxi_csr	*pcsr,
+int		prealloc,
+unsigned	*pOffset,
+VXISZ		*pvxisz,
+int		slot
+)
+{
+	unsigned	offset;
+	unsigned 	count;
+	EPVXISTAT	status;
+	int16_t		id;
+
+	status = vxMemProbe(	
+			(char *)pcsr,
+			READ,
+			sizeof(id),
+			(char *)&id);
+	if(status<0){
+		return S_epvxi_noDevice;
+	}
+
+	count = slot_la_count(pcsr);
+
+	if(prealloc){
+		offset = *pOffset;
+	}
+	else{
+		status = vxi_alloc_la(
+				pvxie,
+				count,
+				&offset);
+		if(status){
+			errPrintf(
+				status,
+				__FILE__,
+				__LINE__,
+				"VXI: %d DC VXI device(s) do(es) not fit",
+				count);
+			errPrintf(
+				status,
+				__FILE__,
+				__LINE__,
+		"VXI: DC VXI device(s) at slot %d in extender LA=0X%X ignored",
+				slot,
+				pvxie->la);
+			return S_epvxi_noMemory;
+		}
+	}
+
+	/*
+	 * blocked addr devices recv their
+	 * addr assignements in unison
+	 */
+	pcsr->dir.w.addr = offset;
+
+	while(count){
+		count--;
+		status = open_vxi_device(
+				pvxie, 
+				offset);
+		if(status){
+			errPrintf(
+				status,
+				__FILE__,
+				__LINE__,
+			"VXI resman: DC dev assign to LA=0X%X failed",
+				offset);
+			errPrintf(
+				status,
+				__FILE__,
+				__LINE__,
+			"VXI resman: Slot Zero LA=0X%X",
+				pvxisz->la);
+			errPrintf(
+				status,
+				__FILE__,
+				__LINE__,
+			"VXI resman: DC VXI device ignored");
+		}
+		offset++;
+	}
+
+	if(prealloc){
+		*pOffset = offset;
+	}
+
+	return status;
 }
 
 
@@ -1581,6 +1672,12 @@ unsigned	*pCount
 		 * by opening up the window in the extender
 		 * and the slot zeros extender will be the
 		 * current extender.
+		 *
+		 * Counts multiple blocked addr device per slot here.
+		 * Does not try to count multiple independently
+		 * addressed devices per slot here. Space is
+		 * allocated for these DC devices on demand due to
+		 * difficulties counting them ahead of time.
 		 */
 		if(pvxisz->pvxie == pvxie || 
 			pvxisz->la == pvxie->la){
@@ -1594,7 +1691,7 @@ unsigned	*pCount
 						sizeof(id),
 						(char *)&id);
 				if(status>=0){
-					nDC++;
+					nDC += slot_la_count(pcsr);
 				}
 			}
 			CLRMODID(pvxisz);
@@ -1606,7 +1703,25 @@ unsigned	*pCount
 	return VXI_SUCCESS;
 }
 
+
+/*
+ *
+ * slot_la_count()
+ *
+ */
+LOCAL unsigned slot_la_count(struct vxi_csr *pcsr)
+{
+	unsigned	blockedAddrCount;
 
+	/*
+	 * Rule F.2.6
+	 */
+	blockedAddrCount = VXINDCDEVICES(pcsr);
+	if(blockedAddrCount==0 || blockedAddrCount==0xff){
+		blockedAddrCount = 1;
+	}
+	return blockedAddrCount;
+}
 
 
 /*
@@ -1982,14 +2097,16 @@ VXISZ			**ppvxisz
 	EPVXISTAT	status;
 	unsigned char	slot;
 
+	status = S_epvxi_slotNotFound;
+
 	/*
 	 * RULE C.2.7
 	 */
 	if(VXIMODIDSTATUS(pcsr->dir.r.status)){
-		return S_epvxi_noMODID;
+		errMessage(status, "device's MODID status is active & no MODID?");
+		return status;
 	}
 
-	status = S_epvxi_slotNotFound;
 	pvxisz = (VXISZ *) crateList.node.next;
 	while(pvxisz){
 
@@ -3583,7 +3700,7 @@ int		level
 {
 	VXIDI			*plac;
 	VXISZ			*pvxisz;
-        int			slot;
+        unsigned		slot;
 	EPVXISTAT		status;
 	int			make;
 	int			model;
@@ -3614,9 +3731,16 @@ int		level
 	/*
 	 * crate and slot
 	 */
-	printf(	"slot zero LA=0X%02X slot %2d ",
-		pvxisz?pvxisz->la:UKN_LA,
-		slot);
+	if(pvxisz){
+		printf(	"slot zero LA=0X%02X slot %2d ",
+			pvxisz->la,
+			slot);
+	}
+	else{
+		printf(	"slot zero LA=?? slot=?? ",
+			UKN_LA,
+			UKN_LA);
+	}
 
 
 	/*

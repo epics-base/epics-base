@@ -31,5 +31,14 @@
  * There seems to be no way to handle this automatically, so
  * if you get compile errors, just make the appropriate changes here.
  */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int putenv (char *);
 char *strdup (const char *);
+
+#ifdef __cplusplus
+}
+#endif

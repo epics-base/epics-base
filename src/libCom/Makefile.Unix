@@ -56,11 +56,11 @@ errSymTbl.o: errSymTbl.c errInc.o
 
 errSymTbl.c errInc.o: errInc.c
 	@$(RM) errInc.o
-	@$(EPICS_BASE)/tools/blderrSymTbl;
+	@../blderrSymTbl $(EPICS) $(HOST_ARCH) "$(MAKE)"
 
 envData.c: $(EPICS_BASE)/include/envDefs.h $(EPICS)/config/CONFIG_ENV \
 		$(EPICS)/config/CONFIG_SITE_ENV
-	$(EPICS_BASE)/tools/bldEnvData
+	../bldEnvData $(EPICS)
 
 pre_build:
 	@test -f errInc.c || ln -s ../errInc.c errInc.c

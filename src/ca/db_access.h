@@ -85,7 +85,6 @@ of this distribution.
 #include "shareLib.h"
 #include "epicsTypes.h"
 #include "tsStamp.h"
-#include "ellLib.h"
 
 #ifdef __cplusplus
 extern "C" {

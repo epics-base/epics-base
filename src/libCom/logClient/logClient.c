@@ -613,7 +613,7 @@ epicsShareFunc logClientId epicsShareAPI logClientInit ()
 /*
  *	iocLogInit()
  */
-int iocLogInit (void)
+epicsShareFunc int epicsShareAPI iocLogInit (void)
 {
     /*
      * check for global disable
@@ -641,7 +641,7 @@ int iocLogInit (void)
 /*
  * logClientShow ()
  */
-void logClientShow (logClientId id, unsigned level)
+epicsShareFunc void epicsShareAPI logClientShow (logClientId id, unsigned level)
 {
     logClient *pClient = (logClient *) id;
     char name[64];
@@ -665,7 +665,7 @@ void logClientShow (logClientId id, unsigned level)
 /*
  *	iocLogShow ()
  */
-void iocLogShow (unsigned level)
+epicsShareFunc void epicsShareAPI iocLogShow (unsigned level)
 {
     if (pLogClientDefaultClient!=NULL) {
         logClientShow ((logClientId)pLogClientDefaultClient, level);

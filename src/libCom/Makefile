@@ -82,9 +82,6 @@ SRCS += macUtil.c
 
 SRC_DIRS += $(LIBCOM)/misc
 INC += adjustment.h
-INC += cadef.h
-INC += caerr.h
-INC += caeventmask.h
 INC += cantProceed.h
 INC += dbDefs.h
 INC += epicsString.h

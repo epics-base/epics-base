@@ -21,6 +21,7 @@
 #include "epicsPrint.h"
 #include "ellLib.h"
 #include "cvtFast.h"
+#include "epicsTypes.h"
 
 #define epicsExportSharedSymbols
 #include "dbBase.h"
@@ -32,9 +33,9 @@
 static char hex_digit_to_ascii[16]={'0','1','2','3','4','5','6','7','8','9',
 		'a','b','c','d','e','f'};
 
-static void ulongToHexString(unsigned long source,char *pdest)
+static void ulongToHexString(epicsUInt32 source,char *pdest)
 {
-    unsigned long  val,temp;
+    epicsUInt32  val,temp;
     char  digit[10];
     int	  i,j;
 
@@ -60,8 +61,7 @@ static double delta[2]={1e-6,1e-15};
 static int precision[2]={6,14};
 static void realToString(double value,char *preturn,int isdouble)
 {
-    long	intval;
-    double	diff,absvalue;
+    double	absvalue;
     int		logval,prec,end;
     char	tstr[30];
     char	*ptstr=&tstr[0];
@@ -70,13 +70,18 @@ static void realToString(double value,char *preturn,int isdouble)
     char	*loce=NULL;
 
     if(value==0.0) {strcpy(preturn,"0"); return;};
-    intval=value;
-    diff = value - intval;
-    if(diff<0.0) diff =-diff;
-    absvalue = (value<0.0? -value: value);
-    if(diff < absvalue*delta[isdouble]) {
-	cvtLongToString(intval,preturn);
-	return;
+    absvalue = (value<0.0 ? -value: value);
+    if(absvalue<(double)INT_MAX) {
+        epicsInt32 intval;
+        double diff;
+
+        intval=value;
+        diff = value - intval;
+        if(diff<0.0) diff =-diff;
+        if(diff < absvalue*delta[isdouble]) {
+	    cvtLongToString(intval,preturn);
+	    return;
+        }
     }
     /*Now starts the hard cases*/
     if(value<0.0) {*preturn++ = '-'; value = -value;}
@@ -445,38 +450,38 @@ char *dbGetStringNum(DBENTRY *pdbentry)
 	if(cvttype==CT_DECIMAL)
 	    cvtCharToString(*(char*)pfield, message);
 	else
-	    ulongToHexString((unsigned long)(*(char*)pfield),message);
+	    ulongToHexString((epicsUInt32)(*(char*)pfield),message);
 	break;
     case DBF_UCHAR:
 	if(cvttype==CT_DECIMAL)
 	    cvtUcharToString(*(unsigned char*)pfield, message);
 	else
-	    ulongToHexString((unsigned long)(*(unsigned char*)pfield),message);
+	    ulongToHexString((epicsUInt32)(*(unsigned char*)pfield),message);
 	break;
     case DBF_SHORT:
 	if(cvttype==CT_DECIMAL)
 	    cvtShortToString(*(short*)pfield, message);
 	else
-	    ulongToHexString((unsigned long)(*(short*)pfield),message);
+	    ulongToHexString((epicsUInt32)(*(short*)pfield),message);
 	break;
     case DBF_USHORT:
     case DBF_ENUM:
 	if(cvttype==CT_DECIMAL)
 	    cvtUshortToString(*(unsigned short*)pfield, message); 
 	else
-	    ulongToHexString((unsigned long)(*(unsigned short*)pfield),message);
+	    ulongToHexString((epicsUInt32)(*(unsigned short*)pfield),message);
 	break;
     case DBF_LONG:
 	if(cvttype==CT_DECIMAL) 
-	    cvtLongToString(*(long*)pfield, message);
+	    cvtLongToString(*(epicsInt32*)pfield, message);
 	else
-	    ulongToHexString((unsigned long)(*(long*)pfield), message);
+	    ulongToHexString((epicsUInt32)(*(epicsInt32*)pfield), message);
 	break;
     case DBF_ULONG:
 	if(cvttype==CT_DECIMAL)
-	    cvtUlongToString(*(unsigned long *)pfield, message);
+	    cvtUlongToString(*(epicsUInt32 *)pfield, message);
 	else
-	    ulongToHexString(*(unsigned long*)pfield, message);
+	    ulongToHexString(*(epicsUInt32*)pfield, message);
 	break;
     case DBF_FLOAT:
 	floatToString(*(float *)pfield,message);
@@ -537,7 +542,7 @@ long dbPutStringNum(DBENTRY *pdbentry,const char *pstring)
 	    switch (pflddes->field_type) {
 	    case DBF_CHAR : *(char *)pfield = value; break;
 	    case DBF_SHORT : *(short *)pfield = value; break;
-	    case DBF_LONG : *(long *)pfield = value; break;
+	    case DBF_LONG : *(epicsInt32 *)pfield = value; break;
 	    default: epicsPrintf("Logic error in dbPutStringNum\n");
 	    }
 	}
@@ -555,7 +560,7 @@ long dbPutStringNum(DBENTRY *pdbentry,const char *pstring)
 	    case DBF_UCHAR : *(unsigned char *)pfield = value; break;
 	    case DBF_USHORT:
 	    case DBF_ENUM: *(unsigned short *)pfield=value; break;
-	    case DBF_ULONG : *(unsigned long *)pfield = value; break;
+	    case DBF_ULONG : *(epicsUInt32 *)pfield = value; break;
 	    default: epicsPrintf("Logic error in dbPutStringNum\n");
 	    }
 	}

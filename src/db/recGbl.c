@@ -238,6 +238,7 @@ long recGblGetLinkValue(struct link *plink,void *pdbc,short dbrType,
 	precord->pact = TRUE;
 	switch (plink->type){
 		case(CONSTANT):
+			*pnRequest = 0;
 			break;
 		case(DB_LINK):
 			status=dbGetLink(&(plink->value.db_link),

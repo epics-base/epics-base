@@ -7,16 +7,10 @@
 
 #< ../nfsCommands
 
-#The following sets timezone properly on vxWorks
-#YOU MUST enter correct values for name,minutesWest,start daylight,end daylight
-#putenv("TIMEZONE=<name>::<minutesWest>:<start daylight>:<end daylight>")
-#For example
-#putenv("TIMEZONE=US/Central::360:040102:100102")
-
 cd topbin
 ld < example.munch
 
-#The following uses drvTS for vxWorks IF it was included in src/Makefile
+#The following uses drvTS for vxWorks. May be needed for hardware event systems
 #TSinit
 
 cd top

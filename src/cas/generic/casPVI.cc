@@ -138,7 +138,7 @@ caStatus casPVI::attachToServer ( caServerI & cas )
 //
 // what a API complexity nightmare this GDD is
 //
-caStatus casPVI::updateEnumStringTable ( casCtx & ctx )
+caStatus casPVI::updateEnumStringTable ( casCtx & ctxIn )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
 
@@ -176,7 +176,7 @@ caStatus casPVI::updateEnumStringTable ( casCtx & ctx )
     //
     // read the enum string table
     //
-    status = this->read ( ctx, *pTmp );
+    status = this->read ( ctxIn, *pTmp );
 	if ( status == S_casApp_asyncCompletion ) {
         return status;
     }

@@ -100,7 +100,7 @@ OPTIM_NO =
 UNIX_OPT_FLAGS = $(OPTIM_$(UNIX_OPT))
 
 # Include files
-UNIX_INCLUDES = -I. -I.. -I$(EPICS_BASE_INCLUDE)
+UNIX_INCLUDES = -I. -I.. -I$(EPICS_BASE_INCLUDE) -I$(EPICS_BASE_INCLUDE)/os/$(T_A)
  
 # Operating system flags
 OP_SYS_FLAGS = -DUNIX

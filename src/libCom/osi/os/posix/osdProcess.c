@@ -8,19 +8,18 @@
  *
  */
 
-/* ANSI C */
-#include <limits.h>
 #include <string.h>
 #include <errno.h>
-#include <stddef.h>
-
-/* POSIX */
+#include <stdlib.h>
+#include <string.h>
+#include <limits.h> /* OPEN_MAX defined here */
 #include <unistd.h>
 #include <sys/types.h>
 #include <pwd.h>
 
 #define epicsExportSharedSymbols
 #include "osiProcess.h"
+#include "errlog.h"
 
 epicsShareFunc osiGetUserNameReturn epicsShareAPI osiGetUserName (char *pBuf, unsigned bufSizeIn)
 {
@@ -53,6 +52,35 @@ epicsShareFunc osiGetUserNameReturn epicsShareAPI osiGetUserName (char *pBuf, un
     }
 }
 
+/*
+ * maxPosixFD ()
+ *
+ * attempt to determine the maximum file descriptor
+ * on all posix systems
+ */
+static int maxPosixFD ( )
+{
+	int max;
+	static const int bestGuess = 1024;
+
+#	if defined (_SC_OPEN_MAX) /* posix */
+		max = sysconf (_SC_OPEN_MAX);
+		if (max<0) {
+#           if defined (OPEN_MAX)
+                max = OPEN_MAX;
+#           else
+			    max = bestGuess;
+#           endif
+		}
+#	elif defined (OPEN_MAX) /* posix */
+        max = OPEN_MAX; 
+#	else
+		max = bestGuess;
+#	endif
+
+	return max;
+}
+
 epicsShareFunc osiSpawnDetachedProcessReturn epicsShareAPI osiSpawnDetachedProcess 
     (const char *pProcessName, const char *pBaseExecutableName)
 {
@@ -80,7 +108,7 @@ epicsShareFunc osiSpawnDetachedProcessReturn epicsShareAPI osiSpawnDetachedProce
      * close all open files except for STDIO so they will not
      * be inherited by the spawned process
      */
-    maxfd = max_unix_fd (); 
+    maxfd = maxPosixFD (); 
     for (fd = 0; fd<=maxfd; fd++) {
         if (fd==STDIN_FILENO) continue;
         if (fd==STDOUT_FILENO) continue;

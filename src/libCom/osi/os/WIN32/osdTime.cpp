@@ -173,7 +173,7 @@ static int dayOfYear ( DWORD day, DWORD month, DWORD year )
 }
 
 // synthesize a reentrant gmtime on WIN32
-int epicsTime_gmtime ( const time_t *pAnsiTime, struct tm *pTM )
+int epicsShareAPI epicsTime_gmtime ( const time_t *pAnsiTime, struct tm *pTM )
 {
     FILETIME ft;
     UnixTimeToFileTime ( pAnsiTime, &ft );
@@ -201,7 +201,7 @@ int epicsTime_gmtime ( const time_t *pAnsiTime, struct tm *pTM )
 }
 
 // synthesize a reentrant localtime on WIN32
-int epicsTime_localtime ( 
+int epicsShareAPI epicsTime_localtime ( 
     const time_t * pAnsiTime, struct tm * pTM )
 {
     FILETIME ft;

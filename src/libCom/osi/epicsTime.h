@@ -250,8 +250,8 @@ epicsShareFunc void epicsShareAPI epicsTimeShow (
 
 /* OS dependent reentrant versions of the ANSI C interface because */
 /* vxWorks gmtime_r interface does not match POSIX standards */
-int epicsTime_localtime ( const time_t * clock, struct tm * result );
-int epicsTime_gmtime ( const time_t * clock, struct tm * result );
+epicsShareFunc int epicsShareAPI epicsTime_localtime ( const time_t * clock, struct tm * result );
+epicsShareFunc int epicsShareAPI epicsTime_gmtime ( const time_t * clock, struct tm * result );
 
 #ifdef __cplusplus
 }

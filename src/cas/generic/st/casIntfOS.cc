@@ -12,7 +12,6 @@
 // CA server
 // 
 #include "server.h"
-#include "casIODIL.h"
 
 //
 // casServerReg
@@ -20,7 +19,7 @@
 class casServerReg : public fdReg {
 public:
         casServerReg (casIntfOS &osIn) :
-      fdReg (osIn.casIntfIO::getFD(), fdrRead), os (osIn) {}
+        fdReg (osIn.casIntfIO::getFD(), fdrRead), os (osIn) {}
         ~casServerReg ();
 private:
         casIntfOS &os;

@@ -31,7 +31,7 @@
 union endianTest {
 public:
         endianTest () : uint ( true ) {}
-        bool littleEndian () const { return uchar[0] }
+        bool littleEndian () const { return uchar[0]; }
         bool bigEndian () const { return ! littleEndian(); }
 private:
         unsigned uint;

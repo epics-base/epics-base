@@ -20,6 +20,7 @@
 #define epicsExportSharedSymbols
 #include "osiProcess.h"
 #include "errlog.h"
+#include "epicsAssert.h"
 
 epicsShareFunc osiGetUserNameReturn epicsShareAPI osiGetUserName (char *pBuf, unsigned bufSizeIn)
 {
@@ -124,7 +125,7 @@ epicsShareFunc osiSpawnDetachedProcessReturn epicsShareAPI osiSpawnDetachedProce
         errlogPrintf ( "The executable \"%s\" couldnt be located\n", pBaseExecutableName );
         errlogPrintf ( "because of errno = \"%s\".\n", strerror (errno) );
         errlogPrintf ( "You may need to modify your PATH environment variable.\n" );
-        errlogPrintf ( "Unable to start \"%s\" process.\n" pProcessName);
+        errlogPrintf ( "Unable to start \"%s\" process.\n", pProcessName);
         assert (0);
     }
     exit (0);

@@ -28,9 +28,18 @@
  * 	Modification Log:
  * 	-----------------
  * 	.01 joh 071092	added argument to calloc()
- * 	.01 joh 071092	stripped the hkv2f specific portion off the comet
+ * 	.02 joh 071092	stripped the hkv2f specific portion off the comet
  *			std addr base specification and left it at base
  *			addr zero which is most likely wrong. 
+ *	.03 joh 071492	use extended (A32) address space
+ *			instead of standard (A24) address space
+ *			for the base address of the waveform memory
+ *			(changed arg to sysBusToLocalAdrs()
+ *	.04 joh 071592  fixed to use correct size when incrementing
+ *			to the waveform memory of the second card
+ *	.05 joh 071592	modified A16 & A32 base addr to match AT8 
+ *			address standard
+ *
  */
 
 /*
@@ -54,19 +63,18 @@
 #include <fast_lock.h>
 #include <vme.h>
 
-
-static char	*stdaddr;
+#define COMET_NCHAN			4
+#define COMET_CHANNEL_MEM_SIZE		0x20000	/* bytes */
+#define COMET_DATA_MEM_SIZE		(COMET_CHANNEL_MEM_SIZE*COMET_NCHAN)
 static char	*shortaddr;
-
-
-
-/* comet conrtol register map */
-struct comet_cr{
-	unsigned char	csrh;	/* control and status register - high byte */
-	unsigned char	csrl;	/* control and status register - low byte */
-	unsigned char	lcrh;	/* location status register - high byte	*/
-	unsigned char	lcrl;	/* location status register - low byte	*/
-	unsigned char	gdcrh;	/* gate duration status register - high byte*/
+  
+/* comet conrtol register map */ 
+struct comet_cr{ 
+	unsigned char	csrh;	/* control and status register - high byte */ 
+	unsigned char	csrl;	/* control and status register - low byte */ 
+	unsigned char	lcrh;	/* location status register - high byte	*/ 
+	unsigned char	lcrl;	/* location status register - low byte	*/ 
+	unsigned char	gdcrh;	/* gate duration status register - high byte*/ 
 	unsigned char	gdcrl;	/* gate duration status register - low byte */
 	unsigned char	cdr;	/* channel delay register	*/
 	unsigned char	acr;	/* auxiliary control register	*/
@@ -108,8 +116,8 @@ struct comet_cr{
 
 
 /* values that will end up in module_types.h */
-#define		COMET_SHORT_BASE_ADDR	0x0a000
-#define		COMET_STD_BASE_ADDR	0x000000
+#define		COMET_SHORT_BASE_ADDR	0xbc00
+#define		COMET_EXT_BASE_ADDR	0xe0000000
 #define		FLAG_EOC		0x10
 
 /* comet configuration data */
@@ -187,7 +195,7 @@ comet_init()
 	short				readback,got_one,card;
 	int				status;
 	struct comet_cr			*pcomet_cr;
-	unsigned short			*stdaddr;
+	unsigned char			*extaddr;
 
 	void			cometDoneTask();
 
@@ -207,28 +215,33 @@ comet_init()
 
 	/* get the standard and short address locations */
         if ((status = sysBusToLocalAdrs(VME_AM_SUP_SHORT_IO,COMET_SHORT_BASE_ADDR,&pcomet_cr)) != OK){
-		logMsg("\nCOMET: failed in sysBusToLocalAdrs for short address space");
+		logMsg("\nCOMET: failed to map VME A16 base address\n");
 		return;
         } 
-        if ((status = sysBusToLocalAdrs(VME_AM_STD_SUP_DATA,COMET_STD_BASE_ADDR,&stdaddr)) != OK){
-		logMsg("\nCOMET: failed in sysBusToLocalAdrs for standard address space");
+        if ((status = sysBusToLocalAdrs(VME_AM_EXT_SUP_DATA,COMET_EXT_BASE_ADDR,&extaddr)) != OK){
+		logMsg("\nCOMET: failed to map VME A32 base address\n");
 		return;
         }
 
 	/* determine which cards are present */
 	got_one = FALSE;
 	pconfig = pcomet_config;
-	for (card = 0; card < 2; card++, pconfig++, pcomet_cr++, stdaddr+= 0x20000){
+	for (	card = 0; 
+		card < 2; 
+		card++, pconfig++, pcomet_cr++, extaddr+= COMET_DATA_MEM_SIZE){
+
+
+
 		/* is the card present */
   		if (vxMemProbe(pcomet_cr,READ,sizeof(readback),&readback) != OK)	continue;
-  		if (vxMemProbe(stdaddr,READ,sizeof(readback),&readback) != OK){
-			logMsg("\nCOMET: Found CSR but not data RAM %x",stdaddr);
+  		if (vxMemProbe(extaddr,READ,sizeof(readback),&readback) != OK){
+			logMsg("\nCOMET: Found CSR but not data RAM %x",extaddr);
 			continue;
 		}
 
 		/* initialize the configuration data */
 		pconfig->pcomet_csr = pcomet_cr; 
-		pconfig->pdata = stdaddr; 
+		pconfig->pdata = (unsigned short *) extaddr; 
 		got_one = TRUE;
 
 		/* initialize the card */

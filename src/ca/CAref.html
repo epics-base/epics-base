@@ -67,6 +67,7 @@ height="31" width="88"></a></p>
   <li><a href="#Unicast">Unicast Addreses in the EPICS_CA_ADDR_LIST Does not
     Reliably Contact Servers Sharing the Same UDP Port on the Same
   Host</a></li>
+  <li><a href="#Client1">Client Does not See Server's Beacons</a></li>
 </ul>
 
 <h3><a href="#Function">Function Call Interface Guidelines</a></h3>
@@ -761,6 +762,11 @@ receive UDP search requests sent as broadcasts, but unfortunately (due to a
 weakness of most IP kernel implementations) only one of the servers will
 typically receive UDP search requests sent to unicast addresses (i.e. a
 single specific host's ip address).</p>
+
+<h4><a name="Client1">Client Does not See Server's Beacons</a></h4>
+
+<p>See <a href="#Dynamic">Dynamic Changes in the CA Client Library Search
+Interval.</a></p>
 
 <h2><a name="Function">Function Call Interface General Guidelines</a></h2>
 

@@ -173,7 +173,7 @@ void dbServiceIO::callStateNotify ( struct dbAddr & addr,
     if ( status ) {
         notify.exception ( ECA_GETFAIL, 
             "db_get_field() completed unsuccessfuly",
-            type, count);
+            type, count );
     }
     else { 
         notify.current ( type, count, this->pEventCallbackCache );
@@ -186,8 +186,8 @@ extern "C" void cacAttachClientCtx ( void * pPrivate )
     assert ( status == ECA_NORMAL );
 }
 
-dbEventSubscription dbServiceIO::subscribe ( struct dbAddr &addr, dbChannelIO &chan,
-             dbSubscriptionIO &subscr, unsigned mask, cacChannel::ioid *pId )
+dbEventSubscription dbServiceIO::subscribe ( struct dbAddr & addr, dbChannelIO & chan,
+             dbSubscriptionIO & subscr, unsigned mask )
 {
     dbEventSubscription es;
     int status;
@@ -220,17 +220,10 @@ dbEventSubscription dbServiceIO::subscribe ( struct dbAddr &addr, dbChannelIO &c
 
     es = db_add_event ( this->ctx, &addr,
         dbSubscriptionEventCallback, (void *) &subscr, mask );
-    if ( es ) {
-        db_post_single_event ( es );
-    }
-    else {
+    if ( ! es ) {
         epicsAutoMutex locker ( this->mutex );
         chan.dbServicePrivateListOfIO::eventq.remove ( subscr );
         this->ioTable.remove ( subscr );
-    }
-
-    if ( pId ) {
-        *pId = subscr.getId ();
     }
 
     return es;

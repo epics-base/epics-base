@@ -36,14 +36,20 @@ epicsMutex dbSubscriptionIO::freeListMutex;
 dbSubscriptionIO::dbSubscriptionIO ( dbServiceIO &serviceIO, dbChannelIO &chanIO, 
     dbAddr &addr, cacStateNotify &notifyIn, 
     unsigned typeIn, unsigned long countIn, unsigned maskIn,
-    cacChannel::ioid * pId ) :
+        cacChannel::ioid * pId ) :
     notify ( notifyIn ), chan ( chanIO ), es ( 0 ), 
         type ( typeIn ), count ( countIn ), id ( 0u )
 {
-    this->es = serviceIO.subscribe ( addr, chanIO, *this, maskIn, pId );
+    this->es = serviceIO.subscribe ( addr, chanIO, *this, maskIn );
     if ( ! this->es ) {
         throw std::bad_alloc ();
     }
+
+    if ( pId ) {
+        *pId = this->getId ();
+    }
+
+    db_post_single_event ( this->es );
 }
 
 dbSubscriptionIO::~dbSubscriptionIO ()

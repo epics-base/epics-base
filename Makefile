@@ -19,7 +19,7 @@ ifeq (0, $(words $(notdir $(wildcard $(TOP)/configure))))
 else
   include $(TOP)/configure/CONFIG
 
-  PROD = msi
+  PROD_HOST = msi
   HTMLS = msi.html
 
   msi_SRCS = msi.c

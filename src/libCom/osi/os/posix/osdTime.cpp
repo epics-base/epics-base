@@ -14,10 +14,7 @@
 //
 extern "C" epicsShareFunc int epicsShareAPI tsStampGetCurrent (TS_STAMP *pDest)
 {
-
-// Under HP-UX CLOCK_REALTIME is part of an enum
-
-#   if defined(CLOCK_REALTIME) || (defined(HP_UX) && defined(_INCLUDE_POSIX4_SOURCE))
+#   ifdef _POSIX_TIMERS
         struct timespec ts;
         int status;
     

@@ -10,20 +10,12 @@
 
 #include <unistd.h>
 
-/*
- * "struct timespec" is not in all versions of POSIX 1.
- * Solaris has it at ISO POSIX-1c so we will start from there,
- * but may need to fine tune this
- */
-
-#ifndef HP_UX
-#if _POSIX_VERSION < 199506L
+#ifndef _POSIX_TIMERS
 	struct timespec {
 		time_t tv_sec; /* seconds since some epoch */
 		long tv_nsec; /* nanoseconds within the second */
 	};
-#endif /* if _POSIX_VERSION < 199506L */
-#endif /* ifndef HP_UX */
+#endif /* ifndef _POSIX_TIMERS */
 
 #endif /* ifndef osdTimeh */
 

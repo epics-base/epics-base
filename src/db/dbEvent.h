@@ -74,6 +74,7 @@ epicsShareFunc int epicsShareAPI db_add_extra_labor_event (
     dbEventCtx ctx, EXTRALABORFUNC *func, void *arg);
 epicsShareFunc int epicsShareAPI db_flush_extra_labor_event (dbEventCtx);
 epicsShareFunc int epicsShareAPI db_post_extra_labor (dbEventCtx ctx);
+epicsShareFunc void epicsShareAPI db_event_change_priority ( dbEventCtx ctx, unsigned epicsPriority );
 
 typedef void EVENTFUNC (void *user_arg, struct dbAddr *paddr,
 	int eventsRemaining, struct db_field_log *pfl);

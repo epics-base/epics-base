@@ -973,6 +973,15 @@ int epicsShareAPI db_start_events (
 }
 
 /*
+ * db_event_change_priority()
+ */
+void epicsShareAPI db_event_change_priority ( dbEventCtx ctx, unsigned epicsPriority )
+{
+    struct event_user * evUser = ( struct event_user * ) ctx;
+    epicsThreadSetPriority ( evUser->taskid, epicsPriority );
+}
+
+/*
  * db_event_flow_ctrl_mode_on()
  */
 void epicsShareAPI db_event_flow_ctrl_mode_on (dbEventCtx ctx)

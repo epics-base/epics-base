@@ -2411,7 +2411,9 @@ void verifyChannelPriorities ( const char *pName, unsigned interestLevel )
     showProgressEnd ( interestLevel );
 }
 
-void verifyImmediateTearDown ( const char * pName, unsigned interestLevel )
+void verifyImmediateTearDown ( const char * pName, 
+        enum ca_preemptive_callback_select select, 
+        unsigned interestLevel )
 {
     unsigned i;
 
@@ -2421,6 +2423,7 @@ void verifyImmediateTearDown ( const char * pName, unsigned interestLevel )
         chid chan;
         int status;
         dbr_long_t value = i % 2;
+        ca_context_create ( select );
         ca_task_initialize ();
         status = ca_create_channel ( pName, 0, 0, 0, & chan );
         SEVCHK ( status, "immediate tear down channel create failed" );
@@ -2630,9 +2633,9 @@ int acctst ( char *pName, unsigned interestLevel, unsigned channelCount,
         epicsEnvSet ( "EPICS_CA_MAX_ARRAY_BYTES", tmpString ); 
     }
 
-    verifyImmediateTearDown ( pName, interestLevel );
+    verifyImmediateTearDown ( pName, select, interestLevel );
 
-	status = ca_context_create ( select );
+    status = ca_context_create ( select );
     SEVCHK ( status, NULL );
 
     verifyDataTypeMacros ();

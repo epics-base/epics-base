@@ -21,6 +21,7 @@
 
 #define epicsExportSharedSymbols
 #include "caServerI.h"
+#include "casMonitor.h"
 
 caServer::caServer ()
 {

@@ -16,6 +16,7 @@
 #define casDGIntfIOh
 
 #include "casDGClient.h"
+#include "ipIgnoreEntry.h"
 
 class casDGIntfIO : public casDGClient {
 public:
@@ -44,7 +45,7 @@ public:
     bufSizeT incomingBytesPresent () const;
 
 private:
-    tsFreeList < class ipIgnoreEntry, 128 > ipIgnoreEntryFreeList;
+    tsFreeList < ipIgnoreEntry, 128 > ipIgnoreEntryFreeList;
     resTable < ipIgnoreEntry, ipIgnoreEntry > ignoreTable;
 	ELLLIST beaconAddrList;
 	SOCKET sock;

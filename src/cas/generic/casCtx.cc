@@ -13,6 +13,9 @@
 
 #define epicsExportSharedSymbols
 #include "casCtx.h"
+#include "caServerI.h"
+#include "casCoreClient.h"
+#include "casChannelI.h"
 
 casCtx::casCtx() :
 	pData(NULL), pCAS(NULL), pClient(NULL),

@@ -27,5 +27,29 @@ INC += recGbl.h
 INC += dbBkpt.h
 INC += devLib.h
 
+MENUS += menuAlarmSevr.h
+MENUS += menuAlarmStat.h
+MENUS += menuArrType.h
+MENUS += menuCompress.h
+MENUS += menuFtype.h
+MENUS += menuIvoa.h
+MENUS += menuLinr.h
+MENUS += menuOmsl.h
+MENUS += menuPriority.h
+MENUS += menuScan.h
+MENUS += menuYesNo.h
+
+RECTYPES += dbCommon.h
+USER_DBDFLAGS += -I ..
+
+DBDINSTALL +=  dbCommonRecord.dbd 
+DBDINSTALL +=  menuGlobal.dbd
+DBDINSTALL +=  base.dbd
+DBDINSTALL += baseLIBOBJS
+
 include $(TOP)/config/RULES.Host
 
+dbCommon.h: ../dbCommonRecord.dbd ../dbCommon.dbd
+	$(RM) $@
+	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToRecordtypeH \
+		$(USER_DBDFLAGS) $<

@@ -193,10 +193,12 @@ ifdef DLLNAME
 INSTALL_DLLS=$(DLLNAME:%=$(INSTALL_BIN)/%)
 endif
 
+INCREC +=$(RECTYPES) $(MENUS)
 INSTALL_LIBS= $(LIBNAME:%=$(INSTALL_LIB)/%)
 INSTALL_INC= $(INC:%=$(INSTALL_INCLUDE)/%)
 INSTALL_OSINCLUDE=$(INSTALL_INCLUDE)/os/$(ARCH_CLASS)
 INSTALL_OSINC= $(OSINC:%= $(INSTALL_OSINCLUDE)/%)
+INSTALL_INCREC = $(INCREC:%= $(INSTALL_INCLUDE)/%)
 MANLIST = 1 2 3 4 5 6 7 8 9
 INSTALL_MANS = $(foreach n, \
         $(MANLIST),$(INSTALL_MAN)/man$(n) $(MAN$(n):%= $(INSTALL_MAN)/man$(n)/%))
@@ -210,11 +212,18 @@ INSTALL_TEMPLATES_SUBDIR = $(INSTALL_TEMPLATES)
 endif
 INSTALL_TEMPLATE = $(TEMPLATES:%= $(INSTALL_TEMPLATES_SUBDIR)/%)
 INSTALL_CONFIGS = $(CONFIGS:%= $(INSTALL_CONFIG)/%)
+ 
+INSTALL_BPTS = $(BPTS:%= $(INSTALL_DBD)/%)
+INSTALL_DBS = $(DBDINSTALL:%= $(INSTALL_DBD)/%)\
+        $(RECTYPES:%.h= $(INSTALL_DBD)/%.dbd)\
+        $(MENUS:%.h= $(INSTALL_DBD)/%.dbd)
+
+INSTALL_DBDNAME = $(DBDNAME:%= $(INSTALL_DBD)/%)
 
 MAN_DIRECTORY_TARGETS = $(foreach n, $(MANLIST),$(INSTALL_MAN)/man$(n))
 
 DIRECTORY_TARGETS = $(INSTALL_INCLUDE) $(INSTALL_INCLUDE)/os \
-	$(INSTALL_OSINCLUDE) $(INSTALL_DOC) \
+	$(INSTALL_OSINCLUDE) $(INSTALL_DOC) $(INSTALL_DBD) \
 	$(INSTALL_LOCATION_BIN) $(INSTALL_BIN) $(INSTALL_LIB) \
 	$(INSTALL_LOCATION_LIB) $(INSTALL_CONFIG) \
 	$(MAN_DIRECTORY_TARGETS) $(INSTALL_MAN) \
@@ -250,7 +259,8 @@ endif # LIBRARY
 #
 all::	install
 
-build:: $(LIBTARGETS) $(PROD) $(TESTPROD)
+build:: $(LIBTARGETS) $(PROD) $(TESTPROD) \
+	$(MENUS) $(RECTYPES) $(BPTS) $(DBDNAME)
 
 inc:: $(INSTALL_INCLUDE) $(INSTALL_INC) \
 	$(INSTALL_INCLUDE)/os $(INSTALL_OSINCLUDE) $(INSTALL_OSINC)
@@ -265,7 +275,9 @@ buildInstall :: build $(TARGETS) $(INSTALL_LOCATION_BIN) \
 	$(INSTALL_DOC) $(INSTALL_DOCS) \
 	$(INSTALL_HTMLS) \
 	$(INSTALL_TEMPLATES) $(INSTALL_TEMPLATES_SUBDIR) $(INSTALL_TEMPLATE) \
-	$(INSTALL_CONFIG) $(INSTALL_CONFIGS) 
+	$(INSTALL_CONFIG) $(INSTALL_CONFIGS) \
+	$(INSTALL_DBD) $(INSTALL_DBS) $(INSTALL_BPTS) \
+	$(INSTALL_DBDNAME) $(INSTALL_INCREC)
 
 depends:: $(LIBSRCS) $(SRCS)
 	$(RM) .DEPENDS
@@ -434,6 +446,46 @@ endif
 %.1:../%
 	$(MANGEN) -s $<
 	$(MV) $(<F).nr $(<F).1
+
+$(INSTALL_DBD)/%: %
+	@echo "Installing $@"
+	@$(INSTALL) -m 644 $< $(INSTALL_DBD)
+ 
+$(INSTALL_DBD)/%: ../%
+	@echo "Installing $@"
+	@$(INSTALL) -m 644 $< $(INSTALL_DBD)
+ 
+%Record.h: %Record.dbd
+	$(RM) $@
+	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToRecordtypeH \
+	        $(USER_DBDFLAGS)  $<
+ 
+%Record.h: ../%Record.dbd
+	$(RM) $@
+	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToRecordtypeH \
+	        $(USER_DBDFLAGS)  $<
+ 
+menu%.h: menu%.dbd
+	$(RM) $@
+	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToMenuH $<
+ 
+menu%.h: ../menu%.dbd
+	$(RM) $@
+	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToMenuH $<
+ 
+bpt%.dbd: bpt%.data
+	$(RM) $@
+	$(EPICS_BASE)/bin/$(HOST_ARCH)/makeBpt $<
+ 
+bpt%.dbd: ../bpt%.data
+	$(RM) $@
+	$(EPICS_BASE)/bin/$(HOST_ARCH)/makeBpt $<
+ 
+$(DBDNAME): ../$(DBDEXPAND)
+	@echo expanding dbd
+	@$(RM) $@
+	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbExpand\
+		$(USER_DBDFLAGS) $< > $@
 
 # rule for shareable (DLL- dynamic link library) creation
 $(DLLNAME): $(LIBOBJS)

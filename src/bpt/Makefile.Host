@@ -1,6 +1,3 @@
-#	Makefile.Host for base/src/bpt
-#
-
 TOP = ../../..
 include $(TOP)/config/CONFIG_BASE
 
@@ -9,6 +6,14 @@ INC := cvtTable.h
 SRCS := makeBpt.c
 PROD := makeBpt
 
+MENUS += menuConvert.h
+
+BPTS += bptTypeJdegC.dbd
+BPTS += bptTypeJdegF.dbd
+BPTS += bptTypeKdegC.dbd
+BPTS += bptTypeKdegF.dbd
+
 include $(TOP)/config/RULES.Host
 
-#	EOF Makefile.Host for base/src/bpt
+$(BPTS): $(INSTALL_PROD)
+

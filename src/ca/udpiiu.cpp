@@ -566,7 +566,7 @@ void udpiiu::searchRespAction ( const caHdr &msg, const osiSockAddr &addr )
         else {
             serverAddr.ia.sin_addr = addr.ia.sin_addr;
         }
-        serverAddr.ia.sin_port = htons (msg.m_dataType);
+        serverAddr.ia.sin_port = htons ( msg.m_dataType );
     }
     else if ( CA_V45 (CA_PROTOCOL_VERSION,minorVersion) ) {
         serverAddr.ia.sin_port = htons ( msg.m_dataType );

@@ -131,7 +131,7 @@ LOCAL int getConfig (logClient *pClient)
 /*
  * logClientReset ()
  */
-void logClientReset (logClient *pClient) 
+LOCAL void logClientReset (logClient *pClient) 
 {
 #   ifdef DEBUG
         fprintf (stderr, "log client: lingering for connection close...");
@@ -492,7 +492,7 @@ LOCAL void logRestart (void *pPrivate)
 /*
  *	logClientGlobalInit ()
  */
-void logClientGlobalInit ()
+LOCAL void logClientGlobalInit ()
 {
     static const unsigned logRestartStackSize = 0x2000;
 

@@ -19,8 +19,11 @@
 #define epicsExportSharedSymbols
 #include "locationException.h"
 #include "epicsAssert.h"
+#include "epicsVersion.h"
 #include "envDefs.h"
 #include "epicsTime.h"
+
+static const char *id = "@(#) " EPICS_VERSION_STRING ", Common Utilities Library" __DATE__;
 
 //
 // useful public constants

@@ -57,8 +57,6 @@ long dbtgf(char *pname);	/*test get field*/
 long dbtpf(char	*pname,char *pvalue); /*test put field*/
 long dbior(char	*pdrvName,int type); /*I/O report */
 int dbhcr(void);		/*Hardware Configuration Report*/
-long dblls(int	lockset);	/*list lock sets*/
-int dbllsdblinks(int lset);	/*List dblinks for each record in lock set*/
 
 #include	<vxWorks.h>
 #include	<stdlib.h>
@@ -72,6 +70,7 @@ int dbllsdblinks(int lset);	/*List dblinks for each record in lock set*/
 #include	<dbAccess.h>
 #include	<dbBase.h>
 #include	<dbCommon.h>
+#include	<dbLock.h>
 #include	<recSup.h>
 #include	<devSup.h>
 #include	<drvSup.h>
@@ -110,8 +109,8 @@ static void dbpr_init_msg(TAB_BUFFER *pMsgBuff,int tab_size);
 static void dbpr_insert_msg(TAB_BUFFER *pMsgBuff,int len,int tab_size);
 static void dbpr_msg_flush(TAB_BUFFER *pMsgBuff,int tab_size);
 static void dbprReportLink(
-	TAB_BUFFER *pMsgBuff,char *pfield_name,struct link *plink,
-	short field_type,int tab_size);
+	TAB_BUFFER *pMsgBuff,char *precord_name, char *pfield_name,
+	struct link *plink, short field_type,int tab_size);
 static void dbprReportMenu(
 	TAB_BUFFER *pMsgBuff,struct dbCommon *precord,dbFldDes *pdbFldDes,
 	unsigned short  choice_value,int tab_size);
@@ -693,37 +692,6 @@ int dbhcr(void)
     return(0);
 }
 
-long dblls(int	lockset)
-{
-    DBENTRY		dbentry;
-    DBENTRY		*pdbentry=&dbentry;
-    long		status;
-    struct dbCommon	*precord;
-
-    dbInitEntry(pdbbase,pdbentry);
-    status = dbFirstRecdes(pdbentry);
-    printf(" lset  lcnt  disv  disa  pact\n");
-    while(!status) {
-	status = dbFirstRecord(pdbentry);
-	while(!status) {
-	    precord = pdbentry->precnode->precord;
-	    if(lockset==0 || lockset==precord->lset) {
-		printf("%5.5d %5.5d %5.5d %5.5d %5.5d %s\n",
-			precord->lset,
-			precord->lcnt,
-			precord->disv,
-			precord->disa,
-			precord->pact,
-			precord->name);
-	    }
-	    status = dbNextRecord(pdbentry);
-	}
-	status = dbNextRecdes(pdbentry);
-    }
-    dbFinishEntry(pdbentry);
-    return(0);
-}
-
 static char *dbf[DBF_NTYPES]={
 	"STRING","CHAR","UCHAR","SHORT","USHORT","LONG","ULONG",
 	"FLOAT","DOUBLE","ENUM","MENU","DEVICE",
@@ -1150,17 +1118,10 @@ static int dbpr_report(
 				    *(unsigned short *)pfield, tab_size);
 	    break;
 	case DBF_INLINK:
-	    dbprReportLink(pMsgBuff, pfield_name,
-	     (struct link *) pfield, pdbFldDes->field_type, tab_size);
-	    break;
 	case DBF_OUTLINK:
-	    dbprReportLink(pMsgBuff, pfield_name,
-	     (struct link *) pfield, pdbFldDes->field_type, tab_size);
-	    break;
 	case DBF_FWDLINK:
-	    dbprReportLink(pMsgBuff, pfield_name,
+	    dbprReportLink(pMsgBuff, paddr->precord->name,pfield_name,
 	     (struct link *) pfield, pdbFldDes->field_type, tab_size);
-	    break;
 	    break;
 	default:
 	    sprintf(pmsg, "%s: dbpr: Unknown field_type", pfield_name);
@@ -1269,129 +1230,39 @@ static void dbpr_msg_flush(TAB_BUFFER *pMsgBuff,int tab_size)
 }
 
 static void dbprReportLink(
-	TAB_BUFFER *pMsgBuff,char *pfield_name,struct link *plink,
-	short field_type,int tab_size)
+	TAB_BUFFER *pMsgBuff,char *precordname,char *pfield_name,
+	struct link *plink, short field_type,int tab_size)
 {
-    char *pmsg = pMsgBuff->message;
-    switch(plink->type) {
-    case CONSTANT:
-	sprintf(pmsg,"%4s: %s", pfield_name, plink->value.constantStr);
-	dbpr_msgOut(pMsgBuff,tab_size);
-	break;
-    case PV_LINK:
-	if(field_type != DBF_FWDLINK) {
-	sprintf(pmsg,"%4s: PV_LINK pp=%1d ms=%1d %s",
-	    pfield_name,
-	    plink->value.pv_link.process_passive,
-	    plink->value.pv_link.maximize_sevr,
-	    plink->value.pv_link.pvname);
-	} else {
-	sprintf(pmsg,"%4s: PV_LINK %s",
-	    pfield_name,
-	    plink->value.pv_link.pvname);
-	}
-	dbpr_msgOut(pMsgBuff,tab_size);
-	break;
-    case VME_IO:
-	sprintf(pmsg,"%4s: VME card=%2d signal=%2d parm=%s",
-	    pfield_name,
-	    plink->value.vmeio.card,plink->value.vmeio.signal,
-	    plink->value.vmeio.parm);
-	dbpr_msgOut(pMsgBuff,tab_size);
-	break;
-    case VXI_IO:
-	if(plink->value.vxiio.flag==0)
-	{
-	    sprintf(pmsg,"%4s: VXI frame=%2d slot=%2d signal=%2d parm=%s",
-	    	pfield_name,
-	    	plink->value.vxiio.frame,
-		plink->value.vxiio.slot,
-	    	plink->value.vxiio.signal,
-	    	plink->value.vxiio.parm);
-	}
-	else
-	{
-	    sprintf(pmsg,"%4s: VXI la=%2d signal=%2d parm=%s",
-	    	pfield_name,
-	    	plink->value.vxiio.la,
-	    	plink->value.vxiio.signal,
-	    	plink->value.vxiio.parm);
-	}
-	dbpr_msgOut(pMsgBuff,tab_size);
-	break;
-    case CAMAC_IO:
-	sprintf(pmsg,"%4s: CAMAC b=%2d c=%2d n=%2d a=%2d f=%2d parm=%s",
-	    pfield_name,
-	    plink->value.camacio.b,plink->value.camacio.c,
-	    plink->value.camacio.n,plink->value.camacio.a,
-	    plink->value.camacio.f,plink->value.camacio.parm);
-	dbpr_msgOut(pMsgBuff,tab_size);
-	break;
-    case AB_IO:
-	sprintf(pmsg,"%4s: ABIO link=%2d adaptor=%2d card=%2d signal=%2d parm=%s",
-	    pfield_name,
-	    plink->value.abio.link,plink->value.abio.adapter,
-	    plink->value.abio.card,plink->value.abio.signal,
-	    plink->value.abio.parm);
-	dbpr_msgOut(pMsgBuff,tab_size);
-	break;
-    case GPIB_IO:
-	sprintf(pmsg,"%4s: GPIB link=%2d addr=%2d parm=%s",
-	    pfield_name,
-	    plink->value.gpibio.link, plink->value.gpibio.addr,
-	    &plink->value.gpibio.parm[0]);
-	dbpr_msgOut(pMsgBuff,tab_size);
-	break;
-    case BITBUS_IO:
-	sprintf(pmsg,"%4s: BITBUS link=%2d node=%2d port=%2d signal=%2d parm=%s",
-	    pfield_name,
-	    plink->value.bitbusio.link,plink->value.bitbusio.node,
-	    plink->value.bitbusio.port,plink->value.bitbusio.signal,
-	    &plink->value.bitbusio.parm[0]);
-	dbpr_msgOut(pMsgBuff,tab_size);
-	break;
-    case BBGPIB_IO:
-	sprintf(pmsg,"%4s: BBGPIBIO link=%2d bbaddr=%2d gpibio=%2d parm=%s",
-	    pfield_name,
-	    plink->value.bbgpibio.link,plink->value.bbgpibio.bbaddr,
-	    plink->value.bbgpibio.gpibaddr,
-	    &plink->value.bbgpibio.parm[0]);
-	dbpr_msgOut(pMsgBuff,tab_size);
-	break;
-    case INST_IO:
-	sprintf(pmsg,"%4s: INSTIO  parm=%s",
-	    pfield_name,
-	    &plink->value.instio.string[0]);
-	dbpr_msgOut(pMsgBuff,tab_size);
-	break;
-    case DB_LINK:
-	if(field_type != DBF_FWDLINK) {
-	    DBADDR *paddr = (DBADDR *)plink->value.db_link.pdbAddr;
+    char	*pmsg = pMsgBuff->message;
+    DBENTRY	dbEntry;
+    DBENTRY	*pdbEntry;
+    long	status;
+    char	*pvalue;
 
-	    sprintf(pmsg,"%4s: DB_LINK pp=%1d ms=%1d %s",
-	    pfield_name,
-	    plink->value.db_link.process_passive,
-	    plink->value.db_link.maximize_sevr,
-	    paddr->precord->name);
-	}else{
-	sprintf(pmsg,"%4s: DB_LINK %.32s",
-	    pfield_name,
-	    ((struct dbCommon *)(
-		((DBADDR *)plink->value.db_link.pdbAddr)
-		->precord))->name);
+    pdbEntry = &dbEntry;
+    dbInitEntry(pdbbase,pdbEntry);
+    status = dbFindRecord(pdbEntry,precordname);
+    if(!status) status = dbFindField(pdbEntry,pfield_name);
+    if(status) {
+        sprintf(pmsg,"%4s: dbGetString Failed", pfield_name);
+    } else {
+	int	ind;
+
+	for(ind=0; ind<LINK_NTYPES; ind++) {
+	    if(pamaplinkType[ind].value == plink->type) break;
 	}
-	dbpr_msgOut(pMsgBuff,tab_size);
-	break;
-   case CA_LINK:
-	sprintf(pmsg,"%4s: CA_LINK",pfield_name);
-	dbpr_msgOut(pMsgBuff,tab_size);
-	break;
-    default:
-	sprintf(pmsg,"%4s: dbprReportLink: Illegal link.type",
-	    pfield_name);
-	dbpr_msgOut(pMsgBuff,tab_size);
-	break;
+	if(ind>=LINK_NTYPES) {
+	    sprintf(pmsg,"%4s: Illegal Link Type", pfield_name);
+	} else {
+	    pvalue = dbGetString(pdbEntry);
+	    sprintf(pmsg,"%4s:%s %s",
+		pfield_name,
+		pamaplinkType[ind].strvalue,
+		pvalue);
+	}
     }
+    dbpr_msgOut(pMsgBuff,tab_size);
+    dbFinishEntry(&dbEntry);
     return;
 }
 
@@ -1477,46 +1348,4 @@ char *record_name;
   dbScanUnlock(precord);
  
   return(0);
-}
-
-int dbllsdblinks(int lset)
-{
-    int			link;
-    dbRecDes		*pdbRecDes;
-    dbFldDes		*pdbFldDes;
-    dbRecordNode 	*pdbRecordNode;
-    dbCommon		*precord;
-    DBLINK		*plink;
-    
-    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbbase->recDesList); pdbRecDes;
-    pdbRecDes = (dbRecDes *)ellNext(&pdbRecDes->node)) {
-	for (pdbRecordNode=(dbRecordNode *)ellFirst(&pdbRecDes->recList);
-	pdbRecordNode;
-	pdbRecordNode = (dbRecordNode *)ellNext(&pdbRecordNode->node)) {
-	    precord = pdbRecordNode->precord;
-	    if(!(precord->name[0])) continue;
-	    if(precord->lset != lset) continue; 
-	    printf("%s\n",precord->name);
-	    for(link=0; (link<pdbRecDes->no_links) ; link++) {
-		DBADDR	*pdbAddr;
-
-		pdbFldDes = pdbRecDes->papFldDes[pdbRecDes->link_ind[link]];
-		plink = (DBLINK *)((char *)precord + pdbFldDes->offset);
-		if(plink->type != DB_LINK) continue;
-		pdbAddr = (DBADDR *)(plink->value.db_link.pdbAddr);
-		if(pdbFldDes->field_type==DBF_INLINK) {
-			printf("\t INLINK");
-		} else if(pdbFldDes->field_type==DBF_OUTLINK) {
-			printf("\tOUTLINK");
-		} else if(pdbFldDes->field_type==DBF_FWDLINK) {
-			printf("\tFWDLINK");
-		}
-		printf(" %s %s",
-			((plink->value.db_link.process_passive)?" PP":"NPP"),
-			((plink->value.db_link.maximize_sevr)?" MS":"NMS"));
-		printf(" %s\n",pdbAddr->precord->name);
-	    }
-	}
-    }
-    return(0);
 }

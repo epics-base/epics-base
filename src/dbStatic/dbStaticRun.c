@@ -152,23 +152,23 @@ static void doubleToString(double value,char *preturn)
 
 long dbAllocRecord(DBENTRY *pdbentry,char *precordName)
 {
-    dbRecDes		*precdes = pdbentry->precdes;
+    dbRecDes		*pdbRecDes = pdbentry->precdes;
     dbRecordNode	*precnode = pdbentry->precnode;
     dbFldDes		*pflddes;
     int			i;
     char		*precord;
     char		*pfield;
     
-    if(!precdes) return(S_dbLib_recdesNotFound);
+    if(!pdbRecDes) return(S_dbLib_recdesNotFound);
     if(!precnode) return(S_dbLib_recNotFound);
-    precnode->precord = dbCalloc(1,precdes->rec_size);
+    precnode->precord = dbCalloc(1,pdbRecDes->rec_size);
     precord = (char *)precnode->precord;
-    if(precdes->rec_size == 0) {
+    if(pdbRecDes->rec_size == 0) {
 	epicsPrintf("dbAllocRecord(%s) record_size =0\n",
-	    precdes->name);
+	    pdbRecDes->name);
 	return(S_dbLib_noRecSup);
     }
-    pflddes = precdes->papFldDes[0];
+    pflddes = pdbRecDes->papFldDes[0];
     if(!pflddes) {
 	epicsPrintf("dbAllocRecord pflddes for NAME not found\n");
 	return(S_dbLib_flddesNotFound);
@@ -179,9 +179,9 @@ long dbAllocRecord(DBENTRY *pdbentry,char *precordName)
     }
     pfield = precord + pflddes->offset;
     strcpy(pfield,precordName);
-    for(i=1; i<precdes->no_fields; i++) {
+    for(i=1; i<pdbRecDes->no_fields; i++) {
 
-	pflddes = precdes->papFldDes[i];
+	pflddes = pdbRecDes->papFldDes[i];
 	if(!pflddes) continue;
 	pfield = precord + pflddes->offset;
 	pdbentry->pfield = (void *)pfield;
@@ -192,7 +192,7 @@ long dbAllocRecord(DBENTRY *pdbentry,char *precordName)
 	    if(pflddes->initial)  {
 		if(strlen(pflddes->initial) >= pflddes->size) {
 		    epicsPrintf("initial size > size for %s.%s\n",
-			precdes->name,pflddes->name);
+			pdbRecDes->name,pflddes->name);
 		} else {
 		    strcpy(pfield,pflddes->initial);
 		}
@@ -207,8 +207,6 @@ long dbAllocRecord(DBENTRY *pdbentry,char *precordName)
 	case DBF_FLOAT:
 	case DBF_DOUBLE:
 	case DBF_ENUM:
-	case DBF_DEVICE:
-	    if(!pflddes->ftPvt) dbInitDeviceMenu(pdbentry);
 	case DBF_MENU:
 	    if(pflddes->initial) {
 		long status;
@@ -216,8 +214,11 @@ long dbAllocRecord(DBENTRY *pdbentry,char *precordName)
 		status = dbPutStringNum(pdbentry,pflddes->initial);
 		if(status)
 		    epicsPrintf("Error initializing %s.%s initial %s\n",
-			precdes->name,pflddes->name,pflddes->initial);
+			pdbRecDes->name,pflddes->name,pflddes->initial);
 	    }
+	    break;
+	case DBF_DEVICE:
+	    if(!pflddes->ftPvt) dbInitDeviceMenu(pdbentry);
 	    break;
 	case DBF_INLINK:
 	case DBF_OUTLINK:
@@ -242,10 +243,10 @@ long dbAllocRecord(DBENTRY *pdbentry,char *precordName)
 
 long dbFreeRecord(DBENTRY *pdbentry)
 {
-    dbRecDes	*precdes = pdbentry->precdes;
+    dbRecDes	*pdbRecDes = pdbentry->precdes;
     dbRecordNode *precnode = pdbentry->precnode;
 
-    if(!precdes) return(S_dbLib_recdesNotFound);
+    if(!pdbRecDes) return(S_dbLib_recdesNotFound);
     if(!precnode) return(S_dbLib_recNotFound);
     if(!precnode->precord) return(S_dbLib_recNotFound);
     free(precnode->precord);
@@ -255,11 +256,11 @@ long dbFreeRecord(DBENTRY *pdbentry)
 
 long dbGetFieldAddress(DBENTRY *pdbentry)
 {
-    dbRecDes	*precdes = pdbentry->precdes;
+    dbRecDes	*pdbRecDes = pdbentry->precdes;
     dbRecordNode *precnode = pdbentry->precnode;
     dbFldDes	*pflddes = pdbentry->pflddes;
 
-    if(!precdes) return(S_dbLib_recdesNotFound);
+    if(!pdbRecDes) return(S_dbLib_recdesNotFound);
     if(!precnode) return(S_dbLib_recNotFound);
     if(!pflddes) return(S_dbLib_flddesNotFound);
     if(!precnode->precord) return(0);
@@ -269,16 +270,16 @@ long dbGetFieldAddress(DBENTRY *pdbentry)
 
 char *dbRecordName(DBENTRY *pdbentry)
 {
-    dbRecDes	*precdes = pdbentry->precdes;
+    dbRecDes	*pdbRecDes = pdbentry->precdes;
     dbRecordNode *precnode = pdbentry->precnode;
     dbFldDes	*pflddes;
     char	*precord;
 
-    if(!precdes) return(0);
+    if(!pdbRecDes) return(0);
     if(!precnode) return(0);
     if(!precnode->precord) return(0);
     precord = (char *)precnode->precord;
-    pflddes = precdes->papFldDes[0];
+    pflddes = pdbRecDes->papFldDes[0];
     if(!pflddes) return(NULL);
     return(precord + pflddes->offset);
 }
@@ -377,8 +378,7 @@ int  dbIsDefaultValue(DBENTRY *pdbentry)
 	    return((field==0.0));
 	}
 	case DBF_ENUM:
-	case DBF_MENU:
-	case DBF_DEVICE: {
+	case DBF_MENU: {
 	    unsigned short	field = *(unsigned short *)pfield;
 	    unsigned long	ltemp;
 
@@ -388,10 +388,30 @@ int  dbIsDefaultValue(DBENTRY *pdbentry)
 	    }
 	    return((field==0));
 	}
+	case DBF_DEVICE: {
+		dbRecDes	*pdbRecDes = pdbentry->precdes;
+		devSup		*pdevSup;
+
+		if(!pdbRecDes) {
+		    epicsPrintf("dbIsDefaultValue: pdbRecDes is NULL??\n");
+		    return(FALSE);
+		}
+		pdevSup = (devSup *)ellFirst(&pdbRecDes->devList);
+		if(!pdevSup) return(TRUE);
+		return(FALSE);
+	}
 	case DBF_INLINK:
 	case DBF_OUTLINK:
-	case DBF_FWDLINK: 
-	    return(TRUE); /*Dont know what to do with this!!*/
+	case DBF_FWDLINK: {
+	    struct link *plink = (struct link *)pfield;
+
+	    if(!plink) return(FALSE);
+	    if(plink->type!=CONSTANT) return(FALSE);
+	    if(plink->value.constantStr == 0) return(TRUE);
+	    if(strcmp(plink->value.constantStr,pflddes->initial)==0)
+		return(TRUE);
+	    return(FALSE);
+	}
 	default:
 	    return(TRUE);
     }
@@ -583,8 +603,8 @@ void dbGetRecordtypeSizeOffset(dbRecDes *pdbRecDes)
 	(void *)&sizeOffset, &type);
     if (vxstatus != OK) {
 	status = S_rec_noSizeOffset;
-	errPrintf(status,__FILE__,__LINE__,"%s",pdbRecDes->name);
-	return;
+	errPrintf(status,__FILE__,__LINE__,"%s",name);
+	exit(1);
     }
     sizeOffset(pdbRecDes);
 }

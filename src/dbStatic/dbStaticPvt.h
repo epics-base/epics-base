@@ -34,6 +34,7 @@
 
 /*Following are not intended for client code */
 void dbInitDeviceMenu(DBENTRY *pdbentry);
+void dbFreeParmString(char **pparm);
 
 /*The following routines have different versions for run-time no-run-time*/
 long dbAllocRecord(DBENTRY *pdbentry,char *precordName);
@@ -61,7 +62,7 @@ typedef struct{
 	dbRecordNode	*precnode;
 }PVDENTRY;
 int dbPvdTableSize(int size);
-extern int dbDebug;
+extern int dbStaticDebug;
 void	dbPvdInitPvt(DBBASE *pdbbase);
 PVDENTRY *dbPvdFind(DBBASE *pdbbase,char *name,int lenname);
 PVDENTRY *dbPvdAdd(DBBASE *pdbbase,dbRecDes *precdes,dbRecordNode *precnode);

@@ -116,6 +116,9 @@
 #define oldDBR_PUT_ACKT		oldDBR_CTRL_DOUBLE + 1
 #define oldDBR_PUT_ACKS		oldDBR_PUT_ACKT + 1
 #define oldDBR_STSACK_STRING	oldDBR_PUT_ACKS + 1
+
+/*Following is defined in db_access.h*/
+extern unsigned short dbDBRnewToDBRold[DBR_ENUM+1];
 
 
 /* function declarations */
@@ -572,8 +575,6 @@ void fill(pbuffer,size,fillchar)
 /*
  * DB_NAME_TO_ADDR
  */
-static short mapNewToOld[]={0,4,4,1,5,5,6,2,6,3};
-
 short db_name_to_addr(pname,paddr)
   char           *pname;
   struct dbAddr *paddr;
@@ -588,7 +589,7 @@ short db_name_to_addr(pname,paddr)
 	        recGblDbaddrError(S_db_badDbrtype,paddr,"db_name_to_addr error");
 		return(-2);
 	    }
-	    paddr->dbr_field_type = mapNewToOld[ftype];
+	    paddr->dbr_field_type = dbDBRnewToDBRold[ftype];
             return(0);
 	}
         else

@@ -54,7 +54,6 @@
 
 
 #include	<vxWorks.h>
-#include	<lstLib.h>
 #include	<stdlib.h>
 #include	<stdarg.h>
 #include	<stdio.h>
@@ -74,6 +73,7 @@
 #include	<dbBkpt.h>
 #include	<dbScan.h>
 #include	<dbCommon.h>
+#include	<dbLock.h>
 #include	<dbFldTypes.h>
 #include	<dbEvent.h>
 #include	<db_field_log.h>
@@ -90,7 +90,7 @@ static short mapDBFToDBR[DBF_NTYPES] = {
 	DBR_STRING, DBR_CHAR, DBR_UCHAR, DBR_SHORT, DBR_USHORT, 
 	DBR_LONG, DBR_ULONG, DBR_FLOAT, DBR_DOUBLE,
 	DBR_ENUM, DBR_ENUM, DBR_ENUM,
-	DBR_NOACCESS, DBR_NOACCESS, DBR_NOACCESS, DBR_NOACCESS
+	DBR_STRING, DBR_STRING, DBR_STRING, DBR_NOACCESS
 };
 
 /*
@@ -100,500 +100,39 @@ static short mapDBFToDBR[DBF_NTYPES] = {
  *    that flag becomes unset.
  */
 #define MAX_LOCK 10
-
-/*
- *  The lock structure for each database lock set.  A lockset is the
- *    connected graph of all adjacent nodes to a record (with one
- *    exception, single-valued NPP NMS gets), where adjacent is defined
- *    as a record connected by a get, put, or forward link to the current
- *    record.
- */
-struct scanLock {
-	FAST_LOCK	lock;
-	void		*precord;
-	ULONG		start_time;
-	int		task_id;
-};
-
-static struct {
-	int		nset;		/* Number of sets */
-	struct scanLock *pscanLock;	/*addr of array of struct scanLock */
-} dbScanPvt;
 
-struct rset *dbGetRset(struct dbAddr *paddr)
+static long putSpecial(DBADDR *paddr,int pass)
 {
-     return(((struct dbFldDes *)paddr->pfldDes)->pdbRecDes->prset);
-}
-
-int dbIsValueField(struct dbFldDes *pdbFldDes)
-{
-    if(pdbFldDes->pdbRecDes->indvalFlddes == pdbFldDes->indRecDes)
-	return(TRUE);
-    else
-	return(FALSE);
-}
-
-int dbGetFieldIndex(struct dbAddr *paddr)
-{
-    return(((struct dbFldDes *)paddr->pfldDes)->indRecDes);
-}
-
-/*
- *   Initialize the record's dbCommon structure.
- *      dbCommon is the set of all fields that are
- *      common to all record types.  These fields serve
- *      as a header to each record's structure.
- */
-long dbCommonInit(dbCommon *precord, int pass)
-{
-    long status;
-
-    if (pass == 0)
-        return(0);
-
-   /*
-    *  Init the record disable link.  A record will not be
-    *    processed if the value retrieved through this link
-    *    is equal to constant set in the record's disv field.
-    */
-    status = recGblInitFastInLink(&(precord->sdis),
-	(void *) precord, DBR_SHORT, "DISA");
-    if (status)
-       recGblRecordError(status, (void *) precord, "dbCommonInit: SDIS");
-   /*
-    *  Initialize the time stamp link.
-    */
-    status = recGblInitFastInLink(&(precord->tsel),
-	(void *) precord, DBR_SHORT, "TSE");
-
-    if (status)
-       recGblRecordError(status, (void *)precord, "dbCommonInit: TSEL");
-
+    long int	(*pspecial)()=NULL;
+    struct rset	*prset;
+    dbCommon 	*precord=(dbCommon *)(paddr->precord);
+    long	status=0;
+    long	special=paddr->special;
+	
+    prset = dbGetRset(paddr);
+    if(special<100) { /*global processing*/
+	if((special==SPC_NOMOD) && (pass==0)) {
+	    status = S_db_noMod;
+	    recGblDbaddrError(status,paddr,"dbPut");
+	    return(status);
+	}else if(special==SPC_SCAN){
+	    if(pass==0)
+		scanDelete(precord);
+	    else
+		scanAdd(precord);
+	}else if((special==SPC_AS) && (pass==1)) {
+	    asChangeGroup((ASMEMBERPVT *)&precord->asp,precord->asg);
+	}
+    }else {
+	if( prset && (pspecial = (prset->special))) {
+	    status=(*pspecial)(paddr,pass);
+	    if(status) return(status);
+	} else if(pass==0){
+	    recGblRecSupError(S_db_noSupport,paddr,"dbPut", "special");
+	    return(S_db_noSupport);
+	}
+    }
     return(0);
-} /* end dbCommonInit() */
-
-void dbScanLock(dbCommon *precord)
-{
-	struct scanLock *pscanLock;
-	short		lset=((dbCommon *)precord)->lset - 1;
-
-       /* Move range check to iocInit */
-	if(lset < 0 || lset >= dbScanPvt.nset) {
-		errMessage(S_db_badLset, "Lock Set out of range:dbScanLock");
-		taskSuspend(taskIdSelf());
-	}
-	pscanLock = dbScanPvt.pscanLock + lset;
-	FASTLOCK(&pscanLock->lock);
-	pscanLock->start_time = tickGet();
-	pscanLock->task_id = taskIdSelf();
-	pscanLock->precord = (void *)precord;
-	return;
-}
-
-void dbScanUnlock(dbCommon *precord)
-{
-	struct scanLock *pscanLock;
-	short		lset=((dbCommon *)precord)->lset - 1;
-
-       /* Put check in iocInit() */
-	if(lset<0 || lset>=dbScanPvt.nset) {
-		errMessage(S_db_badLset,"Lock Set out of range:dbScanUnlock");
-		taskSuspend(taskIdSelf());
-	}
-	pscanLock = dbScanPvt.pscanLock + lset;
-	pscanLock->precord = NULL;
-	FASTUNLOCK(&pscanLock->lock);
-	return;
-}
-
-void dbScanLockInit(int nset)
-{
-	struct scanLock	*pscanLock;
-	int i;
-
-	dbScanPvt.nset = nset;
-
-       /*
-        *  Allocate one scan lock structure for each
-        *     lockset in the database.
-        */
-	pscanLock = calloc((size_t)nset, (size_t)sizeof(struct scanLock));
-
-	dbScanPvt.pscanLock = pscanLock;
-
-       /*
-        *  Initialize scan lock structure for
-        *    all locksets.  This includes
-        *    initializing the FASTLOCK semaphore.
-        */
-	for (i=0; i<nset; i++, pscanLock++) {
-	    FASTLOCKINIT(&pscanLock->lock);
-	    pscanLock->precord=NULL;
-	    pscanLock->start_time=0;
-	    pscanLock->task_id=0;
-	}
-	return;
-}
-
-/*
- *  Process a record if its scan field is passive.
- *     Will notify if processing is complete by callback.
- *       (only if you are interested in completion)
- */
-long dbScanPassive(dbCommon *pfrom, dbCommon *pto)
-{
-    long status;
-	
-    /* if not passive just return success */
-    if(pto->scan != 0) return(0);
-
-    if(pfrom && pfrom->ppn) dbNotifyAdd(pfrom,pto);
-    status = dbProcess(pto);
-    return(status);
-}
-
-/*KLUDGE: Following needed so that dbPutLink to PROC field works correctly*/
-long dbScanLink(dbCommon *pfrom, dbCommon *pto)
-{
-    long status;
-
-    if(pfrom && pfrom->ppn) dbNotifyAdd(pfrom,pto);
-    status = dbProcess(pto);
-    return(status);
-}
-
-/*
- *   Process the record.
- *     1.  Check for breakpoints.
- *     2.  Check the process active flag (PACT).
- *     3.  Check the disable link.
- *     4.  Check the RSET (record support entry table) exists.
- *     5.  Run the process routine specific to the record type.
- *     6.  Check to see if record contents should be automatically printed.
- */
-long dbProcess(dbCommon *precord)
-{
-	struct rset	*prset;
-	unsigned char	tpro=precord->tpro;
-	short		lset = precord->lset;
-	long		status = 0;
-	static char 	trace=0;
-	static int	trace_lset=0;
-	int		set_trace=FALSE;
-
-        /*
-         *  Note that it is likely that if any changes are made
-         *   to dbProcess() corresponding changes will have to
-         *   be made in the breakpoint handler.
-         */
- 
-        /* see if there are any stopped records or breakpoints */
-        if (lset_stack_not_empty) {
-           /*
-            *  Check to see if the record should be processed
-            *   and activate breakpoint accordingly.  If this
-            *   function call returns non-zero, skip record
-            *   support and fall out of dbProcess().  This is
-            *   done so that a dbContTask() can be spawned to
-            *   take over record processing for the lock set
-            *   containing a breakpoint.
-            */
-            if (dbBkpt(precord))
-                goto all_done;
-        }
-    
-	/* check for trace processing*/
-	if (tpro) {
-		if (vxTas(&trace)) {
-			trace_lset = lset;
-			set_trace = TRUE;
-		}
-	}
-
-	/* If already active dont process */
-	if (precord->pact) {
-	        struct rset     *prset;
-		struct valueDes valueDes;
-		unsigned short	monitor_mask;
-
-		if (trace && trace_lset==lset)
-			printf("active:    %s\n",precord->name);
-		/* raise scan alarm after MAX_LOCK times */
-		if (precord->stat==SCAN_ALARM)
-                    goto all_done;
-
-		if (precord->lcnt++ !=MAX_LOCK)
-                    goto all_done;
-
-		if (precord->sevr>=INVALID_ALARM)
-                    goto all_done;
-
-		recGblSetSevr(precord, SCAN_ALARM, INVALID_ALARM);
-		monitor_mask = recGblResetAlarms(precord);
-		monitor_mask |= DBE_VALUE;
-	        prset=(struct rset *)precord->rset;
-
-		if (prset && prset->get_value) {
-			(*prset->get_value)(precord, &valueDes);
-			db_post_events(precord, valueDes.pvalue, monitor_mask);
-		}
-		goto all_done;
-	}
-        else precord->lcnt = 0;
-
-       /*
-        *  Check the record disable link.  A record will not be
-        *    processed if the value retrieved through this link
-        *    is equal to constant set in the record's disv field.
-        */
-        status = recGblGetFastLink(&(precord->sdis),
-	    (void *)precord, &(precord->disa));
-
-	/* if disabled check disable alarm severity and return success */
-	if (precord->disa == precord->disv) {
-		struct valueDes valueDes;
-
-		if (trace && trace_lset==lset)
-			printf("disabled:  %s\n",precord->name);
-
-		/*take care of caching and notifyCompletion*/
-		precord->rpro = FALSE;
-		if (precord->ppn)
-                    dbNotifyCompletion(precord);
-
-		/* raise disable alarm */
-		if (precord->stat==DISABLE_ALARM)
-                    goto all_done;
-
-		precord->sevr = precord->diss;
-		precord->stat = DISABLE_ALARM;
-		precord->nsev = 0;
-		precord->nsta = 0;
-
-		/* anyone waiting for an event on this record?*/
-		if (precord->mlis.count == 0)
-                    goto all_done;
-
-		db_post_events(precord, &precord->stat, DBE_VALUE);
-		db_post_events(precord, &precord->sevr, DBE_VALUE);
-	        prset=(struct rset *)precord->rset;
-
-		if (prset && prset->get_value) {
-		    (*prset->get_value)(precord, &valueDes);
-		    db_post_events(precord, valueDes.pvalue, DBE_VALUE|DBE_ALARM);
-		}
-		goto all_done;
-	}
-
-	/* locate record processing routine */
-        /* put this in iocInit() !!! */
-	if (!(prset=(struct rset *)precord->rset) || !(prset->process)) {
-		precord->pact=1;/*set pact TRUE so error is issued only once*/
-		recGblRecordError(S_db_noRSET, (void *)precord, "dbProcess");
-		status = S_db_noRSET;
-		if (trace && trace_lset == lset)
-			printf("failure:   %s\n", precord->name);
-
-		goto all_done;
-	}
-
-	if (trace && trace_lset==lset)
-		printf("process:   %s\n", precord->name);
-
-	/* process record */
-	status = (*prset->process)(precord);
-
-        /*
-         *  Print record's fields if PRINT_MASK set in breakpoint field
-         */
-        if (lset_stack_not_empty) {
-                dbPrint(precord);
-        }
-
-all_done:
-	if (set_trace) {
-		trace_lset = 0;
-		trace = 0;
-	}
-
-	return(status);
-}
-
-/*
- *  Fill out a database structure (*paddr) for
- *    a record given by the name "pname."
- *
- *    Returns error codes from StaticLib module, not
- *        from dbAccess.
- */
-long dbNameToAddr(char *pname,DBADDR *paddr)
-{
-	DBENTRY		dbEntry;
-	long		status=0;
-	struct rset	*prset;
-	dbFldDes	*pflddes;
-
-	dbInitEntry(pdbbase,&dbEntry);
-	if(status = dbFindRecord(&dbEntry,pname)) return(status);
-	paddr->precord = dbEntry.precnode->precord;
-	if(!dbEntry.pfield) {
-		if(status=dbFindField(&dbEntry,"VAL"))return(status);
-	}
-	paddr->pfield = dbEntry.pfield;
-	pflddes = dbEntry.pflddes;
-	paddr->pfldDes = (void *)pflddes;
-	paddr->field_type = pflddes->field_type;
-	paddr->dbr_field_type = mapDBFToDBR[pflddes->field_type];
-	paddr->field_size = pflddes->size;
-	paddr->special = pflddes->special;
-
-	/*if special is SPC_DBADDR then call cvt_dbaddr		*/
-	/*it may change pfield,no_elements,field_type,dbr_field_type,*/
-	/*field_size,and special*/
-	paddr->no_elements=1;
-	if( ((paddr->special)==SPC_DBADDR)
-	  && (prset=dbGetRset(paddr))
-	  && (prset->cvt_dbaddr) ) 
-		status = (*prset->cvt_dbaddr)(paddr);
-
-	return(status);
-}
-
-long dbValueSize(
-	short     dbr_type
-)
-{
-     /* sizes for value associated with each DBR request type */
-     static long size[] = {
-        MAX_STRING_SIZE,                /* STRING       */
-        sizeof(char),                   /* CHAR         */
-        sizeof(unsigned char),          /* UCHAR        */
-        sizeof(short),                  /* SHORT        */
-        sizeof(unsigned short),         /* USHORT       */
-        sizeof(long),                   /* LONG         */
-        sizeof(unsigned long),          /* ULONG        */
-        sizeof(float),                  /* FLOAT        */
-        sizeof(double),                 /* DOUBLE       */
-        sizeof(unsigned short)};        /* ENUM         */
-
-     return(size[dbr_type]);
-}
-
-long dbBufferSize(
-     short     dbr_type,
-     long      options,
-     long      no_elements
-)
-{
-    long nbytes=0;
-
-    nbytes += dbValueSize(dbr_type) * no_elements;
-    if(options & DBR_STATUS)	nbytes += dbr_status_size;
-    if(options & DBR_UNITS)	nbytes += dbr_units_size;
-    if(options & DBR_PRECISION) nbytes += dbr_precision_size;
-    if(options & DBR_TIME)	nbytes += dbr_time_size;
-    if(options & DBR_ENUM_STRS)	nbytes += dbr_enumStrs_size;
-    if(options & DBR_GR_LONG)	nbytes += dbr_grLong_size;
-    if(options & DBR_GR_DOUBLE)	nbytes += dbr_grDouble_size;
-    if(options & DBR_CTRL_LONG) nbytes += dbr_ctrlLong_size;
-    if(options & DBR_CTRL_DOUBLE)nbytes += dbr_ctrlDouble_size;
-    if(options & DBR_AL_LONG)   nbytes += dbr_alLong_size;
-    if(options & DBR_AL_DOUBLE) nbytes += dbr_alDouble_size;
-    return(nbytes);
-}
-
-/*
- *  Get value through fast input link.
- *
- *  1.  Check for and call channel access routine instead if appropriate
- *  2.  Set PACT flag
- *  3.  Process record if process passive field set
- *  4.  Maximize severity through the link if flag set
- *  5.  Reset PACT flag
- */
-long dbFastLinkGet(
-     struct link *plink,
-     dbCommon *precord,
-     void *pdest)
-{
-  long status = 0;
-  char pact = precord->pact;
-
-  precord->pact = TRUE;
-
- /*
-  *  Test for CA_LINK
-  */
-  if (plink->type == CA_LINK) {
-       status = dbCaGetLink(plink);
-  }
-  else {
-       struct db_link *pdb_link = &(plink->value.db_link);
-       DBADDR *pdb_addr = (DBADDR *) (pdb_link->pdbAddr);
-
-       if (pdb_link->process_passive) {
-          status = dbScanPassive(precord, pdb_addr->precord);
-
-          if (status) {
-             precord->pact = pact;
-             return(status);
-          }
-       }
-
-       if (pdb_link->maximize_sevr) {
-           recGblSetSevr(precord, LINK_ALARM, pdb_addr->precord->sevr);
-       }
-
-      /*
-       *  Call conversion routine
-       */
-       status = (*(pdb_link->conversion))(pdb_addr->pfield, pdest, pdb_addr);
-  }
-
-  precord->pact = pact;
-  return(status);
-}
-
-long dbGetField(
-DBADDR	*paddr,
-short		dbrType,
-void		*pbuffer,
-long		*options,
-long		*nRequest,
-void		*pflin
-)
-{
-	dbCommon *precord = (dbCommon *)(paddr->precord);
-	long		status;
-
-	dbScanLock(precord);
-	status = dbGet(paddr,dbrType,pbuffer,options,nRequest,pflin);
-	dbScanUnlock(precord);
-	return(status);
-}
-
-long dbGetLink(
-	struct db_link	*pdblink,
-	dbCommon	*pdest,
-	short  		dbrType,
-	void		*pbuffer,
-	long		*options,
-	long		*nRequest
-)
-{
-	DBADDR	*paddr=(DBADDR*)(pdblink->pdbAddr);
-	dbCommon *psource=paddr->precord;
-	long	status;
-
-	if(pdblink->process_passive && psource->scan==0) {
-		status=dbScanPassive(pdest,psource);
-		if(status) return(status);
-	}
-	if(pdblink->maximize_sevr) recGblSetSevr(pdest,LINK_ALARM,psource->sevr);
-	
-	status= dbGet(paddr,dbrType,pbuffer,options,nRequest,NULL);
-	if(status) recGblRecordError(status,(void *)pdest,"dbGetLink");
-        return(status);
 }
 
 static void get_enum_strs(DBADDR *paddr,void **ppbuffer,
@@ -773,30 +312,16 @@ static void get_alarm(DBADDR *paddr,void	**ppbuffer,
 	return;
 }
 
-long dbGet(
-DBADDR	*paddr,
-short		dbrType,
-void		*pbuffer,
-long		*options,
-long		*nRequest,
-void		*pflin
-)
+static void getOptions(DBADDR *paddr,void **poriginal,long *options,void *pflin)
 {
 	db_field_log	*pfl= (db_field_log *)pflin;
-	long		no_elements=paddr->no_elements;
-	long 		offset;
 	struct rset	*prset;
 	short		field_type=paddr->field_type;
-	long		(*pconvert_routine)();
-	dbCommon *pcommon;
-	long		status;
-	long		*perr_status=NULL;
+	dbCommon	*pcommon;
+	void		*pbuffer = *poriginal;
 
 
 	prset=dbGetRset(paddr);
-
-	if(!(*options)) goto GET_DATA;
-
 	/* Process options */
 	pcommon = (dbCommon *)(paddr->precord);
 	if( (*options) & DBR_STATUS ) {
@@ -809,11 +334,11 @@ void		*pflin
 	    }
 	    *((unsigned short *)pbuffer)++ = pcommon->acks;
 	    *((unsigned short *)pbuffer)++ = pcommon->ackt;
-	    *perr_status = 0;
 	}
 	if( (*options) & DBR_UNITS ) {
 	    if( prset && prset->get_units ){ 
 		char *	pchar = (char *)pbuffer;
+
 		(*prset->get_units)(paddr,pchar);
 		pchar[DB_UNITS_SIZE-1] = '\0';
 	    } else {
@@ -823,15 +348,18 @@ void		*pflin
 	    pbuffer = (char *)pbuffer + dbr_units_size;
 	}
 	if( (*options) & DBR_PRECISION ) {
-	    struct dbr_precision *pdbr_precision=( struct dbr_precision *)pbuffer;
+	    struct dbr_precision *pdbr_precision=
+		(struct dbr_precision *)pbuffer;
 
-	    if((field_type==DBF_FLOAT || field_type==DBF_DOUBLE) &&  prset && prset->get_precision ){ 
+	    if((field_type==DBF_FLOAT || field_type==DBF_DOUBLE)
+	    &&  prset && prset->get_precision ){ 
 		(*prset->get_precision)(paddr,pbuffer);
 		if(pdbr_precision->field_width<=0)
-			pdbr_precision->field_width = pdbr_precision->precision + 5;
+			pdbr_precision->field_width =
+				pdbr_precision->precision + 5;
 	    } else {
 		memset(pbuffer,'\0',dbr_precision_size);
-		*options = (*options) ^ DBR_PRECISION; /*Turn off DBR_PRECISION*/
+		*options = (*options)^DBR_PRECISION; /*Turn off DBR_PRECISION*/
 	    }
 	    pbuffer = (char *)pbuffer + dbr_precision_size;
 	}
@@ -844,236 +372,611 @@ void		*pflin
 		*((unsigned long *)pbuffer)++ = pcommon->time.nsec;
 	    }
 	}
-	if( (*options) & DBR_ENUM_STRS ) get_enum_strs(paddr,&pbuffer,prset,options);
+	if( (*options) & DBR_ENUM_STRS )
+		get_enum_strs(paddr,&pbuffer,prset,options);
 	if( (*options) & (DBR_GR_LONG|DBR_GR_DOUBLE ))
 			get_graphics(paddr,&pbuffer,prset,options);
 	if((*options) & (DBR_CTRL_LONG | DBR_CTRL_DOUBLE ))
 			get_control(paddr,&pbuffer,prset,options);
 	if((*options) & (DBR_AL_LONG | DBR_AL_DOUBLE ))
 			get_alarm(paddr,&pbuffer,prset,options);
+	*poriginal = pbuffer;
+}
+
+struct rset *dbGetRset(struct dbAddr *paddr)
+{
+     return(((struct dbFldDes *)paddr->pfldDes)->pdbRecDes->prset);
+}
+
+int dbIsValueField(struct dbFldDes *pdbFldDes)
+{
+    if(pdbFldDes->pdbRecDes->indvalFlddes == pdbFldDes->indRecDes)
+	return(TRUE);
+    else
+	return(FALSE);
+}
+
+int dbGetFieldIndex(struct dbAddr *paddr)
+{
+    return(((struct dbFldDes *)paddr->pfldDes)->indRecDes);
+}
 
 
-GET_DATA:
+/*
+ *  Process a record if its scan field is passive.
+ *     Will notify if processing is complete by callback.
+ *       (only if you are interested in completion)
+ */
+long dbScanPassive(dbCommon *pfrom, dbCommon *pto)
+{
+    long status;
+	
+    /* if not passive just return success */
+    if(pto->scan != 0) return(0);
 
-        if(*nRequest==0) return(0);
+    if(pfrom && pfrom->ppn) dbNotifyAdd(pfrom,pto);
+    status = dbProcess(pto);
+    return(status);
+}
+
+/*KLUDGE: Following needed so that dbPutLink to PROC field works correctly*/
+long dbScanLink(dbCommon *pfrom, dbCommon *pto)
+{
+    long status;
+
+    if(pfrom && pfrom->ppn) dbNotifyAdd(pfrom,pto);
+    status = dbProcess(pto);
+    return(status);
+}
+
+/*
+ *   Process the record.
+ *     1.  Check for breakpoints.
+ *     2.  Check the process active flag (PACT).
+ *     3.  Check the disable link.
+ *     4.  Check the RSET (record support entry table) exists.
+ *     5.  Run the process routine specific to the record type.
+ *     6.  Check to see if record contents should be automatically printed.
+ */
+long dbProcess(dbCommon *precord)
+{
+	struct rset	*prset = (struct rset *)precord->rset;
+	dbRecDes	*pdbRecDes = (dbRecDes *)precord->rdes;
+	unsigned char	tpro=precord->tpro;
+	unsigned long	lset;
+	long		status = 0;
+	static char 	trace=0;
+	static unsigned long trace_lset=0;
+	int		set_trace=FALSE;
+	dbFldDes	*pdbFldDes;
+
+	lset = dbLockGetLockId(precord);
+        /*
+         *  Note that it is likely that if any changes are made
+         *   to dbProcess() corresponding changes will have to
+         *   be made in the breakpoint handler.
+         */
+ 
+        /* see if there are any stopped records or breakpoints */
+        if (lset_stack_not_empty) {
+           /*
+            *  Check to see if the record should be processed
+            *   and activate breakpoint accordingly.  If this
+            *   function call returns non-zero, skip record
+            *   support and fall out of dbProcess().  This is
+            *   done so that a dbContTask() can be spawned to
+            *   take over record processing for the lock set
+            *   containing a breakpoint.
+            */
+            if (dbBkpt(precord))
+                goto all_done;
+        }
+    
+	/* check for trace processing*/
+	if (tpro) {
+		if (vxTas(&trace)) {
+			trace_lset = lset;
+			set_trace = TRUE;
+		}
+	}
+
+	/* If already active dont process */
+	if (precord->pact) {
+		unsigned short	monitor_mask;
+
+		if (trace && trace_lset==lset)
+			printf("active:    %s\n",precord->name);
+		/* raise scan alarm after MAX_LOCK times */
+		if (precord->stat==SCAN_ALARM) goto all_done;
+		if (precord->lcnt++ !=MAX_LOCK) goto all_done;
+		if (precord->sevr>=INVALID_ALARM) goto all_done;
+		recGblSetSevr(precord, SCAN_ALARM, INVALID_ALARM);
+		monitor_mask = recGblResetAlarms(precord);
+		monitor_mask |= DBE_VALUE;
+		pdbFldDes = pdbRecDes->papFldDes[pdbRecDes->indvalFlddes];
+		db_post_events(precord,
+			(void *)(((char *)precord) + pdbFldDes->offset),
+			monitor_mask);
+		goto all_done;
+	}
+        else precord->lcnt = 0;
+
+       /*
+        *  Check the record disable link.  A record will not be
+        *    processed if the value retrieved through this link
+        *    is equal to constant set in the record's disv field.
+        */
+        status = dbGetLink(&(precord->sdis),DBR_SHORT,&(precord->disa),0,0);
+
+	/* if disabled check disable alarm severity and return success */
+	if (precord->disa == precord->disv) {
+		if (trace && trace_lset==lset)
+			printf("disabled:  %s\n",precord->name);
+
+		/*take care of caching and notifyCompletion*/
+		precord->rpro = FALSE;
+		if (precord->ppn) dbNotifyCompletion(precord);
+		/* raise disable alarm */
+		if (precord->stat==DISABLE_ALARM) goto all_done;
+		precord->sevr = precord->diss;
+		precord->stat = DISABLE_ALARM;
+		precord->nsev = 0;
+		precord->nsta = 0;
+		db_post_events(precord, &precord->stat, DBE_VALUE);
+		db_post_events(precord, &precord->sevr, DBE_VALUE);
+		pdbFldDes = pdbRecDes->papFldDes[pdbRecDes->indvalFlddes];
+		db_post_events(precord,
+			(void *)(((char *)precord) + pdbFldDes->offset),
+			DBE_VALUE|DBE_ALARM);
+		goto all_done;
+	}
+
+	/* locate record processing routine */
+        /* put this in iocInit() !!! */
+	if (!(prset=(struct rset *)precord->rset) || !(prset->process)) {
+		precord->pact=1;/*set pact TRUE so error is issued only once*/
+		recGblRecordError(S_db_noRSET, (void *)precord, "dbProcess");
+		status = S_db_noRSET;
+		if (trace && trace_lset == lset)
+			printf("failure:   %s\n", precord->name);
+
+		goto all_done;
+	}
+	if (trace && trace_lset==lset) printf("process:   %s\n", precord->name);
+	/* process record */
+	status = (*prset->process)(precord);
+        /* Print record's fields if PRINT_MASK set in breakpoint field */
+        if (lset_stack_not_empty) {
+                dbPrint(precord);
+        }
+all_done:
+	if (set_trace) {
+		trace_lset = 0;
+		trace = 0;
+	}
+	return(status);
+}
+
+/*
+ *  Fill out a database structure (*paddr) for
+ *    a record given by the name "pname."
+ *
+ *    Returns error codes from StaticLib module, not
+ *        from dbAccess.
+ */
+long dbNameToAddr(char *pname,DBADDR *paddr)
+{
+	DBENTRY		dbEntry;
+	long		status=0;
+	struct rset	*prset;
+	dbFldDes	*pflddes;
+
+	dbInitEntry(pdbbase,&dbEntry);
+	if(status = dbFindRecord(&dbEntry,pname)) return(status);
+	paddr->precord = dbEntry.precnode->precord;
+	if(!dbEntry.pfield) {
+		if(status=dbFindField(&dbEntry,"VAL"))return(status);
+	}
+	paddr->pfield = dbEntry.pfield;
+	pflddes = dbEntry.pflddes;
+	paddr->pfldDes = (void *)pflddes;
+	paddr->field_type = pflddes->field_type;
+	paddr->dbr_field_type = mapDBFToDBR[pflddes->field_type];
+	paddr->field_size = pflddes->size;
+	paddr->special = pflddes->special;
+
+	/*if special is SPC_DBADDR then call cvt_dbaddr		*/
+	/*it may change pfield,no_elements,field_type,dbr_field_type,*/
+	/*field_size,and special*/
+	paddr->no_elements=1;
+	if(((paddr->special)==SPC_DBADDR)
+	&& (prset=dbGetRset(paddr))
+	&& (prset->cvt_dbaddr)) status = (*prset->cvt_dbaddr)(paddr);
+	return(status);
+}
+
+long dbValueSize(
+	short     dbr_type
+)
+{
+     /* sizes for value associated with each DBR request type */
+     static long size[] = {
+        MAX_STRING_SIZE,                /* STRING       */
+        sizeof(char),                   /* CHAR         */
+        sizeof(unsigned char),          /* UCHAR        */
+        sizeof(short),                  /* SHORT        */
+        sizeof(unsigned short),         /* USHORT       */
+        sizeof(long),                   /* LONG         */
+        sizeof(unsigned long),          /* ULONG        */
+        sizeof(float),                  /* FLOAT        */
+        sizeof(double),                 /* DOUBLE       */
+        sizeof(unsigned short)};        /* ENUM         */
+
+     return(size[dbr_type]);
+}
+
+
+long dbBufferSize(
+     short     dbr_type,
+     long      options,
+     long      no_elements
+)
+{
+    long nbytes=0;
+
+    nbytes += dbValueSize(dbr_type) * no_elements;
+    if(options & DBR_STATUS)	nbytes += dbr_status_size;
+    if(options & DBR_UNITS)	nbytes += dbr_units_size;
+    if(options & DBR_PRECISION) nbytes += dbr_precision_size;
+    if(options & DBR_TIME)	nbytes += dbr_time_size;
+    if(options & DBR_ENUM_STRS)	nbytes += dbr_enumStrs_size;
+    if(options & DBR_GR_LONG)	nbytes += dbr_grLong_size;
+    if(options & DBR_GR_DOUBLE)	nbytes += dbr_grDouble_size;
+    if(options & DBR_CTRL_LONG) nbytes += dbr_ctrlLong_size;
+    if(options & DBR_CTRL_DOUBLE)nbytes += dbr_ctrlDouble_size;
+    if(options & DBR_AL_LONG)   nbytes += dbr_alLong_size;
+    if(options & DBR_AL_DOUBLE) nbytes += dbr_alDouble_size;
+    return(nbytes);
+}
+
+long dbGetLinkValue(struct link	*plink, short dbrType, void *pbuffer,
+	long *poptions, long *pnRequest)
+{
+    long		status = 0;
+
+    if(plink->type==CONSTANT) {
+	if(poptions) *poptions = 0;
+	if(pnRequest) *pnRequest = 0;
+    } else if(plink->type==DB_LINK) {
+	dbCommon	*precord = plink->value.pv_link.precord;
+	struct pv_link	*ppv_link = &(plink->value.pv_link);
+	DBADDR		*paddr = ppv_link->pvt;
+
+	/* scan passive records with links that are process passive  */
+	if(ppv_link->pvlMask&pvlOptPP) {
+	    dbCommon	*pfrom = paddr->precord;
+	    unsigned char   pact;
+
+	    pact = precord->pact;
+	    precord->pact = TRUE;
+	    status = dbScanPassive(precord,pfrom);
+	    precord->pact = pact;
+	    if(status) return(status);
+	}
+	if(ppv_link->pvlMask&pvlOptMS)
+	    recGblSetSevr(precord,LINK_ALARM,paddr->precord->sevr);
+
+	if(ppv_link->getCvt && ppv_link->lastGetdbrType==dbrType) {
+	    status = (*ppv_link->getCvt)(paddr->pfield,pbuffer, paddr);
+	} else {
+	    unsigned short	dbfType= paddr->field_type;
+	    long		no_elements = paddr->no_elements;
+
+	    if((dbrType<0) || (dbrType>DBR_ENUM) || (dbfType > DBF_DEVICE)) {
+		status = S_db_badDbrtype;
+		recGblRecordError(status,(void *)precord,"GetLinkValue");
+		recGblSetSevr(precord,LINK_ALARM,INVALID_ALARM);
+		return(status);
+	    }
+	    /*  attempt to make a fast link */
+	    if((!poptions || (*poptions == 0))
+	    && (no_elements == 1)
+	    && (!pnRequest || (*pnRequest == 1))) {
+		ppv_link->getCvt = dbFastGetConvertRoutine[dbfType][dbrType];
+		status = (*ppv_link->getCvt) (paddr->pfield,pbuffer, paddr);
+	    }else{
+		status=dbGet(paddr,dbrType,pbuffer,poptions,pnRequest,NULL);
+		ppv_link->getCvt = 0;
+	    }
+	}
+	ppv_link->lastGetdbrType = dbrType;
+	if(status){
+	    recGblRecordError(status,(void *)precord,"dbGetLinkValue");
+	    recGblSetSevr(precord,LINK_ALARM,INVALID_ALARM);
+	}
+    }else if(plink->type==CA_LINK) {
+	struct dbCommon	*precord = plink->value.pv_link.precord;
+	struct pv_link	*pcalink = &(plink->value.pv_link);
+	unsigned short sevr;
+
+	status=dbCaGetLink(plink,dbrType,pbuffer,&sevr,pnRequest);
+	if(status) {
+	    recGblSetSevr(precord,LINK_ALARM,INVALID_ALARM);
+	}else if(pcalink->pvlMask&pvlOptMS){
+	    recGblSetSevr(precord,LINK_ALARM,sevr);
+	}
+	if(poptions) *poptions = 0;
+    } else {
+	status = -1;
+	errMessage(-1,"dbGetLinkValue: Illegal link type");
+	taskSuspend(0);
+    }
+    return(status);
+}
+
+long dbPutLinkValue(struct link *plink,short dbrType,
+	void *pbuffer,long nRequest)
+{
+	long		status=0;
+
+	if(plink->type==DB_LINK) {
+		struct dbCommon	*psource = plink->value.pv_link.precord;
+		struct pv_link	*ppv_link= &(plink->value.pv_link);
+		DBADDR		*paddr	= (DBADDR*)(ppv_link->pvt);
+		dbCommon 	*pdest	= paddr->precord;
+
+		status=dbPut(paddr,dbrType,pbuffer,nRequest);
+		if(ppv_link->pvlMask&pvlOptMS)
+			recGblSetSevr(pdest,LINK_ALARM,psource->sevr);
+		if(status) return(status);
+		if((paddr->pfield==(void *)&pdest->proc)
+		|| (ppv_link->pvlMask&pvlOptPP && pdest->scan==0)) {
+			/*Note:If ppn then dbNotifyCancel will reprocess*/
+			/*if dbPutField caused asyn record to process   */
+			/* ask for reprocessing*/
+			if(!psource->ppn && pdest->putf) pdest->rpro = TRUE;
+			/* otherwise ask for the record to be processed*/
+			else status=dbScanLink(psource,pdest);
+		}
+		if(status) recGblSetSevr(psource,LINK_ALARM,INVALID_ALARM);
+	} else if(plink->type==CA_LINK) {
+		struct dbCommon	*psource = plink->value.pv_link.precord;
+
+		status = dbCaPutLink(plink,dbrType,pbuffer, nRequest);
+		if(status < 0)
+			recGblSetSevr(psource,LINK_ALARM,INVALID_ALARM);
+	} else {
+		status=-1;
+		errMessage(-1,"dbPutLinkValue: Illegal link type");
+		taskSuspend(0);
+	}
+	return(status);
+}
+
+long dbGetField( DBADDR	*paddr,short dbrType,void *pbuffer,
+	long *options,long *nRequest,void *pflin)
+{
+	dbCommon	*precord = (dbCommon *)(paddr->precord);
+	long		status = 0;
+	short		dbfType = paddr->field_type;
+
+	dbScanLock(precord);
+	if(dbfType>=DBF_INLINK && dbfType<=DBF_FWDLINK) {
+		DBENTRY	dbEntry;
+		dbFldDes *pfldDes = (dbFldDes *)paddr->pfldDes;
+		char	*rtnString;
+		char	*pbuf = (char *)pbuffer;
+
+		if(dbrType!=DBR_STRING) {
+			status = S_db_badDbrtype;
+			goto done;
+		}
+		if(options && (*options))
+			getOptions(paddr,(void **)&pbuf,options,pflin);
+		dbInitEntry(pdbbase,&dbEntry);
+		if(status = dbFindRecord(&dbEntry,precord->name)) goto done;
+		if(status = dbFindField(&dbEntry,pfldDes->name)) goto done;
+		rtnString = dbGetString(&dbEntry);
+		/*begin kludge for old db_access MAX_STRING_SIZE*/
+		if(strlen(rtnString)>=MAX_STRING_SIZE) {
+			strncpy(pbuf,rtnString,MAX_STRING_SIZE-1);
+			pbuf[MAX_STRING_SIZE-1] = 0;
+		} else {
+		    strcpy(pbuf,rtnString);
+		}
+		/*end kludge for old db_access MAX_STRING_SIZE*/
+		dbFinishEntry(&dbEntry);
+		goto done;
+			
+	} else {
+		status = dbGet(paddr,dbrType,pbuffer,options,nRequest,pflin);
+	}
+done:
+	dbScanUnlock(precord);
+	return(status);
+}
+
+long dbGet(DBADDR *paddr,short dbrType,void *pbuffer,long *options,
+	long *nRequest,void *pflin)
+{
+	db_field_log	*pfl= (db_field_log *)pflin;
+	long		no_elements=paddr->no_elements;
+	long 		offset;
+	struct rset	*prset;
+	short		field_type=paddr->field_type;
+	long		(*pconvert_routine)();
+	long		status = 0;
+	char		message[80];
+
+
+	prset=dbGetRset(paddr);
+	if(options && (*options)) {
+		void *pbuf = pbuffer;
+
+		getOptions(paddr,&pbuf,options,pflin);
+		pbuffer = pbuf;
+	}
+        if(nRequest && *nRequest==0) return(0);
 	/* Check for valid request */
 	if( INVALID_DB_REQ(dbrType) || (field_type>DBF_DEVICE) ){
-		char message[80];
-
 		sprintf(message,"dbGet - database request type is %d",dbrType);
 		recGblDbaddrError(S_db_badDbrtype,paddr,message);
-		if(perr_status) *perr_status = S_db_badDbrtype;
 		return(S_db_badDbrtype);
 	}
-	
 	/* check for array			*/
 	if( no_elements>1 && prset && (prset->get_array_info) ) {
 		status = (*prset->get_array_info)(paddr,&no_elements,&offset);
 	}
 	else offset=0;
-	if(no_elements<(*nRequest)) *nRequest = no_elements;
-	if(!(pconvert_routine=dbGetConvertRoutine[field_type][dbrType])) {
-		char message[80];
+	if(offset==0 && (!nRequest || no_elements==1)) {
+		if(nRequest) *nRequest = 1;
+		if(pfl!=NULL) {
+		    DBADDR	localAddr;
 
-		sprintf(message,"dbGet - database request type is %d",dbrType);
-		recGblDbaddrError(S_db_badDbrtype,paddr,message);
-		if(perr_status) *perr_status = S_db_badDbrtype;
-		return(S_db_badDbrtype);
-	}
-	/* convert database field to buffer type and place it in the buffer */
-	if(pfl!=NULL) {
-	    DBADDR	localAddr;
-
-	    memcpy(&localAddr,paddr,sizeof(localAddr));
-	    /*Use longest field size*/
-	    localAddr.pfield = (char *)&pfl->field;
-	    status=(*pconvert_routine)(&localAddr,pbuffer,*nRequest,
-			no_elements,offset);
+		    localAddr = *paddr; /*Structure copy*/
+		    localAddr.pfield = (char *)&pfl->field;
+		    status = (*dbFastGetConvertRoutine[field_type][dbrType])
+				(localAddr.pfield,pbuffer, &localAddr);
+		} else {
+		    status = (*dbFastGetConvertRoutine[field_type][dbrType])
+				(paddr->pfield,pbuffer, paddr);
+		}
 	} else {
-	    status=(*pconvert_routine)(paddr,pbuffer,*nRequest,
-			no_elements,offset);
+		long	n;
+
+		if(nRequest) {
+			if(no_elements<(*nRequest)) *nRequest = no_elements;
+			n = no_elements;
+		} else {
+			n = 1;
+		}
+		pconvert_routine=dbGetConvertRoutine[field_type][dbrType];
+		if(!pconvert_routine) {
+			sprintf(message,"dbGet - database request type is %d",
+				dbrType);
+			recGblDbaddrError(S_db_badDbrtype,paddr,message);
+			return(S_db_badDbrtype);
+		}
+		/* convert database field  and place it in the buffer */
+		if(pfl!=NULL) {
+		    DBADDR	localAddr;
+	
+		    localAddr = *paddr; /*Structure copy*/
+		    localAddr.pfield = (char *)&pfl->field;
+		    status=(*pconvert_routine)(&localAddr,pbuffer,n,
+				no_elements,offset);
+		} else {
+		    status=(*pconvert_routine)(paddr,pbuffer,n,
+				no_elements,offset);
+		}
 	}
-	if(perr_status) *perr_status = status;
         return(status);
 }
 
-/*
- *  Put value through fast link
- *
- *  1. Check for and call channel access routine instead if appropriate
- *  2. Set PACT flag
- *  3. Propagate Maximize severity
- *  4. Check if put was made to force processing field
- *  5. Process record if process passive field set
- *  6. Check field for special processing
- *
- *  pl_record stands for pointer to local record.
- *  pr_record stands for pointer to remote record.
- */
-long dbFastLinkPut(struct link *plink,dbCommon *pl_record,void *psource)
+long dbPutField(DBADDR *paddr,short dbrType,void *pbuffer,long  nRequest)
 {
-  long status = 0;
-  char pact = pl_record->pact;
-
-  pl_record->pact = TRUE;
-
- /*
-  *  Check for CA Link
-  */
-  if (plink->type == CA_LINK) {
-       long options = 0;
-       long nRequest = 1;
-
-       dbCaPutLink(plink, &options, &nRequest);
-  }
-  else {
-       struct db_link	*pdb_link = &(plink->value.db_link);
-       DBADDR		*paddr = (DBADDR *) (pdb_link->pdbAddr);
-       dbCommon		*pdest = (dbCommon *) paddr->precord; 
-       dbFldDes		*pfldDes = (dbFldDes *) (paddr->pfldDes);
-       long		special = paddr->special;
-       struct rset	*prset;
-       int		isValueField;
-       long int (*pspecial)() = NULL;
-
-       prset = dbGetRset(paddr);
-
-       if (special) {
-           if (special < 100) {
-               if (special == SPC_NOMOD) {
-		    recGblDbaddrError(S_db_noMod,paddr,"dbPut");
-                    pl_record->pact = pact;
-                    return(S_db_noMod);
-               }
-               else { 
-                  if (special == SPC_SCAN) {
-                    scanDelete(pdest);
-                  }
-               }
-           }
-           else {
-                  if (prset && (pspecial = (prset->special))) {
-                     status = (*pspecial)(paddr, 0);
-                     if (status) {
-                         pl_record->pact = pact;
-                         return(status);
-                     }
-                  }
-                  else {
-                     recGblRecSupError(S_db_noSupport, paddr, "dbPut", "special");
-                     pl_record->pact = pact;
-                     return(S_db_noSupport);
-                  }
-           }
-       }
-
-      /*
-       *  Call conversion routine
-       */
-       status = (*(pdb_link->conversion))(psource, paddr->pfield, paddr);
-
-       if (status) {
-            pl_record->pact = pact;
-            return(status);
-       }
-
-      /*
-       *  Check for special processing
-       */
-       if (special) {
-          if (special < 100) { /*global processing*/
-               if (special == SPC_SCAN) {
-                  scanAdd(pdest);
-               }
-               else if (special == SPC_AS) {
-                   asChangeGroup((ASMEMBERPVT *)&pdest->asp, pdest->asg);
-               }
-          }
-          else {
-               status = (*pspecial)(paddr, 1);
-               if (status) {
-                  pl_record->pact = pact;
-                  return(status);
-               }
-          }
-       }
-
-      /*
-       *  Propagate events for this field
-       *    if the field is VAL and process_passive is true
-       *    don't propagate.
-       */
-
-	isValueField = dbIsValueField(pfldDes);
-	if (isValueField) pdest->udf=FALSE;
-	if(pdest->mlis.count &&
-	(!isValueField || (!pfldDes->process_passive)))
-	    db_post_events(pdest,paddr->pfield,DBE_VALUE);
-
-       if (pdb_link->maximize_sevr) {
-           recGblSetSevr(pdest, LINK_ALARM, pl_record->sevr);
-       }
-
-       if ((paddr->pfield == (void *) &pdest->proc) ||
-           (pdb_link->process_passive && pdest->scan == 0)) {
-
-          /*
-           *  Note: If ppn then dbNotifyCancel will handle reprocessing
-           *    if dbPutField caused asyn record to process ask for reprocessing
-           */
-           if (!pl_record->ppn && pdest->putf)
-              pdest->rpro = TRUE;
-
-          /* otherwise ask for the record to be processed*/
-           else status = dbScanLink(pl_record, pdest);
-       }
- }
- pl_record->pact = pact;
- return(status);
-}
-
-long dbPutLink(
-	struct db_link	*pdblink,
-	dbCommon	*psource,
-	short		dbrType,
-	void   		*pbuffer,
-	long		nRequest
-)
-{
-	DBADDR	*paddr=(DBADDR*)(pdblink->pdbAddr);
-	dbCommon *pdest=paddr->precord;
-	long	status;
-
-	status=dbPut(paddr,dbrType,pbuffer,nRequest);
-	if(pdblink->maximize_sevr)
-		recGblSetSevr(pdest,LINK_ALARM,psource->sevr);
-	if(status) return(status);
-
-        if((paddr->pfield==(void *)&pdest->proc)
-	|| (pdblink->process_passive && pdest->scan==0)) {
-	    /*Note: If ppn then dbNotifyCancel will handle reprocessing*/
-	    /*if dbPutField caused asyn record to process ask for reprocessing*/
-	    if(!psource->ppn && pdest->putf) pdest->rpro = TRUE;
-	    /* otherwise ask for the record to be processed*/
-	    else status=dbScanLink(psource,pdest);
-	}
-	return(status);
-}
-
-long dbPutField(
-       DBADDR   *paddr,
-       short           dbrType,
-       void            *pbuffer,
-       long            nRequest
-)
-{
-	long	status;
-	dbFldDes *pfldDes=(dbFldDes *)(paddr->pfldDes);
-	dbCommon *precord = (dbCommon *)(paddr->precord);
+	long		status = 0;
+	long		special=paddr->special;
+	dbFldDes	*pfldDes=(dbFldDes *)(paddr->pfldDes);
+	dbCommon 	*precord = (dbCommon *)(paddr->precord);
+	short		dbfType = paddr->field_type;
 
 	/*check for putField disabled*/
 	if(precord->disp) {
 		if((void *)(&precord->disp) != paddr->pfield) return(0);
+	}
+	if(dbfType>=DBF_INLINK && dbfType<=DBF_FWDLINK) {
+		DBLINK  	*plink = (DBLINK *)paddr->pfield;
+		DBENTRY		dbEntry;
+		dbFldDes 	*pfldDes = (dbFldDes *)paddr->pfldDes;
+		char		buffer[MAX_STRING_SIZE+2];
+		int		len,j;
+		char		*lastblank;
+
+		if(dbrType!=DBR_STRING) return(S_db_badDbrtype);
+		/*begin kludge for old db_access MAX_STRING_SIZE*/
+		/*Allow M for MS and (N or NM) for NMS */
+		strcpy(buffer,(char *)pbuffer);
+		/*Strip trailing blanks*/
+		len = strlen(buffer);
+		for(j=len-1; j>0; j--) {
+		    if(buffer[j]==' ')
+			buffer[j] = 0;
+		    else
+			break;
+		}
+		lastblank = strrchr(buffer,' ');
+		if(lastblank) {
+		    if(strcmp(lastblank,"M")==0) {
+			strcpy(lastblank,"MS");
+		    } else {
+			if((strcmp(lastblank,"N")==0)
+			|| (strcmp(lastblank,"NM")==0)) {
+			    strcpy(lastblank,"NMS");
+			}
+		    }
+		}
+		/*End kludge for old db_access MAX_STRING_SIZE*/
+		dbLockSetGblLock();
+		dbLockSetRecordLock(precord);
+		if(plink->type == DB_LINK) {
+			free(plink->value.pv_link.pvt);
+			plink->value.pv_link.pvt = 0;
+			plink->type = PV_LINK;
+			dbLockSetSplit(precord);
+		} else if(plink->type == CA_LINK) {
+			dbCaRemoveLink(plink);
+		}
+		plink->value.pv_link.getCvt = 0;
+		plink->value.pv_link.pvlMask = 0;
+		plink->value.pv_link.lastGetdbrType = 0;
+		plink->type = PV_LINK;
+		dbInitEntry(pdbbase,&dbEntry);
+		if(status=dbFindRecord(&dbEntry,precord->name)) goto done;
+		if(status=dbFindField(&dbEntry,pfldDes->name))  goto done;
+		/* check for special processing	is required */
+		if(special) {
+		    status = putSpecial(paddr,0);
+		    if(status) return(status);
+		}
+		if(status=dbPutString(&dbEntry,buffer)) goto done;
+		if(plink->type == PV_LINK) {
+			DBADDR		dbaddr;
+
+			if(!(plink->value.pv_link.pvlMask
+			     &(pvlOptCA|pvlOptCP|pvlOptCPP))
+			&&(dbNameToAddr(plink->value.pv_link.pvname,&dbaddr)==0)){
+				DBADDR	*pdbAddr;
+
+				plink->type = DB_LINK;
+				pdbAddr = dbCalloc(1,sizeof(struct dbAddr));
+				*pdbAddr = dbaddr; /*structure copy*/;
+				plink->value.pv_link.precord = precord;
+				plink->value.pv_link.pvt = pdbAddr;
+				dbLockSetMerge(precord,pdbAddr->precord);
+			} else {/*It is a CA link*/
+			    char	*pperiod;
+
+			    plink->type = CA_LINK;
+			    plink->value.pv_link.precord = precord;
+			    dbCaAddLink(plink);
+			    if(pfldDes->field_type==DBF_FWDLINK) {
+				pperiod = strrchr(plink->value.pv_link.pvname,
+					'.');
+				if(pperiod && strstr(pperiod,"PROC"))
+				    plink->value.pv_link.pvlMask |= pvlOptFWD;
+			    }
+			}
+		}
+		if(special) {
+		    status = putSpecial(paddr,1);
+		    if(status) return(status);
+		}
+    		db_post_events(precord,plink,DBE_VALUE);
+		dbFinishEntry(&dbEntry);
+done:
+		dbLockSetGblUnlock();
+		return(status);
 	}
 	dbScanLock(precord);
 	status=dbPut(paddr,dbrType,pbuffer,nRequest);
@@ -1133,25 +1036,19 @@ long		offset;
     return(0);
 }
 
-long dbPut(
-       DBADDR   *paddr,
-       short           dbrType,
-       void            *pbuffer,
-       long            nRequest
-)
+long dbPut(DBADDR *paddr,short dbrType,void *pbuffer,long nRequest)
 {
 	long		no_elements=paddr->no_elements;
 	long		dummy;
 	long		offset;
-	long		(*pconvert_routine)();
-	long int	(*pspecial)()=NULL;
 	struct rset	*prset;
-	dbCommon *precord=(dbCommon *)(paddr->precord);
+	dbCommon 	*precord=(dbCommon *)(paddr->precord);
 	long		status=0;
 	dbFldDes	*pfldDes;
 	long		special=paddr->special;
 	short		field_type=paddr->field_type;
 	int		isValueField;
+	char		message[80];
 
 	if(dbrType==DBR_PUT_ACKT && field_type<=DBF_DEVICE) {
 	    status=putAckt(paddr,pbuffer,(long)1,(long)1,(long)0);
@@ -1159,12 +1056,7 @@ long dbPut(
 	} else if(dbrType==DBR_PUT_ACKS && field_type<=DBF_DEVICE) {
 	    status=putAcks(paddr,pbuffer,(long)1,(long)1,(long)0);
 	    return(status);
-	/* Check for valid request */
-	} else if( INVALID_DB_REQ(dbrType) || (field_type>DBF_DEVICE)
-	|| (!(pconvert_routine=dbPutConvertRoutine[dbrType][field_type])) )
-	{
-		char message[80];
-
+	} else if( INVALID_DB_REQ(dbrType) || (field_type>DBF_DEVICE)) {
 		sprintf(message,"dbPut - database request type is %d",dbrType);
 		recGblDbaddrError(S_db_badDbrtype,paddr,message);
 		return(S_db_badDbrtype);
@@ -1174,61 +1066,36 @@ long dbPut(
 	
 	/* check for special processing	is required */
 	if(special) {
-	    if(special<100) { /*global processing*/
-		if(special==SPC_NOMOD) {
-		    status = S_db_noMod;
-		    recGblDbaddrError(status,paddr,"dbPut");
-		    return(status);
-		}else if(special==SPC_SCAN){
-		    scanDelete(precord);
+	    status = putSpecial(paddr,0);
+	    if(status) return(status);
+	}
+	if(no_elements<=1) {
+		status = (*dbFastPutConvertRoutine[dbrType][field_type])
+			(pbuffer,paddr->pfield, paddr);
+	} else {
+		if(prset && (prset->get_array_info) ) {
+			status= (*prset->get_array_info)
+				(paddr,&dummy,&offset);
 		}
-	    }
-	    else {
-		if( prset && (pspecial = (prset->special))) {
-		    status=(*pspecial)(paddr,0);
-		    if(status) return(status);
-		} else {
-		    recGblRecSupError(S_db_noSupport,paddr,"dbPut",
-			"special");
-		    return(S_db_noSupport);
+		else offset=0;
+		if(no_elements<(nRequest)) nRequest = no_elements;
+		status=(*dbPutConvertRoutine[dbrType][field_type])
+			(paddr,pbuffer,nRequest,no_elements,offset);
+		/* update array info	*/
+		if(prset && (prset->put_array_info) ) {
+			status= (*prset->put_array_info)
+				(paddr,nRequest);
 		}
-	    }
 	}
-
-	/* check for array			*/
-	if( no_elements>1 && prset && (prset->get_array_info) ) {
-		status= (*prset->get_array_info)(paddr,&dummy,&offset);
-	}
-	else offset=0;
-	if(no_elements<(nRequest)) nRequest = no_elements;
-
-	/* convert database field to buffer type and place it in the buffer */
-	status=(*pconvert_routine)(paddr,pbuffer,nRequest,no_elements,offset);
-
-	/* update array info	*/
-	if( no_elements>1 && prset && (prset->put_array_info) ) {
-		status= (*prset->put_array_info)(paddr,nRequest);
-	}
-
 	if(status) return(status);
 
 	/* check for special processing	is required */
 	if(special) {
-	    if(special<100) { /*global processing*/
-		if(special==SPC_SCAN) {
-		    scanAdd(precord);
-		} else if(special==SPC_AS) {
-		    asChangeGroup((ASMEMBERPVT *)&precord->asp,precord->asg);
-		}
-	    }
-	    else {
-		status=(*pspecial)(paddr,1);
-		if(status) return(status);
-	    }
+	    status = putSpecial(paddr,1);
+	    if(status) return(status);
 	}
-
 	/* propagate events for this field */
-	/* if the field is VAL and process_passive is true dont propagate*/
+	/* if the field is VAL and pvlMask&pvlOptPP is true dont propagate*/
 	pfldDes = (dbFldDes *)(paddr->pfldDes);
 	isValueField = dbIsValueField(pfldDes);
 	if (isValueField) precord->udf=FALSE;

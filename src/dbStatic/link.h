@@ -34,13 +34,15 @@
  * .03  9-9-92		frl	added vxi link type
  * .04  12-13-93	mcn	added conversion pointer for fast links
  * .05  1-10-95		jt	added rf_io structure
+ * .06	01-10-96	lrd	added ca_link structure fields
  */
 
 #include <dbDefs.h>
 
+#ifndef INClinkh
+#define INClinkh 1
+
 /* link types */
-#ifndef INClinkLT
-#define INClinkLT
 #define CONSTANT	0
 #define PV_LINK		1
 #define VME_IO		2
@@ -80,39 +82,32 @@ maplinkType pamaplinkType[LINK_NTYPES] = {
 };
 #endif /*LINK_GBLSOURCE*/
 
-#endif  /*INClinkLT*/
-
-#ifndef INClinkh
-#define INClinkh 1
-#define	INSTIO_FLD_SZ	36	/* field size for instio */
-#define	LINK_PARAM_SZ	32
-#define	VME_PARAM_SZ	32
-#define	AB_PARAM_SZ	28
-#define	CAMAC_PARAM_SZ	26
-#define	VXI_PARAM_SZ	26
 #define VXIDYNAMIC	0
 #define VXISTATIC	1
 
-/* structure of a link to a process variable*/
+/* structure of a PV_LINK DB_LINK and a CA_LINK	*/
+/*Options defined by pvlMask			*/
+#define pvlOptMS	0x1	/*Maximize Severity*/
+#define pvlOptPP	0x2	/*Process Passive*/
+#define pvlOptCA	0x4	/*Always make it a CA link*/
+#define pvlOptCP	0x8	/*CA + process on monitor*/
+#define pvlOptCPP	0x10	/*CA + process passive record on monitor*/
+#define pvlOptFWD	0x20	/*Generate ca_put for forward link*/
+typedef long (*LINKCVT)();
 struct pv_link {
-	short process_passive; /* should in/out passive link be processed*/
-	short maximize_sevr;   /* maximize sevr of link. stat=LINK_ALARM*/
-	char *pvname;
-};
-
-/* structure of a link to a database link */
-struct db_link {
-	short process_passive; /* should in/out passive link be processed */
-	short maximize_sevr;   /* maximize sevr of link. stat=LINK_ALARM */
-	void *pdbAddr;         /* pointer to database address structure */
-        long (*conversion)();  /* conversion routine for fast links */
+	char	*pvname;	/*pvname to link to*/
+	void	*precord;	/*Address of record containing link*/
+	void	*pvt;		/*CA or DB private*/
+	LINKCVT	getCvt;		/*input conversion function*/
+	short	pvlMask;	/*Options mask*/
+	short	lastGetdbrType;	/*last dbrType for DB or CA get*/
 };
 
 /* structure of a VME io channel */
 struct vmeio {
 	short	card;
 	short	signal;
-	char	parm[VME_PARAM_SZ];
+	char	*parm;
 };
 
 /* structure of a CAMAC io channel */
@@ -122,7 +117,7 @@ struct camacio {
 	short	n;
 	short	a;
 	short	f;
-	char	parm[CAMAC_PARAM_SZ];
+	char	*parm;
 };
 
 /* structure of a RF io channel */
@@ -141,14 +136,14 @@ struct abio {
 	short	adapter;
 	short	card;
 	short	signal;
-	char	parm[AB_PARAM_SZ];
+	char	*parm;
 };
 
 /* structure of a gpib io channel */
 struct gpibio {
 	short	link;
 	short	addr;		/* device address */
-	char	parm[LINK_PARAM_SZ];
+	char	*parm;
 };
 
 /* structure of a bitbus io channel */
@@ -157,7 +152,7 @@ struct	bitbusio {
 	unsigned char	node;
 	unsigned char	port;
 	unsigned char	signal;
-	char	parm[LINK_PARAM_SZ];
+	char	*parm;
 };
 
 /* structure of a bitbus to gpib io channel */
@@ -166,12 +161,12 @@ struct	bbgpibio {
 	unsigned char	bbaddr;
 	unsigned char	gpibaddr;
 	unsigned char	pad;
-	char	parm[LINK_PARAM_SZ];
+	char	*parm;
 };
 
 /* structure of an instrument io link */
 struct	instio {
-	char	string[INSTIO_FLD_SZ];		/* the cat of location.
+	char	*string;		/* the cat of location.
 							signal.parameter  */
 };
 
@@ -182,7 +177,7 @@ struct	vxiio{
 	short	slot;
 	short	la;				/* logical address if flag =1 */
 	short	signal;
-	char	parm[VXI_PARAM_SZ];
+	char	*parm;
 };
 
 /* union of possible address structures */
@@ -195,18 +190,15 @@ union value{
 	struct abio	abio;		/* allen-bradley io point */
 	struct gpibio	gpibio;
 	struct bitbusio	bitbusio;
-	struct db_link	db_link;	/* Data base link	*/
-	void *ca_link;			/* Channel Access link	*/
 	struct instio	instio;		/* instrument io link */
 	struct bbgpibio bbgpibio;	/* bitbus to gpib io link */
 	struct	vxiio	vxiio;		/* vxi io */
 };
 
 struct link{
-	long		type;
-	long		pad;
 	union value	value;
+	short		type;
 };
 
 typedef struct link DBLINK;
-#endif
+#endif /*INClinkh*/

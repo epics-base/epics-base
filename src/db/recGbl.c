@@ -111,27 +111,32 @@ void recGblRecSupError(long status,struct dbAddr *paddr,char *pcaller_name,
 {
 	char 		buffer[200];
 	struct dbCommon *precord;
-	dbFldDes	*pdbFldDes=(dbFldDes *)(paddr->pfldDes);
-	dbRecDes	*pdbRecDes = pdbFldDes->pdbRecDes;
+	dbFldDes	*pdbFldDes = 0;
+	dbRecDes	*pdbRecDes = 0;
 
+	if(paddr) pdbFldDes=(dbFldDes *)(paddr->pfldDes);
+	if(pdbFldDes) pdbRecDes = pdbFldDes->pdbRecDes;
 	buffer[0]=0;
 	strcat(buffer,"Record Support Routine (");
 	if(psupport_name)
 		strcat(buffer,psupport_name);
 	else
 		strcat(buffer,"Unknown");
-	strcat(buffer,") not available.\nRecord Type is ");
-	strcat(buffer,pdbRecDes->name);
-	if(paddr) { /* print process variable name */
+	strcat(buffer,") not available.\n");
+	if(pdbRecDes) {
+	    strcat(buffer,"Record Type is ");
+	    strcat(buffer,pdbRecDes->name);
+	    if(paddr) { /* print process variable name */
 		precord=(struct dbCommon *)(paddr->precord);
 		strcat(buffer,", PV is ");
 		strcat(buffer,precord->name);
 		strcat(buffer,".");
 		strcat(buffer,pdbFldDes->name);
-		strcat(buffer,"  ");
+		strcat(buffer,"\n");
+	    }
 	}
 	if(pcaller_name) {
-		strcat(buffer,"\nerror detected in routine: ");
+		strcat(buffer,"error detected in routine: ");
 		strcat(buffer,pcaller_name);
 	}
 	errMessage(status,buffer);
@@ -164,7 +169,7 @@ void recGblGetPrec(struct dbAddr *paddr,long *precision)
     }
     return;
 }
-
+
 void recGblGetGraphicDouble(struct dbAddr *paddr,struct dbr_grDouble *pgd)
 {
     dbFldDes               *pdbFldDes=(dbFldDes *)(paddr->pfldDes);
@@ -174,7 +179,7 @@ void recGblGetGraphicDouble(struct dbAddr *paddr,struct dbr_grDouble *pgd)
 
     return;
 }
-
+
 void recGblGetAlarmDouble(struct dbAddr *paddr,struct dbr_alDouble *pad)
 {
     pad->upper_alarm_limit = 0;
@@ -184,7 +189,7 @@ void recGblGetAlarmDouble(struct dbAddr *paddr,struct dbr_alDouble *pad)
 
     return;
 }
-
+
 void recGblGetControlDouble(struct dbAddr *paddr,struct dbr_ctrlDouble *pcd)
 {
     dbFldDes               *pdbFldDes=(dbFldDes *)(paddr->pfldDes);
@@ -246,70 +251,6 @@ int  recGblInitConstantLink(struct link *plink,short dbftype,void *pdest)
     return(TRUE);
 }
 
-long recGblGetLinkValue(struct link *plink,void *pdbc,short dbrType,
-	void *pdest,long *poptions,long	*pnRequest)
-{
-	struct dbCommon	*precord = pdbc;
-	long		status=0;
-	unsigned char   pact;
-
-	pact = precord->pact;
-	precord->pact = TRUE;
-	switch (plink->type){
-		case(CONSTANT):
-			*pnRequest = 0;
-			break;
-		case(DB_LINK):
-			status=dbGetLink(&(plink->value.db_link),
-				precord,dbrType,pdest,poptions,pnRequest);
-			if(status)
-				recGblSetSevr(precord,LINK_ALARM,INVALID_ALARM);
-			break;
-		case(CA_LINK):
-			status=dbCaGetLink(plink);
-			if(status)
-				recGblSetSevr(precord,LINK_ALARM,INVALID_ALARM);
-			break;
-		default:
-			status=-1;
-			recGblSetSevr(precord,SOFT_ALARM,INVALID_ALARM);
-	}
-	precord->pact = pact;
-	return(status);
-}
-
-long recGblPutLinkValue(struct link *plink,void *pdbc,short dbrType,
-	void *psource,long *pnRequest)
-{
-	struct dbCommon *precord = pdbc;
-	long		options=0;
-	long		status=0;
-	unsigned char   pact;
-
-	pact = precord->pact;
-	precord->pact = TRUE;
-	switch (plink->type){
-		case(CONSTANT):
-			break;
-		case(DB_LINK):
-			status=dbPutLink(&(plink->value.db_link),
-				precord,dbrType,psource,*pnRequest);
-			if(status)
-				recGblSetSevr(precord,LINK_ALARM,INVALID_ALARM);
-			break;
-		case(CA_LINK):
-			status = dbCaPutLink(plink, &options, pnRequest);
-			if(status)
-				recGblSetSevr(precord,LINK_ALARM,INVALID_ALARM);
-			break;
-		default:
-			status=-1;
-			recGblSetSevr(precord,SOFT_ALARM,INVALID_ALARM);
-	}
-	precord->pact = pact;
-	return(status);
-}
-
 unsigned short recGblResetAlarms(void *precord)
 {
     struct dbCommon *pdbc = precord;
@@ -342,10 +283,15 @@ unsigned short recGblResetAlarms(void *precord)
 void recGblFwdLink(void *precord)
 {
     struct dbCommon *pdbc = precord;
+    static short    fwdLinkValue = 1;
 
     if(pdbc->flnk.type==DB_LINK ) {
-	struct dbAddr	*paddr = pdbc->flnk.value.db_link.pdbAddr;
+	struct dbAddr	*paddr = pdbc->flnk.value.pv_link.pvt;
 	dbScanPassive(precord,paddr->precord);
+    } else
+    if((pdbc->flnk.type==CA_LINK) 
+    && (pdbc->flnk.value.pv_link.pvlMask & pvlOptFWD)) {
+	dbCaPutLink(&pdbc->flnk,DBR_SHORT,&fwdLinkValue,1);
     }
     /*Handle dbPutFieldNotify record completions*/
     if(pdbc->ppn) dbNotifyCompletion(pdbc);
@@ -358,18 +304,14 @@ void recGblFwdLink(void *precord)
     pdbc->putf = FALSE;
 }
 
-
+
 void recGblGetTimeStamp(void* prec)
 {
     struct dbCommon* pr = (struct dbCommon*)prec;
-    long nRequest=1;
-    long options=0;
  
     if(pr->tsel.type!=CONSTANT)
     {
-        recGblGetLinkValue(&(pr->tsel),(void*)pr,
-            DBR_SHORT,&(pr->tse),&options,&nRequest);
- 
+        dbGetLink(&(pr->tsel), DBR_SHORT,&(pr->tse),0,0);
         TSgetTimeStamp((int)pr->tse,(struct timespec*)&pr->time);
     }
     else
@@ -420,131 +362,3 @@ static void getMaxRangeValues(field_type,pupper_limit,plower_limit)
     }
     return;
 }
-
-/*  Fast link initialization routines  */
- 
-/*
- *  String if bad database request type chosen
- */
-static char *bad_in_req_type = "recGblInitFastInLink:  Bad database request type";
-static char *bad_out_req_type = "recGblInitFastInLink:  Bad database request type";
- 
-/*
- *  Initialize fast input links.
- */
-long recGblInitFastInLink(
-     struct link *plink,
-     void *precord,
-     short dbrType,
-     char *fld_name)
-{
-  long status = 0;
-  struct db_link *pdb_link = &(plink->value.db_link);
-  struct dbAddr *pdb_addr = (struct dbAddr *) (pdb_link->pdbAddr);
-  long (*cvt_func)();
- 
- /*
-  *  Check for CA_LINK
-  */
-  if (plink->type == PV_LINK) {
-      status = dbCaAddInlink(plink, (struct dbCommon *) precord, fld_name);
-      return(status);
-  }
- 
- /*
-  *  Return if not database link (A constant link, for example)
-  */
-  if (plink->type != DB_LINK)
-      return(0);
- 
- /*
-  *  Check for legal conversion range...
-  */
-  if ((pdb_addr->field_type < DBF_STRING) ||
-      (pdb_addr->field_type > DBF_DEVICE) ||
-      (       dbrType       < DBR_STRING) ||
-      (       dbrType       > DBR_ENUM)) {
- 
-      pdb_link->conversion = cvt_dummy;
-      recGblDbaddrError(S_db_badDbrtype, pdb_addr, bad_in_req_type);
-      return(S_db_badDbrtype);
-  }
- 
- /*
-  *  Lookup conversion function
-  */
-  cvt_func = dbFastGetConvertRoutine[pdb_addr->field_type][dbrType];
- 
-  if (cvt_func == NULL) {
-      pdb_link->conversion = cvt_dummy;
-      recGblDbaddrError(S_db_badDbrtype, pdb_addr, bad_in_req_type);
-      return(S_db_badDbrtype);
-  }
- 
- /*
-  *  Put function it into conversion field (Run Time Link)
-  */
-  pdb_link->conversion = cvt_func;
- 
-  return(0);
-}
- 
-/*
- *  Initialize fast output links.
- */
-long recGblInitFastOutLink(
-     struct link *plink,
-     void *precord,
-     short dbrType,
-     char *fld_name)
-{
-  long status = 0;
-  struct db_link *pdb_link = &(plink->value.db_link);
-  struct dbAddr *pdb_addr = (struct dbAddr *) (pdb_link->pdbAddr);
-  long (*cvt_func)();
- 
- /*
-  *  Check for CA_LINK
-  */
-  if (plink->type == PV_LINK) {
-      status = dbCaAddOutlink(plink, (struct dbCommon *) precord, fld_name);
-      return(status);
-  }
- 
- /*
-  *  Return if not database link (A constant link, for example)
-  */
-  if (plink->type != DB_LINK)
-      return(0);
- 
- /*
-  *  Check for legal conversion range...
-  */
-  if ((pdb_addr->field_type < DBF_STRING) ||
-      (pdb_addr->field_type > DBF_DEVICE) ||
-      (       dbrType       < DBR_STRING) ||
-      (       dbrType       > DBR_ENUM)) {
- 
-      pdb_link->conversion = cvt_dummy;
-      recGblDbaddrError(S_db_badDbrtype, pdb_addr, bad_out_req_type);
-      return(S_db_badDbrtype);
-  }
- /*
-  *  Lookup conversion function
-  */
-  cvt_func = dbFastPutConvertRoutine[dbrType][pdb_addr->field_type];
- 
-  if (cvt_func == NULL) {
-      pdb_link->conversion = cvt_dummy;
-      recGblDbaddrError(S_db_badDbrtype, pdb_addr, bad_out_req_type);
-      return(S_db_badDbrtype);
-  }
- 
- /*
-  *  Put function it into conversion field (Run Time Link)
-  */
-  pdb_link->conversion = cvt_func;
- 
-  return(0);
-}
-

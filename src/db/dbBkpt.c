@@ -28,6 +28,9 @@
  * Modification Log:
  * -----------------
  *  $Log$
+ *  Revision 1.6  1995/11/29 14:23:28  mrk
+ *  Changes for replacing default.dctsdr by all ascii files
+ *
  * Revision 1.5  1995/02/23  21:45:03  mcn
  * Fixed locking error.  OOPS.
  *
@@ -76,6 +79,7 @@
 #include	<dbAccess.h>
 #include	<dbScan.h>
 #include	<dbCommon.h>
+#include	<dbLock.h>
 #include	<dbFldTypes.h>
 #include	<dbBkpt.h>
 #include	<db_field_log.h>
@@ -174,7 +178,7 @@ static SEM_ID bkpt_stack_sem;
  *    lockset to be continued from differs from this
  *    variable.
  */
-static short last_lset = 0;
+static unsigned long last_lset = 0;
 
 /*
  *  FIND_LOCKSET() finds the stack entry
@@ -185,7 +189,7 @@ static short last_lset = 0;
 #define FIND_LOCKSET(precord, pnode) \
   pnode = (struct LS_LIST *) lstFirst(&lset_stack); \
   while ((pnode) != NULL) { \
-     if ((pnode)->l_num == (precord)->lset) break; \
+     if (pnode->l_num == dbLockGetLockId(precord)) break; \
      pnode = (struct LS_LIST *) lstNext((NODE *)pnode); \
   } \
 
@@ -346,7 +350,7 @@ long dbb(char *record_name)
 
      pnode->taskid   = 0;
      pnode->step     = 0;
-     pnode->l_num    = precord->lset;
+     pnode->l_num    = dbLockGetLockId(precord);
      lstAdd(&lset_stack, (NODE *)pnode);
   }
 
@@ -639,7 +643,7 @@ static void dbBkptCont(struct dbCommon *precord)
  /* remove execution semaphore */
   semDelete(pnode->ex_sem);
 
-  printf("\n   BKPT> End debug of lockset %d\n-> ", pnode->l_num);
+  printf("\n   BKPT> End debug of lockset %lu\n-> ", pnode->l_num);
 
  /* free list node */
   free(pnode);
@@ -698,8 +702,7 @@ int dbBkpt(struct dbCommon *precord)
   }
 
  /* Check disable flag */
-  recGblGetFastLink(&precord->sdis, (void *) precord, &precord->disa);
-
+  dbGetLink(&(precord->sdis),DBR_SHORT,&(precord->disa),0,0);
   if (precord->disa == precord->disv) {
      /*
       *  Do not process breakpoints if the record is disabled,
@@ -917,7 +920,7 @@ long dbstat()
   while (pnode != NULL) {
     if (pnode->precord != NULL) {
 
-       printf("LSet: %5.5d  Stopped at: %-28.28s  #B: %5.5d  T: 0x%7.7x\n",
+       printf("LSet: %lu  Stopped at: %-28.28s  #B: %5.5d  T: 0x%7.7x\n",
              pnode->l_num, pnode->precord->name, lstCount(&pnode->bp_list), pnode->taskid);
 
       /* for each entrypoint detected, print out entrypoint statistics */
@@ -932,7 +935,7 @@ long dbstat()
        }
     }
     else {
-       printf("LSet: %5.5d                                            #B: %5.5d  T: 0x%7.7x\n",
+       printf("LSet: %lu                                            #B: %5.5d  T: 0x%7.7x\n",
          pnode->l_num, lstCount(&pnode->bp_list), pnode->taskid);
     }
 

@@ -63,6 +63,7 @@
 #include	<callback.h>
 #include	<dbBase.h>
 #include	<dbCommon.h>
+#include	<dbLock.h>
 #include	<devSup.h>
 #include	<recGbl.h>
 #include	<task_params.h>
@@ -72,7 +73,7 @@
 extern struct dbBase *pdbbase;
 
 /* SCAN ONCE */
-#define ONCE_QUEUE_SIZE 256
+int onceQueueSize = 256;
 static SEM_ID onceSem;
 static RING_ID onceQ;
 static int onceTaskId;
@@ -426,9 +427,15 @@ static void onceTask(void)
     }
 }
 
+int scanOnceSetQueueSize(int size)
+{
+    onceQueueSize = size;
+    return(0);
+}
+
 static void initOnce(void)
 {
-    if((onceQ = rngCreate(sizeof(void *) * ONCE_QUEUE_SIZE))==NULL){
+    if((onceQ = rngCreate(sizeof(void *) * onceQueueSize))==NULL){
 	errMessage(0,"dbScan: initOnce failed");
 	exit(1);
     }
@@ -485,10 +492,12 @@ static void initPeriodic()
 
 static void spawnPeriodic(int ind)
 {
-    struct scan_list *psl;
+    struct scan_list 	*psl;
+    char		taskName[20];
 
     psl = papPeriodic[ind];
-    periodicTaskId[ind] = taskSpawn(PERIODSCAN_NAME,PERIODSCAN_PRI-ind,
+    sprintf(taskName,"scan%d",psl->ticks);
+    periodicTaskId[ind] = taskSpawn(taskName,PERIODSCAN_PRI-ind,
 				PERIODSCAN_OPT,PERIODSCAN_STACK,
 				(FUNCPTR )periodicTask,(int)psl,
 				0,0,0,0,0,0,0,0,0);

@@ -18,7 +18,7 @@ of this distribution.
  * .02	09-10-93	mrk	dbIsDefault always returns FALSE for DEVCHOICE
  * .03	02-23-94	mrk	dbPutString to DEV_CHOICE. Ok if no INP or OUT
  */
-
+
 #ifdef vxWorks
 #include <vxWorks.h>
 #include <taskLib.h>
@@ -50,12 +50,12 @@ of this distribution.
 #include <guigroup.h>
 #include <special.h>
 
-int dbDebug = 0;
+int dbStaticDebug = 0;
 #define messagesize	100
 #define RPCL_LEN 184
 long postfix(char *pinfix, char *ppostfix,short *perror);
 
-static char *ppstring[2]={"NPP","PP"};
+static char *ppstring[5]={"NPP","PP","CA","CP","CPP"};
 static char *msstring[2]={"NMS","MS"};
 
 static int mapDBFtoDCT[DBF_NOACCESS+1] = {
@@ -78,10 +78,6 @@ struct form {
 
 static char *promptCONSTANT[] = {
 	"Constant:"};
-static char *promptPV_LINK[] = {
-	"           PV Name:",
-	"   Process Passive?",
-	" Maximize Severity?"};
 static char *promptVME_IO[] = {
 	"  card:",
 	"signal:",
@@ -129,10 +125,87 @@ static char *promptVXI_IO[] = {
 	"      Signal:",
 	"        parm:"};
 
-static char **promptAddr[VXI_IO+1];
-static int formlines[VXI_IO+1];
+/*Each DBF link type is separate case*/
+#define FWD_LINK	VXI_IO+1
+#define IN_LINK		FWD_LINK+1
+#define OUTLINK		IN_LINK+1
+static char *promptFWD_LINK[] = {
+	" PV Name:"};
+static char *promptIN_LINK[] = {
+	"         PV Name:",
+	"NPP PP CA CP CPP:"
+	"       NMS or MS:"};
+static char *promptOUT_LINK[] = {
+	"  PV Name:",
+	"NPP PP CA:"
+	"NMS or MS:"};
+static char **promptAddr[OUTLINK+1];
+static int formlines[OUTLINK+1];
 
 /* internal routines*/
+/*checkDevChoice initializes INP or OUT field*/
+static char *pNullString = "";
+static long checkDevChoice(DBENTRY *pdbentry, long link_type)
+{
+    dbFldDes  	*savepflddes = pdbentry->pflddes;
+    void	*savepfield = pdbentry->pfield;
+    short	saveindfield = pdbentry->indfield;
+    dbFldDes	*pflddes;
+    DBLINK	*plink;
+    long	status=0;
+
+    status = dbFindField(pdbentry,"INP");
+    if(status) status = dbFindField(pdbentry,"OUT");
+    if(!status) {
+	pflddes = pdbentry->pflddes;
+	plink = (DBLINK *)(pdbentry->pfield);
+	if(plink->type == link_type) goto clean_up;
+	if(link_type==CONSTANT && plink->type==PV_LINK)goto clean_up;
+	if(link_type!=CONSTANT && plink->type==PV_LINK) {
+	    status = S_dbLib_badField;
+	    goto clean_up;
+	}
+	plink->type = link_type;
+	if(plink->type==CONSTANT) free((void *)plink->value.constantStr);
+	memset((char *)plink,0,sizeof(struct link));
+	switch(plink->type) {
+	    case VME_IO: plink->value.vmeio.parm = pNullString; break;
+	    case CAMAC_IO: plink->value.camacio.parm = pNullString; break;
+	    case AB_IO: plink->value.abio.parm = pNullString; break;
+	    case GPIB_IO: plink->value.gpibio.parm = pNullString; break;
+	    case BITBUS_IO: plink->value.bitbusio.parm = pNullString; break;
+	    case INST_IO: plink->value.instio.string = pNullString; break;
+	    case BBGPIB_IO: plink->value.bbgpibio.parm = pNullString; break;
+	    case VXI_IO: plink->value.vxiio.parm = pNullString; break;
+	}
+    } else {
+	if(link_type==CONSTANT) status = 0;
+	else status = S_dbLib_badField;
+    }
+clean_up:
+    pdbentry->pflddes = savepflddes;
+    pdbentry->pfield = savepfield;
+    pdbentry->indfield = saveindfield;
+    return(status);
+}
+
+static long putParmString(char **pparm,char *pstring)
+{
+    size_t	size;
+
+    size = strlen(pstring) + 1;
+    if(size>=MAX_STRING_SIZE) return(S_dbLib_badLink);
+    if(*pparm && (*pparm != pNullString)) free((void *)(*pparm));
+    *pparm = dbCalloc(size, sizeof(char *));
+    strcpy(*pparm,pstring);
+    return(0);
+}
+
+void dbFreeParmString(char **pparm)
+{
+    if(*pparm && (*pparm != pNullString)) free((void *)(*pparm));
+}
+
 static void dbFreePath(DBBASE *pdbbase) {
     ELLLIST	*ppathList;
     dbPathNode	*pdbPathNode;
@@ -157,12 +230,11 @@ static void initForms(void)
 
 	if(!firstTime) return;
 	firstTime = FALSE;
-	for(i=0; i<=VXI_IO; i++) {
+	for(i=0; i<=OUTLINK; i++) {
 	    promptAddr[i] = NULL;
 	    formlines[i] = 0;
 	}
 	promptAddr[CONSTANT] = promptCONSTANT; formlines[CONSTANT] = 1;
-	promptAddr[PV_LINK]  = promptPV_LINK;  formlines[PV_LINK]  = 4;
 	promptAddr[VME_IO]   = promptVME_IO;   formlines[VME_IO]   = 3;
 	promptAddr[CAMAC_IO] = promptCAMAC_IO; formlines[CAMAC_IO] = 6;
 	promptAddr[RF_IO]    = promptRF_IO;    formlines[RF_IO]    = 4;
@@ -172,6 +244,9 @@ static void initForms(void)
 	promptAddr[INST_IO]  = promptINST_IO;  formlines[INST_IO]  = 1;
 	promptAddr[BBGPIB_IO]= promptBBGPIB_IO;formlines[BBGPIB_IO]= 4;
 	promptAddr[VXI_IO]   = promptVXI_IO;   formlines[VXI_IO]   = 6;
+	promptAddr[FWD_LINK] = promptFWD_LINK; formlines[FWD_LINK] = 1;
+	promptAddr[IN_LINK]  = promptIN_LINK;  formlines[IN_LINK]  = 3;
+	promptAddr[OUTLINK]  = promptOUT_LINK; formlines[OUTLINK]  = 3;
 }
 
 static void entryErrMessage(DBENTRY *pdbentry,long status,char *mess)
@@ -219,6 +294,36 @@ static char *getpMessage(DBENTRY *pdbentry)
     return(pdbentry->message);
 }
 
+static long putPvLink(DBENTRY *pdbentry,short pvlMask,char *pvname)
+{
+    dbFldDes	*pflddes;
+    DBLINK	*plink;
+    char	*pname;
+    
+    dbGetFieldAddress(pdbentry);
+    pflddes = pdbentry->pflddes;
+    if(!pflddes) return(-1);
+    plink = (DBLINK *)pdbentry->pfield;
+    if(!plink) return(-1);
+    switch (pflddes->field_type) {
+    case DBF_INLINK:
+    case DBF_OUTLINK:
+    case DBF_FWDLINK:
+	if(plink->type != PV_LINK) return(S_dbLib_badLink);
+	pname = plink->value.pv_link.pvname;
+	if(pname) free((void *)pname);
+	pname = dbCalloc(strlen(pvname)+1,sizeof(char));
+	plink->value.pv_link.pvname = pname;
+	strcpy(pname,pvname);
+	plink->value.pv_link.pvlMask = pvlMask;
+	return(0);
+    default:
+	errPrintf(-1,__FILE__, __LINE__,"Logic Error\n");
+    }
+    return(S_dbLib_badLink);
+}
+
+/*Public only for dbStaticRun*/
 void dbInitDeviceMenu(DBENTRY *pdbentry)
 {
     dbRecDes	*precdes = pdbentry->precdes;
@@ -273,7 +378,7 @@ void *dbMalloc(size_t size)
 #endif
     return(NULL);
 }
-
+
 dbBase *dbAllocBase(void)
 {
     dbBase	*pdbbase;
@@ -288,7 +393,7 @@ dbBase *dbAllocBase(void)
     initForms();
     return (pdbbase);
 }
-
+
 void dbFreeBase(dbBase *pdbbase)
 {
     dbMenu	*pdbMenu;
@@ -657,7 +762,9 @@ long dbWriteRecDesFP(DBBASE *pdbbase,FILE *fp,char *recdesName)
 		}
 	    }
 	    if(pdbFldDes->special) {
-		for(j=0; j<SPC_NTYPES; j++) {
+		if(pdbFldDes->special >= SPC_NTYPES) {
+		    fprintf(fp,"\t\tspecial(%d)\n",pdbFldDes->special);
+		} else for(j=0; j<SPC_NTYPES; j++) {
 		    if(pamapspcType[j].value == pdbFldDes->special) {
 			fprintf(fp,"\t\tspecial(%s)\n",
 				pamapspcType[j].strvalue);
@@ -854,14 +961,20 @@ int dbGetNRecdes(DBENTRY *pdbentry)
 long dbCreateRecord(DBENTRY *pdbentry,char *precordName)
 {
     dbRecDes		*precdes = pdbentry->precdes;
+    dbFldDes		*pdbFldDes;
     PVDENTRY       	*ppvd;
     ELLLIST           	*preclist = NULL;
     dbRecordNode       	*precnode = NULL;
     dbRecordNode       	*pNewRecNode = NULL;
     long		status;
+    devSup		*pdevSup;
 
-    if((int)strlen(precordName)>PVNAME_SZ) return(S_dbLib_nameLength);
     if(!precdes) return(S_dbLib_recdesNotFound);
+    /*Get size of NAME field*/
+    pdbFldDes = precdes->papFldDes[0];
+    if(!pdbFldDes || (strcmp(pdbFldDes->name,"NAME")!=0))
+	return(S_dbLib_nameLength);
+    if((int)strlen(precordName)>=pdbFldDes->size) return(S_dbLib_nameLength);
     /* clear callers entry */
     zeroDbentry(pdbentry);
     if(!dbFindRecord(pdbentry,precordName)) return (S_dbLib_recExists);
@@ -885,7 +998,11 @@ long dbCreateRecord(DBENTRY *pdbentry,char *precordName)
     pdbentry->precnode = pNewRecNode;
     ppvd = dbPvdAdd(pdbentry->pdbbase,precdes,pNewRecNode);
     if(!ppvd) {errMessage(-1,"Logic Err: Could not add to PVD");return(-1);}
-    return (0);
+    /*If any device support exists let checkDevChoice give default for INP/OUT*/
+    pdevSup = (devSup *)ellFirst(&precdes->devList);
+    if(!pdevSup) return(0);
+    status = checkDevChoice(pdbentry,pdevSup->link_type);
+    return (status);
 }
 
 long dbDeleteRecord(DBENTRY *pdbentry)
@@ -981,6 +1098,7 @@ long dbRenameRecord(DBENTRY *pdbentry,char *newName)
 {
     dbBase		*pdbbase = pdbentry->pdbbase;
     dbRecDes		*precdes = pdbentry->precdes;
+    dbFldDes		*pdbFldDes;
     dbRecordNode	*precnode = pdbentry->precnode;
     PVDENTRY		*ppvd;
     ELLLIST		*preclist;
@@ -988,7 +1106,12 @@ long dbRenameRecord(DBENTRY *pdbentry,char *newName)
     long		status;
     DBENTRY		dbentry;
 
-    if((int)strlen(newName)>PVNAME_SZ) return(S_dbLib_nameLength);
+    if(!precdes) return(S_dbLib_recdesNotFound);
+    /*Get size of NAME field*/
+    pdbFldDes = precdes->papFldDes[0];
+    if(!pdbFldDes || (strcmp(pdbFldDes->name,"NAME")!=0))
+	return(S_dbLib_nameLength);
+    if((int)strlen(newName)>=pdbFldDes->size) return(S_dbLib_nameLength);
     if(!precnode) return(S_dbLib_recNotFound);
     dbInitEntry(pdbentry->pdbbase,&dbentry);
     status = dbFindRecord(&dbentry,newName);
@@ -1229,17 +1352,23 @@ char *dbGetString(DBENTRY *pdbentry)
 		}
 		break;
 	    case PV_LINK:
-		if(plink->value.pv_link.process_passive<0
-		||plink->value.pv_link.process_passive>1)
-			plink->value.pv_link.process_passive=0;
-		if(plink->value.pv_link.maximize_sevr<0
-		||plink->value.pv_link.maximize_sevr>1)
-			plink->value.pv_link.maximize_sevr=0;
+	    case CA_LINK:
+	    case DB_LINK: {
+		int	ppind;
+		short	pvlMask;
+
+		pvlMask = plink->value.pv_link.pvlMask;
+		if(pvlMask&pvlOptPP) ppind=1;
+		else if(pvlMask&pvlOptCA) ppind=2;
+		else if(pvlMask&pvlOptCP) ppind=3;
+		else if(pvlMask&pvlOptCPP) ppind=4;
+		else ppind=0;
 	        sprintf(message,"%s %s %s",
 		    plink->value.pv_link.pvname,
-		    ppstring[plink->value.pv_link.process_passive],
-		    msstring[plink->value.pv_link.maximize_sevr]);
+		    ppstring[ppind],
+		    msstring[pvlMask&pvlOptMS]);
 		break;
+	    }
 	    case VME_IO:
 		sprintf(message,"#C%d S%d @%s",
 		    plink->value.vmeio.card,plink->value.vmeio.signal,
@@ -1307,6 +1436,8 @@ char *dbGetString(DBENTRY *pdbentry)
 		strcpy(message,"0");
 		break;
 	    case PV_LINK:
+	    case CA_LINK:
+	    case DB_LINK:
 	        sprintf(message,"%s",
 		    plink->value.pv_link.pvname);
 		break;
@@ -1319,41 +1450,6 @@ char *dbGetString(DBENTRY *pdbentry)
 	return(NULL);
     }
     return (message);
-}
-
-/* utility routines used by dbPutString */
-static long checkDevChoice(DBENTRY *pdbentry, long link_type)
-{
-    dbFldDes  	*savepflddes = pdbentry->pflddes;
-    void	*savepfield = pdbentry->pfield;
-    short	saveindfield = pdbentry->indfield;
-    dbFldDes	*pflddes;
-    DBLINK	*plink;
-    long	status=0;
-
-    status = dbFindField(pdbentry,"INP");
-    if(status) status = dbFindField(pdbentry,"OUT");
-    if(!status) {
-	pflddes = pdbentry->pflddes;
-	plink = (DBLINK *)(pdbentry->pfield);
-	if(plink->type == link_type) goto clean_up;
-	if(link_type==CONSTANT && plink->type==PV_LINK)goto clean_up;
-	if(link_type!=CONSTANT && plink->type==PV_LINK) {
-	    status = S_dbLib_badField;
-	    goto clean_up;
-	}
-	if(plink->type==CONSTANT) free((void *)plink->value.constantStr);
-	memset((char *)plink,0,sizeof(struct link));
-	plink->type = link_type;
-    } else {
-	if(link_type==CONSTANT) status = 0;
-	else status = S_dbLib_badField;
-    }
-clean_up:
-    pdbentry->pflddes = savepflddes;
-    pdbentry->pfield = savepfield;
-    pdbentry->indfield = saveindfield;
-    return(status);
 }
 
 long dbPutString(DBENTRY *pdbentry,char *pstring)
@@ -1457,8 +1553,8 @@ long dbPutString(DBENTRY *pdbentry,char *pstring)
 	    switch(plink->type) {
 	    case CONSTANT: 
 	    case PV_LINK: {
-	    	    int		pp=0;
-		    int		ms=0;
+	    	    short	ppOpt = 0;
+		    short	msOpt = 0;
 	    	    char	*end;
 		    double	tempval;
 
@@ -1481,13 +1577,18 @@ long dbPutString(DBENTRY *pdbentry,char *pstring)
 		    if(plink->type==CONSTANT) dbCvtLinkToPvlink(pdbentry);
 	    	    end = strchr(pstr,' ');
 		    if(end) {
-		        if(strstr(end," PP")) pp = TRUE;
-		        if(strstr(end,".PP")) pp = TRUE;
-		        if(strstr(end," MS")) ms = TRUE;
-		        if(strstr(end,".MS")) ms = TRUE;
+			if(strstr(end,"NPP")) ppOpt = 0;
+			else if(strstr(end,"PP")) ppOpt = pvlOptPP;
+			else if(strstr(end,"CA")) ppOpt = pvlOptCA;
+			else if(strstr(end,"CP")) ppOpt = pvlOptCP;
+			else if(strstr(end,"CPP")) ppOpt = pvlOptCPP;
+			else ppOpt = 0;
+		        if(strstr(end,"NMS")) msOpt = 0;
+		        else if(strstr(end,"MS")) msOpt = pvlOptMS;
+			else msOpt = 0;
 		        *end = 0;
 		    }
-		    status = dbPutPvlink(pdbentry,pp,ms,pstr);
+		    status = putPvLink(pdbentry,ppOpt|msOpt,pstr);
 		    return(0);
 		}
 	    case VME_IO: {
@@ -1501,11 +1602,7 @@ long dbPutString(DBENTRY *pdbentry,char *pstring)
 		    if(!(end = strchr(pstr,'S'))) return (S_dbLib_badField);
 		    pstr = end + 1;
 		    sscanf(pstr,"%hd",&plink->value.vmeio.signal);
-		    plink->value.vmeio.parm[0] = 0;
-		    if(end = strchr(pstr,'@')) {
-		        pstr = end + 1;
-			strcpy(&plink->value.vmeio.parm[0],pstr);
-		    }
+		    status = putParmString(&plink->value.vmeio.parm,pstr);
 		}
 		break;
 	    case CAMAC_IO: {
@@ -1534,11 +1631,7 @@ long dbPutString(DBENTRY *pdbentry,char *pstring)
  		        pstr = end + 1;
  		        sscanf(pstr,"%hd",&plink->value.camacio.f);
  		    }
-		    plink->value.camacio.parm[0] = 0;
-		    if(end = strchr(pstr,'@')) {
-		        pstr = end + 1;
-			strcpy(&plink->value.camacio.parm[0],pstr);
-		    }
+		    status = putParmString(&plink->value.camacio.parm,pstr);
 		}
 		break;
 	    case RF_IO: {
@@ -1577,11 +1670,7 @@ long dbPutString(DBENTRY *pdbentry,char *pstring)
 		    if(!(end = strchr(pstr,'S'))) return (S_dbLib_badField);
 		    pstr = end + 1;
 		    sscanf(pstr,"%hd",&plink->value.abio.signal);
-		    plink->value.abio.parm[0] = 0;
-		    if(end = strchr(pstr,'@')) {
-		        pstr = end + 1;
-			strcpy(&plink->value.abio.parm[0],pstr);
-		    }
+		    status = putParmString(&plink->value.abio.parm,pstr);
 		}
 		break;
 	    case GPIB_IO: {
@@ -1595,11 +1684,7 @@ long dbPutString(DBENTRY *pdbentry,char *pstring)
 		    if(!(end = strchr(pstr,'A'))) return (S_dbLib_badField);
 		    pstr = end + 1;
 		    sscanf(pstr,"%hd",&plink->value.gpibio.addr);
-		    plink->value.gpibio.parm[0] = 0;
-		    if(end = strchr(pstr,'@')) {
-		        pstr = end + 1;
-			strcpy(&plink->value.gpibio.parm[0],pstr);
-		    }
+		    status = putParmString(&plink->value.gpibio.parm,pstr);
 		}
 		break;
 	    case BITBUS_IO: {
@@ -1627,11 +1712,7 @@ long dbPutString(DBENTRY *pdbentry,char *pstring)
 		    pstr = end + 1;
 		    sscanf(pstr,"%hd",&tmp_val);
 		    plink->value.bitbusio.signal=(unsigned char)tmp_val;
-		    plink->value.bitbusio.parm[0] = 0;
-		    if(end = strchr(pstr,'@')) {
-		        pstr = end + 1;
-			strcpy(&plink->value.bitbusio.parm[0],pstr);
-		    }
+		    status = putParmString(&plink->value.bitbusio.parm,pstr);
 		}
 		break;
 	    case BBGPIB_IO: {
@@ -1655,11 +1736,7 @@ long dbPutString(DBENTRY *pdbentry,char *pstring)
 		    pstr = end + 1;
 		    sscanf(pstr,"%hd",&tmp_val);
 		    plink->value.bbgpibio.gpibaddr=tmp_val;
-		    plink->value.bbgpibio.parm[0] = 0;
-		    if(end = strchr(pstr,'@')) {
-		        pstr = end + 1;
-			strcpy(&plink->value.bbgpibio.parm[0],pstr);
-		    }
+		    status = putParmString(&plink->value.bbgpibio.parm,pstr);
 		}
 		break;
 	    case VXI_IO: {
@@ -1688,21 +1765,11 @@ long dbPutString(DBENTRY *pdbentry,char *pstring)
 		    } else {
 			plink->value.vxiio.signal = 0;
 		    }
-		    plink->value.vxiio.parm[0] = 0;
-		    if(end = strchr(pstr,'@')) {
-		        pstr = end + 1;
-			strcpy(&plink->value.vxiio.parm[0],pstr);
-		    }
+		    status = putParmString(&plink->value.vxiio.parm,pstr);
 		}
 		break;
 	    case INST_IO: {
-	    	    char	*end;
-
-		    plink->value.instio.string[0] = 0;
-		    if(end = strchr(pstr,'@')) {
-		        pstr = end + 1;
-			strcpy(&plink->value.instio.string[0],pstr);
-		    }
+		    status = putParmString(&plink->value.instio.string,pstr);
 		}
 		break;
 	    }
@@ -1892,7 +1959,7 @@ char *dbGetRange(DBENTRY *pdbentry)
     strcpy(message,"Not a valid field type");
     return (message);
 }
-
+
 brkTable *dbFindBrkTable(dbBase *pdbbase,char *name)
 {
     GPHENTRY *pgph;
@@ -2076,6 +2143,7 @@ char  **dbGetFormPrompt(DBENTRY *pdbentry)
 char  **dbGetFormValue(DBENTRY *pdbentry)
 {
     struct form *pform = pdbentry->formpvt;
+    dbFldDes  	*pflddes = pdbentry->pflddes;
     DBLINK	*plink;
     char	**value;
 
@@ -2091,12 +2159,27 @@ char  **dbGetFormValue(DBENTRY *pdbentry)
 	    *value = 0;
 	}
 	break;
-    case PV_LINK:
+    case PV_LINK: {
+        short 	pvlMask = plink->value.pv_link.pvlMask;
+
 	strcpy(*value,plink->value.pv_link.pvname);
 	value++;
-	strcpy(*value, (plink->value.pv_link.process_passive ? "Yes" : "No"));
-	value++;
-	strcpy(*value, (plink->value.pv_link.maximize_sevr ? "Yes" : "No"));
+	switch(pflddes->field_type) {
+	    case DBF_INLINK:
+	    case DBF_OUTLINK:
+		if(pvlMask&pvlOptPP) strcpy(*value,"PP");
+		else if(pvlMask&pvlOptCA) strcpy(*value,"CA");
+		else if(pvlMask&pvlOptCP) strcpy(*value,"CP");
+		else if(pvlMask&pvlOptCPP) strcpy(*value,"CPP");
+		else strcpy(*value,"NPP");
+		value++;
+		if(pvlMask&pvlOptMS) strcpy(*value,"MS");
+		else strcpy(*value,"NMS");
+		value++;
+	    default:
+		break;
+	    }
+	}
 	break;
     case VME_IO:
 	cvtShortToString(plink->value.vmeio.card,*value);
@@ -2204,6 +2287,7 @@ long  dbPutForm(DBENTRY *pdbentry,char **value)
     long	lvalue;
     double	dvalue;
     char	*endp;
+    long	status = 0;
 
     if(!pform) return(S_dbLib_badLink);
     plink = pform->plink;
@@ -2226,17 +2310,28 @@ long  dbPutForm(DBENTRY *pdbentry,char **value)
 	strcpy(plink->value.constantStr,*value);
 	break;
     case PV_LINK: {
-	    int		pp=0;
-	    int		ms=0;
+	    short	ppOpt = 0;
+	    short	msOpt = 0;
 	    char	*pstr;
 
 	    pstr = *value;
 	    **verify = 0;
 	    value++; verify++;
-	    pp = ((strchr(*value,'Y') || strchr(*value,'y') ? TRUE : FALSE));
+	    **verify = 0;  /*Initialize verify to NULL*/
+	    if(!(*value)) ppOpt = 0;
+	    else if(strstr(*value,"NPP")) ppOpt = 0;
+	    else if(strstr(*value,"PP")) ppOpt = pvlOptPP;
+	    else if(strstr(*value,"CA")) ppOpt = pvlOptCA;
+	    else if(strstr(*value,"CP")) ppOpt = pvlOptCP;
+	    else if(strstr(*value,"CPP")) ppOpt = pvlOptCPP;
+	    else strcpy(*verify,"Illegal. Chose a value");
 	    value++; verify++;
-	    ms = ((strchr(*value,'Y') || strchr(*value,'y') ? TRUE : FALSE));
-	    dbPutPvlink(pdbentry,pp,ms,pstr);
+	    **verify = 0;  /*Initialize verify to NULL*/
+	    if(!(*value)) msOpt = 0;
+	    else if(strstr(*value,"NMS")) msOpt = 0;
+	    else if(strstr(*value,"MS")) msOpt = pvlOptMS;
+	    else strcpy(*verify,"Illegal. Chose a value");
+	    putPvLink(pdbentry,ppOpt|msOpt,pstr);
 	}
 	break;
     case VME_IO:
@@ -2254,7 +2349,7 @@ long  dbPutForm(DBENTRY *pdbentry,char **value)
 	    strcpy(*verify,"Illegal. Must be number");
 	}
 	value++; verify++;
-	strncpy(plink->value.vmeio.parm,*value,VME_PARAM_SZ-1);
+	status = putParmString(&plink->value.vmeio.parm,*value);
 	break;
     case CAMAC_IO:
 	lvalue = strtol(*value,&endp,0);
@@ -2292,7 +2387,7 @@ long  dbPutForm(DBENTRY *pdbentry,char **value)
 	    strcpy(*verify,"Illegal. Must be number");
 	}
 	value++; verify++;
-	strncpy(plink->value.camacio.parm,*value,CAMAC_PARAM_SZ-1);
+	status = putParmString(&plink->value.camacio.parm,*value);
 	break;
     case RF_IO:
 	lvalue = strtol(*value,&endp,0);
@@ -2352,7 +2447,7 @@ long  dbPutForm(DBENTRY *pdbentry,char **value)
 	    strcpy(*verify,"Illegal. Must be number");
 	}
 	value++; verify++;
-	strncpy(plink->value.abio.parm,*value,AB_PARAM_SZ-1);
+	status = putParmString(&plink->value.abio.parm,*value);
 	break;
     case GPIB_IO:
 	lvalue = strtol(*value,&endp,0);
@@ -2369,7 +2464,7 @@ long  dbPutForm(DBENTRY *pdbentry,char **value)
 	    strcpy(*verify,"Illegal. Must be number");
 	}
 	value++; verify++;
-	strncpy(plink->value.gpibio.parm,*value,LINK_PARAM_SZ-1);
+	status = putParmString(&plink->value.gpibio.parm,*value);
 	**verify = 0;
 	break;
     case BITBUS_IO:
@@ -2401,11 +2496,11 @@ long  dbPutForm(DBENTRY *pdbentry,char **value)
 	    strcpy(*verify,"Illegal. Must be number");
 	}
 	value++; verify++;
-	strncpy(plink->value.bitbusio.parm,*value,LINK_PARAM_SZ-1);
+	status = putParmString(&plink->value.bitbusio.parm,*value);
 	**verify = 0;
 	break;
     case INST_IO:
-	strncpy(plink->value.instio.string,*value,INSTIO_FLD_SZ-1);
+	status = putParmString(&plink->value.instio.string,*value);
 	**verify = 0;
 	break;
     case BBGPIB_IO:
@@ -2430,7 +2525,7 @@ long  dbPutForm(DBENTRY *pdbentry,char **value)
 	    strcpy(*verify,"Illegal. Must be number");
 	}
 	value++; verify++;
-	strncpy(plink->value.bbgpibio.parm,*value,LINK_PARAM_SZ-1);
+	status = putParmString(&plink->value.bbgpibio.parm,*value);
 	**verify = 0;
 	break;
     case VXI_IO:
@@ -2465,13 +2560,13 @@ long  dbPutForm(DBENTRY *pdbentry,char **value)
 	    strcpy(*verify,"Illegal. Must be number");
 	}
 	value++; verify++;
-	strncpy(plink->value.vxiio.parm,*value,VXI_PARAM_SZ-1);
+	status = putParmString(&plink->value.vxiio.parm,*value);
 	**verify = 0;
 	break;
     default :
 	return(S_dbLib_badLink);
     }
-    return(0);
+    return(status);
 }
 
 char  **dbVerifyForm(DBENTRY *pdbentry,char **value)
@@ -2517,7 +2612,7 @@ long dbGetLinkField(DBENTRY *pdbentry,int index)
     dbGetFieldAddress(pdbentry);
     return(0);
 }
-
+
 int dbGetLinkType(DBENTRY *pdbentry)
 {
     dbFldDes	*pflddes;
@@ -2567,6 +2662,7 @@ long dbCvtLinkToConstant(DBENTRY *pdbentry)
 	if(plink->type == CONSTANT) return(0);
 	if(plink->type != PV_LINK) return(S_dbLib_badLink);
 	free((void *)plink->value.pv_link.pvname);
+	plink->value.pv_link.pvname = 0;
 	plink->type = CONSTANT;
 	if(pflddes->initial) {
 	    plink->value.constantStr =
@@ -2588,6 +2684,7 @@ long dbCvtLinkToPvlink(DBENTRY *pdbentry)
     dbGetFieldAddress(pdbentry);
     pflddes = pdbentry->pflddes;
     if(!pflddes) return(-1);
+    if(!pdbentry->precnode || !pdbentry->precnode->precord) return(-1);
     plink = (DBLINK *)pdbentry->pfield;
     if(!plink) return(-1);
     switch (pflddes->field_type) {
@@ -2598,73 +2695,14 @@ long dbCvtLinkToPvlink(DBENTRY *pdbentry)
 	if(plink->type != CONSTANT) return(S_dbLib_badLink);
 	free(plink->value.constantStr);
 	plink->type = PV_LINK;
-	plink->value.pv_link.process_passive = 0;
-	plink->value.pv_link.maximize_sevr = 0;
+	plink->value.pv_link.pvlMask = 0;
 	plink->value.pv_link.pvname = 0;
+	plink->value.pv_link.precord = pdbentry->precnode->precord;
 	return(0);
     default:
 	errPrintf(-1,__FILE__, __LINE__,"Logic Error\n");
     }
     return(S_dbLib_badLink);
-}
-
-long dbPutPvlink(DBENTRY *pdbentry,int pp,int ms,char *pvname)
-{
-    dbFldDes	*pflddes;
-    DBLINK	*plink;
-    char	*pname;
-    
-    dbGetFieldAddress(pdbentry);
-    pflddes = pdbentry->pflddes;
-    if(!pflddes) return(-1);
-    plink = (DBLINK *)pdbentry->pfield;
-    if(!plink) return(-1);
-    switch (pflddes->field_type) {
-    case DBF_INLINK:
-    case DBF_OUTLINK:
-    case DBF_FWDLINK:
-	if(plink->type != PV_LINK) return(S_dbLib_badLink);
-	pname = plink->value.pv_link.pvname;
-	if(pname) free((void **)pname);
-	pname = dbCalloc(strlen(pvname)+1,sizeof(char));
-	plink->value.pv_link.pvname = pname;
-	strcpy(pname,pvname);
-	plink->value.pv_link.process_passive = pp;
-	plink->value.pv_link.maximize_sevr = ms;
-	return(0);
-    default:
-	errPrintf(-1,__FILE__, __LINE__,"Logic Error\n");
-    }
-    return(S_dbLib_badLink);
-}
-
-long dbGetPvlink(DBENTRY *pdbentry,int *pp,int *ms,char *pvname)
-{
-    dbFldDes	*pflddes;
-    DBLINK	*plink;
-    
-    dbGetFieldAddress(pdbentry);
-    pflddes = pdbentry->pflddes;
-    if(!pflddes) return(-1);
-    plink = (DBLINK *)pdbentry->pfield;
-    if(!plink) return(-1);
-    switch (pflddes->field_type) {
-    case DBF_INLINK:
-    case DBF_OUTLINK:
-    case DBF_FWDLINK:
-	if(plink->type != PV_LINK) return(S_dbLib_badLink);
-	if(plink->value.pv_link.pvname) {
-	    strcpy(pvname,plink->value.pv_link.pvname);
-	} else {
-	    strcpy(pvname,"0");
-	}
-	*pp = plink->value.pv_link.process_passive;
-	*ms = plink->value.pv_link.maximize_sevr;
-	return(0);
-    default:
-	errPrintf(-1,__FILE__, __LINE__,"Logic Error\n");
-	return(NULL);
-    }
 }
 
 void dbDumpPath(DBBASE *pdbbase)

@@ -125,7 +125,7 @@ typedef struct dbRecDes {
 	char		**papsortFldName;/* ptr to array of ptr to fld names*/
 	short		*sortFldInd;	/* addr of array of ind in papFldDes*/
 	dbFldDes	*pvalFldDes;	/*pointer dbFldDes for VAL field*/
-	short		indvalFlddes;	/*ind in apFldDes*/
+	short		indvalFlddes;	/*ind in papFldDes*/
 	dbFldDes 	**papFldDes;	/* ptr to array of ptr to fldDes*/
 	/*The following are only available on run time system*/
 	struct	rset	*prset;

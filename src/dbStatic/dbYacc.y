@@ -37,31 +37,31 @@ database_item:	include
 
 include:	tokenINCLUDE tokenSTRING
 {
-	if(dbDebug>2) printf("include : %s\n",$2);
+	if(dbStaticDebug>2) printf("include : %s\n",$2);
 	dbIncludeNew($2);
 };
 
 path:	tokenPATH tokenSTRING
 {
-	if(dbDebug>2) printf("path : %s\n",$2);
+	if(dbStaticDebug>2) printf("path : %s\n",$2);
 	dbPathCmd($2);
 };
 
 addpath:	tokenADDPATH tokenSTRING
 {
-	if(dbDebug>2) printf("addpath : %s\n",$2);
+	if(dbStaticDebug>2) printf("addpath : %s\n",$2);
 	dbAddPathCmd($2);
 };
 
 menu_head:	'(' tokenSTRING ')'
 {
-	if(dbDebug>2) printf("menu_head %s\n",$2);
+	if(dbStaticDebug>2) printf("menu_head %s\n",$2);
 	dbMenuHead($2);
 };
 
 menu_body:	'{' choice_list '}'
 {
-	if(dbDebug>2) printf("menu_body\n");
+	if(dbStaticDebug>2) printf("menu_body\n");
 	dbMenuBody();
 }
 	| include ;
@@ -70,19 +70,19 @@ choice_list:	choice_list choice | choice;
 
 choice:	tokenCHOICE '(' tokenSTRING ',' tokenSTRING ')'
 {
-	if(dbDebug>2) printf("choice %s %s\n",$3,$5);
+	if(dbStaticDebug>2) printf("choice %s %s\n",$3,$5);
 	dbMenuChoice($3,$5);
 } ;
 
 recordtype_head: '(' tokenSTRING ')'
 {
-	if(dbDebug>2) printf("recordtype_head %s\n",$2);
+	if(dbStaticDebug>2) printf("recordtype_head %s\n",$2);
 	dbRecordtypeHead($2);
 };
 
 recordtype_body: '{' recordtype_field_list '}'
 {
-	if(dbDebug>2) printf("recordtype_body\n");
+	if(dbStaticDebug>2) printf("recordtype_body\n");
 	dbRecordtypeBody();
 };
 
@@ -94,7 +94,7 @@ recordtype_field: tokenFIELD recordtype_field_head recordtype_field_body
 
 recordtype_field_head:	'(' tokenSTRING ',' tokenSTRING ')'
 {
-	if(dbDebug>2) printf("recordtype_field_head %s %s\n",$2,$4);
+	if(dbStaticDebug>2) printf("recordtype_field_head %s %s\n",$2,$4);
 	dbRecordtypeFieldHead($2,$4);
 };
 
@@ -105,14 +105,14 @@ recordtype_field_item_list:  recordtype_field_item_list recordtype_field_item
 
 recordtype_field_item:	tokenSTRING '(' tokenSTRING ')' 
 {
-	if(dbDebug>2) printf("recordtype_field_item %s %s\n",$1,$3);
+	if(dbStaticDebug>2) printf("recordtype_field_item %s %s\n",$1,$3);
 	dbRecordtypeFieldItem($1,$3);
 }
 	| tokenMENU '(' tokenSTRING ')' 
 {
 	char	*pmenu;
 
-	if(dbDebug>2) printf("recordtype_field_item %s (%s)\n",menuString,$3);
+	if(dbStaticDebug>2) printf("recordtype_field_item %s (%s)\n",menuString,$3);
 	pmenu = (char *)malloc(strlen(menuString)+1);
 	strcpy(pmenu,menuString);
 	dbRecordtypeFieldItem(pmenu,$3);
@@ -122,26 +122,26 @@ recordtype_field_item:	tokenSTRING '(' tokenSTRING ')'
 device: tokenDEVICE '('
 	tokenSTRING ',' tokenSTRING ',' tokenSTRING ',' tokenSTRING ')'
 { 
-	if(dbDebug>2) printf("device %s %s %s %s\n",$3,$5,$7,$9);
+	if(dbStaticDebug>2) printf("device %s %s %s %s\n",$3,$5,$7,$9);
 	dbDevice($3,$5,$7,$9);
 };
 
 
 driver: tokenDRIVER '(' tokenSTRING ')'
 {
-	if(dbDebug>2) printf("driver %s\n",$3);
+	if(dbStaticDebug>2) printf("driver %s\n",$3);
 	dbDriver($3);
 };
 
 break_head: '(' tokenSTRING ')'
 {
-	if(dbDebug>2) printf("break_head %s\n",$2);
+	if(dbStaticDebug>2) printf("break_head %s\n",$2);
 	dbBreakHead($2);
 };
 
 break_body : '{' break_list '}'
 {
-	if(dbDebug>2) printf("break_body\n");
+	if(dbStaticDebug>2) printf("break_body\n");
 	dbBreakBody();
 };
 
@@ -151,20 +151,20 @@ break_list: break_list ',' break_item
 
 break_item: tokenSTRING
 {
-	if(dbDebug>2) printf("break_item tokenSTRING %s\n",$1);
+	if(dbStaticDebug>2) printf("break_item tokenSTRING %s\n",$1);
 	dbBreakItem($1);
 };
 
 
 record_head: '(' tokenSTRING ',' tokenSTRING ')'
 {
-	if(dbDebug>2) printf("record_head %s %s\n",$2,$4);
+	if(dbStaticDebug>2) printf("record_head %s %s\n",$2,$4);
 	dbRecordHead($2,$4);
 };
 
 record_body: '{' record_field_list '}'
 {
-	if(dbDebug>2) printf("record_body\n");
+	if(dbStaticDebug>2) printf("record_body\n");
 	dbRecordBody();
 };
 
@@ -173,7 +173,7 @@ record_field_list:	record_field_list record_field
 
 record_field: tokenFIELD '(' tokenSTRING ',' tokenSTRING ')'
 {
-	if(dbDebug>2) printf("record_field %s %s\n",$3,$5);
+	if(dbStaticDebug>2) printf("record_field %s %s\n",$3,$5);
 	dbRecordField($3,$5);
 }
 	| include ;

@@ -31,31 +31,31 @@ of this distribution.
 
 long dbAllocRecord(DBENTRY *pdbentry,char *precordName)
 {
-    dbRecDes		*precdes = pdbentry->precdes;
+    dbRecDes		*pdbRecDes = pdbentry->precdes;
     dbRecordNode	*precnode = pdbentry->precnode;
     dbFldDes		*pflddes;
     void		**papField;
     int			i;
     char		*pstr;
 
-    if(!precdes) return(S_dbLib_recdesNotFound);
+    if(!pdbRecDes) return(S_dbLib_recdesNotFound);
     if(!precnode) return(S_dbLib_recNotFound);
-    precnode->precord = dbCalloc(precdes->no_fields,sizeof(void *));
+    precnode->precord = dbCalloc(pdbRecDes->no_fields,sizeof(void *));
     papField = (void **)precnode->precord;
-    for(i=0; i<precdes->no_fields; i++) {
-	pflddes = precdes->papFldDes[i];
+    for(i=0; i<pdbRecDes->no_fields; i++) {
+	pflddes = pdbRecDes->papFldDes[i];
 	if(!pflddes) continue;
 	switch(pflddes->field_type) {
 	case DBF_STRING:
 	    if(pflddes->size <= 0) {
-		fprintf(stderr,"size=0 for %s.%s\n",precdes->name,pflddes->name);
+		fprintf(stderr,"size=0 for %s.%s\n",pdbRecDes->name,pflddes->name);
 		pflddes->size = 1;
 	    }
 	    papField[i] = dbCalloc(pflddes->size,sizeof(char));
 	    if(pflddes->initial)  {
-		if(strlen(pflddes->initial) >= pflddes->size) {
+		if(strlen(pflddes->initial) >= (unsigned)(pflddes->size)) {
 		    fprintf(stderr,"initial size > size for %s.%s\n",
-			precdes->name,pflddes->name);
+			pdbRecDes->name,pflddes->name);
 		} else {
 		    strcpy((char *)papField[i],pflddes->initial);
 		}
@@ -107,44 +107,52 @@ long dbAllocRecord(DBENTRY *pdbentry,char *precordName)
 
 long dbFreeRecord(DBENTRY *pdbentry)
 {
-    dbRecDes	*precdes = pdbentry->precdes;
+    dbRecDes	*pdbRecDes = pdbentry->precdes;
     dbRecordNode *precnode = pdbentry->precnode;
     dbFldDes	*pflddes = pdbentry->pflddes;
     void	**pap;
     int		i,field_type;
 
-    if(!precdes) return(S_dbLib_recdesNotFound);
+    if(!pdbRecDes) return(S_dbLib_recdesNotFound);
     if(!precnode) return(S_dbLib_recNotFound);
     if(!precnode->precord) return(S_dbLib_recNotFound);
     pap = (void **)precnode->precord;
     precnode->precord = NULL;
-    for(i=0; i<precdes->no_fields; i++) {
-	pflddes = precdes->papFldDes[i];
+    for(i=0; i<pdbRecDes->no_fields; i++) {
+	pflddes = pdbRecDes->papFldDes[i];
 	field_type = pflddes->field_type;
 	if(field_type==DBF_INLINK
 	|| field_type==DBF_OUTLINK
 	|| field_type==DBF_FWDLINK) {
 	    struct link *plink = (struct link *)pap[i];
 
-	    if(plink->type== CONSTANT)
-		free((void *)plink->value.constantStr);
-	    if(plink->type==PV_LINK)
-		free((void *)plink->value.pv_link.pvname);
+	    switch(plink->type) {
+	    case CONSTANT: free((void *)plink->value.constantStr); break;
+	    case PV_LINK: free((void *)plink->value.pv_link.pvname); break;
+	    case VME_IO: dbFreeParmString(&plink->value.vmeio.parm); break;
+	    case CAMAC_IO: dbFreeParmString(&plink->value.camacio.parm); break;
+	    case AB_IO: dbFreeParmString(&plink->value.abio.parm); break;
+	    case GPIB_IO: dbFreeParmString(&plink->value.gpibio.parm); break;
+	    case BITBUS_IO: dbFreeParmString(&plink->value.bitbusio.parm);break;
+	    case INST_IO: dbFreeParmString(&plink->value.instio.string); break;
+	    case BBGPIB_IO: dbFreeParmString(&plink->value.bbgpibio.parm);break;
+	    case VXI_IO: dbFreeParmString(&plink->value.vxiio.parm); break;
+	    }
 	}
 	free(pap[i]);
     }
     free((void *)pap);
     return(0);
 }
-
+
 long dbGetFieldAddress(DBENTRY *pdbentry)
 {
-    dbRecDes	*precdes = pdbentry->precdes;
+    dbRecDes	*pdbRecDes = pdbentry->precdes;
     dbRecordNode *precnode = pdbentry->precnode;
     dbFldDes	*pflddes = pdbentry->pflddes;
     void	**pap;
 
-    if(!precdes) return(S_dbLib_recdesNotFound);
+    if(!pdbRecDes) return(S_dbLib_recdesNotFound);
     if(!precnode) return(S_dbLib_recNotFound);
     if(!pflddes) return(S_dbLib_flddesNotFound);
     if(!precnode->precord) return(0);
@@ -155,11 +163,11 @@ long dbGetFieldAddress(DBENTRY *pdbentry)
 
 char *dbRecordName(DBENTRY *pdbentry)
 {
-    dbRecDes	*precdes = pdbentry->precdes;
+    dbRecDes	*pdbRecDes = pdbentry->precdes;
     dbRecordNode *precnode = pdbentry->precnode;
     void	**pap;
 
-    if(!precdes) return(0);
+    if(!pdbRecDes) return(0);
     if(!precnode) return(0);
     if(!precnode->precord) return(0);
     pap = (void **)precnode->precord;
@@ -190,8 +198,7 @@ int  dbIsDefaultValue(DBENTRY *pdbentry)
 	    if(!pfield) return(TRUE);
 	    if(!pflddes->initial) return(FALSE);
 	    return(strcmp((char *)pfield,(char *)pflddes->initial)==0);
-	case DBF_MENU:
-	case DBF_DEVICE: {
+	case DBF_MENU: {
 		unsigned short val,ival;
 
 		if(!pfield) return(FALSE);
@@ -199,6 +206,18 @@ int  dbIsDefaultValue(DBENTRY *pdbentry)
 		if(pflddes->initial == 0) return((val==0)?TRUE:FALSE);
 		sscanf(pflddes->initial,"%hu",&ival);
 		return((val==ival)?TRUE:FALSE);
+	    }
+	case DBF_DEVICE: {
+		dbRecDes	*pdbRecDes = pdbentry->precdes;
+		devSup		*pdevSup;
+
+		if(!pdbRecDes) {
+		    epicsPrintf("dbIsDefaultValue: pdbRecDes is NULL??\n");
+		    return(FALSE);
+		}
+		pdevSup = (devSup *)ellFirst(&pdbRecDes->devList);
+		if(!pdevSup) return(TRUE);
+		return(FALSE);
 	    }
 	case DBF_INLINK:
 	case DBF_OUTLINK:
@@ -243,7 +262,7 @@ long dbPutStringNum(DBENTRY *pdbentry,char *pstring)
     if(!precnode->precord) return(S_dbLib_recNotFound);
     if(!pflddes) return(S_dbLib_flddesNotFound);
     if(pfield) {
-	if(strlen(pfield) < strlen(pstring)) {
+	if((unsigned)strlen(pfield) < (unsigned)strlen(pstring)) {
 	    free((void *)pfield);
 	    pfield = NULL;
 	}

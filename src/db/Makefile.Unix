@@ -5,6 +5,7 @@ include $(EPICS)/config/CONFIG_BASE
 INC += drvTS.h
 INC += drvSup.h
 INC += callback.h
+INC += dbLock.h
 INC += dbAccess.h
 INC += dbConvert.h
 INC += dbEvent.h

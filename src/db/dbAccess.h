@@ -36,18 +36,22 @@
  * .06  02-02-94	mrk	added definitions for dbPutNotify
  * .07	03-18-94	mcn	added breakpoint codes, fast link protos
  */
-
+
 #ifndef INCdbAccessh
 #define INCdbAccessh
 #include <dbDefs.h>
 #include <dbBase.h>
 #include <dbFldTypes.h>
 #include <link.h>
+#ifdef vxWorks
+#include <dbCommon.h>
+#endif
+#include <dbLock.h>
 #include <tsDefs.h>
 #include <callback.h>
 #include <ellLib.h>
 #include <caeventmask.h>
-
+
 typedef struct dbAddr{
 	struct dbCommon *precord;/* address of record			*/
 	void	*pfield;	/* address of field		 	*/
@@ -251,68 +255,75 @@ struct dbr_alDouble     {DBRalDouble};
 #define S_db_cntCont    (M_dbAccess|65) /*Cannot resume dbContTask*/
 
 /* Global Database Access Routines*/
+#define dbGetLink(PLNK,DBRTYPE,PBUFFER,OPTIONS,NREQUEST) \
+    (((((PLNK)->type == CONSTANT)&&(!(NREQUEST))) ||\
+	(! (((PLNK)->type == DB_LINK) || ((PLNK)->type == CA_LINK)) ))\
+    ? 0\
+    : dbGetLinkValue((PLNK),(DBRTYPE), \
+	(void *)(PBUFFER),(OPTIONS),(NREQUEST)))
+#define dbPutLink(PLNK,DBRTYPE,PBUFFER,NREQUEST) \
+    ((((PLNK)->type == CONSTANT) ||\
+	(! (((PLNK)->type == DB_LINK) || ((PLNK)->type == CA_LINK)) ))\
+    ? 0\
+    : dbPutLinkValue((PLNK),(DBRTYPE),(void *)(PBUFFER),(NREQUEST)))
 #ifdef __STDC__
 struct rset *dbGetRset(struct dbAddr *paddr);
 int dbIsValueField(struct dbFldDes *pdbFldDes);
 int dbGetFieldIndex(struct dbAddr *paddr);
-long dbCommonInit(struct dbCommon *precord, int pass);
-void dbScanLock(struct dbCommon *precord);
-void dbScanUnlock(struct dbCommon *precord);
-void dbScanLockInit(int nset);
 long dbScanPassive(struct dbCommon *pfrom,struct dbCommon *pto);
 long dbProcess(struct dbCommon *precord);
 long dbNameToAddr(char *pname,struct dbAddr *);
-long dbGetLink(struct db_link *,struct dbCommon *precord,short dbrType,
+long dbGetLinkValue(struct link *,short dbrType,
 		void *pbuffer,long *options,long *nRequest);
+long dbGetField(struct dbAddr *,short dbrType,void *pbuffer,long *options,
+	long *nRequest,void *pfl);
+long dbGet(struct dbAddr *,short dbrType,void *pbuffer,long *options,
+	long *nRequest,void *pfl);
+long dbPutLinkValue(struct link *,short dbrType,void *pbuffer,long nRequest);
 long dbPutField(struct dbAddr *,short dbrType,void *pbuffer,long nRequest);
+long dbPut(struct dbAddr *,short dbrType,void *pbuffer,long nRequest);
 long dbPutNotify(PUTNOTIFY *pputnotify);
 /*dbNotifyAdd called by dbScanPassive and dbScanLink*/
 void dbNotifyAdd(struct dbCommon *pfrom,struct dbCommon *pto);
 void dbNotifyCancel(PUTNOTIFY *pputnotify);
-/*dbNotifyCompletion called by recGblFwdLink and dbProcess */
-void dbNotifyCompletion(struct dbCommon *precord); /*called only by recGblFwdLink*/
-long dbPut(struct dbAddr *,short dbrType,void *pbuffer,long nRequest);
-long dbGetField(struct dbAddr *,short dbrType,void *pbuffer,long *options,long *nRequest,void *pfl);
-long dbGet(struct dbAddr *,short dbrType,void *pbuffer,long *options,long *nRequest,void *pfl);
-long dbPutLink(struct db_link *,struct dbCommon *precord,short dbrType,
-		void *pbuffer,long nRequest);
+/*dbNotifyCompletion called by recGblFwdLink */
+void dbNotifyCompletion(struct dbCommon *precord);
 long dbBufferSize(short dbrType,long options,long nRequest);
 long dbValueSize(short dbrType);
 
-long dbCaAddInlink(struct link *plink,void *pdest_record,char *dest_fieldname);
-long dbCaAddOutlink(struct link *plink,void *psource_record,char *source_fieldname);
-long dbCaPutLink(struct link *plink,long *poptions,long *pnRequest);
-long dbCaGetLink(struct link *plink);
-void dbCaLinkInit(int pass);
-long dbFastLinkGet(struct link *plink, struct dbCommon *precord, void *pdest);
-long dbFastLinkPut(struct link *plink, struct dbCommon *precord, void *psource);
-long cvt_uninit(void *from, void *to, struct dbAddr *paddr);
-long cvt_dummy(void *from, void *to, struct dbAddr *paddr);
+void dbCaLinkInit(void);
+void dbCaAddLink(struct link *plink);
+void dbCaRemoveLink(struct link *plink);
+long dbCaGetLink(struct link *plink,short dbrType,void *pbuffer,
+	unsigned short *psevr,long *nRequest);
+long dbCaPutLink(struct link *plink,short dbrType,void *pbuffer,long nRequest);
+
 long dbScanLink(struct dbCommon *pfrom, struct dbCommon *pto);
 #else
-void dbScanLock();
-void dbScanUnlock();
-void dbScanLockInit();
+struct rset *dbGetRset();
+int dbIsValueField();
+int dbGetFieldIndex();
 long dbScanPassive();
 long dbProcess();
 long dbNameToAddr();
-long dbGetLink();
+long dbGetLinkValue();
+long dbGetField();
+long dbGet();
+long dbPutLinkValue();
 long dbPutField();
 long dbPut();
-long dbGetField();
-long dbPutLink();
+long dbPutNotify();
+void dbNotifyAdd();
+void dbNotifyCancel();
+void dbNotifyCompletion();
 long dbBufferSize();
 long dbValueSize();
-long dbCaAddInlink();
-long dbCaAddOutlink();
-long dbCaPutLink();
+void dbCaLinkInit();
+void dbCaAddLink();
+void dbCaRemoveLink();
 long dbCaGetLink();
-long dbFastLinkGet();
-long dbFastLinkPut();
-long cvt_uninit();
-long cvt_dummy();
+long dbCaPutLink();
 long dbScanLink();
-
 #endif /*__STDC__*/
 
 #endif /*INCdbAccessh*/

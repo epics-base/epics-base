@@ -51,8 +51,14 @@
  *				to 60 sec
  * .17	03-18-94	mcn	added entries for breakpoint tasks
  * $Log$
+ * Revision 1.1  1996/01/25 21:13:29  mrk
+ * moved includes; .ascii=> .db; path changes
+ *
  * Revision 1.27  1995/11/29 19:27:59  jhill
  * added $Log$
+ * added Revision 1.1  1996/01/25 21:13:29  mrk
+ * added moved includes; .ascii=> .db; path changes
+ * added
  *
  */
 
@@ -65,14 +71,12 @@
 /* Task Names */
 #define IOEVENTSCAN_NAME	"scanIo"
 #define EVENTSCAN_NAME		"scanEvent"
-#define CALLBACK_NAME          "callback"
 #define SCANONCE_NAME          	"scanOnce"
 #define SMCMD_NAME		"smCommand"
 #define SMRESP_NAME		"smResponse"
 #define ABDONE_NAME		"abDone"
 #define ABSCAN_NAME		"abScan"
 #define ABCOS_NAME              "abBiCosScanner"
-#define PERIODSCAN_NAME		"scanPeriod"
 #define MOMENTARY_NAME		"momentary"
 #define WFDONE_NAME		"wfDone"
 #define	SEQUENCER_NAME		"sequencer"
@@ -95,9 +99,6 @@
 #define	BBTXLINK_NAME		"bbTx"
 #define	BBRXLINK_NAME		"bbRx"
 #define	BBWDTASK_NAME		"bbwd"
-#define DB_CA_INPUT_NAME  "dbCaInput"
-#define DB_CA_OUTPUT_NAME  "dbCaOutput"
-#define DB_CA_PROC_ASYNCH_EV_TASK_NAME "process_asynch_events_task"
 #define EPICSPRINT_NAME		"epicsPrint"
 #define LOG_RESTART_NAME	"logRestart"
 
@@ -126,9 +127,7 @@
 #define PERIODSCAN_PRI  59      /* Periodic Scanners - Slowest rate		*/
 #define	SEQUENCER_PRI	70
 #define XY240_PRI       111     /* xy 240 dio scanner */
-#define DB_CA_INPUT_PRI   100
-#define DB_CA_OUTPUT_PRI   100
-#define DB_CA_PROC_ASYNCH_EV_TASK_PRI   100
+#define DB_CA_PRI       100
 #define	SCANNER_PRI	150	
 #define	REQ_SRVR_PRI	181	/* Channel Access TCP request server*/
 #define CA_CLIENT_PRI	180	/* Channel Access clients */
@@ -182,9 +181,7 @@
 #define	BBTXLINK_OPT	VX_FP_TASK|VX_STDIO
 #define	BBRXLINK_OPT	VX_FP_TASK|VX_STDIO
 #define	BBWDTASK_OPT	VX_FP_TASK|VX_STDIO
-#define DB_CA_INPUT_OPT   (VX_FP_TASK | VX_STDIO)
-#define DB_CA_OUTPUT_OPT   (VX_FP_TASK | VX_STDIO)
-#define DB_CA_PROC_ASYNCH_EV_TASK_OPT   (VX_FP_TASK | VX_STDIO)
+#define DB_CA_OPT   (VX_FP_TASK | VX_STDIO)
 #define XY_240_OPT      (0)             /* none */
 #define LOG_RESTART_OPT  (VX_FP_TASK)		
 
@@ -221,9 +218,7 @@
 #define	BBRXLINK_STACK		5000
 #define	BBTXLINK_STACK		5000
 #define	BBWDTASK_STACK		5000
-#define DB_CA_INPUT_STACK 20000
-#define DB_CA_OUTPUT_STACK 20000
-#define DB_CA_PROC_ASYNCH_EV_TASK_STACK 20000
+#define DB_CA_STACK 		10000
 #define XY_240_STACK            4096
 #define LOG_RESTART_STACK	0x1000		
 

@@ -39,7 +39,7 @@ struct db_addr{
 	void	*asPvt;		/*Access Security Private	*/
         short   pad1;           /*not used by old               */
         short   no_elements;    /* number of elements in arrays of data */
-        short   pad2;           /* not used by old              */
+        short   new_field_type; /* field type for new database access*/
         short   field_size;     /* size of the field being accessed */
                                 /* from database for values of waveforms */
         short   special;        /* special processing                   */

@@ -85,41 +85,21 @@ extern struct dbBase *pdbbase;
  *     will have this conversion.
  */
 
-/* Uninitialized Conversion */
-long cvt_uninit(
-     void *from,
-     void *to,
-     struct dbAddr *paddr)
-{
-  recGblDbaddrError(-1,paddr,"cvt_uninit: uninitialized link");
-  return(-1);
-}
-
-/*
- *  Dummy Conversion
- *    In the case of an unsupported conversion, run this
- *    dummy function instead to avoid a bus error.
- */
-long cvt_dummy(
-     void *from,
-     void *to,
-     struct dbAddr *paddr)
-{ return(-1); }
-
 /* Convert String to String */
 static long cvt_st_st(
      char *from,
      char *to,
      struct dbAddr *paddr)
  {
-   char size = paddr->field_size;
+   char size;
 
-   if (size >= MAX_STRING_SIZE)
-      size = MAX_STRING_SIZE - 1;
-
+   if(paddr && paddr->field_size<MAX_STRING_SIZE) {
+	size =  paddr->field_size - 1;
+   } else {
+	size = MAX_STRING_SIZE - 1;
+   }
    strncpy(to, from, size);
    *(to+size) = '\000';
-
    return(0);
  }
 
@@ -257,10 +237,10 @@ static long cvt_st_e(
      unsigned short *to,
      struct dbAddr *paddr)
  {
-   struct rset *prset;
+   struct rset *prset = 0;
    long status;
 
-   prset = dbGetRset(paddr);
+   if(paddr) prset = dbGetRset(paddr);
 
    if (prset && prset->put_enum_str)
       return (*prset->put_enum_str)(paddr, from);
@@ -760,24 +740,17 @@ static long cvt_f_st(
      char *to,
      struct dbAddr *paddr)
  {
-   struct rset *prset;
+   struct rset *prset = 0;
    long status = 0;
-   long precision = 2;
+   long precision = 0;
 
-   prset = dbGetRset(paddr);
+   if(paddr) prset = dbGetRset(paddr);
  
    if (prset && prset->get_precision)
-     (*prset->get_precision)(paddr, &precision);
+     status = (*prset->get_precision)(paddr, &precision);
    else
      status = S_db_precision;
-
-   if (status) {
-      recGblRecSupError(status, paddr, "dbGetField", "get_precision");
-      return(status);
-   }
-
    cvtFloatToString(*from, to, precision);
-
    return(status);
  }
 
@@ -850,24 +823,17 @@ static long cvt_d_st(
      char *to,
      struct dbAddr *paddr)
  {
-   struct rset *prset;
+   struct rset *prset = 0;
    long status = 0;
-   long precision = 2;
+   long precision = 0;
 
-   prset = dbGetRset(paddr);
+   if(paddr) prset = dbGetRset(paddr);
  
    if (prset && prset->get_precision)
-     (*prset->get_precision)(paddr, &precision);
+     status = (*prset->get_precision)(paddr, &precision);
    else
      status = S_db_precision;
-
-   if (status) {
-      recGblRecSupError(status, paddr, "dbGetField", "get_precision");
-      return(status);
-   }
-
    cvtDoubleToString(*from, to, precision);
-
    return(status);
  }
 
@@ -1005,10 +971,10 @@ static long cvt_e_st_get(
      char *to,
      struct dbAddr *paddr)
  {
-   struct rset *prset;
+   struct rset *prset = 0;
    long status;
 
-   prset = dbGetRset(paddr);
+   if(paddr) prset = dbGetRset(paddr);
  
    if (prset && prset->get_enum_str)
        return (*prset->get_enum_str)(paddr, to);
@@ -1032,12 +998,15 @@ static long cvt_menu_st(
      char *to,
      struct dbAddr *paddr)
  { 
-   dbFldDes		*pdbFldDes = (dbFldDes *)paddr->pfldDes;
-   dbMenu		*pdbMenu = (dbMenu *)pdbFldDes->ftPvt;
+   dbFldDes		*pdbFldDes;
+   dbMenu		*pdbMenu;
    char			**papChoiceValue;
    char			*pchoice;
 
-    if( !pdbMenu  || *from>=pdbMenu->nChoice
+    if(! paddr 
+    || !(pdbFldDes = (dbFldDes *)paddr->pfldDes)
+    || !(pdbMenu = (dbMenu *)pdbFldDes->ftPvt)
+    || *from>=pdbMenu->nChoice
     || !(papChoiceValue = pdbMenu->papChoiceValue)
     || !(pchoice=papChoiceValue[*from])) {
 	recGblDbaddrError(S_db_badChoice,paddr,"dbFastLinkConv(cvt_menu_st)");
@@ -1054,12 +1023,15 @@ static long cvt_device_st(
      char *to,
      struct dbAddr *paddr)
  { 
-   dbFldDes		*pdbFldDes = (dbFldDes *)paddr->pfldDes;
-   dbDeviceMenu		*pdbDeviceMenu = (dbDeviceMenu *)pdbFldDes->ftPvt;
+   dbFldDes		*pdbFldDes;
+   dbDeviceMenu		*pdbDeviceMenu;
    char			**papChoice;
    char			*pchoice;
 
-    if( !pdbDeviceMenu  || *from>=pdbDeviceMenu->nChoice
+    if(!paddr 
+    || !(pdbFldDes = (dbFldDes *)paddr->pfldDes)
+    || !(pdbDeviceMenu = (dbDeviceMenu *)pdbFldDes->ftPvt)
+    || *from>=pdbDeviceMenu->nChoice
     || !(papChoice= pdbDeviceMenu->papChoice)
     || !(pchoice=papChoice[*from])) {
 	recGblDbaddrError(S_db_badChoice,paddr,"dbFastLinkConv(cvt_device_st)");

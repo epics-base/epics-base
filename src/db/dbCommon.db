@@ -46,13 +46,11 @@
 	field(TSEL,DBF_INLINK) {
 		prompt("Time Stamp Link")
 		promptgroup(GUI_SCAN)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(DTYP,DBF_DEVICE) {
 		prompt("Device Type")
 		promptgroup(GUI_LINKS)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(DISV,DBF_SHORT) {
@@ -66,7 +64,6 @@
 	field(SDIS,DBF_INLINK) {
 		prompt("Scanning Disable")
 		promptgroup(GUI_SCAN)
-		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(MLOK,DBF_NOACCESS) {
@@ -133,11 +130,6 @@
 		promptgroup(GUI_SCAN)
 		interest(1)
 		menu(menuAlarmSevr)
-	}
-	field(LSET,DBF_SHORT) {
-		prompt("Lock Set")
-		special(SPC_NOMOD)
-		interest(4)
 	}
 	field(LCNT,DBF_UCHAR) {
 		prompt("Lock Count")
@@ -208,6 +200,20 @@
 		size(4)
 		extra("void		*dpvt")
 	}
+	field(RDES,DBF_NOACCESS) {
+		prompt("Address of dbRecDes")
+		special(SPC_NOMOD)
+		interest(4)
+		size(4)
+		extra("void		*rdes")
+	}
+	field(LSET,DBF_NOACCESS) {
+		prompt("Lock Set")
+		special(SPC_NOMOD)
+		interest(4)
+		size(4)
+		extra("void		*lset")
+	}
 	field(PRIO,DBF_MENU) {
 		prompt("Scheduling Priority")
 		promptgroup(GUI_SCAN)
@@ -241,6 +247,5 @@
 	field(FLNK,DBF_FWDLINK) {
 		prompt("Forward Process Link")
 		promptgroup(GUI_LINKS)
-		special(SPC_NOMOD)
 		interest(1)
 	}

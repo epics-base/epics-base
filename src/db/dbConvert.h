@@ -29,7 +29,8 @@
  * .01  13OCT95	mrk	Created header file as part of extracting convert from
  *			dbLink
  */
-
+
+
 #include <dbFldTypes.h>
 extern long (*dbGetConvertRoutine[DBF_DEVICE+1][DBR_ENUM+1])
     (DBADDR *paddr, void *pbuffer,long nRequest, long no_elements, long offset);

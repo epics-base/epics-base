@@ -32,6 +32,7 @@
 #ifndef INCdbBkptsh
 #define INCdbBkptsh 1
 
+#include <lstLib.h>
 /* Needs to be put into dbTest.h ! */
 long dbpr(char *name, int level);
 
@@ -73,7 +74,7 @@ struct LS_LIST {
    SEM_ID ex_sem; /* semaphore for execution queue */
    int taskid;    /* saved taskid for the task in stepping mode */
    int step;      /* one if currently "stepping," else zero */
-   short l_num;   /* lockset number */
+   unsigned long l_num;   /* lockset number */
 };
 
 /* Values for BKPT (breakpoint) field in record    */

@@ -237,6 +237,54 @@ READONLY int epicsTypeToDBR_XXXX [lastEpicsType+1] = {
 epicsShareExtern READONLY int epicsTypeToDBR_XXXX [lastEpicsType+1];
 #endif
 
+/*Definitions that allow old database access to use new conversion routines*/
+#define newDBF_DEVICE 11
+#define newDBR_ENUM    9
+#ifdef __STDC__
+void *dbCalloc(size_t nobj,size_t size);
+void *dbMalloc(size_t size);
+extern long (*dbGetConvertRoutine[newDBF_DEVICE+1][newDBR_ENUM+1])
+    (struct db_addr *paddr, void *pbuffer,long nRequest,
+	long no_elements, long offset);
+extern long (*dbPutConvertRoutine[newDBR_ENUM+1][newDBF_DEVICE+1])
+    (struct db_addr *paddr, void *pbuffer,long nRequest,
+	long no_elements, long offset);
+extern long (*dbFastGetConvertRoutine[newDBF_DEVICE+1][newDBR_ENUM+1])();
+extern long (*dbFastPutConvertRoutine[newDBR_ENUM+1][newDBF_DEVICE+1])();
+#else
+extern long (*dbGetConvertRoutine[newDBF_DEVICE+1][newDBR_ENUM+1]) ();
+extern long (*dbPutConvertRoutine[newDBR_ENUM+1][newDBF_DEVICE+1]) ();
+extern long (*dbFastGetConvertRoutine[newDBF_DEVICE+1][newDBR_ENUM+1])();
+extern long (*dbFastPutConvertRoutine[newDBR_ENUM+1][newDBF_DEVICE+1])();
+#endif /*__STDC__*/
+
+/*Conversion between old and new DBR types*/
+extern unsigned short dbDBRoldToDBFnew[DBR_DOUBLE+1];
+extern unsigned short dbDBRnewToDBRold[newDBR_ENUM+1];
+#ifdef DB_TEXT_GLBLSOURCE
+unsigned short dbDBRoldToDBFnew[DBR_DOUBLE+1] = {
+	0, /*DBR_STRING to DBF_STRING*/
+	3, /*DBR_INT to DBF_SHORT*/
+	7, /*DBR_FLOAT to DBF_FLOAT*/
+	9, /*DBR_ENUM to DBF_ENUM*/
+	1, /*DBR_CHAR to DBF_CHAR*/
+	5, /*DBR_LONG to DBF_LONG*/
+	8  /*DBR_DOUBLE to DBF_DOUBLE*/
+};
+unsigned short dbDBRnewToDBRold[newDBR_ENUM+1] = {
+	0, /*DBR_STRING to DBR_STRING*/
+	4, /*DBR_CHAR to DBR_CHAR*/
+	4, /*DBR_UCHAR to DBR_CHAR*/
+	1, /*DBR_SHORT to DBR_SHORT*/
+	5, /*DBR_USHORT to DBR_LONG*/
+	5, /*DBR_LONG to DBR_LONG*/
+	6, /*DBR_ULONG to DBR_DOUBLE*/
+	2, /*DBR_FLOAT to DBR_FLOAT*/
+	6, /*DBR_DOUBLE to DBR_DOUBLE*/
+	3, /*DBR_ENUM to DBR_ENUM*/
+};
+#endif /*DB_TEXT_GLBLSOURCE*/
+
 /*
  * The DBR_XXXX types are indicies into this array
  */
@@ -290,7 +338,7 @@ epicsShareExtern READONLY epicsType DBR_XXXXToEpicsType [LAST_BUFFER_TYPE+1];
 #define	EP_SCAN	0x01
 #define	EP_INIT	0x02
 #define	EP_CALC	0x03
-
+
 /* values returned for each field type
  * 	DBR_STRING	returns a NULL terminated string
  *	DBR_SHORT	returns an unsigned short

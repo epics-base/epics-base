@@ -25,6 +25,7 @@ DBINSTALL +=  epics.db
 DBINSTALL += epicsLIBOBJS
 
 SRCS.c = \
+	../dbLock.c\
 	../dbAccess.c\
 	../dbBkpt.c\
 	../dbConvert.c\
@@ -40,12 +41,13 @@ SRCS.c = \
 	../recGbl.c\
 	../callback.c\
 	../taskwd.c \
-	../dbCaLink.c\
-	../dbCaDblink.c\
+	../dbCa.c\
+	../dbcal.c\
 	../devLib.c\
 	../initHooks.c
 
 LIBOBJS = \
+	dbLock.o\
 	dbAccess.o\
 	dbBkpt.o\
 	dbConvert.o\
@@ -61,8 +63,8 @@ LIBOBJS = \
 	recGbl.o\
 	callback.o\
 	taskwd.o\
-	dbCaLink.o \
-	dbCaDblink.o\
+	dbCa.o \
+	dbcal.o \
 	devLib.o
 
 PROD = initHooks.o

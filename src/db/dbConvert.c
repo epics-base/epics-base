@@ -1502,22 +1502,17 @@ static long getFloatString(
 {
     char *pbuffer = (char *)pto;
     float	*psrc=(float *)(paddr->pfield);
-    long	status;
-    int		precision;
+    long	status = 0;
+    int		precision = 0;
     struct rset	*prset;
 
     if((prset=dbGetRset(paddr)) && (prset->get_precision))
 	status = (*prset->get_precision)(paddr,&precision);
     else
 	status=S_db_precision;
-    if(status) {
-	recGblRecSupError(status,paddr,"dbGet","get_precision");
-	return(status);
-    }
-
     if(nRequest==1 && offset==0) {
 	cvtFloatToString(*psrc,pbuffer,precision);
-	return(0);
+	return(status);
     }
     psrc += offset;
     while (nRequest) {
@@ -1529,7 +1524,7 @@ static long getFloatString(
     		psrc++;
 	nRequest--;
     }
-    return(0);
+    return(status);
 }
 
 static long getFloatChar(
@@ -1711,22 +1706,17 @@ static long getDoubleString(
 {
     char *pbuffer = (char *)pto;
     double *psrc=(double *)(paddr->pfield);
-    long	status;
-    int		precision;
+    long	status = 0;
+    int		precision = 0;
     struct rset	*prset;
 
     if((prset=dbGetRset(paddr)) && (prset->get_precision))
 	status = (*prset->get_precision)(paddr,&precision);
     else
 	status=S_db_precision;
-    if(status) {
-	recGblRecSupError(status,paddr,"dbGet","get_precision");
-	return(status);
-    }
-
     if(nRequest==1 && offset==0) {
 	cvtDoubleToString(*psrc,pbuffer,precision);
-	return(0);
+	return(status);
     }
     psrc += offset;
     while (nRequest) {
@@ -1738,7 +1728,7 @@ static long getDoubleString(
     		psrc++;
 	nRequest--;
     }
-    return(0);
+    return(status);
 }
 
 static long getDoubleChar(
@@ -2105,7 +2095,7 @@ static long getMenuString(DBADDR *paddr, void *pto,
 {
     char		*pbuffer = (char *)pto;	
     dbFldDes		*pdbFldDes = (dbFldDes *)paddr->pfldDes;
-    dbMenu		*pdbMenu = (dbMenu *)pdbFldDes->ftPvt;
+    dbMenu		*pdbMenu;
     char		**papChoiceValue;
     char		*pchoice;
     unsigned short	choice_ind= *((unsigned short*)paddr->pfield);
@@ -2114,7 +2104,9 @@ static long getMenuString(DBADDR *paddr, void *pto,
         recGblDbaddrError(S_db_onlyOne,paddr,"dbGet(getMenuString)");
         return(S_db_onlyOne);
     }
-    if( !pdbMenu  || choice_ind>=pdbMenu->nChoice 
+    if(!pdbFldDes
+    || !(pdbMenu = (dbMenu *)pdbFldDes->ftPvt)
+    || (choice_ind>=pdbMenu->nChoice)
     || !(papChoiceValue = pdbMenu->papChoiceValue)
     || !(pchoice=papChoiceValue[choice_ind])) {
         recGblDbaddrError(S_db_badChoice,paddr,"dbGet(getMenuString)");
@@ -2129,7 +2121,7 @@ static long getDeviceString(DBADDR *paddr, void *pto,
 {
     char		*pbuffer = (char *)pto;	
     dbFldDes		*pdbFldDes = (dbFldDes *)paddr->pfldDes;
-    dbDeviceMenu	*pdbDeviceMenu = (dbDeviceMenu *)pdbFldDes->ftPvt;
+    dbDeviceMenu	*pdbDeviceMenu;
     char		**papChoice;
     char		*pchoice;
     unsigned short	choice_ind= *((unsigned short*)paddr->pfield);
@@ -2138,7 +2130,9 @@ static long getDeviceString(DBADDR *paddr, void *pto,
         recGblDbaddrError(S_db_onlyOne,paddr,"dbGet(getDeviceString)");
         return(S_db_onlyOne);
     }
-    if( !pdbDeviceMenu  || choice_ind>=pdbDeviceMenu->nChoice 
+    if(!pdbFldDes
+    || !(pdbDeviceMenu = (dbDeviceMenu *)pdbFldDes->ftPvt)
+    || (choice_ind>=pdbDeviceMenu->nChoice )
     || !(papChoice = pdbDeviceMenu->papChoice)
     || !(pchoice=papChoice[choice_ind])) {
         recGblDbaddrError(S_db_badChoice,paddr,"dbGet(getDeviceString)");
@@ -2465,7 +2459,7 @@ static long putStringEnum(
     if(status == S_db_noRSET) {
 	recGblRecSupError(status,paddr,"dbPutField","put_enum_str");
     } else {
-	recGblDbaddrError(status,paddr,"dbPut(putStringEnum)");
+	recGblRecordError(status,(void *)paddr->precord,pbuffer);
     }
     return(status);
 }
@@ -2475,7 +2469,7 @@ static long putStringMenu(
 {
     char *pbuffer = (char *)pfrom;
     dbFldDes		*pdbFldDes = (dbFldDes *)paddr->pfldDes;
-    dbMenu		*pdbMenu = (dbMenu *)pdbFldDes->ftPvt;
+    dbMenu		*pdbMenu;
     char		**papChoiceValue;
     char		*pchoice;
     unsigned short      *pfield= (unsigned short*)(paddr->pfield);
@@ -2486,7 +2480,9 @@ static long putStringMenu(
         recGblDbaddrError(S_db_onlyOne,paddr,"dbPut(putStringMenu)");
         return(S_db_onlyOne);
     }
-    if( pdbMenu  && (papChoiceValue = pdbMenu->papChoiceValue)) {
+    if(pdbFldDes
+    && (pdbMenu = (dbMenu *)pdbFldDes->ftPvt)
+    && (papChoiceValue = pdbMenu->papChoiceValue)) {
 	nChoice = pdbMenu->nChoice;
 	for(ind=0; ind<nChoice; ind++) {
 	    if(!(pchoice=papChoiceValue[ind])) continue;
@@ -2521,7 +2517,9 @@ static long putStringDevice(
         recGblDbaddrError(S_db_onlyOne,paddr,"dbPut(putStringDevice)");
         return(S_db_onlyOne);
     }
-    if( pdbDeviceMenu  && (papChoice = pdbDeviceMenu->papChoice)) {
+    if(pdbFldDes
+    && (pdbDeviceMenu = (dbDeviceMenu *)pdbFldDes->ftPvt)
+    && (papChoice = pdbDeviceMenu->papChoice)) {
 	nChoice = pdbDeviceMenu->nChoice;
 	for(ind=0; ind<nChoice; ind++) {
 	    if(!(pchoice=papChoice[ind])) continue;
@@ -3721,8 +3719,8 @@ static long putFloatString(
 {
     float *pbuffer = (float *)pfrom;
     char	*pdest=(char *)(paddr->pfield);
-    long	status;
-    int		precision;
+    long	status = 0;
+    int		precision = 0;
     struct rset	*prset;
     short size=paddr->field_size;
 
@@ -3730,14 +3728,10 @@ static long putFloatString(
 	status = (*prset->get_precision)(paddr,&precision);
     else
 	status=S_db_precision;
-    if(status) {
-	recGblRecSupError(status,paddr,"dbPutField","get_precision");
-	return(status);
-    }
 
     if(nRequest==1 && offset==0) {
 	cvtFloatToString(*pbuffer,pdest,precision);
-	return(0);
+	return(status);
     }
     pdest += (size*offset);
     while (nRequest) {
@@ -3749,7 +3743,7 @@ static long putFloatString(
     		pdest += size;
 	nRequest--;
     }
-    return(0);
+    return(status);
 }
 
 static long putFloatChar(
@@ -3931,8 +3925,8 @@ static long putDoubleString(
 {
     double *pbuffer = (double *)pfrom;
     char	*pdest=(char *)(paddr->pfield);
-    long	status;
-    int		precision;
+    long	status = 0;
+    int		precision = 0;
     struct rset	*prset;
     short size=paddr->field_size;
 
@@ -3940,14 +3934,10 @@ static long putDoubleString(
 	status = (*prset->get_precision)(paddr,&precision);
     else
 	status=S_db_precision;
-    if(status) {
-	recGblRecSupError(status,paddr,"dbPutField","get_precision");
-	return(status);
-    }
 
     if(nRequest==1 && offset==0) {
 	cvtDoubleToString(*pbuffer,pdest,precision);
-	return(0);
+	return(status);
     }
     pdest += (size*offset);
     while (nRequest) {
@@ -3959,7 +3949,7 @@ static long putDoubleString(
     		pdest += size;
 	nRequest--;
     }
-    return(0);
+    return(status);
 }
 
 static long putDoubleChar(

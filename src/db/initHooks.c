@@ -73,8 +73,6 @@ int	callNumber;
 	    break;
 	case INITHOOKafterInitDatabase :
 	    break;
-	case INITHOOKafterCaLinkInit2 :
-	    break;
 	case INITHOOKafterFinishDevSup :
 	    break;
 	case INITHOOKafterScanInit :

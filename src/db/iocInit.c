@@ -79,12 +79,13 @@
 #include	<ellLib.h>
 #include	<fast_lock.h>
 #include	<dbDefs.h>
+#include	<dbBase.h>
 #include	<dbAccess.h>
 #include	<dbScan.h>
 #include	<taskwd.h>
 #include	<callback.h>
 #include	<dbCommon.h>
-#include	<dbBase.h>
+#include	<dbLock.h>
 #include	<dbFldTypes.h>
 #include	<devSup.h>
 #include	<drvSup.h>
@@ -115,9 +116,6 @@ LOCAL long initRecSup(void);
 LOCAL long initDevSup(void);
 LOCAL long finishDevSup(void);
 LOCAL long initDatabase(void);
-LOCAL void createLockSets(void);
-LOCAL void createLockSetsExtraPass(int *anyChange);
-LOCAL short makeSameSet(struct dbAddr *paddr,short set,int *anyChange);
 LOCAL long initialProcess(void);
 LOCAL long getResources(char  *fname);
 LOCAL int getResourceToken(FILE *fp, char *pToken, unsigned maxToken);
@@ -142,7 +140,7 @@ int iocInit(char * pResourceFilename)
     }
 
     if (!pdbbase) {
-	logMsg("iocInit aborting because No database loaded by dbReadDatabase\n",
+	logMsg("iocInit aborting because No database\n",
 	    0,0,0,0,0,0);
 	return(-1);
     }
@@ -182,8 +180,8 @@ int iocInit(char * pResourceFilename)
     (void)taskDelay(sysClkRateGet()/10);
     if (pinitHooks) (*pinitHooks)(INITHOOKafterCallbackInit);
 
-   /* Initialize Channel Access Link mechanism.  Pass #1 */
-    dbCaLinkInit((int) 1);
+   /* Initialize Channel Access Link mechanism.  */
+    dbCaLinkInit();
     if (pinitHooks) (*pinitHooks)(INITHOOKafterCaLinkInit1);
 
     if (initDrvSup() != 0)
@@ -207,11 +205,8 @@ int iocInit(char * pResourceFilename)
     if (initDatabase() != 0)
          logMsg("iocInit: Database Failed during Initialization\n",0,0,0,0,0,0);
 
-    createLockSets();
+    dbLockInitRecords(pdbbase);
     if (pinitHooks) (*pinitHooks)(INITHOOKafterInitDatabase);
-
-    dbCaLinkInit((int) 2);
-    if (pinitHooks) (*pinitHooks)(INITHOOKafterCaLinkInit2);
 
     if (finishDevSup() != 0)
          logMsg("iocInit: Device Support Failed during Finalization\n",
@@ -428,6 +423,7 @@ LOCAL long initDatabase(void)
 	    precord = pdbRecordNode->precord;
 	    if(!(precord->name[0])) continue;
 	    precord->rset = prset;
+	    precord->rdes = pdbRecDes;
 	    FASTLOCKINIT(&precord->mlok);
 	    ellInit(&(precord->mlis));
 
@@ -438,8 +434,6 @@ LOCAL long initDatabase(void)
 	    pdevSup = (devSup *)ellNth(&pdbRecDes->devList,precord->dtyp+1);
 	    pdset = (pdevSup ? pdevSup->pdset : 0);
 	    precord->dset = pdset;
-           /* Initialize dbCommon - First pass (pass=0) */
-	    rtnval = dbCommonInit(precord,0);
 	    if(!prset->init_record) continue;
 	    rtnval = (*prset->init_record)(precord,0);
 	    if (status==0) status = rtnval;
@@ -457,50 +451,29 @@ LOCAL long initDatabase(void)
 	pdbRecordNode = (dbRecordNode *)ellNext(&pdbRecordNode->node)) {
 	    precord = pdbRecordNode->precord;
 	    if(!(precord->name[0])) continue;
-            /*
-             *  Convert all PV_LINKs to DB_LINKs or CA_LINKs
-             *    Figures out what type of link to use.  A
-             *    database link local to the IOC, or a channel
-             *    access link across the network.
-             */
+            /* Convert all PV_LINKs to DB_LINKs or CA_LINKs */
             /* For all the links in the record type... */
 	    for(j=0; j<pdbRecDes->no_links; j++) {
 		pdbFldDes = pdbRecDes->papFldDes[pdbRecDes->link_ind[j]];
 		plink = (DBLINK *)((char *)precord + pdbFldDes->offset);
 		if (plink->type == PV_LINK) {
-                    /*
-                     *  Lookup record name in database
-                     *    If a record is _not_ local to the IOC, it is a
-                     *    channel access link, otherwise it is a
-                     *    database link.
-                     */
-		    if(dbNameToAddr(plink->value.pv_link.pvname,&dbaddr) == 0) {
+		    if(!(plink->value.pv_link.pvlMask&(pvlOptCA|pvlOptCP|pvlOptCPP))
+		    && (dbNameToAddr(plink->value.pv_link.pvname,&dbaddr)==0)) {
 			DBADDR	*pdbAddr;
 
 			plink->type = DB_LINK;
 			pdbAddr = dbCalloc(1,sizeof(struct dbAddr));
 			*pdbAddr = dbaddr; /*structure copy*/;
-			plink->value.db_link.pdbAddr = pdbAddr;
-                        /*Initialize conversion to "uninitialized" conversion */
-                        plink->value.db_link.conversion = cvt_uninit;
-		    } else {
-			/*
-			 *  Not a local process variable ... assuming a CA_LINK
-                         *  Only supporting Non Process Passive links,
-			 *  Input Maximize Severity/No Maximize Severity(MS/NMS)
-			 * , and output NMS
-                         *    links ... The following code checks for this.
-                        */
-                        if (errVerbose &&
-			(plink->value.db_link.process_passive
-                        || (pdbFldDes->field_type == DBF_OUTLINK
-                        && plink->value.db_link.maximize_sevr))) {
-			    status = S_db_badField;
-			    errPrintf(status,__FILE__,__LINE__,"%s.%s %s",
-				precord->name,pdbFldDes->name,
-				" PP and/or MS illegal");
-			    status = 0;
-                        }
+			plink->value.pv_link.pvt = pdbAddr;
+		    } else {/*It is a CA link*/
+			char	*pperiod;
+
+			dbCaAddLink(plink);
+			if(pdbFldDes->field_type==DBF_FWDLINK) {
+			    pperiod = strrchr(plink->value.pv_link.pvname,'.');
+			    if(pperiod && strstr(pperiod,"PROC"))
+				plink->value.pv_link.pvlMask |= pvlOptFWD;
+			}
 		    }
 		}
 	    }
@@ -518,8 +491,6 @@ LOCAL long initDatabase(void)
            /* Find pointer to record instance */
 	    precord = pdbRecordNode->precord;
 	    if(!(precord->name[0])) continue;
-	    rtnval = dbCommonInit(precord,1);
-	    if (status==0) status = rtnval;
 	    precord->rset = prset;
 	    if(!prset->init_record) continue;
 	    rtnval = (*prset->init_record)(precord,1);
@@ -527,199 +498,6 @@ LOCAL long initDatabase(void)
 	}
     }
     return(status);
-}
-
-LOCAL void createLockSets(void)
-{
-    int			link;
-    dbRecDes		*pdbRecDes;
-    dbFldDes		*pdbFldDes;
-    dbRecordNode 	*pdbRecordNode;
-    dbCommon		*precord;
-    DBLINK		*plink;
-    short		nset,maxnset,newset;
-    int			again;
-    int			anyChange;
-    
-    nset = 0;
-    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbbase->recDesList); pdbRecDes;
-    pdbRecDes = (dbRecDes *)ellNext(&pdbRecDes->node)) {
-	for (pdbRecordNode=(dbRecordNode *)ellFirst(&pdbRecDes->recList);
-	pdbRecordNode;
-	pdbRecordNode = (dbRecordNode *)ellNext(&pdbRecordNode->node)) {
-	    precord = pdbRecordNode->precord;
-	    if(!(precord->name[0])) continue;
-	    if(precord->lset) continue; /*already in a lock set*/
-           /*
-            *  At First, assume record is in a different lockset
-            *    We shall see later if this assumption is incorrect.
-            */
-	    precord->lset = maxnset = ++nset;
-           /*
-            *  Use the process active flag to eliminate traversing
-            *     cycles in the database "graph"
-            */
-	    precord->pact = TRUE; again = TRUE;
-	    while(again) {
-		again = FALSE;
-    		for(link=0; (link<pdbRecDes->no_links&&!again) ; link++) {
-		    DBADDR	*pdbAddr;
-
-		    pdbFldDes = pdbRecDes->papFldDes[pdbRecDes->link_ind[link]];
-		    plink = (DBLINK *)((char *)precord + pdbFldDes->offset);
-		    if(plink->type != DB_LINK) continue;
-
-		    pdbAddr = (DBADDR *)(plink->value.db_link.pdbAddr);
-
-                   /* The current record is in a different lockset -IF-
-                    *    1. Input link
-                    *    2. Not Process Passive
-                    *    3. Not Maximize Severity
-                    *    4. Not An Array Operation - single element only
-                    */
-		    if (pdbFldDes->field_type==DBF_INLINK
-	    	          && ( !(plink->value.db_link.process_passive)
-	                  && !(plink->value.db_link.maximize_sevr))
-		          && pdbAddr->no_elements<=1) continue;
-
-                   /*
-                    *  Combine the lock sets of the current record with the
-                    *    remote record pointed to by the link. (recursively)
-                    */
-		    newset = makeSameSet(pdbAddr,precord->lset,&anyChange);
-
-                   /*
-                    *  Perform an iteration of the while-loop again
-                    *     if we find that the record pointed to by
-                    *     the link has its lockset set earlier.  If
-                    *      it has, set the current record's lockset to
-                    *      that of the link's endpoint.
-                    */
-		    if (newset!=precord->lset) {
-			if(precord->lset==maxnset && maxnset==nset) nset--;
-			precord->lset = newset;
-			again = TRUE;
-			break;
-		    }
-		}
-	    }
-	    precord->pact = FALSE;
-	}
-    }
-    anyChange = TRUE;
-    while(anyChange) {
-	anyChange = FALSE;
-	createLockSetsExtraPass(&anyChange);
-    }
-    dbScanLockInit(nset);
-}
-
-LOCAL void createLockSetsExtraPass(int *anyChange)
-{
-    int			link;
-    dbRecDes		*pdbRecDes;
-    dbFldDes		*pdbFldDes;
-    dbRecordNode 	*pdbRecordNode;
-    dbCommon		*precord;
-    DBLINK		*plink;
-    int			again;
-    
-    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbbase->recDesList); pdbRecDes;
-    pdbRecDes = (dbRecDes *)ellNext(&pdbRecDes->node)) {
-	for (pdbRecordNode=(dbRecordNode *)ellFirst(&pdbRecDes->recList);
-	pdbRecordNode;
-	pdbRecordNode = (dbRecordNode *)ellNext(&pdbRecordNode->node)) {
-	    precord = pdbRecordNode->precord;
-	    if(!(precord->name[0])) continue;
-	    /*Prevent cycles in database graph*/
-	    precord->pact = TRUE; again = TRUE;
-	    while(again) {
-		short newset;
-
-		again = FALSE;
-    		for(link=0; (link<pdbRecDes->no_links&&!again) ; link++) {
-		    DBADDR	*pdbAddr;
-
-		    pdbFldDes = pdbRecDes->papFldDes[pdbRecDes->link_ind[link]];
-		    plink = (DBLINK *)((char *)precord + pdbFldDes->offset);
-		    if(plink->type != DB_LINK) continue;
-		    pdbAddr = (DBADDR *)(plink->value.db_link.pdbAddr);
-		    if(pdbFldDes->field_type==DBF_INLINK
-	    	          && ( !(plink->value.db_link.process_passive)
-	                  && !(plink->value.db_link.maximize_sevr))
-		          && pdbAddr->no_elements<=1) continue;
-
-		    newset = makeSameSet(pdbAddr,precord->lset,anyChange);
-		    if (newset!=precord->lset) {
-			precord->lset = newset;
-			*anyChange = TRUE;
-			again = TRUE;
-			break;
-		    }
-		}
-	    }
-	    precord->pact = FALSE;
-	}
-    }
-}
-
-LOCAL short makeSameSet(struct dbAddr *paddr, short lset,int *anyChange)
-{
-    dbCommon 		*precord = paddr->precord;
-    short  		link;
-    dbRecDes		*pdbRecDes;
-    dbFldDes		*pdbFldDes;
-    DBLINK		*plink;
-    int			again;
-
-    /*Prevent cycles in database graph*/
-    if(precord->pact) return(((precord->lset<lset) ? precord->lset : lset));
-
-   /*
-    *  If the lock set of the link's endpoint is already set
-    *    to the lockset we are setting it to, return...
-    */
-    if(lset == precord->lset) return(lset);
-
-   /*
-    *  If the record has an uninitialized lock set field,
-    *    we set it here.
-    */
-    if(precord->lset == 0) precord->lset = lset;
-
-   /*
-    *  If the record is already in a lockset determined earlier,
-    *     return that lock set.
-    */
-    if(precord->lset < lset) return(precord->lset);
-   /* set pact to prevent cycles */
-    precord->lset = lset; precord->pact = TRUE; again = TRUE;
-    while(again) {
-	again = FALSE;
-	pdbRecDes = ((dbFldDes *)paddr->pfldDes)->pdbRecDes;
-	for(link=0; link<pdbRecDes->no_links; link++) {
-	    DBADDR	*pdbAddr;
-	    short	newset;
-
-	    pdbFldDes = pdbRecDes->papFldDes[pdbRecDes->link_ind[link]];
-	    plink = (DBLINK *)((char *)precord + pdbFldDes->offset);
-	    if(plink->type != DB_LINK) continue;
-	    pdbAddr = (DBADDR *)(plink->value.db_link.pdbAddr);
-	    if( pdbFldDes->field_type==DBF_INLINK
-	    && ( !(plink->value.db_link.process_passive)
-	    && !(plink->value.db_link.maximize_sevr) )
-	    && pdbAddr->no_elements<=1) continue;
-	    newset = makeSameSet(pdbAddr,precord->lset,anyChange);
-	    if(newset != precord->lset) {
-		precord->lset = newset;
-		again = TRUE;
-		*anyChange = TRUE;
-		break;
-	    }
-	}
-    }
-    precord->pact = FALSE;
-    return(precord->lset);
 }
 
 /*
@@ -745,7 +523,15 @@ LOCAL long initialProcess(void)
     }
     return(0);
 }
+
+
+
+int dbLoadDatabase(char *filename,char *path)
+{
+    return(dbReadDatabase(&pdbbase,filename,path));
+}
 
+/*Remaining code supplied by Bob Zieman*/
 #define MAX 256 
 #define SAME 0
 
@@ -1097,9 +883,4 @@ LOCAL int getResourceTokenInternal(FILE *fp, char *pToken, unsigned maxToken)
 		break;
         }
 	return 0;
-}
-
-int dbLoadDatabase(char *filename,char *path)
-{
-    return(dbReadDatabase(&pdbbase,filename,path));
 }

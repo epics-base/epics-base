@@ -50,6 +50,7 @@ void post_event(int event);
 void scanAdd(struct dbCommon *);
 void scanDelete(struct dbCommon *);
 void scanOnce(void *precord);
+int scanOnceSetQueueSize(int size);
 int scanppl(void);			/*print periodic lists*/
 int scanpel(void);			/*print event lists*/
 int scanpiol(void);			/*print io_event list*/

@@ -48,6 +48,7 @@
 #include	<taskwd.h>
 #include	<errMdef.h>
 #include	<dbCommon.h>
+#include	<dbLock.h>
 #include	<task_params.h>
 
 #define QUEUESIZE 1000
@@ -129,9 +130,11 @@ void callbackRequest(CALLBACK *pcallback)
     }
 }
 
+static char *priorityName[3] = {"Low","Medium","High"};
 static void start(int ind)
 {
     int     priority;
+    char    taskName[20];
 
     if((callbackSem[ind] = semBCreate(SEM_Q_FIFO,SEM_EMPTY))==NULL)
 	errMessage(0,"semBcreate failed while starting a callback task\n");
@@ -144,7 +147,8 @@ static void start(int ind)
     }
     if((callbackQ[ind] = rngCreate(sizeof(CALLBACK *) * QUEUESIZE)) == NULL) 
 	errMessage(0,"rngCreate failed while starting a callback task");
-    callbackTaskId[ind] = taskSpawn(CALLBACK_NAME,priority,
+    sprintf(taskName,"cb%s",priorityName[ind]);
+    callbackTaskId[ind] = taskSpawn(taskName,priority,
     			CALLBACK_OPT,CALLBACK_STACK,
     			(FUNCPTR)callbackTask,ind,
 			0,0,0,0,0,0,0,0,0);

@@ -50,7 +50,7 @@
 #include <alarm.h>
 #endif
 #include <dbFldTypes.h>
-
+
 /*************************************************************************
  * The following must match definitions in global menu definitions
  *************************************************************************/
@@ -62,22 +62,6 @@
 
 /*************************************************************************/
 
-#define recGblGetFastLink(PLNK,PREC,PVAL) \
-\
-  ((((PLNK)->type == CONSTANT) ||\
-      (! (((PLNK)->type == DB_LINK) || ((PLNK)->type == CA_LINK)) ))\
-  ? 0\
-  : dbFastLinkGet((PLNK),(struct dbCommon *)(PREC),(PVAL)))
- 
- 
-#define recGblPutFastLink(PLNK,PREC,PVAL) \
-\
-  ((((PLNK)->type == CONSTANT) ||\
-      (! (((PLNK)->type == DB_LINK) || ((PLNK)->type == CA_LINK)) ))\
-  ? 0\
-  : dbFastLinkPut((PLNK),(struct dbCommon *)(PREC),(PVAL)))
-
-
 #define recGblSetSevr(PREC,NSTA,NSEV) \
 (\
      ((PREC)->nsev<(NSEV))\
@@ -85,7 +69,7 @@
      : FALSE\
 )
 
-
+
 /* Global Record Support Routines*/
 void recGblDbaddrError(long status, struct dbAddr *paddr, char *pcaller_name);
 void recGblRecordError(long status, void *precord, char *pcaller_name);
@@ -95,13 +79,7 @@ void recGblGetControlDouble(struct dbAddr *paddr, struct dbr_ctrlDouble *pcd);
 void recGblGetAlarmDouble(struct dbAddr *paddr, struct dbr_alDouble *pad);
 void recGblGetPrec(struct dbAddr *paddr, long *pprecision);
 int  recGblInitConstantLink(struct link *plink,short dbftype,void *pdest);
-long recGblGetLinkValue(struct link *plink,void *precord,
-	short dbrType,void *pdest,long *poptions,long *pnRequest);
-long recGblPutLinkValue(struct link *plink,void *precord,
-	short dbrType,void *pdest,long *pnRequest);
 unsigned short recGblResetAlarms(void *precord);
 void recGblFwdLink(void *precord);
 void recGblGetTimeStamp(void *precord);
-long recGblInitFastInLink(struct link *plink, void *precord, short dbrType, char *fld_name);
-long recGblInitFastOutLink(struct link *plink, void *precord, short dbrType, char *fld_name);
 #endif /*INCrecGblh*/

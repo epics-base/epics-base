@@ -162,8 +162,6 @@ long dbGetLinkField(DBENTRY *pdbentry,int index);
 int  dbGetLinkType(DBENTRY *pdbentry);
 long dbCvtLinkToConstant(DBENTRY *pdbentry);
 long dbCvtLinkToPvlink(DBENTRY *pdbentry);
-long dbPutPvlink(DBENTRY *pdbentry,int pp,int ms,char *pvname);
-long dbGetPvlink(DBENTRY *pdbentry,int *pp,int *ms,char *pvname);
 
 /*dump routines*/
 void dbDumpPath(DBBASE *pdbbase);
@@ -183,7 +181,7 @@ void dbReportDeviceConfig(DBBASE *pdbbase,FILE *report);
 void *dbCalloc(size_t nobj,size_t size);
 void *dbMalloc(size_t size);
 
-extern int dbDebug;
+extern int dbStaticDebug;
 
 #define S_dbLib_recdesNotFound (M_dbLib| 1)	/*Record Type does not exist*/
 #define S_dbLib_recExists (M_dbLib| 3)		/*Record Already exists*/

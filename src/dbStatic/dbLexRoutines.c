@@ -238,7 +238,7 @@ static int db_yyinput(char *buf, int max_size)
 	    pinputFileNow = (inputFile *)ellLast(&inputFileList);
 	    if(!pinputFileNow) return(0);
 	}
-	if(dbDebug) fprintf(stderr,"%s",my_buffer);
+	if(dbStaticDebug) fprintf(stderr,"%s",my_buffer);
 	pinputFileNow->line_num++;
 	my_buffer_ptr = &my_buffer[0];
     }

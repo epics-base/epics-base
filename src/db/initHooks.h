@@ -45,11 +45,10 @@
 #define INITHOOKafterInitDevSup		7
 #define INITHOOKafterTS_init		8
 #define INITHOOKafterInitDatabase	9
-#define INITHOOKafterCaLinkInit2	10
-#define INITHOOKafterFinishDevSup	11
-#define INITHOOKafterScanInit		12
-#define INITHOOKafterInterruptAccept	13
-#define INITHOOKafterInitialProcess	14
-#define INITHOOKatEnd			15
+#define INITHOOKafterFinishDevSup	10
+#define INITHOOKafterScanInit		11
+#define INITHOOKafterInterruptAccept	12
+#define INITHOOKafterInitialProcess	13
+#define INITHOOKatEnd			14
 
 #endif /*INCinitHooksh*/

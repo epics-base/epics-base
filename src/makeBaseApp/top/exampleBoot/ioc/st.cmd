@@ -15,7 +15,7 @@ ld < exampleLib
 cd startup
 dbLoadDatabase("../../dbd/exampleApp.dbd")
 dbLoadRecords("../../db/dbExample1.db","user=_USER_")
-dbLoadTemplate("../../db/dbExample2.db")
+dbLoadRecords("../../db/dbExample2.db")
 
 iocInit
 seq &snctest

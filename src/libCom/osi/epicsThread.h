@@ -124,6 +124,8 @@ public:
     epicsShareFunc virtual void show(unsigned int level) const;
 };
 
+extern "C" void epicsThreadCallEntryPoint ( void * );
+
 class epicsShareClass epicsThread {
 public:
     epicsThread (epicsThreadRunable &,const char *name, unsigned int stackSize,
@@ -160,10 +162,9 @@ private:
 
     epicsThread ( const epicsThread & );
     epicsThread & operator = ( const epicsThread & );
+    friend void epicsThreadCallEntryPoint ( void * );
 
     class exitException {};
-
-    friend void epicsThreadCallEntryPoint (void *pPvt);
 };
 
 template <class T>

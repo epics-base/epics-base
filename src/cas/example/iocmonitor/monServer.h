@@ -1,6 +1,14 @@
 #ifndef MONSERVER_H
 #define MONSERVER_H
 
+/*
+ * Author: Jim Kowalkowski
+ * Date: 1/97
+ * 
+ * $Id$
+ * $Log$
+ */
+
 #include "casdef.h"
 #include "tsHash.h"
 #include "fdManager.h"

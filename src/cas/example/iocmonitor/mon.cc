@@ -1,4 +1,10 @@
 
+// Author: Jim Kowalkowski
+// Date: 1/97
+//
+// $Id$
+// $Log$
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>

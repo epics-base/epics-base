@@ -1,6 +1,15 @@
 #ifndef tsDLHashList_H
 #define tsDLHashList_H
 
+/*
+ * Author: Jim Kowalkowski
+ * Date: 1/97
+ * 
+ * $Id$
+ * $Log$
+ */
+
+
 extern "C" {
 #include "gpHash.h"
 }

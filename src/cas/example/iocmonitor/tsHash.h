@@ -8,13 +8,6 @@
  * $Id$
  *
  * $Log$
- * Revision 1.2  1996/08/14 21:10:35  jbk
- * next wave of updates, menus stopped working, units working, value not
- * working correctly sometimes, can't delete the channels
- *
- * Revision 1.1  1996/07/23 16:32:46  jbk
- * new gateway that actually runs
- *
  */
 
 extern "C" {

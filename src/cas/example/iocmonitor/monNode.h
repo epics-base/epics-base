@@ -1,6 +1,15 @@
 #ifndef MONNODE_H
 #define MONNODE_H
 
+/*
+ * Author: Jim Kowalkowski
+ * Date: 1/97
+ * 
+ * $Id$
+ * $Log$
+ */
+
+
 #include <time.h>
 
 #include "aitTypes.h"

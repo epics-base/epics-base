@@ -851,6 +851,17 @@ epicsShareFunc void epicsShareAPI ca_signal_with_file_and_lineno
 );
 
 /*
+ * ca_signal_formated()
+ * errorCode    R	status returned from channel access function
+ * pFileStr     R	file name string included with error print out
+ * lineNo       R	line number included with error print out
+ * pFormat      R	printf dtyle format string (and optional arguments)
+ *
+ */
+epicsShareFunc void epicsShareAPI ca_signal_formated (long ca_status, const char *pfilenm, 
+                                       int lineno, const char *pFormat, ...);
+
+/*
  * ca_host_name_function()
  *
  * channel	R	channel identifier
@@ -1110,6 +1121,7 @@ epicsShareFunc int epicsShareAPI ca_test_io ();
 epicsShareFunc int epicsShareAPI ca_flush_io ();
 epicsShareFunc void epicsShareAPI ca_signal ();
 epicsShareFunc void epicsShareAPI ca_signal_with_file_and_lineno ();
+epicsShareFunc void epicsShareAPI ca_signal_formated ();
 epicsShareFunc char * epicsShareAPI ca_host_name_function ();
 typedef void CAFDHANDLER(); 
 epicsShareFunc int epicsShareAPI ca_add_fd_registration();

@@ -128,7 +128,7 @@ public:
         const epicsTime & currentTime, caHdrLargeArray &, char *pMsgBody );
 
     // channel routines
-    bool lookupChannelAndTransferToTCP ( 
+    bool transferChanToVirtCircuit ( 
             epicsGuard < callbackMutex > &,
             unsigned cid, unsigned sid, 
             ca_uint16_t typeCode, arrayElementCount count, 

@@ -1,5 +1,5 @@
-CAS := ../..
-TOP := $(CAS)/../..
+TOP := ../../../..
+CAS := $(TOP)/src/cas
 SRC := $(CAS)/generic
 CA := $(CAS)/../ca
 IOSRC := $(CAS)/io/bsdSocket

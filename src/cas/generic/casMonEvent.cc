@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.4  1997/04/10 19:34:11  jhill
+ * API changes
+ *
  * Revision 1.3  1996/11/02 00:54:16  jhill
  * many improvements
  *
@@ -81,17 +84,8 @@ caStatus casMonEvent::cbFunc(casEventSys &eSys)
 //
 void casMonEvent::assign (casMonitor &monitor, gdd *pValueIn)
 {
-        int gddStatus;
-        if (this->pValue) {
-                gddStatus = this->pValue->unreference();
-                assert (!gddStatus);
-        }
-        if (pValueIn) {
-                gddStatus = pValueIn->reference();
-                assert (!gddStatus);
-        }
-        this->pValue = pValueIn;
-        this->id = monitor.casRes::getId();
+	this->pValue = pValueIn;
+	this->id = monitor.casRes::getId();
 }
 
 //

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.3  1997/04/10 19:34:11  jhill
+ * API changes
+ *
  * Revision 1.2  1996/11/02 00:54:17  jhill
  * many improvements
  *
@@ -46,48 +49,27 @@
 // casMonEvent::casMonEvent()
 //
 inline casMonEvent::casMonEvent () : 
-	pValue(NULL), id(0u) {}
+		id(0u) {}
 
 //
 // casMonEvent::casMonEvent()
 //
 inline casMonEvent::casMonEvent (casMonitor &monitor, gdd &newValue) :
         pValue(&newValue),
-        id(monitor.casRes::getId())
-{
-        int gddStatus;
-        gddStatus = this->pValue->reference();
-        assert (!gddStatus);
-}
+        id(monitor.casRes::getId()) {}
 
 //
 // casMonEvent::casMonEvent()
 //
 inline casMonEvent::casMonEvent (casMonEvent &initValue) :
         pValue(initValue.pValue),
-        id(initValue.id)
-{
-        int gddStatus;
-        if (this->pValue) {
-                gddStatus = this->pValue->reference();
-                assert (!gddStatus);
-        }
-}
+        id(initValue.id) {}
 
 //
 // casMonEvent::operator =  ()
 //
 inline void casMonEvent::operator = (class casMonEvent &monEventIn)
 {
-	int gddStatus;
-	if (this->pValue) {
-		gddStatus = this->pValue->unreference();
-		assert (!gddStatus);
-	}
-	if (monEventIn.pValue) {
-		gddStatus = monEventIn.pValue->reference();
-		assert (!gddStatus);
-	}
 	this->pValue = monEventIn.pValue;
 	this->id = monEventIn.id;
 }
@@ -97,12 +79,7 @@ inline void casMonEvent::operator = (class casMonEvent &monEventIn)
 //
 inline void casMonEvent::clear()
 {
-	int gddStatus;
-	if (this->pValue) {
-		gddStatus = this->pValue->unreference();
-		assert (!gddStatus);
-		this->pValue = NULL;
-	}
+	this->pValue = NULL;
 	this->id = 0u;
 }
 

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.8  1997/05/05 04:50:11  jhill
+ * moved pLog = NULL down
+ *
  * Revision 1.7  1997/04/10 19:34:12  jhill
  * API changes
  *
@@ -65,27 +68,27 @@
 // casMonitor::casMonitor()
 //
 casMonitor::casMonitor(caResId clientIdIn, casChannelI &chan,
-        unsigned long nElemIn, unsigned dbrTypeIn,
+	unsigned long nElemIn, unsigned dbrTypeIn,
 	const casEventMask &maskIn, osiMutex &mutexIn) :
-                nElem(nElemIn),
-                mutex(mutexIn),
-                ciu(chan),
-		mask(maskIn),
-		pModifiedValue(NULL),
-                clientId(clientIdIn),
-                dbrType(dbrTypeIn),
-                nPend(0u),
-                ovf(FALSE),
-                enabled(FALSE)
+	nElem(nElemIn),
+	mutex(mutexIn),
+	ciu(chan),
+	mask(maskIn),
+	pModifiedValue(NULL),
+	clientId(clientIdIn),
+	dbrType(dbrTypeIn),
+	nPend(0u),
+	ovf(FALSE),
+	enabled(FALSE)
 {
-        //
-        // If these are nill it is a programmer error
-        //
-        assert (&this->ciu);
- 
-        this->ciu.addMonitor(*this);
- 
-       	this->enable();
+	//
+	// If these are nill it is a programmer error
+	//
+	assert (&this->ciu);
+
+	this->ciu.addMonitor(*this);
+
+	this->enable();
 }
 
 //
@@ -93,25 +96,22 @@ casMonitor::casMonitor(caResId clientIdIn, casChannelI &chan,
 //
 casMonitor::~casMonitor()
 {
-        casCoreClient &client = this->ciu.getClient();
- 
-        this->mutex.osiLock();
-
+	casCoreClient &client = this->ciu.getClient();
+	
+	this->mutex.osiLock();
+	
 	this->disable();
-
-        //
-        // remove from the event system
-        //
-        if (this->ovf) {
-                client.removeFromEventQueue (this->overFlowEvent);
-        }
-	if (this->pModifiedValue) {
-		this->pModifiedValue->unreference();
-		this->pModifiedValue = NULL;
+	
+	//
+	// remove from the event system
+	//
+	if (this->ovf) {
+		client.removeFromEventQueue (this->overFlowEvent);
 	}
-        this->ciu.deleteMonitor(*this);
 
-        this->mutex.osiUnlock();
+	this->ciu.deleteMonitor(*this);
+	
+	this->mutex.osiUnlock();
 }
 
 //
@@ -151,69 +151,63 @@ void casMonitor::disable()
 //
 void casMonitor::push(gdd &newValue)
 {
-        casCoreClient	&client = this->ciu.getClient();
-        casMonEvent 	*pLog;
-        char            full;
- 
-        this->mutex.osiLock();
- 
+	casCoreClient	&client = this->ciu.getClient();
+	casMonEvent 	*pLog;
+	char			full;
+	
+	this->mutex.osiLock();
+	
 	//
 	// get a new block if we havent exceeded quotas
 	//
-        full = (this->nPend>=individualEventEntries) 
+	full = (this->nPend>=individualEventEntries) 
 		|| client.casEventSys::full();
-        if (!full) {
-                pLog = new casMonEvent(*this, newValue);
-                if (pLog) {
-                        this->nPend++;
-                }
-        }
+	if (!full) {
+		pLog = new casMonEvent(*this, newValue);
+		if (pLog) {
+			this->nPend++;
+		}
+	}
 	else {
 		pLog = NULL;
 	}
- 
-        if (this->ovf) {
-                if (pLog) {
-                        int gddStatus;
-                        //
-                        // swap values
-                        // (ugly - but avoids purify ukn sym type problem)
-                        // (better to create a temp event object)
-                        //
-                        gdd *pValue = this->overFlowEvent.getValue();
-                        assert(pValue);
-                        gddStatus = pValue->reference();
-                        assert(!gddStatus);
-                        this->overFlowEvent = *pLog;
-                        pLog->assign(*this, pValue);
-                        gddStatus = pValue->unreference();
-                        assert(!gddStatus);
-                        client.insertEventQueue(*pLog, this->overFlowEvent);
-                }
-                else {
-                        //
-                        // replace the value with the current one
-                        //
-                        this->overFlowEvent.assign(*this, &newValue);
-                }
-                client.removeFromEventQueue(this->overFlowEvent);
-                pLog = &this->overFlowEvent;
-        }
-        else if (!pLog) {
-                /*
-                 * no log block
-                 *
-                 * => use the over flow block in the event structure
-                 */
-                this->ovf = TRUE;
-                this->overFlowEvent.assign(*this, &newValue);
-                this->nPend++;
-                pLog = &this->overFlowEvent;
-        }
- 
-        client.addToEventQueue(*pLog);
- 
-        this->mutex.osiUnlock();
+	
+	if (this->ovf) {
+		if (pLog) {
+			//
+			// swap values
+			// (ugly - but avoids purify ukn sym type problem)
+			// (better to create a temp event object)
+			//
+			smartGDDPointer pValue = this->overFlowEvent.getValue();
+			assert (pValue!=NULL);
+			this->overFlowEvent = *pLog;
+			pLog->assign(*this, pValue);
+			client.insertEventQueue(*pLog, this->overFlowEvent);
+		}
+		else {
+			//
+			// replace the value with the current one
+			//
+			this->overFlowEvent.assign(*this, &newValue);
+		}
+		client.removeFromEventQueue(this->overFlowEvent);
+		pLog = &this->overFlowEvent;
+	}
+	else if (!pLog) {
+		//
+		// no log block
+		// => use the over flow block in the event structure
+		//
+		this->ovf = TRUE;
+		this->overFlowEvent.assign(*this, &newValue);
+		this->nPend++;
+		pLog = &this->overFlowEvent;
+	}
+	
+	client.addToEventQueue(*pLog);
+	
+	this->mutex.osiUnlock();
 }
 
 //
@@ -221,12 +215,12 @@ void casMonitor::push(gdd &newValue)
 //
 caStatus casMonitor::executeEvent(casMonEvent *pEV)
 {
-        caStatus	status;
-        gdd             *pVal;
- 
-        pVal = pEV->getValue ();
-        assert (pVal);
- 
+	caStatus status;
+	smartGDDPointer pVal;
+	
+	pVal = pEV->getValue ();
+	assert (pVal!=NULL);
+	
 	this->mutex.osiLock();
 	if (this->ciu.getClient().getEventsOff()==aitFalse) {
 		status = this->callBack (*pVal);
@@ -237,15 +231,11 @@ caStatus casMonitor::executeEvent(casMonEvent *pEV)
 		// (and send it later when flow control goes to
 		// no flow control)
 		//
-		if (this->pModifiedValue) {
-			this->pModifiedValue->unreference ();
-		}
-		pVal->reference ();
 		this->pModifiedValue = pVal;
 		status = S_cas_success;
 	}
 	this->mutex.osiUnlock();
- 
+	
 	//
 	// if the event isnt accepted we will try
 	// again later (and the event returns to the queue)
@@ -253,26 +243,26 @@ caStatus casMonitor::executeEvent(casMonEvent *pEV)
 	if (status) {
 		return status;
 	}
-
-        //
-        // decrement the count of the number of events pending
-        //
-        this->nPend--;
- 
-        //
-        // delete event object if it isnt a cache entry
-        // saved in the call back object
-        //
-        if (pEV == &this->overFlowEvent) {
-                assert (this->ovf==TRUE);
-                this->ovf = FALSE;
-                pEV->clear();
-        }
-        else {
-                delete pEV;
-        }
- 
-        return S_cas_success;
+	
+	//
+	// decrement the count of the number of events pending
+	//
+	this->nPend--;
+	
+	//
+	// delete event object if it isnt a cache entry
+	// saved in the call back object
+	//
+	if (pEV == &this->overFlowEvent) {
+		assert (this->ovf==TRUE);
+		this->ovf = FALSE;
+		pEV->clear();
+	}
+	else {
+		delete pEV;
+	}
+	
+	return S_cas_success;
 }
 
 //
@@ -294,12 +284,11 @@ void casMonitor::show(unsigned level) const
 //
 void casMonitor::postIfModified()
 {
-        this->mutex.osiLock();
-        if (this->pModifiedValue) {
-                this->callBack (*this->pModifiedValue);
-                this->pModifiedValue->unreference ();
-                this->pModifiedValue = NULL;
-        }
-        this->mutex.osiUnlock();
+	this->mutex.osiLock();
+	if (this->pModifiedValue!=NULL) {
+		this->callBack (*this->pModifiedValue);
+		this->pModifiedValue = NULL;
+	}
+	this->mutex.osiUnlock();
 }
 

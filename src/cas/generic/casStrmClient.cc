@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.22  1998/05/05 16:32:17  jhill
+ * cleaned up file format
+ *
  * Revision 1.21  1998/04/15 00:04:05  jhill
  * cosmetic
  *
@@ -270,10 +273,10 @@ void casStrmClient::show (unsigned level) const
  */
 caStatus casStrmClient::readAction ()
 {
-	const caHdr 	*mp = this->ctx.getMsg();
-	caStatus	status;
-	casChannelI	*pChan;
-	gdd		*pDesc;
+	const caHdr *mp = this->ctx.getMsg();
+	caStatus status;
+	casChannelI *pChan;
+	smartGDDPointer pDesc;
 
 	status = this->verifyRequest (pChan);
 	if (status != S_cas_validRequest) {
@@ -297,7 +300,6 @@ caStatus casStrmClient::readAction ()
 		return this->sendErr(mp, status, "read access denied");
 	}
 
-	pDesc = NULL;
 	status = this->read(pDesc); 
 	if (status==S_casApp_success) {
 		status = this->readResponse(pChan, *mp, pDesc, S_cas_success);
@@ -310,13 +312,6 @@ caStatus casStrmClient::readAction ()
 	}
 	else {
 		status = this->sendErrWithEpicsStatus(mp, status, ECA_GETFAIL);
-	}
-
-	if (pDesc) {
-		int gddStatus;
-
-		gddStatus = pDesc->unreference();
-		assert(gddStatus==0);
 	}
 
 	return status;
@@ -404,14 +399,15 @@ caStatus casStrmClient::readResponse (casChannelI *pChan, const caHdr &msg,
 //
 caStatus casStrmClient::readNotifyAction ()
 {
-	const caHdr 	*mp = this->ctx.getMsg();
-	int		status;
-	casChannelI	*pChan;
-	gdd		*pDesc;
+	const caHdr *mp = this->ctx.getMsg();
+	int status;
+	casChannelI *pChan;
+	smartGDDPointer pDesc;
 
 	status = this->verifyRequest (pChan);
 	if (status != S_cas_validRequest) {
-		return status;
+		return casStrmClient::readNotifyResponse(NULL, *mp, NULL,
+				S_cas_badRequest);
 	}
 
 	//
@@ -421,7 +417,6 @@ caStatus casStrmClient::readNotifyAction ()
 		return this->readNotifyResponse(pChan, *mp, NULL, S_cas_noRead);
 	}
 
-	pDesc = NULL;
 	status = this->read(pDesc); 
 	if (status == S_casApp_success) {
 		status = this->readNotifyResponse(pChan, *mp, pDesc, status);
@@ -434,12 +429,6 @@ caStatus casStrmClient::readNotifyAction ()
 	}
 	else {
 		status = this->readNotifyResponse(pChan, *mp, pDesc, status);
-	}
-
-	if (pDesc) {
-		int gddStatus;
-		gddStatus = pDesc->unreference();
-		assert(gddStatus==0);
 	}
 
 	return status;
@@ -492,7 +481,7 @@ caStatus casStrmClient::readNotifyResponse (casChannelI *pChan,
 			if (mapDBRStatus<0) {
 				pDesc->dump();
 				errPrintf (S_cas_badBounds, __FILE__, __LINE__, "- get notify with PV=%s type=%u count=%u",
-						pChan->getPVI()->getName(), msg.m_type, msg.m_count);
+					pChan->getPVI()->getName(), msg.m_type, msg.m_count);
 				reply->m_cid = ECA_GETFAIL;
 			}
 			else {
@@ -557,7 +546,7 @@ caStatus casStrmClient::monitorResponse (casChannelI *pChan,
 		const caHdr &msg, gdd *pDesc, const caStatus completionStatus)
 {
 	caStatus completionStatusCopy = completionStatus;
-	gdd *pDBRDD = NULL;
+	smartGDDPointer pDBRDD;
 	caHdr *pReply;
 	unsigned size;
 	caStatus status;
@@ -670,10 +659,6 @@ caStatus casStrmClient::monitorResponse (casChannelI *pChan,
 
 	this->commitMsg ();
 
-	if (pDBRDD) {
-		pDBRDD->unreference();
-	}
-
 	return S_cas_success;
 }
 
@@ -768,7 +753,8 @@ caStatus casStrmClient::writeNotifyAction()
 
 	status = this->verifyRequest (pChan);
 	if (status != S_cas_validRequest) {
-		return status;
+		return casStrmClient::writeNotifyResponse(NULL, *mp,
+				S_cas_badRequest);
 	}
 
 	//
@@ -1035,6 +1021,14 @@ caStatus casStrmClient::createChanResponse(const caHdr &hdr, const pvCreateRetur
 	}
 
 	//
+	// attach the PV to this server
+	//
+	status = pPV->attachToServer (this->getCAS());
+	if (status) {
+		return this->channelCreateFailed (&hdr, status);
+	}
+
+	//
 	// NOTE:
 	// We are allocating enough space for both the claim
 	// response and the access response so that we know for
@@ -1237,7 +1231,7 @@ caStatus casStrmClient::eventAddAction ()
 					this->ctx.getData();
 	casClientMon *pMonitor;
 	casChannelI *pciu;
-	gdd *pDD;
+	smartGDDPointer pDD;
 	caStatus status;
 	casEventMask mask;
 	unsigned short caProtoMask;
@@ -1276,7 +1270,6 @@ caStatus casStrmClient::eventAddAction ()
 	// to postpone asynchronous IO we can safely restart this
 	// request later.
 	//
-	pDD = NULL;
 	status = this->read(pDD); 
 	//
 	// always send immediate monitor response at event add
@@ -1304,12 +1297,6 @@ caStatus casStrmClient::eventAddAction ()
 	}
 	else {
 		status = this->monitorResponse (pciu, *mp, pDD, status);
-	}
-
-	if (pDD) {
-		int gddStatus;
-		gddStatus = pDD->unreference();
-		assert(gddStatus==0);
 	}
 
 	if (status==S_cas_success) {
@@ -1347,9 +1334,11 @@ caStatus casStrmClient::clearChannelAction ()
 	 * Verify the channel
 	 */
 	pciu = this->resIdToChannel (mp->m_cid);
-	if (!pciu) {
-		logBadId (mp, dp);
-		return S_cas_internal;
+	if (pciu==NULL) {
+		logBadId (mp, dp, ECA_BADCHID);
+	}
+	else {
+		pciu->clientDestroy ();
 	}
 
 	/*
@@ -1362,8 +1351,6 @@ caStatus casStrmClient::clearChannelAction ()
 	*reply = *mp;
 	this->commitMsg ();
 
-	pciu->clientDestroy ();
-
 	return S_cas_success;
 }
 
@@ -1373,48 +1360,58 @@ caStatus casStrmClient::clearChannelAction ()
 //
 // casStrmClient::eventCancelAction()
 //
-caStatus casStrmClient::eventCancelAction()
+caStatus casStrmClient::eventCancelAction ()
 {
-	const caHdr 	*mp = this->ctx.getMsg();
-	void		*dp = this->ctx.getData();
-        casChannelI	*pciu;
+	const caHdr 	*mp = this->ctx.getMsg ();
+	void		*dp = this->ctx.getData ();
+	casChannelI *pciu;
 	caHdr		*reply;
 	casMonitor	*pMon;
-	int		status;
-
-        /*
-         * Verify the channel
-         */
-	pciu = this->resIdToChannel(mp->m_cid);
+	int 	status;
+	
+	/*
+	 * Verify the channel
+	 *
+	 * if the monitor delete arrives just after the server tool
+	 * has deleted the PV then the client will deallocate the 
+	 * monitor structure when it receives the PV disconnect message.
+	 *
+	 * otherwise the client or server ha become corrupted
+	 */
+	pciu = this->resIdToChannel (mp->m_cid);
 	if (!pciu) {
-		logBadId(mp, dp);
-		return S_cas_internal;
-	}
-	pMon = pciu->findMonitor(mp->m_available);
-	if (!pMon) {
-		logBadId(mp, dp);
-		return S_cas_internal;
+		logBadId (mp, dp, ECA_BADCHID);
+		return S_cas_success;
 	}
 
 	/*
+	 * verify the event (monitor)
+	 */
+	pMon = pciu->findMonitor (mp->m_available);
+	if (!pMon) {
+		logBadId (mp, dp, ECA_BADMONID);
+		return S_cas_success;
+	}
+	
+	/*
 	 * allocate delete confirmed message
 	 */
-	status = allocMsg(0u, &reply);
+	status = allocMsg (0u, &reply);
 	if (status) {
 		return status;
 	}
-
+	
 	reply->m_cmmd = CA_PROTO_EVENT_ADD;
 	reply->m_postsize = 0u;
-	reply->m_type = pMon->getType();
-	reply->m_count = (unsigned short) pMon->getCount();
-	reply->m_cid = pciu->getCID();
-	reply->m_available = pMon->getClientId();
-
-	this->commitMsg();
-
+	reply->m_type = pMon->getType ();
+	reply->m_count = (unsigned short) pMon->getCount ();
+	reply->m_cid = pciu->getCID ();
+	reply->m_available = pMon->getClientId ();
+	
+	this->commitMsg ();
+	
 	delete pMon;
-
+	
 	return S_cas_success;
 }
 
@@ -1637,7 +1634,7 @@ caStatus casStrmClient::write()
 //
 caStatus casStrmClient::writeScalarData()
 {
-	gdd *pDD;
+	smartGDDPointer pDD;
 	const caHdr *pHdr = this->ctx.getMsg();
 	gddStatus gddStat;
 	caStatus status;
@@ -1649,9 +1646,16 @@ caStatus casStrmClient::writeScalarData()
 	}
 
 	pDD = new gddScalar (gddAppType_value, type);
-	if (!pDD) {
+	if (pDD==NULL) {
 		return S_cas_noMemory;
 	}
+
+	//
+	// reference count is managed by smart pointer class
+	// from here down
+	//
+	gddStat = pDD->unreference();
+	assert (!gddStat);
 
 	if (type==aitEnumFixedString) {
 		aitFixedString *pFStr = 
@@ -1662,7 +1666,6 @@ caStatus casStrmClient::writeScalarData()
 		gddStat = pDD->genCopy(type, this->ctx.getData());
 	}
 	if (gddStat) {
-		pDD->unreference();
 		return S_cas_badType;
 	}
 
@@ -1680,12 +1683,6 @@ caStatus casStrmClient::writeScalarData()
 	//
 	status = (*this->ctx.getPV())->write(this->ctx, *pDD);
 
-	//
-	// tell the DD that this code is finished with it
-	//
-	gddStat = pDD->unreference();
-	assert(gddStat==0);
-
 	return status;
 }
 
@@ -1695,7 +1692,7 @@ caStatus casStrmClient::writeScalarData()
 //
 caStatus casStrmClient::writeArrayData()
 {
-	gdd *pDD;
+	smartGDDPointer pDD;
 	const caHdr *pHdr = this->ctx.getMsg();
 	gddDestructor *pDestructor;
 	gddStatus gddStat;
@@ -1714,17 +1711,21 @@ caStatus casStrmClient::writeArrayData()
 		return S_cas_noMemory;
 	}
 
+	//
+	// GDD ref count is managed by smart pointer class from here down
+	//
+	gddStat = pDD->unreference();
+	assert (!gddStat);
+
 	size = dbr_size_n (pHdr->m_type, pHdr->m_count);
 	pData = new char [size];
 	if (!pData) {
-		pDD->unreference();
 		return S_cas_noMemory;
 	}
 
 	pDestructor = new gddDestructor;
 	if (!pDestructor) {
 		delete [] pData;
-		pDD->unreference();
 		return S_cas_noMemory;
 	}
 
@@ -1754,12 +1755,6 @@ caStatus casStrmClient::writeArrayData()
 	//
 	status = (*this->ctx.getPV())->write(this->ctx, *pDD);
 
-	//
-	// tell the DD that this code is finished with it
-	//
-	gddStat = pDD->unreference();
-	assert(gddStat==0);
-
 	return status;
 }
 
@@ -1767,7 +1762,7 @@ caStatus casStrmClient::writeArrayData()
 //
 // casStrmClient::read()
 //
-caStatus casStrmClient::read(gdd *&pDescRet)
+caStatus casStrmClient::read(smartGDDPointer &pDescRet)
 {
 	const caHdr	*pHdr = this->ctx.getMsg();
 	caStatus	status;
@@ -1778,7 +1773,7 @@ caStatus casStrmClient::read(gdd *&pDescRet)
 		return status;
 	}
 
-	if (!pDescRet) {
+	if (pDescRet==NULL) {
 		return S_cas_noMemory;
 	}
 
@@ -1820,7 +1815,6 @@ caStatus casStrmClient::read(gdd *&pDescRet)
 	}
 
 	if (status) {
-		pDescRet->unreference();
 		pDescRet = NULL;
 	}
 
@@ -1832,12 +1826,12 @@ caStatus casStrmClient::read(gdd *&pDescRet)
 //
 // createDBRDD ()
 //
-caStatus createDBRDD (unsigned dbrType, aitIndex dbrCount, gdd *&pDescRet)
+caStatus createDBRDD (unsigned dbrType, aitIndex dbrCount, smartGDDPointer &pDescRet)
 {
-	aitUint32	valIndex;
-	aitUint32	gddStatus;
-	aitUint16	appType;
-	gdd 		*pVal;
+	aitUint32 valIndex;
+	aitUint32 gddStatus;
+	aitUint16 appType;
+	gdd *pVal;
 
 	appType = gddDbrToAit[dbrType].app;
 
@@ -1848,9 +1842,20 @@ caStatus createDBRDD (unsigned dbrType, aitIndex dbrCount, gdd *&pDescRet)
 	if (!pDescRet) {
 		return S_cas_noMemory;
 	}
+
+	//
+	// smart pointer class maintains the ref count from here down
+	//
+	gddStatus = pDescRet->unreference();
+	assert (!gddStatus);
 	
 	if (pDescRet->isContainer()) {
-		gddContainer *pCont = (gddContainer *) pDescRet;
+		gdd *pGdd = pDescRet;
+		//
+		// this cast is ugly and dangerous
+		// (Jim should have used virtual functions in gdd)
+		//
+		gddContainer *pCont = (gddContainer *) pGdd;
 
 		//
 		// All DBR types have a value member 
@@ -1859,13 +1864,11 @@ caStatus createDBRDD (unsigned dbrType, aitIndex dbrCount, gdd *&pDescRet)
 			gddApplicationTypeTable::app_table.mapAppToIndex
 				(appType, gddAppType_value, valIndex);
 		if (gddStatus) {
-			pDescRet->unreference();
 			pDescRet = NULL;
 			return S_cas_internal;
 		}
 		pVal = pCont->getDD(valIndex);
 		if (!pVal) {
-			pDescRet->unreference();
 			pDescRet = NULL;
 			return S_cas_internal;
 		}
@@ -1884,7 +1887,6 @@ caStatus createDBRDD (unsigned dbrType, aitIndex dbrCount, gdd *&pDescRet)
 		//	=> out of luck (cant modify bounds)
 		//
 		if (pDescRet->isManaged()) {
-			pDescRet->unreference();
 			pDescRet = NULL;
 			return S_cas_internal;
 		}
@@ -1916,7 +1918,6 @@ caStatus createDBRDD (unsigned dbrType, aitIndex dbrCount, gdd *&pDescRet)
 					pVal->setBound(dim, 0u, bound);
 				}
 				else {
-					pDescRet->unreference();
 					pDescRet = NULL;
 					return S_cas_internal;
 				}
@@ -1928,7 +1929,6 @@ caStatus createDBRDD (unsigned dbrType, aitIndex dbrCount, gdd *&pDescRet)
 		//
 		// the GDD is container or isnt any of the normal types
 		//
-		pDescRet->unreference();
 		pDescRet = NULL;
 		return S_cas_internal;
 	}

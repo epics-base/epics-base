@@ -44,6 +44,7 @@
  * .08  11-17-91	jrw	changed to support SR620
  * .09  11-20-91	jrw	redesigned as a library
  * .10  11-22-91	jrw	removed output formatting for all but GPIBWRITEs
+ * .11	01-10-92	jrw	changed return from GPIBSOFT (propagated, was 0)
  *
  * WISH LIST:
  *  It would be nice to read and write directly to/from the val field
@@ -113,8 +114,6 @@ extern int	ibSrqDebug;
  *
  ******************************************************************************/
 
-/* BUG -- this will not work unless the caller passes in a dset pointer */
-
 long
 devGpibLib_report(dset)
 gDset *dset;
@@ -136,7 +135,7 @@ gDset *dset;
   }
   return(0);
 }
-
+
 /******************************************************************************
  *
  * Initialization for device support
@@ -437,6 +436,7 @@ void 			(*process)();
     parmBlock = (struct devGpibParmBlock *)(((gDset*)(pmbbi->dset))->funPtr[pmbbi->dset->number]);
 
     /* do common initialization */
+
     if (result = devGpibLib_initXx((caddr_t)pmbbi, &pmbbi->inp))
     {
         return(result);
@@ -685,7 +685,7 @@ struct link	*plink;
 
     default:
         strcpy(message, pdbCommon->name);
-	strcat(message,": init_record : GPIB link type is invalid");
+	sprintf(message,": init_record : GPIB link type %ld is invalid", plink->type);
 	errMessage(S_db_badField, message);
 	return(S_db_badField);
 	break;
@@ -840,8 +840,7 @@ struct aiRecord	*pai;
     }
     else if (pCmd->type == GPIBSOFT)
     {
-	 (*pCmd->convert)(pdpvt,pCmd->P1,pCmd->P2, pCmd->P3);
-	 return(0);
+	 return((*pCmd->convert)(pdpvt,pCmd->P1,pCmd->P2, pCmd->P3));
     }
     else
     {	/* put pointer to dpvt field on ring buffer */
@@ -878,8 +877,7 @@ struct aoRecord	*pao;
     }
     else if (pCmd->type == GPIBSOFT)
     {
-	 (*pCmd->convert)(pdpvt,pCmd->P1,pCmd->P2, pCmd->P3);
-	 return(0);
+	 return((*pCmd->convert)(pdpvt,pCmd->P1,pCmd->P2, pCmd->P3));
     }
     else
     {		/* put pointer to dvpt field on ring buffer */
@@ -915,8 +913,7 @@ struct longinRecord *pli;
     }
     else if (pCmd->type == GPIBSOFT)
     {
-         (*pCmd->convert)(pdpvt,pCmd->P1,pCmd->P2, pCmd->P3);
-         return(0);
+         return((*pCmd->convert)(pdpvt,pCmd->P1,pCmd->P2, pCmd->P3));
     }
     else
     {   /* put pointer to dpvt field on ring buffer */
@@ -953,8 +950,7 @@ struct longoutRecord *plo;
     }
     else if (pCmd->type == GPIBSOFT)
     {
-         (*pCmd->convert)(pdpvt,pCmd->P1,pCmd->P2, pCmd->P3);
-         return(0);
+         return((*pCmd->convert)(pdpvt,pCmd->P1,pCmd->P2, pCmd->P3));
     }
     else
     {           /* put pointer to dvpt field on ring buffer */
@@ -991,8 +987,7 @@ struct biRecord	*pbi;
     }
     else if (pCmd->type == GPIBSOFT)
     {
-	 (*pCmd->convert)(pdpvt,pCmd->P1,pCmd->P2, pCmd->P3);
-	 return(0);
+	 return((*pCmd->convert)(pdpvt,pCmd->P1,pCmd->P2, pCmd->P3));
     }
     else
     {	/* put pointer to dvpt field on ring buffer */
@@ -1032,8 +1027,7 @@ struct boRecord	*pbo;
     }
     else if (pCmd->type == GPIBSOFT)
     {
-	 (*pCmd->convert)(pdpvt,pCmd->P1,pCmd->P2, pCmd->P3);
-	 return(0);
+	 return((*pCmd->convert)(pdpvt,pCmd->P1,pCmd->P2, pCmd->P3));
     }
     else
     {	/* put pointer to dvpt field on ring buffer */
@@ -1070,8 +1064,7 @@ struct mbbiRecord	*pmbbi;
     }
     else if (pCmd->type == GPIBSOFT)
     {
-	 (*pCmd->convert)(pdpvt,pCmd->P1,pCmd->P2, pCmd->P3);
-	 return(0);
+	 return((*pCmd->convert)(pdpvt,pCmd->P1,pCmd->P2, pCmd->P3));
     }
     else
     {	/* put pointer to dvpt field on ring buffer */
@@ -1108,8 +1101,7 @@ struct mbboRecord	*pmbbo;
     }
     else if (pCmd->type == GPIBSOFT)
     {
-	 (*pCmd->convert)(pdpvt,pCmd->P1,pCmd->P2, pCmd->P3);
-	 return(0);
+	 return((*pCmd->convert)(pdpvt,pCmd->P1,pCmd->P2, pCmd->P3));
     }
     else
     {	/* put pointer to dvpt field on ring buffer */
@@ -1145,8 +1137,7 @@ struct stringinRecord	*psi;
     }
     else if (pCmd->type == GPIBSOFT)
     {
-	 (*pCmd->convert)(pdpvt,pCmd->P1,pCmd->P2, pCmd->P3);
-	 return(0);
+	 return((*pCmd->convert)(pdpvt,pCmd->P1,pCmd->P2, pCmd->P3));
     }
     else
     {	/* put pointer to dvpt field on ring buffer */
@@ -1183,8 +1174,7 @@ struct stringoutRecord	*pso;
     }
     else if (pCmd->type == GPIBSOFT)
     {
-	 (*pCmd->convert)(pdpvt,pCmd->P1,pCmd->P2, pCmd->P3);
-	 return(0);
+	 return((*pCmd->convert)(pdpvt,pCmd->P1,pCmd->P2, pCmd->P3));
     }
     else
     {	/* put pointer to dvpt field on ring buffer */
@@ -1983,6 +1973,7 @@ struct gpibDpvt *pdpvt;
     }
     else
     {	/* BUG -- why can't we just read it into the val field? */
+	/* BUG -- length should not be hard coded here */
 
         strncpy(psi->val,pdpvt->msg,39);
         psi->val[40] = '\0';

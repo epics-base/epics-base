@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.7  1998/07/08 15:38:04  jhill
+ * fixed lost monitors during flow control problem
+ *
  * Revision 1.6  1997/06/30 22:54:27  jhill
  * use %p with pointers
  *
@@ -73,7 +76,8 @@ void casEventSys::show(unsigned level) const
 			this->numEventBlocks, this->maxLogEntries);	
 		printf ("\tthere are %d events in the queue\n",
 			this->eventLogQue.count());
-		printf ("\tevents off = %d\n", this->eventsOff);
+		printf ("Replace events flag = %d, dontProcess flag = %d\n",
+			this->replaceEvents, this->dontProcess);
 	}
 }
 

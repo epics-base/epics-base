@@ -74,7 +74,6 @@ public:
     void flushRequest ();
     int pendIO ( const double &timeout );
     int pendEvent ( const double &timeout );
-    void destroyAllIO ( nciu &chan );
     bool executeResponse ( tcpiiu &, caHdrLargeArray &, char *pMsgBody );
     void ioCancel ( nciu &chan, const cacChannel::ioid &id );
     void ioShow ( const cacChannel::ioid &id, unsigned level ) const;
@@ -139,7 +138,7 @@ public:
     void notifyNewFD ( SOCKET ) const;
     void notifyDestroyFD ( SOCKET ) const;
     void uninstallIIU ( tcpiiu &iiu ); 
-    bool preemptiveCallbackEnable () const;
+    bool preemptiveCallbakIsEnabled () const;
     double beaconPeriod ( const nciu & chan ) const;
     void udpWakeup ();
     static unsigned lowestPriorityLevelAbove ( unsigned priority );
@@ -171,8 +170,6 @@ private:
     double                      connTMO;
     mutable epicsMutex          mutex; 
     epicsMutex                  callbackMutex; 
-    epicsMutex                  serializePendIO; 
-    epicsMutex                  serializeCallbackMutexUsage; 
     epicsEvent                  ioDone;
     epicsEvent                  noRecvThreadsPending;
     epicsEvent                  iiuUninstal;
@@ -186,6 +183,7 @@ private:
     void                        * tcpLargeRecvBufFreeList;
     class callbackAutoMutex     * pCallbackLocker;
     cacNotify                   & notify;
+    epicsThreadId               initializingThreadsId;
     unsigned                    initializingThreadsPriority;
     unsigned                    maxRecvBytesTCP;
     unsigned                    pndRecvCnt;
@@ -198,7 +196,6 @@ private:
     bool setupUDP ();
     void connectAllIO ( nciu &chan );
     void disconnectAllIO ( nciu &chan, bool enableCallbacks );
-    void privateDestroyAllIO ( nciu & chan );
     void ioCancelPrivate ( nciu &chan, const cacChannel::ioid &id );
     void flushIfRequired ( netiiu & ); 
     void recycleReadNotifyIO ( netReadNotifyIO &io );
@@ -346,7 +343,7 @@ inline bool cac::ioComplete () const
     return ( this->pndRecvCnt == 0u );
 }
 
-inline bool cac::preemptiveCallbackEnable () const
+inline bool cac::preemptiveCallbakIsEnabled () const
 {
     return ! this->pCallbackLocker;
 }

@@ -213,7 +213,7 @@ cac::cac ( cacNotify & notifyIn, bool enablePreemptiveCallbackIn ) :
     if ( ! this->tcpSmallRecvBufFreeList ) {
         osiSockRelease ();
         delete [] this->pUserName;
-        throwWithLocation ( caErrorCode ( ECA_ALLOCMEM ) );
+        throw std::bad_alloc ();
     }
 
     freeListInitPvt ( &this->tcpLargeRecvBufFreeList, this->maxRecvBytesTCP, 1 );
@@ -221,7 +221,7 @@ cac::cac ( cacNotify & notifyIn, bool enablePreemptiveCallbackIn ) :
         osiSockRelease ();
         delete [] this->pUserName;
         freeListCleanup ( this->tcpSmallRecvBufFreeList );
-        throwWithLocation ( caErrorCode ( ECA_ALLOCMEM ) );
+        throw std::bad_alloc ();
     }
 
     this->pTimerQueue = & epicsTimerQueueActive::allocate ( false, abovePriority );
@@ -230,7 +230,7 @@ cac::cac ( cacNotify & notifyIn, bool enablePreemptiveCallbackIn ) :
         delete [] this->pUserName;
         freeListCleanup ( this->tcpSmallRecvBufFreeList );
         freeListCleanup ( this->tcpLargeRecvBufFreeList );
-        throwWithLocation ( caErrorCode ( ECA_ALLOCMEM ) );
+        throw std::bad_alloc ();
     }
 
     if ( ! enablePreemptiveCallbackIn ) {
@@ -241,7 +241,7 @@ cac::cac ( cacNotify & notifyIn, bool enablePreemptiveCallbackIn ) :
             freeListCleanup ( this->tcpSmallRecvBufFreeList );
             freeListCleanup ( this->tcpLargeRecvBufFreeList );
             this->pTimerQueue->release ();
-            throwWithLocation ( caErrorCode ( ECA_ALLOCMEM ) );
+            throw std::bad_alloc ();
         }
     }
 }

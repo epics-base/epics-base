@@ -55,7 +55,7 @@ BOOL WINAPI DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 	switch (dwReason) 
 	{
 	case DLL_PROCESS_ATTACH:
-		if (!bsdSockAttach()) 
+		if ( ! osiSockAttach() ) 
 			return FALSE;
 #		ifdef _DEBUG
 			fprintf(stderr, "Process attached to Com.dll version %s\n", EPICS_VERSION_STRING);
@@ -63,7 +63,7 @@ BOOL WINAPI DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 		break;
 
 	case DLL_PROCESS_DETACH:
-		bsdSockRelease();
+		osiSockRelease();
 #		ifdef _DEBUG
 			fprintf(stderr, "Process detached from Com.dll version %s\n", EPICS_VERSION_STRING);
 #		endif

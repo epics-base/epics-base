@@ -98,7 +98,7 @@ epicsShareFunc fdManager::fdManager (osiTimerQueue &timerQueueIn) :
 	size_t i;
     int status;
 
-    status = bsdSockAttach();
+    status = osiSockAttach();
 	assert (status);
 
 	for (i=0u; i<sizeof(this->fdSets)/sizeof(this->fdSets[0u]); i++) {
@@ -124,7 +124,7 @@ epicsShareFunc fdManager::~fdManager()
 		pReg->state = fdReg::limbo;
 		pReg->destroy();
 	}
-	bsdSockRelease();
+	osiSockRelease();
 }
 
 //

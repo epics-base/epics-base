@@ -12,12 +12,12 @@
 #define epicsExportSharedSymbols
 #include "osiSock.h"
 
-int bsdSockAttach()
+int osiSockAttach()
 {
 	return 1;
 }
 
-void bsdSockRelease()
+void osiSockRelease()
 {
 }
 

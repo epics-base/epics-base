@@ -89,12 +89,12 @@ epicsShareFunc int epicsShareAPI hostToIPAddr
 /*
  * attach to BSD socket library
  */
-epicsShareFunc int epicsShareAPI bsdSockAttach(void); /* returns T if success, else F */
+epicsShareFunc int epicsShareAPI osiSockAttach (void); /* returns T if success, else F */
 
 /*
  * release BSD socket library
  */
-epicsShareFunc void epicsShareAPI bsdSockRelease(void);
+epicsShareFunc void epicsShareAPI osiSockRelease (void);
 
 /*
  * convert socket error number to a string

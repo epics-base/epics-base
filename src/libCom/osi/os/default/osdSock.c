@@ -65,7 +65,7 @@ static void unlockInfo (void)
 /*
  * NOOP
  */
-int bsdSockAttach()
+int osiSockAttach()
 {
 	return 1;
 }
@@ -73,7 +73,7 @@ int bsdSockAttach()
 /*
  * NOOP
  */
-void bsdSockRelease()
+void osiSockRelease()
 {
 }
 

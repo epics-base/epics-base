@@ -60,9 +60,9 @@ epicsShareFunc unsigned epicsShareAPI wsaMajorVersion ()
 }
 	
 /*
- * bsdSockAttach()
+ * osiSockAttach()
  */
-epicsShareFunc int epicsShareAPI bsdSockAttach()
+epicsShareFunc int epicsShareAPI osiSockAttach()
 {
 	int status;
 
@@ -114,9 +114,9 @@ epicsShareFunc int epicsShareAPI bsdSockAttach()
 }
 
 /*
- * bsdSockRelease()
+ * osiSockRelease()
  */
-epicsShareFunc void epicsShareAPI bsdSockRelease()
+epicsShareFunc void epicsShareAPI osiSockRelease()
 {
 	if (nAttached) {
 		if (--nAttached==0u) {

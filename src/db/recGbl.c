@@ -58,59 +58,6 @@
 
 extern struct dbBase *pdbBase;
 
-
-/***********************************************************************
-* The following are the global record processing rouitines
-*
-*void recGblDbaddrError(status,paddr,pcaller_name)
-*     long              status;
-*     struct dbAddr	*paddr;
-*     char		*pcaller_name;	* calling routine name *
-*
-*void recGblRecordError(status,precord,pcaller_name)
-*     long              status;
-*     void		*precord;	* addr of record	*
-*     char		*pcaller_name;	* calling routine name *
-*
-*void recGblRecSupError(status,paddr,pcaller_name,psupport_name)
-*     long              status;
-*     struct dbAddr	*paddr;
-*     char		*pcaller_name;	* calling routine name *
-*     char		*psupport_name;	* support routine name	*
-*
-*void recGblGetGraphicDouble(paddr,pgd)
-*     struct dbAddr	  *paddr;
-*     struct dbr_grDouble *pgd;
-*
-*void recGblGetControlDouble(paddr,pcd)
-*     struct dbAddr	  *paddr;
-*     struct dbr_ctrlDouble *pcd;
-*
-*void recGblGetAlarmDouble(paddr,pad)
-*     struct dbAddr	  *paddr;
-*     struct dbr_alDouble *pad;
-*
-*void recGblGetPrec(paddr,pprecision)
-*     struct dbAddr	  *paddr;
-*     long		  *pprecision;
-*
-*long recGblGetLinkValue(plink,precord,dbrType,pdest,poptions,pnRequest)
-*	struct link	*plink;
-*	struct dbCommon	*precord;
-*	short		dbrType;
-*	void		*pdest;
-*	long		*poptions;
-*	long		*pnRequest;
-*
-*long recGblPutLinkValue(plink,precord,dbrType,psource,pnRequest)
-*	struct link	*plink;
-*	struct dbCommon *precord;
-*	short           dbrType;
-*	void            *psource;
-*	long		*pnRequest;
-**************************************************************************/
-
-
 /* local routines */
 static void getVarRangeValue();
 static void getConRangeValue();
@@ -118,11 +65,7 @@ static void getMaxRangeValues();
 
 
 
-void recGblDbaddrError(
-	long	status,
-	struct dbAddr	*paddr,	
-	char	*pcaller_name	/* calling routine name*/
-)
+void recGblDbaddrError(long status,struct dbAddr *paddr,char *pcaller_name)
 {
 	char		buffer[200];
 	struct dbCommon *precord;
@@ -148,14 +91,11 @@ void recGblDbaddrError(
 	return;
 }
 
-void recGblRecordError(
-long		status,
-struct dbCommon *precord,	
-char		*pcaller_name 	/* calling routine name*/
-)
+void recGblRecordError(long status,void *pdbc,char *pcaller_name)
 {
-	char buffer[200];
-	int i,n;
+	struct dbCommon	*precord = pdbc;
+	char		buffer[200];
+	int		i,n;
 
 	buffer[0]=0;
 	if(precord) { /* print process variable name */
@@ -173,12 +113,8 @@ char		*pcaller_name 	/* calling routine name*/
 	return;
 }
 
-void recGblRecSupError(
-long		status,
-struct dbAddr	*paddr,
-char		*pcaller_name,
-char		*psupport_name 
-)
+void recGblRecSupError(long status,struct dbAddr *paddr,char *pcaller_name,
+	char *psupport_name)
 {
 	char buffer[200];
 	char *pstr;
@@ -215,10 +151,7 @@ char		*psupport_name
 	return;
 }
 
-void recGblGetPrec(
-    struct dbAddr *paddr,
-    long           *precision
-)
+void recGblGetPrec(struct dbAddr *paddr,long *precision)
 {
     struct fldDes               *pfldDes=(struct fldDes *)(paddr->pfldDes);
 
@@ -245,10 +178,7 @@ void recGblGetPrec(
     return;
 }
 
-void recGblGetGraphicDouble(
-    struct dbAddr *paddr,
-    struct dbr_grDouble *pgd
-)
+void recGblGetGraphicDouble(struct dbAddr *paddr,struct dbr_grDouble *pgd)
 {
     struct fldDes               *pfldDes=(struct fldDes *)(paddr->pfldDes);
 
@@ -266,10 +196,7 @@ void recGblGetGraphicDouble(
     return;
 }
 
-void recGblGetAlarmDouble(
-    struct dbAddr *paddr,
-    struct dbr_alDouble *pad
-)
+void recGblGetAlarmDouble(struct dbAddr *paddr,struct dbr_alDouble *pad)
 {
     pad->upper_alarm_limit = 0;
     pad->upper_alarm_limit = 0;
@@ -279,10 +206,7 @@ void recGblGetAlarmDouble(
     return;
 }
 
-void recGblGetControlDouble(
-    struct dbAddr *paddr,
-    struct dbr_ctrlDouble *pcd
-)
+void recGblGetControlDouble(struct dbAddr *paddr,struct dbr_ctrlDouble *pcd)
 {
     struct fldDes               *pfldDes=(struct fldDes *)(paddr->pfldDes);
 
@@ -300,15 +224,10 @@ void recGblGetControlDouble(
     return;
 }
 
-long recGblGetLinkValue(
-	struct link	*plink,
-	struct dbCommon *precord,
-	short           dbrType,
-	void            *pdest,
-	long		*poptions,
-	long		*pnRequest
-)
+long recGblGetLinkValue(struct link *plink,void *pdbc,short dbrType,
+	void *pdest,long *poptions,long	*pnRequest)
 {
+	struct dbCommon	*precord = pdbc;
 	long		status=0;
 	unsigned char   pact;
 
@@ -336,14 +255,10 @@ long recGblGetLinkValue(
 	return(status);
 }
 
-long recGblPutLinkValue(
-	struct link	*plink,
-	struct dbCommon *precord,
-	short           dbrType,
-	void            *psource,
-	long		*pnRequest
-)
+long recGblPutLinkValue(struct link *plink,void *pdbc,short dbrType,
+	void *psource,long *pnRequest)
 {
+	struct dbCommon *precord = pdbc;
 	long		options=0;
 	long		status=0;
 	unsigned char   pact;
@@ -370,6 +285,35 @@ long recGblPutLinkValue(
 	}
 	precord->pact = pact;
 	return(status);
+}
+
+unsigned short recGblResetAlarms(void *precord)
+{
+    struct dbCommon *pdbc = precord;
+    unsigned short mask,stat,sevr,nsta,nsev,ackt,acks;
+
+    mask = 0;
+    stat=pdbc->stat; sevr=pdbc->sevr;
+    nsta=pdbc->nsta; nsev=pdbc->nsev;
+    pdbc->stat=nsta; pdbc->sevr=nsev;
+    pdbc->nsta=0; pdbc->nsev=0;
+    /* alarm condition changed this scan?*/
+    if (stat!=nsta) {
+	mask = DBE_ALARM;
+	db_post_events(pdbc,&pdbc->stat,DBE_VALUE);
+    }
+    if (sevr!=nsev) {
+	mask = DBE_ALARM;
+	db_post_events(pdbc,&pdbc->sevr,DBE_VALUE);
+    }
+    if(sevr!=nsev || stat!=nsta) {
+	ackt = pdbc->ackt; acks = pdbc->acks;
+	if(!ackt || nsev>=acks){
+	    pdbc->acks=nsev;
+	    db_post_events(pdbc,&pdbc->acks,DBE_VALUE);
+	}
+    }
+    return(mask);
 }
 
 static void getConRangeValue(field_type,range,plimit)

@@ -2720,7 +2720,8 @@ void		*pflin
 		*((unsigned short *)pbuffer)++ = pcommon->stat;
 		*((unsigned short *)pbuffer)++ = pcommon->sevr;
 	    }
-	    perr_status=((long *)pbuffer)++;
+	    *((unsigned short *)pbuffer)++ = pcommon->acks;
+	    *((unsigned short *)pbuffer)++ = pcommon->ackt;
 	    *perr_status = 0;
 	}
 	if( (*options) & DBR_UNITS ) {
@@ -5471,10 +5472,7 @@ long dbPut(
 	long		*pfield_name;
 	long		special=paddr->special;
 	short		field_type=paddr->field_type;
-	unsigned short	acks=0;
-	unsigned short	ackt=0;
-	unsigned short	oldacks=0;
-	unsigned short	oldackt=0;
+	unsigned short	acks=precord->acks;
 
 	/* Check for valid request */
 	if( INVALID_DB_REQ(dbrType) || (field_type>DBF_DEVCHOICE)
@@ -5492,11 +5490,10 @@ long dbPut(
 	/* check for special processing	is required */
 	if(special) {
 	    if(special<100) { /*global processing*/
-		if(special==SPC_NOMOD) return(S_db_noMod);
-		if(special==SPC_SCAN) scanDelete(precord);
-		if(special==SPC_ALARMACK) {
-		    oldacks=precord->acks;
-		    oldackt=precord->ackt;
+		if(special==SPC_NOMOD) {
+		    return(S_db_noMod);
+		}else if(special==SPC_SCAN){
+		    scanDelete(precord);
 		}
 	    }
 	    else {
@@ -5531,18 +5528,18 @@ long dbPut(
 	/* check for special processing	is required */
 	if(special) {
 	    if(special<100) { /*global processing*/
-		if(special==SPC_SCAN) scanAdd(precord);
-		if(special==SPC_ALARMACK) {
-		    acks=precord->acks;
-		    ackt=precord->ackt;
-		    if(acks!=oldacks) {
-			if(oldacks>0 && oldacks<acks) {
+		if(special==SPC_SCAN) {
+		    scanAdd(precord);
+		} else if(special==SPC_ALARMACK) {
+		    if(paddr->pfield == (void *)&precord->acks) {
+			if(acks>0 && acks<=precord->acks) {
 			    precord->acks = 0;
 			    db_post_events(precord,&precord->acks,DBE_VALUE);
+			} else { /*Undo change*/
+			    precord->acks = acks;
 			}
-		    }
-		    if(ackt!=oldackt) {
-			if(!ackt && acks>precord->sevr) {
+		    }else if(paddr->pfield == (void *)&precord->ackt) {
+			if(!precord->ackt && precord->acks>precord->sevr) {
 			    precord->acks = precord->sevr;
 			    db_post_events(precord,&precord->acks,DBE_VALUE);
 			}

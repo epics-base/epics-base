@@ -96,8 +96,8 @@ private:
     static epicsMutex freeListMutex;
 };
 
-inline comBuf::comBuf () : nextWriteIndex ( 0u ), 
-    nextReadIndex ( 0u ), commitIndex ( 0u )
+inline comBuf::comBuf () : commitIndex ( 0u ),
+    nextWriteIndex ( 0u ), nextReadIndex ( 0u )
 {
 }
 

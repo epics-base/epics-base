@@ -4,21 +4,18 @@
 #	Sample Makefile.Host showing all possible entries
 #	that are allowed using RULES.Host.
 #
-#	8-01-96 -kuk-
-#
-#
 
 TOP = ../../..
 include $(TOP)/config/CONFIG_BASE
 CMPLR = STRICT
 
-#	Add-on CFLAGS that are needed in this subproject.
+#	Add-on CFLAGS that are needed by this Makefile.
 #	(If possible, all system specific flags should be
-#	 defined in CONFIG.$(ARCH_CLASS))
+#	 defined in CONFIG.Host.$(ARCH_CLASS))
 #
-#	Whenever possible, ONLY USR_CFLAGS should be
-#	used. If you need special flags for your system,
-#	try to put them in CONFIG.YourSystem!
+#       These CFLAGS rules also apply to these Makefile-variables:
+#		CXXFLAGS    C++ flags
+#		LDFLAGS     link flags
 #
 #	This is used on all systems:
 USR_CFLAGS         = -DVAR=value -Ddefine_for_all_systems
@@ -40,6 +37,7 @@ USR_CFLAGS_DEFAULT = -DVERSION='generic Unix'
 #	CFLAGS that are only used to compile a_file.c or a_file.cc:
 #
 a_file_CFLAGS      = -DIN_A_FILE
+a_file_CFLAGS_WIN32   = -DVERSION='WIN32 port'
 
 #	---------------------------------------------------------
 #	general rule for all .c .cc .h .hh files and scripts:
@@ -54,7 +52,7 @@ a_file_CFLAGS      = -DIN_A_FILE
 #	---------------------------------------------------------
 
 
-#	includes to install from this sub-project
+#	includes to install from this Makefile
 #
 #	again: if INC_$(ARCH_CLASS) is defined, it is added to INC,
 #	otherwise INC_DEFAULT (if defined) is added:
@@ -96,7 +94,10 @@ LIBSRCS_BSD     = -nil-
 #	
 LIBRARY=libname
 
-# if SHARED_LIBRARIES is YES then 
+# if SHARED_LIBRARIES is YES then shared and archive libraries will
+#	both be built 
+#SHARED_LIBRARIES = YES
+#
 #	Library version
 SHRLIB_VERSION = 
 #	On WIN32 results in /version:$(SHRLIB_VERSION) link option
@@ -108,6 +109,10 @@ SHRLIB_VERSION =
 #
 #	if SRCS is undefined, it defaults to $(PROD).c 
 SRCS=a.c b.c c.c
+
+#	SRCS that are only used for PROD a_file
+#
+a_file_SRCS = aa.c bb.c
 
 #	EPICS libs needed to link PROD, TESTPROD and sharable library
 #
@@ -129,6 +134,19 @@ SYS_PROD_LIBS     = m
 # for most systems:
 SYS_PROD_LIBS_DEFAULT = foolib
 SYS_PROD_LIBS_WIN32   = -nil-
+
+#	other libs needed to link PROD, TESTPROD and sharable library
+#
+# for all systems:
+USR_LIBS     = Xm Xt X11
+Xm_DIR = $(MOTIF_LIB)
+Xt_DIR = $(X11_LIB)
+X11_DIR = $(X11_LIB)
+
+# for most systems:
+USR_LIBS_DEFAULT = foolib
+USR_LIBS_WIN32   = -nil-
+foolib_DIR = $(FOO_LIB)
 
 #	Product,
 #	may be   caRepeater.o -> caRepeater
@@ -154,36 +172,11 @@ SCRIPTS_WIN32   = script_only_for_WIN32
 SCRIPTS_BSD     = script_only_for_BSD
 SCRIPTS         = script
 
-
-#	uncomment if you want to build these locally without installing:
+#	if you want to build products locally without installing:
 # TESTPROD = test
 
-
-# Unfortunately the above allows you only to
-# 1) build one PROD=p from many SRCS=a.c b.c c.c
-# or
-# 2) build many PROD=a b c  each from a single source (a.c, b.c, c.c)
-#
-# If you have several multi-source products in the same dir
-# you have to fall back to explicit rules.
-# (suggestions for a better syntax welcome!)
-#
-# The explicit rules, however, should look like the following:
-
-#	be careful if you add rules and dependencies:
-#	use $(MV) $(RM) $(CP) $(MKDIR) $(RMDIR) $(OBJ) $(EXE) $(LINK.c) ....
-
-xxxxx$(OBJ):  c1.c c2.c h1.h
-
-#	because the output-flag (mostly '-o $@' on Unix, '-Fe$@' on WIN32)
-#	is also system dependend, it's included in $(LINK.c) and $(LINK.cc) !
-#
-prog$(EXE):	a$(OBJ) b$(OBJ)
-	$(LINK.c) a$(OBJ) b$(OBJ) $(LDLIBS)
-
-
-clean::
-	$(RM) dbLex.c
+# put all definitions before the following include line
+# put all rules after the following include line
 
 include $(TOP)/config/RULES.Host
 

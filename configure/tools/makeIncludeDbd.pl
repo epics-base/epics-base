@@ -9,9 +9,8 @@
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
 #
-#	UNIX-cp in Perl
+# $Id$
 
-use File::Copy;
 use File::Basename;
 
 sub Usage
@@ -19,15 +18,14 @@ sub Usage
 	my ($txt) = @_;
 
 	print "Usage:\n";
-	print "\tcp file1 file2\n";
-	print "\tcp file [ file2 file3 ...] directory\n";
+	print "\tmakeIncludeDbd.pl infile1 [ infile2 infile3 ...] outfile\n";
 	print "\nError: $txt\n" if $txt;
 
 	exit 2;
 }
 
 # need at least two args: ARGV[0] and ARGV[1]
-Usage("need more args") if $#ARGV < 1;
+Usage("\"makeIncludeDbd.pl @ARGV\": No input files specified") if $#ARGV < 1;
 
 $target=$ARGV[$#ARGV];
 @sources=@ARGV[0..$#ARGV-1];

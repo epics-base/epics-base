@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.1.1.1  1996/06/20 00:28:16  jhill
+ * ca server installation
+ *
  *
  */
 
@@ -50,6 +53,14 @@ inline void casAsyncIOI::lock()
 inline void casAsyncIOI::unlock()
 {
 	client.unlock();
+}
+
+//
+// casAsyncIO * casAsyncIOI::operator -> ()
+//
+inline casAsyncIO * casAsyncIOI::operator -> ()
+{
+	return &this->asyncIO;
 }
 
 #endif // casAsyncIOIIL_h

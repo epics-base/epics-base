@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.2  1996/07/01 19:56:10  jhill
+ * one last update prior to first release
+ *
  * Revision 1.1.1.1  1996/06/20 00:28:16  jhill
  * ca server installation
  *
@@ -38,6 +41,14 @@
 
 #ifndef casChannelIIL_h
 #define casChannelIIL_h
+
+//
+// casChannelI::operator -> ()
+//
+inline casChannel * casChannelI::operator -> ()
+{
+        return &this->chan;
+}
 
 //
 // casChannelI::lock()
@@ -161,6 +172,7 @@ inline const caResId casChannelI::getSID()
 {
 	return this->uintId::getId();
 }
+
 
 #endif // casChannelIIL_h
 

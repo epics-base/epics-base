@@ -1,5 +1,5 @@
 /* devXxCommonGpib.c */
-/* share/src/devOpt  $Id$ */
+/* share/src/devOpt $Id$ */
 /*
  *      Author: 		John Winans
  *      Origional Author:	Ned D. Arnold
@@ -146,24 +146,17 @@ gDset *dset;
  *
  ******************************************************************************/
 
-/* BUG -- this should have the dset pointer passed in when used */
-
 long 
 devGpibLib_initDevSup(parm, dset)
 int	parm;	/* set to 0 on pre-rec init call, and 1 on post-rec init call */
 gDset	*dset;	/* pointer to dset used to reference the init function */
 {
   struct devGpibParmBlock *parmBlock;
-  static char	firstTime = 1;
 
   parmBlock = (struct devGpibParmBlock *)(dset->funPtr[dset->number]);
 
-  if (!firstTime)
-  {
-    return(OK);
-  }
-  firstTime = 0;
-  printf("%s: Device Support Initializing ...\n", parmBlock->name);
+  if (parm == 0)
+    printf("%s: Device Support Initializing ...\n", parmBlock->name);
 
   return(OK);
 }
@@ -659,7 +652,6 @@ struct link	*plink;
     char 		message[100];
     struct gpibCmd	*pCmd;
     char		foundIt;
-    int			bbnode;
 
     parmBlock = (struct devGpibParmBlock *)(((gDset*)(prec->dset))->funPtr[prec->dset->number]);
 
@@ -677,17 +669,15 @@ struct link	*plink;
 	pdpvt->head.device = plink->value.gpibio.addr; /* gpib dev address */
 	sscanf(plink->value.gpibio.parm, "%hd", &(pdpvt->parm));
 	pdpvt->head.bitBusDpvt = NULL;      /* no bitbus data needed */
-        bbnode = -1;
 	break;
 
     case BBGPIB_IO:       /* Is a bitbus -> gpib link */
 	pdpvt->head.device = plink->value.bbgpibio.gpibaddr; /* dev address */
         sscanf(plink->value.bbgpibio.parm, "%hd", &(pdpvt->parm));
 	pdpvt->head.bitBusDpvt = (struct dpvtBitBusHead *) malloc(sizeof(struct dpvtBitBusHead));
-	pdpvt->head.bitBusDpvt->txMsg = (struct bitBusMsg *) malloc(sizeof(struct bitBusMsg));
-	pdpvt->head.bitBusDpvt->rxMsg = (struct bitBusMsg *) malloc(sizeof(struct bitBusMsg));
-	pdpvt->head.bitBusDpvt->txMsg->node = plink->value.bbgpibio.bbaddr; /* bug node address */
-        bbnode = plink->value.bbgpibio.bbaddr;
+	pdpvt->head.bitBusDpvt->txMsg.data = (unsigned char *) malloc(BB_MAX_DAT_LEN);
+	pdpvt->head.bitBusDpvt->rxMsg.data = (unsigned char *) malloc(BB_MAX_DAT_LEN);
+	pdpvt->head.bitBusDpvt->txMsg.node = plink->value.bbgpibio.bbaddr; /* bug node address */
 	pdpvt->head.bitBusDpvt->link = plink->value.bbgpibio.link;  /* bug link number */
 	pdpvt->head.link = plink->value.bbgpibio.link;
 	pdpvt->head.bitBusDpvt->rxMaxLen = sizeof(struct bitBusMsg);
@@ -710,7 +700,7 @@ struct link	*plink;
 	  pdpvt->phwpvt->device == pdpvt->head.device)
         if (plink->type == BBGPIB_IO)
 	{
-	  if (pdpvt->phwpvt->bug == pdpvt->head.bitBusDpvt->txMsg->node)
+	  if (pdpvt->phwpvt->bug == pdpvt->head.bitBusDpvt->txMsg.node)
 	    foundIt = 1;
 	}
 	else
@@ -722,7 +712,7 @@ struct link	*plink;
     { /* I couldn't find it.  Allocate a new one */
 
       if (*parmBlock->debugFlag)
-	logMsg("%s: allocating a hwpvt structure for link %d device %d\n",
+	printf("%s: allocating a hwpvt structure for link %d device %d\n",
 		 parmBlock->name, pdpvt->head.link, pdpvt->head.device);
 
       pdpvt->phwpvt = (struct hwpvt *) malloc(sizeof (struct hwpvt));
@@ -734,14 +724,21 @@ struct link	*plink;
       pdpvt->phwpvt->device = pdpvt->head.device;
 
       if (pdpvt->phwpvt->linkType == BBGPIB_IO)
-        pdpvt->phwpvt->bug = pdpvt->head.bitBusDpvt->txMsg->node;
+        pdpvt->phwpvt->bug = pdpvt->head.bitBusDpvt->txMsg.node;
 
       pdpvt->phwpvt->tmoVal = 0;
       pdpvt->phwpvt->tmoCount = 0;
       pdpvt->phwpvt->srqCallback = NULL;
       pdpvt->phwpvt->unsolicitedDpvt = NULL;
       pdpvt->phwpvt->parm = (caddr_t)NULL;
+
+printf("issuing IBGENLINK ioctl for link %d\n", pdpvt->phwpvt->link);
+      /* Tell the driver we are going to use this link some time */
+      (*(drvGpib.ioctl))(pdpvt->phwpvt->linkType, pdpvt->phwpvt->link, pdpvt->phwpvt->bug, IBGENLINK, -1, NULL);
     }
+    /* Fill in the dpvt->ibLink field (The driver uses it) */
+
+    (*(drvGpib.ioctl))(pdpvt->phwpvt->linkType, pdpvt->phwpvt->link, pdpvt->phwpvt->bug, IBGETLINK, -1, &(pdpvt->head.pibLink));
 
     /* Check for valid GPIB address */
     if ((pdpvt->head.device < 0) || (pdpvt->head.device >= IBAPERLINK))
@@ -797,8 +794,7 @@ struct link	*plink;
      */
     if(parmBlock->srqHandler != NULL)
     {
-        (*(drvGpib.registerSrqCallback))(pdpvt->linkType, pdpvt->head.link,
-		bbnode, pdpvt->head.device, parmBlock->srqHandler, pdpvt->phwpvt);
+        (*(drvGpib.registerSrqCallback))(pdpvt->head.pibLink, pdpvt->head.device, parmBlock->srqHandler, pdpvt->phwpvt);
     }
 
     /* fill in the required stuff for the callcack task */
@@ -849,7 +845,7 @@ struct aiRecord	*pai;
     }
     else
     {	/* put pointer to dpvt field on ring buffer */
-	if((*(drvGpib.qGpibReq))(pdpvt->linkType, pdpvt->head.link, pdpvt, pCmd->pri) == ERROR)
+	if((*(drvGpib.qGpibReq))(pdpvt, pCmd->pri) == ERROR)
         {
             devGpibLib_setPvSevr(pai,MAJOR_ALARM,VALID_ALARM);
 	    return(0);
@@ -887,7 +883,7 @@ struct aoRecord	*pao;
     }
     else
     {		/* put pointer to dvpt field on ring buffer */
-	if((*(drvGpib.qGpibReq))(pdpvt->linkType, pdpvt->head.link, pdpvt, pCmd->pri) == ERROR)
+	if((*(drvGpib.qGpibReq))(pdpvt, pCmd->pri) == ERROR)
         {
 	    devGpibLib_setPvSevr(pao,WRITE_ALARM,VALID_ALARM);
 	    return(0);
@@ -924,7 +920,7 @@ struct longinRecord *pli;
     }
     else
     {   /* put pointer to dpvt field on ring buffer */
-        if((*(drvGpib.qGpibReq))(pdpvt->linkType, pdpvt->head.link, pdpvt, pCmd->pri) == ERROR)
+        if((*(drvGpib.qGpibReq))(pdpvt, pCmd->pri) == ERROR)
         {
             devGpibLib_setPvSevr(pli,MAJOR_ALARM,VALID_ALARM);
             return(0);
@@ -962,7 +958,7 @@ struct longoutRecord *plo;
     }
     else
     {           /* put pointer to dvpt field on ring buffer */
-        if((*(drvGpib.qGpibReq))(pdpvt->linkType, pdpvt->head.link, pdpvt, pCmd->pri) == ERROR)
+        if((*(drvGpib.qGpibReq))(pdpvt, pCmd->pri) == ERROR)
         {
             devGpibLib_setPvSevr(plo,WRITE_ALARM,VALID_ALARM);
             return(0);
@@ -1000,7 +996,7 @@ struct biRecord	*pbi;
     }
     else
     {	/* put pointer to dvpt field on ring buffer */
-	if((*(drvGpib.qGpibReq))(pdpvt->linkType, pdpvt->head.link, pdpvt, pCmd->pri) == ERROR)
+	if((*(drvGpib.qGpibReq))(pdpvt, pCmd->pri) == ERROR)
         {
 	    devGpibLib_setPvSevr(pbi,READ_ALARM,VALID_ALARM);
 	    return(0);
@@ -1026,7 +1022,7 @@ struct boRecord	*pbo;
     parmBlock = (struct devGpibParmBlock *)(((gDset*)(pbo->dset))->funPtr[pbo->dset->number]);
 
     if (*parmBlock->debugFlag)
-      logMsg("devGpibLib_writeBo() entered\n");
+      printf("devGpibLib_writeBo() entered\n");
 
     pCmd = &parmBlock->gpibCmds[pdpvt->parm];
  
@@ -1041,7 +1037,7 @@ struct boRecord	*pbo;
     }
     else
     {	/* put pointer to dvpt field on ring buffer */
-	if((*(drvGpib.qGpibReq))(pdpvt->linkType, pdpvt->head.link, pdpvt, pCmd->pri) == ERROR)
+	if((*(drvGpib.qGpibReq))(pdpvt, pCmd->pri) == ERROR)
 	{
 	    devGpibLib_setPvSevr(pbo,WRITE_ALARM,VALID_ALARM);
 	    return(0);
@@ -1079,7 +1075,7 @@ struct mbbiRecord	*pmbbi;
     }
     else
     {	/* put pointer to dvpt field on ring buffer */
-	if((*(drvGpib.qGpibReq))(pdpvt->linkType, pdpvt->head.link, pdpvt, pCmd->pri) == ERROR)
+	if((*(drvGpib.qGpibReq))(pdpvt, pCmd->pri) == ERROR)
 	{
 	    devGpibLib_setPvSevr(pmbbi,READ_ALARM,VALID_ALARM);
 	    return(0);
@@ -1117,7 +1113,7 @@ struct mbboRecord	*pmbbo;
     }
     else
     {	/* put pointer to dvpt field on ring buffer */
-	if((*(drvGpib.qGpibReq))(pdpvt->linkType, pdpvt->head.link, pdpvt, pCmd->pri) == ERROR)
+	if((*(drvGpib.qGpibReq))(pdpvt, pCmd->pri) == ERROR)
 	{
 	    devGpibLib_setPvSevr(pmbbo,WRITE_ALARM,VALID_ALARM);
 	    return(0);
@@ -1154,7 +1150,7 @@ struct stringinRecord	*psi;
     }
     else
     {	/* put pointer to dvpt field on ring buffer */
-	if((*(drvGpib.qGpibReq))(pdpvt->linkType, pdpvt->head.link, pdpvt, pCmd->pri) == ERROR)
+	if((*(drvGpib.qGpibReq))(pdpvt, pCmd->pri) == ERROR)
 	{
 	    devGpibLib_setPvSevr(psi,MAJOR_ALARM,VALID_ALARM);
 	    return(0);
@@ -1192,7 +1188,7 @@ struct stringoutRecord	*pso;
     }
     else
     {	/* put pointer to dvpt field on ring buffer */
-	if((*(drvGpib.qGpibReq))(pdpvt->linkType, pdpvt->head.link, pdpvt, pCmd->pri) == ERROR)
+	if((*(drvGpib.qGpibReq))(pdpvt, pCmd->pri) == ERROR)
 	{
 	    devGpibLib_setPvSevr(pso,WRITE_ALARM,VALID_ALARM);
 	    return(0);
@@ -1229,7 +1225,7 @@ struct gpibDpvt *pdpvt;
     /* go send predefined cmd msg and read response into msg[] */
 
     if(*(parmBlock->debugFlag))
-        logMsg("devGpibLib_aiGpibWork: starting ...command type = %d\n",pCmd->type);
+        printf("devGpibLib_aiGpibWork: starting ...command type = %d\n",pCmd->type);
 
     if (devGpibLib_xxGpibWork(pdpvt, pCmd->type, -1) == ERROR) 
     {
@@ -1246,7 +1242,7 @@ struct gpibDpvt *pdpvt;
 	else
 	{
             if (*(parmBlock->debugFlag) || ibSrqDebug)
-	      logMsg("%s: marking srq Handler for READW operation\n", parmBlock->name);
+	      printf("%s: marking srq Handler for READW operation\n", parmBlock->name);
             pdpvt->phwpvt->srqCallback = (int (*)())(((gDset*)(pai->dset))->funPtr[pai->dset->number + 2]);
             pdpvt->phwpvt->parm = (caddr_t)pdpvt; /* mark the handler */
 	    return(BUSY);		/* indicate device still in use */
@@ -1272,7 +1268,7 @@ int		srqStatus;
     parmBlock = (struct devGpibParmBlock *)(((gDset*)(pai->dset))->funPtr[pai->dset->number]);
 
     if (*parmBlock->debugFlag || ibSrqDebug)
-        logMsg("devGpibLib_aiGpibSrq(0x%08.8X, 0x%02.2X): processing srq\n", pdpvt, srqStatus);
+        printf("devGpibLib_aiGpibSrq(0x%08.8X, 0x%02.2X): processing srq\n", pdpvt, srqStatus);
 
     pdpvt->phwpvt->srqCallback = NULL;	/* unmark the handler */
     pdpvt->phwpvt->parm = (caddr_t)NULL;
@@ -1312,7 +1308,7 @@ struct gpibDpvt *pdpvt;
     if (pCmd->convert != NULL)
     {
         if(*parmBlock->debugFlag)
-            logMsg("devGpibLib_aiGpibWork: calling convert ...\n");
+            printf("devGpibLib_aiGpibWork: calling convert ...\n");
 
         (*(pCmd->convert))(pdpvt,pCmd->P1,pCmd->P2, pCmd->P3);
     }
@@ -1398,7 +1394,7 @@ struct gpibDpvt *pdpvt;
     /* go send predefined cmd msg and read response into msg[] */
 
     if(*parmBlock->debugFlag)
-        logMsg("devGpibLib_liGpibWork: starting ...\n");
+        printf("devGpibLib_liGpibWork: starting ...\n");
 
     if (devGpibLib_xxGpibWork(pdpvt, pCmd->type, -1) == ERROR) 
     {
@@ -1439,7 +1435,7 @@ int		srqStatus;
     parmBlock = (struct devGpibParmBlock *)(((gDset*)(pli->dset))->funPtr[pli->dset->number]);
 
     if (*parmBlock->debugFlag || ibSrqDebug)
-        logMsg("devGpibLib_liGpibSrq(0x%08.8X, 0x%02.2X): processing srq\n", pdpvt, srqStatus);
+        printf("devGpibLib_liGpibSrq(0x%08.8X, 0x%02.2X): processing srq\n", pdpvt, srqStatus);
 
     pdpvt->phwpvt->srqCallback = NULL;	/* unmark the handler */
     pdpvt->phwpvt->parm = (caddr_t)NULL;
@@ -1481,7 +1477,7 @@ struct gpibDpvt *pdpvt;
     if (pCmd->convert != NULL)
     {
         if(*parmBlock->debugFlag)
-            logMsg("devGpibLib_liGpibWork: calling convert ...\n");
+            printf("devGpibLib_liGpibWork: calling convert ...\n");
         (*(pCmd->convert))(pdpvt,pCmd->P1,pCmd->P2, pCmd->P3);
     }
     else  /* interpret msg with predefined format and write into .val */
@@ -1604,7 +1600,7 @@ int             srqStatus;
     parmBlock = (struct devGpibParmBlock *)(((gDset*)(pbi->dset))->funPtr[pbi->dset->number]);
 
     if (*parmBlock->debugFlag || ibSrqDebug)
-        logMsg("devGpibLib_biGpibSrq(0x%08.8X, 0x%02.2X): processing srq\n", pdpvt, srqStatus);
+        printf("devGpibLib_biGpibSrq(0x%08.8X, 0x%02.2X): processing srq\n", pdpvt, srqStatus);
 
     pdpvt->phwpvt->srqCallback = NULL;   /* unmark the handler */
     pdpvt->phwpvt->parm = (caddr_t)NULL;   /* unmark the handler */
@@ -1771,7 +1767,7 @@ int             srqStatus;
     parmBlock = (struct devGpibParmBlock *)(((gDset*)(pmbbi->dset))->funPtr[pmbbi->dset->number]);
 
     if (*parmBlock->debugFlag || ibSrqDebug)
-        logMsg("devGpibLib_mbbiGpibSrq(0x%08.8X, 0x%02.2X): processing srq\n", pdpvt, srqStatus);
+        printf("devGpibLib_mbbiGpibSrq(0x%08.8X, 0x%02.2X): processing srq\n", pdpvt, srqStatus);
 
     /* do actual SRQ processing in here */
 
@@ -1902,7 +1898,7 @@ struct gpibDpvt *pdpvt;
     /* go send predefined cmd msg and read response into msg[] */
 
     if(*parmBlock->debugFlag)
-        logMsg("devGpibLib_stringinGpibWork: starting ...\n");
+        printf("devGpibLib_stringinGpibWork: starting ...\n");
 
     if (devGpibLib_xxGpibWork(pdpvt, pCmd->type, -1) == ERROR) 
     {
@@ -1943,7 +1939,7 @@ int             srqStatus;
     parmBlock = (struct devGpibParmBlock *)(((gDset*)(psi->dset))->funPtr[psi->dset->number]);
 
     if (*parmBlock->debugFlag || ibSrqDebug)
-        logMsg("devGpibLib_stringinGpibSrq(0x%08.8X, 0x%02.2X): processing srq\n", pdpvt, srqStatus);
+        printf("devGpibLib_stringinGpibSrq(0x%08.8X, 0x%02.2X): processing srq\n", pdpvt, srqStatus);
 
     /* do actual SRQ processing in here */
 
@@ -2066,7 +2062,7 @@ unsigned short	val;
 
     /* If is a BBGPIB_IO link, the bug address is needed */
     if (pdpvt->linkType == BBGPIB_IO)
-        bbnode = pdpvt->head.bitBusDpvt->txMsg->node;
+        bbnode = pdpvt->head.bitBusDpvt->txMsg.node;
 
     /*
      * check to see if this node has timed out within last 10 sec
@@ -2074,7 +2070,7 @@ unsigned short	val;
     if(tickGet() < (pdpvt->phwpvt->tmoVal + parmBlock->timeWindow) )
     {
         if (*parmBlock->debugFlag)
-            logMsg("devGpibLib_xxGpibWork(): timeout flush\n");
+            printf("devGpibLib_xxGpibWork(): timeout flush\n");
 
         return(ERROR);
     }
@@ -2082,17 +2078,21 @@ unsigned short	val;
     case GPIBWRITE:		/* write the message to the GPIB listen adrs */
 
         if(*parmBlock->debugFlag)
-            logMsg("devGpibLib_xxGpibWork : processing GPIBWRITE\n");
+            printf("devGpibLib_xxGpibWork : processing GPIBWRITE\n");
 
-        status = (*(drvGpib.writeIb))(pdpvt->linkType, pdpvt->head.link, 
-                               bbnode, ibnode, pdpvt->msg, strlen(pdpvt->msg));
+        status = (*(drvGpib.writeIb))(pdpvt->head.pibLink, ibnode,
+				pdpvt->msg, strlen(pdpvt->msg));
 
 
-	if ((status != ERROR) && parmBlock->respond2Writes)
+	if ((status != ERROR) && (parmBlock->respond2Writes) != -1)
 	{   /* device responds to write commands, read the response */
+	    if (parmBlock->respond2Writes > 0)
+	    {
+	      taskDelay(parmBlock->respond2Writes);
+	    }
 
-	    status = (*(drvGpib.readIb))(pdpvt->linkType, pdpvt->head.link, 
-                                bbnode, ibnode, pdpvt->rsp, pCmd->rspLen);
+	    status = (*(drvGpib.readIb))(pdpvt->head.pibLink, ibnode, 
+				pdpvt->rsp, pCmd->rspLen);
 
             /* if user specified a secondary convert routine, call it */
 
@@ -2105,21 +2105,31 @@ unsigned short	val;
     case GPIBEFASTI:
 
         if(*parmBlock->debugFlag)
-            logMsg("devGpibLib_xxGpibWork : processing GPIBREAD\n");
+            printf("devGpibLib_xxGpibWork : processing GPIBREAD\n");
 
-        status = (*(drvGpib.writeIb))(pdpvt->linkType, pdpvt->head.link, 
-                                bbnode, ibnode, pCmd->cmd, strlen(pCmd->cmd));
+        status = (*(drvGpib.writeIb))(pdpvt->head.pibLink, ibnode, 
+				pCmd->cmd, strlen(pCmd->cmd));
         if (status == ERROR)
         {
 	    break;
         }
+
+        /* This is probably not the best way to do this... */
+        /* because the read turnaround time delay should be independant of */
+        /* the responds to writes flag. */
+
+        if (parmBlock->respond2Writes > 0)
+        {
+            taskDelay(parmBlock->respond2Writes);
+        }
+
 	/* This falls thru to the raw read code below! */
 
     case GPIBRAWREAD:   /* for SRQs, read the data w/o a sending a command */
 
 	/* read the instrument  */
-	status = (*(drvGpib.readIb))(pdpvt->linkType, pdpvt->head.link, 
-                                bbnode, ibnode, pdpvt->msg, pCmd->msgLen);
+	status = (*(drvGpib.readIb))(pdpvt->head.pibLink, ibnode, 
+				pdpvt->msg, pCmd->msgLen);
 	if (status == ERROR)
 	{
 	    break;
@@ -2127,7 +2137,7 @@ unsigned short	val;
  	else if (status >( (pCmd->msgLen) - 1) ) /* check length of resp */
 	{   /* This may or may not be an error */
 
-	    logMsg("GPIB Response length equaled allocated space !!!\n");
+	    printf("GPIB Response length equaled allocated space !!!\n");
 	    pdpvt->msg[(pCmd->msgLen)-1] = '\0';    /* place \0 at end */
 	}
 	else
@@ -2138,19 +2148,24 @@ unsigned short	val;
 
     case GPIBREADW:		/* for SRQs, write the command first */
     case GPIBEFASTIW:
-        status = (*(drvGpib.writeIb))(pdpvt->linkType, pdpvt->head.link, 
-                                bbnode, ibnode, pCmd->cmd, strlen(pCmd->cmd));
+        status = (*(drvGpib.writeIb))(pdpvt->head.pibLink, ibnode, 
+				pCmd->cmd, strlen(pCmd->cmd));
 	break;
 
     case GPIBCMD:		/* write the cmd to the GPIB listen adrs */
-        status = (*(drvGpib.writeIb))(pdpvt->linkType, pdpvt->head.link, 
-                                bbnode, ibnode, pCmd->cmd, strlen(pCmd->cmd));
+        status = (*(drvGpib.writeIb))(pdpvt->head.pibLink, ibnode, 
+				pCmd->cmd, strlen(pCmd->cmd));
 
-	if ((status != ERROR) && parmBlock->respond2Writes)
-	{   /* device responds to write commands, read the response */
+        if ((status != ERROR) && (parmBlock->respond2Writes) != -1)
+        {   /* device responds to write commands, read the response */
+            if (parmBlock->respond2Writes > 0)
+            {
+              taskDelay(parmBlock->respond2Writes);
+            }
 
-	    status = (*(drvGpib.readIb))(pdpvt->linkType, pdpvt->head.link, 
-                                bbnode, ibnode, pdpvt->rsp, pCmd->rspLen);
+
+	    status = (*(drvGpib.readIb))(pdpvt->head.pibLink, ibnode, 
+				pdpvt->rsp, pCmd->rspLen);
 
             /* if user specified a secondary convert routine, call it */
 
@@ -2159,20 +2174,24 @@ unsigned short	val;
 	}
 	break;
     case GPIBCNTL:		/* send cmd with atn line active */
-        status = (*(drvGpib.writeIbCmd))(pdpvt->linkType, pdpvt->head.link,
-				bbnode, pCmd->cmd, strlen(pCmd->cmd));
+        status = (*(drvGpib.writeIbCmd))(pdpvt->head.pibLink, pCmd->cmd, 
+				strlen(pCmd->cmd));
         break;
     case GPIBEFASTO:		/* write the enumerated cmd from the P3 array */
         if (pCmd->P3[val] != NULL)
 	{
-	    status = (*(drvGpib.writeIb))(pdpvt->linkType, pdpvt->head.link,
-			bbnode, ibnode, pCmd->P3[val], strlen(pCmd->P3[val]));
+	    status = (*(drvGpib.writeIb))(pdpvt->head.pibLink,ibnode, 
+				pCmd->P3[val], strlen(pCmd->P3[val]));
 
-	    if ((status != ERROR) && parmBlock->respond2Writes)
-	    {   /* device responds to write commands, read the response */
+            if ((status != ERROR) && (parmBlock->respond2Writes) != -1)
+            {   /* device responds to write commands, read the response */
+                if (parmBlock->respond2Writes > 0)
+                {
+                  taskDelay(parmBlock->respond2Writes);
+                }
     
-	        status = (*(drvGpib.readIb))(pdpvt->linkType, pdpvt->head.link, 
-                                    bbnode, ibnode, pdpvt->rsp, pCmd->rspLen);
+	        status = (*(drvGpib.readIb))(pdpvt->head.pibLink, ibnode, 
+				pdpvt->rsp, pCmd->rspLen);
     
                 /* if user specified a secondary convert routine, call it */
     
@@ -2183,7 +2202,7 @@ unsigned short	val;
         break;
     }
     if(*parmBlock->debugFlag)
-        logMsg("devGpibLib_xxGpibWork : done, status = %d\n",status);
+        printf("devGpibLib_xxGpibWork : done, status = %d\n",status);
 
     /* if error occurrs then mark it with time */
     if(status == ERROR)

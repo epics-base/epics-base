@@ -506,8 +506,14 @@ void tcpiiu::shutdown ()
 {
     LOCK ( this->pcas );
     if ( this->state != iiu_disconnected ) {
+        int status;
+
         this->state = iiu_disconnected;
-        ::shutdown ( this->sock, SD_BOTH );
+        status = ::shutdown ( this->sock, SD_BOTH );
+        if ( status ) {
+            errlogPrintf ("CAC TCP shutdown error was %s\n", 
+                SOCKERRSTR (SOCKERRNO) );
+        }
         cacRingBufferShutDown ( &this->send );
         cacRingBufferShutDown ( &this->recv );
         this->pcas->signalRecvActivityIIU ( *this );

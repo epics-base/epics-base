@@ -585,7 +585,14 @@ udpiiu::~udpiiu ()
  */
 void udpiiu::shutdown ()
 {
-    ::shutdown (this->sock, SD_BOTH);
+    int status;
+
+    status = ::shutdown (this->sock, SD_BOTH);
+    if ( status ) {
+        errlogPrintf ( "CAC UDP shutdown error was %s\n", 
+            SOCKERRSTR (SOCKERRNO) );
+    }
+
     this->shutdownCmd = true;
     semBinaryGive (this->xmitSignal);
 }

@@ -47,6 +47,10 @@
  * .09 050494 pg        HPUX port changes.
  * .10 021694 joh	ANSI C	
  * $Log$
+ * Revision 1.28  1998/02/05 23:16:35  jhill
+ * fixed truncate return status logic error
+ * now uses macros from osiSock.h
+ *
  * Revision 1.27  1997/08/05 00:43:19  jhill
  * fixed warning
  *
@@ -177,7 +181,7 @@ int main()
 	int			status;
 	struct ioc_log_server	*pserver;
 
-	int			optval;
+	osiSockIoctl_t	optval;
 
 	status = getConfig();
 	if(status<0){
@@ -381,7 +385,7 @@ static void acceptNewClient(void *pParam)
 	struct sockaddr_in 	addr;
 	char			*pname;
 	int			status;
-	int			optval;
+	osiSockIoctl_t	optval;
 
 	pclient = (struct iocLogClient *) 
 			malloc(sizeof *pclient);

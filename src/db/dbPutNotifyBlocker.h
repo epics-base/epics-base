@@ -45,7 +45,7 @@
 
 class dbPutNotifyBlocker : public dbBaseIO {
 public:
-    dbPutNotifyBlocker ( dbChannelIO & chanIn );
+    dbPutNotifyBlocker ();
     void initiatePutNotify ( epicsGuard < epicsMutex > & locker, 
             cacWriteNotify & notify, struct dbAddr & addr, 
             unsigned type, unsigned long count, const void * pValue );

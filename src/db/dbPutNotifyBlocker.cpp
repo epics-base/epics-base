@@ -43,9 +43,10 @@
 #include "dbChannelIO.h"
 #include "dbPutNotifyBlocker.h"
 
-epicsSingleton < tsFreeList < dbPutNotifyBlocker, 1024 > > dbPutNotifyBlocker::pFreeList;
+epicsSingleton < tsFreeList < dbPutNotifyBlocker, 1024 > > 
+                                    dbPutNotifyBlocker::pFreeList;
 
-dbPutNotifyBlocker::dbPutNotifyBlocker ( dbChannelIO &chanIn ) :
+dbPutNotifyBlocker::dbPutNotifyBlocker () :
     pNotify ( 0 ), maxValueSize ( sizeof ( this->dbrScalarValue ) )
 {
     memset ( & this->pn, '\0', sizeof ( this->pn ) );

@@ -195,7 +195,7 @@ void dbServiceIO::initiatePutNotify (
 {
     epicsGuard < epicsMutex > locker ( this->mutex );
     if ( ! chan.dbServicePrivateListOfIO::pBlocker ) {
-        chan.dbServicePrivateListOfIO::pBlocker = new dbPutNotifyBlocker ( chan );
+        chan.dbServicePrivateListOfIO::pBlocker = new dbPutNotifyBlocker ();
         this->ioTable.add ( *chan.dbServicePrivateListOfIO::pBlocker );
     }
     chan.dbServicePrivateListOfIO::pBlocker->initiatePutNotify ( 

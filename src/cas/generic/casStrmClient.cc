@@ -109,6 +109,31 @@ casStrmClient::~casStrmClient()
 	this->unlock();
 }
 
+//
+// casStrmClient::uknownMessageAction()
+//
+caStatus casStrmClient::uknownMessageAction ()
+{
+	const caHdr *mp = this->ctx.getMsg();
+	caStatus status;
+
+	ca_printf ("CAS: bad request code from virtual circuit=%u\n", mp->m_cmmd);
+	this->dumpMsg (mp, this->ctx.getData());
+
+	/* 
+	 *	most clients dont recover from this
+	 */
+	status = this->sendErr (mp, ECA_INTERNAL, "Invalid Request Code");
+	if (status) {
+		return status;
+	}
+
+	/*
+	 * returning S_cas_internal here disconnects
+	 * the client with the bad message
+	 */
+	return S_cas_internal;
+}
 
 //
 // casStrmClient::verifyRequest()
@@ -171,7 +196,6 @@ void casStrmClient::show (unsigned level) const
 	this->outBuf::show(level);
 }
 
-
 /*
  * casStrmClient::readAction()
  */
@@ -215,7 +239,7 @@ caStatus casStrmClient::readAction ()
 		pChan->getPVI().addItemToIOBLockedList(*this);
 	}
 	else {
-		status = this->sendErrWithEpicsStatus(mp, status, ECA_GETFAIL);
+		status = this->sendErrWithEpicsStatus (mp, status, ECA_GETFAIL);
 	}
 
 	return status;
@@ -257,7 +281,7 @@ caStatus casStrmClient::readResponse (casChannelI *pChan, const caHdr &msg,
 	// convert gdd to db_access type
 	// (places the data in network format)
 	//
-	mapDBRStatus = gddMapDbr[msg.m_dataType].conv_dbr((reply+1), msg.m_count, desc);
+	mapDBRStatus = gddMapDbr[msg.m_dataType].conv_dbr((reply+1), msg.m_count, desc, pChan->enumStringTable());
 	if (mapDBRStatus<0) {
 		desc.dump();
 		errPrintf (S_cas_badBounds, __FILE__, __LINE__, "- get with PV=%s type=%u count=%u",
@@ -419,7 +443,7 @@ caStatus casStrmClient::readNotifyResponseECA_XXX (casChannelI *pChan,
 			// convert gdd to db_access type
 			// (places the data in network format)
 			//
-			mapDBRStatus = gddMapDbr[msg.m_dataType].conv_dbr((reply+1), msg.m_count, *pDesc);
+			mapDBRStatus = gddMapDbr[msg.m_dataType].conv_dbr((reply+1), msg.m_count, *pDesc, pChan->enumStringTable());
 			if (mapDBRStatus<0) {
 				pDesc->dump();
 				errPrintf (S_cas_badBounds, __FILE__, __LINE__, "- get notify with PV=%s type=%u count=%u",
@@ -555,7 +579,7 @@ caStatus casStrmClient::monitorResponse(casChannelI &chan, const caHdr &msg,
 		// there appears to be no success/fail
 		// status from this routine
 		//
-		gddMapDbr[msg.m_dataType].conv_dbr ((pReply+1), msg.m_count, *pDBRDD);
+		gddMapDbr[msg.m_dataType].conv_dbr ((pReply+1), msg.m_count, *pDBRDD, chan.enumStringTable());
 
 #ifdef CONVERSION_REQUIRED
 		/* use type as index into conversion jumptable */
@@ -980,7 +1004,7 @@ caStatus casStrmClient::createChanResponse(const caHdr &hdr, const pvAttachRetur
 	casChannel 	*pChan;
 	casChannelI 	*pChanI;
 	caHdr 		*claim_reply; 
-	unsigned	dbrType;
+	unsigned	nativeType;
     bufSizeT    nBytes;
 	caStatus	status;
 
@@ -997,6 +1021,21 @@ caStatus casStrmClient::createChanResponse(const caHdr &hdr, const pvAttachRetur
 	if (pPV == NULL) {
 		return this->channelCreateFailed (&hdr, S_casApp_pvNotFound);
 	}
+
+    //
+    // fetch the native type
+    //
+	status = pPV->bestDBRType(nativeType);
+	if (status) {
+		errMessage(status, "best external dbr type fetch failed");
+		return this->channelCreateFailed (&hdr, status);
+	}
+
+    //
+    // fetch string conversion table so that we can perform proper conversion
+    // of enumerated PVs to strings during reads
+    //
+    pPV->updateEnumStringTable (nativeType);
 
 	//
 	// attach the PV to this server
@@ -1046,14 +1085,6 @@ caStatus casStrmClient::createChanResponse(const caHdr &hdr, const pvAttachRetur
 		return this->channelCreateFailed(&hdr, status);
 	}
 
-	status = pPV->bestDBRType(dbrType);
-	if (status) {
-        this->outBuf::popCtx (outctx);
-		errMessage(status, "best external dbr type fetch failed");
-		pChanI->destroyNoClientNotify();
-		return this->channelCreateFailed(&hdr, status);
-	}
-
 	//
 	// NOTE:
 	// We are allocated enough space for both the claim
@@ -1069,7 +1100,7 @@ caStatus casStrmClient::createChanResponse(const caHdr &hdr, const pvAttachRetur
 
 	*claim_reply = nill_msg;
 	claim_reply->m_cmmd = CA_PROTO_CLAIM_CIU;
-	claim_reply->m_dataType = dbrType;
+	claim_reply->m_dataType = nativeType;
 	claim_reply->m_count = pPV->nativeCount();
 	claim_reply->m_cid = hdr.m_cid;
 	claim_reply->m_available = pChanI->getSID();
@@ -1752,14 +1783,13 @@ caStatus casStrmClient::writeArrayData()
 	return status;
 }
 
-
 //
 // casStrmClient::read()
 //
 caStatus casStrmClient::read(smartGDDPointer &pDescRet)
 {
-	const caHdr	*pHdr = this->ctx.getMsg();
-	caStatus	status;
+	const caHdr	    *pHdr = this->ctx.getMsg();
+	caStatus        status;
 
 	pDescRet = NULL;
 	status = createDBRDD (pHdr->m_dataType, pHdr->m_count, pDescRet);
@@ -1955,7 +1985,6 @@ caStatus createDBRDD (unsigned dbrType, aitIndex dbrCount, smartGDDPointer &pDes
 }
 
 
-
 //
 // casStrmClient::userName() 
 //

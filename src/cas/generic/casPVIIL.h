@@ -198,6 +198,14 @@ inline aitIndex casPVI::nativeCount ()
 	return this->maxBound(0u);
 }
 
+//
+// casPVI::enumStringTable ()
+//
+inline const vector<string> casPVI::enumStringTable () const
+{
+    return this->enumStrTbl;
+}
+
 #endif // casPVIIL_h
 
 

@@ -344,6 +344,8 @@ public:
 
 	void postAccessRightsEvent ();
 
+    const vector<string> enumStringTable () const;
+
     //
     // virtual functions
     //
@@ -444,7 +446,10 @@ public:
     caStatus bestDBRType (unsigned &dbrType);
        
     epicsShareFunc virtual casResType resourceType () const;
-    
+
+    const vector<string> enumStringTable () const;
+    void updateEnumStringTable (unsigned nativeType);
+
     //
     // virtual functions in the public interface class
     //
@@ -465,13 +470,13 @@ public:
 
 private:
     tsDLList<casPVListChan> chanList;
+    vector<string>          enumStrTbl;
     caServerI               *pCAS;
     unsigned                nMonAttached;
     unsigned                nIOAttached;
    
     inline void lock () const;
     inline void unlock () const;
-
 
     epicsShareFunc virtual void destroy (); // casPVI destructor noop
 };

@@ -15,6 +15,7 @@
  */
 
 #include "iocinf.h"
+#include "epicsGuard.h"
 
 #define epicsExportSharedSymbols
 #include "cacIO.h"
@@ -28,7 +29,7 @@ cacServiceList::cacServiceList ()
 
 void cacServiceList::registerService ( cacService &service )
 {
-    epicsAutoMutex locker ( this->mutex );
+    epicsGuard < epicsMutex > locker ( this->mutex );
     this->services.add ( service );
 }
 
@@ -37,7 +38,7 @@ cacChannel * cacServiceList::createChannel (
 {
     cacChannel *pChanIO = 0;
 
-    epicsAutoMutex locker ( this->mutex );
+    epicsGuard < epicsMutex > locker ( this->mutex );
     tsDLIterBD < cacService > iter = this->services.firstIter ();
     while ( iter.valid () ) {
         pChanIO = iter->createChannel ( pName, chan, pri );
@@ -52,7 +53,7 @@ cacChannel * cacServiceList::createChannel (
 
 void cacServiceList::show ( unsigned level ) const
 {
-    epicsAutoMutex locker ( this->mutex );
+    epicsGuard < epicsMutex > locker ( this->mutex );
     tsDLIterConstBD < cacService > iter = this->services.firstIter ();
     while ( iter.valid () ) {
         iter->show ( level );

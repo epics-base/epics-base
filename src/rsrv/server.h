@@ -87,7 +87,7 @@ struct message_buffer{
   char 				buf[MAX_MSG_SIZE];
   unsigned long 		stk;
   unsigned long			maxstk;
-  long				cnt;			
+  unsigned long			cnt;			
 };
 
 struct client{
@@ -230,7 +230,7 @@ caHdr		*cas_alloc_msg();
 int		rsrv_online_notify_task();
 void		cac_send_heartbeat();
 
-int 		client_stat(void);
+int 		client_stat(unsigned level);
 int 		req_server(void);
 int		cast_server(void);
 int 		free_client(struct client *client);

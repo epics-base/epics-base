@@ -219,8 +219,8 @@ int cast_server(void)
 			continue;
     		}
 
-		prsrv_cast_client->recv.cnt = status;
-		prsrv_cast_client->recv.stk = 0;
+		prsrv_cast_client->recv.cnt = (unsigned long) status;
+		prsrv_cast_client->recv.stk = 0ul;
 		prsrv_cast_client->ticks_at_last_recv = tickGet();
 
 		/*
@@ -241,7 +241,7 @@ int cast_server(void)
 		}
 
     		if(CASDEBUG>1){
-       			logMsg(	"CAS: cast server msg of %d bytes\n", 
+       			logMsg(	"CAS: cast server msg of %lu bytes\n", 
 				prsrv_cast_client->recv.cnt,
 				NULL,
 				NULL,
@@ -267,7 +267,7 @@ int cast_server(void)
 			if(prsrv_cast_client->recv.cnt != 
 				prsrv_cast_client->recv.stk){
 
-				logMsg(	"CAS: partial UDP msg of %d bytes ?\n",
+				logMsg(	"CAS: partial UDP msg of %lu bytes ?\n",
 					prsrv_cast_client->recv.cnt-
 						prsrv_cast_client->recv.stk,
 					NULL,
@@ -331,7 +331,7 @@ LOCAL void clean_addrq()
 	pnextciu = (struct channel_in_use *) 
 			prsrv_cast_client->addrq.node.next;
 
-	while(pciu = pnextciu){
+	while ( (pciu = pnextciu) ) {
 		pnextciu = (struct channel_in_use *)pciu->node.next;
 
 		if (current >= pciu->ticks_at_creation) {
@@ -450,10 +450,10 @@ struct client *create_udp_client(unsigned sock)
       	ellInit(&client->putNotifyQue);
   	bfill((char *)&client->addr, sizeof(client->addr), 0);
       	client->tid = taskIdSelf();
-      	client->send.stk = 0;
-      	client->send.cnt = 0;
-      	client->recv.stk = 0;
-      	client->recv.cnt = 0;
+      	client->send.stk = 0ul;
+      	client->send.cnt = 0ul;
+      	client->recv.stk = 0ul;
+      	client->recv.cnt = 0ul;
       	client->evuser = NULL;
       	client->eventsoff = FALSE;
 	client->disconnect = FALSE;	/* for TCP only */

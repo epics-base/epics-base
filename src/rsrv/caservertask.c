@@ -69,7 +69,7 @@ static char *sccsId = "@(#) $Id$";
 #include <server.h>
 
 LOCAL int terminate_one_client(struct client *client);
-LOCAL void log_one_client(struct client *client);
+LOCAL void log_one_client(struct client *client, unsigned level);
 LOCAL unsigned long delay_in_ticks(unsigned long prev);
 
 
@@ -427,7 +427,7 @@ LOCAL int terminate_one_client(struct client *client)
  *	client_stat()
  *
  */
-int client_stat(void)
+int client_stat (unsigned level)
 {
 	int		bytes_reserved;
 	struct client 	*client;
@@ -440,37 +440,40 @@ int client_stat(void)
 	client = (struct client *) ellNext(&clientQ);
 	while (client) {
 
-		log_one_client(client);
+		log_one_client(client, level);
 
 		client = (struct client *) ellNext(&client->node);
 	}
 	UNLOCK_CLIENTQ;
 
-	if(prsrv_cast_client)
-		log_one_client(prsrv_cast_client);
-	
-	bytes_reserved = 0;
-	bytes_reserved += sizeof(struct client)*
-				ellCount(&rsrv_free_clientQ);
-	bytes_reserved += sizeof(struct channel_in_use)*
-				ellCount(&rsrv_free_addrq);
-	bytes_reserved += (sizeof(struct event_ext)+db_sizeof_event_block())*
-				ellCount(&rsrv_free_eventq);
-	printf(	"There are currently %d bytes on the server's free list\n",
-		bytes_reserved);
-	printf(	"%d client(s), %d channel(s), and %d event(s) (monitors)\n",
-		ellCount(&rsrv_free_clientQ),
-		ellCount(&rsrv_free_addrq),
-		ellCount(&rsrv_free_eventq));
-
-	if(pCaBucket){
-		printf(	"The server's resource id conversion table:\n");
-		FASTLOCK(&rsrv_free_addrq_lck);
-		bucketShow (pCaBucket);
-		FASTUNLOCK(&rsrv_free_addrq_lck);
+	if (level>=1 && prsrv_cast_client) {
+		log_one_client(prsrv_cast_client, level);
 	}
+	
+	if (level >=1u) {
+		bytes_reserved = 0;
+		bytes_reserved += sizeof(struct client)*
+					ellCount(&rsrv_free_clientQ);
+		bytes_reserved += sizeof(struct channel_in_use)*
+					ellCount(&rsrv_free_addrq);
+		bytes_reserved += (sizeof(struct event_ext)+db_sizeof_event_block())*
+					ellCount(&rsrv_free_eventq);
+		printf(	"There are currently %d bytes on the server's free list\n",
+			bytes_reserved);
+		printf(	"%d client(s), %d channel(s), and %d event(s) (monitors)\n",
+			ellCount(&rsrv_free_clientQ),
+			ellCount(&rsrv_free_addrq),
+			ellCount(&rsrv_free_eventq));
 
-	caPrintAddrList (&beaconAddrList);
+		if(pCaBucket){
+			printf(	"The server's resource id conversion table:\n");
+			FASTLOCK(&rsrv_free_addrq_lck);
+			bucketShow (pCaBucket);
+			FASTUNLOCK(&rsrv_free_addrq_lck);
+		}
+
+		caPrintAddrList (&beaconAddrList);
+	}
 
 	return ellCount(&clientQ);
 }
@@ -481,7 +484,7 @@ int client_stat(void)
  *	log_one_client()
  *
  */
-LOCAL void log_one_client(struct client *client)
+LOCAL void log_one_client(struct client *client, unsigned level)
 {
 	int			i;
 	struct channel_in_use	*pciu;
@@ -511,63 +514,68 @@ LOCAL void log_one_client(struct client *client)
 		CA_PROTOCOL_VERSION,
 		client->minor_version_number,
 		client->tid);
-	printf( "\tProtocol=%s, Socket fd=%d\n", 
-		pproto, 
-		client->sock); 
-	printf( "\tSecs since last send %6.2f, Secs since last receive %6.2f\n", 
-		send_delay/sysClkRateGet(),
-		recv_delay/sysClkRateGet());
-	printf( "\tUnprocessed request bytes=%d, Undelivered response bytes=%d\n", 
-		client->send.stk,
-		client->recv.cnt - client->recv.stk);	
-
-	bytes_reserved = 0;
-	bytes_reserved += sizeof(struct client);
-
-	FASTLOCK(&client->addrqLock);
-	pciu = (struct channel_in_use *) client->addrq.node.next;
-	while (pciu){
-		bytes_reserved += sizeof(struct channel_in_use);
-		bytes_reserved += 
-			(sizeof(struct event_ext)+db_sizeof_event_block())*
-				ellCount(&pciu->eventq);
-		if(pciu->pPutNotify){
-			bytes_reserved += sizeof(*pciu->pPutNotify);
-			bytes_reserved += pciu->pPutNotify->valueSize;
-		}
-		pciu = (struct channel_in_use *) ellNext(&pciu->node);
+	if (level>=1) {
+		printf( "\tProtocol=%s, Socket fd=%d\n", 
+			pproto, 
+			client->sock); 
+		printf( 
+		"\tSecs since last send %6.2f, Secs since last receive %6.2f\n", 
+			send_delay/sysClkRateGet(),
+			recv_delay/sysClkRateGet());
+		printf( 
+		"\tUnprocessed request bytes=%lu, Undelivered response bytes=%lu\n", 
+			client->send.stk,
+			client->recv.cnt - client->recv.stk);	
+		psaddr = &client->addr;
+		printf(
+		"\tRemote address %lu.%lu.%lu.%lu Remote port %d state=%s\n",
+			(psaddr->sin_addr.s_addr & 0xff000000) >> 24,
+			(psaddr->sin_addr.s_addr & 0x00ff0000) >> 16,
+			(psaddr->sin_addr.s_addr & 0x0000ff00) >> 8,
+			(psaddr->sin_addr.s_addr & 0x000000ff),
+			psaddr->sin_port,
+			state[client->disconnect?1:0]);
 	}
-	FASTUNLOCK(&client->addrqLock);
-
-	psaddr = &client->addr;
-	printf("\tRemote address %u.%u.%u.%u Remote port %d state=%s\n",
-	       	(psaddr->sin_addr.s_addr & 0xff000000) >> 24,
-	       	(psaddr->sin_addr.s_addr & 0x00ff0000) >> 16,
-	       	(psaddr->sin_addr.s_addr & 0x0000ff00) >> 8,
-	       	(psaddr->sin_addr.s_addr & 0x000000ff),
-	       	psaddr->sin_port,
-		state[client->disconnect?1:0]);
 	printf(	"\tChannel count %d\n", ellCount(&client->addrq));
-	printf(	"\t%d bytes allocated\n", bytes_reserved);
 
-	FASTLOCK(&client->addrqLock);
-	pciu = (struct channel_in_use *) client->addrq.node.next;
-	i=0;
-	while (pciu){
-		printf(	"\t%s(%d%c%c)", 
-			pciu->addr.precord,
-			ellCount(&pciu->eventq),
-			asCheckGet(pciu->asClientPVT)?'r':'-',
-			asCheckPut(pciu->asClientPVT)?'w':'-');
-		pciu = (struct channel_in_use *) ellNext(&pciu->node);
-		if( ++i % 3 == 0){
-			printf("\n");
+	if (level>=2u) {
+		bytes_reserved = 0;
+		bytes_reserved += sizeof(struct client);
+
+		FASTLOCK(&client->addrqLock);
+		pciu = (struct channel_in_use *) client->addrq.node.next;
+		while (pciu){
+			bytes_reserved += sizeof(struct channel_in_use);
+			bytes_reserved += 
+				(sizeof(struct event_ext)+db_sizeof_event_block())*
+					ellCount(&pciu->eventq);
+			if(pciu->pPutNotify){
+				bytes_reserved += sizeof(*pciu->pPutNotify);
+				bytes_reserved += pciu->pPutNotify->valueSize;
+			}
+			pciu = (struct channel_in_use *) ellNext(&pciu->node);
 		}
+		FASTUNLOCK(&client->addrqLock);
+		printf(	"\t%ld bytes allocated\n", bytes_reserved);
+
+
+		FASTLOCK(&client->addrqLock);
+		pciu = (struct channel_in_use *) client->addrq.node.next;
+		i=0;
+		while (pciu){
+			printf(	"\t%s(%d%c%c)", 
+				pciu->addr.precord,
+				ellCount(&pciu->eventq),
+				asCheckGet(pciu->asClientPVT)?'r':'-',
+				asCheckPut(pciu->asClientPVT)?'w':'-');
+			pciu = (struct channel_in_use *) ellNext(&pciu->node);
+			if( ++i % 3 == 0){
+				printf("\n");
+			}
+		}
+		FASTUNLOCK(&client->addrqLock);
+		printf("\n");
 	}
-	FASTUNLOCK(&client->addrqLock);
-
-	printf("\n");
-
 }
 
 

@@ -270,14 +270,14 @@ FAST int 		sock;
 		return ERROR;
 	}
 
-	client->recv.cnt = 0;
+	client->recv.cnt = 0ul;
 	while (TRUE) {
 		client->recv.stk = 0;
 			
 		nchars = recv(	
 				sock, 
 				&client->recv.buf[client->recv.cnt], 
-				sizeof(client->recv.buf)-client->recv.cnt, 
+				(int)(sizeof(client->recv.buf)-client->recv.cnt), 
 				0);
 		if (nchars==0){
   			if(CASDEBUG>0){
@@ -318,20 +318,20 @@ FAST int 		sock;
 		}
 
 		client->ticks_at_last_recv = tickGet();
-		client->recv.cnt += nchars;
+		client->recv.cnt += (unsigned long) nchars;
 
 		status = camessage(client, &client->recv);
 		if(status == OK){
-			unsigned bytes_left;
-
-			bytes_left = client->recv.cnt - client->recv.stk;
 
 			/*
 			 * if there is a partial message
 			 * align it with the start of the buffer
 			 */
-			if(bytes_left>0){
+			if(client->recv.cnt >= client->recv.stk){
+				unsigned bytes_left;
 				char *pbuf;
+
+				bytes_left = client->recv.cnt - client->recv.stk;
 
 				pbuf = client->recv.buf;
 
@@ -345,10 +345,10 @@ FAST int 		sock;
 				client->recv.cnt = bytes_left;
 			}
 			else{
-				client->recv.cnt = 0;
+				client->recv.cnt = 0ul;
 			}
 		}else{
-			client->recv.cnt = 0;
+			client->recv.cnt = 0ul;
 			/*
 			 * disconnect on message alignment
 			 * problems
@@ -359,7 +359,7 @@ FAST int 		sock;
 		/*
 		 * allow message to batch up if more are comming
 		 */
-		status = ioctl(sock, FIONREAD, (int)&nchars);
+		status = ioctl(sock, FIONREAD, &nchars);
 		if (status < 0) {
 			logMsg("CAS: io ctl err %d\n",
 				errnoGet(),

@@ -199,12 +199,12 @@ struct client  *client,
 struct message_buffer *recv
 )
 {
-	int            		nmsg = 0;
+	int           		nmsg = 0;
 	int			v41;
-	unsigned		msgsize;
-	unsigned		bytes_left;
+	unsigned long		msgsize;
+	unsigned long		bytes_left;
 	int             	status;
-	caHdr 		*mp;
+	caHdr 			*mp;
 	struct channel_in_use 	*pciu;
 
 	if(!pCaBucket){
@@ -215,7 +215,7 @@ struct message_buffer *recv
 	}
 
 	if (CASDEBUG > 2){
-		logMsg(	"CAS: Parsing %d(decimal) bytes\n", 
+		logMsg(	"CAS: Parsing %lu (decimal) bytes\n", 
 			recv->cnt,
 			NULL,
 			NULL,
@@ -1823,8 +1823,8 @@ char           *pformat,
 	 */
 	reply = (caHdr *) ALLOC_MSG(client, 512);
 	if (!reply){
-		int     logMsgArgs[6];
-		int	i;
+		int     	logMsgArgs[6];
+		unsigned	i;
 
 		for(i=0; i< NELEMENTS(logMsgArgs); i++){
 			logMsgArgs[i] = va_arg(args, int);

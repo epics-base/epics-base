@@ -154,8 +154,8 @@ epicsShareFunc void epicsShareAPI
     epicsTimerQueuePassiveDestroyTimer ( epicsTimerQueuePassiveId queueid, epicsTimerId id );
 epicsShareFunc double epicsShareAPI 
     epicsTimerQueuePassiveProcess ( epicsTimerQueuePassiveId );
-epicsShareFunc void  epicsShareAPI epicsTimerQueuePassiveShow (
-    epicsTimerQueuePassiveId id, unsigned int level );
+epicsShareFunc void  epicsShareAPI 
+    epicsTimerQueuePassiveShow ( epicsTimerQueuePassiveId id, unsigned int level );
 
 /* timer */
 epicsShareFunc void epicsShareAPI 

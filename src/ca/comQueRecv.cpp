@@ -19,7 +19,7 @@
 #include "iocinf.h"
 #include "virtualCircuit.h"
 
-comQueRecv::comQueRecv ()
+comQueRecv::comQueRecv (): nBytesPending ( 0u )
 {
 }
 
@@ -31,51 +31,29 @@ comQueRecv::~comQueRecv ()
 void comQueRecv::clear ()
 {
     comBuf *pBuf;
-
     while ( ( pBuf = this->bufs.get () ) ) {
         pBuf->destroy ();
     }
+    this->nBytesPending = 0u;
 }
 
-unsigned comQueRecv::occupiedBytes () const
+unsigned comQueRecv::copyOutBytes ( epicsInt8 *pBuf, unsigned nBytes )
 {
-    unsigned count = this->bufs.count ();
-    unsigned nBytes;
-
-    if ( count == 0u ) {
-        nBytes = 0u;
-    }
-    else if ( count == 1u ) {
-        nBytes = this->bufs.first ()->occupiedBytes ();
-    }
-    else {
-        // this requires the compress operation in 
-        // copyIn ( comBuf & bufIn )
-        nBytes = this->bufs.first ()->occupiedBytes ();
-        nBytes += this->bufs.last ()->occupiedBytes ();
-        nBytes += ( count - 2u ) * comBuf::capacityBytes ();
-    }
-
-    return nBytes;
-}
-
-unsigned comQueRecv::copyOutBytes ( void *pBuf, unsigned nBytes )
-{
-    char *pCharBuf = static_cast < char * > ( pBuf );
-
     unsigned totalBytes = 0u;
     do {
         comBuf * pComBuf = this->bufs.first ();
         if ( ! pComBuf ) {
+            this->nBytesPending -= totalBytes;
             return totalBytes;
         }
-        totalBytes += pComBuf->copyOutBytes ( &pCharBuf[totalBytes], nBytes - totalBytes );
+        totalBytes += pComBuf->copyOutBytes ( &pBuf[totalBytes], nBytes - totalBytes );
         if ( pComBuf->occupiedBytes () == 0u ) {
             this->bufs.remove ( *pComBuf );
             pComBuf->destroy ();
         }
     }
     while ( totalBytes < nBytes );
+    this->nBytesPending -= totalBytes;
     return totalBytes;
 }
 
@@ -86,6 +64,7 @@ unsigned comQueRecv::removeBytes ( unsigned nBytes )
     while ( bytesLeft ) {
         comBuf * pComBuf = this->bufs.first ();
         if ( ! pComBuf ) {
+            this->nBytesPending -= totalBytes;
             return totalBytes;
         }
         unsigned nBytesThisTime = pComBuf->removeBytes ( bytesLeft );
@@ -99,18 +78,21 @@ unsigned comQueRecv::removeBytes ( unsigned nBytes )
         totalBytes += nBytesThisTime;
         bytesLeft = nBytes - totalBytes;
     }
+    this->nBytesPending -= totalBytes;
     return totalBytes;
 }
 
 void comQueRecv::pushLastComBufReceived ( comBuf & bufIn )
 {
-    comBuf *pLastBuf = this->bufs.last ();
-    if ( pLastBuf ) {
-        pLastBuf->copyIn ( bufIn );
+    comBuf * pComBuf = this->bufs.last ();
+    if ( pComBuf ) {
+        if ( pComBuf->unoccupiedBytes() ) {
+            this->nBytesPending += pComBuf->copyIn ( bufIn );
+        }
     }
-    if ( bufIn.occupiedBytes () ) {
-        // move occupied bytes to the start of the buffer
-        bufIn.compress ();
+    unsigned bufBytes = bufIn.occupiedBytes();
+    if ( bufBytes ) {
+        this->nBytesPending += bufBytes;
         this->bufs.add ( bufIn );
     }
     else {
@@ -122,15 +104,67 @@ epicsUInt8 comQueRecv::popUInt8 ()
 {
     comBuf *pComBuf = this->bufs.first ();
     if ( pComBuf ) {
-        epicsUInt8 tmp = pComBuf->getByte ();
+        epicsUInt8 tmp = pComBuf->popUInt8 ();
         if ( pComBuf->occupiedBytes() == 0u ) {
             this->bufs.remove ( *pComBuf );
             pComBuf->destroy ();
+        }
+        this->nBytesPending--;
+        return tmp;
+    }
+    throw insufficentBytesAvailable ();
+}
+
+// optimization here complicates this function somewhat
+epicsUInt16 comQueRecv::popUInt16 ()
+{
+    epicsUInt16 tmp;
+    comBuf *pComBuf = this->bufs.first ();
+    if ( pComBuf ) {
+        // try first for all in one buffer efficent version
+        comBuf::statusPopUInt16 ret = pComBuf->popUInt16 ();
+        if ( ret.success ) {
+            if ( pComBuf->occupiedBytes() == 0u ) {
+                this->bufs.remove ( *pComBuf );
+                pComBuf->destroy ();
+            }
+            tmp = ret.val;
+            this->nBytesPending -= sizeof(tmp);
+        }
+        else {
+            // split between buffers runs slower
+            tmp  = this->popUInt8() << 8u;
+            tmp |= this->popUInt8() << 0u;
         }
         return tmp;
     }
     throw insufficentBytesAvailable ();
 }
 
-
-
+// optimization here complicates this function somewhat
+epicsUInt32 comQueRecv::popUInt32 ()
+{
+    epicsUInt32 tmp;
+    comBuf *pComBuf = this->bufs.first ();
+    if ( pComBuf ) {
+        // try first for all in one buffer efficent version 
+        comBuf::statusPopUInt32 ret = pComBuf->popUInt32 ();
+        if ( ret.success ) {
+            if ( pComBuf->occupiedBytes() == 0u ) {
+                this->bufs.remove ( *pComBuf );
+                pComBuf->destroy ();
+            }
+            tmp = ret.val;
+            this->nBytesPending -= sizeof(tmp);
+        }
+        else {
+            // split between buffers runs slower
+            tmp  = this->popUInt8() << 24u;
+            tmp |= this->popUInt8() << 16u;
+            tmp |= this->popUInt8() << 8u;
+            tmp |= this->popUInt8() << 0u;
+        }
+        return tmp;
+    }
+    throw insufficentBytesAvailable ();
+}

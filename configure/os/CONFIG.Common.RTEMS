@@ -70,6 +70,7 @@ OP_SYS_LDFLAGS = $(CPU_CFLAGS) -u Init -lCom \
                  $(PROJECT_RELEASE)/lib/no-part.rel \
                  $(PROJECT_RELEASE)/lib/no-signal.rel \
                  $(PROJECT_RELEASE)/lib/no-rtmon.rel
+CPPSNCFLAGS += -x c
 
 #--------------------------------------------------
 # c++ exceptions,  YES or NO

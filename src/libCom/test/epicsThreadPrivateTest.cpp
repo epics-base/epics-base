@@ -58,7 +58,7 @@ void epicsThreadPrivateTest ()
         epicsThreadGetStackSize ( epicsThreadStackSmall ), 
         epicsThreadPrivateTestThread, 0 );
     while ( ! doneFlag ) {
-        epicsThreadSleep ( 0.01 );
+        epicsThreadSleep ( 0.1 );
     }
     assert ( &var == priv.get() );
     priv.set ( 0 );

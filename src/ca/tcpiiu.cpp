@@ -122,8 +122,6 @@ void tcpSendThread::run ()
     this->iiu.cacRef.uninstallIIU ( this->iiu );
 
     delete & this->iiu;
-
-    epicsThread::exit ();
 }
 
 unsigned tcpiiu::sendBytes ( const void *pBuf, 

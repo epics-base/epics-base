@@ -20,7 +20,7 @@ CODE_CPPFLAGS = -D__EXTENSIONS__
 #POSIX_LDLIBS_YES += -lposix4 -lpthread -lthread
 
 # This set of flags is recommended by sun for posix threads and works with solaris 8
-POSIX_CPPFLAGS_YES = -D_POSIX_C_SOURCE=199506L
+POSIX_CPPFLAGS_YES = -D_POSIX_C_SOURCE=199506L -D_XOPEN_SOURCE=500
 POSIX_LDLIBS_YES += -lposix4 -lpthread
 
 POSIX_CPPFLAGS_NO =

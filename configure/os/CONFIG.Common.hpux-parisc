@@ -13,7 +13,7 @@ include $(CONFIG)/os/CONFIG.Common.UnixCommon
 OS_CLASS = hpux
 ARCH_CLASS = parisc
 
-POSIX_CPPFLAGS_YES = -D_POSIX_C_SOURCE=199506L
+POSIX_CPPFLAGS_YES = -D_POSIX_C_SOURCE=199506L -D_XOPEN_SOURCE=500
 POSIX_CPPFLAGS_NO =
 POSIX_LDLIBS_NO +=
 # When compiling with gcc, static builds need two more libraries (*sigh*)

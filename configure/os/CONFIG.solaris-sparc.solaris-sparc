@@ -9,6 +9,8 @@
 
 SPARCWORKS = /opt/SUNWspro
 
+#CC = purify $(SPARCWORKS)/bin/cc
+#CCC = purify $(SPARCWORKS)/bin/CC
 CC = $(SPARCWORKS)/bin/cc
 CCC = $(SPARCWORKS)/bin/CC
 #CC = purify -max-threads=100 $(SPARCWORKS)/bin/cc

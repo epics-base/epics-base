@@ -179,7 +179,7 @@ WIN32_DLLFLAGS = /subsystem:windows /dll $(OPT_LDFLAGS)
 #
 # specify dll .def file only if it exists
 #
-DLL_DEF_FLAG = $(addprefix /def:,$(wildcard ..\\$(LIBRARY).def))
+DLL_DEF_FLAG = $(addprefix /def:,$(wildcard ../$(LIBRARY).def))
 
 #	HOST_OPT_FLAGS is part of CFLAGS/CXXFLAGS,
 #	which in turn are used in COMPILE.c[c]

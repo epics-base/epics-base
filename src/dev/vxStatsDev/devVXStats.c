@@ -37,7 +37,7 @@ of this distribution.
 #include <link.h>
 #include <aiRecord.h>
 #include <aoRecord.h>
-
+
 /*
 	The following device definitions must exist
 
@@ -110,40 +110,6 @@ of this distribution.
 	}
 */
 
-#define MEMORY_TYPE	0
-#define CPU_TYPE	1
-#define FD_TYPE		2
-#define TOTAL_TYPES	3
-
-#define SECONDS_TO_BURN 5
-
-/* default rate in seconds (memory,cpu,fd) */
-static int default_scan_rate[] = { 10,50,10 };
-
-static char *aiparmValue[TOTAL_TYPES] = {"memory","cpu","fd"};
-static char *aoparmValue[TOTAL_TYPES] = {
-	"memoryScanPeriod","cpuScanPeriod","fdScanPeriod"};
-
-typedef struct devPvt
-{
-	int type;
-}devPvt;
-
-typedef struct scanInfo
-{
-	IOSCANPVT ioscanpvt;
-	WDOG_ID wd;
-	int 	rate_tick;	/* ticks */
-}scanInfo;
-
-static scanInfo scan[TOTAL_TYPES];
-
-static double getMemory(void);
-static double getCpu(void);
-static double getFd(void);
-static void wdCallback(int type);
-static void cpuUsageInit(void);
-
 typedef struct aiaodset
 {
 	long		number;
@@ -154,23 +120,81 @@ typedef struct aiaodset
 	DEVSUPFUN	read_write;
 	DEVSUPFUN	special_linconv;
 }aiaodset;
-static long ai_init(int pass);
-static long ai_init_record(aiRecord*);
-static long ai_read(aiRecord*);
-static long ai_ioint_info(int cmd,aiRecord* pr,IOSCANPVT* iopvt);
 
+typedef struct devPvt
+{
+	int type;
+}devPvt;
+
+static long ai_init(int pass);
+static long ai_ioint_info(int cmd,aiRecord* pr,IOSCANPVT* iopvt);
+static long ai_init_record(aiRecord*);
 static long ao_init_record(aoRecord* pr);
+static long ai_read(aiRecord*);
 static long ao_write(aoRecord*);
+
 aiaodset devAiVXStats={ 6,NULL,ai_init,ai_init_record,ai_ioint_info,ai_read,NULL };
 aiaodset devAoVXStats={ 6,NULL,NULL,ao_init_record,NULL,ao_write,NULL };
+
+#define MEMORY_TYPE	0
+#define CPU_TYPE	1
+#define FD_TYPE		2
+#define TOTAL_TYPES	3
+
+/* default rate in seconds (memory,cpu,fd) */
+static int default_scan_rate[] = { 10,50,10 };
+
+static char *aiparmValue[TOTAL_TYPES] = {"memory","cpu","fd"};
+static char *aoparmValue[TOTAL_TYPES] = {
+	"memoryScanPeriod","cpuScanPeriod","fdScanPeriod"};
+
+typedef struct scanInfo
+{
+	IOSCANPVT ioscanpvt;
+	WDOG_ID wd;
+	int 	rate_tick;	/* ticks */
+}scanInfo;
+static scanInfo scan[TOTAL_TYPES];
+
+static void wdCallback(int type);
+static double getMemory(void);
+static double getFd(void);
+
+#define SECONDS_TO_STARVATION 60
+#define SECONDS_TO_BURN 5
+#define SECONDS_TO_WAIT 15
+
+typedef struct cpuUsage {
+    SEM_ID        lock;
+    unsigned long ticksToDeclareStarvation;
+    unsigned long ticksToBurn;
+    unsigned long ticksToWait;
+    double        nBurnNoContention;
+    unsigned long ticksLastUpdate;
+    double        usage;
+} cpuUsage;
+static cpuUsage usage;
+
+static void wdCpu(void);
+static double cpuBurn();
+static void cpuUsageTask();
+static double getCpu(void);
+static void cpuUsageInit(void);
 
 static long ai_init(int pass)
 {
     int type;
 
     if(pass==1) {
-        for(type=0;type<TOTAL_TYPES;type++) 
-	  wdStart(scan[type].wd,scan[type].rate_tick,(FUNCPTR)wdCallback,type);
+        for(type=0;type<TOTAL_TYPES;type++) {
+          if(type==CPU_TYPE) {
+	      wdStart(scan[type].wd,scan[type].rate_tick,
+                  (FUNCPTR)wdCpu,0);
+          } else {
+	      wdStart(scan[type].wd,scan[type].rate_tick,
+                  (FUNCPTR)wdCallback,type);
+          }
+        }
 	return(0);
     }
     for(type=0;type<TOTAL_TYPES;type++) {
@@ -182,6 +206,14 @@ static long ai_init(int pass)
     return 0;
 }
 
+static long ai_ioint_info(int cmd,aiRecord* pr,IOSCANPVT* iopvt)
+{
+    devPvt* pvt=(devPvt*)pr->dpvt;
+
+    *iopvt=scan[pvt->type].ioscanpvt;
+    return 0;
+}
+
 static long ai_init_record(aiRecord* pr)
 {
     int     type;
@@ -243,21 +275,7 @@ static long ao_init_record(aoRecord* pr)
     pr->dpvt=pvt;
     return 2;
 }
-
-static void wdCallback(int type)
-{
-    scanIoRequest(scan[type].ioscanpvt);
-    wdStart(scan[type].wd,scan[type].rate_tick, (FUNCPTR)wdCallback,type);
-}
-
-static long ai_ioint_info(int cmd,aiRecord* pr,IOSCANPVT* iopvt)
-{
-    devPvt* pvt=(devPvt*)pr->dpvt;
-
-    *iopvt=scan[pvt->type].ioscanpvt;
-    return 0;
-}
-
+
 static long ao_write(aoRecord* pr)
 {
     devPvt* pvt=(devPvt*)pr->dpvt;
@@ -285,11 +303,15 @@ static long ai_read(aiRecord* pr)
     return 2; /* don't convert */
 }
 
+static void wdCallback(int type)
+{
+    scanIoRequest(scan[type].ioscanpvt);
+    wdStart(scan[type].wd,scan[type].rate_tick, (FUNCPTR)wdCallback,type);
+}
+
 /*Memory statistics*/
 #include <memLib.h>
 static MEM_PART_STATS meminfo;
-
-/* -------------------------------------------------------------------- */
 
 static double getMemory(void)
 {
@@ -315,17 +337,18 @@ static double getFd()
     return(100.0*(double)tot/(double)maxFiles);
 }
 
-typedef struct cpuUsage {
-    SEM_ID        startSem;
-    int           didNotComplete;
-    unsigned long ticksNoContention;
-    int           nBurnNoContention;
-    unsigned long ticksNow;
-    int           nBurnNow;
-    double        usage;
-} cpuUsage;
+static void wdCpu(void)
+{
+    unsigned long ticksLastUpdate = usage.ticksLastUpdate;
+    unsigned long ticksNow = tickGet();
 
-static cpuUsage *pcpuUsage=0;
+    if(ticksNow>=ticksLastUpdate /*ignore tick overflow*/
+    && (ticksNow-ticksLastUpdate) >= usage.ticksToDeclareStarvation) {
+        usage.usage = 100.0;
+        scanIoRequest(scan[CPU_TYPE].ioscanpvt);
+    }
+    wdStart(scan[CPU_TYPE].wd,scan[CPU_TYPE].rate_tick,(FUNCPTR)wdCpu,0);
+}
 
 static double cpuBurn()
 {
@@ -338,68 +361,68 @@ static double cpuBurn()
 
 static void cpuUsageTask()
 {
-    while(TRUE) {
-	int    i;
-	unsigned long tickStart,tickEnd;
 
-        semTake(pcpuUsage->startSem,WAIT_FOREVER);
-	pcpuUsage->ticksNow=0;
-	pcpuUsage->nBurnNow=0;
+    while(TRUE) {
+	unsigned long tickStart,tickEnd=0;
+        int nBurnNow;
+        double nBurnNoContention = (double)usage.nBurnNoContention;
+	double nBurnContention,newusage;
+
+	nBurnNow=0;
 	tickStart = tickGet();
-	for(i=0; i< pcpuUsage->nBurnNoContention; i++) {
+        while(1) {
 	    cpuBurn();
-	    pcpuUsage->ticksNow = tickGet() - tickStart;
-	    ++pcpuUsage->nBurnNow;
+	    ++nBurnNow;
+            tickEnd = tickGet();
+            if(tickEnd<tickStart) break; /*allow for tick overflow*/
+            if((tickEnd - tickStart) >= usage.ticksToBurn) break;
 	}
-	tickEnd = tickGet();
-	pcpuUsage->didNotComplete = FALSE;
-	pcpuUsage->ticksNow = tickEnd - tickStart;
+        if(tickEnd<tickStart) continue; /*allow for tick overflow*/
+        nBurnContention = (double)nBurnNow;
+        newusage = 100.0*((nBurnNoContention - nBurnNow)/nBurnNoContention);
+        semTake(usage.lock,WAIT_FOREVER);
+	usage.usage = newusage;
+        semGive(usage.lock);
+        taskDelay(usage.ticksToWait);
+        usage.ticksLastUpdate = tickEnd;
+        scanIoRequest(scan[CPU_TYPE].ioscanpvt);
     }
 }
-
-
+
 static double getCpu()
 {
-    if(pcpuUsage->didNotComplete && pcpuUsage->nBurnNow==0) {
-	pcpuUsage->usage = 0.0;
-    } else {
-	double temp;
-	double ticksNow,nBurnNow;
-
-	ticksNow = (double)pcpuUsage->ticksNow;
-	nBurnNow = (double)pcpuUsage->nBurnNow;
-	ticksNow *= (double)pcpuUsage->nBurnNoContention/nBurnNow;
-	temp = ticksNow - (double)pcpuUsage->ticksNoContention;
-	temp = 100.0 * temp/ticksNow;
-	if(temp<0.0 || temp>100.0) temp=0.0;/*take care of tick overflow*/
-	pcpuUsage->usage = temp;
-    }
-    pcpuUsage->didNotComplete = TRUE;
-    semGive(pcpuUsage->startSem);
-    return(pcpuUsage->usage);
+    double value;
+    semTake(usage.lock,WAIT_FOREVER);
+    value = usage.usage;
+    semGive(usage.lock);
+    return(value);
 }
 
 static void cpuUsageInit(void)
 {
-    unsigned long tickStart,tickNow;
+    unsigned long tickStart,tickEnd=0,tickNow;
     int           nBurnNoContention=0;
-    int		ticksToWait;
 
-    ticksToWait = SECONDS_TO_BURN*sysClkRateGet();
-    pcpuUsage = calloc(1,sizeof(cpuUsage));
+    usage.lock =
+        semMCreate(SEM_DELETE_SAFE|SEM_INVERSION_SAFE|SEM_Q_PRIORITY);
+    usage.usage = 0.0;
+    usage.ticksToDeclareStarvation = SECONDS_TO_STARVATION * sysClkRateGet();
+    usage.ticksToWait = SECONDS_TO_WAIT*sysClkRateGet();
+    usage.ticksToBurn = SECONDS_TO_BURN*sysClkRateGet();
     tickStart = tickGet();
     /*wait for a tick*/
     while(tickStart==(tickNow = tickGet())) {;}
     tickStart = tickNow;
     while(TRUE) {
-	if((tickGet() - tickStart)>=ticksToWait) break;
 	cpuBurn();
 	nBurnNoContention++;
+        tickEnd = tickGet();
+        if(tickEnd<tickStart) break; /*same test as cpuUsageTask*/
+        if((tickEnd - tickStart) >= usage.ticksToBurn) break;
     }
-    pcpuUsage->nBurnNoContention = nBurnNoContention;
-    pcpuUsage->startSem = semBCreate (SEM_Q_FIFO,SEM_EMPTY);
-    pcpuUsage->ticksNoContention = ticksToWait;
-    pcpuUsage->didNotComplete = TRUE;
+    if(tickEnd<tickStart) printf("cpuUsageInit logic error\n");
+    usage.nBurnNoContention = (double)nBurnNoContention;
+    usage.ticksLastUpdate = tickGet();
     taskSpawn("cpuUsageTask",255,VX_FP_TASK,3000,(FUNCPTR)cpuUsageTask,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 }

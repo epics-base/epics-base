@@ -49,15 +49,16 @@ $outfile = $ARGV[0];
 
 # TOP is set to this application for macro expansion purposes
 $apps{TOP} = $top;
+@apporder = ();
 
 # Read the RELEASE file(s) into %apps
 $relfile = "$top/configure/RELEASE";
 die "Can't find configure/RELEASE file" unless (-r $relfile);
-&readrelease($relfile, \%apps);
+&readrelease($relfile, \%apps, \@apporder);
 
 if ($hostarch) {
     $relfile .= ".$hostarch";
-    &readrelease($relfile, \%apps) if (-r $relfile);
+    &readrelease($relfile, \%apps, \@apporder) if (-r $relfile);
 }
 
 # This is a perl switch statement:
@@ -70,8 +71,8 @@ for ($outfile) {
 }
 
 sub readrelease {
-    my ($file, $apps) = @_;
-    # The $apps argument above is a reference to a hash
+    my ($file, $apps, $order) = @_;
+    # $apps is a reference to a hash, $order a ref to a list
     my ($pre, $macro, $post, $path);
     local *IN;
     open(IN, $file) or die "Can't open $file: $!\n";
@@ -89,18 +90,18 @@ sub readrelease {
 	($macro, $path) = /^\s*(\w+)\s*=\s*(.*)/;
 	if ($macro ne "") {
 	    $apps->{$macro} = $path;
+	    push @$order, $macro;
 	    next;
 	}
 	# Handle "include <path>" syntax
 	($path) = /^\s*include\s+(.*)/;
-	&readrelease($path, $apps) if (-r $path);
+	&readrelease($path, $apps, $order) if (-r $path);
     }
     close IN;
 }
 
 sub configAppInclude {
     delete $apps{TOP};
-    delete $apps{EPICS_BASE};
     delete $apps{TEMPLATE_TOP};
     
     unlink($outfile);
@@ -109,25 +110,35 @@ sub configAppInclude {
     print OUT "# be lost when the application is next rebuilt.\n\n";
     
     if ($arch) {
-	while (($app, $path) = each %apps) {
-            next unless (-d "$path/bin/$hostarch");
+	foreach $app (@apporder) {
+            $path = $apps{$app};
+	    next unless (-d "$path/bin/$hostarch");
 	    print OUT "${app}_HOST_BIN = \$($app)/bin/\$(EPICS_HOST_ARCH)\n";
 	}
-	while (($app, $path) = each %apps) {
+	foreach $app (@apporder) {
+            $path = $apps{$app};
+	    next unless (-d "$path/lib/$hostarch");
+	    print OUT "${app}_HOST_LIB = \$($app)/bin/\$(EPICS_HOST_ARCH)\n";
+	}
+	foreach $app (@apporder) {
+            $path = $apps{$app};
             next unless (-d "$path/bin/$arch");
 	    print OUT "${app}_BIN = \$($app)/bin/$arch\n";
 	}
-	while (($app, $path) = each %apps) {
+	foreach $app (@apporder) {
+            $path = $apps{$app};
             next unless (-d "$path/lib/$arch");
 	    print OUT "${app}_LIB = \$($app)/lib/$arch\n";
 	}
     }
-    while (($app, $path) = each %apps) {
+    foreach $app (@apporder) {
+        $path = $apps{$app};
         next unless (-d "$path/include");
 	print OUT "RELEASE_INCLUDES += -I\$($app)/include/os/\$(OS_CLASS)\n";
 	print OUT "RELEASE_INCLUDES += -I\$($app)/include\n";
     }
-    while (($app, $path) = each %apps) {
+    foreach $app (@apporder) {
+        $path = $apps{$app};
         next unless (-d "$path/dbd");
         print OUT "RELEASE_DBDFLAGS += -I \$($app)/dbd\n";
     }
@@ -164,7 +175,8 @@ sub cdCommands {
     print OUT "startup = \"$startup\"\n";
     print OUT "appbin = \"$top/bin/$arch\"\n";	# compatibility with R3.13.1
     
-    while (($app, $path) = each %apps) {
+    foreach $app (@apporder) {
+        $path = $apps{$app};
 	$lcapp = lc($app);
         print OUT "$lcapp = \"$path\"\n" if (-d $path);
 	print OUT "${lcapp}bin = \"$path/bin/$arch\"\n" if (-d "$path/bin/$arch");
@@ -179,11 +191,12 @@ sub checkRelease {
     
     while (($app, $path) = each %apps) {
 	%check = (TOP => $path);
+	@order = ();
 	$relfile = "$path/configure/RELEASE";
-	&readrelease($relfile, \%check) if (-r $relfile);
+	&readrelease($relfile, \%check, \@order) if (-r $relfile);
 	if ($hostarch) {
 	    $relfile .= ".$hostarch";
-	    &readrelease($relfile, \%check) if (-r $relfile);
+	    &readrelease($relfile, \%check, \@order) if (-r $relfile);
 	}
 	delete $check{TOP};
 	

@@ -37,8 +37,6 @@ public:
         epicsThrows (( invalidMutex )); 
     void unlock () 
         epicsThrows (());
-    bool lock ( double timeOut ) /* true if successful */
-        epicsThrows (( invalidMutex )); 
     bool tryLock () /* true if successful */
         epicsThrows (( invalidMutex ));
 private:
@@ -67,8 +65,6 @@ epicsShareFunc void epicsShareAPI epicsMutexUnlock(epicsMutexId id);
 epicsShareFunc epicsMutexLockStatus epicsShareAPI epicsMutexLock(
     epicsMutexId id);
 #define epicsMutexMustLock(ID) assert((epicsMutexLock((ID))==epicsMutexLockOK))
-epicsShareFunc epicsMutexLockStatus epicsShareAPI epicsMutexLockWithTimeout(
-    epicsMutexId id, double timeOut);
 epicsShareFunc epicsMutexLockStatus epicsShareAPI epicsMutexTryLock(
     epicsMutexId id);
 epicsShareFunc void epicsShareAPI epicsMutexShow(

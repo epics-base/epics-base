@@ -150,22 +150,6 @@ void epicsMutex::lock ()
     }
 }
 
-bool epicsMutex::lock ( double timeOut ) // X aCC 361
-    epicsThrows (( epicsMutex::invalidMutex ))
-{
-    epicsMutexLockStatus status = epicsMutexLockWithTimeout ( this->id, timeOut );
-    if ( status == epicsMutexLockOK ) {
-        return true;
-    } 
-    else if ( status == epicsMutexLockTimeout ) {
-        return false;
-    } 
-    else {
-        throw invalidMutex ();
-        return false; // never here, compiler is happy
-    }
-}
-
 bool epicsMutex::tryLock () // X aCC 361
     epicsThrows (( epicsMutex::invalidMutex ))
 {

@@ -153,51 +153,6 @@ epicsMutexLockStatus epicsMutexLock(epicsMutexId id)
 #endif
 }
 
-epicsMutexLockStatus epicsMutexLockWithTimeout(
-    epicsMutexId id, double timeOut)
-{
-#ifdef RTEMS_FAST_MUTEX
-    Semaphore_Control *the_semaphore = (Semaphore_Control *)id;
-    ISR_Level level;
-    boolean wait;
-    rtems_interval delay;
-    extern double rtemsTicksPerSecond_double;
-
-    SEMSTAT(1)
-    if (timeOut <= 0.0) {
-        wait = FALSE;
-        delay = 0;
-    }
-    else {
-        wait = TRUE;
-        delay = timeOut * rtemsTicksPerSecond_double;
-        if (delay == 0)
-            delay++;
-    }
-    _ISR_Disable( level );
-    _CORE_mutex_Seize(
-        &the_semaphore->Core_control.mutex,
-        the_semaphore->Object.id,
-        wait,
-        delay,
-        level
-    );
-    if (_Thread_Executing->Wait.return_code == 0)
-        return epicsMutexLockOK;
-    else
-        return epicsMutexLockError;
-#else
-    epicsEventWaitStatus status;
-    SEMSTAT(1)
-    status = epicsEventWaitWithTimeout(id,timeOut);
-    return((status==epicsEventWaitOK
-        ? epicsMutexLockOK
-        : (status==epicsEventWaitTimeout)
-           ? epicsMutexLockTimeout
-           : epicsMutexLockError));
-#endif
-}
-
 epicsMutexLockStatus epicsMutexTryLock(epicsMutexId id)
 {
 #ifdef RTEMS_FAST_MUTEX

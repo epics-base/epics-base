@@ -265,15 +265,10 @@ extern "C" void epicsMutexTest(int nthreads,int verbose)
     printf("calling epicsMutexLock(mutex) time %ld\n",time(&tp));
     status = epicsMutexLock(mutex);
     if(status) printf("status %d\n",status);
-    printf("calling epicsMutexLockWithTimeout(mutex,2.0) time %ld\n",time(&tp));
-    status = epicsMutexLockWithTimeout(mutex,2.0);
-    if(status) printf("status %d\n",status);
     printf("calling epicsMutexTryLock(mutex) time %ld\n",time(&tp));
     status = epicsMutexTryLock(mutex);
     if(status) printf("status %d\n",status);
     epicsMutexShow(mutex,1);
-    printf("calling epicsMutexUnlock() time %ld\n",time(&tp));
-    epicsMutexUnlock(mutex);
     printf("calling epicsMutexUnlock() time %ld\n",time(&tp));
     epicsMutexUnlock(mutex);
     printf("calling epicsMutexUnlock() time %ld\n",time(&tp));

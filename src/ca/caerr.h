@@ -133,6 +133,7 @@
 #define ECA_NOTINSERVICE    DEFMSG(CA_K_WARNING,   54)
 #define ECA_CHANDESTROY     DEFMSG(CA_K_WARNING,   55)
 #define ECA_BADPRIORITY     DEFMSG(CA_K_ERROR,     56)
+#define ECA_NOTTHREADED     DEFMSG(CA_K_ERROR,     57)
 
 #ifndef CA_ERROR_GLBLSOURCE
 epicsShareExtern READONLY char  *ca_message_text[];
@@ -207,6 +208,8 @@ READONLY char   *ca_message_text[]
 "No support in service",
 
 "User destroyed channel"
+"Priority out of range"
+"Preemptive callback not enabled - additional threads may not join"
 
 };
 #endif

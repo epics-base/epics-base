@@ -213,16 +213,9 @@ FAST int 		sock;
 
   	if(CASDEBUG>0){
 		char buf[64];
-    		logMsg(	"CAS: Recieved connection request\n",
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL);
-		ipAddrToA (&client->addr, buf, sizeof(buf));
-   		logMsg(	"from addr %s\n", 
-			(int) /* sic */ buf, 
+ 		ipAddrToA (&client->addr, buf, sizeof(buf));
+    	logMsg(	"CAS: conn req from %s\n",
+			(int) /* sic */ buf,
 			NULL,
 			NULL,
 			NULL,
@@ -356,11 +349,18 @@ FAST int 		sock;
 				client->recv.cnt = 0ul;
 			}
 		}else{
+            char buf[64];
+ 
 			client->recv.cnt = 0ul;
+
 			/*
-			 * disconnect on message alignment
-			 * problems
+			 * disconnect when there are severe message errors
 			 */
+            ipAddrToA (&client->addr, buf, sizeof(buf));
+            logMsg ("CAS: forcing disconnect from %s\n",
+	            /* sic */ (int) buf, NULL, NULL,
+	            NULL, NULL, NULL);
+
 			break;
 		}
 

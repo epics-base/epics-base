@@ -35,8 +35,6 @@ tsBTreeBench_SRCS += tsBTreeBench.cc
 PROD += tsBTreeBench
 OBJS_IOC += tsBTreeBench
 
-CXXCMPLR = STRICT
-
 PROD_LIBS = Com
 
 include $(TOP)/configure/RULES

@@ -22,7 +22,6 @@ SRCS += devMbboDirectSoft.c
 SRCS += devMbboDirectSoftRaw.c
 SRCS += devMbboSoft.c
 SRCS += devMbboSoftRaw.c
-SRCS += devPtSoft.c
 SRCS += devSASoft.c
 SRCS += devSiSoft.c
 SRCS += devSoSoft.c

@@ -705,7 +705,7 @@ epicsShareFunc void epicsShareAPI ca_signal_with_file_and_lineno
  * pFormat      R   printf dtyle format string (and optional arguments)
  *
  */
-epicsShareFunc void epicsShareAPI ca_signal_formated (long ca_status, READONLY char *pfilenm, 
+epicsShareFunc void epicsShareAPI ca_signal_formated (long ca_status, const char *pfilenm, 
                                        int lineno, const char *pFormat, ...);
 
 /*

@@ -56,29 +56,7 @@ extern "C" {
 enum fdi_type {fdi_read, fdi_write, fdi_excp};
 enum alarm_list_type {alt_invalid, alt_alarm, alt_expired, alt_free};
 
-typedef struct{
-    ELLLIST		fdentry_list;
-    ELLLIST		fdentry_in_use_list;
-    ELLLIST		fdentry_free_list;
-    ELLLIST		alarm_list;
-    ELLLIST		expired_alarm_list;
-    ELLLIST   	free_alarm_list;
-    fd_set		readch;
-    fd_set		writech;
-    fd_set		excpch;
-	BUCKET		*pAlarmBucket;
-	unsigned	nextAlarmId;
-    SOCKET		maxfd;
-	int		select_tmo;
-	semId		lock;
-    semId		fdmgr_pend_event_lock;
-	semId		expired_alarm_lock;
-	semId		fd_handler_lock;
-	unsigned long   clk_rate;       /* ticks per sec */
-	unsigned long	last_tick_count;
-	unsigned long	sec_offset;
-	threadId	*fdmgr_pend_event_tid;
-}fdctx;
+typedef void fdctx;
 
 /*
  * C "typedef" name "alarm" was changed to "fdmgrAlarm" to avoid collisions

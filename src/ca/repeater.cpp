@@ -197,15 +197,15 @@ LOCAL void fanOut (struct sockaddr_in *pFrom, const char *pMsg, unsigned msgSize
         }
 
         status = send ( pclient->sock, (char *)pMsg, msgSize, 0);
-        if (status>=0) {
+        if ( status >= 0 ) {
 #ifdef DEBUG
             ca_printf ("Sent to %d\n", 
                 ntohs (pclient->from.sin_port));
 #endif
         }
-        if(status < 0){
+        if ( status < 0 ) {
             int errnoCpy = SOCKERRNO;
-            if (errnoCpy == SOCK_ECONNREFUSED) {
+            if ( errnoCpy == SOCK_ECONNREFUSED ) {
 #ifdef DEBUG
                 ca_printf ("Deleted client %d\n",
                     ntohs (pclient->from.sin_port));
@@ -213,7 +213,7 @@ LOCAL void fanOut (struct sockaddr_in *pFrom, const char *pMsg, unsigned msgSize
                 verify = TRUE;
             }
             else {
-                ca_printf(
+                ca_printf (
 "CA Repeater: UDP fan out err was \"%s\"\n",
                     SOCKERRSTR(errnoCpy));
             }

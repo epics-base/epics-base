@@ -239,6 +239,7 @@ cac::~cac ()
     // this blocks until the UDP thread exits so that
     // it will not sneak in any new clients
     delete this->pudpiiu;
+    this->pudpiiu = 0; // for tcpCircuitShutdown
 
     //
     // shutdown all tcp connections

@@ -24,6 +24,14 @@ LIBSRCS := gdd.cc gddTest.cc gddAppTable.cc gddNewDel.cc \
 
 LIBRARY := gdd
 
+# build locally:
+TESTPROD:=genApps
+TESTPROD_SRCS:=genApps.cc gdd.cc gddTest.cc gddAppTable.cc\
+		gddNewDel.cc gddAppDefs.cc \
+		aitTypes.cc aitConvert.cc aitHelpers.cc
+
+include $(TOP)/config/RULES.Host
+
 # cannot generate these dependencies automatically
 #
 # Problem: Some dependencies are include files that may
@@ -43,12 +51,6 @@ aitConvertGenerated.cc: aitGen$(EXE) ../aitTypes.h
 ./gddApps.h: genApps$(EXE)
 	./genApps$(EXE) $@
 
-# build locally:
-TESTPROD:=genApps
-TESTPROD_SRCS:=genApps.cc gdd.cc gddTest.cc gddAppTable.cc\
-		gddNewDel.cc gddAppDefs.cc \
-		aitTypes.cc aitConvert.cc aitHelpers.cc
-
 # unfortunately there is only one TESTPROD/TESTPROD_SRCS allowed
 # right now
 # (or many 'simple' progs:
@@ -62,7 +64,5 @@ aitGen$(EXE): aitGen$(OBJ) aitTypes$(OBJ)
 
 clean::
 	$(RM) aitConvertGenerated.cc aitGen$(EXE) genApps$(EXE)
-
-include $(TOP)/config/RULES.Host
 
 #	EOF base/src/gdd/Makefile.Host

@@ -46,14 +46,19 @@
 epicsSingleton < tsFreeList < dbPutNotifyBlocker, 1024 > > dbPutNotifyBlocker::pFreeList;
 
 dbPutNotifyBlocker::dbPutNotifyBlocker ( dbChannelIO &chanIn ) :
-    pNotify ( 0 )
+    pNotify ( 0 ), maxValueSize ( sizeof ( this->dbrScalarValue ) )
 {
-    memset ( &this->pn, '\0', sizeof ( this->pn ) );
+    memset ( & this->pn, '\0', sizeof ( this->pn ) );
+    memset ( & this->dbrScalarValue, '\0', sizeof ( this->dbrScalarValue ) );
+    this->pn.pbuffer = & this->dbrScalarValue;
 }
 
 dbPutNotifyBlocker::~dbPutNotifyBlocker () 
 {
     this->cancel ();
+    if ( this->maxValueSize > sizeof ( this->dbrScalarValue ) ) {
+        delete [] this->pn.pbuffer;
+    }
 }
 
 void dbPutNotifyBlocker::destroy ()
@@ -66,9 +71,21 @@ void dbPutNotifyBlocker::cancel ()
     if ( this->pn.paddr ) {
         dbNotifyCancel ( &this->pn );
     }
-    memset ( &this->pn, '\0', sizeof ( this->pn ) );
     this->pNotify = 0;
     this->block.signal ();
+}
+
+void dbPutNotifyBlocker::expandValueBuf ( unsigned long newSize )
+{
+    if ( this->maxValueSize < newSize ) {
+        if ( this->maxValueSize > sizeof ( this->dbrScalarValue ) ) {
+            delete [] this->pn.pbuffer;
+            this->maxValueSize = sizeof ( this->dbrScalarValue );
+            this->pn.pbuffer = & this->dbrScalarValue;
+        }
+        this->pn.pbuffer = new char [newSize];
+        this->maxValueSize = newSize;
+    }
 }
 
 extern "C" void putNotifyCompletion ( putNotify *ppn )
@@ -97,7 +114,6 @@ extern "C" void putNotifyCompletion ( putNotify *ppn )
         errlogPrintf ( "put notify completion with nill pNotify?\n" );
     }
     // no need to lock here because only one put notify at a time is allowed to run
-    memset ( &pBlocker->pn, '\0', sizeof ( pBlocker->pn ) );
     pBlocker->pNotify = 0;
     pBlocker->block.signal ();
 }
@@ -140,16 +156,18 @@ void dbPutNotifyBlocker::initiatePutNotify ( epicsGuard < epicsMutex > & locker,
     status = dbPutNotifyMapType ( 
                 &this->pn, static_cast <short> ( type ) );
     if ( status ) {
-        memset ( &this->pn, '\0', sizeof ( this->pn ) );
         this->pNotify = 0;
         throw cacChannel::badType();
     }
 
-    this->pn.pbuffer = const_cast < void * > ( pValue );
     this->pn.nRequest = static_cast < unsigned > ( count );
     this->pn.paddr = &addr;
     this->pn.userCallback = putNotifyCompletion;
     this->pn.usrPvt = this;
+
+    unsigned long size = dbr_size_n ( type, count );
+    this->expandValueBuf ( size );
+    memcpy ( this->pn.pbuffer, pValue, size );
 
     ::dbPutNotify ( &this->pn );
 }

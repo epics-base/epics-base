@@ -58,9 +58,27 @@ protected:
     virtual ~dbPutNotifyBlocker ();
 private:
     putNotify pn;
+    //
+    // Include a union of all scalar types 
+    // including fixed length strings so
+    // that in many cases we can avoid 
+    // allocating another buffer
+    // 
+    union {
+        dbr_string_t strval;
+        dbr_short_t shrtval;
+        dbr_short_t intval;
+        dbr_float_t fltval;
+        dbr_enum_t enmval;
+        dbr_char_t charval;
+        dbr_long_t longval;
+        dbr_double_t doubleval;
+    } dbrScalarValue;
     epicsEvent block;
     cacWriteNotify * pNotify;
+    unsigned long maxValueSize;
     dbSubscriptionIO * isSubscription ();
+    void dbPutNotifyBlocker::expandValueBuf ( unsigned long newSize );
     static epicsSingleton < tsFreeList < dbPutNotifyBlocker > > pFreeList;
     friend void putNotifyCompletion ( putNotify *ppn );
 	dbPutNotifyBlocker ( const dbPutNotifyBlocker & );

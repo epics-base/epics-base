@@ -46,5 +46,7 @@ int epicsStringTest()
     if(epicsStrCaseCmp("abcde","ABCD")==0) printf("case 20 failed\n");
     if(epicsStrCaseCmp("abcde","ABCDF")==0) printf("case 21 failed\n");
 
+    printf("String comparison tests completed.\n");
+
     return(0);
 }

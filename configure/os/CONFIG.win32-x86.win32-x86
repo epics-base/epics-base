@@ -108,7 +108,6 @@ CPP = gcc -x c -E
 CCC = cl 
 CONFORM_CXXFLAGS_NORMAL = /nologo /D__STDC__=0 /GX /GR
 CONFORM_CXXFLAGS_STRICT = /nologo /D__STDC__=0 /GX /GR
-TEMPL_INST_CXXFLAG =
 
 #
 # /W<N> use warning level N

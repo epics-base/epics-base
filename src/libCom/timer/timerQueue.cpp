@@ -118,21 +118,24 @@ double timerQueue::process ( const epicsTime & currentTime )
         // while the call back was running
         //
         if ( this->cancelPending ) {
+            this->pExpireTmr->curState = timer::stateLimbo;
 
             // 1) if another thread is canceling cancel() waits for this
             // 2) if this thread is canceling in the timer callback then
             // dont touch timer or notify here because the cancel might 
-            // have occurred because they destroyed the time rin the 
+            // have occurred because they destroyed the timer in the 
             // callback
             this->cancelPending = false;
             this->cancelBlockingEvent.signal ();
         }
-        // restart as nec
         else {
-            this->pExpireTmr->curState = timer::stateLimbo;
+            // restart as nec
             if ( expStat.restart() ) {
                 this->pExpireTmr->privateStart ( 
                     *pTmpNotify, currentTime + expStat.expirationDelay() );
+            }
+            else {
+                this->pExpireTmr->curState = timer::stateLimbo;
             }
         }
         this->pExpireTmr = 0;

@@ -4,25 +4,14 @@ TOP = $(CAS)/../..
 
 include $(TOP)/config/CONFIG_BASE
 
-#CPLUSPLUS = G++
-
-GDD = $(CAS)/../gdd
-
-CAS_INCLUDES = -I$(CAS)/generic -I$(CAS)/../ca
-
-USR_INCLUDES = -I$(GDD) -I$(GDD)/O.$(T_A) $(CAS_INCLUDES) 
-
+USR_INCLUDES = 
 USR_LDLIBS = -lcas -lca -lCom -lgdd 
 
-ifeq ($(CPLUSPLUS),G++)
-USR_LDLIBS += -liberty
-endif
-
-USR_LDFLAGS = -L$(GDD)/O.$(T_A)/
+USR_LDFLAGS = 
 
 DEPLIBS_BASE = $(EPICS_BASE_LIB)
-DEPLIBSWOCAS = $(DEPLIBS_BASE)/libca.a \
-	$(DEPLIBS_BASE)/libCom.a $(GDD)/O.$(T_A)/libgdd.a
+DEPLIBSWOCAS = $(DEPLIBS_BASE)/libca.a $(DEPLIBS_BASE)/libCom.a \
+	$(DEPLIBS_BASE)/libgdd.a
 DEPLIBS = $(DEPLIBS_BASE)/libcas.a $(DEPLIBSWOCAS)
 
 SRCS.cc += ../exServer.cc 

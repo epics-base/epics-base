@@ -198,7 +198,7 @@ static long read_mbbi(struct mbbiRecord	*pmbbi)
 
 	
 	pvmeio = (struct vmeio *)&(pmbbi->inp.value);
-	status = at5vxi_bi_driver(pvmeio->card,pmbbi->mask,&value);
+	status = xy240_bi_driver(pvmeio->card,pmbbi->mask,&value);
 	if(status==0) {
 		pmbbi->rval = value;
 	} else {

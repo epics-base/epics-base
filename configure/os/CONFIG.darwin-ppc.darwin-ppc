@@ -21,19 +21,6 @@ CODE_CFLAGS =
 CODE_CXXFLAGS = 
 
 #
-# -O3 is too agressive on Darwin with the April 2002 Developer Tools 
-# and causes problems with undefined references to non-virtual thunks
-# with the August 2002 Developer Tools.
-#
-OPT_CFLAGS_YES = -O2
-OPT_CXXFLAGS_YES = -O2
-
-#
-# Static linking fails on OS X (missing crt0.o)
-#
-STATIC_LDFLAGS_YES =
-
-#
 # Add support for Objective-C source
 #
 vpath %.m $(USR_VPATH) $(ALL_SRC_DIRS)

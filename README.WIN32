@@ -192,14 +192,27 @@ in a visual C++ make file project: "kill caRepeater.exe&make -C ..". Be careful
 not to introduce additional spaces around the &. The kill.exe command is in the
 NT resource kit.
 
-6) When compiling applications that link with EPICS base you will need to
-include from <epics>\base\include, include from <epics>\base\include\os\win32,
-and augment the link path with <epics>\base\lib\win32-x86. If the visual C++
-/Za option is not used then you will also need to define __STDC__ to be zero 
-on the command line. Its important that all .DLL and .EXE files in the same
-process use the same version of the Microsoft run-time support. Therefore,
-you must also use the /MDd (multithreaded debug DLL version of the Microsoft 
-run-time libraries) or /MD (multithreaded DLL version of the Microsoft run-time 
-libraries) options depending on if it is an debug build or not. The above assumes 
-that you are linking with the DLL versions of the EPICS libraries (xxx.lib) and
-not with th object libraries (xxxObj.lib).
+6) Here are the issues that you must be aware of if you are building code that 
+calls EPICS, but are not using the EPICS build system.
+
+6a) You will need to include header files from the following paths.
+    <epics>\base\include
+    <epics>\base\include\os\win32
+6b) You will need to link with the following path in effect.
+    <epics>\base\lib\win32-x86. 
+6c) If the visual C++ /Za option is not used then you will also need to define 
+    __STDC__ to be zero on the command line so that EPICS headers will know that
+    a ANSI standard C compiler is in use. 
+6d) If you link with EPICS object libraries then specify /MT or /MTd
+    depending on whether EPICS base and your code are built for debugging. 
+    This specifies the multithreaded operating environment required by EPICS.
+    It will also not define _DLL and therefore the EPICS header files will
+    not specify that sharable libraries are being called. EPICS object library 
+    names follow the convention "xxxObj.lib".
+6c) If you link with EPICS shareable libraries (with DLLs) then you must 
+    use /MDd or /MD depending on whether EPICS base and your code are 
+    built for debugging. This specifies the multithreaded operating environment 
+    required by EPICS. It will also define _DLL and therefore the EPICS header 
+    files will specify an optimized calling convention for shareable libraries. 
+    EPICS shareable libraries (DLL) names follow the convention "xxx.lib"
+    and "xxx.dll".

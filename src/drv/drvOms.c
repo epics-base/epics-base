@@ -73,7 +73,7 @@
 #include	<dbDefs.h>
 #include	<drvSup.h>
 #include	<module_types.h>
-#include	<oms_sm_driver.h>
+#include	<drvOms.h>
 #include	<steppermotor.h>
 
 #define OMS_INT_LEV 5

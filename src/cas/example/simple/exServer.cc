@@ -252,7 +252,7 @@ pvAttachReturn exServer::pvAttach
 //
 // pvInfo::createPV()
 //
-exPV *pvInfo::createPV (exServer &exCAS, aitBool preCreateFlag, aitBool scanOn)
+exPV *pvInfo::createPV (exServer &, aitBool preCreateFlag, aitBool scanOn)
 {
 	if (this->pPV) {
 		return this->pPV;

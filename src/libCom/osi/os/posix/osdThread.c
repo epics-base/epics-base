@@ -67,6 +67,8 @@ static ELLLIST pthreadList;
 static commonAttr *pcommonAttr = 0;
 static int epicsThreadOnceCalled = 0;
 
+static epicsThreadOSD *createImplicit(void);
+
 #define checkStatus(status,message) \
 if((status))  {\
     errlogPrintf("%s error %s\n",(message),strerror((status))); \
@@ -111,9 +113,12 @@ static void myAtExit(void)
     status = pthread_mutex_lock(&listLock);
     checkStatusQuit(status,"pthread_mutex_lock","myAtExit");
     pthreadSelf = (epicsThreadOSD *)pthread_getspecific(getpthreadInfo);
+    if(pthreadSelf==NULL)
+        pthreadSelf = createImplicit();
     pthreadInfo=(epicsThreadOSD *)ellFirst(&pthreadList);
     while(pthreadInfo) {
-        if(pthreadInfo != pthreadSelf){	/* dont cancel this thread! */
+        if(pthreadInfo != pthreadSelf /*dont cancel this thread*/
+        && (strcmp("_main_",pthreadInfo->name)!=0)){/* dont cancel main*/
             pthread_cancel(pthreadInfo->tid);
         }
         pthreadInfo=(epicsThreadOSD *)ellNext(&pthreadInfo->node);

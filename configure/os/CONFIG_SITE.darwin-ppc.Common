@@ -1,0 +1,11 @@
+# CONFIG_SITE.darwin-ppc.Common
+#
+# $Id$
+# This file is maintained by the build community.
+#
+# Site override definitions for darwin-ppc host builds
+#-------------------------------------------------------
+
+# JBA test override values
+#CROSS_COMPILER_TARGET_ARCHS = vxWorks-68040 solaris-sparc
+#CROSS_COMPILER_TARGET_ARCHS = vxWorks-68040

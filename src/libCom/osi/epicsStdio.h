@@ -67,6 +67,7 @@ epicsShareFunc int epicsShareAPI epicsStdoutPrintf(
 #undef printf
 #endif /*printf*/
 #define printf epicsStdoutPrintf
+#endif /* epicsStdioPVT */
 
 #ifdef  __cplusplus
 }

@@ -18,16 +18,16 @@
 
 typedef void (*pProtoStubUDP) (udpiiu *piiu, caHdr *pMsg, const struct sockaddr_in *pnet_addr);
 
-/*
- *  cac_udp_recv_msg ()
- */
-LOCAL int cac_udp_recv_msg (udpiiu *piiu)
+//
+//  udpiiu::recvMsg ()
+//
+int udpiiu::recvMsg ()
 {
     osiSockAddr         src;
     int                 src_size = sizeof (src);
     int                 status;
 
-    status = recvfrom ( piiu->sock, piiu->recvBuf, sizeof (piiu->recvBuf), 0,
+    status = recvfrom ( this->sock, this->recvBuf, sizeof ( this->recvBuf ), 0,
                         &src.sa, &src_size );
     if (status < 0) {
         int errnoCpy = SOCKERRNO;
@@ -42,7 +42,7 @@ LOCAL int cac_udp_recv_msg (udpiiu *piiu)
             return -1;
         }
         if ( errnoCpy == SOCK_EINTR ) {
-            if ( piiu->shutdownCmd ) {
+            if ( this->shutdownCmd ) {
                 return -1;
             }
             else {
@@ -62,8 +62,8 @@ LOCAL int cac_udp_recv_msg (udpiiu *piiu)
             "Unexpected UDP recv error %s\n", SOCKERRSTR(errnoCpy));
     }
     else if (status > 0) {
-        status = piiu->post_msg ( &src.ia,
-                    piiu->recvBuf, (unsigned long) status );
+        status = this->post_msg ( &src.ia,
+                    this->recvBuf, (unsigned long) status );
         if ( status != ECA_NORMAL ) {
             char buf[64];
 
@@ -89,43 +89,23 @@ extern "C" void cacRecvThreadUDP (void *pParam)
     int status;
 
     do {
-        status = cac_udp_recv_msg (piiu);
+        status = piiu->recvMsg ();
     } while ( status == 0 );
 
     semBinaryGive (piiu->recvThreadExitSignal);
 }
 
 /*
- *  NOTIFY_CA_REPEATER()
+ *  udpiiu::repeaterRegistrationMessage ()
  *
- *  tell the cast repeater that another client needs fan out
- *
- *  NOTES:
- *  1)  local communication only (no LAN traffic)
- *
+ *  register with the repeater 
  */
-void notify_ca_repeater (udpiiu *piiu)
+void udpiiu::repeaterRegistrationMessage ( unsigned attemptNumber )
 {
     caHdr msg;
     osiSockAddr saddr;
     int status;
-    static int once = FALSE;
     int len;
-
-    if (piiu->repeaterContacted) {
-        return;
-    }
-
-    if (piiu->repeaterTries > N_REPEATER_TRIES_PRIOR_TO_MSG ) {
-        if (!once) {
-            ca_printf (
-        "Unable to contact CA repeater after %d tries\n",
-            N_REPEATER_TRIES_PRIOR_TO_MSG);
-            ca_printf (
-        "Silence this message by starting a CA repeater daemon\n");
-            once = TRUE;
-        }
-    }
 
     /*
      * In 3.13 beta 11 and before the CA repeater calls local_addr() 
@@ -145,9 +125,9 @@ void notify_ca_repeater (udpiiu *piiu)
      * either the loopback address or the address returned
      * by local address (the first non-loopback address found)
      */
-    if (piiu->repeaterTries&1) {
-        saddr = osiLocalAddr (piiu->sock);
-        if (saddr.sa.sa_family != AF_INET) {
+    if ( attemptNumber & 1 ) {
+        saddr = osiLocalAddr ( this->sock );
+        if ( saddr.sa.sa_family != AF_INET ) {
             /*
              * use the loop back address to communicate with the CA repeater
              * if this os does not have interface query capabilities
@@ -155,18 +135,18 @@ void notify_ca_repeater (udpiiu *piiu)
              * this will only work with 3.13 beta 12 CA repeaters or later
              */
             saddr.ia.sin_family = AF_INET;
-            saddr.ia.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
-            saddr.ia.sin_port = htons (piiu->repeaterPort);   
+            saddr.ia.sin_addr.s_addr = htonl ( INADDR_LOOPBACK );
+            saddr.ia.sin_port = htons ( this->repeaterPort );   
         }
     }
     else {
         saddr.ia.sin_family = AF_INET;
-        saddr.ia.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
-        saddr.ia.sin_port = htons (piiu->repeaterPort);   
+        saddr.ia.sin_addr.s_addr = htonl ( INADDR_LOOPBACK );
+        saddr.ia.sin_port = htons ( this->repeaterPort );   
     }
 
-    memset ((char *)&msg, 0, sizeof(msg));
-    msg.m_cmmd = htons (REPEATER_REGISTER);
+    memset ( (char *) &msg, 0, sizeof (msg) );
+    msg.m_cmmd = htons ( REPEATER_REGISTER );
     msg.m_available = saddr.ia.sin_addr.s_addr;
 
     /*
@@ -186,13 +166,13 @@ void notify_ca_repeater (udpiiu *piiu)
      * therefore restarted the CA repeater - and therefore
      * moved it to an EPICS release that accepts this protocol)
      */
-#   if defined (DOES_NOT_ACCEPT_ZERO_LENGTH_UDP)
+#   if defined ( DOES_NOT_ACCEPT_ZERO_LENGTH_UDP )
         len = sizeof (msg);
 #   else 
         len = 0;
 #   endif 
 
-    status = sendto ( piiu->sock, (char *) &msg, len,  
+    status = sendto ( this->sock, (char *) &msg, len,  
                 0, (struct sockaddr *)&saddr, sizeof (saddr) );
     if ( status < 0 ) {
         int errnoCpy = SOCKERRNO;
@@ -207,88 +187,6 @@ void notify_ca_repeater (udpiiu *piiu)
                 SOCKERRSTR(errnoCpy));
         }
     }
-    piiu->repeaterTries++;
-    piiu->contactRepeater = 0u;
-}
-
-/*
- *  cacSendThreadUDP ()
- */
-extern "C" void cacSendThreadUDP (void *pParam)
-{
-    udpiiu *piiu = (udpiiu *) pParam;
-
-    while ( ! piiu->shutdownCmd ) {
-        int status;
-
-        if ( piiu->contactRepeater ) {
-            notify_ca_repeater (piiu);
-        }
-
-        semBinaryMustTake ( piiu->xmitSignal );
-
-        semMutexMustTake (piiu->xmitBufLock);
-
-        if (piiu->nBytesInXmitBuf > 0) {
-            osiSockAddrNode  *pNode;
-
-            pNode = (osiSockAddrNode *) ellFirst (&piiu->dest);
-            while ( pNode ) {
-
-                assert ( piiu->nBytesInXmitBuf <= INT_MAX );
-                status = sendto ( piiu->sock, piiu->xmitBuf,   
-                        (int) piiu->nBytesInXmitBuf, 0, 
-                        &pNode->addr.sa, sizeof (pNode->addr.sa) );
-                if ( status <= 0 ) {
-                    int localErrno = SOCKERRNO;
-
-                    if (status==0) {
-                        break;
-                    }
-
-                    if (localErrno == SOCK_SHUTDOWN) {
-                        break;
-                    }
-                    else if ( localErrno == SOCK_ENOTSOCK ) {
-                        break;
-                    }
-                    else if ( localErrno == SOCK_EBADF ) {
-                        break;
-                    }
-                    else if ( localErrno == SOCK_EINTR ) {
-                        if ( piiu->shutdownCmd ) {
-                            break;
-                        }
-                        else {
-                            continue;
-                        }
-                    }
-                    else {
-                        char buf[64];
-
-                        ipAddrToA (&pNode->addr.ia, buf, sizeof (buf));
-
-                        ca_printf (
-                            "CAC: error = \"%s\" sending UDP msg to %s\n",
-                            SOCKERRSTR(localErrno), buf);
-
-                        break;
-                    }
-                }
-                pNode = (osiSockAddrNode *) ellNext (&pNode->node);
-            }
-
-            piiu->nBytesInXmitBuf = 0u;
-
-            if ( status <= 0 ) {
-                break;
-            }
-        }
-
-        semMutexGive ( piiu->xmitBufLock );
-    }
-
-    semBinaryGive ( piiu->sendThreadExitSignal) ;
 }
 
 /*
@@ -421,9 +319,6 @@ udpiiu::udpiiu ( cac *pcac ) :
     }
 
     this->nBytesInXmitBuf = 0u;
-    this->contactRepeater = 0u;
-    this->repeaterContacted = 0u;
-    this->repeaterTries = 0u;
 
     this->xmitBufLock = semMutexCreate ();
     if (!this->xmitBufLock) {
@@ -433,24 +328,6 @@ udpiiu::udpiiu ( cac *pcac ) :
 
     this->recvThreadExitSignal = semBinaryCreate (semEmpty);
     if ( ! this->recvThreadExitSignal ) {
-        semMutexDestroy (this->xmitBufLock);
-        socket_close (this->sock);
-        throwWithLocation ( noMemory () );
-    }
-
-    this->sendThreadExitSignal = semBinaryCreate (semEmpty);
-    if ( ! this->sendThreadExitSignal ) {
-        semBinaryDestroy (this->recvThreadExitSignal);
-        semMutexDestroy (this->xmitBufLock);
-        socket_close (this->sock);
-        throwWithLocation ( noMemory () );
-    }
-
-    this->xmitSignal = semBinaryCreate (semEmpty);
-    if ( ! this->xmitSignal ) {
-        ca_printf ("CA: unable to create xmit signal\n");
-        semBinaryDestroy (this->recvThreadExitSignal);
-        semBinaryDestroy (this->sendThreadExitSignal);
         semMutexDestroy (this->xmitBufLock);
         socket_close (this->sock);
         throwWithLocation ( noMemory () );
@@ -481,35 +358,6 @@ udpiiu::udpiiu ( cac *pcac ) :
                 threadGetStackSize (threadStackMedium), cacRecvThreadUDP, this);
         if (tid==0) {
             ca_printf ("CA: unable to create UDP receive thread\n");
-            ::shutdown (this->sock, SD_BOTH);
-            semBinaryDestroy (this->xmitSignal);
-            semBinaryDestroy (this->recvThreadExitSignal);
-            semBinaryDestroy (this->sendThreadExitSignal);
-            semMutexDestroy (this->xmitBufLock);
-            socket_close (this->sock);
-            throwWithLocation ( noMemory () );
-        }
-    }
-
-    {
-        unsigned priorityOfSelf = threadGetPrioritySelf ();
-        unsigned priorityOfSend;
-        threadId tid;
-        threadBoolStatus tbs;
-
-        tbs  = threadHighestPriorityLevelBelow (priorityOfSelf, &priorityOfSend);
-        if ( tbs != tbsSuccess ) {
-            priorityOfSend = priorityOfSelf;
-        }
-
-        tid = threadCreate ( "CAC-UDP-send", priorityOfSend,
-                threadGetStackSize (threadStackMedium), cacSendThreadUDP, this );
-        if (tid==0) {
-            ca_printf ("CA: unable to create UDP transmitt thread\n");
-            ::shutdown (this->sock, SD_BOTH);
-            semMutexMustTake (this->recvThreadExitSignal);
-            semBinaryDestroy (this->xmitSignal);
-            semBinaryDestroy (this->sendThreadExitSignal);
             semBinaryDestroy (this->recvThreadExitSignal);
             semMutexDestroy (this->xmitBufLock);
             socket_close (this->sock);
@@ -517,8 +365,8 @@ udpiiu::udpiiu ( cac *pcac ) :
         }
     }
 
-    if (pcac->ca_fd_register_func) {
-        (*pcac->ca_fd_register_func) (pcac->ca_fd_register_arg, this->sock, TRUE);
+    if ( pcac->ca_fd_register_func ) {
+        ( *pcac->ca_fd_register_func ) ( pcac->ca_fd_register_arg, this->sock, TRUE );
     }
 
     if ( ! repeater_installed (this) ) {
@@ -552,8 +400,6 @@ udpiiu::udpiiu ( cac *pcac ) :
             ca_printf ("CA: unable to start CA repeater daemon detached process\n");
         }
     }
-
-    this->repeaterSubscribeTmr.reschedule ();
 }
 
 /*
@@ -576,14 +422,11 @@ udpiiu::~udpiiu ()
     }
     UNLOCK (this->pcas);
 
-    // wait for send and recv threads to exit
+    // wait for recv threads to exit
     semBinaryMustTake (this->recvThreadExitSignal);
-    semBinaryMustTake (this->sendThreadExitSignal);
 
-    semBinaryDestroy (this->xmitSignal);
     semMutexDestroy (this->xmitBufLock);
     semBinaryDestroy (this->recvThreadExitSignal);
-    semBinaryDestroy (this->sendThreadExitSignal);
     ellFree (&this->dest);
 
     if (this->pcas->ca_fd_register_func) {
@@ -593,7 +436,7 @@ udpiiu::~udpiiu ()
 }
 
 /*
- *  udpiiu::sutdown ()
+ *  udpiiu::shutdown ()
  */
 void udpiiu::shutdown ()
 {
@@ -613,7 +456,6 @@ void udpiiu::shutdown ()
         }
     }
     UNLOCK (this->pcas);
-    semBinaryGive (this->xmitSignal);
 }
 
 /*
@@ -823,11 +665,7 @@ LOCAL void beacon_action ( udpiiu * piiu,
 LOCAL void repeater_ack_action (udpiiu * piiu, 
 	caHdr * /* pMsg */,  const struct sockaddr_in * /* pnet_addr */)
 {
-    piiu->repeaterContacted = 1u;
-#   ifdef DEBUG
-        ca_printf ( "CAC: repeater confirmation recv\n");
-#   endif
-    return;
+    piiu->repeaterSubscribeTmr.confirmNotify ();
 }
 
 /*
@@ -1055,7 +893,8 @@ int udpiiu::pushDatagramMsg (const caHdr *pMsg, const void *pExt, ca_uint16_t ex
     }
 
     semMutexMustTake (this->xmitBufLock);
-    if ( msgsize + this->nBytesInXmitBuf > sizeof (this->xmitBuf) ) {
+
+    if ( msgsize + this->nBytesInXmitBuf > sizeof ( this->xmitBuf ) ) {
         semMutexGive (this->xmitBufLock);
         return ECA_TOLARGE;
     }
@@ -1069,9 +908,72 @@ int udpiiu::pushDatagramMsg (const caHdr *pMsg, const void *pExt, ca_uint16_t ex
     }
     pbufmsg->m_postsize = htons (allignedExtSize);
     this->nBytesInXmitBuf += msgsize;
+
     semMutexGive (this->xmitBufLock);
 
     return ECA_NORMAL;
+}
+
+//
+// udpiiu::flush ()
+//
+void udpiiu::flush ()
+{
+    osiSockAddrNode  *pNode;
+
+    semMutexMustTake (this->xmitBufLock);
+
+    pNode = (osiSockAddrNode *) ellFirst ( &this->dest );
+    while ( pNode ) {
+        int status;
+
+        assert ( this->nBytesInXmitBuf <= INT_MAX );
+        status = sendto ( this->sock, this->xmitBuf,   
+                (int) this->nBytesInXmitBuf, 0, 
+                &pNode->addr.sa, sizeof ( pNode->addr.sa ) );
+        if ( status != (int) this->nBytesInXmitBuf ) {
+            if ( status >= 0 ) {
+                ca_printf ( "CAC: UDP sendto () call returned strange xmit count?\n" );
+                break;
+            }
+            else {
+                int localErrno = SOCKERRNO;
+
+                if ( localErrno == SOCK_EINTR ) {
+                    if ( this->shutdownCmd ) {
+                        break;
+                    }
+                    else {
+                        continue;
+                    }
+                }
+                else if ( localErrno == SOCK_SHUTDOWN ) {
+                    break;
+                }
+                else if ( localErrno == SOCK_ENOTSOCK ) {
+                    break;
+                }
+                else if ( localErrno == SOCK_EBADF ) {
+                    break;
+                }
+                else {
+                    char buf[64];
+
+                    ipAddrToA ( &pNode->addr.ia, buf, sizeof ( buf ) );
+
+                    ca_printf (
+                        "CAC: error = \"%s\" sending UDP msg to %s\n",
+                        SOCKERRSTR ( localErrno ), buf);
+                    break;
+                }
+            }
+        }
+        pNode = (osiSockAddrNode *) ellNext ( &pNode->node );
+    }
+
+    this->nBytesInXmitBuf = 0u;
+
+    semMutexGive ( this->xmitBufLock );
 }
 
 int udpiiu::pushStreamMsg ( const caHdr * /* pmsg */, 

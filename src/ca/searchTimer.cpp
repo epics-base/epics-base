@@ -41,18 +41,30 @@ searchTimer::searchTimer (udpiiu &iiuIn, osiTimerQueue &queueIn) :
 //
 void searchTimer::reset ( double delayToNextTry )
 {
-    LOCK (this->iiu.pcas);
-    this->retry = 0;
-    this->period = CA_RECAST_DELAY;
-    UNLOCK (this->iiu.pcas);
+    bool reschedule;
 
     if ( delayToNextTry < CA_RECAST_DELAY ) {
         delayToNextTry = CA_RECAST_DELAY;
     }
 
-    if ( this->timeRemaining () > delayToNextTry ) {
-        this->reschedule (delayToNextTry);
-        debugPrintf ( ("reschedualed search timer for completion in %f sec\n", delayToNextTry) );
+    LOCK (this->iiu.pcas);
+    this->retry = 0;
+    if ( this->period > delayToNextTry ) {
+        reschedule = true;
+    }
+    else {
+        reschedule = false;
+    }
+    this->period = CA_RECAST_DELAY;
+    UNLOCK (this->iiu.pcas);
+
+    if ( reschedule ) {
+        this->reschedule ( delayToNextTry );
+        debugPrintf ( ("rescheduled search timer for completion in %f sec\n", delayToNextTry) );
+    }
+    else {
+        this->activate ( delayToNextTry );
+        debugPrintf ( ("if inactive, search timer started to completion in %f sec\n", delayToNextTry) );
     }
 }
 
@@ -105,7 +117,7 @@ void searchTimer::notifySearchResponse (nciu *pChan)
         
     UNLOCK (this->iiu.pcas);
 
-    if (pChan->retrySeqNo == this->retrySeqNo) {
+    if ( pChan->retrySeqNo == this->retrySeqNo ) {
         this->reschedule (0.0);
     }
 }
@@ -115,8 +127,8 @@ void searchTimer::notifySearchResponse (nciu *pChan)
 //
 void searchTimer::expire ()
 {
-    tsDLIterBD<nciu>    chan(0);
-    tsDLIterBD<nciu>    firstChan(0);
+    tsDLIterBD <nciu>   chan(0);
+    tsDLIterBD <nciu>   firstChan(0);
     int                 status;
     unsigned            nSent=0u;
     
@@ -255,24 +267,24 @@ void searchTimer::expire ()
          * list (if successful)
          */
         status = chan->searchMsg ();
-        if (status != ECA_NORMAL) {
+        if ( status != ECA_NORMAL ) {
             nSent++;
             
-            if (nSent>=this->framesPerTry) {
+            if ( nSent >= this->framesPerTry ) {
                 break;
             }
 
-            /* flush out the search request buffer */
-            semBinaryGive (this->iiu.xmitSignal);
-            
-            /* try again */
+            // flush out the search request buffer 
+            this->iiu.flush ();
+           
+            // try again
             status = chan->searchMsg ();
             if (status != ECA_NORMAL) {
                 break;
             }
         }
 
-        if (this->searchTries<ULONG_MAX) {
+        if ( this->searchTries < ULONG_MAX ) {
             this->searchTries++;
         }
 
@@ -282,7 +294,7 @@ void searchTimer::expire ()
         /*
          * dont send any of the channels twice within one try
          */
-        if (chan==firstChan) {
+        if ( chan == firstChan ) {
             /*
              * add one to nSent because there may be 
              * one more partial frame to be sent
@@ -304,9 +316,9 @@ void searchTimer::expire ()
     
     UNLOCK (this->iiu.pcas);
 
-    /* flush out the search request buffer */
-    semBinaryGive (this->iiu.xmitSignal);
-    
+    // flush out the search request buffer
+    this->iiu.flush ();
+
     debugPrintf ( ("sent %u delay sec=%f\n", nSent, this->period) );
 }
 

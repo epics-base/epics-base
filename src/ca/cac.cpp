@@ -534,15 +534,18 @@ void cac::beaconNotify ( const inetAddrID &addr )
         int                 status;
 
         status = getsockname ( this->pudpiiu->sock, (struct sockaddr *) &saddr,
-                        &saddr_length);
-        assert ( status >= 0 );
+                        &saddr_length );
+        if ( status < 0 ) {
+            epicsPrintf ( "CAC: getsockname () error was \"%s\"\n", SOCKERRSTR (SOCKERRNO) );
+            return;
+        }
         port = ntohs ( saddr.sin_port );
     }
 
     {
         ca_real     delay;
 
-        delay = (port&CA_RECAST_PORT_MASK);
+        delay = ( port & CA_RECAST_PORT_MASK );
         delay /= MSEC_PER_SEC;
         delay += CA_RECAST_DELAY;
 

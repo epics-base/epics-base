@@ -23,17 +23,17 @@ struct putCvrtBuf {
 /*
  * nciu::nciu ()
  */
-nciu::nciu (cac *pcac, cacChannel &chan, const char *pNameIn) :
-    cacChannelIO (chan)
+nciu::nciu ( cac *pcac, cacChannel &chan, const char *pNameIn ) :
+    cacChannelIO ( chan )
 {
     static const caar defaultAccessRights = { false, false };
     size_t strcnt;
 
-    strcnt = strlen (pNameIn) + 1;
-    if ( strcnt > MAX_UDP - sizeof (caHdr) ) {
-        throwWithLocation ( caErrorCode (ECA_STRTOBIG) );
+    strcnt = strlen ( pNameIn ) + 1;
+    if ( strcnt > MAX_UDP - sizeof ( caHdr ) ) {
+        throwWithLocation ( caErrorCode ( ECA_STRTOBIG ) );
     }
-    this->pNameStr = reinterpret_cast <char *> ( malloc (strcnt) );
+    this->pNameStr = reinterpret_cast <char *> ( malloc ( strcnt ) );
     if ( ! this->pNameStr ) {
         this->f_fullyConstructed = false;
         return;
@@ -41,8 +41,6 @@ nciu::nciu (cac *pcac, cacChannel &chan, const char *pNameIn) :
     strcpy ( this->pNameStr, pNameIn );
 
     pcac->lock ();
-
-    pcac->installChannel (*this);
 
     this->typeCode = USHRT_MAX; /* invalid initial type    */
     this->count = 0;    /* invalid initial count     */
@@ -52,7 +50,8 @@ nciu::nciu (cac *pcac, cacChannel &chan, const char *pNameIn) :
     this->previousConn = 0;
     this->f_connected = false;
 
-    pcac->pudpiiu->addToChanList (this);
+    pcac->installChannel ( *this );
+    pcac->pudpiiu->addToChanList ( this );
 
     /*
      * reset broadcasted search counters
@@ -61,7 +60,7 @@ nciu::nciu (cac *pcac, cacChannel &chan, const char *pNameIn) :
 
     this->f_fullyConstructed = true;
 
-    chan.attachIO (*this);
+    chan.attachIO ( *this );
 
     pcac->unlock ();
 }

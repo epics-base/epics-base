@@ -319,9 +319,6 @@ private:
  */
 #define CA_RETRY_PERIOD     5   /* int sec to next keepalive */
 
-#define N_REPEATER_TRIES_PRIOR_TO_MSG   50
-#define REPEATER_TRY_PERIOD     (1.0) 
-
 /*
  * this determines the number of messages received
  * without a delay in between before we go into 
@@ -398,6 +395,7 @@ private:
 class repeaterSubscribeTimer : public osiTimer {
 public:
     repeaterSubscribeTimer (udpiiu &iiu, osiTimerQueue &queue);
+    void confirmNotify ();
 
 private:
 	virtual void expire ();
@@ -408,6 +406,9 @@ private:
 	virtual const char *name () const;
 
     udpiiu &iiu;
+    unsigned attempts;
+    bool registered;
+    bool once;
 };
 
 class udpiiu : public netiiu {
@@ -421,10 +422,13 @@ public:
     void addToChanList (nciu *chan);
     void removeFromChanList (nciu *chan);
     void disconnect (nciu *chan);
+    int recvMsg ();
     int post_msg (const struct sockaddr_in *pnet_addr, 
               char *pInBuf, unsigned long blockSize);
     int pushStreamMsg ( const caHdr *pmsg, const void *pext, bool BlockingOk );
     int pushDatagramMsg (const caHdr *pMsg, const void *pExt, ca_uint16_t extsize);
+    void repeaterRegistrationMessage ( unsigned attemptNumber );
+    void flush ();
 
     osiTime                 recvTime;
     char                    xmitBuf[MAX_UDP];   
@@ -432,16 +436,11 @@ public:
     searchTimer             searchTmr;
     repeaterSubscribeTimer  repeaterSubscribeTmr;
     semMutexId              xmitBufLock;
-    semBinaryId             xmitSignal;
     ELLLIST                 dest;
     SOCKET                  sock;
     semBinaryId             recvThreadExitSignal;
-    semBinaryId             sendThreadExitSignal;
     unsigned                nBytesInXmitBuf;
-    unsigned                repeaterTries;
     unsigned short          repeaterPort;
-    bool                    contactRepeater;
-    bool                    repeaterContacted;
     bool                    shutdownCmd;
 
     // exceptions

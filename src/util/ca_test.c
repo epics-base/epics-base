@@ -72,14 +72,15 @@ char	*pname,
 char	*pvalue
 )
 {
-
+    int status;
 	if(pvalue){
-		return capft(pname,pvalue);
+		status = capft(pname,pvalue);
 	}
 	else{
-		return cagft(pname);
+		status = cagft(pname);
 	}
     ca_task_exit();
+    return status;
 }
 
 

@@ -4,12 +4,9 @@ include $(EPICS)/config/CONFIG_BASE
 
 SRCS.c = ../epicsRelease.c
 
-OBJS =  epicsRelease.o
+LIBOBJS =  epicsRelease.o
 
-PROD = miscLib
+LIBNAME = miscLib
 
 include $(EPICS)/config/RULES.Vx
 
-miscLib: $(OBJS)
-	$(RM) $@
-	$(LINK.c) $@ $(OBJS) $(LDLIBS)

@@ -8,20 +8,16 @@ SRCS.c = \
 	../seq_main.c ../seq_ca.c ../seq_qry.c ../seq_task.c \
 	../seq_mac.c ../seq_prog.c
 
-OBJS = \
+LIBOBJS = \
 	seq_main.o seq_ca.o seq_qry.o seq_task.o \
 	seq_mac.o seq_prog.o seqVersion.o
 
-PROD = seq
+LIBNAME = seq
 
 include $(EPICS)/config/RULES.Vx
 
 clean::
 	@$(RM) seqVersion.c
-
-seq: $(OBJS)
-	$(RM) $@
-	$(LINK.c) $@ $(OBJS) $(LDLIBS)
 
 seqVersion.c: ../Version
 	$(RM) seqVersion.c

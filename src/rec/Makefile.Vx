@@ -47,54 +47,50 @@ SRCS.c += ../recWait.c
 SRCS.c += ../recWaitCa.c
 SRCS.c += ../recWaveform.c
 
-#	OBJS += recAai.o
-#	OBJS += recAao.o
-OBJS += recAi.o
-OBJS += recAo.o
-OBJS += recBi.o
-OBJS += recBo.o
-OBJS += recCalc.o
-OBJS += recCompress.o
-OBJS += recDfanout.o
-OBJS += recEg.o
-OBJS += recEgevent.o
-OBJS += recEr.o
-OBJS += recErevent.o
-OBJS += recEvent.o
-OBJS += recFanout.o
-#	OBJS += recGsub.o
-OBJS += recHistogram.o
-OBJS += recLongin.o
-OBJS += recLongout.o
-OBJS += recMbbi.o
-OBJS += recMbbiDirect.o
-OBJS += recMbbo.o
-OBJS += recMbboDirect.o
-#	OBJS += recPal.o
-OBJS += recPermissive.o
-OBJS += recPid.o
-OBJS += recPulseCounter.o
-OBJS += recPulseDelay.o
-OBJS += recPulseTrain.o
-OBJS += recScan.o
-OBJS += recSel.o
-OBJS += recSeq.o
-OBJS += recState.o
-OBJS += recSteppermotor.o
-OBJS += recStringin.o
-OBJS += recStringout.o
-OBJS += recSub.o
-OBJS += recSubArray.o
-OBJS += recTimer.o
-OBJS += recWait.o
-OBJS += recWaitCa.o
-OBJS += recWaveform.o
+#	LIBOBJS += recAai.o
+#	LIBOBJS += recAao.o
+LIBOBJS += recAi.o
+LIBOBJS += recAo.o
+LIBOBJS += recBi.o
+LIBOBJS += recBo.o
+LIBOBJS += recCalc.o
+LIBOBJS += recCompress.o
+LIBOBJS += recDfanout.o
+LIBOBJS += recEg.o
+LIBOBJS += recEgevent.o
+LIBOBJS += recEr.o
+LIBOBJS += recErevent.o
+LIBOBJS += recEvent.o
+LIBOBJS += recFanout.o
+#	LIBOBJS += recGsub.o
+LIBOBJS += recHistogram.o
+LIBOBJS += recLongin.o
+LIBOBJS += recLongout.o
+LIBOBJS += recMbbi.o
+LIBOBJS += recMbbiDirect.o
+LIBOBJS += recMbbo.o
+LIBOBJS += recMbboDirect.o
+#	LIBOBJS += recPal.o
+LIBOBJS += recPermissive.o
+LIBOBJS += recPid.o
+LIBOBJS += recPulseCounter.o
+LIBOBJS += recPulseDelay.o
+LIBOBJS += recPulseTrain.o
+LIBOBJS += recScan.o
+LIBOBJS += recSel.o
+LIBOBJS += recSeq.o
+LIBOBJS += recState.o
+LIBOBJS += recSteppermotor.o
+LIBOBJS += recStringin.o
+LIBOBJS += recStringout.o
+LIBOBJS += recSub.o
+LIBOBJS += recSubArray.o
+LIBOBJS += recTimer.o
+LIBOBJS += recWait.o
+LIBOBJS += recWaitCa.o
+LIBOBJS += recWaveform.o
 
-PROD = recSup
+LIBNAME = recSup
 
 include $(EPICS)/config/RULES.Vx
-
-$(PROD): $(OBJS)
-	$(RM) $@
-	$(LINK.c) $@ $(OBJS) $(LDLIBS)
 

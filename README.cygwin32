@@ -61,7 +61,7 @@ BUILD INSTRUCTIONS
         gunzip -d <basereleasename>.gz
         chmod +w -R *
 
-4) Set environment variables and path using base\cygwin32.bat
+4) Set environment variables and path using cygwin32.bat
 -------------------------------------------------------------
         <edit cygwin32.bat changing paths if necessary>
         cd <epicsBaseReleaseDir>\startup

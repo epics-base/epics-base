@@ -87,7 +87,7 @@ endif
 
 include $(TOP)/configure/RULES
 
-$(COMMON_DIR)/dbCommon.h: ../dbCommonRecord.dbd ../dbCommon.dbd $(COMMON_DIR)
+$(COMMON_DIR)/dbCommon.h: ../dbCommonRecord.dbd ../dbCommon.dbd
 	@$(RM) $@$(DEP)
 	@-$(MKMF) -m $@$(DEP) ..  $@ $<
 	$(RM) $@

@@ -18,6 +18,14 @@ include $(TOP)/config/CONFIG_BASE
 
 DIRS = src config
 
+#
+# this bootstraps in makeMakefile.pl (and others) so that it can
+# be used to create the first O.xxxx/Makefile
+#
+PERL_BOOTSTRAP_SCRIPTS = $(notdir $(wildcard $(TOP)/src/tools/*.pl))
+PERL_BOOTSTRAP_SCRIPTS_INSTALL = $(PERL_BOOTSTRAP_SCRIPTS:%=$(INSTALL_BIN)/%)
+all host cross inc rebuild uninstall clean depends buildInstall :: $(PERL_BOOTSTRAP_SCRIPTS_INSTALL)
+
 include $(TOP)/config/RULES_TOP
 
 release: 
@@ -28,3 +36,5 @@ built_release:
 	@echo TOP: Creating Fully Built Release...
 	@./MakeRelease -b $(INSTALL_LOCATION)
 
+$(INSTALL_BIN)/%.pl: $(TOP)/src/tools/%.pl
+	$(PERL) $(TOP)/src/tools/installEpics.pl -d -m 555 $< $(INSTALL_BIN)

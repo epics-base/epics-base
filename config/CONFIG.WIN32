@@ -27,18 +27,22 @@ HOME = $(HOMEDRIVE)$(HOMEPATH)
 BUILD_TYPE=Host
 
 #
-# optimize/debug flags
+# global WIN32 optimize/debug flag
+# (set this to NO in $(HOME)/EPICS_CONFIG if you need to compile 
+# in debug info)
 #
 HOST_OPT = YES 
+
 # 	-Ox  : maximum optimizations
 #	-Wn  ; use this warning level (all warnings at level 4)
-CXX_OPT_FLAGS_YES = -Ox -W1
+CXX_OPT_FLAGS_YES = -Ox -W3
 #	-Zi  : include debugging info in object files
-CXX_OPT_FLAGS_NO = -Zi -W1
+CXX_OPT_FLAGS_NO = -Zi -W3 -D_DEBUG
 CXX_OPT_FLAGS = $(CXX_OPT_FLAGS_$(HOST_OPT))
 LINK_OPT_FLAGS_YES = 
 LINK_OPT_FLAGS_NO = -debug
 LINK_OPT_FLAGS = $(LINK_OPT_FLAGS_$(HOST_OPT))
+
 
 #	to identify the general architecture class:
 #	should be BSD, SYSV, WIN32, ...
@@ -55,13 +59,14 @@ WIN32=1
 YACC  = $(EYACC)
 LEX   = $(ELEX)
 CC    = cl -nologo
-CP    = $(PERL) $(EPICS_BASE)/src/tools/cp.pl
-MV    = $(PERL) $(EPICS_BASE)/src/tools/mv.pl
-RM    = $(PERL) $(EPICS_BASE)/src/tools/rm.pl -f
-MKDIR = $(PERL) $(EPICS_BASE)/src/tools/mkdir.pl
-RMDIR = $(PERL) $(EPICS_BASE)/src/tools/rm.pl -rf
+CP    = $(PERL) $(INSTALL_BIN)/cp.pl
+MV    = $(PERL) $(INSTALL_BIN)/mv.pl
+RM    = $(PERL) $(INSTALL_BIN)/rm.pl -f
+MKDIR = $(PERL) $(INSTALL_BIN)/mkdir.pl
+RMDIR = $(PERL) $(INSTALL_BIN)/rm.pl -rf
 EXE=.exe
 OBJ=.obj
+ECHO = echo
 
 # Include files
 HOST_INCLUDES = -I. -I.. $(USR_INCLUDES) -I$(INSTALL_INCLUDE) \
@@ -77,29 +82,32 @@ HOST_INCLUDES = -I. -I.. $(USR_INCLUDES) -I$(INSTALL_INCLUDE) \
 #	-MDd : use MSVCRTD (run-time as DLL, multi-thread support)
 #	       this also calls for _DLL
 #
-OP_SYS_FLAGS:=-MDd $(CXX_OPT_FLAGS) -VMG -VMV -DWIN32 -D_WIN32 -D_DEBUG -D_WINDOWS \
+#	Unable to use -Za to turn on __STDC__ because there are
+#	non-standard constructs in winnt.h etc
+#
+OP_SYS_FLAGS = -MDd -VMG -VMV -DWIN32 -D_WIN32  -D_WINDOWS \
 	-D_X86_ -D_NTSDK -D_DLL -D__STDC__=0
 
 
-HOST_LDLIBS:=user32.lib kernel32.lib wsock32.lib advapi32.lib winmm.lib
-HOST_LDFLAGS:=-nologo -libpath:$(EPICS_BASE_LIB)
+HOST_LDLIBS = user32.lib kernel32.lib wsock32.lib advapi32.lib winmm.lib
+HOST_LDFLAGS = -nologo -libpath:$(EPICS_BASE_LIB)
 
 #	Files and flags needed to link DLLs (used in RULES.Host)
 #
 #	Strange but seems to work without: WIN32_DLLFLAGS should contain
 #	an entry point:
 #		'-entry:_DllMainCRTStartup$(DLLENTRY)'
-DLLENTRY:=@12
+DLLENTRY = @12
 
 #	yes, for MS it's I386 for 386, 486, Pentium!
 #	don't mix this with VxWorks which has different BSPs for [34]86 !
-WIN32_DLLFLAGS:=$(HOST_LDFLAGS) $(HOST_LDLIBS)\
+WIN32_DLLFLAGS = $(HOST_LDFLAGS) $(HOST_LDLIBS)\
 	-subsystem:windows -dll -incremental:no $(LINK_OPT_FLAGS) -machine:I386 
 
 
 ARCH_DEP_CFLAGS =
 ARCH_DEP_CXXFLAGS = $(ARCH_DEP_CFLAGS)
-HOST_CFLAGS = $(HOST_SFLAGS) $(HOST_INCLUDES) $(OP_SYS_FLAGS)
+HOST_CFLAGS = $(HOST_SFLAGS) $(HOST_INCLUDES) $(OP_SYS_FLAGS) $(CXX_OPT_FLAGS)
  
 HOST_CXXFLAGS = $(HOST_CFLAGS)
  
@@ -126,7 +134,7 @@ COMPILE.c = $(CC) $(CFLAGS) $(CPPFLAGS) -c
 #	Problem: MS Visual C++ does not recognize  *.cc as C++ source,
 #	we have to compile xx.cc  using the flag -Tp xx.cc,
 #	i.e.  -Tp  has to be immediately before the source file name
-COMPILE.cc = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -DEXPL_TEMPL -c -Tp
+COMPILE.cc = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -c -Tp
 
 LINK.c=link $(LINK_OPT_FLAGS) $(LDFLAGS) -out:$@
 LINK.cc=$(LINK.c)

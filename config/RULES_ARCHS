@@ -2,7 +2,7 @@
 # $Id$
 #
 #  EPICS RULES_ARCH
-#       by Matthew Needes and Mike Bordua and Janet Andersoni and Jeff Hill
+#       by Matthew Needes and Mike Bordua and Janet Anderson and Jeff Hill
 #
 
 all:: install
@@ -51,11 +51,11 @@ $(crossActionArchTargets) :
 $(crossArchs) : 
 endif
 
-$(hostDirs) : $(EPICS_BASE)/config/makeMakefile.pl
-	$(PERL) $(EPICS_BASE)/config/makeMakefile.pl $@ $(BUILD_TYPE)
+$(hostDirs) : 
+	$(PERL) $(INSTALL_BIN)/makeMakefile.pl $@ $(BUILD_TYPE)
 
-$(crossDirs) : $(EPICS_BASE)/config/makeMakefile.pl
-	$(PERL) $(EPICS_BASE)/config/makeMakefile.pl $@ Vx
+$(crossDirs) : 
+	$(PERL) $(INSTALL_BIN)/makeMakefile.pl $@ Vx
 
 #
 # host/cross action targets

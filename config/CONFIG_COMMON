@@ -38,22 +38,25 @@ EPICS_EXTENSIONS_TEMPLATES    = $(EPICS_EXTENSIONS)/templates
 
 DIVIDER = .
 
+EPICS_BASE_HOST_BIN = $(EPICS_BASE)/bin/$(HOST_ARCH)
+
+
 # private versions of lex/yacc from EPICS
-EYACC = $(EPICS_BASE)/bin/$(HOST_ARCH)/antelope$(EXE)
-ELEX = $(EPICS_BASE)/bin/$(HOST_ARCH)/e_flex$(EXE) -S$(EPICS_BASE_INCLUDE)/flex.skel.static
+EYACC = $(EPICS_BASE_HOST_BIN)/antelope$(EXE)
+ELEX = $(EPICS_BASE_HOST_BIN)/e_flex$(EXE) -S$(EPICS_BASE_INCLUDE)/flex.skel.static
 
 # Default for perl if it's on the PATH,
 # otherwise override this in e.g. CONFIG_SITE
 PERL=perl
 
 # install from EPICS
-INSTALL = $(PERL) $(EPICS_BASE)/bin/$(HOST_ARCH)/installEpics.pl
+INSTALL = $(PERL) $(EPICS_BASE_HOST_BIN)/installEpics.pl
 INSTALL_PRODUCT = $(INSTALL)
 
 # dbtools from EPICS
 
 # state notation language compiler (installed from base/src/sequencer)
-SNC = $(EPICS_BASE)/bin/$(HOST_ARCH)/snc
+SNC = $(EPICS_BASE_HOST_BIN)/snc
 
 # vxWorks definitions
 VX_CONFIG_DIR = $(VX_DIR)/config

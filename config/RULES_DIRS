@@ -30,11 +30,11 @@ rebuild:: clean all
 $(DIRS) $(dirActionTargets) $(dirArchTargets)$(dirActionArchTargets) ::
 	$(MAKE) -C $(dirPart) $(actionArchPart)
 
-$(ARCHS) $(installArchTargets) :%: \
+$(ARCHS) $(installArchTargets) ::%: \
 	$(foreach dir, $(DIRS), $(dir)$(DIVIDER)inc) \
 	$(foreach dir, $(DIRS), $(dir)$(DIVIDER)%)
 
-$(ACTIONS) $(actionArchTargets) :%: \
+$(ACTIONS) $(actionArchTargets) ::%: \
 	$(foreach dir, $(DIRS), $(dir)$(DIVIDER)%)
  
 

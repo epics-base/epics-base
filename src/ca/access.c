@@ -99,6 +99,9 @@
 /************************************************************************/
 /*
  * $Log$
+ * Revision 1.107  1998/10/27 00:43:27  jhill
+ * eliminated warning
+ *
  * Revision 1.106  1998/09/25 00:20:56  jhill
  * fixed warnings
  *
@@ -1909,11 +1912,11 @@ const void	*pvalue
 		while (TRUE) {
 			switch (type) {
 			case	DBR_LONG:
-				*(long *)pdest = htonl (*(dbr_long_t *)pvalue);
+				*(dbr_long_t *)pdest = htonl (*(dbr_long_t *)pvalue);
 				break;
 
 			case	DBR_CHAR:
-				*(char *)pdest = *(dbr_char_t *)pvalue;
+				*(dbr_char_t *)pdest = *(dbr_char_t *)pvalue;
 				break;
 
 			case	DBR_ENUM:
@@ -1923,7 +1926,7 @@ const void	*pvalue
 #			if DBR_INT != DBR_SHORT
 			case	DBR_INT:
 #			endif /*DBR_INT != DBR_SHORT*/
-				*(short *)pdest = htons (*(dbr_short_t *)pvalue);
+				*(dbr_short_t *)pdest = htons (*(dbr_short_t *)pvalue);
 				break;
 
 			case	DBR_FLOAT:
@@ -1959,8 +1962,8 @@ const void	*pvalue
 #	endif /*CONVERSION_REQUIRED*/
 
 	hdr.m_cmmd = htons(cmd);
-	hdr.m_type = htons((ca_uint16_t)type);
-	hdr.m_count = htons((ca_uint16_t)count);
+	hdr.m_type = htons(((ca_uint16_t)type));
+	hdr.m_count = htons(((ca_uint16_t)count));
 	hdr.m_cid = chix->id.sid;
 	hdr.m_available = id;
 	hdr.m_postsize = (ca_uint16_t) postcnt;

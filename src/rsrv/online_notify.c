@@ -50,6 +50,8 @@
 
 #include "server.h"
 
+int casSufficentSpaceInPool = TRUE;
+
 /*
  * forcePort ()
  */

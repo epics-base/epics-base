@@ -150,7 +150,7 @@ LIBRARY_LD_OBJS = $(TARGET_OBJS) $(LIBRARY_OBJS)
 #--------------------------------------------------
 # resource(WIN32) files
 
-TARGET_RESS = $(addsuffix $(RES),$(basename $($*_RESS)))
+TARGET_RESS = $(addsuffix $(RES),$(basename $($*_RCS)))
 
 PROD_RESS = $(addsuffix $(RES),$(basename $(RCS) $(PROD_RCS)))
 PROD_LD_RESS = $(TARGET_RESS) $(PROD_RESS)
@@ -275,7 +275,7 @@ DBDFLAGS = $(USR_DBDFLAGS) -I . -I .. $(INSTALL_DBDFLAGS)
 # ar definition default
 AR = $($(ANSI)_AR)
 ARFLAGS =
-ARCMD = $(AR) $(ARFLAGS) $@
+ARCMD = $(AR) $(ARFLAGS) $@  $(LIBRARY_LD_OBJS)
 
 #--------------------------------------------------
 # C compiler
@@ -295,7 +295,10 @@ COMPILE.cpp = $(CXX) $(CXXFLAGS) $(CPPFLAGS) $(INCLUDES) -c $(SOURCE_CXXFLAG)
 
 #--------------------------------------------------
 # depends definition 
-DEPENDS_RULE = -$(COMPILE.cpp) $(DEPENDS_FLAG) $^ > DEPENDS
+TARGET_SRCS = $(foreach name, $(TESTPROD) $(PROD) $(LIBRARY_HOST) $(LIBRARY_IOC), $($(name)_SRCS))
+SRC_FILES = $(foreach src, $(LIBSRCS) $(SRCS) $(PROD_SRCS) $(TARGET_SRCS) , \
+    $(firstword  $(wildcard $(addsuffix /$(src),$(ALL_SRC_DIRS))) $(src)))
+DEPENDS_RULE = -$(COMPILE.cpp) $(DEPENDS_FLAG) $(SRC_FILES) > DEPENDS
 
 #---------------------------------------------------------------
 # Names of installed items 

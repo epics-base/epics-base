@@ -1,5 +1,5 @@
 /* devXxSr620Gpib.c */
-/* share/src/devOpt  $Id$ */
+/* share/src/devOpt $Id$ */
 /*
  *      Author: John Winans
  *      Date:   11-19-91
@@ -179,11 +179,11 @@ static struct gpibCmd gpibCmds[] =
   NULL, 0, 0, NULL, &reset, -1},
 
     /* Param1 */
-  {&DSET_LO, GPIBWRITE, IB_Q_HIGH, "mode %ld", "", 0, 32,
+  {&DSET_LO, GPIBWRITE, IB_Q_HIGH, NULL, "mode %ld", 0, 32,
   NULL, 0, 0, NULL, NULL, -1},
 
     /* Param2 */
-  {&DSET_LO, GPIBWRITE, IB_Q_HIGH, "ARMM %ld", "", 0, 32,
+  {&DSET_LO, GPIBWRITE, IB_Q_HIGH, NULL, "ARMM %ld", 0, 32,
   NULL, 0, 0, NULL, NULL, -1},
 
     /* Param 3 */
@@ -217,7 +217,7 @@ static struct gpibCmd gpibCmds[] =
  ******************************************************************************/
 struct  devGpibParmBlock devSupParms = {
   &sr620Debug,          /* debugging flag pointer */
-  0,                    /* set if the device responds to writes */
+  -1,                   /* device does not respond to writes */
   TIME_WINDOW,          /* # of clock ticks to skip after a device times out */
   NULL,                 /* hwpvt list head */
   gpibCmds,             /* GPIB command array */
@@ -304,21 +304,18 @@ int		srqStatus;	/* The poll response from the device */
  * value of 0.  And then again AFTER all record-level init is complete
  * with a param value of 1.
  *
- * The use of this function will not be required after EPICS 3.3 is released.
- *
  ******************************************************************************/
 static long 
-init_dev_sup()
+init_dev_sup(parm)
+int	parm;
 {
-  return(devGpibLib_initDevSup(0, &DSET_AI));
+  return(devGpibLib_initDevSup(parm, &DSET_AI));
 }
 
 /******************************************************************************
  *
  * Print a report of operating statistics for all devices supported by this
  * module.
- *
- * The use of this function will not be required after EPICS 3.3 is released.
  *
  ******************************************************************************/
 static long

@@ -1,5 +1,5 @@
 /* devXxDc5009Gpib.c */
-/* share/src/devOpt  $Id$ */
+/* share/src/devOpt $Id$ */
 /*
  *      Author: John Winans
  *      Date:   11-19-91
@@ -237,7 +237,11 @@ static struct gpibCmd gpibCmds[] =
 
     /* Param 5 */
   {&DSET_BI, GPIBEFASTI, IB_Q_HIGH, "user?", NULL, 0, 32,
-  NULL, 0, 0, userOffOn, &offOn, -1}
+  NULL, 0, 0, userOffOn, &offOn, -1},
+
+   /* Param 6 */
+  {&DSET_AI, GPIBREAD, IB_Q_LOW, "send", "%lf", 0, 32,
+  NULL, 0, 0, NULL, NULL, -1}
 };
 
 /* The following is the number of elements in the command array above.  */
@@ -257,8 +261,8 @@ static struct gpibCmd gpibCmds[] =
  *
  ******************************************************************************/
 struct  devGpibParmBlock devSupParms = {
-  &Dc5009Debug,          /* debugging flag pointer */
-  0,                    /* set if the device responds to writes */
+  &Dc5009Debug,         /* debugging flag pointer */
+  -1,                   /* device does not respond to writes */
   TIME_WINDOW,          /* # of clock ticks to skip after a device times out */
   NULL,                 /* hwpvt list head */
   gpibCmds,             /* GPIB command array */
@@ -364,13 +368,12 @@ int		srqStatus;	/* The poll response from the device */
  * value of 0.  And then again AFTER all record-level init is complete
  * with a param value of 1.
  *
- * This function will no longer be required after epics 3.3 is released
- *
  ******************************************************************************/
 static long 
-init_dev_sup()
+init_dev_sup(parm)
+int	parm;
 {
-  return(devGpibLib_initDevSup(0,&DSET_AI));
+  return(devGpibLib_initDevSup(parm,&DSET_AI));
 }
 
 /******************************************************************************

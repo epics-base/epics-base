@@ -567,21 +567,34 @@ void notify_ca_repeater()
 	LOCK; /*MULTINET TCP/IP routines are not reentrant*/
      	status = local_addr(piiuCast->sock_chan, &saddr);
 	if (status == OK) {
+		int	len;
+
 		memset((char *)&msg, 0, sizeof(msg));
 		msg.m_cmmd = htons(REPEATER_REGISTER);
 		msg.m_available = saddr.sin_addr.s_addr;
       		saddr.sin_port = htons(ca_static->ca_repeater_port);	
+
 		/*
 		 * Intentionally sending a zero length message here
 		 * until most CA repeater daemons have been restarted
 		 * (and only then will accept the above protocol)
 		 * (repeaters began accepting this protocol
 		 * starting with EPICS 3.12)
+		 *
+		 * SOLARIS will not accept a zero length message
+		 * and we are just porting there for 3.12 so
+		 * we will use the new protocol for 3.12
 		 */
+#		ifdef SOLARIS
+			len = sizeof(msg);
+# 		else /* SOLARIS */
+			len = 0;
+#		endif /* SOLARIS */
+
       		status = sendto(
 			piiuCast->sock_chan,
         		(char *)&msg, /* UCX requires a valid address here */
-        		0, /* <= sizeof(msg) ! see comment above ! */ 
+        		len,  
         		0,
        			(struct sockaddr *)&saddr, 
 			sizeof(saddr));

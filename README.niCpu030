@@ -1,0 +1,34 @@
+
+The CPU030 may need to have the nivxi path set correctly:
+	From the vxWorks shell type "vxitedit" (you may need to
+	loading the NI vxitedit package first)
+	take option 2
+	take option 3
+	type list
+	type modify 0
+		type in the correct path when promped
+		(the path should end in nivxi 
+		and should traverse the niCpu030
+		directories shipped with the 030
+		ie something of the form "???/config/niCPU030/nivxi"
+	type save
+	type exit
+	.
+	.
+	.
+
+	see "Getting Started with Your VXIcpu-030" from NI
+
+You may may need to setup front panel to backplane trigger
+routing:
+
+To take a TTL input and map it to VXI backplane ECL trigger 0
+type in (to the vxWorks shell):
+
+epvxiRouteTriggerECL(<logical address>, 1, 0)
+
+where <logical address> specifies the card with the 
+front panel trigger connection.
+
+johill@lanl.gov
+

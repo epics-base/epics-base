@@ -90,7 +90,7 @@ void epicsThread::exitWait ()
     assert ( this->exitWait ( DBL_MAX ) );
 }
 
-bool epicsThread::exitWait ( double delay )
+bool epicsThread::exitWait (const double delay )
 {
     {
         epicsTime exitWaitBegin = epicsTime::getCurrent ();

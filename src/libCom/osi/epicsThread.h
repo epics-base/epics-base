@@ -137,7 +137,7 @@ public:
     ~epicsThread ();
     void start();
     void exitWait ();
-    bool exitWait ( double delay ); 
+    bool exitWait (const double delay ); 
     void exitWaitRelease (); /* noop if not called by managed thread */
     static void exit ();
     void resume ();

@@ -42,18 +42,34 @@ LIBNAME = libCom
 
 MAN3 = gpHash.3 freeList.3
 
+ERR_S_FILES += $(TOP)/src/as/asLib.h
+ERR_S_FILES += $(TOP)/src/db/dbAccess.h
+ERR_S_FILES += $(TOP)/src/db/devLib.h
+ERR_S_FILES += $(TOP)/src/db/devSup.h
+ERR_S_FILES += $(TOP)/src/db/drvSup.h
+ERR_S_FILES += $(TOP)/src/db/recSup.h
+ERR_S_FILES += $(TOP)/src/dbStatic/dbStaticLib.h
+ERR_S_FILES += $(TOP)/src/drv/ansi/drvEpvxi.h
+ERR_S_FILES += $(TOP)/src/drv/old/drvBitBusErr.h
+ERR_S_FILES += $(TOP)/src/drv/old/drvGpibErr.h
+ERR_S_FILES += ../tsDefs.h
+ERR_S_FILES += ../errMdef.h
+ERR_S_FILES += $(TOP)/src/cas/generic/casdef.h
+ERR_S_FILES += $(TOP)/src/cas/generic/gddAppFuncTable.h
+
 include $(TOP)/config/RULES.Vx
 
 clean::
 	@$(RM) errSymTbl.c envData.c
 
-build: errSymTbl.o errInc.o
-
-errSymTbl.c errInc.o: ../errInc.c
-	@$(RM) errInc.o
-	../blderrSymTbl $(TOP) $(HOST_ARCH) "$(MAKE)"
-
 envData.c: ../envDefs.h $(TOP)/config/CONFIG_ENV \
         $(TOP)/config/CONFIG_SITE_ENV
 	../bldEnvData $(TOP)/config
+
+errSymTbl.o: errSymTbl.c
+	$(COMPILE.c) -o $@ $<
+
+errSymTbl.c: $(ERR_S_FILES)
+	@/bin/rm -f errSymTbl.c ;\
+	../makeStatTbl  $(ERR_S_FILES) >errSymTbl.c
 

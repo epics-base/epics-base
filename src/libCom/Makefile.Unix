@@ -27,7 +27,6 @@ SRCS.c += ../cvtFast.c
 SRCS.c += ../ellLib.c
 SRCS.c += ../envSubr.c
 SRCS.c += envData.c
-SRCS.c += ../errInc.c
 SRCS.c += ../errMtst.c
 SRCS.c += ../errPrintfUNIX.c
 SRCS.c += ../errSymLib.c
@@ -74,14 +73,27 @@ LIBNAME = libCom.a
 
 MAN3 = gpHash.3 freeList.3
 
+SRC = $(TOP)/src
+
+ERR_S_FILES += $(TOP)/src/as/asLib.h
+ERR_S_FILES += $(TOP)/src/db/dbAccess.h
+ERR_S_FILES += $(TOP)/src/db/devLib.h
+ERR_S_FILES += $(TOP)/src/db/devSup.h
+ERR_S_FILES += $(TOP)/src/db/drvSup.h
+ERR_S_FILES += $(TOP)/src/db/recSup.h
+ERR_S_FILES += $(TOP)/src/dbStatic/dbStaticLib.h
+ERR_S_FILES += $(TOP)/src/drv/ansi/drvEpvxi.h
+ERR_S_FILES += $(TOP)/src/drv/old/drvBitBusErr.h
+ERR_S_FILES += $(TOP)/src/drv/old/drvGpibErr.h
+ERR_S_FILES += ../tsDefs.h
+ERR_S_FILES += ../errMdef.h
+ERR_S_FILES += $(TOP)/src/cas/generic/casdef.h
+ERR_S_FILES += $(TOP)/src/cas/generic/gddAppFuncTable.h
+
 include $(TOP)/config/RULES.Unix
 
-errSymTbl.o: errSymTbl.c errInc.o errIncCXX.o
+errSymTbl.o: errSymTbl.c
 	$(COMPILE.c) -o $@ $<
-
-errSymTbl.c errInc.o errIncCXX.o : ../errInc.c ../errIncCXX.cc
-	@$(RM) errInc.o errIncCXX.o
-	@../blderrSymTbl $(TOP) $(HOST_ARCH) "$(MAKE)"
 
 envData.c: ../envDefs.h $(TOP)/config/CONFIG_ENV \
         $(TOP)/config/CONFIG_SITE_ENV
@@ -91,5 +103,9 @@ tsTest: tsSubr.o
 	$(LINK.c) -o $@ tsSubr.o -lCom -lDb -lCom -lm -s
 
 clean::
-	@$(RM) errInc.c errSymTbl.c envData.c
+	@$(RM) errSymTbl.c envData.c
+
+errSymTbl.c: $(ERR_S_FILES)
+	@/bin/rm -f errSymTbl.c ;\
+	../makeStatTbl  $(ERR_S_FILES) >errSymTbl.c
 

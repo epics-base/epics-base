@@ -136,11 +136,11 @@ extern "C" void cacOnceFunc ( void * )
 // cac::cac ()
 //
 cac::cac ( cacNotify & notifyIn ) :
-    ipToAEngine ( "dnsQuery" ), 
     programBeginTime ( epicsTime::getCurrent() ),
     connTMO ( CA_CONN_VERIFY_PERIOD ),
     cbMutex ( notifyIn ),
     globalServiceList ( globalServiceListCAC.getReference () ),
+    ipToAEngine ( ipAddrToAsciiEngine::allocate () ),
     timerQueue ( epicsTimerQueueActive::allocate ( false, 
         lowestPriorityLevelAbove(epicsThreadGetPrioritySelf()) ) ),
     pUserName ( 0 ),
@@ -298,6 +298,8 @@ cac::~cac ()
     osiSockRelease ();
 
     this->timerQueue.release ();
+
+    this->ipToAEngine.release ();
 
     errlogFlush ();
 
@@ -554,8 +556,9 @@ bool cac::transferChanToVirtCircuit (
                 char acc[64];
                 pChan->getPIIU()->hostName ( acc, sizeof ( acc ) );
                 msgForMultiplyDefinedPV * pMsg = new ( this->mdpvFreeList )
-                    msgForMultiplyDefinedPV ( *this, pChan->pName (), acc, addr );
-                pMsg->ioInitiate ( this->ipToAEngine );
+                    msgForMultiplyDefinedPV ( this->ipToAEngine, 
+                        *this, pChan->pName (), acc );
+                pMsg->ioInitiate ( addr );
             }
             return false;
         }

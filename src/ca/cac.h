@@ -193,7 +193,6 @@ public:
 
 private:
     localHostName hostNameCache;
-    ipAddrToAsciiEngine ipToAEngine;
     cacServiceList services;
     chronIntIdResTable < nciu > chanTable;
     //
@@ -242,6 +241,7 @@ private:
     epicsSingleton 
         < cacServiceList >::reference
             globalServiceList;
+    ipAddrToAsciiEngine  & ipToAEngine;
     epicsTimerQueueActive & timerQueue;
     char * pUserName;
     class udpiiu * pudpiiu;

@@ -20,13 +20,14 @@ of this distribution.
 #include <stddef.h>
 #include <stdio.h>
 
-#include "dbDefs.h"
 #include "epicsPrint.h"
 #include "errMdef.h"
 #include "dbStaticLib.h"
 #include "dbStaticPvt.h"
 #include "dbBase.h"
 #include "gpHash.h"
+#include "osiFileName.h"
+#include "dbDefs.h"
 
 DBBASE *pdbbase = NULL;
 
@@ -42,7 +43,7 @@ int main(int argc,char **argv)
     char	*psep;
     int		*len;
     long	status;
-    static char *pathSep = ":";
+    static char *pathSep = OSI_PATH_LIST_SEPARATOR;
     static char *subSep = ",";
 
     /*Look for options*/
@@ -86,8 +87,8 @@ int main(int argc,char **argv)
     dbPvdDump(pdbbase);
     gphDump(pdbbase->pgpHash);
     dbDumpMenu(pdbbase,NULL);
+*/
     dbDumpRecord(pdbbase,NULL,0);
     dbFreeBase(pdbbase);
-*/
     return(0);
 }

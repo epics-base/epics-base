@@ -31,6 +31,7 @@
  * Modification Log:
  * -----------------
  * .01  08-21-92	mrk	Replaces individual At5Vxi modules
+ * .02 	05-27-92	joh	changed linear conversion
  */
 
 #include	<vxWorks.h>
@@ -110,7 +111,7 @@ static long init_ai( struct aiRecord	*pai)
     }
 
     /* set linear conversion slope*/
-    pai->eslo = (pai->eguf -pai->egul)/4095.0;
+    pai->eslo = (pai->eguf -pai->egul)/0xffff;
 
     /* call driver so that it configures card */
     pvmeio = (struct vmeio *)&(pai->inp.value);
@@ -140,7 +141,7 @@ static long read_ai(struct aiRecord	*pai)
 	
 	pvmeio = (struct vmeio *)&(pai->inp.value);
 	status = at5vxi_ai_driver(pvmeio->card,pvmeio->signal,&value);
-	if(status==0 || status==-2) pai->rval = value & 0xfff;
+	if(status==0 || status==-2) pai->rval = value;
         if(status==-1) {
 		status = 2; /*don't convert*/
                 recGblSetSevr(pai,READ_ALARM,INVALID_ALARM);
@@ -156,7 +157,7 @@ static long ai_lincvt(struct aiRecord	*pai, int after)
 
     if(!after) return(0);
     /* set linear conversion slope*/
-    pai->eslo = (pai->eguf -pai->egul)/4095.0;
+    pai->eslo = (pai->eguf -pai->egul)/0xffff;
     return(0);
 }
 
@@ -176,7 +177,7 @@ static long init_ao(struct aoRecord	*pao)
     }
 
     /* set linear conversion slope*/
-    pao->eslo = (pao->eguf -pao->egul)/4095.0;
+    pao->eslo = (pao->eguf -pao->egul)/0xffff;
 
     /* call driver so that it configures card */
     read_ao(pao);
@@ -208,7 +209,7 @@ static long ao_lincvt( struct aoRecord	*pao, int after)
 
     if(!after) return(0);
     /* set linear conversion slope*/
-    pao->eslo = (pao->eguf -pao->egul)/4095.0;
+    pao->eslo = (pao->eguf -pao->egul)/0xffff;
     return(0);
 }
 

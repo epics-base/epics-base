@@ -18,19 +18,22 @@
 extern "C" {
 #endif
 
-typedef void (*dbCaPutCallback)(struct link *plink);
+typedef void (*dbCaCallback)(void *userPvt);
+epicsShareFunc void epicsShareAPI dbCaCallbackProcess(struct link *plink);
 
 epicsShareFunc void epicsShareAPI dbCaLinkInit(void);
-epicsShareFunc void epicsShareAPI dbCaAddLink(struct link *plink);
+epicsShareFunc void epicsShareAPI dbCaAddLinkCallback(struct link *plink,
+    dbCaCallback connect,dbCaCallback monitor,void *userPvt);
+#define dbCaAddLink(plink) dbCaAddLinkCallback((plink),0,0,0)
 epicsShareFunc void epicsShareAPI dbCaRemoveLink(struct link *plink);
 epicsShareFunc long epicsShareAPI dbCaGetLink(
     struct link *plink,short dbrType,void *pbuffer,
     unsigned short *psevr,long *nRequest);
-epicsShareFunc long epicsShareAPI dbCaPutLink(
-    struct link *plink,short dbrType,const void *pbuffer,long nRequest);
 epicsShareFunc long epicsShareAPI dbCaPutLinkCallback(
     struct link *plink,short dbrType,const void *pbuffer,long nRequest,
-    dbCaPutCallback callback);
+    dbCaCallback callback,void *userPvt);
+#define dbCaPutLink(plink,dbrType,pbuffer,nRequest) \
+    dbCaPutLinkCallback((plink),(dbrType),(pbuffer),(nRequest),0,0)
 epicsShareFunc int epicsShareAPI dbCaIsLinkConnected(const struct link *plink);
 /* The following are available after the link is connected*/
 epicsShareFunc long epicsShareAPI dbCaGetNelements(
@@ -42,7 +45,7 @@ epicsShareFunc long epicsShareAPI dbCaGetTimeStamp(
 epicsShareFunc int epicsShareAPI dbCaGetLinkDBFtype(const struct link *plink);
 /*The following  are available after attribute request is complete*/
 epicsShareFunc long epicsShareAPI dbCaGetAttributes(
-    const struct link *plink,void (*callback)(void *usrPvt),void *usrPvt);
+    const struct link *plink,dbCaCallback callback,void *userPvt);
 epicsShareFunc long epicsShareAPI dbCaGetControlLimits(
     const struct link *plink,double *low, double *high);
 epicsShareFunc long epicsShareAPI dbCaGetGraphicLimits(

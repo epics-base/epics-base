@@ -49,14 +49,19 @@ typedef struct caLink
         char		hasWriteAccess;
         char            isConnected;
 	char		gotFirstConnection;
+        /* The following are for dbCaAddLinkCallback */
+        dbCaCallback    connect;
+        dbCaCallback    monitor;
+        void            *userPvt;
         /* The following are for write request */
         short           putType;
-        dbCaPutCallback putCallback;
+        dbCaCallback    putCallback;
+        void            *putUserPvt;
         struct link     *plinkPutCallback;
         /* The following are for access to additional attributes*/
         char            gotAttributes;
-        void            (*callback)(void *usrPvt);
-        void            *userPvt;
+        dbCaCallback	getAttributes;
+        void            *getAttributesPvt;
         /* The following have values after getAttribEventCallback*/
         double          controlLimits[2];
         double          displayLimits[2];

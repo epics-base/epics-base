@@ -168,6 +168,7 @@ int epicsShareAPI dbel ( const char *pname, unsigned level )
     struct evSubscrip   *pevent;
     dbFldDes 		    *pdbFldDes;
 
+    if ( ! pname ) return DB_EVENT_OK;
     status = dbNameToAddr ( pname, &addr );
     if ( status != 0 ) {
 	    errMessage ( status, " dbNameToAddr failed" );

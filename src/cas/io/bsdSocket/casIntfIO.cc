@@ -115,7 +115,7 @@ casIntfIO::casIntfIO (const caNetAddr &addrIn) :
         errlogPrintf ( "cas warning: Configured TCP port was unavailable.\n");
         errlogPrintf ( "cas warning: Using dynamically assigned TCP port %hu,\n", 
             ntohs (this->addr.sin_port) );
-        errlogPrintf ( "cas warning: but now two or more severs share the same UDP port.\n");
+        errlogPrintf ( "cas warning: but now two or more servers share the same UDP port.\n");
         errlogPrintf ( "cas warning: Depending on your IP kernel this server may not be\n" );
         errlogPrintf ( "cas warning: reachable with UDP unicast (a host's IP in EPICS_CA_ADDR_LIST)\n" );
     }

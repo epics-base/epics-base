@@ -53,16 +53,17 @@ unsigned long tickGet();
 long init_record();
 long process();
 #define special NULL
-long get_precision();
 long get_value();
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
-#define get_enum_str NULL
 long get_units();
+long get_precision();
+#define get_enum_str NULL
+#define get_enum_strs NULL
 long get_graphic_double();
 long get_control_double();
-#define get_enum_strs NULL
+long get_alarm_double();
 
 struct rset pidRSET={
 	RSETNUMBER,
@@ -71,16 +72,17 @@ struct rset pidRSET={
 	init_record,
 	process,
 	special,
-	get_precision,
 	get_value,
 	cvt_dbaddr,
 	get_array_info,
 	put_array_info,
 	get_enum_str,
+	get_enum_strs,
 	get_units,
+	get_precision,
 	get_graphic_double,
 	get_control_double,
-	get_enum_strs };
+	get_alarm_double };
 
 
 void alarm();
@@ -100,62 +102,6 @@ static long init_record(ppid)
         if (ppid->stpl.type == CONSTANT)
                 ppid->val = ppid->stpl.value.value;
 	return(0);
-}
-
-static long get_precision(paddr,precision)
-    struct dbAddr *paddr;
-    long	  *precision;
-{
-    struct pidRecord	*ppid=(struct pidRecord *)paddr->precord;
-
-    *precision = ppid->prec;
-    return(0);
-}
-
-static long get_value(ppid,pvdes)
-    struct pidRecord		*ppid;
-    struct valueDes	*pvdes;
-{
-    pvdes->field_type = DBF_FLOAT;
-    pvdes->no_elements=1;
-    (float *)(pvdes->pvalue) = &ppid->val;
-    return(0);
-}
-
-static long get_units(paddr,units)
-    struct dbAddr *paddr;
-    char	  *units;
-{
-    struct pidRecord	*ppid=(struct pidRecord *)paddr->precord;
-
-    strncpy(units,ppid->egu,sizeof(ppid->egu));
-    return(0);
-}
-
-static long get_graphic_double(paddr,pgd)
-    struct dbAddr *paddr;
-    struct dbr_grDouble	*pgd;
-{
-    struct pidRecord	*ppid=(struct pidRecord *)paddr->precord;
-
-    pgd->upper_disp_limit = ppid->hopr;
-    pgd->lower_disp_limit = ppid->lopr;
-    pgd->upper_alarm_limit = ppid->hihi;
-    pgd->upper_warning_limit = ppid->high;
-    pgd->lower_warning_limit = ppid->low;
-    pgd->lower_alarm_limit = ppid->lolo;
-    return(0);
-}
-
-static long get_control_double(paddr,pcd)
-    struct dbAddr *paddr;
-    struct dbr_ctrlDouble *pcd;
-{
-    struct pidRecord	*ppid=(struct pidRecord *)paddr->precord;
-
-    pcd->upper_ctrl_limit = ppid->hopr;
-    pcd->lower_ctrl_limit = ppid->lopr;
-    return(0);
 }
 
 static long process(paddr)
@@ -185,20 +131,87 @@ static long process(paddr)
 	return(status);
 }
 
+static long get_value(ppid,pvdes)
+    struct pidRecord		*ppid;
+    struct valueDes	*pvdes;
+{
+    pvdes->field_type = DBF_FLOAT;
+    pvdes->no_elements=1;
+    (float *)(pvdes->pvalue) = &ppid->val;
+    return(0);
+}
+
+static long get_units(paddr,units)
+    struct dbAddr *paddr;
+    char	  *units;
+{
+    struct pidRecord	*ppid=(struct pidRecord *)paddr->precord;
+
+    strncpy(units,ppid->egu,sizeof(ppid->egu));
+    return(0);
+}
+
+static long get_precision(paddr,precision)
+    struct dbAddr *paddr;
+    long	  *precision;
+{
+    struct pidRecord	*ppid=(struct pidRecord *)paddr->precord;
+
+    *precision = ppid->prec;
+    return(0);
+}
+
+
+static long get_graphic_double(paddr,pgd)
+    struct dbAddr *paddr;
+    struct dbr_grDouble	*pgd;
+{
+    struct pidRecord	*ppid=(struct pidRecord *)paddr->precord;
+
+    pgd->upper_disp_limit = ppid->hopr;
+    pgd->lower_disp_limit = ppid->lopr;
+    return(0);
+}
+
+static long get_control_double(paddr,pcd)
+    struct dbAddr *paddr;
+    struct dbr_ctrlDouble *pcd;
+{
+    struct pidRecord	*ppid=(struct pidRecord *)paddr->precord;
+
+    pcd->upper_ctrl_limit = ppid->hopr;
+    pcd->lower_ctrl_limit = ppid->lopr;
+    return(0);
+}
+static long get_alarm_double(paddr,pad)
+    struct dbAddr *paddr;
+    struct dbr_alDouble	*pad;
+{
+    struct pidRecord	*ppid=(struct pidRecord *)paddr->precord;
+
+    pad->upper_alarm_limit = ppid->hihi;
+    pad->upper_warning_limit = ppid->high;
+    pad->lower_warning_limit = ppid->low;
+    pad->lower_alarm_limit = ppid->lolo;
+    return(0);
+}
+
+
 static void alarm(ppid)
     struct pidRecord	*ppid;
 {
 	float	ftemp;
+	float	val=ppid->val;
 
-        /* if difference is not > hysterisis don't bother */
+        /* if difference is not > hysterisis use lalm not val */
         ftemp = ppid->lalm - ppid->val;
         if(ftemp<0.0) ftemp = -ftemp;
-        if (ftemp < ppid->hyst) return;
+        if (ftemp < ppid->hyst) val=ppid->lalm;
 
         /* alarm condition hihi */
         if (ppid->nsev<ppid->hhsv){
-                if (ppid->val > ppid->hihi){
-                        ppid->lalm = ppid->val;
+                if (val > ppid->hihi){
+                        ppid->lalm = val;
                         ppid->nsta = HIHI_ALARM;
                         ppid->nsev = ppid->hhsv;
                         return;
@@ -207,8 +220,8 @@ static void alarm(ppid)
 
         /* alarm condition lolo */
         if (ppid->nsev<ppid->llsv){
-                if (ppid->val < ppid->lolo){
-                        ppid->lalm = ppid->val;
+                if (val < ppid->lolo){
+                        ppid->lalm = val;
                         ppid->nsta = LOLO_ALARM;
                         ppid->nsev = ppid->llsv;
                         return;
@@ -217,8 +230,8 @@ static void alarm(ppid)
 
         /* alarm condition high */
         if (ppid->nsev<ppid->hsv){
-                if (ppid->val > ppid->high){
-                        ppid->lalm = ppid->val;
+                if (val > ppid->high){
+                        ppid->lalm = val;
                         ppid->nsta = HIGH_ALARM;
                         ppid->nsev =ppid->hsv;
                         return;
@@ -227,8 +240,8 @@ static void alarm(ppid)
 
         /* alarm condition lolo */
         if (ppid->nsev<ppid->lsv){
-                if (ppid->val < ppid->low){
-                        ppid->lalm = ppid->val;
+                if (val < ppid->low){
+                        ppid->lalm = val;
                         ppid->nsta = LOW_ALARM;
                         ppid->nsev = ppid->lsv;
                         return;

@@ -54,16 +54,17 @@
 long init_record();
 long process();
 #define special NULL
-long get_precision();
 long get_value();
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
-#define get_enum_str NULL
 long get_units();
+long get_precision();
+#define get_enum_str NULL
+#define get_enum_strs NULL
 long get_graphic_double();
 long get_control_double();
-#define get_enum_strs NULL
+long get_alarm_double();
 
 struct rset selRSET={
 	RSETNUMBER,
@@ -72,16 +73,17 @@ struct rset selRSET={
 	init_record,
 	process,
 	special,
-	get_precision,
 	get_value,
 	cvt_dbaddr,
 	get_array_info,
 	put_array_info,
-	get_enum_str,
 	get_units,
+	get_precision,
+	get_enum_str,
+	get_enum_strs,
 	get_graphic_double,
 	get_control_double,
-	get_enum_strs };
+	get_alarm_double };
 
 #define	SEL_MAX	6
 #define SELECTED	0
@@ -110,62 +112,6 @@ static long init_record(psel)
     if(psel->inpf.type==CONSTANT) psel->f = psel->inpf.value.value;
     return(0);
 }
-
-static long get_precision(paddr,precision)
-    struct dbAddr *paddr;
-    long	  *precision;
-{
-    struct selRecord	*psel=(struct selRecord *)paddr->precord;
-
-    *precision = psel->prec;
-    return(0);
-}
-
-static long get_value(psel,pvdes)
-    struct selRecord		*psel;
-    struct valueDes	*pvdes;
-{
-    pvdes->field_type = DBF_FLOAT;
-    pvdes->no_elements=1;
-    (float *)(pvdes->pvalue) = &psel->val;
-    return(0);
-}
-
-static long get_units(paddr,units)
-    struct dbAddr *paddr;
-    char	  *units;
-{
-    struct selRecord	*psel=(struct selRecord *)paddr->precord;
-
-    strncpy(units,psel->egu,sizeof(psel->egu));
-    return(0);
-}
-
-static long get_graphic_double(paddr,pgd)
-    struct dbAddr *paddr;
-    struct dbr_grDouble	*pgd;
-{
-    struct selRecord	*psel=(struct selRecord *)paddr->precord;
-
-    pgd->upper_disp_limit = psel->hopr;
-    pgd->lower_disp_limit = psel->lopr;
-    pgd->upper_alarm_limit = psel->hihi;
-    pgd->upper_warning_limit = psel->high;
-    pgd->lower_warning_limit = psel->low;
-    pgd->lower_alarm_limit = psel->lolo;
-    return(0);
-}
-
-static long get_control_double(paddr,pcd)
-    struct dbAddr *paddr;
-    struct dbr_ctrlDouble *pcd;
-{
-    struct selRecord	*psel=(struct selRecord *)paddr->precord;
-
-    pcd->upper_ctrl_limit = psel->hopr;
-    pcd->lower_ctrl_limit = psel->lopr;
-    return(0);
-}
 
 static long process(paddr)
     struct dbAddr	*paddr;
@@ -174,7 +120,7 @@ static long process(paddr)
 
 	psel->pact = TRUE;
 	fetch_values(psel);
-	if(!do_sel(psel)) {
+	if(do_sel(psel)!=0) {
 		if(psel->nsev<MAJOR_ALARM) {
 			psel->nsta = CALC_ALARM;
 			psel->nsev = MAJOR_ALARM;
@@ -194,21 +140,90 @@ static long process(paddr)
 	psel->pact=FALSE;
 	return(0);
 }
+
+
+static long get_value(psel,pvdes)
+    struct selRecord		*psel;
+    struct valueDes	*pvdes;
+{
+    pvdes->field_type = DBF_FLOAT;
+    pvdes->no_elements=1;
+    (float *)(pvdes->pvalue) = &psel->val;
+    return(0);
+}
+
+static long get_units(paddr,units)
+    struct dbAddr *paddr;
+    char	  *units;
+{
+    struct selRecord	*psel=(struct selRecord *)paddr->precord;
+
+    strncpy(units,psel->egu,sizeof(psel->egu));
+    return(0);
+}
+
+static long get_precision(paddr,precision)
+    struct dbAddr *paddr;
+    long	  *precision;
+{
+    struct selRecord	*psel=(struct selRecord *)paddr->precord;
+
+    *precision = psel->prec;
+    return(0);
+}
+
+
+static long get_graphic_double(paddr,pgd)
+    struct dbAddr *paddr;
+    struct dbr_grDouble	*pgd;
+{
+    struct selRecord	*psel=(struct selRecord *)paddr->precord;
+
+    pgd->upper_disp_limit = psel->hopr;
+    pgd->lower_disp_limit = psel->lopr;
+    return(0);
+}
+
+static long get_control_double(paddr,pcd)
+    struct dbAddr *paddr;
+    struct dbr_ctrlDouble *pcd;
+{
+    struct selRecord	*psel=(struct selRecord *)paddr->precord;
+
+    pcd->upper_ctrl_limit = psel->hopr;
+    pcd->lower_ctrl_limit = psel->lopr;
+    return(0);
+}
+
+static long get_alarm_double(paddr,pgd)
+    struct dbAddr *paddr;
+    struct dbr_alDouble	*pgd;
+{
+    struct selRecord	*psel=(struct selRecord *)paddr->precord;
+
+    pgd->upper_alarm_limit = psel->hihi;
+    pgd->upper_warning_limit = psel->high;
+    pgd->lower_warning_limit = psel->low;
+    pgd->lower_alarm_limit = psel->lolo;
+    return(0);
+}
+
 
 static void alarm(psel)
     struct selRecord	*psel;
 {
 	float	ftemp;
+	float	val=psel->val;
 
-        /* if difference is not > hysterisis don't bother */
+        /* if difference is not > hysterisis use lalm not val */
         ftemp = psel->lalm - psel->val;
         if(ftemp<0.0) ftemp = -ftemp;
-        if (ftemp < psel->hyst) return;
+        if (ftemp < psel->hyst) val=psel->lalm;
 
         /* alarm condition hihi */
         if (psel->nsev<psel->hhsv){
-                if (psel->val > psel->hihi){
-                        psel->lalm = psel->val;
+                if (val > psel->hihi){
+                        psel->lalm = val;
                         psel->nsta = HIHI_ALARM;
                         psel->nsev = psel->hhsv;
                         return;
@@ -216,8 +231,8 @@ static void alarm(psel)
         }
         /* alarm condition lolo */
         if (psel->nsev<psel->llsv){
-                if (psel->val < psel->lolo){
-                        psel->lalm = psel->val;
+                if (val < psel->lolo){
+                        psel->lalm = val;
                         psel->nsta = LOLO_ALARM;
                         psel->nsev = psel->llsv;
                         return;
@@ -225,8 +240,8 @@ static void alarm(psel)
         }
         /* alarm condition high */
         if (psel->nsev<psel->hsv){
-                if (psel->val > psel->high){
-                        psel->lalm = psel->val;
+                if (val > psel->high){
+                        psel->lalm = val;
                         psel->nsta = HIGH_ALARM;
                         psel->nsev =psel->hsv;
                         return;
@@ -234,8 +249,8 @@ static void alarm(psel)
         }
         /* alarm condition lolo */
         if (psel->nsev<psel->lsv){
-                if (psel->val < psel->low){
-                        psel->lalm = psel->val;
+                if (val < psel->low){
+                        psel->lalm = val;
                         psel->nsta = LOW_ALARM;
                         psel->nsev = psel->lsv;
                         return;
@@ -330,6 +345,7 @@ struct selRecord *psel;  /* pointer to selection record  */
 	case (SELECT_HIGH):
 		psel->val = *pvalue;
 		for (i = 0; i < SEL_MAX; i++,pvalue++){
+			if (*pvalue == udfFloat) continue;
 			if (psel->val < *pvalue)
 				psel->val = *pvalue;
 		}
@@ -337,6 +353,7 @@ struct selRecord *psel;  /* pointer to selection record  */
 	case (SELECT_LOW):
 		psel->val = *pvalue;
 		for (i = 0; i < SEL_MAX; i++,pvalue++){
+			if (*pvalue == udfFloat) continue;
 			if (psel->val > *pvalue)
 				psel->val = *pvalue;
 		}
@@ -346,6 +363,7 @@ struct selRecord *psel;  /* pointer to selection record  */
 		plink = &psel->inpa;
 		order_inx = 0;
 		for (i = 0; i < SEL_MAX; i++,pvalue++,plink++){
+			if (*pvalue == udfFloat) continue;
 			if (plink->type == DB_LINK){
 				j = order_inx;
 				while ((order[j-1] > *pvalue) && (j > 0)){

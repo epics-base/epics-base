@@ -57,16 +57,17 @@
 #define init_record NULL
 long process();
 #define special NULL
-#define get_precision NULL
 #define get_value NULL
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
-#define get_enum_str NULL
 #define get_units NULL
+#define get_precision NULL
+#define get_enum_str NULL
+#define get_enum_strs NULL
 #define get_graphic_double NULL
 #define get_control_double NULL
-#define get_enum_strs NULL
+#define get_alarm_double NULL
 
 struct rset fanoutRSET={
 	RSETNUMBER,
@@ -75,16 +76,17 @@ struct rset fanoutRSET={
 	init_record,
 	process,
 	special,
-	get_precision,
 	get_value,
 	cvt_dbaddr,
 	get_array_info,
 	put_array_info,
-	get_enum_str,
 	get_units,
+	get_precision,
+	get_enum_str,
+	get_enum_strs,
 	get_graphic_double,
 	get_control_double,
-	get_enum_strs };
+	get_alarm_double };
 
 static long process(paddr)
     struct dbAddr	*paddr;

@@ -72,16 +72,17 @@
 long init_record();
 long process();
 long special();
-#define get_precision NULL
 long get_value();
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
-long get_enum_str();
 #define get_units NULL
+#define get_precision NULL
+long get_enum_str();
+long get_enum_strs();
 #define get_graphic_double NULL
 #define get_control_double NULL
-long get_enum_strs();
+#define get_alarm_double NULL
 
 struct rset mbboRSET={
 	RSETNUMBER,
@@ -90,16 +91,17 @@ struct rset mbboRSET={
 	init_record,
 	process,
 	special,
-	get_precision,
 	get_value,
 	cvt_dbaddr,
 	get_array_info,
 	put_array_info,
-	get_enum_str,
 	get_units,
+	get_precision,
+	get_enum_str,
+	get_enum_strs,
 	get_graphic_double,
 	get_control_double,
-	get_enum_strs };
+	get_alarm_double };
 
 struct mbbodset { /* multi bit binary input dset */
 	long		number;
@@ -113,6 +115,7 @@ struct mbbodset { /* multi bit binary input dset */
 
 void alarm();
 void monitor();
+
 
 static void init_common(pmbbo)
     struct mbboRecord   *pmbbo;
@@ -142,7 +145,6 @@ static long init_record(pmbbo)
 
     init_common(pmbbo);
     pmbbo->mlst = -1;
-    pmbbo->lalm = -1;
 
     if(!(pdset = (struct mbbodset *)(pmbbo->dset))) {
 	recGblRecordError(S_dev_noDSET,pmbbo,"mbbo: init_record");
@@ -173,6 +175,67 @@ static long init_record(pmbbo)
 	pmbbo->val = rbv;
     }
     return(0);
+}
+
+static long process(paddr)
+    struct dbAddr	*paddr;
+{
+    struct mbboRecord	*pmbbo=(struct mbboRecord *)(paddr->precord);
+	struct mbbodset	*pdset = (struct mbbodset *)(pmbbo->dset);
+	long		status;
+	unsigned long   *pstate_values;
+	short      	i,rbv;
+
+	if( (pdset==NULL) || (pdset->write_mbbo==NULL) ) {
+		pmbbo->pact=TRUE;
+		recGblRecordError(S_dev_missingSup,pmbbo,"write_mbbo");
+		return(S_dev_missingSup);
+	}
+
+       /* fetch the desired output if there is a database link */
+       if (!pmbbo->pact && pmbbo->dol.type==DB_LINK && pmbbo->omsl==CLOSED_LOOP){
+		long options=0;
+		long nRequest=1;
+		short savepact=pmbbo->pact;
+
+		pmbbo->pact = TRUE;
+               (void)dbGetLink(&pmbbo->dol.value.db_link,pmbbo,DBR_ENUM,
+			&(pmbbo->val),&options,&nRequest);
+		pmbbo->pact = savepact;
+        }
+
+	status=(*pdset->write_mbbo)(pmbbo); /* write the new value */
+	pmbbo->pact = TRUE;
+
+	/* status is one if an asynchronous record is being processed*/
+	if(status==1) return(0);
+
+	/* convert the value */
+        if (pmbbo->sdef){
+               	pstate_values = &(pmbbo->zrvl);
+               	rbv = -1;        /* initalize to unknown state*/
+               	for (i = 0; i < 16; i++){
+                       	if (*pstate_values == pmbbo->rval){
+                               	rbv = i;
+                               	break;
+                       	}
+                       	pstate_values++;
+               	}
+        }else{
+               	/* the raw value is the desired value */
+               	rbv =  (unsigned short)(pmbbo->rval);
+        }
+        pmbbo->rbv = rbv;
+
+	/* check for alarms */
+	alarm(pmbbo);
+	/* check event list */
+	monitor(pmbbo);
+	/* process the forward scan link record */
+	if (pmbbo->flnk.type==DB_LINK) dbScanPassive(pmbbo->flnk.value.db_link.pdbAddr);
+
+	pmbbo->pact=FALSE;
+	return(status);
 }
 
 static long special(paddr,after)
@@ -236,77 +299,12 @@ static long get_enum_strs(paddr,pes)
     return(0);
 }
 
-static long process(paddr)
-    struct dbAddr	*paddr;
-{
-    struct mbboRecord	*pmbbo=(struct mbboRecord *)(paddr->precord);
-	struct mbbodset	*pdset = (struct mbbodset *)(pmbbo->dset);
-	long		status;
-	unsigned long   *pstate_values;
-	short      	i,rbv;
-
-	if( (pdset==NULL) || (pdset->write_mbbo==NULL) ) {
-		pmbbo->pact=TRUE;
-		recGblRecordError(S_dev_missingSup,pmbbo,"write_mbbo");
-		return(S_dev_missingSup);
-	}
-
-       /* fetch the desired output if there is a database link */
-       if (!pmbbo->pact && pmbbo->dol.type==DB_LINK && pmbbo->omsl==CLOSED_LOOP){
-		long options=0;
-		long nRequest=1;
-		short savepact=pmbbo->pact;
-
-		pmbbo->pact = TRUE;
-               (void)dbGetLink(&pmbbo->dol.value.db_link,pmbbo,DBR_ENUM,
-			&(pmbbo->val),&options,&nRequest);
-		pmbbo->pact = savepact;
-        }
-
-	if(pmbbo->lalm != pmbbo->val) { /*we have a change*/
-		status=(*pdset->write_mbbo)(pmbbo); /* write the new value */
-		pmbbo->pact = TRUE;
-
-		/* status is one if an asynchronous record is being processed*/
-		if(status==1) return(0);
-
-		/* convert the value */
-        	if (pmbbo->sdef){
-                	pstate_values = &(pmbbo->zrvl);
-                	rbv = -1;        /* initalize to unknown state*/
-                	for (i = 0; i < 16; i++){
-                        	if (*pstate_values == pmbbo->rval){
-                                	rbv = i;
-                                	break;
-                        	}
-                        	pstate_values++;
-                	}
-        	}else{
-                	/* the raw value is the desired value */
-                	rbv =  (unsigned short)(pmbbo->rval);
-        	}
-        	pmbbo->rbv = rbv;
-	} else pmbbo->pact = TRUE;
-
-	/* check for alarms */
-	alarm(pmbbo);
-	/* check event list */
-	monitor(pmbbo);
-	/* process the forward scan link record */
-	if (pmbbo->flnk.type==DB_LINK) dbScanPassive(pmbbo->flnk.value.db_link.pdbAddr);
-
-	pmbbo->pact=FALSE;
-	return(status);
-}
-
 static void alarm(pmbbo)
     struct mbboRecord	*pmbbo;
 {
 	unsigned short *severities;
 	short		val=pmbbo->val;
 
-	if(val == pmbbo->lalm) return;
-	pmbbo->lalm = val;
 
         /* check for  state alarm */
         /* unknown state */

@@ -51,16 +51,17 @@
 #define init_record NULL
 long process();
 #define special NULL
-#define get_precision NULL
 long get_value();
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
-#define get_enum_str NULL
 #define get_units NULL
+#define get_precision NULL
+#define get_enum_str NULL
+#define get_enum_strs NULL
 #define get_graphic_double NULL
 #define get_control_double NULL
-#define get_enum_strs NULL
+#define get_alarm_double NULL
 
 struct rset stateRSET={
 	RSETNUMBER,
@@ -69,28 +70,18 @@ struct rset stateRSET={
 	init_record,
 	process,
 	special,
-	get_precision,
 	get_value,
 	cvt_dbaddr,
 	get_array_info,
 	put_array_info,
-	get_enum_str,
 	get_units,
+	get_precision,
+	get_enum_str,
+	get_enum_strs,
 	get_graphic_double,
 	get_control_double,
-	get_enum_strs };
+	get_alarm_double };
 
-static long get_value(pstate,pvdes)
-    struct stateRecord             *pstate;
-    struct valueDes     *pvdes;
-{
-    pvdes->field_type = DBF_STRING;
-    pvdes->no_elements=1;
-    pvdes->pvalue = (caddr_t)(&pstate->val[0]);
-    return(0);
-}
-
-
 static long process(paddr)
     struct dbAddr	*paddr;
 {
@@ -107,3 +98,14 @@ static long process(paddr)
         pstate->pact=FALSE;
 	return(0);
 }
+
+static long get_value(pstate,pvdes)
+    struct stateRecord             *pstate;
+    struct valueDes     *pvdes;
+{
+    pvdes->field_type = DBF_STRING;
+    pvdes->no_elements=1;
+    pvdes->pvalue = (caddr_t)(&pstate->val[0]);
+    return(0);
+}
+

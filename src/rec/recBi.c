@@ -65,16 +65,17 @@
 long init_record();
 long process();
 #define special NULL
-#define get_precision NULL
 long get_value();
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
-long get_enum_str();
 #define get_units NULL
+#define get_precision NULL
+long get_enum_str();
+long get_enum_strs();
 #define get_graphic_double NULL
 #define get_control_double NULL
-long get_enum_strs();
+#define get_alarm_double NULL
 struct rset biRSET={
 	RSETNUMBER,
 	report,
@@ -82,16 +83,17 @@ struct rset biRSET={
 	init_record,
 	process,
 	special,
-	get_precision,
 	get_value,
 	cvt_dbaddr,
 	get_array_info,
 	put_array_info,
-	get_enum_str,
 	get_units,
+	get_precision,
+	get_enum_str,
+	get_enum_strs,
 	get_graphic_double,
 	get_control_double,
-	get_enum_strs };
+	get_alarm_double };
 struct bidset { /* binary input dset */
 	long		number;
 	DEVSUPFUN	dev_report;
@@ -122,7 +124,6 @@ static long init_record(pbi)
 	if((status=(*pdset->init_record)(pbi,process))) return(status);
     }
     pbi->mlst = -1;
-    pbi->lalm = -1;
     return(0);
 }
 
@@ -201,10 +202,6 @@ static void alarm(pbi)
     struct biRecord	*pbi;
 {
 
-        if (pbi->val == pbi->lalm) return;
-
-        /* set last alarmed value */
-        pbi->lalm = pbi->val;
 
         /* check for  state alarm */
         if (pbi->val == 0){

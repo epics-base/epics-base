@@ -68,16 +68,18 @@
 long init_record();
 long process();
 long  special();
-#define get_precision NULL
 long get_value();
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
-long get_enum_str();
 #define get_units NULL
+#define get_precision NULL
+long get_enum_str();
+long get_enum_strs();
 #define get_graphic_double NULL
 #define get_control_double NULL
-long get_enum_strs();
+#define get_alarm_double NULL
+
 struct rset mbbiRSET={
 	RSETNUMBER,
 	report,
@@ -85,16 +87,18 @@ struct rset mbbiRSET={
 	init_record,
 	process,
 	special,
-	get_precision,
 	get_value,
 	cvt_dbaddr,
 	get_array_info,
 	put_array_info,
-	get_enum_str,
 	get_units,
+	get_precision,
+	get_enum_str,
+	get_enum_strs,
 	get_graphic_double,
 	get_control_double,
-	get_enum_strs };
+	get_alarm_double };
+
 struct mbbidset { /* multi bit binary input dset */
 	long		number;
 	DEVSUPFUN	dev_report;
@@ -145,67 +149,6 @@ static long init_record(pmbbi)
     if( pdset->init_record ) {
 	if((status=(*pdset->init_record)(pmbbi,process))) return(status);
     }
-    return(0);
-}
-
-static long special(paddr,after)
-    struct dbAddr *paddr;
-    int           after;
-{
-    struct mbbiRecord     *pmbbi = (struct mbbiRecord *)(paddr->precord);
-    int                 special_type = paddr->special;
-
-    if(!after) return(0);
-    switch(special_type) {
-    case(SPC_MOD):
-	init_common(pmbbi);
-	return(0);
-    default:
-        recGblDbaddrError(S_db_badChoice,paddr,"mbbi: special");
-        return(S_db_badChoice);
-    }
-}
-
-static long get_value(pmbbi,pvdes)
-    struct mbbiRecord		*pmbbi;
-    struct valueDes	*pvdes;
-{
-    pvdes->field_type = DBF_ENUM;
-    pvdes->no_elements=1;
-    (unsigned short *)(pvdes->pvalue) = &pmbbi->val;
-    return(0);
-}
-
-static long get_enum_str(paddr,pstring)
-    struct dbAddr *paddr;
-    char	  *pstring;
-{
-    struct mbbiRecord	*pmbbi=(struct mbbiRecord *)paddr->precord;
-    char		*psource;
-    unsigned short	val=pmbbi->val;
-
-    if(val<= 15) {
-	psource = (pmbbi->zrst);
-	psource += (val * sizeof(pmbbi->zrst));
-	strncpy(pstring,psource,sizeof(pmbbi->zrst));
-    } else {
-	strcpy(pstring,"Illegal Value");
-    }
-    return(0);
-}
-
-static long get_enum_strs(paddr,pes)
-    struct dbAddr *paddr;
-    struct dbr_enumStrs *pes;
-{
-    struct mbbiRecord	*pmbbi=(struct mbbiRecord *)paddr->precord;
-    char		*psource;
-    int			i;
-
-    pes->no_str = 16;
-    bzero(pes->strs,sizeof(pes->strs));
-    for(i=0,psource=(pmbbi->zrst); i<15; i++, psource += sizeof(pmbbi->zrst) ) 
-	strncpy(pes->strs[i],psource,sizeof(pmbbi->zrst));
     return(0);
 }
 
@@ -260,6 +203,68 @@ static long process(paddr)
 	pmbbi->pact=FALSE;
 	return(status);
 }
+
+
+static long special(paddr,after)
+    struct dbAddr *paddr;
+    int           after;
+{
+    struct mbbiRecord     *pmbbi = (struct mbbiRecord *)(paddr->precord);
+    int                 special_type = paddr->special;
+
+    if(!after) return(0);
+    switch(special_type) {
+    case(SPC_MOD):
+	init_common(pmbbi);
+	return(0);
+    default:
+        recGblDbaddrError(S_db_badChoice,paddr,"mbbi: special");
+        return(S_db_badChoice);
+    }
+}
+
+static long get_value(pmbbi,pvdes)
+    struct mbbiRecord		*pmbbi;
+    struct valueDes	*pvdes;
+{
+    pvdes->field_type = DBF_ENUM;
+    pvdes->no_elements=1;
+    (unsigned short *)(pvdes->pvalue) = &pmbbi->val;
+    return(0);
+}
+
+static long get_enum_str(paddr,pstring)
+    struct dbAddr *paddr;
+    char	  *pstring;
+{
+    struct mbbiRecord	*pmbbi=(struct mbbiRecord *)paddr->precord;
+    char		*psource;
+    unsigned short	val=pmbbi->val;
+
+    if(val<= 15) {
+	psource = (pmbbi->zrst);
+	psource += (val * sizeof(pmbbi->zrst));
+	strncpy(pstring,psource,sizeof(pmbbi->zrst));
+    } else {
+	strcpy(pstring,"Illegal Value");
+    }
+    return(0);
+}
+
+static long get_enum_strs(paddr,pes)
+    struct dbAddr *paddr;
+    struct dbr_enumStrs *pes;
+{
+    struct mbbiRecord	*pmbbi=(struct mbbiRecord *)paddr->precord;
+    char		*psource;
+    int			i;
+
+    pes->no_str = 16;
+    bzero(pes->strs,sizeof(pes->strs));
+    for(i=0,psource=(pmbbi->zrst); i<15; i++, psource += sizeof(pmbbi->zrst) ) 
+	strncpy(pes->strs[i],psource,sizeof(pmbbi->zrst));
+    return(0);
+}
 
 static void alarm(pmbbi)
     struct mbbiRecord	*pmbbi;
@@ -267,8 +272,6 @@ static void alarm(pmbbi)
 	unsigned short *severities;
 	short		val=pmbbi->val;
 
-	if(val == pmbbi->lalm) return;
-	pmbbi->lalm = val;
 
         /* check for  state alarm */
         /* unknown state */

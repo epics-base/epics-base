@@ -72,16 +72,17 @@
 long init_record();
 long process();
 long special();
-long get_precision();
 long get_value();
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
-#define get_enum_str NULL
 long get_units();
+long get_precision();
+#define get_enum_str NULL
+#define get_enum_strs NULL
 long get_graphic_double();
 long get_control_double();
-#define get_enum_strs NULL
+long get_alarm_double();
 
 struct rset aoRSET={
 	RSETNUMBER,
@@ -90,16 +91,17 @@ struct rset aoRSET={
 	init_record,
 	process,
 	special,
-	get_precision,
 	get_value,
 	cvt_dbaddr,
 	get_array_info,
 	put_array_info,
-	get_enum_str,
 	get_units,
+	get_precision,
+	get_enum_str,
+	get_enum_strs,
 	get_graphic_double,
 	get_control_double,
-	get_enum_strs };
+	get_alarm_double };
 
 struct aodset { /* analog input dset */
 	long		number;
@@ -169,10 +171,9 @@ static long process(paddr)
 	}
 	if(pao->pact == FALSE) {
 		convert(pao);
-		if(pao->oraw != pao->oval) status=(*pdset->write_ao)(pao);
-                else status=0;
+		status=(*pdset->write_ao)(pao);
 	} else {
-		status=(*pdset->write_ao)(pao); /* write the new value */
+		status=(*pdset->write_ao)(pao); 
 		pao->pact = TRUE;
 	}
 
@@ -214,16 +215,6 @@ static long special(paddr,after)
     }
 }
 
-static long get_precision(paddr,precision)
-    struct dbAddr *paddr;
-    long	  *precision;
-{
-    struct aoRecord	*pao=(struct aoRecord *)paddr->precord;
-
-    *precision = pao->prec;
-    return(0);
-}
-
 static long get_value(pao,pvdes)
     struct aoRecord		*pao;
     struct valueDes	*pvdes;
@@ -244,6 +235,16 @@ static long get_units(paddr,units)
     return(0);
 }
 
+static long get_precision(paddr,precision)
+    struct dbAddr *paddr;
+    long	  *precision;
+{
+    struct aoRecord	*pao=(struct aoRecord *)paddr->precord;
+
+    *precision = pao->prec;
+    return(0);
+}
+
 static long get_graphic_double(paddr,pgd)
     struct dbAddr *paddr;
     struct dbr_grDouble	*pgd;
@@ -252,10 +253,6 @@ static long get_graphic_double(paddr,pgd)
 
     pgd->upper_disp_limit = pao->hopr;
     pgd->lower_disp_limit = pao->lopr;
-    pgd->upper_alarm_limit = pao->hihi;
-    pgd->upper_warning_limit = pao->high;
-    pgd->lower_warning_limit = pao->low;
-    pgd->lower_alarm_limit = pao->lolo;
     return(0);
 }
 
@@ -269,21 +266,35 @@ static long get_control_double(paddr,pcd)
     pcd->lower_ctrl_limit = pao->lopr;
     return(0);
 }
+static long get_alarm_double(paddr,pad)
+    struct dbAddr *paddr;
+    struct dbr_alDouble	*pad;
+{
+    struct aoRecord	*pao=(struct aoRecord *)paddr->precord;
+
+    pad->upper_alarm_limit = pao->hihi;
+    pad->upper_warning_limit = pao->high;
+    pad->lower_warning_limit = pao->low;
+    pad->lower_alarm_limit = pao->lolo;
+    return(0);
+}
+
 
 static void alarm(pao)
     struct aoRecord	*pao;
 {
 	float	ftemp;
+	float	val=pao->val;
 
-        /* if difference is not > hysterisis don't bother */
+        /* if difference is not > hysterisis use lalm not val */
         ftemp = pao->lalm - pao->val;
         if(ftemp<0.0) ftemp = -ftemp;
-        if (ftemp < pao->hyst) return;
+        if (ftemp < pao->hyst) val=pao->lalm;
 
         /* alarm condition hihi */
         if (pao->nsev<pao->hhsv){
-                if (pao->val > pao->hihi){
-                        pao->lalm = pao->val;
+                if (val > pao->hihi){
+                        pao->lalm = val;
                         pao->nsta = HIHI_ALARM;
                         pao->nsev = pao->hhsv;
                         return;
@@ -292,8 +303,8 @@ static void alarm(pao)
 
         /* alarm condition lolo */
         if (pao->nsev<pao->llsv){
-                if (pao->val < pao->lolo){
-                        pao->lalm = pao->val;
+                if (val < pao->lolo){
+                        pao->lalm = val;
                         pao->nsta = LOLO_ALARM;
                         pao->nsev = pao->llsv;
                         return;
@@ -302,8 +313,8 @@ static void alarm(pao)
 
         /* alarm condition high */
         if (pao->nsev<pao->hsv){
-                if (pao->val > pao->high){
-                        pao->lalm = pao->val;
+                if (val > pao->high){
+                        pao->lalm = val;
                         pao->nsta = HIGH_ALARM;
                         pao->nsev =pao->hsv;
                         return;
@@ -312,8 +323,8 @@ static void alarm(pao)
 
         /* alarm condition lolo */
         if (pao->nsev<pao->lsv){
-                if (pao->val < pao->low){
-                        pao->lalm = pao->val;
+                if (val < pao->low){
+                        pao->lalm = val;
                         pao->nsta = LOW_ALARM;
                         pao->nsev = pao->lsv;
                         return;
@@ -321,6 +332,65 @@ static void alarm(pao)
         }
         return;
 }
+
+
+static void convert(pao)
+    struct aoRecord  *pao;
+{
+	float		value;
+
+        /* fetch the desired output if there is a database link */
+        if ((pao->dol.type == DB_LINK) && (pao->omsl == CLOSED_LOOP)){
+		long		nRequest;
+		long		options;
+		short		save_pact;
+		long		status;
+
+		options=0;
+		nRequest=1;
+		save_pact = pao->pact;
+		pao->pact = TRUE;
+                status = dbGetLink(&pao->dol.value,DBR_FLOAT,&value,&options,&nRequest);
+		pao->pact = save_pact;
+		if(status) {
+			if(pao->nsev<VALID_ALARM) {
+				pao->nsta = LINK_ALARM;
+				pao->nsev=VALID_ALARM;
+			}
+			return;
+		}
+                if (pao->oif == OUTPUT_INCREMENTAL) value += pao->val;
+        } else value = pao->val;
+
+        /* check drive limits */
+	if(pao->drvh > pao->drvl) {
+        	if (value > pao->drvh) value = pao->drvh;
+        	else if (value < pao->drvl) value = pao->drvl;
+	}
+	pao->val = value;
+
+	/* now set value equal to desired output value */
+        /* apply the output rate of change */
+        if (pao->oroc){
+		float		diff;
+
+                diff = value - pao->oval;
+                if (diff < 0){
+                        if (pao->oroc < -diff) value = pao->oval - pao->oroc;
+                }else if (pao->oroc < diff) value = pao->oval + pao->oroc;
+        }
+	pao->oval = value;
+
+
+        /* convert */
+        if (pao->linr == LINEAR){
+                if (pao->eslo == 0) pao->rval = 0;
+                else pao->rval = (value - pao->egul) / pao->eslo;
+        }else{
+                pao->rval = value;
+        }
+}
+
 
 static void monitor(pao)
     struct aoRecord	*pao;
@@ -391,61 +461,3 @@ static void monitor(pao)
 	}
 	return;
 }
-
-static void convert(pao)
-struct aoRecord  *pao;
-{
-	float		value;
-
-        /* fetch the desired output if there is a database link */
-        if ((pao->dol.type == DB_LINK) && (pao->omsl == CLOSED_LOOP)){
-		long		nRequest;
-		long		options;
-		short		save_pact;
-		long		status;
-
-		options=0;
-		nRequest=1;
-		save_pact = pao->pact;
-		pao->pact = TRUE;
-                status = dbGetLink(&pao->dol.value,DBR_FLOAT,&value,&options,&nRequest);
-		pao->pact = save_pact;
-		if(status) {
-			if(pao->nsev<VALID_ALARM) {
-				pao->nsta = LINK_ALARM;
-				pao->nsev=VALID_ALARM;
-			}
-			return;
-		}
-                if (pao->oif == OUTPUT_INCREMENTAL) value += pao->val;
-        } else value = pao->val;
-
-        /* check drive limits */
-	if(pao->drvh > pao->drvl) {
-        	if (value > pao->drvh) value = pao->drvh;
-        	else if (value < pao->drvl) value = pao->drvl;
-	}
-	pao->val = value;
-
-	/* now set value equal to desired output value */
-        /* apply the output rate of change */
-        if (pao->oroc){
-		float		diff;
-
-                diff = value - pao->oval;
-                if (diff < 0){
-                        if (pao->oroc < -diff) value = pao->oval - pao->oroc;
-                }else if (pao->oroc < diff) value = pao->oval + pao->oroc;
-        }
-	pao->oval = value;
-
-
-        /* convert */
-        if (pao->linr == LINEAR){
-                if (pao->eslo == 0) pao->rval = 0;
-                else pao->rval = (value - pao->egul) / pao->eslo;
-        }else{
-                pao->rval = value;
-        }
-}
-

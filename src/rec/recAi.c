@@ -77,16 +77,17 @@
 long init_record();
 long process();
 long special();
-long get_precision();
 long get_value();
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
-#define get_enum_str NULL
 long get_units();
+long get_precision();
+#define get_enum_str NULL
+#define get_enum_strs NULL
 long get_graphic_double();
 long get_control_double();
-#define get_enum_strs NULL
+long get_alarm_double();
 
 struct rset aiRSET={
 	RSETNUMBER,
@@ -95,16 +96,17 @@ struct rset aiRSET={
 	init_record,
 	process,
 	special,
-	get_precision,
 	get_value,
 	cvt_dbaddr,
 	get_array_info,
 	put_array_info,
-	get_enum_str,
 	get_units,
+	get_precision,
+	get_enum_str,
+	get_enum_strs,
 	get_graphic_double,
 	get_control_double,
-	get_enum_strs };
+	get_alarm_double};
 
 struct aidset { /* analog input dset */
 	long		number;
@@ -118,8 +120,8 @@ struct aidset { /* analog input dset */
 	DEVSUPFUN	special_linconv;
 };
 
-void convert();
 void alarm();
+void convert();
 void monitor();
 
 static long init_record(pai)
@@ -212,16 +214,6 @@ static long special(paddr,after)
     }
 }
 
-static long get_precision(paddr,precision)
-    struct dbAddr *paddr;
-    long	  *precision;
-{
-    struct aiRecord	*pai=(struct aiRecord *)paddr->precord;
-
-    *precision = pai->prec;
-    return(0);
-}
-
 static long get_value(pai,pvdes)
     struct aiRecord		*pai;
     struct valueDes	*pvdes;
@@ -242,6 +234,16 @@ static long get_units(paddr,units)
     return(0);
 }
 
+static long get_precision(paddr,precision)
+    struct dbAddr *paddr;
+    long	  *precision;
+{
+    struct aiRecord	*pai=(struct aiRecord *)paddr->precord;
+
+    *precision = pai->prec;
+    return(0);
+}
+
 static long get_graphic_double(paddr,pgd)
     struct dbAddr *paddr;
     struct dbr_grDouble	*pgd;
@@ -250,10 +252,6 @@ static long get_graphic_double(paddr,pgd)
 
     pgd->upper_disp_limit = pai->hopr;
     pgd->lower_disp_limit = pai->lopr;
-    pgd->upper_alarm_limit = pai->hihi;
-    pgd->upper_warning_limit = pai->high;
-    pgd->lower_warning_limit = pai->low;
-    pgd->lower_alarm_limit = pai->lolo;
     return(0);
 }
 
@@ -267,21 +265,35 @@ static long get_control_double(paddr,pcd)
     pcd->lower_ctrl_limit = pai->lopr;
     return(0);
 }
+
+static long get_alarm_double(paddr,pad)
+    struct dbAddr *paddr;
+    struct dbr_alDouble	*pad;
+{
+    struct aiRecord	*pai=(struct aiRecord *)paddr->precord;
+
+    pad->upper_alarm_limit = pai->hihi;
+    pad->upper_warning_limit = pai->high;
+    pad->lower_warning_limit = pai->low;
+    pad->lower_alarm_limit = pai->lolo;
+    return(0);
+}
 
 static void alarm(pai)
     struct aiRecord	*pai;
 {
 	float	ftemp;
+	float	val=pai->val;
 
-	/* if difference is not > hysterisis don't bother */
+	/* if difference is not > hysterisis use lalm not val */
 	ftemp = pai->lalm - pai->val;
 	if(ftemp<0.0) ftemp = -ftemp;
-	if (ftemp < pai->hyst) return;
+	if (ftemp < pai->hyst) val=pai->lalm;
 
 	/* alarm condition hihi */
 	if (pai->nsev<pai->hhsv){
-		if (pai->val > pai->hihi){
-			pai->lalm = pai->val;
+		if (val > pai->hihi){
+			pai->lalm = val;
 			pai->nsta = HIHI_ALARM;
 			pai->nsev = pai->hhsv;
 			return;
@@ -290,8 +302,8 @@ static void alarm(pai)
 
 	/* alarm condition lolo */
 	if (pai->nsev<pai->llsv){
-		if (pai->val < pai->lolo){
-			pai->lalm = pai->val;
+		if (val < pai->lolo){
+			pai->lalm = val;
 			pai->nsta = LOLO_ALARM;
 			pai->nsev = pai->llsv;
 			return;
@@ -300,8 +312,8 @@ static void alarm(pai)
 
 	/* alarm condition high */
 	if (pai->nsev<pai->hsv){
-		if (pai->val > pai->high){
-			pai->lalm = pai->val;
+		if (val > pai->high){
+			pai->lalm = val;
 			pai->nsta = HIGH_ALARM;
 			pai->nsev =pai->hsv;
 			return;
@@ -310,74 +322,11 @@ static void alarm(pai)
 
 	/* alarm condition lolo */
 	if (pai->nsev<pai->lsv){
-		if (pai->val < pai->low){
-			pai->lalm = pai->val;
+		if (val < pai->low){
+			pai->lalm = val;
 			pai->nsta = LOW_ALARM;
 			pai->nsev = pai->lsv;
 			return;
-		}
-	}
-	return;
-}
-
-static void monitor(pai)
-    struct aiRecord	*pai;
-{
-	unsigned short	monitor_mask;
-	float		delta;
-	short		stat,sevr,nsta,nsev;
-
-	/* get previous stat and sevr  and new stat and sevr*/
-	stat=pai->stat;
-	sevr=pai->sevr;
-	nsta=pai->nsta;
-	nsev=pai->nsev;
-	/*set current stat and sevr*/
-	pai->stat = nsta;
-	pai->sevr = nsev;
-	pai->nsta = 0;
-	pai->nsev = 0;
-
-	/* anyone waiting for an event on this record */
-	if (pai->mlis.count == 0) return;
-
-	/* Flags which events to fire on the value field */
-	monitor_mask = 0;
-
-	/* alarm condition changed this scan */
-	if (stat!=nsta || sevr!=nsev) {
-		/* post events for alarm condition change*/
-		monitor_mask = DBE_ALARM;
-		/* post stat and nsev fields */
-		db_post_events(pai,&pai->stat,DBE_VALUE);
-		db_post_events(pai,&pai->sevr,DBE_VALUE);
-	}
-	/* check for value change */
-	delta = pai->mlst - pai->val;
-	if(delta<0.0) delta = -delta;
-	if (delta > pai->mdel) {
-		/* post events for value change */
-		monitor_mask |= DBE_VALUE;
-		/* update last value monitored */
-		pai->mlst = pai->val;
-	}
-
-	/* check for archive change */
-	delta = pai->alst - pai->val;
-	if(delta<0.0) delta = 0.0;
-	if (delta > pai->adel) {
-		/* post events on value field for archive change */
-		monitor_mask |= DBE_LOG;
-		/* update last archive value monitored */
-		pai->alst = pai->val;
-	}
-
-	/* send out monitors connected to the value field */
-	if (monitor_mask){
-		db_post_events(pai,&pai->val,monitor_mask);
-		if(pai->oraw != pai->rval) {
-			db_post_events(pai,&pai->rval,monitor_mask);
-			pai->oraw = pai->rval;
 		}
 	}
 	return;
@@ -451,6 +400,69 @@ struct aiRecord	*pai;
 	    pai->val = val * (1.00 - pai->smoo) + (pai->val * pai->smoo);
 	}else{
 	    pai->val = val;
+	}
+	return;
+}
+
+static void monitor(pai)
+    struct aiRecord	*pai;
+{
+	unsigned short	monitor_mask;
+	float		delta;
+	short		stat,sevr,nsta,nsev;
+
+	/* get previous stat and sevr  and new stat and sevr*/
+	stat=pai->stat;
+	sevr=pai->sevr;
+	nsta=pai->nsta;
+	nsev=pai->nsev;
+	/*set current stat and sevr*/
+	pai->stat = nsta;
+	pai->sevr = nsev;
+	pai->nsta = 0;
+	pai->nsev = 0;
+
+	/* anyone waiting for an event on this record */
+	if (pai->mlis.count == 0) return;
+
+	/* Flags which events to fire on the value field */
+	monitor_mask = 0;
+
+	/* alarm condition changed this scan */
+	if (stat!=nsta || sevr!=nsev) {
+		/* post events for alarm condition change*/
+		monitor_mask = DBE_ALARM;
+		/* post stat and nsev fields */
+		db_post_events(pai,&pai->stat,DBE_VALUE);
+		db_post_events(pai,&pai->sevr,DBE_VALUE);
+	}
+	/* check for value change */
+	delta = pai->mlst - pai->val;
+	if(delta<0.0) delta = -delta;
+	if (delta > pai->mdel) {
+		/* post events for value change */
+		monitor_mask |= DBE_VALUE;
+		/* update last value monitored */
+		pai->mlst = pai->val;
+	}
+
+	/* check for archive change */
+	delta = pai->alst - pai->val;
+	if(delta<0.0) delta = 0.0;
+	if (delta > pai->adel) {
+		/* post events on value field for archive change */
+		monitor_mask |= DBE_LOG;
+		/* update last archive value monitored */
+		pai->alst = pai->val;
+	}
+
+	/* send out monitors connected to the value field */
+	if (monitor_mask){
+		db_post_events(pai,&pai->val,monitor_mask);
+		if(pai->oraw != pai->rval) {
+			db_post_events(pai,&pai->rval,monitor_mask);
+			pai->oraw = pai->rval;
+		}
 	}
 	return;
 }

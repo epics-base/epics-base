@@ -68,16 +68,17 @@
 long init_record();
 long process();
 #define special NULL
-long get_precision();
 long get_value();
 long cvt_dbaddr();
 long get_array_info();
 long put_array_info();
-#define get_enum_str NULL
 long get_units();
+long get_precision();
+#define get_enum_str NULL
+#define get_enum_strs NULL
 long get_graphic_double();
 long get_control_double();
-#define get_enum_strs NULL
+long get_alarm_double();
 
 struct rset waveformRSET={
 	RSETNUMBER,
@@ -86,16 +87,18 @@ struct rset waveformRSET={
 	init_record,
 	process,
 	special,
-	get_precision,
 	get_value,
 	cvt_dbaddr,
 	get_array_info,
 	put_array_info,
-	get_enum_str,
 	get_units,
+	get_precision,
+	get_enum_str,
+	get_enum_strs,
 	get_graphic_double,
 	get_control_double,
-	get_enum_strs };
+	get_alarm_double };
+
 struct wfdset { /* waveform dset */
         long            number;
         DEVSUPFUN       dev_report;
@@ -143,15 +146,31 @@ static long init_record(pwf)
     }
     return(0);
 }
-
-static long get_precision(paddr,precision)
-    struct dbAddr *paddr;
-    long	  *precision;
+
+static long process(paddr)
+    struct dbAddr	*paddr;
 {
-    struct waveformRecord	*pwf=(struct waveformRecord *)paddr->precord;
+	struct waveformRecord	*pwf=(struct waveformRecord *)(paddr->precord);
+        struct wfdset   *pdset = (struct wfdset *)(pwf->dset);
+	long		 status;
 
-    *precision = pwf->prec;
-    return(0);
+        if( (pdset==NULL) || (pdset->read_wf==NULL) ) {
+                pwf->pact=TRUE;
+                recGblRecordError(S_dev_missingSup,pwf,"read_wf");
+                return(S_dev_missingSup);
+        }
+        /*pact must not be set true until read_wf completes*/
+        status=(*pdset->read_wf)(pwf); /* read the new value */
+        pwf->pact = TRUE;
+        /* status is one if an asynchronous record is being processed*/
+        if(status==1) return(0);
+
+	monitor(pwf);
+        /* process the forward scan link record */
+        if (pwf->flnk.type==DB_LINK) dbScanPassive(pwf->flnk.value.db_link.pdbAddr);
+
+        pwf->pact=FALSE;
+        return(0);
 }
 
 static long get_value(pwf,pvdes)
@@ -199,7 +218,7 @@ static long put_array_info(paddr,nNew)
 {
     struct waveformRecord	*pwf=(struct waveformRecord *)paddr->precord;
 
-    pwf->nord = (pwf->nord + nNew);
+    pwf->nord = nNew;
     if(pwf->nord > pwf->nelm) pwf->nord = pwf->nelm;
     return(0);
 }
@@ -214,6 +233,16 @@ static long get_units(paddr,units)
     return(0);
 }
 
+static long get_precision(paddr,precision)
+    struct dbAddr *paddr;
+    long	  *precision;
+{
+    struct waveformRecord	*pwf=(struct waveformRecord *)paddr->precord;
+
+    *precision = pwf->prec;
+    return(0);
+}
+
 static long get_graphic_double(paddr,pgd)
     struct dbAddr *paddr;
     struct dbr_grDouble *pgd;
@@ -222,10 +251,6 @@ static long get_graphic_double(paddr,pgd)
 
     pgd->upper_disp_limit = pwf->hopr;
     pgd->lower_disp_limit = pwf->lopr;
-    pgd->upper_alarm_limit = 0.0;
-    pgd->upper_warning_limit = 0.0;
-    pgd->lower_warning_limit = 0.0;
-    pgd->lower_alarm_limit = 0.0;
     return(0);
 }
 static long get_control_double(paddr,pcd)
@@ -238,31 +263,17 @@ static long get_control_double(paddr,pcd)
     pcd->lower_ctrl_limit = pwf->lopr;
     return(0);
 }
-
-static long process(paddr)
-    struct dbAddr	*paddr;
+static long get_alarm_double(paddr,pgd)
+    struct dbAddr *paddr;
+    struct dbr_alDouble *pgd;
 {
-	struct waveformRecord	*pwf=(struct waveformRecord *)(paddr->precord);
-        struct wfdset   *pdset = (struct wfdset *)(pwf->dset);
-	long		 status;
+    struct waveformRecord     *pwf=(struct waveformRecord *)paddr->precord;
 
-        if( (pdset==NULL) || (pdset->read_wf==NULL) ) {
-                pwf->pact=TRUE;
-                recGblRecordError(S_dev_missingSup,pwf,"read_wf");
-                return(S_dev_missingSup);
-        }
-        /*pact must not be set true until read_wf completes*/
-        status=(*pdset->read_wf)(pwf); /* read the new value */
-        pwf->pact = TRUE;
-        /* status is one if an asynchronous record is being processed*/
-        if(status==1) return(0);
-
-	monitor(pwf);
-        /* process the forward scan link record */
-        if (pwf->flnk.type==DB_LINK) dbScanPassive(pwf->flnk.value.db_link.pdbAddr);
-
-        pwf->pact=FALSE;
-        return(0);
+    pgd->upper_alarm_limit = 0.0;
+    pgd->upper_warning_limit = 0.0;
+    pgd->lower_warning_limit = 0.0;
+    pgd->lower_alarm_limit = 0.0;
+    return(0);
 }
 
 static void monitor(pwf)

@@ -71,16 +71,17 @@
 long init_record();
 long process();
 long special();
-long get_precision();
 long get_value();
 long cvt_dbaddr();
 long get_array_info();
 long put_array_info();
-#define get_enum_str NULL
 long get_units();
+long get_precision();
+#define get_enum_str NULL
+#define get_enum_strs NULL
 long get_graphic_double();
 long get_control_double();
-#define get_enum_strs NULL
+#define get_alarm_double NULL
 
 struct rset compressRSET={
 	RSETNUMBER,
@@ -89,16 +90,17 @@ struct rset compressRSET={
 	init_record,
 	process,
 	special,
-	get_precision,
 	get_value,
 	cvt_dbaddr,
 	get_array_info,
 	put_array_info,
-	get_enum_str,
 	get_units,
+	get_precision,
+	get_enum_str,
+	get_enum_strs,
 	get_graphic_double,
 	get_control_double,
-	get_enum_strs };
+	get_alarm_double };
 
 #define NTO1LOW	 0
 #define NTO1HIGH 1
@@ -138,6 +140,56 @@ static long init_record(pcompress)
     return(0);
 }
 
+
+static long process(paddr)
+    struct dbAddr	*paddr;
+{
+    struct compressRecord *pcompress=(struct compressRecord *)(paddr->precord);
+    long		 status=0;
+
+	pcompress->pact = TRUE;
+
+	if (pcompress->inp.type != DB_LINK) {
+		status=0;
+	}else if (pcompress->wptr == NULL) {
+		if(pcompress->nsev<MAJOR_ALARM) {
+			pcompress->nsta = READ_ALARM;
+			pcompress->nsev = MAJOR_ALARM;
+		}
+		status=0;
+	} else {
+		struct dbAddr	*pdbAddr =
+			(struct dbAddr *)(pcompress->inp.value.db_link.pdbAddr);
+		long		options=0;
+		long		no_elements=pdbAddr->no_elements;
+		int			alg=pcompress->alg;
+
+		(void)dbGetLink(&pcompress->inp.value.db_link,pcompress,DBR_FLOAT,pcompress->wptr,
+				&options,&no_elements);
+		if(alg==AVERAGE) {
+			status = array_average(pcompress,pcompress->wptr,no_elements);
+		} else if(alg==CIRBUF) {
+			(void)put_value(pcompress,pcompress->wptr,no_elements);
+			status = 0;
+		} else if(pdbAddr->no_elements>1) {
+			status = compress_array(pcompress,pcompress->wptr,no_elements);
+		}else if(no_elements==1){
+			status = compress_value(pcompress,pcompress->wptr);
+		}else status=1;
+	}
+
+	/* check event list */
+	if(status!=1) {
+		monitor(pcompress);
+		/* process the forward scan link record */
+		if (pcompress->flnk.type==DB_LINK) dbScanPassive(pcompress->flnk.value.db_link.pdbAddr);
+	}
+
+	pcompress->pact=FALSE;
+	return(0);
+}
+
+
 static long special(paddr,after)
     struct dbAddr *paddr;
     int           after;
@@ -160,16 +212,6 @@ static long special(paddr,after)
     }
 }
 
-static long get_precision(paddr,precision)
-    struct dbAddr *paddr;
-    long	  *precision;
-{
-    struct compressRecord	*pcompress=(struct compressRecord *)paddr->precord;
-
-    *precision = pcompress->prec;
-    return(0);
-}
-
 static long get_value(pcompress,pvdes)
     struct compressRecord *pcompress;
     struct valueDes	*pvdes;
@@ -230,6 +272,16 @@ static long get_units(paddr,units)
     return(0);
 }
 
+static long get_precision(paddr,precision)
+    struct dbAddr *paddr;
+    long	  *precision;
+{
+    struct compressRecord	*pcompress=(struct compressRecord *)paddr->precord;
+
+    *precision = pcompress->prec;
+    return(0);
+}
+
 static long get_graphic_double(paddr,pgd)
     struct dbAddr *paddr;
     struct dbr_grDouble *pgd;
@@ -238,12 +290,9 @@ static long get_graphic_double(paddr,pgd)
 
     pgd->upper_disp_limit = pcompress->hopr;
     pgd->lower_disp_limit = pcompress->lopr;
-    pgd->upper_alarm_limit = 0.0;
-    pgd->upper_warning_limit = 0.0;
-    pgd->lower_warning_limit = 0.0;
-    pgd->lower_alarm_limit = 0.0;
     return(0);
 }
+
 static long get_control_double(paddr,pcd)
     struct dbAddr *paddr;
     struct dbr_ctrlDouble *pcd;
@@ -254,54 +303,7 @@ static long get_control_double(paddr,pcd)
     pcd->lower_ctrl_limit = pcompress->lopr;
     return(0);
 }
-
-static long process(paddr)
-    struct dbAddr	*paddr;
-{
-    struct compressRecord *pcompress=(struct compressRecord *)(paddr->precord);
-    long		 status;
 
-	pcompress->pact = TRUE;
-
-	if (pcompress->inp.type != DB_LINK) {
-		status=0;
-	}else if (pcompress->wptr == NULL) {
-		if(pcompress->nsev<MAJOR_ALARM) {
-			pcompress->nsta = READ_ALARM;
-			pcompress->nsev = MAJOR_ALARM;
-		}
-		status=0;
-	} else {
-		struct dbAddr	*pdbAddr =
-			(struct dbAddr *)(pcompress->inp.value.db_link.pdbAddr);
-		long		options=0;
-		long		no_elements=pdbAddr->no_elements;
-		int			alg=pcompress->alg;
-
-		(void)dbGetLink(&pcompress->inp.value.db_link,pcompress,DBR_FLOAT,pcompress->wptr,
-				&options,&no_elements);
-		if(alg==AVERAGE) {
-			status = array_average(pcompress,pcompress->wptr,no_elements);
-		} else if(alg==CIRBUF) {
-			(void)put_value(pcompress,pcompress->wptr,no_elements);
-			status = 0;
-		} else if(pdbAddr->no_elements>1) {
-			status = compress_array(pcompress,pcompress->wptr,no_elements);
-		}else if(no_elements==1){
-			status = compress_value(pcompress,pcompress->wptr);
-		}else status=1;
-	}
-
-	/* check event list */
-	if(status!=1) {
-		monitor(pcompress);
-		/* process the forward scan link record */
-		if (pcompress->flnk.type==DB_LINK) dbScanPassive(pcompress->flnk.value.db_link.pdbAddr);
-	}
-
-	pcompress->pact=FALSE;
-	return(0);
-}
 
 static void monitor(pcompress)
     struct compressRecord	*pcompress;

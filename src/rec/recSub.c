@@ -54,16 +54,17 @@
 long init_record();
 long process();
 #define special NULL
-long get_precision();
 long get_value();
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
-#define get_enum_str NULL
 long get_units();
+long get_precision();
+#define get_enum_str NULL
+#define get_enum_strs NULL
 long get_graphic_double();
 long get_control_double();
-#define get_enum_strs NULL
+long get_alarm_double();
 
 struct rset subRSET={
 	RSETNUMBER,
@@ -72,16 +73,17 @@ struct rset subRSET={
 	init_record,
 	process,
 	special,
-	get_precision,
 	get_value,
 	cvt_dbaddr,
 	get_array_info,
 	put_array_info,
-	get_enum_str,
 	get_units,
+	get_precision,
+	get_enum_str,
+	get_enum_strs,
 	get_graphic_double,
 	get_control_double,
-	get_enum_strs };
+	get_alarm_double };
 
 void alarm();
 void monitor();
@@ -122,7 +124,7 @@ static long init_record(psub)
     status = psubroutine(psub,process);
 
     /* convert the subroutine name to an address and type */
-    /* convert the initialization subroutine name  */
+    /* convert the processing subroutine name  */
     temp[0] = 0;			/* all global variables start with _ */
     if (psub->snam[0] != '_'){
     	strcpy(temp,"_");
@@ -134,62 +136,6 @@ static long init_record(psub)
 	return(S_db_BadSub);
     }
     psub->styp = sub_type;
-    return(0);
-}
-
-static long get_precision(paddr,precision)
-    struct dbAddr *paddr;
-    long	  *precision;
-{
-    struct subRecord	*psub=(struct subRecord *)paddr->precord;
-
-    *precision = psub->prec;
-    return(0);
-}
-
-static long get_value(psub,pvdes)
-    struct subRecord		*psub;
-    struct valueDes	*pvdes;
-{
-    pvdes->field_type = DBF_FLOAT;
-    pvdes->no_elements=1;
-    (float *)(pvdes->pvalue) = &psub->val;
-    return(0);
-}
-
-static long get_units(paddr,units)
-    struct dbAddr *paddr;
-    char	  *units;
-{
-    struct subRecord	*psub=(struct subRecord *)paddr->precord;
-
-    strncpy(units,psub->egu,sizeof(psub->egu));
-    return(0);
-}
-
-static long get_graphic_double(paddr,pgd)
-    struct dbAddr *paddr;
-    struct dbr_grDouble	*pgd;
-{
-    struct subRecord	*psub=(struct subRecord *)paddr->precord;
-
-    pgd->upper_disp_limit = psub->hopr;
-    pgd->lower_disp_limit = psub->lopr;
-    pgd->upper_alarm_limit = psub->hihi;
-    pgd->upper_warning_limit = psub->high;
-    pgd->lower_warning_limit = psub->low;
-    pgd->lower_alarm_limit = psub->lolo;
-    return(0);
-}
-
-static long get_control_double(paddr,pcd)
-    struct dbAddr *paddr;
-    struct dbr_ctrlDouble *pcd;
-{
-    struct subRecord	*psub=(struct subRecord *)paddr->precord;
-
-    pcd->upper_ctrl_limit = psub->hopr;
-    pcd->lower_ctrl_limit = psub->lopr;
     return(0);
 }
 
@@ -217,20 +163,87 @@ static long process(paddr)
         return(0);
 }
 
+static long get_value(psub,pvdes)
+    struct subRecord		*psub;
+    struct valueDes	*pvdes;
+{
+    pvdes->field_type = DBF_FLOAT;
+    pvdes->no_elements=1;
+    (float *)(pvdes->pvalue) = &psub->val;
+    return(0);
+}
+
+static long get_units(paddr,units)
+    struct dbAddr *paddr;
+    char	  *units;
+{
+    struct subRecord	*psub=(struct subRecord *)paddr->precord;
+
+    strncpy(units,psub->egu,sizeof(psub->egu));
+    return(0);
+}
+
+static long get_precision(paddr,precision)
+    struct dbAddr *paddr;
+    long	  *precision;
+{
+    struct subRecord	*psub=(struct subRecord *)paddr->precord;
+
+    *precision = psub->prec;
+    return(0);
+}
+
+
+static long get_graphic_double(paddr,pgd)
+    struct dbAddr *paddr;
+    struct dbr_grDouble	*pgd;
+{
+    struct subRecord	*psub=(struct subRecord *)paddr->precord;
+
+    pgd->upper_disp_limit = psub->hopr;
+    pgd->lower_disp_limit = psub->lopr;
+    return(0);
+}
+
+static long get_control_double(paddr,pcd)
+    struct dbAddr *paddr;
+    struct dbr_ctrlDouble *pcd;
+{
+    struct subRecord	*psub=(struct subRecord *)paddr->precord;
+
+    pcd->upper_ctrl_limit = psub->hopr;
+    pcd->lower_ctrl_limit = psub->lopr;
+    return(0);
+}
+static long get_alarm_double(paddr,pad)
+    struct dbAddr *paddr;
+    struct dbr_alDouble	*pad;
+{
+    struct subRecord	*psub=(struct subRecord *)paddr->precord;
+
+    pad->upper_alarm_limit = psub->hihi;
+    pad->upper_warning_limit = psub->high;
+    pad->lower_warning_limit = psub->low;
+    pad->lower_alarm_limit = psub->lolo;
+    return(0);
+}
+
+
 static void alarm(psub)
     struct subRecord	*psub;
 {
 	float	ftemp;
+	float	val=psub->val;
 
-        /* if difference is not > hysterisis don't bother */
+        /* if difference is not > hysterisis use lalm not val */
         ftemp = psub->lalm - psub->val;
         if(ftemp<0.0) ftemp = -ftemp;
-        if (ftemp < psub->hyst) return;
+        if (ftemp < psub->hyst) val=psub->lalm;
 
         /* alarm condition hihi */
         if (psub->nsev<psub->hhsv){
-                if (psub->val > psub->hihi){
-                        psub->lalm = psub->val;
+                if (val > psub->hihi){
+                        psub->lalm = val;
                         psub->nsta = HIHI_ALARM;
                         psub->nsev = psub->hhsv;
                         return;
@@ -239,8 +252,8 @@ static void alarm(psub)
 
         /* alarm condition lolo */
         if (psub->nsev<psub->llsv){
-                if (psub->val < psub->lolo){
-                        psub->lalm = psub->val;
+                if (val < psub->lolo){
+                        psub->lalm = val;
                         psub->nsta = LOLO_ALARM;
                         psub->nsev = psub->llsv;
                         return;
@@ -249,8 +262,8 @@ static void alarm(psub)
 
         /* alarm condition high */
         if (psub->nsev<psub->hsv){
-                if (psub->val > psub->high){
-                        psub->lalm = psub->val;
+                if (val > psub->high){
+                        psub->lalm = val;
                         psub->nsta = HIGH_ALARM;
                         psub->nsev =psub->hsv;
                         return;
@@ -258,8 +271,8 @@ static void alarm(psub)
         }
         /* alarm condition lolo */
         if (psub->nsev<psub->lsv){
-                if (psub->val < psub->low){
-                        psub->lalm = psub->val;
+                if (val < psub->low){
+                        psub->lalm = val;
                         psub->nsta = LOW_ALARM;
                         psub->nsev = psub->lsv;
                         return;

@@ -79,16 +79,17 @@
 long init_record();
 long process();
 long special();
-long get_precision();
 long get_value();
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
-#define get_enum_str NULL
 long get_units();
+long get_precision();
+#define get_enum_str NULL
+#define get_enum_strs NULL
 long get_graphic_double();
 long get_control_double();
-#define get_enum_strs NULL
+long get_alarm_double();
 
 struct rset calcRSET={
 	RSETNUMBER,
@@ -97,16 +98,17 @@ struct rset calcRSET={
 	init_record,
 	process,
 	special,
-	get_precision,
 	get_value,
 	cvt_dbaddr,
 	get_array_info,
 	put_array_info,
-	get_enum_str,
 	get_units,
+	get_precision,
+	get_enum_str,
+	get_enum_strs,
 	get_graphic_double,
 	get_control_double,
-	get_enum_strs };
+	get_alarm_double };
 
 void alarm();
 void monitor();
@@ -138,85 +140,6 @@ static long init_record(pcalc)
     return(0);
 }
 
-static long special(paddr,after)
-    struct dbAddr *paddr;
-    int	   	  after;
-{
-    long		status;
-    struct calcRecord  	*pcalc = (struct calcRecord *)(paddr->precord);
-    int           	special_type = paddr->special;
-    short error_number;
-    char rpbuf[80];
-
-    if(!after) return(0);
-    switch(special_type) {
-    case(SPC_CALC):
-	status=postfix(pcalc->calc,rpbuf,&error_number);
-	if(status) return(status);
-	bcopy(rpbuf,pcalc->rpcl,sizeof(pcalc->rpcl));
-	return(0);
-    default:
-	recGblDbaddrError(S_db_badChoice,paddr,"calc: special");
-	return(S_db_badChoice);
-    }
-}
-
-static long get_precision(paddr,precision)
-    struct dbAddr *paddr;
-    long	  *precision;
-{
-    struct calcRecord	*pcalc=(struct calcRecord *)paddr->precord;
-
-    *precision = pcalc->prec;
-    return(0);
-}
-
-static long get_value(pcalc,pvdes)
-    struct calcRecord		*pcalc;
-    struct valueDes	*pvdes;
-{
-    pvdes->field_type = DBF_FLOAT;
-    pvdes->no_elements=1;
-    (float *)(pvdes->pvalue) = &pcalc->val;
-    return(0);
-}
-
-static long get_units(paddr,units)
-    struct dbAddr *paddr;
-    char	  *units;
-{
-    struct calcRecord	*pcalc=(struct calcRecord *)paddr->precord;
-
-    strncpy(units,pcalc->egu,sizeof(pcalc->egu));
-    return(0);
-}
-
-static long get_graphic_double(paddr,pgd)
-    struct dbAddr *paddr;
-    struct dbr_grDouble	*pgd;
-{
-    struct calcRecord	*pcalc=(struct calcRecord *)paddr->precord;
-
-    pgd->upper_disp_limit = pcalc->hopr;
-    pgd->lower_disp_limit = pcalc->lopr;
-    pgd->upper_alarm_limit = pcalc->hihi;
-    pgd->upper_warning_limit = pcalc->high;
-    pgd->lower_warning_limit = pcalc->low;
-    pgd->lower_alarm_limit = pcalc->lolo;
-    return(0);
-}
-
-static long get_control_double(paddr,pcd)
-    struct dbAddr *paddr;
-    struct dbr_ctrlDouble *pcd;
-{
-    struct calcRecord	*pcalc=(struct calcRecord *)paddr->precord;
-
-    pcd->upper_ctrl_limit = pcalc->hopr;
-    pcd->lower_ctrl_limit = pcalc->lopr;
-    return(0);
-}
-
 static long process(paddr)
     struct dbAddr	*paddr;
 {
@@ -240,20 +163,109 @@ static long process(paddr)
 	return(0);
 }
 
+static long special(paddr,after)
+    struct dbAddr *paddr;
+    int	   	  after;
+{
+    long		status;
+    struct calcRecord  	*pcalc = (struct calcRecord *)(paddr->precord);
+    int           	special_type = paddr->special;
+    short error_number;
+    char rpbuf[80];
+
+    if(!after) return(0);
+    switch(special_type) {
+    case(SPC_CALC):
+	status=postfix(pcalc->calc,rpbuf,&error_number);
+	if(status) return(status);
+	bcopy(rpbuf,pcalc->rpcl,sizeof(pcalc->rpcl));
+	return(0);
+    default:
+	recGblDbaddrError(S_db_badChoice,paddr,"calc: special");
+	return(S_db_badChoice);
+    }
+}
+
+static long get_value(pcalc,pvdes)
+    struct calcRecord		*pcalc;
+    struct valueDes	*pvdes;
+{
+    pvdes->field_type = DBF_FLOAT;
+    pvdes->no_elements=1;
+    (float *)(pvdes->pvalue) = &pcalc->val;
+    return(0);
+}
+
+static long get_units(paddr,units)
+    struct dbAddr *paddr;
+    char	  *units;
+{
+    struct calcRecord	*pcalc=(struct calcRecord *)paddr->precord;
+
+    strncpy(units,pcalc->egu,sizeof(pcalc->egu));
+    return(0);
+}
+
+static long get_precision(paddr,precision)
+    struct dbAddr *paddr;
+    long	  *precision;
+{
+    struct calcRecord	*pcalc=(struct calcRecord *)paddr->precord;
+
+    *precision = pcalc->prec;
+    return(0);
+}
+
+static long get_graphic_double(paddr,pgd)
+    struct dbAddr *paddr;
+    struct dbr_grDouble	*pgd;
+{
+    struct calcRecord	*pcalc=(struct calcRecord *)paddr->precord;
+
+    pgd->upper_disp_limit = pcalc->hopr;
+    pgd->lower_disp_limit = pcalc->lopr;
+    return(0);
+}
+
+static long get_control_double(paddr,pcd)
+    struct dbAddr *paddr;
+    struct dbr_ctrlDouble *pcd;
+{
+    struct calcRecord	*pcalc=(struct calcRecord *)paddr->precord;
+
+    pcd->upper_ctrl_limit = pcalc->hopr;
+    pcd->lower_ctrl_limit = pcalc->lopr;
+    return(0);
+}
+static long get_alarm_double(paddr,pad)
+    struct dbAddr *paddr;
+    struct dbr_alDouble	*pad;
+{
+    struct calcRecord	*pcalc=(struct calcRecord *)paddr->precord;
+
+    pad->upper_alarm_limit = pcalc->hihi;
+    pad->upper_warning_limit = pcalc->high;
+    pad->lower_warning_limit = pcalc->low;
+    pad->lower_alarm_limit = pcalc->lolo;
+    return(0);
+}
+
+
 static void alarm(pcalc)
     struct calcRecord	*pcalc;
 {
 	float	ftemp;
+	float	val=pcalc->val;
 
         /* if difference is not > hysterisis don't bother */
         ftemp = pcalc->lalm - pcalc->val;
         if(ftemp<0.0) ftemp = -ftemp;
-        if (ftemp < pcalc->hyst) return;
+        if (ftemp < pcalc->hyst) val=pcalc->lalm;
 
         /* alarm condition hihi */
         if (pcalc->nsev<pcalc->hhsv){
-                if (pcalc->val > pcalc->hihi){
-                        pcalc->lalm = pcalc->val;
+                if (val > pcalc->hihi){
+                        pcalc->lalm = val;
                         pcalc->nsta = HIHI_ALARM;
                         pcalc->nsev = pcalc->hhsv;
                         return;
@@ -262,8 +274,8 @@ static void alarm(pcalc)
 
         /* alarm condition lolo */
         if (pcalc->nsev<pcalc->llsv){
-                if (pcalc->val < pcalc->lolo){
-                        pcalc->lalm = pcalc->val;
+                if (val < pcalc->lolo){
+                        pcalc->lalm = val;
                         pcalc->nsta = LOLO_ALARM;
                         pcalc->nsev = pcalc->llsv;
                         return;
@@ -272,8 +284,8 @@ static void alarm(pcalc)
 
         /* alarm condition high */
         if (pcalc->nsev<pcalc->hsv){
-                if (pcalc->val > pcalc->high){
-                        pcalc->lalm = pcalc->val;
+                if (val > pcalc->high){
+                        pcalc->lalm = val;
                         pcalc->nsta = HIGH_ALARM;
                         pcalc->nsev =pcalc->hsv;
                         return;
@@ -282,8 +294,8 @@ static void alarm(pcalc)
 
         /* alarm condition lolo */
         if (pcalc->nsev<pcalc->lsv){
-                if (pcalc->val < pcalc->low){
-                        pcalc->lalm = pcalc->val;
+                if (val < pcalc->low){
+                        pcalc->lalm = val;
                         pcalc->nsta = LOW_ALARM;
                         pcalc->nsev = pcalc->lsv;
                         return;

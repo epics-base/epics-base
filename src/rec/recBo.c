@@ -75,16 +75,17 @@
 long init_record();
 long process();
 #define special NULL
-#define get_precision NULL
 long get_value();
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
-long get_enum_str();
 #define get_units NULL
+#define get_precision NULL
+long get_enum_str();
+long get_enum_strs();
 #define get_graphic_double NULL
 #define get_control_double NULL
-long get_enum_strs();
+#define get_alarm_double NULL
 
 struct rset boRSET={
 	RSETNUMBER,
@@ -93,16 +94,17 @@ struct rset boRSET={
 	init_record,
 	process,
 	special,
-	get_precision,
 	get_value,
 	cvt_dbaddr,
 	get_array_info,
 	put_array_info,
-	get_enum_str,
 	get_units,
+	get_precision,
+	get_enum_str,
+	get_enum_strs,
 	get_graphic_double,
 	get_control_double,
-	get_enum_strs };
+	get_alarm_double };
 
 struct bodset { /* binary output dset */
 	long		number;
@@ -167,10 +169,9 @@ static long init_record(pbo)
     pbo->dpvt = (caddr_t)pcallback;
     pcallback->callback = myCallback;
     if(dbNameToAddr(pbo->name,&(pcallback->dbAddr))) {
-            logMsg("dbNameToAddr failed in init_record for devAiTestAsyn\n");
+            logMsg("dbNameToAddr failed in init_record for recBo\n");
             exit(1);
     }
-    pbo->lalm = -1;
     pbo->mlst = -1;
     return(0);
 }
@@ -202,22 +203,21 @@ static long process(paddr)
                 pbo->pact = savepact;
         }
 
-	if(pbo->lalm != pbo->val) {/*we have a change */
-		status=(*pdset->write_bo)(pbo); /* write the new value */
-		pbo->pact = TRUE;
+	status=(*pdset->write_bo)(pbo); /* write the new value */
+	pbo->pact = TRUE;
 
-		/* status is one if an asynchronous record is being processed*/
-		if(status==1) return(0);
+	/* status is one if an asynchronous record is being processed*/
+	if(status==1) return(0);
 
-		wait_time = (int)(pbo->high) * vxTicksPerSecond;   /* seconds to ticks */
-		if(pbo->val==1 && wait_time>0) {
-			struct callback *pcallback;
+	wait_time = (int)(pbo->high) * vxTicksPerSecond;   /* seconds to ticks */
+	if(pbo->val==1 && wait_time>0) {
+		struct callback *pcallback;
 	
-			pcallback = (struct callback *)(pbo->dpvt);
-        		if(pcallback->wd_id==NULL) pcallback->wd_id = wdCreate();
-               		wdStart(pcallback->wd_id,wait_time,callbackRequest,pcallback);
-		}
-	} else pbo->pact = TRUE;
+		pcallback = (struct callback *)(pbo->dpvt);
+        	if(pcallback->wd_id==NULL) pcallback->wd_id = wdCreate();
+               	wdStart(pcallback->wd_id,wait_time,callbackRequest,pcallback);
+	}
+	
 
 	/* check for alarms */
 	alarm(pbo);
@@ -275,10 +275,6 @@ static void alarm(pbo)
     struct boRecord	*pbo;
 {
 
-        if (pbo->val == pbo->lalm) return;
-
-        /* set last alarmed value */
-        pbo->lalm = pbo->val;
 
         /* check for  state alarm */
         if (pbo->val == 0){

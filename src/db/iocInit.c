@@ -27,7 +27,7 @@
  *
  * Modification Log:
  * -----------------
- * .01  mm-dd-yy        iii     Comment
+ * .01  07-20-91	rac	print release data; set env params
  */
 
 #include	<vxWorks.h>
@@ -55,6 +55,7 @@
 #include	<errMdef.h>
 #include	<link.h>
 #include	<recSup.h>
+#include	<envDefs.h>
 
 static initialized=FALSE;
 
@@ -83,6 +84,8 @@ char * pResourceFilename;
 	printf("iocInit can only be called once\n");
 	return(-1);
     }
+    coreRelease();
+    epicsSetEnvParams();
     if(status=initBusController()) {
 	printf("Xycom SRM010 Bus Controller Not Present\n");
     }

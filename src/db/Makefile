@@ -75,8 +75,10 @@ OBJLIB_SRCS = $(LIBSRCS)
 include $(TOP)/configure/RULES
 
 $(COMMON_DIR)/dbCommon.h: ../dbCommonRecord.dbd ../dbCommon.dbd $(COMMON_DIR)
+	@$(RM) $@$(DEP)
+	@-$(MKMF) -m $@$(DEP) ..  $@ $<
 	$(RM) $@
 	$(DBTORECORDTYPEH) -I .. $< $@
 
-inc depends: $(INSTALL_DBD)/dbCommon.dbd
+inc: $(INSTALL_DBD)/dbCommon.dbd
 

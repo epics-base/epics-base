@@ -1,2 +1,3 @@
 include "base.dbd"
-include "_APPNAME_Support.dbd"
+include "xxxSupport.dbd"
+registrar(mySubRegistrar)

@@ -26,9 +26,8 @@ static registryFunctionRef mySubRef[] = {
     {"mySubProcess",(REGISTRYFUNCTION)mySubProcess}
 };
 
-static void mySub(void)
+static void mySubRegistrar(void)
 {
     registryFunctionRefAdd(mySubRef,NELEMENTS(mySubRef));
 }
-epicsExportRegistrar(mySub);
-
+epicsExportRegistrar(mySubRegistrar);

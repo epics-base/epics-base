@@ -239,7 +239,7 @@ static void once(void)
     status = atexit(myAtExit);
     checkStatusOnce(status,"atexit");
 }
-
+
 static void * start_routine(void *arg)
 {
     epicsThreadOSD *pthreadInfo = (epicsThreadOSD *)arg;
@@ -278,6 +278,7 @@ static void epicsThreadInit(void)
 
 unsigned int epicsThreadGetStackSize (epicsThreadStackSizeClass stackSizeClass)
 {
+    if(!epicsThreadInitCalled) epicsThreadInit();
 #if ! defined (_POSIX_THREAD_ATTR_STACKSIZE)
     return 0;
 #elif defined (OSITHREAD_USE_DEFAULT_STACK)
@@ -302,7 +303,6 @@ unsigned int epicsThreadGetStackSize (epicsThreadStackSizeClass stackSizeClass)
 /* epicsThreadOnce is a macro that calls epicsThreadOnceOsd */
 void epicsThreadOnceOsd(epicsThreadOnceId *id, void (*func)(void *), void *arg)
 {
-
     if(!epicsThreadInitCalled) epicsThreadInit();
     if(epicsMutexLock(onceLock) != epicsMutexLockOK) {
         fprintf(stderr,"epicsThreadOnceOsd epicsMutexLock failed.\n");
@@ -335,20 +335,27 @@ epicsThreadId epicsThreadCreate(const char *name,
 
 void epicsThreadSuspendSelf(void)
 {
-    epicsThreadOSD *pthreadInfo = (epicsThreadOSD *)pthread_getspecific(getpthreadInfo);
+    epicsThreadOSD *pthreadInfo;
+
+    if(!epicsThreadInitCalled) epicsThreadInit();
+    pthreadInfo = (epicsThreadOSD *)pthread_getspecific(getpthreadInfo);
     pthreadInfo->isSuspended = 1;
     epicsEventMustWait(pthreadInfo->suspendEvent);
 }
 
 void epicsThreadResume(epicsThreadOSD *pthreadInfo)
 {
+    if(!epicsThreadInitCalled) epicsThreadInit();
     pthreadInfo->isSuspended = 0;
     epicsEventSignal(pthreadInfo->suspendEvent);
 }
 
 void epicsThreadExitMain(void)
 {
-    epicsThreadOSD *pthreadInfo = (epicsThreadOSD *)pthread_getspecific(getpthreadInfo);
+    epicsThreadOSD *pthreadInfo;
+
+    if(!epicsThreadInitCalled) epicsThreadInit();
+    pthreadInfo = (epicsThreadOSD *)pthread_getspecific(getpthreadInfo);
     if(pthreadInfo->createFunc) {
         errlogPrintf("called from non-main thread\n");
         cantProceed("epicsThreadExitMain");
@@ -358,14 +365,16 @@ void epicsThreadExitMain(void)
 	pthread_exit(0);
     }
 }
-
+
 unsigned int epicsThreadGetPriority(epicsThreadId pthreadInfo)
 {
+    if(!epicsThreadInitCalled) epicsThreadInit();
     return(pthreadInfo->osiPriority);
 }
 
 unsigned int epicsThreadGetPrioritySelf(void)
 {
+    if(!epicsThreadInitCalled) epicsThreadInit();
     return(epicsThreadGetPriority(epicsThreadGetIdSelf()));
 }
 
@@ -375,6 +384,8 @@ void epicsThreadSetPriority(epicsThreadId pthreadInfo,unsigned int priority)
     int status;
 #endif /* _POSIX_THREAD_PRIORITY_SCHEDULING */
 
+    if(!epicsThreadInitCalled) epicsThreadInit();
+    assert(pthreadInfo);
     pthreadInfo->osiPriority = priority;
 #if defined (_POSIX_THREAD_PRIORITY_SCHEDULING) 
     pthreadInfo->schedParam.sched_priority = getOssPriorityValue(pthreadInfo);
@@ -424,10 +435,12 @@ epicsThreadBooleanStatus epicsThreadLowestPriorityLevelAbove(
 
 int epicsThreadIsEqual(epicsThreadId p1, epicsThreadId p2)
 {
+    if(!epicsThreadInitCalled) epicsThreadInit();
     return(pthread_equal(p1->tid,p2->tid));
 }
 
 int epicsThreadIsSuspended(epicsThreadId pthreadInfo) {
+    if(!epicsThreadInitCalled) epicsThreadInit();
     return(pthreadInfo->isSuspended ? 1 : 0);
 }
 
@@ -444,13 +457,17 @@ void epicsThreadSleep(double seconds)
 }
 
 epicsThreadId epicsThreadGetIdSelf(void) {
-    epicsThreadOSD *pthreadInfo = (epicsThreadOSD *)pthread_getspecific(getpthreadInfo);
-    assert ( pthreadInfo ); /* very dangerous to allow non-unique thread id into use */
+    epicsThreadOSD *pthreadInfo;
+
+    if(!epicsThreadInitCalled) epicsThreadInit();
+    pthreadInfo = (epicsThreadOSD *)pthread_getspecific(getpthreadInfo);
+    assert ( pthreadInfo );
     return(pthreadInfo);
 }
 
 epicsThreadId epicsThreadGetId(const char *name) {
     epicsThreadOSD *pthreadInfo;
+    if(!epicsThreadInitCalled) epicsThreadInit();
     epicsMutexMustLock(listLock);
     pthreadInfo=(epicsThreadOSD *)ellFirst(&pthreadList);
     while(pthreadInfo) {
@@ -463,19 +480,25 @@ epicsThreadId epicsThreadGetId(const char *name) {
 
 const char *epicsThreadGetNameSelf()
 {
-    epicsThreadOSD *pthreadInfo = (epicsThreadOSD *)pthread_getspecific(getpthreadInfo);
+    epicsThreadOSD *pthreadInfo;
+
+    if(!epicsThreadInitCalled) epicsThreadInit();
+    pthreadInfo = (epicsThreadOSD *)pthread_getspecific(getpthreadInfo);
     return(pthreadInfo->name);
 }
 
 void epicsThreadGetName(epicsThreadId pthreadInfo, char *name, size_t size)
 {
+    if(!epicsThreadInitCalled) epicsThreadInit();
     strncpy(name, pthreadInfo->name, size-1);
     name[size-1] = '\0';
 }
-
+
 void epicsThreadShowAll(unsigned int level)
 {
     epicsThreadOSD *pthreadInfo;
+
+    if(!epicsThreadInitCalled) epicsThreadInit();
     epicsThreadShow(0,level);
     epicsMutexMustLock(listLock);
     pthreadInfo=(epicsThreadOSD *)ellFirst(&pthreadList);
@@ -488,6 +511,7 @@ void epicsThreadShowAll(unsigned int level)
 
 void epicsThreadShow(epicsThreadId pthreadInfo,unsigned int level)
 {
+    if(!epicsThreadInitCalled) epicsThreadInit();
     if(!pthreadInfo) {
 	printf ("            NAME       ID   OSIPRI   OSSPRI    STATE\n");
     }
@@ -513,6 +537,7 @@ epicsThreadPrivateId epicsThreadPrivateCreate(void)
     pthread_key_t *key;
     int status;
 
+    if(!epicsThreadInitCalled) epicsThreadInit();
     key = callocMustSucceed(1,sizeof(pthread_key_t),"epicsThreadPrivateCreate");
     status = pthread_key_create(key,0);
     checkStatusQuit(status,"pthread_key_create","epicsThreadPrivateCreate");
@@ -524,6 +549,7 @@ void epicsThreadPrivateDelete(epicsThreadPrivateId id)
     pthread_key_t *key = (pthread_key_t *)id;
     int status;
 
+    if(!epicsThreadInitCalled) epicsThreadInit();
     status = pthread_key_delete(*key);
     checkStatusQuit(status,"pthread_key_delete","epicsThreadPrivateDelete");
 }
@@ -533,6 +559,7 @@ void epicsThreadPrivateSet (epicsThreadPrivateId id, void *value)
     pthread_key_t *key = (pthread_key_t *)id;
     int status;
 
+    if(!epicsThreadInitCalled) epicsThreadInit();
     if(errVerbose && !value)
         errlogPrintf("epicsThreadPrivateSet: setting value of 0\n");
     status = pthread_setspecific(*key,value);

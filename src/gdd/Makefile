@@ -53,11 +53,11 @@ dbMapper.o:	../gdd.h ../gddI.h ../gddContainer.h ../gddContainerI.h \
 
 # Rules for generated files
 #
-aitConvertGenerated.cc:  $(EPICS_BASE_HOST_BIN)/aitGen$(HOSTEXE) ../aitTypes.h
-	 $(EPICS_BASE_HOST_BIN)/aitGen$(HOSTEXE)
+aitConvertGenerated.cc:  ../O.$(HOST_ARCH)/aitGen$(HOSTEXE) ../aitTypes.h
+	 ../O.$(HOST_ARCH)/aitGen$(HOSTEXE)
 
-gddApps.h :  $(EPICS_BASE_HOST_BIN)/genApps$(HOSTEXE)
-	 $(EPICS_BASE_HOST_BIN)/genApps$(HOSTEXE) $@
+gddApps.h :  ../O.$(HOST_ARCH)/genApps$(HOSTEXE)
+	 ../O.$(HOST_ARCH)/genApps$(HOSTEXE) $@
 
 # unfortunately there is only one TESTPROD/TESTPROD_SRCS allowed
 # right now

@@ -168,22 +168,22 @@ template <class T>
 inline epicsList<T>::~epicsList() {}
 
 template <class T>
-inline epicsList<T>::iterator epicsList<T>::begin() {
+inline typename epicsList<T>::iterator epicsList<T>::begin() {
     return _head.next();
 }
 
 template <class T>
-inline epicsList<T>::const_iterator epicsList<T>::begin() const {
+inline typename epicsList<T>::const_iterator epicsList<T>::begin() const {
     return _head.next();
 }
 
 template <class T>
-inline epicsList<T>::iterator epicsList<T>::end() {
+inline typename epicsList<T>::iterator epicsList<T>::end() {
     return &_head;
 }
 
 template <class T>
-inline epicsList<T>::const_iterator epicsList<T>::end() const {
+inline typename epicsList<T>::const_iterator epicsList<T>::end() const {
     return &_head;
 }
 
@@ -193,7 +193,7 @@ inline bool epicsList<T>::empty() const {
 }
 
 template <class T>
-inline epicsList<T>::size_type epicsList<T>::size() const {
+inline typename epicsList<T>::size_type epicsList<T>::size() const {
     return _count;
 }
 
@@ -262,7 +262,7 @@ inline void epicsList<T>::pop_back() {
 }
 
 template <class T>
-inline epicsList<T>::iterator epicsList<T>::insert(iterator pos, const T x) {
+inline typename epicsList<T>::iterator epicsList<T>::insert(iterator pos, const T x) {
     epicsListNode* node = _pool.allocate();
     node->payload = x;
     pos._node->insert(*node);
@@ -271,7 +271,7 @@ inline epicsList<T>::iterator epicsList<T>::insert(iterator pos, const T x) {
 }
 
 template <class T>
-inline epicsList<T>::iterator epicsList<T>::erase(iterator pos) {
+inline typename epicsList<T>::iterator epicsList<T>::erase(iterator pos) {
     if ((pos._node == 0) || (pos._node == &_head))
 	return pos;
     iterator next = pos._node->next();
@@ -282,7 +282,7 @@ inline epicsList<T>::iterator epicsList<T>::erase(iterator pos) {
 }
 
 template <class T>
-inline epicsList<T>::iterator epicsList<T>::erase(iterator pos, iterator leave) {
+inline typename epicsList<T>::iterator epicsList<T>::erase(iterator pos, iterator leave) {
     while (pos != leave) {
 	pos = erase(pos);
     }

@@ -87,6 +87,7 @@ struct event_que{
         unsigned short  getix;
         unsigned short  quota;          /* the number of assigned entries*/
 	    unsigned short	nDuplicates;	/* N events duplicated on this q */ 
+        unsigned short  nCanceled;      /* the number of canceled entries */
 };
 
 struct event_user{

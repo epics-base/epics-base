@@ -64,7 +64,7 @@
  *			problem
  */
 
-#include	"epicsAssert.h"
+#include    <limits.h>
 
 #include	<vxWorks.h>
 #include	<types.h>
@@ -78,6 +78,7 @@
 #include	<logLib.h>
 #include	<taskLib.h>
 
+#include	"epicsAssert.h"
 #include	"dbDefs.h"
 #include	"errlog.h"
 #include	"taskwd.h"
@@ -311,7 +312,7 @@ struct event_block	*pevent /* ptr to event blk (not required) */
   	/* otherwise add a new one to the list */
   	ev_que = &evUser->firstque;
   	while (TRUE) {
-    		if(ev_que->quota < EVENTQUESIZE - EVENTENTRIES)
+    		if(ev_que->quota + ev_que->nCanceled < EVENTQUESIZE - EVENTENTRIES)
       			break;
     		if(!ev_que->nextque){
       			tmp_que = (struct event_que *) 
@@ -492,6 +493,8 @@ int	db_cancel_event(struct event_block	*pevent)
             pevent->ev_que->evque[getix] != EVENTQEMPTY; 
             getix = RNGINC ( getix ) ) {
         if ( pevent->ev_que->evque[getix] == pevent ) {
+            assert ( pevent->ev_que->nCanceled < USHRT_MAX );
+            pevent->ev_que->nCanceled++;
             event_remove ( pevent->ev_que, getix, &canceledEvent );
         }
     }
@@ -994,6 +997,8 @@ LOCAL int event_read (struct event_que *ev_que)
         if ( event == &canceledEvent ) {
             ev_que->evque[ev_que->getix] = EVENTQEMPTY;
             ev_que->getix = RNGINC ( ev_que->getix );
+            assert ( ev_que->nCanceled > 0 );
+            ev_que->nCanceled--;
             continue;
         }
 

@@ -50,7 +50,7 @@
 #include	<types.h>
 #include	<stdioLib.h>
 #include	<string.h>
-#include	<iv.h>
+#include	<intLib.h>
 
 #include	<alarm.h>
 #include	<dbRecType.h>

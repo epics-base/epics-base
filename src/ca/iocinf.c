@@ -47,6 +47,9 @@
 /*			address in use so that test works on UNIX	*/
 /*			kernels that support multicast			*/
 /* $Log$
+ * Revision 1.62  1996/06/19 17:59:06  jhill
+ * many 3.13 beta changes
+ *
  * Revision 1.61  1995/12/19  19:33:02  jhill
  * function prototype changes
  *
@@ -1654,7 +1657,7 @@ void caAddConfiguredAddr(ELLLIST *pList, ENV_PARAM *pEnv,
 		return;
 	}
 
-        while(pToken = getToken(&pStr)){
+        while( (pToken = getToken(&pStr)) ){
       		memset((char *)&addr,0,sizeof(addr));
 		addr.in.sin_family = AF_INET;
   		addr.in.sin_port = htons(port);

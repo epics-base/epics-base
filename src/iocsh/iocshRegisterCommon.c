@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <dbAccess.h>
 
 #define epicsExportSharedSymbols
 #include "iocCoreLimitsRegister.h"
@@ -34,6 +35,7 @@
 
 void epicsShareAPI iocshRegisterCommon(void)
 {
+    iocshPpdbbase = &pdbbase;
     iocCoreLimitsRegister();
     osiRegister();
     iocUtilRegister();

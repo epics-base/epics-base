@@ -70,6 +70,9 @@ epicsShareFunc void epicsShareAPI iocshFree(void);
 
 epicsShareFunc int epicsShareAPI iocsh(const char *pathname);
 
+/* 'weak' link to pdbbase */
+epicsShareExtern struct dbBase **iocshPpdbbase;
+
 #ifdef __cplusplus
 }
 #endif

@@ -36,6 +36,11 @@
 extern "C" {
 
 /*
+ * Global link to pdbbase
+ */
+epicsShareDef struct dbBase **iocshPpdbbase;
+
+/*
  * File-local information
  */
 struct iocshCommand {
@@ -273,7 +278,11 @@ cvtArg (const char *filename, int lineno, char *arg, iocshArgBuf *argBuf, const 
     case iocshArgPdbbase:
         /* Argument must be missing or 0 or pdbbase */
         if(!arg || !*arg || (*arg == '0') || (strcmp(arg, "pdbbase") == 0)) {
-            argBuf->vval = pdbbase;
+            if(!iocshPpdbbase || !*iocshPpdbbase) {
+                showError (filename, lineno, "pdbbase not present");
+                return 0;
+            }
+            argBuf->vval = *iocshPpdbbase;
             break;
         }
         showError (filename, lineno, "Expecting `pdbbase' got `%s'", arg);

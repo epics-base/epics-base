@@ -104,6 +104,9 @@ inline double epicsTimerNotify::expireStatus::expirationDelay () const
 extern "C" {
 #endif /* __cplusplus */
 
+typedef struct epicsTimer * epicsTimerId;
+typedef void ( *epicsTimerCallback ) ( void *pPrivate );
+
 /* threaded timer queue management */
 typedef struct epicsTimerQueueThreaded * epicsTimerQueueThreadedId;
 epicsShareFunc epicsTimerQueueThreadedId epicsShareAPI
@@ -135,8 +138,6 @@ epicsShareFunc void  epicsShareAPI epicsTimerQueueNonThreadedShow (
     epicsTimerQueueNonThreadedId id, unsigned int level );
 
 /* timer management */
-typedef struct epicsTimer * epicsTimerId;
-typedef void ( *epicsTimerCallback ) ( void *pPrivate );
 epicsShareFunc void epicsShareAPI 
     epicsTimerDestroy ( epicsTimerId id );
 epicsShareFunc void epicsShareAPI 

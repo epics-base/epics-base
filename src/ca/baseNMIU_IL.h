@@ -23,7 +23,7 @@ inline ca_uint32_t baseNMIU::getID () const
     return this->id;
 }
 
-inline nciu & baseNMIU::channel ()
+inline nciu & baseNMIU::channel () const
 {
     return this->chan;
 }

@@ -1,11 +1,11 @@
 eval 'exec perl -S $0 ${1+"$@"}'      # -*- Mode: perl -*-
-	if $running_under_some_shell; # makeDependsTargets.pl
+	if $running_under_some_shell; # filterWarnings.pl
 #*************************************************************************
 # Copyright (c) 2002 The University of Chicago, as Operator of Argonne
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
-# Copyright (c) 2002 Berliner Speicherringgesellschaft fuer
+# Copyright (c) 2002 Berliner Elektronenspeicherringgesellschaft fuer
 #     Synchrotronstrahlung.
 # EPICS BASE Versions 3.13.7
 # and higher are distributed subject to a Software License Agreement found

@@ -20,6 +20,8 @@ CPLUSPLUS = CCC
 MSVISC = c:\\Program\ Files\\DevStudio\\Vc
 WINLINK = link
 
+RCCMD = rc -l 0x409  -fo $@ $<
+
 ARCMD = lib /nologo /verbose /out:$@
 
 #
@@ -140,6 +142,7 @@ WIN32=1
 
 EXE=.exe
 OBJ=.obj
+RES=.res
 
 #       Problem: MS Visual C++ does not recognize  *.cc as C++ source,
 #       we have to compile xx.cc  using the flag -Tp xx.cc,

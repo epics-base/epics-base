@@ -31,6 +31,7 @@
 vpath %.h $(USER_VPATH)   
 vpath %.c $(USER_VPATH) ../os/$(ARCH_CLASS) ../os/generic ..
 vpath %.cc $(USER_VPATH) ../os/$(ARCH_CLASS) ../os/generic ..
+vpath %.rc $(USER_VPATH) ../os/$(ARCH_CLASS) ../os/generic ..
 #	This prevents base/src/include/*.h from being installed. Why??
 #vpath %.h ../os/$(ARCH_CLASS) ../os/generic ..
 vpath %.h $(USER_VPATH)   
@@ -186,6 +187,17 @@ endif
 
 endif
 
+#
+#	concat specific resource files
+#
+ifneq (x$(RCS_$(ARCH_CLASS)),x)
+RCS += $(subst -nil-,,$(RCS_$(ARCH_CLASS)))
+else
+ifdef RCS_DEFAULT
+RCS += $(RCS_DEFAULT)
+endif
+endif
+
 #	adjust executables
 ifdef TESTPROD
 TESTPROD := $(addsuffix $(EXE), $(TESTPROD))
@@ -322,7 +334,7 @@ depends:: $(LIBSRCS) $(SRCS)
 
 clean::
 	@echo "Cleaning"
-	@$(RM) *.i *$(OBJ) *.a $(PROD) $(TESTPROD) $(LIBNAME) $(INC)
+	@$(RM) *.i *$(OBJ) *.a $(PROD) $(TESTPROD) $(LIBNAME) $(INC) *$(RES)
 
 $(DIRECTORY_TARGETS) :
 	$(MKDIR) $@
@@ -334,11 +346,13 @@ $(DIRECTORY_TARGETS) :
 ifdef PROD
 
 COND_PROD_SRCS=$(foreach prod, $(basename $(PROD)), $($(prod)_SRCS))
+COND_PROD_RCS=$(foreach prod, $(basename $(PROD)), $($(prod)_RCS) $($(prod)_RCS_$(ARCH_CLASS)))
 COND_PROD_LIBS=$(foreach prod, $(basename $(PROD)), $($(prod)_LIBS))
 
-ifeq ($(COND_PROD_SRCS) $(COND_PROD_LIBS)x,x)
+ifeq ($(COND_PROD_SRCS) $(COND_PROD_RCS) $(COND_PROD_LIBS)x,x)
 PRODNAME=$(PROD)
-PRODNAME_SRCS=$(SRCS) $(PROD_SRCS)
+PRODNAME_SRCS=$(SRCS)
+PRODNAME_RCS=$(RCS)
 endif
 
 ifdef PRODNAME
@@ -346,16 +360,19 @@ ifdef PRODNAME
 $(PRODNAME): $(PROD_DEPLIBS) $(PRODNAME_DEPLIBS)
 
 ifdef PRODNAME_SRCS
+
 ifeq ($(findstring cc,$(suffix $(PRODNAME_SRCS))),cc)
 PRODNAME_LINKER = $(LINK.cc)
 else
 PRODNAME_LINKER = $(LINK.c)
 endif
-PRODNAME_OBJS=$(addsuffix $(OBJ), $(basename $(PRODNAME_SRCS)))
 
-$(PRODNAME): $(PRODNAME_OBJS)
+PRODNAME_OBJS=$(addsuffix $(OBJ), $(basename $(PRODNAME_SRCS)))
+PRODNAME_RESS=$(addsuffix $(RES), $(basename $(PRODNAME_RCS)))
+
+$(PRODNAME): $(PRODNAME_OBJS) $(PRODNAME_RESS)
 	@$(RM) $@
-	$(PRODNAME_LINKER) $(PRODNAME_OBJS) $(LDLIBS)
+	$(PRODNAME_LINKER) $(PRODNAME_OBJS) $(PRODNAME_RESS) $(LDLIBS)
 
 endif  # ifdef PRODNAME_SRCS
 
@@ -364,11 +381,17 @@ else # PRODNAME not defined
 # We have to use the product's true dependancies and
 # call make again to determine if product should be rebuilt
 
-PROD_OBJS=$(addsuffix $(OBJ), $(basename $(SRCS)))
-COND_PROD_OBJS=$(addsuffix $(OBJ), $(basename $(COND_PROD_SRCS)))
+PROD_OBJS=$(addsuffix $(OBJ), $(basename $(SRCS) $(COND_PROD_SRCS)))
+PROD_RESS=$(addsuffix $(RES), $(basename $(RCS)  $(COND_PROD_RCS)))
 
-$(PROD): $(PROD_OBJS) $(COND_PROD_OBJS) $(PROD_DEPLIBS) $(COND_PROD_DEPLIBS)
-	@$(MAKE) $@ PRODNAME="$@"  PRODNAME_SRCS="$(SRCS) $($(basename $@)_SRCS)" PRODNAME_LIBS="$($(basename $@)_LIBS)"
+PROD_MAKE_COMMAND=$(MAKE) $@\
+	PRODNAME="$@"\
+	PRODNAME_SRCS="$(SRCS) $($(basename $@)_SRCS)"\
+	PRODNAME_RCS="$(RCS) $($(basename $@)_RCS) $($(basename $@)_RCS_$(ARCH_CLASS))"\
+	PRODNAME_LIBS="$($(basename $@)_LIBS)"
+
+$(PROD): $(PROD_OBJS) $(PROD_RESS) $(PROD_DEPLIBS) $(COND_PROD_DEPLIBS)
+	@$(PROD_MAKE_COMMAND)
 
 endif  #ifdef PRODNAME
 
@@ -436,6 +459,11 @@ endif
 %$(OBJ): %.C
 	@$(RM) $@
 	$(COMPILE.cc)  $<
+
+# WIN95/NT resource compiler
+%$(RES): %.rc
+	@$(RM) $@
+	$(RCCMD)
 
 #
 # rename the y.tab.h file only if we

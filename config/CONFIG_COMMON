@@ -35,6 +35,7 @@ EPICS_BASE_INCLUDE      = $(EPICS_BASE)/include
 
 DIVIDER = .
 OBJ = .
+RES = .
 
 EPICS_BASE_HOST_BIN = $(EPICS_BASE)/bin/$(HOST_ARCH)
 

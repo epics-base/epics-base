@@ -506,7 +506,7 @@ void ca_repeater ()
         if ( SOCKERRNO == SOCK_EADDRINUSE ) {
             osiSockRelease ();
             debugPrintf ( ( "CA Repeater: exiting because a repeater is already running\n" ) );
-            exit (0);
+            return;
         }
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString ( 
@@ -515,7 +515,7 @@ void ca_repeater ()
             __FILE__, sockErrBuf );
         osiSockRelease ();
         delete [] pBuf;
-        exit(0);
+        return;
     }
 
     debugPrintf ( ( "CA Repeater: Attached and initialized\n" ) );

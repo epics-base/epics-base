@@ -29,6 +29,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.21  1996/11/02 00:51:08  jhill
+ * many pc port, const in API, and other changes
+ *
  * Revision 1.20  1996/07/10 23:30:12  jhill
  * fixed GNU warnings
  *
@@ -187,7 +190,7 @@ int epicsShareAPI ca_sg_create(CA_SYNC_GID *pgid)
 /*
  * ca_sg_delete()
  */
-int epicsShareAPI ca_sg_delete(CA_SYNC_GID gid)
+int epicsShareAPI ca_sg_delete(const CA_SYNC_GID gid)
 {
 	int	status;
 	CASG 	*pcasg;
@@ -225,7 +228,7 @@ int epicsShareAPI ca_sg_delete(CA_SYNC_GID gid)
 /*
  * ca_sg_block()
  */
-int epicsShareAPI ca_sg_block(CA_SYNC_GID gid, ca_real timeout)
+int epicsShareAPI ca_sg_block(const CA_SYNC_GID gid, ca_real timeout)
 {
 	struct timeval	beg_time;
 	ca_real		delay;
@@ -321,7 +324,7 @@ int epicsShareAPI ca_sg_block(CA_SYNC_GID gid, ca_real timeout)
 /*
  * ca_sg_reset
  */
-int epicsShareAPI ca_sg_reset(CA_SYNC_GID gid)
+int epicsShareAPI ca_sg_reset(const CA_SYNC_GID gid)
 {
 	CASG 	*pcasg;
 
@@ -343,7 +346,7 @@ int epicsShareAPI ca_sg_reset(CA_SYNC_GID gid)
 /*
  * ca_sg_stat
  */
-int epicsShareAPI ca_sg_stat(CA_SYNC_GID gid)
+int epicsShareAPI ca_sg_stat(const CA_SYNC_GID gid)
 {
 	CASG 	*pcasg;
 	CASGOP	*pcasgop;
@@ -379,7 +382,7 @@ int epicsShareAPI ca_sg_stat(CA_SYNC_GID gid)
 /*
  * ca_sg_test
  */
-int epicsShareAPI ca_sg_test(CA_SYNC_GID gid)
+int epicsShareAPI ca_sg_test(const CA_SYNC_GID gid)
 {
 	CASG 	*pcasg;
 
@@ -404,11 +407,11 @@ int epicsShareAPI ca_sg_test(CA_SYNC_GID gid)
  * ca_sg_array_put()
  */
 int epicsShareAPI ca_sg_array_put(
-CA_SYNC_GID 	gid, 
-chtype		type,
-unsigned long 	count, 
-chid 		chix, 
-const void 	*pvalue)
+const CA_SYNC_GID 	gid, 
+chtype			type,
+unsigned long 		count, 
+chid 			chix, 
+const void 		*pvalue)
 {
 	int	status;
 	CASGOP	*pcasgop;
@@ -470,11 +473,11 @@ const void 	*pvalue)
  * ca_sg_array_get()
  */
 int epicsShareAPI ca_sg_array_get(
-CA_SYNC_GID 	gid, 
-chtype		type,
-unsigned long 	count, 
-chid 		chix, 
-void 		*pvalue)
+const CA_SYNC_GID 	gid, 
+chtype			type,
+unsigned long 		count, 
+chid 			chix, 
+void 			*pvalue)
 {
 	int	status;
 	CASGOP	*pcasgop;

@@ -41,7 +41,7 @@ private:
 class epicsMutexNOOP {
 public:
     void lock () {}
-    bool lock ( double timeOut ) { return true; }
+    bool lock ( double /* timeOut */ ) { return true; }
     bool tryLock () { return true; }
     void unlock () {}
     void show ( unsigned /* level */ ) const {}

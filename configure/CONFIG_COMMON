@@ -54,6 +54,8 @@ INSTALL_BIN                 = $(INSTALL_LOCATION_BIN)/$(T_A)
 
 ifdef T_A
 
+INSTALL_HOST_BIN                 = $(INSTALL_LOCATION_BIN)/$(EPICS_HOST_ARCH)
+
 #-------------------------------------------------------
 # tools for installing libraries and products
 INSTALL = $(PERL) $(TOOLS)/installEpics.pl

@@ -8,3 +8,4 @@
 #
 RTEMS_TARGET_CPU=i386
 include $(CONFIG)/os/CONFIG.Common.RTEMS
+OP_SYS_LDFLAGS = -Wl,-Ttext,0x100000

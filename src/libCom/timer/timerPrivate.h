@@ -54,7 +54,6 @@ private:
     timerQueue & queue;
     static epicsSingleton < tsFreeList < timer, 0x20 > > pFreeList;
     void privateStart ( epicsTimerNotify & notify, const epicsTime & );
-    void privateCancel ( epicsGuard < epicsMutex > & );
     timer & operator = ( const timer & );
     friend class timerQueue;
 };

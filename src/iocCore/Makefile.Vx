@@ -26,5 +26,6 @@ $(EPICS_VX_IMAGE_SYM): $(VX_IMAGE_SYM)
 iocCore: $(IOC_CORE)
 
 $(IOC_CORE): $(IOC_CORE_OBJS)
+	$(RM) $@
 	$(LINK.c) $@ $?
 	@what $@

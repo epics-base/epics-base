@@ -1,6 +1,6 @@
 /* $Id$ */
   
-/* cvtBpt.c - Convert using breakpoint table
+/* cvtBpt.c - Convert using breakpoint table */
 /*
  *      Author:          Janet Anderson
  *      Date:            9-19-91

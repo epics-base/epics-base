@@ -24,27 +24,12 @@ endif
 #---------------------------------------------------------------
 # Epics base Ioc libraries 
 
-EPICS_BASE_IOC_LIBRARIES += recIoc
-EPICS_BASE_IOC_LIBRARIES += softDevIoc
-EPICS_BASE_IOC_LIBRARIES += testDevIoc
-EPICS_BASE_IOC_LIBRARIES += iocsh
-EPICS_BASE_IOC_LIBRARIES += miscIoc
-EPICS_BASE_IOC_LIBRARIES += rsrvIoc
-EPICS_BASE_IOC_LIBRARIES += dbtoolsIoc
-EPICS_BASE_IOC_LIBRARIES += asIoc
-EPICS_BASE_IOC_LIBRARIES += dbIoc
-EPICS_BASE_IOC_LIBRARIES += registryIoc
-EPICS_BASE_IOC_LIBRARIES += dbStaticIoc
-EPICS_BASE_IOC_LIBRARIES += ca
-EPICS_BASE_IOC_LIBRARIES += Com
+EPICS_BASE_IOC_LIBS += recIoc softDevIoc testDevIoc iocsh 
+EPICS_BASE_IOC_LIBS += miscIoc rsrvIoc dbtoolsIoc asIoc
+EPICS_BASE_IOC_LIBS += dbIoc registryIoc dbStaticIoc ca Com 
 
-EPICS_BASE_HOST_LIBRARIES += libcas
-EPICS_BASE_HOST_LIBRARIES += libgdd
-EPICS_BASE_HOST_LIBRARIES += libiocsh
-EPICS_BASE_HOST_LIBRARIES += libasHost
-EPICS_BASE_HOST_LIBRARIES += libdbStaticHost
-EPICS_BASE_HOST_LIBRARIES += libca
-EPICS_BASE_HOST_LIBRARIES += libCom
+EPICS_BASE_HOST_LIBS += libcas libgdd libiocsh libasHost libdbStaticHost
+EPICS_BASE_HOST_LIBS += libca libCom
 
 #---------------------------------------------------------------
 # Version number for base shared libraries (and win32 products)

@@ -190,6 +190,7 @@ private:
     unsigned                    readSeq;
     unsigned                    recvThreadsPendingCount;
 
+    void privateUninstallIIU ( tcpiiu &iiu ); 
     void flushRequestPrivate ();
     void uninstallChannelPrivate ( nciu & );
     void run ();

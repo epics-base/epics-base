@@ -46,6 +46,7 @@
  * .16	05-19-92	mrk	Changes for internal database structure changes
  * .17	06-16-92	jba	Added prset test to call of init_record second time loop
  * .18	07-31-92	rcz	moved database loading to function dbLoad
+ * .19	08-14-92	jba	included dblinks with maximize severity in lockset
  *
  */
 
@@ -415,6 +416,7 @@ static long initDatabase()
 			    /* See determine lock set below.*/
 			    if( pfldDes->field_type!=DBF_INLINK
 				|| plink->value.pv_link.process_passive
+				|| plink->value.pv_link.maximize_sevr
 				|| dbAddr.no_elements>1 )
 			    	((struct dbCommon *)(dbAddr.precord))->lset= -1;
 			    plink->type = DB_LINK;
@@ -471,7 +473,8 @@ static long initDatabase()
     /* Now determine lock sets*/
     /* When each record is examined lset has one of the following values
      * -1   Record is not in a set and at least one following record refers
-     *      to this record unless INLINK && no_elements<=1 && !process_passive
+     *      to this record unless INLINK && no_elements<=1 && ( !process_passive
+     *      && !maximize_sevr )
      *  0   record is not in a set and no following records refer to it.
      * >0   Record is already in a set
      */
@@ -521,7 +524,7 @@ static long addToSet(precord,record_type,lookAhead,i,prootNode,lset)
     }
     precord->lset = lset;
    /* add all DB_LINKs in this record to the set */
-   /* unless not process_passive or no_elements>1*/
+   /* unless (!process_passive && !maximize_sevr) or no_elements>1*/
     precTypDes = precDes->papRecTypDes[record_type];
     for(k=0; k<precTypDes->no_links; k++) {
 	struct dbAddr	*pdbAddr;
@@ -532,7 +535,8 @@ static long addToSet(precord,record_type,lookAhead,i,prootNode,lset)
 	if(plink->type != DB_LINK) continue;
 	pdbAddr = (struct dbAddr *)(plink->value.db_link.pdbAddr);
 	if( pfldDes->field_type==DBF_INLINK
-	    && !(plink->value.db_link.process_passive)
+	    && ( !(plink->value.db_link.process_passive)
+	         && !(plink->value.db_link.maximize_sevr) )
 	    && pdbAddr->no_elements<=1) continue;
 	pk = (struct dbCommon *)(pdbAddr->precord);
 	if(pk->lset > 0){
@@ -545,7 +549,7 @@ static long addToSet(precord,record_type,lookAhead,i,prootNode,lset)
 	if(status) return(status);
     }
     /* Now look for all later records that refer to this record*/
-    /* unless not process_passive or no_elements>1*/
+    /* unless (!process_passive && !maximize_sevr) or no_elements>1*/
     /* remember that all earlier records already have lock set determined*/
     if(!lookAhead) return(0);
     precNode = (RECNODE *)lstNext(&prootNode->next);
@@ -569,7 +573,8 @@ static long addToSet(precord,record_type,lookAhead,i,prootNode,lset)
 		    if(plink->type != DB_LINK) continue;
 		    pdbAddr = (struct dbAddr *)(plink->value.db_link.pdbAddr);
 		    if( pfldDes->field_type==DBF_INLINK
-		        && !(plink->value.db_link.process_passive)
+		        && ( !(plink->value.db_link.process_passive)
+		             && !(plink->value.db_link.maximize_sevr) )
 			&& pdbAddr->no_elements<=1 ) continue;
 		    pk = (struct dbCommon *)(pdbAddr->precord);
 		    if(pk != precord) continue;

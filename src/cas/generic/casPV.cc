@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.7  1997/08/05 00:47:10  jhill
+ * fixed warnings
+ *
  * Revision 1.6  1997/04/10 19:34:14  jhill
  * API changes
  *
@@ -61,8 +64,8 @@
 #include "casPVIIL.h" 	// casPVI inline func
 #include "casCtxIL.h" 	// casCtx inline func
 
-epicsShareFunc casPV::casPV (caServer &casIn) :
-	casPVI (casIn, *this)
+epicsShareFunc casPV::casPV () :
+	casPVI (*this)
 {
 }
 
@@ -159,7 +162,7 @@ epicsShareFunc aitIndex casPV::maxBound(unsigned /* dimension */) const
 epicsShareFunc casChannel *casPV::createChannel (const casCtx &ctx, const char * const,
 		const char * const)
 {
-        return new casChannel (ctx);
+	return new casChannel (ctx);
 }
 
 //

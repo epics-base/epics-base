@@ -20,6 +20,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <fcntl.h>
 
 #define epicsExportSharedSymbols
 #include "epicsThread.h"
@@ -64,6 +65,11 @@ void osiSockRelease()
 {
 }
 
+/*
+ * this version sets the file control flags so that
+ * the socket will be closed if the user uses exec()
+ * as is the case with third party tools such as TCL/TK
+ */
 epicsShareFunc SOCKET epicsShareAPI epicsSocketCreate ( 
     int domain, int type, int protocol )
 {
@@ -79,7 +85,7 @@ epicsShareFunc SOCKET epicsShareAPI epicsSocketCreate (
             errlogPrintf ( 
                 "epicsSocketCreate: failed to "
                 "fcntl FD_CLOEXEC because \"%s\"\n",
-                buf ):
+                buf );
             close ( sock );
             sock = INVALID_SOCKET;
         }

@@ -49,6 +49,8 @@ extern "C" {
 #include "ellLib.h"
 #include "bucketLib.h"
 #include "osiSock.h"
+#include "osiSem.h"
+#include "osiThread.h"
 #include "shareLib.h"
 
 enum fdi_type {fdi_read, fdi_write, fdi_excp};
@@ -68,18 +70,14 @@ typedef struct{
 	unsigned	nextAlarmId;
     SOCKET		maxfd;
 	int		select_tmo;
-#	if defined (vxWorks)
-	SEM_ID		lock;
-    SEM_ID		fdmgr_pend_event_lock;
-	SEM_ID		expired_alarm_lock;
-	SEM_ID		fd_handler_lock;
+	semId		lock;
+    semId		fdmgr_pend_event_lock;
+	semId		expired_alarm_lock;
+	semId		fd_handler_lock;
 	unsigned long   clk_rate;       /* ticks per sec */
 	unsigned long	last_tick_count;
 	unsigned long	sec_offset;
-	WIND_TCB	*fdmgr_pend_event_tid;
-#	else 
-	unsigned	fdmgr_pend_event_in_use;
-#	endif
+	threadId	*fdmgr_pend_event_tid;
 }fdctx;
 
 /*

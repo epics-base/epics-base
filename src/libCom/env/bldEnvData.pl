@@ -23,7 +23,7 @@ chdir $config_dir or die "cannot change dir to $config_dir";
 $config_dir=cwd();
 chdir $start_dir;
 
-$SRC      = "../../../misc/generic/envDefs.h";
+$SRC      = "../../misc/generic/envDefs.h";
 $env_data = "${config_dir}/CONFIG_ENV";
 $site_data= "${config_dir}/CONFIG_SITE_ENV";
 $out_name = "envData.c";

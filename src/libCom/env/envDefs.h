@@ -35,7 +35,6 @@
  * .08  03-18-97	joh 	remove env param length limit	
  *
  * make options
- *	-DvxWorks	makes a version for VxWorks
  *	-DNDEBUG	don't compile assert() checking
  *      -DDEBUG         compile various debug code, including checks on
  *                      malloc'd memory

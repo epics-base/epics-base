@@ -35,7 +35,6 @@
 #ifndef INCerrorh
 #define INCerrorh 1
 
-#define LOCAL   static
 #define NELEMENTS(array)		/* number of elements in an array */ \
 		(sizeof (array) / sizeof ((array) [0]))
 

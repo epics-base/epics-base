@@ -88,7 +88,7 @@
 
 #ifdef vxWorks
 #include  <vxWorks.h>
-#include <varargs.h>
+/*#include <varargs.h>*/
 #include <fioLib.h>
 #else
 #include <stdio.h>

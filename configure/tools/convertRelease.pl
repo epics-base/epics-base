@@ -28,16 +28,25 @@ if ($opt_a) {
 $hostarch = $arch;
 $hostarch = $opt_h if ($opt_h);
 
+# Find $top from current path; NB only works under iocBoot/* and configure/*
+$top = $cwd;
+$top =~ s/\/iocBoot.*$//;
+$top =~ s/\/configure.*$//;
+
+# The IOC may need a different path to get to $top
 if ($opt_t) {
-    $top = $opt_t;
-} else {		# Find $top from current path
-    $top = $cwd;
-    $top =~ s/\/iocBoot.*//;
-    $top =~ s/\/configure\/O\..*//;
+    $iocroot = $ioctop = $opt_t;
+    $root = $top;
+    while (substr($iocroot, -1, 1) eq substr($root, -1, 1)) {
+	chop $iocroot;
+	chop $root;
+    }
+} else {
+    $ioctop = $top;
 }
 
 unless (@ARGV == 1) {
-    print "Usage: convertRelease.pl [-a arch] [-h hostarch] [-t top] outfile\n";
+    print "Usage: convertRelease.pl [-a arch] [-h hostarch] [-t ioctop] outfile\n";
     print "   where outfile is be one of:\n";
     print "\tcheckRelease - checks consistency with support apps\n";
     print "\tcdCommands - generate cd path strings for IOC use\n";
@@ -185,20 +194,21 @@ sub cdCommands {
     die "Architecture not set (use -a option)" unless ($arch);
     @includes = grep !/^TEMPLATE_TOP$/, @apps;
     
-    # if -t <top> was given, substitute it in the startup path
-    $startup = $cwd;
-    $startup =~ s/.*(\/iocBoot\/.*)/$top$1/ if ($opt_t);
-    
     unlink($outfile);
     open(OUT,">$outfile") or die "$! creating $outfile";
+    
+    $startup = $cwd;
+    $startup =~ s/^$root/$iocroot/ if ($opt_t);
+    
     print OUT "startup = \"$startup\"\n";
-    print OUT "appbin = \"$top/bin/$arch\"\n";	# compatibility with R3.13.1
+    print OUT "appbin = \"$ioctop/bin/$arch\"\n";	# R3.13.1 compatibility
     
     foreach $app (@includes) {
-        $path = $macros{$app};
-	$lcapp = lc($app);
-        print OUT "$lcapp = \"$path\"\n" if (-d $path);
-	print OUT "${lcapp}bin = \"$path/bin/$arch\"\n" if (-d "$path/bin/$arch");
+	$iocpath = $path = $macros{$app};
+	$iocpath =~ s/^$root/$iocroot/ if ($opt_t);
+	$app_lc = lc($app);
+        print OUT "$app_lc = \"$iocpath\"\n" if (-d $path);
+	print OUT "${app_lc}bin = \"$iocpath/bin/$arch\"\n" if (-d "$path/bin/$arch");
     }
     close OUT;
 }

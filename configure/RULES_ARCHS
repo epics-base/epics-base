@@ -37,7 +37,7 @@ O.Common:
 	$(MKDIR) O.Common
 
 checkRelease: $(wildcard $(TOP)/configure/RELEASE*)
-	$(PERL) $(TOOLS)/convertRelease.pl -h $(EPICS_HOST_ARCH) -t $(TOP) $@
+	$(PERL) $(TOOLS)/convertRelease.pl -h $(EPICS_HOST_ARCH) $@
 
 #
 # special clean rule

@@ -5,7 +5,7 @@
 TOP = .
 include $(TOP)/configure/CONFIG
 
-DIRS += config configure src
+DIRS += config config/tools configure src
 
 include $(TOP)/configure/RULES_TOP
 

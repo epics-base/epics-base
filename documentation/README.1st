@@ -148,6 +148,7 @@ Directory Structure
      base/configure/os            Operating system dependent build config files 
      base/configure/tools         Perl and shell scripts used in the build 
      base/copyright               Text files describing software copyrights 
+     base/documentation           Distributation build documentation
      base/src                     All epics base source code in subdirectories 
      base/src/as                  Access security 
      base/src/bpt                 Break point table 
@@ -192,6 +193,7 @@ Directory Structure
      base/src/toolsComm           Code for the build tools antelope and e_flex 
      base/src/util                Utilities (ca_test, iocLogServer, startCArepeater) 
      base/src/vxWorks             R3.13 compatibility code specific to vxWorks 
+     base/src/RTEMS               Code to configure RTEMS for EPICS
      base/startup                 Scripts for setting up path and environment 
 
      Install directories created by the build: 
@@ -202,6 +204,8 @@ Directory Structure
      base/include                 Installed header files 
      base/include/os              Installed os specific header files 
      base/templates               Installed templates 
+     base/javalib                 Installed java class files 
+     base/html                    Installed html documentation
 
 Build related components
 
@@ -212,6 +216,10 @@ Build related components
      README.cxxTemplates  Information about C++ templates in EPICS base 
      README.niCpu030      NI cpu030 specific instructions 
      README.darwin        Installation notes for Mac OS X (Darwin)
+     RELEASE_NOTES.html   Notes on release changes.
+     KnownProblems.html   List of know problems and workarounds.
+     Converting*To*.html  Release specific conversion instructions.
+     Building*With*.html  Release specific build instructions.
        
      base/startup directory - contains scripts to set environment and path 
      EpicsHostArch       c shell script to set EPICS_HOST_ARCH env variable 
@@ -235,6 +243,7 @@ Build related components
      RELEASE               Location of external products such as Tornado II 
      RULES                 Includes appropriate rules file 
      RULES.Db              Rules for database and database definition files 
+     RULES.ioc             Rules for application iocBoot/ioc* directory 
      RULES_ARCHS           Definitions and rules for building architectures 
      RULES_BUILD           Build and install rules and definitions 
      RULES_DIRS            Definitions and rules for building subdirectories 
@@ -254,11 +263,10 @@ Build related components
      CONFIG_SITE.<host>.Common   Site specific host defs for all targets 
        
      base/configure/tools directory - contains Perl scripts used for the build 
-     MakeReleae              Unix shell script to create a release tar file
      convertRelease.pl       Performs consistancy checks on RELEASE files
      cp.pl                   This Perl script copies an existing file 
+     filterWarnings.pl       Filters warning messages during HP builds.
      installEpics.pl         Installs built files into install directories. 
-     makeDependsTargets.pl   Creates targets of include dependency files
      makeMakefile.pl         Creates a Makefile in O.<arch> dirs 
      makeMakefileInclude.pl  Creates file to be included by Makefile 
      mkdir.pl                Creates a directory (like Unix mkdir) 

@@ -15,7 +15,6 @@ vpath %.dbd $(USR_VPATH) $(GENERIC_SRC_DIRS) $(dir $(DBD)) $(COMMON_DIR)
 vpath %.db $(USR_VPATH) $(GENERIC_SRC_DIRS) $(dir $(DB)) $(COMMON_DIR)
 vpath %.substitutions $(USR_VPATH) $(GENERIC_SRC_DIRS) $(COMMON_DIR)
 vpath %.template $(USR_VPATH) $(GENERIC_SRC_DIRS) $(COMMON_DIR)
-vpath %.edf $(USR_VPATH) $(GENERIC_SRC_DIRS) $(COMMON_DIR)
 vpath bpt%.data $(USR_VPATH) $(GENERIC_SRC_DIRS) $(COMMON_DIR)
 
 ##################################################### dbdflags
@@ -51,15 +50,20 @@ SOURCE_DB_aaa = $(addsuffix /$(file), $(dir) )
 COMMONS = $(COMMON_DIR)/*.dbd $(COMMON_DIR)/*.db $(COMMON_DIR)/*.h \
           $(COMMON_DIR)/*.substitutions $(COMMON_DIR)/*.template
 
-# WARNING 0-9 allowed only at end of stem
-TEMPLATE_FILENAME=$(addsuffix .template,$(addprefix ../,$(subst 0,, \
-       $(subst 1,,$(subst 2,,$(subst 3,,$(subst 4,, $(subst 5,, \
-       $(subst 6,,$(subst 7,,$(subst 8,,$(subst 9,,$*))))))))))))
-
+# Remove trailing numbers (to 99) on stem
+TEMPLATE1=$(patsubst %0,%,$(patsubst %1,%,$(patsubst %2,%,$(patsubst %3,%,$(patsubst %4,%, \
+          $(patsubst %5,%,$(patsubst %6,%,$(patsubst %7,%,$(patsubst %8,%,$(patsubst %9,%, \
+          $*))))))))))
+TEMPLATE2=$(patsubst %0,%,$(patsubst %1,%,$(patsubst %2,%,$(patsubst %3,%,$(patsubst %4,%, \
+          $(patsubst %5,%,$(patsubst %6,%,$(patsubst %7,%,$(patsubst %8,%,$(patsubst %9,%, \
+          $(TEMPLATE1)))))))))))
+TEMPLATE_FILENAME=$(addsuffix .template,$(addprefix ../,$(TEMPLATE2)))
 
 # dbst based database optimization
 ifeq '$(DB_OPT)' 'YES'
 RAW=.raw
+COMMON_DBS = $(addprefix $(COMMON_DIR)/,$(filter %.db,$(DB)))
+COMMON_DBS += $(addsuffix $(RAW),$(addprefix $(COMMON_DIR)/,$(filter %.db,$(DB))))
 endif
 
 #####################################################  dependancies
@@ -142,7 +146,7 @@ endif
 $(COMMON_DIR)/%.edf: ../%.sch $(DEPSCHS) 
 	@$(RM) $@
 	@if [ ! -f cad.rc -a -r ../cad.rc ] ; then ln -s ../cad.rc ; fi
-	$(SCH2EDIF) $(SCH2EDIF_SYSFLAGS) $(SCH2EDIF_FLAGS) $<
+	$(SCH2EDIF) $(SCH2EDIF_SYSFLAGS) $(SCH2EDIF_FLAGS) -o $@  $<
 
 ##################################################### Substitution files
 
@@ -154,15 +158,23 @@ $(COMMON_DIR)/%.substitutions:
 	@$(CREATESUBSTITUTIONS) $(COMMON_DIR)/$*
 endif
 
-.PRECIOUS: $(DB:%.db=$(COMMON_DIR)/%.substitutions)
+$(INSTALL_DB)/%.substitutions: %.substitutions
+	@echo "Installing db file $@"
+	@$(INSTALL) -d -m 644 $< $(@D)
+
+.PRECIOUS: $(COMMON_DIR)/%.substitutions
 
 ##################################################### Template files
 
-$(COMMON_DIR)/%.template: %.edf 
+$(COMMON_DIR)/%.template: $(COMMON_DIR)/%.edf 
 	@$(RM) $@
 	$(E2DB) $(E2DB_SYSFLAGS) $(E2DB_FLAGS) -n $@.VAR $<
 	@$(REPLACEVAR) < $@.VAR > $@
 	@$(RM) $@.VAR
+
+$(INSTALL_DB)/%.template: %.template
+	@echo "Installing db file $@"
+	@$(INSTALL) -d -m 644 $< $(@D)
 
 .PRECIOUS: $(DB:%.db=$(COMMON_DIR)/%.template)
 
@@ -197,7 +209,7 @@ $(INSTALL_DBD)/%: %
 
 ##################################################### DB files
 
-$(COMMON_DIR)/%.db$(RAW): %.edf 
+$(COMMON_DIR)/%.db$(RAW): $(COMMON_DIR)/%.edf 
 	$(E2DB) $(E2DB_SYSFLAGS) $(E2DB_FLAGS) -n $@.VAR $<
 	@$(REPLACEVAR) < $@.VAR > $@
 	@$(RM) $@.VAR
@@ -213,7 +225,7 @@ $(COMMON_DIR)/%.db$(RAW): %.substitutions
 # dbst based database optimization
 ifeq '$(DB_OPT)' 'YES'
 
-$(COMMON_DIR)/%.db$(RAW): %.db 
+$(COMMON_DIR)/%.db$(RAW): ../%.db
 	@$(RM) $@
 	$(CP) $< $@
 
@@ -222,13 +234,20 @@ $(COMMON_DIR)/%.db: $(COMMON_DIR)/%.db$(RAW)
 	@$(RM) $@
 	$(DBST) . $< -d > $@
 
+$(INSTALL_DB)/%.db: $(COMMON_DIR)/%.db
+	@echo "Installing db file $@"
+	@$(INSTALL) -d -m 644 $< $(@D)
+
+.PRECIOUS: $(COMMON_DIR)/%.db
 .PRECIOUS: $(DB:%=$(COMMON_DIR)/%$(RAW))
-endif
+else
 
 $(INSTALL_DB)/%: %
 	@echo "Installing db file $@"
 	@$(INSTALL) -d -m 644 $< $(@D)
+endif
 
+.PRECIOUS: $(COMMON_DIR)/%.edf
 .PRECIOUS: $(COMMON_DBS)
 
 ##################################################### register record,device,driver support

@@ -59,7 +59,6 @@ class casMonitor;
 class casMonEvent;
 class casCoreClient;
 
-class evSysMutex;
 template < class MUTEX > class epicsGuard;
 
 class evSysMutex : public epicsMutex {};
@@ -86,7 +85,7 @@ public:
         bool & onTheEventQueue );
 	bool addToEventQueue ( 
         casChannelI &, bool & inTheEventQueue );
-	void addToEventQueue ( class channelDestroyEvent & );
+	bool addToEventQueue ( class channelDestroyEvent & );
 	bool getNDuplicateEvents () const;
 	void setDestroyPending ();
 	void eventsOn ();

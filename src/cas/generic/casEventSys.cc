@@ -259,10 +259,12 @@ void casEventSys::removeFromEventQueue ( casAsyncIOI &  io, bool & onTheEventQue
     }
 }
 
-void casEventSys::addToEventQueue ( channelDestroyEvent & event )
+bool casEventSys::addToEventQueue ( channelDestroyEvent & event )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
+    bool wakeupRequired = ! this->dontProcess && this->eventLogQue.count()==0;
 	this->eventLogQue.add ( event );
+    return wakeupRequired;
 }
 
 void casEventSys::setDestroyPending ()

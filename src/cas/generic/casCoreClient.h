@@ -108,6 +108,7 @@ public:
         bool & onTheEventQueue );
 	void addToEventQueue ( 
         casChannelI &, bool & inTheEventQueue );
+    void addToEventQueue ( class channelDestroyEvent & ev );
     void enableEvents ();
     void disableEvents ();
     caStatus casMonitorCallBack ( 
@@ -128,8 +129,8 @@ public:
         casMonEvent &, epicsGuard < evSysMutex > & );
 
 protected:
-    mutable casClientMutex mutex;
     casEventSys eventSys;
+    mutable casClientMutex mutex;
 	casCtx ctx;
     bool userStartedAsyncIO;
 
@@ -200,6 +201,14 @@ inline void casCoreClient::addToEventQueue (
 	if ( signalNeeded ) {
 		this->eventSignal ();
 	}
+}
+
+inline void casCoreClient::addToEventQueue ( class channelDestroyEvent & ev )
+{
+    bool wakeUpNeeded = this->eventSys.addToEventQueue ( ev );
+    if ( wakeUpNeeded ) {
+		this->eventSignal ();
+    }
 }
 
 inline void casCoreClient::enableEvents ()

@@ -1704,7 +1704,7 @@ void casStrmClient::casChannelDestroyNotify (
             immediateUninstallNeeded ? & chan : 0,
             chan.getSID() );
     if ( pEvent ) {
-        this->eventSys.addToEventQueue ( *pEvent );
+        this->addToEventQueue ( *pEvent );
     }
     else {
         this->forceDisconnect ();

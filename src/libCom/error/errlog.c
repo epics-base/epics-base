@@ -128,6 +128,7 @@ epicsShareFunc int errlogVprintf(
 {
     int nchar;
     char *pbuffer;
+    int isShell = epicsThreadIsShellContext(epicsThreadGetIdSelf());
 
     if(epicsInterruptIsInterruptContext()) {
 	epicsInterruptContextMessage
@@ -135,10 +136,11 @@ epicsShareFunc int errlogVprintf(
 	return 0;
     }
     errlogInit(0);
-    pbuffer = msgbufGetFree(0);
+    pbuffer = msgbufGetFree(!isShell);
     if(!pbuffer) return(0);
     nchar = tvsnPrint(pbuffer,MAX_MESSAGE_SIZE,pFormat?pFormat:"",pvar);
     msgbufSetSize(nchar);
+    if(isShell) printf("%s",pbuffer);
     return nchar;
 }
 
@@ -206,9 +208,11 @@ epicsShareFunc int errlogSevPrintf(
 epicsShareFunc int errlogSevVprintf(
     const errlogSevEnum severity,const char *pFormat,va_list pvar)
 {
-    char	*pnext;
-    int		nchar;
-    int		totalChar=0;
+    char *pnext;
+    int	 nchar;
+    int	 totalChar=0;
+    int  isShell = epicsThreadIsShellContext(epicsThreadGetIdSelf());
+    char *pmessage;
 
     if(pvtData.sevToLog>severity) return(0);
     if(epicsInterruptIsInterruptContext()) {
@@ -217,7 +221,8 @@ epicsShareFunc int errlogSevVprintf(
 	return 0;
     }
     errlogInit(0);
-    pnext = msgbufGetFree(0);
+    pnext = msgbufGetFree(!isShell);
+    pmessage = pnext;
     if(!pnext) return(0);
     nchar = sprintf(pnext,"sevr=%s ",errlogGetSevEnumString(severity));
     pnext += nchar; totalChar += nchar;
@@ -228,6 +233,7 @@ epicsShareFunc int errlogSevVprintf(
         totalChar++;
     }
     msgbufSetSize(totalChar);
+    if(isShell) printf("%s",pmessage);
     return(nchar);
 }
 
@@ -302,13 +308,16 @@ epicsShareFunc void errPrintf(long status, const char *pFileName,
     char    *pnext;
     int     nchar;
     int     totalChar=0;
+    int     isShell = epicsThreadIsShellContext(epicsThreadGetIdSelf());
+    char    *pmessage;
 
     if(epicsInterruptIsInterruptContext()) {
         epicsInterruptContextMessage("errPrintf called from interrupt level\n");
         return;
     }
     errlogInit(0);
-    pnext = msgbufGetFree(0);
+    pnext = msgbufGetFree(!isShell);
+    pmessage = pnext;
     if(!pnext) return;
     if(pFileName){
         nchar = sprintf(pnext,"filename=\"%s\" line number=%d\n",
@@ -333,6 +342,7 @@ epicsShareFunc void errPrintf(long status, const char *pFileName,
     strcpy(pnext,"\n");
     totalChar++ ; /*include the \n */
     msgbufSetSize(totalChar);
+    if(isShell) printf("%s",pmessage);
 }
 
 static void errlogInitPvt(void *arg)

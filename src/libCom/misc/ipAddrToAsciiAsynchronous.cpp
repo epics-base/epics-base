@@ -23,117 +23,148 @@
  *	johill@lanl.gov
  */
 
+#include <stdexcept>
+
 #define epicsExportSharedSymbols
-#include "epicsThread.h"
-#include "epicsGuard.h"
 #include "ipAddrToAsciiAsynchronous.h"
+#include "epicsThread.h"
+#include "epicsMutex.h"
+#include "epicsEvent.h"
+#include "epicsGuard.h"
+#include "tsDLList.h"
+#include "tsFreeList.h"
 
-epicsMutex ipAddrToAsciiEngine::mutex;
+// - this class implements the asynchronous DNS query
+// - it completes early with the host name in dotted IP address form 
+//   if the ipAddrToAsciiEngine is destroyed before IO completion
+//   or if there are too many items already in the engine's queue.
+class ipAddrToAsciiTransactionPrivate : 
+    public ipAddrToAsciiTransaction,
+    public tsDLNode < ipAddrToAsciiTransactionPrivate > {
+public:
+    ipAddrToAsciiTransactionPrivate ( class ipAddrToAsciiEnginePrivate & engineIn );
+    virtual ~ipAddrToAsciiTransactionPrivate ();
+    osiSockAddr address () const;
+    void show ( unsigned level ) const; 
+    void * operator new ( size_t size, tsFreeList 
+        < ipAddrToAsciiTransactionPrivate, 0x80, epicsMutexNOOP > & );
+    epicsPlacementDeleteOperator (( void *, tsFreeList 
+        < ipAddrToAsciiTransactionPrivate, 0x80, epicsMutexNOOP > & ))
+private:
+    osiSockAddr addr;
+    ipAddrToAsciiEnginePrivate & engine;
+    ipAddrToAsciiCallBack * pCB;
+    bool pending;
+    void ipAddrToAscii ( const osiSockAddr &, ipAddrToAsciiCallBack & );
+    void release (); 
+    void * operator new ( size_t ); 
+    void operator delete ( void * );
+    friend class ipAddrToAsciiEnginePrivate;
+};
 
-ipAddrToAsciiEngine::ipAddrToAsciiEngine ( const char *pName ) :
-    thread ( * new epicsThread ( *this, pName, 0x2000, epicsThreadPriorityLow ) ),
-    pCurrent ( 0 ), exitFlag ( false ), cancelPending ( false ),
-    callbackInProgress ( false ), waitingForCancelPendCompletion (false )
+// - this class executes the synchronous DNS query
+// - it creates one thread
+class ipAddrToAsciiEnginePrivate : 
+    public ipAddrToAsciiEngine, 
+    public epicsThreadRunable {
+public:
+    ipAddrToAsciiEnginePrivate ();
+    virtual ~ipAddrToAsciiEnginePrivate ();
+    void show ( unsigned level ) const; 
+private:
+    char nameTmp [1024];
+    tsFreeList 
+        < ipAddrToAsciiTransactionPrivate, 0x80, epicsMutexNOOP > 
+            transactionFreeList;
+    tsDLList < ipAddrToAsciiTransactionPrivate > labor;
+    mutable epicsMutex mutex;
+    epicsEvent laborEvent;
+    epicsEvent destructorBlockEvent;
+    epicsThread thread;
+    ipAddrToAsciiTransactionPrivate * pCurrent;
+    unsigned cancelPendingCount;
+    bool exitFlag;
+    bool callbackInProgress;
+    static epicsMutex globalMutex;
+    static ipAddrToAsciiEnginePrivate * pEngine;
+    static unsigned numberOfReferences;
+    ipAddrToAsciiTransaction & createTransaction ();
+    void release (); 
+    void run ();
+	ipAddrToAsciiEnginePrivate ( const ipAddrToAsciiEngine & );
+	ipAddrToAsciiEnginePrivate & operator = ( const ipAddrToAsciiEngine & );
+    friend class ipAddrToAsciiEngine;
+    friend class ipAddrToAsciiTransactionPrivate;
+};
+
+epicsMutex ipAddrToAsciiEnginePrivate::globalMutex;
+ipAddrToAsciiEnginePrivate * ipAddrToAsciiEnginePrivate::pEngine = 0;
+unsigned ipAddrToAsciiEnginePrivate::numberOfReferences = 0u;
+
+// the users are not required to supply a show routine
+// for there transaction callback class
+void ipAddrToAsciiCallBack::show ( unsigned /* level */ ) const {}
+
+// some noop pure virtual destructures
+ipAddrToAsciiCallBack::~ipAddrToAsciiCallBack () {}
+ipAddrToAsciiTransaction::~ipAddrToAsciiTransaction () {}
+ipAddrToAsciiEngine::~ipAddrToAsciiEngine () {}
+
+// for now its probably sufficent to allocate one 
+// DNS transaction thread for all codes sharing
+// the same process that need DNS services but we 
+// leave our options open for the future
+ipAddrToAsciiEngine & ipAddrToAsciiEngine::allocate ()
+{
+    epicsGuard < epicsMutex > guard ( ipAddrToAsciiEnginePrivate::globalMutex );
+    if ( ! ipAddrToAsciiEnginePrivate::pEngine ) {
+        ipAddrToAsciiEnginePrivate::pEngine = new ipAddrToAsciiEnginePrivate ();
+    }
+    ipAddrToAsciiEnginePrivate::numberOfReferences++;
+    return * ipAddrToAsciiEnginePrivate::pEngine;
+}
+
+ipAddrToAsciiEnginePrivate::ipAddrToAsciiEnginePrivate () :
+    thread ( *this, "ipToAsciiProxy", 0x2000, epicsThreadPriorityLow ),
+    pCurrent ( 0 ), cancelPendingCount ( 0u ), exitFlag ( false ),  
+    callbackInProgress ( false )
 {
     this->thread.start (); // start the thread
 }
 
-ipAddrToAsciiEngine::~ipAddrToAsciiEngine ()
+ipAddrToAsciiEnginePrivate::~ipAddrToAsciiEnginePrivate ()
 {
-    ipAddrToAsciiAsynchronous * pItem;
-
     {
-        epicsGuard < epicsMutex > locker ( ipAddrToAsciiEngine::mutex );
+        epicsGuard < epicsMutex > guard ( this->mutex );
         this->exitFlag = true;
     }
     this->laborEvent.signal ();
-    this->threadExit.wait ();
+    this->thread.exitWait ();
+}
 
-    // force IO completion for any items that remain
-    {
-        epicsGuard < epicsMutex > locker ( ipAddrToAsciiEngine::mutex );
-        while ( ( pItem = this->labor.first () ) ) {
-            pItem->pEngine = 0u;
-            sockAddrToDottedIP ( &pItem->addr.sa, this->nameTmp, 
-                sizeof ( this->nameTmp ) );
-            pItem->ioCompletionNotify ( this->nameTmp );
-        }
-        if ( this->cancelPending ) {
-            this->waitingForCancelPendCompletion = true;
-        }
-    }
-
-    delete & thread;
-
-    while ( this->cancelPending ) {
-        this->cancelPendCompleted.wait ();
+// for now its probably sufficent to allocate one 
+// DNS transaction thread for all codes sharing
+// the same process that need DNS services but we 
+// leave our options open for the future
+void ipAddrToAsciiEnginePrivate::release ()
+{
+    epicsGuard < epicsMutex > guard ( ipAddrToAsciiEnginePrivate::globalMutex );
+    assert ( ipAddrToAsciiEnginePrivate::numberOfReferences > 0u );
+    ipAddrToAsciiEnginePrivate::numberOfReferences--;
+    if ( ipAddrToAsciiEnginePrivate::numberOfReferences == 0u ) {
+        delete ipAddrToAsciiEnginePrivate::pEngine;
+        ipAddrToAsciiEnginePrivate::pEngine = 0;
     }
 }
 
-void ipAddrToAsciiEngine::run ()
+void ipAddrToAsciiEnginePrivate::show ( unsigned level ) const
 {
-    {
-        epicsGuard < epicsMutex > guard ( ipAddrToAsciiEngine::mutex );
-        while ( ! this->exitFlag ) {
-            while ( true ) {
-                ipAddrToAsciiAsynchronous * pItem = this->labor.get ();
-                osiSockAddr addr;
-                if ( pItem ) {
-                    addr = pItem->addr;
-                    this->pCurrent = pItem;
-                }
-                else {
-                    break;
-                }
-     
-                if ( this->exitFlag )
-                {
-                    sockAddrToDottedIP ( & addr.sa, this->nameTmp, 
-                        sizeof ( this->nameTmp ) );
-                }
-                else {
-                    epicsGuardRelease < epicsMutex > unguard ( guard );
-                    // depending on DNS configuration, this could take a very long time
-                    // so we release the lock
-                    sockAddrToA ( &addr.sa, this->nameTmp, sizeof ( this->nameTmp ) );
-                }
-
-                if ( this->pCurrent ) {
-                    this->pCurrent->pEngine = 0;
-                    this->callbackInProgress = true;
-                }
-                else {
-                    continue;
-                }
-
-                {
-                    epicsGuardRelease < epicsMutex > unguard ( guard );
-                    // dont call callback with lock applied
-                    this->pCurrent->ioCompletionNotify ( this->nameTmp );
-                }
-
-                this->pCurrent = 0;
-                this->callbackInProgress = false;
-                if ( this->cancelPending  ) {
-                    this->destructorBlockEvent.signal ();
-                }
-            }
-            {
-                epicsGuardRelease < epicsMutex > unguard ( guard );
-                this->laborEvent.wait ();
-            }
-        }
-    }
-    this->threadExit.signal ();
-}
-
-void ipAddrToAsciiEngine::show ( unsigned level ) const
-{
-    epicsGuard < epicsMutex > locker ( ipAddrToAsciiEngine::mutex );
+    epicsGuard < epicsMutex > guard ( this->mutex );
     printf ( "ipAddrToAsciiEngine at %p with %u requests pending\n", 
         static_cast <const void *> (this), this->labor.count () );
     if ( level > 0u ) {
-        tsDLIterConst < ipAddrToAsciiAsynchronous > pItem = this->labor.firstIter ();
+        tsDLIterConst < ipAddrToAsciiTransactionPrivate > 
+            pItem = this->labor.firstIter ();
         while ( pItem.valid () ) {
             pItem->show ( level - 1u );
             pItem++;
@@ -146,67 +177,159 @@ void ipAddrToAsciiEngine::show ( unsigned level ) const
         this->laborEvent.show ( level - 2u );
         printf ( "exitFlag  boolean = %u\n", this->exitFlag );
         printf ( "exit event:\n" );
-        this->threadExit.show ( level - 2u );
     }
 }
 
-ipAddrToAsciiAsynchronous::ipAddrToAsciiAsynchronous 
-    ( const osiSockAddr &addrIn ) :
-    addr ( addrIn ), pEngine ( 0u )
+inline void * ipAddrToAsciiTransactionPrivate::operator new ( size_t size, tsFreeList 
+    < ipAddrToAsciiTransactionPrivate, 0x80, epicsMutexNOOP > & freeList )
 {
+    return freeList.allocate ( size );
 }
 
-ipAddrToAsciiAsynchronous::~ipAddrToAsciiAsynchronous ()
+#ifdef CXX_PLACEMENT_DELETE
+inline void ipAddrToAsciiTransactionPrivate::operator delete ( void * pTrans, tsFreeList 
+    < ipAddrToAsciiTransactionPrivate, 0x80, epicsMutexNOOP > &  freeList )
 {
-    epicsGuard < epicsMutex > locker ( ipAddrToAsciiEngine::mutex );
-    if ( this->pEngine ) {
+    return freeList.release ( pTrans );
+}
+#endif
+
+void * ipAddrToAsciiTransactionPrivate::operator new ( size_t ) // X aCC 361
+{
+    // The HPUX compiler seems to require this even though no code
+    // calls it directly
+    throw std::logic_error ( "why is the compiler calling private operator new" );
+}
+
+void ipAddrToAsciiTransactionPrivate::operator delete ( void * )
+{
+    // Visual C++ .net appears to require operator delete if
+    // placement operator delete is defined? I smell a ms rat
+    // because if I declare placement new and delete, but
+    // comment out the placement delete definition there are
+    // no undefined symbols.
+    errlogPrintf ( "%s:%d this compiler is confused about placement delete - memory was probably leaked",
+        __FILE__, __LINE__ );
+}
+
+
+ipAddrToAsciiTransaction & ipAddrToAsciiEnginePrivate::createTransaction ()
+{
+    return * new ( this->transactionFreeList ) ipAddrToAsciiTransactionPrivate ( *this );
+}
+
+void ipAddrToAsciiEnginePrivate::run ()
+{
+    while ( ! this->exitFlag ) {
+        this->laborEvent.wait ();
+        epicsGuard < epicsMutex > guard ( this->mutex );
         while ( true ) {
-            if ( this->pEngine->pCurrent == this && 
-                    this->pEngine->callbackInProgress && 
-                    ! this->pEngine->thread.isCurrentThread() ) {
-                this->pEngine->cancelPending = true;
-                {
-                    epicsGuardRelease < epicsMutex > unlocker ( locker );
-                    this->pEngine->destructorBlockEvent.wait ();
-                }
-                if ( ! this->pEngine ) {
-                    break;
-                }
-                this->pEngine->cancelPending = false;
-                if ( this->pEngine->waitingForCancelPendCompletion ) {
-                    this->pEngine->cancelPendCompleted.signal ();
-                }
-                continue;
+            ipAddrToAsciiTransactionPrivate * pItem = this->labor.get ();
+            if ( ! pItem ) {
+                break;
+            }
+            osiSockAddr addr = pItem->addr;
+            this->pCurrent = pItem;
+    
+            if ( this->exitFlag )
+            {
+                sockAddrToDottedIP ( & addr.sa, this->nameTmp, 
+                    sizeof ( this->nameTmp ) );
             }
             else {
-                if ( this->pEngine->pCurrent != this ) {
-                    this->pEngine->labor.remove ( *this );
-                }
-                else {
-                    this->pEngine->pCurrent = 0;
-                }
-                break;
+                epicsGuardRelease < epicsMutex > unguard ( guard );
+                // depending on DNS configuration, this could take a very long time
+                // so we release the lock
+                sockAddrToA ( &addr.sa, this->nameTmp, sizeof ( this->nameTmp ) );
+            }
+
+            // the ipAddrToAsciiTransactionPrivate destructor is allowed to
+            // set pCurrent to nill and avoid blocking on a slow DNS 
+            // operation
+            if ( ! this->pCurrent ) {
+                continue;
+            }
+
+            this->callbackInProgress = true;
+
+            {
+                epicsGuardRelease < epicsMutex > unguard ( guard );
+                // dont call callback with lock applied
+                this->pCurrent->pCB->transactionComplete ( this->nameTmp );
+            }
+
+            this->callbackInProgress = false;
+
+            this->pCurrent->pending = false;
+            this->pCurrent = 0;
+            if ( this->cancelPendingCount  ) {
+                this->destructorBlockEvent.signal ();
             }
         }
     }
 }
 
-// for situations where the derived destructor is running, but the
-// ipAddrToAsciiAsynchronous destructor has not run yet
-void ipAddrToAsciiAsynchronous::ioCompletionNotify ( const char * )
+ipAddrToAsciiTransactionPrivate::ipAddrToAsciiTransactionPrivate 
+    ( ipAddrToAsciiEnginePrivate & engineIn ) :
+    engine ( engineIn ), pCB ( 0 ), pending ( false )
 {
+    memset ( & this->addr, '\0', sizeof ( this->addr ) );
+    this->addr.sa.sa_family = AF_UNSPEC;
 }
 
-epicsShareFunc void ipAddrToAsciiAsynchronous::ioInitiate ( ipAddrToAsciiEngine & engine )
+void ipAddrToAsciiTransactionPrivate::release ()
+{
+    this->~ipAddrToAsciiTransactionPrivate ();
+    this->engine.transactionFreeList.release ( this );
+}
+
+ipAddrToAsciiTransactionPrivate::~ipAddrToAsciiTransactionPrivate ()
+{
+    epicsGuard < epicsMutex > guard ( this->engine.mutex );
+    while ( this->pending ) {
+        if ( this->engine.pCurrent == this && 
+                this->engine.callbackInProgress && 
+                ! this->engine.thread.isCurrentThread() ) {
+            assert ( this->engine.cancelPendingCount < UINT_MAX );
+            this->engine.cancelPendingCount++;
+            {
+                epicsGuardRelease < epicsMutex > unguard ( guard );
+                this->engine.destructorBlockEvent.wait ();
+            }
+            assert ( this->engine.cancelPendingCount > 0u );
+            this->engine.cancelPendingCount--;
+            if ( ! this->pending ) {
+                if ( this->engine.cancelPendingCount ) {
+                    this->engine.destructorBlockEvent.signal ();
+                }
+                break;
+            }
+        }
+        else {
+            if ( this->engine.pCurrent == this ) {
+                this->engine.pCurrent = 0;
+            }
+            else {
+                this->engine.labor.remove ( *this );
+            }
+            this->pending = false;
+        }
+    }
+}
+
+void ipAddrToAsciiTransactionPrivate::ipAddrToAscii ( 
+    const osiSockAddr & addrIn, ipAddrToAsciiCallBack & cbIn )
 {
     bool success;
 
     {
-        epicsGuard < epicsMutex > locker ( ipAddrToAsciiEngine::mutex );
+        epicsGuard < epicsMutex > guard ( this->engine.mutex );
         // put some reasonable limit on queue expansion
-        if ( !this->pEngine && engine.labor.count () < 16u ) {
-            this->pEngine = & engine;
-            engine.labor.add ( *this );
+        if ( !this->pending && engine.labor.count () < 16u ) {
+            this->addr = addrIn;
+            this->pCB = & cbIn;
+            this->pending = true;
+            this->engine.labor.add ( *this );
             success = true;
         }
         else {
@@ -215,25 +338,30 @@ epicsShareFunc void ipAddrToAsciiAsynchronous::ioInitiate ( ipAddrToAsciiEngine 
     }
 
     if ( success ) {
-        engine.laborEvent.signal ();
+        this->engine.laborEvent.signal ();
     }
     else {
         char autoNameTmp[256];
-        sockAddrToDottedIP ( &this->addr.sa, autoNameTmp, 
+        sockAddrToDottedIP ( & addrIn.sa, autoNameTmp, 
             sizeof ( autoNameTmp ) );
-        this->ioCompletionNotify ( autoNameTmp );
+        cbIn.transactionComplete ( autoNameTmp );
     }
 }
 
-void ipAddrToAsciiAsynchronous::show ( unsigned level ) const
+osiSockAddr ipAddrToAsciiTransactionPrivate::address () const
 {
-    char ipAddr [64];
+    return this->addr;
+}
 
-    epicsGuard < epicsMutex > locker ( ipAddrToAsciiEngine::mutex );
+void ipAddrToAsciiTransactionPrivate::show ( unsigned level ) const
+{
+    epicsGuard < epicsMutex > guard ( this->engine.mutex );
+    char ipAddr [64];
     sockAddrToDottedIP ( &this->addr.sa, ipAddr, sizeof ( ipAddr ) );
-    printf ( "ipAddrToAsciiAsynchronous for address %s\n", ipAddr );
+    printf ( "ipAddrToAsciiTransactionPrivate for address %s\n", ipAddr );
     if ( level > 0u ) {
         printf ( "\tengine %p\n",
-            static_cast <void *> (this->pEngine) );
+            static_cast <void *> ( & this->engine ) );
+        this->pCB->show ( level - 1u );
     }
 }

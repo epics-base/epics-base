@@ -24,7 +24,6 @@ of this distribution.
 
 #include "dbDefs.h"
 #include "errMdef.h"
-#include "registryRecordType.h"
 #include "epicsPrint.h"
 #include "ellLib.h"
 #include "cvtFast.h"

@@ -10,6 +10,9 @@ INC += dbStaticLib.h
 INC += link.h
 INC += special.h
 INC += guigroup.h
+INC += devSup.h
+INC += drvSup.h
+INC += recSup.h
 
 LIBSRCS += dbStaticLib.c
 LIBSRCS += dbYacc.c

@@ -31,4 +31,13 @@ cacNotify::~cacNotify ()
 {
 }
 
+void cacNotify::callbackLock () 
+{
+}
+
+void cacNotify::callbackUnlock () 
+{
+}
+
+
 

@@ -43,7 +43,7 @@ Usage ("Nothing to install") if ($num_files < 1);
 $install_dir=$ARGV[$num_files];
 $install_dir =~ s[\\][/]g;	# maybe fix DOS-style path
 $install_dir =~ s[/$][];	# remove trailing '/'
-$install_dir =~ s[//][/]g;    # replace '//' by '/'
+$install_dir =~ s[//][/]g;	# replace '//' by '/'
 
 #	Do we have to create the directory?
 unless ( (-d $install_dir) || (-l $install_dir) )
@@ -104,7 +104,7 @@ sub Usage
 	print "Usage:\n";
 	print "\t$tool [ -m mode ] file ... directory\n";
 	print "\n";
-	print "\t-d             Create non-exising directories\n";
+	print "\t-d             Create non-existing directories\n";
 	print "\t-m mode        Set the mode for the installed file";
 		print " (0755 by default)\n";
 	print "\tfile           Name of file\n";

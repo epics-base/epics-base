@@ -19,7 +19,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
-epicsShareFunc int epicsShareAPI
+epicsShareFunc void epicsShareAPI
     convertDoubleToWakeTime(double timeout,struct timespec *wakeTime);
 #ifdef __cplusplus
 }

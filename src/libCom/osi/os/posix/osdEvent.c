@@ -117,9 +117,7 @@ epicsEventWaitStatus epicsEventWaitWithTimeout(epicsEventId pevent, double timeo
     status = pthread_mutex_lock(&pevent->mutex);
     checkStatusQuit(status,"pthread_mutex_lock","epicsEventWaitWithTimeout");
     if(!pevent->isFull) {
-        status = convertDoubleToWakeTime(timeout,&wakeTime);
-        checkStatusQuit(unlockStatus,"convertDoubleToWakeTime",
-            "epicsEventWaitWithTimeout");
+        convertDoubleToWakeTime(timeout,&wakeTime);
         status = pthread_cond_timedwait(
             &pevent->cond,&pevent->mutex,&wakeTime);
     }

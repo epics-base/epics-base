@@ -139,9 +139,7 @@ epicsMutexLockStatus epicsMutexLockWithTimeout(epicsMutexId pmutex, double timeo
     struct timespec wakeTime;
     int status,unlockStatus;
 
-    status = convertDoubleToWakeTime(timeout,&wakeTime);
-    checkStatusQuit(status,"convertDoubleToWakeTime",
-        "epicsMutexLockWithTimeout");
+    convertDoubleToWakeTime(timeout,&wakeTime);
     status = pthread_mutex_lock(&pmutex->lock);
     checkStatusQuit(status,"pthread_mutex_lock","epicsMutexLockWithTimeout");
     while(pmutex->owned && !pthread_equal(pmutex->ownerTid,tid)) {

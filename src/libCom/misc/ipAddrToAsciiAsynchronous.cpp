@@ -49,7 +49,7 @@ ipAddrToAsciiEngine::~ipAddrToAsciiEngine ()
 void ipAddrToAsciiEngine::entryPoint ()
 {
     osiSockAddr addr;
-    unsigned id;
+    unsigned tmpId;
 
     while ( ! this->exitFlag ) {
         while ( true ) {
@@ -57,7 +57,7 @@ void ipAddrToAsciiEngine::entryPoint ()
             ipAddrToAsciiAsynchronous * pItem = this->labor.first ();
             if ( pItem ) {
                 addr = pItem->addr;
-                id = pItem->id;
+                tmpId = pItem->id;
             }
             else {
                 this->mutex.unlock ();
@@ -71,7 +71,7 @@ void ipAddrToAsciiEngine::entryPoint ()
             ipAddrToAsciiEngine::mutex.lock ();
             pItem = this->labor.get ();
             if ( pItem ) {
-                if ( id == pItem->id ) {
+                if ( tmpId == pItem->id ) {
                     pItem->ioCompletionNotify ( this->nameTmp );
                     pItem->pEngine = 0u;
                 }

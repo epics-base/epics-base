@@ -11,7 +11,7 @@
 
 #####################################################  vpath
 
-vpath %.dbd $(USR_VPATH) $(GENERIC_SRC_DIRS) $(dir $(DBD)) $(COMMON_DIR)
+vpath %.dbd $(USR_VPATH) $(GENERIC_SRC_DIRS) $(dir $(DBD))
 vpath %.db $(USR_VPATH) $(GENERIC_SRC_DIRS) $(dir $(DB)) $(COMMON_DIR)
 vpath %.vdb $(USR_VPATH) $(GENERIC_SRC_DIRS) $(dir $(DB)) $(COMMON_DIR)
 vpath %.substitutions $(USR_VPATH) $(GENERIC_SRC_DIRS) $(COMMON_DIR)

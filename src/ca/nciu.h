@@ -101,7 +101,7 @@ public:
 private:
     caAccessRights accessRightState;
     cac & cacCtx;
-    const char * pNameStr;
+    char * pNameStr;
     netiiu * piiu;
     ca_uint32_t sid; // server id
     unsigned count;

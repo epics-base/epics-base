@@ -36,6 +36,7 @@ static char *sccsId = "@(#) $Id$";
 #include <types.h>
 #include <socket.h>
 #include <in.h>
+#include <semLib.h>
 
 #include "ellLib.h"
 #include "db_access.h"

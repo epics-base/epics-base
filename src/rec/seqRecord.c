@@ -196,7 +196,7 @@ seqRecord *pseq;
 
   if (pseq->selm == seqSELM_All)
   {
-    lmask = SELN_BIT_MASK;
+    lmask = (unsigned short) SELN_BIT_MASK;
   }
   else
   { 

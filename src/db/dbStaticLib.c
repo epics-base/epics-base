@@ -1516,8 +1516,6 @@ char *pstring;
 	    char		*pchoice;
 	    int			i;
 
-	    if(!(pdevChoiceSet=GET_PDEV_CHOICE_SET(pdbbase->pchoiceDev,record_type))) 
-		return(S_dbLib_menuNotFound);
 	    if(!(pdevChoiceSet = GET_PDEV_CHOICE_SET(pdbbase->pchoiceDev,record_type)))
 		return(S_dbLib_menuNotFound);
 	    for (i = 0; i < pdevChoiceSet->number; i++) {
@@ -1651,7 +1649,7 @@ char *pstring;
 		    pstr = end + 1;
 		    sscanf(pstr,"%hd",&plink->value.gpibio.addr);
 		    plink->value.gpibio.parm[0] = 0;
-		    if(!(end = strchr(pstr,'@'))) {
+		    if(end = strchr(pstr,'@')) {
 		        pstr = end + 1;
 		        sscanf(pstr,"%s",&plink->value.gpibio.parm[0]);
 		    }
@@ -1675,7 +1673,7 @@ char *pstring;
 		    pstr = end + 1;
 		    sscanf(pstr,"%hd",&plink->value.bitbusio.signal);
 		    plink->value.bitbusio.parm[0] = 0;
-		    if(!(end = strchr(pstr,'@'))) {
+		    if(end = strchr(pstr,'@')) {
 		        pstr = end + 1;
 		        sscanf(pstr,"%s",&plink->value.bitbusio.parm[0]);
 		    }
@@ -1696,7 +1694,7 @@ char *pstring;
 		    pstr = end + 1;
 		    sscanf(pstr,"%hd",&plink->value.bbgpibio.gpibaddr);
 		    plink->value.bbgpibio.parm[0] = 0;
-		    if(!(end = strchr(pstr,'@'))) {
+		    if(end = strchr(pstr,'@')) {
 		        pstr = end + 1;
 		        sscanf(pstr,"%s",&plink->value.bbgpibio.parm[0]);
 		    }
@@ -1722,7 +1720,7 @@ char *pstring;
 		        pstr = end + 1;
 		        sscanf(pstr,"%hd",&plink->value.vxiio.slot);
 		    }
-		    if(!(end = strchr(pstr,'@'))) {
+		    if(end = strchr(pstr,'@')) {
 		        pstr = end + 1;
 		        sscanf(pstr,"%s",&plink->value.gpibio.parm[0]);
 		    }

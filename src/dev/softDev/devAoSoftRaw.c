@@ -40,14 +40,15 @@
 #include	<stdio.h>
 #include	<string.h>
 
-#include	<alarm.h>
-#include	<dbDefs.h>
-#include	<dbAccess.h>
-#include        <recSup.h>
-#include	<devSup.h>
-#include	<link.h>
-#include	<special.h>
-#include	<aoRecord.h>
+#include	"alarm.h"
+#include	"dbDefs.h"
+#include	"dbAccess.h"
+#include	"recGbl.h"
+#include        "recSup.h"
+#include	"devSup.h"
+#include	"link.h"
+#include	"special.h"
+#include	"aoRecord.h"
 
 static long init_record();
 

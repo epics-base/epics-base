@@ -35,12 +35,13 @@
 #include	<stdio.h>
 #include	<string.h>
 
-#include	<alarm.h>
-#include	<dbDefs.h>
-#include	<dbAccess.h>
-#include        <recSup.h>
-#include	<devSup.h>
-#include	<mbbiDirectRecord.h>
+#include	"alarm.h"
+#include	"dbDefs.h"
+#include	"dbAccess.h"
+#include	"recGbl.h"
+#include        "recSup.h"
+#include	"devSup.h"
+#include	"mbbiDirectRecord.h"
 /* Create the dset for devMbbiDirectSoftRaw */
 static long init_record();
 static long read_mbbi();

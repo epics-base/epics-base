@@ -49,6 +49,7 @@
 #include "cvtTable.h"
 #include "dbDefs.h"
 #include "dbAccess.h"
+#include "recGbl.h"
 #include "recSup.h"
 #include "devSup.h"
 #include "link.h"

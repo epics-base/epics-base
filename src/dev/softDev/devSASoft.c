@@ -41,13 +41,14 @@
 #include	<stdio.h>
 #include	<string.h>
 
-#include	<alarm.h>
-#include	<dbDefs.h>
-#include	<dbAccess.h>
-#include        <recSup.h>
-#include	<devSup.h>
-#include	<link.h>
-#include	<subArrayRecord.h>
+#include	"alarm.h"
+#include	"dbDefs.h"
+#include	"dbAccess.h"
+#include	"recGbl.h"
+#include        "recSup.h"
+#include	"devSup.h"
+#include	"link.h"
+#include	"subArrayRecord.h"
 
 static int sizeofTypes[] = {MAX_STRING_SIZE,1,1,2,2,4,4,4,8,2};
 

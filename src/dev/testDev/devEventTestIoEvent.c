@@ -39,6 +39,7 @@
 
 #include "dbDefs.h"
 #include "dbAccess.h"
+#include "recGbl.h"
 #include "callback.h"
 #include "dbScan.h"
 #include "recSup.h"

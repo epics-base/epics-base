@@ -56,12 +56,12 @@ class tsDLNode {
 public:
 	tsDLNode();
 	void operator = (const tsDLNode<T> &) const;
-protected:
-	T	*getNext(void) const;
-	T	*getPrev(void) const;
 private:
 	T	*pNext;
 	T	*pPrev;
+//protected:
+//	T	*getNext(void) const;
+//	T	*getPrev(void) const;
 };
 
 //
@@ -670,7 +670,7 @@ inline tsDLIterBD<T> tsDLIterBD<T>::operator ++ (int)
 template <class T>
 inline tsDLIterBD<T> tsDLIterBD<T>::operator -- () 
 {
-	tsDLNode<T> &entryNode = *pEntry;
+	tsDLNode<T> &entryNode = *this->pEntry;
 	this->pEntry = entryNode.pPrev;
     return *this;
 }
@@ -682,7 +682,7 @@ template <class T>
 inline tsDLIterBD<T> tsDLIterBD<T>::operator -- (int) 
 {
 	tsDLIterBD<T> tmp = *this;
-	tsDLNode<T> &entryNode = *pEntry;
+	tsDLNode<T> &entryNode = *this->pEntry;
 	this->pEntry = entryNode.pPrev;
 	return tmp;
 }

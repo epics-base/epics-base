@@ -17,20 +17,18 @@
  */
 
 
-#include	<stdlib.h>
-#include	<stdio.h>
-#include	<string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
-#include	"alarm.h"
-#include	"dbDefs.h"
-#include	"dbAccess.h"
-#include	"recGbl.h"
-#include        "recSup.h"
-#include	"devSup.h"
-#include	"boRecord.h"
-#define epicsExportSharedSymbols
-#include "shareLib.h"
-
+#include "alarm.h"
+#include "dbDefs.h"
+#include "dbAccess.h"
+#include "recGbl.h"
+#include "recSup.h"
+#include "devSup.h"
+#include "boRecord.h"
+#include "epicsExport.h"
 
 /* added for Channel Access Links */
 static long init_record();
@@ -38,7 +36,7 @@ static long init_record();
 /* Create the dset for devBoSoftRaw */
 static long write_bo();
 
-static struct {
+struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;
@@ -51,11 +49,9 @@ static struct {
 	NULL,
 	init_record,
 	NULL,
-	write_bo};
-epicsShareExtern dset *pdevBoSoftRaw;
-epicsShareDef dset *pdevBoSoftRaw = (dset *)&devBoSoftRaw;
-
-
+	write_bo
+};
+epicsExportAddress(dset,devBoSoftRaw);
 
 static long init_record(boRecord *pbo)
 {

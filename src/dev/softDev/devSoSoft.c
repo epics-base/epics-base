@@ -14,24 +14,23 @@
  *      Date:   	04-21-91
 */
 
-#include	<stdlib.h>
-#include	<stdio.h>
-#include	<string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
-#include	"alarm.h"
-#include	"dbDefs.h"
-#include	"dbAccess.h"
-#include	"recGbl.h"
-#include        "recSup.h"
-#include	"devSup.h"
-#include	"stringoutRecord.h"
-#define epicsExportSharedSymbols
-#include "shareLib.h"
+#include "alarm.h"
+#include "dbDefs.h"
+#include "dbAccess.h"
+#include "recGbl.h"
+#include "recSup.h"
+#include "devSup.h"
+#include "stringoutRecord.h"
+#include "epicsExport.h"
 
 /* Create the dset for devSoSoft */
 static long init_record();
 static long write_stringout();
-static struct {
+struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;
@@ -46,8 +45,7 @@ static struct {
 	NULL,
 	write_stringout
 };
-epicsShareExtern dset *pdevSoSoft;
-epicsShareDef dset *pdevSoSoft = (dset *)&devSoSoft;
+epicsExportAddress(dset,devSoSoft);
 
 static long init_record(stringoutRecord *pstringout)
 {

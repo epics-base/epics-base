@@ -36,10 +36,10 @@
 #include "errMdef.h"
 #include "recSup.h"
 #include "recGbl.h"
-#define epicsExportSharedSymbols
 #define GEN_SIZE_OFFSET
 #include "subRecord.h"
 #undef  GEN_SIZE_OFFSET
+#include "epicsExport.h"
 
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
@@ -60,7 +60,7 @@ static long get_graphic_double();
 static long get_control_double();
 static long get_alarm_double();
 
-epicsShareDef struct rset subRSET={
+rset subRSET={
 	RSETNUMBER,
 	report,
 	initialize,
@@ -78,7 +78,9 @@ epicsShareDef struct rset subRSET={
 	put_enum_str,
 	get_graphic_double,
 	get_control_double,
-	get_alarm_double };
+	get_alarm_double
+};
+epicsExportAddress(rset,subRSET);
 
 static void checkAlarms();
 static long do_sub();

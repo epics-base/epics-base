@@ -31,10 +31,10 @@
 #include "recSup.h"
 #include "recGbl.h"
 #include "dbCommon.h"
-#define epicsExportSharedSymbols
 #define GEN_SIZE_OFFSET
 #include "fanoutRecord.h"
 #undef  GEN_SIZE_OFFSET
+#include "epicsExport.h"
 
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
@@ -55,7 +55,7 @@ static long process();
 #define get_control_double NULL
 #define get_alarm_double NULL
 
-epicsShareDef struct rset fanoutRSET={
+rset fanoutRSET={
         RSETNUMBER,
         report,
         initialize,
@@ -75,6 +75,7 @@ epicsShareDef struct rset fanoutRSET={
         get_control_double,
         get_alarm_double
 };
+epicsExportAddress(rset,fanoutRSET);
 
 static long init_record(pfanout,pass)
     struct fanoutRecord	*pfanout;

@@ -13,24 +13,23 @@
  *      Author:		Janet Anderson
  *      Date:   	09-23-91
 */
-#include	<stdlib.h>
-#include	<stdio.h>
-#include	<string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
-#include	"alarm.h"
-#include	"dbDefs.h"
-#include	"dbAccess.h"
-#include	"recGbl.h"
-#include        "recSup.h"
-#include	"devSup.h"
-#include	"longoutRecord.h"
-#define epicsExportSharedSymbols
-#include "shareLib.h"
+#include "alarm.h"
+#include "dbDefs.h"
+#include "dbAccess.h"
+#include "recGbl.h"
+#include "recSup.h"
+#include "devSup.h"
+#include "longoutRecord.h"
+#include "epicsExport.h"
 
 /* Create the dset for devLoSoft */
 static long init_record();
 static long write_longout();
-static struct {
+struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;
@@ -45,8 +44,7 @@ static struct {
 	NULL,
 	write_longout
 };
-epicsShareExtern dset *pdevLoSoft;
-epicsShareDef dset *pdevLoSoft = (dset *)&devLoSoft;
+epicsExportAddress(dset,devLoSoft);
 
 static long init_record(longoutRecord *plongout)
 {

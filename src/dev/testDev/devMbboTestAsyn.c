@@ -34,13 +34,12 @@
 #include "link.h"
 #include "dbCommon.h"
 #include "mbboRecord.h"
-#define epicsExportSharedSymbols
-#include "shareLib.h"
+#include "epicsExport.h"
 
 /* Create the dset for devMbboTestAsyn */
 static long init_record();
 static long write_mbbo();
-static struct {
+struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;
@@ -57,8 +56,7 @@ static struct {
 	write_mbbo,
 	NULL
 };
-epicsShareExtern dset *pdevMbboTestAsyn;
-epicsShareDef dset *pdevMbboTestAsyn = (dset *)&devMbboTestAsyn;
+epicsExportAddress(dset,devMbboTestAsyn);
 
 static long init_record(pmbbo)
     struct mbboRecord	*pmbbo;

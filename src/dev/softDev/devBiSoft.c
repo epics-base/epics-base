@@ -14,24 +14,23 @@
  *      Current Author:  Marty Kraimer
  *      Date:            6-1-90
  */
-#include	<stdlib.h>
-#include	<stdio.h>
-#include	<string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
-#include	"alarm.h"
-#include	"dbDefs.h"
-#include	"dbAccess.h"
-#include	"recGbl.h"
-#include        "recSup.h"
-#include	"devSup.h"
-#include	"biRecord.h"
-#define epicsExportSharedSymbols
-#include	"shareLib.h"
+#include "alarm.h"
+#include "dbDefs.h"
+#include "dbAccess.h"
+#include "recGbl.h"
+#include "recSup.h"
+#include "devSup.h"
+#include "biRecord.h"
+#include "epicsExport.h"
 
 /* Create the dset for devBiSoft */
 static long init_record();
 static long read_bi();
-static struct {
+struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;
@@ -46,8 +45,7 @@ static struct {
 	NULL,
 	read_bi
 };
-epicsShareExtern dset *pdevBiSoft;
-epicsShareDef dset *pdevBiSoft = (dset *)&devBiSoft;
+epicsExportAddress(dset,devBiSoft);
 
 static long init_record(biRecord *pbi)
 {

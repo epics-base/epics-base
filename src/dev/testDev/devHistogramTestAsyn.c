@@ -29,13 +29,12 @@
 #include "link.h"
 #include "dbCommon.h"
 #include "histogramRecord.h"
-#define epicsExportSharedSymbols
-#include "shareLib.h"
+#include "epicsExport.h"
 
 /* Create the dset for devHistogramTestAsyn */
 static long init_record();
 static long read_histogram();
-static struct {
+struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;
@@ -52,8 +51,7 @@ static struct {
 	read_histogram,
 	NULL
 };
-epicsShareExtern dset *pdevHistogramTestAsyn;
-epicsShareDef dset *pdevHistogramTestAsyn = (dset *)&devHistogramTestAsyn;
+epicsExportAddress(dset,devHistogramTestAsyn);
 
 static long init_record(phistogram)
     struct histogramRecord	*phistogram;

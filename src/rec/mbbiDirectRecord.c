@@ -35,10 +35,10 @@
 #include "recSup.h"
 #include "recGbl.h"
 #include "special.h"
-#define epicsExportSharedSymbols
 #define GEN_SIZE_OFFSET
 #include "mbbiDirectRecord.h"
 #undef  GEN_SIZE_OFFSET
+#include "epicsExport.h"
 
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
@@ -59,7 +59,7 @@ static long process();
 #define get_control_double NULL
 #define get_alarm_double NULL
 
-epicsShareDef struct rset mbbiDirectRSET={
+rset mbbiDirectRSET={
 	RSETNUMBER,
 	report,
 	initialize,
@@ -77,7 +77,9 @@ epicsShareDef struct rset mbbiDirectRSET={
 	put_enum_str,
 	get_graphic_double,
 	get_control_double,
-	get_alarm_double };
+	get_alarm_double
+};
+epicsExportAddress(rset,mbbiDirectRSET);
 
 struct mbbidset { /* multi bit binary input dset */
 	long		number;

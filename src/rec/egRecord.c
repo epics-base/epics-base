@@ -31,11 +31,11 @@
 #include "recSup.h"
 #include "recGbl.h"
 
-#define epicsExportSharedSymbols
 #define GEN_SIZE_OFFSET
 #include "egRecord.h"
 #undef  GEN_SIZE_OFFSET
 #include "egDefs.h"
+#include "epicsExport.h"
 
 #define STATIC	static
 
@@ -60,7 +60,7 @@ STATIC long EgProc(struct egRecord *);
 #define get_control_double NULL
 #define get_alarm_double NULL
 
-epicsShareDef struct rset egRSET={
+rset egRSET={
 	RSETNUMBER,
 	report,
 	initialize,
@@ -78,7 +78,9 @@ epicsShareDef struct rset egRSET={
 	put_enum_str,
 	get_graphic_double,
 	get_control_double,
-	get_alarm_double };
+	get_alarm_double
+};
+epicsExportAddress(rset,egRSET);
 
 
 

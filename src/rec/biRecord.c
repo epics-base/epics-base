@@ -35,10 +35,10 @@
 #include "recSup.h"
 #include "recGbl.h"
 #include "special.h"
-#define epicsExportSharedSymbols
 #define GEN_SIZE_OFFSET
 #include "biRecord.h"
 #undef  GEN_SIZE_OFFSET
+#include "epicsExport.h"
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
@@ -57,7 +57,7 @@ static long put_enum_str();
 #define get_graphic_double NULL
 #define get_control_double NULL
 #define get_alarm_double NULL
-epicsShareDef struct rset biRSET={
+rset biRSET={
 	RSETNUMBER,
 	report,
 	initialize,
@@ -85,6 +85,7 @@ struct bidset { /* binary input dset */
 	DEVSUPFUN	read_bi;/*(0,2)=> success and convert, don't convert)*/
                         /* if convert then raw value stored in rval */
 };
+epicsExportAddress(rset,biRSET);
 static void checkAlarms();
 static void monitor();
 static long readValue();

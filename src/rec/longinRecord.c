@@ -32,10 +32,10 @@
 #include "errMdef.h"
 #include "recSup.h"
 #include "recGbl.h"
-#define epicsExportSharedSymbols
 #define GEN_SIZE_OFFSET
 #include "longinRecord.h"
 #undef  GEN_SIZE_OFFSET
+#include "epicsExport.h"
 
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
@@ -56,7 +56,7 @@ static long get_graphic_double();
 static long get_control_double();
 static long get_alarm_double();
 
-epicsShareDef struct rset longinRSET={
+rset longinRSET={
 	RSETNUMBER,
 	report,
 	initialize,
@@ -74,7 +74,9 @@ epicsShareDef struct rset longinRSET={
 	put_enum_str,
 	get_graphic_double,
 	get_control_double,
-	get_alarm_double };
+	get_alarm_double
+};
+epicsExportAddress(rset,longinRSET);
 
 
 struct longindset { /* longin input dset */

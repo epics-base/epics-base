@@ -31,10 +31,10 @@
 #include "recGbl.h"
 #include "erDefs.h"
 
-#define epicsExportSharedSymbols
 #define GEN_SIZE_OFFSET
 #include "erRecord.h"
 #undef  GEN_SIZE_OFFSET
+#include "epicsExport.h"
 
 #define STATIC	static
 
@@ -59,7 +59,7 @@ static long get_graphic_double(struct dbAddr *paddr, struct dbr_grDouble *pgd);
 static long get_control_double(struct dbAddr *paddr, struct dbr_ctrlDouble *pcd);
 static long get_alarm_double(struct dbAddr *paddr, struct dbr_alDouble *pad);
 
-epicsShareDef struct rset erRSET={
+rset erRSET={
 	RSETNUMBER,
 	report,
 	initialize,
@@ -77,7 +77,9 @@ epicsShareDef struct rset erRSET={
 	put_enum_str,
 	get_graphic_double,
 	get_control_double,
-	get_alarm_double };
+	get_alarm_double
+};
+epicsExportAddress(rset,erRSET);
 
 
 /******************************************************************************

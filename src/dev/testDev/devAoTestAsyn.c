@@ -34,13 +34,12 @@
 #include "link.h"
 #include "dbCommon.h"
 #include "aoRecord.h"
-#define epicsExportSharedSymbols
-#include "shareLib.h"
+#include "epicsExport.h"
 
 /* Create the dset for devAoTestAsyn */
 static long init_record();
 static long write_ao();
-static struct {
+struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;
@@ -57,8 +56,7 @@ static struct {
 	write_ao,
 	NULL
 };
-epicsShareExtern dset *pdevAoTestAsyn;
-epicsShareDef dset *pdevAoTestAsyn = (dset *)&devAoTestAsyn;
+epicsExportAddress(dset,devAoTestAsyn);
 
 static long init_record(pao)
     struct aoRecord	*pao;

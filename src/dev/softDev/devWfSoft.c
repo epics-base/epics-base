@@ -18,25 +18,24 @@
  */
 
 
-#include	<stdlib.h>
-#include	<stdio.h>
-#include	<string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
-#include	"alarm.h"
-#include	"dbDefs.h"
-#include	"dbAccess.h"
-#include	"recGbl.h"
-#include        "recSup.h"
-#include	"devSup.h"
-#include	"link.h"
-#include	"waveformRecord.h"
-#define epicsExportSharedSymbols
-#include "shareLib.h"
+#include "alarm.h"
+#include "dbDefs.h"
+#include "dbAccess.h"
+#include "recGbl.h"
+#include "recSup.h"
+#include "devSup.h"
+#include "link.h"
+#include "waveformRecord.h"
+#include "epicsExport.h"
 
 /* Create the dset for devWfSoft */
 static long init_record();
 static long read_wf();
-static struct {
+struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;
@@ -51,8 +50,7 @@ static struct {
 	NULL,
 	read_wf
 };
-epicsShareExtern dset *pdevWfSoft;
-epicsShareDef dset *pdevWfSoft = (dset *)&devWfSoft;
+epicsExportAddress(dset,devWfSoft);
 
 
 static long init_record(waveformRecord *pwf)

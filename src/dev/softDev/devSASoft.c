@@ -13,27 +13,26 @@
  */
 
 
-#include	<stdlib.h>
-#include	<stdio.h>
-#include	<string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
-#include	"alarm.h"
-#include	"dbDefs.h"
-#include	"dbAccess.h"
-#include	"recGbl.h"
-#include        "recSup.h"
-#include	"devSup.h"
-#include	"link.h"
-#include	"subArrayRecord.h"
-#define epicsExportSharedSymbols
-#include "shareLib.h"
+#include "alarm.h"
+#include "dbDefs.h"
+#include "dbAccess.h"
+#include "recGbl.h"
+#include "recSup.h"
+#include "devSup.h"
+#include "link.h"
+#include "subArrayRecord.h"
+#include "epicsExport.h"
 
 static int sizeofTypes[] = {MAX_STRING_SIZE,1,1,2,2,4,4,4,8,2};
 
 /* Create the dset for devSASoft */
 static long init_record();
 static long read_sa();
-static struct {
+struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;
@@ -48,8 +47,7 @@ static struct {
 	NULL,
 	read_sa
 };
-epicsShareExtern dset *pdevSASoft;
-epicsShareDef dset *pdevSASoft = (dset *)&devSASoft;
+epicsExportAddress(dset,devSASoft);
 
 
 static long init_record(subArrayRecord *psa)

@@ -14,24 +14,23 @@
  *      Current Author:  Matthew Needes
  *      Date:            10-08-93
  */
-#include	<stdlib.h>
-#include	<stdio.h>
-#include	<string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
-#include	"alarm.h"
-#include	"dbDefs.h"
-#include	"dbAccess.h"
-#include	"recGbl.h"
-#include        "recSup.h"
-#include	"devSup.h"
-#include	"mbbiDirectRecord.h"
-#define epicsExportSharedSymbols
-#include "shareLib.h"
+#include "alarm.h"
+#include "dbDefs.h"
+#include "dbAccess.h"
+#include "recGbl.h"
+#include "recSup.h"
+#include "devSup.h"
+#include "mbbiDirectRecord.h"
+#include "epicsExport.h"
 
 /* Create the dset for devMbbiSoft */
 static long init_record();
 static long read_mbbi();
-static struct {
+struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;
@@ -46,8 +45,7 @@ static struct {
 	NULL,
 	read_mbbi
 };
-epicsShareExtern dset *pdevMbbiDirectSoft;
-epicsShareDef dset *pdevMbbiDirectSoft = (dset *)&devMbbiDirectSoft;
+epicsExportAddress(dset,devMbbiDirectSoft);
 
 static long init_record(mbbiDirectRecord *pmbbi)
 {

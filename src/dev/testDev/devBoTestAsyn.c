@@ -34,13 +34,12 @@
 #include "link.h"
 #include "dbCommon.h"
 #include "boRecord.h"
-#define epicsExportSharedSymbols
-#include "shareLib.h"
+#include "epicsExport.h"
 
 /* Create the dset for devBoTestAsyn */
 static long init_record();
 static long write_bo();
-static struct {
+struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;
@@ -57,8 +56,7 @@ static struct {
 	write_bo,
 	NULL
 };
-epicsShareExtern dset *pdevBoTestAsyn;
-epicsShareDef dset *pdevBoTestAsyn = (dset *)&devBoTestAsyn;
+epicsExportAddress(dset,devBoTestAsyn);
 
 static long init_record(pbo)
     struct boRecord	*pbo;

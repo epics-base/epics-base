@@ -60,6 +60,7 @@ print << "END" ;
 #include "registryDeviceSupport.h"
 #include "registryDriverSupport.h"
 #include "iocsh.h"
+#include "epicsExport.h"
 #include "shareLib.h"
 END
 
@@ -68,8 +69,8 @@ print "extern \"C\" {\n";
 #definitions for recordtype
 if($numberRecordType>0) {
     for ($i=0; $i<$numberRecordType; $i++) {
-        print "epicsShareExtern rset $recordType[$i]RSET;\n";
-        print "epicsShareFunc int $recordType[$i]RecordSizeOffset(dbRecordType *pdbRecordType);\n"
+        print "epicsShareExtern rset *p$recordType[$i]RSET;\n";
+        print "epicsShareExtern int (*p$recordType[$i]RecordSizeOffset)(dbRecordType *pdbRecordType);\n"
     }
     print "\nstatic const char * const recordTypeNames[$numberRecordType] = {\n";
     for ($i=0; $i<$numberRecordType; $i++) {
@@ -81,7 +82,7 @@ if($numberRecordType>0) {
 
     print "static const recordTypeLocation rtl[$i] = {\n";
     for ($i=0; $i<$numberRecordType; $i++) {
-        print "    {&$recordType[$i]RSET, $recordType[$i]RecordSizeOffset}";
+        print "    {p$recordType[$i]RSET, p$recordType[$i]RecordSizeOffset}";
         if($i < $numberRecordType-1) { print ",";}
         print "\n";
     }
@@ -113,7 +114,7 @@ if($numberDeviceSupport>0) {
 #definitions for driver
 if($numberDriverSupport>0) {
     for ($i=0; $i<$numberDriverSupport; $i++) {
-        print "epicsShareExtern struct drvet $driverSupport[$i];\n";
+        print "epicsShareExtern drvet *p$driverSupport[$i];\n";
     }
     print "\nstatic char *driverSupportNames[$numberDriverSupport] = {\n";
     for ($i=0; $i<$numberDriverSupport; $i++) {
@@ -125,7 +126,7 @@ if($numberDriverSupport>0) {
     
     print "static struct drvet *drvsl[$i] = {\n";
     for ($i=0; $i<$numberDriverSupport; $i++) {
-        print "    &$driverSupport[$i]";
+        print "    p$driverSupport[$i]";
         if($i < $numberDriverSupport-1) { print ",";}
         print "\n";
     }
@@ -134,9 +135,8 @@ if($numberDriverSupport>0) {
 
 #definitions registrar
 if($numberRegistrar>0) {
-    print "typedef void(*REGISTRARFUNC)(void);\n";
     for ($i=0; $i<$numberRegistrar; $i++) {
-	print "epicsShareFunc void $registrar[$i](void);\n";
+	print "epicsShareExtern void (*p$registrar[$i])(void);\n";
     }
 }
 
@@ -199,7 +199,7 @@ END
 }
 if($numberRegistrar>0) {
     for($i=0; $i< $numberRegistrar;  $i++ ) {
-        print "    $registrar[$i]();\n";
+        print "    (*p$registrar[$i])();\n";
     }
 }
 print << "END" ;

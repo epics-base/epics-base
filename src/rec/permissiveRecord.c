@@ -31,10 +31,10 @@
 #include "errMdef.h"
 #include "recSup.h"
 #include "recGbl.h"
-#define epicsExportSharedSymbols
 #define GEN_SIZE_OFFSET
 #include "permissiveRecord.h"
 #undef  GEN_SIZE_OFFSET
+#include "epicsExport.h"
 
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
@@ -55,7 +55,7 @@ static long process();
 #define get_control_double NULL
 #define get_alarm_double NULL
 
-epicsShareDef struct rset permissiveRSET={
+rset permissiveRSET={
 	RSETNUMBER,
 	report,
 	initialize,
@@ -73,7 +73,9 @@ epicsShareDef struct rset permissiveRSET={
 	put_enum_str,
 	get_graphic_double,
 	get_control_double,
-	get_alarm_double };
+	get_alarm_double
+};
+epicsExportAddress(rset,permissiveRSET);
 
 static void monitor();
 

@@ -3,8 +3,7 @@
 #include <dbDefs.h>
 #include <registryFunction.h>
 #include <subRecord.h>
-#define epicsExportSharedSymbols
-#include "shareLib.h"
+#include <epicsExport.h>
 
 typedef long (*processMethod)(subRecord *precord);
 
@@ -27,8 +26,9 @@ static registryFunctionRef mySubRef[] = {
     {"mySubProcess",(REGISTRYFUNCTION)mySubProcess}
 };
 
-epicsShareFunc void mySub(void)
+void mySub(void)
 {
     registryFunctionRefAdd(mySubRef,NELEMENTS(mySubRef));
 }
+epicsExportRegistrar(mySub);
 

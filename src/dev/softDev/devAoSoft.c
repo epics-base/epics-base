@@ -17,28 +17,27 @@
  *      Date:            6-1-90
  */
 
-#include	<stdlib.h>
-#include	<stdio.h>
-#include	<string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
-#include	"alarm.h"
-#include	"dbDefs.h"
-#include	"dbAccess.h"
-#include	"recGbl.h"
-#include        "recSup.h"
-#include	"devSup.h"
-#include	"link.h"
-#include	"special.h"
-#include	"aoRecord.h"
-#define epicsExportSharedSymbols
-#include	"shareLib.h"
+#include "alarm.h"
+#include "dbDefs.h"
+#include "dbAccess.h"
+#include "recGbl.h"
+#include "recSup.h"
+#include "devSup.h"
+#include "link.h"
+#include "special.h"
+#include "aoRecord.h"
+#include "epicsExport.h"
 
 /* added for Channel Access Links */
 static long init_record();
 
 /* Create the dset for devAoSoft */
 static long write_ao();
-static struct {
+struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;
@@ -54,8 +53,7 @@ static struct {
 	NULL,
 	write_ao,
 	NULL};
-epicsShareExtern dset *pdevAoSoft;
-epicsShareDef dset *pdevAoSoft = (dset *)&devAoSoft;
+epicsExportAddress(dset,devAoSoft);
 
 
 static long init_record(aoRecord *pao)

@@ -33,13 +33,12 @@
 #include "link.h"
 #include "dbCommon.h"
 #include "biRecord.h"
-#define epicsExportSharedSymbols
-#include "shareLib.h"
+#include "epicsExport.h"
 
 /* Create the dset for devBiTestAsyn */
 static long init_record();
 static long read_bi();
-static struct {
+struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;
@@ -56,8 +55,7 @@ static struct {
 	read_bi,
 	NULL
 };
-epicsShareExtern dset *pdevBiTestAsyn;
-epicsShareDef dset *pdevBiTestAsyn = (dset *)&devBiTestAsyn;
+epicsExportAddress(dset,devBiTestAsyn);
 
 static long init_record(pbi)
     struct biRecord	*pbi;

@@ -32,10 +32,10 @@
 #include "special.h"
 #include "callback.h"
 
-#define epicsExportSharedSymbols
 #define GEN_SIZE_OFFSET
 #include "seqRecord.h"
 #undef  GEN_SIZE_OFFSET
+#include "epicsExport.h"
 
 int	seqRecDebug = 0;
 
@@ -43,7 +43,7 @@ int	seqRecDebug = 0;
 static long 	init_record(), process(), asyncFinish(), get_precision();
 static void	processCallback();
 
-epicsShareDef struct rset seqRSET={
+rset seqRSET={
 	RSETNUMBER,
 	NULL,			/* report */
 	NULL,			/* initialize */
@@ -64,6 +64,7 @@ epicsShareDef struct rset seqRSET={
 	NULL 			/* get_alarm_double */
 
 };
+epicsExportAddress(rset,seqRSET);
 
 /* Total number of link-groups in a sequence record */
 #define NUM_LINKS	10

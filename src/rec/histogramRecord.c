@@ -37,10 +37,10 @@
 #include "special.h"
 #include "recSup.h"
 #include "recGbl.h"
-#define epicsExportSharedSymbols
 #define GEN_SIZE_OFFSET
 #include "histogramRecord.h"
 #undef  GEN_SIZE_OFFSET
+#include "epicsExport.h"
 
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
@@ -61,7 +61,7 @@ static long get_precision(struct dbAddr *paddr,long *precision);
 static long get_graphic_double(struct dbAddr *paddr,struct dbr_grDouble *pgd);
 static long get_control_double(struct dbAddr *paddr,struct dbr_ctrlDouble *pcd);
 
-epicsShareDef struct rset histogramRSET={
+rset histogramRSET={
      RSETNUMBER,
      report,
      initialize,
@@ -79,7 +79,9 @@ epicsShareDef struct rset histogramRSET={
      put_enum_str,
      get_graphic_double,
      get_control_double,
-     get_alarm_double };
+     get_alarm_double
+};
+epicsExportAddress(rset,histogramRSET);
 
 struct histogramdset { /* histogram input dset */
      long          number;

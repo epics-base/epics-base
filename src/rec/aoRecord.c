@@ -37,11 +37,11 @@
 #include "recGbl.h"
 #include "menuConvert.h"
 #include "menuOmsl.h"
-#define epicsExportSharedSymbols
 #define GEN_SIZE_OFFSET
 #include "aoRecord.h"
 #undef  GEN_SIZE_OFFSET
 #include "menuIvoa.h"
+#include "epicsExport.h"
 
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
@@ -62,7 +62,7 @@ static long get_graphic_double();
 static long get_control_double();
 static long get_alarm_double();
 
-epicsShareDef struct rset aoRSET={
+rset aoRSET={
 	RSETNUMBER,
 	report,
 	initialize,
@@ -91,6 +91,7 @@ struct aodset { /* analog input dset */
 	DEVSUPFUN	write_ao;/*(0)=>(success ) */
 	DEVSUPFUN	special_linconv;
 };
+epicsExportAddress(rset,aoRSET);
 
 
 

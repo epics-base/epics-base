@@ -34,10 +34,10 @@
 #include "errMdef.h"
 #include "recSup.h"
 #include "recGbl.h"
-#define epicsExportSharedSymbols
 #define GEN_SIZE_OFFSET
 #include "waveformRecord.h"
 #undef  GEN_SIZE_OFFSET
+#include "epicsExport.h"
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
@@ -56,7 +56,7 @@ static long get_precision();
 static long get_graphic_double();
 static long get_control_double();
 #define get_alarm_double NULL
-epicsShareDef struct rset waveformRSET={
+rset waveformRSET={
 	RSETNUMBER,
 	report,
 	initialize,
@@ -74,7 +74,9 @@ epicsShareDef struct rset waveformRSET={
 	put_enum_str,
 	get_graphic_double,
 	get_control_double,
-	get_alarm_double };
+	get_alarm_double
+};
+epicsExportAddress(rset,waveformRSET);
 struct wfdset { /* waveform dset */
         long            number;
         DEVSUPFUN       dev_report;

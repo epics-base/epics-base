@@ -33,13 +33,12 @@
 #include "link.h"
 #include "dbCommon.h"
 #include "stringoutRecord.h"
-#define epicsExportSharedSymbols
-#include "shareLib.h"
+#include "epicsExport.h"
 
 /* Create the dset for devSoTestAsyn */
 static long init_record();
 static long write_stringout();
-static struct {
+struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;
@@ -56,8 +55,7 @@ static struct {
 	write_stringout,
 	NULL
 };
-epicsShareExtern dset *pdevSoTestAsyn;
-epicsShareDef dset *pdevSoTestAsyn = (dset *)&devSoTestAsyn;
+epicsExportAddress(dset,devSoTestAsyn);
 
 static long init_record(pstringout)
     struct stringoutRecord	*pstringout;

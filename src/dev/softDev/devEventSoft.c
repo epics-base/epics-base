@@ -13,25 +13,24 @@
  *      Author:		Janet Anderson
  *      Date:   	04-21-91
 */
-#include	<stdlib.h>
-#include	<stdio.h>
-#include	<string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
-#include	"alarm.h"
-#include	"dbDefs.h"
-#include	"dbAccess.h"
-#include	"recGbl.h"
-#include        "recSup.h"
-#include	"devSup.h"
-#include	"eventRecord.h"
-#define epicsExportSharedSymbols
-#include "shareLib.h"
+#include "alarm.h"
+#include "dbDefs.h"
+#include "dbAccess.h"
+#include "recGbl.h"
+#include "recSup.h"
+#include "devSup.h"
+#include "eventRecord.h"
+#include "epicsExport.h"
 
 
 /* Create the dset for devEventSoft */
 static long init_record();
 static long read_event();
-static struct {
+struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;
@@ -46,8 +45,7 @@ static struct {
 	NULL,
 	read_event
 };
-epicsShareExtern dset *pdevEventSoft;
-epicsShareDef dset *pdevEventSoft = (dset *)&devEventSoft;
+epicsExportAddress(dset,devEventSoft);
 
 static long init_record(eventRecord *pevent)
 {

@@ -38,11 +38,11 @@
 #include "taskwd.h"
 #include "postfix.h"
 
-#define epicsExportSharedSymbols
 #define GEN_SIZE_OFFSET
 #include "calcoutRecord.h"
 #undef  GEN_SIZE_OFFSET
 #include "menuIvoa.h"
+#include "epicsExport.h"
 
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
@@ -63,7 +63,7 @@ static long get_graphic_double();
 static long get_control_double();
 static long get_alarm_double();
 
-epicsShareDef struct rset calcoutRSET={
+rset calcoutRSET={
 	RSETNUMBER,
 	report,
 	initialize,
@@ -83,6 +83,7 @@ epicsShareDef struct rset calcoutRSET={
 	get_control_double,
 	get_alarm_double
 };
+epicsExportAddress(rset,calcoutRSET);
 
 
 /* To provide feedback to the user as to the connection status of the 

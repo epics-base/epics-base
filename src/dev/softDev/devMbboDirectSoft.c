@@ -14,24 +14,23 @@
  *      Current Author:  Matthew Needes
  *      Date:            10-08-93
  */
-#include	<stdlib.h>
-#include	<stdio.h>
-#include	<string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
-#include	"alarm.h"
-#include	"dbDefs.h"
-#include	"dbAccess.h"
-#include	"recGbl.h"
-#include        "recSup.h"
-#include	"devSup.h"
-#include	"mbboDirectRecord.h"
-#define epicsExportSharedSymbols
-#include "shareLib.h"
+#include "alarm.h"
+#include "dbDefs.h"
+#include "dbAccess.h"
+#include "recGbl.h"
+#include "recSup.h"
+#include "devSup.h"
+#include "mbboDirectRecord.h"
+#include "epicsExport.h"
 
 /* Create the dset for devMbboSoft */
 static long init_record();
 static long write_mbbo();
-static struct {
+struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;
@@ -46,8 +45,7 @@ static struct {
 	NULL,
 	write_mbbo
 };
-epicsShareExtern dset *pdevMbboDirectSoft;
-epicsShareDef dset *pdevMbboDirectSoft = (dset *)&devMbboDirectSoft;
+epicsExportAddress(dset,devMbboDirectSoft);
 
 static long init_record(mbboDirectRecord *pmbbo)
 {

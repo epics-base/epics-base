@@ -33,10 +33,10 @@
 #include "special.h"
 #include "recSup.h"
 #include "recGbl.h"
-#define epicsExportSharedSymbols
 #define GEN_SIZE_OFFSET
 #include "compressRecord.h"
 #undef  GEN_SIZE_OFFSET
+#include "epicsExport.h"
 
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
@@ -57,7 +57,7 @@ static long get_graphic_double();
 static long get_control_double();
 #define get_alarm_double NULL
 
-epicsShareDef struct rset compressRSET={
+rset compressRSET={
 	RSETNUMBER,
 	report,
 	initialize,
@@ -77,6 +77,7 @@ epicsShareDef struct rset compressRSET={
 	get_control_double,
 	get_alarm_double
 };
+epicsExportAddress(rset,compressRSET);
 
 static void reset(compressRecord *pcompress)
 {

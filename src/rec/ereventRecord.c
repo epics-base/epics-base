@@ -31,10 +31,10 @@
 #include "recGbl.h"
 
 #include "ereventDefs.h"
-#define epicsExportSharedSymbols
 #define GEN_SIZE_OFFSET
 #include "ereventRecord.h"
 #undef  GEN_SIZE_OFFSET
+#include "epicsExport.h"
 
 #define STATIC	static
 
@@ -59,7 +59,7 @@ STATIC long ErEventProc(struct ereventRecord *);
 #define get_control_double NULL
 #define get_alarm_double NULL
 
-epicsShareDef struct rset ereventRSET={
+rset ereventRSET={
 	RSETNUMBER,
 	report,
 	initialize,
@@ -77,7 +77,9 @@ epicsShareDef struct rset ereventRSET={
 	put_enum_str,
 	get_graphic_double,
 	get_control_double,
-	get_alarm_double };
+	get_alarm_double
+};
+epicsExportAddress(rset,ereventRSET);
 
 
 

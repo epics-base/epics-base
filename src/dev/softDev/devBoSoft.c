@@ -18,27 +18,25 @@
  */
 
 
-#include	<stdlib.h>
-#include	<stdio.h>
-#include	<string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
-#include	"alarm.h"
-#include	"dbDefs.h"
-#include	"dbAccess.h"
-#include	"recGbl.h"
-#include        "recSup.h"
-#include	"devSup.h"
-#include	"boRecord.h"
-#define epicsExportSharedSymbols
-#include "shareLib.h"
-
+#include "alarm.h"
+#include "dbDefs.h"
+#include "dbAccess.h"
+#include "recGbl.h"
+#include "recSup.h"
+#include "devSup.h"
+#include "boRecord.h"
+#include "epicsExport.h"
 
 static long init_record();
 
 /* Create the dset for devBoSoft */
 static long write_bo();
 
-static struct {
+struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;
@@ -51,9 +49,9 @@ static struct {
 	NULL,
 	init_record,
 	NULL,
-	write_bo};
-epicsShareExtern dset *pdevBoSoft;
-epicsShareDef dset *pdevBoSoft = (dset *)&devBoSoft;
+	write_bo
+};
+epicsExportAddress(dset,devBoSoft);
 
 static long init_record(boRecord *pbo)
 {

@@ -33,13 +33,12 @@
 #include "link.h"
 #include "dbCommon.h"
 #include "mbbiRecord.h"
-#define epicsExportSharedSymbols
-#include "shareLib.h"
+#include "epicsExport.h"
 
 /* Create the dset for devMbbiTestAsyn */
 static long init_record();
 static long read_mbbi();
-static struct {
+struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;
@@ -56,8 +55,7 @@ static struct {
 	read_mbbi,
 	NULL
 };
-epicsShareExtern dset *pdevMbbiTestAsyn;
-epicsShareDef dset *pdevMbbiTestAsyn = (dset *)&devMbbiTestAsyn;
+epicsExportAddress(dset,devMbbiTestAsyn);
 
 static long init_record(pmbbi)
     struct mbbiRecord	*pmbbi;

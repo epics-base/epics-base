@@ -14,26 +14,25 @@
  *      Current Author: Marty Kraimer
  *      Date:  3/6/91
  */
-#include	<stdlib.h>
-#include	<stdio.h>
-#include	<string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
-#include	"alarm.h"
-#include	"cvtTable.h"
-#include	"dbDefs.h"
-#include	"dbAccess.h"
-#include	"recGbl.h"
-#include        "recSup.h"
-#include	"devSup.h"
-#include	"link.h"
-#include	"aiRecord.h"
-#define epicsExportSharedSymbols
-#include "shareLib.h"
+#include "alarm.h"
+#include "cvtTable.h"
+#include "dbDefs.h"
+#include "dbAccess.h"
+#include "recGbl.h"
+#include "recSup.h"
+#include "devSup.h"
+#include "link.h"
+#include "aiRecord.h"
+#include "epicsExport.h"
 
 /* Create the dset for devAiSoft */
 static long init_record();
 static long read_ai();
-static struct {
+struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;
@@ -50,8 +49,7 @@ static struct {
 	read_ai,
 	NULL
 };
-epicsShareExtern dset *pdevAiSoft;
-epicsShareDef dset *pdevAiSoft = (dset *)&devAiSoft;
+epicsExportAddress(dset,devAiSoft);
 
 static long init_record(aiRecord *pai)
 {

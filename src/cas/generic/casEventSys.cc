@@ -96,56 +96,49 @@ casProcCond casEventSys::process ()
 	unsigned long nAccepted = 0u;
 
     {
-        epicsGuard < epicsMutex > guard ( this->mutex );
 
-	    while (!this->dontProcess) {
+	while ( ! this->dontProcess ) {
 
-		    casEvent *pEvent = this->eventLogQue.get ();
-		    if ( pEvent == NULL ) {
-			    break;
-		    }
+        {
+            epicsGuard < epicsMutex > guard ( this->mutex );
+		    casEvent * pEvent = this->eventLogQue.get ();
+        }
 
-		    //
-		    // lock must remain on until the event queue
-		    // event is called
-		    //
+		if ( pEvent == NULL ) {
+			break;
+		}
 
-		    caStatus status = pEvent->cbFunc ( *this );
-		    if ( status == S_cas_success ) {
-			    /*
-			    * only remove it after it was accepted by the
-			    * client
-			    */
-			    nAccepted++;
-		    }
-		    else if ( status == S_cas_sendBlocked ) {
-			    /*
-			    * not accepted so return to the head of the list
-			    * (we will try again later)
-			    */
+		// lock must remain on until the event is called
+		caStatus status = pEvent->cbFunc ( *this );
+		if ( status == S_cas_success ) {
+			nAccepted++;
+		}
+		else if ( status == S_cas_sendBlocked ) {
+			// not accepted so return to the head of the list
+		    // (we will try again later)
+            {
+                epicsGuard < epicsMutex > guard ( this->mutex );
 			    this->pushOnToEventQueue ( *pEvent );
-			    cond = casProcOk;
-			    break;
-		    }
-		    else if ( status == S_cas_disconnect ) {
-			    cond = casProcDisconnect;
-			    break;
-		    }
-		    else {
-			    errMessage ( status, 
-                    "- unexpected error processing event" );
-			    cond = casProcDisconnect;
-			    break;
-		    }
-  	    }
+            }
+			cond = casProcOk;
+			break;
+		}
+		else if ( status == S_cas_disconnect ) {
+			cond = casProcDisconnect;
+			break;
+		}
+		else {
+			errMessage ( status, 
+                "- unexpected error processing event" );
+			cond = casProcDisconnect;
+			break;
+		}
+  	}
 
-	    /*
-	    * call flush function if they provided one 
-	    */
-	    if ( nAccepted > 0u ) {
-		    this->eventFlush ();
-	    }
-    }
+	// call flush function if they provided one 
+	if ( nAccepted > 0u ) {
+		this->eventFlush ();
+	}
 
 	//
 	// allows the derived class to be informed that it

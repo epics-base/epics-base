@@ -19,6 +19,7 @@
 #include "bhe_IL.h"
 #include "tcpiiu_IL.h"
 #include "nciu_IL.h"
+#include "ioCounter_IL.h"
 
 static void cacRecursionLockExitHandler ()
 {
@@ -50,7 +51,6 @@ cac::cac ( bool enablePreemptiveCallbackIn ) :
     pudpiiu ( 0 ),
     pSearchTmr ( 0 ),
     pRepeaterSubscribeTmr ( 0 ),
-    pndrecvcnt ( 0 ),
     enablePreemptiveCallback ( enablePreemptiveCallbackIn )
 {
 	long status;
@@ -85,7 +85,6 @@ cac::cac ( bool enablePreemptiveCallbackIn ) :
     this->pVPrintfFunc = errlogVprintf;
     this->ca_exception_func = ca_default_exception_handler;
     this->ca_exception_arg = NULL;
-    this->readSeq = 0u;
 
     installSigPipeIgnore ();
 
@@ -136,11 +135,7 @@ cac::cac ( bool enablePreemptiveCallbackIn ) :
     }
 }
 
-/*
- * cac::~cac ()
- *
- * releases all resources alloc to a channel access client
- */
+
 cac::~cac ()
 {
     this->enableCallbackPreemption ();
@@ -149,7 +144,7 @@ cac::~cac ()
     // destroy local IO channels
     //
     this->defaultMutex.lock ();
-    tsDLIterBD <cacLocalChannelIO> iter ( this->localChanList.first () );
+    tsDLIterBD < cacLocalChannelIO > iter ( this->localChanList.first () );
     while ( iter.valid () ) {
         tsDLIterBD <cacLocalChannelIO> pnext = iter.itemAfter ();
         iter->destroy ();
@@ -165,6 +160,12 @@ cac::~cac ()
     this->pRecvProcThread = 0;
     delete pTmp;
 
+    if ( this->pudpiiu ) {
+        // this blocks until the UDP thread exits so that
+        // it will not sneak in any new clients
+        this->pudpiiu->shutdown ();
+    }
+
     //
     // shutdown all tcp connections and wait for threads to exit
     //
@@ -177,9 +178,14 @@ cac::~cac ()
     }
     this->iiuListMutex.unlock ();
 
-    //
-    // shutdown udp and wait for threads to exit
-    //
+    if ( this->pRepeaterSubscribeTmr ) {
+        delete this->pRepeaterSubscribeTmr;
+    }
+
+    if ( this->pSearchTmr ) {
+        delete this->pSearchTmr;
+    }
+
     if ( this->pudpiiu ) {
         if ( ! this->enablePreemptiveCallback ) {
             if ( this->fdRegFunc ) {
@@ -187,14 +193,17 @@ cac::~cac ()
                     ( this->fdRegArg, this->pudpiiu->getSock (), FALSE );
             }
         }
-        delete this->pSearchTmr;
-        delete this->pRepeaterSubscribeTmr;
+        //
+        // make certain that the UDP thread isnt starting 
+        // up  new clients. this adds an additional 
+        // requirement that threads 
+        //
         delete this->pudpiiu;
     }
 
-    /*
-     * free user name string
-     */
+    //
+    // free user name string
+    //
     if ( this->pUserName ) {
         delete [] this->pUserName;
     }
@@ -240,29 +249,6 @@ void cac::flush ()
     this->iiuListMutex.unlock ();
 }
 
-
-
-/*
- *
- * set pending IO count back to zero and
- * send a sync to each IOC and back. dont
- * count reads until we recv the sync
- *
- */
-void cac::cleanUpPendIO ()
-{
-    this->defaultMutex.lock ();
-
-    this->readSeq++;
-    this->pndrecvcnt = 0u;
-
-    this->defaultMutex.unlock ();
-
-    if ( this->pudpiiu ) {
-        this->pudpiiu->connectTimeoutNotify ();
-    }
-}
-
 unsigned cac::connectionCount () const
 {
     return this->iiuList.count ();
@@ -290,8 +276,6 @@ void cac::show ( unsigned level ) const
         this->defaultMutex.unlock ();
 
         ::printf ( "\tconnection time out watchdog period %f\n", this->connTMO );
-        ::printf ( "\tthere are %u unsatisfied IO operations blocking ca_pend_io()\n",
-            this->pndrecvcnt );
         ::printf ( "\tpreemptive calback is %s\n",
             this->enablePreemptiveCallback ? "enabled" : "disabled" );
         ::printf ( "list of installed services:\n" );
@@ -308,12 +292,11 @@ void cac::show ( unsigned level ) const
                 this->pVPrintfFunc);
         ::printf ( "\tfile descriptor registration function %p, file descriptor registration arg %p\n",
             this->fdRegFunc, this->fdRegArg );
+        this->showOutstandingIO ( level - 2u );
     }
 
     if ( level > 2u ) {
         ::printf ( "Program begin time:\n");
-        ::printf ( "the current read sequence for ca_pend_io() is %u\n",
-            this->readSeq );
         this->programBeginTime.show ( level - 3u );
         ::printf ( "IO identifier hash table:\n" );
         this->ioTable.show ( level - 3u );
@@ -344,8 +327,6 @@ void cac::show ( unsigned level ) const
     }
 
     if ( level > 3u ) {
-        ::printf ( "IO done event:\n");
-        this->ioDone.show ( level - 4u );
         ::printf ( "Default mutex:\n");
         this->defaultMutex.show ( level - 4u );
         ::printf ( "Virtual circuit list mutex:\n");
@@ -545,71 +526,6 @@ void cac::removeBeaconInetAddr (const inetAddrID &ina)
     assert (pBHE);
 }
 
-void cac::decrementOutstandingIO ( unsigned seqNumber )
-{
-    bool signalNeeded;
-    this->defaultMutex.lock ();
-    if ( this->readSeq == seqNumber ) {
-        if ( this->pndrecvcnt > 0u ) {
-            this->pndrecvcnt--;
-            if ( this->pndrecvcnt == 0u ) {
-                signalNeeded = true;
-            }
-            else {
-                signalNeeded = false;
-            }
-        }
-        else {
-            signalNeeded = true;
-        }
-    }
-    else {
-        signalNeeded = true;
-    }
-    this->defaultMutex.unlock ();
-
-    if ( signalNeeded ) {
-        this->ioDone.signal ();
-    }
-}
-
-void cac::decrementOutstandingIO ()
-{
-    bool signalNeeded;
-    this->defaultMutex.lock ();
-    if ( this->pndrecvcnt > 0u ) {
-        this->pndrecvcnt--;
-        if ( this->pndrecvcnt == 0u ) {
-            signalNeeded = true;
-        }
-        else {
-            signalNeeded = false;
-        }
-    }
-    else {
-        signalNeeded = true;
-    }
-    this->defaultMutex.unlock ();
-
-    if ( signalNeeded ) {
-        this->ioDone.signal ();
-    }
-}
-
-void cac::incrementOutstandingIO ()
-{
-    this->defaultMutex.lock ();
-    if ( this->pndrecvcnt < UINT_MAX ) {
-        this->pndrecvcnt++;
-    }
-    this->defaultMutex.unlock ();
-}
-
-unsigned cac::readSequence () const
-{
-    return this->readSeq;
-}
-
 int cac::pend ( double timeout, int early )
 {
     int status;
@@ -647,13 +563,16 @@ int cac::pendPrivate (double timeout, int early)
 
     this->flush ();
 
-    if ( this->pndrecvcnt == 0u && early ) {
+    if ( this->currentOutstandingIOCount () == 0u && early ) {
         return ECA_NORMAL;
     }
    
     if ( timeout < 0.0 ) {
-        if (early) {
-            this->cleanUpPendIO ();
+        if ( early ) {
+            this->cleanUpOutstandingIO ();
+            if ( this->pudpiiu ) {
+                this->pudpiiu->connectTimeoutNotify ();
+            }
         }
         return ECA_TIMEOUT;
     }
@@ -678,15 +597,18 @@ int cac::pendPrivate (double timeout, int early)
              */
             if ( remaining <= CAC_SIGNIFICANT_SELECT_DELAY ) {
                 if ( early ) {
-                    this->cleanUpPendIO ();
+                    this->cleanUpOutstandingIO ();
+                    if ( this->pudpiiu ) {
+                        this->pudpiiu->connectTimeoutNotify ();
+                    }
                 }
                 return ECA_TIMEOUT;
             }
         }    
         
-        this->ioDone.wait ( remaining );
+        this->waitForCompletionOfIO ( remaining );
 
-        if ( this->pndrecvcnt == 0 && early ) {
+        if ( this->currentOutstandingIOCount () == 0 && early ) {
             return ECA_NORMAL;
         }
  
@@ -700,7 +622,7 @@ int cac::pendPrivate (double timeout, int early)
 
 bool cac::ioComplete () const
 {
-    if ( this->pndrecvcnt == 0u ) {
+    if ( this->currentOutstandingIOCount () == 0u ) {
         return true;
     }
     else{
@@ -712,7 +634,7 @@ void cac::ioInstall ( nciu &chan, baseNMIU &io )
 {
     this->defaultMutex.lock ();
     this->ioTable.add ( io );
-    chan.cacPrivate::eventq.add ( io );
+    chan.cacPrivateListOfIO::eventq.add ( io );
     this->defaultMutex.unlock ();
 }
 
@@ -721,7 +643,7 @@ void cac::ioDestroy ( unsigned id )
     this->defaultMutex.lock ();
     baseNMIU * pmiu = this->ioTable.remove ( id );
     if ( pmiu ) {
-        pmiu->chan.cacPrivate::eventq.remove ( *pmiu );
+        pmiu->chan.cacPrivateListOfIO::eventq.remove ( *pmiu );
     }
     this->defaultMutex.unlock ();
     // care is taken to not destroy with the cac lock
@@ -781,7 +703,7 @@ void cac::ioCompletionNotifyAndDestroy ( unsigned id )
     this->defaultMutex.lock ();
     baseNMIU * pmiu = this->ioTable.remove ( id );
     if ( pmiu ) {
-        pmiu->chan.cacPrivate::eventq.remove ( *pmiu );
+        pmiu->chan.cacPrivateListOfIO::eventq.remove ( *pmiu );
     }
     this->defaultMutex.unlock ();
     // care is taken to not destroy with the cac lock
@@ -801,7 +723,7 @@ void cac::ioCompletionNotifyAndDestroy ( unsigned id,
     this->defaultMutex.lock ();
     baseNMIU * pmiu = this->ioTable.remove ( id );
     if ( pmiu ) {
-        pmiu->chan.cacPrivate::eventq.remove ( *pmiu );
+        pmiu->chan.cacPrivateListOfIO::eventq.remove ( *pmiu );
     }
     this->defaultMutex.unlock ();
     // care is taken to not destroy with the cac lock
@@ -820,7 +742,7 @@ void cac::ioExceptionNotifyAndDestroy ( unsigned id, int status, const char *pCo
     this->defaultMutex.lock ();
     baseNMIU * pmiu = this->ioTable.remove ( id );
     if ( pmiu ) {
-        pmiu->chan.cacPrivate::eventq.remove ( *pmiu );
+        pmiu->chan.cacPrivateListOfIO::eventq.remove ( *pmiu );
     }
     this->defaultMutex.unlock ();
     // care is taken to not destroy with the cac lock
@@ -840,7 +762,7 @@ void cac::ioExceptionNotifyAndDestroy ( unsigned id, int status,
     this->defaultMutex.lock ();
     baseNMIU * pmiu = this->ioTable.remove ( id );
     if ( pmiu ) {
-        pmiu->chan.cacPrivate::eventq.remove ( *pmiu );
+        pmiu->chan.cacPrivateListOfIO::eventq.remove ( *pmiu );
     }
     this->defaultMutex.unlock ();
     // care is taken to not destroy with the cac lock
@@ -878,20 +800,31 @@ void cac::accessRightsNotify ( unsigned id, caar ar )
     this->defaultMutex.unlock ();
 }
 
-void cac::connectChannel ( unsigned id, class tcpiiu &iiu, 
+void cac::connectChannel ( bool v44Ok, unsigned id, 
           unsigned nativeType, unsigned long nativeCount, unsigned sid )
 {
     this->defaultMutex.lock ();
     nciu * pChan = this->chanTable.lookup ( id );
     if ( pChan ) {
         unsigned sidTmp;
-        if ( iiu.ca_v44_ok () ) {
+        if ( v44Ok ) {
             sidTmp = sid;
         }
         else {
             sidTmp = pChan->getSID ();
         }
-        pChan->connect ( iiu, nativeType, nativeCount, sidTmp );
+        pChan->connect ( nativeType, nativeCount, sidTmp );
+    }
+    this->defaultMutex.unlock ();
+}
+
+// this is to only be used by early protocol revisions
+void cac::connectChannel ( unsigned id )
+{
+    this->defaultMutex.lock ();
+    nciu * pChan = this->chanTable.lookup ( id );
+    if ( pChan ) {
+        pChan->connect ();
     }
     this->defaultMutex.unlock ();
 }

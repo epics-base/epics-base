@@ -28,6 +28,7 @@
  *      Modification Log:
  *      -----------------
  * 	.01 091493 joh	fixed overzealous parameter check
+ *	.02 121693 joh	added bucketFree()
  */
 
 
@@ -169,11 +170,36 @@ unsigned indexWidth;
 			pb->nEntries, 
 			sizeof(ITEMPTR));
 	if(!pb->pTable){
+		free(pb);
 		return NULL;
 	}
 	return pb;
 }
 
+
+/*
+ * bucketFree()
+ */
+#ifdef __STDC__
+int	bucketFree(BUCKET *prb)
+#else
+int	bucketFree(prb)
+BUCKET	*prb;
+#endif
+{
+	/*
+	 * deleting a bucket with entries in use
+	 * will cause memory leaks and is not allowed
+	 */
+	if(prb->nInUse){
+		return BUCKET_FAILURE;
+	}
+
+	free(prb->pTable);
+	free(prb);
+
+	return BUCKET_SUCCESS;
+}
 
 
 /*

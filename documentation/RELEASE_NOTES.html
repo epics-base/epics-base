@@ -66,6 +66,10 @@ init_record now checks to see if state strings or values are defined
 during pass 0. Previously if another record had a DBR_STRING link to
 an mbboRecord it thought the field was a USHORT instead of an ENUM.</p>
 
+<h4>epicsString</h4>
+<p>A new function has been added epicsStrPrintEscaped, which converts
+the standard C escape characters to \xxx characters.</p>
+
 <center>
 <h2>Changes since 3.14.3</h2>
 </center>

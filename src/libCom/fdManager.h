@@ -32,22 +32,23 @@
  *
  * History
  * $Log$
- * Revision 1.1  1996/06/21 01:08:54  jhill
- * add fdMgr.h fdMgr.cc
- *
  *
  */
 
-#ifndef fdMgrH_included
-#define fdMgrH_included
+#ifndef fdManagerH_included
+#define fdManagerH_included
 
 #include <tsDLList.h>
 #include <osiTime.h>
 
+#ifdef WIN32
+#include <winsock.h>
+#else
 extern "C" {
 #	include <sys/types.h>
 #	include <sys/time.h>
 } // extern "C"
+#endif
 
 #include <stdio.h>
 
@@ -59,7 +60,7 @@ enum fdRegState {fdrActive, fdrPending, fdrLimbo};
 // file descriptor registration
 //
 class fdReg : public tsDLNode<fdReg> {
-        friend class fdMgr;
+        friend class fdManager;
 public:
 	fdReg (const int fdIn, const fdRegType typ, 
 			const unsigned onceOnly=0);
@@ -71,7 +72,7 @@ private:
         //
         // called when there is activity on the fd
 	// NOTES
-	// 1) the fdMgr will call this only once during the
+	// 1) the fdManager will call this only once during the
 	// lifetime of a fdReg object if the constructor
 	// specified "onceOnly"
         //
@@ -79,7 +80,7 @@ private:
 
 	//
 	// Called by the file descriptor manager:
-	// 1) If the fdMgr is deleted and there are still 
+	// 1) If the fdManager is deleted and there are still 
 	// fdReg objects attached
 	// 2) Immediately after calling "callBack()" if
 	// the constructor specified "onceOnly" 
@@ -94,11 +95,11 @@ private:
 	unsigned char	onceOnly;
 };
  
-class fdMgr {
+class fdManager {
 friend class fdReg;
 public:
-        fdMgr();
-        ~fdMgr();
+        fdManager();
+        ~fdManager();
         void process (const osiTime &delay);
 private:
         tsDLList<fdReg>	regList;
@@ -119,13 +120,13 @@ private:
 	fd_set *pFDSet (fdRegType typIn);
 };
 
-extern fdMgr fileDescriptorManager;
+extern fdManager fileDescriptorManager;
 
 
 //
-// fdMgrMaxInt ()
+// fdManagerMaxInt ()
 //
-inline int fdMgrMaxInt (int a, int b)
+inline int fdManagerMaxInt (int a, int b)
 {
         if (a>b) {
                 return a;
@@ -136,9 +137,9 @@ inline int fdMgrMaxInt (int a, int b)
 }
 
 //
-// fdMgr::pFDSet()
+// fdManager::pFDSet()
 //
-inline fd_set *fdMgr::pFDSet (fdRegType typIn)
+inline fd_set *fdManager::pFDSet (fdRegType typIn)
 {
 	fd_set *pSet;
 
@@ -159,22 +160,22 @@ inline fd_set *fdMgr::pFDSet (fdRegType typIn)
 }
 
 //
-// fdMgr::installReg()
+// fdManager::installReg()
 //
-inline void fdMgr::installReg (fdReg &reg)
+inline void fdManager::installReg (fdReg &reg)
 {
-       	this->maxFD = fdMgrMaxInt(this->maxFD, reg.fd+1);
+       	this->maxFD = fdManagerMaxInt(this->maxFD, reg.fd+1);
        	this->regList.add(reg);
 	reg.state = fdrPending;
 }
  
 //
-// fdMgr::removeReg()
+// fdManager::removeReg()
 //
-inline void fdMgr::removeReg(fdReg &reg)
+inline void fdManager::removeReg(fdReg &reg)
 {
         //
-        // signal fdMgr that the fdReg was deleted
+        // signal fdManager that the fdReg was deleted
         // during the call back
         //
         if (this->pCBReg == &reg) {
@@ -214,5 +215,5 @@ inline fdReg::fdReg (const int fdIn, const fdRegType typIn,
 	fileDescriptorManager.installReg(*this);
 }
 
-#endif // fdMgrH_included
+#endif // fdManagerH_included
  

@@ -2,18 +2,8 @@
 //
 // $Id$
 //
-// File descriptor management C++ class library
 //
 // $Log$
-// Revision 1.3  1996/07/24 23:01:03  jhill
-// use iter.remove()
-//
-// Revision 1.2  1996/07/09 23:02:05  jhill
-// mark fd entry in limbo during delete
-//
-// Revision 1.1  1996/06/21 01:08:53  jhill
-// add fdMgr.h fdMgr.cc
-//
 //
 
 //
@@ -39,10 +29,10 @@
 	} //extern "C"
 #endif // __GNUC__
 
-#include <fdMgr.h>
+#include <fdManager.h>
 #include <osiTimer.h>
 
-fdMgr fileDescriptorManager;
+fdManager fileDescriptorManager;
 
 inline int selectErrno()
 {
@@ -50,9 +40,9 @@ inline int selectErrno()
 }
 
 //
-// fdMgr::fdMgr()
+// fdManager::fdManager()
 //
-fdMgr::fdMgr()
+fdManager::fdManager()
 {
 	FD_ZERO (&this->read);
 	FD_ZERO (&this->write);
@@ -63,9 +53,9 @@ fdMgr::fdMgr()
 }
 
 //
-// fdMgr::~fdMgr()
+// fdManager::~fdManager()
 //
-fdMgr::~fdMgr()
+fdManager::~fdManager()
 {
 	fdReg	*pReg;
 
@@ -80,9 +70,9 @@ fdMgr::~fdMgr()
 }
 
 //
-// fdMgr::process()
+// fdManager::process()
 //
-void fdMgr::process (const osiTime &delay)
+void fdManager::process (const osiTime &delay)
 {
 	tsDLIter<fdReg> regIter(this->regList);
 	osiTime minDelay;
@@ -135,7 +125,7 @@ void fdMgr::process (const osiTime &delay)
 		}
 		else {
 			fprintf(stderr, 
-			"fdMgr: select failed because \"%s\"\n",
+			"fdManager: select failed because \"%s\"\n",
 				strerror(selectErrno()));
 		}
 	}

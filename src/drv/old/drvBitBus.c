@@ -65,6 +65,10 @@
  * This driver currently needs work on error message generation.
  *
  * $Log$
+ * Revision 1.3  1996/05/03 19:04:44  winans
+ * Fixed a reversed set of parms to a semBCreate().
+ * Changed the data type of a parameter to memory probe call.
+ *
  * Revision 1.2  1995/09/26 14:50:31  winans
  * Added code to send last byte of a RAC_RESET in pepTxTask().  It was left
  * out in a previous mod that modes the last byte transmission into a locked
@@ -171,10 +175,33 @@ STATIC int BBDumpXactHistory(XactHistStruct *pXact);
 /*****************************************************************************
  *
  * Used to limit the TOTAL number of simultaneous messages that can be
- * outstanding on a single Xycom link.  (Shell settable.)
+ * outstanding on a single Xycom/PEP link.  (Shell settable.) PEP limit
+ * of 7 is a magic number. Anything more and PEP board will throw away
+ * your transaction resulting in a TIMEOUT. Ugh.
  *
  *****************************************************************************/
 int	XycomMaxOutstandMsgs = XYCOM_BB_MAX_OUTSTAND_MSGS;
+int PepMaxOutstandMsgs = 7;  /* pre-determined magic number */
+
+/*****************************************************************************
+ *
+ * Create an artificial delay to prevent back-to-back message
+ * loading of the PEP FIFO, since this has proven to induce protocol
+ * errors. If the global PepLinkXDelay variable is 0 or positive,
+ * use a software spin loop for the delay. If the PepLinkXDelay
+ * variable is negative, wait for the 80C152 "currently transmitting"
+ * bit to clear (bit 7 == 0). 
+ * 
+ *****************************************************************************/
+int PepLink0Delay = 450;
+int PepLink1Delay = 450;
+int PepLink2Delay = 450;
+int PepLink3Delay = 450;
+int PepLink0ConsecutiveDelay = 0;
+int PepLink1ConsecutiveDelay = 0;
+int PepLink2ConsecutiveDelay = 0;
+int PepLink3ConsecutiveDelay = 0;
+int PepLink0PulseNode = 1;
 
 /*****************************************************************************
  *
@@ -1980,6 +2007,16 @@ pepRxTask(int link)
 		if (rxHead[6] == 0x91)
 		{ /* something bad happened... inject a delay to the */
 		  /* requested timeout duration. */
+
+		  /* start of saunders patch */
+		  if (link==0 && PepLink0PulseNode == -1) {
+		    pulseSysMon();
+		  } else if (link==0 && PepLink0PulseNode > 0) {
+		    if (rxHead[4] == PepLink0PulseNode) 
+		      pulseSysMon();
+		  }
+		  /* end of saunders patch */
+
 		  if (bbDebug)
 		    printf("pepRxTask(%d): 0x91 from node %d, invoking synthetic delay\n", link, rxHead[4]);
 		  (pBBLink[link]->syntheticDelay[rxDpvtHead->txMsg.node]) = rxDpvtHead->retire;
@@ -2432,7 +2469,8 @@ STATIC int pepTxTask(int link)
       printf("pepTxTask(%d): got an event\n", link);
     
     working = 1;
-    while ((working != 0) && (pBBLink[link]->abortFlag == 0)) {
+    while ((working != 0) && (pBBLink[link]->abortFlag == 0) &&
+	   (pBBLink[link]->busyList.elements < PepMaxOutstandMsgs)) {
       working = 0;
       
       prio = BB_NUM_PRIO-1;
@@ -2461,6 +2499,63 @@ STATIC int pepTxTask(int link)
 	    }
 	  }
 	}
+
+	/* Start of unpleasant patch.
+	   Create an artificial delay to prevent back-to-back message
+	   loading of the PEP FIFO, since this has proven to induce protocol
+	   errors. If the global PepLinkXDelay variable is 0 or positive,
+	   use a software spin loop for the delay. If the PepLinkXDelay
+	   variable is negative, wait for the 80C152 "currently transmitting"
+	   bit to clear (bit 7 == 0).
+	   */
+	switch (link) {
+	case 0:
+	  if (PepLink0Delay >= 0) {
+	    for (x=0 ; x < PepLink0Delay ; x++);
+	  } else {
+	    stuck = -PepLink0Delay;
+	    while (((pBBLink[link]->l.PepLink.bbRegs->stat_ctl & 0x80) 
+		    == 0x0) && --stuck)
+	      for(x=0;x<100;x++);   	    
+	  }
+	  PepLink0ConsecutiveDelay++;
+	  break;
+	case 1:
+	  if (PepLink1Delay >= 0) {
+	    for (x=0 ; x < PepLink1Delay ; x++);
+	  } else {
+	    stuck = -PepLink1Delay;
+	    while (((pBBLink[link]->l.PepLink.bbRegs->stat_ctl & 0x80) 
+		    == 0x0) && --stuck)
+	      for(x=0;x<100;x++);   	    
+	  }
+	  PepLink1ConsecutiveDelay++;
+	  break;
+	case 2:
+	  if (PepLink2Delay >= 0) {
+	    for (x=0 ; x < PepLink2Delay ; x++);
+	  } else {
+	    stuck = -PepLink2Delay;
+	    while (((pBBLink[link]->l.PepLink.bbRegs->stat_ctl & 0x80) 
+		    == 0x0) && --stuck)
+	      for(x=0;x<100;x++);   	    
+	  }
+	  PepLink2ConsecutiveDelay++;
+	  break;
+	case 3:
+	  if (PepLink3Delay >= 0) {
+	    for (x=0 ; x < PepLink3Delay ; x++);
+	  } else {
+	    stuck = -PepLink3Delay;
+	    while (((pBBLink[link]->l.PepLink.bbRegs->stat_ctl & 0x80) 
+		    == 0x0) && --stuck)
+	      for(x=0;x<100;x++);   	    
+	  }
+	  PepLink3ConsecutiveDelay++;
+	  break;
+	default:
+	}
+	/* End unpleasant patch */
 
 	if (pnode != NULL) {  /* have an xact to start processing */
 	  working = 1;
@@ -2634,4 +2729,50 @@ int pepDumpStat(int link)
 
   printf("stat_ctl reg: %2X\n",stat_ctl);
   return(OK);
+}
+
+/* pulseSysMon.c */
+/* Function for pulsing a bit on System Monitor Board */
+/* TEMPORARY ROUTINE TO FIND BITBUS PROBLEMS*/
+typedef struct SysmonStruct {
+  char 	                Pad[36];            /*** nF0 - nF17 36 bytes ***/
+  unsigned short        SysmonStatusLink;   /*** nF18 ***/
+  unsigned short        SysmonDio;          /*** nF19 ***/
+  unsigned short        SysmonIntMask;      /*** nF20 ***/
+  unsigned short 	SysmonTemperature;  /*** nF21 ***/
+  unsigned short        SysmonWatchdog;     /*** nF22 ***/
+  unsigned short 	SysmonVXIVector;    /*** nF23 ***/
+  unsigned short        SysmonIntVector;    /*** nF24 ***/
+  unsigned short        SysmonIRQ1;         /*** nF25 ***/
+  unsigned short        SysmonIRQ2;         /*** nF26 ***/
+  unsigned short        SysmonIRQ3;         /*** nF27 ***/
+  unsigned short        SysmonIRQ4;         /*** nF28 ***/
+  unsigned short        SysmonIRQ5;         /*** nF29 ***/
+  unsigned short        SysmonIRQ6;         /*** nF30 ***/
+  unsigned short        SysmonIRQ7;         /*** nF31 ***/
+} SysmonStruct;
+
+int bitbusTriggerWidth = 1500;
+
+long pulseSysMon() {
+  volatile SysmonStruct *SysmonBase;
+  volatile unsigned short *pReg;
+  int i;
+  volatile int j = 0;
+
+  if (sysBusToLocalAdrs(VME_AM_SUP_SHORT_IO, (char *)0x8b80, 
+			(char **)&(SysmonBase)) == ERROR) {
+    printf("can't convert to local address, aborting\n");
+    return(1);
+  }
+  pReg = &(SysmonBase->SysmonDio);
+  
+  *pReg = 0xffff;
+  for (i=0 ; i < bitbusTriggerWidth ; i++) {
+    j++;
+    j--;
+    }
+  *pReg = 0x0000;
+
+  return(0);
 }

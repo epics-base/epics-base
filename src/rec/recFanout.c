@@ -1,11 +1,10 @@
-
 /* recFanout.c */
 /* share/src/rec $Id$ */
 
 /* recFanout.c - Record Support Routines for Fanout records
  *
- * Author: 	Marty Kraimer
- * Date:	10/10/90
+ * Author:      Bob Dalesio
+ * Date:        12-20-88
  *
  *	Control System Software for the GTA Project
  *
@@ -29,7 +28,13 @@
  *
  * Modification Log:
  * -----------------
- * .01  10-10-90	mrk	extensible record and device support
+ * .01  12-23-88        lrd     Alarm on locked MAX_LOCKED times
+ * .02  05-03-89        lrd     removed process mask from arg list
+ * .03  09-25-89        lrd     add conditional scanning
+ * .04  01-21-90        lrd     unlock on scan disable exit
+ * .05  04-19-90        lrd     user select disable on 0 or 1
+ * .06  10-31-90	mrk	no user select disable on 0 or 1
+ * .07  10-31-90	mrk	extensible record and device support
  */
 
 #include	<vxWorks.h>
@@ -38,11 +43,9 @@
 #include	<lstLib.h>
 
 #include	<alarm.h>
-#include	<cvtTable.h>
 #include	<dbAccess.h>
 #include	<dbDefs.h>
 #include	<dbFldTypes.h>
-#include	<devSup.h>
 #include	<errMdef.h>
 #include	<link.h>
 #include	<recSup.h>
@@ -55,7 +58,7 @@ long report();
 long process();
 #define special NULL
 #define get_precision NULL
-long get_value();
+#define get_value NULL
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
@@ -104,12 +107,13 @@ static long process(paddr)
 {
     struct fanoutRecord	*pfanout=(struct fanoutRecord *)(paddr->precord);
 
-        if (pfanout->lnk1.type==DB_LINK) dbScanPassive(&pfanout->lnk1.value);
-        if (pfanout->lnk2.type==DB_LINK) dbScanPassive(&pfanout->lnk2.value);
-        if (pfanout->lnk3.type==DB_LINK) dbScanPassive(&pfanout->lnk3.value);
-        if (pfanout->lnk4.type==DB_LINK) dbScanPassive(&pfanout->lnk4.value);
-        if (pfanout->lnk5.type==DB_LINK) dbScanPassive(&pfanout->lnk5.value);
-        if (pfanout->lnk6.type==DB_LINK) dbScanPassive(&pfanout->lnk6.value);
+	pfanout->pact = TRUE;
+        if (pfanout->lnk1.type==DB_LINK) dbScanPassive(&pfanout->lnk1.value.db_link.pdbAddr);
+        if (pfanout->lnk2.type==DB_LINK) dbScanPassive(&pfanout->lnk2.value.db_link.pdbAddr);
+        if (pfanout->lnk3.type==DB_LINK) dbScanPassive(&pfanout->lnk3.value.db_link.pdbAddr);
+        if (pfanout->lnk4.type==DB_LINK) dbScanPassive(&pfanout->lnk4.value.db_link.pdbAddr);
+        if (pfanout->lnk5.type==DB_LINK) dbScanPassive(&pfanout->lnk5.value.db_link.pdbAddr);
+        if (pfanout->lnk6.type==DB_LINK) dbScanPassive(&pfanout->lnk6.value.db_link.pdbAddr);
 	pfanout->pact=FALSE;
 	return(0);
 }

@@ -1,4 +1,3 @@
-
 /* recCalc.c */
 /* share/src/rec $Id$ */
 
@@ -64,11 +63,9 @@
 #include	<math.h>
 
 #include	<alarm.h>
-#include	<cvtTable.h>
 #include	<dbAccess.h>
 #include	<dbDefs.h>
 #include	<dbFldTypes.h>
-#include	<devSup.h>
 #include	<errMdef.h>
 #include	<link.h>
 #include	<recSup.h>
@@ -109,6 +106,308 @@ struct rset calcRSET={
 	get_graphic_double,
 	get_control_double,
 	get_enum_strs };
+
+void alarm();
+void monitor();
+int do_calc();
+long postfix();
+void fetch_values();
+
+static long report(fp,paddr)
+    FILE	  *fp;
+    struct dbAddr *paddr;
+{
+    struct calcRecord	*pcalc=(struct calcRecord*)(paddr->precord);
+
+    if(recGblReportDbCommon(fp,paddr)) return(-1);
+    if(fprintf(fp,"VAL  %-12.4G\n",pcalc->val)) return(-1);
+    if(recGblReportLink(fp,"INPA ",&(pcalc->inpa))) return(-1);
+    if(recGblReportLink(fp,"INPB ",&(pcalc->inpb))) return(-1);
+    if(recGblReportLink(fp,"INPC ",&(pcalc->inpc))) return(-1);
+    if(recGblReportLink(fp,"INPD ",&(pcalc->inpd))) return(-1);
+    if(recGblReportLink(fp,"INPE ",&(pcalc->inpe))) return(-1);
+    if(recGblReportLink(fp,"INPF ",&(pcalc->inpf))) return(-1);
+    if(recGblReportLink(fp,"FLNK",&(pcalc->flnk))) return(-1);
+    if(fprintf(fp,"A  %-12.4G\n",pcalc->a)) return(-1);
+    if(fprintf(fp,"B  %-12.4G\n",pcalc->b)) return(-1);
+    if(fprintf(fp,"C  %-12.4G\n",pcalc->c)) return(-1);
+    if(fprintf(fp,"D  %-12.4G\n",pcalc->d)) return(-1);
+    if(fprintf(fp,"E  %-12.4G\n",pcalc->e)) return(-1);
+    if(fprintf(fp,"F  %-12.4G\n",pcalc->f)) return(-1);
+    if(fprintf(fp,"PREC %d  EGU %-8s\n",pcalc->prec,pcalc->egu)) return(-1);
+    if(fprintf(fp,"HOPR %-12.4G LOPR %-12.4G\n",
+	pcalc->hopr,pcalc->lopr)) return(-1);
+    if(fprintf(fp,"HIHI %-12.4G HIGH %-12.4G  LOW %-12.4G LOLO %-12.4G\n",
+	pcalc->hihi,pcalc->high,pcalc->low,pcalc->lolo)) return(-1);
+    if(recGblReportGblChoice(fp,pcalc,"HHSV",pcalc->hhsv)) return(-1);
+    if(recGblReportGblChoice(fp,pcalc,"HSV ",pcalc->hsv)) return(-1);
+    if(recGblReportGblChoice(fp,pcalc,"LSV ",pcalc->lsv)) return(-1);
+    if(recGblReportGblChoice(fp,pcalc,"LLSV",pcalc->llsv)) return(-1);
+    if(fprintf(fp,"HYST %-12.4G ADEL %-12.4G MDEL %-12.4G\n",
+	pcalc->hyst,pcalc->adel,pcalc->mdel)) return(-1);
+    if(fprintf(fp,"LALM %-12.4G ALST %-12.4G MLST %-12.4G\n",
+	pcalc->lalm,pcalc->alst,pcalc->mlst)) return(-1);
+    if(fprintf(fp,"CALC %s\n",pcalc->calc)) return(-1);
+    return(0);
+}
+
+static long init_record(pcalc)
+    struct calcRecord	*pcalc;
+{
+    long status;
+    short error_number;
+    char rpbuf[80];
+
+    /* initialize so that first alarm, archive, and monitor get generated*/
+    pcalc->lalm = 1e30;
+    pcalc->alst = 1e30;
+    pcalc->mlst = 1e30;
+
+    if(pcalc->inpa.type==CONSTANT) pcalc->a = pcalc->inpa.value.value;
+    if(pcalc->inpb.type==CONSTANT) pcalc->b = pcalc->inpb.value.value;
+    if(pcalc->inpc.type==CONSTANT) pcalc->c = pcalc->inpc.value.value;
+    if(pcalc->inpd.type==CONSTANT) pcalc->d = pcalc->inpd.value.value;
+    if(pcalc->inpe.type==CONSTANT) pcalc->e = pcalc->inpe.value.value;
+    if(pcalc->inpf.type==CONSTANT) pcalc->f = pcalc->inpf.value.value;
+    status=postfix(pcalc->calc,rpbuf,&error_number);
+    if(status) return(status);
+    bcopy(rpbuf,pcalc->rpcl,sizeof(pcalc->rpcl));
+    return(0);
+}
+
+static long special(paddr,after)
+    struct dbAddr *paddr;
+    int	   	  after;
+{
+    long		status;
+    struct calcRecord  	*pcalc = (struct calcRecord *)(paddr->precord);
+    int           	special_type = paddr->special;
+    short error_number;
+    char rpbuf[80];
+
+    if(!after) return(0);
+    switch(special_type) {
+    case(SPC_CALC):
+	status=postfix(pcalc->calc,rpbuf,&error_number);
+	if(status) return(status);
+	bcopy(rpbuf,pcalc->rpcl,sizeof(pcalc->rpcl));
+	return(0);
+    default:
+	recGblDbaddrError(S_db_badChoice,paddr,"calc: special");
+	return(S_db_badChoice);
+    }
+}
+
+static long get_precision(paddr,precision)
+    struct dbAddr *paddr;
+    long	  *precision;
+{
+    struct calcRecord	*pcalc=(struct calcRecord *)paddr->precord;
+
+    *precision = pcalc->prec;
+    return(0);
+}
+
+static long get_value(pcalc,pvdes)
+    struct calcRecord		*pcalc;
+    struct valueDes	*pvdes;
+{
+    pvdes->field_type = DBF_FLOAT;
+    pvdes->no_elements=1;
+    (float *)(pvdes->pvalue) = &pcalc->val;
+    return(0);
+}
+
+static long get_units(paddr,units)
+    struct dbAddr *paddr;
+    char	  *units;
+{
+    struct calcRecord	*pcalc=(struct calcRecord *)paddr->precord;
+
+    strncpy(units,pcalc->egu,sizeof(pcalc->egu));
+    return(0);
+}
+
+static long get_graphic_double(paddr,pgd)
+    struct dbAddr *paddr;
+    struct dbr_grDouble	*pgd;
+{
+    struct calcRecord	*pcalc=(struct calcRecord *)paddr->precord;
+
+    pgd->upper_disp_limit = pcalc->hopr;
+    pgd->lower_disp_limit = pcalc->lopr;
+    pgd->upper_alarm_limit = pcalc->hihi;
+    pgd->upper_warning_limit = pcalc->high;
+    pgd->lower_warning_limit = pcalc->low;
+    pgd->lower_alarm_limit = pcalc->lolo;
+    return(0);
+}
+
+static long get_control_double(paddr,pcd)
+    struct dbAddr *paddr;
+    struct dbr_ctrlDouble *pcd;
+{
+    struct calcRecord	*pcalc=(struct calcRecord *)paddr->precord;
+
+    pcd->upper_ctrl_limit = pcalc->hopr;
+    pcd->lower_ctrl_limit = pcalc->lopr;
+    return(0);
+}
+
+static long process(paddr)
+    struct dbAddr	*paddr;
+{
+    struct calcRecord	*pcalc=(struct calcRecord *)(paddr->precord);
+
+	pcalc->pact = TRUE;
+	fetch_values(pcalc);
+	if(do_calc(pcalc)) {
+		if(pcalc->nsev<MAJOR_ALARM) {
+			pcalc->nsta = CALC_ALARM;
+			pcalc->nsev = MAJOR_ALARM;
+		}
+	}
+	if(pcalc->hopr!=pcalc->lopr) {
+		if(pcalc->val>pcalc->hopr) pcalc->val = pcalc->hopr;
+		if(pcalc->val<pcalc->lopr) pcalc->val = pcalc->lopr;
+	}
+	/* check for alarms */
+	alarm(pcalc);
+	/* check event list */
+	monitor(pcalc);
+	/* process the forward scan link record */
+	if (pcalc->flnk.type==DB_LINK) dbScanPassive(&pcalc->flnk.value.db_link.pdbAddr);
+	pcalc->pact = FALSE;
+	return(0);
+}
+
+static void alarm(pcalc)
+    struct calcRecord	*pcalc;
+{
+	float	ftemp;
+
+        /* if difference is not > hysterisis don't bother */
+        ftemp = pcalc->lalm - pcalc->val;
+        if(ftemp<0.0) ftemp = -ftemp;
+        if (ftemp < pcalc->hyst) return;
+
+        /* alarm condition hihi */
+        if (pcalc->nsev<pcalc->hhsv){
+                if (pcalc->val > pcalc->hihi){
+                        pcalc->lalm = pcalc->val;
+                        pcalc->nsta = HIHI_ALARM;
+                        pcalc->nsev = pcalc->hhsv;
+                        return;
+                }
+        }
+
+        /* alarm condition lolo */
+        if (pcalc->nsev<pcalc->llsv){
+                if (pcalc->val < pcalc->lolo){
+                        pcalc->lalm = pcalc->val;
+                        pcalc->nsta = LOLO_ALARM;
+                        pcalc->nsev = pcalc->llsv;
+                        return;
+                }
+        }
+
+        /* alarm condition high */
+        if (pcalc->nsev<pcalc->hsv){
+                if (pcalc->val > pcalc->high){
+                        pcalc->lalm = pcalc->val;
+                        pcalc->nsta = HIGH_ALARM;
+                        pcalc->nsev =pcalc->hsv;
+                        return;
+                }
+        }
+
+        /* alarm condition lolo */
+        if (pcalc->nsev<pcalc->lsv){
+                if (pcalc->val < pcalc->low){
+                        pcalc->lalm = pcalc->val;
+                        pcalc->nsta = LOW_ALARM;
+                        pcalc->nsev = pcalc->lsv;
+                        return;
+                }
+        }
+        return;
+}
+
+static void monitor(pcalc)
+    struct calcRecord	*pcalc;
+{
+	unsigned short	monitor_mask;
+	float		delta;
+        short           stat,sevr,nsta,nsev;
+
+        /* get previous stat and sevr  and new stat and sevr*/
+        stat=pcalc->stat;
+        sevr=pcalc->sevr;
+        nsta=pcalc->nsta;
+        nsev=pcalc->nsev;
+        /*set current stat and sevr*/
+        pcalc->stat = nsta;
+        pcalc->sevr = nsev;
+        pcalc->nsta = 0;
+        pcalc->nsev = 0;
+
+        /* anyone waiting for an event on this record */
+        if (pcalc->mlis.count == 0) return;
+
+        /* Flags which events to fire on the value field */
+        monitor_mask = 0;
+
+        /* alarm condition changed this scan */
+        if (stat!=nsta || sevr!=nsev) {
+                /* post events for alarm condition change*/
+                monitor_mask = DBE_ALARM;
+                /* post stat and nsev fields */
+                db_post_events(pcalc,&pcalc->stat,DBE_VALUE);
+                db_post_events(pcalc,&pcalc->sevr,DBE_VALUE);
+        }
+        /* check for value change */
+        delta = pcalc->mlst - pcalc->val;
+        if(delta<0.0) delta = -delta;
+        if (delta > pcalc->mdel) {
+                /* post events for value change */
+                monitor_mask |= DBE_VALUE;
+                /* update last value monitored */
+                pcalc->mlst = pcalc->val;
+        }
+        /* check for archive change */
+        delta = pcalc->alst - pcalc->val;
+        if(delta<0.0) delta = 0.0;
+        if (delta > pcalc->adel) {
+                /* post events on value field for archive change */
+                monitor_mask |= DBE_LOG;
+                /* update last archive value monitored */
+                pcalc->alst = pcalc->val;
+        }
+
+        /* send out monitors connected to the value field */
+        if (monitor_mask){
+                db_post_events(pcalc,&pcalc->val,monitor_mask);
+        }
+        return;
+}
+
+static void fetch_values(pcalc)
+struct calcRecord *pcalc;
+{
+	struct link	*plink;	/* structure of the link field  */
+	float		*pvalue;
+	long		options,nRequest;
+	int		i;
+
+	for(i=0, plink=&pcalc->inpa, pvalue=&pcalc->a; i<6; i++, plink++, pvalue++) {
+		if(plink->type!=DB_LINK) continue;
+		options=0;
+		nRequest=1;
+		(void)dbGetLink(&plink->value.db_link,pcalc,DBR_FLOAT,
+			pvalue,&options,&nRequest);
+	}
+	return;
+}
 
 /* the floating point math routines need to be declared as doubles */
 static double   random();       /* random number generator      */
@@ -172,201 +471,6 @@ double  cosh(),sinh(),tanh();
 #define		PAREN		-1
 #define		END_STACK	-1
 
-static long report(fp,paddr)
-    FILE	  *fp;
-    struct dbAddr *paddr;
-{
-    struct calcRecord	*pcalc=(struct calcRecord*)(paddr->precord);
-
-    if(recGblReportDbCommon(fp,paddr)) return(-1);
-    if(fprintf(fp,"VAL  %-12.4G\n",pcalc->val)) return(-1);
-    if(recGblReportLink(fp,"INPA ",&(pcalc->inpa))) return(-1);
-    if(recGblReportLink(fp,"INPB ",&(pcalc->inpb))) return(-1);
-    if(recGblReportLink(fp,"INPC ",&(pcalc->inpc))) return(-1);
-    if(recGblReportLink(fp,"INPD ",&(pcalc->inpd))) return(-1);
-    if(recGblReportLink(fp,"INPE ",&(pcalc->inpe))) return(-1);
-    if(recGblReportLink(fp,"INPF ",&(pcalc->inpf))) return(-1);
-    if(recGblReportLink(fp,"FLNK",&(pcalc->flnk))) return(-1);
-    if(fprintf(fp,"A  %-12.4G\n",pcalc->a)) return(-1);
-    if(fprintf(fp,"B  %-12.4G\n",pcalc->b)) return(-1);
-    if(fprintf(fp,"C  %-12.4G\n",pcalc->c)) return(-1);
-    if(fprintf(fp,"D  %-12.4G\n",pcalc->d)) return(-1);
-    if(fprintf(fp,"E  %-12.4G\n",pcalc->e)) return(-1);
-    if(fprintf(fp,"F  %-12.4G\n",pcalc->f)) return(-1);
-    if(fprintf(fp,"PREC %d  EGU %-8s\n",pcalc->prec,pcalc->egu)) return(-1);
-    if(fprintf(fp,"HOPR %-12.4G LOPR %-12.4G\n",
-	pcalc->hopr,pcalc->lopr)) return(-1);
-    if(fprintf(fp,"HIHI %-12.4G HIGH %-12.4G  LOW %-12.4G LOLO %-12.4G\n",
-	pcalc->hihi,pcalc->high,pcalc->low,pcalc->lolo)) return(-1);
-    if(recGblReportGblChoice(fp,pcalc,"HHSV",pcalc->hhsv)) return(-1);
-    if(recGblReportGblChoice(fp,pcalc,"HSV ",pcalc->hsv)) return(-1);
-    if(recGblReportGblChoice(fp,pcalc,"LSV ",pcalc->lsv)) return(-1);
-    if(recGblReportGblChoice(fp,pcalc,"LLSV",pcalc->llsv)) return(-1);
-    if(fprintf(fp,"HYST %-12.4G ADEL %-12.4G MDEL %-12.4G\n",
-	pcalc->hyst,pcalc->adel,pcalc->mdel)) return(-1);
-    if(fprintf(fp,"ACHN %d\n",pcalc->achn)) return(-1);
-    if(fprintf(fp,"LALM %-12.4G ALST %-12.4G MLST %-12.4G\n",
-	pcalc->lalm,pcalc->alst,pcalc->mlst)) return(-1);
-    if(fprintf(fp,"CALC %s\n",pcalc->calc)) return(-1);
-    return(0);
-}
-
-static long init_record(pcalc)
-    struct calcRecord	*pcalc;
-{
-    long status;
-    short error_number;
-    char rpbuf[80];
-
-    if(pcalc->inpa.type==CONSTANT) pcalc->a = pcalc->inpa.value.value;
-    if(pcalc->inpb.type==CONSTANT) pcalc->b = pcalc->inpb.value.value;
-    if(pcalc->inpc.type==CONSTANT) pcalc->c = pcalc->inpc.value.value;
-    if(pcalc->inpd.type==CONSTANT) pcalc->d = pcalc->inpd.value.value;
-    if(pcalc->inpe.type==CONSTANT) pcalc->e = pcalc->inpe.value.value;
-    if(pcalc->inpf.type==CONSTANT) pcalc->f = pcalc->inpf.value.value;
-    status=postfix(pcalc->calc,rpbuf,&error_number);
-    if(status) return(status);
-    bcopy(rpbuf,pcalc->rpcl,sizeof(pcalc->rpcl));
-    return(0);
-}
-
-static long special(paddr,after)
-    struct dbAddr *paddr;
-    int	   	  after;
-{
-    long		status;
-    struct calcRecord  	*pcalc = (struct calcRecord *)(paddr->precord);
-    int           	special_type = paddr->special;
-    short error_number;
-    char rpbuf[80];
-
-    if(!after) return(0);
-    switch(special_type) {
-    case(SPC_CALC):
-	status=postfix(pcalc->calc,rpbuf,&error_number);
-	if(status) return(status);
-	bcopy(rpbuf,pcalc->rpcl,sizeof(pcalc->rpcl));
-	return(0);
-    default:
-	recGblDbaddrError(S_db_badChoice,paddr,"calc: special");
-	return(S_db_badChoice);
-    }
-}
-
-static long get_precision(paddr,precision)
-    struct dbAddr *paddr;
-    long	  *precision;
-{
-    struct calcRecord	*pcalc=(struct calcRecord *)paddr->precord;
-
-    *precision = pcalc->prec;
-    return(0L);
-}
-
-static long get_value(pcalc,pvdes)
-    struct calcRecord		*pcalc;
-    struct valueDes	*pvdes;
-{
-    pvdes->field_type = DBF_FLOAT;
-    pvdes->no_elements=1;
-    (float *)(pvdes->pvalue) = &pcalc->val;
-    return(0);
-}
-
-static long get_units(paddr,units)
-    struct dbAddr *paddr;
-    char	  *units;
-{
-    struct calcRecord	*pcalc=(struct calcRecord *)paddr->precord;
-
-    strncpy(units,pcalc->egu,sizeof(pcalc->egu));
-    return(0L);
-}
-
-static long get_graphic_double(paddr,pgd)
-    struct dbAddr *paddr;
-    struct dbr_grDouble	*pgd;
-{
-    struct calcRecord	*pcalc=(struct calcRecord *)paddr->precord;
-
-    pgd->upper_disp_limit = pcalc->hopr;
-    pgd->lower_disp_limit = pcalc->lopr;
-    pgd->upper_alarm_limit = pcalc->hihi;
-    pgd->upper_warning_limit = pcalc->high;
-    pgd->lower_warning_limit = pcalc->low;
-    pgd->lower_alarm_limit = pcalc->lolo;
-    return(0L);
-}
-
-static long get_control_double(paddr,pcd)
-    struct dbAddr *paddr;
-    struct dbr_ctrlDouble *pcd;
-{
-    struct calcRecord	*pcalc=(struct calcRecord *)paddr->precord;
-
-    pcd->upper_ctrl_limit = pcalc->hopr;
-    pcd->lower_ctrl_limit = pcalc->lopr;
-    return(0L);
-}
-
-static long process(paddr)
-    struct dbAddr	*paddr;
-{
-    struct calcRecord	*pcalc=(struct calcRecord *)(paddr->precord);
-	struct calcdset	*pdset = (struct calcdset *)(pcalc->dset);
-	long		 status;
-
-	pcalc->achn = 0;
-	/* read inputs  */
-	if (fetch_values(pcalc) < 0){
-		if (pcalc->stat != READ_ALARM){
-			pcalc->stat = READ_ALARM;
-			pcalc->sevr = MAJOR_ALARM;
-			pcalc->achn = 1;
-			monitor_calc(pcalc);
-		}
-		pcalc->pact = 0;
-		return(0);
-	}else{
-		if (pcalc->stat == READ_ALARM){
-			pcalc->stat = NO_ALARM;
-			pcalc->sevr = NO_ALARM;
-			pcalc->achn = 1;
-		}
-	}
-
-	/* perform calculation */
-	if (do_calc(pcalc) < 0){
-		if (pcalc->stat != CALC_ALARM){
-			pcalc->stat = CALC_ALARM;
-			pcalc->sevr = MAJOR_ALARM;
-			pcalc->achn = 1;
-			monitor_calc(pcalc);
-		}
-		pcalc->pact = 0;
-		return;
-	}else{
-		if (pcalc->stat == CALC_ALARM){
-			pcalc->stat = NO_ALARM;
-			pcalc->sevr = NO_ALARM;
-			pcalc->achn = 1;
-		}
-	}
-
-	/* check for alarms */
-	alarm(pcalc);
-
-
-	/* check event list */
-	if(!pcalc->disa) status = monitor(pcalc);
-
-	/* process the forward scan link record */
-	if (pcalc->flnk.type==DB_LINK) dbScanPassive(&pcalc->flnk.value);
-
-	pcalc->pact=FALSE;
-	return(status);
-}
-
 /*
  *	DO_CALC
  *
@@ -376,14 +480,13 @@ static long process(paddr)
 #define	TRUE_COND	1
 #define	FALSE_COND	2
 
-static do_calc(pcalc)
+static int do_calc(pcalc)
 struct calcRecord *pcalc;  /* pointer to calculation record  */
 {
 	char	*post;		/* postfix expression	*/
 	double	*pstacktop;	/* stack of values	*/
 	double	stack[80];
-	double	temp;
-	short	temp1;
+	int	temp;
 	short	i;
 	double	*top;
 	int	itop;		/* integer top value	*/
@@ -517,12 +620,12 @@ struct calcRecord *pcalc;  /* pointer to calculation record  */
 		case EXPON:
 			--pstacktop;
 			if (*pstacktop < 0){
-				temp1 = (int) *(pstacktop+1);
+				temp = (int) *(pstacktop+1);
 				/* is exponent an integer */
-				if ((*(pstacktop+1) - (double)temp1) != 0) return (-1);
+				if ((*(pstacktop+1) - (double)temp) != 0) return (-1);
         			*pstacktop = exp(*(pstacktop+1) * log(-*pstacktop));
 				/* is value negative */
-				if ((temp1 % 2) > 0) *pstacktop = -*pstacktop;
+				if ((temp % 2) > 0) *pstacktop = -*pstacktop;
 			}else{
         			*pstacktop = exp(*(pstacktop+1) * log(*pstacktop));
 			}
@@ -664,62 +767,13 @@ struct calcRecord *pcalc;  /* pointer to calculation record  */
 	/* if everything is peachy,the stack should end at its first position */
 	if (++top == pstacktop)
 		pcalc->val = *pstacktop;
-	else
-		return(-1);
-	return(0);
-}
-
-/*
- * FETCH_VALUES
- *
- * fetch the values for the variables in the calculation
- */
-static fetch_values(pcalc)
-struct calcRecord *pcalc;
-{
-	short	status;
-
-	/* note - currently not using alarm status */
-	status = 0;
-	status |= get_calc_inp(&pcalc->inpa,&pcalc->a);
-	status |= get_calc_inp(&pcalc->inpb,&pcalc->b);
-	status |= get_calc_inp(&pcalc->inpc,&pcalc->c);
-	status |= get_calc_inp(&pcalc->inpd,&pcalc->d);
-	status |= get_calc_inp(&pcalc->inpe,&pcalc->e);
-	status |= get_calc_inp(&pcalc->inpf,&pcalc->f);
-	return(status);
-}
-
-/*
- *	GET_CALC_INPUT
- *
- *	return an input value
- */
-static get_calc_inp(plink,pvalue)
-struct link	*plink;	/* structure of the link field  */
-float		*pvalue;
-{
-	float	float_value;
-
-	/* hardware io into a calc not currently supported */
-	if (plink->type == VME_IO){
-		return(-1);
-
-	/* database link */
-	}else if (plink->type == DB_LINK){
-		if (dbGetLink(&plink->value.db_link,DBR_FLOAT,&float_value,1) < 0)
-			return(-1);
-		*pvalue = float_value;
-
-	/* constant */
-	}else if (plink->type == CONSTANT){
-		;
-	/* illegal link type */
-	}else{
-		return(-1);
+	else {
+		if(pcalc->nsev < MAJOR_ALARM) {
+			pcalc->nsev = MAJOR_ALARM;
+			pcalc->nsta = CALC_ALARM;
+		}
 	}
 	return(0);
-
 }
 
 /*
@@ -744,135 +798,6 @@ static double random()
 
 	/* between 0 - 1 */
 	return(randy);
-}
-
-static long alarm(pcalc)
-    struct calcRecord	*pcalc;
-{
-	float	ftemp;
-
-	/* if in alarm and difference is not > hysterisis don't bother */
-	if (pcalc->stat != NO_ALARM){
-		ftemp = pcalc->lalm - pcalc->val;
-		if(ftemp<0.0) ftemp = -ftemp;
-		if (ftemp < pcalc->hyst) return(0);
-	}
-
-	/* alarm condition hihi */
-	if (pcalc->hhsv != NO_ALARM){
-		if (pcalc->val > pcalc->hihi){
-			pcalc->lalm = pcalc->val;
-			if (pcalc->stat != HIHI_ALARM){
-				pcalc->stat = HIHI_ALARM;
-				pcalc->sevr = pcalc->hhsv;
-				pcalc->achn = 1;
-			}
-			return(0);
-		}
-	}
-
-	/* alarm condition lolo */
-	if (pcalc->llsv != NO_ALARM){
-		if (pcalc->val < pcalc->lolo){
-			pcalc->lalm = pcalc->val;
-			if (pcalc->stat != LOLO_ALARM){
-				pcalc->stat = LOLO_ALARM;
-				pcalc->sevr = pcalc->llsv;
-				pcalc->achn = 1;
-			}
-			return(0);
-		}
-	}
-
-	/* alarm condition high */
-	if (pcalc->hsv != NO_ALARM){
-		if (pcalc->val > pcalc->high){
-			pcalc->lalm = pcalc->val;
-			if (pcalc->stat != HIGH_ALARM){
-				pcalc->stat = HIGH_ALARM;
-				pcalc->sevr =pcalc->hsv;
-				pcalc->achn = 1;
-			}
-			return(0);
-		}
-	}
-
-	/* alarm condition lolo */
-	if (pcalc->lsv != NO_ALARM){
-		if (pcalc->val < pcalc->low){
-			pcalc->lalm = pcalc->val;
-			if (pcalc->stat != LOW_ALARM){
-				pcalc->stat = LOW_ALARM;
-				pcalc->sevr = pcalc->lsv;
-				pcalc->achn = 1;
-			}
-			return(0);
-		}
-	}
-
-	/* no alarm */
-	if (pcalc->stat != NO_ALARM){
-		pcalc->stat = NO_ALARM;
-		pcalc->sevr = NO_ALARM;
-		pcalc->achn = 1;
-	}
-
-	return(0);
-}
-
-static long monitor(pcalc)
-    struct calcRecord	*pcalc;
-{
-	unsigned short	monitor_mask;
-	float		delta;
-
-	/* anyone wcalcting for an event on this record */
-	if (pcalc->mlis.count == 0) return(0L);
-
-	/* Flags which events to fire on the value field */
-	monitor_mask = 0;
-
-	/* alarm condition changed this scan */
-	if (pcalc->achn){
-		/* post events for alarm condition change and value change */
-		monitor_mask = DBE_ALARM | DBE_VALUE | DBE_LOG;
-
-		/* post stat and sevr fields */
-		db_post_events(pcalc,&pcalc->stat,DBE_VALUE);
-		db_post_events(pcalc,&pcalc->sevr,DBE_VALUE);
-
-		/* update last value monitored */
-		pcalc->mlst = pcalc->val;
-
-	/* check for value change */
-	}else{
-		delta = pcalc->mlst - pcalc->val;
-		if(delta<0.0) delta = -delta;
-		if (delta > pcalc->mdel) {
-			/* post events for value change */
-			monitor_mask = DBE_VALUE;
-
-			/* update last value monitored */
-			pcalc->mlst = pcalc->val;
-		}
-	}
-
-	/* check for archive change */
-	delta = pcalc->alst - pcalc->val;
-	if(delta<0.0) delta = 0.0;
-	if (delta > pcalc->adel) {
-		/* post events on value field for archive change */
-		monitor_mask |= DBE_LOG;
-
-		/* update last archive value monitored */
-		pcalc->alst = pcalc->val;
-	}
-
-	/* send out monitors connected to the value field */
-	if (monitor_mask){
-		db_post_events(pcalc,&pcalc->val,monitor_mask);
-	}
-	return(0L);
 }
 
 /*
@@ -933,13 +858,6 @@ static long monitor(pcalc)
  *		FINE		found an expression element
  *		VARIABLE	found a database reference
  *		UNKNOWN_ELEMENT	unknown element found in the infix expression
- * match_element	finds an alpha element in the expression table
- *	args
- *		pbuffer		pointer to an alpha expression element
- *		pelement	pointer to the expression element table
- *	returns
- *		TRUE		found the element in the element table
- *		FLASE		expression element not found
  * postfix		convert an algebraic expression to symbolic postfix
  *	args
  *		pinfix		the algebraic expression
@@ -1051,7 +969,7 @@ static struct expression_element	elements[] = {
  *
  * find the pointer to an entry in the element table
  */
- find_element(pbuffer,pelement,pno_bytes)
+static  find_element(pbuffer,pelement,pno_bytes)
 #define SAME 0
  char	*pbuffer;
  struct expression_element	**pelement;
@@ -1076,13 +994,11 @@ static struct expression_element	elements[] = {
  *
  * get an expression element
  */
-get_element(pinfix,pelement,pno_bytes)
+static get_element(pinfix,pelement,pno_bytes)
 char	*pinfix;
 struct expression_element	**pelement;
 short		*pno_bytes;
 {
-	char	buffer[40];
-	short	i;
 
 	/* get the next expression element from the infix expression */
 	if (*pinfix == NULL) return(END);
@@ -1103,7 +1019,7 @@ short		*pno_bytes;
  *
  * convert an infix expression to a postfix expression
  */
-long postfix(pinfix,ppostfix,perror)
+static long postfix(pinfix,ppostfix,perror)
 char	*pinfix;
 char	*ppostfix;
 short		*perror;
@@ -1113,7 +1029,6 @@ short		*perror;
 	short		no_bytes;
 	short	operand_needed;
 	short	new_expression;
-	short	link_inx;	/* index into variable table	*/
 	struct expression_element	stack[80];
 	struct expression_element	*pelement;
 	struct expression_element	*pstacktop;

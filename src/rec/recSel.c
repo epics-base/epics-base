@@ -1,4 +1,3 @@
-
 /* recSel.c */
 /* share/src/rec $Id$ */
 
@@ -41,14 +40,12 @@
 #include	<lstLib.h>
 
 #include	<alarm.h>
-#include	<cvtTable.h>
 #include	<dbAccess.h>
 #include	<dbDefs.h>
 #include	<dbFldTypes.h>
 #include	<errMdef.h>
 #include	<link.h>
 #include	<recSup.h>
-#include	<special.h>
 #include	<selRecord.h>
 
 /* Create RSET - Record Support Entry Table*/
@@ -87,6 +84,15 @@ struct rset selRSET={
 	get_enum_strs };
 
 #define	SEL_MAX	6
+#define SELECTED	0
+#define SELECT_HIGH	1
+#define SELECT_LOW	2
+#define SELECT_MEDIAN	3
+
+void alarm();
+void monitor();
+void fetch_values();
+int do_sel();
 
 static long report(fp,paddr)
     FILE	  *fp;
@@ -96,31 +102,16 @@ static long report(fp,paddr)
 
     if(recGblReportDbCommon(fp,paddr)) return(-1);
     if(fprintf(fp,"VAL  %-12.4G\n",psel->val)) return(-1);
-    if(recGblReportLink(fp,"INP ",&(psel->inp))) return(-1);
-    if(fprintf(fp,"PREC %d\n",psel->prec)) return(-1);
-    if(recGblReportCvtChoice(fp,"LINR",psel->linr)) return(-1);
-    if(fprintf(fp,"EGUF %-12.4G EGUL %-12.4G  EGU %-8s\n",
-	psel->eguf,psel->egul,psel->egu)) return(-1);
-    if(fprintf(fp,"HOPR %-12.4G LOPR %-12.4G\n",
-	psel->hopr,psel->lopr)) return(-1);
-    if(recGblReportLink(fp,"FLNK",&(psel->flnk))) return(-1);
-    if(fprintf(fp,"HIHI %-12.4G HIGH %-12.4G  LOW %-12.4G LOLO %-12.4G\n",
-	psel->hihi,psel->high,psel->low,psel->lolo)) return(-1);
-    if(recGblReportGblChoice(fp,psel,"HHSV",psel->hhsv)) return(-1);
-    if(recGblReportGblChoice(fp,psel,"HSV ",psel->hsv)) return(-1);
-    if(recGblReportGblChoice(fp,psel,"LSV ",psel->lsv)) return(-1);
-    if(recGblReportGblChoice(fp,psel,"LLSV",psel->llsv)) return(-1);
-    if(fprintf(fp,"HYST %-12.4G ADEL %-12.4G MDEL %-12.4G ESLO %-12.4G\n",
-	psel->hyst,psel->adel,psel->mdel,psel->eslo)) return(-1);
-    if(fprintf(fp,"ACHN %d\n", psel->achn)) return(-1);
-    if(fprintf(fp,"LALM %-12.4G ALST %-12.4G MLST %-12.4G\n",
-	psel->lalm,psel->alst,psel->mlst)) return(-1);
     return(0);
 }
-^L
+
 static long init_record(psel)
     struct selRecord     *psel;
 {
+    /* initialize so that first alarm, archive, and monitor get generated*/
+    psel->lalm = 1e30;
+    psel->alst = 1e30;
+    psel->mlst = 1e30;
 
     if(psel->inpa.type==CONSTANT) psel->a = psel->inpa.value.value;
     if(psel->inpb.type==CONSTANT) psel->b = psel->inpb.value.value;
@@ -130,43 +121,7 @@ static long init_record(psel)
     if(psel->inpf.type==CONSTANT) psel->f = psel->inpf.value.value;
     return(0);
 }
-
-static long process(paddr)
-    struct dbAddr	*paddr;
-{
-    struct selRecord	*psel=(struct selRecord *)(paddr->precord);
-	long		 status;
 
-	psel->pact = TRUE;
-	status=fetch_values(psel);
-	if(status == -1) {
-		if(psel->stat != READ_ALARM) {/* error. set alarm condition */
-			psel->stat = READ_ALARM;
-			psel->sevr = MAJOR_ALARM;
-			psel->achn=1;
-		}
-	}else if(status!=0) return(status);
-	else if(psel->stat == READ_ALARM || psel->stat ==  HW_LIMIT_ALARM) {
-		psel->stat = NO_ALARM;
-		psel->sevr = NO_ALARM;
-		psel->achn=1;
-	}
-	if(status==0) do_select(psel);
-
-	/* check for alarms */
-	alarm(psel);
-
-
-	/* check event list */
-	if(!psel->disa) status = monitor(psel);
-
-	/* process the forward scan link record */
-	if (psel->flnk.type==DB_LINK) dbScanPassive(&psel->flnk.value);
-
-	psel->pact=FALSE;
-	return(status);
-}
-
 static long get_precision(paddr,precision)
     struct dbAddr *paddr;
     long	  *precision;
@@ -174,7 +129,7 @@ static long get_precision(paddr,precision)
     struct selRecord	*psel=(struct selRecord *)paddr->precord;
 
     *precision = psel->prec;
-    return(0L);
+    return(0);
 }
 
 static long get_value(psel,pvdes)
@@ -186,7 +141,7 @@ static long get_value(psel,pvdes)
     (float *)(pvdes->pvalue) = &psel->val;
     return(0);
 }
-
+
 static long get_units(paddr,units)
     struct dbAddr *paddr;
     char	  *units;
@@ -194,7 +149,7 @@ static long get_units(paddr,units)
     struct selRecord	*psel=(struct selRecord *)paddr->precord;
 
     strncpy(units,psel->egu,sizeof(psel->egu));
-    return(0L);
+    return(0);
 }
 
 static long get_graphic_double(paddr,pgd)
@@ -209,7 +164,7 @@ static long get_graphic_double(paddr,pgd)
     pgd->upper_warning_limit = psel->high;
     pgd->lower_warning_limit = psel->low;
     pgd->lower_alarm_limit = psel->lolo;
-    return(0L);
+    return(0);
 }
 
 static long get_control_double(paddr,pcd)
@@ -220,144 +175,146 @@ static long get_control_double(paddr,pcd)
 
     pcd->upper_ctrl_limit = psel->hopr;
     pcd->lower_ctrl_limit = psel->lopr;
-    return(0L);
+    return(0);
 }
 
-static long alarm(psel)
+static long process(paddr)
+    struct dbAddr	*paddr;
+{
+	struct selRecord	*psel=(struct selRecord *)(paddr->precord);
+
+	psel->pact = TRUE;
+	fetch_values(psel);
+	if(!do_sel(psel)) {
+		if(psel->nsev<MAJOR_ALARM) {
+			psel->nsta = CALC_ALARM;
+			psel->nsev = MAJOR_ALARM;
+		}
+	}
+
+	/* check for alarms */
+	alarm(psel);
+
+
+	/* check event list */
+	monitor(psel);
+
+	/* process the forward scan link record */
+	if (psel->flnk.type==DB_LINK) dbScanPassive(&psel->flnk.value.db_link.pdbAddr);
+
+	psel->pact=FALSE;
+	return(0);
+}
+
+static void alarm(psel)
     struct selRecord	*psel;
 {
 	float	ftemp;
 
-	/* check for a hardware alarm */
-	if (psel->stat == READ_ALARM) return(0);
+        /* if difference is not > hysterisis don't bother */
+        ftemp = psel->lalm - psel->val;
+        if(ftemp<0.0) ftemp = -ftemp;
+        if (ftemp < psel->hyst) return;
 
-	/* if in alarm and difference is not > hysterisis don't bother */
-	if (psel->stat != NO_ALARM){
-		ftemp = psel->lalm - psel->val;
-		if(ftemp<0.0) ftemp = -ftemp;
-		if (ftemp < psel->hyst) return(0);
-	}
-
-	/* alarm condition hihi */
-	if (psel->hhsv != NO_ALARM){
-		if (psel->val > psel->hihi){
-			psel->lalm = psel->val;
-			if (psel->stat != HIHI_ALARM){
-				psel->stat = HIHI_ALARM;
-				psel->sevr = psel->hhsv;
-				psel->achn = 1;
-			}
-			return(0);
-		}
-	}
-
-	/* alarm condition lolo */
-	if (psel->llsv != NO_ALARM){
-		if (psel->val < psel->lolo){
-			psel->lalm = psel->val;
-			if (psel->stat != LOLO_ALARM){
-				psel->stat = LOLO_ALARM;
-				psel->sevr = psel->llsv;
-				psel->achn = 1;
-			}
-			return(0);
-		}
-	}
-
-	/* alarm condition high */
-	if (psel->hsv != NO_ALARM){
-		if (psel->val > psel->high){
-			psel->lalm = psel->val;
-			if (psel->stat != HIGH_ALARM){
-				psel->stat = HIGH_ALARM;
-				psel->sevr =psel->hsv;
-				psel->achn = 1;
-			}
-			return(0);
-		}
-	}
-
-	/* alarm condition lolo */
-	if (psel->lsv != NO_ALARM){
-		if (psel->val < psel->low){
-			psel->lalm = psel->val;
-			if (psel->stat != LOW_ALARM){
-				psel->stat = LOW_ALARM;
-				psel->sevr = psel->lsv;
-				psel->achn = 1;
-			}
-			return(0);
-		}
-	}
-
-	/* no alarm */
-	if (psel->stat != NO_ALARM){
-		psel->stat = NO_ALARM;
-		psel->sevr = NO_ALARM;
-		psel->achn = 1;
-	}
-
-	return(0);
+        /* alarm condition hihi */
+        if (psel->nsev<psel->hhsv){
+                if (psel->val > psel->hihi){
+                        psel->lalm = psel->val;
+                        psel->nsta = HIHI_ALARM;
+                        psel->nsev = psel->hhsv;
+                        return;
+                }
+        }
+        /* alarm condition lolo */
+        if (psel->nsev<psel->llsv){
+                if (psel->val < psel->lolo){
+                        psel->lalm = psel->val;
+                        psel->nsta = LOLO_ALARM;
+                        psel->nsev = psel->llsv;
+                        return;
+                }
+        }
+        /* alarm condition high */
+        if (psel->nsev<psel->hsv){
+                if (psel->val > psel->high){
+                        psel->lalm = psel->val;
+                        psel->nsta = HIGH_ALARM;
+                        psel->nsev =psel->hsv;
+                        return;
+                }
+        }
+        /* alarm condition lolo */
+        if (psel->nsev<psel->lsv){
+                if (psel->val < psel->low){
+                        psel->lalm = psel->val;
+                        psel->nsta = LOW_ALARM;
+                        psel->nsev = psel->lsv;
+                        return;
+                }
+        }
+        return;
 }
 
-static long monitor(psel)
+static void monitor(psel)
     struct selRecord	*psel;
 {
 	unsigned short	monitor_mask;
 	float		delta;
+        short           stat,sevr,nsta,nsev;
 
-	/* anyone waiting for an event on this record */
-	if (psel->mlis.count == 0) return(0L);
+        /* get previous stat and sevr  and new stat and sevr*/
+        stat=psel->stat;
+        sevr=psel->sevr;
+        nsta=psel->nsta;
+        nsev=psel->nsev;
+        /*set current stat and sevr*/
+        psel->stat = nsta;
+        psel->sevr = nsev;
+        psel->nsta = 0;
+        psel->nsev = 0;
 
-	/* Flags which events to fire on the value field */
-	monitor_mask = 0;
+        /* anyone waiting for an event on this record */
+        if (psel->mlis.count == 0) return;
 
-	/* alarm condition changed this scan */
-	if (psel->achn){
-		/* post events for alarm condition change and value change */
-		monitor_mask = DBE_ALARM | DBE_VALUE | DBE_LOG;
+        /* Flags which events to fire on the value field */
+        monitor_mask = 0;
 
-		/* post stat and sevr fields */
-		db_post_events(psel,&psel->stat,DBE_VALUE);
-		db_post_events(psel,&psel->sevr,DBE_VALUE);
+        /* alarm condition changed this scan */
+        if (stat!=nsta || sevr!=nsev) {
+                /* post events for alarm condition change*/
+                monitor_mask = DBE_ALARM;
+                /* post stat and nsev fields */
+                db_post_events(psel,&psel->stat,DBE_VALUE);
+                db_post_events(psel,&psel->sevr,DBE_VALUE);
+        }
+        /* check for value change */
+        delta = psel->mlst - psel->val;
+        if(delta<0.0) delta = -delta;
+        if (delta > psel->mdel) {
+                /* post events for value change */
+                monitor_mask |= DBE_VALUE;
+                /* update last value monitored */
+                psel->mlst = psel->val;
+        }
+        /* check for archive change */
+        delta = psel->alst - psel->val;
+        if(delta<0.0) delta = 0.0;
+        if (delta > psel->adel) {
+                /* post events on value field for archive change */
+                monitor_mask |= DBE_LOG;
+                /* update last archive value monitored */
+                psel->alst = psel->val;
+        }
 
-		/* update last value monitored */
-		psel->mlst = psel->val;
-
-	/* check for value change */
-	}else{
-		delta = psel->mlst - psel->val;
-		if(delta<0.0) delta = -delta;
-		if (delta > psel->mdel) {
-			/* post events for value change */
-			monitor_mask = DBE_VALUE;
-
-			/* update last value monitored */
-			psel->mlst = psel->val;
-		}
-	}
-
-	/* check for archive change */
-	delta = psel->alst - psel->val;
-	if(delta<0.0) delta = 0.0;
-	if (delta > psel->adel) {
-		/* post events on value field for archive change */
-		monitor_mask |= DBE_LOG;
-
-		/* update last archive value monitored */
-		psel->alst = psel->val;
-	}
-
-	/* send out monitors connected to the value field */
-	if (monitor_mask){
-		db_post_events(psel,&psel->val,monitor_mask);
-		db_post_events(psel,&psel->rval,monitor_mask);
-	}
-	return(0L);
+        /* send out monitors connected to the value field */
+        if (monitor_mask){
+                db_post_events(psel,&psel->val,monitor_mask);
+        }
+        return;
 }
 
-static long do_sel(psel)
-struct sel *psel;  /* pointer to selection record  */
+static int do_sel(psel)
+struct selRecord *psel;  /* pointer to selection record  */
 {
 	float		*pvalue;
 	struct link	*plink;
@@ -402,6 +359,8 @@ struct sel *psel;  /* pointer to selection record  */
 		}
 		psel->val = order[order_inx/2];
 		break;
+	default:
+		return(-1);
 	}
 
 	/* initialize flag  */
@@ -413,22 +372,22 @@ struct sel *psel;  /* pointer to selection record  */
  *
  * fetch the values for the variables from which to select
  */
-static fetch_values(psel)
-register struct sel	*psel;
+static void fetch_values(psel)
+struct selRecord *psel;
 {
 	long		nRequest;
 	long		options=0;
 	struct link	*plink;
 	float		*pvalue;
+	int		i;
 
 	plink = &psel->inpa;
 	pvalue = &psel->a;
 	for(i=0; i<SEL_MAX; i++, plink++, pvalue++) {
 		if(plink->type==DB_LINK) {
 			nRequest=1;
-			status=dbGetLink(plink,DBR_FLOAT,pvalue,&options,&nRequest);
-			if(status!=0) return(status);
+			(void)dbGetLink(&plink->value.db_link,psel,DBR_FLOAT,pvalue,&options,&nRequest);
 		}
 	}
-	return(0);
+	return;
 }

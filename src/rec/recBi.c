@@ -1,4 +1,3 @@
-
 /* recBi.c */
 /* share/src/rec $Id$ */
 
@@ -51,7 +50,6 @@
 #include	<strLib.h>
 
 #include	<alarm.h>
-#include	<cvtTable.h>
 #include	<dbAccess.h>
 #include	<dbDefs.h>
 #include	<dbFldTypes.h>
@@ -67,8 +65,8 @@ long report();
 #define initialize NULL
 long init_record();
 long process();
-long special();
-long get_precision();
+#define special NULL
+#define get_precision NULL
 long get_value();
 #define cvt_dbaddr NULL
 #define get_array_info NULL
@@ -78,7 +76,6 @@ long get_enum_str();
 #define get_graphic_double NULL
 #define get_control_double NULL
 long get_enum_strs();
-
 struct rset biRSET={
 	RSETNUMBER,
 	report,
@@ -96,7 +93,6 @@ struct rset biRSET={
 	get_graphic_double,
 	get_control_double,
 	get_enum_strs };
-
 struct bidset { /* binary input dset */
 	long		number;
 	DEVSUPFUN	report;
@@ -105,6 +101,9 @@ struct bidset { /* binary input dset */
 	DEVSUPFUN	get_ioint_info;
 	DEVSUPFUN	read_bi;/*(-1,0,1)=>(failure,success,don't Continue*/
 };
+
+void alarm();
+void monitor();
 
 static long report(fp,paddr)
     FILE	  *fp;
@@ -120,7 +119,8 @@ static long report(fp,paddr)
 	pbi->rval)) return(-1);
     return(0);
 }
-
+
+
 static long init_record(pbi)
     struct biRecord	*pbi;
 {
@@ -137,8 +137,10 @@ static long init_record(pbi)
 	return(S_dev_missingSup);
     }
     if( pdset->init_record ) {
-	if((status=(*pdset->init_record)(pbi))) return(status);
+	if((status=(*pdset->init_record)(pbi,process))) return(status);
     }
+    pbi->mlst = -1;
+    pbi->lalm = -1;
     return(0);
 }
 
@@ -160,29 +162,13 @@ static long process(paddr)
 
 	/* status is one if an asynchronous record is being processed*/
 	if(status==1) return(1);
-	else if(status == -1) {
-		if(pbi->stat != READ_ALARM) {/* error. set alarm condition */
-			pbi->stat = READ_ALARM;
-			pbi->sevr = MAJOR_ALARM;
-			pbi->achn=1;
-		}
-	}
-	else if(status!=0) return(status);
-	else if(pbi->stat == READ_ALARM) {
-		pbi->stat = NO_ALARM;
-		pbi->sevr = NO_ALARM;
-		pbi->achn=1;
-	}
 
 	/* check for alarms */
 	alarm(pbi);
-
-
 	/* check event list */
-	if(!pbi->disa) status = monitor(pbi);
-
+	monitor(pbi);
 	/* process the forward scan link record */
-	if (pbi->flnk.type==DB_LINK) dbScanPassive(&pbi->flnk.value);
+	if (pbi->flnk.type==DB_LINK) dbScanPassive(&pbi->flnk.value.db_link.pdbAddr);
 
 	pbi->pact=FALSE;
 	return(status);
@@ -207,11 +193,11 @@ static long get_enum_str(paddr,pstring)
     if(pbi->val==0) {
 	strncpy(pstring,pbi->znam,sizeof(pbi->znam));
 	pstring[sizeof(pbi->znam)] = 0;
-    } else if(pbi->val==0) {
+    } else if(pbi->val==1) {
 	strncpy(pstring,pbi->onam,sizeof(pbi->onam));
 	pstring[sizeof(pbi->onam)] = 0;
     } else {
-	strcpy(pstring,"Illegal Value");
+	strcpy(pstring,"Illegal_Value");
     }
     return(0L);
 }
@@ -229,89 +215,72 @@ static long get_enum_strs(paddr,pes)
     return(0L);
 }
 
-static long alarm(pbi)
+static void alarm(pbi)
     struct biRecord	*pbi;
 {
-	float	ftemp;
 
-	/* check for a hardware alarm */
-	if (pbi->stat == READ_ALARM) return(0);
-
-        if (pbi->val == pbi->lalm){
-                /* no new message for COS alarms */
-                if (pbi->stat == COS_ALARM){
-                        pbi->stat = NO_ALARM;
-                        pbi->sevr = NO_ALARM;
-                }
-                return;
-        }
+        if (pbi->val == pbi->lalm) return;
 
         /* set last alarmed value */
         pbi->lalm = pbi->val;
 
         /* check for  state alarm */
         if (pbi->val == 0){
-                if (pbi->zsv != NO_ALARM){
-                        pbi->stat = STATE_ALARM;
-                        pbi->sevr = pbi->zsv;
-                        pbi->achn = 1;
-                        return;
+                if (pbi->nsev<pbi->zsv){
+                        pbi->nsta = STATE_ALARM;
+                        pbi->nsev = pbi->zsv;
                 }
         }else{
-                if (pbi->osv != NO_ALARM){
-                        pbi->stat = STATE_ALARM;
-                        pbi->sevr = pbi->osv;
-                        pbi->achn = 1;
-                        return;
+                if (pbi->nsev<pbi->osv){
+                        pbi->nsta = STATE_ALARM;
+                        pbi->nsev = pbi->osv;
                 }
         }
 
         /* check for cos alarm */
-        if (pbi->cosv != NO_ALARM){
-                pbi->sevr = pbi->cosv;
-                pbi->stat = COS_ALARM;
-                pbi->achn = 1;
-                return;
+        if (pbi->nsev<pbi->cosv) {
+                pbi->nsta = COS_ALARM;
+                pbi->nsev = pbi->cosv;
         }
 
-        /* check for change from alarm to no alarm */
-        if (pbi->sevr != NO_ALARM){
-                pbi->sevr = NO_ALARM;
-                pbi->stat = NO_ALARM;
-                pbi->achn = 1;
-                return;
-        }
-
-	return(0);
+	return;
 }
 
-static long monitor(pbi)
+static void monitor(pbi)
     struct biRecord	*pbi;
 {
 	unsigned short	monitor_mask;
+        short           stat,sevr,nsta,nsev;
+
+        /* get previous stat and sevr  and new stat and sevr*/
+        stat=pbi->stat;
+        sevr=pbi->sevr;
+        nsta=pbi->nsta;
+        nsev=pbi->nsev;
+        /*set current stat and sevr*/
+        pbi->stat = nsta;
+        pbi->sevr = nsev;
+        pbi->nsta = 0;
+        pbi->nsev = 0;
 
 	/* anyone waiting for an event on this record */
-	if (pbi->mlis.count == 0) return(0L);
+	if (pbi->mlis.count == 0) return;
 
 	/* Flags which events to fire on the value field */
 	monitor_mask = 0;
 
 	/* alarm condition changed this scan */
-	if (pbi->achn){
-		/* post events for alarm condition change and value change */
-		monitor_mask = DBE_ALARM | DBE_VALUE | DBE_LOG;
-
+	if (stat!=nsta || sevr!=nsev){
+		/* post events for alarm condition change*/
+		monitor_mask = DBE_ALARM;
 		/* post stat and sevr fields */
 		db_post_events(pbi,&pbi->stat,DBE_VALUE);
 		db_post_events(pbi,&pbi->sevr,DBE_VALUE);
-
-		/* update last value monitored */
-		pbi->mlst = pbi->val;
+	}
         /* check for value change */
-        }else if (pbi->mlst != pbi->val){
+        if (pbi->mlst != pbi->val){
                 /* post events for value change and archive change */
                 monitor_mask |= (DBE_VALUE | DBE_LOG);
-
                 /* update last value monitored */
                 pbi->mlst = pbi->val;
         }
@@ -321,5 +290,5 @@ static long monitor(pbi)
 		db_post_events(pbi,&pbi->val,monitor_mask);
 		db_post_events(pbi,&pbi->rval,monitor_mask);
 	}
-	return(0L);
+	return;
 }

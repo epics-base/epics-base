@@ -1,4 +1,3 @@
-
 /* recState.c */
 /* share/src/rec $Id$ */
 
@@ -37,8 +36,6 @@
 #include	<stdioLib.h>
 #include	<lstLib.h>
 
-#include	<alarm.h>
-#include	<cvtTable.h>
 #include	<dbAccess.h>
 #include	<dbDefs.h>
 #include	<dbFldTypes.h>
@@ -46,7 +43,6 @@
 #include	<errMdef.h>
 #include	<link.h>
 #include	<recSup.h>
-#include	<special.h>
 #include	<stateRecord.h>
 
 /* Create RSET - Record Support Entry Table*/
@@ -91,15 +87,29 @@ static long report(fp,paddr)
     struct stateRecord	*pstate=(struct stateRecord*)(paddr->precord);
 
     if(recGblReportDbCommon(fp,paddr)) return(-1);
-    if(fprintf(fp,"VAL  %d\n",pstate->val)) return(-1);
+    if(fprintf(fp,"VAL  %s\n",pstate->val)) return(-1);
     return(0);
 }
+
+static long get_value(pstate,pvdes)
+    struct stateRecord             *pstate;
+    struct valueDes     *pvdes;
+{
+    pvdes->field_type = DBF_STRING;
+    pvdes->no_elements=1;
+    pvdes->pvalue = (caddr_t)(&pstate->val[0]);
+    return(0);
+}
+
 
 static long process(paddr)
     struct dbAddr	*paddr;
 {
-    struct stateRecord	*pstate=(struct stateRecord *)(paddr->precord);
-	/* anyone waiting for an event on this record */
-	pstate->pact=FALSE;
+	struct stateRecord	*pstate=(struct stateRecord *)(paddr->precord);
+
+        pstate->pact=TRUE;
+        if(pstate->mlis.count != 0)
+                db_post_events(pstate,&(pstate->val[0]),DBE_VALUE);
+        pstate->pact=FALSE;
 	return(0);
 }

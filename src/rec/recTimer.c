@@ -1,4 +1,3 @@
-
 /* recTimer.c */
 /* share/src/rec $Id$ */
 
@@ -48,7 +47,6 @@
 #include	<lstLib.h>
 
 #include	<alarm.h>
-#include	<cvtTable.h>
 #include	<dbAccess.h>
 #include	<dbDefs.h>
 #include	<dbFldTypes.h>
@@ -56,7 +54,6 @@
 #include	<errMdef.h>
 #include	<link.h>
 #include	<recSup.h>
-#include	<special.h>
 #include	<timerRecord.h>
 
 /* Create RSET - Record Support Entry Table*/
@@ -64,16 +61,16 @@ long report();
 #define initialize NULL
 long init_record();
 long process();
-#define special();
-#define get_precision();
+#define special NULL
+#define get_precision NULL
 long get_value();
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
 #define get_enum_str NULL
-#define get_units();
-#define get_graphic_double();
-#define get_control_double();
+#define get_units NULL
+#define get_graphic_double NULL
+#define get_control_double NULL
 #define get_enum_strs NULL
 
 struct rset timerRSET={
@@ -95,9 +92,16 @@ struct rset timerRSET={
 	get_enum_strs };
 
 /* because the driver does all the work just declare device support here*/
-struct dset devMizar8310={4,NULL,NULL,NULL,NULL};
-struct dset devDg535={4,NULL,NULL,NULL,NULL};
-struct dset devVxiAt5Time={4,NULL,NULL,NULL,NULL};
+struct dset devTmMizar8310={4,NULL,NULL,NULL,NULL};
+struct dset devTmDg535={4,NULL,NULL,NULL,NULL};
+struct dset devTmVxiAt5={4,NULL,NULL,NULL,NULL};
+
+extern int	post_event();
+
+void monitor();
+void read_timer();
+void convert_timer();
+void write_timer();
 
 static long report(fp,paddr)
     FILE	  *fp;
@@ -107,37 +111,18 @@ static long report(fp,paddr)
 
     if(recGblReportDbCommon(fp,paddr)) return(-1);
     if(fprintf(fp,"VAL  %-12.4G\n",ptimer->val)) return(-1);
-    if(recGblReportLink(fp,"INP ",&(ptimer->inp))) return(-1);
-    if(fprintf(fp,"PREC %d\n",ptimer->prec)) return(-1);
-    if(recGblReportCvtChoice(fp,"LINR",ptimer->linr)) return(-1);
-    if(fprintf(fp,"HOPR %-12.4G LOPR %-12.4G\n",
-	ptimer->hopr,ptimer->lopr)) return(-1);
-    if(recGblReportLink(fp,"FLNK",&(ptimer->flnk))) return(-1);
-    if(fprintf(fp,"HIHI %-12.4G HIGH %-12.4G  LOW %-12.4G LOLO %-12.4G\n",
-	ptimer->hihi,ptimer->high,ptimer->low,ptimer->lolo)) return(-1);
-    if(recGblReportGblChoice(fp,ptimer,"HHSV",ptimer->hhsv)) return(-1);
-    if(recGblReportGblChoice(fp,ptimer,"HSV ",ptimer->hsv)) return(-1);
-    if(recGblReportGblChoice(fp,ptimer,"LSV ",ptimer->lsv)) return(-1);
-    if(recGblReportGblChoice(fp,ptimer,"LLSV",ptimer->llsv)) return(-1);
-    if(fprintf(fp,"HYST %-12.4G ADEL %-12.4G MDEL %-12.4G ESLO %-12.4G\n",
-	ptimer->hyst,ptimer->adel,ptimer->mdel,ptimer->eslo)) return(-1);
-    if(fprintf(fp,"RVAL 0x%-8X   ACHN %d\n",
-	ptimer->rval,ptimer->achn)) return(-1);
-    if(fprintf(fp,"LALM %-12.4G ALST %-12.4G MLST %-12.4G\n",
-	ptimer->lalm,ptimer->alst,ptimer->mlst)) return(-1);
     return(0);
 }
 
 static long init_record(ptimer)
     struct timerRecord	*ptimer;
 {
-    long status;
 
     /* read to maintain time pulses over a restart */
     read_timer(ptimer);
     return(0);
 }
-
+
 static long get_value(ptimer,pvdes)
     struct timerRecord		*ptimer;
     struct valueDes	*pvdes;
@@ -148,39 +133,63 @@ static long get_value(ptimer,pvdes)
     return(0);
 }
 
-extern int	post_event();
-
 static long process(paddr)
     struct dbAddr	*paddr;
 {
 	struct timerRecord	*ptimer=(struct timerRecord *)(paddr->precord);
-	long		 status;
 
 	ptimer->pact=TRUE;
-	ptimer->achn = 0;	/* init the alarm change flag */
 
 	/* write the new value */
 	write_timer(ptimer);
 
-	/* need to post events for an alarm condition change */
-	if ((ptimer->achn) && (ptimer->mlis.count!=0))
-		db_post_events(ptimer,&ptimer->val,DBE_ALARM);
+        /* check event list */
+        monitor(ptimer);
+        /* process the forward scan link record */
+        if (ptimer->flnk.type==DB_LINK) dbScanPassive(&ptimer->flnk.value.db_link.pdbAddr);
 
-	if (ptimer->mlis.count!=0){
-		db_post_events(ptimer,&ptimer->val,DBE_VALUE);
-		db_post_events(ptimer,&ptimer->t1wd,DBE_VALUE);
-		db_post_events(ptimer,&ptimer->t1ld,DBE_VALUE);
-		db_post_events(ptimer,&ptimer->t1td,DBE_VALUE);
-	}
+        ptimer->pact=FALSE;
+        return(0);
+}
 
-	/* process the forward scan link record */
-	if (ptimer->flnk.type == DB_LINK)
-		dbScanPassive(&ptimer->flnk.value);
+static void monitor(ptimer)
+struct timerRecord *ptimer;
+{
+        unsigned short  monitor_mask;
+        short           stat,sevr,nsta,nsev;
 
-	/* unlock the record */
-	ptimer->lock = 0;
-	ptimer->pact=FALSE;
-	return(0);
+        /* get previous stat and sevr  and new stat and sevr*/
+        stat=ptimer->stat;
+        sevr=ptimer->sevr;
+        nsta=ptimer->nsta;
+        nsev=ptimer->nsev;
+        /*set current stat and sevr*/
+        ptimer->stat = nsta;
+        ptimer->sevr = nsev;
+        ptimer->nsta = 0;
+        ptimer->nsev = 0;
+
+        /* anyone waiting for an event on this record */
+        if (ptimer->mlis.count == 0) return;
+
+        /* Flags which events to fire on the value field */
+        monitor_mask = 0;
+
+        /* alarm condition changed this scan */
+        if (stat!=nsta || sevr!=nsev){
+                /* post events for alarm condition change*/
+                monitor_mask = DBE_ALARM;
+                /* post stat and sevr fields */
+                db_post_events(ptimer,&ptimer->stat,DBE_VALUE);
+                db_post_events(ptimer,&ptimer->sevr,DBE_VALUE);
+        }
+
+	monitor_mask |= (DBE_VALUE | DBE_LOG);
+	db_post_events(ptimer,&ptimer->val,monitor_mask);
+	db_post_events(ptimer,&ptimer->t1wd,monitor_mask);
+	db_post_events(ptimer,&ptimer->t1ld,monitor_mask);
+	db_post_events(ptimer,&ptimer->t1td,monitor_mask);
+	return;
 }
 
 /*
@@ -192,8 +201,8 @@ static double constants[] = {1000,1000000,1000000000,1000000000000};
  * CONVERT_TIMER
  *
  */
-static convert_timer(ptimer)
-register struct timer	*ptimer;
+static void convert_timer(ptimer)
+struct timerRecord	*ptimer;
 {
 	double	constant;
 
@@ -246,32 +255,27 @@ register struct timer	*ptimer;
  *
  * convert the value and write it 
  */
-static write_timer(ptimer)
-register struct timer	*ptimer;
+static void write_timer(ptimer)
+struct timerRecord	*ptimer;
 {
-	register struct vmeio	*pvmeio;
-	register double		*pdelay;
-	register short		count;
-	register short		i;
+	struct vmeio	*pvmeio;
+	long status,options,nRequest;
 
 	/* get the delay from trigger source */
-	if (ptimer->torg.type == DB_LINK){
-                if (db_fetch(&ptimer->torg.value,&ptimer->trdl) < 0){
-			if (ptimer->stat != READ_ALARM){
-				ptimer->stat = READ_ALARM;
-				ptimer->sevr = MAJOR;
-				ptimer->achn = 1;
-			}
-			return(-1);
-		}else if (ptimer->stat == READ_ALARM){
-			ptimer->stat = NO_ALARM;
-			ptimer->sevr = NO_ALARM;
-			ptimer->achn = 1;
-		}
+	if (ptimer->torg.type == DB_LINK) {
+		options=0;
+		nRequest=1;
+		status = dbGetLink(&(ptimer->torg.value.db_link),ptimer,DBR_FLOAT,
+                &(ptimer->trdl),&options,&nRequest);
+		if(status!=0) return;
 	}
-			
-	if (ptimer->out.type != VME_IO) return(-1);
-
+	if (ptimer->out.type != VME_IO) {
+		if(ptimer->nsev<MAJOR_ALARM) {
+			ptimer->nsta = WRITE_ALARM;
+			ptimer->nsev = MAJOR_ALARM;
+		}
+		return;
+	}
 	pvmeio = (struct vmeio *)(&ptimer->out.value);
 
 	/* convert the value */
@@ -280,26 +284,20 @@ register struct timer	*ptimer;
 	/* put the value to the ao driver */
 	if (time_driver((int)pvmeio->card, /* card number */
 	  (int)pvmeio->signal,		/* signal number */
-	  (int)ptimer->type,		/* card type */
+	  (int)ptimer->dtyp,		/* card type */
 	  (int)ptimer->tsrc,		/* trigger source */
 	  (int)ptimer->ptst,		/* pre-trigger state */
 	  &ptimer->t1dl,		/* delay/width array */
 	  1,				/* number of pulses */
 	  ((ptimer->tevt == 0)?0:post_event),	/* addr of event post routine */
 	  (int)ptimer->tevt)		/* event to post on trigger */
-	    != NO_ALARM){
-		if (ptimer->stat != WRITE_ALARM){
-			ptimer->stat = WRITE_ALARM;
-			ptimer->sevr = MAJOR;
-			ptimer->achn = 1;
+	    != 0){
+		if (ptimer->nsev<MAJOR_ALARM) {
+			ptimer->nsta = WRITE_ALARM;
+			ptimer->nsev = MAJOR_ALARM;
 		}
-		return(-1);
-	}else if (ptimer->stat == WRITE_ALARM){
-		ptimer->stat = NO_ALARM;
-		ptimer->sevr = NO_ALARM;
-		ptimer->achn = 1;
 	}
-	return(0);
+	return;
 }
 
 /*
@@ -307,10 +305,10 @@ register struct timer	*ptimer;
  *
  * read the current timer pulses and convert them to engineering units 
  */
-static read_timer(ptimer)
-register struct timer	*ptimer;
+static void read_timer(ptimer)
+struct timerRecord	*ptimer;
 {
-	register struct vmeio	*pvmeio;
+	struct vmeio	*pvmeio;
 	int			source;
 	int			ptst;
 	int			no_pulses;
@@ -318,17 +316,19 @@ register struct timer	*ptimer;
 	double			constant;
 
 	/* initiate the write */
-	if (ptimer->out.type != VME_IO) return(-1);
+	if (ptimer->out.type != VME_IO) {
+		recGblRecordError(S_dev_badOutType,ptimer,"read_timer");
+		return;
+	}
 
 	/* only supports a one channel VME timer module !!!! */
-
 
 	pvmeio = (struct vmeio *)(&ptimer->out.value);
 
 	/* put the value to the ao driver */
 	if (time_driver_read((int)pvmeio->card, /* card number */
 	  (int)pvmeio->signal,			/* signal number */
-	  (int)ptimer->type,			/* card type */
+	  (int)ptimer->dtyp,			/* card type */
 	  &source,				/* trigger source */
 	  &ptst,				/* pre-trigger state */
 	  &time_pulse[0],			/* delay/width */
@@ -347,5 +347,5 @@ register struct timer	*ptimer;
 	ptimer->opw1 = time_pulse[1] * constant;	/* pulse width */
 	ptimer->ptst = ptst;				/* pre-trigger state */
 	ptimer->tsrc = source;				/* clock source */
-	return(0);
+	return;
 }

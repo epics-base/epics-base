@@ -1,4 +1,3 @@
-
 /* recMbbi.c */
 /* share/src/rec $Id$ */
 
@@ -44,7 +43,7 @@
  *                              states are defined - like the mbbo
  * .11  12-06-89        lrd     add database fetch support
  * .12  02-08-90        lrd     add Allen-Bradley PLC support
- * .13  10-11-90	mrk	changes for new record and device support
+ * .13  10-31-90	mrk	changes for new record and device support
  */
 
 #include	<vxWorks.h>
@@ -54,7 +53,6 @@
 #include	<strLib.h>
 
 #include	<alarm.h>
-#include	<cvtTable.h>
 #include	<dbAccess.h>
 #include	<dbDefs.h>
 #include	<dbFldTypes.h>
@@ -70,8 +68,8 @@ long report();
 #define initialize NULL
 long init_record();
 long process();
-long special();
-long get_precision();
+long  special();
+#define get_precision NULL
 long get_value();
 #define cvt_dbaddr NULL
 #define get_array_info NULL
@@ -108,6 +106,9 @@ struct mbbidset { /* multi bit binary input dset */
 	DEVSUPFUN	get_ioint_info;
 	DEVSUPFUN	read_mbbi;/*(-1,0,1)=>(failure,success,don't Continue*/
 };
+
+void alarm();
+void monitor();
 
 static long report(fp,paddr)
     FILE	  *fp;
@@ -119,17 +120,37 @@ static long report(fp,paddr)
     if(fprintf(fp,"VAL  %d\n",pmbbi->val)) return(-1);
     if(recGblReportLink(fp,"INP ",&(pmbbi->inp))) return(-1);
     if(recGblReportLink(fp,"FLNK",&(pmbbi->flnk))) return(-1);
-    if(fprintf(fp,"RVAL 0x%-8X\n",
-	pmbbi->rval)) return(-1);
+    if(fprintf(fp,"RVAL 0x%-8X\n",pmbbi->rval)) return(-1);
     return(0);
 }
 
+static void init_common(pmbbi)
+    struct mbbiRecord	*pmbbi;
+{
+        unsigned long 	*pstate_values;
+        short  		i;
+
+        /* determine if any states are defined */
+        pstate_values = &(pmbbi->zrvl);
+        pmbbi->sdef = FALSE;
+        for (i=0; i<16; i++) {
+                if (*(pstate_values+i)) {
+			pmbbi->sdef = TRUE;
+			return;
+		}
+	}
+	return;
+}
+
 static long init_record(pmbbi)
     struct mbbiRecord	*pmbbi;
 {
     struct mbbidset *pdset;
     long status;
 
+    init_common(pmbbi);
+    pmbbi->mlst = -1;
+    pmbbi->lalm = -1;
     if(!(pdset = (struct mbbidset *)(pmbbi->dset))) {
 	recGblRecordError(S_dev_noDSET,pmbbi,"mbbi: init_record");
 	return(S_dev_noDSET);
@@ -140,79 +161,27 @@ static long init_record(pmbbi)
 	return(S_dev_missingSup);
     }
     if( pdset->init_record ) {
-	if((status=(*pdset->init_record)(pmbbi))) return(status);
+	if((status=(*pdset->init_record)(pmbbi,process))) return(status);
     }
     return(0);
 }
-
-static long process(paddr)
-    struct dbAddr	*paddr;
+
+static long special(paddr,after)
+    struct dbAddr *paddr;
+    int           after;
 {
-    struct mbbiRecord	*pmbbi=(struct mbbiRecord *)(paddr->precord);
-	struct mbbidset	*pdset = (struct mbbidset *)(pmbbi->dset);
-	long		status;
-        unsigned long 	*pstate_values;
-        short  		i,states_defined;
+    struct mbbiRecord     *pmbbi = (struct mbbiRecord *)(paddr->precord);
+    int                 special_type = paddr->special;
 
-	if( (pdset==NULL) || (pdset->read_mbbi==NULL) ) {
-		pmbbi->pact=TRUE;
-		recGblRecordError(S_dev_missingSup,pmbbi,"read_mbbi");
-		return(S_dev_missingSup);
-	}
-
-	status=(*pdset->read_mbbi)(pmbbi); /* read the new value */
-	pmbbi->pact = TRUE;
-
-	/* status is one if an asynchronous record is being processed*/
-	if(status==1) return(1);
-	else if(status == -1) {
-		if(pmbbi->stat != READ_ALARM) {/* error. set alarm condition */
-			pmbbi->stat = READ_ALARM;
-			pmbbi->sevr = MAJOR_ALARM;
-			pmbbi->achn=1;
-		}
-	}
-	else if(status!=0) return(status);
-	else if(pmbbi->stat == READ_ALARM) {
-		pmbbi->stat = NO_ALARM;
-		pmbbi->sevr = NO_ALARM;
-		pmbbi->achn=1;
-	}
-
-        /* determine if any states are defined */
-        pstate_values = &(pmbbi->zrvl);
-        states_defined = 0;
-        for (i=0; (i<16) && (!states_defined); i++)
-                if (*(pstate_values+i)) states_defined = 1;
-
-        /* convert the value */
-        if (states_defined){
-                pstate_values = &(pmbbi->zrvl);
-                for (i = 0; i < 16; i++){
-                        if (*pstate_values == pmbbi->rval){
-                                pmbbi->val = i;
-                                return(0);
-                        }
-                        pstate_values++;
-                }
-                pmbbi->val = -2;        /* unknown state-other than init LALM */
-        }else{
-                /* the raw value is the desired value */
-                pmbbi->val = pmbbi->rval;
-	}
-
-	/* check for alarms */
-	alarm(pmbbi);
-
-
-	/* check event list */
-	if(!pmbbi->disa) status = monitor(pmbbi);
-
-	/* process the forward scan link record */
-	if (pmbbi->flnk.type==DB_LINK) dbScanPassive(&pmbbi->flnk.value);
-
-	pmbbi->pact=FALSE;
-	return(status);
+    if(!after) return(0);
+    switch(special_type) {
+    case(SPC_MOD):
+	init_common(pmbbi);
+	return(0);
+    default:
+        recGblDbaddrError(S_db_badChoice,paddr,"mbbi: special");
+        return(S_db_badChoice);
+    }
 }
 
 static long get_value(pmbbi,pvdes)
@@ -233,14 +202,14 @@ static long get_enum_str(paddr,pstring)
     char		*psource;
     unsigned short	val=pmbbi->val;
 
-    if( val>0 && val<= 15) {
+    if(val<= 15) {
 	psource = (pmbbi->zrst);
 	psource += (val * sizeof(pmbbi->zrst));
 	strncpy(pstring,psource,sizeof(pmbbi->zrst));
     } else {
 	strcpy(pstring,"Illegal Value");
     }
-    return(0L);
+    return(0);
 }
 
 static long get_enum_strs(paddr,pes)
@@ -254,103 +223,138 @@ static long get_enum_strs(paddr,pes)
     pes->no_str = 16;
     bzero(pes->strs,sizeof(pes->strs));
     for(i=0,psource=(pmbbi->zrst); i<15; i++, psource += sizeof(pmbbi->zrst) ) 
-	strncpy(pes->strs[i],pmbbi->zrst,sizeof(pmbbi->zrst));
-    return(0L);
+	strncpy(pes->strs[i],psource,sizeof(pmbbi->zrst));
+    return(0);
 }
 
-static long alarm(pmbbi)
+static long process(paddr)
+    struct dbAddr	*paddr;
+{
+    struct mbbiRecord	*pmbbi=(struct mbbiRecord *)(paddr->precord);
+	struct mbbidset	*pdset = (struct mbbidset *)(pmbbi->dset);
+	long		status;
+        unsigned long 	*pstate_values;
+        short  		i,val;
+
+	if( (pdset==NULL) || (pdset->read_mbbi==NULL) ) {
+		pmbbi->pact=TRUE;
+		recGblRecordError(S_dev_missingSup,pmbbi,"read_mbbi");
+		return(S_dev_missingSup);
+	}
+
+	status=(*pdset->read_mbbi)(pmbbi); /* read the new value */
+	pmbbi->pact = TRUE;
+
+	/* status is one if an asynchronous record is being processed*/
+	if(status==1) return(0);
+
+        /* convert the value */
+        if (pmbbi->sdef){
+                pstate_values = &(pmbbi->zrvl);
+                val = -1;        /* initalize to unknown state*/
+                for (i = 0; i < 16; i++){
+                        if (*pstate_values == pmbbi->rval){
+                                val = i;
+                                break;
+                        }
+                        pstate_values++;
+                }
+        }else{
+                /* the raw value is the desired value */
+                *((unsigned short *)(&val)) =  (unsigned short)(pmbbi->rval);
+	}
+	pmbbi->val = val;
+
+	/* check for alarms */
+	alarm(pmbbi);
+
+
+	/* check event list */
+	monitor(pmbbi);
+
+	/* process the forward scan link record */
+	if (pmbbi->flnk.type==DB_LINK) dbScanPassive(&pmbbi->flnk.value.db_link.pdbAddr);
+
+	pmbbi->pact=FALSE;
+	return(status);
+}
+
+static void alarm(pmbbi)
     struct mbbiRecord	*pmbbi;
 {
-	float	ftemp;
 	unsigned short *severities;
+	short		val=pmbbi->val;
 
-	/* check for a hardware alarm */
-	if (pmbbi->stat == READ_ALARM) return(0);
-
-        if (pmbbi->val == pmbbi->lalm){
-                /* no new message for COS alarms */
-                if (pmbbi->stat == COS_ALARM){
-                        pmbbi->stat = NO_ALARM;
-                        pmbbi->sevr = NO_ALARM;
-                }
-                return;
-        }
-
-        /* set last alarmed value */
-        pmbbi->lalm = pmbbi->val;
+	if(val = pmbbi->lalm) return;
+	pmbbi->lalm = val;
 
         /* check for  state alarm */
         /* unknown state */
-        if ((pmbbi->val < 0) || (pmbbi->val > 15)){
-                if (pmbbi->unsv != NO_ALARM){
-                        pmbbi->stat = STATE_ALARM;
-                        pmbbi->sevr = pmbbi->unsv;
-                        pmbbi->achn = 1;
-                        return;
+        if ((val < 0) || (val > 15)){
+                if (pmbbi->nsev<pmbbi->unsv){
+                        pmbbi->nsta = STATE_ALARM;
+                        pmbbi->nsev = pmbbi->unsv;
                 }
-        }
-        /* in a state which is an error */
-        severities = (unsigned short *)&(pmbbi->zrsv);
-        if (severities[pmbbi->val] != NO_ALARM){
-                pmbbi->stat = STATE_ALARM;
-                pmbbi->sevr = severities[pmbbi->val];
-                pmbbi->achn = 1;
-                return;
-        }
+        } else {
+        	/* in a state which is an error */
+        	severities = (unsigned short *)&(pmbbi->zrsv);
+        	if (pmbbi->nsev<severities[pmbbi->val]){
+                	pmbbi->nsta = STATE_ALARM;
+                	pmbbi->nsev = severities[pmbbi->val];
+        	}
+	}
 
         /* check for cos alarm */
-        if (pmbbi->cosv != NO_ALARM){
-                pmbbi->sevr = pmbbi->cosv;
-                pmbbi->stat = COS_ALARM;
-                pmbbi->achn = 1;
+        if (pmbbi->nsev<pmbbi->cosv){
+                pmbbi->nsta = COS_ALARM;
+                pmbbi->nsev = pmbbi->cosv;
                 return;
         }
-        /* check for change from alarm to no alarm */
-        if (pmbbi->sevr != NO_ALARM){
-                pmbbi->sevr = NO_ALARM;
-                pmbbi->stat = NO_ALARM;
-                pmbbi->achn = 1;
-                return;
-        }
-
-	return(0);
+	return;
 }
 
-static long monitor(pmbbi)
+static void monitor(pmbbi)
     struct mbbiRecord	*pmbbi;
 {
 	unsigned short	monitor_mask;
+        short           stat,sevr,nsta,nsev;
+
+        /* get previous stat and sevr  and new stat and sevr*/
+        stat=pmbbi->stat;
+        sevr=pmbbi->sevr;
+        nsta=pmbbi->nsta;
+        nsev=pmbbi->nsev;
+        /*set current stat and sevr*/
+        pmbbi->stat = nsta;
+        pmbbi->sevr = nsev;
+        pmbbi->nsta = 0;
+        pmbbi->nsev = 0;
 
 	/* anyone waiting for an event on this record */
-	if (pmbbi->mlis.count == 0) return(0L);
+	if (pmbbi->mlis.count == 0) return;
 
 	/* Flags which events to fire on the value field */
 	monitor_mask = 0;
 
-	/* alarm condition changed this scan */
-	if (pmbbi->achn){
-		/* post events for alarm condition change and value change */
-		monitor_mask = DBE_ALARM | DBE_VALUE | DBE_LOG;
-
-		/* post stat and sevr fields */
-		db_post_events(pmbbi,&pmbbi->stat,DBE_VALUE);
-		db_post_events(pmbbi,&pmbbi->sevr,DBE_VALUE);
-
-		/* update last value monitored */
-		pmbbi->mlst = pmbbi->val;
+        /* alarm condition changed this scan */
+        if (stat!=nsta || sevr!=nsev){
+                /* post events for alarm condition change*/
+                monitor_mask = DBE_ALARM;
+                /* post stat and sevr fields */
+                db_post_events(pmbbi,&pmbbi->stat,DBE_VALUE);
+                db_post_events(pmbbi,&pmbbi->sevr,DBE_VALUE);
+        }
         /* check for value change */
-        }else if (pmbbi->mlst != pmbbi->val){
+        if (pmbbi->mlst != pmbbi->val){
                 /* post events for value change and archive change */
                 monitor_mask |= (DBE_VALUE | DBE_LOG);
-
                 /* update last value monitored */
                 pmbbi->mlst = pmbbi->val;
         }
-
-	/* send out monitors connected to the value field */
-	if (monitor_mask){
-		db_post_events(pmbbi,&pmbbi->val,monitor_mask);
-		db_post_events(pmbbi,&pmbbi->rval,monitor_mask);
-	}
-	return(0L);
+        /* send out monitors connected to the value field */
+        if (monitor_mask){
+                db_post_events(pmbbi,&pmbbi->val,monitor_mask);
+                db_post_events(pmbbi,&pmbbi->rval,monitor_mask);
+        }
+        return;
 }

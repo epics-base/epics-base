@@ -1,4 +1,3 @@
-
 /* recPid.c */
 /* share/src/rec $Id$ */
 
@@ -36,16 +35,16 @@
 #include	<types.h>
 #include	<stdioLib.h>
 #include	<lstLib.h>
+/*since tickLib is not defined just define tickGet*/
+unsigned long tickGet();
 
 #include	<alarm.h>
-#include	<cvtTable.h>
 #include	<dbAccess.h>
 #include	<dbDefs.h>
 #include	<dbFldTypes.h>
 #include	<errMdef.h>
 #include	<link.h>
 #include	<recSup.h>
-#include	<special.h>
 #include	<pidRecord.h>
 
 /* Create RSET - Record Support Entry Table*/
@@ -83,6 +82,14 @@ struct rset pidRSET={
 	get_control_double,
 	get_enum_strs };
 
+/* the following definitions must match those in choiceGbl.ascii */
+#define SUPERVISORY 0
+#define CLOSED_LOOP 1
+
+void alarm();
+void monitor();
+long do_pid();
+
 
 static long report(fp,paddr)
     FILE	  *fp;
@@ -92,78 +99,23 @@ static long report(fp,paddr)
 
     if(recGblReportDbCommon(fp,paddr)) return(-1);
     if(fprintf(fp,"VAL  %-12.4G\n",ppid->val)) return(-1);
-    if(recGblReportLink(fp,"INP ",&(ppid->inp))) return(-1);
-    if(fprintf(fp,"PREC %d\n",ppid->prec)) return(-1);
-    if(recGblReportCvtChoice(fp,"LINR",ppid->linr)) return(-1);
-    if(fprintf(fp,"EGUF %-12.4G EGUL %-12.4G  EGU %-8s\n",
-	ppid->eguf,ppid->egul,ppid->egu)) return(-1);
-    if(fprintf(fp,"HOPR %-12.4G LOPR %-12.4G\n",
-	ppid->hopr,ppid->lopr)) return(-1);
-    if(recGblReportLink(fp,"FLNK",&(ppid->flnk))) return(-1);
-    if(fprintf(fp,"HIHI %-12.4G HIGH %-12.4G  LOW %-12.4G LOLO %-12.4G\n",
-	ppid->hihi,ppid->high,ppid->low,ppid->lolo)) return(-1);
-    if(recGblReportGblChoice(fp,ppid,"HHSV",ppid->hhsv)) return(-1);
-    if(recGblReportGblChoice(fp,ppid,"HSV ",ppid->hsv)) return(-1);
-    if(recGblReportGblChoice(fp,ppid,"LSV ",ppid->lsv)) return(-1);
-    if(recGblReportGblChoice(fp,ppid,"LLSV",ppid->llsv)) return(-1);
-    if(fprintf(fp,"HYST %-12.4G ADEL %-12.4G MDEL %-12.4G ESLO %-12.4G\n",
-	ppid->hyst,ppid->adel,ppid->mdel,ppid->eslo)) return(-1);
-    if(fprintf(fp,"ACHN %d\n", ppid->achn)) return(-1);
-    if(fprintf(fp,"LALM %-12.4G ALST %-12.4G MLST %-12.4G\n",
-	ppid->lalm,ppid->alst,ppid->mlst)) return(-1);
     return(0);
 }
-^L
-static pid_intervals[] = {1,5,4,3,2,1,1,1};
-
+
 static long init_record(ppid)
     struct pidRecord     *ppid;
 {
-        /* get the interval based on the scan type */
-        ppid->intv = pid_intervals[ppid->scan];
+	/* initialize so that first alarm, archive, and monitor get generated*/
+	ppid->lalm = 1e30;
+	ppid->alst = 1e30;
+	ppid->mlst = 1e30;
 
         /* initialize the setpoint for constant setpoint */
         if (ppid->stpl.type == CONSTANT)
                 ppid->val = ppid->stpl.value.value;
 	return(0);
 }
-
-static long process(paddr)
-    struct dbAddr	*paddr;
-{
-    struct pidRecord	*ppid=(struct pidRecord *)(paddr->precord);
-	long		 status;
 
-	ppid->pact = TRUE;
-	status=do_pid(ppid);
-	if(status == -1) {
-		if(ppid->stat != READ_ALARM) {/* error. set alarm condition */
-			ppid->stat = READ_ALARM;
-			ppid->sevr = MAJOR_ALARM;
-			ppid->achn=1;
-		}
-	}else if(status!=0) return(status);
-	else if(ppid->stat == READ_ALARM || ppid->stat ==  HW_LIMIT_ALARM) {
-		ppid->stat = NO_ALARM;
-		ppid->sevr = NO_ALARM;
-		ppid->achn=1;
-	}
-	if(status==0) do_pidect(ppid);
-
-	/* check for alarms */
-	alarm(ppid);
-
-
-	/* check event list */
-	monitor(ppid);
-
-	/* process the forward scan link record */
-	if (ppid->flnk.type==DB_LINK) dbScanPassive(&ppid->flnk.value);
-
-	ppid->pact=FALSE;
-	return(status);
-}
-
 static long get_precision(paddr,precision)
     struct dbAddr *paddr;
     long	  *precision;
@@ -171,7 +123,7 @@ static long get_precision(paddr,precision)
     struct pidRecord	*ppid=(struct pidRecord *)paddr->precord;
 
     *precision = ppid->prec;
-    return(0L);
+    return(0);
 }
 
 static long get_value(ppid,pvdes)
@@ -183,7 +135,7 @@ static long get_value(ppid,pvdes)
     (float *)(pvdes->pvalue) = &ppid->val;
     return(0);
 }
-
+
 static long get_units(paddr,units)
     struct dbAddr *paddr;
     char	  *units;
@@ -191,7 +143,7 @@ static long get_units(paddr,units)
     struct pidRecord	*ppid=(struct pidRecord *)paddr->precord;
 
     strncpy(units,ppid->egu,sizeof(ppid->egu));
-    return(0L);
+    return(0);
 }
 
 static long get_graphic_double(paddr,pgd)
@@ -206,7 +158,7 @@ static long get_graphic_double(paddr,pgd)
     pgd->upper_warning_limit = ppid->high;
     pgd->lower_warning_limit = ppid->low;
     pgd->lower_alarm_limit = ppid->lolo;
-    return(0L);
+    return(0);
 }
 
 static long get_control_double(paddr,pcd)
@@ -217,7 +169,34 @@ static long get_control_double(paddr,pcd)
 
     pcd->upper_ctrl_limit = ppid->hopr;
     pcd->lower_ctrl_limit = ppid->lopr;
-    return(0L);
+    return(0);
+}
+
+static long process(paddr)
+    struct dbAddr	*paddr;
+{
+    struct pidRecord	*ppid=(struct pidRecord *)(paddr->precord);
+	long		 status;
+
+	ppid->pact = TRUE;
+	status=do_pid(ppid);
+	if(status==1) {
+		ppid->pact = FALSE;
+		return(0);
+	}
+
+	/* check for alarms */
+	alarm(ppid);
+
+
+	/* check event list */
+	monitor(ppid);
+
+	/* process the forward scan link record */
+	if (ppid->flnk.type==DB_LINK) dbScanPassive(&ppid->flnk.value.db_link.pdbAddr);
+
+	ppid->pact=FALSE;
+	return(status);
 }
 
 static void alarm(ppid)
@@ -225,76 +204,51 @@ static void alarm(ppid)
 {
 	float	ftemp;
 
-	/* check for a hardware alarm */
-	if (ppid->stat == READ_ALARM) return(0);
+        /* if difference is not > hysterisis don't bother */
+        ftemp = ppid->lalm - ppid->val;
+        if(ftemp<0.0) ftemp = -ftemp;
+        if (ftemp < ppid->hyst) return;
 
-	/* if in alarm and difference is not > hysterisis don't bother */
-	if (ppid->stat != NO_ALARM){
-		ftemp = ppid->lalm - ppid->val;
-		if(ftemp<0.0) ftemp = -ftemp;
-		if (ftemp < ppid->hyst) return;
-	}
+        /* alarm condition hihi */
+        if (ppid->nsev<ppid->hhsv){
+                if (ppid->val > ppid->hihi){
+                        ppid->lalm = ppid->val;
+                        ppid->nsta = HIHI_ALARM;
+                        ppid->nsev = ppid->hhsv;
+                        return;
+                }
+        }
 
-	/* alarm condition hihi */
-	if (ppid->hhsv != NO_ALARM){
-		if (ppid->val > ppid->hihi){
-			ppid->lalm = ppid->val;
-			if (ppid->stat != HIHI_ALARM){
-				ppid->stat = HIHI_ALARM;
-				ppid->sevr = ppid->hhsv;
-				ppid->achn = 1;
-			}
-			return;
-		}
-	}
+        /* alarm condition lolo */
+        if (ppid->nsev<ppid->llsv){
+                if (ppid->val < ppid->lolo){
+                        ppid->lalm = ppid->val;
+                        ppid->nsta = LOLO_ALARM;
+                        ppid->nsev = ppid->llsv;
+                        return;
+                }
+        }
 
-	/* alarm condition lolo */
-	if (ppid->llsv != NO_ALARM){
-		if (ppid->val < ppid->lolo){
-			ppid->lalm = ppid->val;
-			if (ppid->stat != LOLO_ALARM){
-				ppid->stat = LOLO_ALARM;
-				ppid->sevr = ppid->llsv;
-				ppid->achn = 1;
-			}
-			return;
-		}
-	}
+        /* alarm condition high */
+        if (ppid->nsev<ppid->hsv){
+                if (ppid->val > ppid->high){
+                        ppid->lalm = ppid->val;
+                        ppid->nsta = HIGH_ALARM;
+                        ppid->nsev =ppid->hsv;
+                        return;
+                }
+        }
 
-	/* alarm condition high */
-	if (ppid->hsv != NO_ALARM){
-		if (ppid->val > ppid->high){
-			ppid->lalm = ppid->val;
-			if (ppid->stat != HIGH_ALARM){
-				ppid->stat = HIGH_ALARM;
-				ppid->sevr =ppid->hsv;
-				ppid->achn = 1;
-			}
-			return;
-		}
-	}
-
-	/* alarm condition lolo */
-	if (ppid->lsv != NO_ALARM){
-		if (ppid->val < ppid->low){
-			ppid->lalm = ppid->val;
-			if (ppid->stat != LOW_ALARM){
-				ppid->stat = LOW_ALARM;
-				ppid->sevr = ppid->lsv;
-				ppid->achn = 1;
-			}
-			return;
-		}
-	}
-
-	/* no alarm */
-	if (ppid->stat != NO_ALARM){
-		ppid->stat = NO_ALARM;
-		ppid->sevr = NO_ALARM;
-		ppid->achn = 1;
-	}
-
-	return;
+        /* alarm condition lolo */
+        if (ppid->nsev<ppid->lsv){
+                if (ppid->val < ppid->low){
+                        ppid->lalm = ppid->val;
+                        ppid->nsta = LOW_ALARM;
+                        ppid->nsev = ppid->lsv;
+                        return;
+                }
+        }
+        return;
 }
 
 static void monitor(ppid)
@@ -302,108 +256,160 @@ static void monitor(ppid)
 {
 	unsigned short	monitor_mask;
 	float		delta;
+        short           stat,sevr,nsta,nsev;
 
-	/* anyone waiting for an event on this record */
-	if (ppid->mlis.count == 0) return;
+        /* get previous stat and sevr  and new stat and sevr*/
+        stat=ppid->stat;
+        sevr=ppid->sevr;
+        nsta=ppid->nsta;
+        nsev=ppid->nsev;
+        /*set current stat and sevr*/
+        ppid->stat = nsta;
+        ppid->sevr = nsev;
+        ppid->nsta = 0;
+        ppid->nsev = 0;
 
-	/* Flags which events to fire on the value field */
-	monitor_mask = 0;
+        /* anyone waiting for an event on this record */
+        if (ppid->mlis.count == 0) return;
 
-	/* alarm condition changed this scan */
-	if (ppid->achn){
-		/* post events for alarm condition change and value change */
-		monitor_mask = DBE_ALARM | DBE_VALUE | DBE_LOG;
+        /* Flags which events to fire on the value field */
+        monitor_mask = 0;
 
-		/* post stat and sevr fields */
-		db_post_events(ppid,&ppid->stat,DBE_VALUE);
-		db_post_events(ppid,&ppid->sevr,DBE_VALUE);
-
-		/* update last value monitored */
-		ppid->mlst = ppid->val;
-
-	/* check for value change */
-	}else{
-		delta = ppid->mlst - ppid->val;
-		if(delta<0.0) delta = -delta;
-		if (delta > ppid->mdel) {
-			/* post events for value change */
-			monitor_mask = DBE_VALUE;
-
-			/* update last value monitored */
-			ppid->mlst = ppid->val;
-		}
-	}
-
-	/* check for archive change */
-	delta = ppid->alst - ppid->val;
-	if(delta<0.0) delta = 0.0;
-	if (delta > ppid->adel) {
-		/* post events on value field for archive change */
-		monitor_mask |= DBE_LOG;
-
-		/* update last archive value monitored */
-		ppid->alst = ppid->val;
-	}
-
-	/* send out monitors connected to the value field */
-	if (monitor_mask){
-		db_post_events(ppid,&ppid->val,monitor_mask);
-		db_post_events(ppid,&ppid->rval,monitor_mask);
-	}
-	return;
-}
-
-static long do_pid(ppid)
-register struct pid     *ppid;
-{
-        /* fetch the controlled value */
-        if (ppid->cvl.type != DB_LINK) return(-1);      /* nothing to control */
-        if (db_fetch(&ppid->cvl.value,&ppid->cval) < 0){
-                if (ppid->stat != READ_ALARM){
-                        ppid->stat = READ_ALARM;
-                        ppid->sevr = MAJOR;
-                        ppid->achn = 1;
-                        return(-1);
-                }
+        /* alarm condition changed this scan */
+        if (stat!=nsta || sevr!=nsev) {
+                /* post events for alarm condition change*/
+                monitor_mask = DBE_ALARM;
+                /* post stat and nsev fields */
+                db_post_events(ppid,&ppid->stat,DBE_VALUE);
+                db_post_events(ppid,&ppid->sevr,DBE_VALUE);
+        }
+        /* check for value change */
+        delta = ppid->mlst - ppid->val;
+        if(delta<0.0) delta = -delta;
+        if (delta > ppid->mdel) {
+                /* post events for value change */
+                monitor_mask |= DBE_VALUE;
+                /* update last value monitored */
+                ppid->mlst = ppid->val;
+        }
+        /* check for archive change */
+        delta = ppid->alst - ppid->val;
+        if(delta<0.0) delta = 0.0;
+        if (delta > ppid->adel) {
+                /* post events on value field for archive change */
+                monitor_mask |= DBE_LOG;
+                /* update last archive value monitored */
+                ppid->alst = ppid->val;
         }
 
-/* rate of change on the setpoint? */
+        /* send out monitors connected to the value field */
+        if (monitor_mask){
+                db_post_events(ppid,&ppid->val,monitor_mask);
+        }
+        return;
+}
+
+/* A discrete form of the PID algorithm is as follows
+ * M(n) = KP*(E(n) + KI*SUMi(E(i)*dT(i))
+ *		   + KD*(E(n) -E(n-1))/dT(i) + Mr
+ * where
+ *	M(n)	Value of manipulated variable at nth sampling instant
+ *	KP,KI,KD Proportional, Integral, and Differential Gains
+ *		NOTE: KI is inverse of normal KI
+ *	E(n)	Error at nth sampling instant
+ *	SUMi	Sum from i=0 to i=n
+ *	dT(n)	Time difference between n-1 and n
+ *	Mr midrange adjustment
+ *
+ * Taking first difference yields
+ * delM(n) = KP*((E(n)-E(n-1)) + E(n)*dT(n)*KI
+ *		+ KD*((E(n)-E(n-1))/dT(n) - (E(n-1)-E(n-2))/dT(n-1))
+ * or using variables defined in following
+ * out = kp*(de + e*dt*ki + kd*(de/dt - dep/dtp)
+ */
+
+static long do_pid(ppid)
+struct pidRecord     *ppid;
+{
+	long		options,nRequest;
+	unsigned long	ctp;	/*clock ticks previous	*/
+	unsigned long	ct;	/*clock ticks		*/
+	float		cval;	/*actual value		*/
+	float		val;	/*desired value(setpoint)*/
+	float		dt;	/*delta time (seconds)	*/
+	float		dtp;	/*previous dt		*/
+	float		kp,ki,kd;/*gains		*/
+	float		e;	/*error			*/
+	float		ep;	/*previous error	*/
+	float		de;	/*change in error	*/
+	float		dep;	/*prev change in error	*/
+	float		out;	/*output value		*/
+
+        /* fetch the controlled value */
+        if (ppid->cvl.type != DB_LINK) { /* nothing to control*/
+                if (ppid->nsev<MAJOR_ALARM) {
+                        ppid->nsta = SOFT_ALARM;
+                        ppid->nsev = MAJOR_ALARM;
+                        return(0);
+                }
+	}
+        options=0;
+        nRequest=1;
+        if(!dbGetLink(&(ppid->cvl.value.db_link),ppid,DBR_FLOAT,
+	&cval,&options,&nRequest)) {
+                if (ppid->nsev<MAJOR_ALARM) {
+                        ppid->nsta = READ_ALARM;
+                        ppid->nsev = MAJOR_ALARM;
+                        return(0);
+                }
+        }
         /* fetch the setpoint */
-        if ((ppid->stpl.type == DB_LINK) && (ppid->smsl == CLOSED_LOOP)){
-                if (db_fetch(&ppid->stpl.value,&ppid->val) < 0){
-                        if (ppid->stat != READ_ALARM){
+        if(ppid->stpl.type == DB_LINK && ppid->smsl == CLOSED_LOOP){
+        	options=0;
+        	nRequest=1;
+        	if(!dbGetLink(&(ppid->stpl.value.db_link),ppid,DBR_FLOAT,
+		&(ppid->val),&options,&nRequest)) {
+                	if (ppid->nsev<MAJOR_ALARM) {
                                 ppid->stat = READ_ALARM;
-                                ppid->sevr = MAJOR;
-                                ppid->achn = 1;
+                                ppid->sevr = MAJOR_ALARM;
                                 return(-1);
                         }
                 }
         }
+	val = ppid->val;
 
-        /* reset the integral term when the setpoint changes */
-        if (ppid->val != ppid->lval){
-                ppid->lval = ppid->val;
-                ppid->inte = 0;
-        }
-
-        /* determine the error */
-        ppid->lerr = ppid->err;
-        ppid->err = ppid->val - ppid->cval;
-        ppid->derr = ppid->err - ppid->lerr;
-
-        /* determine the proportional contribution */
-        ppid->prop = ppid->err * ppid->kp;
-
-        /* determine the integral contribution */
-        ppid->inte += ppid->err;
-        ppid->intg = ppid->inte * ppid->ki * ppid->intv;
-
-        /* determine the derivative contribution */
-/* we are implementing the derivativa term on error - do we want value also? */
-        ppid->der = (ppid->derr * ppid->kd) / ppid->intv;
-
-        /* delta output contributions weighted by the proportional constant */
-        ppid->out = ppid->intg + ppid->der + ppid->prop;
-
+	/* compute time difference and make sure it is large enough*/
+	ctp = ppid->ct;
+	ct = tickGet();
+	if(ctp==ct) return(1);
+	if(ctp<ct) {
+		dt = (float)(ct-ctp);
+	}else { /* clock has overflowed */
+		dt = (unsigned long)(0xffffffff) - ctp;
+		dt = dt + ct + 1;
+	}
+	dt = dt/vxTicksPerSecond;
+	if(dt<ppid->mdt) return(1);
+	/* get the rest of values needed */
+	dtp = ppid->dt;
+	kp = ppid->kp;
+	ki = ppid->ki;
+	kd = ppid->kd;
+	ep = ppid->err;
+	dep = ppid->derr;
+	e = val - cval;
+	de = e - ep;
+	out = de;
+	out = out + e*dt*ki;
+	if(dtp!=0.0) out = out + kd*(de/dt - dep/dtp);
+	out = kp*out;
+	/* update record*/
+	ppid->ct  = ct;
+	ppid->dt   = dt;
+	ppid->err  = e;
+	ppid->derr = de;
+	ppid->val  = val;
+	ppid->cval  = cval;
+	ppid->out  = out;
 	return(0);
 }

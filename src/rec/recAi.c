@@ -112,11 +112,15 @@ struct aidset { /* analog input dset */
 	DEVSUPFUN	init;
 	DEVSUPFUN	init_record; /*returns: (-1,0)=>(failure,success)*/
 	DEVSUPFUN	get_ioint_info;
-	DEVSUPFUN	read_ai;/*(-1,0,1)=>(failure,success,don't Continue*/
+	DEVSUPFUN	read_ai;/*(0,1,2)=> success and */
+			/*(convert,don't continue, don't convert)*/
+			/* if convert then raw value stored in rval */
 	DEVSUPFUN	special_linconv;
 };
 
-long convert_ai();
+void convert();
+void alarm();
+void monitor();
 
 static long report(fp,paddr)
     FILE	  *fp;
@@ -144,8 +148,7 @@ static long report(fp,paddr)
     if(recGblReportGblChoice(fp,pai,"LLSV",pai->llsv)) return(-1);
     if(fprintf(fp,"HYST %-12.4G ADEL %-12.4G MDEL %-12.4G ESLO %-12.4G\n",
 	pai->hyst,pai->adel,pai->mdel,pai->eslo)) return(-1);
-    if(fprintf(fp,"RVAL 0x%-8X   ACHN %d\n",
-	pai->rval,pai->achn)) return(-1);
+    if(fprintf(fp,"RVAL 0x%-8X\n",pai->rval)) return(-1);
     if(fprintf(fp,"LALM %-12.4G ALST %-12.4G MLST %-12.4G\n",
 	pai->lalm,pai->alst,pai->mlst)) return(-1);
     if(fprintf(fp,"LBRK %d\n",pai->lbrk)) return(-1);
@@ -158,18 +161,23 @@ static long init_record(pai)
     struct aidset *pdset;
     long status;
 
+    /* initialize so that first alarm, archive, and monitor get generated*/
+    pai->lalm = 1e30;
+    pai->alst = 1e30;
+    pai->mlst = 1e30;
+
     if(!(pdset = (struct aidset *)(pai->dset))) {
 	recGblRecordError(S_dev_noDSET,pai,"ai: init_record");
 	return(S_dev_noDSET);
     }
     /* must have read_ai function defined */
-    if( (pdset->number < 5) || (pdset->read_ai == NULL) ) {
+    if( (pdset->number < 6) || (pdset->read_ai == NULL) ) {
 	recGblRecordError(S_dev_missingSup,pai,"ai: init_record");
 	return(S_dev_missingSup);
     }
     pai->init = TRUE;
     if( pdset->init_record ) {
-	if((status=(*pdset->init_record)(pai))) return(status);
+	if((status=(*pdset->init_record)(pai,process))) return(status);
     }
     if(pai->linr >= 2) { /*must find breakpoint table*/
 	if( !cvtTable || (cvtTable->number < pai->linr)
@@ -196,43 +204,19 @@ static long process(paddr)
 		return(S_dev_missingSup);
 	}
 
+	/*pact must not be set true until read_ai completes*/
 	status=(*pdset->read_ai)(pai); /* read the new value */
 	pai->pact = TRUE;
-
 	/* status is one if an asynchronous record is being processed*/
-	if(status==1) return(1);
-	else if(status == -1) {
-		if(pai->stat != READ_ALARM) {/* error. set alarm condition */
-			pai->stat = READ_ALARM;
-			pai->sevr = MAJOR_ALARM;
-			pai->achn=1;
-		}
-	}
-	else if(status == -2) {
-		if(pai->stat != HW_LIMIT_ALARM) {/* error. set alarm condition */
-			pai->stat = HW_LIMIT_ALARM;
-			pai->sevr = MAJOR_ALARM;
-			pai->achn=1;
-		}
-		status=0;
-	}
-	else if(status!=0) return(status);
-	else if(pai->stat == READ_ALARM || pai->stat ==  HW_LIMIT_ALARM) {
-		pai->stat = NO_ALARM;
-		pai->sevr = NO_ALARM;
-		pai->achn=1;
-	}
-	if(status==0) status=convert_ai(pai);
+	if(status==1) return(0);
+	if(status==2) status=0; else convert(pai);
 
 	/* check for alarms */
 	alarm(pai);
-
-
 	/* check event list */
-	if(!pai->disa) status = monitor(pai);
-
+	monitor(pai);
 	/* process the forward scan link record */
-	if (pai->flnk.type==DB_LINK) dbScanPassive(&pai->flnk.value);
+	if (pai->flnk.type==DB_LINK) dbScanPassive(&pai->flnk.value.db_link.pdbAddr);
 
 	pai->init=FALSE;
 	pai->pact=FALSE;
@@ -249,7 +233,7 @@ static long special(paddr,after)
 
     switch(special_type) {
     case(SPC_LINCONV):
-	if(pdset->number<5 || !(pdset->special_linconv)) {
+	if(pdset->number<6 || !(pdset->special_linconv)) {
 	    recGblDbaddrError(S_db_noMod,paddr,"ai: special");
 	    return(S_db_noMod);
 	}
@@ -268,7 +252,7 @@ static long get_precision(paddr,precision)
     struct aiRecord	*pai=(struct aiRecord *)paddr->precord;
 
     *precision = pai->prec;
-    return(0L);
+    return(0);
 }
 
 static long get_value(pai,pvdes)
@@ -288,7 +272,7 @@ static long get_units(paddr,units)
     struct aiRecord	*pai=(struct aiRecord *)paddr->precord;
 
     strncpy(units,pai->egu,sizeof(pai->egu));
-    return(0L);
+    return(0);
 }
 
 static long get_graphic_double(paddr,pgd)
@@ -303,7 +287,7 @@ static long get_graphic_double(paddr,pgd)
     pgd->upper_warning_limit = pai->high;
     pgd->lower_warning_limit = pai->low;
     pgd->lower_alarm_limit = pai->lolo;
-    return(0L);
+    return(0);
 }
 
 static long get_control_double(paddr,pcd)
@@ -314,121 +298,101 @@ static long get_control_double(paddr,pcd)
 
     pcd->upper_ctrl_limit = pai->hopr;
     pcd->lower_ctrl_limit = pai->lopr;
-    return(0L);
+    return(0);
 }
 
-static long alarm(pai)
+static void alarm(pai)
     struct aiRecord	*pai;
 {
 	float	ftemp;
 
-	/* check for a hardware alarm */
-	if (pai->stat == READ_ALARM) return(0);
-
-	/* if in alarm and difference is not > hysterisis don't bother */
-	if (pai->stat != NO_ALARM){
-		ftemp = pai->lalm - pai->val;
-		if(ftemp<0.0) ftemp = -ftemp;
-		if (ftemp < pai->hyst) return(0);
-	}
+	/* if difference is not > hysterisis don't bother */
+	ftemp = pai->lalm - pai->val;
+	if(ftemp<0.0) ftemp = -ftemp;
+	if (ftemp < pai->hyst) return;
 
 	/* alarm condition hihi */
-	if (pai->hhsv != NO_ALARM){
+	if (pai->nsev<pai->hhsv){
 		if (pai->val > pai->hihi){
 			pai->lalm = pai->val;
-			if (pai->stat != HIHI_ALARM){
-				pai->stat = HIHI_ALARM;
-				pai->sevr = pai->hhsv;
-				pai->achn = 1;
-			}
-			return(0);
+			pai->nsta = HIHI_ALARM;
+			pai->nsev = pai->hhsv;
+			return;
 		}
 	}
 
 	/* alarm condition lolo */
-	if (pai->llsv != NO_ALARM){
+	if (pai->nsev<pai->llsv){
 		if (pai->val < pai->lolo){
 			pai->lalm = pai->val;
-			if (pai->stat != LOLO_ALARM){
-				pai->stat = LOLO_ALARM;
-				pai->sevr = pai->llsv;
-				pai->achn = 1;
-			}
-			return(0);
+			pai->nsta = LOLO_ALARM;
+			pai->nsev = pai->llsv;
+			return;
 		}
 	}
 
 	/* alarm condition high */
-	if (pai->hsv != NO_ALARM){
+	if (pai->nsev<pai->hsv){
 		if (pai->val > pai->high){
 			pai->lalm = pai->val;
-			if (pai->stat != HIGH_ALARM){
-				pai->stat = HIGH_ALARM;
-				pai->sevr =pai->hsv;
-				pai->achn = 1;
-			}
-			return(0);
+			pai->nsta = HIGH_ALARM;
+			pai->nsev =pai->hsv;
+			return;
 		}
 	}
 
 	/* alarm condition lolo */
-	if (pai->lsv != NO_ALARM){
+	if (pai->nsev<pai->lsv){
 		if (pai->val < pai->low){
 			pai->lalm = pai->val;
-			if (pai->stat != LOW_ALARM){
-				pai->stat = LOW_ALARM;
-				pai->sevr = pai->lsv;
-				pai->achn = 1;
-			}
-			return(0);
+			pai->nsta = LOW_ALARM;
+			pai->nsev = pai->lsv;
+			return;
 		}
 	}
-
-	/* no alarm */
-	if (pai->stat != NO_ALARM){
-		pai->stat = NO_ALARM;
-		pai->sevr = NO_ALARM;
-		pai->achn = 1;
-	}
-
-	return(0);
+	return;
 }
 
-static long monitor(pai)
+static void monitor(pai)
     struct aiRecord	*pai;
 {
 	unsigned short	monitor_mask;
 	float		delta;
+	short		stat,sevr,nsta,nsev;
+
+	/* get previous stat and sevr  and new stat and sevr*/
+	stat=pai->stat;
+	sevr=pai->sevr;
+	nsta=pai->nsta;
+	nsev=pai->nsev;
+	/*set current stat and sevr*/
+	pai->stat = nsta;
+	pai->sevr = nsev;
+	pai->nsta = 0;
+	pai->nsev = 0;
 
 	/* anyone waiting for an event on this record */
-	if (pai->mlis.count == 0) return(0L);
+	if (pai->mlis.count == 0) return;
 
 	/* Flags which events to fire on the value field */
 	monitor_mask = 0;
 
 	/* alarm condition changed this scan */
-	if (pai->achn){
-		/* post events for alarm condition change and value change */
-		monitor_mask = DBE_ALARM | DBE_VALUE | DBE_LOG;
-
-		/* post stat and sevr fields */
+	if (stat!=nsta || sevr!=nsev) {
+		/* post events for alarm condition change*/
+		monitor_mask = DBE_ALARM;
+		/* post stat and nsev fields */
 		db_post_events(pai,&pai->stat,DBE_VALUE);
 		db_post_events(pai,&pai->sevr,DBE_VALUE);
-
+	}
+	/* check for value change */
+	delta = pai->mlst - pai->val;
+	if(delta<0.0) delta = -delta;
+	if (delta > pai->mdel) {
+		/* post events for value change */
+		monitor_mask |= DBE_VALUE;
 		/* update last value monitored */
 		pai->mlst = pai->val;
-
-	/* check for value change */
-	}else{
-		delta = pai->mlst - pai->val;
-		if(delta<0.0) delta = -delta;
-		if (delta > pai->mdel) {
-			/* post events for value change */
-			monitor_mask = DBE_VALUE;
-
-			/* update last value monitored */
-			pai->mlst = pai->val;
-		}
 	}
 
 	/* check for archive change */
@@ -437,7 +401,6 @@ static long monitor(pai)
 	if (delta > pai->adel) {
 		/* post events on value field for archive change */
 		monitor_mask |= DBE_LOG;
-
 		/* update last archive value monitored */
 		pai->alst = pai->val;
 	}
@@ -447,24 +410,22 @@ static long monitor(pai)
 		db_post_events(pai,&pai->val,monitor_mask);
 		db_post_events(pai,&pai->rval,monitor_mask);
 	}
-	return(0L);
+	return;
 }
 
-static long convert_ai(pai)
+static void convert(pai)
 struct aiRecord	*pai;
 {
 	float			 val;
 
 
+	val = pai->rval;
 	/* adjust slope and offset */
-	if(pai->aslo != 0.0)
-		val = val * pai->aslo + pai->aoff;
-	else if(pai->aoff != 0.0)
-		val = val + pai->aoff;
+	if(pai->aslo != 0.0) val = val * pai->aslo + pai->aoff;
 
 	/* convert raw to engineering units and signal units */
 	if(pai->linr == 0) {
-		val = pai->val;
+		; /* do nothing*/
 	}
 	else if(pai->linr == 1) {
 		val = (val * pai->eslo) + pai->egul;
@@ -476,16 +437,7 @@ struct aiRecord	*pai;
 	    short	    lbrk;
 	    int		    number;
 
-	    val = pai->val;
 	    pbrkTable = (struct brkTable *) pai->pbrk;
-	    if((val<pbrkTable->rawLow) || (val>pbrkTable->rawHigh)) {
-		if(pai->stat != READ_ALARM) {
-		    pai->stat = READ_ALARM;
-		    pai->sevr = MAJOR_ALARM;
-		    pai->achn = 1;
-		}
-		return(0L);
-	    }
 	    number = pbrkTable->number;
 	    if(pai->init) lbrk = number/2; /* Just start in the middle */
 	    else {
@@ -493,21 +445,28 @@ struct aiRecord	*pai;
 		/*make sure we dont go off end of table*/
 		if( (lbrk+1) >= number ) lbrk--;
 	    }
-	    pInt = (pbrkTable->papBrkInt[lbrk]);
-	    pnxtInt = (pbrkTable->papBrkInt[lbrk+1]);
+	    pInt = pbrkTable->papBrkInt[lbrk];
+	    pnxtInt = pbrkTable->papBrkInt[lbrk+1];
 	    /* find entry for increased value */
  	    while( (pnxtInt->raw) <= val ) {
 		if( lbrk >= number-1) {
-		    errMessage(S_db_badField,"breakpoint table error");
-			return(S_db_badField);
+		    if(pai->nsev < MAJOR_ALARM) {
+			pai->nsta = SOFT_ALARM;
+			pai->nsev = MAJOR_ALARM;
+		    }
+		    break; /* out of while */
 		}
 		lbrk++;
 		pInt = pbrkTable->papBrkInt[lbrk];
+		pnxtInt = pbrkTable->papBrkInt[lbrk+1];
 	    }
 	    while( (pInt->raw) > val) {
 		if(lbrk==0) {
-		    errMessage(S_db_badField,"breakpoint table error");
-		    return(S_db_badField);
+		    if(pai->nsev < MAJOR_ALARM) {
+			pai->nsta = SOFT_ALARM;
+			pai->nsev = MAJOR_ALARM;
+		    }
+		    break; /* out of while */
 		}
 		lbrk--;
 		pInt = pbrkTable->papBrkInt[lbrk];
@@ -517,11 +476,11 @@ struct aiRecord	*pai;
 	}
 
 	/* apply smoothing algorithm */
-	if (pai->smoo != 0){
+	if (pai->smoo != 0.0){
 	    if (pai->init == 0) pai->val = val;	/* initial condition */
 	    pai->val = val * (1.00 - pai->smoo) + (pai->val * pai->smoo);
 	}else{
 	    pai->val = val;
 	}
-	return(0L);
+	return;
 }

@@ -1,4 +1,3 @@
-
 /* recPermissive.c */
 /* share/src/rec $Id$ */
 
@@ -37,16 +36,12 @@
 #include	<stdioLib.h>
 #include	<lstLib.h>
 
-#include	<alarm.h>
-#include	<cvtTable.h>
 #include	<dbAccess.h>
 #include	<dbDefs.h>
 #include	<dbFldTypes.h>
-#include	<devSup.h>
 #include	<errMdef.h>
 #include	<link.h>
 #include	<recSup.h>
-#include	<special.h>
 #include	<permissiveRecord.h>
 
 /* Create RSET - Record Support Entry Table*/
@@ -97,11 +92,24 @@ static long report(fp,paddr)
     return(0);
 }
 
+static long get_value(ppermissive,pvdes)
+    struct permissiveRecord             *ppermissive;
+    struct valueDes     *pvdes;
+{
+    pvdes->field_type = DBF_SHORT;
+    pvdes->no_elements=1;
+    (short *)(pvdes->pvalue) = &(ppermissive->val);
+    return(0);
+}
+
 static long process(paddr)
     struct dbAddr	*paddr;
 {
-    struct permissiveRecord	*ppermissive=(struct permissiveRecord *)(paddr->precord);
-	/* anyone waiting for an event on this record */
+	struct permissiveRecord	*ppermissive=(struct permissiveRecord *)(paddr->precord);
+
+	ppermissive->pact=TRUE;
+	if(ppermissive->mlis.count!=0)
+		db_post_events(ppermissive,&ppermissive->val,DBE_VALUE);
 	ppermissive->pact=FALSE;
 	return(0);
 }

@@ -16,7 +16,13 @@ ifeq ($(wildcard $(INSTALL_LOCATION_LIB)/*),)
 	@$(RMDIR) $(INSTALL_LOCATION_LIB)
 endif
 
-distclean: clean uninstall
+distclean: realclean realuninstall
+
+realuninstall:
+	@$(RMDIR) $(INSTALL_LOCATION_BIN) $(INSTALL_LOCATION_LIB)
+	@$(RMDIR) $(INSTALL_DBD) $(INSTALL_INCLUDE) $(INSTALL_DOC)\
+		$(INSTALL_HTML) $(INSTALL_JAVA) $(INSTALL_TEMPLATES) \
+		$(INSTALL_DB)
 
 uninstall: $(addprefix uninstall$(DIVIDER),$(BUILD_ARCHS))
 	@$(MAKE) -f Makefile  cleandirs
@@ -64,8 +70,10 @@ help:
 	@echo "     install        - Builds and installs all targets (default rule)"
 	@echo "     all            - Same as install"
 	@echo "     buildInstall   - Same as install"
-	@echo "     clean          - Cleans objects.  Clean removes the O.<arch> dirs"
-	@echo "                      in all except the O.<arch> level Makefile"
+	@echo "     clean          - Removes the O.<arch> dirs created by running make"
+	@echo "                      In O.<arch> dir, clean removes build created files"
+	@echo "     realclean      - Removes ALL O.<arch> dirs"
+	@echo "                      Cannot be used within an O.<arch> dir"
 	@echo "     rebuild        - Same as clean install"
 	@echo "     inc            - Installs header files"
 	@echo "     build          - Builds all targets"
@@ -76,7 +84,8 @@ help:
 	@echo "     build.<arch>   - Builds <arch> only."
 	@echo "Targets supported by top level Makefile:"
 	@echo "     uninstall      - Cleans directories created by the install."
-	@echo "     distclean      - Same as clean uninstall."
+	@echo "     realuninstall  - Removes ALL install dirs"
+	@echo "     distclean      - Same as realclean realuninstall."
 	@echo "     tar            - Create tar file "
 	@echo "     help           - Prints this list of valid make targets "
 	@echo "Indiv. object targets are supported by O.<arch> level Makefile .e.g"

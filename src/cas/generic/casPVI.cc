@@ -115,6 +115,11 @@ caStatus casPVI::attachToServer (caServerI &cas)
 		}
 	}
 	else {
+        //
+        // update only when attaching to the server so
+        // this does not change while clients are using it
+        //
+        this->updateEnumStringTable ();
 
 		//
 		// install the PV into the server
@@ -133,7 +138,7 @@ caStatus casPVI::attachToServer (caServerI &cas)
 //
 // what a API complexity nightmare this GDD is
 //
-void casPVI::updateEnumStringTable (unsigned nativeType)
+void casPVI::updateEnumStringTable ()
 {
     static const aitUint32 stringTableTypeStaticInit = 0xffffffff;
     static aitUint32 stringTableType = stringTableTypeStaticInit;
@@ -145,6 +150,15 @@ void casPVI::updateEnumStringTable (unsigned nativeType)
     // PV is attached to the server
     //
     this->enumStrTbl.clear ();
+
+    //
+    // fetch the native type
+    //
+	status = pPV->bestDBRType (nativeType);
+	if (status) {
+		errMessage(status, "best external dbr type fetch failed");
+        return;
+	}
 
     //
     // empty string table for non-enumerated PVs

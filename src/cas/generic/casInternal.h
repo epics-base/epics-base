@@ -344,7 +344,7 @@ public:
 
 	void postAccessRightsEvent ();
 
-    const vector<string> enumStringTable () const;
+    const std::vector< std::string >& enumStringTable () const;
 
     //
     // virtual functions
@@ -447,8 +447,8 @@ public:
        
     epicsShareFunc virtual casResType resourceType () const;
 
-    const vector<string> enumStringTable () const;
-    void updateEnumStringTable (unsigned nativeType);
+    const std::vector< std::string >& enumStringTable () const;
+    void updateEnumStringTable ();
 
     //
     // virtual functions in the public interface class
@@ -469,11 +469,11 @@ public:
     epicsShareFunc casPV *apiPointer (); //retuns NULL if casPVI isnt a base of casPV
 
 private:
-    tsDLList<casPVListChan> chanList;
-    vector<string>          enumStrTbl;
-    caServerI               *pCAS;
-    unsigned                nMonAttached;
-    unsigned                nIOAttached;
+    tsDLList<casPVListChan>     chanList;
+    std::vector< std::string >  enumStrTbl;
+    caServerI                   *pCAS;
+    unsigned                    nMonAttached;
+    unsigned                    nIOAttached;
    
     inline void lock () const;
     inline void unlock () const;

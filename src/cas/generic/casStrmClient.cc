@@ -1031,12 +1031,6 @@ caStatus casStrmClient::createChanResponse(const caHdr &hdr, const pvAttachRetur
 		return this->channelCreateFailed (&hdr, status);
 	}
 
-    //
-    // fetch string conversion table so that we can perform proper conversion
-    // of enumerated PVs to strings during reads
-    //
-    pPV->updateEnumStringTable (nativeType);
-
 	//
 	// attach the PV to this server
 	//

@@ -56,6 +56,7 @@ static struct {
 	read_wf,
 	NULL
 };
+epicsShareExtern dset *pdevWfTestAsyn;
 epicsShareDef dset *pdevWfTestAsyn = (dset *)&devWfTestAsyn;
 
 static long init_record(pwf)

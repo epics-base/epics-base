@@ -57,6 +57,7 @@ static struct {
 	write_ao,
 	NULL
 };
+epicsShareExtern dset *pdevAoTestAsyn;
 epicsShareDef dset *pdevAoTestAsyn = (dset *)&devAoTestAsyn;
 
 static long init_record(pao)

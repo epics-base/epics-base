@@ -46,6 +46,7 @@ static struct {
 	NULL,
 	write_mbbo
 };
+epicsShareExtern dset *pdevMbboSoft;
 epicsShareDef dset *pdevMbboSoft = (dset *)&devMbboSoft;
 
 static long init_record(mbboRecord *pmbbo)

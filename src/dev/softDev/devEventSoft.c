@@ -46,6 +46,7 @@ static struct {
 	NULL,
 	read_event
 };
+epicsShareExtern dset *pdevEventSoft;
 epicsShareDef dset *pdevEventSoft = (dset *)&devEventSoft;
 
 static long init_record(eventRecord *pevent)

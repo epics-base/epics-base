@@ -57,6 +57,7 @@ static struct {
 	write_mbbo,
 	NULL
 };
+epicsShareExtern dset *pdevMbboTestAsyn;
 epicsShareDef dset *pdevMbboTestAsyn = (dset *)&devMbboTestAsyn;
 
 static long init_record(pmbbo)

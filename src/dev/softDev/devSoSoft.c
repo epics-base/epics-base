@@ -46,6 +46,7 @@ static struct {
 	NULL,
 	write_stringout
 };
+epicsShareExtern dset *pdevSoSoft;
 epicsShareDef dset *pdevSoSoft = (dset *)&devSoSoft;
 
 static long init_record(stringoutRecord *pstringout)

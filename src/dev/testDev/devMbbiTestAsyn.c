@@ -56,6 +56,7 @@ static struct {
 	read_mbbi,
 	NULL
 };
+epicsShareExtern dset *pdevMbbiTestAsyn;
 epicsShareDef dset *pdevMbbiTestAsyn = (dset *)&devMbbiTestAsyn;
 
 static long init_record(pmbbi)

@@ -56,6 +56,7 @@ static struct {
 	write_stringout,
 	NULL
 };
+epicsShareExtern dset *pdevSoTestAsyn;
 epicsShareDef dset *pdevSoTestAsyn = (dset *)&devSoTestAsyn;
 
 static long init_record(pstringout)

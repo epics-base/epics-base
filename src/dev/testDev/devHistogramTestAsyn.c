@@ -52,6 +52,7 @@ static struct {
 	read_histogram,
 	NULL
 };
+epicsShareExtern dset *pdevHistogramTestAsyn;
 epicsShareDef dset *pdevHistogramTestAsyn = (dset *)&devHistogramTestAsyn;
 
 static long init_record(phistogram)

@@ -52,6 +52,7 @@ static struct {
 	init_record,
 	NULL,
 	write_bo};
+epicsShareExtern dset *pdevBoSoftRaw;
 epicsShareDef dset *pdevBoSoftRaw = (dset *)&devBoSoftRaw;
 
 

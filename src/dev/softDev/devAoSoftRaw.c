@@ -51,6 +51,7 @@ static struct {
 	NULL,
 	write_ao,
 	NULL};
+epicsShareExtern dset *pdevAoSoftRaw;
 epicsShareDef dset *pdevAoSoftRaw = (dset *)&devAoSoftRaw;
 
 static long write_ao(aoRecord *pao)

@@ -47,6 +47,7 @@ static struct {
 	NULL,
 	read_longin
 };
+epicsShareExtern dset *pdevLiSoft;
 epicsShareDef dset *pdevLiSoft = (dset *)&devLiSoft;
 
 static long init_record(longinRecord *plongin)

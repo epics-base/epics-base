@@ -55,6 +55,7 @@ static struct {
 	read_stringin,
 	NULL
 };
+epicsShareExtern dset *pdevSiTestAsyn;
 epicsShareDef dset *pdevSiTestAsyn = (dset *)&devSiTestAsyn;
 
 static long init_record(pstringin)

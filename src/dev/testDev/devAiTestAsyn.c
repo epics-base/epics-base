@@ -56,6 +56,7 @@ static struct {
 	read_ai,
 	NULL
 };
+epicsShareExtern dset *pdevAiTestAsyn;
 epicsShareDef dset *pdevAiTestAsyn = (dset *)&devAiTestAsyn;
 
 

@@ -49,6 +49,7 @@ static struct {
 	get_ioint_info,
 	read_event
 };
+epicsShareExtern dset *pdevEventTestIoEvent;
 epicsShareDef dset *pdevEventTestIoEvent = (dset *)&devEventTestIoEvent;
 
 typedef struct myCallback {

@@ -46,6 +46,7 @@ static struct {
 	NULL,
 	read_mbbi
 };
+epicsShareExtern dset *pdevMbbiSoft;
 epicsShareDef dset *pdevMbbiSoft = (dset *)&devMbbiSoft;
 
 static long init_record(mbbiRecord *pmbbi)

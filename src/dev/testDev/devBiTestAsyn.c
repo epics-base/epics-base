@@ -56,6 +56,7 @@ static struct {
 	read_bi,
 	NULL
 };
+epicsShareExtern dset *pdevBiTestAsyn;
 epicsShareDef dset *pdevBiTestAsyn = (dset *)&devBiTestAsyn;
 
 static long init_record(pbi)

@@ -51,6 +51,7 @@ static struct {
 	NULL,
 	read_wf
 };
+epicsShareExtern dset *pdevWfSoft;
 epicsShareDef dset *pdevWfSoft = (dset *)&devWfSoft;
 
 

@@ -46,6 +46,7 @@ static struct {
 	NULL,
 	read_bi
 };
+epicsShareExtern dset *pdevBiSoftRaw;
 epicsShareDef dset *pdevBiSoftRaw = (dset *)&devBiSoftRaw;
 
 static long init_record(biRecord *pbi)

@@ -54,6 +54,7 @@ static struct {
 	NULL,
 	write_ao,
 	NULL};
+epicsShareExtern dset *pdevAoSoft;
 epicsShareDef dset *pdevAoSoft = (dset *)&devAoSoft;
 
 

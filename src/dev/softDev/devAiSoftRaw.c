@@ -51,6 +51,7 @@ static struct {
 	read_ai,
 	NULL
 };
+epicsShareExtern dset *pdevAiSoftRaw;
 epicsShareDef dset *pdevAiSoftRaw = (dset *)&devAiSoftRaw;
 
 static long init_record(aiRecord *pai)

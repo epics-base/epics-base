@@ -25,6 +25,7 @@
 #include <rtems/error.h>
 #include <rtems/stackchk.h>
 #include <rtems/rtems_bsdnet.h>
+#include <rtems/imfs.h>
 
 #include <epicsThread.h>
 #include <errlog.h>
@@ -35,7 +36,7 @@
 /*
  * Architecture-dependent routines
  */
-#ifdef __mcpu32__
+#if defined(__mcpu32__)
 #include <m68360.h>
 static void
 logReset (void)
@@ -169,6 +170,36 @@ mustMalloc(int size, const char *msg)
 # include <rtems/tftp.h>
 #endif
 
+static int
+initialize_local_filesystem(const char **argv)
+{
+    argv[0] = rtems_bsdnet_bootp_boot_file_name;
+
+#if defined(__mcf528x__)
+    extern char _DownloadLocation[], _edata[], _FlashBase[];
+    unsigned long flashIndex = _edata - _DownloadLocation;
+    char *header;
+
+    header = _FlashBase + flashIndex;
+    if (memcmp(header + 257, "ustar  ", 8) == 0) {
+        int fd;
+        printf ("***** Unpack in-memory file system (IMFS) *****\n");
+        if (rtems_tarfs_load("/", header, 2000000) != 0) {
+            printf("Can't unpack tar filesystem\n");
+            return -1;
+        }
+        if ((fd = open(rtems_bsdnet_bootp_cmdline, 0)) >= 0) {
+            close(fd);
+            printf ("***** Found startup script (%s) in IMFS *****\n", rtems_bsdnet_bootp_cmdline);
+            argv[1] = rtems_bsdnet_bootp_cmdline;
+            return 0;
+        }
+        printf ("***** Startup script (%s) not in IMFS *****\n", rtems_bsdnet_bootp_cmdline);
+    }
+#endif
+    return -1;
+}
+
 static void
 initialize_remote_filesystem(const char **argv)
 {
@@ -232,7 +263,6 @@ initialize_remote_filesystem(const char **argv)
     nfsMount(rtems_bsdnet_bootp_server_name, server_path, mount_point);
     free(cp);
 #endif
-    argv[0] = rtems_bsdnet_bootp_boot_file_name;
 }
 
 /*
@@ -247,12 +277,16 @@ set_directory (const char *commandline)
     int l;
 
     cp = strrchr(commandline, '/');
-    if (cp == NULL)
-        l = strlen(commandline);
-    else
+    if (cp == NULL) {
+        l = 0;
+        cp = "/";
+    }
+    else {
         l = cp - commandline;
+        cp = commandline;
+    }
     directoryPath = mustMalloc(l + 2, "Command path directory ");
-    strncpy(directoryPath, commandline, l);
+    strncpy(directoryPath, cp, l);
     directoryPath[l] = '/';
     directoryPath[l+1] = '\0';
     if (chdir (directoryPath) < 0)
@@ -416,7 +450,8 @@ Init (rtems_task_argument ignored)
     }
     printf ("\n***** Initializing network *****\n");
     rtems_bsdnet_initialize_network ();
-    initialize_remote_filesystem (argv);
+    if (initialize_local_filesystem (argv) != 0)
+        initialize_remote_filesystem (argv);
 
     /*
      * Use BSP-supplied time of day if available

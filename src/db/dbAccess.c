@@ -390,7 +390,7 @@ long dbGetLink(
 	struct dbCommon *psource=paddr->precord;
 	long	status;
 
-	if(pdblink->process_passive && psource->scan!=0) {
+	if(pdblink->process_passive && psource->scan==0) {
 		status=dbScanPassive(pdest,psource);
 		if(status) return(status);
 	}

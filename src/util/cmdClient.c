@@ -27,6 +27,7 @@
  * -----------------
  * .01	11-26-90	rac	initial version
  * .02	07-30-91	rac	installed in SCCS
+ * .03  09-11-91	joh	updated for v5 vxWorks
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -95,7 +96,7 @@
 *	A cmdcl descriptor is the `master handle' which is used for
 *	handling business.
 *----------------------------------------------------------------------------*/
-#define CmdclLock semTake(pglCmdclCtx->semLock)
+#define CmdclLock semTake(pglCmdclCtx->semLock, WAIT_FOREVER)
 #define CmdclUnlock semGive(pglCmdclCtx->semLock)
 #define CmdclLockCheck semClear(pglCmdclCtx->semLock)
 #define CmdclLockInitAndLock semInit(pglCmdclCtx->semLock)

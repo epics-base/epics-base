@@ -27,6 +27,8 @@
  * -----------------
  * .00	11-23-90	rac	initial version
  * .01	06-18-91	rac	installed in SCCS
+ * .02	09-05-91	joh	updated for v5 vxWorks
+ *				included systime.h for utime.h
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -71,7 +73,11 @@
 #   include <ioLib.h>
 #   include <taskLib.h>
 #   include <types.h>
-#   include <utime.h>
+#	ifdef V5_vxWorks
+#   		include <systime.h>
+#	else
+#   		include <utime.h>
+#	endif
 #   include <socket.h>
 #   include <inetLib.h>
 #   include <in.h>

@@ -27,6 +27,7 @@
  * -----------------
  * .01	10-24-90	rac	initial version
  * .02	07-30-91	rac	installed in SCCS; changed to use EPICS_ENV..
+ * .03  09-11-91	joh	updated for v5 vxWorks
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -136,7 +137,7 @@
 *	A zzz descriptor is the `master handle' which is used for
 *	handling business.
 *----------------------------------------------------------------------------*/
-#define ZzzLock semTake(pglZzzCtx->semLock)
+#define ZzzLock semTake(pglZzzCtx->semLock, WAIT_FOREVER)
 #define ZzzUnlock semGive(pglZzzCtx->semLock)
 #define ZzzLockCheck semClear(pglZzzCtx->semLock)
 #define ZzzLockInitAndLock semInit(pglZzzCtx->semLock)

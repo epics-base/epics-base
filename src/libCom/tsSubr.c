@@ -29,6 +29,7 @@
  * .01	06-18-91	rac	installed in SCCS
  * .02	07-20-91	rac	use EPICS_TS_MIN_WEST to override TS_MIN_WEST
  * .03	08-16-91	rac	use envGetLongConfigParam
+ * .04	09-05-91	joh	updated for v5 vxWorks
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -578,12 +579,12 @@ TS_STAMP *pStamp;	/* O pointer to time stamp buffer */
     pStamp->secPastEpoch = 30 * 86400 + 495;	/* 0815 Jan 31 of epoch year */
 #  else
     extern TS_STAMP time_stamp;	/* VxWorks global time stamp */
-    int		prevIntLevel;
+    int		key;
 
     assert(pStamp != NULL);
-    prevIntLevel = intLock();
+    key = intLock();
     *pStamp = time_stamp;
-    intUnlock(prevIntLevel);
+    intUnlock(key);
 #  endif
 #elif VMS
     assert(0);		/* not available on VMS */

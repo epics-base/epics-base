@@ -171,11 +171,11 @@ $(TARGETS) $(PROD): $(DEPLIBS)
 
 $(INSTALL_DBD)/%: %
 	@echo "Installing $@"
-	@$(INSTALL) -m 644 $< $(INSTALL_DBD)
+	@$(INSTALL) -d -m 644 $< $(INSTALL_DBD)
  
 $(INSTALL_DBD)/%: ../%
 	@echo "Installing $@"
-	@$(INSTALL) -m 644 $< $(INSTALL_DBD)
+	@$(INSTALL) -d -m 644 $< $(INSTALL_DBD)
  
 %Record.h: %Record.dbd
 	$(RM) $@
@@ -219,26 +219,26 @@ $(LIBNAME): $(LIBOBJS)
 
 $(INSTALL_BIN)/%: % 
 	@echo "Installing Binary $@"
-	@$(INSTALL_PRODUCT) -m 555 $< $(INSTALL_BIN)
+	@$(INSTALL_PRODUCT) -d -m 555 $< $(INSTALL_BIN)
 
 $(INSTALL_BIN)/%: ../% 
 	@echo "Installing Binary $@"
-	@$(INSTALL_PRODUCT) -m 555 $< $(INSTALL_BIN)
+	@$(INSTALL_PRODUCT) -d -m 555 $< $(INSTALL_BIN)
 
 $(INSTALL_LIB)/%.a: %.a 
 	@echo "Installing library $@"
-	@$(INSTALL) -m 644 $< $(INSTALL_LIB)
+	@$(INSTALL) -d -m 644 $< $(INSTALL_LIB)
 	@if [ ! -z "$(RANLIB)" ] ; then\
 		$(RANLIB) $(RANLIBFLAGS) $@; \
 	fi
 
 $(INSTALL_TCLLIB)/%: % 
 	@echo "Installing Tcl library $@"
-	@$(INSTALL) -m 555 $< $(INSTALL_TCLLIB)
+	@$(INSTALL) -d -m 555 $< $(INSTALL_TCLLIB)
 
 $(INSTALL_TCLLIB)/%: ../% 
 	@echo "Installing Tcl library $@"
-	@$(INSTALL) -m 555 $< $(INSTALL_TCLLIB)
+	@$(INSTALL) -d -m 555 $< $(INSTALL_TCLLIB)
 
 $(INSTALL_TCLLIB)/$(TCLINDEX): $(INSTALL_TCLLIBS)
 	@echo "Updating $@"
@@ -246,35 +246,35 @@ $(INSTALL_TCLLIB)/$(TCLINDEX): $(INSTALL_TCLLIBS)
  
 $(INSTALL_CONFIG)/%: % 
 	@echo "Installing Config File $@"
-	@$(INSTALL) -m 644 $< $(INSTALL_CONFIG)
+	@$(INSTALL) -d -m 644 $< $(INSTALL_CONFIG)
 
 $(INSTALL_CONFIG)/%: ../% 
 	@echo "Installing Config File $@"
-	@$(INSTALL) -m 644 $< $(INSTALL_CONFIG)
+	@$(INSTALL) -d -m 644 $< $(INSTALL_CONFIG)
 
 $(addsuffix /%,$(MAN_DIRECTORY_TARGETS)) : % 
 	@echo "Installing man file $@"
-	@$(INSTALL) -m 644 $< $(@D)
+	@$(INSTALL) -d -m 644 $< $(@D)
 
 $(addsuffix /%,$(MAN_DIRECTORY_TARGETS)) : ../% 
 	@echo "Installing man file $@"
-	@$(INSTALL) -m 644 $< $(@D)
+	@$(INSTALL) -d -m 644 $< $(@D)
 
 $(INSTALL_INCLUDE)/%: % 
 	@echo "Installing Include File $@"
-	@$(INSTALL) -m 644 $< $(@D)
+	@$(INSTALL) -d -m 644 $< $(@D)
 
 $(INSTALL_INCLUDE)/%: ../% 
 	@echo "Installing Include File $@"
-	@$(INSTALL) -m 644 $< $(@D)
+	@$(INSTALL) -d -m 644 $< $(@D)
 
 $(INSTALL_DOC)/%: % 
 	@echo "Installing doc $@"
-	@$(INSTALL) -m 644 $< $(INSTALL_DOC)
+	@$(INSTALL) -d -m 644 $< $(INSTALL_DOC)
 
 $(INSTALL_DOC)/%: ../% 
 	@echo "Installing doc $@"
-	@$(INSTALL) -m 644 $< $(INSTALL_DOC)
+	@$(INSTALL) -d -m 644 $< $(INSTALL_DOC)
 
 $(INSTALL_HTML)/$(HTMLS_DIR)/%: % 
 	@echo "Installing html $@"

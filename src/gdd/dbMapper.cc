@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.25  1999/05/10 23:41:38  jhill
+// fixed sleazy time stamp cast, and some const problems
+//
 // Revision 1.24  1999/05/07 20:01:00  jhill
 // fixed missing const
 //
@@ -126,55 +129,71 @@ epicsShareDef extern const chtype gddAitToDbr[] = {
 	DBR_STRING
 };
 
+epicsShareDef extern const unsigned gddDbrToAitNElem = 
+        sizeof(gddAitToDbr)/sizeof(chtype);
+
 /*
  * application type ("app" field) is initialized
  * at run tim using the "app_name" field.
  */
-epicsShareDef gddDbrToAitTable gddDbrToAit[] = {
-	// normal
-	{ aitEnumFixedString,	0,	"value" },
-	{ aitEnumInt16,		0,	"value" },
-	{ aitEnumFloat32,	0,	"value" },
-	{ aitEnumEnum16,	0,	"value" },
-	{ aitEnumInt8,		0,	"value" },
-	{ aitEnumInt32,		0,	"value" },
-	{ aitEnumFloat64,	0,	"value" },
-	// STS
-	{ aitEnumFixedString,	0,	"value" },
-	{ aitEnumInt16,		0,	"value" },
-	{ aitEnumFloat32,	0,	"value" },
-	{ aitEnumEnum16,	0,	"value" },
-	{ aitEnumInt8,		0,	"value" },
-	{ aitEnumInt32,		0,	"value" },
-	{ aitEnumFloat64,	0,	"value" },
-	// TIME
-	{ aitEnumFixedString,	0,	"value" },
-	{ aitEnumInt16,		0,	"value" },
-	{ aitEnumFloat32,	0,	"value" },
-	{ aitEnumEnum16,	0,	"value" },
-	{ aitEnumInt8,		0,	"value" },
-	{ aitEnumInt32,		0,	"value" },
-	{ aitEnumFloat64,	0,	"value" },
-	// Graphic
-	{ aitEnumFixedString,	0,	"value" },
-	{ aitEnumInt16,		0,	"dbr_gr_short" },
-	{ aitEnumFloat32,	0,	"dbr_gr_float" },
-	{ aitEnumEnum16,	0,	"dbr_gr_enum" },
-	{ aitEnumInt8,		0,	"dbr_gr_char" },
-	{ aitEnumInt32,		0,	"dbr_gr_long" },
-	{ aitEnumFloat64,	0,	"dbr_gr_double" },
-	// control
-	{ aitEnumFixedString,	0,	"value" },
-	{ aitEnumInt16,		0,	"dbr_ctrl_short" },
-	{ aitEnumFloat32,	0,	"dbr_ctrl_float" },
-	{ aitEnumEnum16,	0,	"dbr_ctrl_enum" },
-	{ aitEnumInt8,		0,	"dbr_ctrl_char" },
-	{ aitEnumInt32,		0,	"dbr_ctrl_long" },
-	{ aitEnumFloat64,	0,	"dbr_ctrl_double" }
+epicsShareDef gddDbrToAitTable gddDbrToAit[DBM_N_DBR_TYPES] = {
+    // Atomic
+    { aitEnumFixedString,	0,	"value" },              // DBR_STRING
+    { aitEnumInt16,		    0,	"value" },              // DBR_SHORT
+    { aitEnumFloat32,	    0,	"value" },              // DBR_FLOAT
+    { aitEnumEnum16,	    0,	"value" },              // DBR_ENUM
+    { aitEnumInt8,		    0,	"value" },              // DBR_CHAR
+    { aitEnumInt32,		    0,	"value" },              // DBR_LONG
+    { aitEnumFloat64,	    0,	"value" },              // DBR_DOUBLE
+    // Status
+    { aitEnumFixedString,	0,	"value" },              // DBR_STS_STRING
+    { aitEnumInt16,		    0,	"value" },              // DBR_STS_SHORT
+    { aitEnumFloat32,	    0,	"value" },              // DBR_STS_FLOAT
+    { aitEnumEnum16,	    0,	"value" },              // DBR_STS_ENUM
+    { aitEnumInt8,		    0,	"value" },              // DBR_STS_CHAR
+    { aitEnumInt32,		    0,	"value" },              // DBR_STS_LONG
+    { aitEnumFloat64,	    0,	"value" },              // DBR_STS_DOUBLE
+    // Time
+    { aitEnumFixedString,	0,	"value" },              // DBR_TIME_STRING
+    { aitEnumInt16,		    0,	"value" },              // DBR_TIME_SHORT
+    { aitEnumFloat32,	    0,	"value" },              // DBR_TIME_FLOAT
+    { aitEnumEnum16,	    0,	"value" },              // DBR_TIME_ENUM
+    { aitEnumInt8,		    0,	"value" },              // DBR_TIME_CHAR
+    { aitEnumInt32,		    0,	"value" },              // DBR_TIME_LONG
+    { aitEnumFloat64,	    0,	"value" },              // DBR_TIME_DOUBLE
+    // Graphic
+    { aitEnumFixedString,	0,	"value" },              // DBR_GR_STRING
+    { aitEnumInt16,		    0,	"dbr_gr_short" },       // DBR_GR_SHORT
+    { aitEnumFloat32,	    0,	"dbr_gr_float" },       // DBR_GR_FLOAT
+    { aitEnumEnum16,	    0,	"dbr_gr_enum" },        // DBR_GR_ENUM
+    { aitEnumInt8,		    0,	"dbr_gr_char" },        // DBR_GR_CHAR
+    { aitEnumInt32,		    0,	"dbr_gr_long" },        // DBR_GR_LONG
+    { aitEnumFloat64,	    0,	"dbr_gr_double" },      // DBR_GR_DOUBLE
+    // Control
+    { aitEnumFixedString,   0,  "value" },              // DBR_CTRL_STRING
+    { aitEnumInt16,		    0,	"dbr_ctrl_short" },     // DBR_CTRL_SHORT
+    { aitEnumFloat32,	    0,	"dbr_ctrl_float" },     // DBR_CTRL_FLOAT
+    { aitEnumEnum16,	    0,	"dbr_ctrl_enum" },      // DBR_CTRL_ENUM
+    { aitEnumInt8,		    0,	"dbr_ctrl_char" },      // DBR_CTRL_CHAR
+    { aitEnumInt32,		    0,	"dbr_ctrl_long" },      // DBR_CTRL_LONG
+    { aitEnumFloat64,	    0,	"dbr_ctrl_double" },     // DBR_CTRL_DOUBLE
+    // Ack
+    { aitEnumUint16,        0,  "ackt" },               // DBR_PUT_ACKT
+    { aitEnumUint16,        0,  "acks" },               // DBR_PUT_ACKS
+    { aitEnumFixedString,   0,  "dbr_stsack_string" },  // DBR_STSACK_STRING
+    // Class
+    { aitEnumFixedString,   0,  "class" }               // DBR_CLASS_NAME
 };
+
+#if DBM_N_DBR_TYPES != (LAST_BUFFER_TYPE+1)
+#error db mapper is out of sync with db_access.h
+#endif
 
 static gddApplicationTypeTable* type_table = NULL;
 static aitDataFormat local_data_format=aitLocalDataFormat;
+
+epicsShareDef extern const unsigned gddAitToDbrNElem = 
+        sizeof(gddDbrToAit)/sizeof(gddDbrToAitTable);
 
 //
 // special gddDestructor guarantees same form of new and delete
@@ -187,7 +206,7 @@ class dbMapperFixedStringDestructor: public gddDestructor {
 // I generated a container for each of the important DBR types.  This
 // includes all the control and graphic structures.  The others are
 // not needed become you can get time stamp and status in each gdd.
-// Currently the containers are build here with c++ code.
+// Currently the containers are built here with c++ code.
 
 // string type needs to be written special and not use template
 // maybe create a template for the string type
@@ -208,32 +227,34 @@ static gdd* mapStringToGdd(void* v,aitIndex count) {
 	else
 	{
 		dd=new gddAtomic(to_app,to_type,1,count);
-		dd->putRef(db);
+        aitFixedString* pCopy = new aitFixedString [count];
+        memcpy (pCopy,db,sizeof(aitFixedString)*count);
+		dd->putRef(db,new dbMapperFixedStringDestructor);
 	}
 	return dd;
 }
 
-static int mapGddToString(void* vd, aitIndex count, const gdd& dd) {
+static int mapGddToString(void* vd, aitIndex count, const gdd& dd, const vector< string > &enumStringTable) {
 	aitFixedString* db = (aitFixedString*)vd;
 	aitIndex sz = dd.getDataSizeElements();
 	const void* v = dd.dataVoid();
 	int status;
 
-	if (count<=sz) {
-		if(local_data_format==aitLocalDataFormat) {
-			if((aitFixedString*)v!=db) {
-				status = aitConvert(aitEnumFixedString,db,dd.primitiveType(),v,count);
-			}
-			else {
-				status = sz*sizeof(aitFixedString);
-			}
+    if (count>sz) {
+        memset (db+sz, '\0', sizeof(*db)*(count-sz));
+        count = sz;
+    }
+
+	if(local_data_format==aitLocalDataFormat) {
+		if((aitFixedString*)v!=db) {
+			status = aitConvert(aitEnumFixedString,db,dd.primitiveType(),v,count, enumStringTable);
 		}
 		else {
-			status = aitConvertToNet(aitEnumFixedString,db,dd.primitiveType(),v,count);
+			status = sz*sizeof(aitFixedString);
 		}
 	}
 	else {
-		status = -1;
+		status = aitConvertToNet(aitEnumFixedString,db,dd.primitiveType(),v,count, enumStringTable);
 	}
 	
 	return status;
@@ -246,7 +267,9 @@ static gdd* mapShortToGdd(void* v,aitIndex count) {
 	if(count>1) {
 		dd=new gddAtomic(gddDbrToAit[DBR_SHORT].app,
 			gddDbrToAit[DBR_SHORT].type,1,count);
-		dd->putRef(sv);
+        dbr_short_t* pCopy = (dbr_short_t*) new char [sizeof(dbr_short_t)*count];
+        memcpy (pCopy,sv,sizeof(dbr_short_t)*count);
+		dd->putRef(pCopy, new gddDestructor);
 	} else {
 		dd=new gddScalar(gddDbrToAit[DBR_SHORT].app);
 		*dd=*sv;
@@ -254,27 +277,27 @@ static gdd* mapShortToGdd(void* v,aitIndex count) {
 	return dd;
 }
 
-static int mapGddToShort(void* vd, aitIndex count, const gdd &dd) {
+static int mapGddToShort(void* vd, aitIndex count, const gdd &dd, const vector<string> &enumStringTable) {
 	dbr_short_t* sv = (dbr_short_t*)vd;
     aitIndex sz = dd.getDataSizeElements();
 	const void * v=dd.dataVoid();
 	int status;
 
-	if (count==sz) {
-		if (local_data_format==aitLocalDataFormat) {
-			if((dbr_short_t*)v!=sv) {
-				status = aitConvert(aitEnumInt16,sv,dd.primitiveType(),v,sz);
-			}
-			else {
-				status = sz*sizeof(dbr_short_t);
-			}
+    if (count>sz) {
+        memset (sv+sz, '\0', sizeof(*sv)*(count-sz));
+        count = sz;
+    }
+
+	if (local_data_format==aitLocalDataFormat) {
+		if((dbr_short_t*)v!=sv) {
+			status = aitConvert(aitEnumInt16,sv,dd.primitiveType(),v,count, enumStringTable);
 		}
 		else {
-			status = aitConvertToNet(aitEnumInt16,sv,dd.primitiveType(),v,sz);
+			status = count*sizeof(dbr_short_t);
 		}
 	}
 	else {
-		status = -1;
+		status = aitConvertToNet(aitEnumInt16,sv,dd.primitiveType(),v,count, enumStringTable);
 	}
 
 	return status;
@@ -287,7 +310,9 @@ static gdd* mapFloatToGdd(void* v,aitIndex count) {
 	if(count>1) {
 		dd=new gddAtomic(gddDbrToAit[DBR_FLOAT].app,
 			gddDbrToAit[DBR_FLOAT].type,1,count);
-		dd->putRef(sv);
+        dbr_float_t* pCopy = (dbr_float_t*) new char [sizeof(dbr_float_t)*count];
+        memcpy (pCopy,sv,sizeof(dbr_float_t)*count);
+		dd->putRef(pCopy, new gddDestructor);
 	} else {
 		dd=new gddScalar(gddDbrToAit[DBR_FLOAT].app);
 		*dd=*sv;
@@ -295,27 +320,27 @@ static gdd* mapFloatToGdd(void* v,aitIndex count) {
 	return dd;
 }
 
-static int mapGddToFloat(void* vd, aitIndex count, const gdd& dd) {
+static int mapGddToFloat(void* vd, aitIndex count, const gdd& dd, const vector<string> &enumStringTable) {
 	dbr_float_t* sv = (dbr_float_t*)vd;
     aitIndex sz=dd.getDataSizeElements();
 	const void * v = dd.dataVoid();
 	int status;
 
-	if (count==sz) {
-		if(local_data_format==aitLocalDataFormat) {
-			if((dbr_float_t*)v!=sv) {
-				status = aitConvert(aitEnumFloat32,sv,dd.primitiveType(),v,sz);
-			}
-			else {
-				status = sz*sizeof(dbr_float_t);
-			}
+    if (count>sz) {
+        memset (sv+sz, '\0', sizeof(*sv)*(count-sz));
+        count = sz;
+    }
+
+	if(local_data_format==aitLocalDataFormat) {
+		if((dbr_float_t*)v!=sv) {
+			status = aitConvert(aitEnumFloat32,sv,dd.primitiveType(),v,count, enumStringTable);
 		}
 		else {
-			status = aitConvertToNet(aitEnumFloat32,sv,dd.primitiveType(),v,sz);
+			status = sz*sizeof(dbr_float_t);
 		}
 	}
 	else {
-		status = -1;
+		status = aitConvertToNet(aitEnumFloat32,sv,dd.primitiveType(),v,count, enumStringTable);
 	}
 
 	return status;
@@ -328,7 +353,9 @@ static gdd* mapEnumToGdd(void* v,aitIndex count) {
 	if(count>1) {
 		dd=new gddAtomic(gddDbrToAit[DBR_ENUM].app,
 			gddDbrToAit[DBR_ENUM].type,1,count);
-		dd->putRef(sv);
+        dbr_enum_t* pCopy = (dbr_enum_t *) new char [sizeof(dbr_enum_t)*count];
+        memcpy (pCopy,sv,sizeof(dbr_enum_t)*count);
+		dd->putRef(pCopy, new gddDestructor);
 	} else {
 		dd=new gddScalar(gddDbrToAit[DBR_ENUM].app);
 		*dd=*sv;
@@ -336,27 +363,27 @@ static gdd* mapEnumToGdd(void* v,aitIndex count) {
 	return dd;
 }
 
-static int mapGddToEnum(void* vd, aitIndex count, const gdd& dd) {
+static int mapGddToEnum(void* vd, aitIndex count, const gdd& dd, const vector<string> &enumStringTable) {
 	dbr_enum_t* sv = (dbr_enum_t*)vd;
     aitIndex sz=dd.getDataSizeElements();
 	const void* v = dd.dataVoid();
 	int status;
 
-	if (count==sz) {
-		if(local_data_format==aitLocalDataFormat) {
-			if((dbr_enum_t*)v!=sv) {
-				status = aitConvert(aitEnumEnum16,sv,dd.primitiveType(),v,sz);
-			}
-			else {
-				status = sizeof(dbr_enum_t)*count;
-			}
+    if (count>sz) {
+        memset (sv+sz, '\0', sizeof(*sv)*(count-sz));
+        count = sz;
+    }
+
+	if(local_data_format==aitLocalDataFormat) {
+		if((dbr_enum_t*)v!=sv) {
+			status = aitConvert(aitEnumEnum16,sv,dd.primitiveType(),v,count, enumStringTable);
 		}
 		else {
-			status = aitConvertToNet(aitEnumEnum16,sv,dd.primitiveType(),v,sz);
+			status = sizeof(dbr_enum_t)*count;
 		}
 	}
 	else {
-		status = -1;
+		status = aitConvertToNet(aitEnumEnum16,sv,dd.primitiveType(),v,count, enumStringTable);
 	}
 
 	return status;
@@ -369,7 +396,9 @@ static gdd* mapCharToGdd(void* v,aitIndex count) {
 	if(count>1) {
 		dd=new gddAtomic(gddDbrToAit[DBR_CHAR].app,
 			gddDbrToAit[DBR_CHAR].type,1,count);
-		dd->putRef(sv);
+        dbr_char_t* pCopy = (dbr_char_t *) new char [sizeof(dbr_char_t)*count];
+        memcpy (pCopy,sv,sizeof(dbr_char_t)*count);
+		dd->putRef(pCopy, new gddDestructor);
 	} else {
 		dd=new gddScalar(gddDbrToAit[DBR_CHAR].app);
 		*dd=*sv;
@@ -377,27 +406,27 @@ static gdd* mapCharToGdd(void* v,aitIndex count) {
 	return dd;
 }
 
-static int mapGddToChar(void* vd, aitIndex count, const gdd& dd) {
+static int mapGddToChar(void* vd, aitIndex count, const gdd& dd, const vector<string> &enumStringTable) {
 	dbr_char_t* sv = (dbr_char_t*)vd;
     aitIndex sz=dd.getDataSizeElements();
 	const void* v = dd.dataVoid();
 	int status;
 
-	if (count==sz) {
-		if (local_data_format==aitLocalDataFormat) {
-			if((dbr_char_t*)v!=sv) {
-				status = aitConvert(aitEnumInt8,sv,dd.primitiveType(),v,sz);
-			}
-			else {
-				status = sz*sizeof(dbr_char_t);
-			}
+   if (count>sz) {
+        memset (sv+sz, '\0', sizeof(*sv)*(count-sz));
+        count = sz;
+    }
+
+	if (local_data_format==aitLocalDataFormat) {
+		if((dbr_char_t*)v!=sv) {
+			status = aitConvert(aitEnumInt8,sv,dd.primitiveType(),v,count, enumStringTable);
 		}
 		else {
-			status = aitConvertToNet(aitEnumInt8,sv,dd.primitiveType(),v,sz);
+			status = sz*sizeof(dbr_char_t);
 		}
 	}
 	else {
-		status = -1;
+		status = aitConvertToNet(aitEnumInt8,sv,dd.primitiveType(),v,count, enumStringTable);
 	}
 
 	return status;
@@ -410,7 +439,9 @@ static gdd* mapLongToGdd(void* v,aitIndex count) {
 	if(count>1) {
 		dd=new gddAtomic(gddDbrToAit[DBR_LONG].app,
 			gddDbrToAit[DBR_LONG].type,1,count);
-		dd->putRef(sv);
+        dbr_long_t* pCopy = (dbr_long_t*) new char [sizeof(dbr_long_t)*count];
+        memcpy (pCopy,sv,sizeof(dbr_long_t)*count);
+		dd->putRef(pCopy, new gddDestructor);
 	} else {
 		dd=new gddScalar(gddDbrToAit[DBR_LONG].app);
 		*dd=*sv;
@@ -418,27 +449,27 @@ static gdd* mapLongToGdd(void* v,aitIndex count) {
 	return dd;
 }
 
-static int mapGddToLong(void* vd, aitIndex count, const gdd& dd) {
+static int mapGddToLong(void* vd, aitIndex count, const gdd& dd, const vector<string> &enumStringTable) {
 	dbr_long_t* sv = (dbr_long_t*)vd;
     aitIndex sz=dd.getDataSizeElements();
 	const void* v = dd.dataVoid();
 	int status;
 
-	if (count==sz) {
-		if (local_data_format==aitLocalDataFormat) {
-			if ((dbr_long_t*)v!=sv) {
-				status = aitConvert(aitEnumInt32,sv,dd.primitiveType(),v,sz);
-			}
-			else {
-				status = count*sizeof(dbr_long_t);
-			}
+    if (count>sz) {
+        memset (sv+sz, '\0', sizeof(*sv)*(count-sz));
+        count = sz;
+    }
+
+	if (local_data_format==aitLocalDataFormat) {
+		if ((dbr_long_t*)v!=sv) {
+			status = aitConvert(aitEnumInt32,sv,dd.primitiveType(),v,count, enumStringTable);
 		}
 		else {
-			status = aitConvertToNet(aitEnumInt32,sv,dd.primitiveType(),v,sz);
+			status = count*sizeof(dbr_long_t);
 		}
 	}
 	else {
-		status = -1;
+		status = aitConvertToNet(aitEnumInt32,sv,dd.primitiveType(),v,count, enumStringTable);
 	}
 
 	return status;
@@ -451,7 +482,9 @@ static gdd* mapDoubleToGdd(void* v,aitIndex count) {
 	if(count>1) {
 		dd=new gddAtomic(gddDbrToAit[DBR_DOUBLE].app,
 			gddDbrToAit[DBR_DOUBLE].type,1,count);
-		dd->putRef(sv);
+        dbr_double_t* pCopy = (dbr_double_t *) new char [sizeof(dbr_double_t)*count];
+        memcpy (pCopy,sv,sizeof(dbr_double_t)*count);
+		dd->putRef(pCopy, new gddDestructor);
 	} else {
 		dd=new gddScalar(gddDbrToAit[DBR_DOUBLE].app);
 		*dd=*sv;
@@ -459,27 +492,27 @@ static gdd* mapDoubleToGdd(void* v,aitIndex count) {
 	return dd;
 }
 
-static int mapGddToDouble(void* vd, aitIndex count, const gdd& dd) {
+static int mapGddToDouble(void* vd, aitIndex count, const gdd& dd, const vector<string> &enumStringTable) {
 	dbr_double_t* sv = (dbr_double_t*)vd;
     aitIndex sz=dd.getDataSizeElements();
 	const void* v = dd.dataVoid();
 	int status;
 
-	if (count==sz) {
-		if (local_data_format==aitLocalDataFormat) {
-			if ((dbr_double_t*)v!=sv) {
-				status = aitConvert(aitEnumFloat64,sv,dd.primitiveType(),v,sz);
-			}
-			else {
-				status = count*sizeof(dbr_double_t);
-			}
+    if (count>sz) {
+        memset (sv+sz, '\0', sizeof(*sv)*(count-sz));
+        count = sz;
+    }
+
+	if (local_data_format==aitLocalDataFormat) {
+		if ((dbr_double_t*)v!=sv) {
+			status = aitConvert(aitEnumFloat64,sv,dd.primitiveType(),v,count, enumStringTable);
 		}
 		else {
-			status = aitConvertToNet(aitEnumFloat64,sv,dd.primitiveType(),v,sz);
+			status = count*sizeof(dbr_double_t);
 		}
 	}
 	else {
-		status = -1;
+		status = aitConvertToNet(aitEnumFloat64,sv,dd.primitiveType(),v,count, enumStringTable);
 	}
 
 	return status;
@@ -505,20 +538,22 @@ static gdd* mapStsStringToGdd(void* v,aitIndex count)
 	else
 	{
 		dd=new gddAtomic(to_app,to_type,1,count);
-		dd->putRef(dbv);
+        aitFixedString* pCopy = (aitFixedString*)  new char [sizeof(aitFixedString)*count];
+        memcpy (pCopy,dbv,sizeof(aitFixedString)*count);
+		dd->putRef(pCopy, new gddDestructor);
 	}
 
 	dd->setStatSevr(db->status,db->severity);
 	return dd;
 }
 
-static int mapStsGddToString(void* v, aitIndex count, const gdd& dd)
+static int mapStsGddToString(void* v, aitIndex count, const gdd& dd, const vector<string> &enumStringTable)
 {
 	dbr_sts_string* db = (dbr_sts_string*)v;
 	aitFixedString* dbv = (aitFixedString*)db->value;
 
 	dd.getStatSevr(db->status,db->severity);
-	return mapGddToString(dbv, count, dd);
+	return mapGddToString(dbv, count, dd, enumStringTable);
 }
 
 static gdd* mapStsShortToGdd(void* v,aitIndex count)
@@ -529,11 +564,11 @@ static gdd* mapStsShortToGdd(void* v,aitIndex count)
 	return dd;
 }
 
-static int mapStsGddToShort(void* v, aitIndex count, const gdd& dd)
+static int mapStsGddToShort(void* v, aitIndex count, const gdd& dd, const vector<string> &enumStringTable)
 {
 	dbr_sts_short* dbv = (dbr_sts_short*)v;
 	dd.getStatSevr(dbv->status,dbv->severity);
-	return mapGddToShort(&dbv->value, count, dd);
+	return mapGddToShort(&dbv->value, count, dd, enumStringTable);
 }
 
 static gdd* mapStsFloatToGdd(void* v,aitIndex count)
@@ -544,11 +579,11 @@ static gdd* mapStsFloatToGdd(void* v,aitIndex count)
 	return dd;
 }
 
-static int mapStsGddToFloat(void* v, aitIndex count, const gdd& dd)
+static int mapStsGddToFloat(void* v, aitIndex count, const gdd& dd, const vector<string> &enumStringTable)
 {
 	dbr_sts_float* dbv = (dbr_sts_float*)v;
 	dd.getStatSevr(dbv->status,dbv->severity);
-	return mapGddToFloat(&dbv->value,count,dd);
+	return mapGddToFloat(&dbv->value,count,dd, enumStringTable);
 }
 
 static gdd* mapStsEnumToGdd(void* v,aitIndex count)
@@ -559,11 +594,11 @@ static gdd* mapStsEnumToGdd(void* v,aitIndex count)
 	return dd;
 }
 
-static int mapStsGddToEnum(void* v, aitIndex count, const gdd& dd)
+static int mapStsGddToEnum(void* v, aitIndex count, const gdd& dd, const vector<string> &enumStringTable)
 {
 	dbr_sts_enum* dbv = (dbr_sts_enum*)v;
 	dd.getStatSevr(dbv->status,dbv->severity);
-	return mapGddToEnum(&dbv->value,count,dd);
+	return mapGddToEnum(&dbv->value,count,dd, enumStringTable);
 }
 
 static gdd* mapStsCharToGdd(void* v,aitIndex count)
@@ -574,12 +609,12 @@ static gdd* mapStsCharToGdd(void* v,aitIndex count)
 	return dd;
 }
 
-static int mapStsGddToChar(void* v, aitIndex count, const gdd& dd)
+static int mapStsGddToChar(void* v, aitIndex count, const gdd& dd, const vector<string> &enumStringTable)
 {
 	dbr_sts_char* dbv = (dbr_sts_char*)v;
 	dd.getStatSevr(dbv->status,dbv->severity);
 	dbv->RISC_pad = '\0'; // shut up purify
-	return mapGddToChar(&dbv->value,count,dd);
+	return mapGddToChar(&dbv->value,count,dd, enumStringTable);
 }
 
 static gdd* mapStsLongToGdd(void* v,aitIndex count)
@@ -590,11 +625,11 @@ static gdd* mapStsLongToGdd(void* v,aitIndex count)
 	return dd;
 }
 
-static int mapStsGddToLong(void* v, aitIndex count, const gdd& dd)
+static int mapStsGddToLong(void* v, aitIndex count, const gdd& dd, const vector<string> &enumStringTable)
 {
 	dbr_sts_long* dbv = (dbr_sts_long*)v;
 	dd.getStatSevr(dbv->status,dbv->severity);
-	return mapGddToLong(&dbv->value,count,dd);
+	return mapGddToLong(&dbv->value,count,dd, enumStringTable);
 }
 
 static gdd* mapStsDoubleToGdd(void* v,aitIndex count)
@@ -605,12 +640,12 @@ static gdd* mapStsDoubleToGdd(void* v,aitIndex count)
 	return dd;
 }
 
-static int mapStsGddToDouble(void* v, aitIndex count, const gdd& dd)
+static int mapStsGddToDouble(void* v, aitIndex count, const gdd& dd, const vector<string> &enumStringTable)
 {
 	dbr_sts_double* dbv = (dbr_sts_double*)v;
 	dd.getStatSevr(dbv->status,dbv->severity);
 	dbv->RISC_pad = 0; // shut up purify
-	return mapGddToDouble(&dbv->value,count,dd);
+	return mapGddToDouble(&dbv->value,count,dd, enumStringTable);
 }
 
 // ********************************************************************
@@ -633,7 +668,9 @@ static gdd* mapTimeStringToGdd(void* v,aitIndex count)
 	else
 	{
 		dd=new gddAtomic(to_app,to_type,1,count);
-		dd->putRef(dbv);
+        aitFixedString* pCopy = (aitFixedString*) new char [sizeof(aitFixedString)*count];
+        memcpy (pCopy,dbv,sizeof(aitFixedString)*count);
+		dd->putRef(pCopy, new gddDestructor);
 	}
 
 	dd->setStatSevr(db->status,db->severity);
@@ -641,14 +678,14 @@ static gdd* mapTimeStringToGdd(void* v,aitIndex count)
 	return dd;
 }
 
-static int mapTimeGddToString(void* v, aitIndex count, const gdd& dd)
+static int mapTimeGddToString(void* v, aitIndex count, const gdd& dd, const vector<string> &enumStringTable)
 {
 	dbr_time_string* db = (dbr_time_string*)v;
 	aitFixedString* dbv = (aitFixedString*)db->value;
 
 	dd.getStatSevr(db->status,db->severity);
 	dd.getTimeStamp(&db->stamp);
-	return mapGddToString(dbv, count, dd);
+	return mapGddToString(dbv, count, dd, enumStringTable);
 }
 
 static gdd* mapTimeShortToGdd(void* v,aitIndex count)
@@ -660,13 +697,13 @@ static gdd* mapTimeShortToGdd(void* v,aitIndex count)
 	return dd;
 }
 
-static int mapTimeGddToShort(void* v, aitIndex count, const gdd& dd)
+static int mapTimeGddToShort(void* v, aitIndex count, const gdd& dd, const vector<string> &enumStringTable)
 {
 	dbr_time_short* dbv = (dbr_time_short*)v;
 	dd.getStatSevr(dbv->status,dbv->severity);
 	dd.getTimeStamp(&dbv->stamp);
 	dbv->RISC_pad = 0; // shut up purify
-	return mapGddToShort(&dbv->value,count,dd);
+	return mapGddToShort(&dbv->value,count,dd, enumStringTable);
 }
 
 static gdd* mapTimeFloatToGdd(void* v,aitIndex count)
@@ -678,12 +715,12 @@ static gdd* mapTimeFloatToGdd(void* v,aitIndex count)
 	return dd;
 }
 
-static int mapTimeGddToFloat(void* v, aitIndex count, const gdd& dd)
+static int mapTimeGddToFloat(void* v, aitIndex count, const gdd& dd, const vector<string> &enumStringTable)
 {
 	dbr_time_float* dbv = (dbr_time_float*)v;
 	dd.getStatSevr(dbv->status,dbv->severity);
 	dd.getTimeStamp(&dbv->stamp);
-	return mapGddToFloat(&dbv->value,count,dd);
+	return mapGddToFloat(&dbv->value,count,dd, enumStringTable);
 }
 
 static gdd* mapTimeEnumToGdd(void* v,aitIndex count)
@@ -695,13 +732,13 @@ static gdd* mapTimeEnumToGdd(void* v,aitIndex count)
 	return dd;
 }
 
-static int mapTimeGddToEnum(void* v, aitIndex count, const gdd& dd)
+static int mapTimeGddToEnum(void* v, aitIndex count, const gdd& dd, const vector<string> &enumStringTable)
 {
 	dbr_time_enum* dbv = (dbr_time_enum*)v;
 	dd.getStatSevr(dbv->status,dbv->severity);
 	dd.getTimeStamp(&dbv->stamp);
 	dbv->RISC_pad = 0; // shut up purify
-	return mapGddToEnum(&dbv->value,count,dd);
+	return mapGddToEnum(&dbv->value,count,dd, enumStringTable);
 }
 
 static gdd* mapTimeCharToGdd(void* v,aitIndex count)
@@ -713,14 +750,14 @@ static gdd* mapTimeCharToGdd(void* v,aitIndex count)
 	return dd;
 }
 
-static int mapTimeGddToChar(void* v, aitIndex count, const gdd& dd)
+static int mapTimeGddToChar(void* v, aitIndex count, const gdd& dd, const vector<string> &enumStringTable)
 {
 	dbr_time_char* dbv = (dbr_time_char*)v;
 	dd.getStatSevr(dbv->status,dbv->severity);
 	dd.getTimeStamp(&dbv->stamp);
 	dbv->RISC_pad0 = 0; // shut up purify
 	dbv->RISC_pad1 = '\0'; // shut up purify
-	return mapGddToChar(&dbv->value,count,dd);
+	return mapGddToChar(&dbv->value,count,dd, enumStringTable);
 }
 
 static gdd* mapTimeLongToGdd(void* v,aitIndex count)
@@ -732,12 +769,12 @@ static gdd* mapTimeLongToGdd(void* v,aitIndex count)
 	return dd;
 }
 
-static int mapTimeGddToLong(void* v, aitIndex count, const gdd& dd)
+static int mapTimeGddToLong(void* v, aitIndex count, const gdd& dd, const vector<string> &enumStringTable)
 {
 	dbr_time_long* dbv = (dbr_time_long*)v;
 	dd.getStatSevr(dbv->status,dbv->severity);
 	dd.getTimeStamp(&dbv->stamp);
-	return mapGddToLong(&dbv->value,count,dd);
+	return mapGddToLong(&dbv->value,count,dd, enumStringTable);
 }
 
 static gdd* mapTimeDoubleToGdd(void* v,aitIndex count)
@@ -749,13 +786,13 @@ static gdd* mapTimeDoubleToGdd(void* v,aitIndex count)
 	return dd;
 }
 
-static int mapTimeGddToDouble(void* v, aitIndex count, const gdd& dd)
+static int mapTimeGddToDouble(void* v, aitIndex count, const gdd& dd, const vector<string> &enumStringTable)
 {
 	dbr_time_double* dbv = (dbr_time_double*)v;
 	dd.getStatSevr(dbv->status,dbv->severity);
 	dd.getTimeStamp(&dbv->stamp);
 	dbv->RISC_pad = 0; // shut up purify
-	return mapGddToDouble(&dbv->value,count,dd);
+	return mapGddToDouble(&dbv->value,count,dd, enumStringTable);
 }
 
 // ********************************************************************
@@ -790,11 +827,10 @@ static gdd* mapGraphicShortToGdd(void* v, aitIndex count)
 		if(vdd.dimension()!=1) vdd.reset(aitEnumInt16,1,&count);
 		else vdd.setPrimType(aitEnumInt16);
 		vdd.setBound(0,0,count);
-//
-// joh - looks like a dangling ref to the input dbr type here
-// with no destructor
-//
-		vdd.putRef(&db->value);
+
+        dbr_short_t* pCopy = (dbr_short_t*) new char [sizeof(dbr_short_t)*count];
+        memcpy (pCopy,&db->value,sizeof(dbr_short_t)*count);
+		vdd.putRef(pCopy, new gddDestructor);
 	}
 	return dd;
 }
@@ -828,16 +864,15 @@ static gdd* mapControlShortToGdd(void* v, aitIndex count)
 		if(vdd.dimension()!=1) vdd.reset(aitEnumInt16,1,&count);
 		else vdd.setPrimType(aitEnumInt16);
 		vdd.setBound(0,0,count);
-//
-// joh - looks like a dangling ref to the input dbr type here
-// with no destructor
-//
-		vdd.putRef(&db->value);
+
+        dbr_short_t* pCopy = (dbr_short_t*) new char [sizeof(dbr_short_t)*count];
+        memcpy (pCopy,&db->value,sizeof(dbr_short_t)*count);
+		vdd.putRef(pCopy, new gddDestructor);
 	}
 	return dd;
 }
 
-static int mapGraphicGddToShort(void* v, aitIndex count, const gdd& dd)
+static int mapGraphicGddToShort(void* v, aitIndex count, const gdd& dd, const vector<string> &enumStringTable)
 {
 	const aitString* str;
 	dbr_gr_short* db = (dbr_gr_short*)v;
@@ -857,10 +892,10 @@ static int mapGraphicGddToShort(void* v, aitIndex count, const gdd& dd)
 	db->upper_warning_limit=dd[gddAppTypeIndex_dbr_gr_short_alarmHighWarning];
 
 	vdd.getStatSevr(db->status,db->severity);
-	return mapGddToShort(&db->value,count,vdd);
+	return mapGddToShort(&db->value,count,vdd, enumStringTable);
 }
 
-static int mapControlGddToShort(void* v, aitIndex count, const gdd& dd)
+static int mapControlGddToShort(void* v, aitIndex count, const gdd& dd, const vector<string> &enumStringTable)
 {
 	const aitString* str;
 	dbr_ctrl_short* db = (dbr_ctrl_short*)v;
@@ -882,7 +917,7 @@ static int mapControlGddToShort(void* v, aitIndex count, const gdd& dd)
 	db->upper_warning_limit=dd[gddAppTypeIndex_dbr_ctrl_short_alarmHighWarning];
 
 	vdd.getStatSevr(db->status,db->severity);
-	return mapGddToShort(&db->value,count,vdd);
+	return mapGddToShort(&db->value,count,vdd, enumStringTable);
 }
 
 // -------------map the float structures----------------
@@ -914,11 +949,10 @@ static gdd* mapGraphicFloatToGdd(void* v, aitIndex count)
 		if(vdd.dimension()!=1) vdd.reset(aitEnumFloat32,1,&count);
 		else vdd.setPrimType(aitEnumFloat32);
 		vdd.setBound(0,0,count);
-//
-// joh - looks like a dangling ref to the input dbr type here
-// with no destructor
-//
-		vdd.putRef(&db->value);
+
+        dbr_float_t* pCopy = (dbr_float_t*) new char [sizeof(dbr_float_t)*count];
+        memcpy (pCopy,&db->value,sizeof(dbr_float_t)*count);
+		vdd.putRef(pCopy, new gddDestructor);
 	}
 	return dd;
 }
@@ -953,16 +987,15 @@ static gdd* mapControlFloatToGdd(void* v, aitIndex count)
 		if(vdd.dimension()!=1) vdd.reset(aitEnumFloat32,1,&count);
 		else vdd.setPrimType(aitEnumFloat32);
 		vdd.setBound(0,0,count);
-//
-// joh - looks like a dangling ref to the input dbr type here
-// with no destructor
-//
-		vdd.putRef(&db->value);
+
+        dbr_float_t* pCopy = (dbr_float_t*) new char [sizeof(dbr_float_t)*count];
+        memcpy (pCopy,&db->value,sizeof(dbr_float_t)*count);
+		vdd.putRef(pCopy, new gddDestructor);
 	}
 	return dd;
 }
 
-static int mapGraphicGddToFloat(void* v, aitIndex count, const gdd& dd)
+static int mapGraphicGddToFloat(void* v, aitIndex count, const gdd& dd, const vector<string> &enumStringTable)
 {
 	const aitString* str;
 	dbr_gr_float* db = (dbr_gr_float*)v;
@@ -984,10 +1017,10 @@ static int mapGraphicGddToFloat(void* v, aitIndex count, const gdd& dd)
 	db->RISC_pad0 = 0; // shut up purify
 
 	vdd.getStatSevr(db->status,db->severity);
-	return mapGddToFloat(&db->value,count,vdd);
+	return mapGddToFloat(&db->value,count,vdd, enumStringTable);
 }
 
-static int mapControlGddToFloat(void* v, aitIndex count, const gdd& dd)
+static int mapControlGddToFloat(void* v, aitIndex count, const gdd& dd, const vector<string> &enumStringTable)
 {
 	const aitString* str;
 	dbr_ctrl_float* db = (dbr_ctrl_float*)v;
@@ -1011,7 +1044,7 @@ static int mapControlGddToFloat(void* v, aitIndex count, const gdd& dd)
 	db->RISC_pad = 0; // shut up purify
 
 	vdd.getStatSevr(db->status,db->severity);
-	return mapGddToFloat(&db->value,count,vdd);
+	return mapGddToFloat(&db->value,count,vdd, enumStringTable);
 }
 
 // -------------map the enum structures----------------
@@ -1105,7 +1138,7 @@ static gdd* mapControlEnumToGdd(void* v, aitIndex /*count*/)
 	return dd;
 }
 
-static int mapGraphicGddToEnum(void* v, aitIndex count, const gdd& dd)
+static int mapGraphicGddToEnum(void* v, aitIndex count, const gdd& dd, const vector<string> &enumStringTable)
 {
 	dbr_gr_enum* db = (dbr_gr_enum*)v;
 	const gdd& menu = dd[gddAppTypeIndex_dbr_gr_enum_enums];
@@ -1125,10 +1158,10 @@ static int mapGraphicGddToEnum(void* v, aitIndex count, const gdd& dd)
 			db->strs[i][MAX_ENUM_STRING_SIZE-1u] = '\0';
 		}
 	}
-	return mapGddToEnum(&db->value, count, vdd);
+	return mapGddToEnum(&db->value, count, vdd, enumStringTable);
 }
 
-static int mapControlGddToEnum(void* v, aitIndex count, const gdd& dd)
+static int mapControlGddToEnum(void* v, aitIndex count, const gdd& dd, const vector<string> &enumStringTable)
 {
 	dbr_ctrl_enum* db = (dbr_ctrl_enum*)v;
 	const gdd& menu = dd[gddAppTypeIndex_dbr_ctrl_enum_enums];
@@ -1148,7 +1181,7 @@ static int mapControlGddToEnum(void* v, aitIndex count, const gdd& dd)
 			db->strs[i][sizeof(aitFixedString)-1u] = '\0';
 		}
 	}
-	return mapGddToEnum(&db->value, count, vdd);
+	return mapGddToEnum(&db->value, count, vdd, enumStringTable);
 }
 
 // -------------map the char structures----------------
@@ -1179,11 +1212,10 @@ static gdd* mapGraphicCharToGdd(void* v, aitIndex count)
 		if(vdd.dimension()!=1) vdd.reset(aitEnumInt8,1,&count);
 		else vdd.setPrimType(aitEnumInt8);
 		vdd.setBound(0,0,count);
-//
-// joh - looks like a dangling ref to the input dbr type here
-// with no destructor
-//
-		vdd.putRef(&db->value);
+
+        dbr_char_t* pCopy = (dbr_char_t *) new char [sizeof(dbr_char_t)*count];
+        memcpy (pCopy,&db->value,sizeof(dbr_char_t)*count);
+		vdd.putRef(pCopy, new gddDestructor);
 	}
 	return dd;
 }
@@ -1217,16 +1249,15 @@ static gdd* mapControlCharToGdd(void* v, aitIndex count)
 		if(vdd.dimension()!=1) vdd.reset(aitEnumInt8,1,&count);
 		else vdd.setPrimType(aitEnumInt8);
 		vdd.setBound(0,0,count);
-//
-// joh - looks like a dangling ref to the input dbr type here
-// with no destructor
-//
-		vdd.putRef(&db->value);
-	}
+
+        dbr_char_t* pCopy = (dbr_char_t*) new char [sizeof(dbr_char_t)*count];
+        memcpy (pCopy,&db->value,sizeof(dbr_char_t)*count);
+		vdd.putRef(pCopy, new gddDestructor);
+ 	}
 	return dd;
 }
 
-static int mapGraphicGddToChar(void* v, aitIndex count, const gdd& dd)
+static int mapGraphicGddToChar(void* v, aitIndex count, const gdd& dd, const vector<string> &enumStringTable)
 {
 	const aitString* str;
 	dbr_gr_char* db = (dbr_gr_char*)v;
@@ -1247,10 +1278,10 @@ static int mapGraphicGddToChar(void* v, aitIndex count, const gdd& dd)
 	db->RISC_pad = 0;
 
 	vdd.getStatSevr(db->status,db->severity);
-	return mapGddToChar(&db->value,count,vdd);
+	return mapGddToChar(&db->value,count,vdd, enumStringTable);
 }
 
-static int mapControlGddToChar(void* v, aitIndex count, const gdd& dd)
+static int mapControlGddToChar(void* v, aitIndex count, const gdd& dd, const vector<string> &enumStringTable)
 {
 	const aitString* str;
 	dbr_ctrl_char* db = (dbr_ctrl_char*)v;
@@ -1273,7 +1304,7 @@ static int mapControlGddToChar(void* v, aitIndex count, const gdd& dd)
 	db->RISC_pad = '\0'; // shut up purify
 
 	vdd.getStatSevr(db->status,db->severity);
-	return mapGddToChar(&db->value,count,vdd);
+	return mapGddToChar(&db->value,count,vdd, enumStringTable);
 }
 
 // -------------map the long structures----------------
@@ -1304,11 +1335,10 @@ static gdd* mapGraphicLongToGdd(void* v, aitIndex count)
 		if(vdd.dimension()!=1) vdd.reset(aitEnumInt32,1,&count);
 		else vdd.setPrimType(aitEnumInt32);
 		vdd.setBound(0,0,count);
-//
-// joh - looks like a dangling ref to the input dbr type here
-// with no destructor
-//
-		vdd.putRef(&db->value);
+
+        dbr_long_t* pCopy = (dbr_long_t*) new char [sizeof(dbr_long_t)*count];
+        memcpy (pCopy,&db->value,sizeof(dbr_long_t)*count);
+		vdd.putRef(pCopy, new gddDestructor);
 	}
 	return dd;
 }
@@ -1342,16 +1372,15 @@ static gdd* mapControlLongToGdd(void* v, aitIndex count)
 		if(vdd.dimension()!=1) vdd.reset(aitEnumInt32,1,&count);
 		else vdd.setPrimType(aitEnumInt32);
 		vdd.setBound(0,0,count);
-//
-// joh - looks like a dangling ref to the input dbr type here
-// with no destructor
-//
-		vdd.putRef(&db->value);
+
+        dbr_long_t* pCopy = (dbr_long_t *)new char [sizeof(dbr_long_t)*count];
+        memcpy (pCopy,&db->value,sizeof(dbr_long_t)*count);
+		vdd.putRef(pCopy, new gddDestructor);
 	}
 	return dd;
 }
 
-static int mapGraphicGddToLong(void* v, aitIndex count, const gdd& dd)
+static int mapGraphicGddToLong(void* v, aitIndex count, const gdd& dd, const vector<string> &enumStringTable)
 {
 	const aitString* str;
 	dbr_gr_long* db = (dbr_gr_long*)v;
@@ -1371,10 +1400,10 @@ static int mapGraphicGddToLong(void* v, aitIndex count, const gdd& dd)
 	db->upper_warning_limit=dd[gddAppTypeIndex_dbr_gr_long_alarmHighWarning];
 
 	vdd.getStatSevr(db->status,db->severity);
-	return mapGddToLong(&db->value,count,vdd);
+	return mapGddToLong(&db->value,count,vdd, enumStringTable);
 }
 
-static int mapControlGddToLong(void* v, aitIndex count, const gdd& dd)
+static int mapControlGddToLong(void* v, aitIndex count, const gdd& dd, const vector<string> &enumStringTable)
 {
 	const aitString* str;
 	dbr_ctrl_long* db = (dbr_ctrl_long*)v;
@@ -1396,7 +1425,7 @@ static int mapControlGddToLong(void* v, aitIndex count, const gdd& dd)
 	db->upper_warning_limit=dd[gddAppTypeIndex_dbr_ctrl_long_alarmHighWarning];
 
 	vdd.getStatSevr(db->status,db->severity);
-	return mapGddToLong(&db->value,count,vdd);
+	return mapGddToLong(&db->value,count,vdd, enumStringTable);
 }
 
 // -------------map the double structures----------------
@@ -1428,11 +1457,10 @@ static gdd* mapGraphicDoubleToGdd(void* v, aitIndex count)
 		if(vdd.dimension()!=1) vdd.reset(aitEnumFloat64,1,&count);
 		else vdd.setPrimType(aitEnumFloat64);
 		vdd.setBound(0,0,count);
-//
-// joh - looks like a dangling ref to the input dbr type here
-// with no destructor
-//
-		vdd.putRef(&db->value);
+
+        dbr_double_t* pCopy = (dbr_double_t *) new char [sizeof(dbr_double_t)*count];
+        memcpy (pCopy,&db->value,sizeof(dbr_double_t)*count);
+		vdd.putRef(pCopy, new gddDestructor);
 	}
 	return dd;
 }
@@ -1467,16 +1495,15 @@ static gdd* mapControlDoubleToGdd(void* v, aitIndex count)
 		if(vdd.dimension()!=1) vdd.reset(aitEnumFloat64,1,&count);
 		else vdd.setPrimType(aitEnumFloat64);
 		vdd.setBound(0,0,count);
-//
-// joh - looks like a dangling ref to the input dbr type here
-// with no destructor
-//
-		vdd.putRef(&db->value);
+
+        dbr_double_t* pCopy = (dbr_double_t *) new char [sizeof(dbr_double_t)*count];
+        memcpy (pCopy,&db->value,sizeof(dbr_double_t)*count);
+		vdd.putRef(pCopy, new gddDestructor);
 	}
 	return dd;
 }
 
-static int mapGraphicGddToDouble(void* v, aitIndex count, const gdd& dd)
+static int mapGraphicGddToDouble(void* v, aitIndex count, const gdd& dd, const vector<string> &enumStringTable)
 {
 	const aitString* str;
 	dbr_gr_double* db = (dbr_gr_double*)v;
@@ -1498,10 +1525,10 @@ static int mapGraphicGddToDouble(void* v, aitIndex count, const gdd& dd)
 	db->RISC_pad0 = 0; // shut up purify
 
 	vdd.getStatSevr(db->status,db->severity);
-	return mapGddToDouble(&db->value,count,vdd);
+	return mapGddToDouble(&db->value,count,vdd, enumStringTable);
 }
 
-static int mapControlGddToDouble(void* v, aitIndex count, const gdd& dd)
+static int mapControlGddToDouble(void* v, aitIndex count, const gdd& dd, const vector<string> &enumStringTable)
 {
 	const aitString* str;
 	dbr_ctrl_double* db = (dbr_ctrl_double*)v;
@@ -1525,8 +1552,207 @@ static int mapControlGddToDouble(void* v, aitIndex count, const gdd& dd)
 	db->RISC_pad0 = '\0'; // shut up purify
 
 	vdd.getStatSevr(db->status,db->severity);
-	return mapGddToDouble(&db->value,count,vdd);
+	return mapGddToDouble(&db->value,count,vdd, enumStringTable);
 }
+
+static gdd* mapStsAckStringToGdd(void* v, aitIndex count)
+{
+    // must be a container
+    dbr_stsack_string* db = (dbr_stsack_string*)v;
+    aitFixedString* dbv = (aitFixedString*)db->value;
+    gdd* dd = type_table->getDD(gddDbrToAit[DBR_STSACK_STRING].app);
+    gdd& vdd = dd[gddAppTypeIndex_dbr_stsack_string_value];
+    
+    dd[gddAppTypeIndex_dbr_stsack_string_ackt]=db->ackt;
+    dd[gddAppTypeIndex_dbr_stsack_string_acks]=db->acks;
+    
+    vdd.setStatSevr(db->status,db->severity);
+    
+    if(count==1) {
+        if(vdd.dimension()) vdd.clear();
+        vdd.put(*dbv);
+    } else {
+        if(vdd.dimension()!=1) 
+            vdd.reset(aitEnumFixedString,1,&count);
+        else vdd.setPrimType(aitEnumFixedString);
+        vdd.setBound(0,0,count);
+
+        aitFixedString* pCopy = (aitFixedString*) new char [sizeof(aitFixedString)*count];
+        memcpy (pCopy,&db->value,sizeof(aitFixedString)*count);
+		vdd.putRef(pCopy, new gddDestructor);
+    }
+    return dd;
+}
+
+static int mapStsAckGddToString(void* v, aitIndex count, const gdd &dd, const vector<string> &enumStringTable)
+{
+    dbr_stsack_string* db = (dbr_stsack_string*)v;
+    const gdd& vdd = dd[gddAppTypeIndex_dbr_stsack_string_value];
+    
+    db->ackt=dd[gddAppTypeIndex_dbr_stsack_string_ackt];
+    db->acks=dd[gddAppTypeIndex_dbr_stsack_string_acks];
+    
+    // Unlike all the others, which are dbr_short_t, status and
+    // severity for a dbr_stsack_string are dbr_ushort_t.  Have to
+    // convert.
+    dbr_short_t st,sv;
+    vdd.getStatSevr(st,sv);
+    db->status = (dbr_ushort_t)st;
+    db->severity = (dbr_ushort_t)sv;
+    return mapGddToString (&db->value, count, vdd, enumStringTable);
+}
+
+// -------------map the ack elements --------------------
+static gdd* mapAcktToGdd(void* v,aitIndex count) {
+    dbr_put_ackt_t* sv = (dbr_put_ackt_t*)v;
+    gdd* dd;
+    
+    // Count should be 1, but leave it general
+    if(count>1) {
+        dd=new gddAtomic(gddDbrToAit[DBR_PUT_ACKT].app,
+            gddDbrToAit[DBR_PUT_ACKT].type,1,count);
+
+        dbr_put_ackt_t* pCopy = (dbr_put_ackt_t*) new char [sizeof(dbr_put_ackt_t)*count];
+        memcpy (pCopy,sv,sizeof(dbr_put_ackt_t)*count);
+		dd->putRef(pCopy, new gddDestructor);
+    } else {
+        dd=new gddScalar(gddDbrToAit[DBR_PUT_ACKT].app);
+        *dd=*sv;
+    }
+    return dd;
+}
+
+static int mapGddToAckt(void* vd, aitIndex count, const gdd &dd, const vector<string> &enumStringTable) {
+    dbr_put_ackt_t* sv = (dbr_put_ackt_t*)vd;
+    aitIndex sz = dd.getDataSizeElements();
+    const void* v=dd.dataVoid();
+    int status;
+    
+    // Count should be 1, but leave it general
+    if (count==sz) {
+        if (local_data_format==aitLocalDataFormat) {
+            if((dbr_put_ackt_t*)v!=sv) {
+                status = 
+                    aitConvert(aitEnumUint16,sv,dd.primitiveType(),v,sz,enumStringTable);
+            }
+            else {
+                status = sz*sizeof(dbr_put_ackt_t);
+            }
+        }
+        else {
+            status = 
+                aitConvertToNet(aitEnumUint16,sv,dd.primitiveType(),v,sz, enumStringTable);
+        }
+    }
+    else {
+        status = -1;
+    }
+    
+    return status;
+}
+
+static gdd* mapAcksToGdd(void* v,aitIndex count) {
+    dbr_put_acks_t* sv = (dbr_put_acks_t*)v;
+    gdd* dd;
+    
+    // Count should be 1, but leave it general
+    if(count>1) {
+        dd=new gddAtomic(gddDbrToAit[DBR_PUT_ACKS].app,
+            gddDbrToAit[DBR_PUT_ACKS].type,1,count);
+
+        dbr_put_acks_t* pCopy = (dbr_put_acks_t*) new char [sizeof(dbr_put_acks_t)*count];
+        memcpy (pCopy,sv,sizeof(dbr_put_acks_t)*count);
+		dd->putRef(pCopy, new gddDestructor);
+    } else {
+        dd=new gddScalar(gddDbrToAit[DBR_PUT_ACKS].app);
+        *dd=*sv;
+    }
+    return dd;
+}
+
+static int mapGddToAcks(void* vd, aitIndex count, const gdd &dd, const vector<string> &enumStringTable) {
+    dbr_put_acks_t* sv = (dbr_put_acks_t*)vd;
+    aitIndex sz = dd.getDataSizeElements();
+    const void* v=dd.dataVoid();
+    int status;
+    
+    // Count should be 1, but leave it general
+    if (count==sz) {
+        if (local_data_format==aitLocalDataFormat) {
+            if((dbr_put_acks_t*)v!=sv) {
+                status = 
+                    aitConvert(aitEnumUint16,sv,dd.primitiveType(),v,sz, enumStringTable);
+            }
+            else {
+                status = sz*sizeof(dbr_put_acks_t);
+            }
+        }
+        else {
+            status = 
+                aitConvertToNet(aitEnumUint16,sv,dd.primitiveType(),v,sz, enumStringTable);
+        }
+    }
+    else {
+        status = -1;
+    }
+    
+    return status;
+}
+
+// -------------map the class name element --------------
+
+static gdd* mapClassNameToGdd(void* v,aitIndex count) {
+    aitFixedString* db = (aitFixedString*)v;
+    aitEnum to_type = gddDbrToAit[DBR_CLASS_NAME].type;
+    aitUint16 to_app  = gddDbrToAit[DBR_CLASS_NAME].app;
+    gdd* dd;
+    
+    // Count should be 1, but leave it general
+    if(count<=1)
+    {
+        dd=new gddScalar(to_app,to_type);
+        dd->put(*db);
+    }
+    else
+    {
+        dd=new gddAtomic(to_app,to_type,1,count);
+
+        aitFixedString* pCopy = (aitFixedString*) new char [sizeof(aitFixedString)*count];
+        memcpy (pCopy,db,sizeof(aitFixedString)*count);
+		dd->putRef(pCopy, new gddDestructor);
+    }
+    return dd;
+}
+
+static int mapGddToClassName(void* vd, aitIndex count, const gdd &dd, const vector<string> &enumStringTable) {
+    aitFixedString* db = (aitFixedString*)vd;
+    aitIndex sz = dd.getDataSizeElements();
+    const void* v = dd.dataVoid();
+    int status;
+    
+    // Count should be 1, but leave it general
+    if (count<=sz) {
+        if(local_data_format==aitLocalDataFormat) {
+            if((aitFixedString*)v!=db) {
+                status = 
+                    aitConvert(aitEnumFixedString,db,dd.primitiveType(),v,count, enumStringTable);
+            }
+            else {
+                status = sz*sizeof(aitFixedString);
+            }
+        }
+        else {
+            status = 
+                aitConvertToNet(aitEnumFixedString,db,dd.primitiveType(),v,count, enumStringTable);
+        }
+    }
+    else {
+        status = -1;
+    }
+    
+    return status;
+}
+
 
 // ----------------must run this to use mapping functions--------------
 epicsShareFunc void gddMakeMapDBR(gddApplicationTypeTable& tt) { gddMakeMapDBR(&tt); }
@@ -1563,41 +1789,52 @@ void dbMapperFixedStringDestructor::run (void *pUntyped)
 // C++ will not make a const decl external linkage unless
 // we explicitly specify extern
 //
-epicsShareDef extern const gddDbrMapFuncTable gddMapDbr[] = {
-	{ mapStringToGdd,		mapGddToString },			// DBR_STRING
-	{ mapShortToGdd,		mapGddToShort },			// DBR_SHORT
-	{ mapFloatToGdd,		mapGddToFloat },			// DBR_FLOAT
-	{ mapEnumToGdd,			mapGddToEnum },				// DBR_ENUM
-	{ mapCharToGdd,			mapGddToChar },				// DBR_CHAR
-	{ mapLongToGdd,			mapGddToLong },				// DBR_LONG
-	{ mapDoubleToGdd,		mapGddToDouble },			// DBR_DOUBLE
-	{ mapStsStringToGdd,	mapStsGddToString },		// DBR_STS_STRING
-	{ mapStsShortToGdd,		mapStsGddToShort },			// DBR_STS_SHORT
-	{ mapStsFloatToGdd,		mapStsGddToFloat },			// DBR_STS_FLOAT
-	{ mapStsEnumToGdd,		mapStsGddToEnum },			// DBR_STS_ENUM
-	{ mapStsCharToGdd,		mapStsGddToChar },			// DBR_STS_CHAR
-	{ mapStsLongToGdd,		mapStsGddToLong },			// DBR_STS_LONG
-	{ mapStsDoubleToGdd,	mapStsGddToDouble },		// DBR_STS_DOUBLE
-	{ mapTimeStringToGdd,	mapTimeGddToString },		// DBR_TIME_STRING
-	{ mapTimeShortToGdd,	mapTimeGddToShort },		// DBR_TIME_SHORT
-	{ mapTimeFloatToGdd,	mapTimeGddToFloat },		// DBR_TIME_FLOAT
-	{ mapTimeEnumToGdd,		mapTimeGddToEnum },			// DBR_TIME_ENUM
-	{ mapTimeCharToGdd,		mapTimeGddToChar },			// DBR_TIME_CHAR
-	{ mapTimeLongToGdd,		mapTimeGddToLong },			// DBR_TIME_LONG
-	{ mapTimeDoubleToGdd,	mapTimeGddToDouble },		// DBR_TIME_DOUBLE
-	{ mapStsStringToGdd,	mapStsGddToString },		// DBR_GR_STRING
-	{ mapGraphicShortToGdd,	mapGraphicGddToShort },		// DBR_GR_SHORT
-	{ mapGraphicFloatToGdd,	mapGraphicGddToFloat },		// DBR_GR_FLOAT
-	{ mapGraphicEnumToGdd,	mapGraphicGddToEnum },		// DBR_GR_ENUM
-	{ mapGraphicCharToGdd,	mapGraphicGddToChar },		// DBR_GR_CHAR
-	{ mapGraphicLongToGdd,	mapGraphicGddToLong },		// DBR_GR_LONG
-	{ mapGraphicDoubleToGdd,mapGraphicGddToDouble },	// DBR_GR_DOUBLE
-	{ mapStsStringToGdd,	mapStsGddToString },		// DBR_CTRL_STRING
-	{ mapControlShortToGdd,	mapControlGddToShort },		// DBR_CTRL_SHORT
-	{ mapControlFloatToGdd,	mapControlGddToFloat },		// DBR_CTRL_FLOAT
-	{ mapControlEnumToGdd,	mapControlGddToEnum },		// DBR_CTRL_ENUM
-	{ mapControlCharToGdd,	mapControlGddToChar },		// DBR_CTRL_CHAR
-	{ mapControlLongToGdd,	mapControlGddToLong },		// DBR_CTRL_LONG
-	{ mapControlDoubleToGdd,mapControlGddToDouble }		// DBR_CTRL_DOUBLE
+epicsShareDef extern const gddDbrMapFuncTable gddMapDbr[DBM_N_DBR_TYPES] = {
+    { mapStringToGdd,       mapGddToString },           // DBR_STRING
+    { mapShortToGdd,        mapGddToShort },            // DBR_SHORT
+    { mapFloatToGdd,        mapGddToFloat },            // DBR_FLOAT
+    { mapEnumToGdd,         mapGddToEnum },             // DBR_ENUM
+    { mapCharToGdd,         mapGddToChar },             // DBR_CHAR
+    { mapLongToGdd,         mapGddToLong },             // DBR_LONG
+    { mapDoubleToGdd,       mapGddToDouble },           // DBR_DOUBLE
+    { mapStsStringToGdd,    mapStsGddToString },        // DBR_STS_STRING
+    { mapStsShortToGdd,     mapStsGddToShort },         // DBR_STS_SHORT
+    { mapStsFloatToGdd,     mapStsGddToFloat },         // DBR_STS_FLOAT
+    { mapStsEnumToGdd,      mapStsGddToEnum },          // DBR_STS_ENUM
+    { mapStsCharToGdd,      mapStsGddToChar },          // DBR_STS_CHAR
+    { mapStsLongToGdd,      mapStsGddToLong },          // DBR_STS_LONG
+    { mapStsDoubleToGdd,    mapStsGddToDouble },        // DBR_STS_DOUBLE
+    { mapTimeStringToGdd,   mapTimeGddToString },       // DBR_TIME_STRING
+    { mapTimeShortToGdd,    mapTimeGddToShort },        // DBR_TIME_SHORT
+    { mapTimeFloatToGdd,    mapTimeGddToFloat },        // DBR_TIME_FLOAT
+    { mapTimeEnumToGdd,     mapTimeGddToEnum },         // DBR_TIME_ENUM
+    { mapTimeCharToGdd,     mapTimeGddToChar },         // DBR_TIME_CHAR
+    { mapTimeLongToGdd,     mapTimeGddToLong },         // DBR_TIME_LONG
+    { mapTimeDoubleToGdd,   mapTimeGddToDouble },       // DBR_TIME_DOUBLE
+    { mapStsStringToGdd,    mapStsGddToString },        // DBR_GR_STRING
+    { mapGraphicShortToGdd, mapGraphicGddToShort },     // DBR_GR_SHORT
+    { mapGraphicFloatToGdd, mapGraphicGddToFloat },     // DBR_GR_FLOAT
+    { mapGraphicEnumToGdd,  mapGraphicGddToEnum },      // DBR_GR_ENUM
+    { mapGraphicCharToGdd,  mapGraphicGddToChar },      // DBR_GR_CHAR
+    { mapGraphicLongToGdd,  mapGraphicGddToLong },      // DBR_GR_LONG
+    { mapGraphicDoubleToGdd,mapGraphicGddToDouble },    // DBR_GR_DOUBLE
+    { mapStsStringToGdd,    mapStsGddToString },        // DBR_CTRL_STRING
+    { mapControlShortToGdd, mapControlGddToShort },     // DBR_CTRL_SHORT
+    { mapControlFloatToGdd, mapControlGddToFloat },     // DBR_CTRL_FLOAT
+    { mapControlEnumToGdd,  mapControlGddToEnum },      // DBR_CTRL_ENUM
+    { mapControlCharToGdd,  mapControlGddToChar },      // DBR_CTRL_CHAR
+    { mapControlLongToGdd,  mapControlGddToLong },      // DBR_CTRL_LONG
+    { mapControlDoubleToGdd,mapControlGddToDouble },     // DBR_CTRL_DOUBLE
+    { mapAcktToGdd,         mapGddToAckt },             // DBR_PUT_ACKT
+    { mapAcksToGdd,         mapGddToAcks },             // DBR_PUT_ACKS
+    { mapStsAckStringToGdd, mapStsAckGddToString },     // DBR_STSACK_STRING
+    { mapClassNameToGdd,    mapGddToClassName }         // DBR_CLASS_NAME
 };
+
+#if DBM_N_DBR_TYPES != (LAST_BUFFER_TYPE+1)
+#error db mapper is out of sync with db_access.h
+#endif
+
+epicsShareDef extern const unsigned gddMapDbrNElem = 
+        sizeof(gddMapDbr)/sizeof(gddDbrMapFuncTable);
 

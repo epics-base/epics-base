@@ -77,8 +77,6 @@
 
 #include "shareLib.h"
 
-epicsShareFunc int putenv ( const char *envstring ); /* not in ANSI C */
-
 #define epicsExportSharedSymbols
 #include "errMdef.h"
 #include "envDefs.h"

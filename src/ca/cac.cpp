@@ -14,6 +14,7 @@
 #include "osiSigPipeIgnore.h"
 #include "iocinf.h"
 
+#include "cac_IL.h"
 #include "inetAddrID_IL.h"
 #include "bhe_IL.h"
 #include "tcpiiu_IL.h"

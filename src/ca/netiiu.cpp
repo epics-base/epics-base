@@ -11,7 +11,9 @@
  */
 
 #include "iocinf.h"
+#include "netiiu_IL.h"
 #include "nciu_IL.h"
+
 #include "claimMsgCache_IL.h"
 
 netiiu::~netiiu ()
@@ -246,3 +248,5 @@ int netiiu::subscriptionCancelRequest ( unsigned, unsigned, unsigned, unsigned )
 {
     return ECA_DISCONNCHID;
 }
+
+

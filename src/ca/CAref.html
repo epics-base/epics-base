@@ -72,18 +72,14 @@ height="31" width="88"></a></p>
     data type to the console</a></li>
 </ul>
 
-<h3 style=""><a href="#CommandTools">Command Line Tools <span
-style="color: #FF5F00">(under development)</span></a></h3>
+<h3 style=""><a href="#CommandTools">Command Line Tools</a></h3>
 <ul style="">
   <li><a href="#caget">caget - Get and print value for PVs</a></li>
   <li><a href="#camonitor">camonitor - Set up monitor and continuously print
-    incoming values for PVs <span style="color: #FF5F00">(not implemented
-    yet)</span></a></li>
-  <li><a href="#caput">caput - Put value to a PV <span
-    style="color: #FF5F00">(not implemented yet)</span></a></li>
+    incoming values for PVs</a></li>
+  <li><a href="#caput">caput - Put value to a PV</a></li>
   <li><a href="#cainfo">cainfo - Print all available channel status and
-    information for a PV <span style="color: #FF5F00">(not implemented
-    yet)</span></a></li>
+    information for a PV</a></li>
 </ul>
 
 <h3><a href="#Troublesho">Troubleshooting</a></h3>
@@ -867,16 +863,7 @@ of the PV is converted to each of the many external data type that can be
 specified at the CA client library interface, and each of these is formated
 and then output to the console.</p>
 
-<h2><a name="CommandTools">Command Line Tools <span
-style="color: #FF5F00">(under development)</span></a></h2>
-
-<p><span style="color: #FF5F00">Note: The CA Command Line Tools are currently
-under development. Thus only the first of the tools is included in EPICS Base
-R3.14.5, while the others are still being worked on. These tools have not yet
-proven to be stable and reliable. The user interface might still change, so
-please be careful relying on these early versions in scripts and other
-crucial places. Please report any bugs or unexpected behaviour to the author:
-Ralph.Lange@bessy.de</span></p>
+<h2><a name="CommandTools">Command Line Tools</a></h2>
 
 <h3><a name="caget">caget</a></h3>
 <pre>caget [options] &lt;PV name&gt; ...</pre>
@@ -889,6 +876,9 @@ Ralph.Lange@bessy.de</span></p>
 DBR_... format in which the data is read, the output format, and a number of
 details of how integer and float values are represented can be controlled
 using command line options.</p>
+
+<p>When getting multiple PVs, their order on the command line is retained in
+the output.</p>
 
 <table border="1">
   <caption></caption>
@@ -934,8 +924,7 @@ using command line options.</p>
     </tr>
     <tr>
       <td>-n</td>
-      <td>Print DBF_ENUM values as number (default are enum string
-      values)</td>
+      <td>Print DBF_ENUM values as number (default are enum strings)</td>
     </tr>
     <tr>
       <td>-d &lt;type&gt;</td>
@@ -1085,12 +1074,16 @@ using command line options.</p>
       <td>Use %g format</td>
     </tr>
     <tr>
+      <td>-e &lt;nr&gt;</td>
+      <td>Use %e format, with &lt;nr&gt; digits after the decimal point</td>
+    </tr>
+    <tr>
       <td>-f &lt;nr&gt;</td>
       <td>Use %f format, with &lt;nr&gt; digits after the decimal point</td>
     </tr>
     <tr>
-      <td>-e &lt;nr&gt;</td>
-      <td>Use e format, with &lt;nr&gt; digits after the decimal point</td>
+      <td>-g &lt;nr&gt;</td>
+      <td>Use %g format, with &lt;nr&gt; digits after the decimal point</td>
     </tr>
     <tr>
       <td></td>
@@ -1122,18 +1115,199 @@ using command line options.</p>
 
 <p>Subscribe to and print value updates for PV(s).</p>
 
-<p><span style="color: #FF5F00">Not implemented yet. Under
-development.</span></p>
+<table border="1">
+  <caption></caption>
+  <thead>
+    <tr>
+      <th>Option</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>-h</td>
+      <td>Print usage information</td>
+    </tr>
+    <tr>
+      <td></td>
+      <td><strong>CA options:</strong></td>
+    </tr>
+    <tr>
+      <td>-w &lt;sec&gt;</td>
+      <td>Wait time, specifies longer CA timeout, default is 1.0 second</td>
+    </tr>
+    <tr>
+      <td>-m &lt;mask&gt;</td>
+      <td>Specify CA event mask to use, with &lt;mask&gt; being any
+        combination of 'v' (value), 'a' (alarm), 'l' (log). Default: va</td>
+    </tr>
+    <tr>
+      <td></td>
+      <td><strong>Timestamps:</strong></td>
+    </tr>
+    <tr>
+      <td>Default:</td>
+      <td>Print absolute timestamps (as reported by CA)</td>
+    </tr>
+    <tr>
+      <td>-r</td>
+      <td>Relative timestamps (time elapsed since start of program)</td>
+    </tr>
+    <tr>
+      <td>-i</td>
+      <td>Incremental timestamps (time elapsed since last update)</td>
+    </tr>
+    <tr>
+      <td>-I</td>
+      <td>Incremental timestamps (time elapsed since last update for this
+        channel)</td>
+    </tr>
+    <tr>
+      <td></td>
+      <td><strong>Enum Format:</strong></td>
+    </tr>
+    <tr>
+      <td>-n</td>
+      <td>Print DBF_ENUM values as number (default are enum strings)</td>
+    </tr>
+    <tr>
+      <td></td>
+      <td><strong>Arrays:</strong></td>
+    </tr>
+    <tr>
+      <td></td>
+      <td>Value format: Print number of requested values, then list of
+      values</td>
+    </tr>
+    <tr>
+      <td>Default:</td>
+      <td>Print all values</td>
+    </tr>
+    <tr>
+      <td>-# &lt;count&gt;</td>
+      <td>Print first &lt;count&gt; elements of an array</td>
+    </tr>
+    <tr>
+      <td></td>
+      <td><strong>Floating point type format:</strong></td>
+    </tr>
+    <tr>
+      <td>Default:</td>
+      <td>Use %g format</td>
+    </tr>
+    <tr>
+      <td>-e &lt;nr&gt;</td>
+      <td>Use %e format, with &lt;nr&gt; digits after the decimal point</td>
+    </tr>
+    <tr>
+      <td>-f &lt;nr&gt;</td>
+      <td>Use %f format, with &lt;nr&gt; digits after the decimal point</td>
+    </tr>
+    <tr>
+      <td>-g &lt;nr&gt;</td>
+      <td>Use %g format, with &lt;nr&gt; digits after the decimal
+        pointDefault:</td>
+    </tr>
+    <tr>
+      <td></td>
+      <td><strong>Integer number format:</strong></td>
+    </tr>
+    <tr>
+      <td>Default:</td>
+      <td>Print as decimal number</td>
+    </tr>
+    <tr>
+      <td>-0x</td>
+      <td>Print as hex number</td>
+    </tr>
+    <tr>
+      <td>-0o</td>
+      <td>Print as octal number</td>
+    </tr>
+    <tr>
+      <td>-0b</td>
+      <td>Print as binary number</td>
+    </tr>
+  </tbody>
+</table>
 
 <h3><a name="caput">caput</a></h3>
-<pre>caput [options] &lt;PV name&gt; &lt;value&gt;</pre>
+<pre>caput [options] &lt;PV name&gt; &lt;value&gt;
+caput -a [options] &lt;PV name&gt; &lt;no of elements&gt; &lt;value&gt; ...</pre>
 
 <h4>Description</h4>
 
 <p>Put value to a PV.</p>
 
-<p><span style="color: #FF5F00">Not implemented yet. Under
-development.</span></p>
+<p>The specified value is written to the PV (as a string). The PV value is
+read before and after the write operation and printed as "Old" and "new"
+values on stdout.</p>
+
+<p>The array variant writes an array to the specified PV. The first numeric
+argument specifying the number of array elements is kept for compatibility
+with the array data format of caget - the actual number of values specified
+on the command line is used.</p>
+
+<table border="1">
+  <caption></caption>
+  <thead>
+    <tr>
+      <th>Option</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>-h</td>
+      <td>Print usage information</td>
+    </tr>
+    <tr>
+      <td></td>
+      <td><strong>CA options:</strong></td>
+    </tr>
+    <tr>
+      <td>-w &lt;sec&gt;</td>
+      <td>Wait time, specifies longer CA timeout, default is 1.0 second</td>
+    </tr>
+    <tr>
+      <td></td>
+      <td><strong>Format options:</strong></td>
+    </tr>
+    <tr>
+      <td>-t</td>
+      <td>Terse mode - print only sucessfully written value, without name</td>
+    </tr>
+    <tr>
+      <td></td>
+      <td><strong>Enum Format:</strong></td>
+    </tr>
+    <tr>
+      <td></td>
+      <td>Auto - try value as ENUM string, then as index number</td>
+    </tr>
+    <tr>
+      <td>-n</td>
+      <td>Force interpretation of values as numbers</td>
+    </tr>
+    <tr>
+      <td>-s</td>
+      <td>Force interpretation of values as strings</td>
+    </tr>
+    <tr>
+      <td></td>
+      <td><strong>Arrays:</strong></td>
+    </tr>
+    <tr>
+      <td>-a</td>
+      <td>Put array data</td>
+    </tr>
+    <tr>
+      <td></td>
+      <td>Value format: Print number of requested values, then list of
+      values</td>
+    </tr>
+  </tbody>
+</table>
 
 <h3><a name="cainfo">cainfo</a></h3>
 <pre>cainfo [options] &lt;PV name&gt; ...</pre>
@@ -1142,8 +1316,43 @@ development.</span></p>
 
 <p>Get and print channel and connection information for PV(s).</p>
 
-<p><span style="color: #FF5F00">Not implemented yet. Under
-development.</span></p>
+<p>All available Channel Access related information about PV(s) is printed to
+stdout.</p>
+
+<p>The -s option allows to specify an interest level for calling Channel
+Access' internal report function ca_client_status(), that prints lots of
+internal informations on stdout, including environment settings, used CA
+ports etc.</p>
+
+<table border="1">
+  <caption></caption>
+  <thead>
+    <tr>
+      <th>Option</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>-h</td>
+      <td>Print usage information</td>
+    </tr>
+    <tr>
+      <td></td>
+      <td><strong>CA options:</strong></td>
+    </tr>
+    <tr>
+      <td>-w &lt;sec&gt;</td>
+      <td>Wait time, specifies longer CA timeout, default is 1.0 second</td>
+    </tr>
+    <tr>
+      <td>-s &lt;level&gt;</td>
+      <td>Call ca_client_status with the specified interest level</td>
+    </tr>
+  </tbody>
+</table>
+
+<p></p>
 
 <h2><a name="Troublesho">Troubleshooting</a></h2>
 

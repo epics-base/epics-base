@@ -31,6 +31,8 @@ of this distribution.
 #include <errno.h>
 #include <taskLib.h>
 
+#include "dbDefs.h"
+#include "errlog.h"
 #include "cadef.h"
 #include "caerr.h"
 #include "alarm.h"

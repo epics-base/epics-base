@@ -28,6 +28,9 @@
  * Modification Log:
  * -----------------
  *  $Log$
+ *  Revision 1.8  1996/08/05 19:33:40  jhill
+ *  removed ; from if
+ *
  *  Revision 1.7  1996/04/22 14:30:38  mrk
  *  Changes for dynamic link modification
  *
@@ -75,22 +78,23 @@
 #include	<tickLib.h>
 #include	<sysLib.h>
 
-#include	<fast_lock.h>
-#include	<alarm.h>
-#include	<dbDefs.h>
-#include	<dbBase.h>
-#include	<dbAccess.h>
-#include	<dbScan.h>
-#include	<dbCommon.h>
-#include	<dbLock.h>
-#include	<dbFldTypes.h>
-#include	<dbBkpt.h>
-#include	<db_field_log.h>
-#include	<errMdef.h>
-#include	<recSup.h>
-#include	<recGbl.h>
-#include	<special.h>
-#include        <task_params.h>
+#include	"dbDefs.h"
+#include	"errlog.h"
+#include	"fast_lock.h"
+#include	"alarm.h"
+#include	"dbBase.h"
+#include	"dbAccess.h"
+#include	"dbScan.h"
+#include	"dbCommon.h"
+#include	"dbLock.h"
+#include	"dbFldTypes.h"
+#include	"dbBkpt.h"
+#include	"db_field_log.h"
+#include	"errMdef.h"
+#include	"recSup.h"
+#include	"recGbl.h"
+#include	"special.h"
+#include        "task_params.h"
 
 /* private routines */
 static void dbBkptCont();

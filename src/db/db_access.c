@@ -46,18 +46,21 @@
  ***/
 
 #include        <vxWorks.h>
-#include        <types.h>
-
+#include        <stddef.h>
+#include        <stdlib.h>
 #include        <stdarg.h>
 #include        <fioLib.h>
 #include        <string.h>
-#include        <dbDefs.h>
-#include        <dbAccess.h>
-#include        <dbCommon.h>
-#include        <errMdef.h>
-#include        <recSup.h>
+#include        <types.h>
 
-#include	<alarm.h>
+#include        "dbDefs.h"
+#include        "errlog.h"
+#include        "dbAccess.h"
+#include        "dbCommon.h"
+#include        "errMdef.h"
+#include        "recSup.h"
+
+#include	"alarm.h"
 
 #ifndef NULL
 #define NULL 0

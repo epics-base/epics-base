@@ -38,22 +38,23 @@
 #include        <vxLib.h>
 #include        <tickLib.h>
  
-#include        <fast_lock.h>
-#include        <cvtFast.h>
-#include        <alarm.h>
-#include        <dbDefs.h>
-#include        <dbBase.h>
-#include        <dbAccess.h>
-#include        <dbConvert.h>
-#include        <dbStaticLib.h>
-#include        <dbScan.h>
-#include        <dbCommon.h>
-#include        <dbFldTypes.h>
-#include        <db_field_log.h>
-#include        <errMdef.h>
-#include        <recSup.h>
-#include        <recGbl.h>
-#include        <special.h>
+#include        "dbDefs.h"
+#include        "errlog.h"
+#include        "fast_lock.h"
+#include        "cvtFast.h"
+#include        "alarm.h"
+#include        "dbBase.h"
+#include        "dbAccess.h"
+#include        "dbConvert.h"
+#include        "dbStaticLib.h"
+#include        "dbScan.h"
+#include        "dbCommon.h"
+#include        "dbFldTypes.h"
+#include        "db_field_log.h"
+#include        "errMdef.h"
+#include        "recSup.h"
+#include        "recGbl.h"
+#include        "special.h"
  
 extern struct dbBase *pdbbase;
 

@@ -68,9 +68,11 @@ static char *sccsID = "@(#) $Id$";
 #include 	<stdioLib.h>
 #include	<stdlib.h>
 
-#include	<fast_lock.h>
+#include	"dbDefs.h"
+#include	"errlog.h"
+#include	"fast_lock.h"
 #define devLibGlobal
-#include	<devLib.h>
+#include	"devLib.h"
 
 
 LOCAL LIST addrAlloc[atLast];

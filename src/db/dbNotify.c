@@ -40,16 +40,17 @@
 #include	<semLib.h>
 #include	<sysLib.h>
 
-#include	<dbDefs.h>
-#include	<fast_lock.h>
-#include	<dbBase.h>
-#include	<dbAccess.h>
-#include	<dbStaticLib.h>
-#include	<dbScan.h>
-#include	<dbCommon.h>
-#include	<errMdef.h>
-#include	<ellLib.h>
-#include	<recGbl.h>
+#include	"dbDefs.h"
+#include	"errlog.h"
+#include	"fast_lock.h"
+#include	"dbBase.h"
+#include	"dbAccess.h"
+#include	"dbStaticLib.h"
+#include	"dbScan.h"
+#include	"dbCommon.h"
+#include	"errMdef.h"
+#include	"ellLib.h"
+#include	"recGbl.h"
 
 /*NODE structure attached to ppnn field of each record in list*/
 typedef struct {

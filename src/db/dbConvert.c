@@ -35,15 +35,17 @@
 #include	<stdio.h>
 #include	<string.h>
 
-#include	<cvtFast.h>
-#include	<dbBase.h>
-#include	<dbAccess.h>
-#include	<dbConvert.h>
-#include	<dbStaticLib.h>
-#include	<dbFldTypes.h>
-#include	<errMdef.h>
-#include	<recSup.h>
-#include	<recGbl.h>
+#include	"dbDefs.h"
+#include	"errlog.h"
+#include	"cvtFast.h"
+#include	"dbBase.h"
+#include	"dbAccess.h"
+#include	"dbConvert.h"
+#include	"dbStaticLib.h"
+#include	"dbFldTypes.h"
+#include	"errMdef.h"
+#include	"recSup.h"
+#include	"recGbl.h"
 
 /* DATABASE ACCESS GET CONVERSION SUPPORT */
 

@@ -67,22 +67,23 @@ int dbhcr(void);		/*Hardware Configuration Report*/
 /*for open and close*/
 #include <ioLib.h>
 
-#include <ellLib.h>
-#include <fast_lock.h>
-#include <dbDefs.h>
-#include <dbAccess.h>
-#include <dbBase.h>
-#include <dbCommon.h>
-#include <dbLock.h>
-#include <recSup.h>
-#include <devSup.h>
-#include <drvSup.h>
-#include <recGbl.h>
-#include <special.h>
-#include <dbStaticLib.h>
-#include <dbEvent.h>
-#include <ellLib.h>
-#include <callback.h>
+#include "dbDefs.h"
+#include "errlog.h"
+#include "ellLib.h"
+#include "fast_lock.h"
+#include "dbAccess.h"
+#include "dbBase.h"
+#include "dbCommon.h"
+#include "dbLock.h"
+#include "recSup.h"
+#include "devSup.h"
+#include "drvSup.h"
+#include "recGbl.h"
+#include "special.h"
+#include "dbStaticLib.h"
+#include "dbEvent.h"
+#include "ellLib.h"
+#include "callback.h"
 
 extern struct dbBase *pdbbase;
 

@@ -40,11 +40,12 @@
 #include 	<taskLib.h>
 #include 	<sysLib.h>
 
-#include        <dbDefs.h>
-#include        <errMdef.h>
-#include        <taskwd.h>
-#include        <task_params.h>
-#include        <fast_lock.h>
+#include        "dbDefs.h"
+#include        "errlog.h"
+#include        "errMdef.h"
+#include        "taskwd.h"
+#include        "task_params.h"
+#include        "fast_lock.h"
 
 struct task_list {
 	ELLNODE		node;

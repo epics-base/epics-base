@@ -47,17 +47,17 @@
 #include	<stdioLib.h>
 #include	<strLib.h>
 
-#include	<dbDefs.h>
-#include	<dbBase.h>
-#include	<epicsPrint.h>
-#include	<dbEvent.h>
-#include	<dbAccess.h>
-#include	<dbConvert.h>
-#include	<dbScan.h>
-#include	<devSup.h>
-#include	<recGbl.h>
-#include	<dbCommon.h>
-#include	<drvTS.h>
+#include	"dbDefs.h"
+#include	"epicsPrint.h"
+#include	"dbBase.h"
+#include	"dbEvent.h"
+#include	"dbAccess.h"
+#include	"dbConvert.h"
+#include	"dbScan.h"
+#include	"devSup.h"
+#include	"recGbl.h"
+#include	"dbCommon.h"
+#include	"drvTS.h"
 
 
 /* local routines */

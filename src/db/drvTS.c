@@ -1,6 +1,9 @@
 
 /*
  * $Log$
+ * Revision 1.20  1997/05/30 13:17:21  mrk
+ * get rid of warning messages when using TS_1900_TO_*
+ *
  * Revision 1.19  1997/03/05 13:20:44  jbk
  * Fixed a bug in TSreport - printing of IP addresses was incorrect
  *
@@ -157,6 +160,8 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #include <net/if.h>
 #include <envDefs.h>
 #include <envLib.h>
+
+#include <dbDefs.h>
 #include <epicsPrint.h>
 
 #include <errMdef.h>

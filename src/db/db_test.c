@@ -36,8 +36,10 @@
 #include	<vxWorks.h>
 #include	<stdlib.h>
 #include	<stdio.h>
-#include        <dbDefs.h>
-#include        <db_access.h>
+
+#include        "dbDefs.h"
+#include        "errlog.h"
+#include        "db_access.h"
 
 
 /* function declarations */

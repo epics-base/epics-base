@@ -39,6 +39,7 @@ of this distribution.
 #undef INVALID_DB_REQ
 /*end of conflicting definitions*/
 #include "cadef.h"
+#include "dbDefs.h"
 #include "epicsPrint.h"
 #include "dbCommon.h"
 #include "dbCa.h"

@@ -78,10 +78,11 @@
 #include	<logLib.h>
 #include	<taskLib.h>
 
+#include	"dbDefs.h"
+#include	"errlog.h"
 #include	"taskwd.h"
 #include	"freeList.h"
 #include 	"tsDefs.h"
-#include	"dbDefs.h"
 #include	"dbCommon.h"
 #include	"task_params.h"
 #include	"dbAccess.h"

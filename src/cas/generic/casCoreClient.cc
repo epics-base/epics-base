@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.7  1998/02/05 22:52:46  jhill
+ * removed trash
+ *
  * Revision 1.6  1997/06/13 09:15:55  jhill
  * connect proto changes
  *
@@ -85,27 +88,27 @@ casCoreClient::casCoreClient (caServerI &serverInternal) : casEventSys(*this)
 //
 casCoreClient::~casCoreClient()
 {
-        if (this->ctx.getServer()->getDebugLevel()>0u) {
-                ca_printf ("CAS: Connection Terminated\n");
-        }
+    if (this->ctx.getServer()->getDebugLevel()>0u) {
+		ca_printf ("CAS: Connection Terminated\n");
+    }
 
 	this->osiLock();
 	tsDLIterBD<casAsyncIOI>   iterIO(this->ioInProgList.first());
 	tsDLIterBD<casAsyncIOI>   tmpIO;
 	tsDLIterBD<casAsyncIOI>   eolIO;
 
-        //
-        // cancel any pending asynchronous IO
-        //
-        while (iterIO!=eolIO) {
-                //
-                // destructor removes from this list
-                //
+	//
+	// cancel any pending asynchronous IO
+	//
+	while (iterIO!=eolIO) {
+		//
+		// destructor removes from this list
+		//
 		tmpIO = iterIO;
 		++tmpIO;
 		iterIO->destroy();
 		iterIO = tmpIO;
-        }
+	}
 
 	this->osiUnlock();
 }

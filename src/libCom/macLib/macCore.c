@@ -754,7 +754,11 @@ char *Strdup( char *string )
     return copy;
 }
 
-/* $Log$
+/*************************************************************************
+ * $Log$
+ * Revision 1.8  1998/02/27 01:34:13  jhill
+ * cleaned up the DLL symbol export
+ *
  * Revision 1.7  1998/02/20 21:45:16  evans
  * Made a large number of changes to epicsShareThings in libCom routines
  * to get imports and exports straight on WIN32.  Not everything is fixed

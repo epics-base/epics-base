@@ -109,8 +109,13 @@
 	 * (Those using either ... or va_list arguments)
 	 */
 #	define epicsShareAPIV __cdecl
+    /* 
+     * visual C++ appears to require extern even
+     * in the variable/objects definition? This
+     * does not match their documentation.
+     */
 #	if defined(EPICS_DLL_NO) /* this indicates that we are not building a DLL */
-#		define epicsShareDef
+#		define epicsShareDef extern 
 #	else
 #		define epicsShareDef __declspec(dllexport) extern
 #	endif

@@ -188,8 +188,8 @@ int recGblReportDbCommon(fp,paddr)
     if(recGblReportGblChoice(fp,precord,"SCAN",precord->scan)) return(-1);
     if(fprintf(fp,"PHAS %d\tEVNT %d\n",
 		precord->phas,precord->evnt)<0) return(-1);
-    if(fprintf(fp,"STAT %d\tSEVR %d\nDTYP %5d\n",
-		precord->stat,precord->sevr,precord->dtyp)<0) return(-1);
+    if(fprintf(fp,"STAT %d\tSEVR %d\tACHN %d\nDTYP %5d\n",
+		precord->stat,precord->sevr,precord->achn,precord->dtyp)<0) return(-1);
     if(precord->dset != NULL) {
 	if(!(pdevSup=GET_DEVSUP(paddr->record_type))) return(-1);
 	if(fprintf(fp,"DSET %s\n",(pdevSup->dsetName[precord->dtyp]))<0)
@@ -216,8 +216,10 @@ int recGblReportLink(fp,pfield_name,plink)
 	    plink->value.value)<0) return(-1);
 	break;
     case PV_LINK:
-	if(fprintf(fp,"%4s %28s.%4s\n",
+	if(fprintf(fp,"%4s %1d %1d PV_LINK: %28s %4s\n",
 	    pfield_name,
+	    plink->value.pv_link.process_passive,
+	    plink->value.pv_link.maximize_sevr,
 	    plink->value.pv_link.pvname,
 	    plink->value.pv_link.fldname)<0) return(-1);
 	break;
@@ -256,16 +258,20 @@ int recGblReportLink(fp,pfield_name,plink)
 	    plink->value.bitbusio.signal)<0) return(-1);
 	break;
     case DB_LINK:
-	if(fprintf(fp,"%4s DB_LINK: %28s\n",
+	if(fprintf(fp,"%4s  %1d %1d DB_LINK: %28s\n",
 	    pfield_name,
+	    plink->value.db_link.process_passive,
+	    plink->value.db_link.maximize_sevr,
 	    ((struct dbCommon *)(
 		((struct dbAddr *)plink->value.db_link.paddr)
 		->precord))->name)<0)
 	    return(-1);
 	break;
     case CA_LINK:
-	if(fprintf(fp,"%4s CA_LINK: Not Yet Implemented\n",
-	    pfield_name)<0) return(-1);
+	if(fprintf(fp,"%4s  %1d %1d CA_LINK: Not Yet Implemented\n",
+	    pfield_name,
+	    plink->value.ca_link.process_passive,
+	    plink->value.ca_link.maximize_sevr) <0) return(-1);
 	break;
     default:
 	errMessage(S_db_badField,"recGblReportLink: Illegal link.type");

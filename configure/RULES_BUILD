@@ -77,7 +77,7 @@ endif
 
 ifneq (,$(strip $(PROD) $(TESTPROD) $(LIBRARY) $(LOADABLE_LIBRARY)))
 
-MakefileInclude: ../Makefile
+MakefileInclude: ../Makefile $(wildcard $(TOP)/configure/RELEASE*)
 	@$(RM) $@
 	@$(PERL) $(TOOLS)/makeMakefileInclude.pl $(PROD) $(TESTPROD) $(LIBRARY) $(LOADABLE_LIBRARY) $@
 

@@ -742,8 +742,8 @@ epicsShareFunc void epicsShareAPI epicsThreadOnceOsd (
     assert ( stat == WAIT_OBJECT_0 );
 
     if ( ! *id ) {
-        *id = 1;
         ( *func ) ( arg );
+        *id = 1;
     }
 
     success = ReleaseMutex ( win32ThreadGlobalMutex );

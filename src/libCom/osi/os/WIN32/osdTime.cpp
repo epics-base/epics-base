@@ -68,8 +68,7 @@ static CRITICAL_SECTION osdTimeCriticalSection;
 static bool osdTimeSyncThreadExit = false;
 static LONGLONG epicsEpoch;
 
-static int osdTimeSych ();
-
+static void osdTimeInit ( void * );
 
 /*
  * osdTimeExit ()
@@ -80,91 +79,10 @@ static void osdTimeExit ()
     osdTimeSyncThreadExit = true;
 }
 
-/*
- * epicsWin32ThreadEntry()
- */
-static unsigned __stdcall osdTimeSynchThreadEntry (LPVOID)
-{
-    static const DWORD tmoTenSec = 10 * epicsTime::mSecPerSec;
-    int status;
-
-    while ( ! osdTimeSyncThreadExit ) {
-	    Sleep (tmoTenSec); 
-        status = osdTimeSych ();
-        if (status!=epicsTimeOK) {
-            errlogPrintf ("osdTimeSych (): failed?\n");
-        }
-    }
-    return 0u;
-}
-
 //
-// osdTimeInit ()
+// osdTimeSychPvt ()
 //
-static void osdTimeInit ( void * )
-{
-	LARGE_INTEGER parm;
-	BOOL success;
-    int unixStyleStatus;
-    HANDLE osdTimeThread;
-    unsigned threadAddr;
-	FILETIME epicsEpochFT;
-
-    InitializeCriticalSection ( & osdTimeCriticalSection );
-
-	//
-	// initialize elapsed time counters
-	//
-	// All CPUs running win32 currently have HR
-	// counters (Intel and Mips processors do)
-	//
-	if ( QueryPerformanceFrequency (&parm) == 0 ) {
-        DeleteCriticalSection ( & osdTimeCriticalSection );
-        return;
-	}
-	perf_freq = parm.QuadPart;
-
-	//
-	// convert the EPICS epoch to file time
-	//
-	success = SystemTimeToFileTime (&epicsEpochST, &epicsEpochFT);
-    if ( ! success ) {
-        DeleteCriticalSection ( & osdTimeCriticalSection );
-        return;
-    }
-	parm.LowPart = epicsEpochFT.dwLowDateTime;
-	parm.HighPart = epicsEpochFT.dwHighDateTime;
-	epicsEpoch = parm.QuadPart;
-
-    // set here to avoid recursion problems
-    osdTimeInitSuccess = true;
-
-    unixStyleStatus = osdTimeSych ();
-    if ( unixStyleStatus != epicsTimeOK ) {
-        DeleteCriticalSection ( & osdTimeCriticalSection );
-        return;
-    }
-
-    //
-    // spawn off a thread which periodically resynchronizes the offset
-    //
-    osdTimeThread = (HANDLE) _beginthreadex ( NULL, 4096, osdTimeSynchThreadEntry, 
-                0, 0, &threadAddr );
-    if ( osdTimeThread == NULL ) {
-        errlogPrintf ( "osdTimeInit(): unable to start time synch thread\n" );
-    }
-    else {
-        assert ( CloseHandle ( osdTimeThread ) );
-    }
-
-    atexit ( osdTimeExit );
-
-}
-
-//
-// osdTimeSych ()
-//
-static int osdTimeSych ()
+static int osdTimeSychPvt ()
 {
     static const DWORD tmoTwentySec = 20 * epicsTime::mSecPerSec;
 	LONGLONG new_sec_offset, new_frac_offset;
@@ -172,11 +90,6 @@ static int osdTimeSych ()
 	LONGLONG secondsSinceBoot;
 	FILETIME currentTimeFT;
 	LONGLONG currentTime;
-
-    epicsThreadOnce ( &osdTimeOnceFlag, osdTimeInit, 0 );
-    if ( ! osdTimeInitSuccess ) {
-        return epicsTimeERROR;
-    }
 
 	//
 	// its important that the following two time queries
@@ -275,6 +188,100 @@ static int osdTimeSych ()
     LeaveCriticalSection ( & osdTimeCriticalSection );
 
     return epicsTimeOK;
+}
+
+//
+// osdTimeSych ()
+//
+static int osdTimeSych ()
+{
+    epicsThreadOnce ( &osdTimeOnceFlag, osdTimeInit, 0 );
+    if ( ! osdTimeInitSuccess ) {
+        return epicsTimeERROR;
+    }
+
+    return osdTimeSychPvt ();
+}
+
+/*
+ * osdTimeSynchThreadEntry()
+ */
+static unsigned __stdcall osdTimeSynchThreadEntry (LPVOID)
+{
+    static const DWORD tmoTenSec = 10 * epicsTime::mSecPerSec;
+    int status;
+
+    while ( ! osdTimeSyncThreadExit ) {
+	    Sleep (tmoTenSec); 
+        status = osdTimeSych ();
+        if ( status != epicsTimeOK ) {
+            errlogPrintf ( "osdTimeSych (): failed?\n" );
+        }
+    }
+    return 0u;
+}
+
+//
+// osdTimeInit ()
+//
+static void osdTimeInit ( void * )
+{
+	LARGE_INTEGER parm;
+	BOOL success;
+    int unixStyleStatus;
+    HANDLE osdTimeThread;
+    unsigned threadAddr;
+	FILETIME epicsEpochFT;
+
+    InitializeCriticalSection ( & osdTimeCriticalSection );
+
+	//
+	// initialize elapsed time counters
+	//
+	// All CPUs running win32 currently have HR
+	// counters (Intel and Mips processors do)
+	//
+	if ( QueryPerformanceFrequency (&parm) == 0 ) {
+        DeleteCriticalSection ( & osdTimeCriticalSection );
+        return;
+	}
+	perf_freq = parm.QuadPart;
+
+	//
+	// convert the EPICS epoch to file time
+	//
+	success = SystemTimeToFileTime (&epicsEpochST, &epicsEpochFT);
+    if ( ! success ) {
+        DeleteCriticalSection ( & osdTimeCriticalSection );
+        return;
+    }
+	parm.LowPart = epicsEpochFT.dwLowDateTime;
+	parm.HighPart = epicsEpochFT.dwHighDateTime;
+	epicsEpoch = parm.QuadPart;
+
+    // set here to avoid recursion problems
+    osdTimeInitSuccess = true;
+
+    unixStyleStatus = osdTimeSychPvt ();
+    if ( unixStyleStatus != epicsTimeOK ) {
+        DeleteCriticalSection ( & osdTimeCriticalSection );
+        return;
+    }
+
+    //
+    // spawn off a thread which periodically resynchronizes the offset
+    //
+    osdTimeThread = (HANDLE) _beginthreadex ( NULL, 4096, osdTimeSynchThreadEntry, 
+                0, 0, &threadAddr );
+    if ( osdTimeThread == NULL ) {
+        errlogPrintf ( "osdTimeInit(): unable to start time synch thread\n" );
+    }
+    else {
+        assert ( CloseHandle ( osdTimeThread ) );
+    }
+
+    atexit ( osdTimeExit );
+
 }
 
 //

@@ -1,9 +1,9 @@
-//  epics_auto_ptr.h
+//  epicsMemoryH.h
 //	Author:	Jeff Hill
 //	Date:	March 2001
 
-#ifndef epics_auto_ptrh
-#define epics_auto_ptrh
+#ifndef epicsMemoryH
+#define epicsMemoryH
 
 template < class T >
 class epics_auto_ptr {
@@ -71,4 +71,4 @@ inline T * epics_auto_ptr<T>::release ()
     return pTmp; 
 }
 
-#endif // ifndef epics_auto_ptrh
+#endif // ifndef epicsMemoryH

@@ -10,9 +10,10 @@
  *  Author: Jeff Hill
  */
 
+#include "epicsMemory.h"
+
 #include "osiProcess.h"
 #include "osiSigPipeIgnore.h"
-#include "epics_auto_ptr.h"
 
 #include "iocinf.h"
 #include "cac_IL.h"

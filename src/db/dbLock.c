@@ -215,7 +215,7 @@ void dbScanLock(dbCommon *precord)
     if(!(plockRecord= (lockRecord *)precord->lset)) {
 	epicsPrintf("dbScanLock plockRecord is NULL record %s\n",
 	    precord->name);
-	exit(1);
+	taskSuspend(0);
     }
     while(TRUE) {
 	if(changingLockSets) {

@@ -36,6 +36,7 @@
 #include "epicsPrint.h"
 #include "epicsVersion.h"
 #include "epicsAssert.h"
+#include "osiThread.h"
 #include "cantProceed.h"
 
 /*
@@ -45,38 +46,38 @@ epicsShareFunc void epicsShareAPI
 	epicsAssert (const char *pFile, const unsigned line, 
     const char *pExp, const char *pAuthorName)
 {
-	epicsPrintf (
+	errlogPrintf (
 "\n\n\nA call to \"assert (%s)\" failed in %s line %d.\n", pExp, pFile, line);
 
-	epicsPrintf (
+	errlogPrintf (
 "The file \"core\" will be created in the current working directory.\n");
 
-	epicsPrintf (
+	errlogPrintf (
 "Please save this file and the text of this message in order to assist\n");
 
-	epicsPrintf (
+	errlogPrintf (
 "in diagnosing this problem.\n");
 
 	if (pAuthorName) {
 
-		epicsPrintf (
+		errlogPrintf (
 "Please send the text of this message to \"%s\"\n", pAuthorName);
 
-		epicsPrintf (
+		errlogPrintf (
 "(the author of this call to assert()) or to \"tech-talk@aps.anl.gov\"\n");
 
 	}
 	else {
 
-		epicsPrintf (
+		errlogPrintf (
 "Please contact the author of this software or else send the text of\n");
 
-		epicsPrintf (
+		errlogPrintf (
 "this message to \"tech-talk@aps.anl.gov\"\n");
 
 	}
-	epicsPrintf ("This problem occurred in \"%s\"\n", epicsReleaseVersion);
-
-	abort ();
+	errlogPrintf ("This problem occurred in \"%s\"\n", epicsReleaseVersion);
+        errlogPrintf("calling threadSuspendSelf()\n");
+        threadSuspendSelf();
 }
 

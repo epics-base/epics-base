@@ -263,12 +263,13 @@ public:
     void vSignal ( int ca_status, const char *pfilenm, 
                      int lineno, const char *pFormat, va_list args );
     bool preemptiveCallbakIsEnabled () const;
-    epicsGuard < callbackMutex > callbackGuardFactory ();
     void destroyChannel ( oldChannelNotify & chan );
     void destroyGetCopy ( getCopy & );
     void destroyGetCallback ( getCallback & );
     void destroyPutCallback ( putCallback & );
     void destroySubscription ( oldSubscription & );
+    void changeConnCallBack ( caCh * pfunc, caCh * & pConnCallBack, 
+        const bool & currentlyConnected );
 
     // exceptions
     class noSocket {};
@@ -280,9 +281,11 @@ private:
     tsFreeList < struct oldSubscription, 1024 > subscriptionFreeList;
     tsFreeList < struct CASG, 128 > casgFreeList;
     mutable ca_client_context_mutex mutex; 
+    epicsMutex callbackMutex; 
     epicsEvent ioDone;
+    epicsEvent callbackThreadActivityComplete;
     epics_auto_ptr < cac > pClientCtx;
-    epics_auto_ptr < epicsGuard < callbackMutex > > pCallbackGuard;
+    epics_auto_ptr < epicsGuard < epicsMutex > > pCallbackGuard;
     caExceptionHandler * ca_exception_func;
     void * ca_exception_arg;
     caPrintfFunc * pVPrintfFunc;
@@ -291,11 +294,13 @@ private:
     SOCKET sock;
     unsigned pndRecvCnt;
     unsigned ioSeqNo;
+    unsigned callbackThreadsPending;
     ca_uint16_t localPort;
     bool fdRegFuncNeedsToBeCalled;
     bool noWakeupSincePend;
 
-    void messageArrivalNotify ();
+    void callbackLock ();
+    void callbackUnlock ();
     void attachToClientCtx ();
 	ca_client_context ( const ca_client_context & );
 	ca_client_context & operator = ( const ca_client_context & );
@@ -482,6 +487,14 @@ inline oldChannelNotify & oldSubscription::channel () const
     return this->chan;
 }
 
+inline int oldChannelNotify::changeConnCallBack ( caCh * pfunc )
+{
+    // operation protected by call back lock in ca_client_context
+    this->cacCtx.changeConnCallBack ( pfunc, 
+        this->pConnCallBack, this->currentlyConnected );
+    return ECA_NORMAL;
+}
+
 inline void * getCopy::operator new ( size_t size, 
     tsFreeList < class getCopy, 1024 > & freeList )
 {
@@ -579,7 +592,7 @@ inline void ca_client_context::selfTest ()
 
 inline bool ca_client_context::preemptiveCallbakIsEnabled () const
 {
-    return this->pClientCtx->preemptiveCallbakIsEnabled ();
+    return ! this->pCallbackGuard.get ();
 }
 
 inline bool ca_client_context::ioComplete () const
@@ -591,11 +604,6 @@ inline unsigned ca_client_context::sequenceNumberOfOutstandingIO () const
 {
     // perhaps on SMP systems THERE should be lock/unlock around this
     return this->ioSeqNo;
-}
-
-inline epicsGuard < callbackMutex > ca_client_context::callbackGuardFactory ()
-{
-    return this->pClientCtx->callbackGuardFactory ();
 }
 
 inline void ca_client_context_mutex::lock ()

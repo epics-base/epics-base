@@ -62,6 +62,7 @@
  * .20  02-05-92	jba	Changed function arguments from paddr to precord 
  * .21  02-28-92        jba     Changed get_precision,get_graphic_double,get_control_double
  * .22  02-28-92	jba	ANSI C changes
+ * .23  06-02-92        jba     changed graphic/control limits for hihi,high,low,lolo
  */
 
 #include	<vxWorks.h>
@@ -246,10 +247,26 @@ static long get_graphic_double(paddr,pgd)
 {
     struct calcRecord	*pcalc=(struct calcRecord *)paddr->precord;
 
-    if(paddr->pfield==(void *)&pcalc->val){
+    if(paddr->pfield==(void *)&pcalc->val
+    || paddr->pfield==(void *)&pcalc->hihi
+    || paddr->pfield==(void *)&pcalc->high
+    || paddr->pfield==(void *)&pcalc->low
+    || paddr->pfield==(void *)&pcalc->lolo){
         pgd->upper_disp_limit = pcalc->hopr;
         pgd->lower_disp_limit = pcalc->lopr;
-    } else recGblGetGraphicDouble(paddr,pgd);
+       return(0);
+    } 
+
+    if(paddr->pfield>=(void *)&pcalc->a && paddr->pfield<=(void *)&pcalc->l){
+        pgd->upper_disp_limit = pcalc->hopr;
+        pgd->lower_disp_limit = pcalc->lopr;
+        return(0);
+    }
+    if(paddr->pfield>=(void *)&pcalc->la && paddr->pfield<=(void *)&pcalc->ll){
+        pgd->upper_disp_limit = pcalc->hopr;
+        pgd->lower_disp_limit = pcalc->lopr;
+        return(0);
+    }
     return(0);
 }
 
@@ -259,10 +276,26 @@ static long get_control_double(paddr,pcd)
 {
     struct calcRecord	*pcalc=(struct calcRecord *)paddr->precord;
 
-    if(paddr->pfield==(void *)&pcalc->val){
+    if(paddr->pfield==(void *)&pcalc->val
+    || paddr->pfield==(void *)&pcalc->hihi
+    || paddr->pfield==(void *)&pcalc->high
+    || paddr->pfield==(void *)&pcalc->low
+    || paddr->pfield==(void *)&pcalc->lolo){
         pcd->upper_ctrl_limit = pcalc->hopr;
         pcd->lower_ctrl_limit = pcalc->lopr;
-    } else recGblGetControlDouble(paddr,pcd);
+       return(0);
+    } 
+
+    if(paddr->pfield>=(void *)&pcalc->a && paddr->pfield<=(void *)&pcalc->l){
+        pcd->upper_ctrl_limit = pcalc->hopr;
+        pcd->lower_ctrl_limit = pcalc->lopr;
+        return(0);
+    }
+    if(paddr->pfield>=(void *)&pcalc->la && paddr->pfield<=(void *)&pcalc->ll){
+        pcd->upper_ctrl_limit = pcalc->hopr;
+        pcd->lower_ctrl_limit = pcalc->lopr;
+        return(0);
+    }
     return(0);
 }
 static long get_alarm_double(paddr,pad)

@@ -37,6 +37,7 @@
  * .04  02-05-92	jba	Changed function arguments from paddr to precord 
  * .05  02-28-92        jba     Changed get_precision,get_graphic_double,get_control_double
  * .06  02-28-92	jba	ANSI C changes
+ * .07  06-02-92        jba     changed graphic/control limits for hihi,high,low,lolo
  */
 
 #include	<vxWorks.h>
@@ -226,7 +227,11 @@ static long get_graphic_double(paddr,pgd)
     double *pvalue,*plvalue;
     int i;
 
-    if(paddr->pfield==(void *)&psel->val){
+    if(paddr->pfield==(void *)&psel->val
+    || paddr->pfield==(void *)&psel->hihi
+    || paddr->pfield==(void *)&psel->high
+    || paddr->pfield==(void *)&psel->low
+    || paddr->pfield==(void *)&psel->lolo){
         pgd->upper_disp_limit = psel->hopr;
         pgd->lower_disp_limit = psel->lopr;
         return(0);
@@ -254,7 +259,11 @@ static long get_control_double(paddr,pcd)
     double *pvalue;
     int i;
 
-    if(paddr->pfield==(void *)&psel->val){
+    if(paddr->pfield==(void *)&psel->val
+    || paddr->pfield==(void *)&psel->hihi
+    || paddr->pfield==(void *)&psel->high
+    || paddr->pfield==(void *)&psel->low
+    || paddr->pfield==(void *)&psel->lolo){
         pcd->upper_ctrl_limit = psel->hopr;
         pcd->lower_ctrl_limit = psel->lopr;
         return(0);

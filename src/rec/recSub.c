@@ -37,6 +37,7 @@
  * .05  02-28-92        jba     Changed get_precision,get_graphic_double,get_control_double
  * .06  02-28-92	jba	ANSI C changes
  * .07  04-10-92        jba     pact now used to test for asyn processing, not status
+ * .08  06-02-92        jba     changed graphic/control limits for hihi,high,low,lolo
  */
 
 #include	<vxWorks.h>
@@ -231,10 +232,26 @@ static long get_graphic_double(paddr,pgd)
 {
     struct subRecord	*psub=(struct subRecord *)paddr->precord;
 
-    if(paddr->pfield==(void *)&psub->val){
+    if(paddr->pfield==(void *)&psub->val
+    || paddr->pfield==(void *)&psub->hihi
+    || paddr->pfield==(void *)&psub->high
+    || paddr->pfield==(void *)&psub->low
+    || paddr->pfield==(void *)&psub->lolo){
         pgd->upper_disp_limit = psub->hopr;
         pgd->lower_disp_limit = psub->lopr;
-    } else recGblGetGraphicDouble(paddr,pgd);
+        return(0);
+    }
+
+    if(paddr->pfield>=(void *)&psub->a && paddr->pfield<=(void *)&psub->l){
+        pgd->upper_disp_limit = psub->hopr;
+        pgd->lower_disp_limit = psub->lopr;
+        return(0);
+    }
+    if(paddr->pfield>=(void *)&psub->la && paddr->pfield<=(void *)&psub->ll){
+        pgd->upper_disp_limit = psub->hopr;
+        pgd->lower_disp_limit = psub->lopr;
+        return(0);
+    }
     return(0);
 }
 
@@ -244,12 +261,29 @@ static long get_control_double(paddr,pcd)
 {
     struct subRecord	*psub=(struct subRecord *)paddr->precord;
 
-    if(paddr->pfield==(void *)&psub->val){
+    if(paddr->pfield==(void *)&psub->val
+    || paddr->pfield==(void *)&psub->hihi
+    || paddr->pfield==(void *)&psub->high
+    || paddr->pfield==(void *)&psub->low
+    || paddr->pfield==(void *)&psub->lolo){
         pcd->upper_ctrl_limit = psub->hopr;
         pcd->lower_ctrl_limit = psub->lopr;
-    } else recGblGetControlDouble(paddr,pcd);
+       return(0);
+    } 
+
+    if(paddr->pfield>=(void *)&psub->a && paddr->pfield<=(void *)&psub->l){
+        pcd->upper_ctrl_limit = psub->hopr;
+        pcd->lower_ctrl_limit = psub->lopr;
+        return(0);
+    }
+    if(paddr->pfield>=(void *)&psub->la && paddr->pfield<=(void *)&psub->ll){
+        pcd->upper_ctrl_limit = psub->hopr;
+        pcd->lower_ctrl_limit = psub->lopr;
+        return(0);
+    }
     return(0);
 }
+
 static long get_alarm_double(paddr,pad)
     struct dbAddr *paddr;
     struct dbr_alDouble	*pad;

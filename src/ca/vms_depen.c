@@ -47,6 +47,44 @@
 
 #include "iocinf.h"
 
+#define CONNECTION_TIMER_ID 56
+
+void connectionTimer(void *astarg);
+
+struct time{
+	int		lval;
+	int		hval;
+}
+
+struct time timer = {-10000000,-1};
+
+
+/*
+ *
+ */
+void setupConnectionTimer()
+{
+	struct time	tmo;
+	int 		status;
+
+	status = sys$setimr(NULL, &timer, connectionTimer, CONNECTION_TIMER_ID, 0);
+	assert(status == SS$_NORMAL);
+}
+
+
+/*
+ * connectionTimer()
+ */
+LOCAL void connectionTimer(void *astarg);
+	struct time	tmo;
+	int 		status;
+
+	manage_conn(TRUE);
+
+	status = sys$setimr(NULL, &timer, connectionTimer, CONNECTION_TIMER_ID, 0);
+	assert(status == SS$_NORMAL);
+}
+
 
 /*
  *

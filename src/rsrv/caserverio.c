@@ -93,7 +93,7 @@ int		lock_needed;
 	}
 
 	if(lock_needed){
-		LOCK_CLIENT(pclient);
+		SEND_LOCK(pclient);
 	}
 
 	if(pclient->send.stk){
@@ -147,7 +147,7 @@ int		lock_needed;
 
 
 	if(lock_needed){
-		UNLOCK_CLIENT(pclient);
+		SEND_UNLOCK(pclient);
 	}
 
 	return;

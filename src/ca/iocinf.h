@@ -83,6 +83,7 @@ static char	*iocinfhSccsId = "$Id$";
 /*
  * CA private includes 
  */
+#include "addrList.h"
 #include "iocmsg.h"
 
 #ifndef min
@@ -136,36 +137,36 @@ struct pending_io_event{
   void			*io_done_arg;
 };
 
-union caAddr{
-	struct sockaddr_in	inetAddr;
-	struct sockaddr		sockAddr;	
-};
-
-typedef struct {
-	ELLNODE			node;
-	union caAddr		srcAddr;
-	union caAddr		destAddr;
-}caAddrNode;
-
 typedef unsigned long ca_time;
 
-#define MAXCONNTRIES 		60	/* N conn retries on unchanged net */
-#define CA_RETRY_PERIOD		5	/* int sec to next keepalive */
-#define CA_RECAST_DELAY		1	/* initial int sec to next recast */
-#define CA_RECAST_PORT_MASK	0x3	/* random retry interval off port */
-#define CA_RECAST_PERIOD 	5	/* ul on retry period long term */
+/*
+ * dont adjust
+ */
 #define CA_CURRENT_TIME 	0
 
 /*
- * for the beacon's recvd hash table
+ * these control the duration and period of name resolution
+ * broadcasts
  */
-#define BHT_INET_ADDR_MASK		0x7f
-typedef struct beaconHashEntry{
-	struct beaconHashEntry	*pNext;
-	struct in_addr 		inetAddr;
-	int			timeStamp;
-	int			averagePeriod;
-}bhe;
+#define MAXCONNTRIES 		60	/* N conn retries on unchanged net */
+#define CA_RECAST_DELAY		1	/* initial int sec to next recast */
+#define CA_RECAST_PORT_MASK	0x3	/* random retry interval off port */
+#define CA_RECAST_PERIOD 	5	/* ul on retry period long term */
+
+/*
+ * these two control the period of connection verifies
+ * (echo requests) - CA_CONN_VERIFY_PERIOD - and how
+ * long we will wait for an echo reply before we
+ * give up and flag the connection for disconnect
+ * - CA_ECHO_TIMEOUT.
+ */
+#define CA_ECHO_TIMEOUT		5	/* disconn if no echo reply tmo */ 
+#define CA_CONN_VERIFY_PERIOD	30	/* how often to request echo */
+
+/*
+ * only used when communicating with old servers
+ */
+#define CA_RETRY_PERIOD		5	/* int sec to next keepalive */
 
 #ifdef vxWorks
 typedef struct caclient_put_notify{
@@ -289,7 +290,6 @@ typedef struct ioc_in_use{
 	unsigned		minor_version_number;
 	unsigned		contiguous_msg_count;
 	unsigned		client_busy;
-	char			active;
 	struct ca_buffer	send;
 	struct ca_buffer	recv;
 	struct extmsg		curMsg;
@@ -298,6 +298,9 @@ typedef struct ioc_in_use{
 	unsigned long		curDataMax;
 	unsigned long		curDataBytes;
 	ca_time			timeAtLastRecv;
+	ca_time			timeAtLastSend;
+	int			echoPending;
+	ca_time			timeAtEchoRequest;
 #ifdef __STDC__
 	void			(*sendBytes)(struct ioc_in_use *);
 	void			(*recvBytes)(struct ioc_in_use *);
@@ -328,6 +331,17 @@ typedef struct ioc_in_use{
 
 }IIU;
 
+/*
+ * for the beacon's recvd hash table
+ */
+#define BHT_INET_ADDR_MASK		0x7f
+typedef struct beaconHashEntry{
+	struct beaconHashEntry	*pNext;
+	IIU			*piiu;
+	struct in_addr 		inetAddr;
+	int			timeStamp;
+	int			averagePeriod;
+}bhe;
 
 struct  ca_static{
 	IIU		*ca_piiuCast;
@@ -426,6 +440,7 @@ int		ca_request_event(evid monix);
 void 		ca_busy_message(struct ioc_in_use *piiu);
 void		ca_ready_message(struct ioc_in_use *piiu);
 void		noop_msg(struct ioc_in_use *piiu);
+void		echo_request(struct ioc_in_use *piiu);
 void 		issue_claim_channel(struct ioc_in_use *piiu, chid pchan);
 void 		issue_identify_client(struct ioc_in_use *piiu);
 void 		issue_client_host_name(struct ioc_in_use *piiu);
@@ -505,6 +520,11 @@ int                     net_proto
 
 int ca_check_for_fp();
 
+void freeBeaconHash(struct ca_static *ca_temp);
+void removeBeaconInetAddr(struct in_addr *pnet_addr);
+bhe *lookupBeaconInetAddr(struct in_addr *pnet_addr);
+bhe *createBeaconHashEntry(struct in_addr *pnet_addr);
+
 #else /*__STDC__*/
 int		ca_defunct();
 int		repeater_installed();
@@ -514,6 +534,7 @@ int		broadcast_addr();
 int		local_addr();
 void		manage_conn();
 void 		noop_msg();
+void		echo_request();
 void 		ca_busy_message();
 void 		ca_ready_message();
 void 		flow_control();
@@ -545,6 +566,10 @@ void		caAddConfiguredAddr();
 void		caPrintAddrList();
 int		create_net_chan();
 int		ca_check_for_fp();
+void 		freeBeaconHash();
+void 		removeBeaconInetAddr();
+bhe 		*lookupBeaconInetAddr();
+bhe 		*createBeaconHashEntry();
 #endif /*__STDC__*/
 
 /*

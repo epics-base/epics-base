@@ -52,19 +52,17 @@ static char *sccsId = "$Id$\t$Date$";
 #include <in.h>
 #include <logLib.h>
 #include <sysLib.h>
+#include <taskLib.h>
+
+#define MAX_BLOCK_THRESHOLD 100000
 
 /*
  *	EPICS includes
  */
-#include <iocinf.h>
-#if 0
-#include <taskwd.h>
-#include <task_params.h>
-#include <iocmsg.h>
-#include <ellLib.h>
 #include <envDefs.h>
-#endif
-
+#include "server.h"
+#include <task_params.h>
+#include <addrList.h>
 
 /*
  *	RSRV_ONLINE_NOTIFY_TASK
@@ -91,7 +89,7 @@ int rsrv_online_notify_task()
 	int			sock;
   	int			true = TRUE;
 
-	taskwdInsert((int)taskIdCurrent,NULL,NULL);
+	taskwdInsert(taskIdSelf(),NULL,NULL);
 
   	/* 
   	 *  Open the socket.
@@ -143,6 +141,20 @@ int rsrv_online_notify_task()
 #	endif
 
  	while(TRUE){
+		int maxBlock;
+
+		/*
+		 * check max block and disable new channels
+		 * if its to small
+		 */
+		maxBlock = memFindMax();
+		if(maxBlock<MAX_BLOCK_THRESHOLD){
+			casDontAllowSearchReplies = TRUE;
+		}
+		else{
+			casDontAllowSearchReplies = FALSE;
+		}
+
 		pNode = (caAddrNode *) destAddr.node.next;
 		while(pNode){
 			msg.m_available = 

@@ -289,7 +289,6 @@ float timeout;
 	 * at least once.
 	 */
 	ca_flush_io();
-	manage_conn(TRUE);
 
 	status = ECA_NORMAL;
 	beg_time = time(NULL);
@@ -339,7 +338,6 @@ float timeout;
 			status = ECA_TIMEOUT;
 			break;
 		}
-		manage_conn(TRUE);
 	}
 	pcasg->opPendCount = 0;
 	pcasg->seqNo++;

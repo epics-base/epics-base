@@ -15,18 +15,29 @@
  *	.05 011294 joh	New command added - write notify 
  *
  *	.06 020194 joh	New command added for CA V4.1 - client name 
+ *
+ *	.07 041194 joh	New command added for CA V4.2 - access rights 
+ *
+ *	.08 050594 joh	New command added for CA V4.3 - echo request
  */
 
 #define __IOCMSG__
 
-static char	*iocmsghSccsId = "$Id$ CA version 4.2";
+static char	*iocmsghSccsId = "$Id$ CA version 4.3";
 
 /* TCP/UDP port number (bumped each protocol change) */
 #define CA_PROTOCOL_VERSION	4
-#define CA_MINOR_VERSION	2
+#define CA_MINOR_VERSION	3
 #define CA_UKN_MINOR_VERSION	0 /* unknown minor version */
-#define CA_V41(MAJOR,MINOR)	( ((MAJOR)==4&&(MINOR)>=1) || (MAJOR)>4 )
-#define CA_V42(MAJOR,MINOR)	( ((MAJOR)==4&&(MINOR)>=2) || (MAJOR)>4 )
+#if CA_PROTOCOL_VERSION == 4
+#define CA_V41(MAJOR,MINOR)	((MINOR)>=1) 
+#define CA_V42(MAJOR,MINOR)	((MINOR)>=2)
+#define CA_V43(MAJOR,MINOR)	((MINOR)>=3)
+#else
+#define CA_V41(MAJOR,MINOR)	( 1 )
+#define CA_V42(MAJOR,MINOR)	( 1 )
+#define CA_V43(MAJOR,MINOR)	( 1 )
+#endif 
 #define	CA_PORT_BASE		IPPORT_USERRESERVED + 56
 #define CA_SERVER_PORT		(CA_PORT_BASE+CA_PROTOCOL_VERSION*2)
 #define CA_CLIENT_PORT		(CA_PORT_BASE+CA_PROTOCOL_VERSION*2+1)
@@ -60,7 +71,8 @@ static char	*iocmsghSccsId = "$Id$ CA version 4.2";
 #define IOC_WRITE_NOTIFY	19	/* notify after write chan value */
 #define IOC_CLIENT_NAME		20	/* CA V4.1 identify client */
 #define IOC_HOST_NAME		21	/* CA V4.1 identify client */
-#define IOC_ACCESS_RIGHTS	22	/* CA V4.1 asynch access rights chg */
+#define IOC_ACCESS_RIGHTS	22	/* CA V4.2 asynch access rights chg */
+#define IOC_ECHO		23	/* CA V4.3 connection verify */
 
 /*
  * for use with build and search and not_found (if search fails and

@@ -59,13 +59,73 @@ void manage_conn(silent)
 int	silent;
 #endif
 {
-	struct ioc_in_use	*piiu;
-  	chid			chix;
-  	unsigned int		retry_cnt = 0;
-  	unsigned int		retry_cnt_no_handler = 0;
-	ca_time			current;
+	IIU		*piiu;
+  	chid		chix;
+  	unsigned int	retry_cnt = 0;
+  	unsigned int	retry_cnt_no_handler = 0;
+	ca_time		current;
+	int 		sendBytesPending;
+	int 		sendBytesAvailable;
+	int 		stmo;
+	int 		rtmo;
 
 	current = time(NULL);
+
+        /*
+         * issue connection heartbeat
+         */
+        LOCK;
+        for(    piiu = (IIU *) iiuList.node.next;
+                piiu;
+                piiu = (IIU *) piiu->node.next){
+
+                if(piiu == piiuCast || !piiu->conn_up){
+                        continue;
+                }
+
+		stmo = (current-piiu->timeAtLastSend)>CA_RETRY_PERIOD;
+		sendBytesPending = cacRingBufferReadSize(&piiu->send, TRUE);
+
+		/* 
+		 * mark connection for shutdown if outgoing messages
+		 * are not accepted by TCP/IP for several seconds
+		 */
+		if(sendBytesPending && stmo){
+			piiu->conn_up = FALSE;
+		}
+
+		rtmo = (current-piiu->timeAtLastRecv)>CA_RETRY_PERIOD;
+		sendBytesAvailable = cacRingBufferWriteSize(&piiu->send, TRUE);
+
+		/*
+		 * remain backwards compatible with old servers
+		 */
+		if(!CA_V43(CA_PROTOCOL_VERSION, piiu->minor_version_number)){
+			if(stmo && rtmo && !sendBytesPending){
+				noop_msg(piiu);
+			}
+			continue;
+		}
+
+		if(piiu->echoPending){
+			if((current-piiu->timeAtEchoRequest)>CA_ECHO_TIMEOUT){
+				/* 
+				 * mark connection for shutdown
+				 */
+				piiu->conn_up = FALSE;
+			}
+		}
+		else{
+			if((current-piiu->timeAtLastRecv)>CA_CONN_VERIFY_PERIOD &&
+				sendBytesAvailable>sizeof(struct extmsg)){
+				piiu->echoPending = TRUE;
+				piiu->timeAtEchoRequest = current;
+				echo_request(piiu);
+			}
+		}
+
+        }
+        UNLOCK;
 
 	if(!piiuCast){
 		return;
@@ -128,16 +188,17 @@ int	silent;
  */
 #ifdef __STDC__
 void mark_server_available(struct in_addr *pnet_addr)
-#else
+#else /*__STDC__*/
 void mark_server_available(pnet_addr)
 struct in_addr  *pnet_addr;
-#endif
+#endif /*__STDC__*/
 {
 	int		currentPeriod;
 	int		currentTime;
 	bhe		*pBHE;
 	unsigned	index;
 	unsigned	port;	
+	int 		netChange = FALSE;
 
 	/*
 	 * if timers have expired take care of them
@@ -151,39 +212,27 @@ struct in_addr  *pnet_addr;
 
 	currentTime = time(NULL);
 
+	LOCK;
 	/*
 	 * look for it in the hash table
 	 */
-	index = ntohl(pnet_addr->s_addr);
-	index &= BHT_INET_ADDR_MASK;
-	LOCK;
-	pBHE = ca_static->ca_beaconHash[index];
-	while(pBHE){
-		if(pBHE->inetAddr.s_addr ==
-			pnet_addr->s_addr){
-					
-			break;
-		}
-		pBHE = pBHE->pNext;
-	}
-
-	/*
-	 * if we have seen the beacon before ignore it
-	 * (unless there is an unusual change in its period)
-	 */
+	pBHE = lookupBeaconInetAddr(pnet_addr);
 	if(pBHE){
-		int netChange = FALSE;
+
+		/*
+		 * if we have seen the beacon before ignore it
+		 * (unless there is an unusual change in its period)
+		 */
 
 		/*
 		 * update time stamp and average period
 		 */
 		currentPeriod = currentTime - pBHE->timeStamp;
-		pBHE->averagePeriod = 
-			(currentPeriod + pBHE->averagePeriod)>>1;
+		pBHE->averagePeriod = (currentPeriod + pBHE->averagePeriod)>>1;
 		pBHE->timeStamp = currentTime;
-
+	
 		if((currentPeriod>>2)>=pBHE->averagePeriod){
-#ifdef DEBUG
+#ifdef 	DEBUG
 			ca_printf(	
 				"net resume seen %x cur=%d avg=%d\n", 
 				pnet_addr->s_addr,
@@ -203,43 +252,23 @@ struct in_addr  *pnet_addr;
 #endif
 			netChange = TRUE;
 		}
-
+		if(pBHE->piiu){
+			pBHE->piiu->timeAtLastRecv = currentTime;
+		}
 		if(!netChange){
 			UNLOCK;
 			return;
 		}
 	}
 	else{
-
-		/*
-		 * create the hash entry
-		 */
-		pBHE = (bhe *)calloc(1,sizeof(*pBHE));
+		pBHE = createBeaconHashEntry(pnet_addr);
 		if(!pBHE){
 			UNLOCK;
 			return;
 		}
-
-#ifdef DEBUG
-		ca_printf("new IOC %x\n", pnet_addr->s_addr);
-#endif
-		/*
-		 * store the inet address
-		 */
-		pBHE->inetAddr = *pnet_addr;
-
-		/*
-		 * start the average at zero
-		 */
-		pBHE->averagePeriod = 0;
-		pBHE->timeStamp = currentTime;
-
-		/*
-		 * install in the hash table
-		 */
-		pBHE->pNext = ca_static->ca_beaconHash[index];
-		ca_static->ca_beaconHash[index] = pBHE;
 	}
+	
+
 
 #ifdef DEBUG
 	ca_printf("CAC: <%s> ",host_from_addr(pnet_addr));
@@ -301,5 +330,160 @@ struct in_addr  *pnet_addr;
 #	endif
 
 	UNLOCK;
-
 }
+
+
+/*
+ * createBeaconHashEntry()
+ *
+ * LOCK must be applied
+ */
+#ifdef __STDC__
+bhe *createBeaconHashEntry(struct in_addr *pnet_addr)
+#else
+bhe *createBeaconHashEntry(pnet_addr)
+struct in_addr  *pnet_addr;
+#endif
+{
+	bhe		*pBHE;
+	unsigned	index;
+
+	pBHE = lookupBeaconInetAddr(pnet_addr);
+	if(pBHE){
+		return pBHE;
+	}
+
+	index = ntohl(pnet_addr->s_addr);
+	index &= BHT_INET_ADDR_MASK;
+
+	assert(index<NELEMENTS(ca_static->ca_beaconHash));
+
+	pBHE = (bhe *)calloc(1,sizeof(*pBHE));
+	if(!pBHE){
+		return NULL;
+	}
+
+#ifdef DEBUG
+	ca_printf("new IOC %x\n", pnet_addr->s_addr);
+#endif
+	/*
+	 * store the inet address
+	 */
+	pBHE->inetAddr = *pnet_addr;
+
+	/*
+	 * start the average at zero
+	 */
+	pBHE->averagePeriod = 0;
+	pBHE->timeStamp = time(NULL);
+
+	/*
+	 * install in the hash table
+	 */
+	pBHE->pNext = ca_static->ca_beaconHash[index];
+	ca_static->ca_beaconHash[index] = pBHE;
+
+	return pBHE;
+}
+
+
+/*
+ * lookupBeaconInetAddr()
+ *
+ * LOCK must be applied
+ */
+#ifdef __STDC__
+bhe *lookupBeaconInetAddr(struct in_addr *pnet_addr)
+#else
+bhe *lookupBeaconInetAddr(pnet_addr)
+struct in_addr  *pnet_addr;
+#endif
+{
+	bhe		*pBHE;
+	unsigned	index;
+
+	index = ntohl(pnet_addr->s_addr);
+	index &= BHT_INET_ADDR_MASK;
+
+	assert(index<NELEMENTS(ca_static->ca_beaconHash));
+
+	pBHE = ca_static->ca_beaconHash[index];
+	while(pBHE){
+		if(pBHE->inetAddr.s_addr == pnet_addr->s_addr){
+			break;
+		}
+		pBHE = pBHE->pNext;
+	}
+	return pBHE;
+}
+
+
+
+/*
+ * removeBeaconInetAddr()
+ *
+ * LOCK must be applied
+ */
+#ifdef __STDC__
+void removeBeaconInetAddr(struct in_addr *pnet_addr)
+#else /*__STDC__*/
+void removeBeaconInetAddr(pnet_addr)
+struct in_addr  *pnet_addr;
+#endif /*__STDC__*/
+{
+	bhe		*pBHE;
+	bhe		**ppBHE;
+	unsigned	index;
+
+	index = ntohl(pnet_addr->s_addr);
+	index &= BHT_INET_ADDR_MASK;
+
+	assert(index<NELEMENTS(ca_static->ca_beaconHash));
+
+	ppBHE = &ca_static->ca_beaconHash[index];
+	pBHE = *ppBHE;
+	while(pBHE){
+		if(pBHE->inetAddr.s_addr == pnet_addr->s_addr){
+			*ppBHE = pBHE->pNext;
+			free(pBHE);
+			return;
+		}
+		ppBHE = &pBHE->pNext;
+		pBHE = *ppBHE;
+	}
+	assert(0);
+}
+
+
+/*
+ * freeBeaconHash()
+ *
+ * LOCK must be applied
+ */
+#ifdef __STDC__
+void freeBeaconHash(struct ca_static *ca_temp)
+#else /*__STDC__*/
+void freeBeaconHash(ca_temp)
+struct ca_static	*ca_temp;
+#endif /*__STDC__*/
+{
+	bhe		*pBHE;
+	bhe		**ppBHE;
+	int		len;
+
+	len = NELEMENTS(ca_temp->ca_beaconHash);
+	for(    ppBHE = ca_temp->ca_beaconHash;
+		ppBHE < &ca_temp->ca_beaconHash[len];
+		ppBHE++){
+
+		pBHE = *ppBHE;
+		while(pBHE){
+			bhe     *pOld;
+
+			pOld = pBHE;
+			pBHE = pBHE->pNext;
+			free(pOld);
+		}
+	}
+}
+

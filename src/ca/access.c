@@ -628,6 +628,9 @@ int ca_task_initialize()
 			assert(status == OK);
 		}
 #endif /*vxWorks*/
+#ifdef VMS
+		setupConnectionTimer();
+#endif
 	}
 	return ECA_NORMAL;
 }
@@ -971,6 +974,9 @@ LOCAL void ca_process_exit()
 		ca_printf("CAC: entering the exit handler 2 %x\n", tid);
 #	endif
 
+#ifdef VMS
+	removeConnectionTimer();
+#endif
 #	if defined(vxWorks)
 
 		ca_temp = (struct ca_static *) 
@@ -1261,25 +1267,7 @@ LOCAL void ca_process_exit()
 		/*
 		 * free beacon hash table
 		 */
-		{
-			int	len;
-			bhe	**ppBHE;
-			bhe	*pBHE;
-
-			len = NELEMENTS(ca_temp->ca_beaconHash);
-			for(	ppBHE = ca_temp->ca_beaconHash;
-				ppBHE < &ca_temp->ca_beaconHash[len];
-				ppBHE++){
-				pBHE = *ppBHE;
-				while(pBHE){
-					bhe     *pOld;
-					
-					pOld = pBHE;
-					pBHE = pBHE->pNext;
-					free(pOld);
-				}
-			}
-		}
+		freeBeaconHash(ca_temp);
 
 		free((char *)ca_temp);
 		ca_static = (struct ca_static *) NULL;
@@ -3063,8 +3051,6 @@ int			early;
     		return ECA_EVDISALLOW;
 	}
 
-	manage_conn(TRUE);
-
   	/*	
 	 * Flush the send buffers
 	 */
@@ -3147,8 +3133,6 @@ int			early;
         			return ECA_TIMEOUT;
       			}
   		}    
-
-		manage_conn(TRUE);
 	}
 }
 
@@ -3427,10 +3411,35 @@ struct ioc_in_use *piiu;
 
 /*
  *
+ * echo_request (lock must be on)
+ * 
+ */
+#ifdef __STDC__
+void echo_request(struct ioc_in_use *piiu)
+#else /*__STDC__*/
+void echo_request(piiu)
+struct ioc_in_use 	*piiu;
+#endif /*__STDC__*/
+{
+	struct extmsg  	hdr;
+
+	hdr.m_cmmd = htons(IOC_ECHO);
+	hdr.m_type = htons(0);
+	hdr.m_count = htons(0);
+	hdr.m_cid = htons(0);
+	hdr.m_available = htons(0);
+	hdr.m_postsize = 0;
+	
+	cac_push_msg(piiu, &hdr, NULL);
+
+	piiu->send_needed = TRUE;
+}
+
+
+/*
+ *
  * NOOP_MSG (lock must be on)
  * 
- * now allows variable size NOOP message
- *
  */
 #ifdef __STDC__
 void noop_msg(struct ioc_in_use *piiu)

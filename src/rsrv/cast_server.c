@@ -82,7 +82,7 @@ static char	*sccsId = "$Id$";
 #include <server.h>
 
 	
-LOCAL void clean_addrq(struct client *pclient);
+LOCAL void clean_addrq();
 
 
 
@@ -298,7 +298,7 @@ int cast_server(void)
 
     		if(nchars == 0){
 			cas_send_msg(prsrv_cast_client, TRUE);
-	      		clean_addrq(prsrv_cast_client);
+	      		clean_addrq();
     		}	
   	}
 }
@@ -311,8 +311,7 @@ int cast_server(void)
  */
 #define		TIMEOUT	60 /* sec */
 
-LOCAL void 
-clean_addrq(struct client *pclient)
+LOCAL void clean_addrq()
 {
 	struct channel_in_use	*pciu;
 	struct channel_in_use	*pnextciu;
@@ -325,9 +324,9 @@ clean_addrq(struct client *pclient)
 
 	current = tickGet();
 
-	LOCK_CLIENT(prsrv_cast_client);
+	FASTLOCK(&prsrv_cast_client->addrqLock);
 	pnextciu = (struct channel_in_use *) 
-			pclient->addrq.node.next;
+			prsrv_cast_client->addrq.node.next;
 
 	while(pciu = pnextciu){
 		pnextciu = (struct channel_in_use *)pciu->node.next;
@@ -342,7 +341,7 @@ clean_addrq(struct client *pclient)
 		if (delay > timeout) {
 			int status;
 
-			ellDelete(&pclient->addrq, &pciu->node);
+			ellDelete(&prsrv_cast_client->addrq, &pciu->node);
         		FASTLOCK(&rsrv_free_addrq_lck);
 			s = bucketRemoveItem(pCaBucket, pciu->sid, pciu);
 			if(s != BUCKET_SUCCESS){
@@ -361,7 +360,7 @@ clean_addrq(struct client *pclient)
 			maxdelay = max(delay, maxdelay);
 		}
 	}
-	UNLOCK_CLIENT(prsrv_cast_client);
+	FASTUNLOCK(&prsrv_cast_client->addrqLock);
 
 #	ifdef DEBUG
 	if(ndelete){
@@ -471,6 +470,8 @@ struct client *create_udp_client(unsigned sock)
 
       	FASTLOCKINIT(&client->lock);
       	FASTLOCKINIT(&client->putNotifyLock);
+      	FASTLOCKINIT(&client->addrqLock);
+      	FASTLOCKINIT(&client->eventqLock);
 
       	client->recv.maxstk = MAX_UDP;
 

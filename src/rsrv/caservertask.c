@@ -274,9 +274,9 @@ LOCAL int terminate_one_client(struct client *client)
 	}
 
 	while(TRUE){
-		LOCK_CLIENT(client);
+		FASTLOCK(&client->addrqLock);
 		pciu = (struct channel_in_use *) ellGet(&client->addrq);
-		UNLOCK_CLIENT(client);
+		FASTUNLOCK(&client->addrqLock);
 		if(!pciu){
 			break;
 		}
@@ -294,9 +294,9 @@ LOCAL int terminate_one_client(struct client *client)
 			/*
 			 * AS state change could be using this list
 			 */
-			LOCK_CLIENT(client);
+			FASTLOCK(&client->eventqLock);
 			pevext = (struct event_ext *) ellGet(&pciu->eventq);
-			UNLOCK_CLIENT(client);
+			FASTUNLOCK(&client->eventqLock);
 			if(!pevext){
 				break;
 			}
@@ -355,6 +355,26 @@ LOCAL int terminate_one_client(struct client *client)
 			NULL,
 			NULL,
 			NULL);
+
+	if(FASTLOCKFREE(&client->eventqLock)<0){
+		logMsg("CAS: couldnt free sem\n",
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL);
+	}
+
+	if(FASTLOCKFREE(&client->addrqLock)<0){
+		logMsg("CAS: couldnt free sem\n",
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL);
+	}
 
 	if(FASTLOCKFREE(&client->putNotifyLock)<0){
 		logMsg("CAS: couldnt free sem\n",
@@ -499,7 +519,8 @@ LOCAL void log_one_client(struct client *client)
 
 	bytes_reserved = 0;
 	bytes_reserved += sizeof(struct client);
-	LOCK_CLIENT(client);
+
+	FASTLOCK(&client->addrqLock);
 	pciu = (struct channel_in_use *) client->addrq.node.next;
 	while (pciu){
 		bytes_reserved += sizeof(struct channel_in_use);
@@ -512,7 +533,7 @@ LOCAL void log_one_client(struct client *client)
 		}
 		pciu = (struct channel_in_use *) ellNext(&pciu->node);
 	}
-	UNLOCK_CLIENT(client);
+	FASTUNLOCK(&client->addrqLock);
 
 	psaddr = &client->addr;
 	printf("\tRemote address %u.%u.%u.%u Remote port %d state=%s\n",
@@ -525,7 +546,7 @@ LOCAL void log_one_client(struct client *client)
 	printf(	"\tChannel count %d\n", ellCount(&client->addrq));
 	printf(	"\t%d bytes allocated\n", bytes_reserved);
 
-	LOCK_CLIENT(client);
+	FASTLOCK(&client->addrqLock);
 	pciu = (struct channel_in_use *) client->addrq.node.next;
 	i=0;
 	while (pciu){
@@ -539,7 +560,7 @@ LOCAL void log_one_client(struct client *client)
 			printf("\n");
 		}
 	}
-	UNLOCK_CLIENT(client);
+	FASTUNLOCK(&client->addrqLock);
 
 	printf("\n");
 

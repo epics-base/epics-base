@@ -138,42 +138,38 @@ struct ioc_in_use		**ppiiu;
 	caAddrNode		*pNode;
 	struct ioc_in_use	*piiu;
   	int			status;
+	bhe			*pBHE;
 
 	/*
 	 * look for an existing connection
-	 *
-	 * quite a bottle neck with increasing connection count
-	 *
 	 */
 	LOCK;
-	for(	piiu = (struct ioc_in_use *) iiuList.node.next;
-		piiu;
-		piiu = (struct ioc_in_use *) piiu->node.next){
-
-		if(piiu->sock_proto!=IPPROTO_TCP){
-			continue;
-		}
-
-		pNode = (caAddrNode *)piiu->destAddr.node.next;
-		assert(pNode);
-		assert(pNode->destAddr.sockAddr.sa_family == AF_INET);
-    		if(pnet_addr->s_addr == 
-			pNode->destAddr.inetAddr.sin_addr.s_addr){
-
-			if(!piiu->conn_up){
-				continue;
-			}
-
-			*ppiiu = piiu;
+	pBHE = lookupBeaconInetAddr(pnet_addr);
+	if(!pBHE){
+		pBHE = createBeaconHashEntry(pnet_addr);
+		if(!pBHE){
 			UNLOCK;
-      			return ECA_NORMAL;
+			return ECA_ALLOCMEM;
 		}
-    	}
+	}
+
+	if(pBHE->piiu){
+		*ppiiu = pBHE->piiu;
+		status = ECA_NORMAL;
+	}
+	else{
+  		status = create_net_chan(
+				ppiiu, 
+				pnet_addr, 
+				IPPROTO_TCP);
+		if(status == ECA_NORMAL){
+			pBHE->piiu = *ppiiu;
+		}
+	}
+
 	UNLOCK;
 
-  	status = create_net_chan(ppiiu, pnet_addr, IPPROTO_TCP);
   	return status;
-
 }
 
 
@@ -208,8 +204,6 @@ int			net_proto;
 		UNLOCK;
 		return ECA_ALLOCMEM;
 	}
-
-	piiu->active = FALSE;
 
 	piiu->pcas = ca_static;
 	ellInit(&piiu->chidlist);
@@ -404,6 +398,10 @@ int			net_proto;
 			pnet_addr,
 			piiu->host_name_str,
 			sizeof(piiu->host_name_str));
+
+		piiu->timeAtLastSend = time(NULL);
+		piiu->timeAtLastRecv = time(NULL);
+
       		break;
 
     	case	IPPROTO_UDP:
@@ -706,6 +704,7 @@ struct ioc_in_use 	*piiu;
 	if(status>=0){
 		assert(status<=sendCnt);
 
+		piiu->timeAtLastSend = time(NULL);
 		CAC_RING_BUFFER_READ_ADVANCE(&piiu->send, status);
 		
 		sendCnt = cacRingBufferReadSize(&piiu->send, FALSE);
@@ -828,6 +827,11 @@ int		flags;
   	IIU		*piiu;
 	unsigned long	minfreespace;
 	unsigned long	freespace;
+
+	/*
+	 * manage search timers and detect disconnects
+	 */
+	manage_conn(TRUE);
 
 	LOCK;
 	piiu=(IIU *)iiuList.node.next;
@@ -1291,7 +1295,7 @@ int		tid;
 	 */
   	while(TRUE){
 		timeout.tv_usec = 0;
-		timeout.tv_sec = 20;
+		timeout.tv_sec = 1;
 		ca_mux_io(&timeout, CA_DO_RECVS);
 	}
 }
@@ -1373,9 +1377,9 @@ LOCAL void close_ioc(piiu)
 struct ioc_in_use	*piiu;
 #endif /*__STDC__*/
 {
-  	chid				chix;
-	int				status;
-
+	caAddrNode	*pNode;
+  	chid		chix;
+	int		status;
 
 	/*
 	 * dont close twice
@@ -1402,7 +1406,6 @@ struct ioc_in_use	*piiu;
 	 * prior to calling handlers incase the
 	 * handler tries to use a channel before
 	 * I mark it disconnected.
-	 *
 	 */
   	chix = (chid) &piiu->chidlist.node.next;
   	while(chix = (chid) chix->node.next){
@@ -1414,31 +1417,16 @@ struct ioc_in_use	*piiu;
 		chix->ar.write_access = FALSE;
   	}
 
+	if(piiu->chidlist.count){
+		ca_signal(ECA_DISCONN,piiu->host_name_str);
+	}
+
 	/*
 	 * remove IOC from the hash table
 	 */
-	{
-		caAddrNode	*pNode;
-		bhe		*pBHE;
-		bhe		**ppBHE;
-		unsigned 	index;
-
-		pNode = (caAddrNode *) piiu->destAddr.node.next;
-        	index = ntohl(pNode->destAddr.inetAddr.sin_addr.s_addr);
-        	index &= BHT_INET_ADDR_MASK;
-		ppBHE = &ca_static->ca_beaconHash[index];
-		pBHE = *ppBHE;
-        	while(pBHE){
-                	if(pBHE->inetAddr.s_addr == 
-				pNode->destAddr.inetAddr.sin_addr.s_addr){
-				*ppBHE = pBHE->pNext;
-				free(pBHE);
-                       		break;
-                	}
-			ppBHE = &pBHE->pNext;
-			pBHE = *ppBHE;
-		}
-	}
+	pNode = (caAddrNode *) piiu->destAddr.node.next;
+	assert(pNode);
+	removeBeaconInetAddr(&pNode->destAddr.inetAddr.sin_addr);
 
 	/*
 	 * call their connection handler as required

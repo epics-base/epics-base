@@ -69,6 +69,8 @@ struct client{
   ELLNODE			node;
   FAST_LOCK			lock;
   FAST_LOCK			putNotifyLock;
+  FAST_LOCK			addrqLock;
+  FAST_LOCK			eventqLock;
   ELLLIST			addrq;
   ELLLIST			putNotifyQue;
   struct message_buffer		send;
@@ -156,13 +158,18 @@ GLBLTYPE FAST_LOCK		rsrv_free_addrq_lck;
 GLBLTYPE FAST_LOCK		rsrv_free_eventq_lck;
 GLBLTYPE struct client		*prsrv_cast_client;
 GLBLTYPE BUCKET            	*pCaBucket;
+/*
+ * set true if max memory block drops below MAX_BLOCK_THRESHOLD
+ */
+#define MAX_BLOCK_THRESHOLD 100000
+GLBLTYPE int			casDontAllowSearchReplies;
 
-#define LOCK_CLIENT(CLIENT)\
+#define SEND_LOCK(CLIENT)\
 {\
 FASTLOCK(&(CLIENT)->lock);\
 }
 
-#define UNLOCK_CLIENT(CLIENT)\
+#define SEND_UNLOCK(CLIENT)\
 { \
 FASTUNLOCK(&(CLIENT)->lock);\
 }

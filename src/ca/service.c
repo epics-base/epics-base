@@ -257,6 +257,10 @@ struct in_addr  	*pnet_addr;
 	case IOC_NOOP:
 		break;
 
+	case IOC_ECHO:
+		piiu->echoPending = FALSE;
+		break;
+
 	case IOC_WRITE_NOTIFY:
 	{
 		/*

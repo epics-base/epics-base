@@ -48,7 +48,6 @@
 #define instantiateRecourceLib
 #define epicsExportSharedSymbols
 #include "epicsAssert.h"
-#include "osiTimer.h"
 #include "epicsThread.h"
 #include "tsMinMax.h"
 #include "fdManager.h"
@@ -91,9 +90,8 @@ inline const unsigned fdRegId::maxIndexBitWidth ()
 //
 // fdManager::fdManager()
 //
-epicsShareFunc fdManager::fdManager (osiTimerQueue &timerQueueIn) :
-    fdTbl (1<<hashTableIndexBits),
-    timerQueue (timerQueueIn)
+epicsShareFunc fdManager::fdManager () :
+    fdTbl ( 1<<hashTableIndexBits ), pTimerQueue ( 0 )
 {
     size_t i;
     int status;
@@ -124,6 +122,9 @@ epicsShareFunc fdManager::~fdManager()
         pReg->state = fdReg::limbo;
         pReg->destroy();
     }
+    if ( this->pTimerQueue ) {
+        delete this->pTimerQueue;
+    }
     osiSockRelease();
 }
 
@@ -137,6 +138,8 @@ epicsShareFunc void fdManager::process (double delay)
     struct timeval tv;
     int status;
     int ioPending = 0;
+
+    this->lazyInitTimerQueue ();
 
     //
     // no recursion 
@@ -153,13 +156,13 @@ epicsShareFunc void fdManager::process (double delay)
     // more than once here so that fd activity get serviced
     // in a reasonable length of time.
     //
-    minDelay = this->timerQueue.delayToFirstExpire();
-    if (minDelay<=0.0) {
-        this->timerQueue.process();
-        minDelay = this->timerQueue.delayToFirstExpire();
+    minDelay = this->pTimerQueue->getNextExpireDelay ();
+    if ( minDelay <= 0.0 ) {
+        this->pTimerQueue->process();
+        minDelay = this->pTimerQueue->getNextExpireDelay ();
     } 
 
-    if (minDelay>=delay) {
+    if ( minDelay >= delay ) {
         minDelay = delay;
     }
 
@@ -191,7 +194,7 @@ epicsShareFunc void fdManager::process (double delay)
             &this->fdSets[fdrWrite], &this->fdSets[fdrException], &tv);
     }
 
-    this->timerQueue.process();
+    this->pTimerQueue->process();
     if (status==0) {
         this->processInProg = 0;
         return;
@@ -361,6 +364,15 @@ void fdManager::removeReg (fdReg &regIn)
     regIn.state = fdReg::limbo;
 
     FD_CLR(regIn.getFD(), &this->fdSets[regIn.getType()]);
+}
+
+//
+// fdManager::reschedule ()
+// NOOP - this only runs single threaded, and therefore they can only
+// add a new timer from places that will always end up in a reschedule
+//
+void fdManager::reschedule ()
+{
 }
 
 //

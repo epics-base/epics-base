@@ -38,7 +38,6 @@
 #include <stddef.h>
 #define epicsExportSharedSymbols
 #include "epicsAssert.h"
-#include "osiTimer.h"
 #include "fdManager.h"
 #include "fdmgr.h"
  
@@ -66,48 +65,36 @@ private:
 class oldFdmgr;
 
 //
-// osiTimerForOldFdmgr
+// timerForOldFdmgr
 //
-class osiTimerForOldFdmgr : public osiTimer, public chronIntIdRes<osiTimerForOldFdmgr> {
+class timerForOldFdmgr : public epicsTimerNotify, public chronIntIdRes<timerForOldFdmgr> {
 public:
+	epicsShareFunc timerForOldFdmgr (oldFdmgr &fdmgr, double delay, pCallBackFDMgr pFunc, void *pParam);
+	epicsShareFunc ~timerForOldFdmgr ();
+
     //
     // exceptions
     //
     class noFunctionSpecified {};
     class doubleDelete {};
-
-    //
-    // create an active timer that will expire in delay seconds
-    //
-	epicsShareFunc osiTimerForOldFdmgr (oldFdmgr &fdmgr, double delay, pCallBackFDMgr pFunc, void *pParam);
-	epicsShareFunc ~osiTimerForOldFdmgr ();
-
-	//
-	// called when the osiTimer expires
-	//
-	epicsShareFunc virtual void expire();
-
-	//
-	// for diagnostics
-	//
-	epicsShareFunc virtual const char *name() const;
-
 private:
+    epicsTimer &timer;
     oldFdmgr &fdmgr;
     pCallBackFDMgr pFunc;
     void *pParam;
     unsigned id;
+    epicsShareFunc expireStatus expire ();
 };
 
 class oldFdmgr : public fdManager {
-    friend class osiTimerForOldFdmgr;
+    friend class timerForOldFdmgr;
     friend epicsShareFunc int epicsShareAPI fdmgr_clear_timeout (fdctx *pfdctx, fdmgrAlarmId id);
 
 public:
     oldFdmgr ();
 
 private:
-    chronIntIdResTable <osiTimerForOldFdmgr> resTbl;
+    chronIntIdResTable <timerForOldFdmgr> resTbl;
 };
 
 epicsShareFunc fdRegForOldFdmgr::fdRegForOldFdmgr (const SOCKET fdIn, const fdRegType typeIn, 
@@ -133,38 +120,33 @@ epicsShareFunc void fdRegForOldFdmgr::callBack ()
     (*this->pFunc) (this->pParam);
 }
 
-osiTimerForOldFdmgr::osiTimerForOldFdmgr (oldFdmgr &fdmgrIn, 
-    double delayIn, pCallBackFDMgr pFuncIn, void *pParamIn) :
-    osiTimer (delayIn, fdmgrIn.timerQueueRef ()), 
-    fdmgr (fdmgrIn), pFunc (pFuncIn), pParam(pParamIn)
+timerForOldFdmgr::timerForOldFdmgr ( oldFdmgr &fdmgrIn, 
+    double delayIn, pCallBackFDMgr pFuncIn, void * pParamIn ) :
+    timer ( fdmgrIn.timerQueueRef().createTimer( *this ) ), 
+    fdmgr ( fdmgrIn ), pFunc ( pFuncIn ), pParam( pParamIn )
 {
-    if (pFuncIn==NULL) {
+    if ( pFuncIn == NULL ) {
         throwWithLocation ( noFunctionSpecified () );
     }
-
     this->fdmgr.resTbl.add (*this);
+    this->timer.start ( delayIn );
 }
 
-osiTimerForOldFdmgr::~osiTimerForOldFdmgr ()
+timerForOldFdmgr::~timerForOldFdmgr ()
 {
     if (this->pFunc==NULL) {
         throwWithLocation ( doubleDelete () );
     }
-
     this->pFunc = NULL;
     this->pParam = NULL;
-
-    this->fdmgr.resTbl.remove (this->getId());
+    this->fdmgr.resTbl.remove ( this->getId() );
+    delete & this->timer;
 }
 
-void osiTimerForOldFdmgr::expire ()
+epicsTimerNotify::expireStatus timerForOldFdmgr::expire ()
 {
     (*this->pFunc) (this->pParam);
-}
-
-const char * osiTimerForOldFdmgr::name () const
-{
-    return "osiTimerForOldFdmgr";
+    return noRestart;
 }
 
 oldFdmgr::oldFdmgr () : resTbl (1024)
@@ -195,7 +177,7 @@ extern "C" epicsShareFunc fdmgrAlarmId epicsShareAPI fdmgr_add_timeout (
 {
     double delay = ptimeout->tv_sec + ptimeout->tv_usec / static_cast <const double> (epicsTime::uSecPerSec);
     oldFdmgr *pfdm = static_cast <oldFdmgr *> (pfdctx);
-    osiTimerForOldFdmgr *pTimer;
+    timerForOldFdmgr *pTimer;
     unsigned id;
 
     if (!pfdm) {
@@ -204,11 +186,11 @@ extern "C" epicsShareFunc fdmgrAlarmId epicsShareAPI fdmgr_add_timeout (
 
     while (true) {
 #       ifdef noExceptionsFromCXX
-            pTimer = new osiTimerForOldFdmgr (*pfdm, delay, pFunc, pParam);
+            pTimer = new timerForOldFdmgr (*pfdm, delay, pFunc, pParam);
 #       else            
             try {
-                pTimer = new osiTimerForOldFdmgr 
-			(*pfdm, delay, pFunc, pParam);
+                pTimer = new timerForOldFdmgr 
+			        (*pfdm, delay, pFunc, pParam);
             }
             catch (...)
             {
@@ -236,7 +218,7 @@ extern "C" epicsShareFunc fdmgrAlarmId epicsShareAPI fdmgr_add_timeout (
 extern "C" epicsShareFunc int epicsShareAPI fdmgr_clear_timeout (fdctx *pfdctx, fdmgrAlarmId id)
 {
     oldFdmgr *pfdm = static_cast <oldFdmgr *> (pfdctx);
-    osiTimerForOldFdmgr *pTimer;
+    timerForOldFdmgr *pTimer;
 
 #   ifdef noExceptionsFromCXX
         pTimer = pfdm->resTbl.remove (id);

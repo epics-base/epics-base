@@ -41,7 +41,7 @@
 #include "resourceLib.h"
 #include "epicsTime.h"
 #include "osiSock.h"
-#include "osiTimer.h"
+#include "epicsTimer.h"
 
 static const unsigned hashTableIndexBits = 8;
 
@@ -85,39 +85,33 @@ private:
     const fdRegType type;
 };
 
-class osiTimerQueue;
-
 //
 // fdManager
 //
 // file descriptor manager
 //
-class fdManager {
-friend class fdReg;
+class fdManager : public epicsTimerQueueNotify {
 public:
     //
     // exceptions
     //
     class fdInterestSubscriptionAlreadyExits {};
 
-    epicsShareFunc fdManager (osiTimerQueue &timerQueue = osiDefaultTimerQueue);
+    epicsShareFunc fdManager ();
     epicsShareFunc ~fdManager ();
-    epicsShareFunc void process (double delay); // delay parameter is in seconds
+    epicsShareFunc void process ( double delay ); // delay parameter is in seconds
 
-    //
     // returns NULL if the fd is unknown
-    //
-    epicsShareFunc fdReg *lookUpFD (const SOCKET fd, const fdRegType type);
+    epicsShareFunc class fdReg *lookUpFD (const SOCKET fd, const fdRegType type);
 
-    osiTimerQueue & timerQueueRef () const;
+    epicsTimerQueue & timerQueueRef ();
 
 private:
     tsDLList<fdReg> regList;
     tsDLList<fdReg> activeList;
     resTable<fdReg, fdRegId> fdTbl;
     fd_set fdSets[fdrNEnums];
-    osiTimerQueue &timerQueue;
-
+    epicsTimerQueuePassive *pTimerQueue;
     SOCKET maxFD;
     unsigned processInProg;
     //
@@ -125,9 +119,11 @@ private:
     // and nill otherwise
     //
     fdReg *pCBReg; 
-
+    void reschedule ();
     epicsShareFunc void installReg (fdReg &reg);
     epicsShareFunc void removeReg (fdReg &reg);
+    void lazyInitTimerQueue ();
+    friend class fdReg;
 };
 
 //
@@ -201,12 +197,10 @@ inline resTableIndex fdRegId::hash (unsigned) const
     return hashid;
 }
 
-//
-// fdManager::timerQueueRef ()
-//
-inline osiTimerQueue & fdManager::timerQueueRef () const
+inline epicsTimerQueue & fdManager::timerQueueRef () 
 {
-    return this->timerQueue;
+    this->lazyInitTimerQueue ();
+    return * this->pTimerQueue;
 }
 
 #endif // fdManagerH_included

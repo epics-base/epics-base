@@ -67,7 +67,7 @@ casIntfIO::casIntfIO (const caNetAddr &addrIn) :
 	if (status<0) {
 		if (SOCKERRNO == SOCK_EADDRINUSE) {
 			//
-			// force assignment of a default port
+			// enable assignment of a default port
 			// (so the getsockname() call below will
 			// work correctly)
 			//
@@ -113,10 +113,11 @@ casIntfIO::casIntfIO (const caNetAddr &addrIn) :
 
     if ( portChange ) {
         errlogPrintf ( "cas warning: Configured TCP port was unavailable.\n");
-        errlogPrintf ( "cas warning: Using dynamically assigned port %hu\n", 
+        errlogPrintf ( "cas warning: Using dynamically assigned TCP port %hu,\n", 
             ntohs (this->addr.sin_port) );
-        errlogPrintf ( "cas warning: Depending on your IP kernel\n" );
-        errlogPrintf ( "cas warning: this server may not be reachable with unicast\n" );
+        errlogPrintf ( "cas warning: but now two or more severs share the same UDP port.\n");
+        errlogPrintf ( "cas warning: Depending on your IP kernel this server may not be\n" );
+        errlogPrintf ( "cas warning: reachable with UDP unicast (a host's IP in EPICS_CA_ADDR_LIST)\n" );
     }
 
     status = listen(this->sock, caServerConnectPendQueueSize);
@@ -216,13 +217,4 @@ void casIntfIO::show(unsigned level) const
 		printf(" casIntfIO::sock = %d\n", this->sock);
 	}
 }
-
-//
-// casIntfIO::portNumber()
-//
-unsigned casIntfIO::portNumber() const
-{
-	return ntohs(this->addr.sin_port);
-}
-
 

@@ -47,6 +47,9 @@
  * .09 050494 pg        HPUX port changes.
  * .10 021694 joh	ANSI C	
  * $Log$
+ * Revision 1.29  1998/05/29 20:19:11  jhill
+ * use new sock ioctl() typedef
+ *
  * Revision 1.28  1998/02/05 23:16:35  jhill
  * fixed truncate return status logic error
  * now uses macros from osiSock.h
@@ -113,6 +116,7 @@ static char	*pSCCSID = "@(#)iocLogServer.c	1.9\t05/05/94";
 #include 	"envDefs.h"
 #include 	"osiSock.h"
 #include	"truncateFile.h"
+#include	"bsdSocketResource.h"
 
 static unsigned short	ioc_log_port;
 static long		ioc_log_file_limit;
@@ -214,15 +218,15 @@ int main()
 	}
 	
 	optval = TRUE;
-        status = setsockopt(    pserver->sock,
-                                SOL_SOCKET,
-                                SO_REUSEADDR,
-                                (char *) &optval,
-                                sizeof(optval));
-        if(status<0){
+	status = setsockopt(    pserver->sock,
+							SOL_SOCKET,
+							SO_REUSEADDR,
+							(char *) &optval,
+							sizeof(optval));
+	if(status<0){
 		fprintf(stderr, "iocLogServer: %d=%s\n", SOCKERRNO, SOCKERRSTR);
 		return IOCLS_ERROR;
-        }
+	}
 
 	/* Zero the sock_addr structure */
 	memset((void *)&serverAddr, 0, sizeof serverAddr);
@@ -248,19 +252,19 @@ int main()
 		return IOCLS_ERROR;
 	}
 
-        /*
-         * Set non blocking IO
-         * to prevent dead locks
-         */
+	/*
+	 * Set non blocking IO
+	 * to prevent dead locks
+	 */
 	optval = TRUE;
-        status = socket_ioctl(
-                       	pserver->sock,
-                        FIONBIO,
-                        &optval);
-        if(status<0){
+	status = socket_ioctl(
+					pserver->sock,
+					FIONBIO,
+					&optval);
+	if(status<0){
 		fprintf(stderr, "iocLogServer: %d=%s\n", SOCKERRNO, SOCKERRSTR);
 		return IOCLS_ERROR;
-        }
+	}
 
 #	ifdef UNIX
 		status = setupSIGHUP(pserver);
@@ -383,7 +387,6 @@ static void acceptNewClient(void *pParam)
 	struct iocLogClient	*pclient;
 	int			size;
 	struct sockaddr_in 	addr;
-	char			*pname;
 	int			status;
 	osiSockIoctl_t	optval;
 
@@ -403,45 +406,27 @@ static void acceptNewClient(void *pParam)
 		return;
 	}
 
-        /*
-         * Set non blocking IO
-         * to prevent dead locks
-         */
+	/*
+	 * Set non blocking IO
+	 * to prevent dead locks
+	 */
 	optval = TRUE;
-        status = socket_ioctl(
-                       	pclient->insock,
-                        FIONBIO,
-                        &optval);
-        if(status<0){
+	status = socket_ioctl(
+					pclient->insock,
+					FIONBIO,
+					&optval);
+	if(status<0){
 		socket_close(pclient->insock);
 		free(pclient);
 		fprintf(stderr, "%s:%d %s\n", 
 			__FILE__, __LINE__, SOCKERRSTR);
 		return;
-        }
+	}
 
 	pclient->pserver = pserver;
 	pclient->nChar = 0u;
 
-        if (addr.sin_family==AF_INET) {
-  		struct hostent      *pent;   
-
-    		pent = gethostbyaddr(
-				(char *)&addr.sin_addr, 
-				sizeof addr.sin_addr, 
-				AF_INET);
-		if(pent){
-			pname = pent->h_name;
-		}else{
-			pname = inet_ntoa (addr.sin_addr);
-		}
-        }
-	else {
-		pname = "<ukn>";
-	}
-
-	strncpy(pclient->name, pname, sizeof(pclient->name));
-	pclient->name[sizeof(pclient->name) - 1u] = '\0';
+	ipAddrToA (&addr, pclient->name, sizeof(pclient->name));
 
 	logTime(pclient);
 	
@@ -456,10 +441,10 @@ static void acceptNewClient(void *pParam)
 	}
 #endif
 
-        /*
-         * turn on KEEPALIVE so if the client crashes
-         * this task will find out and exit
-         */
+	/*
+	 * turn on KEEPALIVE so if the client crashes
+	 * this task will find out and exit
+	 */
 	{
 		long	true = true;
 
@@ -474,15 +459,15 @@ static void acceptNewClient(void *pParam)
 		}
 	}
 
-#       define SOCKET_SHUTDOWN_WRITE_SIDE 1
-        status = shutdown(pclient->insock, SOCKET_SHUTDOWN_WRITE_SIDE);
-        if(status<0){
+#	define SOCKET_SHUTDOWN_WRITE_SIDE 1
+	status = shutdown(pclient->insock, SOCKET_SHUTDOWN_WRITE_SIDE);
+	if(status<0){
 		socket_close(pclient->insock);
 		free(pclient);
-                printf("%s:%d %s\n", __FILE__, __LINE__,
-                        SOCKERRSTR);
-                return;
-        }
+		printf("%s:%d %s\n", __FILE__, __LINE__,
+				SOCKERRSTR);
+		return;
+	}
 
 	status = fdmgr_add_callback(
 			pserver->pfdctx, 

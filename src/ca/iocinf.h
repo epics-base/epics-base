@@ -19,6 +19,7 @@
 /*	.08 102991 joh	added sprintf buffer				*/
 /*	.09 111891 joh	added event task id for vxWorks			*/
 /*	.10 111991 joh	mobe IODONESUB macro to service.c		*/
+/*	.11 031692 joh	added declaration for post_msg()		*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -259,5 +260,6 @@ void		mark_server_available();
 void		issue_claim_channel();
 void		ca_request_event();
 void		cac_io_done();
+int		post_msg();
 
 #endif /* this must be the last line in this file */

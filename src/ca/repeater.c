@@ -46,6 +46,9 @@
  * 	-----------------
  *	.01 060691 joh	Took out 4 byte count at message begin to 
  *			in preparation for SPARC alignment
+ *	.02 042892 joh	No longer checking the status from free
+ *			since it varies from OS to OS
+ *	.03 042892 joh	made local routines static
  *
  */
 
@@ -92,6 +95,7 @@ LIST	client_list;
 static
 char	buf[MAX_UDP]; 
 
+int 	clean_client();
 int	ca_repeater();
 int	local_addr();
 
@@ -140,6 +144,7 @@ ca_repeater_task()
  *
  *
  */
+static int
 ca_repeater()
 {
   	int				status;
@@ -287,6 +292,7 @@ ca_repeater()
  *	check to see if this client is still around
  *
  */
+static int
 clean_client(pclient)
 struct one_client		*pclient;
 {
@@ -323,8 +329,7 @@ struct one_client		*pclient;
 
 	if(!present){
 		lstDelete(&client_list, pclient);
-		if(free(pclient)<0)
-			abort();
+		free(pclient);
 #ifdef DEBUG
 		printf("Deleted\n");
 #endif

@@ -51,6 +51,7 @@ void cas_send_bs_msg ( struct client *pclient, int lock_needed )
             errlogPrintf ( "CAS: msg Discard for sock %d addr %x\n",
                 pclient->sock, (unsigned) pclient->addr.sin_addr.s_addr );
         }
+        pclient->send.stk = 0u;
         return;
     }
 
@@ -79,6 +80,7 @@ void cas_send_bs_msg ( struct client *pclient, int lock_needed )
             char buf[64];
 
             if ( pclient->disconnect ) {
+                pclient->send.stk = 0u;
                 break;
             }
 

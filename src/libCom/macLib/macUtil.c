@@ -29,7 +29,7 @@
  * and escapes are honored but only removed from macro names (not
  * values)
  *
- * Doesn't yet use handle (so uses default special characters)
+ * Doesn't yet use special characters (so uses default special characters)
  */
 long				/* #defns encountered; <0 = ERROR */
 epicsShareAPI macParseDefns(
@@ -59,7 +59,7 @@ epicsShareAPI macParseDefns(
     enum { preName, inName, preValue, inValue } state;
 
     /* debug output */
-    if ( handle->debug & 1 )
+    if ( handle && (handle->debug & 1) )
 	printf( "macParseDefns( %s )\n", defns );
 
     /* allocate temporary pointer arrays; in worst case they need to have

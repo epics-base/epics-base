@@ -135,7 +135,7 @@ void epicsShareAPI macSuppressWarning(
     int         falseTrue       /*0 means issue, 1 means suppress*/
 )
 {
-    handle->suppressWarning = falseTrue;
+    if(handle) handle->suppressWarning = falseTrue;
 }
 
 /*

@@ -86,10 +86,9 @@ int epicsTimeTest (void)
     printf ("epicsTime Test (%3d loops)\n========================\n\n", nTimes);
 
     for (int iTimes=0; iTimes < nTimes; ++iTimes) {
-        epicsThreadSleep (60.0);
-        //for (i=0; i<wasteTime; i++) {
-        //    useSomeCPU = epicsTime::getCurrent();
-        //}
+        for (unsigned i=0; i<wasteTime; i++) {
+            useSomeCPU = epicsTime::getCurrent();
+        }
 
         const epicsTime end = epicsTime::getCurrent();
 

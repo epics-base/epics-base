@@ -54,8 +54,7 @@
                     RTEMS_NO_TIMESLICE | \
                     RTEMS_NO_ASR | \
                     RTEMS_INTERRUPT_LEVEL(0))
-#define CONFIGURE_INIT_TASK_INITIAL_ATTRIBUTES (RTEMS_FLOATING_POINT | \
-                    RTEMS_LOCAL)
+#define CONFIGURE_INIT_TASK_ATTRIBUTES (RTEMS_FLOATING_POINT | RTEMS_LOCAL)
 #define CONFIGURE_INIT_TASK_STACK_SIZE  (16*1024)
 rtems_task Init (rtems_task_argument argument);
 

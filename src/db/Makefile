@@ -55,6 +55,7 @@ LIBSRCS += callback.c
 LIBSRCS += dbCa.c 
 LIBSRCS += initHooks.c 
 LIBSRCS += dbcar.c 
+LIBSRCS += cvtBpt.c 
 
 OBJS_IOC += iocInit
 

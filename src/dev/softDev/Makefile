@@ -2,6 +2,8 @@ TOP=../../..
 
 include $(TOP)/configure/CONFIG
 
+SHARED_LIBRARIES = NO
+
 SRCS += devAiSoft.c
 SRCS += devAiSoftRaw.c
 SRCS += devAoSoft.c
@@ -27,7 +29,10 @@ SRCS += devSiSoft.c
 SRCS += devSoSoft.c
 SRCS += devWfSoft.c
 
-OBJS_IOC = $(SRCS:%.c=%)
+LIBRARY_IOC += softDevIoc
+
+# For R3.13 compatability
+OBJS_vxWorks = $(SRCS:%.c=%)
 
 include $(TOP)/configure/RULES
 

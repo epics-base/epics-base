@@ -12,7 +12,7 @@ DBD += bptTypeKdegC.dbd
 DBD += bptTypeKdegF.dbd
 
 PROD_LIBS = dbStaticHost Com
-PROD += makeBpt
+PROD_HOST += makeBpt
 
 include $(TOP)/configure/RULES
 

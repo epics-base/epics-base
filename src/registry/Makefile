@@ -32,5 +32,8 @@ registryIoc_DLL_LIBS  = Com
 
 registryIoc_RCS_WIN32 = registryIoc.rc
 
+OBJLIB_vxWorks = registryIoc
+OBJLIB_SRCS = $(LIBSRCS)
+
 include $(TOP)/configure/RULES
 

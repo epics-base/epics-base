@@ -7,7 +7,7 @@ dbIoc_DIR=$(INSTALL_LIB)
 dbStaticHost_DIR=$(INSTALL_LIB)
 
 callbackTestHost_SRCS += callbackTestMain.c callbackTest.c
-PROD += callbackTestHost
+PROD_HOST += callbackTestHost
 OBJS_IOC += callbackTest
 
 

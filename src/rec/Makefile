@@ -1,6 +1,8 @@
 TOP=../..
 include $(TOP)/configure/CONFIG
 
+SHARED_LIBRARIES = NO
+
 INC += egDefs.h
 INC += erDefs.h
 INC += ereventDefs.h
@@ -38,38 +40,43 @@ DBDINC += subRecord
 DBDINC += subArrayRecord
 DBDINC += waveformRecord
 
-OBJS_IOC += aaiRecord
-OBJS_IOC += aaoRecord
-OBJS_IOC += aiRecord
-OBJS_IOC += aoRecord
-OBJS_IOC += biRecord
-OBJS_IOC += boRecord
-OBJS_IOC += calcRecord
-OBJS_IOC += calcoutRecord
-OBJS_IOC += compressRecord
-OBJS_IOC += dfanoutRecord
-OBJS_IOC += egRecord
-OBJS_IOC += egeventRecord
-OBJS_IOC += erRecord
-OBJS_IOC += ereventRecord
-OBJS_IOC += eventRecord
-OBJS_IOC += fanoutRecord
-OBJS_IOC += histogramRecord
-OBJS_IOC += longinRecord
-OBJS_IOC += longoutRecord
-OBJS_IOC += mbbiRecord
-OBJS_IOC += mbbiDirectRecord
-OBJS_IOC += mbboRecord
-OBJS_IOC += mbboDirectRecord
-OBJS_IOC += permissiveRecord
-OBJS_IOC += selRecord
-OBJS_IOC += seqRecord
-OBJS_IOC += stateRecord
-OBJS_IOC += stringinRecord
-OBJS_IOC += stringoutRecord
-OBJS_IOC += subRecord
-OBJS_IOC += subArrayRecord
-OBJS_IOC += waveformRecord
+LIBSRCS += aaiRecord.c
+LIBSRCS += aaoRecord.c
+LIBSRCS += aiRecord.c
+LIBSRCS += aoRecord.c
+LIBSRCS += biRecord.c
+LIBSRCS += boRecord.c
+LIBSRCS += calcRecord.c
+LIBSRCS += calcoutRecord.c
+LIBSRCS += compressRecord.c
+LIBSRCS += dfanoutRecord.c
+LIBSRCS += egRecord.c
+LIBSRCS += egeventRecord.c
+LIBSRCS += erRecord.c
+LIBSRCS += ereventRecord.c
+LIBSRCS += eventRecord.c
+LIBSRCS += fanoutRecord.c
+LIBSRCS += histogramRecord.c
+LIBSRCS += longinRecord.c
+LIBSRCS += longoutRecord.c
+LIBSRCS += mbbiRecord.c
+LIBSRCS += mbbiDirectRecord.c
+LIBSRCS += mbboRecord.c
+LIBSRCS += mbboDirectRecord.c
+LIBSRCS += permissiveRecord.c
+LIBSRCS += selRecord.c
+LIBSRCS += seqRecord.c
+LIBSRCS += stateRecord.c
+LIBSRCS += stringinRecord.c
+LIBSRCS += stringoutRecord.c
+LIBSRCS += subRecord.c
+LIBSRCS += subArrayRecord.c
+LIBSRCS += waveformRecord.c
+
+LIBRARY_IOC += recIoc
+
+# For R3.13 compatability
+OBJS_vxWorks = $(LIBSRCS:%.c=%)
 
 include $(TOP)/configure/RULES
 

@@ -63,9 +63,11 @@ LIBSRCS += limboiiu.cpp
 
 LIBRARY=ca
 
+# For R3.13 compatibility only
+OBJLIB_vxWorks=ca
+OBJLIB_SRCS = $(LIBSRCS)
+
 #   only for WIN32:
-#   build LIBRARY as a DLL, use the specified def file
-LIBTYPE := SHARED
 SYS_DLL_LIBS = ws2_32
 DLL_LIBS = Com
 
@@ -80,9 +82,9 @@ ca_DIR = .
 Com_DIR = $(INSTALL_LIB)
 
 caRepeater_SRCS = caRepeater.cpp
-PROD += caRepeater
+PROD_HOST += caRepeater
 
-PROD_DEFAULT += catime acctst caConnTest casw caEventRate
+PROD_HOST += catime acctst caConnTest casw caEventRate
 OBJS_IOC += catime acctst caConnTest casw caEventRate
 catime_SRCS = catimeMain.c catime.c 
 acctst_SRCS = acctstMain.c acctst.c 
@@ -90,8 +92,5 @@ caEventRate_SRCS = caEventRateMain.cpp caEventRate.cpp
 casw_SRCS = casw.cpp
 caConnTest_SRCS = caConnTestMain.cpp caConnTest.cpp 
 
-PROD_vxWorks = catime acctst caConnTest caEventRate
-
 include $(TOP)/configure/RULES
-
 

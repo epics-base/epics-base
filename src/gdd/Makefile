@@ -38,14 +38,13 @@ gdd_SRCS := gdd.cc gddTest.cc gddAppTable.cc gddNewDel.cc \
 	gddArray.cc gddContainer.cc gddErrorCodes.cc gddUtils.cc \
 	smartGDDPointer.cc
 
-LIBRARY_HOST = gdd
+LIBRARY = gdd
 
 DLL_LIBS = Com
 
 genApps_SRCS = genApps.cc $(AITGENSRCS)
 aitGen_SRCS = aitTypes.c aitGen.c
-PROD = aitGen genApps
-PROD_vxWorks = genApps
+PROD_HOST = aitGen genApps
 
 gdd_RCS_WIN32 = gdd.rc
 

@@ -46,7 +46,7 @@ SHRLIB_LDFLAGS += $(sort $(SHRLIB_DEPLIB_DIRS:%=-L%))
 
 #--------------------------------------------------
 # Prod: dependancy definitions
-PROD_DEPLIBS = $(foreach lib,$(PROD_LIBS) $(USR_LIBS),$(firstword $(wildcard  \
+PROD_DEPLIBS = $(foreach lib,$(PROD_LDLIBS) $(USR_LDLIBS),$(firstword $(wildcard  \
 $($(lib)_DIR)/$(LIB_PREFIX)$(lib).*)))
 
 #--------------------------------------------------
@@ -54,7 +54,7 @@ $($(lib)_DIR)/$(LIB_PREFIX)$(lib).*)))
 DEPLIB_DIRS = $(dir $($*_DEPLIBS)) $(dir $(PROD_DEPLIBS))
 DEPLIB_LDFLAGS += $(sort $(DEPLIB_DIRS:%=-L%))
 
-DEPLIB_LDLIBS = $($*_LIBS:%=-l%) $(PROD_LIBS:%=-l%) $(USR_LIBS:%=-l%)\
+DEPLIB_LDLIBS = $($*_LDLIBS:%=-l%) $(PROD_LDLIBS:%=-l%) $(USR_LDLIBS:%=-l%)\
  $($*_SYS_LIBS:%=-l%) $(SYS_PROD_LIBS:%=-l%)
 
 #--------------------------------------------------

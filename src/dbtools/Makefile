@@ -17,6 +17,10 @@ HTMLS += dbLoadTemplate.html
 
 dbtoolsIoc_RCS_WIN32 = dbtoolsIoc.rc
 
+# For R3.13 compatibility only
+OBJLIB_vxWorks=dbtoolsIoc
+OBJLIB_SRCS = $(LIBSRCS)
+
 include $(TOP)/configure/RULES
  
 #

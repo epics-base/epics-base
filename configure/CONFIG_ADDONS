@@ -203,12 +203,13 @@ endif
 endif
 
 ifneq ($(strip $(PROD_LIBS_$(OS_CLASS))),)
-PROD_LIBS += $(subst -nil-,,$(PROD_LIBS_$(OS_CLASS)))
+PROD_LDLIBS += $(subst -nil-,,$(PROD_LIBS_$(OS_CLASS)))
 else
 ifdef PROD_LIBS_DEFAULT
-PROD_LIBS += $(PROD_LIBS_DEFAULT)
+PROD_LDLIBS += $(PROD_LIBS_DEFAULT)
 endif
 endif
+PROD_LDLIBS += $(PROD_LIBS)
 
 ifneq ($(strip $(SHRLIB_LIBS_$(OS_CLASS))),)
 SHRLIB_LIBS += $(subst -nil-,,$(SHRLIB_LIBS_$(OS_CLASS)))
@@ -219,12 +220,13 @@ endif
 endif
 
 ifneq ($(strip $(USR_LIBS_$(OS_CLASS))),)
-USR_LIBS += $(subst -nil-,,$(USR_LIBS_$(OS_CLASS)))
+USR_LDLIBS += $(subst -nil-,,$(USR_LIBS_$(OS_CLASS)))
 else
 ifdef USR_LIBS_DEFAULT
-USR_LIBS += $(USR_LIBS_DEFAULT)
+USR_LDLIBS += $(USR_LIBS_DEFAULT)
 endif
 endif
+USR_LDLIBS += $(USR_LIBS)
 
 #
 #	concat specific library contents (if defined) to SYS_PROD_LIBS
@@ -241,10 +243,26 @@ endif
 #	concat specific products
 #
 ifneq ($(strip $(PROD_$(OS_CLASS))),)
-PROD += $(subst -nil-,,$(PROD_$(OS_CLASS)))
+PROD+=$(subst -nil-,,$(PROD_$(OS_CLASS)))
 else
-ifdef PROD_DEFAULT
-PROD += $(PROD_DEFAULT)
+ifneq (,$(strip $(PROD_DEFAULT)))
+PROD+=$(PROD_DEFAULT)
+endif
+endif
+
+ifneq ($(strip $(PROD_IOC_$(OS_CLASS))),)
+PROD_IOC+=$(subst -nil-,,$(PROD_IOC_$(OS_CLASS)))
+else
+ifneq (,$(strip $(PROD_IOC_DEFAULT)))
+PROD_IOC+=$(PROD_IOC_DEFAULT)
+endif
+endif
+
+ifneq ($(strip $(PROD_HOST_$(OS_CLASS))),)
+PROD_HOST+=$(subst -nil-,,$(PROD_HOST_$(OS_CLASS)))
+else
+ifneq (,$(strip $(PROD_HOST_DEFAULT)))
+PROD_HOST+=$(PROD_HOST_DEFAULT)
 endif
 endif
 
@@ -252,10 +270,26 @@ endif
 #	concat specific products
 #
 ifneq ($(strip $(TESTPROD_$(OS_CLASS))),)
-TESTPROD += $(subst -nil-,,$(TESTPROD_$(OS_CLASS)))
+TESTPROD+=$(subst -nil-,,$(TESTPROD_$(OS_CLASS)))
 else
-ifdef TESTPROD_DEFAULT
-TESTPROD += $(TESTPROD_DEFAULT)
+ifneq (,$(strip $(TESTPROD_DEFAULT)))
+TESTPROD+=$(TESTPROD_DEFAULT)
+endif
+endif
+
+ifneq ($(strip $(TESTPROD_IOC_$(OS_CLASS))),)
+TESTPROD_IOC+=$(subst -nil-,,$(TESTPROD_IOC_$(OS_CLASS)))
+else
+ifneq (,$(strip $(TESTPROD_IOC_DEFAULT)))
+TESTPROD_IOC+=$(TESTPROD_IOC_DEFAULT)
+endif
+endif
+
+ifneq ($(strip $(TESTPROD_HOST_$(OS_CLASS))),)
+TESTPROD_HOST+=$(subst -nil-,,$(TESTPROD_HOST_$(OS_CLASS)))
+else
+ifneq (,$(strip $(TESTPROD_HOST_DEFAULT)))
+TESTPROD_HOST+=$(TESTPROD_HOST_DEFAULT)
 endif
 endif
 

@@ -23,13 +23,17 @@ dbStaticIoc_SRCS += dbStaticRun.c
 LIBRARY_HOST += dbStaticHost
 LIBRARY_IOC += dbStaticIoc
 
+# For R3.13 compatibility only
+OBJLIB_vxWorks=dbStaticIoc
+OBJLIB_SRCS = $(LIBSRCS) $(dbStaticIoc_SRCS)
+
 dbStaticHost_DLL_LIBS = Com
 dbStaticIoc_DLL_LIBS = Com
 
 PROD_LIBS := dbStaticHost Com
 dbStaticHost_DIR=.
-PROD = dbReadTest dbExpand dbToMenuH dbToRecordtypeH
-PROD +=  dbMakeDBDDepends
+PROD_HOST = dbReadTest dbExpand dbToMenuH dbToRecordtypeH
+PROD_HOST +=  dbMakeDBDDepends
 
 dbStaticHost_RCS_WIN32 = dbStaticHost.rc
 dbStaticIoc_RCS_WIN32 = dbStaticIoc.rc

@@ -14,7 +14,7 @@
 #putenv("TIMEZONE=US/Central::360:040102:100102")
 
 cd topbin
-ld < exampleLibrary.munch
+ld < example.munch
 
 #The following uses drvTS for vxWorks IF it was included in src/Makefile
 #TSinit

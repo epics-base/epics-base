@@ -20,4 +20,8 @@ SYS_DLL_LIBS := ws2_32
 
 rsrvIoc_RCS_WIN32 = rsrvIoc.rc
 
+# For R3.13 compatibility only
+OBJLIB_vxWorks=rsrvIoc
+OBJLIB_SRCS = $(LIBSRCS)
+
 include $(TOP)/configure/RULES

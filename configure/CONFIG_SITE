@@ -49,7 +49,7 @@
 # override 
 #
 #CROSS_COMPILER_TARGET_ARCHS=
-CROSS_COMPILER_TARGET_ARCHS=vxWorks-68040
+CROSS_COMPILER_TARGET_ARCHS=vxWorks-68040 vxWorks-ppc604
 
 
 #  If only a subset of the host architectures perform

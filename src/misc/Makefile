@@ -19,5 +19,9 @@ registryIoc_DIR=$(EPICS_BASE_LIB)
 
 misc_RCS_WIN32 = misc.rc
 
+# For R3.13 compatibility only
+OBJLIB_vxWorks=miscIoc
+OBJLIB_SRCS = $(LIBSRCS)
+
 include $(TOP)/configure/RULES
 

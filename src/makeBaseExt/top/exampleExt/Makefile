@@ -1,7 +1,7 @@
 TOP=../..
 include $(TOP)/configure/CONFIG
 
-PROD = caExample
+PROD_HOST = caExample
 caExample_SRCS += caExample.cc
 #caExample_CFLAGS += 
 #caExample_LDFLAGS += 

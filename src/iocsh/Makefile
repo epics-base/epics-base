@@ -48,5 +48,9 @@ rsrvIoc_DIR=$(EPICS_BASE_LIB)
 
 iocsh_RCS_WIN32 = iocsh.rc
 
+# For R3.13 compatibility only
+OBJLIB_vxWorks=iocsh
+OBJLIB_SRCS = $(LIBSRCS)
+
 include $(TOP)/configure/RULES
 

@@ -11,6 +11,8 @@ SPARCWORKS = /opt/SUNWspro
 
 CC = $(SPARCWORKS)/bin/cc
 CCC = $(SPARCWORKS)/bin/CC
+#CC = purify -max-threads=100 $(SPARCWORKS)/bin/cc
+#CCC = purify -max-threads=100 $(SPARCWORKS)/bin/CC
 # required by sun's C++ compiler
 AR = $(CCC) -xar -o
 LD = ld -r

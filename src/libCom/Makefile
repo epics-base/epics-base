@@ -211,6 +211,10 @@ SRCS_vxWorks += iocClock.c
 LIBRARY=Com
 SYS_DLL_LIBS := ws2_32 advapi32 user32
 
+# For R3.13 compatibility only
+OBJLIB_vxWorks=Com
+OBJLIB_SRCS = $(SRCS)
+
 #Com_RCS_WIN32 = Com.rc
 
 #   libs needed for PROD and TESTPRODUCT
@@ -219,9 +223,9 @@ SYS_PROD_LIBS_WIN32 := ws2_32 advapi32
 
 #USR_CFLAGS += -DTS_TEST
 #TESTPROD_SRCS=tsSubr.c
-#TESTPROD=testtsLib
-#TESTPROD=envtest
-#TESTPROD=osiTimeTest fdManagerTest
+#TESTPROD_HOST=testtsLib
+#TESTPROD_HOST=envtest
+#TESTPROD_HOST=osiTimeTest fdManagerTest
 
 #	for bldErrSymTbl:
 #

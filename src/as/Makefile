@@ -20,10 +20,14 @@ asIoc_DLL_LIBS  = dbIoc dbStaticIoc ca Com
 
 asHost_DIR=.
 PROD_LIBS = asHost dbStaticHost Com
-PROD = ascheck
+PROD_HOST = ascheck
 
 asHost_RCS_WIN32 = asHost.rc
 asIoc_RCS_WIN32 = asIoc.rc
+
+# For R3.13 compatibility only
+OBJLIB_vxWorks=asIoc
+OBJLIB_SRCS = $(LIBSRCS) $(asIoc_SRCS)
 
 include $(TOP)/configure/RULES
 

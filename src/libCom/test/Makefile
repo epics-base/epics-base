@@ -7,43 +7,43 @@ PROD_LIBS += Com
 USR_LIBS_hpux += cma
 
 #epicsListTest_SRCS += epicsListTest.cpp
-#PROD += epicsListTest
+#PROD_HOST += epicsListTest
 #OBJS_IOC += epicsListTest
 
 epicsAlgorithmTest_SRCS += epicsAlgorithmTest.cpp
-PROD += epicsAlgorithmTest
+PROD_HOST += epicsAlgorithmTest
 OBJS_IOC += epicsAlgorithmTest
 
 epicsTimeTestHost_SRCS += epicsTimeTestMain.cpp epicsTimeTest.cpp
-PROD += epicsTimeTestHost
+PROD_HOST += epicsTimeTestHost
 OBJS_IOC += epicsTimeTest
 
 epicsThreadTestHost_SRCS += epicsThreadTestMain.cpp epicsThreadTest.cpp
-PROD += epicsThreadTestHost
+PROD_HOST += epicsThreadTestHost
 OBJS_IOC += epicsThreadTest
 
 epicsThreadPrivateTestHost_SRCS += epicsThreadPrivateTestMain.cpp epicsThreadPrivateTest.cpp
-PROD += epicsThreadPrivateTestHost
+PROD_HOST += epicsThreadPrivateTestHost
 OBJS_IOC += epicsThreadPrivateTest
 
 epicsTimerTestHost_SRCS += epicsTimerTestMain.cpp epicsTimerTest.cpp
-PROD += epicsTimerTestHost
+PROD_HOST += epicsTimerTestHost
 OBJS_IOC += epicsTimerTest
 
 ringPointerTestHost_SRCS += ringPointerTestMain.c ringPointerTest.c
-PROD += ringPointerTestHost
+PROD_HOST += ringPointerTestHost
 OBJS_IOC += ringPointerTest
 
 epicsEventTestHost_SRCS += epicsEventTestMain.cpp epicsEventTest.cpp
-PROD += epicsEventTestHost
+PROD_HOST += epicsEventTestHost
 OBJS_IOC += epicsEventTest
 
 epicsMutexTestHost_SRCS += epicsMutexTestMain.cpp epicsMutexTest.cpp
-PROD += epicsMutexTestHost
+PROD_HOST += epicsMutexTestHost
 OBJS_IOC += epicsMutexTest
 
 #fdmgrTest_SRCS += fdmgrTest.c
-#PROD += fdmgrTest
+#PROD_HOST += fdmgrTest
 
 include $(TOP)/configure/RULES
 

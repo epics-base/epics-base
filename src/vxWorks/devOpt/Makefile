@@ -16,5 +16,8 @@ OBJS_vxWorks += $(SRCS:%.c=%)
 
 LIBRARY_vxWorks += devLibOpt
 
+OBJLIB_vxWorks += devLibOpt
+OBJLIB_SRCS = $(SRCS)
+
 include $(TOP)/configure/RULES
 

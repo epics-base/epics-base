@@ -21,7 +21,6 @@ TEMPLATES += top/exampleApp/Db/dbExample1.db
 TEMPLATES += top/exampleApp/Db/dbExample2.db
 TEMPLATES += top/exampleApp/src/Makefile
 TEMPLATES += top/exampleApp/src/base.dbd
-TEMPLATES += top/exampleApp/src/baseLIBOBJS
 TEMPLATES += top/exampleApp/src/devXxxSoft.c
 TEMPLATES += top/exampleApp/src/xxxRecord.c
 TEMPLATES += top/exampleApp/src/caExample.c

@@ -9,7 +9,7 @@ PROD_LIBS       += ca
 PROD_LIBS       += Db
 PROD_LIBS       += Com
 
-#PROD = 
+#PROD_HOST = 
 
 include $(TOP)/configure/RULES
 #----------------------------------------

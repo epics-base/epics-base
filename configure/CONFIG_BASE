@@ -31,6 +31,13 @@ iocsh_DIR           = $(EPICS_BASE_LIB)
 miscIoc_DIR         = $(EPICS_BASE_LIB)
 registryIoc_DIR     = $(EPICS_BASE_LIB)
 rsrvIoc_DIR         = $(EPICS_BASE_LIB)
+recIoc_DIR          = $(EPICS_BASE_LIB)
+softDevIoc_DIR      = $(EPICS_BASE_LIB)
+testDevIoc_DIR      = $(EPICS_BASE_LIB)
+recIocObj_DIR       = $(EPICS_BASE_LIB)
+softDevIocObj_DIR   = $(EPICS_BASE_LIB)
+testDevIocObj_DIR   = $(EPICS_BASE_LIB)
+iocCore_DIR         = $(EPICS_BASE_LIB)
 
 #---------------------------------------------------------------
 # For applications and extensions

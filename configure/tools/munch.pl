@@ -15,7 +15,7 @@ while ($line = <STDIN>)
         ($adr,$type,$name) = split ' ',$line,3;
         chop $name;
         $name =~ s/^__/_/;
-        next if ( $name =~ /^__?GLOBAL_.D.*\.cpp/ );
+        next if ( $name =~ /^__?GLOBAL_.D.*.\.cpp/ );
         next if ( $name =~ /^__?GLOBAL_.D.\.\./ );
         @dtorlist = (@dtorlist,$name);
     };
@@ -23,7 +23,7 @@ while ($line = <STDIN>)
         ($adr,$type,$name) = split ' ',$line,3;
         chop $name;
         $name =~ s/^__/_/;
-        next if ( $name =~ /^__?GLOBAL_.I.*\.cpp/ );
+        next if ( $name =~ /^__?GLOBAL_.I.*.\.cpp/ );
         next if ( $name =~ /^__?GLOBAL_.I.\.\./ );
         @ctorlist = (@ctorlist,$name);
     };

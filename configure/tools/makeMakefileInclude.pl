@@ -53,12 +53,13 @@ foreach $name ( @nameList ) {
 	print OUT "endif\n";
 	print OUT "endif\n";
 	print OUT "ifneq (\$(strip \$(${name}_LIBS_\$(OS_CLASS))),)\n";
-	print OUT "${name}_LIBS+=\$(subst -nil-,,\$(${name}_LIBS_\$(OS_CLASS)))\n";
+	print OUT "${name}_LDLIBS+=\$(subst -nil-,,\$(${name}_LIBS_\$(OS_CLASS)))\n";
 	print OUT "else\n";
 	print OUT "ifdef ${name}_LIBS_DEFAULT\n";
-	print OUT "${name}_LIBS+=\$(${name}_LIBS_DEFAULT)\n";
+	print OUT "${name}_LDLIBS+=\$(${name}_LIBS_DEFAULT)\n";
 	print OUT "endif\n";
 	print OUT "endif\n";
+	print OUT "${name}_LDLIBS+=\$(${name}_LIBS)\n";
 	print OUT "ifneq (\$(strip \$(${name}_SYS_LIBS_\$(OS_CLASS))),)\n";
 	print OUT "${name}_SYS_LIBS+=\$(subst -nil-,,\$(${name}_SYS_LIBS_\$(OS_CLASS)))\n";
 	print OUT "else\n";
@@ -76,7 +77,7 @@ foreach $name ( @nameList ) {
 	print OUT "endif\n";
 	print OUT "${name}_RESS+=\$(addsuffix \$(RES),\$(basename \$(${name}_RCS)))\n";
 	print OUT "${name}_OBJSNAME+=\$(addsuffix \$(OBJ),\$(basename \$(${name}_OBJS)))\n";
-	print OUT "${name}_DEPLIBS=\$(foreach lib, \$(${name}_LIBS),\$(firstword \$(wildcard \\\n";
+	print OUT "${name}_DEPLIBS=\$(foreach lib, \$(${name}_LDLIBS),\$(firstword \$(wildcard \\\n";
 	print OUT " \$(\$(lib)_DIR)/\$(LIB_PREFIX)\$(lib)\*)))\n";
 	print OUT "${name}\$(EXE): \$(${name}_OBJSNAME) \$(${name}_RESS) \$(${name}_DEPLIBS)\n";
 	print OUT "endif\n";
@@ -87,7 +88,7 @@ foreach $name ( @nameList ) {
 	print OUT "endif\n";
 	print OUT "${name}_RESS+=\$(addsuffix \$(RES),\$(basename \$(${name}_RCS)))\n";
 	print OUT "${name}_OBJSNAME+=\$(addsuffix \$(OBJ),\$(basename \$(${name}_OBJS)))\n";
-	print OUT "${name}_DEPLIBS=\$(foreach lib, \$(${name}_LIBS),\$(firstword \$(wildcard \\\n";
+	print OUT "${name}_DEPLIBS=\$(foreach lib, \$(${name}_LDLIBS),\$(firstword \$(wildcard \\\n";
 	print OUT " \$(\$(lib)_DIR)/\$(LIB_PREFIX)\$(lib)\*)))\n";
 	print OUT "${name}\$(EXE): \$(${name}_OBJSNAME) \$(${name}_RESS) \$(${name}_DEPLIBS)\n";
 	print OUT "endif\n";
@@ -98,7 +99,7 @@ foreach $name ( @nameList ) {
 	print OUT "endif\n";
 	print OUT "${name}_RESS+=\$(addsuffix \$(RES),\$(basename \$(${name}_RCS)))\n";
 	print OUT "${name}_OBJSNAME+=\$(addsuffix \$(OBJ),\$(basename \$(${name}_OBJS)))\n";
-	print OUT "${name}_DEPLIBS=\$(foreach lib, \$(${name}_LIBS),\$(firstword \$(wildcard \\\n";
+	print OUT "${name}_DEPLIBS=\$(foreach lib, \$(${name}_LDLIBS),\$(firstword \$(wildcard \\\n";
 	print OUT " \$(\$(lib)_DIR)/\$(LIB_PREFIX)\$(lib)\*)))\n";
 	print OUT "\$(LIB_PREFIX)${name}\$(LIB_SUFFIX):\$(${name}_OBJSNAME) \$(${name}_RESS)\n";
 	print OUT "\$(LIB_PREFIX)${name}\$(LIB_SUFFIX):\$(${name}_DEPLIBS)\n";

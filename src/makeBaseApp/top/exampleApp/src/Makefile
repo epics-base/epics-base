@@ -7,7 +7,7 @@ include $(TOP)/configure/CONFIG
 
 #USR_CFLAGS += 
 
-PROD += caExample
+PROD_HOST += caExample
 
 caExample_LIBS	+= ca
 caExample_LIBS	+= Com
@@ -25,31 +25,17 @@ DBD += example.dbd
 
 #=============================
 
-LIBRARY_vxWorks = example
-PROD_RTEMS = example
-PROD += example
-
-example_LIBS += iocsh
-example_LIBS += miscIoc
-example_LIBS += rsrvIoc
-example_LIBS += dbtoolsIoc
-example_LIBS += asIoc
-example_LIBS += dbIoc
-example_LIBS += registryIoc
-example_LIBS += dbStaticIoc
-example_LIBS += ca
-example_LIBS += Com
+PROD_IOC = example
 
 example_SRCS += xxxRecord.c
 example_SRCS += devXxxSoft.c
 example_SRCS += caMonitor.c
 
 # <name>_registerRecordDeviceDriver.cpp will be created from <name>.dbd
-example_SRCS_DEFAULT += example_registerRecordDeviceDriver.cpp
+example_SRCS += example_registerRecordDeviceDriver.cpp
 example_SRCS_DEFAULT += exampleMain.c
 example_SRCS_vxWorks += -nil-
-
-example_OBJS_vxWorks += $(EPICS_BASE_BIN)/iocCoreLibrary
+example_LDFLAGS_vxWorks += -u _iocInit
 
 #The following adds drvTS support for vxWorks
 #example_OBJS_vxWorks += $(EPICS_BASE_BIN)/drvTS
@@ -61,15 +47,13 @@ example_OBJS_vxWorks += $(EPICS_BASE_BIN)/iocCoreLibrary
 
 #The following builds sncExample as a component of example
 #example_SRCS += sncExample.stt
-#example_OBJS_vxWorks += $(SNCSEQ_BIN)/seqLibrary
-#example_OBJS_vxWorks += $(SNCSEQ_BIN)/pvLibrary
-#seq_DIR    = $(SNCSEQ_LIB)
-#pv_DIR     = $(SNCSEQ_LIB)
 #example_LIBS += seq
 #example_LIBS += pv
+#seq_DIR    = $(SNCSEQ_LIB)
+#pv_DIR     = $(SNCSEQ_LIB)
 
 #The following builds sncExample as a standalone application
-#PROD += sncExample
+#PROD_HOST += sncExample
 #sncExample_SNCFLAGS += +m
 #sncExample_SRCS += sncExample.stt
 #seq_DIR    = $(SNCSEQ_LIB)
@@ -86,6 +70,25 @@ example_OBJS_vxWorks += $(EPICS_BASE_BIN)/iocCoreLibrary
 #sncExample_LIBS += dbStaticIoc
 #sncExample_LIBS += ca
 #sncExample_LIBS += Com
+
+# Use win32 object libs for registered support
+example_LIBS_win32 += recIocObj
+example_LIBS_win32 += softDevIocObj
+example_LIBS_win32 += testDevIocObj
+example_LIBS_DEFAULT += recIoc
+example_LIBS_DEFAULT += softDevIoc
+example_LIBS_DEFAULT += testDevIoc
+
+example_LIBS += iocsh
+example_LIBS += miscIoc
+example_LIBS += rsrvIoc
+example_LIBS += dbtoolsIoc
+example_LIBS += asIoc
+example_LIBS += dbIoc
+example_LIBS += registryIoc
+example_LIBS += dbStaticIoc
+example_LIBS += ca
+example_LIBS += Com
 
 -include ../baseLIBOBJS
 example_OBJS += $(LIBOBJS)

@@ -69,6 +69,10 @@ DLL_LIBS = dbStaticIoc ca Com
 
 dbIoc_RCS_WIN32 = dbIoc.rc
 
+# For R3.13 compatibility only
+OBJLIB_vxWorks=dbIoc
+OBJLIB_SRCS = $(LIBSRCS)
+
 include $(TOP)/configure/RULES
 
 $(COMMON_DIR)/dbCommon.h: ../dbCommonRecord.dbd ../dbCommon.dbd $(COMMON_DIR)

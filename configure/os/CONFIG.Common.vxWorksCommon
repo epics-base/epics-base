@@ -19,36 +19,57 @@ OS_CLASS = vxWorks
 # Prefix and suffix definitions
 EXE =
 OBJ = .o
-LIB_PREFIX =
-LIB_SUFFIX = Library.o
+LIB_PREFIX =lib
+LIB_SUFFIX = .a
+SHRLIB_SUFFIX = .so$(addprefix .,$(SHRLIB_VERSION))
 MUNCH_SUFFIX = .munch
 
 #-------------------------------------------------------
-# Library definition
-# Build both *.o and *.munch libraries
+# Library definitions
 LIBNAME = $(BUILD_LIBRARY:%=$(LIB_PREFIX)%$(LIB_SUFFIX))
-MUNCHNAME = $(LIBNAME:%$(OBJ)=%$(MUNCH_SUFFIX))
-LIBRARY_CTDT_SRCS = $(LIBNAME:%$(OBJ)=%_ctdt.c)
-LIBRARY_CTDT_OBJS = $(LIBNAME:%$(OBJ)=%_ctdt$(OBJ))
-LIBRARY_NM = $(LIBNAME:%$(OBJ)=%.nm)
 
 #--------------------------------------------------
-# Library install location override
-INSTALL_LOCATION_LIB=$(INSTALL_LOCATION)/bin
+# Prod: dependancy definitions
+PROD_DEPLIBS = $(foreach lib,$(PROD_LDLIBS) $(USR_LDLIBS),$(firstword $(wildcard  \
+$($(lib)_DIR)/$(LIB_PREFIX)$(lib).*)))
+
+#--------------------------------------------------
+# Prod: LDFLAGS and LDLIBS definitions
+DEPLIB_DIRS = $(dir $($*_DEPLIBS)) $(dir $(PROD_DEPLIBS))
+DEPLIB_LDFLAGS += $(sort $(DEPLIB_DIRS:%=-L%))
+
+DEPLIB_LDLIBS = $($*_LDLIBS:%=-l%) $(PROD_LDLIBS:%=-l%) $(USR_LDLIBS:%=-l%)\
+ $($*_SYS_LIBS:%=-l%) $(SYS_PROD_LIBS:%=-l%)
+
+#-------------------------------------------------------
+# Prod definitions
+MUNCHNAME = $(PRODNAME:%$(EXE)=%$(MUNCH_SUFFIX))
+CTDT_SRCS = $(PRODNAME:%$(EXE)=%_ctdt.c)
+CTDT_OBJS = $(PRODNAME:%$(EXE)=%_ctdt$(OBJ))
+NMS = $(PRODNAME:%$(EXE)=%.nm)
+
+#-------------------------------------------------------
+# R3.13 compatability object library definitions
+OBJLIB += $(OBJLIB_$(OS_CLASS))
+OBJLIB_SUFFIX = Library.o
+OBJLIBNAME = $(addsuffix $(OBJLIB_SUFFIX),$(basename $(OBJLIB)))
+OBJLIB_LD_OBJS = $(addsuffix $(OBJ),$(basename $(OBJLIB_SRCS) $(OBJLIB_OBJS)))
+PRODTARGETS += $(OBJLIBNAME)
+INSTALL_PROD += $(OBJLIBNAME:%=$(INSTALL_BIN)/%)
+OBJLIB_MUNCHNAME += $(OBJLIBNAME:%$(OBJ)=%$(MUNCH_SUFFIX))
+INSTALL_MUNCHS += $(OBJLIB_MUNCHNAME:%=$(INSTALL_BIN)/%)
+PRODTARGETS += $(OBJLIB_MUNCHNAME)
+CTDT_SRCS += $(OBJLIBNAME:%$(OBJ)=%_ctdt.c)
+CTDT_OBJS += $(OBJLIBNAME:%$(OBJ)=%_ctdt$(OBJ))
+NMS += $(OBJLIBNAME:%$(OBJ)=%.nm)
+OBJLIB_LINK.cpp = $(LD) -o $@ $(OBJLIB_LD_OBJS)
+
 
 #--------------------------------------------------
 # vxWorks directory definitions
 # Tornado directory definitions
 GNU_TARGET_INCLUDE_DIR = $(VX_DIR)/target/h
 GNU_DIR = $(VX_DIR)/host/$(WIND_HOST_TYPE)
-
-#-------------------------------------------------------
-# Command definition overrides
-
-# use ld  partial linking not ar to create libraries)
-AR = $(LD)
-ARFLAGS = -o
-RANLIB =
 
 #--------------------------------------------------
 # C++ host processing
@@ -98,9 +119,10 @@ OSITHREAD_USE_DEFAULT_STACK = NO
 
 #--------------------------------------------------
 # Link definitions
-LINK.cpp = $(LD) -o $@ $(LDFLAGS) $(PROD_LD_OBJS) $(PROD_LD_RES) $(LDLIBS)
+LINK.cpp = $(LD) -o $@ $(LDFLAGS) $(PROD_LD_OBJS) $(PROD_LD_RESS) $(LDLIBS)
 
 #--------------------------------------------------
 # Allow site overrides
 -include $(CONFIG)/os/CONFIG_SITE.Common.vxWorksCommon
 -include $(CONFIG)/os/CONFIG_SITE.$(EPICS_HOST_ARCH).vxWorksCommon
+

@@ -48,18 +48,15 @@ include $(CONFIG)/CONFIG_ADDONS
 ifeq ($(findstring Host,$(VALID_BUILDS)),Host)
 LIBRARY += $(LIBRARY_HOST)
 OBJS += $(OBJS_HOST)
-else 
-PROD = $(PROD_$(OS_CLASS))
-TESTPROD = $(TESTPROD_$(OS_CLASS))
-ifneq ($(findstring Ioc,$(VALID_BUILDS)),Ioc)
-LIBRARY = $(LIBRARY_$(OS_CLASS))
-OBJS = $(OBJS_$(OS_CLASS))
-endif
+PROD += $(PROD_HOST)
+TESTPROD += $(TESTPROD_HOST)
 endif
 
 ifeq ($(findstring Ioc,$(VALID_BUILDS)),Ioc)
 LIBRARY += $(LIBRARY_IOC)
 OBJS += $(OBJS_IOC)
+PROD += $(PROD_IOC)
+TESTPROD += $(TESTPROD_IOC)
 endif
 
 #---------------------------------------------------------------
@@ -89,13 +86,17 @@ MakefileInclude: ../Makefile
 endif # PROD, TESTPROD, or LIBRARY defined
 
 #---------------------------------------------------------------
+#   Products and Object libraries
+#
+PRODTARGETS += $(PRODNAME) $(MUNCHNAME) $(CTDT_SRCS) $(CTDT_OBJS) $(NMS)
+
+#---------------------------------------------------------------
 #   Libraries 
 #
 
 LIBTARGETS += $(LIBNAME)
-LIBTARGETS += $(MUNCHNAME) $(LIBRARY_CTDT_SRCS) $(LIBRARY_CTDT_OBJS) $(LIBRARY_NM)
 ifneq (,$(strip $(LIBTARGETS)))
-LIBTARGETS += $(INSTALL_LIBS) $(INSTALL_MUNCHS)
+LIBTARGETS += $(INSTALL_LIBS)
 ifeq ($(strip $(SHARED_LIBRARIES)),YES)
 LIBTARGETS += $(SHRLIBNAME) $(INSTALL_SHRLIBS) $(INSTALL_DLL_LINK_LIBS)
 endif # SHARED_LIBRARIES=YES
@@ -120,11 +121,11 @@ install: buildInstall
 
 rebuild: clean install
 
-build: $(OBJSNAME) $(LIBTARGETS) $(PRODNAME) $(TESTPRODNAME) \
+build: $(OBJSNAME) $(LIBTARGETS) $(PRODTARGETS) $(TESTPRODNAME) \
 	$(TARGETS)
 
 buildInstall : \
-	$(INSTALL_SCRIPTS) $(INSTALL_PROD) \
+	$(INSTALL_SCRIPTS) $(INSTALL_PROD) $(INSTALL_MUNCHS) \
 	$(INSTALL_TCLLIBS) $(INSTALL_TCLINDEX) \
 	$(INSTALL_OBJS) \
 	$(INSTALL_DOCS) \
@@ -143,7 +144,7 @@ clean::
 	*.out MakefileInclude \
 	$(COMMON_INC)
 ifdef MUNCHNAME
-	@$(RM) $(MUNCHNAME) $(LIBRARY_CTDT_SRCS) $(LIBRARY_CTDT_OBJS) $(LIBRARY_NM)
+	@$(RM) $(MUNCHNAME) $(CTDT_SRCS) $(CTDT_OBJS) $(NMS)
 endif
 ifdef BAF
 	@$(RM) $(PROD_BAF) $(LIB_BAF) *$(BOF)
@@ -183,6 +184,11 @@ endif
 $(TESTPRODNAME) $(PRODNAME):%$(EXE): $(PRODUCT_OBJS) $(PROD_RESS) $(PROD_DEPLIBS)
 	@$(RM) $@
 	$(LINK.cpp)
+
+# object libs for R3.13 vxWorks compatibility only
+$(OBJLIBNAME):%$(OBJ): $(OBJLIB_LD_OBJS)
+	@$(RM) $@
+	$(OBJLIB_LINK.cpp)
 
 %_ctdt$(OBJ) : %_ctdt.c
 	@$(RM) $@
@@ -282,6 +288,10 @@ $(SHRLIBNAME):$(LIB_PREFIX)%$(SHRLIB_SUFFIX): $(LIBRARY_OBJS) $(LIBRARY_RESS)
 	$(LINK.shrlib)
 
 # C++ munching for VxWorks
+%.nm : %$(EXE)
+	@$(RM) $@
+	$(NM) $<  > $@
+
 %.nm : %$(OBJ)
 	@$(RM) $@
 	$(NM) $<  > $@
@@ -290,10 +300,13 @@ $(SHRLIBNAME):$(LIB_PREFIX)%$(SHRLIB_SUFFIX): $(LIBRARY_OBJS) $(LIBRARY_RESS)
 	@$(RM) $@
 	$(PERL) $(TOOLS)/munch.pl <  $< > $@
 
-$(MUNCHNAME):%.munch : %_ctdt$(OBJ) %.o
+$(MUNCHNAME):%.munch : %_ctdt$(OBJ) %$(EXE)
 	@$(RM) $@
 	$(LDCMD)
 
+$(OBJLIB_MUNCHNAME):%.munch : %_ctdt$(OBJ) %$(OBJ)
+	@$(RM) $@
+	$(LDCMD)
 
 # Ext, app and module rules
 CONFIG_APP_INCLUDE: $(wildcard $(TOP)/configure/RELEASE*)

@@ -6,5 +6,7 @@
 
 EPICS_BASE=_EPICS_BASE_
 TEMPLATE_TOP=_TEMPLATE_TOP_
-MSI=/home/epics/CLS/epics/extensions/bin/$(EPICS_HOST_ARCH)/msi
-#SNCSEQ=<full path to sequencer>
+#SNCSEQ=$(EPICS_BASE)/../modules/soft/seq
+# If msi is in extensions bin define EPICS_EXTENSIONS
+# else define MSI = <full path to msi executable>
+#EPICS_EXTENSIONS=$(EPICS_BASE)/../extensions

@@ -16,7 +16,7 @@ SRCS += symtab.c
 SRCS += verbose.c
 SRCS += warshall.c
 
-PROD = antelope
+PROD_HOST = antelope
 
 include $(TOP)/configure/RULES
 

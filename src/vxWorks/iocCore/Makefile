@@ -2,8 +2,6 @@ TOP=../../..
 
 include $(TOP)/configure/CONFIG
 
-LIBRARY_vxWorks = iocCore
-
 iocCore_OBJS += $(INSTALL_BIN)/ComLibrary.o
 iocCore_OBJS += $(INSTALL_BIN)/caLibrary.o
 iocCore_OBJS += $(INSTALL_BIN)/dbStaticIocLibrary.o
@@ -17,6 +15,9 @@ iocCore_OBJS += $(INSTALL_BIN)/vxComLibrary.o
 iocCore_OBJS += $(INSTALL_BIN)/vxDbLibrary.o
 iocCore_OBJS += $(INSTALL_BIN)/iocshLibrary.o
 iocCore_SRCS += registerRecordDeviceDriver.c
+
+OBJLIB_vxWorks = iocCore
+OBJLIB_OBJS += $(iocCore_OBJS)
 
 include $(TOP)/configure/RULES
 

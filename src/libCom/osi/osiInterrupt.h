@@ -18,4 +18,6 @@ epicsShareFunc void epicsShareAPI interruptContextMessage(const char *message);
 }
 #endif
 
+#include "osdInterrupt.h"
+
 #endif /* osiInterrupth */

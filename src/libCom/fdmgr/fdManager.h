@@ -32,6 +32,9 @@
  *
  * History
  * $Log$
+ * Revision 1.5  1997/04/23 17:22:58  jhill
+ * fixed WIN32 DLL symbol exports
+ *
  * Revision 1.4  1997/04/10 19:45:38  jhill
  * API changes and include with  not <>
  *
@@ -63,15 +66,15 @@ enum fdRegState {fdrActive, fdrPending, fdrLimbo};
 class epicsShareClass fdRegId  
 {
 public:
-	fdRegId (const int fdIn, const fdRegType typeIn) :
+	fdRegId (const SOCKET fdIn, const fdRegType typeIn) :
 		fd(fdIn), type(typeIn) {}
 
-	int getFD()
+	SOCKET getFD ()
 	{
 		return this->fd;
 	}
 
-	fdRegType getType()
+	fdRegType getType ()
 	{
 		return this->type;
 	}
@@ -81,7 +84,7 @@ public:
                 return this->fd == idIn.fd && this->type==idIn.type;
         }
 
-        resTableIndex resourceHash(unsigned nBitsId) const
+        resTableIndex resourceHash (unsigned nBitsId) const
         {
                 unsigned        src = (unsigned) this->fd;
                 resTableIndex   hashid;
@@ -101,25 +104,25 @@ public:
                 return hashid;
         }
 
-	virtual void show(unsigned level) const;
+	virtual void show (unsigned level) const;
 private:
-        const int	fd;
+        const SOCKET	fd;
 	const fdRegType	type;
 };
+
 
 //
 // fdReg
 // file descriptor registration
 //
-class epicsShareClass fdReg : public tsDLNode<fdReg>, public fdRegId,
-	public tsSLNode<fdReg> {
+class fdReg : public tsDLNode<fdReg>, public fdRegId, public tsSLNode<fdReg> {
         friend class fdManager;
 public:
-	inline fdReg (const int fdIn, const fdRegType typ, 
+	epicsShareFunc inline fdReg (const SOCKET fdIn, const fdRegType typ, 
 			const unsigned onceOnly=0);
-	virtual ~fdReg ();
+	epicsShareFunc virtual ~fdReg ();
 
-	virtual void show(unsigned level) const;
+	epicsShareFunc virtual void show(unsigned level) const;
 	
 	//
 	// Called by the file descriptor manager:
@@ -130,7 +133,7 @@ public:
 	//
 	// fdReg::destroy() does a "delete this"
 	//
-	virtual void destroy ();
+	epicsShareFunc virtual void destroy ();
 private:
 
         //
@@ -140,27 +143,33 @@ private:
 	// lifetime of a fdReg object if the constructor
 	// specified "onceOnly"
         //
-        virtual void callBack ()=0;
+        epicsShareFunc virtual void callBack ()=0;
 
 	unsigned char 	state; // fdRegState goes here
 	unsigned char	onceOnly;
 };
- 
-class epicsShareClass fdManager {
+
+//
+// fdManager
+// file descriptor manager
+//
+class fdManager {
 friend class fdReg;
 public:
-        fdManager();
-        ~fdManager();
-        void process (const osiTime &delay);
+        epicsShareFunc fdManager();
+        epicsShareFunc ~fdManager();
+        epicsShareFunc void process (const osiTime &delay);
 
 	//
 	// returns NULL if the fd is unknown
 	//
-	inline fdReg *lookUpFD(const int fd, const fdRegType type);
+	epicsShareFunc fdReg *lookUpFD(const int fd, const fdRegType type);
 private:
         tsDLList<fdReg>	regList;
         tsDLList<fdReg>	activeList;
+	resTable<fdReg,fdRegId> fdTbl;
 	fd_set		fdSets[fdRegTypeNElem];
+
         int             maxFD;
 	unsigned	processInProg;
 	//
@@ -169,24 +178,11 @@ private:
 	//
 	fdReg		*pCBReg; 
 
-	inline void installReg (fdReg &reg);
-        inline void removeReg (fdReg &reg);
-	resTable<fdReg,fdRegId> fdTbl;
+	void installReg (fdReg &reg);
+        void removeReg (fdReg &reg);
 };
 
 epicsShareExtern fdManager fileDescriptorManager;
-
-//
-// lookUpFD()
-//
-inline fdReg *fdManager::lookUpFD(const int fd, const fdRegType type)
-{
-	if (fd<0) {
-		return NULL;
-	}
-	fdRegId id (fd,type);
-	return this->fdTbl.lookup(id); 
-}
 
 //
 // fdManagerMaxInt ()
@@ -200,62 +196,11 @@ inline int fdManagerMaxInt (int a, int b)
                 return b;
         }
 }
-
-//
-// fdManager::installReg()
-//
-inline void fdManager::installReg (fdReg &reg)
-{
-	int status;
-
-       	this->maxFD = fdManagerMaxInt(this->maxFD, reg.getFD()+1);
-       	this->regList.add(reg);
-	reg.state = fdrPending;
-	status = this->fdTbl.add(reg);
-	if (status) {
-		fprintf (stderr, 
-			"**** Warning - duplicate fdReg object\n");
-		fprintf (stderr, 
-			"**** will not be seen by fdManager::lookUpFD()\n");
-	}
-}
  
-//
-// fdManager::removeReg()
-//
-inline void fdManager::removeReg(fdReg &reg)
-{
-	fdReg *pItemFound;
-
-        //
-        // signal fdManager that the fdReg was deleted
-        // during the call back
-        //
-        if (this->pCBReg == &reg) {
-                this->pCBReg = 0;
-        }
-        FD_CLR(reg.getFD(), &this->fdSets[reg.getType()]);
-	pItemFound = this->fdTbl.remove(reg);
-	assert (pItemFound==&reg);
-	switch (reg.state) {
-	case fdrActive:
-        	this->activeList.remove(reg);
-		break;
-	case fdrPending:
-        	this->regList.remove(reg);
-		break;
-	case fdrLimbo:
-		break;
-	default:
-		assert(0);
-	}
-	reg.state = fdrLimbo;
-}
-
 //
 // fdReg::fdReg()
 //
-inline fdReg::fdReg (const int fdIn, const fdRegType typIn, 
+inline fdReg::fdReg (const SOCKET fdIn, const fdRegType typIn, 
 		const unsigned onceOnlyIn) : 
 	fdRegId(fdIn,typIn), state(fdrLimbo), onceOnly(onceOnlyIn)
 {

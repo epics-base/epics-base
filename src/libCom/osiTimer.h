@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.4  1997/04/10 19:45:42  jhill
+ * API changes and include with  not <>
+ *
  * Revision 1.3  1996/11/02 02:06:59  jhill
  * fixed several subtle problems
  *
@@ -57,19 +60,19 @@ enum osiTimerState {ositPending, ositExpired, ositLimbo};
 //
 // osiTimer
 //
-class epicsShareClass osiTimer : public tsDLNode<osiTimer> {
+class osiTimer : public tsDLNode<osiTimer> {
 	friend class osiTimerQueue;
 public:
-	osiTimer (const osiTime &delay)
+	epicsShareFunc osiTimer (const osiTime &delay)
 	{
 		this->arm(&delay);
 	}
-	virtual ~osiTimer();
+	epicsShareFunc virtual ~osiTimer();
 
 	//
 	// called when the timer expires
 	//
-	virtual void expire()=0;
+	epicsShareFunc virtual void expire()=0;
 
 	//
 	// called if 
@@ -78,7 +81,7 @@ public:
 	//
 	// osiTimer::destroy() does a "delete this"
 	//
-	virtual void destroy();
+	epicsShareFunc virtual void destroy();
 
 	//
 	// osiTimer::again() returns false
@@ -87,7 +90,7 @@ public:
 	// timer should be rearmed with delay
 	// "delay()" when it expires
 	//
-	virtual osiBool again() const;
+	epicsShareFunc virtual osiBool again() const;
 
 	//
 	// returns the delay prior to expire
@@ -96,26 +99,26 @@ public:
 	//
 	// osiTimer::delay() returns 1 sec
 	//
-	virtual const osiTime delay() const;
+	epicsShareFunc virtual const osiTime delay() const;
 
 	//
 	// change the timers expiration to newDelay
 	// seconds after when reschedule() is called
 	//
-	void reschedule(const osiTime &newDelay);
+	epicsShareFunc void reschedule(const osiTime &newDelay);
 
 	//
 	// return the number of seconds remaining before
 	// this timer will expire
 	//
-	osiTime timeRemaining();
+	epicsShareFunc osiTime timeRemaining();
 
-	virtual void show (unsigned level) const;
+	epicsShareFunc virtual void show (unsigned level) const;
 
 	//
 	// for diagnostics
 	//
-	virtual const char *name() const;
+	epicsShareFunc virtual const char *name() const;
 private:
 	osiTime		exp;
 	osiTimerState 	state;
@@ -126,6 +129,8 @@ private:
 	//
 	void arm (const osiTime * const pInitialDelay=0);
 };
+
+
 
 //
 // osiTimerQueue

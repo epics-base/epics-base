@@ -4,6 +4,9 @@
 //
 //
 // $Log$
+// Revision 1.9  1997/06/13 09:39:09  jhill
+// fixed warnings
+//
 // Revision 1.8  1997/05/29 21:37:38  tang
 // add ifdef for select call to support HP-UX
 //
@@ -48,9 +51,8 @@
 //	implemented in this DLL -> define epicsExportSharesSymbols
 #define epicsExportSharedSymbols
 #include "osiTimer.h"
-#include "fdManager.h"
 #define instantiateStringIdFastHash
-#include "resourceLib.cc"
+#include "fdManager.h"
  
 //
 // if the compiler supports explicit instantiation of
@@ -64,6 +66,10 @@
         // This explicitly instantiates the template class's member
         // functions used by fdManager 
         //
+		//
+		// instantiated by "fdManager fileDescriptorManager;" statement below?
+		// (according to ms vis C++)
+		//
         template class resTable <fdReg, fdRegId>;
 #endif
 
@@ -77,7 +83,7 @@ inline int selectErrno()
 //
 // fdManager::fdManager()
 //
-fdManager::fdManager()
+epicsShareFunc fdManager::fdManager()
 {
 	size_t	i;
 
@@ -98,7 +104,7 @@ fdManager::fdManager()
 //
 // fdManager::~fdManager()
 //
-fdManager::~fdManager()
+epicsShareFunc fdManager::~fdManager()
 {
 	fdReg	*pReg;
 
@@ -115,7 +121,7 @@ fdManager::~fdManager()
 //
 // fdManager::process()
 //
-void fdManager::process (const osiTime &delay)
+epicsShareFunc void fdManager::process (const osiTime &delay)
 {
 	static const tsDLIterBD<fdReg> eol; // end of list
 	tsDLIterBD<fdReg> iter;
@@ -234,7 +240,7 @@ void fdManager::process (const osiTime &delay)
 // fdReg::destroy()
 // (default destroy method)
 //
-void fdReg::destroy()
+epicsShareFunc void fdReg::destroy()
 {
 	delete this;
 }
@@ -242,7 +248,7 @@ void fdReg::destroy()
 //
 // fdReg::~fdReg()
 //
-fdReg::~fdReg()
+epicsShareFunc fdReg::~fdReg()
 {
 	fileDescriptorManager.removeReg(*this);
 }
@@ -250,7 +256,7 @@ fdReg::~fdReg()
 //
 // fdReg::show()
 //
-void fdReg::show(unsigned level) const
+epicsShareFunc void fdReg::show(unsigned level) const
 {
 	printf ("fdReg at %p\n", (void *) this);
 	if (level>1u) {
@@ -272,4 +278,65 @@ void fdRegId::show(unsigned level) const
 	}
 }
 
+//
+// fdManager::installReg()
+//
+void fdManager::installReg (fdReg &reg)
+{
+	int status;
 
+       	this->maxFD = fdManagerMaxInt(this->maxFD, reg.getFD()+1);
+       	this->regList.add(reg);
+	reg.state = fdrPending;
+	status = this->fdTbl.add(reg);
+	if (status) {
+		fprintf (stderr, 
+			"**** Warning - duplicate fdReg object\n");
+		fprintf (stderr, 
+			"**** will not be seen by fdManager::lookUpFD()\n");
+	}
+}
+
+//
+// fdManager::removeReg()
+//
+void fdManager::removeReg(fdReg &reg)
+{
+	fdReg *pItemFound;
+
+        //
+        // signal fdManager that the fdReg was deleted
+        // during the call back
+        //
+        if (this->pCBReg == &reg) {
+                this->pCBReg = 0;
+        }
+        FD_CLR(reg.getFD(), &this->fdSets[reg.getType()]);
+	pItemFound = this->fdTbl.remove(reg);
+	assert (pItemFound==&reg);
+	switch (reg.state) {
+	case fdrActive:
+        	this->activeList.remove(reg);
+		break;
+	case fdrPending:
+        	this->regList.remove(reg);
+		break;
+	case fdrLimbo:
+		break;
+	default:
+		assert(0);
+	}
+	reg.state = fdrLimbo;
+}
+
+//
+// lookUpFD()
+//
+epicsShareFunc fdReg *fdManager::lookUpFD(const int fd, const fdRegType type)
+{
+	if (fd<0) {
+		return NULL;
+	}
+	fdRegId id (fd,type);
+	return this->fdTbl.lookup(id); 
+}

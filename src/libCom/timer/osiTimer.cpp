@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.7  1997/04/10 19:45:34  jhill
+ * API changes and include with  not <>
+ *
  * Revision 1.6  1996/11/02 02:06:58  jhill
  * fixed several subtle problems
  *
@@ -150,7 +153,7 @@ void osiTimer::arm (const osiTime * const pInitialDelay)
 //
 // osiTimer::~osiTimer()
 //
-osiTimer::~osiTimer()
+epicsShareFunc osiTimer::~osiTimer()
 {
 	//
 	// signal the timer queue if this
@@ -178,7 +181,7 @@ osiTimer::~osiTimer()
 //
 // osiTimer::again()
 //
-osiBool osiTimer::again() const
+epicsShareFunc osiBool osiTimer::again() const
 {
 	//
 	// default is to run the timer only once 
@@ -189,7 +192,7 @@ osiBool osiTimer::again() const
 //
 // osiTimer::destroy()
 //
-void osiTimer::destroy()
+epicsShareFunc void osiTimer::destroy()
 {
         delete this;
 }
@@ -197,7 +200,7 @@ void osiTimer::destroy()
 //
 // osiTimer::delay()
 //
-const osiTime osiTimer::delay() const
+epicsShareFunc const osiTime osiTimer::delay() const
 {
 	//
 	// default to 1 sec
@@ -205,13 +208,13 @@ const osiTime osiTimer::delay() const
 	return osiTime (1.0);
 }
 
-void osiTimer::show (unsigned level) const
+epicsShareFunc void osiTimer::show (unsigned level) const
 {
 	osiTime	cur(osiTime::getCurrent());
 	double delay;
 
-	printf ("osiTimer at %x for \"%s\" with again = %d\n", 
-		(unsigned) this, this->name(), this->again());
+	printf ("osiTimer at %p for \"%s\" with again = %d\n", 
+		this, this->name(), this->again());
 	if (this->exp >= cur) {
 		delay = this->exp - cur;
 	}
@@ -231,7 +234,6 @@ void osiTimer::show (unsigned level) const
 osiTime osiTimerQueue::delayToFirstExpire() const
 {
 	osiTimer *pTmr;
-	osiTime cur(osiTime::getCurrent());
 	osiTime delay;
 
 	pTmr = this->pending.first();
@@ -360,7 +362,7 @@ osiTimerQueue::~osiTimerQueue()
 // osiTimer::name()
 // virtual base default 
 //
-const char *osiTimer::name() const
+epicsShareFunc const char *osiTimer::name() const
 {
 	return "osiTimer";
 }
@@ -371,7 +373,7 @@ const char *osiTimer::name() const
 // pull this timer out of the queue ans reinstall
 // it with a new experation time
 //
-void osiTimer::reschedule(const osiTime &newDelay)
+epicsShareFunc void osiTimer::reschedule(const osiTime &newDelay)
 {
 	//
 	// signal the timer queue if this
@@ -403,7 +405,7 @@ void osiTimer::reschedule(const osiTime &newDelay)
 // return the number of seconds remaining before
 // this timer will expire
 //
-osiTime osiTimer::timeRemaining()
+epicsShareFunc osiTime osiTimer::timeRemaining()
 {
 	osiTime cur = osiTime::getCurrent();
 	osiTime delay;

@@ -71,6 +71,9 @@
  *			we eliminate delete ambiguity (chance of the same
  *			being reused).
  * $Log$
+ * Revision 1.24  1997/05/01 19:57:25  jhill
+ * updated dll keywords
+ *
  * Revision 1.23  1997/04/10 19:45:25  jhill
  * API changes and include with  not <>
  *
@@ -105,20 +108,7 @@ static char	*pSccsId = "@(#) $Id$";
 #include <stdlib.h>
 #include <stdarg.h>
 
-/*
- * Yuk
- */
-#if 0
-#if defined (MULTINET)
-#	define select_errno socket_errno
-#elif defined (WINTCP)
-#	define select_errno uerrno
-       	extern int uerrno;
-#else
-#	include <errno.h>
-#	define select_errno errno
-#endif
-#endif
+#define select_errno SOCKERRNO 
 
 #ifdef vxWorks
 #include <vxWorks.h>
@@ -131,13 +121,14 @@ static char	*pSccsId = "@(#) $Id$";
 #endif
 
 #define epicsExportSharedSymbols
-#include "osiSock.h"
 #include "epicsAssert.h"
 #include "epicsTypes.h"
 #include "fdmgr.h"
 
+#if 0
 #define NOBSDNETPROTO
 #include "bsdProto.h"
+#endif
 
 #ifndef TRUE
 #define TRUE 1
@@ -145,12 +136,10 @@ static char	*pSccsId = "@(#) $Id$";
 #ifndef FALSE
 #define FALSE 0
 #endif
-#ifndef OK
-#define OK 0
-#endif
-#ifndef ERROR
-#define ERROR (-1)
-#endif
+
+#define FDMGR_OK 0
+#define FDMGR_ERROR (-1)
+
 #ifndef NULL
 #define NULL 0
 #endif
@@ -165,7 +154,7 @@ static char	*pSccsId = "@(#) $Id$";
 
 typedef struct{
 	ELLNODE		node;
-	int		fd;
+	int			fd;
 	enum fdi_type	fdi;		/* the type of fd interest */
 	fd_set		*pfds;
 	void		(*pfunc)(void *);
@@ -183,22 +172,22 @@ typedef struct{
 }fdmgrAlarm;
 
 #if defined(vxWorks)
-#	define LOCK(PFDCTX)	assert(semTake((PFDCTX)->lock, WAIT_FOREVER)==OK);
-#	define UNLOCK(PFDCTX)	assert(semGive((PFDCTX)->lock)==OK);
+#	define LOCK(PFDCTX)	assert(semTake((PFDCTX)->lock, WAIT_FOREVER)==FDMGR_OK);
+#	define UNLOCK(PFDCTX)	assert(semGive((PFDCTX)->lock)==FDMGR_OK);
 
 #	define UNLOCK_FDMGR_PEND_EVENT(PFDCTX) \
 		{(PFDCTX)->fdmgr_pend_event_tid = NULL; \
-		assert(semGive((PFDCTX)->fdmgr_pend_event_lock)==OK);}
+		assert(semGive((PFDCTX)->fdmgr_pend_event_lock)==FDMGR_OK);}
 
 #	define LOCK_EXPIRED(PFDCTX) \
-		assert(semTake((PFDCTX)->expired_alarm_lock, WAIT_FOREVER)==OK);
+		assert(semTake((PFDCTX)->expired_alarm_lock, WAIT_FOREVER)==FDMGR_OK);
 #	define UNLOCK_EXPIRED(PFDCTX) \
-		assert(semGive((PFDCTX)->expired_alarm_lock)==OK);
+		assert(semGive((PFDCTX)->expired_alarm_lock)==FDMGR_OK);
 
 #	define LOCK_FD_HANDLER(PFDCTX) \
-		assert(semTake((PFDCTX)->fd_handler_lock, WAIT_FOREVER)==OK);
+		assert(semTake((PFDCTX)->fd_handler_lock, WAIT_FOREVER)==FDMGR_OK);
 #	define UNLOCK_FD_HANDLER(PFDCTX) \
-		assert(semGive((PFDCTX)->fd_handler_lock)==OK);
+		assert(semGive((PFDCTX)->fd_handler_lock)==FDMGR_OK);
 
 #elif defined(UNIX) || defined(VMS) || defined(WIN32)
 #	define LOCK(PFDCTX)
@@ -254,7 +243,7 @@ LOCAL void process_alarm_queue(
  *	fdmgr_init()
  *
  */
-fdctx *fdmgr_init(void)
+epicsShareFunc fdctx * epicsShareAPI fdmgr_init(void)
 {
 	fdctx 		*pfdctx;
 
@@ -310,25 +299,25 @@ fdctx *fdmgr_init(void)
  *	fdmgr_delete()
  *
  */
-int fdmgr_delete(fdctx *pfdctx)
+epicsShareFunc int epicsShareAPI fdmgr_delete(fdctx *pfdctx)
 {
 	int		status;
 	fdmgrAlarm	*palarm;
 	fdmgrAlarm	*pnext;
 
 	if(!pfdctx){
-		return ERROR;
+		return FDMGR_ERROR;
 	}
 
 #	if defined(vxWorks)
 		status = semDelete (pfdctx->lock);
-		assert (status == OK);
+		assert (status == FDMGR_OK);
 		status = semDelete (pfdctx->fdmgr_pend_event_lock);
-		assert (status == OK);
+		assert (status == FDMGR_OK);
 		status = semDelete (pfdctx->expired_alarm_lock);
-		assert (status == OK);
+		assert (status == FDMGR_OK);
 		status = semDelete (pfdctx->fd_handler_lock);
-		assert (status == OK);
+		assert (status == FDMGR_OK);
 #	endif
 
 	ellFree(&pfdctx->fdentry_list);
@@ -348,14 +337,14 @@ int fdmgr_delete(fdctx *pfdctx)
 	ellFree(&pfdctx->expired_alarm_list);
 	ellFree(&pfdctx->free_alarm_list);
 
-	return OK;
+	return FDMGR_OK;
 }
 
 
 /*
  * 	fdmgr_add_timeout()
  */
-fdmgrAlarmId fdmgr_add_timeout(
+epicsShareFunc fdmgrAlarmId epicsShareAPI fdmgr_add_timeout(
 fdctx 		*pfdctx,
 struct timeval 	*ptimeout,
 void		(*func)(void *),
@@ -454,7 +443,7 @@ void		*param
 /*
  *	fdmgr_clear_timeout()
  */
-int fdmgr_clear_timeout(
+epicsShareFunc int epicsShareAPI fdmgr_clear_timeout(
 fdctx 		*pfdctx,
 fdmgrAlarmId	id	
 )
@@ -467,7 +456,7 @@ fdmgrAlarmId	id
 				pfdctx->pAlarmBucket,
 				&id);
 	if (!palarm) {
-		return ERROR;
+		return FDMGR_ERROR;
 	}
 
 	status = bucketRemoveItemUnsignedId(
@@ -475,7 +464,7 @@ fdmgrAlarmId	id
 				&id);
 	assert (status == S_bucket_success);
 
-	status = ERROR;
+	status = FDMGR_ERROR;
 
 	LOCK(pfdctx);
 	alt = palarm->alt;
@@ -483,7 +472,7 @@ fdmgrAlarmId	id
 		ellDelete(&pfdctx->alarm_list, &palarm->node);
 		ellAdd(&pfdctx->free_alarm_list, &palarm->node);
 		palarm->alt = alt_free;
-		status = OK;
+		status = FDMGR_OK;
 	}
 	else if(alt == alt_expired){
 		/*
@@ -526,7 +515,7 @@ fdmgrAlarmId	id
 			}
 #		endif
 
-		status = OK;
+		status = FDMGR_OK;
 	}
 
 	return status;
@@ -540,7 +529,7 @@ fdmgrAlarmId	id
  *	this routine is supplied solely for compatibility	
  *	with earlier versions of this software
  */
-int fdmgr_add_fd(
+epicsShareFunc int epicsShareAPI fdmgr_add_fd(
 fdctx 	*pfdctx,
 int	fd,
 void	(*pfunc)(void *),
@@ -565,7 +554,7 @@ void	*param
  *	fdmgr_add_fd_callback()
  *
  */
-int fdmgr_add_callback(
+epicsShareFunc int epicsShareAPI fdmgr_add_callback(
 fdctx 		*pfdctx,
 int		fd,
 enum fdi_type	fdi,
@@ -576,8 +565,10 @@ void		*param
 	fdentry		*pfdentry;
 	fd_set		*pfds;
 
-	if (fd>=FD_SETSIZE || fd<0) {
-		return ERROR;
+	if (!FD_IN_FDSET(fd)) {
+		fprintf (stderr, "%s: fd > FD_SETSIZE ignored\n", 
+			__FILE__);
+		return FDMGR_ERROR;
 	}
 
 	switch(fdi){
@@ -591,7 +582,7 @@ void		*param
      		pfds = &pfdctx->excpch;
 		break;
 	default:
-		return ERROR;
+		return FDMGR_ERROR;
 	}
 
 	pfdctx->maxfd = max(pfdctx->maxfd, fd+1);
@@ -602,7 +593,7 @@ void		*param
 	if(!pfdentry){
 		pfdentry = (fdentry *) malloc(sizeof(fdentry));
 		if(!pfdentry){
-			return ERROR;
+			return FDMGR_ERROR;
 		}
 	}
 
@@ -622,7 +613,7 @@ void		*param
 	ellAdd(&pfdctx->fdentry_list, &pfdentry->node);
 	UNLOCK(pfdctx);
 
-	return OK;
+	return FDMGR_OK;
 }
 
 
@@ -633,7 +624,7 @@ void		*param
  *	included solely for compatibility with previous release
  *
  */
-int fdmgr_clear_fd(
+epicsShareFunc int epicsShareAPI fdmgr_clear_fd(
 fdctx 	*pfdctx,
 int	fd 
 )
@@ -647,7 +638,7 @@ int	fd
  *	fdmgr_clear_callback()
  *
  */
-int fdmgr_clear_callback(
+epicsShareFunc int epicsShareAPI fdmgr_clear_callback(
 fdctx 		*pfdctx,
 int		fd,
 enum fdi_type	fdi
@@ -658,7 +649,7 @@ enum fdi_type	fdi
 	int			delete_pending;
 
 	delete_pending = FALSE;
-	status = ERROR;
+	status = FDMGR_ERROR;
 
 	LOCK(pfdctx);
 	for(	pfdentry = (fdentry *) pfdctx->fdentry_list.node.next;
@@ -668,7 +659,7 @@ enum fdi_type	fdi
 		if(pfdentry->fd == fd && pfdentry->fdi == fdi){
 			ellDelete(&pfdctx->fdentry_list, &pfdentry->node);
 			fdmgr_finish_off_fdentry(pfdctx, pfdentry);
-			status = OK;
+			status = FDMGR_OK;
 			break;
 		}
 	}
@@ -685,7 +676,7 @@ enum fdi_type	fdi
 		if(pfdentry->fd == fd && pfdentry->fdi == fdi){
 			delete_pending = TRUE;
 			pfdentry->delete_pending = TRUE;
-                        status = OK;
+                        status = FDMGR_OK;
                         break;
                 }
         }
@@ -710,7 +701,7 @@ enum fdi_type	fdi
 	/*
 	 * If it is an ukn fd its a problem worth printing out
 	 */
-	if(status != OK){
+	if(status != FDMGR_OK){
 		fdmgrPrintf("fdmg: delete of ukn fd failed\n");
 	}
 
@@ -740,7 +731,7 @@ register fdentry	*pfdentry
  *	fdmgr_pend_event()
  *
  */
-int fdmgr_pend_event(
+epicsShareFunc int epicsShareAPI fdmgr_pend_event(
 fdctx 				*pfdctx,
 struct timeval 			*ptimeout 
 )
@@ -773,7 +764,7 @@ struct timeval 			*ptimeout
 				select_alarm,
 				pfdctx);
 		if (alarmId==fdmgrNoAlarm) {
-			return ERROR;
+			return FDMGR_ERROR;
 		}
 		process_alarm_queue(pfdctx, &t);
 	}
@@ -793,7 +784,7 @@ struct timeval 			*ptimeout
 
 	UNLOCK_FDMGR_PEND_EVENT(pfdctx);
 
-	return OK;
+	return FDMGR_OK;
 }
 
 
@@ -866,8 +857,8 @@ struct timeval 			*ptimeout
 				ptimeout->tv_usec);
 		else
 			fdmgrPrintf(	
-				"fdmgr: error from select %s\n",
-				strerror(SOCKERRNO));
+				"fdmgr: error from select %d=%s\n",
+				SOCKERRNO, strerror(SOCKERRNO));
 
 		return labor_performed;
 	}
@@ -1054,7 +1045,7 @@ struct timeval	*poffset
  *	select_alarm()
  *
  */
-LOCAL void select_alarm(void	*pParam)
+LOCAL void select_alarm(void *pParam)
 {
 	fdctx 	*pfdctx = pParam;
 
@@ -1130,7 +1121,7 @@ struct timeval	*pt
 			USEC_PER_SEC)/pfdctx->clk_rate;
 	UNLOCK(pfdctx);
 
-	return OK;
+	return FDMGR_OK;
 }
 #endif
 
@@ -1141,7 +1132,7 @@ struct timeval	*pt
 LOCAL void lockFDMGRPendEvent (fdctx *pfdctx)
 {
 #	if defined(vxWorks)
-		assert(semTake (pfdctx->fdmgr_pend_event_lock, WAIT_FOREVER)==OK); 
+		assert(semTake (pfdctx->fdmgr_pend_event_lock, WAIT_FOREVER)==FDMGR_OK); 
 		pfdctx->fdmgr_pend_event_tid = taskIdCurrent;
 #	else
 		assert (pfdctx->fdmgr_pend_event_in_use==0); 

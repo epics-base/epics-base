@@ -46,46 +46,10 @@
 extern "C" {
 #endif
 
-#include        "ellLib.h"
-#include        "bucketLib.h"
-
-#if defined(vxWorks)
-#      	include <vxWorks.h>
-#	include <taskLib.h>
-#	include <semLib.h>
-#      	include <sys/types.h>
-#      	include <systime.h>
-#      	include <errno.h>
-#	define FDMGR_OS vxWorks
-#endif
-
-#if defined(UNIX)
-#       include <sys/types.h>
-#       include <sys/time.h>
-#       include <errno.h>
-#	define FDMGR_OS UNIX 
-#endif
-
-#if defined(WIN32)
-#       include <time.h>
-#       include <stdlib.h>
-#       include <errno.h>
-#       include <malloc.h>
-#       include <windows.h>
-#	define FDMGR_OS WIN32 
-#endif
-
-#if defined(VMS)
-#       include <sys/types.h>
-#       include <sys/time.h>
-#       include <tcp/errno.h> 
-#	define FDMGR_OS VMS 
-#endif
-
-#ifndef FDMGR_OS
-Please Define an OS Type
-#endif
-
+#include "ellLib.h"
+#include "bucketLib.h"
+#include "shareLib.h"
+#include "osiSock.h"
 
 enum fdi_type {fdi_read, fdi_write, fdi_excp};
 enum alarm_list_type {alt_invalid, alt_alarm, alt_expired, alt_free};
@@ -149,7 +113,7 @@ typedef unsigned fdmgrAlarmId;
  * Initialize a file descriptor manager session
  *
  */
-fdctx *fdmgr_init(void);
+epicsShareFunc fdctx * epicsShareAPI fdmgr_init(void);
 
 /*
  * Specify a function to be called with a specified parameter
@@ -158,7 +122,7 @@ fdctx *fdmgr_init(void);
  * Returns fdmgrNoAlarm (zero) if alarm cant be created
  */
 #define fdmgrNoAlarm 0
-fdmgrAlarmId fdmgr_add_timeout(
+epicsShareFunc fdmgrAlarmId epicsShareAPI fdmgr_add_timeout(
 fdctx           *pfdctx,	/* fd mgr ctx from fdmgr_init()		*/
 struct timeval  *ptimeout,	/* relative delay from current time	*/
 void            (*func)(void *pParam),	
@@ -170,7 +134,7 @@ void            *param		/* first parameter passed to the func	*/
  * Clear a timeout which has not executed its function (handler)
  * yet.
  */
-int fdmgr_clear_timeout(
+epicsShareFunc int epicsShareAPI fdmgr_clear_timeout(
 fdctx           *pfdctx,	/* fd mgr ctx from fdmgr_init() 	*/
 fdmgrAlarmId	id		/* alarm to delete                      */
 );
@@ -192,7 +156,7 @@ fdmgrAlarmId	id		/* alarm to delete                      */
  * fdmgr_add_callback()
  * 
  */
-int fdmgr_add_callback(
+epicsShareFunc int epicsShareAPI fdmgr_add_callback(
 fdctx           *pfdctx,	/* fd mgr ctx from fdmgr_init() 	*/
 int             fd,		/* file descriptor			*/
 enum fdi_type   fdi,		/* file descriptor interest type	*/	
@@ -205,7 +169,7 @@ void            *param		/* first parameter passed to the func   */
  * Clear nterest in a type of file descriptor activity (IO).
  *
  */ 
-int fdmgr_clear_callback(
+epicsShareFunc int epicsShareAPI fdmgr_clear_callback(
 fdctx           *pfdctx,	/* fd mgr ctx from fdmgr_init() 	*/
 int             fd,		/* file descriptor                      */
 enum fdi_type   fdi		/* file descriptor interest type        */
@@ -220,7 +184,7 @@ enum fdi_type   fdi		/* file descriptor interest type        */
  * enough. 
  *
  */
-int fdmgr_pend_event(
+epicsShareFunc int epicsShareAPI fdmgr_pend_event(
 fdctx		*pfdctx,	/* fd mgr ctx from fdmgr_init() */
 struct timeval	*ptimeout
 );
@@ -229,7 +193,7 @@ struct timeval	*ptimeout
 /*
  * obsolete interface
  */
-int fdmgr_clear_fd(
+epicsShareFunc int epicsShareAPI fdmgr_clear_fd(
 fdctx   *pfdctx,		/* fd mgr ctx from fdmgr_init() */
 int     fd
 );
@@ -237,30 +201,30 @@ int     fd
 /*
  * obsolete interface
  */
-int fdmgr_add_fd(
+epicsShareFunc int epicsShareAPI fdmgr_add_fd(
 fdctx   *pfdctx,		/* fd mgr ctx from fdmgr_init() */
 int     fd,
 void    (*pfunc)(void *pParam),
 void    *param
 );
 
-int fdmgr_delete(fdctx *pfdctx);
+epicsShareFunc int epicsShareAPI fdmgr_delete(fdctx *pfdctx);
 
 #else
 
-fdctx *fdmgr_init();
-fdmgrAlarmId fdmgr_add_timeout();
-int fdmgr_clear_timeout();
-int fdmgr_add_callback();
-int fdmgr_clear_callback();
-int fdmgr_pend_event();
-int fdmgr_delete();
+epicsShareFunc fdctx * epicsShareAPI fdmgr_init();
+epicsShareFunc fdmgrAlarmId epicsShareAPI fdmgr_add_timeout();
+epicsShareFunc int epicsShareAPI fdmgr_clear_timeout();
+epicsShareFunc int epicsShareAPI fdmgr_add_callback();
+epicsShareFunc int epicsShareAPI fdmgr_clear_callback();
+epicsShareFunc int epicsShareAPI fdmgr_pend_event();
+epicsShareFunc int epicsShareAPI fdmgr_delete();
 
 /*
  * obsolete interface
  */
-int fdmgr_clear_fd();
-int fdmgr_add_fd();
+epicsShareFunc int epicsShareAPI fdmgr_clear_fd();
+epicsShareFunc int epicsShareAPI fdmgr_add_fd();
 
 #endif
 

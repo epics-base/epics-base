@@ -14,16 +14,17 @@ dd Month 2004</h1>
 
 <h4>EPICS_HOST_ARCH win32-x86-cygwin renamed to cygwin-x86</h4>
 
-<p> The EPICS_HOST_ARCH win32-x86-cygwin was renamed cygwin-x86 to avoid
-confusion about what OS interfaces are used on Windows: native win32 or cygwin's
-emulation of POSIX. Now we have 
+<p>The EPICS_HOST_ARCH win32-x86-cygwin was renamed cygwin-x86 to avoid
+confusion about what OS interfaces are used on Windows: native win32 or
+cygwin's emulation of POSIX. Now we have</p>
 <ul>
-<li>win32-x86  Uses native win32 interfaces with MS compiler.</li>
-<li>win32-x86-borland  Uses native win32 interfaces with borland compiler.</li>
-<li>win32-x86-gnu Uses native win32 interfaces with cygwin gnu compiler. (Not implemented yet.)</li>
-<li>cygwin-x86 Uses cygwin POSIX interfaces with cygwin gnu compiler.</li>
+  <li>win32-x86  Uses native win32 interfaces with MS compiler.</li>
+  <li>win32-x86-borland  Uses native win32 interfaces with borland
+  compiler.</li>
+  <li>win32-x86-gnu Uses native win32 interfaces with cygwin gnu compiler.
+    (Not implemented yet.)</li>
+  <li>cygwin-x86 Uses cygwin POSIX interfaces with cygwin gnu compiler.</li>
 </ul>
-</p>
 
 <h4>EPICS_TS_NTP_INET</h4>
 
@@ -81,6 +82,7 @@ all dirs of the top directory tree.</p>
 directories are not removed.</p>
 
 <h4>epicsString</h4>
+
 <p>Add epicsSnStrPrintEscaped.</p>
 
 <h4>epicsExport</h4>
@@ -104,6 +106,132 @@ just names were allowed previously.</p>
 report of the INP channel access connections. Level (0,1,2) produces (a
 summary report, summary plus unconnected channels, summary plus report of all
 channels)</p>
+
+<h4>Channel Access Client Library</h4>
+<ul>
+  <li>Fixed "subscription updates intermittently do not resume when
+    unresponsive circuit reconnects" bug
+    <ul>
+      <li>Scope:
+        <p>This bug was introduced in R3.14.5 and does not exist in any other
+        release.</p>
+      </li>
+      <li>Symptom:
+        <p>Subscription updates intermittently do not resume depending on
+        circumstances when unresponsive circuit reconnects</p>
+      </li>
+      <li>Additional Information:
+        <p>A decision was made to add a change to EPICS R3.14.5 so that when
+        a TCP circuit is temporarily unresponsive the channel, but not the
+        circuit, is immediately disconnected. This change was determined to
+        be necessary to improve overall system robustness in the face of IOC
+        or network overload. Unfortunately, an error was made when installing
+        these changes. I am sorry about any inconvience that this has caused.
+        Thanks to Ken Evans at the APS for discovering this problem.</p>
+      </li>
+    </ul>
+  </li>
+  <li>Fixed "ca_replace_access_rights_event() fails if passed a nill function
+    pointer" bug
+    <ul>
+      <li>Scope:
+        <p>This bug probably exists in all R3.14 releases.</p>
+      </li>
+      <li>Symptom:
+        <p>Passing a nill function pointer to
+        ca_replace_access_rights_event() should install a noop handler, but
+        this currently causes a failure. </p>
+      </li>
+      <li>Additional information:
+        <p>Regression tests have been installed to detect this mistake. </p>
+      </li>
+    </ul>
+  </li>
+  <li>Fixed "CA client library crash when clear channel request occurs in get
+    callback handler" bug
+    <ul>
+      <li>Scope:
+        <p>This bug was introduced in R3.14.5 and does not exist in any other
+        release.</p>
+      </li>
+      <li>Symptom:
+        <p>CA client library crash when clear channel request occurs in get
+        callback handler</p>
+      </li>
+      <li>Additional information:
+        <p>When testing the striptool application, Ken Evans, discovered a
+        bug in the CA client library occurring when a clear channel request
+        occurs in get callback handler. Regression tests have been updated so
+        that this mistake will not slip through testing undetected in a
+        future release. </p>
+      </li>
+    </ul>
+  </li>
+  <li>Fixed "Double server subscription install when subscription request
+    occurs in connection callback handler" bug
+    <ul>
+      <li>Scope:
+        <p>This bug was introduced in R3.14.5 and does not exist in any other
+        release. Subscription request must be made from within connection
+        callback handler</p>
+      </li>
+      <li>Symptom:
+        <p>It has been discovered (by Ken Evans while testing the gateway)
+        that certain subscription requests were persisting in the gateway
+        after clients had deleted them. This bug causes additional resources
+        to be consumed, but does not result in a crash.</p>
+      </li>
+      <li>Additional information
+        <p>Additional debugging has revealed that the CA client library in
+        this situation inadvertently made the subscription request twice:
+        once at the users&#x2019; request, and later on again when the
+        library auto installed subscriptions for disconnected channels.</p>
+      </li>
+    </ul>
+  </li>
+</ul>
+<ul>
+  <li>Behavior Changes
+    <ul>
+      <li>Process blocks attempting to exit if the application does not call
+        ca_context_destroy()
+        <p>In EPICS release R3.14 the CA client library is implemented using
+        auxillary threads. If the application does not call
+        ca_context_destroy() these threads will still be running, and
+        dependening on operating system conventions the process may
+        <em>not</em> exit if the main thread exits, but auxillary threads are
+        still running. Note that ca_context_destroy() is functionally
+        equivalent to the depricated call ca_task_exit().</p>
+      </li>
+    </ul>
+  </li>
+</ul>
+
+<h4>Channel Access Portable Server (used by the CA gateway and others)</h4>
+<ul>
+  <li>Fixed "assert fail when writing string through Portable CA Server" bug
+    <ul>
+      <li>Scope:
+        <p>This bug is only present in the portable CA server and so it does
+        <em>not</em> impact IOC based applications. The bug is present in the
+        CA gateway and any portable CA server based application. This problem
+        may have been recently introduced when GDD was patched to properly
+        handle fixed sized strings.</p>
+      </li>
+      <li>Synmptom:
+        <p>Failure, when writing large string through the portable CA server.
+        There appears to be a posssibility of the wrong string being written
+        when a smaller string is used. You may see the following message. </p>
+        <p>A call to "assert (! this-&gt;pValue-&gt;unreference ())" failed
+        in ..\..\..\..\include\smartGDDPointer.h line 88.</p>
+      </li>
+      <li>Additional Information:
+        <p>Thanks to Stephanie Alison at SLAC for discovering the bug and to
+        Ken Evans at the APS for reminding me to fix it.</p>
+      </li>
+    </ul>
+  </li>
+</ul>
 
 <h2 align="center">Changes since 3.14.4</h2>
 
@@ -165,7 +293,7 @@ to experiment with other CA client tools.</p>
 <h4>Stringin record time-stamp soft device support</h4>
 Add simple device support for converting time to nicely-formatted string
 using INP field as epicsTimeToStrftime format string:
-<pre>record(stringin, "$(user):now")
+<pre>record(stringin, "$(user)now")
 {
     field(DESC, "Current time and date")
     field(DTYP, "Soft Timestamp")

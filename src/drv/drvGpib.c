@@ -64,7 +64,7 @@
 #include <wdLib.h>
 #include <rngLib.h>
 
-#include <dllEpicsLib.h>
+#include <ellLib.h>
 #include <task_params.h>
 #include <module_types.h>
 #include <drvSup.h>
@@ -1152,10 +1152,10 @@ struct ibLink *plink;
   plink->srqIntFlag = 0;	/* no srq ints set now */
   plink->linkEventSem = semBCreate(SEM_EMPTY, SEM_Q_PRIORITY);
 
-  dllInit(&(plink->hiPriList));		/* init the list as empty */
+  ellInit(&(plink->hiPriList));		/* init the list as empty */
   plink->hiPriSem = semBCreate(SEM_FULL, SEM_Q_PRIORITY);
 
-  dllInit(&(plink->loPriList));		/* init the list as empty */
+  ellInit(&(plink->loPriList));		/* init the list as empty */
   plink->loPriSem = semBCreate(SEM_FULL, SEM_Q_PRIORITY);
 
   plink->srqRing = rngCreate(SRQRINGSIZE * sizeof(struct srqStatus));
@@ -1349,14 +1349,14 @@ struct  ibLink	*plink; 	/* a reference to the link structures covered */
      */
     semTake(plink->hiPriSem, WAIT_FOREVER);
 
-    if ((pnode = (struct dpvtGpibHead *)dllFirst(&(plink->hiPriList))) != NULL)
+    if ((pnode = (struct dpvtGpibHead *)ellFirst(&(plink->hiPriList))) != NULL)
     {
       while (plink->deviceStatus[pnode->device] == BUSY)
-        if ((pnode = (struct dpvtGpibHead *)dllNext(pnode)) == NULL)
+        if ((pnode = (struct dpvtGpibHead *)ellNext(pnode)) == NULL)
           break;
     }
     if (pnode != NULL)
-      dllDelete(&(plink->hiPriList), pnode);
+      ellDelete(&(plink->hiPriList), pnode);
 
     semGive(plink->hiPriSem);
 
@@ -1371,14 +1371,14 @@ struct  ibLink	*plink; 	/* a reference to the link structures covered */
     else
     {
       semTake(plink->loPriSem, WAIT_FOREVER);
-      if ((pnode = (struct dpvtGpibHead *)dllFirst(&(plink->loPriList))) != NULL)
+      if ((pnode = (struct dpvtGpibHead *)ellFirst(&(plink->loPriList))) != NULL)
       {
         while (plink->deviceStatus[pnode->device] == BUSY)
-          if ((pnode = (struct dpvtGpibHead *)dllNext(pnode)) == NULL)
+          if ((pnode = (struct dpvtGpibHead *)ellNext(pnode)) == NULL)
             break;
       }
       if (pnode != NULL)
-        dllDelete(&(plink->loPriList), pnode);
+        ellDelete(&(plink->loPriList), pnode);
 
       semGive(plink->loPriSem);
 
@@ -1665,13 +1665,13 @@ int	prio;
   switch (prio) {
   case IB_Q_LOW:                /* low priority transaction request */
     semTake(pdpvt->pibLink->loPriSem, WAIT_FOREVER);
-    dllAdd(&(pdpvt->pibLink->loPriList), pdpvt);
+    ellAdd(&(pdpvt->pibLink->loPriList), pdpvt);
     semGive(pdpvt->pibLink->loPriSem);
     semGive(pdpvt->pibLink->linkEventSem);
     break;
   case IB_Q_HIGH:               /* high priority transaction request */
     semTake(pdpvt->pibLink->hiPriSem, WAIT_FOREVER);
-    dllAdd(&(pdpvt->pibLink->hiPriList), pdpvt);
+    ellAdd(&(pdpvt->pibLink->hiPriList), pdpvt);
     semGive(pdpvt->pibLink->hiPriSem);
     semGive(pdpvt->pibLink->linkEventSem);
     break;

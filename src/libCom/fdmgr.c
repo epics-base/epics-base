@@ -117,7 +117,7 @@ static char	*pSccsId = "$Id$\t$Date$";
 #endif
 
 typedef struct{
-	DLLNODE		node;
+	ELLNODE		node;
 	int		fd;
 	enum fdi_type	fdi;		/* the type of fd interest */
 	fd_set		*pfds;
@@ -234,12 +234,12 @@ fdctx *fdmgr_init()
 		pfdctx->clk_rate = sysClkRateGet();
 		pfdctx->last_tick_count = tickGet();
 #	endif
-	dllInit(&pfdctx->fdentry_list);
-	dllInit(&pfdctx->fdentry_in_use_list);
-	dllInit(&pfdctx->fdentry_free_list);
-	dllInit(&pfdctx->alarm_list);
-	dllInit(&pfdctx->expired_alarm_list);
-	dllInit(&pfdctx->free_alarm_list);
+	ellInit(&pfdctx->fdentry_list);
+	ellInit(&pfdctx->fdentry_in_use_list);
+	ellInit(&pfdctx->fdentry_free_list);
+	ellInit(&pfdctx->alarm_list);
+	ellInit(&pfdctx->expired_alarm_list);
+	ellInit(&pfdctx->free_alarm_list);
 
 	/*
  	 * returns NULL if unsuccessfull
@@ -283,7 +283,7 @@ void		*param;
 		return NULL;
 
 	LOCK(pfdctx);
-	palarm = (alarm *) dllGet(&pfdctx->free_alarm_list);
+	palarm = (alarm *) ellGet(&pfdctx->free_alarm_list);
 	UNLOCK(pfdctx);
 	if(!palarm){
 		palarm = (alarm *) malloc(sizeof(alarm));
@@ -325,10 +325,10 @@ void		*param;
 		}
 	}
 	if(pa){
-	dllInsert(&pfdctx->alarm_list, pa->node.previous, (DLLNODE*)palarm);
+	ellInsert(&pfdctx->alarm_list, pa->node.previous, (ELLNODE*)palarm);
 	}
 	else{
-		dllAdd(&pfdctx->alarm_list,(DLLNODE*) palarm);
+		ellAdd(&pfdctx->alarm_list,(ELLNODE*) palarm);
 	}
 	palarm->alt = alt_alarm;
 	UNLOCK(pfdctx);
@@ -361,8 +361,8 @@ alarm		*palarm;
 	LOCK(pfdctx);
 	alt = palarm->alt;
 	if(alt == alt_alarm){
-		dllDelete(&pfdctx->alarm_list, (DLLNODE*)palarm);
-		dllAdd(&pfdctx->free_alarm_list, (DLLNODE*)palarm);
+		ellDelete(&pfdctx->alarm_list, (ELLNODE*)palarm);
+		ellAdd(&pfdctx->free_alarm_list, (ELLNODE*)palarm);
 		palarm->alt = alt_free;
 		status = OK;
 	}
@@ -490,7 +490,7 @@ void		*param;
 
 	pfdctx->maxfd = max(pfdctx->maxfd, fd+1);
 	LOCK(pfdctx);
-	pfdentry = (fdentry *) dllGet(&pfdctx->fdentry_free_list);
+	pfdentry = (fdentry *) ellGet(&pfdctx->fdentry_free_list);
 	UNLOCK(pfdctx);
 
 	if(!pfdentry){
@@ -513,7 +513,7 @@ void		*param;
 	pfdentry->delete_pending = FALSE;
 
 	LOCK(pfdctx);
-	dllAdd(&pfdctx->fdentry_list, (DLLNODE*)pfdentry);
+	ellAdd(&pfdctx->fdentry_list, (ELLNODE*)pfdentry);
 	UNLOCK(pfdctx);
 
 	return OK;
@@ -573,7 +573,7 @@ enum fdi_type	fdi;
 		pfdentry = (fdentry *) pfdentry->node.next){
 
 		if(pfdentry->fd == fd && pfdentry->fdi == fdi){
-			dllDelete(&pfdctx->fdentry_list, (DLLNODE*)pfdentry);
+			ellDelete(&pfdctx->fdentry_list, (ELLNODE*)pfdentry);
 			fdmgr_finish_off_fdentry(pfdctx, pfdentry);
 			status = OK;
 			break;
@@ -639,7 +639,7 @@ register fdentry	*pfdentry;
 #endif
 {
      	FD_CLR(pfdentry->fd, pfdentry->pfds);
-	dllAdd(&pfdctx->fdentry_free_list, (DLLNODE*)pfdentry);
+	ellAdd(&pfdctx->fdentry_free_list, (ELLNODE*)pfdentry);
 }
 
 
@@ -804,14 +804,14 @@ struct timeval 			*ptimeout;
 		LOCK(pfdctx)
 		pfdentry = (fdentry *) pfdentry->node.next;
 		if(pfdentry){
-			dllDelete(&pfdctx->fdentry_list, (DLLNODE*)pfdentry);
+			ellDelete(&pfdctx->fdentry_list, (ELLNODE*)pfdentry);
 			/*
 			 *
 			 * holding place where it can be marked 
 			 * pending delete but not deleted
  			 *
 			 */
-			dllAdd(&pfdctx->fdentry_in_use_list, (DLLNODE*)pfdentry);
+			ellAdd(&pfdctx->fdentry_in_use_list, (ELLNODE*)pfdentry);
 		}
 		UNLOCK(pfdctx)
 	
@@ -842,7 +842,7 @@ struct timeval 			*ptimeout;
 		}
 
 		LOCK(pfdctx)
-		dllDelete(&pfdctx->fdentry_in_use_list, (DLLNODE*)pfdentry);
+		ellDelete(&pfdctx->fdentry_in_use_list, (ELLNODE*)pfdentry);
 
 		/*
 		 * if it is marked pending delete
@@ -855,7 +855,7 @@ struct timeval 			*ptimeout;
 			fdmgr_finish_off_fdentry(pfdctx, pfdentry);
 		}
 		else{
-			dllAdd(&pfdctx->fdentry_list, (DLLNODE*)pfdentry);
+			ellAdd(&pfdctx->fdentry_list, (ELLNODE*)pfdentry);
 		}
 		UNLOCK(pfdctx)
 
@@ -903,8 +903,8 @@ struct timeval	*poffset;
 				break;
 
 		nextpa = (alarm*)pa->node.next;
-		dllDelete(&pfdctx->alarm_list, (DLLNODE*)pa);
-		dllAdd(&pfdctx->expired_alarm_list, (DLLNODE*)pa);
+		ellDelete(&pfdctx->alarm_list, (ELLNODE*)pa);
+		ellAdd(&pfdctx->expired_alarm_list, (ELLNODE*)pa);
 		pa->alt = alt_expired;
 	}
 	UNLOCK(pfdctx);
@@ -958,7 +958,7 @@ struct timeval	*poffset;
 		pa->alt = alt_free;
 		pa = (alarm *) pa->node.next;
 	}
-	dllConcat(&pfdctx->free_alarm_list, &pfdctx->expired_alarm_list);
+	ellConcat(&pfdctx->free_alarm_list, &pfdctx->expired_alarm_list);
 
 	pa = (alarm *)pfdctx->alarm_list.node.next;
 	if(pa){

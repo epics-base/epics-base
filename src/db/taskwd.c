@@ -36,7 +36,7 @@
 #include	<vxLib.h>
 #include	<stdlib.h>
 #include	<stdio.h>
-#include 	<dllEpicsLib.h>
+#include 	<ellLib.h>
 #include 	<taskLib.h>
 
 #include        <dbDefs.h>
@@ -46,15 +46,15 @@
 #include        <fast_lock.h>
 
 struct task_list {
-	DLLNODE		node;
+	ELLNODE		node;
 	VOIDFUNCPTR	callback;
 	void		*arg;
 	int		tid;
 	int		suspended;
 };
 
-static DLLLIST list;
-static DLLLIST anylist;
+static ELLLIST list;
+static ELLLIST anylist;
 static FAST_LOCK lock;
 static int taskwdid=0;
 volatile int taskwdOn=TRUE;
@@ -71,8 +71,8 @@ static void freeList(struct task_list *pt);
 void taskwdInit()
 {
     FASTLOCKINIT(&lock);
-    dllInit(&list);
-    dllInit(&anylist);
+    ellInit(&list);
+    ellInit(&anylist);
     taskwdid = taskSpawn(TASKWD_NAME,TASKWD_PRI,
 			TASKWD_OPT,TASKWD_STACK,(FUNCPTR )taskwdTask,
 			0,0,0,0,0,0,0,0,0,0);
@@ -84,7 +84,7 @@ void taskwdInsert(int tid,VOIDFUNCPTR callback,void *arg)
 
     FASTLOCK(&lock);
     pt = allocList();
-    dllAdd(&list,(void *)pt);
+    ellAdd(&list,(void *)pt);
     pt->suspended = FALSE;
     pt->tid = tid;
     pt->callback = callback;
@@ -98,7 +98,7 @@ void taskwdAnyInsert(int tid,VOIDFUNCPTR callback,void *arg)
 
     FASTLOCK(&lock);
     pt = allocList();
-    dllAdd(&anylist,(void *)pt);
+    ellAdd(&anylist,(void *)pt);
     pt->tid = tid;
     pt->callback = callback;
     pt->arg = arg;
@@ -110,15 +110,15 @@ void taskwdRemove(int tid)
     struct task_list *pt;
 
     FASTLOCK(&lock);
-    pt = (struct task_list *)dllFirst(&list);
+    pt = (struct task_list *)ellFirst(&list);
     while(pt!=NULL) {
 	if (tid == pt->tid) {
-	    dllDelete(&list,(void *)pt);
+	    ellDelete(&list,(void *)pt);
 	    freeList(pt);
 	    FASTUNLOCK(&lock);
 	    return;
 	}
-	pt = (struct task_list *)dllNext((DLLNODE *)pt);
+	pt = (struct task_list *)ellNext((ELLNODE *)pt);
     }
     FASTUNLOCK(&lock);
     errMessage(-1,"taskwdRemove failed");
@@ -129,15 +129,15 @@ void taskwdAnyRemove(int tid)
     struct task_list *pt;
 
     FASTLOCK(&lock);
-    pt = (struct task_list *)dllFirst(&anylist);
+    pt = (struct task_list *)ellFirst(&anylist);
     while(pt!=NULL) {
 	if (tid == pt->tid) {
-	    dllDelete(&anylist,(void *)pt);
+	    ellDelete(&anylist,(void *)pt);
 	    freeList(pt);
 	    FASTUNLOCK(&lock);
 	    return;
 	}
-	pt = (struct task_list *)dllNext((void *)pt);
+	pt = (struct task_list *)ellNext((void *)pt);
     }
     FASTUNLOCK(&lock);
     errMessage(-1,"taskwdanyRemove failed");
@@ -150,9 +150,9 @@ static void taskwdTask(void)
     while(TRUE) {
 	if(taskwdOn) {
 	    FASTLOCK(&lock);
-	    pt = (struct task_list *)dllFirst(&list);
+	    pt = (struct task_list *)ellFirst(&list);
 	    while(pt) {
-		next = (struct task_list *)dllNext((void *)pt);
+		next = (struct task_list *)ellNext((void *)pt);
 		if(taskIsSuspended(pt->tid)) {
 		    char *pname;
 		    char message[100];
@@ -164,10 +164,10 @@ static void taskwdTask(void)
 			sprintf(message,"task %x %s suspended",pt->tid,pname);
 			errMessage(-1,message);
 			if(pt->callback) (pt->callback)(pt->arg);
-			ptany = (struct task_list *)dllFirst(&anylist);
+			ptany = (struct task_list *)ellFirst(&anylist);
 			while(ptany) {
 			    if(ptany->callback) (ptany->callback)(ptany->arg,pt->tid);
-			    ptany = (struct task_list *)dllNext((DLLNODE *)ptany);
+			    ptany = (struct task_list *)ellNext((ELLNODE *)ptany);
 			}
 		    }
 		    pt->suspended = TRUE;

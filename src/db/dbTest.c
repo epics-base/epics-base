@@ -81,7 +81,7 @@
 #include	<string.h>
 #include	<stdio.h>
 
-#include        <dllEpicsLib.h>
+#include        <ellLib.h>
 #include	<fast_lock.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
@@ -188,8 +188,8 @@ long dbl(char	*ptypeName)
 got_it:
     for(rectype=beg; rectype<=end; rectype++) {
 	if(!(precLoc=GET_PRECLOC(precHeader,rectype))) continue;
-	for(precNode=(RECNODE *)dllFirst(precLoc->preclist);
-	    precNode; precNode = (RECNODE *)dllNext(&precNode->node)) {
+	for(precNode=(RECNODE *)ellFirst(precLoc->preclist);
+	    precNode; precNode = (RECNODE *)ellNext(&precNode->node)) {
 		precord = precNode->precord;
 		if(precord->name[0] == 0) continue; /*deleted record*/
 		strncpy(name,precord->name,PVNAME_SZ);
@@ -629,8 +629,8 @@ long dblls(int	lockset)
     printf(" lset  lcnt  disv  disa  pact\n");
     for(rectype=beg; rectype<=end; rectype++) {
         if(!(precLoc=GET_PRECLOC(precHeader,rectype))) continue;
-        for(precNode=(RECNODE *)dllFirst(precLoc->preclist);
-            precNode; precNode = (RECNODE *)dllNext(&precNode->node)) {
+        for(precNode=(RECNODE *)ellFirst(precLoc->preclist);
+            precNode; precNode = (RECNODE *)ellNext(&precNode->node)) {
                 precord = precNode->precord;
 		if(precord->name[0] == 0) continue; /*deleted record*/
 		if(lockset>0 && lockset!=precord->lset) continue;

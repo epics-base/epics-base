@@ -62,7 +62,7 @@
 #include	<vxWorks.h>
 #include	<types.h>
 #include	<wdLib.h>
-#include	<dllEpicsLib.h>
+#include	<ellLib.h>
 #include	<semLib.h>
 
 #include 	<tsDefs.h>
@@ -119,7 +119,7 @@ typedef struct{
 #define abort taskSuspend;
 
 struct event_block{
-  	DLLNODE			node;
+  	ELLNODE			node;
   	struct db_addr		*paddr;
   	void			(*user_sub)();
   	void			*user_arg;
@@ -403,7 +403,7 @@ register struct event_block	*pevent; /* ptr to event blk (not required) */
   		pevent->valque = FALSE;
 
   	LOCKREC(precord);
-  	dllAdd((DLLLIST*)&precord->mlis, (DLLNODE*)pevent);
+  	ellAdd((ELLLIST*)&precord->mlis, (ELLNODE*)pevent);
   	UNLOCKREC(precord);
 
   	return OK;
@@ -434,9 +434,9 @@ register struct event_block	*pevent;
 
   	LOCKREC(precord);
   	/* dont let a misplaced event corrupt the queue */
-  	status = dllFind((DLLLIST*)&precord->mlis, (DLLNODE*)pevent);
+  	status = ellFind((ELLLIST*)&precord->mlis, (ELLNODE*)pevent);
   	if(status!=ERROR)
-    		dllDelete((DLLLIST*)&precord->mlis, (DLLNODE*)pevent);
+    		ellDelete((ELLLIST*)&precord->mlis, (ELLNODE*)pevent);
   	UNLOCKREC(precord);
   	if(status == ERROR)
     		return ERROR;

@@ -45,7 +45,7 @@
 #include 	<string.h>
 #include	<semLib.h>
 #include 	<rngLib.h>
-#include 	<dllEpicsLib.h>
+#include 	<ellLib.h>
 #include 	<vxLib.h>
 #include 	<tickLib.h>
 
@@ -67,13 +67,13 @@ extern volatile int interruptAccept;
 
 struct scan_list{
 	FAST_LOCK	lock;
-	DLLLIST		list;
+	ELLLIST		list;
 	short		modified;/*has list been modified?*/
 	long		ticks;	/*ticks per period for periodic*/
 };
 /*scan_elements are allocated and the address stored in dbCommon.spvt*/
 struct scan_element{
-	DLLNODE			node;
+	ELLNODE			node;
 	struct scan_list	*pscan_list;
 	struct dbCommon		*precord;
 };
@@ -177,7 +177,7 @@ void scanAdd(struct dbCommon *precord)
 		psl = dbCalloc(1,sizeof(struct scan_list));
 		papEvent[precord->evnt] = psl;
 		FASTLOCKINIT(&psl->lock);
-		dllInit(&psl->list);
+		ellInit(&psl->list);
 	    }
 	    addToList(precord,psl);
 	} else if(scan==SCAN_IO_EVENT) {
@@ -338,7 +338,7 @@ void scanIoInit(IOSCANPVT *ppioscanpvt)
     priority<NUM_CALLBACK_PRIORITIES; priority++, piosl++){
 	piosl->callback.callback = ioeventCallback;
 	piosl->callback.priority = priority;
-	dllInit(&piosl->scan_list.list);
+	ellInit(&piosl->scan_list.list);
 	FASTLOCKINIT(&piosl->scan_list.lock);
 	piosl->next=iosl_head[priority];
 	iosl_head[priority]=piosl;
@@ -355,7 +355,7 @@ void scanIoRequest(IOSCANPVT pioscanpvt)
     if(!interruptAccept) return;
     for(priority=0, piosl=pioscanpvt;
     priority<NUM_CALLBACK_PRIORITIES; priority++, piosl++){
-	if(dllCount(&piosl->scan_list.list)>0) callbackRequest((void *)piosl);
+	if(ellCount(&piosl->scan_list.list)>0) callbackRequest((void *)piosl);
     }
 }
 
@@ -401,8 +401,8 @@ static void initPeriodic()
 	/* look for first record */
 	for (i=0; i<precHeader->number; i++) {
 		if((precLoc=precHeader->papRecLoc[i])==NULL) continue;
-		for(precNode=(RECNODE *)dllFirst(precLoc->preclist);
-		precNode; precNode = (RECNODE *)dllNext(&precNode->node)) {
+		for(precNode=(RECNODE *)ellFirst(precLoc->preclist);
+		precNode; precNode = (RECNODE *)ellNext(&precNode->node)) {
 			precord = precNode->precord;
 			if(precord->name[0]!=0) goto got_record;
 		}
@@ -432,7 +432,7 @@ got_record:
 		psl = dbCalloc(1,sizeof(struct scan_list));
 		papPeriodic[i] = psl;
 		FASTLOCKINIT(&psl->lock);
-		dllInit(&psl->list);
+		ellInit(&psl->list);
 		sscanf(scanChoices.strs[i+SCAN_1ST_PERIODIC],"%f",&temp);
 		psl->ticks = temp * vxTicksPerSecond;
 	}
@@ -537,7 +537,7 @@ static void printList(struct scan_list *psl,char *message)
     struct scan_element *pse;
 
     FASTLOCK(&psl->lock);
-    (void *)pse = dllFirst(&psl->list);
+    (void *)pse = ellFirst(&psl->list);
     FASTUNLOCK(&psl->lock);
     if(pse==NULL) return;
     printf("%s\n",message);
@@ -549,7 +549,7 @@ static void printList(struct scan_list *psl,char *message)
 	    printf("Returning because list changed while processing.");
 	    return;
 	}
-	(void *)pse = dllNext((void *)pse);
+	(void *)pse = ellNext((void *)pse);
 	FASTUNLOCK(&psl->lock);
     }
 }
@@ -563,9 +563,9 @@ static void scanList(struct scan_list *psl)
 
     FASTLOCK(&psl->lock);
 	psl->modified = FALSE;
-	(void *)pse = dllFirst(&psl->list);
+	(void *)pse = ellFirst(&psl->list);
 	prev = NULL;
-	(void *)next = dllNext((void *)pse);
+	(void *)next = ellNext((void *)pse);
     FASTUNLOCK(&psl->lock);
     while(pse!=NULL) {
 	struct dbCommon *precord = pse->precord;
@@ -576,27 +576,27 @@ static void scanList(struct scan_list *psl)
 	FASTLOCK(&psl->lock);
 	    if(!psl->modified) {
 		prev = pse;
-		(void *)pse = dllNext((void *)pse);
-		if(pse!=NULL) (void *)next = dllNext((void *)pse);
+		(void *)pse = ellNext((void *)pse);
+		if(pse!=NULL) (void *)next = ellNext((void *)pse);
 	    } else if (pse->pscan_list==psl) {
 		/*This scan element is still in same scan list*/
 		prev = pse;
-		(void *)pse = dllNext((void *)pse);
-		if(pse!=NULL) (void *)next = dllNext((void *)pse);
+		(void *)pse = ellNext((void *)pse);
+		if(pse!=NULL) (void *)next = ellNext((void *)pse);
 		psl->modified = FALSE;
 	    } else if (prev!=NULL && prev->pscan_list==psl) {
 		/*Previous scan element is still in same scan list*/
-		(void *)pse = dllNext((void *)prev);
+		(void *)pse = ellNext((void *)prev);
 		if(pse!=NULL) {
-		    (void *)prev = dllPrevious((void *)pse);
-		    (void *)next = dllNext((void *)pse);
+		    (void *)prev = ellPrevious((void *)pse);
+		    (void *)next = ellNext((void *)pse);
 		}
 		psl->modified = FALSE;
 	    } else if (next!=NULL && next->pscan_list==psl) {
 		/*Next scan element is still in same scan list*/
 		pse = next;
-		(void *)prev = dllPrevious((void *)pse);
-		(void *)next = dllNext((void *)pse);
+		(void *)prev = ellPrevious((void *)pse);
+		(void *)next = ellNext((void *)pse);
 		psl->modified = FALSE;
 	    } else {
 		/*Too many changes. Just wait till next period*/
@@ -623,8 +623,8 @@ static void buildScanLists(void)
 	/* look through all of the database records and place them on lists */
 	for (i=0; i<precHeader->number; i++) {
 		if((precLoc=precHeader->papRecLoc[i])==NULL) continue;
-		for(precNode=(RECNODE *)dllFirst(precLoc->preclist);
-		precNode; precNode = (RECNODE *)dllNext(&precNode->node)) {
+		for(precNode=(RECNODE *)ellFirst(precLoc->preclist);
+		precNode; precNode = (RECNODE *)ellNext(&precNode->node)) {
 			precord = precNode->precord;
 			if(precord->name[0]==0) continue;
 			scanAdd(precord);
@@ -644,16 +644,16 @@ static void addToList(struct dbCommon *precord,struct scan_list *psl)
 		(void *)pse->precord = precord;
 	}
 	pse ->pscan_list = psl;
-	(void *)ptemp = dllFirst(&psl->list);
+	(void *)ptemp = ellFirst(&psl->list);
 	while(ptemp!=NULL) {
 		if(ptemp->precord->phas>precord->phas) {
-			dllInsert(&psl->list,
-				dllPrevious((void *)ptemp),(void *)pse);
+			ellInsert(&psl->list,
+				ellPrevious((void *)ptemp),(void *)pse);
 			break;
 		}
-		(void *)ptemp = dllNext((void *)ptemp);
+		(void *)ptemp = ellNext((void *)ptemp);
 	}
-	if(ptemp==NULL) dllAdd(&psl->list,(void *)pse);
+	if(ptemp==NULL) ellAdd(&psl->list,(void *)pse);
 	psl->modified = TRUE;
 	FASTUNLOCK(&psl->lock);
 	return;
@@ -675,7 +675,7 @@ static void deleteFromList(struct dbCommon *precord,struct scan_list *psl)
 	    return;
 	}
 	pse->pscan_list = NULL;
-	dllDelete(&psl->list,(void *)pse);
+	ellDelete(&psl->list,(void *)pse);
 	psl->modified = TRUE;
 	FASTUNLOCK(&psl->lock);
 	return;

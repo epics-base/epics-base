@@ -21,18 +21,18 @@
 
 LOCAL	SEM_ID	seqProgListSemId;
 LOCAL	int	seqProgListInited = FALSE;
-LOCAL	LIST	seqProgList;
+LOCAL	ELLLIST	seqProgList;
 LOCAL	VOID	seqProgListInit();
 
 typedef struct prog_node
 {
-	NODE		node;
+	ELLNODE		node;
 	SPROG		*pSP;
 } PROG_NODE;
 
-#define	seqListFirst(pList)	(PROG_NODE *)lstFirst((LIST *)pList)
+#define	seqListFirst(pList)	(PROG_NODE *)ellFirst((ELLLIST *)pList)
 
-#define	seqListNext(pNode)	(PROG_NODE *)lstNext((NODE *)pNode)
+#define	seqListNext(pNode)	(PROG_NODE *)ellNext((ELLNODE *)pNode)
 
 /*
  * seqFindProg() - find a program in the state program list from task id.
@@ -137,7 +137,7 @@ SPROG		*pSP;
 	}
 
 	pNode->pSP = pSP;
-	lstAdd((LIST *)&seqProgList, (NODE *)pNode);
+	ellAdd((ELLLIST *)&seqProgList, (ELLNODE *)pNode);
 	semGive(seqProgListSemId);
 #ifdef DEBUG
 	printf("Added task %d to list.\n", pSP->task_id);
@@ -164,7 +164,7 @@ SPROG		*pSP;
 	{
 		if (pNode->pSP == pSP)
 		{
-			lstDelete((LIST *)&seqProgList, (NODE *)pNode);
+			ellDelete((ELLLIST *)&seqProgList, (ELLNODE *)pNode);
 			semGive(seqProgListSemId);
 
 #ifdef DEBUG
@@ -184,7 +184,7 @@ SPROG		*pSP;
 LOCAL VOID seqProgListInit()
 {
 	/* Init linked list */
-	lstInit(&seqProgList);
+	ellInit(&seqProgList);
 
 	/* Create a semaphore for mutual exclusion */
 	seqProgListSemId = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);

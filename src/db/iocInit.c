@@ -61,7 +61,7 @@
 #include	<stdarg.h>
 #include	<stdio.h>
 #include	<string.h>
-#include	<dllEpicsLib.h>
+#include	<ellLib.h>
 #include	<sysLib.h>
 #include	<symLib.h>
 #include	<sysSymTbl.h>	/* for sysSymTbl*/
@@ -394,8 +394,8 @@ static long initDatabase(void)
 	}
 	precTypDes = precDes->papRecTypDes[i];
 	pdevSup = GET_PDEVSUP(pdbBase->precDevSup,i);
-	for(precNode=(RECNODE *)dllFirst(precLoc->preclist);
-	    precNode; precNode = (RECNODE *)dllNext(&precNode->node)) {
+	for(precNode=(RECNODE *)ellFirst(precLoc->preclist);
+	    precNode; precNode = (RECNODE *)ellNext(&precNode->node)) {
 		precord = precNode->precord;
 		/* If NAME is null then skip this record*/
 		if(!(precord->name[0])) continue;
@@ -403,7 +403,7 @@ static long initDatabase(void)
 		(struct rset *)(precord->rset) = prset;
 		/* initialize mlok and mlis*/
 		FASTLOCKINIT(&precord->mlok);
-		dllInit(&(precord->mlis));
+		ellInit(&(precord->mlis));
 		precord->pact=FALSE;
 		/* set lset=0 See determine lock set below*/
 		precord->lset = 0;
@@ -420,8 +420,8 @@ static long initDatabase(void)
     for(i=0; i< (precHeader->number); i++) {
 	if(!(precLoc = precHeader->papRecLoc[i]))continue;
 	precTypDes = precDes->papRecTypDes[i];
-	for(precNode=(RECNODE *)dllFirst(precLoc->preclist);
-	    precNode; precNode = (RECNODE *)dllNext(&precNode->node)) {
+	for(precNode=(RECNODE *)ellFirst(precLoc->preclist);
+	    precNode; precNode = (RECNODE *)ellNext(&precNode->node)) {
 		precord = precNode->precord;
 	        /* If NAME is null then skip this record*/
 		if(!(precord->name[0])) continue;
@@ -479,8 +479,8 @@ static long initDatabase(void)
 	if(!(precLoc = precHeader->papRecLoc[i]))continue;
 	if(!(prset=GET_PRSET(precSup,i))) continue;
 	precTypDes = precDes->papRecTypDes[i];
-	for(precNode=(RECNODE *)dllFirst(precLoc->preclist);
-	    precNode; precNode = (RECNODE *)dllNext(&precNode->node)) {
+	for(precNode=(RECNODE *)ellFirst(precLoc->preclist);
+	    precNode; precNode = (RECNODE *)ellNext(&precNode->node)) {
 		precord = precNode->precord;
 	        /* If NAME is null then skip this record*/
 		if(!(precord->name[0])) continue;
@@ -504,8 +504,8 @@ static long initDatabase(void)
     for(i=0; i<precHeader->number; i++) {
 	if(!(precLoc = precHeader->papRecLoc[i]))continue;
 	precTypDes = precDes->papRecTypDes[i];
-	for(precNode=(RECNODE *)dllFirst(precLoc->preclist);
-	    precNode; precNode = (RECNODE *)dllNext(&precNode->node)) {
+	for(precNode=(RECNODE *)ellFirst(precLoc->preclist);
+	    precNode; precNode = (RECNODE *)ellNext(&precNode->node)) {
 		precord = precNode->precord;
 	        /* If NAME is null then skip this record*/
 		if(!(precord->name[0])) continue;
@@ -576,14 +576,14 @@ static long addToSet(
     /* unless (!process_passive && !maximize_sevr) or no_elements>1*/
     /* remember that all earlier records already have lock set determined*/
     if(!lookAhead) return(0);
-    precNode = (RECNODE *)dllNext(&prootNode->node);
+    precNode = (RECNODE *)ellNext(&prootNode->node);
     if(!(precHeader = pdbBase->precHeader)) return(0);
     for(in=i; in<precHeader->number; in++) {
 	struct dbCommon	*pn;
 
 	if(!(precLoc = precHeader->papRecLoc[in])) continue;
 	precTypDes = precDes->papRecTypDes[in];
-	if(!precNode) precNode = (RECNODE *)dllFirst(precLoc->preclist);
+	if(!precNode) precNode = (RECNODE *)ellFirst(precLoc->preclist);
 	while(precNode) {
 		pn = precNode->precord;
 		/* If NAME is null then skip this record*/
@@ -611,7 +611,7 @@ static long addToSet(
 		    status = addToSet(pn,in,TRUE,i,prootNode,lset);
 		    if(status) return(status);
 		}
-		precNode = (RECNODE *)dllNext(&precNode->node);
+		precNode = (RECNODE *)ellNext(&precNode->node);
 	}
 	precNode = NULL;
     }
@@ -629,8 +629,8 @@ static long initialProcess(void)
     if(!(precHeader = pdbBase->precHeader)) return(0);
     for(i=0; i< (precHeader->number); i++) {
 	if(!(precLoc = precHeader->papRecLoc[i]))continue;
-	for(precNode=(RECNODE *)dllFirst(precLoc->preclist);
-	    precNode; precNode = (RECNODE *)dllNext(&precNode->node)) {
+	for(precNode=(RECNODE *)ellFirst(precLoc->preclist);
+	    precNode; precNode = (RECNODE *)ellNext(&precNode->node)) {
 		precord = precNode->precord;
 	        /* If NAME is null then skip this record*/
 		if(!(precord->name[0])) continue;

@@ -147,7 +147,7 @@ int cast_server(void)
      *  Use ARPA Internet address format and datagram socket.
      */
 
-    if ((IOC_cast_sock = socket (AF_INET, SOCK_DGRAM, 0)) < 0) {
+    if ( ( IOC_cast_sock = socket (AF_INET, SOCK_DGRAM, 0) ) == INVALID_SOCKET ) {
         epicsPrintf ("CAS: cast socket creation error\n");
         threadSuspendSelf ();
     }

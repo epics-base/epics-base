@@ -14,7 +14,6 @@ of this distribution.
 
 #include "dbAccess.h"
 #include "ioccrf.h"
-#define epicsExportSharedSymbols
 #include "registerRecordDeviceDriverRegister.h"
 
 /* registerRecordDeviceDriver */
@@ -29,7 +28,7 @@ static void registerRecordDeviceDriverCallFunc(ioccrfArg **args)
     registerRecordDeviceDriver(pdbbase);
 }
 
-void epicsShareAPI registerRecordDeviceDriverRegister(void)
+void registerRecordDeviceDriverRegister(void)
 {
     ioccrfRegister(
         &registerRecordDeviceDriverFuncDef,registerRecordDeviceDriverCallFunc);

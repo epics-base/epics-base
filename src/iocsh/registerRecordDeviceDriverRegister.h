@@ -16,7 +16,7 @@ of this distribution.
 extern "C" {
 #endif
 
-epicsShareFunc void epicsShareAPI registerRecordDeviceDriverRegister(void);
+void registerRecordDeviceDriverRegister(void);
 
 #ifdef __cplusplus
 }

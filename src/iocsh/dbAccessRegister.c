@@ -18,6 +18,7 @@ of this distribution.
 #define epicsExportSharedSymbols
 #include "registryRecordType.h"
 #include "dbAccessRegister.h"
+#include "ioccrf.h"
 
 #ifdef __rtems__
 # define dbLoadDatabase dbLoadDatabaseRTEMS

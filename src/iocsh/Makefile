@@ -41,7 +41,7 @@ LIBRARY_IOC = iocsh
 
 OBJS += registerRecordDeviceDriverRegister
 
-iocsh_DLL_LIBS  = Com registryIoc dbStaticIoc dbIoc asIoc rsrvIoc dbtoolsIoc miscIoc 
+iocsh_DLL_LIBS  = miscIoc rsrvIoc dbtoolsIoc asIoc dbIoc registryIoc dbStaticIoc Com
 registryIoc_DIR=$(EPICS_BASE_LIB)
 dbtoolsIoc_DIR=$(EPICS_BASE_LIB)
 miscIoc_DIR=$(EPICS_BASE_LIB)

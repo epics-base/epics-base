@@ -1074,9 +1074,9 @@ caStatus casStrmClient::claimChannelAction()
 		return S_cas_badProtocol; // disconnect client
 	}
 
-    pName[mp->m_postsize-1] = '\0';
+    pName[mp->m_postsize-1u] = '\0';
 
-	if (mp->m_postsize-1>unreasonablePVNameSize) {
+	if ( ( mp->m_postsize - 1u ) > unreasonablePVNameSize ) {
 		return S_cas_badProtocol; // disconnect client
 	}
 

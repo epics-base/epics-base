@@ -5,7 +5,7 @@
  * Archictecture dependent support for common device driver resources 
  *
  *      Author: Jeff Hill 
- *      Date: 10-30-98	
+ *      Date: 10-30-98  
  *
  *      Experimental Physics and Industrial Control System (EPICS)
  *
@@ -50,15 +50,15 @@ static char *sccsID = "@(#) $Id$";
  * A list of the names of the unexpected interrupt handlers
  * ( some of these are provided by wrs )
  */
-LOCAL char	*defaultHandlerNames[] = {
-			"_excStub",
-			"_excIntStub",
-			"_unsolicitedHandlerEPICS"};
+LOCAL char  *defaultHandlerNames[] = {
+            "_excStub",
+            "_excIntStub",
+            "_unsolicitedHandlerEPICS"};
 
-typedef void	myISR (void *pParam);
-LOCAL myISR	*defaultHandlerAddr[NELEMENTS(defaultHandlerNames)];
+typedef void    myISR (void *pParam);
+LOCAL myISR *defaultHandlerAddr[NELEMENTS(defaultHandlerNames)];
 
-LOCAL myISR	*isrFetch(unsigned vectorNumber);
+LOCAL myISR *isrFetch(unsigned vectorNumber);
 
 /*
  * this routine needs to be in the symbol table
@@ -86,7 +86,7 @@ int EPICStovxWorksAddrType[]
                 VME_AM_STD_SUP_DATA,
                 VME_AM_EXT_SUP_DATA,
                 EPICSAddrTypeNoConvert
-	        };
+            };
 
 LOCAL void initHandlerAddrList(void);
 
@@ -95,7 +95,7 @@ LOCAL void initHandlerAddrList(void);
  * two device drivers that are using the same address range
  */
 LOCAL long vxDevMapAddr (epicsAddressType addrType, unsigned options,
-		size_t logicalAddress, size_t size, volatile void **ppPhysicalAddress);
+        size_t logicalAddress, size_t size, volatile void **ppPhysicalAddress);
 
 /*
  * a bus error safe "wordSize" read at the specified address which returns 
@@ -113,9 +113,9 @@ long vxDevWriteProbe (unsigned wordSize, volatile void *ptr, const void *pValue)
  * used by dynamic bind in devLib.c
  */
 const struct devLibVirtualOS devLibVirtualOS = 
-	{vxDevMapAddr, vxDevReadProbe, vxDevWriteProbe, 
-	devConnectInterruptVME, devDisconnectInterruptVME,
-	devEnableInterruptLevelVME, devDisableInterruptLevelVME};
+    {vxDevMapAddr, vxDevReadProbe, vxDevWriteProbe, 
+    devConnectInterruptVME, devDisconnectInterruptVME,
+    devEnableInterruptLevelVME, devDisableInterruptLevelVME};
 
 #define SUCCESS 0
 
@@ -125,68 +125,68 @@ const struct devLibVirtualOS devLibVirtualOS =
  * wrapper to minimize driver dependency on vxWorks
  */
 long devConnectInterruptVME (
-	unsigned vectorNumber,
-	void (*pFunction)(),
-	void  *parameter)
+    unsigned vectorNumber,
+    void (*pFunction)(),
+    void  *parameter)
 {
-	int	status;
+    int status;
 
 
-	if (devInterruptInUseVME(vectorNumber)) {
-		return S_dev_vectorInUse; 
-	}
-	status = intConnect(
-			(void *)INUM_TO_IVEC(vectorNumber),
-			pFunction,
-			(int) parameter);		
-	if (status<0) {
-		return S_dev_vecInstlFail;
-	}
+    if (devInterruptInUseVME(vectorNumber)) {
+        return S_dev_vectorInUse; 
+    }
+    status = intConnect(
+            (void *)INUM_TO_IVEC(vectorNumber),
+            pFunction,
+            (int) parameter);       
+    if (status<0) {
+        return S_dev_vecInstlFail;
+    }
 
-	return SUCCESS;
+    return SUCCESS;
 }
 
 /*
  *
- *	devDisconnectInterruptVME()
+ *  devDisconnectInterruptVME()
  *
- *	wrapper to minimize driver dependency on vxWorks
+ *  wrapper to minimize driver dependency on vxWorks
  *
- * 	The parameter pFunction should be set to the C function pointer that 
- * 	was connected. It is used as a key to prevent a driver from removing 
- * 	an interrupt handler that was installed by another driver
+ *  The parameter pFunction should be set to the C function pointer that 
+ *  was connected. It is used as a key to prevent a driver from removing 
+ *  an interrupt handler that was installed by another driver
  *
  */
 long devDisconnectInterruptVME (
-	unsigned vectorNumber,
-	void (*pFunction)() 
+    unsigned vectorNumber,
+    void (*pFunction)() 
 )
 {
-	void (*psub)();
-	int	status;
+    void (*psub)();
+    int status;
 
 #   if CPU_FAMILY == PPC
         return S_dev_vecInstlFail;
 #   endif
 
-	/*
-	 * If pFunction not connected to this vector
-	 * then they are probably disconnecting from the wrong vector
-	 */
-	psub = isrFetch(vectorNumber);
-	if(psub != pFunction){
-		return S_dev_vectorNotInUse;
-	}
+    /*
+     * If pFunction not connected to this vector
+     * then they are probably disconnecting from the wrong vector
+     */
+    psub = isrFetch(vectorNumber);
+    if(psub != pFunction){
+        return S_dev_vectorNotInUse;
+    }
 
-	status = intConnect(
-			(void *)INUM_TO_IVEC(vectorNumber),
-			unsolicitedHandlerEPICS,
-			(int) vectorNumber);		
-	if(status<0){
-		return S_dev_vecInstlFail;
-	}
+    status = intConnect(
+            (void *)INUM_TO_IVEC(vectorNumber),
+            unsolicitedHandlerEPICS,
+            (int) vectorNumber);        
+    if(status<0){
+        return S_dev_vecInstlFail;
+    }
 
-	return SUCCESS;
+    return SUCCESS;
 }
 
 /*
@@ -194,16 +194,16 @@ long devDisconnectInterruptVME (
  */
 long devEnableInterruptLevelVME (unsigned level)
 {
-#	if CPU_FAMILY != I80X86 
-	    int	s;
-	    s = sysIntEnable (level);
-	    if (s!=OK) {
-		    return S_dev_intEnFail;
-	    }
-	    return SUCCESS;
-#	else
-		return S_dev_intEnFail;
-#	endif
+#   if CPU_FAMILY != I80X86 
+        int s;
+        s = sysIntEnable (level);
+        if (s!=OK) {
+            return S_dev_intEnFail;
+        }
+        return SUCCESS;
+#   else
+        return S_dev_intEnFail;
+#   endif
 }
 
 /*
@@ -211,16 +211,16 @@ long devEnableInterruptLevelVME (unsigned level)
  */
 long devEnableInterruptLevelISA (unsigned level)
 {
-#	if CPU_FAMILY == I80X86
-		int s;
-		s = sysIntEnablePIC (level);
-		if (s!=OK) {
-			return S_dev_intEnFail;
-		}
-		return SUCCESS;
-#	else
-		return S_dev_intEnFail;
-#	endif
+#   if CPU_FAMILY == I80X86
+        int s;
+        s = sysIntEnablePIC (level);
+        if (s!=OK) {
+            return S_dev_intEnFail;
+        }
+        return SUCCESS;
+#   else
+        return S_dev_intEnFail;
+#   endif
 }
 
 /*
@@ -228,17 +228,17 @@ long devEnableInterruptLevelISA (unsigned level)
  */
 long devDisableInterruptLevelISA (unsigned level)
 {
-#	if CPU_FAMILY == I80X86
-		int s;
-		s = sysIntDisablePIC (level);
-		if (s!=OK) {
-			return S_dev_intEnFail;
-		}
-#	else
-		return S_dev_intEnFail;
-#	endif
+#   if CPU_FAMILY == I80X86
+        int s;
+        s = sysIntDisablePIC (level);
+        if (s!=OK) {
+            return S_dev_intEnFail;
+        }
+#   else
+        return S_dev_intEnFail;
+#   endif
 
-	return SUCCESS;
+    return SUCCESS;
 }
 
 /*
@@ -246,44 +246,44 @@ long devDisableInterruptLevelISA (unsigned level)
  */
 long devDisableInterruptLevelVME (unsigned level)
 {
-#	if CPU_FAMILY != I80X86
-	    int s;
-	    s = sysIntDisable (level);
-	    if (s!=OK) {
-		    return S_dev_intDissFail;
-	    }
-	    return SUCCESS;
-#	else
-		return S_dev_intEnFail;
-#	endif
+#   if CPU_FAMILY != I80X86
+        int s;
+        s = sysIntDisable (level);
+        if (s!=OK) {
+            return S_dev_intDissFail;
+        }
+        return SUCCESS;
+#   else
+        return S_dev_intEnFail;
+#   endif
 }
 
 /*
  * vxDevMapAddr ()
  */
 LOCAL long vxDevMapAddr (epicsAddressType addrType, unsigned options,
-			size_t logicalAddress, size_t size, volatile void **ppPhysicalAddress)
+            size_t logicalAddress, size_t size, volatile void **ppPhysicalAddress)
 {
-	long status;
+    long status;
 
-	if (ppPhysicalAddress==NULL) {
-		return S_dev_badArgument;
-	}
+    if (ppPhysicalAddress==NULL) {
+        return S_dev_badArgument;
+    }
 
-	if (EPICStovxWorksAddrType[addrType] == EPICSAddrTypeNoConvert)
-	{
-		*ppPhysicalAddress = (void *) logicalAddress;
-	}
-	else
-	{
-		status = sysBusToLocalAdrs (EPICStovxWorksAddrType[addrType],
-						(char *) logicalAddress, (char **)ppPhysicalAddress);
-		if (status) {
-			return S_dev_addrMapFail;
-		}
-	}
+    if (EPICStovxWorksAddrType[addrType] == EPICSAddrTypeNoConvert)
+    {
+        *ppPhysicalAddress = (void *) logicalAddress;
+    }
+    else
+    {
+        status = sysBusToLocalAdrs (EPICStovxWorksAddrType[addrType],
+                        (char *) logicalAddress, (char **)ppPhysicalAddress);
+        if (status) {
+            return S_dev_addrMapFail;
+        }
+    }
 
-	return SUCCESS;
+    return SUCCESS;
 }
 
 /*
@@ -292,17 +292,17 @@ LOCAL long vxDevMapAddr (epicsAddressType addrType, unsigned options,
  */
 long vxDevReadProbe (unsigned wordSize, volatile const void *ptr, void *pValue)
 {
-	long status;
+    long status;
 
-	/*
-	 * this global variable exists in the nivxi library
-	 */
-	status = vxMemProbe ((char *)ptr, VX_READ, wordSize, (char *) pValue);
-	if (status!=OK) {
-		return S_dev_noDevice;
-	}
+    /*
+     * this global variable exists in the nivxi library
+     */
+    status = vxMemProbe ((char *)ptr, VX_READ, wordSize, (char *) pValue);
+    if (status!=OK) {
+        return S_dev_noDevice;
+    }
 
-	return SUCCESS;
+    return SUCCESS;
 }
 
 /*
@@ -311,17 +311,17 @@ long vxDevReadProbe (unsigned wordSize, volatile const void *ptr, void *pValue)
  */
 long vxDevWriteProbe (unsigned wordSize, volatile void *ptr, const void *pValue)
 {
-	long status;
+    long status;
 
-	/*
-	 * this global variable exists in the nivxi library
-	 */
-	status = vxMemProbe ((char *)ptr, VX_READ, wordSize, (char *) pValue);
-	if (status!=OK) {
-		return S_dev_noDevice;
-	}
+    /*
+     * this global variable exists in the nivxi library
+     */
+    status = vxMemProbe ((char *)ptr, VX_READ, wordSize, (char *) pValue);
+    if (status!=OK) {
+        return S_dev_noDevice;
+    }
 
-	return SUCCESS;
+    return SUCCESS;
 }
 
 /*
@@ -329,31 +329,31 @@ long vxDevWriteProbe (unsigned wordSize, volatile void *ptr, const void *pValue)
  */
 LOCAL myISR *isrFetch(unsigned vectorNumber)
 {
-	myISR	*psub;
-	myISR	*pCISR;
-	void	*pParam;
-	int	s;
+    myISR   *psub;
+    myISR   *pCISR;
+    void    *pParam;
+    int s;
 
-	/*
-	 * fetch the handler or C stub attached at this vector
-	 */
-	psub = (myISR *) intVecGet((FUNCPTR *)INUM_TO_IVEC(vectorNumber));
+    /*
+     * fetch the handler or C stub attached at this vector
+     */
+    psub = (myISR *) intVecGet((FUNCPTR *)INUM_TO_IVEC(vectorNumber));
 
     if ( psub ) {
-	    /*
-	     * from libvxWorks/veclist.c
-	     *
-	     * checks to see if it is a C ISR
-	     * and if so finds the function pointer and
-	     * the parameter passed
-	     */
-	    s = cISRTest(psub, &pCISR, &pParam);
-	    if(!s){
-		    psub = pCISR;
-	    }
+        /*
+         * from libvxWorks/veclist.c
+         *
+         * checks to see if it is a C ISR
+         * and if so finds the function pointer and
+         * the parameter passed
+         */
+        s = cISRTest(psub, &pCISR, &pParam);
+        if(!s){
+            psub = pCISR;
+        }
     }
 
-	return psub;
+    return psub;
 }
 
 /*
@@ -361,84 +361,84 @@ LOCAL myISR *isrFetch(unsigned vectorNumber)
  */
 int devInterruptInUseVME (unsigned vectorNumber)
 {
-	static int init;
-	int i;
-	myISR *psub;
+    static int init;
+    int i;
+    myISR *psub;
 
 #   if CPU_FAMILY == PPC
         return FALSE;
 #   else
-	    if (!init) {
-		    initHandlerAddrList();
-		    init = TRUE;
-	    }
+        if (!init) {
+            initHandlerAddrList();
+            init = TRUE;
+        }
  
-	    psub = isrFetch (vectorNumber);
+        psub = isrFetch (vectorNumber);
 
-	    /*
-	     * its a C routine. Does it match a default handler?
-	     */
-	    for (i=0; i<NELEMENTS(defaultHandlerAddr); i++) {
-		    if (defaultHandlerAddr[i] == psub) {
-			    return FALSE;
-		    }
-	    }
+        /*
+         * its a C routine. Does it match a default handler?
+         */
+        for (i=0; i<NELEMENTS(defaultHandlerAddr); i++) {
+            if (defaultHandlerAddr[i] == psub) {
+                return FALSE;
+            }
+        }
 
-	    return TRUE;
+        return TRUE;
 #   endif
 }
 
 
 /*
- *	unsolicitedHandlerEPICS()
- *     	what gets called if they disconnect from an
- *	interrupt and an interrupt arrives on the
- *	disconnected vector
+ *  unsolicitedHandlerEPICS()
+ *      what gets called if they disconnect from an
+ *  interrupt and an interrupt arrives on the
+ *  disconnected vector
  *
  */
 void unsolicitedHandlerEPICS(int vectorNumber)
 {
-	/*
- 	 * call logMsg() and not errMessage()
-	 * so we are certain that printf()
-	 * does not get called at interrupt level
-	 */
-	logMsg(
-		"%s: line=%d: Interrupt to EPICS disconnected vector = 0X %X",
-		(int)__FILE__,
-		__LINE__,
-		vectorNumber,
-		NULL,
-		NULL,
-		NULL);
+    /*
+     * call logMsg() and not errMessage()
+     * so we are certain that printf()
+     * does not get called at interrupt level
+     */
+    logMsg(
+        "%s: line=%d: Interrupt to EPICS disconnected vector = 0X %X",
+        (int)__FILE__,
+        __LINE__,
+        vectorNumber,
+        NULL,
+        NULL,
+        NULL);
 }
 
 /*
  *
- *	initHandlerAddrList()
+ *  initHandlerAddrList()
  *      init list of interrupt handlers to ignore
  *
  */
 LOCAL 
 void initHandlerAddrList(void)
 {
-	int i;
-	SYM_TYPE type;
-	int status;
+    int i;
+    SYM_TYPE type;
+    int status;
 
-	for (i=0; i<NELEMENTS(defaultHandlerNames); i++) {
-		status = symFindByNameEPICS (sysSymTbl,
-								defaultHandlerNames[i],
-								(char **)&defaultHandlerAddr[i],
-								&type);
-		if (status != OK) {
-			errPrintf(
-				S_dev_internal,
-				__FILE__,
-				__LINE__,
-				"initHandlerAddrList() %s not in sym table",
-				defaultHandlerNames[i]);
-		}
-	}
+    for (i=0; i<NELEMENTS(defaultHandlerNames); i++) {
+        status = symFindByNameEPICS (sysSymTbl,
+                                defaultHandlerNames[i],
+                                (char **)&defaultHandlerAddr[i],
+                                &type);
+        if (status != OK) {
+            errPrintf(
+                S_dev_internal,
+                __FILE__,
+                __LINE__,
+                "initHandlerAddrList() %s not in sym table",
+                defaultHandlerNames[i]);
+        }
+    }
 }
 

@@ -1,0 +1,25 @@
+EPICS = ../../../..
+include Target.include
+include $(EPICS)/config/CONFIG_BASE
+
+INC += drvTS.h
+INC += drvSup.h
+INC += callback.h
+INC += dbAccess.h
+INC += dbConvert.h
+INC += dbEvent.h
+INC += dbScan.h
+INC += db_access.h
+INC += db_addr.h
+INC += db_field_log.h
+INC += fast_lock.h
+INC += initHooks.h
+INC += recSup.h
+INC += devSup.h
+INC += task_params.h
+INC += taskwd.h
+INC += recGbl.h
+INC += dbBkpt.h
+INC += devLib.h
+
+include $(EPICS)/config/RULES.Unix

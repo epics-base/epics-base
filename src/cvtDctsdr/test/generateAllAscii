@@ -1,0 +1,49 @@
+#!/bin/sh
+BIN=../O.solaris
+H=/usr/local/epics/R3.12.2/base/rec
+/bin/rm *.db
+$BIN/sdr2gblmenu
+$BIN/sdr2recordtype dbCommon  $H/dbCommon.h
+$BIN/sdr2recordtype ai  $H/aiRecord.h
+$BIN/sdr2recordtype ao  $H/aoRecord.h
+$BIN/sdr2recordtype aai  $H/aaiRecord.h
+$BIN/sdr2recordtype aao  $H/aaoRecord.h
+$BIN/sdr2recordtype bi  $H/biRecord.h
+$BIN/sdr2recordtype bo  $H/boRecord.h
+$BIN/sdr2recordtype calc  $H/calcRecord.h
+$BIN/sdr2recordtype compress  $H/compressRecord.h
+$BIN/sdr2recordtype dfanout  $H/dfanoutRecord.h
+$BIN/sdr2recordtype eg  $H/egRecord.h
+$BIN/sdr2recordtype egevent  $H/egeventRecord.h
+$BIN/sdr2recordtype er  $H/erRecord.h
+$BIN/sdr2recordtype erevent  $H/ereventRecord.h
+$BIN/sdr2recordtype event  $H/eventRecord.h
+$BIN/sdr2recordtype fanout  $H/fanoutRecord.h
+$BIN/sdr2recordtype histogram  $H/histogramRecord.h
+$BIN/sdr2recordtype longin  $H/longinRecord.h
+$BIN/sdr2recordtype longout  $H/longoutRecord.h
+$BIN/sdr2recordtype mbbiDirect  $H/mbbiDirectRecord.h
+$BIN/sdr2recordtype mbbi  $H/mbbiRecord.h
+$BIN/sdr2recordtype mbboDirect  $H/mbboDirectRecord.h
+$BIN/sdr2recordtype mbbo  $H/mbboRecord.h
+$BIN/sdr2recordtype permissive  $H/permissiveRecord.h
+$BIN/sdr2recordtype pid  $H/pidRecord.h
+$BIN/sdr2recordtype pulseCounter  $H/pulseCounterRecord.h
+$BIN/sdr2recordtype pulseDelay  $H/pulseDelayRecord.h
+$BIN/sdr2recordtype pulseTrain  $H/pulseTrainRecord.h
+$BIN/sdr2recordtype scan  $H/scanRecord.h
+$BIN/sdr2recordtype sel  $H/selRecord.h
+$BIN/sdr2recordtype seq  $H/seqRecord.h
+$BIN/sdr2recordtype state  $H/stateRecord.h
+$BIN/sdr2recordtype steppermotor  $H/steppermotorRecord.h
+$BIN/sdr2recordtype stringin  $H/stringinRecord.h
+$BIN/sdr2recordtype stringout  $H/stringoutRecord.h
+$BIN/sdr2recordtype subArray  $H/subArrayRecord.h
+$BIN/sdr2recordtype sub  $H/subRecord.h
+$BIN/sdr2recordtype gsub  $H/gsubRecord.h
+$BIN/sdr2recordtype pal  $H/palRecord.h
+$BIN/sdr2recordtype timer  $H/timerRecord.h
+$BIN/sdr2recordtype wait  $H/waitRecord.h
+$BIN/sdr2recordtype waveform  $H/waveformRecord.h
+$BIN/sdr2device
+$BIN/sdr2driver

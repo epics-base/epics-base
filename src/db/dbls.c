@@ -31,6 +31,8 @@
  * .01  11-26-91        jba     Initialized fp to null
  * .02  02-28-92        jba     ANSI C changes
  * .03  05-19-92	mrk	Mods for internal database structure changes
+ * .04  07-16-92        jba     changes made to remove compile warning msgs
+ * .05  08-05-92	jba	Removed all references to dbr_field_type
  */
 
 
@@ -132,7 +134,7 @@ static struct PRTAB {
  * MAIN PROGRAM
  *
  */
-dbls()
+int dbls()
 {
     struct PRTAB   *pcomtab = &comtab[0];
     void            (*fup) ();	/* SUBROUTINE POINTER */
@@ -178,7 +180,7 @@ dbls()
     }
     return (0);
 }				/* end of main */
-getRecTypeSel()
+int getRecTypeSel()
 {
     struct recType *precType;
 
@@ -216,9 +218,9 @@ getRecTypeSel()
 	    }
 	}
     }
-    return;
+    return(0);
 }				/* end of getRecTypeSel */
-getSelection(pcomtab)
+int getSelection(pcomtab)
     struct PRTAB   *pcomtab;
 {
     int             pos;
@@ -239,7 +241,7 @@ getSelection(pcomtab)
 
     }
 }				/* end of getSelection */
-bufOut(fp, fflag)
+void bufOut(fp, fflag)
     FILE           *fp;
     int             fflag;
 {
@@ -766,10 +768,6 @@ DbRecDes(fp, fflag)
 		sprintf(buffer, "%8x\t\t\tfield_type [%d]",
 			&precDes->papRecTypDes[i]->papFldDes[j]->field_type,
 			precDes->papRecTypDes[i]->papFldDes[j]->field_type);
-		bufOut(fp, fflag);
-		sprintf(buffer, "%8x\t\t\tdbr_field_type [%d]",
-		   &precDes->papRecTypDes[i]->papFldDes[j]->dbr_field_type,
-		   precDes->papRecTypDes[i]->papFldDes[j]->dbr_field_type);
 		bufOut(fp, fflag);
 		sprintf(buffer, "%8x\t\t\tprocess_passive [%d]",
 		   &precDes->papRecTypDes[i]->papFldDes[j]->process_passive,

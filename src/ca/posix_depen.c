@@ -1,5 +1,5 @@
 /*
- *	$Id$	
+ *	$Id$
  *      Author: Jeffrey O. Hill
  *              hill@luke.lanl.gov
  *              (505) 665 1831
@@ -26,48 +26,6 @@
  *              Advanced Photon Source
  *              Argonne National Laboratory
  *
- *      Modification Log:
- *      -----------------
- * $Log$
- * Revision 1.27  1999/05/11 20:09:58  jhill
- * close all open files when spawning the repeater
- *
- * Revision 1.26  1999/05/11 19:42:44  jhill
- * close all open files when spawning the repeater
- *
- * Revision 1.25  1998/08/12 16:36:54  jhill
- * allow the user name to change when they use su
- *
- * Revision 1.24  1998/04/13 19:14:34  jhill
- * fixed task variable problem
- *
- * Revision 1.23  1997/08/04 23:37:14  jhill
- * added beacon anomaly flag init/allow ip 255.255.255.255
- *
- * Revision 1.22  1997/06/13 09:14:23  jhill
- * connect/search proto changes
- *
- * Revision 1.21  1997/04/10 19:26:17  jhill
- * asynch connect, faster connect, ...
- *
- * Revision 1.20  1996/11/02 00:51:02  jhill
- * many pc port, const in API, and other changes
- *
- * Revision 1.19  1996/07/09 22:41:02  jhill
- * pass nill 2nd arg to gettimeofday()
- *
- * Revision 1.18  1996/06/20 21:19:29  jhill
- * fixed posix signal problem with "cc -Xc"
- *
- * Revision 1.17  1995/12/19  19:33:42  jhill
- * added missing arg to execlp()
- *
- * Revision 1.16  1995/10/12  01:35:28  jhill
- * Moved cac_mux_io() to iocinf.c
- *
- * Revision 1.15  1995/08/22  00:22:07  jhill
- * Dont recompute connection timers if the time stamp hasnt changed
- *
  *
  */
 
@@ -76,7 +34,6 @@
 
 #include "iocinf.h"
 
-
 /*
  * cac_gettimeval
  */
@@ -91,13 +48,12 @@ void cac_gettimeval(struct timeval  *pt)
 	assert(status == 0);
 }
 
-
 /*
  * cac_block_for_io_completion()
  */
 void cac_block_for_io_completion(struct timeval *pTV)
 {
-	cac_mux_io (pTV);
+	cac_mux_io (pTV, TRUE);
 }
 
 /*
@@ -105,10 +61,9 @@ void cac_block_for_io_completion(struct timeval *pTV)
  */
 void cac_block_for_sg_completion(CASG *pcasg, struct timeval *pTV)
 {
-	cac_mux_io (pTV);
+	cac_mux_io (pTV, TRUE);
 }
 
-
 /*
  * os_specific_sg_io_complete()
  */
@@ -116,18 +71,17 @@ void os_specific_sg_io_complete(CASG *pcasg)
 {
 }
 
-
 /*
  * does nothing but satisfy undefined
  */
 void os_specific_sg_create(CASG *pcasg)
 {
 }
+
 void os_specific_sg_delete(CASG *pcasg)
 {
 }
 
-
 /*
  * CAC_ADD_TASK_VARIABLE()
  */
@@ -137,7 +91,6 @@ int cac_add_task_variable(struct CA_STATIC *ca_temp)
 	return ECA_NORMAL;
 }
 
-
 /*
  *	ca_task_initialize()
  */
@@ -160,7 +113,6 @@ int epicsShareAPI ca_task_initialize(void)
 	return status;
 }
 
-
 /*
  * ca_task_exit ()
  *
@@ -177,12 +129,11 @@ int epicsShareAPI ca_task_exit (void)
 	ca_static = NULL;
 	return ECA_NORMAL;
 }
-
+
 /*
  *
  * This should work on any POSIX compliant OS
  *
- * o Indicates failure by setting ptr to nill
  */
 char *localUserName()
 {
@@ -238,67 +189,65 @@ int max_unix_fd( )
 	return max;
 }
 
-
 /*
  * ca_spawn_repeater()
  */
 void ca_spawn_repeater()
 {
 	int     status;
-	char	*pImageName;
-	int	fd;
-	int	maxfd;
+	char    *pImageName;
+    int     fd;
+    int     maxfd;
+    
+    /*
+     * create a duplicate process
+     */
+    status = fork();
+    if (status < 0){
+        SEVCHK(ECA_NOREPEATER, NULL);
+        return;
+    }
 
-	/*
-	 * create a duplicate process
-	 */
-	status = fork();
-	if (status < 0){
-		SEVCHK(ECA_NOREPEATER, NULL);
-		return;
-	}
+    /*
+     * return to the caller
+     * if its in the initiating process
+     */
+    if (status) {
+        return;
+    }
 
-	/*
- 	 * return to the caller
-	 * if its in the initiating process
-	 */
-	if (status) {
-		return;
-	}
-
-	/*
-	 * close all open files except for STDIO so they will not
-	 * be inherited by the repeater task
-	 */
-	maxfd = max_unix_fd (); 
-	for (fd = 0; fd<=maxfd; fd++) {
-		if (fd==STDIN_FILENO) continue;
-		if (fd==STDOUT_FILENO) continue;
-		if (fd==STDERR_FILENO) continue;
-		close (fd);
-	}
-
-	/*
- 	 * running in the repeater process
-	 * if here
-	 */
-	pImageName = "caRepeater";
-	status = execlp(pImageName, pImageName, NULL);
-	if(status<0){	
-		ca_printf("!!WARNING!!\n");
-		ca_printf("The executable \"%s\" couldnt be located\n", pImageName);
-		ca_printf("because of errno = \"%s\"\n", strerror(errno));
-		ca_printf("You may need to modify your PATH environment variable.\n");
-		ca_printf("Creating CA repeater with fork() system call.\n");
-		ca_printf("Repeater will inherit parents process name and resources.\n");
-		ca_printf("Duplicate resource consumption may occur.\n");
-		ca_repeater();
-		assert(0);
-	}
-	exit(0);
+    /*
+     * close all open files except for STDIO so they will not
+     * be inherited by the repeater task
+     */
+    maxfd = max_unix_fd (); 
+    for (fd = 0; fd<=maxfd; fd++) {
+        if (fd==STDIN_FILENO) continue;
+        if (fd==STDOUT_FILENO) continue;
+        if (fd==STDERR_FILENO) continue;
+        close (fd);
+    }
+    
+    /*
+     * running in the repeater process
+     * if here
+     */
+    pImageName = "caRepeater";
+    status = execlp(pImageName, pImageName, NULL);
+    if(status<0){	
+        ca_printf("!!WARNING!!\n");
+        ca_printf("The executable \"%s\" couldnt be located\n", pImageName);
+        ca_printf("because of errno = \"%s\"\n", strerror(errno));
+        ca_printf("You may need to modify your PATH environment variable.\n");
+        ca_printf("Creating CA repeater with fork() system call.\n");
+        ca_printf("Repeater will inherit parents process name and resources.\n");
+        ca_printf("Duplicate resource consumption may occur.\n");
+        ca_repeater();
+        assert(0);
+    }
+    exit(0);
 }
 
-
 /*
  * caSetDefaultPrintfHandler ()
  * use the normal default here

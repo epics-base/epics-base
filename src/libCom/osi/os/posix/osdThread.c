@@ -47,6 +47,7 @@ typedef struct threadInfo {
 
 static pthread_key_t getpthreadInfo;
 static commonAttr *pcommonAttr = 0;
+static pthread_once_t once_control = PTHREAD_ONCE_INIT;
 
 #define checkStatus(status,message) \
 if((status))  {\
@@ -155,12 +156,12 @@ threadId threadCreate(const char *name,
     unsigned int priority, unsigned int stackSize,
     THREADFUNC funptr,void *parm)
 {
-    static pthread_once_t once_control = PTHREAD_ONCE_INIT;
     threadInfo *pthreadInfo;
     pthread_t *ptid;
     int status;
 
     status = pthread_once(&once_control,once);
+    checkStatusQuit(status,"pthread_once","threadCreate");
     pthreadInfo = callocMustSucceed(1,sizeof(threadInfo),"threadCreate");
     pthreadInfo->createFunc = funptr;
     pthreadInfo->createArg = parm;
@@ -203,7 +204,19 @@ threadId threadCreate(const char *name,
 
 void threadSuspend()
 {
-    threadInfo *pthreadInfo = (threadInfo *)pthread_getspecific(getpthreadInfo);
+    threadInfo *pthreadInfo;
+    int status;
+
+    status = pthread_once(&once_control,once);
+    checkStatusQuit(status,"pthread_once","threadSuspend");
+    pthreadInfo = (threadInfo *)pthread_getspecific(getpthreadInfo);
+    if(!pthreadInfo) {
+        printf("threadSuspend pthread_getspecific returned 0\n");
+        while(1) {
+            printf("sleeping for 5 seconds\n");
+            threadSleep(5.0);
+        }
+    }
     pthreadInfo->isSuspended = 1;
     semBinaryMustTake(pthreadInfo->suspendSem);
 }
@@ -269,6 +282,11 @@ void threadSleep(double seconds)
 }
 
 threadId threadGetIdSelf(void) {
-    threadInfo *pthreadInfo = (threadInfo *)pthread_getspecific(getpthreadInfo);
+    threadInfo *pthreadInfo;
+    int status;
+
+    status = pthread_once(&once_control,once);
+    checkStatusQuit(status,"pthread_once","threadGetIdSelf");
+    pthreadInfo = (threadInfo *)pthread_getspecific(getpthreadInfo);
     return((threadId)pthreadInfo);
 }

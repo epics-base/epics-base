@@ -192,7 +192,7 @@ extern "C" epicsTimerQueueId epicsShareAPI
     }
 }
 
-extern "C" void epicsShareAPI epicsTimerQueueDelete ( epicsTimerQueueId pQueue )
+extern "C" void epicsShareAPI epicsTimerQueueRelease ( epicsTimerQueueId pQueue )
 {
     pQueue->release ();
 }

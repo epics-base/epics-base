@@ -4,6 +4,9 @@
 //
 //
 // $Log$
+// Revision 1.12  1998/02/05 21:12:09  jhill
+// removed questionable inline
+//
 // Revision 1.11  1997/08/05 00:37:00  jhill
 // removed warnings
 //
@@ -277,45 +280,27 @@ void fdRegId::show(unsigned level) const
 //
 // fdRegId::resourceHash()
 //
-resTableIndex fdRegId::resourceHash (unsigned nBitsId) const
+resTableIndex fdRegId::resourceHash (unsigned) const
 {
-	//
-	// 0.5 uS pentium 200
-	//
-	//unsigned src = (unsigned) this->fd;
-	//resTableIndex hashid;
-	//
-	//hashid = src;
-	//while (src = src >> nBitsId) {
-	//	hashid = hashid ^ src;
-	//}
-	//hashid = hashid ^ this->type;
+	resTableIndex hashid = (unsigned) this->fd;
 
 	//
-	// 0.32 uS Pent 200 MHz
-	// 
-	// faster because it does not 
-	// check for the hash id size
-	// (assumes worst case hash id
-	// of 1 bit)
+	// This assumes worst case hash table index width of 1 bit.
+	// We will iterate this loop 5 times on a 32 bit architecture.
 	//
-	resTableIndex hashid = (unsigned) this->fd;
-#if UINT_MAX >> 128u
-	hashid ^= (hashid>>128u);
-#endif
-#if UINT_MAX >> 64u
-	hashid ^= (hashid>>64u);
-#endif
-#if UINT_MAX >> 32u
-	hashid ^= (hashid>>32u);
-#endif
-#if UINTMAX >> 16u
-	hashid ^= (hashid>>16u);
-#endif
-	hashid ^= (hashid>>8u);
-	hashid ^= (hashid>>4u);
-	hashid ^= (hashid>>2u);
-	hashid ^= (hashid>>1u);
+	// A good optimizer will unroll this loop?
+	// Experiments using the microsoft compiler show that this isnt 
+	// slower than switching on the architecture size and urolling the
+	// loop explicitly (that solution has resulted in portability
+	// problems in the past).
+	//
+	for (unsigned i=(CHAR_BIT*sizeof(unsigned))/2u; i>0u; i >>= 1u) {
+		hashid ^= (hashid>>i);
+	}
+
+	//
+	// evenly distribute based on the type of interest also
+	//
 	hashid ^= this->type;
 
 	//

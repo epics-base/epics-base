@@ -475,36 +475,28 @@ long epicsShareAPI dbCaGetUnits(
 
 STATIC void exceptionCallback(struct exception_handler_args args)
 {
-    chid    chid = args.chid;
-    long        stat = args.stat; /* Channel access status code*/
-    const char    *channel;
-    const char  *context;
-    static char *unknown = "unknown";
-    const char *nativeType;
-    const char *requestType;
-    long nativeCount;
-    long requestCount;
-    int  readAccess;
-    int writeAccess;
+    const char *context = (args.ctx ? args.ctx : "unknown");
 
-    channel = (chid ? ca_name(chid) : unknown);
-    context = (args.ctx ? args.ctx : unknown);
-    nativeType = dbr_type_to_text((chid ? ca_field_type(chid) : -1));
-    requestType = dbr_type_to_text(args.type);
-    nativeCount = (chid ? ca_element_count(chid) : 0);
-    requestCount = args.count;
-    readAccess = (chid ? ca_read_access(chid) : 0);
-    writeAccess = (chid ? ca_write_access(chid) : 0);
-
-    errlogPrintf("dbCa:exceptionCallback stat \"%s\" channel \"%s\""
-        " context \"%s\"\n"
-        " nativeType %s requestType %s"
-        " nativeCount %ld requestCount %ld %s %s\n",
-        ca_message(stat),channel,context,
-        nativeType,requestType,
-        nativeCount,requestCount,
-        (readAccess ? "readAccess" : "noReadAccess"),
-        (writeAccess ? "writeAccess" : "noWriteAccess"));
+    errlogPrintf("DB CA Exception: \"%s\", context \"%s\"\n",
+        ca_message(args.stat), context);
+    if (args.chid) {
+        errlogPrintf(
+            "DB CA Exception: channel \"%s\"\n",
+            ca_name(args.chid));
+        if (ca_state(args.chid)==cs_conn) {
+            const char * pAccessRights;
+            errlogPrintf(
+                "DB CA Exception:  native  T=%s, request T=%s,"
+                " native N=%ld, request N=%ld, "
+                " access rights {%s%s}\n",
+                dbr_type_to_text(ca_field_type(args.chid)),
+                dbr_type_to_text(args.type),
+                ca_element_count(args.chid),
+                args.count,
+                ca_read_access(args.chid) ? "R" : "",
+                ca_write_access(args.chid) ? "W" : "");
+        }
+    }
 }
 
 STATIC void eventCallback(struct event_handler_args arg)

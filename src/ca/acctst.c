@@ -2326,7 +2326,6 @@ void verifyTimeStamps ( chid chan, unsigned interestLevel )
 void verifyChannelPriorities ( const char *pName, unsigned interestLevel )
 {
     static const unsigned nPrio = 30;
-    unsigned priorityIncrement;
     unsigned i;
 
     showProgressBegin ( "verifyChannelPriorities", interestLevel );

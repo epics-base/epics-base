@@ -30,6 +30,7 @@ SRCS.c += ../macUtil.c
 #SRCS.c += ../os/vxWorks/osdTime.cc
 SRCS.c += ../os/vxWorks/ipAddrToA.c
 SRCS.c += ../impLib.c
+SRCS.c += ../dbmf.c
 
 LIBOBJS += calcPerform.o
 LIBOBJS += cvtFast.o
@@ -54,6 +55,7 @@ LIBOBJS += macUtil.o
 #LIBOBJS += osdTime.o
 LIBOBJS += ipAddrToA.o
 LIBOBJS += impLib.o
+LIBOBJS += dbmf.o
 
 LIBNAME = libCom
 

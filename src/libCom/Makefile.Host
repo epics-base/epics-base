@@ -29,6 +29,7 @@ INC += osiTime.h
 INC += osiTimer.h
 INC += macLib.h
 INC += impLib.h
+INC += dbmf.h
 
 #	For WIN32 we supply getopt as part of libCom:
 INC_WIN32 := getopt.h
@@ -57,13 +58,14 @@ LIBSRCS += postfix.c
 LIBSRCS += realpath.c
 LIBSRCS += tsSubr.c
 LIBSRCS += assertUNIX.c
-#LIBSRCS += fdManager.cc
-#LIBSRCS += osiTimer.cc
+LIBSRCS += fdManager.cc
+LIBSRCS += osiTimer.cc
 LIBSRCS += macCore.c
 LIBSRCS += macUtil.c
-#LIBSRCS += ipAddrToA.cc
-#LIBSRCS += osdTime.cc
+LIBSRCS += ipAddrToA.cc
+LIBSRCS += osdTime.cc
 LIBSRCS += impLib.c
+LIBSRCS += dbmf.c
 
 #	WIN32 has no getopt, we add it to the Com lib,
 #	special initialisation is done in winmain.c

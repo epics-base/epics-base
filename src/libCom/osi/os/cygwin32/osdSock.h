@@ -21,13 +21,6 @@ extern "C" {
 #include <net/if.h>
 #include <netdb.h>
 #include <unistd.h> /* close() and others */
- 
-
-/*
- * as far as I can tell there is no header file for these
- */
-int gethostname(char *name, int namelen);
-int sethostname(char *name, int namelen);
 
 #ifdef __cplusplus
 }

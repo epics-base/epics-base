@@ -1,8 +1,11 @@
-BASE = ../..
-include $(BASE)/config/CONFIG
+EPICS = ../../..
+include $(EPICS)/config/CONFIG
 
-USR_LDFLAGS = $(MOTIF_LDFLAGS) $(X11_LDFLAGS) -lm
-USR_CFLAGS = -DACCESS_SECURITY -D_NO_PROTO $(MOTIF_CFLAGS) $(X11_CFLAGS) # -I$(SRCROOT)/ca
+T_ARCH = sun4
+
+USR_LDFLAGS =
+#USR_CFLAGS = -DACCESS_SECURITY -D_NO_PROTO $(MOTIF_CFLAGS) $(X11_CFLAGS) # -I$(SRCROOT)/ca
+USR_CFLAGS =
 
 CC = acc -Xs 
 
@@ -12,20 +15,13 @@ SRCS = \
 OBJS = \
 	dbStaticLib.o
 
-LIBNAME = libDb.a
+LIBNAME = $(OBDIR)/libDb.a
 
 PROD =
 
 all :: $(LIBNAME) $(PROD)
 
+install: $(EPICS_BASE_LIB)/$(T_ARCH)/libDb.a
 
-install :: install_inc 
-
-install_inc : $(BASE_LIB)/libDb.a
-
-$(BASE_LIB)/libDb.a : libDb.a
-	install -m 644 libDb.a $@
-	ranlib -t $@
-
-include $(BASE)/config/RULES
+include $(EPICS)/config/RULES
 

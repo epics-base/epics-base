@@ -53,3 +53,5 @@ typedef u_long FAR osiSockIoctl_t;
  *	fd can be used with FD_SET(), FD_CLR(), and FD_ISSET().
  */
 #define FD_IN_FDSET(FD) (1)
+
+epicsShareFunc unsigned epicsShareAPI wsaMajorVersion ();

@@ -78,6 +78,9 @@
 #include	<drvGpibInterface.h>
 #include	<devCommonGpib.h>
 
+#ifndef VALID_ALARM
+#define VALID_ALARM INVALID_ALARM
+#endif
 long	init_dev_sup(), report();
 int	srqHandler();
 int	aiGpibSrq(), liGpibSrq(), biGpibSrq(), mbbiGpibSrq(), stringinGpibSrq();

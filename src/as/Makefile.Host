@@ -14,8 +14,8 @@ LIBRARY := As
 #	All systems link the libs As, Com, Db (and again Com ??),
 #	generic Unix needs also lib m:
 #
-PROD_LIBS_DEFAULT := m
-PROD_LIBS_WIN32   := -nil-
+SYS_PROD_LIBS_DEFAULT := m
+SYS_PROD_LIBS_WIN32   := -nil-
 PROD_LIBS         := As Com Db Com
 
 PROD := ascheck

@@ -266,9 +266,12 @@ extern "C" void cacRecvThreadTCP ( void *pParam )
                             piiu->busyStateDetected = false;
                         }         
                         piiu->unacknowledgedSendBytes = 0u;
-                        // reschedule connection activity watchdog
-                        piiu->recvDog.messageArrivalNotify (); 
                     }
+                    // reschedule connection activity watchdog
+                    // but dont hold the lock for fear of deadlocking 
+                    // because cancel is blocking for the completion
+                    // of the recvDog expire which takes the lock
+                    piiu->recvDog.messageArrivalNotify (); 
 
                     // wake up recv thread only if
                     // 1) there are currently no bytes in the queue

@@ -177,7 +177,9 @@ char	*message;	/* O message from server (dimension of 80 assumed) */
 {
     struct sockaddr_in server;
     struct hostent *hp;
+#ifndef vxWorks
     struct hostent *gethostbyname();
+#endif
     int		i;
 
     assert(pServerSock != NULL);

@@ -98,6 +98,7 @@
 *----------------------------------------------------------------------------*/
 
 #ifdef vxWorks
+#ifndef V5_vxWorks
     FUNCPTR signal(sig, func)
     int	sig;
     FUNCPTR	func;
@@ -110,6 +111,7 @@
 	    return (FUNCPTR)(-1);
 	return ovec.sv_handler;
     }
+#endif
 #endif
 
 /*----------------------------------------------------------------------------

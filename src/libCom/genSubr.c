@@ -328,6 +328,7 @@ void	(* handler)();	/* I pointer to signal handler */
 }
 
 #ifdef vxWorks
+#ifndef V5_vxWorks
 /*+/subr**********************************************************************
 * NAME	perror - print message corresponding to errno
 *
@@ -344,6 +345,7 @@ char    *str;	/* I string to print in conjunction with error message */
 	(void)printf("%s: ", str);
     printErrno(0);
 }
+#endif
 #endif
 
 int doMatch();

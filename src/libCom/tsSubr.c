@@ -126,8 +126,9 @@
 #define TS_PRIVATE_DATA
 #include <tsDefs.h>
 
-void tsStampFromLocal();
-void tsStampToLocal();
+static void tsStampFromLocal();
+static void tsStampToLocal();
+static void tsStampToLocalZone();
 
 static int needToInitMinWest=1;
 static long tsMinWest=TS_MIN_WEST;
@@ -710,7 +711,6 @@ unsigned long interval;	/* I rounding interval, in seconds */
     return retStat;
 }
 
-void tsStampToLocalZone();
 /*+/internal******************************************************************
 * NAME	tsStampFromLocal - convert time stamp to local time
 *

@@ -18,4 +18,3 @@ AR = ar -rc
 RANLIB=
 LD = ld -r
 
-SHRLIB_LDFLAGS_YES += -fPIC

@@ -40,7 +40,7 @@ STATIC_LDFLAGS_NO=
 STATIC_LDLIBS_YES= -Bdynamic
 STATIC_LDLIBS_NO=
 
-SHRLIB_LDFLAGS_YES = -shared
+SHRLIB_LDFLAGS = -shared
 
 #############  ???????????
 #####ACC_SFLAGS_YES= -non_shared

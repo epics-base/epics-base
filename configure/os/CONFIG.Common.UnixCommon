@@ -37,7 +37,6 @@ SHRLIBNAME_YES = $(BUILD_LIBRARY:%=$(LIB_PREFIX)%$(SHRLIB_SUFFIX))
 SHRLIB_DEPLIBS = $(foreach lib,$(SHRLIB_LIBS),$(firstword $(wildcard  \
 $($(lib)_DIR)/$(LIB_PREFIX)$(lib).*)))
 
-SHRLIB_LDFLAGS = $(SHRLIB_LDFLAGS_$(strip $(SHARED_LIBRARIES)))
 SHRLIB_LDLIBS = $($*_LDLIBS:%=-l%) $(SHRLIB_LIBS:%=-l%) \
  $($*_SYS_LIBS:%=-l%) $(SYS_SHRLIB_LIBS:%=-l%)
 

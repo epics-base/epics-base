@@ -380,5 +380,7 @@ inline osiTime osiTime::operator = (const time_t_wrapper &rhs)
 	return *this;
 }
 
+#include "osdTime.h"
+
 #endif // osiTimehInclude 
 

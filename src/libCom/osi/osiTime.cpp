@@ -46,23 +46,8 @@ const unsigned osiTime::nSecPerSec = 1000u*osiTime::uSecPerSec;
 const unsigned osiTime::nSecPerUSec = 1000u;
 const unsigned osiTime::secPerMin = 60u;
 
-//
-// this is defined by POSIX 1003.1b (POSIX real time) compilant OS
-//
-#ifndef CLOCK_REALTIME
-
-	//
-	// this is part of the POSIX RT standard but some OS 
-	// still do not define this in time.h 
-	//
-	struct timespec {
-		time_t tv_sec; /* seconds since some epoch */
-		long tv_nsec; /* nanoseconds within the second */
-	};
-
-	struct tm *gmtime_r (const time_t *, struct tm *);
-	struct tm *localtime_r (const time_t *, struct tm *);
-#endif
+struct tm *gmtime_r (const time_t *, struct tm *);
+struct tm *localtime_r (const time_t *, struct tm *);
 
 static const unsigned ntpEpochYear = 1900;
 static const unsigned ntpEpocMonth = 0; // January

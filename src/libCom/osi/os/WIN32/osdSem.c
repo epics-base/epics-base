@@ -29,6 +29,8 @@
  *              Argonne National Laboratory
  */
 
+#include <limits.h>
+
 #ifndef VC_EXTRALEAN
 #   define VC_EXTRALEAN
 #endif
@@ -36,6 +38,7 @@
 #   define WIN32_LEAN_AND_MEAN 
 #endif
 /* including less than this causes conflicts with winsock2.h :-( */
+#define _WIN32_WINNT 0x400
 #include <winsock2.h>
 
 #define epicsExportSharedSymbols
@@ -50,36 +53,33 @@ typedef struct binarySem {
     HANDLE handle;
 }binarySem;
 
-typedef struct mutexSem {
-    HANDLE handle;
-}mutexSem;
 
 /*
  * semBinaryCreate ()
  */
-epicsShareFunc semBinaryId epicsShareAPI semBinaryCreate (int initialState) 
+epicsShareFunc semBinaryId epicsShareAPI semBinaryCreate ( semInitialState initialState ) 
 {
     binarySem *pSem;
 
-    pSem = malloc ( sizeof (*pSem) );
-    if (pSem) {
-        pSem->handle =  CreateEvent (NULL, FALSE, initialState?TRUE:FALSE, NULL);
-        if (pSem->handle==0) {
-            free (pSem);
+    pSem = malloc ( sizeof ( *pSem ) );
+    if ( pSem ) {
+        pSem->handle =  CreateEvent ( NULL, FALSE, initialState?TRUE:FALSE, NULL );
+        if ( pSem->handle == 0 ) {
+            free ( pSem );
             pSem = 0;
         }
     }
 
-    return (semBinaryId) pSem;
+    return ( semBinaryId ) pSem;
 }
 
 /*
  * semBinaryMustCreate ()
  */
-epicsShareFunc semBinaryId epicsShareAPI semBinaryMustCreate (int initialState) 
+epicsShareFunc semBinaryId epicsShareAPI semBinaryMustCreate ( semInitialState initialState ) 
 {
-    semBinaryId id = semBinaryCreate (initialState);
-    assert (id);
+    semBinaryId id = semBinaryCreate ( initialState );
+    assert ( id );
     return id;
 }
 
@@ -171,6 +171,12 @@ epicsShareFunc semTakeStatus epicsShareAPI semBinaryTakeNoWait (semBinaryId id)
 epicsShareFunc void epicsShareAPI semBinaryShow (semBinaryId id, unsigned level) 
 { 
 }
+
+#if 0
+
+typedef struct mutexSem {
+    HANDLE handle;
+}mutexSem;
 
 
 /*
@@ -290,3 +296,276 @@ epicsShareFunc semTakeStatus epicsShareAPI semMutexTakeNoWait (semMutexId id)
 epicsShareFunc void epicsShareAPI semMutexShow (semMutexId id, unsigned level) 
 { 
 }
+
+#elif 0
+
+typedef struct mutexSem {
+    CRITICAL_SECTION cs;
+} mutexSem;
+
+/*
+ * semMutexCreate ()
+ */
+epicsShareFunc semMutexId epicsShareAPI semMutexCreate ( void ) 
+{
+    mutexSem *pSem;
+
+    pSem = malloc ( sizeof (*pSem) );
+    if ( pSem ) {
+        InitializeCriticalSection ( &pSem->cs );
+    }    
+
+    return (semMutexId) pSem;
+}
+
+/*
+ * semMutexMustCreate ()
+ */
+epicsShareFunc semBinaryId epicsShareAPI semMutexMustCreate () 
+{
+    semMutexId id = semMutexCreate ();
+    assert ( id );
+    return id;
+}
+
+/*
+ * semMutexDestroy ()
+ */
+epicsShareFunc void epicsShareAPI semMutexDestroy ( semMutexId id ) 
+{
+    mutexSem *pSem = ( mutexSem * ) id;
+    
+    DeleteCriticalSection  ( &pSem->cs );
+    free ( pSem );
+}
+
+/*
+ * semMutexGive ()
+ */
+epicsShareFunc void epicsShareAPI semMutexGive ( semMutexId id ) 
+{
+    mutexSem *pSem = ( mutexSem * ) id;
+    LeaveCriticalSection ( &pSem->cs );
+}
+
+/*
+ * semMutexTake ()
+ */
+epicsShareFunc semTakeStatus epicsShareAPI semMutexTake ( semMutexId id ) 
+{
+    mutexSem *pSem = ( mutexSem * ) id;
+    EnterCriticalSection ( &pSem->cs );
+    return semTakeOK;
+}
+
+/*
+ * semMutexTakeTimeout ()
+ */
+epicsShareFunc semTakeStatus epicsShareAPI semMutexTakeTimeout ( semMutexId id, double timeOut )
+{ 
+    mutexSem *pSem = ( mutexSem * ) id;
+    EnterCriticalSection ( &pSem->cs );
+    return semTakeOK;
+}
+
+/*
+ * semMutexTakeNoWait ()
+ */
+epicsShareFunc semTakeStatus epicsShareAPI semMutexTakeNoWait ( semMutexId id ) 
+{ 
+    mutexSem *pSem = ( mutexSem * ) id;
+    if ( TryEnterCriticalSection ( &pSem->cs ) ) {
+        return semTakeOK;
+    }
+    else {
+        return semTakeTimeout;
+    }
+}
+
+/*
+ * semMutexShow ()
+ */
+epicsShareFunc void epicsShareAPI semMutexShow ( semMutexId id, unsigned level ) 
+{ 
+}
+
+#else
+
+typedef struct mutexSem {
+    CRITICAL_SECTION cs;
+    DWORD threadId;
+    HANDLE unlockSignal;
+    unsigned count;
+} mutexSem;
+
+/*
+ * semMutexCreate ()
+ */
+epicsShareFunc semMutexId epicsShareAPI semMutexCreate ( void ) 
+{
+    mutexSem *pSem;
+
+    pSem = malloc ( sizeof (*pSem) );
+    if ( pSem ) {
+        pSem->unlockSignal = CreateEvent ( NULL, FALSE, FALSE, NULL );
+        if ( pSem->unlockSignal == 0 ) {
+            free ( pSem );
+            pSem = 0;
+        }
+        else {
+            InitializeCriticalSection ( &pSem->cs );
+            pSem->threadId = 0;
+            pSem->count = 0u;
+        }
+    }    
+    return (semMutexId) pSem;
+}
+
+/*
+ * semMutexMustCreate ()
+ */
+epicsShareFunc semBinaryId epicsShareAPI semMutexMustCreate () 
+{
+    semMutexId id = semMutexCreate ();
+    assert ( id );
+    return id;
+}
+
+/*
+ * semMutexDestroy ()
+ */
+epicsShareFunc void epicsShareAPI semMutexDestroy ( semMutexId id ) 
+{
+    mutexSem *pSem = ( mutexSem * ) id;
+    
+    DeleteCriticalSection  ( &pSem->cs );
+    CloseHandle ( pSem->unlockSignal );
+    free ( pSem );
+}
+
+/*
+ * semMutexGive ()
+ */
+epicsShareFunc void epicsShareAPI semMutexGive ( semMutexId id ) 
+{
+    mutexSem *pSem = ( mutexSem * ) id;
+    unsigned signalNeeded;
+    DWORD status;
+
+    EnterCriticalSection ( &pSem->cs );
+    //assert ( pSem->threadId == GetCurrentThreadId () );
+    assert ( pSem->count > 0u );
+    pSem->count--;
+    if ( pSem->count == 0 ) {
+        pSem->threadId = 0;
+        signalNeeded = 1;
+    }
+    else {
+        signalNeeded = 0;
+    }
+    LeaveCriticalSection ( &pSem->cs );
+
+    if ( signalNeeded ) {
+        status = SetEvent ( pSem->unlockSignal );
+        assert ( status ); 
+    }
+}
+
+/*
+ * semMutexTake ()
+ */
+epicsShareFunc semTakeStatus epicsShareAPI semMutexTake ( semMutexId id ) 
+{
+    DWORD thisThread = GetCurrentThreadId ();
+    mutexSem *pSem = ( mutexSem * ) id;
+
+    EnterCriticalSection ( &pSem->cs );
+
+    while ( pSem->count && pSem->threadId != thisThread ) {
+        DWORD status;
+
+        LeaveCriticalSection ( &pSem->cs );
+        status = WaitForSingleObject ( pSem->unlockSignal, INFINITE );
+        if ( status == WAIT_TIMEOUT ) {
+            return semTakeTimeout;
+        }
+        EnterCriticalSection ( &pSem->cs );
+    }
+
+    pSem->threadId = thisThread;
+    assert ( pSem->count != UINT_MAX );
+    pSem->count++;
+
+    LeaveCriticalSection ( &pSem->cs );
+
+    return semTakeOK;
+}
+
+/*
+ * semMutexTakeTimeout ()
+ */
+epicsShareFunc semTakeStatus epicsShareAPI semMutexTakeTimeout ( semMutexId id, double timeOut )
+{ 
+    DWORD thisThread = GetCurrentThreadId ();
+
+    mutexSem *pSem = ( mutexSem * ) id;
+
+    EnterCriticalSection ( &pSem->cs );
+
+    while ( pSem->count && pSem->threadId != thisThread ) {
+        DWORD tmo;
+        DWORD status;
+
+        LeaveCriticalSection ( &pSem->cs );
+        tmo = ( DWORD ) ( timeOut * mSecPerSecOsdSem );
+        status = WaitForSingleObject ( pSem->unlockSignal, tmo );
+        if ( status == WAIT_TIMEOUT ) {
+            return semTakeTimeout;
+        }
+        EnterCriticalSection ( &pSem->cs );
+    }
+
+    pSem->threadId = thisThread;
+    assert ( pSem->count != UINT_MAX );
+    pSem->count++;
+
+    LeaveCriticalSection ( &pSem->cs );
+
+    return semTakeOK;
+}
+
+/*
+ * semMutexTakeNoWait ()
+ */
+epicsShareFunc semTakeStatus epicsShareAPI semMutexTakeNoWait ( semMutexId id ) 
+{ 
+    DWORD thisThread = GetCurrentThreadId ();
+
+    mutexSem *pSem = ( mutexSem * ) id;
+
+    EnterCriticalSection ( &pSem->cs );
+
+    if ( pSem->count && pSem->threadId != thisThread ) {
+        LeaveCriticalSection ( &pSem->cs );
+        return semTakeTimeout;
+    }
+
+    pSem->threadId = thisThread;
+    assert ( pSem->count != UINT_MAX );
+    pSem->count++;
+
+    LeaveCriticalSection ( &pSem->cs );
+
+    return semTakeOK;
+}
+
+/*
+ * semMutexShow ()
+ */
+epicsShareFunc void epicsShareAPI semMutexShow ( semMutexId id, unsigned level ) 
+{ 
+}
+
+
+#endif
+

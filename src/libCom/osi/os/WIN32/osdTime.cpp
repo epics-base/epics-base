@@ -34,6 +34,7 @@
 #include "epicsTime.h"
 #include "errlog.h"
 #include "epicsAssert.h"
+#include "epicsThread.h"
 
 //
 // performance counter last value, ticks per sec,
@@ -60,21 +61,22 @@ static const SYSTEMTIME epicsEpochST = {
 	0 // milli sec
 };
 
+static bool osdTimeInitSuccess = false;
+static epicsThreadOnceId osdTimeOnceFlag = EPICS_THREAD_ONCE_INIT;
 static const LONGLONG FILE_TIME_TICKS_PER_SEC = 10000000L;
-static HANDLE osdTimeMutex = NULL;
+static CRITICAL_SECTION osdTimeCriticalSection; 
 static bool osdTimeSyncThreadExit = false;
 static LONGLONG epicsEpoch;
 
 static int osdTimeSych ();
+
 
 /*
  * osdTimeExit ()
  */
 static void osdTimeExit ()
 {
-    if ( osdTimeMutex ) {
-        CloseHandle (osdTimeMutex);
-    }
+    DeleteCriticalSection ( & osdTimeCriticalSection );
     osdTimeSyncThreadExit = true;
 }
 
@@ -99,7 +101,7 @@ static unsigned __stdcall osdTimeSynchThreadEntry (LPVOID)
 //
 // osdTimeInit ()
 //
-static void osdTimeInit ()
+static void osdTimeInit ( void * )
 {
 	LARGE_INTEGER parm;
 	BOOL success;
@@ -107,40 +109,8 @@ static void osdTimeInit ()
     HANDLE osdTimeThread;
     unsigned threadAddr;
 	FILETIME epicsEpochFT;
-    DWORD status;
 
-    if ( osdTimeMutex ) {
-        /* wait for init to complete */
-        status = WaitForSingleObject ( osdTimeMutex, INFINITE );
-        assert ( status == WAIT_OBJECT_0 );
-        success = ReleaseMutex ( osdTimeMutex );
-        assert (success);
-        return;
-    }
-    else {
-        HANDLE osdTimeMutexTmp;
-        osdTimeMutexTmp = CreateMutex (NULL, TRUE, NULL);
-        if ( osdTimeMutexTmp == 0 ) {
-            return;
-        }
-
-#if 1
-        /* not arch neutral, but at least supported by w95 and borland */
-        if ( InterlockedExchange ( (LPLONG) &osdTimeMutex, (LONG) osdTimeMutexTmp ) ) {
-#else
-
-        /* not supported on W95, but the alternative requires assuming that pointer and integer are the same */
-        if (InterlockedCompareExchange ( (PVOID *) &osdTimeMutex, (PVOID) osdTimeMutexTmp, (PVOID)0 ) != 0) {
-#endif
-            CloseHandle (osdTimeMutexTmp);
-            /* wait for init to complete */
-            status = WaitForSingleObject (osdTimeMutex, INFINITE);
-            assert ( status == WAIT_OBJECT_0 );
-            success = ReleaseMutex (osdTimeMutex);
-            assert (success);
-            return;
-        }
-    }
+    InitializeCriticalSection ( & osdTimeCriticalSection );
 
 	//
 	// initialize elapsed time counters
@@ -149,8 +119,7 @@ static void osdTimeInit ()
 	// counters (Intel and Mips processors do)
 	//
 	if ( QueryPerformanceFrequency (&parm) == 0 ) {
-        CloseHandle (osdTimeMutex);
-        osdTimeMutex = NULL;
+        DeleteCriticalSection ( & osdTimeCriticalSection );
         return;
 	}
 	perf_freq = parm.QuadPart;
@@ -160,20 +129,19 @@ static void osdTimeInit ()
 	//
 	success = SystemTimeToFileTime (&epicsEpochST, &epicsEpochFT);
     if ( ! success ) {
-        CloseHandle ( osdTimeMutex );
-        osdTimeMutex = NULL;
+        DeleteCriticalSection ( & osdTimeCriticalSection );
         return;
     }
 	parm.LowPart = epicsEpochFT.dwLowDateTime;
 	parm.HighPart = epicsEpochFT.dwHighDateTime;
 	epicsEpoch = parm.QuadPart;
 
-    ReleaseMutex ( osdTimeMutex );
+    // set here to avoid recursion problems
+    osdTimeInitSuccess = true;
 
     unixStyleStatus = osdTimeSych ();
     if ( unixStyleStatus != epicsTimeOK ) {
-        CloseHandle ( osdTimeMutex );
-        osdTimeMutex = NULL;
+        DeleteCriticalSection ( & osdTimeCriticalSection );
         return;
     }
 
@@ -190,6 +158,7 @@ static void osdTimeInit ()
     }
 
     atexit ( osdTimeExit );
+
 }
 
 //
@@ -203,18 +172,9 @@ static int osdTimeSych ()
 	LONGLONG secondsSinceBoot;
 	FILETIME currentTimeFT;
 	LONGLONG currentTime;
-	BOOL win32Stat;
-    DWORD win32SemStat;
 
-	if (!osdTimeMutex) {
-        osdTimeInit ();
-        if (!osdTimeMutex) {
-            return epicsTimeERROR;
-        }
-    }
-
-    win32SemStat = WaitForSingleObject (osdTimeMutex, tmoTwentySec);
-    if ( win32SemStat != WAIT_OBJECT_0 ) {
+    epicsThreadOnce ( &osdTimeOnceFlag, osdTimeInit, 0 );
+    if ( ! osdTimeInitSuccess ) {
         return epicsTimeERROR;
     }
 
@@ -226,10 +186,11 @@ static int osdTimeSych ()
 	GetSystemTimeAsFileTime (&currentTimeFT);
 	// this one is second because QueryPerformanceFrequency()
 	// has forced its code to load
-    if (QueryPerformanceCounter (&parm)==0) {
-         ReleaseMutex (osdTimeMutex);
-         return epicsTimeERROR;
+    if ( QueryPerformanceCounter ( & parm ) == 0 ) {
+        return epicsTimeERROR;
     }
+
+    EnterCriticalSection ( & osdTimeCriticalSection );
 	 
 	perf_last = parm.QuadPart;
 	parm.LowPart = currentTimeFT.dwLowDateTime;
@@ -311,10 +272,7 @@ static int osdTimeSych ()
 	perf_sec_offset = new_sec_offset;
 	perf_frac_offset = new_frac_offset;
 
-    win32Stat = ReleaseMutex (osdTimeMutex);
-    if (!win32Stat) {
-        return epicsTimeERROR;
-    }
+    LeaveCriticalSection ( & osdTimeCriticalSection );
 
     return epicsTimeOK;
 }
@@ -329,20 +287,12 @@ extern "C" epicsShareFunc int epicsShareAPI epicsTimeGetCurrent (epicsTimeStamp 
 	LARGE_INTEGER parm;
     BOOL status;
 
-	//
-	// lazy init
-	//
-	if (!osdTimeMutex) {
-        osdTimeInit ();
-        if (!osdTimeMutex) {
-            return epicsTimeERROR;
-        }
-	}
-
-    status = WaitForSingleObject (osdTimeMutex, tmoTwentySec);
-    if ( status != WAIT_OBJECT_0 ) {
+    epicsThreadOnce ( &osdTimeOnceFlag, osdTimeInit, 0 );
+    if ( ! osdTimeInitSuccess ) {
         return epicsTimeERROR;
     }
+
+    EnterCriticalSection ( & osdTimeCriticalSection );
 
 	//
 	// dont need to check status since it was checked once
@@ -351,7 +301,7 @@ extern "C" epicsShareFunc int epicsShareAPI epicsTimeGetCurrent (epicsTimeStamp 
 	//
 	status = QueryPerformanceCounter (&parm);
     if (!status) {
-        ReleaseMutex (osdTimeMutex);
+        LeaveCriticalSection ( & osdTimeCriticalSection );
         return epicsTimeERROR;
     }
 	time_cur = parm.QuadPart;
@@ -391,10 +341,7 @@ extern "C" epicsShareFunc int epicsShareAPI epicsTimeGetCurrent (epicsTimeStamp 
 	pDest->secPastEpoch = (unsigned long) (time_sec%ULONG_MAX);
     pDest->nsec = (unsigned long) ((time_remainder*epicsTime::nSecPerSec)/perf_freq);
 
-    status = ReleaseMutex (osdTimeMutex);
-    if (!status) {
-        return epicsTimeERROR;
-    }
+    LeaveCriticalSection ( & osdTimeCriticalSection );
 
 	return epicsTimeOK;
 }

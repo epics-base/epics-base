@@ -130,7 +130,28 @@ Known Possible Problems
    application successfully, contact me.
 
 
-Please feel free to contact me if you encounter serious problems.
+Kernel Configuration
+--------------------
+
+HP-UX 11 has a kernel configuration parameter that limits the number of
+threads that can be created within the context of a single process. This
+parameter has a default of 64.
+Channel Access creates two threads for each TCP connection it uses,
+where one TCP connection usually corresponds to one client-server
+pair. So a CA client program that connects to 30 different IOCs will use
+60 threads for the CA communication.
+
+Obviously it is advisable to increase that value from 64 to something
+larger - 1024 or 2048 should be enough for regular concole systems.
+You will find the parameter in SAM's Kernel Configuration / Configurable
+Parameters section, under the name max_thread_proc ("Max No. of Threads
+allowed in each process").
+
+This kernel configuration change requires a reboot of the machine.
+
+
+So much for this README - please feel free to contact me if you
+encounter serious problems.
 
 Enjoy!
 Ralph

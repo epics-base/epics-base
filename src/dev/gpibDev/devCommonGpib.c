@@ -3,6 +3,9 @@
 
 /*
  * $Log$
+ * Revision 1.2  1999/07/07 20:07:13  mrk
+ * sscanf response now checked to be equal to 1 rather than just not zero.
+ *
  * Revision 1.1  1998/01/21 20:46:55  mrk
  * restructure; new Symb support
  *
@@ -743,7 +746,7 @@ struct link	*plink;
     if (*parmBlock->debugFlag)
       printf("initXx dealing with record >%s< device >%s<\n", prec->name, parmBlock->name);
     /* allocate space for the private structure */
-    pdpvt = (struct gpibDpvt *) malloc(sizeof(struct gpibDpvt));
+    pdpvt = (struct gpibDpvt *) calloc(1,sizeof(struct gpibDpvt));
     prec->dpvt = (void *) pdpvt;
 
     pdpvt->head.dmaTimeout = parmBlock->dmaTimeout;
@@ -770,9 +773,9 @@ struct link	*plink;
 	case BBGPIB_IO:       /* Is a bitbus -> gpib link */
 		pdpvt->head.device = plink->value.bbgpibio.gpibaddr; /* dev address */
 		sscanf(plink->value.bbgpibio.parm, "%hd", &(pdpvt->parm));
-		pdpvt->head.bitBusDpvt = (struct dpvtBitBusHead *) malloc(sizeof(struct dpvtBitBusHead));
-		pdpvt->head.bitBusDpvt->txMsg.data = (unsigned char *) malloc(BB_MAX_DAT_LEN);
-		pdpvt->head.bitBusDpvt->rxMsg.data = (unsigned char *) malloc(BB_MAX_DAT_LEN);
+		pdpvt->head.bitBusDpvt = (struct dpvtBitBusHead *) calloc(1,sizeof(struct dpvtBitBusHead));
+		pdpvt->head.bitBusDpvt->txMsg.data = (unsigned char *) calloc(BB_MAX_DAT_LEN,sizeof(char));
+		pdpvt->head.bitBusDpvt->rxMsg.data = (unsigned char *) calloc(BB_MAX_DAT_LEN,sizeof(char));
 		pdpvt->head.bitBusDpvt->txMsg.node = plink->value.bbgpibio.bbaddr; /* bug node address */
 		pdpvt->head.bitBusDpvt->link = plink->value.bbgpibio.link;  /* bug link number */
 		pdpvt->head.link = plink->value.bbgpibio.link;
@@ -832,7 +835,7 @@ struct link	*plink;
 	printf("%s: allocating a hwpvt structure for link %d device %d\n",
 		 parmBlock->name, pdpvt->head.link, pdpvt->head.device);
 
-      pdpvt->phwpvt = (struct hwpvt *) malloc(sizeof (struct hwpvt));
+      pdpvt->phwpvt = (struct hwpvt *) calloc(1,sizeof (struct hwpvt));
       pdpvt->phwpvt->next = parmBlock->hwpvtHead;	/* put in the list */
       parmBlock->hwpvtHead = pdpvt->phwpvt;
 
@@ -904,9 +907,9 @@ struct link	*plink;
     }
     pCmd = &(parmBlock->gpibCmds[pdpvt->parm]);
     if(pCmd->msgLen > 0)
-	pdpvt->msg = (char *)(malloc(pCmd->msgLen));
+	pdpvt->msg = (char *)(calloc(pCmd->msgLen,sizeof(char)));
     if(pCmd->rspLen > 0)
-	pdpvt->rsp = (char *)(malloc(pCmd->rspLen));
+	pdpvt->rsp = (char *)(calloc(pCmd->rspLen,sizeof(char)));
 
     if(parmBlock->srqHandler != NULL)
     {

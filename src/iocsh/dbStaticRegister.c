@@ -23,16 +23,6 @@
 #include "iocsh.h"
 #include "dbStaticRegister.h"
 
-/* dbDumpRecDes */
-static const iocshArg dbDumpRecDesArg0 = { "pdbbase",iocshArgPdbbase};
-static const iocshArg dbDumpRecDesArg1 = { "recordTypeName",iocshArgString};
-static const iocshArg * const dbDumpRecDesArgs[2] = {&dbDumpRecDesArg0,&dbDumpRecDesArg1};
-static const iocshFuncDef dbDumpRecDesFuncDef = {"dbDumpRecDes",2,dbDumpRecDesArgs};
-static void dbDumpRecDesCallFunc(const iocshArgBuf *args)
-{
-    dbDumpRecDes(pdbbase,args[1].sval);
-}
-
 /* dbDumpPath */
 static const iocshArg dbDumpPathArg0 = { "pdbbase",iocshArgPdbbase};
 static const iocshArg * const dbDumpPathArgs[1] = {&dbDumpPathArg0};
@@ -76,16 +66,16 @@ static void dbDumpRecordTypeCallFunc(const iocshArgBuf *args)
     dbDumpRecordType(pdbbase,args[1].sval);
 }
 
-/* dbDumpFldDes */
-static const iocshArg dbDumpFldDesArg0 = { "pdbbase",iocshArgPdbbase};
-static const iocshArg dbDumpFldDesArg1 = { "recordTypeName",iocshArgString};
-static const iocshArg dbDumpFldDesArg2 = { "fieldName",iocshArgString};
-static const iocshArg * const dbDumpFldDesArgs[3] =
-    {&dbDumpFldDesArg0,&dbDumpFldDesArg1,&dbDumpFldDesArg2};
-static const iocshFuncDef dbDumpFldDesFuncDef = {"dbDumpFldDes",3,dbDumpFldDesArgs};
-static void dbDumpFldDesCallFunc(const iocshArgBuf *args)
+/* dbDumpField */
+static const iocshArg dbDumpFieldArg0 = { "pdbbase",iocshArgPdbbase};
+static const iocshArg dbDumpFieldArg1 = { "recordTypeName",iocshArgString};
+static const iocshArg dbDumpFieldArg2 = { "fieldName",iocshArgString};
+static const iocshArg * const dbDumpFieldArgs[3] =
+    {&dbDumpFieldArg0,&dbDumpFieldArg1,&dbDumpFieldArg2};
+static const iocshFuncDef dbDumpFieldFuncDef = {"dbDumpField",3,dbDumpFieldArgs};
+static void dbDumpFieldCallFunc(const iocshArgBuf *args)
 {
-    dbDumpFldDes(pdbbase,args[1].sval,args[2].sval);
+    dbDumpField(pdbbase,args[1].sval,args[2].sval);
 }
 
 /* dbDumpDevice */
@@ -131,12 +121,11 @@ static void dbPvdDumpCallFunc(const iocshArgBuf *args)
 
 void epicsShareAPI dbStaticRegister(void)
 {
-    iocshRegister(&dbDumpRecDesFuncDef,dbDumpRecDesCallFunc);
     iocshRegister(&dbDumpPathFuncDef,dbDumpPathCallFunc);
     iocshRegister(&dbDumpRecordFuncDef,dbDumpRecordCallFunc);
     iocshRegister(&dbDumpMenuFuncDef,dbDumpMenuCallFunc);
     iocshRegister(&dbDumpRecordTypeFuncDef,dbDumpRecordTypeCallFunc);
-    iocshRegister(&dbDumpFldDesFuncDef,dbDumpFldDesCallFunc);
+    iocshRegister(&dbDumpFieldFuncDef,dbDumpFieldCallFunc);
     iocshRegister(&dbDumpDeviceFuncDef,dbDumpDeviceCallFunc);
     iocshRegister(&dbDumpDriverFuncDef,dbDumpDriverCallFunc);
     iocshRegister(&dbDumpBreaktableFuncDef,dbDumpBreaktableCallFunc);

@@ -217,7 +217,7 @@ int epicsTimeTest (void)
         }
     }
 
-    printf ("epicsTime Test Summary: %d errors found "
+    printf ("epicsTime test complete. Summary: %d errors found "
             "in %d out of %d loops.\n",
             sum_errors, sum_errloops, nTimes);
 

@@ -90,7 +90,7 @@ void testTimer (fdctx *pfdm, double delay)
         delay, measuredError, 100.0*measuredError/delay);
 }
 
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
     int status;
     fdctx *pfdm;
@@ -128,5 +128,9 @@ main (int argc, char **argv)
 
     status = fdmgr_delete (pfdm);
     assert (status==0);
+    
+    printf ( "Test Complete\n" );
+    
+    return 0;
 }
 

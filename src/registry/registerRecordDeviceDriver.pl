@@ -14,6 +14,7 @@ $file = $ARGV[0];
 $numberRecordType = 0;
 $numberDeviceSupport = 0;
 $numberDriverSupport = 0;
+$numberFunctions = 0;
 
 open(INP,"$file") or die "$! opening file";
 while(<INP>) {
@@ -30,6 +31,10 @@ while(<INP>) {
     if( /driver/) {
         /driver\s*\(\s*(\w+)/;
         $driverSupport[$numberDriverSupport++] = $1;
+    }
+    if( /function/) {
+        /function\s*\(\s*(\w+)/;
+        $function[$numberFunctions++] = $1;
     }
 }
 close(INP) or die "$! closing file";
@@ -54,6 +59,7 @@ print << "END" ;
 #include "registryRecordType.h"
 #include "registryDeviceSupport.h"
 #include "registryDriverSupport.h"
+#include "registryFunction.h"
 #include "iocsh.h"
 END
 
@@ -126,6 +132,28 @@ if($numberDriverSupport>0) {
     print "};\n\n";
 }
 
+#definitions functions
+if($numberFunctions>0) {
+    for ($i=0; $i<$numberFunctions; $i++) {
+	print "extern \"C\" void $function[$i](void);\n";
+    }
+    print "\nstatic char *functionNames[$numberFunctions] = {\n";
+    for ($i=0; $i<$numberFunctions; $i++) {
+        print "    \"$function[$i]\"";
+        if($i < $numberFunctions-1) { print ",";}
+        print "\n";
+    }
+    print "};\n\n";
+    
+    print "static REGISTRYFUNCTION fncsl[$i] = {\n";
+    for ($i=0; $i<$numberFunctions; $i++) {
+        print "    $function[$i]";
+        if($i < $numberFunctions-1) { print ",";}
+        print "\n";
+    }
+    print "};\n\n";
+}
+
 #Now actual registration code.
 
 print << "END" ;
@@ -178,6 +206,18 @@ if($numberDriverSupport>0) {
         if(!registryDriverSupportAdd(driverSupportNames[i],drvsl[i])) {
             errlogPrintf(\"registryDriverSupportAdd failed %s\\n\",
                 driverSupportNames[i]);
+            continue;
+        }
+    }
+END
+}
+if($numberFunctions>0) {
+    print << "END" ;
+    for(i=0; i< $numberFunctions;  i++ ) {
+        if(registryFunctionFind(functionNames[i])) continue;
+        if(!registryFunctionAdd(functionNames[i],fncsl[i])) {
+            errlogPrintf(\"registryFunctionAdd failed %s\\n\",
+                functionNames[i]);
             continue;
         }
     }

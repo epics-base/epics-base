@@ -124,9 +124,6 @@
 #define BINARY_MINUS_I_C_P 4
 #define BINARY_MINUS_CODE  SUB
 
-/* flags end of element table */
-#define	END_ELEMENTS	-1
-
 /* parsing return values */
 #define	FINE		0
 #define	UNKNOWN_ELEMENT	-1

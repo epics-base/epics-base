@@ -34,7 +34,7 @@ typedef void *threadId;
 epicsShareFunc threadId epicsShareAPI threadCreate(const char *name,
     unsigned int priority, unsigned int stackSize,
     THREADFUNC funptr,void *parm);
-epicsShareFunc void epicsShareAPI threadSuspend();
+epicsShareFunc void epicsShareAPI threadSuspend(void);
 epicsShareFunc void epicsShareAPI threadResume(threadId id);
 epicsShareFunc unsigned int epicsShareAPI threadGetPriority(threadId id);
 epicsShareFunc void epicsShareAPI threadSetPriority(
@@ -46,8 +46,8 @@ epicsShareFunc void epicsShareAPI threadSleep(double seconds);
 epicsShareFunc threadId epicsShareAPI threadGetIdSelf(void);
 
 typedef void * threadVarId;
-epicsShareFunc threadVarId epicsShareAPI threadPrivateCreate ();
-epicsShareFunc void epicsShareAPI threadPrivateDelete ();
+epicsShareFunc threadVarId epicsShareAPI threadPrivateCreate (void);
+epicsShareFunc void epicsShareAPI threadPrivateDelete (threadVarId id);
 epicsShareFunc void epicsShareAPI threadPrivateSet (threadVarId, void *);
 epicsShareFunc void * epicsShareAPI threadPrivateGet (threadVarId);
 
@@ -57,41 +57,146 @@ epicsShareFunc void * epicsShareAPI threadPrivateGet (threadVarId);
 
 #ifdef __cplusplus
 
-class osiThread : private osdThread {
+class osiThread {
 public:
-    osiThread (const char *name, threadStackSizeClass = threadStackBig,
+    osiThread (const char *name, unsigned stackSize,
         unsigned priority=threadPriorityLow);
-    //osiThread (const char *name, unsigned stackSize,
-    //    unsigned priority=threadPriorityLow);
-    ~osiThread();
 
     virtual void entryPoint () = 0;
 
     void suspend ();
     void resume ();
-    unsigned getPriority ();
+    unsigned getPriority () const;
     void setPriority (unsigned);
-    bool priorityIsEqual (osiThread &otherThread);
-    bool isReady ();
-    bool isSuspended ();
+    bool priorityIsEqual (const osiThread &otherThread) const;
+    bool isReady () const;
+    bool isSuspended () const;
 
-    operator == ();
+    bool operator == (const osiThread &rhs) const;
 
     /* these operate on the current thread */
     static void sleep (double seconds);
     static osiThread & getSelf ();
+private:
+    threadId id;
 };
 
 template <class T>
-class osiThreadPrivate : private osdThreadPrivate {
+class osiThreadPrivate {
 public:
+    osiThreadPrivate ();
+    ~osiThreadPrivate ();
     T *get () const;
     void set (T *);
     class unableToCreateThreadPrivate {}; // exception
+private:
+    threadVarId id;
 };
 
 #endif /* __cplusplus */
 
 #include "osdThread.h"
+
+#ifdef __cplusplus
+
+#include <epicsAssert.h>
+
+inline void osiThread::suspend ()
+{
+    threadSuspend ();
+}
+
+inline void osiThread::resume ()
+{
+    threadResume (this->id);
+}
+
+inline unsigned osiThread::getPriority () const
+{
+    return threadGetPriority (this->id);
+}
+
+inline void osiThread::setPriority (unsigned priority)
+{
+    threadSetPriority (this->id, priority);
+}
+
+inline bool osiThread::priorityIsEqual (const osiThread &otherThread) const
+{
+    if ( threadIsEqual (this->id, otherThread.id) ) {
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+inline bool osiThread::isReady () const
+{
+    if ( threadIsReady (this->id) ) {
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+inline bool osiThread::isSuspended () const
+{
+    if ( threadIsSuspended (this->id) ) {
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+inline bool osiThread::operator == (const osiThread &rhs) const
+{
+    return (this->id == rhs.id);
+}
+
+inline void osiThread::sleep (double seconds)
+{
+    threadSleep (seconds);
+}
+
+inline osiThread & osiThread::getSelf ()
+{
+    return * static_cast<osiThread *> ( threadGetIdSelf () );
+}
+
+template <class T>
+inline osiThreadPrivate<T>::osiThreadPrivate ()
+{
+    this->id = threadPrivateCreate ();
+    if (this->id == 0) {
+#       ifdef noExceptionsFromCXX
+            assert (this->id != 0);
+#       else            
+            throw unableToCreateThreadPrivate ();
+#       endif
+    }
+}
+
+template <class T>
+inline osiThreadPrivate<T>::~osiThreadPrivate ()
+{
+    threadPrivateDelete ( this->id );
+}
+
+template <class T>
+inline T *osiThreadPrivate<T>::get () const
+{
+    return static_cast<T *> ( threadPrivateGet (this->id) );
+}
+
+template <class T>
+inline void osiThreadPrivate<T>::set (T *pIn)
+{
+    threadPrivateSet ( this->id, static_cast<void *> (pIn) );
+}
+
+#endif /* ifdef __cplusplus */
 
 #endif /* osiThreadh */

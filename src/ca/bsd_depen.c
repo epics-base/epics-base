@@ -115,7 +115,12 @@ int cac_select_io(struct timeval *ptimeout, int flags)
 				&autoTimeOut);
 #	endif
 
-	cac_gettimeval (&ca_static->currentTime);
+	/* 
+	 * If we have been waiting then update the current time
+	 */
+	if (ptimeout->tv_sec>0 || ptimeout->tv_usec>0) {
+		cac_gettimeval (&ca_static->currentTime);
+	}
 
         if (status<0) {
                 if (MYERRNO == EINTR) {

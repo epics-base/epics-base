@@ -29,9 +29,8 @@ CLASSPATH=-classpath $(INSTALL_JAVA)$(addprefix :,$(USR_CLASSPATH))
 SOURCEPATH=-sourcepath .:..:../..
 
 #-------------------------------------------------------
-# Java install directory
+# Java directory
 
-INSTALL_JAVA = $(INSTALL_LOCATION)/javalib
 JAVA_DIRECTORY_TARGETS += $(INSTALL_JAVA)
 
 #-------------------------------------------------------

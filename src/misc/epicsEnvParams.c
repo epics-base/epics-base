@@ -38,10 +38,6 @@ epicsSetEnvParams()
 {
     printf("setting EPICS environment parameters\n");
     envSetConfigParam(&EPICS_TS_MIN_WEST, EPICS_TS_MIN_VALUE);
-    envSetConfigParam(&EPICS_SYSCLK_INET, EPICS_SYSCLK_VALUE);
-    envSetConfigParam(&EPICS_IOCMCLK_INET, EPICS_IOCMCLK_VALUE);
-    envSetConfigParam(&EPICS_SYSCLK_PORT, "2200");
-    envSetConfigParam(&EPICS_IOCMCLK_PORT, "2300");
     envSetConfigParam(&EPICS_AR_PORT, "7002");
     envSetConfigParam(&EPICS_CMD_PROTO_PORT, "7003");
     envSetConfigParam(&EPICS_IOC_LOG_INET, EPICS_IOC_LOG_VALUE);
@@ -53,10 +49,6 @@ epicsSetEnvParams()
 epicsPrtEnvParams()
 {
     envPrtConfigParam(&EPICS_TS_MIN_WEST);
-    envPrtConfigParam(&EPICS_SYSCLK_INET);
-    envPrtConfigParam(&EPICS_IOCMCLK_INET);
-    envPrtConfigParam(&EPICS_SYSCLK_PORT);
-    envPrtConfigParam(&EPICS_IOCMCLK_PORT);
     envPrtConfigParam(&EPICS_AR_PORT);
     envPrtConfigParam(&EPICS_CMD_PROTO_PORT);
     envPrtConfigParam(&EPICS_IOC_LOG_INET);

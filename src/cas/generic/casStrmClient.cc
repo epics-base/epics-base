@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.21  1998/04/15 00:04:05  jhill
+ * cosmetic
+ *
  * Revision 1.20  1998/04/14 23:51:10  jhill
  * improved diagnostic
  *
@@ -111,31 +114,31 @@ static const caHdr nill_msg = {0u,0u,0u,0u,0u,0u};
 //
 caStatus casStrmClient::verifyRequest (casChannelI *&pChan)
 {
-        const caHdr   *mp = this->ctx.getMsg();
- 
-        //
-        // channel exists for this resource id ?
-        //
-        pChan = this->resIdToChannel(mp->m_cid);
-        if (!pChan) {
-                return this->sendErr(mp, ECA_BADCHID, NULL);
-        }
- 
-        //
-        // data type out of range ?
-        //
-        if (mp->m_type>((unsigned)LAST_BUFFER_TYPE)) {
-                return this->sendErr(mp, ECA_BADTYPE, NULL);
-        }
- 
-        //
-        // element count out of range ?
-        //
-        if (mp->m_count > pChan->getPVI().nativeCount() || mp->m_count==0u) {
-                return this->sendErr(mp, ECA_BADCOUNT, NULL);
-        }
- 
-        return S_cas_validRequest;
+	const caHdr   *mp = this->ctx.getMsg();
+
+	//
+	// channel exists for this resource id ?
+	//
+	pChan = this->resIdToChannel(mp->m_cid);
+	if (!pChan) {
+		return this->sendErr(mp, ECA_BADCHID, NULL);
+	}
+
+	//
+	// data type out of range ?
+	//
+	if (mp->m_type>((unsigned)LAST_BUFFER_TYPE)) {
+		return this->sendErr(mp, ECA_BADTYPE, NULL);
+	}
+
+	//
+	// element count out of range ?
+	//
+	if (mp->m_count > pChan->getPVI().nativeCount() || mp->m_count==0u) {
+		return this->sendErr(mp, ECA_BADCOUNT, NULL);
+	}
+
+	return S_cas_validRequest;
 }
 
 
@@ -197,7 +200,7 @@ caStatus casStrmClient::init()
 //
 casStrmClient::~casStrmClient()
 {
-        this->osiLock();
+	this->osiLock();
 
 	//
 	// remove this from the list of connected clients

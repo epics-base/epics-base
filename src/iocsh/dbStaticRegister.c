@@ -14,8 +14,8 @@ of this distribution.
 
 #include "dbAccess.h"
 #include "dbStaticLib.h"
-#include "registryRecordType.h"
 #define epicsExportSharedSymbols
+#include "registryRecordType.h"
 #include "ioccrf.h"
 #include "dbStaticRegister.h"
 

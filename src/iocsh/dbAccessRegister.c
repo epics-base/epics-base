@@ -15,8 +15,8 @@ of this distribution.
 #include "iocInit.h"
 #include "dbAccess.h"
 #include "dbLoadTemplate.h"
-#include "registryRecordType.h"
 #define epicsExportSharedSymbols
+#include "registryRecordType.h"
 #include "dbAccessRegister.h"
 #include "ioccrf.h"
 

@@ -72,6 +72,7 @@ epicsMessageQueueCreate(unsigned int capacity, unsigned int maximumMessageSize)
         c1++;
     }
     rtems_interrupt_enable (level);
+printf("Return message queueu id %x\n", id);
     return id;
 }
 
@@ -230,15 +231,22 @@ epicsShareFunc int epicsShareAPI epicsMessageQueuePending(
             epicsMessageQueueId id)
 {
     rtems_unsigned32 count;
+    rtems_status_code sc;
     
-    if (rtems_message_queue_get_number_pending((rtems_id)id, &count) == RTEMS_SUCCESSFUL)
-        return count;
-    else
+    sc = rtems_message_queue_get_number_pending(id->id, &count);
+    if (sc != RTEMS_SUCCESSFUL) {
+        errlogPrintf("Message queue %x get number pending failed: %s\n",
+                                                    id, rtems_status_text(sc));
         return -1;
+    }
+    return count;
 }
 
 epicsShareFunc void epicsShareAPI epicsMessageQueueShow(
             epicsMessageQueueId id,
                 int level)
 {
+    int pending = epicsMessageQueuePending(id);
+    if (pending >= 0)
+        printf ("Message queue %lx -- Pending: %d\n", (unsigned long)id, pending);
 }

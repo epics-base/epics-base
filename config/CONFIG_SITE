@@ -67,7 +67,7 @@ VX_DIR_YES = /usr/local/vw/tornado101
 VX_DIR_NO=/usr/local/vw/vxV52p1/vw
  
 #  Directory for TORNADO=NO gnu gcc crosscompiler
-VX_GNU_NO = $(VX_DIR)/../vxgccV2.2.3.1
+VX_GNU_NO = $(VX_DIR_NO)/../vxgccV2.2.3.1
 
 #  Directory for TORNADO=NO gnu g++ crosscompiler
 #  used by applications for hideos builds only
@@ -78,13 +78,11 @@ GNU_DIR = /usr/local/hideos/gnu_install-2.7.2
 #   GCC     (gcc -ansi) GNU
 #   ACC     (acc)       OS VENDOR
 #   HPACC   (cc -Aa)    OTHER VENDOR 
-#ANSI=HPACC
 ANSI=ACC
  
 #  C++ Compiler (for Host builds)
 #   G++     (g++)   GNU C++
 #   CCC     (CC)    OS VENDOR C++
-#CPLUSPLUS=G++
 #Note: if CPLUSPLUS is empty then C++ src codes are not built
 #CPLUSPLUS=	# use this if site does not have C++ compiler
 CPLUSPLUS=CCC

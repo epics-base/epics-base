@@ -34,8 +34,6 @@
  * .02  08-11-92        jba     added new status DISABLE_ALARM, SIMM_ALARM
  * .03  05-11-94        jba     added new status READ_ACCESS_ALARM, WRITE_ACCESS_ALARM
  * $Log$
- * Revision 1.14  1995/10/12  01:25:56  jhill
- * added CVS logging
  *
  */
 
@@ -44,14 +42,6 @@
 
 #include <shareLib.h>
 #include <epicsTypes.h>
-
-#ifndef stringOf
-#ifdef VAXC 
-#define stringOf(TOKEN) "TOKEN"
-#else
-#define stringOf(TOKEN) #TOKEN
-#endif
-#endif
 
 /* defines for the choice fields */
 /* ALARM SEVERITIES - NOTE: must match defs in choiceGbl.ascii GBL_ALARM_SEV */
@@ -65,8 +55,9 @@
 
 typedef enum {
 	epicsSevNone = NO_ALARM, 
-	epicsSevMajor = MINOR_ALARM, 
-	epicsSevInvalid = MAJOR_ALARM
+	epicsSevMinor = MINOR_ALARM, 
+	epicsSevMajor = MAJOR_ALARM, 
+	epicsSevInvalid = INVALID_ALARM 
 }epicsAlarmSeverity;
 #define firstEpicsAlarmSev epicsSevNone
 #define lastEpicsAlarmSev epicsSevInvalid 
@@ -75,7 +66,8 @@ typedef enum {
 READONLY char *epicsAlarmSeverityStrings [lastEpicsAlarmSev+1] = {
 		stringOf (NO_ALARM),
 		stringOf (MINOR_ALARM),
-		stringOf (MAJOR_ALARM)
+		stringOf (MAJOR_ALARM),
+		stringOf (INVALID_ALARM),
 };
 #else /*epicsAlarmGLOBAL*/
 epicsShareExtern READONLY char *epicsAlarmSeverityStrings [lastEpicsAlarmSev+1];
@@ -114,6 +106,7 @@ epicsShareExtern READONLY char *epicsAlarmSeverityStrings [lastEpicsAlarmSev+1];
 #ifndef NO_ALARMH_ENUM
 
 typedef enum {
+	epicsAlarmNone = NO_ALARM,
 	epicsAlarmRead = READ_ALARM, 
 	epicsAlarmWrite = WRITE_ALARM, 
 	epicsAlarmHiHi = HIHI_ALARM,

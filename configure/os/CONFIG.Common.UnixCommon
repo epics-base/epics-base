@@ -25,7 +25,7 @@ LIB_PREFIX = lib
 LIB_SUFFIX = .a
 SHRLIB_SUFFIX = .so$(addprefix .,$(SHRLIB_VERSION))
 LOADABLE_SHRLIB_SUFFIX = .so$(addprefix .,$(SHRLIB_VERSION))
-LOADABLE_SHRLIB_PREFIX =
+LOADABLE_SHRLIB_PREFIX = lib
 
 #-------------------------------------------------------
 #	names of libraries to build 
@@ -33,7 +33,7 @@ LOADABLE_SHRLIB_PREFIX =
 LIBNAME = $(BUILD_LIBRARY:%=$(LIB_PREFIX)%$(LIB_SUFFIX))
 # <lib> ->  lib<lib>.so.<version>
 SHRLIBNAME_YES = $(BUILD_LIBRARY:%=$(LIB_PREFIX)%$(SHRLIB_SUFFIX))
-LOADABLE_SHRLIBNAME = $(LOADABLE_BUILD_LIBRARY:$(LOADABLE_SHRLIB_PREFIX)%=%$(LOADABLE_SHRLIB_SUFFIX))
+LOADABLE_SHRLIBNAME = $(LOADABLE_BUILD_LIBRARY:%=$(LOADABLE_SHRLIB_PREFIX)%$(LOADABLE_SHRLIB_SUFFIX))
 
 #-------------------------------------------------------
 # shrlib: DEPLIBS, LDFLAGS, and LDLIBS definitions

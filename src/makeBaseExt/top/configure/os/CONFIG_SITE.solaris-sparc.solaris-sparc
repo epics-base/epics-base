@@ -63,3 +63,19 @@ IDLRPC = $(IDL)/external/rpc.solaris
 JAVA_DIR=/usr/java
 JAVA_INC=$(JAVA_DIR)/include
 
+ZLIB_PREFIX = /usr/local/oag
+ZLIB = $(notdir $(wildcard $(ZLIB_PREFIX)/lib/libz.a))
+ifeq ($(ZLIB) , libz.a)
+ZLIB_LIB = $(ZLIB_PREFIX)/lib
+ZLIB_INC = -I$(ZLIB_PREFIX)/include
+ZLIB_CFLAG = -DzLib
+ZLIB_PROD_LIB = z
+z_DIR=$(ZLIB_PREFIX)/lib
+else
+ZLIB_LIB =
+ZLIB_INC =
+ZLIB_CFLAG =
+ZLIB_PROD_LIB =
+z_DIR=
+endif
+

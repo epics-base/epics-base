@@ -1,0 +1,58 @@
+#	Makefile.Host
+
+TOP = ../../..
+include $(TOP)/config/CONFIG_BASE
+CMPLR = STRICT
+
+#
+#	includes to install from this subproject
+#
+INC += cadef.h
+INC += caerr.h
+INC += caeventmask.h
+INC += caProto.h
+
+#
+#	Contents of library: generic, special and for all systems
+#
+
+# on generic system
+LIBSRCS_DEFAULT := posix_depen.c if_depen.c caRepeater.c
+
+# on WIN32 only
+LIBSRCS_WIN32   := windows_depen.c
+
+# on all systems
+LIBSRCS += iocinf.c
+LIBSRCS += service.c
+LIBSRCS += conn.c
+LIBSRCS += netdb_depen.c
+LIBSRCS += flow_control.c
+LIBSRCS += syncgrp.c
+LIBSRCS += access.c
+LIBSRCS += convert.c
+LIBSRCS += test_event.c
+LIBSRCS += bsd_depen.c
+LIBSRCS += repeater.c
+
+#       Library to build:
+#       lib$(LIBRARY).a  or   ..dll/..exp/..lib
+#
+LIBRARY := ca
+
+#	build LIBRARY as a DLL on WIN32, other systems may ignore this
+LIBTYPE := SHARED
+
+#	WIN32 only: need additional lib to build the DLL and special def-file
+DLL_LIBS := Com
+
+PROD := caRepeater
+
+#	libs needed to build [TEST]PRODUCT
+PROD_LIBS := ca Com
+
+TESTPROD := catime acctst
+
+include $(TOP)/config/RULES.Host
+
+#	EOF Makefile.Host

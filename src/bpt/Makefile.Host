@@ -1,0 +1,14 @@
+#	Makefile.Host for base/src/bpt
+#
+
+TOP = ../../..
+include $(TOP)/config/CONFIG_BASE
+
+INC := cvtTable.h
+
+SRCS := makeBpt.c
+PROD := makeBpt
+
+include $(TOP)/config/RULES.Host
+
+#	EOF Makefile.Host for base/src/bpt

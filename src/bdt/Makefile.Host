@@ -1,0 +1,10 @@
+TOP = ../../..
+include $(TOP)/config/CONFIG_BASE
+
+INC := bdt.h
+
+LIBSRCS := bdt.c
+
+LIBRARY := Bdt
+
+include $(TOP)/config/RULES.Host

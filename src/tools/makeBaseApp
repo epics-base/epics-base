@@ -840,11 +840,12 @@ do
     fi
     if [ -d iocBoot/ioc${APPNAME} ]; then continue; fi
     mkdir iocBoot/ioc${APPNAME}
+    echo "iocBoot/ioc${APPNAME}/Makefile must be edited to define target architecture"
     cd iocBoot/ioc${APPNAME}
 	cat > Makefile <<-\END
 		TOP = ../..
 		include $(TOP)/config/CONFIG_APP
-		ARCH = ???
+		ARCH = <replace this with correct architecture>
 		include $(TOP)/config/RULES.ioc
 	END
 	sed -e "s/USER/${USER}/" \

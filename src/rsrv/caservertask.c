@@ -1,0 +1,263 @@
+/*	@(#)caservertask.c
+ *   $Id$
+ *	Author:	Jeffrey O. Hill
+ *		hill@luke.lanl.gov
+ *		(505) 665 1831
+ *	Date:	5-88
+ *
+ *	Experimental Physics and Industrial Control System (EPICS)
+ *
+ *	Copyright 1991, the Regents of the University of California,
+ *	and the University of Chicago Board of Governors.
+ *
+ *	This software was produced under  U.S. Government contracts:
+ *	(W-7405-ENG-36) at the Los Alamos National Laboratory,
+ *	and (W-31-109-ENG-38) at Argonne National Laboratory.
+ *
+ *	Initial development by:
+ *		The Controls and Automation Group (AT-8)
+ *		Ground Test Accelerator
+ *		Accelerator Technology Division
+ *		Los Alamos National Laboratory
+ *
+ *	Co-developed with
+ *		The Controls and Computing Group
+ *		Accelerator Systems Division
+ *		Advanced Photon Source
+ *		Argonne National Laboratory
+ *
+ * 	Modification Log:
+ * 	-----------------
+ *	.01 joh	030891	now saves old client structure for later reuse
+ */
+
+#include <vxWorks.h>
+#include <lstLib.h>
+#include <taskLib.h>
+#include <types.h>
+#include <socket.h>
+#include <in.h>
+#include <db_access.h>
+#include <task_params.h>
+#include <server.h>
+
+
+/*
+ *
+ *	req_server()
+ *
+ *	CA server task
+ *
+ *	Waits for connections at the CA port and spawns a task to
+ *	handle each of them
+ *
+ */
+void 
+req_server()
+{
+	struct sockaddr_in 	serverAddr;	/* server's address */
+	FAST struct client 	*client;
+	FAST int        	status;
+	FAST int        	i;
+
+	if (IOC_sock != 0 && IOC_sock != ERROR)
+		if ((status = close(IOC_sock)) == ERROR)
+			logMsg("Unable to close open master socket\n");
+
+	/*
+	 * Open the socket. Use ARPA Internet address format and stream
+	 * sockets. Format described in <sys/socket.h>.
+	 */
+	if ((IOC_sock = socket(AF_INET, SOCK_STREAM, 0)) == ERROR) {
+		logMsg("Socket creation error\n");
+		printErrno(errnoGet());
+		taskSuspend(0);
+	}
+	
+	/* Zero the sock_addr structure */
+	bfill(&serverAddr, sizeof(serverAddr), 0);
+	serverAddr.sin_family = AF_INET;
+	serverAddr.sin_port = CA_SERVER_PORT;
+
+	/* get server's Internet address */
+	if (bind(IOC_sock, &serverAddr, sizeof(serverAddr)) == ERROR) {
+		logMsg("Bind error\n");
+		printErrno(errnoGet());
+		close(IOC_sock);
+		taskSuspend(0);
+	}
+
+	/* listen and accept new connections */
+	if (listen(IOC_sock, 10) == ERROR) {
+		logMsg("Listen error\n");
+		printErrno(errnoGet());
+		close(IOC_sock);
+		taskSuspend(0);
+	}
+
+	while (TRUE) {
+		if ((i = accept(IOC_sock, NULL, 0)) == ERROR) {
+			logMsg("Accept error\n");
+			printErrno(errnoGet());
+			taskSuspend(0);
+		} else {
+			status = taskSpawn(CA_CLIENT_NAME,
+					   CA_CLIENT_PRI,
+					   CA_CLIENT_OPT,
+					   CA_CLIENT_STACK,
+					   camsgtask,
+					   i);
+			if (status == ERROR) {
+				logMsg("Unable to spawn network server\n");
+				printErrno(errnoGet());
+			}
+		}
+	}
+}
+
+
+/*
+ *
+ *	free_client()
+ *
+ */
+STATUS
+free_client(client)
+register struct client *client;
+{
+	if (client) {
+		/* remove it from the list of clients */
+		/* list delete returns no status */
+		LOCK_CLIENTQ;
+		lstDelete(&clientQ, client);
+		UNLOCK_CLIENTQ;
+		terminate_one_client(client);
+		LOCK_CLIENTQ;
+		lstAdd(&rsrv_free_clientQ, client);
+		UNLOCK_CLIENTQ;
+	} else {
+		LOCK_CLIENTQ;
+		while (client = (struct client *) lstGet(&clientQ))
+			terminate_one_client(client);
+
+		FASTLOCK(&rsrv_free_addrq_lck);
+		lstFree(&rsrv_free_addrq);
+		lstInit(&rsrv_free_addrq);
+		FASTUNLOCK(&rsrv_free_addrq_lck);
+
+		FASTLOCK(&rsrv_free_eventq_lck);
+		lstFree(&rsrv_free_eventq);
+		lstInit(&rsrv_free_eventq);
+		FASTUNLOCK(&rsrv_free_eventq_lck);
+
+		lstFree(&rsrv_free_clientQ);
+
+		UNLOCK_CLIENTQ;
+	}
+}
+
+
+/* 
+ * TERMINATE_ONE_CLIENT
+ */
+int 
+terminate_one_client(client)
+register struct client *client;
+{
+	FAST int        servertid = client->tid;
+	FAST int        tmpsock = client->sock;
+	FAST int        status;
+	FAST struct event_ext *pevext;
+	FAST struct channel_in_use *pciu;
+
+	if (client->proto == IPPROTO_TCP) {
+
+		logMsg("CA Connection %d Terminated\n", tmpsock);
+
+		/*
+		 * Server task deleted first since close() is not reentrant
+		 */
+		if (servertid != taskIdSelf() && servertid)
+			if (td(servertid) == ERROR) {	/* delete server */
+				if (errnoGet() != S_taskLib_TASK_ID_ERROR)
+					printErrno(errnoGet());
+			}
+		pciu = (struct channel_in_use *) & client->addrq;
+		while (pciu = (struct channel_in_use *) pciu->node.next)
+			while (pevext = (struct event_ext *) lstGet(&pciu->eventq)) {
+
+				status = db_cancel_event(pevext + 1);
+				if (status == ERROR)
+					taskSuspend(0);
+				FASTLOCK(&rsrv_free_eventq_lck);
+				lstAdd(&rsrv_free_eventq, pevext);
+				FASTUNLOCK(&rsrv_free_eventq_lck);
+			}
+
+		if (client->evuser) {
+			status = db_close_events(client->evuser);
+			if (status == ERROR)
+				taskSuspend(0);
+		}
+		if (tmpsock != NONE)
+			if ((status = close(tmpsock)) == ERROR)	/* close socket	 */
+				logMsg("Unable to close open TCP client socket\n");
+	}
+	FASTLOCK(&rsrv_free_addrq_lck);
+	/* free dbaddr str */
+	lstExtract(&client->addrq,
+		   client->addrq.node.next,
+		   client->addrq.node.previous,
+		   &rsrv_free_addrq);
+	FASTUNLOCK(&rsrv_free_addrq_lck);
+
+	return OK;
+}
+
+
+/*
+ *	client_stat()
+ *
+ */
+STATUS
+client_stat()
+{
+	FAST struct client *client;
+	NODE           *addr;
+	struct sockaddr_in *psaddr;
+
+
+	LOCK_CLIENTQ;
+	client = (struct client *) lstNext(&clientQ);
+	while (client) {
+		char	*pproto;
+
+		if(client->proto == IPPROTO_UDP){
+			pproto = "UDP";
+		}
+		else if(client->proto == IPPROTO_TCP){
+			pproto = "TCP";
+		}
+		else{
+			pproto = "UKN";
+		}
+
+		printf("Socket %d Protocol %s\n", client->sock, pproto);
+		psaddr = &client->addr;
+		printf("\tRemote address %u.%u.%u.%u Remote port %d\n",
+		       (psaddr->sin_addr.s_addr & 0xff000000) >> 24,
+		       (psaddr->sin_addr.s_addr & 0x00ff0000) >> 16,
+		       (psaddr->sin_addr.s_addr & 0x0000ff00) >> 8,
+		       (psaddr->sin_addr.s_addr & 0x000000ff),
+		       psaddr->sin_port);
+		printf("\tChannel count %d\n", lstCount(&client->addrq));
+		addr = (NODE *) & client->addrq;
+		while (addr = lstNext(addr))
+			printf("\t%s ", ((struct db_addr *) (addr + 1))->precord);
+		printf("\n");
+
+		client = (struct client *) lstNext(client);
+	}
+	UNLOCK_CLIENTQ;
+	return lstCount(&clientQ);
+}

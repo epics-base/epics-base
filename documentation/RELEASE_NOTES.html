@@ -17,151 +17,188 @@
 </center>
 
 <h4>dbtr</h4>
-<p>Don't seg-fault if no argument is passed to dbtr.</p> 
+
+<p>Don't seg-fault if no argument is passed to dbtr.</p>
 
 <h4>New build targets.</h4>
-<p>New files have been created in configure/os to allow CROSS_COMPILER_TARGET_ARCHS
-to include solaris-sparc-gnu and solaris-sparc-debug when EPICS_HOST_ARCH is solaris-sparc.
-Also CROSS_COMPILER_TARGET_ARCHS can now include linux-x86-debug when EPICS_HOST_ARCH
-is linux-x86.</p> 
+
+<p>New files have been created in configure/os to allow
+CROSS_COMPILER_TARGET_ARCHS to include solaris-sparc-gnu and
+solaris-sparc-debug when EPICS_HOST_ARCH is solaris-sparc. Also
+CROSS_COMPILER_TARGET_ARCHS can now include linux-x86-debug when
+EPICS_HOST_ARCH is linux-x86.</p>
 
 <h4>New epicsString.h function</h4>
+
 <p>A new function epicsStrnCaseCmp has been added. It is like strncmp except
 that it ignores case.</p>
 
 <h4>R3.13 compatability files</h4>
 
-<p>R3.13 compatability files are no longer generated automatically
-during the build. configure/CONFIG_SITE contains two new
-macros for building compatibility files. 
-They are set to NO but can be set to YES.
-The macros are:</p>
+<p>R3.13 compatability files are no longer generated automatically during the
+build. configure/CONFIG_SITE contains two new macros for building
+compatibility files. They are set to NO but can be set to YES. The macros
+are:</p>
 <ul>
-   <li>COMPAT_TOOLS_313
-      <p>This will install the compatibility files needed to build
-         R3.13 extensions built with this R3.14 base.</p>
-   </li>
-   <li>COMPAT_313
-      <p>This will install the compatibility files needed to build
-         R3.13 extensions and IOC applications built with this R3.14 base.</p>
-   </li>
+  <li>COMPAT_TOOLS_313
+    <p>This will install the compatibility files needed to build R3.13
+    extensions built with this R3.14 base.</p>
+  </li>
+  <li>COMPAT_313
+    <p>This will install the compatibility files needed to build R3.13
+    extensions and IOC applications built with this R3.14 base.</p>
+  </li>
 </ul>
 
 <h4>APS Virtual LINAC Templates</h4>
 
-<p>A new set of templates has been included in R3.14.5 to
-implement a Virtual LINAC in an ioc using databases and
-sequence programs. The Virtual LINAC simulates the generation
-and transmission of an electron beam down a LINAC. Several
-steering coils, BPMs, and other typical accelerator components
-are simulated to provide a realistic interaction between the
-operator and the "LINAC". Since it is an entirely soft application,
-it will work on any platform. An medm display is provided as the
-primary GUI. It can also be used to experiment with other CA
-client tools.</p>
+<p>A new set of templates has been included in R3.14.5 to implement a Virtual
+LINAC in an ioc using databases and sequence programs. The Virtual LINAC
+simulates the generation and transmission of an electron beam down a LINAC.
+Several steering coils, BPMs, and other typical accelerator components are
+simulated to provide a realistic interaction between the operator and the
+"LINAC". Since it is an entirely soft application, it will work on any
+platform. An medm display is provided as the primary GUI. It can also be used
+to experiment with other CA client tools.</p>
 
 <p>To install the templates, use the following commands:</p>
- 
-<pre>
-  mkdir <top>
+<pre>  mkdir <top>
   cd <top>
   &lt;base&gt;/bin/&lt;arch&gt;/makeBaseApp.pl -t vlinac vlinac
-  &lt;base&gt;/bin/&lt;arch&gt;/makeBaseApp.pl -i -t vlinac vlinac
-</pre>
+  &lt;base&gt;/bin/&lt;arch&gt;/makeBaseApp.pl -i -t vlinac vlinac</pre>
 
 <p>For further information, see:</p>
-
-<pre>
-  &lt;top&gt;/vlinacApp/misc/README
-  &lt;top&gt;/vlinacApp/misc/Virtual_Linac_Info.pdf
-</pre>
+<pre>  &lt;top&gt;/vlinacApp/misc/README
+  &lt;top&gt;/vlinacApp/misc/Virtual_Linac_Info.pdf</pre>
 
 <h4>Stringin record time-stamp soft device support</h4>
-Add simple device support for converting time to nicely-formatted string using
-INP field as epicsTimeToStrftime format string:
-<pre>
-record(stringin, "$(user):now")
+Add simple device support for converting time to nicely-formatted string
+using INP field as epicsTimeToStrftime format string:
+<pre>record(stringin, "$(user):now")
 {
     field(DESC, "Current time and date")
     field(DTYP, "Soft Timestamp")
     field(INP, "@%Y-%m-%d %H:%M:%S.%03f")
-}
-</pre>
+}</pre>
 
+<h4>Channel Access Portable Server (used by the CA gateway and others)</h4>
+<ul>
+  <li>Fixed failure occurring if client disconnected while asynchronous PV
+    attach was outstanding, or, for enumerated native type process variables,
+    while enumerated string table cache asynchronous IO was outstanding. This
+    problem does not occur in IOCs because they are not yet based on the
+    portable server library. This bug was first detected by Ken Evans in the
+    production CA gateway at the APS.</li>
+</ul>
 
-<h4>Channel Access Portable Server</h4>
+<h4>Channel Access Original Server (used in IOC) </h4>
+<ul>
+  <li>A bug causing the server threads to become stuck in a state where they
+    process requests, but no longer send responses, if in the past the system
+    was experiencing network buffer starvation has been fixed. This problem
+    existed probably in all previous EPICS releases, but network buffer
+    starvation issues have become more prevalent starting with Tornado
+  2.0.</li>
+  <li>Users noticed that UDP related output from the casr diagnostic was
+    easily confused with the information from casr for TCP circuits. This has
+    been fixed.</li>
+</ul>
 
-<p>Fixed failure occurring if client disconnected while asynchronous PV
-attach was outstanding, or, for enumerated native type process variables,
-while enumerated string table cache asynchronous IO was outstanding. This
-problem does not occur in IOCs because they are not yet based on the portable
-server library. This bug was first detected by Ken Evans in the production CA
-gateway at the APS.</p>
-
-<h4>CA Client Library's Search Datagram Interval Exponential Backoff
-Flawed</h4>
-
-<p>CA's search datagram interval exponential backoff should look like
-this:</p>
-
-<p>30mS, 60mS, 120mS, 240mS,...</p>
-
-<p>Or a similar behavior with higher initial delays resulting from a round
-trip time delay estimate greater than 30 mS. However, instead the backoff
-delays looked like this</p>
-
-<p>30 mS, 30mS, 30mS, 30mS, 30mS, 30mS, 60mS, 120mS, 240mS ...</p>
-
-<p>This also impacts what CA does when a channel disconnects or there is a
-beacon anomaly ( a new server event). The intent was to start the search
-delay for disconnected channels in these situations at 2 seconds but due to
-the above bug the delay was more like 64 mS. </p>
-
-<p>This bug appears only in earlier versions of EPICS R3.14</p>
+<h4>Channel Access Client Library</h4>
+<ul>
+  <li>Disconnect behavior is now more robust in response to congestion. When
+    a channel times out, the channel is disconnected, but not the circuit.
+    The circuit is only disconnected when the internal TCP/IP keepalive timer
+    fires or if teh IOC reboots with the same IP address. This will result in
+    less UDP search traffic during periods of congestion and also less TCP/IP
+    circuit thrashing. A side effect will be that if a user turns off a
+    vxWorks IOC, changes its IP address, and then reboots it, then the user
+    will need to wait out the full duration of the TCP/IP keepalive timer
+    before the client will reconnect. This is undoubtedly a negative side
+    effect, but it is felt that the improvements in robustness justify the
+    confusion resulting in the small number of situations that a vxWorks
+    IOC's IP address is changed.</li>
+  <li>In previous releases if a directory service returns the address of a CA
+    server that does <em>not</em> have the PV that is being sought then the
+    client library could end up sending search requests at a very high rate.
+    This problem has been fixed by placing all disconnected channels in a
+    queue implementing a short delay prior to there being ready again for
+    periodic name resolution requests.</li>
+  <li>In previous R3.14 releases the CA client library's search datagram
+    interval exponential backoff was flawed. CA's search datagram interval
+    exponential backoff should proceed following the sequence 30mS, 60mS,
+    120mS, 240mS, and so on. Or a similar behavior with higher initial delays
+    resulting from a round trip time delay estimate greater than 30 mS.
+    However, instead the backoff delays were 30mS, 30mS, 30mS, 30mS, 30mS,
+    30mS, 60mS, 120mS, 240mS, and on. This bug also impacted what CA does
+    when a channel disconnects or there is a beacon anomaly ( a new server
+    event). The intent was to start the search delay for disconnected
+    channels in these situations at 2 seconds but due to the above bug the
+    delay was more like 64mS. This bug appears only in earlier versions of
+    EPICS R3.14.</li>
+</ul>
 
 <h4>dbCa</h4>
+
 <p>Better error messages are now generated.</p>
-<p>dbCaPutLinkCallback is a new function.
-It provides the ability to implement record/driver
-support that does not complete until a channel access put callback
-has completed. See the Application Developer's Guide for details.</p>
-<p>dbCaAddLinkCallback is a new function.
-The caller can provide a connect and monitor callback.
-See the Application Developer's Guide for details.</p>
+
+<p>dbCaPutLinkCallback is a new function. It provides the ability to
+implement record/driver support that does not complete until a channel access
+put callback has completed. See the Application Developer's Guide for
+details.</p>
+
+<p>dbCaAddLinkCallback is a new function. The caller can provide a connect
+and monitor callback. See the Application Developer's Guide for details.</p>
+
 <h4>devXxSoftCallback</h4>
-<p>Soft device that uses dbCaPutLinkCallback has been written for
-ao, bo, calcout, longout, mbbo, mbboDirect, and stringout records.
-The dbd definitions have been added to devSoft.dbd.
-In other to use the new support the DTYP field is defined:</p>
+
+<p>Soft device that uses dbCaPutLinkCallback has been written for ao, bo,
+calcout, longout, mbbo, mbboDirect, and stringout records. The dbd
+definitions have been added to devSoft.dbd. In other to use the new support
+the DTYP field is defined:</p>
 <pre>    field(DTYP,"Async Soft Channel")</pre>
+
 <h4>calcoutRecord</h4>
-<p>The CALC and OCAL fields now have a size of 40 so that they are the
-same as the calcRecord.</p>
-<p>calcoutRecord now has associated device support. The default support
-will act just like the old calcout. Support bis also available that uses
+
+<p>The CALC and OCAL fields now have a size of 40 so that they are the same
+as the calcRecord.</p>
+
+<p>calcoutRecord now has associated device support. The default support will
+act just like the old calcout. Support bis also available that uses
 dbCaPutLinkCallback.</p>
+
 <h4>mbbiRecord</h4>
+
 <p>The fields ZRST,...,FFST are now special(SPC_MOD).</p>
+
 <h4>mbboRecord</h4>
-<p>The fields ZRST,...,FFST are now special(SPC_MOD).
-init_record now checks to see if state strings or values are defined
-during pass 0. Previously if another record had a DBR_STRING link to
-an mbboRecord it thought the field was a USHORT instead of an ENUM.</p>
+
+<p>The fields ZRST,...,FFST are now special(SPC_MOD). init_record now checks
+to see if state strings or values are defined during pass 0. Previously if
+another record had a DBR_STRING link to an mbboRecord it thought the field
+was a USHORT instead of an ENUM.</p>
 
 <h4>epicsString</h4>
-<p>A new function has been added epicsStrPrintEscaped, which converts
-the standard C escape characters to \xxx characters.</p>
+
+<p>A new function has been added epicsStrPrintEscaped, which converts the
+standard C escape characters to \xxx characters.</p>
 
 <h4>IOC shell system command</h4>
-<p>The 'system' command has been added to the IOC shell.  To enable this command, add <code>registrar(iocshSystemCommand)</code> to an application database description file.</p>
+
+<p>The 'system' command has been added to the IOC shell.  To enable this
+command, add <code>registrar(iocshSystemCommand)</code> to an application
+database description file.</p>
 
 <center>
 <h2>Changes since 3.14.3</h2>
 </center>
 
 <h4>sCalcPostfix</h4>
+
 <p>This has been removed from base.</p>
-<h4>Format string checking</h4</h4>
+
+<h4>Format string checking</h4>
+
 <p>'printf-style' functions like errlogPrintf have their arguments verified
 against their format string when compiled with gcc.</p>
 

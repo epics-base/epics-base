@@ -21,8 +21,8 @@ PROD_HOST = caDirServ
 
 include $(TOP)/configure/RULES
 
-pcaDirServ: $(PROD_OBJS) $(PRODDEPLIBS)
-	$(PURIFY) $(PROD_LINKER) $(PROD_OBJS) $(LDLIBS)
+pcaDirServ: $(PRODUCT_OBJS) $(PROD_RESS) $(PROD_DEPLIBS)
+	$(PURIFY_$(OS_CLASS)) $(LINK.cpp)
 
 clean::
 	@$(RM) caDirServ

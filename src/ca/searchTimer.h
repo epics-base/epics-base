@@ -24,7 +24,7 @@ class udpiiu;
 
 class searchTimer : private epicsTimerNotify {
 public:
-    searchTimer ( udpiiu &, epicsTimerQueue &, class epicsMutex & );
+    searchTimer ( udpiiu &, epicsTimerQueue &, class udpMutex & );
     virtual ~searchTimer ();
     void notifySearchResponse ( unsigned short retrySeqNo, const epicsTime & currentTime );
     void resetPeriod ( double delayToNextTry );
@@ -34,7 +34,7 @@ private:
     double period; /* period between tries */
     double roundTripDelayEstimate;
     epicsTimer & timer;
-    class epicsMutex & mutex;
+    class udpMutex & mutex;
     udpiiu & iiu;
     unsigned framesPerTry; /* # of UDP frames per search try */
     unsigned framesPerTryCongestThresh; /* one half N tries w congest */

@@ -34,7 +34,7 @@ static const double maxSearchPeriod = 5.0; // seconds
 //
 // searchTimer::searchTimer ()
 //
-searchTimer::searchTimer ( udpiiu &iiuIn, epicsTimerQueue &queueIn, epicsMutex &mutexIn ) :
+searchTimer::searchTimer ( udpiiu &iiuIn, epicsTimerQueue &queueIn, udpMutex &mutexIn ) :
     period ( initialRoundTripEstimate * 2.0 ),
     roundTripDelayEstimate ( initialRoundTripEstimate ),
     timer ( queueIn.createTimer () ),
@@ -68,7 +68,7 @@ void searchTimer::resetPeriod ( double delayToNextTry )
     bool start;
 
     {
-        epicsGuard < epicsMutex > locker ( this->mutex );
+        epicsGuard < udpMutex > locker ( this->mutex );
 
         // upper bound
         double newPeriod = this->roundTripDelayEstimate * 2.0;
@@ -157,7 +157,7 @@ void searchTimer::notifySearchResponse ( unsigned short retrySeqNoIn,
     bool reschedualNeeded;
 
     {
-        epicsGuard < epicsMutex > locker ( this->mutex );
+        epicsGuard < udpMutex > locker ( this->mutex );
 
         if ( this->retrySeqAtPassBegin <= retrySeqNoIn ) {
             if ( this->searchResponses < UINT_MAX ) {
@@ -204,7 +204,7 @@ void searchTimer::notifySearchResponse ( unsigned short retrySeqNoIn,
 //
 epicsTimerNotify::expireStatus searchTimer::expire ( const epicsTime & currentTime ) // X aCC 361
 {
-    epicsGuard < epicsMutex > locker ( this->mutex );
+    epicsGuard < udpMutex > locker ( this->mutex );
     unsigned nFrameSent = 0u;
     unsigned nChanSent = 0u;
 

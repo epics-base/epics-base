@@ -68,54 +68,54 @@ GLBLTYPE LIST			rsrv_free_eventq;
 GLBLTYPE FAST_LOCK		rsrv_free_addrq_lck;
 GLBLTYPE FAST_LOCK		rsrv_free_eventq_lck;
 
-#define LOCK_SEND(CLIENT)\
+#define LOCK_SEND(CLIENT) \
 FASTLOCK(&(CLIENT)->send.lock);
 
-#define UNLOCK_SEND(CLIENT)\
+#define UNLOCK_SEND(CLIENT) \
 FASTUNLOCK(&(CLIENT)->send.lock);
 
-#define EXTMSGPTR(CLIENT)\
+#define EXTMSGPTR(CLIENT) \
  ((struct extmsg *) &(CLIENT)->send.buf[(CLIENT)->send.stk])
 
-#define	ALLOC_MSG(CLIENT, EXTSIZE)\
-  (struct extmsg *)\
+#define	ALLOC_MSG(CLIENT, EXTSIZE) \
+  (struct extmsg *) \
   ((CLIENT)->send.stk + (EXTSIZE) + sizeof(struct extmsg) > \
-    (CLIENT)->send.maxstk ? send_msg_nolock(CLIENT): NULL,\
-      (CLIENT)->send.stk + (EXTSIZE) + sizeof(struct extmsg) >\
+    (CLIENT)->send.maxstk ? send_msg_nolock(CLIENT): NULL, \
+      (CLIENT)->send.stk + (EXTSIZE) + sizeof(struct extmsg) > \
         (CLIENT)->send.maxstk ? NULL : EXTMSGPTR(CLIENT))
 
-#define END_MSG(CLIENT)\
+#define END_MSG(CLIENT) \
   (CLIENT)->send.stk += sizeof(struct extmsg) + EXTMSGPTR(CLIENT)->m_postsize
 
 /* send with lock */
-#define send_msg(CLIENT)\
+#define send_msg(CLIENT) \
   {LOCK_SEND(CLIENT); send_msg_nolock(CLIENT); UNLOCK_SEND(CLIENT)};
 
 /* send with empty test */
-#define send_msg_nolock(CLIENT)\
+#define send_msg_nolock(CLIENT) \
 !(CLIENT)->send.stk ? FALSE: send_msg_actual(CLIENT)
 
 /* vanilla send */
-#define send_msg_actual(CLIENT)\
-(\
-  (CLIENT)->send.cnt = (CLIENT)->send.stk + sizeof((CLIENT)->send.cnt),\
-  (CLIENT)->send.stk = 0,\
-  MPDEBUG==2?logMsg("Sent a message of %d bytes\n",(CLIENT)->send.cnt):NULL,\
+#define send_msg_actual(CLIENT) \
+( \
+  (CLIENT)->send.cnt = (CLIENT)->send.stk + sizeof((CLIENT)->send.cnt), \
+  (CLIENT)->send.stk = 0, \
+  MPDEBUG==2?logMsg("Sent a message of %d bytes\n",(CLIENT)->send.cnt):NULL, \
   sendto (	(CLIENT)->sock, \
 		&(CLIENT)->send.cnt, \
 		(CLIENT)->send.cnt, \
-		0,\
-		&(CLIENT)->addr,\
-		sizeof((CLIENT)->addr))==ERROR?LOG_SEND_ERROR:TRUE\
+		0, \
+		&(CLIENT)->addr, \
+		sizeof((CLIENT)->addr))==ERROR?LOG_SEND_ERROR:TRUE \
 )
 
-#define LOG_SEND_ERROR\
-(logMsg("Send_msg() unable to send, connection broken? %\n"),\
-printErrno(errnoGet()),\
+#define LOG_SEND_ERROR \
+(logMsg("Send_msg() unable to send, connection broken? %\n"), \
+printErrno(errnoGet()), \
 FALSE)
 
-#define LOCK_CLIENTQ\
+#define LOCK_CLIENTQ \
 FASTLOCK(&clientQlock)
 
-#define UNLOCK_CLIENTQ\
+#define UNLOCK_CLIENTQ \
 FASTUNLOCK(&clientQlock)

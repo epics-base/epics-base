@@ -30,6 +30,7 @@
  * .01  09-05-92	rcz	initial version
  * .02  09-10-92	rcz	changed return from void to long
  * .03  09-10-92	rcz	changed completely
+ * .04  09-10-92	rcz	bug - moved call to setMasterTimeToSelf later
  *
  */
 
@@ -54,11 +55,11 @@ int	callNumber;
 {
 	switch (callNumber) {
 	case INITHOOKatBeginning :
+	    break;
+	case INITHOOKafterSetEnvParams :
 	    /* Note: EPICS_IOCMCLK_INET enabled in the resource.def file*/
 	    /* will override this call to setMasterTimeToSelf */
 	    setMasterTimeToSelf();
-	    break;
-	case INITHOOKafterSetEnvParams :
 	    break;
 	case INITHOOKafterGetResources :
 	    break;

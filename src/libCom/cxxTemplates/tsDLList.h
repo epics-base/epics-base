@@ -170,6 +170,8 @@ public:
 		tsDLIterConstBD (const class tsDLIterConstBD<T> &copyIn);
 #	endif
 
+    bool valid () const;
+
     //
     // end of the list constant
     //
@@ -212,6 +214,8 @@ public:
 #	if defined(_MSC_VER) && _MSC_VER < 1200
 		tsDLIterBD (const class tsDLIterBD<T> &copyIn);
 #	endif
+
+    bool valid () const;
 
     //
     // end of the list constant
@@ -755,6 +759,12 @@ inline tsDLIterConstBD<T> tsDLIterConstBD<T>::operator -- (int)
 	return tmp;
 }
 
+template <class T>
+inline const tsDLIterBD<T> tsDLIterBD<T>::valid ()
+{
+    return this->pEntry ? true : false;
+}
+
 //
 // tsDLIterConstBD<T>::eol
 //
@@ -876,6 +886,12 @@ inline tsDLIterBD<T> tsDLIterBD<T>::operator -- (int)
 	tsDLIterBD<T> tmp = *this;
     this->tsDLIterConstBD<T>::operator -- (1);
 	return tmp;
+}
+
+template <class T>
+inline const tsDLIterBD<T> tsDLIterBD<T>::valid ()
+{
+    return this->tsDLIterConstBD<T>::valid ();
 }
 
 //

@@ -16,6 +16,8 @@
 #         be touched to indicate that a certain portion of the build
 #         is complete.
 #
+# $Log$
+#
 
 EPICS=..
 include $(EPICS)/config/CONFIG_BASE

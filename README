@@ -1,5 +1,7 @@
+$Id$
 
 3.12 EPICS BASE release notes and build instructions.
+	- By Matthew Needes
 
 ----------------------------------------------------------------------------
    Part 1 - Configuring and Building EPICS Base

@@ -4,6 +4,8 @@
 # "Diabolical" EPICS Makefile For Top-Level Subdirectory Recursions
 #    by Matthew Needes and Mike Bordua
 #
+# $Log$
+#
 
 EPICS=..
 include $(EPICS)/config/CONFIG

@@ -128,7 +128,8 @@ private:
 class exScanTimer : public osiTimer {
 public:
 	exScanTimer (double delayIn, exPV &pvIn) : 
-		pv(pvIn), osiTimer(delayIn) {}
+		osiTimer(delayIn), pv(pvIn) {}
+	~exScanTimer();
 	void expire ();
 	osiBool again() const;
 	const osiTime delay() const;
@@ -141,6 +142,8 @@ private:
 // exPV
 //
 class exPV : public casPV, public tsSLNode<exPV> {
+	// allow the exScanTimer destructor to set dangling pScanTimer pointer to NULL
+	friend exScanTimer::~exScanTimer(); 
 public:
 	exPV (caServer &cas, pvInfo &setup, aitBool preCreateFlag, aitBool scanOn);
 	virtual ~exPV();
@@ -407,7 +410,7 @@ private:
 //
 class exOSITimer : public osiTimer {
 public:
-	exOSITimer() : osiTimer(osiTime(0.010)) {} // 10 mSec
+	exOSITimer(double delay) : osiTimer(osiTime(delay)) {}
 
 	//
 	// this is a noop that postpones the timer expiration
@@ -416,6 +419,7 @@ public:
 	//
 	void destroy();
 };
+
 
 //
 // exAsyncWriteIO
@@ -426,7 +430,7 @@ public:
 	// exAsyncWriteIO() 
 	//
 	exAsyncWriteIO(const casCtx &ctxIn, exAsyncPV &pvIn, gdd &valueIn) :
-		casAsyncWriteIO(ctxIn), pv(pvIn), value(valueIn) 
+		casAsyncWriteIO(ctxIn), exOSITimer(0.1), pv(pvIn), value(valueIn)
 	{
 		this->value.reference();
 	}
@@ -460,7 +464,7 @@ public:
 	// exAsyncReadIO()
 	//
 	exAsyncReadIO(const casCtx &ctxIn, exAsyncPV &pvIn, gdd &protoIn) :
-		casAsyncReadIO(ctxIn), pv(pvIn), proto(protoIn) 
+		casAsyncReadIO(ctxIn), exOSITimer(0.1), pv(pvIn), proto(protoIn)
 	{
 		this->proto.reference();
 	}
@@ -477,7 +481,7 @@ public:
 	// see exAsyncPV.cc
 	//
 	void expire();
-		
+
 	const char *name() const;
 
 private:
@@ -496,7 +500,7 @@ public:
 	//
 	exAsyncExistIO(const pvInfo &pviIn, const casCtx &ctxIn,
 			exServer &casIn) :
-		casAsyncPVExistIO(ctxIn), pvi(pviIn), cas(casIn) {}
+		casAsyncPVExistIO(ctxIn), exOSITimer(0.00001), pvi(pviIn), cas(casIn) {}
 
 	~exAsyncExistIO()
 	{
@@ -528,8 +532,8 @@ public:
 	//
 	exAsyncCreateIO(pvInfo &pviIn, exServer &casIn, 
 		const casCtx &ctxIn, aitBool scanOnIn) :
-		casAsyncPVCreateIO(ctxIn), pvi(pviIn), 
-			cas(casIn), scanOn(scanOnIn) {}
+		casAsyncPVCreateIO(ctxIn), exOSITimer(0.00001), 
+			pvi(pviIn), cas(casIn), scanOn(scanOnIn) {}
 
 	~exAsyncCreateIO()
 	{

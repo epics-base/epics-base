@@ -23,7 +23,6 @@ GNU_TARGET_LIB_DIR = $(GNU_DIR)/$(GNU_TARGET)/lib
 
 export GCC_EXEC_PREFIX = $(GNU_LIB)/gcc-lib/
 
-CROSS_CPPFLAGS = -nostdinc
 CROSS_INCLUDES = $(addprefix -I,$(GNU_TARGET_INCLUDE_DIR))
 CROSS_LDFLAGS = $(addprefix -L,$(GNU_TARGET_LIB_DIR))
 

@@ -34,6 +34,8 @@
  *                              referenced little more than National 
  *                              Instruments and Bob Daly (from ANL) in its
  *                              credits.
+ * .02 12-03-91		jrw	changed the setup of the ibLink and niLink structs
+ *
  ******************************************************************************
  *
  * Notes:
@@ -41,6 +43,7 @@
  *  The internals of the 1014D are such that the DMAC can NEVER be hard-reset
  *  unless the SYSRESET* vme line is asserted.  The LMR mode allows the
  *  initGpib() function to reset the DMAC properly.
+ *
  */
 
 /******************************************************************************
@@ -49,15 +52,13 @@
  * from a support functions.
  *
  ******************************************************************************/
-#define GPIB_SHORT_OFF	0x5000	/* The first address of link 0's region */
-				/* Each link uses 0x0200 bytes */
-#define GPIB_NUM_LINKS  4	/* Max number of NI GPIB ports allowed */
-#define GPIB_IVEC_BASE  100     /* Vectored interrupts (2 used for each link) */
-#define GPIB_IRQ_LEVEL  5       /* IRQ level */
+#define NIGPIB_SHORT_OFF  0x5000	/* First address of link 0's region */
+					/* Each link uses 0x0200 bytes */
+#define NIGPIB_NUM_LINKS  4	/* Max number of NI GPIB ports allowed */
+#define NIGPIB_IVEC_BASE  100	/* Vectored interrupts (2 used for each link) */
+#define NIGPIB_IRQ_LEVEL  5	/* IRQ level */
 /**************** end of stuff that does not belong here **********************/
-
-
-
+
 #include <vxWorks.h>
 #include <types.h>
 #include <iosLib.h>
@@ -82,7 +83,6 @@ long	initGpib();
 int	niIrq();
 int	niIrqError();
 int	niTmoHandler();
-int	ibLinkTask();
 int	srqIntEnable();
 int	srqIntDisable();
 
@@ -94,9 +94,22 @@ int	writeIbCmd();
 int	ioctlIb();
 int	srqPollInhibit();
 
+int	ibLinkInit();
+int	ibLinkStart();
+int	ibLinkTask();
+
 int	ibDebug = 0;		/* Turns on debug messages from this driver */
+int	bbibDebug = 0;		/* Turns on ONLY bitbus related messages */
 int	ibSrqDebug = 0;		/* Turns on ONLY srq related debug messages */
 
+static	int	defaultTimeout = 60;	/* in 60ths, for GPIB timeouts */
+
+static	char	init_called = 0;	/* To insure that init is done first */
+static	char	*short_base;		/* Base of short address space */
+static	char	*ram_base;		/* Base of the ram on the CPU board */
+
+static int timeoutSquelch = 0;	/* Used to quiet timeout msgs during polling */
+
 /******************************************************************************
  *
  * Generic driver block.  Epics uses it to call the init routine
@@ -149,21 +162,36 @@ struct	niLink {
   char		r_isr1;
   char		r_isr2;
   int		first_read;
+
+  struct ibLink	ibLink;
 };
 
-static	int	defaultTimeout = 60;	/* in 60ths, for GPIB timeouts */
-
-static	char	init_called = 0;	/* To insure that init is done first */
-static	char	*short_base;		/* Base of short address space */
-static	char	*ram_base;		/* Base of the ram on the CPU board */
-
-static	struct	ibLink	*pIbLink[GPIB_NUM_LINKS];	/* NULL if link not present */
-static	struct	niLink	*pNiLink[GPIB_NUM_LINKS];	/* NULL if link not present */
-static	int	pollInhibit[GPIB_NUM_LINKS][IBAPERLINK];	
+static	struct	niLink	*pNiLink[NIGPIB_NUM_LINKS];	/* NULL if link not present */
+static	int	pollInhibit[NIGPIB_NUM_LINKS][IBAPERLINK];	
 		/* 0=pollable, 1=user inhibited, 2=no device found */
+
+/******************************************************************************
+ *
+ * This structure is used to hold the hardware-specific information for a
+ * single Bit Bus GPIB link. They are dynamically allocated (and an ibLinkTask
+ * started for it) when an IOCTL command requests it.
+ *
+ * The IOCTL requests to initiate a BBGPIB_IO link comes from the device support
+ * init code.  When it finds a BBGPIB_IO link it issues an IOCTL for the link &
+ * bug-node specified in the record.  The driver will then initialize the 
+ * required data structures and start a link task for it.  It is OK to request
+ * the initialization of the same link more than 1 time, the driver will ignore
+ * all but the first request.
+ *
+ ******************************************************************************/
+struct  bbLink {
+  struct bbLink	*next;		/* Next BitBus link structure in list */
 
-static int timeoutSquelch = 0;	/* used to quiet timeout errors during polling */
+  struct ibLink	ibLink;		/* associated ibLink structure */
+};
 
+static	struct	bbLink	*rootBBLink = NULL; /* Head of bitbus structures */
+
 /******************************************************************************
  *
  * This function prints a message indicating the status of each possible GPIB
@@ -177,9 +205,9 @@ reportGpib()
 
   if (init_called)
   {
-    for (i=0; i< GPIB_NUM_LINKS; i++)
+    for (i=0; i< NIGPIB_NUM_LINKS; i++)
     {
-      if (pIbLink[i])
+      if (pNiLink[i])
       {
         logMsg("Link %d (address 0x%08.8X) present and initialized.\n", i, pNiLink[i]->ibregs);
       }
@@ -195,8 +223,7 @@ reportGpib()
   }
   return(OK);
 }
-
-
+
 /******************************************************************************
  *
  * Called by the iocInit processing.
@@ -237,20 +264,19 @@ initGpib()
     logMsg("Gpib driver package initializing\n");
     logMsg("short_base            0x%08.8X\n", short_base);
     logMsg("ram_base              0x%08.8X\n", ram_base);
-    logMsg("GPIB_SHORT_OFF        0x%08.8X\n", GPIB_SHORT_OFF);
-    logMsg("GPIB_NUM_LINKS        0x%08.8X\n", GPIB_NUM_LINKS);
+    logMsg("NIGPIB_SHORT_OFF        0x%08.8X\n", NIGPIB_SHORT_OFF);
+    logMsg("NIGPIB_NUM_LINKS        0x%08.8X\n", NIGPIB_NUM_LINKS);
   }
 
   /* When probing, send out a reset signal to reset the DMAC and the TLC */
   probeValue = D_LMR | D_SFL;
 
-  pibregs = (struct ibregs *)((unsigned int)short_base + GPIB_SHORT_OFF);
+  pibregs = (struct ibregs *)((unsigned int)short_base + NIGPIB_SHORT_OFF);
   /* Gotta do all the probing first because the 1014D's LMRs are shared :-( */
-  for (i=0; i<GPIB_NUM_LINKS; i++)
+  for (i=0; i<NIGPIB_NUM_LINKS; i++)
   {
     if (vxMemProbe(&(pibregs->cfg2), WRITE, 1, &probeValue) < OK)
     { /* no GPIB board present here */
-      pIbLink[i] = (struct ibLink *) NULL;
       pNiLink[i] = (struct niLink *) NULL;
 
       if (ibDebug)
@@ -262,41 +288,22 @@ initGpib()
       if (ibDebug)
 	logMsg("GPIB card found at address 0x%08.8X\n", pibregs);
 
-      if ((pIbLink[i] = (struct ibLink *) malloc(sizeof(struct ibLink))) == NULL)
+      if ((pNiLink[i] = (struct niLink *) malloc(sizeof(struct niLink))) == NULL)
       { /* This better never happen! */
         /* errMsg( BUG -- figure out how to use this thing ); */
-	logMsg("Can't malloc memory for link data structures!\n");
+	logMsg("Can't malloc memory for NI-link data structures!\n");
         return(ERROR);
       }
 
       /* Allocate and init the sems and linked lists */
-      pIbLink[i]->linkType = GPIB_IO;	/* spec'd in link.h */
-      pIbLink[i]->linkId = i;		/* link number */
-      pIbLink[i]->bug = -1;		/* this is not a bug link */
-      pIbLink[i]->srqIntFlag = 0;	/* no srq ints set now */
-      pIbLink[i]->linkEventSem = semCreate();
-      lstInit(&(pIbLink[i]->hiPriList)); /* init the list as empty */
-      pIbLink[i]->hiPriSem = semCreate();
-      semGive(pIbLink[i]->hiPriSem);
-      lstInit(&(pIbLink[i]->loPriList));
-      pIbLink[i]->loPriSem = semCreate();
-      semGive(pIbLink[i]->loPriSem);
-      pIbLink[i]->srqRing = rngCreate(SRQRINGSIZE * sizeof(struct srqStatus));
-      for (j=0; j<IBAPERLINK; j++)
-      {
-        pIbLink[i]->srqHandler[j] = NULL;	/* no handler is registered */
-	pIbLink[i]->deviceStatus[j] = IDLE;	/* assume device is IDLE */
-      }
+      pNiLink[i]->ibLink.linkType = GPIB_IO;	/* spec'd in link.h */
+      pNiLink[i]->ibLink.linkId = i;		/* link number */
+      pNiLink[i]->ibLink.bug = -1;		/* this is not a bug link */
+
+      ibLinkInit(&(pNiLink[i]->ibLink));	/* allocate the sems etc... */
 
       pibregs->cfg2 = D_SFL;	/* can't set all bits at same time */
       pibregs->cfg2 = D_SFL | D_SPAC | D_SC;	/* put board in operating mode */
-
-      if ((pNiLink[i] = (struct niLink *) malloc(sizeof(struct niLink))) == NULL)
-      {
-        /* errMsg( BUG -- figure out how to use this thing ); */
-        logMsg("Can't malloc memory for link data structures!\n");
-        return(ERROR);
-      }
 
       pNiLink[i]->ibregs = pibregs;
       pNiLink[i]->ioSem = semCreate();
@@ -317,7 +324,7 @@ initGpib()
   /* Bring up the cards (has to be done last because the 1014D has to have */
   /* both ports reset before either one is initialized.                    */
 
-  for (i=0; i<GPIB_NUM_LINKS; i++)
+  for (i=0; i<NIGPIB_NUM_LINKS; i++)
   {
     if (pNiLink[i] != NULL)
     {
@@ -345,11 +352,11 @@ initGpib()
 
       /* DMAC setup */
 
-      pNiLink[i]->ibregs->cfg1 = (GPIB_IRQ_LEVEL << 5)|D_BRG3|D_DBM;
-      pNiLink[i]->ibregs->ch1.niv = GPIB_IVEC_BASE + i*2;	/* normal IRQ vector */
-      pNiLink[i]->ibregs->ch1.eiv = GPIB_IVEC_BASE+1+i*2;	/* error IRQ vector */
-      pNiLink[i]->ibregs->ch0.niv = GPIB_IVEC_BASE + i*2;	/* normal IRQ vector */
-      pNiLink[i]->ibregs->ch0.eiv = GPIB_IVEC_BASE+1+i*2;   /* error IRQ vector */
+      pNiLink[i]->ibregs->cfg1 = (NIGPIB_IRQ_LEVEL << 5)|D_BRG3|D_DBM;
+      pNiLink[i]->ibregs->ch1.niv = NIGPIB_IVEC_BASE + i*2;	/* normal IRQ vector */
+      pNiLink[i]->ibregs->ch1.eiv = NIGPIB_IVEC_BASE+1+i*2;	/* error IRQ vector */
+      pNiLink[i]->ibregs->ch0.niv = NIGPIB_IVEC_BASE + i*2;	/* normal IRQ vector */
+      pNiLink[i]->ibregs->ch0.eiv = NIGPIB_IVEC_BASE+1+i*2;   /* error IRQ vector */
       pNiLink[i]->ibregs->ch1.ccr = D_EINT;	/* stop operation, allow ints */
       pNiLink[i]->ibregs->ch0.ccr = 0;		/* stop all channel operation */
       pNiLink[i]->ibregs->ch0.cpr = 3;		/* highest priority */
@@ -363,67 +370,33 @@ initGpib()
       pNiLink[i]->ibregs->ch0.mfc = D_SUP|D_S24;
   
       /* attach the interrupt handler routines */
-      intConnect((GPIB_IVEC_BASE + i*2) * 4, niIrq, i);
-      intConnect((GPIB_IVEC_BASE + 1 + (i*2)) * 4, niIrqError, i);
-
-
+      intConnect((NIGPIB_IVEC_BASE + i*2) * 4, niIrq, i);
+      intConnect((NIGPIB_IVEC_BASE + 1 + (i*2)) * 4, niIrqError, i);
     }
   }
 
   /* should have interrups running before I do any I/O */
-  sysIntEnable(GPIB_IRQ_LEVEL);
+  sysIntEnable(NIGPIB_IRQ_LEVEL);
 
   /* Fire up the TLCs and nudge all the addresses on the GPIB bus */
   /* by doing a serial poll on all of them.  If someone did a */
   /* srqPollInhibit() on a specific link, then skip it and continue. */
 
-  for (i=0; i<GPIB_NUM_LINKS; i++)
+  for (i=0; i<NIGPIB_NUM_LINKS; i++)
   {
     if (pNiLink[i] != NULL)
     {
       pNiLink[i]->ibregs->auxmr = AUX_PON;	/* release pon state */
 
-      niGpibIoctl(i, IBIFC);		/* fire out an interface clear */
-      niGpibIoctl(i, IBREN, 1);		/* turn on the REN line */
-
-      if (niGpibCmd(i, "?_", 2) == ERROR)/* send out a UNL and UNT */
-      {
-	/* errMsg() */
-	logMsg("GPIB init failed for link %d, disableing.\n", i);
-	pNiLink[i] = NULL;		/* prevent flood-o-errors */
-	pIbLink[i] = NULL;
-      }
-
-      /* poll all available adresses to see if will respond */
-      speIb(pIbLink[i]);
-      for (j=1; j<31; j++)		/* poll 1 thru 31 (no 0 or 32) */
-      {
-	if (pollInhibit[i][j] != 1);	/* if user did not block it out */
-        {
-	  niGpibIoctl(i, IBTMO, 4);
-	  if (pollIb(pIbLink[i], j, 0) == ERROR)
-	    pollInhibit[i][j] = 2;	/* address is not pollable */
-        }
-      }
-      spdIb(pIbLink[i]);
-
-      pIbLink[i]->srqIntFlag = 0;	/* In case was set by above polling */
-
-      /* Start a task to manage the link */
-      if (taskSpawn("gpibLink", 46, VX_FP_TASK|VX_STDIO, 2000, ibLinkTask, i) == ERROR)
-      {
-        logMsg("initGpib(): failed to start link task for link %d\n", i);
-        /*errMsg()*/
-      }
+      if (ibLinkStart(&(pNiLink[i]->ibLink)) == ERROR)	/* start up the link */
+	pNiLink[i] = NULL;	/* kill the link to prevent flood of problems */
     }
   }
 
   init_called = 1;		/* let reportGpib() know init occurred */
   return(OK);
 }
-
-
-
+
 /******************************************************************************
  *
  * Interrupt handler for all normal DMAC interrupts.
@@ -447,8 +420,8 @@ int	link;
   if (ibDebug)
     logMsg("GPIB interrupt from link %d\n", link);
 
-  if (GPIB_IRQ_LEVEL == 4)          /* gotta ack ourselves on HK boards */
-    sysBusIntAck(GPIB_IRQ_LEVEL);
+  if (NIGPIB_IRQ_LEVEL == 4)          /* gotta ack ourselves on HK boards */
+    sysBusIntAck(NIGPIB_IRQ_LEVEL);
 
   /* Check the DMA error status bits first */
   if (pNiLink[link]->ibregs->ch0.csr & D_ERR || pNiLink[link]->ibregs->ch1.csr & D_ERR)
@@ -478,18 +451,17 @@ int	link;
   if ((pNiLink[link]->ibregs->ch0.csr) & D_PCLT)
   {
     pNiLink[link]->ibregs->ch0.csr = D_PCLT;	/* Reset srq status */
-    pIbLink[link]->srqIntFlag = 1;
+    pNiLink[link]->ibLink.srqIntFlag = 1;
 
     if (ibDebug|| ibSrqDebug)
       logMsg("GPIB SRQ interrupt on link %d\n", link);
 
-    semGive(pIbLink[link]->linkEventSem);
+    semGive(pNiLink[link]->ibLink.linkEventSem);
 
-/* BUG - should I not check both channels? */
     return(0);
   } 
 
-/* BUG -- perhaps set a flag so the WD system knows I proceeded here */
+/* BUG -- perhaps set a flag so the WD system knows I proceeded here? */
 
   /* if there was a watch-dog timer tie, let the timeout win. */
   if (pNiLink[link]->tmoFlag  == FALSE)
@@ -528,8 +500,7 @@ int	link;
   }
   return(0);
 }
-
-
+
 /******************************************************************************
  *
  * An interrupt handler that catches the DMAC error interrupts.  These should
@@ -570,16 +541,16 @@ int	prio;
 {
   switch (prio) {
   case IB_Q_LOW:		/* low priority transaction request */
-    semTake(pIbLink[link]->loPriSem);
-    lstAdd(&(pIbLink[link]->loPriList), pdpvt);
-    semGive(pIbLink[link]->loPriSem);
-    semGive(pIbLink[link]->linkEventSem);
+    semTake(pNiLink[link]->ibLink.loPriSem);
+    lstAdd(&(pNiLink[link]->ibLink.loPriList), pdpvt);
+    semGive(pNiLink[link]->ibLink.loPriSem);
+    semGive(pNiLink[link]->ibLink.linkEventSem);
     break;
   case IB_Q_HIGH:		/* high priority transaction request */
-    semTake(pIbLink[link]->hiPriSem);
-    lstAdd(&(pIbLink[link]->hiPriList), pdpvt);
-    semGive(pIbLink[link]->hiPriSem);
-    semGive(pIbLink[link]->linkEventSem);
+    semTake(pNiLink[link]->ibLink.hiPriSem);
+    lstAdd(&(pNiLink[link]->ibLink.hiPriList), pdpvt);
+    semGive(pNiLink[link]->ibLink.hiPriSem);
+    semGive(pNiLink[link]->ibLink.linkEventSem);
     break;
   default:		/* invalid priority */
     logMsg("invalid priority requested in call to qgpibreq(%d, %08.8X, %d)\n", link, pdpvt, prio);
@@ -590,8 +561,7 @@ int	prio;
 
   return(OK);
 }
-
-
+
 /******************************************************************************
  *
  * niGpibCmd()
@@ -671,8 +641,7 @@ int     length;
   pNiLink[link]->ibregs->auxmr = AUX_GTS;
   return(ERROR);
 }
-
-
+
 /******************************************************************************
  *
  * Read a buffer via Ni-based link.
@@ -728,8 +697,7 @@ int	length;
 
   return(err ? err : length - niGpibResid(link));
 }
-
-
+
 /******************************************************************************
  *
  * This function is used to figure out the difference in the transfer-length
@@ -752,6 +720,29 @@ int	link;
 
 /******************************************************************************
  *
+ * This function is used to validate all non-BitBus -> GPIB link numbers that
+ * are passed in from user requests.
+ *
+ ******************************************************************************/
+static int
+niCheckLink(link)
+int	link;
+{
+  if (link<0 || link >= NIGPIB_NUM_LINKS)
+  {
+    /* link number out of range */
+    return(ERROR);
+  }
+  if (pNiLink[link] == NULL)
+  {
+    /* link number has no card installed */
+    return(ERROR);
+  }
+  return(OK);
+}
+
+/******************************************************************************
+ *
  * This function provides access to the GPIB protocol operations on the NI
  * interface board.
  *
@@ -767,7 +758,7 @@ int	v;
   if(ibDebug)
     logMsg("niGpibIoctl(%d, %d, %d)\n",link, cmd, v);
 
-  if (niCheckLink(link) == ERROR)
+  if (cmd != IBGENLINK && niCheckLink(link) == ERROR)
   {
     /* bad link number */
     return(ERROR);
@@ -793,38 +784,16 @@ int	v;
     pNiLink[link]->ibregs->auxmr = AUX_TCA;
     break;
   case IBNILNK:		/* returns the max number of NI links possible */
-    stat = GPIB_NUM_LINKS;
+    stat = NIGPIB_NUM_LINKS;
     break;
+  case IBGENLINK:	/* request the creation of a link */
+    break;		/* this is automatic for NI based links */
   default:
     return(ERROR);
   }
   return(stat);
 }
-
-/******************************************************************************
- *
- * This function is used to validate all non-BitBus -> GPIB link numbers that
- * are passed in from user requests.
- *
- ******************************************************************************/
-static int
-niCheckLink(link)
-int	link;
-{
-  if (link<0 || link >= GPIB_NUM_LINKS)
-  {
-    /* link number out of range */
-    return(ERROR);
-  }
-  if (pIbLink[link] == NULL)
-  {
-    /* link number has no card installed */
-    return(ERROR);
-  }
-  return(OK);
-}
-
-
+
 /******************************************************************************
  *
  * This routine does DMA based I/O with the GPIB bus.  It sets up the NI board's
@@ -876,7 +845,7 @@ int	length;		/* number of bytes to transfer */
       pNiLink[link]->cc_byte = b->auxmr = AUXRA | HR_HLDA; /* last byte, do now */
     b->ch0.ocr = D_DTM | D_XRQ;
     /* make sure I only alter the 1014D port-specific fields here! */
-    b->cfg1 = D_ECC | D_IN | (GPIB_IRQ_LEVEL << 5) | D_BRG3 | D_DBM;
+    b->cfg1 = D_ECC | D_IN | (NIGPIB_IRQ_LEVEL << 5) | D_BRG3 | D_DBM;
     b->ch1.ocr = D_DTM | D_ACH | D_XRQ;
     b->ch1.ocr = D_DTM | D_ACH | D_XRQ;
 
@@ -893,7 +862,7 @@ int	length;		/* number of bytes to transfer */
 
     b->ch0.ocr = D_MTD | D_XRQ;
     /* make sure I only alter the 1014D port-specific fields here! */
-    b->cfg1 = D_ECC | D_OUT | (GPIB_IRQ_LEVEL << 5) | D_BRG3 | D_DBM;
+    b->cfg1 = D_ECC | D_OUT | (NIGPIB_IRQ_LEVEL << 5) | D_BRG3 | D_DBM;
     b->ch1.ocr = D_MTD | D_ACH | D_XRQ;
 
     /* enable interrupts and dma */
@@ -998,12 +967,11 @@ int	length;		/* number of bytes to transfer */
 
   b->imr2 = 0;
   /* make sure I only alter the 1014D port-specific fields here! */
-  b->cfg1 = (GPIB_IRQ_LEVEL << 5) | D_BRG3 | D_DBM;
+  b->cfg1 = (NIGPIB_IRQ_LEVEL << 5) | D_BRG3 | D_DBM;
 
   return (status);
 }
-
-
+
 /******************************************************************************
  *
  * This function is called by the watch-dog timer if it expires while waiting
@@ -1019,6 +987,24 @@ int	link;
   return(0);
 }
 
+/******************************************************************************
+ *
+ * Mark a given device as non-pollable.
+ *
+ ******************************************************************************/
+static int
+niSrqPollInhibit(link, gpibAddr)
+int	link;
+int	gpibAddr;
+{
+    if (niCheckLink(link) == ERROR)
+    {
+      logMsg("drvGpib: niSrqPollInhibit(%d, %d): invalid link number specified\n", link, gpibAddr);
+      return(ERROR);
+    }
+    pollInhibit[link][gpibAddr] = 1;	/* mark it as inhibited */
+    return(OK);
+}
 
 /******************************************************************************
  *
@@ -1036,29 +1022,187 @@ int             val;
   *ptr = val >> 16;
   *(ptr + 1) = val & 0xffff;
 }
+
+/******************************************************************************
+ *
+ * This function is used to enable the generation of VME interupts upon the
+ * detection of an SRQ status on the GPIB bus.
+ *
+ ******************************************************************************/
+static int
+niSrqIntEnable(link)
+int	link;
+{
+  int   lockKey;
+
+  if(ibDebug || ibSrqDebug)
+    logMsg("niSrqIntEnable(%d): ch0.csr = 0x%02.2X, gsr=0x%02.2X\n", link, pNiLink[link]->ibregs->ch0.csr, pNiLink[link]->ibregs->gsr);
+
+  lockKey = intLock();  /* lock out ints because the DMAC likes to glitch */
+
+  if (!((pNiLink[link]->ibregs->ch0.csr) & D_NSRQ))
+  { /* SRQ line is CURRENTLY active, just give the event sem and return */
+    pNiLink[link]->ibLink.srqIntFlag = 1;
+    semGive(pNiLink[link]->ibLink.linkEventSem);
+
+    if(ibDebug || ibSrqDebug)
+      logMsg("niSrqIntEnable(%d): found SRQ active, setting srqIntFlag\n", link);
+
+    /* Clear the PCLT status if is already set to prevent unneeded int later */
+    pNiLink[link]->ibregs->ch0.csr = D_PCLT;
+  }
+  else
+    pNiLink[link]->ibregs->ch0.ccr = D_EINT;    /* Allow SRQ ints */
+
+  intUnlock(lockKey);
+  return(0);
+}
 
 
+/******************************************************************************
+ *
+ * This function is used to disable the generation of VME interupts associated
+ * with the detection of an SRQ status on the GPIB bus.
+ *
+ ******************************************************************************/
+static int
+niSrqIntDisable(link)
+int	link;
+{
+  int	lockKey;
+
+  if(ibDebug || ibSrqDebug)
+    logMsg("niSrqIntDisable(%d): ch0.csr = 0x%02.2X, gsr=0x%02.2X\n", link, pNiLink[link]->ibregs->ch0.csr, pNiLink[link]->ibregs->gsr);
+
+  lockKey = intLock();  /* lock out ints because the DMAC likes to glitch */
+  pNiLink[link]->ibregs->ch0.ccr = 0;           /* Don't allow SRQ ints */
+  intUnlock(lockKey);
+
+  return(0);
+}
+
+/******************************************************************************
+ *
+ * Routine used to initialize the values of the fields in an ibLink structure.
+ *
+ ******************************************************************************/
+static int
+ibLinkInit(plink)
+struct ibLink *plink;
+{
+  int	j;
+
+  if(ibDebug || bbibDebug)
+    logMsg("ibLinkInit(%08.8X): entered, type %d, link %d, bug %d\n", plink, plink->linkType, plink->linkId, plink->bug);
+
+  plink->srqIntFlag = 0;	/* no srq ints set now */
+  plink->linkEventSem = semCreate();
+
+  lstInit(&(plink->hiPriList));		/* init the list as empty */
+  plink->hiPriSem = semCreate();
+  semGive(plink->hiPriSem);
+
+  lstInit(&(plink->loPriList));		/* init the list as empty */
+  plink->loPriSem = semCreate();
+  semGive(plink->loPriSem);
+
+  plink->srqRing = rngCreate(SRQRINGSIZE * sizeof(struct srqStatus));
+
+  for (j=0; j<IBAPERLINK; j++)
+  {
+    plink->srqHandler[j] = NULL;		/* no handler is registered */
+    plink->deviceStatus[j] = IDLE;	/* assume device is IDLE */
+  }
+  return(OK);
+}
+/******************************************************************************
+ *
+ * The following section of GPIB driver is written such that it can operate
+ * in a device independant fashon.  It does this by simply not making
+ * references to any architecture-specific data areas.
+ *
+ * When the architecture-specific information is needed, processing
+ * is sent to the architecture-specific routines.
+ *
+ ******************************************************************************/
+static int
+ibLinkStart(plink)
+struct	ibLink *plink;
+{
+  int	j;
+
+  if (ibDebug || bbibDebug)
+    logMsg("ibLinkStart(%08.8X): entered for link %d\n", plink, plink->linkId);
+
+  ioctlIb(plink->linkType, plink->linkId, plink->bug, IBIFC);/* fire out an interface clear */
+  ioctlIb(plink->linkType, plink->linkId, plink->bug, IBREN, 1);/* turn on the REN line */
+
+  if (writeIbCmd(plink->linkType, plink->linkId, plink->bug, "?_", 2) == ERROR)/* send out a UNL and UNT */
+  {
+    logMsg("ibLinkStart(%08.08X): init failed for link %d\n", plink, plink->linkId);
+    return(ERROR);
+  }
+
+/* BUG -- why not just forget this & only poll registered devices? */
+/* BUG -- the pollinhibit array stuff has to be fixed! */
+
+  if (plink->linkType == GPIB_IO)
+  {
+    /* poll all available adresses to see if will respond */
+    speIb(plink);
+    for (j=1; j<31; j++)		/* poll 1 thru 31 (no 0 or 32) */
+    {
+      if (pollInhibit[plink->linkId][j] != 1);/* if user did not block it out */
+      {
+        ioctlIb(plink->linkType, plink->linkId, plink->bug, IBTMO, 4);
+        if (pollIb(plink, j, 0) == ERROR)
+          pollInhibit[plink->linkId][j] = 2;	/* address is not pollable */
+      }
+    }
+
+    spdIb(plink);
+  }
+
+  /* Start a task to manage the link */
+  if (taskSpawn("gpibLink", 46, VX_FP_TASK|VX_STDIO, 2000, ibLinkTask, plink, plink->linkId) == ERROR)
+  {
+    logMsg("ibLinkStart(): failed to start link task for link %d\n", plink->linkId);
+    return(ERROR);
+  }
+  return(OK);
+}
+
 /******************************************************************************
  *
  * At the time this function is started as its own task, the linked list
  * structures will have been created and initialized.
  *
+ * This function is spawned as a task for each GPIB bus present in the
+ * system.  That is one for each Ni card port, and one for each Bit Bus
+ * bug that contains a GPIB port on it.
+ *
+ * All global data areas referenced by this task are limited to the non-port
+ * specific items (no niLink[] references allowed.) so that the same task
+ * can operate all forms of GPIB busses.
+ *
  ******************************************************************************/
 static int 
-ibLinkTask(link)
-int	link;
+ibLinkTask(plink, link)
+struct  ibLink	*plink; 	/* a reference to the link structures covered */
+int		link;
 {
-  struct  ibLink 	*plink; /* a reference to the link structures covered */
-  struct dpvtGpibHead  *pnode;
-  struct srqStatus ringData;
-  int   pollAddress;
-  int	pollActive;
-  int	working;
+  struct dpvtGpibHead	*pnode;
+  struct srqStatus	ringData;
+  int			pollAddress;
+  int			pollActive;
+  int			working;
 
-  if (ibDebug)
-    logMsg("ibLinkTask started for link %d\n", link);
+  /* if (ibDebug) */
+    logMsg("ibLinkTask started for link type %d, link %d\n", plink->linkType, link);
 
-  plink = pIbLink[link];
+  printf("ibLinkTask (%08.8X, %d): started\n", plink, link);
+  taskDelay(30);
+
 
   working = 1;	/* check queues for work the first time */
   while (1)
@@ -1066,15 +1210,15 @@ int	link;
     if (!working)
     {
       /* Enable SRQ interrupts */
-      srqIntEnable(link);
+      srqIntEnable(plink->linkType, link);
       semTake(plink->linkEventSem);
   
       /* Disable SRQ interrupts */
-      srqIntDisable(link);
+      srqIntDisable(plink->linkType, link);
 
       if (ibDebug)
       {
-        logMsg("ibLinkTask(%d): got an event\n", link);
+        logMsg("ibLinkTask(%d, %d): got an event\n", plink->linkType, link);
       }
     }
     working = 0;	/* Assume will do nothing */
@@ -1088,7 +1232,7 @@ int	link;
     if (plink->srqIntFlag)
     {
       if (ibDebug || ibSrqDebug)
-	logMsg("ibLinkTask(%d): srqIntFlag set.\n", link);
+	logMsg("ibLinkTask(%d, %d): srqIntFlag set.\n", plink->linkType, link);
 
       plink->srqIntFlag = 0;
       pollActive = 0;
@@ -1104,19 +1248,19 @@ int	link;
             speIb(plink);
           }
 	  if (ibDebug || ibSrqDebug)
-            logMsg("ibLinkTask(%d): poling device %d\n", link, pollAddress);
+            logMsg("ibLinkTask(%d, %d): poling device %d\n", plink->linkType, link, pollAddress);
           if ((ringData.status = pollIb(plink, pollAddress, 1)) & 0x40)
           {
             ringData.device = pollAddress;
 	    if (ibDebug || ibSrqDebug)
-	      logMsg("ibLinkTask(%d): device %d srq status = 0x%02.2X\n", link, pollAddress, ringData.status);
+	      logMsg("ibLinkTask(%d, %d): device %d srq status = 0x%02.2X\n", plink->linkType, link, pollAddress, ringData.status);
             if (plink->srqHandler[ringData.device] != NULL)
             { /* there is a registered SRQ handler for this device */
               rngBufPut(plink->srqRing, &ringData, sizeof(ringData));
             }
 	    else
 	      if (ibDebug || ibSrqDebug)
-		logMsg("ibLinkTask(%d): got an srq from device %d... ignored\n", link, pollAddress);
+		logMsg("ibLinkTask(%d, %d): got an srq from device %d... ignored\n", plink->linkType, link, pollAddress);
           }
         }
 	pollAddress++;
@@ -1128,7 +1272,7 @@ int	link;
       }
       else
       {
-	logMsg("ibLinkTask(%d): got an SRQ, but have no pollable devices!\n", link);
+	logMsg("ibLinkTask(%d, %d): got an SRQ, but have no pollable devices!\n", plink->linkType, link);
       }
       /* The srqIntFlag should still be set if the SRQ line is again/still */
       /* active, otherwise we have a possible srq interrupt processing */
@@ -1140,7 +1284,7 @@ int	link;
     while (rngBufGet(plink->srqRing, &ringData, sizeof(ringData)))
     {
       if (ibDebug || ibSrqDebug)
-	logMsg("ibLinkTask(%d): dispatching srq handler for device %d\n", link, ringData.device);
+	logMsg("ibLinkTask(%d, %d): dispatching srq handler for device %d\n", plink->linkType, link, ringData.device);
       plink->deviceStatus[ringData.device] = (*(plink->srqHandler)[ringData.device])(plink->srqParm[ringData.device], ringData.status);
       working=1;
     }
@@ -1162,7 +1306,7 @@ int	link;
     if (pnode != NULL)
     {
       if (ibDebug)
-        logMsg("ibLinkTask(%d): got Hi Pri xact, pnode= 0x%08.8X\n", link, pnode);
+        logMsg("ibLinkTask(%d, %d): got Hi Pri xact, pnode= 0x%08.8X\n", plink->linkType, link, pnode);
 
       plink->deviceStatus[pnode->device] = (*(pnode->workStart))(pnode);
       working=1;
@@ -1184,15 +1328,14 @@ int	link;
       if (pnode != NULL)
       {
         if(ibDebug)
-          logMsg("ibLinkTask(%d): got Lo Pri xact, pnode= 0x%08.8X\n", link, pnode);
+          logMsg("ibLinkTask(%d, %d): got Lo Pri xact, pnode= 0x%08.8X\n", plink->linkType, link, pnode);
         plink->deviceStatus[pnode->device] = (*(pnode->workStart))(pnode);
         working=1;
       }
     }
   }
 }
-
-
+
 /******************************************************************************
  *
  * The following are functions used to take care of serial polling.  They
@@ -1205,7 +1348,6 @@ int	link;
  * If there is an error during polling (timeout), the value -1 is returned.
  *
  ******************************************************************************/
-/* BUG -- keep the polling during init time quiet if possible */
 static int
 pollIb(plink, gpibAddr, verbose)
 struct ibLink     *plink;
@@ -1215,11 +1357,13 @@ int		verbose;	/* set to 1 if should log any errors */
   char  pollCmd[4];
   unsigned char  pollResult[3];
   int	status;
+  int	tsSave;
 
   if(verbose && (ibDebug || ibSrqDebug))
     logMsg("pollIb(0x%08.8X, %d, %d)\n", plink, gpibAddr, verbose);
 
-    timeoutSquelch = !verbose;	/* keep the I/O routines quiet if desired */
+  tsSave = timeoutSquelch;
+  timeoutSquelch = !verbose;	/* keep the I/O routines quiet if desired */
 
   /* raw-read back the response from the instrument */
   if (readIb(plink->linkType, plink->linkId, plink->bug, gpibAddr, pollResult, sizeof(pollResult)) == ERROR)
@@ -1237,11 +1381,10 @@ int		verbose;	/* set to 1 if should log any errors */
     }
   }
 
-  timeoutSquelch = 0;	/* return I/O error logging to normal */
+  timeoutSquelch = tsSave;	/* return I/O error logging to normal */
   return(status);
 }
-
-
+
 /******************************************************************************
  *
  * speIb is used to send out a Serial Poll Enable command on the GPIB
@@ -1274,62 +1417,61 @@ struct ibLink     *plink;
 
   return(0);
 }
-
+
 /******************************************************************************
  *
  * Functions used to enable and disable SRQ interrupts.  These only make
  * sense on a Ni based link, so they are ignored in the BitBus case.
+ * (In the BitBus, SRQ status is passed back via query.  So there is no
+ * asynchronous interupt associated with it.)
  *
  * The interrupts referred to here are the actual VME bus interrupts that are
- * generated by the Ni card when it sees the SRQ line go high.
+ * generated by the GPIB interface when it sees the SRQ line go high.
  *
  ******************************************************************************/
 static int
-srqIntEnable(link)
+srqIntEnable(linkType, link)
+int	linkType;
 int	link;
 {
-  int	lockKey;
+  if (linkType == GPIB_IO)
+    return(niSrqIntEnable(link));
 
+  if (linkType == BBGPIB_IO)
+    return(0);		/* Bit Bus does not use interrupts for SRQ handeling */
 
-  if(ibDebug || ibSrqDebug)
-    logMsg("srqIntEnable(%d): ch0.csr = 0x%02.2X, gsr=0x%02.2X\n", link, pNiLink[link]->ibregs->ch0.csr, pNiLink[link]->ibregs->gsr);
-
-  lockKey = intLock();	/* lock out ints because the DMAC likes to glitch */
-
-  if (!((pNiLink[link]->ibregs->ch0.csr) & D_NSRQ))
-  { /* SRQ line is CURRENTLY active, just give the event sem and return */
-    semGive(pIbLink[link]->linkEventSem);
-    pIbLink[link]->srqIntFlag = 1;
-
-    if(ibDebug || ibSrqDebug)
-      logMsg("srqIntEnable(%d): found SRQ active, setting srqIntFlag\n", link);
-
-    /* Clear the PCLT status if is already set to prevent unneeded int later */
-    pNiLink[link]->ibregs->ch0.csr = D_PCLT;
-  }
-  else
-    pNiLink[link]->ibregs->ch0.ccr = D_EINT;	/* Allow SRQ ints */
-
-  intUnlock(lockKey);
-  return(0);
+  return(ERROR);	/* Invalid link type specified on the call */
 }
 
 static int
-srqIntDisable(link)
+srqIntDisable(linkType, link)
+int	linkType;
 int	link;
 {
-  int   lockKey;
+  if (linkType == GPIB_IO)
+    return(niSrqIntDisable(link));
 
-  if(ibDebug || ibSrqDebug)
-    logMsg("srqIntDisable(%d): ch0.csr = 0x%02.2X, gsr=0x%02.2X\n", link, pNiLink[link]->ibregs->ch0.csr, pNiLink[link]->ibregs->gsr);
+  if (linkType == BBGPIB_IO)
+    return(0);          /* Bit Bus does not use interrupts for SRQ handeling */
 
-  lockKey = intLock();  /* lock out ints because the DMAC likes to glitch */
-  pNiLink[link]->ibregs->ch0.ccr = 0;		/* Don't allow SRQ ints */
-  intUnlock(lockKey);
-
-  return(0);
+  return(ERROR);	/* Invlaid link type specified on the call */
 }
 
+static int
+checkLink(linkType, link, bug)
+int	linkType;
+int	link;
+int	bug;
+{
+  if (linkType == GPIB_IO)
+    return(niCheckLink(link));
+
+  if (linkType == BBGPIB_IO)
+    return(bbCheckLink(link, bug));
+
+  return(ERROR);	/* bad link type specefied */
+}
+
 /****************************************************************************
  *
  * The following routines are the user-callable entry points to the GPIB
@@ -1353,34 +1495,29 @@ int	link;
  *
  ******************************************************************************/
 /* static */ int 
-srqPollInhibit(linkType, linkId, bug, gpibAddr)
+srqPollInhibit(linkType, link, bug, gpibAddr)
 int	linkType;	/* link type (defined in link.h) */
-int     linkId;         /* the link number the handler is related to */
+int     link;           /* the link number the handler is related to */
 int     bug;            /* the bug node address if on a bitbus link */
 int     gpibAddr;       /* the device address the handler is for */
 {
   if (ibDebug || ibSrqDebug)
-    logMsg("srqPollInhibit(%d, %d, %d, %d): called -- not yet implemented!\n", linkType, linkId, bug, gpibAddr);
+    logMsg("srqPollInhibit(%d, %d, %d, %d): called\n", linkType, link, bug, gpibAddr);
 
   if (linkType == GPIB_IO)
   {
-    if (niCheckLink(linkId) == ERROR)
-    {
-      logMsg("drvGpib: srqPollInhibit(): invalid link number specified\n");
-      return(ERROR);
-    }
-    pollInhibit[linkId][gpibAddr] = 1;	/* mark it as inhibited */
-    return(OK);
+    return(niSrqPollInhibit(link, gpibAddr));
   }
+
   if (linkType == BBGPIB_IO)
   {
-    logMsg("drvGpib: srqPollInhibit(): not supported on a bitbus link\n");
-    return(ERROR);
+    return(bbSrqPollInhibit(link, bug, gpibAddr));
   }
-  logMsg("drvGpib: srqPollInhibit(): invalid link type specified\n");
+
+  logMsg("drvGpib: srqPollInhibit(%d, %d, %d, %d): invalid link type specified\n", linkType, link, bug, gpibAddr);
   return(ERROR);
 }
-
+
 /******************************************************************************
  *
  * This allows a device support module to register an SRQ event handler.
@@ -1397,35 +1534,33 @@ int     linkId;         /* the link number the handler is related to */
 int	bug;		/* the bug node address if on a bitbus link */
 int     gpibAddr;       /* the device address the handler is for */
 int     (*handler)();   /* handler function to invoke upon SRQ detection */
-caddr_t	parm;		/* so caller can have dpvt passed back */
+caddr_t	parm;		/* so caller can have a parm passed back */
 {
   if(ibDebug || ibSrqDebug)
     logMsg("registerSrqCallback(%d, %d, %d, %d, 0x%08.8X, %d)\n", linkType, linkId, bug, gpibAddr, handler, parm);
 
   if (linkType == GPIB_IO)
   {
-    if (niCheckLink(linkId) == ERROR)
+    if (checkLink(linkType, linkId, bug) == ERROR)
     {
       logMsg("drvGpib: registerSrqCallback(): invalid link number specified\n");
       return(ERROR);
     }
-    pIbLink[linkId]->srqHandler[gpibAddr] = handler;
-    pIbLink[linkId]->srqParm[gpibAddr] = parm;
+    (pNiLink[linkId]->ibLink.srqHandler)[gpibAddr] = handler;
+    (pNiLink[linkId]->ibLink.srqParm)[gpibAddr] = parm;
+
+    return(OK);
   }
-  else if (linkType == BBGPIB_IO)
+
+  if (linkType == BBGPIB_IO)
   {
-    logMsg("drvGpib: registerSrqCallback(): not supported on bitbus links\n");
-    return(ERROR);
+    return(bbRegisterSrqCallback(linkId, bug, gpibAddr, handler, parm));
   }
-  else
-  {
-    logMsg("drvGpib: registerSrqCallback(): invalid link type specified\n");
-    return(ERROR);
-  }
-  return(OK);
+
+  logMsg("drvGpib: registerSrqCallback(%d, %d, %d, %d, 0x%08.8X, %d): invalid link type specified\n", linkType, linkId, bug, gpibAddr, handler, parm);
+  return(ERROR);
 }
-
-
+
 /******************************************************************************
  *
  * Allow users to operate the internal functions of the driver.
@@ -1444,13 +1579,15 @@ int	v;
   int	stat;
 
   if (linkType == GPIB_IO)
-    stat = niGpibIoctl(link, cmd, v);
-  else
-  {
-    printf("ioctlIb(%d, %d, %d, %d, %v): bitbus->gpib not implemented yet\n");
-    stat = ERROR;
-  }
-  return(stat);
+    return(niGpibIoctl(link, cmd, v));	/* link number checked in niGpibIoctl */
+
+  if (linkType == BBGPIB_IO)
+    return(bbGpibIoctl(link, bug, cmd, v));	/* link number checked in bbGpibIoctl */
+  
+  if (ibDebug || bbibDebug)
+    logMsg("ioctlIb(%d, %d, %d, %d, %08.8X): invalid link type\n", linkType, link, bug, cmd, v);
+
+  return(ERROR);
 }
 
 /******************************************************************************
@@ -1474,17 +1611,15 @@ int	link;		/* the link number to use */
 struct	dpvtGpibHead *pdpvt; /* pointer to the device private structure */
 int	prio;		/* 1 for high priority or 2 for low */
 {
-  int	stat;
-
   if (linkType == GPIB_IO)
-    stat = niQGpibReq(link, pdpvt, prio);
-  else  /* is a BBGPB_IO link */
-    stat = bbQGpibReq(link, pdpvt, prio);
+    return(niQGpibReq(link, pdpvt, prio));
 
-  return(stat);
+  if (linkType == BBGPIB_IO)
+    return(bbQGpibReq(link, pdpvt, prio));
+
+  return(ERROR);
 }
-
-
+
 /******************************************************************************
  *
  * The following functions are defined for use by device support modules.
@@ -1523,7 +1658,7 @@ int	length;		/* number of bytes to write out from the data buffer */
 
   if (linkType == GPIB_IO)
     stat = niGpibWrite(linkId, data, length);
-  else	/* is a BBGPB_IO link */
+  else	/* link type checked in writeIbCmd()... must be BBGPIB_IO */
     stat = bbGpibWrite(linkId, bug, data, length);
 
   if (writeIbCmd(linkType, linkId, bug, attnCmd, 2) != 2)
@@ -1532,8 +1667,7 @@ int	length;		/* number of bytes to write out from the data buffer */
 
   return(stat);
 }
-
-
+
 /******************************************************************************
  *
  * A device support callable entry point used to read data from GPIB devices.
@@ -1567,7 +1701,7 @@ int	length;		/* max number of bytes to place into the buffer */
 
   if (linkType == GPIB_IO)
     stat = niGpibRead(linkId, data, length);
-  else  /* is a BB->IB link */
+  else /* linkType checked in writeIbCmd()... must be BBGPIB_IO */
     stat = bbGpibRead(linkId, bug, data, length);
 
   if (writeIbCmd(linkType, linkId, bug, attnCmd, 2) != 2)
@@ -1575,8 +1709,7 @@ int	length;		/* max number of bytes to place into the buffer */
 
   return(stat);
 }
-
-
+
 /******************************************************************************
  *
  * A device support callable entry point that is used to write commands
@@ -1593,7 +1726,6 @@ int     linkId;   	/* the link number to use */
 char    *data;  	/* the data buffer to write out */
 int     length; 	/* number of bytes to write out from the data buffer */
 {
-  int	stat;
 
   if(ibDebug)
     logMsg("writeIbCmd(%d, %d, %d, 0x%08.8X, %d)\n", linkType, linkId, bug, data, length);
@@ -1601,21 +1733,22 @@ int     length; 	/* number of bytes to write out from the data buffer */
   if (linkType == GPIB_IO)
   {
     /* raw-write the data */
-    stat = niGpibCmd(linkId, data, length);
+    return(niGpibCmd(linkId, data, length));
   }
-  else  /* is a BBGPIB_IO link */
+  if (linkType == BBGPIB_IO)
   {
     /* raw-write the data */
-    stat = bbGpibCmd(linkId, bug, data, length);
+    return(bbGpibCmd(linkId, bug, data, length));
   }
-  return(stat);
+  return(ERROR);
 }
-
-/***************************************************************
-/* These will be fleshed out to work with the bitbus driver when 
-/* it is written some day.
-/***************************************************************/
-int
+
+/******************************************************************************
+ *
+ * These are the BitBus architecture specific functions.
+ *
+ ******************************************************************************/
+static int
 bbGpibRead(link, buffer, length)
 int     link;
 char    *buffer;
@@ -1625,7 +1758,7 @@ int     length;
   return(ERROR);
 }
 
-int
+static int
 bbGpibWrite(link, buffer, length)
 int     link;
 char    *buffer;
@@ -1635,17 +1768,7 @@ int     length;
   return(ERROR);
 }
 
-int
-bbGpibIoctl(link, cmd, v)
-int     link;
-int     cmd;
-int     v;
-{
-  logMsg("Ioctl attempted to a bitbus->gpib link\n");
-  return(ERROR);
-}
-
-int
+static int
 bbGpibCmd(link, buffer, length)
 int     link;
 char    *buffer;
@@ -1655,6 +1778,135 @@ int     length;
   return(ERROR);
 }
 
+static int
+bbCheckLink(link, bug)
+int	link;
+int	bug;
+{
+  logMsg("bbCheckLink called for link %d, bug %d\n", link, bug);
+  return(ERROR);
+}
+
+static int
+bbSrqPollInhibit(link, bug, gpibAddr)
+int	link;
+int	bug;
+int	gpibAddr;
+{
+  logMsg("bbSrqPollInhibit called for link %d, bug %d, device %d\n", link, bug, gpibAddr);
+  return(ERROR);
+}
+
+static int
+bbRegisterSrqCallback(link, bug, gpibAddr, handler, parm)
+int	link;
+int	bug;
+int	gpibAddr;
+int     (*handler)();
+caddr_t	parm;
+{
+  logMsg("bbRegisterSrqCallback called for link %d, bug %d, device %d\n", 
+		link, bug, gpibAddr);
+  return(ERROR);
+}
+
+
+/******************************************************************************
+ *
+ * Initialize all required structures and start an ibLinkTask() for use with
+ * a BBGPIB_IO based link.
+ *
+ ******************************************************************************/
+static int
+bbGenLink(link, bug)
+int	link;
+int	bug;
+{
+  struct bbLink	*bbLink;
+
+  if (ibDebug || bbibDebug)
+    logMsg("bbGenLink(%d, %d): entered\n", link, bug);
+
+  /* First check to see if there is already a link set up */
+  bbLink = rootBBLink;
+  while (bbLink != NULL)
+  {
+    if ((bbLink->ibLink.linkId == link) && (bbLink->ibLink.bug == bug))
+      break;
+    else
+      bbLink = bbLink->next;
+  }
+
+  if (bbLink != NULL)
+  { /* Already have initialized the link for this guy...  */
+    if (bbibDebug || ibDebug)
+      logMsg("bbGenLink(%d, %d): link already initialized\n", link, bug);
+
+    return(OK);
+  }
+
+  /* This link is not started yet, initialize all the required stuff */
+
+  if ((bbLink = (struct bbLink *) malloc(sizeof(struct bbLink))) == NULL)
+  {
+    logMsg("bbGenLink(%d, %d): can't malloc memory for link structure\n", link, bug);
+    return(ERROR);
+  }
+
+  bbLink->next = rootBBLink;
+  rootBBLink = bbLink;		/* link the new one into the list */
+
+  bbLink->ibLink.linkType = BBGPIB_IO;
+  bbLink->ibLink.linkId = link;
+  bbLink->ibLink.bug = bug;
+
+  ibLinkInit(&(bbLink->ibLink));
+  return(ibLinkStart(&(bbLink->ibLink)));
+/* BUG -- I should free up the stuff if the init failed for some reason */
+}
+
+/******************************************************************************
+ *
+ * IOCTL control function for BBGPIB_IO based links.
+ *
+ ******************************************************************************/
+static int
+bbGpibIoctl(link, bug, cmd, v)
+int     link;
+int     cmd;
+int     v;
+{
+  int stat = ERROR;
+
+  if (ibDebug || bbibDebug)
+    logMsg("bbGpibIoctl(%d, %d, %d, %08.8X): called\n", link, bug, cmd, v);
+
+  if (cmd != IBGENLINK && bbCheckLink(link, -1) == ERROR)
+  {
+    logMsg("bbGpibIoctl(%d, %d, %d, %08.8X): invalid link specified\n", link, bug, cmd, v);
+    return(ERROR);
+  }
+
+  switch (cmd) {
+  case IBTMO:		/* set timeout time for next transaction only */
+    break;
+  case IBIFC:		/* send an Interface Clear pulse */
+    break;
+  case IBREN:		/* turn the Remote Enable line on or off */
+    break;
+  case IBGTS:		/* go to standby (ATN off etc... ) */
+    break;
+  case IBGTA:		/* go to active (ATN on etc... ) */
+    break;
+  case IBGENLINK:	/* request the initialization of a link */
+    stat = bbGenLink(link, bug);
+    break;
+  default:
+    logMsg("bbGpibIoctl(%d, %d, %d, %08.8X): invalid command requested\n", link, bug, cmd, v);
+  }
+
+  return(stat);
+}
 /******************************************************************************
  *
  * Queue a request for the ibLinkTask associated with the proper BitBus link
@@ -1664,7 +1916,7 @@ int     length;
  * probably not worth worrying about.
  *
  ******************************************************************************/
-bbQGpibReq(link, pdpvt, prio)
+static bbQGpibReq(link, pdpvt, prio)
 int	link;
 struct	dpvtGpibHead *pdpvt;
 int	prio;

@@ -60,7 +60,7 @@ public:
      * processed by the file descriptor manager
      */
     epicsShareFunc osiTimer ( double delay, osiTimerQueue & queueIn );
-    epicsShareFunc osiTimer ( double delay);
+    epicsShareFunc osiTimer ( double delay );
 
     /*
      * Create an inactive timer

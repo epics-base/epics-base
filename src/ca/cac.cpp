@@ -222,6 +222,7 @@ cac::~cac ()
     if ( this->pRecvProcessThread ) {
         this->recvProcessThreadExitRequest = true;
         this->recvProcessActivityEvent.signal ();
+        this->enableCallbackPreemption ();
         this->recvProcessThreadExit.wait ();
         delete this->pRecvProcessThread;
     }
@@ -270,7 +271,7 @@ cac::~cac ()
         }
     }
 
-    if ( ! this->enablePreemptiveCallback ) {
+    if ( ! this->enablePreemptiveCallback && this->pudpiiu ) {
         this->notify.fdWasDestroyed ( this->pudpiiu->getSock() );
     }
     delete this->pudpiiu;

@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <memory.h>
 #include <string.h>
+static int yy_start;
 #include <dbStaticLib.h>
 /* kludge for buggy lex/yacc.  exploits the fact that we know the union */
 /* below will be given the name YYSTYPE.  done so that ifndef YYSTYPE  */
@@ -130,6 +131,5 @@ char  *str;
     sprintf(message,"Error line %d : %s\n",line_num, yytext);
     errMessage(-1,message);
 }
- 
-yywrap() { return(1); }
- 
+
+#include "atdb.c"

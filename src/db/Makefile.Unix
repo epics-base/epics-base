@@ -5,6 +5,11 @@ include $(EPICS)/config/CONFIG_BASE
 USR_LDLIBS = -lDb -lCom
 USR_LDFLAGS = -L.
 
+LEX = $(ELEX)
+YACC = $(EYACC)
+YACCOPT = -l
+LEXOPT = -L
+
 DEPLIBS_BASE = $(EPICS_BASE_LIB)
 DEPLIBS = ./libDb.a\
 	$(DEPLIBS_BASE)/libCom.a
@@ -16,7 +21,6 @@ SRCS.c = \
 	atdb_lex.c \
 	atdb_yacc.c \
 	../dbta.c \
-	../atdb.c \
 	../dbl.c \
 	../dbls.c
 
@@ -29,8 +33,8 @@ PROD = dbta dbl dbls atdb
 
 include $(EPICS)/config/RULES.Unix
 
-atdb: atdb.o atdb_yacc.o $(DEPLIBS)
-	$(LINK.c) -o $@ atdb.o atdb_yacc.o $(LDLIBS)
+atdb: atdb_yacc.o $(DEPLIBS)
+	$(LINK.c) -o $@ atdb_yacc.o $(LDLIBS)
 
 # Extra rule since atdb_lex.c is included in atdb_yacc.c
 #   In my opinion, these objects should really be built

@@ -60,15 +60,33 @@ height="31" width="88"></a></p>
 
 <h4><a href="#When">When Clients Do Not Connect to Their Server</a></h4>
 <ul>
-  <li><a href="#Broadcast">Broadcast addresses dont match</a></li>
-  <li><a href="#Client">Client isnt configured to use the server's
-  port</a></li>
-  <li><a href="#Unicast">Unicast addreses in the EPICS_CA_ADDR_LIST does not
-    reliably contact servers sharing the same UDP port on the same
-  host</a></li>
+  <li><a href="#Broadcast">Client and Server Broadcast Addresses Dont
+    Match</a></li>
+  <li><a href="#Client">Client Isnt Configured to Use the Server's
+  Port</a></li>
+  <li><a href="#Unicast">Unicast Addreses in the EPICS_CA_ADDR_LIST Does not
+    Reliably Contact Servers Sharing the Same UDP Port on the Same
+  Host</a></li>
 </ul>
 
-<h3><a href="#Notes">Function Call Interface Guidelines</a></h3>
+<h3><a href="#Function">Function Call Interface Guidelines</a></h3>
+<ul>
+  <li><a href="#Flushing">Flushing and Blocking</a></li>
+  <li><a href="#Status">Status Codes</a></li>
+  <li><a href="#Channel">Channel Access Data Types</a></li>
+  <li><a href="#User">User Supplied Callback Functions</a></li>
+  <li><a href="#Channel1">Channel Access Exceptions</a></li>
+  <li><a href="#Server">Server and Client Share the Same Address Space on The
+    Same Host</a></li>
+  <li><a href="#Arrays">Arrays</a></li>
+  <li><a href="#Connection">Connection Management</a></li>
+  <li><a href="#Thread">Thread Safety and Preemptive Callback to User
+  Code</a></li>
+  <li><a href="#Polling">Polling the CA Client Library From Single Threaded
+    Applications</a></li>
+  <li><a href="#Avoid">Avoid Emulating Bad Parctices that May Still be
+    Common</a></li>
+</ul>
 
 <h3>Functionality Index </h3>
 <ul>
@@ -117,6 +135,7 @@ height="31" width="88"></a></p>
   <li><a href="#ca_puser">ca_puser</a></li>
   <li><a href="#ca_put">ca_put</a></li>
   <li><a href="#ca_set_puser">ca_set_puser</a></li>
+  <li><a href="#ca_signal">ca_signal</a></li>
   <li><a href="#ca_sg_block">ca_sg_block</a></li>
   <li><a href="#ca_sg_create">ca_sg_create</a></li>
   <li><a href="#ca_sg_delete">ca_sg_delete</a></li>
@@ -131,6 +150,7 @@ height="31" width="88"></a></p>
   <li><a href="#dbr_size[]">dbr_size[]</a></li>
   <li><a href="#L6946">dbr_size_n</a></li>
   <li><a href="#dbr_value_size">dbr_value_size[]</a></li>
+  <li><a href="#ca_signal">SEVCHK</a></li>
 </ul>
 
 <h3>Deprecated Function Call Interface Function Index</h3>
@@ -495,8 +515,8 @@ resources sending periodic state-of-health messages. Second, if a client does
 not see the server's beacons, then it may not connect to a newly introduced
 server that was initially inaccessible if the client timed out attempting to
 find it.</em> The typical situation where a client would not see the server's
-beacon might be when the client isnt on the same IP subnet as the server, the
-EPICS_CA_ADDR_LIST was modified to include a destination address for the
+beacon might be when the client isnt on the same IP subnet as the server, and
+the EPICS_CA_ADDR_LIST was modified to include a destination address for the
 server, but the server's beacon address list was not modified so that it's
 beacons are received by the client.</p>
 
@@ -524,11 +544,11 @@ relying on its CA repeater for services exit.</p>
 
 <h3><a name="Configurin">Configuring the Time Zone</a></h3>
 
-<p><em>Readers Note: Starting with EPICS R3.14 all of the libraries in the
-EPICS base distribution rely on facilities built into the operating system to
-determine the correct time zone. Nevertheless, several programs commonly used
-with EPICS still use the original "tssubr" library and therefore they still
-rely on proper configuration of EPICS_TS_MIN_WEST.</em></p>
+<p><em>Note: Starting with EPICS R3.14 all of the libraries in the EPICS base
+distribution rely on facilities built into the operating system to determine
+the correct time zone. Nevertheless, several programs commonly used with
+EPICS still use the original "tssubr" library and therefore they still rely
+on proper configuration of EPICS_TS_MIN_WEST.</em></p>
 
 <p>While the CA client library does not translate in between the local time
 and the time zone independent internal storage of EPICS time stamps, many
@@ -690,21 +710,22 @@ not implemet this feature</em>.</p>
 
 <h3><a name="When">When Clients Do Not Connect to Their Server</a></h3>
 
-<h4><a name="Broadcast">Broadcast addresses dont match</a></h4>
+<h4><a name="Broadcast">Client and Server Broadcast Addresses Dont
+Match</a></h4>
 
 <p>Verify that the broadcast addresses are identical on the server's host and
 on the client's host. This can be checked  on UNIX with "netstat -i" or
 "ifconfig -a"; on vxWorks with ifShow; and on windows with ipconfig.</p>
 
-<h4><a name="Client">Client isnt configured to use the server's port</a></h4>
+<h4><a name="Client">Client Isnt Configured to Use the Server's Port</a></h4>
 
 <p>Verify that the client and server are using the same UDP port. Check the
 server's port by running "netstat -a | grep nnn" where nnn is the port number
 configured in the client. If you do not set EPICS_CA_SERVER_PORT or
 EPICS_CAS_SERVER_PORT then the default port will be 5064.</p>
 
-<h4><a name="Unicast">Unicast addreses in the EPICS_CA_ADDR_LIST does not
-reliably contact servers sharing the same UDP port on the same host</a></h4>
+<h4><a name="Unicast">Unicast Addreses in the EPICS_CA_ADDR_LIST Does not
+Reliably Contact Servers Sharing the Same UDP Port on the Same Host</a></h4>
 
 <p>Two servers can run on the same host with the same server port number, but
 there are restrictions. If the host has a modern IP kernel it is possible to
@@ -722,7 +743,20 @@ weakness of most IP kernel implementations) only one of the servers will
 typically receive UDP search requests sent to unicast addresses (i.e. a
 single specific host's ip address).</p>
 
-<h2>Function Call Interface General Guidelines</h2>
+<h2><a name="Function">Function Call Interface General Guidelines</a></h2>
+
+<h3><a name="Flushing">Flushing and Blocking</a></h3>
+
+<p>Significant performance gains can be realized when the CA client library
+doesn't wait for a response to return from the server after each request. All
+requests which require interaction with a CA server are accumulated
+(buffered) and not forwarded to the IOC until one of ca_flush_io, ca_pend_io,
+ca_pend_event, or ca_sg_pend are called allowing several operations to be
+efficiently sent over the network together. Any process variable values
+written into your program's variables by ca_get() should not be referenced by
+your program until ECA_NORMAL has been received from ca_pend_io().</p>
+
+<h3><a name="Status">Status Codes</a></h3>
 
 <p>If successful, the routines described here return the status code
 ECA_NORMAL. Unsuccessful status codes returned from the client library are
@@ -730,24 +764,119 @@ listed with each routine in this manual. Operations that appear to be valid
 to the client can still fail in the server. Writing the string "off" to a
 floating point field is an example of this type of error. If the server for a
 channel is located in a different address space than the client then the
-ca_xxx() operations that communicate with the server returns status
-indicating the validity of the request and whether it was successfully
-enqueued to the server.</p>
+ca_xxx() operations that communicate with the server return status indicating
+the validity of the request and whether it was successfully enqueued to the
+server, but communication of completion status is defered until a user
+callback is called, or lacking that an exception handler is called. An error
+number and the error's severity are embedded in CA status (error) constants.
+Applications shouldn't test the success of a CA function call by checking to
+see if the returned value is zero as is the UNIX convention. Below are
+several methods to test CA function returns. See <a
+href="#ca_signal">ca_signal() and SEVCHK</a> for more information on this
+topic.</p>
+<pre><code>status = ca_XXXX(); 
+SEVCHK( status, "ca_XXXX() returned failure status"); 
 
-<p>Significant performance gains may be realized if we don't wait for a
-response to return from the server after each request. All requests which
-require interaction with a CA server are accumulated (buffered) and not
-forwarded to the IOC until one of ca_flush_io, ca_pend_io, ca_pend_event, or
-ca_sg_pend are called allowing several operations to be efficiently sent over
-the network together. Any process variable values written into your program's
-variables by ca_get() should not be referenced by your program until
-ECA_NORMAL has been received from ca_pend_io().</p>
+if ( status &amp; CA_M_SUCCESS ) { 
+        printf ( "The requested ca_XXXX() operation didn't complete successfully\n"); 
+} 
 
-<p>All arguments of type chtype expect one of the set of DBR_XXXX. These
-constants, defined in db_access.h, enumerate which of the standard data types
-you wish to transfer. There are data types for all of the C primitive types
-and there are also compound types that include various process variable
-properties such as units, limits, time stamp, or alarm status.</p>
+if ( status != ECA_NORMAL ) { 
+        printf("The requested ca_XXXX() operation didn't complete successfully because \"%s\"\n",
+                ca_message ( status ) ); 
+}</code></pre>
+
+<h3><a name="Channel">Channel Access Data Types</a></h3>
+
+<p>Arguments of type chtype specifying the data type you wish to transfer.
+They expect one of the set of DBR_XXXX data type codes defined in
+db_access.h. There are data types for all of the C primitive types, and there
+are also compound (C structure) types that include various process variable
+properties such as units, limits, time stamp, or alarm status. The primitive
+C types follow a naming convention where the C typedef dbr_xxxx_t corresponds
+to the DBR_XXXX data type code. The compound (C structure) types follow a
+naming convention where the C structure tag dbr_xxxx corresponds to the
+DBR_XXXX data type code. The following table provides more details on the
+structure of the CA data type space. Since data addresses are passed to the
+CA client library as typeless "void *" pointers then care should be taken to
+ensure that you have passed the corect C data type corresponding to the
+DBR_XXXX type that you have specified. Architecture independent types are
+provided in db_access.h to assist programmers in writing portable code. For
+example "dbr_short_t" should be used to send or receive type DBR_SHORT. </p>
+
+<table border="1">
+  <caption>Structure of the Channel Access Data Type Space</caption>
+  <tbody>
+    <tr>
+      <td><strong>CA Type Code</strong></td>
+      <td><strong>Read / Write</strong></td>
+      <td><strong>Primitive C Data Type</strong></td>
+      <td><strong>Process Variable Properties</strong></td>
+    </tr>
+    <tr>
+      <td>DBR_&lt;PRIMITIVE TYPE&gt;</td>
+      <td>RW</td>
+      <td>dbr_&lt;primitive type&gt;_t</td>
+      <td>value</td>
+    </tr>
+    <tr>
+      <td>DBR_STS_&lt;PRIMITIVE TYPE&gt;</td>
+      <td>R</td>
+      <td>struct dbr_sts_&lt;primitive type&gt;</td>
+      <td>value, alarm status, and alarm severity</td>
+    </tr>
+    <tr>
+      <td>DBR_TIME_&lt;PRIMITIVE TYPE&gt;</td>
+      <td>R</td>
+      <td>struct dbr_time_&lt;primitive type&gt;</td>
+      <td>value, alarm status, alarm severity, and time stamp</td>
+    </tr>
+    <tr>
+      <td>DBR_GR_&lt;PRIMITIVE TYPE&gt;</td>
+      <td>R</td>
+      <td>struct dbr_gr_&lt;primitive type&gt;</td>
+      <td>value, alarm status, alarm severity, units, display precision, and
+        graphic limits</td>
+    </tr>
+    <tr>
+      <td>DBR_CTRL_&lt;PRIMITIVE TYPE&gt;</td>
+      <td>R</td>
+      <td>struct dbr_ctrl_&lt;primitive type&gt;</td>
+      <td>value, alarm status, alarm severity, units, display precision,
+        graphic limits, and control limits</td>
+    </tr>
+    <tr>
+      <td>DBR_PUT_ACKT</td>
+      <td>W</td>
+      <td>dbr_put_ackt_t</td>
+      <td>Used for global alarm ackknoledgement. Do transient alarms have to
+        be acknowledged? (0,1) means (no, yes).</td>
+    </tr>
+    <tr>
+      <td>DBR_PUT_ACKS</td>
+      <td>W</td>
+      <td>dbr_put_acks_t</td>
+      <td>Used for global alarm ackknoledgement. The highest alarm severity
+        to acknowledge. If the current alarm severity is less then or equal
+        to this value the alarm is acknowledged.</td>
+    </tr>
+    <tr>
+      <td>DBR_STSACK_STRING</td>
+      <td>R</td>
+      <td>struct dbr_stsack_string</td>
+      <td>value, alarm status, alarm severity, ackt, ackv</td>
+    </tr>
+    <tr>
+      <td>DBR_CLASS_NAME</td>
+      <td>R</td>
+      <td>dbr_class_name_t</td>
+      <td>name of enclosing interface (name of the record if channel is
+        attached to EPICS run time database)</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="User">User Supplied Callback Functions</h3>
 
 <p>Certain CA client initiated requests asynchronously execute an application
 supplied call back in the client when a response arrives. The functions
@@ -771,25 +900,29 @@ application.</p>
         int status; /* ECA_XXX status of the op from server */ 
 };</code></pre>
 
+<h3><a name="Channel1">Channel Access Exceptions</a></h3>
+
 <p>When the server detects a failure, and there is no client call back
 function attached to the request, then an exception handler is executed in
 the client. The default exception handler prints a message on the console and
-exits if the exception condition is severe. To modify this behavior see <a
-href="#ca_add_exception_event">ca_add_exception_event()</a>.</p>
+exits if the exception condition is severe. Certain internal exceptions
+within the CA client library, and failures detected by the SEVCHK macro may
+also cause the exception handler to be invoked. To modify this behavior see
+<a href="#ca_add_exception_event">ca_add_exception_event()</a>.</p>
 
-<p>If the server for the channel and the client are located on the same node
-then the ca_xxx() operations bypass the server and directly interact with the
-server tool (the IOC's database). Therefore, the ca_xxx() routines always
-return the status of the operation directly to the caller with no opportunity
-for asynchronous notification of failure via an exception handler.</p>
+<h3><a name="Server">Server and Client Share the Same Address Space on The
+Same Host</a></h3>
 
-<p>Certain routines have arguments that specify an address at which channel
-access is to write a value of type DBR_XXXX. Care should be taken to ensure
-that you have reserved space of sufficient size. Architecture independent
-types are provided in db_access.h to assist programmers in writing portable
-code. For example "dbr_short_t" should be used to send or receive type
-DBR_SHORT. The dbr type size returning MACROS provided in db_access.h may
-also be used.</p>
+<p>If the Process Variable's server and it's client are colocated within the
+same memory address space and the same host then the ca_xxx() operations
+bypass the server and directly interact with the server tool component
+(commonly the IOC's function block database). In this situation the ca_xxx()
+routines frequently return the completion status of the requested operation
+directly to the caller with no opportunity for asynchronous notification of
+failure via an exception handler. Likewise, callbacks may be directly invoked
+by the CA library functions that request them.</p>
+
+<h3><a name="Arrays">Arrays</a></h3>
 
 <p>For routines that require an argument specifying the number of array
 elements, no more than the process variable's maximum native element count
@@ -802,22 +935,32 @@ limits the number of elements in an array to be no more than approximately
 R3.14 the maximum array size may be configured in the client and in the
 server.</p>
 
-<p>Channel connections through the network are inherently transient. Channels
-are always initially assumed to be disconnected. A connection state change
-call back function may be installed to be run whenever a channel connects or
+<h3><a name="Connection">Connection Management</a></h3>
+
+<p>You should assume that the availablity of paths through your network is
+transient. When you create a CA channel its initial connection state will
+most commonly be disconnected. If the Process Variable's server is available
+the library will immediatly initiate the necessary actions to make a
+connection with it. Otherwise, the client library will monitor the state of
+servers on the network and immediately connect or reconnect with the process
+variable's server when it becomes available. A connection state change call
+back function may be installed to be run whenever a CA channel connects or
 disconnects. If a connection state change call back function is not installed
 (if a nil function pointer is supplied) then the user must wait for
 successful status from ca_pend_io prior to using the channel for the first
 time. Once the channel connects the user can freely perform IO operations
 through the channel, but he should expect that the channel might disconnect
-at any time due to network interruptions or server restarts. Otherwise, if a
-connection state change call back function is supplied, one of the arguments
-to this function distinguishes between connect and disconnect events. If a
-connection state change call back function is installed on a particular
-channel by the user ca_pend_io will not block for the channel to connect. The
-user's connection state change function will be run immediately when the
-channel is created if the CA client and the server are both hosted in the
-same address space (IOC).</p>
+at any time due to network connectivity disruptions or server restarts.
+Otherwise, if a connection state change call back function is supplied, one
+of the arguments to this function distinguishes between connect and
+disconnect events. If a connection state change call back function is
+installed on a particular channel by the user ca_pend_io will not block for
+the channel to connect. The user's connection state change function will be
+run immediately when the channel is created if the CA client and the server
+are both hosted in the same address space.</p>
+
+<h3><a name="Thread">Thread Safety and Preemptive Callback to User
+Code</a></h3>
 
 <p>Starting with EPICS R3.14 the CA client libraries are fully thread safe on
 all OS (in past releases the library was thread safe only on vxWorks). When
@@ -828,34 +971,25 @@ called by CA's auxiliary threads when the main initiating channel access
 thread is not inside of a function in the channel access client library.
 Otherwise, the user's call back functions will be called only when the main
 initiating channel access thread is executing inside of the CA client
-library.</p>
+library. When the CA client library invokes a user's call back function it
+will always wait for the current callback to complete prior to executing
+another call back function.</p>
+
+<h3><a name="Polling">Polling the CA Client Library From Single Threaded
+Applications</a></h3>
 
 <p>If preemptive call back is not enabled, then for proper operation CA must
 periodically be polled to take care of background activity. This requires
 that your application must either wait in one of ca_pend_event(),
-ca_pend_io(), or ca_sg_block() or alternatively it must call ca_poll() every
-100 milli-seconds.</p>
+ca_pend_io(), or ca_sg_block() or alternatively it must call ca_poll() at
+least every 100 milli-seconds. In single threaded applications a file
+descriptor manager like Xt or the interface described in fdManager.h can be
+used to monitor both mouse clicks and also CA's file descriptors so that
+ca_poll() can be called immediatly when CA server messages arrives over the
+network.</p>
 
-<p>When CA invokes a user's call back function it will always wait for the
-callback to run to completion prior to executing another call back
-function.</p>
-
-<p>The error number and the error severity are embedded in CA status (error)
-constants. Applications shouldn't test the success of a CA function call by
-checking to see if the returned value is zero as is the UNIX convention.
-Below are several methods to test CA function returns. See ca_signal() on
-page 24 for more information on this topic.</p>
-<pre><code>status = ca_XXXX(); 
-SEVCHK( status, "ca_XXXX() returned failure status"); 
-
-if ( status &amp; CA_M_SUCCESS ) { 
-        printf ( "The requested ca_XXXX() operation didn't complete successfully\n"); 
-} 
-
-if ( status != ECA_NORMAL ) { 
-        printf("The requested ca_XXXX() operation didn't complete successfully because \"%s\"\n",
-                ca_message ( status ) ); 
-}</code></pre>
+<h3><a name="Avoid">Avoid Emulating Bad Parctices that May Still be
+Common</a></h3>
 
 <p>With the embryonic releases of EPICS it was a common practice to examine a
 channel's connection state, its native type, and its native element count by
@@ -863,8 +997,8 @@ directly accessing fields in a structure using a pointer stored in type
 <code>chid</code>. Likewise, a user private pointer in the per channel
 structure was also commonly set by directly accessing fields in the channel
 structure. A number of difficulties arise from this practice, which has long
-since been deprecated. For example, in release 3.13 it was recognized that
-transient changes in certain private fields in the per channel structure
+since been deprecated. For example, prior to release 3.13 it was recognized
+that transient changes in certain private fields in the per channel structure
 would make it difficult to reliably test the channels connection state using
 these private fields directly. Therefore, in release 3.13 the names of
 certain fields were changed to discourage this practice. Starting with
@@ -1287,7 +1421,7 @@ int ca_add_masked_array_event ( chtype TYPE,
 
 <h4>Description</h4>
 
-<p>Reguister a state change subscription and specify a call back function to
+<p>Register a state change subscription and specify a call back function to
 be invoked whenever the process variable undergoes significant state changes.
 A significant change can be a change in the process variable's value, alarm
 status, or alarm severity. In the process control function block database the
@@ -1551,7 +1685,7 @@ becomes full.</p>
 
 <p>ECA_NORMAL - Normal successful completion</p>
 
-<h3><code>ca_signal()</code></h3>
+<h3><code><a name="ca_signal">ca_signal</a>()</code></h3>
 <pre><code>#include &lt;cadef.h&gt;
 int ca_signal ( long CA_STATUS, const char * CONTEXT_STRING ); 
 void SEVCHK( CA_STATUS, CONTEXT_STRING );</code></pre>

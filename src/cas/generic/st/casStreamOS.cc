@@ -256,10 +256,6 @@ inline void casStreamOS::armRecv()
 	if ( ! this->pRdReg ) {
 		if ( ! this->in.full() ) {
 			this->pRdReg = new casStreamReadReg ( *this );
-			if ( ! this->pRdReg ) {
-				errMessage ( S_cas_noMemory, "armRecv()" );
-                throw S_cas_noMemory;
-			}
 		}
 	}
 }
@@ -285,10 +281,6 @@ inline void casStreamOS::armSend()
 
 	if ( ! this->pWtReg ) {
 		this->pWtReg = new casStreamWriteReg(*this);
-		if (!this->pWtReg) {
-			errMessage(S_cas_noMemory, "armSend() failed");
-            throw S_cas_noMemory;
-		}
 	}
 }
 

@@ -54,9 +54,6 @@ casBeaconTimer::~casBeaconTimer ()
 caServerOS::caServerOS ()
 {
 	this->pBTmr = new casBeaconTimer(0.0, *this);
-	if (!this->pBTmr) {
-		throw S_cas_noMemory;
-	}
 }
 
 //

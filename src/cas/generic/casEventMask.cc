@@ -100,15 +100,7 @@ casEventMask casEventRegistry::registerEvent(const char *pName)
 		}
 		else {
 			pEntry = new casEventMaskEntry(*this, mask, pName);
-			if (pEntry) {
-				mask = *pEntry;
-			}
-			else {
-				mask.mask = 0u;
-				errMessage(S_cas_noMemory, 
-					"mask bit was lost during init");
-                throw S_cas_noMemory;
-			}
+			mask = *pEntry;
 		}
 	}
 	return mask;

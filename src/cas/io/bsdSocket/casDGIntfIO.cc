@@ -103,7 +103,7 @@ casDGIntfIO::casDGIntfIO (caServerI &serverIn, const caNetAddr &addr,
             this->sock, &serverAddr); // match addr 
 		removeDuplicateAddresses ( &BCastAddrList, &tmpList, 1 );
         if (ellCount(&BCastAddrList)<1) {
-            errMessage (S_cas_noInterface, "unable to continue");
+            errMessage (S_cas_noInterface, "- unable to continue");
             socket_close (this->sock);
             throw S_cas_noInterface;
         }
@@ -289,8 +289,8 @@ casDGIntfIO::osdRecv ( char * pBufIn, bufSizeT size, // X aCC 361
     }
 
     addrSize = ( osiSocklen_t ) sizeof (addr);
-    status = recvfrom (this->sock, pBufIn, size, 0,
-                       &addr, &addrSize);
+    status = recvfrom ( sockThisTime, pBufIn, size, 0,
+                       &addr, &addrSize );
     if (status<=0) {
         if (status<0) {
             int errnoCpy = SOCKERRNO;
@@ -368,7 +368,7 @@ bufSizeT casDGIntfIO::incomingBytesPresent () const // X aCC 361
 //
 // casDGIntfIO::sendBeaconIO()
 // 
-void casDGIntfIO::sendBeaconIO ( char &msg, unsigned length,
+void casDGIntfIO::sendBeaconIO ( char & msg, unsigned length,
                                 aitUint16 & portField, aitUint32 & addrField ) 
 {
     caNetAddr           addr = this->serverAddress ();
@@ -383,7 +383,7 @@ void casDGIntfIO::sendBeaconIO ( char &msg, unsigned length,
          pAddr; pAddr = reinterpret_cast <osiSockAddrNode *> (ellNext(&pAddr->node))) {
         status = connect (this->beaconSock, &pAddr->addr.sa, sizeof(pAddr->addr.sa));
         if (status<0) {
-            ipAddrToA (&pAddr->addr.ia, buf, sizeof(buf));
+            ipAddrToDottedIP (&pAddr->addr.ia, buf, sizeof(buf));
             errlogPrintf ( "%s: CA beacon routing (connect to \"%s\") error was \"%s\"\n",
                 __FILE__, buf, SOCKERRSTR(SOCKERRNO));
         }

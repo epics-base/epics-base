@@ -37,20 +37,17 @@ static const caHdr nill_msg = {0u,0u,0u,0u,0u,0u};
 casStrmClient::casStrmClient ( caServerI &serverInternal ) :
 	casClient ( serverInternal, 1 )
 {
+    this->pHostName = new char [1u];
+    *this->pHostName = '\0';
+
 	this->lock ();
 
 	this->ctx.getServer()->installClient ( this );
 
-    this->pHostName = new char [1u];
-    if ( ! this->pHostName ) {
-        throw S_cas_noMemory;
-    }
-    *this->pHostName = '\0';
-
-    this->pUserName = new char [1u];
+    this->pUserName = new ( std::nothrow ) char [1u];
     if ( ! this->pUserName ) {
         free ( this->pHostName );
-        throw S_cas_noMemory;
+        throw std::bad_alloc();
     }
     *this->pUserName= '\0';
 

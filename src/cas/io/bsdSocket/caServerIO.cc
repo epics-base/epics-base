@@ -66,8 +66,6 @@ void caServerIO::locateInterfaces ()
 	}
 
 	memset ((char *)&saddr,0,sizeof(saddr));
-	saddr.sin_family = AF_INET;
-	saddr.sin_port =  ntohs (port);
 
 	pStr = envGetConfigParam(&EPICS_CA_AUTO_ADDR_LIST, sizeof(buf), buf);
 	if (pStr) {
@@ -98,7 +96,7 @@ void caServerIO::locateInterfaces ()
 		while ( (pToken = getToken(&pStr, buf, sizeof(buf))) ) {
 			int status;
 
-			status = aToIPAddr (pToken, 0u, &saddr);
+			status = aToIPAddr (pToken, port, &saddr);
 			if (status) {
 				errlogPrintf(
 					"%s: Parsing '%s'\n",
@@ -118,6 +116,8 @@ void caServerIO::locateInterfaces ()
 		}
 	}
 	else {
+        saddr.sin_family = AF_INET;
+        saddr.sin_port =  ntohs (port);
 		saddr.sin_addr.s_addr = htonl(INADDR_ANY);
 		stat = this->attachInterface (caNetAddr(saddr), autoBeaconAddr, true);
 		if (stat) {

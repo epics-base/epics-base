@@ -35,10 +35,6 @@ epicsShareFunc caServer::caServer ()
     }    
 
     this->pCAS = new caServerI(*this);
-    if (this->pCAS==NULL) {
-        errMessage (S_cas_noMemory, " - unable to create caServer");
-        throw S_cas_noMemory;
-    }
 }
 
 //

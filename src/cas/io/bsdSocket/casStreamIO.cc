@@ -14,6 +14,9 @@
 //
 //
 // $Log$
+// Revision 1.25  2002/07/12 21:33:37  jba
+// Updated license comments.
+//
 // Revision 1.24  2002/05/29 00:19:31  jhill
 // large array modifications
 //
@@ -170,7 +173,7 @@ casStreamIO::casStreamIO(caServerI &cas, const ioArgsToNewStreamIO &args) :
 					(char *)&i,
 					sizeof(i));
 	if(status < 0){
-			errlogPrintf("CAS: SO_RCVBUF set failed\n");
+		errlogPrintf("CAS: SO_RCVBUF set failed\n");
 	    throw S_cas_internal;
 	}
 #endif

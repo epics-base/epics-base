@@ -79,8 +79,9 @@ caServerI::caServerI (caServer &tool) :
     this->locateInterfaces ();
 
 	if (this->intfList.count()==0u) {
-		errMessage (S_cas_noInterface, "CA server internals init");
-		return;
+		errMessage (S_cas_noInterface, 
+            "- CA server internals init unable to continue");
+        throw S_cas_noInterface;
 	}
 
 	return;

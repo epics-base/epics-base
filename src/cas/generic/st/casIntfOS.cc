@@ -49,11 +49,6 @@ casIntfOS::casIntfOS (caServerI &casIn, const caNetAddr &addrIn,
     this->setNonBlocking();
     
     this->pRdReg = new casServerReg(*this);
-    if (this->pRdReg==NULL) {
-        errMessage (S_cas_noMemory,
-				"casIntfOS::casIntfOS()");
-        throw S_cas_noMemory;
-    }
 }
 
 //

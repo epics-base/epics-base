@@ -219,17 +219,9 @@ void casDGIntfOS::armRecv()
 	if ( ! this->in.full () ) {
 	    if (!this->pRdReg) {
 			this->pRdReg = new casDGReadReg(*this);
-			if (!this->pRdReg) {
-				errMessage (S_cas_noMemory, "armRecv()");
-                throw S_cas_noMemory;
-			}
 		}
 	    if (this->validBCastFD() && this->pBCastRdReg==NULL) {
 			this->pBCastRdReg = new casDGBCastReadReg(*this);
-			if (!this->pBCastRdReg) {
-				errMessage (S_cas_noMemory, "armRecv()");
-                throw S_cas_noMemory;
-			}
 	    }
     }
 }
@@ -258,10 +250,6 @@ void casDGIntfOS::armSend()
 
 	if (!this->pWtReg) {
 		this->pWtReg = new casDGWriteReg(*this);
-		if (!this->pWtReg) {
-			errMessage (S_cas_noMemory, "armSend()");
-            throw S_cas_noMemory;
-		}
 	}
 }
 

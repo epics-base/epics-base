@@ -1,103 +1,108 @@
-<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<!DOCTYPE html public "-//w3c//dtd html 4.0 transitional//en">
 <html>
 <head>
-   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-   <meta name="GENERATOR" content="Mozilla/4.51 [en] (X11; U; SunOS 5.6 sun4u) [Netscape]">
+  <title></title>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
 </head>
-<body>
 
-<h1>
-msi: Macro Substitution and Include Tool</h1>
-Marty Kraimer
-<br>Argonne National Laboratory - Advanced Photon Source
-<br>Original:&nbsp; April 26, 1999
-<h2>
-Introduction</h2>
-msi is a general purpose macro substitution/include tool. It accepts as
-input an ascii template file. It looks for lines containing two reserved
-command names: include and substitute. It also looks for and performs substitutions
+<body>
+<h1>msi: Macro Substitution and Include Tool</h1>
+Marty Kraimer <br>
+Argonne National Laboratory - Advanced Photon Source <br>
+Original:&nbsp; April 26, 1999 
+
+<h2>Introduction</h2>
+msi is a general purpose macro substitution/include tool. It accepts as input
+an ascii template file. It looks for lines containing two reserved command
+names: include and substitute. It also looks for and performs substitutions
 on macros of the form $(var) and ${var}. It uses the macLib, an epics base
 library created by William Lupton, to perform the substitutions.
+
 <p>msi also allows substitutions to be specified via a separate substitution
-file. This substitution file allows the same format as the substitution
-files accepted by dbLoadTemplate or subtool.
-<br>&nbsp;
-<h2>
-Command Syntax:</h2>
+file. This substitution file allows the same format as the substitution files
+accepted by dbLoadTemplate or subtool. <br>
+&nbsp; </p>
 
+<h2>Command Syntax:</h2>
 <pre>msi -V -ofile -Idir -Msub -Ssubfile template</pre>
-NOTE: All parameters are optional and a space is optional between&nbsp;
--o, -I, -M, and -S&nbsp; and the&nbsp; associated value. Output is written
-to stdout unless the -o option is given.
-<p>Where:
-<p><tt>-V</tt>
-<ul>If this parameter is specified then an undefined macro is considered
-an error. An error message is generated and the line containing the macro
-is not written to the output.</ul>
-<tt>-o file</tt>
-<ul>Output will be written to the specifed file rather than to the standard output.</ul>
+NOTE: All parameters are optional and a space is optional between&nbsp; -o,
+-I, -M, and -S&nbsp; and the&nbsp; associated value. Output is written to
+stdout unless the -o option is given. 
 
-<tt>-I dir</tt>
-<ul>This parameter, which may be repeated, specifies a search path for
-include commands. For example:</ul>
+<p>Where:</p>
 
-<dd>
-<tt>&nbsp;&nbsp;&nbsp; msi -I "/home/phoebus/MRK/examples:." -I".." template</tt></dd>
-
-<dd>
-specifies the search path:</dd>
-
-<dd>
-<tt>&nbsp;&nbsp;&nbsp; /home/phoebus/MRK/examples:.:..</tt></dd>
-
-<br>-M substitutions
-<ul>This parameter, which may be repeated, specifies marco substitutions.
-For example:</ul>
-
-<dd>
-<tt>&nbsp;&nbsp;&nbsp; msi -M "a=aval,b=bval" -M"c=cval" template</tt></dd>
-
-<ul>specifies that in the template file each occurrence of:</ul>
-
+<p><tt>-V</tt></p>
 <ul>
-<dd>
-$(a) or ${a} is replaced by aval</dd>
+  If this parameter is specified then an undefined macro is considered an
+  error. An error message is generated and when msi terminates it will do so
+  with an exit status of 2.
 
-<dd>
-$(b) or ${b} is replaced by bval</dd>
+  <p></p>
+</ul>
+<tt>-o file</tt>
+<ul>
+  Output will be written to the specifed file rather than to the standard
+  output.
 
-<dd>
-$(c) or ${c} is replaced by cval</dd>
+  <p></p>
+</ul>
+<tt>-I dir</tt>
+<ul>
+  This parameter, which may be repeated, specifies a search path for include
+  commands. For example:</ul>
+<dl>
+    <dd><tt>&nbsp;&nbsp;&nbsp; msi -I "/home/phoebus/MRK/examples:." -I".."
+      template</tt></dd>
+</dl>
+  <dd>specifies the search path:</dd>
+  <dd><tt>&nbsp;&nbsp;&nbsp; /home/phoebus/MRK/examples:.:..</tt></dd>
+<br>
+-M substitutions
+<ul>
+  This parameter, which may be repeated, specifies marco substitutions. For
+  example:</ul>
+<dl>
+    <dd><tt>&nbsp;&nbsp;&nbsp; msi -M "a=aval,b=bval" -M"c=cval"
+    template</tt></dd>
+</dl>
+<ul>
+  specifies that in the template file each occurrence of:</ul>
+<ul>
+  <dl>
+      <dd>$(a) or ${a} is replaced by aval</dd>
+  </dl>
+    <dd>$(b) or ${b} is replaced by bval</dd>
+    <dd>$(c) or ${c} is replaced by cval</dd>
 </ul>
 -S subfile
-<ul>The substitution file. See below for format.</ul>
+<ul>
+  The substitution file. See below for format.</ul>
 template
-<ul>The input file. If no file is specified then input is taken from stdin,
-i.e. msi can be used as a filter. See below for a description of commands
-that can be embedded in the template file.</ul>
+<ul>
+  The input file. If no file is specified then input is taken from stdin,
+  i.e. msi can be used as a filter. See below for a description of commands
+  that can be embedded in the template file.</ul>
 NOTE: It is not possible to display usage by just typing <tt>msi</tt> since
 executing the command with no arguments i s a valid command. To show usage
 specify an illegal switch, e.g.
 <ul>
-<pre>msi -help</pre>
 </ul>
+<pre>msi -help</pre>
 
-<h2>
-Template File Format</h2>
+<h2>Template File Format</h2>
 This file contains the text to be read and written to the output after macro
-substitution is performed. If no file is given then input is read from
-stdin. In addition the file can have lines containing include and substitute
+substitution is performed. If no file is given then input is read from stdin.
+In addition the file can have lines containing include and substitute
 commands. The format of these commands are:
 <pre>&nbsp;&nbsp;&nbsp; include "file"</pre>
-
 <pre>&nbsp;&nbsp;&nbsp; substitute "var=value,var=value,..."</pre>
 For example let the command be:
 <pre>&nbsp;&nbsp;&nbsp; msi template</pre>
 and file includeFile contain:
 <pre>&nbsp;&nbsp;&nbsp; first name is ${first}
 &nbsp;&nbsp;&nbsp; family name is ${family}</pre>
-and template is
-<br>&nbsp;
+and template is <br>
+&nbsp; 
 <pre>&nbsp;&nbsp;&nbsp; substitute "first=Marty,family=Kraimer"
 &nbsp;&nbsp;&nbsp; include "includeFile"
 &nbsp;&nbsp;&nbsp; substitute "first=Irma,family=Kraimer"
@@ -108,27 +113,26 @@ then the following is written to the output.
 &nbsp;&nbsp;&nbsp; first name is Irma
 &nbsp;&nbsp;&nbsp; family name is Kraimer</pre>
 
-<h2>
-Substitution File Format</h2>
+<h2>Substitution File Format</h2>
 The optional substitution file has three formats: regular, pattern, and
-dbTemplate format. Lets discuss&nbsp; each separately
-<br>&nbsp;
-<h3>
-regular format</h3>
+dbTemplate format. Lets discuss&nbsp; each separately <br>
+&nbsp; 
+
+<h3>regular format</h3>
 
 <blockquote>
-<pre>{var1=value1,var2=value2,...}
+  <pre>{var1=value1,var2=value2,...}
 {var1=value1,var2=value2,...}
 ...</pre>
 </blockquote>
-After reading each set of replacements within braces,&nbsp;&nbsp; the template
-file is read and macro substitution performed.
-<br>&nbsp;
-<h3>
-pattern&nbsp; format:</h3>
+After reading each set of replacements within braces,&nbsp;&nbsp; the
+template file is read and macro substitution performed. <br>
+&nbsp; 
+
+<h3>pattern&nbsp; format:</h3>
 
 <blockquote>
-<pre>pattern {var1,var2,...}
+  <pre>pattern {var1,var2,...}
 {value1,value2,...}
 {value1,value2,...}
 pattern {var1,var2,...}
@@ -136,32 +140,31 @@ pattern {var1,var2,...}
 {value1,value2,...}</pre>
 </blockquote>
 This is the same as the regular format:
+
 <blockquote>
-<pre>{var1=value1,var2=value2}
+  <pre>{var1=value1,var2=value2}
 ...</pre>
 </blockquote>
 
-<h3>
-dbTemplate Format</h3>
+<h3>dbTemplate Format</h3>
 
 <blockquote>
-<pre>file template {
+  <pre>file template {
 &nbsp;&nbsp;&nbsp; pattern format or regular format
 }</pre>
-
-<pre>file template {
+  <pre>file template {
 &nbsp;&nbsp;&nbsp; pattern format or regular format
 }</pre>
 </blockquote>
-For the template format, the command line template argument is optional.
-If it specified it is used, otherwise the file template is used. This format
-is an extension of the format accepted by dbLoadTemplate. It allows templates
-to be&nbsp; expanded on the host rather via dbLoadTemplate.
-The file name may appear inside double quotation marks; these are only required
-if the name contains any environment variable macros of the form ${MOTOR} which
-will be expanded before the file is opened.
-<h3>
-Regular substitution example</h3>
+For the template format, the command line template argument is optional. If
+it specified it is used, otherwise the file template is used. This format is
+an extension of the format accepted by dbLoadTemplate. It allows templates to
+be&nbsp; expanded on the host rather via dbLoadTemplate. The file name may
+appear inside double quotation marks; these are only required if the name
+contains any environment variable macros of the form ${MOTOR} which will be
+expanded before the file is opened. 
+
+<h3>Regular substitution example</h3>
 Let the command be:
 <pre>&nbsp;&nbsp;&nbsp; msi -S substitute template</pre>
 <tt>template</tt> is
@@ -176,8 +179,7 @@ The following is written to the output.
 &nbsp;&nbsp;&nbsp; first name is Irma
 &nbsp;&nbsp;&nbsp; family name is Kraimer</pre>
 
-<h3>
-Pattern substitution example</h3>
+<h3>Pattern substitution example</h3>
 Let the command be:
 <pre>&nbsp;&nbsp;&nbsp; msi -S pattern template</pre>
 <tt>pattern</tt> is
@@ -185,21 +187,23 @@ Let the command be:
 &nbsp;&nbsp;&nbsp; {Marty,Kraimer}
 &nbsp;&nbsp;&nbsp; {Irma,Kraimer}</pre>
 <tt>template</tt> is the same as in the previous example.
-<p>The following is written to the output.
+
+<p>The following is written to the output.</p>
 <pre>&nbsp;&nbsp;&nbsp; first name is Marty
 &nbsp;&nbsp;&nbsp; family name is Kraimer
 &nbsp;&nbsp;&nbsp; first name is Irma
 &nbsp;&nbsp;&nbsp; family name is Kraimer</pre>
 
-<h3>
-dbTemplate example</h3>
+<h3>dbTemplate example</h3>
 Let the command be
+
 <blockquote>
-<pre>msi -S xxx.substitutions</pre>
+  <pre>msi -S xxx.substitutions</pre>
 </blockquote>
 <tt>xxx.substitutions</tt> is
+
 <blockquote>
-<pre>file template {
+  <pre>file template {
 &nbsp;&nbsp;&nbsp; pattern {first,last}
 &nbsp;&nbsp;&nbsp; {Marty,Kraimer}
 &nbsp;&nbsp;&nbsp; {Irma,Kraimer}
@@ -213,9 +217,11 @@ file template {
 }</pre>
 </blockquote>
 <tt>template</tt> is the same as in the previous example..
-<p>The following is written to the output
+
+<p>The following is written to the output</p>
+
 <blockquote>
-<pre>first name is Marty
+  <pre>first name is Marty
 family name is Kraimer
 first name is Irma
 family name is Kraimer
@@ -229,60 +235,61 @@ first name is Irma
 family name is Kraimer</pre>
 </blockquote>
 
-<h2>
-Some Details</h2>
+<h2>Some Details</h2>
 Building msi
-<ul>msi is built as a normal extensions product. It should be built with
-base version 3.13.0beta11 or later.</ul>
-
-<dt>
-Line length limits</dt>
-
-<ul>All buffers containing input or output lines are set for a maximum
-line length of 1024. Longer input or output lines will cause msi to fail.</ul>
+<ul>
+  msi is built as a normal extensions product. It should be built with base
+  version 3.13.0beta11 or later.</ul>
+<dl>
+  <dt>Line length limits</dt>
+</dl>
+<ul>
+  All buffers containing input or output lines are set for a maximum line
+  length of 1024. Longer input or output lines will cause msi to fail.</ul>
 macLib
-<ul>Currently the only macLib documentation is in macLibNOTES and macLibREADME
-which are in base/src/libCom.</ul>
+<ul>
+  Currently the only macLib documentation is in macLibNOTES and macLibREADME
+  which are in base/src/libCom.</ul>
 template file syntax
-<ul>except for lines containing include or substitute commands each line
-is just passed to macLib. Lines containing these commands MUST be of the
+<ul>
+  except for lines containing include or substitute commands each line is
+  just passed to macLib. Lines containing these commands MUST be of the
 form:</ul>
-
-<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; include "&lt;file name>"</pre>
-
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; include "&lt;file name&gt;"</pre>
 <pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; or</pre>
-
-<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; substitute "&lt;substitutions>"</pre>
-
-<ul>White space is allowed before and after the command and after the quoted
-string. If embedded quotes are needed the \ character can be used as an
-escape character. For example:</ul>
-
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; substitute "&lt;substitutions&gt;"</pre>
+<ul>
+  White space is allowed before and after the command and after the quoted
+  string. If embedded quotes are needed the \ character can be used as an
+  escape character. For example:</ul>
 <pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; substitute "a=\"val\""</pre>
-
-<ul>specifies the substitution</ul>
-
+<ul>
+  specifies the substitution</ul>
 <pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; a=val</pre>
-
-<ul>If a line does have the above syntax it is just passed to macLib for
-processing without any notification. Thus the input line:</ul>
-
+<ul>
+  If a line does have the above syntax it is just passed to macLib for
+  processing without any notification. Thus the input line:</ul>
 <pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; include "myfile" #include file</pre>
+<ul>
+  would just be passed to macLib, i.e. it would NOT be considered an include
+  command.</ul>
+substitution&nbsp; file syntax 
+<ul>
+  A comment line may appear anywhere and is just ignored. A comment line is
+  any line beginning with the character #, which MUST be the very first
+  character of the comment line.
 
-<ul>would just be passed to macLib, i.e. it would NOT be considered an
-include command.</ul>
-substitution&nbsp; file syntax
-<ul>A comment line may appear anywhere and is just ignored. A comment line
-is any line beginning with the character #, which MUST be the very first
-character of the comment line.
-<p>For items within braces separators may be given between items. A separator
-is either white space or a comma. White space is any of the following:
-space, formfeed, newline, carriage return, tab, vertical tab.
-<p>Each item within braces can be an alphanumeric token or a quoted string.
-The characters \" can be used for embedded quotes. The rules for non quoted
-strings are actually more relaxed but any item that is not an alphanumeric
-string should be given as a quoted string.
-<p>Thus
+  <p>For items within braces separators may be given between items. A
+  separator is either white space or a comma. White space is any of the
+  following: space, formfeed, newline, carriage return, tab, vertical tab.</p>
+
+  <p>Each item within braces can be an alphanumeric token or a quoted string.
+  The characters \" can be used for embedded quotes. The rules for non quoted
+  strings are actually more relaxed but any item that is not an alphanumeric
+  string should be given as a quoted string.</p>
+
+  <p>Thus</p>
+</ul>
 <pre>&nbsp;&nbsp;&nbsp; {a=aa b=bb c="\"cc\""}</pre>
 and
 <pre>&nbsp;&nbsp;&nbsp; {a=aa,b=bb,c="\"cc\""}</pre>
@@ -292,7 +299,13 @@ and
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; b="bb",
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; c="\"cc\""
 &nbsp;&nbsp;&nbsp; }</pre>
-are all equivalent.</ul>
+are all equivalent.
 
+<p></p>
+
+<h2>Exit Status</h2>
+<p>0 - Success.</p>
+<p>1 - Can't open/create file, or other I/O error.</p>
+<p>2 - <b>-V</b> option specified and one or more undefined macros were encountered.</p>
 </body>
 </html>

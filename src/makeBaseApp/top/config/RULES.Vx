@@ -4,4 +4,6 @@ inc:: $(INSTALL_INCREC)
 #
 # turn off implicit rules search for all binaries in base
 #
-$(EPICS_BASE_BIN)/* : ;
+#Jeff says this turned off all dependency checking
+#????? What to do????
+#$(EPICS_BASE_BIN)/* : ;

@@ -48,12 +48,12 @@ $(INSTALL_BIN)/installEpics: testmkdir installEpics
 testmkdir: ../testmkdir
 	@$(RM) $@
 	@$(CP) -p  $< $@
-	@/bin/chmod 755 $@
+	@$(CHMOD) 755 $@
 
 installEpics: ../installEpics
 	@$(RM) $@
 	@$(CP) -p  $< $@
-	@/bin/chmod 755 $@
+	@$(CHMOD) 755 $@
 
 endif
 

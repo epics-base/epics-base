@@ -1669,12 +1669,18 @@ char *pstring;
 		    if(!(end = strchr(pstr,'N'))) return (S_dbLib_badField);
 		    pstr = end + 1;
 		    sscanf(pstr,"%hd",&plink->value.camacio.n);
-		    if(!(end = strchr(pstr,'A'))) return (S_dbLib_badField);
-		    pstr = end + 1;
-		    sscanf(pstr,"%hd",&plink->value.camacio.a);
-		    if(!(end = strchr(pstr,'F'))) return (S_dbLib_badField);
-		    pstr = end + 1;
-		    sscanf(pstr,"%hd",&plink->value.camacio.f);
+		    if(!(end = strchr(pstr,'A')))  {
+			plink->value.camacio.a = 0;
+		    } else {
+		        pstr = end + 1;
+		        sscanf(pstr,"%hd",&plink->value.camacio.a);
+		    }
+		    if(!(end = strchr(pstr,'F'))) {
+			plink->value.camacio.f = 0;
+		    } else {
+		        pstr = end + 1;
+		        sscanf(pstr,"%hd",&plink->value.camacio.f);
+		    }
 		    plink->value.camacio.parm[0] = 0;
 		    if(end = strchr(pstr,'@')) {
 		        pstr = end + 1;

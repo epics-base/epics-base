@@ -414,8 +414,8 @@ epicsTime::epicsTime (const aitTimeStamp &ts)
     ansiTimeTicks.ts = ts.tv_sec;
     *this = epicsTime (ansiTimeTicks);
 
-    unsigned long secAdj = ts.tv_nsec / nSecPerSec;
-    unsigned long nSecAdj = ts.tv_nsec % nSecPerSec;
+    unsigned long secAdj = ts.tv_nsec / epicsTime::nSecPerSec;
+    unsigned long nSecAdj = ts.tv_nsec % epicsTime::nSecPerSec;
     *this = epicsTime (this->secPastEpoch+secAdj, this->nSec+nSecAdj);
 }
 
@@ -439,7 +439,7 @@ epicsTime::operator _FILETIME () const
 {
     static const DWORD dwordMax = 0xffffffff;
     static const double ticksPerLowWord = 
-        static_cast < double > ( dwordMax ) + 1;
+        static_cast < double > ( dwordMax ) + 1.0;
     static const double ftNanoSecPerTick = 100;
     static const double ftTicksPerSec = 1e7;
 
@@ -491,7 +491,7 @@ epicsTime::epicsTime ( const _FILETIME & ts )
 
         // adjust between file time ticks and EPICS time ticks
         static const double ticksPerLowWord = 
-            static_cast < double > ( dwordMax ) + 1;
+            static_cast < double > ( dwordMax ) + 1.0;
         static const double ftTicksPerSec = 1e7;
         static const double epicsTicksPerSec = 1e9;
         double ftTicksPastEpicsEpochFP = 
@@ -501,9 +501,9 @@ epicsTime::epicsTime ( const _FILETIME & ts )
             ( epicsTicksPerSec / ftTicksPerSec );
         this->secPastEpoch = static_cast < unsigned long > 
                         ( epicsTicksPastEpicsEpoch / nSecPerSec );
-        double nSec = epicsTicksPastEpicsEpoch - 
+        double nSecPart = epicsTicksPastEpicsEpoch - 
                 this->secPastEpoch * epicsTime::nSecPerSec;
-        this->nSec = static_cast < unsigned long > ( nSec );
+        this->nSec = static_cast < unsigned long > ( nSecPart );
     }
     else {
 	    this->secPastEpoch = 0;

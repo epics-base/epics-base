@@ -373,7 +373,7 @@ public:
     epicsShareFunc void clearEventsPostedCounter (void);
 #endif
 
-    epicsShareFunc class epicsTimerQueue & timerQueue ();
+    epicsShareFunc class epicsTimer & createTimer ();
 
 	//caStatus enableClients ();
 	//caStatus disableClients ();

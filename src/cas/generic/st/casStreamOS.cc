@@ -122,7 +122,7 @@ private:
 // casStreamEvWakeup()
 //
 casStreamEvWakeup::casStreamEvWakeup ( casStreamOS &osIn ) : 
-		timer ( fileDescriptorManager.timerQueueRef().createTimer() ), os(osIn) 
+		timer ( fileDescriptorManager.createTimer() ), os(osIn) 
 {
     this->timer.start ( *this, 0.0 );
 }
@@ -191,7 +191,7 @@ private:
 // casStreamIOWakeup::casStreamIOWakeup()
 //
 casStreamIOWakeup::casStreamIOWakeup ( casStreamOS &osIn ) : 
-	timer ( fileDescriptorManager.timerQueueRef().createTimer() ), os(osIn) 
+	timer ( fileDescriptorManager.createTimer() ), os(osIn) 
 {
     this->timer.start ( *this, 0.0 );
 }

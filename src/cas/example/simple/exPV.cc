@@ -22,7 +22,7 @@ class exFixedStringDestructor: public gddDestructor {
 // exPV::exPV()
 //
 exPV::exPV ( pvInfo &setup, bool preCreateFlag, bool scanOnIn ) : 
-    timer ( this->getCAS()->timerQueue().createTimer() ),
+    timer ( this->getCAS()->createTimer() ),
     info ( setup ),
     interest ( false ),
     preCreate ( preCreateFlag ),

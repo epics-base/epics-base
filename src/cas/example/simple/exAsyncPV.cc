@@ -56,7 +56,7 @@ caStatus exAsyncPV::write ( const casCtx &ctx, const gdd &valueIn )
 exAsyncWriteIO::exAsyncWriteIO ( const casCtx &ctxIn, exAsyncPV &pvIn, 
     const gdd &valueIn ) :
 	casAsyncWriteIO ( ctxIn ), pv ( pvIn ), 
-        timer ( pvIn.getCAS()->timerQueue().createTimer () ), pValue(valueIn)
+        timer ( pvIn.getCAS()->createTimer () ), pValue(valueIn)
 {
     this->timer.start ( *this, 0.1 );
 }
@@ -88,7 +88,7 @@ epicsTimerNotify::expireStatus exAsyncWriteIO::expire ( const epicsTime & curren
 exAsyncReadIO::exAsyncReadIO ( const casCtx &ctxIn, exAsyncPV &pvIn, 
     gdd &protoIn ) :
 	casAsyncReadIO ( ctxIn ), pv ( pvIn ), 
-        timer ( pvIn.getCAS()->timerQueue().createTimer() ), pProto ( protoIn )
+        timer ( pvIn.getCAS()->createTimer() ), pProto ( protoIn )
 {
     this->timer.start ( *this, 0.1 );
 }

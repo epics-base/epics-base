@@ -130,7 +130,7 @@ casDGIntfOS::~casDGIntfOS()
 // casDGEvWakeup::casDGEvWakeup()
 //
 casDGEvWakeup::casDGEvWakeup ( casDGIntfOS &osIn ) : 
-		timer ( fileDescriptorManager.timerQueueRef().createTimer() ), os ( osIn ) 
+		timer ( fileDescriptorManager.createTimer() ), os ( osIn ) 
 {
     this->timer.start ( *this, 0.0 );
 }
@@ -168,7 +168,7 @@ epicsTimerNotify::expireStatus casDGEvWakeup::expire( const epicsTime & currentT
 // casDGIOWakeup::casDGIOWakeup()
 //
 casDGIOWakeup::casDGIOWakeup ( casDGIntfOS &osIn ) : 
-	timer ( fileDescriptorManager.timerQueueRef().createTimer() ), os ( osIn ) 
+	timer ( fileDescriptorManager.createTimer() ), os ( osIn ) 
 {
     this->timer.start ( *this, 0.0 );
 }

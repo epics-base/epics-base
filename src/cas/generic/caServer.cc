@@ -208,11 +208,9 @@ epicsShareFunc casEventMask caServer::alarmEventMask () const
 //
 // caServer::alarmEventMask ()
 //
-// for now, this assumes that everything is single threaded
-//
-class epicsTimerQueue & caServer::timerQueue()
+class epicsTimer & caServer::createTimer()
 {
-    return fileDescriptorManager.timerQueueRef();
+    return fileDescriptorManager.createTimer();
 }
 
 //

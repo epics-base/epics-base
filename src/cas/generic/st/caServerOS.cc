@@ -27,7 +27,7 @@ private:
 };
 
 casBeaconTimer::casBeaconTimer ( double delay, caServerOS &osIn ) :
-    timer ( fileDescriptorManager.timerQueueRef().createTimer() ), os ( osIn ) 
+    timer ( fileDescriptorManager.createTimer() ), os ( osIn ) 
 {
     this->timer.start ( *this, delay );
 }

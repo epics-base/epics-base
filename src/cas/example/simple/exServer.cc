@@ -318,7 +318,7 @@ void exServer::show (unsigned level) const
 exAsyncExistIO::exAsyncExistIO ( const pvInfo &pviIn, const casCtx &ctxIn,
         exServer &casIn ) :
     casAsyncPVExistIO ( ctxIn ), pvi ( pviIn ), 
-        timer ( casIn.timerQueue().createTimer () ), cas ( casIn ) 
+        timer ( casIn.createTimer () ), cas ( casIn ) 
 {
     this->timer.start ( *this, 0.00001 );
 }
@@ -352,7 +352,7 @@ epicsTimerNotify::expireStatus exAsyncExistIO::expire ( const epicsTime & curren
 exAsyncCreateIO::exAsyncCreateIO ( pvInfo &pviIn, exServer &casIn, 
     const casCtx &ctxIn, bool scanOnIn ) :
     casAsyncPVAttachIO ( ctxIn ), pvi ( pviIn ), 
-        timer ( casIn.timerQueue().createTimer () ), 
+        timer ( casIn.createTimer () ), 
         cas ( casIn ), scanOn ( scanOnIn ) 
 {
     this->timer.start ( *this, 0.00001 );

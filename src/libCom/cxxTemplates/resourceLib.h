@@ -5,12 +5,15 @@
  *      of any base resource type and any resource identifier type. Fast 
  *      indexing is implemented with a hash lookup. The identifier type 
  *      implements the hash algorithm (or derives from one of the supplied 
- *      identifier types which provide a hashing routine). 
+ *      identifier types which provide a hashing routine). The table expands 
+ *      dynamically depending on load, and without introducing non-determanistic 
+ *      latency.
  *
  *      Unsigned integer and string identifier classes are supplied here.
  *
- *      Author  Jeffrey O. Hill 
- *              (string hash alg by Marty Kraimer and Peter K. Pearson)
+ *      Authors Jeffrey O. Hill 
+ *              Marty Kraimer (string hash algorithm)
+ *              influenced by papers by Peter K. Pearson and Per-Ake Larson
  *
  *              johill@lanl.gov
  *              505 665 1831
@@ -42,13 +45,6 @@
  *  .02 class T must derive from class ID and tsSLNode<T>
  *  
  */
-
-//
-// To Do:
-// 1) Add a member function that sets the size of the hash table.
-//    Dont allocate storage for the hash table until they insert
-//    the first item.
-//
 
 #ifndef INCresourceLibh
 #define INCresourceLibh 

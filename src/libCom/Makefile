@@ -7,6 +7,28 @@ LIBCOM = $(TOP)/src/libCom
 # From osi
 SRC_DIRS = $(LIBCOM)/osi
 
+INC += dbDefs.h
+INC += epicsTypes.h
+INC += epicsVersion.h
+INC += gsd_sync_defs.h
+INC += shareLib.h
+#INC += createSoftLinks.sh
+INC += unixFileName.h
+
+INC += devSup.h
+INC += drvSup.h
+INC += caeventmask.h
+INC += asLib.h
+INC += registryDeviceSupport.h
+INC += registryDriverSupport.h
+INC += registryRecordType.h
+INC += cadef.h
+INC += caerr.h
+INC += asDbLib.h
+
+INC += osiFileName.h
+INC += osiSock.h
+
 INC += osiInterrupt.h
 INC += osdInterrupt.h
 INC += osiRing.h
@@ -171,6 +193,9 @@ envData.c: $(LIBCOM)/env/envDefs.h $(LIBCOM)/env/bldEnvData.pl
 
 errSymTbl.c: $(ERR_S_FILES) $(LIBCOM)/error/makeStatTbl.pl
 	$(PERL) $(LIBCOM)/error/makeStatTbl.pl  $(ERR_S_FILES)
+
+epicsVersion.h: $(TOP)/configure/CONFIG_BASE_VERSION
+	$(PERL) $(LIBCOM)/misc/makeEpicsVersion.pl $(TOP)/configure/CONFIG_BASE_VERSION
 
 clean::
 	@$(RM) errSymTbl.c envData.c

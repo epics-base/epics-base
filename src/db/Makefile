@@ -58,7 +58,6 @@ DLL_LIBS = dbStaticIoc Com
 
 include $(TOP)/configure/RULES
 
-dbCommon.h: ../dbCommonRecord.dbd ../dbCommon.dbd
+$(INSTALL_INCLUDE)/dbCommon.h: ../dbCommonRecord.dbd ../dbCommon.dbd
 	$(RM) $@
-	$(EPICS_BASE_HOST_BIN)/dbToRecordtypeH$(HOSTEXE) \
-		-I .. $<
+	$(EPICS_BASE_HOST_BIN)/dbToRecordtypeH$(HOSTEXE) -I .. $< $@

@@ -4,7 +4,7 @@ buildInstall:: nfs.cmd
 nfs.cmd: nfsCommands
 	@echo "Creating $@"
 	@$(RM) $@ 
-	@$(CP) $< $@
+	@cat  $< >> $@
 	@echo cd \"`\pwd`\" >> $@
 
 clean::

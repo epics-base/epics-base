@@ -109,7 +109,7 @@ static long init_record(psub,pass)
 
     if(strlen(psub->inam)!=0) {
         /* convert the initialization subroutine name  */
-        psubroutine = (void *)registryFunctionFind(psub->inam);
+        psubroutine = (SUBFUNCPTR)registryFunctionFind(psub->inam);
         if(psubroutine==0) {
 	    recGblRecordError(S_db_BadSub,(void *)psub,"recSub(init_record)");
 	    return(S_db_BadSub);

@@ -56,7 +56,9 @@ inline SOCKET tcpiiu::getSock () const
 
 inline void tcpiiu::flush ()
 {
+    this->lock ();
     this->flushPending = true;
+    this->unlock ();
     semBinaryGive ( this->sendThreadFlushSignal );
 }
 

@@ -33,74 +33,28 @@
  *   bg 11-18-91  added time_io_report
  *   bg 02-24-91  added levels to time_io_report.
  *   bg 06-26-92  Combined time_driver.c and drvTime.c
-*/
+ *  joh 08-05-92  removed report & init routines
+ */
 
+static char *sccsID = "$Id$\t$Date$";
 
 /* drvTime.c -  Driver Support Routines for Time */
 #include	<vxWorks.h>
-#include	<stdioLib.h>
-
-#include	<dbDefs.h>
-#include	<drvSup.h>
 #include	<module_types.h>
-
-/* If any of the following does not exist replace it with #define <> NULL */
-static long report();
-static long init();
-
-struct {
-	long	number;
-	DRVSUPFUN	report;
-	DRVSUPFUN	init;
-} drvTime={
-	2,
-	report,
-	init};
-
-static long report(fp)
-    FILE	*fp;
-{
-    register int i;
-
-    time_io_report();
-    return(0);
-}
-
-static long init()
-{
-    int status;
-
-    time_driver_init();
-    return(0);
-}
 
 struct pulse{
 double		offset;
 double		width;
 };
 
-time_io_report(level)
- short int level;
-{
-  register unsigned int card;
 
-  for(card=0; card<tm_num_cards[MZ8310]; card++)
-    mz8310_io_report(card,level);
-
-
-  return OK;
-}
-
+
 /*
-NOTE: This routine must be run prior to int enable
-*/
-time_driver_init()
-{
-  mz8310_init(tm_num_cards[MZ8310]);
-  return OK;
-}
-
-
+ *
+ * time_driver_read()
+ *
+ *
+ */
 time_driver_read
 		(
 		card, 		/* 0 through ... */

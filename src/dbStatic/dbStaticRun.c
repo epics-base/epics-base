@@ -24,15 +24,17 @@ of this distribution.
 
 #include "dbDefs.h"
 #include "errMdef.h"
-#include "dbBase.h"
 #include "registryRecordType.h"
 #include "epicsPrint.h"
 #include "ellLib.h"
-#include "dbDefs.h"
 #include "cvtFast.h"
+
+#define epicsExportSharedSymbols
+#include "dbBase.h"
 #include "dbStaticLib.h"
 #include "dbStaticPvt.h"
 #include "special.h"
+
 
 static char hex_digit_to_ascii[16]={'0','1','2','3','4','5','6','7','8','9',
 		'a','b','c','d','e','f'};
@@ -281,7 +283,7 @@ char *dbRecordName(DBENTRY *pdbentry)
 
 int dbIsMacroOk(DBENTRY *pdbentry) { return(FALSE); }
 
-int epicsShareAPI dbIsDefaultValue(DBENTRY *pdbentry)
+epicsShareFunc int epicsShareAPI dbIsDefaultValue(DBENTRY *pdbentry)
 {
     dbFldDes  	*pflddes = pdbentry->pflddes;
     void        *pfield = pdbentry->pfield;
@@ -598,7 +600,7 @@ long dbPutStringNum(DBENTRY *pdbentry,char *pstring)
     return(status);
 }
 
-int epicsShareAPI dbGetMenuIndex(DBENTRY *pdbentry)
+epicsShareFunc int epicsShareAPI dbGetMenuIndex(DBENTRY *pdbentry)
 {
     dbFldDes  	*pflddes = pdbentry->pflddes;
     void	*pfield = pdbentry->pfield;
@@ -614,8 +616,8 @@ int epicsShareAPI dbGetMenuIndex(DBENTRY *pdbentry)
     }
     return(-1);
 }
-
-long epicsShareAPI dbPutMenuIndex(DBENTRY *pdbentry,int index)
+
+epicsShareFunc long epicsShareAPI dbPutMenuIndex(DBENTRY *pdbentry,int index)
 {
     dbFldDes  		*pflddes = pdbentry->pflddes;
     unsigned short	*pfield = pdbentry->pfield;

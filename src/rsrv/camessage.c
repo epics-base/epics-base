@@ -66,6 +66,7 @@ static char *sccsId = "%W% %G%";
 #include <sysLib.h>
 
 #include "db_access.h"
+#include "special.h"
 #include "task_params.h"
 #include "ellLib.h"
 #include "freeList.h"
@@ -694,7 +695,7 @@ struct client  	*client
 		return ERROR;
 	}
 
-	if(!asCheckPut(pciu->asClientPVT)){
+	if(!rsrvCheckPut(pciu)){
 		v41 = CA_V41(
 			CA_PROTOCOL_VERSION,
 			client->minor_version_number);
@@ -751,7 +752,6 @@ struct client  	*client
     return OK;
 }
 
-
 /*
  * host_name_action()
  */
@@ -761,7 +761,7 @@ struct client  	*client
 )
 {
 	struct channel_in_use 	*pciu;
-	unsigned		size;
+    unsigned		size;
 	char 			*pName;
 	char 			*pMalloc;
 	int			status;
@@ -1017,7 +1017,7 @@ LOCAL void access_rights_reply(struct channel_in_use *pciu)
 	if(asCheckGet(pciu->asClientPVT)){
 		ar |= CA_PROTO_ACCESS_RIGHT_READ;
 	}
-	if(asCheckPut(pciu->asClientPVT)){
+	if(rsrvCheckPut(pciu)){
 		ar |= CA_PROTO_ACCESS_RIGHT_WRITE;
 	}
 
@@ -1480,7 +1480,7 @@ struct client  *client
 		return ERROR;
 	}
 
-	if(!asCheckPut(pciu->asClientPVT)){
+	if(!rsrvCheckPut(pciu)){
 		putNotifyErrorReply(client, mp, ECA_NOWTACCESS);
 		return OK;
 	}
@@ -1488,6 +1488,7 @@ struct client  *client
 	size = dbr_size_n(mp->m_type, mp->m_count);
 
 	if(pciu->pPutNotify){
+
 		/*
 		 * serialize concurrent put notifies 
 		 */
@@ -1687,6 +1688,7 @@ struct client  *client
 
 	return OK;
 }
+
 
 
 /*
@@ -2236,4 +2238,20 @@ int camessage(
     }
     
     return OK;
+}
+
+/*
+ * rsrvCheckPut ()
+ */
+int rsrvCheckPut (const struct channel_in_use *pciu)
+{
+    /*
+     * SPC_NOMOD fields are always unwritable
+     */    
+    if (pciu->addr.special==SPC_NOMOD) {
+        return 0;
+    }
+    else {
+        return asCheckPut (pciu->asClientPVT);
+    }
 }

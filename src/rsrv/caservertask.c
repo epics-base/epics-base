@@ -45,6 +45,7 @@
  */
 
 static char *sccsId = "@(#) $Id$";
+
 #include <stdio.h>
 #include <unistd.h>
 
@@ -71,6 +72,7 @@ static char *sccsId = "@(#) $Id$";
 #include "bsdSocketResource.h"
 
 #include "server.h"
+#include "bsdSocketResource.h"
 
 LOCAL int terminate_one_client(struct client *client);
 LOCAL void log_one_client(struct client *client, unsigned level);
@@ -506,7 +508,7 @@ LOCAL void log_one_client(struct client *client, unsigned level)
 	float			recv_delay;
 	unsigned long		bytes_reserved;
 	char			*state[] = {"up", "down"};
-    char            clientHostName[128];
+    char            clientHostName[256];
 
     ipAddrToA (&client->addr, clientHostName, sizeof(clientHostName));
 
@@ -581,11 +583,11 @@ LOCAL void log_one_client(struct client *client, unsigned level)
 				pciu->addr.precord->name,
 				ellCount(&pciu->eventq),
 				asCheckGet(pciu->asClientPVT)?'r':'-',
-				asCheckPut(pciu->asClientPVT)?'w':'-');
+				rsrvCheckPut(pciu)?'w':'-');
 			pciu = (struct channel_in_use *) ellNext(&pciu->node);
 			if( ++i % 3 == 0){
 				printf("\n");
-			}
+            }
 		}
 		FASTUNLOCK(&client->addrqLock);
 		printf("\n");

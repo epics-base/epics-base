@@ -295,6 +295,9 @@ struct client   *pc
 
 void write_notify_reply(void *pArg);
 
+int rsrvCheckPut (const struct channel_in_use *pciu);
+
+
 /*
  * !!KLUDGE!!
  *

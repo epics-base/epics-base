@@ -31,6 +31,7 @@
 
 #include "errlog.h"
 #include "epicsMutex.h"
+#include "epicsString.h"
 #include "epicsThread.h"
 #include "cantProceed.h"
 #include "osdInterrupt.h"
@@ -345,7 +346,7 @@ epicsThreadSetPriority (epicsThreadId id,unsigned int osip)
 
     sc = rtems_task_set_priority (tid, pri, &pri);
     if (sc != RTEMS_SUCCESSFUL)
-        errlogPrintf("epicsThreadSetPriority failed\n", rtems_status_text (sc));
+        errlogPrintf("epicsThreadSetPriority failed: %s\n", rtems_status_text (sc));
 }
 
 int

@@ -637,23 +637,14 @@ tcpiiu::~tcpiiu ()
         }
     }
 
-    /*
-     * free message body cache
-     */
-    {
-        epicsAutoMutex autoMutex ( this->pCAC()->mutexRef() );
-
-        if ( this->pCurData ) {
-            if ( this->curDataMax == MAX_TCP ) {
-                this->pCAC()->releaseSmallBufferTCP ( this->pCurData );
-            }
-            else {
-                this->pCAC()->releaseLargeBufferTCP ( this->pCurData );
-            }
+    // free message body cache
+    if ( this->pCurData ) {
+        if ( this->curDataMax == MAX_TCP ) {
+            this->pCAC()->releaseSmallBufferTCP ( this->pCurData );
         }
-
-        this->sendQue.clear ();
-        this->recvQue.clear ();
+        else {
+            this->pCAC()->releaseLargeBufferTCP ( this->pCurData );
+        }
     }
 
     // wakeup user threads blocking for send backlog to be reduced

@@ -299,27 +299,15 @@ void cac::processRecvBacklog ()
         while ( piiu.valid () ) {
             tsDLIterBD < tcpiiu > pNext = piiu;
             pNext++;
-
             if ( ! piiu->alive () ) {
-                assert ( this->pudpiiu && this->pSearchTmr );
-
-                piiu->getBHE().unbindFromIIU ();
-
                 if ( piiu->channelCount () ) {
                     char hostNameTmp[64];
                     piiu->hostName ( hostNameTmp, sizeof ( hostNameTmp ) );
                     genLocalExcep ( *this, ECA_DISCONN, hostNameTmp );
                 }
-
+                piiu->getBHE().unbindFromIIU ();
+                assert ( this->pudpiiu );
                 piiu->disconnectAllChan ( *this->pudpiiu );
-
-                // make certain that:
-                // 1) this is called from the appropriate thread
-                // 2) lock is not held while in call back
-                if ( ! this->enablePreemptiveCallback ) {
-                    epicsAutoMutexRelease autoRelease ( this->mutex );
-                    this->notify.fdWasDestroyed ( piiu->getSock() );
-                }
                 this->iiuList.remove ( *piiu );
                 deadIIU.add ( *piiu ); // postpone destroy and avoid deadlock
             }
@@ -333,7 +321,6 @@ void cac::processRecvBacklog ()
                 }
                 piiu->processIncoming ();
             }
-
             piiu = pNext;
 	    }
     }
@@ -341,9 +328,16 @@ void cac::processRecvBacklog ()
         {
             epicsAutoMutex autoRelease ( this->mutex );
             while ( tcpiiu *piiu = deadIIU.get() ) {
+                // make certain that:
+                // 1) this is called from the appropriate thread
+                // 2) lock is not held while in call back
+                if ( ! this->enablePreemptiveCallback ) {
+                    this->notify.fdWasDestroyed ( piiu->getSock() );
+                }
                 piiu->destroy ();
             }
         }
+        assert ( this->pSearchTmr );
         this->pSearchTmr->resetPeriod ( 0.0 );
     }
 }
@@ -687,27 +681,14 @@ void cac::startRecvProcessThread ()
 void cac::run ()
 {
     epicsAutoMutex autoMutex ( this->mutex );
-
     this->attachToClientCtx ();
-
     while ( ! this->recvProcessThreadExitRequest ) {
-
-        {
-            if ( this->recvProcessEnableRefCount ) {
-                this->recvProcessInProgress = true;
-            }
-        }
-
-        if ( this->recvProcessInProgress ) {
+        if ( this->recvProcessEnableRefCount ) {
+            this->recvProcessInProgress = true;
             this->processRecvBacklog ();
-        }
-
-        bool signalNeeded;
-        {
             this->recvProcessInProgress = false;
-            signalNeeded = this->recvProcessCompletionNBlockers > 0u;
         }
-        
+        bool signalNeeded = this->recvProcessCompletionNBlockers > 0u;
         {
             epicsAutoMutexRelease autoRelease ( this->mutex );
             if ( signalNeeded ) {

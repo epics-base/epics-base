@@ -295,11 +295,13 @@ inline void cac::attachToClientCtx ()
 
 inline char * cac::allocateSmallBufferTCP ()
 {
+    // this locks internally
     return ( char * ) freeListMalloc ( this->tcpSmallRecvBufFreeList );
 }
 
 inline void cac::releaseSmallBufferTCP ( char *pBuf )
 {
+    // this locks internally
     freeListFree ( this->tcpSmallRecvBufFreeList, pBuf );
 }
 
@@ -310,11 +312,13 @@ inline unsigned cac::largeBufferSizeTCP () const
 
 inline char * cac::allocateLargeBufferTCP ()
 {
+    // this locks internally
     return ( char * ) freeListMalloc ( this->tcpLargeRecvBufFreeList );
 }
 
 inline void cac::releaseLargeBufferTCP ( char *pBuf )
 {
+    // this locks internally
     freeListFree ( this->tcpLargeRecvBufFreeList, pBuf );
 }
 

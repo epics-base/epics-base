@@ -96,9 +96,9 @@ casDGIntfIO::casDGIntfIO ( caServerI & serverIn, clientBufMemoryManager & memMgr
     //
     {
         osiSockAddrNode *pAddr;
-		ELLLIST tmpList;
+        ELLLIST tmpList;
 
-		ellInit ( &tmpList );
+        ellInit ( &tmpList );
         osiSockDiscoverBroadcastAddresses (&tmpList, 
             this->sock, &serverAddr); // match addr 
 		removeDuplicateAddresses ( &BCastAddrList, &tmpList, 1 );
@@ -184,17 +184,18 @@ casDGIntfIO::casDGIntfIO ( caServerI & serverIn, clientBufMemoryManager & memMgr
         }
     }
 
-	//
+    //
     // Solaris specific:
-	// If they are binding to a particular interface then
-	// we will also need to bind to the broadcast address 
-	// for that interface (if it has one). This allows
+    // If they are binding to a particular interface then
+    // we will also need to bind to the broadcast address 
+    // for that interface (if it has one). This allows
     // broadcast packets to be received, but we must reply
     // through the "normal" UDP binding or the client will
     // appear to receive replies from the broadcast address.
     // Since it should never be valid to fill in the UDP
     // source address as the broadcast address, then we must
-    // conclude that the Solaris implementation is broken.
+    // conclude that the Solaris implementation is at least
+    // partially broken.
     //
     // WIN32 specific:
     // On windows this appears to only create problems because

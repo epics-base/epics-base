@@ -69,7 +69,6 @@ epicsShareFunc epicsMutexId epicsShareAPI
         osInfo.dwOSVersionInfoSize = sizeof ( OSVERSIONINFO );
         status = GetVersionEx ( & osInfo );
         thisIsNT = status && ( osInfo.dwPlatformId == VER_PLATFORM_WIN32_NT );
-        thisIsNT = 0;
         weHaveInitialized = 1;
     }
  

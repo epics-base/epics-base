@@ -529,6 +529,7 @@ static void
 showInternalTaskInfo (rtems_id tid)
 {
 #ifdef __RTEMS_VIOLATE_KERNEL_VISIBILITY__
+    int epicsPri;
     Thread_Control *the_thread;
     Objects_Locations location;
     static Thread_Control thread;
@@ -538,7 +539,7 @@ showInternalTaskInfo (rtems_id tid)
         { "DORM",  STATES_DORMANT,              STATES_DORMANT },
         { "SUSP",  STATES_SUSPENDED,            STATES_SUSPENDED },
         { "TRANS", STATES_TRANSIENT,            STATES_TRANSIENT },
-        { "DELAY", STATES_DELAYING,             STATES_DELAYING },
+        { "Delay", STATES_DELAYING,             STATES_DELAYING },
         { "Wtime", STATES_WAITING_FOR_TIME,     STATES_WAITING_FOR_TIME },
         { "Wbuf",  STATES_WAITING_FOR_BUFFER,   STATES_WAITING_FOR_BUFFER },
         { "Wseg",  STATES_WAITING_FOR_SEGMENT,  STATES_WAITING_FOR_SEGMENT },
@@ -565,32 +566,42 @@ showInternalTaskInfo (rtems_id tid)
      * that priority should be displayed, not the value truncated to
      * the EPICS range.
      */
-    if (thread.current_priority == thread.real_priority)
-        printf ("%4d     ", 199-thread.current_priority);
+    epicsPri = 199-thread.real_priority;
+    if (epicsPri < 0)
+        printf ("   <0");
+    else if (epicsPri > 99)
+        printf ("  >99");
     else
-        printf ("%4d/%-4d", 199-thread.current_priority, 199-thread.real_priority);
+        printf (" %4d", epicsPri);
+    if (thread.current_priority == thread.real_priority)
+        printf ("%4d    ", thread.current_priority);
+    else
+        printf ("%4d/%-3d", thread.real_priority, thread.current_priority);
     showBitmap (bitbuf, thread.current_state, taskState);
-    printf ("%9.9s", bitbuf);
+    printf ("%8.8s", bitbuf);
     if (thread.current_state & (STATES_WAITING_FOR_SEMAPHORE |
                                 STATES_WAITING_FOR_MUTEX |
                                 STATES_WAITING_FOR_MESSAGE))
         printf (" %8.8x", thread.Wait.id);
+    else
+        printf ("         ");
 #endif
 }
 
 static void
 epicsThreadShowHeader (void)
 {
-    printf ("      NAME        ID    PRIORITY   STATE    WAIT   \n");
-    printf ("+-------------+--------+--------+--------+--------+\n");
+    printf ("            PRIORITY\n");
+    printf ("    ID    EPICS RTEMS   STATE    WAIT         NAME\n");
+    printf ("+--------+-----------+--------+--------+---------------------+\n");
 }
 
 static void
 epicsThreadShowInfo (struct taskVar *v, unsigned int level)
 {
-        printf ("%14.14s %8.8x", v->name, v->id);
+        printf ("%9.8x", v->id);
         showInternalTaskInfo (v->id);
-        printf ("\n");
+        printf (" %s\n", v->name);
 }
 
 void epicsThreadShow (epicsThreadId id, unsigned int level)

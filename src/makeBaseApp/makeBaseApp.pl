@@ -2,6 +2,7 @@ eval 'exec perl -S $0 ${1+"$@"}'  # -*- Mode: perl -*-
     if $running_under_some_shell; # makeBaseApp 
 
 # Authors: Ralph Lange and Marty Kraimer
+# $Revision$  $Date$
 
 use Cwd;
 use Getopt::Std;
@@ -58,14 +59,14 @@ sub ReplaceFilename { # (filename)
 # this and that
 sub ReplaceLine { # (line)
     my($line) = $_[0];
-    $line =~ s/_USER_/$user/;
-    $line =~ s/_EPICS_BASE_/$epics_base/;
-    $line =~ s/_ARCH_/$arch/;
-    $line =~ s/_APPNAME_/$appname/;
-    $line =~ s/_APPTYPE_/$apptype/;
-    $line =~ s/_TEMPLATE_TOP_/$top/;
+    $line =~ s/_USER_/$user/o;
+    $line =~ s/_EPICS_BASE_/$epics_base/o;
+    $line =~ s/_ARCH_/$arch/o;
+    $line =~ s/_APPNAME_/$appname/o;
+    $line =~ s/_APPTYPE_/$apptype/o;
+    $line =~ s/_TEMPLATE_TOP_/$top/o;
     if ($ioc) {
-	$line =~ s/_IOC_/$ioc/;
+	$line =~ s/_IOC_/$ioc/o;
     }
     $line = &ReplaceLineHook($line); # Call the user-defineable hook
     return $line;
@@ -133,12 +134,12 @@ sub get_commandline_opts { #no args
 	open(IN, "config/RELEASE") or die "Cannot open config/RELEASE";
 	while (<IN>) {
 	    chomp;
-	    s/EPICS_BASE\s*=\s*// and $epics_base = $_, break;
+	    s/EPICS_BASE\s*=\s*// and $epics_base = UnixPath($_), break;
 	}
 	close IN;
-    } elsif ($command =~ /\/bin\//) {	# assume script was called with full path to base
+    } elsif ($command =~ m|/bin/|) { # assume script was called with full path to base
 	$epics_base = $command;
-	$epics_base =~ s:(/.*)/bin/.*makeBaseApp.*:$1:;
+	$epics_base =~ s|(/.*)/bin/.*makeBaseApp.*|$1|;
     }
     "$epics_base" or Cleanup(1, "Cannot find EPICS base");
 
@@ -149,13 +150,13 @@ sub get_commandline_opts { #no args
 	open(IN, "config/RELEASE") or die "Cannot open config/RELEASE";
 	while (<IN>) {
 	    chomp;
-	    s/TEMPLATE_TOP\s*=\s*// and $top = $_, break;
+	    s/TEMPLATE_TOP\s*=\s*// and $top = UnixPath($_), break;
 	}
 	close IN;
     }
     if("$top" eq "") { 
 	if ($eTOP) {		# third choice is $ENV{EPICS_MBA_TEMPL_TOP}
-	    $top = $eTOP;
+	    $top = UnixPath($eTOP);
 	} else {			# use templates from EPICS base
 	    $top = $epics_base . "/templates/makeBaseApp/top";
 	}

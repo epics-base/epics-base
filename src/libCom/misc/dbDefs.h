@@ -62,12 +62,6 @@
 #endif
 #define FALSE           0
 
-#ifndef OK
-#define OK              0
-#endif
-#ifndef ERROR
-#define ERROR           (-1)
-#endif
 #ifndef NONE
 #define NONE            (-1)    /* for times when NULL won't do */
 #endif
@@ -113,11 +107,9 @@
 
 #ifdef __STDC__
 int coreRelease(void);
-int iocLogInit(void);
 int rsrv_init(void);
 #else
 int coreRelease();
-int iocLogInit();
 int rsrv_init();
 #endif /*__STDC__*/
 

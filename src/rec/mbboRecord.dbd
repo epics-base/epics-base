@@ -12,6 +12,7 @@ recordtype(mbbo) {
 	field(VAL,DBF_ENUM) {
 		prompt("Desired Value")
                 promptgroup(GUI_OUTPUT)
+		special(SPC_DBADDR)
 		asl(ASL0)
 		pp(TRUE)
 	}

@@ -46,7 +46,7 @@ static long init_record();
 static long process();
 static long special();
 #define get_value NULL
-#define cvt_dbaddr NULL
+static long cvt_dbaddr();
 #define get_array_info NULL
 #define put_array_info NULL
 #define get_units NULL
@@ -274,6 +274,24 @@ static long special(paddr,after)
         recGblDbaddrError(S_db_badChoice,paddr,"mbbo: special");
         return(S_db_badChoice);
     }
+}
+
+static long cvt_dbaddr(paddr)
+    struct dbAddr *paddr;
+{
+    struct mbboRecord *pmbbo=(struct mbboRecord *)paddr->precord;
+    int index;
+
+    index = dbGetFieldIndex(paddr);
+    if(index!=mbboRecordVAL) {
+        recGblDbaddrError(S_db_badField,paddr,"mbbo: cvt_dbaddr");
+        return(0);
+    }
+    if(!pmbbo->sdef)  {
+        paddr->field_type = DBF_USHORT;
+        paddr->dbr_field_type = DBF_USHORT;
+    }
+    return(0);
 }
 
 static long get_enum_str(paddr,pstring)

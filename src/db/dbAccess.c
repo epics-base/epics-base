@@ -267,7 +267,7 @@ long dbProcess(struct dbCommon *precord)
 	/* locate record processing routine */
 	if(!(prset=(struct rset *)precord->rset) || !(prset->process)) {
 		precord->pact=1;/*set pact TRUE so error is issued only once*/
-		recGblRecSupError(S_db_noRSET,precord,"dbProcess");
+		recGblRecordError(S_db_noRSET,precord,"dbProcess");
 		status = S_db_noRSET;
 		if(trace && trace_lset==lset)
 			printf("failure:   %s\n",precord->name);

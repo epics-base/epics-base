@@ -76,5 +76,7 @@ typedef socklen_t osiSocklen_t;
 #define SD_BOTH 2
 #endif
 
+#define DOES_NOT_ACCEPT_ZERO_LENGTH_UDP
+
 #endif /*osdSockH*/
 

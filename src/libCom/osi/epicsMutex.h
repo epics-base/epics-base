@@ -1,6 +1,7 @@
 #ifndef epicsMutexh
 #define epicsMutexh
 
+#include <stdarg.h>
 #include "epicsAssert.h"
 #include "shareLib.h"
 
@@ -59,9 +60,16 @@ private:
 #ifdef __cplusplus
 extern "C" {
 #endif /*__cplusplus*/
+/* The following should NOT be called by user code*/
+epicsShareFunc epicsMutexId epicsShareAPI epicsMutexOsdCreate(void);
+epicsShareFunc void epicsShareAPI epicsMutexOsdDestroy(epicsMutexId id);
+epicsShareFunc epicsMutexId epicsShareAPI epicsMutexOsiCreate(
+    const char *pFileName,int lineno);
+epicsShareFunc epicsMutexId epicsShareAPI epicsMutexOsiMustCreate(
+    const char *pFileName,int lineno);
 
-epicsShareFunc epicsMutexId epicsShareAPI epicsMutexCreate(void);
-epicsShareFunc epicsMutexId epicsShareAPI epicsMutexMustCreate (void);
+#define epicsMutexCreate() epicsMutexOsiCreate(__FILE__,__LINE__)
+#define epicsMutexMustCreate() epicsMutexOsiMustCreate(__FILE__,__LINE__)
 epicsShareFunc void epicsShareAPI epicsMutexDestroy(epicsMutexId id);
 epicsShareFunc void epicsShareAPI epicsMutexUnlock(epicsMutexId id);
 epicsShareFunc epicsMutexLockStatus epicsShareAPI epicsMutexLock(
@@ -73,6 +81,8 @@ epicsShareFunc epicsMutexLockStatus epicsShareAPI epicsMutexTryLock(
     epicsMutexId id);
 epicsShareFunc void epicsShareAPI epicsMutexShow(
     epicsMutexId id,unsigned  int level);
+epicsShareFunc void epicsShareAPI epicsMutexShowAll(
+    int onlyLocked,unsigned  int level);
 
 /*NOTES:
     epicsMutex MUST implement recursive locking

@@ -34,7 +34,7 @@ unsigned long semStat[6];
 #endif
 
 epicsMutexId
-epicsMutexCreate(void)
+epicsMutexOsdCreate(void)
 {
     rtems_status_code sc;
     rtems_id sid;
@@ -86,14 +86,7 @@ epicsMutexCreate(void)
     return (epicsMutexId)sid;
 }
 
-epicsMutexId epicsMutexMustCreate(void)
-{
-    epicsMutexId id = epicsMutexCreate ();
-    assert (id);
-    return id;
-}
-
-void epicsMutexDestroy(epicsMutexId id)
+void epicsMutexOsdDestroy(epicsMutexId id)
 {
     rtems_status_code sc;
     rtems_id sid;

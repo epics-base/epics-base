@@ -57,9 +57,9 @@ typedef struct mutexSem {
 
 
 /*
- * epicsMutexCreate ()
+ * epicsMutexOsdCreate ()
  */
-epicsShareFunc epicsMutexId epicsShareAPI epicsMutexCreate (void) 
+epicsShareFunc epicsMutexId epicsShareAPI epicsMutexOsdCreate (void) 
 {
     mutexSem *pSem;
 
@@ -76,19 +76,9 @@ epicsShareFunc epicsMutexId epicsShareAPI epicsMutexCreate (void)
 }
 
 /*
- * epicsMutexMustCreate ()
+ * epicsMutexOsdDestroy ()
  */
-epicsShareFunc epicsMutexId epicsShareAPI epicsMutexMustCreate () 
-{
-    epicsMutexId id = epicsMutexCreate ();
-    assert (id);
-    return id;
-}
-
-/*
- * epicsMutexDestroy ()
- */
-epicsShareFunc void epicsShareAPI epicsMutexDestroy (epicsMutexId id) 
+epicsShareFunc void epicsShareAPI epicsMutexOsdDestroy (epicsMutexId id) 
 {
     mutexSem *pSem = (mutexSem *) id;
     
@@ -196,19 +186,9 @@ epicsShareFunc epicsMutexId epicsShareAPI epicsMutexCreate ( void )
 }
 
 /*
- * epicsMutexMustCreate ()
+ * epicsMutexOsdDestroy ()
  */
-epicsShareFunc semBinaryId epicsShareAPI epicsMutexMustCreate () 
-{
-    epicsMutexId id = epicsMutexCreate ();
-    assert ( id );
-    return id;
-}
-
-/*
- * epicsMutexDestroy ()
- */
-epicsShareFunc void epicsShareAPI epicsMutexDestroy ( epicsMutexId id ) 
+epicsShareFunc void epicsShareAPI epicsMutexOsdDestroy ( epicsMutexId id ) 
 {
     mutexSem *pSem = ( mutexSem * ) id;
     
@@ -299,19 +279,9 @@ epicsShareFunc epicsMutexId epicsShareAPI epicsMutexCreate ( void )
 }
 
 /*
- * epicsMutexMustCreate ()
+ * epicsMutexOsdDestroy ()
  */
-epicsShareFunc epicsMutexId epicsShareAPI epicsMutexMustCreate () 
-{
-    epicsMutexId id = epicsMutexCreate ();
-    assert ( id );
-    return id;
-}
-
-/*
- * epicsMutexDestroy ()
- */
-epicsShareFunc void epicsShareAPI epicsMutexDestroy ( epicsMutexId id ) 
+epicsShareFunc void epicsShareAPI epicsMutexOsdDestroy ( epicsMutexId id ) 
 {
     mutexSem *pSem = ( mutexSem * ) id;
     

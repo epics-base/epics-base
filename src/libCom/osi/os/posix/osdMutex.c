@@ -68,20 +68,20 @@ static void convertDoubleToWakeTime(double timeout,struct timespec *wakeTime)
     }
 }
 
-epicsMutexId epicsMutexCreate(void) {
+epicsMutexId epicsMutexOsdCreate(void) {
     mutex *pmutex;
     int   status;
 
-    pmutex = callocMustSucceed(1,sizeof(mutex),"epicsMutexCreate");
+    pmutex = callocMustSucceed(1,sizeof(mutex),"epicsMutexOsdCreate");
     status = pthread_mutexattr_init(&pmutex->mutexAttr);
-    checkStatusQuit(status,"pthread_mutexattr_init","epicsMutexCreate");
+    checkStatusQuit(status,"pthread_mutexattr_init","epicsMutexOsdCreate");
 #if defined _POSIX_THREAD_PRIO_INHERIT
     status = pthread_mutexattr_setprotocol(
         &pmutex->mutexAttr,PTHREAD_PRIO_INHERIT);
     if(errVerbose) checkStatus(status,"pthread_mutexattr_setprotocal");
 #endif /*_POSIX_THREAD_PRIO_INHERIT*/
     status = pthread_mutex_init(&pmutex->lock,&pmutex->mutexAttr);
-    checkStatusQuit(status,"pthread_mutex_init","epicsMutexCreate");
+    checkStatusQuit(status,"pthread_mutex_init","epicsMutexOsdCreate");
 #if defined _POSIX_THREAD_PROCESS_SHARED
     status = pthread_condattr_init(&pmutex->condAttr);
     checkStatus(status,"pthread_condattr_init");
@@ -92,18 +92,11 @@ epicsMutexId epicsMutexCreate(void) {
 #else
     status = pthread_cond_init(&pmutex->waitToBeOwner,0);
 #endif /*_POSIX_THREAD_PROCESS_SHARED*/
-    checkStatusQuit(status,"pthread_cond_init","epicsMutexCreate");
+    checkStatusQuit(status,"pthread_cond_init","epicsMutexOsdCreate");
     return((epicsMutexId)pmutex);
 }
 
-epicsMutexId epicsMutexMustCreate(void)
-{
-    epicsMutexId id = epicsMutexCreate ();
-    assert (id);
-    return id;
-}
-
-void epicsMutexDestroy(epicsMutexId id)
+void epicsMutexOsdDestroy(epicsMutexId id)
 {
     mutex *pmutex = (mutex *)id;
     int   status;

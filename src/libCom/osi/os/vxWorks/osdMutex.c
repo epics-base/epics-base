@@ -19,20 +19,13 @@ int sysClkRateGet(void);
 
 #include "epicsMutex.h"
 
-epicsMutexId epicsMutexCreate(void)
+epicsMutexId epicsMutexOsdCreate(void)
 {
     return((epicsMutexId)
         semMCreate(SEM_DELETE_SAFE|SEM_INVERSION_SAFE|SEM_Q_PRIORITY));
 }
 
-epicsMutexId epicsMutexMustCreate(void)
-{
-    epicsMutexId id = epicsMutexCreate ();
-    assert (id);
-    return id;
-}
-
-void epicsMutexDestroy(epicsMutexId id)
+void epicsMutexOsdDestroy(epicsMutexId id)
 {
     semDelete((SEM_ID)id);
 }

@@ -1,0 +1,23 @@
+Installation notes for EPICS on Mac OS X (Darwin).
+==================================================
+
+$Id$
+
+EPICS Base
+==========
+1) EPICS for Mac OS X (Darwin) can not be built with OS X Developer Tools
+   older than the April 2002 release.  The April tools, which were the most
+   recent when this note was written, are not bug-free.  The compiler produces
+   bad code when run with -O3 or higher so CONFIG.darwin-ppc.darwin-ppc sets
+   the optimization level to -O2.  Hopefully a new release of developer tools
+   will remove this restriction.
+
+2) If broadcasts are not seen locally, then it may help to add "localhost"
+   (127.0.0.1) to the EPICS_CA_ADDR_LIST.
+
+EPICS Extensions
+================
+Many extensions build and run properly on OS X.  To build and run MEDM, first
+obtain the X11 and OpenMotif3 packages from the Fink distribution.  Running
+X11 applications on Darwin is quite a bit easier if you install the OroborOSX
+application as well.

@@ -50,8 +50,8 @@
 #include "caCommonDef.h"
 #include "caerr.h"
 
-#if defined(epicsExportSharedSymbols)
-#error suspect that libCom, ca, cxxTemplates, and gdd were not imported
+#if defined ( epicsExportSharedSymbols )
+#   error suspect that libCom, ca, cxxTemplates, and gdd were not imported
 #endif
 
 //

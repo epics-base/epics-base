@@ -42,9 +42,9 @@ void oldSubscription::current (
     struct event_handler_args args;
 
     args.usr = this->pPrivate;
-    args.chid = &this->chan;
-    args.type = type;
-    args.count = count;
+    args.chid = & this->chan;
+    args.type = static_cast < long > ( type );
+    args.count = static_cast < long > ( count );
     args.status = ECA_NORMAL;
     args.dbr = pData;
     ( *this->pFunc ) ( args );

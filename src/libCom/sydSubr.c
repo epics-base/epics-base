@@ -76,6 +76,7 @@
  *			option for exporting only means; fix a bug in
  *			sydInputReset where last buffer didn't get discarded;
  *  .18	03-22-93	changed VALID_ALARM to INVALID_ALARM - thanks
+ *  .19 04-19-94 mrk	removed static from sydSamplePrintStats
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -361,7 +362,6 @@
 #define ENF_WID 16
 static void sydSamplePrint1();
 static void sydSamplePrintVal();
-static long sydSamplePrintStats();
 static void sydChanFreeArrays();
 static void sydInputGetIn();
 long sydSampleSetAlloc();
@@ -2899,8 +2899,7 @@ int	colWidth;
 * EXAMPLE
 *
 *-*/
-static long
-sydSamplePrintStats(pSspec, out, formatFlag, headerFlag, nCol, colWidth, snap)
+long sydSamplePrintStats(pSspec, out, formatFlag, headerFlag, nCol, colWidth, snap)
 SYD_SPEC *pSspec;	/* I pointer to synchronous set spec */
 FILE	*out;		/* I stream pointer for output */
 int	formatFlag;	/* I ==1 causes page formatting for printing */

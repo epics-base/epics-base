@@ -530,7 +530,7 @@ LOCAL void beacon_action (udpiiu *piiu, const struct sockaddr_in *pnet_addr)
 /*
  * repeater_ack_action ()
  */
-LOCAL void repeater_ack_action (udpiiu *piiu, const struct sockaddr_in *pnet_addr)
+LOCAL void repeater_ack_action (udpiiu *piiu, const struct sockaddr_in * /* pnet_addr */)
 {
     piiu->repeaterContacted = 1u;
 #   ifdef DEBUG
@@ -542,7 +542,7 @@ LOCAL void repeater_ack_action (udpiiu *piiu, const struct sockaddr_in *pnet_add
 /*
  * not_here_resp_action ()
  */
-LOCAL void not_here_resp_action (udpiiu * /* piiu */, const struct sockaddr_in * /*pnet_addr*/)
+LOCAL void not_here_resp_action (udpiiu * /* piiu */, const struct sockaddr_in * /* pnet_addr */)
 {
     return;
 }

@@ -29,6 +29,7 @@
 #include "envRegister.h"
 #include "iocshRegisterCommon.h"
 #include "osiRegister.h"
+#include "registryRegister.h"
 #include "iocsh.h"
 
 void epicsShareAPI iocshRegisterCommon(void)
@@ -44,4 +45,5 @@ void epicsShareAPI iocshRegisterCommon(void)
     dbAccessRegister();
     asTestRegister();
     envRegister();
+    registryRegister();
 }

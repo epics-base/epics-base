@@ -233,15 +233,17 @@ sub cdCommands {
     open(OUT,">$outfile") or die "$! creating $outfile";
     
     $startup = $cwd;
-    $startup =~ s/^$root/$iocroot/ if ($opt_t);
+    $startup =~ s/^$root/$iocroot/o if ($opt_t);
     
     print OUT "startup = \"$startup\"\n";
     
     foreach $app (@includes) {
 	$iocpath = $path = $macros{$app};
-	$iocpath =~ s/^$root/$iocroot/ if ($opt_t);
+	$iocpath =~ s/^$root/$iocroot/o if ($opt_t);
 	$app_lc = lc($app);
-        print OUT "$app_lc = \"$iocpath\"\n" if (-d $path);
+	$app_uc = uc($app);
+	print OUT "$app_lc = \"$iocpath\"\n" if (-d $path);
+	print OUT "putenv \"$app_uc=$iocpath\"\n" if (-d $path);
 	print OUT "${app_lc}bin = \"$iocpath/bin/$arch\"\n" if (-d "$path/bin/$arch");
     }
     close OUT;
@@ -261,7 +263,7 @@ sub envPaths {
     
     foreach $app (@includes) {
 	$iocpath = $path = $macros{$app};
-	$iocpath =~ s/^$root/$iocroot/ if ($opt_t);
+	$iocpath =~ s/^$root/$iocroot/o if ($opt_t);
         print OUT "epicsEnvSet($app,\"$iocpath\")\n" if (-d $path);
     }
     close OUT;

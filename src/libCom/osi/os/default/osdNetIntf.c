@@ -187,7 +187,7 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
                 free ( pNewNode );
                 continue;
             }
-            pNewNode->netMask.sa = pifreq->ifr_netmask;
+            pNewNode->netMask.sa = pifreq->ifr_addr;
         }
         else if ( pifreq->ifr_flags & IFF_POINTOPOINT ) {
             status = socket_ioctl ( socket, SIOCGIFDSTADDR, pifreq);

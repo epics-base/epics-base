@@ -26,14 +26,14 @@ localHostName::localHostName ()
         status = gethostname ( this->cache, sizeof ( this->cache ) );
         if ( status ) {
             strncpy ( this->cache, "<unknown host>", sizeof ( this->cache ) );
-            localHostName::cache [ sizeof ( this->cache ) - 1u ] = '\0';
+            this->cache [ sizeof ( this->cache ) - 1u ] = '\0';
         }
-        this->length = strlen ( this->cache );
     }
     else {
         this->attachedToSockLib = false;
         strncpy ( this->cache, "<unknown host>", sizeof ( this->cache ) );
     }
+    this->length = strlen ( this->cache );
 }
 
 localHostName::~localHostName ()

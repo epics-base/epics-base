@@ -47,7 +47,7 @@ caStatus exAsyncPV::write (const casCtx &ctx, gdd &valueIn)
 		return S_casApp_noMemory;
 	}
 
-        return S_casApp_asyncCompletion;
+	return S_casApp_asyncCompletion;
 }
 
 //

@@ -245,7 +245,7 @@ FAST int 		sock;
 	UNLOCK_CLIENTQ;
 
 	client->recv.cnt = 0ul;
-	while (TRUE) {
+	while ( ! client->disconnect ) {
 		client->recv.stk = 0;
 			
 		nchars = recv(	
@@ -269,6 +269,15 @@ FAST int 		sock;
 			long	anerrno;
 
 			anerrno = errnoGet();
+			
+            if ( anerrno == SOCK_ENOBUFS ) {
+                logMsg ( 
+                    "rsrv: system low on network buffers "
+                    "- receive retry in 15 seconds\n",
+                    0,0,0,0,0,0 );
+                taskDelay ( 15 * sysClkRateGet() );
+                continue;
+            }
 
 			/*
 			 * normal conn lost conditions

@@ -14,6 +14,9 @@ $cwd  = cwd();
 $eAPPTYPE = $ENV{EPICS_MBA_DEF_APP_TYPE};
 $eTOP     = $ENV{EPICS_MBA_TEMPLATE_TOP};
 
+# For winXX convert all each instance of \ to /
+$0 =~ s|\\|/|g;
+
 &get_commandline_opts;		# Read and check options
 
 #

@@ -178,8 +178,12 @@ public:
         epicsGuard < epicsMutex > & callbackControlGuard, 
         epicsGuard < epicsMutex > & mutualExclusionGuard ) = 0;
     cacChannelNotify & notify () const; // required ?????
+    virtual unsigned getName (
+        epicsGuard < epicsMutex > &, 
+        char * pBuf, unsigned bufLen ) const throw () = 0;
+    // !! deprecated, avoid use  !!
     virtual const char * pName (
-        epicsGuard < epicsMutex > & ) const = 0;
+        epicsGuard < epicsMutex > & guard ) const throw () = 0;
     virtual void show ( 
         epicsGuard < epicsMutex > &,
         unsigned level ) const = 0;
@@ -227,11 +231,12 @@ public:
         epicsGuard < epicsMutex > & ) const; 
     virtual bool connected (
         epicsGuard < epicsMutex > & ) const; 
-    virtual void hostName (
+    virtual unsigned getHostName (
         epicsGuard < epicsMutex > &,
-        char * pBuf, unsigned bufLength ) const;
+        char * pBuf, unsigned bufLength ) const throw ();
+    // !! deprecated, avoid use  !!
     virtual const char * pHostName (
-        epicsGuard < epicsMutex > & ) const; 
+        epicsGuard < epicsMutex > & guard ) const throw ();
 
     // exceptions
     class badString {};
@@ -253,8 +258,6 @@ private:
     cacChannelNotify & callback;
 	cacChannel ( const cacChannel & );
 	cacChannel & operator = ( const cacChannel & );
-    void * operator new ( size_t );
-    void operator delete ( void * );
 };
 
 class epicsShareClass cacContext { // X aCC 655

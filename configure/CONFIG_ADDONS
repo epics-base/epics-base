@@ -104,24 +104,6 @@ LIBSRCS+=$(LIBSRCS_DEFAULT)
 endif
 endif
 
-#	concat specific library contents (if defined)
-#
-ifneq ($(strip $(LIBSRCS_HOST_$(OS_CLASS))),)
-LIBSRCS_HOST += $(subst -nil-,,$(LIBSRCS_HOST_$(OS_CLASS)))
-else
-ifdef LIBSRCS_HOST_DEFAULT
-LIBSRCS_HOST+=$(LIBSRCS_HOST_DEFAULT)
-endif
-endif
-
-ifneq ($(strip $(LIBSRCS_IOC_$(OS_CLASS))),)
-LIBSRCS_IOC += $(subst -nil-,,$(LIBSRCS_IOC_$(OS_CLASS)))
-else
-ifdef LIBSRCS_IOC_DEFAULT
-LIBSRCS_IOC+=$(LIBSRCS_IOC_DEFAULT)
-endif
-endif
-
 ifneq ($(strip $(BIN_INSTALLS_$(OS_CLASS))),)
 BIN_INSTALLS+=$(subst -nil-,,$(BIN_INSTALLS_$(OS_CLASS)))
 else

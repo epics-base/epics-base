@@ -712,6 +712,10 @@ DbRecDes(fp, fflag)
 		   &dbRecDes->papRecTypDes[i]->papFldDes[j]->dbr_field_type,
 		   dbRecDes->papRecTypDes[i]->papFldDes[j]->dbr_field_type);
 		bufOut(fp, fflag);
+		sprintf(buffer, "%8x\t\t\tprocess_passive [%d]",
+		   &dbRecDes->papRecTypDes[i]->papFldDes[j]->process_passive,
+		   dbRecDes->papRecTypDes[i]->papFldDes[j]->process_passive);
+		bufOut(fp, fflag);
 		sprintf(buffer, "%8x\t\t\tchoice_set [%d]",
 			&dbRecDes->papRecTypDes[i]->papFldDes[j]->choice_set,
 			dbRecDes->papRecTypDes[i]->papFldDes[j]->choice_set);

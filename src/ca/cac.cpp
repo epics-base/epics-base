@@ -1538,32 +1538,44 @@ void cac::initiateAbortShutdown ( tcpiiu & iiu )
 
 void cac::destroyIIU ( tcpiiu & iiu )
 {
-    epicsGuard < callbackMutex > cbGuard ( this->cbMutex );
-    epicsGuard < cacMutex > guard ( this->mutex );
-    if ( iiu.channelCount() ) {
-        char hostNameTmp[64];
-        iiu.hostName ( hostNameTmp, sizeof ( hostNameTmp ) );
-        genLocalExcep ( cbGuard, *this, ECA_DISCONN, hostNameTmp );
-    }
-    osiSockAddr addr = iiu.getNetworkAddress();
-    if ( addr.sa.sa_family == AF_INET ) {
-        inetAddrID tmp ( addr.ia );
-        bhe * pBHE = this->beaconTable.lookup ( tmp );
-        if ( pBHE ) {
-            pBHE->unregisterIIU ( iiu );
+    {
+        epicsGuard < callbackMutex > cbGuard ( this->cbMutex );
+        epicsGuard < cacMutex > guard ( this->mutex );
+        if ( iiu.channelCount() ) {
+            char hostNameTmp[64];
+            iiu.hostName ( hostNameTmp, sizeof ( hostNameTmp ) );
+            genLocalExcep ( cbGuard, *this, ECA_DISCONN, hostNameTmp );
         }
+        osiSockAddr addr = iiu.getNetworkAddress();
+        if ( addr.sa.sa_family == AF_INET ) {
+            inetAddrID tmp ( addr.ia );
+            bhe * pBHE = this->beaconTable.lookup ( tmp );
+            if ( pBHE ) {
+                pBHE->unregisterIIU ( iiu );
+            }
+        }
+       
+        assert ( this->pudpiiu );
+        iiu.removeAllChannels ( cbGuard, guard, *this );
     }
-   
-    assert ( this->pudpiiu );
-    iiu.removeAllChannels ( cbGuard, guard, *this );
 
-    this->serverTable.remove ( iiu );
-    this->serverList.remove ( iiu );
-    iiu.~tcpiiu ();
-    this->freeListVirtualCircuit.release ( & iiu );
+    {
+        // this lock synchronizes with a blocking loop
+        // in ~cac waiting until no circuits are installed.
+        // After the cac lock is released here we must not 
+        // access any part of the cac (including the 
+        // callback lock) because ~cac is allowed to
+        // complete.
+        epicsGuard < cacMutex > guard ( this->mutex );
 
-    // signal iiu uninstal event so that cac can properly shut down
-    this->iiuUninstall.signal();
+        this->serverTable.remove ( iiu );
+        this->serverList.remove ( iiu );
+        iiu.~tcpiiu ();
+        this->freeListVirtualCircuit.release ( & iiu );
+
+        // signal iiu uninstal event so that cac can properly shut down
+        this->iiuUninstall.signal();
+    }
 }
 
 double cac::beaconPeriod ( const nciu & chan ) const

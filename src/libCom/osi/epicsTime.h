@@ -17,11 +17,7 @@
 
 #include "shareLib.h"
 #include "epicsTypes.h"
-#include "epicsAssert.h"
 #include "osdTime.h"
-#ifdef __cplusplus
-#include "locationException.h"
-#endif /* __cplusplus */
 
 /* epics time stamp for C interface*/
 typedef struct epicsTimeStamp {

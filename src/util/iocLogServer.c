@@ -38,6 +38,7 @@
  * .01 080791 joh	Created
  * .02 102591 joh	Dont try to reopen the log file if a write fails
  * .03 110691 joh	Disconnect if sent a zero length message
+ * .04 091092 joh	Print routine messages only when in debug mode	
  *
  */
 
@@ -321,9 +322,11 @@ readFromClient(pclient)
 		      sizeof(pclient->recvbuf)-stacksize-1);
 	if (length <= 0) {
 
+#		ifdef	DEBUG
 		if(length == 0){
 			printf("iocLogServer: nil message disconnect\n");
 		}
+#		endif
 
 		/*
 		 * flush any leftovers
@@ -418,8 +421,10 @@ readFromClient(pclient)
 	 */
 	length = ftell(pclient->pserver->poutfile);
 	if (length > pclient->pserver->max_file_size) {
-#define 	FILE_BEGIN 0
-		printf("ioc log server: resetting the file pointer\n");
+#		define 	FILE_BEGIN 0
+#		ifdef DEBUG
+			printf("ioc log server: resetting the file pointer\n");
+#		endif
 		fseek(pclient->pserver->poutfile, 0, FILE_BEGIN);
 		status = ftruncate(
 				   fileno(pclient->pserver->poutfile),

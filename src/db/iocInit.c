@@ -106,9 +106,10 @@
 LOCAL int initialized=FALSE;
 
 /* The following is for use by interrupt routines */
-int interruptAccept=FALSE;
+volatile int interruptAccept=FALSE;
 
 struct dbBase *pdbBase=NULL;
+
 
 /* added for Channel Access Links */
 long dbCommonInit();
@@ -120,7 +121,8 @@ LOCAL long initDevSup(void);
 LOCAL long finishDevSup(void);
 LOCAL long initDatabase(void);
 LOCAL void createLockSets(void);
-LOCAL short makeSameSet(struct dbAddr *paddr,short set);
+LOCAL void createLockSetsExtraPass(int *anyChange);
+LOCAL short makeSameSet(struct dbAddr *paddr,short set,int *anyChange);
 LOCAL long initialProcess(void);
 LOCAL long getResources(char  *fname);
 LOCAL int getResourceToken(FILE *fp, char *pToken, unsigned maxToken);
@@ -165,15 +167,6 @@ int iocInit(char * pResourceFilename)
     *  Print out version of iocCore
     */
     coreRelease();
-
-   /*
-    *  Read EPICS environment
-    */
-    epicsSetEnvParams();
-
-   /* Hook after environment has been set */
-    if (pinitHooks) (*pinitHooks)(INITHOOKafterSetEnvParams);
-
    /*
     *  Read EPICS resources.
     */
@@ -829,17 +822,6 @@ LOCAL long initDatabase(void)
     return(status);
 }
 
-/*
- *  Create lock sets for records
- *    A lock set is a set of records that must be locked
- *    with a semaphore so as to prevent mutual exclusion
- *    hazards.  Lock sets are determined by examining the
- *    links interconnecting the records.  If a link connecting
- *    two records is not an NPP/NMS single-valued input link,
- *    then the two records are considered part of the same
- *    lock set.  Records connected by forward links are
- *    definately considered part of the same lockset.
- */
 LOCAL void createLockSets(void)
 {
     int			i,link;
@@ -853,6 +835,7 @@ LOCAL void createLockSets(void)
     struct link		*plink;
     short		nset,maxnset,newset;
     int			again;
+    int			anyChange;
     
     nset = 0;
     if(!(precHeader = pdbBase->precHeader)) return;
@@ -873,7 +856,6 @@ LOCAL void createLockSets(void)
             *    We shall see later if this assumption is incorrect.
             */
 	    precord->lset = maxnset = ++nset;
-
            /*
             *  Use the process active flag to eliminate traversing
             *     cycles in the database "graph"
@@ -881,7 +863,7 @@ LOCAL void createLockSets(void)
 	    precord->pact = TRUE; again = TRUE;
 	    while(again) {
 		again = FALSE;
-    		for(link=0; link<precTypDes->no_links; link++) {
+    		for(link=0; (link<precTypDes->no_links&&!again) ; link++) {
 		    struct dbAddr	*pdbAddr;
 
 		    pfldDes = precTypDes->papFldDes[precTypDes->link_ind[link]];
@@ -910,7 +892,7 @@ LOCAL void createLockSets(void)
                     *  Combine the lock sets of the current record with the
                     *    remote record pointed to by the link. (recursively)
                     */
-		    newset = makeSameSet(pdbAddr,precord->lset);
+		    newset = makeSameSet(pdbAddr,precord->lset,&anyChange);
 
                    /*
                     *  Perform an iteration of the while-loop again
@@ -930,10 +912,70 @@ LOCAL void createLockSets(void)
 	    precord->pact = FALSE;
 	}
     }
+    anyChange = TRUE;
+    while(anyChange) {
+	anyChange = FALSE;
+	createLockSetsExtraPass(&anyChange);
+    }
     dbScanLockInit(nset);
 }
 
-LOCAL short makeSameSet(struct dbAddr *paddr, short lset)
+LOCAL void createLockSetsExtraPass(int *anyChange)
+{
+    int			i,link;
+    struct recLoc	*precLoc;
+    struct recDes	*precDes;
+    struct recTypDes	*precTypDes;
+    struct recHeader	*precHeader;
+    RECNODE		*precNode;
+    struct fldDes	*pfldDes;
+    struct dbCommon	*precord;
+    struct link		*plink;
+    int			again;
+    
+    if(!(precHeader = pdbBase->precHeader)) return;
+    if(!(precDes = pdbBase->precDes)) return;
+    for(i=0; i< (precHeader->number); i++) {
+	if(!(precLoc = precHeader->papRecLoc[i]))continue;
+	if(!precLoc->preclist) continue;
+	precTypDes = precDes->papRecTypDes[i];
+	for(precNode=(RECNODE *)ellFirst(precLoc->preclist);
+	precNode; precNode = (RECNODE *)ellNext(&precNode->node)) {
+	    precord = precNode->precord;
+	    if(!(precord->name[0])) continue;
+	    /*Prevent cycles in database graph*/
+	    precord->pact = TRUE; again = TRUE;
+	    while(again) {
+		short newset;
+
+		again = FALSE;
+    		for(link=0; (link<precTypDes->no_links&&!again) ; link++) {
+		    struct dbAddr	*pdbAddr;
+
+		    pfldDes = precTypDes->papFldDes[precTypDes->link_ind[link]];
+		    plink = (struct link *)((char *)precord + pfldDes->offset);
+		    if(plink->type != DB_LINK) continue;
+		    pdbAddr = (struct dbAddr *)(plink->value.db_link.pdbAddr);
+		    if (pfldDes->field_type==DBF_INLINK
+	    	          && ( !(plink->value.db_link.process_passive)
+	                  && !(plink->value.db_link.maximize_sevr))
+		          && pdbAddr->no_elements<=1) continue;
+
+		    newset = makeSameSet(pdbAddr,precord->lset,anyChange);
+		    if (newset!=precord->lset) {
+			precord->lset = newset;
+			*anyChange = TRUE;
+			again = TRUE;
+			break;
+		    }
+		}
+	    }
+	    precord->pact = FALSE;
+	}
+    }
+}
+
+LOCAL short makeSameSet(struct dbAddr *paddr, short lset,int *anyChange)
 {
     struct dbCommon 	*precord = paddr->precord;
     short  		link;
@@ -943,12 +985,7 @@ LOCAL short makeSameSet(struct dbAddr *paddr, short lset)
     struct recDes	*precDes;
     int			again;
 
-   /*
-    *  Use the process active flag to eliminate traversing
-    *     cycles in the database "graph."  Effectively converts
-    *     the arbitrary database "graph" (where edges are
-    *     defined as links) into a tree structure.
-    */
+    /*Prevent cycles in database graph*/
     if(precord->pact) return(((precord->lset<lset) ? precord->lset : lset));
 
    /*
@@ -988,10 +1025,11 @@ LOCAL short makeSameSet(struct dbAddr *paddr, short lset)
 	    && ( !(plink->value.db_link.process_passive)
 	    && !(plink->value.db_link.maximize_sevr) )
 	    && pdbAddr->no_elements<=1) continue;
-	    newset = makeSameSet(pdbAddr,precord->lset);
+	    newset = makeSameSet(pdbAddr,precord->lset,anyChange);
 	    if(newset != precord->lset) {
 		precord->lset = newset;
 		again = TRUE;
+		*anyChange = TRUE;
 		break;
 	    }
 	}

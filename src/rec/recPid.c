@@ -293,7 +293,7 @@ static void monitor(ppid)
 {
 	unsigned short	monitor_mask;
 	float		delta;
-        short           stat,sevr,nsta,nsev;
+        unsigned short  stat,sevr,nsta,nsev;
 
         /* get previous stat and sevr  and new stat and sevr*/
         recGblResetSevr(ppid,stat,sevr,nsta,nsev);

@@ -522,7 +522,7 @@ static void monitor(pao)
 {
 	unsigned short	monitor_mask;
 	double		delta;
-        short           stat,sevr,nsta,nsev;
+        unsigned short  stat,sevr,nsta,nsev;
 
         /* get previous stat and sevr  and new stat and sevr*/
         recGblResetSevr(pao,stat,sevr,nsta,nsev);

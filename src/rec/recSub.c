@@ -350,7 +350,7 @@ static void monitor(psub)
 {
 	unsigned short	monitor_mask;
 	double		delta;
-        short           stat,sevr,nsta,nsev;
+        unsigned short  stat,sevr,nsta,nsev;
 	double           *pnew;
 	double           *pprev;
 	int             i;

@@ -311,7 +311,7 @@ static long get_control_double(struct dbAddr *paddr, struct dbr_ctrlDouble *pcd)
 static void monitor(struct pulseCounterRecord             *ppc)
 {
     unsigned short  monitor_mask;
-    short           stat,sevr,nsta,nsev;
+    unsigned short  stat,sevr,nsta,nsev;
 
     /* get previous stat and sevr  and new stat and sevr*/
     recGblResetSevr(ppc,stat,sevr,nsta,nsev);

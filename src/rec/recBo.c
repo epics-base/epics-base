@@ -301,7 +301,7 @@ static long process(pbo)
 		pcallback = (struct callback *)(pbo->rpvt);
         	if(pcallback->wd_id==NULL) pcallback->wd_id = wdCreate();
                 callbackSetPriority(pbo->prio,pcallback);
-               	wdStart(pcallback->wd_id,wait_time,callbackRequest,(int)pcallback);
+               	wdStart(pcallback->wd_id,wait_time,(FUNCPTR)callbackRequest,(int)pcallback);
 	}
 	/* check event list */
 	monitor(pbo);
@@ -392,7 +392,7 @@ static void monitor(pbo)
     struct boRecord	*pbo;
 {
 	unsigned short	monitor_mask;
-        short           stat,sevr,nsta,nsev;
+        unsigned short  stat,sevr,nsta,nsev;
 
         /* get previous stat and sevr  and new stat and sevr*/
         recGblResetSevr(pbo,stat,sevr,nsta,nsev);

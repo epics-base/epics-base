@@ -210,7 +210,7 @@ static void monitor(pstringin)
     struct stringinRecord             *pstringin;
 {
     unsigned short  monitor_mask;
-    short           stat,sevr,nsta,nsev;
+    unsigned short  stat,sevr,nsta,nsev;
 
     /* get previous stat and sevr  and new stat and sevr*/
     recGblResetSevr(pstringin,stat,sevr,nsta,nsev);

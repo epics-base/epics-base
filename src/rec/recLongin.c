@@ -321,7 +321,7 @@ static void monitor(plongin)
 {
 	unsigned short	monitor_mask;
 	long		delta;
-	short		stat,sevr,nsta,nsev;
+	unsigned short	stat,sevr,nsta,nsev;
 
 	/* get previous stat and sevr  and new stat and sevr*/
         recGblResetSevr(plongin,stat,sevr,nsta,nsev);

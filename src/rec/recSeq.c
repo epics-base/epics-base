@@ -123,7 +123,7 @@ int pass;
       printf("init_record(%s) entered\n", pseq->name);
 
     /* Allocate a callback structure for use in processing */
-    pseq->dpvt = malloc(sizeof(struct  callbackSeq));
+    pseq->dpvt = (void *)malloc(sizeof(struct  callbackSeq));
 
     ((struct callbackSeq *) (pseq->dpvt))->callBack.callback = processCallback;
     ((struct callbackSeq *) (pseq->dpvt))->callBack.user = (void *) pseq;
@@ -226,7 +226,7 @@ struct seqRecord *pseq;
     }
     if  (pseq->selm == REC_SEQ_SELM_SPECIFIC)
     {
-      if(pseq->seln<0 || pseq->seln>10)
+      if(pseq->seln>10)
       { /* Invalid selection number */
         recGblSetSevr(pseq,SOFT_ALARM,INVALID_ALARM);
         return(asyncFinish(pseq));
@@ -310,7 +310,7 @@ struct seqRecord *pseq;
     {
       /* Use the watch-dog as a delay mechanism */
       wdDelay = pcb->plinks[pcb->index]->dly * sysClkRateGet();
-      wdStart(pcb->wd_id, wdDelay, watchDog, (int)(&(pcb->callBack)));
+      wdStart(pcb->wd_id, wdDelay, (FUNCPTR)watchDog, (int)(&(pcb->callBack)));
     }
     else
     {
@@ -332,7 +332,7 @@ static long
 asyncFinish(pseq)
 struct seqRecord *pseq;
 {
-  short	stat, sevr, nsta, nsev;
+  unsigned short stat, sevr, nsta, nsev;
 
   if (seqRecDebug > 5)
     printf("asyncFinish(%s) completing processing\n", pseq->name);

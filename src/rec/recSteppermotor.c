@@ -395,7 +395,7 @@ static void monitor(psm)
 {
 	unsigned short	monitor_mask;
         float           delta;
-        short           stat,sevr,nsta,nsev;
+        unsigned short  stat,sevr,nsta,nsev;
 
         /* get previous stat and sevr  and new stat and sevr*/
 	recGblResetSevr(psm,stat,sevr,nsta,nsev);
@@ -447,7 +447,7 @@ struct motor_data	*psm_data;
 struct steppermotorRecord	*psm;
 {
     struct smdset   *pdset = (struct smdset *)(psm->dset);
-    short	stat,sevr,nsta,nsev;
+    unsigned short   stat,sevr,nsta,nsev;
     int		intAccept=interruptAccept;
     short	post_events;
     double          temp;

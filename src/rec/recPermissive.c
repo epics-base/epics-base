@@ -118,7 +118,7 @@ static void monitor(ppermissive)
     struct permissiveRecord             *ppermissive;
 {
     unsigned short  monitor_mask;
-    short           stat,sevr,nsta,nsev;
+    unsigned short  stat,sevr,nsta,nsev;
     unsigned short  val,oval,wflg,oflg;
 
     /* get previous stat and sevr  and new stat and sevr*/

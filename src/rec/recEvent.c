@@ -194,7 +194,7 @@ static void monitor(pevent)
     struct eventRecord             *pevent;
 {
     unsigned short  monitor_mask;
-    short           stat,sevr,nsta,nsev;
+    unsigned short  stat,sevr,nsta,nsev;
 
     /* get previous stat and sevr  and new stat and sevr*/
     recGblResetSevr(pevent,stat,sevr,nsta,nsev);

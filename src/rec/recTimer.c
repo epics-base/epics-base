@@ -112,10 +112,10 @@ struct dset devTmAt5Vxi={4,NULL,NULL,NULL,NULL};
 
 extern int	post_event();
 
-void monitor();
-void read_timer();
-void convert_timer();
-void write_timer();
+static void monitor();
+static void read_timer();
+static void convert_timer();
+static void write_timer();
 
 static long init_record(ptimer,pass)
     struct timerRecord	*ptimer;
@@ -176,7 +176,7 @@ static void monitor(ptimer)
     struct timerRecord *ptimer;
 {
         unsigned short  monitor_mask;
-        short           stat,sevr,nsta,nsev;
+        unsigned short  stat,sevr,nsta,nsev;
 
         /* get previous stat and sevr  and new stat and sevr*/
         recGblResetSevr(ptimer,stat,sevr,nsta,nsev);

@@ -130,7 +130,7 @@ static long init_record(pfanout,pass)
 static long process(pfanout)
     struct fanoutRecord     *pfanout;
 {
-    short           stat,sevr,nsta,nsev;
+    unsigned short   stat,sevr,nsta,nsev;
 
 
     struct link    *plink;

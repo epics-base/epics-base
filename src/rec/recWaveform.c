@@ -147,7 +147,7 @@ static long init_record(pwf,pass)
 	if(pwf->ftvl == 0) {
 		pwf->bptr = (char *)calloc(pwf->nelm,MAX_STRING_SIZE);
 	} else {
-		if(pwf->ftvl<0|| pwf->ftvl>DBF_ENUM) pwf->ftvl=2;
+		if(pwf->ftvl>DBF_ENUM) pwf->ftvl=2;
 		pwf->bptr = (char *)calloc(pwf->nelm,sizeofTypes[pwf->ftvl]);
 	}
 	pwf->nord = 0;
@@ -343,7 +343,7 @@ static void monitor(pwf)
     struct waveformRecord	*pwf;
 {
 	unsigned short	monitor_mask;
-        short           stat,sevr,nsta,nsev;
+        unsigned short  stat,sevr,nsta,nsev;
 
         /* get previous stat and sevr  and new stat and sevr*/
         recGblResetSevr(pwf,stat,sevr,nsta,nsev);

@@ -385,7 +385,7 @@ static void monitor(ppd)
     struct pulseDelayRecord             *ppd;
 {
     unsigned short  monitor_mask;
-    short           stat,sevr,nsta,nsev;
+    unsigned short  stat,sevr,nsta,nsev;
 
     /* get previous stat and sevr  and new stat and sevr*/
     recGblResetSevr(ppd,stat,sevr,nsta,nsev);

@@ -340,5 +340,4 @@ void cast_server(void *pParm)
             clean_addrq ();
         }
     }
-    return(0);
 }

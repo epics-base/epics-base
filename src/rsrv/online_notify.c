@@ -35,32 +35,24 @@
 
 static char *sccsId = "@(#) $Id$";
 
-/*
- * ansi includes
- */
+#include <stddef.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
-/*
- *	system includes
- */
-#include <vxWorks.h>
-#include <types.h>
-#include <sockLib.h>
-#include <socket.h>
-#include <errnoLib.h>
-#include <in.h>
-#include <logLib.h>
-#include <sysLib.h>
-#include <taskLib.h>
+#include <errno.h>
 
 #define MAX_BLOCK_THRESHOLD 100000
 
 /*
  *	EPICS includes
  */
+#include "osiSock.h"
+#include "osiThread.h"
+#include "osiClock.h"
+#include "errlog.h"
 #include "envDefs.h"
 #include "server.h"
-#include "task_params.h"
 
 /*
  *	RSRV_ONLINE_NOTIFY_TASK
@@ -74,12 +66,12 @@ int rsrv_online_notify_task()
     double              maxPeriod;
     caHdr               msg;
     struct sockaddr_in  recv_addr;
-    int                 status;
-    int                 sock;
+    SOCKET              status;
+    SOCKET              sock;
     int                 true = TRUE;
     unsigned short      port;
     
-    taskwdInsert(taskIdSelf(),NULL,NULL);
+    taskwdInsert(threadGetIdSelf(),NULL,NULL);
     
     longStatus = envGetDoubleConfigParam (
         &EPICS_CA_BEACON_PERIOD,
@@ -96,9 +88,10 @@ int rsrv_online_notify_task()
     }
     
     /*
-     * 1 tick initial delay between beacons
+     * 1 tick initial delay between beacons, but max of 1/60 sec
      */
     delay = 1ul;
+    if(clockGetRate() > 60.0) delay = clockGetRate()/60.0;
     maxdelay = (unsigned long) maxPeriod*sysClkRateGet();
     
     /* 
@@ -107,13 +100,7 @@ int rsrv_online_notify_task()
      *  Format described in <sys/socket.h>.
      */
     if((sock = socket (AF_INET, SOCK_DGRAM, 0)) == ERROR){
-        logMsg("CAS: online socket creation error\n",
-            0,
-            0,
-            0,
-            0,
-            0,
-            0);
+        errlogPrintf("CAS: online socket creation error\n");
         abort();
     }
     
@@ -126,7 +113,7 @@ int rsrv_online_notify_task()
         abort();
     }
     
-    bfill((char *)&recv_addr, sizeof recv_addr, 0);
+    memset((char *)&recv_addr, 0, sizeof recv_addr);
     recv_addr.sin_family = AF_INET;
     recv_addr.sin_addr.s_addr = htonl(INADDR_ANY); /* let slib pick lcl addr */
     recv_addr.sin_port = htons(0);   /* let slib pick port */
@@ -134,7 +121,7 @@ int rsrv_online_notify_task()
     if(status<0)
         abort();
     
-    bfill((char *)&msg, sizeof msg, 0);
+    memset((char *)&msg, 0, sizeof msg);
     msg.m_cmmd = htons (CA_PROTO_RSRV_IS_UP);
     msg.m_count = htons (ca_server_port);
     msg.m_available = htonl (INADDR_ANY);
@@ -177,13 +164,9 @@ int rsrv_online_notify_task()
                 &pNode->destAddr.sa,
                 sizeof(pNode->destAddr.sa));
             if(status < 0){
-                logMsg( "%s: CA beacon error was \"%s\"\n",
+                errlogPrintf( "%s: CA beacon error was \"%s\"\n",
                     (int) __FILE__,
-                    (int) strerror(errnoGet()),
-                    0,
-                    0,
-                    0,
-                    0);
+                    (int) SOCKERRSTR(SOCKERRNO));
             }
             else{
                 assert(status == sizeof(msg));
@@ -191,7 +174,7 @@ int rsrv_online_notify_task()
             
             pNode = (caAddrNode *)pNode->node.next;
         }
-        taskDelay(delay);
+        threadSleep(delay/(double)clockGetRate());
         delay = min(delay << 1, maxdelay);
     }
 }

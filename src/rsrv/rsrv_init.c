@@ -32,23 +32,22 @@
 
 static char *sccsId = "@(#) $Id$";
 
-#include <vxWorks.h>
-#include <taskLib.h>
-#include <types.h>
-#include <socket.h>
-#include <in.h>
-#include <errnoLib.h>
-#include <usrLib.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <errno.h>
 
+#include "osiSock.h"
+#include "osiThread.h"
 #include "ellLib.h"
 #include "dbDefs.h"
 #include "db_access.h"
-#include "task_params.h"
 #include "freeList.h"
 #include "server.h"
 
 #define DELETE_TASK(NAME)\
-if(taskNameToId(NAME)!=ERROR)taskDelete(taskNameToId(NAME));
+if(threadNameToId(NAME)!=0)threadDestroy(threadNameToId(NAME));
 
 
 /*
@@ -56,7 +55,7 @@ if(taskNameToId(NAME)!=ERROR)taskDelete(taskNameToId(NAME));
  */
 int rsrv_init()
 {
-	FASTLOCKINIT(&clientQlock);
+        clientQlock = semMutexCreate();
 
 	ellInit(&clientQ);
 	freeListInitPvt(&rsrvClientFreeList, sizeof(struct client), 8);
@@ -67,41 +66,17 @@ int rsrv_init()
 	prsrv_cast_client = NULL;
 	pCaBucket = NULL;
 
-	DELETE_TASK(CAST_SRVR_NAME);
-	DELETE_TASK(REQ_SRVR_NAME);
-	DELETE_TASK(CA_ONLINE_NAME);
+	DELETE_TASK("CAUDP");
+	DELETE_TASK("CATCP");
+	DELETE_TASK("CAonline");
 
-	taskSpawn(REQ_SRVR_NAME,
-		  REQ_SRVR_PRI,
-		  REQ_SRVR_OPT,
-		  REQ_SRVR_STACK,
-		  req_server,
-		  NULL,
-		  NULL,
-		  NULL,
-		  NULL,
-		  NULL,
-		  NULL,
-		  NULL,
-		  NULL,
-		  NULL,
-		  NULL);
-
-	taskSpawn(CAST_SRVR_NAME,
-		  CAST_SRVR_PRI,
-		  CAST_SRVR_OPT,
-		  CAST_SRVR_STACK,
-		  cast_server,
-		  NULL,
-		  NULL,
-		  NULL,
-		  NULL,
-		  NULL,
-		  NULL,
-		  NULL,
-		  NULL,
-		  NULL,
-		  NULL);
-
+	threadCreate("CATCP",
+	    threadPriorityChannelAccessServer,
+	    threadGetStackSize(threadStackMedium),
+	    (THREADFUNC)req_server,0);
+	threadCreate("CAUDP",
+	    threadPriorityChannelAccessServer-1,
+	    threadGetStackSize(threadStackMedium),
+	    (THREADFUNC)cast_server,0);
 	return OK;
 }

@@ -58,27 +58,22 @@
 
 static char	*sccsId = "@(#) $Id$";
 
+#include <stddef.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
-#include <vxWorks.h>
-#include <taskLib.h>
-#include <types.h>
-#include <socket.h>
-#include <ioLib.h>
-#include <in.h>
-#include <logLib.h>
-#include <sockLib.h>
-#include <errnoLib.h>
-#include <sysLib.h>
-#include <tickLib.h>
-#include <stdioLib.h>
-#include <usrLib.h>
-#include <inetLib.h>
+#include <sys/types.h>
+#include <errno.h>
 
+#include "osiSock.h"
+#include "osiClock.h"
+#include "os_depen.h"
+#include "osiThread.h"
+#include "errlog.h"
 #include "ellLib.h"
 #include "taskwd.h"
 #include "db_access.h"
-#include "task_params.h"
 #include "envDefs.h"
 #include "freeList.h"
 #include "server.h"
@@ -97,22 +92,23 @@ LOCAL void clean_addrq();
  */
 int cast_server(void)
 {
-  	struct sockaddr_in		sin;	
-  	FAST int			status;
-  	int				count=0;
-	struct sockaddr_in		new_recv_addr;
-  	int  				recv_addr_size;
-	unsigned short			port;
+  	struct sockaddr_in	sin;	
+  	int			status;
+  	int			count=0;
+	struct sockaddr_in	new_recv_addr;
+  	int  			recv_addr_size;
+	unsigned short		port;
   	int			nchars;
+	threadId		tid;
 
-	taskwdInsert((int)taskIdCurrent,NULL,NULL);
+	taskwdInsert(threadGetIdSelf(),NULL,NULL);
 
 	port = caFetchPortConfig(&EPICS_CA_SERVER_PORT, CA_SERVER_PORT);
 
   	recv_addr_size = sizeof(new_recv_addr);
 
     if( IOC_cast_sock!=0 && IOC_cast_sock!=ERROR ) {
-        if( (status = close(IOC_cast_sock)) == ERROR ) {
+        if( (status = socket_close(IOC_cast_sock)) == ERROR ) {
             epicsPrintf ("CAS: Unable to close master cast socket\n");
         }
     }
@@ -124,7 +120,7 @@ int cast_server(void)
 
   	if((IOC_cast_sock = socket (AF_INET, SOCK_DGRAM, 0)) == ERROR){
     		epicsPrintf ("CAS: casts socket creation error\n");
-    		taskSuspend(taskIdSelf());
+    		threadSuspend(threadGetIdSelf());
   	}
 
 	/*
@@ -153,7 +149,7 @@ int cast_server(void)
 #endif
     
     /*  Zero the sock_addr structure */
-    bfill((char *)&sin, sizeof(sin), 0);
+    memset((char *)&sin, 0, sizeof(sin));
     sin.sin_family = AF_INET;
     sin.sin_addr.s_addr = htonl(INADDR_ANY);
     sin.sin_port = htons(port);
@@ -161,30 +157,17 @@ int cast_server(void)
     /* get server's Internet address */
     if( bind(IOC_cast_sock, (struct sockaddr *)&sin, sizeof (sin)) == ERROR){
         epicsPrintf ("CAS: cast bind error\n");
-        close (IOC_cast_sock);
-        taskSuspend(0);
+        socket_close (IOC_cast_sock);
+        threadSuspend(threadGetIdSelf());
     }
     
     /* tell clients we are on line again */
-    status = taskSpawn(
-        CA_ONLINE_NAME,
-        CA_ONLINE_PRI,
-        CA_ONLINE_OPT,
-        CA_ONLINE_STACK,
-        rsrv_online_notify_task,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        NULL);
-    if(status==ERROR){
+    tid = threadCreate("CAonline",threadPriorityChannelAccessClient-3,
+	threadGetStackSize(threadStackSmall),
+	(THREADFUNC)rsrv_online_notify_task,0);
+    if(tid == 0) {
         epicsPrintf ("CAS: couldnt start up online notify task because \"%s\"\n",
-            strerror(errnoGet()));
+            strerror(errno));
     }
     
  
@@ -198,7 +181,7 @@ int cast_server(void)
         if(prsrv_cast_client){
             break;
         }
-        taskDelay(sysClkRateGet()*60*5);
+	threadSleep(300.0);
     }
     
     while (TRUE) {
@@ -210,14 +193,14 @@ int cast_server(void)
             (struct sockaddr *)&new_recv_addr, 
             &recv_addr_size);
         if (status<0) {
-            epicsPrintf ("CAS: UDP recv error (errno=%d)\n",
-                    errnoGet());
-            taskDelay (sysClkRateGet());
+            epicsPrintf ("CAS: UDP recv error (errno=%s)\n",
+                    SOCKERRSTR(SOCKERRNO));
+	    threadSleep(1.0);
         }
         else {
             prsrv_cast_client->recv.cnt = (unsigned long) status;
             prsrv_cast_client->recv.stk = 0ul;
-            prsrv_cast_client->ticks_at_last_recv = tickGet();
+            prsrv_cast_client->ticks_at_last_recv = clockGetRate();
 
             /*
              * If we are talking to a new client flush to the old one 
@@ -225,10 +208,7 @@ int cast_server(void)
              * see if the next message is for this same client.
              */
             if (prsrv_cast_client->send.stk) {
-                status = bcmp(
-                    (char *)&prsrv_cast_client->addr, 
-                    (char *)&new_recv_addr, 
-                    recv_addr_size);
+                status = memcmp( (void *)&prsrv_cast_client->addr, (void *)&new_recv_addr, recv_addr_size);
                 if(status){ 	
                     /* 
                      * if the address is different 
@@ -285,9 +265,9 @@ int cast_server(void)
 		/*
 		 * allow messages to batch up if more are comming
 		 */
- 	   	status = ioctl(IOC_cast_sock, FIONREAD, /* sic */(int) &nchars);
+ 	   	status = socket_ioctl(IOC_cast_sock, FIONREAD, /* sic */(int) &nchars);
  	   	if(status == ERROR){
-            taskSuspend(0);
+            threadSuspend(threadGetIdSelf());
  	   	}
 
         if(nchars == 0){
@@ -313,12 +293,12 @@ LOCAL void clean_addrq()
 	unsigned long   	delay;
 	unsigned long   	maxdelay = 0;
 	unsigned		ndelete=0;
-  	unsigned long		timeout = TIMEOUT*sysClkRateGet();
+  	unsigned long		timeout = TIMEOUT*clockGetRate();
 	int			s;
 
-	current = tickGet();
+	current = clockGetRate();
 
-	FASTLOCK(&prsrv_cast_client->addrqLock);
+	semMutexTakeAssert(prsrv_cast_client->addrqLock);
 	pnextciu = (struct channel_in_use *) 
 			prsrv_cast_client->addrq.node.next;
 
@@ -335,25 +315,25 @@ LOCAL void clean_addrq()
 		if (delay > timeout) {
 
 			ellDelete(&prsrv_cast_client->addrq, &pciu->node);
-        		FASTLOCK(&clientQlock);
+        		LOCK_CLIENTQ;
 			s = bucketRemoveItemUnsignedId (
 				pCaBucket,
 				&pciu->sid);
 			if(s){
 				errMessage (s, "Bad id at close");
 			}
-       			FASTUNLOCK(&clientQlock);
+       			UNLOCK_CLIENTQ;
 			freeListFree(rsrvChanFreeList, pciu);
 			ndelete++;
 			maxdelay = max(delay, maxdelay);
 		}
 	}
-	FASTUNLOCK(&prsrv_cast_client->addrqLock);
+	semMutexGive(prsrv_cast_client->addrqLock);
 
 #	ifdef DEBUG
 	if(ndelete){
 		epicsPrintf ("CAS: %d CA channels have expired after %d sec\n",
-			ndelete, maxdelay / sysClkRateGet());
+			ndelete, maxdelay / clockGetRate());
 	}
 #	endif
 
@@ -365,7 +345,7 @@ LOCAL void clean_addrq()
  *
  * 
  */
-struct client *create_udp_client(unsigned sock)
+struct client *create_udp_client(SOCKET sock)
 {
 	struct client *client;
 	
@@ -385,7 +365,7 @@ struct client *create_udp_client(unsigned sock)
 	 * memset(client, 0, sizeof(*client));
 	 */
 	
-	client->blockSem = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
+	client->blockSem = semBinaryCreate(semEmpty);
 	if(!client->blockSem){
 		freeListFree(rsrvClientFreeList, client);
 		return NULL;
@@ -396,7 +376,7 @@ struct client *create_udp_client(unsigned sock)
 	 */
 	client->pUserName = malloc(1); 
 	if(!client->pUserName){
-		semDelete(client->blockSem);
+		semBinaryDestroy(client->blockSem);
 		freeListFree(rsrvClientFreeList, client);
 		return NULL;
 	}
@@ -407,7 +387,7 @@ struct client *create_udp_client(unsigned sock)
 	 */
 	client->pHostName = malloc(1); 
 	if(!client->pHostName){
-		semDelete(client->blockSem);
+		semBinaryDestroy(client->blockSem);
 		free(client->pUserName);
 		freeListFree(rsrvClientFreeList, client);
 		return NULL;
@@ -416,26 +396,26 @@ struct client *create_udp_client(unsigned sock)
 	
 	ellInit(&client->addrq);
 	ellInit(&client->putNotifyQue);
-	bfill((char *)&client->addr, sizeof(client->addr), 0);
-	client->tid = taskIdSelf();
+	memset((char *)&client->addr, 0, sizeof(client->addr));
+	client->tid = threadGetIdSelf();
 	client->send.stk = 0ul;
 	client->send.cnt = 0ul;
 	client->recv.stk = 0ul;
 	client->recv.cnt = 0ul;
 	client->evuser = NULL;
 	client->disconnect = FALSE;	/* for TCP only */
-	client->ticks_at_last_send = tickGet();
-	client->ticks_at_last_recv = tickGet();
+	client->ticks_at_last_send = clockGetRate();
+	client->ticks_at_last_recv = clockGetRate();
 	client->proto = IPPROTO_UDP;
 	client->sock = sock;
 	client->minor_version_number = CA_UKN_MINOR_VERSION;
 	
 	client->send.maxstk = MAX_UDP;
 	
-	FASTLOCKINIT(&client->lock);
-	FASTLOCKINIT(&client->putNotifyLock);
-	FASTLOCKINIT(&client->addrqLock);
-	FASTLOCKINIT(&client->eventqLock);
+	client->lock = semMutexCreate();
+	client->putNotifyLock = semMutexCreate();
+	client->addrqLock = semMutexCreate();
+	client->eventqLock = semMutexCreate();
 	
 	client->recv.maxstk = ETHERNET_MAX_UDP;
 	return client;
@@ -451,7 +431,7 @@ struct client *create_udp_client(unsigned sock)
  */
 int udp_to_tcp(
 struct client 	*client,
-unsigned	sock
+SOCKET	sock
 )
 {
 	int	status;
@@ -465,7 +445,7 @@ unsigned	sock
   	client->send.maxstk 	= MAX_TCP;
   	client->recv.maxstk 	= MAX_TCP;
   	client->sock 		= sock;
-      	client->tid = 		taskIdSelf();
+      	client->tid = 		threadGetIdSelf();
 
 	addrSize = sizeof(client->addr);
         status = getpeername(

@@ -46,33 +46,29 @@
 
 static char *sccsId = "@(#) $Id$";
 
+#include <stddef.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <limits.h>
 
-#include <vxWorks.h>
-#include <taskLib.h>
-#include <types.h>
-#include <sockLib.h>
-#include <socket.h>
-#include <in.h>
-#include <logLib.h>
-#include <string.h>
-#include <usrLib.h>
-#include <errnoLib.h>
-#include <tickLib.h>
-#include <sysLib.h>
+#include <sys/types.h>
+#include <errno.h>
 
+#include "osiSock.h"
+#include "osiClock.h"
+#include "errlog.h"
 #include "ellLib.h"
 #include "taskwd.h"
 #include "db_access.h"
-#include "task_params.h"
 #include "envDefs.h"
 #include "freeList.h"
 #include "errlog.h"
 #include "bsdSocketResource.h"
 
 #include "server.h"
-#include "bsdSocketResource.h"
 
 LOCAL int terminate_one_client(struct client *client);
 LOCAL void log_one_client(struct client *client, unsigned level);
@@ -95,64 +91,40 @@ int req_server(void)
 	int status;
 	int i;
 
-	taskwdInsert((int)taskIdCurrent,NULL,NULL);
+	taskwdInsert(threadGetIdSelf(),NULL,NULL);
 
 	ca_server_port = caFetchPortConfig(&EPICS_CA_SERVER_PORT, CA_SERVER_PORT);
 
 	if (IOC_sock != 0 && IOC_sock != ERROR)
-		if ((status = close(IOC_sock)) == ERROR)
-			logMsg( "CAS: Unable to close open master socket\n",
-				NULL,
-				NULL,
-				NULL,
-				NULL,
-				NULL,
-				NULL);
+		if ((status = socket_close(IOC_sock)) == ERROR)
+			errlogPrintf( "CAS: Unable to close open master socket\n");
 
 	/*
 	 * Open the socket. Use ARPA Internet address format and stream
 	 * sockets. Format described in <sys/socket.h>.
 	 */
 	if ((IOC_sock = socket(AF_INET, SOCK_STREAM, 0)) == ERROR) {
-		logMsg("CAS: Socket creation error\n",
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL);
-		taskSuspend(0);
+		errlogPrintf("CAS: Socket creation error\n");
+		threadSuspend(threadGetIdSelf());
 	}
 
 	/* Zero the sock_addr structure */
-	bfill((char *)&serverAddr, sizeof(serverAddr), 0);
+	memset((void *)&serverAddr, 0, sizeof(serverAddr));
 	serverAddr.sin_family = AF_INET;
 	serverAddr.sin_port = htons(ca_server_port);
 
 	/* get server's Internet address */
 	if (bind(IOC_sock, (struct sockaddr *)&serverAddr, sizeof(serverAddr)) == ERROR) {
-		logMsg("CAS: Bind error\n",
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL);
-		close(IOC_sock);
-		taskSuspend(0);
+		errlogPrintf("CAS: Bind error\n");
+		socket_close(IOC_sock);
+		threadSuspend(threadGetIdSelf());
 	}
 
 	/* listen and accept new connections */
 	if (listen(IOC_sock, 10) == ERROR) {
-		logMsg("CAS: Listen error\n",
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL);
-		close(IOC_sock);
-		taskSuspend(0);
+		errlogPrintf("CAS: Listen error\n");
+		socket_close(IOC_sock);
+		threadSuspend(threadGetIdSelf());
 	}
 
 	while (TRUE) {
@@ -160,40 +132,20 @@ int req_server(void)
 		int		addLen = sizeof(sockAddr);
 
 		if ((i = accept(IOC_sock, &sockAddr, &addLen)) == ERROR) {
-			logMsg("CAS: Client accept error was \"%s\"\n",
-				(int) strerror(errnoGet()),
-				NULL,
-				NULL,
-				NULL,
-				NULL,
-				NULL);
-			taskDelay(15*sysClkRateGet());
+			errlogPrintf("CAS: Client accept error was \"%s\"\n",
+				(int) SOCKERRSTR(SOCKERRNO));
+			threadSleep(15.0);
 			continue;
 		} else {
-			status = taskSpawn(CA_CLIENT_NAME,
-					   CA_CLIENT_PRI,
-					   CA_CLIENT_OPT,
-					   CA_CLIENT_STACK,
-					   (FUNCPTR) camsgtask,
-					   i,
-					   NULL,
-					   NULL,
-					   NULL,
-					   NULL,
-					   NULL,
-					   NULL,
-					   NULL,
-					   NULL,
-					   NULL);
-			if (status == ERROR) {
-				logMsg("CAS: task creation for new client failed because \"%s\"\n",
-					(int) strerror(errnoGet()),
-					NULL,
-					NULL,
-					NULL,
-					NULL,
-					NULL);
-				taskDelay(15*sysClkRateGet());
+			threadId id;
+			id = threadCreate("CAclient",
+				threadPriorityChannelAccessClient,
+				threadGetStackSize(threadStackBig),
+				(THREADFUNC)camsgtask,(void *)i);
+			if (id==0) {
+				errlogPrintf("CAS: task creation for new client failed because \"%s\"\n",
+					(int) strerror(errno));
+				threadSleep(15.0);
 				continue;
 			}
 		}
@@ -231,33 +183,22 @@ int free_client(struct client *client)
  */
 LOCAL int terminate_one_client(struct client *client)
 {
-	int        	servertid;
-	int        	tmpsock;
+	threadId       	servertid;
+	SOCKET        	tmpsock;
 	int        	status;
 	struct event_ext 	*pevext;
 	struct channel_in_use *pciu;
 
 	if (client->proto != IPPROTO_TCP) {
-		logMsg("CAS: non TCP client delete ignored\n",
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL);
+		errlogPrintf("CAS: non TCP client delete ignored\n");
 		return ERROR;
 	}
 
 	tmpsock = client->sock;
 
 	if(CASDEBUG>0){
-		logMsg("CAS: Connection %d Terminated\n", 
-			tmpsock,
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL);
+		errlogPrintf("CAS: Connection %d Terminated\n", 
+			tmpsock);
 	}
 
 	/*
@@ -271,24 +212,17 @@ LOCAL int terminate_one_client(struct client *client)
 	 */
 	servertid = client->tid;
 	taskwdRemove(servertid);
-	if (servertid != taskIdSelf()){
-		if (taskIdVerify(servertid) == OK){
-			if (taskDelete(servertid) == ERROR) {
-				logMsg("CAS: Client shut down task delete failed because \"%s\"\n", 
-					(int) strerror(errnoGet()),
-					NULL,
-					NULL,
-					NULL,
-					NULL,
-					NULL);
-			}
+	if (servertid != threadGetIdSelf()){
+		if(servertid != 0) {
+			threadDestroy(servertid);
 		}
+		servertid = 0;
 	}
 
 	while(TRUE){
-		FASTLOCK(&client->addrqLock);
+		semMutexTakeAssert(client->addrqLock);
 		pciu = (struct channel_in_use *) ellGet(&client->addrq);
-		FASTUNLOCK(&client->addrqLock);
+		semMutexGive(client->addrqLock);
 		if(!pciu){
 			break;
 		}
@@ -306,9 +240,9 @@ LOCAL int terminate_one_client(struct client *client)
 			/*
 			 * AS state change could be using this list
 			 */
-			FASTLOCK(&client->eventqLock);
+			semMutexTakeAssert(client->eventqLock);
 			pevext = (struct event_ext *) ellGet(&pciu->eventq);
-			FASTUNLOCK(&client->eventqLock);
+			semMutexGive(client->eventqLock);
 			if(!pevext){
 				break;
 			}
@@ -324,11 +258,11 @@ LOCAL int terminate_one_client(struct client *client)
 		if(pciu->pPutNotify){
 			free(pciu->pPutNotify);
 		}
-		FASTLOCK(&clientQlock);
+		LOCK_CLIENTQ;
 		status = bucketRemoveItemUnsignedId (
 				pCaBucket, 
 				&pciu->sid);
-		FASTUNLOCK(&clientQlock);
+		UNLOCK_CLIENTQ;
 		if(status != S_bucket_success){
 			errPrintf (
 				status,
@@ -353,67 +287,20 @@ LOCAL int terminate_one_client(struct client *client)
 	if (client->evuser) {
 		status = db_close_events(client->evuser);
 		if (status == ERROR)
-			taskSuspend(0);
+			threadSuspend(threadGetIdSelf());
 	}
-	if (close(tmpsock) == ERROR)	/* close socket	 */
-		logMsg("CAS: Unable to close socket\n",
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL);
+	if (socket_close(tmpsock) == ERROR)	/* close socket	 */
+		errlogPrintf("CAS: Unable to close socket\n");
 
-	if(FASTLOCKFREE(&client->eventqLock)<0){
-		logMsg("CAS: couldnt free sem\n",
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL);
-	}
+	semMutexDestroy(client->eventqLock);
 
-	if(FASTLOCKFREE(&client->addrqLock)<0){
-		logMsg("CAS: couldnt free sem\n",
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL);
-	}
+	semMutexDestroy(client->addrqLock);
 
-	if(FASTLOCKFREE(&client->putNotifyLock)<0){
-		logMsg("CAS: couldnt free sem\n",
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL);
-	}
+	semMutexDestroy(client->putNotifyLock);
 
-	if(FASTLOCKFREE(&client->lock)<0){
-		logMsg("CAS: couldnt free sem\n",
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL);
-	}
+	semMutexDestroy(client->lock);
 
-	status = semDelete(client->blockSem);
-	if(status != OK){
-		logMsg("CAS: couldnt free block sem\n",
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL);
-	}
+	semBinaryDestroy(client->blockSem);
 
 	if(client->pUserName){
 		free(client->pUserName);
@@ -484,9 +371,9 @@ void casr (unsigned level)
 
 		if(pCaBucket){
 			printf(	"The server's resource id conversion table:\n");
-			FASTLOCK(&clientQlock);
+			LOCK_CLIENTQ;
 			bucketShow (pCaBucket);
-			FASTUNLOCK(&clientQlock);
+			UNLOCK_CLIENTQ;
 		}
 
 		caPrintAddrList (&beaconAddrList);
@@ -540,8 +427,8 @@ LOCAL void log_one_client(struct client *client, unsigned level)
 			client->sock); 
 		printf( 
 		"\tSecs since last send %6.2f, Secs since last receive %6.2f\n", 
-			send_delay/sysClkRateGet(),
-			recv_delay/sysClkRateGet());
+			send_delay/clockGetRate(),
+			recv_delay/clockGetRate());
 		printf( 
 		"\tUnprocessed request bytes=%lu, Undelivered response bytes=%lu, State=%s\n", 
 			client->send.stk,
@@ -553,7 +440,7 @@ LOCAL void log_one_client(struct client *client, unsigned level)
 		bytes_reserved = 0;
 		bytes_reserved += sizeof(struct client);
 
-		FASTLOCK(&client->addrqLock);
+		semMutexTakeAssert(client->addrqLock);
 		pciu = (struct channel_in_use *) client->addrq.node.next;
 		while (pciu){
 			bytes_reserved += sizeof(struct channel_in_use);
@@ -566,11 +453,11 @@ LOCAL void log_one_client(struct client *client, unsigned level)
 			}
 			pciu = (struct channel_in_use *) ellNext(&pciu->node);
 		}
-		FASTUNLOCK(&client->addrqLock);
+		semMutexGive(client->addrqLock);
 		printf(	"\t%ld bytes allocated\n", bytes_reserved);
 
 
-		FASTLOCK(&client->addrqLock);
+		semMutexTakeAssert(client->addrqLock);
 		pciu = (struct channel_in_use *) client->addrq.node.next;
 		i=0;
 		while (pciu){
@@ -584,21 +471,21 @@ LOCAL void log_one_client(struct client *client, unsigned level)
 				printf("\n");
             }
 		}
-		FASTUNLOCK(&client->addrqLock);
+		semMutexGive(client->addrqLock);
 		printf("\n");
 	}
 
 	if (level >= 3u) {
 		printf(	"\tSend Lock\n");
-		semShow (client->lock.ppend, 1);
+		semMutexShow(client->lock);
 		printf(	"\tPut Notify Lock\n");
-		semShow (client->putNotifyLock.ppend, 1);
+		semMutexShow (client->putNotifyLock);
 		printf(	"\tAddress Queue Lock\n");
-		semShow (client->addrqLock.ppend, 1);
+		semMutexShow (client->addrqLock);
 		printf(	"\tEvent Queue Lock\n");
-		semShow (client->eventqLock.ppend, 1);
+		semMutexShow (client->eventqLock);
 		printf(	"\tBlock Semaphore\n");
-		semShow (client->blockSem, 1);
+		semBinaryShow (client->blockSem);
 	}
 }
 
@@ -611,7 +498,7 @@ unsigned long delay_in_ticks(unsigned long prev)
 	unsigned long delay;
 	unsigned long current;
 
-	current = tickGet();
+	current = clockGetCurrentTick();
 	if (current >= prev) {
 		delay = current - prev;
 	} 

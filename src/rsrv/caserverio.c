@@ -37,23 +37,18 @@
 
 static char *sccsId = "@(#) $Id$";
 
+#include <stddef.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <errno.h>
 
-#include <vxWorks.h>
-#include "ellLib.h"
-#include <types.h>
-#include <socket.h>
-#include <ioLib.h>
-#include <in.h>
-#include <netinet/tcp.h>
-#include <logLib.h>
-#include <sockLib.h>
-#include <errnoLib.h>
-#include <taskLib.h>
-#include <tickLib.h>
-#include <inetLib.h>
+#include <sys/types.h>
 
+#include "osiSock.h"
+#include "osiClock.h"
+#include "ellLib.h"
+#include "errlog.h"
 #include "server.h"
 #include "bsdSocketResource.h"
 
@@ -71,24 +66,15 @@ int		lock_needed;
 	int	status;
 
   	if(CASDEBUG>2 && pclient->send.stk){
-		logMsg(	"CAS: Sending a message of %d bytes\n",
-			pclient->send.stk,
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL);
+		errlogPrintf(	"CAS: Sending a message of %d bytes\n",
+			pclient->send.stk);
 	}
 
 	if(pclient->disconnect){
   		if(CASDEBUG>2){
-			logMsg(	"CAS: msg Discard for sock %d addr %x\n",
+			errlogPrintf("CAS: msg Discard for sock %d addr %x\n",
 				pclient->sock,
-				pclient->addr.sin_addr.s_addr,
-				NULL,
-				NULL,
-				NULL,
-				NULL);
+				pclient->addr.sin_addr.s_addr);
 		}
 		return;
 	}
@@ -149,7 +135,7 @@ int		lock_needed;
 				int	anerrno;
 				char	buf[64];
 
-				anerrno = errnoGet();
+				anerrno = SOCKERRNO;
 
 				ipAddrToA (&pclient->addr, buf, sizeof(buf));
 
@@ -160,46 +146,34 @@ int		lock_needed;
 						anerrno!=ETIMEDOUT)||
 						CASDEBUG>2){
 
-						logMsg(
+						errlogPrintf(
 			"CAS: TCP send to \"%s\" failed because \"%s\"\n",
 							(int)buf,
-							(int)strerror(anerrno),
-							NULL,
-							NULL,
-							NULL,
-							NULL);	
+							(int)SOCKERRSTR(anerrno));
 					}
 					pclient->disconnect = TRUE;
 				}
 				else if (pclient->proto == IPPROTO_UDP) {
-					logMsg(
+					errlogPrintf(
 			"CAS: UDP send to \"%s\" failed because \"%s\"\n",
 							(int)buf,
-							(int)strerror(anerrno),
-							NULL,
-							NULL,
-							NULL,
-							NULL);	
+							(int)SOCKERRSTR(anerrno));
 				}
 				else {
 					assert (0);
 				}
 			}
 			else{
-				logMsg(
+				errlogPrintf(
 				"CAS: blk sock partial send: req %d sent %d \n",
 					pclient->send.stk,
-					status,
-					NULL,
-					NULL,
-					NULL,
-					NULL);
+					status);
 			}
 		}
 
   		pclient->send.stk = 0;
 
-		pclient->ticks_at_last_send = tickGet();
+		pclient->ticks_at_last_send = clockGetRate();
 	}
 
 

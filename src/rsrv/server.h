@@ -55,9 +55,13 @@ static char *serverhSccsId = "@(#) $Id$";
 
 #include "epicsAssert.h"
 
-#include <vxLib.h>
 #include "ellLib.h"
-#include "fast_lock.h"
+#include "osiSem.h"
+#include "osiThread.h"
+
+#include "osiSock.h"
+#include "addrList.h"
+#include "net_convert.h"
 
 #include "dbDefs.h"
 #include "db_access.h"
@@ -68,12 +72,6 @@ static char *serverhSccsId = "@(#) $Id$";
 
 #include "asLib.h"
 #include "asDbLib.h"
-
-#include <socket.h>
-#include "addrList.h"
-
-
-#include "net_convert.h"
 
 /*
  * !! buf must be the first item in this structure !!
@@ -119,10 +117,10 @@ struct client{
   ELLNODE			node;
   struct message_buffer		send;
   struct message_buffer		recv;
-  FAST_LOCK			lock;
-  FAST_LOCK			putNotifyLock;
-  FAST_LOCK			addrqLock;
-  FAST_LOCK			eventqLock;
+  semId				lock;
+  semId				putNotifyLock;
+  semId				addrqLock;
+  semId				eventqLock;
   ELLLIST			addrq;
   ELLLIST			putNotifyQue;
   struct sockaddr_in		addr;
@@ -132,10 +130,10 @@ struct client{
   void				*evuser;
   char				*pUserName;
   char				*pHostName;
-  SEM_ID			blockSem; /* used whenever the client blocks */
-  int				sock;
+  semId				blockSem; /* used whenever the client blocks */
+  SOCKET			sock;
   int				proto;
-  int				tid;
+  threadId			tid;
   unsigned			minor_version_number;
   char				disconnect;	/* disconnect detected */
 };
@@ -203,7 +201,7 @@ char				send_lock;	/* lock send buffer */
 
 #	define DLOG(level, fmt, a1, a2, a3, a4, a5, a6)	\
 		if (CASDEBUG > level)			\
-			logMsg (fmt, a1, a2, a3, a4, a5, a6)
+			errlogPrintf (fmt, a1, a2, a3, a4, a5, a6)
 
 #	define DBLOCK(level, code)			\
 		if (CASDEBUG > level)			\
@@ -219,12 +217,12 @@ char				send_lock;	/* lock send buffer */
 #endif
 
 GLBLTYPE int			CASDEBUG;
-GLBLTYPE int 		 	IOC_sock;
-GLBLTYPE int			IOC_cast_sock;
+GLBLTYPE SOCKET		 	IOC_sock;
+GLBLTYPE SOCKET			IOC_cast_sock;
 GLBLTYPE unsigned short		ca_server_port;
 GLBLTYPE ELLLIST		clientQ; /* locked by clientQlock */
 GLBLTYPE ELLLIST		beaconAddrList;
-GLBLTYPE FAST_LOCK		clientQlock;
+GLBLTYPE semId			clientQlock;
 GLBLTYPE struct client		*prsrv_cast_client;
 GLBLTYPE BUCKET            	*pCaBucket;
 GLBLTYPE void			*rsrvClientFreeList; 
@@ -239,15 +237,8 @@ GLBLTYPE void 			*rsrvEventFreeList;
 #define MAX_BLOCK_THRESHOLD 100000
 GLBLTYPE int	casBelowMaxBlockThresh;
 
-#define SEND_LOCK(CLIENT)\
-{\
-FASTLOCK(&(CLIENT)->lock);\
-}
-
-#define SEND_UNLOCK(CLIENT)\
-{ \
-FASTUNLOCK(&(CLIENT)->lock);\
-}
+#define SEND_LOCK(CLIENT) semMutexTakeAssert((CLIENT)->lock)
+#define SEND_UNLOCK(CLIENT) semMutexGive((CLIENT)->lock)
 
 #define EXTMSGPTR(CLIENT)\
  ((caHdr *) &(CLIENT)->send.buf[(CLIENT)->send.stk])
@@ -264,9 +255,8 @@ FASTUNLOCK(&(CLIENT)->lock);\
   (CLIENT)->send.stk += sizeof(caHdr) + EXTMSGPTR(CLIENT)->m_postsize
 
 
-#define LOCK_CLIENTQ	FASTLOCK(&clientQlock);
-
-#define UNLOCK_CLIENTQ	FASTUNLOCK(&clientQlock);
+#define LOCK_CLIENTQ	semMutexTakeAssert(clientQlock)
+#define UNLOCK_CLIENTQ	semMutexGive(clientQlock)
 
 struct client	*existing_client();
 int		camsgtask();
@@ -280,8 +270,8 @@ void 		casr(unsigned level);
 int 		req_server(void);
 int		cast_server(void);
 int 		free_client(struct client *client);
-struct client 	*create_udp_client(unsigned sock);
-int 		udp_to_tcp(struct client *client, unsigned sock);
+struct client 	*create_udp_client(SOCKET sock);
+int 		udp_to_tcp(struct client *client, SOCKET sock);
 
 int camessage(
 struct client  *client,

@@ -45,23 +45,20 @@
 
 static char *sccsId = "@(#) $Id$";
 
-#include <vxWorks.h>
-#include <types.h>
-#include <socket.h>
-#include <sockLib.h>
-#include <ioLib.h>
-#include <in.h>
-#include <netinet/tcp.h>
-#include <errno.h>
-#include <logLib.h>
-#include <errnoLib.h>
-#include <tickLib.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
-#include <taskLib.h>
+#include <sys/types.h>
+#include <errno.h>
 
+#include "osiSock.h"
+#include "osiClock.h"
+#include "os_depen.h"
+#include "osiThread.h"
+#include "errlog.h"
 #include "ellLib.h"
 #include "taskwd.h"
-#include "task_params.h"
 #include "db_access.h"
 #include "server.h"
 #include "bsdSocketResource.h"
@@ -74,12 +71,12 @@ static char *sccsId = "@(#) $Id$";
  *	CA server TCP client task (one spawned for each client)
  */
 int camsgtask(sock)
-FAST int 		sock;
+SOCKET 		sock;
 {
-  	int 			nchars;
-  	FAST int		status;
-	FAST struct client 	*client;
-    	int 			true = TRUE;
+  	int 		nchars;
+  	int		status;
+	struct client 	*client;
+    	int 		true = TRUE;
 
 	client = NULL;
 
@@ -94,14 +91,8 @@ FAST int 		sock;
 				(char *)&true,
 				sizeof(true));
     	if(status == ERROR){
-      		logMsg("CAS: TCP_NODELAY option set failed\n",
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL);
-      		close(sock);
+      		errlogPrintf("CAS: TCP_NODELAY option set failed\n");
+      		socket_close(sock);
       		return ERROR;
     	}
 
@@ -117,14 +108,8 @@ FAST int 		sock;
 		    	(char *)&true, 
 			sizeof(true));
     	if(status == ERROR){
-      		logMsg("CAS: SO_KEEPALIVE option set failed\n",
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL);
-      		close(sock);
+      		errlogPrintf("CAS: SO_KEEPALIVE option set failed\n");
+      		socket_close(sock);
       		return ERROR;
     	}
 
@@ -147,14 +132,8 @@ FAST int 		sock;
 			(char *)&i,
 			sizeof(i));
 	if(status < 0){
-		logMsg("CAS: SO_SNDBUF set failed\n",
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL);
-		close(sock);
+		errlogPrintf("CAS: SO_SNDBUF set failed\n");
+		socket_close(sock);
 		return ERROR;
 	}
 	i = MAX_MSG_SIZE;
@@ -165,14 +144,8 @@ FAST int 		sock;
 			(char *)&i,
 			sizeof(i));
 	if(status < 0){
-		logMsg("CAS: SO_RCVBUF set failed\n",
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL);
-		close(sock);
+		errlogPrintf("CAS: SO_RCVBUF set failed\n");
+		socket_close(sock);
 		return ERROR;
 	}
 #endif
@@ -183,30 +156,18 @@ FAST int 		sock;
 	 */
 	client = (struct client *) create_udp_client(NULL);
 	if (!client) {
-		logMsg("CAS: client init failed\n",
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL);
-		close(sock);
+		errlogPrintf("CAS: client init failed\n");
+		socket_close(sock);
 		return ERROR;
 	}
 
-	taskwdInsert( 	(int)taskIdCurrent,
+	taskwdInsert( 	threadGetIdSelf(),
 			NULL,
 			NULL);
 
 	status = udp_to_tcp(client, sock);
 	if(status<0){
-		logMsg("CAS: TCP convert failed\n",
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL);
+		errlogPrintf("CAS: TCP convert failed\n");
 		free_client(client);
       		return ERROR;
 	}
@@ -214,13 +175,8 @@ FAST int 		sock;
   	if(CASDEBUG>0){
 		char buf[64];
  		ipAddrToA (&client->addr, buf, sizeof(buf));
-    	logMsg(	"CAS: conn req from %s\n",
-			(int) /* sic */ buf,
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL);
+    	errlogPrintf(	"CAS: conn req from %s\n",
+			(int) /* sic */ buf);
   	}
 
 	LOCK_CLIENTQ;
@@ -229,13 +185,7 @@ FAST int 		sock;
 
 	client->evuser = (struct event_user *) db_init_events();
 	if (!client->evuser) {
-		logMsg("CAS: unable to init the event facility\n",
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL);
+		errlogPrintf("CAS: unable to init the event facility\n");
 		free_client(client);
 		return ERROR;
 	}
@@ -244,30 +194,18 @@ FAST int 		sock;
 			write_notify_reply,
 			client);
 	if(status == ERROR){
-		logMsg("CAS: unable to setup the event facility\n",
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL);
+		errlogPrintf("CAS: unable to setup the event facility\n");
 		free_client(client);
 		return ERROR;
 	}
 	status = db_start_events(
 			client->evuser, 
-			CA_EVENT_NAME, 
+			"CA event",
 			NULL, 
 			NULL,
 			1);	/* one priority notch lower */
 	if (status == ERROR) {
-		logMsg("CAS: unable to start the event facility\n",
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL);
+		errlogPrintf("CAS: unable to start the event facility\n");
 		free_client(client);
 		return ERROR;
 	}
@@ -283,20 +221,14 @@ FAST int 		sock;
 				0);
 		if (nchars==0){
   			if(CASDEBUG>0){
-				logMsg("CAS: nill message disconnect\n",
-					NULL,
-					NULL,
-					NULL,
-					NULL,
-					NULL,
-					NULL);
+				errlogPrintf("CAS: nill message disconnect\n");
 			}
 			break;
 		}
 		else if(nchars<0){
 			long	anerrno;
 
-			anerrno = errnoGet();
+			anerrno = SOCKERRNO;
 
 			/*
 			 * normal conn lost conditions
@@ -306,20 +238,15 @@ FAST int 		sock;
                                 anerrno!=ETIMEDOUT)||
                                 CASDEBUG>2){
 
-                                logMsg(
+                                errlogPrintf(
                                 	"CAS: client disconnect(errno=%d)\n",
-                                	anerrno,
-					NULL,
-					NULL,
-					NULL,
-					NULL,
-					NULL);
+                                	anerrno);
                         }
 
 			break;
 		}
 
-		client->ticks_at_last_recv = tickGet();
+		client->ticks_at_last_recv = clockGetRate();
 		client->recv.cnt += (unsigned long) nchars;
 
 		status = camessage(client, &client->recv);
@@ -357,25 +284,18 @@ FAST int 		sock;
 			 * disconnect when there are severe message errors
 			 */
             ipAddrToA (&client->addr, buf, sizeof(buf));
-            logMsg ("CAS: forcing disconnect from %s\n",
-	            /* sic */ (int) buf, NULL, NULL,
-	            NULL, NULL, NULL);
-
+            errlogPrintf ("CAS: forcing disconnect from %s\n",
+	            /* sic */ (int) buf);
 			break;
 		}
 
 		/*
 		 * allow message to batch up if more are comming
 		 */
-		status = ioctl(sock, FIONREAD, (int) &nchars);
+		status = socket_ioctl(sock, FIONREAD, (int) &nchars);
 		if (status < 0) {
-			logMsg("CAS: io ctl err %d\n",
-				errnoGet(),
-				NULL,
-				NULL,
-				NULL,
-				NULL,
-				NULL);
+			errlogPrintf("CAS: io ctl err %d\n",
+				SOCKERRNO);
 			cas_send_msg(client, TRUE);
 		}
 		else if (nchars == 0){

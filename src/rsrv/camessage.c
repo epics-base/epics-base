@@ -52,22 +52,20 @@
 
 static char *sccsId = "%W% %G%";
 
-#include <vxWorks.h>
-#include <string.h>
+#include <stddef.h>
+#include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <stdarg.h>
 
-#include <taskLib.h>
-#include <types.h>
-#include <in.h>
-#include <logLib.h>
-#include <tickLib.h>
-#include <stdioLib.h>
-#include <sysLib.h>
+#include <sys/types.h>
 
+#include "osiSock.h"
+#include "osiThread.h"
+#include "osiClock.h"
+#include "errlog.h"
 #include "db_access.h"
 #include "special.h"
-#include "task_params.h"
 #include "ellLib.h"
 #include "freeList.h"
 #include "caerr.h"
@@ -122,9 +120,9 @@ LOCAL struct channel_in_use *MPTOPCIU (const caHdr *mp)
 	struct channel_in_use 	*pciu;
 	const unsigned		id = mp->m_cid;
 
-	FASTLOCK(&clientQlock);
+	LOCK_CLIENTQ;
 	pciu = bucketLookupItemUnsignedId (pCaBucket, &id);
-	FASTUNLOCK(&clientQlock);
+	UNLOCK_CLIENTQ;
 
 	return pciu;
 }
@@ -157,21 +155,16 @@ const char      *pformat,
 	 */
 	reply = (caHdr *) ALLOC_MSG(client, 512);
 	if (!reply){
-		int    	logMsgArgs[6];
+		int 	logMsgArgs[6];
 		size_t	i;
 
 		for(i=0; i< NELEMENTS(logMsgArgs); i++){
 			logMsgArgs[i] = va_arg(args, int);
 		}
 
-		logMsg(	"caserver: Unable to deliver err msg to client => \"%s\"\n",
-			(int) ca_message(status),
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL);
-		logMsg(
+		errlogPrintf(	"caserver: Unable to deliver err msg to client => \"%s\"\n",
+			(int) ca_message(status));
+		errlogPrintf(
 			(char *) pformat,
 			logMsgArgs[0],
 			logMsgArgs[1],
@@ -463,7 +456,7 @@ struct event_ext 	*pevext
 		*reply = pevext->msg;
 		reply->m_postsize = pevext->size;
 		reply->m_cid = ECA_NORDACCESS;
-		bzero((char *)(reply+1), pevext->size);
+		memset((void *)(reply+1), 0, pevext->size);
 		END_MSG(client);
 	}
 }
@@ -568,7 +561,7 @@ db_field_log		*pfl
 			 * The m_cid field in the protocol
 			 * header is abused to carry the status
 			 */
-			bzero((char *)(reply+1), pevext->size);
+			memset((void *)(reply+1), 0, pevext->size);
 			reply->m_cid = ECA_GETFAIL;
 			END_MSG(client);
 		}
@@ -789,7 +782,7 @@ struct client  	*client
 		size-1);
 	pMalloc[size-1]='\0';
 
-	FASTLOCK(&client->addrqLock);
+	semMutexTakeAssert(client->addrqLock);
 	pName = client->pHostName;
 	client->pHostName = pMalloc;
 	if(pName){
@@ -804,7 +797,7 @@ struct client  	*client
 				client->pUserName,
 				client->pHostName);	
 		if(status != 0 && status != S_asLib_asNotActive){
-			FASTUNLOCK(&client->addrqLock);
+			semMutexGive(client->addrqLock);
             SEND_LOCK(client);
 		    send_err(
 			    mp, 
@@ -816,7 +809,7 @@ struct client  	*client
 		}
 		pciu = (struct channel_in_use *) pciu->node.next;
 	}
-	FASTUNLOCK(&client->addrqLock);
+	semMutexGive(client->addrqLock);
 
 	DLOG(2, "CAS: host_name_action for \"%s\"\n", 
 			(int) client->pHostName,
@@ -873,7 +866,7 @@ struct client  	*client
 		size-1);
 	pMalloc[size-1]='\0';
 
-	FASTLOCK(&client->addrqLock);
+	semMutexTakeAssert(client->addrqLock);
 	pName = client->pUserName;
 	client->pUserName = pMalloc;
 	if(pName){
@@ -888,7 +881,7 @@ struct client  	*client
 				client->pUserName,
 				client->pHostName);	
 		if(status != 0 && status != S_asLib_asNotActive){
-			FASTUNLOCK(&client->addrqLock);
+			semMutexGive(client->addrqLock);
             SEND_LOCK(client);
 		    send_err(
 			    mp,
@@ -900,7 +893,7 @@ struct client  	*client
 		}
 		pciu = (struct channel_in_use *) pciu->node.next;
 	}
-	FASTUNLOCK(&client->addrqLock);
+	semMutexGive(client->addrqLock);
 
 	DLOG (2, "CAS: client_name_action for \"%s\"\n", 
 			(int) client->pUserName,
@@ -930,7 +923,7 @@ unsigned	cid
 		return NULL;
 	}
 	ellInit(&pchannel->eventq);
-	pchannel->ticks_at_creation = tickGet();
+	pchannel->ticks_at_creation = clockGetRate();
 	pchannel->addr = *pAddr;
 	pchannel->client = client;
 	/*
@@ -948,7 +941,7 @@ unsigned	cid
 	 * The lock is applied here because on some architectures the
 	 * ++ operator isnt atomic.
 	 */
-	FASTLOCK(&clientQlock);
+	LOCK_CLIENTQ;
 
 	do {
 		/*
@@ -966,7 +959,7 @@ unsigned	cid
 				pchannel);
 	} while (status != S_bucket_success);
 
-	FASTUNLOCK(&clientQlock);
+	UNLOCK_CLIENTQ;
 
 	if(status!=S_bucket_success){
 		freeListFree(rsrvChanFreeList, pchannel);
@@ -974,9 +967,9 @@ unsigned	cid
 		return NULL;
 	}
 
-	FASTLOCK(&client->addrqLock);
+	semMutexTakeAssert(client->addrqLock);
 	ellAdd(&client->addrq, &pchannel->node);
-	FASTUNLOCK(&client->addrqLock);
+	semMutexGive(client->addrqLock);
 
 	return pchannel;
 }
@@ -1054,7 +1047,7 @@ LOCAL void casAccessRightsCB(ASCLIENTPVT ascpvt, asClientStatus type)
 		/*
 		 * Update all event call backs 
 		 */
-		FASTLOCK(&pclient->eventqLock);
+		semMutexTakeAssert(pclient->eventqLock);
 		for (pevext = (struct event_ext *) ellFirst(&pciu->eventq);
 		     pevext;
 		     pevext = (struct event_ext *) ellNext(&pevext->node)){
@@ -1071,7 +1064,7 @@ LOCAL void casAccessRightsCB(ASCLIENTPVT ascpvt, asClientStatus type)
 				db_post_single_event(pevext->pdbev);
 			}
 		}
-		FASTUNLOCK(&pclient->eventqLock);
+		semMutexGive(pclient->eventqLock);
 
 		break;
 
@@ -1131,7 +1124,7 @@ struct client  *client
 		}
 	}
 	else {
-		FASTLOCK(&prsrv_cast_client->addrqLock);
+		semMutexTakeAssert(prsrv_cast_client->addrqLock);
 		/*
 		 * clients which dont claim their 
 		 * channel in use block prior to
@@ -1139,14 +1132,9 @@ struct client  *client
 		 */
 		pciu = MPTOPCIU(mp);
 		if(!pciu){
-			logMsg("CAS: client timeout disconnect id=%d\n",
-				mp->m_cid,
-				NULL,
-				NULL,
-				NULL,
-				NULL,
-				NULL);
-			FASTUNLOCK(&prsrv_cast_client->addrqLock);
+			errlogPrintf("CAS: client timeout disconnect id=%d\n",
+				mp->m_cid);
+			semMutexGive(prsrv_cast_client->addrqLock);
             SEND_LOCK(client);
 		    send_err(
 			    mp,
@@ -1162,14 +1150,9 @@ struct client  *client
 		 * (so we disconnect the client)
 		 */
 		if (pciu->client!=prsrv_cast_client) {
-			logMsg("CAS: duplicate claim disconnect id=%d\n",
-				mp->m_cid,
-				NULL,
-				NULL,
-				NULL,
-				NULL,
-				NULL);
-			FASTUNLOCK(&prsrv_cast_client->addrqLock);
+			errlogPrintf("CAS: duplicate claim disconnect id=%d\n",
+				mp->m_cid);
+			semMutexGive(prsrv_cast_client->addrqLock);
             SEND_LOCK(client);
 		    send_err(
 			    mp,
@@ -1189,12 +1172,12 @@ struct client  *client
 		ellDelete(
 			&prsrv_cast_client->addrq, 
 			&pciu->node);
-		FASTUNLOCK(&prsrv_cast_client->addrqLock);
+		semMutexGive(prsrv_cast_client->addrqLock);
 
-		FASTLOCK(&prsrv_cast_client->addrqLock);
+		semMutexTakeAssert(prsrv_cast_client->addrqLock);
 		pciu->client = client;
 		ellAdd(&client->addrq, &pciu->node);
-		FASTUNLOCK(&prsrv_cast_client->addrqLock);
+		semMutexGive(prsrv_cast_client->addrqLock);
 	}
 
 
@@ -1292,13 +1275,7 @@ LOCAL void write_notify_call_back(PUTNOTIFY *ppn)
 	assert(pciu->pPutNotify);
 
 	if(!pciu->pPutNotify->busy){
-		logMsg("Double DB put notify call back!!\n",
-				NULL,
-				NULL,
-				NULL,
-				NULL,
-				NULL,
-				NULL);
+		errlogPrintf("Double DB put notify call back!!\n");
 		return;
 	}
 
@@ -1310,9 +1287,9 @@ LOCAL void write_notify_call_back(PUTNOTIFY *ppn)
 	 * the database (or indirectly blocking
 	 * one client on another client).
 	 */
-	FASTLOCK(&pclient->putNotifyLock);
+	semMutexTakeAssert(pclient->putNotifyLock);
 	ellAdd(&pclient->putNotifyQue, &pciu->pPutNotify->node);
-	FASTUNLOCK(&pclient->putNotifyLock);
+	semMutexGive(pclient->putNotifyLock);
 
 	/*
 	 * offload the labor for this to the
@@ -1333,7 +1310,6 @@ void write_notify_reply(void *pArg)
 	RSRVPUTNOTIFY		*ppnb;
 	struct client 		*pClient;
 	caHdr		*preply;
-	int			status;
 
 	pClient = pArg;
 
@@ -1345,9 +1321,9 @@ void write_notify_reply(void *pArg)
 		 * the database (or indirectly blocking
 		 * one client on another client).
 		 */
-		FASTLOCK(&pClient->putNotifyLock);
+		semMutexTakeAssert(pClient->putNotifyLock);
 		ppnb = (RSRVPUTNOTIFY *)ellGet(&pClient->putNotifyQue);
-		FASTUNLOCK(&pClient->putNotifyLock);
+		semMutexGive(pClient->putNotifyLock);
 		/*
 		 * break to loop exit
 		 */
@@ -1364,13 +1340,7 @@ void write_notify_reply(void *pArg)
 			 * inability to aquire buffer space
 			 * Indicates corruption  
 			 */
-			logMsg("CA server corrupted - put call back(s) discarded\n",
-				NULL,
-				NULL,
-				NULL,
-				NULL,
-				NULL,
-				NULL);
+			errlogPrintf("CA server corrupted - put call back(s) discarded\n");
 			break;
 		}
 		*preply = ppnb->msg;
@@ -1405,16 +1375,7 @@ void write_notify_reply(void *pArg)
 	/*
 	 * wakeup the TCP thread if it is waiting for a cb to complete
 	 */
-	status = semGive(pClient->blockSem);
-	if(status != OK){
-		logMsg("CA block sem corrupted\n",
-				NULL,
-				NULL,
-				NULL,
-				NULL,
-				NULL,
-				NULL);
-	}
+        semBinaryGive(pClient->blockSem);
 }
 
 /*
@@ -1427,14 +1388,10 @@ LOCAL void putNotifyErrorReply(struct client *client, caHdr *mp, int statusCA)
 	SEND_LOCK(client);
 	preply = ALLOC_MSG(client, 0);
 	if(!preply){
-		logMsg("Fatal Error:%s, %d\n",
-			(int)__FILE__,
-			__LINE__,
-			NULL,
-			NULL,
-			NULL,
-			NULL);
-		taskSuspend(0);
+		errlogPrintf("Fatal Error:%s, %d\n",
+			__FILE__,
+			__LINE__);
+		threadSuspend(threadGetIdSelf());
 	}
 
 	*preply = *mp;
@@ -1483,10 +1440,8 @@ struct client  *client
 		 * serialize concurrent put notifies 
 		 */
 		while(pciu->pPutNotify->busy){
-			status = semTake(
-					client->blockSem, 
-					sysClkRateGet()*60);
-			if(status != OK && pciu->pPutNotify->busy){
+			status = semBinaryTakeTimeout(client->blockSem,1.0);
+			if(status != semTakeOK && pciu->pPutNotify->busy){
 				log_header("put call back time out", client, mp,0);
 				dbNotifyCancel(&pciu->pPutNotify->dbPutNotify);
 				pciu->pPutNotify->busy = FALSE;
@@ -1537,7 +1492,7 @@ struct client  *client
 		  FALSE,       /* net -> host format */
 		  mp->m_count);
 #else
-	memcpy(pciu->pPutNotify->dbPutNotify.pbuffer, (char *)(mp+1), size);
+	memcpy(pciu->pPutNotify->dbPutNotify.pbuffer, (void *)(mp+1), size);
 #endif
 	status = dbPutNotifyMapType(&pciu->pPutNotify->dbPutNotify, mp->m_dataType);
 	if(status){
@@ -1612,9 +1567,9 @@ struct client  *client
 	pevext->size = dbr_size_n(mp->m_dataType, mp->m_count);
 	pevext->mask = pmo->m_info.m_mask;
 
-	FASTLOCK(&client->eventqLock);
+	semMutexTakeAssert(client->eventqLock);
 	ellAdd(	&pciu->eventq, &pevext->node);
-	FASTUNLOCK(&client->eventqLock);
+	semMutexGive(client->eventqLock);
 
 	pevext->pdbev = (struct event_block *)(pevext+1);
 
@@ -1715,9 +1670,9 @@ struct client  *client
      }
      
      while (TRUE){
-         FASTLOCK(&client->eventqLock);
+         semMutexTakeAssert(client->eventqLock);
          pevext = (struct event_ext *) ellGet(&pciu->eventq);
-         FASTUNLOCK(&client->eventqLock);
+         semMutexGive(client->eventqLock);
          
          if(!pevext){
              break;
@@ -1757,9 +1712,9 @@ struct client  *client
      END_MSG(client);
      SEND_UNLOCK(client);
      
-     FASTLOCK(&client->addrqLock);
+     semMutexTakeAssert(client->addrqLock);
      ellDelete(&client->addrq, &pciu->node);
-     FASTUNLOCK(&client->addrqLock);
+     semMutexGive(client->addrqLock);
      
      /*
       * remove from access control list
@@ -1770,13 +1725,13 @@ struct client  *client
          errMessage(status, RECORD_NAME(&pciu->addr));
      }
      
-     FASTLOCK(&clientQlock);
+     LOCK_CLIENTQ;
      status = bucketRemoveItemUnsignedId (pCaBucket, &pciu->sid);
      if(status != S_bucket_success){
          errMessage (status, "Bad resource id during channel clear");
          logBadId(client, mp);
      }
-     FASTUNLOCK(&clientQlock);
+     UNLOCK_CLIENTQ;
      freeListFree(rsrvChanFreeList, pciu);
      
      return OK;
@@ -1817,7 +1772,7 @@ LOCAL int event_cancel_reply(
       * search events on this channel for a match
       * (there are usually very few monitors per channel)
       */
-     FASTLOCK(&client->eventqLock);
+     semMutexTakeAssert(client->eventqLock);
      for (pevext = (struct event_ext *) ellFirst(&pciu->eventq);
             pevext; pevext = (struct event_ext *) ellNext(&pevext->node)){
          
@@ -1826,7 +1781,7 @@ LOCAL int event_cancel_reply(
              break;
          }
      }
-     FASTUNLOCK(&client->eventqLock);
+     semMutexGive(client->eventqLock);
      
      /*
       * Not Found- return an exception event 
@@ -1880,7 +1835,7 @@ caHdr *mp,
 struct client  *client
 )
 {
-	FAST caHdr *reply;
+	caHdr *reply;
 
 	SEND_LOCK(client);
 	reply = (caHdr *) ALLOC_MSG(client, 0);
@@ -1909,12 +1864,12 @@ caHdr *mp,
 struct client  *client
 )
 {
-	FAST caHdr *reply;
+	caHdr *reply;
 
 	SEND_LOCK(client);
 	reply = (caHdr *) ALLOC_MSG(client, 0);
 	if (!reply) {
-		taskSuspend(0);
+		threadSuspend(threadGetIdSelf());
 	}
 	*reply = *mp;
 	reply->m_cmmd = CA_PROTO_NOT_FOUND;
@@ -2050,11 +2005,11 @@ void cas_send_heartbeat(
 struct client	*pc
 )
 {
-        FAST caHdr 	*reply;
+        caHdr 	*reply;
 
         reply = (caHdr *) ALLOC_MSG(pc, 0);
         if(!reply){
-                taskSuspend(0);
+                threadSuspend(threadGetIdSelf());
 	}
 
 	*reply = nill_msg;

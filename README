@@ -38,9 +38,10 @@
 NOTES:
    1. tools/MakeRelease will create tar files in the directory ABOVE
         base.  These tar files are then meant to be untarred at that level.
+        The release will include the "config" directory.
 
    2. EPICS binaries are kept in the bin/ARCH and lib/ARCH directories. 
-      EPICS shellscripts are kept in the tools directory.
+        EPICS shellscripts are kept in the tools directory.
    
    3. Temporary objects are stored in src/DIR/O.ARCH, so one can store
         objects for multiple architectures at the same time.  While
@@ -88,7 +89,7 @@ RULES.Unix                   -         -             -            b
    Part 3  ---  Configuration File Inclusion Tree Examples
 ----------------------------------------------------------------------------
 ----------------------------  hkv2f example --------------------------------
-  (files are numbered in the order of their inclusion)
+            (files are numbered in the order of their inclusion)
 
  src/db/Makefile.Vx     (An example EPICS makefile)
     ^   ^
@@ -105,7 +106,7 @@ RULES.Unix                   -         -             -            b
                 |  |                 Lots More.
                 |  +------- 2. CONFIG_ARCH.hkv2f
                 |                    BUILD_TYPE = Vx
-                |                    ARCH_CLASS = hkv2f 
+                |                    ARCH_CLASS = 68k 
                 |                    Arch Specific Compiler Flag Setup
                 +---------- 3. CONFIG.Vx.68k
                                      Directory Setup

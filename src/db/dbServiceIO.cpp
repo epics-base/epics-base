@@ -34,7 +34,11 @@ private:
     dbServiceIO dbio;
 };
 
-static dbServiceIOLoadTimeInit lti;
+// The following is just to force lti to be constructed
+extern "C" void dbServiceIOInit()
+{
+    static dbServiceIOLoadTimeInit lti;
+}
 
 dbServiceIOLoadTimeInit::dbServiceIOLoadTimeInit ()
 {

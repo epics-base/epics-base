@@ -5,6 +5,9 @@
 //
 //
 // $Log$
+// Revision 1.2  1996/06/21 02:18:11  jhill
+// SOLARIS port
+//
 // Revision 1.1.1.1  1996/06/20 00:28:19  jhill
 // ca server installation
 //
@@ -75,6 +78,8 @@ caStatus casStreamIO::init()
 		return S_cas_internal;
         }
 #ifdef MATCHING_BUFFER_SIZES
+	int i;
+
         /*
          * set TCP buffer sizes to be synergistic
          * with CA internal buffering
@@ -84,7 +89,7 @@ caStatus casStreamIO::init()
                         sock,
                         SOL_SOCKET,
                         SO_SNDBUF,
-                        &i,
+                        (char *)&i,
                         sizeof(i));
         if(status < 0){
                 ca_printf("CAS: SO_SNDBUF set failed\n");

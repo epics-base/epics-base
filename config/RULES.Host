@@ -360,6 +360,7 @@ clean::
 #	Products
 #
 
+PROD += $(TESTPROD)
 ifdef PROD
 
 COND_PROD_SRCS=$(foreach prod, $(basename $(PROD)), $($(prod)_SRCS))
@@ -432,27 +433,6 @@ $(PROD): $(PROD_OBJS) $(PROD_RESS) $(PROD_DEPLIBS) $(COND_PROD_DEPLIBS)
 endif  #ifdef PRODNAME
 
 endif  #ifdef PROD
-
-#---------------------------------------------------------------
-#	Test Products
-#
-
-#	explicit list of source files given for TESTPROD ?
-#	(otherwise implicit rule  .c -> $(OBJ) -> $(EXE)
-ifdef TESTPROD_SRCS
-
-ifeq ($(findstring cc,$(suffix $(TESTPROD_SRCS))),cc)
-TESTPROD_LINKER = $(LINK.cc)
-else
-TESTPROD_LINKER = $(LINK.c)
-endif
-
-TESTPROD_OBJS=$(addsuffix $(OBJ), $(basename $(TESTPROD_SRCS)))
-
-$(TESTPROD): $(TESTPROD_OBJS) $(PRODDEPLIBS)
-	@$(RM) $@
-	$(TESTPROD_LINKER) $(TESTPROD_OBJS) $(LDLIBS)
-endif
 
 #---------------------------------------------------------------
 #     Java classes and packages

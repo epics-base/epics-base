@@ -101,18 +101,19 @@ void threadOnceOsd(threadOnceId *id, void (*func)(void *), void *arg)
     }
     semGive(threadOnceMutex);
 }
-
+
 static void createFunction(THREADFUNC func, void *parm)
 {
     int tid = taskIdSelf();
 
     taskVarAdd(tid,(int *)&papTSD);
+    /*Make sure that papTSD is still 0 after that call to taskVarAdd*/
     papTSD = 0;
     (*func)(parm);
     taskVarDelete(tid,(int *)&papTSD);
     free(papTSD);
 }
-
+
 threadId threadCreate(const char *name,
     unsigned int priority, unsigned int stackSize,
     THREADFUNC funptr,void *parm)
@@ -297,20 +298,17 @@ void threadPrivateDelete(threadPrivateId id)
 void threadPrivateSet (threadPrivateId id, void *pvt)
 {
     int indpthreadPrivate = (int)id;
+    int nthreadPrivateOld = 0;
 
-    if(!papTSD) {
+    if(papTSD) nthreadPrivateOld = (int)papTSD[0];
+    if(!papTSD || (nthreadPrivateOld<indpthreadPrivate)) {
+        void **papTSDold = papTSD;
+        int i;
+
         papTSD = callocMustSucceed(indpthreadPrivate + 1,sizeof(void *),
             "threadPrivateSet");
         papTSD[0] = (void *)(indpthreadPrivate);
-    } else {
-        int nthreadPrivate = (int)papTSD[0];
-        if(nthreadPrivate < indpthreadPrivate) {
-            void **ptemp;
-            ptemp = realloc(papTSD,(indpthreadPrivate+1)*sizeof(void *));
-            if(!ptemp) cantProceed("threadPrivateSet realloc failed\n");
-            papTSD = ptemp;
-            papTSD[0] = (void *)(indpthreadPrivate);
-        }
+        for(i=1; i<= nthreadPrivateOld; i++) papTSD[i] = papTSDold[i];
     }
     papTSD[indpthreadPrivate] = pvt;
 }
@@ -324,6 +322,7 @@ void *threadPrivateGet(threadPrivateId id)
             "threadPrivateSet");
         papTSD[0] = (void *)(indpthreadPrivate);
     }
+    /* Note that threadPrivateGet may be called BEFORE threadPrivateSet*/
     if ( (int) id <= (int) papTSD[0] ) {
         data = papTSD[(int)id];
     }

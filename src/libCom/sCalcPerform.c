@@ -66,7 +66,7 @@
 #include	<stdlib.h>
 #include	<stdio.h>
 #include	<string.h>
-#include	<math.h>
+#include	"epicsMath.h"
 
 #include	"dbDefs.h"
 #define epicsExportSharedSymbols
@@ -76,14 +76,6 @@
 
 static double	local_random();
 
-static int isnan(double d)
-{
-	union { long l[2]; double d; } u;
-	u.d = d;
-	if ((u.l[0] & 0x7ff00000) != 0x7ff00000) return(0);
-	if (u.l[1] || (u.l[0] & 0x000fffff)) return(1);
-	return(0);
-}
 #define myNINT(a) ((int)((a) >= 0 ? (a)+0.5 : (a)-0.5))
 #ifndef PI
 #define PI 3.141592654
@@ -153,10 +145,13 @@ static void to_string(struct stackElement *ps)
 {
 	ps->s = calloc(20, 1);
 	/* any precision greater than 8 results in (slow) sprintf call */
-	if (isnan(ps->d))
-		strcpy(ps->s,"NaN");
-	else
-		(void)cvtDoubleToString(ps->d, ps->s, 8);
+        if (isnan(ps->d)) {
+                strcpy(ps->s,"nan");
+        } else if (isinf(ps->d)) {
+                strcpy(ps->s,"inf");
+        } else {
+                (void)cvtDoubleToString(ps->d, ps->s, 8);
+        }
 }
 
 static char *findConversionIndicator(char *s)
@@ -648,10 +643,13 @@ printf(") \n");
 #endif
 		*presult = *pd;
 		if (psresult && (lenSresult > 15)) {
-			if (isnan(*pd))
-				strcpy(psresult,"NaN");
-			else
-				(void)cvtDoubleToString(*pd, psresult, 8);
+                        if (isnan(*pd)) {
+                                strcpy(psresult,"nan");
+                        } else if (isinf(*pd)) {
+                                strcpy(psresult,"inf");
+                        } else {
+                                (void)cvtDoubleToString(*pd, psresult, 8);
+                        }
 		}
 	} else {
 
@@ -1429,7 +1427,7 @@ printf(") \n");
 
 	} /* if (*post++ != USES_STRING) {} else */
 
-	return(0);
+	return(((isnan(*presult)||isinf(*presult)) ? -1 : 0));
 }
 
 

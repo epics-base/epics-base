@@ -100,22 +100,18 @@
  *		double value between 0.00 and 1.00
  */
 
-#ifdef vxWorks
-#include <vxWorks.h>
-#include        <private/mathP.h>  /* For isNan*/
-#define isnan isNan
-#endif
-
 #include	<stdlib.h>
+#include        <stddef.h>
 #include	<stdio.h>
 #include	<string.h>
-#include	<math.h>
+#include	"epicsMath.h"
 
 #include	"dbDefs.h"
 
 #define epicsExportSharedSymbols
 #include	"postfix.h"
 #include	"postfixPvt.h"
+
 
 static double	local_random();
 
@@ -516,7 +512,7 @@ printf ("*FINISHED*\n");
 		*presult = *pstacktop;
 	else
 		return(-1);
-	return((isnan(*presult) ? -1 : 0));
+        return(((isnan(*presult)||isinf(*presult)) ? -1 : 0));
 }
 
 

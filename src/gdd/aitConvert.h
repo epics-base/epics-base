@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.8  1999/10/29 00:41:32  jhill
+ * disable microslock warning
+ *
  * Revision 1.7  1999/10/28 23:33:41  jhill
  * use fully qualified namespace names for C++ RTL classes
  *
@@ -37,7 +40,7 @@
 
 #include <sys/types.h>
 
-#if _MSC_VER <= 1200
+#if defined(_MSC_VER) && _MSC_VER < 1200
 #pragma warning (disable:4786)
 #endif
 #include <vector>

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.11  2000/03/08 16:12:08  jhill
+ * fixed gnu version test
+ *
  * Revision 1.10  1999/04/30 00:11:12  jhill
  * removed redundant code
  *
@@ -143,7 +146,7 @@ public:
 	// workaround for bug existing only in microsloth vis c++ 5.0.
 	// (in this version we are unable to overload installReadFunc())
 	//
-#if _MSC_VER == 1100
+#if defined(_MSC_VER) && _MSC_VER < 1100
 	gddAppFuncTableStatus installReadFuncVISC50 (const unsigned type, 
 			gddAppFuncTablePMF(pMFuncIn));
 #else
@@ -193,7 +196,7 @@ private:
 // A typedef is not used here because of portability 
 // problems resulting from compiler weaknesses
 //
-#if _MSC_VER == 1100
+#if defined(_MSC_VER) && _MSC_VER < 1100
 	template <class PV>
 	gddAppFuncTableStatus gddAppFuncTable<PV>::installReadFuncVISC50(
 		const unsigned type, gddAppFuncTablePMF(pMFuncIn))
@@ -243,7 +246,7 @@ gddAppFuncTableStatus gddAppFuncTable<PV>::installReadFunc(
 		printf("installing PV attribute %s = %d\n", pName, type);		
 #	endif
 	
-#if _MSC_VER == 1100
+#if defined(_MSC_VER) && _MSC_VER < 1100
 	return this->installReadFuncVISC50(type, pMFuncIn);
 #else
 	return this->installReadFunc(type, pMFuncIn);
@@ -270,7 +273,7 @@ void gddAppFuncTable<PV>::newTbl(unsigned newApplTypeMax)
 		return;
 	}
 	maxApp = newApplTypeMax+(1u<<6u);
-#	if defined(_MSC_VER)
+#   if defined(_MSC_VER) && _MSC_VER < 1100
 		//
 		// MS Visual C++ 5.0 (_MSC_VER==1100) or lower 
 		// compilers allocate the wrong amount of memory 

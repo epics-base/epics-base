@@ -35,12 +35,7 @@ typedef struct epicsTimeStamp {
 
 struct timespec; /* POSIX real time */
 struct timeval; /* BSD */
-
-/* Network Time Protocal Timestamp */
-struct ntpTimeStamp {
-    epicsUInt32 l_ui; /* sec past NTP epoch */
-    epicsUInt32 l_uf; /* fractional seconds */
-};
+struct l_fp; /* NTP timestamp */
 
 #ifdef __cplusplus
 
@@ -122,16 +117,16 @@ public:
     epicsTime & operator = ( const struct timeval & );
 
     // convert to and from NTP timestamp format
-    operator ntpTimeStamp () const;
-    epicsTime ( const ntpTimeStamp & );
-    epicsTime & operator = ( const ntpTimeStamp & );
+    operator l_fp () const;
+    epicsTime ( const l_fp & );
+    epicsTime & operator = ( const l_fp & );
 
     // convert to and from GDDs aitTimeStamp format
     operator aitTimeStamp () const;
     epicsTime ( const aitTimeStamp & );
     epicsTime & operator = ( const aitTimeStamp & );
 
-    // convert to and from WIN32s FILETIME
+    // convert to and from WIN32s FILETIME (implemented only on WIN32)
     operator struct _FILETIME () const;
     epicsTime ( const struct _FILETIME & );
     epicsTime & operator = ( const struct _FILETIME & );
@@ -336,13 +331,11 @@ inline epicsTime::operator epicsTimeStamp () const
     return ts;
 }
 
-#ifdef NTP_SUPPORT
-inline epicsTime epicsTime::operator = ( const ntpTimeStamp & rhs )
+inline epicsTime & epicsTime::operator = ( const l_fp & rhs )
 {
-    *this = epicsTime (rhs);
+    *this = epicsTime ( rhs );
     return *this;
 }
-#endif
 
 inline epicsTime & epicsTime::operator = ( const time_t_wrapper & rhs )
 {

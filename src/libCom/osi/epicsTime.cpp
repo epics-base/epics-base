@@ -35,11 +35,6 @@ const unsigned epicsTime::nSecPerSec = 1000u*epicsTime::uSecPerSec;
 const unsigned epicsTime::nSecPerUSec = 1000u;
 const unsigned epicsTime::secPerMin = 60u;
 
-static const unsigned ntpEpochYear = 1900;
-static const unsigned ntpEpocMonth = 0; // January
-static const unsigned ntpEpocDayOfTheMonth = 1; // the 1st day of the month
-static const double ULONG_MAX_PLUS_ONE = (static_cast<double>(ULONG_MAX) + 1.0);
-
 //
 // force this module to include code that can convert
 // to GDD's aitTimeStamp, but dont require that it must
@@ -69,11 +64,7 @@ inline epicsTime::epicsTime (const unsigned long secIn, const unsigned long nSec
 class epicsTimeLoadTimeInit {
 public:
     epicsTimeLoadTimeInit ();
-
     double epicsEpochOffset; // seconds
-#ifdef NTP_SUPPORT
-    double ntpEpochOffset; // seconds
-#endif
     double time_tSecPerTick; // seconds (both NTP and EPICS use int sec)
     unsigned long epicsEpochOffsetAsAnUnsignedLong;
     bool useDiffTimeOptimization;
@@ -133,27 +124,6 @@ epicsTimeLoadTimeInit::epicsTimeLoadTimeInit ()
         this->useDiffTimeOptimization = false;
         this->epicsEpochOffsetAsAnUnsignedLong = 0;
     }
-
-#ifdef NTP_SUPPORT
-    /* unfortunately, on NT mktime cant calculate a time_t for a date before 1970 */
-    {
-        struct tm tmEpochNTP;
-        time_t ntpEpoch;
-
-        tmEpochNTP.tm_sec = 0;
-        tmEpochNTP.tm_min = 0;
-        tmEpochNTP.tm_hour = 0;
-        tmEpochNTP.tm_mday = ntpEpocDayOfTheMonth;
-        tmEpochNTP.tm_mon = ntpEpocMonth;
-        tmEpochNTP.tm_year = ntpEpochYear-tmStructEpochYear;
-        tmEpochNTP.tm_isdst = -1; // dont know if its daylight savings time
-
-        ntpEpoch = mktime (&tmEpochNTP);
-        assert (ntpEpoch!=(time_t)-1);
-
-        this->ntpEpochOffset = static_cast<long> (difftime (ansiEpoch, ntpEpoch) + this->epicsEpochOffset - secWest);
-    }
-#endif
 }
 
 //
@@ -420,52 +390,37 @@ epicsTime::epicsTime (const aitTimeStamp &ts)
     *this = epicsTime (this->secPastEpoch+secAdj, this->nSec+nSecAdj);
 }
 
+// 631152000 (at posix epic) + 2272060800 (btw posix and epics epoch) +
+// 15 ( leap seconds )
+static const unsigned long epicsEpocSecsPastEpochNTP = 2903212815;
+static const double ULONG_MAX_PLUS_ONE = (static_cast<double>(ULONG_MAX) + 1.0);
+
+struct l_fp { /* NTP time stamp */
+    epicsUInt32 l_ui; /* sec past NTP epoch */
+    epicsUInt32 l_uf; /* fractional seconds */
+};
+
 //
-// epicsTime::ntpTimeStamp ()
+// epicsTime::l_fp ()
 //
-#ifdef NTP_SUPPORT
-epicsTime::operator ntpTimeStamp () const
+epicsTime::operator l_fp () const
 {
-    ntpTimeStamp ts;
-
-    if (lti.ntpEpochOffset>=0) {
-        unsigned long offset = static_cast<unsigned long> (lti.ntpEpochOffset);
-        // underflow expected
-        ts.l_ui = this->secPastEpoch - offset;
-    }
-    else {
-        unsigned long offset = static_cast<unsigned long> (-lti.ntpEpochOffset);
-        // overflow expected
-        ts.l_ui = this->secPastEpoch + offset;
-    }
-
-    ts.l_uf = static_cast<unsigned long> ( ( this->nSec * ULONG_MAX_PLUS_ONE ) / nSecPerSec );
-
+    l_fp ts;
+    ts.l_ui = this->secPastEpoch + epicsEpocSecsPastEpochNTP;
+    ts.l_uf = static_cast < unsigned long > 
+        ( ( this->nSec * ULONG_MAX_PLUS_ONE ) / nSecPerSec );
     return ts;
 }
-#endif
 
 //
-// epicsTime::epicsTime (const ntpTimeStamp &ts)
+// epicsTime::epicsTime ( const l_fp & ts )
 //
-#ifdef NTP_SUPPORT
-epicsTime::epicsTime (const ntpTimeStamp &ts)
+epicsTime::epicsTime ( const l_fp & ts )
 {
-
-    if (lti.ntpEpochOffset>=0) {
-        unsigned long offset = static_cast<unsigned long> (lti.ntpEpochOffset);
-        // overflow expected
-        this->secPastEpoch = ts.l_ui + this->secPastEpoch + offset;
-    }
-    else {
-        unsigned long offset = static_cast<unsigned long> (-lti.ntpEpochOffset);
-        // underflow expected
-        this->secPastEpoch = ts.l_ui + this->secPastEpoch - offset;
-    }
-
-    this->nSec = static_cast<unsigned long> ( ( ts.l_uf / ULONG_MAX_PLUS_ONE ) * nSecPerSec );
+    this->secPastEpoch = ts.l_ui - epicsEpocSecsPastEpochNTP;
+    this->nSec = static_cast < unsigned long > 
+        ( ( ts.l_uf / ULONG_MAX_PLUS_ONE ) * nSecPerSec );
 }
-#endif
 
 // return pointer to trailing "%0<n>f" (<n> is a number) in a format string,
 // NULL if none; also return <n> and a pointer to the "f"

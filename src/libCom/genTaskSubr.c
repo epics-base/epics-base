@@ -1,3 +1,9 @@
+#if !defined(vxWorks) && !defined(sun)
+
+/* do nothing if not vxWorks and not sun */
+
+#else
+
 /*	$Id$
  *	Author:	Roger A. Cole
  *	Date:	02-03-90
@@ -358,4 +364,6 @@ char    *msg;
         }    
     }    
 }
+#endif
+
 #endif

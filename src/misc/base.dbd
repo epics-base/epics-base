@@ -48,3 +48,5 @@ device(stringin,CONSTANT,devSiSoft,"Soft Channel")
 device(stringout,CONSTANT,devSoSoft,"Soft Channel")
 device(subArray,CONSTANT,devSASoft,"Soft Channel")
 device(waveform,CONSTANT,devWfSoft,"Soft Channel")
+
+registrar(asSub)

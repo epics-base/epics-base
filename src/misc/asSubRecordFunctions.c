@@ -30,7 +30,7 @@
 #include "asDbLib.h"
 #include "subRecord.h"
 #define epicsExportSharedSymbols
-#include "asSubRecordFunctions.h"
+#include "shareLib.h"
 
 /* The following is provided for access security*/
 /*It allows a CA client to force access security initialization*/
@@ -85,7 +85,7 @@ static registryFunctionRef asSubRef[] = {
     {"asSubProcess",(REGISTRYFUNCTION)asSubProcess}
 };
 
-void epicsShareAPI asSub(void)
+epicsShareFunc void epicsShareAPI asSub(void)
 {
     registryFunctionRefAdd(asSubRef,NELEMENTS(asSubRef));
 }

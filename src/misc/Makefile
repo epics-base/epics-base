@@ -15,7 +15,6 @@ DBD += base.dbd
 
 INC +=  epicsRelease.h
 INC +=  iocInit.h
-INC +=  asSubRecordFunctions.h
 
 LIBSRCS +=  epicsRelease.c
 LIBSRCS +=  iocInit.c

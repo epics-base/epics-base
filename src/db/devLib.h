@@ -383,6 +383,7 @@ struct devLibVirtualOS {
 #define S_dev_badFunction (M_devLib| 31) /*bad function pointer*/
 #define S_dev_badVector (M_devLib| 32) /*bad interrupt vector*/
 #define S_dev_badArgument (M_devLib| 33) /*bad function argument*/
+#define S_dev_vxWorksIntEnFail S_dev_intEnFail
 
 /*
  * NOTE: this routine has been deprecated. It exists

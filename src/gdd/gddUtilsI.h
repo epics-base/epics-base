@@ -15,13 +15,6 @@
  * Date:	3/97
  *
  * $Id$
- * $Log$
- * Revision 1.2  1997/03/24 12:41:49  jbk
- * fixed bug in gddDestructor constructor.
- *
- * Revision 1.1  1997/03/21 01:56:12  jbk
- * *** empty log message ***
- *
  *
  */
 

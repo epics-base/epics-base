@@ -12,45 +12,6 @@
 // 
 // $Id$
 // 
-// $Log$
-// Revision 1.9  1997/08/05 00:51:13  jhill
-// fixed problems in aitString and the conversion matrix
-//
-// Revision 1.8  1997/04/23 17:13:00  jhill
-// fixed export of symbols from WIN32 DLL
-//
-// Revision 1.7  1996/09/04 20:55:02  jhill
-// add GDD_NAME_PV_NAME
-//
-// Revision 1.6  1996/08/27 13:05:07  jbk
-// final repairs to string functions, put() functions, and error code printing
-//
-// Revision 1.5  1996/08/22 21:05:42  jbk
-// More fixes to make strings and fixed string work better.
-//
-// Revision 1.4  1996/08/06 19:14:13  jbk
-// Fixes to the string class.
-// Changes units field to a aitString instead of aitInt8.
-//
-// Revision 1.3  1996/07/26 02:23:18  jbk
-// Fixed the spelling error with Scalar.
-//
-// Revision 1.2  1996/07/23 17:13:34  jbk
-// various fixes - dbmapper incorrectly worked with enum types
-//
-// Revision 1.1  1996/06/25 19:11:41  jbk
-// new in EPICS base
-//
-//
-
-// *Revision 1.3  1996/06/24 03:15:34  jbk
-// *name changes and fixes for aitString and fixed string functions
-// *Revision 1.2  1996/06/17 15:24:11  jbk
-// *many mods, string class corrections.
-// *gdd operator= protection.
-// *dbmapper uses aitString array for menus now
-// *Revision 1.1  1996/05/31 13:15:26  jbk
-// *add new stuff
 
 #define epicsExportSharedSymbols
 #include "gddAppTable.h"

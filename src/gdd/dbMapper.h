@@ -15,24 +15,6 @@
  * Date: 2/96
  *
  * $Id$
- *
- * $Log$
- * Revision 1.4  1997/08/05 00:51:10  jhill
- * fixed problems in aitString and the conversion matrix
- *
- * Revision 1.3  1997/04/23 17:12:57  jhill
- * fixed export of symbols from WIN32 DLL
- *
- * Revision 1.2  1997/04/10 19:59:25  jhill
- * api changes
- *
- * Revision 1.1  1996/06/25 19:11:36  jbk
- * new in EPICS base
- *
- *
- * *Revision 1.1  1996/05/31 13:15:24  jbk
- * *add new stuff
- *
  */
 
 #include "shareLib.h"

@@ -14,60 +14,6 @@
  *              johill@lanl.gov
  *              505 665 1831
  *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- *
- * History
- * $Log$
- * Revision 1.9  1997/08/05 00:37:06  jhill
- * removed warnings
- *
- * Revision 1.8  1997/06/25 05:45:54  jhill
- * cleaned up pc port
- *
- * Revision 1.7  1997/04/10 19:45:34  jhill
- * API changes and include with  not <>
- *
- * Revision 1.6  1996/11/02 02:06:58  jhill
- * fixed several subtle problems
- *
- * Revision 1.5  1996/09/16 21:19:25  jhill
- * removed unused variable
- *
- * Revision 1.4  1996/08/05 21:51:11  jhill
- * fixed delete this confusion
- *
- * Revision 1.3  1996/07/24 23:01:53  jhill
- * use iter.remove()
- *
- * Revision 1.2  1996/07/09 23:00:06  jhill
- * force timer into limbo state during delete
- *
- * Revision 1.1  1996/06/26 22:14:13  jhill
- * added new src files
- *
- * Revision 1.1.1.1  1996/06/20 00:28:15  jhill
- * ca server installation
- *
  */
 
 //

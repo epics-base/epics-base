@@ -9,22 +9,6 @@
 \*************************************************************************/
 
 /*
- * $Log$
- * Revision 1.1  1997/05/13 14:35:15  jbk
- * New version of ldpp
- *
- * Revision 1.2  1996/09/16 21:56:03  jhill
- * added several compiler support functions and updated to gcc 2.7.2
- *
- * Revision 1.1  1996/01/29 17:05:58  jbk
- * Added the simple program to allow loading of C++ object modules.
- *
- * Revision 1.1.1.1  1994/12/12  16:07:06  hideos
- * Version 2 of hideos.
- *
- */
-
-/*
 	Author: Jim Kowalkowski
 	Date: 6/94
 */

@@ -15,14 +15,6 @@
  * Date:	3/97
  *
  * $Id$
- * $Log$
- * Revision 1.2  1997/06/25 06:17:38  jhill
- * fixed warnings
- *
- * Revision 1.1  1997/03/21 01:56:10  jbk
- * *** empty log message ***
- *
- *
  */
 
 #include "aitTypes.h"

@@ -15,17 +15,6 @@
  * Date: 3/97
  *
  * $Id$
- *
- * $Log$
- * Revision 1.3  1998/06/16 03:16:27  jhill
- * fixed big problems with leaked ait/fixedString in gdd union
- *
- * Revision 1.2  1997/08/05 00:51:15  jhill
- * fixed problems in aitString and the conversion matrix
- *
- * Revision 1.1  1997/03/21 01:56:08  jbk
- * *** empty log message ***
- *
  */
 
 inline void gdd::setData(void* d)					{ data.Pointer=d; }

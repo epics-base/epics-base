@@ -12,39 +12,6 @@
 // 
 // $Id$
 // 
-// $Log$
-// Revision 1.9  1997/08/05 00:51:16  jhill
-// fixed problems in aitString and the conversion matrix
-//
-// Revision 1.8  1997/06/25 06:17:38  jhill
-// fixed warnings
-//
-// Revision 1.7  1997/04/23 17:13:05  jhill
-// fixed export of symbols from WIN32 DLL
-//
-// Revision 1.6  1996/12/20 13:11:42  jbk
-// More strings yet printed now
-//
-// Revision 1.4  1996/10/17 12:40:06  jbk
-// adjusted the network byte ordering dump
-//
-// Revision 1.3  1996/08/23 20:28:46  jbk
-// made dump functions print more useful information
-//
-// Revision 1.2  1996/07/26 02:23:18  jbk
-// Fixed the spelling error with Scalar.
-//
-// Revision 1.1  1996/06/25 19:11:48  jbk
-// new in EPICS base
-//
-//
-
-// *Revision 1.3  1996/06/24 03:15:38  jbk
-// *name changes and fixes for aitString and fixed string functions
-// *Revision 1.2  1996/06/13 21:32:00  jbk
-// *Various fixes and correction - including ref_cnt change to unsigned short
-// *Revision 1.1  1996/05/31 13:15:35  jbk
-// *add new stuff
 
 #include <stdio.h>
 #define epicsExportSharedSymbols

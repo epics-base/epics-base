@@ -210,35 +210,3 @@ epicsShareAPI macInstallMacros(
 				/* argument implies no macros */
 );
 
-/*
- * $Log$
- * Revision 1.6.4.2  1999/12/15 21:28:35  jba
- * Second try at fixing cvs log comments.
- *
- * Revision 1.6.4.1  1999/12/15 21:13:32  jba
- * Fixed cvs comments.
- *
- * Revision 1.6  1998/02/27 01:34:13  jhill
- * cleaned up the DLL symbol export
- *
- * Revision 1.5  1998/02/20 21:45:17  evans
- * Made a large number of changes to epicsShareThings in libCom routines
- * to get imports and exports straight on WIN32.  Not everything is fixed
- * at this time.
- *
- * Revision 1.4  1997/06/05 18:28:49  mrk
- * Allow message about referenced but undefined to be suppressed
- *
- * Revision 1.3  1997/05/01 19:57:34  jhill
- * updated dll keywords
- *
- * Revision 1.2  1996/09/16 21:07:10  jhill
- * fixed warnings
- *
- * Revision 1.1  1996/07/10 14:49:51  mrk
- * added macLib
- *
- * Revision 1.8  1996/06/26  09:43:16  wlupton
- * first released version
- *
- */

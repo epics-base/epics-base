@@ -12,9 +12,6 @@
  * Date: 4/97
  *
  * $Id$
- * $Log$
- * Revision 1.1  1997/05/13 14:36:56  jbk
- * library support for the tick timers on the mvme167
  *
  */
 

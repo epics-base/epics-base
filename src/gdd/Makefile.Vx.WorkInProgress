@@ -13,13 +13,6 @@
 #
 # $Id$
 #
-# $Log$
-# Revision 1.1  1996/09/04 22:41:41  jhill
-# installed
-#
-# Revision 1.1  1996/09/04 20:59:40  jhill
-# installed
-#
 
 VPATH=.:..
 

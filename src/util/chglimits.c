@@ -14,12 +14,6 @@
  * Author: Jim Kowalkowski
  * Date:   10/22/96
  *
- * $Log$
- * Revision 1.1  1996/10/22 15:40:04  jbk
- * New program for running programs with different priority and changing the
- * maximum number of file descriptors.
- *
- *
 */
 
 #include <stdio.h>

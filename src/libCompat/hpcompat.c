@@ -17,11 +17,6 @@
  *	
  * Author: Pratik Gupta  , CEBAF Control Systems Group 
  * 
- * Revision History: 
- *   $Log$
- *   Revision 1.1  1994/06/27 23:51:19  mcn
- *   HP compatibility library
- * 
  */
 
 #include <sys/types.h>

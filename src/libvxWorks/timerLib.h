@@ -17,10 +17,6 @@
  * Based heavily on the HiDEOS ticktimer scheme - but using c instead of c++
  *
  * $Id$
- * $Log$
- * Revision 1.1  1997/05/13 14:36:57  jbk
- * library support for the tick timers on the mvme167
- *
  */
 
 typedef enum {

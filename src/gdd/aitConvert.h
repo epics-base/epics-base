@@ -15,30 +15,6 @@
  * Date: 2/96
  *
  * $Id$
- *
- * $Log$
- * Revision 1.5.8.1  2001/09/05 15:10:11  jhill
- * removed ifdef on GNUC
- *
- * Revision 1.5  1997/08/05 00:51:04  jhill
- * fixed problems in aitString and the conversion matrix
- *
- * Revision 1.4  1997/04/10 19:59:22  jhill
- * api changes
- *
- * Revision 1.3  1996/10/17 12:41:07  jbk
- * network byte order stuff / added strDup function to Helpers
- *
- * Revision 1.2  1996/08/13 23:13:34  jhill
- * win NT changes
- *
- * Revision 1.1  1996/06/25 19:11:29  jbk
- * new in EPICS base
- *
- *
- * *Revision 1.1  1996/05/31 13:15:18  jbk
- * *add new stuff
- *
  */
 
 #include <sys/types.h>

@@ -12,56 +12,6 @@
 // $Id$
 //
 //
-// $Log$
-// Revision 1.15.4.1  1999/08/12 20:38:04  jhill
-// bail out if select returns errors besides EINTR
-//
-// Revision 1.15  1998/10/23 19:47:12  jhill
-// fixed inline is too big warning
-//
-// Revision 1.14  1998/06/16 02:06:32  jhill
-// lazy init sock lib when its a static build & recoverfrom select differences in winsock
-//
-// Revision 1.13  1998/05/29 20:22:44  jhill
-// made hashing routine portable
-//
-// Revision 1.12  1998/02/05 21:12:09  jhill
-// removed questionable inline
-//
-// Revision 1.11  1997/08/05 00:37:00  jhill
-// removed warnings
-//
-// Revision 1.10  1997/06/25 05:45:49  jhill
-// cleaned up pc port
-//
-// Revision 1.9  1997/06/13 09:39:09  jhill
-// fixed warnings
-//
-// Revision 1.8  1997/05/29 21:37:38  tang
-// add ifdef for select call to support HP-UX
-//
-// Revision 1.7  1997/05/27 14:53:11  tang
-// fd_set cast in select for both Hp and Sun
-//
-// Revision 1.6  1997/05/08 19:49:12  tang
-// added int * cast in select for HP port compatibility
-//
-// Revision 1.5  1997/04/23 17:22:57  jhill
-// fixed WIN32 DLL symbol exports
-//
-// Revision 1.4  1997/04/10 19:45:33  jhill
-// API changes and include with  not <>
-//
-// Revision 1.3  1996/11/02 02:04:42  jhill
-// fixed several subtle bugs
-//
-// Revision 1.2  1996/09/04 21:50:16  jhill
-// added hashed fd to fdi convert
-//
-// Revision 1.1  1996/08/13 22:48:23  jhill
-// dfMgr =>fdManager
-//
-//
 
 //
 //

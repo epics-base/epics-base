@@ -13,14 +13,6 @@
 #
 # $Id$
 #
-# $Log$
-# Revision 1.2  1997/03/21 01:55:59  jbk
-# *** empty log message ***
-#
-# Revision 1.1  1996/09/12 11:18:46  jbk
-# makefile to build library outside of EPICS tree
-#
-#
 
 DEPENDS_FLAG = -M # -xM
 CCFLAGS = -g -DGDDAUTOPRINT

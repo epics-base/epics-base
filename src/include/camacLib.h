@@ -12,33 +12,6 @@
  * Marty Wise
  * 10/11/93
  *
- * $Log$
- * Revision 1.1  1996/01/25 21:38:38  mrk
- * moved files from /base/include
- *
- * Revision 1.1  1994/10/20  20:16:16  tang
- * Commit adding of Camac Driver h file.
- *
- * Revision 1.4  94/05/11  13:52:57  13:52:57  wise (Marty Wise)
- * Added low-level diagnostics
- * 
- * Revision 1.3  94/03/27  10:52:29  10:52:29  wise (Marty Wise)
- * *** empty log message ***
- * 
- * Revision 1.1  93/11/05  06:39:35  06:39:35  wise (Marty Wise)
- * Initial revision
- * 
- * Revision 0.3  93/10/19  09:03:45  09:03:45  wise (Marty Wise)
- * Added cssa and csmad
- * 
- * Revision 0.2  93/10/12  07:33:01  07:33:01  wise (Marty Wise)
- * cfubc working, cfmad working, almost ready for alpha release.
- * 
- * Revision 0.1  93/10/11  10:31:48  10:31:48  wise (Marty Wise)
- * Initial revision
- * 
- *
- *
  */
 
 static char ht2992_h_RCSID[] = "$Header$";

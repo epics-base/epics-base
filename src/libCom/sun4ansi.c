@@ -20,18 +20,6 @@
 #ifdef SUNOS4
 
 /*
- * $Log$
- * Revision 1.2  1995/02/21 17:53:22  jba
- * Added comments.
- *
- * Revision 1.1  1995/02/17  15:09:56  jba
- * Initial version
- *
- * Revision 1.1  1995/01/11  10:34:21  anj
- * Added sun4ansi.c for those without sun4 ACC.
- *
- * 
- * 
  * Routines which are needed but SunOS 4.x doesn't provide.
  * These definitions obtained from GNU libiberty directory.
  * Note that Sun's Ansi C compiler provides these routines,

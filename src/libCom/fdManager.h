@@ -19,62 +19,6 @@
  *
  *      Experimental Physics and Industrial Control System (EPICS)
  *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- *
- * History
- * $Log$
- * Revision 1.11  1998/10/27 22:06:46  jhill
- * removed inline keyword
- *
- * Revision 1.10  1998/10/23 19:47:12  jhill
- * fixed inline is too big warning
- *
- * Revision 1.9  1998/06/16 02:04:07  jhill
- * fixed spelling
- *
- * Revision 1.8  1998/02/05 21:12:10  jhill
- * removed questionable inline
- *
- * Revision 1.7  1997/08/05 00:37:01  jhill
- * removed warnings
- *
- * Revision 1.6  1997/06/25 05:45:50  jhill
- * cleaned up pc port
- *
- * Revision 1.5  1997/04/23 17:22:58  jhill
- * fixed WIN32 DLL symbol exports
- *
- * Revision 1.4  1997/04/10 19:45:38  jhill
- * API changes and include with  not <>
- *
- * Revision 1.3  1996/11/02 02:04:41  jhill
- * fixed several subtle bugs
- *
- * Revision 1.2  1996/09/04 21:50:16  jhill
- * added hashed fd to fdi convert
- *
- * Revision 1.1  1996/08/13 22:48:21  jhill
- * dfMgr =>fdManager
- *
- *
  */
 
 #ifndef fdManagerH_included

@@ -2,14 +2,6 @@
 #
 # Solaris rc2 script for EPICS IOC Log Server process.
 #
-# $Log$
-# Revision 1.2  1999/05/17 15:09:59  anj
-# Moved export statements to the right place.
-#
-# Revision 1.1  1995/03/30 23:17:59  jba
-# Added solaris scripts for starting caRepeater and iocLogServer - anj
-#
-#
 
 INSTALL_BIN=:INSTALL_BIN:
 EPICS=:EPICS:

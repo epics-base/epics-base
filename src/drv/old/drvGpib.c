@@ -28,69 +28,6 @@
  *  The internals of the 1014D are such that the DMAC can NEVER be hard-reset
  *  unless the SYSRESET* vme line is asserted.  The LMR mode allows the
  *  initGpib() function to reset the DMAC properly.
- *
- *
- * $Log$
- * Revision 1.9.8.3  2002/04/17 21:56:48  anj
- * Added cache handling so the NI-1014 works on MC68060-based boards.
- *
- * Revision 1.9.8.2  2001/08/30 21:16:48  anj
- * Changes to get working on PowerPC - struct alignment issues mainly,
- * plus a problem with the maximum message length check...
- * Also removed lots of warnings, although this was a bit of a waste of time.
- *
- * Revision 1.9.8.1  1999/12/08 22:02:43  mrk
- * all mallocs changed to callocs. This is needed for the new unbundled bitbus support.
- *
- * Revision 1.9  1998/06/04 19:21:20  wlupton
- * changed to use symFindByNameEPICS
- *
- * Revision 1.8  1998/01/20 21:51:53  mrk
- * add includes for error messages
- *
- * Revision 1.7  1997/04/30 19:02:08  mrk
- * Fixed many compiler warning messages
- *
- * Revision 1.6  1996/05/03 19:05:36  winans
- * Added the EOS logic from Mark Rivers.  (It is only supported for HiDEOS
- * GPIB interfaces.)
- *
- * Revision 1.5  1996/03/06 14:17:34  mrk
- * Made STATIC static
- *
- * Revision 1.4  1995/07/31  19:44:18  winans
- * Changed the parameter table and associated support routines to support
- * buffer length specifications of size long instead of short.
- *
- * Revision 1.3  1995/04/25  15:32:23  winans
- * Changed name of HiDEOS link configuration command/function.
- *
- * Revision 1.2  1995/04/12  19:31:41  winans
- * Added support for the HiDEOS system as a GPIB bus transport agent.
- *
- * Revision 1.28  1995/02/14  22:33:01  winans
- * Cleaned up some Hideos hacking and commented out the LANL debug code because
- * APS has had some add behaviour from GPIB lately and it is one of few things
- * that has changed WRT to it.
- *
- * Revision 1.27  1994/12/14  22:29:14  winans
- * Removed DMAC command chaining structure(s) from the ibLink
- * structure so they can be malloc'd seperately.  This keeps
- * the usage of A24 space restricted to ONLY those structures
- * that have to be there.
- *
- * Revision 1.26  1994/12/12  16:03:00  winans
- * Rewrote the init code so that it always returns a zero (don't kill the
- * startup.cmd file.)  It is possible that this could cause some confusion
- * to the database, should it decide to then use a link that did not init
- * properly.
- *
- * Revision 1.25  1994/10/28  19:55:30  winans
- * Added VME bus violation prevention code/bug fix from LANL.
- *
- * Revision 1.24  1994/10/04  18:42:46  winans
- * Added an extensive debugging facility.
- *
  */
 
 #define INCLUDE_HIDEOS_INTERFACE

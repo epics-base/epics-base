@@ -13,65 +13,6 @@
  *      Author  Jeffrey O. Hill
  *              johill@lanl.gov
  *              505 665 1831
- *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- *
- * History
- * $Log$
- * Revision 1.9  1998/05/06 21:40:02  jhill
- * updated for g++ 2.8.1
- *
- * Revision 1.8  1998/04/14 00:51:33  jhill
- * code around ms sizeof() bug V5.0
- *
- * Revision 1.7  1998/02/18 22:52:22  jhill
- * fixed to run on both vis C++ 5.0 and g++
- *
- * Revision 1.6  1998/02/05 22:47:46  jhill
- * workaround vis C++ 5.0 bug
- *
- * Revision 1.5  1997/06/25 06:17:36  jhill
- * fixed warnings
- *
- * Revision 1.4  1996/11/22 20:37:19  jhill
- * converted large inline templ funcs
- *
- * Revision 1.3  1996/09/04 20:58:18  jhill
- * changes for MS VISC++
- *
- * Revision 1.2  1996/08/13 23:13:35  jhill
- * win NT changes
- *
- * Revision 1.1  1996/07/10 23:44:12  jhill
- * moved here from src/cas/generic
- *
- * Revision 1.2  1996/06/26 21:19:01  jhill
- * now matches gdd api revisions
- *
- * Revision 1.1.1.1  1996/06/20 00:28:15  jhill
- * ca server installation
- *
- *
  */
 
 #ifndef gddAppFuncTableH

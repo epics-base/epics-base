@@ -16,54 +16,6 @@
  *
  *      Experimental Physics and Industrial Control System (EPICS)
  *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- *
- * History
- * $Log$
- * Revision 1.6  1997/06/13 09:31:46  jhill
- * fixed warnings
- *
- * Revision 1.5  1997/04/10 19:45:41  jhill
- * API changes and include with  not <>
- *
- * Revision 1.4  1996/11/02 02:06:00  jhill
- * const param => #define
- *
- * Revision 1.3  1996/09/04 21:53:36  jhill
- * allow use with goofy vxWorks 5.2 time spec - which has unsigned sec and
- * signed nsec
- *
- * Revision 1.2  1996/07/09 23:01:04  jhill
- * added new operators
- *
- * Revision 1.1  1996/06/26 22:14:11  jhill
- * added new src files
- *
- * Revision 1.2  1996/06/21 02:03:40  jhill
- * added stdio.h include
- *
- * Revision 1.1.1.1  1996/06/20 22:15:56  jhill
- * installed  ca server templates
- *
- *
  */
 
 

@@ -1,5 +1,5 @@
 /* drvBitBus.c */
-/* share/src/drv  $Id$ */
+/* share/src/drv $Id$ */
 /*
  *	Original Author: Ned Arnold
  *      Author: John Winans
@@ -31,6 +31,7 @@
  * -----------------
  * .01  09-30-91        jrw     Completely redesigned and rewritten
  * .02	12-02-91	jrw	Changed priority info to arrays
+ * .03	12-16-91	jrw	Made the data portion of the message a pointer
  *
  * NOTES:
  * This driver currently needs work on error message generation.
@@ -39,7 +40,7 @@
 /******************************************************************************
  *
  * The following defines should be in module_types.h or derived
- * from a support functions.
+ * from a support function.
  *
  ******************************************************************************/
 #define BB_SHORT_OFF	0x1800	/* the first address of link 0's region */
@@ -55,7 +56,6 @@
 #include <memLib.h>
 #include <rngLib.h>
 #include <wdLib.h>
-#include <lstLib.h>
 #include <wdLib.h>
 #include <vme.h>
 
@@ -204,7 +204,6 @@ initBB()
       if ((pBbLink[i] = (struct bbLink *) malloc(sizeof(struct bbLink))) == NULL
 )
       { /* This better never happen! */
-        /* errMsg( BUG -- figure out how to use this thing ); */
         printf("Can't malloc memory for link data structures!\n");
         return(ERROR);
       }
@@ -215,12 +214,14 @@ initBB()
       /* init all the prioritized queue lists */
       for (j=0; j<BB_NUM_PRIO; j++)
       {
-        lstInit(&(pBbLink[i]->queue[j].list));
+        pBbLink[i]->queue[j].head = NULL;
+	pBbLink[i]->queue[j].tail = NULL;
         FASTLOCKINIT(&(pBbLink[i]->queue[j].sem));
         FASTUNLOCK(&(pBbLink[i]->queue[j].sem));
       }
 
-      lstInit(&(pBbLink[i]->busyList));	/* init the busy message list */
+      pBbLink[i]->busyList.head = NULL;	/* init the busy message list */
+      pBbLink[i]->busyList.tail = NULL;	/* init the busy message list */
 
       for (j=0; j<BB_APERLINK; j++)
       {
@@ -229,7 +230,6 @@ initBB()
 
       if ((pXvmeLink[i] = (struct xvmeLink *) malloc(sizeof(struct xvmeLink))) == NULL)
       {
-        /* errMsg( BUG -- figure out how to use this thing ); */
         printf("Can't malloc memory for link data structures!\n");
         return(ERROR);
       }
@@ -258,7 +258,6 @@ initBB()
       if (taskSpawn("bbLink", 46, VX_FP_TASK|VX_STDIO, 2000, xvmeLinkTask, i) == ERROR)
       {
         printf("initBB: failed to start link task for link %d\n", i);
-        /*errMsg()*/
       }
     }
     pXvmeRegs++;		/* ready for next board window */
@@ -339,32 +338,37 @@ int	link;
 {
   unsigned char	ch;
 
-  if (pXvmeLink[link]->txCount == 0)
-  { /* we just finished sending a message */
-    if (bbDebug)
-      logMsg("xvmeIrqTbmt(%d): last char of xmit msg sent\n", link);
-
-    pXvmeLink[link]->bbRegs->cmnd = BB_SEND_CMD; /* Tell XVME to xmit it now */
-
-    ch = pXvmeLink[link]->bbRegs->stat_ctl;	/* get current int status */
-    ch &= XVME_ENABLE_INT|XVME_RX_INT;		/* mask off TX interrupts */
-    pXvmeLink[link]->bbRegs->stat_ctl = ch;	/* and reset the int mask */
-
-/* BUG -- do the callbackRequest in here if the command was a RAC_RESET_SLAVE */
-
-    FASTUNLOCK(&(pBbLink[link]->linkEventSem));	/* wake up the Link Task */
-  }
-  else
-  {
-    if (bbDebug)
-      logMsg("xvmeIrqTbmt(%d): outputting char %02.2X\n", link, *(pXvmeLink[link]->txMsg));
-
-    pXvmeLink[link]->txCount--;
-    ch = *(pXvmeLink[link]->txMsg);
-    pXvmeLink[link]->txMsg++;
-
-    pXvmeLink[link]->bbRegs->data = ch;       /* xmit the character */
-  }
+    if (pXvmeLink[link]->txCCount == pXvmeLink[link]->txTCount)
+    { /* we just finished sending a message */
+      if (bbDebug)
+        logMsg("xvmeIrqTbmt(%d): last char of xmit msg sent\n", link);
+  
+      pXvmeLink[link]->bbRegs->cmnd = BB_SEND_CMD; /* forward it now */
+  
+      ch = pXvmeLink[link]->bbRegs->stat_ctl;	/* get current int status */
+      ch &= XVME_ENABLE_INT|XVME_RX_INT;	/* mask off TX interrupts */
+      pXvmeLink[link]->bbRegs->stat_ctl = ch;	/* and reset the int mask */
+  
+/* BUG -- do the callbackRequest here if the command was a RAC_RESET_SLAVE */
+/* BUG -- also have to remove from busy list. */
+  
+      FASTUNLOCK(&(pBbLink[link]->linkEventSem)); /* wake up the Link Task */
+    }
+    else
+    {
+      if (bbDebug)
+        logMsg("xvmeIrqTbmt(%d): outputting char %02.2X\n", link, *(pXvmeLink[link]->txMsg));
+  
+      ch = *(pXvmeLink[link]->txMsg);	/* get the byte to xmit */
+  
+      pXvmeLink[link]->txCCount++;	/* update for next int */
+      if (pXvmeLink[link]->txCCount != 5)
+        pXvmeLink[link]->txMsg++;
+      else
+        pXvmeLink[link]->txMsg = pXvmeLink[link]->txDpvtHead->txMsg.data;
+  
+      pXvmeLink[link]->bbRegs->data = ch;	/* send the byte */
+    }
   return(0);
 }
 
@@ -380,57 +384,70 @@ xvmeIrqRdav(link)
 int	link;
 {
   unsigned char	ch;
+  int		waiting;
 
+  while ((pXvmeLink[link]->bbRegs->fifo_stat & (XVME_RFNE|XVME_RCMD)) == XVME_RFNE)
+  {
     switch (pXvmeLink[link]->rxStatus) {
     case BB_RXWAIT:	/* waiting for the first byte of a new message */
       pXvmeLink[link]->rxHead[0] = pXvmeLink[link]->bbRegs->data;
       if (bbDebug)
         logMsg("xvmeIrqRdav(%d): >%02.2X< new message\n", link, pXvmeLink[link]->rxHead[0]);
-      pXvmeLink[link]->cHead = 1;
+      pXvmeLink[link]->rxTCount = 1;
       pXvmeLink[link]->rxStatus = BB_RXGOT1;
       break;
   
     case BB_RXGOT1:	/* currently receiving the header of a bitbus message */
-      pXvmeLink[link]->rxHead[pXvmeLink[link]->cHead] = pXvmeLink[link]->bbRegs->data;
+      pXvmeLink[link]->rxHead[pXvmeLink[link]->rxTCount] = pXvmeLink[link]->bbRegs->data;
       if (bbDebug)
-        logMsg("xvmeIrqRdav(%d): >%02.2X<\n", link, pXvmeLink[link]->rxHead[pXvmeLink[link]->cHead]);
-      pXvmeLink[link]->cHead++;
+        logMsg("xvmeIrqRdav(%d): >%02.2X<\n", link, pXvmeLink[link]->rxHead[pXvmeLink[link]->rxTCount]);
+      pXvmeLink[link]->rxTCount++;
   
-      if (pXvmeLink[link]->cHead == 3)
-        pXvmeLink[link]->rxStatus = BB_RXGOT3;
+      if (pXvmeLink[link]->rxTCount == 4)
+        pXvmeLink[link]->rxStatus = BB_RXGOTHEAD;
       break;
-    case BB_RXGOT3:	/* got 3 bytes of header so far */
-      ch = pXvmeLink[link]->bbRegs->data;	/* get the 'tasks' byte of the header */
+    case BB_RXGOTHEAD:	/* got all of header now */
+      ch = pXvmeLink[link]->bbRegs->data;	/* get the 'status' byte of the header */
       if (bbDebug)
-        logMsg("xvmeIrqRdav(%d): >%02.2X<\n", link, pXvmeLink[link]->rxHead[pXvmeLink[link]->cHead]);
-      pXvmeLink[link]->cHead++;
-  
+        logMsg("xvmeIrqRdav(%d): >%02.2X<\n", link, ch);
+      pXvmeLink[link]->rxTCount += 3;	/* account for the link field too */
+
       /* find the message this is a reply to */
-      pXvmeLink[link]->rxDpvtHead = (struct dpvtBitBusHead *) lstFirst(&(pBbLink[link]->busyList));
+      pXvmeLink[link]->rxDpvtHead = pBbLink[link]->busyList.head;
       while (pXvmeLink[link]->rxDpvtHead != NULL)
       { /* see if node's match */
-        if (pXvmeLink[link]->rxDpvtHead->txMsg->node == pXvmeLink[link]->rxHead[2])
+        if (pXvmeLink[link]->rxDpvtHead->txMsg.node == pXvmeLink[link]->rxHead[2])
         { /* see if the tasks match */
-          if (pXvmeLink[link]->rxDpvtHead->txMsg->tasks == ch)
+          if (pXvmeLink[link]->rxDpvtHead->txMsg.tasks == pXvmeLink[link]->rxHead[3])
           { /* They match, finish putting the response into the rxMsg buffer */
             if (bbDebug)
               logMsg("xvmeIrqRdav(%d): msg is response to 0x%08.8X\n", link, pXvmeLink[link]->rxDpvtHead);
-          
-            /* I can do the list operation here, because the linkTask */
-            /* disables XVME RX interrupts when using the busy list! */
-            lstDelete(&(pBbLink[link]->busyList), pXvmeLink[link]->rxDpvtHead);
-           
-            pXvmeLink[link]->rxDpvtHead->rxMsg->length = pXvmeLink[link]->rxHead[0];
-            pXvmeLink[link]->rxDpvtHead->rxMsg->route = pXvmeLink[link]->rxHead[1];
-            pXvmeLink[link]->rxDpvtHead->rxMsg->node = pXvmeLink[link]->rxHead[2];
-            pXvmeLink[link]->rxDpvtHead->rxMsg->tasks = ch;
-            pXvmeLink[link]->rxMsg = &(pXvmeLink[link]->rxDpvtHead->rxMsg->cmd);
-         
+
+            /* I can do the list manipulation here, because the linkTask */
+            /* and qReq() disable RX interrupts when using the busy list! */
+
+            /* Delete the node from the list */
+            if (pXvmeLink[link]->rxDpvtHead->next != NULL)
+              pXvmeLink[link]->rxDpvtHead->next->prev = pXvmeLink[link]->rxDpvtHead->prev;
+            if (pXvmeLink[link]->rxDpvtHead->prev != NULL)
+              pXvmeLink[link]->rxDpvtHead->prev->next = pXvmeLink[link]->rxDpvtHead->next;
+            if (pBbLink[link]->busyList.head == pXvmeLink[link]->rxDpvtHead)
+              pBbLink[link]->busyList.head = pXvmeLink[link]->rxDpvtHead->next;
+            if (pBbLink[link]->busyList.tail == pXvmeLink[link]->rxDpvtHead)
+              pBbLink[link]->busyList.tail = pXvmeLink[link]->rxDpvtHead->prev;
+
+            pXvmeLink[link]->rxDpvtHead->rxMsg.length = pXvmeLink[link]->rxHead[0];
+            pXvmeLink[link]->rxDpvtHead->rxMsg.route = pXvmeLink[link]->rxHead[1];
+            pXvmeLink[link]->rxDpvtHead->rxMsg.node = pXvmeLink[link]->rxHead[2];
+            pXvmeLink[link]->rxDpvtHead->rxMsg.tasks = pXvmeLink[link]->rxHead[3];
+	    pXvmeLink[link]->rxDpvtHead->rxMsg.cmd = ch;
+            pXvmeLink[link]->rxMsg = pXvmeLink[link]->rxDpvtHead->rxMsg.data;
+
             pXvmeLink[link]->rxDpvtHead->status = OK;	/* OK, unless BB_LENGTH */
             break;		/* get out of the while() */
           }
         }
-        pXvmeLink[link]->rxDpvtHead = (struct dpvtBitBusHead *) lstNext(pXvmeLink[link]->rxDpvtHead); /* Keep looking */
+        pXvmeLink[link]->rxDpvtHead = pXvmeLink[link]->rxDpvtHead->next; /* Keep looking */
       }
       if (pXvmeLink[link]->rxDpvtHead == NULL)
       {
@@ -442,26 +459,36 @@ int	link;
       break;
   
     case BB_RXREST:	/* reading message body */
-      *(pXvmeLink[link]->rxMsg) = pXvmeLink[link]->bbRegs->data;
-      if (bbDebug)
-        logMsg("xvmeIrqRdav(%d): >%02.2X<\n", link, *(pXvmeLink[link]->rxMsg));
-      pXvmeLink[link]->rxMsg++;
-      pXvmeLink[link]->cHead++;
-      if (pXvmeLink[link]->cHead >= pXvmeLink[link]->rxDpvtHead->rxMaxLen)
+    case BB_RXIGN:	/* dump the rest of the message */
+      ch = pXvmeLink[link]->bbRegs->data;
+
+      if (pXvmeLink[link]->rxTCount >= pXvmeLink[link]->rxDpvtHead->rxMaxLen)
       {
-        logMsg("xvmeIrqRdav(%d): in-bound message length too long for device support buffer!\n", link);
         pXvmeLink[link]->rxStatus = BB_RXIGN;	/* toss the rest of the data */
         pXvmeLink[link]->rxDpvtHead->status = BB_LENGTH; /* set driver status */
+	if (bbDebug)
+	  logMsg("xvmeIrqRdav(%d): ignoring >%02.2X<\n", link, ch);
+      }
+      else
+      {
+        *(pXvmeLink[link]->rxMsg) = ch;
+        if (bbDebug)
+          logMsg("xvmeIrqRdav(%d): >%02.2X<\n", link, ch);
+        pXvmeLink[link]->rxMsg++;
+        pXvmeLink[link]->rxTCount++;
       }
       break;
-  
-    case BB_RXIGN:			/* dump the rest of the message */
-      ch = pXvmeLink[link]->bbRegs->data;
-      if (bbDebug)
-        logMsg("xvmeIrqRdav(%d): ignoring >%02.2X<\n", link, ch);
-      pXvmeLink[link]->cHead++;		/* should I bother??? */
-      break;
     }
+#ifdef DONT_DO_THIS
+    /* Wait a while for either another byte to arrive, or an RCMD to arrive */
+    waiting = XVME_IRQ_HANG_TIME;
+    while (!(pXvmeLink[link]->bbRegs->fifo_stat & (XVME_RFNE|XVME_RCMD)) && waiting--);
+#endif
+  }
+  /* If we are going to miss the RCMD interrupt, do it now */
+  if ((pXvmeLink[link]->bbRegs->fifo_stat & (XVME_RFNE|XVME_RCMD)) == (XVME_RFNE|XVME_RCMD))
+    xvmeIrqRcmd(link);
+
   return(0);
 }
 
@@ -490,6 +517,9 @@ static int
 xvmeIrqRcmd(link)
 int	link;
 {
+  if (!(pXvmeLink[link]->bbRegs->fifo_stat & XVME_RCMD))
+    return(0);	/* false alarm */
+
   if(bbDebug)
     logMsg("BB RCMD interrupt generated on link %d\n", link);
 
@@ -500,29 +530,31 @@ int	link;
   }
   else
   {
-    pXvmeLink[link]->rxStatus = BB_RXWAIT;	/* are now waiting for a new message */
     pXvmeLink[link]->rxDpvtHead->status = BB_OK;
     pXvmeLink[link]->rxDpvtHead->rxCmd = pXvmeLink[link]->bbRegs->cmnd;
     if (bbDebug)
       logMsg("xvmeIrqRcmd(%d): command byte = %02.2X\n", link, pXvmeLink[link]->rxDpvtHead->rxCmd);
 
     /* decrement the number of outstanding messages to the node */
-    (pBbLink[link]->deviceStatus[pXvmeLink[link]->rxDpvtHead->rxMsg->node])--;
+    (pBbLink[link]->deviceStatus[pXvmeLink[link]->rxDpvtHead->rxMsg.node])--;
 
     if (pXvmeLink[link]->rxDpvtHead->finishProc != NULL)
     {
-      pXvmeLink[link]->rxDpvtHead->header.callback.callback = pXvmeLink[link]->rxDpvtHead->finishProc;
-      pXvmeLink[link]->rxDpvtHead->header.callback.priority = pXvmeLink[link]->rxDpvtHead->priority;
-
       if (bbDebug)
         logMsg("xvmeIrqRcmd(%d): invoking the callbackRequest\n", link);
       callbackRequest(pXvmeLink[link]->rxDpvtHead); /* schedule completion processing */
 
     }
+    /* If there is a semaphore for synchronous I/O, unlock it */
+
+    if (pXvmeLink[link]->rxDpvtHead->syncLock != NULL)
+      FASTUNLOCK(pXvmeLink[link]->rxDpvtHead->syncLock);
+
   }
   pXvmeLink[link]->rxDpvtHead = NULL;	/* The watch dog agerizer needs this */
+  pXvmeLink[link]->rxStatus = BB_RXWAIT;/* are now waiting for a new message */
 
-  if (!lstCount(&(pBbLink[link]->busyList))) /* if list empty, stop the watch dog */
+  if (pBbLink[link]->busyList.head == NULL) /* if list empty, stop the dog */
     wdCancel(pXvmeLink[link]->watchDogId);
 
   FASTUNLOCK(&(pBbLink[link]->linkEventSem)); /* wake up the Link Task */
@@ -569,7 +601,7 @@ static int
 xvmeTmoHandler(link)
 int	link;
 {
-  /* if (bbDebug) */
+  if (bbDebug)
     logMsg("xvmeTmoHandler(%d): Watch dog interrupt\n", link);
 
   pXvmeLink[link]->watchDogFlag = 1; /* set the timeout flag for the link */
@@ -597,6 +629,7 @@ int	link;
   struct dpvtBitBusHead  *npnode;
   unsigned char	intMask;
   int			prio;
+  int   		lockKey;
 
   if (bbDebug)
     printf("xvmeLinkTask started for link %d\n", link);
@@ -608,6 +641,7 @@ int	link;
 
   while (1)
   {
+/* need to add the working flag stuff in here like gpib */
     FASTLOCK(&(plink->linkEventSem));
 
     if (bbDebug)
@@ -622,9 +656,9 @@ int	link;
 
       intMask = pXvmeLink[link]->bbRegs->stat_ctl & (XVME_RX_INT | XVME_ENABLE_INT | XVME_TX_INT);
       /* Turn off ints from this link so list integrity is maintained */
-      pXvmeLink[link]->bbRegs->stat_ctl = XVME_NO_INT;
+      pXvmeLink[link]->bbRegs->stat_ctl = intMask & (~XVME_ENABLE_INT);
 
-      pnode = (struct dpvtBitBusHead *) lstFirst(&(plink->busyList));
+      pnode = plink->busyList.head;
       while (pnode != NULL)
       {
 	pnode->ageLimit--;
@@ -632,32 +666,37 @@ int	link;
           printf("xvmeLinkTask(%d): (Watchdog) node 0x%08.8X.ageLimit=%d\n", link, pnode, pnode->ageLimit);
 	if (pnode->ageLimit <= 0)
 	{ /* This node has been on the busy list for too long */
-	  npnode = (struct dpvtBitBusHead *) lstNext(pnode);
+	  npnode = pnode->next;
 	  if ((intMask & XVME_TX_INT) && (pXvmeLink[link]->txDpvtHead == pnode))
 	  { /* Uh oh... Transmitter is stuck while sending this xact */
             printf("xvmeLinkTask(%d): transmitter looks stuck, link dead\n", link);
-	    taskDelay(60);	/* waste some time /
-            /* BUG -- This should probably reset the xvme card here */
+/* BUG -- This should probably reset the xvme card here */
 	  }
 	  else
 	  { /* Get rid of the request and set error status etc... */
-	    lstDelete(&(plink->busyList), pnode);
+	    if (pnode->next != NULL)
+	      pnode->next->prev = pnode->prev;
+   	    if (pnode->prev != NULL)
+	      pnode->prev->next = pnode->next;
+	    if (plink->busyList.head == pnode)
+	      plink->busyList.head = pnode->next;
+	    if (plink->busyList.tail == pnode)
+	      plink->busyList.tail = pnode->prev;
+
 	    printf("xvmeLinkTask(%d): TIMEOUT on xact 0x%08.8X\n", link, pnode);
             pnode->status = BB_TIMEOUT;
-	    (plink->deviceStatus[pnode->txMsg->node])--; /* fix node status */
+	    (plink->deviceStatus[pnode->txMsg.node])--; /* fix device status */
 	    if(pnode->finishProc != NULL)
 	    { /* make the callbackRequest to inform message sender */
-	      pnode->header.callback.callback = pnode->finishProc;
-	      pnode->header.callback.priority = pnode->priority;
-/* BUG -- undoc the callback request call here & nuke the manual call */
-	      /* callbackRequest(pnode); */ /* schedule completion processing */
-	      (pnode->header.callback.callback)(pnode);
+	      callbackRequest(pnode);	/* schedule completion processing */
 	    }
+	    if (pnode->syncLock != NULL)
+	      FASTUNLOCK(pnode->syncLock);
 	  }
-	  pnode = npnode;	/* Because I deleted the current one */
+	  pnode = npnode;	/* Because current one could be altered by now */
 	}
 	else
-	  pnode = (struct dpvtBitBusHead *) lstNext(pnode);	/* check out the rest */
+	  pnode = pnode->next;	/* check out the rest */
       }
       /* check the pnode pointed to by rxDpvtHead to see if rcvr is stuck */
       if (pXvmeLink[link]->rxDpvtHead != NULL)
@@ -666,11 +705,11 @@ int	link;
 	{ /* old, but busy... and we even gave it an extra tick.  Rcvr stuck. */
 	  printf("xvmeLinkTask(%d): receiver looks stuck, link dead\n", link);
 	  taskDelay(60);
-          /* BUG -- This should probably reset the xvme card */
+/* BUG -- This should probably reset the xvme card */
 	}
       }
       /* Restart the timer if the list is not empty */
-      if (lstCount(&(plink->busyList))) /* If list not empty, start watch dog */
+      if (plink->busyList.head != NULL) /* If list not empty, start watch dog */
       {
 	if (bbDebug)
 	  printf("xvmeLinkTask(%d): restarting watch dog timer\n", link);
@@ -679,57 +718,135 @@ int	link;
 
       /* Restore interrupt mask for the link */
       pXvmeLink[link]->bbRegs->stat_ctl = intMask;
+
+      /* If it looks like the XVME is going to get stuck... kick it */
+
+      if (pXvmeLink[link]->bbRegs->stat_ctl & XVME_RX_INT)
+      {
+        lockKey = intLock();  /* lock out ints because so won't nest */
+	taskLock();		/* make sure I run to completion */
+        xvmeIrqRdav(link);
+	taskUnlock();
+        intUnlock(lockKey);
+      }
+      if (pXvmeLink[link]->bbRegs->stat_ctl & XVME_TX_INT)
+      {
+	lockKey = intLock();  /* lock out ints because so won't nest */
+	taskLock();             /* make sure I run to completion */
+	xvmeIrqTbmt(link);
+	taskUnlock();
+	intUnlock(lockKey);
+      }
     }
 
+    /********************************************************************/
     /* If transmitter interrupts are enabled, then it is currently busy */
+    /********************************************************************/
 
     if (!(pXvmeLink[link]->bbRegs->stat_ctl & XVME_TX_INT))
     { /* If we are here, the transmitter is idle and the TX ints are disabled */
 
-      for (prio = 0; prio < BB_NUM_PRIO; prio++)
+      for (prio = BB_NUM_PRIO-1; prio >= 0; prio--)
       {
+        if (bbDebug)
+	  printf("Transmitter idle for link %d, checking fifo prio %d\n", link, prio);
+
         /* see if the queue has anything in it */
         FASTLOCK(&(plink->queue[prio].sem));
         /* disable XVME RX ints for the link while accessing the busy list! */
         intMask = pXvmeLink[link]->bbRegs->stat_ctl & (XVME_RX_INT | XVME_ENABLE_INT);
-        pXvmeLink[link]->bbRegs->stat_ctl = XVME_NO_INT; /* stop the receiver */
+        pXvmeLink[link]->bbRegs->stat_ctl = intMask & (~XVME_ENABLE_INT); /* stop the receiver */
     
-        if ((pnode = (struct dpvtBitBusHead *)lstFirst(&(plink->queue[prio].list))) != NULL)
+        if ((pnode = plink->queue[prio].head) != NULL)
         {
-          while (plink->deviceStatus[pnode->txMsg->node] == BB_BUSY)
-            if ((pnode = (struct dpvtBitBusHead *)lstNext(&(plink->queue[prio].list))) == NULL)
+	  if (bbDebug)
+	    printf("xact queue non-empty, checking xact %08.8X\n", pnode);
+          while (plink->deviceStatus[pnode->txMsg.node] == BB_BUSY)
+	  {
+            if ((pnode = pnode->next) == NULL)
               break;
+
+	  if (bbDebug)
+	    printf("checking xact at %08.8X\n", pnode);
+	  }
         }
         if (pnode != NULL)
         { /* have an xact to start processing */
-          lstDelete(&(plink->queue[prio].list), pnode);
+
+	  /* delete the node from the inbound fifo queue */
+	  if (pnode->next != NULL)
+	    pnode->next->prev = pnode->prev;
+	  if (pnode->prev != NULL)
+	    pnode->prev->next = pnode->next;
+          if (plink->queue[prio].head == pnode)
+            plink->queue[prio].head = pnode->next;
+          if (plink->queue[prio].tail == pnode)
+            plink->queue[prio].tail = pnode->prev;
+
+
 	  FASTUNLOCK(&(plink->queue[prio].sem));
     
           if (bbDebug)
-            printf("xvmeLinkTask(%d): got xact, pnode= 0x%08.8X\n", link, pnode);
+            printf("xvmeLinkTask(%d): got xact, pnode=0x%08.8X\n", link, pnode);
     
           /* Count the outstanding messages */
-          (plink->deviceStatus[pnode->txMsg->node])++;
+          (plink->deviceStatus[pnode->txMsg.node])++;
     
           /* ready the structures for the TX int handler */
           pXvmeLink[link]->txDpvtHead = pnode;	
-          pXvmeLink[link]->txCount = pnode->txMsg->length - 2;
-          pXvmeLink[link]->txMsg = &(pnode->txMsg->length);
+          pXvmeLink[link]->txTCount = pnode->txMsg.length - 2;
+          pXvmeLink[link]->txCCount = 0;
+          pXvmeLink[link]->txMsg = &(pnode->txMsg.length);
     
           intMask |= XVME_ENABLE_INT | XVME_TX_INT;
     
-          if (!lstCount(&(plink->busyList))) /* if list empty, start watch dog */
+          if (plink->busyList.head == NULL) /* if list empty, start watch dog */
             wdStart(pXvmeLink[link]->watchDogId, BB_WD_INTERVAL, xvmeTmoHandler, link);
-          lstAdd(&(plink->busyList), pnode);	/* put request on busy list */
+	  /* Add pnode to the busy list */
+	  pnode->next = NULL;
+	  pnode->prev = plink->busyList.tail;
+	  if (plink->busyList.tail != NULL)
+	    plink->busyList.tail->next = pnode;
+	  plink->busyList.tail = pnode;
+	  if (plink->busyList.head == NULL)
+	    plink->busyList.head = pnode;
+
           pXvmeLink[link]->bbRegs->stat_ctl = intMask; /* need before use xmtr */
-          xvmeIrqTbmt(link);			/* force first byte out */
+
+          /* force out first byte since xycom's board wont gen the first int */
+          lockKey = intLock();  /* lock out ints because so won't nest */
+          taskLock();             /* make sure I run to completion */
+          xvmeIrqTbmt(link);
+          taskUnlock();
+          intUnlock(lockKey);
+
+	  break;			/* stop checking the fifo queues */
         }
 	else
 	{ /* we have no xacts that can be processed at this time */
           pXvmeLink[link]->bbRegs->stat_ctl = intMask; /* Restore rcvr ints */
     
           FASTUNLOCK(&(plink->queue[prio].sem));
+	  if (bbDebug)
+	    printf("hit end of xact queue\n");
 	}
+        /* If it looks like the XVME is going to get stuck... kick it */
+        if (pXvmeLink[link]->bbRegs->stat_ctl & XVME_RX_INT)
+	{
+	  lockKey = intLock();  /* lock out ints because so won't nest */
+	  taskLock();		/* make sure I run tocompletion */
+          xvmeIrqRdav(link);
+	  taskUnlock();
+	  intUnlock(lockKey);
+        }
+        if (pXvmeLink[link]->bbRegs->stat_ctl & XVME_TX_INT)
+        {
+          lockKey = intLock();  /* lock out ints because so won't nest */
+          taskLock();             /* make sure I run to completion */
+          xvmeIrqTbmt(link);
+          taskUnlock();
+          intUnlock(lockKey);
+        }
       }
     }
   }
@@ -744,8 +861,7 @@ int	link;
  *
  ******************************************************************************/
 static long
-qBBReq(link, pdpvt, prio)
-int     link;
+qBBReq(pdpvt, prio)
 struct  dpvtBitBusHead *pdpvt;
 int     prio;
 {
@@ -753,17 +869,25 @@ int     prio;
 
   if (prio < 0 || prio >= BB_NUM_PRIO)
   {
-    sprintf(message, "invalid priority requested in call to qbbreq(%d, %08.8X, %d)\n", link, pdpvt, prio);
+    sprintf(message, "invalid priority requested in call to qbbreq(%08.8X, %d)\n", pdpvt, prio);
     errMessage(S_BB_badPrio, message);
   }
 
-  FASTLOCK(&(pBbLink[link]->queue[prio].sem));
-  lstAdd(&(pBbLink[link]->queue[prio].list), pdpvt);
-  FASTUNLOCK(&(pBbLink[link]->queue[prio].sem));
-  FASTUNLOCK(&(pBbLink[link]->linkEventSem));
+  FASTLOCK(&(pBbLink[pdpvt->link]->queue[prio].sem));
+  /* Add to the end of the queue of waiting transactions */
+  pdpvt->next = NULL;
+  pdpvt->prev = pBbLink[pdpvt->link]->queue[prio].tail;
+  if (pBbLink[pdpvt->link]->queue[prio].tail != NULL)
+    pBbLink[pdpvt->link]->queue[prio].tail->next = pdpvt;
+  pBbLink[pdpvt->link]->queue[prio].tail = pdpvt;
+  if (pBbLink[pdpvt->link]->queue[prio].head == NULL)
+    pBbLink[pdpvt->link]->queue[prio].head = pdpvt;
+
+  FASTUNLOCK(&(pBbLink[pdpvt->link]->queue[prio].sem));
+  FASTUNLOCK(&(pBbLink[pdpvt->link]->linkEventSem));
 
   if (bbDebug)
-    printf("qbbreq(%d, 0x%08.8X, %d): transaction queued\n", link, pdpvt, prio);
+    printf("qbbreq(0x%08.8X, %d): transaction queued\n", pdpvt, prio);
 
   return(OK);
 }

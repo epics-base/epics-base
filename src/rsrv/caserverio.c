@@ -68,55 +68,57 @@ void cas_send_msg ( struct client *pclient, int lock_needed )
         SEND_LOCK ( pclient );
     }
 
-    if ( pclient->send.stk ) {
-
-        status = sendto (pclient->sock, pclient->send.buf, pclient->send.stk, 0,
-                        (struct sockaddr *)&pclient->addr, sizeof(pclient->addr));
-        if ( pclient->send.stk != (unsigned)status) {
-            if (status < 0) {
-                int anerrno;
-                char    buf[64];
-
-                anerrno = SOCKERRNO;
-
-                ipAddrToDottedIP (&pclient->addr, buf, sizeof(buf));
-
-                if(pclient->proto == IPPROTO_TCP) {
-                    if (    (anerrno!=SOCK_ECONNABORTED&&
-                            anerrno!=SOCK_ECONNRESET&&
-                            anerrno!=SOCK_EPIPE&&
-                            anerrno!=SOCK_ETIMEDOUT)||
-                            CASDEBUG>2){
-
-                        errlogPrintf (
-            "CAS: TCP send to \"%s\" failed because \"%s\"\n",
-                            buf, SOCKERRSTR(anerrno));
-                    }
-                    pclient->disconnect = TRUE;
-                }
-                else if (pclient->proto == IPPROTO_UDP) {
-                    errlogPrintf(
-            "CAS: UDP send to \"%s\" failed because \"%s\"\n",
-                            (int)buf,
-                            (int)SOCKERRSTR(anerrno));
-                }
-                else {
-                    assert (0);
-                }
+    while ( pclient->send.stk ) {
+        status = sendto ( pclient->sock, pclient->send.buf, pclient->send.stk, 0,
+                        (struct sockaddr *)&pclient->addr, sizeof(pclient->addr) );
+        if ( status >= 0 ) {
+            unsigned transferSize = (unsigned) status;
+            if ( transferSize >= pclient->send.stk ) {
+                pclient->send.stk = 0;
+                epicsTimeGetCurrent (&pclient->time_at_last_send);
+                break;
             }
-            else{
-                errlogPrintf(
-                "CAS: blk sock partial send: req %d sent %d \n",
-                    pclient->send.stk,
-                    status);
+            else {
+                unsigned bytesLeft = pclient->send.stk - transferSize;
+                memmove ( pclient->send.buf, &pclient->send.buf[transferSize], 
+                    bytesLeft );
+                pclient->send.stk = bytesLeft;
             }
         }
+        else {
+            int anerrno = SOCKERRNO;
+            char buf[64];
 
-        pclient->send.stk = 0;
-        epicsTimeGetCurrent (&pclient->time_at_last_send);
+            ipAddrToDottedIP ( &pclient->addr, buf, sizeof(buf) );
+
+            if(pclient->proto == IPPROTO_TCP) {
+                if (    (anerrno!=SOCK_ECONNABORTED&&
+                        anerrno!=SOCK_ECONNRESET&&
+                        anerrno!=SOCK_EPIPE&&
+                        anerrno!=SOCK_ETIMEDOUT)||
+                        CASDEBUG>2){
+
+                    errlogPrintf (
+        "CAS: TCP send to \"%s\" failed because \"%s\"\n",
+                        buf, SOCKERRSTR(anerrno));
+                }
+                pclient->disconnect = TRUE;
+            }
+            else if (pclient->proto == IPPROTO_UDP) {
+                errlogPrintf(
+        "CAS: UDP send to \"%s\" failed because \"%s\"\n",
+                        (int)buf,
+                        (int)SOCKERRSTR(anerrno));
+            }
+            else {
+                assert (0);
+            }
+            pclient->send.stk = 0u;
+            break;
+        }
     }
 
-    if(lock_needed){
+    if ( lock_needed ) {
         SEND_UNLOCK(pclient);
     }
 

@@ -71,9 +71,7 @@
 # configure/os/CONFIG_SITE.<host>.Common files will
 # override 
 #
-CROSS_COMPILER_TARGET_ARCHS=
-#CROSS_COMPILER_TARGET_ARCHS= vxWorks-68040
-
+CROSS_COMPILER_TARGET_ARCHS=vxWorks-68040
 
 #  If only a subset of the host architectures perform
 #  the build for the CROSS_COMPILER_TARGET_ARCHS

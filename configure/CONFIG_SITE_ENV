@@ -35,7 +35,7 @@
 #                EU: Mar 30 - Oct 26
 # EPICS_TS_NTP_INET ntp or Unix time server ip addr.
 
-EPICS_TIMEZONE=CUS::360:040602:102602
+EPICS_TIMEZONE=CUS::360:040603:102603
 EPICS_TS_NTP_INET=
 
 

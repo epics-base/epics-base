@@ -126,8 +126,7 @@ static int firstTime = 1;
 static int hexmode = 1;
 static SEM_ID	msgReply;
 
-int
-GI()
+int GI(void)
 {
   unsigned char	ans;
   int	cnt;
@@ -222,8 +221,7 @@ GI()
   return(0);
 }                       /* end of main */
 
-static int
-timingStudy()
+static int timingStudy(void)
 {
   struct gpibIntCmd *pCmd[LIST_SIZE];
   int	inInt;          /* input integer from operator */
@@ -245,6 +243,17 @@ timingStudy()
         pCmd[i] = &gpibIntCmds[inInt];    /* assign pointer to desired entry */
         pCmd[i]->busy = 0;		/* mark message 'not in queue' */
 	pCmd[i]->count = 0;
+
+        if (pCmd[i]->linkId < MVME162_LINK_NUM_BASE)
+        {
+          (*(drvGpib.ioctl))(pCmd[i]->linkType, pCmd[i]->linkId, pCmd[i]->bug, IBGENLINK, 0, NULL);
+          (*(drvGpib.ioctl))(pCmd[i]->linkType, pCmd[i]->linkId, pCmd[i]->bug, IBGETLINK, 0, &(pCmd[i]->head.pibLink));
+        }
+        else
+        {
+          drv162IB_InitLink(pCmd[i]->linkId);
+          drv162IB_GetLink(pCmd[i]->linkId, &(pCmd[i]->head.pibLink));
+        }
       }
       else
       {
@@ -269,9 +278,6 @@ timingStudy()
 
   startTime = tickGet();	/* time the looping started */
 
-  (*(drvGpib.ioctl))(pCmd[i]->linkType, pCmd[i]->linkId, pCmd[i]->bug, IBGENLINK, 0, NULL);
-  (*(drvGpib.ioctl))(pCmd[i]->linkType, pCmd[i]->linkId, pCmd[i]->bug, IBGETLINK, 0, &(pCmd[i]->head.pibLink));
-
   while(reps)
   {
     for(i=0; i<LIST_SIZE && reps; i++)
@@ -282,7 +288,12 @@ timingStudy()
         {
 	  pCmd[i]->count++;
 	  pCmd[i]->busy = 1;	/* mark the xact as busy */
-          (*(drvGpib.qGpibReq))(pCmd[i], IB_Q_LOW);
+
+          if (pCmd[i]->linkId < MVME162_LINK_NUM_BASE)
+            (*(drvGpib.qGpibReq))(pCmd[i], IB_Q_LOW);
+          else
+            drv162IB_QueueReq(pCmd[i], IB_Q_LOW);
+
 	  reps--;
 	  if (reps%10000 == 0)
 	  {
@@ -328,8 +339,7 @@ timingStudy()
 /* sendMsg() ***************************************************
  */
 
-static int
-sendMsg()
+static int sendMsg(void)
 {
   struct gpibIntCmd *pCmd;
   int             inInt;          /* input integer from operator */
@@ -339,9 +349,9 @@ sendMsg()
 
   printf("\nEnter Message # to Send (1 thru 5) > ");
   if (!getInt(&inInt))
-    return;             /* if no entry, return to main menu */
+    return(-1);             /* if no entry, return to main menu */
   if((inInt >= LIST_SIZE) || (inInt < 0))
-    return;
+    return(-1);
 
   msgNum = inInt;
   pCmd = &gpibIntCmds[msgNum];    /* assign pointer to desired entry */
@@ -349,9 +359,18 @@ sendMsg()
   replyIsBack = FALSE;
   ticks = 0;
 
-  (*(drvGpib.ioctl))(pCmd->linkType, pCmd->linkId, pCmd->bug, IBGENLINK, 0, NULL);
-  (*(drvGpib.ioctl))(pCmd->linkType, pCmd->linkId, pCmd->bug, IBGETLINK, 0, &(pCmd->head.pibLink));
-  (*(drvGpib.qGpibReq))(pCmd, IB_Q_LOW); /* queue the msg */
+  if (pCmd->linkId < MVME162_LINK_NUM_BASE)
+  {
+    (*(drvGpib.ioctl))(pCmd->linkType, pCmd->linkId, pCmd->bug, IBGENLINK, 0, NULL);
+    (*(drvGpib.ioctl))(pCmd->linkType, pCmd->linkId, pCmd->bug, IBGETLINK, 0, &(pCmd->head.pibLink));
+    (*(drvGpib.qGpibReq))(pCmd, IB_Q_LOW); /* queue the msg */
+  }
+  else
+  {
+    drv162IB_InitLink(pCmd->linkId);
+    drv162IB_GetLink(pCmd->linkId, &(pCmd->head.pibLink));
+    drv162IB_QueueReq(pCmd, IB_Q_LOW);
+  }
 
   while (!replyIsBack && (ticks < maxTicks))      /* wait for reply msg */
   {
@@ -366,14 +385,13 @@ sendMsg()
   else
     printf("No Reply Received ...\n");
 
+  return(0);
 }
 
-static int
-gpibWork(pCmd)
-struct gpibIntCmd *pCmd;
+static int gpibWork(struct gpibIntCmd *pCmd)
 {
-char    msgBuf[MAX_MSG_LENGTH + 1];
-int     status;
+  char    msgBuf[MAX_MSG_LENGTH + 1];
+  int     status;
 
   if (GIDebug || ibDebug)
     logMsg("GI's gpibWork() was called for command >%s<\n", pCmd->cmd);
@@ -381,7 +399,11 @@ int     status;
   switch (pCmd->type) {
     case 'w':
     case 'W':         /* write the message to the GPIB listen adrs */
-      status =(*(drvGpib.writeIb))(pCmd->head.pibLink, pCmd->head.device, pCmd->cmd, strlen(pCmd->cmd), GITime);
+      if (pCmd->linkId < MVME162_LINK_NUM_BASE)
+        status =(*(drvGpib.writeIb))(pCmd->head.pibLink, pCmd->head.device, pCmd->cmd, strlen(pCmd->cmd), GITime);
+      else
+        status = drv162IB_write(pCmd->head.pibLink, pCmd->head.device, pCmd->cmd, strlen(pCmd->cmd), GITime);
+
       if (status == ERROR)
 	strcpy(pCmd->resp, "GPIB TIMEOUT (while talking)");
       else
@@ -389,15 +411,25 @@ int     status;
       break;
     case 'r':
     case 'R':               /* write the command string */
-      status = (*(drvGpib.writeIb))(pCmd->head.pibLink, pCmd->head.device, pCmd->cmd, strlen(pCmd->cmd), GITime);
+      if (pCmd->linkId < MVME162_LINK_NUM_BASE)
+        status = (*(drvGpib.writeIb))(pCmd->head.pibLink, pCmd->head.device, pCmd->cmd, strlen(pCmd->cmd), GITime);
+      else
+        status = drv162IB_write(pCmd->head.pibLink, pCmd->head.device, pCmd->cmd, strlen(pCmd->cmd), GITime);
+
       if (status == ERROR)
       {
         strcpy(pCmd->resp, "GPIB TIMEOUT (while talking)");
         break;
       }
+      /* fall thru into the reading protion below */
+    case 'I':
+    case 'i':
       /* read the instrument  */
       pCmd->resp[0] = 0;          /* clear response string */
-      status = (*(drvGpib.readIb))(pCmd->head.pibLink, pCmd->head.device, pCmd->resp, MAX_MSG_LENGTH, GITime);
+      if (pCmd->linkId < MVME162_LINK_NUM_BASE)
+        status = (*(drvGpib.readIb))(pCmd->head.pibLink, pCmd->head.device, pCmd->resp, MAX_MSG_LENGTH, GITime);
+      else
+        status = drv162IB_read(pCmd->head.pibLink, pCmd->head.device, pCmd->resp, MAX_MSG_LENGTH, GITime);
 
       if (status == ERROR)
       {
@@ -487,20 +519,26 @@ configMsg()
     pCmd->head.device = inInt;
   }
 
-  printf("\nenter command type R, W, C [%c] > ", pCmd->type);
+  printf("\nenter command type R, W, C, I [%c] > ", pCmd->type);
   if (getChar(&inChar) == 1)
     pCmd->type = inChar;
-
-  if (hexmode)
+ 
+  if ((pCmd->type != 'I') && (pCmd->type != 'i'))
   {
-    printf("\nEnter string to send (no quotes)\n");
-    hexDump(pCmd->cmd, 0);
+    if (hexmode)
+    {
+      printf("\nEnter string to send (no quotes)\n");
+      hexDump(pCmd->cmd, 0);
+    }
+    else
+      printf("\nenter string to send (no quotes) [%.80s] > ", pCmd->cmd);
+
+    if (getString(inString) == 1)
+      strcpy(pCmd->cmd, inString);
   }
   else
-    printf("\nenter string to send (no quotes) [%.80s] > ", pCmd->cmd);
+    pCmd->cmd[0] = 0;
 
-  if (getString(inString) == 1)
-    strcpy(pCmd->cmd, inString);
   pCmd->resp[0]= 0;       /* clear response string */
   
   showGpibMsg(msgNum);

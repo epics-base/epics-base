@@ -2,7 +2,6 @@ recordtype(mbbiDirect) {
 	include "dbCommon.dbd" 
 	field(VAL,DBF_USHORT) {
 		prompt("Current Value")
-		special(SPC_NOMOD)
 		asl(ASL0)
 		pp(TRUE)
 	}

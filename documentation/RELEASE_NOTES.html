@@ -12,6 +12,11 @@
 
 <h2 align="center">Changes since 3.14.6</h2>
 
+<h4>epicsStdlib.h/epicsStrtod()</h4>
+<p>epicsStdlib.h declares epicsStrtod() which provides a version of
+strtod which handles NAN/INF on all architectures.  All uses of strtod() in
+base have been converted to use epicsStrtod().</p>
+
 <h4>epicsThreadCreate Stacksize Posix</h4>
 <p>The posix implementation of epicsThreadCreate now makes pthread
 calls to set the stack size. The sizes for (small,medium,large) stack

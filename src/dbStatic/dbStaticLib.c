@@ -10,7 +10,6 @@
 /*dbStaticLib.c*/
 /* share/src/db @(#)dbStaticLib.c	1.21     7/11/94 */
 
-#include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
 #include <limits.h>
@@ -32,6 +31,7 @@
 #include "dbmf.h"
 #include "postfix.h"
 #include "osiFileName.h"
+#include "epicsStdlib.h"
 #include "epicsStdioRedirect.h"
 
 #define epicsExportSharedSymbols
@@ -2101,9 +2101,9 @@ long epicsShareAPI dbPutString(DBENTRY *pdbentry,const char *pstring)
                     long        templong;
 
 		    /* Check first to see if string is a constant*/
-		    /*It is a string if strtod or strtol eats entire string*/
+		    /*It is a string if epicsStrtod or strtol eats entire string*/
 		    /*leading and trailing blanks have already been stripped*/
-		    tempdouble = strtod(pstr,&enddouble);
+		    tempdouble = epicsStrtod(pstr,&enddouble);
 		    templong = strtol(pstr,&endlong,0);
 		    if((*enddouble == 0) || (*endlong == 0)) {
 			if(plink->type==PV_LINK) dbCvtLinkToConstant(pdbentry);
@@ -2466,7 +2466,7 @@ char * epicsShareAPI dbVerify(DBENTRY *pdbentry,const char *pstring)
 	    double value;
 	    char  *endp;
 
-	    value = strtod(pstring,&endp);
+	    value = epicsStrtod(pstring,&endp);
 	    if(*endp!=0) {
 		strcpy(message,"not a number");
 		return(message);
@@ -3095,7 +3095,7 @@ long epicsShareAPI dbPutForm(DBENTRY *pdbentry,char **value)
     case FORM_CONSTANT: 
 	**verify = 0; /*Initialize to no error*/
 	if(**value == '\0') break;
-	dvalue = strtod(*value,&endp);
+	dvalue = epicsStrtod(*value,&endp);
 	if(*endp!=0) {
 	    strcpy(*verify,"Illegal. Must be number");
 	    break;

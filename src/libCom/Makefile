@@ -119,6 +119,7 @@ INC += cantProceed.h
 INC += dbDefs.h
 INC += epicsConvert.h
 INC += epicsExit.h
+INC += epicsStdlib.h
 INC += epicsString.h
 INC += epicsTypes.h
 INC += gsd_sync_defs.h
@@ -134,6 +135,7 @@ SRCS += cantProceed.c
 SRCS += epicsConvert.c
 SRCS += epicsExit.c
 SRCS += epicsString.c
+SRCS += epicsStrtod.c
 SRCS += truncateFile.c
 SRCS += ipAddrToAsciiAsynchronous.cpp
 
@@ -151,6 +153,7 @@ INC += epicsEvent.h
 INC += osdEvent.h
 INC += epicsMath.h
 INC += osdMessageQueue.h
+INC += osdStrtod.h
 
 INC += epicsAssert.h
 INC += epicsFindSymbol.h

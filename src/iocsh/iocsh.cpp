@@ -14,7 +14,6 @@
 
 #include <stddef.h>
 #include <string.h>
-#include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <errno.h>
@@ -24,6 +23,7 @@
 #include "macLib.h"
 #include "epicsStdio.h"
 #include "epicsString.h"
+#include "epicsStdlib.h"
 #include "epicsThread.h"
 #include "epicsMutex.h"
 #include "envDefs.h"
@@ -247,7 +247,7 @@ cvtArg (const char *filename, int lineno, char *arg, iocshArgBuf *argBuf, const 
 
     case iocshArgDouble:
         if (arg && *arg) {
-            argBuf->dval = strtod (arg, &endp);
+            argBuf->dval = epicsStrtod (arg, &endp);
             if (*endp) {
                 showError (filename, lineno, "Illegal double `%s'", arg);
                 return 0;
@@ -822,7 +822,7 @@ static void varHandler(const iocshVarDef *v, const char *setString)
         case iocshArgDouble:
           {
             char *endp;
-            double dtmp = strtod(setString, &endp);
+            double dtmp = epicsStrtod(setString, &endp);
             if((*setString != '\0') && (*endp == '\0'))
                 *(double *)v->pval = dtmp;
             else

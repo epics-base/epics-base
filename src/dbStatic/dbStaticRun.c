@@ -10,7 +10,6 @@
 /*dbStaticLibRun.c*/
 
 #include <stddef.h>
-#include <stdlib.h>
 #include <stdio.h>
 #include <limits.h>
 #include <string.h>
@@ -22,6 +21,7 @@
 #include "ellLib.h"
 #include "cvtFast.h"
 #include "epicsTypes.h"
+#include "epicsStdlib.h"
 
 #define epicsExportSharedSymbols
 #include "dbBase.h"
@@ -364,7 +364,7 @@ epicsShareFunc int epicsShareAPI dbIsDefaultValue(DBENTRY *pdbentry)
 	    double	dtemp;
 
 	    if(pflddes->initial)  {
-		dtemp = strtod(pflddes->initial,NULL);
+		dtemp = epicsStrtod(pflddes->initial,NULL);
 		return((field==dtemp));
 	    }
 	    return((field==0.0));
@@ -374,7 +374,7 @@ epicsShareFunc int epicsShareAPI dbIsDefaultValue(DBENTRY *pdbentry)
 	    double	dtemp;
 
 	    if(pflddes->initial)  {
-		dtemp = strtod(pflddes->initial,NULL);
+		dtemp = epicsStrtod(pflddes->initial,NULL);
 		return((field==dtemp));
 	    }
 	    return((field==0.0));
@@ -570,7 +570,7 @@ long dbPutStringNum(DBENTRY *pdbentry,const char *pstring)
 	    double value;
 	    char  *endp;
 
-	    value = strtod(pstring,&endp);
+	    value = epicsStrtod(pstring,&endp);
 	    if(*endp!=0) status = S_dbLib_badField;
 	    if(pflddes->field_type==DBF_FLOAT)
 	    	*(float *)pfield = value;

@@ -17,8 +17,8 @@
  */
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
+#include <epicsStdlib.h>
 
 #include <cadef.h>
 #include <epicsGetopt.h>
@@ -349,7 +349,7 @@ int main (int argc, char *argv[])
         if (enumAsNr) {         /* Interpret values as numbers */
 
             for (i = 0; i < count; ++i) {
-                dbuf[i] = strtod(*(argv+optind+i), &pend);
+                dbuf[i] = epicsStrtod(*(argv+optind+i), &pend);
                 if (*(argv+optind+i) == pend) { /* Conversion didn't work */
                     fprintf(stderr, "Enum index value '%s' is not a number.\n",
                             *(argv+optind+i));
@@ -377,7 +377,7 @@ int main (int argc, char *argv[])
 
                 if (len >= bufGrEnum.no_str) {
                                          /* Not a string? Try as number */
-                    dbuf[i] = strtod(*(argv+optind+i), &pend);
+                    dbuf[i] = epicsStrtod(*(argv+optind+i), &pend);
                     if (*(argv+optind+i) == pend || enumAsString) {
                         fprintf(stderr, "Enum string value '%s' invalid.\n",
                                 *(argv+optind+i));

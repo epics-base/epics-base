@@ -61,6 +61,8 @@ typedef void (*iocshCallFunc)(const iocshArgBuf *argBuf);
 
 epicsShareFunc void epicsShareAPI iocshRegister(
     const iocshFuncDef *piocshFuncDef, iocshCallFunc func);
+epicsShareFunc void epicsShareAPI iocshRegisterVariable (
+    const iocshVarDef *piocshVarDef);
 
 /* iocshFree frees storage used by iocshRegister*/
 /* This should only be called when iocsh is no longer needed*/

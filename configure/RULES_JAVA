@@ -69,6 +69,14 @@ JAR_OPTIONS = cvf
 endif
 
 #-------------------------------------------------------
+# Java doc  definitions
+ifeq ($(JAVADOC),YES)
+JAVADOCFLAGS += $(USR_JAVADOCFLAGS)
+JAVADOCCMD = $(subst \,/,$(JAVA_BIN)/javadoc$(EXE) $(CLASSPATH) $(SOURCEPATH) $(JAVADOCFLAGS))
+INSTALL_JAVADOC = $(CLASSES:%.class=$(INSTALL_HTML)/%.html)
+endif
+
+#-------------------------------------------------------
 # Java rules
 
 all:    install
@@ -85,12 +93,12 @@ build: inc
 
 build:  $(COMMON_TESTCLASSES) $(COMMON_JAR)
 
-buildInstall : $(INSTALL_JAR)
+buildInstall : $(INSTALL_JAR) $(INSTALL_JAVADOC)
 
 #This clean works only from O.* dirs.
 clean:: 
 	@$(RMDIR) $(INSTALL_CLASSES)
-	@$(RM) $(INSTALL_JAR)
+	@$(RM) $(INSTALL_JAR) $(INSTALL_JAVADOC)
 	@$(RM) $(COMMON_TESTCLASSES) $(COMMON_JAR) $(COMMON_JAVAINC)
 
 $(JAVA_DIRECTORY_TARGETS):
@@ -107,6 +115,11 @@ $(COMMON_TESTCLASSES): $(addprefix ../,$(DEPTESTJAVA))
 	$(JAVACCMD) -d $(COMMON_DIR) $^
 
 $(INSTALL_CLASSES): $(addprefix ../,$(DEPJAVA))
+	@echo Creating java class files 
+	@$(RM) $@
+	$(JAVACCMD) -d $(INSTALL_JAVA) $^
+
+$(INSTALL_JAVADOC): $(addprefix ../,$(DEPJAVA))
 	@echo Creating java class files 
 	@$(RM) $@
 	$(JAVACCMD) -d $(INSTALL_JAVA) $^

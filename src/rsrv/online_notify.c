@@ -138,7 +138,8 @@ int rsrv_online_notify_task()
 		abort();
 
    	bfill((char *)&msg, sizeof msg, 0);
-	msg.m_cmmd = htons(CA_PROTO_RSRV_IS_UP);
+	msg.m_cmmd = htons (CA_PROTO_RSRV_IS_UP);
+	msg.m_count = htons (ca_server_port);
 
 	ellInit(&beaconAddrList);
 

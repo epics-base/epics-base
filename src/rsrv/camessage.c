@@ -1490,7 +1490,7 @@ db_field_log		*pfl
 		 * assert() is safe here because the type was
 		 * checked by db_get_field()
 		 */
-		assert (mp->m_type < NELEMENTS(cac_dbr_cvrt));
+		assert (pevext->msg.m_type < NELEMENTS(cac_dbr_cvrt));
 
 		/* use type as index into conversion jumptable */
 		(* cac_dbr_cvrt[pevext->msg.m_type])

@@ -1513,6 +1513,8 @@ unsigned long cacRingBufferWriteSize(struct ca_buffer *pBuf, int contiguous)
  * vxWorks user will need to configure a DNS format name for the
  * host name if they wish to be cnsistent with UNIX and VMS hosts.
  *
+ * this needs to attempt to determine if the process is a remote 
+ * login - hard to do under UNIX
  */
 char *localHostName()
 {

@@ -72,6 +72,7 @@
 /*	050492	joh	batch up flow control messages by setting a	*/
 /*			send_needed flag				*/
 /*	060392	joh	added ca_host_name()				*/
+/*	072792	joh	better messages					*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -481,7 +482,7 @@ ca_add_task_variable()
 	int             status;
 
 #	if DEBUG
-		ca_printf("adding task variable\n");
+		ca_printf("CAC: adding task variable\n");
 #	endif
 
 	/*
@@ -501,7 +502,7 @@ ca_add_task_variable()
 		 * in a task exit handler.
 		 */
 #		if DEBUG
-			ca_printf("adding the CA delete hook\n");
+			ca_printf("CAC: adding delete hook\n");
 #		endif
 
 #		ifdef V5_vxWorks
@@ -561,7 +562,7 @@ ca_task_exit_tcb(ptcb)
 WIND_TCB 	*ptcb;
 {
 #	if DEBUG
-		ca_printf("entering the exit handler %x\n", ptcb);
+		ca_printf("CAC: entering the exit handler %x\n", ptcb);
 #	endif
 
 	/*
@@ -611,7 +612,7 @@ ca_process_exit()
 #endif
 
 #	ifdef DEBUG
-		ca_printf("entering the exit handler 2 %x\n", tid);
+		ca_printf("CAC: entering the exit handler 2 %x\n", tid);
 #	endif
 
 #	if defined(vxWorks)
@@ -626,12 +627,12 @@ ca_process_exit()
 
 		if (ca_temp == (struct ca_static *) ERROR){
 #			if DEBUG
-				ca_printf("task variable lookup failed\n");
+				ca_printf("CAC: task variable lookup failed\n");
 #			endif
 			return;
 		}
 #		if DEBUG
-			ca_printf(	"exit handler with ca_static = %x\n", 
+			ca_printf(	"CAC: exit handler with ca_static = %x\n", 
 				ca_static);
 #		endif
 #	else
@@ -2312,7 +2313,7 @@ char		*message;
   }
 
   ca_printf(
-"CA.Diagnostic.....................................................\n");
+"CA.Client.Diagnostic..............................................\n");
 
   ca_printf(
 "    Message: [%s]\n", ca_message_text[CA_EXTRACT_MSG_NO(ca_status)]);

@@ -21,7 +21,6 @@ EXE =
 OBJ = .o
 LIB_PREFIX =lib
 LIB_SUFFIX = .a
-SHRLIB_SUFFIX = .so$(addprefix .,$(SHRLIB_VERSION))
 MUNCH_SUFFIX = .munch
 
 #-------------------------------------------------------

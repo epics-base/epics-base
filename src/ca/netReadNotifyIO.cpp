@@ -79,7 +79,14 @@ void netReadNotifyIO::completion ( unsigned type,
 #   if defined (_MSC_VER) && _MSC_VER <= 1300
     void netReadNotifyIO::operator delete ( void * ) // avoid visual c++ 7 bug
     {
-        throw std::logic_error ( "_MSC_VER == 1300 bogus stub called?" );
+        throw std::logic_error ( "bogus operator delete called?" );
+    }
+#   endif
+
+#   if __GNUC__==2 && __GNUC_MINOR_<=96 
+    void netReadNotifyIO::operator delete ( void *, size_t ) // avoid gnu g++ bug
+    {
+        throw std::logic_error ( "bogus operator delete called?" );
     }
 #   endif
 

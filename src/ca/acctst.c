@@ -1384,6 +1384,9 @@ int acctst ( char *pName, unsigned channelCount, unsigned repetitionCount )
     pend_event_delay_test ( 0.1 );
     pend_event_delay_test ( 0.25 ); 
 
+    /* ca_channel_status ( 0 ); */
+    ca_client_status ( 0u );
+
     caTaskExistTest ();
 
     printf ( "\nTest Complete\n" );

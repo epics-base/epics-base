@@ -3,33 +3,45 @@
 #  This file is maintained by the EPICS community.
 
 # BUILD_TYPE
-#   Currently either Vx or Unix
-BUILD_TYPE = Unix
+#   Currently either Vx or Host
+BUILD_TYPE = Host
+
+ARCH_CLASS = alpha
 
 # Compiler and utility invocation (supply path to compiler here)
 #   (with warning flags built in)
 #  Paths to compilers
 GCC = gcc
-ACC = cc -std
-TRADCC = cc -traditional
-AR = ar 
-ARCMD = $(AR) $(ARFLAGS)
+ACC = cc
+
+AR = ar -rc
+_AR = $(AR) $(ARFLAGS)
+G++_AR = $(_AR)
+CCC_AR = $(AR)
+ARCMD = $($(CPLUSPLUS)_AR)
+
 RANLIB = ranlib
 YACC = $(EYACC)
 LEX = $(ELEX)
 G++ = g++
-CCC = CC
+CCC = cc
+
+CP=cp
 MV = mv
+RM=rm -f
 RMDIR = rm -rf
 MKDIR = mkdir
 CHMOD = "/bin/chmod"
+EXE=
+OBJ=.o
 
-ACC_ANSI_INVOKE_W_NO = $(ACC) -w
-ACC_ANSI_INVOKE_W_YES = $(ACC)
-ACC_STRICT_INVOKE_W_YES = $(ACC) -stdl -w
-ACC_STRICT_INVOKE_W_NO = $(ACC) -stdl
-ACC_TRAD_INVOKE_W_NO = $(ACC) -w
-ACC_TRAD_INVOKE_W_YES = $(ACC)
+
+ACC_ANSI_INVOKE_W_NO = $(ACC) -std -w
+ACC_ANSI_INVOKE_W_YES = $(ACC) -std
+ACC_STRICT_INVOKE_W_YES = $(ACC) -std1 -w
+ACC_STRICT_INVOKE_W_NO = $(ACC) -std1
+ACC_TRAD_INVOKE_W_NO = $(ACC) -std0 -w
+ACC_TRAD_INVOKE_W_YES = $(ACC) -std0
 GCC_ANSI_INVOKE_W_NO = $(GCC) -ansi -w
 GCC_ANSI_INVOKE_W_YES = $(GCC) -ansi
 GCC_STRICT_INVOKE_W_NO = $(GCC) -ansi -pedantic
@@ -89,8 +101,11 @@ SPECIAL_LDFLAGS =
 UNIX_LDFLAGS = -L$(EPICS_BASE_LIB)
 UNIX_LDLIBS = -lm
  
-ARCH_DEP_CFLAGS = -D_OSF_SOURCE -DLITTLE_ENDIAN
+# Architecture specific build flags
+ARCH_DEP_CFLAGS = -D_OSF_SOURCE
 ARCH_DEP_CXXFLAGS = $(ARCH_DEP_CFLAGS)
+ARCH_DEP_LDLIBS = -lnsl
+
 UNIX_CFLAGS = $(UNIX_SFLAGS) $(UNIX_INCLUDES) $(OP_SYS_FLAGS)
  
 UNIX_CXXFLAGS = $(UNIX_CFLAGS)
@@ -113,8 +128,9 @@ LDLIBS = $(TARGET_LDLIBS) $(USR_LDLIBS) $(ARCH_DEP_LDLIBS) $(UNIX_LDLIBS)
 # Override defaults
 COMPILE.c = $(CC) $(CFLAGS) $(CPPFLAGS) -c
 COMPILE.cc = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -c
-LINK.c = $(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
-LINK.cc = $(CXX) $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS)
+# Unlike the 'Unix' makesystem, output flags -o .. are now part of LINK.c[c]
+LINK.c = $(CC) -o $@ $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
+LINK.cc = $(CXX) -o $@ $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS)
 
 DEPEND_RULE.c = @echo no DEPENDS_RULE.c defined in CONFIG.alpha
 DEPEND_RULE.cc = @echo no DEPENDS_RULE.cc defined in CONFIG.alpha

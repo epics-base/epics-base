@@ -53,7 +53,6 @@ LIBOBJS += $(EPICS_BASE_BIN)/waveformRecord.o
 LIBOBJS += $(EPICS_BASE_BIN)/devAiSoft.o
 LIBOBJS += $(EPICS_BASE_BIN)/devAiSoftRaw.o
 #LIBOBJS += $(EPICS_BASE_BIN)/devVXStats.o
-LIBOBJS += $(EPICS_BASE_BIN)/devAiSymb.o
 LIBOBJS += $(EPICS_BASE_BIN)/devAiTestAsyn.o
 #LIBOBJS += $(EPICS_BASE_BIN)/devAiXy566Di.o
 #LIBOBJS += $(EPICS_BASE_BIN)/devAiXy566DiL.o
@@ -62,7 +61,6 @@ LIBOBJS += $(EPICS_BASE_BIN)/devAiTestAsyn.o
 #LIBOBJS += $(EPICS_BASE_BIN)/devAoCamac.o
 LIBOBJS += $(EPICS_BASE_BIN)/devAoSoft.o
 LIBOBJS += $(EPICS_BASE_BIN)/devAoSoftRaw.o
-LIBOBJS += $(EPICS_BASE_BIN)/devAoSymb.o
 LIBOBJS += $(EPICS_BASE_BIN)/devAoTestAsyn.o
 #LIBOBJS += $(EPICS_BASE_BIN)/devAoVmiVme4100.o
 #LIBOBJS += $(EPICS_BASE_BIN)/devApsEg.o
@@ -90,10 +88,8 @@ LIBOBJS += $(EPICS_BASE_BIN)/devHistogramTestAsyn.o
 #LIBOBJS += $(EPICS_BASE_BIN)/devHpe1368a.o
 #LIBOBJS += $(EPICS_BASE_BIN)/devLiCamac.o
 LIBOBJS += $(EPICS_BASE_BIN)/devLiSoft.o
-LIBOBJS += $(EPICS_BASE_BIN)/devLiSymb.o
 #LIBOBJS += $(EPICS_BASE_BIN)/devLoCamac.o
 LIBOBJS += $(EPICS_BASE_BIN)/devLoSoft.o
-LIBOBJS += $(EPICS_BASE_BIN)/devLoSymb.o
 #LIBOBJS += $(EPICS_BASE_BIN)/devMbbiCamac.o
 #LIBOBJS += $(EPICS_BASE_BIN)/devMbbiDirectCamac.o
 #LIBOBJS += $(EPICS_BASE_BIN)/devMbbiDirectMpv910.o
@@ -120,12 +116,10 @@ LIBOBJS += $(EPICS_BASE_BIN)/devMbboTestAsyn.o
 LIBOBJS += $(EPICS_BASE_BIN)/devPtSoft.o
 LIBOBJS += $(EPICS_BASE_BIN)/devSASoft.o
 LIBOBJS += $(EPICS_BASE_BIN)/devSiSoft.o
-LIBOBJS += $(EPICS_BASE_BIN)/devSiSymb.o
 LIBOBJS += $(EPICS_BASE_BIN)/devSiTestAsyn.o
 #LIBOBJS += $(EPICS_BASE_BIN)/devSmCompumotor1830.o
 #LIBOBJS += $(EPICS_BASE_BIN)/devSmOms6Axis.o
 LIBOBJS += $(EPICS_BASE_BIN)/devSoSoft.o
-LIBOBJS += $(EPICS_BASE_BIN)/devSoSymb.o
 LIBOBJS += $(EPICS_BASE_BIN)/devSoTestAsyn.o
 #LIBOBJS += $(EPICS_BASE_BIN)/devTimerMz8310.o
 #LIBOBJS += $(EPICS_BASE_BIN)/devWfCamac.o
@@ -146,7 +140,6 @@ LIBOBJS += $(EPICS_BASE_BIN)/devWfTestAsyn.o
 #LIBOBJS += $(EPICS_BASE_BIN)/devABSLCDCM.o
 #LIBOBJS += $(EPICS_BASE_BIN)/devABBINARY.o
 #LIBOBJS += $(EPICS_BASE_BIN)/devABStatus.o
-#LIBOBJS += $(EPICS_BASE_BIN)/devMpc.o
 
 #LIBOBJS += $(EPICS_BASE_BIN)/devAiCan.o
 #LIBOBJS += $(EPICS_BASE_BIN)/devAoCan.o
@@ -157,6 +150,14 @@ LIBOBJS += $(EPICS_BASE_BIN)/devWfTestAsyn.o
 #LIBOBJS += $(EPICS_BASE_BIN)/devMbbiDirectCan.o
 #LIBOBJS += $(EPICS_BASE_BIN)/devMbboDirectCan.o
 #LIBOBJS += $(EPICS_BASE_BIN)/devVmic2534.o
+
+LIBOBJS += $(EPICS_BASE_BIN)/devAiSymb.o
+LIBOBJS += $(EPICS_BASE_BIN)/devAoSymb.o
+LIBOBJS += $(EPICS_BASE_BIN)/devLiSymb.o
+LIBOBJS += $(EPICS_BASE_BIN)/devLoSymb.o
+LIBOBJS += $(EPICS_BASE_BIN)/devSiSymb.o
+LIBOBJS += $(EPICS_BASE_BIN)/devSoSymb.o
+
 #
 # Driver support ANSI
 #

@@ -4,10 +4,6 @@
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
   <title>EPICS R3.14 Channel Access Reference Manual</title>
-  <link href="CommandTools">
-  <link href="#CommandTools">
-  <style type="text/css">
-  </style>
 </head>
 
 <body lang="en" bgcolor="#FFFFFF">
@@ -15,21 +11,27 @@
 
 <h1>EPICS R3.14 Channel Access Reference Manual</h1>
 <address>
-  Jeffrey O. Hill<br>
-
+  Jeffrey O. Hill
 </address>
 
-<p><font size="2">Los Alamos National Laboratory</font></p>
+<p><font size="2">Los Alamos National Laboratory<br>
+SNS Division</font></p>
+<address>
+  Ralph Lange
+</address>
 
-<p>SNS Division<font size="2"></font></p>
+<p><font size="2">BESSY</font></p>
 
 <p><font size="1">Copyright © 2002 The University of Chicago, as Operator of
 Argonne National Laboratory.<br>
 Copyright © 2002 The Regents of the University of California, as Operator of
 Los Alamos National Laboratory.<br>
-EPICS BASE Versions 3.13.7 and higher are distributed subject to a Software
-License Agreement found in the file LICENSE that is included with this
-distribution.</font></p>
+Copyright © 2002 Berliner Elektronenspeicherringgesellschaft für
+Synchrotronstrahlung.</font></p>
+
+<p><font size="1">EPICS BASE Versions 3.13.7 and higher are distributed
+subject to a Software License Agreement found in the file LICENSE that is
+included with this distribution.</font></p>
 
 <p><a href="http://www.w3.org/Amaya/"><img
 src="http://www.w3.org/Amaya/Icons/w3c-amaya.gif" alt="W3C-Amaya" height="31"
@@ -861,13 +863,12 @@ using command line options.</p>
   </thead>
   <tbody>
     <tr>
-      <td><p>-h</p>
-      </td>
+      <td>-h</td>
       <td>Print usage information</td>
     </tr>
     <tr>
       <td></td>
-      <td></td>
+      <td><strong>CA options:</strong></td>
     </tr>
     <tr>
       <td>-w &lt;sec&gt;</td>
@@ -879,7 +880,7 @@ using command line options.</p>
     </tr>
     <tr>
       <td></td>
-      <td>Format options:</td>
+      <td><strong>Format and data type options:</strong></td>
     </tr>
     <tr>
       <td></td>
@@ -1023,7 +1024,7 @@ using command line options.</p>
     </tr>
     <tr>
       <td></td>
-      <td>Arrays:</td>
+      <td><strong>Arrays:</strong></td>
     </tr>
     <tr>
       <td></td>
@@ -1040,7 +1041,7 @@ using command line options.</p>
     </tr>
     <tr>
       <td></td>
-      <td>Floating point type format:</td>
+      <td><strong>Floating point type format:</strong></td>
     </tr>
     <tr>
       <td>Default:</td>
@@ -1056,7 +1057,7 @@ using command line options.</p>
     </tr>
     <tr>
       <td></td>
-      <td>Integer number format:</td>
+      <td><strong>Integer number format:</strong></td>
     </tr>
     <tr>
       <td>Default:</td>
@@ -1082,7 +1083,30 @@ using command line options.</p>
 
 <h4>Description</h4>
 
-<p><span style="color: #FF5F00">Not implemented.</span></p>
+<p>Subscribe to and print value updates for PV(s).</p>
+
+<p><span style="color: #FF5F00">Not implemented yet. Under
+development.</span></p>
+
+<h3><a name="caput">caput</a></h3>
+<pre>caput [options] &lt;PV name&gt; &lt;value&gt;</pre>
+
+<h4>Description</h4>
+
+<p>Put value to a PV.</p>
+
+<p><span style="color: #FF5F00">Not implemented yet. Under
+development.</span></p>
+
+<h3><a name="cainfo">cainfo</a></h3>
+<pre>cainfo [options] &lt;PV name&gt; ...</pre>
+
+<h4>Description</h4>
+
+<p>Get and print channel and connection information for PV(s).</p>
+
+<p><span style="color: #FF5F00">Not implemented yet. Under
+development.</span></p>
 
 <h2><a name="Troublesho">Troubleshooting</a></h2>
 

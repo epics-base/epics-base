@@ -7,6 +7,9 @@ static char *sccsId = "@(#) $Id$";
 
 /*
  * $Log$
+ * Revision 1.48  1997/07/10 19:33:11  jhill
+ * improved CPU consumption by select() under vxWorks
+ *
  * Revision 1.47  1997/06/25 06:12:13  jhill
  * fixed warnings
  *
@@ -1000,7 +1003,7 @@ void pend_event_delay_test(dbr_double_t request)
 	tsLocalTime(&end_time);
 	TsDiffAsDouble(&delay,&end_time,&start_time);
 	accuracy = 100.0*(delay-request)/request;
-	printf("CA pend event delay = %f sec results in accuracy = %f %%\n",
+	printf("CA pend event delay = %f sec results in error = %f %%\n",
 		request, accuracy);
 	assert (fabs(accuracy) < 10.0);
 }
@@ -1070,6 +1073,13 @@ unsigned 	iterations)
 void null_event(struct event_handler_args args)
 {
 	unsigned	*pInc = (unsigned *) args.usr;
+	int status;
+
+	/*
+	 * no pend event in event call back test
+	 */
+	status = ca_pend_event(1e-6);
+	assert (status==ECA_EVDISALLOW);
 
 	if (pInc) {
 		(*pInc)++;

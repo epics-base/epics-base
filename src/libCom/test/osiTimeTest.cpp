@@ -12,7 +12,7 @@ int osiTimeTest (void);
 
 int osiTimeTest (void)
 {
-    unsigned i, error;
+    unsigned i, errors, sum_errors=0, sum_errloops=0;
     osiTime begin = osiTime::getCurrent();
     const unsigned wasteTime = 100000u;
     const int nTimes = 100;
@@ -35,9 +35,9 @@ int osiTimeTest (void)
         diff = end - begin;
 
         if (iTimes == 0) {
-		    printf ("Elapsed time per call to osiTime::getCurrent() "
-					"(%d calls) = %f12 sec\n\n", wasteTime,
-					diff/wasteTime);
+		    printf ("Time per call to osiTime::getCurrent() "
+					"(%d calls) = %6.3f usec\n\n", wasteTime,
+					diff*1e6/wasteTime);
 
 			stamp = begin;
 			ansiDate = begin;
@@ -62,56 +62,65 @@ int osiTimeTest (void)
 		}		   
 
         osiTime copy = end;
-		error = 0;
+		errors = 0;
 
         if (!(copy==end)) {
-			printf ("Loop #%3d: Failed test copy==end\n",iTimes);
-			error = 1;
+			printf ("#%3d: Failed copy==end by %12.9f\n",
+					iTimes, fabs(copy-end));
+			errors += 1;
 		}
 		if (!(copy<=end)) {
-			printf ("Loop #%3d: Failed test copy<=end %d\n",iTimes);
-			error = 1;
+			printf ("#%3d: Failed copy<=end by %12.9f\n",
+					iTimes, (copy-end));
+			errors += 1;
 		}
         if (!(copy>=end)) {
-			printf ("Loop #%3d: Failed test copy>=end %d\n",iTimes);
-			error = 1;
+			printf ("#%3d: Failed copy>=end by %12.9f\n",
+					iTimes, (end-copy));
+			errors += 1;
 		}
         if (!(end>begin)) {
-			printf ("Loop #%3d: Failed test end>begin %d\n",iTimes);
-			error = 1;
+			printf ("#%3d: Failed end>begin by %12.9f\n",
+					iTimes, (begin-end));
+			errors += 1;
 		}
 		if (!(end>=begin)) {
-			printf ("Loop #%3d: Failed test end>=begin %d\n",iTimes);
-			error = 1;
+			printf ("#%3d: Failed end>=begin by %12.9f\n",
+					iTimes, (begin-end));
+			errors += 1;
 		}
         if (!(begin<end)) {
-			printf ("Loop #%3d: Failed test begin<end %d\n",iTimes);
-			error = 1;
+			printf ("#%3d: Failed begin<end by %12.9f\n",
+					iTimes, (begin-end));
+			errors += 1;
 		}
         if (!(begin<=end)) {
-			printf ("Loop #%3d: Failed test begin<=end %d\n",iTimes);
-			error = 1;
+			printf ("#%3d: Failed begin<=end by %12.9f\n",
+					iTimes, (begin-end));
+			errors += 1;
 		}
         if (!(begin!=end)) {
-			printf ("Loop #%3d: Failed test begin!=end %d\n",iTimes);
-			error = 1;
+			printf ("#%3d: Failed begin!=end\n",iTimes);
+			errors += 1;
 		}
 		if (!(end-begin==diff)) {
-			printf ("Loop #%3d: Failed test end-begin==diff %d\n",iTimes);
-			error = 1;
+			printf ("#%3d: Failed end-begin==diff by %12.9f\n",
+					iTimes, fabs(end-begin-diff));
+			errors += 1;
 		}
 
         begin += diff;
-        if (!(begin==end) && (fabs(begin-end) > 1.0e-6)) {
-			printf ("Loop #%3d: Failed test (begin+=diff)==end by %12.9f\n",
+        if (!(begin==end)) {
+			printf ("#%3d: Failed (begin+=diff)==end by %12.9f\n",
 					iTimes, fabs(begin-end));
-			error = 1;
+			errors += 1;
 		}
 
         begin -= diff;
-        if (!(begin+diff==end) && (fabs(begin+diff-end) > 1.0e-6)) {
-			printf ("Loop #%3d: Failed test begin+diff==end\n",iTimes);
-			error = 1;
+        if (!(begin+diff==end)) {
+			printf ("#%3d: Failed begin+diff==end by %12.9f\n",
+					iTimes, fabs(begin+diff-end));
+			errors += 1;
 		}
 
         //
@@ -119,10 +128,11 @@ int osiTimeTest (void)
         //
         ansiDate = begin;
         begin = ansiDate;
-        if (!(begin+diff==end) && (fabs(begin+diff-end) > 1.0e-6)) {
-			printf ("Loop #%3d: Failed test begin+diff==end "
-					"after tm conversions\n",iTimes);
-			error = 1;
+        if (!(begin+diff==end)) {
+			printf ("#%3d: Failed begin+diff==end "
+					"after tm conversions by %12.9f\n",
+					iTimes, fabs(begin+diff-end));
+			errors += 1;
 		}
 
         //
@@ -130,19 +140,27 @@ int osiTimeTest (void)
         //
         ts = begin;
         begin = ts;
-        if (!(begin+diff==end) && (fabs(begin+diff-end) > 1.0e-6)) {
-			printf ("Loop #%3d: Failed test begin+diff==end "
-					"after timespec conversions\n",iTimes);
-			error = 1;
+        if (!(begin+diff==end)) {
+			printf ("#%3d: Failed begin+diff==end "
+					"after timespec conversions by %12.9f\n",
+					iTimes, fabs(begin+diff-end));
+			errors += 1;
 		}
 		
-		if (error) {
-			printf ("Loop #%3d: begin ", iTimes); begin.show(0);
-			printf ("Loop #%3d: end   ", iTimes); end.show(0);
-			printf ("Loop #%3d: diff  %12.9f\n\n", iTimes, diff);
+		if (errors) {
+			printf ("#%3d:   begin ", iTimes); begin.show(0);
+			printf ("#%3d:   end   ", iTimes); end.show(0);
+			printf ("#%3d:   diff  %12.9f\n\n", iTimes, diff);
+			sum_errors += errors;
+			sum_errloops += 1;
 		}
     }
-    return 0;
+
+	printf ("osiTime Test Summary: %d errors found "
+			"in %d out of %d loops.\n",
+			sum_errors, sum_errloops, nTimes);
+
+    return (sum_errors?1:0);
 }
 
 /* **************************** Emacs Editing Sequences ***************** */

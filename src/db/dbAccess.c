@@ -226,6 +226,38 @@ long dbScanPassive(struct dbCommon *pfrom,struct dbCommon *pto)
     }
     return(status);
 }
+
+/*KLUDGE: Following needed so that dbPutLink to PROC field works correctly*/
+static long dbScanLink(struct dbCommon *pfrom,struct dbCommon *pto)
+{
+    long status;
+	
+    if(pfrom && pfrom->ppn) {
+	PUTNOTIFY *ppn = pfrom->ppn;
+
+	if(pto->ppn) { /*already being used. Abandon request*/
+	    ppn->status = S_db_Blocked;
+	    dbNotifyCompletion(ppn);
+	} else {
+	    ppn->nwaiting++;
+	    pto->ppn = pfrom->ppn;
+	    /*If already active must redo*/
+	    if(pto->pact) ppn->rescan = TRUE;
+	}
+    }
+    status = dbProcess(pto);
+    if(pfrom && pfrom->ppn) {
+	PUTNOTIFY *ppn = pfrom->ppn;
+
+	if(!pto->pact) {
+	    pto->ppn = NULL;
+	} else { /*add to list of records for which to wait*/
+	    pto->ppnn = ppn->list;
+	    ppn->list = pto;
+	}
+    }
+    return(status);
+}
 
 long dbProcess(struct dbCommon *precord)
 {
@@ -424,11 +456,11 @@ long dbPutLink(
 	    /*if dbPutField caused asyn record to process ask for reprocessing*/
 	    if(!psource->ppn && pdest->putf) pdest->rpro = TRUE;
 	    /* otherwise ask for the record to be processed*/
-	    else status=dbScanPassive(psource,pdest);
+	    else status=dbScanLink(psource,pdest);
 	}
 	return(status);
 }
-
+
 long dbPutField(
        struct dbAddr   *paddr,
        short           dbrType,

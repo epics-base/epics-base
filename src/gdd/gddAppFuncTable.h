@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.5  1997/06/25 06:17:36  jhill
+ * fixed warnings
+ *
  * Revision 1.4  1996/11/22 20:37:19  jhill
  * converted large inline templ funcs
  *
@@ -94,33 +97,54 @@ public:
 	}
 
 	//
-	// typedef for the app read function to be called
+	// Both cases below are correct C++ syntax.
+	// (compiler quality varies)
 	//
-	typedef gddAppFuncTableStatus (PV::*gddAppReadFunc)(gdd &value);
+#if _MSC_VER == 1100
+	//
+	// required by MS vis c++ 5.0 (but not by 4.0 or 4.2)
+	//
+	typedef gddAppFuncTableStatus (PV::*gddAppFuncTablePMF_t)(gdd &);
+#	define gddAppFuncTablePMF(VAR) gddAppFuncTablePMF_t VAR
+#else
+	//
+	// required by gnu g++ 2.7.2
+	//
+#	define gddAppFuncTablePMF(VAR) gddAppFuncTableStatus (PV:: * VAR)(gdd &)
+#	define gddAppFuncTablePMF_t ((PV:: *)(gdd &))
+#endif
 
 	//
 	// installReadFunc()
-        //
-        // The 2nd parameter has type "gddAppReadFunc" which is
-        // a ptr to member function. The member function should
-        // be declared as follows:
-        //
-        // gddAppFuncTableStatus PV::memberFunction(gdd &value);
-        //
-	gddAppFuncTableStatus installReadFunc(const unsigned type, 
-			gddAppReadFunc pMFuncIn);
+	//
+	// The 2nd parameter has type "gddAppFuncTablePMF" which is
+	// a ptr to member function. The member function should
+	// be declared as follows:
+	//
+	// gddAppFuncTableStatus PV::memberFunction(gdd &value);
+	//
+	//
+	// workaround for bug existing only in microsloth vis c++ 5.0
+	//
+#if _MSC_VER == 1100
+	gddAppFuncTableStatus installReadFuncVISC50 (const unsigned type, 
+			gddAppFuncTablePMF(pMFuncIn));
+#else
+	gddAppFuncTableStatus installReadFunc (const unsigned type, 
+			gddAppFuncTablePMF(pMFuncIn));
+#endif
 
 	//
 	// installReadFunc()
-        //
-        // The 2nd parameter has type "gddAppReadFunc" which is
-        // a ptr to member function. The member function should
-        // be declared as follows:
-        //
-        // gddAppFuncTableStatus PV::memberFunction(gdd &value);
-        //
-	gddAppFuncTableStatus installReadFunc(const char * const pName, 
-			gddAppReadFunc pMFuncIn);
+	//
+	// The 2nd parameter has type "gddAppFuncTablePMF" which is
+	// a ptr to member function. The member function should
+	// be declared as follows:
+	//
+	// gddAppFuncTableStatus PV::memberFunction(gdd &value);
+	//
+	gddAppFuncTableStatus installReadFunc (const char * pName, 
+			gddAppFuncTablePMF(pMFuncIn));
 
 	//
 	//
@@ -134,7 +158,7 @@ private:
 	// hidden from the application (eventually allow for auto
 	// expansion of the table)
 	//
-	gddAppReadFunc *pMFuncRead;
+	gddAppFuncTablePMF(*pMFuncRead);
 	unsigned appTableNElem;
 
 	void newTbl(unsigned neMaxType);
@@ -143,7 +167,7 @@ private:
 //
 // gddAppFuncTable::installReadFunc()
 //
-// The 2nd parameter has type "gddAppReadFunc" which is
+// The 2nd parameter has type "gddAppFuncTablePMF" which is
 // a ptr to member function. The member function should
 // be declared as follows:
 //
@@ -152,10 +176,15 @@ private:
 // The typedef is not used here because of portability 
 // problems resulting from compiler weaknesses
 //
-template <class PV>
-gddAppFuncTableStatus gddAppFuncTable<PV>::installReadFunc(
-	const unsigned type, 
-	gddAppFuncTableStatus (PV::*pMFuncIn)(gdd &value))
+#if _MSC_VER == 1100
+	template <class PV>
+	gddAppFuncTableStatus gddAppFuncTable<PV>::installReadFuncVISC50(
+		const unsigned type, gddAppFuncTablePMF(pMFuncIn))
+#else
+	template <class PV>
+	gddAppFuncTableStatus gddAppFuncTable<PV>::installReadFunc(
+		const unsigned type, gddAppFuncTablePMF(pMFuncIn))
+#endif
 {
 	//
 	// Attempt to expand the table if the app type will not fit 
@@ -173,7 +202,7 @@ gddAppFuncTableStatus gddAppFuncTable<PV>::installReadFunc(
 //
 // installReadFunc()
 //
-// The 2nd parameter has type "gddAppReadFunc" which is
+// The 2nd parameter has type "gddAppFuncTablePMF" which is
 // a ptr to member function. The member function should
 // be declared as follows:
 //
@@ -181,8 +210,7 @@ gddAppFuncTableStatus gddAppFuncTable<PV>::installReadFunc(
 //
 template <class PV>
 gddAppFuncTableStatus gddAppFuncTable<PV>::installReadFunc(
-	const char * const pName, 
-	gddAppFuncTableStatus (PV::*pMFuncIn)(gdd &value))
+	const char * pName, gddAppFuncTablePMF(pMFuncIn))
 {
 	aitUint32 type;
 	gddStatus rc;
@@ -197,7 +225,12 @@ gddAppFuncTableStatus gddAppFuncTable<PV>::installReadFunc(
 #	ifdef DEBUG
 		printf("installing PV attribute %s = %d\n", pName, type);		
 #	endif
+	
+#if _MSC_VER == 1100
+	return this->installReadFuncVISC50(type, pMFuncIn);
+#else
 	return this->installReadFunc(type, pMFuncIn);
+#endif
 }
 
 //
@@ -212,7 +245,7 @@ gddAppFuncTableStatus gddAppFuncTable<PV>::installReadFunc(
 template <class PV> 
 void gddAppFuncTable<PV>::newTbl(unsigned newApplTypeMax) 
 {
-	gddAppReadFunc *pMNewFuncTbl;
+	gddAppFuncTablePMF(*pMNewFuncTbl);
 	unsigned maxApp;
 	unsigned i;
 
@@ -220,7 +253,7 @@ void gddAppFuncTable<PV>::newTbl(unsigned newApplTypeMax)
 		return;
 	}
 	maxApp = newApplTypeMax+(1u<<6u);
-#	ifdef _MSC_VER
+#	if _MSC_VER < 1100
 		//
 		//      Right now all MS Visual C++ compilers allocate the
 		//      wrong amount of memory (i.e. too little)
@@ -228,10 +261,10 @@ void gddAppFuncTable<PV>::newTbl(unsigned newApplTypeMax)
 		//      only explicit calculation via sizeof() works.
 		//      For future versions this may become "if _MSC_VER < ???"...
 		//
-		pMNewFuncTbl = (gddAppReadFunc *)
-			new char[sizeof(gddAppReadFunc) * maxApp];
+		pMNewFuncTbl = (gddAppFuncTablePMF(*))
+			new char[sizeof(gddAppFuncTablePMF_t) * maxApp];
 #	else
-        	pMNewFuncTbl = new gddAppReadFunc[maxApp];
+		pMNewFuncTbl = new gddAppFuncTablePMF_t[maxApp];
 #	endif
 	if (pMNewFuncTbl) {
 		for (i=0u; i<maxApp; i++) {
@@ -292,7 +325,7 @@ template <class PV>
 gddAppFuncTableStatus gddAppFuncTable<PV>::callReadFunc (PV &pv, gdd &value)
 {
 	unsigned type = value.applicationType();
-	gddAppReadFunc pFunc;
+	gddAppFuncTablePMF(pFunc);
 
 	//
 	// otherwise call the function associated

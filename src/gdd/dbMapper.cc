@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.33  2000/09/26 21:11:56  jhill
+// added definition of min
+//
 // Revision 1.32  2000/06/27 22:32:21  jhill
 // backed out over-zelous use of smart pointers
 //
@@ -1116,7 +1119,7 @@ static smartGDDPointer mapGraphicEnumToGdd(void* v, aitIndex /*count*/)
 			sz=db->no_str;
 	}
 
-	unsigned minl = min(sizeof(aitFixedString),sizeof(str[0].fixed_string)) - 1;
+    unsigned minl = min(sizeof(aitFixedString),sizeof(str[0].fixed_string)) - 1;
 	for (i=0;i<sz;i++) {
 		strncpy (str[i].fixed_string, &(db->strs[i][0]), minl);
 		memset(&str[i].fixed_string[minl], '\0', sizeof(aitFixedString)-minl);
@@ -1158,7 +1161,7 @@ static smartGDDPointer mapControlEnumToGdd(void* v, aitIndex /*count*/)
 			sz=db->no_str;
 	}
 
-	unsigned minl = min(sizeof(aitFixedString),MAX_ENUM_STRING_SIZE) - 1;
+    unsigned minl = min(sizeof(aitFixedString),MAX_ENUM_STRING_SIZE) - 1;
 	for (i=0;i<sz;i++) {
 		strncpy(str[i].fixed_string,&(db->strs[i][0]), minl);
 		memset(&str[i].fixed_string[minl], '\0', sizeof(aitFixedString)-minl);

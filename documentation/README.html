@@ -440,7 +440,8 @@ need C and C++ compilers in your search path. For building base you also
 must have echo in your search path. For Unix host builds you also need
 touch, cpp, cp, rm, mv, and mkdir in your search path and /bin/chmod must
 exist. On some Unix systems you may also need ar and ranlib in your path,
-and the c compiler may require ld in your path.
+and the c compiler may require ld in your path. On solaris systems you
+need uname in your path.
 <p><b>LD_LIBRARY_PATH</b>
 <br>If you plan to build EPICS base shared libraries instead of archive
 libraries, on Unix systems you will need to add fullpathname to $(INSTALL_LOCATION)/lib/$(EPICS_HOST_ARCH)

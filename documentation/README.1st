@@ -315,6 +315,7 @@ Building EPICS base (Unix and Win32)
          mv, and mkdir in your search path and /bin/chmod must
          exist. On some Unix systems you may also need ar and ranlib
          in your path, and the c compiler may require ld in your path. 
+         On solaris systems you need uname in your path.
 
          Unix LD_LIBRARY_PATH
          If you plan to build EPICS base shared libraries instead of

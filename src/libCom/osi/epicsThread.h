@@ -20,7 +20,8 @@ static const unsigned epicsThreadPriorityMedium = 50;
 static const unsigned epicsThreadPriorityHigh = 90;
 
 /* some iocCore specific values */
-static const unsigned epicsThreadPriorityChannelAccessServer = 30;
+static const unsigned epicsThreadPriorityCAServerLow = 20;
+static const unsigned epicsThreadPriorityCAServerHigh = 40;
 static const unsigned epicsThreadPriorityScanLow = 60;
 static const unsigned epicsThreadPriorityScanHigh = 70;
 

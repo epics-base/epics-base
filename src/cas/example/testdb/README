@@ -1,0 +1,8 @@
+
+This server does not set the precision, limits,
+units, etc and this may cause clients that use
+these attributes to not work correctly. For example
+clients that convert real values to strings using
+the precision attribute may truncate real
+values stored as strings.
+

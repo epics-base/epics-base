@@ -33,6 +33,7 @@
 #include "dbCommon.h"
 #include "special.h"
 #include "db_field_log.h"
+#include "epicsString.h"
 #define epicsExportSharedSymbols
 #include "dbAddr.h"
 #include "dbLock.h"

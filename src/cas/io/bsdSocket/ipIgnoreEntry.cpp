@@ -9,7 +9,6 @@
 \*************************************************************************/
 
 //
-//	$Id$
 //
 //      Author: Jeffrey O. Hill
 //              johill@lanl.gov
@@ -19,6 +18,7 @@
 #include <stdexcept>
 
 #include "osiSock.h"
+#include "errlog.h"
 
 #define epicsExportSharedSymbols
 #define caNetAddrSock

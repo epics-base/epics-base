@@ -29,6 +29,7 @@
 #include "envDefs.h"
 #include "registry.h"
 #include "epicsReadline.h"
+#include "cantProceed.h"
 #define epicsExportSharedSymbols
 #include "iocsh.h"
 

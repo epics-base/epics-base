@@ -194,7 +194,6 @@ bool casEventSys::eventsOff ()
                     signalNeeded = true;
                 }
 	            this->eventLogQue.add ( *this->pPurgeEvent );
-                signalNeeded = true;
 		    }
 	    }
     }

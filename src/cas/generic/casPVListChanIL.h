@@ -26,22 +26,6 @@
  *              Advanced Photon Source
  *              Argonne National Laboratory
  *
- *
- * History
- * $Log$
- * Revision 1.4  1997/01/10 21:17:59  jhill
- * code around gnu g++ inline bug when -O isnt used
- *
- * Revision 1.3  1997/01/09 22:29:17  jhill
- * installed hostBuild branch
- *
- * Revision 1.2  1996/12/06 22:36:20  jhill
- * use destroyInProgress flag now functional nativeCount()
- *
- * Revision 1.1.1.1  1996/06/20 00:28:16  jhill
- * ca server installation
- *
- *
  */
 
 

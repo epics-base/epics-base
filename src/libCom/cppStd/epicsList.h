@@ -6,7 +6,6 @@
 #define __EPICS_LIST_H__
 
 #include "epicsListBase.h"
-#include "epicsExcept.h"
 #include <stdexcept>
 
 // epicsList
@@ -59,7 +58,7 @@ public:
     
     iterator insert(iterator position, const T x);
     iterator erase(iterator position);
-    iterator erase(iterator position, iterator last);
+    iterator erase(iterator position, iterator leave);
     void swap(epicsList<T>& x);
     void clear();
     
@@ -85,8 +84,13 @@ friend class epicsListConstIterator<T>;
 template <class T>
     inline void swap(epicsList<T>& x, epicsList<T>& y) { x.swap(y); }
 
+template <class T>
+    inline void epicsSwap(epicsList<T>& x, epicsList<T>& y) { x.swap(y); }
+
 
 // Mutable iterator
+// 	These used to be inner classes of epicsList<T>, but MSVC6
+//	didn't like that so they had to be typedefs...
 
 template <class T>
 class epicsListIterator {
@@ -281,8 +285,8 @@ inline epicsList<T>::iterator epicsList<T>::erase(iterator pos) {
 }
 
 template <class T>
-inline epicsList<T>::iterator epicsList<T>::erase(iterator pos, iterator last) {
-    while (pos != last) {
+inline epicsList<T>::iterator epicsList<T>::erase(iterator pos, iterator leave) {
+    while (pos != leave) {
 	pos = erase(pos);
     }
     return pos;
@@ -292,9 +296,7 @@ template <class T>
 inline void epicsList<T>::swap(epicsList<T>& x) {
     _head.swap(x._head);
     _pool.swap(x._pool);
-    size_type temp = x._count;
-    x._count = _count;
-    _count = temp;
+    epicsSwap(x._count, _count);
 }
 
 template <class T>

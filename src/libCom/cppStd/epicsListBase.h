@@ -10,6 +10,7 @@
 #endif
 
 #include "epicsMutex.h"
+#include "epicsAlgorithm.h"
 
 // epicsListNode
 class epicsListNode {
@@ -127,9 +128,7 @@ inline epicsListLink* epicsListLink::extract() {
 }
 
 inline void epicsListLink::swap(epicsListLink& node) {
-    epicsListLink* tn = node._next;
-    node._next = _next;
-    _next = tn;
+    epicsSwap(node._next, _next);
 }
 
 
@@ -185,14 +184,11 @@ inline void epicsListNode::unlink() {
 }
 
 inline void epicsListNode::swap(epicsListNode& node) {
-    epicsListNode* temp = node._next;
-    node._next = _next;
-    _next = temp;
+    epicsSwap(node._next, _next);
     _next->_prev = this;
     node._next->_prev = &node;
-    temp = node._prev;
-    node._prev = _prev;
-    _prev = temp;
+    
+    epicsSwap(node._prev, _prev);
     _prev->_next = this;
     node._prev->_next = &node;
 }

@@ -36,6 +36,7 @@ TEMPLATES += top/exampleBoot/ioc/Makefile@Common
 TEMPLATES += top/exampleBoot/ioc/Makefile@vxWorks
 TEMPLATES += top/exampleBoot/ioc/st.cmd@Common
 TEMPLATES += top/exampleBoot/ioc/st.cmd@vxWorks
+TEMPLATES += top/exampleBoot/ioc/st.cmd@RTEMS
 TEMPLATES += top/exampleBoot/ioc/README@Common
 TEMPLATES += top/exampleBoot/ioc/README@vxWorks
 
@@ -49,6 +50,7 @@ TEMPLATES += top/simpleBoot/ioc/Makefile@Common
 TEMPLATES += top/simpleBoot/ioc/Makefile@vxWorks
 TEMPLATES += top/simpleBoot/ioc/st.cmd@Common
 TEMPLATES += top/simpleBoot/ioc/st.cmd@vxWorks
+TEMPLATES += top/simpleBoot/ioc/st.cmd@RTEMS
 
 SCRIPTS += makeBaseApp.pl
 

@@ -60,7 +60,7 @@
 #include <iocinf.h>
 #include <comBuf_IL.h>
 
-tsFreeList < class comBuf, 0x20, 1u > comBuf::freeList;
+tsFreeList < class comBuf, 0x20 > comBuf::freeList;
 
 // nill message pad bytes
 static const char nillBytes [] = 
@@ -458,7 +458,6 @@ int comQueSend::writeNotifyRequest ( unsigned ioId, unsigned serverId, unsigned 
         comQueSend_copyIn ( this->bufs, reservoir, nillBytes, postcnt - size );
         this->mutex.unlock ();
     }
-
 
     return status;
 }

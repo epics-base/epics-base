@@ -135,7 +135,7 @@ public:
     bool flushToWire ( class comQueSend & );
     unsigned fillFromWire ( class comQueRecv & );
 private:
-    static tsFreeList < class comBuf, 0x20, 1u > freeList;
+    static tsFreeList < class comBuf, 0x20 > freeList;
 
     ~comBuf ();
     unsigned nextWriteIndex;

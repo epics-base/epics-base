@@ -89,6 +89,7 @@ int main(int argc,char **argv)
     gphDump(pdbbase->pgpHash);
     dbDumpMenu(pdbbase,NULL);
     dbDumpRecord(pdbbase,NULL,0);
+    dbReportDeviceConfig(pdbbase,stdout);
     dbFreeBase(pdbbase);
 */
     return(0);

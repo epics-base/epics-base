@@ -3629,15 +3629,22 @@ void  epicsShareAPI dbReportDeviceConfig(dbBase *pdbbase,FILE *report)
 		if(status) break;
 		strcpy(dtypValue,dbGetString(pdbentry));
 		status = dbFindField(pdbentry,"LINR");
-		if(status || *((short *)pdbentry->pfield) <=1 ) {
-			cvtValue[0] = 0;
+		if(status) {
+		    cvtValue[0] = 0;
 		} else {
+		    if(strcmp(dbGetString(pdbentry),"LINEAR")!=0) {
+			cvtValue[0] = 0;
+		    } else {
 			strcpy(cvtValue,"cvt(");
 			status = dbFindField(pdbentry,"EGUL");
 			if(!status) strcat(cvtValue,dbGetString(pdbentry));
-			status = dbFindField(pdbentry,"EGUH");
-			if(!status) strcat(cvtValue,dbGetString(pdbentry));
+			status = dbFindField(pdbentry,"EGUF");
+			if(!status) {
+			    strcat(cvtValue,",");
+			    strcat(cvtValue,dbGetString(pdbentry));
+			}
 			strcat(cvtValue,")");
+		    }
 		}
 		fprintf(report,"%-8s %-20s %-20s %-20s %-s\n",
 			busName,linkValue,dtypValue,

@@ -30,8 +30,8 @@
  *
  * Modification Log:
  * -----------------
- * .01	mm-dd-yy	iii	Comment
- * .02	mm-dd-yy	iii	Comment
+ * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
+ * .02  12-02-91        jba     Added cmd control to io-interrupt processing
  * 	...
  */
 
@@ -45,6 +45,7 @@
 #include	<cvtTable.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
+#include        <recSup.h>
 #include	<devSup.h>
 #include	<link.h>
 #include	<module_types.h>
@@ -106,7 +107,8 @@ static long init_record(pai)
     return(0);
 }
 
-static long get_ioint_info(pai,io_type,card_type,card_number)
+static long get_ioint_info(cmd,pai,io_type,card_type,card_number)
+    short               *cmd;
     struct aiRecord     *pai;
     short               *io_type;
     short               *card_type;
@@ -133,17 +135,11 @@ static long read_ai(pai)
 	*((unsigned short*)(&pai->rval))=value;
 	if(status==0 || status==-2) pai->rval = value;
         if(status==-1) {
-		if(pai->nsev<VALID_ALARM ) {
-                	pai->nsta = READ_ALARM;
-                	pai->nsev = VALID_ALARM;
-		}
+                recGblSetSevr(pai,READ_ALARM,VALID_ALARM);
 		status=2; /*don't convert*/
         }else if(status==-2) {
                 status=0;
-                if(pai->nsev<VALID_ALARM ) {
-                        pai->nsta = HW_LIMIT_ALARM;
-                        pai->nsev = VALID_ALARM;
-                }
+                recGblSetSevr(pai,HW_LIMIT_ALARM,VALID_ALARM);
         }
 	return(status);
 }

@@ -87,7 +87,12 @@ epicsShareFunc int epicsShareAPI dbNotifyDump(void);
  * and all records processed because of that record complete processing.
  * For asynchronous records completion means completion of the asyn phase.
  *
- * User code calls dbPutNotify and dbNotifyCancel.
+ * User code calls putNotifyInit, putNotifyCleanup,
+ * dbPutNotify, and dbNotifyCancel.
+ *
+ * The use must allocate storage for "struct putNotify"
+ * putNotifyInit must be called before the first call to dbPutNotify
+ * and putNotifyCleanup must be called when the user is done with putNotify.
  *
  * After dbPutNotify is called it may not called for the same putNotify
  * until the putCallback is complete. The use can call dbNotifyCancel

@@ -26,7 +26,7 @@ POSIX_LDLIBS_YES += -lposix4 -lpthread
 POSIX_CPPFLAGS_NO =
 POSIX_LDLIBS_NO +=
 
-OP_SYS_CPPFLAGS = -DSOLARIS
+OP_SYS_CPPFLAGS = -DSOLARIS=$(subst 5.,,$(shell uname -r))
 ARCH_DEP_CPPFLAGS = -D_X86_
 # socket and nsl needed by libca.a
 OP_SYS_LDLIBS += -lsocket -lnsl

@@ -36,3 +36,9 @@ epicsShareFunc osiGetUserNameReturn epicsShareAPI osiGetUserName (char *pBuf, un
     return osiGetUserNameSuccess;
 }
 
+epicsShareFunc osiSpawnDetachedProcessReturn epicsShareAPI osiSpawnDetachedProcess
+    (const char *pProcessName, const char *pBaseExecutableName)
+{
+    errlogPrintf("osiSpawnDetachedProcess not implemented on RTEMS\n");
+    return osiSpawnDetachedProcessFail;
+}

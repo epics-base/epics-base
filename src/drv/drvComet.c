@@ -334,33 +334,36 @@ static long init()
  */
 comet_driver(card, signal, pcbroutine, parg)
 register unsigned short	card,signal;
-register unsigned int	*pcbroutine;
-register unsigned int	*parg;	/* number of values read */
+unsigned int		*pcbroutine;
+unsigned int		*parg;	/* pointer to the waveform record */
 {
 	register struct comet_cr			*pcomet_csr;
+	register struct comet_config			*pconfig;
 	register unsigned short				*pcomet_data;
 
 	/* check for valid card number */
 	if(card >= wf_num_cards[COMET])
 		return ERROR;
-	if(signal >= NELEMENTS(pcomet_config[card].parg))
+	pconfig = pcomet_config[card];
+	if(signal >= NELEMENTS(pconfig->parg))
 		return ERROR;
 
 	/* check for card present */      
-	if(!pcomet_config[card].pcomet_csr)	return ERROR;
+	if(!pconfig->pcomet_csr)	return ERROR;
 
 	/* mutual exclusion area */
-       FASTLOCK(&pcomet_config[card].lock);
+       FASTLOCK(&pconfig->lock);
 
 	/* mark the card as armed */
-	if (pcomet_config[card].parg[signal] != 0) pcomet_config[card].parg[signal] = parg;
- 	if (pcomet_config[card].psub) return;
-	pcomet_config[card].psub = (void (*)()) pcbroutine;
+	if (pconfig->parg[signal] != 0) 
+		pconfig->parg[signal] = parg;
+ 	if (pconfig->psub) return;
+	pconfig->psub = (void (*)()) pcbroutine;
 
 	/* exit mutual exclusion area */
-        FASTUNLOCK(&pcomet_config[card].lock);
+        FASTUNLOCK(&pconfig->lock);
 
-	pcomet_csr = pcomet_config[card].pcomet_csr;
+	pcomet_csr = pconfig->pcomet_csr;
 
 	/* reset each of the control registers */
 	pcomet_csr->csrh = pcomet_csr->csrl = 0;
@@ -369,7 +372,7 @@ register unsigned int	*parg;	/* number of values read */
 	pcomet_csr->acr = 0;
 	
 	/* arm the card */
-	*(pcomet_config[card].pdata+FLAG_EOC) = 0xffff;
+	*(pconfig->pdata+FLAG_EOC) = 0xffff;
 	if (scan_control > 0)
 		{
 		pcomet_csr->gdcrh = 0xff;		/* 64K samples per channel */

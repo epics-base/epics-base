@@ -13,6 +13,11 @@
 
 /*
  * $Log$
+ * Revision 1.31  1999/08/26 21:36:39  jhill
+ * fixed bug where time sync UDP client was getting in a state where
+ * it was using the response from the previous request, and ending
+ * up setting the time 10 seconds back
+ *
  * Revision 1.30  1999/08/05 21:50:21  jhill
  * global reformat
  *
@@ -222,6 +227,8 @@ static long (*TSdirectTime)();
 static long (*TSdriverInit)();
 static long (*TSuserGet)(int event_number,struct timespec* sp);
 
+static int TSinitialized = 0;
+
 /* global functions */
 #ifdef __cplusplus
 extern "C" {
@@ -286,6 +293,7 @@ unsigned long TSepochNtpToUnix(struct timespec* ts)
     unsigned long nfssecs = (unsigned long)ts->tv_sec;
     unsigned long secs = 0;
     
+    if(!TSinitialized) TSinit();
     /*If high order bit is not set then nfssecs has overflowed */
     if(!(nfssecs & 0x80000000ul)) {
         /*secs = nfssecs - TS_1900_TO_VXWORKS_EPOCH + 2**32 */
@@ -302,6 +310,7 @@ unsigned long TSfractionToNano(unsigned long fraction)
 {
     double value;
     
+    if(!TSinitialized) TSinit();
     /*value = 1e9 * fraction / 2**32 */
     value = (1e9 * (double)fraction)/4294967296.0;
     return((unsigned long)value);
@@ -312,6 +321,7 @@ unsigned long TSepochNtpToEpics(struct timespec* ts)
     unsigned long nfssecs = (unsigned long)ts->tv_sec;
     unsigned long secs = 0;
     
+    if(!TSinitialized) TSinit();
     /*If high order bit is not set then nfssecs has overflowed */
     if(!(nfssecs & 0x80000000ul)) {
         /*secs = nfssecs - TS_1900_TO_EPICS_EPOCH + 2**32 */
@@ -329,6 +339,7 @@ unsigned long TSepochUnixToEpics(struct timespec* ts)
     unsigned long unixsecs = (unsigned long)ts->tv_sec;
     unsigned long secs;
     
+    if(!TSinitialized) TSinit();
     secs = unixsecs - TS_VXWORKS_TO_EPICS_EPOCH;
     return(secs);
 }
@@ -338,6 +349,7 @@ unsigned long TSepochEpicsToUnix(struct timespec* ts)
     unsigned long epicssecs = (unsigned long)ts->tv_sec;
     unsigned long secs;
     
+    if(!TSinitialized) TSinit();
     secs = epicssecs + TS_VXWORKS_TO_EPICS_EPOCH;
     return(secs);
 }
@@ -466,6 +478,7 @@ long TSgetTimeStamp(int event_number,struct timespec* sp)
 an invalid time stamp, so use the vxworks clock. Also remember that
 the IOC vxWorks clock may not be in sync with time stamps if 
     default TSgetTime() in use and master failure is detected */
+    if(!TSinitialized) TSinit();
     
     switch(TSdata.type)
     {
@@ -543,6 +556,8 @@ long TSinit(void)
     
     Debug0(5,"In TSinit()\n");
     
+    if(TSinitialized) return(0);
+    TSinitialized = 1;
     /* 0=default, 1=none, 2=direct */
     
     if(	TSdata.UserRequestedType==DEFAULT_TIME)
@@ -1119,6 +1134,7 @@ long TSsetClockFromUnix(void)
     struct timespec tp;
     unsigned long ulongtemp;
     
+    if(!TSinitialized) TSinit();
     Debug0(3,"in TSsetClockFromUnix()\n");
     
     if(TSgetUnixTime(&tp)!=0) return -1;
@@ -1706,6 +1722,7 @@ long TSaccurateTimeStamp(struct timespec* sp)
     struct timespec ts;
     unsigned long ticks;
     
+    if(!TSinitialized) TSinit();
     if(TSdata.has_direct_time==1)
     {
         TSgetTime(sp);
@@ -1965,6 +1982,7 @@ long TSgetFirstOfYearVx(struct timespec* ts)
     time_t tloc;
     struct tm t;
     
+    if(!TSinitialized) TSinit();
     time(&tloc); /* retrieve the current time */
     localtime_r(&tloc,&t);
     t.tm_sec=0;

@@ -1,7 +1,12 @@
-
 TOP=../../..
 
 include $(TOP)/configure/CONFIG
 
-include $(TOP)/configure/RULES_ARCHS
+INC += camacLib.h
+INC += module_types.h
+INC += task_params.h
+INC += fast_lock.h
+INC += module_types.h
+
+include $(TOP)/configure/RULES
 

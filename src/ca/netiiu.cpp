@@ -42,8 +42,7 @@ void netiiu::show ( unsigned level ) const
     }
 }
 
-// cac lock must also be applied when
-// calling this
+// cac lock must also be applied when calling this
 void netiiu::disconnectAllChan ( netiiu & newiiu )
 {
     tsDLIterBD < nciu > chan = this->channelList.firstIter ();

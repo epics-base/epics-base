@@ -17,8 +17,11 @@
 #include <fcntl.h>
 #include <errno.h>
 
+#define epicsStdioh
+#include "shareLib.h"
 #include "epicsThread.h"
 
+#undef epicsStdioh
 #define epicsExportSharedSymbols
 #define epicsStdioPVT
 #include "epicsStdio.h"

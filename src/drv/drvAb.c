@@ -161,15 +161,20 @@
  *				periodically as well as on change
  * .42	08-06-91	rac	remove include for alarm.h--it's not used
  * .43  09-11-91	joh 	updated for v5 vxWorks
- * .44  11-16-91	 bg 	moved io_report for Allen Bradley to this module. Broke
- *                              io_report up into subroutines.Added sysBusToLocalAdrs 
- *                              and SysIntEnable
- * .45   1-13-92         bg     added level to io_report and added the ability to print raw 
+ * .44  11-16-91	 bg 	moved io_report for Allen Bradley to this 
+ *				module. Broke io_report up into subroutines.
+ *				Added sysBusToLocalAdrs and SysIntEnable
+ * .45   1-13-92         bg     added level to io_report and added the 
+ *				ability to print raw 
  *                              values if the level is > 0 .    
- * .46	05-22-92	lrd	added the task that monitors the binary inputs and simulates a change
- *				of state interrupt - wakes up the io event scanner
- * .47	06-10-92	 bg	combined drvAb.c and ab_driver.c                                 
- * .48	06-26-92	 bg	added level to the ab_io_report in the drvSup structure          
+ * .46	05-22-92	lrd	added the task that monitors the binary 
+ *				inputs and simulates a change
+ *				of state interrupt - wakes up the io event 
+ *				scanner
+ * .47	06-10-92	 bg	combined drvAb.c and ab_driver.c    
+ * .48	06-26-92	 bg	added level to the ab_io_report in 
+ *				the drvSup structure          
+ * .49	06--29-92	joh	removed FILE pointer argument to io report
  */
 
 /*
@@ -311,13 +316,13 @@ struct {
 
 
 
-static long report(fp)
-    FILE	*fp;
+static long report(level)
+int level;
 {
    ab_io_report(level);
 }
-
 
+
 /* forward reference for ioc_reboot */
 int ioc_reboot();
 

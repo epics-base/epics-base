@@ -374,7 +374,7 @@ static void convert(aiRecord *pai)
 	}
 	else { /* must use breakpoint table */
                 if (cvtRawToEngBpt(&val,pai->linr,pai->init,(void *)&pai->pbrk,&pai->lbrk)!=0) {
-                      recGblSetSevr(pai,SOFT_ALARM,INVALID_ALARM);
+                      recGblSetSevr(pai,SOFT_ALARM,MAJOR_ALARM);
                 }
 	}
 

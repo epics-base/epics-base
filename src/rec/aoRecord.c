@@ -491,7 +491,7 @@ static void convert(pao,value)
               }
         }else{
 	      if(cvtEngToRawBpt(&value,pao->linr,pao->init,(void *)&pao->pbrk,&pao->lbrk)!=0){
-                   recGblSetSevr(pao,SOFT_ALARM,INVALID_ALARM);
+                   recGblSetSevr(pao,SOFT_ALARM,MAJOR_ALARM);
 		   return;
 	     }
         }

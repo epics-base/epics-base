@@ -33,11 +33,11 @@ noopiiu::~noopiiu ()
 {
 }
 
-void noopiiu::hostName ( 
+unsigned noopiiu::getHostName ( 
     epicsGuard < epicsMutex > & cacGuard,
-    char *pBuf, unsigned bufLength ) const
+    char * pBuf, unsigned bufLength ) const throw ()
 {
-    netiiu::hostName ( cacGuard, pBuf, bufLength );
+    return netiiu::getHostName ( cacGuard, pBuf, bufLength );
 }
 
 const char * noopiiu::pHostName (

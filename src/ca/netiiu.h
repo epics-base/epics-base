@@ -38,11 +38,11 @@ class nciu;
 class netiiu {
 public:
     virtual ~netiiu () = 0;
-    virtual void hostName ( 
+    virtual unsigned getHostName ( 
         epicsGuard < epicsMutex > &, char * pBuf, 
-        unsigned bufLength ) const = 0;
+        unsigned bufLength ) const throw () = 0;
     virtual const char * pHostName (
-        epicsGuard < epicsMutex > & ) const = 0; 
+        epicsGuard < epicsMutex > & ) const = 0;
     virtual bool ca_v41_ok (
         epicsGuard < epicsMutex > & ) const = 0;
     virtual bool ca_v42_ok (

@@ -30,9 +30,9 @@
 class noopiiu : public netiiu {
 public:
     ~noopiiu ();
-    void hostName ( 
+    unsigned getHostName ( 
         epicsGuard < epicsMutex > &, char * pBuf, 
-        unsigned bufLength ) const;
+        unsigned bufLength ) const throw ();
     const char * pHostName (
         epicsGuard < epicsMutex > & ) const; 
     bool ca_v41_ok (

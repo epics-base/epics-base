@@ -88,20 +88,31 @@ void netiiu::subscriptionUpdateRequest (
 {
 }
 
-void netiiu::hostName ( 
+static const char * const pHostNameNetIIU = "<disconnected>";
+
+unsigned netiiu::getHostName ( 
     epicsGuard < epicsMutex > & guard,
-    char *pBuf, unsigned bufLength ) const
+    char * pBuf, unsigned bufLen ) const throw ()
 {
-    if ( bufLength ) {
-        strncpy ( pBuf, this->pHostName ( guard ), bufLength );
-        pBuf[bufLength - 1u] = '\0';
+    if ( bufLen ) {
+        unsigned len = strlen ( pHostNameNetIIU );
+        strncpy ( pBuf, pHostNameNetIIU, bufLen );
+        if ( len < bufLen ) {
+            return len;
+        }
+        else {
+            unsigned reducedSize = bufLen - 1u;
+            pBuf[reducedSize] = '\0';
+            return reducedSize;
+        }
     }
+    return 0u;
 }
 
 const char * netiiu::pHostName (
     epicsGuard < epicsMutex > & ) const
 {
-    return "<disconnected>";
+    return pHostNameNetIIU;
 }
 
 osiSockAddr netiiu::getNetworkAddress (

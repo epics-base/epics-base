@@ -236,10 +236,29 @@ bool nciu::searchMsg ( epicsGuard < epicsMutex > & guard )
 }
 
 const char *nciu::pName (
-    epicsGuard < epicsMutex > & guard ) const
+    epicsGuard < epicsMutex > & guard ) const throw ()
 {
     guard.assertIdenticalMutex ( this->cacCtx.mutexRef () );
     return this->pNameStr;
+}
+
+unsigned nciu::getName (
+    epicsGuard < epicsMutex > &,
+    char * pBuf, unsigned bufLen ) const throw ()
+{
+    if ( bufLen == 0u ) {
+        return 0u;
+    }
+    if ( this->nameLength < bufLen ) {
+        strcpy ( pBuf, this->pNameStr );
+        return this->nameLength;
+    }
+    else {
+        unsigned reducedSize = bufLen - 1u;
+        strncpy ( pBuf, this->pNameStr, bufLen );
+        pBuf[reducedSize] = '\0';
+        return reducedSize;
+    }
 }
 
 unsigned nciu::nameLen (
@@ -386,19 +405,12 @@ void nciu::ioShow (
     this->cacCtx.ioShow ( guard, idIn, level );
 }
 
-void nciu::hostName ( 
+unsigned nciu::getHostName ( 
     epicsGuard < epicsMutex > & guard,
-    char *pBuf, unsigned bufLength ) const
+    char *pBuf, unsigned bufLength ) const throw ()
 {   
-    this->piiu->hostName ( 
+    return this->piiu->getHostName ( 
         guard, pBuf, bufLength );
-}
-
-// deprecated - please do not use, this is _not_ thread safe
-const char * nciu::pHostName (
-    epicsGuard < epicsMutex > & guard ) const
-{
-    return this->piiu->pHostName ( guard );
 }
 
 bool nciu::ca_v42_ok (
@@ -477,7 +489,7 @@ void nciu::show (
 {
     if ( this->connected ( guard ) ) {
         char hostNameTmp [256];
-        this->hostName ( guard, hostNameTmp, sizeof ( hostNameTmp ) );
+        this->getHostName ( guard, hostNameTmp, sizeof ( hostNameTmp ) );
         ::printf ( "Channel \"%s\", connected to server %s", 
             this->pNameStr, hostNameTmp );
         if ( level > 1u ) {

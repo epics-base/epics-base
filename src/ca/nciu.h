@@ -178,12 +178,16 @@ public:
     void show ( 
         epicsGuard < epicsMutex > &,
         unsigned level ) const;
+    unsigned getName (
+        epicsGuard < epicsMutex > &,
+        char * pBuf, unsigned bufLen ) const throw ();
     const char * pName (
-        epicsGuard < epicsMutex > & ) const;
+        epicsGuard < epicsMutex > & ) const throw ();
     unsigned nameLen (
         epicsGuard < epicsMutex > & ) const;
-    const char * pHostName (
-        epicsGuard < epicsMutex > & ) const; // deprecated - please do not use
+    unsigned getHostName (
+        epicsGuard < epicsMutex > &,
+        char * pBuf, unsigned bufLen ) const throw (); 
     void writeException ( 
         epicsGuard < epicsMutex > &, epicsGuard < epicsMutex > &,
         int status, const char *pContext, unsigned type, arrayElementCount count );
@@ -255,9 +259,6 @@ private:
         epicsGuard < epicsMutex > & ) const;
     bool ca_v42_ok (
         epicsGuard < epicsMutex > & ) const;
-    void hostName ( 
-        epicsGuard < epicsMutex > &,
-        char *pBuf, unsigned bufLength ) const;
     arrayElementCount nativeElementCount (
         epicsGuard < epicsMutex > & ) const;
     static void stringVerify ( const char *pStr, const unsigned count );

@@ -39,8 +39,6 @@ static char	*sccsId = "@(#) $Id$";
 
 #include "iocinf.h"
 
-#define DEBUG
-
 /*
  * Dont use ca_static based lock macros here because this is
  * also called by the server. All locks required are applied at

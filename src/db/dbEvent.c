@@ -407,7 +407,7 @@ int db_event_disable(struct event_block      *pevent)
 	 * dont let a misplaced event corrupt the queue 
 	 */
   	status = ellFind(&precord->mlis, &pevent->node);
-	if(status == OK){
+	if(status != ERROR){
   		ellDelete(&precord->mlis, &pevent->node);
 	}
   	UNLOCKREC(precord);

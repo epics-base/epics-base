@@ -41,7 +41,17 @@
 #ifndef INCerrMdefh
 #define INCerrMdefh
 
-#ifdef __STDC__ 
+#ifdef __STDC__
+#define errMDefUseFuncProto
+#endif
+
+#ifdef __cplusplus
+#ifndef errMDefUseFuncProto
+#define errMDefUseFuncProto
+#endif
+#endif
+
+#ifdef errMDefUseFuncProto
 #       include <stdarg.h>
 #else
 #       include <varargs.h>
@@ -85,7 +95,7 @@
 #define errMessage(S, PM) \
          errPrintf(S, __FILE__, __LINE__, PM)
 
-#ifdef __STDC__
+#ifdef errMDefUseFuncProto
 int errSymFind(long status, char *name);
 int UnixSymFind(long status, char *name, long *value);
 int ModSymFind(long status, char *name, long *value);
@@ -99,7 +109,7 @@ void errSymDump();
 void tstErrSymFind();
 void errInit(void);
 
-#else /*__STDC__*/
+#else /*errMDefUseFuncProto*/
 
 void errSymTest();
 int errSymFind();
@@ -111,7 +121,7 @@ int errSymbolAdd();
 void errPrintf();
 void errSymDump();
 void tstErrSymFind();
-#endif /*__STDC__*/
+#endif /*errMDefUseFuncProto*/
 
 extern int errVerbose;
 

@@ -79,6 +79,16 @@ struct arrBrkTable { /* array of brkTable */
 
 /* Global Routines*/
 #ifdef __STDC__
+#define cvtTableUseProto
+#endif
+
+#ifdef __cplusplus
+#ifndef cvtTableUseProto
+#define cvtTableUseProto
+#endif
+#endif
+
+#ifdef cvtTableUseProto
 long cvtEngToRawBpt(double *pval,short linr,short init,
      void **ppbrk,short *plbrk);
 
@@ -89,6 +99,6 @@ long cvtRawToEngBpt(double *pval,short linr,short init,
 long cvtEngToRawBpt();
 long cvtRawToEngBpt();
 
-#endif /*__STDC__*/
+#endif /*cvtTableUseProto*/
 
 #endif

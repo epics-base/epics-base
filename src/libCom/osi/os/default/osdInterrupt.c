@@ -22,7 +22,7 @@ of this distribution.
 #include "errlog.h"
 #include "osiInterrupt.h"
 
-static semId globalLock=0;
+static semMutexId globalLock=0;
 static int firstTime = 1;
 
 epicsShareFunc int epicsShareAPI interruptLock()

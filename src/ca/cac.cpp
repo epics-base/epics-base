@@ -175,6 +175,10 @@ cac::~cac ()
         tsDLIterBD <tcpiiu> piiu ( this->iiuList.first () );
         while ( piiu.valid () ) {
             tsDLIterBD <tcpiiu> pnext = piiu.itemAfter ();
+            {
+                osiAutoMutex autoMutex ( this->defaultMutex );
+                piiu->disconnectAllChan ( *this->pudpiiu );
+            }
             piiu->disconnect ();
             piiu->suicide ();
             piiu = pnext;
@@ -248,6 +252,12 @@ void cac::processRecvBacklog ()
                     ( *this->fdRegFunc ) 
                         ( (void *) this->fdRegArg, piiu->getSock (), FALSE );
                 }
+            }
+
+            if ( piiu->channelCount () ) {
+                char hostNameTmp[64];
+                piiu->hostName ( hostNameTmp, sizeof ( hostNameTmp ) );
+                genLocalExcep ( *this, ECA_DISCONN, hostNameTmp );
             }
 
             {

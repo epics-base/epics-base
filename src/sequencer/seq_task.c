@@ -288,11 +288,11 @@ SSCB		*pSS;
 	 * calculate the delay since this state was entered
 	 */
 	cur = tickGet();
-	if (cur>pSS->timeEntered) {
+	if (cur >= pSS->timeEntered) {
 		delay = cur - pSS->timeEntered;
 	}
 	else {
-		delay = cur + ULONG_MAX - pSS->timeEntered;
+		delay = cur + (ULONG_MAX - pSS->timeEntered);
 	}
 
 	delayMinInit = 0;

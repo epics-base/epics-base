@@ -1,4 +1,4 @@
-/* epicsStdio.c */
+/* osdStdio.c */
 /*************************************************************************\
 * Copyright (c) 2002 The University of Chicago, as Operator of Argonne
 *     National Laboratory.
@@ -23,6 +23,7 @@ static STATUS outRoutine(char *buffer, int nchars, int outarg) {
     struct outStr_s *poutStr = (struct outStr_s *) outarg;
     int len = min(poutStr->free, nchars);
     
+    if(len<=0) return ERROR;
     strncat(poutStr->str, buffer, len);
     poutStr->free -= nchars;
     

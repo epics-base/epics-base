@@ -190,6 +190,7 @@ SRCS += osdEnv.c
 SRCS += epicsReadline.c
 SRCS += epicsTempFile.cpp
 SRCS += epicsStdio.c
+SRCS += osdStdio.c
 
 osdEnv_CFLAGS_WIN32= -U__STDC__
 

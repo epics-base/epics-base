@@ -1,4 +1,4 @@
-/* epicsStdio.c */
+/* osdStdio.c */
 /*************************************************************************\
 * Copyright (c) 2002 The University of Chicago, as Operator of Argonne
 *     National Laboratory.
@@ -12,18 +12,15 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#ifdef  __cplusplus
-extern "C" {
-#endif
-
+#define epicsExportSharedSymbols
 #include "epicsStdio.h"
 
-int epicsVsnprintf (
+int epicsShareAPI epicsVsnprintf (
     char * str, size_t size, const char *format, va_list ap )
 {
     int rtn;
 
-    rtn = vsnprintf ( str, size, format, ap );
+    rtn = _vsnprintf ( str, size, format, ap );
     if ( rtn >= 0 ) {
         size_t sizeReturned = (size_t) rtn;
         if ( sizeReturned < size ) {
@@ -37,7 +34,7 @@ int epicsVsnprintf (
     return rtn;
 }
 
-int epicsSnprintf (
+int epicsShareAPI epicsSnprintf (
     char *str, size_t size, const char *pFormat, ... )
 {
     int rtn;
@@ -48,7 +45,3 @@ int epicsSnprintf (
     va_end ( pvar );
     return ( rtn );
 }
-
-#ifdef  __cplusplus
-}
-#endif

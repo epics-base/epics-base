@@ -8,11 +8,10 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-#include <epicsStdio.h>
 #include <osiUnistd.h>
+#define epicsExportSharedSymbols
+#include <epicsStdio.h>
 
-extern "C" {
-	
 epicsShareFunc int epicsShareAPI epicsSnprintf(
     char *str, size_t size, const char *format, ...)
 {
@@ -30,7 +29,3 @@ epicsShareFunc int epicsShareAPI epicsVsnprintf(
 {
     return vsnprintf ( str, size, format, ap );
 }
-
-}
-
-

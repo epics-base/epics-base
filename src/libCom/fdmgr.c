@@ -117,7 +117,7 @@ static char	*pSccsId = "$Id$\t$Date$";
 #endif
 
 typedef struct{
-	NODE		node;
+	DLLNODE		node;
 	int		fd;
 	enum fdi_type	fdi;		/* the type of fd interest */
 	fd_set		*pfds;
@@ -325,10 +325,10 @@ void		*param;
 		}
 	}
 	if(pa){
-		dllInsert(&pfdctx->alarm_list, pa->node.previous, palarm);
+	dllInsert(&pfdctx->alarm_list, pa->node.previous, (DLLNODE*)palarm);
 	}
 	else{
-		dllAdd(&pfdctx->alarm_list, palarm);
+		dllAdd(&pfdctx->alarm_list,(DLLNODE*) palarm);
 	}
 	palarm->alt = alt_alarm;
 	UNLOCK(pfdctx);
@@ -361,8 +361,8 @@ alarm		*palarm;
 	LOCK(pfdctx);
 	alt = palarm->alt;
 	if(alt == alt_alarm){
-		dllDelete(&pfdctx->alarm_list, palarm);
-		dllAdd(&pfdctx->free_alarm_list, palarm);
+		dllDelete(&pfdctx->alarm_list, (DLLNODE*)palarm);
+		dllAdd(&pfdctx->free_alarm_list, (DLLNODE*)palarm);
 		palarm->alt = alt_free;
 		status = OK;
 	}
@@ -513,7 +513,7 @@ void		*param;
 	pfdentry->delete_pending = FALSE;
 
 	LOCK(pfdctx);
-	dllAdd(&pfdctx->fdentry_list, pfdentry);
+	dllAdd(&pfdctx->fdentry_list, (DLLNODE*)pfdentry);
 	UNLOCK(pfdctx);
 
 	return OK;
@@ -573,7 +573,7 @@ enum fdi_type	fdi;
 		pfdentry = (fdentry *) pfdentry->node.next){
 
 		if(pfdentry->fd == fd && pfdentry->fdi == fdi){
-			dllDelete(&pfdctx->fdentry_list, pfdentry);
+			dllDelete(&pfdctx->fdentry_list, (DLLNODE*)pfdentry);
 			fdmgr_finish_off_fdentry(pfdctx, pfdentry);
 			status = OK;
 			break;
@@ -639,7 +639,7 @@ register fdentry	*pfdentry;
 #endif
 {
      	FD_CLR(pfdentry->fd, pfdentry->pfds);
-	dllAdd(&pfdctx->fdentry_free_list, pfdentry);
+	dllAdd(&pfdctx->fdentry_free_list, (DLLNODE*)pfdentry);
 }
 
 
@@ -804,14 +804,14 @@ struct timeval 			*ptimeout;
 		LOCK(pfdctx)
 		pfdentry = (fdentry *) pfdentry->node.next;
 		if(pfdentry){
-			dllDelete(&pfdctx->fdentry_list, pfdentry);
+			dllDelete(&pfdctx->fdentry_list, (DLLNODE*)pfdentry);
 			/*
 			 *
 			 * holding place where it can be marked 
 			 * pending delete but not deleted
  			 *
 			 */
-			dllAdd(&pfdctx->fdentry_in_use_list, pfdentry);
+			dllAdd(&pfdctx->fdentry_in_use_list, (DLLNODE*)pfdentry);
 		}
 		UNLOCK(pfdctx)
 	
@@ -842,7 +842,7 @@ struct timeval 			*ptimeout;
 		}
 
 		LOCK(pfdctx)
-		dllDelete(&pfdctx->fdentry_in_use_list, pfdentry);
+		dllDelete(&pfdctx->fdentry_in_use_list, (DLLNODE*)pfdentry);
 
 		/*
 		 * if it is marked pending delete
@@ -855,7 +855,7 @@ struct timeval 			*ptimeout;
 			fdmgr_finish_off_fdentry(pfdctx, pfdentry);
 		}
 		else{
-			dllAdd(&pfdctx->fdentry_list, pfdentry);
+			dllAdd(&pfdctx->fdentry_list, (DLLNODE*)pfdentry);
 		}
 		UNLOCK(pfdctx)
 
@@ -903,8 +903,8 @@ struct timeval	*poffset;
 				break;
 
 		nextpa = (alarm*)pa->node.next;
-		dllDelete(&pfdctx->alarm_list, pa);
-		dllAdd(&pfdctx->expired_alarm_list, pa);
+		dllDelete(&pfdctx->alarm_list, (DLLNODE*)pa);
+		dllAdd(&pfdctx->expired_alarm_list, (DLLNODE*)pa);
 		pa->alt = alt_expired;
 	}
 	UNLOCK(pfdctx);

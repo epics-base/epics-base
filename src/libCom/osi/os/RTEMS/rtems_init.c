@@ -24,9 +24,8 @@
 #include <osiThread.h>
 #include <logClient.h>
 #include <ioccrf.h>
-#include <ioccrfRegister.h>
 #include <ioccrfRegisterCommon.h>
-#include "registerRecordDeviceDriverRegister.h"
+#include <registerRecordDeviceDriverRegister.h>
 #include <dbStaticLib.h>
 
 /*

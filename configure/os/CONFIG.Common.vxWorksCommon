@@ -80,6 +80,11 @@ export WIND_BASE = $(VX_DIR)
 export WIND_HOST_TYPE
 
 #--------------------------------------------------
+# Tornado2.2 
+# The follow export allows vxWorks.h to include gnu header files
+export TOOL_FAMILY = GNU
+
+#--------------------------------------------------
 # Operating system flags
 OP_SYS_CPPFLAGS = -DvxWorks
 OP_SYS_CFLAGS = -fno-builtin

@@ -153,9 +153,11 @@ const char * netiiu::pHostName () const
     return "<disconnected>";
 }
 
-double netiiu::beaconPeriod () const
+osiSockAddr netiiu::getNetworkAddress () const
 {
-    return ( - DBL_MAX );
+    osiSockAddr addr;
+    addr.sa.sa_family = AF_UNSPEC;
+    return addr;
 }
 
 void netiiu::flushRequest ()

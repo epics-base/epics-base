@@ -54,12 +54,12 @@ public:
     virtual void clearChannelRequest ( nciu & );
     virtual void subscriptionRequest ( nciu &, netSubscription &subscr );
     virtual void subscriptionCancelRequest ( nciu &, netSubscription &subscr );
-    virtual double beaconPeriod () const;
     virtual void flushRequest ();
     virtual bool flushBlockThreshold () const;
     virtual void flushRequestIfAboveEarlyThreshold ();
     virtual void blockUntilSendBacklogIsReasonable ( epicsMutex *, epicsMutex & );
     virtual void requestRecvProcessPostponedFlush ();
+    virtual osiSockAddr getNetworkAddress () const;
 protected:
     cac * pCAC () const;
 private:

@@ -216,9 +216,7 @@ extern "C" epicsShareFunc int epicsShareAPI fdmgr_clear_timeout (fdctx *pfdctx, 
     if (pTimer==NULL) {
         return -1;
     }
-    else {
-        delete pTimer;
-    }
+    delete pTimer;
     return 0;
 }
 

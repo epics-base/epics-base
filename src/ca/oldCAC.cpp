@@ -18,6 +18,8 @@
 #   pragma warning(disable:4355)
 #endif
 
+#include <stdexcept>
+
 #include <stdio.h>
 
 #define epicsExportSharedSymbols
@@ -29,18 +31,24 @@ extern epicsThreadPrivateId caClientContextId;
 oldCAC::oldCAC ( bool enablePreemptiveCallback ) :
     clientCtx ( * new cac ( *this, enablePreemptiveCallback ) ),
     ca_exception_func ( 0 ), ca_exception_arg ( 0 ), 
-    pVPrintfFunc ( errlogVprintf ), fdRegFunc ( 0 ), fdRegArg ( 0 )
+    pVPrintfFunc ( errlogVprintf ), fdRegFunc ( 0 ), fdRegArg ( 0 ),
+    pCallbackGuard ( 0 ), pndRecvCnt ( 0u ), ioSeqNo ( 0u )
 {
+    if ( enablePreemptiveCallback ) {
+        this->pCallbackGuard = new epicsGuard < callbackMutex > 
+            ( this->clientCtx.callbackGuardFactory () );
+    }
 }
 
 oldCAC::~oldCAC ()
 {
+    delete this->pCallbackGuard;
     delete & this->clientCtx;
 }
 
 void oldCAC::changeExceptionEvent ( caExceptionHandler *pfunc, void *arg )
 {
-    epicsGuard < oldCACMutex > autoMutex ( this->mutex );
+    epicsGuard < oldCACMutex > guard ( this->mutex );
     this->ca_exception_func = pfunc;
     this->ca_exception_arg = arg;
 // should block here until releated callback in progress completes
@@ -197,6 +205,15 @@ void oldCAC::show ( unsigned level ) const
     if ( level > 0u ) {
         this->mutex.show ( level - 1u );
         this->clientCtx.show ( level - 1u );
+        ::printf ( "\tpreemptive calback is %s\n",
+            this->pCallbackGuard ? "disabled" : "enabled" );
+        ::printf ( "\tthere are %u unsatisfied IO operations blocking ca_pend_io()\n",
+                this->pndRecvCnt );
+        ::printf ( "\tthe current io sequence number is %u\n",
+                this->ioSeqNo );
+        ::printf ( "IO done event:\n");
+        this->ioDone.show ( level - 1u );
+
     }
 }
 
@@ -206,5 +223,156 @@ void oldCAC::attachToClientCtx ()
     epicsThreadPrivateSet ( caClientContextId, this );
 }
 
+void oldCAC::incrementOutstandingIO ( unsigned ioSeqNo )
+{
+    if ( this->ioSeqNo == ioSeqNo ) {
+        epicsGuard < oldCACMutex > guard ( this->mutex );
+        if ( this->ioSeqNo == ioSeqNo ) {
+            if ( this->pndRecvCnt < UINT_MAX ) {
+                this->pndRecvCnt++;
+            }
+            else {
+                throw std::logic_error ( 
+                    "oldCAC::incrementOutstandingIO() IO counter overflow" );
+            }
+        }
+    }
+}
 
+void oldCAC::decrementOutstandingIO ( unsigned ioSeqNo )
+{
+    if ( this->ioSeqNo != ioSeqNo ) {
+        return;
+    }
 
+    bool signalNeeded;
+    {
+        epicsGuard < oldCACMutex > guard ( this->mutex ); 
+        if ( this->ioSeqNo == ioSeqNo ) {
+            if ( this->pndRecvCnt > 0u ) {
+                this->pndRecvCnt--;
+                if ( this->pndRecvCnt == 0u ) {
+                    signalNeeded = true;
+                }
+                else {
+                    signalNeeded = false;
+                }
+            }
+            else {
+                signalNeeded = true;
+            }
+        }
+        else {
+            signalNeeded = false;
+        }
+    }
+
+    if ( signalNeeded ) {
+        this->ioDone.signal ();
+    }
+}
+
+// !!!! This routine is only visible in the old interface - or in a new ST interface. 
+// !!!! In the old interface we restrict thread attach so that calls from threads 
+// !!!! other than the initializing thread are not allowed if preemptive callback 
+// !!!! is disabled. This prevents the preemptive callback lock from being released
+// !!!! by other threads than the one that locked it.
+//
+int oldCAC::pendIO ( const double & timeout )
+{
+    // prevent recursion nightmares by disabling calls to 
+    // pendIO () from within a CA callback. 
+    if ( epicsThreadPrivateGet ( caClientCallbackThreadId ) ) {
+        return ECA_EVDISALLOW;
+    }
+
+    int status = ECA_NORMAL;
+    epicsTime beg_time = epicsTime::getCurrent ();
+    double remaining = timeout;
+
+    this->flushRequest ();
+   
+    while ( this->pndRecvCnt > 0 ) {
+        if ( remaining < CAC_SIGNIFICANT_DELAY ) {
+            status = ECA_TIMEOUT;
+            break;
+        }
+
+        this->blockForEventAndEnableCallbacks ( this->ioDone, remaining );
+
+        double delay = epicsTime::getCurrent () - beg_time;
+        if ( delay < timeout ) {
+            remaining = timeout - delay;
+        }
+        else {
+            remaining = 0.0;
+        }
+    }
+
+    {
+        epicsGuard < oldCACMutex > guard ( this->mutex );
+        this->ioSeqNo++;
+        this->pndRecvCnt = 0u;
+    }
+
+    return status;
+}
+
+// !!!! This routine is only visible in the old interface - or in a new ST interface. 
+// !!!! In the old interface we restrict thread attach so that calls from threads 
+// !!!! other than the initializing thread are not allowed if preemptive callback 
+// !!!! is disabled. This prevents the preemptive callback lock from being released
+// !!!! by other threads than the one that locked it.
+//
+// this routine should probably be moved to the oldCAC?
+int oldCAC::pendEvent ( const double & timeout )
+{
+    // prevent recursion nightmares by disabling calls to 
+    // pendIO () from within a CA callback. 
+    if ( epicsThreadPrivateGet ( caClientCallbackThreadId ) ) {
+        return ECA_EVDISALLOW;
+    }
+
+    epicsTime current = epicsTime::getCurrent ();
+
+    this->flushRequest ();
+
+    // process at least once if preemptive callback is disabled
+    if ( this->pCallbackGuard ) {
+        epicsGuardRelease < callbackMutex > unguard ( *this->pCallbackGuard );
+        this->clientCtx.waitUntilNoRecvThreadsPending ();
+    }
+
+    double elapsed = epicsTime::getCurrent() - current;
+    double delay;
+
+    if ( timeout > elapsed ) {
+        delay = timeout - elapsed;
+    }
+    else {
+        delay = 0.0;
+    }
+
+    if ( delay >= CAC_SIGNIFICANT_DELAY ) {
+        if ( this->pCallbackGuard ) {
+            epicsGuardRelease < callbackMutex > unguard ( *this->pCallbackGuard );
+            epicsThreadSleep ( delay );
+        }
+        else {
+            epicsThreadSleep ( delay );
+        }
+    }
+
+    return ECA_TIMEOUT;
+}
+
+void oldCAC::blockForEventAndEnableCallbacks ( epicsEvent & event, double timeout )
+{
+    if ( this->pCallbackGuard ) {
+        epicsGuardRelease < callbackMutex > unguard ( *this->pCallbackGuard );
+        event.wait ( timeout );
+    }
+    else {
+        event.wait ( timeout );
+    }
+}

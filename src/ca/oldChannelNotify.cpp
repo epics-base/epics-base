@@ -27,10 +27,6 @@
 
 epicsSingleton < tsFreeList < struct oldChannelNotify, 1024 > > oldChannelNotify::pFreeList;
 
-extern "C" void cacNoopConnHandler ( struct connection_handler_args )
-{
-}
-
 extern "C" void cacNoopAccesRightsHandler ( struct access_rights_handler_args )
 {
 }
@@ -38,15 +34,28 @@ extern "C" void cacNoopAccesRightsHandler ( struct access_rights_handler_args )
 oldChannelNotify::oldChannelNotify ( oldCAC & cacIn, const char *pName, 
         caCh * pConnCallBackIn, void * pPrivateIn, capri priority ) :
     cacCtx ( cacIn ), 
-    pConnCallBack ( pConnCallBackIn ? pConnCallBackIn : cacNoopConnHandler ), 
+    pConnCallBack ( pConnCallBackIn ), 
     pPrivate ( pPrivateIn ), pAccessRightsFunc ( cacNoopAccesRightsHandler ),
-    io ( cacIn.createChannel ( pName, *this, priority ) )
+    io ( cacIn.createChannel ( pName, *this, priority ) ), 
+    ioSeqNo ( cacIn.sequenceNumberOfOutstandingIO () ),
+    prevConnected ( false )
 {
+    // no need to worry about a connect preempting here because
+    // the connect sequence will not start untill initiateConnect()
+    // is called
+    if ( pConnCallBackIn == 0 ) {
+        this->cacCtx.incrementOutstandingIO ( cacIn.sequenceNumberOfOutstandingIO () );
+    }
 }
 
 oldChannelNotify::~oldChannelNotify ()
 {
+
     delete & this->io;
+
+    // no need to worry about a connect preempting here because
+    // the nciu as been deleted
+    this->cacCtx.decrementOutstandingIO ( this->ioSeqNo );
 }
 
 void oldChannelNotify::setPrivatePointer ( void *pPrivateIn )
@@ -57,15 +66,6 @@ void oldChannelNotify::setPrivatePointer ( void *pPrivateIn )
 void * oldChannelNotify::privatePointer () const
 {
     return this->pPrivate;
-}
-
-int oldChannelNotify::changeConnCallBack ( caCh *pfunc )
-{
-    this->pConnCallBack = pfunc ? pfunc : cacNoopConnHandler;
-    // test for NOOP connection handler does _not_ occur here because the
-    // lock is not applied
-    this->io.notifyStateChangeFirstConnectInCountOfOutstandingIO ();
-    return ECA_NORMAL;
 }
 
 int oldChannelNotify::replaceAccessRightsEvent ( caArh *pfunc )
@@ -87,20 +87,55 @@ int oldChannelNotify::replaceAccessRightsEvent ( caArh *pfunc )
     return ECA_NORMAL;
 }
 
+int oldChannelNotify::changeConnCallBack ( caCh * pfunc )
+{
+    epicsGuard < callbackMutex > callbackGuard =
+            this->cacCtx.callbackGuardFactory ();
+ 
+    if ( ! this->prevConnected ) {
+         if ( pfunc ) { 
+            if ( ! this->pConnCallBack ) {
+                this->cacCtx.decrementOutstandingIO ( this->ioSeqNo );
+            }
+        }
+        else {
+            if ( this->pConnCallBack ) {
+                this->cacCtx.incrementOutstandingIO ( this->ioSeqNo );
+            }
+        }
+    }
+    this->pConnCallBack = pfunc;
+
+    return ECA_NORMAL;
+}
+
 void oldChannelNotify::connectNotify ()
 {
-    struct connection_handler_args  args;
-    args.chid = this;
-    args.op = CA_OP_CONN_UP;
-    ( *this->pConnCallBack ) ( args );
+    this->prevConnected = true;
+    if ( this->pConnCallBack ) {
+        struct connection_handler_args  args;
+        args.chid = this;
+        args.op = CA_OP_CONN_UP;
+        ( *this->pConnCallBack ) ( args );
+        
+    }
+    else {
+        this->cacCtx.decrementOutstandingIO ( this->ioSeqNo );
+    }
+
 }
 
 void oldChannelNotify::disconnectNotify ()
 {
-    struct connection_handler_args args;
-    args.chid = this;
-    args.op = CA_OP_CONN_DOWN;
-    ( *this->pConnCallBack ) ( args );
+    if ( this->pConnCallBack ) {
+        struct connection_handler_args args;
+        args.chid = this;
+        args.op = CA_OP_CONN_DOWN;
+        ( *this->pConnCallBack ) ( args );
+    }
+    else {
+        this->cacCtx.incrementOutstandingIO ( this->ioSeqNo );
+    }
 }
 
 void oldChannelNotify::accessRightsNotify ( const caAccessRights &ar )
@@ -129,11 +164,6 @@ void oldChannelNotify::writeException ( int status, const char *pContext,
 {
     this->cacCtx.exception ( status, pContext, 
         __FILE__, __LINE__, *this, type, count, CA_OP_PUT );
-}
-
-bool oldChannelNotify::includeFirstConnectInCountOfOutstandingIO () const
-{
-    return ( this->pConnCallBack == cacNoopConnHandler );
 }
 
 void * oldChannelNotify::operator new ( size_t size )

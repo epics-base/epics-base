@@ -84,10 +84,13 @@ protected:
     ~oldChannelNotify (); // must allocate from pool
 private:
     oldCAC & cacCtx;
+    cacChannel & io;
     caCh * pConnCallBack;
     void * pPrivate;
     caArh * pAccessRightsFunc;
-    cacChannel & io;
+    unsigned ioSeqNo;
+    bool prevConnected;
+    bool connCallbackInProress;
     void connectNotify ();
     void disconnectNotify ();
     void accessRightsNotify ( const caAccessRights & );
@@ -96,7 +99,6 @@ private:
         unsigned type, arrayElementCount count, void *pValue );
     void writeException ( int status, const char *pContext,
         unsigned type, arrayElementCount count );
-    bool includeFirstConnectInCountOfOutstandingIO () const;
     static epicsSingleton < tsFreeList < struct oldChannelNotify, 1024 > > pFreeList;
 	oldChannelNotify ( const oldChannelNotify & );
 	oldChannelNotify & operator = ( const oldChannelNotify & );
@@ -118,7 +120,7 @@ private:
     oldCAC &cacCtx;
     oldChannelNotify &chan;
     void *pValue;
-    unsigned readSeq;
+    unsigned ioSeqNo;
     unsigned type;
     void completion (
         unsigned type, arrayElementCount count, const void *pData);
@@ -212,21 +214,21 @@ struct oldCAC : public cacNotify
 public:
     oldCAC ( bool enablePreemptiveCallback = false );
     virtual ~oldCAC ();
-    void changeExceptionEvent ( caExceptionHandler *pfunc, void *arg );
-    void registerForFileDescriptorCallBack ( CAFDHANDLER *pFunc, void *pArg );
-    void replaceErrLogHandler ( caPrintfFunc *ca_printf_func );
-    void registerService ( cacService &service );
+    void changeExceptionEvent ( caExceptionHandler * pfunc, void * arg );
+    void registerForFileDescriptorCallBack ( CAFDHANDLER * pFunc, void * pArg );
+    void replaceErrLogHandler ( caPrintfFunc * ca_printf_func );
+    void registerService ( cacService & service );
     cacChannel & createChannel ( const char * name_str, 
         oldChannelNotify & chan, cacChannel::priLev pri );
     void flushRequest ();
-    int pendIO ( const double &timeout );
-    int pendEvent ( const double &timeout );
+    int pendIO ( const double & timeout );
+    int pendEvent ( const double & timeout );
     bool ioComplete () const;
     void show ( unsigned level ) const;
     unsigned connectionCount () const;
     unsigned sequenceNumberOfOutstandingIO () const;
-    void incrementOutstandingIO ();
-    void decrementOutstandingIO ( unsigned sequenceNo );
+    void incrementOutstandingIO ( unsigned ioSeqNo );
+    void decrementOutstandingIO ( unsigned ioSeqNo );
     void exception ( int status, const char *pContext, 
         const char *pFileName, unsigned lineNo );
     void exception ( int status, const char *pContext,
@@ -235,7 +237,7 @@ public:
     CASG * lookupCASG ( unsigned id );
     void installCASG ( CASG & );
     void uninstallCASG ( CASG & );
-    int blockForEventAndEnableCallbacks ( epicsEvent &event, double timeout );
+    void blockForEventAndEnableCallbacks ( epicsEvent & event, double timeout );
     void selfTest ();
 // perhaps these should be eliminated in deference to the exception mechanism
     int printf ( const char *pformat, ... ) const;
@@ -243,14 +245,19 @@ public:
     void vSignal ( int ca_status, const char *pfilenm, 
                      int lineno, const char *pFormat, va_list args );
     bool preemptiveCallbakIsEnabled () const;
+    epicsGuard < callbackMutex > callbackGuardFactory ();
 private:
     mutable oldCACMutex mutex; 
+    epicsEvent ioDone;
     cac & clientCtx;
-    caExceptionHandler *ca_exception_func;
-    void *ca_exception_arg;
-    caPrintfFunc *pVPrintfFunc;
-    CAFDHANDLER *fdRegFunc;
-    void *fdRegArg;
+    epicsGuard < callbackMutex > * pCallbackGuard;
+    caExceptionHandler * ca_exception_func;
+    void * ca_exception_arg;
+    caPrintfFunc * pVPrintfFunc;
+    CAFDHANDLER * fdRegFunc;
+    void  * fdRegArg;
+    unsigned pndRecvCnt;
+    unsigned ioSeqNo;
 // this should probably be phased out (its not OS independent)
     void fdWasCreated ( int fd );
     void fdWasDestroyed ( int fd );
@@ -353,7 +360,7 @@ inline bool oldChannelNotify::connected () const
 
 inline bool oldChannelNotify::previouslyConnected () const
 {
-    return this->io.previouslyConnected ();
+    return this->prevConnected;
 }
 
 inline void oldChannelNotify::hostName ( char *pBuf, unsigned bufLength ) const
@@ -457,44 +464,14 @@ inline cacChannel & oldCAC::createChannel ( const char * name_str,
     return this->clientCtx.createChannel ( name_str, chan, pri );
 }
 
-inline int oldCAC::pendIO ( const double &timeout )
-{
-    return this->clientCtx.pendIO ( timeout );
-}
-
-inline int oldCAC::pendEvent ( const double &timeout )
-{
-    return this->clientCtx.pendEvent ( timeout );
-}
-
 inline void oldCAC::flushRequest ()
 {
     this->clientCtx.flushRequest ();
 }
 
-inline bool oldCAC::ioComplete () const
-{
-    return this->clientCtx.ioComplete ();
-}
-
 inline unsigned oldCAC::connectionCount () const
 {
     return this->clientCtx.connectionCount ();
-}
-
-inline unsigned oldCAC::sequenceNumberOfOutstandingIO () const
-{
-    return this->clientCtx.sequenceNumberOfOutstandingIO ();
-}
-
-inline void oldCAC::incrementOutstandingIO ()
-{
-    this->clientCtx.incrementOutstandingIO ();
-}
-
-inline void oldCAC::decrementOutstandingIO ( unsigned sequenceNo )
-{
-    this->clientCtx.decrementOutstandingIO ( sequenceNo );
 }
 
 inline CASG * oldCAC::lookupCASG ( unsigned id )
@@ -512,12 +489,6 @@ inline void oldCAC::uninstallCASG ( CASG &sg )
     this->clientCtx.uninstallCASG ( sg );
 }
 
-inline int oldCAC::blockForEventAndEnableCallbacks ( 
-        epicsEvent &event, double timeout )
-{
-    return this->clientCtx.blockForEventAndEnableCallbacks ( event, timeout );
-}
-
 inline void oldCAC::vSignal ( int ca_status, const char *pfilenm, 
                      int lineno, const char *pFormat, va_list args )
 {
@@ -533,6 +504,21 @@ inline void oldCAC::selfTest ()
 inline bool oldCAC::preemptiveCallbakIsEnabled () const
 {
     return this->clientCtx.preemptiveCallbakIsEnabled ();
+}
+
+inline bool oldCAC::ioComplete () const
+{
+    return ( this->pndRecvCnt == 0u );
+}
+
+inline unsigned oldCAC::sequenceNumberOfOutstandingIO () const
+{
+    return this->ioSeqNo;
+}
+
+inline epicsGuard < callbackMutex > oldCAC::callbackGuardFactory ()
+{
+    return this->clientCtx.callbackGuardFactory ();
 }
 
 inline void oldCACMutex::lock ()

@@ -71,7 +71,7 @@ void osiSockRelease()
 epicsShareFunc unsigned epicsShareAPI ipAddrToHostName 
             (const struct in_addr *pAddr, char *pBuf, unsigned bufSize)
 {
-	struct hostent	*ent;
+	struct hostent *ent;
 	int ret = 0;
 
 	if (bufSize<1) {
@@ -79,7 +79,7 @@ epicsShareFunc unsigned epicsShareAPI ipAddrToHostName
 	}
 
 	lockInfo ();
-	ent = gethostbyaddr((char *) pAddr, sizeof (*pAddr), AF_INET);
+	ent = gethostbyaddr((const char *) pAddr, sizeof (*pAddr), AF_INET);
 	if (ent) {
         strncpy (pBuf, ent->h_name, bufSize);
         pBuf[bufSize-1] = '\0';

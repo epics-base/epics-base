@@ -1389,7 +1389,6 @@ int dbLoad(char * pfilename)
     long	status;
     FILE	*fp;
 
-    errInit();
     fp = fopen(pfilename,"r");
     if(!fp) {
 	errMessage(-1,"dbLoad: Error opening file");

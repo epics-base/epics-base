@@ -102,8 +102,8 @@ int cast_server(void)
   	int				count=0;
 	struct sockaddr_in		new_recv_addr;
   	int  				recv_addr_size;
-  	unsigned			nchars;
 	unsigned short			port;
+  	int			nchars;
 
 	taskwdInsert((int)taskIdCurrent,NULL,NULL);
 
@@ -111,30 +111,19 @@ int cast_server(void)
 
   	recv_addr_size = sizeof(new_recv_addr);
 
-  	if( IOC_cast_sock!=0 && IOC_cast_sock!=ERROR )
-    		if( (status = close(IOC_cast_sock)) == ERROR )
-      			logMsg("CAS: Unable to close master cast socket\n",
-				NULL,
-				NULL,
-				NULL,
-				NULL,
-				NULL,
-				NULL);
+    if( IOC_cast_sock!=0 && IOC_cast_sock!=ERROR ) {
+        if( (status = close(IOC_cast_sock)) == ERROR ) {
+            epicsPrintf ("CAS: Unable to close master cast socket\n");
+        }
+    }
 
   	/* 
   	 *  Open the socket.
  	 *  Use ARPA Internet address format and datagram socket.
- 	 *  Format described in <sys/socket.h>.
- 	 */
+     */
 
   	if((IOC_cast_sock = socket (AF_INET, SOCK_DGRAM, 0)) == ERROR){
-    		logMsg("CAS: casts socket creation error\n",
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL);
+    		epicsPrintf ("CAS: casts socket creation error\n");
     		taskSuspend(taskIdSelf());
   	}
 
@@ -158,182 +147,153 @@ int cast_server(void)
 		status = setsockopt (IOC_cast_sock, SOL_SOCKET,
 						SO_RCVBUF, (char *)&size, sizeof(size));
 		if (status<0) {
-			logMsg("CAS: unable to set cast socket size\n",
-				NULL, NULL, NULL, NULL, NULL, NULL);
+			epicsPrintf ("CAS: unable to set cast socket size\n");
 		}
 	}
 #endif
+    
+    /*  Zero the sock_addr structure */
+    bfill((char *)&sin, sizeof(sin), 0);
+    sin.sin_family = AF_INET;
+    sin.sin_addr.s_addr = htonl(INADDR_ANY);
+    sin.sin_port = htons(port);
+    
+    /* get server's Internet address */
+    if( bind(IOC_cast_sock, (struct sockaddr *)&sin, sizeof (sin)) == ERROR){
+        epicsPrintf ("CAS: cast bind error\n");
+        close (IOC_cast_sock);
+        taskSuspend(0);
+    }
+    
+    /* tell clients we are on line again */
+    status = taskSpawn(
+        CA_ONLINE_NAME,
+        CA_ONLINE_PRI,
+        CA_ONLINE_OPT,
+        CA_ONLINE_STACK,
+        rsrv_online_notify_task,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL);
+    if(status==ERROR){
+        epicsPrintf ("CAS: couldnt start up online notify task because \"%s\"\n",
+            strerror(errnoGet()));
+    }
+    
+ 
+    /*
+     * setup new client structure but reuse old structure if
+     * possible
+     *
+     */
+    while(TRUE){
+        prsrv_cast_client = create_udp_client(IOC_cast_sock);
+        if(prsrv_cast_client){
+            break;
+        }
+        taskDelay(sysClkRateGet()*60*5);
+    }
+    
+    while (TRUE) {
+        status = recvfrom (
+            IOC_cast_sock,
+            prsrv_cast_client->recv.buf,
+            sizeof(prsrv_cast_client->recv.buf),
+            NULL,
+            (struct sockaddr *)&new_recv_addr, 
+            &recv_addr_size);
+        if (status<0) {
+            epicsPrintf ("CAS: UDP recv error (errno=%d)\n",
+                    errnoGet());
+            taskDelay (sysClkRateGet());
+        }
+        else {
+            prsrv_cast_client->recv.cnt = (unsigned long) status;
+            prsrv_cast_client->recv.stk = 0ul;
+            prsrv_cast_client->ticks_at_last_recv = tickGet();
 
-  	/*  Zero the sock_addr structure */
-  	bfill((char *)&sin, sizeof(sin), 0);
-  	sin.sin_family = AF_INET;
-  	sin.sin_addr.s_addr = htonl(INADDR_ANY);
-  	sin.sin_port = htons(port);
-	
-  	/* get server's Internet address */
-  	if( bind(IOC_cast_sock, (struct sockaddr *)&sin, sizeof (sin)) == ERROR){
-    		logMsg("CAS: cast bind error\n",
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL);
-    		close (IOC_cast_sock);
-    		taskSuspend(0);
-  	}
+            /*
+             * If we are talking to a new client flush to the old one 
+             * in case we are holding UDP messages waiting to 
+             * see if the next message is for this same client.
+             */
+            if (prsrv_cast_client->send.stk) {
+                status = bcmp(
+                    (char *)&prsrv_cast_client->addr, 
+                    (char *)&new_recv_addr, 
+                    recv_addr_size);
+                if(status){ 	
+                    /* 
+                     * if the address is different 
+                     */
+                    cas_send_msg(prsrv_cast_client, TRUE);
+                    prsrv_cast_client->addr = new_recv_addr;
+                }
+            }
+            else {
+                prsrv_cast_client->addr = new_recv_addr;
+            }
 
-  	/* tell clients we are on line again */
-  	status = taskSpawn(
-		CA_ONLINE_NAME,
-		CA_ONLINE_PRI,
-		CA_ONLINE_OPT,
-		CA_ONLINE_STACK,
-		rsrv_online_notify_task,
-		NULL,
-		NULL,
-		NULL,
-		NULL,
-		NULL,
-		NULL,
-		NULL,
-		NULL,
-		NULL,
-		NULL);
-  	if(status==ERROR){
-    		logMsg("CAS: couldnt start up online notify task because \"%s\"\n",
-				(int) /* sic */ strerror(errnoGet()),
-				NULL,
-				NULL,
-				NULL,
-				NULL,
-				NULL);
-  	}
+            if(CASDEBUG>1){
+                char	buf[40];
+    
+                ipAddrToA (&prsrv_cast_client->addr, buf, sizeof(buf));
+                epicsPrintf ("CAS: cast server msg of %d bytes from addr %s\n", 
+                    prsrv_cast_client->recv.cnt, buf);
+            }
 
+            if(CASDEBUG>2)
+                count = ellCount(&prsrv_cast_client->addrq);
 
-	/*
-	 * setup new client structure but reuse old structure if
-	 * possible
-	 *
-	 */
-	while(TRUE){
-       	 	prsrv_cast_client = create_udp_client(IOC_cast_sock);
-      		if(prsrv_cast_client){
-       	 		break;
-      		}
-		taskDelay(sysClkRateGet()*60*5);
-    	}
+            status = camessage(
+                prsrv_cast_client,&prsrv_cast_client->recv);
+            if(status == OK){
+                if(prsrv_cast_client->recv.cnt != 
+                    prsrv_cast_client->recv.stk){
+                    char buf[40];
+        
+                    ipAddrToA (&prsrv_cast_client->addr, buf, sizeof(buf));
 
+                    epicsPrintf ("CAS: partial (damaged?) UDP msg of %d bytes from %s ?\n",
+                        prsrv_cast_client->recv.cnt-prsrv_cast_client->recv.stk, buf);
+                }
+            }
+            else {
+                char buf[40];
+    
+                ipAddrToA (&prsrv_cast_client->addr, buf, sizeof(buf));
 
-  	while(TRUE){
+                epicsPrintf ("CAS: invalid (damaged?) UDP request from %s ?\n", buf);
+            }
 
-    		status = recvfrom(
-			IOC_cast_sock,
-			prsrv_cast_client->recv.buf,
-			sizeof(prsrv_cast_client->recv.buf),
-			NULL,
-			(struct sockaddr *)&new_recv_addr, 
-			&recv_addr_size);
-    		if(status<0){
-      			logMsg("CAS: UDP recv error (errno=%d)\n",
-				errnoGet(),
-				NULL,
-				NULL,
-				NULL,
-				NULL,
-				NULL);
-			taskDelay(sysClkRateGet());
-			continue;
-    		}
-
-		prsrv_cast_client->recv.cnt = (unsigned long) status;
-		prsrv_cast_client->recv.stk = 0ul;
-		prsrv_cast_client->ticks_at_last_recv = tickGet();
-
-		/*
-		 * If we are talking to a new client flush the old one 
-		 * in case it is holding UDP messages waiting to 
-		 * see if the next message is for this same client.
-		 */
-		status = bcmp(
-				(char *)&prsrv_cast_client->addr, 
-				(char *)&new_recv_addr, 
-				recv_addr_size);
-		if(status){ 	
-			/* 
-			 * if the address is different 
-			 */
-			cas_send_msg(prsrv_cast_client, TRUE);
-  			prsrv_cast_client->addr = new_recv_addr;
-		}
-
-    		if(CASDEBUG>1){
-			char	buf[40];
-
-       			logMsg(	"CAS: cast server msg of %d bytes\n", 
-				prsrv_cast_client->recv.cnt,
-				NULL,
-				NULL,
-				NULL,
-				NULL,
-				NULL);
-				ipAddrToA (&prsrv_cast_client->addr, buf, sizeof(buf));
-
-       			logMsg(	"CAS: from addr %s \n", 
-				(int)buf,
-				NULL,
-				NULL,
-				NULL,
-				NULL,
-				NULL);
-    		}
-
-    		if(CASDEBUG>2)
-      			count = ellCount(&prsrv_cast_client->addrq);
-
-    		status = camessage(
-				prsrv_cast_client, 
-				&prsrv_cast_client->recv);
-		if(status == OK){
-			if(prsrv_cast_client->recv.cnt != 
-				prsrv_cast_client->recv.stk){
-
-				logMsg(	"CAS: partial UDP msg of %d bytes ?\n",
-					prsrv_cast_client->recv.cnt-
-						prsrv_cast_client->recv.stk,
-					NULL,
-					NULL,
-					NULL,
-					NULL,
-					NULL);
-			}
-		}
-
-      		if(CASDEBUG>2){
-			if(ellCount(&prsrv_cast_client->addrq)){
-        			logMsg(	"CAS: Fnd %d name matches (%d tot)\n",
-					ellCount(&prsrv_cast_client->addrq)
-						-count,
-					ellCount(&prsrv_cast_client->addrq),
-					NULL,
-					NULL,
-					NULL,
-					NULL);
-			}
-		}
+            if(CASDEBUG>2){
+                if(ellCount(&prsrv_cast_client->addrq)){
+                    epicsPrintf ("CAS: Fnd %d name matches (%d tot)\n",
+                        ellCount(&prsrv_cast_client->addrq)-count,
+                        ellCount(&prsrv_cast_client->addrq));
+                }
+            }
+        }
 
 		/*
-		 * allow message to batch up if more are comming
+		 * allow messages to batch up if more are comming
 		 */
- 	   	status = ioctl(IOC_cast_sock, FIONREAD, (int) &nchars);
+ 	   	status = ioctl(IOC_cast_sock, FIONREAD, /* sic */(int) &nchars);
  	   	if(status == ERROR){
-  	    		taskSuspend(0);
+            taskSuspend(0);
  	   	}
 
-    		if(nchars == 0){
-			cas_send_msg(prsrv_cast_client, TRUE);
-	      		clean_addrq();
-    		}	
+        if(nchars == 0){
+            cas_send_msg(prsrv_cast_client, TRUE);
+            clean_addrq();
+        }	
   	}
 }
 
@@ -392,13 +352,8 @@ LOCAL void clean_addrq()
 
 #	ifdef DEBUG
 	if(ndelete){
-		logMsg(	"CAS: %d CA channels have expired after %d sec\n",
-			ndelete,
-			maxdelay / sysClkRateGet(),
-			NULL,
-			NULL,
-			NULL,
-			NULL);
+		epicsPrintf ("CAS: %d CA channels have expired after %d sec\n",
+			ndelete, maxdelay / sysClkRateGet());
 	}
 #	endif
 
@@ -416,24 +371,12 @@ struct client *create_udp_client(unsigned sock)
 	
 	client = freeListMalloc(rsrvClientFreeList);
 	if(!client){
-		logMsg("CAS: no spae in pool for a new client\n",
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL);
+		epicsPrintf ("CAS: no space in pool for a new client\n");
 		return NULL;
 	}
 	
 	if(CASDEBUG>2)
-		logMsg(	"CAS: Creating new udp client\n",
-		NULL,
-		NULL,
-		NULL,
-		NULL,
-		NULL,
-		NULL);
+		epicsPrintf ("CAS: Creating new udp client\n");
 	
 	/*
 	 * The following inits to zero done instead of a bfill since the send
@@ -516,13 +459,7 @@ unsigned	sock
 	int	addrSize;
 
   	if(CASDEBUG>2){
-    		logMsg("CAS: converting udp client to tcp\n",
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL);
+    		epicsPrintf ("CAS: converting udp client to tcp\n");
 	}
 
   	client->proto 		= IPPROTO_TCP;
@@ -537,13 +474,7 @@ unsigned	sock
                         (struct sockaddr *)&client->addr,
                         &addrSize);
         if(status == ERROR){
-                logMsg("CAS: peer address fetch failed\n",
-                        NULL,
-                        NULL,
-                        NULL,
-                        NULL,
-                        NULL,
-                        NULL);
+                epicsPrintf ("CAS: peer address fetch failed\n");
                 return ERROR;
         }
 

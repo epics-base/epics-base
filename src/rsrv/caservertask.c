@@ -67,6 +67,9 @@ static char *sccsId = "@(#) $Id$";
 #include "task_params.h"
 #include "envDefs.h"
 #include "freeList.h"
+#include "errlog.h"
+#include "bsdSocketResource.h"
+
 #include "server.h"
 
 LOCAL int terminate_one_client(struct client *client);
@@ -477,8 +480,6 @@ void casr (unsigned level)
 			freeListItemsAvail (rsrvChanFreeList),
 			freeListItemsAvail (rsrvEventFreeList));
 
-		printf ("The next resource ID allocated will be %u\n", getNextRsrvResourceID());
-
 		if(pCaBucket){
 			printf(	"The server's resource id conversion table:\n");
 			FASTLOCK(&clientQlock);
@@ -500,12 +501,14 @@ LOCAL void log_one_client(struct client *client, unsigned level)
 {
 	int			i;
 	struct channel_in_use	*pciu;
-	struct sockaddr_in 	*psaddr;
 	char			*pproto;
 	float			send_delay;
 	float			recv_delay;
 	unsigned long		bytes_reserved;
 	char			*state[] = {"up", "down"};
+    char            clientHostName[128];
+
+    ipAddrToA (&client->addr, clientHostName, sizeof(clientHostName));
 
 	if(client->proto == IPPROTO_UDP){
 		pproto = "UDP";
@@ -521,9 +524,10 @@ LOCAL void log_one_client(struct client *client, unsigned level)
 	recv_delay = delay_in_ticks(client->ticks_at_last_recv);
 
 	printf(	
-"Client Name=\"%s\", Client Host=\"%s\", V%d.%u, Channel Count=%d\n", 
-		client->pUserName,
+    "%s(%s): User=\"%s\", V%d.%u, Channel Count=%d\n", 
+        clientHostName,
 		client->pHostName,
+		client->pUserName,
 		CA_PROTOCOL_VERSION,
 		client->minor_version_number,
 		ellCount(&client->addrq));
@@ -537,18 +541,10 @@ LOCAL void log_one_client(struct client *client, unsigned level)
 			send_delay/sysClkRateGet(),
 			recv_delay/sysClkRateGet());
 		printf( 
-		"\tUnprocessed request bytes=%lu, Undelivered response bytes=%lu\n", 
+		"\tUnprocessed request bytes=%lu, Undelivered response bytes=%lu, State=%s\n", 
 			client->send.stk,
-			client->recv.cnt - client->recv.stk);	
-		psaddr = &client->addr;
-		printf(
-		"\tRemote Address %lu.%lu.%lu.%lu Remote Port %d State=%s\n",
-			(psaddr->sin_addr.s_addr & 0xff000000) >> 24,
-			(psaddr->sin_addr.s_addr & 0x00ff0000) >> 16,
-			(psaddr->sin_addr.s_addr & 0x0000ff00) >> 8,
-			(psaddr->sin_addr.s_addr & 0x000000ff),
-			psaddr->sin_port,
-			state[client->disconnect?1:0]);
+			client->recv.cnt - client->recv.stk,
+            state[client->disconnect?1:0]);	
 	}
 
 	if (level>=2u) {

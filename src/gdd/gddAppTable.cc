@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.5  1996/10/17 12:41:48  jbk
+// took out strdup function - replaced with strDup
+//
 // Revision 1.4  1996/09/07 13:03:07  jbk
 // fixes to destroyData function
 //
@@ -438,7 +441,10 @@ gddStatus gddApplicationTypeTable::freeDD(gdd* dd)
 		// that user can attach data to - which causes problems because
 		// the actual structure of the DD is unknown
 		for(i=1;i<attr_table[group][app].total_dds;i++)
+		{
 			dd[i].destroyData();
+			dd[i].setPrimType(attr_table[group][app].proto[i].primitiveType());
+		}
 
 		// fprintf(stderr,"Adding DD to free_list %d\n",app);
 		dd->setNext(attr_table[group][app].free_list);

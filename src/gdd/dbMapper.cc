@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.15  1996/11/02 01:24:44  jhill
+// strcpy => styrcpy (shuts up purify)
+//
 // Revision 1.14  1996/09/10 15:06:28  jbk
 // Adjusted dbMapper.cc so gdd to string function work correctly
 // Added checks in gdd.h so that get(pointer) functions work with scalars
@@ -77,6 +80,7 @@
 // no way to detect a string type!!!!!!!
 
 static gddApplicationTypeTable* type_table = NULL;
+static aitDataFormat local_data_format=aitLocalDataFormat;
 
 const chtype gddAitToDbr[] = {
 	0,
@@ -168,16 +172,8 @@ static gdd* mapStringToGdd(void* v,aitIndex count) {
 
 static int mapGddToString(void* v, gdd* dd) {
 	aitFixedString* db = (aitFixedString*)v;
-	aitFixedString* dbx;
-
-	if(dd->isScalar())
-		dbx=(aitFixedString*)dd->dataAddress();
-	else
-		dbx=(aitFixedString*)dd->dataPointer();
-
-	int len = dd->getDataSizeElements();
-	if(dbx!=db) dd->get(*db);
-	return len;
+	if((aitFixedString*)dd->dataPointer()!=db) dd->get(db);
+	return dd->getDataSizeElements();
 }
 
 static gdd* mapShortToGdd(void* v,aitIndex count) {
@@ -195,16 +191,17 @@ static gdd* mapShortToGdd(void* v,aitIndex count) {
 	return dd;
 }
 
-static int mapGddToShort(void* v, gdd* dd) {
-	dbr_short_t* sv = (dbr_short_t*)v;
-    int sz=1;
+static int mapGddToShort(void* vd, gdd* dd) {
+	dbr_short_t* sv = (dbr_short_t*)vd;
+    int sz=dd->getDataSizeElements();
+	void* v=dd->dataVoid();
 
-	if(dd->getBounds()) {
-		sz=dd->getDataSizeElements();
-		if(dd->dataPointer()!=sv)
-			memcpy(sv,dd->dataPointer(),dd->getDataSizeBytes());
-	} else
-		*sv=*dd;
+	if(local_data_format==aitLocalDataFormat)
+		if((dbr_short_t*)v!=sv)
+			aitConvert(aitEnumInt16,sv,dd->primitiveType(),v,sz);
+	else
+		aitConvertToNet(aitEnumInt16,sv,dd->primitiveType(),v,sz);
+
 	return sz;
 }
 
@@ -223,16 +220,17 @@ static gdd* mapFloatToGdd(void* v,aitIndex count) {
 	return dd;
 }
 
-static int mapGddToFloat(void* v, gdd* dd) {
-	dbr_float_t* sv = (dbr_float_t*)v;
-    int sz=1;
+static int mapGddToFloat(void* vd, gdd* dd) {
+	dbr_float_t* sv = (dbr_float_t*)vd;
+    int sz=dd->getDataSizeElements();
+	void* v=dd->dataVoid();
 
-	if(dd->getBounds()) {
-		sz=dd->getDataSizeElements();
-		if(dd->dataPointer()!=sv)
-			memcpy(sv,dd->dataPointer(),dd->getDataSizeBytes());
-	} else
-		*sv=*dd;
+	if(local_data_format==aitLocalDataFormat)
+		if((dbr_float_t*)v!=sv)
+			aitConvert(aitEnumFloat32,sv,dd->primitiveType(),v,sz);
+	else
+		aitConvertToNet(aitEnumFloat32,sv,dd->primitiveType(),v,sz);
+
 	return sz;
 }
 
@@ -251,16 +249,17 @@ static gdd* mapEnumToGdd(void* v,aitIndex count) {
 	return dd;
 }
 
-static int mapGddToEnum(void* v, gdd* dd) {
-	dbr_enum_t* sv = (dbr_enum_t*)v;
-	aitEnum16* e;
-    int sz=1;
+static int mapGddToEnum(void* vd, gdd* dd) {
+	dbr_enum_t* sv = (dbr_enum_t*)vd;
+    int sz=dd->getDataSizeElements();
+	void* v=dd->dataVoid();
 
-	if(dd->dimension()) {
-		dd->getRef(e);
-		*sv=*e;
-	} else
-		*sv=*dd;
+	if(local_data_format==aitLocalDataFormat)
+		if((dbr_enum_t*)v!=sv)
+			aitConvert(aitEnumEnum16,sv,dd->primitiveType(),v,sz);
+	else
+		aitConvertToNet(aitEnumEnum16,sv,dd->primitiveType(),v,sz);
+
 	return sz;
 }
 
@@ -279,16 +278,17 @@ static gdd* mapCharToGdd(void* v,aitIndex count) {
 	return dd;
 }
 
-static int mapGddToChar(void* v, gdd* dd) {
-	dbr_char_t* sv = (dbr_char_t*)v;
-    int sz=1;
+static int mapGddToChar(void* vd, gdd* dd) {
+	dbr_char_t* sv = (dbr_char_t*)vd;
+    int sz=dd->getDataSizeElements();
+	void* v=dd->dataVoid();
 
-	if(dd->dimension()) {
-		sz=dd->getDataSizeElements();
-		if(dd->dataPointer()!=sv)
-			memcpy(sv,dd->dataPointer(),dd->getDataSizeBytes());
-	} else
-		*sv=*dd;
+	if(local_data_format==aitLocalDataFormat)
+		if((dbr_char_t*)v!=sv)
+			aitConvert(aitEnumInt8,sv,dd->primitiveType(),v,sz);
+	else
+		aitConvertToNet(aitEnumInt8,sv,dd->primitiveType(),v,sz);
+
 	return sz;
 }
 
@@ -307,16 +307,17 @@ static gdd* mapLongToGdd(void* v,aitIndex count) {
 	return dd;
 }
 
-static int mapGddToLong(void* v, gdd* dd) {
-	dbr_long_t* sv = (dbr_long_t*)v;
-    int sz=1;
+static int mapGddToLong(void* vd, gdd* dd) {
+	dbr_long_t* sv = (dbr_long_t*)vd;
+    int sz=dd->getDataSizeElements();
+	void* v=dd->dataVoid();
 
-	if(dd->dimension()) {
-		sz=dd->getDataSizeElements();
-		if(dd->dataPointer()!=sv)
-			memcpy(sv,dd->dataPointer(),dd->getDataSizeBytes());
-	} else
-		*sv=*dd;
+	if(local_data_format==aitLocalDataFormat)
+		if((dbr_long_t*)v!=sv)
+			aitConvert(aitEnumInt32,sv,dd->primitiveType(),v,sz);
+	else
+		aitConvertToNet(aitEnumInt32,sv,dd->primitiveType(),v,sz);
+
 	return sz;
 }
 
@@ -335,16 +336,17 @@ static gdd* mapDoubleToGdd(void* v,aitIndex count) {
 	return dd;
 }
 
-static int mapGddToDouble(void* v, gdd* dd) {
-	dbr_double_t* sv = (dbr_double_t*)v;
-    int sz=1;
+static int mapGddToDouble(void* vd, gdd* dd) {
+	dbr_double_t* sv = (dbr_double_t*)vd;
+    int sz=dd->getDataSizeElements();
+	void* v=dd->dataVoid();
 
-	if(dd->dimension()) {
-		sz=dd->getDataSizeElements();
-		if(dd->dataPointer()!=sv)
-			memcpy(sv,dd->dataPointer(),dd->getDataSizeBytes());
-	} else
-		*sv=*dd;
+	if(local_data_format==aitLocalDataFormat)
+		if((dbr_double_t*)v!=sv)
+			aitConvert(aitEnumFloat64,sv,dd->primitiveType(),v,sz);
+	else
+		aitConvertToNet(aitEnumFloat64,sv,dd->primitiveType(),v,sz);
+
 	return sz;
 }
 
@@ -377,17 +379,12 @@ static gdd* mapStsStringToGdd(void* v,aitIndex count)
 
 static int mapStsGddToString(void* v, gdd* dd)
 {
+	// what about arrays of string? is this allowed?
 	dbr_sts_string* db = (dbr_sts_string*)v;
 	aitFixedString* dbv = (aitFixedString*)db->value;
-	aitFixedString* dbx;
 	
-	if(dd->isScalar())
-		dbx=(aitFixedString*)dd->dataAddress();
-	else
-		dbx=(aitFixedString*)dd->dataPointer();
-
 	// copy string into user buffer for now if not the same as one in gdd
-	if(dbx!=dbv) dd->get(*dbv);
+	if((aitFixedString*)dd->dataPointer()!=dbv) dd->get(dbv);
 	dd->getStatSevr(db->status,db->severity);
 	return dd->getDataSizeElements();
 }
@@ -403,9 +400,8 @@ static gdd* mapStsShortToGdd(void* v,aitIndex count)
 static int mapStsGddToShort(void* v, gdd* dd)
 {
 	dbr_sts_short* dbv = (dbr_sts_short*)v;
-	int sz=mapGddToShort(&dbv->value,dd);
 	dd->getStatSevr(dbv->status,dbv->severity);
-	return sz;
+	return mapGddToShort(&dbv->value,dd);
 }
 
 static gdd* mapStsFloatToGdd(void* v,aitIndex count)
@@ -419,9 +415,8 @@ static gdd* mapStsFloatToGdd(void* v,aitIndex count)
 static int mapStsGddToFloat(void* v, gdd* dd)
 {
 	dbr_sts_float* dbv = (dbr_sts_float*)v;
-	int sz=mapGddToFloat(&dbv->value,dd);
 	dd->getStatSevr(dbv->status,dbv->severity);
-	return sz;
+	return mapGddToFloat(&dbv->value,dd);
 }
 
 static gdd* mapStsEnumToGdd(void* v,aitIndex count)
@@ -435,9 +430,8 @@ static gdd* mapStsEnumToGdd(void* v,aitIndex count)
 static int mapStsGddToEnum(void* v, gdd* dd)
 {
 	dbr_sts_enum* dbv = (dbr_sts_enum*)v;
-	int sz=mapGddToEnum(&dbv->value,dd);
 	dd->getStatSevr(dbv->status,dbv->severity);
-	return sz;
+	return mapGddToEnum(&dbv->value,dd);
 }
 
 static gdd* mapStsCharToGdd(void* v,aitIndex count)
@@ -451,10 +445,9 @@ static gdd* mapStsCharToGdd(void* v,aitIndex count)
 static int mapStsGddToChar(void* v, gdd* dd)
 {
 	dbr_sts_char* dbv = (dbr_sts_char*)v;
-	int sz=mapGddToChar(&dbv->value,dd);
 	dd->getStatSevr(dbv->status,dbv->severity);
 	dbv->RISC_pad = '\0'; // shut up purify
-	return sz;
+	return mapGddToChar(&dbv->value,dd);
 }
 
 static gdd* mapStsLongToGdd(void* v,aitIndex count)
@@ -468,9 +461,8 @@ static gdd* mapStsLongToGdd(void* v,aitIndex count)
 static int mapStsGddToLong(void* v, gdd* dd)
 {
 	dbr_sts_long* dbv = (dbr_sts_long*)v;
-	int sz=mapGddToLong(&dbv->value,dd);
 	dd->getStatSevr(dbv->status,dbv->severity);
-	return sz;
+	return mapGddToLong(&dbv->value,dd);
 }
 
 static gdd* mapStsDoubleToGdd(void* v,aitIndex count)
@@ -484,10 +476,9 @@ static gdd* mapStsDoubleToGdd(void* v,aitIndex count)
 static int mapStsGddToDouble(void* v, gdd* dd)
 {
 	dbr_sts_double* dbv = (dbr_sts_double*)v;
-	int sz=mapGddToDouble(&dbv->value,dd);
 	dd->getStatSevr(dbv->status,dbv->severity);
 	dbv->RISC_pad = 0; // shut up purify
-	return sz;
+	return mapGddToDouble(&dbv->value,dd);
 }
 
 // ********************************************************************
@@ -522,19 +513,12 @@ static int mapTimeGddToString(void* v, gdd* dd)
 {
 	dbr_time_string* db = (dbr_time_string*)v;
 	aitFixedString* dbv = (aitFixedString*)db->value;
-	aitFixedString* dbx;
 
 	// copy string into user buffer for now if not the same as one in gdd
-	if(dd->isScalar())
-		dbx=(aitFixedString*)dd->dataAddress();
-	else
-		dbx=(aitFixedString*)dd->dataPointer();
-
-	if(dbv!=dbx) dd->get(*dbv);
-
+	if(dbv!=(aitFixedString*)dd->dataPointer()) dd->get(dbv);
 	dd->getStatSevr(db->status,db->severity);
 	dd->getTimeStamp((aitTimeStamp*)&db->stamp);
-	return dd->getDataSizeBytes();
+	return dd->getDataSizeElements();
 }
 
 static gdd* mapTimeShortToGdd(void* v,aitIndex count)
@@ -549,11 +533,10 @@ static gdd* mapTimeShortToGdd(void* v,aitIndex count)
 static int mapTimeGddToShort(void* v, gdd* dd)
 {
 	dbr_time_short* dbv = (dbr_time_short*)v;
-	int sz=mapGddToShort(&dbv->value,dd);
 	dd->getStatSevr(dbv->status,dbv->severity);
 	dd->getTimeStamp((aitTimeStamp*)&dbv->stamp);
 	dbv->RISC_pad = 0; // shut up purify
-	return sz;
+	return mapGddToShort(&dbv->value,dd);
 }
 
 static gdd* mapTimeFloatToGdd(void* v,aitIndex count)
@@ -568,10 +551,9 @@ static gdd* mapTimeFloatToGdd(void* v,aitIndex count)
 static int mapTimeGddToFloat(void* v, gdd* dd)
 {
 	dbr_time_float* dbv = (dbr_time_float*)v;
-	int sz=mapGddToFloat(&dbv->value,dd);
 	dd->getStatSevr(dbv->status,dbv->severity);
 	dd->getTimeStamp((aitTimeStamp*)&dbv->stamp);
-	return sz;
+	return mapGddToFloat(&dbv->value,dd);
 }
 
 static gdd* mapTimeEnumToGdd(void* v,aitIndex count)
@@ -586,11 +568,10 @@ static gdd* mapTimeEnumToGdd(void* v,aitIndex count)
 static int mapTimeGddToEnum(void* v, gdd* dd)
 {
 	dbr_time_enum* dbv = (dbr_time_enum*)v;
-	int sz=mapGddToEnum(&dbv->value,dd);
 	dd->getStatSevr(dbv->status,dbv->severity);
 	dd->getTimeStamp((aitTimeStamp*)&dbv->stamp);
 	dbv->RISC_pad = 0; // shut up purify
-	return sz;
+	return mapGddToEnum(&dbv->value,dd);
 }
 
 static gdd* mapTimeCharToGdd(void* v,aitIndex count)
@@ -605,12 +586,11 @@ static gdd* mapTimeCharToGdd(void* v,aitIndex count)
 static int mapTimeGddToChar(void* v, gdd* dd)
 {
 	dbr_time_char* dbv = (dbr_time_char*)v;
-	int sz=mapGddToChar(&dbv->value,dd);
 	dd->getStatSevr(dbv->status,dbv->severity);
 	dd->getTimeStamp((aitTimeStamp*)&dbv->stamp);
 	dbv->RISC_pad0 = 0; // shut up purify
 	dbv->RISC_pad1 = '\0'; // shut up purify
-	return sz;
+	return mapGddToChar(&dbv->value,dd);
 }
 
 static gdd* mapTimeLongToGdd(void* v,aitIndex count)
@@ -625,10 +605,9 @@ static gdd* mapTimeLongToGdd(void* v,aitIndex count)
 static int mapTimeGddToLong(void* v, gdd* dd)
 {
 	dbr_time_long* dbv = (dbr_time_long*)v;
-	int sz=mapGddToLong(&dbv->value,dd);
 	dd->getStatSevr(dbv->status,dbv->severity);
 	dd->getTimeStamp((aitTimeStamp*)&dbv->stamp);
-	return sz;
+	return mapGddToLong(&dbv->value,dd);
 }
 
 static gdd* mapTimeDoubleToGdd(void* v,aitIndex count)
@@ -643,11 +622,10 @@ static gdd* mapTimeDoubleToGdd(void* v,aitIndex count)
 static int mapTimeGddToDouble(void* v, gdd* dd)
 {
 	dbr_time_double* dbv = (dbr_time_double*)v;
-	int sz=mapGddToDouble(&dbv->value,dd);
 	dd->getStatSevr(dbv->status,dbv->severity);
 	dd->getTimeStamp((aitTimeStamp*)&dbv->stamp);
 	dbv->RISC_pad = 0; // shut up purify
-	return sz;
+	return mapGddToDouble(&dbv->value,dd);
 }
 
 // ********************************************************************
@@ -723,11 +701,10 @@ static gdd* mapControlShortToGdd(void* v, aitIndex count)
 
 static int mapGraphicGddToShort(void* v, gdd* dd)
 {
+	aitString* str;
 	dbr_gr_short* db = (dbr_gr_short*)v;
-	int sz=1;
 	gdd& vdd = dd[gddAppTypeIndex_dbr_gr_short_value];
 
-	aitString* str;
 	dd[gddAppTypeIndex_dbr_gr_short_units].getRef(str);
 	if(str->string()) {
 		strncpy(db->units,str->string(), sizeof(db->units));
@@ -742,23 +719,15 @@ static int mapGraphicGddToShort(void* v, gdd* dd)
 	db->upper_warning_limit=dd[gddAppTypeIndex_dbr_gr_short_alarmHighWarning];
 
 	vdd.getStatSevr(db->status,db->severity);
-
-	if(vdd.dimension()) {
-		sz=vdd.getDataSizeElements();
-		if(vdd.dataPointer()!=v)
-			memcpy(&db->value, vdd.dataPointer(), vdd.getDataSizeBytes());
-	} else
-		db->value=vdd;
-	return sz;
+	return mapGddToShort(&db->value,&vdd);
 }
 
 static int mapControlGddToShort(void* v, gdd* dd)
 {
+	aitString* str;
 	dbr_ctrl_short* db = (dbr_ctrl_short*)v;
-	int sz=1;
 	gdd& vdd = dd[gddAppTypeIndex_dbr_ctrl_short_value];
 
-	aitString* str;
 	dd[gddAppTypeIndex_dbr_ctrl_short_units].getRef(str);
 	if(str->string()) {
 		strncpy(db->units,str->string(), sizeof(db->units));
@@ -775,14 +744,7 @@ static int mapControlGddToShort(void* v, gdd* dd)
 	db->upper_warning_limit=dd[gddAppTypeIndex_dbr_ctrl_short_alarmHighWarning];
 
 	vdd.getStatSevr(db->status,db->severity);
-
-	if(vdd.dimension()) {
-		sz=vdd.getDataSizeElements();
-		if(vdd.dataPointer()!=v)
-			memcpy(&db->value, vdd.dataPointer(), vdd.getDataSizeBytes());
-	} else
-		db->value=vdd;
-	return sz;
+	return mapGddToShort(&db->value,&vdd);
 }
 
 // -------------map the float structures----------------
@@ -811,8 +773,8 @@ static gdd* mapGraphicFloatToGdd(void* v, aitIndex count)
 		if(vdd.dimension()) vdd.clear();
 		vdd=db->value;
 	} else {
-		if(vdd.dimension()!=1) vdd.reset(aitEnumInt16,1,&count);
-		else vdd.setPrimType(aitEnumInt16);
+		if(vdd.dimension()!=1) vdd.reset(aitEnumFloat32,1,&count);
+		else vdd.setPrimType(aitEnumFloat32);
 		vdd.setBound(0,0,count);
 		vdd.putRef(&db->value);
 	}
@@ -846,8 +808,8 @@ static gdd* mapControlFloatToGdd(void* v, aitIndex count)
 		if(vdd.dimension()) vdd.clear();
 		vdd=db->value;
 	} else {
-		if(vdd.dimension()!=1) vdd.reset(aitEnumInt16,1,&count);
-		else vdd.setPrimType(aitEnumInt16);
+		if(vdd.dimension()!=1) vdd.reset(aitEnumFloat32,1,&count);
+		else vdd.setPrimType(aitEnumFloat32);
 		vdd.setBound(0,0,count);
 		vdd.putRef(&db->value);
 	}
@@ -856,11 +818,10 @@ static gdd* mapControlFloatToGdd(void* v, aitIndex count)
 
 static int mapGraphicGddToFloat(void* v, gdd* dd)
 {
+	aitString* str;
 	dbr_gr_float* db = (dbr_gr_float*)v;
-	int sz=1;
 	gdd& vdd = dd[gddAppTypeIndex_dbr_gr_float_value];
 
-	aitString* str;
 	dd[gddAppTypeIndex_dbr_gr_float_units].getRef(str);
 	if(str->string()) {
 		strncpy(db->units,str->string(), sizeof(db->units));
@@ -877,23 +838,15 @@ static int mapGraphicGddToFloat(void* v, gdd* dd)
 	db->RISC_pad0 = 0; // shut up purify
 
 	vdd.getStatSevr(db->status,db->severity);
-
-	if(vdd.dimension()) {
-		sz=vdd.getDataSizeElements();
-		if(vdd.dataPointer()!=v)
-			memcpy(&db->value, vdd.dataPointer(), vdd.getDataSizeBytes());
-	} else
-		db->value=vdd;
-	return sz;
+	return mapGddToFloat(&db->value,&vdd);
 }
 
 static int mapControlGddToFloat(void* v, gdd* dd)
 {
+	aitString* str;
 	dbr_ctrl_float* db = (dbr_ctrl_float*)v;
-	int sz=1;
 	gdd& vdd = dd[gddAppTypeIndex_dbr_ctrl_float_value];
 
-	aitString* str;
 	dd[gddAppTypeIndex_dbr_ctrl_float_units].getRef(str);
 	if(str->string()) {
 		strncpy(db->units,str->string(), sizeof(db->units));
@@ -912,14 +865,7 @@ static int mapControlGddToFloat(void* v, gdd* dd)
 	db->RISC_pad = 0; // shut up purify
 
 	vdd.getStatSevr(db->status,db->severity);
-
-	if(vdd.dimension()) {
-		sz=vdd.getDataSizeElements();
-		if(vdd.dataPointer()!=v)
-			memcpy(&db->value, vdd.dataPointer(), vdd.getDataSizeBytes());
-	} else
-		db->value=vdd;
-	return sz;
+	return mapGddToFloat(&db->value,&vdd);
 }
 
 // -------------map the enum structures----------------
@@ -1080,8 +1026,8 @@ static gdd* mapGraphicCharToGdd(void* v, aitIndex count)
 		if(vdd.dimension()) vdd.clear();
 		vdd=db->value;
 	} else {
-		if(vdd.dimension()!=1) vdd.reset(aitEnumInt16,1,&count);
-		else vdd.setPrimType(aitEnumInt16);
+		if(vdd.dimension()!=1) vdd.reset(aitEnumInt8,1,&count);
+		else vdd.setPrimType(aitEnumInt8);
 		vdd.setBound(0,0,count);
 		vdd.putRef(&db->value);
 	}
@@ -1114,8 +1060,8 @@ static gdd* mapControlCharToGdd(void* v, aitIndex count)
 		if(vdd.dimension()) vdd.clear();
 		vdd=db->value;
 	} else {
-		if(vdd.dimension()!=1) vdd.reset(aitEnumInt16,1,&count);
-		else vdd.setPrimType(aitEnumInt16);
+		if(vdd.dimension()!=1) vdd.reset(aitEnumInt8,1,&count);
+		else vdd.setPrimType(aitEnumInt8);
 		vdd.setBound(0,0,count);
 		vdd.putRef(&db->value);
 	}
@@ -1124,11 +1070,10 @@ static gdd* mapControlCharToGdd(void* v, aitIndex count)
 
 static int mapGraphicGddToChar(void* v, gdd* dd)
 {
+	aitString* str;
 	dbr_gr_char* db = (dbr_gr_char*)v;
 	gdd& vdd = dd[gddAppTypeIndex_dbr_gr_char_value];
-	int sz=1;
 
-	aitString* str;
 	dd[gddAppTypeIndex_dbr_gr_char_units].getRef(str);
 	if(str->string()) {
 		strncpy(db->units,str->string(), sizeof(db->units));
@@ -1144,23 +1089,15 @@ static int mapGraphicGddToChar(void* v, gdd* dd)
 	db->RISC_pad = 0;
 
 	vdd.getStatSevr(db->status,db->severity);
-
-	if(vdd.dimension()) {
-		sz=vdd.getDataSizeElements();
-		if(vdd.dataPointer()!=v)
-			memcpy(&db->value, vdd.dataPointer(), vdd.getDataSizeBytes());
-	} else
-		db->value=vdd;
-	return sz;
+	return mapGddToChar(&db->value,&vdd);
 }
 
 static int mapControlGddToChar(void* v, gdd* dd)
 {
+	aitString* str;
 	dbr_ctrl_char* db = (dbr_ctrl_char*)v;
 	gdd& vdd = dd[gddAppTypeIndex_dbr_ctrl_char_value];
-	int sz=1;
 
-	aitString* str;
 	dd[gddAppTypeIndex_dbr_ctrl_char_units].getRef(str);
 	if(str->string()) {
 		strncpy(db->units,str->string(), sizeof(db->units));
@@ -1178,14 +1115,7 @@ static int mapControlGddToChar(void* v, gdd* dd)
 	db->RISC_pad = '\0'; // shut up purify
 
 	vdd.getStatSevr(db->status,db->severity);
-
-	if(vdd.dimension()) {
-		sz=vdd.getDataSizeElements();
-		if(vdd.dataPointer()!=v)
-			memcpy(&db->value, vdd.dataPointer(), vdd.getDataSizeBytes());
-	} else
-		db->value=vdd;
-	return sz;
+	return mapGddToChar(&db->value,&vdd);
 }
 
 // -------------map the long structures----------------
@@ -1213,8 +1143,8 @@ static gdd* mapGraphicLongToGdd(void* v, aitIndex count)
 		if(vdd.dimension()) vdd.clear();
 		vdd=db->value;
 	} else {
-		if(vdd.dimension()!=1) vdd.reset(aitEnumInt16,1,&count);
-		else vdd.setPrimType(aitEnumInt16);
+		if(vdd.dimension()!=1) vdd.reset(aitEnumInt32,1,&count);
+		else vdd.setPrimType(aitEnumInt32);
 		vdd.setBound(0,0,count);
 		vdd.putRef(&db->value);
 	}
@@ -1247,8 +1177,8 @@ static gdd* mapControlLongToGdd(void* v, aitIndex count)
 		if(vdd.dimension()) vdd.clear();
 		vdd=db->value;
 	} else {
-		if(vdd.dimension()!=1) vdd.reset(aitEnumInt16,1,&count);
-		else vdd.setPrimType(aitEnumInt16);
+		if(vdd.dimension()!=1) vdd.reset(aitEnumInt32,1,&count);
+		else vdd.setPrimType(aitEnumInt32);
 		vdd.setBound(0,0,count);
 		vdd.putRef(&db->value);
 	}
@@ -1257,11 +1187,10 @@ static gdd* mapControlLongToGdd(void* v, aitIndex count)
 
 static int mapGraphicGddToLong(void* v, gdd* dd)
 {
+	aitString* str;
 	dbr_gr_long* db = (dbr_gr_long*)v;
 	gdd& vdd = dd[gddAppTypeIndex_dbr_gr_long_value];
-	int sz=1;
 
-	aitString* str;
 	dd[gddAppTypeIndex_dbr_gr_long_units].getRef(str);
 	if(str->string()) {
 		strncpy(db->units,str->string(), sizeof(db->units));
@@ -1276,23 +1205,15 @@ static int mapGraphicGddToLong(void* v, gdd* dd)
 	db->upper_warning_limit=dd[gddAppTypeIndex_dbr_gr_long_alarmHighWarning];
 
 	vdd.getStatSevr(db->status,db->severity);
-
-	if(vdd.dimension()) {
-		sz=vdd.getDataSizeElements();
-		if(vdd.dataPointer()!=v)
-			memcpy(&db->value, vdd.dataPointer(), vdd.getDataSizeBytes());
-	} else
-		db->value=vdd;
-	return sz;
+	return mapGddToLong(&db->value,&vdd);
 }
 
 static int mapControlGddToLong(void* v, gdd* dd)
 {
+	aitString* str;
 	dbr_ctrl_long* db = (dbr_ctrl_long*)v;
 	gdd& vdd = dd[gddAppTypeIndex_dbr_ctrl_long_value];
-	int sz=1;
 
-	aitString* str;
 	dd[gddAppTypeIndex_dbr_ctrl_long_units].getRef(str);
 	if(str->string()) {
 		strncpy(db->units,str->string(), sizeof(db->units));
@@ -1309,14 +1230,7 @@ static int mapControlGddToLong(void* v, gdd* dd)
 	db->upper_warning_limit=dd[gddAppTypeIndex_dbr_ctrl_long_alarmHighWarning];
 
 	vdd.getStatSevr(db->status,db->severity);
-
-	if(vdd.dimension()) {
-		sz=vdd.getDataSizeElements();
-		if(vdd.dataPointer()!=v)
-			memcpy(&db->value, vdd.dataPointer(), vdd.getDataSizeBytes());
-	} else
-		db->value=vdd;
-	return sz;
+	return mapGddToLong(&db->value,&vdd);
 }
 
 // -------------map the double structures----------------
@@ -1345,8 +1259,8 @@ static gdd* mapGraphicDoubleToGdd(void* v, aitIndex count)
 		if(vdd.dimension()) vdd.clear();
 		vdd=db->value;
 	} else {
-		if(vdd.dimension()!=1) vdd.reset(aitEnumInt16,1,&count);
-		else vdd.setPrimType(aitEnumInt16);
+		if(vdd.dimension()!=1) vdd.reset(aitEnumFloat64,1,&count);
+		else vdd.setPrimType(aitEnumFloat64);
 		vdd.setBound(0,0,count);
 		vdd.putRef(&db->value);
 	}
@@ -1380,8 +1294,8 @@ static gdd* mapControlDoubleToGdd(void* v, aitIndex count)
 		if(vdd.dimension()) vdd.clear();
 		vdd=db->value;
 	} else {
-		if(vdd.dimension()!=1) vdd.reset(aitEnumInt16,1,&count);
-		else vdd.setPrimType(aitEnumInt16);
+		if(vdd.dimension()!=1) vdd.reset(aitEnumFloat64,1,&count);
+		else vdd.setPrimType(aitEnumFloat64);
 		vdd.setBound(0,0,count);
 		vdd.putRef(&db->value);
 	}
@@ -1390,11 +1304,10 @@ static gdd* mapControlDoubleToGdd(void* v, aitIndex count)
 
 static int mapGraphicGddToDouble(void* v, gdd* dd)
 {
+	aitString* str;
 	dbr_gr_double* db = (dbr_gr_double*)v;
 	gdd& vdd = dd[gddAppTypeIndex_dbr_gr_double_value];
-	int sz=1;
 
-	aitString* str;
 	dd[gddAppTypeIndex_dbr_gr_double_units].getRef(str);
 	if(str->string()) {
 		strncpy(db->units,str->string(), sizeof(db->units));
@@ -1411,23 +1324,15 @@ static int mapGraphicGddToDouble(void* v, gdd* dd)
 	db->RISC_pad0 = 0; // shut up purify
 
 	vdd.getStatSevr(db->status,db->severity);
-
-	if(vdd.dimension()) {
-		sz=vdd.getDataSizeElements();
-		if(vdd.dataPointer()!=v)
-			memcpy(&db->value, vdd.dataPointer(), vdd.getDataSizeBytes());
-	} else
-		db->value=vdd;
-	return sz;
+	return mapGddToDouble(&db->value,&vdd);
 }
 
 static int mapControlGddToDouble(void* v, gdd* dd)
 {
+	aitString* str;
 	dbr_ctrl_double* db = (dbr_ctrl_double*)v;
 	gdd& vdd = dd[gddAppTypeIndex_dbr_ctrl_double_value];
-	int sz=1;
 
-	aitString* str;
 	dd[gddAppTypeIndex_dbr_ctrl_double_units].getRef(str);
 	if(str->string()) {
 		strncpy(db->units,str->string(), sizeof(db->units));
@@ -1446,14 +1351,7 @@ static int mapControlGddToDouble(void* v, gdd* dd)
 	db->RISC_pad0 = '\0'; // shut up purify
 
 	vdd.getStatSevr(db->status,db->severity);
-
-	if(vdd.dimension()) {
-		sz=vdd.getDataSizeElements();
-		if(vdd.dataPointer()!=v)
-			memcpy(&db->value, vdd.dataPointer(), vdd.getDataSizeBytes());
-	} else
-		db->value=vdd;
-	return sz;
+	return mapGddToDouble(&db->value,&vdd);
 }
 
 // ----------------must run this to use mapping functions--------------

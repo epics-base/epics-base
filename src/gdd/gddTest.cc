@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.4  1996/10/17 12:40:06  jbk
+// adjusted the network byte ordering dump
+//
 // Revision 1.3  1996/08/23 20:28:46  jbk
 // made dump functions print more useful information
 //
@@ -277,7 +280,7 @@ void gddContainer::dump(void)
 
 	// should use a cursor
 
-	for(i=0;dd=getDD(i);i++)
+	for(i=1;dd=getDD(i);i++)
 	{
 		if(dd->isAtomic())		{ add=(gddAtomic*)dd; add->dump(); }
 		if(dd->isScalar())		{ sdd=(gddScalar*)dd; sdd->dump(); }

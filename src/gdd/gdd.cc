@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.15  1996/12/17 15:04:42  jbk
+// fixed bug in copyData, sets bounds now
+//
 // Revision 1.14  1996/12/06 22:27:44  jhill
 // fixed wrong start bug in getDD()
 //
@@ -237,6 +240,8 @@ gdd::~gdd(void)
 		if(destruct) destruct->destroy(dataPointer());
 		if(bounds) freeBounds();
 	}
+	setPrimType(aitEnumInvalid);
+	setApplType(0);
 }
 
 void gdd::freeBounds(void)
@@ -1398,6 +1403,7 @@ gddStatus gdd::copyData(const gdd* dd)
 	gddStatus rc=0;
 	size_t sz;
 	aitUint8* arr;
+	int i;
 
 	if(isFlat() || isManaged() || isContainer())
 	{
@@ -1406,29 +1412,33 @@ gddStatus gdd::copyData(const gdd* dd)
 	}
 	else
 	{
-		if(isScalar())
+		// this is really a preliminary version of this function.  it
+		// does simple data copies and source dd to this dd.
+
+		// clean up the old data
+		if(destruct)
+			destruct->destroy(dataPointer());
+		else
 		{
-			int i;
-			init(dd->applicationType(),dd->primitiveType(),dd->dimension());
-			const gddBounds* bnds = dd->getBounds();
-			for(i=0;i<dd->dimension();i++) bounds[i]=bnds[i];
+			if(primitiveType()==aitEnumString && isScalar())
+			{
+				aitString* str = (aitString*)dataAddress();
+				str->clear();
+			}
 		}
 
-		if(!aitValid(primitiveType()))
-			setPrimType(dd->primitiveType());
-
-		destroyData();
+		setPrimType(dd->primitiveType());
+		setDimension(dd->dimension());
+		const gddBounds* bnds = dd->getBounds();
+		for(i=0;i<dd->dimension();i++) bounds[i]=bnds[i];
 		sz=describedDataSizeBytes();
 
+		// copy the copy
 		if((arr=new aitUint8[sz]))
 		{
 			destruct=new gddDestructor;
 			setData(arr);
-			if(primitiveType()==dd->primitiveType())
-				memcpy(arr,dd->dataPointer(),sz);
-			else
-				aitConvert(primitiveType(),arr,dd->primitiveType(),
-					dd->dataPointer(),describedDataSizeElements());
+			memcpy(arr,dd->dataPointer(),sz);
 		}
 		else
 		{
@@ -1584,10 +1594,13 @@ gdd* gddContainer::getDD(aitIndex index)
 	if (index==0u) {
 		return this;
 	}
-	else {
+	else if(index>getDataSizeElements())
+		return NULL;
+	else
+	{
 		aitIndex i;
 		gdd* dd=(gdd*)dataPointer();
-		for(i=1u;i<index && i<bounds->size();i++) {
+		for(i=1u;i<index;i++) {
 			dd=(gdd*)dd->next();
 		}
 		return dd;

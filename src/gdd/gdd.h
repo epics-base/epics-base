@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.18  1996/11/04 17:12:50  jbk
+ * fix setFirst
+ *
  * Revision 1.17  1996/11/02 01:24:49  jhill
  * strcpy => styrcpy (shuts up purify)
  *
@@ -336,6 +339,7 @@ public:
 	gddStatus getBound(unsigned dim_to_get, aitIndex& first, aitIndex& count);
 	gddStatus registerDestructor(gddDestructor*);
 	gddStatus replaceDestructor(gddDestructor*);
+	void* dataVoid(void) const;
 	void* dataAddress(void) const;
 	void* dataPointer(void) const;
 	void* dataPointer(aitIndex element_offset) const;
@@ -408,42 +412,53 @@ public:
 	gdd& operator=(const gdd& v);
 
 	// get a pointer to the data in the DD
-	void getRef(aitFloat64*& d);
-	void getRef(aitFloat32*& d);
-	void getRef(aitUint32*& d);
-	void getRef(aitInt32*& d);
-	void getRef(aitUint16*& d);
-	void getRef(aitInt16*& d);
-	void getRef(aitUint8*& d);
-	void getRef(aitInt8*& d);
-	void getRef(aitString*& d);
-	void getRef(aitFixedString*& d);
-	void getRef(void*& d);
+	void getRef(aitFloat64*& d,aitDataFormat=aitLocalDataFormat);
+	void getRef(aitFloat32*& d,aitDataFormat=aitLocalDataFormat);
+	void getRef(aitUint32*& d,aitDataFormat=aitLocalDataFormat);
+	void getRef(aitInt32*& d,aitDataFormat=aitLocalDataFormat);
+	void getRef(aitUint16*& d,aitDataFormat=aitLocalDataFormat);
+	void getRef(aitInt16*& d,aitDataFormat=aitLocalDataFormat);
+	void getRef(aitUint8*& d,aitDataFormat=aitLocalDataFormat);
+	void getRef(aitInt8*& d,aitDataFormat=aitLocalDataFormat);
+	void getRef(aitString*& d,aitDataFormat=aitLocalDataFormat);
+	void getRef(aitFixedString*& d,aitDataFormat=aitLocalDataFormat);
+	void getRef(void*& d,aitDataFormat=aitLocalDataFormat);
 
 	// make the DD points to user data with a destroy method,
 	// put the referenced in and adjust the primitive type
-	void putRef(void* v,aitEnum code, gddDestructor* d = NULL);
-	void putRef(aitFloat64* v, gddDestructor* d = NULL);
-	void putRef(aitFloat32* v, gddDestructor* d = NULL);
-	void putRef(aitUint8* v, gddDestructor* d  = NULL);
-	void putRef(aitInt8* v, gddDestructor* d = NULL);
-	void putRef(aitUint16* v, gddDestructor* d = NULL);
-	void putRef(aitInt16* v, gddDestructor* d = NULL);
-	void putRef(aitUint32* v, gddDestructor* d = NULL);
-	void putRef(aitInt32* v, gddDestructor* d = NULL);
-	void putRef(aitString* v, gddDestructor* d = NULL);
-	void putRef(aitFixedString* v, gddDestructor* d = NULL);
+	void putRef(void*,aitEnum,gddDestructor* =0,
+		aitDataFormat=aitLocalDataFormat);
+	void putRef(aitFloat64*,gddDestructor* =0,aitDataFormat=aitLocalDataFormat);
+	void putRef(aitFloat32*,gddDestructor* =0,aitDataFormat=aitLocalDataFormat);
+	void putRef(aitUint8*,gddDestructor* =0,aitDataFormat=aitLocalDataFormat);
+	void putRef(aitInt8*,gddDestructor* =0,aitDataFormat=aitLocalDataFormat);
+	void putRef(aitUint16*,gddDestructor* =0,aitDataFormat=aitLocalDataFormat);
+	void putRef(aitInt16*,gddDestructor* =0,aitDataFormat=aitLocalDataFormat);
+	void putRef(aitUint32*,gddDestructor* =0,aitDataFormat=aitLocalDataFormat);
+	void putRef(aitInt32*,gddDestructor* =0,aitDataFormat=aitLocalDataFormat);
+	void putRef(aitString*,gddDestructor* =0,aitDataFormat=aitLocalDataFormat);
+	void putRef(aitFixedString*,gddDestructor* =0,aitDataFormat=aitLocalDataFormat);
 	// work with constants
-	void putRef(const aitFloat64* v, gddDestructor* d = NULL);
-	void putRef(const aitFloat32* v, gddDestructor* d = NULL);
-	void putRef(const aitUint8* v, gddDestructor* d  = NULL);
-	void putRef(const aitInt8* v, gddDestructor* d = NULL);
-	void putRef(const aitUint16* v, gddDestructor* d = NULL);
-	void putRef(const aitInt16* v, gddDestructor* d = NULL);
-	void putRef(const aitUint32* v, gddDestructor* d = NULL);
-	void putRef(const aitInt32* v, gddDestructor* d = NULL);
-	void putRef(const aitString* v,gddDestructor* d=NULL);
-	void putRef(const aitFixedString* v,gddDestructor* d=NULL);
+	void putRef(const aitFloat64*,gddDestructor* =0,
+		aitDataFormat=aitLocalDataFormat);
+	void putRef(const aitFloat32*,gddDestructor* =0,
+		aitDataFormat=aitLocalDataFormat);
+	void putRef(const aitUint8*,gddDestructor* =0,
+		aitDataFormat=aitLocalDataFormat);
+	void putRef(const aitInt8*,gddDestructor* =0,
+		aitDataFormat=aitLocalDataFormat);
+	void putRef(const aitUint16*,gddDestructor* =0,
+		aitDataFormat=aitLocalDataFormat);
+	void putRef(const aitInt16*,gddDestructor* =0,
+		aitDataFormat=aitLocalDataFormat);
+	void putRef(const aitUint32*,gddDestructor* =0,
+		aitDataFormat=aitLocalDataFormat);
+	void putRef(const aitInt32*,gddDestructor* =0,
+		aitDataFormat=aitLocalDataFormat);
+	void putRef(const aitString*,gddDestructor* =0,
+		aitDataFormat=aitLocalDataFormat);
+	void putRef(const aitFixedString*,gddDestructor* =0,
+		aitDataFormat=aitLocalDataFormat);
 	void putRef(const gdd*);
 
 	// get the data in the form the user wants (do conversion)
@@ -574,7 +589,7 @@ public:
 	// gdd::operator aitFixedString(void); // not present
 
 	gddStatus genCopy(aitEnum t, const void* d);
-	void adjust(gddDestructor* d, void* v, aitEnum type);
+	void adjust(gddDestructor* d, void* v, aitEnum type, aitDataFormat);
 	void get(aitEnum t,void* v);
 	void set(aitEnum t,void* v);
 
@@ -635,6 +650,9 @@ inline gddStatus gdd::Dup(gdd* dd)			{ return copyStuff(dd,2); }
 inline void* gdd::dataAddress(void)	const	{ return (void*)&data; }
 inline void* gdd::dataPointer(void)	const	{ return data.Pointer; }
 
+inline void* gdd::dataVoid(void) const
+	{ return dimension()?dataPointer():dataAddress(); }
+
 inline aitUint32 gdd::align8(unsigned long count) const
 {
 	unsigned long tmp=count&(~((unsigned long)0x07));
@@ -648,7 +666,7 @@ inline int gdd::isManaged(void) const	{ return flags&GDD_MANAGED_MASK; }
 inline int gdd::isFlat(void) const		{ return flags&GDD_FLAT_MASK; }
 inline int gdd::isNoRef(void) const		{ return flags&GDD_NOREF_MASK; }
 inline int gdd::isConstant(void) const	{ return flags&GDD_CONSTANT_MASK; }
-inline int gdd::isLocalDataFormat(void) const { return flags&GDD_NET_MASK; }
+inline int gdd::isLocalDataFormat(void) const { return !(flags&GDD_NET_MASK); }
 inline int gdd::isNetworkDataFormat(void) const
 	{ return !isLocalDataFormat() || aitLocalNetworkDataFormatSame; }
 
@@ -656,8 +674,8 @@ inline void gdd::markConstant(void)		{ flags|=GDD_CONSTANT_MASK; }
 inline void gdd::markFlat(void)			{ flags|=GDD_FLAT_MASK; }
 inline void gdd::markManaged(void)		{ flags|=GDD_MANAGED_MASK; }
 inline void gdd::markUnmanaged(void)	{ flags&=~GDD_MANAGED_MASK; }
-inline void gdd::markLocalDataFormat(void)		{ flags|=GDD_NET_MASK; }
-inline void gdd::markNotLocalDataFormat(void)	{ flags&=~GDD_NET_MASK; }
+inline void gdd::markLocalDataFormat(void)		{ flags&=~GDD_NET_MASK; }
+inline void gdd::markNotLocalDataFormat(void)	{ flags|=GDD_NET_MASK; }
 
 inline void gdd::getTimeStamp(struct timespec* const ts) const
 	{ ts->tv_sec=time_stamp.tv_sec; ts->tv_nsec=time_stamp.tv_nsec; }
@@ -755,12 +773,12 @@ inline void gdd::destroyData(void)
 {
 	if(destruct)
 	{
-		// up to destructor to free the bounds
 		if(isContainer())
 			destruct->destroy(this);
 		else
 			destruct->destroy(dataPointer());
 
+		freeBounds(); // must be done here
 		destruct=NULL;
 		setData(NULL);
 	}
@@ -774,7 +792,7 @@ inline void gdd::destroyData(void)
 	}
 }
 
-inline void gdd::adjust(gddDestructor* d, void* v, aitEnum type)
+inline void gdd::adjust(gddDestructor* d, void* v, aitEnum type,aitDataFormat)
 {
 	if(destruct) destruct->destroy(dataPointer());
 	destruct=d;
@@ -810,66 +828,76 @@ inline void gdd::set(aitEnum t,void* v)
 }
 
 // -------------------getRef(data pointer) functions----------------
-inline void gdd::getRef(aitFloat64*& d)	{ d=(aitFloat64*)dataPointer(); }
-inline void gdd::getRef(aitFloat32*& d)	{ d=(aitFloat32*)dataPointer(); }
-inline void gdd::getRef(aitUint32*& d)	{ d=(aitUint32*)dataPointer(); }
-inline void gdd::getRef(aitInt32*& d)	{ d=(aitInt32*)dataPointer(); }
-inline void gdd::getRef(aitUint16*& d)	{ d=(aitUint16*)dataPointer(); }
-inline void gdd::getRef(aitInt16*& d)	{ d=(aitInt16*)dataPointer(); }
-inline void gdd::getRef(aitUint8*& d)	{ d=(aitUint8*)dataPointer(); }
-inline void gdd::getRef(aitInt8*& d)	{ d=(aitInt8*)dataPointer(); }
-inline void gdd::getRef(void*& d)		{ d=dataPointer(); }
-inline void gdd::getRef(aitFixedString*& d) {d=(aitFixedString*)dataPointer();}
-inline void gdd::getRef(aitString*& d) {
+inline void gdd::getRef(aitFloat64*& d,aitDataFormat )
+	{ d=(aitFloat64*)dataPointer(); }
+inline void gdd::getRef(aitFloat32*& d,aitDataFormat )
+	{ d=(aitFloat32*)dataPointer(); }
+inline void gdd::getRef(aitUint32*& d,aitDataFormat )
+	{ d=(aitUint32*)dataPointer(); }
+inline void gdd::getRef(aitInt32*& d,aitDataFormat )
+	{ d=(aitInt32*)dataPointer(); }
+inline void gdd::getRef(aitUint16*& d,aitDataFormat )
+	{ d=(aitUint16*)dataPointer(); }
+inline void gdd::getRef(aitInt16*& d,aitDataFormat )
+	{ d=(aitInt16*)dataPointer(); }
+inline void gdd::getRef(aitUint8*& d,aitDataFormat )
+	{ d=(aitUint8*)dataPointer(); }
+inline void gdd::getRef(aitInt8*& d,aitDataFormat )
+	{ d=(aitInt8*)dataPointer(); }
+inline void gdd::getRef(void*& d,aitDataFormat )
+	{ d=dataPointer(); }
+inline void gdd::getRef(aitFixedString*& d,aitDataFormat )
+	{d=(aitFixedString*)dataPointer();}
+inline void gdd::getRef(aitString*& d,aitDataFormat ) {
 	if(isScalar()) d=(aitString*)dataAddress();
 	else d=(aitString*)dataPointer();
 }
 
 // -------------------putRef(data pointer) functions----------------
-inline void gdd::putRef(void* v,aitEnum code, gddDestructor* d)
-	{ adjust(d, v, code); }
-inline void gdd::putRef(aitFloat64* v, gddDestructor* d)
-	{ adjust(d, (void*)v, aitEnumFloat64); }
-inline void gdd::putRef(aitFloat32* v, gddDestructor* d)
-	{ adjust(d, (void*)v, aitEnumFloat32); }
-inline void gdd::putRef(aitUint8* v, gddDestructor* d)
-	{ adjust(d, (void*)v, aitEnumUint8); }
-inline void gdd::putRef(aitInt8* v, gddDestructor* d)
-	{ adjust(d, (void*)v, aitEnumInt8); }
-inline void gdd::putRef(aitUint16* v, gddDestructor* d)
-	{ adjust(d, (void*)v, aitEnumUint16); }
-inline void gdd::putRef(aitInt16* v, gddDestructor* d)
-	{ adjust(d, (void*)v, aitEnumInt16); }
-inline void gdd::putRef(aitUint32* v, gddDestructor* d)
-	{ adjust(d, (void*)v, aitEnumUint32); }
-inline void gdd::putRef(aitInt32* v, gddDestructor* d)
-	{ adjust(d, (void*)v, aitEnumInt32); }
-inline void gdd::putRef(aitString* v, gddDestructor* d)
-	{ adjust(d, (void*)v, aitEnumString); }
-inline void gdd::putRef(aitFixedString* v, gddDestructor* d)
-	{ adjust(d, (void*)v, aitEnumFixedString); }
+inline void gdd::putRef(void* v,aitEnum code, gddDestructor* d,aitDataFormat f)
+	{ adjust(d, v, code,f); }
+inline void gdd::putRef(aitFloat64* v, gddDestructor* d,aitDataFormat f)
+	{ adjust(d, (void*)v, aitEnumFloat64,f); }
+inline void gdd::putRef(aitFloat32* v, gddDestructor* d,aitDataFormat f)
+	{ adjust(d, (void*)v, aitEnumFloat32,f); }
+inline void gdd::putRef(aitUint8* v, gddDestructor* d,aitDataFormat f)
+	{ adjust(d, (void*)v, aitEnumUint8,f); }
+inline void gdd::putRef(aitInt8* v, gddDestructor* d,aitDataFormat f)
+	{ adjust(d, (void*)v, aitEnumInt8,f); }
+inline void gdd::putRef(aitUint16* v, gddDestructor* d,aitDataFormat f)
+	{ adjust(d, (void*)v, aitEnumUint16,f); }
+inline void gdd::putRef(aitInt16* v, gddDestructor* d,aitDataFormat f)
+	{ adjust(d, (void*)v, aitEnumInt16,f); }
+inline void gdd::putRef(aitUint32* v, gddDestructor* d,aitDataFormat f)
+	{ adjust(d, (void*)v, aitEnumUint32,f); }
+inline void gdd::putRef(aitInt32* v, gddDestructor* d,aitDataFormat f)
+	{ adjust(d, (void*)v, aitEnumInt32,f); }
+inline void gdd::putRef(aitString* v, gddDestructor* d,aitDataFormat f)
+	{ adjust(d, (void*)v, aitEnumString,f); }
+inline void gdd::putRef(aitFixedString* v, gddDestructor* d,aitDataFormat f)
+	{ adjust(d, (void*)v, aitEnumFixedString,f); }
 
 // -------------------putRef(const data pointer) functions----------------
-inline void gdd::putRef(const aitFloat64* v, gddDestructor* d)
-	{ adjust(d, (void*)v, aitEnumFloat64); markConstant(); }
-inline void gdd::putRef(const aitFloat32* v, gddDestructor* d)
-	{ adjust(d, (void*)v, aitEnumFloat32); markConstant(); }
-inline void gdd::putRef(const aitUint8* v, gddDestructor* d)
-	{ adjust(d, (void*)v, aitEnumUint8); markConstant(); }
-inline void gdd::putRef(const aitInt8* v, gddDestructor* d)
-	{ adjust(d, (void*)v, aitEnumInt8); markConstant(); }
-inline void gdd::putRef(const aitUint16* v, gddDestructor* d)
-	{ adjust(d, (void*)v, aitEnumUint16); markConstant(); }
-inline void gdd::putRef(const aitInt16* v, gddDestructor* d)
-	{ adjust(d, (void*)v, aitEnumInt16); markConstant(); }
-inline void gdd::putRef(const aitUint32* v, gddDestructor* d)
-	{ adjust(d, (void*)v, aitEnumUint32); markConstant(); }
-inline void gdd::putRef(const aitInt32* v, gddDestructor* d)
-	{ adjust(d, (void*)v, aitEnumInt32); markConstant(); }
-inline void gdd::putRef(const aitString* v, gddDestructor* d)
-	{ adjust(d, (void*)v, aitEnumString); markConstant(); }
-inline void gdd::putRef(const aitFixedString* v, gddDestructor* d)
-	{ adjust(d, (void*)v, aitEnumFixedString); markConstant(); }
+inline void gdd::putRef(const aitFloat64* v, gddDestructor* d,aitDataFormat f)
+	{ adjust(d, (void*)v, aitEnumFloat64,f); markConstant(); }
+inline void gdd::putRef(const aitFloat32* v, gddDestructor* d,aitDataFormat f)
+	{ adjust(d, (void*)v, aitEnumFloat32,f); markConstant(); }
+inline void gdd::putRef(const aitUint8* v, gddDestructor* d,aitDataFormat f)
+	{ adjust(d, (void*)v, aitEnumUint8,f); markConstant(); }
+inline void gdd::putRef(const aitInt8* v, gddDestructor* d,aitDataFormat f)
+	{ adjust(d, (void*)v, aitEnumInt8,f); markConstant(); }
+inline void gdd::putRef(const aitUint16* v, gddDestructor* d,aitDataFormat f)
+	{ adjust(d, (void*)v, aitEnumUint16,f); markConstant(); }
+inline void gdd::putRef(const aitInt16* v, gddDestructor* d,aitDataFormat f)
+	{ adjust(d, (void*)v, aitEnumInt16,f); markConstant(); }
+inline void gdd::putRef(const aitUint32* v, gddDestructor* d,aitDataFormat f)
+	{ adjust(d, (void*)v, aitEnumUint32,f); markConstant(); }
+inline void gdd::putRef(const aitInt32* v, gddDestructor* d,aitDataFormat f)
+	{ adjust(d, (void*)v, aitEnumInt32,f); markConstant(); }
+inline void gdd::putRef(const aitString* v, gddDestructor* d,aitDataFormat f)
+	{ adjust(d, (void*)v, aitEnumString,f); markConstant(); }
+inline void gdd::putRef(const aitFixedString* v,gddDestructor* d,aitDataFormat f)
+	{ adjust(d, (void*)v, aitEnumFixedString,f); markConstant(); }
 
 // -------------------getConvert(scalar) functions ----------------------
 inline void gdd::getConvert(aitFloat64& d)	{ get(aitEnumFloat64,&d); }

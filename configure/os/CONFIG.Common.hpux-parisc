@@ -7,5 +7,30 @@
 # Sites may override these definitions in CONFIG_SITE.Common.hpux-68k
 #-------------------------------------------------------
 
-#Include definitions common to unix hosts
+#Include definitions common to unix targets
 include $(CONFIG)/os/CONFIG.Common.UnixCommon
+
+OS_CLASS = hpux
+ARCH_CLASS = parisc
+
+POSIX_CPPFLAGS_YES =
+POSIX_CPPFLAGS_NO =
+POSIX_LDLIBS_YES +=
+POSIX_LDLIBS_NO +=
+
+######################################################
+# +DAportable causes portable object code to be created for execution
+# on different PA-Risc machines
+ARCH_DEP_CPPFLAGS = -D_HPUX_SOURCE -DHP_UX
+ARCH_DEP_CFLAGS = +DAportable +z
+ARCH_DEP_CXXFLAGS = +DAportable +z
+ARCH_DEP_LDLIBS +=
+
+SHRLIB_SUFFIX = .sl
+
+ifdef CROSS
+   GNU_TARGET=parisc-hp-unix
+   CMPLR_SUFFIX=
+   CMPLR_PREFIX=$(addsuffix -,$(GNU_TARGET))
+endif
+

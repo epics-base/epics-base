@@ -65,7 +65,7 @@ public:
     epicsShareFunc double period () const;
     epicsShareFunc epicsTime updateTime () const;
     epicsShareFunc void show ( unsigned level) const;
-    epicsShareFunc void registerIIU ( tcpiiu &, const epicsTime & );
+    epicsShareFunc void registerIIU ( tcpiiu & );
     epicsShareFunc void unregisterIIU ( tcpiiu & );
     epicsShareFunc void * operator new ( size_t size, bheMemoryManager & );
 #ifdef CXX_PLACEMENT_DELETE

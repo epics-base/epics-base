@@ -511,8 +511,7 @@ void cac::repeaterSubscribeConfirmNotify ()
 bool cac::lookupChannelAndTransferToTCP ( 
              epicsGuard < callbackMutex > & cbGuard, unsigned cid, unsigned sid, 
              ca_uint16_t typeCode, arrayElementCount count, 
-             unsigned minorVersionNumber, const osiSockAddr & addr,
-             const epicsTime & currentTime )
+             unsigned minorVersionNumber, const osiSockAddr & addr )
 {
     bool newIIU = false;
     tcpiiu * piiu = 0;
@@ -575,7 +574,7 @@ bool cac::lookupChannelAndTransferToTCP (
                 }
                 this->serverTable.add ( *pnewiiu );
                 this->serverList.add ( *pnewiiu );
-                pBHE->registerIIU ( *pnewiiu, currentTime );
+                pBHE->registerIIU ( *pnewiiu );
                 piiu = pnewiiu.release ();
                 newIIU = true;
             }

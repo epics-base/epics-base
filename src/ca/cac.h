@@ -134,8 +134,7 @@ public:
             epicsGuard < callbackMutex > &,
             unsigned cid, unsigned sid, 
             ca_uint16_t typeCode, arrayElementCount count, 
-            unsigned minorVersionNumber, const osiSockAddr &, 
-            const epicsTime & currentTime );
+            unsigned minorVersionNumber, const osiSockAddr & );
 
     void destroyChannel ( nciu & );
     cacChannel & createChannel ( const char *name_str, 

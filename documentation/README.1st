@@ -44,26 +44,35 @@ Supported platforms
      Host platforms (operating system - architecture - <alternate c++
      compiler>) 
 
+         aix-ppc
+         aix-ppc-gnu
+         cygwin-x86
          darwin-ppc (Mac OS X) 
          hpux-parisc
          hpux-parisc-gnu
-         linux-mpc82xx
          linux-x86
-         lynxos-x86
-         osf-alpha
+         win32-x86-borland
+         linux-x86-debug
          solaris-sparc
+         solaris-sparc-debug
          solaris-sparc-gnu
          solaris-x86
          solaris-x86-gnu
-         sun4-x86
          win32-x86
          win32-x86-borland
+         win32-x86-debug
 
 
      Cross compile target platforms (operating system - architecture)
 
+         linux-386 
+         linux-486 
+         linux-586 
+         linux-686 
+         linux-athlon 
          vxWorks-486 
          vxWorks-68040 
+         vxWorks-68040-debug
          vxWorks-68040lc 
          vxWorks-68060 
          vxWorks-pentium
@@ -71,7 +80,6 @@ Supported platforms
          vxWorks-ppc603_long
          vxWorks-ppc604 
          vxWorks-ppc604_long
-         vxWorks-pentium 
          RTEMS-gen68360 
          RTEMS-mcp750
          RTEMS-mvme167 

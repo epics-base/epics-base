@@ -59,6 +59,7 @@ LOCAL void test (
 	unsigned	iterations
 );
 
+LOCAL tf 	test_pend;
 LOCAL tf 	test_search;
 LOCAL tf	test_free;
 LOCAL tf	test_wait;
@@ -82,7 +83,7 @@ int main(int argc, char **argv)
 		catime(pname);
 	}
 	else{
-		printf("usage: %s <channel name>", argv[0]);
+		printf("usage: %s <channel name>\n", argv[0]);
 		return -1;
 	}
 	return 0;
@@ -118,6 +119,9 @@ int catime (char *channelName)
 		ca_name(itemList[0].chix),
 		ca_field_type(itemList[0].chix),
 		ca_element_count(itemList[0].chix));
+
+	printf ("\tpend event test\n");
+  	timeIt (test_pend, NULL, 100);
 
   	for (i=0; i<NELEMENTS(itemList); i++) {
 		itemList[i].val.fltval = 0.0;
@@ -183,12 +187,54 @@ void timeIt(
 	unsigned	inlineIter;
 
 	status = tsLocalTime(&start_time);
+#if 0
 	assert (status == S_ts_OK);
+#endif
 	(*pfunc) (pItems, iterations, &inlineIter);
 	status = tsLocalTime(&end_time);
+#if 0
 	assert (status == S_ts_OK);
+#endif
 	TsDiffAsDouble(&delay,&end_time,&start_time);
 	printf ("Elapsed Per Item = %f\n", delay/(iterations*inlineIter));
+}
+
+
+/*
+ * test_search ()
+ */
+LOCAL void test_pend(
+ti		*pItems,
+unsigned	iterations,
+unsigned	*pInlineIter
+)
+{
+	unsigned 	i;
+	int		status;
+
+	for (i=0; i<iterations; i++) {
+		status = ca_pend_event(1e-9);
+		if (status != ECA_TIMEOUT && status != ECA_NORMAL) {
+			SEVCHK(status, NULL);
+		}
+		status = ca_pend_event(1e-9);
+		if (status != ECA_TIMEOUT && status != ECA_NORMAL) {
+			SEVCHK(status, NULL);
+		}
+		status = ca_pend_event(1e-9);
+		if (status != ECA_TIMEOUT && status != ECA_NORMAL) {
+			SEVCHK(status, NULL);
+		}
+		status = ca_pend_event(1e-9);
+		if (status != ECA_TIMEOUT && status != ECA_NORMAL) {
+			SEVCHK(status, NULL);
+		}
+		status = ca_pend_event(1e-9);
+		if (status != ECA_TIMEOUT && status != ECA_NORMAL) {
+			SEVCHK(status, NULL);
+		}
+  	}
+	*pInlineIter = 5;
 }
 
 

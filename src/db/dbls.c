@@ -45,6 +45,7 @@
 #include <sys/types.h>
 #include <string.h>
 #include <dbDefs.h>
+#include <dbStaticLib.h>
 #include <errno.h>
 #else
 #include <vxWorks.h>
@@ -74,8 +75,7 @@
 #include <sdrHeader.h>
 
 #ifndef vxWorks
-struct dbBase *pdbBase=NULL;
-extern long dbLoad();
+DBBASE *pdbBase=NULL;
 #ifndef MYERRNO
 #define MYERRNO	(int errno)
 #endif
@@ -163,14 +163,25 @@ static struct PRTAB {
 #ifndef vxWorks
 main()
 {
-/* load the default.dctsdr file */
     long status;
+    FILE *fp;
 
-    status=dbRead(&pdbBase, "default.dctsdr");
+    /* Create the database */
+    pdbBase=dbAllocBase();
+
+    /* open the default.dctsdr file */
+    if ((fp = fopen("default.dctsdr", "rb")) == NULL) {
+	printf("dbls can't open default.dctsdr\n");
+	return(-1);
+    }
+
+    /* read in the database */
+    status=dbRead(pdbBase, fp);
     if(status!=0) {
 	printf("dbls aborting because dbRead failed\n");
 	return(-1);
     }
+    fclose(fp);
     dbls();
 return(0);
 }

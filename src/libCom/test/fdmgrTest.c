@@ -5,6 +5,7 @@
 #include "fdmgr.h"
 #include "epicsTime.h"
 #include "epicsAssert.h"
+#include "cadef.h"
 
 static const unsigned uSecPerSec = 1000000;
 
@@ -39,7 +40,7 @@ void fdCreateDestroyHandler (void *pArg, int fd, int open)
 }
 
 typedef struct cbStuctTimer {
-    epicsTime time;
+    epicsTimeStamp time;
     int done;
 } cbStruct;
 
@@ -55,7 +56,7 @@ void testTimer (fdctx *pfdm, double delay)
     int status;
     fdmgrAlarmId aid;
     struct timeval tmo;
-    epicsTime begin;
+    epicsTimeStamp begin;
     cbStruct cbs;
     double measuredDelay;
     double measuredError;

@@ -60,18 +60,18 @@
 #include <fast_lock.h>
 #include <taskwd.h>
 
-#include <rec/dbCommon.h>
-#include <rec/aoRecord.h>
-#include <rec/aiRecord.h>
-#include <rec/biRecord.h>
-#include <rec/boRecord.h>
-#include <rec/longinRecord.h>
-#include <rec/longoutRecord.h>
-#include <rec/mbbiRecord.h>
-#include <rec/mbboRecord.h>
-#include <rec/waveformRecord.h>
-#include <rec/stringinRecord.h>
-#include <rec/stringoutRecord.h>
+#include <dbCommon.h>
+#include <aoRecord.h>
+#include <aiRecord.h>
+#include <biRecord.h>
+#include <boRecord.h>
+#include <longinRecord.h>
+#include <longoutRecord.h>
+#include <mbbiRecord.h>
+#include <mbboRecord.h>
+#include <waveformRecord.h>
+#include <stringinRecord.h>
+#include <stringoutRecord.h>
 
 #include <drvMsg.h>
 

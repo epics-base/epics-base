@@ -14,14 +14,13 @@ DBD += _APPNAME_.dbd
 #The following creates a library
 #LIBRARY_IOC += _APPNAME_Ioc
 #_APPNAME_Ioc_LIBS += $(EPICS_BASE_IOC_LIBS)
-
-## Build and add other local sources like this:
 #_APPNAME_Ioc_SRCS += xxx.c xxx.cpp xxx.stt
 
 #=============================
 
 #The following creates an application
 PROD_IOC = _APPNAME_
+#_APPNAME__SRCS += yyy.c yyy.cpp yyy.stt
 
 #_APPNAME__registerRecordDeviceDriver.cpp will be created from _APPNAME_.dbd
 _APPNAME__SRCS += _APPNAME__registerRecordDeviceDriver.cpp
@@ -46,6 +45,7 @@ _APPNAME__OBJS_vxWorks += $(EPICS_BASE_BIN)/vxComLibrary
 ## The following adds EPICS base libraries
 _APPNAME__LIBS += $(EPICS_BASE_IOC_LIBS)
 
+#=============================
 
 include $(TOP)/configure/RULES
 #----------------------------------------

@@ -51,7 +51,6 @@ void flow_control(struct ioc_in_use *piiu)
 {
 	unsigned        nbytes;
 	int    		status;
-	int    		busy = piiu->client_busy;
 
 	LOCK;
 
@@ -74,19 +73,19 @@ void flow_control(struct ioc_in_use *piiu)
 	 */
 	if (nbytes) {
 		piiu->contiguous_msg_count++;
-		if (!busy)
+		if (!piiu->client_busy)
 			if (piiu->contiguous_msg_count >
 			    MAX_CONTIGUOUS_MSG_COUNT) {
 				piiu->client_busy = TRUE;
 				ca_busy_message(piiu);
-#				ifdef DEBUG	
+#				if defined(DEBUG) 
 					printf("fc on\n");
 #				endif
 			}
 	} else {
 		piiu->contiguous_msg_count = 0;
-		if (busy) {
-#			ifdef DEBUG
+		if (piiu->client_busy) {
+#			if defined(DEBUG) 
 				printf("fc off\n");
 #			endif
 			ca_ready_message(piiu);

@@ -1,11 +1,11 @@
 
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #pragma warning (disable:4237)
+
 #include <time.h>
 #include <errno.h>
 #include <winsock2.h>
@@ -14,13 +14,9 @@ extern "C" {
 }
 #endif
 
-#define SOCKERRNO			WSAGetLastError()
-/*
- * I dont think that this works, but winsock does
- * not appear to provide equivalent functionality
- * here
- */
-#define SOCKERRSTR (strerror(SOCKERRNO))
+#define SOCKERRNO WSAGetLastError()
+#define SOCKERRSTR getLastWSAErrorAsString()
+
 #define socket_close(S)		closesocket(S)
 #define socket_ioctl(A,B,C)	ioctlsocket(A,B,C)
 typedef u_long FAR osiSockIoctl_t;
@@ -50,4 +46,3 @@ typedef u_long FAR osiSockIoctl_t;
  *	fd can be used with FD_SET(), FD_CLR(), and FD_ISSET().
  */
 #define FD_IN_FDSET(FD) (1)
-

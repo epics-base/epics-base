@@ -33,13 +33,7 @@
 
 #include <stdio.h>
 #include <string.h>
-
-#ifdef vxWorks
-#include <memLib.h>
-#else
-#include <memory.h>
-#include <malloc.h>
-#endif
+#include <stdlib.h>
 
 #include "dbVarSub.h"
 #include <dbStaticLib.h>

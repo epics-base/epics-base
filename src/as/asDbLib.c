@@ -30,13 +30,19 @@ of this distribution.
 #include "taskwd.h"
 #include "alarm.h"
 #include "caeventmask.h"
+#include "callback.h"
 #include "dbStaticLib.h"
+#include "tsStamp.h"
+#include "dbAddr.h"
 #include "dbAccess.h"
+#include "db_field_log.h"
 #include "dbEvent.h"
-#include "asLib.h"
-#include "asDbLib.h"
 #include "dbCommon.h"
 #include "recSup.h"
+#define epicsExportSharedSymbols
+#include "asLib.h"
+#include "asCa.h"
+#include "asDbLib.h"
 
 static char	*pacf=NULL;
 static char	*psubstitutions=NULL;
@@ -69,7 +75,7 @@ static long asDbAddRecords(void)
     return(0);
 }
 
-int asSetFilename(char *acf)
+int epicsShareAPI asSetFilename(char *acf)
 {
     if(pacf) free ((void *)pacf);
     if(acf) {
@@ -85,7 +91,7 @@ int asSetFilename(char *acf)
     return(0);
 }
 
-int asSetSubstitutions(char *substitutions)
+int epicsShareAPI asSetSubstitutions(char *substitutions)
 {
     if(psubstitutions) free ((void *)psubstitutions);
     if(substitutions) {
@@ -162,7 +168,7 @@ static void asInitTask(ASDBCALLBACK *pcallback)
     }
 }
 
-int asInitAsyn(ASDBCALLBACK *pcallback)
+int epicsShareAPI asInitAsyn(ASDBCALLBACK *pcallback)
 {
     if(!pacf) return(0);
     if(asInitTheadId) {
@@ -188,7 +194,7 @@ int asInitAsyn(ASDBCALLBACK *pcallback)
     return(0);
 }
 
-int asDbGetAsl(void *paddress)
+int epicsShareAPI asDbGetAsl(void *paddress)
 {
     DBADDR	*paddr = paddress;
     dbFldDes	*pflddes;
@@ -197,7 +203,7 @@ int asDbGetAsl(void *paddress)
     return((int)pflddes->as_level);
 }
 
-ASMEMBERPVT  asDbGetMemberPvt(void *paddress)
+ASMEMBERPVT  epicsShareAPI asDbGetMemberPvt(void *paddress)
 {
     DBADDR	*paddr = paddress;
     dbCommon	*precord;
@@ -253,32 +259,32 @@ static void myMemberCallback(ASMEMBERPVT memPvt)
     if(precord) printf(" Record:%s",precord->name);
 }
 
-int asdbdump(void)
+int epicsShareAPI asdbdump(void)
 {
     asDump(myMemberCallback,NULL,1);
     return(0);
 }
 
-int aspuag(char *uagname)
+int epicsShareAPI aspuag(char *uagname)
 {
 
     asDumpUag(uagname);
     return(0);
 }
 
-int asphag(char *hagname)
+int epicsShareAPI asphag(char *hagname)
 {
     asDumpHag(hagname);
     return(0);
 }
 
-int asprules(char *asgname)
+int epicsShareAPI asprules(char *asgname)
 {
     asDumpRules(asgname);
     return(0);
 }
 
-int aspmem(char *asgname,int clients)
+int epicsShareAPI aspmem(char *asgname,int clients)
 {
     asDumpMem(asgname,myMemberCallback,clients);
     return(0);

@@ -20,25 +20,21 @@ of this distribution.
 
 #ifndef INCdbAsLibh
 #define INCdbAsLibh
-#include <asLib.h>
-#include <callback.h>
 
 typedef struct {
     CALLBACK	callback;
     long	status;
 } ASDBCALLBACK;
 
-int asSetFilename(char *acf);
-int asSetSubstitutions(char *substitutions);
-int asInitAsyn(ASDBCALLBACK *pcallback);
-int asDbGetAsl( void *paddr);
-ASMEMBERPVT  asDbGetMemberPvt( void *paddr);
-int asdbdump( void);
-int aspuag(char *uagname);
-int asphag(char *hagname);
-int asprules(char *asgname);
-int aspmem(char *asgname,int clients);
-void asCaStart(void);
-void asCaStop(void);
+epicsShareFunc int epicsShareAPI asSetFilename(char *acf);
+epicsShareFunc int epicsShareAPI asSetSubstitutions(char *substitutions);
+epicsShareFunc int epicsShareAPI asInitAsyn(ASDBCALLBACK *pcallback);
+epicsShareFunc int epicsShareAPI asDbGetAsl( void *paddr);
+epicsShareFunc ASMEMBERPVT  epicsShareAPI asDbGetMemberPvt( void *paddr);
+epicsShareFunc int epicsShareAPI asdbdump( void);
+epicsShareFunc int epicsShareAPI aspuag(char *uagname);
+epicsShareFunc int epicsShareAPI asphag(char *hagname);
+epicsShareFunc int epicsShareAPI asprules(char *asgname);
+epicsShareFunc int epicsShareAPI aspmem(char *asgname,int clients);
 
 #endif /*INCdbAsLibh*/

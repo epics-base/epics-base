@@ -1,8 +1,9 @@
 TOP=../..
 include $(TOP)/configure/CONFIG
 
-INC += asDbLib.h
 INC += asLib.h
+INC += asDbLib.h
+INC += asCa.h
 
 LIBSRCS += asLib.c
 

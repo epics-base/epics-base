@@ -25,21 +25,24 @@ of this distribution.
 #include <string.h>
 
 #include "dbDefs.h"
+#include "ellLib.h"
 #include "osiThread.h"
 #include "osiSem.h"
 #include "cantProceed.h"
 #include "errlog.h"
 #include "taskwd.h"
-#include "asDbLib.h"
+#include "callback.h"
 #include "cadef.h"
 #include "caerr.h"
 #include "caeventmask.h"
 #include "alarm.h"
 
 #define epicsExportSharedSymbols
+#include "asLib.h"
+#include "asDbLib.h"
+#include "asCa.h"
 
-int asCaDebug = 0;
-epicsShareDef ASBASE volatile *pasbase;
+epicsShareDef int asCaDebug = 0;
 LOCAL int firstTime = TRUE;
 LOCAL threadId threadid=0;
 LOCAL int caInitializing=FALSE;
@@ -207,7 +210,7 @@ LOCAL void asCaTask(void)
     }
 }
     
-void asCaStart(void)
+void epicsShareAPI asCaStart(void)
 {
     if(asCaDebug) printf("asCaStart called\n");
     if(firstTime) {
@@ -231,7 +234,7 @@ void asCaStart(void)
     semMutexGive(asCaTaskLock);
 }
 
-void asCaStop(void)
+void epicsShareAPI asCaStop(void)
 {
     if(threadid==0) return;
     if(asCaDebug) printf("asCaStop called\n");

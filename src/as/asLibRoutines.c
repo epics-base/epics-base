@@ -25,6 +25,7 @@ of this distribution.
 #include <string.h>
 
 #include "dbDefs.h"
+#include "ellLib.h"
 #include "cantProceed.h"
 #include "osiSem.h"
 #include "epicsPrint.h"
@@ -32,8 +33,8 @@ of this distribution.
 #include "freeList.h"
 #include "macLib.h"
 #include "postfix.h"
-#include <errlog.h>
-#include <ellLib.h>
+#include "errlog.h"
+#include "ellLib.h"
  
 static semMutexId asLock;
 #define LOCK semMutexMustTake(asLock)
@@ -42,13 +43,14 @@ static semMutexId asLock;
 #define epicsExportSharedSymbols
 #include "asLib.h"
 
-static int          asLockInit=TRUE;
-epicsShareDef int   asActive = FALSE;
-static void         *freeListPvt = NULL;
-
 /*following must be global because asCa nneeds it*/
 epicsShareDef ASBASE volatile *pasbase=NULL;
 static ASBASE *pasbasenew=NULL;
+epicsShareDef int   asActive = FALSE;
+
+static int          asLockInit=TRUE;
+static void         *freeListPvt = NULL;
+
 
 #define RPCL_LEN 184
 #define DEFAULT "DEFAULT"

@@ -19,11 +19,7 @@ of this distribution.
 #ifndef INCasLibh
 #define INCasLibh
 
-#include <stddef.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <errMdef.h>
-#include <ellLib.h>
+#include "shareLib.h"
 
 typedef struct asgMember *ASMEMBERPVT;
 typedef struct asgClient *ASCLIENTPVT;
@@ -110,6 +106,7 @@ typedef struct asBase{
 	ELLLIST	asgList;
 	void	*phash;
 } ASBASE;
+
 epicsShareExtern volatile ASBASE *pasbase;
 
 /*Defs for User Access Groups*/

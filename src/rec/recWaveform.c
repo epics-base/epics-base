@@ -57,6 +57,7 @@
  * .17  04-18-92        jba     removed process from dev init_record parms
  * .18  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
  * .19  08-14-92        jba     Added simulation processing
+ * .20  09-14-92        jba     nord set only for db links
  */
 
 #include	<vxWorks.h>
@@ -391,7 +392,8 @@ static long readValue(pwf)
         	nRequest=pwf->nelm;
                 status=recGblGetLinkValue(&(pwf->siol),
                                 (void *)pwf,pwf->ftvl,pwf->bptr,&options,&nRequest);
-        	pwf->nord = nRequest;
+                /* nord set only for db links: needed for old db_access */
+        	if (pwf->siol.type == DB_LINK )pwf->nord = nRequest;
                 if (status==0){
                          pwf->udf=FALSE;
                 }

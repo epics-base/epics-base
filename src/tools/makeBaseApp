@@ -846,7 +846,7 @@ do
 	-e "s/APPNAME/${APPNAME}/" > st.cmd <<-\END
 		# Example vxWorks startup file
 		#Following must be added for many board support packages
-		#cd <full path name to boot directory>
+		#cd <full path to target bin directory>
 		ld < bin/iocCore
 		ld < bin/seq
 		ld < bin/APPNAMELib

@@ -29,21 +29,34 @@
 
 #include "epicsTimer.h"
 
-class udpiiu;
 class epicsMutex;
 class cacContextNotify;
 
+class repeaterTimerNotify {
+public:
+    virtual ~repeaterTimerNotify () = 0;
+    virtual void repeaterRegistrationMessage ( 
+        unsigned attemptNumber ) = 0;
+    virtual int printf ( 
+        epicsGuard < epicsMutex > & callbackControl, 
+        const char * pformat, ... ) = 0;
+};
+
 class repeaterSubscribeTimer : private epicsTimerNotify {
 public:
-    repeaterSubscribeTimer ( udpiiu &, epicsTimerQueue &, 
+    repeaterSubscribeTimer ( 
+        repeaterTimerNotify &, epicsTimerQueue &, 
         epicsMutex & cbMutex, cacContextNotify & ctxNotify );
     virtual ~repeaterSubscribeTimer ();
-    void shutdown ();
+    void start ();
+    void shutdown (
+        epicsGuard < epicsMutex > & cbGuard,
+        epicsGuard < epicsMutex > & guard );
     void confirmNotify ();
 	void show ( unsigned level ) const;
 private:
     epicsTimer & timer;
-    udpiiu & iiu;
+    repeaterTimerNotify & iiu;
     epicsMutex & cbMutex;
     cacContextNotify & ctxNotify;
     unsigned attempts;

@@ -85,14 +85,6 @@ private:
 	cacComBufMemoryManager & operator = ( const cacComBufMemoryManager & );
 };
 
-class cacDisconnectChannelPrivate { // X aCC 655
-public:
-    virtual void disconnectChannel ( 
-        const epicsTime & currentTime, 
-        epicsGuard < epicsMutex > & cbGuard, 
-        epicsGuard < epicsMutex > & guard, nciu & chan ) = 0;
-};
-
 class notifyGuard {
 public:
     notifyGuard ( cacContextNotify & );
@@ -114,7 +106,6 @@ public:
 class cac : 
     public cacContext,
     private cacRecycle, 
-    private cacDisconnectChannelPrivate,
     private callbackForMultiplyDefinedPV
 {
 public:
@@ -136,15 +127,12 @@ public:
         const epicsTime & currentTime, caHdrLargeArray &, char *pMsgBody );
 
     // channel routines
-    bool transferChanToVirtCircuit ( 
+    void transferChanToVirtCircuit ( 
         epicsGuard < epicsMutex > &,
         unsigned cid, unsigned sid, 
         ca_uint16_t typeCode, arrayElementCount count, 
-        unsigned minorVersionNumber, const osiSockAddr & );
-    void disconnectAllChannels (
-        epicsGuard < epicsMutex > & callbackControlGuard, 
-        epicsGuard < epicsMutex > & mutualExclusionGuard,
-        tcpiiu & );
+        unsigned minorVersionNumber, const osiSockAddr &,
+        const epicsTime & currentTime );
     cacChannel & createChannel ( 
         epicsGuard < epicsMutex > & guard, const char * pChannelName, 
         cacChannelNotify &, cacChannel::priLev );
@@ -153,7 +141,7 @@ public:
         epicsGuard < epicsMutex > & mutualExclusionGuard,
         nciu & );
     void initiateConnect ( 
-        epicsGuard < epicsMutex > &, nciu & );
+        epicsGuard < epicsMutex > &, nciu &, netiiu * & );
 
     // IO requests
     void writeRequest ( epicsGuard < epicsMutex > &, nciu &, unsigned type, 
@@ -293,7 +281,6 @@ private:
         epicsGuard < epicsMutex > &, netSubscription &io );
 
     void disconnectChannel ( 
-        const epicsTime & currentTime, 
         epicsGuard < epicsMutex > & cbGuard, 
         epicsGuard < epicsMutex > & guard, nciu & chan );
 
@@ -421,16 +408,6 @@ inline unsigned cac::beaconAnomaliesSinceProgramStart (
 {
     guard.assertIdenticalMutex ( this->mutex );
     return this->beaconAnomalyCount;
-}
-
-inline void cac::disconnectAllChannels (
-    epicsGuard < epicsMutex > & cbGuard, 
-    epicsGuard < epicsMutex > & guard,
-    tcpiiu & iiu )
-{
-    cbGuard.assertIdenticalMutex ( this->cbMutex );
-    guard.assertIdenticalMutex ( this->mutex );
-    iiu.removeAllChannels ( false, cbGuard, guard, *this->pudpiiu );
 }
 
 inline notifyGuard::notifyGuard ( cacContextNotify & notifyIn ) :

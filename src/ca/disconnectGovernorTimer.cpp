@@ -24,15 +24,17 @@
 #define epicsExportSharedSymbols
 #include "disconnectGovernorTimer.h"
 #include "udpiiu.h"
+#include "nciu.h"
 
-static const double period = 10.0; // sec
+static const double disconnectGovernorPeriod = 10.0; // sec
 
 disconnectGovernorTimer::disconnectGovernorTimer ( 
-    udpiiu & iiuIn, epicsTimerQueue & queueIn ) :
-        timer ( queueIn.createTimer () ),
+    disconnectGovernorNotify & iiuIn, 
+    epicsTimerQueue & queueIn, 
+    epicsMutex & mutexIn ) :
+        mutex ( mutexIn ), timer ( queueIn.createTimer () ),
     iiu ( iiuIn )
 {
-    this->timer.start ( *this, period );
 }
 
 disconnectGovernorTimer::~disconnectGovernorTimer ()
@@ -40,18 +42,65 @@ disconnectGovernorTimer::~disconnectGovernorTimer ()
     this->timer.destroy ();
 }
 
-void disconnectGovernorTimer::shutdown ()
+void disconnectGovernorTimer:: start ()
 {
-    this->timer.cancel ();
+    this->timer.start ( *this, disconnectGovernorPeriod );
 }
 
-epicsTimerNotify::expireStatus disconnectGovernorTimer::expire ( const epicsTime & currentTime ) // X aCC 361
+void disconnectGovernorTimer::shutdown (
+    epicsGuard < epicsMutex > & cbGuard,
+    epicsGuard < epicsMutex > & guard )
 {
-    this->iiu.govExpireNotify ( currentTime );
-    return expireStatus ( restart, period );
+    epicsGuardRelease < epicsMutex > unguard ( guard );
+    {
+        epicsGuardRelease < epicsMutex > unguard ( cbGuard );
+        this->timer.cancel ();
+    }
+    while ( nciu * pChan = this->chanList.get () ) {
+        pChan->channelNode::listMember = 
+            channelNode::cs_none;
+        pChan->serviceShutdownNotify ( cbGuard, guard );
+    }
 }
 
-void disconnectGovernorTimer::show ( unsigned /* level */ ) const
+epicsTimerNotify::expireStatus disconnectGovernorTimer::expire ( 
+    const epicsTime & currentTime ) // X aCC 361
 {
+    epicsGuard < epicsMutex > guard ( this->mutex );
+    while ( nciu * pChan = chanList.get () ) {
+        pChan->channelNode::listMember = 
+            channelNode::cs_none;
+        this->iiu.govExpireNotify ( guard, *pChan );
+    }
+    return expireStatus ( restart, disconnectGovernorPeriod );
 }
+
+void disconnectGovernorTimer::show ( unsigned level ) const
+{
+    epicsGuard < epicsMutex > guard ( this->mutex );
+    ::printf ( "disconnect governor timer:\n" );
+    tsDLIterConst < nciu > pChan = this->chanList.firstIter ();
+	while ( pChan.valid () ) {
+        pChan->show ( level - 1u );
+        pChan++;
+    }
+}
+
+void disconnectGovernorTimer::installChan ( 
+    epicsGuard < epicsMutex > & guard, nciu & chan )
+{
+    guard.assertIdenticalMutex ( this->mutex );
+    this->chanList.add ( chan );
+    chan.channelNode::listMember = channelNode::cs_disconnGov;
+}
+
+void disconnectGovernorTimer::uninstallChan (
+    epicsGuard < epicsMutex > & guard, nciu & chan )
+{
+    guard.assertIdenticalMutex ( this->mutex );
+    this->chanList.remove ( chan );
+    chan.channelNode::listMember = channelNode::cs_none;
+}
+
+disconnectGovernorNotify::~disconnectGovernorNotify () {}
 

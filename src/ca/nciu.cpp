@@ -18,14 +18,6 @@
  *
  *  Author: Jeff Hill
  *
- * Notes:
- * 1) This class has a pointer to the IIU. This pointer always points at 
- * a valid IIU. If the client context is deleted then the channel points at a
- * static file scope IIU. IIU's that disconnect go into an inactive state
- * and are stored on a list for later reuse. When the channel calls a
- * member function of the IIU, the IIU verifies that the channel's IIU
- * pointer is still pointing at itself only after it has acquired the IIU 
- * lock.
  */
 
 #include <new>
@@ -33,6 +25,8 @@
 #include <stdexcept>
 
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
+
+#include "epicsAlgorithm.h"
 
 #define epicsExportSharedSymbols
 #include "iocinf.h"
@@ -42,6 +36,7 @@
 #include "virtualCircuit.h"
 #include "cadef.h"
 #include "db_access.h" // for INVALID_DB_REQ
+#include "noopIIU.h"
 
 nciu::nciu ( cac & cacIn, netiiu & iiuIn, cacChannelNotify & chanIn, 
             const char *pNameIn, cacChannel::priLev pri ) :
@@ -97,8 +92,7 @@ void nciu::destroy (
             mutualExclusionGuard, this->sid, this->id );
     }
     
-    this->piiu->uninstallChan ( 
-        callbackControlGuard, mutualExclusionGuard, *this );
+    this->piiu->uninstallChan ( mutualExclusionGuard, *this );
     
     this->cacCtx.destroyChannel ( 
         callbackControlGuard, mutualExclusionGuard, *this );
@@ -125,7 +119,7 @@ void nciu::operator delete ( void * )
 void nciu::initiateConnect ( 
     epicsGuard < epicsMutex > & guard )
 {   
-    this->cacCtx.initiateConnect ( guard, *this );
+    this->cacCtx.initiateConnect ( guard, *this, this->piiu );
 }
 
 void nciu::connect ( unsigned nativeType, 
@@ -186,7 +180,7 @@ void nciu::unresponsiveCircuitNotify (
     this->notify().accessRightsNotify ( guard, noRights );
 }
 
-void nciu::setServerAddressUnknown ( udpiiu & newiiu, 
+void nciu::setServerAddressUnknown ( netiiu & newiiu, 
                                 epicsGuard < epicsMutex > & guard )
 {
     guard.assertIdenticalMutex ( this->cacCtx.mutexRef () );
@@ -217,30 +211,16 @@ void nciu::accessRightsStateChange (
 /*
  * nciu::searchMsg ()
  */
-bool nciu::searchMsg ( udpiiu & iiu )
+bool nciu::searchMsg ( epicsGuard < epicsMutex > & guard )
 {
-    caHdr msg;
-    bool success;
-
-    msg.m_cmmd = epicsHTON16 ( CA_PROTO_SEARCH );
-    msg.m_available = epicsHTON32 ( this->getId () );
-    msg.m_dataType = epicsHTON16 ( DONTREPLY );
-    msg.m_count = epicsHTON16 ( CA_MINOR_PROTOCOL_REVISION );
-    msg.m_cid = epicsHTON32 ( this->getId () );
-
-    success = iiu.pushDatagramMsg ( msg, 
-            this->pNameStr, this->nameLength );
-    if ( success ) {
-        //
-        // increment the number of times we have tried 
-        // to find this channel
-        //
+   bool success = this->piiu->searchMsg ( 
+        guard, this->getId (), this->pNameStr, this->nameLength );
+   if ( success ) {
         if ( this->retry < UINT_MAX ) {
             this->retry++;
         }
-    }
-
-    return success;
+   }
+   return success;
 }
 
 const char *nciu::pName (
@@ -570,5 +550,64 @@ void nciu::disconnectAllIO (
 {
     this->cacCtx.disconnectAllIO ( cbGuard, guard, 
         *this, this->eventq );
+}
+
+void nciu::serviceShutdownNotify (
+    epicsGuard < epicsMutex > & callbackControlGuard, 
+    epicsGuard < epicsMutex > & mutualExclusionGuard )
+{
+    this->setServerAddressUnknown ( noopIIU, mutualExclusionGuard );
+    this->notify().serviceShutdownNotify ( callbackControlGuard, mutualExclusionGuard );
+}
+
+void channelNode::setRespPendingState ( 
+    epicsGuard < epicsMutex > &, unsigned index ) 
+{
+    this->listMember = 
+        static_cast < channelNode::channelState >
+        ( channelNode::cs_searchRespPending0 + index );
+    if ( this->listMember > cs_searchRespPending17 ) {
+        throw std::runtime_error ( 
+            "resp search timer index out of bounds" );
+    }
+}
+
+void channelNode::setReqPendingState ( 
+    epicsGuard < epicsMutex > &, unsigned index ) 
+{
+    this->listMember = 
+        static_cast < channelNode::channelState >
+        ( channelNode::cs_searchReqPending0 + index );
+    if ( this->listMember > cs_searchReqPending17 ) {
+        throw std::runtime_error ( 
+            "req search timer index out of bounds" );
+    }
+}
+
+unsigned channelNode::getMaxSearchTimerCount () 
+{
+    return epicsMin ( 
+        cs_searchReqPending17 - cs_searchReqPending0,
+        cs_searchRespPending17 - cs_searchRespPending0 ) + 1u;
+}
+
+unsigned channelNode::getSearchTimerIndex ( 
+    epicsGuard < epicsMutex > & )
+{
+    channelNode::channelState chanState = this->listMember;
+    unsigned index = 0u;
+    if ( chanState >= cs_searchReqPending0 && 
+            chanState <= cs_searchReqPending17 ) {
+        index = chanState - cs_searchReqPending0;
+    }
+    else if ( chanState >= cs_searchRespPending0 && 
+            chanState <= cs_searchRespPending17 ) {
+        index = chanState - cs_searchRespPending0;
+    }
+    else {
+        throw std::runtime_error ( 
+            "channel was expected to be in a search timer, but wasnt" );;
+    }
+    return index;
 }
 

@@ -19,6 +19,7 @@
 //  Author: Jeff Hill
 //
 
+#include <stdexcept>
 #include <limits.h>
 
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
@@ -28,188 +29,297 @@
 
 #define epicsExportSharedSymbols
 #include "iocinf.h"
-#include "searchTimer.h"
 #include "udpiiu.h"
+#include "nciu.h"
 
 static const unsigned initialTriesPerFrame = 1u; // initial UDP frames per search try
 static const unsigned maxTriesPerFrame = 64u; // max UDP frames per search try 
 
-static const double minSearchPeriod = 30e-3; // seconds
-static const double maxSearchPeriodDefault = 5.0 * 60.0; // seconds
-static const double maxSearchPeriodLowerLimit = 60.0; // seconds
-
-// This impacts the exponential backoff delay between search messages.
-// This delay is two to the power of the minimum channel retry count
-// times the estimated round trip time or the OS's delay quantum 
-// whichever is greater. So this results in about a one second delay. 
-static const unsigned successfulSearchRetrySetpoint = 6u;
-static const unsigned beaconAnomalyRetrySetpoint = 6u;
-static const unsigned disconnectRetrySetpoint = 6u;
-
 //
 // searchTimer::searchTimer ()
 //
-searchTimer::searchTimer ( udpiiu & iiuIn, 
-        epicsTimerQueue & queueIn, udpMutex & mutexIn ) :
-    period ( 1e9 ),
+searchTimer::searchTimer ( 
+        searchTimerNotify & iiuIn, 
+        epicsTimerQueue & queueIn, 
+        const unsigned indexIn, 
+        epicsMutex & mutexIn,
+        bool boostPossibleIn ) :
     timer ( queueIn.createTimer () ),
     iiu ( iiuIn ),
     mutex ( mutexIn ),
     framesPerTry ( initialTriesPerFrame ),
     framesPerTryCongestThresh ( DBL_MAX ),
-    maxPeriod ( maxSearchPeriodDefault ),
     retry ( 0 ),
     searchAttempts ( 0u ),
     searchResponses ( 0u ),
-    searchAttemptsThisPass ( 0u ),
-    searchResponsesThisPass ( 0u ), 
+    index ( indexIn ),
     dgSeqNoAtTimerExpireBegin ( 0u ),
     dgSeqNoAtTimerExpireEnd ( 0u ),
+    boostPossible ( boostPossibleIn ),
     stopped ( false )
 {
-    if ( envGetConfigParamPtr ( & EPICS_CA_MAX_SEARCH_PERIOD ) ) {
-        long longStatus = envGetDoubleConfigParam ( 
-            & EPICS_CA_MAX_SEARCH_PERIOD, & this->maxPeriod );
-        if ( ! longStatus ) {
-            if ( this->maxPeriod < maxSearchPeriodLowerLimit ) {
-                epicsPrintf ( "EPICS \"%s\" out of range (low)\n",
-                                EPICS_CA_MAX_SEARCH_PERIOD.name );
-                this->maxPeriod = maxSearchPeriodLowerLimit;
-                epicsPrintf ( "Setting \"%s\" = %f seconds\n",
-                    EPICS_CA_MAX_SEARCH_PERIOD.name, this->maxPeriod );
-            }
-        }
-        else {
-            epicsPrintf ( "EPICS \"%s\" wasnt a real number\n",
-                            EPICS_CA_MAX_SEARCH_PERIOD.name );
-            epicsPrintf ( "Setting \"%s\" = %f seconds\n",
-                EPICS_CA_MAX_SEARCH_PERIOD.name, this->maxPeriod );
-        }
-    }
+}
+
+void searchTimer::start ()
+{
+    this->timer.start ( *this, this->period () );
 }
 
 searchTimer::~searchTimer ()
 {
+    assert ( this->chanListReqPending.count() == 0 );
+    assert ( this->chanListRespPending.count() == 0 );
     this->timer.destroy ();
 }
 
-void searchTimer::shutdown ()
+void searchTimer::shutdown ( 
+    epicsGuard < epicsMutex > & cbGuard,
+    epicsGuard < epicsMutex > & guard )
 {
     this->stopped = true;
-    this->timer.cancel ();
-}
-
-void searchTimer::channelCreatedNotify ( 
-    epicsGuard < udpMutex > & guard,
-    const epicsTime & currentTime, bool firstChannel )
-{
-    this->newChannelNotify ( guard, currentTime, 
-        firstChannel, 0 );
-}
-
-void searchTimer::channelDisconnectedNotify ( 
-    epicsGuard < udpMutex > & guard,
-    const epicsTime & currentTime, bool firstChannel )
-{
-    this->newChannelNotify ( guard, currentTime, 
-        firstChannel, disconnectRetrySetpoint );
-}
-
-void searchTimer::newChannelNotify ( 
-    epicsGuard < udpMutex > & guard, const epicsTime & currentTime, 
-    bool firstChannel, const unsigned minRetryNo )
-{
-    if ( ! this->stopped ) {
-        if ( firstChannel ) {
-            this->recomputeTimerPeriod ( guard, minRetryNo );
-            double newPeriod = this->period;
-            {
-                // avoid timer cancel block deadlock
-                epicsGuardRelease < udpMutex > unguard ( guard );
-                this->timer.start ( *this, currentTime + newPeriod );
-            }
-        }
-        else {
-            this->recomputeTimerPeriodAndStartTimer ( guard, 
-                currentTime, minRetryNo, 0.0 );
-        }
-    }
-}
-
-void searchTimer::beaconAnomalyNotify ( 
-    epicsGuard < udpMutex > & guard, 
-    const epicsTime & currentTime, const double & delay )
-{
-    this->recomputeTimerPeriodAndStartTimer ( 
-        guard, currentTime, beaconAnomalyRetrySetpoint, delay );
-}
-
-// lock must be applied
-void searchTimer::recomputeTimerPeriod ( 
-    epicsGuard < udpMutex > & guard, const unsigned retryNew ) // X aCC 431
-{
-    this->retry = retryNew;
-    size_t idelay = 1u << tsMin ( (size_t) this->retry,
-                                    CHAR_BIT * sizeof ( idelay ) - 1u );
-    double delayFactor = tsMax ( 
-        this->iiu.roundTripDelayEstimate ( guard ) * 2.0, minSearchPeriod );
-    this->period = idelay * delayFactor; /* sec */ 
-    this->period = tsMin ( this->maxPeriod, this->period );
-}
-
-void searchTimer::recomputeTimerPeriodAndStartTimer ( epicsGuard < udpMutex > & guard,
-    const epicsTime & currentTime, const unsigned retryNew, const double & initialDelay )
-{
-    if ( this->iiu.unresolvedChannelCount ( guard ) == 0 || this->stopped ) {
-        return; 
-    }
-
-    bool start = false;
-    double totalDelay = initialDelay;
     {
-        if ( this->retry <= retryNew  ) {
-            return; 
-        }
-
-        double oldPeriod = this->period;
-
-        this->recomputeTimerPeriod ( guard, retryNew );
-
-        totalDelay += this->period;
-
-        if ( totalDelay < oldPeriod ) {
-            epicsTimer::expireInfo info = this->timer.getExpireInfo ();
-            if ( info.active ) {
-                double delay = info.expireTime - currentTime;
-                if ( delay > totalDelay ) {
-                    start = true;
-                }
-            }
-            else {
-                start = true;
-            }
+        epicsGuardRelease < epicsMutex > unguard ( guard );
+        {
+            epicsGuardRelease < epicsMutex > unguard ( cbGuard );
+            this->timer.cancel ();
         }
     }
 
-    if ( start ) {
-        // avoid timer cancel block deadlock
-        epicsGuardRelease < udpMutex > unguard ( guard );
-        this->timer.start ( *this, currentTime + totalDelay );
+    while ( nciu * pChan = this->chanListReqPending.get () ) {
+        pChan->channelNode::listMember = 
+            channelNode::cs_none;
+        pChan->serviceShutdownNotify ( cbGuard, guard );
     }
-    debugPrintf ( ( "changed search period to %f sec\n", this->period ) );
+    while ( nciu * pChan = this->chanListRespPending.get () ) {
+        pChan->channelNode::listMember = 
+            channelNode::cs_none;
+        pChan->serviceShutdownNotify ( cbGuard, guard );
+    }
+}
+
+void searchTimer::installChannel ( 
+    epicsGuard < epicsMutex > & guard, nciu & chan )
+{
+    this->chanListReqPending.add ( chan );
+    chan.channelNode::setReqPendingState ( guard, this->index );
+}
+
+void searchTimer::moveChannels ( 
+    epicsGuard < epicsMutex > & guard, searchTimer & dest )
+{
+    while ( nciu * pChan = this->chanListRespPending.get () ) {
+        if ( this->searchAttempts > 0 ) {
+            this->searchAttempts--;
+        }
+        dest.installChannel ( guard, *pChan );
+    }
+    while ( nciu * pChan = this->chanListReqPending.get () ) {
+        dest.installChannel ( guard, *pChan );
+    }
 }
 
 //
-// searchTimer::notifySuccessfulSearchResponse ()
+// searchTimer::expire ()
+//
+epicsTimerNotify::expireStatus searchTimer::expire ( 
+    const epicsTime & currentTime ) // X aCC 361
+{
+    epicsGuard < epicsMutex > guard ( this->mutex );
+
+    while ( nciu * pChan = this->chanListRespPending.get () ) {
+        pChan->channelNode::listMember = 
+            channelNode::cs_none;
+        this->iiu.noSearchRespNotify ( 
+            guard, *pChan, this->index );
+    }
+
+    // boost search period for channels not recently
+    // searched for if there was some success
+    if ( this->searchResponses && this->boostPossible ) {
+        while ( nciu * pChan = this->chanListReqPending.get () ) {
+            pChan->channelNode::listMember = 
+                channelNode::cs_none;
+            this->iiu.boostChannel ( guard, *pChan );
+        }
+    }
+
+    if ( this->searchAttempts ) {
+#if 0
+        //
+        // dynamically adjust the number of UDP frames per 
+        // try depending how many search requests are not 
+        // replied to
+        //
+        // The variable this->framesPerTry
+        // determines the number of UDP frames to be sent
+        // each time that expire() is called.
+        // If this value is too high we will waste some
+        // network bandwidth. If it is too low we will
+        // use very little of the incoming UDP message
+        // buffer associated with the server's port and
+        // will therefore take longer to connect. We 
+        // initialize this->framesPerTry to a prime number 
+        // so that it is less likely that the
+        // same channel is in the last UDP frame
+        // sent every time that this is called (and
+        // potentially discarded by a CA server with
+        // a small UDP input queue). 
+        //
+        // increase frames per try only if we see better than
+        // a 93.75% success rate for one pass through the list
+        //
+        if ( this->searchResponses >
+            ( this->searchAttempts - (this->searchAttempts/16u) ) ) {
+            // increase UDP frames per try if we have a good score
+            if ( this->framesPerTry < maxTriesPerFrame ) {
+                // a congestion avoidance threshold similar to TCP is now used
+                if ( this->framesPerTry < this->framesPerTryCongestThresh ) {
+                    this->framesPerTry += this->framesPerTry;
+                }
+                else {
+                    this->framesPerTry += (this->framesPerTry/8) + 1;
+                }
+                debugPrintf ( ("Increasing frame count to %u t=%u r=%u\n", 
+                    this->framesPerTry, this->searchAttempts, this->searchResponses) );
+            }
+        }
+        // if we detect congestion because we have less than a 87.5% success 
+        // rate then gradually reduce the frames per try
+        else if ( this->searchResponses < 
+            ( this->searchAttempts - (this->searchAttempts/8u) ) ) {
+            if ( this->framesPerTry > 1 ) {
+                this->framesPerTry--;
+            }
+            this->framesPerTryCongestThresh = this->framesPerTry/2 + 1;
+            debugPrintf ( ("Congestion detected - set frames per try to %f t=%u r=%u\n", 
+                this->framesPerTry, this->searchAttempts, this->searchResponses) );
+        }
+#else
+        if ( this->searchResponses == this->searchAttempts ) {
+            // increase UDP frames per try if we have a good score
+            if ( this->framesPerTry < maxTriesPerFrame ) {
+                // a congestion avoidance threshold similar to TCP is now used
+                if ( this->framesPerTry < this->framesPerTryCongestThresh ) {
+                    double doubled = 2 * this->framesPerTry;
+                    if ( doubled > this->framesPerTryCongestThresh ) {
+                        this->framesPerTry = this->framesPerTryCongestThresh;
+                    }
+                    else {
+                        this->framesPerTry = doubled;
+                    }
+                }
+                else {
+                    this->framesPerTry += 1.0 / this->framesPerTry;
+                }
+                debugPrintf ( ("Increasing frame count to %g t=%u r=%u\n", 
+                    this->framesPerTry, this->searchAttempts, this->searchResponses) );
+            }
+        }
+        else  {
+            this->framesPerTryCongestThresh = this->framesPerTry / 2.0;
+            this->framesPerTry = 1u;
+            debugPrintf ( ("Congestion detected - set frames per try to %g t=%u r=%u\n", 
+                this->framesPerTry, this->searchAttempts, this->searchResponses) );
+        }
+#endif
+    }
+
+    this->dgSeqNoAtTimerExpireBegin = 
+        this->iiu.datagramSeqNumber ( guard );
+
+    this->searchAttempts = 0;
+    this->searchResponses = 0;
+
+    unsigned nFrameSent = 0u;
+    while ( true ) {
+        nciu * pChan = this->chanListReqPending.get ();
+        if ( ! pChan ) {
+            break;
+        }
+
+        pChan->channelNode::listMember = 
+            channelNode::cs_none;
+    
+        bool success = pChan->searchMsg ( guard );
+        if ( ! success ) {
+            if ( this->iiu.datagramFlush ( guard, currentTime ) ) {
+                nFrameSent++;
+                if ( nFrameSent < this->framesPerTry ) {
+                    success = pChan->searchMsg ( guard );
+                }
+            }
+            if ( ! success ) {
+                this->chanListReqPending.push ( *pChan );
+                pChan->channelNode::setReqPendingState ( 
+                    guard, this->index );
+                break;
+            }
+        }
+
+        this->chanListRespPending.add ( *pChan );
+        pChan->channelNode::setRespPendingState ( 
+            guard, this->index );
+
+        if ( this->searchAttempts < UINT_MAX ) {
+            this->searchAttempts++;
+        }
+    }
+
+    // flush out the search request buffer
+    if ( this->iiu.datagramFlush ( guard, currentTime ) ) {
+        nFrameSent++;
+    }
+
+    this->dgSeqNoAtTimerExpireEnd = 
+        this->iiu.datagramSeqNumber ( guard ) - 1u;
+
+    this->timeAtLastSend = currentTime;
+
+#   ifdef DEBUG
+        if ( this->searchAttempts ) {
+            char buf[64];
+            currentTime.strftime ( buf, sizeof(buf), "%M:%S.%09f");
+            debugPrintf ( ("sent %u delay sec=%f Rts=%s\n", 
+                nFrameSent, this->period(), buf ) );
+        }
+#   endif
+
+    return expireStatus ( restart, this->period() );
+}
+
+void searchTimer::show ( unsigned level ) const
+{
+    epicsGuard < epicsMutex > guard ( this->mutex );
+    ::printf ( "search timer delay %f\n", this->period() );
+    ::printf ( "%u channels with search request pending\n", 
+        this->chanListReqPending.count () );
+    tsDLIterConst < nciu > pChan = this->chanListReqPending.firstIter ();
+	while ( pChan.valid () ) {
+        pChan->show ( level - 1u );
+        pChan++;
+    }
+    ::printf ( "%u channels with search response pending\n", 
+        this->chanListRespPending.count () );
+    pChan = this->chanListRespPending.firstIter ();
+	while ( pChan.valid () ) {
+        pChan->show ( level - 1u );
+        pChan++;
+    }
+}
+
 //
 // Reset the delay to the next search request if we get
 // at least one response. However, dont reset this delay if we
 // get a delayed response to an old search request.
 //
-void searchTimer::notifySuccessfulSearchResponse ( epicsGuard < udpMutex > & guard,
-    ca_uint32_t respDatagramSeqNo, bool seqNumberIsValid, const epicsTime & currentTime )
+void searchTimer::uninstallChanDueToSuccessfulSearchResponse ( 
+    epicsGuard < epicsMutex > & guard, nciu & chan, 
+    ca_uint32_t respDatagramSeqNo, bool seqNumberIsValid, 
+    const epicsTime & currentTime )
 {
-    if ( this->iiu.unresolvedChannelCount ( guard ) == 0 || this->stopped ) {
+    this->uninstallChan ( guard, chan );
+
+    if ( this->stopped ) {
         return;
     }
 
@@ -223,235 +333,49 @@ void searchTimer::notifySuccessfulSearchResponse ( epicsGuard < udpMutex > & gua
     // if we receive a successful response then reset to a
     // reasonable timer period
     if ( validResponse ) {
+        double measured = currentTime - this->timeAtLastSend;
+        this->iiu.updateRTTE ( measured );
+
         if ( this->searchResponses < UINT_MAX ) {
             this->searchResponses++;
             if ( this->searchResponses == this->searchAttempts ) {
-                debugPrintf ( ( "Response set timer delay to zero\n" ) );
-                if ( this->retry > successfulSearchRetrySetpoint ) {
-                    this->recomputeTimerPeriod ( 
-                        guard, successfulSearchRetrySetpoint );
-                }
-                // avoid timer cancel block deadlock
-                epicsGuardRelease < udpMutex > unguard ( guard );
-                //
-                // when we get 100% success immediately 
-                // send another search request
-                //
-                this->timer.start ( *this, currentTime );
-            }
-            else {
-                debugPrintf ( ( "Response set timer delay to beacon anomaly set point\n" ) );
-                //
-                // otherwise, if making some progress then dont allow
-                // retry rate to drop below some reasonable minimum
-                //
-                if ( this->retry > successfulSearchRetrySetpoint ) {
-                    this->recomputeTimerPeriodAndStartTimer ( 
-                        guard, currentTime, successfulSearchRetrySetpoint, 0.0 );
+                if ( this->chanListReqPending.count () ) {
+                    // avoid timer cancel block deadlock
+                    epicsGuardRelease < epicsMutex > unguard ( guard );
+                    //
+                    // when we get 100% success immediately 
+                    // send another search request
+                    //
+                    debugPrintf ( ( "All requests succesful, set timer delay to zero\n" ) );
+                    this->timer.start ( *this, currentTime );
                 }
             }
         }
     }
 }
 
-//
-// searchTimer::expire ()
-//
-epicsTimerNotify::expireStatus searchTimer::expire ( const epicsTime & currentTime ) // X aCC 361
+void searchTimer::uninstallChan (
+    epicsGuard < epicsMutex > & cacGuard, nciu & chan )
 {
-    epicsGuard < udpMutex > guard ( this->mutex );
-
-    // check to see if there is nothing to do here 
-    if ( this->iiu.unresolvedChannelCount ( guard ) == 0 ) {
-        debugPrintf ( ( "all channels located - search timer terminating\n" ) );
-        this->period = DBL_MAX;
-        return noRestart;
-    }   
-
-#if 0
-    //
-    // dynamically adjust the number of UDP frames per 
-    // try depending how many search requests are not 
-    // replied to
-    //
-    // The variable this->framesPerTry
-    // determines the number of UDP frames to be sent
-    // each time that expire() is called.
-    // If this value is too high we will waste some
-    // network bandwidth. If it is too low we will
-    // use very little of the incoming UDP message
-    // buffer associated with the server's port and
-    // will therefore take longer to connect. We 
-    // initialize this->framesPerTry to a prime number 
-    // so that it is less likely that the
-    // same channel is in the last UDP frame
-    // sent every time that this is called (and
-    // potentially discarded by a CA server with
-    // a small UDP input queue). 
-    //
-    // increase frames per try only if we see better than
-    // a 93.75% success rate for one pass through the list
-    //
-    if ( this->searchResponses >
-        ( this->searchAttempts - (this->searchAttempts/16u) ) ) {
-        // increase UDP frames per try if we have a good score
-        if ( this->framesPerTry < maxTriesPerFrame ) {
-            // a congestion avoidance threshold similar to TCP is now used
-            if ( this->framesPerTry < this->framesPerTryCongestThresh ) {
-                this->framesPerTry += this->framesPerTry;
-            }
-            else {
-                this->framesPerTry += (this->framesPerTry/8) + 1;
-            }
-            debugPrintf ( ("Increasing frame count to %u t=%u r=%u\n", 
-                this->framesPerTry, this->searchAttempts, this->searchResponses) );
-        }
+    cacGuard.assertIdenticalMutex ( this->mutex );
+    if ( chan.channelNode::listMember == 
+            this->index + channelNode::cs_searchReqPending0 ) {
+        this->chanListReqPending.remove ( chan );
     }
-    // if we detect congestion because we have less than a 87.5% success 
-    // rate then gradually reduce the frames per try
-    else if ( this->searchResponses < 
-        ( this->searchAttempts - (this->searchAttempts/8u) ) ) {
-        if ( this->framesPerTry > 1 ) {
-            this->framesPerTry--;
-        }
-        this->framesPerTryCongestThresh = this->framesPerTry/2 + 1;
-        debugPrintf ( ("Congestion detected - set frames per try to %f t=%u r=%u\n", 
-            this->framesPerTry, this->searchAttempts, this->searchResponses) );
-    }
-#else
-    if ( this->searchResponses == this->searchAttempts ) {
-        // increase UDP frames per try if we have a good score
-        if ( this->framesPerTry < maxTriesPerFrame ) {
-            // a congestion avoidance threshold similar to TCP is now used
-            if ( this->framesPerTry < this->framesPerTryCongestThresh ) {
-                double doubled = 2 * this->framesPerTry;
-                if ( doubled > this->framesPerTryCongestThresh ) {
-                    this->framesPerTry = this->framesPerTryCongestThresh;
-                }
-                else {
-                    this->framesPerTry = doubled;
-                }
-            }
-            else {
-                this->framesPerTry += 1.0 / this->framesPerTry;
-            }
-            debugPrintf ( ("Increasing frame count to %g t=%u r=%u\n", 
-                this->framesPerTry, this->searchAttempts, this->searchResponses) );
-        }
-    }
-    else  {
-        this->framesPerTryCongestThresh = this->framesPerTry / 2.0;
-        this->framesPerTry = 1u;
-        debugPrintf ( ("Congestion detected - set frames per try to %g t=%u r=%u\n", 
-            this->framesPerTry, this->searchAttempts, this->searchResponses) );
-    }
-#endif
-
-    if ( this->searchAttemptsThisPass <= UINT_MAX - this->searchAttempts ) {
-        this->searchAttemptsThisPass += this->searchAttempts;
+    else if ( chan.channelNode::listMember == 
+            this->index + channelNode::cs_searchRespPending0 ) {
+        this->chanListRespPending.remove ( chan );
     }
     else {
-        this->searchAttemptsThisPass = UINT_MAX;
+        throw std::runtime_error ( 
+            "uninstalling channel search timer, but channel state is wrong" );;
     }
-    if ( this->searchResponsesThisPass <= UINT_MAX - this->searchResponses ) {
-        this->searchResponsesThisPass += this->searchResponses;
-    }
-    else {
-        this->searchResponsesThisPass = UINT_MAX;
-    }
-
-    this->dgSeqNoAtTimerExpireBegin = this->iiu.datagramSeqNumber ( guard );
-
-    this->searchAttempts = 0;
-    this->searchResponses = 0;
-
-    unsigned nChanSent = 0u;
-    unsigned nFrameSent = 0u;
-    while ( true ) {
-            
-        // check to see if we have reached the end of the list
-        if ( this->searchAttemptsThisPass >= this->iiu.unresolvedChannelCount ( guard ) ) {
-            // if we are making some progress then dont increase the 
-            // delay between search requests
-            if ( this->searchResponsesThisPass == 0u ) {
-                this->recomputeTimerPeriod ( guard, this->retry + 1 );
-            }
-                
-            this->searchAttemptsThisPass = 0;
-            this->searchResponsesThisPass = 0;
-
-            debugPrintf ( ("saw end of list\n") );
-        }
-    
-        if ( ! this->iiu.searchMsg ( guard ) ) {
-            nFrameSent++;
-        
-            if ( nFrameSent >= this->framesPerTry ) {
-                break;
-            }
-            this->dgSeqNoAtTimerExpireEnd = this->iiu.datagramSeqNumber ( guard );
-            this->iiu.datagramFlush ( guard, currentTime );
-            if ( ! this->iiu.searchMsg ( guard ) ) {
-                break;
-            }
-        }
-
-        if ( this->searchAttempts < UINT_MAX ) {
-            this->searchAttempts++;
-        }
-        if ( nChanSent < UINT_MAX ) {
-            nChanSent++;
-        }
-
-        //
-        // dont send any of the channels twice within one try
-        //
-       if ( nChanSent >= this->iiu.unresolvedChannelCount ( guard ) ) {
-            //
-            // add one to nFrameSent because there may be 
-            // one more partial frame to be sent
-            //
-            nFrameSent++;
-        
-            // 
-            // cap this->framesPerTry to
-            // the number of frames required for all of 
-            // the unresolved channels
-            //
-            if ( this->framesPerTry > nFrameSent ) {
-                this->framesPerTry = nFrameSent;
-            }
-        
-            break;
-        }
-    }
-
-    // flush out the search request buffer
-    this->iiu.datagramFlush ( guard, currentTime );
-
-    this->dgSeqNoAtTimerExpireEnd = this->iiu.datagramSeqNumber ( guard ) - 1u;
-
-#   ifdef DEBUG
-        char buf[64];
-        epicsTime ts = currentTime;
-        ts.strftime ( buf, sizeof(buf), "%M:%S.%09f");
-        debugPrintf ( ("sent %u delay sec=%f Rts=%s\n", 
-            nFrameSent, this->period, buf ) );
-#   endif
-
-    if ( this->iiu.unresolvedChannelCount ( guard ) == 0 ) {
-        debugPrintf ( ( "all channels connected\n" ) );
-        this->period = DBL_MAX;
-        return noRestart;
-    }
-
-    // the code used to test this->minRetry < maxSearchTries here 
-    // and return no restart if the maximum tries was exceeded
-    // prior to R3.14.7
-    return expireStatus ( restart, this->period );
+    chan.channelNode::listMember = channelNode::cs_none;
 }
 
-void searchTimer::show ( unsigned /* level */ ) const
+double searchTimer::period () const
 {
+    return (1 << this->index ) * this->iiu.getRTTE ();
 }
 
+searchTimerNotify::~searchTimerNotify () {}

@@ -36,7 +36,7 @@ tcpRecvWatchdog::tcpRecvWatchdog
         cbMutex ( cbMutexIn ), ctxNotify ( ctxNotifyIn ), 
         mutex ( mutexIn ), iiu ( iiuIn ), 
         probeResponsePending ( false ), beaconAnomaly ( true ), 
-        probeTimeoutDetected ( false )
+        probeTimeoutDetected ( false ), shuttingDown ( false )
 {
 }
 
@@ -49,6 +49,10 @@ epicsTimerNotify::expireStatus
 tcpRecvWatchdog::expire ( const epicsTime & /* currentTime */ ) // X aCC 361
 {
     callbackManager mgr ( this->ctxNotify, this->cbMutex );
+    epicsGuard < epicsMutex > guard ( this->mutex );
+    if ( this->shuttingDown ) {
+        return noRestart;
+    }
     if ( this->probeResponsePending ) {
         if ( this->iiu.bytesArePendingInOS() ) {
             this->iiu.printf ( mgr.cbGuard,
@@ -64,7 +68,6 @@ tcpRecvWatchdog::expire ( const epicsTime & /* currentTime */ ) // X aCC 361
     "o application is blocked in a callback from the client library\n" );
         }
         {
-            epicsGuard < epicsMutex > guard ( this->mutex );
 #           ifdef DEBUG
                 char hostName[128];
                 this->iiu.hostName ( guard, hostName, sizeof (hostName) );
@@ -78,11 +81,8 @@ tcpRecvWatchdog::expire ( const epicsTime & /* currentTime */ ) // X aCC 361
         return noRestart;
     }
     else {
-        {
-            epicsGuard < epicsMutex > guard ( this->mutex );
-            this->probeTimeoutDetected = false;
-            this->probeResponsePending = this->iiu.setEchoRequestPending ( guard );
-        }
+        this->probeTimeoutDetected = false;
+        this->probeResponsePending = this->iiu.setEchoRequestPending ( guard );
         debugPrintf ( ("circuit timed out - sending echo request\n") );
         return expireStatus ( restart, CA_ECHO_TIMEOUT );
     }
@@ -92,7 +92,7 @@ void tcpRecvWatchdog::beaconArrivalNotify (
     epicsGuard < epicsMutex > & guard, const epicsTime & currentTime )
 {
     guard.assertIdenticalMutex ( this->mutex );
-    if ( ! this->beaconAnomaly && ! this->probeResponsePending ) {
+    if ( ! ( this->shuttingDown || this->beaconAnomaly || this->probeResponsePending ) ) {
         epicsGuardRelease < epicsMutex > unguard ( guard );
         this->timer.start ( *this, currentTime + this->period );
         debugPrintf ( ("saw a normal beacon - reseting circuit receive watchdog\n") );
@@ -120,15 +120,15 @@ void tcpRecvWatchdog::messageArrivalNotify (
     bool restartNeeded = false;
     {
         epicsGuard < epicsMutex > guard ( this->mutex );
-        if ( ! this->probeResponsePending ) {
+        if ( ! ( this->shuttingDown || this->probeResponsePending ) ) {
             this->beaconAnomaly = false;
             restartNeeded = true;
         }
     }
     // dont hold the lock for fear of deadlocking 
     // because cancel is blocking for the completion
-    // of the recvDog expire which takes the lock
-    // - it take also the callback lock
+    // of expire() which takes the lock - it take also 
+    // the callback lock
     if ( restartNeeded ) {
         this->timer.start ( *this, currentTime + this->period );
         debugPrintf ( ("received a message - reseting circuit recv watchdog\n") );
@@ -143,7 +143,7 @@ void tcpRecvWatchdog::probeResponseNotify (
     double restartDelay = DBL_MAX;
     {
         epicsGuard < epicsMutex > guard ( this->mutex );
-        if ( this->probeResponsePending ) {
+        if ( this->probeResponsePending && ! this->shuttingDown ) {
             restartNeeded = true;
             if ( this->probeTimeoutDetected ) {
                 this->probeTimeoutDetected = false;
@@ -192,7 +192,7 @@ void tcpRecvWatchdog::sendBacklogProgressNotify (
     // beacon anomaly (which could be transiently detecting a reboot) we will 
     // not trust the beacon as an indicator of a healthy server until we 
     // receive at least one message from the server.
-    if ( this->probeResponsePending ) {
+    if ( this->probeResponsePending && ! this->shuttingDown ) {
         // we avoid calling this with the lock applied because
         // it restarts the recv wd timer, this might block
         // until a recv wd timer expire callback completes, and 
@@ -205,6 +205,12 @@ void tcpRecvWatchdog::sendBacklogProgressNotify (
 
 void tcpRecvWatchdog::connectNotify ()
 {
+    {
+        epicsGuard < epicsMutex > guard ( this->mutex );
+        if ( this->shuttingDown ) {
+            return;
+        }
+    }
     this->timer.start ( *this, this->period );
     debugPrintf ( ("connected to the server - initiating circuit recv watchdog\n") );
 }
@@ -217,7 +223,7 @@ void tcpRecvWatchdog::sendTimeoutNotify (
     guard.assertIdenticalMutex ( this->mutex );
 
     bool restartNeeded = false;
-    if ( ! this->probeResponsePending ) {
+    if ( ! ( this->probeResponsePending || this->shuttingDown ) ) {
         this->probeResponsePending = this->iiu.setEchoRequestPending ( guard );
         restartNeeded = true;
     }
@@ -233,6 +239,16 @@ void tcpRecvWatchdog::sendTimeoutNotify (
 
 void tcpRecvWatchdog::cancel ()
 {
+    this->timer.cancel ();
+    debugPrintf ( ("canceling TCP recv watchdog\n") );
+}
+
+void tcpRecvWatchdog::shutdown ()
+{
+    {
+        epicsGuard < epicsMutex > guard ( this->mutex );
+        this->shuttingDown = true;
+    }
     this->timer.cancel ();
     debugPrintf ( ("canceling TCP recv watchdog\n") );
 }

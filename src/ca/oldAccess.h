@@ -142,7 +142,9 @@ private:
     bool prevConnected;
     void connectNotify ( epicsGuard < epicsMutex > & );
     void disconnectNotify ( epicsGuard < epicsMutex > & );
-    void serviceShutdownNotify ();
+    void serviceShutdownNotify (
+        epicsGuard < epicsMutex > & callbackControlGuard, 
+        epicsGuard < epicsMutex > & mutualExclusionGuard );
     void accessRightsNotify (  
         epicsGuard < epicsMutex > &, const caAccessRights & );
     void exception ( epicsGuard < epicsMutex > &,
@@ -324,7 +326,8 @@ public:
     void vSignal ( int ca_status, const char * pfilenm, 
                      int lineno, const char  *pFormat, va_list args );
     bool preemptiveCallbakIsEnabled () const;
-    void destroyChannel ( oldChannelNotify & chan );
+    void destroyChannel ( epicsGuard < epicsMutex > & cbGuard, 
+        epicsGuard < epicsMutex > & guard, oldChannelNotify & chan );
     void destroyGetCopy ( epicsGuard < epicsMutex > &, getCopy & );
     void destroyGetCallback ( epicsGuard < epicsMutex > &, getCallback & );
     void destroyPutCallback ( epicsGuard < epicsMutex > &, putCallback & );
@@ -365,8 +368,6 @@ private:
     void callbackProcessingCompleteNotify ();
     cacContext & createNetworkContext ( 
         epicsMutex & mutualExclusion, epicsMutex & callbackControl );
-    void destroyChannelPrivate ( 
-        oldChannelNotify & chan, epicsGuard < epicsMutex > & cbGuard );
     void clearSubscriptionPrivate ( 
         evid pMon, epicsGuard < epicsMutex > & cbGuard  );
 
@@ -379,6 +380,7 @@ private:
     friend int epicsShareAPI ca_create_channel (
         const char * name_str, caCh * conn_func, void * puser,
         capri priority, chid * chanptr );
+    friend int epicsShareAPI ca_clear_channel ( chid pChan );
     friend int epicsShareAPI ca_array_get ( chtype type, 
         arrayElementCount count, chid pChan, void * pValue );
     friend int epicsShareAPI ca_array_get_callback ( chtype type, 

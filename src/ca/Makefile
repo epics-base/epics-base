@@ -46,6 +46,7 @@ LIBSRCS += nciu.cpp
 LIBSRCS += netiiu.cpp
 LIBSRCS += udpiiu.cpp
 LIBSRCS += tcpiiu.cpp
+LIBSRCS += noopiiu.cpp
 LIBSRCS += netReadNotifyIO.cpp
 LIBSRCS += netWriteNotifyIO.cpp
 LIBSRCS += netSubscription.cpp

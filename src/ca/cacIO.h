@@ -137,7 +137,9 @@ public:
     virtual ~cacChannelNotify () = 0;
     virtual void connectNotify ( epicsGuard < epicsMutex > & ) = 0;
     virtual void disconnectNotify ( epicsGuard < epicsMutex > & ) = 0;
-    virtual void serviceShutdownNotify () = 0;
+    virtual void serviceShutdownNotify (
+        epicsGuard < epicsMutex > & callbackControlGuard, 
+        epicsGuard < epicsMutex > & mutualExclusionGuard ) = 0;
     virtual void accessRightsNotify ( 
         epicsGuard < epicsMutex > &, const caAccessRights & ) = 0;
     virtual void exception ( 

@@ -44,6 +44,7 @@ epicsTimerNotify::expireStatus tcpSendWatchdog::expire (
                  const epicsTime & currentTime )
 {
     callbackManager mgr ( this->ctxNotify, this->cbMutex );
+    epicsGuard < epicsMutex > guard ( this->mutex );
     if ( this->iiu.bytesArePendingInOS() ) {
         this->iiu.printf ( mgr.cbGuard,
             "The CA client library is disconnecting after a flush request "
@@ -51,13 +52,12 @@ epicsTimerNotify::expireStatus tcpSendWatchdog::expire (
             "application schedualing problem\n" );
     }
 #   ifdef DEBUG
-        epicsGuard < epicsMutex > guard ( this->mutex );
         char hostName[128];
         this->iiu.hostName ( guard, hostName, sizeof ( hostName ) );
         debugPrintf ( ( "Request not accepted by CA server %s for %g sec. Disconnecting.\n", 
             hostName, this->period ) );
 #   endif
-    this->iiu.sendTimeoutNotify ( currentTime, mgr );
+    this->iiu.sendTimeoutNotify ( currentTime, mgr, guard );
     return noRestart;
 }
 
@@ -70,4 +70,5 @@ void tcpSendWatchdog::cancel ()
 {
     this->timer.cancel ();
 }
+
 

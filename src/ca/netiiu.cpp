@@ -19,6 +19,8 @@
  *  Author: Jeff Hill
  */
 
+#include <stdexcept>
+
 #include <limits.h>
 #include <float.h>
 
@@ -124,17 +126,33 @@ void netiiu::eliminateExcessiveSendBacklog (
 void netiiu::requestRecvProcessPostponedFlush (
     epicsGuard < epicsMutex > & )
 {
-    return;
 }
 
 void netiiu::uninstallChan ( 
-    epicsGuard < epicsMutex > &, 
     epicsGuard < epicsMutex > &, nciu & )
 {
     throw cacChannel::notConnected();
 }
 
+double netiiu::receiveWatchdogDelay (
+    epicsGuard < epicsMutex > & guard ) const
+{
+    return - DBL_MAX;
+}
 
+void netiiu::uninstallChanDueToSuccessfulSearchResponse ( 
+    epicsGuard < epicsMutex > &, nciu &, 
+    const epicsTime & currentTime )
+{
+    throw std::runtime_error ( 
+        "search response occured when not attached to udpiiu?" );
+}
 
+bool netiiu::searchMsg (
+    epicsGuard < epicsMutex > &, ca_uint32_t id, 
+        const char * pName, unsigned nameLength )
+{
+    return false;
+}
 
 

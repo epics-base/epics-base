@@ -28,8 +28,8 @@
 #endif
 
 #include <stdexcept>
-
 #include <stdio.h>
+
 #include "epicsExit.h"
 
 #define epicsExportSharedSymbols
@@ -187,11 +187,11 @@ ca_client_context::~ca_client_context ()
     }
 }
 
-void ca_client_context::destroyChannelPrivate ( 
-    oldChannelNotify & chan, 
-    epicsGuard < epicsMutex > & cbGuard )
+void ca_client_context::destroyChannel ( 
+    epicsGuard < epicsMutex > & cbGuard,
+    epicsGuard < epicsMutex > & guard,
+    oldChannelNotify & chan )
 {
-    epicsGuard < epicsMutex > guard ( this->mutex );
     try {
         chan.eliminateExcessiveSendBacklog ( 
             &cbGuard, guard );
@@ -201,18 +201,6 @@ void ca_client_context::destroyChannelPrivate (
     }
     chan.destructor ( cbGuard, guard );
     this->oldChannelNotifyFreeList.release ( & chan );
-}
-
-void ca_client_context::destroyChannel ( oldChannelNotify & chan )
-{
-    epicsGuard < epicsMutex > * pCBGuard = this->pCallbackGuard.get();
-    if ( pCBGuard ) {
-        destroyChannelPrivate ( chan, *pCBGuard );
-    }
-    else {
-        epicsGuard < epicsMutex > cbGuard ( this->cbMutex );
-        destroyChannelPrivate ( chan, cbGuard );
-    }
 }
 
 void ca_client_context::destroyGetCopy ( 

@@ -173,9 +173,14 @@ void oldChannelNotify::disconnectNotify (
     }
 }
 
-void oldChannelNotify::serviceShutdownNotify ()
+void oldChannelNotify::serviceShutdownNotify (
+    epicsGuard < epicsMutex > & callbackControlGuard, 
+    epicsGuard < epicsMutex > & mutualExclusionGuard )
 {
-    this->cacCtx.destroyChannel ( *this );
+    this->cacCtx.destroyChannel ( 
+        callbackControlGuard,
+        mutualExclusionGuard,
+        *this );
 }
 
 void oldChannelNotify::accessRightsNotify ( 

@@ -42,16 +42,34 @@
 #endif
 
 #include "caProto.h"
+#include "netiiu.h"
+
+class disconnectGovernorNotify {
+public:
+    virtual ~disconnectGovernorNotify () = 0;
+    virtual void govExpireNotify ( 
+        epicsGuard < epicsMutex > &, nciu & ) = 0;
+};
 
 class disconnectGovernorTimer : private epicsTimerNotify {
 public:
-    disconnectGovernorTimer ( class udpiiu &, epicsTimerQueue & );
+    disconnectGovernorTimer ( 
+        class disconnectGovernorNotify &, epicsTimerQueue &, epicsMutex & );
     virtual ~disconnectGovernorTimer ();
+    void start ();
+    void shutdown (
+        epicsGuard < epicsMutex > & cbGuard,
+        epicsGuard < epicsMutex > & guard );
+    void installChan ( 
+        epicsGuard < epicsMutex > &, nciu & );
+    void uninstallChan ( 
+        epicsGuard < epicsMutex > &, nciu & );
     void show ( unsigned level ) const;
-    void shutdown ();
 private:
+    tsDLList < nciu > chanList;
+    epicsMutex & mutex;
     epicsTimer & timer;
-    class udpiiu & iiu;
+    class disconnectGovernorNotify & iiu;
     epicsTimerNotify::expireStatus expire ( const epicsTime & currentTime );
 	disconnectGovernorTimer ( const disconnectGovernorTimer & );
 	disconnectGovernorTimer & operator = ( const disconnectGovernorTimer & );

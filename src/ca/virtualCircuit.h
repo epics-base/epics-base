@@ -109,7 +109,8 @@ public:
         epicsGuard < epicsMutex > & guard );
     void sendTimeoutNotify ( 
         const epicsTime & currentTime,
-        callbackManager & );
+        callbackManager & cbMgr,
+        epicsGuard < epicsMutex > & guard );
     void receiveTimeoutNotify( 
         callbackManager &,
         epicsGuard < epicsMutex > & );
@@ -159,14 +160,16 @@ public:
         const char *pformat, ... );
     unsigned channelCount ( 
         epicsGuard < epicsMutex > & );
-    void removeAllChannels (
-        bool supressApplicationNotify,
+    void disconnectAllChannels (
         epicsGuard < epicsMutex > & cbGuard, 
-        epicsGuard < epicsMutex > & guard, udpiiu & );
+        epicsGuard < epicsMutex > & guard, class udpiiu & );
+    void unlinkAllChannels (
+        epicsGuard < epicsMutex > & cbGuard, 
+        epicsGuard < epicsMutex > & guard );
     void installChannel ( epicsGuard < epicsMutex > &,
         epicsGuard < epicsMutex > &, nciu & chan, 
         unsigned sidIn, ca_uint16_t typeIn, arrayElementCount countIn );
-    void uninstallChan ( epicsGuard < epicsMutex > & cbGuard, 
+    void uninstallChan ( 
         epicsGuard < epicsMutex > & guard, nciu & chan );
     void connectNotify ( 
         epicsGuard < epicsMutex > &, nciu & chan );
@@ -288,6 +291,13 @@ private:
         epicsGuard < epicsMutex > & );
     bool flush ( 
         epicsGuard < epicsMutex > & ); // only to be called by the send thread
+
+    // netiiu stubs
+    void uninstallChanDueToSuccessfulSearchResponse ( 
+        epicsGuard < epicsMutex > &, nciu &, const class epicsTime & );
+    bool searchMsg (
+        epicsGuard < epicsMutex > &, ca_uint32_t id, 
+            const char * pName, unsigned nameLength );
 
     friend class tcpRecvThread;
     friend class tcpSendThread;

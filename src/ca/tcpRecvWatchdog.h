@@ -56,6 +56,7 @@ public:
         epicsGuard < epicsMutex > & mutex,
         const epicsTime & currentTime );
     void cancel ();
+    void shutdown ();
     void show ( unsigned level ) const;
     double delay () const;
 private:
@@ -68,6 +69,7 @@ private:
     bool probeResponsePending;
     bool beaconAnomaly;
     bool probeTimeoutDetected;
+    bool shuttingDown;
     expireStatus expire ( const epicsTime & currentTime );
 	tcpRecvWatchdog ( const tcpRecvWatchdog & );
 	tcpRecvWatchdog & operator = ( const tcpRecvWatchdog & );

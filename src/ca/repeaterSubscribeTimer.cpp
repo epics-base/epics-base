@@ -30,14 +30,16 @@
 #include "udpiiu.h"
 #undef epicsExportSharedSymbols
 
+static const double repeaterSubscribeTimerInitialPeriod = 10.0; // sec
+static const double repeaterSubscribeTimerPeriod = 1.0; // sec
+
 repeaterSubscribeTimer::repeaterSubscribeTimer ( 
-    udpiiu & iiuIn, epicsTimerQueue & queueIn,
+    repeaterTimerNotify & iiuIn, epicsTimerQueue & queueIn,
     epicsMutex & cbMutexIn, cacContextNotify & ctxNotifyIn ) :
     timer ( queueIn.createTimer () ), iiu ( iiuIn ), 
         cbMutex ( cbMutexIn ),ctxNotify ( ctxNotifyIn ),
         attempts ( 0 ), registered ( false ), once ( false )
 {
-    this->timer.start ( *this, 10.0 );
 }
 
 repeaterSubscribeTimer::~repeaterSubscribeTimer ()
@@ -45,9 +47,21 @@ repeaterSubscribeTimer::~repeaterSubscribeTimer ()
     this->timer.destroy ();
 }
 
-void repeaterSubscribeTimer::shutdown ()
+void repeaterSubscribeTimer::start ()
 {
-    this->timer.cancel ();
+    this->timer.start ( 
+        *this, repeaterSubscribeTimerInitialPeriod );
+}
+
+void repeaterSubscribeTimer::shutdown (
+    epicsGuard < epicsMutex > & cbGuard,
+    epicsGuard < epicsMutex > & guard )
+{
+    epicsGuardRelease < epicsMutex > unguard ( guard );
+    {
+        epicsGuardRelease < epicsMutex > unguard ( cbGuard );
+        this->timer.cancel ();
+    }
 }
 
 epicsTimerNotify::expireStatus repeaterSubscribeTimer::
@@ -58,11 +72,11 @@ epicsTimerNotify::expireStatus repeaterSubscribeTimer::
         callbackManager mgr ( this->ctxNotify, this->cbMutex );
         this->iiu.printf ( mgr.cbGuard,
     "CA client library is unable to contact CA repeater after %u tries.\n", 
-            nTriesToMsg);
+            nTriesToMsg );
         this->iiu.printf ( mgr.cbGuard,
-    "Silence this message by starting a CA repeater daemon\n");
+    "Silence this message by starting a CA repeater daemon\n") ;
         this->iiu.printf ( mgr.cbGuard,
-    "or by calling ca_pend_event() and or ca_poll() more often.\n");
+    "or by calling ca_pend_event() and or ca_poll() more often.\n" );
         this->once = true;
     }
 
@@ -73,7 +87,7 @@ epicsTimerNotify::expireStatus repeaterSubscribeTimer::
         return noRestart;
     }
     else {
-        return expireStatus ( restart, 1.0 );
+        return expireStatus ( restart, repeaterSubscribeTimerPeriod );
     }
 }
 
@@ -87,3 +101,5 @@ void repeaterSubscribeTimer::confirmNotify ()
 {
     this->registered = true;
 }
+
+repeaterTimerNotify::~repeaterTimerNotify () {}

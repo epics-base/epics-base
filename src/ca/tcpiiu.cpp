@@ -185,7 +185,7 @@ void tcpSendThread::run ()
     }
 
     this->iiu.sendDog.cancel ();
-    this->iiu.recvDog.cancel ();
+    this->iiu.recvDog.shutdown ();
 
     while ( ! this->iiu.recvThread.exitWait ( 30.0 ) ) {
         // it is possible to get stuck here if the user calls 
@@ -333,15 +333,16 @@ void tcpiiu::recvBytes (
                 continue;
             }
 
+            char sockErrBuf[64];
+            epicsSocketConvertErrnoToString ( 
+                sockErrBuf, sizeof ( sockErrBuf ) );
+
             // the replacable printf handler isnt called here
             // because it reqires a callback lock which probably
             // isnt appropriate here
             char name[64];
             this->hostNameCacheInstance.hostName ( 
                 name, sizeof ( name ) );
-            char sockErrBuf[64];
-            epicsSocketConvertErrnoToString ( 
-                sockErrBuf, sizeof ( sockErrBuf ) );
             errlogPrintf (
                 "Unexpected problem with CA circuit to"
                 " server \"%s\" was \"%s\" - disconnecting\n", 
@@ -813,10 +814,11 @@ void tcpiiu::responsiveCircuitNotify (
 
 void tcpiiu::sendTimeoutNotify ( 
     const epicsTime & currentTime,
-    callbackManager & mgr )
+    callbackManager & mgr,
+    epicsGuard < epicsMutex > & guard )
 {
     mgr.cbGuard.assertIdenticalMutex ( this-> cbMutex );
-    epicsGuard < epicsMutex > guard ( this->mutex );
+    guard.assertIdenticalMutex ( this->mutex );
     this->unresponsiveCircuitNotify ( mgr.cbGuard, guard );
     // setup circuit probe sequence
     this->recvDog.sendTimeoutNotify ( mgr.cbGuard, guard, currentTime );
@@ -844,8 +846,16 @@ void tcpiiu::unresponsiveCircuitNotify (
         this->sendThreadFlushEvent.signal ();
         this->flushBlockEvent.signal ();
 
-        this->recvDog.cancel ();
-        this->sendDog.cancel ();
+        // must not hold lock when canceling timer
+        {
+            epicsGuardRelease < epicsMutex > unguard ( guard );
+            {
+                epicsGuardRelease < epicsMutex > unguard ( cbGuard );
+                this->recvDog.cancel ();
+                this->sendDog.cancel ();
+            }
+        }
+
         if ( this->connectedList.count() ) {
             char hostNameTmp[128];
             this->hostName ( guard, hostNameTmp, sizeof ( hostNameTmp ) );
@@ -944,7 +954,7 @@ tcpiiu::~tcpiiu ()
     this->sendThread.exitWait ();
     this->recvThread.exitWait ();
     this->sendDog.cancel ();
-    this->recvDog.cancel ();
+    this->recvDog.shutdown ();
 
     if ( ! this->socketHasBeenClosed ) {
         epicsSocketDestroy ( this->sock );
@@ -1691,49 +1701,76 @@ const char * tcpiiu::pHostName (
     return nameBuf;
 }
 
-void tcpiiu::removeAllChannels ( 
-    bool supressApplicationNotify,
+void tcpiiu::disconnectAllChannels ( 
     epicsGuard < epicsMutex > & cbGuard, 
     epicsGuard < epicsMutex > & guard,
-    udpiiu & discIIU )
+    class udpiiu & discIIU )
 {
     cbGuard.assertIdenticalMutex ( this->cbMutex );
     guard.assertIdenticalMutex ( this->mutex );
 
     while ( nciu * pChan = this->createReqPend.get () ) {
-        discIIU.installDisconnectedChannel ( *pChan );
-        pChan->setServerAddressUnknown ( discIIU, guard );
+        discIIU.installDisconnectedChannel ( guard, *pChan );
     }
 
     while ( nciu * pChan = this->createRespPend.get () ) {
         this->clearChannelRequest ( guard, 
             pChan->getSID(guard), pChan->getCID(guard) );
-        discIIU.installDisconnectedChannel ( *pChan );
-        pChan->setServerAddressUnknown ( discIIU, guard );
+        discIIU.installDisconnectedChannel ( guard, *pChan );
     }
 
     while ( nciu * pChan = this->subscripReqPend.get () ) {
         pChan->disconnectAllIO ( cbGuard, guard );
-        discIIU.installDisconnectedChannel ( *pChan );
-        pChan->setServerAddressUnknown ( discIIU, guard );
-        if ( ! supressApplicationNotify ) {
-            pChan->unresponsiveCircuitNotify ( cbGuard, guard );
-        }
+        discIIU.installDisconnectedChannel ( guard, *pChan );
+        pChan->unresponsiveCircuitNotify ( cbGuard, guard );
     }
 
     while ( nciu * pChan = this->connectedList.get () ) {
         pChan->disconnectAllIO ( cbGuard, guard );
-        discIIU.installDisconnectedChannel ( *pChan );
-        pChan->setServerAddressUnknown ( discIIU, guard );
-        if ( ! supressApplicationNotify ) {
-            pChan->unresponsiveCircuitNotify ( cbGuard, guard );
-        }
+        discIIU.installDisconnectedChannel ( guard, *pChan );
+        pChan->unresponsiveCircuitNotify ( cbGuard, guard );
     }
 
     while ( nciu * pChan = this->unrespCircuit.get () ) {
         pChan->disconnectAllIO ( cbGuard, guard );
-        discIIU.installDisconnectedChannel ( *pChan );
-        pChan->setServerAddressUnknown ( discIIU, guard );
+        discIIU.installDisconnectedChannel ( guard, *pChan );
+    }
+
+    this->channelCountTot = 0u;
+
+    this->initiateCleanShutdown ( guard );
+}
+
+void tcpiiu::unlinkAllChannels ( 
+    epicsGuard < epicsMutex > & cbGuard, 
+    epicsGuard < epicsMutex > & guard )
+{
+    cbGuard.assertIdenticalMutex ( this->cbMutex );
+    guard.assertIdenticalMutex ( this->mutex );
+
+    while ( nciu * pChan = this->createReqPend.get () ) {
+        pChan->serviceShutdownNotify ( cbGuard, guard );
+    }
+
+    while ( nciu * pChan = this->createRespPend.get () ) {
+        this->clearChannelRequest ( guard, 
+            pChan->getSID(guard), pChan->getCID(guard) );
+        pChan->serviceShutdownNotify ( cbGuard, guard );
+    }
+
+    while ( nciu * pChan = this->subscripReqPend.get () ) {
+        pChan->disconnectAllIO ( cbGuard, guard );
+        pChan->serviceShutdownNotify ( cbGuard, guard );
+    }
+
+    while ( nciu * pChan = this->connectedList.get () ) {
+        pChan->disconnectAllIO ( cbGuard, guard );
+        pChan->serviceShutdownNotify ( cbGuard, guard );
+    }
+
+    while ( nciu * pChan = this->unrespCircuit.get () ) {
+        pChan->disconnectAllIO ( cbGuard, guard );
+        pChan->serviceShutdownNotify ( cbGuard, guard );
     }
 
     this->channelCountTot = 0u;
@@ -1785,11 +1822,8 @@ void tcpiiu::connectNotify (
 }
 
 void tcpiiu::uninstallChan ( 
-    epicsGuard < epicsMutex > & cbGuard, 
-    epicsGuard < epicsMutex > & guard, 
-    nciu & chan )
+    epicsGuard < epicsMutex > & guard, nciu & chan )
 {
-    cbGuard.assertIdenticalMutex ( this->cbMutex );
     guard.assertIdenticalMutex ( this->mutex );
 
     switch ( chan.channelNode::listMember ) {
@@ -1812,7 +1846,7 @@ void tcpiiu::uninstallChan (
         this->subscripUpdateReqPend.remove ( chan );
         break;
     default:
-        this->cacRef.printf ( cbGuard,
+        errlogPrintf ( 
             "cac: attempt to uninstall channel from tcp iiu, but it inst installed there?" );
     }
     chan.channelNode::listMember = channelNode::cs_none;
@@ -1922,6 +1956,21 @@ unsigned tcpiiu::channelCount ( epicsGuard < epicsMutex > & guard )
     return this->channelCountTot;
 }
 
+void tcpiiu::uninstallChanDueToSuccessfulSearchResponse ( 
+    epicsGuard < epicsMutex > & guard, nciu & chan, 
+    const class epicsTime & currentTime )
+{
+    return netiiu::uninstallChanDueToSuccessfulSearchResponse (
+        guard, chan, currentTime );
+}
+
+bool tcpiiu::searchMsg (
+    epicsGuard < epicsMutex > & guard, ca_uint32_t id, 
+        const char * pName, unsigned nameLength )
+{
+    return netiiu::searchMsg (
+        guard, id, pName, nameLength );
+}
 
 
 

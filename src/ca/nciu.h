@@ -59,11 +59,51 @@ protected:
     channelNode ();
     bool isConnected ( epicsGuard < epicsMutex > & ) const;
     bool isInstalledInServer ( epicsGuard < epicsMutex > & ) const;
+    static unsigned getMaxSearchTimerCount ();
 private:
     enum channelState {
         cs_none,
         cs_disconnGov,
-        cs_serverAddrResPend,
+        // note: indexing is used here
+        // so these must be contiguous
+        cs_searchReqPending0,
+        cs_searchReqPending1,
+        cs_searchReqPending2,
+        cs_searchReqPending3,
+        cs_searchReqPending4,
+        cs_searchReqPending5,
+        cs_searchReqPending6,
+        cs_searchReqPending7,
+        cs_searchReqPending8,
+        cs_searchReqPending9,
+        cs_searchReqPending10,
+        cs_searchReqPending11,
+        cs_searchReqPending12,
+        cs_searchReqPending13,
+        cs_searchReqPending14,
+        cs_searchReqPending15,
+        cs_searchReqPending16,
+        cs_searchReqPending17,
+        // note: indexing is used here
+        // so these must be contiguous
+        cs_searchRespPending0,
+        cs_searchRespPending1,
+        cs_searchRespPending2,
+        cs_searchRespPending3,
+        cs_searchRespPending4,
+        cs_searchRespPending5,
+        cs_searchRespPending6,
+        cs_searchRespPending7,
+        cs_searchRespPending8,
+        cs_searchRespPending9,
+        cs_searchRespPending10,
+        cs_searchRespPending11,
+        cs_searchRespPending12,
+        cs_searchRespPending13,
+        cs_searchRespPending14,
+        cs_searchRespPending15,
+        cs_searchRespPending16,
+        cs_searchRespPending17,
         cs_createReqPend,
         cs_createRespPend,
         cs_subscripReqPend,
@@ -71,9 +111,14 @@ private:
         cs_unrespCircuit,
         cs_subscripUpdateReqPend
     } listMember;
+    void setRespPendingState ( epicsGuard < epicsMutex > &, unsigned index );
+    void setReqPendingState ( epicsGuard < epicsMutex > &, unsigned index );
+    unsigned getSearchTimerIndex ( epicsGuard < epicsMutex > & );
     friend class tcpiiu;
-    friend class tcpSendThread;
     friend class udpiiu;
+    friend class tcpSendThread;
+    friend class searchTimer;
+    friend class disconnectGovernorTimer;
 };
 
 class privateInterfaceForIO { // X aCC 655
@@ -107,9 +152,12 @@ public:
         epicsGuard < epicsMutex > & cbGuard, 
         epicsGuard < epicsMutex > & guard );
     void setServerAddressUnknown ( 
-        udpiiu & newiiu, epicsGuard < epicsMutex > & guard );
-    bool searchMsg ( class udpiiu & iiu );
-    void serviceShutdownNotify ();
+        netiiu & newiiu, epicsGuard < epicsMutex > & guard );
+    bool searchMsg ( 
+        epicsGuard < epicsMutex > & );
+    void serviceShutdownNotify (
+        epicsGuard < epicsMutex > & callbackControlGuard, 
+        epicsGuard < epicsMutex > & mutualExclusionGuard );
     void accessRightsStateChange ( const caAccessRights &, 
         epicsGuard < epicsMutex > & cbGuard, 
         epicsGuard < epicsMutex > & guard );
@@ -150,7 +198,7 @@ public:
     void sendSubscriptionUpdateRequests ( epicsGuard < epicsMutex > & );
     void disconnectAllIO ( 
         epicsGuard < epicsMutex > &, epicsGuard < epicsMutex > & );
-    bool connected ( epicsGuard < epicsMutex > & ) const;
+    bool connected ( epicsGuard < epicsMutex > & ) const; 
 
 private:
     tsDLList < class baseNMIU > eventq;
@@ -285,11 +333,6 @@ inline const netiiu * nciu::getConstPIIU (
     epicsGuard < epicsMutex > & ) const
 {
     return this->piiu;
-}
-
-inline void nciu::serviceShutdownNotify ()
-{
-    this->notify().serviceShutdownNotify ();
 }
 
 inline cac & nciu::getClient ()

@@ -42,50 +42,68 @@
 #endif
 
 #include "caProto.h"
+#include "netiiu.h"
 
-class udpMutex;
+class searchTimerNotify {
+public:
+    virtual ~searchTimerNotify () = 0;
+    virtual void boostChannel ( 
+        epicsGuard < epicsMutex > &, nciu & ) = 0;
+    virtual void noSearchRespNotify ( 
+        epicsGuard < epicsMutex > &, nciu &, unsigned ) = 0;
+    virtual double getRTTE () const = 0;
+    virtual void updateRTTE ( double rtte ) = 0;
+    virtual bool datagramFlush ( 
+        epicsGuard < epicsMutex > &, 
+        const epicsTime & currentTime ) = 0;
+    virtual ca_uint32_t datagramSeqNumber (
+        epicsGuard < epicsMutex > & ) const = 0;
+};
 
 class searchTimer : private epicsTimerNotify {
 public:
-    searchTimer ( class udpiiu &, epicsTimerQueue &, udpMutex & );
+    searchTimer ( 
+        class searchTimerNotify &, epicsTimerQueue &, 
+        const unsigned index, epicsMutex &,
+        bool boostPossible );
     virtual ~searchTimer ();
-    void notifySuccessfulSearchResponse ( epicsGuard < udpMutex > &, 
-        ca_uint32_t respDatagramSeqNo, 
-        bool seqNumberIsValid, const epicsTime & currentTime );
-    void beaconAnomalyNotify ( epicsGuard < udpMutex > &,
-        const epicsTime & currentTime, const double & delay );
-    void channelCreatedNotify ( epicsGuard < udpMutex > &,
-        const epicsTime &, bool firstChannel );
-    void channelDisconnectedNotify ( epicsGuard < udpMutex > &,
-        const epicsTime &, bool firstChannel );
-    void shutdown ();
+    void start ();
+    void shutdown ( 
+        epicsGuard < epicsMutex > & cbGuard,
+        epicsGuard < epicsMutex > & guard );
+    void moveChannels ( 
+        epicsGuard < epicsMutex > &, searchTimer & dest );
+    void installChannel ( 
+        epicsGuard < epicsMutex > &, nciu & );
+    void uninstallChan ( 
+        epicsGuard < epicsMutex > &, nciu & );
+    void uninstallChanDueToSuccessfulSearchResponse ( 
+        epicsGuard < epicsMutex > &, nciu &, 
+        ca_uint32_t respDatagramSeqNo, bool seqNumberIsValid, 
+        const epicsTime & currentTime );
     void show ( unsigned level ) const;
 private:
-    double period; /* period between tries */
+    tsDLList < nciu > chanListReqPending;
+    tsDLList < nciu > chanListRespPending;
+    epicsTime timeAtLastSend;
     epicsTimer & timer;
-    class udpiiu & iiu;
-    udpMutex & mutex;
+    searchTimerNotify & iiu;
+    epicsMutex & mutex;
     double framesPerTry; /* # of UDP frames per search try */
     double framesPerTryCongestThresh; /* one half N tries w congest */
-    double maxPeriod;
     unsigned retry;
     unsigned searchAttempts; /* num search tries after last timer experation */
     unsigned searchResponses; /* num search resp after last timer experation */
-    unsigned searchAttemptsThisPass; /* num search tries within this pass */
-    unsigned searchResponsesThisPass; /* num search resp within this pass */
+    const unsigned index;
     ca_uint32_t dgSeqNoAtTimerExpireBegin; 
     ca_uint32_t dgSeqNoAtTimerExpireEnd;
+    const bool boostPossible;
     bool stopped;
+
     expireStatus expire ( const epicsTime & currentTime );
-    void recomputeTimerPeriod ( epicsGuard < udpMutex > &, const unsigned minRetryNew );
-    void recomputeTimerPeriodAndStartTimer ( epicsGuard < udpMutex > &,
-        const epicsTime & currentTime, const unsigned minRetryNew, 
-        const double & initialDelay );
-    void newChannelNotify ( epicsGuard < udpMutex > &,
-        const epicsTime &, bool firstChannel,
-        const unsigned minRetryNo );
-	searchTimer ( const searchTimer & );
-	searchTimer & operator = ( const searchTimer & );
+    double period () const;
+	searchTimer ( const searchTimer & ); // not implemented
+	searchTimer & operator = ( const searchTimer & ); // not implemented
 };
 
 #endif // ifdef searchTimerh

@@ -26,20 +26,19 @@
 #ifndef netiiuh
 #define netiiuh
 
-#include "tsDLList.h"
-
-#include "nciu.h"
+#include "cacIO.h"
+#include "caProto.h"
 
 class netWriteNotifyIO;
 class netReadNotifyIO;
 class netSubscription;
 union osiSockAddr;
-
 class cac;
+class nciu;
 
 class netiiu {
 public:
-    virtual ~netiiu ();
+    virtual ~netiiu () = 0;
     virtual void hostName ( 
         epicsGuard < epicsMutex > &, char * pBuf, 
         unsigned bufLength ) const = 0;
@@ -84,10 +83,15 @@ public:
     virtual osiSockAddr getNetworkAddress (
         epicsGuard < epicsMutex > & ) const = 0;
     virtual void uninstallChan ( 
-        epicsGuard < epicsMutex > & cbMutex, 
-        epicsGuard < epicsMutex > & mutex, nciu & ) = 0;
+        epicsGuard < epicsMutex > &, nciu & ) = 0;
+    virtual void uninstallChanDueToSuccessfulSearchResponse ( 
+        epicsGuard < epicsMutex > &, nciu &, 
+        const class epicsTime & currentTime ) = 0;
     virtual double receiveWatchdogDelay (
         epicsGuard < epicsMutex > & ) const = 0;
+    virtual bool searchMsg (
+        epicsGuard < epicsMutex > &, ca_uint32_t id, 
+            const char * pName, unsigned nameLength ) = 0;
 };
 
 #endif // netiiuh

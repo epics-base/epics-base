@@ -23,7 +23,8 @@
 
 #include <new>
 #include <float.h>
-#include <epicsExit.h>
+
+#include "epicsExit.h"
 
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
@@ -43,6 +44,7 @@
 #include "iocinf.h"
 #include "oldAccess.h"
 #include "cac.h"
+#include "autoPtrFreeList.h"
 
 epicsThreadPrivateId caClientContextId;
 
@@ -364,10 +366,18 @@ int epicsShareAPI ca_create_channel (
 int epicsShareAPI ca_clear_channel ( chid pChan )
 {
     ca_client_context & cac = pChan->getClientCtx ();
-    cac.destroyChannel ( *pChan );
+    epicsGuard < epicsMutex > * pCBGuard = cac.pCallbackGuard.get();
+    if ( pCBGuard ) {
+        epicsGuard < epicsMutex > guard ( cac.mutex );
+        cac.destroyChannel ( *pCBGuard, guard, *pChan );
+    }
+    else {
+        epicsGuard < epicsMutex > cbGuard ( cac.cbMutex );
+        epicsGuard < epicsMutex > guard ( cac.mutex );
+        cac.destroyChannel ( cbGuard, guard, *pChan );
+    }
     return ECA_NORMAL;
 }
-#include "autoPtrFreeList.h"
 
 /*
  * ca_array_get ()

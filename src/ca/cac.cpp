@@ -44,6 +44,7 @@
 #include "bhe.h"
 #include "net_convert.h"
 #include "autoPtrFreeList.h"
+#include "noopIIU.h"
 
 static const char *pVersionCAC = 
     "@(#) " EPICS_VERSION_STRING 
@@ -232,17 +233,17 @@ cac::~cac ()
     // waiting for the UDP thread to exit while it is waiting to 
     // get the lock.
     if ( this->pudpiiu ) {
-        this->pudpiiu->shutdown ();
+        epicsGuard < epicsMutex > cbGuard ( this->cbMutex );
+        epicsGuard < epicsMutex > guard ( this->mutex );
+        this->pudpiiu->shutdown ( cbGuard, guard );
 
         //
         // shutdown all tcp circuits
         //
-        epicsGuard < epicsMutex > cbGuard ( this->cbMutex );
-        epicsGuard < epicsMutex > guard ( this->mutex );
         tsDLIter < tcpiiu > iter = this->circuitList.firstIter ();
         while ( iter.valid() ) {
             // this causes a clean shutdown to occur
-            iter->removeAllChannels ( true, cbGuard, guard, *this->pudpiiu );
+            iter->unlinkAllChannels ( cbGuard, guard );
             iter++;
         }
     }
@@ -425,7 +426,7 @@ void cac::beaconNotify ( const inetAddrID & addr, const epicsTime & currentTime,
 
     this->beaconAnomalyCount++;
 
-    this->pudpiiu->beaconAnomalyNotify ( guard, currentTime );
+    this->pudpiiu->beaconAnomalyNotify ( guard );
 
 #   ifdef DEBUG
     {
@@ -457,21 +458,19 @@ cacChannel & cac::createChannel (
     }
 
     nciu * pNetChan = new ( this->channelFreeList ) 
-            nciu ( *this, *this->pudpiiu, chan, pName, pri );
+            nciu ( *this, noopIIU, chan, pName, pri );
     this->chanTable.idAssignAdd ( *pNetChan );
     return *pNetChan;
 }
 
-bool cac::transferChanToVirtCircuit ( 
+void cac::transferChanToVirtCircuit ( 
     epicsGuard < epicsMutex > & cbGuard, unsigned cid, unsigned sid, // X aCC 431
     ca_uint16_t typeCode, arrayElementCount count, 
-    unsigned minorVersionNumber, const osiSockAddr & addr )
+    unsigned minorVersionNumber, const osiSockAddr & addr,
+    const epicsTime & currentTime )
 {
-    bool newIIU = false;
-    tcpiiu * piiu = 0;
-
     if ( addr.sa.sa_family != AF_INET ) {
-        return false;
+        return ;
     }
 
     epicsGuard < epicsMutex > guard ( this->mutex );
@@ -481,12 +480,12 @@ bool cac::transferChanToVirtCircuit (
      */
     nciu * pChan = this->chanTable.lookup ( cid );
     if ( ! pChan ) {
-        return false;
+        return;
     }
 
     /*
-        * Ignore duplicate search replies
-        */
+     * Ignore duplicate search replies
+     */
     osiSockAddr chanAddr = pChan->getPIIU(guard)->getNetworkAddress (guard);
     if ( chanAddr.sa.sa_family != AF_UNSPEC ) {
         if ( ! sockAddrAreIdentical ( &addr, &chanAddr ) ) {
@@ -497,17 +496,18 @@ bool cac::transferChanToVirtCircuit (
                     *this, pChan->pName ( guard ), acc );
             pMsg->ioInitiate ( addr );
         }
-        return false;
+        return;
     }
 
     /*
      * look for an existing virtual circuit
      */
+    bool newIIU = false;
     caServerID servID ( addr.ia, pChan->getPriority(guard) );
-    piiu = this->serverTable.lookup ( servID );
+    tcpiiu * piiu = this->serverTable.lookup ( servID );
     if ( piiu ) {
         if ( ! piiu->alive ( guard ) ) {
-            return false;
+            return;
         }
     }
     else {
@@ -523,7 +523,7 @@ bool cac::transferChanToVirtCircuit (
                 pBHE = new ( this->bheFreeList ) 
                                     bhe ( this->mutex, epicsTime (), 0u, addr.ia );
                 if ( this->beaconTable.add ( *pBHE ) < 0 ) {
-                    return false;
+                    return;
                 }
             }
             this->serverTable.add ( *pnewiiu );
@@ -533,17 +533,20 @@ bool cac::transferChanToVirtCircuit (
             newIIU = true;
         }
         catch ( std::bad_alloc & ) {
-            return false;
+            return;
         }
         catch ( ... ) {
             errlogPrintf ( 
                 "CAC: Unexpected exception during virtual circuit creation\n" );
-            return false;
+            return;
         }
     }
 
-    this->pudpiiu->uninstallChan ( cbGuard, guard, *pChan );
-    piiu->installChannel ( cbGuard, guard, *pChan, sid, typeCode, count );
+    // must occur before moving to new iiu
+    pChan->getPIIU(guard)->uninstallChanDueToSuccessfulSearchResponse ( 
+        guard, *pChan, currentTime );
+    piiu->installChannel ( 
+        cbGuard, guard, *pChan, sid, typeCode, count );
 
     if ( ! piiu->ca_v42_ok ( guard ) ) {
         // connect to old server with lock applied
@@ -553,8 +556,6 @@ bool cac::transferChanToVirtCircuit (
     if ( newIIU ) {
         piiu->start ( guard );
     }
-
-    return true;
 }
 
 void cac::destroyChannel ( 
@@ -1081,21 +1082,19 @@ bool cac::verifyAndDisconnectChan (
     if ( ! pChan ) {
         return true;
     }
-    this->disconnectChannel ( currentTime, mgr.cbGuard, guard, *pChan );
+    this->disconnectChannel ( mgr.cbGuard, guard, *pChan );
     return true;
 }
 
 void cac::disconnectChannel (
-        const epicsTime & /* currentTime */, 
         epicsGuard < epicsMutex > & cbGuard, // X aCC 431
         epicsGuard < epicsMutex > & guard, nciu & chan )
 {
     guard.assertIdenticalMutex ( this->mutex );
     assert ( this->pudpiiu );
     chan.disconnectAllIO ( cbGuard, guard );
-    chan.getPIIU(guard)->uninstallChan ( cbGuard, guard, chan );
-    this->pudpiiu->installDisconnectedChannel ( chan );
-    chan.setServerAddressUnknown ( *this->pudpiiu, guard );
+    chan.getPIIU(guard)->uninstallChan ( guard, chan );
+    this->pudpiiu->installDisconnectedChannel ( guard, chan );
     chan.unresponsiveCircuitNotify ( cbGuard, guard );
 }
 
@@ -1153,7 +1152,7 @@ void cac::destroyIIU ( tcpiiu & iiu )
         }
        
         assert ( this->pudpiiu );
-        iiu.removeAllChannels ( false, cbGuard, guard, *this->pudpiiu );
+        iiu.disconnectAllChannels ( cbGuard, guard, *this->pudpiiu );
 
         this->serverTable.remove ( iiu );
         this->circuitList.remove ( iiu );
@@ -1191,12 +1190,12 @@ double cac::beaconPeriod (
 }
 
 void cac::initiateConnect ( 
-    epicsGuard < epicsMutex > & guard, nciu & chan )
+    epicsGuard < epicsMutex > & guard, 
+    nciu & chan, netiiu * & piiu )
 {
     guard.assertIdenticalMutex ( this->mutex );
     assert ( this->pudpiiu );
-    this->pudpiiu->installNewChannel ( 
-        epicsTime::getCurrent(), chan );
+    this->pudpiiu->installNewChannel ( guard, chan, piiu );
 }
 
 void *cacComBufMemoryManager::allocate ( size_t size )

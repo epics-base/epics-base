@@ -1,202 +1,395 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
 <HTML>
 <HEAD>
-   <TITLE>EPICS Release baseR3.13.0.beta11
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.03 [en] (X11; U; SunOS 5.5.1 sun4u) [Netscape]">
+   <TITLE>EPICS Release baseR3.13.0.beta12
 </TITLE>
-   <META NAME="GENERATOR" CONTENT="Mozilla/3.01Gold (X11; I; SunOS 5.5.1 sun4u) [Netscape]">
 </HEAD>
 <BODY>
 
-<H1>EPICS Release baseR3.13.0.beta11 </H1>
+<H1>
+EPICS Release baseR3.13.0.beta12</H1>
 
-<H4>July 17, 1997</H4>
-
-<P>All major functionality that will be in R3.13 is now in place. It has
-been build on solaris, sunos, HPUX, alpha, SG, and winXX.
-There are still some c++ related problems. In particular c++ code
-does not build properly on SGI. Thus we are not yet ready for the
-first official 3.13 release. Since none of the c++ code is necessary
-for IOC applications this should not stop anyone from upgrading to 3.13.</P>
-
+<H4>
+Feb 19, 1998</H4>
+All major functionality that will be in R3.13 is now in place. It has been
+build on solaris, sunos, HPUX, alpha, SG, and winXX. There are still some
+c++ related problems. In particular c++ code does not build properly on
+SGI. Thus we are not yet ready for the first official 3.13 release. Since
+none of the c++ code is necessary for IOC applications this should not
+stop anyone from upgrading to 3.13.
 
 <P>The Application Developer's Guide is a major revision of the 3.12 edition.
 All Application Developer's should get a hard copy (from the postscript
 version) and read it. It describes the features in the latest release.
-The latest version is for beta11 base release. </P>
+The latest version is for beta11 base release.
 
 <P>LANL has a revision of the Record Reference Manual available. See the
-LANL EPICS documentation. </P>
+LANL EPICS documentation.
 
-<P>The document &quot;<A HREF="http://www.aps.anl.gov/asd/controls/epics/EpicsDocumentation/AppDevManuals/iocAppBuildSRcontrol.html">EPICS
-IOC Applications: Building and Source/Release Control</A>&quot; provides
-guidlines for developing applications with 3.13.</P>
+<P>The document "<A HREF="http://www.aps.anl.gov/asd/controls/epics/EpicsDocumentation/AppDevManuals/iocAppBuildSRcontrol.html">EPICS
+IOC Applications: Building and Source/Release Control</A>" provides guidlines
+for developing applications with 3.13.
+<H3>
+Changes between beta11 and beta12</H3>
 
-<H3>Changes between beta4 and beta11</H3>
+<H3>
+IOC Applications: Building</H3>
+The config.CONFIG_APP file must be edited. Remove the following lines:
+<PRE>ifndef T_A
+T_A = $(HOST_ARCH)
+endif #ifndef T_A</PRE>
 
-<H4>Support for win95 and winNT</H4>
+<H3>
+aoRecord</H3>
+This did not work properly if DOL&nbsp; is a channel access link that fails.
+<H3>
+Access Security</H3>
+Previously it was possible to crash an IOC if access security was restarted
+after iocInit. This is now fixed. Two major changes were made.
+<OL>
+<LI>
+asCaTask is no ]longer deleted and restarted. Instead it just clears all
+channels and than adds the new channels</LI>
 
-<P>Epics base now builds on windows platforms</P>
+<LI>
+The locking mechanism was changed and made more roibust and easier to understand.</LI>
 
-<H4>GDD and Portable Channel Access Server</H4>
+<LI>
+Fixed bug that caused asRegisterClientCallback to fail on UNIX.</LI>
 
-<P>The gdd library and the portable channel access server now build on
-all platforms, except SGI and cygwin32, listed above.
-This also means that C++ is supported on these platforms.</P>
+<LI>
+asLib_lex.l changed to allow more characters(like dbLoadxxx)</LI>
+</OL>
+Access Security now supports macro substitutions. A new vxWorks shell command
+is:
+<BR>&nbsp;
+<UL>asSetSubstitutions("var1=sub1,var2=sub2,..."</UL>
+The Application developer's Guide was updated.
+<H3>
+tsdefs.h and tsSubr.c</H3>
+tsTextToStamp and tsTimeTextToStamp no longer modify the pointer or the
+string referenced by pText.
 
-<H4>Application Developer's Guide</H4>
+<P>The nextField routines used by tsSubr were moved inside tsSubr.c&nbsp;
+and made static routines.
+<H3>
+drvTS</H3>
+Checked for Y2K complience. It turns out it was even ok when NTP time overflows
+in 2036. However it was modified so that no overflows should occur while
+converting between NTP, UNIX, and EPICS epochs. In addition the conversion
+of fractions of a second to nanaoseconds was changed and formatting was
+changed so that interesting code does not run off right side of page. Hopefully
+EPICS base is now fine for Y2K. In fact it should be fine (as far as time
+is converned) until the Unix epoch overflows a 32 unsigned integer in the
+year 2106.
+<BR>&nbsp;
+<H3>
+nextFieldSubr.c</H3>
+Removed from base.
+<H3>
+vxWorks</H3>
+Base now builds with either vxWorks 5.2 or vxWorks 5.3. The default is
+to build vxWorks 5.3. In CONFIG_COMMON a new definition "VX_IS_TORNADO
+= 1" is present. If this statemant is commented out then vxWorks 5.2 is
+assumed.
+<H3>
+makeBaseApp</H3>
+Only the perl version is now supported. Due to encouragement from Rozelle
+Wright (LANL) and the developers at BESSY, makeBaseApp now uses template
+files instead of being one huge ugly perl script. It is now executed as
+<PRE>&lt;base>/bin/&lt;arch>/makeBaseApp.pl -e
+or
+&lt;base>/bin/&lt;arch>/makeBaseApp.pl -i ioc ...&nbsp;
+or
+&lt;base>/bin/&lt;arch>/makeBaseApp.pl app ...</PRE>
 
-<P>The chapter &quot;Building IOC Applications&quot; is gone. It is replaced
-by the document &quot;EPICS IOC Applications, Building and Source/Release
-Control&quot;. Other changes are minor. Following is a brief list: </P>
+<LI>
+See the new WWW documentation on Application Source Release for details</LI>
+
+<H3>
+dbStaticLib</H3>
+The include path now supports the unix convention that an empty directory
+name means the current directory. Thus the following are OK
+<PRE>-I nnn::mmm&nbsp;&nbsp;&nbsp; # Current directory is between nnn and mmm
+-I :nnn&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; # Current directiry is first
+-I nnn:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; # Current directiry is last</PRE>
+The lex grammer was changed so that it for quoted strings can contain any
+ascii character except a quote. A quote itself can be given as the escape
+sequence \". This same change was made to dbLoadRecords and dbLoadTemplates.
+
+<P>For all fields in a .db file, a non null string is considered as not
+the default.
+
+<P>For winNT the path seperator is a ;
+
+<P>Field attributes (psuedo fields) are now supported. In particular RTYP
+(record type) and VERS (verssion) mare now supported. In addition a new
+request type DBR_CLASS is supported. See Application Developer's guide
+for details.
+<H3>
+base.dbd</H3>
 
 <UL>
-<LI>Database Definition: General Rules describes escape sequences</LI>
+<LI>
+Soft raw device support is uncommenmted</LI>
 
-<LI>Record Support: All record support methods that accept DBADDDR * now
-use the routine dbGetFieldIndex instead of comparing addresses.
-IOn addition the get_enum_str routines now use paddr->pfield
-as the field address instead of the field in the record.</LI>
-
-<LI>Runtime Database Access: Gives brief description of DBR_PUT_ACKT and
-DBR_PUT_ACKS. Also describes new routine dbGetPdbaddrFromLink </LI>
-<LI>The chapter "IOC Initialization" describes how to configure the
-error message logger.
+<BR>Device support for the Allen Bradley SLC is changed.It is now:
+<PRE>#device(ai,AB_IO,devAiAbSlcDcm,"AB-SLC500DCM")&nbsp;
+#device(ai,AB_IO,devAiAbSlcDcmSigned,"AB-SLC500DCM-Signed")&nbsp;
+#device(ao,AB_IO,devAoAbSlcDcm,"AB-SLC500DCM")&nbsp;
+#device(longin,AB_IO,devLiAbSlcDcm,"AB-SLC500DCM")&nbsp;
+#device(longout,AB_IO,devLoAbSlcDcm,"AB-SLC500DCM")</PRE>
 </UL>
 
-<P><B>NOTE: </B>The initHooks described in the appDevGuide is not in beta11.
+<H3>
+initHooks</H3>
+Changed to support initHookRegister. See Application Developer's Guide
+for details. The 3.13.0beta11 version explains the new method. Note that
+to use the new the startup file must contain the statement:
+<UL>
+<PRE>ld &lt; bin/initHooks.o</PRE>
+</UL>
+If you have your own version of initHooks.c it should be changed to support
+the new features. At a minumum the statement
+<BR>&nbsp;
+<UL>
+<PRE>void initHooks( int state)</PRE>
+</UL>
+must be changed to
+<BR>&nbsp;
+<PRE>&nbsp;&nbsp;&nbsp; void initHooks( initHookState state)</PRE>
+
+<H3>
+menuAlarmStat.dbd</H3>
+The no alarm string changed from "" to "NO_ALARM"
+<H3>
+Linear Conversion for ai and ao records:</H3>
+Before beginning it should be stated that the previous linear conversion
+method is still valid.
+
+<P>The following, which is designed by Benjamin Franksen at BESSY, is now
+the recommended method:
+
+<P>A new field EOFF exists.&nbsp; The new linear conversion algorithm is
+now
+<UL>
+<PRE>&nbsp;VAL = AVAL * ESLO + EOFF</PRE>
+</UL>
+AVAL is the raw value adjusted by ASLO and AOFF.
+
+<P>Thus device support should now compute ESLO and EOFF instead of ESLO
+and ROFF.
+
+<P>For example let an ADC be a 16 bits adc with raw values between -32767
+and 32767.
+<UL>
+<PRE>ESLO = (EGUH - EGUL)/65535.0;
+EOFF = 0.0;</PRE>
+</UL>
+NOTES:
+<UL>
+<LI>
+Device support may compute either ROFF or EOFF but not both.</LI>
+
+<LI>
+Record support sets EOFF = EGUL before calling the device init_record.
+This is done so that for old device supports (those that do not set the
+EOFF field) the above formula becomes:</LI>
+
+<UL>
+<PRE>VAL = AVAL * ESLO + EGUL</PRE>
+</UL>
+The original&nbsp; bi-polar adc device support modules added a "bias" to
+the raw value so that the raw value is >= 0. When they were written neither
+RVAL or EOFF existed.</UL>
+
+<H3>
+64 bit architectures</H3>
+Some changes were made to build on 64 bit architectures. A new include
+and source file (adjustment.h and adjustment.c) were created to aid this
+support. We can thank Peregrine McGehee for this new support.
+<H3>
+errlog</H3>
+This is a replacement for the old code that implemented errMessage, errPrintf,
+and epicsPrintf. It provides for multiple system wide error loggers. The
+existing iocLog has been modified to use the new code. The new code supports
+the old calls and adds some new calls. See Application Developer's guide&nbsp;
+for details.
+<BR>&nbsp;
+<H3>
+devABSLCDCM</H3>
+Changed Scl to Slc wherever this occured. Added support for signed 16 bit
+analog values. Stephanie Allison (SLAC) made these changes.
+<BR>&nbsp;
+<H3>
+devMpc</H3>
+Removed from base.
+<H3>
+devVXStats</H3>
+Major rewrite of this routine. It computes the cpu usage via a low priority
+taks rather than using spy. It reports file descriptor usage rather than
+tcp connections (this is what is actually measures). The format of the
+INP ,and OUT fields has changed since the previous version.&nbsp; The new
+device definitions are:
+<UL>
+<PRE>device(ai,INST_IO,devAiVXStats,"VX stats")
+device(ao,INST_IO,devAoVXStats,"VX stats")</PRE>
+</UL>
+The INP fields now have the form
+<UL>
+<PRE>field(INP,"@memory")
+field(INP,"@cpu")
+field(INP,"@fd")</PRE>
+</UL>
+The OUT fields now have the form
+<UL>
+<PRE>field(OUT,"@memoryScanRate")
+field(OUT,"@fdScanRate")
+field(OUT,"@cpuScanRate")</PRE>
+</UL>
+The source file has comments showing a sample database.
+<H3>
+devSymb</H3>
+This has been drastically changed. ??????? what to say
+<H2>
+Changes between beta4 and beta11</H2>
+
+<H4>
+Support for win95 and winNT</H4>
+Epics base now builds on windows platforms
+<H4>
+GDD and Portable Channel Access Server</H4>
+The gdd library and the portable channel access server now build on all
+platforms, except SGI and cygwin32, listed above. This also means that
+C++ is supported on these platforms.
+<H4>
+Application Developer's Guide</H4>
+The chapter "Building IOC Applications" is gone. It is replaced by the
+document "EPICS IOC Applications, Building and Source/Release Control".
+Other changes are minor. Following is a brief list:
+<UL>
+<LI>
+Database Definition: General Rules describes escape sequences</LI>
+
+<LI>
+Record Support: All record support methods that accept DBADDDR * now use
+the routine dbGetFieldIndex instead of comparing addresses. IOn addition
+the get_enum_str routines now use paddr->pfield as the field address instead
+of the field in the record.</LI>
+
+<LI>
+Runtime Database Access: Gives brief description of DBR_PUT_ACKT and DBR_PUT_ACKS.
+Also describes new routine dbGetPdbaddrFromLink</LI>
+
+<LI>
+The chapter "IOC Initialization" describes how to configure the error message
+logger.</LI>
+</UL>
+<B>NOTE: </B>The initHooks described in the appDevGuide is not in beta11.
 In beta11 initHooks is the same as previous releases. The new version will
-be in the next release.<P>
+be in the next release.
 
-<H4>Compiler warning messages:</H4>
-
-<P>All of base except drv/old is now being built with </P>
-
+<P>&nbsp;
+<H4>
+Compiler warning messages:</H4>
+All of base except drv/old is now being built with
 <UL>
 <PRE>VX_WARN_YES = -Wall -pedantic -ansi</PRE>
 </UL>
-
-<P>Most warning messages have now been eliminated. The remaining messages
-should not be removed without looking hard at code.</P>
-
-<H4>recSubArray</H4>
-
-<P>get_control_double routine returned incorrect values for fields INDX
-and NELM.</P>
-
-<H4>devAiStats</H4>
-
-<P>This is now renamed devVXStats. The new device definitions are:</P>
-<PRE>
-device(ai,VME_IO,devAiVXStats,"VX stats")
-device(ao,VME_IO,devAoVXStats,"VX stats")
-</PRE>
-<P>Thus if an application has an old base.dbd and baseLIBOBJS
-including definitions for this device support they must be modified.</P>
-
-<H4>SysMon device support</H4>
-
-<P>This is removed from base. It is for APS designed and build
-VME create system monitoring. The support code is available
-from APS if needed. NOTE: In some beta releases baseLIBOBJS,
-had an include for devSysmon.o. Applications using
-an old version of baseLIBOBJS will not build until this statement is
-deleted.</P>
-
-<H4>dbToRecordtypeH</H4>
-
-<P>The enums for menus had a comma after last item.</P>
-
-<H4>pulseTrainRecord</H4>
-
-<P>recGblInitConstantLink for sgl was referencing wrong field.</P>
-
-<H4>gphLib</H4>
-
-<P>This did not properly support multiple clients in multi-thread environment.
-</P>
-
-<H4>dbPvdLib</H4>
-
-<P>Modified to be faster.</P>
-
-<H4>devMz8311</H4>
-
-<P>Use maxCards from module_types.h instead of a #define</P>
-
-<H4>calcRecord</H4>
-
-<P>Allow CALC to be 40 characters. Increase rpbuf from 184 to 200 </P>
-
-<H4>mbbiDirectRecord</H4>
-
-<P>Add call to refresh_bits.</P>
-
-<H4>mbbxDirectRecord</H4>
-
-<P>Bx becomes no prompt for mbbi and prompt for mbbo. It was the reverse
-before.</P>
-
-<H4>calcoutRecord</H4>
-
-<P>A new record type that replaces old wait record. It is like a calc record
-with an output and a delay. It makes the wait record obsolete.</P>
-
-<H4>dbAccess</H4>
-
-<P>dbGetPdbAddrFromLink is a new routine. It returns NULL for all except
-LINK_DB links, for which it returns the address of the associated DB_ADDR
-structure. </P>
-
-<H4>escape characters in database files</H4>
-
-<P>dbLoadDatabase, dbLoadRecords, and dbLoadTemplate all allow the standard
+Most warning messages have now been eliminated. The remaining messages
+should not be removed without looking hard at code.
+<H4>
+recSubArray</H4>
+get_control_double routine returned incorrect values for fields INDX and
+NELM.
+<H4>
+devAiStats</H4>
+This is now renamed devVXStats. The new device definitions are:
+<PRE>device(ai,VME_IO,devAiVXStats,"VX stats")
+device(ao,VME_IO,devAoVXStats,"VX stats")</PRE>
+Thus if an application has an old base.dbd and baseLIBOBJS including definitions
+for this device support they must be modified.
+<H4>
+SysMon device support</H4>
+This is removed from base. It is for APS designed and build VME create
+system monitoring. The support code is available from APS if needed. NOTE:
+In some beta releases baseLIBOBJS, had an include for devSysmon.o. Applications
+using an old version of baseLIBOBJS will not build until this statement
+is deleted.
+<H4>
+dbToRecordtypeH</H4>
+The enums for menus had a comma after last item.
+<H4>
+pulseTrainRecord</H4>
+recGblInitConstantLink for sgl was referencing wrong field.
+<H4>
+gphLib</H4>
+This did not properly support multiple clients in multi-thread environment.
+<H4>
+dbPvdLib</H4>
+Modified to be faster.
+<H4>
+devMz8311</H4>
+Use maxCards from module_types.h instead of a #define
+<H4>
+calcRecord</H4>
+Allow CALC to be 40 characters. Increase rpbuf from 184 to 200
+<H4>
+mbbiDirectRecord</H4>
+Add call to refresh_bits.
+<H4>
+mbbxDirectRecord</H4>
+Bx becomes no prompt for mbbi and prompt for mbbo. It was the reverse before.
+<H4>
+calcoutRecord</H4>
+A new record type that replaces old wait record. It is like a calc record
+with an output and a delay. It makes the wait record obsolete.
+<H4>
+dbAccess</H4>
+dbGetPdbAddrFromLink is a new routine. It returns NULL for all except LINK_DB
+links, for which it returns the address of the associated DB_ADDR structure.
+<H4>
+escape characters in database files</H4>
+dbLoadDatabase, dbLoadRecords, and dbLoadTemplate all allow the standard
 C escape sequences in quoted strings. For example a string can contain:
-&quot;\x00 \27 \t&quot; Thus these sequences pass though the lexical analyzer
-.</P>
-
-<H4>dbTranslateEscape</H4>
-
-<P>A new routine in libCom. It is used to translate escape sequences. It
-is defined in file epicsString.h. It typical place to use this is on parm
-fields that contain escape sequences like &quot;\x00 \27 \t&quot;. </P>
-
-<H4>Slow booting</H4>
-
-<P>iocs with big databases were taking a long time to boot. It was discovered
+"\x00 \27 \t" Thus these sequences pass though the lexical analyzer .
+<H4>
+dbTranslateEscape</H4>
+A new routine in libCom. It is used to translate escape sequences. It is
+defined in file epicsString.h. It typical place to use this is on parm
+fields that contain escape sequences like "\x00 \27 \t".
+<H4>
+Slow booting</H4>
+iocs with big databases were taking a long time to boot. It was discovered
 that allocating and then freeing small amounts of memeory frequently resulted
-in a VERY long memory free list. This is now fixed. </P>
+in a VERY long memory free list. This is now fixed.
+<H4>
+boRecord, mbboRecord</H4>
+init_record now initialized the RVAL field.
+<H4>
+ProcessCallback</H4>
+Benjamin Franksen at BESSY reported a serious bug in the routine ProcessCallback
+(not used in base). It has been fixed.
+<H4>
+CALC fields</H4>
+postfix and calcPerform (used by calcRecord) have been changed so that
+a 0 byte now ends the postfix expression. Also if postfix detects an illegal
+expression it generates a 0 length postfix string. When calcPerform is
+given a 0 length string it returns a error status. Thus calcRecord no longer
+causes the IOC to crash if an illegal CALC fields is loaded.
+<H4>
+Etc.</H4>
+Many other minor problems, bugs, etc. were fixed.
+<BR>
+<HR>
+<H1>
+Notes for Release 3.13 of EPICS Base</H1>
 
-<H4>boRecord, mbboRecord</H4>
-
-<P>init_record now initialized the RVAL field.</P>
-
-<H4>ProcessCallback</H4>
-
-<P>Benjamin Franksen at BESSY reported a serious bug in the routine
-ProcessCallback (not used in base). It has been fixed.</P>
-
-<H4>CALC fields</H4>
-
-<P>postfix and calcPerform (used by calcRecord) have been changed
-so that a 0 byte now ends the postfix expression. Also if postfix
-detects an illegal expression it generates a 0 length postfix string.
-When calcPerform is given a 0 length string it returns a error status.
-Thus calcRecord no longer causes the IOC to crash if an illegal
-CALC fields is loaded.  <P>
-
-<H4>Etc.</H4>
-
-<P>Many other minor problems, bugs, etc. were fixed.</P>
-
-<HR></P>
-
-<H1>Notes for Release 3.13 of EPICS Base</H1>
-
-<P>
 <HR>For Release 3.13 major changes have been made to EPICS base. The IOC
 Application Developer's Guide has been extensively modified and now describes
 release 3.13. If you are upgrading for a 3.12.xxx or earlier release you
-must obtain and read the new App Dev Guide. </P>
+must obtain and read the new App Dev Guide.
 
 <P>In porting EPICS to multiple architectures, the previous method of using
 utilities to convert the database definition files to a binary file (default.dctsdr)
@@ -204,78 +397,87 @@ caused problems. The problem is that the binary file is created on one
 architecture and used on another. This has worked so far for sun4 and hp
 hosts combined with motorola 68xxx processors. As support for more host
 and more ioc architectures is developed problems are appearing. This paper
-describes changes that solve the problems. </P>
+describes changes that solve the problems.
 
 <P>Because the changes result in extensive changes to database access,
 other changes are also made. The file syntax is changed. The internal database
 structures are simplified and also changed to make it easier to support
-runtime add/delete of record types and record instances. </P>
-
-<H3>Goals</H3>
+runtime add/delete of record types and record instances.
+<H3>
+Goals</H3>
 
 <UL>
-<LI>Allow database definition without an EPICS generated binary file. </LI>
+<LI>
+Allow database definition without an EPICS generated binary file.</LI>
 
-<LI>Change internal database structures so that runtime add/delete of record
-types and record instances is possible. </LI>
+<LI>
+Change internal database structures so that runtime add/delete of record
+types and record instances is possible.</LI>
 
-<LI>Allow each ioc to load and initialize only the record, device, and
-driver support it actually uses. </LI>
+<LI>
+Allow each ioc to load and initialize only the record, device, and driver
+support it actually uses.</LI>
 </UL>
 
-<H3>Backward Compatibility</H3>
+<H3>
+Backward Compatibility</H3>
 
 <UL>
-<LI>Minimal changes to existing record/device/driver support. A section
-below describes necessary changes. </LI>
+<LI>
+Minimal changes to existing record/device/driver support. A section below
+describes necessary changes.</LI>
 
-<LI>Provide tools to generate new database files from existing default.dctsdr
-</LI>
+<LI>
+Provide tools to generate new database files from existing default.dctsdr</LI>
 
-<LI>No or almost no incompatible changes to the dbStatic API. New capabilities
-are of course allowed. </LI>
+<LI>
+No or almost no incompatible changes to the dbStatic API. New capabilities
+are of course allowed.</LI>
 </UL>
 
-<H3>Incompatibilities</H3>
+<H3>
+Incompatibilities</H3>
 
 <UL>
-<LI>DCT is no longer supported. A TCL/TK replacement is now available.
-</LI>
+<LI>
+DCT is no longer supported. A TCL/TK replacement is now available.</LI>
 
-<LI>The sdr file format (.database files) is no longer supported. </LI>
+<LI>
+The sdr file format (.database files) is no longer supported.</LI>
 
-<LI>The old DCT short form format is no longer supported. </LI>
+<LI>
+The old DCT short form format is no longer supported.</LI>
 
-<LI>The only way to load record instance definitions into an ioc is the
-record instance format, which is exactly the same as the GDCT .db format.
-</LI>
+<LI>
+The only way to load record instance definitions into an ioc is the record
+instance format, which is exactly the same as the GDCT .db format.</LI>
 
-<LI>Any user written code that accesses internal database structures, i.e.
+<LI>
+Any user written code that accesses internal database structures, i.e.
 any code that uses anything described in Chapter 11 (Database Structures)
-of the old Application Developers Guide will have to be changed. </LI>
+of the old Application Developers Guide will have to be changed.</LI>
 </UL>
 
-<H2>Overview of new database support</H2>
-
-<P>EPICS defines a set of database file formats. In addition any of these
+<H2>
+Overview of new database support</H2>
+EPICS defines a set of database file formats. In addition any of these
 files can contain include statements. For each ioc, the application developer
 will create a set of files specifying the record types, devices, and drivers
 needed for that ioc. Normally a master file will be created which consists
 of include statements that bring in record, device, and driver definitions.
 Default configurations can be provided for new users or for particular
-applications. </P>
+applications.
 
 <P>Database configuration and utility tools access the database via the
 static database access library. This library reads the files. It provides
 routines for reading the information in the database and for creating and
 modifying record instances. Database definition files can be read incrementally.
-</P>
 
 <P>Other database configuration tools (capfast, relational database systems,
 object oriented databases, etc.) can also be used as long as they generate
 record instances in the format described below. In this case, however,
 it is still necessary to generate the other files because they are needed
-by database access and for record and device support modules. </P>
+by database access and for record and device support modules.
 
 <P>Tools are provided that generate C code from the database files. Header
 files are generated for menu and record type definitions. These header
@@ -283,698 +485,706 @@ files are used by record and device support. In addition the record type
 definitions contain code which computes field offsets and sizes and record
 sizes. This code is compiled by the same cross compiler that is used to
 compile other ioc code. Thus cross platform compatibility is achieved.
-</P>
 
 <P>In order to initialize an ioc, all files needed by that ioc have to
 be loaded. It is also necessary to load the record/device/driver support
-modules. </P>
+modules.
 
-<P>Everything is designed so that the following are possible: </P>
-
+<P>Everything is designed so that the following are possible:
 <UL>
-<LI>It is easy to tailor record/device/driver support individually for
-each ioc. </LI>
+<LI>
+It is easy to tailor record/device/driver support individually for each
+ioc.</LI>
 
-<LI>It is possible to incrementally add definitions. For example database
-configuration tools do NOT have to load all definitions at startup. New
-definitions can be read at any time. The underlying structures are designed
-so that it is possible to add new definitions after an ioc is initialized.
-Note however that additional changes will be needed after this project
-is complete before on-line add and delete are possible. </LI>
+<LI>
+It is possible to incrementally add definitions. For example database configuration
+tools do NOT have to load all definitions at startup. New definitions can
+be read at any time. The underlying structures are designed so that it
+is possible to add new definitions after an ioc is initialized. Note however
+that additional changes will be needed after this project is complete before
+on-line add and delete are possible.</LI>
 
-<LI>It is possible to completely unbundle record support, device support,
-and driver support. Again work will remain before this is a reality. </LI>
+<LI>
+It is possible to completely unbundle record support, device support, and
+driver support. Again work will remain before this is a reality.</LI>
 </UL>
-
-<P>An additional feature is that, for database configuration tools, record
+An additional feature is that, for database configuration tools, record
 instance numeric fields and menu fields are stored as character strings.
-This solves the following problems. </P>
-
+This solves the following problems.
 <UL>
-<LI>Rounding problems caused by converting from string to float and then
-back to string disappear. </LI>
+<LI>
+Rounding problems caused by converting from string to float and then back
+to string disappear.</LI>
 
-<LI>For integer fields the user can use the standard c conventions of preceding
+<LI>
+For integer fields the user can use the standard c conventions of preceding
 the value with 0x for hex or 0 for octal. Since the string itself is stored,
-the value will always appear with the prefix. </LI>
+the value will always appear with the prefix.</LI>
 
-<LI>Macro definitions are allowed. </LI>
+<LI>
+Macro definitions are allowed.</LI>
 </UL>
+Another feature is is that it is now possible to distinguish link constants
+with a value of 0 from links that have never been given a value.
 
-<P>Another feature is is that it is now possible to distinguish link constants
-with a value of 0 from links that have never been given a value. </P>
-
-<P>Other changes have been made while the opportunity was available. </P>
-
+<P>Other changes have been made while the opportunity was available.
 <UL>
-<LI>The config files have been changed considerably. Base now has it's
-own config directory. Extensions (not implemented) can use the config from
+<LI>
+The config files have been changed considerably. Base now has it's own
+config directory. Extensions (not implemented) can use the config from
 the version of base against which it is built as well as supply additional
-config files. </LI>
+config files.</LI>
 
-<LI>Field names are no longer limited to four characters. It is NOT a good
+<LI>
+Field names are no longer limited to four characters. It is NOT a good
 idea to use this feature until it has been checked against existing channel
-access clients. If fact it has not been tested at all. </LI>
+access clients. If fact it has not been tested at all.</LI>
 
-<LI>The record support modules have been renamed from recXxx.c to xxxRecord.c.
+<LI>
+The record support modules have been renamed from recXxx.c to xxxRecord.c.
 This the name of the database file, include file, and source file are the
-same. Only the extensions are different. </LI>
+same. Only the extensions are different.</LI>
 
-<LI>All files in base/include have been moved to an appropriate base/src
-directory. These files are now installed into base/include. </LI>
+<LI>
+All files in base/include have been moved to an appropriate base/src directory.
+These files are now installed into base/include.</LI>
 </UL>
 
-<H2>Database Definition File format</H2>
-
-<P>Formats are defined for the following: </P>
-
+<H2>
+Database Definition File format</H2>
+Formats are defined for the following:
 <UL>
-<LI>Menu choices. </LI>
+<LI>
+Menu choices.</LI>
 
-<LI>Record type description </LI>
+<LI>
+Record type description</LI>
 
-<LI>Device choice </LI>
+<LI>
+Device choice</LI>
 
-<LI>Driver choice </LI>
+<LI>
+Driver choice</LI>
 
-<LI>Breakpoint Conversion Table </LI>
+<LI>
+Breakpoint Conversion Table</LI>
 
-<LI>Record Instance. </LI>
+<LI>
+Record Instance.</LI>
 </UL>
-
-<P>See the Application Developer's Guide for details. </P>
+See the Application Developer's Guide for details.
 
 <P>The menu choices replace the existing global, record, and conversion
 choices. The global and record choices are very similar and thus are easy
 to combine. The method of handling the old conversion choices is described
-below. That section also describes the breakpoint tables. </P>
+below. That section also describes the breakpoint tables.
 
 <P>The record type description format has been completely changed. It now
-has a &quot;real&quot; syntax. It should be MUCH easier to generate new
-definitions. </P>
+has a "real" syntax. It should be MUCH easier to generate new definitions.
 
 <P>The device choice and driver support definitions are defined so that
-it is easy to provide incremental definitions. </P>
+it is easy to provide incremental definitions.
 
 <P>The record instance format is an extension of the 3.12.beta13 and later
-GDCT .db format. </P>
+GDCT .db format.
 
 <P>Path and include statements are supported. This provides a powerful
 tool for combining definitions from many sources. The path is a unix style
-path, i.e. a colon separated list of directory names. </P>
-
-<H2>default.dctsdr conversion tools</H2>
-
-<P>NOTES </P>
-
+path, i.e. a colon separated list of directory names.
+<H2>
+default.dctsdr conversion tools</H2>
+NOTES
 <UL>
-<LI>In the following default.dctsdr is optional. If not given the tool
-just looks for the file &quot;default.dctsdr&quot; in the current directory.
-</LI>
+<LI>
+In the following default.dctsdr is optional. If not given the tool just
+looks for the file "default.dctsdr" in the current directory.</LI>
 
-<LI>All output files are placed in the directory from which the tool is
-executed. </LI>
+<LI>
+All output files are placed in the directory from which the tool is executed.</LI>
 </UL>
-
-<P>The following tools are provided: </P>
-
+The following tools are provided:
 <UL>
-<LI>sdr2gblmenu [default.dctsdr] <BR>
-All global menus are written as separate files. </LI>
+<LI>
+sdr2gblmenu [default.dctsdr]</LI>
 
-<LI>sdr2recordtype record_type record_type.h [default.dctsdr] <BR>
-A record type definition file is generated. </LI>
+<BR>All global menus are written as separate files.
+<LI>
+sdr2recordtype record_type record_type.h [default.dctsdr]</LI>
 
-<LI>sdr2device [default.dctsdr] <BR>
-All device definitions are placed in a file called device.dbd </LI>
+<BR>A record type definition file is generated.
+<LI>
+sdr2device [default.dctsdr]</LI>
 
-<LI>sdr2driver [default.dctsdr] <BR>
-All driver definitions are placed in a file called driver.dbd </LI>
-</UL>
+<BR>All device definitions are placed in a file called device.dbd
+<LI>
+sdr2driver [default.dctsdr]</LI>
 
-<P>For all utilities the required database definition files are generated
+<BR>All driver definitions are placed in a file called driver.dbd</UL>
+For all utilities the required database definition files are generated
 from a dctsdr file from a previous epics release. A dctsdr file can be
 specified or else the utilities can be run in a directory which contains
 default.dctsdr (or a soft link with that name). sdr2recordtype also requires
-the header file generated by a previous epics release. </P>
+the header file generated by a previous epics release.
+<H2>
+Conversions - replacement for DBF_CVTCHOICE</H2>
+Let's briefly review database conversion, i.e. the LINR field for ai and
+ao records.
 
-<H2>Conversions - replacement for DBF_CVTCHOICE</H2>
-
-<P>Let's briefly review database conversion, i.e. the LINR field for ai
-and ao records. </P>
-
-<P>The allowed conversions are: </P>
-
+<P>The allowed conversions are:
 <OL>
-<LI>None </LI>
+<LI>
+None</LI>
 
-<LI>Linear </LI>
+<LI>
+Linear</LI>
 
-<LI>Breakpoint Tables </LI>
+<LI>
+Breakpoint Tables</LI>
 </OL>
-
-<P>The main complication results from the breakpoint tables. Previously
-EPICS handled breakpoint tables as follows: </P>
+The main complication results from the breakpoint tables. Previously EPICS
+handled breakpoint tables as follows:
 
 <P>The user prepares files in one of two formats: The first is just a list
-of &quot;raw value, eng units value&quot;. The second format is a file
-with a header line followed by a table of raw data values that represent
-data at equally spaced engineering unit values. In either case the ascii
-data is converted to an internal binary format containing breakpoint tables.
-This data is part of default.dctsdr. </P>
+of "raw value, eng units value". The second format is a file with a header
+line followed by a table of raw data values that represent data at equally
+spaced engineering unit values. In either case the ascii data is converted
+to an internal binary format containing breakpoint tables. This data is
+part of default.dctsdr.
 
-<P>Here is how breakpoint table are now handled. </P>
-
+<P>Here is how breakpoint table are now handled.
 <UL>
-<LI>A new file format is defined for breakpoint tables. </LI>
+<LI>
+A new file format is defined for breakpoint tables.</LI>
 
-<LI>A conversion tool, makeBpt, takes as input the second format described
-above and creates the breakpoint table in the new file format. </LI>
+<LI>
+A conversion tool, makeBpt, takes as input the second format described
+above and creates the breakpoint table in the new file format.</LI>
 
-<LI>Previously EPICS automatically provided breakpoint tables for TypeJdegC,
+<LI>
+Previously EPICS automatically provided breakpoint tables for TypeJdegC,
 TypeJdegF, TypeKdegC, and TypeKdegF thermocouples. These breakpoint tables
 are part of the new epics base. However there are only loaded into an ioc
-if the user includes their definitions. </LI>
+if the user includes their definitions.</LI>
 
-<LI>A regular menu definition file menuConvert contains the same definitions
+<LI>
+A regular menu definition file menuConvert contains the same definitions
 as choices as that provided by the 3.12.2 version of epics. The menu includes
-definitions for the epics supplied breakpoint tables. </LI>
+definitions for the epics supplied breakpoint tables.</LI>
 
-<LI>The ai and ao records call a routine cvtRawToEngBpt to perform breakpoint
+<LI>
+The ai and ao records call a routine cvtRawToEngBpt to perform breakpoint
 conversions. This routine has been rewritten to to look for breakpoint
-tables obtained from the new breakpoint file format. </LI>
+tables obtained from the new breakpoint file format.</LI>
 </UL>
-
-<P>One other comment needs to be made about conversions. The Allen Bradley
+One other comment needs to be made about conversions. The Allen Bradley
 device support for the IXE module uses the LINR field in a non standard
 way. This was a mistake but compatibility must be maintained. Thus menuConvert
-contains a lot of choices used only by the IXE device support. </P>
+contains a lot of choices used only by the IXE device support.
+<H1>
+Converting existing applications</H1>
 
-<H1>Converting existing applications</H1>
+<H2>
+Database Configuration Tools</H2>
 
-<H2>Database Configuration Tools</H2>
+<LI>
+DCT - Rather than making major changes to DCT, a TCL/TK replacement has
+been written. The executable is named DCT313.</LI>
 
-<LI>DCT - Rather than making major changes to DCT, a TCL/TK replacement
-has been written. The executable is named DCT313. </LI>
+<LI>
+GDCT - A new version is provided that supports 3.13. The executable is
+named GDCT313.</LI>
 
-<LI>GDCT - A new version is provided that supports 3.13. The executable
-is named GDCT313. </LI>
-
-<LI>CAPFAST </LI>
+<LI>
+CAPFAST</LI>
 
 <UL>
-<LI>The filter that converts record instance definitions must generate
-the new record instance file format rather than the old short form report.
-Contact Roselle Wright at LANL for details. </LI>
+<LI>
+The filter that converts record instance definitions must generate the
+new record instance file format rather than the old short form report.
+Contact Roselle Wright at LANL for details.</LI>
 
-<LI>A tool should be developed that, using static database access, automatically
+<LI>
+A tool should be developed that, using static database access, automatically
 generates the record type description files used by capfast. My guess is
-that this should be easy to do. </LI>
+that this should be easy to do.</LI>
 </UL>
 
-<H3>Application Source/Release Control</H3>
-
-<P>At the present time There are at least three Application Source/Release
+<H3>
+Application Source/Release Control</H3>
+At the present time There are at least three Application Source/Release
 Control Systems in active use. The old technique of having cat_ascii and
 replace_ascii directories no longer work. In addition makesdr no longer
 exists. The new system offers developers far more flexibility but it also
 means that each Application Source/Release Control system has to be modified
 to take advantage of the new capabilities. Again the changes in RULES and
-makeBaseApp should make this task easier. </P>
+makeBaseApp should make this task easier.
 
-<P>The document &quot;<A HREF="http://www.aps.anl.gov/asd/controls/epics/EpicsDocumentation/AppDevManuals/iocAppBuildSRcontrol.html">EPICS
-IOC Applications: Building and Source/Release Control</A>&quot; describes
-a utility makeBaseApp which can be used for small applications. It also
-provides guidlines that can be used for large applications.</P>
-
-<H3>Locally developed Record/Device support</H3>
+<P>The document "<A HREF="http://www.aps.anl.gov/asd/controls/epics/EpicsDocumentation/AppDevManuals/iocAppBuildSRcontrol.html">EPICS
+IOC Applications: Building and Source/Release Control</A>" describes a
+utility makeBaseApp which can be used for small applications. It also provides
+guidlines that can be used for large applications.
+<H3>
+Locally developed Record/Device support</H3>
 
 <UL>
-<LI>The dctsdr file and any header files for locally developed record types
-must be saved before performing a getrel to a new version of base. </LI>
+<LI>
+The dctsdr file and any header files for locally developed record types
+must be saved before performing a getrel to a new version of base.</LI>
 
-<LI>Any global menus, not supplied with epics, have to be converted via
-the sdr2gblmenu tool. The generated file must be edited to extract the
-locally developed menus. </LI>
+<LI>
+Any global menus, not supplied with epics, have to be converted via the
+sdr2gblmenu tool. The generated file must be edited to extract the locally
+developed menus.</LI>
 
-<LI>Any locally developed record type definitions have to be converted
-to the new ascii file format via the sdr2recordtype tool. Note that the
-generated file also contains definitions for any record specific menus.
-</LI>
+<LI>
+Any locally developed record type definitions have to be converted to the
+new ascii file format via the sdr2recordtype tool. Note that the generated
+file also contains definitions for any record specific menus.</LI>
 
-<LI>New definitions for locally developed device support must be generated
+<LI>
+New definitions for locally developed device support must be generated
 via the sdr2device tool. The generated file must be edited so that only
-locally developed device support remains. </LI>
+locally developed device support remains.</LI>
 
-<LI>New definitions for locally developed driver support must be generated
+<LI>
+New definitions for locally developed driver support must be generated
 via the sdr2driver tool. The generated file must be edited so that only
-locally developed drive support remains. </LI>
+locally developed drive support remains.</LI>
 
-<LI>If breakpoint tables have been locally developed. The following should
-be done. </LI>
+<LI>
+If breakpoint tables have been locally developed. The following should
+be done.</LI>
 
 <UL>
-<LI>The menuConvert file should be copied from epics and new entries for
-the local breakpoint tables added to the end. </LI>
+<LI>
+The menuConvert file should be copied from epics and new entries for the
+local breakpoint tables added to the end.</LI>
 
-<LI>If raw breakpoint tables were previously used, convert them to the
-new breakpoint format (easy to do). If equally spaced data files were used
-the makeBpt tool can be used to create new breakpoint tables. </LI>
+<LI>
+If raw breakpoint tables were previously used, convert them to the new
+breakpoint format (easy to do). If equally spaced data files were used
+the makeBpt tool can be used to create new breakpoint tables.</LI>
 </UL>
 
-<LI>The following changes must be made to the record support modules: </LI>
+<LI>
+The following changes must be made to the record support modules:</LI>
 
 <UL>
-<LI>The include statement for the record type h file must be surrounded
-by the statements: </LI>
+<LI>
+The include statement for the record type h file must be surrounded by
+the statements:</LI>
 
 <PRE>#define GEN_SIZE_OFFSET
 
-#undef  GEN_SIZE_OFFSET
-</PRE>
+#undef&nbsp; GEN_SIZE_OFFSET</PRE>
 
-<LI>Any statements that initialize a field from constant links must be
-changed. Such statements always contain the characters &quot;value.value&quot;.
-For example: </LI>
+<LI>
+Any statements that initialize a field from constant links must be changed.
+Such statements always contain the characters "value.value". For example:</LI>
 
-<PRE>    pai-&gt;simm = pai-&gt;siml.value.value;
+<PRE>&nbsp;&nbsp;&nbsp; pai->simm = pai->siml.value.value;
 
 is changed to
 
-   recGblInitConstantLink(&amp;pai-&gt;siml,DBF_USHORT,&amp;pai-&gt;simm);
-</PRE>
-
-<P>NOTE: This change also has to be made to any device support that manipulates
-constant links. Normally this is only soft device support. </P>
+&nbsp;&nbsp; recGblInitConstantLink(&amp;pai->siml,DBF_USHORT,&amp;pai->simm);</PRE>
+NOTE: This change also has to be made to any device support that manipulates
+constant links. Normally this is only soft device support.
 
 <P>Because it is now possible to distinguish between null links (links
 that were never given a value) and CONSTANT links with the value 0, the
 code now handles initialization of constant links in a uniform manner.
 Several record types in previous versions had special code to handle the
-case of the value 0 for constant links. These have been changed.</P>
-
-<LI>If record support uses menus it should be modified to use the enum
-definitions in the generated header files. </LI>
+case of the value 0 for constant links. These have been changed.
+<LI>
+If record support uses menus it should be modified to use the enum definitions
+in the generated header files.</LI>
 </UL>
 
-<LI>dbStaticLib - Some routines have a new name: </LI>
+<LI>
+dbStaticLib - Some routines have a new name:</LI>
 
-<PRE>OLD ROUTINE             REPLACEMENT
- 
-dbFindRecdes            dbFindRecordType
-dbFirstRecdes           dbFirstRecordType
-dbNextRecdes            dbNextRecordType
-dbGetRecdesName         dbGetRecordTypeName
-dbGetNRecdes            dbGetNRecordTypes
-dbFirstFielddes         dbFirstField
-dbNextFielddes          dbNextField
-dbGetChoices            dbGetMenuChoices
+<PRE>OLD ROUTINE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; REPLACEMENT
+&nbsp;
+dbFindRecdes&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; dbFindRecordType
+dbFirstRecdes&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; dbFirstRecordType
+dbNextRecdes&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; dbNextRecordType
+dbGetRecdesName&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; dbGetRecordTypeName
+dbGetNRecdes&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; dbGetNRecordTypes
+dbFirstFielddes&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; dbFirstField
+dbNextFielddes&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; dbNextField
+dbGetChoices&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; dbGetMenuChoices</PRE>
+For now the old version will be supported. After one release they will
+go away.
+<LI>
+New vxWorks CONFIG rules are available to generate menu and record type
+include files from ascii files. The rules are:</LI>
 
-</PRE>
+<PRE>&nbsp;&nbsp;&nbsp; MENUS&nbsp;&nbsp;&nbsp; += menuXXX.h
+&nbsp;&nbsp;&nbsp; RECTYPES += xxxRecord.h</PRE>
 
-<P>For now the old version will be supported. After one release they will
-go away. </P>
-
-<LI>New vxWorks CONFIG rules are available to generate menu and record
-type include files from ascii files. The rules are: </LI>
-
-<PRE>    MENUS    += menuXXX.h
-    RECTYPES += xxxRecord.h
-</PRE>
-
-<LI>Changes to recGbl and database access link routines. </LI>
+<LI>
+Changes to recGbl and database access link routines.</LI>
 
 <UL>
-<LI>recGblInitFastInLink <BR>
-recGblInitFastOutLink <BR>
-<BR>
-All code calling these should be removed. They are no longer needed. </LI>
+<LI>
+recGblInitFastInLink</LI>
 
-<LI>recGblGetFastLink <BR>
-recGblPutFastLink <BR>
-dbFastLinkGet <BR>
-dbFastLinkPut <BR>
-recGblGetLinkValue <BR>
-recGblPutLinkValue <BR>
-<BR>
-These are replaced by <BR>
-dbGetLink dbPutLink </LI>
+<BR>recGblInitFastOutLink
 
+<P>All code calling these should be removed. They are no longer needed.
+<LI>
+recGblGetFastLink</LI>
+
+<BR>recGblPutFastLink
+<BR>dbFastLinkGet
+<BR>dbFastLinkPut
+<BR>recGblGetLinkValue
+<BR>recGblPutLinkValue
+
+<P>These are replaced by
+<BR>dbGetLink dbPutLink
 <PRE>long dbGetLink(struct db_link *,short dbrType,
-        void *pbuffer,long *options,long *nRequest);
-</PRE>
-
-<P>The last two arguments can be 0. options=0 means no options. nRequest=0
-means scalar, i.e. retrieve one value. </P>
-
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void *pbuffer,long *options,long *nRequest);</PRE>
+The last two arguments can be 0. options=0 means no options. nRequest=0
+means scalar, i.e. retrieve one value.
 <PRE>long dbPutLink(struct db_link *,short dbrType,
-        void *pbuffer,long nRequest);
-</PRE>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void *pbuffer,long nRequest);</PRE>
 
-<LI>dbCaAddInLink <BR>
-dbCaAddOutlink <BR>
-dbCaGetLink <BR>
-dbCaPutLink <BR>
-<BR>
-The Add routines are no longer needed. The Get/Put routines are replaced
-by dbGetLink/dbPutLink. </LI>
-</UL>
+<LI>
+dbCaAddInLink</LI>
 
-<LI>link.h <BR>
-All parm fields are now declared char * parm rather than char parm[<size>]
+<BR>dbCaAddOutlink
+<BR>dbCaGetLink
+<BR>dbCaPutLink
+
+<P>The Add routines are no longer needed. The Get/Put routines are replaced
+by dbGetLink/dbPutLink.</UL>
+
+<LI>
+link.h</LI>
+
+<BR>All parm fields are now declared char * parm rather than char parm[<size>]
 In addition the defines INSTIO_FLD_SZ to VXI_PARAM_SZ no longer exist.
-This is done so that unused links now use less storage. </LI>
-</UL>
+This is done so that unused links now use less storage.</UL>
 
-<H1>Record Instance Definitions</H1>
+<H1>
+Record Instance Definitions</H1>
 
-<H4>Convert to proper format</H4>
-
-<P>All record instances must be capable of being loaded into an ioc via
-dbLoadDatabase, dbLoadRecords, or dbLoadTemplate. This is the same format
-that dbLoadRecords and dbLoadTemplate used in 3.12 releases. Note that
-if any files contain the statements: </P>
-
-<PRE>        database(x) { nowhere() {
-        }
-        }
+<H4>
+Convert to proper format</H4>
+All record instances must be capable of being loaded into an ioc via dbLoadDatabase,
+dbLoadRecords, or dbLoadTemplate. This is the same format that dbLoadRecords
+and dbLoadTemplate used in 3.12 releases. Note that if any files contain
+the statements:
+<PRE>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; database(x) { nowhere() {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
 
 or
 
-        database(x) {
-        }
-</PRE>
-
-<P>These statements must be removed. They were in pre 3.12 releases. </P>
-
-<H4>CONSTANT Links with value &quot;0&quot;</H4>
-
-<P>Release 3.13 is now capably of distingushing between a null link (a
-link that is not given any value at all) and a constant link with the value
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; database(x) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }</PRE>
+These statements must be removed. They were in pre 3.12 releases.
+<H4>
+CONSTANT Links with value "0"</H4>
+Release 3.13 is now capably of distingushing between a null link (a link
+that is not given any value at all) and a constant link with the value
 0. This cause problems for some old record instance files. For example
-if a record instance is defined as: </P>
-
-<PRE>        record(fanout,name) {
-                field(SELN,&quot;1&quot;)
-                field(SELL,&quot;0&quot;)
-        }
-</PRE>
-
-<P>Such definitions can be fixed by either completly removing the link
-definition or changing the value from &quot;0&quot; to &quot;&quot;. </P>
+if a record instance is defined as:
+<PRE>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; record(fanout,name) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; field(SELN,"1")
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; field(SELL,"0")
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }</PRE>
+Such definitions can be fixed by either completly removing the link definition
+or changing the value from "0" to "".
 
 <P>here is a complete list of record types and fields that may have this
-problem: </P>
+problem:
+<UL>
+<LI>
+fanoutRecord</LI>
 
 <UL>
-<LI>fanoutRecord </LI>
-
-<UL>
-<LI>SELL -&gt; SELN Note SELN is not a prompt field. </LI>
+<LI>
+SELL -> SELN Note SELN is not a prompt field.</LI>
 </UL>
-
-<P>pulseCounterRecord </P>
-
+pulseCounterRecord
 <UL>
-<LI>SGL -&gt; SGV </LI>
+<LI>
+SGL -> SGV</LI>
 </UL>
-
-<P>pulseDelayRecord </P>
-
+pulseDelayRecord
 <UL>
-<LI>STL -&gt; STV </LI>
+<LI>
+STL -> STV</LI>
 
-<LI>GLNK -&gt; GATE </LI>
+<LI>
+GLNK -> GATE</LI>
 </UL>
-
-<P>pulseTrainRecord </P>
-
+pulseTrainRecord
 <UL>
-<LI>SGL -&gt; HGV <BR>
-NOTE: This is a bug. The field should be SGV. Fixed 3.13.beta5. </LI>
+<LI>
+SGL -> HGV</LI>
+
+<BR>NOTE: This is a bug. The field should be SGV. Fixed 3.13.beta5.</UL>
+selRecord
+<UL>
+<LI>
+INPA -> A NOTE A is not a prompt field</LI>
+
+<LI>
+INPB -> B NOTE B is not a prompt field</LI>
+
+<LI>
+... for all INP links</LI>
 </UL>
-
-<P>selRecord </P>
-
+seqRecord
 <UL>
-<LI>INPA -&gt; A NOTE A is not a prompt field </LI>
-
-<LI>INPB -&gt; B NOTE B is not a prompt field </LI>
-
-<LI>... for all INP links </LI>
+<LI>
+SELL -> SELN NOTE SELN is not a prompt field</LI>
 </UL>
-
-<P>seqRecord </P>
-
+stringinRecord
 <UL>
-<LI>SELL -&gt; SELN NOTE SELN is not a prompt field </LI>
+<LI>
+SIOL -> SVAL NOTE SVAL is not a prompt field</LI>
 </UL>
-
-<P>stringinRecord </P>
-
+stringoutRecord
 <UL>
-<LI>SIOL -&gt; SVAL NOTE SVAL is not a prompt field </LI>
-</UL>
-
-<P>stringoutRecord </P>
-
-<UL>
-<LI>DOL -&gt; VAL </LI>
+<LI>
+DOL -> VAL</LI>
 </UL>
 </UL>
+A good way to find these problems is to use grep. For example:
+<PRE>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; grep SELL */*.db</PRE>
+This assumes that you are in directory that contains subdirectorys containing
+.db files.
+<H1>
+IOC Startup files</H1>
+The command dbLoad is no longer supported. The new method is to issue one
+or more dbLoadDatabase commands and any combination of dbLoadRecords and
+dbLoadTemplate commands.
+<H2>
+Other Release Notes</H2>
 
-<P>A good way to find these problems is to use grep. For example: </P>
-
-<PRE>        grep SELL */*.db
-</PRE>
-
-<P>This assumes that you are in directory that contains subdirectorys containing
-.db files. </P>
-
-<H1>IOC Startup files</H1>
-
-<P>The command dbLoad is no longer supported. The new method is to issue
-one or more dbLoadDatabase commands and any combination of dbLoadRecords
-and dbLoadTemplate commands. </P>
-
-<H2>Other Release Notes </H2>
-
-<H4>IOC Test routines</H4>
-
-<P>Many changes have been made to the EPICS ioc test routines, i.e., routines
-given to the vxWorks shell. Please read the chapter &quot;IOC Test Facilities&quot;
-in the Application Developer's Guide for details.</P>
-
-<H4>Changes to Record and Device Support</H4>
+<H4>
+IOC Test routines</H4>
+Many changes have been made to the EPICS ioc test routines, i.e., routines
+given to the vxWorks shell. Please read the chapter "IOC Test Facilities"
+in the Application Developer's Guide for details.
+<H4>
+Changes to Record and Device Support</H4>
 
 <UL>
-<LI>Changes to record support modules (caused by looking for UDF problems)
-</LI>
+<LI>
+Changes to record support modules (caused by looking for UDF problems)</LI>
 
 <UL>
-<LI>aaiRecord, aaoRecord - The siol field, which was never used in record
-processing, has been removed from aaiRecord.dbd and aaoRecord.dbd files.
-Old style, pre R3.12, c code in init_record was updated. </LI>
+<LI>
+aaiRecord, aaoRecord - The siol field, which was never used in record processing,
+has been removed from aaiRecord.dbd and aaoRecord.dbd files. Old style,
+pre R3.12, c code in init_record was updated.</LI>
 
-<LI>compressRecord - Now allows Channel Access links for INP. It also sets
-READ_ALARM if it has bad or no input. </LI>
+<LI>
+compressRecord - Now allows Channel Access links for INP. It also sets
+READ_ALARM if it has bad or no input.</LI>
 
-<LI>dfanoutRecord, longoutRecord - In process the udf field is set to false
-when dbGetLink returns success only if dol is not a constant link. </LI>
+<LI>
+dfanoutRecord, longoutRecord - In process the udf field is set to false
+when dbGetLink returns success only if dol is not a constant link.</LI>
 
-<LI>fanoutRecord - Now supports CA links. Same rules as FLNK. </LI>
+<LI>
+fanoutRecord - Now supports CA links. Same rules as FLNK.</LI>
 
-<LI>biRecord, mbbiRecord - Udf now set to false in put_enum_string when
-val is initialized. </LI>
+<LI>
+biRecord, mbbiRecord - Udf now set to false in put_enum_string when val
+is initialized.</LI>
 
-<LI>mbbiDirectRecord - Udf now set to false in process when val is initialized.
-</LI>
+<LI>
+mbbiDirectRecord - Udf now set to false in process when val is initialized.</LI>
 
-<LI>mbbiDirectRecord, mbboDirectRecord, waitRecord - Old style, pre R3.12,
-c code in init_record was updated. </LI>
+<LI>
+mbbiDirectRecord, mbboDirectRecord, waitRecord - Old style, pre R3.12,
+c code in init_record was updated.</LI>
 
-<LI>pidRecord - Changes made to modify DB_LINK test on cvl field to allow
-type CA_LINK. </LI>
+<LI>
+pidRecord - Changes made to modify DB_LINK test on cvl field to allow type
+CA_LINK.</LI>
 
-<LI>pulseDelayRecord - Removed code that called recGblSetSevr is status
-non zero just before return. process always returns 0. </LI>
+<LI>
+pulseDelayRecord - Removed code that called recGblSetSevr is status non
+zero just before return. process always returns 0.</LI>
 
-<LI>pulseTrainRecord - process always returns 0. </LI>
+<LI>
+pulseTrainRecord - process always returns 0.</LI>
 
-<LI>seqRecord - Changes made to modify DB_LINK tests on the lnk and dol
-fields to allow type CA_LINK. </LI>
+<LI>
+seqRecord - Changes made to modify DB_LINK tests on the lnk and dol fields
+to allow type CA_LINK.</LI>
 
-<LI>steppermotorRecord - In process the udf field is now set to false if
-dol is not a constant link and dbGetLink returns success. Changes made
-to modify DB_LINK test on rdbl field to allow type CA_LINK. </LI>
+<LI>
+steppermotorRecord - In process the udf field is now set to false if dol
+is not a constant link and dbGetLink returns success. Changes made to modify
+DB_LINK test on rdbl field to allow type CA_LINK.</LI>
 
-<LI>stringoutRecord - In process the udf field is now set to false if dol
-is not a constant link and dbGetLink returns success. </LI>
+<LI>
+stringoutRecord - In process the udf field is now set to false if dol is
+not a constant link and dbGetLink returns success.</LI>
 
-<LI>waveform record - While processing the udf field is now set to false
-if simulation mode is TRUE and siol is not a constant link and dbGetLink
-returns success. </LI>
+<LI>
+waveform record - While processing the udf field is now set to false if
+simulation mode is TRUE and siol is not a constant link and dbGetLink returns
+success.</LI>
 </UL>
 
-<LI>Device Support Changes </LI>
+<LI>
+Device Support Changes</LI>
 
 <UL>
-<LI>devAiSoft, devBiSoft, devEventSoft, devLiSoft, devMbbiDirectSoft devMbbiSoft,devSiSoft
+<LI>
+devAiSoft, devBiSoft, devEventSoft, devLiSoft, devMbbiDirectSoft devMbbiSoft,devSiSoft
 - In init_record the udf field is set to false only if inp is a constant
 link and recGblInitConstantLink returns success. In read_xxx the udf field
 is set to false only if inp is not a constant link and dbGetLink returns
-success. </LI>
+success.</LI>
 
-<LI>devAiSoftRaw, devBiSoftRaw, devMbbiDirectSoftRaw, devMbbiSoftRaw -
-In init_record the udf field is no longer set to false if inp is a constant
-link and recGblInitConstantLink returns success (rval, not val, was successfully
-initialized). </LI>
+<LI>
+devAiSoftRaw, devBiSoftRaw, devMbbiDirectSoftRaw, devMbbiSoftRaw - In init_record
+the udf field is no longer set to false if inp is a constant link and recGblInitConstantLink
+returns success (rval, not val, was successfully initialized).</LI>
 
-<LI>devLoSoft, devLoSymb, devMbboDirectSoft, devMbboSoft, devPtSoft, devSoSymb
-- The udf field is no longer set to false in write_xxx. </LI>
+<LI>
+devLoSoft, devLoSymb, devMbboDirectSoft, devMbboSoft, devPtSoft, devSoSymb
+- The udf field is no longer set to false in write_xxx.</LI>
 
-<LI>devHistogramSoft, devHistogramTestAsyn - In init_record the udf field
-is set to false only if svl is a constant link and recGblInitConstantLink
-returns success. </LI>
+<LI>
+devHistogramSoft, devHistogramTestAsyn - In init_record the udf field is
+set to false only if svl is a constant link and recGblInitConstantLink
+returns success.</LI>
 </UL>
 </UL>
 
-<H4>Make rules and config files</H4>
-
-<P>The config environment has been extensively changed. BASE now has its
-own set of config files. Extensions will be able to use the base config
-files (for the version of base it is built against) and add it's own definitions.
-Changes to extensions will come at a future time. </P>
-
-<H4>GNU C++ for base</H4>
-
-<P>It is now possible to compile 3.13 EPICS base with the gnu C and C++
-compilers. A C++ compiler that properly supports templates is required
-to build the new ca server and the gdd library. </P>
-
-<H4>log server</H4>
-
-<P>Thanks to William Lupton at KECK the log server will now (under the
-latest EPICS 3.13) obtain a new directory for the log file in response
-to SIGHUP. </P>
-
-<H4>CA repeater fix</H4>
-
-<P>Thanks to Kim Gillies, Bret Goodrich, and others at NOAO a problem has
-been discovered and fixed in the 3.12 CA repeater under solaris. </P>
-
-<H4>Portable CA server</H4>
-
-<P>A new CA server C++ class library is available. The server library is
-in libcas.a. The API is described in casdef.h. Doc is in progress. An example
+<H4>
+Make rules and config files</H4>
+The config environment has been extensively changed. BASE now has its own
+set of config files. Extensions will be able to use the base config files
+(for the version of base it is built against) and add it's own definitions.
+Changes to extensions will come at a future time.
+<H4>
+GNU C++ for base</H4>
+It is now possible to compile 3.13 EPICS base with the gnu C and C++ compilers.
+A C++ compiler that properly supports templates is required to build the
+new ca server and the gdd library.
+<H4>
+log server</H4>
+Thanks to William Lupton at KECK the log server will now (under the latest
+EPICS 3.13) obtain a new directory for the log file in response to SIGHUP.
+<H4>
+CA repeater fix</H4>
+Thanks to Kim Gillies, Bret Goodrich, and others at NOAO a problem has
+been discovered and fixed in the 3.12 CA repeater under solaris.
+<H4>
+Portable CA server</H4>
+A new CA server C++ class library is available. The server library is in
+libcas.a. The API is described in casdef.h. Doc is in progress. An example
 server tool can be found at base/src/cas/example. The server has been tested
 under sunos4 and solaris. A multi-threaded version of the new server for
-vxWorks is in progress. </P>
-
-<H4>Macro Substitution Library</H4>
-
-<P>The macro substitution library discussed in tech-talk is now part of
-epics base. Thus was contributed by Bill Lupton. The static database library
-uses this library. dbLoadRecords and dvbLoadTemplate also use it.</P>
-
-<H4>VXI Resource Manager fix</H4>
-
-<P>Thanks to Ric Claus of SLAC a bug has been isolated in the VXI resource
-manager. <BR>
-Symptom: correct slot isnt located when EPICS_VXI_LA_BASE is set to something
-other than zero. </P>
-
-<H4>Access Security </H4>
-
-<P>If asSetFile has been set in a startup file and access security initialization
-fails, then iocInit returns -1 so that startup file does not finish. </P>
-
-<H4>errPrintf </H4>
-
-<P>On Unix this now calls fprintf(stderr instead of printf </P>
-
-<H4>iocLogClient.c </H4>
-
-<P>This now calls printf instead of epicsPrintf to prevent deadlocks. </P>
-
-<H4>Native type for DBF_USHORT </H4>
-
-<P>Formerlly old database access, which does not have unsigned short called
-the native type DBR_FLOAT. It now calls it DBF_LONG </P>
-
-<H4>Allen Bradley Driver </H4>
-
-<P>Analog Output Block Transfers were being requested too frequently </P>
+vxWorks is in progress.
+<H4>
+Macro Substitution Library</H4>
+The macro substitution library discussed in tech-talk is now part of epics
+base. Thus was contributed by Bill Lupton. The static database library
+uses this library. dbLoadRecords and dvbLoadTemplate also use it.
+<H4>
+VXI Resource Manager fix</H4>
+Thanks to Ric Claus of SLAC a bug has been isolated in the VXI resource
+manager.
+<BR>Symptom: correct slot isnt located when EPICS_VXI_LA_BASE is set to
+something other than zero.
+<H4>
+Access Security</H4>
+If asSetFile has been set in a startup file and access security initialization
+fails, then iocInit returns -1 so that startup file does not finish.
+<H4>
+errPrintf</H4>
+On Unix this now calls fprintf(stderr instead of printf
+<H4>
+iocLogClient.c</H4>
+This now calls printf instead of epicsPrintf to prevent deadlocks.
+<H4>
+Native type for DBF_USHORT</H4>
+Formerlly old database access, which does not have unsigned short called
+the native type DBR_FLOAT. It now calls it DBF_LONG
+<H4>
+Allen Bradley Driver</H4>
+Analog Output Block Transfers were being requested too frequently
 
 <P>If link_status command fails (3 times in succession) adapters are now
-immediatly declared down. </P>
+immediatly declared down.
 
 <P>For btRead and btWrite, The driver now enforces a timeout of 5 seconds
 which is 1 second more than scanner itself enforces. This is so that if
-scanner throws away a BT request it will still timeout. </P>
+scanner throws away a BT request it will still timeout.
 
 <P>For btRead and btWrite is is no longer permissible to issue a new btRead
-or btWrite from tha callback routine. </P>
+or btWrite from tha callback routine.
 
-<P>The on line doc has the following two changes: </P>
-
+<P>The on line doc has the following two changes:
 <UL>
-<LI>abConfigBaud has arguments (link,number) (Old doc was wrong) </LI>
+<LI>
+abConfigBaud has arguments (link,number) (Old doc was wrong)</LI>
 
-<LI>Now states that new btRead/btWrite can NOT be ussued from callback.
-</LI>
+<LI>
+Now states that new btRead/btWrite can NOT be ussued from callback.</LI>
 </UL>
 
-<H4>vmic2534 </H4>
+<H4>
+vmic2534</H4>
+Support has been added by LBL. It still needs to be ansified.
+<H4>
+New options for links</H4>
 
-<P>Support has been added by LBL. It still needs to be ansified. </P>
+<LI>
+FWDLINK</LI>
 
-<H4>New options for links </H4>
+<BR>A forward link now works between IOCs but only if the field is PROC.
+When recGblFwdLink is executed, a 1 is written.
+<LI>
+OUTLINK new option CA (In addition to PP and NPP)</LI>
 
-<LI>FWDLINK <BR>
-A forward link now works between IOCs but only if the field is PROC. When
-recGblFwdLink is executed, a 1 is written. </LI>
-
-<LI>OUTLINK new option CA (In addition to PP and NPP) <BR>
-CA means always make it channel access link </LI>
-
-<LI>INLINK new options CA CP CPP (In addition to PP and NPP) </LI>
+<BR>CA means always make it channel access link
+<LI>
+INLINK new options CA CP CPP (In addition to PP and NPP)</LI>
 
 <UL>
-<LI>CA means always make it a channel access link </LI>
+<LI>
+CA means always make it a channel access link</LI>
 
-<LI>CP means CA + process when monitor occurs </LI>
+<LI>
+CP means CA + process when monitor occurs</LI>
 
-<LI>CPP means CA + process passive records when monitor occurs </LI>
+<LI>
+CPP means CA + process passive records when monitor occurs</LI>
 </UL>
-
-<P>dbAccess (dbGetField dbPutField) make sure that link field strings are
-not longer than 39 characters. They allow M for MS and N for NMS </P>
-
-<H4>callback and scan task names </H4>
-
-<P>The task names have been changed to make them unique </P>
-
-<H4>dbPutString </H4>
-
-<P>If the strlen of the new field is &gt;= field_size an error is returned.
-</P>
-
-<H4>event scanned records </H4>
-
-<P>Multiple priorities are now supported. <BR>
-WARNING: Default PRIO is low thus old event scanned records may be executed
-at a lower priority then previous release. </P>
-
-<H4>Allen Bradley Stepper Motor Support (Ric Claus SLAC) </H4>
-
-<P>Support for the allen bradley stepper motor is available. See the APS
-EPICS Hardware Support page for details.</P>
-
-<H4>initHooks </H4>
-
-<P>INITHOOKafterCaLinkInit1 is replaced by INITHOOKafterCaLinkInit <BR>
-INITHOOKafterCaLinkInit2 no longer exists </P>
-
+dbAccess (dbGetField dbPutField) make sure that link field strings are
+not longer than 39 characters. They allow M for MS and N for NMS
+<H4>
+callback and scan task names</H4>
+The task names have been changed to make them unique
+<H4>
+dbPutString</H4>
+If the strlen of the new field is >= field_size an error is returned.
+<H4>
+event scanned records</H4>
+Multiple priorities are now supported.
+<BR>WARNING: Default PRIO is low thus old event scanned records may be
+executed at a lower priority then previous release.
+<H4>
+Allen Bradley Stepper Motor Support (Ric Claus SLAC)</H4>
+Support for the allen bradley stepper motor is available. See the APS EPICS
+Hardware Support page for details.
+<H4>
+initHooks</H4>
+INITHOOKafterCaLinkInit1 is replaced by INITHOOKafterCaLinkInit
+<BR>INITHOOKafterCaLinkInit2 no longer exists
 </BODY>
 </HTML>

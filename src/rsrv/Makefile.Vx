@@ -10,7 +10,7 @@ SRCS =  ../caserverio.c ../caservertask.c ../camsgtask.c ../camessage.c \
 
 OBJS = \
 	caserverio.o caservertask.o camsgtask.o camessage.o \
-	rsrv_init.o cast_server.o online_notify.o
+	rsrv_init.o cast_server.o online_notify.o globalsource.o
 
 PROD = dbgLib rsrvLib
 

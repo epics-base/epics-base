@@ -48,16 +48,25 @@ the above bug the delay was more like 64 mS. </p>
 
 <h4>dbCa</h4>
 <p>Better error messages are now generated.</p>
-<p>dbCaPutLinkCallback is a new function. It provides the ability to implement record/driver
-support that does not complete until a channel access put callback has completed. See the Application Developer's Guide for details.</p>
+<p>dbCaPutLinkCallback is a new function.
+It provides the ability to implement record/driver
+support that does not complete until a channel access put callback
+has completed. See the Application Developer's Guide for details.</p>
+<p>dbCaAddLinkCallback is a new function.
+The caller can provide a connect and monitor callback.
+See the Application Developer's Guide for details.</p>
 <h4>devXxSoftCallback</h4>
 <p>Soft device that uses dbCaPutLinkCallback has been written for
-ao, bo, longout, mbbo, mbboDirect, and stringout records. To use these
-your xxxInclude.dbd must have:</p>
-<pre>    include "devSoftCallback.dbd"</pre>
+ao, bo, calcout, longout, mbbo, mbboDirect, and stringout records.
+The dbd definitions have been added to devSoft.dbd.
+In other to use the new support the DTYP field is defined:</p>
+<pre>    field(DTYP,"Async Soft Channel")</pre>
 <h4>calcoutRecord</h4>
 <p>The CALC and OCAL fields now have a size of 40 so that they are the
 same as the calcRecord.</p>
+<p>calcoutRecord now has associated device support. The default support
+will act just like the old calcout. Support bis also available that uses
+dbCaPutLinkCallback.</p>
 <h4>mbbiRecord</h4>
 <p>The fields ZRST,...,FFST are now special(SPC_MOD).</p>
 <h4>mbboRecord</h4>

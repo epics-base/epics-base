@@ -33,6 +33,9 @@
 
 /*
  * $Log$
+ * Revision 1.74  1998/10/07 14:32:52  jba
+ * Modified log message.
+ *
  * Revision 1.73  1998/09/24 21:22:53  jhill
  *  CLR_CA_TIME() now correctly zeros the delay
  *
@@ -310,7 +313,8 @@ typedef struct timeval ca_time;
 /*
  * A prime number works best here (see comment in retrySearchRequest()
  */
-#define TRIESPERFRAME 		5u	/* N UDP frames per search try */
+#define INITIALTRIESPERFRAME    1u	/* initial UDP frames per search try */
+#define MAXTRIESPERFRAME        64u	/* max UDP frames per search try */
 
 /*
  * NOTE: These must be larger than one vxWorks tick or we will end up
@@ -555,7 +559,7 @@ struct  CA_STATIC {
 	const void	*ca_exception_arg;
 	int		(*ca_printf_func)(const char *pformat, va_list args);
 	void		(*ca_fd_register_func)
-				(void *, SOCKET, int);
+				(void *, int, int);
 	const void	*ca_fd_register_arg;
 	char		*ca_pUserName;
 	char		*ca_pHostName;
@@ -568,6 +572,7 @@ struct  CA_STATIC {
 	ciu		ca_pEndOfBCastList;
 	unsigned 	ca_search_responses; /* num valid search resp within seq # */
 	unsigned 	ca_search_tries; /* num search tries within seq # */
+    unsigned    ca_search_tries_congest_thresh; /* one half N tries w congest */
 	unsigned	ca_search_retry; /* search retry seq number */
 	unsigned	ca_min_retry; /* min retry no so far */
 	unsigned	ca_frames_per_try; /* # of UDP frames per search try */
@@ -652,7 +657,7 @@ struct CA_STATIC *ca_static;
  */
 
 void 	cac_send_msg(void);
-void 	cac_mux_io(struct timeval *ptimeout);
+void 	cac_mux_io(struct timeval *ptimeout, unsigned iocCloseAllowed);
 int	repeater_installed(void);
 int	search_msg(ciu chix, int reply_type);
 int	ca_request_event(evid monix);

@@ -22,8 +22,8 @@ of this distribution.
 typedef struct ringPvt {
     int nextPut;
     int nextGet;
-    int size;
-    char *buffer;
+    int          size;
+    char         *buffer;
 }ringPvt;
 
 
@@ -46,75 +46,80 @@ epicsShareFunc void epicsShareAPI ringDelete(ringId id)
 epicsShareFunc int epicsShareAPI ringGet(ringId id, char *value,int nbytes)
 {
     ringPvt *pring = (ringPvt *)id;
+    int nextGet = pring->nextGet;
+    int nextPut = pring->nextPut;
+    int size = pring->size;
     int count;
 
-    if (pring->nextGet <= pring->nextPut) {
-        count = pring->nextPut - pring->nextGet;
+    if (nextGet <= nextPut) {
+        count = nextPut - nextGet;
         if (count < nbytes)
             nbytes = count;
-        memcpy (value, &pring->buffer[pring->nextGet], nbytes);
-        pring->nextGet += nbytes;
+        memcpy (value, &pring->buffer[nextGet], nbytes);
+        nextGet += nbytes;
     }
     else {
-        int nextGet;
-        count = pring->size - pring->nextGet;
+        count = size - nextGet;
         if (count > nbytes)
             count = nbytes;
-        memcpy (value, &pring->buffer[pring->nextGet], count);
-        if ((nextGet = pring->nextGet + count) == pring->size) {
+        memcpy (value, &pring->buffer[nextGet], count);
+        if ((nextGet = nextGet + count) == size) {
             int nLeft = nbytes - count;
-            if (nLeft > pring->nextPut)
-                nLeft = pring->nextPut;
+            if (nLeft > nextPut)
+                nLeft = nextPut;
             memcpy (value+count, &pring->buffer[0], nLeft);
-            pring->nextGet = nLeft;
+            nextGet = nLeft;
             nbytes = count + nLeft;
         }
         else {
             nbytes = count;
-            pring->nextGet = nextGet;
         }
     }
+    pring->nextGet = nextGet;
     return nbytes;
 }
 
 epicsShareFunc int epicsShareAPI ringPut(ringId id, char *value,int nbytes)
 {
     ringPvt *pring = (ringPvt *)id;
+    int nextGet = pring->nextGet;
+    int nextPut = pring->nextPut;
+    int size = pring->size;
     int count;
 
-    if (pring->nextPut < pring->nextGet) {
-        count = pring->nextGet - pring->nextPut - 1;
+    if (nextPut < nextGet) {
+        count = nextGet - nextPut - 1;
         if (nbytes > count)
             nbytes = count;
-        memcpy (&pring->buffer[pring->nextPut], value, nbytes);
-        pring->nextPut += nbytes;
+        memcpy (&pring->buffer[nextPut], value, nbytes);
+        nextPut += nbytes;
     }
-    else if (pring->nextGet == 0) {
-        count = pring->size - pring->nextPut - 1;
+    else if (nextGet == 0) {
+        count = size - nextPut - 1;
         if (nbytes > count)
             nbytes = count;
-        memcpy (&pring->buffer[pring->nextPut], value, nbytes);
-        pring->nextPut += nbytes;
+        memcpy (&pring->buffer[nextPut], value, nbytes);
+        nextPut += nbytes;
     }
     else {
-        int nextPut;
-        count = pring->size - pring->nextPut;
+        count = size - nextPut;
         if (count > nbytes)
             count = nbytes;
-        memcpy (&pring->buffer[pring->nextPut], value, count);
-        if ((nextPut = pring->nextPut + count) == pring->size) {
+        memcpy (&pring->buffer[nextPut], value, count);
+        if ((nextPut = nextPut + count) == size) {
             int nLeft = nbytes - count;
-            if (nLeft > (pring->nextGet - 1))
-                nLeft = pring->nextGet - 1;
+            if (nLeft > (nextGet - 1))
+                nLeft = nextGet - 1;
             memcpy (&pring->buffer[0], value+count, nLeft);
-            pring->nextPut = nLeft;
+            nextPut = nLeft;
             nbytes = count + nLeft;
         }
         else {
             nbytes = count;
-            pring->nextPut = nextPut;
+            nextPut = nextPut;
         }
     }
+    pring->nextPut = nextPut;
     return nbytes;
 }
 
@@ -132,7 +137,7 @@ epicsShareFunc int epicsShareAPI ringFreeBytes(ringId id)
 
     n = pring->nextGet - pring->nextPut - 1;
     if (n < 0)
-    	n += pring->size;
+        n += pring->size;
     return n;
 }
 
@@ -143,7 +148,7 @@ epicsShareFunc int epicsShareAPI ringUsedBytes(ringId id)
 
     n = pring->nextPut - pring->nextGet;
     if (n < 0)
-    	n += pring->size;
+        n += pring->size;
     return n;
 }
 

@@ -171,6 +171,12 @@ extern "C" epicsTimerId epicsShareAPI epicsTimerQueuePassiveCreateTimer (
     }
 }
 
+extern "C" epicsShareFunc void epicsShareAPI epicsTimerQueuePassiveDestroyTimer ( 
+    epicsTimerQueuePassiveId /* pQueue */, epicsTimerId pTmr )
+{
+    pTmr->destroy ();
+}
+
 extern "C" void  epicsShareAPI epicsTimerQueuePassiveShow (
     epicsTimerQueuePassiveId pQueue, unsigned int level )
 {
@@ -214,7 +220,8 @@ extern "C" void  epicsShareAPI epicsTimerQueueShow (
     pQueue->show ( level );
 }
 
-extern "C" void  epicsShareAPI epicsTimerDestroy ( epicsTimerId pTmr )
+extern "C" void epicsShareAPI epicsTimerQueueDestroyTimer ( 
+    epicsTimerQueueId /* pQueue */, epicsTimerId pTmr )
 {
     pTmr->destroy ();
 }

@@ -51,15 +51,15 @@ void alarmCB (void *parg)
     pCBS->done = 1;
 }
 
-void testTimer (fdctx *pfdm, long double delay)
+void testTimer (fdctx *pfdm, double delay)
 {
     int status;
     fdmgrAlarmId aid;
     struct timeval tmo;
     osiTime begin;
     cbStruct cbs;
-    long double measuredDelay;
-    long double measuredError;
+    double measuredDelay;
+    double measuredError;
 
     osiTimeGetCurrent (&begin);
     cbs.done = 0;

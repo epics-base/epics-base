@@ -36,8 +36,8 @@ typedef long    jgvtr1Stat;
 #define JGVTR1_SUCCESS  0
 
 jgvtr1Stat jgvtr1_driver(
-        unsigned        card,
-        unsigned        *pcbroutine,
-        unsigned        *parg   /* number of values read */
+unsigned        card,
+void            (*pcbroutine)(void *, unsigned, uint16_t *),
+void            *parg
 );
 

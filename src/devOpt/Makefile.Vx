@@ -13,15 +13,13 @@ include $(TOP)/config/CONFIG_BASE
 USR_INCLUDES = -I../../drv
 
 SRCS.c += ../devAnalytekGpib.c
-SRCS.c += ../devXxDg535Gpib.c
-#SRCS.c += ../devBBInteract.c
 SRCS.c += ../devGpibInteract.c
-SRCS.c += ../devXxSr620Gpib.c
 SRCS.c += ../devK486Gpib.c
-SRCS.c += ../devXxK196Gpib.c
 SRCS.c += ../devXxDc5009Gpib.c
+SRCS.c += ../devXxK196Gpib.c
 SRCS.c += ../devXxK263Gpib.c
 SRCS.c += ../devXxSkeletonGpib.c
+SRCS.c += ../devXxSr620Gpib.c
 
 LIBOBJS = $(SRCS.c:../%.c=%.o)
 

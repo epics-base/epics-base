@@ -49,4 +49,16 @@ device(stringout,CONSTANT,devSoSoft,"Soft Channel")
 device(subArray,CONSTANT,devSASoft,"Soft Channel")
 device(waveform,CONSTANT,devWfSoft,"Soft Channel")
 
+device(ai,CONSTANT,devAiTestAsyn,"Test Asyn")
+device(ao,CONSTANT,devAoTestAsyn,"Test Asyn")
+device(bi,CONSTANT,devBiTestAsyn,"Test Asyn")
+device(bo,CONSTANT,devBoTestAsyn,"Test Asyn")
+device(event,CONSTANT,devEventTestIoEvent,"Test Asyn")
+device(mbbi,CONSTANT,devMbbiTestAsyn,"Test Asyn")
+device(mbbo,CONSTANT,devMbboTestAsyn,"Test Asyn")
+device(stringin,CONSTANT,devSiTestAsyn,"Test Asyn")
+device(stringout,CONSTANT,devSoTestAsyn,"Test Asyn")
+device(waveform,CONSTANT,devWfTestAsyn,"Test Asyn")
+
+
 registrar(asSub)

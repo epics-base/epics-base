@@ -1207,3 +1207,135 @@ long dbPut(DBADDR *paddr,short dbrType,const void *pbuffer,long nRequest)
 
 	return(status);
 }
+
+/* various utility routines */
+long dbGetControlLimits(
+    struct link *plink,double *low, double *high)
+{
+    struct buffer {
+        DBRctrlDouble
+        double value;
+    } buffer;
+    DBADDR *paddr;
+    long options = DBR_CTRL_DOUBLE;
+    long number_elements = 0;
+    long status;
+
+    if(plink->type == CA_LINK) return(dbCaGetControlLimits(plink,low,high));
+    if(plink->type !=DB_LINK) return(S_db_notFound);
+    paddr = (DBADDR *)plink->value.pv_link.pvt;
+    status = dbGet(paddr,DBR_DOUBLE,&buffer,&options,&number_elements,0);
+    if(status) return(status);
+    *low = buffer.lower_ctrl_limit;
+    *high = buffer.upper_ctrl_limit;
+    return(0);
+}
+
+long dbGetGraphicLimits(
+    struct link *plink,double *low, double *high)
+{
+    struct buffer {
+        DBRgrDouble
+        double value;
+    } buffer;
+    DBADDR *paddr;
+    long options = DBR_GR_DOUBLE;
+    long number_elements = 0;
+    long status;
+
+    if(plink->type == CA_LINK) return(dbCaGetGraphicLimits(plink,low,high));
+    if(plink->type !=DB_LINK) return(S_db_notFound);
+    paddr = (DBADDR *)plink->value.pv_link.pvt;
+    status = dbGet(paddr,DBR_DOUBLE,&buffer,&options,&number_elements,0);
+    if(status) return(status);
+    *low = buffer.lower_disp_limit;
+    *high = buffer.upper_disp_limit;
+    return(0);
+}
+
+long dbGetAlarmLimits(struct link *plink,
+	double *lolo, double *low, double *high, double *hihi)
+{
+    struct buffer {
+        DBRalDouble
+        double value;
+    } buffer;
+    DBADDR *paddr;
+    long options = DBR_AL_DOUBLE;
+    long number_elements = 0;
+    long status;
+
+    if(plink->type == CA_LINK)
+        return(dbCaGetAlarmLimits(plink,lolo,low,high,hihi));
+    if(plink->type !=DB_LINK) return(S_db_notFound);
+    paddr = (DBADDR *)plink->value.pv_link.pvt;
+    status = dbGet(paddr,DBR_DOUBLE,&buffer,&options,&number_elements,0);
+    if(status) return(status);
+    *lolo = buffer.lower_alarm_limit;
+    *low = buffer.lower_warning_limit;
+    *high = buffer.upper_warning_limit;
+    *hihi = buffer.upper_alarm_limit;
+    return(0);
+}
+
+long dbGetPrecision(struct link *plink,short *precision)
+{
+    struct buffer {
+        DBRprecision
+        double value;
+    } buffer;
+    DBADDR *paddr;
+    long options = DBR_PRECISION;
+    long number_elements = 0;
+    long status;
+
+    if(plink->type == CA_LINK) return(dbCaGetPrecision(plink,precision));
+    if(plink->type !=DB_LINK) return(S_db_notFound);
+    paddr = (DBADDR *)plink->value.pv_link.pvt;
+    status = dbGet(paddr,DBR_DOUBLE,&buffer,&options,&number_elements,0);
+    if(status) return(status);
+    *precision = buffer.precision;
+    return(0);
+}
+
+long dbGetUnits(struct link *plink,char *units,int unitsSize)
+{
+    struct buffer {
+        DBRunits
+        double value;
+    } buffer;
+    DBADDR *paddr;
+    long options = DBR_UNITS;
+    long number_elements = 0;
+    long status;
+
+    if(plink->type == CA_LINK) return(dbCaGetUnits(plink,units,unitsSize));
+    if(plink->type !=DB_LINK) return(S_db_notFound);
+    paddr = (DBADDR *)plink->value.pv_link.pvt;
+    status = dbGet(paddr,DBR_DOUBLE,&buffer,&options,&number_elements,0);
+    if(status) return(status);
+    strncpy(units,buffer.units,unitsSize);
+    return(0);
+}
+
+long dbGetSevr(struct link *plink,short *severity)
+{
+    DBADDR *paddr;
+
+    if(plink->type == CA_LINK) return(dbCaGetSevr(plink,severity));
+    if(plink->type !=DB_LINK) return(S_db_notFound);
+    paddr = (DBADDR *)plink->value.pv_link.pvt;
+    *severity = paddr->precord->sevr;
+    return(0);
+}
+
+long dbGetTimeStamp(struct link *plink,TS_STAMP *pstamp)
+{
+    DBADDR *paddr;
+
+    if(plink->type == CA_LINK) return(dbCaGetTimeStamp(plink,pstamp));
+    if(plink->type !=DB_LINK) return(S_db_notFound);
+    paddr = (DBADDR *)plink->value.pv_link.pvt;
+    *pstamp = paddr->precord->time;
+    return(0);
+}

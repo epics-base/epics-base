@@ -241,6 +241,18 @@ long dbGet(struct dbAddr *,short dbrType,void *pbuffer,long *options,
 long dbPutLinkValue(struct link *,short dbrType,const void *pbuffer,long nRequest);
 long dbPutField(struct dbAddr *,short dbrType,const void *pbuffer,long nRequest);
 long dbPut(struct dbAddr *,short dbrType,const void *pbuffer,long nRequest);
+
+/* various utility routines */
+long dbGetControlLimits( struct link *plink,double *low, double *high);
+long dbGetGraphicLimits( struct link *plink,double *low, double *high);
+long dbGetAlarmLimits(
+    struct link *plink,double *lolo, double *low, double *high, double *hihi);
+long dbGetPrecision( struct link *plink,short *precision);
+long dbGetUnits( struct link *plink,char *units,int unitsSize);
+long dbGetNelements( struct link *plink,long *nelements);
+long dbGetSevr( struct link *plink,short *severity);
+long dbGetTimeStamp( struct link *plink,TS_STAMP *pstamp);
+
 long dbPutNotify(PUTNOTIFY *pputnotify);
 /*dbNotifyAdd called by dbScanPassive and dbScanLink*/
 void dbNotifyAdd(struct dbCommon *pfrom,struct dbCommon *pto);

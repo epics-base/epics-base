@@ -23,7 +23,6 @@ actionArchTargets = $(foreach action, $(ACTIONS),\
                     $(foreach arch, $(ARCHS), \
                     $(action)$(DIVIDER)$(arch)))
 
-
 all:: inc install
 
 rebuild:: clean all
@@ -31,7 +30,8 @@ rebuild:: clean all
 $(DIRS) $(dirActionTargets) $(dirArchTargets)$(dirActionArchTargets) ::
 	$(MAKE) -C $(dirPart) $(actionArchPart)
 
-$(ARCHS) $(ACTIONS) $(actionArchTargets):%: $(foreach dir, $(DIRS), $(dir)$(DIVIDER)%)
+$(ARCHS) $(ACTIONS) $(actionArchTargets) :%: \
+	$(foreach dir, $(DIRS), $(dir)$(DIVIDER)%)
  
 
 .PHONY : $(DIRS)

@@ -3,6 +3,7 @@ include Target.include
 include $(EPICS)/config/CONFIG_BASE
 
 USR_LDLIBS = -lDb -lCom  -lm 
+USR_LDFLAGS = -L.
 
 #USR_CFLAGS = -v -g
 #CC = $(PURIFYHOME)/purify $(C_$(CMPLR))

@@ -3,38 +3,4 @@ TOP=../..
 
 include $(TOP)/configure/CONFIG
 
-INC += dbDefs.h
-INC += epicsTypes.h
-INC += epicsVersion.h
-INC += gsd_sync_defs.h
-INC += shareLib.h
-#INC += createSoftLinks.sh 
-INC += osiMutexNOOP.h
-INC += unixFileName.h
-
-INC += drvTS.h
-INC += devSup.h
-INC += drvSup.h
-INC += caeventmask.h
-INC += asLib.h
-INC += registryDeviceSupport.h
-INC += registryDriverSupport.h
-INC += registryRecordType.h
-INC += cadef.h
-INC += caerr.h
-INC += task_params.h
-INC += fast_lock.h
-INC += asDbLib.h
-
-
-INC += osiFileName.h
-INC += osiSock.h
-
-include $(TOP)/configure/RULES_BUILD
-
-#	This seems to be handled wrong by gnumake:
-#	epicsVersion.h is rebuild in any case,
-#	no matter what date ...CONFIG_BASE_VERSION has
-epicsVersion.h: $(TOP)/configure/CONFIG_BASE_VERSION
-	$(PERL) ../makeEpicsVersion.pl $(TOP)/configure/CONFIG_BASE_VERSION
-
+include $(TOP)/configure/RULES_ARCHS

@@ -1,0 +1,10 @@
+
+TOP=../..
+
+include $(TOP)/configure/CONFIG
+
+INC += osiFileName.h
+INC += osiSock.h
+
+include $(TOP)/configure/RULES_BUILD
+

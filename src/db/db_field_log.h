@@ -57,7 +57,7 @@ union native_value{
  *	structure to log the state of a data base field at the time
  *	an event is triggered.
  */
-typedef struct{
+typedef struct db_field_log {
         unsigned short		stat;	/* Alarm Status         */
         unsigned short		sevr;	/* Alarm Severity       */
 	TS_STAMP		time;	/* time stamp		*/

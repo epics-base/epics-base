@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.2  1996/06/21 02:30:52  jhill
+ * solaris port
+ *
  * Revision 1.1.1.1  1996/06/20 00:28:14  jhill
  * ca server installation
  *
@@ -114,6 +117,9 @@ void caServer::show(unsigned level)
 {
 	if (this->pCAS) {
 		this->pCAS->show(level);
+	}
+	else {
+		printf("caServer:: no server internals attached\n");
 	}
 }
 

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.10  1996/09/04 20:27:02  jhill
+ * doccasdef.h
+ *
  * Revision 1.9  1996/08/13 22:56:14  jhill
  * added init for mutex class
  *
@@ -110,6 +113,7 @@ caStatus copyBetweenDD(gdd &dest, gdd &src);
 //
 enum xRecvStatus {xRecvOK, xRecvDisconnect};
 enum xSendStatus {xSendOK, xSendDisconnect};
+enum xBlockingStatus {xIsBlocking, xIsntBlocking};
 enum casIOState {casOnLine, casOffLine};
 typedef unsigned bufSizeT;
 class casMsgIO {
@@ -129,8 +133,8 @@ public:
 	//
 	// device dependent recv
 	//
-        xSendStatus xSend (char *pBuf, bufSizeT nBytesToSend, 
-			bufSizeT &nBytesSent);
+        xSendStatus xSend (char *pBuf, bufSizeT nBytesAvailableToSend, 
+			bufSizeT nBytesNeedToBeSent, bufSizeT &nBytesSent);
         xRecvStatus xRecv (char *pBuf, bufSizeT nBytesToRecv,
 			bufSizeT &nByesRecv);
 
@@ -140,7 +144,11 @@ public:
         virtual casIOState state() const=0;
         virtual void hostNameFromAddr (char *pBuf, unsigned bufSize)=0;
 	virtual int getFileDescriptor() const;
-	virtual void setNonBlocking();
+	void setNonBlocking()
+	{
+		this->xSetNonBlocking();
+		this->blockingStatus = xIsntBlocking;
+	}
 
 	//
 	// only for use with DG io
@@ -154,12 +162,14 @@ private:
 	//
         osiTime	elapsedAtLastSend;
         osiTime	elapsedAtLastRecv;
+	xBlockingStatus blockingStatus;
 
         virtual xSendStatus osdSend (const char *pBuf,
                 bufSizeT nBytesReq, bufSizeT &nBytesActual) =0;
         virtual xRecvStatus osdRecv (char *pBuf,
                 bufSizeT nBytesReq, bufSizeT &nBytesActual) =0;
         virtual void osdShow (unsigned level) const = 0;
+	virtual void xSetNonBlocking();
 };
 
 #include <casOSD.h> // OS dependent
@@ -260,9 +270,9 @@ private:
 //
 inline void casEventSys::insertEventQueue(casEvent &insert, casEvent &prevEvent)
 {
-	this->mutex.lock();
+	this->mutex.osiLock();
 	this->eventLogQue.insertAfter(insert, prevEvent);
-	this->mutex.unlock();
+	this->mutex.osiUnlock();
 }
 
 //
@@ -270,9 +280,9 @@ inline void casEventSys::insertEventQueue(casEvent &insert, casEvent &prevEvent)
 //
 inline void casEventSys::pushOnToEventQueue(casEvent &event)
 {
-	this->mutex.lock();
+	this->mutex.osiLock();
 	this->eventLogQue.push(event);
-	this->mutex.unlock();
+	this->mutex.osiUnlock();
 }
 
 //
@@ -280,9 +290,9 @@ inline void casEventSys::pushOnToEventQueue(casEvent &event)
 //
 inline void casEventSys::removeFromEventQueue(casEvent &event)
 {
-	this->mutex.lock();
+	this->mutex.osiLock();
         this->eventLogQue.remove(event);
-	this->mutex.unlock();
+	this->mutex.osiUnlock();
 }
 
 //
@@ -469,6 +479,9 @@ enum casFlushCondition{
 	casFlushPartial, 
 	casFlushCompleted,
 	casFlushDisconnect};
+enum casFlushRequest{
+	casFlushAll,
+	casFlushSpecified};
 
 class outBuf {
 public:
@@ -480,13 +493,24 @@ public:
 	// number of bytes in the output queue?
 	//
 	bufSizeT bytesPresent() const 
-	{ return this->stack; }
+	{ 
+		return this->stack; 
+	}
+
+	//
+	// number of bytes unused in the output queue?
+	//
+	bufSizeT bytesFree() const 
+	{ 
+		return this->bufSize - this->stack; 
+	}
 
         //
         // flush output queue
 	// (returns the number of bytes sent)
         //
-        casFlushCondition flush();
+        casFlushCondition flush(casFlushRequest req = casFlushAll, 
+				bufSizeT spaceRequired=0u);
 
         //
         // allocate message buffer space
@@ -502,18 +526,25 @@ public:
         //
         // release an allocated message (but dont send it)
         //
-        void discardMsg () { this->mutex.unlock(); };
+        void discardMsg () 
+	{ 
+		this->mutex.osiUnlock(); 
+	};
 
 	void show(unsigned level);
 
 	virtual unsigned getDebugLevel()=0;
 	virtual void sendBlockSignal()=0;
 
+        void clear()
+	{
+		this->stack = 0u;
+	}
 private:
         casMsgIO 	&io;
 	osiMutex	&mutex;
         char            *pBuf;
-        bufSizeT        bufSize;
+        const bufSizeT  bufSize;
         bufSizeT        stack;
 };
 
@@ -552,16 +583,16 @@ public:
 
 	void installAsyncIO(casAsyncIOI &ioIn)
 	{
-		this->lock();
+		this->osiLock();
 		this->ioInProgList.add(ioIn);
-		this->unlock();
+		this->osiUnlock();
 	}
 
 	void removeAsyncIO(casAsyncIOI &ioIn)
 	{
-		this->lock();
+		this->osiLock();
 		this->ioInProgList.remove(ioIn);
-		this->unlock();
+		this->osiUnlock();
 	}
 
 	casRes *lookupRes(const caResId &idIn, casResType type);
@@ -668,8 +699,8 @@ protected:
                         const void *dp, const char *pFileName, 
 			const unsigned lineno);
 
-private:
 	casMsgIO		&msgIO;
+private:
 
         //
         // dump message to stderr
@@ -822,7 +853,7 @@ private:
 //
 // casDGClient 
 //
-class casDGClient : private casDGIO, public casClient {
+class casDGClient : private casDGIO, private casClient {
 public:
         casDGClient (caServerI &serverIn);
 
@@ -857,9 +888,24 @@ public:
 
 	void destroy();
 
+	int getFD() const
+	{
+		return this->casClient::getFD();
+	}
+
 protected:
 	void process();
 
+	casProcCond eventSysProcess()
+	{
+		return this->casEventSys::process();
+	}
+
+        casFlushCondition flush(casFlushRequest req = casFlushAll, 
+				bufSizeT spaceRequired=0u)
+	{
+		return this->outBuf::flush(req,spaceRequired);
+	}
 private:
 	void ioBlockedSignal(); // dummy
 

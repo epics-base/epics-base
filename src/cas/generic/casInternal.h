@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.6  1996/09/04 20:21:41  jhill
+ * removed operator -> and added member pv
+ *
  * Revision 1.5  1996/07/01 19:56:11  jhill
  * one last update prior to first release
  *
@@ -560,13 +563,14 @@ public:
 
 	inline aitBool okToBeginNewIO() const;
 
-	inline void lock();
-	inline void unlock();
 private:
 	tsDLList<casPVListChan>	chanList;
 	caServerI		&cas;
 	casPV			&pv;
 	unsigned		nMonAttached;
 	unsigned		nIOAttached;
+
+	inline void lock();
+	inline void unlock();
 };
 

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.4  1996/07/24 22:00:49  jhill
+ * added pushOnToEventQueue()
+ *
  * Revision 1.3  1996/07/01 19:56:11  jhill
  * one last update prior to first release
  *
@@ -82,7 +85,7 @@ casMonitor::~casMonitor()
 {
         casCoreClient &client = this->ciu.getClient();
  
-        this->mutex.lock();
+        this->mutex.osiLock();
 
 	this->disable();
 
@@ -97,6 +100,8 @@ casMonitor::~casMonitor()
 		this->pModifiedValue = NULL;
 	}
         this->ciu.deleteMonitor(*this);
+
+        this->mutex.osiUnlock();
 }
 
 //
@@ -106,24 +111,16 @@ void casMonitor::enable()
 {
         caStatus status;
  
-        this->mutex.lock();
-        if (this->enabled) {
-                this->mutex.unlock();
-                return;
+        this->mutex.osiLock();
+        if (!this->enabled && this->ciu->readAccess()) {
+		this->enabled = TRUE;
+		status = this->ciu.getPVI().registerEvent();
+		if (status) {
+			errMessage(status,
+				"Server tool failed to register event\n");
+		}
         }
- 
-        if (!this->ciu->readAccess()) {
-                this->mutex.unlock();
-                return;
-        }
- 
-        this->enabled = TRUE;
-        status = this->ciu.getPVI().registerEvent();
-        if (status) {
-                errMessage(status,
-                        "Server tool failed to register event\n");
-        }
-        this->mutex.unlock();
+        this->mutex.osiUnlock();
 }
 
 //
@@ -131,14 +128,12 @@ void casMonitor::enable()
 //
 void casMonitor::disable()
 {
-        this->mutex.lock();
-        if (!this->enabled) {
-                this->mutex.unlock();
-                return;
+        this->mutex.osiLock();
+        if (this->enabled) {
+		this->enabled = FALSE;
+		this->ciu.getPVI().unregisterEvent();
         }
-        this->enabled = FALSE;
-        this->ciu.getPVI().unregisterEvent();
-        this->mutex.unlock();
+        this->mutex.osiUnlock();
 }
 
 //
@@ -150,7 +145,7 @@ void casMonitor::push(gdd &newValue)
         casMonEvent 	*pLog = NULL;
         char            full;
  
-        this->mutex.lock();
+        this->mutex.osiLock();
  
 	//
 	// get a new block if we havent exceeded quotas
@@ -205,7 +200,7 @@ void casMonitor::push(gdd &newValue)
  
         client.addToEventQueue(*pLog);
  
-        this->mutex.unlock();
+        this->mutex.osiUnlock();
 }
 
 //
@@ -219,7 +214,7 @@ caStatus casMonitor::executeEvent(casMonEvent *pEV)
         pVal = pEV->getValue ();
         assert (pVal);
  
-	this->mutex.lock();
+	this->mutex.osiLock();
 	if (this->ciu.getClient().getEventsOff()==aitFalse) {
 		status = this->callBack (*pVal);
 	}
@@ -236,7 +231,7 @@ caStatus casMonitor::executeEvent(casMonEvent *pEV)
 		this->pModifiedValue = pVal;
 		status = S_cas_success;
 	}
-	this->mutex.unlock();
+	this->mutex.osiUnlock();
  
 	//
 	// if the event isnt accepted we will try
@@ -285,12 +280,12 @@ void casMonitor::show(unsigned level)
 //
 void casMonitor::postIfModified()
 {
-        this->mutex.lock();
+        this->mutex.osiLock();
         if (this->pModifiedValue) {
                 this->callBack (*this->pModifiedValue);
                 this->pModifiedValue->unreference ();
                 this->pModifiedValue = NULL;
         }
-        this->mutex.unlock();
+        this->mutex.osiUnlock();
 }
 

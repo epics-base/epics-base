@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.1.1.1  1996/06/20 00:28:16  jhill
+ * ca server installation
+ *
  *
  */
 
@@ -110,10 +113,10 @@ inline void caServerI::installPV (casPVI &pv)
 {
 	int resLibStatus;
 
-	this->lock ();
+	this->osiLock ();
 	this->pvCount++;
 	resLibStatus = this->stringResTbl.add (pv);
-	this->unlock ();
+	this->osiUnlock ();
 	assert (resLibStatus==0);
 }
 
@@ -124,11 +127,11 @@ inline void caServerI::removePV(casPVI &pv)
 {
 	casPVI *pPV;
 
-	this->lock();
+	this->osiLock();
 	casVerify (this->pvCount>=1u);
 	this->pvCount--;
 	pPV = this->stringResTbl.remove (pv);
-	this->unlock();
+	this->osiUnlock();
 	casVerify (pPV!=0);
 	casVerify (pPV==&pv);
 }

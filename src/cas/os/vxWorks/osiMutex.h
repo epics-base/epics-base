@@ -3,9 +3,26 @@
 // osiMutex - OS independent mutex 
 // (vxWorks version)
 //
+//
+// NOTES:
+// 1) epicsPrintf() is used in this file because we cant stand
+// the logMsg() 8 arg API amd we dont want the messages from different
+// tasks to co-mingle
+//
 
 #include <semLib.h>
-#include <assert.h>
+#include <epicsAssert.h>
+#include <epicsPrint.h>
+
+
+#ifdef DEBUG_OSIMUTEX
+#include <stdio.h>
+#endif
+
+#ifdef DEBUG_OSIMUTEX
+#define osiLock() osiLockI (__FILE__, __LINE__)
+#define osiUnlock() osiUnlockI (__FILE__, __LINE__)
+#endif
 
 class osiMutex {
 public:
@@ -24,26 +41,71 @@ public:
 		{
 			return -1;
 		}
+#		ifdef DEBUG_OSIMUTEX
+			epicsPrintf("created mutex at %lx\n", 
+				(unsigned long) this->mutex);
+#		endif
 		return 0;
 	}
+
 	~osiMutex()
 	{
 		STATUS s;
 		s = semDelete (this->mutex);
 		assert (s==OK);
+#		ifdef DEBUG_OSIMUTEX
+			epicsPrintf("destroyed mutex at %lx\n", 
+				(unsigned long) this->mutex);
+#		endif
 	}
-        void lock() 
+
+#ifdef DEBUG_OSIMUTEX
+	void osiLockI(const char *pFN, unsigned ln) 
+#else
+	void osiLock() 
+#endif
 	{
 		STATUS s;
+		if (!this->mutex) {
+			epicsPrintf(
+			"osiMutex: lock request before init was ignored\n");
+			return;
+		}
 		assert(this->mutex);
 		s = semTake (this->mutex, WAIT_FOREVER);
 		assert (s==OK);
+#		ifdef DEBUG_OSIMUTEX
+			epicsPrintf("L%lx in %s at %u\n", 
+				(unsigned long) this->mutex,
+				pFN, ln);
+#		endif
 	}
-        void unlock() 
+
+#ifdef DEBUG_OSIMUTEX
+	void osiUnlockI(const char *pFN, unsigned ln) 
+#else
+        void osiUnlock() 
+#endif
 	{ 
 		STATUS s;
+
+		if (!this->mutex) {
+			epicsPrintf( 
+			"osiMutex: unlock request before init was ignored\n");
+			return;
+		}
 		s = semGive (this->mutex);
 		assert (s==OK);
+#		ifdef DEBUG_OSIMUTEX
+			epicsPrintf("U%lx in %s at %d\n", 
+				(unsigned long) this->mutex,
+				pFN, ln);
+#		endif
+	}
+
+	void show(unsigned level)
+	{
+		semShow(this->mutex, (int) level);
 	}
 private:
 	SEM_ID	mutex;

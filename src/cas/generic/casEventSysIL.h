@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.1.1.1  1996/06/20 00:28:16  jhill
+ * ca server installation
+ *
  *
  */
 
@@ -41,9 +44,9 @@
 //
 inline void casEventSys::addToEventQueue(casEvent &event)
 {
-        this->mutex.lock();
+        this->mutex.osiLock();
         this->eventLogQue.add(event);
-        this->mutex.unlock();
+        this->mutex.osiUnlock();
         //
         // wakes up the event queue consumer
         //

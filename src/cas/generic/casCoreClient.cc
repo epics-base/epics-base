@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.2  1996/08/13 22:53:14  jhill
+ * changes for MVC++
+ *
  * Revision 1.1.1.1  1996/06/20 00:28:16  jhill
  * ca server installation
  *
@@ -107,6 +110,8 @@ casCoreClient::~casCoreClient()
                 ca_printf ("CAS: Connection Terminated\n");
         }
 
+	this->osiLock();
+
         //
         // cancel any pending asynchronous IO
         //
@@ -120,6 +125,8 @@ casCoreClient::~casCoreClient()
                 delete pCurIO;
                 pCurIO = pNextIO;
         }
+
+	this->osiUnlock();
 }
 
 //

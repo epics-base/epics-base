@@ -10,8 +10,9 @@ public:
         // (since g++ does not have exceptions)
         //
 	int init() {return 0;}
-        void lock() {};
-        void unlock() {};
+        void osiLock() {}
+        void osiUnlock() {}
+	void show (unsigned) {}
 private:
 };
 

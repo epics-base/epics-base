@@ -29,6 +29,10 @@
  *
  * History
  * $Log$
+ * Revision 1.9  1996/09/04 20:25:53  jhill
+ * use correct app type for exist test gdd, correct byte 
+ * oder for mon mask, and efficient use of PV name gdd
+ *
  * Revision 1.8  1996/08/05 23:22:57  jhill
  * gddScaler => gddScalar
  *
@@ -214,7 +218,7 @@ casStrmClient::~casStrmClient()
                 delete [] this->pHostName;
         }
 
-        this->lock();
+        this->osiLock();
  
 	//
 	// delete all channel attached
@@ -228,6 +232,10 @@ casStrmClient::~casStrmClient()
 		pChan->clientDestroy();
 		pChan = pNextChan;
         }
+
+	delete &this->msgIO;
+
+        this->osiUnlock();
 }
 
 //
@@ -812,7 +820,7 @@ caStatus casStrmClient::hostNameAction()
 		size-1);
 	pMalloc[size-1]='\0';
 
-	this->lock();
+	this->osiLock();
 
 	if (this->pHostName) {
 		delete [] this->pHostName;
@@ -823,7 +831,7 @@ caStatus casStrmClient::hostNameAction()
 		(*pciu)->setOwner(this->pUserName, this->pHostName);
 	}
 
-	this->unlock();
+	this->osiUnlock();
 
 	return S_cas_success;
 }
@@ -857,7 +865,7 @@ caStatus casStrmClient::clientNameAction()
 		size-1);
 	pMalloc[size-1]='\0';
 
-	this->lock();
+	this->osiLock();
 	if (this->pUserName) {
 		delete [] this->pUserName;
 	}
@@ -866,7 +874,7 @@ caStatus casStrmClient::clientNameAction()
 	while ( (pciu = iter()) ) {
 		(*pciu)->setOwner(this->pUserName, this->pHostName);
 	}
-	this->unlock();
+	this->osiUnlock();
 
 	return S_cas_success;
 }
@@ -1015,11 +1023,11 @@ caStatus casStrmClient::eventsOnAction ()
 	// perhaps this is to slow - perhaps there
 	// should be a queue of modified events
 	//
-	this->lock();
+	this->osiLock();
 	while ( (pciu = iter()) ) {
 		pciu->postAllModifiedEvents();
 	}
-	this->unlock();
+	this->osiUnlock();
 
 	return S_cas_success;
 }
@@ -1639,13 +1647,13 @@ caStatus casStrmClient::createChanResponse(casChannelI *,
 	// prevent problems such as the PV being deleted before the
 	// channel references it
 	//
-	this->lock();
+	this->osiLock();
 
 	pCanonicalName->markConstant();
 
 	pPV = this->ctx.getServer()->createPV(*pCanonicalName);
 	if (!pPV) {
-		this->unlock();
+		this->osiUnlock();
 		return this->channelCreateFailed(&msg, S_cas_noMemory);
 	}
 
@@ -1656,12 +1664,12 @@ caStatus casStrmClient::createChanResponse(casChannelI *,
 	pChan = (*pPV)->createChannel(this->ctx, 
 			this->pUserName, this->pHostName);
 	if (!pChan) {
-		this->unlock();
+		this->osiUnlock();
 		pPV->deleteSignal();
 		return this->channelCreateFailed(&msg, S_cas_noMemory);
 	}
 
-	this->unlock();
+	this->osiUnlock();
 
 	pChanI = (casChannelI *) pChan;
 
@@ -1711,7 +1719,7 @@ casPVI *caServerI::createPV (gdd &name)
 	name.getRef(pNameStr);
 	stringId id (pNameStr->string());
 
-        this->lock ();
+        this->osiLock ();
 
         pPVI = this->stringResTbl.lookup (id);
 	if (!pPVI) {
@@ -1726,7 +1734,7 @@ casPVI *caServerI::createPV (gdd &name)
 	// lock shouldnt be released until we finish creating and
 	// installing the PV
 	//
-        this->unlock ();
+        this->osiUnlock ();
 
         return pPVI;
 }
@@ -1744,10 +1752,10 @@ inline aitBool caServerI::roomForNewChannel() const
 //
 void casStrmClient::installChannel(casChannelI &chan)
 {
-        this->lock();
+        this->osiLock();
         this->getCAS().installItem(chan);
         this->chanList.add(chan);
-        this->unlock();
+        this->osiUnlock();
 }
  
 //
@@ -1757,10 +1765,10 @@ void casStrmClient::removeChannel(casChannelI &chan)
 {
         casRes *pRes;
  
-        this->lock();
+        this->osiLock();
         pRes = this->getCAS().removeItem(chan);
         assert (&chan == (casChannelI *)pRes);
         this->chanList.remove(chan);
-        this->unlock();
+        this->osiUnlock();
 }
 

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.4  1996/09/04 20:12:04  jhill
+ * added arg to serverToolDebugFunc()
+ *
  * Revision 1.3  1996/08/13 22:56:12  jhill
  * added init for mutex class
  *
@@ -61,13 +64,15 @@ void caServerI::show (unsigned level)
         printf( "Channel Access Server Status V%d.%d\n",
                 CA_PROTOCOL_VERSION, CA_MINOR_VERSION);
 
-        this->lock();
+	this->osiMutex::show(level);
+
+        this->osiLock();
         while ( (pClient = iter()) ) {
                 pClient->show(level);
         }
 
         this->dgClient.show(level);
-        this->unlock();
+        this->osiUnlock();
 
         bytes_reserved = 0u;
 #if 0
@@ -94,14 +99,14 @@ void caServerI::show (unsigned level)
 #endif
                 printf( 
 	"The server's integer resource id conversion table:\n");
-                this->lock();
+                this->osiLock();
                 this->uintResTable<casRes>::show(level);
-                this->unlock();
+                this->osiUnlock();
                 printf( 
 	"The server's character string resource id conversion table:\n");
-		this->lock();
+		this->osiLock();
                 this->stringResTbl.show(level);
-               	this->unlock();
+               	this->osiUnlock();
         }
 
         // @@@@@@ caPrintAddrList(&destAddr);
@@ -193,7 +198,7 @@ caServerI::~caServerI()
 {
 	casClient *pClient;
 
-	this->lock();
+	this->osiLock();
 
 	//
 	// delete all clients
@@ -201,6 +206,8 @@ caServerI::~caServerI()
 	while ( (pClient = this->clientList.get()) ) {
 		delete pClient;
 	}
+
+	this->osiUnlock();
 
 	//
 	// verify that we didnt leak a PV
@@ -214,9 +221,9 @@ caServerI::~caServerI()
 //
 void caServerI::installClient(casStrmClient *pClient)
 {
-	this->lock();
+	this->osiLock();
 	this->clientList.add(*pClient);
-	this->unlock();
+	this->osiUnlock();
 }
 
 
@@ -225,9 +232,9 @@ void caServerI::installClient(casStrmClient *pClient)
 //
 void caServerI::removeClient(casStrmClient *pClient)
 {
-	this->lock();
+	this->osiLock();
 	this->clientList.remove(*pClient);
-	this->unlock();
+	this->osiUnlock();
 }
 
 

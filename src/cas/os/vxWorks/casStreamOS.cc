@@ -4,6 +4,9 @@
 //
 //
 // $Log$
+// Revision 1.1  1996/09/04 22:06:46  jhill
+// installed
+//
 // Revision 1.1.1.1  1996/06/20 00:28:06  jhill
 // ca server installation
 //
@@ -23,7 +26,7 @@
 //
 void casStreamOS::ioBlockedSignal()
 {
-	printf("in casStreamOS::ioBlockedSignal()\n");
+	printf("in casStreamOS::ioBlockedSignal() ?\n");
 }
 
 //
@@ -115,7 +118,7 @@ void casStreamOS::show(unsigned level)
 		taskShow(this->clientTId, level);
 	}
 	if (taskIdVerify(this->eventTId)==OK) {
-		taskShow(this->eventTId, level);
+		printf("casStreamOS task id %x\n", this->eventTId);
 	}
 	if (this->eventSignalSem) {
 		semShow(this->eventSignalSem, level);
@@ -217,10 +220,9 @@ int casStrmServer (casStreamOS *pStrmOS)
 {
 	casFillCondition fillCond;
 	casProcCond procCond;
-        caStatus status;
  
         //
-        // block for the next DG until the connection closes
+        // block for the next message until the connection closes
         //
         while (TRUE) {
 		//
@@ -237,20 +239,13 @@ int casStrmServer (casStreamOS *pStrmOS)
 			//
 			return OK;
 		}	
-		else if (pStrmOS->inBuf::full()==aitTrue) {
-			//
-			// If there isnt any space then temporarily 
-			// stop calling this routine until problem is resolved 
-			// either by:
-			// (1) sending or
-			// (2) a blocked IO op unblocks
-			//
-			delete pStrmOS;
-			//
-			// NO CODE HERE
-			// (see delete above)
-			//
-			return OK;
+		//
+		// force the output buffer to flush prior to 
+		// blocking for more input (if no input bytes are
+		// pending)
+		//
+		if (pStrmOS->bytesAvailable()<=0u) {
+			pStrmOS->flush();
 		}
         }
 
@@ -269,7 +264,7 @@ int casStrmEvent(casStreamOS *pStrmOS)
 	//
 	while (TRUE) {
                 status = semTake(pStrmOS->eventSignalSem, WAIT_FOREVER);
-                assert (status!=OK);
+                assert (status==OK);
  
                 cond = pStrmOS->casEventSys::process();
                 if (cond != casProcOk) {

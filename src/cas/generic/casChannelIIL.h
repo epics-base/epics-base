@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.3  1996/09/04 20:18:27  jhill
+ * moved operator -> here
+ *
  * Revision 1.2  1996/07/01 19:56:10  jhill
  * one last update prior to first release
  *
@@ -55,7 +58,7 @@ inline casChannel * casChannelI::operator -> ()
 //
 inline void casChannelI::lock()
 {
-	this->client.lock();
+	this->client.osiLock();
 }
 
 //
@@ -63,7 +66,7 @@ inline void casChannelI::lock()
 //
 inline void casChannelI::unlock()
 {
-	this->client.unlock();
+	this->client.osiUnlock();
 }
 
 //

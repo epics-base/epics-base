@@ -5,6 +5,9 @@
 //
 //
 // $Log$
+// Revision 1.4  1996/07/24 22:03:36  jhill
+// fixed net proto for gnu compiler
+//
 // Revision 1.3  1996/07/09 22:55:22  jhill
 // added cast
 //
@@ -23,8 +26,15 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#ifndef SUNOS4 // the SUNOS4 prototypes are trad C - see bsdProto.h
+//
+// the SUNOS4 and vxWorks5.2 prototypes are trad C 
+//
+#if !defined(SUNOS4) && !defined(vxWorks) 
 #include <arpa/inet.h>
+#else
+extern "C" {
+char * inet_ntoa(struct in_addr);
+}
 #endif
 
 
@@ -32,10 +42,9 @@
 // casStreamIO::casStreamIO()
 //
 casStreamIO::casStreamIO(const SOCKET s, const caAddr &a) :
-	sock(s), addr(a)
+	sockState(casOffLine), sock(s), addr(a) 
 {
 	assert (sock>=0);
-	this->sockState = casOffLine;
 }
 
 
@@ -124,7 +133,8 @@ caStatus casStreamIO::init()
 casStreamIO::~casStreamIO()
 {
 	if (sock>=0) {
-		close(sock);
+		close(this->sock);
+printf("closing sock=%d\n", this->sock);
 	}
 }
 
@@ -132,7 +142,7 @@ casStreamIO::~casStreamIO()
 //
 // casStreamIO::osdSend()
 //
-xSendStatus casStreamIO::osdSend(const char *pBuf, bufSizeT nBytes, 
+xSendStatus casStreamIO::osdSend(const char *pBuf, bufSizeT nBytesReq, 
 		bufSizeT &nBytesActual)
 {
         int	status;
@@ -156,31 +166,29 @@ xSendStatus casStreamIO::osdSend(const char *pBuf, bufSizeT nBytes,
                 return xSendDisconnect;
         }
 
-
-        if (nBytes<=0u) {
+        if (nBytesReq<=0u) {
 		nBytesActual = 0u;
                 return xSendOK;
         }
 
-        status = send (
-                        this->sock,
-                        pBuf,
-                        nBytes,
-                        0);
-        if (status == 0) {
-                this->sockState = casOffLine;
+	status = send (
+			this->sock,
+			(char *) pBuf,
+			nBytesReq,
+			0);
+	if (status == 0) {
+		this->sockState = casOffLine;
 		return xSendDisconnect;
-        }
-        else if (status<0) {
-        	int anerrno = SOCKERRNO;
+	}
+	else if (status<0) {
+		int anerrno = SOCKERRNO;
 
-                if (anerrno != EWOULDBLOCK) {
-                	this->sockState = casOffLine;
+		if (anerrno != EWOULDBLOCK) {
+			this->sockState = casOffLine;
 		}
 		nBytesActual = 0u;
 		return xSendOK;
 	}
-
 	nBytesActual = (bufSizeT) status;
 	return xSendOK;
 }
@@ -247,9 +255,9 @@ void casStreamIO::osdShow (unsigned level) const
 
 
 //
-// casStreamIO::setNonBlocking()
+// casStreamIO::xSsetNonBlocking()
 //
-void casStreamIO::setNonBlocking()
+void casStreamIO::xSetNonBlocking()
 {
 	int status;
 	int yes = TRUE;

@@ -5,6 +5,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  1996/09/04 22:06:43  jhill
+ * installed
+ *
  * Revision 1.1.1.1  1996/06/20 00:28:06  jhill
  * ca server installation
  *
@@ -109,9 +112,9 @@ caServerOS::~caServerOS()
 
 
 //
-// caServer()
+// caServerEntry()
 //
-void caServer(caServerI *pCAS)
+void caServerEntry(caServerI *pCAS)
 {
 	//
 	// forever

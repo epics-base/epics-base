@@ -7,6 +7,9 @@
 // Some BSD calls have crept in here
 //
 // $Log$
+// Revision 1.1  1996/09/04 22:06:46  jhill
+// installed
+//
 // Revision 1.1.1.1  1996/06/20 00:28:06  jhill
 // ca server installation
 //
@@ -61,14 +64,14 @@ class caServerOS;
 //
 // vxWorks task entry
 //
-int caServerEntry(caServerI *pCAS);
+void caServerEntry(caServerI *pCAS);
 
 //
 // caServerOS
 //
 class caServerOS {
 	friend class casServerReg;
-	friend int caServerEntry(caServerOS *pOS);
+	friend void caServerEntry(caServerI *pCAS);
 public:
 	caServerOS (caServerI &casIn) : 
 		cas (casIn), pBTmr (NULL), tid(ERROR) {}

@@ -176,9 +176,9 @@ void casDGIO::osdShow (unsigned level) const
 }
 
 //
-// casDGIO::setNonBlocking()
+// casDGIO::xSetNonBlocking()
 //
-void casDGIO::setNonBlocking() 
+void casDGIO::xSetNonBlocking() 
 {
         int status;
         int yes = TRUE;

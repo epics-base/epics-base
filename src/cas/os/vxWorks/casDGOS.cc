@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  1996/09/04 22:06:45  jhill
+ * installed
+ *
  * Revision 1.1.1.1  1996/06/20 00:28:06  jhill
  * ca server installation
  *
@@ -100,7 +103,7 @@ void casDGOS::show(unsigned level)
 		taskShow(this->clientTId, level);
 	}
 	if (taskIdVerify(this->eventTId) == OK) {
-		taskShow(this->eventTId, level);
+		printf("casDGOS task id = %x\n", this->eventTId);
 	}
 	if (this->eventSignalSem) {
 		semShow(this->eventSignalSem, level);
@@ -174,16 +177,11 @@ casProcCond casDGOS::processInput ()
 //
 int casDGServer (casDGOS *pDGOS)
 {
-	caStatus status;
-
 	//
 	// block for the next DG until the connection closes
 	//
 	while (TRUE) {
-		status = pDGOS->processInput();
-		if (status) {
-			errMessage(status, "casDGServer (casDGOS *pDGOS)");
-		}
+		pDGOS->process();
 	}
 }
 
@@ -202,7 +200,7 @@ int casDGEvent (casDGOS *pDGOS)
 		status = semTake(pDGOS->eventSignalSem, WAIT_FOREVER);
 		assert (status!=OK);
 
-		cond = pDGOS->casEventSys::process();
+		cond = pDGOS->eventSysProcess();
 		if (cond != casProcOk) {
 			printf("DG event sys process failed\n");
 		}

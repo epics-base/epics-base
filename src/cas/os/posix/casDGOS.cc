@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  1996/08/05 19:29:25  jhill
+ * os depen code now smaller
+ *
  * Revision 1.1.1.1  1996/06/20 00:28:06  jhill
  * ca server installation
  *
@@ -52,7 +55,7 @@ void casDGEvWakeup::show(unsigned level)
 void casDGEvWakeup::expire()
 {
         casProcCond cond;
-        cond = this->os.casEventSys::process();
+        cond = this->os.eventSysProcess();
         if (cond != casProcOk) {
                 //
                 // if "this" is being used above this

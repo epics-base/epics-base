@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.2  1996/07/24 22:00:49  jhill
+ * added pushOnToEventQueue()
+ *
  * Revision 1.1.1.1  1996/06/20 00:28:15  jhill
  * ca server installation
  *
@@ -79,16 +82,18 @@ casEventSys::~casEventSys()
 {
 	casEvent 	*pE;
 	
-	this->mutex.lock();
-
 	/*
-	 * They must cancel all active event blocks first
+	 * all active event blocks must be canceled first
 	 */
 	assert (this->numEventBlocks==0);
+
+	this->mutex.osiLock();
 
 	while ( (pE = this->eventLogQue.get()) ) {
 		delete pE;
 	}
+
+	this->mutex.osiUnlock();
 }
 
 
@@ -97,10 +102,10 @@ casEventSys::~casEventSys()
 //
 void casEventSys::installMonitor()
 {
-	this->mutex.lock();
+	this->mutex.osiLock();
 	this->numEventBlocks++;
 	this->maxLogEntries += averageEventEntries;
-	this->mutex.unlock();
+	this->mutex.osiUnlock();
 }
 
 //
@@ -108,11 +113,11 @@ void casEventSys::installMonitor()
 //
 void casEventSys::removeMonitor() 
 {       
-	this->mutex.lock();
+	this->mutex.osiLock();
 	assert (this->numEventBlocks>=1u);
 	this->numEventBlocks--;
 	this->maxLogEntries -= averageEventEntries;
-	this->mutex.unlock();
+	this->mutex.osiUnlock();
 }
 
 
@@ -126,7 +131,7 @@ casProcCond casEventSys::process()
 	casProcCond	cond = casProcOk;
 	unsigned long	nAccepted = 0u;
 
-	this->mutex.lock();
+	this->mutex.osiLock();
 
 	while ( (pEvent = this->eventLogQue.get()) ) {
 
@@ -166,7 +171,7 @@ casProcCond casEventSys::process()
 		this->coreClient.eventFlush();
 	}
 
-	this->mutex.unlock();
+	this->mutex.osiUnlock();
 
 	return cond;
 }

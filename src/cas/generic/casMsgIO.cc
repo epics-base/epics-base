@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.1.1.1  1996/06/20 00:28:15  jhill
+ * ca server installation
+ *
  *
  */
 
@@ -39,8 +42,9 @@
 
 casMsgIO::casMsgIO()
 {
-	elapsedAtLastSend = this->elapsedAtLastRecv 
+	this->elapsedAtLastSend = this->elapsedAtLastRecv 
 		= osiTime::getCurrent ();
+	this->blockingStatus = xIsBlocking;
 }
 
 casMsgIO::~casMsgIO()
@@ -81,15 +85,41 @@ xRecvStatus casMsgIO::xRecv(char *pBuf, bufSizeT nBytes, bufSizeT &nActualBytes)
 	return stat;
 }
 
-xSendStatus casMsgIO::xSend(char *pBuf, bufSizeT nBytes, bufSizeT &nActualBytes)
+xSendStatus casMsgIO::xSend(char *pBuf, bufSizeT nBytesAvailableToSend, 
+	bufSizeT nBytesNeedToBeSent, bufSizeT &nActualBytes)
 {
 	xSendStatus stat;
+	bufSizeT nActualBytesDelta;
 
-	stat = this->osdSend(pBuf, nBytes, nActualBytes);
-	if (stat == xSendOK) {
-		this->elapsedAtLastSend = osiTime::getCurrent();
+	assert (nBytesAvailableToSend>=nBytesNeedToBeSent);
+
+	nActualBytes = 0u;
+	if (this->blockingStatus == xIsntBlocking) {
+		stat = this->osdSend(pBuf, nBytesAvailableToSend, 
+				nActualBytes);
+		if (stat == xSendOK) {
+			this->elapsedAtLastSend = osiTime::getCurrent();
+		}
+		return stat;
 	}
-	return stat;
+
+	while (nBytesNeedToBeSent) {
+		stat = this->osdSend(pBuf, nBytesAvailableToSend, 
+				nActualBytesDelta);
+		if (stat != xSendOK) {
+			return stat;
+		}
+
+		this->elapsedAtLastSend = osiTime::getCurrent();
+		nActualBytes += nActualBytesDelta;
+		if (nBytesNeedToBeSent>nActualBytesDelta) {
+			nBytesNeedToBeSent -= nActualBytesDelta;
+		}
+		else {
+			break;
+		}
+	}
+	return xSendOK;
 }
 
 void casMsgIO::sendBeacon(char & /*msg*/, bufSizeT /*length*/, 
@@ -103,9 +133,9 @@ int casMsgIO::getFileDescriptor() const
 	return -1;	// some os will not have file descriptors
 }
 
-void casMsgIO::setNonBlocking()
+void casMsgIO::xSetNonBlocking()
 {
-	printf("virtual base setNonBlocking() called?\n");
+	printf("virtual base casMsgIO::xSetNonBlocking() called?\n");
 }
 
 bufSizeT casMsgIO::incommingBytesPresent() const

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.3  1996/09/04 20:27:01  jhill
+ * doccasdef.h
+ *
  * Revision 1.2  1996/08/13 22:53:59  jhill
  * fixed little endian problem
  *
@@ -47,13 +50,12 @@
 //
 outBuf::outBuf(casMsgIO &virtualCircuit, osiMutex &mutexIn) : 
 	io(virtualCircuit),
-	mutex(mutexIn)
+	mutex(mutexIn),
+	pBuf(NULL),
+	bufSize(io.optimumBufferSize()),
+	stack(0u)
 {
 	assert(&io);
-
-	this->stack = 0u;
-	this->bufSize = 0u;
-	this->pBuf = NULL;
 }
 
 //
@@ -61,10 +63,8 @@ outBuf::outBuf(casMsgIO &virtualCircuit, osiMutex &mutexIn) :
 //
 caStatus outBuf::init() 
 {
-	this->bufSize = io.optimumBufferSize();
 	this->pBuf = new char [this->bufSize];
 	if (!this->pBuf) {
-		this->bufSize = 0u;
 		return S_cas_noMemory;
 	}
 	return S_cas_success;
@@ -94,30 +94,32 @@ caHdr		**ppMsg
 )
 {
 	bufSizeT msgsize;
+	bufSizeT stackNeeded;
 	
 	extsize = CA_MESSAGE_ALIGN(extsize);
 
 	msgsize = extsize + sizeof(caHdr);
-	if (msgsize>this->bufSize) {
+	if (msgsize>this->bufSize || this->pBuf==NULL) {
 		return S_cas_hugeRequest;
 	}
 
+	stackNeeded = this->bufSize - msgsize;
 
-	this->mutex.lock();
+	this->mutex.osiLock();
 
-	if (this->stack + msgsize > this->bufSize) {
+	if (this->stack > stackNeeded) {
 		
 		/*
 		 * Try to flush the output queue
 		 */
-		this->flush();
+		this->flush(casFlushSpecified, msgsize);
 
 		/*
 		 * If this failed then the fd is nonblocking 
 		 * and we will let select() take care of it
 		 */
-		if (this->stack + msgsize > this->bufSize) {
-			this->mutex.unlock();
+		if (this->stack > stackNeeded) {
+			this->mutex.osiUnlock();
 			this->sendBlockSignal();
 			return S_cas_sendBlocked;
 		}
@@ -183,43 +185,69 @@ void outBuf::commitMsg ()
     	this->stack += sizeof(caHdr) + extSize;
 	assert (this->stack <= this->bufSize);
 
-	this->mutex.unlock();
+	this->mutex.osiUnlock();
 }
 
 //
 // outBuf::flush()
 //
-casFlushCondition outBuf::flush()
+casFlushCondition outBuf::flush(casFlushRequest req,
+				bufSizeT spaceRequired)
 {
-	bufSizeT 	nBytes;
-	xSendStatus	stat;
+	bufSizeT 		nBytes;
+	bufSizeT 		stackNeeded;
+	bufSizeT 		nBytesNeeded;
+	xSendStatus		stat;
+	casFlushCondition	cond;
 
-	if (this->stack<=0u) {
-		return casFlushCompleted;
-	}
-
-	stat = this->io.xSend(this->pBuf, this->stack, nBytes);
-	if (stat!=xSendOK) {
+	if (!this->pBuf) {
 		return casFlushDisconnect;
 	}
-	else if (nBytes >= this->stack) {
-		this->stack=0u;	
-		return casFlushCompleted;
-	}
-	else if (nBytes) {
-		bufSizeT len;
 
-		len = this->stack-nBytes;
-		//
-		// memmove() is ok with overlapping buffers
-		//
-		memmove (this->pBuf, &this->pBuf[nBytes], len);
-		this->stack = len;
-		return casFlushPartial;
+	this->mutex.osiLock();
+
+	if (req==casFlushAll) {
+		nBytesNeeded = this->stack;
 	}
 	else {
-		return casFlushNone;
+		stackNeeded = this->bufSize - spaceRequired;
+		if (this->stack>stackNeeded) {
+			nBytesNeeded = this->stack - stackNeeded;
+		}
+		else {
+			nBytesNeeded = 0u;
+		}
 	}
+
+	stat = this->io.xSend(this->pBuf, this->stack, 
+			nBytesNeeded, nBytes);
+	if (nBytes) {
+		bufSizeT len;
+
+		if (nBytes >= this->stack) {
+			this->stack=0u;	
+			cond = casFlushCompleted;
+		}
+		else {
+			len = this->stack-nBytes;
+			//
+			// memmove() is ok with overlapping buffers
+			//
+			memmove (this->pBuf, &this->pBuf[nBytes], len);
+			this->stack = len;
+			cond = casFlushPartial;
+		}
+	}
+	else {
+		cond = casFlushNone;
+	}
+
+	if (stat!=xSendOK) {
+		cond = casFlushDisconnect;
+	}
+	this->mutex.osiUnlock();
+	return cond;
+
 }
 
 //

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.5  1996/09/04 20:23:59  jhill
+ * added operator ->
+ *
  * Revision 1.4  1996/07/01 19:56:13  jhill
  * one last update prior to first release
  *
@@ -75,7 +78,13 @@ casPV * casPVI::operator -> () const
 //
 inline void casPVI::lock()
 {
-	this->cas.lock();
+	//
+	// NOTE:
+	// if this lock becomes something else besides the
+	// server's lock then look carefully at the 
+	// comment in casPVI::deleteSignal()
+	//
+	this->cas.osiLock();
 }
 
 //
@@ -83,7 +92,7 @@ inline void casPVI::lock()
 //
 inline void casPVI::unlock()
 {
-	this->cas.unlock();
+	this->cas.osiUnlock();
 }
 
 //
@@ -148,13 +157,29 @@ inline void casPVI::unregisterIO()
 //
 inline void casPVI::deleteSignal()
 {
-	this->lock();
+	caServerI	&localCASRef(this->cas);
+
+	//
+	// We dont take the PV lock here because
+	// the PV may be destroyed and we must
+	// keep the lock unlock pairs consistent
+	// (because the PV's lock is really a ref
+	// to the server's lock)
+	//
+	// This is safe to do because we take the PV
+	// lock when we add a new channel (and the
+	// PV lock is realy the server's lock)
+	//
+	localCASRef.osiLock();
+
 	if (this->chanList.count()==0u) {
 		(*this)->destroy();
+		//
+		// !! dont access self after destroy !!
+		//
 	}
-	else {
-		this->unlock();
-	}
+
+	localCASRef.osiUnlock();
 }
 
 //

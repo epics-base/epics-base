@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.2  1996/09/04 20:16:24  jhill
+ * moved operator -> here
+ *
  * Revision 1.1.1.1  1996/06/20 00:28:16  jhill
  * ca server installation
  *
@@ -44,7 +47,7 @@
 //
 inline void casAsyncIOI::lock()
 {
-	client.lock();
+	client.osiLock();
 }
 
 //
@@ -52,7 +55,7 @@ inline void casAsyncIOI::lock()
 //
 inline void casAsyncIOI::unlock()
 {
-	client.unlock();
+	client.osiUnlock();
 }
 
 //

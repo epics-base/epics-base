@@ -7,6 +7,9 @@
 // Some BSD calls have crept in here
 //
 // $Log$
+// Revision 1.4  1996/09/04 20:29:08  jhill
+// removed os depen stuff
+//
 // Revision 1.3  1996/08/13 23:00:29  jhill
 // removed include of netdb.h
 //
@@ -84,7 +87,7 @@ public:
 	~casStreamIO();
 
 	int getFileDescriptor() const;
-	void setNonBlocking();
+	void xSetNonBlocking();
 	bufSizeT optimumBufferSize ();
 
 	casIOState state() const;
@@ -110,7 +113,7 @@ public:
 	~casDGIO();
 
 	int getFileDescriptor() const;
-	void setNonBlocking();
+	void xSetNonBlocking();
 	bufSizeT optimumBufferSize ();
 	void sendBeacon(char &msg, bufSizeT length,
 			aitUint32 &m_avail);

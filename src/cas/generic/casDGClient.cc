@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.5  1996/09/04 20:19:47  jhill
+ * added missing byte swap on search reply port no
+ *
  * Revision 1.4  1996/08/13 22:54:20  jhill
  * fixed little endian problem
  *
@@ -311,7 +314,8 @@ void casDGClient::process()
         // force all replies to be sent to the client
         // that made the request
         //
-        this->clear();
+        this->inBuf::clear();
+        this->outBuf::clear();
  
         //
         // read in new input
@@ -319,12 +323,11 @@ void casDGClient::process()
         fillCond = this->fill();
         if (fillCond == casFillDisconnect) {
                 casVerify(0);
-                return;
         }
         //
         // verify that we have a message to process
         //
-        if (this->inBuf::bytesPresent()>0u) {
+        else if (this->inBuf::bytesPresent()>0u) {
                 //
                 // process the message
                 //
@@ -332,22 +335,20 @@ void casDGClient::process()
                 if (status) {
                         errMessage (status,
                 "unexpected error processing stateless protocol");
-                        //
-                        // clear the input buffer so this will
-                        // not effect future input
-                        //
-                        this->clear();
                 }
-                else {
-                        //
-                        // force all replies to go to the sender
-                        //
-                        flushCond = this->flush();
-                        if (flushCond!=casFlushCompleted) {
-                                this->clear();
-                                casVerify(0);
-                        }
-                }
+		//
+		// force all replies to go to the sender
+		//
+		flushCond = this->flush();
+		if (flushCond!=casFlushCompleted) {
+			casVerify(0);
+		}
         }
+	//
+	// clear the input/output buffers so replies
+	// are always sent to the sender of the request
+	//
+	this->inBuf::clear();
+	this->outBuf::clear();
 }
 

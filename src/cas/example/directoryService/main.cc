@@ -198,10 +198,10 @@ LOCAL int parseDirectoryFP (FILE *pf, const char *pFileName)
 				return -1;
 			}
 			
-			ipa.sin_port = (aitUint16) portNumber;
+			ipa.sin_port = htons((aitUint16) portNumber);
 		}
 		else {
-			ipa.sin_port = 0u; // will default to this server's port
+			ipa.sin_port = 0u; // use the default CA server port
 		}
 
 		pPVI = new pvInfo (pvNameStr, ipa);

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.9  1998/05/06 21:40:02  jhill
+ * updated for g++ 2.8.1
+ *
  * Revision 1.8  1998/04/14 00:51:33  jhill
  * code around ms sizeof() bug V5.0
  *
@@ -334,7 +337,7 @@ gddAppFuncTableStatus gddAppFuncTable<PV>::read(PV &pv, gdd &value)
 template <class PV> 
 gddAppFuncTableStatus gddAppFuncTable<PV>::callReadFunc (PV &pv, gdd &value)
 {
-	unsigned type = value.applicationType();
+	unsigned type;
 	gddAppFuncTablePMF(pFunc);
 
 	//

@@ -552,8 +552,9 @@ extern "C" int epicsShareAPI ca_add_masked_array_event (
             return ECA_ALLOCMEM;
         }
 
+        evid pTmp = pSubsr.release ();
         if ( monixptr ) {
-            *monixptr = pSubsr.release ();
+            *monixptr = pTmp;
         }
         return ECA_NORMAL;
     }

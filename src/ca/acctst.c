@@ -78,6 +78,8 @@ void nUpdatesTester ( struct event_handler_args args )
 void monitorSubscriptionFirstUpdateTest ( const char *pName, chid chan )
 {
     int status;
+    struct dbr_ctrl_double currentVal;
+    double delta;
     unsigned eventCount = 0u;
     unsigned waitCount = 0u;
     evid id;
@@ -86,7 +88,8 @@ void monitorSubscriptionFirstUpdateTest ( const char *pName, chid chan )
     showProgressBegin ();
 
     /*
-     * verify that the first event arrives
+     * verify that the first event arrives (with evid)
+     * and channel connected
      */
     status = ca_add_event ( DBR_FLOAT, 
                 chan, nUpdatesTester, &eventCount, &id );
@@ -98,15 +101,48 @@ void monitorSubscriptionFirstUpdateTest ( const char *pName, chid chan )
         ca_pend_event ( 0.1 );
     }
     assert ( eventCount > 0 );
+
+    /* verify that a ca_put() produces an update, but */
+    /* this may fail if there is an unusual deadband */
+    status = ca_get ( DBR_CTRL_DOUBLE, chan, &currentVal );
+    SEVCHK ( status, NULL );
+    status = ca_pend_io ( 100.0 );
+    SEVCHK ( status, NULL );
+    eventCount = 0u;
+    waitCount = 0u;
+    delta = ( currentVal.upper_ctrl_limit - currentVal.lower_ctrl_limit ) / 4.0;
+    if ( delta <= 0.0 ) {
+        delta = 100.0;
+    }
+    if ( currentVal.value + delta < currentVal.upper_ctrl_limit ) {
+        currentVal.value += delta;
+    }
+    else {
+        currentVal.value -= delta;
+    }
+    status = ca_put ( DBR_DOUBLE, chan, &currentVal.value );
+    SEVCHK ( status, NULL );
+    ca_pend_event ( 0.1 );
+    while ( eventCount < 1 && waitCount++ < 100 ) {
+        printf ( "-" );
+        fflush ( stdout );
+        ca_pend_event ( 0.1 );
+    }
+    assert ( eventCount > 0 );
+
     status = ca_clear_event ( id );
     SEVCHK (status, 0);
 
+    /*
+     * verify that the first event arrives (w/o evid)
+     * and ehen channel initially disconnected
+     */
     eventCount = 0u;
     waitCount = 0u;
     status = ca_search ( pName, &chan2 );
     SEVCHK ( status, 0 );
     status = ca_add_event ( DBR_FLOAT, chan2, 
-		nUpdatesTester, &eventCount, &id );
+		nUpdatesTester, &eventCount, 0 );
     SEVCHK ( status, 0 );
     status = ca_pend_io ( 20.0 );
     SEVCHK (status, 0);
@@ -117,6 +153,36 @@ void monitorSubscriptionFirstUpdateTest ( const char *pName, chid chan )
         ca_pend_event ( 0.1 );
     }
     assert ( eventCount > 0 );
+
+    /* verify that a ca_put() produces an update, but */
+    /* this may fail if there is an unusual deadband */
+    status = ca_get ( DBR_CTRL_DOUBLE, chan2, &currentVal );
+    SEVCHK ( status, NULL );
+    status = ca_pend_io ( 100.0 );
+    SEVCHK ( status, NULL );
+    eventCount = 0u;
+    waitCount = 0u;
+    delta = ( currentVal.upper_ctrl_limit - currentVal.lower_ctrl_limit ) / 4.0;
+    if ( delta <= 0.0 ) {
+        delta = 100.0;
+    }
+    if ( currentVal.value + delta < currentVal.upper_ctrl_limit ) {
+        currentVal.value += delta;
+    }
+    else {
+        currentVal.value -= delta;
+    }
+    status = ca_put ( DBR_DOUBLE, chan2, &currentVal.value );
+    SEVCHK ( status, NULL );
+    ca_pend_event ( 0.1 );
+    while ( eventCount < 1 && waitCount++ < 100 ) {
+        printf ( "-" );
+        fflush ( stdout );
+        ca_pend_event ( 0.1 );
+    }
+    assert ( eventCount > 0 );
+
+    /* clean up */
     status = ca_clear_channel ( chan2 );
     SEVCHK ( status, 0 );
 
@@ -1692,7 +1758,7 @@ void performMonitorUpdateTest ( chid chan )
     showProgress ();
 
     /*
-     * dont pass the test if we dont get the first monitor update
+     * pass the test only if we get the first monitor update
      */
     tries = 0;
     while ( 1 ) {

@@ -66,50 +66,27 @@ void cac_gettimeval(struct timeval  *pt)
 void cac_mux_io(struct timeval  *ptimeout)
 {
         int                     count;
-        int                     newInput;
         struct timeval          timeout;
 
         cac_clean_iiu_list();
 
         timeout = *ptimeout;
         do{
-        	/*
-         	 * manage search timers and detect disconnects
-         	 */
-        	manage_conn(TRUE);
+                count = cac_select_io(
+                                &timeout,
+                                CA_DO_RECVS | CA_DO_SENDS);
 
-                newInput = FALSE;
-                do{
-                        count = cac_select_io(
-					&timeout, 
-					CA_DO_RECVS | CA_DO_SENDS);
-                        if(count>0){
-                                newInput = TRUE;
-                        }
-                        timeout.tv_usec = 0;
-                        timeout.tv_sec = 0;
-                }
-                while(count>0);
                 ca_process_input_queue();
 
+                /*
+                 * manage search timers and detect disconnects
+                 */
+                manage_conn(TRUE);
+
+                timeout.tv_sec = 0;
+                timeout.tv_usec = 0;
         }
-        while(newInput);
-}
-
-log_time(char *pStr)
-{
-	static struct timeval time;
-	struct timeval	newtime;
-	struct timezone tz;
-	ca_real	diff;
-	int	status;
-
-	status = gettimeofday(&newtime, &tz);
-	assert(status==0);
-	
-	diff = cac_time_diff(&newtime, &time);
-	printf("Expired %f - %s\n", diff, pStr);
-	time = newtime;
+        while(count>0);
 }
 
 
@@ -246,7 +223,7 @@ void ca_spawn_repeater()
 
 	/*
  	 * return to the caller
-	 * if its the in the initiating process
+	 * if its in the initiating process
 	 */
 	if (status){
 		return;
@@ -260,7 +237,8 @@ void ca_spawn_repeater()
 	status = execlp(pImageName, NULL);
 	if(status<0){	
 		ca_printf("!!WARNING!!\n");
-		ca_printf("The executable \"%s\" couldnt be located.\n", pImageName);
+		ca_printf("The executable \"%s\" couldnt be located\n", pImageName);
+		ca_printf("because - %s\n", strerror(MYERRNO));
 		ca_printf("You may need to modify your PATH environment variable.\n");
 		ca_printf("Creating CA repeater with fork() system call.\n");
 		ca_printf("Repeater will inherit parents process name and resources.\n");

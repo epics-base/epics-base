@@ -16,7 +16,7 @@
 <p><strong>dbConvert and dbFastLinkConv</strong></p>
 
 <p>When a double precision 0 is converted to a float, instead of 0 the float
-value becomes -FLT_MIN, which is a very small ,value, e.g. -1.175494e-38. </p>
+value becomes -FLT_MIN, which is a very small ,value, e.g. -1.175494e-38.</p>
 
 <p><b>iocInit and initHooks</b></p>
 
@@ -55,50 +55,64 @@ value recGblSetSevr(psel,SOFT_ALARM,MAJOR_ALARM) is called.</p>
 code.</p>
 
 <p><strong>CA Client Library</strong></p>
-
-<p><em>Scope:</em>   </p>
-
-<p>Almost all recent EPICS versions that promote the native type of unsigned
-database fields to the next larger integer or floating point type, because
-Channel Access clients use only signed types, are effected.   </p>
-
-<p>The problem is further restricted only to Channel Access clients that run
-within a vxWorks IOC communicating with local database fields stored in some
-unsigned integer type.  </p>
-
-<p> Furthermore, the CA client must enter a subscription with an external
-type that is identical to the CA "native" type only when the CA "native" type
-is promoted to some larger signed type from the fields unsigned integer field
-type.  </p>
-
-<p>The majority of EPICS users use only two CA client programs that attach to
-local in-memory process variables: The sequencer and the CA based database
-links. Both of these clients install monitor subscriptions that include
-timestamp and or alarm information. Therefore, they do not monitor in a
-native promoted type as described above, and are not involved.  </p>
-
-<p><em>Likely symptom:</em>   </p>
-
-<p>A field contiguous to a field in the database with an unsigned integer
-type is mysteriously damaged.   </p>
+<ul>
+  <li>Monitor Subscription Attached to In-Memory Unsigned Short PV Anomaly
+    <p><em>Symptom:</em></p>
+    <p>A database field contiguous to a database field in the with an
+    unsigned integer type is mysteriously damaged.</p>
+    <p><em>Scope:</em></p>
+    <p>Almost all recent EPICS versions that promote the native type of
+    unsigned database fields to the next larger integer or floating point
+    type, because Channel Access clients use only signed types, are
+    effected.</p>
+    <p>The problem is further restricted only to Channel Access clients that
+    run within a vxWorks IOC communicating with local database fields stored
+    in some unsigned integer type.</p>
+    <p>Furthermore, the CA client must enter a subscription with an external
+    type that is identical to the CA "native" type only when the CA "native"
+    type is promoted to some larger signed type from the fields unsigned
+    integer field type.</p>
+    <p>The majority of EPICS users use only two CA client programs that
+    attach to local in-memory process variables: The sequencer and the CA
+    based database links. Both of these clients install monitor subscriptions
+    that include timestamp and or alarm information. Therefore, they do not
+    monitor in a native promoted type as described above, and are not
+    involved.</p>
+  </li>
+</ul>
 
 <p><strong>IOC Resident CA Server</strong></p>
-
-<p><em>Scope:  </em></p>
-
-<p>EPICS R3.13.5 based IOCs only.   </p>
-
-<p>A client must issue a large number of monitor subscription install
-requests immediately after a large number of monitor subscription uninstall
-requests.</p>
-
-<p>This problem was discovered during regression testing of EPICS R3.14.</p>
-
-<p><em>Likely symptom: </em></p>
-
-<p>A Channel Access client, such as medm, does not receive its first  monitor
-subscription update. An "events lost" message will show up on the IOC's
-console, and in the log server.  </p>
+<ul>
+  <li>Missing First Monitor Subscription Update
+    <p><em>Symptom:</em></p>
+    <p>A Channel Access client, such as medm, does not receive its first 
+    monitor subscription update. An "events lost" message will show up on the
+    IOC's console, and in the log server.</p>
+    <p><em>Scope:</em></p>
+    <p>EPICS R3.13.5 based IOCs only.</p>
+    <p>A client must issue a large number of monitor subscription install
+    requests immediately after a large number of monitor subscription
+    uninstall requests.</p>
+    <p>This problem was discovered during regression testing of EPICS
+    R3.14.</p>
+  </li>
+</ul>
+<ul>
+  <li>Client Disconnect or Channel Delete While Put Callback in Progress
+    Failure
+    <p><em>Symptom:</em></p>
+    <p>The channel access server prints messages about a corrupt semaphore or
+    a bad file descriptor when a client forces a disconnect before its put
+    callback request completes.</p>
+    <p><em>Scope:</em></p>
+    <p>This bug has probably existed in every version of EPICS supporting put
+    callback requests. The problem may have been benign until the client
+    disconnect monitor cleanup code became more efficent in EPICS R3.13.5.
+    The problem was detected only on power PC systems. A similar problem
+    potentially occuring when a channel is deleted before its put callback
+    request completes was also fixed.</p>
+  </li>
+</ul>
 
 <h3>Changes since 3.13.4</h3>
 

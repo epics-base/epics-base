@@ -48,7 +48,7 @@ CROSS_COMPILER_TARGET_ARCHS=vxWorks-68040
 #  the build for the CROSS_COMPILER_TARGET_ARCHS
 #  uncomment the following line and specify them.
 #
-CROSS_COMPILER_HOST_ARCHS=solaris
+#CROSS_COMPILER_HOST_ARCHS=
 
 #  Client ANSI C Compiler (for Host builds)
 #   GCC     GNU			(gcc -ansi)

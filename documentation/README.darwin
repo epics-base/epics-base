@@ -5,32 +5,116 @@ $Id$
 
 EPICS Base
 ==========
-1) EPICS for Mac OS X (Darwin) can not be built with OS X Developer Tools
-   older than the April 2002 release.  The April tools, which were the most
-   recent when this note was written, are not bug-free.  The compiler produces
-   bad code when run with -O3 or higher so CONFIG.darwin-ppc.darwin-ppc sets
-   the optimization level to -O2.  Hopefully a new release of developer tools
-   will remove this restriction.
-
-2) As distributed, EPICS on Mac OS X uses the readline library.  The easiest
-   way to get this library on to your system is to download and install it
-   using the Fink package manager which may be found at:
+1) As distributed, EPICS on Mac OS X uses the default command line input
+   routines.  IOC applications are much more pleasant to interact with if
+   either the readline or libtecla input libraries is used.  The easiest
+   way to get either or both of these libraries on to your system is to
+   download and install them using the Fink package manager which may be
+   found at:
         http://fink.sourceforge.net/
-   If you'd rather not use readline you can make the appropriate changes to
-        src/libCom/osi/os/Darwin/osdReadline.h
-   and then rebuild EPICS base.
 
-3) If broadcasts are not seen locally, then it may help to add "localhost"
-   (127.0.0.1) to the EPICS_CA_ADDR_LIST.
+2) If broadcasts are not seen locally, try adding "localhost" (127.0.0.1)
+   to the EPICS_CA_ADDR_LIST.
 
 EPICS Extensions
 ================
 Many extensions build and run properly on OS X.  To build and run medm, first
-obtain the X11 and OpenMotif3 packages from Fink.
-Medm doesn't actually use readline, but if you're using shared libraries and
-you don't link against libreadline, you'll get Undefined Symbol messages when
-you try to run medm.  I consider this a failing of the OS X shared library
-system, but Apple doesn't seem to agree.
-Running X11 applications on Darwin is quite a bit easier if you install the
-OroborOSX application as well:
-        http://oroborosx.sourceforge.net/
+obtain the X11 run-time and developer packages from Apple and the OpenMotif3
+package from Fink.
+
+Objective-C
+===========
+Code written in Objective-C can be included in host or IOC applications.
+Here are a couple of short Objective-C examples which can be used to send
+AppleScript events to other applications on the OS X machine.
+
+==============================================================================
+
+/*
+ * exampleAppleScriptRecord.m 
+ *
+ * Simple Objective-C/AppleScript subroutine record
+ *
+ * To use this record in an application:
+ *
+ * 1) Make the following changes to the application Makefile:
+ *    - Add exampleAppleScriptRecord.m to the application SRCS.
+ *    - Add -framework Foundation to the application LDFLAGS.
+ * 2) Add the following line to the application database description:
+ *      function(exampleAppleScriptProcess)
+ * 3) Add a record to the application database:
+ *      record(sub,"setVolume")
+ *      {
+ *          field(SNAM,"exampleAppleScriptProcess")
+ *      }
+ */
+#import <Foundation/Foundation.h>
+#include <subRecord.h>
+#include <alarm.h>
+#include <errlog.h>
+#include <recGbl.h>
+
+/*
+ * Shim between EPICS and NSAppleScript class.
+ */
+long
+exampleAppleScriptProcess(struct subRecord *psub)
+ {
+    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+    NSDictionary *err;
+    NSAppleScript *nsa;
+    
+    nsa = [[NSAppleScript alloc] initWithSource:[NSString stringWithFormat:
+                @"tell application \"Finder\" to set volume %g\n", psub->a]];
+    if ([nsa executeAndReturnError:&err] == nil) {
+        errlogPrintf("Failed to run AppleScript: %s\n",
+                        [[err objectForKey:NSAppleScriptErrorMessage] cString]);
+        recGblSetSevr(psub, SOFT_ALARM, INVALID_ALARM);
+    }
+    [nsa release];
+    [pool release];
+    return 0;
+}
+
+
+==============================================================================
+/*
+ * runAppleScript.m 
+ *
+ * Simple Objective-C/AppleScript shim to allow EPICS application to
+ * send arbitrary AppleScript messages to other applications.
+ *
+ * To use this subroutine in an application make the following
+ * changes to the application Makefile:
+ * - Add runAppleScript.m to the application SRCS.
+ * - Add -framework Foundation to the application LDFLAGS.
+ */
+#import <Foundation/Foundation.h>
+#include <errlog.h>
+
+int
+runAppleScript(const char *format, ...)
+{
+    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+    NSString *script;
+    NSMutableDictionary *err;
+    NSAppleScript *nsa;
+    va_list args;
+    int ret = 0;
+    
+    va_start(args, format);
+    script = [[NSString alloc] initWithFormat:
+                            [NSString stringWithCString:format] arguments:args];
+    va_end(args);
+    err = [NSMutableDictionary dictionaryWithCapacity:10];
+    nsa = [[NSAppleScript alloc] initWithSource:script];
+    if ([nsa executeAndReturnError:&err] == nil) {
+        errlogPrintf("Failed to run AppleScript: %s\n",
+                        [[err objectForKey:NSAppleScriptErrorMessage] cString]);
+        ret = -1;
+    }
+    [script release];
+    [nsa release];
+    [pool release];
+    return ret;
+}

@@ -1,0 +1,140 @@
+#	Makefile.Host  for  base/src/libCom
+#
+#
+
+TOP = ../../..
+include $(TOP)/config/CONFIG_BASE
+CMPLR = STRICT
+
+USR_CFLAGS = -D_NO_PROTO 
+
+#	includes to install from this sub-project
+#
+INC += cvtFast.h
+INC += ellLib.h
+INC += envDefs.h
+INC += epicsAssert.h
+INC += epicsPrint.h
+INC += errMdef.h
+INC += error.h
+INC += fdmgr.h
+INC += freeList.h
+INC += gpHash.h
+INC += memDebugLib.h
+INC += tsDefs.h
+INC += bucketLib.h
+INC += pal.h
+INC += fdManager.h
+INC += osiTime.h
+INC += osiTimer.h
+INC += macLib.h
+INC += impLib.h
+
+#	For WIN32 we supply getopt as part of libCom:
+INC_WIN32 := getopt.h
+
+#       general contents of library on all platforms
+#
+#       system specific lines in RULES.Host figure out
+#       1) what object names (.o, .obj,...) to build
+#	2) where to find the sources: ., ./os/<ARCH_CLASS>, ./os/generic, ...
+#
+LIBSRCS += bucketLib.c
+LIBSRCS += calcPerform.c
+LIBSRCS += cvtFast.c
+LIBSRCS += ellLib.c
+LIBSRCS += envSubr.c
+LIBSRCS += envData.c
+LIBSRCS += errPrintfUNIX.c
+LIBSRCS += errSymLib.c
+LIBSRCS += errSymTbl.c
+LIBSRCS += fdmgr.c
+LIBSRCS += freeListLib.c
+LIBSRCS += gpHashLib.c
+LIBSRCS += memDebugLib.c
+LIBSRCS += nextFieldSubr.c
+LIBSRCS += postfix.c
+LIBSRCS += realpath.c
+LIBSRCS += tsSubr.c
+LIBSRCS += assertUNIX.c
+LIBSRCS += fdManager.cc
+LIBSRCS += osiTimer.cc
+LIBSRCS += macCore.c
+LIBSRCS += macUtil.c
+LIBSRCS += ipAddrToA.cc
+LIBSRCS += osdTime.cc
+LIBSRCS += impLib.c
+
+#	WIN32 has no getopt, we add it to the Com lib,
+#	special initialisation is done in winmain.c
+LIBSRCS_WIN32 := getopt.c dllmain.cc
+
+#       Library to build:
+#       lib$(LIBRARY).a  or   ..dll/..exp/..lib
+#
+LIBRARY:=Com
+
+#	only for WIN32:
+#	build LIBRARY as a DLL, use the specified def file
+LIBTYPE:=SHARED
+
+#	libs needed for PROD and TESTPRODUCT
+PROD_LIBS=Com 
+
+#	tsTest does not use the default tsTest.c:
+#TESTPROD_SRCS=tsSubr.c
+#TESTPROD=tsTest 
+
+#TESTPROD=envtest
+#TESTPROD = errMtst.c
+PROD := impExpand
+
+MAN3 = gpHash.3 freeList.3
+
+#	for bldErrSymTbl:
+#
+ERR_S_FILES += $(TOP)/src/as/asLib.h
+ERR_S_FILES += $(TOP)/src/db/dbAccess.h
+ERR_S_FILES += $(TOP)/src/db/devLib.h
+ERR_S_FILES += $(TOP)/src/db/devSup.h
+ERR_S_FILES += $(TOP)/src/db/drvSup.h
+ERR_S_FILES += $(TOP)/src/db/recSup.h
+ERR_S_FILES += $(TOP)/src/dbStatic/dbStaticLib.h
+ERR_S_FILES += $(TOP)/src/drv/ansi/drvEpvxi.h
+ERR_S_FILES += $(TOP)/src/drv/old/drvBitBusErr.h
+ERR_S_FILES += $(TOP)/src/drv/old/drvGpibErr.h
+ERR_S_FILES += ../tsDefs.h
+ERR_S_FILES += ../errMdef.h
+ERR_S_FILES += $(TOP)/src/cas/generic/casdef.h
+ERR_S_FILES += $(TOP)/src/gdd/gddAppFuncTable.h
+
+include $(TOP)/config/RULES.Host
+
+#	The WIN32 scripts are simpler versions that should
+#	work on all systems.
+#	In order to keep the old ones, however, I moved
+#	the new ones to WIN32.  -kuk-
+#	Improvements:
+#	1) use only the simpler scripts (well,..)
+#	2) use C code instead (yes!)
+#
+ifdef WIN32
+TOOLDIR=../os/WIN32
+else
+TOOLDIR=..
+endif
+
+#	The real dependecies seem to confuse GNUmake:
+#	envData.c is rebuild every time...
+#envData.c: ../envDefs.h $(TOP)/config/CONFIG_ENV $(TOP)/config/CONFIG_SITE_ENV
+envData.c: ../envDefs.h
+	$(TOOLDIR)/bldEnvData $(TOP)/config
+
+errSymTbl.c: $(ERR_S_FILES)
+	@$(RM) -f errSymTbl.c
+	$(TOOLDIR)/makeStatTbl  $(ERR_S_FILES) >errSymTbl.c
+
+clean::
+	@$(RM) errSymTbl.c envData.c
+
+#	EOF Makefile.Host  for  base/src/libCom

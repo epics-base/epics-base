@@ -1,0 +1,22 @@
+#       Makefile.Host  for  base/src/toolsComm/antelope
+#
+#
+
+TOP = ../../../..
+include $(TOP)/config/CONFIG_BASE
+
+USR_CFLAGS = -D_NO_PROTO
+
+SRCS=	closure.c error.c lalr.c lr0.c main.c \
+	mkpar.c output.c reader.c skeleton.c \
+	symtab.c verbose.c warshall.c
+
+#	genric Unix needs libm.a, WIN32 not:
+PROD_LIBS_DEFAULT:=m
+PROD_LIBS_WIN32:=-nil-
+
+PROD=antelope
+
+include $(TOP)/config/RULES.Host
+
+#	EOF Makefile.Host

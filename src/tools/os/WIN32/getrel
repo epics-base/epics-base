@@ -1,0 +1,38 @@
+#!/bin/sh
+#
+#  $Id$
+#
+#	simplified WIN32 version   7/25/96  -kuk-
+#
+#           Author: Matthew Needes
+#
+
+# one arg
+if [ $# -ne 1 ]; then
+	echo 'Usage:'
+	echo '        getrel <EpicsNodeFullPathName> '
+	echo ' '
+	echo 'ex:     getrel  /usr/local/epics/base_R3.13'
+	echo '        --------- OR -----------'
+	echo '        getrel  ~/epics/base '
+
+        exit
+fi
+
+BASE=${1}
+BIN=${BASE}/bin
+DBD=${BASE}/dbd
+
+if [ ! -d ${BIN} -o ! -d ${DBD} ]
+then
+	echo "getrel: ${BASE} does not appear to be an epics BASE root tree"
+	echo "        I cannot locate a /bin or /dbd directory in there"
+
+	exit 1
+fi
+
+echo EPICS_BASE=${BASE} > EPICS_BASE
+
+echo ${BASE} - `date` >> .current_rel_hist
+
+exit 0

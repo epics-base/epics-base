@@ -1,0 +1,19 @@
+TOP = ../../..
+include $(TOP)/config/CONFIG_BASE
+
+INC += dbDefs.h
+INC += camacLib.h
+INC += epicsTypes.h
+INC += epicsVersion.h
+INC += gsd_sync_defs.h
+INC += module_types.h
+INC += shareLib.h
+INC += createSoftLinks.sh 
+INC += bsdProto.h
+INC += task_params.h
+INC += osiMutexNOOP.h
+
+OSINC += osiSock.h
+
+include $(TOP)/config/RULES.Host
+

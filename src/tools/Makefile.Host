@@ -1,0 +1,62 @@
+#	base/src/tools/Makefile.Host
+#
+
+TOP = ../../..
+include $(TOP)/config/CONFIG_BASE
+
+#	install these scripts:
+SCRIPTS := installEpics getrel makeBaseApp
+
+#	But: before anything is done, installEpics has to be in place
+#	The first action in a full build & install is 'make inc.host',
+#	that's where we hook into:
+inc:: $(INSTALL_BIN)/installEpics
+
+
+#	This Makefile.Host is ugly
+#	because the install process (chmod ...)
+#	is different for WIN32.
+#
+#	This is usually hidden in installEpics,
+#	but we are about to install installEpics...
+#
+#	The same applies to the 'os' directory:
+#	If we are on e.g. WIN32 and have os/WIN32/stuff,
+#	that whould have precedence over ./stuff.
+#	But again: we are just installing the Makesystem here.
+#
+#	-kuk-
+
+ifdef WIN32
+
+$(INSTALL_BIN)/installEpics: ../os/WIN32/installEpics
+	@echo "Installing $@ for WIN32"
+	@../os/WIN32/testmkdir $(INSTALL_LOCATION_BIN)
+	@../os/WIN32/testmkdir $(INSTALL_BIN)
+	@../os/WIN32/installEpics ../os/WIN32/testmkdir    $(INSTALL_BIN)
+	@../os/WIN32/installEpics ../os/WIN32/installEpics $(INSTALL_BIN)
+else
+
+$(INSTALL_BIN)/installEpics: testmkdir installEpics 
+	@echo "Installing $@"
+	@testmkdir $(INSTALL_LOCATION_BIN)
+	@testmkdir $(INSTALL_BIN)
+	@./installEpics -m 555 testmkdir $(INSTALL_BIN)
+	@./installEpics -m 555 installEpics $(INSTALL_BIN)
+
+#	make sure the scripts are executable:
+testmkdir: ../testmkdir
+	@$(RM) $@
+	@$(CP) -p  $< $@
+	@/bin/chmod 755 $@
+
+installEpics: ../installEpics
+	@$(RM) $@
+	@$(CP) -p  $< $@
+	@/bin/chmod 755 $@
+
+endif
+
+include $(TOP)/config/RULES.Host
+
+#	EOF base/src/tools/Makefile.Host

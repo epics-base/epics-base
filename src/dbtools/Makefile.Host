@@ -1,0 +1,76 @@
+#	base/src/dbtools/Makefile.Host
+#
+
+TOP = ../../..
+include $(TOP)/config/CONFIG_BASE
+
+YACCOPT := -l
+LEXOPT  := -L
+
+#	includes and manual pages to install:
+#
+INC     := dbVarSub.h
+MAN1    := dbLoadTemplate.1 subtool.1
+MAN3    := dbLoadRecords.3 dbLoadTemplate.3
+MAN5    := templatefile.5 dbfile.5
+
+#	the BSlib is not ported to WIN32,
+#	this results in less buildable products
+#
+ifdef WIN32
+
+#	uses getopt, optind, optarg from lib Com:
+PROD_LIBS := Db Com
+PROD      := dbLoadTemplate
+
+else
+
+#	library to build from BSlib.c:
+#
+LIBSRCS := BSlib.c
+LIBRARY := BSlib
+
+#	products to build,
+#	all use BSlib, dbLoadTemplate needs lib Db:
+#	(it doesn't hurt if all link Db...)
+#
+#	but
+#
+PROD_LIBS := BSlib Db
+PROD      := subtool dbLoadTemplate rdbls rdbapplist PVSserver
+
+endif
+
+include $(TOP)/config/RULES.Host
+ 
+#	hard-coded dependencies and rules,
+#	hopefully system-independent
+#
+#	These lex sources are included in some C sources,
+#	so they have to be created in time:
+#
+dbLoadTemplate$(OBJ) sub_src$(OBJ): dbLoadTemplate_lex.c
+dbLoadRecords$(OBJ): dbLoadRecords_lex.c 
+
+
+#	Problem: dbLoadTemplate is used twice:
+#	in dbLoadTemplate and
+#	(with SUB_TOOL defined!) in subtool
+sub_src.c:	dbLoadTemplate.c
+	$(CP) $^ $@
+
+#	special CFLAGS only for compiling sub_src.c:
+#
+sub_src_CFLAGS := -DSUB_TOOL
+
+subtool$(EXE): sub_src$(OBJ) dbVarSub$(OBJ)
+	$(LINK.c) $^ $(LDLIBS)
+
+dbLoadTemplate$(EXE): dbVarSub$(OBJ) dbLoadTemplate$(OBJ) dbLoadRecords$(OBJ)
+	$(LINK.c) $^ $(LDLIBS)
+
+clean::
+	@$(RM) dbLoadTemplate_lex.c dbLoadTemplate.c dbLoadRecords_lex.c \
+			dbLoadRecords.c 
+
+#	EOF base/src/dbtools/Makefile.Host

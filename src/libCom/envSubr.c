@@ -472,7 +472,7 @@ epicsPrtEnvParams()
 *	}
 *
 *-*/
-int envParamIsEmpty(
+int epicsShareAPI envParamIsEmpty(
 ENV_PARAM *pParam	/* I pointer to config param structure */
 )
 {

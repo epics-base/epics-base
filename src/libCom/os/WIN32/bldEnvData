@@ -1,0 +1,137 @@
+#!/bin/sh
+#
+#	base/tools $Id$
+# 	Author: Andrew Johnson (RGO)
+# 	Date:	14-Mar-95
+# 
+# 	Experimental Physics and Industrial Control System (EPICS)
+# 
+# $Log$
+# Revision 1.1.2.1  1996/11/25 19:28:53  jhill
+# installed
+#
+# Revision 1.1  1996/11/02 02:12:53  jhill
+# installed
+#
+# Revision 1.4  1996/06/25 21:48:33  jba
+# Makefile includes now from base/src/config, removed all soft links
+#
+# Revision 1.3  1996/05/10 16:10:18  mrk
+# remove hard path to base/include
+#
+# Revision 1.2  1995/09/29  22:16:27  jhill
+# ms windows changes
+#
+# Revision 1.1  1995/08/17  20:22:09  jba
+# Moved bldEnvData,blderrSymTbl, makeStatTbl to libCom dir
+#
+# Revision 1.3  1995/08/14  19:27:24  jhill
+# extern => epicsShareExtern
+#
+# Revision 1.2  1995/05/04  09:49:24  anj
+# Added CONFIG_SITE_ENV, changed envData to .c file
+#
+# Revision 1.1  1995/04/24  16:02:29  anj
+# Moved environment parameter defaults to config/CONFIG_ENV
+#
+#
+
+# tool to build envData.c from envDefs.h and config/CONFIG*ENV
+
+# Usage 	bldEnvData
+
+HERE=`/bin/pwd`
+cd $1
+CONFIG_DIR=`/bin/pwd`
+cd ${HERE}
+SRC=../envDefs.h
+ENV_DATA=${CONFIG_DIR}/CONFIG_ENV
+SITE_DATA=${CONFIG_DIR}/CONFIG_SITE_ENV
+OBJ=envData.c
+TOOL=`basename $0`
+
+# Start by creating a list of the ENV_PARAM declarations
+PARAMS=`sed -n -e 's/;//' \
+	-e 's/^[	 ]*epicsShareExtern[	 ][	 ]*ENV_PARAM[	 ][	 ]*//p' \
+	${SRC}` 
+
+
+echo 'For some unknown reason, the bldEnvData script hangs on WIN32'
+echo 'sometimes...'
+echo 'The reason might be some too-small buffer in gnumake or knts,'
+echo 'because from inside the O.WIN32 directory everything is fine.'
+echo 'If this happens, simply cd to O.WIN32, type the line above'
+echo '(the one that started bldEnvData) by hand and restart gnumake'
+# Create a new header file
+rm -rf ${OBJ}
+cat >${OBJ} <<!EOF
+/* ${HERE}/${OBJ}
+ *
+ * created by ${TOOL}
+ *
+ * from:
+ * ${SRC}
+ * ${ENV_DATA}
+ * ${SITE_DATA}
+ *
+ * `date`
+ *
+ */
+
+#define epicsExportSharedSymbols
+#include "envDefs.h"
+#include "shareLib.h"
+
+!EOF
+
+
+# Make sure no corresponding shell environment variables
+unset ${PARAMS}
+
+# Read the default values from the config file into shell variables
+. ${ENV_DATA}
+. ${SITE_DATA}
+
+
+# Scan through the parameters to create the definition
+for ENV in ${PARAMS}
+do
+#	The set | grep ... construct does not work on WIN32
+#	so we give no error for missing DEFAULTS
+#
+	# Get the default, complain if not present
+#	if [ `set | grep -c ${ENV}=` = 0 ];
+#	then
+#		echo No default value for ${ENV}
+#		DEFAULT=""
+#	else
+		VAR='$'${ENV}
+		DEFAULT=`eval echo ${VAR}`
+#	fi
+
+	# Add this definition to the header file
+	#echo ${ENV} = ${DEFAULT}
+	echo ENV_PARAM ${ENV}'={"'${ENV}'","'${DEFAULT}'"};' >>${OBJ}
+done
+
+# Now create an array pointing to all parameters
+cat >>${OBJ} <<!EOF
+
+ENV_PARAM* env_param_list[EPICS_ENV_VARIABLE_COUNT+1] = {
+!EOF
+
+# Contents are the addresses of each parameter
+for ENV in ${PARAMS}
+do
+	echo '	&'${ENV}, >>${OBJ}
+done
+
+# Finally finish list with 0
+cat >>${OBJ} <<!EOF
+	0
+};
+
+!EOF
+
+exit 0
+

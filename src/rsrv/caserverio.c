@@ -120,7 +120,7 @@ int		lock_needed;
 
 			DLOG(3,"CAS: sending cmmd %d, postsize %d\n",
 				mp->m_cmmd, (int)mp->m_postsize,
-				NULL, NULL);
+				0, 0, 0, 0);
 
 			/* convert the complete header into host format */
 			mp->m_cmmd      = htons (mp->m_cmmd);

@@ -1,0 +1,10 @@
+#!/bin/sh
+#
+#  iocMakeApp
+#
+#           Author: Marty Kraimer
+#
+
+
+echo "makeBaseApp is not yet ported to WIN32"
+exit 2

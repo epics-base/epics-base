@@ -58,7 +58,7 @@ SRCS.c += ../assertUNIX.c
 SRCS.c += ../macCore.c
 SRCS.c += ../macUtil.c
 SRCS.c += ../os/generic/ipAddrToA.c
-SRCS.c += ../os/generic/osdTime.cc
+#SRCS.c += ../os/generic/osdTime.cc
 SRCS.c += ../impLib.c
 SRCS.c += ../impExpand.c
 
@@ -86,9 +86,9 @@ LIBOBJS += assertUNIX.o
 LIBOBJS += macCore.o
 LIBOBJS += macUtil.o
 LIBOBJS += ipAddrToA.o
-LIBOBJS += osdTime.o
+#LIBOBJS += osdTime.o
 LIBOBJS += impLib.o
-LIBOBJS += impExpand.o
+#LIBOBJS += impExpand.o # this looks like an error, it's a product!!
 
 LIBNAME = libCom.a
 

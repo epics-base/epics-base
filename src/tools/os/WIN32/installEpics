@@ -1,0 +1,26 @@
+#!/bin/sh
+#
+# InstallEpics
+#
+#     InstallEpics is used within makefiles to copy new versions of
+#     files into a destination directory.
+#
+##########################################################
+
+#	-kuk-   use cp on WIN32
+#
+if [ $HOST_ARCH != WIN32 ]
+then
+	echo "You are using the simple version of installEpics"
+	echo "though you seem not to be on WIN32?"
+	echo "Check this in ....epics/base/src/tools !"
+fi
+
+if [ $1 = '-m' ]
+then
+	shift 2
+fi
+#	echo WIN32-installEpics: calling cp $*
+eval cp $*
+
+#	EOF installEpics

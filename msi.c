@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <errno.h>
  
 #include <macLib.h>
 #include <ellLib.h>
@@ -63,6 +64,11 @@ int main(int argc,char **argv)
 	pval = (narg==1) ? (argv[1]+2) : argv[2];
 	if(strncmp(argv[1],"-I",2)==0) {
 	    inputAddPath(inputPvt,pval);
+	} else if(strncmp(argv[1],"-o",2)==0) {
+	    if(freopen(pval,"w",stdout)==NULL) {
+            fprintf(stderr,"Can't open %s for writing: %s\n", pval, strerror(errno));
+            exit(1);
+        }
 	} else if(strncmp(argv[1],"-M",2)==0) {
 	    addMacroReplacements(macPvt,pval);
 	} else if(strncmp(argv[1],"-S",2)==0) {
@@ -113,7 +119,7 @@ int main(int argc,char **argv)
 
 void usageExit(void)
 {
-    fprintf(stderr,"usage: msi -V -Ipath ... -Msub ... -Ssubfile  template\n");
+    fprintf(stderr,"usage: msi -V -opath -Ipath ... -Msub ... -Ssubfile  template\n");
     fprintf(stderr,"    Specifying path will replace the default '.'\n");
     fprintf(stderr,"    stdin is used if template is not given\n");
     exit(1);
@@ -547,8 +553,13 @@ static int substituteGetNextSet(void *pvt,char **filename)
         }
         freePattern(psubInfo);
         free((void *)psubInfo->filename);
-        psubInfo->filename = calloc(strlen(psubFile->string)+1,sizeof(char));
-        strcpy(psubInfo->filename,psubFile->string);
+        if(psubFile->string[0]=='"'&&psubFile->string[strlen(psubFile->string)-1]=='"') {
+            psubFile->string[strlen(psubFile->string)-1]='\0';
+            psubInfo->filename = macEnvExpand(psubFile->string+1);
+        }
+        else {
+            psubInfo->filename = macEnvExpand(psubFile->string);
+        }
         while(subGetNextToken(psubFile)==tokenSeparater);
         if(psubFile->token!=tokenLBrace) {
             subFileErrPrint(psubFile,"Expecting {");

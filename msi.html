@@ -25,15 +25,18 @@ files accepted by dbLoadTemplate or subtool.
 <h2>
 Command Syntax:</h2>
 
-<pre>msi -V -Idir -Msub -Ssubfile template</pre>
+<pre>msi -V -ofile -Idir -Msub -Ssubfile template</pre>
 NOTE: All parameters are optional and a space is optional between&nbsp;
--I, -M, and -S&nbsp; and the&nbsp; associated value. Output is written
-to stdout.
+-o, -I, -M, and -S&nbsp; and the&nbsp; associated value. Output is written
+to stdout unless the -o option is given.
 <p>Where:
 <p><tt>-V</tt>
 <ul>If this parameter is specified then an undefined macro is considered
 an error. An error message is generated and the line containing the macro
-is not written to stdout.</ul>
+is not written to the output.</ul>
+<tt>-o file</tt>
+<ul>Output will be written to the specifed file rather than to the standard output.</ul>
+
 <tt>-I dir</tt>
 <ul>This parameter, which may be repeated, specifies a search path for
 include commands. For example:</ul>
@@ -71,7 +74,7 @@ $(c) or ${c} is replaced by cval</dd>
 template
 <ul>The input file. If no file is specified then input is taken from stdin,
 i.e. msi can be used as a filter. See below for a description of commands
-that can be imbedded in the template file.</ul>
+that can be embedded in the template file.</ul>
 NOTE: It is not possible to display usage by just typing <tt>msi</tt> since
 executing the command with no arguments i s a valid command. To show usage
 specify an illegal switch, e.g.
@@ -81,7 +84,7 @@ specify an illegal switch, e.g.
 
 <h2>
 Template File Format</h2>
-This file contains the text to be read and written to stdout after macro
+This file contains the text to be read and written to the output after macro
 substitution is performed. If no file is given then input is read from
 stdin. In addition the file can have lines containing include and substitute
 commands. The format of these commands are:
@@ -99,7 +102,7 @@ and template is
 &nbsp;&nbsp;&nbsp; include "includeFile"
 &nbsp;&nbsp;&nbsp; substitute "first=Irma,family=Kraimer"
 &nbsp;&nbsp;&nbsp; include "includeFile"</pre>
-then the following is written to stdout.
+then the following is written to the output.
 <pre>&nbsp;&nbsp;&nbsp; first name is Marty
 &nbsp;&nbsp;&nbsp; family name is Kraimer
 &nbsp;&nbsp;&nbsp; first name is Irma
@@ -150,10 +153,13 @@ dbTemplate Format</h3>
 &nbsp;&nbsp;&nbsp; pattern format or regular format
 }</pre>
 </blockquote>
-For thedbTemplate format, the command line template argument is optional.
+For the template format, the command line template argument is optional.
 If it specified it is used, otherwise the file template is used. This format
 is an extension of the format accepted by dbLoadTemplate. It allows templates
 to be&nbsp; expanded on the host rather via dbLoadTemplate.
+The file name may appear inside double quotation marks; these are only required
+if the name contains any environment variable macros of the form ${MOTOR} which
+will be expanded before the file is opened.
 <h3>
 Regular substitution example</h3>
 Let the command be:
@@ -164,7 +170,7 @@ Let the command be:
 <tt>substitute</tt> is
 <pre>&nbsp;&nbsp;&nbsp; {first=Marty,family=Kraimer}
 &nbsp;&nbsp;&nbsp; {first=Irma,family=Kraimer}</pre>
-The following is written to stdout.
+The following is written to the output.
 <pre>&nbsp;&nbsp;&nbsp; first name is Marty
 &nbsp;&nbsp;&nbsp; family name is Kraimer
 &nbsp;&nbsp;&nbsp; first name is Irma
@@ -179,7 +185,7 @@ Let the command be:
 &nbsp;&nbsp;&nbsp; {Marty,Kraimer}
 &nbsp;&nbsp;&nbsp; {Irma,Kraimer}</pre>
 <tt>template</tt> is the same as in the previous example.
-<p>The following is written to stdout.
+<p>The following is written to the output.
 <pre>&nbsp;&nbsp;&nbsp; first name is Marty
 &nbsp;&nbsp;&nbsp; family name is Kraimer
 &nbsp;&nbsp;&nbsp; first name is Irma
@@ -207,7 +213,7 @@ file template {
 }</pre>
 </blockquote>
 <tt>template</tt> is the same as in the previous example..
-<p>The following is written to stdout
+<p>The following is written to the output
 <blockquote>
 <pre>first name is Marty
 family name is Kraimer
@@ -249,7 +255,7 @@ form:</ul>
 <pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; substitute "&lt;substitutions>"</pre>
 
 <ul>White space is allowed before and after the command and after the quoted
-string. If imbedded quotes are needed the \ character can be used as an
+string. If embedded quotes are needed the \ character can be used as an
 escape character. For example:</ul>
 
 <pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; substitute "a=\"val\""</pre>
@@ -273,7 +279,7 @@ character of the comment line.
 is either white space or a comma. White space is any of the following:
 space, formfeed, newline, carriage return, tab, vertical tab.
 <p>Each item within braces can be an alphanumeric token or a quoted string.
-The characters \" can be used for imbedded quotes. The rules for non quoted
+The characters \" can be used for embedded quotes. The rules for non quoted
 strings are actually more relaxed but any item that is not an alphanumeric
 string should be given as a quoted string.
 <p>Thus

@@ -150,7 +150,10 @@ int req_server(void)
 	}
 
 	while (TRUE) {
-		if ((i = accept(IOC_sock, NULL, 0)) == ERROR) {
+		struct sockaddr sockAddr;
+		int    addLen = sizeof( sockAddr );
+
+		if ((i = accept(IOC_sock, &sockAddr, &addLen)) == ERROR) {
 			logMsg("CAS: Client accept error\n",
 				NULL,
 				NULL,
@@ -425,19 +428,30 @@ LOCAL int terminate_one_client(struct client *client)
 
 /*
  *	client_stat()
- *
  */
 int client_stat (unsigned level)
+{
+	printf("\"clinet_stat\" has been replaced by \"casr\"\n");
+	return ellCount(&clientQ);
+}
+
+/*
+ *	casr()
+ */
+void casr (unsigned level)
 {
 	int		bytes_reserved;
 	struct client 	*client;
 
-	printf( "Channel Access Server Status V%d.%d\n",
+	printf( "Channel Access Server V%d.%d\n",
 		CA_PROTOCOL_VERSION,
 		CA_MINOR_VERSION);
 
 	LOCK_CLIENTQ;
 	client = (struct client *) ellNext(&clientQ);
+	if (!client) {
+		printf("No clients connected.\n");
+	}
 	while (client) {
 
 		log_one_client(client, level);
@@ -446,11 +460,11 @@ int client_stat (unsigned level)
 	}
 	UNLOCK_CLIENTQ;
 
-	if (level>=1 && prsrv_cast_client) {
+	if (level>=2 && prsrv_cast_client) {
 		log_one_client(prsrv_cast_client, level);
 	}
 	
-	if (level >=1u) {
+	if (level >=2u) {
 		bytes_reserved = 0;
 		bytes_reserved += sizeof(struct client)*
 					ellCount(&rsrv_free_clientQ);
@@ -474,8 +488,6 @@ int client_stat (unsigned level)
 
 		caPrintAddrList (&beaconAddrList);
 	}
-
-	return ellCount(&clientQ);
 }
 
 
@@ -508,14 +520,16 @@ LOCAL void log_one_client(struct client *client, unsigned level)
 	send_delay = delay_in_ticks(client->ticks_at_last_send);
 	recv_delay = delay_in_ticks(client->ticks_at_last_recv);
 
-	printf(	"Client Name=%s, Client Host=%s, ver=%d.%u, server tid=%x\n", 
+	printf(	
+"Client Name=\"%s\", Client Host=\"%s\", V%d.%u, Channel Count=%d\n", 
 		client->pUserName,
 		client->pHostName,
 		CA_PROTOCOL_VERSION,
 		client->minor_version_number,
-		client->tid);
+		ellCount(&client->addrq));
 	if (level>=1) {
-		printf( "\tProtocol=%s, Socket fd=%d\n", 
+		printf( "\tTId=0X%lX, Protocol=%3s, Socket FD=%d\n", 
+			client->tid,
 			pproto, 
 			client->sock); 
 		printf( 
@@ -528,7 +542,7 @@ LOCAL void log_one_client(struct client *client, unsigned level)
 			client->recv.cnt - client->recv.stk);	
 		psaddr = &client->addr;
 		printf(
-		"\tRemote address %lu.%lu.%lu.%lu Remote port %d state=%s\n",
+		"\tRemote Address %lu.%lu.%lu.%lu Remote Port %d State=%s\n",
 			(psaddr->sin_addr.s_addr & 0xff000000) >> 24,
 			(psaddr->sin_addr.s_addr & 0x00ff0000) >> 16,
 			(psaddr->sin_addr.s_addr & 0x0000ff00) >> 8,
@@ -536,7 +550,6 @@ LOCAL void log_one_client(struct client *client, unsigned level)
 			psaddr->sin_port,
 			state[client->disconnect?1:0]);
 	}
-	printf(	"\tChannel count %d\n", ellCount(&client->addrq));
 
 	if (level>=2u) {
 		bytes_reserved = 0;

@@ -359,7 +359,7 @@ FAST int 		sock;
 		/*
 		 * allow message to batch up if more are comming
 		 */
-		status = ioctl(sock, FIONREAD, &nchars);
+		status = ioctl(sock, FIONREAD, (int) &nchars);
 		if (status < 0) {
 			logMsg("CAS: io ctl err %d\n",
 				errnoGet(),

@@ -105,7 +105,7 @@ int		lock_needed;
 			NULL,
 			(struct sockaddr *)&pclient->addr,
 			sizeof(pclient->addr));
-		if(status != pclient->send.stk){
+		if( pclient->send.stk != (unsigned)status){
 			if(status < 0){
 				int	anerrno;
 

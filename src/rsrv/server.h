@@ -231,6 +231,7 @@ int		rsrv_online_notify_task();
 void		cac_send_heartbeat();
 
 int 		client_stat(unsigned level);
+void 		casr(unsigned level);
 int 		req_server(void);
 int		cast_server(void);
 int 		free_client(struct client *client);

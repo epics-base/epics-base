@@ -46,7 +46,7 @@ static char *sccsId = "@(#) $Id$";
 #include <server.h>
 
 #define DELETE_TASK(TID)\
-if(errnoOfTaskGet(TID)!=ERROR)taskDelete(TID);
+if(taskIdVerify(TID)==OK)taskDelete(TID);
 
 
 /*

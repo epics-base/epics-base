@@ -56,18 +56,31 @@ height="31" width="88"></a></p>
   <li><a href="#Configurin2">Configuring a CA server</a></li>
 </ul>
 
-<h3><a href="#Troublesho">Troubleshooting</a></h3>
-
-<h4><a href="#When">When Clients Do Not Connect to Their Server</a></h4>
+<h3><a href="#Command">Command Line Utilities</a></h3>
 <ul>
-  <li><a href="#Broadcast">Client and Server Broadcast Addresses Dont
-    Match</a></li>
-  <li><a href="#Client">Client Isnt Configured to Use the Server's
-  Port</a></li>
-  <li><a href="#Unicast">Unicast Addreses in the EPICS_CA_ADDR_LIST Does not
-    Reliably Contact Servers Sharing the Same UDP Port on the Same
-  Host</a></li>
-  <li><a href="#Client1">Client Does not See Server's Beacons</a></li>
+  <li><a href="#acctst">acctst - CA client library regression test</a></li>
+  <li><a href="#caEventRat">caEventRate - PV event rate logging</a></li>
+  <li><a href="#casw">casw - CA server beacon anomaly logging</a></li>
+  <li><a href="#catime">catime - CA client library performance test</a></li>
+  <li><a href="#ca_test">ca_test - dump the value of a PV in each external
+    data type to the console</a></li>
+</ul>
+
+<h3><a href="#Troublesho">Troubleshooting</a></h3>
+<ul>
+  <li><a href="#When">When Clients Do Not Connect to Their Server</a>
+    <ul>
+      <li><a href="#Broadcast">Client and Server Broadcast Addresses Dont
+        Match</a></li>
+      <li><a href="#Client">Client Isnt Configured to Use the Server's
+        Port</a></li>
+      <li><a href="#Unicast">Unicast Addreses in the EPICS_CA_ADDR_LIST Does
+        not Reliably Contact Servers Sharing the Same UDP Port on the Same
+        Host</a></li>
+      <li><a href="#Problems">Client Does not See Server's Beacons</a></li>
+    </ul>
+  </li>
+  <li><a href="#Problems">ENOBUFS Messages</a></li>
 </ul>
 
 <h3><a href="#Function">Function Call Interface Guidelines</a></h3>
@@ -163,16 +176,6 @@ height="31" width="88"></a></p>
   <li><a href="#ca_create_channel">ca_search_and_connect</a></li>
   <li><a href="#ca_context_destroy">ca_task_exit</a></li>
   <li><a href="#ca_context_create">ca_task_initialize</a></li>
-</ul>
-
-<h3><a href="#Command">Command Line Utilities</a></h3>
-<ul>
-  <li><a href="#acctst">acctst - CA client library regression test</a></li>
-  <li><a href="#caEventRat">caEventRate - PV event rate logging</a></li>
-  <li><a href="#casw">casw - CA server beacon anomaly logging</a></li>
-  <li><a href="#catime">catime - CA client library performance test</a></li>
-  <li><a href="#ca_test">ca_test - dump each external data type to the
-    console</a></li>
 </ul>
 
 <h3><a href="#Return">Return Codes</a></h3>
@@ -726,6 +729,74 @@ implemet this feature.</em></p>
 
 <p>See also <a href="#Routing">Routing restiction on vxWorks systems</a>.</p>
 
+<h2><a name="Command">Command Line Utilities</a></h2>
+
+<h3><a name="acctst">acctst</a></h3>
+<pre>acctst &lt;PV name&gt; [progress logging level] [channel duplication count] 
+                 [test repetition count] [enable preemptive callback]</pre>
+
+<h4>Description</h4>
+
+<p>Channel Access Client Library regression test.</p>
+
+<p>Test failure is indicated if the program stops prior to printing "test
+complete". If unspecified the progress logging level is zero, and no messages
+are printed while the test is progressing. If unspecified, the channel
+duplication count is 20000. If unspecified, the test repetition count is once
+only. If unspecified, preemptive callback is disabled.</p>
+
+<h3><a name="catime">catime</a></h3>
+<pre>catime &lt;PV name&gt; [channel count] [append number to pv name if true]</pre>
+
+<h4>Description</h4>
+
+<p>Channel Access Client Library performance test.</p>
+
+<p>If unspecified, the channel count is 10000. If the "append number to pv
+name if true" argument is specified and it is greater than zero then the
+channel names in the test are numbered as follows.</p>
+
+<p>&lt;PV name&gt;000000, &lt;PV name&gt;000001, ... &lt;PV name&gt;nnnnnn</p>
+
+<h3><a name="casw">casw</a></h3>
+<pre>casw [-i &lt;interest level&gt;]</pre>
+
+<h4>Description</h4>
+
+<p>CA server "beacon anomaly" logging.</p>
+
+<p>CA server beacon anomalies occur when a new server joins the network, a
+server is rebooted, network connectivity to a server is reestablished, or if
+a server's CPU exits a CPU load saturated state.</p>
+
+<p>CA clients with unresolved channels reset their search request schedualing
+timers whenever they see a beacon anomaly.</p>
+
+<p>This program can be useful to verify that configuration problems have not
+resulted in false beacon anomalies that might cause CA to use unnecessary
+additional network bandwidth and server CPU load when searching for
+unresolved channels.</p>
+
+<h3><a name="caEventRat">caEventRate</a></h3>
+<pre>caEventRate &lt;PV name&gt; [subscription count]</pre>
+
+<h4>Description</h4>
+
+<p>Connect to the specified PV, subscribe for monitor updates the specified
+number of times (default once),  and periodically log the current sampled
+event rate, average event rate, and the standard deviation of the event rate
+in Hertz to standard out.</p>
+
+<h3><a name="ca_test">ca_test</a></h3>
+<pre>ca_test &lt;PV name&gt; [value to be written]</pre>
+
+<h4>Description</h4>
+
+<p>If a value is specified it is written to the PV. Next, the current value
+of the PV is converted to each of the many external data type that can be
+specified at the CA client library interface, and each of these is formated
+and then output to the console.</p>
+
 <h2><a name="Troublesho">Troubleshooting</a></h2>
 
 <h3><a name="When">When Clients Do Not Connect to Their Server</a></h3>
@@ -767,6 +838,71 @@ single specific host's ip address).</p>
 
 <p>See <a href="#Dynamic">Dynamic Changes in the CA Client Library Search
 Interval.</a></p>
+
+<h3><a name="Problems">ENOBUFS Messages</a></h3>
+
+<p>Many Berkley UNIX derived Internet Protocol (IP) kernels use a memory
+management scheme with a fixed sized low level memory allocation quantum
+called an "mbuf". Messages about "ENOBUFS" are an indication that your IP
+kernel is running low on mbuf buffers. An IP kernel mbuf starvation situation
+may lead to temporary IP communications stalls or reduced throughput. This
+issue has to date been primarily associated with vxWorks systems where mbuf
+starvation on earlier vxWorks versions is rumored to lead to permanent IP
+communications stalls which are resolved only by a system reboot. IP kernels
+that use mbufs frequently allow the initial and maximum number of mbufs to be
+configured. Consult your OS's documenation for configuration procedures which
+vary between OS and even between different versions of the same OS.</p>
+
+<h4>Contributing Circumstances</h4>
+<ul>
+  <li>The total number of connected clients is high. Each active socket
+    requires dedicated mbufs for protocol control blocks, and for any data
+    that might be pending in the operating system for transmission to Channel
+    Access or to the network at a given instant. If you increase the vxWorks
+    limit on the maximum number of file descriptors then it may also be
+    necessary to increase the size of the mbuf pool.</li>
+</ul>
+<ul>
+  <li>The server has multiple connections where the server's sustained event
+    (monitor subscription update) production rate is higher than the client's
+    or the network's sustained event consumption rate. This ties up a per
+    socket quota of mbufs for data that are pending transmission to the
+    client via the network. In particular, if there are multiple clients that
+    subscribe for monitor events but do not call ca_pend_event() or ca_poll()
+    to process their CA input queue, then a significant mbuf consuming
+    backlog can occur in the server.</li>
+</ul>
+<ul>
+  <li>The server does not get a chance to run (because some other higher
+    priority thread is running) and the CA clients are sending a high volume
+    of data over TCP or UDP. This ties up a quota of mbufs for each socket in
+    the server that isn't being reduced by the server's socket read system
+    calls.</li>
+</ul>
+<ul>
+  <li>The server has multiple stale connections. Stale connections occur when
+    a client is abruptly turned off or disconnected from the network, and an
+    internal "keepalive" timer has not yet expired for the virtual circuit in
+    the operating system, and therefore mbufs may be dedicated to unused
+    virtual circuits. This situation is made worse if there are active
+    monitor subscriptions associated with stale connections which will
+    rapidly increase the number of dedicated mbufs to the quota available for
+    each circuit.</li>
+</ul>
+
+<h4>Related Diagnostics</h4>
+<ul>
+  <li>The EPICS command "casr [interest level]" displays information about
+    the CA server and how many clients are connected.</li>
+  <li>The vxWorks command "inetstatShow" indicates how many bytes are pending
+    in mbufs and indirectly (based on the number of circuits listed) how many
+    mbuf based protocol control blocks have been consumed. The vxWorks
+    commands (availability depending on vxWorks version) mbufShow,
+    netStackSysPoolShow, and netStackDataPoolShow indicate how much space
+    remains in the mbuf pool.</li>
+  <li>The RTEMS command "netstat [interest level]" displays network
+    information including mbuf consumption statistics.</li>
+</ul>
 
 <h2><a name="Function">Function Call Interface General Guidelines</a></h2>
 
@@ -2758,74 +2894,6 @@ preemptively from more than one thread.</p>
 <h4>See Also</h4>
 
 <p>ca_current_context()</p>
-
-<h2><a name="Command">Command Line Utilities</a></h2>
-
-<h3><a name="acctst">acctst</a></h3>
-<pre>acctst &lt;PV name&gt; [progress logging level] [channel duplication count] 
-                 [test repetition count] [enable preemptive callback]</pre>
-
-<h4>Description</h4>
-
-<p>Channel Access Client Library regression test.</p>
-
-<p>Test failure is indicated if the program stops prior to printing "test
-complete". If unspecified the progress logging level is zero, and no messages
-are printed while the test is progressing. If unspecified, the channel
-duplication count is 20000. If unspecified, the test repetition count is once
-only. If unspecified, preemptive callback is disabled.</p>
-
-<h3><a name="catime">catime</a></h3>
-<pre>catime &lt;PV name&gt; [channel count] [append number to pv name if true]</pre>
-
-<h4>Description</h4>
-
-<p>Channel Access Client Library performance test.</p>
-
-<p>If unspecified, the channel count is 10000. If the "append number to pv
-name if true" argument is specified and it is greater than zero then the
-channel names in the test are numbered as follows.</p>
-
-<p>&lt;PV name&gt;000000, &lt;PV name&gt;000001, ... &lt;PV name&gt;nnnnnn</p>
-
-<h3><a name="casw">casw</a></h3>
-<pre>casw [-i &lt;interest level&gt;]</pre>
-
-<h4>Description</h4>
-
-<p>CA server "beacon anomaly" logging.</p>
-
-<p>CA server beacon anomalies occur when a new server joins the network, a
-server is rebooted, network connectivity to a server is reestablished, or if
-a server's CPU exits a CPU load saturated state.</p>
-
-<p>CA clients with unresolved channels reset their search request schedualing
-timers whenever they see a beacon anomaly.</p>
-
-<p>This program can be useful to verify that configuration problems have not
-resulted in false beacon anomalies that might cause CA to use unnecessary
-additional network bandwidth and server CPU load when searching for
-unresolved channels.</p>
-
-<h3><a name="caEventRat">caEventRate</a></h3>
-<pre>caEventRate &lt;PV name&gt; [subscription count]</pre>
-
-<h4>Description</h4>
-
-<p>Connect to the specified PV, subscribe for monitor updates the specified
-number of times (default once),  and periodically log the current sampled
-event rate, average event rate, and the standard deviation of the event rate
-in Hertz to standard out.</p>
-
-<h3><a name="ca_test">ca_test</a></h3>
-<pre>ca_test &lt;PV name&gt; [value to be written]</pre>
-
-<h4>Description</h4>
-
-<p>If a value is specified it is written to the PV. Next, the current value
-of the PV is converted to each of the many external data type that can be
-specified at the CA client library interface, and each of these is formated
-and then output to the console.</p>
 
 <h2><a name="Return">Return Codes</a></h2>
 <dl>

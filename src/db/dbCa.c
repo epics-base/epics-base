@@ -145,7 +145,7 @@ long epicsShareAPI dbCaGetLink(struct link *plink,short dbrType, void *pdest,
     }
     epicsMutexMustLock(pca->lock);
     if(pca->caState != cs_conn || !pca->hasReadAccess) {
-        pca->sevr = INVALID_ALARM;
+        pca->sevr = INVALID_ALARM; status = -1;
         goto done;
     }
     if((pca->dbrType == DBR_ENUM) && (dbDBRnewToDBRold[dbrType] == DBR_STRING)){
@@ -155,7 +155,7 @@ long epicsShareAPI dbCaGetLink(struct link *plink,short dbrType, void *pdest,
             link_action |= CA_MONITOR_STRING;
         }
         if(!pca->gotInString) {
-            pca->sevr = INVALID_ALARM;
+            pca->sevr = INVALID_ALARM; status = -1;
             goto done;
         }
         if(nelements) *nelements = 1;
@@ -168,7 +168,7 @@ long epicsShareAPI dbCaGetLink(struct link *plink,short dbrType, void *pdest,
         link_action |= CA_MONITOR_NATIVE;
     }
     if(!pca->gotInNative){
-        pca->sevr = INVALID_ALARM;
+        pca->sevr = INVALID_ALARM; status = -1;
         goto done;
     }
     if(!nelements || *nelements == 1){

@@ -1,38 +1,8 @@
 //
 // $Id$
 //
-// casIOD.h - Channel Access Server IO Dependent for BSD sockets 
-// 
+// casIOD.h - Channel Access Server BSD socket dependent wrapper
 //
-// Some BSD calls have crept in here
-//
-// $Log$
-// Revision 1.9  1997/08/05 00:47:24  jhill
-// fixed warnings
-//
-// Revision 1.8  1997/06/13 09:16:14  jhill
-// connect proto changes
-//
-// Revision 1.7  1997/01/10 21:18:55  jhill
-// code around gnu g++ inline bug when -O isnt used
-//
-// Revision 1.6  1996/11/02 00:54:45  jhill
-// many improvements
-//
-// Revision 1.5  1996/09/16 18:25:15  jhill
-// vxWorks port changes
-//
-// Revision 1.4  1996/09/04 20:29:08  jhill
-// removed os depen stuff
-//
-// Revision 1.3  1996/08/13 23:00:29  jhill
-// removed include of netdb.h
-//
-// Revision 1.2  1996/07/24 22:03:36  jhill
-// fixed net proto for gnu compiler
-//
-// Revision 1.1.1.1  1996/06/20 00:28:18  jhill
-// ca server installation
 //
 //
 

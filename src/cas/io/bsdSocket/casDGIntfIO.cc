@@ -338,11 +338,11 @@ xSendStatus casDGIntfIO::osdSend(const char *pBuf, bufSizeT size,
 	// (char *) cast below is for brain dead wrs prototype
 	//
 	struct sockaddr dest = to;
-        status = sendto(this->sock, (char *) pBuf, size, 0,
+	status = sendto (this->sock, (char *) pBuf, size, 0,
                         &dest, sizeof(dest));
 	if (status>0) {
-        	if (size != (unsigned) status) {
-                        ca_printf ("CAS: partial UDP msg discarded??\n");
+        if (size != (unsigned) status) {
+			ca_printf ("CAS: partial UDP msg discarded??\n");
 		}
 	}
 	else if (status==0) {

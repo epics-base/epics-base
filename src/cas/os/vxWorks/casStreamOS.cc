@@ -4,6 +4,9 @@
 //
 //
 // $Log$
+// Revision 1.5  1997/08/05 00:47:27  jhill
+// fixed warnings
+//
 // Revision 1.4  1997/06/30 23:38:47  jhill
 // use %p for pointers
 //
@@ -182,26 +185,25 @@ caStatus casStreamOS::start()
 //
 casProcCond casStreamOS::processInput()
 {
-        caStatus status;
+	caStatus status;
 
 #	ifdef DEBUG
-		printf(
+	printf(
 		"Resp bytes to send=%d, Req bytes pending %d\n", 
 		this->outBuf::bytesPresent(),
 		this->inBuf::bytesPresent());
 #	endif
 
-        status = this->processMsg();
-        switch (status) {
-        case S_cas_partialMessage:
-        case S_cas_ioBlocked:
+	status = this->processMsg();
+	switch (status) {
+	case S_cas_ioBlocked:
 	case S_cas_success:
 		return casProcOk;
-        default:
-                errMessage (status,
-                 	"unexpected error processing client's input");
+	default:
+		errMessage (status,
+			"unexpected error processing client's input");
 		return casProcDisconnect;
-        }
+	}
 }
 
 //

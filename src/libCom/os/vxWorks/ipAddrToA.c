@@ -44,6 +44,8 @@
 
 #include <inetLib.h>
 
+#define maxPortDigits 16u
+
 /*
  * ipAddrToA ()
  */
@@ -51,9 +53,7 @@ void ipAddrToA (const struct sockaddr_in *pInetAddr,
 		char *pBuf, const unsigned bufSize)
 {
 	char		pName[INET_ADDR_LEN];
-	const unsigned  maxPortDigits = 16u;
 	char    	tmp[maxPortDigits+1];
-
 
 	if (pInetAddr->sin_family != AF_INET) {
 		strncpy(pName, "UKN ADDR FAMILY", sizeof(pName)-1);

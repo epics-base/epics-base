@@ -29,14 +29,14 @@ receiver(void *arg)
     epicsMessageQueue *q = (epicsMessageQueue *)arg;
     char cbuf[80];
     int expectmsg[4];
-    unsigned int len;
+    int len;
     int sender, msgNum;
 
     for (sender = 1 ; sender <= 4 ; sender++)
         expectmsg[sender-1] = 1;
     for (;;) {
         cbuf[0] = '\0';
-        q->receive(cbuf, &len);
+        len = q->receive(cbuf);
         if ((sscanf(cbuf, "Sender %d -- %d", &sender, &msgNum) == 2)
          && (sender >= 1)
          && (sender <= 4)) {
@@ -60,7 +60,7 @@ sender(void *arg)
 {
     epicsMessageQueue *q = (epicsMessageQueue *)arg;
     char cbuf[80];
-    unsigned int len;
+    int len;
     int i = 0;
 
     for (;;) {
@@ -74,12 +74,12 @@ sender(void *arg)
 void
 epicsMessageQueueTest()
 {
-    int i;
+    unsigned int i;
     char cbuf[80];
-    unsigned int len;
+    int len;
     int pass;
     int used;
-    unsigned int want;
+    int want;
 
     epicsMessageQueue *q1 = new epicsMessageQueue(4, 20);
 
@@ -88,55 +88,45 @@ epicsMessageQueueTest()
      */
     i = 0;
     used = 0;
-    assert(q1->isEmpty());
-    assert(!q1->isFull());
+    assert(q1->pending() == 0);
     while (q1->send((void *)msg1, i ) == true) {
         i++;
+        assert(q1->pending() == i);
         printf("Should have %d used -- ", ++used);
-        assert(!q1->isEmpty());
         q1->show();
     }
-    assert(!q1->isEmpty());
-    assert(q1->isFull());
+    assert(q1->pending() == 4);
 
     want = 0;
-    q1->receive(cbuf, &len);
-    assert(!q1->isEmpty());
-    assert(!q1->isFull());
+    len = q1->receive(cbuf);
+    assert(q1->pending() == 3);
     if ((len != want) || (strncmp(msg1, cbuf, len) != 0))
         printf("wanted:%d '%.*s'   got:%d '%.*s'\n", want, want, msg1, len, len, cbuf);
-    printf("Should have %d used -- ", --used);
-    q1->show();
 
     want++;
-    q1->receive(cbuf, &len);
+    len = q1->receive(cbuf);
+    assert(q1->pending() == 2);
     if ((len != want) || (strncmp(msg1, cbuf, len) != 0))
         printf("wanted:%d '%.*s'   got:%d '%.*s'\n", want, want, msg1, len, len, cbuf);
-    printf("Should have %d used -- ", --used);
-    q1->show();
     q1->send((void *)msg1, i++);
-    printf("Should have %d used -- ", ++used);
-    q1->show();
 
     want++;
-    q1->receive(cbuf, &len);
+    len = q1->receive(cbuf);
+    assert(q1->pending() == 2);
     if ((len != want) || (strncmp(msg1, cbuf, len) != 0))
         printf("wanted:%d '%.*s'   got:%d '%.*s'\n", want, want, msg1, len, len, cbuf);
-    printf("Should have %d used -- ", --used);
-    q1->show();
     q1->send((void *)msg1, i++);
-    printf("Should have %d used -- ", ++used);
-    q1->show();
+    assert(q1->pending() == 3);
 
-    while (q1->receive(cbuf, &len, 1.0) == true) {
-        printf("Should have %d used -- ", --used);
-        q1->show();
+    i = 3;
+    while ((len = q1->receive(cbuf, 1.0)) >= 0) {
+        assert(q1->pending() == --i);
         want++;
         if ((len != want) || (strncmp(msg1, cbuf, len) != 0))
             printf("wanted:%d '%.*s'   got:%d '%.*s'\n", want, want, msg1, len, len, cbuf);
     }
-    assert(q1->isEmpty());
-    assert(!q1->isFull());
+    printf("len:%d i:%d pending:%d\n", len, i, q1->pending());
+    assert(q1->pending() == 0);
 
     /*
      * Single receiver, single sender tests

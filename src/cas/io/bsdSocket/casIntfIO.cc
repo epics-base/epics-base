@@ -40,16 +40,14 @@ casIntfIO::casIntfIO (const caNetAddr &addrIn) :
 		throw S_cas_noFD;
 	}
 
-	/*
-	 * Allows immediate reuse of the port in case we exit early
-     *
+    /*
      * Note: WINSOCK appears to assign a different functionality for 
-     * SO_REUSEADDR compared to other OS. With WINSOCK SO_REUSEADDR indicates 
-     * that other servers can bind to the same TCP port on the same host!
+     * SO_REUSEADDR compared to other OS. With WINSOCK SO_REUSEADDR indicates
+     * that simultaneously servers can bind to the same TCP port on the same host!
      * Also, servers are always enabled to reuse a port immediately after 
-     * they exit.
-	 */
-#   ifndef SO_REUSEADDR_DOES_NOT_RELEASE_TCP_PORT
+     * they exit ( even if SO_REUSEADDR isnt set ).
+     */
+#   ifndef SO_REUSEADDR_ALLOWS_SIMULTANEOUS_TCP_SERVERS_TO_USE_SAME_PORT
 	    status = setsockopt (
 					    this->sock,
 					    SOL_SOCKET,

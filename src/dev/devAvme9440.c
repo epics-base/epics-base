@@ -107,16 +107,24 @@
 
 #include        <dbScan.h>
 
-long init();
-long report();
-long init_bo_record(), init_bi_record();
-long init_mbbo_record(), init_mbbi_record();
-long write_bo(), read_bi();
-long write_mbbo(), read_mbbi();
-long write_card(), write_mbbo_card(), read_card();
-long get_bi_int_info();
-int  checkLink();
-void avme9440_isr();
+#define STATIC static
+
+STATIC long init();
+STATIC long report();
+STATIC long init_bo_record();
+STATIC long init_bi_record();
+STATIC long init_mbbo_record();
+STATIC long init_mbbi_record();
+STATIC long write_bo();
+STATIC long read_bi();
+STATIC long write_mbbo();
+STATIC long read_mbbi();
+STATIC long write_card();
+STATIC long write_mbbo_card();
+STATIC long read_card();
+STATIC long get_bi_int_info();
+STATIC int  checkLink();
+STATIC void avme9440_isr();
 
 int  devAvme9440Debug = 0; 
 
@@ -179,7 +187,6 @@ struct ioCard {
 };
 
 #define 	CONST_NUM_LINKS	6
-#define         STATIC
 
 STATIC int devAvme9440Report();
 

@@ -213,9 +213,19 @@ READONLY char	*ca_message_text[]
 };
 #endif
 
-#ifdef __STDC__
+#ifdef __STDC__ 
+#define CAERR_USE_FUNC_PROTO
+#endif
+
+#ifdef __cplusplus
+#ifndef CAERR_USE_FUNC_PROTO
+#define CAERR_USE_FUNC_PROTO
+#endif
+#endif
+
+#ifdef CAERR_USE_FUNC_PROTO
 READONLY char * epicsShareAPI ca_message(long ca_status);
-#else /* __STDC__ */
+#else /* CAERR_USE_FUNC_PROTO */
 READONLY char *ca_message();
 #endif
 

@@ -43,13 +43,21 @@
 
 #ifdef __cplusplus
 extern "C" {
+#define errMDefUseProtoANSI
 #endif
 
-#ifdef __STDC__ 
+#ifdef __STDC__
+#ifndef errMDefUseProtoANSI
+#define errMDefUseProtoANSI
+#endif
+#endif
+
+#ifdef errMDefUseProtoANSI
 #       include <stdarg.h>
 #else
 #       include <varargs.h>
 #endif
+
 #include "ellLib.h"
 
 #define RTN_SUCCESS(STATUS) ((STATUS)==0)
@@ -86,7 +94,7 @@ extern "C" {
 #define errMessage(S, PM) \
          errPrintf(S, __FILE__, __LINE__, PM)
 
-#ifdef __STDC__
+#ifdef errMDefUseProtoANSI
 int errSymFind(long status, char *name);
 int UnixSymFind(long status, char *name, long *value);
 int ModSymFind(long status, char *name, long *value);
@@ -100,7 +108,7 @@ void errSymDump();
 void tstErrSymFind();
 void errInit(void);
 
-#else /*__STDC__*/
+#else /* errMDefUseProtoANSI */ 
 
 void errSymTest();
 int errSymFind();
@@ -112,7 +120,7 @@ int errSymbolAdd();
 void errPrintf();
 void errSymDump();
 void tstErrSymFind();
-#endif /*__STDC__*/
+#endif /* errMDefUseProtoANSI */ 
 
 extern int errVerbose;
 

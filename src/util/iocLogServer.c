@@ -1,5 +1,5 @@
 /* iocLogServer.c */
-/* share/src/util  $Id$ */
+/* base/src/util $Id$ */
 
 /*
  *	archive logMsg() from several IOC's to a common rotating file	
@@ -43,10 +43,10 @@
  * .06 091192 joh	now uses SO_KEEPALIVE
  * .07 091192 joh	added SCCS ID
  * .08 092292 joh	improved message sent to the log
- *
+ * .09 050494 pg	HPUX port changes.
  */
 
-static char	*pSCCSID = "$Id$\t$Date$";
+static char	*pSCCSID = "@(#)iocLogServer.c	1.9\t05/05/94";
 
 #include	<stdio.h>
 #include	<string.h>
@@ -117,6 +117,7 @@ main()
 	struct timeval          timeout;
 	int			status;
 	struct ioc_log_server	*pserver;
+	int			optval=1;
 
 	status = getConfig();
 	if(status<0){
@@ -148,8 +149,8 @@ main()
         status = setsockopt(    pserver->sock,
                                 SOL_SOCKET,
                                 SO_REUSEADDR,
-                                NULL,
-                                0);
+                                &optval,
+                                sizeof(optval));
         if(status<0){
                 ca_printf(      "%s: set socket option failed\n",
                                 __FILE__);

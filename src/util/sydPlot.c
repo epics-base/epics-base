@@ -1,6 +1,4 @@
-#ifndef sun
-#else
-/*	@(#)sydPlot.c	1.10 2/23/93
+/*	base/src/util $Id$
  *	Author:	Roger A. Cole
  *	Date:	12-04-90
  *
@@ -50,6 +48,7 @@
  *			add strip chart; discontinue use of special malloc;
  *  .10 10-01-92 rac	continued work on strip chart; use pprWave routines;
  *  .11 01-12-93 rac	get StripYY routines in sync with StripY routines
+ *  .12 05-04-94 pg	HPUX port changes.
  *
  * make options
  *	-DXWINDOWS	makes a version for X11
@@ -145,6 +144,15 @@
 #   include <ctype.h>
 #   include <math.h>
 #endif
+
+# ifdef _HPUX_SOURCE
+#  ifndef nint
+#   define nint(value) (value>=0 ? (int)((value)+.5) : (int)((value)-.5))
+#  endif
+#  ifndef exp10
+#   define exp10(value) (exp(value * log(10.)))
+#  endif
+# endif
 
 /*-----------------------------------------------------------------------------
 *    prototypes
@@ -4071,4 +4079,3 @@ SYD_PL_MSTR *pMstr;	/* I pointer to master plot structure */
 	pSlave = pSlave->pNext;
     }
 }
-#endif

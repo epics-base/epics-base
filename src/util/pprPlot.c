@@ -1,4 +1,4 @@
-/*	@(#)pprPlot.c	1.9 11/16/92
+/*	base/src/util $Id$
  *	Author:	Roger A. Cole
  *	Date:	12-04-90
  *
@@ -41,6 +41,7 @@
  *			waveform plotting call
  *  .08 11-13-92 rac	handle annotations a little better; replace pprCvt
  *			with a copy of cvtXxx
+ *  .09 05-04-94 pg	HPUX port changes.
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -364,6 +365,15 @@
 #   include <math.h>
 #endif
 
+# ifdef _HPUX_SOURCE
+#  ifndef nint
+#   define nint(value) (value>=0 ? (int)((value)+.5) : (int)((value)-.5))
+#  endif
+#  ifndef exp10
+#   define exp10(value) (exp(value * log(10.)))
+#  endif
+# endif
+
 #define PPR_PRIVATE
 #include <pprPlotDefs.h>
 
@@ -479,7 +489,8 @@ pprTest()
     Canvas	plotCanvas, plotCanvas1, plotCanvas2;
     struct pprWinWin winList;
     void	pprTestEvHandler();
-#elif defined XWINDOWS
+#else
+#if defined XWINDOWS
     Display	*pDisp;		/* pointer to X server connection */
     int		screenNo;	/* screen number */
     Window	rootWindow;	/* the root window on display */
@@ -488,6 +499,7 @@ pprTest()
     Window	plotWindow;	/* the plot window on the display */
     Window	subWin1, subWin2;
     XSizeHints	sizeHints;	/* defaults for position and size */
+#endif
 #endif
 
     for (i=0; i<NPTS; i++) {
@@ -551,7 +563,8 @@ pprTest()
 	}
     }
 
-#elif defined SUNVIEW && defined UW
+#else
+#if defined SUNVIEW && defined UW
 /*-----------------------------------------------------------------------------
 *    A test program for user window in SunView; user program interacting with
 *    window manager.
@@ -633,6 +646,7 @@ pprTest()
     PprAssert(stat == 0);
     pprWinInfo(pWin, &x, &y, &width, &height);
     pprWinClose(pWin);
+#endif
 #endif
 
     pWin = pprWinOpen(PPR_WIN_POSTSCRIPT, "testPS", NULL, x,y,width,height);
@@ -1489,10 +1503,12 @@ double	yDblTop;	/* I y data value at top edge of area */
 #ifdef SUNVIEW
     y = pArea->pWin->height - y - height;
     pw_writebackground(pArea->pWin->pw, x, y, width, height, PIX_SRC);
-#elif defined XWINDOWS
+#else
+#if defined XWINDOWS
     y = pArea->pWin->height - y - height;
     XClearArea(pArea->pWin->pDisp, pArea->pWin->plotWindow,
 						x, y, width, height, False);
+#endif
 #endif
 }
 
@@ -1627,8 +1643,10 @@ double	charHt;		/* I value to use as default for character size, as
     pArea->linkedTo = NULL;
     pArea->pixMap = pArea->stipple = NULL;
     pArea->pixMapGC = NULL;
-#elif
+#else
+#if
     pArea->attr.myGC = 0;
+#endif
 #endif
     pArea->attr.bgGC = 0;
     pArea->attr.pPatt = NULL;
@@ -2912,7 +2930,8 @@ PPR_AREA *pArea;	/* I pointer to plot area structure */
     y = pArea->pWin->height - y - height;
     pw_writebackground(pArea->pWin->pw, x, y, width, height, PIX_SRC);
     pprGrid(pArea);
-#elif defined XWINDOWS
+#else
+#if defined XWINDOWS
     y = pArea->pWin->height - y - height;
     XClearArea(pArea->pWin->pDisp, pArea->pWin->plotWindow,
 						x, y, width, height, False);
@@ -2922,6 +2941,7 @@ PPR_AREA *pArea;	/* I pointer to plot area structure */
     }
     pprGrid(pArea);
     XFlush(pArea->pWin->pDisp);
+#endif
 #endif
 }
 
@@ -3262,7 +3282,8 @@ long	xp0, xp1, yp0, yp1;	/* y must be corrected properly by the caller
 		&pArea->pWin->brush, &texture, (int)PIX_SRC);
         else
 	    pw_vector(pArea->pWin->pw, xp0, yp0, xp1, yp1, PIX_SRC, 1);
-#elif defined XWINDOWS
+#else
+#if defined XWINDOWS
 /*-----------------------------------------------------------------------------
 *	!!!! NOTE WELL !!!!  Various routines have these plotting statements
 *	for calling XDrawLine.  If you modify the statements here, modify
@@ -3279,6 +3300,7 @@ long	xp0, xp1, yp0, yp1;	/* y must be corrected properly by the caller
 			yp1 - (pArea->pWin->height - pArea->yPixTop));
 	    }
         }
+#endif
 #endif
     }
     else if (pArea->pWin->winType == PPR_WIN_POSTSCRIPT ||
@@ -3318,10 +3340,12 @@ long	xp0, xp1, yp0, yp1;	/* y must be corrected properly by the caller
 		&pArea->pWin->brush, &texture, (int)PIX_SRC);
         else
 	    pw_vector(pArea->pWin->pw, xp0, yp0, xp1, yp1, PIX_SRC, 1);
-#elif defined XWINDOWS
+#else
+#if defined XWINDOWS
 	if (xp0 != xp1 || yp0 != yp1)
 	    XDrawLine(pArea->pWin->pDisp, pArea->pWin->plotWindow,
 		pArea->pWin->attr.gc, xp0, yp0, xp1, yp1);
+#endif
 #endif
     }
     else if (pArea->pWin->winType == PPR_WIN_POSTSCRIPT ||
@@ -3353,10 +3377,12 @@ long	xp0, xp1, yp0, yp1;	/* y must be corrected properly by the caller
 		&pArea->pWin->brush, &texture, (int)(PIX_NOT(PIX_SRC)&PIX_DST));
     else
 	pw_vector(pArea->pWin->pw, xp0, yp0, xp1, yp1, PIX_SRC, 0);
-#elif defined XWINDOWS
+#else
+#if defined XWINDOWS
     if (xp0 != xp1 || yp0 != yp1)
 	XDrawLine(pArea->pWin->pDisp, pArea->pWin->plotWindow,
 	    pArea->pWin->attr.gcBG, xp0, yp0, xp1, yp1);
+#endif
 #endif
 }
 
@@ -3434,11 +3460,13 @@ short	*pPatt;		/* I pointer to pattern array */
 			ypA = ybeg;
 			xpA = xbeg - pArea->pWin->attr.ltPix / 2;
 			xpB = xpA + pArea->pWin->attr.ltPix - 1;
-#elif defined XWINDOWS
+#else
+#if defined XWINDOWS
 		    if (pArea->attr.ltPix > 1) {
 			ypA = ybeg;
 			xpA = xbeg - pArea->attr.ltPix / 2;
 			xpB = xpA + pArea->attr.ltPix - 1;
+#endif
 #endif
 			/* for thick lines, draw a square 'blob' */
 			pprLineSegPixD_wc(pArea, xpA, ypA, xpB, ypA);
@@ -3446,9 +3474,11 @@ short	*pPatt;		/* I pointer to pattern array */
 		    else {
 #ifdef SUNVIEW
 			pw_put(pArea->pWin->pw, (int)xbeg, (int)ybeg, 1);
-#elif defined XWINDOWS
+#else
+#if defined XWINDOWS
 			XDrawPoint(pArea->pWin->pDisp, pArea->pWin->plotWindow,
 				pArea->pWin->attr.gc, (int)xbeg, (int)ybeg);
+#endif
 #endif
 		    }
 		}
@@ -3501,9 +3531,11 @@ short	thick;	/* I thickness in thousandths of window height */
 #ifdef SUNVIEW
 	if (thick != pWin->attr.ltCurr) {
 	    pWin->attr.ltCurr = thick;
-#elif defined XWINDOWS
+#else
+#if defined XWINDOWS
 	if (thick != pArea->attr.ltCurr) {
 	    pArea->attr.ltCurr = thick;
+#endif
 #endif
 	    if (thick == 0)
 		ltPix = 1;
@@ -3515,7 +3547,8 @@ short	thick;	/* I thickness in thousandths of window height */
 #ifdef SUNVIEW
 	    pWin->attr.ltPix = ltPix;
             pWin->brush.width = ltPix;
-#elif defined XWINDOWS
+#else
+#if defined XWINDOWS
 	    pArea->attr.ltPix = ltPix;
 	    XSetLineAttributes(pWin->pDisp, pArea->attr.gc, ltPix, LineSolid,
 				CapButt, JoinRound);
@@ -3523,6 +3556,7 @@ short	thick;	/* I thickness in thousandths of window height */
 		XSetLineAttributes(pWin->pDisp, pArea->pWin->attr.gcBG,
 				ltPix, LineSolid, CapButt, JoinRound);
 	    }
+#endif
 #endif
 	}
     }
@@ -3997,7 +4031,8 @@ PPR_AREA *pArea;	/* I pointer to plot area structure */
     y = pArea->pWin->height - y - height;
     pw_writebackground(pArea->pWin->pw, x, y, width, height, PIX_SRC);
     pprPerim(pArea);
-#elif defined XWINDOWS
+#else
+#if defined XWINDOWS
     y = pArea->pWin->height - y - height;
     XClearArea(pArea->pWin->pDisp, pArea->pWin->plotWindow,
 						x, y, width, height, False);
@@ -4007,6 +4042,7 @@ PPR_AREA *pArea;	/* I pointer to plot area structure */
     }
     pprPerim(pArea);
     XFlush(pArea->pWin->pDisp);
+#endif
 #endif
 }
 
@@ -4109,20 +4145,24 @@ double	y;		/* I y data coordinate */
 	    yp0 = yPix;
 	    xp0 = xPix - pArea->pWin->attr.ltPix / 2;
 	    xp1 = xp0 + pArea->pWin->attr.ltPix - 1;
-#elif defined XWINDOWS
+#else
+#if defined XWINDOWS
         if (pArea->attr.ltPix > 1) {
 	    yp0 = yPix;
 	    xp0 = xPix - pArea->attr.ltPix / 2;
 	    xp1 = xp0 + pArea->attr.ltPix - 1;
+#endif
 #endif
 	    pprLineSegPixD_ac(pArea, xp0, yp0, xp1, yp0);
 	}
 	else {
 #ifdef SUNVIEW
 	    pw_put(pArea->pWin->pw, (int)xPix, (int)yPix, 1);
-#elif defined XWINDOWS
+#else
+#if defined XWINDOWS
 	    XDrawPoint(pArea->pWin->pDisp, pArea->pWin->plotWindow,
 				pArea->attr.gc, (int)xPix, (int)yPix);
+#endif
 #endif
 	}
     }
@@ -4159,20 +4199,24 @@ double	y;		/* I y data coordinate */
 	yp0 = yPix;
 	xp0 = xPix - pArea->pWin->attr.ltPix / 2;
 	xp1 = xp0 + pArea->pWin->attr.ltPix - 1;
-#elif defined XWINDOWS
+#else
+#if defined XWINDOWS
     if (pArea->attr.ltPix > 1) {
 	yp0 = yPix;
 	xp0 = xPix - pArea->attr.ltPix / 2;
 	xp1 = xp0 + pArea->attr.ltPix - 1;
+#endif
 #endif
 	pprLineSegPixEraseD(pArea, xp0, yp0, xp1, yp0);
     }
     else {
 #ifdef SUNVIEW
 	pw_put(pArea->pWin->pw, (int)xPix, (int)yPix, 0);
-#elif defined XWINDOWS
+#else
+#if defined XWINDOWS
 	XDrawPoint(pArea->pWin->pDisp, pArea->pWin->plotWindow,
 				pArea->pWin->attr.gcBG, (int)xPix, (int)yPix);
+#endif
 #endif
     }
 }
@@ -4330,10 +4374,12 @@ double	wfracYtop;	/* I y win frac of top edge of area (see Note 1) */
 #ifdef SUNVIEW
     y = pArea->pWin->height - y - height;
     pw_writebackground(pArea->pWin->pw, x, y, width, height, PIX_SRC);
-#elif defined XWINDOWS
+#else
+#if defined XWINDOWS
     y = pArea->pWin->height - y - height;
     XClearArea(pArea->pWin->pDisp, pArea->pWin->plotWindow,
 						x, y, width, height, False);
+#endif
 #endif
 }
 
@@ -4995,7 +5041,8 @@ PPR_WIN	*pWin;
     pWin->height = (int)window_get(pWin->canvas, WIN_HEIGHT);
     pWin->x = (int)window_get(pWin->frame, WIN_X);
     pWin->y = (int)window_get(pWin->frame, WIN_Y);
-#elif defined XWINDOWS
+#else
+#if defined XWINDOWS
     XWindowAttributes	winAttr;
     XWindowAttributes	parentAttr;
     long	stat;
@@ -5020,6 +5067,7 @@ PPR_WIN	*pWin;
     pWin->height = winAttr.height;
     pWin->x = actualX;
     pWin->y = actualY;
+#endif
 #endif
 }
 
@@ -5090,10 +5138,12 @@ PPR_WIN	*pWin;	/* I pointer to plot window structure */
     if (pWin->winType == PPR_WIN_SCREEN) {
 #ifdef SUNVIEW
         pw_writebackground(pWin->pw, 0, 0, pWin->width, pWin->height, PIX_SRC);
-#elif defined XWINDOWS
+#else
+#if defined XWINDOWS
 	XClearArea(pWin->pDisp, pWin->plotWindow, 0, 0,
 			pWin->width, pWin->height, False);
         XFlush(pWin->pDisp);
+#endif
 #endif
     }
 }
@@ -5328,11 +5378,13 @@ void	*pDrawArg;/* I pointer to pass to drawFun */
     if (pWin->winType == PPR_WIN_SCREEN) {
 #ifdef SUNVIEW
 	window_main_loop(pWin->frame);
-#elif defined XWINDOWS
+#else
+#if defined XWINDOWS
 	while (pWin->loopDone == 0) {
 	    XNextEvent(pWin->pDisp, &anEvent);
 	    pprWinEvHandler(pWin, &anEvent);
 	}
+#endif
 #endif
     }
     else if (pWin->winType == PPR_WIN_POSTSCRIPT ||
@@ -5411,7 +5463,8 @@ PPR_WIN	*pWin;	/* I pointer to plot window structure */
 	window_set(pWin->canvas, WIN_SHOW, 1, 0);
 	pArea->attr.myGC = 0;
 	pArea->attr.bgGC = 0;
-#elif defined XWINDOWS
+#else
+#if defined XWINDOWS
 	if (pWin->winDispName[0] == '\0')
 	    pWin->pDisp = XOpenDisplay((char *)NULL);
 	else
@@ -5446,6 +5499,7 @@ PPR_WIN	*pWin;	/* I pointer to plot window structure */
 				GCBackground|GCForeground, pWin->attr.gcBG);
 	XSetFunction(pWin->pDisp, pWin->attr.gcBG, GXclear);
 	pWin->attr.bgGC = 1;
+#endif
 #endif
     }
     else if (pWin->winType == PPR_WIN_POSTSCRIPT ||
@@ -5822,7 +5876,8 @@ void	*pArg4;
     pWin->canvas = *(Canvas *)pArg2;
     pWin->pw = canvas_pixwin(pWin->canvas);
     pWin->attr.bgGC = 0;
-#elif defined XWINDOWS
+#else
+#if defined XWINDOWS
     pWin->pDisp = *(Display **)pArg1;
     pWin->plotWindow = *(Window *)pArg2;
     pWin->attr.gc = *(GC *)pArg3;
@@ -5832,6 +5887,7 @@ void	*pArg4;
 				GCBackground|GCForeground, pWin->attr.gcBG);
     XSetFunction(pWin->pDisp, pWin->attr.gcBG, GXclear);
     pWin->attr.bgGC = 1;
+#endif
 #endif
     pprWinAttr(pWin);
 

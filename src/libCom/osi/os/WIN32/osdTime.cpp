@@ -1,24 +1,13 @@
 
+#include <math.h>
 #include <time.h>
 #include <winsock2.h>
-#include <mmsystem.h>
 
 #define epicsExportSharedSymbols
 #include <osiTime.h>
 
-
-/*
- *	This code is mainly adapted form Chris Timossi's windows_depen.c
- *
- *	8-2-96  -kuk-
- */
-
-
-/* offset from timeGetTime() to 1970 */
-static unsigned long	offset_secs;
-static DWORD		prev_time = 0;
-static UINT		res;
-static char init = 0;
+static long offset_time_s = 0;  /* time diff (sec) from 1990 when EPICS started */
+static LARGE_INTEGER time_prev, time_freq;
 
 /*
  *	init_osi_time has to be called before using the timer,
@@ -26,40 +15,29 @@ static char init = 0;
  */
 int init_osi_time ()
 {
-	TIMECAPS	tc;
-
-	if (init) {
-		return 1;
+	if (offset_time_s == 0) {
+		/*
+		 * initialize elapsed time counters
+		 *
+		 * All CPUs running win32 currently have HR
+		 * counters (Intel and Mips processors do)
+		 */
+		if (QueryPerformanceCounter (&time_prev)==0) {
+			return 1;
+		}
+		if (QueryPerformanceFrequency (&time_freq)==0) {
+			return 1;
+		}
+		offset_time_s = (long)time(NULL) - 
+				(long)(time_prev.QuadPart/time_freq.QuadPart);
 	}
-
-	if (timeGetDevCaps (&tc, sizeof(TIMECAPS)) != TIMERR_NOERROR)
-	{
-		fprintf (stderr, "init_osi_time: cannot get timer info\n");
-		return 1;
-	}
-	/* set for 1 ms resoulution */
-	res = min(max(tc.wPeriodMin, 1), tc.wPeriodMax);
-	if (timeBeginPeriod (res) != TIMERR_NOERROR)
-	{
-		fprintf(stderr,"timer setup failed\n");
-		return 2;
-	}
-	prev_time =  timeGetTime();
-	offset_secs = (long)time(NULL) - (long)prev_time/1000;
-
-	init = 1;
 
 	return 0;
 }
 
 int exit_osi_time ()
 {
-	if (!init) {
-		return 0;
-	}
-
-	timeEndPeriod (res);
-	init = 0;
+	offset_time_s = 0;
 
 	return 0;
 }
@@ -70,31 +48,61 @@ int exit_osi_time ()
 //
 osiTime osiTime::getCurrent ()
 {
-	unsigned long now;
+	LARGE_INTEGER time_cur, time_sec, time_remainder;
+	unsigned long sec, nsec;
 
 	/*
 	 * this allows the code to work when it is in an object
 	 * library (in addition to inside a dll)
 	 */
-	if (!init) {
+	if (offset_time_s==0) {
 		init_osi_time();
-		init = 1;
 	}
 
-	/* MS Online help:
-	 * Note that the value returned by the timeGetTime function is
-	 * a DWORD value. The return value wraps around to
-	 * 0 every 2^32 milliseconds, which is about 49.71 days.
+	/*
+	 * dont need to check status since it was checked once
+	 * during initialization to see if the CPU has HR
+	 * counters (Intel and Mips processors do)
 	 */
+	QueryPerformanceCounter (&time_cur);
+	if (time_prev.QuadPart > time_cur.QuadPart)	{	/* must have been a timer roll-over */
+		double offset;
+		/*
+		 * must have been a timer roll-over
+		 * It takes 9.223372036855e+18/time_freq sec
+		 * to roll over this counter (time_freq is 1193182
+		 * sec on my system). This is currently about 245118 years.
+		 *
+		 * attempt to add number of seconds in a 64 bit integer
+		 * in case the timer resolution improves
+		 */
+		offset = pow(2.0, 63.0)-1.0/time_freq.QuadPart;
+		if (offset<=LONG_MAX-offset_time_s) {
+			offset_time_s += (long) offset;
+		}
+		else {
+			/*
+			 * this problem cant be fixed, but hopefully will never occurr
+			 */
+			fprintf (stderr, "%s.%d Timer overflowed\n", __FILE__, __LINE__);
+			return osiTime (0, 0);
+		}
+	}
+	time_sec.QuadPart = time_cur.QuadPart / time_freq.QuadPart;
+	time_remainder.QuadPart = time_cur.QuadPart % time_freq.QuadPart;
+	if (time_sec.QuadPart > LONG_MAX-offset_time_s) {
+		/*
+		 * this problem cant be fixed, but hopefully will never occurr
+		 */
+		fprintf (stderr, "%s.%d Timer value larger than storage\n", __FILE__, __LINE__);
+		return osiTime (0, 0);
+	}
 
-	// get millisecs, timeGetTime gives DWORD
-	now = timeGetTime ();
-	if (prev_time > now)	/* looks like a DWORD overflow */
-		offset_secs +=  4294967ul; /* 0x100000000 / 1000 */
- 
-	prev_time = now;
+	/* add time (sec) since 1970 */
+	sec = offset_time_s + (long)time_sec.QuadPart;
+	nsec = (long)((time_remainder.QuadPart*1000000000)/time_freq.QuadPart);
 
-	// compute secs and nanosecs from millisecs:
-	return osiTime (now / 1000ul + offset_secs, (now % 1000ul) * 1000000ul);
+	time_prev = time_cur;
+
+	return osiTime (sec, nsec);
 }
-

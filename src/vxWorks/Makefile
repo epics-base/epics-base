@@ -12,6 +12,7 @@ DIRS += db
 DIRS += drv
 DIRS += dev
 DIRS += devOpt
+DIRS += sequencer
 DIRS += iocCore
 
 include $(TOP)/configure/RULES_DIRS

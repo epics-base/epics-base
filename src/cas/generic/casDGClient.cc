@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.12  1997/08/05 00:47:06  jhill
+ * fixed warnings
+ *
  * Revision 1.11  1997/06/30 22:54:27  jhill
  * use %p with pointers
  *
@@ -81,8 +84,8 @@
 // casDGClient::casDGClient()
 //
 casDGClient::casDGClient(caServerI &serverIn) :
-	dgInBuf(*(osiMutex *)this, casDGIntfIO::optimumBufferSize()),
-	dgOutBuf(*(osiMutex *)this, casDGIntfIO::optimumBufferSize()),
+	dgInBuf(*(osiMutex *)this, casDGIntfIO::optimumInBufferSize()),
+	dgOutBuf(*(osiMutex *)this, casDGIntfIO::optimumOutBufferSize()),
 	casClient(serverIn, *this, *this),
 	pOutMsgIO(NULL),
 	pInMsgIO(NULL)
@@ -96,15 +99,23 @@ caStatus casDGClient::init()
 {
 	caStatus status;
 
-        status = this->dgInBuf::init();
-        if (status) {
-                return status;
-        }
-        status = this->dgOutBuf::init();
-        if (status) {
-                return status;
-        }
+	status = this->dgInBuf::init();
+	if (status) {
+		return status;
+	}
+	status = this->dgOutBuf::init();
+	if (status) {
+		return status;
+	}
 	return S_cas_success;
+}
+
+//
+// casDGClient::~casDGClient()
+// (virtual destructor)
+//
+casDGClient::~casDGClient()
+{
 }
 
 //
@@ -122,7 +133,7 @@ void casDGClient::show(unsigned level) const
 {
 	this->casClient::show(level);
 	printf("casDGClient at %p\n", this);
-        this->dgInBuf::show(level);
+	this->dgInBuf::show(level);
 	this->dgOutBuf::show(level);
 }
 
@@ -159,19 +170,19 @@ caStatus casDGClient::searchAction()
 	pvExistReturn pver = 
 		(*this->ctx.getServer())->pvExistTest(this->ctx, pChanName);
 
-        //
-        // prevent problems when they initiate
-        // async IO but dont return status
-        // indicating so (and vise versa)
-        //
-        if (this->asyncIOFlag) {
+	//
+	// prevent problems when they initiate
+	// async IO but dont return status
+	// indicating so (and vise versa)
+	//
+	if (this->asyncIOFlag) {
 		pver = pverAsyncCompletion;
-        }
-        else if (pver.getStatus() == pverAsyncCompletion) {
+	}
+	else if (pver.getStatus() == pverAsyncCompletion) {
 		pver = pverDoesNotExistHere;
-                errMessage(S_cas_badParameter, 
+		errMessage(S_cas_badParameter, 
 		"- expected asynch IO status from caServer::pvExistTest()");
-        }
+	}
 
 	//
 	// otherwise we assume sync IO operation was initiated
@@ -226,15 +237,15 @@ caStatus casDGClient::searchResponse(const caHdr &msg,
 		return S_cas_success;
 	}
 
-        /*
-         * starting with V4.1 the count field is used (abused)
-         * by the client to store the minor version number of 
+	/*
+	 * starting with V4.1 the count field is used (abused)
+	 * by the client to store the minor version number of 
 	 * the client.
-         *
-         * Old versions expect alloc of channel in response
-         * to a search request. This is no longer supported.
-         */
-        if ( !CA_V44(CA_PROTOCOL_VERSION,msg.m_count) ) {
+	 *
+	 * Old versions expect alloc of channel in response
+	 * to a search request. This is no longer supported.
+	 */
+	if ( !CA_V44(CA_PROTOCOL_VERSION,msg.m_count) ) {
 		//
 		// old connect protocol was dropped when the
 		// new API was added to the server (they must
@@ -243,7 +254,7 @@ caStatus casDGClient::searchResponse(const caHdr &msg,
 		status = this->sendErr(&msg, ECA_DEFUNCT, 
 			"R3.11 connect sequence from old client was ignored");
 		return status;
-        }
+	}
 
 	/*
 	 * obtain space for the reply message
@@ -379,18 +390,18 @@ void casDGClient::processDG(casDGIntfIO &inMsgIO, casDGIntfIO &outMsgIO)
 	//
 	// !! special locking required here in mt case
 	//
-        //
-        // force all replies to be sent to the client
-        // that made the request
-        //
+    //
+    // force all replies to be sent to the client
+    // that made the request
+    //
 	this->pInMsgIO = &inMsgIO;
 	this->pOutMsgIO = &outMsgIO;
-        this->inBuf::clear();
-        this->outBuf::clear();
- 
-        //
-        // read in new input
-        //
+    this->inBuf::clear();
+    this->outBuf::clear();
+
+    //
+    // read in new input
+    //
 	if (this->fill() != casFillDisconnect) {
 
 		//
@@ -439,7 +450,7 @@ caStatus casDGClient::asyncSearchResponse(
 	// !! special locking required here in mt case
 	//
 	this->pOutMsgIO = &outMsgIO;
-        this->dgOutBuf::clear();
+	this->dgOutBuf::clear();
 	this->setRecipient(outAddr);
 
 	stat = this->searchResponse(msg, retVal);
@@ -465,10 +476,10 @@ xSendStatus casDGClient::xDGSend (char *pBufIn, bufSizeT nBytesNeedToBeSent,
 	stat = this->pOutMsgIO->osdSend(pBufIn, nBytesNeedToBeSent, 
 				nBytesSent, recipient);	
 	if (stat==xSendOK) {
-                //
-                // !! this time fetch may be slowing things down !!
-                //
-                this->elapsedAtLastSend = osiTime::getCurrent();
+		//
+		// !! this time fetch may be slowing things down !!
+		//
+		this->elapsedAtLastSend = osiTime::getCurrent();
 	}
 	return stat;
 }
@@ -487,10 +498,10 @@ xRecvStatus casDGClient::xDGRecv (char *pBufIn, bufSizeT nBytesToRecv,
 	stat = this->pInMsgIO->osdRecv(pBufIn, nBytesToRecv, 
 						nByesRecv, sender);
 	if (stat==xRecvOK) {
-                //
-                // !! this time fetch may be slowing things down !!
-                //
-                this->elapsedAtLastRecv = osiTime::getCurrent();
+		//
+		// !! this time fetch may be slowing things down !!
+		//
+		this->elapsedAtLastRecv = osiTime::getCurrent();
 	}
 	return stat;
 }
@@ -529,6 +540,6 @@ caNetAddr casDGClient::fetchRespAddr()
 //
 casDGIntfIO* casDGClient::fetchOutIntf()
 {
-        return this->pOutMsgIO;
+	return this->pOutMsgIO;
 }
 

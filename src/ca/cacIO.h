@@ -172,4 +172,22 @@ epicsShareExtern cacServiceList cacGlobalServiceList;
 
 epicsShareFunc int epicsShareAPI ca_register_service ( struct cacServiceIO *pService );
 
+inline void cacNotifyIO::completionNotify ()
+{
+    this->notify.completionNotify ();
+}
 
+inline void cacNotifyIO::completionNotify ( unsigned type, unsigned long count, const void *pData )
+{
+    this->notify.completionNotify ( type, count, pData );
+}
+
+inline void cacNotifyIO::exceptionNotify ( int status, const char *pContext )
+{
+    this->notify.exceptionNotify ( status, pContext );
+}
+
+inline void cacNotifyIO::exceptionNotify ( int status, const char *pContext, unsigned type, unsigned long count )
+{
+    this->notify.exceptionNotify ( status, pContext, type, count );
+}

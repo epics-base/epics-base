@@ -359,7 +359,6 @@ epicsThreadIsSuspended (epicsThreadId id)
         return 1;
 
     default:
-        errlogPrintf("epicsThreadIsSuspended: %s\n", rtems_status_text (sc));
         return 1;
     }
 }
@@ -562,8 +561,10 @@ showInternalTaskInfo (rtems_id tid)
     };
 
     the_thread = _Thread_Get (tid, &location);
-    if (location != OBJECTS_LOCAL)
+    if (location != OBJECTS_LOCAL) {
+        printf ("%-30s",  "  *** RTEMS task gone! ***");
         return;
+    }
     thread = *the_thread;
     _Thread_Enable_dispatch();
     /*
@@ -591,7 +592,7 @@ showInternalTaskInfo (rtems_id tid)
                                 STATES_WAITING_FOR_MESSAGE))
         printf (" %8.8x", thread.Wait.id);
     else
-        printf ("         ");
+        printf (" %8.8s", "");
 #endif
 }
 

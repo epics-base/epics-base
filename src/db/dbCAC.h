@@ -74,7 +74,7 @@ public:
         unsigned type, unsigned long count, unsigned mask, cacChannel::ioid * );
     void destroy ();
     void show ( unsigned level ) const;
-    //dbChannelIO & chan () const;
+    void channelDestroyNotify ();
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
 protected:
@@ -117,12 +117,12 @@ public:
     void show ( unsigned level ) const;
     void * operator new ( size_t size);
     void operator delete ( void *pCadaver, size_t size );
+    const char *pName () const;
 protected:
     ~dbChannelIO (); // allocate only from pool
 private:
     dbServiceIO &serviceIO;
     dbAddr addr;
-    const char *pName () const;
     void initiateConnect ();
     ioStatus read ( unsigned type, unsigned long count, 
         cacReadNotify &, ioid * );

@@ -26,9 +26,6 @@
 
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
-#if 0
-#include "iocinf.h"
-#endif
 #include "comBuf.h"
 #include "errlog.h"
 
@@ -128,9 +125,9 @@ unsigned comBuf::push ( const epicsFloat64 * pValue, unsigned nElem ) epics_thro
 // throwing the exception from a function that isnt inline 
 // shrinks the GNU compiled object code
 void comBuf::throwInsufficentBytesException () 
-    epics_throws (( insufficentBytesAvailable ))
+    epics_throws (( comBuf::insufficentBytesAvailable ))
 {
-    throw insufficentBytesAvailable ();
+    throw comBuf::insufficentBytesAvailable ();
 }
 
 void comBuf::operator delete ( void *pCadaver ) epics_throws (())

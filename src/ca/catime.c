@@ -36,7 +36,7 @@
 #define NELEMENTS(A) (sizeof (A) / sizeof ((A) [0]))
 #endif
 
-#define ITERATION_COUNT 10000
+#define ITERATION_COUNT 1000
 
 #define WAIT_FOR_ACK
 
@@ -50,9 +50,9 @@ typedef struct testItem {
 
 ti itemList[ITERATION_COUNT];
 
-int catime(char *channelName);
+int catime (char *channelName);
 
-typedef void tf (ti *pItems, unsigned iterations);
+typedef void tf (ti *pItems, unsigned iterations, unsigned *pInlineIter);
 
 LOCAL void test (
 	ti		*pItems,
@@ -95,8 +95,7 @@ int main(int argc, char **argv)
  */
 int catime (char *channelName)
 {
-	long		status;
-  	long		i,j;
+  	long		i;
 	unsigned 	strsize;
 
   	SEVCHK (ca_task_initialize(),"Unable to initialize");
@@ -144,6 +143,8 @@ int catime (char *channelName)
   	printf ("free test\n");
 	timeIt (test_free, itemList, NELEMENTS(itemList));
 
+	SEVCHK (ca_task_exit (), "Unable to free resources at exit");
+
   	return OK;
 }
 
@@ -158,11 +159,11 @@ LOCAL void test (
 )
 {
 	printf ("\tasync put test\n");
-  	timeIt(test_put, pItems, iterations);
+  	timeIt (test_put, pItems, iterations);
 	printf ("\tasync get test\n");
-  	timeIt(test_get, pItems, iterations);
+  	timeIt (test_get, pItems, iterations);
 	printf ("\tsynch get test\n");
-  	timeIt(test_wait, pItems, iterations);
+  	timeIt (test_wait, pItems, iterations);
 }
 
 
@@ -179,14 +180,15 @@ void timeIt(
 	TS_STAMP	start_time;
 	double		delay;
 	int		status;
+	unsigned	inlineIter;
 
 	status = tsLocalTime(&start_time);
 	assert (status == S_ts_OK);
-	(*pfunc) (pItems, iterations);
+	(*pfunc) (pItems, iterations, &inlineIter);
 	status = tsLocalTime(&end_time);
 	assert (status == S_ts_OK);
 	TsDiffAsDouble(&delay,&end_time,&start_time);
-	printf ("Elapsed Per Item = %f\n", delay/iterations);
+	printf ("Elapsed Per Item = %f\n", delay/(iterations*inlineIter));
 }
 
 
@@ -195,24 +197,23 @@ void timeIt(
  */
 LOCAL void test_search(
 ti		*pItems,
-unsigned	iterations
+unsigned	iterations,
+unsigned	*pInlineIter
 )
 {
-  	int 	i;
+	ti	*pi;
 	int	status;
-	chid	chan;
 
-	status = ca_search (
-			pItems[0].name, 
-			&chan);
-    	SEVCHK (status, NULL);
-	status = ca_pend_io(0.0);
-
-  	for (i=0; i< iterations;i++) {
-		pItems[i].chix = chan;
+	for (pi=pItems; pi<&pItems[iterations]; pi++) {
+		status = ca_search (
+				pi->name, 
+				&pi->chix);
+		SEVCHK (status, NULL);
   	}
-
+	status = ca_pend_io(0.0);
     	SEVCHK (status, NULL);
+
+	*pInlineIter = 1;
 }
 
 
@@ -221,29 +222,18 @@ unsigned	iterations
  */
 LOCAL void test_free(
 ti		*pItems,
-unsigned	iterations
+unsigned	iterations,
+unsigned	*pInlineIter
 )
 {
-  	int 		i;
+	ti		*pi;
 	int		status;
-	dbr_int_t	val;
 
-	status = ca_clear_channel (pItems[0].chix);
-    	SEVCHK (status, NULL);
-
-#if 0
-#ifdef WAIT_FOR_ACK
-	status = ca_array_get (DBR_INT, 1, pItems[0].chix, &val);
-    	SEVCHK (status, NULL);
-  	status = ca_pend_io(100.0);
-    	SEVCHK (status, NULL);
-#endif
-
-	status = ca_clear_channel (pItems[0].chix);
-    	SEVCHK (status, NULL);
-  	status = ca_flush_io();
-    	SEVCHK (status, NULL);
-#endif
+	for (pi=pItems; pi<&pItems[iterations]; pi++) {
+		status = ca_clear_channel (pi->chix);
+		SEVCHK (status, NULL);
+	}
+	*pInlineIter = 1;
 }
 
 
@@ -252,19 +242,74 @@ unsigned	iterations
  */
 LOCAL void test_put(
 ti		*pItems,
-unsigned	iterations
+unsigned	iterations,
+unsigned	*pInlineIter
 )
 {
-  	int 		i;
+	ti		*pi;
 	int		status;
 	dbr_int_t	val;
   
-  	for (i=1; i<iterations; i++) {
+	for (pi=pItems; pi<&pItems[iterations]; pi++) {
 		status = ca_array_put(
-				pItems[i].type,
-				pItems[i].count,
-				pItems[i].chix,
-				&pItems[i].val);
+				pi->type,
+				pi->count,
+				pi->chix,
+				&pi->val);
+    		SEVCHK (status, NULL);
+		status = ca_array_put(
+				pi->type,
+				pi->count,
+				pi->chix,
+				&pi->val);
+    		SEVCHK (status, NULL);
+		status = ca_array_put(
+				pi->type,
+				pi->count,
+				pi->chix,
+				&pi->val);
+    		SEVCHK (status, NULL);
+		status = ca_array_put(
+				pi->type,
+				pi->count,
+				pi->chix,
+				&pi->val);
+    		SEVCHK (status, NULL);
+		status = ca_array_put(
+				pi->type,
+				pi->count,
+				pi->chix,
+				&pi->val);
+    		SEVCHK (status, NULL);
+		status = ca_array_put(
+				pi->type,
+				pi->count,
+				pi->chix,
+				&pi->val);
+    		SEVCHK (status, NULL);
+		status = ca_array_put(
+				pi->type,
+				pi->count,
+				pi->chix,
+				&pi->val);
+    		SEVCHK (status, NULL);
+		status = ca_array_put(
+				pi->type,
+				pi->count,
+				pi->chix,
+				&pi->val);
+    		SEVCHK (status, NULL);
+		status = ca_array_put(
+				pi->type,
+				pi->count,
+				pi->chix,
+				&pi->val);
+    		SEVCHK (status, NULL);
+		status = ca_array_put(
+				pi->type,
+				pi->count,
+				pi->chix,
+				&pi->val);
     		SEVCHK (status, NULL);
   	}
 #ifdef WAIT_FOR_ACK
@@ -280,6 +325,8 @@ unsigned	iterations
     	SEVCHK (status, NULL);
   	status = ca_flush_io();
     	SEVCHK (status, NULL);
+
+	*pInlineIter = 10;
 }
 
 
@@ -288,22 +335,79 @@ unsigned	iterations
  */
 LOCAL void test_get(
 ti		*pItems,
-unsigned	iterations
+unsigned	iterations,
+unsigned	*pInlineIter
 )
 {
-  	int 	i;
+	ti	*pi;
 	int	status;
   
-  	for (i=0; i<iterations; i++) {
+	for (pi=pItems; pi<&pItems[iterations]; pi++) {
 		status = ca_array_get(
-				pItems[i].type,
-				pItems[i].count,
-				pItems[i].chix,
-				&pItems[i].val);
+				pi->type,
+				pi->count,
+				pi->chix,
+				&pi->val);
+    		SEVCHK (status, NULL);
+		status = ca_array_get(
+				pi->type,
+				pi->count,
+				pi->chix,
+				&pi->val);
+    		SEVCHK (status, NULL);
+		status = ca_array_get(
+				pi->type,
+				pi->count,
+				pi->chix,
+				&pi->val);
+    		SEVCHK (status, NULL);
+		status = ca_array_get(
+				pi->type,
+				pi->count,
+				pi->chix,
+				&pi->val);
+    		SEVCHK (status, NULL);
+		status = ca_array_get(
+				pi->type,
+				pi->count,
+				pi->chix,
+				&pi->val);
+    		SEVCHK (status, NULL);
+		status = ca_array_get(
+				pi->type,
+				pi->count,
+				pi->chix,
+				&pi->val);
+    		SEVCHK (status, NULL);
+		status = ca_array_get(
+				pi->type,
+				pi->count,
+				pi->chix,
+				&pi->val);
+    		SEVCHK (status, NULL);
+		status = ca_array_get(
+				pi->type,
+				pi->count,
+				pi->chix,
+				&pi->val);
+    		SEVCHK (status, NULL);
+		status = ca_array_get(
+				pi->type,
+				pi->count,
+				pi->chix,
+				&pi->val);
+    		SEVCHK (status, NULL);
+		status = ca_array_get(
+				pi->type,
+				pi->count,
+				pi->chix,
+				&pi->val);
     		SEVCHK (status, NULL);
   	}
   	status = ca_pend_io(100.0);
     	SEVCHK (status, NULL);
+
+	*pInlineIter = 10;
 }
 
 
@@ -313,21 +417,24 @@ unsigned	iterations
  */
 LOCAL void test_wait (
 ti		*pItems,
-unsigned	iterations
+unsigned	iterations,
+unsigned	*pInlineIter
 )
 {
-  	int 	i;
+	ti	*pi;
 	int	status;
   
-  	for (i=1; i<iterations; i++) {
+	for (pi=pItems; pi<&pItems[iterations]; pi++) {
 		status = ca_array_get(
-				pItems[i].type,
-				pItems[i].count,
-				pItems[i].chix,
-				&pItems[i].val);
+				pi->type,
+				pi->count,
+				pi->chix,
+				&pi->val);
     		SEVCHK (status, NULL);
 		status = ca_pend_io(100.0);
 		SEVCHK (status, NULL);
   	}
+
+	*pInlineIter = 1;
 }
 

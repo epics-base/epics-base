@@ -31,13 +31,13 @@
 
 ifdef T_A
 
-vpath %.c $(USER_VPATH) $(ALL_SRC_DIRS)
-vpath %.cc $(USER_VPATH) $(ALL_SRC_DIRS)
-vpath %.cpp $(USER_VPATH) $(ALL_SRC_DIRS)
-vpath %.C $(USER_VPATH) $(ALL_SRC_DIRS)
-vpath %.rc $(USER_VPATH) $(ALL_SRC_DIRS)
-vpath %.h $(USER_VPATH) $(ALL_SRC_DIRS)
-vpath %.skel.static $(USER_VPATH) $(GENERIC_SRC_DIRS)
+vpath %.c $(USR_VPATH) $(ALL_SRC_DIRS)
+vpath %.cc $(USR_VPATH) $(ALL_SRC_DIRS)
+vpath %.cpp $(USR_VPATH) $(ALL_SRC_DIRS)
+vpath %.C $(USR_VPATH) $(ALL_SRC_DIRS)
+vpath %.rc $(USR_VPATH) $(ALL_SRC_DIRS)
+vpath %.h $(USR_VPATH) $(ALL_SRC_DIRS)
+vpath %.skel.static $(USR_VPATH) $(GENERIC_SRC_DIRS)
 
 #---------------------------------------------------------------
 
@@ -193,7 +193,7 @@ depends: $(LIBSRCS) $(SRCS) $(PROD_SRCS)
 
 $(PRODNAME):%$(EXE): $(PROD_OBJS) $(PROD_RESS) $(PROD_DEPLIBS)
 	@$(RM) $@
-	$(LINK.cpp) $(LD_OBJS) $(LD_RESS) $(LDLIBS)
+	$(LINK.cpp) $(PROD_LD_OBJS) $(PROD_LD_RESS) $(LDLIBS)
 
 %$(OBJ): %.c
 	@$(RM) $@
@@ -247,7 +247,7 @@ endif
 %.c: ../%.st
 	@echo "preprocessing $*.st"
 	@$(RM) $*.i
-	$(CPP) $(CPPFLAGS) $(CPPSNCFLAGS) $< > $*.i
+	$(CPP) $(CPPSNCFLAGS) $< > $*.i
 	@echo "converting $*.i"
 	@$(RM) $@
 	$(SNC) $(TARGET_SNCFLAGS) $(SNCFLAGS) $*.i

@@ -1,22 +1,14 @@
-
-
 #define epicsExportSharedSymbols
 #include "osiTime.h"
+
+extern long TSgetTimeStamp(int event_number,TS_STAMP* ts);
 
 //
 // osiTime::osdGetCurrent ()
 //
 extern "C" epicsShareFunc int tsStampGetCurrent (TS_STAMP *pDest)
 {
-    int status;
-    struct timespec ts;
-
-    status = clock_gettime (CLOCK_REALTIME, &ts);
-    if (status) {
-        return -1;
-    }
-    *pDest = osiTime (ts);
-    return 0;
+    return(TSgetTimeStamp(0,pDest));
 }
 
 //
@@ -24,10 +16,5 @@ extern "C" epicsShareFunc int tsStampGetCurrent (TS_STAMP *pDest)
 //
 extern "C" epicsShareFunc int epicsShareAPI tsStampGetEvent (TS_STAMP *pDest, unsigned eventNumber)
 {
-    if (eventNumber==tsStampEventCurrentTime) {
-        return tsStampGetCurrent (pDest);
-    }
-    else {
-        return tsStampERROR;
-    }
+    return(TSgetTimeStamp((int)eventNumber,pDest));
 }

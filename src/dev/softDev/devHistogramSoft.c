@@ -32,7 +32,7 @@
 /* Create the dset for devHistogramSoft */
 static long init_record();
 static long read_histogram();
-epicsShareDef struct {
+static struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;
@@ -49,6 +49,7 @@ epicsShareDef struct {
 	read_histogram,
 	NULL
 };
+epicsShareDef dset *pdevHistogramSoft = (dset *)&devHistogramSoft;
 
 static long init_record(histogramRecord	*phistogram)
 {

@@ -40,7 +40,7 @@
 /* Create the dset for devMbboTestAsyn */
 static long init_record();
 static long write_mbbo();
-epicsShareDef struct {
+static struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;
@@ -55,7 +55,9 @@ epicsShareDef struct {
 	init_record,
 	NULL,
 	write_mbbo,
-	NULL};
+	NULL
+};
+epicsShareDef dset *pdevMbboTestAsyn = (dset *)&devMbboTestAsyn;
 
 static long init_record(pmbbo)
     struct mbboRecord	*pmbbo;

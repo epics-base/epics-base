@@ -34,7 +34,7 @@
 /* Create the dset for devAiSoftRaw */
 static long init_record(aiRecord *pai);
 static long read_ai(aiRecord *pai);
-epicsShareDef struct {
+static struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;
@@ -51,6 +51,7 @@ epicsShareDef struct {
 	read_ai,
 	NULL
 };
+epicsShareDef dset *pdevAiSoftRaw = (dset *)&devAiSoftRaw;
 
 static long init_record(aiRecord *pai)
 {

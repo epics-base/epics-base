@@ -30,7 +30,7 @@
 /* Create the dset for devLoSoft */
 static long init_record();
 static long write_longout();
-epicsShareDef struct {
+static struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;
@@ -45,6 +45,7 @@ epicsShareDef struct {
 	NULL,
 	write_longout
 };
+epicsShareDef dset *pdevLoSoft = (dset *)&devLoSoft;
 
 static long init_record(longoutRecord *plongout)
 {

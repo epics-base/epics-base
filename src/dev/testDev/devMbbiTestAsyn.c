@@ -39,7 +39,7 @@
 /* Create the dset for devMbbiTestAsyn */
 static long init_record();
 static long read_mbbi();
-epicsShareDef struct {
+static struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;
@@ -54,7 +54,9 @@ epicsShareDef struct {
 	init_record,
 	NULL,
 	read_mbbi,
-	NULL};
+	NULL
+};
+epicsShareDef dset *pdevMbbiTestAsyn = (dset *)&devMbbiTestAsyn;
 
 static long init_record(pmbbi)
     struct mbbiRecord	*pmbbi;

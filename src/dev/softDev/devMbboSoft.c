@@ -31,7 +31,7 @@
 /* Create the dset for devMbboSoft */
 static long init_record();
 static long write_mbbo();
-epicsShareDef struct {
+static struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;
@@ -46,6 +46,7 @@ epicsShareDef struct {
 	NULL,
 	write_mbbo
 };
+epicsShareDef dset *pdevMbboSoft = (dset *)&devMbboSoft;
 
 static long init_record(mbboRecord *pmbbo)
 {

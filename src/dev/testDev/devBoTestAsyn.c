@@ -40,7 +40,7 @@
 /* Create the dset for devBoTestAsyn */
 static long init_record();
 static long write_bo();
-epicsShareDef struct {
+static struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;
@@ -55,7 +55,9 @@ epicsShareDef struct {
 	init_record,
 	NULL,
 	write_bo,
-	NULL};
+	NULL
+};
+epicsShareDef dset *pdevBoTestAsyn = (dset *)&devBoTestAsyn;
 
 static long init_record(pbo)
     struct boRecord	*pbo;

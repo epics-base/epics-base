@@ -38,7 +38,7 @@
 /* Create the dset for devSiTestAsyn */
 static long init_record();
 static long read_stringin();
-epicsShareDef struct {
+static struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;
@@ -53,7 +53,9 @@ epicsShareDef struct {
 	init_record,
 	NULL,
 	read_stringin,
-	NULL};
+	NULL
+};
+epicsShareDef dset *pdevSiTestAsyn = (dset *)&devSiTestAsyn;
 
 static long init_record(pstringin)
     struct stringinRecord	*pstringin;

@@ -39,7 +39,7 @@
 /* Create the dset for devBiTestAsyn */
 static long init_record();
 static long read_bi();
-epicsShareDef struct {
+static struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;
@@ -54,7 +54,9 @@ epicsShareDef struct {
 	init_record,
 	NULL,
 	read_bi,
-	NULL};
+	NULL
+};
+epicsShareDef dset *pdevBiTestAsyn = (dset *)&devBiTestAsyn;
 
 static long init_record(pbi)
     struct biRecord	*pbi;

@@ -36,7 +36,7 @@
 /* Create the dset for devWfSoft */
 static long init_record();
 static long read_wf();
-epicsShareDef struct {
+static struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;
@@ -49,7 +49,9 @@ epicsShareDef struct {
 	NULL,
 	init_record,
 	NULL,
-	read_wf};
+	read_wf
+};
+epicsShareDef dset *pdevWfSoft = (dset *)&devWfSoft;
 
 
 static long init_record(waveformRecord *pwf)

@@ -40,7 +40,7 @@
 /* Create the dset for devAoTestAsyn */
 static long init_record();
 static long write_ao();
-epicsShareDef struct {
+static struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;
@@ -55,7 +55,9 @@ epicsShareDef struct {
 	init_record,
 	NULL,
 	write_ao,
-	NULL};
+	NULL
+};
+epicsShareDef dset *pdevAoTestAsyn = (dset *)&devAoTestAsyn;
 
 static long init_record(pao)
     struct aoRecord	*pao;

@@ -32,7 +32,7 @@
 static long init_record();
 static long read_longin();
 
-epicsShareDef struct {
+static struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;
@@ -47,6 +47,7 @@ epicsShareDef struct {
 	NULL,
 	read_longin
 };
+epicsShareDef dset *pdevLiSoft = (dset *)&devLiSoft;
 
 static long init_record(longinRecord *plongin)
 {

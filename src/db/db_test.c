@@ -51,7 +51,7 @@ int epicsShareAPI gft(char *pname)
 		return(1);
 	}
 	printf("   Record Name: %s\n",pname);
-	printf("Record Address: 0x%p\n",addr.precord);
+	printf("Record Address: 0x%p\n",(void *)addr.precord);
 	printf("    Field Type: %d\n",addr.dbr_field_type);
 	printf(" Field Address: 0x%p\n",addr.pfield);
 	printf("    Field Size: %d\n",addr.field_size);
@@ -107,7 +107,7 @@ int epicsShareAPI pft(char *pname,char *pvalue)
 		return(1);
 	}
 	printf("   Record Name: %s\n",pname);
-	printf("Record Address: 0x%p\n",addr.precord);
+	printf("Record Address: 0x%p\n",(void *)addr.precord);
 	printf("    Field Type: %d\n",addr.dbr_field_type);
 	printf(" Field Address: 0x%p\n",addr.pfield);
 	printf("    Field Size: %d\n",addr.field_size);
@@ -154,7 +154,7 @@ int epicsShareAPI pft(char *pname,char *pvalue)
 		printf("\n\t CHAR GET failed");
 	  else print_returned(DBR_CHAR,buffer,1);
 	}
-	if(sscanf(pvalue,"%hu",&shortvalue)==1) {
+	if(sscanf(pvalue,"%hd",&shortvalue)==1) {
 	  if (db_put_field(paddr,DBR_ENUM,&shortvalue,1) < 0) 
 		printf("\n\t ENUM failed ");
 	  if (db_get_field(paddr,DBR_ENUM,buffer,1,NULL) < 0) 

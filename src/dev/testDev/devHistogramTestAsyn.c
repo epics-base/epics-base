@@ -35,7 +35,7 @@
 /* Create the dset for devHistogramTestAsyn */
 static long init_record();
 static long read_histogram();
-epicsShareDef struct {
+static struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;
@@ -50,7 +50,9 @@ epicsShareDef struct {
 	init_record,
 	NULL,
 	read_histogram,
-	NULL};
+	NULL
+};
+epicsShareDef dset *pdevHistogramTestAsyn = (dset *)&devHistogramTestAsyn;
 
 static long init_record(phistogram)
     struct histogramRecord	*phistogram;

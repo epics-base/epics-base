@@ -39,7 +39,7 @@
 /* Create the dset for devWfTestAsyn */
 static long init_record();
 static long read_wf();
-epicsShareDef struct {
+static struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;
@@ -54,7 +54,9 @@ epicsShareDef struct {
 	init_record,
 	NULL,
 	read_wf,
-	NULL};
+	NULL
+};
+epicsShareDef dset *pdevWfTestAsyn = (dset *)&devWfTestAsyn;
 
 static long init_record(pwf)
     struct waveformRecord	*pwf;

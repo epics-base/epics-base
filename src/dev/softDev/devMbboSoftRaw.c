@@ -30,7 +30,7 @@
 /* Create the dset for devMbboSoftRaw */
 static long init_record();
 static long write_mbbo();
-epicsShareDef struct {
+static struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;
@@ -45,6 +45,7 @@ epicsShareDef struct {
 	NULL,
 	write_mbbo
 };
+epicsShareDef dset *pdevMbboSoftRaw = (dset *)&devMbboSoftRaw;
 
 static long init_record(mbboRecord *pmbbo)
 {

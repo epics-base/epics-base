@@ -32,7 +32,7 @@
 /* Create the dset for devSiSoft */
 static long init_record();
 static long read_stringin();
-epicsShareDef struct {
+static struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;
@@ -47,6 +47,7 @@ epicsShareDef struct {
 	NULL,
 	read_stringin
 };
+epicsShareDef dset *pdevSiSoft = (dset *)&devSiSoft;
 
 static long init_record(stringinRecord *pstringin)
 {

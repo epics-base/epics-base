@@ -244,8 +244,8 @@ static int specified_by(char *ptest, char *pspec)
                 pspec += inx;
  
                 /* check for end of specification */
-                if (*pspec == NULL) {
-                        if (*ptest == NULL) return(TRUE);
+                if (*pspec == 0) {
+                        if (*ptest == 0) return(TRUE);
                         else return(FALSE);
                 }
         }
@@ -334,7 +334,7 @@ long epicsShareAPI dbpf(char	*pname,char *pvalue)
     /* If entire field is digits then use DBR_ENUM else DBR_STRING*/
     if((addr.dbr_field_type==DBR_ENUM) && (*pvalue!=0)
     &&  (strspn(pvalue,"0123456789")==strlen(pvalue))) {
-	    short value;
+	    unsigned short value;
 
 	    sscanf(pvalue,"%hu",&value);
 	    status=dbPutField(&addr,DBR_ENUM,&value,1L);
@@ -626,8 +626,8 @@ long epicsShareAPI dbtpf(char	*pname,char *pvalue)
 	}
     } else printf("sscanf failed for DBR_DOUBLE\n");
     /* DBR_ENUM */
-    if(validNumber && sscanf(pvalue,"%hu",&svalue)==1) {
-	status=dbPutField(&addr,DBR_ENUM,&svalue,1L);
+    if(validNumber && sscanf(pvalue,"%hu",&usvalue)==1) {
+	status=dbPutField(&addr,DBR_ENUM,&usvalue,1L);
 	if(status!=0) errMessage(status,"DBR_ENUM failed");
 	else {
 	    printf("DBR_ENUM ok\n");
@@ -744,9 +744,9 @@ static void printDbAddr(long status,DBADDR *paddr)
     if(status!=0) {
 	errMessage(status,"dbNameToAddr error");
     }
-    printf("Record Address: %p",paddr->precord);
+    printf("Record Address: %p",(void *)paddr->precord);
     printf(" Field Address: %p",paddr->pfield);
-    printf(" Field Description: %p\n",pdbFldDes);
+    printf(" Field Description: %p\n",(void *)pdbFldDes);
     printf("   No Elements: %ld\n",paddr->no_elements);
     printf("   Record Type: %s\n",pdbFldDes->pdbRecordType->name);
     printf("     FieldType: DBF_");

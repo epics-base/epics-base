@@ -34,7 +34,7 @@
 static long init_record();
 static long get_ioint_info();
 static long read_event();
-epicsShareDef struct {
+static struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;
@@ -49,6 +49,7 @@ epicsShareDef struct {
 	get_ioint_info,
 	read_event
 };
+epicsShareDef dset *pdevEventTestIoEvent = (dset *)&devEventTestIoEvent;
 
 typedef struct myCallback {
     CALLBACK callback;

@@ -68,7 +68,7 @@ print "extern \"C\" {\n";
 #definitions for recordtype
 if($numberRecordType>0) {
     for ($i=0; $i<$numberRecordType; $i++) {
-        print "epicsShareExtern struct rset $recordType[$i]RSET;\n";
+        print "epicsShareExtern rset $recordType[$i]RSET;\n";
         print "epicsShareFunc int $recordType[$i]RecordSizeOffset(dbRecordType *pdbRecordType);\n"
     }
     print "\nstatic const char * const recordTypeNames[$numberRecordType] = {\n";
@@ -91,7 +91,7 @@ if($numberRecordType>0) {
 #definitions for device
 if($numberDeviceSupport>0) {
     for ($i=0; $i<$numberDeviceSupport; $i++) {
-        print "epicsShareExtern struct dset $deviceSupport[$i];\n";
+        print "epicsShareExtern dset *p$deviceSupport[$i];\n";
     }
     print "\nstatic const char * const deviceSupportNames[$numberDeviceSupport] = {\n";
     for ($i=0; $i<$numberDeviceSupport; $i++) {
@@ -101,9 +101,9 @@ if($numberDeviceSupport>0) {
     }
     print "};\n\n";
 
-    print "static const struct dset * const devsl[$i] = {\n";
+    print "static const dset * const devsl[$i] = {\n";
     for ($i=0; $i<$numberDeviceSupport; $i++) {
-        print "    &$deviceSupport[$i]";
+        print "    p$deviceSupport[$i]";
         if($i < $numberDeviceSupport-1) { print ",";}
         print "\n";
     }

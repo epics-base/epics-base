@@ -39,7 +39,7 @@
 /* Create the dset for devSoTestAsyn */
 static long init_record();
 static long write_stringout();
-epicsShareDef struct {
+static struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;
@@ -54,7 +54,9 @@ epicsShareDef struct {
 	init_record,
 	NULL,
 	write_stringout,
-	NULL};
+	NULL
+};
+epicsShareDef dset *pdevSoTestAsyn = (dset *)&devSoTestAsyn;
 
 static long init_record(pstringout)
     struct stringoutRecord	*pstringout;

@@ -410,7 +410,7 @@ int epicsShareAPI dbNotifyDump(void)
             if(precord->ppn->paddr->precord != precord) continue;
             ppn = precord->ppn;
             printf("%s state %d ppn %p\n  waitList\n",
-                precord->name,ppn->state,ppn);
+                precord->name,ppn->state,(void*)ppn);
             ppnrWait = (putNotifyRecord *)ellFirst(&ppn->waitList);
             while(ppnrWait) {
                 printf("    %s pact %d\n",
@@ -420,7 +420,7 @@ int epicsShareAPI dbNotifyDump(void)
             printf("  restartList\n");
             ppnRestart = (putNotify *)ellFirst(&precord->ppnr->restartList);
             while(ppnRestart) {
-                printf("    %p\n", ppnRestart);
+                printf("    %p\n", (void *)ppnRestart);
                 ppnRestart = (putNotify *)ellNext(&ppnRestart->restartNode.node);
             }
         }

@@ -21,7 +21,7 @@
 /*Create the dset for devXxxSoft */
 static long init_record();
 static long read_xxx();
-epicsShareDef struct {
+static struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;
@@ -36,6 +36,7 @@ epicsShareDef struct {
 	NULL,
 	read_xxx,
 };
+epicsShareDef dset *pdevXxxSoft = (dset *)&devXxxSoft;
 
 
 static long init_record(pxxx)

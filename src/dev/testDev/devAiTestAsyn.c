@@ -39,7 +39,7 @@
 /* Create the dset for devAiTestAsyn */
 static long init_record();
 static long read_ai();
-epicsShareDef struct {
+static struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;
@@ -54,7 +54,9 @@ epicsShareDef struct {
 	init_record,
 	NULL,
 	read_ai,
-	NULL};
+	NULL
+};
+epicsShareDef dset *pdevAiTestAsyn = (dset *)&devAiTestAsyn;
 
 
 static long init_record(pai)

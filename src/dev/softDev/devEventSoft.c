@@ -31,7 +31,7 @@
 /* Create the dset for devEventSoft */
 static long init_record();
 static long read_event();
-epicsShareDef struct {
+static struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;
@@ -46,6 +46,7 @@ epicsShareDef struct {
 	NULL,
 	read_event
 };
+epicsShareDef dset *pdevEventSoft = (dset *)&devEventSoft;
 
 static long init_record(eventRecord *pevent)
 {

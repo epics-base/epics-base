@@ -18,19 +18,20 @@
 #define INCdevSuph 1
 
 #ifdef __cplusplus
+extern "C" {
 typedef long (*DEVSUPFUN)(void*);	/* ptr to device support function*/
 #else
 typedef long (*DEVSUPFUN)();	/* ptr to device support function*/
 #endif
 
-struct dset {	/* device support entry table */
-	long		number;		/*number of support routines*/
-	DEVSUPFUN	report;		/*print report*/
-	DEVSUPFUN	init;		/*init support*/
-	DEVSUPFUN	init_record;	/*init support for particular record*/
-	DEVSUPFUN	get_ioint_info;	/* get io interrupt information*/
-	/*other functions are record dependent*/
-	};
+typedef struct dset {	/* device support entry table */
+    long	number;		/*number of support routines*/
+    DEVSUPFUN	report;		/*print report*/
+    DEVSUPFUN	init;		/*init support*/
+    DEVSUPFUN	init_record;	/*init support for particular record*/
+    DEVSUPFUN	get_ioint_info;	/* get io interrupt information*/
+    /*other functions are record dependent*/
+}dset;
 
 #define S_dev_noDevSup      (M_devSup| 1) /*SDR_DEVSUP: Device support missing*/
 #define S_dev_noDSET        (M_devSup| 3) /*Missing device support entry table*/
@@ -44,5 +45,9 @@ struct dset {	/* device support entry table */
 #define S_dev_NoInit        (M_devSup|19) /*No init*/
 #define S_dev_Conflict      (M_devSup|21) /*Multiple records accessing same signal*/
 #define S_dev_noDeviceFound (M_devSup|23) /*No device found at specified address*/
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

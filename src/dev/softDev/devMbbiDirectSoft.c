@@ -31,7 +31,7 @@
 /* Create the dset for devMbbiSoft */
 static long init_record();
 static long read_mbbi();
-epicsShareDef struct {
+static struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;
@@ -46,6 +46,7 @@ epicsShareDef struct {
 	NULL,
 	read_mbbi
 };
+epicsShareDef dset *pdevMbbiDirectSoft = (dset *)&devMbbiDirectSoft;
 
 static long init_record(mbbiDirectRecord *pmbbi)
 {

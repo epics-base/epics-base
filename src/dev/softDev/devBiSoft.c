@@ -31,7 +31,7 @@
 /* Create the dset for devBiSoft */
 static long init_record();
 static long read_bi();
-epicsShareDef struct {
+static struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;
@@ -46,6 +46,7 @@ epicsShareDef struct {
 	NULL,
 	read_bi
 };
+epicsShareDef dset *pdevBiSoft = (dset *)&devBiSoft;
 
 static long init_record(biRecord *pbi)
 {

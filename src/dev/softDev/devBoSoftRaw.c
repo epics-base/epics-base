@@ -38,7 +38,7 @@ static long init_record();
 /* Create the dset for devBoSoftRaw */
 static long write_bo();
 
-epicsShareDef struct {
+static struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;
@@ -52,6 +52,7 @@ epicsShareDef struct {
 	init_record,
 	NULL,
 	write_bo};
+epicsShareDef dset *pdevBoSoftRaw = (dset *)&devBoSoftRaw;
 
 
 

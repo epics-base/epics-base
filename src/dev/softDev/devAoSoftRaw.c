@@ -35,7 +35,7 @@
 
 /* Create the dset for devAoSoftRaw */
 static long write_ao(aoRecord *pao);
-epicsShareDef struct {
+static struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;
@@ -51,6 +51,7 @@ epicsShareDef struct {
 	NULL,
 	write_ao,
 	NULL};
+epicsShareDef dset *pdevAoSoftRaw = (dset *)&devAoSoftRaw;
 
 static long write_ao(aoRecord *pao)
 {

@@ -33,7 +33,7 @@ static int sizeofTypes[] = {MAX_STRING_SIZE,1,1,2,2,4,4,4,8,2};
 /* Create the dset for devSASoft */
 static long init_record();
 static long read_sa();
-epicsShareDef struct {
+static struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;
@@ -46,7 +46,9 @@ epicsShareDef struct {
 	NULL,
 	init_record,
 	NULL,
-	read_sa};
+	read_sa
+};
+epicsShareDef dset *pdevSASoft = (dset *)&devSASoft;
 
 
 static long init_record(subArrayRecord *psa)

@@ -16,40 +16,14 @@
 #ifndef INCrecSuph
 #define INCrecSuph 1
 
-typedef long (*RECSUPFUN) ();      /* ptr to record support function*/
-
 #ifdef __cplusplus
-#include <dbAddr.h>
-extern "C" 
-{
-    struct rset {	// record support entry table
-        long number;                                // no of support routines
-        long (*report) ( const dbCommon * precord );          // print report
-        long (*init) ();                                      // init support
-        long (*init_record) ( dbCommon * precord, int pass );  // init record
-        long (*process) ( dbCommon * precord );             // process record
-        long (*special) ( DBADDR * paddr, int after );  // special processing
-        long (*get_value) ();                                     // obsolete
-        long (*cvt_dbaddr) ( DBADDR * paddr );              // convert dbaddr
-        long (*get_array_info) ( const DBADDR * paddr,
-                                 long * no_elements, long * offset );
-        long (*put_array_info) ( const DBADDR * paddr, const long nNew );
-        long (*get_units) ( const DBADDR * paddr, char * units );
-        long (*get_precision) ( const DBADDR * paddr, long * precision );
-        long (*get_enum_str) ( const DBADDR * paddr, char * pstring );
-        long (*get_enum_strs) ( const DBADDR * paddr,
-                                struct dbr_enumStrs * pes );
-        long (*put_enum_str) ( const DBADDR * paddr, const char * pstring );
-        long (*get_graphic_double) ( const DBADDR * paddr,
-                                     struct dbr_grDouble * pgd );
-        long (*get_control_double) ( const DBADDR * paddr,
-                                     struct dbr_ctrlDouble * pcd );
-        long (*get_alarm_double) ( const DBADDR * paddr,
-                                   struct dbr_alDouble * pad );
-    };
-}
+extern "C" {
+typedef long (*RECSUPFUN) (void *);      /* ptr to record support function*/
 #else
-struct rset {	/* record support entry table */
+typedef long (*RECSUPFUN) ();      /* ptr to record support function*/
+#endif
+
+typedef struct rset {	/* record support entry table */
 	long		number;		/*number of support routines	*/
 	RECSUPFUN	report;		/*print report			*/
 	RECSUPFUN	init;		/*init support			*/
@@ -68,8 +42,7 @@ struct rset {	/* record support entry table */
 	RECSUPFUN	get_graphic_double;
 	RECSUPFUN	get_control_double;
 	RECSUPFUN	get_alarm_double;
-	};
-#endif /* ifdef __cplusplus else */
+}rest;
 
 #define RSETNUMBER ( (sizeof(struct rset) - sizeof(long))/sizeof(RECSUPFUN) )
 
@@ -81,11 +54,11 @@ struct rset {	/* record support entry table */
 
 /* Definition os structure for routine get_value */
 
-struct valueDes {
+typedef struct valueDes {
 	long	field_type;
 	long	no_elements;
 	void *	pvalue;
-};
+}valueDes;
 
 /************************************************************************
  * report(FILE fp,void *precord);
@@ -106,4 +79,9 @@ struct valueDes {
  * get_control_double(paddr,struct dbr_ctrlDouble *p);
  * get_alarm_double(paddr,struct dbr_ctrlDouble *p);
  ***********************************************************************/
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
+
 #endif /*INCrecSuph*/

@@ -33,7 +33,7 @@
 /************************************************************************/
 /*_end									*/
 
-static char	*sccsId = "$Id$";
+static char	*sccsId = "%W% %G%";
 
 #include		"iocinf.h"
 
@@ -61,7 +61,7 @@ void flow_control(struct ioc_in_use *piiu)
 	 */
 	status = socket_ioctl(piiu->sock_chan,
 			      FIONREAD,
-			      (int)&nbytes);
+			      &nbytes);
 	if (status < 0) {
 		TAG_CONN_DOWN(piiu);
 		UNLOCK;

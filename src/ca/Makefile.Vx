@@ -7,13 +7,14 @@ USR_CFLAGS = -DACCESS_SECURITY -D_NO_PROTO
 SRCS.c = \
 	../iocinf.c ../access.c ../test_event.c ../service.c \
 	../flow_control.c ../repeater.c ../conn.c ../syncgrp.c \
-	../if_depen.c ../bsd_depen.c ../vxWorks_depen.c
+	../if_depen.c ../bsd_depen.c ../vxWorks_depen.c ../acctst.c
 
 OBJS = \
 	iocinf.o access.o test_event.o service.o flow_control.o \
-	repeater.o conn.o syncgrp.o if_depen.o bsd_depen.o vxWorks_depen.o
+	repeater.o conn.o syncgrp.o if_depen.o bsd_depen.o vxWorks_depen.o \
+	acctst.o
 
-PROD = caLib
+PROD = caLib acctst.o
 
 include $(EPICS)/config/RULES.Vx
 

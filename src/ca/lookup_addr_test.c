@@ -29,7 +29,7 @@ printf("%x\n", net_addr.s_addr);
 
 
 	/* the above seems to be broken ? */
-    	ent = gethostbyaddr(&net, sizeof(net_addr), AF_INET);
+    	ent = gethostbyaddr(&addr, sizeof(net_addr), AF_INET);
     	if(ent)
       		printf("%s\n", ent->h_name);   
 

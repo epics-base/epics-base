@@ -1,10 +1,11 @@
 /* 
- *	$Id$
+ *
  *	U C X . H
  *	UNIX ioctl structures and defines used for VAX/UCX
  *      Author: Gerhard Grygiel (GeG)
  *
  *      GeG	09-DEC-1992	initial edit
+ *      CJM     13-Jul-1994     add fd_set etc for R3.12
  *
  */
 #ifndef _UCX_H_
@@ -14,6 +15,7 @@
 #define	IFF_UP		0x1		/* interface is up */
 #define	IFF_BROADCAST	0x2		/* broadcast address valid */
 #define	IFF_LOOPBACK	0x8		/* is a loopback net */
+#define IFF_POINTOPOINT 0x10            /* interface is point to point */
 /*
  * Interface request structure used for socket
  * ioctl's.  All interface ioctl's must have parameter
@@ -54,10 +56,33 @@ struct	ifconf {
 #define	ifc_req	ifc_ifcu.ifcu_req	/* array of structures returned */
 };
 
+#ifndef NBBY
+#define NBBY 8
+#endif
+
+#ifndef FD_SETSIZE
+#define FD_SETSIZE    256
+#endif
+
+typedef long fd_mask ;
+#define NFDBITS (sizeof (fd_mask) * NBBY )       /* bits per mask */
+#ifndef howmany
+#define howmany(x, y)  (((x)+((y)-1))/(y))
+#endif
+
+typedef struct fd_set {
+        fd_mask fds_bits[howmany(FD_SETSIZE, NFDBITS)] ;
+} fd_set ;
+
+#define FD_SET(n, p)    ((p)->fds_bits[(n)/NFDBITS] |= (1 << ((n) % NFDBITS)))
+#define FD_CLR(n, p)    ((p)->fds_bits[(n)/NFDBITS] &= ~(1 << ((n) % NFDBITS)))
+#define FD_ISSET(n, p)  ((p)->fds_bits[(n)/NFDBITS] & (1 << ((n) % NFDBITS)))
+#define FD_ZERO(p)      bzero((char *)(p), sizeof (*(p)))
 
 #include <iodef.h>
 #define IO$_RECEIVE	(IO$_WRITEVBLK)
 
 #endif
 #endif
+
 

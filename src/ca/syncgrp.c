@@ -1,5 +1,5 @@
 /*
- *	$Id$
+ *	%W% %G%	
  *      Author: Jeffrey O. Hill
  *              hill@luke.lanl.gov
  *              (505) 665 1831
@@ -108,13 +108,13 @@ int ca_sg_create(CA_SYNC_GID *pgid)
 	 */
 	memset((char *)pcasg,0,sizeof(*pcasg));
 	pcasg->magic = CASG_MAGIC;
-	pcasg->id = CLIENT_ID_ALLOC; 
+	pcasg->id = CLIENT_SLOW_ID_ALLOC; 
 	pcasg->opPendCount = 0;
 	pcasg->seqNo = 0;
 
 	os_specific_sg_create(pcasg);
 
-	status = bucketAddItem(pBucket, pcasg->id, pcasg);
+	status = bucketAddItemUnsignedId(pSlowBucket, &pcasg->id, pcasg);
 	if(status == BUCKET_SUCCESS){
 		/*
 	  	 * place it on the active sync group list
@@ -154,13 +154,13 @@ int ca_sg_delete(CA_SYNC_GID gid)
 
 	LOCK;
 
-	pcasg = bucketLookupItem(pBucket, gid);
+	pcasg = bucketLookupItemUnsignedId(pSlowBucket, &gid);
 	if(!pcasg || pcasg->magic != CASG_MAGIC){
 		UNLOCK;
 		return ECA_BADSYNCGRP;
 	}
 
-	status = bucketRemoveItem(pBucket, gid, pcasg);
+	status = bucketRemoveItemUnsignedId(pSlowBucket, &gid);
 	assert(status == BUCKET_SUCCESS);
 
 	os_specific_sg_delete(pcasg);
@@ -180,9 +180,11 @@ int ca_sg_delete(CA_SYNC_GID gid)
  */
 int ca_sg_block(CA_SYNC_GID gid, ca_real timeout)
 {
-	time_t	beg_time;
-	int	status;
-	CASG 	*pcasg;
+	struct timeval	beg_time;
+	struct timeval	cur_time;
+	ca_real		delay;
+	int		status;
+	CASG 		*pcasg;
 
 	/*
 	 * Force the CA client id bucket to
@@ -190,6 +192,10 @@ int ca_sg_block(CA_SYNC_GID gid, ca_real timeout)
 	 * Return error if unable to init.
 	 */
 	INITCHK;
+
+	if(timeout<0.0){
+		return ECA_TIMEOUT;
+	}
 
 	/*
 	 * until CAs input mechanism is 
@@ -202,7 +208,7 @@ int ca_sg_block(CA_SYNC_GID gid, ca_real timeout)
 	}
 
 	LOCK;
-	pcasg = bucketLookupItem(pBucket, gid);
+	pcasg = bucketLookupItemUnsignedId(pSlowBucket, &gid);
 	if(!pcasg || pcasg->magic != CASG_MAGIC){
 		UNLOCK;
 		return ECA_BADSYNCGRP;
@@ -216,21 +222,35 @@ int ca_sg_block(CA_SYNC_GID gid, ca_real timeout)
 	 */
 	ca_flush_io();
 
+	cac_gettimeval(&beg_time);
+
 	status = ECA_NORMAL;
-	beg_time = time(NULL);
 	while(pcasg->opPendCount){
-		/*
-		 * wait for asynch notification
-		 */
-		cac_block_for_sg_completion(pcasg);
+		ca_real         remaining;
+		struct timeval	tmo;
 
 		/*
 		 * Exit if the timeout has expired
 		 */
-		if(timeout < time(NULL)-beg_time){
+		cac_gettimeval (&cur_time);
+		delay = cac_time_diff (&cur_time, &beg_time);
+		remaining = timeout-delay;
+		if (remaining<=0.0) {
 			status = ECA_TIMEOUT;
 			break;
 		}
+
+		/*
+		 * Allow for CA background labor
+		 */
+		remaining = min(SELECT_POLL, remaining);
+
+		/*
+		 * wait for asynch notification
+		 */
+		tmo.tv_sec = remaining;
+		tmo.tv_usec = (remaining-tmo.tv_sec)*USEC_PER_SEC;
+		cac_block_for_sg_completion (pcasg, &tmo);
 	}
 	pcasg->opPendCount = 0;
 	pcasg->seqNo++;
@@ -246,7 +266,7 @@ int ca_sg_reset(CA_SYNC_GID gid)
 	CASG 	*pcasg;
 
 	LOCK;
-	pcasg = bucketLookupItem(pBucket, gid);
+	pcasg = bucketLookupItemUnsignedId(pSlowBucket, &gid);
 	if(!pcasg || pcasg->magic != CASG_MAGIC){
 		UNLOCK;
 		return ECA_BADSYNCGRP;
@@ -268,7 +288,7 @@ int ca_sg_test(CA_SYNC_GID gid)
 	CASG 	*pcasg;
 
 	LOCK;
-	pcasg = bucketLookupItem(pBucket, gid);
+	pcasg = bucketLookupItemUnsignedId(pSlowBucket, &gid);
 	if(!pcasg || pcasg->magic != CASG_MAGIC){
 		UNLOCK;
 		return ECA_BADSYNCGRP;
@@ -301,7 +321,7 @@ void 		*pvalue)
 	CASG 	*pcasg;
 
 	LOCK;
-	pcasg = bucketLookupItem(pBucket, gid);
+	pcasg = bucketLookupItemUnsignedId(pSlowBucket, &gid);
 	if(!pcasg || pcasg->magic != CASG_MAGIC){
 		UNLOCK;
 		return ECA_BADSYNCGRP;
@@ -338,14 +358,15 @@ void 		*pvalue)
 			pcasgop);
 
 	if(status != ECA_NORMAL){
-		LOCK;
-		pcasg->opPendCount--;
-		ellDelete(&ca_static->activeCASGOP, &pcasgop->node);
-		ellAdd(&ca_static->freeCASGOP, &pcasgop->node);
-		UNLOCK;	
-	}
+                LOCK;
+                pcasg->opPendCount--;
+                ellDelete(&ca_static->activeCASGOP, &pcasgop->node);
+                ellAdd(&ca_static->freeCASGOP, &pcasgop->node);
+                UNLOCK;
+         }
 
-	return status;
+
+	return  status;
 }
 
 
@@ -365,7 +386,7 @@ void 		*pvalue)
 	CASG 	*pcasg;
 
 	LOCK;
-	pcasg = bucketLookupItem(pBucket, gid);
+	pcasg = bucketLookupItemUnsignedId(pSlowBucket, &gid);
 	if(!pcasg || pcasg->magic != CASG_MAGIC){
 		UNLOCK;
 		return ECA_BADSYNCGRP;
@@ -391,6 +412,7 @@ void 		*pvalue)
 	pcasgop->pValue = pvalue;
 	ellAdd(&ca_static->activeCASGOP, &pcasgop->node);
 	pcasg->opPendCount++;
+
 	UNLOCK;
 
 	status = ca_array_get_callback(
@@ -405,9 +427,8 @@ void 		*pvalue)
 		pcasg->opPendCount--;
 		ellDelete(&ca_static->activeCASGOP, &pcasgop->node);
 		ellAdd(&ca_static->freeCASGOP, &pcasgop->node);
-		UNLOCK;	
+		UNLOCK;
 	}
-
 	return status;
 }
 
@@ -425,7 +446,6 @@ LOCAL void io_complete(struct event_handler_args args)
 	assert(pcasgop->magic == CASG_MAGIC);
 
 	LOCK;
-
 	ellDelete(&ca_static->activeCASGOP, &pcasgop->node);
 	pcasgop->magic = 0;
 	ellAdd(&ca_static->freeCASGOP, &pcasgop->node);
@@ -433,13 +453,14 @@ LOCAL void io_complete(struct event_handler_args args)
 	/*
  	 * ignore stale replies
 	 */
-	pcasg = bucketLookupItem(pBucket, pcasgop->id);
+	pcasg = bucketLookupItemUnsignedId(pSlowBucket, &pcasgop->id);
 	if(!pcasg || pcasg->seqNo != pcasgop->seqNo){
 		UNLOCK;
 		return;
 	}
 
 	assert(pcasg->magic == CASG_MAGIC);
+
 
 	if(!(args.status&CA_M_SUCCESS)){
 		ca_printf(

@@ -10,11 +10,8 @@
 
 */
 
-# ifdef VMS
-  lib$init_timer();
-# endif
-# ifdef VMS
-  lib$show_timer();
+#ifdef VMS
+#include <LIB$ROUTINES.H>
 #endif
 
 

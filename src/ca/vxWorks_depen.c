@@ -1,5 +1,5 @@
 /*
- *	$Id$
+ *	%W% %G%	
  *      Author: Jeffrey O. Hill
  *              hill@luke.lanl.gov
  *              (505) 665 1831
@@ -41,6 +41,49 @@ LOCAL void ca_task_exit_tcb(WIND_TCB *ptcb);
 LOCAL void ca_extra_event_labor(void *pArg);
 LOCAL int cac_os_depen_exit(struct ca_static *pcas, int tid);
 
+#define USEC_PER_SEC 1000000
+
+
+/*
+ * cac_gettimeval()
+ */
+void cac_gettimeval(struct timeval  *pt)
+{
+	unsigned long		sec;
+	unsigned long		current;
+	static unsigned long	rate;
+	static unsigned long	last;
+	static unsigned long	offset;
+	static SEM_ID		sem;
+	int			status;
+
+	assert(pt);
+
+	/*
+ 	 * Lazy Init
+	 */
+	if(!rate){
+		rate = sysClkRateGet();
+		assert(rate);
+		sem = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
+		assert(sem!=NULL);
+	}
+
+	status = semTake(sem, WAIT_FOREVER);
+	assert(status==OK);
+	current = tickGet();
+	if(current<last){
+		offset += (~0UL)/rate;
+	}
+	last = current;
+	status = semGive(sem);
+	assert(status==OK);
+	
+	sec = current/rate;
+        pt->tv_sec = sec + offset;
+        pt->tv_usec = ((current-sec*rate)*USEC_PER_SEC)/rate;
+}
+
 
 /*
  *      CAC_MUX_IO()
@@ -71,15 +114,24 @@ void cac_mux_io(struct timeval  *ptimeout)
 /*
  * cac_block_for_io_completion()
  */
-void cac_block_for_io_completion()
+void cac_block_for_io_completion(struct timeval *pTV)
 {
         struct timeval  itimeout;
+	unsigned long 	ticks;
+	unsigned long	rate = sysClkRateGet();
 
+	/*
+	 * flush outputs
+	 * (recv occurs in another thread)
+	 */
         itimeout.tv_usec = 0;
         itimeout.tv_sec = 0;
         cac_mux_io(&itimeout);
         
-	semTake(io_done_sem, LOCALTICKS);
+	ticks = pTV->tv_sec*rate + (pTV->tv_usec*rate)/USEC_PER_SEC;
+	ticks = min(LOCALTICKS, ticks);
+
+	semTake(io_done_sem, ticks);
 }
 
 
@@ -120,15 +172,24 @@ void os_specific_sg_io_complete(CASG   *pcasg)
 /*
  * cac_block_for_sg_completion()
  */
-void cac_block_for_sg_completion(CASG	*pcasg)
+void cac_block_for_sg_completion(CASG *pcasg, struct timeval *pTV)
 {
         struct timeval  itimeout;
+	unsigned long 	ticks;
+	unsigned long	rate = sysClkRateGet();
 
+	/*
+	 * flush outputs
+	 * (recv occurs in another thread)
+	 */
         itimeout.tv_usec = 0;
         itimeout.tv_sec = 0;
         cac_mux_io(&itimeout);
         
-	semTake(pcasg->sem, LOCALTICKS);
+	ticks = pTV->tv_sec*rate + (pTV->tv_usec*rate)/USEC_PER_SEC;
+	ticks = min(LOCALTICKS, ticks);
+
+	semTake(pcasg->sem, ticks);
 }
 
 
@@ -230,10 +291,6 @@ LOCAL void ca_task_exit_tcb(WIND_TCB *ptcb)
          */
 	ca_temp = (struct ca_static *)taskVarGet((int)ptcb, (int *) &ca_static);
 	if (ca_temp == (struct ca_static *) ERROR){
-		return;
-	}
-
-	if(ca_temp->ca_exit_in_progress){
 		return;
 	}
 
@@ -389,6 +446,8 @@ LOCAL int cac_os_depen_exit(struct ca_static *pcas, int tid)
 	assert(semDelete(pcas->ca_putNotifyLock)==OK);
 	assert(semDelete(pcas->ca_io_done_sem)==OK);
 	assert(semDelete(pcas->ca_blockSem)==OK);
+
+        return ECA_NORMAL;
 }
 
 

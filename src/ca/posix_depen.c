@@ -1,5 +1,5 @@
 /*
- *	$Id$ 
+ *	%W% %G%
  *      Author: Jeffrey O. Hill
  *              hill@luke.lanl.gov
  *              (505) 665 1831
@@ -47,6 +47,22 @@
 
 
 /*
+ * cac_gettimeval
+ */
+void cac_gettimeval(struct timeval  *pt)
+{
+        struct timezone tz;
+	int		status;
+
+	/*
+	 * Not POSIX but available on most of the systems that we use
+	 */
+        status = gettimeofday(pt, &tz);
+	assert(status == 0);
+}
+
+
+/*
  *      CAC_MUX_IO()
  *
  *      Asynch notification of incomming messages under UNIX
@@ -83,27 +99,39 @@ void cac_mux_io(struct timeval  *ptimeout)
                 while(count>0);
 
                 ca_process_input_queue();
+
+        	/*
+         	 * manage search timers and detect disconnects
+         	 */
+        	manage_conn(TRUE);
         }
         while(newInput);
 
-        /*
-         * manage search timers and detect disconnects
-         */
-        manage_conn(TRUE);
+}
+
+log_time(char *pStr)
+{
+	static struct timeval time;
+	struct timeval	newtime;
+	struct timezone tz;
+	ca_real	diff;
+	int	status;
+
+	status = gettimeofday(&newtime, &tz);
+	assert(status==0);
+	
+	diff = cac_time_diff(&newtime, &time);
+	printf("Expired %f - %s\n", diff, pStr);
+	time = newtime;
 }
 
 
 /*
  * cac_block_for_io_completion()
  */
-void cac_block_for_io_completion()
+void cac_block_for_io_completion(struct timeval *pTV)
 {
-	struct timeval  itimeout;
-
-	itimeout.tv_usec        = SELECT_POLL%USEC_PER_SEC;
-	itimeout.tv_sec         = SELECT_POLL/USEC_PER_SEC;
-
-	cac_mux_io(&itimeout);
+	cac_mux_io(pTV);
 }
 
 
@@ -126,14 +154,9 @@ void os_specific_sg_delete(CASG *pcasg)
 }
 
 
-void cac_block_for_sg_completion(CASG	*pcasg)
+void cac_block_for_sg_completion(CASG *pcasg, struct timeval *pTV)
 {
-	struct timeval  itimeout;
-
-	itimeout.tv_usec        = SELECT_POLL%USEC_PER_SEC;
-	itimeout.tv_sec         = SELECT_POLL/USEC_PER_SEC;
-
-	cac_mux_io(&itimeout);
+	cac_mux_io(pTV);
 }
 
 

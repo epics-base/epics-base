@@ -1,5 +1,4 @@
 /*
- * $Id$
  * caRepeater.c
  * share/src/ca/caRepeater.c
  *

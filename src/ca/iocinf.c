@@ -66,7 +66,7 @@
 /************************************************************************/
 /*_end									*/
 
-static char *sccsId = "$Id$";
+static char *sccsId = "%W% %G%";
 
 
 /*	Allocate storage for global variables in this module		*/
@@ -152,7 +152,7 @@ int			net_proto
 {
 	struct ioc_in_use	*piiu;
   	int			status;
-  	int 			sock;
+  	SOCKET			sock;
   	int			true = TRUE;
   	struct sockaddr_in	saddr;
 	caAddrNode		*pNode;
@@ -195,12 +195,13 @@ int			net_proto
 		piiu->recvBytes = tcp_recv_msg; 
 		piiu->sendBytes = cac_tcp_send_msg_piiu; 
 		piiu->procInput = ca_process_tcp; 
+		piiu->minfreespace = 1;	
 
       		/* 	allocate a socket	*/
       		sock = socket(	AF_INET,	/* domain	*/
 				SOCK_STREAM,	/* type		*/
 				0);		/* deflt proto	*/
-      		if(sock == ERROR){
+      		if(sock == INVALID_SOCKET){
 			free(piiu);
 			UNLOCK;
         		return ECA_SOCK;
@@ -347,7 +348,7 @@ int			net_proto
         	status = socket_ioctl(
 				piiu->sock_chan,
 				FIONBIO,
-				(int) &true);
+				&true);
 		if(status<0){
 			ca_printf(
 				"Error setting non-blocking io: %s\n",
@@ -363,7 +364,7 @@ int			net_proto
 			piiu->host_name_str,
 			sizeof(piiu->host_name_str));
 
-		piiu->timeAtLastRecv = time(NULL);
+		cac_gettimeval (&piiu->timeAtLastRecv);
 
       		break;
 
@@ -373,12 +374,13 @@ int			net_proto
 		piiu->recvBytes = udp_recv_msg; 
 		piiu->sendBytes = cac_udp_send_msg_piiu; 
 		piiu->procInput = ca_process_udp; 
+		piiu->minfreespace = MAX_UDP+2*sizeof(struct udpmsglog);	
 
       		/* 	allocate a socket			*/
       		sock = socket(	AF_INET,	/* domain	*/
 				SOCK_DGRAM,	/* type		*/
 				0);		/* deflt proto	*/
-      		if(sock == ERROR){
+      		if(sock == INVALID_SOCKET){
 			free (piiu);
 			UNLOCK;
         		return ECA_SOCK;
@@ -490,7 +492,7 @@ int			net_proto
 /*
  *	NOTIFY_CA_REPEATER()
  *
- *	tell the cast repeater that another client has come on line 
+ *	tell the cast repeater that another client needs fan out
  *
  *	NOTES:
  *	1)	local communication only (no LAN traffic)
@@ -498,25 +500,48 @@ int			net_proto
  */
 void notify_ca_repeater()
 {
+	struct extmsg   	msg;
 	struct sockaddr_in	saddr;
 	int			status;
+	static int		once = FALSE;
 
 	if(!piiuCast)
 		return;
 	if(!piiuCast->conn_up)
 		return;
 
+	if(ca_static->ca_repeater_contacted){
+		return;
+	}
+
+	if(ca_static->ca_repeater_tries>N_REPEATER_TRIES_PRIOR_TO_MSG && !once){
+		ca_printf("Unable to contact CA repeater after %d tries\n",
+			N_REPEATER_TRIES_PRIOR_TO_MSG);
+		ca_printf("Silence this message by starting a CA repeater daemon\n");
+		once = TRUE;
+	}
+
 	LOCK; /*MULTINET TCP/IP routines are not reentrant*/
      	status = local_addr(piiuCast->sock_chan, &saddr);
 	if(status == OK){
+		memset((char *)&msg, 0, sizeof(msg));
+		msg.m_cmmd = htons(REPEATER_REGISTER);
+		msg.m_available = saddr.sin_addr.s_addr;
       		saddr.sin_port = htons(CA_CLIENT_PORT);	
+		/*
+		 * Intentionally sending a zero length message here
+		 * until most CA repeater daemons have been restarted
+		 * (and only then will accept the above protocol)
+		 * (repeaters began accepting this protocol
+		 * starting with EPICS 3.12)
+		 */
       		status = sendto(
 			piiuCast->sock_chan,
-        		NULL,
-        		0, /* zero length message */
+        		(char *)&msg, /* UCX requires a valid address here */
+        		0, /* <= sizeof(msg) ! see comment above ! */ 
         		0,
        			(struct sockaddr *)&saddr, 
-			sizeof saddr);
+			sizeof(saddr));
       		if(status < 0){
 			if(	MYERRNO != EINTR && 
 				MYERRNO != ENOBUFS && 
@@ -526,6 +551,9 @@ void notify_ca_repeater()
 					strerror(MYERRNO));
 				assert(0);	
 			}
+		}
+		else{
+			ca_static->ca_repeater_tries++;
 		}
 	}
 	UNLOCK;
@@ -659,7 +687,7 @@ LOCAL void cac_tcp_send_msg_piiu(struct ioc_in_use *piiu)
 		MYERRNO == EINTR){
 			UNLOCK;
 			if(!piiu->sendPending){
-				piiu->timeAtSendBlock = time(NULL);
+				cac_gettimeval(&piiu->timeAtSendBlock);
 				piiu->sendPending = TRUE;
 			}
 			return;
@@ -830,7 +858,7 @@ LOCAL void tcp_recv_msg(struct ioc_in_use *piiu)
 	 * Record the time whenever we receive a message 
 	 * from this IOC
 	 */
-	piiu->timeAtLastRecv = time(NULL);
+	cac_gettimeval(&piiu->timeAtLastRecv);
 
 	UNLOCK;
 	return;
@@ -856,7 +884,7 @@ LOCAL void ca_process_tcp(struct ioc_in_use *piiu)
 
 	pNode = (caAddrNode *) piiu->destAddr.node.next;
 
-	post_msg_active++;
+	post_msg_active = TRUE;
 
 	LOCK;
 	while(TRUE){
@@ -873,7 +901,8 @@ LOCAL void ca_process_tcp(struct ioc_in_use *piiu)
 				bytesToProcess);
 		if(status != OK){
 			TAG_CONN_DOWN(piiu);
-			post_msg_active--;
+			post_msg_active = FALSE;
+			UNLOCK;
 			return;
 		}
 		CAC_RING_BUFFER_READ_ADVANCE(
@@ -882,7 +911,7 @@ LOCAL void ca_process_tcp(struct ioc_in_use *piiu)
 	}
 	UNLOCK;
 
-	post_msg_active--;
+	post_msg_active = FALSE;
 
     	flow_control(piiu);
 
@@ -939,7 +968,7 @@ LOCAL void udp_recv_msg(struct ioc_in_use *piiu)
 	 	 * log the msg size
 		 * and advance the ring index
 	 	 */
-		pmsglog->nbytes = (long) status;
+		pmsglog->nbytes = status;
 		pmsglog->valid = TRUE;
 		bytesActual = status + sizeof(*pmsglog);
 		CAC_RING_BUFFER_WRITE_ADVANCE(&piiu->recv, bytesActual);
@@ -961,7 +990,7 @@ LOCAL void udp_recv_msg(struct ioc_in_use *piiu)
       			ca_printf(
 				"%s: udp reply of %d bytes\n",
 				__FILE__,
-				byte_cnt);
+				status);
 #		endif
 	}
 
@@ -991,7 +1020,7 @@ LOCAL void ca_process_udp(struct ioc_in_use *piiu)
 	}
 
 
-	post_msg_active++;
+	post_msg_active = TRUE;
 
 	LOCK;
 	while(TRUE){
@@ -1029,7 +1058,7 @@ LOCAL void ca_process_udp(struct ioc_in_use *piiu)
 						sizeof(piiu->recv.buf));
 					piiu->curMsgBytes = 0;
 					piiu->curDataBytes = 0;
-					post_msg_active--;
+					post_msg_active = FALSE;
 					UNLOCK;
 					return;
 				}
@@ -1043,7 +1072,7 @@ LOCAL void ca_process_udp(struct ioc_in_use *piiu)
 
 	UNLOCK;
 
-	post_msg_active--;
+	post_msg_active = FALSE;
 
   	return; 
 }
@@ -1066,7 +1095,7 @@ void close_ioc(struct ioc_in_use *piiu)
 	/*
 	 * dont close twice
 	 */
-  	if(piiu->sock_chan == -1){
+  	if(piiu->sock_chan == INVALID_SOCKET){
 		return;
 	}
 
@@ -1097,7 +1126,16 @@ void close_ioc(struct ioc_in_use *piiu)
     		chix->id.sid = ~0L;
 		chix->ar.read_access = FALSE;
 		chix->ar.write_access = FALSE;
+		/*
+		 * try to reconnect
+		 */
+		chix->retry = 0;
   	}
+
+	/*
+	 * Try to reconnect
+	 */
+	ca_static->ca_search_retry = 0;
 
 	if(piiu->chidlist.count){
 		ca_signal(ECA_DISCONN,piiu->host_name_str);
@@ -1162,7 +1200,7 @@ void close_ioc(struct ioc_in_use *piiu)
 		piiu->curDataMax = 0;
 	}
 
-  	piiu->sock_chan = -1;
+  	piiu->sock_chan = INVALID_SOCKET;
 
 	ellFree(&piiu->destAddr);
 
@@ -1198,12 +1236,11 @@ void close_ioc(struct ioc_in_use *piiu)
  */
 int repeater_installed()
 {
-  	int				status;
-  	int 				sock;
-  	struct sockaddr_in		bd;
-	int				true = 1;
-
-	int 				installed = FALSE;
+  	int			status;
+  	SOCKET			sock;
+  	struct sockaddr_in	bd;
+	int			true = 1;
+	int 			installed = FALSE;
 
 	LOCK;
 
@@ -1211,7 +1248,7 @@ int repeater_installed()
       	sock = socket(	AF_INET,	/* domain	*/
 			SOCK_DGRAM,	/* type		*/
 			0);		/* deflt proto	*/
-      	if(sock == ERROR){
+      	if(sock == INVALID_SOCKET) {
 		UNLOCK;
 		return installed;
 	}
@@ -1417,30 +1454,24 @@ unsigned long cacRingBufferWriteSize(struct ca_buffer *pBuf, int contiguous)
  *
  * o Indicates failure by setting ptr to nill
  *
- * o Calls non posix gethostname() 
- *  
- * o We want the full domain name however neither
- *	gethostbyname() or gethostname() appear to provide it
- *	under SUNOS.
+ * o Calls non posix gethostbyname() so that we get DNS style names
+ *      (gethostbyname() should be available with most BSD sock libs)
  *
- * vxWorks user may need to configure a DNS format name for the
+ * vxWorks user will need to configure a DNS format name for the
  * host name if they wish to be cnsistent with UNIX and VMS hosts.
  *
  */
 char *localHostName()
 {
-        int     	size;
-        int     	status;
-        char    	nameBuf[MAXHOSTNAMELEN];
-	char		*pName;
-	char		*pTmp;
+        int     size;
+        int     status;
+        char    pName[MAXHOSTNAMELEN];
+	char	*pTmp;
 
-        status = gethostname(nameBuf, sizeof(nameBuf));
+        status = gethostname(pName, sizeof(pName));
         if(status){
                 return NULL;
         }
-
-	pName = nameBuf;
 
         size = strlen(pName)+1;
         pTmp = malloc(size);
@@ -1459,7 +1490,7 @@ char *localHostName()
  * caAddConfiguredAddr()
  */
 void caAddConfiguredAddr(ELLLIST *pList, ENV_PARAM *pEnv, 
-	int socket, int port)
+	SOCKET socket, int port)
 {
         caAddrNode              *pNode;
         ENV_PARAM               list;

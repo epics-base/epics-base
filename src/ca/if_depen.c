@@ -1,5 +1,5 @@
 /* if_depen.c */
-/* $Id$ */
+/* share/src/ca/%W% %G% */
 
 /*
  *      Author:	Jeff Hill 
@@ -35,11 +35,10 @@
  */
 
 
-static char	*sccsId = "$Id$";
+static char	*sccsId = "%W% %G%";
 
 
 #include "iocinf.h"
-
 
 
 /*
@@ -69,39 +68,42 @@ int local_addr(int s, struct sockaddr_in *plcladdr)
 	 */
 	ifconf.ifc_len = sizeof ifreq;
 	ifconf.ifc_req = ifreq;
-	status = socket_ioctl(s, SIOCGIFCONF, (int)&ifconf);
+	status = socket_ioctl(s, SIOCGIFCONF, &ifconf);
 	if (status < 0 || ifconf.ifc_len == 0) {
 		ca_printf("CAC: ioctl failed %s\n", strerror(MYERRNO));
 		ifconf.ifc_len = 0;
 	}
 
+#ifdef DEBUG
+	ca_printf("CAC: %d if fnd\n", ifconf.ifc_len/sizeof(*pifreq));
+#endif
+
 	for (	pifreq = ifconf.ifc_req;
 	    	ifconf.ifc_len >= sizeof(*pifreq);
 	     	pifreq++, ifconf.ifc_len -= sizeof(*pifreq)) {
 
-		status = socket_ioctl(s, SIOCGIFFLAGS, (int)pifreq);
+		status = socket_ioctl(s, SIOCGIFFLAGS, pifreq);
 		if (status == ERROR){
 			ca_printf("CAC: could not obtain if flags\n");
 			continue;
 		}
 
-		if (!(pifreq->ifr_flags & IFF_UP)) {
-			continue;
-		}
-
-		if (pifreq->ifr_flags & IFF_LOOPBACK) {
-			continue;
-		}
-
-		if (!(pifreq->ifr_flags & IFF_BROADCAST)) {
-			continue;
-		}
-		
 #ifdef DEBUG
 		ca_printf("CAC: if fnd %s\n", pifreq->ifr_name);
 #endif
 
-		status = socket_ioctl(s, SIOCGIFADDR, (int)pifreq);
+		if (!(pifreq->ifr_flags & IFF_UP)) {
+#ifdef DEBUG
+			ca_printf("CAC: if was down\n");
+#endif
+			continue;
+		}
+
+		/*
+		 * o Dont require broadcast capabilities.
+		 * o Loopback addresss is ok - preferable?
+		 */	
+		status = socket_ioctl(s, SIOCGIFADDR, pifreq);
 		if (status == ERROR){
 #ifdef DEBUG
 			ca_printf("CAC: could not obtain addr\n");
@@ -118,20 +120,9 @@ int local_addr(int s, struct sockaddr_in *plcladdr)
 
 		tmpaddr = (struct sockaddr_in *) &pifreq->ifr_addr;
 
-		if (!init){
-			init = TRUE;
-			addr = *tmpaddr;
-		}
-		else {
-			if (tmpaddr->sin_addr.s_addr
-				   != addr.sin_addr.s_addr)
-				ca_printf("CAC: %s: interface=%s inet addr does not match first interface found %x\n",
-					__FILE__,
-				       pifreq->ifr_name,
-				       tmpaddr->sin_addr.s_addr);
-			if (tmpaddr->sin_port != addr.sin_port)
-				ca_printf("CAC: local_addr(): inconsistent port found- first used\n");
-		}
+		init = TRUE;
+		addr = *tmpaddr;
+		break;
 	}
 
 	if(!init){
@@ -176,7 +167,7 @@ void caDiscoverInterfaces(ELLLIST *pList, int socket, int port)
 
 	ifconf.ifc_len = nelem*sizeof(*pifreq);
 	ifconf.ifc_req = pIfreqList;
-	status = socket_ioctl(socket, SIOCGIFCONF, (int)&ifconf);
+	status = socket_ioctl(socket, SIOCGIFCONF, &ifconf);
 	if (status < 0 || ifconf.ifc_len == 0) {
 		free(pIfreqList);
 		return;
@@ -184,7 +175,7 @@ void caDiscoverInterfaces(ELLLIST *pList, int socket, int port)
 
 	nelem = ifconf.ifc_len/sizeof(struct ifreq);
 	for (pifreq = pIfreqList; pifreq<(pIfreqList+nelem); pifreq++){
-		status = socket_ioctl(socket, SIOCGIFFLAGS, (int) pifreq);
+		status = socket_ioctl(socket, SIOCGIFFLAGS, pifreq);
 		if (status){
 			continue;
 		}
@@ -206,7 +197,7 @@ void caDiscoverInterfaces(ELLLIST *pList, int socket, int port)
 		/*
 		 * Fetch the local address for this interface
 		 */
-		status = socket_ioctl(socket, SIOCGIFADDR, (int)pifreq);
+		status = socket_ioctl(socket, SIOCGIFADDR, pifreq);
 		if (status){
 			continue;
 		}
@@ -234,7 +225,7 @@ void caDiscoverInterfaces(ELLLIST *pList, int socket, int port)
 			status = socket_ioctl(
 					socket, 
 					SIOCGIFBRDADDR, 
-					(int) pifreq);
+					pifreq);
 			if (status){
 				continue;
 			}
@@ -243,7 +234,7 @@ void caDiscoverInterfaces(ELLLIST *pList, int socket, int port)
 			status = socket_ioctl(
 					socket, 
 					SIOCGIFDSTADDR, 
-					(int) pifreq);
+					pifreq);
 			if (status){
 				continue;
 			}

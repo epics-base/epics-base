@@ -14,7 +14,7 @@
  *
  */
 
-static char *sccsId = "$Id$";
+static char *sccsId = "%W% %G%";
 
 #include	"iocinf.h"
 
@@ -52,7 +52,7 @@ void ca_test_event(struct event_handler_args args)
     ca_printf("CAC: Value:\t<%f>\n",*(float *)args.dbr);
     break;
   case	DBR_DOUBLE:
-    ca_printf("CAC: Value:\t<%f>\n",*(double *)args.dbr);
+    ca_printf("CAC: Value:\t<%lf>\n",*(double *)args.dbr);
     break;
   case	DBR_STS_STRING:
     ca_printf("CAC: Value:\t<%s>\n",((struct dbr_sts_string *)args.dbr)->value);

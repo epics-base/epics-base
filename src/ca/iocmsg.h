@@ -19,11 +19,15 @@
  *	.07 041194 joh	New command added for CA V4.2 - access rights 
  *
  *	.08 050594 joh	New command added for CA V4.3 - echo request
+ *
+ *	.09 050594 joh	New command added for CA V4.3 - repeater fanout register 
+ *
+ *	.10 050594 joh	New command added for CA V4.3 - wakeup the server
  */
 
 #define __IOCMSG__
 
-static char	*iocmsghSccsId = "$Id$ CA version 4.3";
+HDRVERSIONID(iocmsgh, "%W% %G% CA version 4.3")
 
 /* TCP/UDP port number (bumped each protocol change) */
 #define CA_PROTOCOL_VERSION	4
@@ -46,6 +50,16 @@ static char	*iocmsghSccsId = "$Id$ CA version 4.3";
 #define MAX_TCP			(MAX_UDP*16) /* so waveforms fit */
 #define MAX_MSG_SIZE		(MAX_TCP) /* the larger of tcp and udp max */
 
+/*
+ * architecture independent types
+ *
+ * (so far this works on all archs we have ported to)
+ */
+typedef unsigned short  ca_uint16_t;
+typedef unsigned int	ca_uint32_t;
+typedef float           ca_float32_t;
+
+
 		/* values for m_cmmd */
 #define IOC_NOOP		0	/* do nothing, but verify TCP */
 #define IOC_EVENT_ADD		1	/* add an event */
@@ -54,6 +68,7 @@ static char	*iocmsghSccsId = "$Id$ CA version 4.3";
 #define IOC_WRITE		4	/* write a channel value */
 #define IOC_SNAPSHOT		5	/* snapshot of the system */
 #define	IOC_SEARCH		6	/* IOC channel search */
+/*				7				*/
 #define IOC_EVENTS_OFF		8	/* flow control */ 
 #define IOC_EVENTS_ON		9	/* flow control */ 
 #define IOC_READ_SYNC		10	/* purge old reads */ 
@@ -62,6 +77,7 @@ static char	*iocmsghSccsId = "$Id$ CA version 4.3";
 #define IOC_RSRV_IS_UP		13	/* CA server has joined the net */
 #define IOC_NOT_FOUND		14	/* channel not found */
 #define IOC_READ_NOTIFY		15	/* add a one shot event */
+/*				16				*/
 #define REPEATER_CONFIRM	17	/* registration confirmation */
 #define IOC_CLAIM_CIU		18	/* client claims resource in server */
 #define IOC_WRITE_NOTIFY	19	/* notify after write chan value */
@@ -69,6 +85,8 @@ static char	*iocmsghSccsId = "$Id$ CA version 4.3";
 #define IOC_HOST_NAME		21	/* CA V4.1 identify client */
 #define IOC_ACCESS_RIGHTS	22	/* CA V4.2 asynch access rights chg */
 #define IOC_ECHO		23	/* CA V4.3 connection verify */
+#define REPEATER_REGISTER	24	/* registr for repeater fan out */
+#define IOC_SIGNAL		25	/* knock the server out of select */
 
 /*
  * for use with search and not_found (if search fails and
@@ -98,12 +116,8 @@ static char	*iocmsghSccsId = "$Id$ CA version 4.3";
 #define CA_ACCESS_RIGHT_WRITE	(1<<1)
 
 /*
- * Required Message Alignment 
- *
- * Determined by the architecture with the most restrictive
- * alignment requirements (currently the SPARC).
- *
- * octal rounding
+ * All structures passed in the protocol must have individual
+ * fields aligned on natural boundaries.
  *
  * NOTE: all structures declared in this file must have a
  * byte count which is evenly divisible by 8 for the SPARC.
@@ -114,25 +128,25 @@ static char	*iocmsghSccsId = "$Id$ CA version 4.3";
  * the common part of each message sent/recv by the
  * CA server.
  */
-struct	extmsg {
-	unsigned short	m_cmmd;		/* operation to be performed */
-	unsigned short	m_postsize;	/* size of message extension */	
-	unsigned short	m_type;		/* operation data type */ 
-	unsigned short 	m_count;	/* operation data count */
-	unsigned long	m_cid;		/* channel identifier */
-	unsigned long	m_available;	/* undefined message location for use
+typedef struct	extmsg {
+	ca_uint16_t	m_cmmd;		/* operation to be performed */
+	ca_uint16_t	m_postsize;	/* size of message extension */	
+	ca_uint16_t	m_type;		/* operation data type */ 
+	ca_uint16_t	m_count;	/* operation data count */
+	ca_uint32_t	m_cid;		/* channel identifier */
+	ca_uint32_t	m_available;	/* undefined message location for use
 					 * by client processes */
-};
+}caHdr;
 
 /*
  * for  monitor (event) message extension
  */
 struct  mon_info{
-	float		m_lval;		/* low delta */
-	float		m_hval;		/* high delta */ 
-	float		m_toval;	/* period btween samples */
-	unsigned short	m_mask;		/* event select mask */
-	unsigned short	m_pad;		/* extend to 32 bits */
+	ca_float32_t	m_lval;		/* low delta */
+	ca_float32_t	m_hval;		/* high delta */ 
+	ca_float32_t	m_toval;	/* period btween samples */
+	ca_uint16_t	m_mask;		/* event select mask */
+	ca_uint16_t	m_pad;		/* extend to 32 bits */
 };
 
 struct	monops {			/* monitor req opi to ioc */

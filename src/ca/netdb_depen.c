@@ -1,5 +1,5 @@
 /* netdb_depen.c */
-/* $Id$ */
+/* share/src/ca/%W% %G% */
 /*
  *      Author:		Jeff Hill 
  *      Date:          	04-05-94 
@@ -31,7 +31,7 @@
  */
 
 
-static char	*sccsId = "$Id$";
+static char	*sccsId = "%W% %G%";
 
 
 #include <ctype.h>

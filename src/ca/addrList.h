@@ -1,6 +1,24 @@
 
+#include <envDefs.h>
 
+void caSetupAddrList(
+        ELLLIST *pList,
+        SOCKET socket);
 
+void caPrintAddrList();
+
+void caDiscoverInterfaces(
+        ELLLIST *pList,
+        SOCKET socket,
+        int port);
+
+void caAddConfiguredAddr(
+        ELLLIST *pList,
+        ENV_PARAM *pEnv,
+        SOCKET socket,
+        int port);
+
+int	local_addr(SOCKET socket, struct sockaddr_in *plcladdr);
 
 
 union caAddr{

@@ -23,13 +23,14 @@
  *	.10 joh	112092	removed the requirement that VMS locking
  *			pairs reside at the same C bracket level
  *      .11 GeG 120992	support VMS/UCX
+ *      .12 CJM 130794  define MYERRNO properly for UCX
  *
  */
 
 #ifndef INCos_depenh
 #define INCos_depenh
 
-static char *os_depenhSccsId = "$Id$";
+static char *os_depenhSccsId = "%W% %G%";
 
 /*
  * errno.h is ANSI however we
@@ -92,7 +93,7 @@ static char *os_depenhSccsId = "$Id$";
 #	include <sys/types.h>
 #	include <sys/socket.h>
 #	include <netinet/in.h>
-#       define  __TIME /* dont include VMS CC time.h under MULTINET */
+#       define  __TIME_LOADED /* dont include VMS CC time.h under MULTINET */
 #	include <sys/time.h>
 #       include <tcp/errno.h>
 #	include <ssdef>
@@ -113,30 +114,64 @@ static char *os_depenhSccsId = "$Id$";
 #	define CA_OS_CONFIGURED
 #endif /*VMS*/
 
+#ifdef _WINDOWS
+#	include <errno.h>
+#	include <time.h>
+#	include <windows.h>
+#	include <winsock.h>
+#	define CA_OS_CONFIGURED
+#endif /*_WINDOWS*/
+
 #ifndef CA_OS_CONFIGURED
 #error Please define one of vxWorks, UNIX or VMS 
 #endif
 
 /*
- * Set the flag "CONVERSION_REQUIRED" if the architechure is 
- * little endian or if the local floating point format isnt IEEE.
+ * Big endin architecture is assumed. Otherwise set "CA_LITTLE_ENDIAN". 
  *
- * Big endin architecture is assumed. Otherwise set "LITTLE_ENDIAN". 
- *
- * IEEE floating point architecture assumed. Set "MIT_FLOAT" if
+ * IEEE floating point architecture assumed. Set "CA_FLOAT_MIT" if
  * appropriate. No other floating point formats currently
  * supported.
  */
-#ifdef VAX
-#define CONVERSION_REQUIRED
-#define MIT_FLOAT
-#define LITTLE_ENDIAN
+#if defined(VAX) 
+#	define CA_FLOAT_MIT
+#	define CA_LITTLE_ENDIAN
+#elif defined(_X86_)
+#	define CA_FLOAT_IEEE
+#	define CA_LITTLE_ENDIAN
+#elif (defined(__ALPHA) || defined(__alpha)) && defined(VMS)
+#	define CA_FLOAT_MIT
+#	define CA_LITTLE_ENDIAN
+#elif (defined(__ALPHA) || defined(__alpha)) && defined(UNIX)
+#	define CA_FLOAT_IEEE
+#	define CA_LITTLE_ENDIAN
+#else
+#	define CA_FLOAT_IEEE
+#	define CA_BIG_ENDIAN
 #endif
 
-#ifdef __ALPHA 
+/*
+ * some architecture sanity checks
+ */
+#if defined(CA_BIG_ENDIAN) && defined(CA_LITTLE_ENDIAN)
+#error defined(CA_BIG_ENDIAN) && defined(CA_LITTLE_ENDIAN)
+#endif
+#if !defined(CA_BIG_ENDIAN) && !defined(CA_LITTLE_ENDIAN)
+#error !defined(CA_BIG_ENDIAN) && !defined(CA_LITTLE_ENDIAN)
+#endif
+#if defined(CA_FLOAT_IEEE) && defined(CA_FLOAT_MIT)
+#error defined(CA_FLOAT_IEEE) && defined(CA_FLOAT_MIT)
+#endif
+#if !defined(CA_FLOAT_IEEE) && !defined(CA_FLOAT_MIT)
+#error !defined(CA_FLOAT_IEEE) && !defined(CA_FLOAT_MIT) 
+#endif
+
+/*
+ * CONVERSION_REQUIRED is set if either the byte order
+ * or the floating point does not match
+ */
+#if !defined(CA_FLOAT_IEEE) || !defined(CA_BIG_ENDIAN)
 #define CONVERSION_REQUIRED
-#define MIT_FLOAT
-#define LITTLE_ENDIAN
 #endif
 
 #ifndef NULL
@@ -167,44 +202,56 @@ static char *os_depenhSccsId = "$Id$";
 #define LOCAL static
 #endif
 
-/************************************************************************/
-/*	Provided to enforce one thread at a time code sections		*/
-/*	independent of a particular operating system			*/
-/************************************************************************/
+/* delay for when a poll is used	 				*/
+/*	NOTE: DELAYTICKS must be less than TICKSPERSEC	*/
+#define DELAYTICKS	50L		/* (adjust units below) */
+#define TICKSPERSEC	1000L		/* mili sec per sec	*/
 
-#if defined(VMS)
-#	define  LOCK
-#	define  UNLOCK
-#  	define	LOCKEVENTS
-#  	define	UNLOCKEVENTS
-#	define	EVENTLOCKTEST	(post_msg_active!=0)
-#endif
+/*
+ * order of ops is important here
+ * 
+ * NOTE: large OS dependent SYFREQ might cause an overflow 
+ */
+#define LOCALTICKS	((SYSFREQ*DELAYTICKS)/TICKSPERSEC)
+
 
 #if defined(vxWorks)
-#	define	VXTASKIDNONE	0
-#  	define	LOCK 		semTake(client_lock, WAIT_FOREVER);
-#  	define	UNLOCK  	semGive(client_lock);
-#	define	LOCKEVENTS \
+#	define VXTASKIDNONE	0
+#  	define LOCK 		semTake(client_lock, WAIT_FOREVER);
+#  	define UNLOCK  	semGive(client_lock);
+#	define LOCKEVENTS \
 	{semTake(event_lock, WAIT_FOREVER); event_tid=(int)taskIdCurrent;}
-#  	define	UNLOCKEVENTS \
+#  	define UNLOCKEVENTS \
 	{event_tid=VXTASKIDNONE; semGive(event_lock);}
-#	define	EVENTLOCKTEST \
+#	define EVENTLOCKTEST \
 (((int)taskIdCurrent)==event_tid || ca_static->recv_tid == (int)taskIdCurrent)
+#	define VXTHISTASKID 	taskIdSelf()
+#	define abort() 		taskSuspend(VXTHISTASKID)
+#   	define socket_close(S) close(S)
+	/* vxWorks still has a brain dead func proto for ioctl */
+#   	define socket_ioctl(A,B,C) ioctl(A,B,(int)C) 
+# 	define MYERRNO	(errnoGet()&0xffff)
+#  	define POST_IO_EV semGive(io_done_sem)
+# 	define SYSFREQ		((long) sysClkRateGet())  /* usually 60 Hz */
+# 	define time(A) 		(tickGet()/SYSFREQ)
+	typedef int SOCKET;
+#	define INVALID_SOCKET (-1)
 #endif
 
 #if defined(UNIX)
-#  	define	LOCK
-#  	define	UNLOCK  
-#  	define	LOCKEVENTS
-#  	define	UNLOCKEVENTS
-#	define	EVENTLOCKTEST	(post_msg_active!=0)
+#  	define LOCK
+#  	define UNLOCK  
+#  	define LOCKEVENTS
+#  	define UNLOCKEVENTS
+#	define EVENTLOCKTEST	(post_msg_active)
+#   	define socket_close(S) close(S)
+#   	define socket_ioctl(A,B,C) ioctl(A,B,C) 
+# 	define MYERRNO	errno
+#  	define POST_IO_EV 
+#	define SYSFREQ		1000000L	/* 1 MHz	*/
+	typedef int SOCKET;
+#	define INVALID_SOCKET (-1)
 #endif
-
-#ifdef vxWorks
-#	define VXTHISTASKID 	taskIdSelf()
-#	define abort() 		taskSuspend(VXTHISTASKID)
-#endif
-
 
 #if defined(VMS)
 #  if defined(WINTCP)	/* Wallangong */
@@ -216,73 +263,42 @@ static char *os_depenhSccsId = "$Id$";
 # 		define socket_close(S) close(S)
 # 		define socket_ioctl(A,B,C) ioctl(A,B,C) 
 #  endif
-#endif
-
-#if defined(UNIX)
-#   	define socket_close(S) close(S)
-#   	define socket_ioctl(A,B,C) ioctl(A,B,C) 
-#endif
-
-#if defined(vxWorks)
-#   	define socket_close(S) close(S)
-#   	define socket_ioctl(A,B,C) ioctl(A,B,C) 
-#endif
-
-#if defined(VMS)
 #	ifdef WINTCP
-  		extern int	uerrno;		/* Wallongong errno is uerrno 	*/
+  		extern int	uerrno;	
 # 		define MYERRNO	uerrno
 #	else
+#           ifdef UCX
+#               define MYERRNO errno
+                extern volatile int noshare errno ;
+#           else
 # 		define MYERRNO	socket_errno
+#           endif
 #	endif
-#endif
-
-#if defined(vxWorks)
-# 	define MYERRNO	(errnoGet()&0xffff)
-#endif
-
-#if defined(UNIX)
-# 	define MYERRNO	errno
-#endif
-
-
-#if defined(vxWorks)
-#  	define POST_IO_EV semGive(io_done_sem)
-#endif
-
-#if defined(VMS)
 #  	define POST_IO_EV 
-#endif
-
-#if defined(UNIX)
-#  	define POST_IO_EV 
-#endif
-
-/* delay for when a poll is used	 				*/
-/*	NOTE: DELAYTICKS must be less than TICKSPERSEC	*/
-#define DELAYTICKS	50L		/* (adjust units below) */
-#define TICKSPERSEC	1000L		/* mili sec per sec	*/
-
-/*
- * order of ops is important here
- * 
- * NOTE: large SYFREQ can cause an overflow 
- */
-#	define LOCALTICKS	((SYSFREQ*DELAYTICKS)/TICKSPERSEC)
-
-#if defined(VMS)
 # 	define SYSFREQ		10000000L	/* 10 MHz	*/
+#	define LOCK
+#	define UNLOCK
+#  	define LOCKEVENTS
+#  	define UNLOCKEVENTS
+#	define EVENTLOCKTEST	(post_msg_active)
+	typedef int SOCKET;
+#	define INVALID_SOCKET (-1)
 #endif
 
-#if defined(vxWorks)
-# 	define SYSFREQ		((long) sysClkRateGet())  /* usually 60 Hz */
-# 	define time(A) 		(tickGet()/SYSFREQ)
+#ifdef _WINDOWS
+#	define IPPORT_USERRESERVED	5000
+#	define EWOULDBLOCK		WSAEWOULDBLOCK
+#	define ENOBUFS			WSAENOBUFS
+#	define ECONNRESET		WSAECONNRESET
+#	define ETIMEDOUT		WSAETIMEDOUT
+#	define EADDRINUSE		WSAEADDRINUSE
+#	define socket_close(S) 		closesocket(S)
+#	define socket_ioctl(A,B,C)	ioctlsocket(A,B,C)
+#	define MYERRNO			WSAGetLastError()
+#	define POST_IO_EV
+#	define SYSFREQ			1000000L /* 1 MHz        */
+#endif /*_WINDOWS*/
+
+
 #endif
 
-#if defined(UNIX)
-#	define SYSFREQ		1000000L	/* 1 MHz	*/
-#endif
-
-
-
-#endif

@@ -68,7 +68,7 @@
 /************************************************************************/
 /*_end									*/
 
-static char *sccsId = "$Id$";
+static char *sccsId = "%W% %G%"; 
 
 #include 	"iocinf.h"
 #include 	"net_convert.h"
@@ -90,7 +90,7 @@ struct in_addr          *pnet_addr
 );
 
 #ifdef CONVERSION_REQUIRED 
-globalref CACVRTFUNC *cac_dbr_cvrt[];
+extern CACVRTFUNC *cac_dbr_cvrt[];
 #endif /*CONVERSION_REQUIRED*/
 
 
@@ -230,7 +230,6 @@ struct in_addr  	*pnet_addr
 )
 {
 	evid            monix;
-	int             status;
 
 	switch (piiu->curMsg.m_cmmd) {
 
@@ -243,13 +242,21 @@ struct in_addr  	*pnet_addr
 
 	case IOC_WRITE_NOTIFY:
 	{
-		/*
-		 * run the user's event handler
-		 * m_available points to event descriptor
-		 */
 		struct event_handler_args args;
 
-		monix = (evid) piiu->curMsg.m_available;
+		/*
+		 * run the user's event handler
+		 */
+		LOCK;
+		monix = (evid) bucketLookupItemUnsignedId(
+				pFastBucket, 
+				&piiu->curMsg.m_available);
+		UNLOCK;
+		if(!monix){
+			ca_signal(ECA_INTERNAL, 
+				"bad client write io id from server");
+			break;
+		}
 
 		/*
 		 * 
@@ -276,21 +283,31 @@ struct in_addr  	*pnet_addr
 		}
 		LOCK;
 		ellDelete(&pend_write_list, &monix->node);
-		ellAdd(&free_event_list, &monix->node);
 		UNLOCK;
+
+		caIOBlockFree(monix);
 
 		break;
 
 	}	
 	case IOC_READ_NOTIFY:
 	{
-		/*
-		 * run the user's event handler
-		 * m_available points to event descriptor
-		 */
 		struct event_handler_args args;
 
-		monix = (evid) piiu->curMsg.m_available;
+		/*
+		 * run the user's event handler
+		 */
+
+		LOCK;
+		monix = (evid) bucketLookupItemUnsignedId(
+				pFastBucket, 
+				&piiu->curMsg.m_available);
+		UNLOCK;
+		if(!monix){
+			ca_signal(ECA_INTERNAL, 
+				"bad client read notify io id from server");
+			break;
+		}
 
 		/*
 		 * 
@@ -339,8 +356,8 @@ struct in_addr  	*pnet_addr
 		}
 		LOCK;
 		ellDelete(&pend_read_list, &monix->node);
-		ellAdd(&free_event_list, &monix->node);
 		UNLOCK;
+		caIOBlockFree(monix);
 
 		break;
 	}
@@ -350,10 +367,18 @@ struct in_addr  	*pnet_addr
 		struct event_handler_args args;
 
 		/*
-		 * run the user's event handler m_available
-		 * points to event descriptor
+		 * run the user's event handler 
 		 */
-		monix = (evid) piiu->curMsg.m_available;
+		LOCK;
+		monix = (evid) bucketLookupItemUnsignedId(
+				pFastBucket, 
+				&piiu->curMsg.m_available);
+		UNLOCK;
+		if(!monix){
+			ca_signal(ECA_INTERNAL, 
+				"bad client event id from server");
+			break;
+		}
 
 
 		/*
@@ -363,8 +388,8 @@ struct in_addr  	*pnet_addr
 		if (!piiu->curMsg.m_postsize) {
 			LOCK;
 			ellDelete(&monix->chan->eventq, &monix->node);
-			ellAdd(&free_event_list, &monix->node);
 			UNLOCK;
+			caIOBlockFree(monix);
 
 			break;
 		}
@@ -420,17 +445,19 @@ struct in_addr  	*pnet_addr
 	}
 	case IOC_READ:
 	{
-		chid            chan;
+		evid	pIOBlock;
 
 		/*
-		 * verify the channel id
+		 * verify the event id
 		 */
 		LOCK;
-		chan = bucketLookupItem(pBucket, piiu->curMsg.m_cid);
+		pIOBlock = (evid) bucketLookupItemUnsignedId(
+					pFastBucket, 
+					&piiu->curMsg.m_available);
 		UNLOCK;
-		if(!chan){
+		if(!pIOBlock){
 			ca_signal(ECA_INTERNAL, 
-				"bad client channel id from server");
+				"bad client read io id from server");
 			break;
 		}
 
@@ -438,30 +465,35 @@ struct in_addr  	*pnet_addr
 		 * only count get returns if from the current
 		 * read seq
 		 */
-		if (!VALID_MSG(piiu))
-			break;
+		if (VALID_MSG(piiu)){
 
-		/*
-		 * convert the data buffer from net
-		 * format to host format
-		 */
-#		ifdef CONVERSION_REQUIRED 
-			(*cac_dbr_cvrt[piiu->curMsg.m_type])(
-				piiu->pCurData, 
-				piiu->curMsg.m_available, 
-				FALSE,
-				piiu->curMsg.m_count);
-#		else
-			memcpy(
-				(char *)piiu->curMsg.m_available,
-				piiu->pCurData,
-				dbr_size_n(piiu->curMsg.m_type, piiu->curMsg.m_count));
-#		endif
+			/*
+			 * convert the data buffer from net
+			 * format to host format
+			 */
+#			ifdef CONVERSION_REQUIRED 
+				(*cac_dbr_cvrt[piiu->curMsg.m_type])(
+					piiu->pCurData, 
+					pIOBlock->usr_arg, 
+					FALSE,
+					piiu->curMsg.m_count);
+#			else
+				memcpy(
+					(char *)pIOBlock->usr_arg,
+					piiu->pCurData,
+					dbr_size_n(piiu->curMsg.m_type, 
+						piiu->curMsg.m_count));
+#			endif
 
-		/*
-		 * decrement the outstanding IO count
-		 */
-		CLRPENDRECV(TRUE);
+			/*
+			 * decrement the outstanding IO count
+			 */
+			CLRPENDRECV(TRUE);
+		}
+		LOCK;
+		ellDelete(&pend_read_list, &pIOBlock->node);
+		UNLOCK;
+		caIOBlockFree(pIOBlock);
 		break;
 	}
 	case IOC_SEARCH:
@@ -477,7 +509,7 @@ struct in_addr  	*pnet_addr
 		{
 			struct in_addr ina;
 			
-			ina.s_addr = (long) piiu->curMsg.m_available;
+			ina.s_addr = piiu->curMsg.m_available;
 			mark_server_available(&ina);
 		}
 		UNLOCK;
@@ -494,46 +526,12 @@ struct in_addr  	*pnet_addr
 		break;
 
 	case IOC_CLEAR_CHANNEL:
-	{
-		chid            	chix = (chid) piiu->curMsg.m_available;
-		struct ioc_in_use 	*piiu = chix->piiu;
-		register evid   	monix;
-
-
-		LOCK;
-		/*
-		 * remove any orphaned get callbacks for this
-		 * channel
-		 */
-		for (monix = (evid) pend_read_list.node.next;
-		     monix;
-		     monix = (evid) monix->node.next){
-			if (monix->chan == chix) {
-				ellDelete(	
-					&pend_read_list, 
-					&monix->node);
-				ellAdd(
-					&free_event_list, 
-					&monix->node);
-			}
-		}
-		ellConcat(&free_event_list, &chix->eventq);
-		ellDelete(&piiu->chidlist, &chix->node);
-		status = bucketRemoveItem(pBucket, chix->cid, chix);
-		if(status != BUCKET_SUCCESS){
-			ca_signal(
-				ECA_INTERNAL,
-				"bad id at channel delete");
-		}
-		free(chix);
-		if (!piiu->chidlist.count){
-			TAG_CONN_DOWN(piiu);
-		}
-		UNLOCK;
+		clearChannelResources (piiu->curMsg.m_available);
 		break;
-	}
+
 	case IOC_ERROR:
 	{
+		evid		monix;
 		char		nameBuf[64];
 		char           	context[255];
 		struct extmsg  	*req = piiu->pCurData;
@@ -567,12 +565,36 @@ struct in_addr  	*pnet_addr
 		 * future. This is quite wasteful of space
 		 * however.
 		 */
+		monix = NULL;
+		args.addr = NULL;
 		switch (ntohs(req->m_cmmd)) {
 		case IOC_READ_NOTIFY:
+			LOCK;
+			monix = (evid) bucketLookupItemUnsignedId(
+					pFastBucket, 
+					&req->m_available);
+			UNLOCK;
+			op = CA_OP_GET;
+			break;
 		case IOC_READ:
+			LOCK;
+			monix = (evid) bucketLookupItemUnsignedId(
+					pFastBucket, 
+					&req->m_available);
+			UNLOCK;
+			if(monix){
+				args.addr = monix->usr_arg;
+			}
 			op = CA_OP_GET;
 			break;
 		case IOC_WRITE_NOTIFY:
+			LOCK;
+			monix = (evid) bucketLookupItemUnsignedId(
+					pFastBucket, 
+					&req->m_available);
+			UNLOCK;
+			op = CA_OP_PUT;
+			break;
 		case IOC_WRITE:
 			op = CA_OP_PUT;
 			break;
@@ -580,9 +602,19 @@ struct in_addr  	*pnet_addr
 			op = CA_OP_SEARCH;
 			break;
 		case IOC_EVENT_ADD:
+			LOCK;
+			monix = (evid) bucketLookupItemUnsignedId(
+					pFastBucket, 
+					&req->m_available);
+			UNLOCK;
 			op = CA_OP_ADD_EVENT;
 			break;
 		case IOC_EVENT_CANCEL:
+			LOCK;
+			monix = (evid) bucketLookupItemUnsignedId(
+					pFastBucket, 
+					&req->m_available);
+			UNLOCK;
 			op = CA_OP_CLEAR_EVENT;
 			break;
 		default:
@@ -590,14 +622,19 @@ struct in_addr  	*pnet_addr
 			break;
 		}
 
+		if (monix) {
+			caIOBlockFree(monix);
+		}
+
 		LOCK;
-		args.chid = bucketLookupItem(pBucket, piiu->curMsg.m_cid);
+		args.chid = bucketLookupItemUnsignedId
+				(pSlowBucket, &piiu->curMsg.m_cid);
 		UNLOCK;
 		args.usr = ca_static->ca_exception_arg;
-		args.type = ntohs(req->m_type);	
-		args.count = ntohs(req->m_count);
-		args.addr = (void *) (req->m_available);
-		args.stat = ntohl((long) piiu->curMsg.m_available);							args.op = op;
+		args.type = ntohs (req->m_type);	
+		args.count = ntohs (req->m_count);
+		args.stat = ntohl (piiu->curMsg.m_available);
+		args.op = op;
 		args.ctx = context;
 
 		LOCKEVENTS;
@@ -611,11 +648,17 @@ struct in_addr  	*pnet_addr
 		chid	chan;
 
 		LOCK;
-		chan = bucketLookupItem(pBucket, piiu->curMsg.m_cid);
+		chan = bucketLookupItemUnsignedId(pSlowBucket, &piiu->curMsg.m_cid);
 		UNLOCK;
-		assert(chan);
+		if(!chan){
+			/*
+			 * end up here if they delete the channel
+			 * prior to connecting
+			 */
+			break;
+		}
 
-		ar = ntohl(piiu->curMsg.m_available);
+		ar = ntohl (piiu->curMsg.m_available);
 		chan->ar.read_access = (ar&CA_ACCESS_RIGHT_READ)?1:0;
 		chan->ar.write_access = (ar&CA_ACCESS_RIGHT_WRITE)?1:0;
 
@@ -633,9 +676,16 @@ struct in_addr  	*pnet_addr
 		chid	chan;
 
 		LOCK;
-		chan = bucketLookupItem(pBucket, piiu->curMsg.m_cid);
+		chan = bucketLookupItemUnsignedId(pSlowBucket, &piiu->curMsg.m_cid);
 		UNLOCK;
-		assert(chan);
+		if(!chan){
+			/*
+			 * end up here if they delete the channel
+			 * prior to connecting
+			 */
+			break;
+		}
+
 		reconnect_channel(piiu, chan);
 		break;
 	}
@@ -674,7 +724,7 @@ struct in_addr          *pnet_addr
 	 * lock required around use of the sprintf buffer
 	 */
 	LOCK;
-	chan = bucketLookupItem(pBucket, piiu->curMsg.m_available);
+	chan = bucketLookupItemUnsignedId(pSlowBucket, &piiu->curMsg.m_available);
 	if(!chan){
 		UNLOCK;
 		return;

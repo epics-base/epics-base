@@ -3,8 +3,11 @@
  * CA test/debug routine
  */
 
-static char *sccsId = "$Id$";
+static char *sccsId = "%W% %G%";
 
+#ifdef VMS
+#include <LIB$ROUTINES.H>
+#endif
 
 #include		<stdio.h>
 #include		<assert.h>
@@ -52,9 +55,7 @@ int acctst(char *pname)
 			NULL,
 			NULL);
 }
-#endif /*vxWorks*/
-
-#if defined(UNIX) || defined(VMS)
+#else /* not vxWorks */
 main(int argc, char **argv)
 {
 	if(argc == 2){
@@ -65,7 +66,7 @@ main(int argc, char **argv)
 	}
 	return 0;
 }
-#endif /* UNIX or VMS */
+#endif /*vxWorks*/
 
 
 int doacctst(char *pname)
@@ -244,9 +245,7 @@ int doacctst(char *pname)
 		float	temp;
 
 		printf("Performing multiple get test...");
-#ifdef UNIX
 		fflush(stdout);
-#endif /*UNIX*/
 		for(i=0; i<10000; i++){
 			SEVCHK(ca_get(DBR_FLOAT, chix4, &temp),NULL);
 		}
@@ -262,9 +261,7 @@ int doacctst(char *pname)
 	 */
 	if(ca_write_access(chix4)){
 		printf("Performing multiple put test...");
-#ifdef UNIX
 		fflush(stdout);
-#endif /*UNIX*/
 		for(i=0; i<10000; i++){
 			double fval = 3.3;
 			status = ca_put(DBR_DOUBLE, chix4, &fval);
@@ -283,9 +280,7 @@ int doacctst(char *pname)
 	 */
 	if(ca_read_access(chix1)){
 		printf("Performing multiple get callback test...");
-#ifdef UNIX
 		fflush(stdout);
-#endif /*UNIX*/
 		for(i=0; i<10000; i++){
 			status = ca_array_get_callback(
 					DBR_FLOAT, 
@@ -303,17 +298,18 @@ int doacctst(char *pname)
 		printf("Skipped multiple get cb test - no read access\n");
 	}
 
-	test_sync_groups(chix1);
+
+	if(ca_v42_ok(chix1)){
+		test_sync_groups(chix1);
+	}
 
 	/*
 	 * verify we dont jam up on many uninterrupted
 	 * solicitations
 	 */
-	if(ca_write_access(chix1)){
+	if(ca_write_access(chix1) && ca_v42_ok(chix1)){
 		printf("Performing multiple put callback test...");
-#ifdef UNIX
 		fflush(stdout);
-#endif /*UNIX*/
 		for(i=0; i<10000; i++){
 			float fval = 3.3;
 			status = ca_array_put_callback(
@@ -337,9 +333,7 @@ int doacctst(char *pname)
 	 * verify we can add many monitors at once
 	 */
 	printf("Performing multiple monitor test...");
-#ifdef UNIX
 	fflush(stdout);
-#endif /*UNIX*/
 	{
 		evid	mid[1000];
 		float	temp;
@@ -361,7 +355,7 @@ int doacctst(char *pname)
 				printf(
 			"Clear of event %d %x failed because \"%s\"\n",
 					i,
-					mid[i],
+					mid[i]->id,
 					ca_message(status));
 			}
 			SEVCHK(status,NULL);
@@ -468,8 +462,10 @@ int doacctst(char *pname)
 		printf("GR Float value Returned from put/get %f\n", pgrfloat[i].value);
 	}
 
+#if 0
 	for (i = 0; i < 10; i++)
 		ca_get_callback(DBR_GR_FLOAT, chix1, ca_test_event, NULL);
+#endif
 
 
 	SEVCHK(ca_modify_user_name("Willma"), NULL);
@@ -501,7 +497,7 @@ void null_event(struct event_handler_args args)
 	static int      i;
 
 	if (i++ > 1000) {
-		printf("1000 occured\n");
+		printf("1000 occurred\n");
 		i = 0;
 	}
 }
@@ -555,9 +551,7 @@ void test_sync_groups(chid chix)
 	CA_SYNC_GID	gid2;
 
 	printf("Performing sync group test...");
-#ifdef UNIX
 	fflush(stdout);
-#endif /*UNIX*/
 
 	status = ca_sg_create(&gid1);
 	SEVCHK(status, NULL);

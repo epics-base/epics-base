@@ -1,5 +1,5 @@
 /*
- *      $Id$
+ *      %W% %G%
  *      Author: Jeffrey O. Hill
  *              hill@luke.lanl.gov
  *              (505) 665 1831
@@ -41,7 +41,6 @@ int cac_select_io(struct timeval *ptimeout, int flags)
 {
         long            status;
         IIU             *piiu;
-        unsigned long   minfreespace;
         unsigned long   freespace;
 	int		maxfd;
 
@@ -60,23 +59,15 @@ int cac_select_io(struct timeval *ptimeout, int flags)
                  * Dont bother receiving if we have insufficient
                  * space for the maximum UDP message
                  */
-                if(flags&CA_DO_RECVS){
+                if (flags&CA_DO_RECVS) {
                         freespace = cacRingBufferWriteSize(&piiu->recv, TRUE);
-                        if(piiu->sock_proto == IPPROTO_UDP){
-                                minfreespace =
-                                        MAX_UDP+2*sizeof(struct udpmsglog);
-                        }
-                        else{
-                                minfreespace = 1;
-                        }
-
-                        if(freespace>=minfreespace){
+                        if(freespace>=piiu->minfreespace){
 				maxfd = max(maxfd,piiu->sock_chan);
                                 FD_SET(piiu->sock_chan,&readch);
                         }
                 }
 
-                if(flags&CA_DO_SENDS){
+                if (flags&CA_DO_SENDS) {
                         if(cacRingBufferReadSize(&piiu->send, FALSE)>0){
 				maxfd = max(maxfd,piiu->sock_chan);
                                 FD_SET(piiu->sock_chan,&writech);

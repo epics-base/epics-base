@@ -23,11 +23,12 @@
  *	joh	07-05-94	Fixed double invocation of ++ operator
  *				by byte swap macro bug in cvrt_short(),
  *				cvrt_long(), cvrt_enum().
+ *	joh	11-02-94	moved float convert to this source 
  *
  *
  */
 
-static char	*sccsId = "$Id$";
+static char	*sccsId = "%W% %G%";
 
 #include	<string.h>
 
@@ -36,11 +37,8 @@ static char	*sccsId = "$Id$";
 
 void htond(double *pHost, double *pNet);
 void ntohd(double *pNet, double *pHost);
-
-#ifndef CONVERSION_REQUIRED
-void htonf(float *IEEEhost, float *IEEEnet);
-void ntohf(float *IEEEnet, float *IEEEhost);
-#endif /*not CONVERSION_REQUIRED*/
+void htonf(float *pHost, float *pNet);
+void ntohf(float *pNet, float *pHost);
 
 /*
  * if hton is true then it is a host to network conversion
@@ -94,9 +92,6 @@ LOCAL CACVRTFUNC	cvrt_ctrl_long;
 LOCAL CACVRTFUNC	cvrt_ctrl_double;
 
 /*  cvrt is (array of) (pointer to) (function returning) int */
-#ifdef VMS
-globaldef
-#endif
 CACVRTFUNC *cac_dbr_cvrt[]
 	=
 	{
@@ -148,7 +143,7 @@ typedef short		ca_short_tt;
 typedef float		ca_float_tt;
 typedef short		ca_enum_tt;
 typedef char		ca_char_tt;
-typedef long		ca_long_tt;
+typedef int		ca_long_tt;
 typedef double		ca_double_tt;
 
 #define dbr_ntohs(A)	ntohs(A)
@@ -227,7 +222,7 @@ int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
 )
 {
-      	unsigned int	i;
+      	unsigned long	i;
 	ca_char_tt	*pSrc = s;
 	ca_char_tt	*pDest = d;
 
@@ -280,7 +275,7 @@ int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
 )
 {
-      	unsigned 	i;
+      	unsigned long 	i;
 	ca_enum_tt	*pSrc;
 	ca_enum_tt	*pDest;
 
@@ -347,7 +342,7 @@ int 		encode,			/* cvrt HOST to NET if T	*/
 unsigned long	num			/* number of values		*/
 )
 {
-      	unsigned int	i;
+      	unsigned long	i;
 	ca_double_tt	*pSrc = s;
 	ca_double_tt	*pDest = d;
 
@@ -1379,7 +1374,7 @@ unsigned long	num			/* number of values		*/
 }
 
 
-#ifdef MIT_FLOAT 
+#ifdef CA_FLOAT_MIT
 /************************************************************************/
 /*      double convert 				                        */
 /*      (THIS ASSUMES IEEE IS THE NETWORK FLOATING POINT FORMAT)        */
@@ -1424,8 +1419,8 @@ void htond(double *pHost, double *pNet)
 	double		copyin;
 	struct mitdbl 	*pMIT;
 	struct ieeedbl 	*pIEEE;
-    	long		*ptmp;
-    	long        	tmp;
+    	ca_uint32_t	*ptmp;
+    	ca_uint32_t	tmp;
 
 	copyin = *pHost;
 	pMIT = (struct mitdbl *)&copyin;
@@ -1448,7 +1443,7 @@ void htond(double *pHost, double *pNet)
     	/*
     	 * byte swap to net order
      	 */
-    	ptmp = (long *) pNet;
+    	ptmp = (ca_uint32_t *) pNet;
     	tmp = htonl(ptmp[0]);
     	ptmp[0] = htonl(ptmp[1]);
     	ptmp[1] = tmp;
@@ -1464,8 +1459,8 @@ void ntohd(double *pNet, double *pHost)
 	double		copyin;
 	struct mitdbl 	*pMIT;
 	struct ieeedbl 	*pIEEE;
-    	long		*ptmp;
-    	long        	tmp;
+    	ca_uint32_t	*ptmp;
+    	ca_uint32_t	tmp;
 
 	copyin = *pNet;
 	pMIT = (struct mitdbl *)pHost;
@@ -1474,7 +1469,7 @@ void ntohd(double *pNet, double *pHost)
 	/*
 	 * Byte swap from net order to host order
 	 */
-    	ptmp = (long *) pIEEE;
+    	ptmp = (ca_uint32_t *) pIEEE;
     	tmp = htonl(ptmp[0]);
     	ptmp[0] = htonl(ptmp[1]);
     	ptmp[1] = tmp;
@@ -1505,9 +1500,106 @@ void ntohd(double *pNet, double *pHost)
     	}
 } 
 
-#endif /*MIT_FLOAT*/
+/************************************************************************/
+/*      (THIS ASSUMES IEEE IS THE NETWORK FLOATING POINT FORMAT)        */
+/************************************************************************/
 
-#ifndef CONVERSION_REQUIRED 
+struct ieeeflt{
+  unsigned      mant    :23;
+  unsigned      exp     :8;
+  unsigned      sign    :1;
+};
+
+/*      Exponent sign bias      */
+#define IEEE_SB         127
+
+/*      Conversion Range        */
+/*      -126<exp<127    with mantissa of form 1.mant                    */
+#define EXPMINIEEE      -126            /* min for norm # IEEE exponent */
+
+
+struct mitflt{
+    unsigned    mant1   :7;
+    unsigned    exp     :8;
+    unsigned    sign    :1;
+    unsigned    mant2   :16;
+};
+
+/*    Exponent sign bias      */
+# define        MIT_SB          129
+
+/*    Conversion Ranges       */
+/*    -128<exp<126    with mantissa of form 1.mant                    */
+# define        EXPMAXMIT       126     /* max MIT exponent             */
+# define        EXPMINMIT       -128    /* min MIT exponent             */
+
+/* (this includes mapping of fringe reals to zero or infinity) */
+/* (byte swaps included in conversion */
+
+void htonf(float *pHost, float *pNet)
+{
+	struct mitflt	*pMIT = pHost;
+	struct ieeeflt	*pIEEE = pNet;
+    	long  		exp,mant,sign;
+
+    	sign = pHost->sign;
+
+	if( (short)(pMIT->exp < EXPMINIEEE + MIT_SB){
+		exp       = 0;
+		mant      = 0;
+		sign      = 0;
+	}
+	else{
+		exp = (short)pMIT->exp-MIT_SB+IEEE_SB;
+		mant = (pMIT->mant1<<16) | pMIT->mant2;
+    	}
+    	pIEEE->mant   = mant;
+    	pIEEE->exp    = exp;
+    	pIEEE->sign   = sign;
+    	*(ca_uint32_t *)pIEEE = ntohl(*(ca_uint32_t *)pIEEE);
+}
+
+
+/*
+ * sign must be forced to zero if the exponent is zero to prevent a reserved
+ * operand fault- joh 9-13-90
+ */
+void ntohf(float *pNet, float *pHost)
+{
+	struct mitflt	*pMIT = pHost;
+	struct ieeeflt	*pIEEE = pNet;
+  	long  		exp,mant2,mant1,sign;
+
+    	*(ca_uint32_t *)pIEEE = htonl(*(ca_uint32_t *)pIEEE);
+    	if( (short) pIEEE->exp > EXPMAXMIT + IEEE_SB){
+		sign      = pIEEE->sign;
+		exp       = EXPMAXMIT + MIT_SB;
+		mant2     = ~0;
+		mant1     = ~0;
+    	}
+    	else if( pIEEE->exp == 0){
+		sign      = 0;
+		exp       = 0;
+		mant2     = 0;
+		mant1     = 0;
+    	}
+    	else{
+		sign      = pIEEE->sign;
+		exp       = pIEEE->exp+MIT_SB-IEEE_SB;
+		mant2     = pIEEE->mant;
+		mant1     = pIEEE->mant>>(unsigned)16;
+    	}
+    	pMIT->exp      = exp;
+    	pMIT->mant2    = mant2;
+    	pMIT->mant1    = mant1;
+    	pMIT->sign     = sign;
+}
+
+
+#endif /*CA_FLOAT_MIT*/
+
+#ifndef CA_FLOAT_MIT
+
 void htond(double *IEEEhost, double *IEEEnet)
 {
 	*IEEEnet = *IEEEhost;	
@@ -1527,5 +1619,8 @@ void htonf(float *IEEEhost, float *IEEEnet)
 {
 	*IEEEnet = *IEEEhost;	
 }
-#endif /* not MIT_FLOAT */
+
+#endif /* not CA_MIT_FLOAT*/
+
+
 

@@ -32,20 +32,16 @@
 /************************************************************************/
 /*_end                              					*/
 
-static char *sccsId = "$Id$";
+static char *sccsId = "%W% %G%";
 
 #include <stdio.h>
+#include <stdarg.h>
 
 #ifdef vxWorks
 # 	include <vxWorks.h>
 #	include <logLib.h>
 #endif /*vxWorks*/
 
-#ifdef __STDC__
-#include <stdarg.h>
-#else /*__STDC__*/
-#include <varargs.h>
-#endif /*__STDC__*/
 
 
 /*
@@ -65,24 +61,10 @@ va_dcl
 {
 	va_list		args;
 	int		status;
-#ifndef __STDC__
-	char		*pformat;
-#endif /*__STDC__*/
 
-#ifdef __STDC__
 	va_start(args, pformat);
-#else /*__STDC__*/
-	va_start(args);
-	pformat = va_arg(args, char *);
-#endif /*__STDC__*/
 
-
-#ifndef vxWorks
-	status = vfprintf(
-			stderr,
-			pformat,
-			args);
-#else /*vxWorks*/
+#if defined(vxWorks)
 	{
 		int	logMsgArgs[6];
 		int	i;
@@ -101,7 +83,12 @@ va_dcl
 				logMsgArgs[5]);
 			
 	}
-#endif /*vxWorks*/
+#else
+	status = vfprintf(
+			stderr,
+			pformat,
+			args);
+#endif 
 
 	va_end(args);
 

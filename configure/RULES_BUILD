@@ -50,7 +50,7 @@ INSTALL_INCLUDES += $(foreach dir,$(SRC_DIRS) $(INSTALL_INCLUDE), \
        -I$(dir)/os/$(OS_CLASS) -I$(dir)/os/posix \
        -I$(dir)/generic -I$(dir))
 
-INSTALL_INC += $(foreach inc,$(INC), \
+INSTALL_INC += $(subst generic/,,$(foreach inc,$(INC), \
     $(firstword $(foreach dir,$(SRC_DIRS) .., \
     $(subst $(dir),$(INSTALL_INCLUDE),$(firstword $(wildcard \
          $(dir)/os/$(OS_CLASS)MT/$(inc) \
@@ -60,14 +60,14 @@ INSTALL_INC += $(foreach inc,$(INC), \
          $(dir)/generic/$(inc) \
          $(dir)/$(inc) \
          ../$(inc) \
-    )))) $(INSTALL_INCLUDE)/$(inc)))
+    )))) $(INSTALL_INCLUDE)/$(inc))))
 
 else
 OS_SRC_DIRS += $(foreach dir,$(SRC_DIRS), \
          $(dir)/os/$(OS_CLASS) $(dir)/os/posix $(dir)/generic $(dir)) . ..
 INSTALL_INCLUDES += $(foreach dir,$(SRC_DIRS) $(INSTALL_INCLUDE), \
          -I$(dir)/os/$(OS_CLASS) -I$(dir)/os/posix -I$(dir)/generic -I$(dir))
-INSTALL_INC += $(foreach inc,$(INC), \
+INSTALL_INC += $(subst generic/,,$(foreach inc,$(INC), \
     $(firstword $(foreach dir,$(SRC_DIRS) .., \
     $(subst $(dir),$(INSTALL_INCLUDE),$(firstword $(wildcard \
          $(dir)/os/$(OS_CLASS)/$(inc) \
@@ -75,7 +75,7 @@ INSTALL_INC += $(foreach inc,$(INC), \
          $(dir)/generic/$(inc) \
          $(dir)/$(inc) \
          ../$(inc) \
-    )))) $(INSTALL_INCLUDE)/$(inc)))
+    )))) $(INSTALL_INCLUDE)/$(inc))))
 
 endif
 
@@ -85,7 +85,7 @@ vpath %.C $(USER_VPATH) $(OS_SRC_DIRS) ../os/$(OS_CLASS) ../os/generic ..
 vpath %.rc $(USER_VPATH) $(OS_SRC_DIRS) ../os/$(OS_CLASS) ../os/generic ..
 #	This prevents base/src/include/*.h from being installed. Why??
 #vpath %.h ../os/$(OS_CLASS) ../os/generic ..
-vpath %.h $(USER_VPATH)  $(SRC_DIRS) .. .
+vpath %.h $(USER_VPATH)  $(OS_SRC_DIRS) .. .
 
 #	check for add-on CFLAGS and CXXFLAGS
 #

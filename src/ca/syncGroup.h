@@ -33,9 +33,9 @@
 
 #include "tsDLList.h"
 #include "tsFreeList.h"
-#include "epicsSingleton.h"
 #include "resourceLib.h"
 #include "epicsEvent.h"
+#include "cxxCompilerDepPlacementDelete.h"
 
 #ifdef syncGrouph_restore_epicsExportSharedSymbols
 #   define epicsExportSharedSymbols
@@ -44,17 +44,6 @@
 
 #include "cadef.h"
 #include "cacIO.h"
-
-// does the compiler support placement delete
-#if defined (_MSC_VER) && ( _MSC_VER >= 1200 )
-#   define CASG_PLACEMENT_DELETE
-#elif defined ( __HP_aCC ) && ( _HP_aCC > 033300 )
-#   define CASG_PLACEMENT_DELETE
-#elif defined ( __BORLANDC__ ) && ( __BORLANDC__ > 0x550 )
-#   define CASG_PLACEMENT_DELETE
-#else
-#	define CASG_PLACEMENT_DELETE
-#endif
 
 static const unsigned CASG_MAGIC = 0xFAB4CAFE;
 
@@ -99,9 +88,11 @@ private:
     syncGroupReadNotify ( struct CASG &sgIn, chid, void *pValueIn );
     void * operator new ( size_t );
     void operator delete ( void * );
+    void * operator new [] ( size_t );
+    void operator delete [] ( void * );
     void * operator new ( size_t, 
         tsFreeList < class syncGroupReadNotify, 128, epicsMutexNOOP > & );
-#   if defined ( CASG_PLACEMENT_DELETE )
+#   if defined ( CXX_PLACEMENT_DELETE )
     void operator delete ( void *, 
         tsFreeList < class syncGroupReadNotify, 128, epicsMutexNOOP > & );
 #   endif
@@ -129,9 +120,11 @@ private:
     syncGroupWriteNotify  ( struct CASG &, chid );
     void * operator new ( size_t );
     void operator delete ( void * );
+    void * operator new [] ( size_t );
+    void operator delete [] ( void * );
     void * operator new ( size_t, 
         tsFreeList < class syncGroupWriteNotify, 128, epicsMutexNOOP > & );
-#   if defined ( CASG_PLACEMENT_DELETE )
+#   if defined ( CXX_PLACEMENT_DELETE )
     void operator delete ( void *, 
         tsFreeList < class syncGroupWriteNotify, 128, epicsMutexNOOP > & );
 #   endif
@@ -158,8 +151,8 @@ template < class T > class sgAutoPtr;
 struct CASG : public chronIntIdRes < CASG >, private casgRecycle {
 public:
     CASG ( ca_client_context & cacIn );
+    ~CASG ();
     bool ioComplete ();
-    void destroy ();
     bool verify () const;
     int block ( double timeout );
     void reset ();
@@ -167,16 +160,16 @@ public:
     void get ( chid pChan, unsigned type, arrayElementCount count, void * pValue );
     void put ( chid pChan, unsigned type, arrayElementCount count, const void * pValue );
     void completionNotify ( syncGroupNotify & );
-    void * operator new ( size_t size );
-    void operator delete ( void * pCadaver, size_t size );
     int printf ( const char * pFormat, ... );
     void exception ( int status, const char *pContext, 
         const char *pFileName, unsigned lineNo );
     void exception ( int status, const char *pContext,
         const char *pFileName, unsigned lineNo, oldChannelNotify &chan, 
         unsigned type, arrayElementCount count, unsigned op );
-protected:
-    virtual ~CASG ();
+    void * operator new ( size_t size, tsFreeList < struct CASG, 128 > & );
+#   if defined ( CXX_PLACEMENT_DELETE )
+    void operator delete ( void *, tsFreeList < struct CASG, 128 > & );
+#   endif
 private:
     tsDLList < syncGroupNotify > ioPendingList;
     tsDLList < syncGroupNotify > ioCompletedList;
@@ -188,7 +181,6 @@ private:
     tsFreeList < class syncGroupWriteNotify, 128, epicsMutexNOOP > freeListWriteOP;
     void recycleSyncGroupWriteNotify ( syncGroupWriteNotify &io );
     void recycleSyncGroupReadNotify ( syncGroupReadNotify &io );
-    static epicsSingleton < tsFreeList < struct CASG, 128 > > pFreeList;
 
     void destroyPendingIO ( syncGroupNotify * );
     void destroyCompletedIO ();
@@ -197,9 +189,28 @@ private:
 	CASG ( const CASG & );
 	CASG & operator = ( const CASG & );
 
+    void * operator new ( size_t size );
+    void operator delete ( void * );
+    void * operator new [] ( size_t size );
+    void operator delete [] ( void * );
+
     friend class sgAutoPtr < syncGroupWriteNotify >;
     friend class sgAutoPtr < syncGroupReadNotify >;
 };
+
+inline void * CASG::operator new ( size_t size, 
+    tsFreeList < struct CASG, 128 > & freeList )
+{
+    return freeList.allocate ( size );
+}
+
+#   if defined ( CXX_PLACEMENT_DELETE )
+inline void CASG::operator delete ( void * pCadaver, 
+    tsFreeList < struct CASG, 128 > & freeList )
+{
+    freeList.release ( pCadaver );
+}
+#endif
 
 inline bool syncGroupNotify::ioInitiated () const
 {

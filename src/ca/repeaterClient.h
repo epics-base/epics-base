@@ -33,7 +33,8 @@
 #endif
 
 #include "tsDLList.h"
-#include "epicsSingleton.h"
+#include "tsFreeList.h"
+#include "cxxCompilerDepPlacementDelete.h"
 
 #ifdef repeaterClienth_restore_epicsExportSharedSymbols
 #   define epicsExportSharedSymbols
@@ -49,22 +50,27 @@ union osiSockAddr;
 class repeaterClient : public tsDLNode < repeaterClient > {
 public:
     repeaterClient ( const osiSockAddr & from );
+    ~repeaterClient ();
     bool connect ();
     bool sendConfirm ();
     bool sendMessage ( const void *pBuf, unsigned bufSize );
-    void destroy ();
     bool verify ();
     bool identicalAddress ( const osiSockAddr &from );
     bool identicalPort ( const osiSockAddr &from );
-    void * operator new ( size_t size );
-    void operator delete ( void *pCadaver, size_t size );
-protected:
-    ~repeaterClient ();
+    void * operator new ( size_t size, 
+        tsFreeList < repeaterClient, 0x20 > & );
+#ifdef CXX_PLACEMENT_DELETE
+    void operator delete ( void *, 
+        tsFreeList < repeaterClient, 0x20 > & );
+#endif
 private:
     osiSockAddr from;
     SOCKET sock;
     unsigned short port () const;
-    static epicsSingleton < tsFreeList < class repeaterClient, 0x20 > > pFreeList;
+    void * operator new ( size_t size );
+    void operator delete ( void * );
+    void * operator new [] ( size_t size );
+    void operator delete [] ( void * );
 };
 
 #endif // repeaterClienth

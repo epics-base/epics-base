@@ -24,11 +24,11 @@
  *	505 665 1831
  */
 
+#include <stdexcept>
+
 #define epicsExportSharedSymbols
 #include "iocinf.h"
 #include "oldAccess.h"
-
-epicsSingleton < tsFreeList < class putCallback, 1024 > > putCallback::pFreeList;
 
 putCallback::putCallback ( oldChannelNotify &chanIn, 
                                  caEventCallBackFunc *pFuncIn, void *pPrivateIn ) :
@@ -51,7 +51,7 @@ void putCallback::completion ()
     args.status = ECA_NORMAL;
     args.dbr = 0;
     ( *this->pFunc ) (args);
-    delete this;
+    this->chan.getClientCtx().destroyPutCallback ( *this );
 }
 
 void putCallback::exception (  
@@ -68,7 +68,12 @@ void putCallback::exception (
         args.dbr = 0;
         ( *this->pFunc ) (args);
     }
-    delete this;
+    this->chan.getClientCtx().destroyPutCallback ( *this );
 }
 
+void putCallback::operator delete ( void * pCadaver )
+{
+    throw std::logic_error 
+        ( "compiler is confused about placement delete" );
+}
 

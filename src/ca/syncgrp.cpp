@@ -24,7 +24,7 @@
 /*
  * ca_sg_create()
  */
-extern "C" int epicsShareAPI ca_sg_create ( CA_SYNC_GID *pgid ) // X aCC 361
+extern "C" int epicsShareAPI ca_sg_create ( CA_SYNC_GID * pgid ) // X aCC 361
 {
     ca_client_context *pcac;
     int caStatus;
@@ -35,13 +35,16 @@ extern "C" int epicsShareAPI ca_sg_create ( CA_SYNC_GID *pgid ) // X aCC 361
         return caStatus;
     }
 
-    pcasg = new CASG ( *pcac );
-    if ( pcasg ) {
+    try {
+        pcasg = new ( pcac->casgFreeList ) CASG ( *pcac );
         *pgid = pcasg->getId ();
         return ECA_NORMAL;
     }
-    else {
+    catch ( std::bad_alloc & ) {
         return ECA_ALLOCMEM;
+    }
+    catch ( ... ) {
+        return ECA_INTERNAL;
     }
 }
 
@@ -50,21 +53,23 @@ extern "C" int epicsShareAPI ca_sg_create ( CA_SYNC_GID *pgid ) // X aCC 361
  */
 extern "C" int epicsShareAPI ca_sg_delete ( const CA_SYNC_GID gid )
 {
-    ca_client_context *pcac;
-    int caStatus;
-    CASG *pcasg;
-
-    caStatus = fetchClientContext ( &pcac );
+    ca_client_context * pcac;
+    int caStatus = fetchClientContext ( & pcac );
     if ( caStatus != ECA_NORMAL ) {
         return caStatus;
     }
 
-    pcasg = pcac->lookupCASG ( gid );
+    CASG * pcasg = pcac->lookupCASG ( gid );
     if ( ! pcasg ) {
         return ECA_BADSYNCGRP;
     }
 
-    pcasg->destroy ();
+    pcasg->~CASG ();
+#   if defined ( CXX_PLACEMENT_DELETE ) && 0
+    CASG::operator delete ( pcasg, pcac->casgFreeList );
+#   else
+    pcac->casgFreeList.release ( pcasg );
+#   endif
 
     return ECA_NORMAL;
 }

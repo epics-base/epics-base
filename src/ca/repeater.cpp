@@ -78,6 +78,8 @@
  * received).                                           -- Jeff
  */
 
+#include <stdexcept>
+
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
 #include "tsDLList.h"
@@ -99,14 +101,12 @@
  */
 static tsDLList < repeaterClient > client_list;
 
-epicsSingleton < tsFreeList < repeaterClient, 0x20 > > repeaterClient::pFreeList;
-
 static const unsigned short PORT_ANY = 0u;
 
 typedef struct {
     SOCKET sock;
     int errNumber;
-    const char *pErrStr;
+    const char * pErrStr;
 } makeSocketReturn;
 
 /*
@@ -249,20 +249,25 @@ repeaterClient::~repeaterClient ()
     debugPrintf ( ( "Deleted client %u\n", epicsNTOH16 ( this->from.ia.sin_port ) ) );
 }
 
-inline void * repeaterClient::operator new ( size_t size )
+inline void repeaterClient::operator delete ( void *pCadaver )
 { 
-    return repeaterClient::pFreeList->allocate ( size );
+    throw std::logic_error 
+        ( "compiler is confused about placement delete" );
 }
 
-inline void repeaterClient::operator delete ( void *pCadaver, size_t size )
+inline void * repeaterClient::operator new ( size_t size, 
+    tsFreeList < repeaterClient, 0x20 > & freeList )
 { 
-    repeaterClient::pFreeList->release ( pCadaver, size );
+    return freeList.allocate ( size );
 }
 
-inline void repeaterClient::destroy ()
-{
-    delete this;
+#ifdef CXX_PLACEMENT_DELETE
+inline void repeaterClient::operator delete ( void *pCadaver, 
+    tsFreeList < repeaterClient, 0x20 > & freeList )
+{ 
+    freeList.release ( pCadaver );
 }
+#endif
 
 inline unsigned short repeaterClient::port () const
 {
@@ -315,7 +320,7 @@ bool repeaterClient::verify ()  // X aCC 361
 /*
  * verifyClients()
  */
-static void verifyClients()
+static void verifyClients ( tsFreeList < repeaterClient, 0x20 > & freeList )
 {
     static tsDLList < repeaterClient > theClients;
     repeaterClient *pclient;
@@ -325,7 +330,8 @@ static void verifyClients()
             theClients.add ( *pclient );
         }
         else {
-            pclient->destroy ();
+            pclient->~repeaterClient ();
+            freeList.release ( pclient );
         }
     }
     client_list.add ( theClients );
@@ -334,7 +340,8 @@ static void verifyClients()
 /*
  * fanOut()
  */
-static void fanOut ( const osiSockAddr &from, const void *pMsg, unsigned msgSize )
+static void fanOut ( const osiSockAddr & from, const void * pMsg, 
+    unsigned msgSize, tsFreeList < repeaterClient, 0x20 > & freeList )
 {
     static tsDLList < repeaterClient > theClients;
     repeaterClient *pclient;
@@ -349,7 +356,8 @@ static void fanOut ( const osiSockAddr &from, const void *pMsg, unsigned msgSize
         if ( ! pclient->sendMessage ( pMsg, msgSize ) ) {
             if ( ! pclient->verify () ) {
                 theClients.remove ( *pclient );
-                pclient->destroy ();
+                pclient->~repeaterClient ();
+                freeList.release ( pclient );
             }
         }
     }
@@ -360,7 +368,8 @@ static void fanOut ( const osiSockAddr &from, const void *pMsg, unsigned msgSize
 /*
  * register_new_client()
  */
-static void register_new_client ( osiSockAddr &from )
+static void register_new_client ( osiSockAddr & from, 
+            tsFreeList < repeaterClient, 0x20 > & freeList )
 {
     int status;
     bool newClient = false;
@@ -428,13 +437,14 @@ static void register_new_client ( osiSockAddr &from )
         pNewClient = pclient.pointer ();
     }
     else {
-        pNewClient = new repeaterClient ( from );
+        pNewClient = new ( freeList ) repeaterClient ( from );
         if ( ! pNewClient ) {
             fprintf ( stderr, "%s: no memory for new client\n", __FILE__ );
             return;
         }
         if ( ! pNewClient->connect () ) {
-            pclient->destroy ();
+            pNewClient->~repeaterClient ();
+            freeList.release ( pNewClient );
             return;
         }
         client_list.add ( *pNewClient ); 
@@ -443,7 +453,8 @@ static void register_new_client ( osiSockAddr &from )
 
     if ( ! pNewClient->sendConfirm () ) {
         client_list.remove ( *pNewClient );
-        pNewClient->destroy ();
+        pNewClient->~repeaterClient ();
+        freeList.release ( pNewClient );
         debugPrintf ( ( "Deleted repeater client=%u (error while sending ack)\n",
                     epicsNTOH16 (from.ia.sin_port) ) );
     }
@@ -455,7 +466,7 @@ static void register_new_client ( osiSockAddr &from )
     caHdr noop;
     memset ( (char *) &noop, '\0', sizeof ( noop ) );
     noop.m_cmmd = epicsHTON16 ( CA_PROTO_VERSION );
-    fanOut ( from, &noop, sizeof ( noop ) );
+    fanOut ( from, &noop, sizeof ( noop ), freeList );
 
     if ( newClient ) {
         /*
@@ -469,7 +480,7 @@ static void register_new_client ( osiSockAddr &from )
          * This is done here in order to avoid deleting a client
          * prior to sending its confirm message.
          */
-        verifyClients ();
+        verifyClients ( freeList );
     }
 }
 
@@ -479,6 +490,7 @@ static void register_new_client ( osiSockAddr &from )
  */
 void ca_repeater () 
 {
+    tsFreeList < repeaterClient, 0x20 > freeList;
     int size;
     SOCKET sock;
     osiSockAddr from;
@@ -490,7 +502,7 @@ void ca_repeater ()
 
     assert ( osiSockAttach() );
 
-    port = envGetInetPortConfigParam ( &EPICS_CA_REPEATER_PORT,
+    port = envGetInetPortConfigParam ( & EPICS_CA_REPEATER_PORT,
                                        static_cast <unsigned short> (CA_REPEATER_PORT) );
 
     msr = makeSocket ( port, true );
@@ -541,7 +553,7 @@ void ca_repeater ()
          */
         if ( ( (size_t) size) >= sizeof (*pMsg) ) {
             if ( epicsNTOH16 ( pMsg->m_cmmd ) == REPEATER_REGISTER ) {
-                register_new_client ( from );
+                register_new_client ( from, freeList );
 
                 /*
                  * strip register client message
@@ -559,11 +571,11 @@ void ca_repeater ()
             }
         }
         else if ( size == 0 ) {
-            register_new_client ( from );
+            register_new_client ( from, freeList );
             continue;
         }
 
-        fanOut ( from, pMsg, size ); 
+        fanOut ( from, pMsg, size, freeList ); 
     }
 }
 

@@ -113,8 +113,6 @@ private:
 	oldChannelNotify & operator = ( const oldChannelNotify & );
     void * operator new ( size_t size );
     void operator delete ( void * );
-    void * operator new [] ( size_t size );
-    void operator delete [] ( void * );
 };
 
 class getCopy : public cacReadNotify {
@@ -145,8 +143,6 @@ private:
 	getCopy & operator = ( const getCopy & );
     void * operator new ( size_t size );
     void operator delete ( void * );
-    void * operator new [] ( size_t size );
-    void operator delete [] ( void * );
 };
 
 class getCallback : public cacReadNotify {
@@ -173,8 +169,6 @@ private:
 	getCallback & operator = ( const getCallback & );
     void * operator new ( size_t size );
     void operator delete ( void * );
-    void * operator new [] ( size_t size );
-    void operator delete [] ( void * );
 };
 
 class putCallback : public cacWriteNotify {
@@ -199,8 +193,6 @@ private:
 	putCallback & operator = ( const putCallback & );
     void * operator new ( size_t size );
     void operator delete ( void * );
-    void * operator new [] ( size_t );
-    void operator delete [] ( void * );
 };
 
 struct oldSubscription : public cacStateNotify {
@@ -231,8 +223,6 @@ private:
 	oldSubscription & operator = ( const oldSubscription & );
     void * operator new ( size_t size );
     void operator delete ( void * );
-    void * operator new [] ( size_t size );
-    void operator delete [] ( void * );
 };
 
 class ca_client_context_mutex {

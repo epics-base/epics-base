@@ -6,13 +6,9 @@ DBST		= dbst
 MAKEDBDEPENDS	= $(PERL) $(TOP)/config/makeDbDepends.pl
 REPLACEVAR	= $(PERL) $(TOP)/config/replaceVAR.pl
 ifndef WIN32
-ifeq ($(HOST_ARCH),cygwin32)
-TOUCH		= echo >>
-else
 TOUCH		= touch
-endif
 else
-TOUCH		= echo >>
+TOUCH		= type NUL >>
 endif
 
 INSTALL_BPTS = $(BPTS:%= $(INSTALL_DBD)/%)

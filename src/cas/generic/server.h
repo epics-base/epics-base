@@ -976,6 +976,9 @@ private:
 	caStatus cbFunc(casEventSys &);
 };
 
+bool convertContainerMemberToAtomic ( gdd & dd, 
+         aitUint32 appType, aitUint32 elemCount );
+
 #endif /*INCLserverh*/
 
 

@@ -1063,6 +1063,14 @@ epicsShareFunc int epicsShareAPI ca_replace_printf_handler (
 );
 #endif /*CA_DONT_INCLUDE_STDARGH*/
 
+/*
+ * ca_get_ioc_connection_count()
+ *
+ * returns the number of IOC's that CA is connected to
+ * (for testing purposes only)
+ */
+epicsShareFunc unsigned epicsShareAPI ca_get_ioc_connection_count ();
+
 #else /* CAC_ANSI_FUNC_PROTO */
 epicsShareFunc short epicsShareAPI ca_get_field_type ();
 epicsShareFunc unsigned short epicsShareAPI ca_get_element_count ();

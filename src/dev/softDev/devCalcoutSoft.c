@@ -29,7 +29,7 @@
 #include "calcoutRecord.h"
 #include "epicsExport.h"
 
-static long write();
+static long write_calcout();
 struct {
 	long		number;
 	DEVSUPFUN	report;
@@ -44,11 +44,11 @@ struct {
 	NULL,
 	NULL,
 	NULL,
-	write,
+	write_calcout,
 	NULL};
 epicsExportAddress(dset,devCalcoutSoft);
 
-static long write(calcoutRecord *pcalcout)
+static long write_calcout(calcoutRecord *pcalcout)
 {
     return dbPutLink(&pcalcout->out,DBR_DOUBLE, &pcalcout->oval,1);
 }

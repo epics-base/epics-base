@@ -29,10 +29,14 @@ of this distribution.
 #include <stdlib.h>
 #include <stddef.h>
 
+/* Up to now epicsShareThings have been declared as imports
+ *   (Appropriate for other stuff)
+ * After setting the following they will be declared as exports
+ *   (Appropriate for what we implenment)
+ */
+#define epicsExportSharedSymbols
 #include "shareLib.h"
 #include "adjustment.h"
-
-#define epicsExportSharedSymbols
 
 epicsShareFunc size_t epicsShareAPI adjustToWorstCaseAlignment(size_t size)
 {

@@ -204,16 +204,12 @@ INSTALL_DBDFLAGS = -I $(INSTALL_LOCATION)/dbd
 #####POSIX_FLAGS = $(POSIX_FLAGS_$(POSIX))
 
 #--------------------------------------------------
-# Warnings flags  (CONFIG.<arch> will override)
-# final value determined in RULES_BUILD
-WARN=$(HOST_WARN)
+# Warnings flags
 WARN_CFLAGS = $($(ANSI)_WARN_$(WARN))
 WARN_CXXFLAGS = $($(CPLUSPLUS)_WARN_$(WARN))
 
 #--------------------------------------------------
-# Optimization flags  (CONFIG.<arch> will override)
-# final value determined in RULES_BUILD
-OPT=$(HOST_OPT)
+# Optimization flags
 OPT_CFLAGS = $($(ANSI)_OPT_$(OPT))
 OPT_CXXFLAGS = $($(CPLUSPLUS)_OPT_$(OPT))
 OPT_LDFLAGS =

@@ -96,14 +96,14 @@ STATIC_BUILD=NO
 #	must be either YES or NO
 HOST_OPT=YES
 
-#  Ioc build optimization
+#  Cross build optimization
 #	must be either YES or NO
-IOC_OPT=YES
+CROSS_OPT=YES
 
 #  Generate Verbose Compiler Warnings for Host builds
 #	must be either YES or NO
 HOST_WARN=YES
 
-#  Generate Verbose Compiler Warnings for Ioc builds
+#  Generate Verbose Compiler Warnings for cross compile builds
 #	must be either YES or NO
-IOC_WARN=YES
+CROSS_WARN=YES

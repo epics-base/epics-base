@@ -68,12 +68,12 @@ endif
 #STATIC_BUILD=NO
 #  Host build optimization,   must be either YES or NO
 #HOST_OPT=YES
-#  Ioc build optimization,  must be either YES or NO
-#IOC_OPT=YES
+#  Cross build optimization,  must be either YES or NO
+#CROSS_OPT=YES
 #  Generate Verbose Compiler Warnings for host build,  must be either YES or NO
 #HOST_WARN=YES
-#  Generate Verbose Compiler Warnings for ioc builds,  must be either YES or NO
-#IOC_WARN=YES
+#  Generate Verbose Compiler Warnings for cross compile builds,  must be either YES or NO
+#CROSS_WARN=YES
 #etc.
 
 #CROSS_COMPILER_TARGET_ARCHS=mv167

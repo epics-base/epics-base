@@ -46,6 +46,8 @@ gev(const char *parm)
 void
 setBootConfigFromMOTLOADNVRAM(void)
 {
+    char *cp;
+
     if (rtems_bsdnet_config.bootp != NULL)
         return;
     rtems_bsdnet_bootp_server_name = gev("mot-/dev/enet0-sipa");
@@ -56,6 +58,9 @@ setBootConfigFromMOTLOADNVRAM(void)
     if (rtems_bsdnet_config.name_server[0] == NULL)
         rtems_bsdnet_config.name_server[0] = rtems_bsdnet_bootp_server_name;
     rtems_bsdnet_config.log_host = rtems_bsdnet_bootp_server_name;
+    cp = gev("rtems-dns-domainname");
+    if (cp)
+        rtems_bsdnet_config.domainname = cp;
 
     rtems_bsdnet_config.ifconfig->ip_address = gev("mot-/dev/enet0-cipa");
     rtems_bsdnet_config.hostname = gev("rtems-client-name");

@@ -9,11 +9,74 @@
 <body>
 
 <h1>
-EPICS Release 3.13.4</h1>
+EPICS Release 3.13.5</h1>
 
 <h4>
-Dec 15, 2000</h4>
+June 2001</h4>
 
+<h3>
+Changes since 3.13.4</h3>
+<br>
+Several of the changes have been made to help prevent exceptions on powerPcs
+when conversions are made from float to double.
+<p>
+<b>aaiRecord aaoRecord aiRecord aoRecord boRecord calcRecord calcoutRecord
+compressRecord dfanoutRecord egeventRecord selRecord subArrayRecord
+subRecordwaveformRecord</b>
+<p>
+All DBF_FLOAT fields have been replaced by DBF_DOUBLE
+<p>
+<b>dbConvert dbFastLinkConv db_access</b>
+<p>
+Conversion from double to float checks for exponent too large.
+<p>
+<b>dfanoutRecord.c longoutRecord.c stringoutRecord.c </b>
+<p>
+OMSL did not work correctly for constant links.
+<br>
+<br>
+<b>compressRecord</b>
+<p>
+READ_ALARM changed to LINK_ALARM
+<br>
+<b>Database Channel Access Links</b>
+<p>
+A message was sent to errlog whenever the connection to the server was lost. This message is no longer generated.
+<p>
+<b>drvEpvxi</b>
+<p>
+National Instruments MXI-2 devices are now fully supported on both 68K and
+PowerPC (the PowerPC BSP must provide code for the vxWorks intVecGet()
+routine though).  PowerPC CPUs that have a Universe VME interface chip
+will have problems driving MXI-1 boards, although they can be made to do
+so by setting the variable 'vxi_use_failed_mxi' to a non-zero value in the
+st.cmd file before iocInit() and ignoring any warnings about the MXI-1
+board having failed its self-test.
+<p>
+If a VME-MXI-2 board will not be installed as the VME system controller
+read the NOTES: towards the top of the driver source for an essential
+warning.
+<p>
+There is special code for the National Instruments CPU030 board in this
+file, which is now only included when compiling for that particular CPU
+board (an entry in config/CONFIG.Vx.niCpu030 enables this).
+<p>
+<b>Put Notify</b>
+<p>A bug in dbNotifyCancel could cause a problem if a channel access
+client disconnects while put notifys are outstanding.
+<p>
+<b>dbAccess</b>
+<p>
+A bug was fixed that was related to dynamically changing lock sets.
+<p>The record support put_array_info is called after the a put only if the put is successful. Previosuly it was always called.
+<p>
+<b>breakpoint tables</b>
+<p>
+Breakpoint values are doubles rather than floats.
+<p>
+<b>devVXStats</b>
+<p>
+Improved algorithm for cpuUsage.
 <h3>
 Changes since 3.13.3</h3>
 <b>Channel Access</b><b></b>
@@ -33,11 +96,9 @@ system calls.
 <ul>
 <li>
 VAL and all related fields are now DBF_DOUBLE instead of DBF_LONG</li>
-
 <li>
 SELM, SELN, and SELL are now available. They have same semantics as for
 fanout record</li>
-
 <li>
 PREC is now supported.</li>
 

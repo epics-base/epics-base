@@ -120,7 +120,7 @@ static threadInfo * init_threadInfo(const char *name,
         &pthreadInfo->attr,PTHREAD_EXPLICIT_SCHED);
     if(errVerbose) checkStatus(status,"pthread_attr_setinheritsched");
 #endif /* _POSIX_THREAD_PRIORITY_SCHEDULING */
-    pthreadInfo->suspendSem = semBinaryMustCreate(semFull);
+    pthreadInfo->suspendSem = semBinaryMustCreate(semEmpty);
     pthreadInfo->name = mallocMustSucceed(strlen(name)+1,"threadCreate");
     strcpy(pthreadInfo->name,name);
     return(pthreadInfo);
@@ -233,21 +233,11 @@ unsigned int threadGetStackSize (threadStackSizeClass stackSizeClass)
 #endif /* OSITHREAD_USE_DEFAULT_STACK */
 }
 
-/* the following technique is mt-safe for initializing osiThread because
-   only the main thread calls threadInit(); other libraries should use
-   threadOnce() for one-time initialization */
 void threadInit(void)
 {
     static pthread_once_t once_control = PTHREAD_ONCE_INIT;
-    static int initialized = 0;
-
-    if (!initialized) {
-	/* don't actually have to use pthread_once() for this; could call
-	   once() directly or include its body here */
-	int status = pthread_once(&once_control,once);
-	checkStatusQuit(status,"pthread_once","threadInit");
-	initialized = 1;
-    }
+    int status = pthread_once(&once_control,once);
+    checkStatusQuit(status,"pthread_once","threadInit");
 }
 
 /* threadOnce is a macro that calls threadOnceOsd */
@@ -274,7 +264,11 @@ threadId threadCreate(const char *name,
     threadInfo *pthreadInfo;
     int status;
 
-    threadInit();
+    if(pcommonAttr==0) {
+        fprintf(stderr,"It appears that threadCreate was called before threadInit.\n");
+        fprintf(stderr,"Program is exiting\n");
+        exit(-1);
+    }
     pthreadInfo = init_threadInfo(name,priority,stackSize,funptr,parm);
     status = pthread_create(&pthreadInfo->tid,&pthreadInfo->attr,
 			    start_routine,pthreadInfo);

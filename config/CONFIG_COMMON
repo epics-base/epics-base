@@ -9,6 +9,15 @@
 
 # Common Configuration Information 
 
+BUILD_ARCHS=$(HOST_ARCH)
+ifndef CROSS_COMPILER_HOST_ARCHS
+     BUILD_ARCHS+=$(CROSS_COMPILER_TARGET_ARCHS)
+else
+     ifeq ($(HOST_ARCH),$(findstring $(HOST_ARCH),$(CROSS_COMPILER_HOST_ARCHS)))
+          BUILD_ARCHS+=$(CROSS_COMPILER_TARGET_ARCHS)
+     endif
+endif
+
 INSTALL_LOCATION = $(TOP)
  
 INSTALL_LOCATION_LIB        = $(INSTALL_LOCATION)/lib

@@ -59,6 +59,9 @@
  *      ...
  *
  * $Log$
+ * Revision 1.7  1995/01/09  20:28:42  winans
+ * Added AI support for temperature input
+ *
  * Revision 1.6  1995/01/06  16:55:04  winans
  * enabled irq services and rearranged the parm names and meanings.
  *
@@ -261,13 +264,24 @@ struct dset_sysmon {
 };
 typedef struct dset_sysmon DSET_SYSMON;
 
-DSET_SYSMON devAiSysmon={
-	5,
+struct{
+	long		number;
+	DEVSUPFUN	report;		/* used by dbior */
+	DEVSUPFUN	init;		/* called 1 time before & after all records */
+	DEVSUPFUN	init_record;	/* called 1 time for each record */
+	DEVSUPFUN	get_ioint_info;	/* used for COS processing */
+	DEVSUPFUN	read_write;	/* output command goes here */
+	DEVSUPFUN	dumb_lincov_thing;
+}
+devAiSysmon=
+{
+	6,
 	NULL,
 	SysmonInit,
 	SysmonInitAiRec,
 	NULL,
-	SysmonReadAi
+	SysmonReadAi,
+	NULL
 };
 
 DSET_SYSMON devBoSysmon={

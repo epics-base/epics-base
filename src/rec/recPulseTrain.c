@@ -29,7 +29,7 @@
  *
  * Modification Log:
  * -----------------
- * .01  mm-dd-yy        iii     Comment
+ * .01  10-24-91        jba     New device support changes
  */ 
 
 #include     <vxWorks.h>
@@ -40,6 +40,7 @@
 #include        <alarm.h>
 #include     <dbAccess.h>
 #include     <dbDefs.h>
+#include     <dbRecDes.h>
 #include     <dbFldTypes.h>
 #include     <devSup.h>
 #include     <errMdef.h>
@@ -58,12 +59,12 @@ long get_value();
 #define get_array_info NULL
 #define put_array_info NULL
 #define get_units NULL
-#define get_precision NULL
+long get_precision();
 #define get_enum_str NULL
 #define get_enum_strs NULL
 #define put_enum_str NULL
-#define get_graphic_double NULL
-#define get_control_double NULL
+long get_graphic_double();
+long get_control_double();
 #define get_alarm_double NULL
 
 struct rset pulseTrainRSET={
@@ -95,6 +96,17 @@ struct ptdset { /* pulseTrain input dset */
      DEVSUPFUN     get_ioint_info;
      DEVSUPFUN     write_pt;/*(-1,0,1)=>(failure,success,don't Continue*/
 };
+
+/* def for gsrc field */
+#define SOFTWARE 1
+
+/* defs for counter commands */
+#define CTR_READ        0
+#define CTR_CLEAR       1
+#define CTR_START       2
+#define CTR_STOP        3
+#define CTR_SETUP       4
+
 void monitor();
 
 static long init_record(ppt)
@@ -108,9 +120,9 @@ static long init_record(ppt)
          recGblRecordError(S_dev_noDSET,ppt,"pt: init_record");
          return(S_dev_noDSET);
     }
-    /* get the gate value if gsrc is a constant*/
-    if (ppt->gsrc.type == CONSTANT ){
-         ppt->gate = ppt->gsrc.value.value;
+    /* get the gate value if sgl is a constant*/
+    if (ppt->sgl.type == CONSTANT ){
+         ppt->gate = ppt->sgl.value.value;
     }
 
     /* must have write_pt functions defined */
@@ -130,8 +142,10 @@ static long process(paddr)
 {
     struct pulseTrainRecord     *ppt=(struct pulseTrainRecord *)(paddr->precord);
     struct ptdset     *pdset = (struct ptdset *)(ppt->dset);
-    long           status=0;
-    long             options,nRequest;
+    long              status=0;
+    long              options,nRequest;
+    double            save;
+
 
     /* must have  write_pt functions defined */
     if( (pdset==NULL) || (pdset->write_pt==NULL) ) {
@@ -140,14 +154,14 @@ static long process(paddr)
          return(S_dev_missingSup);
     }
 
-    /* get gate value when gsrc is a DB_LINK  */
-    if (!ppt->pact) {
-         if (ppt->gsrc.type == DB_LINK){
+    /* get soft gate value when sgl is a DB_LINK and gsrc from Software */
+    if (!ppt->pact && ppt->gsrc == SOFTWARE){
+         if (ppt->sgl.type == DB_LINK){
               options=0;
               nRequest=1;
               ppt->pact = TRUE;
-              status=dbGetLink(&ppt->gsrc.value.db_link,ppt,DBR_SHORT,
-                   &ppt->gate,&options,&nRequest);
+              status=dbGetLink(&ppt->sgl.value.db_link,ppt,DBR_SHORT,
+                   &ppt->sgv,&options,&nRequest);
               ppt->pact = FALSE;
               if(status!=0) {
                   if (ppt->nsev<VALID_ALARM) {
@@ -156,14 +170,34 @@ static long process(paddr)
                   }
               }
          }
+         if(status=0){
+              /* gate changed */
+              if(ppt->sgv != ppt->osgv){
+                   if(ppt->sgv==0){
+                        save=ppt->dcy;
+                        ppt->dcy=0.0;
+			status=(*pdset->write_pt)(ppt);
+                        ppt->dcy=save;
+                   	if(status!=0) {
+                       	    if (ppt->nsev<VALID_ALARM) {
+                               ppt->nsta = WRITE_ALARM;
+                               ppt->nsev = VALID_ALARM;
+                            }
+                       }
+                   }
+                   ppt->osgv=ppt->sgv;
+              }
+         }
      }
 
-     if (status==0) status=(*pdset->write_pt)(ppt); /* write the new value */
+     if (status==0 && (ppt->gsrc!=SOFTWARE || ppt->sgv!=0))
+	status=(*pdset->write_pt)(ppt);
 
      ppt->pact = TRUE;
 
      /* status is one if an asynchronous record is being processed*/
      if (status==1) return(0);
+     if(status==-1)status = 0;
 
      ppt->udf=FALSE;
      tsLocalTime(&ppt->time);
@@ -187,7 +221,71 @@ static long get_value(ppt,pvdes)
     (short *)pvdes->pvalue = &ppt->val;
     return(0);
 }
+static long get_precision(paddr,precision)
+    struct dbAddr *paddr;
+    long          *precision;
+{
+    struct pulseTrainRecord    *ppt=(struct pulseTrainRecord *)paddr->precord;
 
+    *precision = ppt->prec;
+    return(0);
+}
+
+static long get_graphic_double(paddr,pgd)
+    struct dbAddr *paddr;
+    struct dbr_grDouble *pgd;
+{
+    struct pulseTrainRecord     *ppt=(struct pulseTrainRecord *)paddr->precord;
+    struct fldDes               *pfldDes=(struct fldDes *)(paddr->pfldDes);
+
+    if(((void *)(paddr->pfield))==((void *)&(ppt->clks))){ 
+         pgd->upper_disp_limit = (double)pfldDes->range2.value.short_value;
+         pgd->lower_disp_limit = (double)pfldDes->range1.value.short_value;
+         return(0);
+    }
+    if(((void *)(paddr->pfield))==((void *)&(ppt->gate))){
+         pgd->upper_disp_limit = (double)pfldDes->range2.value.short_value;
+         pgd->lower_disp_limit = (double)pfldDes->range1.value.short_value;
+         return(0);
+    }
+    if(((void *)(paddr->pfield))==((void *)&(ppt->dcy ))){
+         pgd->upper_disp_limit = (double)pfldDes->range2.value.double_value;
+         pgd->lower_disp_limit = (double)pfldDes->range1.value.double_value;
+         return(0);
+    }
+    pgd->upper_disp_limit = ppt->hopr;
+    pgd->lower_disp_limit = ppt->lopr;
+
+    return(0);
+}
+
+static long get_control_double(paddr,pcd)
+    struct dbAddr *paddr;
+    struct dbr_ctrlDouble *pcd;
+{
+    struct pulseTrainRecord     *ppt=(struct pulseTrainRecord *)paddr->precord;
+    struct fldDes               *pfldDes=(struct fldDes *)(paddr->pfldDes);
+
+    if(((void *)(paddr->pfield))==((void *)&(ppt->clks))){ 
+         pcd->upper_ctrl_limit = (double)pfldDes->range2.value.short_value;
+         pcd->lower_ctrl_limit = (double)pfldDes->range1.value.short_value;
+         return(0);
+    }
+    if(((void *)(paddr->pfield))==((void *)&(ppt->gate))){
+         pcd->upper_ctrl_limit = (double)pfldDes->range2.value.short_value;
+         pcd->lower_ctrl_limit = (double)pfldDes->range1.value.short_value;
+         return(0);
+    }
+    if(((void *)(paddr->pfield))==((void *)&(ppt->dcy ))){
+         pcd->upper_ctrl_limit = (double)pfldDes->range2.value.double_value;
+         pcd->lower_ctrl_limit = (double)pfldDes->range1.value.double_value;
+         return(0);
+    }
+    pcd->upper_ctrl_limit = ppt->hopr;
+    pcd->lower_ctrl_limit = ppt->lopr;
+
+    return(0);
+}
 
 static void monitor(ppt)
     struct pulseTrainRecord             *ppt;

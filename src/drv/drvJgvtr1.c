@@ -1,4 +1,3 @@
-
 /* drvJgvtr1.c */
 /* share/src/drv $Id$ */
 /*
@@ -53,6 +52,8 @@
  *			report by bg
  */
 
+static char *sccsID = "$Id$\t$Date$";
+
 /*
  * 	Code Portions
  *
@@ -68,7 +69,6 @@
 
 /* drvJgvtr1.c -  Driver Support Routines for Jgvtr1 */
 #include	<vxWorks.h>
-#include	<stdioLib.h>
 
 #include	<dbDefs.h>
 #include	<drvSup.h>
@@ -86,8 +86,8 @@
 
 
 /* If any of the following does not exist replace it with #define <> NULL */
-static long report();
-static long init();
+static long jgvtr1_io_report();
+static long jgvtr1_init();
 
 struct {
 	long	number;
@@ -95,13 +95,10 @@ struct {
 	DRVSUPFUN	init;
 } drvJgvtr1={
 	2,
-	report,
-	init};
+	jgvtr1_io_report,
+	jgvtr1_init};
 
 static char SccsId[] = "@(#)jgvtr1_driver.c	1.4\t11/14/88";
-
-extern io_num_read;
-unsigned int jg_num_read;
 
 static char	*stdaddr;
 static char	*shortaddr;
@@ -164,22 +161,6 @@ int			jgvtr1_max_card_count;
 	SEM_ID		jgvtr1_interrupt;	/* interrupt event */
 #endif
 
-
-static long report(level)
-int	level;
-{
-    jgvtr1_io_report(level, jg_num_read);
-    return(0);
-}
-
-
-static long init()
-{
-    int status;
-
-    return(0);
-}
-
 
 
 /*
@@ -188,7 +169,7 @@ static long init()
  * intialize the driver for the joerger vtr1
  *
  */
-jgvtr1_init()
+long jgvtr1_init()
 {
 	register unsigned 	card;
 	register unsigned 	card_count = 0;
@@ -453,21 +434,31 @@ jgvtr1DoneTask()
  *
  *	JGVTR1_IO_REPORT
  *
- *	print status for all cards in the specified joerger vtr1 address range
+ *	print status for all cards in the specified joerger 
+ *	vtr1 address range
  *
  *
  */
-
-
-
-jgvtr1_io_report(level,jg_num_read)
-short int level,*jg_num_read;
+long jgvtr1_io_report(level)
+short int level;
 {
-	unsigned card;
-        short readback;
-
-	for(card=0; card < wf_num_cards[JGVTR1]; card++)
-		jgvtr1_stat(card,level,jg_num_read);
+	unsigned 	card;
+	unsigned	nelements;
+	int		status;
+	
+	for(card=0; card < wf_num_cards[JGVTR1]; card++){
+		status = jgvtr1_stat(card,level);
+		if(status<0){
+			continue;
+		}
+		if (level >= 2){
+			printf("enter the number of elements to dump:");
+			status = scanf("%d",&nelements);
+			if(status == 1){
+				jgvtr1_dump(card, nelements);
+			}
+		}
+	}
 	return OK;
 }
 
@@ -481,18 +472,12 @@ short int level,*jg_num_read;
  *	
  *
  */
-jgvtr1_stat(card,level,jg_num_read)
+jgvtr1_stat(card,level)
 unsigned	card;
-short int level,*jg_num_read;
+short int 	level;
 {
  	struct jgvtr1_status 		stat;
 	int				status;
-	register unsigned short		*pjgdata;
-        short int                       jg_num_bytes,i;
-        unsigned short	                ptemp1,ptemp2;  /* pointer to the data buffer	*/
-       
-        unsigned short                   readback,*pread,*pdata;
-	register struct jgvtr1_config	*pconfig;
 
 	/* 
 	internal freq status is bit reversed so I
@@ -538,46 +523,63 @@ short int level,*jg_num_read;
 			activity_status[ stat.active ],
 			memory_status[ stat.memory_full ]);
 
-        /* Print out the data if user requests it. */
-
-        if (level >= 2){
-             if (*jg_num_read > JRG_MEM_SIZE)
-                 *jg_num_read = JRG_MEM_SIZE;
-	     pdata = (unsigned short *)malloc(JRG_MEM_SIZE * (sizeof(unsigned short)));
-             pread = pdata;
-             jg_num_bytes = 0;
-             pjgdata = (unsigned short *)JGVTR1DATA(card);
-             while((status != ERROR) && (jg_num_bytes < *jg_num_read)){
-       	     	 if ((status = vxMemProbe( pjgdata++,	
-				READ,
-				sizeof(readback),
-				&readback)) != ERROR){
-                
-                  *pread++ = readback;
-                  jg_num_bytes++;
-                 }
-             }
-  
-             pread = pdata;
-	     for(i = 0;i < jg_num_bytes-1;i++){
-                if (i%8 == 0)
-	           printf("\n"); 
-		printf("%x  %x  ",(*pread)>>8,*pread & 0xff);
-                pread++;
-	     }
-
-     	     if(status==ERROR){
-                    printf("\n Bytes_read = %d\n", jg_num_bytes);
-             }
-             else
-	     	printf("\n"); 
-
-             taskDelay(30);
-             pread = pdata;
-             if((status = free(pdata)) == ERROR)  
-                 printf("Error freeing memory in io_report\n");
-         } 
-        
 	return OK;
 }
 
+
+/*
+ * jgvtr1_dump
+ *
+ */
+LOCAL
+int jgvtr1_dump(card, n)
+unsigned	card;
+unsigned	n;
+{
+	register unsigned short		*pjgdata;
+        unsigned short                  *pread;
+        unsigned short                  *pdata;
+	unsigned			nread;
+      	int				status;
+ 
+        /* Print out the data if user requests it. */
+
+	n = min(JRG_MEM_SIZE,n);
+	
+	pdata = (unsigned short *)malloc(n * (sizeof(*pdata)));
+	if(!pdata){
+		return ERROR;
+	}
+	
+	pread = pdata;
+	nread = 0;
+	pjgdata = (unsigned short *)JGVTR1DATA(card);
+	while(nread <= (n>>1)){
+		status = vxMemProbe(
+				pjgdata,
+				READ,
+				sizeof(*pread),
+				pread);
+		if(status<0){
+			break;
+		}
+		nread++;
+		pread++;
+		pjgdata++;
+ 	} 
+
+	for(pread=pdata; pread<&pdata[nread]; pread++){
+                if ((pread-pdata)%8 == 0){
+	           printf("\n\t"); 
+		}
+		printf(	"%02X %02X ",
+			(unsigned char) ((*pread)>>8),
+			(unsigned char) *pread);
+	}
+
+	printf("\n");
+
+	free(pdata);        
+
+	return OK;
+}

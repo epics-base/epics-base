@@ -163,29 +163,13 @@ static long init_record(pwf,pass)
     }
 
     /* wf.siml must be a CONSTANT or a PV_LINK or a DB_LINK */
-    switch (pwf->siml.type) {
-    case (CONSTANT) :
+    if (pwf->siml.type == CONSTANT) {
 	recGblInitConstantLink(&pwf->siml,DBF_USHORT,&pwf->simm);
-        break;
-    case (PV_LINK) :
-    case (DB_LINK) :
-        break;
-    default :
-        recGblRecordError(S_db_badField,(void *)pwf,
-                "wf: init_record Illegal SIML field");
-        return(S_db_badField);
     }
 
     /* wf.siol must be a CONSTANT or a PV_LINK or a DB_LINK */
-    switch (pwf->siol.type) {
-    case (CONSTANT) :
-    case (PV_LINK) :
-    case (DB_LINK) :
-        break;
-    default :
-        recGblRecordError(S_db_badField,(void *)pwf,
-                "wf: init_record Illegal SIOL field");
-        return(S_db_badField);
+    if (pwf->siol.type == CONSTANT) {
+	recGblInitConstantLink(&pwf->siol,DBF_DOUBLE,&pwf->sval);
     }
 
     /* must have dset defined */
@@ -368,10 +352,10 @@ static long readValue(pwf)
                 status=dbGetLink(&(pwf->siol),
                                 pwf->ftvl,pwf->bptr,0,&nRequest);
                 /* nord set only for db links: needed for old db_access */
-        	if (pwf->siol.type == DB_LINK )pwf->nord = nRequest;
-                if (status==0){
-                         pwf->udf=FALSE;
-                }
+        	if (pwf->siol.type != CONSTANT ){
+                pwf->nord = nRequest;
+                if (status==0) pwf->udf=FALSE;
+            }
         } else {
                 status=-1;
                 recGblSetSevr(pwf,SOFT_ALARM,INVALID_ALARM);

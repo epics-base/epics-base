@@ -30,6 +30,9 @@
  * Modification Log:
  * -----------------
  * .01  08-02-92        mrk     Original version
+ * .02	06-03-93	joh	fixed read_mbbi routine calls the 
+ *				"at5vxi_bi_driver" rather than the 
+ *				"hpe1368a_bi_driver" 
  */
 
 #include	<vxWorks.h>
@@ -198,7 +201,7 @@ static long read_mbbi(struct mbbiRecord	*pmbbi)
 
 	
 	pvmeio = (struct vmeio *)&(pmbbi->inp.value);
-	status = at5vxi_bi_driver(pvmeio->card,pmbbi->mask,&value);
+	status = hpe1368a_bi_driver(pvmeio->card,pmbbi->mask,&value);
 	if(status==0) {
 		pmbbi->rval = value;
 	} else {

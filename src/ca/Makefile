@@ -25,7 +25,6 @@ LIBSRCS += iocinf.cpp
 LIBSRCS += convert.cpp
 LIBSRCS += test_event.cpp
 LIBSRCS += repeater.cpp
-LIBSRCS += ringBuffer.cpp
 LIBSRCS += searchTimer.cpp
 LIBSRCS += repeaterSubscribeTimer.cpp
 LIBSRCS += tcpiiu.cpp

@@ -65,6 +65,8 @@ struct	ifconf {
 #   define NBBY 8
 #endif
 
+/* test */
+
 #ifndef FD_SETSIZE
 #   define FD_SETSIZE    256
 #endif

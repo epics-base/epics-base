@@ -38,13 +38,13 @@ epicsShareDef char * errlogSevEnumString[] = {"info","minor","major","fatal"};
 epicsShareExtern char * errlogSevEnumString[];
 #endif
 
-epicsShareFunc int epicsShareAPIV errlogPrintf(
+epicsShareFunc int errlogPrintf(
     const char *pformat, ...);
-epicsShareFunc int epicsShareAPIV errlogVprintf(
+epicsShareFunc int errlogVprintf(
     const char *pformat,va_list pvar);
-epicsShareFunc int epicsShareAPIV errlogSevPrintf(
+epicsShareFunc int errlogSevPrintf(
     const errlogSevEnum severity,const char *pformat, ...);
-epicsShareFunc int epicsShareAPIV errlogSevVprintf(
+epicsShareFunc int errlogSevVprintf(
     const errlogSevEnum severity,const char *pformat,va_list pvar);
 epicsShareFunc int epicsShareAPI errlogMessage(
 	const char *message);
@@ -65,7 +65,7 @@ epicsShareFunc int epicsShareAPI errlogInit(int bufsize);
 epicsShareFunc void epicsShareAPI errlogFlush(void);
 
 /*other routines that write to log file*/
-epicsShareFunc void epicsShareAPIV errPrintf(long status, const char *pFileName,
+epicsShareFunc void errPrintf(long status, const char *pFileName,
     int lineno, const char *pformat, ...);
 
 epicsShareExtern int errVerbose;

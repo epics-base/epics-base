@@ -94,7 +94,7 @@ LOCAL struct {
     void         *pbuffer;
 }pvtData;
 
-epicsShareFunc int epicsShareAPIV errlogPrintf( const char *pFormat, ...)
+epicsShareFunc int errlogPrintf( const char *pFormat, ...)
 {
     va_list	pvar;
     int		nchar;
@@ -111,7 +111,7 @@ epicsShareFunc int epicsShareAPIV errlogPrintf( const char *pFormat, ...)
     return(nchar);
 }
 
-epicsShareFunc int epicsShareAPIV errlogVprintf(
+epicsShareFunc int errlogVprintf(
     const char *pFormat,va_list pvar)
 {
     int nchar;
@@ -147,7 +147,7 @@ epicsShareFunc int epicsShareAPI errlogMessage(const char *message)
     return 0;
 }
 
-epicsShareFunc int epicsShareAPIV errlogSevPrintf(
+epicsShareFunc int errlogSevPrintf(
     const errlogSevEnum severity,const char *pFormat, ...)
 {
     va_list	pvar;
@@ -166,7 +166,7 @@ epicsShareFunc int epicsShareAPIV errlogSevPrintf(
     return(nchar);
 }
 
-epicsShareFunc int epicsShareAPIV errlogSevVprintf(
+epicsShareFunc int errlogSevVprintf(
     const errlogSevEnum severity,const char *pFormat,va_list pvar)
 {
     char	*pnext;
@@ -256,7 +256,7 @@ epicsShareFunc int epicsShareAPI eltc(int yesno)
     return(0);
 }
 
-epicsShareFunc void epicsShareAPIV errPrintf(long status, const char *pFileName, 
+epicsShareFunc void errPrintf(long status, const char *pFileName, 
                                              int lineno, const char *pformat, ...)
 {
     va_list pvar;

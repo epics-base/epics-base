@@ -1,3 +1,4 @@
+/*asCa.c*/
 /*************************************************************************\
 * Copyright (c) 2002 The University of Chicago, as Operator of Argonne
 *     National Laboratory.
@@ -7,8 +8,6 @@
 * and higher are distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* share/src/as/asCa.c	*/
-/* share/src/as $Id$ */
 /* Author:  Marty Kraimer Date:    10-15-93 */
 
 /*This module is separate from asDbLib because CA uses old database access*/
@@ -267,6 +266,10 @@ int epicsShareAPI ascar(int level)
     int  n=0,nbad=0;
     enum channel_state state;
 
+    if(!pasbase) {
+        printf("access security not started\n");
+        return(0);
+    }
     pasg = (ASG *)ellFirst(&pasbase->asgList);
     while(pasg) {
         ASGINP *pasginp;

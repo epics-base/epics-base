@@ -478,15 +478,15 @@ STATIC void exceptionCallback(struct exception_handler_args args)
 {
     const char *context = (args.ctx ? args.ctx : "unknown");
 
-    errlogPrintf("DB CA Exception: \"%s\", context \"%s\"\n",
+    errlogPrintf("DB CA Link Exception: \"%s\", context \"%s\"\n",
         ca_message(args.stat), context);
     if (args.chid) {
         errlogPrintf(
-            "DB CA Exception: channel \"%s\"\n",
+            "DB CA Link Exception: channel \"%s\"\n",
             ca_name(args.chid));
         if (ca_state(args.chid)==cs_conn) {
             errlogPrintf(
-                "DB CA Exception:  native  T=%s, request T=%s,"
+                "DB CA Link Exception:  native  T=%s, request T=%s,"
                 " native N=%ld, request N=%ld, "
                 " access rights {%s%s}\n",
                 dbr_type_to_text(ca_field_type(args.chid)),
@@ -693,9 +693,10 @@ done:
     epicsMutexUnlock(pca->lock);
 }
 
+
 void dbCaTask()
 {
-    caLink    *pca;
+    caLink *pca;
     short    link_action;
     int        status;
 

@@ -15,7 +15,7 @@ PROD_LIBS += dbIoc dbStaticHost ca Com
 
 callbackTestHost_SRCS += callbackTestMain.c callbackTest.c
 PROD_HOST += callbackTestHost
-OBJS_IOC += callbackTest
+OBJS_IOC_vxWorks += callbackTest
 
 include $(TOP)/configure/RULES
 

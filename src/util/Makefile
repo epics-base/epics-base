@@ -26,7 +26,7 @@ ca_test_SRCS = ca_test_main.c ca_test.c
 iocLogServer_SRCS = iocLogServer.c
 startCArepeater_SRCS = startCArepeater.c
 
-OBJS = ca_test
+OBJS_vxWorks = ca_test
 
 SCRIPTS_solaris := S99logServer S99caRepeater 
 

@@ -11,6 +11,16 @@
 
 <h2>Changes since 3.13.8</h2>
 
+<h4>Close-On-Exec flag set for all sockets created in EPICS base</h4>
+
+<p>On POSIX systsems if a Channel Access application spawns off 3rd party
+software with an exec() call then all open file desriptors are inherited
+unless the close-on-exec flag is set for each file descriptor. A new wrapper
+function was created so that all sockets created in EPICS base will have the
+close-on-exec flag set on POSIX systems. The function which spawns the CA
+repeater with exec() used to close all open files except stdin/stdout/stderr.
+This step was no longer required and therefore was removed from the code.</p>
+
 <h3>Assert fail in CA libraries when system runs low on mbufs</h3>
 
 <h4>Scope</h4>

@@ -1,11 +1,13 @@
 #
 # base $Id$
 #
-# "Diabolical" EPICS Makefile For Top-Level Subdirectory Recursions
+# EPICS Makefile For Top-Level Subdirectory Recursions
 #    by Matthew Needes and Mike Bordua
 #
 
-include config.${T_A}.mk
+EPICS=..
+include $(EPICS)/config/CONFIG_BASE
+include $(EPICS)/config/CONFIG_ARCH.${T_A}
 
 MAKEOPT=${MFLAGS} -f Makefile.${BUILD_TYPE}
 
@@ -14,35 +16,42 @@ all: build
 depends:
 	@(for DIR in ${DIRS};					\
 		do						\
-			TMP=$$PWD; echo "${T_A}: --$$DIR"; 	\
+			TMP=$$PWD; echo "${T_A}: $@: $$DIR"; 	\
+			cd $$DIR; ${MAKE} ${MAKEOPT} $@; cd $$TMP;\
+		done)
+
+pre_build:
+	@(for DIR in ${DIRS};					\
+		do						\
+			TMP=$$PWD; echo "${T_A}: $@: $$DIR"; 	\
 			cd $$DIR; ${MAKE} ${MAKEOPT} $@; cd $$TMP;\
 		done)
 
 build_libs:
 	@(for DIR in ${DIRS};					\
 		do						\
-			TMP=$$PWD; echo "${T_A}: --$$DIR"; 	\
+			TMP=$$PWD; echo "${T_A}: $@: $$DIR"; 	\
 			cd $$DIR; ${MAKE} ${MAKEOPT} $@; cd $$TMP;\
 		done)
 
 install_libs:
 	@(for DIR in ${DIRS};					\
 		do						\
-			TMP=$$PWD; echo "${T_A}: --$$DIR"; 	\
+			TMP=$$PWD; echo "${T_A}: $@: $$DIR"; 	\
 			cd $$DIR; ${MAKE} ${MAKEOPT} $@; cd $$TMP;\
 		done)
 
 build:
 	@(for DIR in ${DIRS};					\
 		do						\
-			TMP=$$PWD; echo "${T_A}: --$$DIR"; 	\
+			TMP=$$PWD; echo "${T_A}: $@: $$DIR"; 	\
 			cd $$DIR; ${MAKE} ${MAKEOPT} $@; cd $$TMP;\
 		done)
 
 install:
 	@(for DIR in ${DIRS};					\
 		do						\
-			TMP=$$PWD; echo "${T_A}: --$$DIR"; 	\
+			TMP=$$PWD; echo "${T_A}: $@: $$DIR"; 	\
 			cd $$DIR; ${MAKE} ${MAKEOPT} $@; cd $$TMP;\
 		done)
 

@@ -104,7 +104,7 @@ sub Usage
 	print "Usage:\n";
 	print "\t$tool [ -m mode ] file ... directory\n";
 	print "\n";
-	print "\t-d             Create non-exising directories\n";
+	print "\t-d             Create non-existing directories\n";
 	print "\t-m mode        Set the mode for the installed file";
 		print " (0755 by default)\n";
 	print "\tfile           Name of file\n";

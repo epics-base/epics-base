@@ -225,6 +225,7 @@ void write_notify_reply(void *pArg);
  * to include both dbAccess.h and db_access.h at the
  * same time.
  */
-#define S_db_Blocked (M_dbAccess|39) /*Request is Blocked*/
+#define S_db_Blocked 	(M_dbAccess|39) /*Request is Blocked*/
+#define S_db_Pending    (M_dbAccess|37) /*Request is pending*/
 
 #endif /*INCLserverh*/

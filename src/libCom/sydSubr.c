@@ -2066,9 +2066,9 @@ int	ignorePartial;	/* I 0,1 to store,ignore partial samples */
 		    }
 		}
 		else if (type == DBR_TIME_ENUM) {
-		    short	*pSrc, *pDest;
+		    unsigned short	*pSrc, *pDest;
 		    pSrc = &pSChan->pInBuf[i]->tenmval.value;
-		    pDest = ((short *)pSChan->pData) + sub * pSChan->elCount;
+		    pDest = ((unsigned short *)pSChan->pData) + sub * pSChan->elCount;
 		    if (useVal && pSChan->minMaxNeedInit) {
 			pSChan->maxDataVal = pSChan->minDataVal = (double)*pSrc;
 			pSChan->minMaxNeedInit = 0;
@@ -2801,12 +2801,12 @@ int	sub;		/* subscript for array channels */
 int	flags;
 int	colWidth;
 {
-    int		myType;		/* 0,1,2 for lng, dbl, str */
+    int		myType=0;		/* 0,1,2 for lng, dbl, str */
     chtype	type;		/* type of value */
     char	text[100];
-    long	lngVal;
-    double	dblVal;
-    char	*strVal;
+    long	lngVal=0;
+    double	dblVal=0.0;
+    char	*strVal=NULL;
 
     type = pSChan->dbrType;
 
@@ -3772,10 +3772,10 @@ SYD_SPEC *pSspec;	/* I pointer to synchronous set spec */
     SYD_TEST	*pTest;
     int		i, change;
     chtype	type;
-    double	dblVal;
-    long	lngVal;
-    char	*strVal;
-    int		myType;		/* 0,1,2 for double, long, string */
+    double	dblVal=0.0;
+    long	lngVal=0;
+    char	*strVal=NULL;
+    int		myType=0;		/* 0,1,2 for double, long, string */
 
     if ((pTest = pSspec->pAccept) == NULL)
 	return 1;

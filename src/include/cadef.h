@@ -323,7 +323,7 @@ int epicsShareAPI ca_task_exit (void);
 
 /************************************************************************
  * anachronistic entry points                                           *
- * **** Fetching a value while searching no longer supported****         *
+ * **** Fetching a value while searching no longer supported****        *
  ************************************************************************/
 #define ca_build_channel(NAME,XXXXX,CHIDPTR,YYYYY)\
 ca_build_and_connect(NAME, XXXXX, 1, CHIDPTR, YYYYY, 0, 0)

@@ -33,7 +33,7 @@ casChannelI::~casChannelI ()
     // force PV delete if this is the last channel attached
     this->pv.deleteSignal ();
 
-    delete & this->chan;
+    this->chan.destroy ();
 }
 
 void casChannelI::uninstallFromPV ( casEventSys & eventSys )

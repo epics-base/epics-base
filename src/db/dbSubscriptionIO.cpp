@@ -22,26 +22,13 @@
 #include "tsFreeList.h"
 #include "epicsSingleton.h"
 
-#include "cacIO.h"
 #include "db_access.h" // need to eliminate this
 #include "cadef.h" // this can be eliminated when the callbacks use the new interface
 
 #define epicsExportSharedSymbols
 #include "dbCAC.h"
-#include "dbChannelIOIL.h"
+#include "dbChannelIO.h"
 #include "db_access_routines.h"
-
-#ifdef _MSC_VER
-#   pragma warning ( push )
-#   pragma warning ( disable:4660 )
-#endif
-
-template class tsFreeList < dbSubscriptionIO >;
-template class epicsSingleton < tsFreeList < dbSubscriptionIO > >;
-
-#ifdef _MSC_VER
-#   pragma warning ( pop )
-#endif
 
 epicsSingleton < tsFreeList < dbSubscriptionIO > > dbSubscriptionIO::pFreeList;
 

@@ -26,26 +26,13 @@
 #include "epicsSingleton.h"
 #include "errMdef.h"
 
-#include "cacIO.h"
 #include "caerr.h" // this needs to be eliminated
 #include "db_access.h" // this needs to be eliminated
 
 #define epicsExportSharedSymbols
 #include "dbCAC.h"
-#include "dbChannelIOIL.h"
+#include "dbChannelIO.h"
 #include "dbPutNotifyBlocker.h"
-
-#ifdef _MSC_VER
-#   pragma warning ( push )
-#   pragma warning ( disable:4660 )
-#endif
-
-template class tsFreeList < dbPutNotifyBlocker, 1024 >;
-template class epicsSingleton < tsFreeList < dbPutNotifyBlocker, 1024 > >;
-
-#ifdef _MSC_VER
-#   pragma warning ( pop )
-#endif
 
 epicsSingleton < tsFreeList < dbPutNotifyBlocker, 1024 > > dbPutNotifyBlocker::pFreeList;
 

@@ -8,7 +8,6 @@
 #include "tsFreeList.h"
 #include "epicsSingleton.h"
 
-#include "cacIO.h"
 #include "cadef.h" // this can be eliminated when the callbacks use the new interface
 #include "db_access.h" // should be eliminated here in the future
 

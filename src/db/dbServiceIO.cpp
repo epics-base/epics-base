@@ -19,7 +19,6 @@
 #include "epicsMutex.h"
 #include "tsFreeList.h"
 
-#include "cacIO.h"
 #include "cadef.h" // this can be eliminated when the callbacks use the new interface
 #include "db_access.h" // should be eliminated here in the future
 #include "caerr.h" // should be eliminated here in the future
@@ -30,20 +29,8 @@
 #define epicsExportSharedSymbols
 #include "db_access_routines.h"
 #include "dbCAC.h"
-#include "dbChannelIOIL.h"
+#include "dbChannelIO.h"
 #include "dbPutNotifyBlocker.h"
-
-#ifdef _MSC_VER
-#   pragma warning ( push )
-#   pragma warning ( disable:4660 )
-#endif
-
-template class resTable < dbBaseIO, chronIntId >;
-template class chronIntIdResTable < dbBaseIO >;
-
-#ifdef _MSC_VER
-#   pragma warning ( pop )
-#endif
 
 class dbServiceIOLoadTimeInit {
 public:

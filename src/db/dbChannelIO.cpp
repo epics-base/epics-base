@@ -17,7 +17,6 @@
 
 #include <limits.h>
 
-#include "cacIO.h"
 #include "tsFreeList.h"
 #include "epicsMutex.h"
 #include "epicsEvent.h"
@@ -27,20 +26,8 @@
 #define epicsExportSharedSymbols
 #include "db_access_routines.h"
 #include "dbCAC.h"
-#include "dbChannelIOIL.h"
+#include "dbChannelIO.h"
 #include "dbPutNotifyBlocker.h"
-
-#ifdef _MSC_VER
-#   pragma warning ( push )
-#   pragma warning ( disable:4660 )
-#endif
-
-template class tsFreeList < dbChannelIO >;
-template class epicsSingleton < tsFreeList < dbChannelIO > >;
-
-#ifdef _MSC_VER
-#   pragma warning ( pop )
-#endif
 
 epicsSingleton < tsFreeList < dbChannelIO > > dbChannelIO::pFreeList;
 

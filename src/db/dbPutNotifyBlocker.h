@@ -18,6 +18,22 @@
 #ifndef dbPutNotifyBlockerh
 #define dbPutNotifyBlockerh
 
+#ifdef epicsExportSharedSymbols
+#define dbPutNotifyBlockerh_restore_epicsExportSharedSymbols
+#undef epicsExportSharedSymbols
+#endif
+
+#include "shareLib.h"
+
+#include "tsFreeList.h"
+#include "epicsSingleton.h"
+
+#ifdef dbPutNotifyBlockerh_restore_epicsExportSharedSymbols
+#define epicsExportSharedSymbols
+#endif
+
+#include "shareLib.h"
+
 class dbPutNotifyBlocker : public dbBaseIO {
 public:
     dbPutNotifyBlocker ( dbChannelIO & chanIn );

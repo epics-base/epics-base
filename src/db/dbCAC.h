@@ -17,6 +17,30 @@
  * 1) This interface is preliminary and will change in the future
  */
 
+#ifndef dbCACh
+#define dbCACh
+
+#ifdef epicsExportSharedSymbols
+#define dbCACh_restore_epicsExportSharedSymbols
+#undef epicsExportSharedSymbols
+#endif
+
+#include "shareLib.h"
+
+#include "tsDLList.h"
+#include "epicsSingleton.h"
+#include "tsFreeList.h"
+#include "resourceLib.h"
+
+#include "cacIO.h"
+
+#ifdef dbCACh_restore_epicsExportSharedSymbols
+#define epicsExportSharedSymbols
+#endif
+
+#include "shareLib.h"
+
+#include "db_access.h"
 #include "dbNotify.h"
 #include "dbEvent.h"
 #include "dbAddr.h"
@@ -86,42 +110,6 @@ private:
 	dbServicePrivateListOfIO & operator = ( const dbServicePrivateListOfIO & );
 };
 
-class dbChannelIO : public cacChannel, public dbServicePrivateListOfIO {
-public:
-    dbChannelIO ( cacChannelNotify &notify, 
-        const dbAddr &addr, dbServiceIO &serviceIO );
-    void destroy ();
-    void callReadNotify ( unsigned type, unsigned long count, 
-            cacReadNotify &notify );
-    void callStateNotify ( unsigned type, unsigned long count, 
-            const struct db_field_log *pfl, cacStateNotify &notify );
-    void show ( unsigned level ) const;
-    void * operator new ( size_t size);
-    void operator delete ( void *pCadaver, size_t size );
-    const char *pName () const;
-protected:
-    ~dbChannelIO (); // allocate only from pool
-private:
-    dbServiceIO & serviceIO;
-    dbAddr addr;
-    void initiateConnect ();
-    ioStatus read ( unsigned type, unsigned long count, 
-        cacReadNotify &, ioid * );
-    void write ( unsigned type, unsigned long count, 
-        const void *pvalue );
-    ioStatus write ( unsigned type, unsigned long count, 
-        const void *pvalue, cacWriteNotify &, ioid * );
-    void subscribe ( unsigned type, unsigned long count, 
-        unsigned mask, cacStateNotify &notify, ioid * );
-    void ioCancel ( const ioid & );
-    void ioShow ( const ioid &, unsigned level ) const;
-    short nativeType () const;
-    unsigned long nativeElementCount () const;
-    static epicsSingleton < tsFreeList < dbChannelIO > > pFreeList;
-	dbChannelIO ( const dbChannelIO & );
-	dbChannelIO & operator = ( const dbChannelIO & );
-};
-
 // allow only one thread at a time to use the cache, but do not hold
 // lock when calling the callback
 class dbServiceIOReadNotifyCache  {
@@ -181,4 +169,6 @@ inline void dbServiceIO::callReadNotify ( struct dbAddr &addr,
 {
     this->readNotifyCache.callReadNotify ( addr, type, count, notify );
 }
+
+#endif // dbCACh
 

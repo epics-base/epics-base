@@ -23,7 +23,8 @@
 
 #include <osiThread.h>
 #include <logClient.h>
-#include <CommandInterpreter.h>
+#include <ioccrf.h>
+#include <ioccrfRegister.h>
 #include <dbStaticLib.h>
 #include <cantProceed.h>
 
@@ -251,44 +252,12 @@ rtems_showSem (void)
 }
 
 /*
- * Dummy commands
- *    RTEMS does not yet support full NFS.
- *    RTEMS does not support dynamic loading.
- */
-long
-rtems_cdCommand (char *name)
-{
-    printf ("`cd' command ignored.\n");
-    return 0;
-}
-
-long
-rtems_ldCommand (char *name)
-{
-    printf ("`ld' command ignored.\n");
-    return 0;
-}
-
-/*
  * Wrappers for EPICS routines which refer to file names.
  * Since RTEMS doesn't have NFS we fake it by making sure that
  * all paths refer to files in the TFTP area.
  */
 long
-rtems_registerRecordDeviceDriver (char *name)
-{
-    extern DBBASE *pdbbase;
-    int registerRecordDeviceDriver(DBBASE *pdbbase);
-
-    if (strcmp (name, "pdbbase") == 0)
-        return registerRecordDeviceDriver (pdbbase);
-    errlogPrintf ("Don't know how to registerRecordDeviceDriver(%s)\n", name);
-    cantProceed ("registerRecordDeviceDriver");
-    return -1;
-}
-
-long
-rtems_dbLoadDatabase (char *name)
+dbLoadDatabaseRTEMS (char *name)
 {
     char *cp = rtems_tftp_path (name);
     int dbLoadDatabase (char *filename, char *path, char *substitutions);
@@ -299,7 +268,7 @@ rtems_dbLoadDatabase (char *name)
 }
 
 long
-rtems_dbLoadRecords (char *name, char *substitutions)
+dbLoadRecordsRTEMS (char *name, char *substitutions)
 {
     char *cp = rtems_tftp_path (name);
     int dbLoadRecords (char* pfilename, char* substitutions);
@@ -310,7 +279,7 @@ rtems_dbLoadRecords (char *name, char *substitutions)
 }
 
 void
-rtems_runScript (const char *name)
+runScriptRTEMS (const char *name)
 {
     char *cp;
     FILE *fp;
@@ -321,7 +290,7 @@ rtems_runScript (const char *name)
         printf ("Can't open script (%s)\n", name);
     }
     else {
-        CommandInterpreter (NULL, fp, name);
+        ioccrf (fp, name);
         fclose (fp);
     }
     free (cp);
@@ -341,57 +310,11 @@ rtems_reboot (const char *name)
 }
 
 /*
- * RTEMS-specific commands
- */
-typedef long (*cmd)();
-static const struct CommandTableEntry CommandTable[] = {
-    { "<",
-      "Redirect command",
-      "*",      (cmd)rtems_runScript,    2, 2
-    },
-    { "Reboot",
-      "Rebot IOC",
-      NULL,     (cmd)rtems_reboot,       1, 1
-    },
-    { "cd",
-      "Change directories",
-      NULL,     rtems_cdCommand,         2, 2
-    },
-    { "ld",
-      "Load object module",
-      NULL,     rtems_ldCommand,         3, 3
-    },
-    { "dbLoadDatabase",
-      "Load database",
-      "*",      rtems_dbLoadDatabase,    2, 2
-    },
-    { "dbLoadRecords",
-      "Load database records",
-      "**",     rtems_dbLoadRecords,     2, 3
-    },
-    { "registerRecordDeviceDriver",
-      "Register device driver",
-      "*",      rtems_registerRecordDeviceDriver,    2, 2
-    },
-    { "network",
-      "Show network statistics",
-      "i",      rtems_showStats,         1, 2
-    },
-    { "semaphore",
-      "Show semaphores",
-      "",       rtems_showSem,           1, 1
-    },
-    { NULL }
-};
-
-/*
  * RTEMS Startup task
  */
 rtems_task
 Init (rtems_task_argument ignored)
 {
-    void registerBaseCommands (void);
-
     /*
      * Create a reasonable environment
      */
@@ -423,14 +346,13 @@ Init (rtems_task_argument ignored)
      * Run the EPICS startup script
      */
     printf ("***** Executing EPICS startup script *****\n");
-    registerBaseCommands ();
-    CommandInterpreterRegisterCommands (CommandTable);
-    rtems_runScript ("st.cmd");
+    ioccrfrRegister ();
+    runScriptRTEMS ("st.cmd");
 
     /*
      * Everything's running!
      */
     threadSleep (2.0);
-    CommandInterpreter (NULL, NULL, NULL);
-    rtems_task_suspend (RTEMS_SELF);
+    ioccrf (NULL, NULL);
+    LogFatal ("Console command interpreter terminated");
 }

@@ -411,18 +411,11 @@ void epicsShareAPI db_event_enable (dbEventSubscription es)
 {
     struct evSubscrip *pevent = (struct evSubscrip *) es;
     struct dbCommon *precord;
-    int     status;
 
     precord = (struct dbCommon *) pevent->paddr->precord;
 
     LOCKREC(precord);
-    /* 
-     * dont let a misplaced event corrupt the queue 
-     */
-    status = ellFind (&precord->mlis, &pevent->node);
-    if ( status < 0 ) {
-        ellAdd (&precord->mlis, &pevent->node);
-    }
+    ellAdd (&precord->mlis, &pevent->node);
     UNLOCKREC(precord);
 }
 
@@ -433,18 +426,11 @@ void epicsShareAPI db_event_disable (dbEventSubscription es)
 {
     struct evSubscrip *pevent = (struct evSubscrip *) es;
     struct dbCommon *precord;
-    int     status;
 
     precord = (struct dbCommon *) pevent->paddr->precord;
 
     LOCKREC(precord);
-    /* 
-     * dont let a misplaced event corrupt the queue 
-     */
-    status = ellFind(&precord->mlis, &pevent->node);
-    if ( status > 0 ) {
-        ellDelete(&precord->mlis, &pevent->node);
-    }
+    ellDelete(&precord->mlis, &pevent->node);
     UNLOCKREC(precord);
 }
 
@@ -462,18 +448,10 @@ void epicsShareAPI db_cancel_event (dbEventSubscription es)
 {
     struct evSubscrip *pevent = (struct evSubscrip *) es;
     struct dbCommon *precord;
-    int status;
 
     precord = (struct dbCommon *) pevent->paddr->precord;
 
     LOCKREC(precord);
-    /* dont let a misplaced event corrupt the queue */
-    status = ellFind((ELLLIST*)&precord->mlis, &pevent->node);
-    if (status==DB_EVENT_ERROR) {
-        errlogPrintf ("db_cancel_event() - invalid event ignored\n");
-        UNLOCKREC(precord);
-        return;
-    }
     ellDelete((ELLLIST*)&precord->mlis, &pevent->node);
     UNLOCKREC(precord);
 

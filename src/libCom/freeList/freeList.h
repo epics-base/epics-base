@@ -55,6 +55,7 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #ifndef INCfreeListh
 #define INCfreeListh
 
+#include <sys/types.h>
 #include "shareLib.h"
 
 #ifdef __cplusplus

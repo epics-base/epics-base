@@ -171,14 +171,14 @@ int rsrv_online_notify_task()
 		pNode = (caAddrNode *) beaconAddrList.node.next;
 		while(pNode){
 			msg.m_available = 
-				pNode->srcAddr.inetAddr.sin_addr.s_addr;
+				pNode->srcAddr.in.sin_addr.s_addr;
         		status = sendto(
 					sock,
         				(char *)&msg,
         				sizeof(msg),
         				0,
-					&pNode->destAddr.sockAddr,
-					sizeof(pNode->destAddr.sockAddr));
+					&pNode->destAddr.sa,
+					sizeof(pNode->destAddr.sa));
       			if(status < 0){
 				logMsg( "%s: CA beacon error was \"%s\"\n",
 					(int) __FILE__,

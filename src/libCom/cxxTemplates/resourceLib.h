@@ -764,7 +764,8 @@ stringIdentifier<MAX_INDEX_WIDTH, MIN_INDEX_WIDTH>::stringIdentifier (const char
 // stringIdentifier::operator == ()
 //
 template <unsigned MAX_INDEX_WIDTH, unsigned MIN_INDEX_WIDTH>
-inline bool stringIdentifier<MAX_INDEX_WIDTH, MIN_INDEX_WIDTH>::operator == (const stringIdentifier &idIn) const
+inline bool stringIdentifier<MAX_INDEX_WIDTH, MIN_INDEX_WIDTH>::operator == 
+        (const stringIdentifier<MAX_INDEX_WIDTH, MIN_INDEX_WIDTH> &idIn) const
 {
 	if (this->pStr!=NULL && idIn.pStr!=NULL) {
 		return strcmp(this->pStr,idIn.pStr)==0;

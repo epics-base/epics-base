@@ -114,6 +114,7 @@ foreach $name ( @nameList ) {
 	print OUT "ifdef DBDNAME_DEFAULT\n";
 	print OUT "DBDNAME+=\$(DBDNAME_DEFAULT)\n";
 	print OUT "endif\n";
+	print OUT "endif\n";
 	print OUT "\n";
 }
 close OUT or die "Cannot close $outfile: $!";

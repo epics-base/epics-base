@@ -55,7 +55,9 @@ epicsShareAPI macParseDefns(
 
     /* allocate temporary pointer arrays; in worst case they need to have
        as many entries as the length of the defns string */
-    numMax = max ( strlen( defns ), altNumMax );
+    numMax = strlen( defns );
+    if ( numMax < altNumMax )
+        numMax = altNumMax;
     ptr = ( char ** ) malloc( numMax * sizeof( char * ) );
     end = ( char ** ) malloc( numMax * sizeof( char * ) );
     del = ( long *  ) malloc( numMax * sizeof( long   ) );
@@ -274,6 +276,9 @@ epicsShareAPI macInstallMacros(
 
 /*********************************************************************
  * $Log$
+ * Revision 1.5  2000/05/30 17:08:57  jhill
+ * fixed pool corruption problems
+ *
  * Revision 1.4  1999/05/13 16:06:23  anj
  * Cleaned up warnings - the RCS Log: keyword was on the comment line
  * that starts with a '/' which RCS replicates for these notes...

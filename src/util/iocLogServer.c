@@ -46,6 +46,7 @@
  * .08 092292 joh	improved message sent to the log
  * .09 050494 pg        HPUX port changes.
  * .10 021694 joh	ANSI C	
+ * $Log$
  */
 
 static char	*pSCCSID = "@(#)iocLogServer.c	1.9\t05/05/94";
@@ -54,12 +55,14 @@ static char	*pSCCSID = "@(#)iocLogServer.c	1.9\t05/05/94";
 #include	<stdlib.h>
 #include	<string.h>
 #include	<errno.h>
+#include	<assert.h>
 
 #include 	<unistd.h>
 
 #include	<sys/types.h>
 #include	<sys/time.h>
 #include	<sys/socket.h>
+#include	<sys/ioctl.h>
 #include	<netinet/in.h>
 #include        <netdb.h>
 
@@ -68,7 +71,7 @@ static char	*pSCCSID = "@(#)iocLogServer.c	1.9\t05/05/94";
 #include 	<envDefs.h>
 #include 	<fdmgr.h>
 
-static long 		ioc_log_port;
+static unsigned short	ioc_log_port;
 static long		ioc_log_file_limit;
 static char		ioc_log_file_name[64];
 
@@ -113,6 +116,7 @@ static int getConfig(void);
 static int openLogFile(struct ioc_log_server *pserver);
 static void handleLogFileError(void);
 static void envFailureNotify(ENV_PARAM *pparam);
+static void freeLogClient(struct iocLogClient *pclient);
 
 
 /*
@@ -126,7 +130,7 @@ int main()
 	struct timeval          timeout;
 	int			status;
 	struct ioc_log_server	*pserver;
-	int			optval=1;
+	int			optval;
 
 	status = getConfig();
 	if(status<0){
@@ -158,6 +162,7 @@ int main()
 		return ERROR;
 	}
 	
+	optval = TRUE;
         status = setsockopt(    pserver->sock,
                                 SOL_SOCKET,
                                 SO_REUSEADDR,
@@ -179,8 +184,8 @@ int main()
 			sizeof (serverAddr) );
 	if (status<0) {
 		fprintf(stderr,
-			"ioc log server allready installed on port %ld?\n", 
-			ioc_log_port);
+			"iocLogServer: a server is already installed on port %u?\n", 
+			(unsigned)ioc_log_port);
 		fprintf(stderr, "iocLogServer: %s\n", strerror(errno));
 		return ERROR;
 	}
@@ -192,6 +197,20 @@ int main()
 		return ERROR;
 	}
 
+        /*
+         * Set non blocking IO
+         * to prevent dead locks
+         */
+	optval = TRUE;
+        status = ioctl(
+                       	pserver->sock,
+                        FIONBIO,
+                        &optval);
+        if(status<0){
+		fprintf(stderr, "iocLogServer: %s\n", strerror(errno));
+		return ERROR;
+        }
+
 	status = openLogFile(pserver);
 	if(status<0){
 		fprintf(stderr,
@@ -201,10 +220,11 @@ int main()
 		return ERROR;
 	}
 
-	status = fdmgr_add_fd(
+	status = fdmgr_add_callback(
 			pserver->pfdctx, 
 			pserver->sock, 
-			acceptNewClient, 
+			fdi_read,
+			acceptNewClient,
 			pserver);
 	if(status<0){
 		return ERROR;
@@ -268,7 +288,7 @@ static void acceptNewClient(void *pParam)
 	struct sockaddr_in 	addr;
 	char			*pname;
 	int			status;
-
+	int			optval;
 
 	pclient = (struct iocLogClient *) 
 			malloc(sizeof *pclient);
@@ -279,9 +299,27 @@ static void acceptNewClient(void *pParam)
 	pclient->insock = accept(pserver->sock, NULL, 0);
 	if(pclient->insock<0){
 		free(pclient);
-		fprintf(stderr, "Accept Error %d\n", errno);
+		if (errno!=EWOULDBLOCK) {
+			fprintf(stderr, "Accept Error %d\n", errno);
+		}
 		return;
 	}
+
+        /*
+         * Set non blocking IO
+         * to prevent dead locks
+         */
+	optval = TRUE;
+        status = ioctl(
+                       	pclient->insock,
+                        FIONBIO,
+                        &optval);
+        if(status<0){
+		close(pclient->insock);
+		free(pclient);
+		fprintf(stderr, "%s:%d %s\n", __FILE__, __LINE__, strerror(errno));
+		return;
+        }
 
 	pclient->pserver = pserver;
 	pclient->need_prefix = TRUE;
@@ -313,6 +351,7 @@ static void acceptNewClient(void *pParam)
 
 	logTime(pclient);
 	
+#if 0
 	status = fprintf(
 		pclient->pserver->poutfile,
 		"%s %s ----- Client Connect -----\n",
@@ -321,6 +360,7 @@ static void acceptNewClient(void *pParam)
 	if(status<0){
 		handleLogFileError();
 	}
+#endif
 
         /*
          * turn on KEEPALIVE so if the client crashes
@@ -340,11 +380,29 @@ static void acceptNewClient(void *pParam)
 		}
 	}
 
-	fdmgr_add_fd(
-		pserver->pfdctx, 
-		pclient->insock, 
-		readFromClient,
-		pclient);
+#       define SOCKET_SHUTDOWN_WRITE_SIDE 1
+        status = shutdown(pclient->insock, SOCKET_SHUTDOWN_WRITE_SIDE);
+        if(status<0){
+                close(pclient->insock);
+		free(pclient);
+                printf("%s:%d %s\n", __FILE__, __LINE__,
+                        strerror(errno));
+                return;
+        }
+
+	status = fdmgr_add_callback(
+			pserver->pfdctx, 
+			pclient->insock, 
+			fdi_read,
+			readFromClient,
+			pclient);
+	if (status<0) {
+		close(pclient->insock);
+		free(pclient);
+		fprintf(stderr, "%s:%d client fdmgr_add_callback() failed\n", 
+			__FILE__, __LINE__);
+		return;
+	}
 }
 
 
@@ -362,66 +420,36 @@ static void readFromClient(void *pParam)
 	int             	length;
 	char			*pcr;
 	char			*pline;
-	unsigned		stacksize;
+	int			stacksize;
+	int			size;
 
 	logTime(pclient);
 
 	stacksize = pclient->ptopofstack - pclient->recvbuf;
-	length = read(pclient->insock,
+	size = sizeof(pclient->recvbuf)-stacksize-1;
+	assert(size>0);
+	length = recv(pclient->insock,
 		      pclient->ptopofstack,
-		      sizeof(pclient->recvbuf)-stacksize-1);
+		      size,
+		      0);
 	if (length <= 0) {
-
-#		ifdef	DEBUG
-		if(length == 0){
-			fprintf(stderr, "iocLogServer: nil message disconnect\n");
-		}
-#		endif
-
-		/*
-		 * flush any leftovers
-		 */
-		if(stacksize){
-			status = fprintf(
-				pclient->pserver->poutfile,
-				"%s %s ",
-				pclient->name,
-				pclient->ascii_time);
-			if(status<0){
-				handleLogFileError();
+		if (length<0) {
+			if (errno != EWOULDBLOCK) {
+				fprintf(stderr, 
+					"%s:%d socket=%d addr=%x size=%d read error=%s\n",
+					__FILE__, __LINE__, pclient->insock, 
+					pclient->ptopofstack, size, strerror(errno));
+				freeLogClient(pclient);
 			}
-			status = fwrite(
-					pclient->recvbuf,
-					stacksize,
-					NITEMS,
-					pclient->pserver->poutfile);
-			if (status != NITEMS) {
-				handleLogFileError();
-			}
-			status = fprintf(pclient->pserver->poutfile,"\n");
-			if(status<0){
-				handleLogFileError();
-			}
+			return;
 		}
-
-		status = fprintf(
-			pclient->pserver->poutfile,
-			"%s %s ----- Client Disconnect -----\n",
-			pclient->name,
-			pclient->ascii_time);
-		if(status<0){
-			handleLogFileError();
+		else {
+			/*
+			 * disconnect
+			 */
+			freeLogClient(pclient);
+			return;
 		}
-
-		fdmgr_clear_fd(
-			       pclient->pserver->pfdctx,
-			       pclient->insock);
-		if(close(pclient->insock)<0)
-			abort();
-
-		free (pclient);
-
-		return;
 	}
 
 	pclient->ptopofstack[length] = NULL;
@@ -486,7 +514,76 @@ static void readFromClient(void *pParam)
 	}
 }
 
+
+/*
+ * freeLogClient ()
+ */
+static void freeLogClient(struct iocLogClient     *pclient)
+{
+	unsigned	stacksize;
+	int		status;
 
+	stacksize = pclient->ptopofstack - pclient->recvbuf;
+
+#	ifdef	DEBUG
+	if(length == 0){
+		fprintf(stderr, "iocLogServer: nil message disconnect\n");
+	}
+#	endif
+
+	/*
+	 * flush any left overs
+	 */
+	if(stacksize){
+		status = fprintf(
+			pclient->pserver->poutfile,
+			"%s %s ",
+			pclient->name,
+			pclient->ascii_time);
+		if(status<0){
+			handleLogFileError();
+		}
+		status = fwrite(
+				pclient->recvbuf,
+				stacksize,
+				NITEMS,
+				pclient->pserver->poutfile);
+		if (status != NITEMS) {
+			handleLogFileError();
+		}
+		status = fprintf(pclient->pserver->poutfile,"\n");
+		if(status<0){
+			handleLogFileError();
+		}
+	}
+
+#if 0
+	status = fprintf(
+		pclient->pserver->poutfile,
+		"%s %s ----- Client Disconnect -----\n",
+		pclient->name,
+		pclient->ascii_time);
+	if(status<0){
+		handleLogFileError();
+	}
+#endif
+
+	status = fdmgr_clear_callback(
+		       pclient->pserver->pfdctx,
+		       pclient->insock,
+		       fdi_read);
+	if (status!=OK) {
+		fprintf(stderr, "%s:%d fdmgr_clear_callback() failed\n",
+			__FILE__, __LINE__);
+	}
+
+	if(close(pclient->insock)<0)
+		abort();
+
+	free (pclient);
+
+	return;
+}
 
 
 /*
@@ -524,21 +621,23 @@ static int getConfig(void)
 {
 	int	status;
 	char	*pstring;
+	long	param;
 
 	status = envGetLongConfigParam(
 			&EPICS_IOC_LOG_PORT, 
-			&ioc_log_port);
-	if(status<0){
-		envFailureNotify(&EPICS_IOC_LOG_PORT);
-		return ERROR;
+			&param);
+	if(status>=0){
+		ioc_log_port = (unsigned short) param;
+	}
+	else {
+		ioc_log_port = 7004U;
 	}
 
 	status = envGetLongConfigParam(
 			&EPICS_IOC_LOG_FILE_LIMIT, 
 			&ioc_log_file_limit);
 	if(status<0){
-		envFailureNotify(&EPICS_IOC_LOG_FILE_LIMIT);
-		return ERROR;
+		ioc_log_file_limit = 10000;
 	}
 
 	pstring = envGetConfigParam(

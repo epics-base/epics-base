@@ -41,6 +41,7 @@ endif
 JAVAHFLAGS += $(USR_JAVAHFLAGS)
 JAVAINC_CLASSFILES += $(addprefix $(INSTALL_JAVA)/,$(subst _,/,$(subst .h,.class,$(JAVAINC))))
 JAVAINC_CLASSNAMES += $(subst _,.,$(subst .h,,$(JAVAINC)))
+COMMON_JAVAINC += $(addprefix $(COMMON_DIR)/,$(JAVAINC))
 
 #-------------------------------------------------------
 # Java class files
@@ -87,7 +88,7 @@ buildInstall : build
 
 rebuild: clean install
 
-inc:  $(JAVA_DIRECTORY_TARGETS) $(INSTALL_CLASSES) $(JAVAINC)
+inc:  $(JAVA_DIRECTORY_TARGETS) $(INSTALL_CLASSES) $(COMMON_JAVAINC)
 
 build: inc
 
@@ -99,18 +100,15 @@ buildInstall : $(INSTALL_JAR) $(INSTALL_JAVADOC)
 clean:: 
 	@$(RMDIR) $(INSTALL_CLASSES)
 	@$(RM) $(INSTALL_JAR) $(INSTALL_JAVADOC)
-	@$(RM) $(COMMON_TESTCLASSES) $(COMMON_JAR) $(JAVAINC)
+	@$(RM) $(COMMON_TESTCLASSES) $(COMMON_JAR) $(COMMON_JAVAINC)
 
 ifdef JAVA_DIRECTORY_TARGETS
 $(JAVA_DIRECTORY_TARGETS):
 	$(MKDIR) -p $@
 endif
 
-$(INSTALL_JAVA):
-	$(MKDIR) -p $@
-
-$(JAVAINC):$(JAVAINC_CLASSFILES)
-	@echo Creating header files $(JAVAINC)
+$(COMMON_JAVAINC):$(JAVAINC_CLASSFILES)
+	@echo Creating header files $(COMMON_JAVAINC)
 	@$(RM) $@
 	$(JAVAHCMD) $(JAVAINC_CLASSNAMES)
 

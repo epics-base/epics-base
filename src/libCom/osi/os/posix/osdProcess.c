@@ -119,12 +119,11 @@ epicsShareFunc osiSpawnDetachedProcessReturn epicsShareAPI osiSpawnDetachedProce
      * overlay the specified executable
      */
     status = execlp (pBaseExecutableName, pBaseExecutableName, NULL);
-    if (status<0) { 
-        errlogPrintf ( "The executable \"%s\" couldnt be located\n", pBaseExecutableName );
-        errlogPrintf ( "because of errno = \"%s\".\n", strerror (errno) );
-        errlogPrintf ( "You may need to modify your PATH environment variable.\n" );
-        errlogPrintf ( "Unable to start \"%s\" process.\n", pProcessName);
-        assert (0);
+    if ( status < 0 ) { 
+        fprintf ( stderr, "**** The executable \"%s\" couldnt be located\n", pBaseExecutableName );
+        fprintf ( stderr, "**** because of errno = \"%s\".\n", strerror (errno) );
+        fprintf ( stderr, "**** You may need to modify your PATH environment variable.\n" );
+        fprintf ( stderr, "**** Unable to start \"%s\" process.\n", pProcessName);
     }
-    exit (0);
+    exit ( -1 );
 }

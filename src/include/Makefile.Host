@@ -17,15 +17,16 @@ OSINC += osiSock.h
 
 include $(TOP)/config/RULES.Host
 
--include $(TOP)/config/CONFIG_BASE_VERSION
+include $(TOP)/config/CONFIG_BASE_VERSION
 
 epicsVersion.h: $(TOP)/config/CONFIG_BASE_VERSION
 	@$(RM) $@
-	@echo "#define BASE_VERSION           $(BASE_VERSION)" > $@
-	@echo "#define BASE_REVISION          $(BASE_REVISION)" >> $@
-	@echo "#define BASE_MODIFICATION      $(BASE_MODIFICATION)" >> $@
-	@echo "#define BASE_UPDATE_NAME       $(BASE_UPDATE_NAME)" >> $@
-	@echo "#define BASE_UPDATE_LEVEL      $(BASE_UPDATE_LEVEL)" >> $@
-	@echo "#define BASE_VERSION_STRING    \"EPICS Version $(BASE_VERSION_STRING)\" " >> $@
-	@echo "#define epicsReleaseVersion \"@(#)Version R$(BASE_VERSION_STRING) $(CVS_DATE)\" " >> $@
+	@echo EPICS_VERSION=$(EPICS_VERSION)
+	@echo "#define EPICS_VERSION           $(EPICS_VERSION)" > $@
+	@echo "#define EPICS_REVISION          $(EPICS_REVISION)" >> $@
+	@echo "#define EPICS_MODIFICATION      $(EPICS_MODIFICATION)" >> $@
+	@echo "#define EPICS_UPDATE_NAME       $(EPICS_UPDATE_NAME)" >> $@
+	@echo "#define EPICS_UPDATE_LEVEL      $(EPICS_UPDATE_LEVEL)" >> $@
+	@echo "#define EPICS_VERSION_STRING    \"EPICS Version $(EPICS_VERSION_STRING)\" " >> $@
+	@echo "#define epicsReleaseVersion \"@(#)Version R$(EPICS_VERSION_STRING) $(CVS_DATE)\" " >> $@
 

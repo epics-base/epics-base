@@ -34,6 +34,7 @@
 #define S_db_Pending 	(M_dbAccess|37)
 
 tsFreeList <dbPutNotifyIO> dbPutNotifyIO::freeList;
+epicsMutex dbPutNotifyIO::freeListMutex;
 
 dbPutNotifyIO::dbPutNotifyIO ( cacNotify &notifyIn, dbPutNotifyBlocker &blockerIn ) :
     cacNotifyIO ( notifyIn ), blocker ( blockerIn )
@@ -50,6 +51,12 @@ dbPutNotifyIO::~dbPutNotifyIO ()
     }
     this->blocker.putNotifyDestroyNotify ();
 }
+
+void dbPutNotifyIO::cancel () 
+{
+    delete this;
+}
+
 
 cacChannelIO & dbPutNotifyIO::channelIO () const
 {
@@ -106,6 +113,13 @@ void dbPutNotifyIO::completion ()
     else {
         this->notify ().completionNotify ( this->blocker.channel () );
     }
+}
+
+void dbPutNotifyIO::show ( unsigned level ) const
+{
+    // !! when there is a show routine for the putNotify 
+    // !! structure we would call it here
+    this->blocker.show ( level );
 }
 
 

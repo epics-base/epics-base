@@ -39,8 +39,8 @@
 
 #include "iocinf.h"
 
-#ifndef _WINDOWS
-#error This source is specific to DOS/WINDOS
+#ifndef WIN32
+#error This source is specific to WIN32 
 #endif
 
 static int get_subnet_mask ( char SubNetMaskStr[256]);
@@ -434,7 +434,7 @@ static int RegKeyData (CHAR *RegPath, HANDLE hKeyRoot, LPSTR lpzValueName,
 
  }
 
-BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
+BOOL epicsAPI DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 {
 	int status;
 	WSADATA WsaData;
@@ -445,11 +445,13 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 
 		if ((status = WSAStartup(MAKEWORD(1,1), &WsaData)) != 0)
 			return FALSE;
+#if _DEBUG
 		if (AllocConsole())	{
 			SetConsoleTitle("Channel Access Status");
     		freopen( "CONOUT$", "a", stderr );
 			fprintf(stderr, "Process attached to ca.dll R12\n");
 		}
+#endif
 		break;
 
 	case DLL_PROCESS_DETACH:

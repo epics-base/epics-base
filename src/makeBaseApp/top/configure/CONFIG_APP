@@ -1,7 +1,7 @@
 # CONFIG_APP
 
 include $(TOP)/configure/RELEASE
--include $(TOP)/configure/RELEASE.$(HOST_ARCH)
+-include $(TOP)/configure/RELEASE.$(EPICS_HOST_ARCH)
 CONFIG=$(EPICS_BASE)/configure
 include $(CONFIG)/CONFIG
 INSTALL_LOCATION = $(TOP)

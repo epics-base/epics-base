@@ -37,7 +37,7 @@
 #include <memLib.h>
 #endif
 
-#include "dbVarSub.h"
+#include <dbVarSub.h>
 #include <dbStaticLib.h>
 
 static int subst_total;

@@ -38,14 +38,14 @@ of this distribution.
 #include <ellLib.h>
  
 #ifdef vxWorks
-#include <fast_lock.h>
-static FAST_LOCK asLock;
+#include <semLib.h>
+static SEM_ID asLock;
+#define LOCK semTake(asLock,WAIT_FOREVER)
+#define UNLOCK semGive(asLock);
 #else
 /*This only works in a single threaded environment */
-#define FAST_LOCK int
-#define FASTLOCKINIT(PFAST_LOCK)
-#define FASTLOCK(PFAST_LOCK)
-#define FASTUNLOCK(PFAST_LOCK)
+#define LOCK 
+#define UNLOCK 
 #endif
 
 #define epicsExportSharedSymbols
@@ -105,10 +105,16 @@ long epicsShareAPI asInitialize(ASINPUTFUNCPTR inputfunction)
     HAGNAME	*phagname;
 
     if(asLockInit) {
-	FASTLOCKINIT(&asLock);
+#ifdef vxWorks
+	asLock  = semMCreate(SEM_DELETE_SAFE|SEM_INVERSION_SAFE|SEM_Q_PRIORITY);
+	if(!asLock) {
+	    errMessage(0,"asInitialize semMCreate failed\n");
+	    exit(-1);
+	}
+#endif
 	asLockInit = FALSE;
     }
-    FASTLOCK(&asLock);
+    LOCK;
     pasbasenew = asCalloc(1,sizeof(ASBASE));
     if(!freeListPvt) freeListInitPvt(&freeListPvt,sizeof(ASGCLIENT),20);
     ellInit(&pasbasenew->uagList);
@@ -119,7 +125,7 @@ long epicsShareAPI asInitialize(ASINPUTFUNCPTR inputfunction)
     if(status) {
 	status = S_asLib_badConfig;
 	/*Not safe to call asFreeAll */
-	FASTUNLOCK(&asLock);
+	UNLOCK;
 	return(status);
     }
     pasg = (ASG *)ellFirst(&pasbasenew->asgList);
@@ -176,7 +182,7 @@ long epicsShareAPI asInitialize(ASINPUTFUNCPTR inputfunction)
 	asFreeAll(pasbaseold);
     }
     asActive = TRUE;
-    FASTUNLOCK(&asLock);
+    UNLOCK;
     return(0);
 }
 
@@ -274,9 +280,9 @@ long epicsShareAPI asAddMember(ASMEMBERPVT *pasMemberPvt,char *asgName)
     long	status;
 
     if(!asActive) return(S_asLib_asNotActive);
-    FASTLOCK(&asLock);
+    LOCK;
     status = asAddMemberPvt(pasMemberPvt,asgName);
-    FASTUNLOCK(&asLock);
+    UNLOCK;
     return(status);
 }
 
@@ -287,18 +293,18 @@ long epicsShareAPI asRemoveMember(ASMEMBERPVT *asMemberPvt)
     if(!asActive) return(S_asLib_asNotActive);
     pasgmember = *asMemberPvt;
     if(!pasgmember) return(S_asLib_badMember);
-    FASTLOCK(&asLock);
+    LOCK;
     if(ellCount(&pasgmember->clientList)>0) return(S_asLib_clientsExist);
     if(pasgmember->pasg) {
 	ellDelete(&pasgmember->pasg->memberList,(ELLNODE *)pasgmember);
     } else {
 	errMessage(-1,"Logic error in asRemoveMember");
-	FASTUNLOCK(&asLock);
+	UNLOCK;
 	exit(-1);
     }
     free((void *)pasgmember);
     *asMemberPvt = NULL;
-    FASTUNLOCK(&asLock);
+    UNLOCK;
     return(0);
 }
 
@@ -310,16 +316,16 @@ long epicsShareAPI asChangeGroup(ASMEMBERPVT *asMemberPvt,char *newAsgName)
     if(!asActive) return(S_asLib_asNotActive);
     pasgmember = *asMemberPvt;
     if(!pasgmember) return(S_asLib_badMember);
-    FASTLOCK(&asLock);
+    LOCK;
     if(pasgmember->pasg) {
 	ellDelete(&pasgmember->pasg->memberList,(ELLNODE *)pasgmember);
     } else {
 	errMessage(-1,"Logic error in asChangeGroup");
-	FASTUNLOCK(&asLock);
+	UNLOCK;
 	exit(-1);
     }
-    status = asAddMember(asMemberPvt,newAsgName);
-    FASTUNLOCK(&asLock);
+    status = asAddMemberPvt(asMemberPvt,newAsgName);
+    UNLOCK;
     return(status);
 }
 
@@ -358,10 +364,10 @@ long epicsShareAPI asAddClient(ASCLIENTPVT *pasClientPvt,ASMEMBERPVT asMemberPvt
     pasgclient->level = asl;
     pasgclient->user = user;
     pasgclient->host = host;
-    FASTLOCK(&asLock);
+    LOCK;
     ellAdd(&pasgmember->clientList,(ELLNODE *)pasgclient);
     status = asComputePvt(pasgclient);
-    FASTUNLOCK(&asLock);
+    UNLOCK;
     return(status);
 }
 
@@ -372,12 +378,12 @@ long epicsShareAPI asChangeClient(ASCLIENTPVT asClientPvt,int asl,char *user,cha
 
     if(!asActive) return(S_asLib_asNotActive);
     if(!pasgclient) return(S_asLib_badClient);
-    FASTLOCK(&asLock);
+    LOCK;
     pasgclient->level = asl;
     pasgclient->user = user;
     pasgclient->host = host;
     status = asComputePvt(pasgclient);
-    FASTUNLOCK(&asLock);
+    UNLOCK;
     return(status);
 }
 
@@ -388,15 +394,15 @@ long epicsShareAPI asRemoveClient(ASCLIENTPVT *asClientPvt)
 
     if(!asActive) return(S_asLib_asNotActive);
     if(!pasgclient) return(S_asLib_badClient);
-    FASTLOCK(&asLock);
+    LOCK;
     pasgMember = pasgclient->pasgMember;
     if(!pasgMember) {
 	errMessage(-1,"asRemoveClient: No ASGMEMBER");
-	FASTUNLOCK(&asLock);
+	UNLOCK;
 	return(-1);
     }
     ellDelete(&pasgMember->clientList,(ELLNODE *)pasgclient);
-    FASTUNLOCK(&asLock);
+    UNLOCK;
     freeListFree(freeListPvt,pasgclient);
     *asClientPvt = NULL;
     return(0);
@@ -409,10 +415,10 @@ long epicsShareAPI asRegisterClientCallback(ASCLIENTPVT asClientPvt,
 
     if(!asActive) return(S_asLib_asNotActive);
     if(!pasgclient) return(S_asLib_badClient);
-    FASTLOCK(&asLock);
+    LOCK;
     pasgclient->pcallback = pcallback;
     (*pasgclient->pcallback)(pasgclient,asClientCOAR);
-    FASTUNLOCK(&asLock);
+    UNLOCK;
     return(0);
 }
 
@@ -430,9 +436,9 @@ void epicsShareAPI asPutClientPvt(ASCLIENTPVT asClientPvt,void *userPvt)
     ASGCLIENT	*pasgclient = asClientPvt;
     if(!asActive) return;
     if(!pasgclient) return;
-    FASTLOCK(&asLock);
+    LOCK;
     pasgclient->userPvt = userPvt;
-    FASTUNLOCK(&asLock);
+    UNLOCK;
 }
 
 long epicsShareAPI asComputeAllAsg(void)
@@ -440,9 +446,9 @@ long epicsShareAPI asComputeAllAsg(void)
     long status;
 
     if(!asActive) return(S_asLib_asNotActive);
-    FASTLOCK(&asLock);
+    LOCK;
     status = asComputeAllAsgPvt();
-    FASTUNLOCK(&asLock);
+    UNLOCK;
     return(status);
 }
 
@@ -451,9 +457,9 @@ long epicsShareAPI asComputeAsg(ASG *pasg)
     long status;
 
     if(!asActive) return(S_asLib_asNotActive);
-    FASTLOCK(&asLock);
+    LOCK;
     status = asComputeAsgPvt(pasg);
-    FASTUNLOCK(&asLock);
+    UNLOCK;
     return(status);
 }
 
@@ -462,9 +468,9 @@ long epicsShareAPI asCompute(ASCLIENTPVT asClientPvt)
     long status;
 
     if(!asActive) return(S_asLib_asNotActive);
-    FASTLOCK(&asLock);
+    LOCK;
     status = asComputePvt(asClientPvt);
-    FASTUNLOCK(&asLock);
+    UNLOCK;
     return(status);
 }
 
@@ -818,17 +824,21 @@ static long asAddMemberPvt(ASMEMBERPVT *pasMemberPvt,char *asgName)
     ASGMEMBER	*pasgmember;
     ASG		*pgroup;
     ASGCLIENT	*pasgclient;
+    size_t	len;
 
     if(*pasMemberPvt) {
 	pasgmember = *pasMemberPvt;
+	free((void *)pasgmember->asgName);
     } else {
 	pasgmember = asCalloc(1,sizeof(ASGMEMBER));
 	ellInit(&pasgmember->clientList);
 	*pasMemberPvt = pasgmember;
     }
-    pasgmember->asgName = asgName;
+    len = (asgName ? (strlen(asgName)+1) : 1);
+    pasgmember->asgName = asCalloc(len,sizeof(char));
+    if(asgName) strcpy(pasgmember->asgName,asgName);
     pgroup = (ASG *)ellFirst(&pasbase->asgList);
-    while(pgroup) {
+    if(strlen(pasgmember->asgName)>0) while(pgroup) {
 	if(strcmp(pgroup->name,pasgmember->asgName)==0) goto got_it;
 	pgroup = (ASG *)ellNext((ELLNODE *)pgroup);
     }

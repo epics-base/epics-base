@@ -1,6 +1,5 @@
 integer	[0-9]
-name	[a-zA-Z0-9_\.]
-pvname  [a-zA-Z0-9_\-:\.\[\]<>;]
+name	[a-zA-Z0-9_\-:\.\[\]<>;]
 notquote [^\"]
 escapequote \\\"
 string {notquote}|{escapequote}
@@ -37,19 +36,13 @@ INP[A-L] {/* If A-L is changed then ASMAXINP must also be changed*/
 	return(tokenINTEGER);
 	}
 
-{name}+ {
+{name}+ { /*unquoted string*/
 	yylval.Str=(char *)asCalloc(1,strlen(yytext)+1);
 	strcpy(yylval.Str,yytext);
 	return(tokenNAME);
 	}
 
-{pvname}+ {
-        yylval.Str=(char *)asCalloc(1,strlen(yytext)+1);
-        strcpy(yylval.Str,yytext);
-        return(tokenPVNAME);
-    }
-
-\"{string}*\" {
+\"{string}*\" { /*quoted string*/
         yylval.Str=(char *)asCalloc(1,strlen(yytext)+1);
         /* making sure that neither double quote gets passed back */
         strcpy(yylval.Str,yytext+1);

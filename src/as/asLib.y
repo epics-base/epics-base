@@ -16,7 +16,7 @@ static ASGRULE *yyAsgRule=NULL;
 %token tokenUAG tokenHAG tokenASG tokenRULE tokenCALC 
 %token <Str> tokenINP
 %token <Int> tokenINTEGER
-%token <Str> tokenNAME tokenPVNAME tokenSTRING
+%token <Str> tokenNAME  tokenSTRING
 
 %union
 {
@@ -126,7 +126,7 @@ inp_config:	tokenINP '(' inp_body ')'
 	}
 	;
 
-inp_body:	tokenNAME | tokenPVNAME
+inp_body:	tokenNAME
 	;
 
 rule_config:	tokenRULE rule_head rule_body

@@ -284,7 +284,7 @@ LDCMD = $(LD) -o $@ $^
 PATH_FILTER = $(1)
 COMPILE.c = $(CC) -c $(CPPFLAGS) $(CFLAGS) $(call PATH_FILTER,$(INCLUDES)) $(SOURCE_FLAG)
 COMPILE.cpp = $(CCC) -c $(CPPFLAGS) $(CXXFLAGS) $(call PATH_FILTER,$(INCLUDES)) $(SOURCE_CXXFLAG)
-CFLAGS_ctdt = $(filter-out -pedantic,$(CFLAGS))
+CFLAGS_ctdt = $(filter-out -pedantic,$(CFLAGS)) -fdollars-in-identifiers 
 COMPILE.ctdt = $(CC) -c $(CPPFLAGS) $(CFLAGS_ctdt) $(call PATH_FILTER,$(INCLUDES)) $(SOURCE_FLAG)
 
 #--------------------------------------------------

@@ -32,12 +32,13 @@
  * .03	08-13-91	mrk	Added extra null arg to db_get_field calls
  */
 #include	<vxWorks.h>
-#include	<types.h>
+#include	<stdlib.h>
+#include	<stdio.h>
 #include        <db_access.h>
 
 
 /* function declarations */
-static print_returned();
+static void print_returned();
 
 
 char		tgf_buffer[600];
@@ -100,8 +101,6 @@ short	index;
 	struct db_addr		addr;
 	struct db_addr		*paddr = &addr;
 	char			buffer[500];
-	struct dbr_ctrl_enum	test_enum;
-	short			i;
 	short			shortvalue;
 	long			longvalue;
 	float			floatvalue;
@@ -189,7 +188,7 @@ short	index;
  *
  * print out the values in a database access interface structure
  */
-static print_returned(type,pbuffer,count)
+static void print_returned(type,pbuffer,count)
   short	type;
   char	*pbuffer;
   short		count;

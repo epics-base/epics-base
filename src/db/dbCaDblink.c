@@ -47,9 +47,8 @@
 
 /* needed for NULL */
 #include <vxWorks.h>
-
-/* needed for typedef of caddr_t which is used in struct dbAddr */
-#include <types.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 /* needed for PVNAME_SZ and FLDNAME_SZ ... must be before dbAccess.h */
 #include <dbDefs.h>
@@ -335,7 +334,6 @@ long *poptions;
 long *pnrequest;
 {
 
-char errmsg[100];
 long rc;
 
     if (psource_dbaddr)
@@ -417,7 +415,6 @@ unsigned short new_severity;
 unsigned short new_status;
 {
 
-char errmsg[100];
 long rc;
 
     if (pdest_dbaddr)
@@ -468,7 +465,6 @@ void *pval;
 long nelements;
 {
 
-char errmsg[100];
 long rc;
 
     if (pdest_dbaddr)

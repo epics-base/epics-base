@@ -77,7 +77,6 @@
 #include	<taskLib.h>
 #include	<vxLib.h>
 #include	<tickLib.h>
-#include	<lstLib.h>
 
 #include	<fast_lock.h>
 #include	<cvtFast.h>

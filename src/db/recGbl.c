@@ -43,7 +43,6 @@
 #include	<vxWorks.h>
 #include	<limits.h>
 #include	<types.h>
-#include	<lstLib.h>
 #include	<stdioLib.h>
 #include	<strLib.h>
 

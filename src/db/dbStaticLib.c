@@ -42,7 +42,7 @@
 #include <math.h>
 
 #include <errMdef.h>
-#include <lstLib.h>
+#include <dllEpicsLib.h>
 #include <dbDefs.h>
 #include <sdrHeader.h>
 #include <cvtFast.h>
@@ -389,13 +389,13 @@ void dbFreeBase(pdbbase)
 DBBASE *pdbbase;
 #endif /*__STDC__*/
 {
-    LIST          **ppvd = (LIST **) pdbbase->ppvd;
+    DLLLIST          **ppvd = (DLLLIST **) pdbbase->ppvd;
     struct recType *precType = (struct recType *) pdbbase->precType;
     struct recLoc  *precLoc;
     struct recHeader *precHeader = (struct recHeader *) pdbbase->precHeader;
     RECNODE        *precnode;
     RECNODE        *pnext;
-    LIST           *preclist;
+    DLLLIST           *preclist;
     int             recType;
     if (!pdbbase || !ppvd || !precType) return;
     dbPvdFreeMem(pdbbase);
@@ -407,11 +407,11 @@ DBBASE *pdbbase;
 	    free((void *) precLoc);
 	    continue;
 	}
-	precnode = (RECNODE *) lstFirst(preclist);
+	precnode = (RECNODE *) dllFirst(preclist);
 	while(precnode) {
-	    pnext = (RECNODE *) lstNext((NODE *) precnode);
+	    pnext = (RECNODE *) dllNext((DLLNODE *) precnode);
 	    free(precnode->precord);
-	    lstDelete(preclist, (NODE*)precnode);
+	    dllDelete(preclist, (DLLNODE*)precnode);
 	    dbPvdDelete(pdbbase,precnode);
 	    free((void *)precnode);
 	    precnode = pnext;
@@ -687,7 +687,7 @@ char *precordName;
     DBBASE		*pdbbase = pdbentry->pdbbase;
     int			record_type = pdbentry->record_type;
     PVDENTRY       	*ppvd;
-    LIST           	*preclist = NULL;
+    DLLLIST           	*preclist = NULL;
     RECNODE        	*precnode = NULL;
     RECNODE        	*pNewRecNode = NULL;
     void           	*pNewRecord = NULL;
@@ -707,8 +707,8 @@ char *precordName;
     precLoc = precHeader->papRecLoc[record_type];
     if ((precLoc->preclist) == NULL) {
 	/* allocate new list for this record type */
-	precLoc->preclist = dbCalloc(1,sizeof(LIST));
-	lstInit(precLoc->preclist);
+	precLoc->preclist = dbCalloc(1,sizeof(DLLLIST));
+	dllInit(precLoc->preclist);
     }
     preclist = precLoc->preclist;
     rec_size = precTypDes->rec_size;
@@ -721,13 +721,13 @@ char *precordName;
     init_record(pdbbase, pNewRecord, record_type);
     pNewRecNode->precord = pNewRecord;
     /* install record node in list in sorted postion */
-    precnode = (RECNODE *)lstFirst(preclist);
+    precnode = (RECNODE *)dllFirst(preclist);
     while(precnode && strcmp(precordName,(char*)precnode->precord) > 0)
-	precnode = (RECNODE *)lstNext((NODE*)precnode);
+	precnode = (RECNODE *)dllNext((DLLNODE*)precnode);
     if(precnode)
-	lstInsert(preclist, lstPrevious((NODE*)precnode) ,(NODE *)pNewRecNode);
+	dllInsert(preclist, dllPrevious((DLLNODE*)precnode) ,(DLLNODE *)pNewRecNode);
     else
-	lstAdd(preclist, (NODE*)pNewRecNode);
+	dllAdd(preclist, (DLLNODE*)pNewRecNode);
     ppvd = dbPvdAdd(pdbbase,record_type,pNewRecNode);
     if(!ppvd) {errMessage(-1,"Logic Err: Could not add to PVD");return(-1);}
     pdbentry->precnode = pNewRecNode;
@@ -745,13 +745,13 @@ DBENTRY *pdbentry;
     DBBASE		*pdbbase = pdbentry->pdbbase;
     int			record_type = pdbentry->record_type;
     RECNODE		*precnode = pdbentry->precnode;
-    LIST           	*preclist;
+    DLLLIST           	*preclist;
 
 
     if (!precnode) return (-1);
     preclist = pdbbase->precHeader->papRecLoc[record_type]->preclist;
     free(precnode->precord);
-    lstDelete(preclist, (NODE*)precnode);
+    dllDelete(preclist, (DLLNODE*)precnode);
     dbPvdDelete(pdbbase,precnode);
     free((void *)precnode);
     pdbentry->precnode = NULL;
@@ -807,7 +807,7 @@ DBENTRY *pdbentry;
     pdbentry->record_type = record_type;
     if(!(precLoc=GET_PRECLOC(precHeader,record_type))) return(S_dbLib_recNotFound);
     if(!precLoc->preclist) return(S_dbLib_recNotFound);
-    precnode = (RECNODE *)lstFirst(precLoc->preclist);
+    precnode = (RECNODE *)dllFirst(precLoc->preclist);
     if(!precnode) return(S_dbLib_recNotFound);
     pdbentry->precnode = precnode;
     return(0);
@@ -824,7 +824,7 @@ DBENTRY *pdbentry;
     long	status=0;
 
     if(!precnode) return(S_dbLib_recNotFound);
-    precnode = (RECNODE *)lstNext((NODE *)precnode);
+    precnode = (RECNODE *)dllNext((DLLNODE *)precnode);
     if(!precnode) status = S_dbLib_recNotFound;
     pdbentry->precnode = precnode;
     pdbentry->pfield = NULL;
@@ -847,7 +847,7 @@ DBENTRY *pdbentry;
     if(!(precLoc=GET_PRECLOC(precHeader,record_type)))
 	return(0);
     if(!precLoc->preclist) return(0);
-    return(lstCount(precLoc->preclist));
+    return(dllCount(precLoc->preclist));
 }
 
 #ifdef __STDC__
@@ -889,7 +889,7 @@ char *newName;
     struct recHeader	*precHeader = (struct recHeader *) pdbbase->precHeader;
     char		*precord;
     PVDENTRY		*ppvd;
-    LIST		*preclist;
+    DLLLIST		*preclist;
     RECNODE		*plistnode;
 
     if(!precnode) return(S_dbLib_recNotFound);
@@ -900,14 +900,14 @@ char *newName;
     if(!ppvd) {errMessage(-1,"Logic Err: Could not add to PVD");return(-1);}
     /*remove from record list and reinstall in sorted order*/
     preclist = precHeader->papRecLoc[record_type]->preclist;
-    lstDelete(preclist, (NODE*)precnode);
-    plistnode = (RECNODE *)lstFirst(preclist);
+    dllDelete(preclist, (DLLNODE*)precnode);
+    plistnode = (RECNODE *)dllFirst(preclist);
     while(plistnode && strcmp(newName,(char*)plistnode->precord) < 0)
-	plistnode = (RECNODE *)lstNext((NODE*)plistnode);
+	plistnode = (RECNODE *)dllNext((DLLNODE*)plistnode);
     if(plistnode)
-	lstInsert(preclist, lstPrevious((NODE*)plistnode) ,(NODE *)precnode);
+	dllInsert(preclist, dllPrevious((DLLNODE*)plistnode) ,(DLLNODE *)precnode);
     else
-	lstAdd(preclist, (NODE*)precnode);
+	dllAdd(preclist, (DLLNODE*)precnode);
     return(0);
 }
 
@@ -3768,7 +3768,7 @@ FILE *fp;
 #endif /*__STDC__*/
 {
     RECNODE        *precnode;
-    LIST           *preclist;
+    DLLLIST           *preclist;
     int             no_entries;
     unsigned        rec_size;	/* set to record size */
     struct sdrHeader sdrHeader;
@@ -3796,7 +3796,7 @@ FILE *fp;
 	if ((precLoc = GET_PRECLOC(precHeader, recType)) == NULL) continue;
 	if((preclist = precLoc->preclist) == NULL) continue;
 	/* set up and write the SDR_DB_RECORDS sdrHeader */
-	no_entries = lstCount(preclist);
+	no_entries = dllCount(preclist);
 	rec_size = pRecTypDes->rec_size;
 	memset((char *) &sdrHeader, '\0', sizeof(struct sdrHeader));
 	sdrHeader.magic = DBMAGIC;
@@ -3812,9 +3812,9 @@ FILE *fp;
 	    errMessage(-1,"dbWrite: incomplete write");
 	    return (-1);
 	}
-	for (precnode = (RECNODE *) lstFirst(preclist);
+	for (precnode = (RECNODE *) dllFirst(preclist);
 		precnode != NULL;
-		precnode = (RECNODE *) lstNext((NODE*)precnode)) {
+		precnode = (RECNODE *) dllNext((DLLNODE*)precnode)) {
 	    /* write  each record of this type contiguous */
 	    if ((fwrite(precnode->precord, (int) rec_size, 1, fp)) != 1) {
 	        errMessage(-1,"dbWrite: incomplete write");
@@ -3902,9 +3902,9 @@ void    dbPvdInitPvt(pdbbase)
 DBBASE *pdbbase;
 #endif /*__STDC__*/
 {
-    LIST **ppvd;
+    DLLLIST **ppvd;
 
-    ppvd = dbCalloc(HASH_NO, sizeof(LIST *));
+    ppvd = dbCalloc(HASH_NO, sizeof(DLLLIST *));
     pdbbase->ppvd = (void *) ppvd;
     return;
 }
@@ -3919,17 +3919,17 @@ int lenName;
 #endif /*__STDC__*/
 {
     unsigned short  hashInd;
-    LIST          **ppvd = (LIST **) pdbbase->ppvd;
-    LIST           *pvdlist;
+    DLLLIST          **ppvd = (DLLLIST **) pdbbase->ppvd;
+    DLLLIST           *pvdlist;
     PVDENTRY       *ppvdNode;
     
     hashInd = hash(name, lenName);
     if ((pvdlist=ppvd[hashInd]) == NULL) return (NULL);
-    ppvdNode = (PVDENTRY *) lstFirst(pvdlist);
+    ppvdNode = (PVDENTRY *) dllFirst(pvdlist);
     while(ppvdNode) {
 	if(strcmp(name,(char *)ppvdNode->precnode->precord) == 0)
 		return(ppvdNode);
-	ppvdNode = (PVDENTRY *) lstNext((NODE*)ppvdNode);
+	ppvdNode = (PVDENTRY *) dllNext((DLLNODE*)ppvdNode);
     }
     return (NULL);
 }
@@ -3944,8 +3944,8 @@ RECNODE *precnode;
 #endif /*__STDC__*/
 {
     unsigned short  hashInd;
-    LIST          **ppvd = (LIST **) pdbbase->ppvd;
-    LIST           *ppvdlist;
+    DLLLIST          **ppvd = (DLLLIST **) pdbbase->ppvd;
+    DLLLIST           *ppvdlist;
     PVDENTRY       *ppvdNode;
     int		lenName;
     char	*name=(char *)precnode->precord;
@@ -3953,17 +3953,17 @@ RECNODE *precnode;
     lenName=strlen(name);
     hashInd = hash(name, lenName);
     if (ppvd[hashInd] == NULL) {
-	ppvd[hashInd] = dbCalloc(1, sizeof(LIST));
-	lstInit(ppvd[hashInd]);
+	ppvd[hashInd] = dbCalloc(1, sizeof(DLLLIST));
+	dllInit(ppvd[hashInd]);
     }
     ppvdlist=ppvd[hashInd];
-    ppvdNode = (PVDENTRY *) lstFirst(ppvdlist);
+    ppvdNode = (PVDENTRY *) dllFirst(ppvdlist);
     while(ppvdNode) {
 	if(strcmp(name,(char *)ppvdNode->precnode->precord) == 0) return(NULL);
-	ppvdNode = (PVDENTRY *) lstNext((NODE*)ppvdNode);
+	ppvdNode = (PVDENTRY *) dllNext((DLLNODE*)ppvdNode);
     }
     ppvdNode = dbCalloc(1, sizeof(PVDENTRY));
-    lstAdd(ppvdlist, (NODE*)ppvdNode);
+    dllAdd(ppvdlist, (DLLNODE*)ppvdNode);
     ppvdNode->record_type = record_type;
     ppvdNode->precnode = precnode;
     return (ppvdNode);
@@ -3979,8 +3979,8 @@ RECNODE *precnode;
 {
     char	*name=(char *)precnode->precord;
     unsigned short  hashInd;
-    LIST        **ppvd = (LIST **) pdbbase->ppvd;
-    LIST        *ppvdlist;
+    DLLLIST        **ppvd = (DLLLIST **) pdbbase->ppvd;
+    DLLLIST        *ppvdlist;
     PVDENTRY    *ppvdNode;
     int		lenName;
     
@@ -3988,14 +3988,14 @@ RECNODE *precnode;
     hashInd = hash(name, lenName);
     if (ppvd[hashInd] == NULL)return;
     ppvdlist=ppvd[hashInd];
-    ppvdNode = (PVDENTRY *) lstFirst(ppvdlist);
+    ppvdNode = (PVDENTRY *) dllFirst(ppvdlist);
     while(ppvdNode) {
 	if(strcmp(name,(char *)ppvdNode->precnode->precord) == 0) {
-	    lstDelete(ppvdlist, (NODE*)ppvdNode);
+	    dllDelete(ppvdlist, (DLLNODE*)ppvdNode);
 	    free((void *)ppvdNode);
 	    return;
 	}
-	ppvdNode = (PVDENTRY *) lstNext((NODE*)ppvdNode);
+	ppvdNode = (PVDENTRY *) dllNext((DLLNODE*)ppvdNode);
     }
     return;
 }
@@ -4008,8 +4008,8 @@ DBBASE *pdbbase;
 #endif /*__STDC__*/
 {
     unsigned short  hashInd;
-    LIST          **ppvd = (LIST **) pdbbase->ppvd;
-    LIST           *ppvdlist;
+    DLLLIST          **ppvd = (DLLLIST **) pdbbase->ppvd;
+    DLLLIST           *ppvdlist;
     PVDENTRY       *ppvdNode;
     PVDENTRY       *next;
     
@@ -4017,10 +4017,10 @@ DBBASE *pdbbase;
     for (hashInd=0; hashInd<HASH_NO; hashInd++) {
 	if(ppvd[hashInd] == NULL) continue;
 	ppvdlist=ppvd[hashInd];
-	ppvdNode = (PVDENTRY *) lstFirst(ppvdlist);
+	ppvdNode = (PVDENTRY *) dllFirst(ppvdlist);
 	while(ppvdNode) {
-	    next = (PVDENTRY *) lstNext((NODE*)ppvdNode);
-	    lstDelete(ppvdlist,(NODE*)ppvdNode);
+	    next = (PVDENTRY *) dllNext((DLLNODE*)ppvdNode);
+	    dllDelete(ppvdlist,(DLLNODE*)ppvdNode);
 	    free((void *)ppvdNode);
 	    ppvdNode = next;
 	}
@@ -4037,8 +4037,8 @@ DBBASE *pdbbase;
 #endif /*__STDC__*/
 {
     unsigned short  hashInd;
-    LIST          **ppvd = (LIST **) pdbbase->ppvd;
-    LIST           *ppvdlist;
+    DLLLIST          **ppvd = (DLLLIST **) pdbbase->ppvd;
+    DLLLIST           *ppvdlist;
     PVDENTRY       *ppvdNode;
     int		number;
     
@@ -4047,13 +4047,13 @@ DBBASE *pdbbase;
     for (hashInd=0; hashInd<HASH_NO; hashInd++) {
 	if(ppvd[hashInd] == NULL) continue;
 	ppvdlist=ppvd[hashInd];
-	ppvdNode = (PVDENTRY *) lstFirst(ppvdlist);
-	printf(" %3.3hd=%3.3d\n",hashInd,lstCount(ppvdlist));
+	ppvdNode = (PVDENTRY *) dllFirst(ppvdlist);
+	printf(" %3.3hd=%3.3d\n",hashInd,dllCount(ppvdlist));
 	number=0;
 	while(ppvdNode) {
 	    printf(" %s",(char *)ppvdNode->precnode->precord);
 	    if(number++ ==2) {number=0;printf("\n        ");}
-	    ppvdNode = (PVDENTRY *) lstNext((NODE*)ppvdNode);
+	    ppvdNode = (PVDENTRY *) dllNext((DLLNODE*)ppvdNode);
 	}
     }
     printf("\nEnd of Process Variable Directory\n");

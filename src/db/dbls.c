@@ -66,11 +66,11 @@
 #include <recSup.h>
 #endif
 
-#include <lstLib.h>
 #include <dbBase.h>
 #include <dbRecDes.h>
 #include <dbRecords.h>
 #include <errMdef.h>
+#include <errno.h>
 #include <error.h>
 #include <sdrHeader.h>
 
@@ -87,18 +87,18 @@ extern struct dbBase *pdbBase;
 #endif
 
 /* forward references */
-static void            DbRecType();
-static void            DrvSup();
-static void            DevSup();
-static void            DbRecDes();
-static void            CvtTable();
-static void            ChoiceRec();
-static void            ChoiceDev();
-static void            ChoiceCvt();
-static void            ChoiceGbl();
-static void            DbErrDes();
-static void            DbRecords();
-static void            RecSup();
+void            DbRecType();
+void            DrvSup();
+void            DevSup();
+void            DbRecDes();
+void            CvtTable();
+void            ChoiceRec();
+void            ChoiceDev();
+void            ChoiceCvt();
+void            ChoiceGbl();
+void            DbErrDes();
+void            DbRecords();
+void            RecSup();
 int             getSelection();
 
 static char     buffer[512];
@@ -219,7 +219,7 @@ int dbls()
 	printf("ENTER FULL_PATH_NAME OF OUTPUT LISTING FILE : ");
 	scanf("%s", fname);
 	if ((fp = fopen(fname, "a")) == NULL) {
-	    printf("dbls: fopen error errno=%d\nfile=%s\n", MYERRNO, fname);
+	    printf("dbls: fopen error errno=%d\nfile=%s\n", errno, fname);
 	    printf("TRY:  < cd \"/full_dir_path/.\" > to correct this failure\n");
 	    return (-1);
 	}

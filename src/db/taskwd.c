@@ -32,25 +32,11 @@
  * .01	07-24-91	mrk	Replacement for special purpose scan watchdog
  */
 
-
-/* Public routines
- *  taskwdInit()			Initialize task watchdor
- *
- *  taskwdInsert(tid,callback,arg)	Insert in lists of tasks to watch
- *	int	tid			Task Id
- *	VOIDFUNCPTR callback		Address of callback routine
- *	void 	*arg			Argument to pass to callback
- *
- *  taskwdRemove(tid)			Remove from list of tasks to watch
- *	
- *	int	tid			Task Id
- */
-
 #include	<vxWorks.h>
 #include	<vxLib.h>
 #include	<stdlib.h>
 #include	<stdio.h>
-#include 	<lstLib.h>
+#include 	<dllEpicsLib.h>
 #include 	<taskLib.h>
 
 #include        <dbDefs.h>
@@ -60,14 +46,15 @@
 #include        <fast_lock.h>
 
 struct task_list {
-	NODE		node;
+	DLLNODE		node;
 	VOIDFUNCPTR	callback;
 	void		*arg;
 	int		tid;
 	int		suspended;
 };
 
-static LIST list;
+static DLLLIST list;
+static DLLLIST anylist;
 static FAST_LOCK lock;
 static int taskwdid=0;
 volatile int taskwdOn=TRUE;
@@ -84,7 +71,8 @@ static void freeList(struct task_list *pt);
 void taskwdInit()
 {
     FASTLOCKINIT(&lock);
-    lstInit(&list);
+    dllInit(&list);
+    dllInit(&anylist);
     taskwdid = taskSpawn(TASKWD_NAME,TASKWD_PRI,
 			TASKWD_OPT,TASKWD_STACK,(FUNCPTR )taskwdTask,
 			0,0,0,0,0,0,0,0,0,0);
@@ -96,8 +84,21 @@ void taskwdInsert(int tid,VOIDFUNCPTR callback,void *arg)
 
     FASTLOCK(&lock);
     pt = allocList();
-    lstAdd(&list,(void *)pt);
+    dllAdd(&list,(void *)pt);
     pt->suspended = FALSE;
+    pt->tid = tid;
+    pt->callback = callback;
+    pt->arg = arg;
+    FASTUNLOCK(&lock);
+}
+
+void taskwdAnyInsert(int tid,VOIDFUNCPTR callback,void *arg)
+{
+    struct task_list *pt;
+
+    FASTLOCK(&lock);
+    pt = allocList();
+    dllAdd(&anylist,(void *)pt);
     pt->tid = tid;
     pt->callback = callback;
     pt->arg = arg;
@@ -109,18 +110,37 @@ void taskwdRemove(int tid)
     struct task_list *pt;
 
     FASTLOCK(&lock);
-    (void *)pt = lstFirst(&list);
+    pt = (struct task_list *)dllFirst(&list);
     while(pt!=NULL) {
 	if (tid == pt->tid) {
-	    lstDelete(&list,(void *)pt);
+	    dllDelete(&list,(void *)pt);
 	    freeList(pt);
 	    FASTUNLOCK(&lock);
 	    return;
 	}
-	(void *)pt = lstNext((void *)pt);
+	pt = (struct task_list *)dllNext((DLLNODE *)pt);
     }
     FASTUNLOCK(&lock);
     errMessage(-1,"taskwdRemove failed");
+}
+
+void taskwdAnyRemove(int tid)
+{
+    struct task_list *pt;
+
+    FASTLOCK(&lock);
+    pt = (struct task_list *)dllFirst(&anylist);
+    while(pt!=NULL) {
+	if (tid == pt->tid) {
+	    dllDelete(&anylist,(void *)pt);
+	    freeList(pt);
+	    FASTUNLOCK(&lock);
+	    return;
+	}
+	pt = (struct task_list *)dllNext((void *)pt);
+    }
+    FASTUNLOCK(&lock);
+    errMessage(-1,"taskwdanyRemove failed");
 }
 
 static void taskwdTask(void)
@@ -130,18 +150,25 @@ static void taskwdTask(void)
     while(TRUE) {
 	if(taskwdOn) {
 	    FASTLOCK(&lock);
-	    (void *)pt = lstFirst(&list);
-	    while(pt!=NULL) {
-		(void *)next = lstNext((void *)pt);
+	    pt = (struct task_list *)dllFirst(&list);
+	    while(pt) {
+		next = (struct task_list *)dllNext((void *)pt);
 		if(taskIsSuspended(pt->tid)) {
 		    char *pname;
 		    char message[100];
 
 		    pname = taskName(pt->tid);
 		    if(!pt->suspended) {
+			struct task_list *ptany,*anynext;
+
 			sprintf(message,"task %x %s suspended",pt->tid,pname);
 			errMessage(-1,message);
 			if(pt->callback) (pt->callback)(pt->arg);
+			ptany = (struct task_list *)dllFirst(&anylist);
+			while(ptany) {
+			    if(ptany->callback) (ptany->callback)(ptany->arg,pt->tid);
+			    ptany = (struct task_list *)dllNext((DLLNODE *)ptany);
+			}
 		    }
 		    pt->suspended = TRUE;
 		}

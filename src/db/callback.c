@@ -31,18 +31,20 @@
  * -----------------
  * .01	12-12-91	mrk	moved from dbScan.c to callback.c
  * .02	04-23-92	jba	Fixed test on priority
+ * .03	06-28-93	mrk	In callbackRequest replaced errMessage by logMsg
 */
 
 #include	<vxWorks.h>
 #include	<stdlib.h>
-#include	<types.h>
 #include	<semLib.h>
 #include	<rngLib.h>
-#include 	<lstLib.h>
+#include 	<logLib.h>
+#include 	<intLib.h>
 
 #include	<dbDefs.h>
 #include	<callback.h>
 #include	<taskwd.h>
+#include	<errMdef.h>
 #include	<task_params.h>
 
 #define QUEUESIZE 1000
@@ -52,8 +54,8 @@ static int callbackTaskId[NUM_CALLBACK_PRIORITIES];
 volatile int callbackRestart=FALSE;
 
 /* forward references */
-static void wdCallback(long);	/*callback from taskwd*/
-static void start();		/*start or restart a callbackTask*/
+static void wdCallback(long ind); /*callback from taskwd*/
+static void start(int ind); /*start or restart a callbackTask*/
 
 /*public routines */
 long callbackInit()
@@ -76,10 +78,8 @@ void callbackRequest(CALLBACK *pcallback)
     static int status;
 
     if(priority<0 || priority>=(NUM_CALLBACK_PRIORITIES)) {
-	char msg[80];
 
-	sprintf(msg,"callbackRequest called with invalid priority=%d",priority);
-	errMessage(-1,msg);
+	logMsg("callbackRequest called with invalid priority\n",0,0,0,0,0,0);
 	return;
     }
     lockKey = intLock();
@@ -89,7 +89,7 @@ void callbackRequest(CALLBACK *pcallback)
     if((status=semGive(callbackSem[priority]))!=OK) {
 /*semGive randomly returns garbage value*/
 /*
-		errMessage(-1,"semGive returned error in callbackRequest\n");
+	logMsg("semGive returned error in callbackRequest\n",0,0,0,0,0,0);
 */
     }
     return;
@@ -136,7 +136,8 @@ static void start(int ind)
 	errMessage(0,"rngCreate failed while starting a callback task");
     callbackTaskId[ind] = taskSpawn(CALLBACK_NAME,priority,
     			CALLBACK_OPT,CALLBACK_STACK,
-    			(FUNCPTR)callbackTask,ind,0,0,0,0,0,0,0,0,0);
+    			(FUNCPTR)callbackTask,ind,
+			0,0,0,0,0,0,0,0,0);
     if(callbackTaskId[ind]==ERROR) {
 	errMessage(0,"Failed to spawn a callback task");
 	return;

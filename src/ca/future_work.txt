@@ -29,3 +29,11 @@ change the new handlers to be nothrow also if this is
 the design goal.
 
 o test the library when an IOC is running low on memory.
+
+o The new CA interface should be multi-threaded by default.
+We should continue to support a single-threaded interface,
+but this would should be restricted so that it always
+runs with preemptive callback disable and no threads
+may join in. Alternatively, the new CA interface could
+be 100% preemptive multi-threaded and the old interface
+could be layered on this.

@@ -1,0 +1,11 @@
+open aota1 
+user jeffhill 
+mkdir [.cas]
+cd [.cas]
+prompt
+lcd ~/epics/base/src/cas
+lcd os/vms
+put BUILD_VMS.COM
+lcd ../../../libCom
+lcd ../ca
+lcd ../../include

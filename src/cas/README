@@ -1,0 +1,29 @@
+
+$Id$
+
+README file for the EPICS Channel Access Server
+
+Author Jeff Hill johill@lanl.gov 
+
+$Log$
+
+Directory Structure
+-------------------
+o example - 	example server tool
+o generic - 	generic server lib source code 
+o os -		os dependnet server lib source code
+o io -		io dependnet server lib source code
+o build -	server lib object code
+
+Internal Source Code Naming Conventions
+---------------------------------------
+o API class X will almost always have associated internal (usually 
+	private base) class named XI
+o for class X there will be
+	o X.h - the class declaration (and simple inlines)
+	o XIL.h - complex inline functions (that will not
+		compile with until the compiler has seen
+		the declarations of other classes)
+	o X.cc - all other source code for the class
+
+

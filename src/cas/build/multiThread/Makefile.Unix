@@ -1,0 +1,78 @@
+
+EPICS = ../../../..
+CAS = ../../..
+SRC = $(CAS)/generic
+IOSRC = $(CAS)/io/bsdSocket
+OSSRC = $(CAS)/os/posix
+VPATH = $(SRC) $(IOSRC) $(OSSRC) 
+
+include Target.include
+include $(EPICS)/config/CONFIG_BASE
+
+USR_INCLUDES = -I$(CAS)/../ca -I$(OSSRC) -I$(IOSRC) -I$(CAS)/gdd  
+USR_LDLIBS = -lcas -lm
+USR_LDFLAGS = -L.
+
+DEPLIBS_BASE = $(EPICS_BASE_LIB)
+
+#CPLUSPLUS = G++
+
+SRCS.cc += $(SRC)/caServer.cc 
+SRCS.cc += $(SRC)/casClient.cc 
+SRCS.cc += $(SRC)/casDGClient.cc 
+SRCS.cc += $(SRC)/casStreamClient.cc 
+SRCS.cc += $(SRC)/casPV.cc 
+SRCS.cc += $(SRC)/casPVI.cc 
+SRCS.cc += $(SRC)/casChannel.cc 
+SRCS.cc += $(SRC)/casChannelI.cc 
+SRCS.cc += $(SRC)/casClientMon.cc 
+SRCS.cc += $(SRC)/casMsgIO.cc 
+SRCS.cc += $(SRC)/casAsyncIO.cc 
+SRCS.cc += $(SRC)/casAsyncIOI.cc 
+SRCS.cc += $(SRC)/casEventSys.cc 
+SRCS.cc += $(SRC)/outBuf.cc 
+SRCS.cc += $(SRC)/inBuf.cc 
+SRCS.cc += $(SRC)/casMapDBR.cc
+
+SRCS.cc += $(OSSRC)/casDGOS.cc
+SRCS.cc += $(OSSRC)/casServerOS.cc
+SRCS.cc += $(OSSRC)/casStreamOS.cc
+
+SRCS.cc += $(IOSRC)/casDGIO.cc
+SRCS.cc += $(IOSRC)/casStreamIO.cc
+SRCS.cc += $(IOSRC)/caServerIO.cc
+
+LIBOBJS += caServer.o
+LIBOBJS += casClient.o
+LIBOBJS += casDGClient.o
+LIBOBJS += casStreamClient.o
+LIBOBJS += casPV.o
+LIBOBJS += casPVI.o
+LIBOBJS += casChannel.o
+LIBOBJS += casChannelI.o
+LIBOBJS += casClientMon.o
+LIBOBJS += casMsgIO.o
+LIBOBJS += casAsyncIO.o
+LIBOBJS += casAsyncIOI.o
+LIBOBJS += casEventSys.o
+LIBOBJS += outBuf.o
+LIBOBJS += inBuf.o 
+LIBOBJS += casMapDBR.o
+
+LIBOBJS += casDGOS.o
+LIBOBJS += casServerOS.o
+LIBOBJS += casStreamOS.o
+
+LIBOBJS += casDGIO.o
+LIBOBJS += casStreamIO.o
+LIBOBJS += caServerIO.o
+
+LIBNAME = libcas.a
+
+include $(EPICS)/config/RULES.Unix
+
+obj: $(LIBOBJS) 
+
+clean::
+	@$(RM) -rf Templates.DB
+

@@ -1,0 +1,92 @@
+
+EPICS = ../../../../..
+CAS = ../../
+
+include Target.include
+include $(EPICS)/config/CONFIG_BASE
+
+#CPLUSPLUS = G++
+
+GDD = $(CAS)/gdd
+
+CAS_INCLUDES = -I$(CAS)/generic -I$(CAS)/../ca
+
+USR_INCLUDES = -I$(GDD) $(CAS_INCLUDES) 
+ifeq ($(CPLUSPLUS),G++)
+USR_LDLIBS = -lca -lCom -lgdd -lm -liberty
+else
+USR_LDLIBS = -lca -lCom -lgdd -lm
+endif
+
+USR_LDFLAGS = -L$(GDD)/sun4/
+
+DEPLIBS_BASE = $(EPICS_BASE_LIB)
+DEPLIBS = $(DEPLIBS_BASE)/libca.a $(DEPLIBS_BASE)/libCom.a $(GDD)/sun4/libgdd.a
+
+SRCS.cc += ../exServer.cc 
+SRCS.cc += ../exPV.cc 
+SRCS.cc += ../exSyncPV.cc 
+SRCS.cc += ../exAsyncPV.cc 
+SRCS.cc += ../exChannel.cc 
+
+OBJS += exServer.o
+OBJS += exPV.o
+OBJS += exSyncPV.o
+OBJS += exAsyncPV.o
+OBJS += exChannel.o
+
+#PROD += excas
+
+include $(EPICS)/config/RULES.Unix
+
+BUILDDIR = $(CAS)/build/singleThread/O.sun4/
+
+GLOMBOBJ += $(BUILDDIR)caServer.o
+GLOMBOBJ += $(BUILDDIR)caServerI.o
+GLOMBOBJ += $(BUILDDIR)casCoreClient.o
+GLOMBOBJ += $(BUILDDIR)casClient.o
+GLOMBOBJ += $(BUILDDIR)casDGClient.o
+GLOMBOBJ += $(BUILDDIR)casStrmClient.o
+GLOMBOBJ += $(BUILDDIR)casPV.o
+GLOMBOBJ += $(BUILDDIR)casPVI.o
+GLOMBOBJ += $(BUILDDIR)casChannel.o
+GLOMBOBJ += $(BUILDDIR)casChannelI.o
+GLOMBOBJ += $(BUILDDIR)casClientMon.o
+GLOMBOBJ += $(BUILDDIR)casChanDelEv.o
+GLOMBOBJ += $(BUILDDIR)casMsgIO.o
+GLOMBOBJ += $(BUILDDIR)casAsyncIO.o
+GLOMBOBJ += $(BUILDDIR)casAsyncIOI.o
+GLOMBOBJ += $(BUILDDIR)casEventSys.o
+GLOMBOBJ += $(BUILDDIR)casMonitor.o
+GLOMBOBJ += $(BUILDDIR)casMonEvent.o
+GLOMBOBJ += $(BUILDDIR)outBuf.o
+GLOMBOBJ += $(BUILDDIR)inBuf.o
+GLOMBOBJ += $(BUILDDIR)osiTimer.o
+GLOMBOBJ += $(BUILDDIR)osiTimerQueue.o
+GLOMBOBJ += $(BUILDDIR)casEventMask.o
+
+GLOMBOBJ += $(BUILDDIR)caServerOS.o
+GLOMBOBJ += $(BUILDDIR)casDGOS.o
+GLOMBOBJ += $(BUILDDIR)casStreamOS.o
+GLOMBOBJ += $(BUILDDIR)fdMgr.o
+GLOMBOBJ += $(BUILDDIR)osiTimeOSD.o
+ 
+GLOMBOBJ += $(BUILDDIR)caServerIO.o
+GLOMBOBJ += $(BUILDDIR)casDGIO.o
+GLOMBOBJ += $(BUILDDIR)casStreamIO.o
+GLOMBOBJ += $(BUILDDIR)sigPipeIgnore.o
+ 
+all: excas
+
+#PURIFY = /remote/lear_local/pure/purify-3.0a-sunos4/purify
+nolib:  $(OBJS) $(GLOMBOBJ) $(DEPLIBS)
+	$(PURIFY) $(LINK.cc) -o $@ $(OBJS) $(GLOMBOBJ) $(USR_LDFLAGS) $(USR_LDLIBS)
+
+excas: $(OBJS) $(DEPLIBS) $(DEPLIBS_BASE)/libcas.a
+	$(LINK.cc) -o $@ $(OBJS) $(USR_LDFLAGS) -lcas $(USR_LDLIBS)
+
+clean::
+	@$(RM) excas 
+	@$(RM) nolib
+	@$(RM) -rf Templates.DB
+

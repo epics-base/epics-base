@@ -1,0 +1,26 @@
+open aota1 
+user jeffhill 
+prompt
+macdef archcd
+lcd O.sun4
+
+mkdir [.cas]
+cd [.cas]
+lcd ~/epics/base/src/cas
+mput *.c
+mput *.h
+lcd os/vms
+mput *.c
+mput *.h
+put BUILD_VMS.COM
+lcd ../../../libCom
+mput *.c
+mput *.h
+$archcd
+mput *.c
+lcd ../../ca
+mput *.h
+mput *.c
+lcd ../../include
+mput *.h
+

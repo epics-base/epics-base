@@ -27,6 +27,7 @@
  *
  * 	Modification Log:
  * 	-----------------
+ * 	.01 joh 071092	added argument to calloc()
  */
 
 /*
@@ -192,10 +193,10 @@ comet_init()
 		if ((status = taskDelete(cometDoneTaskId)) < 0)
 			logMsg("\nCOMET: Failed to delete cometDoneTask: %d",status);
 	}else{
-/*		if (pcomet_config = (struct comet_config *)calloc(wf_num_cards[COMET]*sizeof(struct comet_config)) 
+/*		if (pcomet_config = (struct comet_config *) calloc(wf_num_cards[COMET], sizeof(struct comet_config)) 
 		  != (wf_num_cards[COMET]*sizeof(struct comet_config)){
 */
-		if ( (pcomet_config = (struct comet_config *)calloc(2*sizeof(struct comet_config))) == 0){
+		if ( (pcomet_config = (struct comet_config *)calloc(2,sizeof(struct comet_config))) == 0){
 			logMsg("\nCOMET: Couldn't allocate memory for the configuration data");
 			return;
 		}

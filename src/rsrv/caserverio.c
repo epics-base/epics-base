@@ -126,7 +126,7 @@ int		lock_needed;
 			/* convert the complete header into host format */
 			mp->m_cmmd      = htons (mp->m_cmmd);
 			mp->m_postsize  = htons (mp->m_postsize);
-			mp->m_type      = htons (mp->m_type);
+			mp->m_dataType  = htons (mp->m_dataType);
 			mp->m_count     = htons (mp->m_count);
 			mp->m_cid       = htonl (mp->m_cid);
 			mp->m_available = htonl (mp->m_available);

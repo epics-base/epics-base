@@ -227,7 +227,7 @@ const char      *pformat,
 	 */
 	reply[1].m_postsize = htons (curp->m_postsize);
 	reply[1].m_cmmd = htons (curp->m_cmmd);
-	reply[1].m_type = htons (curp->m_type);
+	reply[1].m_dataType = htons (curp->m_dataType);
 	reply[1].m_count = htons (curp->m_count);
 	reply[1].m_cid = curp->m_cid;
 	reply[1].m_available = curp->m_available;
@@ -275,14 +275,14 @@ LOCAL void log_header (
 
 	epicsPrintf (
 "CAS: Request from %s => cmmd=%d cid=0x%x type=%d count=%d postsize=%u\n",
-        hostName, mp->m_cmmd, mp->m_cid, mp->m_type, mp->m_count, mp->m_postsize);
+        hostName, mp->m_cmmd, mp->m_cid, mp->m_dataType, mp->m_count, mp->m_postsize);
 
 
 	epicsPrintf (	
 "CAS: Request from %s =>  available=0x%x \tN=%d paddr=%x\n",
         hostName, mp->m_available, mnum, (pciu?&pciu->addr:NULL));
 
-    if (mp->m_cmmd==CA_PROTO_WRITE && mp->m_type==DBF_STRING) {
+    if (mp->m_cmmd==CA_PROTO_WRITE && mp->m_dataType==DBF_STRING) {
     		epicsPrintf (
 "CAS: Request from %s => \tThe string written: %s \n",
                 hostName, (mp+1));
@@ -548,7 +548,7 @@ db_field_log		*pfl
 	}
 	status = db_get_field(
 			      paddr,
-			      pevext->msg.m_type,
+			      pevext->msg.m_dataType,
 			      reply + 1,
 			      pevext->msg.m_count,
 			      pfl);
@@ -604,10 +604,10 @@ db_field_log		*pfl
 		 * assert() is safe here because the type was
 		 * checked by db_get_field()
 		 */
-		assert (pevext->msg.m_type < NELEMENTS(cac_dbr_cvrt));
+		assert (pevext->msg.m_dataType < NELEMENTS(cac_dbr_cvrt));
 
 		/* use type as index into conversion jumptable */
-		(* cac_dbr_cvrt[pevext->msg.m_type])
+		(* cac_dbr_cvrt[pevext->msg.m_dataType])
 			( reply + 1,
 			  reply + 1,
 			  TRUE,       /* host -> net format */
@@ -617,7 +617,7 @@ db_field_log		*pfl
 		 * force string message size to be the true size rounded to even
 		 * boundary
 		 */
-		if (pevext->msg.m_type == DBR_STRING 
+		if (pevext->msg.m_dataType == DBR_STRING 
 			&& pevext->msg.m_count == 1) {
 			/* add 1 so that the string terminator will be shipped */
 			strcnt = strlen((char *)(reply + 1)) + 1;
@@ -661,7 +661,7 @@ struct client  	*client
 	evext.pciu = pciu;
 	evext.send_lock = TRUE;
 	evext.pdbev = NULL;
-	evext.size = dbr_size_n(mp->m_type, mp->m_count);
+	evext.size = dbr_size_n(mp->m_dataType, mp->m_count);
 
 	/*
 	 * Arguments to this routine organized in
@@ -716,7 +716,7 @@ struct client  	*client
 	}
 
 #ifdef CONVERSION_REQUIRED		
-	if (mp->m_type >= NELEMENTS(cac_dbr_cvrt)) {
+	if (mp->m_dataType >= NELEMENTS(cac_dbr_cvrt)) {
         SEND_LOCK(client);
 		send_err(
 			mp, 
@@ -728,7 +728,7 @@ struct client  	*client
 	}
 
 	/* use type as index into conversion jumptable */
-	(* cac_dbr_cvrt[mp->m_type])
+	(* cac_dbr_cvrt[mp->m_dataType])
 		( mp + 1,
 		  mp + 1,
 		  FALSE,       /* net -> host format */
@@ -737,7 +737,7 @@ struct client  	*client
 
 	status = db_put_field(
 				  &pciu->addr,
-				  mp->m_type,
+				  mp->m_dataType,
 				  mp + 1,
 				  mp->m_count);
 	if (status < 0) {
@@ -1266,7 +1266,7 @@ struct client  *client
 
 		*claim_reply = nill_msg;
 		claim_reply->m_cmmd = CA_PROTO_CLAIM_CIU;
-		claim_reply->m_type = pciu->addr.dbr_field_type;
+		claim_reply->m_dataType = pciu->addr.dbr_field_type;
 		claim_reply->m_count = pciu->addr.no_elements;
 		claim_reply->m_cid = pciu->cid;
 		claim_reply->m_available = pciu->sid;
@@ -1475,7 +1475,7 @@ struct client  *client
 		return ERROR;
 	}
 
-	if (mp->m_type > LAST_BUFFER_TYPE) {
+	if (mp->m_dataType > LAST_BUFFER_TYPE) {
 		putNotifyErrorReply(client, mp, ECA_BADTYPE);
 		return ERROR;
 	}
@@ -1485,7 +1485,7 @@ struct client  *client
 		return OK;
 	}
 
-	size = dbr_size_n(mp->m_type, mp->m_count);
+	size = dbr_size_n(mp->m_dataType, mp->m_count);
 
 	if(pciu->pPutNotify){
 
@@ -1541,7 +1541,7 @@ struct client  *client
 	pciu->pPutNotify->dbPutNotify.nRequest = mp->m_count;
 #ifdef CONVERSION_REQUIRED
 	/* use type as index into conversion jumptable */
-	(* cac_dbr_cvrt[mp->m_type])
+	(* cac_dbr_cvrt[mp->m_dataType])
 		( mp + 1,
 		  pciu->pPutNotify->dbPutNotify.pbuffer,
 		  FALSE,       /* net -> host format */
@@ -1549,7 +1549,7 @@ struct client  *client
 #else
 	memcpy(pciu->pPutNotify->dbPutNotify.pbuffer, (char *)(mp+1), size);
 #endif
-	status = dbPutNotifyMapType(&pciu->pPutNotify->dbPutNotify, mp->m_type);
+	status = dbPutNotifyMapType(&pciu->pPutNotify->dbPutNotify, mp->m_dataType);
 	if(status){
 		putNotifyErrorReply(client, mp, ECA_PUTFAIL);
 		pciu->pPutNotify->busy = FALSE;
@@ -1619,7 +1619,7 @@ struct client  *client
 	pevext->msg = *mp;
 	pevext->pciu = pciu;
 	pevext->send_lock = TRUE;
-	pevext->size = dbr_size_n(mp->m_type, mp->m_count);
+	pevext->size = dbr_size_n(mp->m_dataType, mp->m_count);
 	pevext->mask = pmo->m_info.m_mask;
 
 	FASTLOCK(&client->eventqLock);
@@ -1962,7 +1962,7 @@ LOCAL int search_reply(
             NULL,
             NULL,
             NULL);
-        if (mp->m_type == DOREPLY)
+        if (mp->m_dataType == DOREPLY)
             search_fail_reply(mp, client);
         return OK;
     }
@@ -2032,7 +2032,7 @@ LOCAL int search_reply(
     search_reply->m_postsize = sizeof(*pMinorVersion);
     
     /* this field for rmt machines where paddr invalid */
-    search_reply->m_type = type;
+    search_reply->m_dataType = type;
     search_reply->m_count = count;
     search_reply->m_cid = sid;
     
@@ -2200,7 +2200,7 @@ int camessage(
          */
         mp->m_cmmd      = ntohs (mp->m_cmmd);
         mp->m_postsize  = tmp_postsize;
-        mp->m_type      = ntohs (mp->m_type);
+        mp->m_dataType  = ntohs (mp->m_dataType);
         mp->m_count     = ntohs (mp->m_count);
         mp->m_cid       = ntohl (mp->m_cid);
         mp->m_available = ntohl (mp->m_available);

@@ -37,18 +37,6 @@ void semBinaryDestroy(semBinaryId id)
     semDelete((SEM_ID)id);
 }
 
-void semBinaryGive(semBinaryId id)
-{
-    semGive((SEM_ID)id);
-}
-
-semTakeStatus semBinaryTake(semBinaryId id)
-{
-    int status;
-    status = semTake((SEM_ID)id,WAIT_FOREVER);
-    return((status==OK ? semTakeOK : semTakeError));
-}
-
 semTakeStatus semBinaryTakeTimeout(
     semBinaryId id, double timeOut)
 {
@@ -92,18 +80,6 @@ semMutexId semMutexMustCreate(void)
 void semMutexDestroy(semMutexId id)
 {
     semDelete((SEM_ID)id);
-}
-
-void semMutexGive(semMutexId id)
-{
-    semGive((SEM_ID)id);
-}
-
-semTakeStatus semMutexTake(semMutexId id)
-{
-    int status;
-    status = semTake((SEM_ID)id,WAIT_FOREVER);
-    return((status==OK ? semTakeOK : semTakeError));
 }
 
 semTakeStatus semMutexTakeTimeout(

@@ -272,6 +272,7 @@ iocsh (const char *pathname)
     int icin, icout;
     char c;
     int quote, inword, backslash;
+    char *raw;
     char *line = NULL;
     int lineno = 0;
     int argc;
@@ -321,33 +322,34 @@ iocsh (const char *pathname)
      * Read commands till EOF or exit
      */
     argc = 0;
-    while ((line = epicsReadline(prompt, readlineContext)) != NULL) {
+    while ((raw = epicsReadline(prompt, readlineContext)) != NULL) {
         lineno++;
-
-        /*
-         * Free previous line's expanded arguments
-         */
-        for (iarg = 0 ; iarg < argc ; iarg++)
-            free(argv[iarg]);
-        argc = 0;
 
         /*
          * Ignore comment lines
          */
-        if (*line == '#')
+        if (*raw == '#')
             continue;
 
         /*
          * Echo commands read from scripts
          */
-        if ((prompt == NULL) && *line)
-            puts(line);
+        if ((prompt == NULL) && *raw)
+            puts(raw);
+
+        /*
+         * Expand macros
+         */
+        free(line);
+        if ((line = macEnvExpand(raw)) == NULL)
+            continue;
 
         /*
          * Break line into words
          */
         icout = icin = 0;
         inword = 0;
+        argc = 0;
         quote = EOF;
         backslash = 0;
         for (;;) {
@@ -422,32 +424,14 @@ iocsh (const char *pathname)
         argv[argc] = NULL;
 
         /*
-         * Expand macros
-         */
-        if (argc) {
-            for (iarg = 0 ; iarg < argc ; iarg++)
-                if ((argv[iarg] = macEnvExpand(argv[iarg])) == NULL)
-                    break;
-            if (iarg < argc) {
-                while (--iarg >= 0)
-                    free(argv[iarg]);
-                argc = 0;
-                continue;
-            }
-        }
-
-        /*
          * Look up command
          */
         if (argc) {
             /*
              * Special command?
              */
-            if (strncmp (argv[0], "exit", 4) == 0) {
-                for (iarg = 0 ; iarg < argc ; iarg++)
-                    free(argv[iarg]);
+            if (strncmp (argv[0], "exit", 4) == 0)
                 break;
-            }
             if ((strcmp (argv[0], "?") == 0) 
              || (strncmp (argv[0], "help", 4) == 0)) {
                 if (argc == 1) {
@@ -555,6 +539,7 @@ iocsh (const char *pathname)
     }
     if (fp && (fp != stdin))
         fclose (fp);
+    free(line);
     free (argv);
     free (argBuf);
     errlogFlush();

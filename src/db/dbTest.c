@@ -61,8 +61,9 @@
  *	char	*pname;
  *	char	*pvalue
  *
- * dbior(pname)			io_report
+ * dbior(pname,type)		io_report
  *	char	*pname		Driver name. If null all drivers
+ *	int	type		<0,1> => <short, full> report
  *
  * dblls(ptypeName)		list lock sets
  *	char	*ptypeName;	Record type. If null all record types
@@ -545,8 +546,9 @@ long dbtpf(pname,pvalue)/* test all options for dbPutField */
     return(0);
 }
 
-long dbior(pdrvName)
+long dbior(pdrvName,type)
     char	*pdrvName;
+    int		type;
 {
     int		 i;
     char	 *pname;
@@ -574,7 +576,7 @@ long dbior(pdrvName)
 	}
 	else {
 	    printf("Driver: %s\n",pname);
-	    (*pdrvet->report)(stdout);
+	    (*pdrvet->report)(stdout,type);
 	}
 	if(pdrvName!=NULL) break;
 	}
@@ -746,7 +748,7 @@ static void printBuffer(status, dbr_type, pbuffer, reqOptions,
     }
     if (reqOptions & DBR_GR_LONG) {
 	if (retOptions & DBR_GR_LONG)
-	    printf("grLong: %ld %ld %ld %ld %ld %ld\n",
+	    printf("grLong: %ld %ld\n",
 		   *(long *) (pbuffer),
 		   *(long *) (pbuffer + 4));
 	else
@@ -755,7 +757,7 @@ static void printBuffer(status, dbr_type, pbuffer, reqOptions,
     }
     if (reqOptions & DBR_GR_DOUBLE) {
 	if (retOptions & DBR_GR_DOUBLE)
-	    printf("grDouble: %lg %lg %lg %lg %lg %lg\n",
+	    printf("grDouble: %lg %lg\n",
 		   *(double *) (pbuffer),
 		   *(double *) (pbuffer + 8));
 	else
@@ -811,10 +813,15 @@ static void printBuffer(status, dbr_type, pbuffer, reqOptions,
 	    dbpr_msgOut(pMsgBuff, tab_size);
 	    break;
 	}
-	len = strlen(pbuffer);
-	if (len > 0) {
-	    sprintf(pmsg, "DBR_STRING: %s", pbuffer);
-	    dbpr_msgOut(pMsgBuff, tab_size);
+	sprintf(pmsg, "DBR_STRING:");
+	dbpr_msgOut(pMsgBuff, tab_size);
+	for(i=0; i<no_elements; i++) {
+	    len = strlen(pbuffer);
+	    if (len > 0) {
+		sprintf(pmsg, " %s", pbuffer);
+		dbpr_msgOut(pMsgBuff, tab_size);
+	    }
+	    pbuffer += MAX_STRING_SIZE;
 	}
 	break;
     case (DBR_CHAR):
@@ -942,6 +949,7 @@ static void printBuffer(status, dbr_type, pbuffer, reqOptions,
 	for (i = 0; i < no_elements; i++) {
 	    sprintf(pmsg, "%-9u", *((unsigned short *) pbuffer));
 	    dbpr_msgOut(pMsgBuff, tab_size);
+	    pbuffer += 2;
 	}
 	break;
     default:

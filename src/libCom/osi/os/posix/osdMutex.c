@@ -43,7 +43,7 @@ if(status) { \
 
 /* Three completely different implementations are provided below
  * If support is available for _POSIX_SPIN_LOCK is available
- *      then pthread_spin is used
+ *      and enabled then pthread_spin is used
  * If support is available for PTHREAD_MUTEX_RECURSIVE then
  *      only pthread_mutex is used.
  * If support is not available for PTHREAD_MUTEX_RECURSIVE then
@@ -51,6 +51,12 @@ if(status) { \
  */
 
 #if defined ( _POSIX_SPIN_LOCKS ) && ( _POSIX_SPIN_LOCKS ) >= 200112L && EPICS_TEST_SPINLOCKS
+
+/*
+ * !!!! the following is not safe on multi processor systems !!!!
+ * The problem is that "owner" and "owned" flags must not be accessed
+ * on a MP system w/o taking a lock and enforcing a memory barrier.
+ */
 
 typedef struct epicsMutexOSD {
     pthread_spinlock_t lock;
@@ -121,7 +127,7 @@ epicsMutexLockStatus epicsMutexOsdTryLock(struct epicsMutexOSD * pmutex)
            if ( pthreadStatus == EBUSY ) return ( epicsMutexLockTimeout );
            checkStatusQuit ( pthreadStatus, 
 	       "pthread_spin_trylock", "epicsMutexOsdTryLock" );
-	}
+	    }
         pmutex->owned = 1;
         pmutex->owner = self;
     }

@@ -103,6 +103,7 @@
 /*definitions for db_put_notify */
 /*the following structure is identical*/
 /*except for struct dbAddr -> struct db_addr*/
+struct putNotify;
 typedef struct pnRestartNode {
 	ELLNODE		node;
 	struct putNotify *ppn;

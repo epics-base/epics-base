@@ -147,7 +147,7 @@ endif
 %.db: ../%.edf
 	$(E2DB) $(E2DB_SYSFLAGS) $(E2DB_FLAGS) $<
 
-%.edf: ../%.sch $(DEPSCHS)
+%.edf: ../%.sch
 	@if [ ! -f cad.rc -a -r ../cad.rc ] ; then ln -s ../cad.rc ; fi
 	$(SCH2EDIF) $(SCH2EDIF_SYSFLAGS) $(SCH2EDIF_FLAGS) $<
 
@@ -232,7 +232,7 @@ $(INSTALL_BIN)/%: ../%
 #
 ifneq ($(INSTALL_BIN),$(EPICS_BASE_BIN))
 $(INSTALL_BIN)/%: $(EPICS_BASE_BIN)/% 
-	@echo "Installing $@"
+	@echo "Installing $@ from EPICS base"
 	@$(INSTALL) -m 555 $< $(INSTALL_BIN)
 endif
 

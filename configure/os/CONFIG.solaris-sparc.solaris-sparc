@@ -11,15 +11,11 @@ SPARCWORKS = /opt/SUNWspro
 
 CC = $(SPARCWORKS)/bin/cc
 CCC = $(SPARCWORKS)/bin/CC
-#CPP = $(CCC) -E
-#CPP = $(CCC) -P
-CPP = g++ -x c -E
-LD = ld -r
-
-
-RANLIB =
 # required by sun's C++ compiler
 AR = $(CCC) -xar -o
+LD = ld -r
+CPP = gcc -x c -E
+RANLIB =
 
 #Prepare the object code for profiling with prof. (YES or NO)
 PROFILE=YES

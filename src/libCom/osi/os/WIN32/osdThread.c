@@ -283,17 +283,18 @@ static int WINAPI epicsWin32ThreadEntry (LPVOID lpParameter)
     win32ThreadParam *pParm = (win32ThreadParam *) lpParameter;
     BOOL stat;
 
-    stat = TlsSetValue (tlsIndexWIN32, pParm);
+    stat = TlsSetValue ( tlsIndexWIN32, pParm );
     if (stat) {
-        (*pParm->funptr) (pParm->parm);
-        TlsSetValue (tlsIndexWIN32, 0);
+        ( *pParm->funptr ) ( pParm->parm );
+        TlsSetValue ( tlsIndexWIN32, 0 );
     }
 
     /*
      * CAUTION: !!!! the thread id might continue to be used after this thread exits !!!!
      */
-    free (pParm);
-    return (stat); /* this indirectly closes the thread handle */
+    free ( pParm );
+
+    return ( stat ); /* this indirectly closes the thread handle */
 }
 
 /*
@@ -307,28 +308,28 @@ epicsShareFunc threadId epicsShareAPI threadCreate (const char *pName,
     DWORD wstat;
     BOOL bstat;
 
-    if (!win32ThreadInitOK) {
+    if ( ! win32ThreadInitOK ) {
         threadInit ();
-        if (!win32ThreadInitOK) {
+        if ( ! win32ThreadInitOK ) {
             return NULL;
         }
     }
 
-    pParmWIN32 = malloc ( sizeof (*pParmWIN32) + strlen (pName) + 1 );
+    pParmWIN32 = malloc ( sizeof ( *pParmWIN32 ) + strlen ( pName ) + 1 );
     if ( pParmWIN32 == NULL ) {
         return NULL;
     }
 
-    pParmWIN32->pName = (char *) (pParmWIN32 + 1);
-    strcpy (pParmWIN32->pName, pName);
+    pParmWIN32->pName = (char *) ( pParmWIN32 + 1 );
+    strcpy ( pParmWIN32->pName, pName );
     pParmWIN32->funptr = pFunc;
     pParmWIN32->parm = pParm;
     pParmWIN32->isSuspended = 0;
 
-    pParmWIN32->handle = (HANDLE) _beginthreadex (0, stackSize, epicsWin32ThreadEntry, 
-        pParmWIN32, CREATE_SUSPENDED, &pParmWIN32->id);
+    pParmWIN32->handle = (HANDLE) _beginthreadex ( 0, stackSize, epicsWin32ThreadEntry, 
+        pParmWIN32, CREATE_SUSPENDED, &pParmWIN32->id );
     if ( pParmWIN32->handle == 0 ) {
-        free (pParmWIN32);
+        free ( pParmWIN32 );
         return NULL;
     }
 
@@ -347,7 +348,7 @@ epicsShareFunc threadId epicsShareAPI threadCreate (const char *pName,
         return NULL;
     }
 
-    return (threadId) pParmWIN32;
+    return ( threadId ) pParmWIN32;
 }
 
 /*

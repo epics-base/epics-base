@@ -254,7 +254,7 @@ osiTime::operator tm_nano_sec () const
 //
 osiTime::osiTime (const tm_nano_sec &tm)
 {
-    static const time_t mktimeFailure = static_cast<time_t> (-1);
+    static const time_t mktimeFailure = static_cast <time_t> (-1);
 	time_t_wrapper ansiTimeTicks;
 	struct tm tmp = tm.ansi_tm;
 

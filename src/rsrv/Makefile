@@ -4,7 +4,6 @@ TOP=../..
 include $(TOP)/configure/CONFIG
 
 USR_INCLUDES = -I../../ca
-USR_CFLAGS += -UUNIX -DiocCore
 
 LIBSRCS += caserverio.c
 LIBSRCS += caservertask.c

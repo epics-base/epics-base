@@ -36,8 +36,10 @@ of this distribution.
 #include "caeventmask.h"
 #include "alarm.h"
 
+#define epicsExportSharedSymbols
+
 int asCaDebug = 0;
-extern ASBASE volatile *pasbase;
+epicsShareExtern ASBASE volatile *pasbase;
 LOCAL int firstTime = TRUE;
 LOCAL threadId threadid=0;
 LOCAL int caInitializing=FALSE;

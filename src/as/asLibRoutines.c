@@ -43,12 +43,12 @@ static semId asLock;
 #include "shareLib.h"
 #include "asLib.h"
 
-static int	asLockInit=TRUE;
-int		asActive = FALSE;
-static void 	*freeListPvt = NULL;
+static int          asLockInit=TRUE;
+epicsShareDef int   asActive = FALSE;
+static void         *freeListPvt = NULL;
 
 /*following must be global because asCa nneeds it*/
-ASBASE	volatile *pasbase=NULL;
+epicsShareDef ASBASE volatile *pasbase=NULL;
 static ASBASE *pasbasenew=NULL;
 
 #define RPCL_LEN 184
@@ -784,7 +784,7 @@ int epicsShareAPI asDumpMem(char *asgname,void (*memcallback)(ASMEMBERPVT),int c
     return(0);
 }
 
-int epicsShareAPI asDumpHash(void)
+epicsShareFunc int epicsShareAPI asDumpHash(void)
 {
     if(!asActive) return(0);
     gphDump(pasbase->phash);
@@ -793,7 +793,7 @@ int epicsShareAPI asDumpHash(void)
 
 /*Start of private routines*/
 /* asCalloc is "friend" function */
-void * asCalloc(size_t nobj,size_t size)
+epicsShareFunc void * epicsShareAPI asCalloc(size_t nobj,size_t size)
 {
     void *p;
 

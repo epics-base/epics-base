@@ -501,7 +501,7 @@ gddStatus gdd::copyStuff(const gdd* dd,int ctype)
                         const aitString * pSrc = 
                             static_cast <const aitString *> ( dd->dataPointer() );
                         for ( unsigned j=0; j < nElem; j++ ) {
-                            pStrVec[i] = pSrc[i];
+                            pStrVec[j] = pSrc[j];
                         }
                         destruct->reference();
                         setData ( pStrVec );

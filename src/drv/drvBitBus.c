@@ -1,3 +1,4 @@
+#define DO_RESET_AND_OFFLINE
 /* share/src/drv $Id$ */
 /*
  *	Original Author: Ned Arnold

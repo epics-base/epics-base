@@ -35,6 +35,7 @@ INC += ipAddrToA.h
 INC += epicsString.h
 INC += truncateFile.h
 INC += adjustment.h
+INC += postfix.h
 
 #	For WIN32 we supply getopt as part of libCom:
 INC_WIN32 := getopt.h
@@ -93,10 +94,11 @@ LIBRARY:=Com
 
 #	only for WIN32:
 #	build LIBRARY as a DLL, use the specified def file
-LIBTYPE:=SHARED
+LIBTYPE := SHARED
 
 #	libs needed for PROD and TESTPRODUCT
-PROD_LIBS = Com 
+PROD_LIBS := Com 
+SYS_PROD_LIBS_WIN32 := ws2_32 winmm
 
 #USR_CFLAGS += -DTS_TEST
 #TESTPROD_SRCS=tsSubr.c

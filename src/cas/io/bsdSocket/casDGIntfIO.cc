@@ -35,6 +35,7 @@
 //
 
 #include "server.h"
+#include "ipAddrToA.h"
 
 //
 // casDGIntfIO::casDGIntfIO()

@@ -5,6 +5,9 @@
 //
 //
 // $Log$
+// Revision 1.10  1997/04/23 17:27:01  jhill
+// use matching buffer sizes
+//
 // Revision 1.9  1997/04/10 19:40:34  jhill
 // API changes
 //
@@ -38,6 +41,7 @@
 //
 
 #include "server.h"
+#include "ipAddrToA.h"
 
 
 //

@@ -65,8 +65,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
-#include <netinet/in.h>
+
+#ifdef _WINDOWS
+#	include <winsock.h>
+#else
+#	include <sys/types.h>
+#	include <netinet/in.h>
+#endif
 
 #ifdef vxWorks
 #include <inetLib.h>

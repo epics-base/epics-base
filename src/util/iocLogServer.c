@@ -47,6 +47,9 @@
  * .09 050494 pg        HPUX port changes.
  * .10 021694 joh	ANSI C	
  * $Log$
+ * Revision 1.40  2000/11/08 03:56:28  jhill
+ * fixed SO_REUSEADDR WIN32 strangeness
+ *
  * Revision 1.39  2000/10/11 22:23:30  jhill
  * configure that WINSOCK is very different about SO_REUSEADDR
  *
@@ -135,6 +138,7 @@ static char	*pSCCSID = "@(#)iocLogServer.c	1.9\t05/05/94";
 #include	<errno.h>
 #include 	<stdio.h>
 #include	<limits.h>
+#include	<time.h>
 
 #ifdef UNIX
 #include 	<unistd.h>

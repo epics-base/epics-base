@@ -70,5 +70,25 @@ inline bool cac::flushPermit () const
     return true;
 }
 
+inline void cac::incrementOutstandingIO ()
+{
+    this->ioCounter.increment ();
+}
+
+inline void cac::decrementOutstandingIO ()
+{
+    this->ioCounter.decrement ();
+}
+
+inline void cac::decrementOutstandingIO ( unsigned sequenceNo )
+{
+    this->ioCounter.decrement ( sequenceNo );
+}
+
+inline unsigned cac::sequenceNumberOfOutstandingIO () const
+{
+    return this->ioCounter.sequenceNumber ();
+}
+
 #endif // cac_ILh
 

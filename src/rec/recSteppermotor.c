@@ -88,6 +88,7 @@
  * .30  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
  * .31  07-21-92        jba     changed alarm limits for non val related fields
  * .32  10-10-92        jba     replaced code for get of VAL from DOL with recGblGetLinkValue
+ * .33  01-05-93        jbk     force recalc of velo and accel each time rec processed
  */
 
 #include	<vxWorks.h>
@@ -723,13 +724,14 @@ struct steppermotorRecord	*psm;
 		return;
 
         /* set the velocity and acceleration */
-        if ((psm->velo != psm->lvel) || (psm->lacc != psm->accl)){
+	/* jbk change for allowing mres to change */
+/*      if ((psm->velo != psm->lvel) || (psm->lacc != psm->accl)){ */
                 acceleration = (1/psm->accl) * psm->velo * psm->mres;
                 velocity = psm->velo * psm->mres;
                 (*pdset->sm_command)(psm,SM_VELOCITY,velocity,acceleration);
                 psm->lvel = psm->velo;
                 psm->lacc = psm->accl;
-        }
+/*      } */
 
 	/* set home when requested */
 	if (psm->sthm != 0){

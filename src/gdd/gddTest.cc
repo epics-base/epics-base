@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.9  1997/08/05 00:51:16  jhill
+// fixed problems in aitString and the conversion matrix
+//
 // Revision 1.8  1997/06/25 06:17:38  jhill
 // fixed warnings
 //
@@ -40,7 +43,7 @@
 
 // -----------------------test routines------------------------
 
-void gdd::dump(void)
+void gdd::dump(void) const
 {
 	gddScalar* sdd;
 	gddAtomic* add;
@@ -66,7 +69,7 @@ void gdd::dump(void)
 	}
 }
 
-void gdd::dumpInfo(void)
+void gdd::dumpInfo(void) const
 {
 	unsigned i;
 	aitIndex f,c;
@@ -264,33 +267,31 @@ void gdd::dumpInfo(void)
 		 fprintf(stderr,"--------------------------------------\n");
 }
 
-void gddScalar::dump(void)
+void gddScalar::dump(void) const
 {
 	gdd::dumpInfo();
 	fprintf(stderr,"--------------------------------------\n");
 }
 
-void gddAtomic::dump(void)
+void gddAtomic::dump(void) const
 {
 	gdd::dumpInfo();
 	fprintf(stderr,"-------------------------------------\n");
 }
 
-void gddContainer::dump(void)
+void gddContainer::dump(void) const
 {
-	int i;
-	gdd* dd;
-	gddAtomic* add;
-	gddScalar* sdd;
-	gddContainer* cdd;
+	const gdd* dd;
+	const gddAtomic* add;
+	const gddScalar* sdd;
+	const gddContainer* cdd;
 
 	fprintf(stderr,"----------dumping container:\n");
 	gdd::dumpInfo();
 	fprintf(stderr," total in container = %d\n",total());
 
-	// should use a cursor
-
-	for(i=1; (dd=getDD(i)); i++)
+	gddCursor cur = this->getCursor();
+	for(dd=cur.first();dd;dd=cur.next())
 	{
 		if(dd->isAtomic())		{ add=(gddAtomic*)dd; add->dump(); }
 		if(dd->isScalar())		{ sdd=(gddScalar*)dd; sdd->dump(); }

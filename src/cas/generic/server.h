@@ -482,14 +482,12 @@ public:
 
 	virtual void show (unsigned level) const;
 
-	//
-	// send error response to a message
-	//
 	caStatus sendErr (const caHdr *, const int reportedStatus,
 			const char *pFormat, ...);
 
-	unsigned getMinorVersion() const {return this->minor_version_number;}
+    void sendVersion ();
 
+	unsigned getMinorVersion() const {return this->minor_version_number;}
 
 	//
 	// find the channel associated with a resource id

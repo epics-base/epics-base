@@ -42,6 +42,7 @@
  * .05 091092 joh	now uses SO_REUSEADDR
  * .06 091192 joh	now uses SO_KEEPALIVE
  * .07 091192 joh	added SCCS ID
+ * .08 092292 joh	improved message sent to the log
  *
  */
 
@@ -299,7 +300,7 @@ struct ioc_log_server	*pserver;
 	
 	status = fprintf(
 		pclient->pserver->poutfile,
-		"%s %s ----- Client Connected -----\n",
+		"%s %s ----- Client Connect -----\n",
 		pclient->name,
 		pclient->ascii_time);
 	if(status<0){

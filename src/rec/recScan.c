@@ -48,6 +48,8 @@
  * .09  02-02-95  nda     fixed order of posting monitors to be what people
  *                        expect (i.e. .cpt, .pxdv, .dxcv)
  * .10  02-10-95  nda     fixed on-the-fly so 1st step is to end position
+ * .11  02-21-95  nda     added "Return To Start" flag. If set, positioners
+ *                        will be commanded to the start pos after the scan.
  */
 
 #define VERSION 1.10
@@ -338,7 +340,10 @@ static long process(pscan)
           if(scanRecDebug) {
               precPvt->tickStart = tickGet();
           }
+          pscan->cpt = 0;   /* reset point counter */
 	  initScan(pscan);
+          sprintf(pscan->smsg,"Scanning ...");
+          db_post_events(pscan,&pscan->smsg,DBE_VALUE);
              
         } 
         else if ((pscan->pxsc == 1) && (pscan->exsc == 0)) {
@@ -941,8 +946,6 @@ struct scanRecord *pscan;
   long  nRequest = 1;
   long  options = 0;
 
-  pscan->cpt = 0;
-
   /* Figure out starting positions for each positioner */
   if(pscan->p1sm == REC_SCAN_MO_TAB) {
       pscan->p1dv = pscan->p1pa[0];
@@ -976,8 +979,6 @@ struct scanRecord *pscan;
   precPvt->phase = MOVE_MOTORS;
   /* request callback to do dbPutFields */
   callbackRequest(&precPvt->doPutsCallback);
-  sprintf(pscan->smsg,"Scanning ...");
-  db_post_events(pscan,&pscan->smsg,DBE_VALUE);
   return;
 }
 
@@ -1233,6 +1234,14 @@ struct scanRecord *pscan;
   }
 
   pscan->exsc = 0;  /* done with scan */
+  
+  /* if the "Return To Start: flag is set, command positioners 
+     to their start positions via initScan */
+
+  if(pscan->rtst) {
+     initScan(pscan);
+  }
+
   return;
 }
 

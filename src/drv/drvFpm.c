@@ -44,6 +44,11 @@
  * .06 joh 070992       FP_ILEV passed to call sysIntEnable() so that the
  *                      interrupt level can be easily changed
  * .07 joh 071092       now fetches base addr from module_types.h
+ * .08 joh 071092       added io report routine
+ * .09 joh 071092	allocate config structure at run time so that
+ *			the users can adjust the number of cards without
+ *			recompilation
+ * .10 joh 071092	moved ivec allocation to module_types.h
  *
  *
  * Routines:
@@ -65,6 +70,8 @@
  *
  *		-1		Nonexistent card
  *		-2		Interrupt connection error
+ *		-3		no memory
+ *		-4		VME short IO bus nonexistent
  *		0-2		Successfull completion, or # cards found
  *
  */
@@ -82,8 +89,6 @@
 
 /* general constants */
 #define FPM_ADD0	0xffdd00	/* card 0 base address */
-#define FPM_MAX_CARDS	2		/* max number of cards per system */
-#define FPM_IVEC0	0xe8		/* interrupt vector for card 0 */
 #define FPM_INTLEV	5		/* interrupt level */
 
 /* control register bit definitions */
@@ -133,9 +138,10 @@ struct fpm_rec
 	};
 
 LOCAL
-struct fpm_rec fpm[FPM_MAX_CARDS];		/* fast protect control structure */
+struct fpm_rec *fpm;		/* fast protect control structure */
+
 LOCAL
-int fpm_num;					/* # cards found */
+int fpm_num;				/* # cards found - 1 */
 
 /*
  * fpm_int
@@ -172,12 +178,19 @@ fpm_init(addr)
 {
  int i;
  short junk;
- short intvec = FPM_IVEC0;
+ short intvec = AT8FPM_IVEC_BASE;
  struct fp10m *ptr;
  int status;
 
+ fpm = (struct fpm_rec *) calloc(
+				bo_num_cards[AT8_FP10M_BO],
+				sizeof(*fpm));
+ if(!fpm){
+	return -3;
+ }
+
  if(!addr){
-        addr = bi_addrs[AT8_FP10M_BO];
+        addr = bo_addrs[AT8_FP10M_BO];
  }
 
  status = sysBusToLocalAdrs(
@@ -186,12 +199,10 @@ fpm_init(addr)
                         &ptr);
  if(status<0){
         logMsg("VME shrt IO addr err in the master fast protect driver\n");
-        return ERROR;
+        return -4;
  }
 
- if (addr)
-  ptr = (struct fp10m *)addr;	/* override if present */
- for (i = 0; (i < FPM_MAX_CARDS-1) && (vxMemProbe(ptr,READ,2,&junk) == OK);
+ for (i = 0; (i < bo_num_cards[AT8_FP10M_BO]) && (vxMemProbe(ptr,READ,2,&junk) == OK);
       i++,ptr++)
   {
   /*
@@ -345,4 +356,20 @@ if (card < 0 || (card > fpm_num))
   return -1;
 *pval = fpm[card].fmptr->cr & 0x000f;
 return 0;
+}
+
+
+
+/*
+ * fpm_io_report()
+ *
+ */
+fpm_io_report(level)
+int	level;
+{
+	int	i;
+
+	for(i=0; i<=fpm_num; i++){
+		printf("BO: AT8-FP-M:    card %d\n", i);
+	}
 }

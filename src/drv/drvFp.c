@@ -45,6 +45,9 @@
  *			so that driver diagnostics will show up in
  *			the log
  * .08 joh 071092	now fetches base addr from module_types.h
+ * .09 joh 071092	added io_report routine
+ * .10 joh 071092	added scan task wakeup from ISR	 
+ * .11 joh 071092	moved ivec allocation to module_types.h
  */
 
 
@@ -74,6 +77,8 @@
  *		-1	No card present
  *		-2	Interrupt connection error
  *		-3	Semaphore creation error
+ *		-4	addressing error
+ *		-5	no memory
  *		0-8	successfull completion, or # of cards found
  *
  */
@@ -90,8 +95,6 @@
 #include "module_types.h"
 
 /* general constants */
-#define FP_MAX_CARDS	8		/* max number of cards per system */
-#define FP_IVEC0	0xe0		/* interrupt vector for card 0 */
 #define FP_INTLEV	5		/* interrupt level 5 (HKV2F BCL) */
 #define FP_BUFSIZ	8		/* input buffer size */
 
@@ -154,9 +157,9 @@ struct fp_rec
 	};
 
 LOCAL
-struct fp_rec fp[FP_MAX_CARDS];		/* fast protect control structure */
+struct fp_rec *fp;			/* fast protect control structure */
 LOCAL
-int fp_num;				/* # of fast protect cards found */
+int fp_num;				/* # of fast protect cards found -1 */
 LOCAL
 SEM_ID fp_semid;			/* semaphore for monitor task */
 
@@ -166,9 +169,10 @@ SEM_ID fp_semid;			/* semaphore for monitor task */
  * interrupt service routine
  *
  */
-fp_int(ptr)
- register struct fp_rec *ptr;
+fp_int(card)
+unsigned card;
 {
+ register struct fp_rec *ptr = &fp[card];
  register struct fp1 *regptr;
  unsigned short temp0, temp1, temp2;
 
@@ -193,6 +197,11 @@ fp_int(ptr)
    ptr->drvstat |= (temp0 & 0xff00)<<16;	/* csr status bits */
    if ((temp1 ^ (temp2>>8)) || (temp0 & CSR_CHNG)) /* fault or enable change */
     semGive(fp_semid);				/* wake up monitor */
+
+   /*
+    * wakeup the interrupt driven scanner
+    */
+   io_scanner_wakeup(IO_BI, AT8_FP10S_BI, card);
    break;
  }
  ptr->int_num++;				/* log interrupt */
@@ -213,9 +222,14 @@ fp_init(addr)
 {
  int i;
  short junk;
- short intvec = FP_IVEC0;
+ short intvec = AT8FP_IVEC_BASE;
  struct fp1 *ptr;
  int status;
+
+ fp = (struct fp_rec *) calloc(bi_num_cards[AT8_FP10S_BI], sizeof(*fp));
+ if(!fp){
+   return -5;
+ }
 
  if(!addr){
 	addr = bi_addrs[AT8_FP10S_BI];
@@ -227,10 +241,10 @@ fp_init(addr)
 			&ptr);
  if(status<0){
 	logMsg("VME shrt IO addr err in the slave fast protect driver\n");
-	return ERROR;
+	return -4;
  }
 
- for (i = 0; (i < FP_MAX_CARDS-1) && (vxMemProbe(ptr,READ,2,&junk) == OK);
+ for (i = 0; (i < bi_num_cards[AT8_FP10S_BI]) && (vxMemProbe(ptr,READ,2,&junk) == OK);
       i++,ptr++)
   {
   /*
@@ -254,7 +268,7 @@ fp_init(addr)
   set up interrupt handler
   */
   ptr->csr |= FP_INTLEV<<4;		/* set up board for level 5 interrupt */
-  if (intConnect(INUM_TO_IVEC(fp[i].fp_vector),fp_int,&fp[i]) != OK)
+  if (intConnect(INUM_TO_IVEC(fp[i].fp_vector),fp_int,i) != OK)
    return -2;				/* abort if can't connect */
   sysIntEnable(FP_INTLEV);
   ptr->csr |= 0x0001;
@@ -428,4 +442,13 @@ fp_monitor()
   return -1;
  return 0;
 }
-  
+ 
+fp_io_report(level)
+int level;
+{
+	int i;
+
+        for(i=0; i<=fp_num; i++){
+                printf("BI: AT8-FP-S:    card %d\n", i);
+        }
+} 

@@ -96,7 +96,7 @@ void monitorSubscriptionFirstUpdateTest ( const char *pName, chid chan )
     SEVCHK (status, 0);
     ca_pend_event ( 0.1 );
     while ( eventCount < 1 && waitCount++ < 100 ) {
-        printf ( "-" );
+        printf ( "e" );
         fflush ( stdout );
         ca_pend_event ( 0.1 );
     }
@@ -124,7 +124,7 @@ void monitorSubscriptionFirstUpdateTest ( const char *pName, chid chan )
     SEVCHK ( status, NULL );
     ca_pend_event ( 0.1 );
     while ( eventCount < 1 && waitCount++ < 100 ) {
-        printf ( "-" );
+        printf ( "p" );
         fflush ( stdout );
         ca_pend_event ( 0.1 );
     }
@@ -148,7 +148,7 @@ void monitorSubscriptionFirstUpdateTest ( const char *pName, chid chan )
     SEVCHK (status, 0);
     ca_pend_event ( 0.1 );
     while ( eventCount < 1 && waitCount++ < 100 ) {
-        printf ( "-" );
+        printf ( "w" );
         fflush ( stdout );
         ca_pend_event ( 0.1 );
     }
@@ -176,7 +176,7 @@ void monitorSubscriptionFirstUpdateTest ( const char *pName, chid chan )
     SEVCHK ( status, NULL );
     ca_pend_event ( 0.1 );
     while ( eventCount < 1 && waitCount++ < 100 ) {
-        printf ( "-" );
+        printf ( "t" );
         fflush ( stdout );
         ca_pend_event ( 0.1 );
     }

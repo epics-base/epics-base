@@ -37,6 +37,24 @@
 #include "server.h"
 #include "addrList.h"
 
+
+/*
+ * forcePort ()
+ */
+static void  forcePort (ELLLIST *pList, unsigned short port)
+{
+    osiSockAddrNode *pNode;
+
+    pNode  = (osiSockAddrNode *) ellFirst ( pList );
+    while ( pNode ) {
+        if ( pNode->addr.sa.sa_family == AF_INET ) {
+            pNode->addr.ia.sin_port = htons (port);
+        }
+        pNode = (osiSockAddrNode *) ellNext ( &pNode->node );
+    }
+}
+
+
 //
 // casDGIntfIO::casDGIntfIO()
 //
@@ -44,12 +62,14 @@ casDGIntfIO::casDGIntfIO (caServerI &serverIn, const caNetAddr &addr,
                           bool autoBeaconAddr, bool addConfigBeaconAddr) :
     casDGClient (serverIn)
 {
+    ELLLIST BCastAddrList;
     osiSockAddr serverAddr;
     osiSockAddr serverBCastAddr;
     int status;
     unsigned short beaconPort;
     
-    ellInit(&this->beaconAddrList);
+    ellInit ( &BCastAddrList );
+    ellInit ( &this->beaconAddrList );
     
     if ( ! osiSockAttach () ) {
         throw S_cas_internal;
@@ -90,10 +110,8 @@ casDGIntfIO::casDGIntfIO (caServerI &serverIn, const caNetAddr &addr,
     // discover beacon addresses associated with this interface
     //
     {
-        ELLLIST BCastAddrList;
         osiSockAddrNode *pAddr;
 
-        ellInit (&BCastAddrList);
         osiSockDiscoverBroadcastAddresses (&BCastAddrList, 
             this->sock, &serverAddr); // match addr 
         if (ellCount(&BCastAddrList)<1) {
@@ -106,7 +124,7 @@ casDGIntfIO::casDGIntfIO (caServerI &serverIn, const caNetAddr &addr,
         serverBCastAddr.ia.sin_port = htons (this->dgPort);
 
         if (autoBeaconAddr) {
-            setPortAndRemoveDuplicates (&this->beaconAddrList, &BCastAddrList, beaconPort);
+            forcePort (&BCastAddrList,beaconPort);
         }
         else {
             ellFree (&BCastAddrList);
@@ -144,9 +162,11 @@ casDGIntfIO::casDGIntfIO (caServerI &serverIn, const caNetAddr &addr,
         // add in the configured addresses
         //
         addAddrToChannelAccessAddressList (
-            &this->beaconAddrList, pParam, beaconPort);
+            &BCastAddrList, pParam, beaconPort);
     }
-       
+ 
+    removeDuplicatesAddresses ( &this->beaconAddrList, &BCastAddrList );
+
 	//
     // Solaris specific:
 	// If they are binding to a particular interface then

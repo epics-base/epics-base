@@ -7,15 +7,16 @@ extern "C" {
 #endif
 
 epicsShareFunc void epicsShareAPI configureChannelAccessAddressList 
-        (ELLLIST *pList, SOCKET sock, unsigned short port);
+    ( ELLLIST *pList, SOCKET sock, unsigned short port );
 
 epicsShareFunc void epicsShareAPI addAddrToChannelAccessAddressList 
-    (ELLLIST *pList, const ENV_PARAM *pEnv, unsigned short port);
+    ( ELLLIST *pList, const ENV_PARAM *pEnv, unsigned short port );
 
-epicsShareFunc void epicsShareAPI printChannelAccessAddressList (const ELLLIST *pList);
+epicsShareFunc void epicsShareAPI printChannelAccessAddressList 
+    ( const ELLLIST *pList );
 
-epicsShareFunc void epicsShareAPI setPortAndRemoveDuplicates 
-    (ELLLIST *pDestList, ELLLIST *pSrcList, unsigned short port);
+epicsShareFunc void epicsShareAPI removeDuplicatesAddresses
+    ( ELLLIST *pDestList, ELLLIST *pSrcList );
 
 #ifdef __cplusplus
 }

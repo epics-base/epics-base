@@ -78,6 +78,7 @@ epicsShareFunc void epicsShareAPI addAddrToChannelAccessAddressList
         }
 
         pNewNode->addr.ia = addr;
+        memset ( &pNewNode->netMask, '\0', sizeof ( pNewNode->netMask ) );
 
 		/*
 		 * LOCK applied externally
@@ -89,30 +90,26 @@ epicsShareFunc void epicsShareAPI addAddrToChannelAccessAddressList
 }
 
 /*
- * setPortAndRemoveDuplicates ()
+ * removeDuplicatesAddresses ()
  */
-epicsShareFunc void epicsShareAPI setPortAndRemoveDuplicates 
-    (ELLLIST *pDestList, ELLLIST *pSrcList, unsigned short port)
+epicsShareFunc void epicsShareAPI removeDuplicatesAddresses 
+    ( ELLLIST *pDestList, ELLLIST *pSrcList )
 {
     osiSockAddrNode *pNode;
 
-    /*
-     * eliminate duplicates and set the port
-     */
     while ( (pNode  = (osiSockAddrNode *) ellGet ( pSrcList ) ) ) {
         osiSockAddrNode *pTmpNode;
 
         if ( pNode->addr.sa.sa_family == AF_INET ) {
-            /*
-             * set the correct destination port
-             */
-            pNode->addr.ia.sin_port = htons (port);
 
             pTmpNode = (osiSockAddrNode *) ellFirst (pDestList);
             while ( pTmpNode ) {
                 if (pTmpNode->addr.sa.sa_family == AF_INET) {
-                    if (pNode->addr.ia.sin_addr.s_addr == pTmpNode->addr.ia.sin_addr.s_addr && 
-                        pNode->addr.ia.sin_port == pTmpNode->addr.ia.sin_port) {
+                    unsigned netMask = pNode->netMask.ia.sin_addr.s_addr | 
+                        pTmpNode->netMask.ia.sin_addr.s_addr;
+                    unsigned exorAddr = pNode->addr.ia.sin_addr.s_addr ^ pTmpNode->addr.ia.sin_addr.s_addr;
+                    exorAddr &= netMask;
+                    if ( exorAddr == 0u && pNode->addr.ia.sin_port == pTmpNode->addr.ia.sin_port) {
                         char buf[64];
                         ipAddrToDottedIP ( &pNode->addr.ia, buf, sizeof (buf) );
                         ca_printf ( "Warning: Duplicate EPICS CA Address list entry \"%s\" discarded\n", buf );
@@ -132,6 +129,23 @@ epicsShareFunc void epicsShareAPI setPortAndRemoveDuplicates
         }
     }
 }
+
+/*
+ * forcePort ()
+ */
+static void  forcePort (ELLLIST *pList, unsigned short port)
+{
+    osiSockAddrNode *pNode;
+
+    pNode  = (osiSockAddrNode *) ellFirst ( pList );
+    while ( pNode ) {
+        if ( pNode->addr.sa.sa_family == AF_INET ) {
+            pNode->addr.ia.sin_port = htons (port);
+        }
+        pNode = (osiSockAddrNode *) ellNext ( &pNode->node );
+    }
+}
+
 
 /*
  * configureChannelAccessAddressList ()
@@ -183,17 +197,21 @@ epicsShareFunc void epicsShareAPI configureChannelAccessAddressList
                  */
                 pNewNode->addr.ia.sin_family = AF_INET;
                 pNewNode->addr.ia.sin_addr.s_addr = htonl ( INADDR_LOOPBACK );
+                pNewNode->addr.ia.sin_port = htons ( port );
+                memset ( &pNewNode->netMask, '\0', sizeof ( pNewNode->netMask ) );
                 ellAdd ( &tmpList, &pNewNode->node );
             }
             else {
                 errlogPrintf ( "configureChannelAccessAddressList(): no memory available for configuration\n" );
             }
         }
+        else {
+            forcePort ( &tmpList, port );
+        }
     }
-
     addAddrToChannelAccessAddressList ( &tmpList, &EPICS_CA_ADDR_LIST, port );
 
-    setPortAndRemoveDuplicates (pList, &tmpList, port);
+    removeDuplicatesAddresses ( pList, &tmpList );
 }
 
 

@@ -62,6 +62,8 @@ private:
 	epicsShareFunc virtual void callBack ();
 };
 
+class oldFdmgr;
+
 //
 // osiTimerForOldFdmgr
 //

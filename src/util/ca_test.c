@@ -30,6 +30,7 @@
  * .03	09-24-91	joh	changed declaration of `outstanding'
  *				to a long
  * .04	01-14-91	joh	documentation
+ * .05	09-14-93	jba	added def of print_returned
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -51,6 +52,7 @@
 
 static void 		printit();
 static void 		verify();
+static void			print_returned();
 
 static long	outstanding;
 
@@ -380,7 +382,7 @@ int		type;
  *
  * switches over the range of CA data types and reports the value
  */
-static print_returned(type,pbuffer,count)
+static void print_returned(type,pbuffer,count)
   short	type;
   char	*pbuffer;
   short		count;

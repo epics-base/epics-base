@@ -28,6 +28,8 @@
  * .01	07-20-91	rac	initial version
  * .02	08-07-91	joh	added config get for long and double C types
  * .03	08-07-91	joh	added config get for struct in_addr type
+ * .04	01-11-95	joh	use getenv()/putenv() to fetch/write env 
+ *				vars under vxWorks	
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -60,20 +62,21 @@
 *
 *-***************************************************************************/
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <netinet/in.h>
+
 #ifdef vxWorks
-#   include <vxWorks.h>
-#   include <stdioLib.h>
-#   include <in.h>
-#   include <types.h>
-#else
-#   include <stdio.h>
-#   include <stdlib.h>
-#   include <sys/types.h>
-#   include <netinet/in.h>
+#include <inetLib.h>
+#include <envLib.h>
+#include <errnoLib.h>
 #endif
 
 #define ENV_PRIVATE_DATA
 #include <envDefs.h>
+#include <errMdef.h>
 #include <epicsEnvParams.h>
 
 
@@ -122,11 +125,8 @@ char	*pBuf;		/* I pointer to parameter buffer  */
     char	*pEnv;		/* pointer to environment string */
     long	i;
 
-#ifndef vxWorks
     pEnv = getenv(pParam->name);
-#else
-    pEnv = NULL;
-#endif
+
     if (pEnv == NULL)
 	pEnv = pParam->dflt;
     if (strlen(pEnv) <= 0)
@@ -363,26 +363,64 @@ ENV_PARAM *pParam;	/* I pointer to config param structure */
 *
 *-*/
 long
-envSetConfigParam(pParam, value)
-ENV_PARAM *pParam;	/* I pointer to config param structure */
-char	*value;		/* I pointer to value string */
+envSetConfigParam (pParam, value)
+ENV_PARAM 	*pParam;	/* I pointer to config param structure */
+char		*value;		/* I pointer to value string */
 {
 #ifndef vxWorks
-    printf("envSetConfigParam can't be used in UNIX\n");
+    	printf("envSetConfigParam can only be used under vxWorks\n");
+	return -1L;
 #else
-    if (strlen(value) < 80)
-	strcpy(pParam->dflt, value);
-    else {
-	strncpy(pParam->dflt, value, 79);
-	pParam->dflt[79] = '\0';
-    }
+	long	retCode = 0;
+	int	status;
+	char	*pEnv;
+
+	/*
+	 * space for two strings, an '=' character,
+	 * and a null termination
+	 */
+	pEnv = malloc (strlen (pParam->name) + strlen (value) + 2);
+	if (!pEnv) {
+		errPrintf(
+			-1L,
+			__FILE__,
+			__LINE__,
+"Failed to set environment parameter \"%s\" to \"%s\" because \"%s\"\n",
+			pParam->name,
+			value,
+			strerror (errnoGet()));
+		return -1L;
+	}
+
+	strcpy (pEnv, pParam->name);
+	strcat (pEnv, "=");
+	strcat (pEnv, value);
+	status = putenv (pEnv);
+	if (status<0) {
+		errPrintf(
+			-1L,
+			__FILE__,
+			__LINE__,
+"Failed to set environment parameter \"%s\" to \"%s\" because \"%s\"\n",
+			pParam->name,
+			value,
+			strerror (errnoGet()));
+		retCode = -1L;
+	}
+	/*
+ 	 * vxWorks copies into a private buffer
+	 * (this does not match UNIX behavior)
+	 */
+	free (pEnv);
+	
+	return retCode;
 #endif
-    return 0;
 }
+
 
 /*parameters meant to be modified in epicsEnvParams.h*/
 
-epicsSetEnvParams()
+int epicsSetEnvParams()
 {
     printf("setting EPICS environment parameters\n");
     envSetConfigParam(&EPICS_TS_MIN_WEST, EPICS_TS_MIN_VALUE);
@@ -393,7 +431,8 @@ epicsSetEnvParams()
     envSetConfigParam(&EPICS_IOC_LOG_FILE_NAME, EPICS_IOC_LOG_FILE_TXT);
     return 0;
 }
-epicsPrtEnvParams()
+
+int epicsPrtEnvParams()
 {
     envPrtConfigParam(&EPICS_TS_MIN_WEST);
     envPrtConfigParam(&EPICS_CMD_PROTO_PORT);

@@ -37,6 +37,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
 #include <time.h>
 
@@ -196,7 +197,7 @@ LOCAL ITEM **bucketUnsignedCompare (ITEM **ppi, const void *pId)
 /*
  * bucketPointerCompare()
  */
-ITEM **bucketPointerCompare (ITEM **ppi, const void *pId)
+LOCAL ITEM **bucketPointerCompare (ITEM **ppi, const void *pId)
 {
 	void		*ptr;	
 	void		**pItemId;
@@ -219,7 +220,7 @@ ITEM **bucketPointerCompare (ITEM **ppi, const void *pId)
 /*
  * bucketStringCompare ()
  */
-ITEM **bucketStringCompare (ITEM **ppi, const void *pId)
+LOCAL ITEM **bucketStringCompare (ITEM **ppi, const void *pId)
 {
 	const char	*pStr = pId;	
 	ITEM		*pi;
@@ -241,7 +242,7 @@ ITEM **bucketStringCompare (ITEM **ppi, const void *pId)
 /*
  * bucketUnsignedHash ()
  */
-BUCKETID bucketUnsignedHash (BUCKET *pb, const void *pId)
+LOCAL BUCKETID bucketUnsignedHash (BUCKET *pb, const void *pId)
 {
 	const unsigned	*pUId = pId;	
 	unsigned 	src;
@@ -262,11 +263,10 @@ BUCKETID bucketUnsignedHash (BUCKET *pb, const void *pId)
 
 /*
  * bucketPointerHash ()
- *
  */
-BUCKETID bucketPointerHash (BUCKET *pb, const void *pId)
+LOCAL BUCKETID bucketPointerHash (BUCKET *pb, const void *pId)
 {
-	void * const	*ppId = pId;	
+	void * const	*ppId = (void * const *) pId;	
 	unsigned long	src;
 	BUCKETID	hashid;
 
@@ -292,7 +292,7 @@ BUCKETID bucketPointerHash (BUCKET *pb, const void *pId)
 /*
  * bucketStringHash ()
  */
-BUCKETID bucketStringHash (BUCKET *pb, const void *pId)
+LOCAL BUCKETID bucketStringHash (BUCKET *pb, const void *pId)
 {
 	const char	*pStr = pId;	
 	BUCKETID	hashid;

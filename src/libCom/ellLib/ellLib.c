@@ -32,6 +32,8 @@
 
 /* #define	DEBUG_DRIVER */
 
+#include <stdlib.h>
+
 #include <ellLib.h>
 
 #if     !defined(NULL) 

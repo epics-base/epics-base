@@ -61,27 +61,32 @@
  * .01  09-04-93        rcz     Merged errMessage.c, errPrint.c, errSymFind.c
  *			rcz	into one file (errSymLib.c) and changed method
  *			rcz	of errSymTable lookup.
+ * .02 	01-13-95	joh	call mprintf() instead of logMsg()	
+ *				and eliminated errToLogMsg variable
  */
+
+#include <stdio.h>
+#include <string.h>
+#include <errno.h>
 
 #include <ellLib.h>
 #include <dbDefs.h>
 #include <errMdef.h>
 #include "errSymTbl.h"
-#include <stdio.h>
 
 #ifdef vxWorks
 #include <vxWorks.h>
 #include <taskLib.h>
-#include <logLib.h>
 #include <types.h>
 #include <symLib.h>
+#include <errnoLib.h>
+
+#include <mprintf.h>
 
 extern SYMTAB_ID  statSymTbl;
 
 #else
-#include <string.h>
-extern int errno;
-extern int      sys_nerr;
+extern int     sys_nerr;
 extern char    *sys_errlist[];
 #endif
 
@@ -108,14 +113,14 @@ static int initialized = FALSE;
 extern ERRSYMTAB_ID errSymTbl;
 
 
-#ifdef vxWorks
-int errToLogMsg = TRUE;
-#endif
-
 /*Declare storage for errVerbose( defined in errMdef.h)*/
 int errVerbose=0;
 
-
+#ifdef __STDC__
+int verrPrintStatus(long status, char *pFormatString, va_list pvar);
+#else
+int verrPrintStatus();
+#endif
 
 
 /****************************************************************
@@ -213,11 +218,6 @@ va_dcl
     char	   *pFileName;
     int		   lineno;
 #endif
-#ifdef vxWorks
-    int             id;
-    static int      saveid = -1;
-    char           *pname;
-#endif
 
 #ifdef __STDC__
     va_start(pvar, pformat);
@@ -229,29 +229,8 @@ va_dcl
     pformat = va_arg(pvar, char *);
 #endif
 
-#ifdef vxWorks
-    if(!errToLogMsg) {
-	id = taskIdSelf();
-	if (saveid != id) {
-	    saveid = id;
-	    pname = taskName(id);
-	    printf("taskid=%x taskname=%s ", id, pname);
-	}
-    }
-#endif
-
     if(pFileName && errVerbose){
-#ifdef vxWorks
-      	if(errToLogMsg) {
-        	logMsg("filename=\"%s\" line number=%d\n", pFileName, lineno,
-		NULL, NULL, NULL, NULL);
-      	}
-      	else{
-        	printf("filename=\"%s\" line number=%d\n", pFileName, lineno);
-      	}
-#else
-      	printf("filename=\"%s\" line number=%d\n", pFileName, lineno);
-#endif
+      	mprintf("filename=\"%s\" line number=%d\n", pFileName, lineno);
     }
 
     if (pformat != NULL) {
@@ -273,12 +252,7 @@ va_dcl
 			reformatSize = size;
 		}
 		else{
-#ifdef vxWorks
-		    logMsg("%s: calloc error\n", __FILE__,
-		    NULL, NULL, NULL, NULL, NULL);
-#else
-		    printf("%s: calloc error\n", __FILE__);
-#endif
+		    mprintf ("%s: calloc error\n", __FILE__);
 		    return;
 		}
 	}
@@ -369,34 +343,11 @@ va_list	pvar;
 			strcat(name, ctxToLarge);
 		}
 		else{
-			fprintf(stderr,ctxToLarge);
+			mprintf(ctxToLarge);
 		}
 	}
 
-#ifdef vxWorks
-	if(errToLogMsg){
-		int     i;
-		int     logMsgArgs[6];
-
-		for(i=0; i< NELEMENTS(logMsgArgs); i++){
-			logMsgArgs[i] = va_arg(pvar, int);
-		}
-
-		logMsg(
-			name,
-			logMsgArgs[0],
-			logMsgArgs[1],
-			logMsgArgs[2],
-			logMsgArgs[3],
-			logMsgArgs[4],
-			logMsgArgs[5]);
-	}
-	else{
-		vprintf(name, pvar);
-	}
-#else
-	vprintf(name, pvar);
-#endif
+	vmprintf(name, pvar);
 
 	return rtnval;
 }
@@ -623,3 +574,5 @@ unsigned short endErrNum;
 	errSymTestPrint(errNum);
     }
 }
+
+

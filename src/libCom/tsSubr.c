@@ -37,6 +37,7 @@
  *  .09 02-09-94 jbk 	tsLocalTime() now calls TScurrentTimeStamp() vxWorks
  *			for the EPOCH year
  *  .10	05-04-94 pg	HPUX cpp changes. (elif to else and if)
+ *  .11	01-09-95 joh	fixed ts min west out of range test	
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -107,19 +108,23 @@
 * 4.2 BSD.)
 *-***************************************************************************/
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include <string.h>
+
 #ifdef vxWorks
 #   include <vxWorks.h>
 #   include <stdioLib.h>
 #   include <strLib.h>
-#   include <ctype.h>
 #else
 #if VMS
+#   include <sys/time.h>
 #else
 #   include <sys/time.h>
-#   include <stdio.h>
-#   include <string.h>
+#if 0
 #   include <strings.h>
-#   include <ctype.h>
+#endif
 #endif
 #endif
 
@@ -361,7 +366,7 @@ date()
 *
 *-*/
 static
-sunday(day, leap, dayYear, dayOfWeek)
+int sunday(day, leap, dayYear, dayOfWeek)
 int	day;		/* I day of year to find closest Sunday */
 int	leap;		/* I 0, 1 for not leap year, leap year, respectively */
 int	dayYear;	/* I known day of year */
@@ -600,10 +605,6 @@ TS_STAMP *pStamp;	/* O pointer to time stamp buffer */
 	return TScurrentTimeStamp((struct timespec*)pStamp);
 #  endif
 #else
-#if VMS
-    assert(0);		/* not available on VMS */
-    assert(pStamp != NULL);
-#else		/* SunOS */
     struct timeval curtime;
 
     assert(pStamp != NULL);
@@ -613,7 +614,6 @@ TS_STAMP *pStamp;	/* O pointer to time stamp buffer */
 	pStamp->nsec = ( curtime.tv_usec/1000 ) * 1000000;
 	pStamp->secPastEpoch = curtime.tv_sec - TS_EPOCH_SEC_PAST_1970;
     }
-#endif
 #endif
 
     pStamp->nsec = pStamp->nsec - (pStamp->nsec % TS_TRUNC);
@@ -874,7 +874,7 @@ tsInitMinWest()
     if (envGetLongConfigParam(&EPICS_TS_MIN_WEST, &tsMinWest) != 0)
 	error = 1;
     else
-	if (tsMinWest > 1380 && tsMinWest < -1380)
+	if (tsMinWest > 1380 || tsMinWest < -1380)
 	    error = 1;
     if (error) {
 	    (void)printf(
@@ -1373,10 +1373,8 @@ TS_STAMP *pStamp;	/* O time stamp corresponding to text */
 char	**pText;	/* IO ptr to ptr to string containing time and date */
 {
     long	retStat=S_ts_OK;/* status return to caller */
-    long	stat;		/* status from calls */
     struct tsDetail t;		/* detailed breakdown of text */
     TS_STAMP	stamp;		/* temp for building time stamp */
-    char	*pField;	/* pointer to field */
     char	delim;		/* delimiter character */
     int		count;		/* count from scan of next field */
     long	nsec;		/* temp for nano-seconds */

@@ -2,8 +2,8 @@
  * RTEMS startup task for EPICS
  *  $Id$
  *      Author: W. Eric Norum
- *              eric@cls.usask.ca
- *              (306) 966-6055
+ *              eric.norum@usask.ca
+ *              (306) 966-5394
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -200,6 +200,9 @@ rtems_task
 Init (rtems_task_argument ignored)
 {
     int i;
+    char arg0[] = "RTEMS_IOC";
+    char arg1[] = "st.cmd";
+	char *argv[3] = { arg0, arg1, NULL };
 
     /*
      * Create a reasonable environment
@@ -247,16 +250,10 @@ Init (rtems_task_argument ignored)
     /*
      * Run the EPICS startup script
      */
-    printf ("***** Executing EPICS startup script *****\n");
+    printf ("***** Starting EPICS application *****\n");
     iocshRegisterRTEMS ();
     rtems_set_directory ();
-    iocsh ("st.cmd");
-
-    /*
-     * Everything's running!
-     */
-    epicsThreadSleep (2.0);
-    iocsh (NULL);
+    main ((sizeof argv / sizeof argv[0]) - 1, argv);
     LogFatal ("Console command interpreter terminated");
 }
 

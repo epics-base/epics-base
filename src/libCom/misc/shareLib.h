@@ -165,7 +165,7 @@
 #       elif defined (_MSC_VER)
 #	        define INLINE __inline
 #       elif defined (_SUNPRO_C)
-#           pragma error_messages (off, extern and prior uses redeclared as static)
+#           pragma error_messages (off, E_EXTERN_PRIOR_REDECL_STATIC)
 #           define INLINE static
 #       else
 #	        define INLINE static

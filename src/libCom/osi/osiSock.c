@@ -168,12 +168,12 @@ void epicsShareAPI ipAddrToDottedIP
     }
 }
 
-epicsShareFunc void epicsShareAPI epicsSocketEnableInterruptedSystemCall ()
+epicsShareFunc void epicsShareAPI epicsEnableInterruptedSystemCall ()
 {
     epicsSignalInstallSigUrgIgnore ();
 }
 
-epicsShareFunc void epicsShareAPI epicsSocketInterruptSystemCall 
+epicsShareFunc void epicsShareAPI epicsInterruptSystemCall 
                                     ( struct epicsThreadOSD * threadId )
 {
     epicsSignalRaiseSigUrg ( threadId );

@@ -65,7 +65,7 @@ void tcpSendThread::exitWait ()
 void tcpSendThread::run ()
 {
     try {
-        epicsSocketEnableInterruptedSystemCall ();
+        epicsEnableInterruptedSystemCall ();
 
         while ( true ) {
             bool flowControlLaborNeeded;
@@ -283,7 +283,7 @@ void tcpRecvThread::exitWait ()
 void tcpRecvThread::run ()
 {
     try {
-        epicsSocketEnableInterruptedSystemCall ();
+        epicsEnableInterruptedSystemCall ();
 
         this->iiu.cacRef.attachToClientCtx ();
 

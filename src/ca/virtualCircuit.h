@@ -256,7 +256,7 @@ inline void tcpRecvThread::interruptSocketRecv ()
 {
     epicsThreadId threadId = this->thread.getId ();
     if ( threadId ) {
-        epicsSocketInterruptSystemCall ( threadId );
+        epicsInterruptSystemCall ( threadId );
     }
 }
 
@@ -264,7 +264,7 @@ inline void tcpSendThread::interruptSocketSend ()
 {
     epicsThreadId threadId = this->thread.getId ();
     if ( threadId ) {
-        epicsSocketInterruptSystemCall ( threadId );
+        epicsInterruptSystemCall ( threadId );
     }
 }
 

@@ -173,9 +173,9 @@ epicsShareFunc osiSockAddr epicsShareAPI osiLocalAddr (SOCKET socket);
  * close(). To solve this problem we need to employ OS specific
  * mechanisms.
  */
-epicsShareFunc void epicsShareAPI epicsSocketEnableInterruptedSystemCall ();
+epicsShareFunc void epicsShareAPI epicsEnableInterruptedSystemCall ();
 struct epicsThreadOSD;
-epicsShareFunc void epicsShareAPI epicsSocketInterruptSystemCall ( struct epicsThreadOSD * );
+epicsShareFunc void epicsShareAPI epicsInterruptSystemCall ( struct epicsThreadOSD * );
 
 #ifdef __cplusplus
 }

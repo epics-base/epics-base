@@ -62,11 +62,10 @@
 #include	<stdlib.h>
 #include	<stdio.h>
 #include	<string.h>
-#include	<math.h>
+#include	"epicsMath.h"
 
 #include	"dbDefs.h"
 #define epicsExportSharedSymbols
-#include    "epicsMath.h"
 #include	"cvtFast.h"
 #include	"sCalcPostfix.h"
 #include	"sCalcPostfixPvt.h"
@@ -142,10 +141,13 @@ static void to_string(struct stackElement *ps)
 {
 	ps->s = calloc(20, 1);
 	/* any precision greater than 8 results in (slow) sprintf call */
-	if (epicsIsNAN(ps->d))
-		strcpy(ps->s,"NaN");
-	else
+	if (isnan(ps->d)) {
+		strcpy(ps->s,"nan");
+	} else if (isinf(ps->d)) {
+		strcpy(ps->s,"inf");
+	} else {
 		(void)cvtDoubleToString(ps->d, ps->s, 8);
+	}
 }
 
 static char *findConversionIndicator(char *s)
@@ -637,10 +639,13 @@ printf(") \n");
 #endif
 		*presult = *pd;
 		if (psresult && (lenSresult > 15)) {
-			if (epicsIsNAN(*pd))
-				strcpy(psresult,"NaN");
-			else
+			if (isnan(*pd)) {
+				strcpy(psresult,"nan");
+			} else if (isinf(*pd)) {
+				strcpy(psresult,"inf");
+			} else {
 				(void)cvtDoubleToString(*pd, psresult, 8);
+			}
 		}
 	} else {
 
@@ -1418,7 +1423,7 @@ printf(") \n");
 
 	} /* if (*post++ != USES_STRING) {} else */
 
-	return(0);
+	return(((isnan(*presult)||isinf(*presult)) ? -1 : 0));
 }
 
 

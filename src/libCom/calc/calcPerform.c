@@ -104,8 +104,7 @@
 #include	<stddef.h>
 #include	<stdio.h>
 #include	<string.h>
-#include	<math.h>
-#include	<epicsMath.h>
+#include	"epicsMath.h"
 
 #include	"dbDefs.h"
 
@@ -512,7 +511,7 @@ printf ("*FINISHED*\n");
 		*presult = *pstacktop;
 	else
 		return(-1);
-	return((epicsIsNAN(*presult) ? -1 : 0));
+	return(((isnan(*presult)||isinf(*presult)) ? -1 : 0));
 }
 
 

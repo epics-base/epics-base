@@ -32,6 +32,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.38  1998/05/29 00:03:21  jhill
+ * allow CA to run systems w/o local interface query capabilities (ie cygwin32)
+ *
  * Revision 1.37  1998/04/15 21:53:02  jhill
  * fixed incomplete init problem
  *
@@ -67,6 +70,9 @@
  *
  * Revision 1.19  1995/11/29  19:15:42  jhill
  * added $Log$
+ * added Revision 1.38  1998/05/29 00:03:21  jhill
+ * added allow CA to run systems w/o local interface query capabilities (ie cygwin32)
+ * added
  * added Revision 1.37  1998/04/15 21:53:02  jhill
  * added fixed incomplete init problem
  * added
@@ -112,6 +118,7 @@
 #include <mmsystem.h>
 
 #include "epicsVersion.h"
+#include "bsdSocketResource.h"
 #include "iocinf.h"
 
 #ifndef _WIN32
@@ -120,8 +127,7 @@
 
 long offset_time;  /* time diff (sec) between 1970 and when windows started */
 DWORD prev_time;
-static WSADATA WsaData; /* version of winsock */
-
+static UINT wTimerRes;
 static void init_timers();
 
 
@@ -192,6 +198,7 @@ void cac_block_for_sg_completion(CASG *pcasg, struct timeval *pTV)
 int epicsShareAPI ca_task_initialize(void)
 {
 	int status;
+	TIMECAPS tc;
 
 	if (ca_static) {
 		return ECA_NORMAL;
@@ -203,21 +210,39 @@ int epicsShareAPI ca_task_initialize(void)
 		return ECA_ALLOCMEM;
 	}
 
+	/*
+	 * this code moved here from dllMain() so that the code will also run
+	 * in object libraries
+	 */
+	if (!bsdSockAttach()) {
+		free (ca_static);
+		ca_static = NULL;
+		return ECA_INTERNAL;
+	}
+	 	
+	/* setup multi-media timer */
+	if (timeGetDevCaps(&tc, sizeof(TIMECAPS)) != TIMERR_NOERROR) {
+		fprintf(stderr,"cant get timer info \n");
+		bsdSockRelease ();
+		free (ca_static);
+		ca_static = NULL;
+		return ECA_INTERNAL;
+	}
+	/* set for 1 ms resoulution */
+	wTimerRes = min(max(tc.wPeriodMin, 1), tc.wPeriodMax);
+	status = timeBeginPeriod(wTimerRes);
+	if (status != TIMERR_NOERROR)
+		fprintf(stderr,"timer setup failed\n");
+	offset_time = (long)time(NULL) - (long)timeGetTime()/1000;
+	prev_time =  timeGetTime();
+
 	status = ca_os_independent_init ();
 	if (status != ECA_NORMAL) {
+		timeEndPeriod (wTimerRes);
+		bsdSockRelease ();
+		free (ca_static);
+		ca_static = NULL;
 		return status;
-	}
-
-	/*
-	 * select() under WIN32 gives us grief
-	 * if we delay with out interest in at
- 	 * least one fd (so we create the UDP
-	 * fd during init before it is used for 
-	 * the first time)
-	 */
-	cac_create_udp_fd();
-	if(!ca_static->ca_piiuCast){
-		return ECA_NOCAST;
 	}
 
     return ECA_NORMAL;
@@ -233,11 +258,20 @@ int epicsShareAPI ca_task_initialize(void)
 int epicsShareAPI ca_task_exit (void)
 {
 	if (!ca_static) {
-		return ECA_NOCACTX;
+		return ECA_NORMAL;
 	}
 	ca_process_exit();
 	free ((char *)ca_static);
 	ca_static = NULL;
+
+	/*
+	 * this code moved here from dllMain() so that the code will also run
+	 * in object libraries
+	 */
+	timeEndPeriod (wTimerRes);
+
+	bsdSockRelease ();
+
 	return ECA_NORMAL;
 }
 
@@ -278,7 +312,7 @@ char *localUserName()
  */
 void ca_spawn_repeater()
 {
-	int status;
+	BOOL status;
 	char *pImageName;
 	STARTUPINFO startupInfo;
 	PROCESS_INFORMATION processInfo;
@@ -302,8 +336,8 @@ void ca_spawn_repeater()
 	startupInfo.wShowWindow = SW_SHOWMINNOACTIVE;
 	
 	status =  CreateProcess( 
-		pImageName, // pointer to name of executable module 
-		NULL, // pointer to command line string (defaults to just the executable name above)
+		NULL, // pointer to name of executable module (not required if command line is specified)
+		pImageName, // pointer to command line string 
 		NULL, // pointer to process security attributes 
 		NULL, // pointer to thread security attributes 
 		FALSE, // handle inheritance flag 
@@ -313,7 +347,7 @@ void ca_spawn_repeater()
 		&startupInfo, // pointer to STARTUPINFO 
 		&processInfo // pointer to PROCESS_INFORMATION 
 	); 
-	if (!status) {
+	if (status==0) {
 		DWORD W32status;
 		LPVOID errStrMsgBuf;
 		LPVOID complteMsgBuf;
@@ -437,7 +471,7 @@ int local_addr (SOCKET socket, struct sockaddr_in *plcladdr)
 	/* 
 	 * only valid for winsock 2 and above 
 	 */
-	if ( LOBYTE( WsaData.wVersion ) < 2 ) {
+	if (wsaMajorVersion() < 2 ) {
 		return -1;
 	}
 
@@ -543,7 +577,7 @@ void epicsShareAPI caDiscoverInterfaces(ELLLIST *pList, SOCKET socket,
 	 */
 
 	/* only valid for winsock 2 and above */
-	if ( LOBYTE( WsaData.wVersion ) < 2 ) {
+	if (wsaMajorVersion() < 2 ) {
 		fprintf(stderr, "Need to set EPICS_CA_AUTO_ADDR_LIST=NO for winsock 1\n");
 		return;
 	}
@@ -634,7 +668,7 @@ void epicsShareAPI caDiscoverInterfaces(ELLLIST *pList, SOCKET socket,
 		}
 
 		pNode = (caAddrNode *) calloc(1,sizeof(*pNode));
-		if(!pNode){
+		if (!pNode) {
 			continue;
 		}
 
@@ -645,74 +679,42 @@ void epicsShareAPI caDiscoverInterfaces(ELLLIST *pList, SOCKET socket,
 		/*
 		 * LOCK applied externally
 		 */
-		ellAdd(pList, &pNode->node);
+		ellAdd (pList, &pNode->node);
 	}
 
 	free(pIfinfoList);
 }
 
+#ifdef EPICS_DLL
+
+/*
+ * most of the code here was moved to ca_task_initialize and ca_task_exit()
+ * so that the code will also run in object libraries
+ */
 BOOL epicsShareAPI DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 {
 	int status;
-	TIMECAPS tc;
-	static UINT     wTimerRes;
 
 	switch (dwReason)  {
 
 	case DLL_PROCESS_ATTACH:
-
-#if _DEBUG			  /* for gui applications, setup console for error messages */
-		if (AllocConsole())	{
-			char title[256];
-			DWORD titleLength = GetConsoleTitle(title, sizeof(title));
-			if (titleLength) {
-				titleLength = strlen (title);
-				strncat (title, " " BASE_VERSION_STRING, sizeof(title));
-			}
-			else {
-				strncpy(title, BASE_VERSION_STRING, sizeof(title));
-			}
-			title[sizeof(title)-1]= '\0';
-			SetConsoleTitle(title);
-    		freopen( "CONOUT$", "a", stderr );
-		}
-		fprintf(stderr, "Process attached to ca.dll version %s\n", EPICS_VERSION_STRING);
-#endif	 			  /* init. winsock */
-		if ((status = WSAStartup(MAKEWORD(/*major*/2,/*minor*/2), &WsaData)) != 0) {
-			WSACleanup();
-			fprintf(stderr,
-	"Unable to attach to windows sockets version 2. error=%d\n", status);
-			fprintf(stderr,
-	"A Windows Sockets II update for windows 95 is available at\n");
-			fprintf(stderr,
-	"http://www.microsoft.com/windows95/info/ws2.htm");
+		status = ca_task_initialize();
+		if (status!=ECA_NORMAL) {
 			return FALSE;
 		}
-		
-#if _DEBUG			  
-		fprintf(stderr, "EPICS ca.dll attached to winsock version %s\n", WsaData.szDescription);
-#endif	 	
-					   /* setup multi-media timer */
-		if (timeGetDevCaps(&tc, sizeof(TIMECAPS)) != TIMERR_NOERROR) {
-			fprintf(stderr,"cant get timer info \n");
-			return FALSE;
-		}
-					  /* set for 1 ms resoulution */
-		wTimerRes = min(max(tc.wPeriodMin, 1), tc.wPeriodMax);
-		status = timeBeginPeriod(wTimerRes);
-		if (status != TIMERR_NOERROR)
-			fprintf(stderr,"timer setup failed\n");
-		offset_time = (long)time(NULL) - (long)timeGetTime()/1000;
-		prev_time =  timeGetTime();
-
+#		ifdef _DEBUG
+			fprintf(stderr, "Process attached to ca.dll version %s\n", EPICS_VERSION_STRING);
+#		endif
 		break;
 
 	case DLL_PROCESS_DETACH:
-
-		timeEndPeriod(wTimerRes);
-
-		if ((status = WSACleanup()) !=0)
+		status = ca_task_exit ();
+		if (status!=ECA_NORMAL) {
 			return FALSE;
+		}
+#		ifdef _DEBUG
+			fprintf(stderr, "Process detached from ca.dll version %s\n", EPICS_VERSION_STRING);
+#		endif
 		break;
 
 	case DLL_THREAD_ATTACH:
@@ -731,10 +733,7 @@ BOOL epicsShareAPI DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 		break;
 	}
 
-return TRUE;
-
-
+	return TRUE;
 }
 
-
-
+#endif

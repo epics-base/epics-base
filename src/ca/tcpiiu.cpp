@@ -84,9 +84,9 @@ tcpiiu * constructTCPIIU (cac *pcac, const struct sockaddr_in *pina,
 
 
 /*
- * cac_connect_tcp ()
+ * tcpiiu::connect ()
  */
-LOCAL void cac_connect_tcp (tcpiiu *piiu)
+void tcpiiu::connect ()
 {
     int status;
         
@@ -96,14 +96,14 @@ LOCAL void cac_connect_tcp (tcpiiu *piiu)
     while (1) {
         int errnoCpy;
 
-        status = connect ( piiu->sock, &piiu->dest.sa,
-                sizeof (piiu->dest.sa) );
-        if (status == 0) {
+        status = ::connect ( this->sock, &this->dest.sa,
+                sizeof ( this->dest.sa ) );
+        if ( status == 0 ) {
             break;
         }
 
         errnoCpy = SOCKERRNO;
-        if (errnoCpy==SOCK_EISCONN) {
+        if ( errnoCpy == SOCK_EISCONN ) {
             /*
              * called connect after we are already connected 
              * (this appears to be how they provide 
@@ -111,16 +111,7 @@ LOCAL void cac_connect_tcp (tcpiiu *piiu)
              */
             break;
         }
-        else if ( errnoCpy==SOCK_EINPROGRESS ||
-            errnoCpy==SOCK_EWOULDBLOCK /* for WINSOCK */ ) {
-            /*
-             * The  socket  is   non-blocking   and   a
-             * connection attempt has been initiated,
-             * but not completed.
-             */
-            return;
-        }
-        else if (errnoCpy==SOCK_EALREADY) {
+        else if ( errnoCpy == SOCK_EALREADY ) {
             return; 
         }
 #ifdef _WIN32
@@ -133,15 +124,20 @@ LOCAL void cac_connect_tcp (tcpiiu *piiu)
         }
 #endif
         else if ( errnoCpy == SOCK_EINTR ) {
-            /*
-             * restart the system call if interrupted
-             */
-            continue;
+            if ( this->state == iiu_disconnected ) {
+                return;
+            }
+            else {
+                continue;
+            }
+        }
+        else if ( errnoCpy == SOCK_SHUTDOWN ) {
+            return;
         }
         else {  
-            ca_printf ("Unable to connect because %d=\"%s\"\n", 
+            ca_printf ( "Unable to connect because %d=\"%s\"\n", 
                 errnoCpy, SOCKERRSTR (errnoCpy) );
-            piiu->shutdown ();
+            this->shutdown ();
             return;
         }
     }
@@ -149,9 +145,9 @@ LOCAL void cac_connect_tcp (tcpiiu *piiu)
     /*
      * put the iiu into the connected state
      */
-    piiu->state = iiu_connected;
+    this->state = iiu_connected;
 
-    piiu->rescheduleRecvTimer (); // reset connection activity watchdog
+    this->rescheduleRecvTimer (); // reset connection activity watchdog
 
     return;
 }
@@ -202,7 +198,7 @@ extern "C" void cacSendThreadTCP (void *pParam)
         int status;
 
         pOutBuf = static_cast <char *> ( cacRingBufferReadReserveNoBlock (&piiu->send, &sendCnt) );
-        while (!pOutBuf) {
+        while ( ! pOutBuf ) {
             piiu->tcpSendWatchdog::cancel ();
             pOutBuf = (char *) cacRingBufferReadReserve (&piiu->send, &sendCnt);
             if ( piiu->state != iiu_connected ) {
@@ -229,25 +225,30 @@ extern "C" void cacSendThreadTCP (void *pParam)
             cacRingBufferReadCommit (&piiu->send, 0);
 
             if ( status == 0 ) {    
-                semBinaryGive (piiu->sendThreadExitSignal);
                 piiu->shutdown ();
-                return;
+                break;
             }
 
             if ( localError == SOCK_SHUTDOWN ) {
                 break;
             }
 
-            if ( localError != SOCK_EWOULDBLOCK && localError != SOCK_EINTR ) {
-                if ( localError != SOCK_EPIPE && localError != SOCK_ECONNRESET &&
-                    localError != SOCK_ETIMEDOUT) {
-                    ca_printf ("CAC: unexpected TCP send error: %s\n", SOCKERRSTR (localError) );
+            if ( localError == SOCK_EINTR ) {
+                if ( piiu->state == iiu_disconnected ) {
+                    break;
                 }
-
-                semBinaryGive ( piiu->sendThreadExitSignal );
-                piiu->shutdown ();
-                return;
+                else {
+                    continue;
+                }
             }
+               
+            if ( localError != SOCK_EPIPE && localError != SOCK_ECONNRESET &&
+                localError != SOCK_ETIMEDOUT) {
+                ca_printf ("CAC: unexpected TCP send error: %s\n", SOCKERRSTR (localError) );
+            }
+
+            piiu->shutdown ();
+            break;
         }
     }
 
@@ -286,7 +287,7 @@ void tcpiiu::recvMsg ()
             return;
         }
 
-        if ( localErrno == SOCK_EWOULDBLOCK || localErrno == SOCK_EINTR ) {
+        if ( localErrno == SOCK_EINTR ) {
             return;
         }
         
@@ -314,7 +315,7 @@ extern "C" void cacRecvThreadTCP (void *pParam)
 {
     tcpiiu *piiu = (tcpiiu *) pParam;
 
-    cac_connect_tcp (piiu);
+    piiu->connect ();
     if ( piiu->state == iiu_connected ) {
         unsigned priorityOfSelf = threadGetPrioritySelf ();
         unsigned priorityOfSend;

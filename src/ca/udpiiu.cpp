@@ -27,23 +27,28 @@ LOCAL int cac_udp_recv_msg (udpiiu *piiu)
     int                 src_size = sizeof (src);
     int                 status;
 
-    status = recvfrom (piiu->sock, piiu->recvBuf, sizeof (piiu->recvBuf), 0,
-                        &src.sa, &src_size);
+    status = recvfrom ( piiu->sock, piiu->recvBuf, sizeof (piiu->recvBuf), 0,
+                        &src.sa, &src_size );
     if (status < 0) {
         int errnoCpy = SOCKERRNO;
 
-        if (errnoCpy == SOCK_SHUTDOWN) {
+        if ( errnoCpy == SOCK_SHUTDOWN ) {
             return -1;
         }
-        if (errnoCpy == SOCK_EWOULDBLOCK || errnoCpy == SOCK_EINTR) {
-            return 0;
+        if ( errnoCpy == SOCK_EINTR ) {
+            if ( piiu->shutdownCmd ) {
+                return -1;
+            }
+            else {
+                return 0;
+            }
         }
 #       ifdef linux
             /*
              * Avoid spurious ECONNREFUSED bug
              * in linux
              */
-            if (errnoCpy==SOCK_ECONNREFUSED) {
+            if ( errnoCpy == SOCK_ECONNREFUSED ) {
                 return 0;
             }
 #       endif
@@ -181,18 +186,16 @@ void notify_ca_repeater (udpiiu *piiu)
         len = 0;
 #   endif 
 
-    status = sendto (piiu->sock, (char *)&msg, len,  
-                        0, (struct sockaddr *)&saddr, sizeof(saddr));
-    if (status < 0) {
+    status = sendto ( piiu->sock, (char *) &msg, len,  
+                0, (struct sockaddr *)&saddr, sizeof (saddr) );
+    if ( status < 0 ) {
         int errnoCpy = SOCKERRNO;
-        if( errnoCpy != SOCK_EINTR && 
-            errnoCpy != SOCK_EWOULDBLOCK &&
+        if ( errnoCpy != SOCK_EINTR && 
             /*
              * This is returned from Linux when
              * the repeater isnt running
              */
-            errnoCpy != SOCK_ECONNREFUSED 
-            ) {
+            errnoCpy != SOCK_ECONNREFUSED ) {
             ca_printf (
                 "CAC: error sending to repeater was \"%s\"\n", 
                 SOCKERRSTR(errnoCpy));
@@ -209,7 +212,7 @@ extern "C" void cacSendThreadUDP (void *pParam)
 {
     udpiiu *piiu = (udpiiu *) pParam;
 
-    while ( ! piiu->sendThreadExitCmd ) {
+    while ( ! piiu->shutdownCmd ) {
         int status;
 
         if (piiu->contactRepeater) {
@@ -222,13 +225,13 @@ extern "C" void cacSendThreadUDP (void *pParam)
             osiSockAddrNode  *pNode;
 
             pNode = (osiSockAddrNode *) ellFirst (&piiu->dest);
-            while (pNode) {
+            while ( pNode ) {
 
                 assert ( piiu->nBytesInXmitBuf <= INT_MAX );
-                status = sendto (piiu->sock, piiu->xmitBuf,   
+                status = sendto ( piiu->sock, piiu->xmitBuf,   
                         (int) piiu->nBytesInXmitBuf, 0, 
-                        &pNode->addr.sa, sizeof(pNode->addr.sa));
-                if (status <= 0) {
+                        &pNode->addr.sa, sizeof (pNode->addr.sa) );
+                if ( status <= 0 ) {
                     int localErrno = SOCKERRNO;
 
                     if (status==0) {
@@ -239,7 +242,12 @@ extern "C" void cacSendThreadUDP (void *pParam)
                         break;
                     }
                     else if ( localErrno == SOCK_EINTR ) {
-                        status = 1;
+                        if ( piiu->shutdownCmd ) {
+                            break;
+                        }
+                        else {
+                            continue;
+                        }
                     }
                     else {
                         char buf[64];
@@ -258,17 +266,17 @@ extern "C" void cacSendThreadUDP (void *pParam)
 
             piiu->nBytesInXmitBuf = 0u;
 
-            if (status<=0) {
+            if ( status <= 0 ) {
                 break;
             }
         }
 
-        semMutexGive (piiu->xmitBufLock);
+        semMutexGive ( piiu->xmitBufLock );
 
-        semBinaryMustTake (piiu->xmitSignal);
+        semBinaryMustTake ( piiu->xmitSignal );
     }
 
-    semBinaryGive (piiu->sendThreadExitSignal);
+    semBinaryGive ( piiu->sendThreadExitSignal) ;
 }
 
 /*
@@ -342,7 +350,7 @@ udpiiu::udpiiu (cac *pcac) :
     netiiu (pcac),
     searchTmr (*this, pcac->timerQueue), 
     repeaterSubscribeTmr (*this, pcac->timerQueue),
-    sendThreadExitCmd (false)
+    shutdownCmd (false)
 {
     static const unsigned short PORT_ANY = 0u;
     osiSockAddr addr;
@@ -580,7 +588,7 @@ udpiiu::~udpiiu ()
 void udpiiu::shutdown ()
 {
     ::shutdown (this->sock, SD_BOTH);
-    this->sendThreadExitCmd = true;
+    this->shutdownCmd = true;
     semBinaryGive (this->xmitSignal);
 }
 

@@ -442,7 +442,7 @@ public:
     unsigned short          repeaterPort;
     bool                    contactRepeater;
     bool                    repeaterContacted;
-    bool                    sendThreadExitCmd;
+    bool                    shutdownCmd;
 
     // exceptions
     class noSocket {};
@@ -503,6 +503,7 @@ public:
     int post_msg (char *pInBuf, unsigned long blockSize);
     void addToChanList (nciu *chan);
     void removeFromChanList (nciu *chan);
+    void connect ();
     void disconnect (nciu *chan);
     bool fullyConstructed () const;
     void recvMsg ();

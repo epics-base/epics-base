@@ -75,12 +75,7 @@ arrayElementCount   num             /* number of values     */
     /* convert "in place" -> nothing to do */
     if (s == d)
         return;
-    if(num == 1){
-        strcpy(pDest, pSrc);
-    }
-    else{
-        memcpy(pDest, pSrc, num*MAX_STRING_SIZE);
-    }
+    memcpy(pDest, pSrc, num*MAX_STRING_SIZE);
 }
 
 /*
@@ -282,10 +277,7 @@ arrayElementCount   num         /* number of values     */
     if (s == d)
         return;
 
-    if (num == 1)   /* if single value */
-        strcpy(pDest->value, pSrc->value);
-    else
-        memcpy(pDest->value, pSrc->value, (MAX_STRING_SIZE * num));
+    memcpy(pDest->value, pSrc->value, (MAX_STRING_SIZE * num));
 
 }
 
@@ -432,7 +424,9 @@ arrayElementCount   num         /* number of values     */
 
     pDest->status       = dbr_ntohs(pSrc->status);
     pDest->severity     = dbr_ntohs(pSrc->severity);
-    memcpy(pDest->units,pSrc->units,sizeof(pSrc->units));
+    if ( s != d ) {
+        memcpy(pDest->units,pSrc->units,sizeof(pSrc->units));
+    }
 
     pDest->upper_disp_limit     = dbr_ntohs(pSrc->upper_disp_limit);
     pDest->lower_disp_limit     = dbr_ntohs(pSrc->lower_disp_limit);
@@ -510,7 +504,9 @@ arrayElementCount   num         /* number of values     */
 
     pDest->status       = dbr_ntohs(pSrc->status);
     pDest->severity     = dbr_ntohs(pSrc->severity);
-    memcpy(pDest->units,pSrc->units,sizeof(pSrc->units));
+    if ( s != d ) {
+        memcpy(pDest->units,pSrc->units,sizeof(pSrc->units));
+    }
 
     pDest->upper_disp_limit     = dbr_ntohl(pSrc->upper_disp_limit);
     pDest->lower_disp_limit     = dbr_ntohl(pSrc->lower_disp_limit);
@@ -549,7 +545,9 @@ arrayElementCount   num         /* number of values     */
     pDest->status           = dbr_ntohs(pSrc->status);
     pDest->severity         = dbr_ntohs(pSrc->severity);
     pDest->no_str           = dbr_ntohs(pSrc->no_str);
-    memcpy((void *)pDest->strs,(void *)pSrc->strs,sizeof(pSrc->strs));
+    if ( s != d ) {
+        memcpy((void *)pDest->strs,(void *)pSrc->strs,sizeof(pSrc->strs));
+    }
 
     if (num == 1)   /* single value */
         pDest->value = dbr_ntohs(pSrc->value);
@@ -583,7 +581,9 @@ arrayElementCount   num         /* number of values     */
     pDest->status           = dbr_ntohs(pSrc->status);
     pDest->severity         = dbr_ntohs(pSrc->severity);
     pDest->precision        = dbr_ntohs(pSrc->precision);
-    memcpy(pDest->units,pSrc->units,sizeof(pSrc->units));
+    if ( s != d ) {
+        memcpy(pDest->units,pSrc->units,sizeof(pSrc->units));
+    }
 
     if (encode)         /* vax to ieee convert      */
     {
@@ -645,7 +645,9 @@ arrayElementCount   num         /* number of values     */
     pDest->status           = dbr_ntohs(pSrc->status);
     pDest->severity         = dbr_ntohs(pSrc->severity);
     pDest->precision        = dbr_ntohs(pSrc->precision);
-    memcpy(pDest->units,pSrc->units,sizeof(pSrc->units));
+    if ( s != d ) {
+        memcpy(pDest->units,pSrc->units,sizeof(pSrc->units));
+    }
 
     if (encode)         /* vax to ieee convert      */
     {
@@ -707,7 +709,9 @@ arrayElementCount   num         /* number of values     */
     /* vax to ieee or ieee to vax -- same code */
     pDest->status           = dbr_ntohs(pSrc->status);
     pDest->severity         = dbr_ntohs(pSrc->severity);
-    memcpy(pDest->units,pSrc->units,sizeof(pSrc->units));
+    if ( s != d ) {
+        memcpy(pDest->units,pSrc->units,sizeof(pSrc->units));
+    }
 
     pDest->upper_disp_limit     = dbr_ntohs(pSrc->upper_disp_limit);
     pDest->lower_disp_limit     = dbr_ntohs(pSrc->lower_disp_limit);
@@ -747,7 +751,9 @@ arrayElementCount   num         /* number of values     */
     /* vax to ieee or ieee to vax -- same code */
     pDest->status           = dbr_ntohs(pSrc->status);
     pDest->severity         = dbr_ntohs(pSrc->severity);
-    memcpy(pDest->units,pSrc->units,sizeof(pSrc->units));
+    if ( s != d ) {
+        memcpy(pDest->units,pSrc->units,sizeof(pSrc->units));
+    }
 
     pDest->upper_disp_limit     = dbr_ntohl(pSrc->upper_disp_limit);
     pDest->lower_disp_limit     = dbr_ntohl(pSrc->lower_disp_limit);
@@ -788,6 +794,9 @@ arrayElementCount   num         /* number of values     */
     pDest->status           = dbr_ntohs(pSrc->status);
     pDest->severity         = dbr_ntohs(pSrc->severity);
 
+    if ( s == d ) 
+        return;
+
     pDest->upper_disp_limit     = pSrc->upper_disp_limit;
     pDest->lower_disp_limit     = pSrc->lower_disp_limit;
     pDest->upper_alarm_limit    = pSrc->upper_alarm_limit;
@@ -826,7 +835,9 @@ arrayElementCount   num         /* number of values     */
     pDest->status       = dbr_ntohs(pSrc->status);
     pDest->severity     = dbr_ntohs(pSrc->severity);
     pDest->precision    = dbr_ntohs(pSrc->precision);
-    memcpy(pDest->units,pSrc->units,sizeof(pSrc->units));
+    if ( s != d ) {
+        memcpy(pDest->units,pSrc->units,sizeof(pSrc->units));
+    }
     if (encode)         /* vax to ieee convert      */
     {
         if (num == 1){
@@ -890,7 +901,9 @@ arrayElementCount   num         /* number of values     */
     pDest->status       = dbr_ntohs(pSrc->status);
     pDest->severity     = dbr_ntohs(pSrc->severity);
     pDest->precision        = dbr_ntohs(pSrc->precision);
-    memcpy(pDest->units,pSrc->units,sizeof(pSrc->units));
+    if ( s != d ) {
+        memcpy(pDest->units,pSrc->units,sizeof(pSrc->units));
+    }
     if (encode)         /* vax to ieee convert      */
     {
         if (num == 1){
@@ -952,7 +965,9 @@ arrayElementCount   num         /* number of values     */
     pDest->status           = dbr_ntohs(pSrc->status);
     pDest->severity         = dbr_ntohs(pSrc->severity);
     pDest->no_str           = dbr_ntohs(pSrc->no_str); 
-    memcpy((void *)pDest->strs,(void *)pSrc->strs,sizeof(pSrc->strs));
+    if ( s != d ) {
+        memcpy((void *)pDest->strs,(void *)pSrc->strs,sizeof(pSrc->strs));
+    }
 
     if (num == 1)   /* single value */
         pDest->value = dbr_ntohs(pSrc->value);
@@ -988,6 +1003,9 @@ arrayElementCount   num         /* number of values     */
     /* convert vax to ieee or ieee to vax format -- same code*/
     pDest->status       = dbr_ntohs(pSrc->status);
     pDest->severity     = dbr_ntohs(pSrc->severity);
+
+    if ( s == d ) 
+        return;
 
     if (num == 1)   /* single value */
         pDest->value = pSrc->value;
@@ -1054,11 +1072,9 @@ arrayElementCount   num         /* number of values     */
     pDest->stamp.secPastEpoch = dbr_ntohl(pSrc->stamp.secPastEpoch);
     pDest->stamp.nsec   = dbr_ntohl(pSrc->stamp.nsec);
 
-    if (num == 1)   /* if single value */
-        strcpy(pDest->value, pSrc->value);
-    else
+    if ( s != d ) {
         memcpy(pDest->value, pSrc->value, (MAX_STRING_SIZE * num));
-
+    }
 }
 
 /****************************************************************************
@@ -1207,6 +1223,9 @@ arrayElementCount   num         /* number of values     */
     pDest->stamp.secPastEpoch = dbr_ntohl(pSrc->stamp.secPastEpoch);
     pDest->stamp.nsec   = dbr_ntohl(pSrc->stamp.nsec);
 
+    if ( s == d ) 
+        return;
+
     if (num == 1)   /* single value */
         pDest->value = pSrc->value;
     else        /* array chan-- multiple pts */
@@ -1308,10 +1327,7 @@ arrayElementCount   num         /* number of values     */
     if (s == d)
         return;
 
-    if (num == 1)   /* if single value */
-        strcpy(pDest->value, pSrc->value);
-    else
-        memcpy(pDest->value, pSrc->value, (MAX_STRING_SIZE * num));
+    memcpy(pDest->value, pSrc->value, (MAX_STRING_SIZE * num));
 }
 
 #if defined(CA_FLOAT_MIT) 

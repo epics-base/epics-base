@@ -512,19 +512,9 @@ tcpiiu::tcpiiu ( cac &cac, const osiSockAddr &addrIn,
  */
 void tcpiiu::shutdown ()
 {
-    bool laborNeeded;
-
     this->lock ();
     if ( this->state != iiu_disconnected ) {
         this->state = iiu_disconnected;
-        laborNeeded = true;
-    }
-    else  {
-        laborNeeded = false;
-    }
-    this->unlock ();
-
-    if ( laborNeeded ) {
         //
         // using shutdown () here initiates a graceful socket
         // shutdown sequence which will linger on the CA echo
@@ -542,6 +532,7 @@ void tcpiiu::shutdown ()
         this->recvPending = true;
         this->clientCtx ().signalRecvActivity ();
     }
+    this->unlock ();
 }
 
 //
@@ -558,9 +549,9 @@ tcpiiu::~tcpiiu ()
     this->shutdown ();
 
     if ( this->channelCount () ) {
-        char hostName[64];
-        this->ipToA.hostName ( hostName, sizeof ( hostName ) );
-        genLocalExcep ( this->clientCtx (), ECA_DISCONN, hostName );
+        char hostNameTmp[64];
+        this->ipToA.hostName ( hostNameTmp, sizeof ( hostNameTmp ) );
+        genLocalExcep ( this->clientCtx (), ECA_DISCONN, hostNameTmp );
     }
 
     this->disconnectAllChan ();
@@ -986,7 +977,7 @@ void tcpiiu::postMsg ()
          */
         pProtoStubTCP pStub;
         if ( this->curMsg.m_cmmd >= NELEMENTS ( tcpJumpTableCAC ) ) {
-            pStub = badTCPRespAction;
+            pStub = &tcpiiu::badTCPRespAction;
         }
         else {
             pStub = tcpJumpTableCAC [this->curMsg.m_cmmd];

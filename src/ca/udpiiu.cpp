@@ -444,23 +444,13 @@ udpiiu::~udpiiu ()
  */
 void udpiiu::shutdown ()
 {
-    bool laborRequired;
-
     this->lock ();
     if ( ! this->shutdownCmd ) {
-        this->shutdownCmd = true;
-        laborRequired = true;
-    }
-    else {
-        laborRequired = false;
-    }
-    this->unlock ();
-
-    if ( laborRequired ) {
         int status;
         osiSockAddr addr;
         osiSocklen_t size = sizeof ( addr.sa );
 
+        this->shutdownCmd = true;
         status = getsockname ( this->sock, &addr.sa, &size );
         if ( status < 0 ) {
             // this knocks the UDP input thread out of recv ()
@@ -480,8 +470,8 @@ void udpiiu::shutdown ()
             addr.ia.sin_addr.s_addr = htonl ( INADDR_LOOPBACK );
 
             // send a wakeup msg so the UDP recv thread will exit
-            status = sendto ( this->sock, reinterpret_cast < const char * > ( &msg ),  sizeof (msg), 0, 
-                    &addr.sa, sizeof ( addr.sa ) );
+            status = sendto ( this->sock, reinterpret_cast < const char * > ( &msg ),  
+                    sizeof (msg), 0, &addr.sa, sizeof ( addr.sa ) );
             if ( status < 0 ) {
                 // this knocks the UDP input thread out of recv ()
                 // on all os except linux
@@ -490,6 +480,7 @@ void udpiiu::shutdown ()
             }
         }
     }
+    this->unlock ();
 }
 
 void udpiiu::badUDPRespAction ( const caHdr &msg, const osiSockAddr &netAddr )
@@ -693,7 +684,7 @@ int udpiiu::postMsg ( const osiSockAddr &net_addr,
          */
         pProtoStubUDP      pStub;
         if ( pCurMsg->m_cmmd >= NELEMENTS ( udpJumpTableCAC ) ) {
-            pStub = badUDPRespAction;
+            pStub = &udpiiu::badUDPRespAction;
         }
         else {
             pStub = udpJumpTableCAC [pCurMsg->m_cmmd];

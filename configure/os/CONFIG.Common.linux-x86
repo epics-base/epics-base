@@ -48,3 +48,5 @@ else
 endif
 endif
 
+LDLIBS_READLINE = -lreadline -lcurses
+

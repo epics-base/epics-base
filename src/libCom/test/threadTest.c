@@ -36,6 +36,7 @@ void threadTest(int ntasks)
     int i;
     char **name;
     void **arg;
+    int startPriority,minPriority,maxPriority;
 
     id = calloc(ntasks,sizeof(threadId *));
     name = calloc(ntasks,sizeof(char **));
@@ -50,8 +51,18 @@ void threadTest(int ntasks)
         arg[i] = calloc(1,sizeof(int));
         argvalue = (int *)arg[i];
         *argvalue = i;
-        id[i] = threadCreate(name[i],40+i,stackSize,threadFunc,arg[i]);
+        startPriority = 50+i;
+        id[i] = threadCreate(name[i],startPriority,stackSize,threadFunc,arg[i]);
         errlogPrintf("threadTest created %d id %p\n",i,id[i]);
+        startPriority = threadGetPriority(id[i]);
+        threadSetPriority(id[i],threadPriorityMin);
+        minPriority = threadGetPriority(id[i]);
+        threadSetPriority(id[i],threadPriorityMax);
+        maxPriority = threadGetPriority(id[i]);
+        threadSetPriority(id[i],50+i);
+        if(i==0)errlogPrintf("startPriority %d minPriority %d maxPriority %d\n",
+            startPriority,minPriority,maxPriority);
     }
+    
     threadSleep(5.0);
 }

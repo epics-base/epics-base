@@ -99,7 +99,6 @@ void gdd::init(int app, aitEnum prim, int dimen)
 	ref_cnt=1;
 	flags=0;
 	bounds=NULL;
-	setData(NULL);
 	setStatSevr(0u,0u);
 
 	if(dim)
@@ -111,6 +110,7 @@ void gdd::init(int app, aitEnum prim, int dimen)
 		case 3:  bounds=(gddBounds*)new gddBounds3D; break;
 		default: bounds=(gddBounds*)new gddBounds[dim]; break;
 		}
+        memset ( & this->data, '\0', sizeof ( this->data ) );
 	}
 	else if(primitiveType()==aitEnumString)
 	{
@@ -120,8 +120,11 @@ void gdd::init(int app, aitEnum prim, int dimen)
 	else if (primitiveType()==aitEnumFixedString)
 	{
 		this->data.FString = new aitFixedString;
-		memset (this->data.FString, '\0', sizeof(aitFixedString));
+		memset ( this->data.FString, '\0', sizeof(aitFixedString) );
 	}
+    else {
+        memset ( & this->data, '\0', sizeof ( this->data ) );
+    }
 }
 
 gdd::gdd(gdd* dd)
@@ -171,15 +174,21 @@ gdd::~gdd(void)
 		this->setPrimType (aitEnumInvalid);
 	}
 	this->setApplType (0);
+    memset ( & this->data, '\0', sizeof ( this->data ) );
 }
 
+// this routine is private so we dont need to initialize
+// string data when changing to a scalar, but we do need
+// to be careful about how it is called
 void gdd::freeBounds(void)
 {
 	if(bounds)
 	{
 		switch(dim)
 		{
-		case 0: break;
+		case 0: 
+		    fprintf ( stderr, "gdd: freeing bounds, bounds exist, but gdd is scalar?\n" );
+		    break;
 		case 1: { gddBounds1D* d1=(gddBounds1D*)bounds; delete d1; } break;
 		case 2: { gddBounds2D* d2=(gddBounds2D*)bounds; delete d2; } break;
 		case 3: { gddBounds3D* d3=(gddBounds3D*)bounds; delete d3; } break;
@@ -187,45 +196,79 @@ void gdd::freeBounds(void)
 		}
 		bounds=NULL;
 	}
-	dim=0;	// Reflect the fact that this now a scalar? Bounds and dim
-			// should be tightly coupled, so no bounds means no dimension.
+	dim=0;	
 }
 
 void gdd::setDimension(int d, const gddBounds* bnds)
 {
-	int i;
-
+    if ( dim != 0 ) {
+        if ( isFlat() || isManaged() ) {
+            throw std::logic_error ( 
+                "sorry: cant change the bounds on an atomic, managed or flat gdd" );
+        }
+    }
 	if(dim!=d)
 	{
-        if ( dim != 0 ) {
-            if ( isFlat() || isManaged() ) {
-                throw std::logic_error ( 
-                    "sorry: cant change the bounds on an atomic, managed or flat gdd" );
-            }
-
-		    freeBounds();
-        }
-
-        //
-        // joh 05-28-02
-        // added code to set a nill data pointer if gdd changes from scalar to vector
-        //
         if ( dim == 0 ) {
-            this->data.Pointer = 0;
+		    // run destructors for scalar string data
+		    if ( primitiveType() == aitEnumFixedString )
+		    {
+			    // aitString type could have destructors
+                if ( destruct ) {
+				    destruct->destroy(dataPointer());
+                    destruct = 0;
+                }
+			    else
+				    if (data.FString) delete data.FString;
+		    }
+		    else if ( primitiveType() == aitEnumString )
+		    {
+			    // aitString type could have destructors
+                if ( destruct ) {
+				    destruct->destroy(dataAddress());
+                    destruct = 0;
+                }
+			    else
+			    {
+				    aitString* s = (aitString*)dataAddress();
+				    s->clear();
+			    }
+		    }
+        }
+        else {
+		    this->freeBounds();
         }
 		dim=(aitUint8)d;
 		switch(dim)
 		{
-		case 0:  break;
+		case 0:  bounds=0; break;
 		case 1:  bounds=(gddBounds*)new gddBounds1D; bounds->set(0,0); break;
 		case 2:  bounds=(gddBounds*)new gddBounds2D; break;
 		case 3:  bounds=(gddBounds*)new gddBounds3D; break;
 		default: bounds=(gddBounds*)new gddBounds[dim]; break;
 		}
+        if ( dim == 0 ) {
+            if ( destruct ) {
+	            destruct->destroy(dataAddress());
+                destruct = 0;
+            }
+		    // run constructers for scalar string data types
+		    if ( primitiveType() == aitEnumString ) {
+			    aitString* str=(aitString*)dataAddress();
+			    str->init();
+		    }
+		    else if ( primitiveType() ==aitEnumFixedString ) {
+			    this->data.FString = new aitFixedString;
+			    memset (this->data.FString, '\0', sizeof(aitFixedString));
+		    }
+            else {
+                memset ( & this->data, '\0', sizeof ( this->data ) );
+            }
+        }
 	}
-	if(bnds)
+	if ( bnds )
 	{
-		for(i=0;i<dim;i++)
+		for(int i=0;i<dim;i++)
 			bounds[i]=bnds[i];
 	}
 }
@@ -963,6 +1006,30 @@ gddStatus gdd::convertAddressToOffsets(void)
 	return 0;
 }
 
+void gdd::destroyData(void)
+{
+	if (isScalar())
+	{
+		// this destroys the string types
+		this->setPrimType (aitEnumInvalid);
+        memset ( & this->data, '\0', sizeof ( this->data ) );
+	}
+    else {
+	    if(destruct)
+	    {
+		    if(isContainer())
+			    destruct->destroy(this);
+		    else
+			    destruct->destroy(dataPointer());
+
+		    destruct=NULL;
+	    }
+		freeBounds(); 
+        this->prim_type = aitEnumInvalid;
+        memset ( & this->data, '\0', sizeof ( this->data ) );
+    }
+}
+
 gddStatus gdd::clearData(void)
 {
 	gddStatus rc=0;
@@ -972,16 +1039,27 @@ gddStatus gdd::clearData(void)
 		gddAutoPrint("gdd::clearData()",gddErrorNotAllowed);
 		rc=gddErrorNotAllowed;
 	}
-	else
-	{
+    else if ( this->isScalar () ) {
+        // clear scaler types
+        if ( this->primitiveType() == aitEnumString ) {
+			aitString * str=(aitString*)dataAddress();
+			str->clear();
+        }
+        else if ( this->primitiveType() == aitEnumFixedString ) {
+            memset ( this->data.FString, '\0', sizeof ( this->data.FString ) );
+        }
+        else {
+            memset ( & this->data, '\0', sizeof ( this->data ) );
+        }
+    }
+    else {
 		if(destruct)
 		{
 			destruct->destroy(dataPointer());
 			destruct=NULL;
 		}
-		freeBounds();
-		setData(NULL);
-	}
+        setDimension ( 0, 0 );
+    }
 	return rc;
 }
 
@@ -993,21 +1071,9 @@ gddStatus gdd::clear(void)
 		return gddErrorNotAllowed;
 	}
 
-
-	if(isScalar()) 
-	{
-		//
-		// this code clears out aitString and 
-		// aitFixedString scalars
-		//
-		// joh 4-23-99
-		//		
-		changeType(0,aitEnumInvalid);
-	}
 	if(isAtomic())
 	{
 		destroyData();
-		changeType(0,aitEnumInvalid);
 	}
 	else if(isContainer())
 	{
@@ -1021,9 +1087,16 @@ gddStatus gdd::clear(void)
 			dd=cur.next();
 			if(tdd->unreference()<0) delete tdd;
 		}
-		setBound(0,0,0);
-		setData(NULL);
+        freeBounds();
 	}
+
+	//
+	// this code clears out aitString and 
+	// aitFixedString scalars (the doc says
+    // that every field is set to invalid)
+	//
+	changeType(0,aitEnumInvalid);
+    memset ( & this->data, '\0', sizeof ( this->data ) );
 
 	return 0;
 }
@@ -1167,37 +1240,34 @@ gddStatus gdd::putRef(const gdd*)
 	return gddErrorNotSupported;
 }
 
-gddStatus gdd::put(const gdd* dd)
-{
-    aitTimeStamp ts;
-    aitUint8* arr;
-    size_t sz;
-    
-    // bail out quickly is either dd is a container
-    if(isContainer() || dd->isContainer())
-    {
-        gddAutoPrint("gdd::put(const gdd*)",gddErrorNotSupported);
-        return gddErrorNotSupported;
-    }
-    
-    if(isScalar() && dd->isScalar())
+gddStatus gdd::put ( const gdd * dd )
+{    
+    if ( this->isScalar() && dd->isScalar() )
     {
         // this is the simple case - just make this scalar look like the other
         this->set(dd->primitiveType(),dd->dataVoid());
     }
-    else if(isScalar()) // dd must be atomic if this is true
+    else if ( isContainer() || dd->isContainer() )
     {
-        this->set(dd->primitiveType(),dd->dataPointer());
+        gddAutoPrint("gdd::put(const gdd*)",gddErrorNotSupported);
+        return gddErrorNotSupported;
     }
-    // at this point this GDD must be atomic or scalar
-    // and the src gdd is atomic
     else if ( this->dimension() > 1 || dd->dimension() > 1 )
     {
         // sorry, no support currently for multidimensional arrays
         return gddErrorOutOfBounds;
     }
-    // now both dd must be single dimensional atomic
+    else if ( this->isScalar() ) // dd must be atomic if this is true
+    {
+        this->set ( dd->primitiveType(), dd->dataPointer() );
+    }
+    // at this point this GDD must be atomic 
+    // and the src gdd is either atomic or scalar
     else {
+        // this must be single dimensional atomic at this point
+
+        // dd can be scaler or single dimensional atomic at this point
+        // so fetch the bounds carefully
         aitUint32 srcFirst;
         aitUint32 srcElemCount;
         if ( dd->isScalar() ) {
@@ -1209,9 +1279,7 @@ gddStatus gdd::put(const gdd* dd)
             srcElemCount = dd->getBounds()->size();
         }
 
-        //
         // clip to lower limit of source
-        //
         aitUint32 srcCopyFirst;
         if ( this->getBounds()->first () > srcFirst ) {
             srcCopyFirst = this->getBounds()->first();
@@ -1219,13 +1287,11 @@ gddStatus gdd::put(const gdd* dd)
         else {
             srcCopyFirst = srcFirst;
         }
-        
-        //
+    
         // clip to upper limit of source
-        //
         aitUint32 srcCopySize;
         const aitUint32 unusedSrcBelow = srcCopyFirst - srcFirst;
-        if ( dd->getBounds()->size() <= unusedSrcBelow ) {
+        if ( srcElemCount <= unusedSrcBelow ) {
             return gddErrorOutOfBounds;
         }
 
@@ -1237,15 +1303,15 @@ gddStatus gdd::put(const gdd* dd)
             srcCopySize = srcAvailSize;
         }
 
-        if(dataVoid()==NULL)
+        if ( dataVoid() == NULL )
         {
             if (primitiveType()==aitEnumInvalid) {
                 setPrimType (dd->primitiveType());
             }
-            sz=srcCopySize * aitSize[primitiveType()];
+            size_t sz = srcCopySize * aitSize[primitiveType()];
             
             // allocate a data buffer for the user
-            arr=new aitUint8[sz];
+            aitUint8 * arr = new aitUint8[sz];
             if( ! arr ) {
                 return gddErrorNewFailed;
             }
@@ -1260,7 +1326,7 @@ gddStatus gdd::put(const gdd* dd)
                 return gddErrorNewFailed;
             }
 
-            // the rule is that if storage is not preaalocated then its ok
+            // the rule is that if storage is not preallocated then its ok
             // for the dest bounds to shrink to match the original dest 
             // bounds intersection with the source data bounds
             for ( unsigned i = 0; i < this->dimension(); i++ ) {
@@ -1279,7 +1345,7 @@ gddStatus gdd::put(const gdd* dd)
         if ( unusedDstLow > 0 ) {
             //
             // zero portions that dont match
-            // (should eventually throw an exception ?
+            // (should eventually throw an exception ?)
             //
             aitUint32 byteCount = aitSize[primitiveType()] * unusedDstLow;
             memset (pDst, '\0', byteCount);
@@ -1300,7 +1366,7 @@ gddStatus gdd::put(const gdd* dd)
             pDst += aitSize[primitiveType()] * srcCopySize;
             //
             // zero portions that dont match
-            // (should eventually throw an exception ?
+            // (should eventually throw an exception ?)
             //
             aitUint32 byteCount = aitSize[primitiveType()] * unusedDstHigh;
             memset (pDst, '\0', byteCount);
@@ -1308,6 +1374,7 @@ gddStatus gdd::put(const gdd* dd)
     }
     
     setStatSevr(dd->getStat(),dd->getSevr());
+    aitTimeStamp ts;
     dd->getTimeStamp(&ts);
     setTimeStamp(&ts);
     
@@ -1530,7 +1597,7 @@ void gdd::setPrimType (aitEnum t)
 	//
 	// NOOP if there is no change
 	//
-	if (this->prim_type == t) {
+	if ( this->prim_type == t ) {
 		return;
 	}
 
@@ -1546,16 +1613,20 @@ void gdd::setPrimType (aitEnum t)
 		if(primitiveType()==aitEnumFixedString)
 		{
 			// aitString type could have destructors
-			if(destruct)
+            if ( destruct ) {
 				destruct->destroy(dataPointer());
+                destruct = 0;
+            }
 			else
 				if (data.FString) delete data.FString;
 		}
 		else if(primitiveType()==aitEnumString)
 		{
 			// aitString type could have destructors
-			if(destruct)
+            if ( destruct ) {
 				destruct->destroy(dataAddress());
+                destruct = 0;
+            }
 			else
 			{
 				aitString* s = (aitString*)dataAddress();
@@ -1564,7 +1635,7 @@ void gdd::setPrimType (aitEnum t)
 		}
 
 		//
-		// run constructers for new string data types
+		// run constructors for new string data types
 		//
 		if (t==aitEnumString) {
 			aitString* str=(aitString*)dataAddress();
@@ -1572,8 +1643,11 @@ void gdd::setPrimType (aitEnum t)
 		}
 		else if (t==aitEnumFixedString) {
 			this->data.FString = new aitFixedString;
-			memset (this->data.FString, '\0', sizeof(aitFixedString));
+			memset ( this->data.FString, '\0', sizeof(aitFixedString) );
 		}
+        else {
+			memset ( & this->data, '\0', sizeof(this->data) );
+        }
 	}
 
 	//
@@ -1585,11 +1659,11 @@ void gdd::setPrimType (aitEnum t)
 	//
 	else if(isAtomic())
 	{
-        if (dataPointer()) {
+        if ( dataPointer() && destruct ) {
 			destruct->destroy(dataPointer());
 		    destruct=NULL;
-			memset (&this->data, '\0', sizeof(this->data));
         }
+		memset (&this->data, '\0', sizeof(this->data));
 	}
     else if(isContainer()) {
         this->clear();

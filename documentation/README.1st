@@ -1,10 +1,10 @@
-README 
+README.1st
 
-                  Installation Instructions
+                    Installation Instructions
 
                            EPICS base
 
-                      Release 3.14.1
+                         Release 3.14.2
 
 What is EPICS base?
 
@@ -44,12 +44,21 @@ Supported platforms
      Host platforms (operating system - architecture - <alternate c++
      compiler>) 
 
-         solaris-sparc 
-         solaris-sparc-gnu 
-         linux-x86 
-         win32-x86 
+         darwin-ppc (Mac OS X) 
+         hpux-parisc
+         hpux-parisc-gnu
+         linux-mpc82xx
+         linux-x86
+         lynxos-x86
+         osf-alpha
+         solaris-sparc
+         solaris-sparc-gnu
+         solaris-x86
+         solaris-x86-gnu
+         sun4-x86
+         win32-x86
          win32-x86-borland
-         darwin-ppc  (Mac OS X) 
+
 
      Cross compile target platforms (operating system - architecture)
 
@@ -57,12 +66,18 @@ Supported platforms
          vxWorks-68040 
          vxWorks-68040lc 
          vxWorks-68060 
+         vxWorks-pentium
          vxWorks-ppc603 
+         vxWorks-ppc603_long
          vxWorks-ppc604 
+         vxWorks-ppc604_long
          vxWorks-pentium 
          RTEMS-gen68360 
+         RTEMS-mcp750
          RTEMS-mvme167 
          RTEMS-pc386
+         RTEMS-psim
+
 
 Supported compilers
 
@@ -90,11 +105,11 @@ Software requirements
      You must have tools available to unzip and untar the EPICS base
      distribution file. 
 
-     Tornado 2.0 
-     You must have Tornado 2.0 installed if any of your target systems are
-     vxWorks systems.  Tornado 2.0 provides the cross-compiler and header
-     files needed to build for these target systems. The full path location to
-     Tornado 2.0 must be specified in the base/configure/RELEASE or
+     Tornado 2
+     You must have Tornado 2 installed if any of your target systems are
+     vxWorks systems.  Tornado 2 provides the cross-compiler and header
+     files needed to build for these target systems. The full path location
+     to Tornado 2 should be specified in the base/configure/RELEASE or
      base/configure/RELEASE.<hostarch> file. You will also need one or
      more board support packages. Consult the vxWorks documentation for
      details. 
@@ -116,8 +131,8 @@ Documentation
      EPICS documentation is available on the WWW via the EPICS home
      page at APS:  URL http://www.aps.anl.gov/epics
 
-     This README.1st is in the base distribution file and will be available
-     on the IOC software R3.14 EPICS WWW page which can be accessed
+     This README.1st file is in the base distribution and available on the 
+     IOC software, Base R3.14, release number, web page which can be accessed
      from the APS EPICS home page.
 
 WWW pages
@@ -147,13 +162,13 @@ Directory Structure
      base/configure               Operating system independent build config files 
      base/configure/os            Operating system dependent build config files 
      base/configure/tools         Perl and shell scripts used in the build 
-     base/copyright               Text files describing software copyrights 
      base/documentation           Distributation build documentation
      base/src                     All epics base source code in subdirectories 
+     base/src/RTEMS               Code to configure RTEMS for EPICS
      base/src/as                  Access security 
      base/src/bpt                 Break point table 
      base/src/ca                  Channel access 
-     base/src/cas                 Channel access server 
+     base/src/cas                 Channel access server library and examples
      base/src/db                  Database access 
      base/src/db/test             Database access tests 
      base/src/dbStatic            Static database access 
@@ -164,6 +179,7 @@ Directory Structure
      base/src/libCom              General purpose library code in subdirectories 
      base/src/libCom/bucketLib    Hash bucket 
      base/src/libCom/calc         Algebraic expression interpreter 
+     base/src/libCom/cppStd       Support for C++ standard template library
      base/src/libCom/cvtFast      Fast number to string conversion 
      base/src/libCom/cxxTemplates C++ templates and templates tests 
      base/src/libCom/dbmf         Memory management for frequent alloc/free 
@@ -178,6 +194,7 @@ Directory Structure
      base/src/libCom/misc         Miscellaneous utilities 
      base/src/libCom/osi          Operating system independent code 
      base/src/libCom/osi/os       Operating system dependant code in subdirectories 
+     base/src/libCom/ring         Methods for creating and using ring buffers
      base/src/libCom/taskwd       Task watchdog 
      base/src/libCom/test         Test tools (timer, semBinary, semMutex,fdmgr, ?) 
      base/src/libCom/timer        Timer 
@@ -193,19 +210,19 @@ Directory Structure
      base/src/toolsComm           Code for the build tools antelope and e_flex 
      base/src/util                Utilities (ca_test, iocLogServer, startCArepeater) 
      base/src/vxWorks             R3.13 compatibility code specific to vxWorks 
-     base/src/RTEMS               Code to configure RTEMS for EPICS
      base/startup                 Scripts for setting up path and environment 
 
      Install directories created by the build: 
 
      base/bin                     Installed scripts and executables in subdirs 
-     base/lib                     Installed libraries in arch subdirectories 
+     base/db                      Installed data bases 
      base/dbd                     Installed data base definitions 
+     base/html                    Installed html documentation
      base/include                 Installed header files 
      base/include/os              Installed os specific header files 
-     base/templates               Installed templates 
      base/javalib                 Installed java class files 
-     base/html                    Installed html documentation
+     base/lib                     Installed libraries in arch subdirectories 
+     base/templates               Installed templates 
 
 Build related components
 
@@ -230,6 +247,7 @@ Build related components
      win32.bat           WIN32 bat file to set path and env variables 
        
      base/configure  directory - contains build definitions and rules 
+     CONFIG                Includes configure files and allows variable overrides 
      CONFIG.CrossCommon    Cross build definitions 
      CONFIG.gnuCommon      Gnu compiler build definitions for all archs 
      CONFIG_ADDONS         Definitions for <osclass> and DEFAULT options 
@@ -239,7 +257,7 @@ Build related components
      CONFIG_ENV            Definitions of EPICS environment variables 
      CONFIG_SITE           Site specific make defintions 
      CONFIG_SITE_ENV       Site defaults for EPICS environment variables 
-     CONFIG                Includes configure files and allows variable overrides 
+     Makefile              Installs CONFIG* RULES* creates CONFIG_APP_INCLUDE
      RELEASE               Location of external products such as Tornado II 
      RULES                 Includes appropriate rules file 
      RULES.Db              Rules for database and database definition files 
@@ -255,8 +273,9 @@ Build related components
      CONFIG.<host>.<target>      Specific host-target build definitions 
      CONFIG.Common.<target>      Specific target definitions for all hosts 
      CONFIG.<host>.Common        Specific host definitions for all targets 
-     CONFIG.UnixCommon.Common    Definitions for Unix hosts and all target 
-     CONFIG.<host>.vxWorksCommon Specific host definitions for all vx targets 
+     CONFIG.UnixCommon.Common    Definitions for Unix hosts and all targets
+     CONFIG.Common.UnixCommon    Definitions for Unix targets and all hosts
+     CONFIG.Common.vxWorksCommon Specific host definitions for all vx targets 
      CONFIG_COMPAT               R3.13 arch compatibility definitions 
      CONFIG_SITE.<host>.<target> Site specific host-target definitions 
      CONFIG_SITE.Common.<target> Site specific target defs for all hosts 
@@ -303,7 +322,7 @@ Building EPICS base (Unix and Win32)
          for a list of supported EPICS_HOST_ARCH values.
 
          PERLLIB
-         On WIN32, some versions of Perl require that  the
+         On WIN32, some versions of Perl require that the
          environment variable PERLLIB be set to <perl directory
          location>.
 
@@ -318,11 +337,15 @@ Building EPICS base (Unix and Win32)
          your path. On solaris systems you need uname in your path.
 
          Unix LD_LIBRARY_PATH
-         If you plan to build EPICS base shared libraries instead of
-         archive libraries, on Unix systems you will need to add 
-         fullpathname to $(INSTALL_LOCATION)/lib/$(EPICS_HOST_ARCH) to
-         your LD_LIBRARY_PATH environment variable.  On Linux systems,
-         building shared libraries is the default setting.
+         It is no longer necessary to have LD_LIBRARY_PATH include
+         EPICS directories on Unix type system. The shared libraries
+         and executables will contain full path name to libraries
+         they require. However, if you move the EPICS directories
+         from their build-time location then in order for libraries
+         to be found at runtime LD_LIBRARY_PATH must include the full
+         pathname to $(INSTALL_LOCATION)/lib/$(EPICS_HOST_ARCH) when
+         invoking executables.  Building shared libraries is now the
+         default setting for all Unix type hosts.
 
          Win32 PATH
          On WIN32 systems, building shared libraries is the default
@@ -416,12 +439,11 @@ Example application and extension
      install location bin/<hostarch> directory during the base build.
 
      Instructions for building and executing the 3.14 example application
-     can be found in the section "Example Application" of Chapter 2, "New
-     Features for 3.14", in the  "IOC Application Developer's Guide
-     R3.14.1". The "Example Application" section briefly explains
-     how to create and build an example application in a user created <top>
-     directory. It also explains how to run the example application on a
-     vxWorks ioc or a host system and run an example channel access client
-     on the host system.
+     can be found in the section "Example Application" of Chapter 2, "Getting
+     Started", in the  "IOC Application Developer's Guide R3.14.2". The
+     "Example IOC Application" section briefly explains how to create and
+     build an example application in a user created <top> directory. It also
+     explains how to run the example application on a vxWorks ioc or a host
+     system and run an example channel access client on the host system.
 
 

@@ -113,7 +113,6 @@ static void ascarCallFunc(const iocshArgBuf *args)
     ascar(args[0].ival);
 }
 
-static int * const pasCaDebug = &asCaDebug;
 static struct iocshVarDef vardefs[] = {
     {"asCaDebug", iocshArgInt,(void *)&asCaDebug},
     {0,iocshArgInt,0}

@@ -23,6 +23,11 @@
 #include "vxWorks.h"
 #include "symLib.h"
 #include "sysSymTbl.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
  
 STATUS symFindByNameEPICS( 
 	SYMTAB_ID symTblId,
@@ -37,6 +42,10 @@ STATUS symFindByNameAndTypeEPICS(
 	SYM_TYPE  *pType,
 	SYM_TYPE  sType,
 	SYM_TYPE  mask);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ifdef epicsDynLinkh */
 

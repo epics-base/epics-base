@@ -36,6 +36,9 @@
 extern "C" {
 #endif
 
+struct dbAddr;
+struct db_field_log;
+
 epicsShareFunc int epicsShareAPI db_event_list (
     const char *name, unsigned level);
 epicsShareFunc int epicsShareAPI dbel (

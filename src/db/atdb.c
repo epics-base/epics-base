@@ -57,7 +57,7 @@ char **argv;
     
 
     if(argc!=3) {
-	printf("Usage: atdb <dctsdr file> <database file>\n");
+	printf("Usage: atdb default.dctsdr file.database < file.rpt\n");
 	exit(-1);
     }
     fpdctsdr = fopen(argv[1],"r");

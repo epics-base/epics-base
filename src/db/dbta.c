@@ -177,7 +177,7 @@ char **dbname;
 	if(!gotperiod) strcat(*dbname,".database");
 	return;
     }
-    fprintf(stderr, "\nusage: dbta [-v] [-s] fn\n");
+    fprintf(stderr, "\nusage: dbta [-v] [-s] fn > file.rpt\n");
     fprintf(stderr,"\n\t-v\tVerbose mode, outputs all prompt fields of\n");
     fprintf(stderr,"\t\trecords to standard out.  If not specified,\n");
     fprintf(stderr,"\t\tthen only non default fields will be printed\n");

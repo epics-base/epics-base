@@ -205,8 +205,9 @@ public:
 
 	void insert(T &item)
 	{
-		item.tsBTreeNode<T>::pLeft = 0;
-		item.tsBTreeNode<T>::pRight = 0;
+		tsBTreeNode<T> &node = item;
+		node.pLeft = 0;
+		node.pRight = 0;
 		if (this->pRoot) {
 			tsBTreeNode<T>::insert(*this->pRoot, item);
 		}

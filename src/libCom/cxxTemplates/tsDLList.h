@@ -521,13 +521,13 @@ void tsDLList<T>::insertBefore (T &item, T &itemAfter)
 	tsDLNode<T> &node = item;
 	tsDLNode<T> &nodeAfter = itemAfter;
 
-	tsDLNode.pNext = &itemAfter;
-	tsDLNode.pPrev = nodeAfter.pPrev;
+	node.pNext = &itemAfter;
+	node.pPrev = nodeAfter.pPrev;
 	nodeAfter.pPrev = &item;
 
 	if (node.pPrev) {
-		tsDLNode<T> *pPrevNode = node.pPrev;
-		pPrevNode->pNext = &item;
+		tsDLNode<T> &prevNode = *node.pPrev;
+		prevNode.pNext = &item;
 	}
 	else {
 		this->pFirst = &item;

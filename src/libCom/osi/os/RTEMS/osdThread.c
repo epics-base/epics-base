@@ -38,7 +38,7 @@ struct taskVar {
     void                **threadVariables;
     int			threadVariablesAdded;
 };
-static rtems_id taskVarMutex;
+static semMutexId taskVarMutex;
 static struct taskVar *taskVarHead;
 #define RTEMS_NOTEPAD_TASKVAR       11
 
@@ -77,46 +77,13 @@ threadGetStackSize (threadStackSizeClass size)
 static void
 taskVarLock (void)
 {
-    rtems_status_code sc;
-
-    if (!taskVarMutex) {
-	rtems_mode mode;
-	rtems_task_mode (RTEMS_NO_PREEMPT, RTEMS_PREEMPT_MASK, &mode);
-	if (!taskVarMutex) {
-	    sc = rtems_semaphore_create (rtems_build_name ('T', 'V', 'M', 'X'),
-		1,
-		RTEMS_FIFO | 
-		    RTEMS_BINARY_SEMAPHORE |
-		    RTEMS_NO_INHERIT_PRIORITY |
-		    RTEMS_NO_PRIORITY_CEILING |
-		    RTEMS_LOCAL,
-		0,
-		&taskVarMutex);
-	    if (sc != RTEMS_SUCCESSFUL) {
-		rtems_task_mode (mode, RTEMS_PREEMPT_MASK, &mode);
-		syslog (LOG_ERR, "Can't create task variable mutex: %s", rtems_status_text (sc));
-		cantProceed ("Can't create task variable mutex");
-	    }
-	}
-	rtems_task_mode (mode, RTEMS_PREEMPT_MASK, &mode);
-    }
-    sc = rtems_semaphore_obtain (taskVarMutex, RTEMS_WAIT, RTEMS_NO_TIMEOUT);
-    if (sc != RTEMS_SUCCESSFUL) {
-	syslog (LOG_ERR, "Can't obtain task variable mutex: %s", rtems_status_text (sc));
-	cantProceed ("Can't obtain task variable mutex");
-    }
+    semMutexTake (taskVarMutex);
 }
 
 static void
 taskVarUnlock (void)
 {
-    rtems_status_code sc;
-
-    sc = rtems_semaphore_release (taskVarMutex);
-    if (sc != RTEMS_SUCCESSFUL) {
-	syslog (LOG_ERR, "Can't release task variable mutex: %s", rtems_status_text (sc));
-	cantProceed ("Can't release task variable mutex");
-    }
+    semMutexGive (taskVarMutex);
 }
 
 /*
@@ -128,13 +95,6 @@ threadWrapper (rtems_task_argument arg)
 {
     struct taskVar *v = (struct taskVar *)arg;
 
-    taskVarLock ();
-    v->forw = taskVarHead;
-    v->back = NULL;
-    if (v->forw)
-	v->forw->back = v;
-    taskVarHead = v;
-    taskVarUnlock ();
     (*v->funptr)(v->parm);
     taskVarLock ();
     if (v->back)
@@ -150,6 +110,15 @@ threadWrapper (rtems_task_argument arg)
 }
 
 /*
+ * OS-dependent initialization
+ */
+static void
+threadInitRTEMS (void *unused)
+{
+    taskVarMutex = semMutexMustCreate ();
+}
+
+/*
  * Create and start a new thread
  */
 threadId
@@ -162,7 +131,9 @@ threadCreate (const char *name,
     rtems_status_code sc;
     rtems_unsigned32 note;
     char c[4];
+    static threadOnceId initId;
 
+    threadOnce (&initId, threadInitRTEMS, NULL);
     if (stackSize < RTEMS_MINIMUM_STACK_SIZE) {
         errlogPrintf ("threadCreate %s illegal stackSize %d\n",name,stackSize);
         return 0;
@@ -189,6 +160,13 @@ threadCreate (const char *name,
     v->threadVariablesAdded = 0;
     note = (rtems_unsigned32)v;
     rtems_task_set_note (RTEMS_SELF, RTEMS_NOTEPAD_TASKVAR, note);
+    taskVarLock ();
+    v->forw = taskVarHead;
+    v->back = NULL;
+    if (v->forw)
+	v->forw->back = v;
+    taskVarHead = v;
+    taskVarUnlock ();
     rtems_task_start (tid, threadWrapper, (rtems_task_argument)v);
     return (threadId)tid;
 }
@@ -486,7 +464,8 @@ void threadShow (void)
 {
     struct taskVar *v;
 
-    printf ("   NAME        ID    PRI   STATE      WAIT\n");
+    printf ("     NAME       ID    PRI    STATE      WAIT    \n");
+    printf ("+-----------+--------+---+-----------+--------+\n");
     taskVarLock ();
     for (v = taskVarHead ; v != NULL ; v = v->forw) {
 	printf ("%12.12s %8.8x", v->name, v->id);

@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.24  1998/06/16 03:15:34  jhill
+// fixed big problems with leaked ait/fixedString in gdd union
+//
 // Revision 1.23  1997/08/05 00:51:11  jhill
 // fixed problems in aitString and the conversion matrix
 //
@@ -1250,15 +1253,21 @@ gddStatus gdd::put(const gdd* dd)
 
 		if(rc==0)
 		{
-			esz=describedDataSizeElements();
+			if (dd->dataPointer()==NULL) {
+				memset (dataPointer(), '\0', describedDataSizeBytes());
+				rc = gddErrorNotDefined;
+			}
+			else {
+				esz=describedDataSizeElements();
 
-			// this code currently only works correctly with one
-			// dimensional arrays.
+				// this code currently only works correctly with one
+				// dimensional arrays.
 
-			arr=(aitUint8*)dataPointer();
-			aitConvert(primitiveType(),
-				&arr[aitSize[primitiveType()]*dd->getBounds()->first()],
-				dd->primitiveType(), dd->dataPointer(),esz);
+				arr=(aitUint8*)dataPointer();
+				aitConvert(primitiveType(),
+					&arr[aitSize[primitiveType()]*dd->getBounds()->first()],
+					dd->primitiveType(), dd->dataPointer(),esz);
+			}
 		}
 	}
 

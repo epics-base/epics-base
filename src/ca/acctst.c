@@ -263,12 +263,13 @@ void verifyConnectionHandlerConnect ( appChan *pChans, unsigned chanCount, unsig
 
     showProgressBegin ();
 
-    subscriptionUpdateCount = 0u;
-    accessUpdateCount = 0u;
-    connectionUpdateCount = 0u;
-    getCallbackCount = 0u;
 
     for ( i = 0; i < repetitionCount; i++ ) {
+        subscriptionUpdateCount = 0u;
+        accessUpdateCount = 0u;
+        connectionUpdateCount = 0u;
+        getCallbackCount = 0u;
+
         for ( j = 0u; j < chanCount; j++ ) {
 
             pChans[j].subscriptionUpdateCount = 0u;

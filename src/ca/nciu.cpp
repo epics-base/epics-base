@@ -252,7 +252,7 @@ cacChannel::ioStatus nciu::read (
 {
     guard.assertIdenticalMutex ( this->cacCtx.mutexRef () );
 
-    if ( ! this->isConnected ( guard ) ) {
+    if ( ! this->connected ( guard ) ) {
         throw cacChannel::notConnected ();
     }
     if ( ! this->accessRightState.readPermit () ) {
@@ -398,17 +398,11 @@ bool nciu::ca_v42_ok (
 short nciu::nativeType (
     epicsGuard < epicsMutex > & guard ) const
 {
-    short type;
-    if ( this->channelNode::isConnected ( guard ) ) {
+    short type = TYPENOTCONN;
+    if ( this->connected ( guard ) ) {
         if ( this->typeCode < SHRT_MAX ) {
             type = static_cast <short> ( this->typeCode );
         }
-        else {
-            type = TYPENOTCONN;
-        }
-    }
-    else {
-        type = TYPENOTCONN;
     }
     return type;
 }
@@ -416,12 +410,9 @@ short nciu::nativeType (
 arrayElementCount nciu::nativeElementCount ( 
     epicsGuard < epicsMutex > & guard ) const
 {
-    arrayElementCount countOut;
-    if ( this->channelNode::isConnected ( guard ) ) {
+    arrayElementCount countOut = 0ul;
+    if ( this->connected ( guard ) ) {
         countOut = this->count;
-    }
-    else {
-        countOut = 0ul;
     }
     return countOut;
 }
@@ -455,7 +446,12 @@ double nciu::receiveWatchdogDelay (
 bool nciu::connected ( epicsGuard < epicsMutex > & guard ) const
 {
     guard.assertIdenticalMutex ( this->cacCtx.mutexRef () );
-    return this->channelNode::isConnected ( guard );
+    if ( this->piiu->ca_v42_ok ( guard ) ) {
+        return this->channelNode::isConnectedAtOrAfterV42 ( guard );
+    }
+    else {
+        return this->channelNode::isConnectedBeforeV42 ( guard );
+    }
 }
 
 void nciu::show ( unsigned level ) const
@@ -467,7 +463,7 @@ void nciu::show ( unsigned level ) const
 void nciu::show ( 
     epicsGuard < epicsMutex > & guard, unsigned level ) const
 {
-    if ( this->channelNode::isConnected ( guard ) ) {
+    if ( this->connected ( guard ) ) {
         char hostNameTmp [256];
         this->hostName ( guard, hostNameTmp, sizeof ( hostNameTmp ) );
         ::printf ( "Channel \"%s\", connected to server %s", 

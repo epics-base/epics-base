@@ -57,7 +57,8 @@ class channelNode : public tsDLNode < class nciu >
 {
 protected:
     channelNode ();
-    bool isConnected ( epicsGuard < epicsMutex > & ) const;
+    bool isConnectedAtOrAfterV42 ( epicsGuard < epicsMutex > & ) const;
+    bool isConnectedBeforeV42 ( epicsGuard < epicsMutex > & ) const;
     bool isInstalledInServer ( epicsGuard < epicsMutex > & ) const;
     static unsigned getMaxSearchTimerCount ();
 private:
@@ -351,12 +352,21 @@ inline channelNode::channelNode () :
 {
 }
 
-inline bool channelNode::isConnected ( epicsGuard < epicsMutex > & ) const
+inline bool channelNode::isConnectedAtOrAfterV42 ( epicsGuard < epicsMutex > & ) const
 {
     return 
         this->listMember == cs_connected || 
         this->listMember == cs_subscripReqPend ||
         this->listMember == cs_subscripUpdateReqPend;
+}
+
+inline bool channelNode::isConnectedBeforeV42 ( epicsGuard < epicsMutex > & ) const
+{
+    return 
+        this->listMember == cs_connected || 
+        this->listMember == cs_subscripReqPend ||
+        this->listMember == cs_subscripUpdateReqPend ||
+        this->listMember == cs_createReqPend;
 }
 
 inline bool channelNode::isInstalledInServer ( epicsGuard < epicsMutex > & ) const

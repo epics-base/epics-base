@@ -72,7 +72,11 @@ private:
     epicsMutex & cbMutex;
     cacContextNotify & ctxNotify;
     void run ();
-    void connect ();
+    void connect (
+        epicsGuard < epicsMutex > & guard );
+    bool validFillStatus ( 
+        epicsGuard < epicsMutex > & guard, 
+        const statusWireIO & stat );
 };
 
 class tcpSendThread : private epicsThreadRunable {
@@ -250,7 +254,8 @@ private:
         epicsGuard < epicsMutex > & );
     void initiateAbortShutdown ( 
         epicsGuard < epicsMutex > & ); 
-    void disconnectNotify ();
+    void disconnectNotify (
+        epicsGuard < epicsMutex > & );
 
     // send protocol stubs
     void echoRequest ( 

@@ -42,6 +42,7 @@ public:
         epicsGuard < epicsMutex > &,
         const epicsTime & currentTime );
     void messageArrivalNotify (
+        epicsGuard < epicsMutex > & guard,
         const epicsTime & currentTime );
     void probeResponseNotify ( 
         epicsGuard < epicsMutex > &,
@@ -50,10 +51,11 @@ public:
         epicsGuard < epicsMutex > &,
         const epicsTime & currentTime );
     void beaconAnomalyNotify ( epicsGuard < epicsMutex > & );
-    void connectNotify ();
+    void connectNotify (
+        epicsGuard < epicsMutex > & );
     void sendTimeoutNotify (
-        epicsGuard < epicsMutex > & cbMutex,
-        epicsGuard < epicsMutex > & mutex,
+        epicsGuard < epicsMutex > & cbGuard,
+        epicsGuard < epicsMutex > & guard,
         const epicsTime & currentTime );
     void cancel ();
     void shutdown ();

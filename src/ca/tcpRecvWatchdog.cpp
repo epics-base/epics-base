@@ -115,21 +115,18 @@ void tcpRecvWatchdog::beaconAnomalyNotify (
 }
 
 void tcpRecvWatchdog::messageArrivalNotify ( 
+    epicsGuard < epicsMutex > & guard,
     const epicsTime & currentTime )
 {
-    bool restartNeeded = false;
-    {
-        epicsGuard < epicsMutex > guard ( this->mutex );
-        if ( ! ( this->shuttingDown || this->probeResponsePending ) ) {
-            this->beaconAnomaly = false;
-            restartNeeded = true;
-        }
-    }
-    // dont hold the lock for fear of deadlocking 
-    // because cancel is blocking for the completion
-    // of expire() which takes the lock - it take also 
-    // the callback lock
-    if ( restartNeeded ) {
+    guard.assertIdenticalMutex ( this->mutex );
+
+    if ( ! ( this->shuttingDown || this->probeResponsePending ) ) {
+        this->beaconAnomaly = false;
+        // dont hold the lock for fear of deadlocking 
+        // because cancel is blocking for the completion
+        // of expire() which takes the lock - it take also 
+        // the callback lock
+        epicsGuardRelease < epicsMutex > unguard ( guard );
         this->timer.start ( *this, currentTime + this->period );
         debugPrintf ( ("received a message - reseting circuit recv watchdog\n") );
     }
@@ -203,15 +200,17 @@ void tcpRecvWatchdog::sendBacklogProgressNotify (
     }
 }
 
-void tcpRecvWatchdog::connectNotify ()
+void tcpRecvWatchdog::connectNotify (
+    epicsGuard < epicsMutex > & guard )
 {
-    {
-        epicsGuard < epicsMutex > guard ( this->mutex );
-        if ( this->shuttingDown ) {
-            return;
-        }
+    guard.assertIdenticalMutex ( this->mutex );
+    if ( this->shuttingDown ) {
+        return;
     }
-    this->timer.start ( *this, this->period );
+    {
+        epicsGuardRelease < epicsMutex > guardRelease ( guard );
+        this->timer.start ( *this, this->period );
+    }
     debugPrintf ( ("connected to the server - initiating circuit recv watchdog\n") );
 }
 

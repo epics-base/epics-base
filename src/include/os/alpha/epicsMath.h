@@ -2,6 +2,6 @@
 #define epicsMathh
 
 #include <math.h>
-#define isinf(D) 0
+#define isinf(D) (!finite((D)) && !(isnan((D))))
 
 #endif /* epicsMathh */

@@ -15,7 +15,7 @@
 
 #-------------------------------------------------------
 # Where to find RTEMS
-RTEMS_BASE=/opt/rtems-4.7
+RTEMS_BASE=/opt/rtems/rtems-4.7
 RTEMS_VERSION=4.7
 
 #-------------------------------------------------------

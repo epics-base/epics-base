@@ -1,7 +1,17 @@
 /* drvGpib.c */
 /* share/src/drv/drvGpib.c %W% %G% */
 
-/*      Author: John Winans
+/******************************************************************************
+ *
+ * TODO:
+ * - Autodetect the need to use a bounce buffer (saves time on boards that have
+ *   "malloc"-able A24 space.
+ *
+ * - Launch campaign against the use of National Instruments hardware.
+ *
+ ******************************************************************************
+ *
+ *	Author: John Winans
  *      Date:   09-10-91
  *      GPIB driver for the NI-1014 and NI-1014D VME cards.
  *
@@ -52,6 +62,12 @@
  *
  *
  * $Log$
+ * Revision 1.26  1994/12/12  16:03:00  winans
+ * Rewrote the init code so that it always returns a zero (don't kill the
+ * startup.cmd file.)  It is possible that this could cause some confusion
+ * to the database, should it decide to then use a link that did not init
+ * properly.
+ *
  * Revision 1.25  1994/10/28  19:55:30  winans
  * Added VME bus violation prevention code/bug fix from LANL.
  *
@@ -186,6 +202,11 @@ struct    cc_ary
     short	cc_TWO;
 };
 
+typedef struct DmaStuffStruct
+{
+	struct	cc_ary cc_array;
+	char	cc_byte;
+}DmaStuffStruct;
 /******************************************************************************
  *
  * This structure is used to hold the hardware-specific information for a
@@ -200,8 +221,12 @@ struct	niLink {
   WDOG_ID	watchDogId;	/* watchdog for timeouts */
   struct	ibregs	*ibregs;/* pointer to board registers */
 
+#if 0
   char		cc_byte;
   struct	cc_ary	cc_array;
+#else
+  DmaStuffStruct *DmaStuff;
+#endif
 
   char		r_isr1;
   char		r_isr2;
@@ -375,9 +400,9 @@ initGpib(void)
       if (ibDebug)
 	logMsg("GPIB card found at address 0x%08.8X\n", pibregs);
 
-      if ((pNiLink[i] = (struct niLink *) devLibA24Malloc(sizeof(struct niLink))) == NULL)
+      if ((pNiLink[i] = (struct niLink *)malloc(sizeof(struct niLink))) == NULL)
       { /* This better never happen! */
-	logMsg("initGpib(): Can't malloc memory for NI-link data structures!");
+	logMsg("initGpib(): Can't malloc memory for NI-link data structures!\n");
         return(ERROR);
       }
 
@@ -405,10 +430,15 @@ initGpib(void)
       pNiLink[i]->cmdSpins = 0;
       pNiLink[i]->maxSpins = 0;
 
-      pNiLink[i]->cc_array.cc_ccb = 0;	/* DMAC array chained structure */
-      pNiLink[i]->cc_array.cc_ONE = 1;
-      pNiLink[i]->cc_array.cc_n_1addr = 0;
-      pNiLink[i]->cc_array.cc_TWO = 2;
+      if ((pNiLink[i]->DmaStuff = (DmaStuffStruct *)devLibA24Malloc(sizeof(DmaStuffStruct))) == NULL)
+      { /* This better never happen! */
+	logMsg("initGpib(): Can't malloc A24 memory for DMAC control structures!\n");
+        return(ERROR);
+      }
+      pNiLink[i]->DmaStuff->cc_array.cc_ccb = 0; /* DMAC chaining structure */
+      pNiLink[i]->DmaStuff->cc_array.cc_ONE = 1;
+      pNiLink[i]->DmaStuff->cc_array.cc_n_1addr = 0;
+      pNiLink[i]->DmaStuff->cc_array.cc_TWO = 2;
 
       pNiLink[i]->first_read = 1;	/* used in physIo() */
     }
@@ -973,9 +1003,9 @@ int	time;		/* time to wait on the DMA operation */
     b->auxmr = AUXRA | HR_HLDE;		/* hold off on end */
     
     if (cnt != 1)
-      pNiLink[link]->cc_byte = AUXRA | HR_HLDA;	/* (cc) holdoff on all */
+      pNiLink[link]->DmaStuff->cc_byte = AUXRA | HR_HLDA; /* (cc) holdoff on all */
     else
-      pNiLink[link]->cc_byte = b->auxmr = AUXRA | HR_HLDA; /* last byte, do now */
+      pNiLink[link]->DmaStuff->cc_byte = b->auxmr = AUXRA | HR_HLDA; /* last byte, do now */
     b->ch0.ocr = D_DTM | D_XRQ;
     /* make sure I only alter the 1014D port-specific fields here! */
     b->cfg1 = D_ECC | D_IN | (NIGPIB_IRQ_LEVEL << 5) | D_BRG3 | D_DBM;
@@ -992,7 +1022,7 @@ int	time;		/* time to wait on the DMA operation */
     memcpy(pNiLink[link]->A24BounceBuffer, buffer, length);
 
     if (cnt != 1)
-      pNiLink[link]->cc_byte = AUX_SEOI;	/* send EOI with last byte */
+      pNiLink[link]->DmaStuff->cc_byte = AUX_SEOI; /* send EOI with last byte */
     else
       b->auxmr = AUX_SEOI;			/* last byte, do it now */
 
@@ -1009,28 +1039,28 @@ int	time;		/* time to wait on the DMA operation */
   /* setup channel 1 (carry cycle) */
 
   if(ibDebug > 5)
-    logMsg("PhysIO: readying to xlate cc pointers at %8.8X and %8.8X\n", &(pNiLink[link]->cc_byte), &pNiLink[link]->A24BounceBuffer[cnt - 1]);
+    logMsg("PhysIO: readying to xlate cc pointers at %8.8X and %8.8X\n", &(pNiLink[link]->DmaStuff->cc_byte), &pNiLink[link]->A24BounceBuffer[cnt - 1]);
 
 #ifdef USE_OLD_XLATION
-  pNiLink[link]->cc_array.cc_ccb = &(pNiLink[link]->cc_byte) + (long) ram_base;
-  pNiLink[link]->cc_array.cc_n_1addr = &(pNiLink[link]->A24BounceBuffer[cnt - 1]) + (long)ram_base;
+  pNiLink[link]->DmaStuff->cc_array.cc_ccb = &(pNiLink[link]->DmaStuff->cc_byte) + (long) ram_base;
+  pNiLink[link]->DmaStuff->cc_array.cc_n_1addr = &(pNiLink[link]->A24BounceBuffer[cnt - 1]) + (long)ram_base;
 #else
 
-  if (sysLocalToBusAdrs(VME_AM_STD_SUP_DATA, &(pNiLink[link]->cc_byte), &(pNiLink[link]->cc_array.cc_ccb)) == ERROR)
+  if (sysLocalToBusAdrs(VME_AM_STD_SUP_DATA, &(pNiLink[link]->DmaStuff->cc_byte), &(pNiLink[link]->DmaStuff->cc_array.cc_ccb)) == ERROR)
     return(ERROR);
 
-  if (sysLocalToBusAdrs(VME_AM_STD_SUP_DATA, &(pNiLink[link]->A24BounceBuffer[cnt - 1]), &(pNiLink[link]->cc_array.cc_n_1addr)) == ERROR)
+  if (sysLocalToBusAdrs(VME_AM_STD_SUP_DATA, &(pNiLink[link]->A24BounceBuffer[cnt - 1]), &(pNiLink[link]->DmaStuff->cc_array.cc_n_1addr)) == ERROR)
     return(ERROR);
 
 #endif
   if(ibDebug > 5)
-    logMsg("PhysIO: &cc_byte=%8.8X, &pNiLink[link]->A24BounceBuffer[cnt-1]=%8.8X, ", pNiLink[link]->cc_array.cc_ccb, pNiLink[link]->cc_array.cc_n_1addr);
+    logMsg("PhysIO: &cc_byte=%8.8X, &pNiLink[link]->A24BounceBuffer[cnt-1]=%8.8X, ", pNiLink[link]->DmaStuff->cc_array.cc_ccb, pNiLink[link]->DmaStuff->cc_array.cc_n_1addr);
 
   cnt--;
 #ifdef USE_OLD_XLATION
-  temp_addr = (long) (&(pNiLink[link]->cc_array)) + (long)ram_base;
+  temp_addr = (long) (&(pNiLink[link]->DmaStuff->cc_array)) + (long)ram_base;
 #else
-  if (sysLocalToBusAdrs(VME_AM_STD_SUP_DATA, &(pNiLink[link]->cc_array), &temp_addr) == ERROR)
+  if (sysLocalToBusAdrs(VME_AM_STD_SUP_DATA, &(pNiLink[link]->DmaStuff->cc_array), &temp_addr) == ERROR)
     return(ERROR);
 #endif
   if(ibDebug > 5)
@@ -1082,7 +1112,7 @@ int	time;		/* time to wait on the DMA operation */
   if (ibDmaTimingError > ibDmaMaxError)
     ibDmaMaxError = ibDmaTimingError;
   if (ibDmaDebug)
-    printf("DMA timing: error = %d, total = %d, max = %d\n",
+    logMsg("DMA timing: error = %d, total = %d, max = %d\n",
         ibDmaTimingError, ibDmaTimingErrorTotal, ibDmaMaxError);
   /***************************************************************************/
 
@@ -1098,7 +1128,7 @@ int	time;		/* time to wait on the DMA operation */
   if (ibDmaTimingError > ibDmaMaxError)
     ibDmaMaxError = ibDmaTimingError;
   if (ibDmaDebug)
-    printf("DMA timing: error = %d, total = %d, max = %d\n",
+    logMsg("DMA timing: error = %d, total = %d, max = %d\n",
         ibDmaTimingError, ibDmaTimingErrorTotal, ibDmaMaxError);
   /***************************************************************************/
 
@@ -2025,7 +2055,7 @@ int     length; 	/* number of bytes to write out from the data buffer */
 STATIC int
 HideosGpibRead(struct ibLink *pibLink, int device, char *buffer, int length, int time)
 {
-	printf("HideosGpibRead() entered\n");
+	logMsg("HideosGpibRead() entered\n");
 	return(bytes read | error);
 }
 /******************************************************************************
@@ -2036,7 +2066,7 @@ HideosGpibRead(struct ibLink *pibLink, int device, char *buffer, int length, int
 STATIC int
 HideosGpibWrite(struct ibLink *pibLink, int device, char *buffer, int length, int time)
 {
-	printf("HideosGpibWrite() entered\n");
+	logMsg("HideosGpibWrite() entered\n");
 	return(bytes sent | error);
 }
 /******************************************************************************
@@ -2047,7 +2077,7 @@ HideosGpibWrite(struct ibLink *pibLink, int device, char *buffer, int length, in
 STATIC int
 HideosGpibCmd(struct ibLink *pibLink, char *buffer, int length)
 {
-	printf("HideosGpibCmd() entered\n");
+	logMsg("HideosGpibCmd() entered\n");
 	return(bytes sent | error);
 }
 /******************************************************************************
@@ -2058,7 +2088,7 @@ HideosGpibCmd(struct ibLink *pibLink, char *buffer, int length)
 STATIC int
 HideosGpibCheckLink(int link, int bug)
 {
-	printf("HideosGpibCheckLink() entered\n");
+	logMsg("HideosGpibCheckLink() entered\n");
 	return(OK | ERROR);
 }
 /******************************************************************************
@@ -2069,7 +2099,7 @@ HideosGpibCheckLink(int link, int bug)
 STATIC int
 HideosGpibSrqPollInhibit(int link, int bug, int gpibAddr)
 {
-	printf("HideosGpibSrqPollInhibit() entered -- NOT SUPPORTED YET\n");
+	logMsg("HideosGpibSrqPollInhibit() entered -- NOT SUPPORTED YET\n");
 	return(ERROR);
 }
 /******************************************************************************
@@ -2080,7 +2110,7 @@ HideosGpibSrqPollInhibit(int link, int bug, int gpibAddr)
 STATIC int
 HideosGpibGenLink(int link, int bug)
 {
-	printf("HideosGpibGenLink() entered\n");
+	logMsg("HideosGpibGenLink() entered\n");
 	return(ibLinkStart() | ERROR);
 }
 /******************************************************************************
@@ -2091,7 +2121,7 @@ HideosGpibGenLink(int link, int bug)
 STATIC int
 HideosGpibIoctl(int link, int bug, int cmd, int v, caddr_t p)
 {
-	printf("HideosGpibIoctl() entered\n");
+	logMsg("HideosGpibIoctl() entered\n");
 	return(OK | ERROR);
 }
 /******************************************************************************
@@ -2102,7 +2132,7 @@ HideosGpibIoctl(int link, int bug, int cmd, int v, caddr_t p)
 struct	bbIbLink *
 HideosGpibFindLink(int link, int bug)
 {
-	printf("HideosGpibFindLink() entered\n");
+	logMsg("HideosGpibFindLink() entered\n");
 	return(bbIbLink* | NULL);
 }
 #endif
@@ -2623,13 +2653,13 @@ IBHistDump(int type, int link, int bug)
   {
     if (pibLink->linkType == GPIB_IO)
     {
-      printf("%d GPIB-L%d-D%d: %s\n", pibLink->History.Hist[i].Time,
+      logMsg("%d GPIB-L%d-D%d: %s\n", pibLink->History.Hist[i].Time,
     	pibLink->linkId, pibLink->History.Hist[i].DevAddr, 
 	pibLink->History.Hist[i].Msg);
     }
     else if (pibLink->linkType == BBGPIB_IO)
     {
-      printf("%d BBIB-l%d-B%d-D%d: %s\n", pibLink->History.Hist[i].Time,
+      logMsg("%d BBIB-l%d-B%d-D%d: %s\n", pibLink->History.Hist[i].Time,
 	pibLink->linkId, pibLink->bug, pibLink->History.Hist[i].DevAddr,
 	pibLink->History.Hist[i].Msg);
     }
@@ -2641,5 +2671,14 @@ IBHistDump(int type, int link, int bug)
 
   semGive(pibLink->History.Sem);
   return(0);
+}
+#endif
+
+#if 1
+/* A way to stop the CPU when idle... run from shell at prio 250 */
+BigFFT()
+{
+  while (1)
+  	asm(" stop #0x3000");
 }
 #endif

@@ -24,36 +24,6 @@
  *              Advanced Photon Source
  *              Argonne National Laboratory
  *
- * Modification Log: 
- * -----------------
- * $Log$
- * Revision 1.11  1998/02/27 01:34:07  jhill
- * cleaned up the DLL symbol export
- *
- * Revision 1.10  1998/01/20 21:36:51  mrk
- * add dbDefs.h
- *
- * Revision 1.9  1997/05/01 19:57:09  jhill
- * updated dll keywords
- *
- * Revision 1.8  1997/04/10 19:45:15  jhill
- * API changes and include with  not <>
- *
- * Revision 1.7  1997/01/22 22:06:49  jhill
- * doc
- *
- * Revision 1.6  1996/11/02 01:56:55  jhill
- * improved message
- *
- * Revision 1.5  1996/06/19 17:14:11  jhill
- * print out the EPICS release when there is an assert failure
- *
- * Revision 1.4  1995/12/19  19:40:04  jhill
- * added author name
- *
- * Revision 1.3  1995/08/12  00:59:11  jhill
- * use $log in header
- *
  */
 
 #include <stdlib.h>
@@ -67,27 +37,15 @@
 #include "epicsVersion.h"
 #include "epicsAssert.h"
 
-
 /*
- * epicsAssertPrintf ()
+ * epicsAssert ()
  */
 epicsShareFunc void epicsShareAPI 
-	epicsAssertPrintf (const char *pFile, const unsigned line, 
-    const char *pExp, const char *pAuthorName, const char *pFormat, ...
-	)
+	epicsAssert (const char *pFile, const unsigned line, 
+    const char *pExp, const char *pAuthorName)
 {
-    va_list	pvar;
-
-    va_start (pvar, pFormat);
-
 	epicsPrintf (
 "\n\n\nA call to \"assert (%s)\" failed in %s line %d.\n", pExp, pFile, line);
-
-    if (pFormat) {
-        epicsPrintf ("When: ");
-        epicsVprintf (pFormat, pvar);
-        epicsPrintf ("\n");
-    }
 
 	epicsPrintf (
 "The file \"core\" will be created in the current working directory.\n");
@@ -117,8 +75,6 @@ epicsShareFunc void epicsShareAPI
 
 	}
 	epicsPrintf ("This problem occurred in \"%s\"\n", epicsReleaseVersion);
-
-    va_end (pvar);
 
 	abort ();
 }

@@ -45,8 +45,6 @@ extern "C" {
 #   define epicsAssertAuthor 0
 #endif
 
-#define assertParenStrip(ARG) ARG
-
 #ifdef NDEBUG
 #	define assert(ignore)  ((void) 0)
 #else /* NDEBUG */
@@ -54,36 +52,21 @@ extern "C" {
 #if defined(__STDC__) || defined(__cplusplus)
 
 epicsShareFunc extern void epicsShareAPI 
-	epicsAssertPrintf (const char *pFile, const unsigned line, 
-			const char *pExp, const char *pAuthorName, const char *pFormat, ...);
+	epicsAssert (const char *pFile, const unsigned line, 
+			const char *pExp, const char *pAuthorName);
 
 #else /*__STDC__ or __cplusplus*/
 
-	epicsShareFunc extern void epicsShareAPI epicsAssert ();
+epicsShareFunc extern void epicsShareAPI epicsAssert ();
 
 #endif /*__STDC__ or __cplusplus*/
 
 #if (defined(__STDC__) || defined(__cplusplus)) && !defined(VAXC)
 
 #define assert(exp) \
-{if (!(exp)) epicsAssertPrintf (__FILE__, __LINE__, #exp, epicsAssertAuthor, 0);}
-
-/*
- * Because C macros dont allow variable numbers of arguments we must
- * use this as follows
- *
- * assertPrintf (a==b, ("bad news, a=%d b=%d", a, b) );
- */
-#define assertPrintf(exp, fmtAndArgsInParenthesis) \
-    {if (!(exp)) {epicsAssertPrintf (__FILE__, __LINE__, #exp, epicsAssertAuthor, assertParenStrip fmtAndArgsInParenthesis);}}
+{if (!(exp)) epicsAssert (__FILE__, __LINE__, #exp, epicsAssertAuthor);}
 
 #else /*__STDC__ or __cplusplus*/
-
-#define assert(exp) \
-{if (!(exp)) epicsAssertPrintf (__FILE__, __LINE__, "", epicsAssertAuthor, 0);}
-
-#define assertPrintf(exp, fmtAndArgsInParenthesis) \
-    {if (!(exp)) {epicsAssertPrintf (__FILE__, __LINE__, "", epicsAssertAuthor, assertParenStrip fmtAndArgsInParenthesis);}}
 
 #endif /* (__STDC__ or __cplusplus) and not VAXC */
 

@@ -64,51 +64,6 @@ epicsShareFunc unsigned epicsShareAPI ipAddrToHostName
 }
 
 /*
- * sockAddrToA() 
- * (convert socket address to ASCII host name)
- */
-void epicsShareAPI sockAddrToA 
-			(const struct sockaddr *paddr, char *pBuf, unsigned bufSize)
-{
-	const int		maxPortDigits = 5u;
-	char			name[max(INET_ADDR_LEN,MAXHOSTNAMELEN)+1];
-	int				status;
-	int				errnoCopy = errno;
-
-	if (bufSize<1) {
-		return;
-	}
-
-	if (paddr->sa_family!=AF_INET) {
-		strncpy(pBuf, "<Host with Unknown Address Type>", bufSize-1);
-		/*
-		 * force null termination
-		 */
-		pBuf[bufSize-1] = '\0';
-	}
-	else {
-        struct sockaddr_in *paddr_in = (struct sockaddr_in *) paddr;
-		status = hostGetByAddr ((int)paddr_in->sin_addr.s_addr, name);
-		if (status!=OK) {
-			inet_ntoa_b (paddr_in->sin_addr, name);
-		}
-
-		/*
-		 * allow space for the port number
-		 */
-		if (bufSize>maxPortDigits+strlen(name)) {
-			sprintf (pBuf, "%.*s:%u", ((int)bufSize)-maxPortDigits-1, 
-				name, ntohs(paddr_in->sin_port));
-		}
-		else {
-			sprintf (pBuf, "%.*s", ((int)bufSize)-1, name);
-		}
-	}
-
-	errno = errnoCopy;
-}
-
-/*
  * hostToIPAddr ()
  */
 epicsShareFunc int epicsShareAPI hostToIPAddr 

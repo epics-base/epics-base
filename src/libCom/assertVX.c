@@ -24,38 +24,10 @@
  *              Advanced Photon Source
  *              Argonne National Laboratory
  *
- * Modification Log: 
- * -----------------
- * $Log$
- * Revision 1.10  1998/02/27 01:34:07  jhill
- * cleaned up the DLL symbol export
- *
- * Revision 1.9  1998/02/20 21:45:08  evans
- * Made a large number of changes to epicsShareThings in libCom routines
- * to get imports and exports straight on WIN32.  Not everything is fixed
- * at this time.
- *
- * Revision 1.8  1997/05/01 19:57:10  jhill
- * updated dll keywords
- *
- * Revision 1.7  1997/04/10 19:45:16  jhill
- * API changes and include with  not <>
- *
- * Revision 1.6  1997/01/22 22:07:22  jhill
- * doc
- *
- * Revision 1.5  1996/06/19 17:14:12  jhill
- * print out the EPICS release when there is an assert failure
- *
- * Revision 1.4  1995/12/19  19:40:07  jhill
- * added author name
- *
- * Revision 1.3  1995/08/12  01:00:07  jhill
- *  use $log in header
  *
  ***************************************************************************
  */
-
+
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
@@ -69,23 +41,17 @@
 #include "epicsVersion.h"
 #include "epicsAssert.h"
 
-
-
 /*
- * epicsAssertPrintf ()
+ * epicsAssert ()
  *
  * This forces assert failures into the log file and then
  * calls taskSuspend() instead of exit() so that we can debug
  * the problem.
  */
-void epicsAssertPrintf (const char *pFile, const unsigned line, const char *pExp,
-	const char *pAuthorName, const char *pFormat, ...)
+void epicsAssert (const char *pFile, const unsigned line, const char *pExp,
+	const char *pAuthorName)
 {
 	int	taskId = taskIdSelf();
-    va_list	pvar;
-
-    va_start (pvar, pFormat);
-
 
     epicsPrintf (	
 "\n\n\n%s: A call to \"assert (%s)\" failed in %s at %d\n", 
@@ -93,12 +59,6 @@ void epicsAssertPrintf (const char *pFile, const unsigned line, const char *pExp
 		pExp, 
 		pFile, 
 		line);
-
-    if (pFormat) {
-        epicsPrintf ("When: ");
-        epicsVprintf (pFormat, pvar);
-        epicsPrintf ("\n");
-    }
 
 	if (pAuthorName) {
 
@@ -122,8 +82,6 @@ void epicsAssertPrintf (const char *pFile, const unsigned line, const char *pExp
 
 	}
 	epicsPrintf ("This problem occurred in \"%s\"\n", epicsReleaseVersion);
-
-    va_end (pvar);
 
     taskSuspend (taskId);
 }

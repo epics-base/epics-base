@@ -17,6 +17,7 @@
 01mar94,ajk	Changed algorithm for assigning event bits.
 13jan98,wfl	Supported E_COMMA token (for compound expressions).
 09mar98,wfl	Avoided compilation warnings under Tornado
+01oct98,wfl     Supported setting initial value on declaration.
 ***************************************************************************/
 /*#define	DEBUG	1*/
 
@@ -314,6 +315,9 @@ gen_var_decl()
 
 		if (vp->type == V_STRING)
 			printf("[MAX_STRING_SIZE]");
+
+		if (vp->value != NULL)
+			printf(" = %s", vp->value);
 
 		printf(";\n");
 	}

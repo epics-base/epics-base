@@ -90,10 +90,11 @@ ACC_SLIBS_NO=
 # because MS uses:   if __STDC__ ... disable many nice things
 #
 # Use of /Za would dissable DLL import/export keywords which
+# Use of /GX supports C++ extensions
 # EPICS include/excludes using architecture neutral macros
 CCC = cl 
-CCC_NORMAL = $(CCC) /nologo /D__STDC__=0
-CCC_STRICT = $(CCC) /nologo /D__STDC__=0
+CCC_NORMAL = $(CCC) /nologo /D__STDC__=0 /GX
+CCC_STRICT = $(CCC) /nologo /D__STDC__=0 /GX
 CCC_TEMPL_INST_FLAG =
 
 #

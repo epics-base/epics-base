@@ -10,12 +10,12 @@
 <body>
 
 <center>
-<h2>Converting an EPICS R3.13 application to R3.14.4</h2>
+<h2>Converting an EPICS R3.13 application to R3.14</h2>
 </center>
 
 <p><br>
 This document describes how to convert a R3.13 vxWorks application so that it
-builds with release R3.14.4.  It describes procedures such that:</p>
+builds with release R3.14. It describes procedures such that:</p>
 <ul>
   <li>The application uses the configure rules which are new to R3.14.</li>
 </ul>
@@ -50,7 +50,7 @@ If sequence programs (*.st or *.stt files) exist in your application, add the
 SNCSEQ location definition for the R3.14 seq external module</p>
 
 <p><tt>SNCSEQ =&lt;full path to seq module top&gt;</tt></p>
-The R3.14 seq module must exist and be built with EPICS base R3.14.4
+The R3.14 seq module must exist and be built with the same EPICS base R3.14 release.
 
 <h3>Modify the Makefiles in &lt;top&gt;/*App directories.</h3>
 
@@ -300,10 +300,14 @@ function("mySubProcess")</pre>
 <p>Change " i<tt>nclude $(TOP)/config/CONFIG_APP" </tt>to "<tt>include
 $(TOP)/configure/CONFIG"</tt></p>
 
-<p>Remove the line "<tt>DIRS += $(wildcard *ioc*"</tt></p>
+<p>If they do not already exist, add the lines
+<blockquote>
+<p><tt>DIRS += $(wildcard *ioc*)</tt></p>
+<p><tt>DIRS += $(wildcard as*)</tt></p>
+</blockquote>
 
 <p>Change <tt>"include $(TOP)/config/RULES.iocBoot" </tt>to "i<tt>nclude
-$(TOP)/configure/RULES.iocBoot"</tt></p>
+$(TOP)/configure/RULES_DIRS"</tt></p>
 
 <h3>Modify the Makefiles in &lt;top&gt;/iocBoot/ioc* directories.</h3>
 

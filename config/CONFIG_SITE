@@ -151,3 +151,4 @@ E2DB_FLAGS =
 #dbst 
 DBST = $(EPICS_EXTENSIONS)/bin/$(HOST_ARCH)/dbst
 
+include $(EPICS_BASE)/config/CONFIG_COMPAT

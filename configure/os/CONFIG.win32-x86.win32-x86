@@ -29,7 +29,10 @@ ARCMD = lib /nologo /verbose /out:$@ $(LIBRARY_LD_OBJS)
 
 BAFCMD = bscmake /nologo /o $@
 
-DEPENDS_RULE =  @echo depends target not supported
+#DEPENDS_RULE =  @echo depends target not supported
+#GNU depends flag
+DEPENDS.cpp = g++
+DEPENDS_FLAG = -MM
 
 #
 # Configure OS vendor C compiler
@@ -82,7 +85,9 @@ STATIC_CFLAGS_YES= /MT$(VISC_STATIC_CFLAGS_DEBUG) $(VISC_DLL)
 STATIC_CFLAGS_NO= /MD$(VISC_STATIC_CFLAGS_DEBUG) $(VISC_DLL)
 
 # OS vendor c preprocessor
-CPP = cl  /E
+#CPP = cl  /E
+#GNU c preprocessor
+CPP = gcc -x c -E
 
 # Configure OS vendor C++ compiler
 #

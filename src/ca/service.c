@@ -33,6 +33,9 @@
 /*			field.						*/
 /*	031692	joh	When bad cmd in message detected disconnect	*/
 /*			instead of terminating the client		*/
+/*	041692	joh	set state to cs_conn before caling 		*/
+/* 			ca_request_event() so their channel 		*/
+/*			connect tests wont fail				*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -604,6 +607,13 @@ struct in_addr			*pnet_addr;
           	lstAdd(&iiu[newiocix].chidlist, chan);
         }
 
+	/*
+	 * set state to cs_conn before caling 
+	 * ca_request_event() so their channel 
+	 * connect tests wont fail
+ 	 */
+	prev_cs = chan->state;
+	chan->state = cs_conn;
 
 	/*
 	 * claim the resource in the IOC
@@ -611,7 +621,6 @@ struct in_addr			*pnet_addr;
 	 * after reboot go away
 	 */
 	issue_claim_channel(&iiu[chan->iocix], chan);
-
 
 	/*
 	 * NOTE: monitor and callback reissue must occur prior to calling
@@ -622,11 +631,12 @@ struct in_addr			*pnet_addr;
 	if(pend_read_list.count){
           	for(	pevent = (evid) pend_read_list.node.next; 
 			pevent; 
-			pevent = (evid) pevent->node.next)
+			pevent = (evid) pevent->node.next){
             		if(pevent->chan == chan){
 	      			issue_get_callback(pevent);
-	      			cac_send_msg();
 	    		}
+		}
+      		cac_send_msg();
         }
 #endif
 
@@ -638,9 +648,6 @@ struct in_addr			*pnet_addr;
 	    		ca_request_event(pevent);
 	 	cac_send_msg();
  	}
-
-	prev_cs = chan->state;
-	chan->state = cs_conn;
 
       	UNLOCK;
 

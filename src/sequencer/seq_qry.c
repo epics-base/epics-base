@@ -9,6 +9,10 @@
 	seqChanShow - printf channel (pv) info.
 
 	ENVIRONMENT: VxWorks
+	HISTORY:
+25nov91,ajk	Display task names(s) with id(s).
+		Display logfile name and file descriptor.
+		Moved wait_rtn() to top of loop.
 ***************************************************************************/
 
 /*	#define	DEBUG	1	*/
@@ -38,8 +42,9 @@ int	tid;
 	SSCB		*ss_ptr;
 	STATE		*st_ptr;
 	CHAN		*db_ptr;
-	int		nss, nst, nch;
+	int		nss, nst, nch, status;
 	float		time;
+	char		file_name[100];
 
 	/* Info? */
 	if (tid == 0)
@@ -77,14 +82,22 @@ int	tid;
 	printf("  async flag=%d, debug flag=%d, reent flag=%d, conn flag=%d\n",
 	 sp_ptr->async_flag, sp_ptr->debug_flag, sp_ptr->reent_flag,
 	 sp_ptr->conn_flag);
+	printf("  log file fd=%d\n", sp_ptr->logFd);
+	status = ioctl(sp_ptr->logFd, FIOGETNAME, file_name);
+	if (status != ERROR)
+		printf("  log file name=\"%s\"\n", file_name);
 
 	printf("\n");
 	ss_ptr = sp_ptr->sscb;
 	for (nss = 0; nss < sp_ptr->nss; nss++, ss_ptr++)
 	{
+		wait_rtn();
+
 		printf("  State Set: \"%s\"\n", ss_ptr->name);
 
-		printf("  task id=%d=0x%x\n", ss_ptr->task_id, ss_ptr->task_id);
+		printf("  task name=%s;  ", taskName(ss_ptr->task_id));
+
+		printf("  id=%d=0x%x\n", ss_ptr->task_id, ss_ptr->task_id);
 
 		st_ptr = ss_ptr->states;
 		printf("  First state = \"%s\"\n", ss_ptr->states->name);
@@ -99,8 +112,6 @@ int	tid;
 		printf("\tTime since state was entered = %.1f seconds)\n", time);
 
 		printf("\tNumber delays queued=%d\n", ss_ptr->ndelay);
-
-		wait_rtn();
 	}
 
 	return 0;

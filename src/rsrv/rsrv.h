@@ -35,7 +35,7 @@
 
 #include "shareLib.h"
 
-epicsShareFunc int rsrv_init (void);
+epicsShareFunc int epicsShareAPI rsrv_init (void);
 
 #define RSRV_OK 0
 #define RSRV_ERROR (-1)

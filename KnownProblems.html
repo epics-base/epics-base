@@ -13,6 +13,26 @@
 
 <p> </p>
 
+<h2>CA puts to disabled record</h2>
+<p>If a CA client issues a put to a disabled record then, when the record is ena
+bled, database puts to the record will not make the record process until a CA pu
+t is again issued. The fix is:</p>
+<pre>
+diff -c -r1.113 dbAccess.c
+*** dbAccess.c	2002/04/08 14:46:13	1.113
+--- dbAccess.c	2002/05/02 20:09:18
+***************
+*** 614,619 ****
+--- 614,620 ----
+  		if(*ptrace) printf("disabled:  %s\n",precord->name);
+  		/*take care of caching and notifyCompletion*/
+  		precord->rpro = FALSE;
++ 		precord->putf = FALSE;
+                  callNotifyCompletion = TRUE;
+  		/* raise disable alarm */
+  		if (precord->stat==DISABLE_ALARM) goto all_done;
+</pre>
+
 <h2>casEventMask</h2>
 
 <p>The multiply-defined fatal error of the type</p>

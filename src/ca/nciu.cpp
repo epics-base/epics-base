@@ -31,8 +31,17 @@
 #include "cadef.h"
 #include "db_access.h" // for INVALID_DB_REQ
 
+#ifdef _MSC_VER
+#   pragma warning ( push )
+#   pragma warning ( disable:4660 )
+#endif
+
 template class tsFreeList < class nciu, 1024 >;
 template class epicsSingleton < tsFreeList < class nciu, 1024 > >;
+
+#ifdef _MSC_VER
+#   pragma warning ( pop )
+#endif
 
 epicsSingleton < tsFreeList < class nciu, 1024 > > nciu::pFreeList;
 

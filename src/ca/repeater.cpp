@@ -100,8 +100,17 @@ private:
  */
 static tsDLList < repeaterClient > client_list;
 
+#ifdef _MSC_VER
+#   pragma warning ( push )
+#   pragma warning ( disable:4660 )
+#endif
+
 template class tsFreeList < repeaterClient, 0x20 >;
 template class epicsSingleton < tsFreeList < repeaterClient, 0x20 > >;
+
+#ifdef _MSC_VER
+#   pragma warning ( pop )
+#endif
 
 epicsSingleton < tsFreeList < repeaterClient, 0x20 > > repeaterClient::pFreeList;
 

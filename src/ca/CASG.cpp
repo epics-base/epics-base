@@ -36,10 +36,19 @@
 #include "autoPtrDestroy.h"
 #include "cac.h"
 
+#ifdef _MSC_VER
+#   pragma warning ( push )
+#   pragma warning ( disable:4660 )
+#endif
+
 template class tsFreeList < CASG, 128 >;
 template class epicsSingleton < tsFreeList < struct CASG, 128 > >;
 template class tsFreeList < syncGroupReadNotify, 128, epicsMutexNOOP >;
 template class tsFreeList < syncGroupWriteNotify, 128, epicsMutexNOOP >;
+
+#ifdef _MSC_VER
+#   pragma warning ( pop )
+#endif
 
 epicsSingleton < tsFreeList < struct CASG, 128 > > CASG::pFreeList;
 

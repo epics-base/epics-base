@@ -13,4 +13,13 @@
 
 #include "resourceLib.h"
 
+#ifdef _MSC_VER
+#   pragma warning ( push )
+#   pragma warning ( disable:4660 )
+#endif
+
 template class intId < unsigned, 8u, sizeof(unsigned)*CHAR_BIT >;
+
+#ifdef _MSC_VER
+#   pragma warning ( pop )
+#endif

@@ -31,7 +31,16 @@
 #define epicsExportSharedSymbols
 #include "timerPrivate.h"
 
+#ifdef _MSC_VER
+#   pragma warning ( push )
+#   pragma warning ( disable:4660 )
+#endif
+
 template class epicsSingleton < timerQueueActiveMgr >;
+
+#ifdef _MSC_VER
+#   pragma warning ( pop )
+#endif
 
 epicsSingleton < timerQueueActiveMgr > pTimerQueueMgrEPICS;
 

@@ -19,8 +19,17 @@
 #include "iocinf.h"
 #include "comBuf.h"
 
+#ifdef _MSC_VER
+#   pragma warning ( push )
+#   pragma warning ( disable:4660 )
+#endif
+
 template class tsFreeList < comBuf, 0x20 >;
 template class epicsSingleton < tsFreeList < comBuf, 0x20 > >;
+
+#ifdef _MSC_VER
+#   pragma warning ( pop )
+#endif
 
 epicsSingleton < tsFreeList < class comBuf, 0x20 > > comBuf::pFreeList;
 

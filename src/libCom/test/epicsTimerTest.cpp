@@ -99,8 +99,17 @@ inline void delayVerify::start ( const epicsTime &expireTime )
     this->timer.start ( *this, expireTime );
 }
 
+#ifdef _MSC_VER
+#   pragma warning ( push )
+#   pragma warning ( disable:4660 )
+#endif
+
 template class tsFreeList < class delayVerify, 0x20 >;
 template class epicsSingleton < tsFreeList < class delayVerify, 0x20 > >;
+
+#ifdef _MSC_VER
+#   pragma warning ( pop )
+#endif
 
 epicsSingleton < tsFreeList < class delayVerify, 0x20 > > delayVerify::pFreeList;
 
@@ -185,8 +194,17 @@ inline void cancelVerify::start ( const epicsTime &expireTime )
     this->timer.start ( *this, expireTime );
 }
 
+#ifdef _MSC_VER
+#   pragma warning ( push )
+#   pragma warning ( disable:4660 )
+#endif
+
 template class tsFreeList < class cancelVerify, 0x20 >;
 template class epicsSingleton < tsFreeList < class cancelVerify, 0x20 > >;
+
+#ifdef _MSC_VER
+#   pragma warning ( pop )
+#endif
 
 epicsSingleton < tsFreeList < class cancelVerify, 0x20 > > cancelVerify::pFreeList;
 
@@ -273,8 +291,17 @@ inline void expireDestroVerify::start ( const epicsTime & expireTime )
     this->timer.start ( *this, expireTime );
 }
 
+#ifdef _MSC_VER
+#   pragma warning ( push )
+#   pragma warning ( disable:4660 )
+#endif
+
 template class tsFreeList < class expireDestroVerify, 0x20 >;
 template class epicsSingleton < tsFreeList < class expireDestroVerify, 0x20 > >;
+
+#ifdef _MSC_VER
+#   pragma warning ( pop )
+#endif
 
 epicsSingleton < tsFreeList < class expireDestroVerify, 0x20 > > expireDestroVerify::pFreeList;
 
@@ -353,8 +380,17 @@ inline void periodicVerify::start ( const epicsTime &expireTime )
     this->timer.start ( *this, expireTime );
 }
 
+#ifdef _MSC_VER
+#   pragma warning ( push )
+#   pragma warning ( disable:4660 )
+#endif
+
 template class tsFreeList < class periodicVerify, 0x20 >;
 template class epicsSingleton < tsFreeList < class periodicVerify, 0x20 > >;
+
+#ifdef _MSC_VER
+#   pragma warning ( pop )
+#endif
 
 epicsSingleton < tsFreeList < class periodicVerify, 0x20 > > periodicVerify::pFreeList;
 

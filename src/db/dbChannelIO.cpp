@@ -30,8 +30,17 @@
 #include "dbChannelIOIL.h"
 #include "dbPutNotifyBlocker.h"
 
+#ifdef _MSC_VER
+#   pragma warning ( push )
+#   pragma warning ( disable:4660 )
+#endif
+
 template tsFreeList < dbChannelIO >;
 template class epicsSingleton < tsFreeList < dbChannelIO > >;
+
+#ifdef _MSC_VER
+#   pragma warning ( pop )
+#endif
 
 epicsSingleton < tsFreeList < dbChannelIO > > dbChannelIO::pFreeList;
 

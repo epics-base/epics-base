@@ -37,6 +37,11 @@
 #include "bhe.h"
 #include "net_convert.h"
 
+#ifdef _MSC_VER
+#   pragma warning ( push )
+#   pragma warning ( disable:4660 )
+#endif
+
 template class resTable < nciu, chronIntId >;
 template class chronIntIdResTable < nciu >;
 template class resTable < baseNMIU, chronIntId >;
@@ -48,6 +53,10 @@ template class resTable < tcpiiu, caServerID >;
 template class tsFreeList < netReadNotifyIO, 1024, epicsMutexNOOP >;
 template class tsFreeList < netWriteNotifyIO, 1024, epicsMutexNOOP >;
 template class tsFreeList < netSubscription, 1024, epicsMutexNOOP >;
+
+#ifdef _MSC_VER
+#   pragma warning ( pop )
+#endif
 
 // TCP response dispatch table
 const cac::pProtoStubTCP cac::tcpJumpTableCAC [] = 

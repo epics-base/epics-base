@@ -33,12 +33,21 @@
 #include "epicsGuard.h"
 #include "timerPrivate.h"
 
+#ifdef _MSC_VER
+#   pragma warning ( push )
+#   pragma warning ( disable:4660 )
+#endif
+
 template class tsFreeList < epicsTimerForC, 0x20 >;
 template class tsFreeList < epicsTimerQueuePassiveForC, 0x10 >;
 template class tsFreeList < epicsTimerQueueActiveForC, 0x10 >;
 template class epicsSingleton < tsFreeList < epicsTimerForC, 0x20 > >;
 template class epicsSingleton < tsFreeList < epicsTimerQueuePassiveForC, 0x10 > >;
 template class epicsSingleton < tsFreeList < epicsTimerQueueActiveForC, 0x10 > >;
+
+#ifdef _MSC_VER
+#   pragma warning ( pop )
+#endif
 
 epicsSingleton < tsFreeList < epicsTimerForC, 0x20 > > epicsTimerForC::pFreeList;
 epicsSingleton < tsFreeList < epicsTimerQueuePassiveForC, 0x10 > > epicsTimerQueuePassiveForC::pFreeList;

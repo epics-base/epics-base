@@ -31,8 +31,17 @@
 #include "dbChannelIOIL.h"
 #include "db_access_routines.h"
 
+#ifdef _MSC_VER
+#   pragma warning ( push )
+#   pragma warning ( disable:4660 )
+#endif
+
 template tsFreeList < dbSubscriptionIO >;
 template class epicsSingleton < tsFreeList < dbSubscriptionIO > >;
+
+#ifdef _MSC_VER
+#   pragma warning ( pop )
+#endif
 
 epicsSingleton < tsFreeList < dbSubscriptionIO > > dbSubscriptionIO::pFreeList;
 

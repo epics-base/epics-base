@@ -19,8 +19,17 @@
 #include "iocinf.h"
 #include "oldAccess.h"
 
+#ifdef _MSC_VER
+#   pragma warning ( push )
+#   pragma warning ( disable:4660 )
+#endif
+
 template class tsFreeList < class putCallback, 1024 >;
 template class epicsSingleton < tsFreeList < class putCallback, 1024 > >;
+
+#ifdef _MSC_VER
+#   pragma warning ( pop )
+#endif
 
 epicsSingleton < tsFreeList < class putCallback, 1024 > > putCallback::pFreeList;
 

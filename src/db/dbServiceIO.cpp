@@ -33,8 +33,17 @@
 #include "dbChannelIOIL.h"
 #include "dbPutNotifyBlocker.h"
 
+#ifdef _MSC_VER
+#   pragma warning ( push )
+#   pragma warning ( disable:4660 )
+#endif
+
 template class resTable < dbBaseIO, chronIntId >;
 template class chronIntIdResTable < dbBaseIO >;
+
+#ifdef _MSC_VER
+#   pragma warning ( pop )
+#endif
 
 class dbServiceIOLoadTimeInit {
 public:

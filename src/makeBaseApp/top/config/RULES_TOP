@@ -1,0 +1,15 @@
+#RULES_TOP
+include $(EPICS_BASE)/config/RULES_TOP
+
+ifdef MASTER_IOCAPPS
+inc:	softlinks
+buildInstall:	softlinks
+
+softlinks:
+	@echo "softlinks" ; if [ "$(MASTER_IOCAPPS)" ]; then \
+	for DIR in bin lib dbd include man ; do \
+	$(TOP)/config/makeSoftLinks $(MASTER_IOCAPPS) $${DIR} ;\
+	done; fi
+
+.PHONY :: softlinks
+endif

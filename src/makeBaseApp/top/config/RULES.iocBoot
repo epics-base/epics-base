@@ -1,0 +1,16 @@
+#RULES.iocBoot
+DIRS += $(wildcard ioc*)
+DIRS += $(wildcard as*)
+include $(EPICS_BASE)/config/RULES_DIRS
+ifeq ($(findstring nfsCommands,$(wildcard *)),nfsCommands)
+buildInstall:: nfs.cmd
+
+nfs.cmd: nfsCommands
+	@echo "Creating $@"
+	@$(RM) $@
+	@cat  $< >> $@
+	@echo cd \"`\pwd`\" >> $@
+
+clean::
+	@$(RM) nfs.cmd
+endif

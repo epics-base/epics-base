@@ -1,0 +1,32 @@
+#CONFIG_APP 
+include $(TOP)/config/RELEASE
+ifndef T_A
+T_A = $(HOST_ARCH)
+endif
+include $(EPICS_BASE)/config/CONFIG
+ 
+#Other share areas can be added similar to following
+#ifdef <share_top>
+#USR_INCLUDES += -I$(<share_top>)/include
+#<share_top>BIN = $(<share_top>)/bin/$(T_A)
+#endif
+ 
+ifdef SHARE
+USR_INCLUDES += -I$(SHARE)/include
+SHARE_BIN = $(SHARE)/bin/$(T_A)
+endif
+ifdef HIDEOS
+USR_INCLUDES += -I$(HIDEOS)/include
+HIDEOS_ARCH = $(subst mv,vx,$(T_A))
+HIDEOS_LIB=$(HIDEOS)/lib/$(HIDEOS_ARCH)
+HIDEOS_APPS=$(HIDEOS)/usrapps/$(HIDEOS_ARCH)
+endif
+ifdef EPICSHIDEOS
+USR_INCLUDES += -I$(EPICSHIDEOS)/include
+EPICSHIDEOS_BIN=$(EPICSHIDEOS)/bin/$(T_A)
+endif
+ifdef MASTER_IOCAPPS
+USR_INCLUDES += -I$(MASTER_IOCAPPS)/include
+MASTER_IOCAPPS_BIN = $(MASTER_IOCAPPS)/bin/$(T_A)
+endif
+include $(TOP)/config/CONFIG

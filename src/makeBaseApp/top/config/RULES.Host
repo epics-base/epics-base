@@ -1,0 +1,9 @@
+#RULES.Host
+
+#Following is tempoery until Jeff fixes RULES.Host
+PRODDEPLIBS = $(EPICS_BASE_LIB)/libca.a
+PRODDEPLIBS += $(EPICS_BASE_LIB)/libDb.a
+PRODDEPLIBS += $(EPICS_BASE_LIB)/libCom.a
+#end of temporary stuff
+
+include $(EPICS_BASE)/config/RULES.Host

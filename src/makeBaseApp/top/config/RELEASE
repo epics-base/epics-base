@@ -1,0 +1,6 @@
+#RELEASE Location of external products
+EPICS_BASE=${epics_base}
+#SHARE=
+#HIDEOS=
+#EPICSHIDEOS=
+#MASTER_IOCAPPS=

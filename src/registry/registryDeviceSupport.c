@@ -13,8 +13,8 @@ of this distribution.
 
 #include "dbBase.h"
 #include "devSup.h"
-#include "registry.h"
 #define epicsExportSharedSymbols
+#include "registry.h"
 #include "registryDeviceSupport.h"
 
 const char *deviceSupport = "device support";

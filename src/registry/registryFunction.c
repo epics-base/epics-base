@@ -10,9 +10,9 @@ of this distribution.
 #include <stddef.h>
 #include <stdlib.h>
 #include <stddef.h>
-#include "registry.h"
 
 #define epicsExportSharedSymbols
+#include "registry.h"
 #include "registryFunction.h"
 
 const char *function = "function";

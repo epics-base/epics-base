@@ -395,7 +395,7 @@ void epicsShareAPI ca_repeater ()
     unsigned short port;
     makeSocketReturn msr;
 
-    assert (bsdSockAttach());
+    assert ( osiSockAttach() );
 
     port = envGetInetPortConfigParam ( &EPICS_CA_REPEATER_PORT, CA_REPEATER_PORT );
 
@@ -407,12 +407,12 @@ void epicsShareAPI ca_repeater ()
          * test for server was already started
          */
         if ( msr.errNumber == SOCK_EADDRINUSE ) {
-            bsdSockRelease ();
+            osiSockRelease ();
             exit (0);
         }
         ca_printf("%s: Unable to create repeater socket because %d=\"%s\" - fatal\n",
             __FILE__, msr.errNumber, msr.pErrStr);
-        bsdSockRelease ();
+        osiSockRelease ();
         exit(0);
     }
 

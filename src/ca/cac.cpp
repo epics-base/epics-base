@@ -37,7 +37,7 @@ cac::cac () :
         }
     }
 
-	if (!bsdSockAttach()) {
+	if ( ! osiSockAttach() ) {
         throwWithLocation ( caErrorCode (ECA_INTERNAL) );
 	}
 
@@ -218,7 +218,7 @@ cac::~cac ()
 
     semMutexDestroy (this->ca_client_lock);
 
-	bsdSockRelease ();
+    osiSockRelease ();
 }
 
 void cac::safeDestroyNMIU (unsigned id)

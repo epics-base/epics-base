@@ -304,6 +304,8 @@ cac::~cac ()
     osiSockRelease ();
 
     this->pTimerQueue->release ();
+
+    epicsThreadPrivateDelete ( this->isRecvProcessId );
 }
 
 // lock must be applied
@@ -1480,7 +1482,7 @@ bool cac::defaultExcep ( tcpiiu &iiu, const caHdrLargeArray &,
     return true;
 }
 
-bool cac::eventAddExcep ( tcpiiu &iiu, const caHdrLargeArray &hdr, 
+bool cac::eventAddExcep ( tcpiiu & /* iiu */, const caHdrLargeArray &hdr, 
                          const char *pCtx, unsigned status )
 {
     this->ioExceptionNotify ( hdr.m_available, status, pCtx, 
@@ -1575,7 +1577,8 @@ bool cac::accessRightsRespAction ( tcpiiu &, const caHdrLargeArray &hdr, void * 
     return true;
 }
 
-bool cac::claimCIURespAction ( tcpiiu &iiu, const caHdrLargeArray &hdr, void *pMsgBdy )
+bool cac::claimCIURespAction ( tcpiiu &iiu, 
+                              const caHdrLargeArray &hdr, void * /*pMsgBdy */ )
 {
     nciu * pChan = this->chanTable.lookup ( hdr.m_cid );
     if ( pChan ) {

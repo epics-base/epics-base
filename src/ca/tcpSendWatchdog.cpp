@@ -27,7 +27,8 @@ tcpSendWatchdog::~tcpSendWatchdog ()
     this->timer.destroy ();
 }
 
-epicsTimerNotify::expireStatus tcpSendWatchdog::expire ( const epicsTime & currentTime )
+epicsTimerNotify::expireStatus tcpSendWatchdog::expire ( 
+                 const epicsTime & /* currentTime */ )
 {
     char hostName[128];
     this->iiu.hostName ( hostName, sizeof ( hostName ) );

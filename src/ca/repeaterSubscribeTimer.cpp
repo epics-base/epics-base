@@ -33,7 +33,8 @@ repeaterSubscribeTimer::~repeaterSubscribeTimer ()
     this->timer.destroy ();
 }
 
-epicsTimerNotify::expireStatus repeaterSubscribeTimer::expire ( const epicsTime & currentTime )
+epicsTimerNotify::expireStatus repeaterSubscribeTimer::
+        expire ( const epicsTime & /* currentTime */ )
 {
     static const unsigned nTriesToMsg = 50;
     if ( this->attempts > nTriesToMsg && ! this->once ) {

@@ -114,7 +114,7 @@ void oldChannelNotify::exception ( int status, const char *pContext )
 }
 
 void oldChannelNotify::readException ( int status, const char *pContext,
-    unsigned type, arrayElementCount count, void *pValue )
+    unsigned type, arrayElementCount count, void * /* pValue */ )
 {
     this->cacCtx.exception ( status, pContext, 
         __FILE__, __LINE__, *this, type, count, CA_OP_GET );

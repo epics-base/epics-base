@@ -36,6 +36,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#define epicsExportSharedSymbols
 #include "dbDefs.h"
 #include "osiThread.h"
 #include "osiSem.h"

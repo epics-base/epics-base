@@ -40,18 +40,33 @@
  */
 
 /*
- * It would be preferable to avoid using the repeater on multicast enhanced IP kernels, but
- * this is not going to work in all situations because (according to Steven's TCP/IP
- * illustrated volume I) if a broadcast is received it goes to all sockets on the same port,
- * but if a unicast is received it goes to only one of the sockets on the same port
- * (we can only guess at which one it will be).
+ * It would be preferable to avoid using the repeater on multicast enhanced
+ * IP kernels, but this is not going to work in all situations because
+ * (according to Steven's TCP/IP illustrated volume I) if a broadcast is
+ * received it goes to all sockets on the same port, but if a unicast is
+ * received it goes to only one of the sockets on the same port (we can only
+ * guess at which one it will be).
  *   
  * I have observed this behavior under winsock II:
- * o only one of the sockets on the same port receives the message if we send to the 
- * loop back address
- * o both of the sockets on the same port receives the message if we send to the 
- * broadcast address
- * 
+ * o only one of the sockets on the same port receives the message if we
+ *   send to the loopback address
+ * o both of the sockets on the same port receives the message if we send
+ *   to the broadcast address
+ */
+
+/* verifyClients() Mechanism
+ *
+ * This is required because Solaris and HPUX have half baked versions
+ * of sockets.
+ *
+ * As written, the repeater should be robust against situations where the
+ * IP kernel doesn't implement UDP disconnect on receiving ICMP port
+ * unreachable errors from the destination process. As I recall, this
+ * change was required in the repeater code when we ported from sunos4 to
+ * Solaris. To avoid unreasonable overhead, I decided at the time to check
+ * the validity of all existing connections only when a new client
+ * registers with the repeater (and not when fanning out each beacon
+ * received).                                           -- Jeff
  */
 
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
@@ -290,7 +305,6 @@ bool repeaterClient::verify ()  // X aCC 361
 
 /*
  * verifyClients()
- * (this is required because solaris has a half baked version of sockets)
  */
 static void verifyClients()
 {
@@ -436,15 +450,15 @@ static void register_new_client ( osiSockAddr &from )
 
     if ( newClient ) {
         /*
-         * on solaris we need to verify that the clients
-         * have not gone away (because ICMP does not
-         * get through to send()
+         * For HPUX and Solaris we need to verify that the clients
+         * have not gone away - because an ICMP error return does not
+         * get through to send(), which returns no error code.
          *
-         * this is done each time that a new client is 
-         * created
+         * This is done each time that a new client is created.
+         * See also the note in the file header.
          *
-         * this is done here in order to avoid deleting
-         * a client prior to sending its confirm message
+         * This is done here in order to avoid deleting a client
+         * prior to sending its confirm message.
          */
         verifyClients ();
     }
@@ -501,8 +515,7 @@ void ca_repeater ()
             if ( errnoCpy == SOCK_ECONNREFUSED ) {
                 continue;
             }
-            // Avoid ECONNRESET from connected socket 
-            // in windows
+            // Avoid ECONNRESET from connected socket in windows
             if ( errnoCpy == SOCK_ECONNRESET ) {
                 continue;
             }

@@ -68,7 +68,9 @@
 #include	<rngLib.h>
 #include	<types.h>
 #include	<stdioLib.h>
+#include	<stdlib.h>
 
+#include	<devLib.h>
 #include	<alarm.h>
 #include	<cvtTable.h>
 #include	<dbDefs.h>

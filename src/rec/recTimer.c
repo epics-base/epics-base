@@ -57,7 +57,7 @@
 #include	<timerRecord.h>
 
 /* Create RSET - Record Support Entry Table*/
-long report();
+#define report NULL
 #define initialize NULL
 long init_record();
 long process();
@@ -103,17 +103,6 @@ void read_timer();
 void convert_timer();
 void write_timer();
 
-static long report(fp,paddr)
-    FILE	  *fp;
-    struct dbAddr *paddr;
-{
-    struct timerRecord	*ptimer=(struct timerRecord*)(paddr->precord);
-
-    if(recGblReportDbCommon(fp,paddr)) return(-1);
-    if(fprintf(fp,"VAL  %-12.4G\n",ptimer->val)) return(-1);
-    return(0);
-}
-
 static long init_record(ptimer)
     struct timerRecord	*ptimer;
 {
@@ -146,7 +135,7 @@ static long process(paddr)
         /* check event list */
         monitor(ptimer);
         /* process the forward scan link record */
-        if (ptimer->flnk.type==DB_LINK) dbScanPassive(&ptimer->flnk.value.db_link.pdbAddr);
+        if (ptimer->flnk.type==DB_LINK) dbScanPassive(ptimer->flnk.value.db_link.pdbAddr);
 
         ptimer->pact=FALSE;
         return(0);

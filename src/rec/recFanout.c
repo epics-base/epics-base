@@ -52,7 +52,7 @@
 #include	<fanoutRecord.h>
 
 /* Create RSET - Record Support Entry Table*/
-long report();
+#define report NULL
 #define initialize NULL
 #define init_record NULL
 long process();
@@ -86,22 +86,6 @@ struct rset fanoutRSET={
 	get_control_double,
 	get_enum_strs };
 
-static long report(fp,paddr)
-    FILE	  *fp;
-    struct dbAddr *paddr;
-{
-    struct fanoutRecord	*pfanout=(struct fanoutRecord*)(paddr->precord);
-
-    if(recGblReportDbCommon(fp,paddr)) return(-1);
-    if(recGblReportLink(fp,"LNK1",&(pfanout->lnk1))) return(-1);
-    if(recGblReportLink(fp,"LNK2",&(pfanout->lnk2))) return(-1);
-    if(recGblReportLink(fp,"LNK3",&(pfanout->lnk3))) return(-1);
-    if(recGblReportLink(fp,"LNK4",&(pfanout->lnk4))) return(-1);
-    if(recGblReportLink(fp,"LNK5",&(pfanout->lnk5))) return(-1);
-    if(recGblReportLink(fp,"LNK6",&(pfanout->lnk6))) return(-1);
-    return(0);
-}
-
 static long process(paddr)
     struct dbAddr	*paddr;
 {

@@ -45,7 +45,7 @@
 #include	<permissiveRecord.h>
 
 /* Create RSET - Record Support Entry Table*/
-long report();
+#define report NULL
 #define initialize NULL
 #define init_record NULL
 long process();
@@ -79,19 +79,6 @@ struct rset permissiveRSET={
 	get_control_double,
 	get_enum_strs };
 
-static long report(fp,paddr)
-    FILE	  *fp;
-    struct dbAddr *paddr;
-{
-    struct permissiveRecord	*ppermissive=(struct permissiveRecord*)(paddr->precord);
-
-    if(recGblReportDbCommon(fp,paddr)) return(-1);
-    if(fprintf(fp,"LABL %s\n",ppermissive->labl)) return(-1);
-    if(fprintf(fp,"VAL  %d\n",ppermissive->val)) return(-1);
-    if(fprintf(fp,"WFLG %d\n",ppermissive->wflg)) return(-1);
-    return(0);
-}
-
 static long get_value(ppermissive,pvdes)
     struct permissiveRecord             *ppermissive;
     struct valueDes     *pvdes;

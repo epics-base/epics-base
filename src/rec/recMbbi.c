@@ -63,7 +63,7 @@
 #include	<special.h>
 #include	<mbbiRecord.h>
 /* Create RSET - Record Support Entry Table*/
-long report();
+#define report NULL
 #define initialize NULL
 long init_record();
 long process();
@@ -105,20 +105,6 @@ struct mbbidset { /* multi bit binary input dset */
 };
 void alarm();
 void monitor();
-
-static long report(fp,paddr)
-    FILE	  *fp;
-    struct dbAddr *paddr;
-{
-    struct mbbiRecord	*pmbbi=(struct mbbiRecord*)(paddr->precord);
-
-    if(recGblReportDbCommon(fp,paddr)) return(-1);
-    if(fprintf(fp,"VAL  %d\n",pmbbi->val)) return(-1);
-    if(recGblReportLink(fp,"INP ",&(pmbbi->inp))) return(-1);
-    if(recGblReportLink(fp,"FLNK",&(pmbbi->flnk))) return(-1);
-    if(fprintf(fp,"RVAL 0x%-8X\n",pmbbi->rval)) return(-1);
-    return(0);
-}
 
 static void init_common(pmbbi)
     struct mbbiRecord	*pmbbi;
@@ -269,7 +255,7 @@ static long process(paddr)
 	monitor(pmbbi);
 
 	/* process the forward scan link record */
-	if (pmbbi->flnk.type==DB_LINK) dbScanPassive(&pmbbi->flnk.value.db_link.pdbAddr);
+	if (pmbbi->flnk.type==DB_LINK) dbScanPassive(pmbbi->flnk.value.db_link.pdbAddr);
 
 	pmbbi->pact=FALSE;
 	return(status);

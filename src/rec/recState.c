@@ -46,7 +46,7 @@
 #include	<stateRecord.h>
 
 /* Create RSET - Record Support Entry Table*/
-long report();
+#define report NULL
 #define initialize NULL
 #define init_record NULL
 long process();
@@ -80,17 +80,6 @@ struct rset stateRSET={
 	get_control_double,
 	get_enum_strs };
 
-static long report(fp,paddr)
-    FILE	  *fp;
-    struct dbAddr *paddr;
-{
-    struct stateRecord	*pstate=(struct stateRecord*)(paddr->precord);
-
-    if(recGblReportDbCommon(fp,paddr)) return(-1);
-    if(fprintf(fp,"VAL  %s\n",pstate->val)) return(-1);
-    return(0);
-}
-
 static long get_value(pstate,pvdes)
     struct stateRecord             *pstate;
     struct valueDes     *pvdes;
@@ -114,7 +103,7 @@ static long process(paddr)
 		strncpy(pstate->oval,pstate->val,sizeof(pstate->val));
 	}
         /* process the forward scan link record */
-        if (pstate->flnk.type==DB_LINK) dbScanPassive(&pstate->flnk.value.db_link.pdbAddr);
+        if (pstate->flnk.type==DB_LINK) dbScanPassive(pstate->flnk.value.db_link.pdbAddr);
         pstate->pact=FALSE;
 	return(0);
 }

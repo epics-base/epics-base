@@ -48,7 +48,7 @@ unsigned long tickGet();
 #include	<pidRecord.h>
 
 /* Create RSET - Record Support Entry Table*/
-long report();
+#define report NULL
 #define initialize NULL
 long init_record();
 long process();
@@ -87,17 +87,6 @@ void alarm();
 void monitor();
 long do_pid();
 
-
-static long report(fp,paddr)
-    FILE	  *fp;
-    struct dbAddr *paddr;
-{
-    struct pidRecord	*ppid=(struct pidRecord*)(paddr->precord);
-
-    if(recGblReportDbCommon(fp,paddr)) return(-1);
-    if(fprintf(fp,"VAL  %-12.4G\n",ppid->val)) return(-1);
-    return(0);
-}
 
 static long init_record(ppid)
     struct pidRecord     *ppid;
@@ -190,7 +179,7 @@ static long process(paddr)
 	monitor(ppid);
 
 	/* process the forward scan link record */
-	if (ppid->flnk.type==DB_LINK) dbScanPassive(&ppid->flnk.value.db_link.pdbAddr);
+	if (ppid->flnk.type==DB_LINK) dbScanPassive(ppid->flnk.value.db_link.pdbAddr);
 
 	ppid->pact=FALSE;
 	return(status);
@@ -304,11 +293,11 @@ static void monitor(ppid)
                 db_post_events(ppid,&ppid->val,monitor_mask);
         }
 	if(ppid->ocva != ppid->cval) { 
-		db_post_events(ppid,&ppid->cval,DBE_VALUE);
+		db_post_events(ppid,&ppid->cval,monitor_mask|DBE_VALUE);
 		ppid->ocva = ppid->cval;
 	}
 	if(ppid->oout != ppid->out) { 
-		db_post_events(ppid,&ppid->out,DBE_VALUE);
+		db_post_events(ppid,&ppid->out,monitor_mask|DBE_VALUE);
 		ppid->oout = ppid->out;
 	}
         return;

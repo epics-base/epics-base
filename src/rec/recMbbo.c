@@ -67,7 +67,7 @@
 #include	<mbboRecord.h>
 
 /* Create RSET - Record Support Entry Table*/
-long report();
+#define report NULL
 #define initialize NULL
 long init_record();
 long process();
@@ -113,21 +113,6 @@ struct mbbodset { /* multi bit binary input dset */
 
 void alarm();
 void monitor();
-
-static long report(fp,paddr)
-    FILE	  *fp;
-    struct dbAddr *paddr;
-{
-    struct mbboRecord	*pmbbo=(struct mbboRecord*)(paddr->precord);
-
-    if(recGblReportDbCommon(fp,paddr)) return(-1);
-    if(fprintf(fp,"VAL  %d\n",pmbbo->val)) return(-1);
-    if(recGblReportLink(fp,"OUT ",&(pmbbo->out))) return(-1);
-    if(recGblReportLink(fp,"FLNK",&(pmbbo->flnk))) return(-1);
-    if(fprintf(fp,"RVAL 0x%-8X\n",
-	pmbbo->rval)) return(-1);
-    return(0);
-}
 
 static void init_common(pmbbo)
     struct mbboRecord   *pmbbo;
@@ -308,7 +293,7 @@ static long process(paddr)
 	/* check event list */
 	monitor(pmbbo);
 	/* process the forward scan link record */
-	if (pmbbo->flnk.type==DB_LINK) dbScanPassive(&pmbbo->flnk.value.db_link.pdbAddr);
+	if (pmbbo->flnk.type==DB_LINK) dbScanPassive(pmbbo->flnk.value.db_link.pdbAddr);
 
 	pmbbo->pact=FALSE;
 	return(status);
@@ -391,11 +376,11 @@ static void monitor(pmbbo)
                 db_post_events(pmbbo,&pmbbo->val,monitor_mask);
 	}
         if(pmbbo->oraw!=pmbbo->rval) {
-                db_post_events(pmbbo,&pmbbo->rval,monitor_mask|=DBE_VALUE);
+                db_post_events(pmbbo,&pmbbo->rval,monitor_mask|DBE_VALUE);
                 pmbbo->oraw = pmbbo->rval;
         }
         if(pmbbo->orbv!=pmbbo->rbv) {
-                db_post_events(pmbbo,&pmbbo->rbv,monitor_mask|=DBE_VALUE);
+                db_post_events(pmbbo,&pmbbo->rbv,monitor_mask|DBE_VALUE);
                 pmbbo->orbv = pmbbo->rbv;
         }
         return;

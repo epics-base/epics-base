@@ -74,7 +74,7 @@
 #include	<post.h>
 
 /* Create RSET - Record Support Entry Table*/
-long report();
+#define report NULL
 #define initialize NULL
 long init_record();
 long process();
@@ -113,44 +113,6 @@ void monitor();
 int do_calc();
 long postfix();
 void fetch_values();
-
-static long report(fp,paddr)
-    FILE	  *fp;
-    struct dbAddr *paddr;
-{
-    struct calcRecord	*pcalc=(struct calcRecord*)(paddr->precord);
-
-    if(recGblReportDbCommon(fp,paddr)) return(-1);
-    if(fprintf(fp,"VAL  %-12.4G\n",pcalc->val)) return(-1);
-    if(recGblReportLink(fp,"INPA ",&(pcalc->inpa))) return(-1);
-    if(recGblReportLink(fp,"INPB ",&(pcalc->inpb))) return(-1);
-    if(recGblReportLink(fp,"INPC ",&(pcalc->inpc))) return(-1);
-    if(recGblReportLink(fp,"INPD ",&(pcalc->inpd))) return(-1);
-    if(recGblReportLink(fp,"INPE ",&(pcalc->inpe))) return(-1);
-    if(recGblReportLink(fp,"INPF ",&(pcalc->inpf))) return(-1);
-    if(recGblReportLink(fp,"FLNK",&(pcalc->flnk))) return(-1);
-    if(fprintf(fp,"A  %-12.4G\n",pcalc->a)) return(-1);
-    if(fprintf(fp,"B  %-12.4G\n",pcalc->b)) return(-1);
-    if(fprintf(fp,"C  %-12.4G\n",pcalc->c)) return(-1);
-    if(fprintf(fp,"D  %-12.4G\n",pcalc->d)) return(-1);
-    if(fprintf(fp,"E  %-12.4G\n",pcalc->e)) return(-1);
-    if(fprintf(fp,"F  %-12.4G\n",pcalc->f)) return(-1);
-    if(fprintf(fp,"PREC %d  EGU %-8s\n",pcalc->prec,pcalc->egu)) return(-1);
-    if(fprintf(fp,"HOPR %-12.4G LOPR %-12.4G\n",
-	pcalc->hopr,pcalc->lopr)) return(-1);
-    if(fprintf(fp,"HIHI %-12.4G HIGH %-12.4G  LOW %-12.4G LOLO %-12.4G\n",
-	pcalc->hihi,pcalc->high,pcalc->low,pcalc->lolo)) return(-1);
-    if(recGblReportGblChoice(fp,pcalc,"HHSV",pcalc->hhsv)) return(-1);
-    if(recGblReportGblChoice(fp,pcalc,"HSV ",pcalc->hsv)) return(-1);
-    if(recGblReportGblChoice(fp,pcalc,"LSV ",pcalc->lsv)) return(-1);
-    if(recGblReportGblChoice(fp,pcalc,"LLSV",pcalc->llsv)) return(-1);
-    if(fprintf(fp,"HYST %-12.4G ADEL %-12.4G MDEL %-12.4G\n",
-	pcalc->hyst,pcalc->adel,pcalc->mdel)) return(-1);
-    if(fprintf(fp,"LALM %-12.4G ALST %-12.4G MLST %-12.4G\n",
-	pcalc->lalm,pcalc->alst,pcalc->mlst)) return(-1);
-    if(fprintf(fp,"CALC %s\n",pcalc->calc)) return(-1);
-    return(0);
-}
 
 static long init_record(pcalc)
     struct calcRecord	*pcalc;
@@ -273,7 +235,7 @@ static long process(paddr)
 	/* check event list */
 	monitor(pcalc);
 	/* process the forward scan link record */
-	if (pcalc->flnk.type==DB_LINK) dbScanPassive(&pcalc->flnk.value.db_link.pdbAddr);
+	if (pcalc->flnk.type==DB_LINK) dbScanPassive(pcalc->flnk.value.db_link.pdbAddr);
 	pcalc->pact = FALSE;
 	return(0);
 }
@@ -391,7 +353,7 @@ static void monitor(pcalc)
 	/* check all input fields for changes*/
 	for(i=0, pnew=&pcalc->a, pprev=&pcalc->la; i<6; i++, pnew++, pprev++) {
 		if(*pnew != *pprev) {
-			db_post_events(pcalc,pnew,monitor_mask|=DBE_VALUE);
+			db_post_events(pcalc,pnew,monitor_mask|DBE_VALUE);
 			*pprev = *pnew;
 		}
 	}

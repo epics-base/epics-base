@@ -49,7 +49,7 @@
 #include	<selRecord.h>
 
 /* Create RSET - Record Support Entry Table*/
-long report();
+#define report NULL
 #define initialize NULL
 long init_record();
 long process();
@@ -93,17 +93,6 @@ void alarm();
 void monitor();
 void fetch_values();
 int do_sel();
-
-static long report(fp,paddr)
-    FILE	  *fp;
-    struct dbAddr *paddr;
-{
-    struct selRecord	*psel=(struct selRecord*)(paddr->precord);
-
-    if(recGblReportDbCommon(fp,paddr)) return(-1);
-    if(fprintf(fp,"VAL  %-12.4G\n",psel->val)) return(-1);
-    return(0);
-}
 
 static long init_record(psel)
     struct selRecord     *psel;
@@ -200,7 +189,7 @@ static long process(paddr)
 	monitor(psel);
 
 	/* process the forward scan link record */
-	if (psel->flnk.type==DB_LINK) dbScanPassive(&psel->flnk.value.db_link.pdbAddr);
+	if (psel->flnk.type==DB_LINK) dbScanPassive(psel->flnk.value.db_link.pdbAddr);
 
 	psel->pact=FALSE;
 	return(0);
@@ -316,7 +305,7 @@ static void monitor(psel)
         /* check all input fields for changes*/
         for(i=0, pnew=&psel->a, pprev=&psel->la; i<6; i++, pnew++, pprev++) {
                 if(*pnew != *pprev) {
-                        db_post_events(psel,pnew,monitor_mask|=DBE_VALUE);
+                        db_post_events(psel,pnew,monitor_mask|DBE_VALUE);
                         *pprev = *pnew;
                 }
         }

@@ -66,7 +66,7 @@
 #include	<compressRecord.h>
 
 /* Create RSET - Record Support Entry Table*/
-long report();
+#define report NULL
 #define initialize NULL
 long init_record();
 long process();
@@ -110,16 +110,6 @@ void monitor();
 void put_value();
 int compress_array();
 int compress_value();
-
-static long report(fp,paddr)
-    FILE	  *fp;
-    struct dbAddr *paddr;
-{
-    struct compressRecord *pcompress=(struct compressRecord*)(paddr->precord);
-
-    if(recGblReportDbCommon(fp,paddr)) return(-1);
-    return(0);
-}
 
 static long init_record(pcompress)
     struct compressRecord	*pcompress;
@@ -306,7 +296,7 @@ static long process(paddr)
 	if(status!=1) {
 		monitor(pcompress);
 		/* process the forward scan link record */
-		if (pcompress->flnk.type==DB_LINK) dbScanPassive(&pcompress->flnk.value.db_link.pdbAddr);
+		if (pcompress->flnk.type==DB_LINK) dbScanPassive(pcompress->flnk.value.db_link.pdbAddr);
 	}
 
 	pcompress->pact=FALSE;

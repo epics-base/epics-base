@@ -67,7 +67,7 @@
 #include	<aoRecord.h>
 
 /* Create RSET - Record Support Entry Table*/
-long report();
+#define report NULL
 #define initialize NULL
 long init_record();
 long process();
@@ -125,36 +125,6 @@ void convert();
 void monitor();
 
 
-static long report(fp,paddr)
-    FILE	  *fp;
-    struct dbAddr *paddr;
-{
-    struct aoRecord	*pao=(struct aoRecord*)(paddr->precord);
-
-    if(recGblReportDbCommon(fp,paddr)) return(-1);
-    if(fprintf(fp,"VAL  %-12.4G OROC %-12.4G\n",pao->val,pao->oroc)) return(-1);
-    if(recGblReportLink(fp,"OUT ",&(pao->out))) return(-1);
-    if(fprintf(fp,"PREC %d\n",pao->prec)) return(-1);
-    if(recGblReportCvtChoice(fp,"LINR",pao->linr)) return(-1);
-    if(fprintf(fp,"EGUF %-12.4G EGUL %-12.4G  EGU %-8s\n",
-	pao->eguf,pao->egul,pao->egu)) return(-1);
-    if(fprintf(fp,"HOPR %-12.4G LOPR %-12.4G\n",
-	pao->hopr,pao->lopr)) return(-1);
-    if(recGblReportLink(fp,"FLNK",&(pao->flnk))) return(-1);
-    if(fprintf(fp,"HIHI %-12.4G HIGH %-12.4G  LOW %-12.4G LOLO %-12.4G\n",
-	pao->hihi,pao->high,pao->low,pao->lolo)) return(-1);
-    if(recGblReportGblChoice(fp,pao,"HHSV",pao->hhsv)) return(-1);
-    if(recGblReportGblChoice(fp,pao,"HSV ",pao->hsv)) return(-1);
-    if(recGblReportGblChoice(fp,pao,"LSV ",pao->lsv)) return(-1);
-    if(recGblReportGblChoice(fp,pao,"LLSV",pao->llsv)) return(-1);
-    if(fprintf(fp,"HYST %-12.4G ADEL %-12.4G MDEL %-12.4G ESLO %-12.4G\n",
-	pao->hyst,pao->adel,pao->mdel,pao->eslo)) return(-1);
-    if(fprintf(fp,"RVAL 0x%-8X\n", pao->rval)) return(-1);
-    if(fprintf(fp,"LALM %-12.4G ALST %-12.4G MLST %-12.4G\n",
-	pao->lalm,pao->alst,pao->mlst)) return(-1);
-    return(0);
-}
-
 static long init_record(pao)
     struct aoRecord	*pao;
 {
@@ -200,6 +170,7 @@ static long process(paddr)
 	if(pao->pact == FALSE) {
 		convert(pao);
 		if(pao->oraw != pao->oval) status=(*pdset->write_ao)(pao);
+                else status=0;
 	} else {
 		status=(*pdset->write_ao)(pao); /* write the new value */
 		pao->pact = TRUE;
@@ -216,7 +187,7 @@ static long process(paddr)
 	monitor(pao);
 
 	/* process the forward scan link record */
-	if (pao->flnk.type==DB_LINK) dbScanPassive(&pao->flnk.value.db_link.pdbAddr);
+	if (pao->flnk.type==DB_LINK) dbScanPassive(pao->flnk.value.db_link.pdbAddr);
 
 	pao->pact=FALSE;
 	return(status);

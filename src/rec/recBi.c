@@ -60,7 +60,7 @@
 #include	<special.h>
 #include	<biRecord.h>
 /* Create RSET - Record Support Entry Table*/
-long report();
+#define report NULL
 #define initialize NULL
 long init_record();
 long process();
@@ -103,22 +103,6 @@ struct bidset { /* binary input dset */
 void alarm();
 void monitor();
 
-static long report(fp,paddr)
-    FILE	  *fp;
-    struct dbAddr *paddr;
-{
-    struct biRecord	*pbi=(struct biRecord*)(paddr->precord);
-
-    if(recGblReportDbCommon(fp,paddr)) return(-1);
-    if(fprintf(fp,"VAL  %d\n",pbi->val)) return(-1);
-    if(recGblReportLink(fp,"INP ",&(pbi->inp))) return(-1);
-    if(recGblReportLink(fp,"FLNK",&(pbi->flnk))) return(-1);
-    if(fprintf(fp,"RVAL 0x%-8X\n",
-	pbi->rval)) return(-1);
-    return(0);
-}
-
-
 static long init_record(pbi)
     struct biRecord	*pbi;
 {
@@ -166,7 +150,7 @@ static long process(paddr)
 	/* check event list */
 	monitor(pbi);
 	/* process the forward scan link record */
-	if (pbi->flnk.type==DB_LINK) dbScanPassive(&pbi->flnk.value.db_link.pdbAddr);
+	if (pbi->flnk.type==DB_LINK) dbScanPassive(pbi->flnk.value.db_link.pdbAddr);
 
 	pbi->pact=FALSE;
 	return(status);
@@ -288,7 +272,7 @@ static void monitor(pbi)
 		db_post_events(pbi,&pbi->val,monitor_mask);
 	}
 	if(pbi->oraw!=pbi->rval) {
-		db_post_events(pbi,&pbi->rval,monitor_mask|=DBE_VALUE);
+		db_post_events(pbi,&pbi->rval,monitor_mask|DBE_VALUE);
 		pbi->oraw = pbi->rval;
 	}
 	return;

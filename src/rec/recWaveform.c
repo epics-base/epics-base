@@ -63,7 +63,7 @@
 #include	<waveformRecord.h>
 
 /* Create RSET - Record Support Entry Table*/
-long report();
+#define report NULL
 #define initialize NULL
 long init_record();
 long process();
@@ -110,16 +110,6 @@ struct wfdset { /* waveform dset */
 static int sizeofTypes[] = {0,1,1,2,2,4,4,4,8,2};
 void monitor();
 
-
-static long report(fp,paddr)
-    FILE	  *fp;
-    struct dbAddr *paddr;
-{
-    struct waveformRecord	*pwf=(struct waveformRecord*)(paddr->precord);
-
-    if(recGblReportDbCommon(fp,paddr)) return(-1);
-    return(0);
-}
 
 static long init_record(pwf)
     struct waveformRecord	*pwf;
@@ -269,7 +259,7 @@ static long process(paddr)
 
 	monitor(pwf);
         /* process the forward scan link record */
-        if (pwf->flnk.type==DB_LINK) dbScanPassive(&pwf->flnk.value.db_link.pdbAddr);
+        if (pwf->flnk.type==DB_LINK) dbScanPassive(pwf->flnk.value.db_link.pdbAddr);
 
         pwf->pact=FALSE;
         return(0);

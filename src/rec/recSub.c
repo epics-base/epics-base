@@ -49,7 +49,7 @@
 #include	<subRecord.h>
 
 /* Create RSET - Record Support Entry Table*/
-long report();
+#define report NULL
 #define initialize NULL
 long init_record();
 long process();
@@ -87,43 +87,6 @@ void alarm();
 void monitor();
 long do_sub();
 void fetch_values();
-
-static long report(fp,paddr)
-    FILE	  *fp;
-    struct dbAddr *paddr;
-{
-    struct subRecord	*psub=(struct subRecord*)(paddr->precord);
-
-    if(recGblReportDbCommon(fp,paddr)) return(-1);
-    if(fprintf(fp,"VAL  %-12.4G\n",psub->val)) return(-1);
-    if(recGblReportLink(fp,"INPA ",&(psub->inpa))) return(-1);
-    if(recGblReportLink(fp,"INPB ",&(psub->inpb))) return(-1);
-    if(recGblReportLink(fp,"INPC ",&(psub->inpc))) return(-1);
-    if(recGblReportLink(fp,"INPD ",&(psub->inpd))) return(-1);
-    if(recGblReportLink(fp,"INPE ",&(psub->inpe))) return(-1);
-    if(recGblReportLink(fp,"INPF ",&(psub->inpf))) return(-1);
-    if(recGblReportLink(fp,"FLNK",&(psub->flnk))) return(-1);
-    if(fprintf(fp,"A  %-12.4G\n",psub->a)) return(-1);
-    if(fprintf(fp,"B  %-12.4G\n",psub->b)) return(-1);
-    if(fprintf(fp,"C  %-12.4G\n",psub->c)) return(-1);
-    if(fprintf(fp,"D  %-12.4G\n",psub->d)) return(-1);
-    if(fprintf(fp,"E  %-12.4G\n",psub->e)) return(-1);
-    if(fprintf(fp,"F  %-12.4G\n",psub->f)) return(-1);
-    if(fprintf(fp,"PREC %d  EGU %-8s\n",psub->prec,psub->egu)) return(-1);
-    if(fprintf(fp,"HOPR %-12.4G LOPR %-12.4G\n",
-	psub->hopr,psub->lopr)) return(-1);
-    if(fprintf(fp,"HIHI %-12.4G HIGH %-12.4G  LOW %-12.4G LOLO %-12.4G\n",
-	psub->hihi,psub->high,psub->low,psub->lolo)) return(-1);
-    if(recGblReportGblChoice(fp,psub,"HHSV",psub->hhsv)) return(-1);
-    if(recGblReportGblChoice(fp,psub,"HSV ",psub->hsv)) return(-1);
-    if(recGblReportGblChoice(fp,psub,"LSV ",psub->lsv)) return(-1);
-    if(recGblReportGblChoice(fp,psub,"LLSV",psub->llsv)) return(-1);
-    if(fprintf(fp,"HYST %-12.4G ADEL %-12.4G MDEL %-12.4G\n",
-	psub->hyst,psub->adel,psub->mdel)) return(-1);
-    if(fprintf(fp,"LALM %-12.4G ALST %-12.4G MLST %-12.4G\n",
-	psub->lalm,psub->alst,psub->mlst)) return(-1);
-    return(0);
-}
 
 static long init_record(psub)
     struct subRecord	*psub;
@@ -249,7 +212,7 @@ static long process(paddr)
         /* check event list */
         monitor(psub);
         /* process the forward scan link record */
-        if (psub->flnk.type==DB_LINK) dbScanPassive(&psub->flnk.value.db_link.pdbAddr);
+        if (psub->flnk.type==DB_LINK) dbScanPassive(psub->flnk.value.db_link.pdbAddr);
         psub->pact = FALSE;
         return(0);
 }
@@ -365,7 +328,7 @@ static void monitor(psub)
 	/* check all input fields for changes*/
 	for(i=0, pnew=&psub->a, pprev=&psub->la; i<6; i++, pnew++, pprev++) {
 		if(*pnew != *pprev) {
-			db_post_events(psub,pnew,monitor_mask|=DBE_VALUE);
+			db_post_events(psub,pnew,monitor_mask|DBE_VALUE);
 			*pprev = *pnew;
 		}
 	}

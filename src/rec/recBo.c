@@ -70,7 +70,7 @@
 #include	<boRecord.h>
 
 /* Create RSET - Record Support Entry Table*/
-long report();
+#define report NULL
 #define initialize NULL
 long init_record();
 long process();
@@ -137,21 +137,6 @@ static void myCallback(pcallback)
     pbo->val = 1;
     (void)process(&(pcallback->dbAddr));
     dbScanUnlock(pbo); 
-}
-
-static long report(fp,paddr)
-    FILE	  *fp;
-    struct dbAddr *paddr;
-{
-    struct boRecord	*pbo=(struct boRecord*)(paddr->precord);
-
-    if(recGblReportDbCommon(fp,paddr)) return(-1);
-    if(fprintf(fp,"VAL  %d\n",pbo->val)) return(-1);
-    if(recGblReportLink(fp,"OUT ",&(pbo->out))) return(-1);
-    if(recGblReportLink(fp,"FLNK",&(pbo->flnk))) return(-1);
-    if(fprintf(fp,"RVAL 0x%-8X\n",
-	pbo->rval)) return(-1);
-    return(0);
 }
 
 static long init_record(pbo)
@@ -239,7 +224,7 @@ static long process(paddr)
 	/* check event list */
 	monitor(pbo);
 	/* process the forward scan link record */
-	if (pbo->flnk.type==DB_LINK) dbScanPassive(&pbo->flnk.value.db_link.pdbAddr);
+	if (pbo->flnk.type==DB_LINK) dbScanPassive(pbo->flnk.value.db_link.pdbAddr);
 
 	pbo->pact=FALSE;
 	return(status);
@@ -361,11 +346,11 @@ static void monitor(pbo)
                 db_post_events(pbo,&pbo->val,monitor_mask);
         }
 	if(pbo->oraw!=pbo->rval) {
-		db_post_events(pbo,&pbo->rval,monitor_mask|=DBE_VALUE);
+		db_post_events(pbo,&pbo->rval,monitor_mask|DBE_VALUE);
 		pbo->oraw = pbo->rval;
 	}
 	if(pbo->orbv!=pbo->rbv) {
-		db_post_events(pbo,&pbo->rbv,monitor_mask|=DBE_VALUE);
+		db_post_events(pbo,&pbo->rbv,monitor_mask|DBE_VALUE);
 		pbo->orbv = pbo->rbv;
 	}
         return;

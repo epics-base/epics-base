@@ -11,7 +11,7 @@
 
 <h1>EPICS R3.14 Channel Access Reference Manual</h1>
 <address>
-  <a href="mailto:johill@lanl.gov">Jeffrey O. Hill</a><br>
+  Jeffrey O. Hill<br>
 
 </address>
 
@@ -19,15 +19,13 @@
 
 <p>SNS Division<font size="2"></font></p>
 
-<p><font size="1">
-Copyright &copy; 2002 The University of Chicago, as Operator of Argonne
-National Laboratory.<br>
-Copyright &copy; 2002 The Regents of the University of California, as Operator
-of Los Alamos National Laboratory.<br>
-EPICS BASE Versions 3.13.7 and higher are distributed subject to a
-Software License Agreement found in the file LICENSE that is included
-with this distribution.
-</font></p>
+<p><font size="1">Copyright © 2002 The University of Chicago, as Operator of
+Argonne National Laboratory.<br>
+Copyright © 2002 The Regents of the University of California, as Operator of
+Los Alamos National Laboratory.<br>
+EPICS BASE Versions 3.13.7 and higher are distributed subject to a Software
+License Agreement found in the file LICENSE that is included with this
+distribution.</font></p>
 
 <p><a href="http://www.w3.org/Amaya/"><img
 src="http://www.w3.org/Amaya/Icons/w3c-amaya.gif" alt="W3C-Amaya" height="31"
@@ -48,11 +46,25 @@ height="31" width="88"></a></p>
   Information</a></li>
   <li><a href="#port">IP port numbers</a></li>
   <li><a href="#Environmen">WAN Environment</a></li>
-  <li><a href="#Disconnect">Disconnect Time Out Interval / Server Beacon
+  <li><a href="#Dynamic">Disconnect Time Out Interval / Server Beacon
     Period</a></li>
+  <li><a href="#Dynamic">Dynamic Changes in the CA Client Library Search
+    Interval</a></li>
   <li><a href="#Configurin">Configuring the Time Zone</a></li>
   <li><a href="#Configurin1">Configuring the maximum array size</a></li>
   <li><a href="#Configurin2">Configuring a CA server</a></li>
+</ul>
+
+<h3><a href="#Troublesho">Troubleshooting</a></h3>
+
+<h4><a href="#When">When Clients Do Not Connect to Their Server</a></h4>
+<ul>
+  <li><a href="#Broadcast">Broadcast addresses dont match</a></li>
+  <li><a href="#Client">Client isnt configured to use the server's
+  port</a></li>
+  <li><a href="#Unicast">Unicast addreses in the EPICS_CA_ADDR_LIST does not
+    reliably contact servers sharing the same UDP port on the same
+  host</a></li>
 </ul>
 
 <h3><a href="#Notes">Function Call Interface Guidelines</a></h3>
@@ -76,9 +88,7 @@ height="31" width="88"></a></p>
   <li><a href="#L3253">replace the default exception handler</a></li>
 </ul>
 
-<h3><a
-href="#Function Call Reference">Function
-Call Interface Index</a></h3>
+<h3><a href="#Function Call Reference">Function Call Interface Index</a></h3>
 <ul>
   <li><a href="#ca_add_event">ca_add_event</a></li>
   <li><a href="#ca_add_exception_event">ca_add_exception_event</a></li>
@@ -136,17 +146,16 @@ Call Interface Index</a></h3>
   <li><a href="#caEventRat">caEventRate - PV event rate logging</a></li>
   <li><a href="#casw">casw - CA server beacon anomaly logging</a></li>
   <li><a href="#catime">catime - CA client library performance test</a></li>
-  <li><a href="#ca_test">ca_test - dump each external type to the
-  console</a></li>
+  <li><a href="#ca_test">ca_test - dump each external data type to the
+    console</a></li>
 </ul>
 
 <h3><a href="#Return">Return Codes</a></h3>
-
 <hr>
 
 <h2><a name="Configuration"></a>Configuration</h2>
 
-<p>Why Reconfigure Channel Access</p>
+<h3>Why Reconfigure Channel Access</h3>
 
 <p>Typically reasons to reconfigure EPICS Channel Access:</p>
 <ul>
@@ -310,16 +319,16 @@ assignments.</p>
 
 <h3><a name="port">IP port numbers</a></h3>
 
-<p>The two IP port numbers used by Channel Access may be configured. This
-might occur when a site decides to set up two or more completely independent
-control systems that will share the same network. For instance, a site might
-set up an operational control system and a test control system on the same
-network. In this situation it is desirable for the test system and the
-operational system to use identical PV names without fear of collision.
-Usually the best choice is to assign new port numbers to the operational
-system and allow the test system to use the default CA port numbers. A site
-might also configure the CA port numbers because some other facility has
-already reserved the defaults.</p>
+<p>The two default IP port numbers used by Channel Access may be
+reconfigured. This might occur when a site decides to set up two or more
+completely independent control systems that will share the same network. For
+instance, a site might set up an operational control system and a test
+control system on the same network. In this situation it is desirable for the
+test system and the operational system to use identical PV names without fear
+of collision. Usually the best choice is to assign new port numbers to the
+operational system and allow the test system to use the default CA port
+numbers. A site might also configure the CA port numbers because some other
+facility has already using the CA default port numbers.</p>
 
 <table cellspacing="1" cellpadding="1" width="80%" border="1">
   <col><tbody>
@@ -348,54 +357,39 @@ Environment</a> below.</p>
 
 <h3><a name="Environmen">WAN Environment</a></h3>
 
-<p>Typically vxWorks hosts boot with routes configured for the host's subnet.
-If a EPICS system is operating in a WAN environment it may be necessary to
-configure routes into the vxWorks system which enable a vxWorks based CA
-server to respond to requests originating outside it's subnet. An EPICS
-system manager can limit access to a particular host by not providing routes
-in that host that reach outside of a limited set of subnets.</p>
+<p>When the CA client library connects a channel it must first determine the
+IP address of the server the channels Process Variable resides on. To
+accomplish this the server sends name resolution (search) requests to a list
+of server destination addresses. These server destination addresses can be IP
+unicast addresses (individual host addresses) or IP broadcast addresses. Each
+name resolution (search) request contains a list of Process Variable names.If
+one of the servers reachable by this address list knows the IP address of a
+CA server that can service one or more of the specified Process Variables,
+then it sends back a response containing the server's IP address and port
+number.</p>
 
-<table border="1">
-  <tbody>
-    <tr>
-      <td>routeShow()</td>
-    </tr>
-    <tr>
-      <td>hostAdd "the-router", "N.N.N.N"</td>
-    </tr>
-    <tr>
-      <td>routeAdd "0","the-router"</td>
-    </tr>
-  </tbody>
-</table>
-
-<p>During initialization CA builds a list of the destination addresses used
-when sending CA client name resolution (search) requests, and when sending CA
-server beacons. This table is initialized by traversing a database of network
-interfaces attached to the host. For each interface found that is attached to
-a broadcast capable IP subnet the broadcast address of that subnet is added
-to the list. For each point to point interface found the destination address
-of that link is added to the list. This network interface introspection
-driven initialization is disabled only if the EPICS environment variable
-"EPICS_CA_AUTO_ADDR_LIST" exists and its value is either of "no" or "NO". The
-typical default is to enable network interface introspection driven
-initialization with "EPICS_CA_AUTO_ADDR_LIST" set to "YES" or "yes".</p>
+<p>During initialization CA builds the list of server destination addresses
+used when sending CA client name resolution (search) requests. This table is
+initialized by introspecting the network interfaces attached to the host. For
+each interface found that is attached to a broadcast capable IP subnet, the
+broadcast address of that subnet is added to the list. For each point to
+point interface found, the destination address of that link is added to the
+list. This automatic server address list initialization can be disabled if
+the EPICS environment variable "EPICS_CA_AUTO_ADDR_LIST" exists and its value
+is either of "no" or "NO". The typical default is to enable network interface
+introspection driven initialization with "EPICS_CA_AUTO_ADDR_LIST" set to
+"YES" or "yes".</p>
 
 <p>Following network interface introspection, any IP addresses specified in
 the EPICS environment variable EPICS_CA_ADDR_LIST are added to the list of
-destination addresses for CA client name resolution requests and CA server
-beacons. In a multiple subnet EPICS system users will quickly learn that the
-EPICS_CA_ADDR_LIST must be set so that CA name resolution ( search requests )
-frames pass from CA clients to the targeted CA servers. However, a more
-subtle configuration mistake resulting in wasted network bandwidth will be to
-not also arrange for beacons issued by the targeted CA servers to reach the
-hosts of all potential clients. For this reason the EPICS_CA_ADDR_LIST
-environment variable parameter will often be identical within a group of
-clients and servers that communicate between themselves. The addresses in
-EPICS_CA_ADDR_LIST may be dotted IP addresses or host names if the local OS
-has support for host name to IP address translation. When multiple names are
-added to EPICS_CA_ADDR_LIST they must be separated by while space. There is
-no requirement that the addresses specified in the EPICS_CA_ADDR_LIST be a
+destination addresses for CA client name resolution requests. In an EPICS
+system crossing multiple subnets the EPICS_CA_ADDR_LIST must be set so that
+CA name resolution ( search requests ) frames pass from CA clients to the
+targeted CA servers unless a CA proxy (gateway) is installed. The addresses
+in EPICS_CA_ADDR_LIST may be dotted IP addresses or host names if the local
+OS has support for host name to IP address translation. When multiple names
+are added to EPICS_CA_ADDR_LIST they must be separated by white space. There
+is no requirement that the addresses specified in the EPICS_CA_ADDR_LIST be a
 broadcast addresses, but this will often be the most convenient choice.</p>
 
 <table border="1">
@@ -431,34 +425,75 @@ number will default to EPICS_CA_SERVER_PORT.</p>
   </tbody>
 </table>
 
-<h3><a name="Disconnect">Disconnect Time Out Interval / Server Beacon
-Period</a></h3>
+<h3><a name="Disconnect">Disconnect Time Out Interval</a></h3>
 
 <p>If the CA client library does not see a beacon from a server that it is
-connected to for EPICS_CA_CONN_TMO seconds then an echo message is sent to
-the server over TCP/IP. If this echo message isn't promptly replied to then
-the client will assume that the server is no longer present on the network
-and disconnect. Disconnecting implies notification of client side application
-programs. The parameter EPICS_CA_CONN_TMO is specified in floating point
-seconds. The default is typically 30 seconds.</p>
+connected to for EPICS_CA_CONN_TMO seconds then an state-of-health message is
+sent to the server over TCP/IP. If this state-of-health message isn't
+promptly replied to then the client will assume that the server is no longer
+present on the network and disconnect. Disconnecting implies notification of
+client side application programs via function callbacks. The parameter
+EPICS_CA_CONN_TMO is specified in floating point seconds. The default is
+typically 30 seconds. For efficient operation it is recommended that
+EPICS_CA_CONN_TMO be set to no less than twice the value specified for
+EPICS_CA_BEACON_PERIOD.</p>
 
-<p>When a CA server initializes it sends "beacon" messages to each address
-specified in EPICS_CA_ADDR_LIST, and also any addresses auto configured from
-network interfaces found. Initially, there is a short period between
-"beacons". However, this period is doubled each time that a "beacon" is sent
-until a plateau specified by EPICS_CA_BEACON_PERIOD is reached. This
-parameter is specified in floating point seconds, and the default is
-typically 15 seconds. For efficient operation it is recommended that
-EPICS_CA_BEACON_PERIOD be set to at least one half of the value specified for
-EPICS_CA_CONN_TMO.</p>
+<h3><a name="Dynamic">Dynamic Changes in the CA Client Library Search
+Interval</a></h3>
+
+<p>The CA client library will continuously attempt to connect any CA channels
+that an application has created until it is successful. The CA client library
+periodically queries the server destination address list described above with
+name resolution requests for any unresolved channels. Since this address list
+frequently contains broadcast addresses, and because nonexistent process
+variable names are frequently configured, or servers may be temporarily
+unavailable, then it is necessary for the CA client library internals to
+carefully schedule these requests in time to avoid introducing excessive load
+on the network and the servers.</p>
+
+<p>When the CA client library has many channels to connect, and most of its
+name resolution requests are responded to, then it sends name resolution
+requests at an interval that is twice the estimated round trip interval for
+the set of servers responding, or at the minimum delay quantum for the
+operating system - whichever is greater. The number of UDP frames per
+interval is also dynamically adjusted based on the past success rate.</p>
+
+<p>If name resolution requests are not responded to, then the client library
+doubles the delay between name resolution attempts with each attempt
+eventually limited by a maxuimum plateau interval, and it also reduces the
+number of requests per interval. After some long interval, if the client
+library does not receive any responses it stops sending name resolution
+attempts altogether until it sees a beacon anomaly.</p>
+
+<p>The CA client library continually estimates the beacon period of all
+server beacons received. If a particular server's beacon period becomes
+significantly shorter or longer then the client is said to detect a beacon
+anomaly. When a client sees a beacon anomaly then it resumes search requests
+but with a longer initial interval between requests than is used when the
+application creates a channel. An initial delay based on the client's
+ephemeral port number is also imposed before the first name resolution
+request to avoid all clients responding to a beacon anomaly at the same
+instant. The program "casw" prints a message on standard out each time that a
+CA client will detect a beacon anomaly.</p>
+
+<p>Two conclusions deserve special emphasis.<em> First, if a client does not
+see the server's beacons, then it will use additional network and server
+resources sending periodic state-of-health messages. Second, if a client does
+not see the server's beacons, then it may not connect to a newly introduced
+server that was initially inaccessible if the client timed out attempting to
+find it.</em> The typical situation where a client would not see the server's
+beacon might be when the client isnt on the same IP subnet as the server, the
+EPICS_CA_ADDR_LIST was modified to include a destination address for the
+server, but the server's beacon address list was not modified so that it's
+beacons are received by the client.</p>
 
 <h3><a name="Configurin">Configuring the Time Zone</a></h3>
 
-<p><em>Starting with EPICS R3.14 all of the libraries in the EPICS base
-distribution rely on facilities built into the operating system to determine
-the time zone. Nevertheless, several programs commonly used with EPICS use
-the original "tssubr" library and therefore they still rely on proper
-configuration of EPICS_TS_MIN_WEST.</em></p>
+<p><em>Readers Note: Starting with EPICS R3.14 all of the libraries in the
+EPICS base distribution rely on facilities built into the operating system to
+determine the correct time zone. Nevertheless, several programs commonly used
+with EPICS still use the original "tssubr" library and therefore they still
+rely on proper configuration of EPICS_TS_MIN_WEST.</em></p>
 
 <p>While the CA client library does not translate in between the local time
 and the time zone independent internal storage of EPICS time stamps, many
@@ -533,55 +568,125 @@ request transportation of large arrays.</p>
       <td>Default</td>
     </tr>
     <tr>
-      <td>EPICS_CAS_ADDR_LIST</td>
-      <td>{N.N.N.NN.N.N.N...}</td>
-      <td>&lt;none&gt;</td>
-    </tr>
-    <tr>
       <td>EPICS_CAS_SERVER_PORT</td>
       <td>i &gt; 5000</td>
-      <td></td>
+      <td>EPICS_CA_SERVER_PORT</td>
+    </tr>
+    <tr>
+      <td>EPICS_CAS_AUTO_BEACON_ADDR_LIST</td>
+      <td>{YES, NO}</td>
+      <td>EPICS_CA_AUTO_ADDR_LIST</td>
     </tr>
     <tr>
       <td>EPICS_CAS_BEACON_ADDR_LIST</td>
       <td>{N.N.N.NN.N.N.N:P...}</td>
-      <td></td>
+      <td>EPICS_CA_ADDR_LIST</td>
+    </tr>
+    <tr>
+      <td>EPICS_CAS_BEACON_PERIOD</td>
+      <td>r &gt; 0.1 seconds</td>
+      <td>15.0</td>
     </tr>
     <tr>
       <td>EPICS_CAS_BEACON_PORT</td>
       <td>i &gt; 5000</td>
-      <td></td>
+      <td>EPICS_CA_REPEATER_PORT</td>
+    </tr>
+    <tr>
+      <td>EPICS_CAS_INTF_ADDR_LIST</td>
+      <td>{N.N.N.NN.N.N.N:P...}</td>
+      <td>&lt;none&gt;</td>
     </tr>
   </tbody>
 </table>
 
-<p><em>Readers Note: The CA server configurationn documentation is
-incomplete. Also, the configuration feature set is more advanced in the new
-server than in the original server which is still employed in
-iocCore.</em></p>
+<h4>Server Beacons</h4>
 
-<p>The server configures its UDP port number from the EPICS_CAS_SERVER_PORT
+<p>CA servers send "beacon" messages to each address specified in
+EPICS_CAS_BEACON_ADDR_LIST, and also any addresses auto configured from
+network interfaces found if EPICS_CAS_AUTO_BEACON_ADDR_LIST is "yes" or
+"YES".</p>
+
+<h4>Configuring the Server's Beacon Period</h4>
+
+<p>The  EPICS_CAS_BEACON_PERIOD parameter determines the server's beacon
+period and is specified in floating point seconds. The default is typically
+15 seconds. See also <a href="#Disconnect">EPICS_CA_CONN_TMO</a> and <a
+href="#Dynamic">Dynamic Changes in the CA Client Library Search
+Interval</a>.</p>
+
+<p>The server configures its port number from the EPICS_CAS_SERVER_PORT
 environment variable if it is specified. Otherwise the EPICS_CA_SERVER_PORT
-environemnt variable determines the server's UDP port number. If two servers
-share the same UDP port number on the same host then both of them may not,
-depending on the local IP kernel, be reachable with IP unicast (an IP address
-specifying only one recipient in the client's EPICS_CA_ADDR_LIST). If
-available, the server will use the same TCP port number as its UDP port
-number. Otherwise, it will use an ephemeral TCP port number assigned by the
-opertaing system, and clients will discover this port number via the UDP
-search response. The server must build a list of addresses to send beacons
-to. If EPICS_CA_AUTO_ADDR_LIST has the value "YES" then the beacon address
-list will contain at least the broadcast address of all LAN interfaces found
-in the host and the destination address of all point-to-point interfaces
-found in the host. If EPICS_CAS_BEACON_ADDR_LIST is defined then its contents
-will be used to augment this list. Individual entries in
-EPICS_CAS_BEACON_ADDR_LIST may override the repeater's port number if a colun
-follows the host name or IP address there. Otherwise, if EPICS_CA_ADDR_LIST
-is defined, its contents will be used to augment this list, but its
-individual entries will not be allowed to override the repeater's port
-number.</p>
+environment variable determines the server's port number. Two servers can
+share the same UDP port number on the same machine, but there are
+restrictions - see a <a href="#Unicast">discussion of unicast addresses and
+two servers shareing the same UDP port on the same host</a>.</p>
 
-<h2><a name="Notes"></a>Function Call Interface General Guidelines</h2>
+<p>CA servers build a list of addresses to send beacons to during
+initialization. If EPICS_CAS_AUTO_BEACON_ADDR_LIST has the value "YES" then
+the beacon address list will contain at least the broadcast address of all
+LAN interfaces found in the host and the destination address of all
+point-to-point interfaces found in the host. If EPICS_CAS_BEACON_ADDR_LIST is
+defined then its contents will be used to augment this list. Individual
+entries in EPICS_CAS_BEACON_ADDR_LIST may override the destination port
+number if ":nnn" follows the host name or IP address there. Only if
+EPICS_CAS_BEACON_ADDR_LIST is not defined, EPICS_CA_ADDR_LIST is defined, and
+EPICS_CAS_INTF_ADDR_LIST is not defined, then the contents of
+EPICS_CA_ADDR_LIST will inetead be used to augment this list.</p>
+
+<p>The parameter EPICS_CAS_INTF_ADDR_LIST allows a ca server to bind itself
+to a limited set of network interfaces (each specified by its IP address). By
+defualt, the CA server is accessible from all network interfaces configured
+into its host.  <em>I</em><em>n R3.14 the CA server used in iocCore does not
+implemet this feature</em>.</p>
+
+<p>See also <a href="#Configurin1">Configuring the Maximum Array Size</a>.</p>
+
+<p>Typically vxWorks hosts boot with routes configured for the host's subnet.
+If a EPICS system is operating in a WAN environment it may be necessary to
+configure routes into the vxWorks system which enable a vxWorks based CA
+server to respond to requests originating outside it's subnet. An EPICS
+system manager can implemnt an rudamentary, but robust, form of access
+control for a particular host by not providing routes in that host that reach
+outside of a limited set of subnets.</p>
+
+<h2><a name="Troublesho">Troubleshooting</a></h2>
+
+<h3><a name="When">When Clients Do Not Connect to Their Server</a></h3>
+
+<h4><a name="Broadcast">Broadcast addresses dont match</a></h4>
+
+<p>Verify that the broadcast addresses are identical on the server's host and
+on the client's host. This can be checked  on UNIX with "netstat -i" or
+"ifconfig -a"; on vxWorks with ifShow; and on windows with ipconfig.</p>
+
+<h4><a name="Client">Client isnt configured to use the server's port</a></h4>
+
+<p>Verify that the client and server are using the same UDP port. Check the
+server's port by running "netstat -a | grep nnn" where nnn is the port number
+configured in the client. If you do not set EPICS_CA_SERVER_PORT or
+EPICS_CAS_SERVER_PORT then the default port will be 5064.</p>
+
+<h4><a name="Unicast">Unicast addreses in the EPICS_CA_ADDR_LIST does not
+reliably contact servers sharing the same UDP port on the same host</a></h4>
+
+<p>Two servers can run on the same host with the same server port number if
+the following restrictions are understood. If the host has a modern IP kernel
+it is possible to have two or more servers share the same UDP port. It is not
+possible for these servers to run on the same host using the same TCP server
+port. If the CA server library detects that a server is attempting to start
+on the same port as an existing CA server then both servers will use the same
+UDP port, and the 2nd server will be allocated an ephemeral TCP port. In this
+situation the clients could be configured to use the same port number for
+both servers. The clients will find the 2nd server via the shared UDP port,
+and transparently connect to the 2nd server's ephemeral TCP port. Be aware
+that If there are two server's running on the same host on the same UDP port
+then they will both receive UDP search requests sent as broadcasts, but
+unfortunately (due to a weakness of most IP kernel implementations) only one
+of the servers will typically receive UDP search requests sent to unicast
+addresses (i.e. a single specific host's ip address).</p>
+
+<h2>Function Call Interface General Guidelines</h2>
 
 <p>If successful, the routines described here return the status code
 ECA_NORMAL. Unsuccessful status codes returned from the client library are
@@ -630,11 +735,11 @@ application.</p>
         int status; /* ECA_XXX status of the op from server */ 
 };</code></pre>
 
-<p>When the server detects a failure, and there is no client call back function
-attached to the request, then an exception handler is executed in the client.
-The default exception handler prints a message on the console and exits if the
-exception condition is severe. To modify this behavior see
-<a href="#ca_add_exception_event">ca_add_exception_event()</a>.</p>
+<p>When the server detects a failure, and there is no client call back
+function attached to the request, then an exception handler is executed in
+the client. The default exception handler prints a message on the console and
+exits if the exception condition is severe. To modify this behavior see <a
+href="#ca_add_exception_event">ca_add_exception_event()</a>.</p>
 
 <p>If the server for the channel and the client are located on the same node
 then the ca_xxx() operations bypass the server and directly interact with the
@@ -760,7 +865,11 @@ channel access calls.</p>
       callbacks might be called when the thread that calls this routine is
       not executing in the CA client library. Programmers who are unfamiliar
       with mutual exclusion locking in a multi-threaded environment should
-      specify <code>ca_disable_preemptive_callback</code>.</dd>
+      specify <code>ca_disable_preemptive_callback</code>. If
+      ca_enable_preemptive_callback is specified then CA client background
+      activies, such as connection management, will proceed even if the
+      thread that calls this routine is not executing in the CA client
+      library.</dd>
 </dl>
 
 <h4>Returns</h4>
@@ -855,18 +964,18 @@ callbacks will be called preemptively from more than one thread.</p>
 <h4>Arguments</h4>
 <dl>
   <dt><code>PROCESS_VARIABLE_NAME</code></dt>
-    <dd>A nil terminated process variable name string. EPICS process
-      control function block database variable names are of the form
-      "&lt;record name&gt;.&lt;field name&gt;". If the field name and the
-      period separator are omitted then the "VAL" field is implicit. For
-      example "RFHV01" and "RFHV01.VAL" reference the same EPICS process
-      control function block database variable.</dd>
+    <dd>A nil terminated process variable name string. EPICS process control
+      function block database variable names are of the form "&lt;record
+      name&gt;.&lt;field name&gt;". If the field name and the period
+      separator are omitted then the "VAL" field is implicit. For example
+      "RFHV01" and "RFHV01.VAL" reference the same EPICS process control
+      function block database variable.</dd>
 </dl>
 <dl>
   <dt><code>USERFUNC</code></dt>
-    <dd>Optional address of the user's call back function to be run when
-      the connection state changes. Casual users of channel access may decide
-      to set this field to nil or 0 if they do not need to have a call back
+    <dd>Optional address of the user's call back function to be run when the
+      connection state changes. Casual users of channel access may decide to
+      set this field to nil or 0 if they do not need to have a call back
       function run in response to each connection state change event.</dd>
 </dl>
 <dl>
@@ -985,8 +1094,8 @@ This allows several requests to be efficiently combined into one message.</p>
 </dl>
 <dl>
   <dt><code>COUNT</code></dt>
-    <dd>Element count to be written to the specified channel. This must
-      match the array pointed to by PVALUE.</dd>
+    <dd>Element count to be written to the specified channel. This must match
+      the array pointed to by PVALUE.</dd>
 </dl>
 <dl>
   <dt><code>CHID</code></dt>
@@ -994,8 +1103,8 @@ This allows several requests to be efficiently combined into one message.</p>
 </dl>
 <dl>
   <dt><code>PVALUE</code></dt>
-    <dd>Pointer to a value or array of values provided by the application
-      to be written to the channel.</dd>
+    <dd>Pointer to a value or array of values provided by the application to
+      be written to the channel.</dd>
 </dl>
 <dl>
   <dt><code>PFUNC</code></dt>
@@ -1004,8 +1113,8 @@ This allows several requests to be efficiently combined into one message.</p>
 </dl>
 <dl>
   <dt><code>USERARG</code></dt>
-    <dd>pointer sized variable retained and then passed back to user
-      supplied function above</dd>
+    <dd>pointer sized variable retained and then passed back to user supplied
+      function above</dd>
 </dl>
 
 <h4>Returns</h4>
@@ -1076,8 +1185,8 @@ in one message.</p>
 </dl>
 <dl>
   <dt><code>COUNT</code></dt>
-    <dd>Element count to be read from the specified channel. Must match
-      the array pointed to by PVALUE.</dd>
+    <dd>Element count to be read from the specified channel. Must match the
+      array pointed to by PVALUE.</dd>
 </dl>
 <dl>
   <dt><code>CHID</code></dt>
@@ -1085,8 +1194,8 @@ in one message.</p>
 </dl>
 <dl>
   <dt><code>PVALUE</code></dt>
-    <dd>Pointer to an application supplied buffer where the current value
-      of the channel is to be written.</dd>
+    <dd>Pointer to an application supplied buffer where the current value of
+      the channel is to be written.</dd>
 </dl>
 <dl>
   <dt><code>USERFUNC</code></dt>
@@ -1230,7 +1339,8 @@ least one update indicating the current state of the channel.</p>
       <p>For functions above that do not include a trigger specification,
       events will be triggered when there are significant changes in the
       channel's value or when there are changes in the channel's alarm state.
-      This is the same as "DBE_VALUE | DBE_ALARM."</dd>
+      This is the same as "DBE_VALUE | DBE_ALARM."</p>
+    </dd>
 </dl>
 
 <h4>Returns</h4>
@@ -1434,8 +1544,7 @@ for this purpose.</p>
 <h4>Arguments</h4>
 <dl>
   <dt><code>CA_STATUS</code></dt>
-    <dd>The status (error code) returned from a channel access
-      function.</dd>
+    <dd>The status (error code) returned from a channel access function.</dd>
 </dl>
 <dl>
   <dt><code>CONTEXT_STRING</code></dt>
@@ -1447,7 +1556,8 @@ for this purpose.</p>
 
 <p>ECA_NORMAL - Normal successful completion</p>
 
-<h3><code><a name="ca_add_exception_event">ca_add_exception_event()</a></code></h3>
+<h3><code><a
+name="ca_add_exception_event">ca_add_exception_event()</a></code></h3>
 <pre>#include &lt;cadef.h&gt; 
 typedef void (*pCallback) ( struct exception_handler_args HANDLERARGS );
 int ca_add_exception_event ( pCallback  USERFUNC, void *USERARG );</pre>
@@ -1472,14 +1582,14 @@ field should not be used.</p>
 <h4>Arguments</h4>
 <dl>
   <dt><code>USERFUNC</code></dt>
-    <dd>Addressof usercall back functionto beexecuted when exceptions
-      occur. Passing a nil value causes the default exception handler to be
+    <dd>Addressof usercall back functionto beexecuted when exceptions occur.
+      Passing a nil value causes the default exception handler to be
       reinstalled.</dd>
 </dl>
 <dl>
   <dt><code>USERARG</code></dt>
     <dd>pointer sized variable retained and passed back to user function
-      above</dd>
+    above</dd>
 </dl>
 
 <h4>Example</h4>
@@ -1520,9 +1630,9 @@ default handler uses fprintf to send messages to 'stderr'.</p>
 <h4>Arguments</h4>
 <dl>
   <dt><code>PFUNC</code></dt>
-    <dd>The address of a user supplied call back handler to be invoked
-      when CA prints diagnostic messages. Installing a nil pointer will cause
-      the default call back handler to be reinstalled.</dd>
+    <dd>The address of a user supplied call back handler to be invoked when
+      CA prints diagnostic messages. Installing a nil pointer will cause the
+      default call back handler to be reinstalled.</dd>
 </dl>
 
 <h4>Examples</h4>
@@ -1567,8 +1677,8 @@ the specified channel.</p>
 </dl>
 <dl>
   <dt><code>PFUNC</code></dt>
-    <dd>Address of user supplied call back function. A nil pointer
-      uninstalls the current handler.</dd>
+    <dd>Address of user supplied call back function. A nil pointer uninstalls
+      the current handler.</dd>
 </dl>
 
 <h4>Returns</h4>
@@ -1621,8 +1731,8 @@ channel.</p>
 <h4>Returns</h4>
 <dl>
   <dt><code>COUNT</code></dt>
-    <dd>The maximum array element count in  the server. An element count
-      of zero is returned if the channel is disconnected.</dd>
+    <dd>The maximum array element count in  the server. An element count of
+      zero is returned if the channel is disconnected.</dd>
 </dl>
 
 <h3><code><a name="L6931">ca_name()</a></code></h3>
@@ -1631,8 +1741,7 @@ char * ca_name ( CHID );</code></pre>
 
 <h4>Description</h4>
 
-<p>Return the name provided when the supplied channel id was
-created.</p>
+<p>Return the name provided when the supplied channel id was created.</p>
 
 <h4>Arguments</h4>
 <dl>
@@ -1643,8 +1752,8 @@ created.</p>
 <h4>Returns</h4>
 <dl>
   <dt><code>PNAME</code></dt>
-    <dd>The channel name. The string returned is valid as long as the
-      channel specified exists.</dd>
+    <dd>The channel name. The string returned is valid as long as the channel
+      specified exists.</dd>
 </dl>
 
 <h3><code><a name="ca_set_puser">ca_set_puser()</a></code></h3>
@@ -1775,8 +1884,8 @@ specified channel and boolean false otherwise.</p>
 <h4>Returns</h4>
 <dl>
   <dt><code>STRING</code></dt>
-    <dd>boolean true if the client currently has read access to the
-      specified channel and boolean false otherwisex</dd>
+    <dd>boolean true if the client currently has read access to the specified
+      channel and boolean false otherwisex</dd>
 </dl>
 
 <h3><code><a name="L6941">ca_write_access()</a></code></h3>
@@ -1813,7 +1922,7 @@ extern unsigned dbr_size[/*TYPE*/];</code></pre>
 <dl>
   <dt><code>TYPE</code></dt>
     <dd>The data type code. A member of the set of DBF_XXXX in
-      db_access.h.</dd>
+    db_access.h.</dd>
 </dl>
 
 <h4>Returns</h4>
@@ -1847,8 +1956,8 @@ pointer to the value field.</p>
 <h4>Returns</h4>
 <dl>
   <dt><code>SIZE</code></dt>
-    <dd>the size in bytes of the specified type with the specified number
-      of elements</dd>
+    <dd>the size in bytes of the specified type with the specified number of
+      elements</dd>
 </dl>
 
 <h3><code><a name="dbr_value_size">dbr_value_size[]</a></code></h3>
@@ -1865,14 +1974,14 @@ field is returned otherwise the size of the type is returned.</p>
 <dl>
   <dt><code>TYPE</code></dt>
     <dd>The data type code. A member of the set of DBF_XXXX in
-      db_access.h.</dd>
+    db_access.h.</dd>
 </dl>
 
 <h4>Returns</h4>
 <dl>
   <dt><code>SIZE</code></dt>
-    <dd>the size in bytes of the value field if the type is a structure
-      and otherwise the size in bytes of the type</dd>
+    <dd>the size in bytes of the value field if the type is a structure and
+      otherwise the size in bytes of the type</dd>
 </dl>
 
 <h3><code><a name="ca_test_event">ca_test_event()</a></code></h3>
@@ -1913,7 +2022,6 @@ out and in all likelihood will never be satisfied.</p>
 operations outstanding within them at any given time.</p>
 
 <h4>Arguments</h4>
-
 <dl>
   <dt><code>PGID</code></dt>
     <dd>Pointer to a user supplied CA_SYNC_GID.</dd>
@@ -2105,8 +2213,8 @@ reissued.</p>
 </dl>
 <dl>
   <dt><code>COUNT</code></dt>
-    <dd>element count to be written to the specified channel - must match
-      the array pointed to by PVALUE</dd>
+    <dd>element count to be written to the specified channel - must match the
+      array pointed to by PVALUE</dd>
 </dl>
 <dl>
   <dt><code>CHID</code></dt>
@@ -2114,8 +2222,8 @@ reissued.</p>
 </dl>
 <dl>
   <dt><code>PVALUE</code></dt>
-    <dd>A pointer to an application supplied buffer containing the value
-      or array of valuesReturns</dd>
+    <dd>A pointer to an application supplied buffer containing the value or
+      array of valuesReturns</dd>
 </dl>
 
 <h4>Returns</h4>
@@ -2168,8 +2276,8 @@ reissued.</p>
 </dl>
 <dl>
   <dt><code>TYPE</code></dt>
-    <dd>External type of returned value. Conversion will occur if this
-      does not match native type. Specify one from the set of DBR_XXXX in
+    <dd>External type of returned value. Conversion will occur if this does
+      not match native type. Specify one from the set of DBR_XXXX in
       db_access.h</dd>
 </dl>
 <dl>
@@ -2183,8 +2291,8 @@ reissued.</p>
 </dl>
 <dl>
   <dt><code>PVALUE</code></dt>
-    <dd>Pointer to application supplied buffer that is to contain the
-      value or array of values to be returned</dd>
+    <dd>Pointer to application supplied buffer that is to contain the value
+      or array of values to be returned</dd>
 </dl>
 
 <h4>Returns</h4>
@@ -2224,8 +2332,7 @@ levels, status for each channel.</p>
   <dt><code>CONTEXT</code></dt>
     <dd>A pointer to the CA context to join with.</dd>
   <dt><code>LEVEL</code></dt>
-    <dd>The interest level. Increasing level produces increasing
-      detail.</dd>
+    <dd>The interest level. Increasing level produces increasing detail.</dd>
 </dl>
 
 <h3><a name="ca_current_context">ca_current_context()</a></h3>
@@ -2315,7 +2422,6 @@ additional network bandwidth and server CPU load when searching for
 unresolved channels.</p>
 
 <h3><a name="caEventRat">caEventRate</a></h3>
-
 <pre>caEventRate &lt;PV name&gt;</pre>
 
 <h4>Description</h4>
@@ -2323,7 +2429,6 @@ unresolved channels.</p>
 <p>Subscribe to the specified PV and periodically log its event rate.</p>
 
 <h3><a name="ca_test">ca_test</a></h3>
-
 <pre>ca_test &lt;PV name&gt; [value to be written]</pre>
 
 <h4>Description</h4>
@@ -2400,8 +2505,14 @@ and then output to the console.</p>
     <dd>write access denied</dd>
 </dl>
 
-<p><small>CVS Revision
-$Id$
-</small></p>
+<p><small>CVS Revision $Id: CAref.html,v 1.24 2002/08/06 22:48:42 anj Exp
+$</small></p>
 </body>
 </html>
+/*************************************************************************\ *
+Copyright (c) 2002 The University of Chicago, as Operator of Argonne *
+National Laboratory. * Copyright (c) 2002 The Regents of the University of
+California, as *     Operator of Los Alamos National Laboratory. * EPICS BASE
+Versions 3.13.7 * and higher are distributed subject to a Software License
+Agreement found * in file LICENSE that is included with this distribution.
+\*************************************************************************/ 

@@ -1621,7 +1621,9 @@ LOCAL int event_add_action (caHdrLargeArray *mp, void *pPayload, struct client *
         log_header ("no memory to add subscription to db", 
             client, mp, pPayload, 0);
         SEND_LOCK(client);
-        send_err (mp, ECA_ADDFAIL, client, RECORD_NAME(&pciu->addr));
+        send_err (mp, ECA_ALLOCMEM, client, 
+            "subscription install into record %s failed", 
+            RECORD_NAME(&pciu->addr));
         SEND_UNLOCK(client);
         return RSRV_ERROR;
     }

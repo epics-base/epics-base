@@ -216,7 +216,7 @@ extern "C" int epicsShareAPI ca_search_and_connect (
     }
 
     if ( name_str == NULL || *name_str == '\0' ) {
-        return ECA_EMPTYSTR;
+        return ECA_BADSTR;
     }
 
     oldChannelNotify *pChanNotify = new oldChannelNotify ( *pcac, name_str, conn_func, puser );
@@ -587,7 +587,7 @@ extern "C" int epicsShareAPI ca_add_masked_array_event (
     {
         return ECA_ALLOCMEM;
     }
-    catch ( cacChannel::msgBodyCacheTooSmall ) {
+    catch ( cacChannel::msgBodyCacheTooSmall & ) {
         return ECA_TOLARGE;
     }
     catch ( ... )

@@ -37,8 +37,8 @@ epicsShareFunc long epicsShareAPI dbtgf(char *pname);
 /*test put field*/
 epicsShareFunc long epicsShareAPI dbtpf(char	*pname,char *pvalue);
 /*I/O report */
-epicsShareFunc long dbior(char	*pdrvName,int type);
+epicsShareFunc long epicsShareAPI dbior(char	*pdrvName,int type);
 /*Hardware Configuration Report*/
-epicsShareFunc int dbhcr(char *filename);
+epicsShareFunc int epicsShareAPI dbhcr(char *filename);
 
 #endif /*INCdbTesth */

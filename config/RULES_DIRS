@@ -3,8 +3,8 @@
 #
  
 
-ARCHS= $(BUILD_ARCHS) host cross
-ACTIONS = clean inc install depends
+ARCHS += $(BUILD_ARCHS) host cross
+ACTIONS += clean inc install depends
  
 dirPart = $(word 1, $(subst $(DIVIDER), ,$@))
 actionArchPart = $(subst $(dirPart)$(DIVIDER), ,$@)

@@ -19,7 +19,6 @@
  *  Author: Jeff Hill
  */
 
-#define DEBUG
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
 #include "iocinf.h"

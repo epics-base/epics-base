@@ -1,12 +1,12 @@
-#	Makefile.Host  for  base/src/sample
+#	Makefile  for  base/src/sample
 #
 #
-#	Sample Makefile.Host showing all possible entries
-#	that are allowed using RULES.Host.
+#	Sample Makefile showing all possible entries
+#	that are allowed using RULES_BUILD.
 #
 
 TOP = ../../..
-include $(TOP)/config/CONFIG
+include $(TOP)/configure/CONFIG
 CMPLR = STRICT
 
 #	Add-on CFLAGS that are needed by this Makefile.
@@ -178,6 +178,6 @@ SCRIPTS         = script
 # put all definitions before the following include line
 # put all rules after the following include line
 
-include $(TOP)/config/RULES.Host
+include $(TOP)/configure/RULES_BUILD
 
 #	EOF Makefile.Host

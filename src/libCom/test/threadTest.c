@@ -24,9 +24,9 @@ of this distribution.
 static void threadFunc(void *arg)
 {
     int argvalue = *(int *)arg;
-    printf("threadFunc %d starting\n",argvalue);
+    errlogPrintf("threadFunc %d starting\n",argvalue);
     threadSleep(2.0);
-    printf("threadFunc %d stopping\n",argvalue);
+    errlogPrintf("threadFunc %d stopping\n",argvalue);
 }
 
 void threadTest(int ntasks,int verbose)
@@ -39,14 +39,14 @@ void threadTest(int ntasks,int verbose)
     int startPriority,minPriority,maxPriority;
     int errVerboseSave = errVerbose;
 
-printf("threadTest ntasks %d verbose %d\n",ntasks,verbose);
     errVerbose = verbose;
+    errlogInit(4096);
     id = calloc(ntasks,sizeof(threadId *));
     name = calloc(ntasks,sizeof(char **));
     arg = calloc(ntasks,sizeof(void *));
-    printf("threadTest starting\n");
+    errlogPrintf("threadTest starting\n");
     stackSize = threadGetStackSize(threadStackSmall);
-    printf("stackSize %u\n",stackSize);
+    errlogPrintf("stackSize %u\n",stackSize);
     for(i=0; i<ntasks; i++) {
         int *argvalue;
         name[i] = calloc(10,sizeof(char));
@@ -56,18 +56,18 @@ printf("threadTest ntasks %d verbose %d\n",ntasks,verbose);
         *argvalue = i;
         startPriority = 50+i;
         id[i] = threadCreate(name[i],startPriority,stackSize,threadFunc,arg[i]);
-        printf("threadTest created %d id %p\n",i,id[i]);
+        errlogPrintf("threadTest created %d id %p\n",i,id[i]);
         startPriority = threadGetPriority(id[i]);
         threadSetPriority(id[i],threadPriorityMin);
         minPriority = threadGetPriority(id[i]);
         threadSetPriority(id[i],threadPriorityMax);
         maxPriority = threadGetPriority(id[i]);
         threadSetPriority(id[i],50+i);
-        if(i==0)printf("startPriority %d minPriority %d maxPriority %d\n",
+        if(i==0)errlogPrintf("startPriority %d minPriority %d maxPriority %d\n",
             startPriority,minPriority,maxPriority);
     }
     
     threadSleep(5.0);
-    printf("threadTest terminating\n");
+    errlogPrintf("threadTest terminating\n");
     errVerbose = errVerboseSave;
 }

@@ -31,22 +31,22 @@ static void binaryThread(void *arg)
 {
     info *pinfo = (info *)arg;
     time_t tp;
-    printf("binaryThread %d starting time %d\n",pinfo->threadnum,time(&tp));
+    printf("binaryThread %d starting time %ld\n",pinfo->threadnum,time(&tp));
     threadSleep(1.0);
     while(1) {
         semTakeStatus status;
         if(pinfo->quit) {
-            printf("binaryThread %d returning time %d\n",
+            printf("binaryThread %d returning time %ld\n",
                 pinfo->threadnum,time(&tp));
             semBinaryGive(pinfo->binary);
             return;
         }
         status = semBinaryTake(pinfo->binary);
         if(status!=semTakeOK) {
-            printf("task %d semBinaryTake returned %d  time %d\n",
+            printf("task %d semBinaryTake returned %d  time %ld\n",
                 pinfo->threadnum,(int)status,time(&tp));
         }
-        printf("binaryThread %d semBinaryTake time %d\n",
+        printf("binaryThread %d semBinaryTake time %ld\n",
             pinfo->threadnum,time(&tp));
         semBinaryGive(pinfo->binary);
         threadSleep(1.0);
@@ -68,20 +68,20 @@ void semBinaryTest(int nthreads,int verbose)
 
     errVerbose = verbose;
     binary = semBinaryMustCreate(semEmpty);
-    printf("calling semBinaryTakeTimeout(binary,2.0) time %d\n",time(&tp));
+    printf("calling semBinaryTakeTimeout(binary,2.0) time %ld\n",time(&tp));
     status = semBinaryTakeTimeout(binary,2.0);
     if(status!=semTakeTimeout) printf("status %d\n",status);
-    printf("calling semBinaryTakeNoWait(binary) time %d\n",time(&tp));
+    printf("calling semBinaryTakeNoWait(binary) time %ld\n",time(&tp));
     status = semBinaryTakeNoWait(binary);
     if(status!=semTakeTimeout) printf("status %d\n",status);
-    printf("calling semBinaryGive() time %d\n",time(&tp));
+    printf("calling semBinaryGive() time %ld\n",time(&tp));
     semBinaryGive(binary);
-    printf("calling semBinaryTakeTimeout(binary,2.0) time %d\n",time(&tp));
+    printf("calling semBinaryTakeTimeout(binary,2.0) time %ld\n",time(&tp));
     status = semBinaryTakeTimeout(binary,2.0);
     if(status) printf("status %d\n",status);
-    printf("calling semBinaryGive() time %d\n",time(&tp));
+    printf("calling semBinaryGive() time %ld\n",time(&tp));
     semBinaryGive(binary);
-    printf("calling semBinaryTakeNoWait(binary) time %d\n",time(&tp));
+    printf("calling semBinaryTakeNoWait(binary) time %ld\n",time(&tp));
     status = semBinaryTakeNoWait(binary);
     if(status) printf("status %d\n",status);
 
@@ -102,14 +102,14 @@ void semBinaryTest(int nthreads,int verbose)
         pinfo[i]->binary = binary;
         arg[i] = pinfo[i];
         id[i] = threadCreate(name[i],40,stackSize,binaryThread,arg[i]);
-        printf("semTest created binaryThread %d id %p time %d\n",
+        printf("semTest created binaryThread %d id %p time %ld\n",
             i, id[i],time(&tp));
     }
     threadSleep(2.0);
-    printf("semTest calling semBinaryGive(binary) time %d\n",time(&tp));
+    printf("semTest calling semBinaryGive(binary) time %ld\n",time(&tp));
     semBinaryGive(binary);
     threadSleep(5.0);
-    printf("semTest setting quit time %d\n",time(&tp));
+    printf("semTest setting quit time %ld\n",time(&tp));
     for(i=0; i<nthreads; i++) {
         pinfo[i]->quit = 1;
     }

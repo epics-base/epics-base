@@ -328,7 +328,6 @@ LOCAL void errlogTask(void)
     while(TRUE) {
 	char	*pmessage;
 
-	semBinaryMustTake(pvtData.errlogTaskWaitForWork);
 	while((pmessage = msgbufGetSend())) {
 	    semMutexMustTake(pvtData.listenerLock);
 	    if(pvtData.toConsole) printf("%s",pmessage);
@@ -340,6 +339,7 @@ LOCAL void errlogTask(void)
             semMutexGive(pvtData.listenerLock);
 	    msgbufFreeSend();
 	}
+	semBinaryMustTake(pvtData.errlogTaskWaitForWork);
     }
 }
 

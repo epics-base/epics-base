@@ -148,6 +148,8 @@ FPNUM	(\-?(([0-9]+)(\.[0-9]*)?)|(\.[0-9]+))
 <SNL>"if"	RETURN(IF);
 <SNL>"else"	RETURN(ELSE);
 <SNL>"while"	RETURN(WHILE);
+<SNL>"for"	RETURN(FOR);
+<SNL>"break"	RETURN(BREAK);
 <SNL>"exit"	RETURN(EXIT);
 <SNL>"TRUE" {	yylval.pchar = "1";
 		RETURN(NUMBER);
@@ -163,9 +165,11 @@ FPNUM	(\-?(([0-9]+)(\.[0-9]*)?)|(\.[0-9]+))
 		str_next += nc+1;
 		RETURN(NAME);
 }
+<SNL>"++"	RETURN(AUTO_INCR);
+<SNL>"--"	RETURN(AUTO_DECR);
+<SNL>"||"	RETURN(OR);
 <SNL>"<<="	RETURN(LEFT_EQUAL);
 <SNL>">>="	RETURN(RIGHT_EQUAL);
-<SNL>"||"	RETURN(OR);
 <SNL>"&&"	RETURN(AND);
 <SNL>">>"	RETURN(R_SHIFT);
 <SNL>">="	RETURN(GE);

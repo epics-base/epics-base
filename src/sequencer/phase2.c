@@ -3,7 +3,7 @@
 	Copyright, 1990, The Regents of the University of California.
 		 Los Alamos National Laboratory
 
-	@(#)phase2.c	1.5	4/17/91
+	$Id$
 	DESCRIPTION: Phase 2 code generation routines for SNC.
 	Produces code and tables in C output file.
 	See also:  gen_ss_code.c
@@ -77,6 +77,7 @@ phase2()
 gen_preamble()
 {
 	extern char		*prog_name;
+	extern int		async_flag, conn_flag, debug_flag, reent_flag;
 
 	/* Program name (comment) */
 	printf("/* Program \"%s\" */\n", prog_name);
@@ -88,6 +89,13 @@ gen_preamble()
 	printf("\n#define NUM_SS %d\n", num_ss);
 	printf("#define NUM_CHANNELS %d\n", num_channels);
 
+	/* #define's for compiler flags */
+	gen_flag_defn(async_flag, "ASYNC_FLAG");
+	gen_flag_defn(conn_flag,  "CONN_FLAG" );
+	gen_flag_defn(debug_flag, "DEBUG_FLAG");
+	gen_flag_defn(reent_flag, "REENT_FLAG");
+	printf("\n");
+
 	/* Forward references of tables: */
 	printf("\nextern SPROG %s;\n", prog_name);
 	printf("extern CHAN db_channels[];\n");
@@ -95,9 +103,20 @@ gen_preamble()
 	return;
 }
 
-int	printTree = FALSE;
+gen_flag_defn(flag, defn_name)
+int		flag;
+char		*defn_name;
+{
+	if (flag)
+		printf("#define %s TRUE\n", defn_name);
+	else
+		printf("#define %s FALSE\n", defn_name);
+}
+
 /* Reconcile all variables in an expression,
  and tie each to the appropriate VAR struct */
+int	printTree = FALSE;
+
 reconcile_variables()
 {
 	extern Expr		*ss_list, *exit_code_list;
@@ -421,6 +440,7 @@ void		*argp;		/* ptr to argument to pass on to function */
 	case E_CONST:
 	case E_STRING:
 	case E_TEXT:
+	case E_BREAK:
 		break;
 
 	case E_PAREN:
@@ -431,6 +451,8 @@ void		*argp;		/* ptr to argument to pass on to function */
 	case E_CMPND:
 	case E_STMT:
 	case E_ELSE:
+	case E_PRE:
+	case E_POST:
 		for (ep1 = ep->left; ep1 != 0;	ep1 = ep1->next)
 		{
 			traverseExprTree(ep1, type, value, funcp, argp);
@@ -443,6 +465,8 @@ void		*argp;		/* ptr to argument to pass on to function */
 	case E_SUBSCR:
 	case E_IF:
 	case E_WHILE:
+	case E_FOR:
+	case E_X:
 		for (ep1 = ep->left; ep1 != 0;	ep1 = ep1->next)
 		{
 			traverseExprTree(ep1, type, value, funcp, argp);
@@ -452,7 +476,6 @@ void		*argp;		/* ptr to argument to pass on to function */
 			traverseExprTree(ep1, type, value, funcp, argp);
 		}
 		break;
-
 
 	default:
 		fprintf(stderr, "traverseExprTree: type=%d???\n", ep->type);

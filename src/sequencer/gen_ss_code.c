@@ -3,7 +3,7 @@
 	Copyright, 1990, The Regents of the University of California.
 		 Los Alamos National Laboratory
 
-	@(#)gen_ss_code.c	1.4	4/17/91
+	$Id$
 	DESCRIPTION: gen_ss_code.c -- routines to generate state set code
 	ENVIRONMENT: UNIX
 ***************************************************************************/
@@ -241,6 +241,21 @@ int		level;		/* indentation level */
 		else
 			eval_expr(stmt_type, ep->right, sp, level+1);
 		break;
+	case E_FOR:
+		indent(level);
+		printf("for (");
+		eval_expr(stmt_type, ep->left->left, sp, 0);
+		printf("; ");
+		eval_expr(stmt_type, ep->left->right, sp, 0);
+		printf("; ");
+		eval_expr(stmt_type, ep->right->left, sp, 0);
+		printf(")\n");
+		epf = ep->right->right;
+		if (epf->type == E_CMPND)
+			eval_expr(stmt_type, epf, sp, level);
+		else
+			eval_expr(stmt_type, epf, sp, level+1);
+		break;
 	case E_ELSE:
 		indent(level);
 		printf("else\n");
@@ -270,6 +285,10 @@ int		level;		/* indentation level */
 	case E_STRING:
 		printf("\"%s\"", ep->value);
 		break;
+	case E_BREAK:
+		indent(level);
+		printf("break;\n");
+		break;
 	case E_FUNC:
 		if (special_func(stmt_type, ep, sp))
 			break;
@@ -297,6 +316,14 @@ int		level;		/* indentation level */
 	case E_UNOP:
 		printf("%s", ep->value);
 		eval_expr(stmt_type, ep->left, sp, 0);
+		break;
+	case E_PRE:
+		printf("%s", ep->value);
+		eval_expr(stmt_type, ep->left, sp, 0);
+		break;
+	case E_POST:
+		eval_expr(stmt_type, ep->left, sp, 0);
+		printf("%s", ep->value);
 		break;
 	case E_SUBSCR:
 		eval_expr(stmt_type, ep->left, sp, 0);

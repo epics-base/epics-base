@@ -11,10 +11,21 @@
 ***************************************************************************/
 
 #include	"seq.h"
-#include	"vxWorks.h"
-#include	"taskLib.h"
+
+/* Function declarations */
+#define	ANSI
+#ifdef	ANSI
+LOCAL	VOID ss_task_init(SPROG *, SSCB *);
+LOCAL	long get_timeout(SSCB *);
+#else
+LOCAL	VOID ss_task_init();
+LOCAL	long get_timeout();
+#endif	ANSI
 
 #define		TASK_NAME_SIZE 10
+
+#define	MAX_TIMEOUT	(1<<30) /* like 2 years */
+
 /* Sequencer main task entry point */
 sequencer(sp_ptr, stack_size, ptask_name)
 SPROG		*sp_ptr;	/* ptr to original (global) state program table */
@@ -33,7 +44,7 @@ char		*ptask_name;	/* Parent task name */
 	/* Make "seq_task_ptr" a task variable */
 	if (taskVarAdd(sp_ptr->task_id, &seq_task_ptr) != OK)
 	{
-		seqLog(sp_ptr, "%s: taskVarAdd failed\n", sp_ptr->name);
+		seq_log(sp_ptr, "%s: taskVarAdd failed\n", sp_ptr->name);
 		return -1;
 	}
 	seq_task_ptr = sp_ptr;
@@ -49,7 +60,7 @@ char		*ptask_name;	/* Parent task name */
 
 	/* Connect to database channels & initiate monitor requests.
 	   Returns here immediately if "connect" switch is not set */
-	connect_db_channels(sp_ptr);
+	seq_connect(sp_ptr);
 
 	/* Create the state set tasks */
 	if (strlen(ptask_name) > TASK_NAME_SIZE);
@@ -66,7 +77,7 @@ char		*ptask_name;	/* Parent task name */
 		 SPAWN_PRIORITY+ss_ptr->task_priority,
 		 SPAWN_OPTIONS, stack_size, ss_entry, sp_ptr, ss_ptr);
 
-		seqLog(sp_ptr, "Spawning task %d: \"%s\"\n", task_id, task_name);
+		seq_log(sp_ptr, "Spawning task %d: \"%s\"\n", task_id, task_name);
 	}
 
 	/* Main task handles first state set */
@@ -74,13 +85,13 @@ char		*ptask_name;	/* Parent task name */
 }
 /* Task entry point for state sets */
 /* Provides main loop for state set processing (common, re-entrant code) */
-ss_entry(sp_ptr, ss_ptr)
+VOID ss_entry(sp_ptr, ss_ptr)
 SPROG	*sp_ptr;
 SSCB	*ss_ptr;
 {
 	BOOL		ev_trig;
 	STATE		*st_ptr, *st_pNext;
-	ULONG		delay, get_timeout();
+	long		delay;
 	int		i;
 	char		*var_ptr;
 
@@ -96,10 +107,10 @@ SSCB	*ss_ptr;
 	while (1)
 	{
 		/* Clear event bits */
-		semTake(sp_ptr->sem_id, 0); /* Lock CA */
+		semTake(sp_ptr->caSemId, WAIT_FOREVER); /* Lock CA event update */
 		for (i = 0; i < NWRDS; i++)
 			ss_ptr->events[i] = 0;
-		semGive(sp_ptr->sem_id); /* Unlock CA */
+		semGive(sp_ptr->caSemId); /* Unlock CA event update */
 
 		ss_ptr->time = tickGet(); /* record time we entered this state */
 
@@ -108,27 +119,23 @@ SSCB	*ss_ptr;
 		st_ptr->delay_func(sp_ptr, ss_ptr, var_ptr);
 
 		/* On 1-st pass fall thru w/o wake up */
-		semGive(ss_ptr->sem_id);
+		semGive(ss_ptr->syncSemId);
 
 		/* Loop until an event is triggered */
 		do {
 			/* Wake up on CA event, event flag, or expired time delay */
-			semTake(ss_ptr->sem_id, get_timeout(ss_ptr, st_ptr));
-#ifdef	DEBUG
-			printf("%s: semTake returned, events[0]=0x%x\n",
-			 ss_ptr->name, ss_ptr->events[0]);
-#endif	DEBUG
-			ss_ptr->time = tickGet();
+			delay = get_timeout(ss_ptr);
+			semTake(ss_ptr->syncSemId, delay);
 
-			/* Apply CA resource lock: any new events coming in will
-			   be deferred until after event tests */
-			semTake(sp_ptr->sem_id, 0);
+			/* Apply resource lock: any new events coming in will
+			   be deferred until next state is entered */
+			semTake(sp_ptr->caSemId, WAIT_FOREVER);
 
 			/* Call event function to check for event trigger */
 			ev_trig = st_ptr->event_func(sp_ptr, ss_ptr, var_ptr);
 
 			/* Unlock CA resource */
-			semGive(sp_ptr->sem_id);
+			semGive(sp_ptr->caSemId);
 
 		} while (!ev_trig);
 		/* Event triggered */
@@ -152,7 +159,7 @@ SSCB	*ss_ptr;
 	}
 }
 /* Initialize state-set tasks */
-LOCAL ss_task_init(sp_ptr, ss_ptr)
+LOCAL VOID ss_task_init(sp_ptr, ss_ptr)
 SPROG	*sp_ptr;
 SSCB	*ss_ptr;
 {
@@ -168,31 +175,33 @@ SSCB	*ss_ptr;
 
 	return;
 }
-/* Return time-out for semTake() */
-LOCAL ULONG get_timeout(ss_ptr)
+/* Return time-out for delay() */
+LOCAL long get_timeout(ss_ptr)
 SSCB	*ss_ptr;
 {
-	int	ndelay;
-	ULONG	time, timeout, tmin;
+	int		ndelay;
+	long		timeout;	/* min. expiration clock time */
+	long		delay;		/* min. delay (tics) */
 
 	if (ss_ptr->ndelay == 0)
-		return 0;
+		return MAX_TIMEOUT;
 
-	time = tickGet();
-	tmin = 0;
-	/* find lowest timeout that's not expired */
+	timeout = MAX_TIMEOUT; /* start with largest timeout */
+
+	/* Find the minimum abs. timeout (0 means already expired) */
 	for (ndelay = 0; ndelay < ss_ptr->ndelay; ndelay++)
 	{
-		timeout = ss_ptr->timeout[ndelay];
-		if (time < timeout)
-		{
-			if (tmin == 0 || timeout < tmin)
-				tmin = timeout;
-		}
+		if ((ss_ptr->timeout[ndelay] != 0) &&
+		    (ss_ptr->timeout[ndelay] < timeout) )
+			timeout = (long)ss_ptr->timeout[ndelay];
 	}
-	if (tmin != 0)
-		tmin -= time; /* convert timeout to delay */
-	return tmin;
+
+	/* Convert timeout to delay */
+	delay = timeout - tickGet();
+	if (delay <= 0)
+		return NO_WAIT;
+	else
+		return delay;
 }
 /* Set-up for delay() on entering a state.  This routine is called
 by the state program for each delay in the "when" statement  */
@@ -220,9 +229,31 @@ SPROG	*sp_ptr;
 SSCB	*ss_ptr;
 int	delay_id;
 {
-	return (ss_ptr->time >= ss_ptr->timeout[delay_id]);
+	if (ss_ptr->timeout[delay_id] == 0)
+		return TRUE; /* previously expired t-o */
+
+	if (tickGet() >= ss_ptr->timeout[delay_id])
+	{
+		ss_ptr->timeout[delay_id] = 0; /* mark as expired */
+		return TRUE;
+	}
+	return FALSE;
 }
-/* This task is run whenever ANY task in the system is deleted */
+/*
+ * Delete the state set tasks and do general clean-up.
+ * General procedure is:
+ * 1.  Suspend all state set tasks except self.
+ * 2.  Call the user program's exit routine.
+ * 3.  Delete all state set tasks except self.
+ * 4.  Delete semaphores, close log file, and free allocated memory.
+ * 5.  Return, causing self to be deleted.
+ *
+ * This task is run whenever ANY task in the system is deleted.
+ * Therefore, we have to check the task variable "seq_task_ptr"
+ * to see if it's one of ours.
+ * With VxWorks 5.0 we need to change references to the TCBX to handle
+ * the Wind kernel.
+ */
 sprog_delete(pTcbX)
 TCBX	*pTcbX;	/* ptr to TCB of task to be deleted */
 {
@@ -247,20 +278,16 @@ TCBX	*pTcbX;	/* ptr to TCB of task to be deleted */
 		return -1;
 	}
 
-	/* Suspend state set tasks */
+	/* Suspend all state set tasks except self */
 	ss_ptr = sp_ptr->sscb;
 	for (nss = 0; nss < sp_ptr->nss; nss++, ss_ptr++)
 	{
 		tid_ss = ss_ptr->task_id;
-		if ( tid_ss > 0)
+		if ( (tid_ss > 0) && (tid != tid_ss) )
 		{
-			/* Don't suspend self */
-			if (tid != tid_ss)
-			{
-				logMsg("   suspend ss task: tid=%d\n", tid_ss);
-				taskVarSet(tid_ss, &seq_task_ptr, ERROR);
-				taskSuspend(tid_ss);
-			}
+			logMsg("   suspend ss task: tid=%d\n", tid_ss);
+			taskVarSet(tid_ss, &seq_task_ptr, ERROR);
+			taskSuspend(tid_ss);
 		}
 	}
 
@@ -275,26 +302,27 @@ TCBX	*pTcbX;	/* ptr to TCB of task to be deleted */
 		sp_ptr->logFd = ioGlobalStdGet(1);
 	}
 
-	/* Delete state set tasks & delete semaphores */
+	/* Delete state set tasks (except self) & delete their semaphores */
 	ss_ptr = sp_ptr->sscb;
 	for (nss = 0; nss < sp_ptr->nss; nss++, ss_ptr++)
 	{
 		tid_ss = ss_ptr->task_id;
 		if ( tid_ss > 0)
 		{
-			/* Don't delete self */
 			if (tid != tid_ss)
 			{
 				logMsg("   delete ss task: tid=%d\n", tid_ss);
 				taskVarSet(tid_ss, &seq_task_ptr, ERROR);
 				taskDelete(tid_ss);
 			}
-			semDelete(ss_ptr->sem_id);
+			semDelete(ss_ptr->syncSemId);
+			if (!sp_ptr->async_flag)
+				semDelete(ss_ptr->getSemId);
 		}
 	}
 
-	/* Delete semaphores & free the task area */
-	semDelete(sp_ptr->sem_id);
+	/* Delete program-wide semaphores & free the task area */
+	semDelete(sp_ptr->caSemId);
 	semDelete(sp_ptr->logSemId);
 	logMsg("free sp_ptr->dyn_ptr=0x%x\n", sp_ptr->dyn_ptr);
 	taskDelay(5);
@@ -302,13 +330,23 @@ TCBX	*pTcbX;	/* ptr to TCB of task to be deleted */
 	
 	return 0;
 }
-/* semTake - take semaphore:
-	VxWorks semTake with timeout added. */
-LOCAL VOID semTake (semId, timeout)
-SEM_ID semId;	/* semaphore id to take */
-UINT timeout;	/* timeout in tics */
-{
-	int dummy;
+/* VxWorks Version 4.02 only */
+#ifdef	VX4
 
-	vrtxPend(&semId->count, timeout, &dummy);
+/* seq_semTake - take semaphore:
+ * VxWorks semTake() with timeout added. (emulates VxWorks 5.0)
+ */
+VOID seq_semTake(semId, timeout)
+SEM_ID		semId;		/* semaphore id to take */
+long		timeout;	/* timeout in tics */
+{
+	int		dummy;
+
+	if (timeout == WAIT_FOREVER)
+		vrtxPend(&semId->count, 0, &dummy);
+	else if (timeout == NO_WAIT)
+		semClear(semId);
+	else
+		vrtxPend(&semId->count, timeout, &dummy);
 }
+#endif	VX4

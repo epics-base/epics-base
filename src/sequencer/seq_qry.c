@@ -14,11 +14,24 @@
 /*	#define	DEBUG	1	*/
 
 #include	"seq.h"
-#include	"vxWorks.h"
-#include	"taskLib.h"
+
+#define	ANSI
+#ifdef	ANSI
+int	seqShow(int);
+int	seqChanShow(int);
+LOCAL	VOID wait_rtn();
+static	void printValue(void *, int, int, int);
+static	void printType(int);
+#else
+int	seqShow();
+int	seqChanShow();
+LOCAL	VOID wait_rtn();
+static	void printValue();
+static	void printType();
+#endif
 
 /* Querry the sequencer for state information */
-seqShow(tid)
+int seqShow(tid)
 int	tid;
 {
 	extern SPROG	*seq_task_ptr;
@@ -94,7 +107,7 @@ int	tid;
 	return 0;
 }
 /* Querry the sequencer for channel information */
-seqChanShow(tid)
+int seqChanShow(tid)
 int	tid;
 {
 	extern SPROG	*seq_task_ptr;
@@ -131,7 +144,7 @@ int	tid;
 		printf("  Size=%d bytes\n", db_ptr->size);
 		printf("  Count=%d\n", db_ptr->count);
 		printType(db_ptr->put_type);
-		printValue(db_ptr->var, db_ptr->size, db_ptr->count,
+		printValue((void *)db_ptr->var, db_ptr->size, db_ptr->count,
 			   db_ptr->put_type);
 		printf("  DB get request type=%d\n", db_ptr->get_type);
 		printf("  DB put request type=%d\n", db_ptr->put_type);
@@ -164,7 +177,7 @@ int	tid;
 }
 
 
-wait_rtn()
+LOCAL VOID wait_rtn()
 {
 	char	bfr;
 	printf("Hit RETURN to continue\n");
@@ -183,7 +196,7 @@ struct	dbr_union {
 	} u;
 };
 
-static printValue(pvar, size, count, type)
+static void printValue(pvar, size, count, type)
 void		*pvar;
 int		size, count, type;
 {
@@ -228,7 +241,7 @@ int		size, count, type;
 	printf("\n");
 }
 
-static printType(type)
+static void printType(type)
 int		type;
 {
 	char		*type_str;
@@ -261,4 +274,3 @@ int		type;
 	}
 	printf("  Type = %s\n", type_str);
 }
-

@@ -3,7 +3,7 @@
 	Copyright, 1990, The Regents of the University of California.
 		         Los Alamos National Laboratory
 
-	@(#)seq_main.c	1.2	4/23/91
+	$Id$
 	DESCRIPTION: Seq() initiates a sequence as a group of cooperating
 	tasks.  An optional string parameter specifies the values for
 	macros.
@@ -11,14 +11,34 @@
 	ENVIRONMENT: VxWorks
 
 	HISTORY:
-	23apr91,ajk Fixed problem with state program invoking the sequencer.
+23apr91,ajk	Fixed problem with state program invoking the sequencer.
+01jul91,ajk	Added ANSI functional prototypes.
+05jul91,ajk	Changed semCreate() in three places to semBCreate() or
+		semMCreate().  Modified semTake() second param. to WAIT_FOREVER.
+		These provide VX5.0 compatability.  
 ***************************************************************************/
-
 /*#define	DEBUG	1*/
 
 #include	"seq.h"
-#include	"vxWorks.h"
-#include	"taskLib.h"
+
+#define	ANSI
+
+#ifdef	ANSI
+/* ANSI functional prototypes */
+LOCAL	SPROG *alloc_task_area(SPROG *);
+LOCAL	VOID copy_sprog(SPROG *, SPROG *);
+LOCAL	VOID init_sprog(SPROG *);
+LOCAL	VOID init_sscb(SPROG *);
+LOCAL	VOID seq_logInit(SPROG *);
+
+#else
+/* Archaic (i.e. Sun) functional prototypes */
+LOCAL	SPROG *alloc_task_area();
+LOCAL	VOID copy_sprog();
+LOCAL	VOID init_sprog();
+LOCAL	VOID init_sscb();
+LOCAL	VOID seq_logInit();
+#endif
 
 #define	SCRATCH_SIZE	(MAX_MACROS*(MAX_STRING_SIZE+1)*12)
 
@@ -33,8 +53,8 @@
 */
 SPROG	*seq_task_ptr = NULL;
 
-/* User entry routine to initiate a state program */
-seq(sp_ptr_orig, macro_def, stack_size)
+/* User-callable routine to initiate a state program */
+int seq(sp_ptr_orig, macro_def, stack_size)
 SPROG		*sp_ptr_orig;	/* ptr to original state program table */
 char		*macro_def;	/* macro def'n string */
 int		stack_size;	/* stack size */
@@ -92,12 +112,9 @@ int		stack_size;	/* stack size */
 
 	/* Parse the macro definitions from the command line */
 	seqMacParse(macro_def, sp_ptr);
-#ifdef	DEBUG
-	print_macro_defs(sp_ptr->mac_ptr);
-#endif	DEBUG
 
 	/* Initialize sequencer logging */
-	seqLogInit(sp_ptr);
+	seq_logInit(sp_ptr);
 
 	/* Specify stack size */
 	pname = "stack";
@@ -118,33 +135,17 @@ int		stack_size;	/* stack size */
 		ptask_name = sp_ptr->name;
 
 	/* Spawn the sequencer main task */
-	seqLog(sp_ptr, "Spawning state program \"%s\", task name = \"%s\"\n",
+	seq_log(sp_ptr, "Spawning state program \"%s\", task name = \"%s\"\n",
 	 sp_ptr->name, ptask_name);
 
 	status = taskSpawn(ptask_name, SPAWN_PRIORITY, SPAWN_OPTIONS,
 	 stack_size, sequencer, sp_ptr, stack_size, ptask_name);
-	seqLog(sp_ptr, "  Task id = %d = 0x%x\n", status, status);
+	seq_log(sp_ptr, "  Task id = %d = 0x%x\n", status, status);
 
 	return status;
 }
 
 #ifdef	DEBUG
-print_macro_defs(mac_ptr)
-MACRO		*mac_ptr;
-{
-	int		i;
-
-	printf("Macro definitions:\n");
-
-	for (i = 0; i < MAX_MACROS; i++, mac_ptr++)
-	{
-		if (mac_ptr->name != NULL)
-		{
-			printf("  %s = %s\n", mac_ptr->name, mac_ptr->value);
-		}
-	}
-}
-
 print_sp_info(sp_ptr)
 SPROG		*sp_ptr;
 {
@@ -265,7 +266,7 @@ SPROG	*sp_ptr_orig;	/* original state program structure */
 /* Copy the SSCB, STATE, and CHAN structures into this task.
 Note: we have to change the pointers in the SPROG struct, user variables,
  and all SSCB structs */
-LOCAL copy_sprog(sp_ptr_orig, sp_ptr)
+LOCAL VOID copy_sprog(sp_ptr_orig, sp_ptr)
 SPROG		*sp_ptr_orig;	/* original ptr to program struct */
 SPROG		*sp_ptr;	/* new ptr */
 {
@@ -318,16 +319,14 @@ SPROG		*sp_ptr;	/* new ptr */
 
 	/* Note:  user area is not copied; it should be all zeros */
 
-	return 0;
+	return;
 }
 /* Initialize state program block */
-LOCAL init_sprog(sp_ptr)
+LOCAL VOID init_sprog(sp_ptr)
 SPROG	*sp_ptr;
 {
-	/* Semaphore for resource locking on events */
-	sp_ptr->sem_id = semCreate();
-	semInit(sp_ptr->sem_id);
-	semGive(sp_ptr->sem_id);
+	/* Semaphore for resource locking on CA events */
+	sp_ptr->caSemId = semMCreate(SEM_INVERSION_SAFE | SEM_DELETE_SAFE);
 
 	sp_ptr->task_is_deleted = FALSE;
 	sp_ptr->logFd = 0;
@@ -336,7 +335,7 @@ SPROG	*sp_ptr;
 }
 
 /* Initialize state set control blocks */
-LOCAL init_sscb(sp_ptr)
+LOCAL VOID init_sscb(sp_ptr)
 SPROG	*sp_ptr;
 {
 	SSCB	*ss_ptr;
@@ -346,16 +345,15 @@ SPROG	*sp_ptr;
 	for (nss = 0; nss < sp_ptr->nss; nss++, ss_ptr++)
 	{
 		ss_ptr->task_id = 0;
-		ss_ptr->sem_id = semCreate();
-		semInit(ss_ptr->sem_id);
-		semGive(ss_ptr->sem_id);
+		/* Create a binary semaphore for synchronizing events in a SS */
+		ss_ptr->syncSemId = semBCreate(SEM_Q_PRIORITY | SEM_DELETE_SAFE);
 		ss_ptr->current_state = 0; /* initial state */
 		ss_ptr->next_state = 0;
 		ss_ptr->action_complete = TRUE;
 		for (i = 0; i < NWRDS; i++)
 			ss_ptr->events[i] = 0;		/* clear events */
 	}
-	return 0;
+	return;
 }
 
 /* Allocate memory from scratch area (always round up to even no. bytes) */
@@ -379,16 +377,14 @@ int		nChar;
 		return NULL;
 }
 /* Initialize logging */
-seqLogInit(sp_ptr)
+LOCAL VOID seq_logInit(sp_ptr)
 SPROG		*sp_ptr;
 {
 	char		*pname, *pvalue, *seqMacValGet();
 	int		fd;
 
-	/* Create a resource locking semaphore */
-	sp_ptr->logSemId = semCreate();
-	semInit(sp_ptr->logSemId);
-	semGive(sp_ptr->logSemId);
+	/* Create a logging resource locking semaphore */
+	sp_ptr->logSemId = semMCreate(SEM_INVERSION_SAFE | SEM_DELETE_SAFE);
 
 	sp_ptr->logFd = ioGlobalStdGet(1); /* default fd is std out */
 
@@ -404,9 +400,9 @@ SPROG		*sp_ptr;
 	}
 }
 
-/* Log a message to the console or a file with time of day and task id */
+/* Log a message to the console or a file with time of day and task id */
 #include	"tsDefs.h"
-seqLog(sp_ptr, fmt, arg1, arg2, arg3, arg4, arg5, arg6)
+VOID seq_log(sp_ptr, fmt, arg1, arg2, arg3, arg4, arg5, arg6)
 SPROG		*sp_ptr;
 char		*fmt;		/* format string */
 int		arg1, arg2, arg3, arg4, arg5, arg6; /* arguments */
@@ -423,8 +419,8 @@ int		arg1, arg2, arg3, arg4, arg5, arg6; /* arguments */
 	/* Truncate the .nano-secs part */
 	timeBfr[17] = 0;
 
-	/* Lock seqLog resource */
-	semTake(sp_ptr->logSemId, 0);
+	/* Lock seq_log resource */
+	semTake(sp_ptr->logSemId, WAIT_FOREVER);
 
 	/* Print the message: e.g. "10:23:28 T13: ...." */
 	fd = sp_ptr->logFd;
@@ -440,5 +436,54 @@ int		arg1, arg2, arg3, arg4, arg5, arg6; /* arguments */
 		ioctl(fd, FIOSYNC);
 	}
 
-	return 0;
+	return;
 }
+/* seqLog() - State program interface to seq_log() */
+VOID seqLog(fmt, arg1, arg2, arg3, arg4, arg5, arg6)
+char		*fmt;		/* format string */
+int		arg1, arg2, arg3, arg4, arg5, arg6; /* arguments */
+{
+	extern SPROG		*seq_task_ptr;
+
+	if (seq_task_ptr == ERROR)
+		return;
+	seq_log(seq_task_ptr, fmt, arg1, arg2, arg3, arg4, arg5, arg6);
+}
+
+/* seq_flagGet: get the value of a flag ("-" -> FALSE; "+" -> TRUE) */
+BOOL seq_flagGet(sp_ptr, flag)
+SPROG		*sp_ptr;
+char		*flag; /* one of the snc flags as a strign (e.g. "a") */
+{
+	switch (flag[0])
+	{
+	    case 'a': return sp_ptr->async_flag;
+	    case 'c': return sp_ptr->conn_flag;
+	    case 'd': return sp_ptr->debug_flag;
+	    case 'r': return sp_ptr->reent_flag;
+	    default:  return FALSE;
+	}
+}
+
+#ifdef	VX4
+/* Fake Vx5.0 semaphore creation */
+SEM_ID semMCreate(flags)
+int		flags;
+{
+	SEM_ID		semId;
+
+	semId = semCreate();
+	semInit(semId);
+	semGive(semId);
+	return(semId);
+}
+SEM_ID semBCreate(flags)
+int		flags;
+{
+	SEM_ID		semId;
+
+	semId = semCreate();
+	semInit(semId);
+	return(semId);
+}
+#endif	VX4

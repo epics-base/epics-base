@@ -4,7 +4,7 @@
 	Copyright, 1990, The Regents of the University of California.
 		         Los Alamos National Laboratory
 
-	@(#)snc.y	1.2	4/17/91
+	$Id$
 	ENVIRONMENT: UNIX
 ***************************************************************************/
 /*	SNC - State Notation Compiler.
@@ -54,19 +54,21 @@ extern	int line_num; /* input file line no. */
 %token	MONITOR ASSIGN TO WHEN CHAR SHORT INT LONG FLOAT DOUBLE STRING_DECL
 %token	EVFLAG SYNC
 %token	ASTERISK AMPERSAND
+%token	AUTO_INCR AUTO_DECR
 %token	PLUS MINUS SLASH GT GE EQ LE LT NE NOT BIT_OR BIT_AND
 %token	L_SHIFT R_SHIFT COMPLEMENT MODULO
 %token	PLUS_EQUAL MINUS_EQUAL MULT_EQUAL DIV_EQUAL AND_EQUAL OR_EQUAL
 %token	MODULO_EQUAL LEFT_EQUAL RIGHT_EQUAL CMPL_EQUAL
 %token	<pchar>	STRING
 %token	<pchar>	C_STMT
-%token	IF ELSE WHILE
+%token	IF ELSE WHILE FOR BREAK
 %token	PP_SYMBOL CR
 %type	<ival>	type
 %type	<pchar>	subscript binop asgnop unop
 %type	<pexpr> state_set_list state_set state_list state transition_list transition
 %type	<pexpr> parameter expr
 %type	<pexpr> statement stmt_list compound_stmt if_stmt else_stmt while_stmt
+%type	<pexpr> for_stmt
 /* precidence rules for expr evaluation */
 %left	OR AND
 %left	GT GE EQ NE LE LT
@@ -188,6 +190,10 @@ expr	/* general expr: e.g. (-b+2*a/(c+d)) != 0 || (func1(x,y) < 5.0) */
 :	expr binop expr 		{ $$ = expression(E_BINOP, $2, $1, $3); }
 |	expr asgnop expr		{ $$ = expression(E_ASGNOP, $2, $1, $3); }
 |	unop expr  %prec UOP		{ $$ = expression(E_UNOP, $1, $2, 0); }
+|	AUTO_INCR expr  %prec UOP	{ $$ = expression(E_PRE, "++", $2, 0); }
+|	AUTO_DECR expr  %prec UOP	{ $$ = expression(E_PRE, "--", $2, 0); }
+|	expr AUTO_INCR  %prec UOP	{ $$ = expression(E_POST, "++", $1, 0); }
+|	expr AUTO_DECR  %prec UOP	{ $$ = expression(E_POST, "--", $1, 0); }
 |	NUMBER				{ $$ = expression(E_CONST, $1, 0, 0); }
 |	STRING				{ $$ = expression(E_STRING, $1, 0, 0); }
 |	NAME				{ $$ = expression(E_VAR, $1, 0, 0); }
@@ -226,6 +232,7 @@ binop	/* Binary operators */
 |	BIT_AND		{ $$ = "&"; }
 |	COMPLEMENT	{ $$ = "^"; }
 |	MODULO		{ $$ = "%"; }
+|	COMMA		{ $$ = ","; }
 ;
 
 asgnop	/* Assignment operators */
@@ -261,10 +268,12 @@ stmt_list
 
 statement
 :	compound_stmt			{ $$ = $1; }
-|	expr SEMI_COLON			{ $$ = expression(E_STMT, "",$1, 0); }
+|	expr SEMI_COLON			{ $$ = expression(E_STMT, "", $1, 0); }
+|	BREAK SEMI_COLON		{ $$ = expression(E_BREAK, "", 0, 0); }
 |	if_stmt				{ $$ = $1; }
 |	else_stmt			{ $$ = $1; }
 |	while_stmt			{ $$ = $1; }
+|	for_stmt			{ $$ = $1; }
 |	C_STMT				{ $$ = expression(E_TEXT, "", $1, 0); }
 |	pp_code				{ $$ = 0; }
 |	error 				{ snc_err("action statement"); }
@@ -280,6 +289,12 @@ else_stmt
 
 while_stmt
 :	WHILE L_PAREN expr R_PAREN statement { $$ = expression(E_WHILE, "", $3, $5); }
+;
+
+for_stmt
+:	FOR L_PAREN expr SEMI_COLON expr SEMI_COLON expr R_PAREN statement
+	{ $$ = expression(E_FOR, "", expression(E_X, "", $3, $5),
+				expression(E_X, "", $7, $9) ); }
 ;
 
 pp_code		/* pre-processor code (e.g. # 1 "test.st") */

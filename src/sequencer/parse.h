@@ -3,7 +3,7 @@
 	Copyright, 1989, The Regents of the University of California.
 		         Los Alamos National Laboratory
 
-	@(#)parse.h	1.2	4/17/91
+	$Id$
 	DESCRIPTION: Structures for parsing the state notation language.
 	ENVIRONMENT: UNIX
 ***************************************************************************/
@@ -93,7 +93,7 @@ Expr		*expression(), *link_expr();
 #define	E_BINOP		6		/* binary operator: expr OP expr */
 #define	E_ASGNOP	7		/* assign operatro:  (=, +=, *=, etc.) */
 #define	E_PAREN		8		/* parenthesis around an expression */
-#define	E_SUBSCR	9	/* subscript */
+#define	E_SUBSCR	9		/* subscript */
 #define	E_TEXT		10		/* C code or other text to be inserted */
 #define	E_STMT		11		/* simple statement */
 #define	E_CMPND		12		/* begin compound statement: {...} */
@@ -103,3 +103,9 @@ Expr		*expression(), *link_expr();
 #define	E_SS		16		/* state set statement */
 #define	E_STATE		17		/* state statement */
 #define	E_WHEN		18		/* when statement */
+#define	E_FOR		19		/* for statement */
+#define	E_X		20		/* eXpansion (e.g. for(;;) */
+#define	E_PRE		21		/* ++expr or --expr */
+#define	E_POST		22		/* expr++ or expr-- */
+#define	E_BREAK		23		/* break stmt */
+#define	E_COMMA		24		/* expr , expr */

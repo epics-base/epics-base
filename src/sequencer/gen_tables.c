@@ -168,6 +168,8 @@ int		index;
 
 	printf("0, ");			/* event id supplied by CA */
 
+	printf("0, ");			/* getSemId */
+
 	printf("&%s", prog_name);	/* ptr to state program structure */
 
 	return;
@@ -256,7 +258,7 @@ gen_state_prog_table()
 
 	printf("\t1,\t/* relative task priority */\n");
 
-	printf("\t0,\t/* sem_id */\n");
+	printf("\t0,\t/* caSemId */\n");
 
 	printf("\tdb_channels,\t/* *channels */\n");
 
@@ -320,7 +322,9 @@ gen_sscb_array()
 
 		printf("\t/* State set \"%s\"*/\n", ssp->value);
 
-		printf("\t0, 1, 0,\t/* task_id, task_prioity, sem_id */\n");
+		printf("\t0, 1,\t/* task_id, task_prioity */\n");
+
+		printf("\t0, 0,\t/* caSemId, getSemId */\n");
 
 		nstates = exprCount(ssp->left);
 		printf("\t%d, state_%s,\t/* num_states, *states */\n", nstates,

@@ -3,19 +3,31 @@
 	Copyright, 1990, The Regents of the University of California.
 		         Los Alamos National Laboratory
 
-	@(#)seq_mac.c	1.3	4/23/91
+	$Id$
 	DESCRIPTION: Macro routines for Sequencer.
 
 	ENVIRONMENT: VxWorks
 ***************************************************************************/
-#include	<stdio.h>
-#include	<ctype.h>
-#include	"vxWorks.h"
 #include	"seq.h"
+
+#ifdef	ANSI
+LOCAL int macNameLth(char *);
+LOCAL int seqMacParseName(char *);
+LOCAL int seqMacParseValue(char *);
+LOCAL char *skipBlanks(char *);
+LOCAL MACRO *seqMacTblGet(char *, MACRO *);
+#else
+LOCAL int macNameLth();
+LOCAL int seqMacParseName();
+LOCAL int seqMacParseValue();
+LOCAL char *skipBlanks();
+LOCAL MACRO *seqMacTblGet();
+#endif
+
 
 /*#define	DEBUG*/
 
-/* seqMacTblInit - initialize macro table */
+/* seqMacTblInit - initialize macro table */
 seqMacTblInit(mac_ptr)
 MACRO	*mac_ptr;
 {

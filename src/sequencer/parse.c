@@ -4,7 +4,7 @@
 	Copyright, 1990, The Regents of the University of California.
 		         Los Alamos National Laboratory
 
-	@(#)parse.c	1.3	5/1/91
+	$Id$
 	DESCRIPTION: Parsing support routines for state notation compiler.
 	 The 'yacc' parser calls these routines to build the tables
 	 and linked lists, which are then passed on to the phase 2 routines.

@@ -349,7 +349,7 @@ LOCAL void logRetryInterval(char *pFN, unsigned lineno)
 /*
  *	MARK_SERVER_AVAILABLE
  */
-void mark_server_available(struct in_addr *pnet_addr)
+void mark_server_available(const struct in_addr *pnet_addr)
 {
 	chid		chan;
 	ca_real		currentPeriod;
@@ -502,7 +502,7 @@ void mark_server_available(struct in_addr *pnet_addr)
  *
  * LOCK must be applied
  */
-bhe *createBeaconHashEntry(struct in_addr *pnet_addr)
+bhe *createBeaconHashEntry(const struct in_addr *pnet_addr)
 {
 	bhe		*pBHE;
 	unsigned	index;
@@ -552,7 +552,7 @@ bhe *createBeaconHashEntry(struct in_addr *pnet_addr)
  *
  * LOCK must be applied
  */
-bhe *lookupBeaconInetAddr(struct in_addr *pnet_addr)
+bhe *lookupBeaconInetAddr (const struct in_addr *pnet_addr)
 {
 	bhe		*pBHE;
 	unsigned	index;
@@ -579,7 +579,7 @@ bhe *lookupBeaconInetAddr(struct in_addr *pnet_addr)
  *
  * LOCK must be applied
  */
-void removeBeaconInetAddr (struct in_addr *pnet_addr)
+void removeBeaconInetAddr (const struct in_addr *pnet_addr)
 {
 	bhe		*pBHE;
 	bhe		**ppBHE;

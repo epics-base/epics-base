@@ -19,7 +19,6 @@ PATH_FILTER = $(subst /,\\,$(1))
 #
 # "\ " forces gnu make to keep this as one token
 #
-MSVISC = c:\\Program\ Files\\DevStudio\\Vc
 WINLINK = link
 
 RCCMD = rc -l 0x409 $(INCLUDES) -fo $@ $<

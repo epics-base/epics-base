@@ -173,7 +173,7 @@ udpiiu::udpiiu ( epicsTimerQueueActive & timerQueue, callbackMutex & cbMutex, ca
      * broadcast address list
      */
     ellInit ( & this->dest );    // X aCC 392
-    configureChannelAccessAddressList ( &this->dest, this->sock, this->serverPort );
+    configureChannelAccessAddressList ( & this->dest, this->sock, this->serverPort );
   
     caStartRepeaterIfNotInstalled ( this->repeaterPort );
 

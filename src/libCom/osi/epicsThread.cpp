@@ -257,7 +257,7 @@ const char *epicsThread::getNameSelf ()
 
 bool epicsThread::isOkToBlock ()
 {
-    return static_cast<int>(epicsThreadIsOkToBlock());
+    return static_cast<bool>(epicsThreadIsOkToBlock());
 }
 
 void epicsThread::setOkToBlock(bool isOkToBlock)

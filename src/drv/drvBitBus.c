@@ -65,6 +65,12 @@
  * This driver currently needs work on error message generation.
  *
  * $Log$
+ * Revision 1.35  1994/12/12  16:02:57  winans
+ * Rewrote the init code so that it always returns a zero (don't kill the
+ * startup.cmd file.)  It is possible that this could cause some confusion
+ * to the database, should it decide to then use a link that did not init
+ * properly.
+ *
  * Revision 1.34  1994/10/19  18:31:22  winans
  * ANSIfied the bitbus driver so that the compiler stopped warning about
  * exery third line of code.
@@ -163,7 +169,7 @@ int	XycomMaxOutstandMsgs = XYCOM_BB_MAX_OUTSTAND_MSGS;
  *		To disable this feature, set one of them to -1.
  *
  *****************************************************************************/
-int	bbDebug = 0;
+int	bbDebug = 1;
 int	bbDebugLink=-1;
 int	bbDebugNode=-1;
 
@@ -434,7 +440,7 @@ STATIC long reportBB(void)
 {
   int	i;
 
-  if (bbDebug)
+  if (bbDebug>1)
     printf("Bitbus debugging flag is set to %d\n", bbDebug);
 
   for (i=0; i< BB_NUM_LINKS; i++)
@@ -483,8 +489,10 @@ pepReset(int link)
 
   taskDelay(20);                   /* give the 80152 time to self check */
 
-  if ((pBBLink[link]->l.PepLink.bbRegs->stat_ctl & 0x10) != 0x0) {
-    printf("pepReset(%d): PB-BIT firmware reset failed!\n", link);
+  if ((pBBLink[link]->l.PepLink.bbRegs->stat_ctl & 0x10) != 0x0) 
+  {
+    if (bbDebug)
+      printf("pepReset(%d): PB-BIT firmware reset failed!\n", link);
     return(ERROR);
   }
 
@@ -495,7 +503,8 @@ pepReset(int link)
 
   if (!j) 
   {
-    printf("pepReset(%d): receive fifo will not clear after reset!\n", link);
+    if (bbDebug)
+      printf("pepReset(%d): receive fifo will not clear after reset!\n", link);
     return(ERROR);
   }
 
@@ -547,7 +556,8 @@ STATIC int xvmeReset(int link)
 
   if (!j)
   {
-    printf("xvmeReset(%d): Command buffer will not clear after reset!\n", link);
+    if (bbDebug)
+      printf("xvmeReset(%d): Command buffer will not clear after reset!\n", link);
     return(ERROR);
   }
 
@@ -557,13 +567,15 @@ STATIC int xvmeReset(int link)
 
   if (!j)
   {
-    printf("xvmeReset(%d): Data buffer will not clear after reset!\n", link);
+    if (bbDebug)
+      printf("xvmeReset(%d): Data buffer will not clear after reset!\n", link);
     return(ERROR);
   }
 
   if ((pBBLink[link]->l.XycomLink.bbRegs->fifo_stat & XVME_FSVALID) != XVME_FSIDLE)
   {
-    printf("xvmeReset(%d): XVME board not returning to idle status after reset!\n", link);
+    if (bbDebug)
+      printf("xvmeReset(%d): XVME board not returning to idle status after reset!\n", link);
     return(ERROR);
   }
 
@@ -861,7 +873,8 @@ xvmeRxTask(int link)
 	      { /* something bad happened... inject a delay to the */
 		/* requested timeout duration. */
 
-		printf("xvmeRxTask(%d): 0x91 from node %d, invoking synthetic delay\n", link, rxHead[2]);
+		if (bbDebug)
+		  printf("xvmeRxTask(%d): 0x91 from node %d, invoking synthetic delay\n", link, rxHead[2]);
 		(pBBLink[link]->syntheticDelay[rxDpvtHead->txMsg.node]) = rxDpvtHead->retire;
 		pBBLink[link]->DelayCount++;
               }
@@ -907,17 +920,6 @@ xvmeRxTask(int link)
 
         rxDpvtHead->status = BB_OK;	/* OK, unless BB_LENGTH */
         rxState = BBRX_DATA;		/* finish reading till RCMD */
-
-#if 0
-	  if (bbDebug)
-	  {
-            printf("xvmeRxTask(%d): msg from node %d unsolicited!\nHeader:", link, rxHead[2]);
-	    rxDpvtHead->rxMsg.length = 7;	/* we just have the header now */
-	    drvBitBusDumpMsg(&(rxDpvtHead->rxMsg));
-	  }
-	  semGive(pXvmeLink[link]->pbbLink->busyList.sem);
-          rxState = BBRX_IGN;	/* nothing waiting... toss it */
-#endif
       }
       break;
 
@@ -950,7 +952,8 @@ xvmeRxTask(int link)
       if (rxDpvtHead == NULL)
       {
         ch = pBBLink[link]->l.XycomLink.bbRegs->cmnd;
-        printf("xvmeRxTask(%d): got unexpected XVME_RCMD\n", link);
+	if (bbDebug)
+          printf("xvmeRxTask(%d): got unexpected XVME_RCMD\n", link);
 #ifdef BB_SUPER_DEBUG
           BBSetHistEvent(link, NULL, XACT_HIST_STATE_RX_URCMD);
 #endif
@@ -960,7 +963,7 @@ xvmeRxTask(int link)
 	rxDpvtHead->status = BB_OK;
 	rxDpvtHead->rxCmd = pBBLink[link]->l.XycomLink.bbRegs->cmnd;
 
-	/* if (bbDebug) */
+	if (bbDebug)
 	{
           printf("xvmeRxTask(%d): msg from node %d unsolicited:", link, rxDpvtHead->rxMsg.node);
 	  drvBitBusDumpMsg(&(rxDpvtHead->rxMsg));
@@ -1023,14 +1026,14 @@ xvmeRxTask(int link)
     /* Tell the watch dog I am ready for the reset (reset in the dog task) */
     pBBLink[link]->rxAbortAck = 1;
 
-    /* if (bbDebug) */
+    if (bbDebug)
       printf("xvmeRxTask(%d): resetting due to abort status\n", link);
 
     /* wait for link state to become active again */
     while (pBBLink[link]->abortFlag != 0)
       taskDelay(RESET_POLL_TIME);
 
-    /* if bbDebug) */
+    if (bbDebug)
       printf("xvmeRxTask(%d): restarting after abort\n", link);
   }
   }
@@ -1149,7 +1152,7 @@ xvmeWdTask(int link)
 	/* Get rid of the request and set error status etc... */
 	listDel(&(pBBLink[link]->busyList), pnode);
 
-	/*if (bbDebug)*/
+	if (bbDebug)
 	{
 #ifdef BB_SUPER_DEBUG
           BBSetHistEvent(link, pnode, XACT_HIST_STATE_WD_TIMEOUT);
@@ -1187,7 +1190,8 @@ xvmeWdTask(int link)
 	{ /* Send out a RAC_NODE_OFFLINE to the controller */
 	  semGive(pBBLink[link]->busyList.sem);
 
-printf("issuing a node offline for link %d node %d\n", link, resetNodeData);
+	  if (bbDebug)
+	    printf("issuing a node offline for link %d node %d\n", link, resetNodeData);
 
 	  semTake(pBBLink[link]->queue[BB_Q_HIGH].sem, WAIT_FOREVER);
 	  listAddHead(&(pBBLink[link]->queue[BB_Q_HIGH]), &resetNode);
@@ -1197,7 +1201,8 @@ printf("issuing a node offline for link %d node %d\n", link, resetNodeData);
 
 	  if (semTake(syncSem, sysClkRateGet()/4) == ERROR)
           {
-	    printf("xvmeWdTask(%d): link dead, trying manual reboot\n", link);
+	    if (bbDebug)
+	      printf("xvmeWdTask(%d): link dead, trying manual reboot\n", link);
 	    pBBLink[link]->nukeEm = 1;
 
             pBBLink[link]->abortFlag = 1; /* Start the abort sequence */
@@ -1301,13 +1306,13 @@ xvmeTxTask(int link)
       BBSetHistEvent(link, NULL, XACT_HIST_STATE_TX_ABORT);
 #endif
 
-      /* if (bbDebug) */
+      if (bbDebug)
         printf("xvmeTxTask(%d): resetting due to abort status\n", link);
 
       while (pBBLink[link]->abortFlag != 0)
         taskDelay(RESET_POLL_TIME);	/* wait for link to reset */
 
-      /* if (bbDebug) */
+      if (bbDebug)
         printf("xvmeTxTask(%d): restarting after abort\n", link);
     }
     else
@@ -1340,7 +1345,8 @@ xvmeTxTask(int link)
 	    if ((pBBLink[link]->syntheticDelay[pnode->txMsg.node] != 0)
 		&& (pBBLink[link]->syntheticDelay[pnode->txMsg.node] < now))
 	    {
-	      printf("xvmeTxTask(%d): terminating synthetic idle on node %d\n", link, pnode->txMsg.node);
+	      if (bbDebug)
+	        printf("xvmeTxTask(%d): terminating synthetic idle on node %d\n", link, pnode->txMsg.node);
 	      (pBBLink[link]->deviceStatus[pnode->txMsg.node])--;
 	      pBBLink[link]->syntheticDelay[pnode->txMsg.node] = 0;
 	      pBBLink[link]-> DelayCount--;
@@ -1412,7 +1418,7 @@ xvmeTxTask(int link)
 #ifdef BB_SUPER_DEBUG
               BBSetHistEvent(link, pnode, XACT_HIST_STATE_TX_RESET);
 #endif
-              /* if (bbDebug) */
+              if (bbDebug)
                 printf("xvmeTxTask(%d): RAC_RESET_SLAVE sent, resetting node %d\n", link, pnode->txMsg.node);
   
 	      pnode->status = BB_OK;
@@ -1486,8 +1492,11 @@ xvmeTxTask(int link)
 #ifdef BB_SUPER_DEBUG
             BBSetHistEvent(link, pnode, XACT_HIST_STATE_TX_ABORT);
 #endif
-	    printf("Message in progress when abort issued:\n");
-	    drvBitBusDumpMsg(&pnode->txMsg);
+	    if (bbDebug)
+	    {
+	      printf("Message in progress when abort issued:\n");
+	      drvBitBusDumpMsg(&pnode->txMsg);
+	    }
 	  }
 /* BUG -- I don't really need this */
 	/* break;*/			/* stop checking the fifo queues */
@@ -1510,7 +1519,7 @@ xvmeTxTask(int link)
  ******************************************************************************/
 STATIC int txStuck(int link)
 {
-  /* if (bbDebug) */
+  if (bbDebug)
     printf("bitbus transmitter task stuck, resetting link %d\n", link);
 
   bbReset(link);
@@ -1538,14 +1547,6 @@ STATIC long qBBReq(struct  dpvtBitBusHead *pdpvt, int prio)
     errMessage(S_BB_badPrio, message);
     return(ERROR);
   }
-#if 0
-  if (checkLink(pdpvt->link) == ERROR)
-  {
-    sprintf(message, "invalid link requested in call to qbbreq(%8.8X, %d)\n", pdpvt, prio);
-    errMessage(S_BB_rfu1, message);
-    return(ERROR);
-  }
-#else
   if (checkLink(pdpvt->link) == ERROR)
   {
     if (pdpvt->link >= BB_NUM_LINKS)
@@ -1561,7 +1562,6 @@ STATIC long qBBReq(struct  dpvtBitBusHead *pdpvt, int prio)
     }
     return(ERROR);
   }
-#endif
 
 #ifdef BB_SUPER_DEBUG
   BBSetHistEvent(pdpvt->link, pdpvt, XACT_HIST_STATE_QUEUE);
@@ -1960,7 +1960,8 @@ pepRxTask(int link)
 		if (rxHead[6] == 0x91)
 		{ /* something bad happened... inject a delay to the */
 		  /* requested timeout duration. */
-		  printf("pepRxTask(%d): 0x91 from node %d, invoking synthetic delay\n", link, rxHead[4]);
+		  if (bbDebug)
+		    printf("pepRxTask(%d): 0x91 from node %d, invoking synthetic delay\n", link, rxHead[4]);
 		  (pBBLink[link]->syntheticDelay[rxDpvtHead->txMsg.node]) = rxDpvtHead->retire;
 		  pBBLink[link]->DelayCount++;
 		}
@@ -2005,21 +2006,6 @@ pepRxTask(int link)
 
 	  rxDpvtHead->status = BB_OK;     /* OK, unless BB_LENGTH */
 	  rxState = BBRX_DATA;            /* finish reading till RCMD */
-
-#if 0	/* relocated to later spot in function */
-	  if (rxDpvtHead == NULL) 
-	  {
-	    if (bbDebug > 9) 
-	    {
-	      printf("pepRxTask(%d): msg from node %d unsolicited!\n", 
-		     link, rxHead[4]);
-	      printf("contents: %2.2x %2.2x %2.2x %2.2x %2.2x\n",rxHead[2],
-		     rxHead[3],rxHead[4],rxHead[5],rxHead[6]);
-	    }
-	    semGive(pXvmeLink[link]->pbbLink->busyList.sem);
-	    rxState = BBRX_IGN;	              /* nothing waiting... toss it */
-	  }
-#endif
 	}
 	break;
 	
@@ -2059,7 +2045,7 @@ pepRxTask(int link)
 	else if (rxDpvtHead == &UselessMsg)
 	{
           rxDpvtHead->status = BB_OK;
-          /* if (bbDebug) */
+          if (bbDebug)
           {
             printf("pepRxTask(%d): msg from node %d unsolicited:\n", link, rxDpvtHead->rxMsg.node);
             drvBitBusDumpMsg(&(rxDpvtHead->rxMsg));
@@ -2122,15 +2108,15 @@ pepRxTask(int link)
       /* Tell the watch dog I am ready for the reset (reset in the dog task) */
       pBBLink[link]->rxAbortAck = 1;
       
-      /* if (bbDebug) */
-      printf("pepRxTask(%d): resetting due to abort status\n", link);
+      if (bbDebug)
+        printf("pepRxTask(%d): resetting due to abort status\n", link);
       
       /* wait for link state to become active again */
       while (pBBLink[link]->abortFlag != 0)
 	taskDelay(RESET_POLL_TIME);
       
-      /* if bbDebug) */
-      printf("pepRxTask(%d): restarting after abort\n", link);
+      if (bbDebug)
+        printf("pepRxTask(%d): restarting after abort\n", link);
     }
   }
 }
@@ -2248,9 +2234,11 @@ STATIC int pepWdTask(int link)
 #ifdef BB_SUPER_DEBUG
         BBSetHistEvent(link, pnode, XACT_HIST_STATE_WD_TIMEOUT);
 #endif
-	/* printf("pepWdTask(%d): TIMEOUT on xact 0x%8.8X\n", link, pnode);*/
-	printf("pepWdTask(%d): TIMEOUT on bitbus message:\n", link);
-	drvBitBusDumpMsg(&pnode->txMsg);
+	if (bbDebug)
+	{
+	  printf("pepWdTask(%d): TIMEOUT on bitbus message:\n", link);
+	  drvBitBusDumpMsg(&pnode->txMsg);
+	}
 	
 	/* BUG -- do this here or defer until RX gets a response? */
         (pBBLink[link]->deviceStatus[pnode->txMsg.node])--; /* fix device status */
@@ -2299,8 +2287,11 @@ STATIC int pepWdTask(int link)
 
 	  semGive(pBBLink[link]->linkEventSem); /* Tell TxTask to send the messages */
 
-	  if (semTake(syncSem, (sysClkRateGet()) ) == ERROR) {
-	    printf("pepWdTask(%d): link dead, trying manual reboot\n", link);
+	  if (semTake(syncSem, (sysClkRateGet()) ) == ERROR) 
+	  {
+	    if (bbDebug)
+	      printf("pepWdTask(%d): link dead, trying manual reboot\n", link);
+
 	    pBBLink[link]->nukeEm = 1;
             pBBLink[link]->abortFlag = 1;
             semGive(pBBLink[link]->linkEventSem);
@@ -2388,7 +2379,7 @@ STATIC int pepTxTask(int link)
   register	int	x;
   unsigned	long	now;
   
-  if (bbDebug)
+  if (bbDebug>1)
     printf("pepTxTask started for link %d\n", link);
 
   while(1) {
@@ -2400,12 +2391,14 @@ STATIC int pepTxTask(int link)
       BBSetHistEvent(link, NULL, XACT_HIST_STATE_TX_ABORT);
 #endif
       
-      printf("pepTxTask(%d): resetting due to abort status\n", link);
+      if (bbDebug)
+        printf("pepTxTask(%d): resetting due to abort status\n", link);
       
       while (pBBLink[link]->abortFlag != 0)
 	taskDelay(RESET_POLL_TIME);	/* wait for link to reset */
       
-      printf("pepTxTask(%d): restarting after abort\n", link);
+      if (bbDebug)
+        printf("pepTxTask(%d): restarting after abort\n", link);
     }
     else
     {
@@ -2435,7 +2428,8 @@ STATIC int pepTxTask(int link)
 	    if ((pBBLink[link]->syntheticDelay[pnode->txMsg.node] != 0)
 		&& (pBBLink[link]->syntheticDelay[pnode->txMsg.node] < now))
 	    {
-	      printf("pepTxTask(%d): terminating synthetic idle on node %d\n", link, pnode->txMsg.node);
+	      if (bbDebug)
+	        printf("pepTxTask(%d): terminating synthetic idle on node %d\n", link, pnode->txMsg.node);
 	      (pBBLink[link]->deviceStatus[pnode->txMsg.node])--;
 	      pBBLink[link]->syntheticDelay[pnode->txMsg.node] = 0;
 	      pBBLink[link]->DelayCount--;
@@ -2519,7 +2513,8 @@ STATIC int pepTxTask(int link)
 #ifdef BB_SUPER_DEBUG
               BBSetHistEvent(link, pnode, XACT_HIST_STATE_TX_RESET);
 #endif
-	      printf("pepTxTask(%d): RAC_RESET_SLAVE sent\n", link);
+	      if (bbDebug)
+	        printf("pepTxTask(%d): RAC_RESET_SLAVE sent\n", link);
 	      
 	      pnode->status = BB_OK;
 	      

@@ -4,6 +4,8 @@ include $(TOP)/configure/CONFIG
 
 PROD_LIBS += Com
 
+USR_LIBS_hpux += cma
+
 timerTestHost_SRCS += timerTestMain.c timerTest.c
 PROD += timerTestHost
 OBJS_IOC += timerTest

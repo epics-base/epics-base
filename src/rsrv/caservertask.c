@@ -623,7 +623,7 @@ unsigned long delay_in_ticks(unsigned long prev)
 		delay = current - prev;
 	} 
 	else {
-		delay = current + (ULONG_MAX - prev);
+		delay = 1 + current + (ULONG_MAX - prev);
 	}
 
 	return delay;

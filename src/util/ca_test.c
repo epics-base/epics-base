@@ -68,7 +68,7 @@ LOCAL int capft(char *pname, char *pvalue);
 LOCAL void verify_value(chid chan_id, chtype type);
 LOCAL void print_returned(chtype type, void *pbuffer, unsigned count);
 
-static long	outstanding;
+static unsigned long	outstanding;
 
 
 /*
@@ -155,7 +155,7 @@ LOCAL int cagft(char *pname)
 	chid		chan_id;
 	int		status;
 	int		i;
-	unsigned	ntries = 10;
+	unsigned long	ntries = 10ul;
 
 	/* 
 	 *	convert name to chan id 
@@ -200,7 +200,7 @@ LOCAL int cagft(char *pname)
 	 * before returning 
 	 */
 	while(ntries){
-		unsigned oldOut;
+		unsigned long oldOut;
 
 		oldOut = outstanding;
 		ca_pend_event (5.0);
@@ -257,7 +257,7 @@ char		*pvalue
 	float			floatvalue;
 	unsigned char		charvalue;
 	double			doublevalue;
-	unsigned		ntries = 10;
+	unsigned long		ntries = 10ul;
 	int			status;
 	chid			chan_id;
 
@@ -714,7 +714,7 @@ LOCAL void print_returned(chtype type, void *pbuffer, unsigned count)
 		printf("\tValue: %d",pvalue->value);
 		if(pvalue->no_str>0) {
 			printf("\n\t%3d",pvalue->no_str);
-			for (i = 0; i < pvalue->no_str; i++)
+			for (i = 0; i < (unsigned) pvalue->no_str; i++)
 				printf("\n\t%.26s",pvalue->strs[i]);
 		}
 		break;

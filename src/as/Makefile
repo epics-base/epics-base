@@ -11,7 +11,7 @@ LIBRARY_IOC = asLibrary
 #	All systems link the libs As, Com, Db (and again Com ??),
 #	generic Unix needs also lib m:
 #
-ascheck_LIBS         := As Db Com
+PROD_LIBS         := As dbStatic Com
 As_DIR=.
 
 PROD = ascheck

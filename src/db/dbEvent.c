@@ -213,6 +213,7 @@ struct event_user *db_init_events(void)
 
   	evUser->firstque.evUser = evUser;
 	FASTLOCKINIT(&(evUser->firstque.writelock));
+    FASTLOCKINIT(&(evUser->lock));
 	evUser->ppendsem = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
 	if(!evUser->ppendsem){
 		FASTLOCKFREE(&(evUser->firstque.writelock));
@@ -227,6 +228,7 @@ struct event_user *db_init_events(void)
 		return NULL;
 	}
 	evUser->flowCtrlMode = FALSE;
+    evUser->extra_labor_busy = FALSE;
 
   	return evUser;
 }
@@ -546,7 +548,7 @@ int db_flush_extra_labor_event(
 struct event_user	*evUser
 )
 {
-	while(evUser->extra_labor){
+	while(evUser->extra_labor_busy){
 		taskDelay(sysClkRateGet());
 	}
 
@@ -567,10 +569,12 @@ EXTRALABORFUNC		func,
 void			*arg
 )
 {
-  	evUser->extralabor_sub = func;
-  	evUser->extralabor_arg = arg;
+    FASTLOCK(&evUser->lock);
+    evUser->extralabor_sub = func;
+    evUser->extralabor_arg = arg;
+    FASTUNLOCK(&evUser->lock);
 
-  	return OK;
+    return OK;
 }
 
 
@@ -579,14 +583,26 @@ void			*arg
  */
 int db_post_extra_labor(struct event_user *evUser)
 {
-	int 	status;
+    int status;
+    int doit;
 
-    	/* notify the event handler of extra labor */
-	evUser->extra_labor = TRUE;
-    	status = semGive(evUser->ppendsem);
-	assert(status == OK);
+    if ( ! evUser->extra_labor ) {
+        FASTLOCK(&evUser->lock);
+        if ( ! evUser->extra_labor ) {
+            evUser->extra_labor = TRUE;
+            doit = TRUE;
+        }
+        else {
+            doit = FALSE;
+        }
+        FASTUNLOCK(&evUser->lock);
+        if ( doit ) {
+            status = semGive(evUser->ppendsem);
+            assert(status == OK);
+        }
+    }
 
-	return OK;
+    return OK;
 }
 
 
@@ -858,16 +874,32 @@ int			init_func_arg
 	taskwdInsert((int)taskIdCurrent,NULL,NULL);
 
   	do{
+        void (*pExtraLaborSub)(void *);
+        void *pExtraLaborArg;
 		semTake(evUser->ppendsem, WAIT_FOREVER);
 
 		/*
 		 * check to see if the caller has offloaded
 		 * labor to this task
 		 */
-		if(evUser->extra_labor && evUser->extralabor_sub){
-			evUser->extra_labor = FALSE;
-			(*evUser->extralabor_sub)(evUser->extralabor_arg);
-		}
+        evUser->extra_labor_busy = TRUE;
+        if (evUser->extra_labor && evUser->extralabor_sub) {
+            FASTLOCK(&evUser->lock);
+		    if(evUser->extra_labor && evUser->extralabor_sub){
+			    evUser->extra_labor = FALSE;
+                pExtraLaborSub = evUser->extralabor_sub;
+                pExtraLaborArg = evUser->extralabor_arg;
+		    }
+            else {
+                pExtraLaborSub = NULL;
+                pExtraLaborArg = NULL;
+            }
+            FASTUNLOCK(&evUser->lock);
+		    if(pExtraLaborSub){
+			    (*pExtraLaborSub)(pExtraLaborArg);
+		    }
+        }
+        evUser->extra_labor_busy = FALSE;
 
 		for(	ev_que= &evUser->firstque; 
 			ev_que; 
@@ -950,6 +982,7 @@ int			init_func_arg
 			NULL,
 			NULL);
 	}
+	FASTLOCKFREE(&(evUser->lock));
 
 	freeListFree(dbevEventUserFreeList, evUser);
 

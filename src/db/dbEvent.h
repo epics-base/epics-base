@@ -93,6 +93,7 @@ struct event_que{
 struct event_user{
         struct event_que        firstque;       /* the first event que */
 
+        FAST_LOCK               lock;
         SEM_ID                  ppendsem;       /* Wait while empty */
         SEM_ID             	pflush_sem;	/* wait for flush */
 
@@ -110,6 +111,7 @@ struct event_user{
         unsigned char           pendexit;       /* exit pend task */
 	unsigned char		extra_labor;	/* if set call extra labor func */
 	unsigned char		flowCtrlMode;	/* replace existing monitor */
+    unsigned char       extra_labor_busy;
 };
 
 typedef void 		OVRFFUNC(void *overflow_arg, unsigned count);

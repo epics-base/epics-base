@@ -1,6 +1,6 @@
 
 
-this directory contains the generic source for 
-the EPICS ca server
+this directory contains the generic (os and io independent) source for 
+the EPICS ca server library
 
 

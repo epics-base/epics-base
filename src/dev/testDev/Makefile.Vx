@@ -1,0 +1,20 @@
+TOP = ../../../..
+include $(TOP)/config/CONFIG_BASE
+
+SRCS.c += ../devAiTestAsyn.c
+SRCS.c += ../devAoTestAsyn.c
+SRCS.c += ../devBiTestAsyn.c
+SRCS.c += ../devBoTestAsyn.c
+SRCS.c += ../devEventTestIoEvent.c
+SRCS.c += ../devHistogramTestAsyn.c
+SRCS.c += ../devMbbiTestAsyn.c
+SRCS.c += ../devMbboTestAsyn.c
+SRCS.c += ../devSiTestAsyn.c
+SRCS.c += ../devSoTestAsyn.c
+SRCS.c += ../devWfTestAsyn.c
+
+PROD = $(SRCS.c:../%.c=%.o)
+
+include $(TOP)/config/RULES.Vx
+
+

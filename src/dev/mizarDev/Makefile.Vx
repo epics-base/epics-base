@@ -1,0 +1,11 @@
+TOP = ../../../..
+include $(TOP)/config/CONFIG_BASE
+
+SRCS.c += ../devMz8310.c
+SRCS.c += ../devTimerMz8310.c
+
+PROD = $(SRCS.c:../%.c=%.o)
+
+include $(TOP)/config/RULES.Vx
+
+

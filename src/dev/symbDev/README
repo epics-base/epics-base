@@ -1,0 +1,43 @@
+README file for dev/symb directory
+----------------------------------
+
+This directory contains all files necessary to build and test a version
+of EPICS vxWorks global variable device support which uses the INST_IO
+string as the variable name specification rather than deriving the name
+from the record name.
+
+In addition to specifying a variable name, a leading "*" operator indicates
+that the variable is a pointer and a trailing "[nnnn]" indicates that an
+element of an array should be accessed.
+
+Refer to the header comments of devSymbFind.c for full details.
+
+The following files are in the release:
+
+README			This file
+
+Makefile		UAE Makefile
+Makefile.Vx		UAE vxWorks Makefile
+
+devAiSymb.c		Modified versions of standard EPICS
+devAoSymb.c		vxWorks global variable device support
+devLiSymb.c
+devLoSymb.c
+devSiSymb.c
+devSoSymb.c
+
+devSymbFind.c		New module containing parsing code
+			(includes conditionally compiled test routine)
+
+devSymbTest.c		Defines globals and a routine for test
+
+devSup.ascii		New INST_IO entries for the above six records
+
+symb.sr			Test database (works with devSymbTest.c)
+symbStartup.vws		Test vxWorks startup script
+
+
+08-Jun-96, William Lupton (wlupton@keck.hawaii.edu), CVS tag: symb-1-0
+----------------------------------------------------------------------
+
+first release

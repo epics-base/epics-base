@@ -1,0 +1,11 @@
+TOP = ../../../..
+include $(TOP)/config/CONFIG_BASE
+
+SRCS.c += ../devAoVmiVme4100.c
+SRCS.c += ../devVmic2534.c
+
+PROD = $(SRCS.c:../%.c=%.o)
+
+include $(TOP)/config/RULES.Vx
+
+

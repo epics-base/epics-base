@@ -1,0 +1,26 @@
+TOP = ../../../..
+include $(TOP)/config/CONFIG_BASE
+
+DBDINSTALL = symb.dbd
+
+SRCS.c += ../devAiSymb.c
+SRCS.c += ../devAoSymb.c
+SRCS.c += ../devBiSymb.c
+SRCS.c += ../devBoSymb.c
+SRCS.c += ../devLiSymb.c
+SRCS.c += ../devLoSymb.c
+SRCS.c += ../devMbbiSymb.c
+SRCS.c += ../devMbbiSymbRaw.c
+SRCS.c += ../devMbboSymb.c
+SRCS.c += ../devMbboSymbRaw.c
+SRCS.c += ../devSiSymb.c
+SRCS.c += ../devSoSymb.c
+SRCS.c += ../devSymbFind.c
+SRCS.c += ../devWfSymb.c
+
+PROD = $(SRCS.c:../%.c=%.o)
+LIBOBJS = $(SRCS.c:../%.c=%.o)
+LIBNAME = symb
+
+
+include $(TOP)/config/RULES.Vx

@@ -1,0 +1,15 @@
+TOP = ../../../..
+include $(TOP)/config/CONFIG_BASE
+
+SRCS.c += ../devBiMpv910.c
+SRCS.c += ../devBoMpv902.c
+SRCS.c += ../devMbbiDirectMpv910.c
+SRCS.c += ../devMbbiMpv910.c
+SRCS.c += ../devMbboDirectMpv902.c
+SRCS.c += ../devMbboMpv902.c
+
+PROD = $(SRCS.c:../%.c=%.o)
+
+include $(TOP)/config/RULES.Vx
+
+

@@ -1,0 +1,21 @@
+TOP = ../../../..
+include $(TOP)/config/CONFIG_BASE
+
+SRCS.c += ../devAiXy566Di.c
+SRCS.c += ../devAiXy566DiL.c
+SRCS.c += ../devAiXy566Se.c
+SRCS.c += ../devBiXVme210.c
+SRCS.c += ../devBoXVme220.c
+SRCS.c += ../devMbbiDirectXVme210.c
+SRCS.c += ../devMbbiXVme210.c
+SRCS.c += ../devMbboDirectXVme220.c
+SRCS.c += ../devMbboXVme220.c
+SRCS.c += ../devWfXy566Sc.c
+SRCS.c += ../devXy240.c
+
+
+PROD = $(SRCS.c:../%.c=%.o)
+
+include $(TOP)/config/RULES.Vx
+
+

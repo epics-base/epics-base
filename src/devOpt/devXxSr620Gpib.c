@@ -42,8 +42,8 @@
 #define	DSET_LO		devLoSr620Gpib
 #define	DSET_BI		devBiSr620Gpib
 #define	DSET_BO		devBoSr620Gpib
-#define	DSET_MBBO	devMbbiSr620Gpib
-#define	DSET_MBBI	devMbboSr620Gpib
+#define	DSET_MBBO	devMbboSr620Gpib
+#define	DSET_MBBI	devMbbiSr620Gpib
 #define	DSET_SI		devSiSr620Gpib
 #define	DSET_SO		devSoSr620Gpib
 

@@ -31,6 +31,9 @@
  *
  * History
  * $Log$
+ * Revision 1.10  1998/02/05 23:28:21  jhill
+ * fixed hp sompiler warnings
+ *
  * Revision 1.9  1997/06/13 09:21:52  jhill
  * fixed compiler compatibility problems
  *
@@ -157,11 +160,14 @@ public:
 			*this = addList;
 		}
 		else {
+			tsDLNode<T> *pLastNode = this->pLast;
+			tsDLNode<T> *pAddListFirstNode = addList.pFirst;
+
 			//
 			// add addList to the end of this
 			//
-			this->pLast->tsDLNode<T>::pNext = addList.pFirst;
-			addList.pFirst->tsDLNode<T>::pPrev = addList.pLast;
+			pLastNode->pNext = addList.pFirst;
+			pAddListFirstNode->pPrev = addList.pLast;
 			this->pLast = addList.pLast;
 			this->itemCount += addList.itemCount;
 		}
@@ -178,11 +184,14 @@ public:
 	//
 	void add (T &item)
 	{
-		item.tsDLNode<T>::pNext = 0;
-		item.tsDLNode<T>::pPrev = this->pLast;
+		tsDLNode<T> &node = item;
+
+		node.pNext = 0;
+		node.pPrev = this->pLast;
 
 		if (this->itemCount) {
-			this->pLast->tsDLNode<T>::pNext = &item;
+			tsDLNode<T> *pLastNode = this->pLast;
+			pLastNode->pNext = &item;
 		}
 		else {
 			this->pFirst = &item;
@@ -213,12 +222,16 @@ public:
 	//
 	void insertAfter (T &item, T &itemBefore)
 	{
-		item.tsDLNode<T>::pPrev = &itemBefore;
-		item.tsDLNode<T>::pNext = itemBefore.tsDLNode<T>::pNext;
-		itemBefore.tsDLNode<T>::pNext = &item;
+		tsDLNode<T> &node = item;
+		tsDLNode<T> &nodeBefore = itemBefore;
 
-		if (item.tsDLNode<T>::pNext) {
-			item.tsDLNode<T>::pNext->tsDLNode<T>::pPrev = &item;
+		node.pPrev = &itemBefore;
+		node.pNext = nodeBefore.pNext;
+		nodeBefore.pNext = &item;
+
+		if (node.pNext) {
+			tsDLNode<T> *pNextNode = node.pNext;
+			pNextNode->pPrev = &item;
 		}
 		else {
 			this->pLast = &item;
@@ -233,12 +246,16 @@ public:
 	//
 	void insertBefore (T &item, T &itemAfter)
 	{
-		item.tsDLNode<T>::pNext = &itemAfter;
-		item.tsDLNode<T>::pPrev = itemAfter.tsDLNode<T>::pPrev;
-		itemAfter.tsDLNode<T>::pPrev = &item;
+		tsDLNode<T> &node = item;
+		tsDLNode<T> &nodeAfter = itemAfter;
 
-		if (item.tsDLNode<T>::pPrev) {
-			item.tsDLNode<T>::pPrev->tsDLNode<T>::pNext = &item;
+		node.pNext = &itemAfter;
+		node.pPrev = nodeAfter.pPrev;
+		nodeAfter.pPrev = &item;
+
+		if (node.pPrev) {
+			tsDLNode<T> *pPrevNode = node.pPrev;
+			pPrevNode->pNext = &item;
 		}
 		else {
 			this->pFirst = &item;
@@ -252,20 +269,22 @@ public:
 	//
 	void remove (T &item)
 	{
+		tsDLNode<T> &node = item;
+
 		if (this->pLast == &item) {
-			this->pLast = item.tsDLNode<T>::pPrev;
+			this->pLast = node.pPrev;
 		}
 		else {
-			item.tsDLNode<T>::pNext->tsDLNode<T>::pPrev = 
-				item.tsDLNode<T>::pPrev; 
+			tsDLNode<T> *pNextNode = node.pNext;
+			pNextNode->pPrev = node.pPrev; 
 		}
 
 		if (this->pFirst == &item) {
-			this->pFirst = item.tsDLNode<T>::pNext;
+			this->pFirst = node.pNext;
 		}
 		else {
-			item.tsDLNode<T>::pPrev->tsDLNode<T>::pNext =
-				item.tsDLNode<T>::pNext;
+			tsDLNode<T> *pPrevNode = node.pPrev;
+			pPrevNode->pNext = node.pNext;
 		}
 		
 		this->itemCount--;
@@ -285,11 +304,13 @@ public:
 	//
 	void push (T &item)
 	{
-		item.tsDLNode<T>::pPrev = 0;
-		item.tsDLNode<T>::pNext = this->pFirst;
+		tsDLNode<T> &node = item;
+		node.pPrev = 0;
+		node.pNext = this->pFirst;
 
 		if (this->itemCount) {
-			this->pFirst->tsDLNode<T>::pPrev = &item;
+			tsDLNode<T> *pFirstNode = this->pFirst;
+			pFirstNode->pPrev = &item;
 		}
 		else {
 			this->pLast = &item;
@@ -393,7 +414,8 @@ public:
 	//
 	T *operator ++ () 
 	{
-		return this->pEntry = this->pEntry->tsDLNode<T>::pNext;
+		tsDLNode<T> *pNode = this->pEntry;
+		return this->pEntry = pNode->pNext;
 	}
 
 	//
@@ -402,7 +424,8 @@ public:
 	T *operator ++ (int) 
 	{
 		T *pE = this->pEntry;
-		this->pEntry = this->pEntry->tsDLNode<T>::pNext;
+		tsDLNode<T> *pNode = this->pEntry;
+		this->pEntry = pNode->pNext;
 		return pE;
 	}
 
@@ -411,7 +434,8 @@ public:
 	//
 	T *operator -- () 
 	{
-		return this->pEntry = pEntry->tsDLNode<T>::pPrev;
+		tsDLNode<T> *pEntryNode = pEntry;
+		return this->pEntry = pEntryNode->pPrev;
 	}
 
 	//
@@ -420,7 +444,8 @@ public:
 	T *operator -- (int) 
 	{
 		T *pE = this->pEntry;
-		this->pEntry = pEntry->tsDLNode<T>::pPrev;
+		tsDLNode<T> *pEntryNode = pEntry;
+		this->pEntry = pEntryNode->pPrev;
 		return pE;
 	}
 private:
@@ -467,7 +492,8 @@ public:
                         pCur = this->pList->pFirst;
                 }
                 else {
-                        pCur = pCur->tsDLNode<T>::pNext;
+			tsDLNode<T> *pCurNode = pCur;
+                        pCur = pCurNode->pNext;
                 }
                 this->pCurrent = pCur;
                 return pCur;
@@ -480,7 +506,8 @@ public:
 			pCur = this->pList->pLast;
 	    }
 	    else {
-			pCur = pCur->tsDLNode<T>::pPrev;
+			tsDLNode<T> *pCurNode = pCur;
+			pCur = pCurNode->pPrev;
 	    }
 	    this->pCurrent = pCur;
 	    return pCur;
@@ -547,11 +574,13 @@ public:
 	}
 	T * next () 
 	{
-		return this->tsDLIter<T>::next();
+		tsDLIter<T> &iterBase = *this;
+		return iterBase.next();
 	}
 	T * first()
 	{
-		return this->tsDLIter<T>::first();
+		tsDLIter<T> &iterBase = *this;
+		return iterBase.first();
 	}
 
 	//
@@ -568,6 +597,8 @@ public:
 		T *pCur = this->pCurrent;
 
 		if (pCur) {
+			tsDLNode<T> *pCurNode = pCur;
+
 			//
 			// strip const (we didnt declare the
 			// list const in the constructor)
@@ -578,7 +609,7 @@ public:
 			//
 			// Move this->pCurrent to the previous item
 			//
-			this->pCurrent = pCur->tsDLNode<T>::pPrev;
+			this->pCurrent = pCurNode->pPrev;
 
 			//
 			// delete current item
@@ -649,6 +680,8 @@ public:
 		T *pCur = this->pCurrent;
 
 		if (pCur) {
+			tsDLNode<T> *pCurNode = pCur;
+
 			//
 			// strip const (we didnt declare the
 			// list const in the constructor)
@@ -660,7 +693,7 @@ public:
 			// Move this->pCurrent to the item after the
 			// item being deleted 
 			//
-			this->pCurrent = pCur->tsDLNode<T>::pNext;
+			this->pCurrent = pCurNode->pNext;
 
 			//
 			// delete current item

@@ -31,6 +31,9 @@
  *
  * History
  * $Log$
+ * Revision 1.10  1998/02/18 22:53:13  jhill
+ * fixed gnu warning
+ *
  * Revision 1.9  1998/02/05 23:28:21  jhill
  * fixed hp sompiler warnings
  *
@@ -107,7 +110,8 @@ public:
 	//
 	void insert (T &item, tsSLNode<T> &itemBefore)
 	{
-		item.tsSLNode<T>::pNext = itemBefore.pNext;
+		tsSLNode<T> &node = item;
+		node.pNext = itemBefore.pNext;
 		itemBefore.pNext = &item;
 	}
 
@@ -127,9 +131,11 @@ public:
 	//
 	void remove (tsSLNode<T> &itemBefore)
 	{
-		T *pItem = itemBefore.tsSLNode<T>::pNext;
+		tsSLNode<T> &nodeBefore = itemBefore;
+		T *pItem = nodeBefore.pNext;
 		if (pItem) {
-			itemBefore.tsSLNode<T>::pNext = pItem->tsSLNode<T>::pNext;
+			tsSLNode<T> *pNode = pItem;
+			nodeBefore.pNext = pNode->pNext;
 		}
 	}
 
@@ -138,7 +144,8 @@ public:
 	//
 	T * get()
 	{
-		T *pItem = this->tsSLNode<T>::pNext;
+		tsSLNode<T> *pThisNode = this;
+		T *pItem = pThisNode->pNext;
 		this->remove(*this);
 		return pItem;
 	}

@@ -126,6 +126,7 @@
 #   include <strLib.h>
 #elif defined(VMS)
 #   include <sys/time.h>
+#   include <sys/socket.h>
 #elif defined(WIN32)
 #   include <windows.h>
 #   include <time.h>

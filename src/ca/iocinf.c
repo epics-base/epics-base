@@ -47,6 +47,9 @@
 /*			address in use so that test works on UNIX	*/
 /*			kernels that support multicast			*/
 /* $Log$
+ * Revision 1.78  1998/06/16 01:16:09  jhill
+ * allow saturated clients to poll/use new consolodated IP address routines in libCom/clean up when a server and client delete the PV simultaneously
+ *
  * Revision 1.77  1998/05/29 00:03:19  jhill
  * allow CA to run systems w/o local interface query capabilities (ie cygwin32)
  *
@@ -767,23 +770,38 @@ void notify_ca_repeater()
 	}
 
 	/*
-	 * Unfortunately on 3.13 beta 11 and before the
-	 * repeater would not always allow the loopback address
-	 * as a local client address so all clients must continue to
-	 * use the address from the first non-loopback interface 
-	 * found to communicate with the CA repeater until all
-	 * CA repeaters have been restarted.
+	 * In 3.13 beta 11 and before the CA repeater calls local_addr() 
+	 * to determine a local address and does not allow registration 
+	 * messages originating from other addresses. In these 
+	 * releases local_addr() returned the address of the first enabled
+	 * interface found, and this address may or may not have been the loop
+	 * back address. Starting with 3.13 beta 12 local_addr() was
+	 * changed to always return the address of the first enabled 
+	 * non-loopback interface because a valid non-loopback local
+	 * address is required in the beacon messages. Therefore, to 
+	 * guarantee compatibility with past versions of the repeater
+	 * we alternate between the address returned by local_addr()
+	 * and the loopback address here.
+	 *
+	 * CA repeaters in R3.13 beta 12 and higher allow
+	 * either the loopback address or the address returned
+	 * by local address (the first non-loopback address found)
 	 */
-	status = local_addr (piiuCast->sock_chan, &saddr);
-	if (status<0) {
-		/*
-		 * use the loop back address to communicate with the CA repeater
-		 * if this os does not have interface query capabilities
-		 *
-		 * this will only work with 3.13 beta 12 CA repeaters or later
-		 */
+	if (ca_static->ca_repeater_tries&1) {
+		status = local_addr (piiuCast->sock_chan, &saddr);
+		if (status<0) {
+			/*
+			 * use the loop back address to communicate with the CA repeater
+			 * if this os does not have interface query capabilities
+			 *
+			 * this will only work with 3.13 beta 12 CA repeaters or later
+			 */
+			saddr.sin_family = AF_INET;
+			saddr.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
+		}
+	}
+	else {
 		saddr.sin_family = AF_INET;
-		saddr.sin_port = htons (ca_static->ca_repeater_port);
 		saddr.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
 	}
 
@@ -792,7 +810,7 @@ void notify_ca_repeater()
 	memset((char *)&msg, 0, sizeof(msg));
 	msg.m_cmmd = htons(REPEATER_REGISTER);
 	msg.m_available = saddr.sin_addr.s_addr;
-      	saddr.sin_port = htons(ca_static->ca_repeater_port);	
+	saddr.sin_port = htons (ca_static->ca_repeater_port);	
 
 	/*
 	 * Intentionally sending a zero length message here
@@ -834,9 +852,7 @@ void notify_ca_repeater()
 				SOCKERRSTR);
 		}
 	}
-	else {
-		ca_static->ca_repeater_tries++;
-	}
+	ca_static->ca_repeater_tries++;
 
 	UNLOCK;
 }

@@ -14,13 +14,13 @@ EPICS_BASE_BIN      = $(EPICS_BASE)/bin/$(T_A)
 endif
 
 #Definitions for extensions convenience
-as_DIR              = $(EPICS_BASE_LIB)
+As_DIR              = $(EPICS_BASE_LIB)
 ca_DIR              = $(EPICS_BASE_LIB)
-Db_DIR              = $(EPICS_BASE_LIB)
-Com_DIR             = $(EPICS_BASE_LIB)
-gdd_DIR             = $(EPICS_BASE_LIB)
 cas_DIR             = $(EPICS_BASE_LIB)
-
+Com_DIR             = $(EPICS_BASE_LIB)
+db                  = $(EPICS_BASE_LIB)
+dbStaticHost_DIR    = $(EPICS_BASE_LIB)
+gdd_DIR             = $(EPICS_BASE_LIB)
 
 #---------------------------------------------------------------
 # For applications and extensions

@@ -71,6 +71,7 @@ templ: templ_head O_BRACE subst C_BRACE
 	;
 
 templ_head: DBFILE WORD
+        | DBFILE QUOTE
 	{
 		var_count=0;
 		if(db_file_name) dbmfFree(db_file_name);

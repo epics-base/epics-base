@@ -23,7 +23,7 @@
 
 #define __IOCMSG__
 
-static char	*iocmsghSccsId = "$Id$ CA version 4.3";
+static char     *iocmsghSccsId = "$Id$ CA version 4.3";
 
 /* TCP/UDP port number (bumped each protocol change) */
 #define CA_PROTOCOL_VERSION	4
@@ -54,9 +54,6 @@ static char	*iocmsghSccsId = "$Id$ CA version 4.3";
 #define IOC_WRITE		4	/* write a channel value */
 #define IOC_SNAPSHOT		5	/* snapshot of the system */
 #define	IOC_SEARCH		6	/* IOC channel search */
-#define	IOC_BUILD		7	/* Conglomerate of IOC_SEARCH */
-					/* IOC_READ */
-					/* (optimizes OPI network use)	*/
 #define IOC_EVENTS_OFF		8	/* flow control */ 
 #define IOC_EVENTS_ON		9	/* flow control */ 
 #define IOC_READ_SYNC		10	/* purge old reads */ 
@@ -65,7 +62,6 @@ static char	*iocmsghSccsId = "$Id$ CA version 4.3";
 #define IOC_RSRV_IS_UP		13	/* CA server has joined the net */
 #define IOC_NOT_FOUND		14	/* channel not found */
 #define IOC_READ_NOTIFY		15	/* add a one shot event */
-#define IOC_READ_BUILD		16	/* read accompanying a build */
 #define REPEATER_CONFIRM	17	/* registration confirmation */
 #define IOC_CLAIM_CIU		18	/* client claims resource in server */
 #define IOC_WRITE_NOTIFY	19	/* notify after write chan value */
@@ -75,7 +71,7 @@ static char	*iocmsghSccsId = "$Id$ CA version 4.3";
 #define IOC_ECHO		23	/* CA V4.3 connection verify */
 
 /*
- * for use with build and search and not_found (if search fails and
+ * for use with search and not_found (if search fails and
  * its not a broadcast tell the client to look elesewhere)
  */
 #define DOREPLY		10

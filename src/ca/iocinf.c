@@ -51,9 +51,6 @@
 /*									*/
 /*	Title:	IOC socket interface module				*/
 /*	File:	share/src/ca/iocinf.c					*/
-/*	Environment: VMS. UNIX, vxWorks					*/
-/*	Equipment: VAX, SUN, VME					*/
-/*									*/
 /*									*/
 /*	Purpose								*/
 /*	-------								*/
@@ -78,36 +75,15 @@ static char *sccsId = "$Id$";
 #include	"net_convert.h"
 #include	<netinet/tcp.h>
 
-#ifdef __STDC__
 LOCAL void 	tcp_recv_msg(struct ioc_in_use *piiu);
-LOCAL void 	cac_flush_internal();
 LOCAL void 	cac_tcp_send_msg_piiu(struct ioc_in_use *piiu);
 LOCAL void 	cac_udp_send_msg_piiu(struct ioc_in_use *piiu);
-LOCAL void 	notify_ca_repeater();
 LOCAL void 	udp_recv_msg(struct ioc_in_use *piiu);
 LOCAL void 	ca_process_tcp(struct ioc_in_use *piiu);
 LOCAL void 	ca_process_udp(struct ioc_in_use *piiu);
-LOCAL void 	ca_process_input_queue();
-LOCAL void	close_ioc(struct ioc_in_use *piiu);
 LOCAL void 	cacRingBufferInit(struct ca_buffer *pBuf, unsigned long size);
 LOCAL char	*getToken(char **ppString);
 
-#else /*__STDC__*/
-
-LOCAL void	tcp_recv_msg();
-LOCAL void   	cac_flush_internal();
-LOCAL void 	cac_tcp_send_msg_piiu();
-LOCAL void 	cac_udp_send_msg_piiu();
-LOCAL void 	notify_ca_repeater();
-LOCAL void	udp_recv_msg();
-LOCAL void 	ca_process_tcp();
-LOCAL void 	ca_process_udp();
-LOCAL void 	ca_process_input_queue();
-LOCAL void	close_ioc();
-LOCAL void 	cacRingBufferInit();
-LOCAL char 	*getToken();
-
-#endif /*__STDC__*/
 
 
 
@@ -118,19 +94,11 @@ LOCAL char 	*getToken();
  * 	allocate and initialize an IOC info block for unallocated IOC
  *
  */
-#ifdef __STDC__
 int alloc_ioc(
 struct in_addr			*pnet_addr,
 struct ioc_in_use		**ppiiu
 )
-#else
-int alloc_ioc(pnet_addr, ppiiu)
-struct in_addr			*pnet_addr;
-struct ioc_in_use		**ppiiu;
-#endif
 {
-	caAddrNode		*pNode;
-	struct ioc_in_use	*piiu;
   	int			status;
 	bhe			*pBHE;
 
@@ -148,8 +116,13 @@ struct ioc_in_use		**ppiiu;
 	}
 
 	if(pBHE->piiu){
-		*ppiiu = pBHE->piiu;
-		status = ECA_NORMAL;
+		if(pBHE->piiu->conn_up){
+			*ppiiu = pBHE->piiu;
+			status = ECA_NORMAL;
+		}
+		else{
+			status = ECA_DISCONN;
+		}
 	}
 	else{
   		status = create_net_chan(
@@ -171,18 +144,11 @@ struct ioc_in_use		**ppiiu;
  *	CREATE_NET_CHANNEL()
  *
  */
-#ifdef __STDC__
 int create_net_chan(
 struct ioc_in_use 	**ppiiu,
 struct in_addr		*pnet_addr,	/* only used by TCP connections */
 int			net_proto
 )
-#else
-int create_net_chan(ppiiu, pnet_addr, net_proto)
-struct ioc_in_use 	**ppiiu;
-struct in_addr		*pnet_addr;
-int			net_proto;
-#endif
 {
 	struct ioc_in_use	*piiu;
   	int			status;
@@ -370,19 +336,23 @@ int			net_proto;
 			UNLOCK;
         		return ECA_CONN;
       		}
+
 		cacRingBufferInit(&piiu->recv, sizeof(piiu->send.buf));
 		cacRingBufferInit(&piiu->send, sizeof(piiu->send.buf));
 
      	 	/*	
-		 * Set non blocking IO for UNIX 
+		 * Set non blocking IO  
 		 * to prevent dead locks	
 		 */
-#ifdef UNIX
         	status = socket_ioctl(
 				piiu->sock_chan,
 				FIONBIO,
-				&true);
-#endif
+				(int) &true);
+		if(status<0){
+			ca_printf(
+				"Error setting non-blocking io: %s\n",
+				strerror(MYERRNO));
+		}
 
 		/*
 		 * Save the Host name for efficient access in the
@@ -393,7 +363,6 @@ int			net_proto;
 			piiu->host_name_str,
 			sizeof(piiu->host_name_str));
 
-		piiu->timeAtLastSend = time(NULL);
 		piiu->timeAtLastRecv = time(NULL);
 
       		break;
@@ -527,7 +496,7 @@ int			net_proto;
  *	1)	local communication only (no LAN traffic)
  *
  */
-LOCAL void notify_ca_repeater()
+void notify_ca_repeater()
 {
 	struct sockaddr_in	saddr;
 	int			status;
@@ -568,12 +537,7 @@ LOCAL void notify_ca_repeater()
  *	CAC_UDP_SEND_MSG_PIIU()
  *
  */
-#ifdef __STDC__
 LOCAL void cac_udp_send_msg_piiu(struct ioc_in_use *piiu)
-#else
-LOCAL void cac_udp_send_msg_piiu(piiu)
-struct ioc_in_use 	*piiu;
-#endif
 {
 	caAddrNode	*pNode;
 	unsigned long	sendCnt;
@@ -618,7 +582,7 @@ struct ioc_in_use 	*piiu;
 					strerror(MYERRNO));
 			}
 
-			piiu->conn_up = FALSE;
+			TAG_CONN_DOWN(piiu);
 			break;
 		}
 		assert(status == sendCnt);
@@ -644,12 +608,7 @@ struct ioc_in_use 	*piiu;
  *	CAC_TCP_SEND_MSG_PIIU()
  *
  */
-#ifdef __STDC__
 LOCAL void cac_tcp_send_msg_piiu(struct ioc_in_use *piiu)
-#else
-LOCAL void cac_tcp_send_msg_piiu(piiu)
-struct ioc_in_use 	*piiu;
-#endif
 {
 	unsigned long	sendCnt;
   	int		status;
@@ -683,7 +642,7 @@ struct ioc_in_use 	*piiu;
 	if(status>=0){
 		assert(status<=sendCnt);
 
-		piiu->timeAtLastSend = time(NULL);
+		piiu->sendPending = FALSE;
 		CAC_RING_BUFFER_READ_ADVANCE(&piiu->send, status);
 		
 		sendCnt = cacRingBufferReadSize(&piiu->send, FALSE);
@@ -699,6 +658,10 @@ struct ioc_in_use 	*piiu;
 		MYERRNO == ENOBUFS ||
 		MYERRNO == EINTR){
 			UNLOCK;
+			if(!piiu->sendPending){
+				piiu->timeAtSendBlock = time(NULL);
+				piiu->sendPending = TRUE;
+			}
 			return;
 	}
 
@@ -710,7 +673,7 @@ struct ioc_in_use 	*piiu;
 			strerror(MYERRNO));
 	}
 
-	piiu->conn_up = FALSE;
+	TAG_CONN_DOWN(piiu);
 	UNLOCK;
 	return;
 }
@@ -723,7 +686,7 @@ struct ioc_in_use 	*piiu;
  * Flush the output - but dont block
  *
  */
-LOCAL void cac_flush_internal()
+void cac_flush_internal()
 {
 	register struct ioc_in_use      *piiu;
 
@@ -743,77 +706,19 @@ LOCAL void cac_flush_internal()
 	UNLOCK;
 }
 
-
-/*
- *	CA_MUX_IO()
- *
- * 	Asynch notification of incomming messages under UNIX
- *	1) Wait no longer than timeout 
- *	2) Return early if nothing outstanding
- *
- * 
- */
-#if defined(UNIX) || defined(vxWorks)
-#ifdef __STDC__
-void ca_mux_io(struct timeval  *ptimeout, int flags)
-#else
-void ca_mux_io(ptimeout, flags)
-struct timeval 	*ptimeout;
-int		flags;
-#endif
-{
-	int			count;
-	int			newInput;
-	struct timeval		timeout;
-
-  	if(!ca_static->ca_repeater_contacted){
-		notify_ca_repeater();
-	}
-
-	timeout = *ptimeout;
-	do{
-		newInput = FALSE;
-		do{
-			count = ca_select_io(&timeout, flags);
-			if(count>0){
-				newInput = TRUE;
-			}
-			timeout.tv_usec = 0;
-			timeout.tv_sec = 0;
-		}
-		while(count>0);
-
-		ca_process_input_queue();
-	}
-	while(newInput);
-}
-#endif
 
 
 /*
- * ca_select_io()
+ * cac_clean_iiu_list()
  */
-#if defined(UNIX) || defined(vxWorks)
-#ifdef __STDC__
-int ca_select_io(struct timeval  *ptimeout, int flags)
-#else
-int ca_select_io(ptimeout, flags)
-struct timeval 	*ptimeout;
-int		flags;
-#endif
+void cac_clean_iiu_list()
 {
-  	long		status;
-  	IIU		*piiu;
-	unsigned long	minfreespace;
-	unsigned long	freespace;
+	IIU *piiu;
 
 	LOCK;
+
 	piiu=(IIU *)iiuList.node.next;
 	while(piiu){
-
-		/*
-		 * clean out dead wood
-		 */
 		if(!piiu->conn_up){
 			IIU *pnextiiu;
 
@@ -822,99 +727,17 @@ int		flags;
 			piiu = pnextiiu;
 			continue;
 		}
-
-		/*
-		 * Dont bother receiving if we have insufficient
-		 * space for the maximum UDP message
-		 */
-		if(flags&CA_DO_RECVS){
-			freespace = cacRingBufferWriteSize(&piiu->recv, TRUE);
-			if(piiu->sock_proto == IPPROTO_UDP){
-				minfreespace = 
-					MAX_UDP+2*sizeof(struct udpmsglog);
-			}
-			else{
-				minfreespace = 1;
-			}
-
-			if(freespace>=minfreespace){
-       				FD_SET(piiu->sock_chan,&readch);
-			}
-		}
-
-		if(flags&CA_DO_SENDS){
-			if(cacRingBufferReadSize(&piiu->send, FALSE)>0){
-				FD_SET(piiu->sock_chan,&writech);
-			}
-		}
-
 		piiu=(IIU *)piiu->node.next;
 	}
+
 	UNLOCK;
-
-    	status = select(
-			sizeof(fd_set)*NBBY,
-			&readch,
-			&writech,
-			NULL,
-			ptimeout);
-
-	if(status<0){
-    		if(MYERRNO == EINTR){
-		}
-    		else if(MYERRNO == EWOULDBLOCK){
-			ca_printf("CAC: blocked at select ?\n");
-    		}                                           
-    		else{
-			char text[255];                                         
-     			sprintf(
-				text,
-				"CAC: unexpected select fail: %s",
-				strerror(MYERRNO)); 
-      			SEVCHK(ECA_INTERNAL,text);   
-		}
-	}
-
-	LOCK;
-	if(status>0){
-    		for(	piiu=(IIU *)iiuList.node.next;
-			piiu;
-			piiu=(IIU *)piiu->node.next){
-
-			if(!piiu->conn_up){
-				continue;
-			}
-
-      			if(flags&CA_DO_SENDS && 
-				FD_ISSET(piiu->sock_chan,&writech)){ 
-				(*piiu->sendBytes)(piiu);
-			}
-
-      			if(flags&CA_DO_RECVS && 
-				FD_ISSET(piiu->sock_chan,&readch)){
-				(*piiu->recvBytes)(piiu);
-			}
-
-			FD_CLR(piiu->sock_chan,&readch);
-			FD_CLR(piiu->sock_chan,&writech);
-		}
-	}
-	UNLOCK;
-
-	/*
-	 * manage search timers and detect disconnects
-	 */
-	manage_conn(TRUE);
-
-	return status;
 }
-#endif
 
 
 /*
  * ca_process_input_queue()
  */
-LOCAL void ca_process_input_queue()
+void ca_process_input_queue()
 {
 	struct ioc_in_use 	*piiu;
 
@@ -947,12 +770,7 @@ LOCAL void ca_process_input_queue()
  * TCP_RECV_MSG()
  *
  */
-#ifdef __STDC__
 LOCAL void tcp_recv_msg(struct ioc_in_use *piiu)
-#else
-LOCAL void tcp_recv_msg(piiu)
-struct ioc_in_use	*piiu;
-#endif
 {
 	unsigned long	writeSpace;
   	int		status;
@@ -974,7 +792,7 @@ struct ioc_in_use	*piiu;
 			writeSpace,
 			0);
 	if(status == 0){
-		piiu->conn_up = FALSE;
+		TAG_CONN_DOWN(piiu);
 		UNLOCK;
 		return;
 	}
@@ -992,7 +810,7 @@ struct ioc_in_use	*piiu;
 				"CAC: unexpected recv error (err=%s)\n",
 				strerror(MYERRNO));
 		}
-		piiu->conn_up = FALSE;
+		TAG_CONN_DOWN(piiu);
 		UNLOCK;
 		return;
     	}
@@ -1001,7 +819,7 @@ struct ioc_in_use	*piiu;
   	if(status>MAX_MSG_SIZE){
     		ca_printf(	"CAC: recv_msg(): message overflow %l\n",
 				status-MAX_MSG_SIZE);
-		piiu->conn_up = FALSE;
+		TAG_CONN_DOWN(piiu);
 		UNLOCK;
     		return;
  	}
@@ -1023,12 +841,7 @@ struct ioc_in_use	*piiu;
  * ca_process_tcp()
  *
  */
-#ifdef __STDC__
 LOCAL void ca_process_tcp(struct ioc_in_use *piiu)
-#else
-LOCAL void ca_process_tcp(piiu)
-struct ioc_in_use	*piiu;
-#endif
 {
 	caAddrNode	*pNode;
 	int		status;
@@ -1059,7 +872,7 @@ struct ioc_in_use	*piiu;
 				&piiu->recv.buf[piiu->recv.rdix],
 				bytesToProcess);
 		if(status != OK){
-			piiu->conn_up = FALSE;
+			TAG_CONN_DOWN(piiu);
 			post_msg_active--;
 			return;
 		}
@@ -1082,12 +895,7 @@ struct ioc_in_use	*piiu;
  *	UDP_RECV_MSG()
  *
  */
-#ifdef __STDC__
 LOCAL void udp_recv_msg(struct ioc_in_use *piiu)
-#else
-LOCAL void udp_recv_msg(piiu)
-struct ioc_in_use	*piiu;
-#endif
 {
   	int			status;
   	int			reply_size;
@@ -1122,7 +930,7 @@ struct ioc_in_use	*piiu;
        			return;
 		}
 		ca_printf("Unexpected UDP failure %s\n", strerror(MYERRNO));
-		piiu->conn_up = FALSE;
+		TAG_CONN_DOWN(piiu);
     	}
 	else if(status > 0){
 		unsigned long		bytesActual;
@@ -1168,12 +976,7 @@ struct ioc_in_use	*piiu;
  *	CA_PROCESS_UDP()
  *
  */
-#ifdef __STDC__
 LOCAL void ca_process_udp(struct ioc_in_use *piiu)
-#else
-LOCAL void ca_process_udp(piiu)
-struct ioc_in_use	*piiu;
-#endif
 {
   	int			status;
 	struct udpmsglog	*pmsglog;
@@ -1245,41 +1048,6 @@ struct ioc_in_use	*piiu;
   	return; 
 }
 
-
-
-
-#ifdef vxWorks
-/*
- * RECV_TASK()
- *
- */
-#ifdef __STDC__
-void cac_recv_task(int	tid)
-#else /*__STDC__*/
-void cac_recv_task(tid)
-int		tid;
-#endif /*__STDC__*/
-{
-	struct timeval	timeout;
-  	int		status;
-
-	taskwdInsert((int) taskIdCurrent, NULL, NULL);
-
-	status = ca_import(tid);
-	SEVCHK(status, NULL);
-
-	/*
-	 * once started, does not exit until
-	 * ca_task_exit() is called.
-	 */
-  	while(TRUE){
-		timeout.tv_usec = 0;
-		timeout.tv_sec = 1;
-		ca_mux_io(&timeout, CA_DO_RECVS);
-	}
-}
-#endif /*vxWorks*/
-
 
 /*
  *
@@ -1289,12 +1057,7 @@ int		tid;
  *
  *
  */
-#ifdef __STDC__
-LOCAL void close_ioc(struct ioc_in_use *piiu)
-#else /*__STDC__*/
-LOCAL void close_ioc(piiu)
-struct ioc_in_use	*piiu;
-#endif /*__STDC__*/
+void close_ioc(struct ioc_in_use *piiu)
 {
 	caAddrNode	*pNode;
   	chid		chix;
@@ -1353,17 +1116,19 @@ struct ioc_in_use	*piiu;
   	chix = (chid) &piiu->chidlist.node.next;
   	while(chix = (chid) chix->node.next){
 		LOCKEVENTS;
-    		if(chix->connection_func){
-  			struct connection_handler_args args;
+    		if(chix->pConnFunc){
+  			struct connection_handler_args 	args;
+
 			args.chid = chix;
 			args.op = CA_OP_CONN_DOWN;
-      			(*chix->connection_func)(args);
+      			(*chix->pConnFunc)(args);
     		}
-    		if(chix->access_rights_func){
-  			struct access_rights_handler_args args;
+    		if(chix->pAccessRightsFunc){
+  			struct access_rights_handler_args 	args;
+
 			args.chid = chix;
 			args.ar = chix->ar;
-      			(*chix->access_rights_func)(args);
+      			(*chix->pAccessRightsFunc)(args);
 		}
 		UNLOCKEVENTS;
 		chix->piiu = piiuCast;
@@ -1466,7 +1231,7 @@ int repeater_installed()
 
 	/*
 	 * turn on reuse only after the test so that
-	 * this works on UNIX kernels that support multicast
+	 * this works on kernels that support multicast
 	 */
 	status = setsockopt(	sock,
 				SOL_SOCKET,
@@ -1495,17 +1260,10 @@ int repeater_installed()
  * returns the number of bytes read which may be less than
  * the number requested.
  */
-#ifdef __STDC__
 unsigned long cacRingBufferRead(
 struct ca_buffer	*pRing,
 void			*pBuf,
 unsigned long		nBytes)
-#else /*__STDC__*/
-unsigned long cacRingBufferRead(pRing, pBuf, nBytes)
-struct ca_buffer	*pRing;
-void			*pBuf;
-unsigned long		nBytes;
-#endif /*__STDC__*/
 {
 	unsigned long	potentialBytes;
 	unsigned long	actualBytes;
@@ -1536,17 +1294,10 @@ unsigned long		nBytes;
  * returns the number of bytes written which may be less than
  * the number requested.
  */
-#ifdef __STDC__
 unsigned long cacRingBufferWrite(
 struct ca_buffer	*pRing,
 void			*pBuf,
 unsigned long		nBytes)
-#else /*__STDC__*/
-unsigned long cacRingBufferWrite(pRing,pBuf,nBytes)
-struct ca_buffer	*pRing;
-void			*pBuf;
-unsigned long		nBytes;
-#endif /*__STDC__*/
 {
 	unsigned long	potentialBytes;
 	unsigned long	actualBytes;
@@ -1576,12 +1327,7 @@ unsigned long		nBytes;
  * cacRingBufferInit()
  *
  */
-#ifdef __STDC__
 LOCAL void cacRingBufferInit(struct ca_buffer *pBuf, unsigned long size)
-#else /*__STDC__*/
-LOCAL void cacRingBufferInit(pBuf, size)
-struct ca_buffer *pBuf;
-#endif /*__STDC__*/
 {
 	assert(size<=sizeof(pBuf->buf));
 	pBuf->max_msg = size;
@@ -1597,13 +1343,7 @@ struct ca_buffer *pBuf;
  * returns N bytes available
  * (not nec contiguous)
  */
-#ifdef __STDC__
 unsigned long cacRingBufferReadSize(struct ca_buffer *pBuf, int contiguous)
-#else /*__STDC__*/
-unsigned long cacRingBufferReadSize(pBuf, contiguous)
-struct ca_buffer *pBuf;
-int contiguous;
-#endif /*__STDC__*/
 {
 	unsigned long 	count;
 	
@@ -1642,13 +1382,7 @@ int contiguous;
  * returns N bytes available
  * (not nec contiguous)
  */
-#ifdef __STDC__
 unsigned long cacRingBufferWriteSize(struct ca_buffer *pBuf, int contiguous)
-#else /*__STDC__*/
-unsigned long cacRingBufferWriteSize(pBuf, contiguous)
-struct ca_buffer *pBuf;
-int contiguous;
-#endif /*__STDC__*/
 {
 	unsigned long 	count;
 
@@ -1684,10 +1418,10 @@ int contiguous;
  * o Indicates failure by setting ptr to nill
  *
  * o Calls non posix gethostbyname() so that we get DNS style names
- *      (gethostbyname() should be available will most BSD sock libs)
+ *      (gethostbyname() should be available with most BSD sock libs)
  *
  * vxWorks user will need to configure a DNS format name for the
- * host name if they wish to be cnsistent UNIX and VMS hosts.
+ * host name if they wish to be cnsistent with UNIX and VMS hosts.
  *
  */
 char *localHostName()
@@ -1718,16 +1452,8 @@ char *localHostName()
 /*
  * caAddConfiguredAddr()
  */
-#ifdef __STDC__
 void caAddConfiguredAddr(ELLLIST *pList, ENV_PARAM *pEnv, 
 	int socket, int port)
-#else /*__STDC__*/
-void caAddConfiguredAddr(pList, pEnv, socket, port)
-ELLLIST         *pList;
-ENV_PARAM       *pEnv;
-int		socket;
-int		port;
-#endif /*__STDC__*/
 {
         caAddrNode              *pNode;
         ENV_PARAM               list;
@@ -1786,12 +1512,7 @@ int		port;
 /*
  * getToken()
  */
-#ifdef __STDC__
 LOCAL char *getToken(char **ppString)
-#else /*__STDC__*/
-LOCAL char *getToken(ppString)
-char **ppString;
-#endif /*__STDC__*/
 {
         char *pToken;
         char *pStr;
@@ -1827,12 +1548,7 @@ char **ppString;
 /*
  * caPrintAddrList()
  */
-#ifdef __STDC__
 void caPrintAddrList(ELLLIST *pList)
-#else /*__STDC__*/
-void caPrintAddrList(pList)
-ELLLIST *pList;
-#endif /*__STDC__*/
 {
         caAddrNode              *pNode;
 

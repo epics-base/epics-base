@@ -37,6 +37,7 @@
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdarg.h>
 
 #include <unistd.h>
 #include <pwd.h>
@@ -46,14 +47,100 @@
 
 
 /*
+ *      CAC_MUX_IO()
+ *
+ *      Asynch notification of incomming messages under UNIX
+ *      1) Wait no longer than timeout
+ *      2) Return early if nothing outstanding
+ *
+ *
+ */
+void cac_mux_io(struct timeval  *ptimeout)
+{
+        int                     count;
+        int                     newInput;
+        struct timeval          timeout;
+
+        if(!ca_static->ca_repeater_contacted){
+                notify_ca_repeater();
+        }
+
+        cac_clean_iiu_list();
+
+        timeout = *ptimeout;
+        do{
+                newInput = FALSE;
+                do{
+                        count = cac_select_io(
+					&timeout, 
+					CA_DO_RECVS | CA_DO_SENDS);
+                        if(count>0){
+                                newInput = TRUE;
+                        }
+                        timeout.tv_usec = 0;
+                        timeout.tv_sec = 0;
+                }
+                while(count>0);
+
+                ca_process_input_queue();
+        }
+        while(newInput);
+
+        /*
+         * manage search timers and detect disconnects
+         */
+        manage_conn(TRUE);
+}
+
+
+/*
+ * cac_block_for_io_completion()
+ */
+void cac_block_for_io_completion()
+{
+	struct timeval  itimeout;
+
+	itimeout.tv_usec        = SELECT_POLL%USEC_PER_SEC;
+	itimeout.tv_sec         = SELECT_POLL/USEC_PER_SEC;
+
+	cac_mux_io(&itimeout);
+}
+
+
+/*
+ * os_specific_sg_io_complete()
+ */
+void os_specific_sg_io_complete(CASG *pcasg)
+{
+}
+
+
+/*
+ * does nothing but satisfy undefined
+ */
+void os_specific_sg_create(CASG *pcasg)
+{
+}
+void os_specific_sg_delete(CASG *pcasg)
+{
+}
+
+
+void cac_block_for_sg_completion(CASG	*pcasg)
+{
+	struct timeval  itimeout;
+
+	itimeout.tv_usec        = SELECT_POLL%USEC_PER_SEC;
+	itimeout.tv_sec         = SELECT_POLL/USEC_PER_SEC;
+
+	cac_mux_io(&itimeout);
+}
+
+
+/*
  * CAC_ADD_TASK_VARIABLE()
  */
-#ifdef __STDC__
 int cac_add_task_variable(struct ca_static *ca_temp)
-#else /*__STDC__*/
-int cac_add_task_variable(ca_temp)
-struct ca_static *ca_temp;
-#endif /*__STDC__*/
 {
 	ca_static = ca_temp;
 	return ECA_NORMAL;
@@ -114,15 +201,6 @@ char *localUserName()
 
 
 /*
- * ca_check_for_fp()
- */
-int ca_check_for_fp()
-{
-        return ECA_NORMAL;
-}
-
-
-/*
  * ca_spawn_repeater()
  */
 void ca_spawn_repeater()
@@ -176,3 +254,26 @@ int cac_setup_recv_thread(IIU *piiu)
 {
 	return ECA_NORMAL;
 }
+
+
+
+/*
+ *      ca_printf()
+ */
+int ca_printf(char *pformat, ...)
+{
+        va_list         args;
+        int             status;
+
+        va_start(args, pformat);
+
+        status = vfprintf(
+                        stderr,
+                        pformat,
+                        args);
+
+        va_end(args);
+
+        return status;
+}
+

@@ -19,12 +19,7 @@ static char *sccsId = "$Id$";
 #include	"iocinf.h"
 
 
-#ifdef __STDC__
 void ca_test_event(struct event_handler_args args)
-#else
-void ca_test_event(args)
-struct event_handler_args	args;
-#endif
 {
   ca_printf("CAC: ~~~### in test event for [%s] ###~~~\n",args.chid+1);
   ca_printf("CAC: User argument\t%x\n", args.usr);

@@ -1,5 +1,5 @@
 /* netdb_depen.c */
-/* share/src/ca/$Id$ */
+/* $Id$ */
 /*
  *      Author:		Jeff Hill 
  *      Date:          	04-05-94 
@@ -41,22 +41,15 @@ static char	*sccsId = "$Id$";
 
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <arpa/inet.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include <netdb.h>
 
 
 /*
  * caHostFromInetAddr() 
  */
-#ifdef __STDC__
 void caHostFromInetAddr(struct in_addr *pnet_addr, char *pBuf, unsigned size)
-#else
-void caHostFromInetAddr(pnet_addr, pBuf, size)
-struct in_addr  *pnet_addr;
-char            *pBuf;
-unsigned        size;
-#endif
 {
         char            *pString;
         struct hostent  *ent;

@@ -1,5 +1,5 @@
 /* if_depen.c */
-/* share/src/ca/$Id$ */
+/* $Id$ */
 
 /*
  *      Author:	Jeff Hill 
@@ -35,7 +35,7 @@
  */
 
 
-static char	*sccsId = "$Id$";
+static char	*sccsId = "%W% %G%";
 
 
 #include "iocinf.h"
@@ -48,13 +48,7 @@ static char	*sccsId = "$Id$";
  * Perhaps it is sufficient for this to return 127.0.0.1
  * (the loop back address)
  */
-#ifdef __STDC__
 int local_addr(int s, struct sockaddr_in *plcladdr)
-#else
-int local_addr(s, plcladdr)
-int   			s;
-struct sockaddr_in 	*plcladdr;
-#endif
 {
 	int             	status;
 	struct ifconf   	ifconf;
@@ -156,14 +150,7 @@ struct sockaddr_in 	*plcladdr;
  * Load the list with the broadcast address for all
  * interfaces found that support broadcast.
  */
-#ifdef __STDC__
 void caDiscoverInterfaces(ELLLIST *pList, int socket, int port)
-#else /*__STDC__*/
-void caDiscoverInterfaces(pList, socket, port)
-ELLLIST *pList;
-int	socket;
-int	port;
-#endif /*__STDC__*/
 {
 	struct sockaddr_in 	localAddr;
 	struct sockaddr_in 	*pInetAddr;

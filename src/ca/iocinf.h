@@ -53,7 +53,7 @@
 #ifndef INCiocinfh  
 #define INCiocinfh
 
-static char	*iocinfhSccsId = "$Id$";
+static char     *iocinfhSccsId = "$Id$";
 
 /*
  * ANSI C includes
@@ -89,9 +89,16 @@ static char	*iocinfhSccsId = "$Id$";
 #define min(A,B) ((A)>(B)?(B):(A))
 #endif
 
+#ifndef max 
+#define max(A,B) ((A)<(B)?(B):(A))
+#endif
+
 #ifndef NBBY
 # define NBBY 8 /* number of bits per byte */
 #endif
+
+#define SELECT_POLL 	50000 		/* units micro-sec */
+#define USEC_PER_SEC 	1000000
 
 /*
  * catch when they use really large strings
@@ -110,13 +117,8 @@ if(!ca_static){ \
 /* throw out requests prior to last ECA_TIMEOUT from ca_pend */
 #define	VALID_MSG(PIIU) (piiu->read_seq == piiu->cur_read_seq)
 
-/* perform a build to reconnect this channel ? */
-#define VALID_BUILD(CHID)\
-(CHID->build_count && CHID->build_type != TYPENOTCONN && CHID->build_value) 
-
 #define SETPENDRECV		{pndrecvcnt++;}
 #define CLRPENDRECV(LOCK)	{if(--pndrecvcnt<1){cac_io_done(LOCK); POST_IO_EV;}}
-
 
 struct udpmsglog{
 	long                    nbytes;
@@ -124,8 +126,14 @@ struct udpmsglog{
 	struct sockaddr_in      addr;
 };
 
+struct putCvrtBuf{
+	ELLNODE			node;
+	unsigned long		size;
+	void			*pBuf;
+};
+
 /*
- * for use with ca_mux_io()
+ * for use with cac_select_io()
  */
 #define CA_DO_SENDS	1
 #define CA_DO_RECVS	2
@@ -211,11 +219,8 @@ typedef struct caclient_put_notify{
 #define sprintf_buf	(ca_static->ca_sprintf_buf)
 #define pBucket		(ca_static->ca_pBucket)
 #define nextBucketId	(ca_static->ca_nextBucketId)
-
-#if defined(UNIX) || defined(vxWorks)
-#	define readch		(ca_static->ca_readch)
-#	define writech		(ca_static->ca_writech)
-#endif
+#define readch		(ca_static->ca_readch)
+#define writech		(ca_static->ca_writech)
 
 #if defined(vxWorks)
 #	define io_done_sem	(ca_static->ca_io_done_sem)
@@ -226,12 +231,6 @@ typedef struct caclient_put_notify{
 #	define dbfree_ev_list	(ca_static->ca_dbfree_ev_list)
 #	define lcl_buff_list	(ca_static->ca_lcl_buff_list)
 #	define event_tid	(ca_static->ca_event_tid)
-#endif
-
-#if defined(VMS)
-#	define io_done_flag	(ca_static->ca_io_done_flag)
-#	define peek_ast_buf	(ca_static->ca_peek_ast_buf)
-#	define ast_lock_count	(ca_static->ca_ast_lock_count)
 #endif
 
 /*
@@ -275,6 +274,11 @@ struct ca_buffer{
 	(PRBUF)->wtix  \
 ) 
 
+#define TAG_CONN_DOWN(PIIU) \
+( \
+/*ca_printf("Tagging connection down at %d in %s\n", __LINE__, __FILE__),*/ \
+(PIIU)->conn_up = FALSE \
+)
 
 /*
  * One per IOC
@@ -288,7 +292,6 @@ typedef struct ioc_in_use{
 	int			sock_proto;
 	unsigned		minor_version_number;
 	unsigned		contiguous_msg_count;
-	unsigned		client_busy;
 	struct ca_buffer	send;
 	struct ca_buffer	recv;
 	struct extmsg		curMsg;
@@ -297,37 +300,23 @@ typedef struct ioc_in_use{
 	unsigned long		curDataMax;
 	unsigned long		curDataBytes;
 	ca_time			timeAtLastRecv;
-	ca_time			timeAtLastSend;
-	int			echoPending;
+	ca_time			timeAtSendBlock;
 	ca_time			timeAtEchoRequest;
-#ifdef __STDC__
 	void			(*sendBytes)(struct ioc_in_use *);
 	void			(*recvBytes)(struct ioc_in_use *);
 	void			(*procInput)(struct ioc_in_use *);
-#else /*__STDC__*/
-	void			(*sendBytes)();
-	void			(*recvBytes)();
-	void			(*procInput)();
-#endif /*__STDC__*/
 	unsigned		read_seq;
 	unsigned 		cur_read_seq;
-	short			conn_up;	/* boolean: T-conn /F-disconn */
-	short			send_needed;	/* CA needs a send */
 	char			host_name_str[32];
 
-#ifdef VMS	/* for qio ASTs */
-	unsigned long		putConvertBufSize;
-	void			*pPutConvertBuf;
-    	struct sockaddr_in	recvfrom;
-    	struct iosb		iosb;
-#endif /*VMS*/
-
-#ifdef UNIX
-#endif /*UNIX*/
-
-#ifdef vxWorks
-#endif /*vxWorks*/
-
+	/*
+	 * bit fields placed together for better packing density
+	 */
+	unsigned		client_busy:1;
+	unsigned		echoPending:1; 
+	unsigned		send_needed:1;	/* CA needs a send */
+	unsigned		conn_up:1;   /* boolean: T-conn /F-disconn */
+	unsigned		sendPending:1;
 }IIU;
 
 /*
@@ -353,6 +342,7 @@ struct  ca_static{
 	ELLLIST		freeCASG;
 	ELLLIST		activeCASGOP;
 	ELLLIST		freeCASGOP;
+	ELLLIST		putCvrtBuf;
 	long		ca_pndrecvcnt;
 	void		(*ca_exception_func)();
 	void		*ca_exception_arg;
@@ -364,9 +354,6 @@ struct  ca_static{
 	unsigned short	ca_post_msg_active; 
 	short		ca_repeater_contacted;
 	unsigned short	ca_send_msg_active;
-#if 0
-	struct in_addr	ca_castaddr;
-#endif
 	char		ca_sprintf_buf[256];
 	BUCKET		*ca_pBucket;
 	unsigned long	ca_nextBucketId;
@@ -376,15 +363,8 @@ struct  ca_static{
 	unsigned	ca_conn_n_tries;
 	ca_time		ca_conn_next_retry;
 	ca_time		ca_conn_retry_delay;
-#if defined(UNIX) || defined(vxWorks)
 	fd_set          ca_readch;  
 	fd_set          ca_writech;  
-#endif
-#if defined(VMS)
-	int		ca_io_done_flag;
-	char		ca_peek_ast_buf;
-	long		ca_ast_lock_count;
-#endif
 #if defined(vxWorks)
 	SEM_ID		ca_io_done_sem;
 	SEM_ID		ca_blockSem;
@@ -403,6 +383,40 @@ struct  ca_static{
 	ELLLIST		ca_taskVarList;
 #endif
 };
+
+
+
+#define CASG_MAGIC      0xFAB4CAFE
+
+/*
+ * one per outstanding op
+ */
+typedef struct{
+        ELLNODE                 node;
+        WRITEABLE_CA_SYNC_GID   id;
+        void                    *pValue;
+        unsigned long           magic;
+        unsigned long           seqNo;
+}CASGOP;
+
+
+/*
+ * one per synch group
+ */
+typedef struct{
+        ELLNODE                 node;
+        WRITEABLE_CA_SYNC_GID   id;
+        unsigned long           magic;
+        unsigned long           opPendCount;
+        unsigned long           seqNo;
+        /*
+         * Asynch Notification
+         */
+#	ifdef vxWorks
+        SEM_ID          sem;
+#	endif /*vxWorks*/
+}CASG;
+
 
 /*
 	GLOBAL VARIABLES
@@ -429,12 +443,11 @@ struct ca_static *ca_static;
  * CA internal functions
  *
  */
-#ifdef __STDC__
 
 void 		cac_send_msg();
-void 		ca_mux_io(struct timeval *ptimeout, int flags);
+void 		cac_mux_io(struct timeval *ptimeout);
 int		repeater_installed();
-void 		build_msg(chid chix, int reply_type);
+void 		search_msg(chid chix, int reply_type);
 int		ca_request_event(evid monix);
 void 		ca_busy_message(struct ioc_in_use *piiu);
 void		ca_ready_message(struct ioc_in_use *piiu);
@@ -450,13 +463,12 @@ void 		mark_server_available(struct in_addr *pnet_addr);
 void		flow_control(struct ioc_in_use *piiu);
 int		broadcast_addr(struct in_addr *pcastaddr);
 int		local_addr(int s, struct sockaddr_in *plcladdr);
-int		ca_repeater();
+void		ca_repeater();
 void 		cac_recv_task(int tid);
 void 		cac_io_done(int lock);
 void 		ca_sg_init(void);
 void		ca_sg_shutdown(struct ca_static *ca_temp);
-int		ca_select_io(struct timeval *ptimeout, int flags);
-
+int 		cac_select_io(struct timeval *ptimeout, int flags);
 void caHostFromInetAddr(
 	struct in_addr *pnet_addr,
 	char		*pBuf,
@@ -524,54 +536,23 @@ void removeBeaconInetAddr(struct in_addr *pnet_addr);
 bhe *lookupBeaconInetAddr(struct in_addr *pnet_addr);
 bhe *createBeaconHashEntry(struct in_addr *pnet_addr);
 int cac_setup_recv_thread(IIU *piiu);
+void close_ioc(IIU *piiu);
+void notify_ca_repeater();
+void cac_clean_iiu_list();
 
-#else /*__STDC__*/
-int		ca_defunct();
-int		repeater_installed();
-void 		cac_send_msg();
-void 		build_msg();
-int		broadcast_addr();
-int		local_addr();
-void		manage_conn();
-void 		noop_msg();
-void		echo_request();
-void 		ca_busy_message();
-void 		ca_ready_message();
-void 		flow_control();
-void		host_from_addr();
-int		ca_repeater();
-void		mark_server_available();
-void		issue_claim_channel();
-int		ca_request_event();
-void		cac_io_done();
-int		post_msg();
-int		alloc_ioc();
-int 		ca_printf();
-void 		cac_recv_task();
-void 		ca_sg_init();
-void		ca_sg_shutdown();
-void 		issue_identify_client();
-void 		issue_client_host_name();
-void 		ca_mux_io();
-int		ca_select_io();
-unsigned long 	cacRingBufferRead();
-unsigned long 	cacRingBufferWrite();
-unsigned long 	cacRingBufferWriteSize();
-unsigned long 	cacRingBufferReadSize();
-char		*localUserName();
-char		*localHostName();
-void		caSetupAddrList();
-void		caDiscoverInterfaces();
-void		caAddConfiguredAddr();
-void		caPrintAddrList();
-int		create_net_chan();
-int		ca_check_for_fp();
-void 		freeBeaconHash();
-void 		removeBeaconInetAddr();
-bhe 		*lookupBeaconInetAddr();
-bhe 		*createBeaconHashEntry();
-int 		cac_setup_recv_thread();
-#endif /*__STDC__*/
+void ca_process_input_queue();
+void cac_flush_internal();
+void cac_block_for_io_completion();
+void cac_block_for_sg_completion();
+void os_specific_sg_create(CASG *pcasg);
+void os_specific_sg_delete(CASG *pcasg);
+void os_specific_sg_io_complete(CASG *pcasg);
+int cac_os_depen_init(struct ca_static *pcas);
+void ca_process_exit(struct ca_static *ca_temp);
+int cac_add_task_variable(struct ca_static *);
+void ca_spawn_repeater();
+typedef void CACVRTFUNC(void *pSrc, void *pDest, int hton, unsigned long count);
+
 
 /*
  * !!KLUDGE!!

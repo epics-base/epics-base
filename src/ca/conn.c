@@ -39,7 +39,7 @@
 /************************************************************************/
 /*_end									*/
 
-static char 	*sccsId = "$Id$";
+static char     *sccsId = "$Id$";
 
 #include 	"iocinf.h"
 
@@ -52,21 +52,13 @@ static char 	*sccsId = "$Id$";
  *
  *
  */
-#ifdef __STDC__
 void manage_conn(int silent)
-#else
-void manage_conn(silent)
-int	silent;
-#endif
 {
 	IIU		*piiu;
   	chid		chix;
   	unsigned int	retry_cnt = 0;
   	unsigned int	retry_cnt_no_handler = 0;
 	ca_time		current;
-	int 		sendBytesPending;
-	int 		sendBytesAvailable;
-	int 		stmo;
 
 	current = time(NULL);
 
@@ -82,21 +74,29 @@ int	silent;
                         continue;
                 }
 
-		sendBytesPending = cacRingBufferReadSize(&piiu->send, TRUE);
-		sendBytesAvailable = cacRingBufferWriteSize(&piiu->send, TRUE);
+		/* 
+		 * mark connection for shutdown if outgoing messages
+		 * are not accepted by TCP/IP for several seconds
+		 */
+		if(piiu->sendPending){
+			if((current-piiu->timeAtSendBlock)>CA_RETRY_PERIOD){
+				TAG_CONN_DOWN(piiu);
+				continue;
+			}
+		}
 
 		/*
 		 * remain backwards compatible with old servers
-		 * ( this isnt an echo request ) 
+		 * ( this isnt an echo request )
 		 */
 		if(!CA_V43(CA_PROTOCOL_VERSION, piiu->minor_version_number)){
 			int	stmo;
-			int	rtmo;
+			int 	rtmo;
 
 			stmo = (current-piiu->timeAtEchoRequest)
 					> CA_RETRY_PERIOD;
 			rtmo = (current-piiu->timeAtLastRecv)>CA_RETRY_PERIOD;
-			if(stmo && rtmo && !sendBytesPending){
+			if(stmo && rtmo && !piiu->sendPending){
 				piiu->timeAtEchoRequest = current;
 				noop_msg(piiu);
 			}
@@ -108,10 +108,14 @@ int	silent;
 				/* 
 				 * mark connection for shutdown
 				 */
-				piiu->conn_up = FALSE;
+				TAG_CONN_DOWN(piiu);
 			}
 		}
 		else{
+			int 	sendBytesAvailable;
+
+			sendBytesAvailable = 
+				cacRingBufferWriteSize(&piiu->send, TRUE);
 			if((current-piiu->timeAtLastRecv)>CA_CONN_VERIFY_PERIOD &&
 				sendBytesAvailable>sizeof(struct extmsg)){
 				piiu->echoPending = TRUE;
@@ -148,10 +152,10 @@ int	silent;
 		chix;
 		chix = (chid) chix->node.next){
 
-      		build_msg(chix, DONTREPLY);
+      		search_msg(chix, DONTREPLY);
      		retry_cnt++;
 
-      		if(!(silent || chix->connection_func)){
+      		if(!(silent || chix->pConnFunc)){
        			ca_signal(ECA_CHIDNOTFND, (char *)(chix+1));
 			retry_cnt_no_handler++;
 		}
@@ -159,15 +163,11 @@ int	silent;
  	UNLOCK; 	
 
   	if(retry_cnt){
-#ifdef TRYING_MESSAGE
-    		ca_printf("<Trying %d> ", retry_cnt);
-#ifdef UNIX
-    		fflush(stdout);
-#endif /*UNIX*/
-#endif /*TRYING_MESSAGE*/
-
     		if(!silent && retry_cnt_no_handler){
-      			sprintf(sprintf_buf, "%d channels outstanding", retry_cnt);
+      			sprintf(
+				sprintf_buf, 
+				"%d channels outstanding", 
+				retry_cnt);
       			ca_signal(ECA_CHIDRETRY, sprintf_buf);
     		}
   	}
@@ -182,17 +182,11 @@ int	silent;
  *
  *
  */
-#ifdef __STDC__
 void mark_server_available(struct in_addr *pnet_addr)
-#else /*__STDC__*/
-void mark_server_available(pnet_addr)
-struct in_addr  *pnet_addr;
-#endif /*__STDC__*/
 {
 	int		currentPeriod;
 	int		currentTime;
 	bhe		*pBHE;
-	unsigned	index;
 	unsigned	port;	
 	int 		netChange = FALSE;
 
@@ -265,15 +259,6 @@ struct in_addr  *pnet_addr;
 	}
 	
 
-
-#ifdef DEBUG
-	ca_printf("CAC: <%s> ",host_from_addr(pnet_addr));
-#ifdef UNIX
-    	fflush(stdout);
-#endif
-#endif
-
-
 	/*
 	 * This part is very important since many machines
 	 * could have channels in a disconnected state which
@@ -313,18 +298,6 @@ struct in_addr  *pnet_addr;
 		ca_static->ca_conn_n_tries = 0;
 	}
 
-#	ifdef DEBUG
-
-		ca_printf(
-		"CAC: <Trying ukn online after pseudo random delay=%d sec> ",
-		ca_static->ca_conn_retry_delay);
-
-#		ifdef UNIX
-    			fflush(stdout);
-#		endif
-
-#	endif
-
 	UNLOCK;
 }
 
@@ -334,12 +307,7 @@ struct in_addr  *pnet_addr;
  *
  * LOCK must be applied
  */
-#ifdef __STDC__
 bhe *createBeaconHashEntry(struct in_addr *pnet_addr)
-#else
-bhe *createBeaconHashEntry(pnet_addr)
-struct in_addr  *pnet_addr;
-#endif
 {
 	bhe		*pBHE;
 	unsigned	index;
@@ -388,12 +356,7 @@ struct in_addr  *pnet_addr;
  *
  * LOCK must be applied
  */
-#ifdef __STDC__
 bhe *lookupBeaconInetAddr(struct in_addr *pnet_addr)
-#else
-bhe *lookupBeaconInetAddr(pnet_addr)
-struct in_addr  *pnet_addr;
-#endif
 {
 	bhe		*pBHE;
 	unsigned	index;
@@ -420,12 +383,7 @@ struct in_addr  *pnet_addr;
  *
  * LOCK must be applied
  */
-#ifdef __STDC__
 void removeBeaconInetAddr(struct in_addr *pnet_addr)
-#else /*__STDC__*/
-void removeBeaconInetAddr(pnet_addr)
-struct in_addr  *pnet_addr;
-#endif /*__STDC__*/
 {
 	bhe		*pBHE;
 	bhe		**ppBHE;
@@ -456,12 +414,7 @@ struct in_addr  *pnet_addr;
  *
  * LOCK must be applied
  */
-#ifdef __STDC__
 void freeBeaconHash(struct ca_static *ca_temp)
-#else /*__STDC__*/
-void freeBeaconHash(ca_temp)
-struct ca_static	*ca_temp;
-#endif /*__STDC__*/
 {
 	bhe		*pBHE;
 	bhe		**ppBHE;

@@ -1,5 +1,5 @@
 /*
- *	@(#)syncgrp.c	1.1 2/7/94
+ *	$Id$
  *      Author: Jeffrey O. Hill
  *              hill@luke.lanl.gov
  *              (505) 665 1831
@@ -37,54 +37,13 @@
 
 #include "iocinf.h"
 
-#define CASG_MAGIC	0xFAB4CAFE
-
-/*
- * one per outstanding op
- */
-typedef struct{
-	ELLNODE			node;
-	WRITEABLE_CA_SYNC_GID	id;
-	void			*pValue;
-	unsigned long		magic;
-	unsigned long		seqNo;
-}CASGOP;
-
-/*
- * one per synch group
- */
-typedef struct{
-	ELLNODE			node;
-	WRITEABLE_CA_SYNC_GID	id;
-	unsigned long		magic;
-	unsigned long		opPendCount;
-	unsigned long		seqNo;
-	/*
-	 * Asynch Notification
-	 */
-#ifdef vxWorks
-	SEM_ID		sem;
-#endif /*vxWorks*/
-#ifdef VMS
-	int		ef;
-#endif /*VMS*/
-}CASG;
-
-#ifdef __STDC__
 LOCAL void io_complete(struct event_handler_args args);
-#else /*__STDC__*/
-LOCAL void io_complete();
-#endif /*__STDC__*/
 
 
 /*
  * ca_sg_init()
  */
-#ifdef __STDC__
 void ca_sg_init(void)
-#else /*__STDC__*/
-void ca_sg_init()
-#endif /*__STDC__*/
 {
 	/*
 	 * init all sync group lists
@@ -99,12 +58,7 @@ void ca_sg_init()
 /*
  * ca_sg_shutdown()
  */
-#ifdef __STDC__
 void ca_sg_shutdown(struct ca_static *ca_temp)
-#else /*__STDC__*/
-void ca_sg_shutdown(ca_temp)
-struct ca_static *ca_temp;
-#endif /*__STDC__*/
 {
 	/*
 	 * free all sync group lists
@@ -121,12 +75,7 @@ struct ca_static *ca_temp;
 /*
  * ca_sg_create()
  */
-#ifdef __STDC__
 int ca_sg_create(CA_SYNC_GID *pgid)
-#else /*__STDC__*/
-int ca_sg_create(pgid)
-CA_SYNC_GID *pgid;
-#endif /*__STDC__*/
 {
 	int	status;
 	CASG 	*pcasg;
@@ -163,14 +112,8 @@ CA_SYNC_GID *pgid;
 	pcasg->opPendCount = 0;
 	pcasg->seqNo = 0;
 
-#ifdef VMS
-	status = lib$get_ef(&pcasg->ef);
-	assert(status == SS$_NORMAL)
-#endif /*VMS*/
-#ifdef vxWorks
-	pcasg->sem = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
-	assert(pcasg->sem);
-#endif /*vxWorks*/
+	os_specific_sg_create(pcasg);
+
 	status = bucketAddItem(pBucket, pcasg->id, pcasg);
 	if(status == BUCKET_SUCCESS){
 		/*
@@ -197,12 +140,7 @@ CA_SYNC_GID *pgid;
 /*
  * ca_sg_delete()
  */
-#ifdef __STDC__
 int ca_sg_delete(CA_SYNC_GID gid)
-#else /*__STDC__*/
-int ca_sg_delete(gid)
-CA_SYNC_GID gid;
-#endif /*__STDC__*/
 {
 	int	status;
 	CASG 	*pcasg;
@@ -215,6 +153,7 @@ CA_SYNC_GID gid;
 	INITCHK;
 
 	LOCK;
+
 	pcasg = bucketLookupItem(pBucket, gid);
 	if(!pcasg || pcasg->magic != CASG_MAGIC){
 		UNLOCK;
@@ -224,19 +163,12 @@ CA_SYNC_GID gid;
 	status = bucketRemoveItem(pBucket, gid, pcasg);
 	assert(status == BUCKET_SUCCESS);
 
-#ifdef VMS
-	status = lib$free_ef(&pcasg->ef);
-	assert(status == SS$_NORMAL)
-#endif /*VMS*/
-
-#ifdef vxWorks
-	status = semDelete(pcasg->sem);
-	assert(status == OK);
-#endif /*vxWorks*/
+	os_specific_sg_delete(pcasg);
 
 	pcasg->magic = 0;
 	ellDelete(&ca_static->activeCASG, &pcasg->node);
 	ellAdd(&ca_static->freeCASG, &pcasg->node);
+
 	UNLOCK;
 
 	return ECA_NORMAL;
@@ -246,13 +178,7 @@ CA_SYNC_GID gid;
 /*
  * ca_sg_block()
  */
-#ifdef __STDC__
-int ca_sg_block(CA_SYNC_GID gid, float timeout)
-#else /*__STDC__*/
-int ca_sg_block(gid, timeout)
-CA_SYNC_GID gid;
-float timeout;
-#endif /*__STDC__*/
+int ca_sg_block(CA_SYNC_GID gid, ca_real timeout)
 {
 	time_t	beg_time;
 	int	status;
@@ -296,41 +222,8 @@ float timeout;
 		/*
 		 * wait for asynch notification
 		 */
-#ifdef UNIX
-		{
-                        struct timeval  itimeout;
+		cac_block_for_sg_completion(pcasg);
 
-                        itimeout.tv_usec        = LOCALTICKS;
-                        itimeout.tv_sec         = 0;
-                        ca_mux_io(&itimeout, CA_DO_SENDS|CA_DO_RECVS);
-                }
-#else /*UNIX*/
-			ca_flush_io();
-#endif /*UNIX*/
-
-#ifdef vxWorks
-		{
-                        semTake(pcasg->sem, LOCALTICKS);
-		}
-#endif /*vxWorks*/
-#ifdef VMS
-                {
-                        int             status;
-                        unsigned int    systim[2]={-LOCALTICKS,~0};
-       
-                        status = sys$setimr(
-                                pcasg->ef,
-                                systim,
-                                NULL,
-                                MYTIMERID,
-                                NULL);
-                        if(status != SS$_NORMAL)
-                                lib$signal(status);
-                        status = sys$waitfr(pcasg->ef);
-                        if(status != SS$_NORMAL)
-                                lib$signal(status);
-                }
-#endif /*VMS*/
 		/*
 		 * Exit if the timeout has expired
 		 */
@@ -348,12 +241,7 @@ float timeout;
 /*
  * ca_sg_reset
  */
-#ifdef __STDC__
 int ca_sg_reset(CA_SYNC_GID gid)
-#else /*__STDC__*/
-int ca_sg_reset(gid)
-CA_SYNC_GID gid;
-#endif /*__STDC__*/
 {
 	CASG 	*pcasg;
 
@@ -375,12 +263,7 @@ CA_SYNC_GID gid;
 /*
  * ca_sg_test
  */
-#ifdef __STDC__
 int ca_sg_test(CA_SYNC_GID gid)
-#else /*__STDC__*/
-int ca_sg_test(gid)
-CA_SYNC_GID gid;
-#endif /*__STDC__*/
 {
 	CASG 	*pcasg;
 
@@ -406,21 +289,12 @@ CA_SYNC_GID gid;
 /*
  * ca_sg_array_put()
  */
-#ifdef __STDC__
 int     ca_sg_array_put(
 CA_SYNC_GID 	gid, 
 chtype		type,
 unsigned long 	count, 
 chid 		chix, 
 void 		*pvalue)
-#else /*__STDC__*/
-int     ca_sg_array_put(gid, type, count, chix, pvalue)
-CA_SYNC_GID 	gid; 
-chtype		type;
-unsigned long 	count; 
-chid 		chix; 
-void 		*pvalue;
-#endif /*__STDC__*/
 {
 	int	status;
 	CASGOP	*pcasgop;
@@ -469,21 +343,12 @@ void 		*pvalue;
 /*
  * ca_sg_array_get()
  */
-#ifdef __STDC__
 int     ca_sg_array_get(
 CA_SYNC_GID 	gid, 
 chtype		type,
 unsigned long 	count, 
 chid 		chix, 
 void 		*pvalue)
-#else /*__STDC__*/
-int     ca_sg_array_get(gid, type, count, chix, pvalue)
-CA_SYNC_GID 	gid; 
-chtype		type;
-unsigned long 	count; 
-chid 		chix; 
-void 		*pvalue;
-#endif /*__STDC__*/
 {
 	int	status;
 	CASGOP	*pcasgop;
@@ -531,15 +396,9 @@ void 		*pvalue;
 /*
  * io_complete()
  */
-#ifdef __STDC__
 LOCAL void io_complete(struct event_handler_args args)
-#else /*__STDC__*/
-LOCAL void io_complete(args)
-struct event_handler_args args;
-#endif /*__STDC__*/
 {
 	unsigned long	size;
-	int		status;
 	CASGOP		*pcasgop;
 	CASG 		*pcasg;
 
@@ -595,17 +454,9 @@ struct event_handler_args args;
 	 *
 	 * occurs through select on UNIX
 	 */
-#ifdef VMS
 	if(pcasg->opPendCount == 0){
-		sys$setef(pcasg->ef)
+		os_specific_sg_io_complete(pcasg);
 	}
-#endif /*VMS*/
-#ifdef vxWorks
-	if(pcasg->opPendCount == 0){
-		status = semGive(pcasg->sem);
-		assert(status == OK);
-	}
-#endif /*vxWorks*/
 
 	return;
 }

@@ -31,12 +31,106 @@
  *
  */
 
+#include <stdarg.h>
+
 #include "iocinf.h"
 #include "remLib.h"
 
 LOCAL void ca_repeater_task();
 LOCAL void ca_task_exit_tcb(WIND_TCB *ptcb);
 LOCAL void ca_extra_event_labor(void *pArg);
+LOCAL int cac_os_depen_exit(struct ca_static *pcas, int tid);
+
+
+/*
+ *      CAC_MUX_IO()
+ *
+ *      Asynch notification of send unblocked for vxWorks 
+ *      1) Wait no longer than timeout
+ *      2) Return early if nothing outstanding
+ *
+ *
+ */
+void cac_mux_io(struct timeval  *ptimeout)
+{
+        int                     count;
+        struct timeval          timeout;
+
+        timeout = *ptimeout;
+	do{
+		count = cac_select_io(
+				&timeout, 
+				CA_DO_SENDS);
+		timeout.tv_usec = 0;
+		timeout.tv_sec = 0;
+	}
+	while(count>0);
+}
+
+
+/*
+ * cac_block_for_io_completion()
+ */
+void cac_block_for_io_completion()
+{
+        struct timeval  itimeout;
+
+        itimeout.tv_usec = 0;
+        itimeout.tv_sec = 0;
+        cac_mux_io(&itimeout);
+        
+	semTake(io_done_sem, LOCALTICKS);
+}
+
+
+/*
+ * os_specific_sg_create()
+ */
+void os_specific_sg_create(CASG   *pcasg)
+{
+	pcasg->sem = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
+	assert(pcasg->sem);
+}
+
+
+/*
+ * os_specific_sg_delete()
+ */
+void os_specific_sg_delete(CASG   *pcasg)
+{
+	int status;
+
+	status = semDelete(pcasg->sem);
+	assert(status == OK);
+}
+
+
+/*
+ * os_specific_sg_io_complete()
+ */
+void os_specific_sg_io_complete(CASG   *pcasg)
+{
+	int status;
+
+	status = semGive(pcasg->sem);
+	assert(status == OK);
+}
+
+
+/*
+ * cac_block_for_sg_completion()
+ */
+void cac_block_for_sg_completion(CASG	*pcasg)
+{
+        struct timeval  itimeout;
+
+        itimeout.tv_usec = 0;
+        itimeout.tv_sec = 0;
+        cac_mux_io(&itimeout);
+        
+	semTake(pcasg->sem, LOCALTICKS);
+}
+
 
 
 /*
@@ -48,6 +142,11 @@ int cac_add_task_variable(struct ca_static *ca_temp)
         TVIU                    *ptviu;
         int                     status;
 
+        status = ca_check_for_fp();
+        if(status != ECA_NORMAL){
+                return status;
+        }
+	
 #       if DEBUG
                 ca_printf("CAC: adding task variable\n");
 #       endif
@@ -115,9 +214,12 @@ int cac_add_task_variable(struct ca_static *ca_temp)
  */
 LOCAL void ca_task_exit_tcb(WIND_TCB *ptcb)
 {
+	struct ca_static	*ca_temp;
+
 #       if DEBUG
                 ca_printf("CAC: entering the exit handler %x\n", ptcb);
 #       endif
+
 
         /*
          * NOTE: vxWorks provides no method at this time
@@ -126,7 +228,18 @@ LOCAL void ca_task_exit_tcb(WIND_TCB *ptcb)
          * the task id - somthing which may not be true
          * on future releases of vxWorks
          */
-        ca_task_exit_tid((int) ptcb);
+	ca_temp = (struct ca_static *)taskVarGet((int)ptcb, (int *) &ca_static);
+	if (ca_temp == (struct ca_static *) ERROR){
+		return;
+	}
+
+	if(ca_temp->ca_exit_in_progress){
+		return;
+	}
+
+	cac_os_depen_exit(ca_temp, (int) ptcb);
+
+        ca_process_exit(ca_temp);
 }
 
 
@@ -183,6 +296,103 @@ int cac_os_depen_init(struct ca_static *pcas)
 
 
 /*
+ * cac_os_depen_exit()
+ */
+LOCAL int cac_os_depen_exit(struct ca_static *pcas, int tid)
+{
+	int	status;
+	chid	chix;
+	evid	monix;
+	TVIU    *ptviu;
+
+	/*
+	 * stop the socket recv task
+	 */
+	if(taskIdVerify(pcas->recv_tid)==OK){
+		taskwdRemove(pcas->recv_tid);
+		/*
+		 * dont do a task suspend if the exit handler is
+		 * running for this task - it botches vxWorks -
+		 */
+		if(pcas->recv_tid != tid){
+			taskSuspend(pcas->recv_tid);
+		}
+	}
+
+	/*
+	 * Cancel all local events
+	 * (and put call backs)
+	 */
+	chix = (chid) & pcas->ca_local_chidlist.node;
+	while (chix = (chid) chix->node.next){
+		while (monix = (evid) ellGet(&chix->eventq)) {
+			status = db_cancel_event(monix + 1);
+			assert(status == OK);
+			free(monix);
+		}
+		if(chix->ppn){
+			CACLIENTPUTNOTIFY *ppn;
+
+			ppn = chix->ppn;
+			if(ppn->busy){
+				dbNotifyCancel(&ppn->dbPutNotify);
+			}
+			free(ppn);
+		}
+	}
+
+
+	/*
+	 * cancel task vars for other tasks so this
+	 * only runs once
+	 *
+	 * This is done only after all oustanding events
+	 * are drained so that the event task still has a CA context
+	 *
+	 * db_close_events() does not require a CA context.
+	 */
+	while(ptviu = (TVIU *)ellGet(&pcas->ca_taskVarList)){
+		status = taskVarDelete(
+				ptviu->tid,
+				(int *)&ca_static);
+		if(status<0){
+			ca_printf(
+			"tsk var del err %x\n",
+			ptviu->tid);
+		}
+		free(ptviu);
+	}
+
+	if(taskIdVerify(pcas->recv_tid)==OK){
+		if(pcas->recv_tid != tid){
+			taskDelete(pcas->recv_tid);
+		}
+	}
+
+	/*
+	 * All local events must be canceled prior to closing the
+	 * local event facility
+	 */
+	status = db_close_events(pcas->ca_evuser);
+	assert(status == OK);
+
+	ellFree(&pcas->ca_lcl_buff_list);
+
+	/*
+	 * remove local chid blocks, paddr blocks, waiting ev blocks
+	 */
+	ellFree(&pcas->ca_local_chidlist);
+	ellFree(&pcas->ca_dbfree_ev_list);
+
+	assert(semDelete(pcas->ca_client_lock)==OK);
+	assert(semDelete(pcas->ca_event_lock)==OK);
+	assert(semDelete(pcas->ca_putNotifyLock)==OK);
+	assert(semDelete(pcas->ca_io_done_sem)==OK);
+	assert(semDelete(pcas->ca_blockSem)==OK);
+}
+
+
+/*
  *
  * localUserName() - for vxWorks
  *
@@ -212,14 +422,7 @@ char *localUserName()
 /*
  * caHostFromInetAddr()
  */
-#ifdef __STDC__
 void caHostFromInetAddr(struct in_addr *pnet_addr, char *pBuf, unsigned size)
-#else /*__STDC__*/
-void caHostFromInetAddr(pnet_addr, pBuf, size)
-struct in_addr  *pnet_addr;
-char            *pBuf;
-unsigned        size;
-#endif /*__STDC__*/
 {
         char    str[INET_ADDR_LEN];
 
@@ -240,12 +443,7 @@ unsigned        size;
  *
  *
  */
-#ifdef __STDC__
 int ca_import(int tid)
-#else
-int ca_import(tid)
-int             tid;
-#endif
 {
         int             status;
         struct ca_static *pcas;
@@ -300,12 +498,7 @@ int             tid;
 /*
  * CA_IMPORT_CANCEL()
  */
-#ifdef __STDC__
 int ca_import_cancel(int tid)
-#else /*__STDC__*/
-int ca_import_cancel(tid)
-int             tid;
-#endif /*__STDC__*/
 {
         int     status;
         TVIU    *ptviu;
@@ -473,5 +666,84 @@ LOCAL void ca_extra_event_labor(void *pArg)
                                 NULL);
         }
 
+}
+
+
+
+/*
+ * CAC_RECV_TASK()
+ *
+ */
+void cac_recv_task(int  tid)
+{
+        struct timeval  timeout;
+        int             status;
+
+        taskwdInsert((int) taskIdCurrent, NULL, NULL);
+
+        status = ca_import(tid);
+        SEVCHK(status, NULL);
+
+        /*
+         * once started, does not exit until
+         * ca_task_exit() is called.
+         */
+        while(TRUE){
+                timeout.tv_usec = 0;
+                timeout.tv_sec = 1;
+
+	        if(!ca_static->ca_repeater_contacted){
+       			notify_ca_repeater();
+        	}
+
+        	cac_clean_iiu_list();
+
+		cac_select_io(
+			&timeout, 
+			CA_DO_RECVS);
+
+                ca_process_input_queue();
+        	manage_conn(TRUE);
+        }
+}
+
+
+
+/*
+ *
+ *
+ *      ca_printf()
+ *
+ *
+ */
+int ca_printf(char *pformat, ...)
+{
+        va_list         args;
+        int             status;
+
+        va_start(args, pformat);
+
+        {
+                int     logMsgArgs[6];
+                int     i;
+
+                for(i=0; i< NELEMENTS(logMsgArgs); i++){
+                        logMsgArgs[i] = va_arg(args, int);
+                }
+
+                status = logMsg(
+                                pformat,
+                                logMsgArgs[0],
+                                logMsgArgs[1],
+                                logMsgArgs[2],
+                                logMsgArgs[3],
+                                logMsgArgs[4],
+                                logMsgArgs[5]);
+
+        }
+
+        va_end(args);
+
+        return status;
 }
 

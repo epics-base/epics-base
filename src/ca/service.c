@@ -68,12 +68,11 @@
 /************************************************************************/
 /*_end									*/
 
-static char *sccsId = "$Id$"; 
+static char *sccsId = "$Id$";
 
 #include 	"iocinf.h"
 #include 	"net_convert.h"
 
-#ifdef __STDC__
 
 LOCAL void reconnect_channel(
 IIU			*piiu,
@@ -90,14 +89,9 @@ IIU			*piiu,
 struct in_addr          *pnet_addr
 );
 
-#else
-
-LOCAL int 	cacMsg();
-LOCAL void 	perform_claim_channel();
-LOCAL void 	reconnect_channel();
-
-#endif
-
+#ifdef CONVERSION_REQUIRED 
+globalref CACVRTFUNC *cac_dbr_cvrt[];
+#endif /*CONVERSION_REQUIRED*/
 
 
 /*
@@ -107,20 +101,12 @@ LOCAL void 	reconnect_channel();
  * LOCK should be applied when calling this routine
  * 
  */
-#ifdef __STDC__
 int post_msg(
 struct ioc_in_use 	*piiu,
 struct in_addr  	*pnet_addr,
 char			*pInBuf,
 unsigned long		blockSize
 )
-#else
-int post_msg(piiu, pnet_addr, pInBuf, blockSize)
-struct ioc_in_use 	*piiu;
-struct in_addr  	*pnet_addr;
-char			*pInBuf;
-unsigned long		blockSize;
-#endif
 {
 	int		status;
 	unsigned long 	size;
@@ -238,16 +224,10 @@ unsigned long		blockSize;
 /*
  * cacMsg()
  */
-#ifdef __STDC__
 LOCAL int cacMsg(
 struct ioc_in_use 	*piiu,
 struct in_addr  	*pnet_addr
 )
-#else
-LOCAL int cacMsg(piiu, pnet_addr)
-struct ioc_in_use 	*piiu;
-struct in_addr  	*pnet_addr;
-#endif
 {
 	evid            monix;
 	int             status;
@@ -324,11 +304,9 @@ struct in_addr  	*pnet_addr;
 			 * convert the data buffer from net
 			 * format to host format
 			 *
-			 * Currently only the VAXs need data
-			 * conversion
 			 */
-#			ifdef VAX
-				(*cvrt[piiu->curMsg.m_type])(
+#			ifdef CONVERSION_REQUIRED 
+				(*cac_dbr_cvrt[piiu->curMsg.m_type])(
 					piiu->pCurData, 
 					piiu->pCurData, 
 					FALSE,
@@ -397,12 +375,9 @@ struct in_addr  	*pnet_addr;
 		/*
 		 * convert the data buffer from net
 		 * format to host format
-		 *
-		 * Currently only the VAXs need data
-		 * conversion
 		 */
-#		ifdef VAX
-			(*cvrt[piiu->curMsg.m_type])(
+#		ifdef CONVERSION_REQUIRED 
+			(*cac_dbr_cvrt[piiu->curMsg.m_type])(
 				piiu->pCurData, 
 				piiu->pCurData, 
 				FALSE,
@@ -444,7 +419,6 @@ struct in_addr  	*pnet_addr;
 		break;
 	}
 	case IOC_READ:
-	case IOC_READ_BUILD:
 	{
 		chid            chan;
 
@@ -455,22 +429,9 @@ struct in_addr  	*pnet_addr;
 		chan = bucketLookupItem(pBucket, piiu->curMsg.m_cid);
 		UNLOCK;
 		if(!chan){
-			if(piiu->curMsg.m_cmmd != IOC_READ_BUILD){
-				ca_signal(ECA_INTERNAL, 
-					"bad client channel id from server");
-			}
+			ca_signal(ECA_INTERNAL, 
+				"bad client channel id from server");
 			break;
-		}
-
-		/*
-		 * ignore IOC_READ_BUILDS after 
-		 * connection occurs
-		 */
-		if(piiu->curMsg.m_cmmd == IOC_READ_BUILD){
-			if(chan->state == cs_conn || 
-				chan->state == cs_closed){
-				break;
-			}
 		}
 
 		/*
@@ -483,14 +444,11 @@ struct in_addr  	*pnet_addr;
 		/*
 		 * convert the data buffer from net
 		 * format to host format
-		 *
-		 * Currently only the VAXs need data
-		 * conversion
 		 */
-#		ifdef VAX
-			(*cvrt[piiu->curMsg.m_type])(
+#		ifdef CONVERSION_REQUIRED 
+			(*cac_dbr_cvrt[piiu->curMsg.m_type])(
 				piiu->pCurData, 
-				piiu->pCurData, 
+				piiu->curMsg.m_available, 
 				FALSE,
 				piiu->curMsg.m_count);
 #		else
@@ -502,22 +460,11 @@ struct in_addr  	*pnet_addr;
 
 		/*
 		 * decrement the outstanding IO count
-		 * 
-		 * This relies on the IOC_READ_BUILD msg
-		 * returning prior to the IOC_BUILD msg.
 		 */
-		if (piiu->curMsg.m_cmmd == IOC_READ){
-			CLRPENDRECV(TRUE);
-		}
-		else if(chan->connection_func == NULL && 
-				chan->state == cs_never_conn){
-			CLRPENDRECV(TRUE);
-		}
-
+		CLRPENDRECV(TRUE);
 		break;
 	}
 	case IOC_SEARCH:
-	case IOC_BUILD:
 		perform_claim_channel(piiu, pnet_addr);
 		break;
 
@@ -580,7 +527,7 @@ struct in_addr  	*pnet_addr;
 		}
 		free(chix);
 		if (!piiu->chidlist.count){
-			piiu->conn_up = FALSE;
+			TAG_CONN_DOWN(piiu);
 		}
 		UNLOCK;
 		break;
@@ -630,7 +577,6 @@ struct in_addr  	*pnet_addr;
 			op = CA_OP_PUT;
 			break;
 		case IOC_SEARCH:
-		case IOC_BUILD:
 			op = CA_OP_SEARCH;
 			break;
 		case IOC_EVENT_ADD:
@@ -673,12 +619,12 @@ struct in_addr  	*pnet_addr;
 		chan->ar.read_access = (ar&CA_ACCESS_RIGHT_READ)?1:0;
 		chan->ar.write_access = (ar&CA_ACCESS_RIGHT_WRITE)?1:0;
 
-		if (chan->access_rights_func) {
-			struct access_rights_handler_args args;
+		if (chan->pAccessRightsFunc) {
+			struct access_rights_handler_args 	args;
 
 			args.chid = chan;
 			args.ar = chan->ar;
-			(*chan->access_rights_func) (args);
+			(*chan->pAccessRightsFunc)(args);
 		}
 		break;
 	}
@@ -709,24 +655,18 @@ struct in_addr  	*pnet_addr;
  *	perform_claim_channel()
  *
  */
-#ifdef __STDC__
 LOCAL void perform_claim_channel(
 IIU			*piiu,
 struct in_addr          *pnet_addr
 )
-#else
-LOCAL void perform_claim_channel(piiu,pnet_addr)
-IIU			*piiu;
-struct in_addr		*pnet_addr;
-#endif
 {
-	int			v42;
-	char			rej[64];
-      	chid			chan;
-	int			status;
-	IIU			*allocpiiu;
-	IIU			*chpiiu;
-	unsigned short		*pMinorVersion;
+	int		v42;
+	char		rej[64];
+      	chid		chan;
+	int		status;
+	IIU		*allocpiiu;
+	IIU		*chpiiu;
+	unsigned short	*pMinorVersion;
 
 	/*
 	 * ignore broadcast replies for deleted channels
@@ -734,9 +674,7 @@ struct in_addr		*pnet_addr;
 	 * lock required around use of the sprintf buffer
 	 */
 	LOCK;
-	chan = bucketLookupItem(
-			pBucket, 
-			piiu->curMsg.m_available);
+	chan = bucketLookupItem(pBucket, piiu->curMsg.m_available);
 	if(!chan){
 		UNLOCK;
 		return;
@@ -782,13 +720,29 @@ struct in_addr		*pnet_addr;
 	}
 
         status = alloc_ioc(pnet_addr, &allocpiiu);
-	if(status != ECA_NORMAL){
+	switch(status){
+
+	case ECA_NORMAL:
+		break;
+
+	case ECA_DISCONN:
+		/*
+		 * This indicates that the connection is tagged
+		 * is tagged for shutdown and we are waiting for 
+		 * it to go away. Search replies are ignored
+		 * in the interim.
+		 */
+		UNLOCK;
+	  	return;
+
+	default:
 		caHostFromInetAddr(pnet_addr,rej,sizeof(rej));
 	  	ca_printf("CAC: ... %s ...\n", ca_message(status));
 	 	ca_printf("CAC: for %s on %s\n", chan+1, rej);
 	 	ca_printf("CAC: ignored search reply- proceeding\n");
 		UNLOCK;
 	  	return;
+
 	}
 
 	/*
@@ -853,16 +807,10 @@ struct in_addr		*pnet_addr;
 /*
  * reconnect_channel()
  */
-#ifdef __STDC__
 LOCAL void reconnect_channel(
 IIU		*piiu,
 chid		chan
 )
-#else
-LOCAL void reconnect_channel(piiu,chan)
-IIU		*piiu;
-chid		chan;
-#endif
 {
       	evid			pevent;
 	enum channel_state	prev_cs;
@@ -920,21 +868,21 @@ chid		chan;
 	 * will always be access and call their call back
 	 * here
 	 */
-	if (chan->access_rights_func && !v41) {
-		struct access_rights_handler_args args;
+	if (chan->pAccessRightsFunc && !v41) {
+		struct access_rights_handler_args 	args;
 
 		args.chid = chan;
 		args.ar = chan->ar;
-		(*chan->access_rights_func) (args);
+		(*chan->pAccessRightsFunc)(args);
 	}
 
-      	if(chan->connection_func){
+      	if(chan->pConnFunc){
 		struct connection_handler_args	args;
 
 		args.chid = chan;
 		args.op = CA_OP_CONN_UP;
 		LOCKEVENTS;
-        	(*chan->connection_func)(args);
+        	(*chan->pConnFunc)(args);
 		UNLOCKEVENTS;
 	}
 	else if(prev_cs==cs_never_conn){
@@ -953,12 +901,7 @@ chid		chan;
  *
  *
  */
-#ifdef __STDC__
 void cac_io_done(int lock)
-#else
-void cac_io_done(lock)
-int 	lock;
-#endif
 {
   	struct pending_io_event	*pioe;
 	

@@ -33,7 +33,7 @@
 /************************************************************************/
 /*_end									*/
 
-static char	*sccsId = "$Id$";
+static char     *sccsId = "$Id$";
 
 #include		"iocinf.h"
 
@@ -47,12 +47,7 @@ static char	*sccsId = "$Id$";
  * suppress monitors if we are behind
  * (an update is sent when we catch up)
  */
-#ifdef __STDC__
 void flow_control(struct ioc_in_use *piiu)
-#else
-void flow_control(piiu)
-struct ioc_in_use *piiu;
-#endif
 {
 	unsigned        nbytes;
 	register int    status;
@@ -68,7 +63,7 @@ struct ioc_in_use *piiu;
 			      FIONREAD,
 			      (int)&nbytes);
 	if (status < 0) {
-		piiu->conn_up = FALSE;
+		TAG_CONN_DOWN(piiu);
 		UNLOCK;
 		return;
 	}

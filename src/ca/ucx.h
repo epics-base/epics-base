@@ -1,5 +1,5 @@
 /* 
- *
+ *	$Id$
  *	U C X . H
  *	UNIX ioctl structures and defines used for VAX/UCX
  *      Author: Gerhard Grygiel (GeG)

@@ -34,9 +34,11 @@
 /*
  * ANSI includes
  */
+#include <stdio.h>
 #include <assert.h>
 #include <string.h>
 #include <stdLib.h>
+#include <stdarg.h>
 
 /*
  * VMS includes
@@ -49,15 +51,103 @@
 
 #define CONNECTION_TIMER_ID 56
 
-LOCAL void connectionTimer(void *astarg);
-LOCAL void      vms_recv_msg_ast(struct ioc_in_use *piiu);
+
+/*
+ * CAC_MUX_IO()
+ *
+ * 	Wait for send ready under VMS
+ *	1) Wait no longer than timeout
+ *
+ *	Under VMS all recv's and input processing
+ *	handled by ASTs
+ */
+void cac_mux_io(struct timeval  *ptimeout)
+{
+        int                     count;
+        int                     newInput;
+        struct timeval          timeout;
 
-struct time{
-	int		lval;
-	int		hval;
+        if(!ca_static->ca_repeater_contacted){
+                notify_ca_repeater();
+        }
+
+        cac_clean_iiu_list();
+
+        timeout = *ptimeout;
+        do{
+                newInput = FALSE;
+                do{
+                        count = cac_select_io(
+                                        &timeout,
+                                        CA_DO_RECVS | CA_DO_SENDS);
+                        if(count>0){
+                                newInput = TRUE;
+                        }
+                        timeout.tv_usec = 0;
+                        timeout.tv_sec = 0;
+                }
+                while(count>0);
+
+                ca_process_input_queue();
+        }
+        while(newInput);
+
+        /*
+         * manage search timers and detect disconnects
+         */
+        manage_conn(TRUE);
 }
 
-struct time timer = {-10000000,-1};
+
+
+/*
+ * cac_block_for_io_completion()
+ */
+void cac_block_for_io_completion()
+{
+	struct timeval  itimeout;
+
+	itimeout.tv_usec = SELECT_POLL%USEC_PER_SEC;
+	itimeout.tv_sec = SELECT_POLL/USEC_PER_SEC;
+	cac_mux_io(&itimeout);
+}
+
+
+/*
+ * os_specific_sg_create()
+ */
+void os_specific_sg_create(CASG *pcasg)
+{
+}
+
+
+/*
+ * os_specific_sg_delete()
+ */
+void os_specific_sg_delete(CASG *pcasg)
+{
+}
+
+
+/*
+ * os_specific_sg_io_complete()
+ */
+void os_specific_sg_io_complete(CASG *pcasg)
+{
+}
+
+
+/*
+ * cac_block_for_sg_completion()
+ */
+void cac_block_for_sg_completion(CASG *pcasg)
+{
+	struct timeval  itimeout;
+
+	itimeout.tv_usec = SELECT_POLL%USEC_PER_SEC;
+	itimeout.tv_sec = SELECT_POLL/USEC_PER_SEC;
+	cac_mux_io(&itimeout);
+}
 
 
 /*
@@ -76,33 +166,7 @@ int cac_add_task_variable(struct ca_static *ca_temp)
  */
 int cac_os_depen_init(struct ca_static *pcas)
 {
-	int status;
-
-	status = lib$get_ef(&pcas->ca_io_done_flag);
-	if (status != SS$_NORMAL){
-		lib$signal(status);
-		return ECA_INTERNAL;
-	}
-
-	status = sys$setimr(NULL, &timer, connectionTimer, CONNECTION_TIMER_ID, 0);
-	assert(status == SS$_NORMAL);
-
-	return ECA_NORMAL
-}
-
-
-
-/*
- * connectionTimer()
- */
-LOCAL void connectionTimer(void *astarg);
-	struct time	tmo;
-	int 		status;
-
-	manage_conn(TRUE);
-
-	status = sys$setimr(NULL, &timer, connectionTimer, CONNECTION_TIMER_ID, 0);
-	assert(status == SS$_NORMAL);
+	return ECA_NORMAL;
 }
 
 
@@ -111,8 +175,6 @@ LOCAL void connectionTimer(void *astarg);
  * localUserName() - for VMS 
  *
  * o Indicates failure by setting ptr to nill
- *
- * !! NEEDS TO BE TESTED !!
  *
  */
 char *localUserName()
@@ -124,24 +186,29 @@ char *localUserName()
 		void		*pRetSize;
 	}item_list[3];
 	int		length;
-	char		pName[8]; /* the size of VMS account names */
+	char		pName[12]; /* the size of VMS user names */
 	short		nameLength;
 	char		*psrc;
 	char		*pdest;
 	int		status;
-	int		jobType;
-	int		jobTypeSize;
+	char		jobType;
+	short		jobTypeSize;
 	char 		*pTmp;
 
 	item_list[0].buffer_length = sizeof(pName);
-	item_list[0].item_code = JPI$_ACCOUNT; /* fetch the account name */
+	item_list[0].item_code = JPI$_USERNAME; /* fetch the user name */
 	item_list[0].pBuf = pName;
 	item_list[0].pRetSize = &nameLength;
-	item_list[1].buffer_length = sizeof(jobtype);
-	item_list[1].item_code = JPI$_JOBTYPE; /* fetch the account name */
+
+	item_list[1].buffer_length = sizeof(jobType);
+	item_list[1].item_code = JPI$_JOBTYPE; /* fetch the job type */
 	item_list[1].pBuf = &jobType;
 	item_list[1].pRetSize = &jobTypeSize;
+
 	item_list[2].buffer_length = 0;
+	item_list[2].item_code = 0; /* none */
+	item_list[2].pBuf = 0;
+	item_list[2].pRetSize = 0;
 
 	status = sys$getjpiw(
 			NULL,
@@ -155,6 +222,25 @@ char *localUserName()
 		return NULL;
 	}
 
+	/*
+	 * test for remote login
+	 */
+	if(jobTypeSize != sizeof(jobType)){
+		return NULL;
+	}
+
+/*
+ * This does not appear to change when it is
+ * a remote login ??
+ */
+	if(jobType != JPI$K_LOCAL && jobType != JPI$K_DETACHED){
+		pTmp = "REMOTE";
+		return pTmp;
+	}
+
+	/*
+	 * parse the user name string
+	 */
 	psrc = pName;
 	length = 0;
 	while(psrc<&pName[nameLength] && !isspace(*psrc)){
@@ -169,25 +255,7 @@ char *localUserName()
 	strncpy(pTmp, pName, length);
 	pTmp[length] = '\0';
 
-	/*
-	 * test for remote login
-	 */
-	if(jobTypeSize == sizeof(jobtype)){
-		if(jobType != JPI$K_LOCAL){
-		}
-	}
-
 	return pTmp;
-}
-
-
-
-/*
- * ca_check_for_fp()
- */
-int ca_check_for_fp()
-{
-	return ECA_NORMAL;
 }
 
 
@@ -221,9 +289,9 @@ void ca_spawn_repeater()
                                     PRC$M_DETACH);
 	if (status != SS$_NORMAL){
 		SEVCHK(ECA_NOREPEATER, NULL);
-#ifdef DEBUG
-		lib$signal(status);
-#endif
+#		ifdef DEBUG
+			lib$signal(status);
+#		endif
         }
 }
 
@@ -231,86 +299,49 @@ void ca_spawn_repeater()
 
 cac_setup_recv_thread(IIU *piiu)
 {
-
-	/*
-	 * request to be informed of future IO
-	 */
-	status = sys$qio(
-                        NULL,
-                        piiu->sock_chan,
-                        IO$_RECEIVE,
-                        &piiu->iosb,
-                        vms_recv_msg_ast,
-                        piiu,
-                        &peek_ast_buf,
-                        sizeof(peek_ast_buf),
-                        MSG_PEEK,
-                        &piiu->recvfrom,
-                        sizeof(piiu->recvfrom),
-                        NULL);
-	if(status != SS$_NORMAL){
-		lib$signal(status);
-		return ECA_INTERNAL;
-        }
-
 	return ECA_NORMAL;
 }
 
 
 /*
+ * caHostFromInetAddr()
  *
- *      VMS_RECV_MSG_AST()
- *
- *
+ * gethostbyaddr() not called on VMS because
+ * the MULTINET socket library requires
+ * user mode AST delivery in order to return from
+ * gethostbyaddr(). This makes gethostbyaddr()
+ * hang when it is called from AST level. 
  */
-#ifdef __STDC__
-LOCAL void vms_recv_msg_ast(struct ioc_in_use *piiu)
-#else /*__STDC__*/
-LOCAL void vms_recv_msg_ast(piiu)
-struct ioc_in_use       *piiu;
-#endif /*__STDC__*/
+void caHostFromInetAddr(struct in_addr *pnet_addr, char *pBuf, unsigned size)
 {
-        short           io_status;
+        char            *pString;
 
-        io_status = piiu->iosb.status;
-
-        if(io_status != SS$_NORMAL){
-                close_ioc(piiu);
-                if(io_status != SS$_CANCEL)
-                        lib$signal(io_status);
-                return;
-        }
-
-        if(!ca_static->ca_repeater_contacted)
-                notify_ca_repeater();
-
-        if(piiu->conn_up){
-                (*piiu->recvBytes)(piiu);
-                ca_process_input_queue();
-        }
-        else{
-                close_ioc(piiu);
-                return;
-        }
+        pString = (char *) inet_ntoa(*pnet_addr);
 
         /*
-         * request to be informed of future IO
+         * force null termination
          */
-        io_status = sys$qio(
-                        NULL,
-                        piiu->sock_chan,
-                        IO$_RECEIVE,
-                        &piiu->iosb,
-                        vms_recv_msg_ast,
-                        piiu,
-                        &peek_ast_buf,
-                        sizeof(peek_ast_buf),
-                        MSG_PEEK,
-                        &piiu->recvfrom,
-                        sizeof(piiu->recvfrom),
-                        NULL);
-        if(io_status != SS$_NORMAL)
-                lib$signal(io_status);
+        strncpy(pBuf, pString, size-1);
+        pBuf[size-1] = '\0';
+
         return;
+}
+
+
+/*
+ *      ca_printf()
+ */
+int ca_printf(char *pformat, ...)
+{
+        va_list         args;
+        int             status;
+
+        va_start(args, pformat);
+
+        status = vfprintf(stderr, pformat, args);
+
+        va_end(args);
+
+        return status;
 }
 

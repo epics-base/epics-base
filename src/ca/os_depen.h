@@ -56,9 +56,8 @@ static char *os_depenhSccsId = "$Id$";
 #	include <sys/ioctl.h>
 #	include <sys/socket.h>
 #	include <netinet/in.h>
-#	include <inetLib.h>
 #	include <net/if.h>
-#	include <taskLib.h>
+
 #	include <systime.h>
 #	include <ioLib.h>
 #	include <tickLib.h>
@@ -72,6 +71,8 @@ static char *os_depenhSccsId = "$Id$";
 #       include <logLib.h>
 #       include <usrLib.h>
 #       include <dbgLib.h>
+#	include <inetLib.h>
+#	include <taskLib.h>
 
 #	include <task_params.h>
 #	include <taskwd.h>
@@ -100,6 +101,7 @@ static char *os_depenhSccsId = "$Id$";
 #	include <psldef.h>
 #       include <prcdef.h>
 #       include <descrip.h>
+#	define MAXHOSTNAMELEN 75
 #ifdef UCX /* GeG 09-DEC-1992 */
 #       include         <sys/ucx$inetdef.h>
 #       include         <ucx.h>
@@ -112,7 +114,29 @@ static char *os_depenhSccsId = "$Id$";
 #endif /*VMS*/
 
 #ifndef CA_OS_CONFIGURED
-@@@@@@ Please define one of vxWorks, UNIX or VMS @@@@@@
+#error Please define one of vxWorks, UNIX or VMS 
+#endif
+
+/*
+ * Set the flag "CONVERSION_REQUIRED" if the architechure is 
+ * little endian or if the local floating point format isnt IEEE.
+ *
+ * Big endin architecture is assumed. Otherwise set "LITTLE_ENDIAN". 
+ *
+ * IEEE floating point architecture assumed. Set "MIT_FLOAT" if
+ * appropriate. No other floating point formats currently
+ * supported.
+ */
+#ifdef VAX
+#define CONVERSION_REQUIRED
+#define MIT_FLOAT
+#define LITTLE_ENDIAN
+#endif
+
+#ifdef __ALPHA 
+#define CONVERSION_REQUIRED
+#define MIT_FLOAT
+#define LITTLE_ENDIAN
 #endif
 
 #ifndef NULL
@@ -147,26 +171,10 @@ static char *os_depenhSccsId = "$Id$";
 /*	Provided to enforce one thread at a time code sections		*/
 /*	independent of a particular operating system			*/
 /************************************************************************/
+
 #if defined(VMS)
-  	/* provides for data structure mutal exclusive lock out	*/
-  	/* in the VMS AST environment.				*/
-  	/* VMS locking recursion allowed			*/
-# 	define	LOCK \
-    		{ \
-			register long astenblwas; \
-   			astenblwas = sys$setast(FALSE); \
-			if(astenblwas == SS$_WASSET){ \
-				ast_lock_count = 1; \
-			} \
-			else{ \
-				ast_lock_count++; \
-			} \
-		}
-# 	define	UNLOCK \
-		ast_lock_count--; \
-		if(ast_lock_count <= 0){ \
-    			sys$setast(TRUE); \
-		}
+#	define  LOCK
+#	define  UNLOCK
 #  	define	LOCKEVENTS
 #  	define	UNLOCKEVENTS
 #	define	EVENTLOCKTEST	(post_msg_active!=0)
@@ -194,7 +202,7 @@ static char *os_depenhSccsId = "$Id$";
 
 #ifdef vxWorks
 #	define VXTHISTASKID 	taskIdSelf()
-#	define abort() 	taskSuspend(VXTHISTASKID)
+#	define abort() 		taskSuspend(VXTHISTASKID)
 #endif
 
 
@@ -225,7 +233,6 @@ static char *os_depenhSccsId = "$Id$";
   		extern int	uerrno;		/* Wallongong errno is uerrno 	*/
 # 		define MYERRNO	uerrno
 #	else
-  		extern volatile int noshare socket_errno;
 # 		define MYERRNO	socket_errno
 #	endif
 #endif
@@ -238,23 +245,13 @@ static char *os_depenhSccsId = "$Id$";
 # 	define MYERRNO	errno
 #endif
 
-#ifdef VMS
-	struct iosb{
-		short 		status;
-		unsigned short 	count;
-		void 		*device;
-	};
-	static char	ca_unique_address;
-#	define		MYTIMERID  (&ca_unique_address)
-#endif
-
 
 #if defined(vxWorks)
 #  	define POST_IO_EV semGive(io_done_sem)
 #endif
 
 #if defined(VMS)
-#  	define POST_IO_EV sys$setef(io_done_flag)
+#  	define POST_IO_EV 
 #endif
 
 #if defined(UNIX)
@@ -275,49 +272,15 @@ static char *os_depenhSccsId = "$Id$";
 
 #if defined(VMS)
 # 	define SYSFREQ		10000000L	/* 10 MHz	*/
-# 	define TCPDELAY\
-	{ \
-		static int ef=NULL; \
- 		int status; \
-		int systim[2]={-LOCALTICKS,~0}; \
-  		if(!ef) ef= lib$get_ef(&ef); \
-  		status = sys$setimr(ef,systim,NULL,MYTIMERID,NULL); \
-  		if(~status&STS$M_SUCCESS)lib$signal(status); \
-  		status = sys$waitfr(ef); \
-  		if(~status&STS$M_SUCCESS)lib$signal(status); \
-	};
 #endif
 
 #if defined(vxWorks)
 # 	define SYSFREQ		((long) sysClkRateGet())  /* usually 60 Hz */
-# 	define TCPDELAY 	taskDelay(ca_static->ca_local_ticks);	
 # 	define time(A) 		(tickGet()/SYSFREQ)
 #endif
 
 #if defined(UNIX)
 #	define SYSFREQ		1000000L	/* 1 MHz	*/
-	/*
-	 * this version of TCPDELAY copies tcpdelayval into temporary storage
-	 * just in case the system modifies the timeval arg to select
- 	 * in the future as is hinted in the select man page.
-	 */
-#	define TCPDELAY \
-	{ \
-		struct timeval dv; \
-		dv = tcpdelayval; \
-		if(select(0,NULL,NULL,NULL,&dv)<0){ \
-			if(MYERRNO != EINTR){ \
-				ca_printf("TCPDELAY errno was %d\n", errno); \
-			} \
-		} \
-	} 
-#	ifdef CA_GLBLSOURCE
-		struct timeval notimeout = {0,0};
-		struct timeval tcpdelayval = {0,LOCALTICKS};
-#	else
-		extern struct timeval notimeout;
-		extern struct timeval tcpdelayval;
-#	endif
 #endif
 
 

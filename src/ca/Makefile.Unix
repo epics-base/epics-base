@@ -1,32 +1,27 @@
 EPICS = ../../..
 include $(EPICS)/config/CONFIG
 
-T_ARCH = sun4
-
-USR_LDLIBS = -lm
+USR_LDLIBS = -lm -s
+USR_LDLIBS =
 USR_CFLAGS = -DACCESS_SECURITY -D_NO_PROTO
 
-CC = acc -Xs
+CC = acc -Xt
 
 SRCS = \
 	iocinf.c access.c test_event.c service.c flow_control.c \
-	repeater.c ca_printf.c conn.c syncgrp.c if_depen.c \
-	netdb_depen.c posix_depen.c caRepeater.c
+	repeater.c conn.c acctst.c syncgrp.c if_depen.c \
+	netdb_depen.c bsd_depen.c posix_depen.c caRepeater.c
 
+OBJS = 
 
-OBJS = \
+LIBOBJS = \
 	$(OBDIR)/iocinf.o $(OBDIR)/access.o $(OBDIR)/test_event.o \
-	$(OBDIR)/service.o $(OBDIR)/flow_control.o \
-        $(OBDIR)/repeater.o $(OBDIR)/ca_printf.o $(OBDIR)/conn.o \
-	$(OBDIR)/syncgrp.o $(OBDIR)/if_depen.o $(OBDIR)/netdb_depen.o \
-	$(OBDIR)/posix_depen.o
+	$(OBDIR)/service.o $(OBDIR)/flow_control.o $(OBDIR)/repeater.o \
+	$(OBDIR)/conn.o $(OBDIR)/syncgrp.o $(OBDIR)/if_depen.o \
+	$(OBDIR)/netdb_depen.o $(OBDIR)/bsd_depen.o $(OBDIR)/posix_depen.o
 
-LIB = libca.a
-LIBNAME = $(OBDIR)/libca.a
+LIBNAME = libca.a
 
-PROD = $(OBDIR)/caRepeater
+TARGET = $(OBDIR)/caRepeater
 
-all :: $(LIBNAME) $(PROD)
-
-include $(EPICS)/config/RULES
-
+include $(EPICS)/config/RULES.Unix

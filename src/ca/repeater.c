@@ -77,11 +77,7 @@ static ELLLIST	client_list;
 
 static char	buf[MAX_UDP]; 
 
-#ifdef __STDC__
 LOCAL int 	clean_client(struct one_client *pclient, int sock);
-#else
-LOCAL int 	clean_client(); 
-#endif
 
 
 /*
@@ -90,7 +86,7 @@ LOCAL int 	clean_client();
  *
  *
  */
-int ca_repeater()
+void ca_repeater()
 {
   	int				status;
   	int				size;
@@ -217,7 +213,7 @@ int ca_repeater()
 				}
 			}
 
-   			memset((char *)&confirm, NULL, sizeof confirm);
+   			memset((char *)&confirm, 0, sizeof confirm);
 			confirm.m_cmmd = htons(REPEATER_CONFIRM);
 			confirm.m_available = local.sin_addr.s_addr;
         		status = sendto(
@@ -256,13 +252,7 @@ int ca_repeater()
  *	check to see if this client is still around
  *
  */
-#ifdef __STDC__
 LOCAL int clean_client(struct one_client *pclient, int sock)
-#else
-LOCAL int clean_client(pclient, sock)
-struct one_client	*pclient;
-int 			sock;
-#endif
 {
 	int			port = pclient->from.sin_port;
   	struct sockaddr_in	bd;

@@ -84,7 +84,7 @@ static long init_record(pmbbo)
 	pvmeio = &(pmbbo->out.value.vmeio);
 	pmbbo->shft = pvmeio->signal;
 	pmbbo->mask = pmbbo->shft;
-	status = bo_read(pvmeio->card,pmbbo->mask,&value,XY220);
+	status = xy220_read(pvmeio->card,pmbbo->mask,&value);
 	if(status==0) pmbbo->rbv = pmbbo->rval = value;
 	break;
     default :
@@ -105,9 +105,9 @@ static long write_mbbo(pmbbo)
 
 	
 	pvmeio = &(pmbbo->out.value.vmeio);
-	status = bo_driver(pvmeio->card,pmbbo->rval,pmbbo->mask,XY220);
+	status = xy220_driver(pvmeio->card,pmbbo->rval,pmbbo->mask);
 	if(status==0) {
-		status = bo_read(pvmeio->card,pmbbo->mask,&value,XY220);
+		status = xy220_read(pvmeio->card,pmbbo->mask,&value);
 		if(status==0) pmbbo->rbv = value;
                 else recGblSetSevr(pmbbo,READ_ALARM,VALID_ALARM);
 	} else {

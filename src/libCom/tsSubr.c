@@ -130,6 +130,7 @@
 #elif defined(WIN32)
 #   include <windows.h>
 #   include <time.h>
+#   include <mmsystem.h>
 #else
 #   include <sys/time.h>
 #endif
@@ -455,7 +456,7 @@ int	dayOfWeek;	/* I day of week for dayYear */
 *	TsAddDouble(&later, &now, twoHours);
 *
 *-*/
-void
+void epicsShareAPI
 tsAddDouble(pSum, pStamp, dbl)
 TS_STAMP *pSum;		/* O sum time stamp */
 TS_STAMP *pStamp;	/* I addend time stamp */
@@ -521,7 +522,7 @@ double	dbl;		/* I number of seconds to add */
 *	    printf("first stamp is later\n");
 *
 *-*/
-int
+int epicsShareAPI
 tsCmpStamps(pStamp1, pStamp2)
 TS_STAMP *pStamp1;	/* pointer to first stamp */
 TS_STAMP *pStamp2;	/* pointer to second stamp */
@@ -595,7 +596,7 @@ TS_STAMP *pStamp2;	/* pointer to second stamp */
 *	tsLocalTime(&now);
 *
 *-*/
-long
+long epicsShareAPI
 tsLocalTime(pStamp)
 TS_STAMP *pStamp;	/* O pointer to time stamp buffer */
 {
@@ -613,11 +614,21 @@ TS_STAMP *pStamp;	/* O pointer to time stamp buffer */
 			return S_ts_sysTimeError;
 		}
 #	elif defined(WIN32)
-		SYSTEMTIME st;	 /* utc */
+		DWORD win_sys_time_ms;		/* time (ms) since windows started */
+                static DWORD prev_time_ms;      /* time (ms) of previous call */
+                static long start_time_s=0;     /* time (sec) from 1990 when windows started */
 
-		pStamp->secPastEpoch = time(NULL) - TS_EPOCH_SEC_PAST_1970;
-		GetSystemTime(&st);
-		pStamp->nsec = st.wMilliseconds * 1000000;
+                if (start_time_s == 0) {
+                       prev_time_ms = timeGetTime();
+                       start_time_s = time(NULL) - TS_EPOCH_SEC_PAST_1970 - (long)prev_time_ms/1000;
+                }
+                win_sys_time_ms = timeGetTime();
+                if (prev_time_ms > win_sys_time_ms) {       /* must have been a timer roll-over */
+                       start_time_s += 4294967;             /* add number of seconds in 49.7 days */
+                }
+                pStamp->secPastEpoch = (long)win_sys_time_ms/1000 + start_time_s; /* time (sec) since 1990 */
+                pStamp->nsec = (long)((win_sys_time_ms % 1000) * 1000000);
+                prev_time_ms = win_sys_time_ms;
 #	else
 		struct timeval curtime;
 
@@ -655,7 +666,7 @@ TS_STAMP *pStamp;	/* O pointer to time stamp buffer */
 *	tsRoundDownLocal(&now, 86400);
 *
 *-*/
-long
+long epicsShareAPI
 tsRoundDownLocal(pStamp, interval)
 TS_STAMP *pStamp;	/* IO pointer to time stamp buffer */
 unsigned long interval;	/* I rounding interval, in seconds */
@@ -700,7 +711,7 @@ unsigned long interval;	/* I rounding interval, in seconds */
 *	tsRoundUpLocal(&now, 86400);
 *
 *-*/
-long
+long epicsShareAPI
 tsRoundUpLocal(pStamp, interval)
 TS_STAMP *pStamp;	/* IO pointer to time stamp buffer */
 unsigned long interval;	/* I rounding interval, in seconds */
@@ -1033,7 +1044,7 @@ struct tsDetail *pT;	/* pointer to time structure for conversion */
 *	printf("time is %s\n", tsStampToText(&now, TS_TEXT_MMDDYY, nowText));
 *
 *-*/
-char *
+char * epicsShareAPI
 tsStampToText(pStamp, textType, textBuffer)
 TS_STAMP *pStamp;	/* I pointer to time stamp */
 enum tsTextType textType;/* I type of conversion desired; one of TS_TEXT_xxx */
@@ -1154,7 +1165,7 @@ char	*textBuffer;	/* O buffer to receive text */
 *	tsTextToStamp(&equiv, &text);
 *
 *-*/
-long
+long epicsShareAPI
 tsTextToStamp(pStamp, pText)
 TS_STAMP *pStamp;	/* O time stamp corresponding to text */
 char	**pText;	/* IO ptr to ptr to string containing time and date */
@@ -1399,7 +1410,7 @@ char	**pText;	/* IO ptr to ptr to string containing time and date */
 *	tsTimeTextToStamp(&equiv, &text);
 *
 *-*/
-long
+long epicsShareAPI
 tsTimeTextToStamp(pStamp, pText)
 TS_STAMP *pStamp;	/* O time stamp corresponding to text */
 char	**pText;	/* IO ptr to ptr to string containing time and date */

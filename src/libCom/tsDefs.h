@@ -288,59 +288,59 @@ void TsAddDouble(TS_STAMP *pSum, TS_STAMP *pS1, double dbl);
 
 #if defined(__STDC__) || defined(__cplusplus)
 
-int nextIntFieldAsInt(
+int epicsShareAPI nextIntFieldAsInt(
 char    **ppText,       /* I/O pointer to pointer to text to scan */
 int     *pIntVal,       /* O pointer to return field's value */
 char    *pDelim         /* O pointer to return field's delimiter */
 );
 
-int nextAlph1UCField(
+int epicsShareAPI nextAlph1UCField(
 char    **ppText,       /* I/O pointer to pointer to text to scan */
 char    **ppField,      /* O pointer to pointer to field */
 char    *pDelim         /* O pointer to return field's delimiter */
 );
 
-int nextIntFieldAsLong(
+int epicsShareAPI nextIntFieldAsLong(
 char    **ppText,       /* I/O pointer to pointer to text to scan */
 long    *pLongVal,      /* O pointer to return field's value */
 char    *pDelim        /* O pointer to return field's delimiter */
 );
 
-long tsLocalTime (TS_STAMP *pStamp);
+long epicsShareAPI tsLocalTime (TS_STAMP *pStamp);
 
-void tsAddDouble(
+void epicsShareAPI tsAddDouble(
 TS_STAMP *pSum,         /* O sum time stamp */
 TS_STAMP *pStamp,       /* I addend time stamp */
 double  dbl             /* I number of seconds to add */
 );
 
-int tsCmpStamps(
+int epicsShareAPI tsCmpStamps(
 TS_STAMP *pStamp1,      /* pointer to first stamp */
 TS_STAMP *pStamp2       /* pointer to second stamp */
 );
 
-long tsRoundDownLocal(
+long epicsShareAPI tsRoundDownLocal(
 TS_STAMP *pStamp,       /* IO pointer to time stamp buffer */
 unsigned long interval  /* I rounding interval, in seconds */
 );
 
-long tsRoundUpLocal(
+long epicsShareAPI tsRoundUpLocal(
 TS_STAMP *pStamp,       /* IO pointer to time stamp buffer */
 unsigned long interval  /* I rounding interval, in seconds */
 );
 
-char * tsStampToText(
+char * epicsShareAPI tsStampToText(
 TS_STAMP *pStamp,       /* I pointer to time stamp */
 enum tsTextType textType,/* I type of conversion desired; one of TS_TEXT_xxx */
 char    *textBuffer     /* O buffer to receive text */
 );
 
-long tsTextToStamp(
+long epicsShareAPI tsTextToStamp(
 TS_STAMP *pStamp,       /* O time stamp corresponding to text */
 char    **pText         /* IO ptr to ptr to string containing time and date */
 );
 
-long tsTimeTextToStamp(
+long epicsShareAPI tsTimeTextToStamp(
 TS_STAMP *pStamp,       /* O time stamp corresponding to text */
 char    **pText         /* IO ptr to ptr to string containing time and date */
 );
@@ -350,14 +350,14 @@ char    **pText         /* IO ptr to ptr to string containing time and date */
 int nextIntFieldAsInt();
 int nextAlph1UCField();
 int nextIntFieldAsLong();
-long tsLocalTime ();
-void tsAddDouble();
-int tsCmpStamps();
-long tsRoundDownLocal();
-long tsRoundUpLocal();
-char *tsStampToText();
-long tsTextToStamp();
-long tsTimeTextToStamp();
+long epicsShareAPI tsLocalTime ();
+void epicsShareAPI tsAddDouble();
+int epicsShareAPI tsCmpStamps();
+long epicsShareAPI tsRoundDownLocal();
+long epicsShareAPI tsRoundUpLocal();
+char epicsShareAPI *tsStampToText();
+long epicsShareAPI tsTextToStamp();
+long epicsShareAPI tsTimeTextToStamp();
 
 #endif
 

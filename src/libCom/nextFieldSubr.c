@@ -141,6 +141,8 @@
 #   include <stdio.h>
 #endif
 #include <epicsAssert.h>
+#include <tsDefs.h>
+
 
 /*-----------------------------------------------------------------------------
 *    the preamble skips over leading white space, stopping either at
@@ -198,7 +200,7 @@ char	*pDelim;	/* O pointer to return field's delimiter */
 	    NEXT_POSTAMBLE
     return count;
 }
-int
+int epicsShareAPI
 nextAlph1UCField(ppText, ppField, pDelim)
 char	**ppText;	/* I/O pointer to pointer to text to scan */
 char	**ppField;	/* O pointer to pointer to field */
@@ -284,7 +286,7 @@ char	*pDelim;	/* O pointer to return field's delimiter */
 	NEXT_POSTAMBLE
     return count;
 }
-int
+int epicsShareAPI 
 nextIntFieldAsInt(ppText, pIntVal, pDelim)
 char	**ppText;	/* I/O pointer to pointer to text to scan */
 int	*pIntVal;	/* O pointer to return field's value */
@@ -303,7 +305,7 @@ char	*pDelim;	/* O pointer to return field's delimiter */
 
     return count;
 }
-int
+int epicsShareAPI
 nextIntFieldAsLong(ppText, pLongVal, pDelim)
 char	**ppText;	/* I/O pointer to pointer to text to scan */
 long	*pLongVal;	/* O pointer to return field's value */

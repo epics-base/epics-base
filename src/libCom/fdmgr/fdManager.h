@@ -91,7 +91,7 @@ private:
     tsDLList < fdReg > activeList;
     resTable < fdReg, fdRegId > fdTbl;
     fd_set fdSets[fdrNEnums];
-    double sleepQuantum;
+    const double sleepQuantum;
     epicsTimerQueuePassive * pTimerQueue;
     SOCKET maxFD;
     bool processInProg;

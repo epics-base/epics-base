@@ -44,20 +44,21 @@ const unsigned uSecPerSec = 1000u * mSecPerSec;
 //
 // fdManager::fdManager()
 //
-epicsShareFunc fdManager::fdManager () : pTimerQueue ( 0 )
+// hopefully its a reasonable guess that select() and epicsThreadSleep()
+// will have the same sleep quantum 
+//
+epicsShareFunc fdManager::fdManager () : 
+    sleepQuantum ( epicsThreadSleepQuantum () ), pTimerQueue ( 0 ), 
+        maxFD ( 0 ), processInProg ( false ), pCBReg ( 0 )
 {
-    size_t i;
-    int status;
-
-    status = osiSockAttach ();
+    int status = osiSockAttach ();
     assert (status);
 
-    for ( i=0u; i < sizeof (this->fdSets) / sizeof ( this->fdSets[0u] ); i++ ) {
+    for ( size_t i = 0u; 
+        i < sizeof (this->fdSets) / sizeof ( this->fdSets[0u] ); 
+        i++ ) {
         FD_ZERO ( &this->fdSets[i] ); // X aCC 392
     }
-    this->maxFD = 0;
-    this->processInProg = false;
-    this->pCBReg = 0;
 }
 
 //
@@ -317,9 +318,7 @@ void fdManager::reschedule ()
 
 double fdManager::quantum ()
 {
-    // hopefully its a reasonable guess that select() and epicsThreadSleep()
-    // will have the same sleep quantum
-    return epicsThreadSleepQuantum ();
+    return this->sleepQuantum;
 }
 
 //

@@ -137,7 +137,7 @@ private:
     epicsEvent rescheduleEvent;
     epicsEvent exitEvent;
     epicsThread thread;
-    double sleepQuantum;
+    const double sleepQuantum;
     bool okToShare;
     bool exitFlag;
     bool terminateFlag;

@@ -35,7 +35,6 @@ static pSigFunc pReplacedSigUrgFunc = 0;
 static void localInstallSigIgnore ( int signalIn, pSigFunc pNewFunc,
                                    pSigFunc * pReplacedFunc )
 {
-    pSigFunc sigRet;
     struct sigaction newAction;
     struct sigaction oldAction;
     int status;

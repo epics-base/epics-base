@@ -26,26 +26,7 @@ inline int cac::vPrintf ( const char *pformat, va_list args )
     return ( *this->pVPrintfFunc ) ( pformat, args );
 }
 
-inline int cac::printf ( const char *pformat, ... )
-{
-    va_list theArgs;
-    int status;
-
-    va_start ( theArgs, pformat );
-    
-    status = this->vPrintf ( pformat, theArgs );
-    
-    va_end ( theArgs );
-    
-    return status;
-}
-
-inline double cac::connectionTimeout () const
-{
-    return this->connTMO;
-}
-
-inline const char * cac::userNamePointer ()
+inline const char * cac::userNamePointer () const
 {
     return this->pUserName;
 }
@@ -60,12 +41,15 @@ inline unsigned cac::getInitializingThreadsPriority () const
     return this->initializingThreadsPriority;
 }
 
-// the recv thread is not permitted to flush as this
+// the process thread is not permitted to flush as this
 // can result in a push / pull deadlock on the TCP pipe.
-// Instead, the recv thread scheduals the flush with the 
+// Instead, the process thread scheduals the flush with the 
 // send thread which runs at a higher priority than the 
 // send thread. The same applies to the UDP thread for
 // locking hierarchy reasons.
+//
+// this is only called when we detect send queue quota
+// exceeded
 inline bool cac::flushPermit () const
 {
     if ( this->pRecvProcThread ) {

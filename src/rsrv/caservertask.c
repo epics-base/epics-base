@@ -38,6 +38,8 @@
  *			debug is on.
  *	.07 joh 020592	substitute lstConcat() for lstExtract() to avoid
  *			replacing the destination list
+ *	.08 joh 021492	cleaned up terminate_one_client()
+ *	.09 joh 022092	print free list statistics in client_stat()
  */
 
 #include <vxWorks.h>
@@ -167,54 +169,59 @@ register struct client *client;
 /* 
  * TERMINATE_ONE_CLIENT
  */
-int 
+LOCAL int 
 terminate_one_client(client)
 register struct client *client;
 {
-	FAST int        servertid = client->tid;
-	FAST int        tmpsock = client->sock;
-	FAST int        status;
-	FAST struct event_ext *pevext;
+	FAST int        	servertid;
+	FAST int        	tmpsock;
+	FAST int        	status;
+	FAST struct event_ext 	*pevext;
 	FAST struct channel_in_use *pciu;
 
-	if (client->proto == IPPROTO_TCP) {
+	if (client->proto != IPPROTO_TCP) {
+		logMsg("CAS: non TCP client delete ignored\n");
+		return ERROR;
+	}
 
-		if(CASDEBUG>0){
-			logMsg("CAS: Connection %d Terminated\n", tmpsock);
-		}
+	tmpsock = client->sock;
 
-		/*
-		 * Server task deleted first since close() is not reentrant
-		 */
-		if (servertid != taskIdSelf() && servertid){
-			if (taskIdVerify(servertid) == OK){
-				if (taskDelete(servertid) == ERROR) {
-					printErrno(errnoGet());
-				}
+	if(CASDEBUG>0){
+		logMsg("CAS: Connection %d Terminated\n", tmpsock);
+	}
+
+	/*
+	 * Server task deleted first since close() is not reentrant
+	 */
+	servertid = client->tid;
+	if (servertid != taskIdSelf()){
+		if (taskIdVerify(servertid) == OK){
+			if (taskDelete(servertid) == ERROR) {
+				printErrno(errnoGet());
 			}
 		}
+	}
 
-		pciu = (struct channel_in_use *) & client->addrq;
-		while (pciu = (struct channel_in_use *) pciu->node.next)
-			while (pevext = (struct event_ext *) lstGet(&pciu->eventq)) {
+	pciu = (struct channel_in_use *) & client->addrq;
+	while (pciu = (struct channel_in_use *) pciu->node.next){
+		while (pevext = (struct event_ext *) lstGet(&pciu->eventq)) {
 
-				status = db_cancel_event(pevext + 1);
-				if (status == ERROR)
-					taskSuspend(0);
-				FASTLOCK(&rsrv_free_eventq_lck);
-				lstAdd(&rsrv_free_eventq, pevext);
-				FASTUNLOCK(&rsrv_free_eventq_lck);
-			}
-
-		if (client->evuser) {
-			status = db_close_events(client->evuser);
+			status = db_cancel_event(pevext + 1);
 			if (status == ERROR)
 				taskSuspend(0);
+			FASTLOCK(&rsrv_free_eventq_lck);
+			lstAdd(&rsrv_free_eventq, pevext);
+			FASTUNLOCK(&rsrv_free_eventq_lck);
 		}
-		if (tmpsock != NONE)
-			if ((status = close(tmpsock)) == ERROR)	/* close socket	 */
-				logMsg("CAS: Unable to close socket\n");
 	}
+
+	if (client->evuser) {
+		status = db_close_events(client->evuser);
+		if (status == ERROR)
+			taskSuspend(0);
+	}
+	if (close(tmpsock) == ERROR)	/* close socket	 */
+		logMsg("CAS: Unable to close socket\n");
 
 	/* free dbaddr str */
 	FASTLOCK(&rsrv_free_addrq_lck);
@@ -238,7 +245,8 @@ register struct client *client;
 STATUS
 client_stat()
 {
-	struct client *client;
+	int		bytes_reserved;
+	struct client 	*client;
 
 
 	LOCK_CLIENTQ;
@@ -254,6 +262,20 @@ client_stat()
 	if(prsrv_cast_client)
 		log_one_client(prsrv_cast_client);
 	
+	bytes_reserved = 0;
+	bytes_reserved += sizeof(struct client)*
+				lstCount(&rsrv_free_clientQ);
+	bytes_reserved += sizeof(struct channel_in_use)*
+				lstCount(&rsrv_free_addrq);
+	bytes_reserved += (sizeof(struct event_ext)+db_sizeof_event_block())*
+				lstCount(&rsrv_free_eventq);
+	printf(	"There are currently %d bytes on the server's free list\n",
+		bytes_reserved);
+	printf(	"{%d client(s), %d channel(s), and %d event(s) (monitors)}\n",
+		lstCount(&rsrv_free_clientQ),
+		lstCount(&rsrv_free_addrq),
+		lstCount(&rsrv_free_eventq));
+
 	return lstCount(&clientQ);
 }
 
@@ -267,7 +289,7 @@ static void
 log_one_client(client)
 struct client *client;
 {
-	NODE          		*addr;
+	struct channel_in_use	*pciu;
 	struct sockaddr_in 	*psaddr;
 	char			*pproto;
 	unsigned long 		current;
@@ -298,6 +320,9 @@ struct client *client;
 		client->tid,
 		delay/sysClkRateGet());
 
+
+
+
 	psaddr = &client->addr;
 	printf("\tRemote address %u.%u.%u.%u Remote port %d state=%s\n",
 	       	(psaddr->sin_addr.s_addr & 0xff000000) >> 24,
@@ -307,8 +332,14 @@ struct client *client;
 	       	psaddr->sin_port,
 		state[client->disconnect?1:0]);
 	printf("\tChannel count %d\n", lstCount(&client->addrq));
-	addr = (NODE *) & client->addrq;
-	while (addr = lstNext(addr))
-		printf("\t%s ", ((struct db_addr *) (addr + 1))->precord);
+
+	pciu = (struct channel_in_use *) client->addrq.node.next;
+	while (pciu){
+		printf(	"\t%s(%d) ", 
+			pciu->addr.precord,
+			pciu->eventq.count);
+		pciu = (struct channel_in_use *) lstNext(pciu);
+	}
+
 	printf("\n");
 }

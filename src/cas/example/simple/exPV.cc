@@ -37,7 +37,7 @@ exPV::exPV (pvInfo &setup, bool preCreateFlag, bool scanOnIn) :
 	// (we will speed this up to the normal rate when
 	// someone is watching the PV)
 	//
-	if (this->scanOn) {
+	if ( this->scanOn && this->info.getScanPeriod () > 0.0 ) {
 		this->pScanTimer = 
 			new exScanTimer (this->getScanPeriod(), *this);
 	}
@@ -169,7 +169,7 @@ caStatus exPV::interestRegister()
 	if (this->pScanTimer) {
 		this->pScanTimer->reschedule(this->getScanPeriod());
 	}
-	else {
+	else if ( this->getScanPeriod () > 0.0 ) {
 		this->pScanTimer = new exScanTimer
 				(this->getScanPeriod(), *this);
 		if (!this->pScanTimer) {

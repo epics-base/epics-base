@@ -41,8 +41,8 @@ const unsigned exServer::pvListNElem = NELEMENTS (exServer::pvList);
 //
 // static on-the-fly PVs
 //
-pvInfo exServer::bill (2.0, "bill", 10.0f, -10.0f, excasIoSync, 1u);
-pvInfo exServer::billy (2.0, "billy", 10.0f, -10.0f, excasIoAsync, 1u);
+pvInfo exServer::bill (-1.0, "bill", 10.0f, -10.0f, excasIoSync, 1u);
+pvInfo exServer::billy (-1.0, "billy", 10.0f, -10.0f, excasIoAsync, 1u);
 
 //
 // exServer::exServer()

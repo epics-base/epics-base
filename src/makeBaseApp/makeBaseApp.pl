@@ -1,228 +1,322 @@
-#!/usr/bin/perl
-#makeBaseApp 
+eval 'exec perl -S $0 ${1+"$@"}'  # -*- Mode: perl -*-
+    if $running_under_some_shell; # makeBaseApp 
+
+# Authors: Ralph Lange and Marty Kraimer
 
 use Cwd;
 use Getopt::Std;
 use File::Copy;
+use File::Find;
+use File::Path;
 
-$user=GetUser();
+$user = GetUser();
+$cwd  = cwd();
+$eAPPTYPE = $ENV{EPICS_MBA_DEF_APP_TYPE};
+$eTOP     = $ENV{EPICS_MBA_TEMPLATE_TOP};
 
-#get options and check for valid combinations
-unless($len = @ARGV) { Cleanup(1);}
-unless(getopts('eib:a:')) {Cleanup(1,"Illegal option");}
-if($opt_e) {
-    if($len = @ARGV) { Cleanup(1,"no arguments allowed with -e");}
-    @ARGV = ("example");
-}
-if(!("opt_i" || "opt_e") && "opt_a") {
-    Cleanup(1,"-a not valid when generating xxxApp only");
-}
+&get_commandline_opts;		# Read and check options
 
-#locate epics_base
-if($opt_b) { #first choice is -b base
-    $epics_base = $opt_b;
-} elsif(-r "config/RELEASE") { #second choice is config/RELEASE
-    open(IN,"config/RELEASE") or die "Cannot open config/RELEASE";
-    while ($line = <IN>) {
-	chomp($line);
-	if($line =~ /EPICS_BASE/) {
-            $line =~ s/EPICS_BASE=//;
-	    $epics_base = $line;
-	    break;
-	}
+#
+# Declare two default callback routines for file copy
+# These may be overriden within $top/$apptypename/Replace.pl
+#
+# ReplaceFilename
+# called with the source (template) file or directory name, returns
+# the "real" name (which gets the target after $top is removed)
+# Empty string: Don't copy this file
+sub ReplaceFilename { # (filename)
+    my($file) = $_[0];
+    $file =~ s|.*/CVS/?.*||;	# template might be kept under CVS
+    if($opt_i) {
+	$file =~ s|/$apptypename|/iocBoot|;
     }
-    close IN;
-} else { #assume script was called with full path to base
-    $epics_base = $0;
-    $epics_base =~ s:(/.*)/bin/.*makeBaseApp.*:$1:;
-}
-unless("$epics_base") {Cleanup (1,"Cannot find EPICS base");}
-
-$top = $epics_base . "/templates/makeBaseApp/top";
-
-#copy <top>/Makefile and config files if not present
-unless (-f 'Makefile')
-{
-    copy("${top}/Makefile","Makefile") or die "$! Copying ${top}/Makefile";
-}
-unless (-d 'config')
-{
-    mkdir('config', 0777) or die "Cannot create config directory";
-    foreach $fullname (glob("${top}/config/*")) {
-	$name = GetFilename($fullname);
-	if($name eq "RELEASE") {#must substitute for epics_base
-	    open(IN,$fullname) or die "Cannot open $fullname";
-	    open OUT, ">config/RELEASE" or die "Cannot create RELEASE";
-	    while ($line =<IN>) {
-		$line =~ s/\${epics_base}/$epics_base/;
-		print OUT $line;
-	    }
-	    close OUT;
-	    close IN;
-	} else {
-	    copy("$fullname","config/$name") or die "$! Copying $fullname";
-	}
+    if ($ioc) {			# iocBoot/ioc template has dynamic name
+	$file =~ s|/iocBoot/ioc|/iocBoot/$ioc|;
+	$file =~ s|_IOC_|$ioc|;
+    } else {
+	$file =~ s|.*/iocBoot/ioc/?.*||;
     }
+    if ($app) {			# apptypenameApp itself is dynamic, too
+	$file =~ s|/$apptypename|/$appdir|;
+	$file =~ s|/$appdir/config|/config/$apptype|;
+    }
+    $file =~ s|_APPNAME_|$appname|;
+    $file =~ s|_APPTYPE_|$apptype|;
+				# We don't want the Replace overrides
+    $file =~ s|.*/$app/Replace.pl$||;
+    return $file;
 }
 
-if($opt_i || $opt_e) { #Create ioc directories
-    unless(-d "iocBoot") {
-        mkdir("iocBoot", 0777) or die "Cannot create iocBoot directory";
-	$fromDir = "$top/iocBoot"; $toDir = "iocBoot";
-	foreach $file ("Makefile","nfsCommands") {
-	    copy("$fromDir/$file","$toDir/$file")
-		or die "$! Copying $fromDir/$file";
-	}
+# ReplaceLine
+# called with one line of a file, returns the line after replacing
+# this and that
+sub ReplaceLine { # (line)
+    my($line) = $_[0];
+    $line =~ s/_USER_/$user/;
+    $line =~ s/_EPICS_BASE_/$epics_base/;
+    $line =~ s/_ARCH_/$arch/;
+    $line =~ s/_APPNAME_/$appname/;
+    $line =~ s/_APPTYPE_/$apptype/;
+    $line =~ s/_TEMPLATE_TOP_/$top/;
+    if ($ioc) {
+	$line =~ s/_IOC_/$ioc/;
     }
-    @IOC = @ARGV;
-    foreach $ioc ( @IOC ) {
-	$ioc =~ s/^ioc//;
-	$ioc = "ioc" . $ioc;
+    return $line;
+}
+
+# Source replace overrides for file copy
+if (-r "$top/$apptypename/Replace.pl") {
+    require "$top/$apptypename/Replace.pl";
+}
+
+#
+# Copy <top>/Makefile and config files if not present
+#
+CopyFile("$top/Makefile") unless (-f 'Makefile');
+find(\&FCopyTree, "$top/config") unless (-d 'config');
+
+#
+# Create ioc directories
+#
+if ($opt_i) {
+    find(\&FCopyTree, "$top/$apptypename") unless (-d "iocBoot");
+
+    foreach $ioc ( @ARGV ) {
+	($ioc =~ /^ioc/) or $ioc = "ioc" . $ioc;
         if (-d "iocBoot/$ioc") {
 	    print "ioc iocBoot/$ioc is already there!\n";
 	    next;
         }
-        mkdir("iocBoot/$ioc", 0777) or die "Cannot create dir iocBoot/$ioc";
-	$fromDir = "$top/iocBoot/ioc"; $toDir = "iocBoot/$ioc";
-	if($opt_a) {
+	find(\&FCopyTree, "$top/$apptypename/ioc");
+    }
+    exit 0;			# finished here for -i (no xxxApps)
+}
+
+#
+# Create app directories (if any names given)
+#
+foreach $app ( @ARGV ) {
+    ($appname = $app) =~ s/App$//;
+    $appdir  = $appname . "App";
+    if (-d "$appdir") {
+	print "Application $appname is already there!\n";
+	next;
+    }
+    print "Creating template structure "
+	. "for $appname (of type $apptypename)\n" if $Debug; 
+    find(\&FCopyTree, "$top/$apptypename");
+}
+
+exit 0;				# END OF SCRIPT
+
+
+#
+# Get commandline options and check for validity
+#
+sub get_commandline_opts { #no args
+    ($len = @ARGV) and getopts('ldit:T:b:a:') or Cleanup(1);
+
+# Debug option
+    $Debug = 1 if $opt_d;
+
+# Locate epics_base
+    if ($opt_b) {		# first choice is -b base
+	$epics_base = $opt_b;
+    } elsif (-r "config/RELEASE") { # second choice is config/RELEASE
+	open(IN, "config/RELEASE") or die "Cannot open config/RELEASE";
+	while (<IN>) {
+	    chomp;
+	    s/EPICS_BASE\s*=\s*// and $epics_base = $_, break;
+	}
+	close IN;
+    } elsif ($0 =~ /\/bin\//) {	# assume script was called with full path to base
+	$epics_base = $0;
+	$epics_base =~ s:(/.*)/bin/.*makeBaseApp.*:$1:;
+    }
+    "$epics_base" or Cleanup(1, "Cannot find EPICS base");
+
+# Locate template top directory
+    if ($opt_T) {		# first choice is -T templ-top
+	$top = $opt_T;
+    } elsif (-r "config/RELEASE") { # second choice is config/RELEASE
+	open(IN, "config/RELEASE") or die "Cannot open config/RELEASE";
+	while (<IN>) {
+	    chomp;
+	    s/TEMPLATE_TOP\s*=\s*// and $top = $_, break;
+	}
+	close IN;
+    }
+    if("$top" eq "") { 
+	if ($eTOP) {		# third choice is $ENV{EPICS_MBA_TEMPL_TOP}
+	    $top = $eTOP;
+	} else {			# use templates from EPICS base
+	    $top = $epics_base . "/templates/makeBaseApp/top";
+	}
+    }
+    "$top" or Cleanup(1, "Cannot find template top directory");
+
+# Print application type list?
+    if ($opt_l) {
+	&ListAppTypes;
+	exit 0;			# finished for -l command
+    }
+
+# iocBoot and architecture stuff
+    if ($opt_i) {
+	if ($opt_a) {
 	    $arch = $opt_a;
 	} else {
 	    print "What architecture do you want to use for your IOC,";
 	    print "e.g. pc486, mv167 ? ";
-	    $arch=<STDIN>;
+	    $arch = <STDIN>;
 	    chomp($arch);
 	}
-        open(IN,"${fromDir}/Makefile") or die "Cannot open ${fromDir}/Makefile";
-        open OUT, ">${toDir}/Makefile" or die "Cannot create ${toDir}/Makefile";
-        while ($line = <IN>) {
-	    $line =~ s/\${arch}/${arch}/;
-	    print OUT $line;
-        }
-        close OUT;
-        close IN;
-	if($opt_e) {
-            open(IN,"${fromDir}/st.cmdExample")
-	        or die "Cannot open ${fromDir}/st.cmdExample";
-            open OUT, ">${toDir}/st.cmd"
-	        or die "Cannot create ${toDir}/st.cmd";
-            while ($line = <IN>) {
-	        $line =~ s/\${user}/${user}/;
-	        print OUT $line;
-            }
-            close OUT;
-            close IN;
-	} else {
-	    copy("$fromDir/st.cmd","$toDir/st.cmd")
-	        or die "$! Copying $fromDir/st.cmd";
-	}
     }
-    if($opt_i) {exit 0;} #If -i was specified dont generate any xxxApps
+
+# Application template type
+    if ($opt_t) { # first choice is -t type
+	$apptype = $opt_t; 
+    } elsif ($eAPPTYPE) { # second choice is $ENV{EPICS_DEFAULT_APP_TYPE}
+	$apptype = $eAPPTYPE;
+    } elsif (-r "$top/defaultApp") {# third choice is (a link) in the $top dir
+	$apptype = "default";
+    }
+    $apptype =~ s/App$//;
+    $apptype =~ s/Boot$//;
+    "$apptype" or Cleanup(1, "Cannot find default application type");
+    if ($opt_i) {			# fixed name when doing ioc dirs
+	$apptypename = $apptype . "Boot";
+    } else {
+	$apptypename = $apptype . "App";
+    }
+
+# Valid $apptypename?
+    while (-l "$top/$apptypename") {
+	($apptypename = readlink "$top/$apptypename") =~ s/^$top//;
+    }
+    unless (-r "$top/$apptypename") {
+	print "Application type does not exist. ";
+	&ListAppTypes;
+	exit 1;
+    }
+
+    print "\nCommand line / environment options validated:\n"
+	. " Templ-Top: $top\n"
+	. "Templ-Type: $apptype\n"
+	. "Templ-Name: $apptypename\n"
+	. "     opt_i: $opt_i\n"
+	. "      arch: $arch\n"
+	. "EPICS-Base: $epics_base\n\n" if $Debug;
 }
 
-#	Generate app dirs (if any names given)
-foreach $app ( @ARGV) {
-    $appname = $app . "App";
-    if (-d "$appname") {
-	print "App $appname is already there!\n";
-	next;
-    }
-    mkdir("$appname", 0777) or die "Cannot create dir $appname";
-    copy("$top/App/Makefile","$appname/Makefile")
-	or die "$! Copying $top/App/Makefile";
-    mkdir("${appname}/src", 0777) or die "Cannot create dir ${appname}/src";
-    $fromDir = "$epics_base/dbd"; $toDir = "${appname}/src";
-    foreach $file ("base.dbd","baseLIBOBJS") {
-	copy("$fromDir/$file","$toDir/$file")
-	    or die "$! Copying $fromDir/$file";
-    }
-    $fromDir = "$top/App/src"; $toDir = "${appname}/src";
-    copy("$fromDir/Makefile","$toDir/Makefile")
-	or die "$! Copying $fromDir/Makefile";
-    if($opt_e) {$example = "Example";} else {$example = "";}
-    foreach $ext ("Host","Vx") {
-	copy("$fromDir/Makefile${example}.$ext","${toDir}/Makefile.$ext")
-	    or die "$! Copying $fromDir/Makefile${example}.$extension";
-    }
-    if($opt_e) {
-	@filelist = (glob("${fromDir}/*.c"));
-	@filelist = (@filelist,glob("${fromDir}/*.dbd"));
-	@filelist = (@filelist,glob("${fromDir}/*.st"));
-	foreach $fullname (@filelist) {
-	    $name = GetFilename($fullname);
-	    if($name eq "sncExample.st") {
-		open(IN,"${fromDir}/sncExample.st")
-		    or die "Cannot open ${fromDir}/sncExample.st";
-		open(OUT, ">${toDir}/sncExample.st")
-		    or die "Cannot open ${toDir}/sncExample.st";
-		while ($line =<IN>) {
-		    $line =~ s/\${user}/${user}/;
-		    print OUT $line;
-		}
-		close OUT;
-		close IN;
-	    } else {
-	        copy("${fromDir}/${name}","${toDir}/${name}")
-	    	    or die "$! \nCopying ${fromDir}/${name}\n";
-	    }
-	}
-    }
-    mkdir("${appname}/Db", 0777) or die "Cannot create dir ${appname}/Db";
-    $fromDir = "$top/App/Db"; $toDir = "${appname}/Db";
-    copy("${fromDir}/Makefile","${toDir}/Makefile")
-	or die "$! Copying ${fromDir}/Makefile";
-    if ($opt_e) {
-        copy("${fromDir}/dbExample.db","${toDir}/dbExample.db")
-	    or die "$! Copying ${fromDir}/dbExample.db";
+#
+# List application types
+#
+sub ListAppTypes { # no args
+    print "Valid application types are:\n";
+    find(\&Fapp_types, "$top/");
+    for $type (keys %Types) {
+	printf "%-15s %-15s\n", $TypeNameA{$type}, $TypeNameE{$type};
     }
 }
+sub Fapp_types {
+    ! /$topn/ && ! /defaultApp$/ && /App$/ &&
+    ($File::Find::prune = 1) && s/App$// &&
+    (($type = $_) =~ s/^example_//, 1) &&
+    ($t = /^example_.*/?TypeNameE:TypeNameA,
+     s/^example_.*/(including example: use \'-e\' option)/, 1) &&
+    (eval "\$$t\{\$type\} = \$_", 1) &&
+    ($Types{$type} = 1);
+}
 
-#	Cleanup (return-code [ messsage-line1, line 2, ... ])
-sub Cleanup
-{
+#
+# Copy a file with replacements
+#
+sub CopyFile { # (source)
+    $source = $_[0];
+    $target = &ReplaceFilename($source);
+
+    if ($target) {
+	$target =~ s|$top/||;
+	open(INP, "<$source") and open(OUT, ">$target")
+	    or die "$! Copying $source -> $target";
+
+	print "Copying file $source -> $target\n" if $Debug;
+	while (<INP>) {
+	    print OUT &ReplaceLine($_);
+	}
+	close INP; close OUT;
+    }
+}
+	
+#
+# Find callback for file or structure copy
+#
+sub FCopyTree {
+    chdir $cwd;			# Sigh
+    if (-d $File::Find::name
+	and ($dir = &ReplaceFilename($File::Find::name))) {
+	$dir =~ s|$top/||;
+	print "Creating directory $dir\n" if $Debug;
+	&mkpath($dir);
+    } else {
+	&CopyFile($File::Find::name);
+    }
+    chdir $File::Find::dir;
+}
+
+#
+# Cleanup and exit
+#
+sub Cleanup { # (return-code [ messsage-line1, line 2, ... ])
     my ($rtncode, @message) = @_;
 
-    foreach $line ( @message )
-    {
+    foreach $line ( @message ) {
 	print "$line\n";
     }
 
-    print "\nUsage:\n\n",
-	"$0 -e\n",
-	"      or create ioc directories\n",
-	"$0 -i [-b base] [-a arch] ioc ...\n",
-	"      or create App directories\n",
-	"$0 [-b base] app ...\n",
-	"\n",
-	"where\n\n",
-	"-e  Create an example app. No other arguments can be given\n",
-	"-i  Create ioc directories only. Each argument is an iocname\n",
-	"    If -i is not specified App directories are created\n",
-	"-b  The location of epics base (full path name).\n",
-	"    If not specified and config exists it is found in config/RELEASE\n",
-	"    If config does not exist it is taken from command\n",
-	"-a  The architecture, e.g. mv167.\n",
-	"    If not given you will be prompted\n";
+    print <<EOF;
+Usage:
+$0 -i [options] ioc ...
+             create ioc boot directories
+$0 [options] app ...
+             create application directories
+where
+ app  Application name (the created directory will have \"App\" appended to this)
+ ioc  IOC name (note: if -i is not specified, App directories will be created)
+
+ -a arch  Set the IOC architecture (e.g. mv167)
+          If not specified, you will be prompted
+ -b base  Set the location of EPICS base (full path)
+          If not specified, base path is taken from config/RELEASE
+          If config does not exist, base path is taken from command
+ -d       Verbose output (useful for debugging)
+ -e       Create example application
+ -l       List valid application types for this installation
+ -t type  Set the application type (-l for a list of valid types)
+          If not specified, type is taken from environment
+          If not found in environment, \"default\" is used
+ -T top   Set the template top directory (where the application templates are)
+          If not specified, top path is taken from config/RELEASE
+          If config does not exist, top path is taken from environment
+          If not found in environment, the templates from EPICS base are used
+
+Environment:
+EPICS_MBA_DEF_APP_TYPE  The application type you want to use as default
+EPICS_MBA_TEMPLATE_TOP  The template top directory
+EOF
 
     exit $rtncode;
 }
 
-sub GetFilename # full name including path
-{
-    my ($name) = @_;
-    $name =~ s:.*/(.*):$1: ;
-    return($name);
-}
-
-sub GetUser # no args
-{
+sub GetUser { # no args
     my ($user);
 
     # add to this list if new possibilities arise,
     # currently it's UNIX and WIN32:
-    $user=$ENV{USER} || $ENV{USERNAME} || $ENV{LOGNAME} || Win32::LoginName();
+    $user = $ENV{USER} || $ENV{USERNAME} || Win32::LoginName();
 
-    unless ($user)
-    {
+    unless ($user) {
 	print "I cannot figure out your user name.\n";
 	print "What shall you be called ?\n";
 	print ">";

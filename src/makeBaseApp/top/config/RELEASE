@@ -1,5 +1,6 @@
 #RELEASE Location of external products
-EPICS_BASE=${epics_base}
+EPICS_BASE=_EPICS_BASE_
+TEMPLATE_TOP=_TEMPLATE_TOP_
 #SHARE=
 #HIDEOS=
 #EPICSHIDEOS=

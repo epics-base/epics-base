@@ -2,15 +2,10 @@
 DIRS += $(wildcard ioc*)
 DIRS += $(wildcard as*)
 include $(EPICS_BASE)/config/RULES_DIRS
-ifeq ($(findstring nfsCommands,$(wildcard *)),nfsCommands)
 buildInstall:: nfs.cmd
 
 nfs.cmd: nfsCommands
-	@echo "Creating $@"
-	@$(RM) $@
-	@cat  $< >> $@
-	@echo cd \"`\pwd`\" >> $@
+	$(PERL) $(TOP)/config/makeNfsCommands.pl
 
 clean::
 	@$(RM) nfs.cmd
-endif

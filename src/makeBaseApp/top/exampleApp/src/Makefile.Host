@@ -1,0 +1,19 @@
+# Makefile.Host
+TOP = ../../..
+include $(TOP)/config/CONFIG_APP
+#----------------------------------------
+#  ADD MACRO DEFINITIONS AFTER THIS LINE
+
+#USR_CFLAGS += 
+PROD_LIBS	+= ca
+PROD_LIBS	+= Db
+PROD_LIBS	+= Com
+ca_DIR  = $(EPICS_BASE_LIB)
+Db_DIR  = $(EPICS_BASE_LIB)
+Com_DIR = $(EPICS_BASE_LIB)
+
+PROD += caExample
+
+include $(TOP)/config/RULES.Host
+#----------------------------------------
+#  ADD RULES AFTER THIS LINE

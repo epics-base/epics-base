@@ -138,16 +138,18 @@ LOCAL void eventCallback(struct event_handler_args eha)
     }
     pasginp = (ASGINP *)eha.usr;
     pcapvt = (CAPVT *)pasginp->capvt;
-    pasg = (ASG *)pasginp->pasg;
-    pcapvt->rtndata = *pdata; /*structure copy*/
-    if(pdata->severity==INVALID_ALARM) {
-	pasg->inpBad |= (1<<pasginp->inpIndex);
-    } else {
-	pasg->inpBad &= ~((1<<pasginp->inpIndex));
-        pasg->pavalue[pasginp->inpIndex] = pdata->value;
+    if(ca_read_access(pcapvt->chid)) {
+	pasg = (ASG *)pasginp->pasg;
+	pcapvt->rtndata = *pdata; /*structure copy*/
+	if(pdata->severity==INVALID_ALARM) {
+	    pasg->inpBad |= (1<<pasginp->inpIndex);
+	} else {
+	    pasg->inpBad &= ~((1<<pasginp->inpIndex));
+            pasg->pavalue[pasginp->inpIndex] = pdata->value;
+	}
+	pasg->inpChanged |= (1<<pasginp->inpIndex);
+	if(!caInitializing) asComputeAsg(pasg);
     }
-    pasg->inpChanged |= (1<<pasginp->inpIndex);
-    if(!caInitializing) asComputeAsg(pasg);
     if(Ilocked) FASTUNLOCK(&asLock);
 }
 

@@ -217,26 +217,28 @@ LOCAL int cac_push_udp_msg (udpiiu *piiu, const caHdr *pMsg, const void *pExt, c
 /*
  *  Default Exception Handler
  */
-LOCAL void ca_default_exception_handler (struct exception_handler_args args)
-{
-    if (args.chid && args.op != CA_OP_OTHER) {
-        ca_signal_formated (
-            args.stat, 
-            args.pFile, 
-            args.lineNo, 
-            "%s - with request chan=%s op=%ld data type=%s count=%ld",
-            args.ctx,
-            ca_name (args.chid),
-            args.op,
-            dbr_type_to_text(args.type),
-            args.count);
-    }
-    else {
-        ca_signal_formated (
-            args.stat, 
-            args.pFile, 
-            args.lineNo, 
-            args.ctx);
+extern "C" {
+    LOCAL void ca_default_exception_handler (struct exception_handler_args args)
+    {
+        if (args.chid && args.op != CA_OP_OTHER) {
+            ca_signal_formated (
+                args.stat, 
+                args.pFile, 
+                args.lineNo, 
+                "%s - with request chan=%s op=%ld data type=%s count=%ld",
+                args.ctx,
+                ca_name (args.chid),
+                args.op,
+                dbr_type_to_text(args.type),
+                args.count);
+        }
+        else {
+            ca_signal_formated (
+                args.stat, 
+                args.pFile, 
+                args.lineNo, 
+                args.ctx);
+        }
     }
 }
 
@@ -861,7 +863,7 @@ cac::~cac ()
  */
 int epicsShareAPI ca_build_and_connect (const char *name_str, chtype get_type,
             unsigned long get_count, chid * chan, void *pvalue, 
-            void (*conn_func) (struct connection_handler_args), void *puser)
+            caCh *conn_func, void *puser)
 {
     if (get_type != TYPENOTCONN && pvalue!=0 && get_count!=0) {
         return ECA_ANACHRONISM;
@@ -874,7 +876,7 @@ int epicsShareAPI ca_build_and_connect (const char *name_str, chtype get_type,
  * constructCoreChannel ()
  */
 LOCAL void constructCoreChannel (baseCIU *pciu,
-               void (*conn_func) (struct connection_handler_args), void *puser) 
+               caCh *conn_func, void *puser) 
 {
     pciu->piiu = NULL; 
     pciu->puser = puser;
@@ -1097,7 +1099,7 @@ int cac_search_msg (nciu *chan)
  * caIOBlockCreate ()
  */
 LOCAL nmiu *caIOBlockCreate (nciu *pChan, unsigned cmdIn, chtype type, 
-    unsigned long count, void (*pFunc) (struct event_handler_args), void *pParam)
+    unsigned long count, caEventCallBackFunc *pFunc, void *pParam)
 {
     int status;
     nmiu *pIOBlock;
@@ -1259,7 +1261,7 @@ LOCAL void ca_event_handler (void *usrArg,
  *  issue_get ()
  */
 LOCAL int issue_get (ca_uint16_t cmd, nciu *chan, chtype type, 
-    unsigned long count, void (*pfunc) (struct event_handler_args), void *pParam)
+    unsigned long count, caEventCallBackFunc *pfunc, void *pParam)
 {
     int         status;
     caHdr       hdr;
@@ -1363,7 +1365,7 @@ int epicsShareAPI ca_array_get (chtype type, unsigned long count, chid chanIn, v
  * ca_array_get_callback ()
  */
 int epicsShareAPI ca_array_get_callback (chtype type, unsigned long count, chid chanIn,
-            void (*pfunc) (struct event_handler_args), void *arg)
+            caEventCallBackFunc *pfunc, void *arg)
 {
     baseCIU *pChan = (baseCIU *) chanIn;
 
@@ -1636,34 +1638,36 @@ LOCAL int issue_put (ca_uint16_t cmd, unsigned id, nciu *chan, chtype type,
 /*
  *  ca_put_notify_action
  */
-LOCAL void ca_put_notify_action (void *pPrivate)
-{
-    lciu *pChan = (lciu *) pPrivate;
-    lclIIU *pliiu = iiuToLIIU (pChan->ciu.piiu);
+extern "C" {
+    LOCAL void ca_put_notify_action (void *pPrivate)
+    {
+        lciu *pChan = (lciu *) pPrivate;
+        lclIIU *pliiu = iiuToLIIU (pChan->ciu.piiu);
 
-    /*
-     * independent lock used here in order to
-     * avoid any possibility of blocking
-     * the database (or indirectly blocking
-     * one client on another client).
-     */
-    semMutexMustTake (pliiu->putNotifyLock);
-    ellAdd (&pliiu->putNotifyQue, &pChan->ppn->node);
-    semMutexGive (pliiu->putNotifyLock);
+        /*
+         * independent lock used here in order to
+         * avoid any possibility of blocking
+         * the database (or indirectly blocking
+         * one client on another client).
+         */
+        semMutexMustTake (pliiu->putNotifyLock);
+        ellAdd (&pliiu->putNotifyQue, &pChan->ppn->node);
+        semMutexGive (pliiu->putNotifyLock);
 
-    /*
-     * offload the labor for this to the
-     * event task so that we never block
-     * the db or another client.
-     */
-    (*pliiu->pva->p_pvEventQueuePostExtraLabor) (pliiu->evctx);
+        /*
+         * offload the labor for this to the
+         * event task so that we never block
+         * the db or another client.
+         */
+        (*pliiu->pva->p_pvEventQueuePostExtraLabor) (pliiu->evctx);
+    }
 }
 
 /*
  * localPutNotifyInitiate ()
  */
 int localPutNotifyInitiate (lciu *pChan, chtype type, unsigned long count, 
-    const void *pValue, void (*pCallback)(struct event_handler_args), void *usrArg)
+    const void *pValue, caEventCallBackFunc *pCallback, void *usrArg)
 {
     lclIIU *pliiu = iiuToLIIU (pChan->ciu.piiu);
     unsigned size;
@@ -1818,7 +1822,7 @@ int epicsShareAPI ca_array_put (chtype type, unsigned long count, chid pChanIn, 
 /*
  *  Specify an event subroutine to be run for connection events
  */
-int epicsShareAPI ca_change_connection_event (chid pChanIn, void (*pfunc)(struct connection_handler_args))
+int epicsShareAPI ca_change_connection_event (chid pChanIn, caCh *pfunc)
 {
     baseCIU *pChan = (baseCIU *) pChanIn;
 
@@ -1854,7 +1858,7 @@ int epicsShareAPI ca_change_connection_event (chid pChanIn, void (*pfunc)(struct
 /*
  * ca_replace_access_rights_event
  */
-int epicsShareAPI ca_replace_access_rights_event (chid pChanIn, void (*pfunc)(struct access_rights_handler_args))
+int epicsShareAPI ca_replace_access_rights_event (chid pChanIn, caArh *pfunc)
 {
     baseCIU *pChan = (baseCIU *) pChanIn;
     struct access_rights_handler_args args;
@@ -1901,8 +1905,7 @@ int epicsShareAPI ca_replace_access_rights_event (chid pChanIn, void (*pfunc)(st
 /*
  *  Specify an event subroutine to be run for asynch exceptions
  */
-int epicsShareAPI ca_add_exception_event
-    (void (*pfunc)(struct exception_handler_args), void *arg)
+int epicsShareAPI ca_add_exception_event (caExceptionHandler *pfunc, void *arg)
 {
     cac *pcac;
     int caStatus;
@@ -1930,7 +1933,7 @@ int epicsShareAPI ca_add_exception_event
  *  ca_add_masked_array_event
  */
 int epicsShareAPI ca_add_masked_array_event (chtype type, unsigned long count, chid pChanIn, 
-        void (*pCallBack)(struct event_handler_args), void *pCallBackArg, ca_real p_delta, 
+        caEventCallBackFunc *pCallBack, void *pCallBackArg, ca_real p_delta, 
         ca_real n_delta, ca_real timeout, evid *monixptr, long mask)
 {
     baseCIU *pChan = (baseCIU *) pChanIn;
@@ -2322,8 +2325,10 @@ void cacFlushAllIIU (cac *pcac)
  * out so that we will not decrement the pending
  * recv count in the future.
  */
-LOCAL void noopConnHandler (struct  connection_handler_args)
-{
+extern "C" {
+    LOCAL void noopConnHandler (struct  connection_handler_args)
+    {
+    }
 }
 
 /*
@@ -3061,7 +3066,7 @@ int ca_printf (cac *pcac, const char *pformat, ...)
  */
 int ca_vPrintf (cac *pcac, const char *pformat, va_list args)
 {
-    int (*ca_printf_func)(const char *pformat, va_list args);
+    caPrintfFunc *ca_printf_func;
     
     if (pcac) {
         if (pcac->ca_printf_func) {
@@ -3650,3 +3655,4 @@ epicsShareDef const char *dbr_text[LAST_BUFFER_TYPE+1] = {
 
 epicsShareDef const char *  dbr_text_invalid = "DBR_invalid";
 epicsShareDef const short   dbr_text_dim = (sizeof dbr_text) / (sizeof (char *)) + 1;
+

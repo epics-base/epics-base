@@ -38,13 +38,13 @@ gdd_SRCS := gdd.cc gddTest.cc gddAppTable.cc gddNewDel.cc \
 	gddArray.cc gddContainer.cc gddErrorCodes.cc gddUtils.cc \
 	smartGDDPointer.cc
 
-LIBRARY = gdd
+LIBRARY_HOST = gdd
 
 DLL_LIBS = Com
 
 genApps_SRCS = genApps.cc $(AITGENSRCS)
 aitGen_SRCS = aitTypes.c aitGen.c
-#TESTPROD = aitGen genApps
+TESTPROD = aitGen genApps
 
 include $(TOP)/configure/RULES
 
@@ -70,22 +70,8 @@ aitConvertGenerated.cc: aitGen$(HOSTEXE) ../aitTypes.h
 gddApps.h : genApps$(EXE)
 	./genApps$(EXE) $@
 
-# unfortunately there is only one TESTPROD/TESTPROD_SRCS allowed
-# right now
-# (or many 'simple' progs:
-#  TESTPROD:=a b c
-#  where a is build from a.cc,   b from b.cc, c from c.cc
-# )
-#
-# This rule, however, should be system-independent:
-aitGen$(EXE): aitGen$(OBJ) aitTypes$(OBJ)
-	$(LINK.c) $^ 
-
-genApps$(EXE): genApps$(OBJ) $(addsuffix $(OBJ), $(basename $(AITGENSRCS)))
-	$(LINK.cpp) $^ 
-
 clean::
-	$(RM) aitConvertGenerated.cc aitGen$(HOSTEXE) genApps$(EXE)
+	$(RM) aitConvertGenerated.cc gddApps.h
 
 #	EOF base/src/gdd/Makefile.Host:n
 

@@ -47,6 +47,9 @@
  * .09 050494 pg        HPUX port changes.
  * .10 021694 joh	ANSI C	
  * $Log$
+ * Revision 1.26  1997/06/25 05:59:23  jhill
+ * ported log server to win32
+ *
  * Revision 1.25  1997/04/10 19:53:03  jhill
  * api changes
  *
@@ -127,12 +130,12 @@ struct iocLogClient {
 };
 
 struct ioc_log_server {
-	char		outfile[256];
-	long		filePos;
-	FILE		*poutfile;
-	void   		*pfdctx;
-	SOCKET		sock;
-	unsigned	max_file_size;
+	char outfile[256];
+	long filePos;
+	FILE *poutfile;
+	void *pfdctx;
+	SOCKET sock;
+	long max_file_size;
 };
 
 
@@ -551,6 +554,7 @@ static void writeMessagesToLog (struct iocLogClient *pclient)
 	while (TRUE) {
 		size_t nchar;
 		size_t nTotChar;
+		int ntci;
 
 		if (pline >= &pclient->recvbuf[pclient->nChar]) {
 			pclient->nChar = 0u;
@@ -587,7 +591,9 @@ static void writeMessagesToLog (struct iocLogClient *pclient)
 		 */
 		nTotChar = strlen(pclient->name) +
 				strlen(pclient->ascii_time) + nchar + 3u;
-		if (pserver->filePos+nTotChar >= pserver->max_file_size) {
+		assert (nTotChar <= INT_MAX);
+		ntci = (int) nTotChar;
+		if (pserver->filePos+ntci >= pserver->max_file_size) {
 			if (pserver->max_file_size>=pserver->filePos) {
 				unsigned nPadChar;
 				/*
@@ -626,7 +632,7 @@ static void writeMessagesToLog (struct iocLogClient *pclient)
 		if (status<0) {
 			handleLogFileError();
 		}
-		if (status != nTotChar) {
+		if (status != ntci) {
 			fprintf(stderr, "iocLogServer: didnt calculate number of characters correctly?\n");
 		}
 		pserver->filePos += status;
@@ -740,7 +746,13 @@ static int getConfig(void)
 	status = envGetLongConfigParam(
 			&EPICS_IOC_LOG_FILE_LIMIT, 
 			&ioc_log_file_limit);
-	if(status<0){
+	if(status>=0){
+		if (ioc_log_file_limit<=0) {
+			envFailureNotify (&EPICS_IOC_LOG_FILE_LIMIT);
+			return IOCLS_ERROR;
+		}
+	}
+	else {
 		ioc_log_file_limit = 10000;
 	}
 

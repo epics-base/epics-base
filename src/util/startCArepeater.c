@@ -46,7 +46,8 @@
 *-***************************************************************************/
 #include <stdio.h>
 #include <cadef.h>
-main()
+int main()
 {
     ca_task_initialize();
+    return 0;
 }

@@ -118,7 +118,7 @@ int main(argc, argv)
 	fprintf(stderr,"Input file MUST have .data  extension\n");
 	exit(-1);
     }
-    strcpy(pext,".ascii");
+    strcpy(pext,".db");
     inFile = fopen(argv[1],"r");
     if(!inFile) {
 	fprintf(stderr,"Error opening %s\n",argv[1]);

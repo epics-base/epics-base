@@ -3,6 +3,7 @@ include Target.include
 include $(EPICS)/config/CONFIG_BASE
 
 
+INC += cvtTable.h
 
 SRCS.c = ../makeBpt
 OBJS = makeBpt

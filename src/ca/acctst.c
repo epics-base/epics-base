@@ -2494,6 +2494,30 @@ void verifyChannelPriorities ( const char *pName, unsigned interestLevel )
     showProgressEnd ( interestLevel );
 }
 
+void verifyTearDownWhenChannelConnected ( const char * pName, 
+        enum ca_preemptive_callback_select select, 
+        unsigned interestLevel )
+{
+    unsigned i;
+
+    showProgressBegin ( "verifyTearDownWhenChannelConnected", interestLevel );
+
+    for ( i = 0u; i < 10; i++ ) {
+        chid chan;
+        int status;
+        ca_context_create ( select );
+        status = ca_create_channel ( pName, 0, 0, 0, & chan );
+        SEVCHK ( status, "immediate tear down channel create failed" );
+        status = ca_pend_io ( timeoutToPendIO );
+        SEVCHK ( status, "immediate tear down channel connect failed" );
+        assert ( status == ECA_NORMAL );
+        ca_context_destroy ();
+    }
+
+    showProgressEnd ( interestLevel );
+}
+
+
 void verifyImmediateTearDown ( const char * pName, 
         enum ca_preemptive_callback_select select, 
         unsigned interestLevel )
@@ -2719,6 +2743,7 @@ int acctst ( char *pName, unsigned interestLevel, unsigned channelCount,
     }
 
     verifyImmediateTearDown ( pName, select, interestLevel );
+    verifyTearDownWhenChannelConnected ( pName, select, interestLevel );
 
     status = ca_context_create ( select );
     SEVCHK ( status, NULL );

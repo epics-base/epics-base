@@ -49,27 +49,27 @@ static const caHdr nill_msg = {0u,0u,0u,0u,0u,0u};
 //
 // casStrmClient::casStrmClient()
 //
-casStrmClient::casStrmClient (caServerI &serverInternal) :
-	casClient (serverInternal, 1)
+casStrmClient::casStrmClient ( caServerI &serverInternal ) :
+	casClient ( serverInternal, 1 )
 {
-	this->lock();
+	this->lock ();
 
-	this->ctx.getServer()->installClient (this);
+	this->ctx.getServer()->installClient ( this );
 
     this->pHostName = new char [1u];
-    if (!this->pHostName) {
+    if ( ! this->pHostName ) {
         throw S_cas_noMemory;
     }
     *this->pHostName = '\0';
 
     this->pUserName = new char [1u];
-    if (!this->pUserName) {
-        free (this->pHostName);
+    if ( ! this->pUserName ) {
+        free ( this->pHostName );
         throw S_cas_noMemory;
     }
     *this->pUserName= '\0';
 
-	this->unlock();
+	this->unlock ();
 }
 
 //
@@ -84,13 +84,9 @@ casStrmClient::~casStrmClient()
 	//
 	this->ctx.getServer()->removeClient(this);
 
-	if (this->pUserName) {
-		delete [] this->pUserName;
-	}
+	delete [] this->pUserName;
 
-	if (this->pHostName) {
-		delete [] this->pHostName;
-	}
+	delete [] this->pHostName;
 
 	//
 	// delete all channel attached

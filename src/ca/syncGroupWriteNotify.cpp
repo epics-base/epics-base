@@ -86,14 +86,10 @@ void syncGroupWriteNotify::show ( unsigned level ) const
     }
 }
 
-void * syncGroupWriteNotify::operator new ( size_t sizeIn )
-{
-    return ::operator new ( sizeIn );
-}
-
 void syncGroupWriteNotify::operator delete ( void * p )
 {
-    ::operator delete ( p );
+    throw std::logic_error 
+        ( "compiler is confused about placement delete" );
 }
 
 void * syncGroupWriteNotify::operator new ( size_t size, 
@@ -102,11 +98,11 @@ void * syncGroupWriteNotify::operator new ( size_t size,
     return freeList.allocate ( size );
 }
 
-#if defined ( CASG_PLACEMENT_DELETE )
+#if defined ( CXX_PLACEMENT_DELETE )
 void syncGroupWriteNotify::operator delete ( void *pCadaver, 
     tsFreeList < class syncGroupWriteNotify, 128, epicsMutexNOOP > &freeList )
 {
-    freeList.release ( pCadaver, sizeof ( syncGroupWriteNotify ) );
+    freeList.release ( pCadaver );
 }
 #endif
 

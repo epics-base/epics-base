@@ -89,18 +89,10 @@ extern "C" void putNotifyCompletion ( putNotify *ppn )
     dbPutNotifyBlocker *pBlocker = static_cast < dbPutNotifyBlocker * > ( ppn->usrPvt );
     if ( pBlocker->pNotify ) {
         if ( pBlocker->pn.status != putNotifyOK) {
-            if ( pBlocker->pn.status == putNotifyBlocked ) {
-                pBlocker->pNotify->exception ( 
-                    ECA_PUTCBINPROG, "put notify blocked",
-                    static_cast <unsigned> (pBlocker->pn.dbrType), 
-                    static_cast <unsigned> (pBlocker->pn.nRequest) );
-            }
-            else {
-                pBlocker->pNotify->exception ( 
-                    ECA_PUTFAIL,  "put notify unsuccessful",
-                    static_cast <unsigned> (pBlocker->pn.dbrType), 
-                    static_cast <unsigned> (pBlocker->pn.nRequest) );
-            }
+            pBlocker->pNotify->exception ( 
+                ECA_PUTFAIL,  "put notify unsuccessful",
+                static_cast <unsigned> (pBlocker->pn.dbrType), 
+                static_cast <unsigned> (pBlocker->pn.nRequest) );
         }
         else {
             pBlocker->pNotify->completion ();

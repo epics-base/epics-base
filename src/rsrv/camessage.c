@@ -1449,12 +1449,7 @@ void write_notify_reply(void *pArg)
          * status here
          */
         if(ppnb->dbPutNotify.status != putNotifyOK){
-            if(ppnb->dbPutNotify.status == putNotifyBlocked){
-                status = ECA_PUTCBINPROG;
-            }
-            else{
-                status = ECA_PUTFAIL;
-            }
+            status = ECA_PUTFAIL;
         }
         else{
             status = ECA_NORMAL;

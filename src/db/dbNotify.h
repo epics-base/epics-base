@@ -32,7 +32,6 @@ typedef struct ellCheckNode{
 typedef enum {
     putNotifyOK,
     putNotifyCanceled,
-    putNotifyBlocked,
     putNotifyError
 }putNotifyStatus;
 
@@ -113,18 +112,7 @@ epicsShareFunc int epicsShareAPI dbNotifyDump(void);
  *		put notify is waiting to complete, and 2) a list of records
  *              to restart.
  *
- * If dbPutNotify finds it's associated record busy, either because another
- * dbPutNotify is already active on the same record or because the record
- * is active, the request is put on a restartList.
- *
- * When a putNotify becomes the owner of a record, it trys up to three times
- * to find PACT false. If on the third try it finds the record active,
- * it gives up and calls the userCallback with status putNotifyBlocked.
- *
- * When a putNotify calls dbProcess, each record that is processed 
- * is added to a waitList. The only exception is that if it finds
- * the same record that the putNotify references. The reason is that if it
- * did it would be easy to create infinite loops of record processing.
+ * See the Application Developer's Guide for implementation rules
  */
 #ifdef __cplusplus
 }

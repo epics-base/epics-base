@@ -179,8 +179,9 @@ struct dbr_alDouble     {DBRalDouble};
 #define S_db_noRSET 	(M_dbAccess|31) /*missing record support entry table*/
 #define S_db_noSupport 	(M_dbAccess|33) /*RSET routine not defined*/
 #define S_db_BadSub 	(M_dbAccess|35) /*Subroutine not found*/
-/*!!!! Do not change next two lines without changing src/rsrv/server.h!!!!!!!!*/
+/*!!!! Do not change next line without changing src/rsrv/server.h!!!!!!!!*/
 #define S_db_Pending 	(M_dbAccess|37) /*Request is pending*/
+
 #define S_db_Blocked 	(M_dbAccess|39) /*Request is Blocked*/
 #define S_db_putDisabled (M_dbAccess|41) /*putFields are disabled*/
 #define S_db_bkptSet    (M_dbAccess|53) /*Breakpoint already set*/

@@ -342,9 +342,7 @@ STATIC void dbtpnCallback(putNotify *ppn)
 {
     putNotifyStatus	status = ppn->status;
 
-    if(status==putNotifyBlocked)
-	printf("dbtpnCallback: blocked record=%s\n",ppn->paddr->precord->name);
-    else if(status==0)
+    if(status==0)
 	printf("dbtpnCallback: success record=%s\n",ppn->paddr->precord->name);
     else
         errlogPrintf("%s dbtpnCallback putNotify.status %d\n",(int)status);

@@ -30,9 +30,9 @@ void cacServiceList::registerService ( cacServiceIO &service )
     this->unlock ();
 }
 
-cacChannelIO * cacServiceList::createChannelIO (const char *pName, cacChannel &chan)
+cacLocalChannelIO * cacServiceList::createChannelIO (const char *pName, cacChannel &chan)
 {
-    cacChannelIO *pChanIO = 0;
+    cacLocalChannelIO *pChanIO = 0;
 
     this->lock ();
     tsDLIterBD <cacServiceIO> iter ( this->services.first () );

@@ -31,6 +31,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <limits.h>
 
 #include "dbDefs.h"
 #include "osiSock.h"
@@ -65,16 +66,16 @@ void cas_send_msg (struct client *pclient, int lock_needed)
         SEND_LOCK(pclient);
     }
 
-    if(pclient->send.stk){
+    if (pclient->send.stk) {
 #ifdef CONVERSION_REQUIRED
         /*  Convert all caHdr into net format.
          *  The remaining bytes must already be in
          *  net format, because here we have no clue
          *  how to convert them.
          */
-        char        *buf;
+        char            *buf;
         unsigned long   msg_size, num_bytes;
-        caHdr       *mp;
+        caHdr           *mp;
 
         
         buf       = (char *) pclient->send.buf;
@@ -107,7 +108,7 @@ void cas_send_msg (struct client *pclient, int lock_needed)
 
         status = sendto (pclient->sock, pclient->send.buf, pclient->send.stk, 0,
                         (struct sockaddr *)&pclient->addr, sizeof(pclient->addr));
-        if( pclient->send.stk != (unsigned)status) {
+        if ( pclient->send.stk != (unsigned)status) {
             if (status < 0) {
                 int anerrno;
                 char    buf[64];
@@ -176,28 +177,23 @@ void cas_send_msg (struct client *pclient, int lock_needed)
 caHdr *cas_alloc_msg (struct client *pclient, unsigned extsize)
 {
     unsigned    msgsize;
-    unsigned    newstack;
     
     extsize = CA_MESSAGE_ALIGN(extsize);
 
+    if ( extsize > UINT_MAX - sizeof(caHdr) ) {
+        return NULL;
+    }
     msgsize = extsize + sizeof(caHdr);
+    if ( msgsize > pclient->send.maxstk ) {
+        return NULL;
+    }
 
-    newstack = pclient->send.stk + msgsize;
-    if(newstack > pclient->send.maxstk){
-        if(pclient->disconnect){
+    if ( pclient->send.stk > pclient->send.maxstk - msgsize ) {
+        if ( pclient->disconnect ) {
             pclient->send.stk = 0;
         }
         else{
-            cas_send_msg (pclient, FALSE);
-        }
-
-        newstack = pclient->send.stk + msgsize;
-
-        /*
-         * If dosnt fit now it never will
-         */
-        if(newstack > pclient->send.maxstk){
-            return NULL;
+            cas_send_msg ( pclient, FALSE );
         }
     }
 

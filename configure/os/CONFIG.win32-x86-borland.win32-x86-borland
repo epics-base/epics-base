@@ -186,11 +186,11 @@ DLL_DEF_FLAG = $(subst /,\\,$(wildcard ../$(addsuffix .def,$(LIBRARY))))
 #
 #   If we compile a .c, .cc into an $(OBJ),
 #   we test if this object is part of the
-#   library objects LIBOBJS_HOST.
+#   library objects LIBRARY_LD_OBJS.
 #   If so, we define _WINDLL so that
 #   e.g. include/shareLib.h works correctly.
 #
-OPT_CFLAGS_YES += $(subst $@, /_WINDLL, $(findstring $@,$(LIBOBJS_HOST)))
+OPT_CFLAGS_YES += $(subst $@, /_WINDLL, $(findstring $@,$(LIBRARY_LD_OBJS)))
 
 #
 #   A WIN32 dll has three parts:

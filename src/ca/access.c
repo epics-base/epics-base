@@ -1372,7 +1372,7 @@ int 	status)
 
 			caIOBlockFree (monix);
 
-			if (cbRequired) {
+			if (cbRequired && monix->usr_func) {
 				(*monix->usr_func) (args);
 			}
 		}
@@ -2306,7 +2306,7 @@ void		*pfl
 	 * Call user's callback
    	 */
 	LOCKEVENTS;
-	{
+	if (monix->usr_func) {
 		struct event_handler_args args;
 		
 		args.usr = monix->usr_arg;

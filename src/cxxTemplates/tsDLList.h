@@ -31,6 +31,9 @@
  *
  * History
  * $Log$
+ * Revision 1.8  1997/04/11 20:49:48  jhill
+ * added no arg reset() to bwd iter
+ *
  * Revision 1.7  1997/04/10 19:43:10  jhill
  * API changes
  *
@@ -57,6 +60,12 @@
 
 #ifndef tsDLListH_include
 #define tsDLListH_include
+
+template <class T> class tsDLList;
+template <class T> class tsDLIterBD;
+template <class T> class tsDLIter;
+template <class T> class tsDLFwdIter;
+template <class T> class tsDLBwdIter;
 
 //
 // tsDLNode<T>
@@ -507,7 +516,7 @@ protected:
 template <class T>
 class tsDLFwdIter: private tsDLIter<T> {
 public:
-	tsDLFwdIter (tsDLList<T> &listIn) : 
+	tsDLFwdIter (const tsDLList<T> &listIn) : 
 		tsDLIter<T>(listIn) {}
 
 	void reset ()
@@ -587,7 +596,7 @@ public:
 template <class T>
 class tsDLBwdIter : private tsDLIter<T> {
 public:
-	tsDLBwdIter(tsDLList<T> &listIn) : 
+	tsDLBwdIter(const tsDLList<T> &listIn) : 
 		tsDLIter<T>(listIn) {}
 
 	void reset ()

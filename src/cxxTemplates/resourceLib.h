@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.9  1997/04/23 17:11:15  jhill
+ * stringId::T[] => stringIdFastHash[]
+ *
  * Revision 1.8  1997/04/10 19:43:09  jhill
  * API changes
  *
@@ -66,6 +69,7 @@
 #include <limits.h>
 #include <string.h>
 #include <math.h>
+#include <assert.h>
 
 #include "tsSLList.h"
 #include "shareLib.h"
@@ -322,7 +326,7 @@ public:
 		// CPU architectures)
 		//
 		unsigned long src = (unsigned long) this->id;
-                resTableIndex hashid;
+                unsigned long hashid;
  
                 hashid = src;
                 src = src >> nBitsId;
@@ -334,7 +338,7 @@ public:
                 // the result here is always masked to the
                 // proper size after it is returned to the resource class
                 //
-                return hashid;
+                return (resTableIndex) hashid;
         }
  
         int operator == (const ptrId &idIn)

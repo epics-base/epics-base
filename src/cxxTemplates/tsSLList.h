@@ -31,6 +31,9 @@
  *
  * History
  * $Log$
+ * Revision 1.7  1997/04/10 19:43:10  jhill
+ * API changes
+ *
  * Revision 1.6  1997/01/22 21:14:21  jhill
  * fixed class decl order for VMS
  *
@@ -51,6 +54,14 @@
  *
  *
  */
+
+//
+// the hp compiler complains about parameterized friend
+// class that has not been declared without this?
+//
+template <class T> class tsSLList;
+template <class T> class tsSLIter;
+template <class T> class tsSLIterRm;
 
 //
 // tsSLNode<>

@@ -132,12 +132,15 @@
 *	printf("command=%s, count=%d, units=%s\n", pCmd, count, pUnits);
 *
 *-***************************************************************************/
-#include <genDefs.h>
 #ifdef vxWorks
+#    include <vxWorks.h>
+#    include <stdioLib.h>
 #   include <ctype.h>
 #else
 #   include <ctype.h>
+#   include <stdio.h>
 #endif
+#include <assert.h>
 
 /*-----------------------------------------------------------------------------
 *    the preamble skips over leading white space, stopping either at

@@ -888,8 +888,7 @@ LOCAL void constructCoreChannel (baseCIU *pciu,
  * constructLocalChannel ()
  */
 LOCAL int constructLocalChannel (cac *pcac, pvId idIn,            
-            void (*conn_func) (struct connection_handler_args), void *puser,
-            chid *pid) 
+            caCh *conn_func, void *puser, chid *pid) 
 {
     lciu *pchan;
     struct connection_handler_args  args;
@@ -927,8 +926,8 @@ LOCAL int constructLocalChannel (cac *pcac, pvId idIn,
  * constructNetChannel ()
  */
 LOCAL int constructNetChannel (cac *pcac, 
-            void (*conn_func) (struct connection_handler_args), 
-            void *puser, const char *pName, unsigned nameLength, chid *pid) 
+            caCh *conn_func, void *puser, const char *pName, 
+            unsigned nameLength, chid *pid) 
 {
     nciu *pchan;
     char *pNameDest;
@@ -1139,122 +1138,124 @@ LOCAL nmiu *caIOBlockCreate (nciu *pChan, unsigned cmdIn, chtype type,
  *  (only for clients attached to local PVs)
  *
  */
-LOCAL void ca_event_handler (void *usrArg, 
-    pvId idIn, int /* hold */, struct db_field_log *pfl)
-{
-    lmiu *monix = (lmiu *) usrArg;
-    lciu *pChan = ciuToLCIU (monix->miu.pChan);
-    lclIIU *piiu = iiuToLIIU (pChan->ciu.piiu);
-    union db_access_val valbuf;
-    unsigned long count;
-    unsigned long nativeElementCount;
-    void *pval;
-    size_t size;
-    int status;
-    struct tmp_buff {
-        ELLNODE node;
+extern "C" {
+    LOCAL void ca_event_handler (void *usrArg, 
+        pvId idIn, int /* hold */, struct db_field_log *pfl)
+    {
+        lmiu *monix = (lmiu *) usrArg;
+        lciu *pChan = ciuToLCIU (monix->miu.pChan);
+        lclIIU *piiu = iiuToLIIU (pChan->ciu.piiu);
+        union db_access_val valbuf;
+        unsigned long count;
+        unsigned long nativeElementCount;
+        void *pval;
         size_t size;
-    };
-    struct tmp_buff *pbuf = NULL;
+        int status;
+        struct tmp_buff {
+            ELLNODE node;
+            size_t size;
+        };
+        struct tmp_buff *pbuf = NULL;
 
-    nativeElementCount = (*piiu->pva->p_pvNoElements) (pChan->id);
+        nativeElementCount = (*piiu->pva->p_pvNoElements) (pChan->id);
 
-    /*
-     * clip to the native count
-     * and set to the native count if they specify zero
-     */
-    if (monix->miu.count > nativeElementCount || monix->miu.count == 0){
-        count = nativeElementCount;
-    }
-    else {
-        count = monix->miu.count;
-    }
+        /*
+         * clip to the native count
+         * and set to the native count if they specify zero
+         */
+        if (monix->miu.count > nativeElementCount || monix->miu.count == 0){
+            count = nativeElementCount;
+        }
+        else {
+            count = monix->miu.count;
+        }
 
-    size = dbr_size_n (monix->miu.type, count);
+        size = dbr_size_n (monix->miu.type, count);
 
-    if ( size <= sizeof(valbuf) ) {
-        pval = (void *) &valbuf;
-    }
-    else {
-         /*
-          * find a preallocated block which fits
-          * (stored with largest block first)
-          */
-         LOCK (piiu->iiu.pcas);
-         pbuf = (struct tmp_buff *) ellFirst (&piiu->buffList);
-         if (pbuf && pbuf->size >= size) {
-             ellDelete (&piiu->buffList, &pbuf->node);
-         }
-         else {
-             pbuf = NULL;
-         }
-         UNLOCK (piiu->iiu.pcas);
- 
-         /* 
-          * test again so malloc is not inside LOCKED
-          * section
-          */
-         if (!pbuf) {
-             pbuf = (struct tmp_buff *) malloc(sizeof(*pbuf)+size);
-             if (!pbuf) {
-                 ca_printf (piiu->iiu.pcas,
-                     "%s: No Mem, Event Discarded\n",
-                     __FILE__);
-                 return;
+        if ( size <= sizeof(valbuf) ) {
+            pval = (void *) &valbuf;
+        }
+        else {
+             /*
+              * find a preallocated block which fits
+              * (stored with largest block first)
+              */
+             LOCK (piiu->iiu.pcas);
+             pbuf = (struct tmp_buff *) ellFirst (&piiu->buffList);
+             if (pbuf && pbuf->size >= size) {
+                 ellDelete (&piiu->buffList, &pbuf->node);
              }
-             pbuf->size = size;
-         }
-         pval = (void *) (pbuf+1);
-    }
-    status = (*piiu->pva->p_pvGetField) (idIn, monix->miu.type, 
-        pval, count, pfl);
+             else {
+                 pbuf = NULL;
+             }
+             UNLOCK (piiu->iiu.pcas);
+ 
+             /* 
+              * test again so malloc is not inside LOCKED
+              * section
+              */
+             if (!pbuf) {
+                 pbuf = (struct tmp_buff *) malloc(sizeof(*pbuf)+size);
+                 if (!pbuf) {
+                     ca_printf (piiu->iiu.pcas,
+                         "%s: No Mem, Event Discarded\n",
+                         __FILE__);
+                     return;
+                 }
+                 pbuf->size = size;
+             }
+             pval = (void *) (pbuf+1);
+        }
+        status = (*piiu->pva->p_pvGetField) (idIn, monix->miu.type, 
+            pval, count, pfl);
 
-    /*
-     * Call user's callback
-     */
-    LOCK (piiu->iiu.pcas);
-    if (monix->miu.usr_func) {
-         struct event_handler_args args;
+        /*
+         * Call user's callback
+         */
+        LOCK (piiu->iiu.pcas);
+        if (monix->miu.usr_func) {
+             struct event_handler_args args;
  
-         args.usr = (void *) monix->miu.usr_arg;
-         args.chid = monix->miu.pChan;
-         args.type = monix->miu.type;
-         args.count = count;
-         args.dbr = pval;
+             args.usr = (void *) monix->miu.usr_arg;
+             args.chid = monix->miu.pChan;
+             args.type = monix->miu.type;
+             args.count = count;
+             args.dbr = pval;
  
-         if (status) {
-             args.status = ECA_GETFAIL;
-         }
-         else{
-             args.status = ECA_NORMAL;
-         }
+             if (status) {
+                 args.status = ECA_GETFAIL;
+             }
+             else{
+                 args.status = ECA_NORMAL;
+             }
  
-         (*monix->miu.usr_func)(args);
-    }
+             (*monix->miu.usr_func)(args);
+        }
      
-    /*
-     * insert the buffer back into the que in size order if
-     * one was used.
-     */
-    if(pbuf){
-        struct tmp_buff     *ptbuf;
+        /*
+         * insert the buffer back into the que in size order if
+         * one was used.
+         */
+        if(pbuf){
+            struct tmp_buff     *ptbuf;
 
-        for (ptbuf = (struct tmp_buff *) ellFirst (&piiu->buffList);
-            ptbuf; ptbuf = (struct tmp_buff *) ellNext (&pbuf->node) ){
+            for (ptbuf = (struct tmp_buff *) ellFirst (&piiu->buffList);
+                ptbuf; ptbuf = (struct tmp_buff *) ellNext (&pbuf->node) ){
 
-            if(ptbuf->size <= pbuf->size){
-                break;
+                if(ptbuf->size <= pbuf->size){
+                    break;
+                }
             }
-        }
-        if (ptbuf) {
-            ptbuf = (struct tmp_buff *) ptbuf->node.previous;
-        }
+            if (ptbuf) {
+                ptbuf = (struct tmp_buff *) ptbuf->node.previous;
+            }
 
-        ellInsert (&piiu->buffList, &ptbuf->node, &pbuf->node);
-    }
-    UNLOCK (piiu->iiu.pcas);
+            ellInsert (&piiu->buffList, &ptbuf->node, &pbuf->node);
+        }
+        UNLOCK (piiu->iiu.pcas);
      
-    return;
+        return;
+    }
 }
 
 /*
@@ -1733,8 +1734,7 @@ int localPutNotifyInitiate (lciu *pChan, chtype type, unsigned long count,
  *  ca_array_put_callback ()
  */
 int epicsShareAPI ca_array_put_callback (chtype type, unsigned long count, 
-    chid pChanIn, const void *pvalue, void (*pfunc)(struct event_handler_args), 
-    void *usrarg)
+    chid pChanIn, const void *pvalue, caEventCallBackFunc *pfunc, void *usrarg)
 {
     baseCIU *pChan = (baseCIU *) pChanIn;
     int status;
@@ -3021,8 +3021,7 @@ const char * epicsShareAPI ca_version()
  * ca_replace_printf_handler ()
  */
 int epicsShareAPI ca_replace_printf_handler (
-int (*ca_printf_func)(const char *pformat, va_list args)
-)
+        caPrintfFunc *ca_printf_func, va_list args)
 {
     cac       *pcac;
     int             caStatus;

@@ -94,7 +94,7 @@ OP_SYS_INCLUDE_CPPFLAGS += -include $(GNU_TARGET_INCLUDE_DIR)/vxWorks.h
 #--------------------------------------------------
 # code flags
 CODE_CFLAGS =
-CODE_CXXFLAGS = -frepo
+CODE_CXXFLAGS = 
 
 #--------------------------------------------------
 # posix c preprocessor flags

@@ -878,14 +878,13 @@ bool cac::lookupChannelAndTransferToTCP ( unsigned cid, unsigned sid,
 
 void cac::uninstallChannel ( nciu & chan )
 {
-    this->udpWakeup ();
     // wait for any IO callbacks in progress to complete
     // prior to destroying the IO object
     //
     // If this is a callback thread then it already owns the 
     // CB lock at this point. If this is the main thread then we 
     // are not in pendEvent, pendIO, SG block, etc and 
-    // this->pCallbackLocker protects. Otherwise if this id
+    // this->pCallbackLocker protects. Otherwise if this is
     // the users auxillary thread then this->pCallbackLocker
     // isnt set and we must take the call back lock.
     if ( epicsThreadPrivateGet ( caClientCallbackThreadId ) ) {

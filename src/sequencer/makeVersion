@@ -1,0 +1,10 @@
+#!/bin/csh -f
+#
+# makeVersion - create the snc version module
+#
+set	VERSION = `cat Version`
+set	DATE = `date`
+echo	'/* sncVersion.c - version & date */'
+echo	'/* Created by makeVersion */'
+echo	'char *sncVersion = "@(#)SNC Version '${VERSION}': '${DATE}'";'
+

@@ -94,7 +94,7 @@ nciu::~nciu ()
      * remove any IO blocks still attached to this channel
      */
     tsDLIterBD <baseNMIU> iter = this->eventq.first ();
-    while ( iter != iter.eol () ) {
+    while ( iter.valid () ) {
         tsDLIterBD <baseNMIU> next = iter.itemAfter ();
         iter->destroy ();
         iter = next;
@@ -540,6 +540,12 @@ void nciu::hostName ( char *pBuf, unsigned bufLength ) const
     this->piiu->hostName ( pBuf, bufLength );
 }
 
+// deprecated - please do not use
+const char * nciu::pHostName () const
+{
+    return this->piiu->pHostName (); 
+}
+
 bool nciu::ca_v42_ok () const
 {
     return this->piiu->ca_v42_ok ();
@@ -628,7 +634,7 @@ void nciu::connect ( tcpiiu &iiu, unsigned nativeType,
  
     // resubscribe for monitors from this channel 
     tsDLIterBD<baseNMIU> iter = this->eventq.first ();
-    while ( iter != iter.eol () ) {
+    while ( iter.valid () ) {
         iter->subscriptionMsg ();
         iter++;
     }
@@ -654,7 +660,7 @@ void nciu::disconnect ()
      * look for events that have an event cancel in progress
      */
     tsDLIterBD <baseNMIU> iter = this->eventq.first ();
-    while ( iter != iter.eol () ) {
+    while ( iter.valid () ) {
         tsDLIterBD <baseNMIU> next = iter.itemAfter ();
         iter->disconnect ( hostNameBuf );
         iter = next;

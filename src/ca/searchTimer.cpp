@@ -212,7 +212,7 @@ void searchTimer::expire ()
      * the end of the list
      */
     firstChan = chan = this->iiu.chidList.first ();
-    while ( chan != chan.eol () ) {
+    while ( chan.valid () ) {
         
         this->minRetry = min (this->minRetry, chan->retry);
         

@@ -36,7 +36,7 @@ cacLocalChannelIO * cacServiceList::createChannelIO (const char *pName, cacChann
 
     this->lock ();
     tsDLIterBD <cacServiceIO> iter ( this->services.first () );
-    while ( iter != iter.eol () ) {
+    while ( iter.valid () ) {
         pChanIO = iter->createChannelIO ( chan, pName );
         if ( pChanIO ) {
             break;

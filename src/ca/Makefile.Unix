@@ -34,3 +34,7 @@ TARGETS = acctst catime
 
 include $(TOP)/config/RULES.Unix
 
+pacctst: acctst.o $(DEPLIBS)
+	$(PURIFY) -best-effort $(LINK.c) -o $@ acctst.o $(DEPLIBS)
+
+

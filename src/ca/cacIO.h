@@ -38,8 +38,19 @@
 
 #include <stdarg.h>
 
+#ifdef epicsExportSharedSymbols
+#   define cacIOh_restore_epicsExportSharedSymbols
+#undef epicsExportSharedSymbols
+#endif
+
+#include "shareLib.h"
+
 #include "tsDLList.h"
 #include "epicsMutex.h"
+
+#ifdef cacIOh_restore_epicsExportSharedSymbols
+#   define epicsExportSharedSymbols
+#endif
 
 #include "shareLib.h"
 

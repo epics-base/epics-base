@@ -41,13 +41,16 @@
 #   undef epicsExportSharedSymbols
 #endif
 
-#   include "epicsThread.h"
+#include "shareLib.h"
+
+#include "epicsThread.h"
 
 #ifdef INCLcadefh_accessh_epicsExportSharedSymbols
 #   define epicsExportSharedSymbols
 #endif
 
 #include "shareLib.h"
+
 #include "caerr.h"
 #include "db_access.h"
 #include "caeventmask.h"

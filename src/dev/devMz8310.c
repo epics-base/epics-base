@@ -1,9 +1,9 @@
-/* devPtMZ8310.c.c */
-/* share/src/dev @(#)devPtMZ8310.c	1.6     6/7/91 */
+/* devMz8310.c.c */
+/* share/src/dev $Id$ */
 
-/* Device Support Routines for MZ8310 Pulse Generator output*/
+/* Device Support Routines for MZ8310 */
 /*
- *      Original Author: Bob Daly
+ *      Original Author: Marty Kraimer and Bob Daly
  *      Date:            6-19-91
  *
  *      Experimental Physics and Industrial Control System (EPICS)
@@ -29,363 +29,644 @@
  *
  * Modification Log:
  * -----------------
- * .01  mm-dd-yy        iii     Comment
- * .02  mm-dd-yy        iii     Comment
+ * .01  10-22-91	mrk	Initial Implementation
  *      ...
  */
+
+/* In order to understand the code in the file you must first	*/
+/* understand the MIZAR 8310 Users Manual.			*/
+/* You must also understand Chapter 1 of the 			*/
+/* the Advanced Micro Devices Am9513 Technical Manual		*/
 
 #include	<vxWorks.h>
+#include	<vme.h>
 #include	<types.h>
 #include	<stdioLib.h>
 
 #include	<alarm.h>
 #include	<dbAccess.h>
+#include	<dbRecType.h>
 #include	<dbDefs.h>
 #include	<dbCommon.h>
 #include	<devSup.h>
 #include	<link.h>
 #include	<special.h>
 #include	<module_types.h>
+#include	<pulseCounterRecord.h>
+#include	<pulseDelayRecord.h>
 #include	<pulseTrainRecord.h>
 
-/* defines specific to mz8310 used as pulse generator */
-/* NOTE: Pulse Generator refers to use of channels 0 thru 4 */
-/*       These channels are referred to as 1o1,1o2,1o3,1o4, */
-/*       and 1o5 on the I/O connector and they occupy the   */
-/*       lower address space in the module's short addr space */
-#define SHORTADDR		0xff0000
-#define MZ8310IOAddr		0xfa00
-#define MZ8310CHIPSIZE		0x20
-#define MZ8310SIZE		0x00000100
-#define MZ8310BASE		(SHORTADDR+MZ8310IOAddr)
-
-#define MZ8310DATA		0
-#define MZ8310CMD		3
-#define MZ8310CHANONCHIP	5
-#define MZ8310CHIPCOUNT		2
-#define MZ8310CHANCNT		(MZ8310CHANONCHIP*MZ8310CHIPCOUNT)
-
-#define MZ8310_CMD_ADDR		((unsigned char *)  MZ8310BASE + MZ8310CMD)
-#define MZ8310_DATA_ADDR 	((unsigned short *) MZ8310BASE + MZ8310DATA)
-#define MZ8310VECBASE		((unsigned char *)  MZ8310BASE + 0x41)
-#define MZ8310VECSIZE		(0x20)
-#define MZ8310INTCNT		4
-#define TCON 0
-#define TCOFF 1
-#define TCPULSE 2
-#define F1	0x0b00
-#define F2	0x0c00
-#define F3	0x0d00
-#define F4	0x0e00
-#define F5	0x0f00
-
-
-/* The following must match the definition in choiceGbl.ascii */
-#define LINEAR 1
-
-/* local device variables */
-static struct	mzCard_S{
-  char				init;
-  FAST_LOCK			lock;
-}mzCard;
-
-/* Create the dset for devPtMZ8310 */
-long init_record();
+/* Create the dsets for devMz8310 */
+long report();
+long init();
+long init_pc();
+long init_pd();
+long init_pt();
+long cmd_pc();
+long write_pd();
 long write_pt();
-long mz8310PtReport();
-short mz8310CardInit();
-short stc_init();
-short convert_pulseTrain();
-struct {
+long cmd_pc();
+typedef struct {
 	long		number;
 	DEVSUPFUN	report;
 	DEVSUPFUN	init;
 	DEVSUPFUN	init_record;
 	DEVSUPFUN	get_ioint_info;
-	DEVSUPFUN	write_pt;
-}devPtMZ8310={
-	6,
-	mz8310PtReport,
-	NULL,
-	init_record,
-	NULL,
-	write_pt};
+	DEVSUPFUN	write;} MZDSET;
+MZDSET devPcMz8310={ 5, report, init, init_pc, NULL, cmd_pc};
+MZDSET devPdMz8310={ 5,   NULL, NULL, init_pd, NULL, write_pd};
+MZDSET devPtMz8310={ 5,   NULL, NULL, init_pt, NULL, write_pt};
 
+/* defs for gsrc and csrc fields */
+#define INTERNAL 0
+#define EXTERNAL 1
+#define SOFTWARE 1
+
+/* defs for counter commands */
+#define CTR_READ	0
+#define CTR_CLEAR	1
+#define CTR_START	2
+#define CTR_STOP	3
+#define CTR_SETUP	4
 
+/* defines specific to mz8310*/
 
-static long mz8310PtReport(ppt)
-    struct pulseTrainRecord	*ppt;
+#define MAXCARDS	4
+#define BASE		0xf800
+#define CARDSIZE	0x00000100
+
+#define CHIPSIZE	0x20
+#define CHANONCHIP	5
+#define NCHIP		2
+
+/*static*/
+ unsigned short *shortaddr;
+int mz8310Debug=0;
+
+#define PCMDREG(CARD,CHIP) \
+( (unsigned char *)\
+ ((unsigned char*)shortaddr + BASE + (CARD)*CARDSIZE + (CHIP)*CHIPSIZE + 3))
+#define PDATAREG(CARD,CHIP) \
+( (unsigned short *)\
+ ((unsigned char*)shortaddr + BASE + (CARD)*CARDSIZE + (CHIP)*CHIPSIZE))
+
+/* Internal clock rate and rate divisor */
+#define INT_CLOCK_RATE	4e6
+#define CLOCK_RATE_DIV	16e0
+#define MAX_CLOCK_RATE 7e6
+
+/* desired master mode 					*/
+/* Binary Division, Enable Inc, 16-bit bus, FOUT on,	*/
+/* FOUT divide by 1, Source F1, TOD Disabled		*/
+#define MASTERMODE	0x2100
+
+/* define command codes */
+#define LDPCOUNTER	0x00
+#define LDPMASTER	0x17
+#define LDPSTATUS	0x1f
+#define ARM		0x20
+#define LOAD		0x40
+#define LOADARM		0x60
+#define DISARMSAVE	0x80
+#define SAVE		0xa0
+#define DISARM		0xc0
+#define SETTOGOUT	0xe8
+#define CLRTOGOUT	0xe0
+#define STEP		0xf0
+#define DISDPS		0xe8
+#define GATEOFFFOUT	0xee
+#define BUS16		0xef
+#define ENADPS		0xe0
+#define GATEONFOUT	0xe6
+#define BUS8		0xe7
+#define ENAPRE		0xf8
+#define DISPRE		0xf9
+#define RESET		0xff
+
+/* Count Source Selection */
+#define SRC1	0x0100
+#define SRC2	0x0200
+#define SRC3	0x0300
+#define SRC4	0x0400
+#define SRC5	0x0500
+static unsigned short externalCountSource[] = {SRC1,SRC2,SRC3,SRC4,SRC5};
+#define F1	0x0b00
+#define F2	0x0c00
+#define F3	0x0d00
+#define F4	0x0e00
+#define F5	0x0f00
+static unsigned short internalCountSource[] = {F1,F2,F3,F4,F5};
+
+/*static*/
+ int ncards=0;
+/*static*/
+ struct mz8310_info {
+    short present;
+    struct {
+	short used;
+	short type;
+    } chan_info[NCHIP][CHANONCHIP];
+}mz8310_info[MAXCARDS];
+
+
+/*The following are used to communicate with the mz8310.		*/
+/*The mz8310 can not keep up when commands are sent as rapidly as possible.*/
+
+putCmd(preg,cmd)
+    unsigned char	*preg;
+    unsigned char	cmd;
 {
-register unsigned char 	*pcmd = MZ8310_CMD_ADDR;
-register unsigned short *pdata =MZ8310_DATA_ADDR;
-short	mode,load,hold,channel,dummy;
+    *preg = cmd;
+    if(mz8310Debug) printf("mz8310:putCmd:  pcmdreg=%x cmd=%x %d\n",preg,cmd,cmd);
+}
 
-  if( (vxMemProbe(pcmd, READ, sizeof(*pcmd), &dummy) != OK) ||
-   (vxMemProbe(pdata, READ, sizeof(*pdata), &dummy) != OK) )
-   {
-    logMsg("\n***\nMZ8310 Pulse Generator Card not found at %x address\n***\n",*pcmd);
-    return ERROR;
-   }
-   logMsg("\n***");
-    logMsg("\nMZ8310 Pulse Generator Card found at %x address\n",*pcmd);
-/* read the mode load and hold values from chip registers */
-  for(channel=0; channel<MZ8310CHANONCHIP; channel++)
-	{
-	*pcmd = channel+1;  /* xfer regs to mode load hold vars for channel */
-	mode = *pdata;
-	load = *pdata;
-	hold = *pdata;
-	logMsg("CHANNEL:%d....\tMODE: %x\tLOAD: %x\tHOLD: %x\n",
-	channel,mode,load,hold);
-        }
-   logMsg("***\n");
-   return(OK);
+putData(preg,data)
+    unsigned short	*preg;
+    unsigned short	data;
+{
+    *preg = data;
+    if(mz8310Debug) printf("mz8310:putData: preg=%x data=%x %d\n",preg,data,data);
+}
+
+getCmd(preg,pcmd)
+    unsigned char	*preg;
+    unsigned char	*pcmd;
+{
+    *pcmd = *preg;
+    if(mz8310Debug) printf("mx8310:getCmd:  pcmdreg=%x cmd=%x %d\n",preg,*pcmd,*pcmd);
+}
+
+getData(preg,pdata)
+    unsigned short	*preg;
+    unsigned short	*pdata;
+{
+    *pdata = *preg;
+    if(mz8310Debug) printf("mz8310:getData: preg=%x data=%x %d\n",preg,*pdata,*pdata);
 }
 
-static long init_record(ppt)
-    struct pulseTrainRecord	*ppt;
+static long init()
 {
-    struct vmeio *pvmeio = (struct vmeio *)(&ppt->out.value);
-    struct dbCommon *pdbCommon = (struct dbCommon *)ppt;
-    struct ptDpvt *dpvt;
+    int card,chip,channel;
+/*volatile*/
+    unsigned char  *pcmd;
+/*volatile*/
+    unsigned short *pdata;
+    unsigned short data;
+    int dummy;
 
-    char message[100];
-    static firstTime = TRUE;
-    static aOK = TRUE;
+    if(sysBusToLocalAdrs(VME_AM_USR_SHORT_IO, 0, &shortaddr)) {
+	logMsg("devMz8310: sysBusToLocalAdrs failed\n");
+	exit(1);
+    }
+    for(card=0; card<MAXCARDS; card++) {
+	mz8310_info[card].present = FALSE;
+	for(chip=0; chip<NCHIP; chip ++) {
+	    pcmd = PCMDREG(card,chip); pdata = PDATAREG(card,chip);
+	    if(vxMemProbe(pcmd, READ, sizeof(*pcmd), &dummy) != OK)continue;
+	    if(vxMemProbe(pdata, READ, sizeof(*pdata), &dummy) != OK)continue;
+	    mz8310_info[card].present = TRUE;
+	    if(mz8310Debug) printf("mz8310: Found card %d chip %d\n",card,chip);
+	    putCmd(pcmd,BUS16);
+	    putCmd(pcmd,LDPMASTER);
+	    getData(pdata,&data);
+	    if(data != MASTERMODE) { /* need to reinitialize */
+	        putCmd(pcmd,RESET);
+	        putCmd(pcmd,BUS16);
+	        putCmd(pcmd,LDPMASTER);
+	        putData(pdata,MASTERMODE);
+	        putCmd(pcmd,(LOAD | 0x001F)); /* issue load command for all channels*/
+		if(mz8310Debug) {
+		    printf("reading back master mode register\n");
+		    putCmd(pcmd,LDPMASTER);
+		    getData(pdata,&data);
+		}
+	    }
+	}
+    }
+    return OK;
+}
+
+static long report(fp,interest)
+    FILE *fp;
+    int  interest;
+{
+    int card,chip,channel,type;
+    char *pstr;
 
-    /* pt.out must be an VME_IO */
-    switch (ppt->out.type) {
+    for(card=0; card<MAXCARDS; card++) {
+	if(!mz8310_info[card].present) continue;
+	fprintf(fp,"mz8310: card %d\n",card);
+	if(interest==0)continue;
+	for(chip=0; chip<NCHIP; chip++) {
+	    for(channel=0; channel<CHANONCHIP; channel++) {
+		short used;
+
+		used = mz8310_info[card].chan_info[chip][channel].used;
+		if(used==0) continue;
+		type = mz8310_info[card].chan_info[chip][channel].type;
+		pstr = GET_PRECTYPE(type);
+		if(!pstr) fprintf(fp,"    Illegal record type\n");
+		else fprintf(fp,"   chip: %d channel: %d used: %d recType: %s\n",
+			chip,channel,used,pstr);
+	    }
+	}
+    }
+}
+
+static long init_common(pdbCommon,pout,nchan)
+    struct dbCommon	*pdbCommon;
+    struct link		*pout;
+    int			nchan;
+{
+    struct vmeio *pvmeio = (struct vmeio *)(&pout->value);
+    unsigned int card,signal,chip,channel;
+
+    /* out must be an VME_IO */
+    switch (pout->type) {
     case (VME_IO) :
 	break;
     default :
-	strcpy(message,pdbCommon->name);
-	strcat(message,": devPtMZ8310 (init_record) Illegal OUT field");
-	errMessage(S_db_badField,message);
-	return(S_db_badField);
+	recGblRecordError(S_dev_badBus,pdbCommon,
+		"devMz8310 (init_record) Illegal OUT Bus Type");
+	return(S_dev_badBus);
     }
-
-   /* only one card supported i.e card 0 */
-    if(pvmeio->card != 0)
-	{
-	strcpy(message,pdbCommon->name);
-	strcat(message,": devPtMZ8310 (init_record) Illegal CARD field");
-	errMessage(S_db_badField,message);
-	return(S_db_badField);
-        }
-
-   /* only 5 channels on card supported */ 
-    if(pvmeio->signal >= 5)
-	{
-	strcpy(message,pdbCommon->name);
-	strcat(message,": devPtMZ8310 (init_record) Illegal SIGNAL field");
-	errMessage(S_db_badField,message);
-	return(S_db_badField);
-        }
-   /* make sure card was initialized OK */
-    if(!aOK)
-        {
-	strcpy(message,pdbCommon->name);
-	strcat(message,": devPtMZ8310 (init_record) CARD not OK");
-	errMessage(S_db_badField,message);
-	return(S_db_badField);
-        }
-
-   /* do first time things */
-    if(firstTime)
-    {
-	firstTime = FALSE;
-	FASTLOCKINIT(&mzCard.lock);
-        if(mz8310CardInit(pvmeio->card) == ERROR)
-	{
-        aOK = FALSE;
-	strcpy(message,pdbCommon->name);
-	strcat(message,": devPtMZ8310 (init_record) CARD INIT error(missing?)");
-	errMessage(S_db_badField,message);
-	return(S_db_badField);
-        }
-     }
-
+    card = pvmeio->card;
+    signal = pvmeio->signal;
+    if(card>=MAXCARDS){
+	recGblRecordError(S_dev_badCard,pdbCommon,
+                "devMz8310 (init_record) exceeded maximum supported cards");
+	return(S_dev_badCard);
+    }
+    if(!mz8310_info[card].present){
+	recGblRecordError(S_dev_badCard,pdbCommon,
+		"devMz8310 (init_record) VME card not found");
+	return(S_dev_badCard);
+    }
+    if(signal >= NCHIP*CHANONCHIP
+    || (nchan==2 && (signal==4 || signal==9))) {
+	recGblRecordError(S_dev_badSignal,pdbCommon,
+		"devMz8310 (init_record) Illegal SIGNAL field");
+	return(S_dev_badSignal);
+    }
+    chip = (signal>=CHANONCHIP ? 1 : 0);
+    channel = signal - chip*CHANONCHIP;
+    if((mz8310_info[card].chan_info[chip][channel].used +=1)>1) 
+	recGblRecordError(S_dev_Conflict,pdbCommon,
+		"devMz8310 (init_record) signal already used");
+    mz8310_info[card].chan_info[chip][channel].type = pdbCommon->pdba->record_type;
+    if(nchan==2) {
+	if((mz8310_info[card].chan_info[chip][channel+1].used +=1)>1)
+	    recGblRecordError(S_dev_Conflict,pdbCommon,
+		"devMz8310 (init_record) signal already used");
+	mz8310_info[card].chan_info[chip][channel+1].type
+		= pdbCommon->pdba->record_type;
+    }
+    return(0);
  }
-
 
-static short mz8310CardInit(card)
-	register int 	card;		/* 0 through ... 	*/
+static long init_pc(pr)
+    struct pulseCounterRecord	*pr;
 {
-  /*
-  BCD division
-  data ptr seq enbl
-  16 bit bus
-  FOUT on 
-  FOUT divide by one
-  FOUT source (F1)
-  Time of day disabled
-  */
-  register unsigned short master_mode = 0xa100;
-  return(stc_init(MZ8310_CMD_ADDR, MZ8310_DATA_ADDR, master_mode)) ;
+    long status;
+    status = init_common((struct dbCommon *)pr,&pr->out,2);
+    if(status) return(status);
+    /*just use dpvt as flag that initialization succeeded*/
+    pr->dpvt = (void *)pr;
+    return(0);
 }
 
-
-static short stc_init(pcmd, pdata, master_mode)
-register unsigned char 	*pcmd;
-register unsigned short *pdata;
-unsigned short		master_mode;
+static long init_pd(pr)
+    struct pulseDelayRecord	*pr;
 {
-  int	dummy;
-  int 	channel;
-
-  if(vxMemProbe(pcmd, READ, sizeof(*pcmd), &dummy) != OK)
-    return ERROR;
-  if(vxMemProbe(pdata, READ, sizeof(*pdata), &dummy) != OK)
-    return ERROR;
- 
-  *pcmd = 0xef;  /* 16 BIT MODE */
-  *pcmd = 0x17; /* next access will be to master mode register */
-  if(master_mode != *pdata) /* reset master mode if not what is wanted */
-    {
-    *pcmd = 0xff;   /* RESET */
-    *pcmd = 0xef;   /* return to 16 BIT MODE  after reset*/
-    *pcmd = 0x17;   /* next data write is to master mode register */
-    *pdata = master_mode; /* set up master mode register */
-    for(channel=0; channel<MZ8310CHANONCHIP; channel++)
-      *pcmd = 0x40 | 1<< channel; /* LOAD must be done after reset */
-    }
-  /* set the initial output states of TC to LOW */
-  
-    for(channel=0; channel<MZ8310CHANONCHIP; channel++)
-	{
-	*pcmd = channel+1;  /* xfer to mode load hold registers for channel */
-	*pdata = 0x0b62;
-	*pdata = 0;
-	*pdata = 0;
-	*pcmd = 0xe0 | channel+1; /* clear the TC toggle output*/
-	}
-
-  return OK;
+    long status;
+    status = init_common((struct dbCommon *)pr,&pr->out,1);
+    if(status) return(status);
+    /*just use dpvt as flag that initialization succeeded*/
+    pr->dpvt = (void *)pr;
+    return(0);
 }
-
-
-
-static long write_pt(ppt)
-    struct pulseTrainRecord	*ppt;
+static long init_pt(pr)
+    struct pulseTrainRecord	*pr;
 {
-	struct vmeio 	*pvmeio;
-	int	    	status;
-	unsigned short  load,hold,mode;
-	short  tcMode;		/*TCON = 0,TCOFF =1,TCPULSE =2*/
-	register unsigned char 	*pcmd = MZ8310_CMD_ADDR;
-	register unsigned short *pdata = MZ8310_DATA_ADDR;
-	short channel;
+    long status;
+    status = init_common((struct dbCommon *)pr,&pr->out,1);
+    if(status) return(status);
+    /*just use dpvt as flag that initialization succeeded*/
+    pr->dpvt = (void *)pr;
+    return(0);
+}
+
+static long cmd_pc(pr)
+    struct pulseCounterRecord	*pr;
+{
+    /*volatile*/
+     unsigned char  *pcmd;
+    /*volatile*/
+    unsigned short *pdata;
+    struct vmeio 	*pvmeio;
+    int card,chip,channel,signal;
+    unsigned short  load,hold,mode;
 	
-	pvmeio = (struct vmeio *)&(ppt->out.value);
-	if (ppt->out.type != VME_IO) {
-		if(ppt->nsev<VALID_ALARM) {
-			ppt->nsta = WRITE_ALARM;
-			ppt->nsev = VALID_ALARM;
-		}
-		return(OK);
-	}
+    if(!pr->dpvt) return(S_dev_NoInit);
+    pvmeio = (struct vmeio *)&(pr->out.value);
+    card = pvmeio->card;
+    signal = pvmeio->signal;
+    chip = (signal>=CHANONCHIP ? 1 : 0);
+    channel = signal - chip*CHANONCHIP;
+    pcmd = PCMDREG(card,chip);
+    pdata = PDATAREG(card,chip);
+    switch (pr->cmd) {
+	case CTR_READ:
+	    putCmd(pcmd,(SAVE | (3<<channel)));
+	    {
+		unsigned short low,high;
 
-	if(convert_pulseTrain(ppt,&load,&hold,&mode,&tcMode)==ERROR){
-		if(ppt->nsev<VALID_ALARM) {
-			ppt->nsta = WRITE_ALARM;
-			ppt->nsev = VALID_ALARM;
+		putCmd(pcmd,(LDPCOUNTER | 0x10 | (channel+1)));
+		getData(pdata,&low);
+		putCmd(pcmd,(LDPCOUNTER | 0x10 | (channel+2)));
+		getData(pdata,&high);
+		pr->val = high<<16 | low;
+	    }
+	    break;
+	case CTR_CLEAR:
+	    putCmd(pcmd,(DISARM | (3<<channel)));
+	    putCmd(pcmd,(LOADARM | (3<<channel)));
+	    break;
+	case CTR_START:
+	    putCmd(pcmd,(ARM | (3<<channel)));
+	    break;
+	case CTR_STOP:
+	    putCmd(pcmd,(DISARM | (3<<channel)));
+	    break;
+	case CTR_SETUP:
+	    /* setup counter i */
+	    mode = 0x0028; /*Count Repeatedly, Count Up*/
+	    if(pr->edge==1) mode |= 0x1000; /*count on falling edge*/
+	    /* If necessary set gate control Active High Level Gate N */
+	    if(pr->gsrc==INTERNAL && pr->gate!=0) {
+		unsigned short gate = (unsigned short)pr->gate;
+
+		if(gate>5) recGblRecordError(S_db_badField,pr,
+			"devMz8310 : illegal gate value");
+		else mode |= gate<<13;
+	    }
+	    /*set count source selection*/
+	    if(pr->clks<0 || pr->clks>15) {
+		if(pr->nsev<VALID_ALARM) {
+		    pr->nsta = WRITE_ALARM;
+		    pr->nsev = VALID_ALARM;
 		}
-		return(OK);
-	}
-	ppt->udf=FALSE;
-	channel = pvmeio->signal;
-/* disarm the channel */
-	*pcmd = 0xc0 | channel+1;
-/* clear TC so starts out with same level each change */
-	   *pcmd = 0xe0 | channel+1;
-/* check if duty cycle = 0 ... if so clear tc i.e do nothing */
-	if(tcMode == TCOFF){
-	    return(OK);
-	}
-/* if GATE OFF ...then clear tc i.e. do nothing*/
-	if(ppt->gate != 0){
-	    return(OK);
-	}
-/* if duty cycle = 100%...then set tc*/
-	if(tcMode == TCON){
-	   *pcmd = 0xe8 | channel+1;
-	    return(OK);
-	}
-/*got here so must be variable duty cycle with gate on*/
-/*xfer the mode,hold, and load values to registers & arm*/
-logMsg("write_pt...gate on...var duty cycle & freq");
-	*pcmd = channel+1;
-	*pdata = mode;
-	*pdata = load;
-	*pdata = hold;
-	*pcmd = 0x20 | 1<< channel;
-        return(OK);
+		recGblRecordError(S_db_badField,pr,
+		    "devMz8310 : illegal clks value");
+		return(1);
+	    }
+	    mode |= (pr->clks << 8);
+	    putCmd(pcmd,(DISARM | (3<<channel)));
+	    putCmd(pcmd,(LDPCOUNTER | (channel+1)));
+	    putData(pdata,mode);
+	    putData(pdata,0x0000);
+	    /* now setup high order portion of counter*/
+	    putCmd(pcmd,(LDPCOUNTER | (channel+2)));
+	    putData(pdata,0x0008);
+	    putData(pdata,0x0000);
+	    /* Load each counter */
+	    putCmd(pcmd,(LOAD | (3<<channel)));
+	    pr->udf = FALSE;
+	    break;
+	default:
+	    if(pr->nsev<MAJOR_ALARM) {
+		pr->nsta = WRITE_ALARM;
+		pr->nsev = MAJOR_ALARM;
+	    }
+	    recGblRecordError(S_db_badField,pr,
+		"devMz8310 : illegal command");
+	    return(0);
+    }
+    return(OK);
 }  
-
 
-static short convert_pulseTrain(ppt,pload,phold,pmode,ptcMode)
-struct pulseTrainRecord	*ppt;
-unsigned short 	*phold,*pload,*pmode,*ptcMode;
+static long write_pd(pr)
+    struct pulseDelayRecord	*pr;
 {
-	int	totalPulses;
-	int	timeScale[] = {1,1000,1000000};/*micro,milli,sec in micro*/
-	int	periodInMicroSec;
+    /*volatile*/ 
+    unsigned char  *pcmd;
+    /*volatile*/
+    unsigned short *pdata;
+    struct vmeio 	*pvmeio;
+    int card,chip,channel,signal;
+    unsigned short  load,hold,mode;
+    double clockRate,holdCount,loadCount;
+    int clockDiv;
+	
+    if(!pr->dpvt) return(S_dev_NoInit);
+    pvmeio = (struct vmeio *)&(pr->out.value);
+    card = pvmeio->card;
+    signal = pvmeio->signal;
+    chip = (signal>=CHANONCHIP ? 1 : 0);
+    channel = signal - chip*CHANONCHIP;
+    pcmd = PCMDREG(card,chip);
+    pdata = PDATAREG(card,chip);
 
-	if(ppt->dcy == 0)
-	{
-	*ptcMode = TCOFF;
-	return(OK);
+    /* compute hold count and load count */
+    clockRate = (pr->csrc==INTERNAL ? INT_CLOCK_RATE : pr->clkr);
+    if(clockRate<=0 || clockRate>MAX_CLOCK_RATE) {
+	if(pr->nsev<VALID_ALARM) {
+		pr->nsta = WRITE_ALARM;
+		pr->nsev = VALID_ALARM;
 	}
+	recGblRecordError(S_db_badField,pr,
+		"devMz8310 : computed illegal clock rate");
+	return(1);
+    }
+    holdCount = clockRate*pr->wide;
+    if(holdCount<1e0) holdCount = 1e0;
+    loadCount = clockRate*pr->dly;
+    if(pr->csrc==INTERNAL) {
+	clockDiv = 0;
+	while(clockDiv<=5 && (loadCount>65536.0 || holdCount>65535.0)) {
+	    clockDiv++;
+	    clockRate /= CLOCK_RATE_DIV;
+    	    holdCount = clockRate*pr->wide;
+    	    if(holdCount<1e0) holdCount = 1e0;
+    	    loadCount = clockRate*pr->dly;
+    	    if(loadCount<1e0) loadCount = 1e0;
+        }
+    }
+    if(loadCount>65536.0 || holdCount>65535.0) {
+	if(pr->nsev<VALID_ALARM) {
+		pr->nsta = WRITE_ALARM;
+		pr->nsev = VALID_ALARM;
+	}
+	recGblRecordError(S_db_badField,pr,
+		"devMz8310 : computed illegal clock rate");
+	return(1);
+    }
+    load = loadCount + .5;
+    hold = holdCount + .5;
 
-	if(ppt->dcy == 100)
-	{
-	*ptcMode = TCON;
-	return(OK);
+    /* compute mode */
+    mode = 0x0062; /* MODE L Waveform */
+    if(pr->gedg==0) mode |=0xc000;/*gate on high edge*/
+    else mode |= 0xe000; /*gate on low edge*/
+    if(pr->edge==1) mode |= 0x1000; /*count on falling edge*/
+    /*set count source selection*/
+    if(pr->csrc==INTERNAL) {
+	mode |= internalCountSource[clockDiv];
+    } else {/*external clock. Determine source*/
+	if(pr->clks<0 || pr->clks>15) {
+	    if(pr->nsev<VALID_ALARM) {
+		pr->nsta = WRITE_ALARM;
+		pr->nsev = VALID_ALARM;
+	    }
+	    recGblRecordError(S_db_badField,pr,
+		"devMz8310 : illegal clks value");
+	    return(1);
 	}
-	/* check period to set Fx  */
-	periodInMicroSec = ppt->per*timeScale[ppt->timu];
-	if(periodInMicroSec <= 10) return(ERROR);        /* must be > 10 usec */
-	if(periodInMicroSec > 100000000) return(ERROR);  /* must be < 100 sec */
-	*ptcMode = TCPULSE;
+	mode |= (pr->clks << 8);
+    }
 
-	if(periodInMicroSec < 10000) { /*10 millisec*/
-	   *pmode = 0x0062 | F1;       /* 4 MHz Count Source */
-	    totalPulses = (periodInMicroSec*4); 
-	   *phold = ((totalPulses*ppt->dcy)/100)+1; /*+1..-1 (on TC) = 0*/
- 	   *pload = totalPulses-*phold+2;
- 	   return(OK);
-	}
-	if(periodInMicroSec < 100000) { /*100 millisec*/
-	   *pmode = 0x0062 | F2;        /* .4 MHz Count Source */
-	    totalPulses = (periodInMicroSec/10)*4;
-	   *phold = ((totalPulses*ppt->dcy)/100)+1; /*+1..-1 (on TC) = 0*/
- 	   *pload = totalPulses-*phold+2;
-	   return(OK);
-	}
-	   
-	if(periodInMicroSec < 1000000) {/* 1 sec */
-	   *pmode = 0x0062 | F3;        /*.04Mhz Count Source */     
-	    totalPulses = (periodInMicroSec/100)*4;
-	   *phold = ((totalPulses*ppt->dcy)/100)+1; /*+1..-1 (on TC) = 0*/
- 	   *pload = totalPulses-*phold+2;
-	   return(OK);
-	}
-	   
-	if(periodInMicroSec < 10000000) {/* 10 sec */
-	   *pmode = 0x0062 | F4;         /* .004MHz Count Source */
-	    totalPulses = (periodInMicroSec/1000)*4;
-	   *phold = ((totalPulses*ppt->dcy)/100)+1; /*+1..-1 (on TC) = 0*/
- 	   *pload = totalPulses-*phold+2;
-	   return(OK);
-	}
-	   
-	if(periodInMicroSec < 100000000) {/* 100 sec */
-	   *pmode = 0x0062 | F5;
-	    totalPulses = (periodInMicroSec/10000)*4;
-	   *phold = ((totalPulses*ppt->dcy)/100)+1; /*+1..-1 (on TC) = 0*/
- 	   *pload = totalPulses-*phold+2;
-	   return(OK);
-	}
+    /* setup counter */
+    putCmd(pcmd,(DISARM | (1<<channel)));
+    /* Set initial state of output */
+    putCmd(pcmd,((pr->llow==0 ? CLRTOGOUT : SETTOGOUT) | (channel+1)));
+    putCmd(pcmd,(LDPCOUNTER | (channel+1)));
+    putData(pdata,mode);
+    putData(pdata,load);
+    putData(pdata,hold);
+    if(mz8310Debug){
+	putCmd(pcmd,(LDPCOUNTER | (channel+1)));
+	printf("reading mode,load,hold\n");
+	getData(pdata,&mode);
+	getData(pdata,&load);
+	getData(pdata,&hold);
+    }
+    /* Load, Step, and Arm Counter */
+    putCmd(pcmd,(LOAD | (1<<channel)));
+    putCmd(pcmd,(STEP | (channel+1)));
+    putCmd(pcmd,(ARM | (1<<channel)));
+    pr->udf = FALSE;
+    return(OK);
 }
-	   
-	  
+
+static long write_pt(pr)
+    struct pulseTrainRecord	*pr;
+{
+    /*volatile*/
+    unsigned char  *pcmd;
+    /*volatile*/
+    unsigned short *pdata;
+    struct vmeio 	*pvmeio;
+    int card,chip,channel,signal;
+    unsigned short  load,hold,mode;
+    double clockRate,periodInClockUnits,holdCount,loadCount;
+    int clockDiv;
+	
+    if(!pr->dpvt) return(S_dev_NoInit);
+    pvmeio = (struct vmeio *)&(pr->out.value);
+    card = pvmeio->card;
+    signal = pvmeio->signal;
+    chip = (signal>=CHANONCHIP ? 1 : 0);
+    channel = signal - chip*CHANONCHIP;
+    pcmd = PCMDREG(card,chip);
+    pdata = PDATAREG(card,chip);
+
+    /* Should we just set on or off */
+    if(pr->dcy<=0e0 || (pr->gsrc==SOFTWARE && pr->gate!=0)) {
+	pr->udf = FALSE;
+	putCmd(pcmd,(DISARM | (1<<channel)));
+	putCmd(pcmd,(LDPCOUNTER | (channel+1)));
+	putData(pdata,(pr->llow==0 ? 0x0000 : 0x0004));
+	return(0);
+    }
+    if(pr->dcy>=100.0) {
+	pr->udf = FALSE;
+	putCmd(pcmd,(DISARM | (1<<channel)));
+	putCmd(pcmd,(LDPCOUNTER | (channel+1)));
+	putData(pdata,(pr->llow==0 ? 0x0004 : 0x0000));
+	return(0);
+    }
+
+    /* compute hold count and load count */
+    clockRate = (pr->csrc==INTERNAL ? INT_CLOCK_RATE : pr->clkr);
+    periodInClockUnits = pr->per * clockRate;
+    if(clockRate<=0 || clockRate>MAX_CLOCK_RATE || periodInClockUnits<=1) {
+	if(pr->nsev<VALID_ALARM) {
+		pr->nsta = WRITE_ALARM;
+		pr->nsev = VALID_ALARM;
+	}
+	recGblRecordError(S_db_badField,pr,
+		"devMz8310 : computed illegal clock rate");
+	return(1);
+    }
+    holdCount = periodInClockUnits*pr->dcy/100.0;
+    if(holdCount<1e0) holdCount = 1e0;
+    loadCount = periodInClockUnits - holdCount;
+    if(pr->csrc==INTERNAL) {
+	clockDiv = 0;
+	while(clockDiv<5 && (loadCount>65536.0 || holdCount>65535.0)) {
+	    clockDiv++;
+	    periodInClockUnits /= CLOCK_RATE_DIV;
+	    holdCount = periodInClockUnits*pr->dcy/100.0;
+	    if(holdCount<1e0) holdCount = 1e0;
+	    loadCount = periodInClockUnits - holdCount;
+        }
+    }
+    if(loadCount>65536.0 || holdCount>65535.0) {
+	if(pr->nsev<VALID_ALARM) {
+		pr->nsta = WRITE_ALARM;
+		pr->nsev = VALID_ALARM;
+	}
+	recGblRecordError(S_db_badField,pr,
+		"devMz8310 : computed illegal clock rate");
+	return(1);
+    }
+    load = loadCount + .5;
+    hold = holdCount + .5;
+
+    /* compute mode */
+    mode = 0x0062; /*MODE J: reload load or hold, count repeatedly, TC toggled*/
+    if(pr->edge==1) mode |= 0x1000; /*count on falling edge*/
+    /* If necessary set gate control MODE K: Active High Level Gate N */
+    if(pr->gsrc==INTERNAL && pr->gate!=0) {
+	unsigned short gate = (unsigned short)pr->gate;
+
+	if(gate>5) recGblRecordError(S_db_badField,pr,
+		"devMz8310 : illegal gate value");
+	else mode |= gate<<13;
+    }
+    /*set count source selection*/
+    if(pr->csrc==INTERNAL) {
+	mode |= internalCountSource[clockDiv];
+    } else {/*external clock. Determine source*/
+	if(pr->clks<0 || pr->clks>15) {
+	    if(pr->nsev<VALID_ALARM) {
+		pr->nsta = WRITE_ALARM;
+		pr->nsev = VALID_ALARM;
+	    }
+	    recGblRecordError(S_db_badField,pr,
+		"devMz8310 : illegal clks value");
+	    return(1);
+	}
+	mode |= (pr->clks << 8);
+    }
+
+    /* setup counter */
+    putCmd(pcmd,(DISARM | (1<<channel)));
+    /* Set initial state of output */
+    putCmd(pcmd,((pr->llow==0 ? CLRTOGOUT : SETTOGOUT) | (channel+1)));
+    putCmd(pcmd,(LDPCOUNTER | (channel+1)));
+    putData(pdata,mode);
+    putData(pdata,load);
+    putData(pdata,hold);
+    if(mz8310Debug){
+	putCmd(pcmd,(LDPCOUNTER | (channel+1)));
+	printf("reading mode,load,hold\n");
+	getData(pdata,&mode);
+	getData(pdata,&load);
+	getData(pdata,&hold);
+    }
+    /* Load and arm counter*/
+    putCmd(pcmd,(LOADARM | (1<<channel)));
+    pr->udf = FALSE;
+    return(OK);
+}

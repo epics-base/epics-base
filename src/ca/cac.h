@@ -48,7 +48,9 @@ struct CASG;
 class inetAddrID;
 struct caHdrLargeArray;
 
-class cac : private cacRecycle, private epicsThreadRunable
+extern epicsThreadPrivateId caClientCallbackThreadId;
+
+class cac : private cacRecycle
 {
 public:
     cac ( cacNotify &, bool enablePreemptiveCallback = false );
@@ -58,9 +60,6 @@ public:
     void beaconNotify ( const inetAddrID &addr, 
         const epicsTime &currentTime );
     void repeaterSubscribeConfirmNotify ();
-
-    // IIU routines
-    void signalRecvActivity ();
 
     // outstanding IO count management routines
     void incrementOutstandingIO ();
@@ -73,15 +72,12 @@ public:
     void flushRequest ();
     int pendIO ( const double &timeout );
     int pendEvent ( const double &timeout );
-    void connectAllIO ( nciu &chan );
-    void disconnectAllIO ( nciu &chan );
     void destroyAllIO ( nciu &chan );
     bool executeResponse ( tcpiiu &, caHdrLargeArray &, char *pMsgBody );
     void ioCancel ( nciu &chan, const cacChannel::ioid &id );
     void ioShow ( const cacChannel::ioid &id, unsigned level ) const;
 
     // channel routines
-    bool connectChannel ( unsigned id );
     void installNetworkChannel ( nciu &, netiiu *&piiu );
     bool lookupChannelAndTransferToTCP ( unsigned cid, unsigned sid, 
              ca_uint16_t typeCode, arrayElementCount count, unsigned minorVersionNumber,
@@ -110,7 +106,7 @@ public:
         const char *pFileName, unsigned lineNo );
 
     // callback preemption control
-    void blockForEventAndEnableCallbacks ( epicsEvent &event, double timeout );
+    int blockForEventAndEnableCallbacks ( epicsEvent &event, double timeout );
 
     // diagnostics
     unsigned connectionCount () const;
@@ -123,17 +119,22 @@ public:
     void vSignal ( int ca_status, const char *pfilenm, 
                      int lineno, const char *pFormat, va_list args );
 
-    // misc
-    const char * userNamePointer () const;
-    unsigned getInitializingThreadsPriority () const;
-    epicsMutex & mutexRef ();
-    void attachToClientCtx ();
+    // buffer management
     char * allocateSmallBufferTCP ();
     void releaseSmallBufferTCP ( char * );
     unsigned largeBufferSizeTCP () const;
     char * allocateLargeBufferTCP ();
     void releaseLargeBufferTCP ( char * );
-    void selfTest ();
+
+    // misc
+    const char * userNamePointer () const;
+    unsigned getInitializingThreadsPriority () const;
+    epicsMutex & mutexRef ();
+    void attachToClientCtx ();
+    void selfTest () const;
+    void notifyNewFD ( SOCKET ) const;
+    void notifyDestroyFD ( SOCKET ) const;
+    void uninstallIIU ( tcpiiu &iiu ); 
 
 private:
     ipAddrToAsciiEngine     ipToAEngine;
@@ -159,11 +160,12 @@ private:
     epicsTime               programBeginTime;
     double                  connTMO;
     mutable epicsMutex      mutex; 
-    epicsMutex              preemptiveCallbackLock; 
-    epicsEvent              notifyCompletionEvent;
-    epicsEvent              recvProcessActivityEvent;
-    epicsEvent              recvProcessThreadExit;
+    epicsMutex              callbackMutex; 
+    epicsMutex              serializePendIO; 
+    epicsMutex              serializePendEvent; 
     epicsEvent              ioDone;
+    epicsEvent              noRecvThreadsPending;
+    epicsEvent              iiuUninstal;
     epicsTimerQueueActive   *pTimerQueue;
     char                    *pUserName;
     class udpiiu            *pudpiiu;
@@ -172,32 +174,28 @@ private:
                             *pRepeaterSubscribeTmr;
     void                    *tcpSmallRecvBufFreeList;
     void                    *tcpLargeRecvBufFreeList;
-    epicsThread             *pRecvProcessThread;
-    epicsThreadPrivateId    isRecvProcessId;
     cacNotify               &notify;
-    unsigned                ioNotifyInProgressId;
     unsigned                initializingThreadsPriority;
-    unsigned                threadsBlockingOnNotifyCompletion;
     unsigned                maxRecvBytesTCP;
-    unsigned                recvProcessEnableRefCount;
     unsigned                pndRecvCnt;
     unsigned                readSeq;
+    unsigned                recvThreadsPendingCount;
     bool                    enablePreemptiveCallback;
-    bool                    ioInProgress;
-    bool                    recvProcessThreadExitRequest;
 
-    void processRecvBacklog ();
     void flushRequestPrivate ();
     void run ();
     bool setupUDP ();
-    void enableCallbackPreemption ();
-    void disableCallbackPreemption ();
-    void flushIfRequired ( nciu & ); // lock must be applied
+    void connectAllIO ( nciu &chan );
+    void disconnectAllIO ( nciu &chan, bool enableCallbacks );
+    void privateDestroyAllIO ( nciu & chan );
+    void ioCancelPrivate ( nciu &chan, const cacChannel::ioid &id );
+    void flushIfRequired ( netiiu & ); 
     void recycleReadNotifyIO ( netReadNotifyIO &io );
     void recycleWriteNotifyIO ( netWriteNotifyIO &io );
     void recycleSubscription ( netSubscription &io );
-    bool recvProcessThreadIsCurrentThread () const;
-    void startRecvProcessThread ();
+    void preemptiveCallbackLock ();
+    void preemptiveCallbackUnlock ();
+
     void ioCompletionNotify ( unsigned id, unsigned type, 
         arrayElementCount count, const void *pData );
     void ioExceptionNotify ( unsigned id, 
@@ -212,7 +210,6 @@ private:
        int status, const char *pContext );
     void ioExceptionNotifyAndDestroy ( unsigned id, 
        int status, const char *pContext, unsigned type, arrayElementCount count );
-    bool blockForIOCallbackCompletion ( const cacChannel::ioid & id );
 
     // recv protocol stubs
     bool noopAction ( tcpiiu &, const caHdrLargeArray &, void *pMsgBdy );
@@ -249,6 +246,22 @@ private:
                     tcpiiu &iiu, const caHdrLargeArray &hdr, 
                     const char *pCtx, unsigned status );
     static const pExcepProtoStubTCP tcpExcepJumpTableCAC [];
+
+    friend class callbackAutoMutex;
+};
+
+class callbackAutoMutex {
+public:
+    callbackAutoMutex ( cac & ctxIn ) : ctx ( ctxIn )
+    {
+        this->ctx.preemptiveCallbackLock ();
+    }
+    ~callbackAutoMutex ()
+    {
+        this->ctx.preemptiveCallbackUnlock ();
+    }
+private:
+    cac & ctx;
 };
 
 inline const char * cac::userNamePointer () const
@@ -321,24 +334,9 @@ inline void cac::releaseLargeBufferTCP ( char *pBuf )
     freeListFree ( this->tcpLargeRecvBufFreeList, pBuf );
 }
 
-inline bool cac::recvProcessThreadIsCurrentThread () const
-{
-    if ( this->pRecvProcessThread ) {
-        return this->pRecvProcessThread->isCurrentThread();
-    }
-    else {
-        return false;
-    }
-}
-
 inline bool cac::ioComplete () const
 {
     return ( this->pndRecvCnt == 0u );
-}
-
-inline void cac::signalRecvActivity ()
-{
-    this->recvProcessActivityEvent.signal ();
 }
 
 #endif // ifdef cach

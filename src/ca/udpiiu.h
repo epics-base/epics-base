@@ -43,7 +43,7 @@ class epicsTime;
 
 class udpiiu : public netiiu {
 public:
-    udpiiu ( class cac &, epicsThreadPrivateId );
+    udpiiu ( class cac & );
     virtual ~udpiiu ();
     void shutdown ();
     void recvMsg ();
@@ -59,15 +59,12 @@ public:
     // exceptions
     class noSocket {};
 
-    SOCKET getSock () const;
-
 private:
     char xmitBuf [MAX_UDP_SEND];   
     char recvBuf [MAX_UDP_RECV];
     ELLLIST dest;
     epicsThreadId recvThreadId;
     epicsEventId recvThreadExitSignal;
-    epicsThreadPrivateId isRecvProcessId;
     unsigned nBytesInXmitBuf;
     SOCKET sock;
     unsigned short repeaterPort;
@@ -111,11 +108,6 @@ inline bool udpiiu::isCurrentThread () const
 inline unsigned udpiiu::getPort () const
 {
     return this->localPort;
-}
-
-inline SOCKET udpiiu::getSock () const
-{
-    return this->sock;
 }
 
 #endif // udpiiuh

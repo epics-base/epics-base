@@ -215,20 +215,21 @@ public:
     tcpiiu ( cac &cac, double connectionTimeout, 
         epicsTimerQueue &timerQueue, const osiSockAddr &addrIn, 
         unsigned minorVersion, class bhe &bhe, 
-        ipAddrToAsciiEngine &engineIn );
+        ipAddrToAsciiEngine & engineIn,
+        bool preemptiveCallbackEnable );
     ~tcpiiu ();
     void connect ();
-    void processIncoming ();
     void destroy ();
-    void cleanShutdown ();
     void forcedShutdown ();
+    void cleanShutdown ();
     void beaconAnomalyNotify ();
     void beaconArrivalNotify ();
 
     void flushRequest ();
     bool flushBlockThreshold () const;
     void flushRequestIfAboveEarlyThreshold ();
-    void blockUntilSendBacklogIsReasonable ( epicsMutex & );
+    void blockUntilSendBacklogIsReasonable 
+        ( epicsMutex * pCallBack, epicsMutex & primary );
     virtual void show ( unsigned level ) const;
     bool setEchoRequestPending ();
     void requestRecvProcessPostponedFlush ();
@@ -245,9 +246,6 @@ public:
     double beaconPeriod () const;
     bhe & getBHE () const;
 
-    SOCKET getSock() const;
-    bool trueOnceOnly ();
-
 private:
     tcpRecvWatchdog recvDog;
     tcpSendWatchdog sendDog;
@@ -263,24 +261,25 @@ private:
     unsigned minorProtocolVersion;
     iiu_conn_state state;
     epicsEvent sendThreadFlushEvent;
-    epicsEvent recvThreadRingBufferSpaceAvailableEvent;
     epicsEvent sendThreadExitEvent;
-    epicsEvent recvThreadExitEvent;
     epicsEvent flushBlockEvent;
     SOCKET sock;
     unsigned contigRecvMsgCount;
     unsigned blockingForFlush;
     unsigned socketLibrarySendBufferSize;
     unsigned unacknowledgedSendBytes;
+    int recvFlag;
     bool busyStateDetected; // only modified by the recv thread
     bool flowControlActive; // only modified by the send process thread
     bool echoRequestPending; 
     bool oldMsgHeaderAvailable;
     bool msgHeaderAvailable;
     bool sockCloseCompleted;
-    bool f_trueOnceOnly;
     bool earlyFlush;
     bool recvProcessPostponedFlush;
+    bool preemptiveCallbackEnable;
+
+    void processIncoming ();
 
     unsigned sendBytes ( const void *pBuf, unsigned nBytesInBuf );
     unsigned recvBytes ( void *pBuf, unsigned nBytesInBuf );
@@ -489,22 +488,6 @@ inline void tcpiiu::beaconAnomalyNotify ()
 inline void tcpiiu::beaconArrivalNotify ()
 {
     this->recvDog.beaconArrivalNotify ();
-}
-
-inline bool tcpiiu::trueOnceOnly ()
-{
-    if ( this->f_trueOnceOnly ) {
-        this->f_trueOnceOnly = false;
-        return true;
-    }
-    else {
-        return false;
-    }
-}
-
-inline SOCKET tcpiiu::getSock () const
-{
-    return this->sock;
 }
 
 inline void tcpiiu::flushIfRecvProcessRequested ()

@@ -45,17 +45,11 @@ void netiiu::show ( unsigned level ) const
 }
 
 // cac lock must also be applied when calling this
-void netiiu::disconnectAllChan ( netiiu & newiiu )
+void netiiu::uninstallAllChan ( tsDLList < nciu > & dstList )
 {
-    tsDLIterBD < nciu > chan = this->channelList.firstIter ();
-    while ( chan.valid () ) {
-        tsDLIterBD < nciu > next = chan;
-        next++;
-        this->clearChannelRequest ( *chan );
-        this->channelList.remove ( *chan );
-        chan->disconnect ( newiiu );
-        newiiu.channelList.add ( *chan );
-        chan = next;
+    while ( nciu *pChan = this->channelList.get () ) {
+        this->clearChannelRequest ( *pChan );
+        dstList.add ( *pChan );
     }
 }
 
@@ -160,14 +154,6 @@ const char * netiiu::pHostName () const
     return "<disconnected>";
 }
 
-void netiiu::disconnectAllIO ( nciu & )
-{
-}
-
-void netiiu::connectAllIO ( nciu & )
-{
-}
-
 double netiiu::beaconPeriod () const
 {
     return ( - DBL_MAX );
@@ -186,7 +172,7 @@ void netiiu::flushRequestIfAboveEarlyThreshold ()
 {
 }
 
-void netiiu::blockUntilSendBacklogIsReasonable ( epicsMutex & )
+void netiiu::blockUntilSendBacklogIsReasonable ( epicsMutex *, epicsMutex & )
 {
 }
 

@@ -73,9 +73,15 @@ int CASG::block ( double timeout )
 {
     epicsTime cur_time;
     epicsTime beg_time;
-    double  delay;
-    double  remaining;
-    int     status;
+    double delay;
+    double remaining;
+    int status;
+
+    // prevent recursion nightmares by disabling blocking
+    // for IO from within a CA callback. 
+    if ( epicsThreadPrivateGet ( caClientCallbackThreadId ) ) {
+        return ECA_EVDISALLOW;
+    }
 
     if ( timeout < 0.0 ) {
         return ECA_TIMEOUT;
@@ -105,7 +111,15 @@ int CASG::block ( double timeout )
             break;
         }
 
-        this->client.blockForEventAndEnableCallbacks ( this->sem, remaining );
+        {
+            // serialize access the blocking mechanism below
+            epicsAutoMutex autoMutex ( this->serializeBlock );
+
+            status = this->client.blockForEventAndEnableCallbacks ( this->sem, remaining );
+            if ( status != ECA_NORMAL ) {
+                return status;
+            }
+        }
 
         /*
          * force a time update 

@@ -43,7 +43,7 @@ protected:
 // perhaps we should not store the channel here and instead fetch it out of the 
 // notify 
 //
-    nciu &chan;
+    nciu & chan;
 };
 
 class netSubscription : public baseNMIU  {

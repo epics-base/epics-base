@@ -118,37 +118,17 @@ void nciu::connect ( unsigned nativeType,
 
     /*
      * if less than v4.1 then the server will never
-     * send access rights and we know that there
-     * will always be access 
+     * send access rights and there will always be access 
      */
     if ( ! v41Ok ) {
         this->accessRightState.setReadPermit();
         this->accessRightState.setWritePermit();
     }
-
-    // resubscribe for monitors from this channel 
-    this->cacCtx.connectAllIO ( *this );
-
-    this->notify().connectNotify ();
-
-    /*
-     * if less than v4.1 then the server will never
-     * send access rights and we know that there
-     * will always be access and also need to call 
-     * their call back here
-     */
-    if ( ! v41Ok ) {
-        this->notify().accessRightsNotify ( this->accessRightState );
-    }
 }
 
-void nciu::disconnect ( netiiu &newiiu )
+void nciu::disconnect ( netiiu & newiiu )
 {
-    bool wasConnected;
-
-    this->piiu->disconnectAllIO ( *this );
-
-    this->piiu = &newiiu;
+    this->piiu = & newiiu;
     this->retry = 0u;
     this->typeCode = USHRT_MAX;
     this->count = 0u;
@@ -156,24 +136,7 @@ void nciu::disconnect ( netiiu &newiiu )
     this->accessRightState.clrReadPermit();
     this->accessRightState.clrWritePermit();
     this->f_claimSent = false;
-
-    if ( this->f_connected ) {
-        wasConnected = true;
-    }
-    else {
-        wasConnected = false;
-    }
     this->f_connected = false;
-
-    if ( wasConnected ) {
-        /*
-         * look for events that have an event cancel in progress
-         */
-        this->notify().disconnectNotify ();
-        this->notify().accessRightsNotify ( this->accessRightState );
-    }
-
-    this->resetRetryCount ();
 }
 
 /*

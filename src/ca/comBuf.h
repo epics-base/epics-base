@@ -49,6 +49,7 @@ public:
     unsigned unoccupiedBytes () const;
     unsigned occupiedBytes () const;
     static unsigned capacityBytes ();
+    void clear ();
     unsigned copyInBytes ( const void *pBuf, unsigned nBytes );
     unsigned copyIn ( comBuf & );
     unsigned copyIn ( const epicsInt8 *pValue, unsigned nElem );
@@ -103,6 +104,12 @@ inline comBuf::~comBuf ()
 inline void comBuf::destroy ()
 {
     delete this;
+}
+
+inline void comBuf::clear ()
+{
+    this->nextWriteIndex = 0u;
+    this->nextReadIndex = 0u;
 }
 
 inline void * comBuf::operator new ( size_t size, const std::nothrow_t & )

@@ -89,7 +89,7 @@ extern "C" void cacSendThreadTCP ( void *pParam )
         }
     }
     catch ( ... ) {
-        piiu->printf ("cac: tcp send thread received an exception - diconnecting\n");
+        piiu->printf ("cac: tcp send thread received an exception - disconnecting\n");
         piiu->forcedShutdown ();
     }
 
@@ -158,8 +158,9 @@ unsigned tcpiiu::recvBytes ( void *pBuf, unsigned nBytesInBuf )
     }
 
     assert ( nBytesInBuf <= INT_MAX );
+
     int status = ::recv ( this->sock, static_cast <char *> ( pBuf ), 
-        static_cast <int> ( nBytesInBuf ), 0);
+        static_cast <int> ( nBytesInBuf ), this->recvFlag );
     if ( status <= 0 ) {
         int localErrno = SOCKERRNO;
 
@@ -207,102 +208,107 @@ extern "C" void cacRecvThreadTCP ( void *pParam )
 {
     tcpiiu *piiu = ( tcpiiu * ) pParam;
 
+    piiu->pCAC()->attachToClientCtx ();
+
+    epicsThreadPrivateSet ( caClientCallbackThreadId, piiu );
+
     piiu->connect ();
 
     {
-        epicsAutoMutex autoMutex ( piiu->pCAC()->mutexRef() );
-        if ( piiu->state == iiu_connected ) {
-            unsigned priorityOfSend;
-            epicsThreadBooleanStatus tbs  = epicsThreadLowestPriorityLevelAbove ( 
-                piiu->pCAC ()->getInitializingThreadsPriority (), &priorityOfSend );
-            if ( tbs != epicsThreadBooleanStatusSuccess ) {
-                priorityOfSend = piiu->pCAC ()->getInitializingThreadsPriority ();
-            }
-            epicsThreadId tid = epicsThreadCreate ( "CAC-TCP-send", priorityOfSend,
-                    epicsThreadGetStackSize ( epicsThreadStackMedium ), cacSendThreadTCP, piiu );
-            if ( ! tid ) {
-                piiu->recvThreadExitEvent.signal ();
-                piiu->sendThreadExitEvent.signal ();
-                piiu->cleanShutdown ();
-                return;
-            }
-        }
-        else {
-            piiu->recvThreadExitEvent.signal ();
-            piiu->sendThreadExitEvent.signal ();
-            piiu->cleanShutdown ();
-            return;
-        }
+        callbackAutoMutex autoMutex ( *piiu->pCAC() );
+        piiu->pCAC()->notifyNewFD ( piiu->sock );
     }
 
-    unsigned nBytes = 0u;
-    while ( piiu->state == iiu_connected ) {
-        if ( nBytes >= maxBytesPendingTCP ) {
-            piiu->recvThreadRingBufferSpaceAvailableEvent.wait ();
-            epicsAutoMutex autoMutex ( piiu->pCAC()->mutexRef() );
-            nBytes = piiu->recvQue.occupiedBytes ();
+    if ( piiu->state == iiu_connected ) {
+        unsigned priorityOfSend;
+        epicsThreadBooleanStatus tbs  = epicsThreadLowestPriorityLevelAbove ( 
+            piiu->pCAC()->getInitializingThreadsPriority (), &priorityOfSend );
+        if ( tbs != epicsThreadBooleanStatusSuccess ) {
+            priorityOfSend = piiu->pCAC ()->getInitializingThreadsPriority ();
         }
-        else {
-            comBuf * pComBuf = new ( std::nothrow ) comBuf;
-            if ( pComBuf ) {
-                unsigned nBytesIn = pComBuf->fillFromWire ( *piiu );
-                if ( nBytesIn ) {
-                    bool msgHeaderButNoBody;
-                    {
-                        epicsAutoMutex autoMutex ( piiu->pCAC()->mutexRef() );
-                        nBytes = piiu->recvQue.occupiedBytes ();
-                        msgHeaderButNoBody = piiu->oldMsgHeaderAvailable; 
-                        piiu->recvQue.pushLastComBufReceived ( *pComBuf );
-                        if ( nBytesIn == pComBuf->capacityBytes () ) {
-                            if ( piiu->contigRecvMsgCount >= contiguousMsgCountWhichTriggersFlowControl ) {
-                                piiu->busyStateDetected = true;
-                            }
-                            else { 
-                                piiu->contigRecvMsgCount++;
-                            }
-                        }
-                        else {
-                            piiu->contigRecvMsgCount = 0u;
-                            piiu->busyStateDetected = false;
-                        }         
-                        piiu->unacknowledgedSendBytes = 0u;
-                    }
-                    // reschedule connection activity watchdog
-                    // but dont hold the lock for fear of deadlocking 
-                    // because cancel is blocking for the completion
-                    // of the recvDog expire which takes the lock
-                    piiu->recvDog.messageArrivalNotify (); 
+        epicsThreadId tid = epicsThreadCreate ( "CAC-TCP-send", priorityOfSend,
+                epicsThreadGetStackSize ( epicsThreadStackMedium ), cacSendThreadTCP, piiu );
+        if ( ! tid ) {
+            piiu->sendThreadExitEvent.signal ();
+            piiu->cleanShutdown ();
+        }
+    }
+    else {
+        piiu->sendThreadExitEvent.signal ();
+        piiu->cleanShutdown ();
+    }
 
-                    // wake up recv thread only if
-                    // 1) there are currently no bytes in the queue
-                    // 2) if the recv thread is currently blocking for an incomplete msg
-                    if ( nBytes < sizeof ( caHdr ) || msgHeaderButNoBody ) {
-                        piiu->pCAC()->signalRecvActivity ();
-                    }
+    while ( piiu->state == iiu_connected ) {
+        comBuf * pComBuf = new ( std::nothrow ) comBuf;
+        if ( pComBuf ) {
+            if ( piiu->preemptiveCallbackEnable ) {
+                piiu->recvFlag = 0;
+            }
+            else {
+                piiu->recvFlag = MSG_PEEK;
+            }
+            unsigned nBytesIn = pComBuf->fillFromWire ( *piiu );
 
-                    if ( nBytes <= UINT_MAX - nBytesIn ) {
-                        nBytes += nBytesIn;
+            // only one recv thread at a time may call callbacks
+            callbackAutoMutex autoMutex ( *piiu->pCAC() );
+
+            //
+            // We leave the bytes pending and fetch them again after
+            // callbacks are enabled when running in the old preemptive 
+            // call back disabled mode so that asynchronous wakeup via
+            // file manager call backs works correctly. Oddly enough,
+            // this does not appear to impact performance.
+            //
+            if ( ! piiu->preemptiveCallbackEnable ) {
+                pComBuf->clear ();
+                piiu->recvFlag = 0;
+                nBytesIn = pComBuf->fillFromWire ( *piiu );
+            }
+
+            if ( nBytesIn ) {
+                piiu->recvQue.pushLastComBufReceived ( *pComBuf );
+                if ( nBytesIn == pComBuf->capacityBytes () ) {
+                    if ( piiu->contigRecvMsgCount >= contiguousMsgCountWhichTriggersFlowControl ) {
+                        piiu->busyStateDetected = true;
                     }
-                    else {
-                        nBytes = UINT_MAX;
+                    else { 
+                        piiu->contigRecvMsgCount++;
                     }
                 }
                 else {
-                    pComBuf->destroy ();
-                    epicsAutoMutex autoMutex ( piiu->pCAC()->mutexRef() );
-                    nBytes = piiu->recvQue.occupiedBytes ();
-                }
+                    piiu->contigRecvMsgCount = 0u;
+                    piiu->busyStateDetected = false;
+                }         
+                piiu->unacknowledgedSendBytes = 0u;
+
+                // reschedule connection activity watchdog
+                // but dont hold the lock for fear of deadlocking 
+                // because cancel is blocking for the completion
+                // of the recvDog expire which takes the lock
+                piiu->recvDog.messageArrivalNotify (); 
+
+                //
+                // execute receive labor
+                //
+                piiu->processIncoming ();
             }
             else {
-                // no way to be informed when memory is available
-                epicsThreadSleep ( 0.5 );
-                epicsAutoMutex autoMutex ( piiu->pCAC()->mutexRef() );
-                nBytes = piiu->recvQue.occupiedBytes ();
+                pComBuf->destroy ();
             }
+        }
+        else {
+            // no way to be informed when memory is available
+            epicsThreadSleep ( 0.5 );
         }
     }
 
-    piiu->recvThreadExitEvent.signal ();
+    {
+        callbackAutoMutex autoMutex ( *piiu->pCAC() );
+        piiu->pCAC()->uninstallIIU ( *piiu );
+        piiu->pCAC()->notifyDestroyFD ( piiu->sock );
+    }
+
+    piiu->destroy ();
 }
 
 //
@@ -311,7 +317,8 @@ extern "C" void cacRecvThreadTCP ( void *pParam )
 tcpiiu::tcpiiu ( cac &cac, double connectionTimeout, 
         epicsTimerQueue &timerQueue, const osiSockAddr &addrIn, 
         unsigned minorVersion, class bhe &bheIn, 
-        ipAddrToAsciiEngine &engineIn ) :
+        ipAddrToAsciiEngine &engineIn,
+        bool preemptiveCallbackEnableIn ) :
     netiiu ( &cac ),
     recvDog ( *this, connectionTimeout, timerQueue ),
     sendDog ( *this, connectionTimeout, timerQueue ),
@@ -329,15 +336,16 @@ tcpiiu::tcpiiu ( cac &cac, double connectionTimeout,
     blockingForFlush ( 0u ),
     socketLibrarySendBufferSize ( 0u ),
     unacknowledgedSendBytes ( 0u ),
+    recvFlag ( 0 ),
     busyStateDetected ( false ),
     flowControlActive ( false ),
     echoRequestPending ( false ),
     oldMsgHeaderAvailable ( false ),
     msgHeaderAvailable ( false ),
     sockCloseCompleted ( false ),
-    f_trueOnceOnly ( true ),
     earlyFlush ( false ),
-    recvProcessPostponedFlush ( false )
+    recvProcessPostponedFlush ( false ),
+    preemptiveCallbackEnable ( preemptiveCallbackEnableIn )
 {
     if ( ! this->pCurData ) {
         throw std::bad_alloc ();
@@ -377,7 +385,6 @@ tcpiiu::tcpiiu ( cac &cac, double connectionTimeout,
     // of user and host name of client
     this->userNameSetRequest ();
     this->hostNameSetRequest ();
-
 
 #   if 0
     {
@@ -424,7 +431,7 @@ tcpiiu::tcpiiu ( cac &cac, double connectionTimeout,
 
     unsigned priorityOfRecv;
     epicsThreadBooleanStatus tbs = epicsThreadLowestPriorityLevelAbove ( 
-        this->pCAC ()->getInitializingThreadsPriority (), &priorityOfRecv );
+        this->pCAC()->getInitializingThreadsPriority (), &priorityOfRecv );
     if ( tbs != epicsThreadBooleanStatusSuccess ) {
         priorityOfRecv = this->pCAC ()->getInitializingThreadsPriority ();
     }
@@ -524,7 +531,7 @@ void tcpiiu::cleanShutdown ()
     else if ( this->state == iiu_connecting ) {
         int status = socket_close ( this->sock );
         if ( status ) {
-            errlogPrintf ("CAC TCP socket close error was %s\n", 
+            errlogPrintf ( "CAC TCP socket close error was %s\n", 
                 SOCKERRSTR (SOCKERRNO) );
         }
         else {
@@ -533,8 +540,6 @@ void tcpiiu::cleanShutdown ()
         }
     }
     this->sendThreadFlushEvent.signal ();
-    this->recvThreadRingBufferSpaceAvailableEvent.signal ();
-    this->pCAC ()->signalRecvActivity ();
 }
 
 /*
@@ -569,8 +574,6 @@ void tcpiiu::forcedShutdown ()
     }
 
     this->sendThreadFlushEvent.signal ();
-    this->recvThreadRingBufferSpaceAvailableEvent.signal ();
-    this->pCAC()->signalRecvActivity ();
 }
 
 //
@@ -592,27 +595,6 @@ tcpiiu::~tcpiiu ()
         }
         if ( ! this->sockCloseCompleted ) {
             printf ( "Gave up waiting for \"shutdown()\" to force send thread to exit after %f sec\n", 
-                shutdownDelay);
-            printf ( "Closing socket\n" );
-            int status = socket_close ( this->sock );
-            if ( status ) {
-                errlogPrintf ("CAC TCP socket close error was %s\n", 
-                    SOCKERRSTR ( SOCKERRNO ) );
-            }
-            else {
-                this->sockCloseCompleted = true;
-            }
-        }
-    }
-
-    // wait for recv thread to exit
-    while ( true ) {
-        bool signaled = this->recvThreadExitEvent.wait ( shutdownDelay );
-        if ( signaled ) {
-            break;
-        }
-        if ( ! this->sockCloseCompleted ) {
-            printf ( "Gave up waiting for \"shutdown()\" to force receive thread to exit after %f sec\n", 
                 shutdownDelay);
             printf ( "Closing socket\n" );
             int status = socket_close ( this->sock );
@@ -722,12 +704,8 @@ void tcpiiu::show ( unsigned level ) const
         ::printf ( "\tvirtual circuit socket identifier %d\n", this->sock );
         ::printf ( "\tsend thread flush signal:\n" );
         this->sendThreadFlushEvent.show ( level-3u );
-        ::printf ( "\trecv thread buffer space available signal:\n" );
-        this->recvThreadRingBufferSpaceAvailableEvent.show ( level-3u );
         ::printf ( "\tsend thread exit signal:\n" );
         this->sendThreadExitEvent.show ( level-3u );
-        ::printf ( "\trecv thread exit signal:\n" );
-        this->recvThreadExitEvent.show ( level-3u );
         ::printf ("\techo pending bool = %u\n", this->echoRequestPending );
         ::printf ( "IO identifier hash table:\n" );
         this->BHE.show ( level - 3u );
@@ -756,7 +734,7 @@ bool tcpiiu::setEchoRequestPending ()
 //
 void tcpiiu::processIncoming ()
 {
-    while ( 1 ) {
+    while ( true ) {
 
         //
         // fetch a complete message header
@@ -825,7 +803,6 @@ void tcpiiu::processIncoming ()
                             &this->pCurData[this->curDataBytes], 
                             this->curMsg.m_postsize - this->curDataBytes );
                 if ( this->curDataBytes < this->curMsg.m_postsize ) {
-                    this->recvThreadRingBufferSpaceAvailableEvent.signal ();
                     this->flushIfRecvProcessRequested ();
                     return;
                 }
@@ -848,15 +825,9 @@ void tcpiiu::processIncoming ()
             this->curDataBytes += this->recvQue.removeBytes ( 
                     this->curMsg.m_postsize - this->curDataBytes );
             if ( this->curDataBytes < this->curMsg.m_postsize  ) {
-                this->recvThreadRingBufferSpaceAvailableEvent.signal ();
                 this->flushIfRecvProcessRequested ();
                 return;
             }
-        }
-
-        if ( nBytes >= maxBytesPendingTCP && 
-            this->recvQue.occupiedBytes () < maxBytesPendingTCP ) {
-            this->recvThreadRingBufferSpaceAvailableEvent.signal ();
         }
  
         this->oldMsgHeaderAvailable = false;
@@ -1276,19 +1247,26 @@ bool tcpiiu::flush ()
 }
 
 // ~tcpiiu() will not return while this->blockingForFlush is greater than zero
-void tcpiiu::blockUntilSendBacklogIsReasonable ( epicsMutex &mutex )
+void tcpiiu::blockUntilSendBacklogIsReasonable ( 
+          epicsMutex *pCallbackMutex, epicsMutex & primaryMutex )
 {
     assert ( this->blockingForFlush < UINT_MAX );
     this->blockingForFlush++;
     while ( this->sendQue.flushBlockThreshold(0u) && this->state == iiu_connected ) {
-        epicsAutoMutexRelease autoRelease ( mutex );
-        this->flushBlockEvent.wait ( 5.0 );
-    }
-    if ( this->blockingForFlush == 1 ) {
-        this->flushBlockEvent.signal ();
+        epicsAutoMutexRelease autoRelease ( primaryMutex );
+        if ( pCallbackMutex ) {
+            epicsAutoMutexRelease autoRelease ( *pCallbackMutex );
+            this->flushBlockEvent.wait ();
+        }
+        else {
+            this->flushBlockEvent.wait ();
+        }
     }
     assert ( this->blockingForFlush > 0u );
     this->blockingForFlush--;
+    if ( this->blockingForFlush == 0 ) {
+        this->flushBlockEvent.signal ();
+    }
 }
 
 void tcpiiu::flushRequestIfAboveEarlyThreshold ()

@@ -47,6 +47,8 @@ public:
     void connect ( unsigned nativeType, 
         unsigned nativeCount, unsigned sid, bool v41Ok );
     void connect ();
+    void connectStateNotify () const;
+    void accessRightsNotify () const;
     void disconnect ( netiiu &newiiu );
     bool searchMsg ( unsigned short retrySeqNumber, 
         unsigned &retryNoForThisChannel );
@@ -77,9 +79,9 @@ protected:
     ~nciu (); // force pool allocation
 private:
     caAccessRights accessRightState;
-    cac &cacCtx;
-    char *pNameStr;
-    netiiu *piiu;
+    cac & cacCtx;
+    char * pNameStr;
+    netiiu * piiu;
     ca_uint32_t sid; // server id
     unsigned count;
     unsigned retry; // search retry number
@@ -139,7 +141,6 @@ inline void nciu::resetRetryCount ()
 inline void nciu::accessRightsStateChange ( const caAccessRights &arIn )
 {
     this->accessRightState = arIn;
-    this->notify().accessRightsNotify ( arIn );
 }
 
 inline ca_uint32_t nciu::getSID () const
@@ -201,6 +202,21 @@ inline void nciu::writeException ( int status,
     const char *pContext, unsigned typeIn, arrayElementCount countIn )
 {
     this->notify().writeException ( status, pContext, typeIn, countIn );
+}
+
+inline void nciu::connectStateNotify () const
+{
+    if ( this->f_connected ) {
+        this->notify().connectNotify ();
+    }
+    else {
+        this->notify().disconnectNotify ();
+    }
+}
+
+inline void nciu::accessRightsNotify () const
+{
+    this->notify().accessRightsNotify ( this->accessRightState );
 }
 
 #endif // ifdef nciuh

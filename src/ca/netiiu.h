@@ -35,7 +35,7 @@ public:
     virtual ~netiiu ();
     void show ( unsigned level ) const;
     unsigned channelCount () const;
-    void disconnectAllChan ( netiiu & newiiu );
+    void uninstallAllChan ( tsDLList < nciu > & dstList );
     void connectTimeoutNotify ();
     bool searchMsg ( unsigned short retrySeqNumber, unsigned &retryNoForThisChannel );
     void resetChannelRetryCounts ();
@@ -51,8 +51,6 @@ public:
     virtual void writeNotifyRequest ( nciu &, netWriteNotifyIO &, unsigned type, unsigned nElem, const void *pValue );
     virtual void readNotifyRequest ( nciu &, netReadNotifyIO &, unsigned type, unsigned nElem );
     virtual void createChannelRequest ( nciu & );
-    virtual void connectAllIO ( nciu &chan );
-    virtual void disconnectAllIO ( nciu &chan );
     virtual void clearChannelRequest ( nciu & );
     virtual void subscriptionRequest ( nciu &, netSubscription &subscr );
     virtual void subscriptionCancelRequest ( nciu &, netSubscription &subscr );
@@ -60,7 +58,7 @@ public:
     virtual void flushRequest ();
     virtual bool flushBlockThreshold () const;
     virtual void flushRequestIfAboveEarlyThreshold ();
-    virtual void blockUntilSendBacklogIsReasonable ( epicsMutex & );
+    virtual void blockUntilSendBacklogIsReasonable ( epicsMutex *, epicsMutex & );
     virtual void requestRecvProcessPostponedFlush ();
 protected:
     cac * pCAC () const;

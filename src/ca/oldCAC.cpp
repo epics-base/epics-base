@@ -191,16 +191,6 @@ void oldCAC::show ( unsigned level ) const
 {
     ::printf ( "oldCAC at %p\n", 
         static_cast <const void *> ( this ) );
-#if 0 // gnu compiler does not like casting func ptr to void ptr
-    ::printf ( "exception func at %p arg at %p\n", 
-        static_cast <const void *> ( this->ca_exception_func ),
-        static_cast <const void *> ( this->ca_exception_arg ) );
-    ::printf ( "printf func at %p\n", 
-        static_cast <const void *> ( this->pVPrintfFunc ) );
-    ::printf ( "fd registration func at %p arg at %p\n", 
-        static_cast <const void *> ( this->fdRegFunc ),
-        static_cast <const void *> ( this->fdRegArg ) );
-#endif
     if ( level > 0u ) {
         this->mutex.show ( level - 1u );
         this->clientCtx.show ( level - 1u );

@@ -130,6 +130,7 @@ protected:
 private:
     tsDLList < syncGroupNotify > ioList;
     epicsMutex mutable mutex;
+    epicsMutex serializeBlock;
     epicsEvent sem;
     oldCAC & client;
     unsigned magic;

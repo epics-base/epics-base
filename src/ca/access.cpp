@@ -32,7 +32,7 @@
 #include "oldAccess.h"
 #include "autoPtrDestroy.h"
 
-epicsThreadPrivateId caClientContextId;
+static epicsThreadPrivateId caClientContextId;
 
 static epicsThreadOnceId caClientContextIdOnce = EPICS_THREAD_ONCE_INIT;
 

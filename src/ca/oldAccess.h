@@ -212,7 +212,7 @@ public:
     CASG * lookupCASG ( unsigned id );
     void installCASG ( CASG & );
     void uninstallCASG ( CASG & );
-    void blockForEventAndEnableCallbacks ( epicsEvent &event, double timeout );
+    int blockForEventAndEnableCallbacks ( epicsEvent &event, double timeout );
     void selfTest ();
 // perhaps these should be eliminated in deference to the exception mechanism
     int printf ( const char *pformat, ... ) const;
@@ -492,10 +492,10 @@ inline void oldCAC::uninstallCASG ( CASG &sg )
     this->clientCtx.uninstallCASG ( sg );
 }
 
-inline void oldCAC::blockForEventAndEnableCallbacks ( 
+inline int oldCAC::blockForEventAndEnableCallbacks ( 
         epicsEvent &event, double timeout )
 {
-    this->clientCtx.blockForEventAndEnableCallbacks ( event, timeout );
+    return this->clientCtx.blockForEventAndEnableCallbacks ( event, timeout );
 }
 
 inline void oldCAC::vSignal ( int ca_status, const char *pfilenm, 

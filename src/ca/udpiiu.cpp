@@ -51,9 +51,9 @@ const udpiiu::pProtoStubUDP udpiiu::udpJumpTableCAC [] =
 //
 // udpiiu::udpiiu ()
 //
-udpiiu::udpiiu ( cac &cac, epicsThreadPrivateId isRecvProcessIdIn ) :
-    netiiu ( &cac ), isRecvProcessId ( isRecvProcessIdIn ), 
-        shutdownCmd ( false ), sockCloseCompleted ( false )
+udpiiu::udpiiu ( cac &cac ) :
+    netiiu ( &cac ), shutdownCmd ( false ), 
+        sockCloseCompleted ( false )
 {
     static const unsigned short PORT_ANY = 0u;
     osiSockAddr addr;
@@ -146,6 +146,11 @@ udpiiu::udpiiu ( cac &cac, epicsThreadPrivateId isRecvProcessIdIn ) :
     ellInit ( &this->dest );
     configureChannelAccessAddressList ( &this->dest, this->sock, this->serverPort );
     if ( ellCount ( &this->dest ) == 0 ) {
+        // no need to lock callbacks here because
+        // 1) this is called while in a CA client function
+        // 2) no auxiliary threads are running at this point
+        // (taking the callback lock here would break the
+        // lock hierarchy and risk deadlocks)
         genLocalExcep ( *this->pCAC (), ECA_NOSEARCHADDR, NULL );
     }
   
@@ -245,7 +250,7 @@ void udpiiu::recvMsg ()
 extern "C" void cacRecvThreadUDP ( void *pParam )
 {
     udpiiu *piiu = (udpiiu *) pParam;
-    epicsThreadPrivateSet ( piiu->isRecvProcessId, pParam );
+    epicsThreadPrivateSet ( caClientCallbackThreadId, pParam );
     do {
         piiu->recvMsg ();
     } while ( ! piiu->shutdownCmd );
@@ -643,11 +648,13 @@ bool udpiiu::exceptionRespAction ( const caHdr &msg,
     return true;
 }
 
-void udpiiu::postMsg ( const osiSockAddr &net_addr, 
-              char *pInBuf, arrayElementCount blockSize,
-              const epicsTime &currentTime)
+void udpiiu::postMsg ( const osiSockAddr & net_addr, 
+              char * pInBuf, arrayElementCount blockSize,
+              const epicsTime & currentTime )
 {
     caHdr *pCurMsg;
+
+    callbackAutoMutex autoMutex ( *this->pCAC() );
 
     while ( blockSize ) {
         arrayElementCount size;
@@ -656,8 +663,8 @@ void udpiiu::postMsg ( const osiSockAddr &net_addr,
             char buf[64];
             sockAddrToDottedIP ( &net_addr.sa, buf, sizeof ( buf ) );
             this->printf (
-                "%s: undecipherable (too small) UDP msg from %s ignored\n", __FILE__, 
-                            buf );
+                "%s: undecipherable (too small) UDP msg from %s ignored\n", 
+                    __FILE__,  buf );
             return;
         }
 

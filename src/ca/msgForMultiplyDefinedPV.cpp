@@ -44,5 +44,6 @@ void msgForMultiplyDefinedPV::ioCompletionNotify ( const char *pHostNameRej )
     char buf[256];
     sprintf ( buf, "Channel: \"%.64s\", Connecting to: %.64s, Ignored: %.64s",
             this->channel, this->acc, pHostNameRej );
+    callbackAutoMutex autoMutex ( this->cacRef );
     genLocalExcep ( this->cacRef, ECA_DBLCHNL, buf );
 }

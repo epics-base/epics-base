@@ -2140,7 +2140,7 @@ int camessage ( struct client *client )
         if ( msgsize > client->recv.maxstk ) {
             casExpandRecvBuffer ( client, msgsize );
             if ( msgsize > client->recv.maxstk ) {
-                const char *pCtx = "rsrv: CA request message too large";
+                const char *pCtx = "CAS: server unable to load large request message";
                 send_err ( &msg, ECA_TOLARGE, client, pCtx );
                 log_header ( pCtx , client, &msg, 0, nmsg );
                 assert ( client->recv.cnt <= client->recv.maxstk );

@@ -331,11 +331,12 @@ LOCAL void log_one_client (struct client *client, unsigned level)
     send_delay = epicsTimeDiffInSeconds(&current,&client->time_at_last_send);
     recv_delay = epicsTimeDiffInSeconds(&current,&client->time_at_last_recv);
 
-    printf( "%s(%s): User=\"%s\", V%s, Channel Count=%d\n", 
+    printf( "%s(%s): User=\"%s\", V%u.%u, Channel Count=%d\n", 
         clientHostName,
         client->pHostName ? client->pHostName : "",
         client->pUserName ? client->pUserName : "",
-        CA_VERSION_STRING ( client->minor_version_number ),
+        CA_MAJOR_PROTOCOL_REVISION,
+        client->minor_version_number,
         ellCount(&client->addrq));
     if (level>=1) {
         printf ("\tTask Id=%p, Protocol=%3s, Socket FD=%d\n", client->tid,

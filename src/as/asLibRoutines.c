@@ -1,3 +1,4 @@
+/* share/src/as/asLibRoutines.c */
 /*************************************************************************\
 * Copyright (c) 2002 The University of Chicago, as Operator of Argonne
 *     National Laboratory.
@@ -7,8 +8,6 @@
 * and higher are distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* share/src/as/asLibRoutines.c	*/
-/* share/src/as $Id$ */
 /* Author:  Marty Kraimer Date:    10-15-93 */
 
 #include <stdlib.h>
@@ -466,8 +465,8 @@ static char *asAccessName[] = {"NONE","READ","WRITE"};
 static char *asTrapOption[] = {"NOTRAPWRITE","TRAPWRITE"};
 static char *asLevelName[] = {"ASL0","ASL1"};
 int epicsShareAPI asDump(
-	void (*memcallback)(struct asgMember *),
-	void (*clientcallback)(struct asgClient *),
+	void (*memcallback)(struct asgMember *,FILE *),
+	void (*clientcallback)(struct asgClient *,FILE *),
 	int verbose)
 {
     return asDumpFP(stdout,memcallback,clientcallback,verbose);
@@ -475,8 +474,8 @@ int epicsShareAPI asDump(
 
 int epicsShareAPI asDumpFP(
 	FILE *fp,
-	void (*memcallback)(struct asgMember *),
-	void (*clientcallback)(struct asgClient *),
+	void (*memcallback)(struct asgMember *,FILE *),
+	void (*clientcallback)(struct asgClient *,FILE *),
 	int verbose)
 {
     UAG		*puag;
@@ -591,7 +590,7 @@ int epicsShareAPI asDumpFP(
 		fprintf(fp,"\t\t<null>");
 	    else
 		fprintf(fp,"\t\t%s",pasgmember->asgName);
-	    if(memcallback) memcallback(pasgmember);
+	    if(memcallback) memcallback(pasgmember,fp);
 	    fprintf(fp,"\n");
 	    pasgclient = (ASGCLIENT *)ellFirst(&pasgmember->clientList);
 	    while(pasgclient) {
@@ -606,7 +605,7 @@ int epicsShareAPI asDumpFP(
                             asTrapOption[pasgclient->trapMask]);
 		else
 			fprintf(fp," Illegal Access %d",pasgclient->access);
-		if(clientcallback) clientcallback(pasgclient);
+		if(clientcallback) clientcallback(pasgclient,fp);
 		fprintf(fp,"\n");
 		pasgclient = (ASGCLIENT *)ellNext((ELLNODE *)pasgclient);
 	    }
@@ -763,14 +762,14 @@ int epicsShareAPI asDumpRulesFP(FILE *fp,char *asgname)
     return(0);
 }
 
-int epicsShareAPI asDumpMem(char *asgname,void (*memcallback)(ASMEMBERPVT),
+int epicsShareAPI asDumpMem(char *asgname,void (*memcallback)(ASMEMBERPVT,FILE *),
   int clients)
 {
     return asDumpMemFP(stdout,asgname,memcallback,clients);
 }
 
 int epicsShareAPI asDumpMemFP(FILE *fp,char *asgname,
-  void (*memcallback)(ASMEMBERPVT),int clients)
+  void (*memcallback)(ASMEMBERPVT,FILE *),int clients)
 {
     ASG		*pasg;
     ASGMEMBER	*pasgmember;
@@ -793,7 +792,7 @@ int epicsShareAPI asDumpMemFP(FILE *fp,char *asgname,
 		fprintf(fp,"\t\t<null>");
 	    else
 		fprintf(fp,"\t\t%s",pasgmember->asgName);
-	    if(memcallback) memcallback(pasgmember);
+	    if(memcallback) memcallback(pasgmember,fp);
 	    fprintf(fp,"\n");
 	    pasgclient = (ASGCLIENT *)ellFirst(&pasgmember->clientList);
 	    if(!clients) pasgclient = NULL;

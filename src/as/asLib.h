@@ -1,3 +1,4 @@
+/* asLib.h */
 /*************************************************************************\
 * Copyright (c) 2002 The University of Chicago, as Operator of Argonne
 *     National Laboratory.
@@ -7,7 +8,6 @@
 * and higher are distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* $Id$ */
 /* Author:  Marty Kraimer Date:    09-27-93*/
 
 #ifndef INCasLibh
@@ -72,18 +72,22 @@ epicsShareFunc long epicsShareAPI asComputeAllAsg(void);
 epicsShareFunc long epicsShareAPI asComputeAsg(ASG *pasg);
 */
 epicsShareFunc long epicsShareAPI asCompute(ASCLIENTPVT asClientPvt);
-epicsShareFunc int epicsShareAPI asDump(void (*memcallback)(ASMEMBERPVT),
-    void (*clientcallback)(ASCLIENTPVT),int verbose);
-epicsShareFunc int epicsShareAPI asDumpFP(FILE *fp,void (*memcallback)(ASMEMBERPVT),
-    void (*clientcallback)(ASCLIENTPVT),int verbose);
+epicsShareFunc int epicsShareAPI asDump(
+    void (*memcallback)(ASMEMBERPVT,FILE *),
+    void (*clientcallback)(ASCLIENTPVT,FILE *),int verbose);
+epicsShareFunc int epicsShareAPI asDumpFP(FILE *fp,
+    void (*memcallback)(ASMEMBERPVT,FILE *),
+    void (*clientcallback)(ASCLIENTPVT,FILE *),int verbose);
 epicsShareFunc int epicsShareAPI asDumpUag(char *uagname);
 epicsShareFunc int epicsShareAPI asDumpUagFP(FILE *fp,char *uagname);
 epicsShareFunc int epicsShareAPI asDumpHag(char *hagname);
 epicsShareFunc int epicsShareAPI asDumpHagFP(FILE *fp,char *hagname);
 epicsShareFunc int epicsShareAPI asDumpRules(char *asgname);
 epicsShareFunc int epicsShareAPI asDumpRulesFP(FILE *fp,char *asgname);
-epicsShareFunc int epicsShareAPI asDumpMem(char *asgname,void (*memcallback)(ASMEMBERPVT),int clients);
-epicsShareFunc int epicsShareAPI asDumpMemFP(FILE *fp,char *asgname,void (*memcallback)(ASMEMBERPVT),int clients);
+epicsShareFunc int epicsShareAPI asDumpMem(char *asgname,
+    void (*memcallback)(ASMEMBERPVT,FILE *),int clients);
+epicsShareFunc int epicsShareAPI asDumpMemFP(FILE *fp,char *asgname,
+    void (*memcallback)(ASMEMBERPVT,FILE *),int clients);
 epicsShareFunc int epicsShareAPI asDumpHash(void);
 epicsShareFunc int epicsShareAPI asDumpHashFP(FILE *fp);
 

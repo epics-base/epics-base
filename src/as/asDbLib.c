@@ -1,3 +1,4 @@
+/* share/src/as/asDbLib.c */
 /*************************************************************************\
 * Copyright (c) 2002 The University of Chicago, as Operator of Argonne
 *     National Laboratory.
@@ -7,8 +8,6 @@
 * and higher are distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* share/src/as/asDbLib.c */
-/* share/src/as $Id$ */
 /* Author:  Marty Kraimer Date:    02-11-94*/
 
 #include <stdlib.h>
@@ -259,12 +258,12 @@ int epicsShareAPI astac(char *pname,char *user,char *location)
     return(0);
 }
 
-static void myMemberCallback(ASMEMBERPVT memPvt)
+static void myMemberCallback(ASMEMBERPVT memPvt,FILE *fp)
 {
     dbCommon	*precord;
 
     precord = asGetMemberPvt(memPvt);
-    if(precord) printf(" Record:%s",precord->name);
+    if(precord) fprintf(fp," Record:%s",precord->name);
 }
 
 int epicsShareAPI asdbdump(void)

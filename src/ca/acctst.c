@@ -1968,10 +1968,13 @@ void verifyReasonableBeaconPeriod ( chid chan )
                 }
                 printf ( "Beacon period error estimate = %f sec.\n", error );
             }
+            else {
+                printf ( "Beacon period unavailable\n" );
+            }
             assert ( attempts++ < maxAttempts );
             printf ( "Waiting for a better beacon period estimate result (%f sec).\n",
                 attempts * delay );
-            epicsThreadSleep ( delay );
+            ca_pend_event ( delay );
         }
     }
 }

@@ -1,16 +1,69 @@
 
 #include <memLib.h>
+#include <limits.h>
 
 #define epicsExportSharedSymbols
+#include "epicsThread.h"
 #include "osiPoolStatus.h"
 
-/*
- * osiSufficentSpaceInPool ()
+/* 
+ * It turns out that memPartInfoGet() nad memFindMax() are very CPU intensive on vxWorks
+ * so we must spawn off a thread that periodically polls. Although this isnt 100% safe, I 
+ * dont see what else to do.
+ *
+ * It takes about 30 uS to call memPartInfoGet() on a pcPentium I vxWorks system.
+ *
+ * joh
  */
-epicsShareFunc int epicsShareAPI osiSufficentSpaceInPool ()
+
+static epicsThreadOnceId osdMaxBlockOnceler = EPICS_THREAD_ONCE_INIT;
+
+static size_t osdMaxBlockSize = 0;
+
+static void osdSufficentSpaceInPoolQuery ()
 {
-    if (memFindMax () > 100000) {
-        return 1;
+    int temp = memFindMax ();
+    if ( temp > 0 ) {
+        osdMaxBlockSize = (size_t) temp;
+    }
+    else {
+        osdMaxBlockSize = 0;
+    }
+}
+
+static void osdSufficentSpaceInPoolPoll ( void *pArgIn )
+{
+    while ( 1 ) {
+        osdSufficentSpaceInPoolQuery ();
+        epicsThreadSleep ( 1.0 );
+    }
+}
+
+static void osdSufficentSpaceInPoolInit ( void *pArgIn )
+{
+    epicsThreadId id;
+
+    osdSufficentSpaceInPoolQuery ();
+
+    id = epicsShareAPI epicsThreadCreate ( "poolPoll", epicsThreadPriorityMedium, 
+        epicsThreadGetStackSize ( epicsThreadStackSmall ), osdSufficentSpaceInPoolPoll, 0 );
+    if ( id ) {
+        osdMaxBlockOnceler = 1;
+    }
+    else {
+        epicsThreadSleep ( 0.1 );
+    }
+}
+
+/*
+ * osiSufficentSpaceInPool () 
+ */
+epicsShareFunc int epicsShareAPI osiSufficentSpaceInPool ( size_t contiguousBlockSize )
+{
+    epicsThreadOnce ( &osdMaxBlockOnceler, osdSufficentSpaceInPoolInit, 0 );
+
+    if ( UINT_MAX - 100000u >= contiguousBlockSize ) {
+        return ( osdMaxBlockSize > 100000 + contiguousBlockSize );
     }
     else {
         return 0;

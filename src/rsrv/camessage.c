@@ -2318,7 +2318,7 @@ int camessage ( struct client *client )
          * disconnect clients that dont send 8 byte 
          * aligned payloads
          */
-        if ( ( ( msgsize >> 3 ) << 3 ) != msgsize ) {
+        if ( msgsize & 0x7 ) {
             send_err ( &msg, ECA_INTERNAL, client, 
                 "CAS: Missaligned protocol rejected" );
             log_header ( "CAS: Missaligned protocol rejected", 

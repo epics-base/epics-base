@@ -781,6 +781,13 @@ caStatus casDGClient::processMsg ()
                 msgTmp.m_cid = epicsNTOH32 ( smallHdr.m_cid );
                 msgTmp.m_available = epicsNTOH32 ( smallHdr.m_available );
 
+                if ( payloadSize & 0x7 ) {
+                    status = this->sendErr ( 
+                        & msgTmp, invalidResID, ECA_INTERNAL, 
+                        "CAS: Datagram request wasn't 8 byte aligned" );
+                    this->in.removeMsg ( bytesLeft );
+                    break;
+                }
 
                 msgSize = hdrSize + payloadSize;
                 if ( bytesLeft < msgSize ) {

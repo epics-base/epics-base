@@ -1091,8 +1091,7 @@ bool tcpiiu::processIncoming (
         }
 
         // check for 8 byte aligned protocol
-        if ( ( ( this->curMsg.m_postsize >> 3 ) << 3 ) 
-            != this->curMsg.m_postsize ) {
+        if ( this->curMsg.m_postsize & 0x7 ) {
             this->printf ( mgr.cbGuard,
                 "CAC: server sent missaligned payload 0x%x\n", 
                 this->curMsg.m_postsize );

@@ -181,11 +181,11 @@ caStatus casStrmClient::processMsg ()
                 msgTmp.m_available = epicsNTOH32 ( smallHdr.m_available );
 
                 // disconnect clients that dont send 8 byte aligned payloads
-                if ( ( ( payloadSize >> 3 ) << 3 ) != payloadSize ) {
+                if ( payloadSize & 0x7 ) {
                     caServerI::dumpMsg ( this->pHostName, this->pUserName, & msgTmp, 0, 
-                        "CAS: Missaligned protocol rejected\n" );
+                        "CAS: Stream request wasn't 8 byte aligned\n" );
                     status = this->sendErr ( guard, & msgTmp, invalidResID, ECA_INTERNAL, 
-                        "Missaligned protocol rejected" );
+                        "Stream request wasn't 8 byte aligned" );
                     status = S_cas_internal;
                     break;
                 }

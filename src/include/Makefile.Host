@@ -21,12 +21,11 @@ include $(TOP)/config/CONFIG_BASE_VERSION
 
 epicsVersion.h: $(TOP)/config/CONFIG_BASE_VERSION
 	@$(RM) $@
-	@echo EPICS_VERSION=$(EPICS_VERSION)
 	@echo "#define EPICS_VERSION           $(EPICS_VERSION)" > $@
 	@echo "#define EPICS_REVISION          $(EPICS_REVISION)" >> $@
 	@echo "#define EPICS_MODIFICATION      $(EPICS_MODIFICATION)" >> $@
 	@echo "#define EPICS_UPDATE_NAME       $(EPICS_UPDATE_NAME)" >> $@
 	@echo "#define EPICS_UPDATE_LEVEL      $(EPICS_UPDATE_LEVEL)" >> $@
-	@echo "#define EPICS_VERSION_STRING    \"EPICS Version $(EPICS_VERSION_STRING)\" " >> $@
-	@echo "#define epicsReleaseVersion \"@(#)Version R$(EPICS_VERSION_STRING) $(CVS_DATE)\" " >> $@
+	@echo "#define EPICS_VERSION_STRING    \"$(EPICS_VERSION_STRING)\" " >> $@
+	@echo "#define epicsReleaseVersion \"@(#)$(EPICS_VERSION_STRING) $(CVS_DATE)\" " >> $@
 

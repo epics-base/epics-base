@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.2  1996/11/02 00:54:06  jhill
+ * many improvements
+ *
  * Revision 1.1.1.1  1996/06/20 00:28:16  jhill
  * ca server installation
  *
@@ -49,7 +52,20 @@ inline casChannelI *casClient::resIdToChannel(const caResId &id)
 {
         casChannelI *pChan;
  
+	//
+	// look up the id in a hash table
+	//
         pChan = this->ctx.getServer()->resIdToChannel(id);
+	//
+	// If the channel isnt attached to this client then
+	// something has gone wrong
+	//
+	if (&pChan->getClient()!=this) {
+		return NULL;
+	}
+	//
+	// update the context
+	//
         this->ctx.setChannel(pChan);
         if (pChan) {
                 this->ctx.setPV(&pChan->getPVI());

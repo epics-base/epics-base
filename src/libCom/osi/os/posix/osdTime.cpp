@@ -30,6 +30,7 @@
 //
 extern "C" epicsShareFunc int epicsShareAPI epicsTimeGetCurrent (epicsTimeStamp *pDest)
 {
+#   ifdef CLOCK_REALTIME
         struct timespec ts;
         int status;
     
@@ -40,6 +41,18 @@ extern "C" epicsShareFunc int epicsShareAPI epicsTimeGetCurrent (epicsTimeStamp 
 
         *pDest = epicsTime (ts);
         return epicsTimeOK;
+#   else
+        int status;
+        struct timeval tv;
+        struct timezone tz;
+    
+      status = gettimeofday (&tv, &tz);
+        if (status) {
+            return epicsTimeERROR;
+        }
+      *pDest = epicsTime (tv); 
+        return epicsTimeOK;
+#   endif
 }
 
 //
@@ -85,7 +98,17 @@ extern "C" epicsShareFunc void epicsShareAPI
 
     if(timeout<0.0) timeout = 0.0;
     else if(timeout>3600.0) timeout = 3600.0;
+#   ifdef CLOCK_REALTIME
     status = clock_gettime(CLOCK_REALTIME,wakeTime);
+#   else
+    {
+    struct timeval tv;
+    struct timezone tz;
+    status = gettimeofday(&tv, &tz);
+    wakeTime->tv_sec = tv.tv_sec;
+    wakeTime->tv_nsec = tv.tv_usec * 1000;
+    }
+#   endif
     if(status) { 
         printf("clock_gettime failed with error %s\n",strerror(errno));
         cantProceed("convertDoubleToWakeTime"); 

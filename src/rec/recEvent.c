@@ -99,11 +99,14 @@ struct eventdset { /* event input dset */
 };
 void monitor();
 
-static long init_record(pevent)
+static long init_record(pevent,pass)
     struct eventRecord	*pevent;
+    int pass;
 {
     struct eventdset *pdset;
     long status=0;
+
+    if (pass!=0) return(0);
 
     if( (pdset=(struct eventdset *)(pevent->dset)) && (pdset->init_record) ) 
 		status=(*pdset->init_record)(pevent);

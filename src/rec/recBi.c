@@ -116,11 +116,14 @@ struct bidset { /* binary input dset */
 void alarm();
 void monitor();
 
-static long init_record(pbi)
+static long init_record(pbi,pass)
     struct biRecord	*pbi;
+    int pass;
 {
     struct bidset *pdset;
     long status;
+
+    if (pass!=0) return(0);
 
     if(!(pdset = (struct bidset *)(pbi->dset))) {
 	recGblRecordError(S_dev_noDSET,pbi,"bi: init_record");

@@ -141,11 +141,14 @@ void convert();
 long cvtRawToEngBpt();
 void monitor();
 
-static long init_record(pai)
+static long init_record(pai,pass)
     struct aiRecord	*pai;
+    int pass;
 {
     struct aidset *pdset;
     long status;
+
+    if (pass!=0) return(0);
 
     if(!(pdset = (struct aidset *)(pai->dset))) {
 	recGblRecordError(S_dev_noDSET,pai,"ai: init_record");

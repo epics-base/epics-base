@@ -133,8 +133,9 @@ long dbCaGetLink();
      {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"};
 
 
-static long init_record(pcalc)
+static long init_record(pcalc,pass)
     struct calcRecord	*pcalc;
+    int pass;
 {
     long status;
     struct link *plink;
@@ -142,6 +143,8 @@ static long init_record(pcalc)
     double *pvalue;
     short error_number;
     char rpbuf[80];
+
+    if (pass!=0) return(0);
 
     plink = &pcalc->inpa;
     pvalue = &pcalc->a;

@@ -101,11 +101,14 @@ long dbCaAddInlink();
 long dbCaGetLink();
 
 
-static long init_record(ppid)
-    struct pidRecord     *ppid;
+static long init_record(ppid,pass)
+        struct pidRecord	*ppid;
+        int pass;
 {
-/* Added for Channel Access Links */
-long status;
+        /* Added for Channel Access Links */
+        long status;
+
+        if (pass!=0) return(0);
 
         /* initialize the setpoint for constant setpoint */
         if (ppid->stpl.type == CONSTANT){

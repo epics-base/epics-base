@@ -139,12 +139,14 @@ void read_timer();
 void convert_timer();
 void write_timer();
 
-static long init_record(ptimer)
+static long init_record(ptimer,pass)
     struct timerRecord	*ptimer;
+    int pass;
 {
-
 /* Added for Channel Access Links */
-long status;
+    long status;
+
+    if (pass!=0) return(0);
 
     /* get the delay initial value if torg is a constant*/
     if (ptimer->torg.type == CONSTANT ){

@@ -172,12 +172,14 @@ long dbCaGetLink();
 
 
 
-static long init_record(psm)
+static long init_record(psm,pass)
     struct steppermotorRecord	*psm;
+    int pass;
 {
     struct smdset *pdset;
     long status;
 
+    if (pass!=0) return(0);
 
     if(!(pdset = (struct smdset *)(psm->dset))) {
         recGblRecordError(S_dev_noDSET,psm,"sm: init_record");

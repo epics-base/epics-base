@@ -136,12 +136,15 @@ static void init_common(pmbbi)
 	return;
 }
 
-static long init_record(pmbbi)
+static long init_record(pmbbi,pass)
     struct mbbiRecord	*pmbbi;
+    int pass;
 {
     struct mbbidset *pdset;
     long status;
     int i;
+
+    if (pass!=0) return(0);
 
     if(!(pdset = (struct mbbidset *)(pmbbi->dset))) {
 	recGblRecordError(S_dev_noDSET,pmbbi,"mbbi: init_record");

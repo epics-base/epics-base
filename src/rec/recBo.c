@@ -154,12 +154,15 @@ static void myCallback(pcallback)
     dbScanUnlock((struct dbCommon *)pbo);
 }
 
-static long init_record(pbo)
+static long init_record(pbo,pass)
     struct boRecord	*pbo;
+    int pass;
 {
     struct bodset *pdset;
     long status=0;
     struct callback *pcallback;
+
+    if (pass!=0) return(0);
 
     if(!(pdset = (struct bodset *)(pbo->dset))) {
 	recGblRecordError(S_dev_noDSET,pbo,"bo: init_record");

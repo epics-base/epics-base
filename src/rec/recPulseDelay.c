@@ -102,11 +102,14 @@ struct pddset { /* pulseDelay input dset */
 };
 void monitor();
 
-static long init_record(ppd)
-    struct pulseDelayRecord     *ppd;
+static long init_record(ppd,pass)
+    struct pulseDelayRecord	*ppd;
+    int pass;
 {
     struct pddset *pdset;
     long status=0;
+
+    if (pass!=0) return(0);
 
     /* must have device support */
     if(!(pdset = (struct pddset *)(ppd->dset))) {

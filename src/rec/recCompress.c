@@ -122,17 +122,18 @@ int compress_array();
 int compress_scalar();
 int array_average();
 
-static long init_record(pcompress)
+static long init_record(pcompress,pass)
     struct compressRecord	*pcompress;
+    int pass;
 {
 
-    /* This routine may get called twice. Once by cvt_dbaddr. Once by iocInit*/
-    if(pcompress->bptr==NULL) {
+    if (pass==0){
 	pcompress->bptr = (double *)calloc(pcompress->nsam,sizeof(double));
 	/* allocate memory for the summing buffer for conversions requiring it */
 	if (pcompress->alg == AVERAGE){
                 pcompress->sptr = (double *)calloc(pcompress->nsam,sizeof(double));
 	}
+        return(0);
     }
     if(pcompress->wptr==NULL && pcompress->inp.type==DB_LINK) {
 	 struct dbAddr *pdbAddr = (struct dbAddr *)(pcompress->inp.value.db_link.pdbAddr);
@@ -230,9 +231,6 @@ static long cvt_dbaddr(paddr)
     struct dbAddr *paddr;
 {
     struct compressRecord *pcompress=(struct compressRecord *)paddr->precord;
-
-    /* This may get called before init_record. If so just call it*/
-    if(pcompress->bptr==NULL) (void)init_record(pcompress);
 
     paddr->pfield = (void *)(pcompress->bptr);
     paddr->no_elements = pcompress->nsam;

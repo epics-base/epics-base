@@ -114,11 +114,14 @@ struct ptdset { /* pulseTrain input dset */
 
 void monitor();
 
-static long init_record(ppt)
-    struct pulseTrainRecord     *ppt;
+static long init_record(ppt,pass)
+    struct pulseTrainRecord	*ppt;
+    int pass;
 {
     struct ptdset *pdset;
     long status=0;
+
+    if (pass!=0) return(0);
 
     /* must have device support */
     if(!(pdset = (struct ptdset *)(ppt->dset))) {

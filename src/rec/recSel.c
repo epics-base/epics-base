@@ -111,14 +111,17 @@ long dbCaGetLink();
      {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"};
 
 
-static long init_record(psel)
-    struct selRecord     *psel;
+static long init_record(psel,pass)
+    struct selRecord	*psel;
+    int pass;
 {
     struct link *plink;
     int i;
     double *pvalue;
 /* Added for Channel Access Links */
     long status;
+
+    if (pass!=0) return(0);
 
     /* get seln initial value if nvl is a constant*/
     if (psel->nvl.type == CONSTANT ) psel->seln = psel->nvl.value.value;

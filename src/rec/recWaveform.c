@@ -131,15 +131,14 @@ void monitor();
 extern unsigned int     gts_trigger_counter;
 
 
-static long init_record(pwf)
+static long init_record(pwf,pass)
     struct waveformRecord	*pwf;
+    int pass;
 {
     struct wfdset *pdset;
     long status;
 
-
-    /* This routine may get called twice. Once by cvt_dbaddr. Once by iocInit*/
-    if(pwf->bptr==NULL) {
+    if (pass==0){
 	if(pwf->nelm<=0) pwf->nelm=1;
 	if(pwf->ftvl == 0) {
 		pwf->bptr = (char *)calloc(pwf->nelm,MAX_STRING_SIZE);
@@ -148,18 +147,19 @@ static long init_record(pwf)
 		pwf->bptr = (char *)calloc(pwf->nelm,sizeofTypes[pwf->ftvl]);
 	}
 	pwf->nord = 0;
-	/* must have read_wf function defined */
-	if(!(pdset = (struct wfdset *)(pwf->dset))) {
-	    recGblRecordError(S_dev_noDSET,pwf,"wf: init_record");
-	    return(S_dev_noDSET);
-	}
-	if( (pdset->number < 5) || (pdset->read_wf == NULL) ) {
-	    recGblRecordError(S_dev_missingSup,pwf,"wf: init_record");
-	    return(S_dev_missingSup);
-	}
-	if( pdset->init_record ) {
-	    if((status=(*pdset->init_record)(pwf))) return(status);
-	}
+	return(0);
+    }
+    /* must have read_wf function defined */
+    if(!(pdset = (struct wfdset *)(pwf->dset))) {
+        recGblRecordError(S_dev_noDSET,pwf,"wf: init_record");
+        return(S_dev_noDSET);
+    }
+    if( (pdset->number < 5) || (pdset->read_wf == NULL) ) {
+        recGblRecordError(S_dev_missingSup,pwf,"wf: init_record");
+        return(S_dev_missingSup);
+    }
+    if( pdset->init_record ) {
+        if((status=(*pdset->init_record)(pwf))) return(status);
     }
     return(0);
 }
@@ -220,8 +220,6 @@ static long cvt_dbaddr(paddr)
 {
     struct waveformRecord *pwf=(struct waveformRecord *)paddr->precord;
 
-    /* This may get called before init_record. If so just call it*/
-    if(pwf->bptr==NULL) init_record(pwf);
     paddr->pfield = (void *)(pwf->bptr);
     paddr->no_elements = pwf->nelm;
     paddr->field_type = pwf->ftvl;

@@ -143,12 +143,15 @@ static void init_common(pmbbo)
         return;
 }
 
-static long init_record(pmbbo)
+static long init_record(pmbbo,pass)
     struct mbboRecord	*pmbbo;
+    int pass;
 {
     struct mbbodset *pdset;
     long status;
     int	i;
+
+    if (pass!=0) return(0);
 
     if(!(pdset = (struct mbbodset *)(pmbbo->dset))) {
 	recGblRecordError(S_dev_noDSET,pmbbo,"mbbo: init_record");

@@ -104,11 +104,14 @@ void alarm();
 int convert();
 void monitor();
 
-static long init_record(plongout)
+static long init_record(plongout,pass)
     struct longoutRecord	*plongout;
+    int pass;
 {
     struct longoutdset *pdset;
     long status=0;
+
+    if (pass!=0) return(0);
 
     if(!(pdset = (struct longoutdset *)(plongout->dset))) {
 	recGblRecordError(S_dev_noDSET,plongout,"longout: init_record");

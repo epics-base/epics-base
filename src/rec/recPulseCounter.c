@@ -112,11 +112,14 @@ struct pcdset { /* pulseCounter input dset */
 
 void monitor();
 
-static long init_record(ppc)
-    struct pulseCounterRecord     *ppc;
+static long init_record(ppc,pass)
+    struct pulseCounterRecord	*ppc;
+    int pass;
 {
     struct pcdset *pdset;
     long status=0;
+
+    if (pass!=0) return(0);
 
     /* must have device support */
     if(!(pdset = (struct pcdset *)(ppc->dset))) {

@@ -147,14 +147,17 @@ static void wdCallback(pcallback)
      return;
 }
 
-static long init_record(phistogram)
-     struct histogramRecord     *phistogram;
+static long init_record(phistogram,pass)
+    struct histogramRecord	*phistogram;
+    int pass;
 {
      struct histogramdset *pdset;
      long status;
      struct callback *pcallback=(struct callback *)(phistogram->wdog);
      float         wait_time;
      void (*process)();
+
+    if (pass==0){
 
      /* This routine may get called twice. Once by cvt_dbaddr. Once by iocInit*/
 
@@ -194,6 +197,8 @@ static long init_record(phistogram)
           recGblRecordError(S_dev_missingSup,phistogram,"histogram: init_record");
           return(S_dev_missingSup);
          }
+     return(0);
+     }
 
      /* call device support init_record */
      if( pdset->init_record ) {
@@ -328,8 +333,6 @@ static long cvt_dbaddr(paddr)
 {
     struct histogramRecord *phistogram=(struct histogramRecord *)paddr->precord;
 
-    /* This may get called before init_record. If so just call it*/
-    if(phistogram->bptr==NULL) init_record(phistogram);
     paddr->pfield = (void *)(phistogram->bptr);
     paddr->no_elements = phistogram->nelm;
     paddr->field_type = DBF_ULONG;

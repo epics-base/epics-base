@@ -101,8 +101,9 @@ void monitor();
 long do_sub();
 long fetch_values();
 
-static long init_record(psub)
+static long init_record(psub,pass)
     struct subRecord	*psub;
+    int pass;
 {
     FUNCPTR	psubroutine;
     char	sub_type;
@@ -112,6 +113,8 @@ static long init_record(psub)
     struct link *plink;
     int i;
     double *pvalue;
+
+    if (pass!=0) return(0);
 
     plink = &psub->inpa;
     pvalue = &psub->a;

@@ -102,11 +102,14 @@ struct stringoutdset { /* stringout input dset */
 };
 void monitor();
 
-static long init_record(pstringout)
+static long init_record(pstringout,pass)
     struct stringoutRecord	*pstringout;
+    int pass;
 {
     struct stringoutdset *pdset;
     long status=0;
+
+    if (pass!=0) return(0);
 
     if(!(pdset = (struct stringoutdset *)(pstringout->dset))) {
 	recGblRecordError(S_dev_noDSET,pstringout,"stringout: init_record");

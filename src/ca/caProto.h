@@ -98,6 +98,7 @@
  *
  * (so far this works on all archs we have ported to)
  */
+typedef unsigned char   ca_uint8_t;
 typedef unsigned short  ca_uint16_t;
 typedef unsigned int    ca_uint32_t;
 typedef float           ca_float32_t;

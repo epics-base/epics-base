@@ -2,6 +2,9 @@ EPICS = ../../../..
 include Target.include
 include $(EPICS)/config/CONFIG_BASE
 
+USR_CFLAGS = -ansi
+VX_WARN_YES = -Wall -pedantic
+
 SRCS.c = \
 	../dbAccess.c ../dbBkpt.c ../dbFastLinkConv.c ../dbLink.c \
 	../dbNotify.c ../dbStaticLib.c ../iocInit.c ../drvTS.c ../dbScan.c \

@@ -18,10 +18,10 @@ include $(TOP)/config/RULES.Vx
 clean::
 	@$(RM) seqVersion.c
 
-seq: $(OBJS)
+$(PROD): $(OBJS)
 	$(RM) $@
 	$(LINK.c) $@ $(OBJS) $(LDLIBS)
 
 seqVersion.c: ../Version
 	$(RM) seqVersion.c
-	sh ../makeSeqVersion ../Version > seqVersion.c
+	../makeSeqVersion ../Version > seqVersion.c

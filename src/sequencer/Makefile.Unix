@@ -4,7 +4,7 @@ include $(TOP)/config/CONFIG_BASE
 #YACCOPT = -l
 #LEXOPT = -L
 
-USR_LDLIBS = -ll
+#USR_LDLIBS = -ll
 YACCOPT = -d -v
 
 INC += seq.h
@@ -29,7 +29,7 @@ snc.o: snc_lex.c
 
 sncVersion.c: ../Version
 	$(RM) sncVersion.c
-	sh ../makeVersion ../Version > sncVersion.c
+	../makeVersion ../Version > sncVersion.c
 
 clean::
 	@$(RM) y.output sncVersion.c snc_lex.c snc.c snc.h

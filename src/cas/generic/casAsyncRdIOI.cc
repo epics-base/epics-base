@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.4  1997/08/05 00:47:01  jhill
+ * fixed warnings
+ *
  * Revision 1.3  1997/04/10 19:33:56  jhill
  * API changes
  *
@@ -83,11 +86,6 @@ casAsyncRdIOI::~casAsyncRdIOI()
 
 	this->chan.removeAsyncIO(*this);
 
-	if (this->pDD) {
-		gddStatus = this->pDD->unreference();
-		assert(!gddStatus);
-	}
-
 	this->unlock();
 }
 
@@ -101,10 +99,7 @@ epicsShareFunc caStatus casAsyncRdIOI::postIOCompletion(caStatus completionStatu
 
 	this->lock();
 	this->pDD = &valueRead;
-	gddStatus = this->pDD->reference();
 	this->unlock();
-
-	assert(!gddStatus);
 
 	this->completionStatus = completionStatusIn;
 	return this->postIOCompletionI();

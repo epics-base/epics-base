@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.22  1998/04/20 18:14:57  jhill
+ * made clientHostName virtual in casDGClient
+ *
  * Revision 1.21  1998/02/18 22:46:47  jhill
  * fixed warning
  *
@@ -139,7 +142,7 @@ void serverToolDebugFunc(const char *pFile, unsigned line, const char *pComment)
 #define serverToolDebug(COMMENT) \
 {serverToolDebugFunc(__FILE__, __LINE__, COMMENT); } 
 #define casVerify(EXP) {if ((EXP)==0) casVerifyFunc(__FILE__, __LINE__, #EXP); } 
-caStatus createDBRDD(unsigned dbrType, aitIndex dbrCount, gdd *&pDescRet);
+caStatus createDBRDD(unsigned dbrType, aitIndex dbrCount, smartGDDPointer &pDescRet);
 caStatus copyBetweenDD(gdd &dest, gdd &src);
 
 enum xRecvStatus {xRecvOK, xRecvDisconnect};
@@ -570,10 +573,10 @@ protected:
 	//
 	// logBadIdWithFileAndLineno()
 	//
-#	define logBadId(MP, DP) \
-	this->logBadIdWithFileAndLineno(MP, DP, __FILE__, __LINE__)
+#	define logBadId(MP, DP, CACSTAT) \
+	this->logBadIdWithFileAndLineno(MP, DP, CACSTAT, __FILE__, __LINE__)
 	caStatus logBadIdWithFileAndLineno(const caHdr *mp,
-			const void *dp, const char *pFileName, 
+			const void *dp, int cacStat, const char *pFileName, 
 			const unsigned lineno);
 
 private:
@@ -715,7 +718,7 @@ private:
 
 	// these prepare the gdd based on what is in the ca hdr
 	//
-	caStatus read (gdd *&pDesc);
+	caStatus read (smartGDDPointer &pDesc);
 	caStatus write ();
 
 	//

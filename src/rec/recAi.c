@@ -378,6 +378,8 @@ struct aiRecord	*pai;
 	    pnxtInt = pbrkTable->papBrkInt[lbrk+1];
 	    /* find entry for increased value */
  	    while( (pnxtInt->raw) <= val ) {
+		lbrk++;
+		pInt = pbrkTable->papBrkInt[lbrk];
 		if( lbrk >= number-1) {
 		    if(pai->nsev < VALID_ALARM) {
 			pai->nsta = SOFT_ALARM;
@@ -385,8 +387,6 @@ struct aiRecord	*pai;
 		    }
 		    break; /* out of while */
 		}
-		lbrk++;
-		pInt = pbrkTable->papBrkInt[lbrk];
 		pnxtInt = pbrkTable->papBrkInt[lbrk+1];
 	    }
 	    while( (pInt->raw) > val) {

@@ -69,6 +69,8 @@
  * .33  08-04-93	mgb	Removed V5/V4 and EPICS_V2 conditionals
  * .34  05-11-94	jba	Added support for CONST_PI, CONST_D2R, and CONST_R2D
  * .34  08-18-94	jba	Must skip over constant when looking for COND_END,COND_ELSE
+ * .35	10-07-94	mda	change local random() to local_random() to
+ *				avoid colliding with math library random()
 
   $Log%
 
@@ -93,7 +95,7 @@
  *		-1		fetch failed
  *
  * Private routine for calcPerform
- *	random		random number generator
+ *	local_random		random number generator
  *	    returns
  *		double value between 0.00 and 1.00
  */
@@ -111,7 +113,7 @@
 #include	<post.h>
 #include	<math.h>
 
-static double	random();
+static double	local_random();
 
 #define	NOT_SET		0
 #define	TRUE_COND	1
@@ -307,7 +309,7 @@ printf ("*FINISHED*\n");
 
 		case RANDOM:
 			++pstacktop;
-			*pstacktop = random();
+			*pstacktop = local_random();
 			break;
 
 		case EXPON:
@@ -520,7 +522,7 @@ printf ("*FINISHED*\n");
 static unsigned short seed = 0xa3bf;
 static unsigned short multy = 191 * 8 + 5;  /* 191 % 8 == 5 */
 static unsigned short addy = 0x3141;
-static double random()
+static double local_random()
 {
         double  randy;
 

@@ -531,7 +531,7 @@ private:
 
 class limboiiu : public netiiu {
 public:
-    limboiiu::limboiiu ();
+    limboiiu ();
 };
 
 extern limboiiu limboIIU;

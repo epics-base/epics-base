@@ -134,8 +134,7 @@ dbEventSubscription dbServiceIO::subscribe ( struct dbAddr &addr, dbSubscription
    
         unsigned selfPriority = threadGetPrioritySelf ();
         unsigned above;
-        threadBoolStatus tbs = threadLowestPriorityLevelAbove 
-                                    (selfPriority, &above);
+        threadBoolStatus tbs = threadLowestPriorityLevelAbove (selfPriority, &above);
         if ( tbs != tbsSuccess ) {
             above = selfPriority;
         }

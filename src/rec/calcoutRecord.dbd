@@ -31,7 +31,6 @@ recordtype(calcout) {
                 prompt("Record Private")
                 special(SPC_NOMOD)
                 interest(4)
-                size(4)
                 extra("void *         rpvt")
         }
 	field(VAL,DBF_DOUBLE) {
@@ -564,14 +563,12 @@ recordtype(calcout) {
 		prompt("Reverse Polish Calc")
 		special(SPC_NOMOD)
 		interest(4)
-		size(184)
 		extra("char	rpcl[184]")
 	}
 	field(ORPC,DBF_NOACCESS) {
 		prompt("Reverse Polish OCalc")
 		special(SPC_NOMOD)
 		interest(4)
-		size(184)
 		extra("char	orpc[184]")
 	}
 }

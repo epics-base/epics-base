@@ -5,7 +5,6 @@ recordtype(subArray) {
 		asl(ASL0)
 		special(SPC_DBADDR)
 		pp(TRUE)
-		size(4)
 		extra("void *		val")
 	}
 	field(PREC,DBF_SHORT) {
@@ -71,7 +70,6 @@ recordtype(subArray) {
 		prompt("Buffer Pointer")
 		special(SPC_NOMOD)
 		interest(4)
-		size(4)
 		extra("void *		bptr")
 	}
 }

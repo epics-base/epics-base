@@ -91,14 +91,12 @@ recordtype(egevent) {
 		prompt("List Node")
 		special(SPC_NOMOD)
 		interest(4)
-		size(12)
 		extra("ELLNODE eln")
 	}
 	field(SELF,DBF_NOACCESS) {
 		prompt("Self Pointer")
 		special(SPC_NOMOD)
 		interest(4)
-		size(4)
 		extra("struct egeventRecord *self")
 	}
 }

@@ -54,7 +54,6 @@ recordtype(scan) {
 		prompt("Ptr to Pvt Struct")
 		special(SPC_NOMOD)
 		interest(4)
-		size(4)
 		extra("void *           rpvt")
 	}
 	field(MPTS,DBF_SHORT) {
@@ -591,14 +590,12 @@ recordtype(scan) {
 		prompt("P1 Step Array")
 		asl(ASL0)
 		special(SPC_DBADDR)
-		size(4)
 		extra("double *         p1pa")
 	}
 	field(P1RA,DBF_NOACCESS) {
 		prompt("P1 Readback Array")
 		asl(ASL0)
 		special(SPC_DBADDR)
-		size(4)
 		extra("double *         p1ra")
 	}
 	field(P1FS,DBF_MENU) {
@@ -756,14 +753,12 @@ recordtype(scan) {
 		prompt("P2 Step Array")
 		asl(ASL0)
 		special(SPC_DBADDR)
-		size(4)
 		extra("double *         p2pa")
 	}
 	field(P2RA,DBF_NOACCESS) {
 		prompt("P2 Readback Array")
 		asl(ASL0)
 		special(SPC_DBADDR)
-		size(4)
 		extra("double *         p2ra")
 	}
 	field(P2FS,DBF_MENU) {
@@ -921,14 +916,12 @@ recordtype(scan) {
 		prompt("P3 Step Array")
 		asl(ASL0)
 		special(SPC_DBADDR)
-		size(4)
 		extra("double *         p3pa")
 	}
 	field(P3RA,DBF_NOACCESS) {
 		prompt("P3 Readback Array")
 		asl(ASL0)
 		special(SPC_DBADDR)
-		size(4)
 		extra("double *         p3ra")
 	}
 	field(P3FS,DBF_MENU) {
@@ -1086,14 +1079,12 @@ recordtype(scan) {
 		prompt("P4 Step Array")
 		asl(ASL0)
 		special(SPC_DBADDR)
-		size(4)
 		extra("double *         p4pa")
 	}
 	field(P4RA,DBF_NOACCESS) {
 		prompt("P4 Readback Array")
 		asl(ASL0)
 		special(SPC_DBADDR)
-		size(4)
 		extra("double *         p4ra")
 	}
 	field(P4FS,DBF_MENU) {
@@ -1180,7 +1171,6 @@ recordtype(scan) {
 		prompt("D1 Data Array")
 		asl(ASL0)
 		special(SPC_DBADDR)
-		size(4)
 		extra("float *          d1da")
 	}
 	field(D1CV,DBF_FLOAT) {
@@ -1230,7 +1220,6 @@ recordtype(scan) {
 		prompt("D2 Data Array")
 		asl(ASL0)
 		special(SPC_DBADDR)
-		size(4)
 		extra("float *          d2da")
 	}
 	field(D2CV,DBF_FLOAT) {
@@ -1280,7 +1269,6 @@ recordtype(scan) {
 		prompt("D3 Data Array")
 		asl(ASL0)
 		special(SPC_DBADDR)
-		size(4)
 		extra("float *          d3da")
 	}
 	field(D3CV,DBF_FLOAT) {
@@ -1330,7 +1318,6 @@ recordtype(scan) {
 		prompt("D4 Data Array")
 		asl(ASL0)
 		special(SPC_DBADDR)
-		size(4)
 		extra("float *          d4da")
 	}
 	field(D4CV,DBF_FLOAT) {
@@ -1380,7 +1367,6 @@ recordtype(scan) {
 		prompt("D5 Data Array")
 		asl(ASL0)
 		special(SPC_DBADDR)
-		size(4)
 		extra("float *          d5da")
 	}
 	field(D5CV,DBF_FLOAT) {
@@ -1430,7 +1416,6 @@ recordtype(scan) {
 		prompt("D6 Data Array")
 		asl(ASL0)
 		special(SPC_DBADDR)
-		size(4)
 		extra("float *          d6da")
 	}
 	field(D6CV,DBF_FLOAT) {
@@ -1480,7 +1465,6 @@ recordtype(scan) {
 		prompt("D7 Data Array")
 		asl(ASL0)
 		special(SPC_DBADDR)
-		size(4)
 		extra("float *          d7da")
 	}
 	field(D7CV,DBF_FLOAT) {
@@ -1530,7 +1514,6 @@ recordtype(scan) {
 		prompt("D8 Data Array")
 		asl(ASL0)
 		special(SPC_DBADDR)
-		size(4)
 		extra("float *          d8da")
 	}
 	field(D8CV,DBF_FLOAT) {
@@ -1580,7 +1563,6 @@ recordtype(scan) {
 		prompt("D9 Data Array")
 		asl(ASL0)
 		special(SPC_DBADDR)
-		size(4)
 		extra("float *          d9da")
 	}
 	field(D9CV,DBF_FLOAT) {
@@ -1630,7 +1612,6 @@ recordtype(scan) {
 		prompt("D10 Data Array")
 		asl(ASL0)
 		special(SPC_DBADDR)
-		size(4)
 		extra("float *          dada")
 	}
 	field(DACV,DBF_FLOAT) {
@@ -1680,7 +1661,6 @@ recordtype(scan) {
 		prompt("D11 Data Array")
 		asl(ASL0)
 		special(SPC_DBADDR)
-		size(4)
 		extra("float *          dbda")
 	}
 	field(DBCV,DBF_FLOAT) {
@@ -1730,7 +1710,6 @@ recordtype(scan) {
 		prompt("D12 Data Array")
 		asl(ASL0)
 		special(SPC_DBADDR)
-		size(4)
 		extra("float *          dcda")
 	}
 	field(DCCV,DBF_FLOAT) {
@@ -1780,7 +1759,6 @@ recordtype(scan) {
 		prompt("D13 Data Array")
 		asl(ASL0)
 		special(SPC_DBADDR)
-		size(4)
 		extra("float *          ddda")
 	}
 	field(DDCV,DBF_FLOAT) {
@@ -1830,7 +1808,6 @@ recordtype(scan) {
 		prompt("D14 Data Array")
 		asl(ASL0)
 		special(SPC_DBADDR)
-		size(4)
 		extra("float *          deda")
 	}
 	field(DECV,DBF_FLOAT) {
@@ -1880,7 +1857,6 @@ recordtype(scan) {
 		prompt("D15 Data Array")
 		asl(ASL0)
 		special(SPC_DBADDR)
-		size(4)
 		extra("float *          dfda")
 	}
 	field(DFCV,DBF_FLOAT) {

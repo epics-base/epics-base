@@ -47,7 +47,6 @@ recordtype(wait) {
 		prompt("Pointer to cbStruct")
 		special(SPC_NOMOD)
 		interest(4)
-		size(4)
 		extra("void *         cbst")
 	}
 	field(INAN,DBF_STRING) {
@@ -425,7 +424,6 @@ recordtype(wait) {
 		prompt("Reverse Polish Calc")
 		special(SPC_NOMOD)
 		interest(4)
-		size(184)
 		extra("char    rpcl[184]")
 	}
 	field(CLCV,DBF_LONG) {

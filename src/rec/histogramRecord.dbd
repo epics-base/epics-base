@@ -11,7 +11,6 @@ recordtype(histogram) {
 		prompt("Value")
 		asl(ASL0)
 		special(SPC_DBADDR)
-		size(4)
 		extra("void *	val")
 	}
 	field(NELM,DBF_USHORT) {
@@ -64,14 +63,12 @@ recordtype(histogram) {
 		prompt("Buffer Pointer")
 		special(SPC_NOMOD)
 		interest(4)
-		size(4)
 		extra("unsigned long *bptr")
 	}
 	field(WDOG,DBF_NOACCESS) {
 		prompt("Watchdog callback")
 		special(SPC_NOMOD)
 		interest(4)
-		size(4)
 		extra("void *  wdog")
 	}
 	field(MDEL,DBF_SHORT) {

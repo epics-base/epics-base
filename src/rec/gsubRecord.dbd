@@ -23,7 +23,6 @@ recordtype(gsub) {
 		prompt("Subroutine Address")
 		special(SPC_NOMOD)
 		interest(4)
-		size(4)
 		extra("void *		sadr")
 	}
 	field(STYP,DBF_SHORT) {

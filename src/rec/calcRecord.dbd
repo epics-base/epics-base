@@ -286,7 +286,6 @@ recordtype(calc) {
 		prompt("Reverse Polish Calc")
 		special(SPC_NOMOD)
 		interest(4)
-		size(200)
 		extra("char	rpcl[200]")
 	}
 }

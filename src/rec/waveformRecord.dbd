@@ -5,7 +5,6 @@ recordtype(waveform) {
 		asl(ASL0)
 		special(SPC_DBADDR)
 		pp(TRUE)
-		size(4)
 		extra("void *		val")
 	}
 	field(RARM,DBF_SHORT) {
@@ -66,7 +65,6 @@ recordtype(waveform) {
 		prompt("Buffer Pointer")
 		special(SPC_NOMOD)
 		interest(4)
-		size(4)
 		extra("void *		bptr")
 	}
 	field(SIOL,DBF_INLINK) {

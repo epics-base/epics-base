@@ -14,7 +14,6 @@ recordtype(pal) {
 	field(PPTR,DBF_NOACCESS) {
 		prompt("paldata")
 		interest(4)
-		size(4)
 		extra("void *  pptr")
 	}
 	field(INPA,DBF_INLINK) {

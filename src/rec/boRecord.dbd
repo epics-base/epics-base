@@ -58,14 +58,12 @@ recordtype(bo) {
 		prompt("Record Private")
 		special(SPC_NOMOD)
 		interest(4)
-		size(4)
 		extra("void *  rpvt")
 	}
 	field(WDPT,DBF_NOACCESS) {
 		prompt("Watch Dog Timer ID")
 		special(SPC_NOMOD)
 		interest(4)
-		size(4)
 		extra("void *	wdpt")
 	}
 	field(ZSV,DBF_MENU) {

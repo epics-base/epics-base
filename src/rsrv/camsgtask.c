@@ -36,13 +36,10 @@
 
 #include "osiSock.h"
 #include "tsStamp.h"
-#include "osiThread.h"
 #include "errlog.h"
-#include "ellLib.h"
 #include "taskwd.h"
 #include "db_access.h"
-#include "serverInclude.h"
-#define epicsExportSharedSymbols
+
 #include "server.h"
 
 /*

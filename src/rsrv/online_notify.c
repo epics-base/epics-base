@@ -41,13 +41,13 @@
  *  EPICS includes
  */
 #include "osiSock.h"
-#include "osiThread.h"
 #include "osiPoolStatus.h"
 #include "tsStamp.h"
 #include "errlog.h"
 #include "envDefs.h"
-#include "serverInclude.h"
-#define epicsExportSharedSymbols
+#include "addrList.h"
+#include "taskwd.h"
+
 #include "server.h"
 
 /*
@@ -122,11 +122,14 @@ int rsrv_online_notify_task()
      * load user and auto configured
      * broadcast address list
      */
-    port = caFetchPortConfig(&EPICS_CA_REPEATER_PORT, CA_REPEATER_PORT);
-    caSetupBCastAddrList (&beaconAddrList, sock, port);
-    
+    port = envGetInetPortConfigParam (&EPICS_CA_REPEATER_PORT, CA_REPEATER_PORT);
+    configureChannelAccessAddressList (&beaconAddrList, sock, port);
+    if ( ellCount ( &beaconAddrList ) == 0 ) {
+        errlogPrintf ("The CA server's beacon address list was empty after initialization?\n");
+    }
+  
 #   ifdef DEBUG
-    caPrintAddrList (&beaconAddrList);
+        printChannelAccessAddressList (&beaconAddrList);
 #   endif
     
     while (TRUE) {
@@ -141,9 +144,9 @@ int rsrv_online_notify_task()
         while (pNode) {
             char buf[64];
  
-            status = connect (sock, &pNode->destAddr.sa, sizeof(pNode->destAddr.sa));
+            status = connect (sock, &pNode->addr.sa, sizeof(pNode->addr.sa));
             if (status<0) {
-                ipAddrToA (&pNode->destAddr.in, buf, sizeof(buf));
+                ipAddrToA (&pNode->addr.ia, buf, sizeof(buf));
                 errlogPrintf ( "%s: CA beacon routing (connect to \"%s\") error was \"%s\"\n",
                     __FILE__, buf, SOCKERRSTR(SOCKERRNO));
             }
@@ -164,7 +167,7 @@ printf ("**** Setting local address to \"%s\" - this may not work correctly ****
 
                     status = send (sock, (char *)&msg, sizeof(msg), 0);
                     if (status < 0) {
-                        ipAddrToA (&pNode->destAddr.in, buf, sizeof(buf));
+                        ipAddrToA (&pNode->addr.ia, buf, sizeof(buf));
                         errlogPrintf ( "%s: CA beacon (send to \"%s\") error was \"%s\"\n",
                             __FILE__, buf, SOCKERRSTR(SOCKERRNO));
                     }

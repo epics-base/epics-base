@@ -50,16 +50,12 @@
 #include <errno.h>
 
 #include "osiSock.h"
-#include "tsStamp.h"
-#include "osiThread.h"
 #include "errlog.h"
-#include "ellLib.h"
 #include "taskwd.h"
-#include "db_access.h"
+#include "tsStamp.h"
 #include "envDefs.h"
 #include "freeList.h"
-#include "serverInclude.h"
-#define epicsExportSharedSymbols
+
 #include "server.h"
     
 #define     TIMEOUT 60.0 /* sec */
@@ -134,7 +130,7 @@ int cast_server(void)
 
     taskwdInsert(threadGetIdSelf(),NULL,NULL);
 
-    port = caFetchPortConfig(&EPICS_CA_SERVER_PORT, CA_SERVER_PORT);
+    port = envGetInetPortConfigParam (&EPICS_CA_SERVER_PORT, CA_SERVER_PORT);
 
     recv_addr_size = sizeof(new_recv_addr);
 
@@ -223,7 +219,7 @@ int cast_server(void)
             IOC_cast_sock,
             prsrv_cast_client->recv.buf,
             sizeof(prsrv_cast_client->recv.buf),
-            NULL,
+            0,
             (struct sockaddr *)&new_recv_addr, 
             &recv_addr_size);
         if (status<0) {

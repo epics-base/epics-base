@@ -38,18 +38,15 @@
 #include <errno.h>
 
 #include "osiSock.h"
-#include "osiThread.h"
 #include "tsStamp.h"
 #include "errlog.h"
-#include "ellLib.h"
 #include "taskwd.h"
-#include "db_access.h"
-#include "envDefs.h"
+#include "addrList.h"
 #include "freeList.h"
 #include "errlog.h"
+#include "dbEvent.h"
+#include "dbCommon.h"
 
-#include "serverInclude.h"
-#define epicsExportSharedSymbols
 #define GLBLSOURCE
 #include "server.h"
 
@@ -271,7 +268,7 @@ LOCAL int req_server (void)
 
     taskwdInsert (threadGetIdSelf(), NULL, NULL);
 
-    ca_server_port = caFetchPortConfig (&EPICS_CA_SERVER_PORT, CA_SERVER_PORT);
+    ca_server_port = envGetInetPortConfigParam (&EPICS_CA_SERVER_PORT, CA_SERVER_PORT);
 
     if (IOC_sock != 0 && IOC_sock != INVALID_SOCKET)
         if ((status = socket_close(IOC_sock)) < 0)
@@ -527,7 +524,7 @@ void casr (unsigned level)
             UNLOCK_CLIENTQ;
         }
 
-        caPrintAddrList (&beaconAddrList);
+        printChannelAccessAddressList (&beaconAddrList);
     }
 }
 

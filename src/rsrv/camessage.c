@@ -33,16 +33,19 @@
 #include <stdarg.h>
 
 #include "osiSock.h"
-#include "osiThread.h"
 #include "tsStamp.h"
 #include "errlog.h"
+#include "db_access_routines.h"
 #include "db_access.h"
 #include "special.h"
-#include "ellLib.h"
 #include "freeList.h"
 #include "caerr.h"
-#include "serverInclude.h"
-#define epicsExportSharedSymbols
+#include "dbEvent.h"
+#include "dbCommon.h"
+#include "db_field_log.h"
+#include "asLib.h"
+#include "asDbLib.h"
+
 #include "server.h"
 
 static caHdr nill_msg;
@@ -500,7 +503,7 @@ db_field_log        *pfl
         }
         return;
     }
-    status = db_get_field(
+    status = db_get_field (
                   paddr,
                   pevext->msg.m_dataType,
                   reply + 1,

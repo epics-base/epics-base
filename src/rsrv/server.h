@@ -30,16 +30,18 @@
 #ifndef INCLserverh
 #define INCLserverh
 
-static char *serverhSccsId = "@(#) $Id$";
-
-#if defined(CAS_VERSION_GLOBAL) && 0
-#       define HDRVERSIONID(NAME,VERS) VERSIONID(NAME,VERS)
-#else /*CAS_VERSION_GLOBAL*/
-#       define HDRVERSIONID(NAME,VERS)
-#endif /*CAS_VERSION_GLOBAL*/
+#include "osiThread.h"
+#include "bucketLib.h"
+#include "asLib.h"
+#include "dbAddr.h"
+#include "dbNotify.h"
+#include "caProto.h"
+#include "ellLib.h"
 
 #define RSRV_OK 0
 #define RSRV_ERROR (-1)
+
+#define LOCAL static
 
 /*
  * !! buf must be the first item in this structure !!

@@ -28,11 +28,12 @@ void ipAddrToA (const struct sockaddr_in *pInetAddr,
 
 /*
  * sun's CC defines at least a few of these under sunos4
+ * ( but acc does not !? )
  */
-#if defined(__SUNPRO_CC) || defined(__SUNPRO_C)
+#if defined(__SUNPRO_CC) 
 #	include <arpa/inet.h>
 #	include <netdb.h>
-#else /* !defined(__SUNPRO_CC) && !defined(__SUNPRO_C) */
+#else
 	int listen (int socket, int backlog);
 	int accept (int socket, struct sockaddr *addr, int *addrlen);
 	int shutdown (int socket, int how);
@@ -80,7 +81,7 @@ void ipAddrToA (const struct sockaddr_in *pInetAddr,
 	};
 	struct hostent *gethostbyaddr(char *addr, int len, int type);
 
-#endif /* !defined(__SUNPRO_CC) && !defined(__SUNPRO_C) */
+#endif /* !defined(__SUNPRO_CC) */
 
 #ifdef __cplusplus
 }

@@ -81,36 +81,25 @@ bool cacChannel::connected (
 }
 
 // the default is to assume that it is a locally hosted channel
-void cacChannel::hostName ( 
+unsigned cacChannel::getHostName ( 
     epicsGuard < epicsMutex > &,
-    char *pBuf, unsigned bufLength ) const 
+    char * pBuf, unsigned bufLength ) const throw ()
 {
     if ( bufLength ) {
         epicsSingleton < localHostName >::reference 
                 ref ( localHostNameAtLoadTime.getReference () );
-        ref->copy ( pBuf, bufLength );
+        return ref->getName ( pBuf, bufLength );
     }
+    return 0u;
 }
 
-// deprecated - please do not use
 // the default is to assume that it is a locally hosted channel
 const char * cacChannel::pHostName (
-    epicsGuard < epicsMutex > & ) const
+    epicsGuard < epicsMutex > & guard ) const throw ()
 {
     epicsSingleton < localHostName >::reference 
             ref ( localHostNameAtLoadTime.getReference () );
     return ref->pointer ();
-}
-
-void cacChannel::operator delete ( void * )
-{
-    // Visual C++ .net appears to require operator delete if
-    // placement operator delete is defined? I smell a ms rat
-    // because if I declare placement new and delete, but
-    // comment out the placement delete definition there are
-    // no undefined symbols.
-    errlogPrintf ( "%s:%d this compiler is confused about placement delete - memory was probably leaked",
-        __FILE__, __LINE__ );
 }
 
 cacContext::~cacContext () {}

@@ -201,5 +201,5 @@ epicsMutexLockStatus epicsMutexTryLock(epicsMutexId pmutex)
 void epicsMutexShow(epicsMutexId pmutex,unsigned int level)
 {
     printf("ownerTid %p count %d owned %d\n",
-        pmutex->ownerTid,pmutex->count,pmutex->owned);
+        (void *)pmutex->ownerTid,pmutex->count,pmutex->owned);
 }

@@ -117,7 +117,7 @@ void epicsShareAPI epicsMutexShowAll(int onlyLocked,unsigned  int level)
             }
         }
         printf("epicsMutexId %p source %s line %d\n",
-            pmutexNode->id,pmutexNode->pFileName,pmutexNode->lineno);
+            (void *)pmutexNode->id,pmutexNode->pFileName,pmutexNode->lineno);
         epicsMutexShow(pmutexNode->id,level);
         pmutexNode = (mutexNode *)ellNext(&pmutexNode->node);
     }

@@ -10,7 +10,7 @@
  *      Unsigned integer and string identifier classes are supplied here.
  *
  *      Author  Jeffrey O. Hill 
- *				(string hash alg by Marty Kraimer and Peter K. Pearson)
+ *              (string hash alg by Marty Kraimer and Peter K. Pearson)
  *
  *              johill@lanl.gov
  *              505 665 1831
@@ -37,10 +37,10 @@
  *              Argonne National Laboratory
  *
  *
- *	NOTES:
- *	.01 Storage for identifier must persist until an item is deleted
- * 	.02 class T must derive from class ID and tsSLNode<T>
- *	
+ *  NOTES:
+ *  .01 Storage for identifier must persist until an item is deleted
+ *  .02 class T must derive from class ID and tsSLNode<T>
+ *  
  */
 
 #ifndef INCresourceLibh
@@ -117,20 +117,20 @@ public:
     class epicsShareClass entryDidntRespondToDestroyVirtualFunction {};
     class epicsShareClass sizeExceedsMaxIndexWidth {};
 
-	resTable (unsigned nHashTableEntries);
+    resTable (unsigned nHashTableEntries);
 
-	virtual ~resTable();
+    virtual ~resTable();
 
-	void destroyAllEntries(); // destroy all entries
+    void destroyAllEntries(); // destroy all entries
 
-	//
-	// Call (pT->show) (level) for each entry
-	// where pT is a pointer to type T. Show
+    //
+    // Call (pT->show) (level) for each entry
+    // where pT is a pointer to type T. Show
     // returns "void". Show dumps increasing
     // diagnostics to std out with increasing 
     // magnitude of the its level argument.
-	//
-	void show (unsigned level) const;
+    //
+    void show (unsigned level) const;
 
     //
     // add entry
@@ -138,33 +138,33 @@ public:
     // returns -1 if the id already exits in the table
     // and zero if successful
     //
-	int add (T &res);
+    int add (T &res);
 
-	T *remove (const ID &idIn); // remove entry
+    T *remove (const ID &idIn); // remove entry
 
-	T *lookup (const ID &idIn) const; // locate entry
+    T *lookup (const ID &idIn) const; // locate entry
 
 #if defined(_MSC_VER) && _MSC_VER < 1100
-	//
-	// required by MS vis c++ 5.0 (but not by 4.0)
-	//
-	typedef void (T::*pSetMFArg_t)();
-#	define pSetMFArg(ARG) pSetMFArg_t ARG
+    //
+    // required by MS vis c++ 5.0 (but not by 4.0)
+    //
+    typedef void (T::*pSetMFArg_t)();
+#   define pSetMFArg(ARG) pSetMFArg_t ARG
 #else
-	//
-	// required by gnu g++ 2.7.2
-	//
-#	define pSetMFArg(ARG) void (T:: * ARG)()
+    //
+    // required by gnu g++ 2.7.2
+    //
+#   define pSetMFArg(ARG) void (T:: * ARG)()
 #endif
 
-	//
-	// Call (pT->*pCB) () for each entry
-	//
-	// where pT is a pointer to type T and pCB is
-	// a pointer to a member function of T with 
-	// no parameters that returns void
-	//
-	void traverse (pSetMFArg(pCB)) const;
+    //
+    // Call (pT->*pCB) () for each entry
+    //
+    // where pT is a pointer to type T and pCB is
+    // a pointer to a member function of T with 
+    // no parameters that returns void
+    //
+    void traverse (pSetMFArg(pCB)) const;
 
 private:
     tsSLList<T>     *pTable;
@@ -172,11 +172,11 @@ private:
     unsigned        hashIdNBits;
     unsigned        nInUse;
 
-	resTableIndex hash (const ID & idIn) const;
+    resTableIndex hash (const ID & idIn) const;
 
-	T *find (tsSLList<T> &list, const ID &idIn) const;
+    T *find (tsSLList<T> &list, const ID &idIn) const;
 
-	T *findDelete (tsSLList<T> &list, const ID &idIn);
+    T *findDelete (tsSLList<T> &list, const ID &idIn);
 };
 
 
@@ -189,12 +189,12 @@ template <class T, class ID>
 class resTableIter {
 public:
     resTableIter (const resTable<T,ID> &tableIn);
-	T * next ();
-	T * operator () ();
+    T * next ();
+    T * operator () ();
 private:
     tsSLIter<T>             iter;
     unsigned                index;
-	const resTable<T,ID>    &table;
+    const resTable<T,ID>    &table;
 };
 
 //
@@ -226,16 +226,16 @@ template <class T, unsigned MIN_INDEX_WIDTH=4u,
     unsigned MAX_ID_WIDTH = sizeof(T)*CHAR_BIT>
 class intId {
 public:
-	intId (const T &idIn);
-	bool operator == (const intId &idIn) const;
-	resTableIndex hash (unsigned nBitsIndex) const;
-	const T getId() const;
+    intId (const T &idIn);
+    bool operator == (const intId &idIn) const;
+    resTableIndex hash (unsigned nBitsIndex) const;
+    const T getId() const;
     static resTableIndex hashEngine (const T &id);
     static const unsigned maxIndexBitWidth ();
     static const unsigned minIndexBitWidth ();
 
 protected:
-	T id;
+    T id;
 };
 
 //
@@ -285,19 +285,19 @@ public:
     //
     class epicsShareClass dynamicMemoryAllocationFailed {};
     enum allocationType {copyString, refString};
-	stringId (const char * idIn, allocationType typeIn=copyString);
+    stringId (const char * idIn, allocationType typeIn=copyString);
     ~ stringId();
-	resTableIndex hash (unsigned nBitsIndex) const;
-	bool operator == (const stringId &idIn) const;
-	const char * resourceName() const; // return the pointer to the string
-	void show (unsigned level) const;
+    resTableIndex hash (unsigned nBitsIndex) const;
+    bool operator == (const stringId &idIn) const;
+    const char * resourceName() const; // return the pointer to the string
+    void show (unsigned level) const;
     static const unsigned maxIndexBitWidth ();
     static const unsigned minIndexBitWidth ();
 
 private:
-	const char * pStr;
-	const allocationType allocType;
-	static const unsigned char fastHashPermutedIndexSpace[256];
+    const char * pStr;
+    const allocationType allocType;
+    static const unsigned char fastHashPermutedIndexSpace[256];
 };
 
 /////////////////////////////////////////////////
@@ -309,19 +309,19 @@ private:
 //
 template <class T, class ID>
 resTable<T,ID>::resTable (unsigned nHashTableEntries) :
-	nInUse (0) 
+    nInUse (0) 
 {
     unsigned nbits, mask;
 
-	//
-	// count the number of bits in the hash index
-	//
-	for (nbits=0; nbits < sizeof (resTableIndex) * CHAR_BIT; nbits++) {
-		mask = (1<<nbits) - 1;
-		if ( ((nHashTableEntries-1) & ~mask) == 0){
-			break;
-		}
-	}
+    //
+    // count the number of bits in the hash index
+    //
+    for (nbits=0; nbits < sizeof (resTableIndex) * CHAR_BIT; nbits++) {
+        mask = (1<<nbits) - 1;
+        if ( ((nHashTableEntries-1) & ~mask) == 0){
+            break;
+        }
+    }
 
     if ( nbits > ID::maxIndexBitWidth () ) {
         throwWithLocation ( sizeExceedsMaxIndexWidth () );
@@ -334,15 +334,15 @@ resTable<T,ID>::resTable (unsigned nHashTableEntries) :
     if ( nbits < ID::minIndexBitWidth () ) {
         nbits = ID::minIndexBitWidth ();
         mask = (1<<nbits) - 1;
-	}
+    }
 
-	this->hashIdNBits = nbits;
+    this->hashIdNBits = nbits;
     this->hashIdMask = mask;
-	this->nInUse = 0u;
-	this->pTable = new tsSLList<T> [1<<nbits];
-	if (this->pTable==0) {
+    this->nInUse = 0u;
+    this->pTable = new tsSLList<T> [1<<nbits];
+    if (this->pTable==0) {
         throwWithLocation ( dynamicMemoryAllocationFailed () );
-	}
+    }
 }
 
 //
@@ -353,8 +353,8 @@ resTable<T,ID>::resTable (unsigned nHashTableEntries) :
 template <class T, class ID>
 inline T * resTable<T,ID>::remove (const ID &idIn)
 {
-	tsSLList<T> &list = this->pTable[this->hash(idIn)];
-	return this->findDelete (list, idIn);
+    tsSLList<T> &list = this->pTable[this->hash(idIn)];
+    return this->findDelete (list, idIn);
 }
 
 //
@@ -365,8 +365,8 @@ inline T * resTable<T,ID>::remove (const ID &idIn)
 template <class T, class ID>
 inline T * resTable<T,ID>::lookup (const ID &idIn) const
 {
-	tsSLList<T> &list = this->pTable[this->hash(idIn)];
-	return this->find (list, idIn);
+    tsSLList<T> &list = this->pTable[this->hash(idIn)];
+    return this->find (list, idIn);
 }
 
 //
@@ -375,7 +375,7 @@ inline T * resTable<T,ID>::lookup (const ID &idIn) const
 template <class T, class ID>
 inline resTableIndex resTable<T,ID>::hash (const ID & idIn) const
 {
-	return idIn.hash (this->hashIdNBits) & this->hashIdMask;
+    return idIn.hash (this->hashIdNBits) & this->hashIdMask;
 }
 
 //
@@ -384,42 +384,42 @@ inline resTableIndex resTable<T,ID>::hash (const ID & idIn) const
 template <class T, class ID>
 void resTable<T,ID>::destroyAllEntries()
 {
-	tsSLList<T> *pList = this->pTable;
+    tsSLList<T> *pList = this->pTable;
 
-	while (pList<&this->pTable[this->hashIdMask+1]) {
-		T *pItem;
-		T *pNextItem;
+    while (pList<&this->pTable[this->hashIdMask+1]) {
+        T *pItem;
+        T *pNextItem;
 
-		{
-			tsSLIter<T> iter(*pList);
-			pItem = iter();
-			while (pItem) {
-				pNextItem = iter();
-				pItem->destroy();
-				pItem = pNextItem;
-			}
-		}
+        {
+            tsSLIter<T> iter(*pList);
+            pItem = iter();
+            while (pItem) {
+                pNextItem = iter();
+                pItem->destroy();
+                pItem = pNextItem;
+            }
+        }
 
-		//
-		// Check to see if a defective class is
-		// installed that does not remove itself
-		// from the resTable when it is destroyed.
-		//
-		{
-			tsSLIterRm<T> iter(*pList);
-			while ( (pItem=iter()) ) {
-				fprintf (stderr, 
+        //
+        // Check to see if a defective class is
+        // installed that does not remove itself
+        // from the resTable when it is destroyed.
+        //
+        {
+            tsSLIterRm<T> iter(*pList);
+            while ( (pItem=iter()) ) {
+                fprintf (stderr, 
 "Warning: Defective class still in resTable<T,ID> after it was destroyed\n");
-				//
-				// remove defective class
-				//
-				iter.remove();
-				this->nInUse--;
-			}
-		}
+                //
+                // remove defective class
+                //
+                iter.remove();
+                this->nInUse--;
+            }
+        }
 
-		pList++;
-	}
+        pList++;
+    }
 }
 
 //
@@ -428,48 +428,48 @@ void resTable<T,ID>::destroyAllEntries()
 template <class T, class ID>
 void resTable<T,ID>::show (unsigned level) const
 {
-	tsSLList<T> *pList;
-	double X;
-	double XX;
-	double mean;
-	double stdDev;
-	unsigned maxEntries;
+    tsSLList<T> *pList;
+    double X;
+    double XX;
+    double mean;
+    double stdDev;
+    unsigned maxEntries;
 
-	printf("resTable with %d resources installed\n", this->nInUse);
+    printf("resTable with %d resources installed\n", this->nInUse);
 
-	if (level >=1u) {
-		pList = this->pTable;
-		X = 0.0;
-		XX = 0.0;
-		maxEntries = 0u;
-		while (pList < &this->pTable[this->hashIdMask+1]) {
-			unsigned count;
-			tsSLIter<T> iter(*pList);
-			T *pItem;
+    if (level >=1u) {
+        pList = this->pTable;
+        X = 0.0;
+        XX = 0.0;
+        maxEntries = 0u;
+        while (pList < &this->pTable[this->hashIdMask+1]) {
+            unsigned count;
+            tsSLIter<T> iter(*pList);
+            T *pItem;
 
-			count = 0;
-			while ( (pItem = iter()) ) {
-				if (level >= 3u) {
-					pItem->show (level);
-				}
-				count++;
-			}
-			if (count>0u) {
-				X += count;
-				XX += count*count;
-				if (count>maxEntries) {
-					maxEntries = count;
-				}
-			}
-			pList++;
-		}
-	 
-		mean = X/(this->hashIdMask+1);
-		stdDev = sqrt(XX/(this->hashIdMask+1) - mean*mean);
-		printf( 
-	"entries/occupied resTable entry: mean = %f std dev = %f max = %d\n",
-			mean, stdDev, maxEntries);
-	}
+            count = 0;
+            while ( (pItem = iter()) ) {
+                if (level >= 3u) {
+                    pItem->show (level);
+                }
+                count++;
+            }
+            if (count>0u) {
+                X += count;
+                XX += count*count;
+                if (count>maxEntries) {
+                    maxEntries = count;
+                }
+            }
+            pList++;
+        }
+     
+        mean = X/(this->hashIdMask+1);
+        stdDev = sqrt(XX/(this->hashIdMask+1) - mean*mean);
+        printf( 
+    "entries/occupied resTable entry: mean = %f std dev = %f max = %d\n",
+            mean, stdDev, maxEntries);
+    }
 }
 
 //
@@ -478,18 +478,18 @@ void resTable<T,ID>::show (unsigned level) const
 template <class T, class ID>
 void resTable<T,ID>::traverse (pSetMFArg(pCB)) const
 {
-	tsSLList<T> *pList;
+    tsSLList<T> *pList;
 
-	pList = this->pTable;
-	while (pList < &this->pTable[this->hashIdMask+1]) {
-		tsSLIter<T> iter(*pList);
-		T *pItem;
+    pList = this->pTable;
+    while (pList < &this->pTable[this->hashIdMask+1]) {
+        tsSLIter<T> iter(*pList);
+        T *pItem;
 
-		while ( (pItem = iter()) ) {
-			(pItem->*pCB) ();
-		}
-		pList++;
-	}
+        while ( (pItem = iter()) ) {
+            (pItem->*pCB) ();
+        }
+        pList++;
+    }
 }
 
 //
@@ -500,17 +500,17 @@ void resTable<T,ID>::traverse (pSetMFArg(pCB)) const
 template <class T, class ID>
 int resTable<T,ID>::add (T &res)
 {
-	//
-	// T must derive from ID
-	//
-	tsSLList<T> &list = this->pTable[this->hash(res)];
+    //
+    // T must derive from ID
+    //
+    tsSLList<T> &list = this->pTable[this->hash(res)];
 
-	if ( this->find (list, res) != 0 ) {
-		return -1;
-	}
+    if ( this->find (list, res) != 0 ) {
+        return -1;
+    }
 
-	list.add (res);
-	this->nInUse++;
+    list.add (res);
+    this->nInUse++;
 
     return 0;
 }
@@ -526,17 +526,17 @@ int resTable<T,ID>::add (T &res)
 template <class T, class ID>
 T *resTable<T,ID>::find (tsSLList<T> &list, const ID &idIn) const
 {
-	tsSLIter<T> iter(list);
-	T *pItem;
-	ID *pId;
+    tsSLIter<T> iter(list);
+    T *pItem;
+    ID *pId;
 
-	while ( (pItem = iter()) ) {
-		pId = pItem;
-		if (*pId == idIn) {
-			break;
-		}
-	}
-	return pItem;
+    while ( (pItem = iter()) ) {
+        pId = pItem;
+        if (*pId == idIn) {
+            break;
+        }
+    }
+    return pItem;
 }
 
 //
@@ -552,19 +552,19 @@ T *resTable<T,ID>::find (tsSLList<T> &list, const ID &idIn) const
 template <class T, class ID>
 T *resTable<T,ID>::findDelete (tsSLList<T> &list, const ID &idIn)
 {
-	tsSLIterRm<T> iter(list);
-	T *pItem;
-	ID *pId;
+    tsSLIterRm<T> iter(list);
+    T *pItem;
+    ID *pId;
 
-	while ( (pItem = iter()) ) {
-		pId = pItem;
-		if (*pId == idIn) {
-			iter.remove();
-			this->nInUse--;
-			break;
-		}
-	}
-	return pItem;
+    while ( (pItem = iter()) ) {
+        pId = pItem;
+        if (*pId == idIn) {
+            iter.remove();
+            this->nInUse--;
+            break;
+        }
+    }
+    return pItem;
 }
 
 //
@@ -573,13 +573,13 @@ T *resTable<T,ID>::findDelete (tsSLList<T> &list, const ID &idIn)
 template <class T, class ID>
 resTable<T,ID>::~resTable() 
 {
-	if (this->pTable) {
-		this->destroyAllEntries();
-		if (this->nInUse != 0u) {
+    if (this->pTable) {
+        this->destroyAllEntries();
+        if (this->nInUse != 0u) {
             throwWithLocation ( entryDidntRespondToDestroyVirtualFunction () );
-		}
-		delete [] this->pTable;
-	}
+        }
+        delete [] this->pTable;
+    }
 }
 
 //////////////////////////////////////////////
@@ -650,7 +650,7 @@ inline void chronIntIdResTable<ITEM>::add (ITEM &item)
 {
     int status;
     do {
-	    item.chronIntIdRes<ITEM>::setId (allocId++);
+        item.chronIntIdRes<ITEM>::setId (allocId++);
         status = this->resTable<ITEM,chronIntId>::add (item);
     }
     while (status);
@@ -695,7 +695,7 @@ template <class T, unsigned MIN_INDEX_WIDTH, unsigned MAX_ID_WIDTH>
 inline bool intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::operator == 
         (const intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH> &idIn) const
 {
-	return this->id == idIn.id;
+    return this->id == idIn.id;
 }
 
 //
@@ -704,7 +704,7 @@ inline bool intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::operator ==
 template <class T, unsigned MIN_INDEX_WIDTH, unsigned MAX_ID_WIDTH>
 inline const T intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::getId () const
 {
-	return this->id;
+    return this->id;
 }
 
 //
@@ -734,28 +734,28 @@ inline const unsigned intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::maxIndexBitWidth 
 template <class T, unsigned MIN_INDEX_WIDTH, unsigned MAX_ID_WIDTH>
 inline resTableIndex intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::hashEngine (const T &id)
 {
-	resTableIndex hashid = static_cast<resTableIndex>(id);
+    resTableIndex hashid = static_cast<resTableIndex>(id);
 
-	//
+    //
     // On most compilers the optimizer will unroll this loop so this
     // is actually a very small inline function
     //
-	// Experiments using the microsoft compiler show that this isnt 
-	// slower than switching on the architecture size and unrolling the
-	// loop explicitly (that solution has resulted in portability
-	// problems in the past).
-	//
+    // Experiments using the microsoft compiler show that this isnt 
+    // slower than switching on the architecture size and unrolling the
+    // loop explicitly (that solution has resulted in portability
+    // problems in the past).
+    //
     unsigned width = MAX_ID_WIDTH;
     do {
         width >>= 1u;
-		hashid ^= hashid>>width;
+        hashid ^= hashid>>width;
     } while (width>MIN_INDEX_WIDTH);
 
-	//
-	// the result here is always masked to the
-	// proper size after it is returned to the "resTable" class
-	//
-	return hashid;
+    //
+    // the result here is always masked to the
+    // proper size after it is returned to the "resTable" class
+    //
+    return hashid;
 }
 
 
@@ -778,12 +778,12 @@ inline resTableIndex intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::hash (unsigned /* 
 inline bool stringId::operator == 
         (const stringId &idIn) const
 {
-	if (this->pStr!=NULL && idIn.pStr!=NULL) {
-		return strcmp(this->pStr,idIn.pStr)==0;
-	}
-	else {
-		return false; // not equal
-	}
+    if (this->pStr!=NULL && idIn.pStr!=NULL) {
+        return strcmp(this->pStr,idIn.pStr)==0;
+    }
+    else {
+        return false; // not equal
+    }
 }
 
 //
@@ -791,7 +791,7 @@ inline bool stringId::operator ==
 //
 inline const char * stringId::resourceName () const
 {
-	return this->pStr;
+    return this->pStr;
 }
 
 //
@@ -822,22 +822,22 @@ inline const unsigned stringId::maxIndexBitWidth ()
 // stringId::stringId()
 //
 stringId::stringId (const char * idIn, allocationType typeIn) :
-	allocType (typeIn)
+    allocType (typeIn)
 {
-	if (typeIn==copyString) {
-		unsigned nChars = strlen (idIn) + 1u;
+    if (typeIn==copyString) {
+        unsigned nChars = strlen (idIn) + 1u;
 
-		this->pStr = new char [nChars];
-		if (this->pStr!=0) {
-			memcpy ((void *)this->pStr, idIn, nChars);
-		}
-		else {
+        this->pStr = new char [nChars];
+        if (this->pStr!=0) {
+            memcpy ((void *)this->pStr, idIn, nChars);
+        }
+        else {
             throwWithLocation ( dynamicMemoryAllocationFailed () );
-		}
-	}
-	else {
-		this->pStr = idIn;
-	}
+        }
+    }
+    else {
+        this->pStr = idIn;
+    }
 }
 
 //
@@ -845,9 +845,9 @@ stringId::stringId (const char * idIn, allocationType typeIn) :
 //
 void stringId::show (unsigned level) const
 {
-	if (level>2u) {
-		printf ("resource id = %s\n", this->pStr);
-	}
+    if (level>2u) {
+        printf ("resource id = %s\n", this->pStr);
+    }
 }
 
 //
@@ -858,27 +858,27 @@ void stringId::show (unsigned level) const
 //
 stringId::~stringId()
 {
-	if (this->allocType==copyString) {
-		if (this->pStr!=NULL) {
-			//
-			// the microsoft and solaris compilers will 
-			// not allow a pointer to "const char"
-			// to be deleted 
-			//
-			// the HP-UX compiler gives us a warning on
-			// each cast away of const, but in this case
-			// it cant be avoided. 
-			//
-			// The DEC compiler complains that const isnt 
-			// really significant in a cast if it is present.
-			//
-			// I hope that deleting a pointer to "char"
-			// is the same as deleting a pointer to 
-			// "const char" on all compilers
-			//
-			delete [] const_cast<char *>(this->pStr);
-		}
-	}
+    if (this->allocType==copyString) {
+        if (this->pStr!=NULL) {
+            //
+            // the microsoft and solaris compilers will 
+            // not allow a pointer to "const char"
+            // to be deleted 
+            //
+            // the HP-UX compiler gives us a warning on
+            // each cast away of const, but in this case
+            // it cant be avoided. 
+            //
+            // The DEC compiler complains that const isnt 
+            // really significant in a cast if it is present.
+            //
+            // I hope that deleting a pointer to "char"
+            // is the same as deleting a pointer to 
+            // "const char" on all compilers
+            //
+            delete [] const_cast<char *>(this->pStr);
+        }
+    }
 }
 
 //
@@ -895,13 +895,13 @@ resTableIndex stringId::hash(unsigned nBitsIndex) const
     const unsigned char *pUStr = 
         reinterpret_cast<const unsigned char *>(this->pStr);
 
-	if (pUStr==NULL) {
-		return 0u;
-	}
+    if (pUStr==NULL) {
+        return 0u;
+    }
 
-	unsigned h0 = 0u;
-	unsigned h1 = 0u;
-	unsigned c;
+    unsigned h0 = 0u;
+    unsigned h1 = 0u;
+    unsigned c;
 
     while (true) {
 
@@ -916,12 +916,12 @@ resTableIndex stringId::hash(unsigned nBitsIndex) const
             break;
         }
         h1 = fastHashPermutedIndexSpace[h1 ^ c];
-	}
+    }
 
     h1 = h1 << (nBitsIndex-8u);
     h0 = h1 ^ h0;
 
-	return h0;
+    return h0;
 }
 
 //

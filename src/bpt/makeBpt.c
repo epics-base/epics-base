@@ -34,9 +34,11 @@
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
-#include <dbBase.h>
-#include <ellLib.h>
-#include <cvtTable.h>
+#include <ctype.h>
+
+#include "dbBase.h"
+#include "ellLib.h"
+#include "cvtTable.h"
 
 #define MAX_LINE_SIZE 160
 #define MAX_BREAKS 100
@@ -91,7 +93,7 @@ int main(argc, argv)
     char	*pbeg;
     char	*pend;
     float	value;
-    char	*pname;
+    char	*pname = NULL;
     dataList	*phead;
     dataList	*pdataList;
     dataList	*pnext;
@@ -183,6 +185,9 @@ got_header:
 	    pdataList->value = value;
 	    pnext = pdataList;
 	}
+    }
+    if(!pname) {
+	errExit("create_break failed: no name specified\n");
     }
     brkCreateInfo.nTable = ndata;
     pdata = (float *)calloc(brkCreateInfo.nTable,sizeof(float));
@@ -330,6 +335,8 @@ static int create_break( struct brkCreateInfo *pbci, brkInt *pabrkInt,
     /* determine next breakpoint interval */
     while ((engBeg <= pbci->engHigh) && (ibeg < ntable - 1)) {
 	/* determine next interval to try. Up to 1/10 full range */
+	rawEnd = rawBeg;
+	engEnd = engBeg;
 	iend = ibeg;
 	inc = (int) ((ihigh - ilow) / 10.0);
 	if (inc < 1)

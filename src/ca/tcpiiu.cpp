@@ -1272,24 +1272,20 @@ bool tcpiiu::flush ()
     }
 }
 
+// ~tcpiiu() will not return while this->blockingForFlush is greater than zero
 void tcpiiu::blockUntilSendBacklogIsReasonable ( epicsMutex &mutex )
 {
-    this->pCAC()->enableCallbackPreemption ();
     assert ( this->blockingForFlush < UINT_MAX );
     this->blockingForFlush++;
     while ( this->sendQue.flushBlockThreshold(0u) && this->state == iiu_connected ) {
         epicsAutoMutexRelease autoRelease ( mutex );
         this->flushBlockEvent.wait ( 5.0 );
     }
-    assert ( this->blockingForFlush > 0u );
-    this->blockingForFlush--;
-    if ( this->blockingForFlush ) {
+    if ( this->blockingForFlush == 1 ) {
         this->flushBlockEvent.signal ();
     }
-    {
-        epicsAutoMutexRelease autoRelease ( mutex );
-        this->pCAC()->disableCallbackPreemption ();
-    }
+    assert ( this->blockingForFlush > 0u );
+    this->blockingForFlush--;
 }
 
 void tcpiiu::flushRequestIfAboveEarlyThreshold ()

@@ -88,15 +88,10 @@ int CASG::block ( double timeout )
     beg_time = cur_time;
     delay = 0.0;
 
-    this->client.enableCallbackPreemption ();
-
     while ( 1 ) {
-        {
-            epicsAutoMutex locker ( this->mutex );
-            if ( this->ioList.count() == 0u ) {
-                status = ECA_NORMAL;
-                break;
-            }
+        if ( this->ioList.count() == 0u ) {
+            status = ECA_NORMAL;
+            break;
         }
 
         remaining = timeout - delay;
@@ -110,7 +105,7 @@ int CASG::block ( double timeout )
             break;
         }
 
-        this->sem.wait ( remaining );
+        this->client.blockForEventAndEnableCallbacks ( this->sem, remaining );
 
         /*
          * force a time update 
@@ -119,8 +114,6 @@ int CASG::block ( double timeout )
 
         delay = cur_time - beg_time;
     }
-
-    this->client.disableCallbackPreemption ();
 
     return status;
 }

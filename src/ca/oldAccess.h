@@ -212,8 +212,7 @@ public:
     CASG * lookupCASG ( unsigned id );
     void installCASG ( CASG & );
     void uninstallCASG ( CASG & );
-    void enableCallbackPreemption ();
-    void disableCallbackPreemption ();
+    void blockForEventAndEnableCallbacks ( epicsEvent &event, double timeout );
 // perhaps these should be eliminated in deference to the exception mechanism
     int printf ( const char *pformat, ... ) const;
     int vPrintf ( const char *pformat, va_list args ) const;
@@ -492,14 +491,10 @@ inline void oldCAC::uninstallCASG ( CASG &sg )
     this->clientCtx.uninstallCASG ( sg );
 }
 
-inline void oldCAC::enableCallbackPreemption ()
+inline void oldCAC::blockForEventAndEnableCallbacks ( 
+        epicsEvent &event, double timeout )
 {
-    this->clientCtx.enableCallbackPreemption ();
-}
-
-inline void oldCAC::disableCallbackPreemption ()
-{
-    this->clientCtx.disableCallbackPreemption ();
+    this->clientCtx.blockForEventAndEnableCallbacks ( event, timeout );
 }
 
 inline void oldCAC::vSignal ( int ca_status, const char *pfilenm, 

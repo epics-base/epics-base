@@ -111,8 +111,7 @@ public:
         const char *pFileName, unsigned lineNo );
 
     // callback preemption control
-    void enableCallbackPreemption ();
-    void disableCallbackPreemption ();
+    void blockForEventAndEnableCallbacks ( epicsEvent &event, double timeout );
 
     // diagnostics
     unsigned connectionCount () const;
@@ -189,8 +188,11 @@ private:
     bool                    recvProcessInProgress;
     bool                    recvProcessThreadExitRequest;
 
+    void flushRequestPrivate ();
     void run ();
     bool setupUDP ();
+    void enableCallbackPreemption ();
+    void disableCallbackPreemption ();
     void flushIfRequired ( nciu & ); // lock must be applied
     void recycleReadNotifyIO ( netReadNotifyIO &io );
     void recycleWriteNotifyIO ( netWriteNotifyIO &io );

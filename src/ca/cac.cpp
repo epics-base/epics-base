@@ -354,6 +354,12 @@ void cac::processRecvBacklog ()
 void cac::flushRequest ()
 {
     epicsAutoMutex autoMutex ( this->mutex );
+    this->flushRequestPrivate ();
+}
+
+// lock must be applied
+void cac::flushRequestPrivate ()
+{
     tsDLIterBD <tcpiiu> piiu = this->iiuList.firstIter ();
     while ( piiu.valid () ) {
         piiu->flushRequest ();
@@ -527,10 +533,6 @@ int cac::pendIO ( const double &timeout )
         return ECA_EVDISALLOW;
     }
 
-    this->enableCallbackPreemption ();
-
-    this->flushRequest ();
-   
     int status = ECA_NORMAL;
     epicsTime beg_time = epicsTime::getCurrent ();
     double remaining;
@@ -540,20 +542,29 @@ int cac::pendIO ( const double &timeout )
     else{
         remaining = timeout;
     }    
-    while ( this->pndRecvCnt > 0 ) {
-        if ( remaining < CAC_SIGNIFICANT_SELECT_DELAY ) {
-            status = ECA_TIMEOUT;
-            break;
-        }
-        this->ioDone.wait ( remaining );
-        if ( timeout != 0.0 ) {
-            double delay = epicsTime::getCurrent () - beg_time;
-            remaining = timeout - delay;
-        }    
-    }
 
     {
         epicsAutoMutex autoMutex ( this->mutex );
+
+        this->flushRequestPrivate ();
+   
+        while ( this->pndRecvCnt > 0 ) {
+            if ( remaining < CAC_SIGNIFICANT_SELECT_DELAY ) {
+                status = ECA_TIMEOUT;
+                break;
+            }
+            this->enableCallbackPreemption ();
+            {
+                epicsAutoMutexRelease autoRelease ( this->mutex );
+                this->ioDone.wait ( remaining );
+            }
+            this->disableCallbackPreemption ();
+            if ( timeout != 0.0 ) {
+                double delay = epicsTime::getCurrent () - beg_time;
+                remaining = timeout - delay;
+            }    
+        }
+
         this->readSeq++;
         this->pndRecvCnt = 0u;
         if ( this->pudpiiu ) {
@@ -561,9 +572,18 @@ int cac::pendIO ( const double &timeout )
         }
     }
 
-    this->disableCallbackPreemption ();
-
     return status;
+}
+
+void cac::blockForEventAndEnableCallbacks ( epicsEvent &event, double timeout )
+{
+    epicsAutoMutex autoMutex ( this->mutex );
+    this->enableCallbackPreemption ();
+    {
+        epicsAutoMutexRelease autoMutexRelease ( this->mutex );
+        event.wait ( timeout );
+    }
+    this->disableCallbackPreemption ();
 }
 
 int cac::pendEvent ( const double &timeout )
@@ -574,20 +594,27 @@ int cac::pendEvent ( const double &timeout )
         return ECA_EVDISALLOW;
     }
 
-    this->enableCallbackPreemption ();
+    {
+        epicsAutoMutex autoMutex ( this->mutex );
 
-    this->flushRequest ();
+        this->flushRequestPrivate ();
 
-    if ( timeout == 0.0 ) {
-        while ( true ) {
-            epicsThreadSleep ( 60.0 );
+        this->enableCallbackPreemption ();
+
+        {
+            epicsAutoMutexRelease autoMutexRelease ( this->mutex );
+            if ( timeout == 0.0 ) {
+                while ( true ) {
+                    epicsThreadSleep ( 60.0 );
+                }
+            }
+            else if ( timeout >= CAC_SIGNIFICANT_SELECT_DELAY ) {
+                epicsThreadSleep ( timeout );
+            }
         }
-    }
-    else if ( timeout >= CAC_SIGNIFICANT_SELECT_DELAY ) {
-        epicsThreadSleep ( timeout );
-    }
 
-    this->disableCallbackPreemption ();
+        this->disableCallbackPreemption ();
+    }
 
     return ECA_TIMEOUT;
 }
@@ -760,56 +787,44 @@ bool cac::setupUDP ()
     return true;
 }
 
+// lock must already be applied
 void cac::enableCallbackPreemption ()
 {
-    unsigned copy;
-    {
-        epicsAutoMutex autoMutex ( this->mutex );
-        assert ( this->recvProcessEnableRefCount < UINT_MAX );
-        copy = this->recvProcessEnableRefCount;
-        this->recvProcessEnableRefCount++;
-    }
-    if ( copy == 0u ) {
+    assert ( this->recvProcessEnableRefCount < UINT_MAX );
+    this->recvProcessEnableRefCount++;
+    if ( this->recvProcessEnableRefCount == 1u ) {
         this->recvProcessActivityEvent.signal ();
     }
 }
 
+// lock must already be applied
 void cac::disableCallbackPreemption ()
 {
-    bool wakeupNeeded;
-
-    {
-        epicsAutoMutex autoMutex ( this->mutex );
-
+    if ( ! this->recvProcessInProgress ) {
+        assert ( this->recvProcessEnableRefCount != 0u );
+        this->recvProcessEnableRefCount--;
+        return;
+    }
+    else {
+        this->recvProcessCompletionNBlockers++;
+    }
+    
+    while ( true ) {
+        {
+            epicsAutoMutexRelease autoMutexRelease ( this->mutex );
+            this->recvProcessCompletion.wait ();
+        }
+        
         if ( ! this->recvProcessInProgress ) {
-            assert ( this->recvProcessEnableRefCount != 0u );
+            assert ( this->recvProcessEnableRefCount > 0u );
             this->recvProcessEnableRefCount--;
+            assert ( this->recvProcessCompletionNBlockers > 0u );
+            this->recvProcessCompletionNBlockers--;
+            if ( this->recvProcessCompletionNBlockers > 0u ) {
+                this->recvProcessCompletion.signal ();
+            }
             return;
         }
-        else {
-            this->recvProcessCompletionNBlockers++;
-        }
-    }
-
-    while ( true ) {
-        this->recvProcessCompletion.wait ();
-
-        {
-            epicsAutoMutex autoMutex ( this->mutex );
-
-            if ( ! this->recvProcessInProgress ) {
-                assert ( this->recvProcessEnableRefCount > 0u );
-                this->recvProcessEnableRefCount--;
-                assert ( this->recvProcessCompletionNBlockers > 0u );
-                this->recvProcessCompletionNBlockers--;
-                wakeupNeeded = this->recvProcessCompletionNBlockers > 0u;
-                break;
-            }
-        }
-    }
-
-    if ( wakeupNeeded ) {
-        this->recvProcessCompletion.signal ();
     }
 }
 
@@ -957,9 +972,14 @@ void cac::flushIfRequired ( nciu &chan )
                 blockPermit = false;
             }
         }
-        this->flushRequest ();
+        this->flushRequestPrivate ();
         if ( blockPermit ) {
+            // enable / disable of call back preemption must occur here
+            // because the tcpiiu might disconnect while waiting and its
+            // pointer to this cac might become invalid
+            this->enableCallbackPreemption ();
             chan.getPIIU()->blockUntilSendBacklogIsReasonable ( this->mutex );
+            this->disableCallbackPreemption ();
         }
     }
     else {

@@ -431,7 +431,7 @@ void resTable<T,ID>::verify () const
     if ( this->pTable ) {
         assert ( this->nextSplitIndex <= this->hashIxMask + 1 );
         assert ( this->hashIxMask );
-        assert ( ( this->hashIxMask == this->hashIxSplitMask ) >> 1 );
+        assert ( this->hashIxMask == ( this->hashIxSplitMask >> 1 ) );
         assert ( this->hashIxSplitMask );
         assert ( this->nBitsHashIxSplitMask );
         assert ( resTableBitMask ( this->nBitsHashIxSplitMask ) 

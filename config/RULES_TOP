@@ -76,3 +76,21 @@ uninstall.%::
 	@rm -rf ./bin/$* ./lib/$* dbd include man
 	@rm -rf  rec.bak rec
 
+
+DIRNAME=$(notdir $(shell pwd))
+
+tar:
+	@echo "TOP: Creating $(DIRNAME).Tar file..."
+	@ls Makefile* | xargs tar vcf ${DIRNAME}.Tar
+	@if [ -f .current_rel_hist ]; then \
+		ls .current_rel_hist | xargs tar vrf ${DIRNAME}.Tar ; \
+	fi
+	@if [ -f EPICS_BASE ]; then \
+		ls EPICS_BASE | xargs tar vrf ${DIRNAME}.Tar ; \
+	fi
+	@for DIR in ${DIRS}; do    \
+		find $${DIR} -name CVS -prune -o ! -type d -print \
+		| grep -v "/O\..*$$" | xargs tar vrf ${DIRNAME}.Tar; \
+	done
+
+

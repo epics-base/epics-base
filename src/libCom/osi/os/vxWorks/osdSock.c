@@ -82,11 +82,14 @@ epicsShareFunc int epicsShareAPI hostToIPAddr
 
 	addr = hostGetByName ((char *)pHostName);
 	if (addr==ERROR) {
-		/*
-		 * return indicating an error
-		 */
-		return -1;
-	}
+        addr = inet_addr ((char *)pHostName);
+        if (addr==ERROR) {
+            /*
+             * return indicating an error
+             */
+            return -1;
+        }
+    }
 
 	pIPA->s_addr = (unsigned long) addr;
 

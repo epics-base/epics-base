@@ -42,12 +42,12 @@
 //
 // ANSI C
 //
-#include <assert.h>
 #include <errno.h>
 #include <string.h>
 
 #define instantiateRecourceLib
 #define epicsExportSharedSymbols
+#include <epicsAssert.h>
 #include "osiTimer.h"
 #include "osiSleep.h"
 #include "tsMinMax.h"
@@ -88,9 +88,11 @@ const unsigned fdRegId::maxIndexBitWidth = sizeof(SOCKET)*CHAR_BIT;
 epicsShareFunc fdManager::fdManager() :
 	fdTbl (1<<hashTableIndexBits)
 {
-	size_t	i;
+	size_t i;
+    int status;
 
-	assert (bsdSockAttach());
+    status = bsdSockAttach();
+	assert (status);
 
 	for (i=0u; i<sizeof(this->fdSets)/sizeof(this->fdSets[0u]); i++) {
 		FD_ZERO(&this->fdSets[i]);

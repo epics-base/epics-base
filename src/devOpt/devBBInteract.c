@@ -1,5 +1,5 @@
 /* devBBInteract.c */
-/* share/src/devOpt   $Id$
+/* share/src/devOpt $Id$
  *
  *      Author: Ned D. Arnold
  *      Date:   06/19/91
@@ -45,7 +45,6 @@
 #include        <types.h>
 #include        <stdioLib.h>
 #include        <strLib.h>
-#include        <semLib.h>
 #include        <lstLib.h>
 #include        <rngLib.h>
 #include        <taskLib.h>
@@ -55,53 +54,34 @@
 #include        <dbDefs.h>
 #include        <dbAccess.h>
 #include        <devSup.h>
+#include        <drvSup.h>
 #include        <link.h>
 #include        <module_types.h>
 #include        <dbCommon.h>
+#include	<fast_lock.h>
 
+#include	<drvBitBusInterface.h>
 
-#define BBREAD        1
-#define BBWRITE       2
-#define BBCMD         3
+extern struct {
+  long number;
+  DRVSUPFUN	report;
+  DRVSUPFUN	init;
+  DRVSUPFUN	qReq;
+} drvBitBus;
 
-#define         MAX_MSG_LENGTH  80
-
-int	bbWork();
-
-struct bbIntCmd {
-  caddr_t	list1;
-  caddr_t	list2;
-  int	(*bbWork)();		/* pointer to work function */
-  int	prio;			/* pri for the callback for work finish funct */
-  int	link;			/* link ID number */
-
-  struct bitBusMsg *txMsg;
-  struct bitBusMsg *rxMsg;
-  int           rxMaxLen;
-  int           status;
-  unsigned char rxCmd;
-  int           wdAge;
-  int           ageLimit;
-
+struct	cmdPvt {
   int		busy;
   long int	count;
 };
 
-static struct bbIntCmd bbIntCmds[] =
-{
-  {0, 0, bbWork, 0, 0, NULL, NULL, 0, 0, 0, 0, 2},
-  {0, 0, bbWork, 0, 0, NULL, NULL, 0, 0, 0, 0, 2},
-  {0, 0, bbWork, 0, 0, NULL, NULL, 0, 0, 0, 0, 2},
-  {0, 0, bbWork, 0, 0, NULL, NULL, 0, 0, 0, 0, 2},
-  {0, 0, bbWork, 0, 0, NULL, NULL, 0, 0, 0, 0, 2},
-  {0, 0, bbWork, 0, 0, NULL, NULL, 0, 0, 0, 0, 2}
-};
-#define         LIST_SIZE	sizeof(bbIntCmds)/sizeof(struct bbIntCmd)
+#define LIST_SIZE	10
+
+static struct dpvtBitBusHead	adpvt[LIST_SIZE];
 
 /* declare other required variables used by more than one routine */
 
-int		biDebug = 0;
-int		replyIsBack;
+extern int bbDebug;
+static int	replyIsBack;
 
 int	sendMsg();
 int	bbWork();
@@ -113,7 +93,7 @@ int	showBbMsg();
 int	timingStudy();
 
 static int firstTime = 1;
-static SEM_ID	msgReply;
+static FAST_LOCK msgReply;
 
 int
 BI()
@@ -124,8 +104,25 @@ BI()
   if(firstTime)
   {
     firstTime = 0;
-    msgReply = semCreate();
-/* BUG -- malloc all the message buffers in here too! */
+    FASTLOCKINIT(&msgReply);
+    FASTUNLOCK(&msgReply);
+    FASTLOCK(&msgReply);	/* Make sure is locked at the begining */
+    
+    for (cnt = 0; cnt < LIST_SIZE; cnt++)
+    {
+      adpvt[cnt].finishProc = bbWork;
+      adpvt[cnt].priority = 0;
+
+      adpvt[cnt].next = NULL;
+      adpvt[cnt].prev = NULL;
+      adpvt[cnt].txMsg.data = (unsigned char *)malloc(BB_MAX_DAT_LEN);
+      adpvt[cnt].txMsg.length = 7;
+      adpvt[cnt].txMsg.route = 0x40;
+      adpvt[cnt].rxMsg.data = (unsigned char *)malloc(BB_MAX_DAT_LEN);
+      adpvt[cnt].rxMsg.length = 7;
+      adpvt[cnt].syncLock = NULL;
+      adpvt[cnt].rxMaxLen = BB_MAX_MSG_LENGTH;
+    }
   }
 
   ans = 0;                /* set loop not to exit */
@@ -159,23 +156,28 @@ BI()
 
     case 't':
     case 'T':       /* Timing analysis */
-      timingStudy();
+      /*timingStudy();*/
       break;
 
     case 'd':
     case 'D':       /* Display message contents */
       for (cnt = 1; cnt < LIST_SIZE; cnt++) /* for each message */
-        showBbMsg(cnt);
-        break;
+      {
+	printf("message %d Transmit buffer:\n", cnt);
+        showBbMsg(&(adpvt[cnt].txMsg));
+	printf("message %d Receive buffer:\n", cnt);
+	showBbMsg(&(adpvt[cnt].rxMsg));
+      }
+      break;
 
       case 'q':
       case 'Q':       /* quit */
         break;
 
-      case 'r':		/* turn off ibDebug */
+      case 'r':		/* turn off bbDebug */
         bbDebug = 0;
         break;
-      case 'R':		/* turn on ibDebug */
+      case 'R':		/* turn on bbDebug */
         bbDebug = 1;
         break;
     }               /* end case */
@@ -183,6 +185,7 @@ BI()
   return(0);
 }                       /* end of main */
 
+#ifdef DONT_DO_THIS
 static int
 timingStudy()
 {
@@ -240,7 +243,7 @@ timingStudy()
         {
 	  pCmd[i]->count++;
 	  pCmd[i]->busy = 1;	/* mark the xact as busy */
-          qBbReq(BB_IO, pCmd[i]->link, 0, pCmd[1]->device, pCmd[i], 2);
+          (*(drvBitBus.qReq))(pCmd[i]->link, &(pCmd[i]), BB_Q_HIGH);
 	  reps--;
 	  if (reps%10000 == 0)
 	  {
@@ -261,7 +264,7 @@ timingStudy()
       else
 	i = LIST_SIZE;		/* force an exit from the loop */
     }
-    semTake(msgReply);
+    FASTLOCK(&msgReply);
   }
 
   endTime = tickGet();
@@ -282,6 +285,7 @@ timingStudy()
   }
   return(OK);
 }
+#endif
 
 /* sendMsg() ***************************************************
  */
@@ -289,91 +293,33 @@ timingStudy()
 static int
 sendMsg()
 {
-  struct bbIntCmd *pCmd;
-  int             inInt;          /* input integer from operator */
   int             msgNum;         /* index to array of messages */
-  int     ticks;  /* # of ticks since message was sent */
-  int     maxTicks = 480; /* # of ticks to wait for reply (8 seconds) */
+
 
   printf("\nEnter Message # to Send (1 thru 5) > ");
-  if (!getInt(&inInt))
+  if (!getInt(&msgNum))
     return;             /* if no entry, return to main menu */
-  if((inInt >= LIST_SIZE) || (inInt < 0))
+  if((msgNum >= LIST_SIZE) || (msgNum < 0))
     return;
 
-  msgNum = inInt;
-  pCmd = &bbIntCmds[msgNum];    /* assign pointer to desired entry */
+  adpvt[msgNum].ageLimit = 10;	/* need to reset each time */
+  (*(drvBitBus.qReq))(&(adpvt[msgNum]), BB_Q_HIGH); /* queue the msg */
 
-  replyIsBack = FALSE;
-  ticks = 0;
+  FASTLOCK(&msgReply);	/* wait for response to return */
 
-  qBBReq(BB_IO, pCmd->link, 0, pCmd->device, pCmd, 2); /* queue the msg */
-
-  while (!replyIsBack && (ticks < maxTicks))      /* wait for reply msg */
-  {
-    taskDelay(1);
-    ticks++;
-  }
-
-  if (replyIsBack)
-  {
-    showBbMsg(msgNum);
-  }
-  else
-    printf("No Reply Received ...\n");
-
+  printf("response message:\n");
+  showBbMsg(&(adpvt[msgNum].rxMsg));
 }
 
 static int
-bbWork(pCmd)
-struct bbIntCmd *pCmd;
+bbWork(pdpvt)
+struct dpvtBitBusHead *pdpvt;
 {
-char    msgBuf[MAX_MSG_LENGTH + 1];
-int     status;
+  if (bbDebug)
+    printf("BI's bbWork():entered\n");
 
-  if (BIDebug || ibDebug)
-    logMsg("BI's bbWork() was called for command >%s<\n", pCmd->cmd);
-
-  switch (pCmd->type) {
-    case 'w':
-    case 'W':         /* write the message */
-      status = writeBb(BB_IO, pCmd->link, 0, pCmd->device, pCmd->cmd, strlen(pCmd->cmd));
-      if (status == ERROR)
-	strcpy(pCmd->resp, "BB TIMEOUT (while talking)");
-      else
-        pCmd->resp[0] = '\0';
-      break;
-    case 'r':
-    case 'R':               /* write the command string */
-      status = writeBb(BB_IO, pCmd->link, 0, pCmd->device, pCmd->cmd, strlen(pCmd->cmd));
-      if (status == ERROR)
-      {
-        strcpy(pCmd->resp, "BB TIMEOUT (while talking)");
-        break;
-      }
-      /* read the instrument  */
-      pCmd->resp[0] = 0;          /* clear response string */
-      status = readBb(BB_IO, pCmd->link, 0, pCmd->device, pCmd->resp, MAX_MSG_LENGTH);
-
-      if (status == ERROR)
-      {
-        strcat(pCmd->resp, "BB TIMEOUT (while listening)");
-        break;
-      }
-      else if (status > (MAX_MSG_LENGTH - 1)) /* check length of resp */
-      {
-        printf("BB Response length equaled allocated space !!!\n");
-        pCmd->resp[(MAX_MSG_LENGTH)-1] = '\0';    /* place \0 at end */
-      }
-      else
-      {
-        pCmd->resp[status] = '\0'; /* terminate response with \0 */
-      }
-      break;
-  }
-  pCmd->busy = 0;
   replyIsBack = TRUE;
-  semGive(msgReply);
+  FASTUNLOCK(&msgReply);
   return(0);
 }
 
@@ -389,11 +335,10 @@ int     status;
 static int
 configMsg()
 {
-  struct bbIntCmd *pCmd;
-  int             msgNum;         /* index to array of messages */
-  int             inInt;          /* input integer from operator */
-  unsigned char   inChar;         /* input char from operator  */
-  char            inString[MAX_MSG_LENGTH]; /* input string from operator */
+  int	msgNum;         /* index to array of messages */
+  int	inInt;
+  int	cnt;	
+  char	str[100];
 
   printf("\nEnter Message # to Configure (1 thru 5) > ");
   if (!getInt(&inInt))
@@ -402,36 +347,55 @@ configMsg()
     return;
 
   msgNum = inInt;
-  pCmd = &bbIntCmds[msgNum];    /* assign pointer to desired entry */
 
-  printf("\n\n Configuring Send Message # %1.1d  .... \n", msgNum);
+  printf("\n\n Configuring Send Message # %d at 0x%08.8X \n", msgNum, &(adpvt[msgNum].txMsg));
 
 /* Prompt the Operator with the current value of each parameter If
  * only a <CR> is typed, keep current value, else replace value with
  * entered value
  */
 
-  printf("\nenter Enter BB Link # [%2.2d] > ", (int) pCmd->link);
-  if (getInt(&inInt) == 1)
-    pCmd->link = inInt;
+  adpvt[msgNum].txMsg.link = 0;
 
-  printf("\nenter BB Node # [%2.2d] > ", pCmd->device);
-  if (getInt(&inInt) == 1)
+  printf("Enter BB Link (hex) [%02.2X]: ", (int) adpvt[msgNum].link);
+  gets(str);
+  if (sscanf(str, "%x", &inInt) == 1)
+    adpvt[msgNum].link = inInt;
+
+  printf("Enter route   (hex) [%02.2X]: ", adpvt[msgNum].txMsg.route);
+  gets(str);
+  if (sscanf(str, "%x", &inInt) == 1)
+    adpvt[msgNum].txMsg.route = inInt;
+
+  printf("Enter Node    (hex) [%02.2X]: ", adpvt[msgNum].txMsg.node);
+  gets(str);
+  if (sscanf(str, "%x", &inInt) == 1)
+    adpvt[msgNum].txMsg.node = inInt;
+
+  printf("Enter tasks   (hex) [%02.2X]: ", adpvt[msgNum].txMsg.tasks);
+  gets(str);
+  if (sscanf(str, "%x", &inInt) == 1)
+    adpvt[msgNum].txMsg.tasks = inInt;
+
+  printf("Enter command (hex) [%02.2X]: ", adpvt[msgNum].txMsg.cmd);
+  gets(str);
+  if (sscanf(str, "%x", &inInt) == 1)
+    adpvt[msgNum].txMsg.cmd = inInt;
+
+  adpvt[msgNum].txMsg.length = 7;
+  printf("Enter data 1 byte per line. Enter a dot to terminate list (hex)\n");
+  for (cnt=0; cnt<BB_MAX_DAT_LEN; cnt++)
   {
-    pCmd->device = inInt;
+    printf("[%02.2X]: ", adpvt[msgNum].txMsg.data[cnt]);
+    gets(str);
+    if (str[0] == '.')
+      break;
+    if (sscanf(str, "%x", &inInt) == 1)
+      adpvt[msgNum].txMsg.data[cnt] = inInt;
+    adpvt[msgNum].txMsg.length++;
   }
-
-  printf("\nenter command type R, W, C [%c] > ", pCmd->type);
-  if (getChar(&inChar) == 1)
-    pCmd->type = inChar;
-
-  printf("\nenter string to send (no quotes) [%.80s] > ", pCmd->cmd);
-  if (getString(inString) == 1)
-    strcpy(pCmd->cmd, inString);
-
-  pCmd->resp[0]= 0;       /* clear response string */
-  
-  showBbMsg(msgNum);
+  printf("Transmit message #%d for BitBus link %d:\n", msgNum, adpvt[msgNum].link);
+  showBbMsg(&(adpvt[msgNum].txMsg));
 }
 
 /*
@@ -534,25 +498,22 @@ char    *pString;
 }
 
 /*
- * showBbMsg(msgNum) ***********************************************
- *
- *
  * Print the bb message contents onto the screen.
  * msgNum selects the message to be displayed
- *
  */
 
 static int
-showBbMsg(msgNum)
-int msgNum;
-
+showBbMsg(msg)
+struct bitBusMsg *msg;
 {
-  struct bbIntCmd *pCmd = &bbIntCmds[msgNum];
+  int	i;
 
-  printf("\nMessage #%1.1d : ", msgNum);
-  printf("Link=%2.2d Adrs=%2.2d Type=%c\n",
-        (int)pCmd->link, pCmd->device, pCmd->type);
-  printf("             Command String  : %.40s\n", pCmd->cmd);
-  printf("             Response String : %.40s\n", pCmd->resp);
+  printf("    link=%04.4X length=%02.2X route=%02.2X node=%02.2X tasks=%02.2X cmd=%02.2X\n",
+        msg->link, msg->length, msg->route, msg->node, msg->tasks, msg->cmd);
+  printf("    data :");
+  for (i = 0; i < msg->length - 7; i++)
+  {
+    printf(" %02.2X", msg->data[i]);
+  }
+  putchar('\n');
 }
-

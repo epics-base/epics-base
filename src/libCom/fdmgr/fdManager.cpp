@@ -122,9 +122,7 @@ epicsShareFunc fdManager::~fdManager()
         pReg->state = fdReg::limbo;
         pReg->destroy();
     }
-    if ( this->pTimerQueue ) {
-        delete this->pTimerQueue;
-    }
+    delete this->pTimerQueue;
     osiSockRelease();
 }
 

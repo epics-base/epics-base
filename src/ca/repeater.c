@@ -91,12 +91,12 @@ static char *sccsId = "$Id$\t$Date$";
  *	per machine so we dont care about reentrancy
  */
 struct one_client{
-	NODE			node;
+	DLLNODE			node;
   	struct sockaddr_in	from;
 };
 
 static
-LIST	client_list;
+DLLLIST	client_list;
 
 static
 char	buf[MAX_UDP]; 
@@ -270,7 +270,7 @@ ca_repeater()
 					malloc(sizeof *pclient);
 				if(pclient){
 					pclient->from = from;
-					dllAdd(&client_list, pclient);
+					dllAdd(&client_list, (DLLNODE *)pclient);
 #ifdef DEBUG
 					ca_printf("Added %x %d\n", from.sin_port, size);
 #endif
@@ -352,7 +352,7 @@ struct one_client		*pclient;
 	socket_close(sock);
 
 	if(!present){
-		dllDelete(&client_list, pclient);
+		dllDelete(&client_list, (DLLNODE *)pclient);
 		free(pclient);
 #ifdef DEBUG
 		ca_printf("Deleted\n");

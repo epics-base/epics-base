@@ -200,8 +200,8 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 				UNLOCKEVENTS;
 			}
 			LOCK;
-			dllDelete(&pend_read_list, monix);
-			dllAdd(&free_event_list, monix);
+			dllDelete(&pend_read_list, (DLLNODE *)monix);
+			dllAdd(&free_event_list, (DLLNODE *)monix);
 			UNLOCK;
 
 			piiu->outstanding_ack_count--;
@@ -225,8 +225,8 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 			 */
 			if (!t_postsize) {
 				LOCK;
-				dllDelete(&monix->chan->eventq, monix);
-				dllAdd(&free_event_list, monix);
+				dllDelete(&monix->chan->eventq, (DLLNODE *)monix);
+				dllAdd(&free_event_list, (DLLNODE *)monix);
 				UNLOCK;
 
 				piiu->outstanding_ack_count--;
@@ -438,8 +438,8 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 			struct ioc_in_use *piiu = &iiu[chix->iocix];
 
 			LOCK;
-			dllDelete(&piiu->chidlist, chix);
-			dllAdd(&iiu[BROADCAST_IIU].chidlist, chix);
+			dllDelete(&piiu->chidlist, (DLLNODE *)chix);
+			dllAdd(&iiu[BROADCAST_IIU].chidlist, (DLLNODE *)chix);
 			chix->iocix = BROADCAST_IIU;
 			if (!piiu->chidlist.count)
 				close_ioc(piiu);
@@ -471,11 +471,11 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 			     monix;
 			     monix = (evid) monix->node.next)
 				if (monix->chan == chix) {
-					dllDelete(&pend_read_list, monix);
-					dllAdd(&free_event_list, monix);
+					dllDelete(&pend_read_list, (DLLNODE *)monix);
+					dllAdd(&free_event_list, (DLLNODE *)monix);
 				}
 			dllConcat(&free_event_list, &chix->eventq);
-			dllDelete(&piiu->chidlist, chix);
+			dllDelete(&piiu->chidlist, (DLLNODE *)chix);
 			free(chix);
 			piiu->outstanding_ack_count--;
 			if (!piiu->chidlist.count)
@@ -625,9 +625,9 @@ struct in_addr			*pnet_addr;
 	  	if(chan->iocix != BROADCAST_IIU)
 	   		ca_signal(ECA_NEWADDR, (char *)(chan+1));
 		chpiiu = &iiu[chan->iocix];
-          	dllDelete(&chpiiu->chidlist, chan);
+          	dllDelete(&chpiiu->chidlist, (DLLNODE *)chan);
           	chan->iocix = newiocix;
-          	dllAdd(&iiu[newiocix].chidlist, chan);
+          	dllAdd(&iiu[newiocix].chidlist, (DLLNODE *)chan);
         }
 
 	/*
@@ -742,7 +742,7 @@ client_channel_exists(chan)
                 /*
                  * dllFind returns the node number or ERROR
                  */
-                status = dllFind(&piiu->chidlist, chan);
+                status = dllFind(&piiu->chidlist, (DLLNODE *)chan);
                 if (status != ERROR) {
                         return TRUE;
                 }

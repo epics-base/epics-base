@@ -13,6 +13,9 @@
 #         install because the release.% syntax is illegal.
 #
 # $Log$
+# Revision 1.19  1994/10/31  21:47:02  jba
+# Removed depends dependancy in release and built_release rules
+#
 # Revision 1.18  1994/10/13  19:44:34  mda
 # Introduce temporary symbol (ARCH_TYPE=$$ARCH) and use in later targets/rules
 # to avoid problem with $* symbol resolution in some versions of gnumake.
@@ -69,7 +72,7 @@ depends:
 			${MAKE} ${MFLAGS} $@.$$ARCH;			\
 		done)
 
-release: install 
+release:
 	@echo TOP: Creating Release...
 	@tools/MakeRelease
 

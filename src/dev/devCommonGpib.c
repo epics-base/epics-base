@@ -2,6 +2,8 @@
 /* base/src/dev $Id$ */
 
 /*
+ * $Log$
+ *
  *      Author: 		John Winans
  *      Origional Author:	Ned D. Arnold
  *      Date:   		11-20-91

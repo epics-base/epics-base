@@ -29,6 +29,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.19  1995/08/22  00:27:58  jhill
+ * added cvs style mod log
+ *
  *
  */
 
@@ -84,40 +87,6 @@ void cac_gettimeval(struct timeval  *pt)
 	sec = current/rate;
         pt->tv_sec = sec + offset;
         pt->tv_usec = ((current-sec*rate)*USEC_PER_SEC)/rate;
-}
-
-
-/*
- *      CAC_MUX_IO()
- *
- *      Asynch notification of send unblocked for vxWorks 
- *      1) Wait no longer than timeout
- *      2) Return early if nothing outstanding
- *
- *
- */
-void cac_mux_io(struct timeval  *ptimeout)
-{
-        int                     count;
-        struct timeval          timeout;
-
-#if NOASYNCRECV
-	cac_clean_iiu_list();
-#endif
-        timeout = *ptimeout;
-	do{
-		count = cac_select_io(
-				&timeout, 
-				CA_DO_SENDS | CA_DO_RECVS);
-		timeout.tv_usec = 0;
-		timeout.tv_sec = 0;
-	}
-	while(count>0);
-
-#if NOASYNCRECV 
-	ca_process_input_queue();
-	manage_conn(TRUE);
-#endif
 }
 
 
@@ -878,12 +847,9 @@ void cac_recv_task(int  tid)
 #else
         	cac_clean_iiu_list();
 
-                timeout.tv_usec = 50000;
+                timeout.tv_usec = 10000;
                 timeout.tv_sec = 0;
-		count = cac_select_io(
-				&timeout, 
-				CA_DO_SENDS | CA_DO_RECVS);
-
+		count = cac_select_io(&timeout, CA_DO_RECVS);
 		ca_process_input_queue();
         	manage_conn(TRUE);
 #endif

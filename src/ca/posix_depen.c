@@ -29,6 +29,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.15  1995/08/22  00:22:07  jhill
+ * Dont recompute connection timers if the time stamp hasnt changed
+ *
  *
  */
 
@@ -52,41 +55,6 @@ void cac_gettimeval(struct timeval  *pt)
 	 */
         status = gettimeofday(pt, &tz);
 	assert(status == 0);
-}
-
-
-/*
- *      CAC_MUX_IO()
- *
- *      Asynch notification of incomming messages under UNIX
- *      1) Wait no longer than timeout
- *      2) Return early if nothing outstanding
- *
- *
- */
-void cac_mux_io(struct timeval  *ptimeout)
-{
-        int                     count;
-        struct timeval          timeout;
-
-        cac_clean_iiu_list();
-
-	/*
-	 * manage search timers and detect disconnects
-	 */
-	manage_conn(TRUE);
-
-        timeout = *ptimeout;
-        do{
-                count = cac_select_io(
-                                &timeout,
-                                CA_DO_RECVS | CA_DO_SENDS);
-
-                ca_process_input_queue();
-                timeout.tv_sec = 0;
-                timeout.tv_usec = 0;
-        }
-        while(count>0);
 }
 
 

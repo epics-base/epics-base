@@ -118,6 +118,7 @@
 	}
 	field(ACKT,DBF_MENU) {
 		prompt("Alarm Ack Transient")
+		promptgroup(GUI_ALARMS)
 		special(SPC_NOMOD)
 		interest(2)
 		menu(menuYesNo)

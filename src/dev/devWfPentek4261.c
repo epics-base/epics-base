@@ -195,6 +195,7 @@ struct card {
 	int word_clock;
 	unsigned long clock_freq;
 	int soc;
+	IOSCANPVT ioscanpvt;
 };
 typedef struct card CARD;
 
@@ -231,7 +232,6 @@ struct pvt_area {
 typedef struct pvt_area PVT_AREA;
 
 static long dev_report(int level);
-static long dev_init(int after);
 static long dev_init_rec(struct waveformRecord* pr);
 static long dev_ioint_info(int cmd,struct waveformRecord* pr,IOSCANPVT* iopvt);
 static long dev_read(struct waveformRecord* pr);
@@ -256,9 +256,9 @@ typedef struct {
 } ADC_DSET;
 
 ADC_DSET devWfPentek4261=
-	{6,dev_report,dev_init,dev_init_rec,dev_ioint_info,dev_read,NULL};
+	{6,dev_report,NULL,dev_init_rec,dev_ioint_info,dev_read,NULL};
 
-static IOSCANPVT ioscanpvt;
+/* this is a bug! there should be one per card! */
 static CARD** cards=0;
 
 static void callback(CALLBACK* cback)
@@ -309,14 +309,6 @@ static long dev_report(int level)
 		}
 	}
 	return 0;
-}
-
-static long dev_init(int after)
-{
-	if(after) return(0);
-	scanIoInit(&ioscanpvt);
-
-    return 0;
 }
 
 static long dev_init_rec(struct waveformRecord* pr)
@@ -524,7 +516,7 @@ static long dev_ioint_info(int cmd,struct waveformRecord* pr,IOSCANPVT* iopvt)
 	else /* CMD_DELETED */
 		buffer_reset(pvt); /* ensure that we are in a good state */
 
-	*iopvt=ioscanpvt;
+	*iopvt=(cards[pvt->card])->ioscanpvt;
 	return 0;
 }
 
@@ -711,7 +703,7 @@ static void irq_func(void* v)
 	pvt->adc_regs->trigger=trig|0x02; /* force reset run FF */
 
 	if(pr->scan==SCAN_IO_EVENT)
-		scanIoRequest(ioscanpvt); /* scan EPICS record */
+		scanIoRequest((cards[pvt->card])->ioscanpvt); /* scan EPICS records */
 	else
 		callbackRequest(cb);
 }
@@ -754,5 +746,6 @@ void ConfigurePentekADC( int card,
 		/* card not really present */
 		cards[card]->in_use=1;
 	}
+	scanIoInit(&(cards[card]->ioscanpvt));
 }
 

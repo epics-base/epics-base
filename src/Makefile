@@ -15,6 +15,7 @@ DIRS += libCom
 DIRS += libCom/test
 DIRS += dbStatic
 DIRS += db
+DIRS += db/test
 DIRS += ca
 DIRS += registry
 DIRS += bpt

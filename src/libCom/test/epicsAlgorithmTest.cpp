@@ -11,6 +11,7 @@
 //	Authors: Jeff Hill & Andrew Johnson
 
 #include <assert.h>
+#include <stdio.h>
 
 #include "epicsAlgorithm.h"
 
@@ -51,6 +52,7 @@ int MAIN(int /*argc*/, char* /*argv[]*/)
     assert(i1==4);
     assert(i2==3);
     
+    puts("epicsMin, epicsMax and epicsSwap tested OK.");
     return 0;
 }
 

@@ -626,7 +626,8 @@ void dbCaTask()
     short	link_action;
     int		status;
 
-    SEVCHK(ca_context_create(enablePreemption),"dbCaTask calling ca_task_initialize");
+    SEVCHK(ca_context_create(enablePreemption),
+        "dbCaTask calling ca_context_create");
     SEVCHK(ca_add_exception_event(exceptionCallback,NULL),
 	"ca_add_exception_event");
     /*Dont do anything until iocInit initializes database*/

@@ -82,7 +82,7 @@ public:
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
 private:
-    osiEvent block;
+    epicsEvent block;
     dbPutNotifyIO *pPN;
     dbChannelIO &chan;
 
@@ -150,6 +150,6 @@ private:
     dbEventCtx ctx;
     char *pEventCallbackCache;
     unsigned long eventCallbackCacheSize;
-    osiMutex mutex;
+    epicsMutex mutex;
 };
 

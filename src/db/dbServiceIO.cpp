@@ -17,7 +17,7 @@
 
 #include "limits.h"
 
-#include "osiMutex.h"
+#include "epicsMutex.h"
 #include "tsFreeList.h"
 
 #include "cadef.h"

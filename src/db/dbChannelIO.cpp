@@ -20,7 +20,7 @@
 #include "cadef.h"
 #include "cacIO.h"
 #include "tsFreeList.h"
-#include "osiMutex.h"
+#include "epicsMutex.h"
 
 #define epicsExportSharedSymbols
 #include "db_access_routines.h"

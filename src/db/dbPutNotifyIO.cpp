@@ -19,7 +19,7 @@
 #include "limits.h"
 #include "string.h"
 
-#include "osiMutex.h"
+#include "epicsMutex.h"
 #include "tsFreeList.h"
 #include "errMdef.h"
 

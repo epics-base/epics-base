@@ -106,14 +106,12 @@ STATIC int	pollIb(struct ibLink *plink, int gpibAddr, int verbose, int time);
 STATIC int	HiDEOSGpibRead(struct ibLink *pibLink, int DevAddr, char *Buf, int BufLen, int time, int Eos);
 STATIC int	HiDEOSGpibWrite(struct ibLink *pibLink, int DevAddr, char *Buf, int BufLen, int time);
 STATIC int	HiDEOSGpibCmd(struct ibLink *pibLink, char *Buf, int BufLen);
-STATIC int	HiDEOSCheckLink(int link);
 STATIC int	HiDEOSSrqPollInhibit(int link, int gpibAddr);
 STATIC int	HiDEOSGpibIoctl(int link, int cmd, int v, void *p);
 
 STATIC int	bbGpibRead(struct ibLink *pibLink, int device, char *buffer, int length, int time);
 STATIC int	bbGpibWrite(struct ibLink *pibLink, int device, char *buffer, int length, int time);
 STATIC int	bbGpibCmd(struct ibLink *pibLink, char *buffer, int length);
-STATIC int	bbCheckLink(int link, int bug);
 STATIC int	bbSrqPollInhibit(int link, int bug, int gpibAddr);
 STATIC int	bbGpibIoctl(int link, int bug, int cmd, int v, caddr_t p);
 
@@ -435,7 +433,8 @@ STATIC long initGpib(void)
       pNiLink[i]->cmdSpins = 0;
       pNiLink[i]->maxSpins = 0;
 
-      if ((pNiLink[i]->DmaStuff = (DmaStuffStruct *)devLibA24Malloc(sizeof(DmaStuffStruct))) == NULL)
+      pNiLink[i]->DmaStuff = (DmaStuffStruct *)devLibA24Malloc(sizeof(DmaStuffStruct));
+      if (pNiLink[i]->DmaStuff == NULL)
       { /* This better never happen! */
 	logMsg("initGpib(): Can't malloc A24 memory for DMAC control structures!\n", 0, 0, 0, 0, 0, 0);
         return(ERROR);
@@ -460,6 +459,10 @@ STATIC long initGpib(void)
     {
       /* 7210 TLC setup */
   
+      /* attach the interrupt handler routines */
+      intConnect(INUM_TO_IVEC(NIGPIB_IVEC_BASE+i*2), niIrq, i);
+      intConnect(INUM_TO_IVEC(NIGPIB_IVEC_BASE+(i*2)+1), niIrqError, i);
+
       /* clear status regs by reading them */
       s = pNiLink[i]->ibregs->cptr;
       pNiLink[i]->r_isr1 = pNiLink[i]->ibregs->isr1;
@@ -498,11 +501,6 @@ STATIC long initGpib(void)
       pNiLink[i]->ibregs->ch0.mfc = STD_ADDRESS_MODE;
       pNiLink[i]->ibregs->ch1.mfc = STD_ADDRESS_MODE;
       pNiLink[i]->ibregs->ch1.bfc = STD_ADDRESS_MODE;
-
-
-      /* attach the interrupt handler routines */
-      intConnect(INUM_TO_IVEC(NIGPIB_IVEC_BASE+i*2), niIrq, i);
-      intConnect(INUM_TO_IVEC(NIGPIB_IVEC_BASE+(i*2)+1), niIrqError, i);
     }
   }
 
@@ -987,31 +985,39 @@ niPhysIo(
 
   if (pNiLink[link]->A24BounceBuffer == NULL)
   {
-    if ((pNiLink[link]->A24BounceBuffer = devLibA24Malloc(DEFAULT_BOUNCE_BUFFER_SIZE)) == NULL)
+    char *bbuf = devLibA24Malloc(DEFAULT_BOUNCE_BUFFER_SIZE);
+    if ((bbuf) == NULL)
     {
       errMessage(S_IB_A24 ,"niPhysIo ran out of A24 memory!");
       return(ERROR);
     }
+    pNiLink[link]->A24BounceBuffer = bbuf;
     pNiLink[link]->A24BounceSize = DEFAULT_BOUNCE_BUFFER_SIZE;
+    cacheFlush(DATA_CACHE, pNiLink[link]->A24BounceBuffer, pNiLink[link]->A24BounceSize);
     if(ibDebug > 5)
-      logMsg("Got a bouncer at 0x%8.8X\n", pNiLink[link]->A24BounceBuffer, 0, 0, 0, 0, 0);
+      logMsg("drvGpib(%d): A24 bounce buffer %p[%ld]\n",
+             link, pNiLink[link]->A24BounceBuffer, pNiLink[link]->A24BounceSize, 0, 0, 0);
   }
 
   if (pNiLink[link]->A24BounceSize < cnt)
   { /* Reallocate a larger bounce buffer */
+    char *bbuf = pNiLink[link]->A24BounceBuffer;
+    devLibA24Free(bbuf);	/* Lose the old one */
 
-    devLibA24Free(pNiLink[link]->A24BounceBuffer);	/* Loose the old one */
-
-    if ((pNiLink[link]->A24BounceBuffer = devLibA24Malloc(cnt)) == NULL)
+    bbuf = devLibA24Malloc(cnt);
+    if (bbuf == NULL)
     {
       errMessage(S_IB_A24 ,"niPhysIo ran out of A24 memory!");
       pNiLink[link]->A24BounceSize = 0;
       pNiLink[link]->A24BounceBuffer = NULL;
       return(ERROR);
     }
+    pNiLink[link]->A24BounceBuffer = bbuf;
     pNiLink[link]->A24BounceSize = cnt;
+    cacheFlush(DATA_CACHE, pNiLink[link]->A24BounceBuffer, pNiLink[link]->A24BounceSize);
     if(ibDebug > 5)
-      logMsg("Got a new bouncer at 0x%8.8X\n", pNiLink[link]->A24BounceBuffer, 0, 0, 0, 0, 0);
+      logMsg("drvGpib(%d): New A24 bounce buffer %p[%ld]\n",
+             link, pNiLink[link]->A24BounceBuffer, pNiLink[link]->A24BounceSize, 0, 0, 0);
   }
 
   b = pNiLink[link]->ibregs;
@@ -1781,28 +1787,6 @@ srqIntDisable(int linkType, int link, int bug)
 
 	return(ERROR);	/* Invlaid link type specified on the call */
 }
-
-/******************************************************************************
- *
- * Check the link number and bug number (if is a BBGPIB_IO link) to see if they
- * are valid.
- *
- ******************************************************************************/
-STATIC int
-checkLink(int linkType, int link, int bug)
-{
-	if (linkType == GPIB_IO)
-	{
-		if (link > NIGPIB_NUM_LINKS)
-			return(HiDEOSCheckLink(link));
-		else
-			return(niCheckLink(link));
-	}
-  if (linkType == BBGPIB_IO)
-    return(bbCheckLink(link, bug));
-
-  return(ERROR);	/* bad link type specefied */
-}
 
 /****************************************************************************
  *
@@ -2356,16 +2340,6 @@ bbGpibCmd(struct ibLink *pibLink, char *buffer, int length)
 
 /******************************************************************************/
 STATIC int
-bbCheckLink(int link, int bug)
-{
-  if (findBBLink(link, bug) != NULL)
-    return(OK);
-  else
-    return(ERROR);
-}
-
-/******************************************************************************/
-STATIC int
 bbSrqPollInhibit(int link, int bug, int gpibAddr)
 {
   logMsg("bbSrqPollInhibit called for link %d, bug %d, device %d\n", link, bug, gpibAddr, 0, 0, 0);
@@ -2718,16 +2692,6 @@ HiDEOSGpibCmd(
 {
 	HideosIbLinkStruct	*pHLink = (HideosIbLinkStruct*)pibLink;
 	return(LHideosWriteCmd(pHLink->remote_td, Buf, BufLen, 100));
-}
-
-/******************************************************************************/
-STATIC int
-HiDEOSCheckLink(int link)
-{
-	if (findHiDEOSIbLink(link) != NULL)
-		return(OK);
-	else
-		return(ERROR);
 }
 
 /******************************************************************************/

@@ -11,8 +11,7 @@
 
 #####################################################  vpath
 
-vpath %.dbd $(USR_VPATH) $(GENERIC_SRC_DIRS) $(dir $(DBD)) $(COMMON_DIR) \
- $(subst -I,,$(RELEASE_DBDFLAGS))
+vpath %.dbd $(USR_VPATH) $(GENERIC_SRC_DIRS) $(dir $(DBD)) $(COMMON_DIR)
 vpath %.db $(USR_VPATH) $(GENERIC_SRC_DIRS) $(dir $(DB)) $(COMMON_DIR)
 vpath %.vdb $(USR_VPATH) $(GENERIC_SRC_DIRS) $(dir $(DB)) $(COMMON_DIR)
 vpath %.substitutions $(USR_VPATH) $(GENERIC_SRC_DIRS) $(COMMON_DIR)
@@ -206,6 +205,13 @@ $(COMMON_DIR)/menu%.h: menu%.dbd
 $(COMMON_DIR)/bpt%.dbd: bpt%.data 
 	@$(RM) $@
 	$(MAKEBPT) $< $@
+
+$(COMMON_DIR)/%.dbd: $(COMMON_DIR)/%Include.dbd 
+	@$(RM) $@$(DEP)
+	@$(DBDDEPENDS_CMD)
+	@echo "Expanding dbd"
+	@$(RM) $@
+	$(DBEXPAND) $(DBDFLAGS) -o $@ $<
 
 $(COMMON_DIR)/%.dbd: %Include.dbd 
 	@$(RM) $@$(DEP)

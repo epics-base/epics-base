@@ -39,7 +39,6 @@ print OUT "#Do not modify this file.\n";
 print OUT "#This file is created during the build.\n";
 
 foreach $name ( @nameList ) {
-  if ( $name !~ m/\.dbd$/ ) {
 	print OUT "\n";
 	print OUT "ifneq (\$(strip \$(${name}_SRCS_\$(OS_CLASS))),)\n";
 	print OUT "${name}_SRCS+=\$(subst -nil-,,\$(${name}_SRCS_\$(OS_CLASS)))\n";
@@ -159,13 +158,6 @@ foreach $name ( @nameList ) {
 	print OUT "\$(LOADABLE_SHRLIB_PREFIX)${name}\$(LOADABLE_SHRLIB_SUFFIX):\$(${name}_DLL_DEPLIBS)\n";
 	print OUT "endif\n";
 	print OUT "\n";
-} else {
-	print OUT "ifneq (\$(\$(patsubst %.dbd,%,${name})_DBD),)\n";
-	print OUT "${name}:\$(patsubst %.dbd,\$(COMMON_DIR)\/%Include.dbd,${name})\n";
-	print OUT "\$(patsubst %.dbd,\$(COMMON_DIR)\/%Include.dbd,${name}):\$(\${patsubst %.dbd,%,${name}}_DBD)\n";
-	print OUT "endif\n";
-	print OUT "\n";
-  }
 }
 close OUT or die "Cannot close $outfile: $!";
 

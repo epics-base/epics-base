@@ -6,8 +6,7 @@
 
 #include <stdio.h>
 #include <stddef.h>
-
-
+#include <float.h>
 
 #define epicsExportSharedSymbols
 #include "epicsThread.h"
@@ -24,11 +23,25 @@ void epicsThreadCallEntryPoint ( void *pPvt )
         pThread->runable.run ();
     }
     pThread->id = 0;
+    pThread->terminated = true;
     pThread->exit.signal ();
 }
 
+void epicsThread::exitWait ()
+{
+    assert ( this->exitWait ( DBL_MAX ) );
+}
+
+bool epicsThread::exitWait ( double delay )
+{
+    if ( ! this->terminated ) {
+        this->exit.wait ( delay );
+    }
+    return this->terminated;
+}
+
 epicsThread::epicsThread (epicsThreadRunable &r, const char *name, unsigned stackSize, unsigned priority ) :
-    runable(r), cancel (false)
+    runable(r), cancel (false), terminated ( false )
 {
     this->id = epicsThreadCreate ( name, priority, stackSize,
         epicsThreadCallEntryPoint, static_cast <void *> (this) );
@@ -39,9 +52,15 @@ epicsThread::~epicsThread ()
     if ( this->id ) {
         this->cancel = true;
         this->begin.signal ();
-        while ( ! this->exit.wait ( 5.0 ) ) {
-            printf ("epicsThread::~epicsThread ():"
-                    " Warning, thread object destroyed before thread exit \n");
+        while ( ! this->exitWait ( 10.0 )  ) {
+            char nameBuf [256];
+            this->getName ( nameBuf, sizeof ( nameBuf ) );
+            fprintf ( stderr, 
+                "epicsThread::~epicsThread(): "
+                "blocking for thread \"%s\" to exit", 
+                nameBuf );
+            fprintf ( stderr, 
+                "was epicsThread object destroyed before thread exit ?\n");
         }
     }
 }

@@ -119,6 +119,8 @@ public:
         unsigned int priority=epicsThreadPriorityLow);
     virtual ~epicsThread ();
     void start();
+    void exitWait ();
+    bool exitWait ( double delay ); 
     void resume ();
     void getName (char *name, size_t size) const;
     unsigned int getPriority () const;
@@ -139,6 +141,7 @@ private:
     epicsEvent exit;
     epicsEvent begin;
     bool cancel;
+    bool terminated;
 
     epicsThread ( const epicsThread & );
     epicsThread & operator = ( const epicsThread & );

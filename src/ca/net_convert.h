@@ -75,22 +75,32 @@ epicsShareExtern CACVRTFUNC *cac_dbr_cvrt[LAST_BUFFER_TYPE+1];
 #endif
 
 #if defined(CA_FLOAT_IEEE) && !defined(CA_LITTLE_ENDIAN)
-    inline void dbr_htond ( dbr_double_t *IEEEhost, dbr_double_t *IEEEnet )
-    {
-        *IEEEnet = *IEEEhost;
-    }
-    inline void dbr_ntohd ( dbr_double_t *IEEEnet, dbr_double_t *IEEEhost )
-    {
-		*IEEEhost = *IEEEnet;
-    }
-    inline void dbr_htonf ( dbr_float_t *IEEEhost, dbr_float_t *IEEEnet )
-    {
-		*IEEEnet = *IEEEhost;
-    }
-    inline void dbr_ntohf ( dbr_float_t *IEEEnet, dbr_float_t *IEEEhost )
-    {
-		*IEEEhost = *IEEEnet;
-    }
+#   ifdef _cplusplus
+        inline void dbr_htond ( dbr_double_t *IEEEhost, dbr_double_t *IEEEnet )
+        {
+            *IEEEnet = *IEEEhost;
+        }
+        inline void dbr_ntohd ( dbr_double_t *IEEEnet, dbr_double_t *IEEEhost )
+        {
+		    *IEEEhost = *IEEEnet;
+        }
+        inline void dbr_htonf ( dbr_float_t *IEEEhost, dbr_float_t *IEEEnet )
+        {
+		    *IEEEnet = *IEEEhost;
+        }
+        inline void dbr_ntohf ( dbr_float_t *IEEEnet, dbr_float_t *IEEEhost )
+        {
+		    *IEEEhost = *IEEEnet;
+        }
+#   else
+        /*
+         * for rsrv
+         */
+        #define dbr_htond(IEEEhost, IEEEnet) (*IEEEnet = *IEEEhost)
+        #define dbr_ntohd(IEEEnet, IEEEhost) (*IEEEhost = *IEEEnet)
+        #define dbr_htonf(IEEEhost, IEEEnet) (*IEEEnet = *IEEEhost)
+        #define dbr_ntohf(IEEEnet, IEEEhost) (*IEEEhost = *IEEEnet)
+#   endif
 #else
 	epicsShareFunc void dbr_htond ( dbr_double_t *pHost, dbr_double_t *pNet );
 	epicsShareFunc void dbr_ntohd ( dbr_double_t *pNet, dbr_double_t *pHost );

@@ -105,7 +105,7 @@ inline epicsSingleton<TYPE>::~epicsSingleton ()
 }
 
 // SUN PRO generates warnings unless it sees an implementation
-#ifdef _SUNPRO_C
+#ifdef _SUNPRO_CC
     template < class TYPE >
     inline epicsSingleton<TYPE>::epicsSingleton ( const epicsSingleton & )
     {

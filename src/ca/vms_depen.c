@@ -32,6 +32,9 @@
  * 	cjm 20-Nov-95 Add code for gettimeofday
  *
  * $Log$
+ * Revision 1.24  1998/04/13 19:14:35  jhill
+ * fixed task variable problem
+ *
  * Revision 1.23  1998/02/05 22:36:01  jhill
  * added starlet.h (SLAC's request)
  *
@@ -319,33 +322,6 @@ void ca_spawn_repeater()
 			lib$signal(status);
 #		endif
         }
-}
-
-
-
-/*
- * caHostFromInetAddr()
- *
- * gethostbyaddr() not called on VMS because
- * the MULTINET socket library requires
- * user mode AST delivery in order to return from
- * gethostbyaddr(). This makes gethostbyaddr()
- * hang when it is called from AST level. 
- */
-void caHostFromInetAddr(const struct in_addr *pnet_addr, 
-		char *pBuf, unsigned size)
-{
-        char            *pString;
-
-        pString = (char *) inet_ntoa(*pnet_addr);
-
-        /*
-         * force null termination
-         */
-        strncpy(pBuf, pString, size-1);
-        pBuf[size-1] = '\0';
-
-        return;
 }
 
 

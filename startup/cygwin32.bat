@@ -54,7 +54,7 @@ REM set EPICS_CA_AUTO_CA_ADDR_LIST=YES
 
 REM    --------------- JAVA ------------------------------
 REM    Needed for java extensions
-set PATH=C:\j2sdk1.4.0\bin;%PATH%
+set PATH=C:\j2sdk1.4.1_01\bin;%PATH%
 set CLASSPATH=G:\epics\extensions\javalib
 
 REM    --------------- Xfree86 + Lesstif ----------------------

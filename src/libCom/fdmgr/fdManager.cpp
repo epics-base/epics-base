@@ -132,7 +132,6 @@ epicsShareFunc fdManager::~fdManager()
 //
 epicsShareFunc void fdManager::process (double delay)
 {
-	static const tsDLIterBD<fdReg> eol (0); // end of list
 	double minDelay;
 	fdReg *pReg;
 	struct timeval tv;
@@ -165,7 +164,7 @@ epicsShareFunc void fdManager::process (double delay)
 	}
 
     tsDLIterBD<fdReg> iter (this->regList.first());
-	while (iter!=eol) {
+	while ( iter.valid () ) {
 		FD_SET(iter->getFD(), &this->fdSets[iter->getType()]); 
 		ioPending = 1;
         ++iter;
@@ -218,7 +217,7 @@ epicsShareFunc void fdManager::process (double delay)
 	// Look for activity
 	//
 	iter=this->regList.first();
-	while (iter!=eol) {
+	while ( iter.valid () ) {
         tsDLIterBD<fdReg> tmp = iter;
 		tmp++;
 		if (FD_ISSET(iter->getFD(), &this->fdSets[iter->getType()])) {

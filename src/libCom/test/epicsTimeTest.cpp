@@ -78,7 +78,7 @@ int epicsTimeTest (void)
         epicsTime tsf = ntp;
         const double diff = fabs ( tsf - tsi );
         // the difference in the precision of the two time formats
-        static const double precisionNTP = 1.0 / ( 1.0 + UINT_MAX );
+        static const double precisionNTP = 1.0 / ( 1.0 + 0xffffffff );
         static const double precisionEPICS = 1.0 / nSecPerSec;
         assert ( diff <= precisionEPICS + precisionNTP );
     }

@@ -69,7 +69,6 @@ endif
 
 depends:: $(SRCS.c) $(SRCS.cc)
 	$(RM) DEPENDS
-	touch DEPENDS
 	$(DEPENDS_RULE)
 
 clean::

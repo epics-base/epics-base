@@ -508,7 +508,6 @@ $(INSTALL_JAVA)/%.jar: %.jar
 
 depends:: $(LIBSRCS) $(SRCS) $(COND_PROD_SRCS)
 	$(RM) DEPENDS
-	touch DEPENDS
 	$(DEPENDS_RULE)
 
 %$(EXE): %.c

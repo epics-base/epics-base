@@ -12,6 +12,10 @@ LIBOBJS = dbVarSub.o dbLoadTemplate.o dbLoadRecords.o BSlib.o PVSvx.o
 
 LIBNAME = dbSubs
 
+MAN1 = dbLoadTemplate.1 subtool.1
+MAN3 = dbLoadRecords.3 dbLoadTemplate.3
+MAN5 = templatefile.5 dbfile.5
+ 
 include $(EPICS)/config/RULES.Vx
 
 #dbLoadTemplate.o: dbLoadTemplate_lex.c dbLoadTemplate.c

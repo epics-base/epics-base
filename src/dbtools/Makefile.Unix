@@ -17,6 +17,10 @@ OBJS =  $(VAR_OBJS) BSlib.o PVSserver.o rdbapplist.o rdbls.o
 PROD = subtool dbLoadTemplate rdbls rdbapplist
 TARGETS = PVSserver
 
+MAN1 = dbLoadTemplate.1 subtool.1
+MAN3 = dbLoadRecords.3 dbLoadTemplate.3
+MAN5 = templatefile.5 dbfile.5
+
 include $(EPICS)/config/RULES.Unix
 
 dbLoadTemplate.o: dbLoadTemplate_lex.c

@@ -104,14 +104,6 @@ static void showCallFunc(const ioccrfArgBuf *args)
     }
 }
 
-/* epicsThreadInit */
-static const ioccrfFuncDef epicsThreadInitFuncDef =
-    {"epicsThreadInit",0};
-static void epicsThreadInitCallFunc(const ioccrfArgBuf *args)
-{
-    epicsThreadInit();
-}
-
 /* putenv */
 static const ioccrfArg putenvArg0 = { "environment_variable=name",ioccrfArgString};
 static const ioccrfArg * const putenvArgs[1] = {&putenvArg0};
@@ -149,7 +141,6 @@ void epicsShareAPI iocUtilRegister(void)
     ioccrfRegister(&chdirFuncDef,chdirCallFunc);
     ioccrfRegister(&pwdFuncDef,pwdCallFunc);
     ioccrfRegister(&showFuncDef,showCallFunc);
-    ioccrfRegister(&epicsThreadInitFuncDef,epicsThreadInitCallFunc);
     ioccrfRegister(&putenvFuncDef,putenvCallFunc);
     ioccrfRegister(&iocLogInitFuncDef,iocLogInitCallFunc);
 }

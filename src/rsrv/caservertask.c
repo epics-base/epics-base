@@ -232,8 +232,6 @@ LOCAL int terminate_one_client(struct client *client)
     int                     status;
     struct event_ext        *pevext;
     struct channel_in_use   *pciu;
-    ELLLIST                 tmpQueue;
-    RSRVPUTNOTIFY           *ppnb;
 
 	if (client->proto != IPPROTO_TCP) {
 		logMsg("CAS: non TCP client delete ignored\n",
@@ -259,46 +257,15 @@ LOCAL int terminate_one_client(struct client *client)
 	}
 
     /*
-     * cancel any put notify in progress 
+     * turn off extra labor callbacks from the event thread
      */
-    ellInit ( &tmpQueue );
-    while ( TRUE ) {
-        FASTLOCK(&client->addrqLock);
-        pciu = (struct channel_in_use *) ellGet(&client->addrq);
-        FASTUNLOCK(&client->addrqLock);
-        if(!pciu){
-            break;
-        }
-
-        ellAdd ( &tmpQueue, &pciu->node );
-
-        if ( pciu->pPutNotify ) {
-            if ( pciu->pPutNotify->busy ) {
-                dbNotifyCancel ( &pciu->pPutNotify->dbPutNotify );
-            }
-        }
-    }
+    status = db_add_extra_labor_event ( client->evuser, NULL, NULL );
+    assert ( status == OK );
 
     /*
-     * remove all put notify entries from the extra labor queue
+     * wait for extra labor in progress to comple
      */
-    FASTLOCK ( &client->putNotifyLock );
-    do {
-        ppnb = ( RSRVPUTNOTIFY * ) ellGet ( &client->putNotifyQue );
-    }
-    while ( ppnb );
-    FASTUNLOCK ( &client->putNotifyLock );
-
-    /*
-     * exit flow control so the event system will
-     * shutdown correctly
-     */
-    db_event_flow_ctrl_mode_off(client->evuser);
-
-    /*
-     * wait for any put notify in progress to comple
-     */
-    status = db_flush_extra_labor_event(client->evuser);
+    status = db_flush_extra_labor_event ( client->evuser );
     assert(status==OK);
 
 	/*
@@ -321,7 +288,9 @@ LOCAL int terminate_one_client(struct client *client)
 	}
 
 	while(TRUE){
-		pciu = (struct channel_in_use *) ellGet ( &tmpQueue );
+        FASTLOCK(&client->addrqLock);
+		pciu = (struct channel_in_use *) ellGet ( &client->addrq );
+        FASTUNLOCK(&client->addrqLock);
 		if(!pciu){
 			break;
 		}
@@ -343,9 +312,14 @@ LOCAL int terminate_one_client(struct client *client)
 			}
 			freeListFree(rsrvEventFreeList, pevext);
 		}
+
 		if(pciu->pPutNotify){
+            if ( pciu->pPutNotify->busy ) {
+                dbNotifyCancel ( &pciu->pPutNotify->dbPutNotify );
+            }
 			free(pciu->pPutNotify);
 		}
+
 		FASTLOCK(&clientQlock);
 		status = bucketRemoveItemUnsignedId (
 				pCaBucket, 

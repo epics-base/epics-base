@@ -15,7 +15,7 @@ ifeq ($(wildcard $(INSTALL_LOCATION_LIB)/*),)
 	@$(RMDIR) $(INSTALL_LOCATION_LIB)
 endif
 
-distClean: clean uninstall
+distclean: clean uninstall
 
 uninstall:: $(addprefix uninstall$(DIVIDER),$(BUILD_ARCHS))
 	@$(RMDIR)  rec.bak rec

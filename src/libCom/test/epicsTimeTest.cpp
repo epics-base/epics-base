@@ -12,6 +12,31 @@ int epicsTimeTest (void);
 
 epicsTime useSomeCPU;
 
+void testStringConversion()
+{
+    char buf[64];
+    epicsTime uninit;
+
+    const char * pFormat = "%a %b %d %Y %H:%M:%S.%f";
+    uninit.strftime ( buf, sizeof ( buf ), pFormat );
+    printf ("Uninitialized using \"%s\" %s\n", pFormat, buf );
+
+    epicsTime current = epicsTime::getCurrent();
+
+    pFormat = "%a %b %d %Y %H:%M:%S.%f";
+    current.strftime ( buf, sizeof ( buf ), pFormat );
+    printf ("using \"%s\" %s\n", pFormat, buf );
+
+    pFormat = "%a %b %d %Y %H:%M:%S.%4f";
+    current.strftime ( buf, sizeof ( buf ), pFormat );
+    printf ("using \"%s\" %s\n", pFormat, buf );
+
+    pFormat = "%a %b %d %Y %H:%M:%S.%05f";
+    current.strftime ( buf, sizeof ( buf ), pFormat );
+    printf ("using \"%s\" %s\n", pFormat, buf );
+
+}
+
 int epicsTimeTest (void)
 {
     unsigned i, errors, sum_errors=0, sum_errloops=0;

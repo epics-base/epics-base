@@ -1,26 +1,46 @@
 EPICS = ../../..
 include $(EPICS)/config/CONFIG
 
-T_ARCH = sun4
-
-USR_LDFLAGS =
-#USR_CFLAGS = -DACCESS_SECURITY -D_NO_PROTO $(MOTIF_CFLAGS) $(X11_CFLAGS) # -I$(SRCROOT)/ca
-USR_CFLAGS =
-
-CC = acc -Xs 
+CC = acc -Xt 
 
 SRCS = \
-	dbStaticLib.c
+	dbStaticLib.c \
+	atdb_lex.c \
+	atdb_yacc.c \
+	dbta.c \
+	atdb.c \
+	dbl.c \
+	dbls.c
 
-OBJS = \
+OBJS =
+
+LIBOBJS = \
 	dbStaticLib.o
 
-LIB = libDb.a
-LIBNAME = $(OBDIR)/libDb.a
+LIBNAME = libDb.a
 
-PROD =
+TARGET = $(OBDIR)/dbta $(OBDIR)/atdb $(OBDIR)/dbl $(OBDIR)/dbls
 
-all :: $(LIBNAME) $(PROD)
+$(OBDIR)/atdb: $(OBDIR)/atdb.o $(OBDIR)/atdb_yacc.o
+	$(LINK.c) -o $@ $? $(LDLIBS)
 
-include $(EPICS)/config/RULES
+depends: $(OBDIR)/atdb_yacc.o
 
+$(OBDIR)/atdb_yacc.o: atdb_lex.c atdb_yacc.c
+	/bin/rm -f $(OBDIR)/atdb_yacc.o
+	$(CC) $(CFLAGS) -o $@ -c atdb_yacc.c
+
+atdb_yacc.c: atdb_lex.c atdb_yacc.y
+	yacc atdb_yacc.y
+	/bin/rm -f atdb_yacc.c
+	/bin/mv y.tab.c atdb_yacc.c
+
+atdb_lex.c: atdb_lex.l
+	lex atdb_lex.l
+	/bin/rm -f atdb_lex.c
+	/bin/mv lex.yy.c atdb_lex.c
+
+clean::
+	/bin/rm -f atdb_lex.c atdb_yacc.c
+
+include $(EPICS)/config/RULES.Unix

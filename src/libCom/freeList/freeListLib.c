@@ -64,6 +64,7 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 
 #define epicsExportSharedSymbols
 #include "freeList.h"
+#include "adjustment.h"
 
 typedef struct allocMem {
     struct allocMem	*next;
@@ -84,6 +85,7 @@ epicsShareFunc void epicsShareAPI
 	freeListInitPvt(void **ppvt,int size,int nmalloc)
 {
     FREELISTPVT	*pfl;
+
     pfl = (void *)calloc((size_t)1,(size_t)sizeof(FREELISTPVT));
     if(!pfl) {
 #ifdef vxWorks
@@ -92,7 +94,7 @@ epicsShareFunc void epicsShareAPI
 	abort();
 #endif
     }
-    pfl->size = size;
+    pfl->size = adjustToWorstCaseAlignment(size);
     pfl->nmalloc = nmalloc;
     pfl->head = NULL;
     pfl->mallochead = NULL;
@@ -127,7 +129,7 @@ epicsShareFunc void * epicsShareAPI freeListMalloc(void *pvt)
 #endif
     ptemp = pfl->head;
     if(!ptemp) {
-	ptemp = (void *)malloc((pfl->nmalloc*pfl->size)+sizeof(void *));
+	ptemp = (void *)malloc(pfl->nmalloc*pfl->size);
 	pallocmem = (allocMem *)calloc(1,sizeof(allocMem));
 	if(!ptemp || !pallocmem) {
 #ifdef vxWorks

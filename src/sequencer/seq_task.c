@@ -13,7 +13,6 @@
 #include	"seq.h"
 
 /* Function declarations */
-#define	ANSI
 #ifdef	ANSI
 LOCAL	VOID ss_task_init(SPROG *, SSCB *);
 LOCAL	long get_timeout(SSCB *);
@@ -267,6 +266,7 @@ TCBX	*pTcbX;	/* ptr to TCB of task to be deleted */
 	val = taskVarGet(tid, &seq_task_ptr);
 	if (val == ERROR)
 		return 0; /* not one of our tasks */
+
 	sp_ptr = (SPROG *)val;
 	logMsg("Delete %s: sp_ptr=%d=0x%x, tid=%d\n",
 	 sp_ptr->name, sp_ptr, sp_ptr, tid);
@@ -286,7 +286,6 @@ TCBX	*pTcbX;	/* ptr to TCB of task to be deleted */
 		if ( (tid_ss > 0) && (tid != tid_ss) )
 		{
 			logMsg("   suspend ss task: tid=%d\n", tid_ss);
-			taskVarSet(tid_ss, &seq_task_ptr, ERROR);
 			taskSuspend(tid_ss);
 		}
 	}
@@ -321,9 +320,11 @@ TCBX	*pTcbX;	/* ptr to TCB of task to be deleted */
 		}
 	}
 
-	/* Delete program-wide semaphores & free the task area */
+	/* Delete program-wide semaphores */
 	semDelete(sp_ptr->caSemId);
-	semDelete(sp_ptr->logSemId);
+	/****semDelete(sp_ptr->logSemId);****/
+
+	/* Free the memory that was allocated for the task area */
 	logMsg("free sp_ptr->dyn_ptr=0x%x\n", sp_ptr->dyn_ptr);
 	taskDelay(5);
 	free(sp_ptr->dyn_ptr);

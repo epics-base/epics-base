@@ -15,7 +15,6 @@
 
 #include	"seq.h"
 
-#define	ANSI
 #ifdef	ANSI
 int	seqShow(int);
 int	seqChanShow(int);

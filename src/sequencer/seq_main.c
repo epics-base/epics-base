@@ -21,8 +21,6 @@
 
 #include	"seq.h"
 
-#define	ANSI
-
 #ifdef	ANSI
 /* ANSI functional prototypes */
 LOCAL	SPROG *alloc_task_area(SPROG *);
@@ -377,6 +375,11 @@ int		nChar;
 		return NULL;
 }
 /* Initialize logging */
+/****#define	GLOBAL_LOCK****/
+#ifdef	GLOBAL_LOCK
+SEM_ID		seq_log_sem = NULL;
+#endif
+
 LOCAL VOID seq_logInit(sp_ptr)
 SPROG		*sp_ptr;
 {
@@ -384,8 +387,12 @@ SPROG		*sp_ptr;
 	int		fd;
 
 	/* Create a logging resource locking semaphore */
+#ifdef	GLOBAL_LOCK
+	if (seq_log_sem == NULL)
+		seq_log_sem = semMCreate(SEM_INVERSION_SAFE | SEM_DELETE_SAFE);
+#else
 	sp_ptr->logSemId = semMCreate(SEM_INVERSION_SAFE | SEM_DELETE_SAFE);
-
+#endif
 	sp_ptr->logFd = ioGlobalStdGet(1); /* default fd is std out */
 
 	/* Check for logfile spec. */
@@ -420,15 +427,22 @@ int		arg1, arg2, arg3, arg4, arg5, arg6; /* arguments */
 	timeBfr[17] = 0;
 
 	/* Lock seq_log resource */
+#ifdef	GLOBAL_LOCK
+	semTake(seq_log_sem, WAIT_FOREVER);
+#else
 	semTake(sp_ptr->logSemId, WAIT_FOREVER);
-
+#endif
 	/* Print the message: e.g. "10:23:28 T13: ...." */
 	fd = sp_ptr->logFd;
 	fdprintf(fd, "%s %s: ", taskName(taskIdSelf()), &timeBfr[9]);
 	fdprintf(fd, fmt, arg1, arg2, arg3, arg4, arg5, arg6);
 
 	/* Unlock the resource */
+#ifdef	GLOBAL_LOCK
+	semGive(seq_log_sem);
+#else
 	semGive(sp_ptr->logSemId);
+#endif
 
 	/* If NSF file then flush the buffer */
 	if (fd != ioGlobalStdGet(1) )
@@ -445,7 +459,7 @@ int		arg1, arg2, arg3, arg4, arg5, arg6; /* arguments */
 {
 	extern SPROG		*seq_task_ptr;
 
-	if (seq_task_ptr == ERROR)
+	if (seq_task_ptr == (SPROG *)ERROR)
 		return;
 	seq_log(seq_task_ptr, fmt, arg1, arg2, arg3, arg4, arg5, arg6);
 }

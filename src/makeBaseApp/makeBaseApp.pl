@@ -14,8 +14,9 @@ $cwd  = cwd();
 $eAPPTYPE = $ENV{EPICS_MBA_DEF_APP_TYPE};
 $eTOP     = $ENV{EPICS_MBA_TEMPLATE_TOP};
 
-# For winXX convert all each instance of \ to /
-$0 =~ s|\\|/|g;
+# For winXX convert each instance of \ to /
+$command = $0;
+$command =~ s|\\|/|g;
 
 &get_commandline_opts;		# Read and check options
 
@@ -138,8 +139,8 @@ sub get_commandline_opts { #no args
 	    s/EPICS_BASE\s*=\s*// and $epics_base = $_, break;
 	}
 	close IN;
-    } elsif ($0 =~ /\/bin\//) {	# assume script was called with full path to base
-	$epics_base = $0;
+    } elsif ($command =~ /\/bin\//) {	# assume script was called with full path to base
+	$epics_base = $command;
 	$epics_base =~ s:(/.*)/bin/.*makeBaseApp.*:$1:;
     }
     "$epics_base" or Cleanup(1, "Cannot find EPICS base");

@@ -37,13 +37,8 @@ DIRS += rec
 DIRS += dev
 DIRS += misc
 DIRS += iocsh
-#Following are optional
-ifeq ($(findstring vxWorks,$(BUILD_ARCHS)),vxWorks)
 DIRS += vxWorks
-endif
-ifneq (,$(findstring RTEMS,$(BUILD_ARCHS)))
 DIRS += RTEMS
-endif
 DIRS += softIoc
 DIRS += libCom/test
 DIRS += gdd

@@ -324,12 +324,12 @@ inline bool osiTime::operator != (const osiTime &rhs) const
 
 inline bool osiTime::operator >= (const osiTime &rhs) const
 {
-	return !(*this < rhs);
+	return ! ( *this < rhs );
 }
 
 inline bool osiTime::operator > (const osiTime &rhs) const
 {
-	return !(*this <= rhs);
+	return ! ( *this <= rhs );
 }
 
 inline osiTime osiTime::operator = (const tm_nano_sec &rhs)

@@ -209,9 +209,6 @@ SRCS += osdProcess.c
 SRCS += osdNetIntf.c
 SRCS += osdMessageQueue.c
 
-SRCS_WIN32 += epicsGetopt.c 
-SRCS_WIN32 += setThreadName.cpp
-
 SRCS_vxWorks += devLib.c
 SRCS_vxWorks += devLibOSD.c
 SRCS_RTEMS += devLib.c
@@ -222,8 +219,6 @@ INC += taskwd.h
 SRCS += taskwd.c
 
 SRC_DIRS += $(LIBCOM)/timer
-#INC += osiTimer.h
-#SRCS += osiTimer.cpp
 INC += epicsTimer.h
 SRCS += epicsTimer.cpp
 SRCS += timer.cpp
@@ -236,10 +231,6 @@ SRCS += timerQueuePassive.cpp
 SRC_DIRS += $(LIBCOM)/tsDefs
 INC += tsDefs.h
 SRCS += tsDefs.c
-
-# For WIN32
-SRCS_WIN32 += dllmain.cpp
-SRCS_WIN32 += forceBadAllocException.cpp
 
 # For vxWorks a clock
 INC_vxWorks += iocClock.h
@@ -259,6 +250,11 @@ SRCS_vxWorks += logMsgToErrlog.cpp
 
 #This forces the vxWorks compatibility stuff to be loaded
 OBJS_vxWorks = vxComLibrary
+
+SRCS_WIN32 += epicsGetopt.c 
+SRCS_WIN32 += setThreadName.cpp
+#SRCS_WIN32 += dllmain.cpp
+SRCS_WIN32 += forceBadAllocException.cpp
 
 #       Library to build:
 #       lib$(LIBRARY).a  or   ..dll/..exp/..lib

@@ -29,8 +29,4 @@ PROD_vxWorks :=
 
 include $(TOP)/configure/RULES_BUILD
 
-clean::
-	@$(RM) excas 
-	@$(RM) -rf Templates.DB
-	@$(RM) core 
 

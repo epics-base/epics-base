@@ -117,7 +117,8 @@ void tcpSendThread::run ()
     }
     catch ( ... ) {
         this->iiu.printf (
-            "cac: tcp send thread received an unexpected exception - disconnecting\n");
+            "cac: tcp send thread received an unexpected exception ",
+            "- disconnecting\n");
     }
 
     this->iiu.sendDog.cancel ();
@@ -167,7 +168,7 @@ unsigned tcpiiu::sendBytes ( const void *pBuf,
         else {
             int localError = SOCKERRNO;
 
-            // winsock indicates disconnect by returniing zero here
+            // winsock indicates disconnect by returning zero here
             if ( status == 0 ) {
                 this->cacRef.disconnectNotify ( *this );
                 break;
@@ -257,7 +258,8 @@ unsigned tcpiiu::recvBytes ( void * pBuf, unsigned nBytesInBuf )
                 char sockErrBuf[64];
                 convertSocketErrorToString ( 
                     sockErrBuf, sizeof ( sockErrBuf ) );
-                this->printf ( "Unexpected problem with circuit to CA server \"%s\" was \"%s\" - disconnecting\n", 
+                this->printf ( "Unexpected problem with circuit to CA ",
+                               "server \"%s\" was \"%s\" - disconnecting\n", 
                     name, sockErrBuf );
             }
 

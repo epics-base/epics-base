@@ -32,6 +32,9 @@
 /************************************************************************/
 
 /* $Log$
+ * Revision 1.53  1996/06/20 21:19:35  jhill
+ * fixed posix signal problem with "cc -Xc"
+ *
  * Revision 1.52  1996/06/19 17:59:07  jhill
  * many 3.13 beta changes
  *
@@ -283,6 +286,7 @@ typedef struct caclient_put_notify{
 #define nextFastBucketId (ca_static->ca_nextFastBucketId)
 
 #if defined(vxWorks)
+#	define io_done_sem      (ca_static->ca_io_done_sem)
 #	define evuser		(ca_static->ca_evuser)
 #	define client_lock	(ca_static->ca_client_lock)
 #	define event_lock	(ca_static->ca_event_lock)
@@ -452,6 +456,7 @@ struct  ca_static{
 	unsigned 	ca_repeater_contacted:1;
 	unsigned 	ca_flush_pending:1;
 #if defined(vxWorks)
+	SEM_ID		ca_io_done_sem;
 	SEM_ID		ca_blockSem;
 	SEM_ID		ca_client_lock; 
 	SEM_ID		ca_event_lock; /* dont allow events to preempt */

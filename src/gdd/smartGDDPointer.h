@@ -9,12 +9,15 @@
 #ifndef smartGDDPointer_h
 #define smartGDDPointer_h
 
+#include "gdd.h"
+#include "shareLib.h"
+
 //
 // smartGDDPointer
 //
 // smart pointer class which auto ref/unrefs the GDD
 //
-class smartGDDPointer {
+class epicsShareClass smartGDDPointer {
 public:
 
 	smartGDDPointer () :
@@ -57,27 +60,7 @@ public:
 		}
 	}
 
-	void set (gdd *pNewValue) 
-	{
-		int gddStatus;
-		//
-		// dont change the ref count (and
-		// potentially unref a gdd that we are 
-		// still using if the pointer isnt changing
-		//
-		if (this->pValue==pNewValue) {
-			return;
-		}
-		if (this->pValue!=NULL) {
-			gddStatus = this->pValue->unreference();
-			assert (!gddStatus);
-		}
-		this->pValue = pNewValue;
-		if (this->pValue!=NULL) {
-			gddStatus = this->pValue->reference();
-			assert (!gddStatus);
-		}
-	}
+	void set (gdd *pNewValue);
 
 	smartGDDPointer operator = (gdd *rhs) 
 	{
@@ -85,7 +68,7 @@ public:
 		return *this;
 	}
 
-	smartGDDPointer operator = (smartGDDPointer &rhs) 
+	smartGDDPointer operator = (const smartGDDPointer &rhs) 
 	{
 		set (rhs.pValue);
 		return *this;

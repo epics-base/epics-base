@@ -21,6 +21,8 @@
 #include "oldAccess.h"
 #include "cac.h"
 
+template class tsFreeList < struct oldChannelNotify, 1024 >;
+
 tsFreeList < struct oldChannelNotify, 1024 > oldChannelNotify::freeList;
 epicsMutex oldChannelNotify::freeListMutex;
 

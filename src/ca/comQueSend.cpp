@@ -66,9 +66,6 @@
 #include "db_access.h" // for dbr_short_t etc
 #undef epicsExportSharedSymbols
 
-tsFreeList < class comBuf, 0x20 > comBuf::freeList;
-epicsMutex comBuf::freeListMutex;
-
 comQueSend::comQueSend ( wireSendAdapter & wireIn ) :
     wire ( wireIn ), nBytesPending ( 0u )
 {

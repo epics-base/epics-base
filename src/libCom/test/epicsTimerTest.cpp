@@ -348,6 +348,10 @@ void testPeriodic ()
     queue.release ();
 }
 
+template class tsFreeList < delayVerify, 32, 0 >;
+template class tsFreeList < cancelVerify, 32, 0 >;
+template class tsFreeList < periodicVerify, 32, 0 >;
+
 void epicsTimerTest ()
 {
     testAccuracy ();

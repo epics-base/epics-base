@@ -19,6 +19,8 @@
 #include "cac.h"
 #include "netiiu.h"
 
+template class tsSLNode < nciu >;
+
 netiiu::netiiu ( cac *pClientCtxIn ) : pClientCtx ( pClientCtxIn )
 {
 }

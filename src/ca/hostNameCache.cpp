@@ -21,6 +21,8 @@
 #include "iocinf.h"
 #include "hostNameCache.h"
 
+template class tsFreeList < hostNameCache, 16 >;
+
 tsFreeList < hostNameCache, 16 > hostNameCache::freeList;
 epicsMutex hostNameCache::freeListMutex;
 

@@ -21,6 +21,8 @@
 #include "oldAccess.h"
 #include "cac.h"
 
+template class tsFreeList < class getCopy, 1024 >;
+
 tsFreeList < class getCopy, 1024 > getCopy::freeList;
 epicsMutex getCopy::freeListMutex;
 

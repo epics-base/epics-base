@@ -32,6 +32,9 @@
 #include "db_access.h" // for INVALID_DB_REQ
 #undef epicsExportSharedSymbols
 
+template class tsFreeList < nciu, 1024, 0 >; 
+template class tsSLNode < baseNMIU >;
+
 tsFreeList < class nciu, 1024 > nciu::freeList;
 epicsMutex nciu::freeListMutex;
 

@@ -99,6 +99,7 @@ private:
  *  per machine so we dont care about reentrancy
  */
 static tsDLList < repeaterClient > client_list;
+template class tsFreeList < repeaterClient, 0x20 >;
 tsFreeList < repeaterClient, 0x20 > repeaterClient::freeList;
 epicsMutex repeaterClient::freeListMutex;
 

@@ -18,6 +18,8 @@
 #include "iocinf.h"
 #include "oldAccess.h"
 
+template class tsFreeList < class putCallback, 1024 >;
+
 tsFreeList < class putCallback, 1024 > putCallback::freeList;
 epicsMutex putCallback::freeListMutex;
 

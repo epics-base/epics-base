@@ -13,6 +13,8 @@
 #include "iocinf.h"
 #include "oldAccess.h"
 
+template class tsFreeList < struct oldSubscription, 1024 >;
+
 tsFreeList < struct oldSubscription, 1024 > oldSubscription::freeList;
 epicsMutex oldSubscription::freeListMutex;
 

@@ -97,6 +97,10 @@ private:
     chronIntIdResTable <timerForOldFdmgr> resTbl;
 };
 
+template class resTable < timerForOldFdmgr, chronIntId >;
+template class tsSLNode < timerForOldFdmgr >;
+template class chronIntIdResTable < timerForOldFdmgr >;
+
 epicsShareFunc fdRegForOldFdmgr::fdRegForOldFdmgr 
     (const SOCKET fdIn, const fdRegType typeIn, 
 	    const bool onceOnlyIn, fdManager &managerIn, 

@@ -19,6 +19,11 @@
 #include "iocinf.h"
 #include "comBuf.h"
 
+template class tsFreeList < class comBuf, 0x20 >;
+
+tsFreeList < class comBuf, 0x20 > comBuf::freeList;
+epicsMutex comBuf::freeListMutex;
+
 bool comBuf::flushToWire ( wireSendAdapter &wire )
 {
     unsigned occupied = this->occupiedBytes ();

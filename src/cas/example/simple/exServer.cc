@@ -8,6 +8,7 @@
 //
 #include "exServer.h"
 
+template class tsSLNode < exPV >;
 
 //
 // static list of pre-created PVs

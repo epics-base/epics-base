@@ -19,6 +19,8 @@
 #include "bhe.h"
 #undef epicsExportSharedSymbols 
 
+template class tsFreeList < class bhe, 1024 >;
+
 tsFreeList < class bhe, 1024 > bhe::freeList;
 epicsMutex bhe::freeListMutex;
 

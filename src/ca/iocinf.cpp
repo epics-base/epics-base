@@ -14,10 +14,12 @@
 
 #include <ctype.h>
 #include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #include "envDefs.h"
 #include "epicsAssert.h"
-#include "locationException.h"
+#include "errlog.h"
 
 #define epicsExportSharedSymbols
 #include "addrList.h"

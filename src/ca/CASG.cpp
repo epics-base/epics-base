@@ -35,6 +35,11 @@
 #include "autoPtrDestroy.h"
 #include "cac.h"
 
+template class tsSLNode < CASG>;
+template class tsFreeList < CASG, 128, 0 >;
+template class tsFreeList < syncGroupWriteNotify, 128, 0 >;
+template class tsFreeList < syncGroupReadNotify, 128, 0 >;
+
 tsFreeList < struct CASG, 128 > CASG::freeList;
 epicsMutex CASG::freeListMutex;
 

@@ -53,6 +53,10 @@
 #include "fdManager.h"
 #include "locationException.h"
 
+template class tsSLNode < fdReg >;
+template class intId < unsigned int, 8, 32 >;
+template class resTable < fdReg, fdRegId >;
+
 epicsShareDef fdManager fileDescriptorManager;
 
 //

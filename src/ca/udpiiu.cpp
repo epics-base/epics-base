@@ -136,7 +136,7 @@ udpiiu::udpiiu ( cac &cac ) :
     this->recvThreadExitSignal = epicsEventMustCreate ( epicsEventEmpty );
     if ( ! this->recvThreadExitSignal ) {
         socket_close ( this->sock );
-        throwWithLocation ( std::bad_alloc () );
+        throw std::bad_alloc ();
     }
 
     /*
@@ -164,7 +164,7 @@ udpiiu::udpiiu ( cac &cac ) :
             this->printf ("CA: unable to create UDP receive thread\n");
             epicsEventDestroy (this->recvThreadExitSignal);
             socket_close (this->sock);
-            throwWithLocation ( std::bad_alloc () );
+            throw std::bad_alloc ();
         }
     }
 

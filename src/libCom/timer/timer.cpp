@@ -32,6 +32,8 @@
 #define epicsExportSharedSymbols
 #include "timerPrivate.h"
 
+template class tsFreeList < timer, 32, 0 >;
+
 timer::timer ( timerQueue &queueIn ) :
     curState ( stateLimbo ), pNotify ( 0 ), queue ( queueIn )
 {

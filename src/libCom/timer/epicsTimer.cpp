@@ -32,6 +32,10 @@
 #include "epicsTimer.h"
 #include "timerPrivate.h"
 
+template class tsFreeList < epicsTimerForC, 32, 0 >;
+template class tsFreeList < epicsTimerQueueActiveForC, 1024, 0 >;
+template class tsFreeList < epicsTimerQueuePassiveForC, 1024, 0 >;
+
 struct epicsTimerQueuePassiveForC : public epicsTimerQueueNotify, public timerQueuePassive {
 public:
     epicsTimerQueuePassiveForC ( epicsTimerQueueRescheduleCallback pCallback, void *pPrivate );

@@ -106,7 +106,7 @@ void * syncGroupReadNotify::operator new ( size_t size,
 
 #if ! defined ( NO_PLACEMENT_DELETE )
 void syncGroupReadNotify::operator delete ( void *pCadaver, size_t size, 
-    tsFreeList < class syncGroupWriteNotify, 128 > &freeList )
+    tsFreeList < class syncGroupReadNotify, 128 > &freeList )
 {
     freeList.release ( pCadaver, size );
 }

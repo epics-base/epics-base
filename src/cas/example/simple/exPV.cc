@@ -4,6 +4,10 @@
 #include "exServer.h"
 #include "gddApps.h"
 
+template class gddAppFuncTable < exPV >;
+template class tsSLNode < pvEntry >;
+template class resTable < pvEntry, stringId >;
+
 //
 // static data for exPV
 //

@@ -82,13 +82,13 @@
 #			define epicsShareClass 
 #			define epicsShareFunc
 #		else
-#			define epicsShareExtern extern __declspec(dllexport)
+#			define epicsShareExtern __declspec(dllexport) extern 
 #			define epicsShareClass  __declspec(dllexport) 
 #			define epicsShareFunc  __declspec(dllexport)
 #		endif
 #	else
 #		if defined(_DLL) /* this indicates that we are being compiled to call a DLL */
-#			define epicsShareExtern extern __declspec(dllimport)
+#			define epicsShareExtern __declspec(dllimport) extern 
 #			define epicsShareClass  __declspec(dllimport) 
 #			define epicsShareFunc  __declspec(dllimport)
 #		else
@@ -110,9 +110,10 @@
 	 */
 #	define epicsShareAPIV __cdecl
 #	if defined(EPICS_DLL_NO) /* this indicates that we are not building a DLL */
-#		define epicsShareDef extern
+#		define epicsShareDef
 #	else
-#		define epicsShareDef extern __declspec(dllexport)
+        /* extern here is incompatible with visual C++ */
+#		define epicsShareDef __declspec(dllexport) 
 #	endif
 #	define READONLY const
 /*

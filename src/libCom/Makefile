@@ -140,7 +140,7 @@ SRCS += osiThread.cpp
 SRCS += osdTime.cpp
 SRCS += osiTime.cpp
 SRCS += osdSigPipeIgnore.c
-SRCS += osdProcess.c
+#SRCS += osdProcess.c
 #tsStamp code is part of osiTime and osdTime
 
 SRC_DIRS += $(LIBCOM)/taskwd

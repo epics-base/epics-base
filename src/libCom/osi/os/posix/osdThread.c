@@ -184,8 +184,8 @@ void threadOnceOsd(threadOnceId *id, void (*func)(void *), void *arg)
 
     semMutexMustTake(onceMutex);
     if (*id == 0) {
-    	func(arg);
     	*id = 1;
+    	func(arg);
     }
     semMutexGive(onceMutex);
 }

@@ -191,7 +191,7 @@ h) Error handling
 These are convenience functions. If other useful functions emerge during
 implementation, the list may grow.
 
-a) macParseDefns( char *defns, char **pairs[] );
+a) macParseDefns( MAC_HANDLE  *handle, char *defns, char **pairs[] );
 
    This takes a set of macro definitions in "a=xxx,b=yyy" format and
    converts them into an array of pointers to character strings which

@@ -14,6 +14,9 @@
  * William Lupton, W. M. Keck Observatory
  */
 
+#ifndef INCmacLibH
+#define INCmacLibH
+
 /*
  * EPICS include files needed by this file
  */
@@ -21,6 +24,10 @@
 #include "epicsPrint.h"
 #include "errMdef.h"
 #include "shareLib.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*
  * Standard FALSE and TRUE macros
@@ -210,3 +217,8 @@ epicsShareAPI macInstallMacros(
 				/* argument implies no macros */
 );
 
+#ifdef __cplusplus
+}
+#endif
+
+#endif /*INCmacLibH*/

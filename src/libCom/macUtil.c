@@ -29,7 +29,7 @@
  * and escapes are honored but only removed from macro names (not
  * values)
  *
- * Doesn't yet use handle (so uses default special characters)
+ * Doesn't yet use special characters (so uses default special characters)
  */
 long				/* #defns encountered; <0 = ERROR */
 epicsShareAPI macParseDefns(
@@ -44,6 +44,8 @@ epicsShareAPI macParseDefns(
 				/* value} pair strings; all storage is */
 				/* allocated contiguously */
 {
+    static const size_t altNumMax = 4;
+    size_t numMax;
     long i;
     long num;
     long quote;
@@ -57,14 +59,17 @@ epicsShareAPI macParseDefns(
     enum { preName, inName, preValue, inValue } state;
 
     /* debug output */
-    if ( handle->debug & 1 )
+    if ( handle && (handle->debug & 1) )
 	printf( "macParseDefns( %s )\n", defns );
 
     /* allocate temporary pointer arrays; in worst case they need to have
        as many entries as the length of the defns string */
-    ptr = ( char ** ) malloc( strlen( defns ) * sizeof( char * ) );
-    end = ( char ** ) malloc( strlen( defns ) * sizeof( char * ) );
-    del = ( long *  ) malloc( strlen( defns ) * sizeof( long   ) );
+    numMax = strlen( defns );
+    if ( numMax < altNumMax )
+        numMax = altNumMax;
+    ptr = ( char ** ) malloc( numMax * sizeof( char * ) );
+    end = ( char ** ) malloc( numMax * sizeof( char * ) );
+    del = ( long *  ) malloc( numMax * sizeof( long   ) );
     if ( ptr == NULL || end == NULL  || del == NULL ) goto error;
 
     /* go through definitions, noting pointers to starts and ends of macro
@@ -87,7 +92,7 @@ epicsShareAPI macParseDefns(
 
 	switch ( state ) {
 	  case preName:
-	    if ( !quote && !escape && ( isspace( *c ) || *c == ',' ) ) break;
+	    if ( !quote && !escape && ( isspace( (int) *c ) || *c == ',' ) ) break;
 	    ptr[num] = c;
 	    state = inName;
 	    /* fall through (may be empty name) */
@@ -95,7 +100,7 @@ epicsShareAPI macParseDefns(
 	  case inName:
 	    if ( quote || escape || ( *c != '=' && *c != ',' ) ) break;
 	    end[num] = c;
-	    while ( end[num] > ptr[num] && isspace( *( end[num] - 1 ) ) )
+	    while ( end[num] > ptr[num] && isspace( (int) *( end[num] - 1 ) ) )
 		end[num]--;
 	    num++;
 	    del[num] = FALSE;
@@ -105,7 +110,7 @@ epicsShareAPI macParseDefns(
 	    /* fall through (','; will delete) */
 
 	  case preValue:
-	    if ( !quote && !escape && isspace( *c ) ) break;
+	    if ( !quote && !escape && isspace( (int) *c ) ) break;
 	    ptr[num] = c;
 	    state = inValue;
 	    /* fall through (may be empty value) */
@@ -113,7 +118,7 @@ epicsShareAPI macParseDefns(
 	  case inValue:
 	    if ( quote || escape || *c != ',' ) break;
 	    end[num] = c;
-	    while ( end[num] > ptr[num] && isspace( *( end[num] - 1 ) ) )
+	    while ( end[num] > ptr[num] && isspace( (int) *( end[num] - 1 ) ) )
 		end[num]--;
 	    num++;
 	    del[num] = FALSE;
@@ -133,7 +138,7 @@ epicsShareAPI macParseDefns(
 	break;
       case inName:
 	end[num] = c;
-	while ( end[num] > ptr[num] && isspace( *( end[num] - 1 ) ) )
+	while ( end[num] > ptr[num] && isspace( (int) *( end[num] - 1 ) ) )
 	    end[num]--;
 	num++;
 	del[num] = TRUE;
@@ -141,7 +146,7 @@ epicsShareAPI macParseDefns(
 	ptr[num] = c;
       case inValue:
 	end[num] = c;
-	while ( end[num] > ptr[num] && isspace( *( end[num] - 1 ) ) )
+	while ( end[num] > ptr[num] && isspace( (int) *( end[num] - 1 ) ) )
 	    end[num]--;
 	num++;
 	del[num] = FALSE;

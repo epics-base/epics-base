@@ -135,7 +135,7 @@ void epicsShareAPI macSuppressWarning(
     int         falseTrue       /*0 means issue, 1 means suppress*/
 )
 {
-    handle->suppressWarning = falseTrue;
+    if(handle) handle->suppressWarning = falseTrue;
 }
 
 /*
@@ -753,7 +753,7 @@ static void trans( MAC_HANDLE *handle, MAC_ENTRY *entry, long level,
 /*
  * strdup() implementation (because it's not always available)
  */
-char *Strdup( char *string )
+static char *Strdup( char *string )
 {
     char *copy = dbmfMalloc( strlen( string ) + 1 );
 

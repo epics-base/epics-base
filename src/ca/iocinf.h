@@ -74,11 +74,9 @@ static char	*iocinfhSccsId = "@(#)iocinf.h	1.15\t6/2/93";
 #  endif
 #endif
 
-#	include <ellLib.h> 
-
-#ifndef INCos_depenh
-#	include	<os_depen.h>
-#endif
+#include <bucketLib.h>
+#include <ellLib.h> 
+#include <os_depen.h>
 
 #ifndef min
 #define min(A,B) ((A)>(B)?(B):(A))
@@ -126,6 +124,12 @@ typedef unsigned long ca_time;
 
 #define MAX_CONTIGUOUS_MSG_COUNT 2
 
+#define CLIENT_ID_WIDTH 	20 /* bits (1 million before rollover) */
+#define CLIENT_ID_COUNT		(1<<CLIENT_ID_WIDTH)
+#define CLIENT_ID_MASK		(CLIENT_ID_COUNT-1)
+#define CLIENT_ID_ALLOC		(CLIENT_ID_MASK&nextBucketId++)
+
+#define SEND_RETRY_COUNT_INIT	100
 
 #define iiu 		(ca_static->ca_iiu)
 #define pndrecvcnt	(ca_static->ca_pndrecvcnt)
@@ -143,6 +147,8 @@ typedef unsigned long ca_time;
 #define post_msg_active	(ca_static->ca_post_msg_active)
 #define send_msg_active	(ca_static->ca_send_msg_active)
 #define sprintf_buf	(ca_static->ca_sprintf_buf)
+#define pBucket		(ca_static->ca_pBucket)
+#define nextBucketId	(ca_static->ca_nextBucketId)
 
 #if defined(UNIX)
 #	define readch		(ca_static->ca_readch)
@@ -189,6 +195,8 @@ struct  ca_static{
   short			ca_cast_available;
   struct in_addr	ca_castaddr;
   char			ca_sprintf_buf[128];
+  BUCKET		*ca_pBucket;
+  unsigned long		ca_nextBucketId;
 #if defined(UNIX)
   fd_set                ca_readch;  
   fd_set                ca_excepch;  
@@ -234,6 +242,7 @@ struct  ca_static{
     short		send_needed;		/* CA needs a send */
     char		host_name_str[32];
     unsigned		nconn_tries;
+    unsigned		send_retry_count;
     ca_time		next_retry;
     ca_time		retry_delay;
 #define MAXCONNTRIES 30

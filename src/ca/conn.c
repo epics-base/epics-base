@@ -20,6 +20,8 @@
 /*	.06 111892 joh	tuned up cast retries				*/
 /*	.07 010493 joh	print retry count when `<Trying>'		*/
 /*	.08 010493 joh	removed `<Trying>' message			*/
+/*	.09 090293 joh	removed flush from manage_conn			*/
+/*			(now handled by the send needed flag)		*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -152,11 +154,6 @@ char			silent;
       			ca_signal(ECA_CHIDRETRY, sprintf_buf);
     		}
   	}
-
-	if(keepalive_cnt|retry_cnt){
-    		cac_send_msg();
-	}
-
 }
 
 

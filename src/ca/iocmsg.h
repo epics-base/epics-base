@@ -92,7 +92,7 @@ struct	extmsg {
 	unsigned short	m_postsize;	/* size of message extension */	
 	unsigned short	m_type;		/* operation data type */ 
 	unsigned short 	m_count;	/* operation data count */
-	void		*m_pciu;	/* ptr to server channel in use */
+	unsigned long	m_cid;		/* channel identifier */
 	unsigned long	m_available;	/* undefined message location for use
 					 * by client processes */
 };

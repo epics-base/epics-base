@@ -608,10 +608,10 @@ void cac_send_msg()
   	register struct ioc_in_use 	*piiu;
 	int				done;
 	int				status;
-	int 				retry_count;
-#	define				RETRY_INIT 100
 
-	retry_count = RETRY_INIT;
+  	for(piiu=iiu; piiu<&iiu[nxtiiu]; piiu++){
+		piiu->send_retry_count = SEND_RETRY_COUNT_INIT;
+	}
 
   	if(!ca_static->ca_repeater_contacted)
 		notify_ca_repeater();
@@ -639,14 +639,11 @@ void cac_send_msg()
 		 * frees up push pull deadlock only
 		 * if recv not already in progress
 		 */
-#if defined(UNIX)
+#		if defined(UNIX)
 			if(post_msg_active==0){
 				recv_msg_select(&notimeout);
 			}
-#else
-#  if defined(vxWorks)
-#  endif
-#endif
+#		endif
 
 		done = TRUE;
   		for(piiu=iiu; piiu<&iiu[nxtiiu]; piiu++){
@@ -656,7 +653,16 @@ void cac_send_msg()
 
 			status = cac_send_msg_piiu(piiu);
 			if(status<0){
-				done = FALSE;
+				if(piiu->send_retry_count == 0){
+					ca_signal(
+						ECA_DLCKREST, 	
+						piiu->host_name_str);
+					close_ioc(piiu);
+				}
+				else{
+					piiu->send_retry_count--;
+					done = FALSE;
+				}
 			}
     		}
 
@@ -676,32 +682,6 @@ void cac_send_msg()
 				break;
 		}
 
-		if(retry_count-- <= 0){
-			char *iocname;
-			struct in_addr *inaddr;
-  			for(piiu=iiu; piiu<&iiu[nxtiiu]; piiu++){
-    				if(piiu->send->stk){
-					inaddr = &piiu->sock_addr.sin_addr;
-					iocname = piiu->host_name_str;
-#define CLOSE_ON_EXPIRED /* kill conn if we pend to long on it */
-#					ifdef CLOSE_ON_EXPIRED		
-						ca_signal(
-							ECA_DLCKREST, 	
-							iocname);
-						close_ioc(piiu);
-#					else
-						ca_signal(
-							ECA_SERVBEHIND, 
-							iocname);
-#					endif
-				}
-			}
-#			ifdef CLOSE_ON_EXPIRED			
-				break;
-#			else
-				retry_count = RETRY_INIT;
-#			endif
-		}
 		TCPDELAY;
 	}
 
@@ -1015,6 +995,7 @@ struct ioc_in_use	*piiu;
     		return;
  	}
 
+	piiu->send_retry_count = SEND_RETRY_COUNT_INIT;
 
 	rcvb->stk += byte_cnt;
 
@@ -1318,7 +1299,7 @@ struct ioc_in_use	*piiu;
     		chix->type = TYPENOTCONN;
     		chix->count = 0;
     		chix->state = cs_prev_conn;
-    		chix->paddr = NULL;
+    		chix->id.sid = ~0L;
   	}
 
 	/*

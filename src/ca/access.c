@@ -348,6 +348,10 @@ int ca_task_initialize
 		ca_static->ca_exception_func = ca_default_exception_handler;
 		ca_static->ca_exception_arg = NULL;
 
+		ca_static->ca_pBucket = bucketCreate(CLIENT_ID_WIDTH);
+		if(!ca_static->ca_pBucket)
+			abort();
+
 		status = broadcast_addr(&ca_static->ca_castaddr);
 		if(status == OK){
 			ca_static->ca_cast_available = TRUE;
@@ -954,14 +958,13 @@ int ca_build_and_connect
 			if (!chix)
 				abort();
 
-			chix->paddr = (void *) (strcnt + (char *) (chix + 1));
-			*(struct db_addr *) chix->paddr = tmp_paddr;
+			chix->id.paddr = (struct db_addr *) 
+				(strcnt + (char *) (chix + 1));
+			*chix->id.paddr = tmp_paddr;
 			chix->puser = puser;
 			chix->connection_func = conn_func;
-			chix->type = ((struct db_addr *) 
-					chix->paddr)->field_type;
-			chix->count = ((struct db_addr *) 
-					chix->paddr)->no_elements;
+			chix->type = chix->id.paddr->field_type;
+			chix->count = chix->id.paddr->no_elements;
 			chix->iocix = LOCAL_IIU;
 			chix->state = cs_conn;
 			ellInit(&chix->eventq);
@@ -1002,6 +1005,7 @@ int ca_build_and_connect
 		status = ECA_NOCAST;
 	}
 	else{
+
 		/* allocate CHIU (channel in use) block */
 		/* also allocate enough for the channel name */
 		*chixptr = chix = (chid) malloc(sizeof(*chix) + strcnt);
@@ -1019,11 +1023,21 @@ int ca_build_and_connect
 			free((char *) chix);
 			goto exit;
 		}
+
+		chix->cid = CLIENT_ID_ALLOC;
+		status = bucketAddItem(pBucket, chix->cid, chix);
+		if(status != BUCKET_SUCCESS){
+			*chixptr = (chid) NULL;
+			free((char *) chix);
+			status = ECA_ALLOCMEM;
+			goto exit;
+		}
+
 		chix->puser = puser;
 		chix->connection_func = conn_func;
-		chix->type = TYPENOTCONN;	/* invalid initial type 	 */
-		chix->count = 0;/* invalid initial count	 */
-		chix->paddr = (void *) NULL;	/* invalid initial paddr	 */
+		chix->type = TYPENOTCONN; /* invalid initial type 	 */
+		chix->count = 0; 	/* invalid initial count	 */
+		chix->id.sid = ~0L;	/* invalid initial server id 	 */
 
 		/* save stuff for build retry if required */
 		chix->build_type = get_type;
@@ -1051,6 +1065,8 @@ int ca_build_and_connect
 			if (VALID_BUILD(chix))
 				SETPENDRECV;
 		}
+
+		status = ECA_NORMAL;
 exit:
 
 		UNLOCK;
@@ -1094,10 +1110,10 @@ void build_msg(chix, reply_type)
 	}
 
 	mptr->m_cmmd = htons(cmd);
-	mptr->m_available = (int) chix;
+	mptr->m_available = chix->cid;
 	mptr->m_type = reply_type;
 	mptr->m_count = 0;
-	mptr->m_pciu = (void *) chix;
+	mptr->m_cid = chix->cid;
 
 	if (cmd == IOC_BUILD) {
 		/* msg header only on db read req	 */
@@ -1107,7 +1123,7 @@ void build_msg(chix, reply_type)
 		mptr->m_type = htons(chix->build_type);
 		mptr->m_count = htons(chix->build_count);
 		mptr->m_available = (int) chix->build_value;
-		mptr->m_pciu = 0;
+		mptr->m_cid = ~0L;
 	}
 	/* 
 	 * channel name string - forces a NULL at the end because 
@@ -1162,7 +1178,7 @@ void 		*pvalue
 
 		if (chix->iocix == LOCAL_IIU) {
 			status = db_get_field(
-					      chix->paddr,
+					      chix->id.paddr,
 					      type,
 					      pvalue,
 					      count,
@@ -1190,7 +1206,7 @@ void 		*pvalue
 	mptr->m_type = htons(type);
 	mptr->m_available = (long) pvalue;
 	mptr->m_count = htons(count);
-	mptr->m_pciu = chix->paddr;
+	mptr->m_cid = chix->id.sid;
 
 	CAC_ADD_MSG(piiu);
 
@@ -1254,7 +1270,7 @@ ca_array_get_callback
 		ev.chan = chix;
 		ev.type = type;
 		ev.count = count;
-		ca_event_handler(&ev, chix->paddr, NULL, NULL);
+		ca_event_handler(&ev, chix->id.paddr, NULL, NULL);
 		return ECA_NORMAL;
 	}
 #endif
@@ -1331,7 +1347,7 @@ issue_get_callback(monix)
 	mptr->m_type = htons(monix->type);
 	mptr->m_available = (long) monix;
 	mptr->m_count = htons(count);
-	mptr->m_pciu = chix->paddr;
+	mptr->m_cid = chix->id.sid;
 
 	CAC_ADD_MSG(piiu);
 
@@ -1395,7 +1411,7 @@ void 				*pvalue;
     		int status;
 
     		if(chix->iocix == LOCAL_IIU){
-      			status = db_put_field(  chix->paddr,  
+      			status = db_put_field(  chix->id.paddr,  
                                 		type,   
                                 		pvalue,
                                 		count);            
@@ -1494,8 +1510,8 @@ void 				*pvalue;
     	mptr->m_cmmd 		= htons(IOC_WRITE);
    	mptr->m_type		= htons(type);
     	mptr->m_count 		= htons(count);
-    	mptr->m_pciu 		= chix->paddr;
-    	mptr->m_available 	= (long) chix;
+    	mptr->m_cid 		= chix->id.sid;
+    	mptr->m_available 	= ~0L;
 
 	CAC_ADD_MSG(&iiu[chix->iocix]);
 	UNLOCK;
@@ -1721,7 +1737,7 @@ long				mask;
 
     if(chix->iocix == LOCAL_IIU){
       status = db_add_event(	evuser,
-				chix->paddr,
+				chix->id.paddr,
 				ca_event_handler,
 				monix,
 				mask,
@@ -1819,7 +1835,7 @@ ca_request_event(monix)
 	mptr->m_header.m_available = (long) monix;
 	mptr->m_header.m_type = htons(monix->type);
 	mptr->m_header.m_count = htons(count);
-	mptr->m_header.m_pciu = chix->paddr;
+	mptr->m_header.m_cid = chix->id.sid;
 
 	/* msg body	 */
 	htonf(&monix->p_delta, &mptr->m_info.m_hval);
@@ -2063,7 +2079,7 @@ evid   monix;
 		mptr->m_available = (long) monix;
 		mptr->m_type = chix->type;
 		mptr->m_count = chix->count;
-		mptr->m_pciu = chix->paddr;
+		mptr->m_cid = chix->id.sid;
 	
 		/* 
 		 *	NOTE: I free the monitor block only
@@ -2108,6 +2124,7 @@ ca_clear_channel
 chid   chix;
 #endif
 {
+	int				status;
 	register evid   		monix;
 	struct ioc_in_use 		*piiu = &iiu[chix->iocix];
 	register struct extmsg 		*mptr;
@@ -2172,6 +2189,12 @@ chid   chix;
 					!piiu->chidlist.count){
 				close_ioc(piiu);
 			}
+			status = bucketRemoveItem(pBucket, chix->cid, chix);
+			if(status != BUCKET_SUCCESS){
+				ca_signal(	
+					ECA_INTERNAL, 
+					"bad id at channel delete");
+			}
 			free((char *) chix);
 			break;	/* to unlock exit */
 		}
@@ -2191,7 +2214,7 @@ chid   chix;
 		mptr->m_available = (int) chix;
 		mptr->m_type = 0;
 		mptr->m_count = 0;
-		mptr->m_pciu = chix->paddr;
+		mptr->m_cid = chix->id.sid;
 
 		/*
 		 * NOTE: I free the chid and monitor blocks only after
@@ -2258,9 +2281,6 @@ int			early;
 	}
 
   	/*	Flush the send buffers	*/
-  	LOCK;
-  	cac_send_msg();
- 	UNLOCK;
 
     	if(pndrecvcnt<1 && early){
         	return ECA_NORMAL;
@@ -2271,30 +2291,17 @@ int			early;
 	 */
   	if((timeout*SYSFREQ)<LOCALTICKS && timeout != 0.0){
 
-		/*
-		 * on UNIX call recv_msg() with zero timeout. on vxWorks 
-		 * and VMS recv_msg() need not be called.
-		 * 
-		 * cac_send_msg() only calls recv_msg on UNIX if the 
-		 * buffer needs to be flushed.
-		 *
-		 */
-#ifdef UNIX
-		{
-    			struct timeval	notimeout;
-			/*
-			 * locking only a comment on UNIX
-			 */
-  	  		notimeout.tv_sec = 0;
-  	 		notimeout.tv_usec = 0;
-   			recv_msg_select(&notimeout);
-		}
-#endif
   		LOCK;
       		manage_conn(!early);
 		if(pndrecvcnt>0 && early){
 			ca_pend_io_cleanup();
 		}
+
+		/*
+		 * also takes care of outstanding recvs
+		 * under UNIX
+		 */
+  		cac_send_msg();
   		UNLOCK;
 
     		if(pndrecvcnt<1 && early){
@@ -2308,7 +2315,16 @@ int			early;
   	beg_time = time(NULL);
 
   	while(TRUE){
-#if defined(UNIX)
+		/*
+		 * also takes care of outstanding recvs
+		 * under UNIX
+		 */
+		LOCK;
+      		manage_conn(TRUE);
+  		cac_send_msg();
+		UNLOCK;
+
+#if 		defined(UNIX)
     		{
       			struct timeval	itimeout;
 
@@ -2318,11 +2334,11 @@ int			early;
       			recv_msg_select(&itimeout);
       			UNLOCK;
     		}
-#else
-#  if defined(vxWorks)
-		semTake(io_done_sem, LOCALTICKS);
-#  else
-#    if defined(VMS)
+#		else
+#  		if defined(vxWorks)
+			semTake(io_done_sem, LOCALTICKS);
+#  		else
+#    		if defined(VMS)
     		{
       			int 		status; 
       			unsigned int 	systim[2]={-LOCALTICKS,~0};
@@ -2339,15 +2355,12 @@ int			early;
       			if(status != SS$_NORMAL)
         			lib$signal(status);
     		}   
-#    else
+#    		else
 			@@@@ dont compile in this case @@@@ 
-#    endif
-#  endif
-#endif
+#    		endif
+#  		endif
+#		endif
 
-   		LOCK;
-      		manage_conn(TRUE);
-    		UNLOCK;
 
     		if(pndrecvcnt<1 && early)
         		return ECA_NORMAL;
@@ -2359,6 +2372,7 @@ int			early;
 				if(early){
 					ca_pend_io_cleanup();
 				}
+  				cac_send_msg();
 				UNLOCK;
         			return ECA_TIMEOUT;
       			}
@@ -2662,7 +2676,7 @@ chid 			pchan;
 	}
 	*mptr = nullmsg;
 	mptr->m_cmmd = htons(IOC_CLAIM_CIU);
-	mptr->m_pciu = pchan->paddr;
+	mptr->m_cid = pchan->id.sid;
 	CAC_ADD_MSG(piiu);
 	piiu->send_needed = TRUE;
 }

@@ -95,7 +95,6 @@ static char *sccsId = "@(#)service.c	1.17\t6/2/93";
 
 static void 	reconnect_channel();
 void		ca_request_event();
-static int	client_channel_exists();
 
 #define BUFSTAT 	ca_printf("CAC: expected %d left %d\n",msgcnt,*pbufcnt);
 
@@ -278,8 +277,20 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 		case IOC_READ:
 		case IOC_READ_BUILD:
 		{
-			chid            chan = (chid) hdrptr->m_pciu;
+			chid            chan;
 			unsigned	size;
+
+			/*
+			 * verify the channel id
+			 */
+			LOCK;
+			chan = bucketLookupItem(pBucket, hdrptr->m_cid);
+			UNLOCK;
+			if(!chan){
+				ca_signal(ECA_INTERNAL, 
+				"bad client channel id from server");
+				break;
+			}
 
 			/*
 			 * ignore IOC_READ_BUILDS after 
@@ -337,79 +348,9 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 		}
 		case IOC_SEARCH:
 		case IOC_BUILD:
-		{
-			chid            	chan = (chid) t_available;
-			struct ioc_in_use 	*chpiiu;
-
-			/*
-			 * ignore broadcast replies for deleted channels
-			 * 
-			 * lock required for client_channel_exists()
-			 * lock required around use of the sprintf buffer
-			 */
-			LOCK;
-			status = client_channel_exists(chan);
-			if (!status) {
-				sprintf(
-					sprintf_buf,
-					"Chid %x Search reply from %s",
-					chan,
-					host_from_addr(pnet_addr));
-				ca_signal(ECA_NOCHANMSG, sprintf_buf);
-				break;
-			}
-			UNLOCK;
-
-			chpiiu = &iiu[chan->iocix];
-
-			if (chan->paddr) {
-
-				if (chpiiu->sock_addr.sin_addr.s_addr == 
-						pnet_addr->s_addr) {
-					ca_printf("<Extra> ");
-#					ifdef UNIX
-						fflush(stdout);
-#					endif
-				} else {
-					char	acc[128];
-					char	rej[128];
-
-					sprintf(acc, 
-						"%s",
-						chpiiu->host_name_str);
-					sprintf(rej, 
-						"%s", 
-						host_from_addr(pnet_addr));
-					LOCK;
-					sprintf(
-						sprintf_buf,
-				"Channel: %s Accepted: %s Rejected: %s ",
-						chan + 1,
-						acc,
-						rej);
-					ca_signal(ECA_DBLCHNL, sprintf_buf);
-					UNLOCK;
-				}
-#				ifdef IOC_READ_FOLLOWING_BUILD
-				/*
-				 * IOC_BUILD messages always have a
-				 * IOC_READ msg following. (IOC_BUILD
-				 * messages are sometimes followed by
-				 * error messages which are ignored
-				 * on double replies)
-				 */
-				if (t_cmmd == IOC_BUILD){
-					msgcnt += sizeof(struct extmsg) +
-					ntohs((hdrptr + 1)->m_postsize);
-				}
-#				endif
-				break;
-			}
 			reconnect_channel(hdrptr, pnet_addr);
-
-
 			break;
-		}
+
 		case IOC_READ_SYNC:
 			piiu->outstanding_ack_count--;
 			piiu->read_seq++;
@@ -477,6 +418,12 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 				}
 			ellConcat(&free_event_list, &chix->eventq);
 			ellDelete(&piiu->chidlist, chix);
+			status = bucketRemoveItem(pBucket, chix->cid, chix);
+			if(status != BUCKET_SUCCESS){
+				ca_signal(
+					ECA_INTERNAL,
+					"bad id at channel delete");
+			}
 			free(chix);
 			piiu->outstanding_ack_count--;
 			if (!piiu->chidlist.count)
@@ -545,8 +492,10 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 				break;
 			}
 
+			LOCK;
+			args.chid = bucketLookupItem(pBucket, hdrptr->m_cid);
+			UNLOCK;
 			args.usr = ca_static->ca_exception_arg;
-			args.chid = (chid) hdrptr->m_pciu; 
 			args.type = ntohs(req->m_type);	
 			args.count = ntohs(req->m_count);
 			args.addr = (void *) (req->m_available);
@@ -592,14 +541,78 @@ static void reconnect_channel(hdrptr,pnet_addr)
 register struct extmsg		*hdrptr;
 struct in_addr			*pnet_addr;
 {
-      	chid			chan = (chid) hdrptr->m_available;
+      	chid			chan;
 	unsigned short		newiocix;
       	evid			pevent;
 	int			status;
 	enum channel_state	prev_cs;
+	struct ioc_in_use 	*chpiiu;
 
+	/*
+	 * ignore broadcast replies for deleted channels
+	 * 
+	 * lock required around use of the sprintf buffer
+	 */
+	LOCK;
+	chan = bucketLookupItem(
+			pBucket, 
+			hdrptr->m_available);
+	if(!chan){
+		sprintf(
+			sprintf_buf,
+		"Search reply from %s with server id %x",
+			host_from_addr(pnet_addr),
+			hdrptr->m_available);
+		ca_signal(ECA_NOCHANMSG, sprintf_buf);
+		UNLOCK;
+		return;
+	}
 
-      	LOCK;
+	chpiiu = &iiu[chan->iocix];
+
+	if (chan->state == cs_conn) {
+
+		if (chpiiu->sock_addr.sin_addr.s_addr == 
+				pnet_addr->s_addr) {
+			ca_printf("<Extra> ");
+#		ifdef UNIX
+			fflush(stdout);
+#		endif
+		} else {
+			char	acc[128];
+			char	rej[128];
+
+			sprintf(acc, 
+				"%s",
+				chpiiu->host_name_str);
+			sprintf(rej, 
+				"%s", 
+				host_from_addr(pnet_addr));
+			sprintf(
+				sprintf_buf,
+		"Channel: %s Accepted: %s Rejected: %s ",
+				chan + 1,
+				acc,
+				rej);
+			ca_signal(ECA_DBLCHNL, sprintf_buf);
+		}
+#		ifdef IOC_READ_FOLLOWING_BUILD
+		/*
+		 * IOC_BUILD messages always have a
+		 * IOC_READ msg following. (IOC_BUILD
+		 * messages are sometimes followed by
+		 * error messages which are ignored
+		 * on double replies)
+		 */
+		if (t_cmmd == IOC_BUILD){
+			msgcnt += sizeof(struct extmsg) +
+			ntohs((hdrptr + 1)->m_postsize);
+		}
+#		endif
+		UNLOCK;
+		return;
+	}
+
         status = alloc_ioc	(
 				pnet_addr,
 				IPPROTO_TCP,		
@@ -609,13 +622,14 @@ struct in_addr			*pnet_addr;
 	  	ca_printf("CAC: ... %s ...\n", ca_message(status));
 	 	ca_printf("CAC: for %s on %s\n", chan+1, host_from_addr(pnet_addr));
 	 	ca_printf("CAC: ignored search reply- proceeding\n");
+		UNLOCK;
 	  	return;
 	}
 
         /*	Update rmt chid fields from extmsg fields	*/
         chan->type  = ntohs(hdrptr->m_type);      
         chan->count = ntohs(hdrptr->m_count);      
-        chan->paddr = hdrptr->m_pciu;
+        chan->id.sid = hdrptr->m_cid;
 
         if(chan->iocix != newiocix){
       		struct ioc_in_use	*chpiiu;
@@ -718,37 +732,3 @@ int 	lock;
   		UNLOCK;
 	}
 }
-
-
-
-
-/*
- *      client_channel_exists()
- *      (usually will find it in the first piiu)
- *
- *      LOCK should be on while in this routine
- *
- *      iocix field in the chid block not used here because
- *      I dont trust the chid ptr yet.
- */
-static int
-client_channel_exists(chan)
-        chid            chan;
-{
-        register struct ioc_in_use      *piiu;
-        register struct ioc_in_use      *pnext_iiu = &iiu[nxtiiu];
-        int                             status;
-
-        for (piiu = iiu; piiu < pnext_iiu; piiu++) {
-                /*
-                 * ellFind returns the node number or ERROR
-                 */
-                status = ellFind(&piiu->chidlist, chan);
-                if (status != ERROR) {
-                        return TRUE;
-                }
-        }
-        return FALSE;
-}
-
-

@@ -1,40 +1,30 @@
 #!/bin/sh
 #
-# Solaris rc2 script for the EPICS CA Repeater.
+# System-V init script for the EPICS CA Repeater.
 #
 
 INSTALL_BIN=:INSTALL_BIN:
 EPICS=:EPICS:
 
-# To change the default values for the EPICS Environment parameters,
-# uncomment and modify the relevant lines below.
+# To change the default values for the EPICS environment parameters,
+# uncomment and modify the relevant lines below. These are the only
+# environment variables that the CA Repeater makes use of.
 
-# EPICS_CA_ADDR_LIST=""
-# EPICS_CA_CONN_TMO="30.0"
-# EPICS_CA_BEACON_PERIOD="15.0"
-# EPICS_CA_AUTO_ADDR_LIST="YES"
-# EPICS_CA_REPEATER_PORT="5065"
-# EPICS_CA_SERVER_PORT="5064"
-# export EPICS_CA_ADDR_LIST
-# export EPICS_CA_CONN_TMO
-# export EPICS_CA_BEACON_PERIOD
-# export EPICS_CA_AUTO_ADDR_LIST
-# export EPICS_CA_REPEATER_PORT
-# export EPICS_CA_SERVER_PORT
+# EPICS_CA_REPEATER_PORT="5065" export EPICS_CA_REPEATER_PORT
 
 if [ $1 = "start" ]; then
-	if [ -x $INSTALL_BIN/startCArepeater ]; then
+	if [ -x $INSTALL_BIN/caRepeater ]; then
 		echo "Starting EPICS CA repeater "
 		PATH=$INSTALL_BIN:$PATH: export PATH
-		$INSTALL_BIN/startCArepeater
+		$INSTALL_BIN/caRepeater &
         fi
 else
         if [ $1 = "stop" ]; then
-                pid=`/usr/bin/ps -e | /usr/bin/grep caRepeat | /usr/bin/sed -e 's/^  *//' -e 's/ .*//'`   
+                pid=`ps -e | sed -ne '/caRepeat/s/^ *\([1-9][0-9]*\).*$/\1/p'`
                 if [ "${pid}" != "" ]; then
                         echo "Stopping EPICS CA Repeater "
-                        /usr/bin/kill ${pid}
-                fi     
+                        kill ${pid}
+                fi
         fi
 fi
 

@@ -16,7 +16,7 @@ PROD_LIBS  = ca Com
 #
 # Added winmm user32 for the non-dll build
 #
-PROD_HOST_DEFAULT = ca_test iocLogServer startCArepeater 
+PROD_HOST_DEFAULT = ca_test iocLogServer
 PROD_HOST_WIN32   = ca_test iocLogServer
 PROD_SYS_LIBS_WIN32 = ws2_32 advapi32 user32
 
@@ -24,7 +24,6 @@ iocLogServer_SYS_LIBS_solaris = socket
 
 ca_test_SRCS = ca_test_main.c ca_test.c
 iocLogServer_SRCS = iocLogServer.c
-startCArepeater_SRCS = startCArepeater.c
 
 OBJS_vxWorks = ca_test
 

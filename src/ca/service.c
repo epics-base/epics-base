@@ -28,6 +28,9 @@
 /*    	100391  joh     added missing ntohs() for the VAX               */
 /*	111991	joh	converted MACRO in iocinf.h to cac_io_done()	*/
 /*			here						*/
+/*	022692	joh	moved modify of chan->state inside lock to	*/
+/*			provide sync necissary for new use of this 	*/
+/*			field.						*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -560,7 +563,7 @@ struct in_addr			*pnet_addr;
 	unsigned short		newiocix;
       	evid			pevent;
 	int			status;
-
+	enum channel_state	prev_cs;
 
 
       	LOCK;
@@ -630,6 +633,9 @@ struct in_addr			*pnet_addr;
 	 	cac_send_msg();
  	}
 
+	prev_cs = chan->state;
+	chan->state = cs_conn;
+
       	UNLOCK;
 
       	if(chan->connection_func){
@@ -641,12 +647,11 @@ struct in_addr			*pnet_addr;
         	(*chan->connection_func)(args);
 		UNLOCKEVENTS;
 	}
-	else if(chan->state==cs_never_conn){
+	else if(prev_cs==cs_never_conn){
           	/* decrement the outstanding IO count */
           	CLRPENDRECV(TRUE);
 	}
 
-	chan->state = cs_conn;
 }
 
 

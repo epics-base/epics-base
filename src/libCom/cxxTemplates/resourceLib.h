@@ -105,14 +105,6 @@ template <class T, class ID>
 class resTable {
 public:
 
-	//
-	// exceptions thrown by this class
-	//
-    class resourceWithThatNameIsAlreadyInstalled {};
-    class dynamicMemoryAllocationFailed {};
-    class entryDidntRespondToDestroyVirtualFunction {};
-    class sizeExceedsMaxIndexWidth {};
-
 	resTable (unsigned nHashTableEntries);
 
 	virtual ~resTable();
@@ -258,7 +250,6 @@ private:
 class epicsShareClass stringId {
 public:
 
-	class dynamicMemoryAllocationFailed {}; // exception
 
     enum allocationType {copyString, refString};
 
@@ -282,6 +273,33 @@ private:
 	const char * pStr;
 	const allocationType allocType;
 	static const unsigned char fastHashPermutedIndexSpace[256];
+};
+
+//
+// exceptions thrown by this library
+//
+class epicsShareClass resLib_resourceWithThatNameIsAlreadyInstalled 
+{
+public:
+    resLib_resourceWithThatNameIsAlreadyInstalled ();
+};
+
+class epicsShareClass resLib_dynamicMemoryAllocationFailed 
+{
+public:
+    resLib_dynamicMemoryAllocationFailed ();
+};
+
+class epicsShareClass resLib_entryDidntRespondToDestroyVirtualFunction 
+{
+public:
+    resLib_entryDidntRespondToDestroyVirtualFunction ();
+};
+
+class epicsShareClass resLib_sizeExceedsMaxIndexWidth 
+{
+public:
+    resLib_sizeExceedsMaxIndexWidth ();
 };
 
 /////////////////////////////////////////////////
@@ -308,7 +326,7 @@ resTable<T,ID>::resTable (unsigned nHashTableEntries) :
 	}
 
     if ( nbits > ID::maxIndexBitWidth ) {
-        throw sizeExceedsMaxIndexWidth ();
+        throw resLib_sizeExceedsMaxIndexWidth ();
     }
 
     //
@@ -325,7 +343,7 @@ resTable<T,ID>::resTable (unsigned nHashTableEntries) :
 	this->nInUse = 0u;
 	this->pTable = new tsSLList<T> [1<<nbits];
 	if (this->pTable==0) {
-		throw dynamicMemoryAllocationFailed ();
+		throw resLib_dynamicMemoryAllocationFailed ();
 	}
 }
 
@@ -561,15 +579,15 @@ resTable<T,ID>::~resTable()
 	if (this->pTable) {
 		this->destroyAllEntries();
 		if (this->nInUse != 0u) {
-			throw entryDidntRespondToDestroyVirtualFunction ();
+			throw resLib_entryDidntRespondToDestroyVirtualFunction ();
 		}
 		delete [] this->pTable;
 	}
 }
 
-//////////////////////////////////////////
+//////////////////////////////////////////////
 // chronIntIdResTable<ITEM> member functions
-//////////////////////////////////////////
+//////////////////////////////////////////////
 
 //
 // chronIntIdResTable<ITEM>::chronIntIdResTable()
@@ -753,7 +771,7 @@ stringId::stringId (const char * idIn, allocationType typeIn) :
 			memcpy ((void *)this->pStr, idIn, nChars);
 		}
 		else {
-			throw dynamicMemoryAllocationFailed ();
+			throw resLib_dynamicMemoryAllocationFailed ();
 		}
 	}
 	else {
@@ -885,6 +903,21 @@ const unsigned char stringId::fastHashPermutedIndexSpace[256] = {
 111,141,191,103, 74,245,223, 20,161,235,122, 63, 89,149, 73,238,
 134, 68, 93,183,241, 81,196, 49,192, 65,212, 94,203, 10,200, 47
 };
+
+//
+// instantiate exceptions
+//
+resLib_resourceWithThatNameIsAlreadyInstalled::
+    resLib_resourceWithThatNameIsAlreadyInstalled () {}
+
+resLib_dynamicMemoryAllocationFailed::
+    resLib_dynamicMemoryAllocationFailed () {}
+
+resLib_entryDidntRespondToDestroyVirtualFunction::
+    resLib_entryDidntRespondToDestroyVirtualFunction () {}
+
+resLib_sizeExceedsMaxIndexWidth::
+    resLib_sizeExceedsMaxIndexWidth () {}
 
 #endif // if instantiateRecourceLib is defined
 

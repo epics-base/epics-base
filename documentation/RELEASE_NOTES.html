@@ -126,8 +126,9 @@ channels)</p>
         circuit, is immediately disconnected. This change was determined to
         be necessary to improve overall system robustness in the face of IOC
         or network overload. Unfortunately, an error was made when installing
-        these changes. I am sorry about any inconvience that this has caused.
-        Thanks to Ken Evans at the APS for discovering this problem.</p>
+        these changes. I am sorry about any inconvenience that this has
+        caused. Thanks to Ken Evans at the APS for discovering this
+        problem.</p>
       </li>
     </ul>
   </li>
@@ -140,10 +141,10 @@ channels)</p>
       <li>Symptom:
         <p>Passing a nill function pointer to
         ca_replace_access_rights_event() should install a noop handler, but
-        this currently causes a failure. </p>
+        this currently causes a failure.</p>
       </li>
       <li>Additional information:
-        <p>Regression tests have been installed to detect this mistake. </p>
+        <p>Regression tests have been installed to detect this mistake.</p>
       </li>
     </ul>
   </li>
@@ -163,7 +164,7 @@ channels)</p>
         bug in the CA client library occurring when a clear channel request
         occurs in get callback handler. Regression tests have been updated so
         that this mistake will not slip through testing undetected in a
-        future release. </p>
+        future release.</p>
       </li>
     </ul>
   </li>
@@ -189,6 +190,16 @@ channels)</p>
       </li>
     </ul>
   </li>
+  <li>Fixed "failure when deleting channel in get callback handler" bug
+    <ul>
+      <li>Scope:
+        <p>Probably introduced in a previous R3.14 release.</p>
+      </li>
+      <li>Symptom:
+        <p>An intermittent C++ exceptions during regression testing.</p>
+      </li>
+    </ul>
+  </li>
 </ul>
 <ul>
   <li>Behavior Changes
@@ -196,12 +207,12 @@ channels)</p>
       <li>Process blocks attempting to exit if the application does not call
         ca_context_destroy()
         <p>In EPICS release R3.14 the CA client library is implemented using
-        auxillary threads. If the application does not call
+        axillary threads. If the application does not call
         ca_context_destroy() these threads will still be running, and
-        dependening on operating system conventions the process may
-        <em>not</em> exit if the main thread exits, but auxillary threads are
+        depending on operating system conventions the process may
+        <em>not</em> exit if the main thread exits, but axillary threads are
         still running. Note that ca_context_destroy() is functionally
-        equivalent to the depricated call ca_task_exit().</p>
+        equivalent to the deprecated call ca_task_exit().</p>
       </li>
     </ul>
   </li>
@@ -218,10 +229,10 @@ channels)</p>
         may have been recently introduced when GDD was patched to properly
         handle fixed sized strings.</p>
       </li>
-      <li>Synmptom:
+      <li>Symptom:
         <p>Failure, when writing large string through the portable CA server.
-        There appears to be a posssibility of the wrong string being written
-        when a smaller string is used. You may see the following message. </p>
+        There appears to be a possibility of the wrong string being written
+        when a smaller string is used. You may see the following message.</p>
         <p>A call to "assert (! this-&gt;pValue-&gt;unreference ())" failed
         in ..\..\..\..\include\smartGDDPointer.h line 88.</p>
       </li>

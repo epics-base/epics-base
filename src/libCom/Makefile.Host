@@ -98,6 +98,8 @@ LIBSRCS_WIN32 += $(patsubst %,dllmain.cc,$(strip $(CPLUSPLUS)))
 #
 LIBRARY:=Com
 
+Com_RCS_WIN32 = Com.rc
+
 #	only for WIN32:
 #	build LIBRARY as a DLL, use the specified def file
 LIBTYPE := SHARED

@@ -12,6 +12,9 @@ of this distribution.
 **********************************************************************/
 /*
  * $Log$
+ * Revision 1.27  1998/09/29 14:11:02  mrk
+ * TSsetClockFromUnix was made global
+ *
  * Revision 1.26  1998/06/18 00:12:22  jhill
  * use ipAddrToA
  *
@@ -173,8 +176,7 @@ static int  TSgetBroadcastSocket(int port, struct sockaddr_in* sin);
 static void TSsyncServer();
 static void TSsyncClient();
 static long TSasyncClient();
-static long TSsyncTheTime(struct timespec* cts, struct timespec* ts,
-    unsigned long tol);
+static long TSsyncTheTime(struct timespec* cts, struct timespec* ts);
 static long TSgetData(char* buf, int buf_size, int soc,
     struct sockaddr* to_sin, struct sockaddr* from_sin,
     struct timespec* round_trip);
@@ -291,7 +293,7 @@ unsigned long TSfractionToNano(unsigned long fraction)
     double value;
 
     /*value = 1e9 * fraction / 2**32 */
-    value = (1000000000.0 * (double)fraction)/4294967296.0;
+    value = (1e9 * (double)fraction)/4294967296.0;
     return((unsigned long)value);
 }
 
@@ -323,10 +325,10 @@ unsigned long TSepochUnixToEpics(struct timespec* ts)
 
 unsigned long TSepochEpicsToUnix(struct timespec* ts)
 {
-    unsigned long unixsecs = (unsigned long)ts->tv_sec;
+    unsigned long epicssecs = (unsigned long)ts->tv_sec;
     unsigned long secs;
 
-    secs = unixsecs + TS_VXWORKS_TO_EPICS_EPOCH;
+    secs = epicssecs + TS_VXWORKS_TO_EPICS_EPOCH;
     return(secs);
 }
 
@@ -810,30 +812,36 @@ static void TSstartSoftClock() /*start the soft clock watch dog*/
 /* NOTE: TSwdIncTime called at interrupt level! */
 static void TSwdIncTime() /*increment the time stamp at a 60 Hz rate*/
 {
-	int key;
+    int key;
 
-	wdStart(wd,1, (FUNCPTR)TSwdIncTime,NULL);
-	/* update the event table */
-	key=intLock();
+    wdStart(wd,1, (FUNCPTR)TSwdIncTime,NULL);
+    /* update the event table */
+    key=intLock();
 
-	if(correction_count)
-	{
-		correction_count--;
-		TSdata.event_table[TSdata.sync_event].tv_nsec +=
-			TSdata.clock_conv + correction_factor;
+    if(correction_count)
+    {
+	long nsec = TSdata.event_table[TSdata.sync_event].tv_nsec
+	    + TSdata.clock_conv;
+	nsec += correction_factor;
+	if(nsec<0) {
+	    nsec += TS_BILLION;
+	    TSdata.event_table[TSdata.sync_event].tv_sec--;
 	}
-	else
-		TSdata.event_table[TSdata.sync_event].tv_nsec +=
+	TSdata.event_table[TSdata.sync_event].tv_nsec = nsec;
+	if(--correction_count == 0) correction_factor = 0;
+    }
+    else
+	TSdata.event_table[TSdata.sync_event].tv_nsec +=
 			TSdata.clock_conv;
 
-	/* adjust seconds if needed */
-	if(TSdata.event_table[TSdata.sync_event].tv_nsec >= TS_BILLION)
-	{
-		TSdata.event_table[TSdata.sync_event].tv_sec++;
-		TSdata.event_table[TSdata.sync_event].tv_nsec -= TS_BILLION;
-	}
-	intUnlock(key);
-	return;
+    /* adjust seconds if needed */
+    if(TSdata.event_table[TSdata.sync_event].tv_nsec >= TS_BILLION)
+    {
+	TSdata.event_table[TSdata.sync_event].tv_sec++;
+	TSdata.event_table[TSdata.sync_event].tv_nsec -= TS_BILLION;
+    }
+    intUnlock(key);
+    return;
 }
 
 static void TSwdIncTimeSync()
@@ -967,14 +975,14 @@ static long TSgetUnixTime(struct timespec* ts)
     /* set up for ntp transaction to boot server */
     Debug(5,"host addr = %s\n",host_addr);
 
-	/* well known registered NTP port - or whatever port they specify */
-	status = aToIPAddr (host_addr, UDP_NTP_PORT, &sin);
-	if (status) {
-	    Debug0(2,"bad host name or IP address\n");
-	    TSdata.async_type=TS_async_none;
-	    close(soc);
-		return -1;
-	}
+    /* well known registered NTP port - or whatever port they specify */
+    status = aToIPAddr (host_addr, UDP_NTP_PORT, &sin);
+    if (status) {
+	Debug0(2,"bad host name or IP address\n");
+	TSdata.async_type=TS_async_none;
+	close(soc);
+	return -1;
+    }
 
     TSdata.async_type=TS_async_ntp;
     memset(&buf_ntp,0,sizeof(buf_ntp));
@@ -1238,30 +1246,32 @@ static long TSgetBroadcastAddr(int soc, struct sockaddr* sin)
 
 /*
 	TSsyncTheTime - given the current time (cts), and a compare time
-	stamp (ts), correct the current time clock to match ts to tolorance
-	tol.
+	stamp (ts), correct the current time clock to match ts.
 */
-static long TSsyncTheTime(struct timespec* cts,
-    struct timespec* ts, unsigned long tol)
+static long TSsyncTheTime(struct timespec* cts, struct timespec* ts)
 {
-    struct timespec diff_time;
-    int dir,key;
+    int key;
+    long diffSec;
+    long diffNsec;
+    long diffSecAbs;
 
-    dir=TScalcDiff(ts,cts,&diff_time);
-
-    /* see if clock can be corrected in sync window - up to 2 secs per tick */
-    if( diff_time.tv_sec <= (TSdata.sync_rate*2) )
+    diffSec = (long)ts->tv_sec -(long) cts->tv_sec;
+    diffNsec = (long)ts->tv_nsec - (long)cts->tv_nsec;
+    diffSecAbs = (diffSec<0) ? -diffSec : diffSec;
+    /* see if clock can be corrected in sync window - up to 1 secs per tick */
+    if(diffSecAbs <= TSdata.sync_rate)
     {
-	/* clock can be corrected if need be */
-	if( diff_time.tv_sec>0 || diff_time.tv_nsec > tol)
-	{
+        long diff;
+        long count;
+	count=sysClkRateGet()*TSdata.sync_rate;
+	diff = (TS_BILLION/count)*diffSec + diffNsec/count;
+	if(diff) {
 	    key=intLock();
-	    correction_count=sysClkRateGet()*TSdata.sync_rate;
-	    correction_factor=(((diff_time.tv_sec/TSdata.sync_rate)*TS_BILLION)
-		+ (diff_time.tv_nsec/correction_count))*dir;
+	    correction_count = count;
+	    correction_factor = diff;
 	    intUnlock(key);
-	    Debug(5,"Correction Factor=.%9.9ld\n",correction_factor);
 	}
+	Debug(5,"Correction Factor=.%9.9ld\n",correction_factor);
     }
     else
     {
@@ -1271,8 +1281,8 @@ static long TSsyncTheTime(struct timespec* cts,
 	{
 	    TSprintf("Slave not in sync: mine=%9.9lu.%9.9lu!=%lu.%lu=other\n",
 	    	cts->tv_sec, cts->tv_nsec, ts->tv_sec, ts->tv_nsec);
-	    TSprintf("slave diff time: %9.9lu.%9.9lu, tolorance=%lu\n",
-	    	diff_time.tv_sec, diff_time.tv_nsec,tol);
+	    TSprintf("slave diff time: %9.9ld.%9.9ld\n",
+	    	diffSec,diffNsec);
 	}
     }
     return 0;
@@ -1436,8 +1446,7 @@ static long TSasyncClient()
 			cts=TSdata.event_table[TSdata.sync_event];
 			curr_time.tv_sec=ntohl(stran.current_time.tv_sec);
 			curr_time.tv_nsec=ntohl(stran.current_time.tv_nsec);
-			TSsyncTheTime(&cts,&curr_time,
-				1000000000/sysClkRateGet());
+			TSsyncTheTime(&cts,&curr_time);
 			Debug(8,"master sec = %lu\n",curr_time.tv_sec);
 				Debug(8,"my sec = %lu\n", cts.tv_sec);
 		    }
@@ -1477,7 +1486,7 @@ static long TSasyncClient()
 		    ts.tv_sec = (long)ulongtemp;
 		    nsecs=ntohl(buf_ntp.transmit_ts.tv_nsec);
 		    ts.tv_nsec = TSfractionToNano(nsecs);
-		    TSsyncTheTime(&cts,&ts,1000000000/sysClkRateGet());
+		    TSsyncTheTime(&cts,&ts);
 		}
 		if(count==0)
 		{
@@ -1772,7 +1781,7 @@ static long TScalcDiff(struct timespec* a,
 	diff->tv_nsec=big_time->tv_nsec-small_time->tv_nsec;
     else
     {
-	diff->tv_nsec=small_time->tv_nsec-big_time->tv_nsec;
+	diff->tv_nsec = TS_BILLION + big_time->tv_nsec-small_time->tv_nsec;
 	diff->tv_sec--;
     }
     /* ---------------------this block sucks--------------------*/

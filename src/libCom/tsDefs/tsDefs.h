@@ -38,5 +38,6 @@ epicsShareFunc long epicsShareAPI tsLocalTime(TS_STAMP *pStamp);
 #ifdef __cplusplus
 }
 #endif
+#endif /* tsDefsh  */
 
 

@@ -3,6 +3,8 @@ include Target.include
 include $(EPICS)/config/CONFIG_BASE
 
 CMPLR = OLD
+#CMPLR = STRICT
+
 YACC = $(EYACC)
 YACCOPT = -l -d
 

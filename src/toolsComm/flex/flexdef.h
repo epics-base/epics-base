@@ -659,7 +659,7 @@ void *allocate_array(), *reallocate_array();
 #define reallocate_character_array(array,size) \
 	(Char *) reallocate_array( (void *) array, size, sizeof( Char ) )
 
-
+#if 0 /* JRW this might couse truuble... but not for IOC usage */
 /* used to communicate between scanner and parser.  The type should really
  * be YYSTYPE, but we can't easily get our hands on it.
  */
@@ -667,6 +667,7 @@ void *allocate_array(), *reallocate_array();
 extern long yylval;
 #else
 extern int yylval;
+#endif
 #endif
 
 

@@ -7,3 +7,4 @@
 # any out-of-date SCCS files, it invokes the script to add execute permissions.
 
     /bin/chmod +x makeSeqVersion makeVersion
+    /bin/chmod u+w Version

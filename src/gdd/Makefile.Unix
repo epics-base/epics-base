@@ -5,6 +5,9 @@
 # $Id$
 #
 # $Log$
+# Revision 1.11  1996/07/24 22:47:29  jhill
+# removed OPTIM_YES=-g which caused link fail
+#
 # Revision 1.10  1996/07/23 17:13:29  jbk
 # various fixes - dbmapper incorrectly worked with enum types
 #
@@ -45,7 +48,7 @@
 # *Revision 1.1  1996/05/31 13:15:14  jbk
 # *add new stuff
 
-VPATH=.:..
+VPATH=..
 
 TOP= ../../..
 # EPICS = /usr/local/epics/R3.12.2
@@ -109,6 +112,6 @@ genApps: genApps.o $(MY_OBJS)
 	$(LINK.cc) -o $@ $^ $(LDLIBS)
 
 clean::
-	/bin/rm -f aitConvertGenerated.cc aitGen genApps
+	$(RM) -f aitConvertGenerated.cc aitGen genApps
 
 

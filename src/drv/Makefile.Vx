@@ -29,3 +29,8 @@ OBJS = \
 PROD = drvSup
 
 include $(EPICS)/config/RULES.Vx
+
+$(PROD): $(OBJS)
+	$(RM) $@
+	$(LINK.c) $@ $(OBJS) $(LDLIBS)
+

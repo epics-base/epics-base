@@ -17,8 +17,9 @@ LIBRARY_IOC += _APPNAME_Ioc
 
 _APPNAME_Ioc_SRCS += xxxRecord.c
 _APPNAME_Ioc_SRCS += devXxxSoft.c
+_APPNAME_Ioc_SRCS += dbSubExample.c
 
-_APPNAME_Ioc_LIBS += $(EPICS_BASE_IOC_LIBRARIES)
+_APPNAME_Ioc_LIBS += $(EPICS_BASE_IOC_LIBS)
 _APPNAME_Ioc_SYS_LIBS_solaris += c
 
 #=============================
@@ -27,7 +28,6 @@ PROD_IOC = _APPNAME_
 
 # <name>_registerRecordDeviceDriver.cpp will be created from <name>.dbd
 _APPNAME__SRCS += _APPNAME__registerRecordDeviceDriver.cpp
-_APPNAME__SRCS += dbSubExample.c
 _APPNAME__SRCS_DEFAULT += _APPNAME_Main.cpp
 _APPNAME__SRCS_vxWorks += -nil-
 
@@ -46,7 +46,7 @@ _APPNAME__LIBS += _APPNAME_Ioc
 #_APPNAME__LIBS += seq
 #_APPNAME__LIBS += pv
 
-_APPNAME__LIBS += $(EPICS_BASE_IOC_LIBRARIES)
+_APPNAME__LIBS += $(EPICS_BASE_IOC_LIBS)
 
 #The following builds sncExample as a standalone application
 #PROD_HOST += sncExample
@@ -54,7 +54,7 @@ _APPNAME__LIBS += $(EPICS_BASE_IOC_LIBRARIES)
 #sncExample_SRCS += sncExample.stt
 #sncExample_LIBS += seq
 #sncExample_LIBS += pv
-#sncExample_LIBS += $(EPICS_BASE_IOC_LIBRARIES)
+#sncExample_LIBS += $(EPICS_BASE_HOST_LIBS)
 
 #===========================
 

@@ -14,6 +14,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include <stdio.h>
 
 #define epicsExportSharedSymbols
 #include "registry.h"
@@ -39,4 +40,19 @@ epicsShareFunc REGISTRYFUNCTION epicsShareAPI registryFunctionFind(
         if(func)registryFunctionAdd(name,func);
     }
     return(func);
+}
+
+epicsShareFunc int epicsShareAPI registryFunctionRefAdd(
+   registryFunctionRef ref[],int nfunctions)
+{
+    int ind;
+
+    for(ind=0; ind<nfunctions; ind++) {
+        if(!registryFunctionAdd(ref[ind].name,ref[ind].addr)) {
+            printf("registryFunctionRefAdd: could not register %s\n",
+                ref[ind].name);
+            return(0);
+        }
+    }
+    return(1);
 }

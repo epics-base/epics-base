@@ -99,7 +99,7 @@ epicsShareFunc long epicsShareAPI dbWriteDeviceFP(DBBASE *pdbbase,FILE *fp);
 epicsShareFunc long epicsShareAPI dbWriteDriver(
     DBBASE *pdbbase,const char *filename);
 epicsShareFunc long epicsShareAPI dbWriteDriverFP(DBBASE *pdbbase,FILE *fp);
-epicsShareFunc long epicsShareAPI dbWriteFunctionFP(DBBASE *pdbbase,FILE *fp);
+epicsShareFunc long epicsShareAPI dbWriteRegistrarFP(DBBASE *pdbbase,FILE *fp);
 epicsShareFunc long epicsShareAPI dbWriteBreaktable(
     DBBASE *pdbbase,const char *filename);
 epicsShareFunc long epicsShareAPI dbWriteBreaktableFP(DBBASE *pdbbase,FILE *fp);
@@ -214,7 +214,7 @@ epicsShareFunc void epicsShareAPI dbDumpField(
 epicsShareFunc void epicsShareAPI dbDumpDevice(
     DBBASE *pdbbase,const char *recordTypeName);
 epicsShareFunc void epicsShareAPI dbDumpDriver(DBBASE *pdbbase);
-epicsShareFunc void epicsShareAPI dbDumpFunction(DBBASE *pdbbase);
+epicsShareFunc void epicsShareAPI dbDumpRegistrar(DBBASE *pdbbase);
 epicsShareFunc void epicsShareAPI dbDumpBreaktable(
     DBBASE *pdbbase,const char *name);
 epicsShareFunc void epicsShareAPI dbPvdDump(DBBASE *pdbbase,int verbose);

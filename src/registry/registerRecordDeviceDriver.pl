@@ -14,7 +14,7 @@ $file = $ARGV[0];
 $numberRecordType = 0;
 $numberDeviceSupport = 0;
 $numberDriverSupport = 0;
-$numberFunctions = 0;
+$numberRegistrar = 0;
 
 open(INP,"$file") or die "$! opening file";
 while(<INP>) {
@@ -32,9 +32,9 @@ while(<INP>) {
         /driver\s*\(\s*(\w+)/;
         $driverSupport[$numberDriverSupport++] = $1;
     }
-    if( /function/) {
-        /function\s*\(\s*(\w+)/;
-        $function[$numberFunctions++] = $1;
+    if( /registrar/) {
+        /registrar\s*\(\s*(\w+)/;
+        $registrar[$numberRegistrar++] = $1;
     }
 }
 close(INP) or die "$! closing file";
@@ -59,7 +59,6 @@ print << "END" ;
 #include "registryRecordType.h"
 #include "registryDeviceSupport.h"
 #include "registryDriverSupport.h"
-#include "registryFunction.h"
 #include "iocsh.h"
 #include "shareLib.h"
 END
@@ -151,23 +150,19 @@ if($numberDriverSupport>0) {
     print "};\n\n";
 }
 
-#definitions functions
-if($numberFunctions>0) {
-    for ($i=0; $i<$numberFunctions; $i++) {
-	print "extern \"C\" void $function[$i](void);\n";
+#definitions registrar
+if($numberRegistrar>0) {
+    print "typedef void(*REGISTRARFUNC)(void);\n";
+    print "extern \"C\" {\n";
+    for ($i=0; $i<$numberRegistrar; $i++) {
+	print "epicsShareFunc void epicsShareAPI $registrar[$i](void);\n";
     }
-    print "\nstatic const char *functionNames[$numberFunctions] = {\n";
-    for ($i=0; $i<$numberFunctions; $i++) {
-        print "    \"$function[$i]\"";
-        if($i < $numberFunctions-1) { print ",";}
-        print "\n";
-    }
-    print "};\n\n";
+    print "}\n\n";
     
-    print "static REGISTRYFUNCTION fncsl[$i] = {\n";
-    for ($i=0; $i<$numberFunctions; $i++) {
-        print "    $function[$i]";
-        if($i < $numberFunctions-1) { print ",";}
+    print "static REGISTRARFUNC registrarFunctions[$i] = {\n";
+    for ($i=0; $i<$numberRegistrar; $i++) {
+        print "    &$registrar[$i]";
+        if($i < $numberRegistrar-1) { print ",";}
         print "\n";
     }
     print "};\n\n";
@@ -230,15 +225,10 @@ if($numberDriverSupport>0) {
     }
 END
 }
-if($numberFunctions>0) {
+if($numberRegistrar>0) {
     print << "END" ;
-    for(i=0; i< $numberFunctions;  i++ ) {
-        if(registryFunctionFind(functionNames[i])) continue;
-        if(!registryFunctionAdd(functionNames[i],fncsl[i])) {
-            errlogPrintf(\"registryFunctionAdd failed %s\\n\",
-                functionNames[i]);
-            continue;
-        }
+    for(i=0; i< $numberRegistrar;  i++ ) {
+        registrarFunctions[i]();
     }
 END
 }

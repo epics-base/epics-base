@@ -144,7 +144,7 @@ typedef struct dbBase {
 	ELLLIST		menuList;
 	ELLLIST		recordTypeList;
 	ELLLIST		drvList;
-	ELLLIST		funcList;
+	ELLLIST		registrarList;
 	ELLLIST		bptList;	/*Break Point Table Head*/
 	void		*pathPvt;
 	void		*ppvd;      /* pointer to process variable directory*/

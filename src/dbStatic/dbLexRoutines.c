@@ -62,6 +62,7 @@ static void dbRecordtypeFieldItem(char *name,char *value);
 static void dbDevice(char *recordtype,char *linktype,
 	char *dsetname,char *choicestring);
 static void dbDriver(char *name);
+static void dbRegistrar(char *name);
 
 static void dbBreakHead(char *name);
 static void dbBreakItem(char *value);
@@ -744,23 +745,23 @@ static void dbDriver(char *name)
     ellAdd(&pdbbase->drvList,&pdrvSup->node);
 }
 
-static void dbFunction(char *name)
+static void dbRegistrar(char *name)
 {
     dbText	*ptext;
     GPHENTRY	*pgphentry;
 
-    pgphentry = gphFind(pdbbase->pgpHash,name,&pdbbase->funcList);
+    pgphentry = gphFind(pdbbase->pgpHash,name,&pdbbase->registrarList);
     if(pgphentry) {
 	return;
     }
     ptext = dbCalloc(1,sizeof(dbText));
     ptext->text = strduplicate(name);
-    pgphentry = gphAdd(pdbbase->pgpHash,ptext->text,&pdbbase->funcList);
+    pgphentry = gphAdd(pdbbase->pgpHash,ptext->text,&pdbbase->registrarList);
     if(!pgphentry) {
 	yyerrorAbort("gphAdd failed");
     } 
     pgphentry->userPvt = ptext;
-    ellAdd(&pdbbase->funcList,&ptext->node);
+    ellAdd(&pdbbase->registrarList,&ptext->node);
 }
 
 static void dbBreakHead(char *name)

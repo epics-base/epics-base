@@ -545,7 +545,7 @@ dbBase * epicsShareAPI dbAllocBase(void)
     ellInit(&pdbbase->menuList);
     ellInit(&pdbbase->recordTypeList);
     ellInit(&pdbbase->drvList);
-    ellInit(&pdbbase->funcList);
+    ellInit(&pdbbase->registrarList);
     ellInit(&pdbbase->bptList);
     gphInitPvt(&pdbbase->pgpHash,256);
     dbPvdInitPvt(pdbbase);
@@ -665,10 +665,10 @@ void epicsShareAPI dbFreeBase(dbBase *pdbbase)
 	free((void *)pdrvSup);
 	pdrvSup = pdrvSupNext;
     }
-    ptext = (dbText *)ellFirst(&pdbbase->funcList);
+    ptext = (dbText *)ellFirst(&pdbbase->registrarList);
     while(ptext) {
 	ptextNext = (dbText *)ellNext(&ptext->node);
-	ellDelete(&pdbbase->funcList,&ptext->node);
+	ellDelete(&pdbbase->registrarList,&ptext->node);
 	free((void *)ptext->text);
 	free((void *)ptext);
 	ptext = ptextNext;
@@ -1149,7 +1149,7 @@ long epicsShareAPI dbWriteDriverFP(DBBASE *pdbbase,FILE *fp)
     return(0);
 }
 
-long epicsShareAPI dbWriteFunctionFP(DBBASE *pdbbase,FILE *fp)
+long epicsShareAPI dbWriteRegistrarFP(DBBASE *pdbbase,FILE *fp)
 {
     dbText	*ptext;
 
@@ -1157,9 +1157,9 @@ long epicsShareAPI dbWriteFunctionFP(DBBASE *pdbbase,FILE *fp)
 	fprintf(stderr,"pdbbase not specified\n");
 	return(-1);
     }
-    for(ptext = (dbText *)ellFirst(&pdbbase->funcList);
+    for(ptext = (dbText *)ellFirst(&pdbbase->registrarList);
     ptext; ptext = (dbText *)ellNext(&ptext->node)) {
-	fprintf(fp,"function(%s)\n",ptext->text);
+	fprintf(fp,"registrar(%s)\n",ptext->text);
     }
     return(0);
 }
@@ -3769,13 +3769,13 @@ void  epicsShareAPI dbDumpDriver(DBBASE *pdbbase)
     dbWriteDriverFP(pdbbase,stdout);
 }
 
-void  epicsShareAPI dbDumpFunction(DBBASE *pdbbase)
+void  epicsShareAPI dbDumpRegistrar(DBBASE *pdbbase)
 {
     if(!pdbbase) {
 	printf("pdbbase not specified\n");
 	return;
     }
-    dbWriteFunctionFP(pdbbase,stdout);
+    dbWriteRegistrarFP(pdbbase,stdout);
 }
 
 void  epicsShareAPI dbDumpBreaktable(DBBASE *pdbbase,const char *name)

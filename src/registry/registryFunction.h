@@ -18,11 +18,20 @@ extern "C" {
 
 typedef void (*REGISTRYFUNCTION)(void);
 
+typedef struct registryFunctionRef {
+    char            *name;
+    REGISTRYFUNCTION addr;
+}registryFunctionRef;
+#define registryFunctionRefNumber(functionRefArray) \
+   (sizeof((functionRefArray))/sizeof(registryFunctionRef))
+
 /* c interface definitions */
 epicsShareFunc int epicsShareAPI registryFunctionAdd(
     const char *name,REGISTRYFUNCTION func);
 epicsShareFunc REGISTRYFUNCTION epicsShareAPI registryFunctionFind(
     const char *name);
+epicsShareFunc int epicsShareAPI registryFunctionRefAdd(
+   registryFunctionRef ref[],int nfunctions);
 
 #ifdef __cplusplus
 }

@@ -50,6 +50,7 @@
  * .17  04-11-90        lrd     make locals static
  * .18  07-27-90        lrd     implement the output to a database record
  * .19  10-10-90	mrk	extensible record and device support
+ * .20  09-25-91	jba	added breakpoint table conversion
  */
 
 #include	<vxWorks.h>
@@ -123,11 +124,10 @@ struct aodset { /* analog input dset */
 #define OUTPUT_FULL 		0
 #define OUTPUT_INCREMENTAL	1
 
-/* The following must match the definition in choiceGbl.ascii */
-#define LINEAR 1
-
 void alarm();
 int convert();
+long cvtRawToEngBpt();
+long cvtEngToRawBpt();
 void monitor();
 
 
@@ -135,7 +135,8 @@ static long init_record(pao)
     struct aoRecord	*pao;
 {
     struct aodset *pdset;
-    long status=0;
+    long	status=0;
+    double	value;
 
     if(!(pdset = (struct aodset *)(pao->dset))) {
 	recGblRecordError(S_dev_noDSET,pao,"ao: init_record");
@@ -151,16 +152,33 @@ static long init_record(pao)
 	recGblRecordError(S_dev_missingSup,pao,"ao: init_record");
 	return(S_dev_missingSup);
     }
+    pao->init = TRUE;
+
     if( pdset->init_record ) {
-	if((status=(*pdset->init_record)(pao,process))) return(status);
-	if(status == 0) { /* convert */
-            if (pao->linr == LINEAR){
-                pao->val = (pao->rval + pao->roff)*pao->eslo + pao->egul;
-            }else{
+        status=(*pdset->init_record)(pao,process);
+        switch(status){
+        case(0): /* convert */
+            if (pao->linr == 0){
                 pao->val = pao->rval;
+                pao->udf=FALSE;
+            }else if (pao->linr == 1){
+                     pao->val = (pao->rval + pao->roff)*pao->eslo + pao->egul;
+                     pao->udf=FALSE;
+            }else{
+		value=pao->rval;
+                if (cvtRawToEngBpt(&value,pao->linr,pao->init,&pao->pbrk,&pao->lbrk)==0){
+                     pao->val=value;
+                     pao->udf=FALSE;
+                }
             }
-	}
-	pao->udf = FALSE;
+        break;
+        case(2): /* no convert */
+        break;
+        default:
+	     recGblRecordError(S_dev_badInitRet,pao,"ao: init_record");
+	     return(S_dev_badInitRet);
+        break;
+        }
     }
     pao->pval = pao->val;
     return(0);
@@ -198,6 +216,7 @@ static long process(paddr)
 	/* process the forward scan link record */
 	if (pao->flnk.type==DB_LINK) dbScanPassive(pao->flnk.value.db_link.pdbAddr);
 
+	pao->init=FALSE;
 	pao->pact=FALSE;
 	return(status);
 }
@@ -216,6 +235,7 @@ static long special(paddr,after)
             recGblDbaddrError(S_db_noMod,paddr,"ao: special");
             return(S_db_noMod);
         }
+	pao->init=TRUE;
         if(!(pdset->special_linconv)) return(0);
         return((*pdset->special_linconv)(pao,after));
     default:
@@ -403,14 +423,23 @@ static int convert(pao)
 	pao->oval = value;
 
         /* convert */
-        if (pao->linr == LINEAR){
-                if (pao->eslo == 0.0) pao->rval = 0;
-                else {
-			pao->rval = (value - pao->egul) / pao->eslo;
-			pao->rval -= pao->roff;
-		}
-        }else{
+        if (pao->linr == 0){
                 pao->rval = value;
+        } else if (pao->linr == 1){
+              if (pao->eslo == 0.0) pao->rval = 0;
+              else {
+                   pao->rval = (value - pao->egul) / pao->eslo;
+                   pao->rval -= pao->roff;
+              }
+        }else{
+	      if(cvtEngToRawBpt(&value,pao->linr,pao->init,&pao->pbrk,&pao->lbrk)!=0){
+	           if (pao->nsev<VALID_ALARM){
+		        pao->nsta=SOFT_ALARM;
+		        pao->nsev=VALID_ALARM;
+		   }
+		   return(1);
+	     }
+	     pao->rval=value;
         }
 	return(0);
 }

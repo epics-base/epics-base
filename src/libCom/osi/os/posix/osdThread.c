@@ -24,9 +24,10 @@
 #include <unistd.h>
 
 #include "ellLib.h"
-#include "epicsThread.h"
-#include "epicsMutex.h"
 #include "epicsEvent.h"
+#include "epicsMutex.h"
+#include "epicsString.h"
+#include "epicsThread.h"
 #include "cantProceed.h"
 #include "errlog.h"
 #include "epicsAssert.h"

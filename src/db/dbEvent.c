@@ -924,7 +924,7 @@ LOCAL void event_task (void *pParm)
  * DB_START_EVENTS()
  */
 int epicsShareAPI db_start_events (
-    dbEventCtx ctx,const char *taskname, void (*init_func)(epicsThreadId), 
+    dbEventCtx ctx,const char *taskname, void (*init_func)(void *), 
     void *init_func_arg, unsigned osiPriority )
 {
      struct event_user *evUser = (struct event_user *) ctx;

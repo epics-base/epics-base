@@ -1,5 +1,5 @@
 /* devLib.c - support for allocation of common device resources */
-/* @(#)devLib.c	1.2	3/30/94 */
+/* @(#)$Id$*/
 
 /*
  *	Original Author: Marty Kraimer

@@ -25,6 +25,10 @@ INC += gddAppFuncTable.h
 INC += smartGDDPointer.h
 INC += gddApps.h
 
+HTMLS += gdd.html
+HTMLS += gddref.html
+HTMLS += gddref2.html
+
 AITGENSRCS := gdd.cc gddTest.cc gddAppTable.cc gddNewDel.cc \
 	gddAppDefs.cc aitTypes.c aitConvert.cc aitHelpers.cc  \
 	gddArray.cc gddContainer.cc gddErrorCodes.cc gddUtils.cc

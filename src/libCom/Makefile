@@ -131,6 +131,19 @@ USR_CFLAGS = -D_NO_PROTO
 #
 LIBRARY=Com
 
+#   only for WIN32:
+#   build LIBRARY as a DLL, use the specified def file
+LIBTYPE := SHARED
+
+#   libs needed for PROD and TESTPRODUCT
+PROD_LIBS := Com
+SYS_PROD_LIBS_WIN32 := ws2_32 advapi32
+
+#USR_CFLAGS += -DTS_TEST
+#TESTPROD_SRCS=tsSubr.c
+#TESTPROD=testtsLib
+#TESTPROD=envtest
+#TESTPROD=osiTimeTest fdManagerTest
 
 #	for bldErrSymTbl:
 #

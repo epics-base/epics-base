@@ -31,13 +31,13 @@
 #define epicsExportSharedSymbols
 #include "timerPrivate.h"
 
-timerQueueActiveMgr queueMgr;
+epicsSingleton < timerQueueActiveMgr > pTimerQueueMgrEPICS;
 
 epicsTimerQueueActive::~epicsTimerQueueActive () {}
 
 epicsTimerQueueActive &epicsTimerQueueActive::allocate ( bool okToShare, unsigned threadPriority )
 {
-    return queueMgr.allocate ( okToShare, threadPriority );
+    return pTimerQueueMgrEPICS->allocate ( okToShare, threadPriority );
 }
 
 timerQueueActive::timerQueueActive ( bool okToShareIn, unsigned priority ) :

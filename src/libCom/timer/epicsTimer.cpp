@@ -76,7 +76,7 @@ epicsTimerQueueActiveForC::~epicsTimerQueueActiveForC ()
 
 void epicsTimerQueueActiveForC::release ()
 {
-    queueMgr.release ( *this );
+    pTimerQueueMgrEPICS->release ( *this );
 }
 
 epicsTimerQueuePassiveForC::epicsTimerQueuePassiveForC 
@@ -144,7 +144,8 @@ extern "C" epicsTimerQueueId epicsShareAPI
     epicsTimerQueueAllocate ( int okToShare, unsigned int threadPriority )
 {
     try {
-        epicsTimerQueueActiveForC &tmr = queueMgr.allocate ( okToShare ? true : false, threadPriority );
+        epicsTimerQueueActiveForC &tmr = 
+            pTimerQueueMgrEPICS->allocate ( okToShare ? true : false, threadPriority );
         return &tmr;
     }
     catch ( ... ) {

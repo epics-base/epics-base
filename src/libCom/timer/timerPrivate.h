@@ -160,7 +160,7 @@ private:
     timerQueueActiveMgr & operator = ( const timerQueueActiveMgr & );
 };
 
-extern timerQueueActiveMgr queueMgr;
+extern epicsSingleton < timerQueueActiveMgr > pTimerQueueMgrEPICS;
 
 class timerQueuePassive : public epicsTimerQueuePassive {
 public:

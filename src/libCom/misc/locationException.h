@@ -17,7 +17,7 @@
 template <class T>
 class sourceFileLocation : public T {
 public:
-    sourceFileLocation (T &parm, const char *fileName, unsigned lineNumber);
+    sourceFileLocation (const T &parm, const char *fileName, unsigned lineNumber);
     const char *fileName () const;
     unsigned lineNumber () const;
 private:
@@ -43,6 +43,7 @@ inline const char * sourceFileLocation<T>::fileName () const
 
 #define throwWithLocation(parm) throwExceptionWithLocation (parm, __FILE__, __LINE__);
 
+template <class T>
 inline void throwExceptionWithLocation (T &parm, const char *pFileName, unsigned lineNo)
 {
 #   ifdef noExceptionsFromCXX

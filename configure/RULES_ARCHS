@@ -37,7 +37,7 @@ O.Common:
 	$(MKDIR) O.Common
 
 checkRelease: $(wildcard $(TOP)/configure/RELEASE*)
-	$(PERL) $(TOOLS)/convertRelease.pl -t $(TOP) $@
+	$(PERL) $(TOOLS)/convertRelease.pl -h $(EPICS_HOST_ARCH) -t $(TOP) $@
 
 #
 # special clean rule
@@ -52,5 +52,5 @@ clean$(DIVIDER)% ::
 .PHONY : $(buildActionArchTargets)
 .PHONY : $(buildArchs)
 .PHONY : $(ACTIONS) clean all
-.PHONY : checkSupport
+.PHONY : checkRelease
 

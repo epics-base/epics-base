@@ -8,11 +8,6 @@ DBEXPAND	= $(EPICS_BASE_HOST_BIN)/dbExpand$(HOSTEXE)
 DBST		= dbst
 MAKEDBDEPENDS	= $(PERL) $(TOP)/configure/makeDbDepends.pl
 REPLACEVAR	= $(PERL) $(TOP)/configure/replaceVAR.pl
-ifndef WIN32
-TOUCH		= touch
-else
-TOUCH		= type NUL >>
-endif
 
 INSTALL_BPTS = $(BPTS:%= $(INSTALL_DBD)/%)
 INSTALL_DBS = $(DBDINSTALL:%= $(INSTALL_DBD)/%)

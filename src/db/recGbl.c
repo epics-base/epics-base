@@ -48,7 +48,7 @@
 #include <limits.h>
 
 #include "dbDefs.h"
-#include "osiClock.h"
+#include "tsStamp.h"
 #include "epicsPrint.h"
 #include "dbBase.h"
 #include "dbAccess.h"
@@ -315,10 +315,10 @@ void recGblGetTimeStamp(void* prec)
     if(pr->tsel.type!=CONSTANT)
     {
         dbGetLink(&(pr->tsel), DBR_SHORT,&(pr->tse),0,0);
-        status = clockGetEventTime((int)pr->tse,&pr->time);
+        status = tsStampGetEvent((int)pr->tse,&pr->time);
     }
     else
-        status = clockGetEventTime((int)pr->tse,&pr->time);
+        status = tsStampGetEvent((int)pr->tse,&pr->time);
     if(status) errlogPrintf("%s recGblGetTimeStamp failed\n",pr->name);
 }
 

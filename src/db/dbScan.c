@@ -54,7 +54,7 @@
 #include "osiSem.h"
 #include "osiInterrupt.h"
 #include "osiThread.h"
-#include "osiClock.h"
+#include "tsStamp.h"
 #include "cantProceed.h"
 #include "osiRing.h"
 #include "epicsPrint.h"
@@ -84,7 +84,7 @@ typedef struct scan_list{
 	semId	lock;
 	ELLLIST		list;
 	short		modified;/*has list been modified?*/
-	long		ticks;	/*ticks per period for periodic*/
+	double		rate;
 }scan_list;
 /*scan_elements are allocated and the address stored in dbCommon.spvt*/
 typedef struct scan_element{
@@ -93,7 +93,6 @@ typedef struct scan_element{
 	struct dbCommon		*precord;
 }scan_element;
 
-int volatile scanRestart=FALSE;
 static char *priorityName[NUM_CALLBACK_PRIORITIES] = {
 	"Low","Medium","High"};
 
@@ -116,7 +115,7 @@ static io_scan_list *iosl_head[NUM_CALLBACK_PRIORITIES]={NULL,NULL,NULL};
 /* PERIODIC SCANNER */
 static int nPeriodic=0;
 static scan_list **papPeriodic; /* pointer to array of pointers*/
-static void **periodicTaskId;		/*array of pointers after allocation*/
+static threadId *periodicTaskId; /*array of thread ids*/
 
 /* Private routines */
 static void onceTask(void);
@@ -124,7 +123,6 @@ static void initOnce(void);
 static void periodicTask(void *arg);
 static void initPeriodic(void);
 static void spawnPeriodic(int ind);
-static void wdPeriodic(long ind);
 static void initEvent(void);
 static void eventCallback(CALLBACK *pcallback);
 static void ioeventCallback(CALLBACK *pcallback);
@@ -316,16 +314,13 @@ int scanppl(double rate)	/*print periodic list*/
 {
     scan_list	*psl;
     char	message[80];
-    double	period;
     int		i;
 
     for (i=0; i<nPeriodic; i++) {
 	psl = papPeriodic[i];
 	if(psl==NULL) continue;
-	period = psl->ticks;
-	period /= clockGetRate();
-	if(rate>0.0 && (fabs(rate - period) >.05)) continue;
-	sprintf(message,"Scan Period= %f seconds ",period);
+	if(rate>0.0 && (fabs(rate - psl->rate) >.05)) continue;
+	sprintf(message,"Scan Period= %f seconds ",psl->rate);
 	printList(psl,message);
     }
     return(0);
@@ -501,22 +496,19 @@ static void periodicTask(void *arg)
 {
     scan_list *psl = (scan_list *)arg;
 
-    unsigned long	start_time,end_time,diff;
-    double		delay;
+    TS_STAMP	start_time,end_time;
+    double	diff;
+    double	delay;
 
-    start_time = clockGetCurrentTick();
+    tsStampGetCurrent(&start_time);
     while(TRUE) {
 	if(interruptAccept)scanList(psl);
-	end_time = clockGetCurrentTick();
-        if(end_time>=start_time) {
-            diff = end_time - start_time;
-        } else {
-            diff = 1 + end_time + (ULONG_MAX - start_time);
-        }
-	delay = psl->ticks - diff;
-        delay = (delay<=0.0) ? .1 : delay/clockGetRate();
+        tsStampGetCurrent(&end_time);
+        diff = tsStampDiffInSeconds(&end_time,&start_time);
+	delay = psl->rate - diff;
+        delay = (delay<=0.0) ? .1 : delay;
 	threadSleep(delay);
-	start_time = clockGetCurrentTick();
+        tsStampGetCurrent(&start_time);
     }
 }
 
@@ -542,7 +534,7 @@ static void initPeriodic()
                 psl->lock = semMutexMustCreate();
 		ellInit(&psl->list);
 		sscanf(pmenu->papChoiceValue[i+SCAN_1ST_PERIODIC],"%f",&temp);
-		psl->ticks = temp * clockGetRate();
+		psl->rate = temp;
 	}
 }
 
@@ -552,26 +544,14 @@ static void spawnPeriodic(int ind)
     char	taskName[20];
 
     psl = papPeriodic[ind];
-    sprintf(taskName,"scan%ld",psl->ticks);
+    sprintf(taskName,"scan%f",psl->rate);
     periodicTaskId[ind] = threadCreate(
         taskName,
         threadPriorityScanLow + ind,
         threadGetStackSize(threadStackBig),
-        periodicTask,
+        (THREADFUNC)periodicTask,
         (void *)psl);
-    taskwdInsert(periodicTaskId[ind],wdPeriodic,(void *)(long)ind);
-}
-
-static void wdPeriodic(long ind)
-{
-    scan_list *psl;
-
-    if(!scanRestart)return;
-    psl = papPeriodic[ind];
-    taskwdRemove(periodicTaskId[ind]);
-    /*Unlock so that task can be resumed*/
-    semMutexGive(psl->lock);
-    spawnPeriodic(ind);
+    taskwdInsert(periodicTaskId[ind],NULL,0L);
 }
 
 static void ioeventCallback(CALLBACK *pcallback)

@@ -14,6 +14,9 @@ of this distribution.
 /* Modification Log:
  * -----------------
  *  $Log$
+ *  Revision 1.11  1999/12/14 22:01:33  mrk
+ *  changes for osiSem changes
+ *
  *  Revision 1.10  1999/09/13 18:26:17  mrk
  *  changes for 3.14
  *
@@ -65,9 +68,9 @@ of this distribution.
 #include <string.h>
 
 #include "dbDefs.h"
-#include "osiClock.h"
 #include "osiThread.h"
 #include "osiSem.h"
+#include "tsStamp.h"
 #include "ellLib.h"
 #include "errlog.h"
 #include "alarm.h"
@@ -725,7 +728,7 @@ int dbBkpt(struct dbCommon *precord)
 
         pqe->entrypoint = precord;
         pqe->count = 1;
-        pqe->time = clockGetCurrentTick();
+        tsStampGetCurrent(&pqe->time);
         pqe->sched = 0;
 
 #ifdef BKPT_DIAG
@@ -891,11 +894,11 @@ long dbstat()
   struct LS_LIST *pnode;
   struct BP_LIST *pbl;
   struct EP_LIST *pqe;
-  unsigned long time;
+  TS_STAMP time;
 
   semMutexMustTake(bkpt_stack_sem);
 
-  time = clockGetCurrentTick();
+  tsStampGetCurrent(&time);
 
  /*
   *  Traverse list, reporting stopped records
@@ -910,10 +913,10 @@ long dbstat()
       /* for each entrypoint detected, print out entrypoint statistics */
        pqe = (struct EP_LIST *) ellFirst(&pnode->ep_queue); 
        while (pqe != NULL) {
-          if (time - pqe->time) {
+          double diff = tsStampDiffInSeconds(&time,&pqe->time);
+          if (diff) {
              printf("             Entrypoint: %-28.28s  #C: %5.5lu  C/S: %7.1f\n",
-                 pqe->entrypoint->name, pqe->count,
-                 clockGetRate() * pqe->count/((double)(time-pqe->time)));
+                 pqe->entrypoint->name, pqe->count,diff);
           }
           pqe = (struct EP_LIST *) ellNext((ELLNODE *)pqe);
        }

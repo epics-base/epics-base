@@ -96,7 +96,7 @@ extern "C" {
 #include <stddef.h>
 
 #include "epicsTypes.h"
-#include "osiTime.h"
+#include "tsStamp.h"
 #include "callback.h"
 #include "ellLib.h"
 #include "dbAddr.h"

@@ -53,7 +53,6 @@ of this distribution.
 
 #include "dbDefs.h"
 #include "osiThread.h"
-#include "osiClock.h"
 #include "osiSem.h"
 #include "epicsPrint.h"
 #include "ellLib.h"
@@ -77,7 +76,6 @@ of this distribution.
 #include "dbStaticLib.h"
 #include "initHooks.h"
 #include "asLib.h"
-#include "logClient.h"
 
 LOCAL int initialized=FALSE;
 
@@ -123,7 +121,6 @@ int iocInit()
     initDrvSup(); initHooks(initHookAfterInitDrvSup);
     initRecSup(); initHooks(initHookAfterInitRecSup);
     initDevSup(); initHooks(initHookAfterInitDevSup);
-    clockInit(); initHooks(initHookAfterClockInit);
 
     initDatabase();
     dbLockInitRecords(pdbbase);

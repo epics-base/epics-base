@@ -806,7 +806,7 @@ long dbPutLinkValue(struct link *plink,short dbrType,
 
 		status=dbPut(paddr,dbrType,pbuffer,nRequest);
 		if(ppv_link->pvlMask&pvlOptMS)
-			recGblSetSevr(pdest,LINK_ALARM,psource->sevr);
+			recGblSetSevr(pdest,LINK_ALARM,psource->nsev);
 		if(status) return(status);
 		if((paddr->pfield==(void *)&pdest->proc)
 		|| (ppv_link->pvlMask&pvlOptPP && pdest->scan==0)) {
@@ -1133,10 +1133,10 @@ long dbPut(DBADDR *paddr,short dbrType,const void *pbuffer,long nRequest)
 
         if(special==SPC_ATTRIBUTE) return(S_db_noMod);
 	if(dbrType==DBR_PUT_ACKT && field_type<=DBF_DEVICE) {
-	    status=putAckt(paddr,pbuffer,(long)1,(long)1,(long)0);
+	    status=putAckt(paddr,(unsigned short*)pbuffer,1l,1l,0l);
 	    return(status);
 	} else if(dbrType==DBR_PUT_ACKS && field_type<=DBF_DEVICE) {
-	    status=putAcks(paddr,pbuffer,(long)1,(long)1,(long)0);
+	    status=putAcks(paddr,(unsigned short*)pbuffer,1l,1l,0l);
 	    return(status);
 	} else if( INVALID_DB_REQ(dbrType) || (field_type>DBF_DEVICE)) {
 		sprintf(message,"dbPut - database request type is %d",dbrType);

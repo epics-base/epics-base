@@ -44,7 +44,6 @@ typedef enum {
     initHookAfterInitDrvSup,
     initHookAfterInitRecSup,
     initHookAfterInitDevSup,
-    initHookAfterClockInit,
     initHookAfterInitDatabase,
     initHookAfterFinishDevSup,
     initHookAfterScanInit,
@@ -70,24 +69,5 @@ void initHooks();
 #ifdef __cplusplus
 }
 #endif
-
-/*FOLLOWING IS OBSOLETE*/
-/*The following are for compatibility with old initHooks.c functions*/
-#define INITHOOKatBeginning		initHookAtBeginning
-#define INITHOOKafterGetResources	initHookAfterGetResources
-#define INITHOOKafterLogInit		initHookAfterLogInit
-#define INITHOOKafterCallbackInit	initHookAfterCallbackInit
-#define INITHOOKafterCaLinkInit		initHookAfterCaLinkInit
-#define INITHOOKafterInitDrvSup		initHookAfterInitDrvSup
-#define INITHOOKafterInitRecSup		initHookAfterInitRecSup
-#define INITHOOKafterInitDevSup		initHookAfterInitDevSup
-#define INITHOOKafterTS_init		initHookAfterTS_init
-#define INITHOOKafterInitDatabase	initHookAfterInitDatabase
-#define INITHOOKafterFinishDevSup	initHookAfterFinishDevSup
-#define INITHOOKafterScanInit		initHookAfterScanInit
-#define INITHOOKafterInterruptAccept	initHookAfterInterruptAccept
-#define INITHOOKafterInitialProcess	initHookAfterInitialProcess
-#define INITHOOKatEnd			initHookAtEnd
-/*END OF OBSOLETE DEFINITIONS*/
 
 #endif /*INCinitHooksh*/

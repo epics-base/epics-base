@@ -35,7 +35,7 @@ of this distribution.
 #include "link.h"
 #include "dbCommon.h"
 #include "dbLock.h"
-#include "osiTime.h"
+#include "tsStamp.h"
 #include "callback.h"
 #include "ellLib.h"
 #include "caeventmask.h"

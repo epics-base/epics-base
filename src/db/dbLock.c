@@ -67,7 +67,7 @@ since this will delay all other threads.
 #include "dbDefs.h"
 #include "dbBase.h"
 #include "osiSem.h"
-#include "osiClock.h"
+#include "tsStamp.h"
 #include "osiThread.h"
 #include "cantProceed.h"
 #include "ellLib.h"
@@ -93,7 +93,7 @@ typedef struct lockSet {
 	ELLNODE		node;
 	ELLLIST		recordList;
 	semId		lock;
-	unsigned long	start_time;
+	TS_STAMP	start_time;
 	threadId	thread_id;
 	dbCommon	*precord;
 	unsigned long	id;
@@ -170,7 +170,7 @@ void dbLockSetRecordLock(dbCommon *precord)
     /*Wait for up to 1 minute*/
     status = semMutexTakeTimeout(plockRecord->plockSet->lock,60.0);
     if(status==semTakeOK) {
-	plockSet->start_time = clockGetCurrentTick();
+        tsStampGetCurrent(&plockSet->start_time);
 	plockSet->thread_id = threadGetIdSelf();
 	plockSet->precord = (void *)precord;
 	/*give it back in case it will not be changed*/
@@ -202,7 +202,7 @@ void dbScanLock(dbCommon *precord)
 	if(status==semTakeOK) break;
     }
     plockSet = plockRecord->plockSet;
-    plockSet->start_time = clockGetCurrentTick();
+    tsStampGetCurrent(&plockSet->start_time);
     plockSet->thread_id = threadGetIdSelf();
     plockSet->precord = (void *)precord;
     return;
@@ -426,8 +426,9 @@ long dblsr(char *recordname,int level)
 	    semMutexGive(plockSet->lock);
 	    printf(" Not Locked\n");
 	} else {
-	    lockSeconds = plockSet->start_time;
-	    lockSeconds = (clockGetCurrentTick() - lockSeconds) / clockGetRate();
+            TS_STAMP currentTime;
+            lockSeconds = tsStampDiffInSeconds(
+                &currentTime,&plockSet->start_time);
 	    printf(" Locked %f seconds", lockSeconds);
 	    printf(" thread %p",plockSet->thread_id);
 	    if(! plockSet->precord || !plockSet->precord->name)

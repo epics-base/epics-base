@@ -34,6 +34,7 @@
 
 #include <ellLib.h>
 #include <osiSem.h>
+#include <tsStamp.h>
 #include <osiThread.h>
 /* Needs to be put into dbTest.h ! */
 long dbpr(char *name, int level);
@@ -58,7 +59,7 @@ struct EP_LIST {
    ELLNODE *prev_list;
    struct dbCommon *entrypoint;  /* pointer to entry point in lockset */
    unsigned long count;          /* number of times record processed */
-   unsigned long time;           /* time record first logged */
+   TS_STAMP time;           /* time record first logged */
    char sched;                   /* schedule record for next dbContTask() pass */
 };
 

@@ -33,6 +33,7 @@ of this distribution.
 #include "dbDefs.h"
 #include "osiSem.h"
 #include "osiThread.h"
+#include "tsStamp.h"
 #include "errlog.h"
 #include "cadef.h"
 #include "caerr.h"

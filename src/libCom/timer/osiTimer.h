@@ -55,7 +55,7 @@ public:
     class noMemory {}; /* exception */
 
     /*
-     * create an active timer that will expire delay secods after it is created
+     * create an active timer that will expire delay seconds after it is created
      * or create an inactive timer respectively
      */
     epicsShareFunc osiTimer (double delay, osiTimerQueue & queueIn);

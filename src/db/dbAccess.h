@@ -225,6 +225,13 @@ struct dbr_alDouble     {DBRalDouble};
 	(! (((PLNK)->type == DB_LINK) || ((PLNK)->type == CA_LINK)) ))\
     ? 0\
     : dbPutLinkValue((PLNK),(DBRTYPE),(void *)(PBUFFER),(NREQUEST)))
+#define dbGetPdbAddrFromLink(PLNK) \
+    (\
+        ((PLNK)->type != DB_LINK) \
+        ? 0\
+        : (((DBADDR*)((PLNK)->value.pv_link.pvt))) \
+    )
+
 #ifdef __STDC__
 struct rset *dbGetRset(struct dbAddr *paddr);
 int dbIsValueField(struct dbFldDes *pdbFldDes);
@@ -242,9 +249,9 @@ long dbGetField(struct dbAddr *,short dbrType,void *pbuffer,long *options,
 	long *nRequest,void *pfl);
 long dbGet(struct dbAddr *,short dbrType,void *pbuffer,long *options,
 	long *nRequest,void *pfl);
-long dbPutLinkValue(struct link *,short dbrType,void *pbuffer,long nRequest);
-long dbPutField(struct dbAddr *,short dbrType,void *pbuffer,long nRequest);
-long dbPut(struct dbAddr *,short dbrType,void *pbuffer,long nRequest);
+long dbPutLinkValue(struct link *,short dbrType,const void *pbuffer,long nRequest);
+long dbPutField(struct dbAddr *,short dbrType,const void *pbuffer,long nRequest);
+long dbPut(struct dbAddr *,short dbrType,const void *pbuffer,long nRequest);
 long dbPutNotify(PUTNOTIFY *pputnotify);
 /*dbNotifyAdd called by dbScanPassive and dbScanLink*/
 void dbNotifyAdd(struct dbCommon *pfrom,struct dbCommon *pto);
@@ -259,7 +266,7 @@ void dbCaAddLink(struct link *plink);
 void dbCaRemoveLink(struct link *plink);
 long dbCaGetLink(struct link *plink,short dbrType,void *pbuffer,
 	unsigned short *psevr,long *nRequest);
-long dbCaPutLink(struct link *plink,short dbrType,void *pbuffer,long nRequest);
+long dbCaPutLink(struct link *plink,short dbrType,const void *pbuffer,long nRequest);
 long dbCaGetAttributes(struct link *plink,
 	void (*callback)(void *usrPvt),void *usrPvt);
 long dbCaGetControlLimits(struct link *plink,double *low, double *high);
@@ -271,21 +278,6 @@ long dbCaGetPrecision(struct link *plink,short *precision);
 long dbCaGetSevr(struct link *plink,short *severity);
 long dbCaGetUnits(struct link *plink,char *units,int unitsSize);
 int dbCaIsLinkConnected(struct link *plink);
-
-short db_name_to_addr_mess(const char *pname, struct dbAddr *paddr);
-short db_get_field_mess(
-struct dbAddr   *paddr,
-short           buffer_type,
-char            *pbuffer,
-unsigned short  no_elements,
-void            *pfl
-);
-short db_put_field_mess(
-struct dbAddr   *paddr,         /* where to put it */
-short           src_type, 
-short           no_elements,
-char            *psrc           /* where to get it from */
-);
 
 #else
 struct rset *dbGetRset();
@@ -312,9 +304,6 @@ void dbCaAddLink();
 void dbCaRemoveLink();
 long dbCaGetLink();
 long dbCaPutLink();
-short db_name_to_addr_mess();
-short db_get_field_mess();
-short db_put_field_mess();
 #endif /*__STDC__*/
 
 #endif /*INCdbAccessh*/

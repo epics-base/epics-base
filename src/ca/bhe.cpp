@@ -12,7 +12,7 @@
 
 #include "iocinf.h"
 
-tsFreeList < class bhe > bhe::freeList;
+tsFreeList < class bhe, 1024 > bhe::freeList;
 
 /*
  * update beacon period

@@ -13,7 +13,7 @@
 #include "iocinf.h"
 #include "oldAccess.h"
 
-tsFreeList < struct oldSubscription > oldSubscription::freeList;
+tsFreeList < struct oldSubscription, 1024 > oldSubscription::freeList;
 
 oldSubscription::oldSubscription  ( oldChannel &chanIn, caEventCallBackFunc *pFuncIn, void *pPrivateIn ) :
     chan (chanIn), pFunc (pFuncIn), pPrivate (pPrivateIn)

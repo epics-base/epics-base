@@ -18,7 +18,7 @@
 #include "iocinf.h"
 #include "oldAccess.h"
 
-tsFreeList < struct oldChannel > oldChannel::freeList;
+tsFreeList < struct oldChannel, 1024 > oldChannel::freeList;
 
 oldChannel::oldChannel (caCh *pConnCallBackIn, void *pPrivateIn) :
     pConnCallBack (pConnCallBackIn), pPrivate (pPrivateIn), pAccessRightsFunc (0)

@@ -12,7 +12,7 @@
 
 #include "iocinf.h"
 
-tsFreeList < class nciu > nciu::freeList;
+tsFreeList < class nciu, 1024 > nciu::freeList;
 
 struct putCvrtBuf {
     ELLNODE             node;

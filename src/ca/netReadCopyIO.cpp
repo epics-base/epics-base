@@ -12,7 +12,7 @@
 
 #include "iocinf.h"
 
-tsFreeList < class netReadCopyIO > netReadCopyIO::freeList;
+tsFreeList < class netReadCopyIO, 1024 > netReadCopyIO::freeList;
 
 netReadCopyIO::netReadCopyIO ( nciu &chanIn, unsigned typeIn, unsigned long countIn, 
                               void *pValueIn, unsigned seqNumberIn ) :

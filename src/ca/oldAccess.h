@@ -39,7 +39,7 @@ private:
     void connectNotify ();
     void disconnectNotify ();
     void accessRightsNotify ( caar );
-    static tsFreeList < struct oldChannel > freeList;
+    static tsFreeList < struct oldChannel, 1024 > freeList;
 
     friend int epicsShareAPI ca_array_get (chtype type, unsigned long count, chid pChan, void *pValue);
 };
@@ -48,8 +48,6 @@ class getCallback : public cacNotify {
 public:
     getCallback (oldChannel &chan, caEventCallBackFunc *pFunc, void *pPrivate);
     void destroy ();
-    virtual void completionNotify (unsigned type, unsigned long count, const void *pData);
-    virtual void exceptionNotify (int status, const char *pContext);
 
     static void * operator new ( size_t size );
     static void operator delete ( void *pCadaver, size_t size );
@@ -59,15 +57,15 @@ private:
     caEventCallBackFunc *pFunc;
     void *pPrivate;
     ~getCallback (); // allocate only out of pool
-    static tsFreeList < class getCallback > freeList;
+    virtual void completionNotify (unsigned type, unsigned long count, const void *pData);
+    virtual void exceptionNotify (int status, const char *pContext);
+    static tsFreeList < class getCallback, 1024 > freeList;
 };
 
 class putCallback : public cacNotify {
 public:
     putCallback (oldChannel &chan, caEventCallBackFunc *pFunc, void *pPrivate );
     void destroy ();
-    virtual void completionNotify ();
-    virtual void exceptionNotify ( int status, const char *pContext );
 
     static void * operator new ( size_t size );
     static void operator delete ( void *pCadaver, size_t size );
@@ -77,7 +75,9 @@ private:
     caEventCallBackFunc *pFunc;
     void *pPrivate;
     ~putCallback (); // allocate only out of pool
-    static tsFreeList < class putCallback > freeList;
+    virtual void completionNotify ();
+    virtual void exceptionNotify ( int status, const char *pContext );
+    static tsFreeList < class putCallback, 1024 > freeList;
 };
 
 struct oldSubscription : public cacNotify {
@@ -97,5 +97,5 @@ private:
     void exceptionNotify ( int status, const char *pContext );
 
     ~oldSubscription (); // must allocate from pool
-    static tsFreeList < struct oldSubscription > freeList;
+    static tsFreeList < struct oldSubscription, 1024 > freeList;
 };

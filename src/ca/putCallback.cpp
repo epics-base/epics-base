@@ -18,7 +18,7 @@
 #include "iocinf.h"
 #include "oldAccess.h"
 
-tsFreeList < class putCallback > putCallback::freeList;
+tsFreeList < class putCallback, 1024 > putCallback::freeList;
 
 putCallback::putCallback (oldChannel &chanIn, caEventCallBackFunc *pFuncIn, void *pPrivateIn ) :
     chan (chanIn), pFunc (pFuncIn), pPrivate (pPrivateIn)

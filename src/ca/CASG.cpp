@@ -30,7 +30,7 @@
 #include "iocinf.h"
 #include "oldAccess.h"
 
-tsFreeList < struct CASG > CASG::freeList;
+tsFreeList < struct CASG, 128 > CASG::freeList;
 
 CASG::CASG (cac &cacIn) :
     client (cacIn), magic (CASG_MAGIC), opPendCount (0u), seqNo (0u)

@@ -12,7 +12,7 @@
 
 #include "iocinf.h"
 
-tsFreeList < class netReadNotifyIO > netReadNotifyIO::freeList;
+tsFreeList < class netReadNotifyIO, 1024 > netReadNotifyIO::freeList;
 
 netReadNotifyIO::netReadNotifyIO ( nciu &chan, cacNotify &notifyIn ) :
     baseNMIU ( chan ), cacNotifyIO ( notifyIn )

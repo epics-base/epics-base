@@ -225,7 +225,7 @@ private:
     unsigned short      typeCode;
     unsigned            f_connected:1;
     unsigned            f_fullyConstructed:1;
-    static tsFreeList < class nciu > freeList;
+    static tsFreeList < class nciu, 1024 > freeList;
     ~nciu (); // force pool allocation
     int nciu::issuePut ( ca_uint16_t cmd, unsigned id, chtype type, 
                      unsigned long count, const void *pvalue );
@@ -267,7 +267,7 @@ private:
     unsigned long       count;
     unsigned short      mask;
     ~netSubscription ();
-    static tsFreeList < class netSubscription > freeList;
+    static tsFreeList < class netSubscription, 1024 > freeList;
 };
 
 class netReadCopyIO : public baseNMIU {
@@ -288,7 +288,7 @@ private:
     void *pValue;
     unsigned seqNumber;
     ~netReadCopyIO (); // must be allocated from pool
-    static tsFreeList < class netReadCopyIO > freeList;
+    static tsFreeList < class netReadCopyIO, 1024 > freeList;
 };
 
 class netReadNotifyIO : public cacNotifyIO, public baseNMIU {
@@ -304,7 +304,7 @@ public:
     static void operator delete ( void *pCadaver, size_t size );
 private:
     ~netReadNotifyIO ();
-    static tsFreeList < class netReadNotifyIO > freeList;
+    static tsFreeList < class netReadNotifyIO, 1024 > freeList;
 };
 
 class netWriteNotifyIO : public cacNotifyIO, public baseNMIU {
@@ -320,7 +320,7 @@ public:
     static void operator delete ( void *pCadaver, size_t size );
 private:
     ~netWriteNotifyIO ();
-    static tsFreeList < class netWriteNotifyIO > freeList;
+    static tsFreeList < class netWriteNotifyIO, 1024 > freeList;
 };
 
 /*
@@ -621,7 +621,7 @@ private:
     osiTime timeStamp;
     double averagePeriod;
 
-    static tsFreeList < class bhe > freeList;
+    static tsFreeList < class bhe, 1024 > freeList;
     ~bhe (); // force allocation from freeList
 };
 
@@ -679,7 +679,7 @@ private:
     void *pValue;
     unsigned long seqNo;
 
-    static tsFreeList < class syncGroupNotify > freeList;
+    static tsFreeList < class syncGroupNotify, 1024 > freeList;
 };
 
 /*
@@ -709,7 +709,7 @@ private:
     osiMutex mutex;
     tsDLList <syncGroupNotify> ioList;
 
-    static tsFreeList < struct CASG > freeList;
+    static tsFreeList < struct CASG, 128 > freeList;
 
     ~CASG ();
     friend class syncGroupNotify;

@@ -30,7 +30,7 @@
 
 #include "iocinf.h"
 
-tsFreeList < class syncGroupNotify > syncGroupNotify::freeList;
+tsFreeList < class syncGroupNotify, 1024 > syncGroupNotify::freeList;
 
 syncGroupNotify::syncGroupNotify ( CASG &sgIn, void *pValueIn ) :
     sg (sgIn), magic (CASG_MAGIC), pValue (pValueIn), seqNo ( sgIn.seqNo )

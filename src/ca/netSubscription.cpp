@@ -12,7 +12,7 @@
 
 #include "iocinf.h"
 
-tsFreeList < class netSubscription > netSubscription::freeList;
+tsFreeList < class netSubscription, 1024 > netSubscription::freeList;
 
 netSubscription::netSubscription ( nciu &chan, chtype typeIn, unsigned long countIn, 
     unsigned short maskIn, cacNotify &notifyIn ) :

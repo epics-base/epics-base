@@ -4,7 +4,7 @@
  
 
 ARCHS += $(BUILD_ARCHS) host cross
-ACTIONS += clean inc depends buildInstall
+ACTIONS += clean inc depends buildInstall browse
  
 dirPart = $(word 1, $(subst $(DIVIDER), ,$@))
 actionArchPart = $(subst $(dirPart)$(DIVIDER), ,$@)

@@ -279,8 +279,6 @@ epicsShareFunc int epicsShareAPI  dbLoadDatabase(
 epicsShareFunc int epicsShareAPI dbLoadRecords(
     char* pfilename, char* substitutions);
 
-epicsShareFunc int epicsShareAPI iocInit(void);
-
 #ifdef __cplusplus
 }
 #endif

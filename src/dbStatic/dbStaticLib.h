@@ -34,12 +34,7 @@
 #define INCdbStaticLibh 1
 
 #include <stddef.h>
-#include <stdlib.h>
 #include <stdio.h>
-#include <ctype.h>
-#include <limits.h>
-#include <ellLib.h>
-#include <dbDefs.h>
 #include <dbFldTypes.h>
 #include <dbBase.h>
 #include <link.h>
@@ -118,6 +113,7 @@ int  dbGetNRecdes(DBENTRY *pdbentry);
 long dbFirstFielddes(DBENTRY *pdbentry,int dctonly);
 long dbNextFielddes(DBENTRY *pdbentry,int dctonly);
 char **dbGetChoices(DBENTRY *pdbentry);
+void dbDumpRecDes(DBBASE *pdbbase,char *recordTypeName);
 /*End obsolete routines*/
 
 long dbFindRecordType(DBENTRY *pdbentry,char *recordTypename);
@@ -207,6 +203,6 @@ extern int dbStaticDebug;
 #define S_dbLib_nameLength (M_dbLib|17)		/*Record Name is too long*/
 #define S_dbLib_noRecSup (M_dbLib|19)		/*Record support not found*/
 #define S_dbLib_strLen (M_dbLib|21)		/*String is too long*/
-#define S_dbLib_noSizeOffset (M_dbLib|23)	/*Missing SizeOffset Routine*/
+#define S_dbLib_noSizeOffset (M_dbLib|23)	/*Missing SizeOffset Routine - No record support?*/
 #define S_dbLib_noForm (M_dbLib|25)		/*dbAllocForm was not called*/
 #endif /*INCdbStaticLibh*/

@@ -89,8 +89,8 @@ static char *promptOUTLINK[] = {
 	"NPP PP CA:",
 	"NMS or MS:"};
 static char *promptFWDLINK[] = {
-	" PV Name:",
-	"   PP CA:"};
+	"  PV Name:",
+	"<null> CA:"};
 static char *promptVME_IO[] = {
 	"  card:",
 	"signal:",
@@ -219,6 +219,8 @@ long dbNextFielddes(DBENTRY *pdbentry,int dctonly)
 	{return dbNextField(pdbentry,dctonly);}
 char **dbGetChoices(DBENTRY *pdbentry)
 	{return dbGetMenuChoices(pdbentry);}
+void dbDumpRecDes(DBBASE *pdbbase,char *recordTypeName)
+	{dbDumpRecordType(pdbbase,recordTypeName);}
 
 /* internal routines*/
 void copyEntry(DBENTRY *pfrom,DBENTRY *pto)
@@ -1682,15 +1684,16 @@ char *dbGetString(DBENTRY *pdbentry)
 		short	pvlMask;
 
 		pvlMask = plink->value.pv_link.pvlMask;
-		if(pvlMask&pvlOptPP) ppind=1;
-		else if(pvlMask&pvlOptCA) ppind=2;
+		if(pvlMask&pvlOptCA) ppind=2;
 		else ppind=0;
 		if(plink->value.pv_link.pvname)
 		    strcpy(message,plink->value.pv_link.pvname);
 		else
 		    strcpy(message,"");
-		strcat(message," ");
-		strcat(message,ppstring[ppind]);
+		if(ppind) {
+		    strcat(message," ");
+		    strcat(message,ppstring[ppind]);
+		}
 		break;
 	    }
 	    default :
@@ -1831,16 +1834,42 @@ long dbPutString(DBENTRY *pdbentry,char *pstring)
 		    if(plink->type==CONSTANT) dbCvtLinkToPvlink(pdbentry);
 	    	    end = strchr(pstr,' ');
 		    if(end) {
-			if(strstr(end,"NPP")) ppOpt = 0;
-			else if(strstr(end,"CPP")) ppOpt = pvlOptCPP;
-			else if(strstr(end,"PP")) ppOpt = pvlOptPP;
-			else if(strstr(end,"CA")) ppOpt = pvlOptCA;
-			else if(strstr(end,"CP")) ppOpt = pvlOptCP;
-			else ppOpt = 0;
-		        if(strstr(end,"NMS")) msOpt = 0;
-		        else if(strstr(end,"MS")) msOpt = pvlOptMS;
-			else msOpt = 0;
-		        *end = 0;
+			switch (pflddes->field_type) {
+			case DBF_INLINK: {
+			    if(strstr(end,"NPP")) ppOpt = 0;
+			    else if(strstr(end,"CPP")) ppOpt = pvlOptCPP;
+			    else if(strstr(end,"PP")) ppOpt = pvlOptPP;
+			    else if(strstr(end,"CA")) ppOpt = pvlOptCA;
+			    else if(strstr(end,"CP")) ppOpt = pvlOptCP;
+			    else ppOpt = 0;
+		            if(strstr(end,"NMS")) msOpt = 0;
+		            else if(strstr(end,"MS")) msOpt = pvlOptMS;
+			    else msOpt = 0;
+		            *end = 0;
+			}
+			break;
+			case DBF_OUTLINK: {
+			    if(strstr(end,"NPP")) ppOpt = 0;
+			    else if(strstr(end,"PP")) ppOpt = pvlOptPP;
+			    else if(strstr(end,"CA")) ppOpt = pvlOptCA;
+			    else ppOpt = 0;
+		            if(strstr(end,"NMS")) msOpt = 0;
+		            else if(strstr(end,"MS")) msOpt = pvlOptMS;
+			    else msOpt = 0;
+		            *end = 0;
+			}
+			break;
+			case DBF_FWDLINK: {
+			    if(strstr(end,"NPP")) ppOpt = 0;
+			    else if(strstr(end,"CA")) ppOpt = pvlOptCA;
+			    else ppOpt = 0;
+			    msOpt = 0;
+		            *end = 0;
+			}
+			break;
+			default:
+			epicsPrintf("dbPutString: Logic Error\n");
+			}
 		    }
 		    status = putPvLink(pdbentry,ppOpt|msOpt,pstr);
 		    return(0);
@@ -2435,7 +2464,7 @@ char  **dbGetFormValue(DBENTRY *pdbentry)
 	if(plink->value.pv_link.pvname)
 	    strcpy(*value,plink->value.pv_link.pvname);
 	else
-	    strcpy(*value,"\0");
+	    strcpy(*value,"");
 	value++;
 	if(pvlMask&pvlOptPP) strcpy(*value,"PP");
 	else if(pvlMask&pvlOptCA) strcpy(*value,"CA");
@@ -2454,7 +2483,7 @@ char  **dbGetFormValue(DBENTRY *pdbentry)
 	if(plink->value.pv_link.pvname)
 	    strcpy(*value,plink->value.pv_link.pvname);
 	else
-	    strcpy(*value,"\0");
+	    strcpy(*value,"");
 	value++;
 	if(pvlMask&pvlOptPP) strcpy(*value,"PP");
 	else if(pvlMask&pvlOptCA) strcpy(*value,"CA");
@@ -2466,11 +2495,15 @@ char  **dbGetFormValue(DBENTRY *pdbentry)
 	}
 	break;
     case FORM_FWDLINK: {
+        short 	pvlMask = plink->value.pv_link.pvlMask;
+
 	if(plink->value.pv_link.pvname)
 	    strcpy(*value,plink->value.pv_link.pvname);
 	else
-	    strcpy(*value,"\0");
+	    strcpy(*value,"");
 	value++;
+	if(pvlMask&pvlOptCA) strcpy(*value,"CA");
+	else strcpy(*value,"");
 	}
 	break;
     case FORM_VME_IO:
@@ -2620,7 +2653,7 @@ long  dbPutForm(DBENTRY *pdbentry,char **value)
 	    **verify = 0;
 	    value++; verify++;
 	    **verify = 0;  /*Initialize verify to NULL*/
-	    if(!(*value)) ppOpt = 0;
+	    if((*value==NULL) || (strcmp(*value,"")==0)) ppOpt = 0;
 	    else if(strstr(*value,"NPP")) ppOpt = 0;
 	    else if(strstr(*value,"PP")) ppOpt = pvlOptPP;
 	    else if(strstr(*value,"CA")) ppOpt = pvlOptCA;
@@ -2629,7 +2662,7 @@ long  dbPutForm(DBENTRY *pdbentry,char **value)
 	    else strcpy(*verify,"Illegal. Chose a value");
 	    value++; verify++;
 	    **verify = 0;  /*Initialize verify to NULL*/
-	    if(!(*value)) msOpt = 0;
+	    if((*value==NULL) || (strcmp(*value,"")==0)) msOpt = 0;
 	    else if(strstr(*value,"NMS")) msOpt = 0;
 	    else if(strstr(*value,"MS")) msOpt = pvlOptMS;
 	    else strcpy(*verify,"Illegal. Chose a value");
@@ -2656,14 +2689,14 @@ long  dbPutForm(DBENTRY *pdbentry,char **value)
 	    **verify = 0;
 	    value++; verify++;
 	    **verify = 0;  /*Initialize verify to NULL*/
-	    if(!(*value)) ppOpt = 0;
+	    if((*value==NULL) || (strcmp(*value,"")==0)) ppOpt = 0;
 	    else if(strstr(*value,"NPP")) ppOpt = 0;
 	    else if(strstr(*value,"PP")) ppOpt = pvlOptPP;
 	    else if(strstr(*value,"CA")) ppOpt = pvlOptCA;
 	    else strcpy(*verify,"Illegal. Chose a value");
 	    value++; verify++;
 	    **verify = 0;  /*Initialize verify to NULL*/
-	    if(!(*value)) msOpt = 0;
+	    if((*value==NULL) || (strcmp(*value,"")==0)) msOpt = 0;
 	    else if(strstr(*value,"NMS")) msOpt = 0;
 	    else if(strstr(*value,"MS")) msOpt = pvlOptMS;
 	    else strcpy(*verify,"Illegal. Chose a value");
@@ -2686,6 +2719,11 @@ long  dbPutForm(DBENTRY *pdbentry,char **value)
 
 	    pstr = *value;
 	    **verify = 0;
+	    value++; verify++;
+	    **verify = 0;  /*Initialize verify to NULL*/
+	    if((*value==NULL) || (strcmp(*value,"")==0)) ppOpt = 0;
+	    else if(strstr(*value,"CA")) ppOpt = pvlOptCA;
+	    else strcpy(*verify,"Illegal. Chose a value");
 	    putPvLink(pdbentry,ppOpt|msOpt,pstr);
 	}
 	break;

@@ -339,7 +339,7 @@ bufSizeT casDGIntfIO::incommingBytesPresent () const
 }
 
 //
-// casDGIntfIO::sendBeacon()
+// casDGIntfIO::sendBeaconIO()
 // 
 void casDGIntfIO::sendBeaconIO (char &msg, unsigned length, aitUint16 &portField, aitUint32 &addrField) 
 {

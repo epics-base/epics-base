@@ -64,7 +64,7 @@ epicsShareFunc osiSockAddr epicsShareAPI osiLocalAddr ( SOCKET socket )
     addr.sa.sa_family = AF_UNSPEC;
 
 	/* only valid for winsock 2 and above */
-	if (wsaMajorVersion() < 2 ) {
+	if ( wsaMajorVersion() < 2 ) {
 		return addr;
 	}
 

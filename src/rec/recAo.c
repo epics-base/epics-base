@@ -90,7 +90,7 @@
 static long init_record();
 static long process();
 static long special();
-long get_value();
+static long get_value();
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL

@@ -21,7 +21,8 @@
 template < class T >
 class autoPtrRecycle {
 public:
-    autoPtrRecycle ( cacRecycle &, T * );
+    autoPtrRecycle ( chronIntIdResTable < baseNMIU > &,
+        tsDLList < class baseNMIU > &, cacRecycle &, T * );
     ~autoPtrRecycle ();
     T & operator * () const;
     T * operator -> () const;
@@ -30,17 +31,22 @@ public:
 private:
     T *p;
     cacRecycle &r;
+    tsDLList < class baseNMIU > &eventq;
+    chronIntIdResTable < baseNMIU > &ioTable;
 };
 
 template < class T >
-inline autoPtrRecycle<T>::autoPtrRecycle ( cacRecycle &rIn, T *pIn ) :
-    p ( pIn ), r ( rIn ) {}
+inline autoPtrRecycle<T>::autoPtrRecycle ( chronIntIdResTable < baseNMIU > &tbl,
+        tsDLList < class baseNMIU > &list, cacRecycle &rIn, T *pIn ) :
+    p ( pIn ), r ( rIn ), eventq ( list ), ioTable ( tbl ) {}
 
 template < class T >
 inline autoPtrRecycle<T>::~autoPtrRecycle ()
 {
     if ( this->p ) {
         baseNMIU *pb = this->p;
+        this->ioTable.remove ( *pb );
+        this->eventq.remove ( *pb );
         pb->destroy ( this->r );
     }
 }

@@ -55,7 +55,7 @@
 #include	<recSup.h>
 #include	<devSup.h>
 #include	<link.h>
-#include	<dbCommon.h>
+#include	<rec/dbCommon.h>
 #include	<boRecord.h>
 
 /* Create the dset for devBoTestAsyn */

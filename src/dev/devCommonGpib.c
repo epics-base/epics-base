@@ -79,7 +79,7 @@
 #include	<drvSup.h>
 #include	<link.h>
 #include	<module_types.h>
-#include	<dbCommon.h>
+#include	<rec/dbCommon.h>
 #include	<aiRecord.h>
 #include	<aoRecord.h>
 #include	<biRecord.h>

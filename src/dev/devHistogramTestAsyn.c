@@ -52,7 +52,7 @@
 #include	<recSup.h>
 #include	<devSup.h>
 #include	<link.h>
-#include	<dbCommon.h>
+#include	<rec/dbCommon.h>
 #include	<histogramRecord.h>
 
 /* Create the dset for devHistogramTestAsyn */

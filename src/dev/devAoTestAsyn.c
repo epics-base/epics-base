@@ -54,7 +54,7 @@
 #include	<recSup.h>
 #include	<devSup.h>
 #include	<link.h>
-#include	<dbCommon.h>
+#include	<rec/dbCommon.h>
 #include	<aoRecord.h>
 
 /* Create the dset for devAoTestAsyn */

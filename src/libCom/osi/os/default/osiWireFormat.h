@@ -49,7 +49,8 @@ private:
 
 static const endianTest endianTester;
 
-inline void osiConvertToWireFormat ( const epicsFloat32 &value, epicsUInt8 *pWire )
+inline void osiConvertToWireFormat ( 
+    const epicsFloat32 & value, epicsUInt8 * pWire )
 {
     union {
         epicsUInt32 utmp;
@@ -62,7 +63,8 @@ inline void osiConvertToWireFormat ( const epicsFloat32 &value, epicsUInt8 *pWir
     pWire[3] = static_cast < epicsUInt8 > ( wireFloat32.utmp >> 0u );
 }
 
-inline void osiConvertToWireFormat ( const epicsFloat64 &value, epicsUInt8 *pWire )
+inline void osiConvertToWireFormat (    
+    const epicsFloat64 & value, epicsUInt8 * pWire )
 {
     union {
         epicsUInt8 btmp[8];
@@ -94,20 +96,22 @@ inline void osiConvertToWireFormat ( const epicsFloat64 &value, epicsUInt8 *pWir
     }
 }
 
-inline void osiConvertFromWireFormat ( epicsFloat32 &value, const epicsUInt8 *pWire )
+inline void osiConvertFromWireFormat ( 
+    epicsFloat32 & value, const epicsUInt8 * pWire )
 {
     union {
         epicsUInt32 utmp;
         epicsFloat32 ftmp;
     } wireFloat32;
-    wireFloat32.utmp  = pWire[0] << 24u;
-    wireFloat32.utmp |= pWire[1] << 16u;
-    wireFloat32.utmp |= pWire[2] <<  8u;
-    wireFloat32.utmp |= pWire[3] <<  0u;
+    wireFloat32.utmp  = 
+        static_cast <epicsUInt32> (
+        ( pWire[0] << 24u ) | ( pWire[1] << 16u ) | 
+        ( pWire[2] <<  8u ) | pWire[3] );
     value = wireFloat32.ftmp;
 }
 
-inline void osiConvertFromWireFormat ( epicsFloat64 &value, const epicsUInt8 *pWire )
+inline void osiConvertFromWireFormat ( 
+    epicsFloat64 & value, const epicsUInt8 * pWire )
 {
     union {
         epicsUInt8 btmp[8];
@@ -138,9 +142,8 @@ inline void osiConvertFromWireFormat ( epicsFloat64 &value, const epicsUInt8 *pW
 
 inline epicsUInt16 epicsHTON16 ( epicsUInt16 in )
 {
-	unsigned tmp = in; // avoid unary conversions to int
-
-	union {
+    unsigned tmp = in; // avoid the usual unary conversions
+	register union {
 		epicsUInt8 bytes[2];
 		epicsUInt16 word;
 	} result;
@@ -158,9 +161,8 @@ inline epicsUInt16 epicsNTOH16 ( epicsUInt16 in )
 
 inline epicsUInt32 epicsHTON32 ( epicsUInt32 in )
 {
-	unsigned tmp = in; // avoid unary conversions to int
-
-	union {
+    unsigned tmp = in; // avoid the usual unary conversions
+	register union {
 		epicsUInt8 bytes[4];
 		epicsUInt32 longWord;
 	} result;

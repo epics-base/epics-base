@@ -1164,17 +1164,20 @@ Interval.</a></p>
 so that when communication over a circuit times out, then the disconnect
 callback handler for each channel attached to that circuit is called, but the
 circuit is not disconnected until TCP/IP's internal keep alive timer expires.
-The disconnected channels remain attached to the beleagured circuit and no
+The disconnected channels remain attached to the beleaguered circuit and no
 attempt is made to search for, or to reestablish, a new circuit. If, at some
 time in the future, the circuit becomes responsive again, then the reconnect
 handlers are called for each channel that is attached to the circuit, and any
 monitor subscriptions that updated while the channel was disconnected are
 refreshed. This behavior is more robust during periods of
-CPU/network/resource/mbuf congestion.</p>
+CPU/network/resource/mbuf congestion. Of course, if at any time the library
+receives an indication from the operating system that the beleaguered circuit
+has shutdown or was disconnected then the library will immediately attempt to
+find a new server and build a circuit to it.</p>
 
-<p>In the past the beleagured circuit was immeduiatly closed when
+<p>In the past the beleaguered circuit was immediately closed when
 communication over it timed out, any attached channels were immediately
-searched for, and after successful search resoponses arrived then attempts
+searched for, and after successful search responses arrived then attempts
 were made to build a new circuit. This behavior could result in undesirable
 load fluctuations during periods of CPU/network/resource/mbuf congestion.
 There could be undesirable CPU consumption resulting from periodic circuit
@@ -1199,11 +1202,11 @@ reconnecting under the following two scenarios:</p>
 
 <p>It is unlikely that any rational organization will advocate changing the
 IP address of a server while the system is operational. Nevertheless, this
-<em>is</em> undoubtedly a negative side effect because there are substanitive
+<em>is</em> undoubtedly a negative side effect because there are substantive
 opportunities for users to become confused during control system development,
 but it is felt that the improvements in operational system robustness justify
 the confusion resulting in the small number of situations where the above
-scenarios occurr.</p>
+scenarios occur.</p>
 
 <h3><a name="Problems">ENOBUFS Messages</a></h3>
 

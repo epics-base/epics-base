@@ -3,9 +3,6 @@
 #  This file is maintained by the EPICS community.
 #  Sites may override these definitions in CONFIG_SITE.WIN32
  
-# 	Use std path variables from ms
-HOME = $(HOMEDRIVE)$(HOMEPATH)
-
 #
 # You currently get Visual C++ even if you ask for GNU.
 #

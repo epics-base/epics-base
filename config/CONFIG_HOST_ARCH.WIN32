@@ -13,6 +13,9 @@ ECHO=echo
 
 WIND_HOST_TYPE = x86-win32
  
-# 	Use std path variables from ms
+# Does not work if using cygwin make
+# because HOME is always defined
+ifndef HOME
 HOME = $(HOMEDRIVE)$(HOMEPATH)
+endif
 

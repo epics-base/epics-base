@@ -2,9 +2,6 @@
 #  This file is maintained by the EPICS community.
 #  Sites may override these definitions in CONFIG_SITE.Borland
  
-# 	Use std path variables from ms
-HOME = $(HOMEDRIVE)$(HOMEPATH)
-
 BORLAND_LIB = $(BORLAND)\\lib
 BORLAND_INC = $(BORLAND)\\include
 BORLAND_BIN = $(BORLAND)\\bin

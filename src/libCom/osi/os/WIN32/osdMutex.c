@@ -258,7 +258,7 @@ typedef struct mutexSem {
 /*
  * epicsMutexCreate ()
  */
-epicsShareFunc epicsMutexId epicsShareAPI epicsMutexCreate ( void ) 
+epicsShareFunc epicsMutexId epicsShareAPI epicsMutexOsdCreate ( void ) 
 {
     mutexSem *pSem;
 

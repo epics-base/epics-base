@@ -193,3 +193,9 @@ o It is now the responsibility of the server tool to limit the
 number of simultaneous asynchronous IO operations allowed (by returning
 S_casApp_postponeAsyncIO).
 
+Changes between epics 3.13 Beta 11 and 3.13 Beta 12 
+
+**** API Change ****
+o The constructor for class casPV no longer requires a reference to the
+server. For backwards compatibility a reference to the server may still be 
+supplied, but it will not be used.

@@ -8,7 +8,7 @@ extern "C" {
 #endif
 
 epicsShareFunc int epicsShareAPI registryDeviceSupportAdd(
-    const char *name,struct dset *pdset);
+    const char *name,const struct dset *pdset);
 epicsShareFunc struct dset * epicsShareAPI registryDeviceSupportFind(
     const char *name);
 

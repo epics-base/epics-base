@@ -124,7 +124,7 @@ epicsShareFunc char ** epicsShareAPI dbGetChoices(DBENTRY *pdbentry);
 epicsShareFunc void epicsShareAPI dbDumpRecDes(DBBASE *pdbbase,char *recordTypeName);
 /*End obsolete routines*/
 
-epicsShareFunc long epicsShareAPI dbFindRecordType(DBENTRY *pdbentry,char *recordTypename);
+epicsShareFunc long epicsShareAPI dbFindRecordType(DBENTRY *pdbentry,const char *recordTypename);
 epicsShareFunc long epicsShareAPI dbFirstRecordType(DBENTRY *pdbentry);
 epicsShareFunc long epicsShareAPI dbNextRecordType(DBENTRY *pdbentry);
 epicsShareFunc char * epicsShareAPI dbGetRecordTypeName(DBENTRY *pdbentry);

@@ -22,7 +22,7 @@ static void *registryID = (void *)&deviceSupport;
 
 
 epicsShareFunc int epicsShareAPI registryDeviceSupportAdd(
-    const char *name,struct dset *pdset)
+    const char *name,const struct dset *pdset)
 {
     return(registryAdd(registryID,name,(void *)pdset));
 }

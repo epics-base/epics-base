@@ -21,7 +21,7 @@ static void *registryID = (void *)&recordType;
 
 
 epicsShareFunc int epicsShareAPI registryRecordTypeAdd(
-    const char *name,recordTypeLocation *prtl)
+    const char *name,const recordTypeLocation *prtl)
 {
     return(registryAdd(registryID,name,(void *)prtl));
 }

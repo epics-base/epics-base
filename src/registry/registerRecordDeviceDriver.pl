@@ -57,7 +57,7 @@ if($numberRecordType>0) {
     #NOTE the following caused a compiler error on vxWorks
     #    print "extern computeSizeOffset $recordType[$i]RecordSizeOffset;\n";
     }
-    print "\nstatic char *recordTypeNames[$numberRecordType] = {\n";
+    print "\nstatic const char * const recordTypeNames[$numberRecordType] = {\n";
     for ($i=0; $i<$numberRecordType; $i++) {
         print "    \"$recordType[$i]\"";
         if($i < $numberRecordType-1) { print ",";}
@@ -65,7 +65,7 @@ if($numberRecordType>0) {
     }
     print "};\n\n";
 
-    print "static recordTypeLocation rtl[$i] = {\n";
+    print "static const recordTypeLocation rtl[$i] = {\n";
     for ($i=0; $i<$numberRecordType; $i++) {
         print "    {&$recordType[$i]RSET, $recordType[$i]RecordSizeOffset}";
         if($i < $numberRecordType-1) { print ",";}
@@ -79,7 +79,7 @@ if($numberDeviceSupport>0) {
     for ($i=0; $i<$numberDeviceSupport; $i++) {
         print "extern struct dset $deviceSupport[$i];\n";
     }
-    print "\nstatic char *deviceSupportNames[$numberDeviceSupport] = {\n";
+    print "\nstatic const char * const deviceSupportNames[$numberDeviceSupport] = {\n";
     for ($i=0; $i<$numberDeviceSupport; $i++) {
         print "    \"$deviceSupport[$i]\"";
         if($i < $numberDeviceSupport-1) { print ",";}
@@ -87,7 +87,7 @@ if($numberDeviceSupport>0) {
     }
     print "};\n\n";
 
-    print "static struct dset *devsl[$i] = {\n";
+    print "static const struct dset * const devsl[$i] = {\n";
     for ($i=0; $i<$numberDeviceSupport; $i++) {
         print "    &$deviceSupport[$i]";
         if($i < $numberDeviceSupport-1) { print ",";}

@@ -20,7 +20,7 @@ extern "C" {
 #endif
 
 epicsShareFunc int epicsShareAPI registryRecordTypeAdd(
-    const char *name,recordTypeLocation *prtl);
+    const char *name,const recordTypeLocation *prtl);
 epicsShareFunc recordTypeLocation * epicsShareAPI registryRecordTypeFind(
     const char *name);
 

@@ -1202,7 +1202,7 @@ long epicsShareAPI dbWriteBreaktableFP(DBBASE *pdbbase,FILE *fp)
     return(0);
 }
 
-long epicsShareAPI dbFindRecordType(DBENTRY *pdbentry,char *recordType)
+long epicsShareAPI dbFindRecordType(DBENTRY *pdbentry,const char *recordType)
 {
     dbBase	*pdbbase = pdbentry->pdbbase;
     GPHENTRY	*phash;
@@ -3617,7 +3617,7 @@ void  epicsShareAPI dbDumpRecordType(DBBASE *pdbbase,char *recordTypeName)
 	printf("indvalFlddes %d name %s\n",pdbRecordType->indvalFlddes,
 	    pdbRecordType->pvalFldDes->name);
 	printf("struct rset * %p rec_size %d\n",
-	    pdbRecordType->prset,pdbRecordType->rec_size);
+	    (void *)pdbRecordType->prset,pdbRecordType->rec_size);
 	if(recordTypeName) break;
     }
 }
@@ -3735,7 +3735,7 @@ void  epicsShareAPI dbDumpDevice(DBBASE *pdbbase,char *recordTypeName)
 	    printf("\t     name: %s\n",pdevSup->name);
 	    printf("\t   choice: %s\n",pdevSup->choice);
 	    printf("\tlink_type: %d\n",pdevSup->link_type);
-	    printf("\t    pdset: %p\n",pdevSup->pdset);
+	    printf("\t    pdset: %p\n",(void *)pdevSup->pdset);
 	}
 	if(recordTypeName) break;
     }

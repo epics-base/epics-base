@@ -45,6 +45,7 @@
  */
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <limits.h>		/* XPG2/XPG3/POSIX.1/FIPS151-1/ANSI-C */
 #include <cvtFast.h>
 
@@ -56,16 +57,16 @@ static long	frac_multiplier[] =
 	{1,10,100,1000,10000,100000,1000000,10000000,100000000};
 
 #ifdef __STDC__
-int cvtFloatToString(flt_value,pstr_value,precision)
-	float flt_value;
-	char  *pstr_value;
-	unsigned short precision;
-{
-#else
 int cvtFloatToString(
 	float flt_value,
 	char  *pstr_value,
 	unsigned short precision)
+{
+#else
+int cvtFloatToString(flt_value,pstr_value,precision)
+	float flt_value;
+	char  *pstr_value;
+	unsigned short precision;
 {
 #endif /*__STDC__*/
         unsigned short	got_one,i;
@@ -260,7 +261,7 @@ int cvtFloatToExpString(f_value,pstr_value,f_precision)
 
 	/* check upper bound, use sprintf if this routine can't handle it */
 	if (f_value >= MAX_OKAY_E_VALUE || f_value <= -MAX_OKAY_E_VALUE){
-		return(sprintf(pstr_value,"% 1.*e",f_precision,f_value));
+return((int)sprintf(pstr_value,"% 1.*e",f_precision,f_value));
 	}
 
 	startAddr = pstr_value;
@@ -299,7 +300,7 @@ int cvtFloatToExpString(f_value,pstr_value,f_precision)
 	    flt_value < place;
 	    e -= e_resolution, place /= divisor);
 	if (e < -99){
-		return(sprintf(pstr_value,"% 1.*e",f_precision,f_value));
+		return((int)sprintf(pstr_value,"% 1.*e",f_precision,f_value));
 	}
 
 	/* whole numbers */
@@ -409,7 +410,7 @@ int cvtDoubleToExpString(f_value,pstr_value,f_precision)
 
 	/* check upper bound, use sprintf if this routine can't handle it */
 	if (f_value >= MAX_OKAY_E_VALUE || f_value <= -MAX_OKAY_E_VALUE){
-		return(sprintf(pstr_value,"% 1.*e",f_precision,f_value));
+		return((int)sprintf(pstr_value,"% 1.*e",f_precision,f_value));
 	}
 
 	startAddr = pstr_value;
@@ -448,7 +449,7 @@ int cvtDoubleToExpString(f_value,pstr_value,f_precision)
 	    flt_value < place;
 	    e -= e_resolution, place /= divisor);
 	if (e < -99){
-		return(sprintf(pstr_value,"% 1.*e",f_precision,f_value));
+		return((int)sprintf(pstr_value,"% 1.*e",f_precision,f_value));
 	}
 
 	/* whole numbers */
@@ -925,3 +926,104 @@ unsigned        bitFieldLength;
         return dest;
 }
 
+/* needed if not standard C */
+#ifndef __STDC__
+/*
+ * 
+ * strtoul 
+ * 
+ * obtained from libiberty directory
+ * 
+ * needed because the standard libc.a doesn't have it
+ *
+ */
+
+/*
+ * strtol : convert a string to long.
+ *
+ * Andy Wilson, 2-Oct-89.
+ */
+
+#include <errno.h>
+#include <ctype.h>
+#include <stdio.h>
+#include "ansidecl.h"
+
+#ifndef ULONG_MAX
+#define	ULONG_MAX	((unsigned long)(~0L))		/* 0xFFFFFFFF */
+#endif
+
+extern int errno;
+
+unsigned long
+strtoul(s, ptr, base)
+     CONST char *s; char **ptr; int base;
+{
+  unsigned long total = 0, tmp = 0;
+  unsigned digit;
+  CONST char *start=s;
+  int did_conversion=0;
+  int negate = 0;
+
+  if (s==NULL)
+    {
+      errno = ERANGE;
+      if (!ptr)
+	*ptr = (char *)start;
+      return 0L;
+    }
+
+  while (isspace(*s))
+    s++;
+  if (*s == '+')
+    s++;
+  else if (*s == '-')
+    s++, negate = 1;
+  if (base==0 || base==16) /*  the 'base==16' is for handling 0x */
+    {
+      /*
+       * try to infer base from the string
+       */
+      if (*s != '0')
+        tmp = 10;	/* doesn't start with 0 - assume decimal */
+      else if (s[1] == 'X' || s[1] == 'x')
+	tmp = 16, s += 2; /* starts with 0x or 0X - hence hex */
+      else
+	tmp = 8;	/* starts with 0 - hence octal */
+      if (base==0)
+	base = (int)tmp;
+    }
+
+  while ( digit = *s )
+    {
+      if (digit >= '0' && digit < ('0'+base))
+	digit -= '0';
+      else
+	if (base > 10)
+	  {
+	    if (digit >= 'a' && digit < ('a'+(base-10)))
+	      digit = digit - 'a' + 10;
+	    else if (digit >= 'A' && digit < ('A'+(base-10)))
+	      digit = digit - 'A' + 10;
+	    else
+	      break;
+	  }
+	else
+	  break;
+      did_conversion = 1;
+      tmp = (total * base) + digit;
+      if (tmp < total)	/* check overflow */
+	{
+	  errno = ERANGE;
+	  if (ptr != NULL)
+	    *ptr = (char *)s;
+	  return (ULONG_MAX);
+	}
+      total = tmp;
+      s++;
+    }
+  if (ptr != NULL)
+    *ptr = (char *) ((did_conversion) ? (char *)s : (char *)start);
+  return negate ? -total : total;
+}
+#endif	/*  __STDC__ */

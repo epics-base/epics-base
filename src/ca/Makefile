@@ -64,6 +64,8 @@ LIBSRCS += limboiiu.cpp
 
 LIBRARY=ca
 
+ca_RCS_WIN32 = ca.rc
+
 # For R3.13 compatibility only
 OBJLIB_vxWorks=ca
 OBJLIB_SRCS = $(LIBSRCS)

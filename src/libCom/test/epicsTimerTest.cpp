@@ -72,10 +72,10 @@ double delayVerify::checkError () const
     const double messageThresh = 0.5; // percent 
     double actualDelay =  this->expireStamp - this->beginStamp;
     double measuredError = actualDelay - delayVerifyOffset - this->expectedDelay;
-    double percentError = measuredError / this->expectedDelay;
+    double percentError = fabs ( measuredError ) / this->expectedDelay;
     percentError *= 100.0;
-    if ( percentError > 0.5 ) {
-        printf ( "delay error > %g %%, delay = %g sec, error = %g mSec (%f %%)\n", 
+    if ( percentError > messageThresh ) {
+        printf ( "delay error > %g %%, delay = %g s, error = %g ms (%f %%)\n", 
             messageThresh, this->expectedDelay, measuredError * 1000.0, percentError );
     }
     return measuredError;
@@ -125,7 +125,7 @@ void testAccuracy ()
         averageMeasuredError += pTimers[i]->checkError ();
     }
     averageMeasuredError /= nTimers;
-    printf ("average timer delay error %f mS\n", 
+    printf ("average timer delay error %f ms\n", 
         averageMeasuredError * 1000 );
     queue.release ();
 }

@@ -307,6 +307,13 @@ static long get_graphic_double(paddr,pgd)
     struct steppermotorRecord	*psm=(struct steppermotorRecord *)paddr->precord;
 
     if(paddr->pfield==(void *)&psm->val
+    || paddr->pfield==(void *)&psm->mpos
+    || paddr->pfield==(void *)&psm->rbv
+    || paddr->pfield==(void *)&psm->epos
+    || paddr->pfield==(void *)&psm->hihi
+    || paddr->pfield==(void *)&psm->high
+    || paddr->pfield==(void *)&psm->low
+    || paddr->pfield==(void *)&psm->lolo
     || paddr->pfield==(void *)&psm->lval){
         pgd->upper_disp_limit = psm->hopr;
         pgd->lower_disp_limit = psm->lopr;
@@ -321,6 +328,13 @@ static long get_control_double(paddr,pcd)
     struct steppermotorRecord	*psm=(struct steppermotorRecord *)paddr->precord;
 
     if(paddr->pfield==(void *)&psm->val
+    || paddr->pfield==(void *)&psm->mpos
+    || paddr->pfield==(void *)&psm->rbv
+    || paddr->pfield==(void *)&psm->epos
+    || paddr->pfield==(void *)&psm->hihi
+    || paddr->pfield==(void *)&psm->high
+    || paddr->pfield==(void *)&psm->low
+    || paddr->pfield==(void *)&psm->lolo
     || paddr->pfield==(void *)&psm->lval){
         pcd->upper_ctrl_limit = psm->drvh;
         pcd->lower_ctrl_limit = psm->drvl;
@@ -527,17 +541,16 @@ struct steppermotorRecord	*psm;
 		post_events = TRUE;
 	}
 
-	/* get the read back value */
-	sm_get_position(psm,psm_data->moving);
-
-	/* needs to follow get position to prevent moves with old readback */
 	/* moving */
 	if (psm->movn != psm_data->moving){
 		psm->movn = psm_data->moving;
 		if (psm->mlis.count)
 			db_post_events(psm,&psm->movn,DBE_VALUE|DBE_LOG);
 	}
+	/* get the read back value */
+	sm_get_position(psm);
 
+	/* needs to follow get position to prevent moves with old readback */
 
         /* anyone waiting for an event on this record */
         if (psm->mlis.count!=0  && post_events) {
@@ -561,8 +574,7 @@ struct steppermotorRecord	*psm;
 	    if ( (psm->rbv < (psm->val - psm->rdbd))
 	      || (psm->rbv > (psm->val + psm->rdbd)) ){
                     /* determine direction */
-                    if (psm->rcnt == 0)
-                            psm->posm = (psm->rbv < psm->val);
+                    psm->posm = (psm->rbv < psm->val);
     
 		    /* one attempt was made - record the error */
 		    if (psm->rcnt == 1){
@@ -572,7 +584,7 @@ struct steppermotorRecord	*psm;
 		    }
 
 		    /* should we retry */
-		    if (psm->rcnt <= psm->rtry){
+		    if (psm->rcnt < psm->rtry){
                             /* convert */
                             temp = psm->val / psm->dist;
                             psm->rval = temp;
@@ -582,10 +594,8 @@ struct steppermotorRecord	*psm;
 			    if ((*pdset->sm_command)(psm,SM_MOVE,psm->rval-psm->rrbv,0) < 0){
 				    recGblSetSevr(psm,WRITE_ALARM,VALID_ALARM);
 			    } else {
-			        psm->movn = 1;
 			        psm->rcnt++;
 			        if (psm->mlis.count){
-				    db_post_events(psm,&psm->movn,DBE_VALUE|DBE_LOG);
 				    db_post_events(psm,&psm->rcnt,DBE_VALUE|DBE_LOG);
 			        }
                                 done_move = 0;
@@ -627,12 +637,6 @@ struct steppermotorRecord      *psm;
 	struct smdset   *pdset = (struct smdset *)(psm->dset);
 	int	acceleration,velocity;
 	short		status=0;
-
-	/* check supported hardware */
-	if (psm->out.type != VME_IO){
-		psm->init = 1;
-		return;
-	}
 
 	/* acceleration is in terms of seconds to reach velocity */
 	acceleration = (1/psm->accl) * psm->velo * psm->mres;
@@ -698,9 +702,6 @@ struct steppermotorRecord	*psm;
 {
 	struct smdset   *pdset = (struct smdset *)(psm->dset);
         int             acceleration,velocity;
-
-	/* only VME stepper motor cards supported */
-	if (psm->out.type != VME_IO) return;
 
 	
 	/* emergency stop */
@@ -774,18 +775,24 @@ struct steppermotorRecord	*psm;
 
 	/* Change of desired position */
 	if (psm->lval != psm->val){
+		double temp;
+
+		sm_get_position(psm);
 		psm->rcnt = 0;
 		psm->lval = psm->val;
                 psm->dmov = 0;          /* start moving to desired location */
+		psm->posm = (psm->rbv < psm->val);
+		temp = psm->val/psm->dist;
+		psm->rval = temp;
 		if (psm->mlis.count){
 			db_post_events(psm,&psm->rcnt,DBE_VALUE|DBE_LOG);
 			db_post_events(psm,&psm->lval,DBE_VALUE|DBE_LOG);
 			db_post_events(psm,&psm->dmov,DBE_VALUE|DBE_LOG);
+			db_post_events(psm,&psm->posm,DBE_VALUE|DBE_LOG);
+			db_post_events(psm,&psm->rval,DBE_VALUE|DBE_LOG);
 		}
 	        /* move motor */
-		psm->movn = 1;
 		if ((*pdset->sm_command)(psm,SM_MOVE,psm->rval-psm->rrbv,0) < 0){
-			psm->movn=0;
 			recGblSetSevr(psm,WRITE_ALARM,VALID_ALARM);
 		}
 	}
@@ -882,9 +889,8 @@ struct steppermotorRecord	*psm;
  *
  * get the stepper motor readback position
  */
-static void sm_get_position(psm,moving)
+static void sm_get_position(psm)
 struct steppermotorRecord	*psm;
-short                           moving;
 {
     struct smdset	*pdset = (struct smdset *)(psm->dset);
     short		reset;
@@ -915,7 +921,7 @@ short                           moving;
     }
 
     /* readback position at initialization */
-    if ((psm->init <= 0) && (moving == 0)){
+    if ((psm->init <= 0) && (psm->movn == 0)){
 	if (psm->sthm){
 		(*pdset->sm_command)(psm,SM_SET_HOME,0,0);
 		psm->sthm = 0;
@@ -940,7 +946,7 @@ short                           moving;
 	/* post events */
 	if (psm->mlis.count != 0){
 		delta = new_pos - psm->rbv;
-		if ((delta > psm->mdel) || (delta < -psm->mdel)){
+		if (!psm->movn ||((delta > psm->mdel) || (delta < -psm->mdel))){
 			psm->rbv = new_pos;
 			db_post_events(psm,&psm->rbv,DBE_VALUE|DBE_ALARM);
 			db_post_events(psm,&psm->rrbv,DBE_VALUE|DBE_ALARM);

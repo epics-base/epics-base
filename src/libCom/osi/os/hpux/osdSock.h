@@ -64,6 +64,7 @@ typedef int osiSockIoctl_t;
 #define SOCK_EPIPE EPIPE
 #define SOCK_EMFILE EMFILE
 #define SOCK_SHUTDOWN ESHUTDOWN
+#define SOCK_ENOTSOCK ENOTSOCK
 
 #endif /*osdSockH*/
 

@@ -58,7 +58,6 @@
 //
 
 #include "iocinf.h"
-#include "comBuf_IL.h"
 #include "comQueSend_IL.h"
 
 tsFreeList < class comBuf, 0x20 > comBuf::freeList;

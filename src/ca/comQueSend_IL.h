@@ -18,6 +18,8 @@
 #ifndef comQueSend_ILh
 #define comQueSend_ILh
 
+#include "comBuf_IL.h"
+
 inline bufferReservoir::~bufferReservoir ()
 {
     this->drain ();

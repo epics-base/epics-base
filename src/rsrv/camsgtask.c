@@ -37,6 +37,7 @@
  *	.05 joh	110691	print nil recv disconnect message only
  *			if debug is on
  *	.06 joh 021192  better diagnostics
+ *	.07 joh 031692  disconnect on bad message
  */
 
 #include <vxWorks.h>
@@ -220,6 +221,11 @@ FAST int 		sock;
 			}
 		}else{
 			client->recv.cnt = 0;
+			/*
+			 * disconnect on message alignment
+			 * problems
+			 */
+			break;
 		}
 
 	

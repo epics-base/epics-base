@@ -53,6 +53,7 @@ private:
     epicsTime expireStamp;
     double expectedDelay;
     static tsFreeList < class delayVerify, 0x20 > freeList;
+    static epicsMutex freeListMutex;
 };
 
 static unsigned expireCount;
@@ -95,14 +96,17 @@ inline void delayVerify::start ( const epicsTime &expireTime )
 }
 
 tsFreeList < class delayVerify, 0x20 > delayVerify::freeList;
+epicsMutex delayVerify::freeListMutex;
 
 inline void * delayVerify::operator new ( size_t size )
 {
+    epicsAutoMutex locker ( delayVerify::freeListMutex );
     return delayVerify::freeList.allocate ( size );
 }
 
 inline void delayVerify::operator delete ( void *pCadaver, size_t size )
 {
+    epicsAutoMutex locker ( delayVerify::freeListMutex );
     delayVerify::freeList.release ( pCadaver, size );
 }
 
@@ -159,6 +163,7 @@ private:
     epicsTimer &timer;
     bool failOutIfExpireIsCalled;
     static tsFreeList < class cancelVerify, 0x20 > freeList;
+    static epicsMutex freeListMutex;
 };
 
 cancelVerify::cancelVerify ( epicsTimerQueue &queue ) :
@@ -176,14 +181,17 @@ inline void cancelVerify::start ( const epicsTime &expireTime )
 }
 
 tsFreeList < class cancelVerify, 0x20 > cancelVerify::freeList;
+epicsMutex cancelVerify::freeListMutex;
 
 inline void * cancelVerify::operator new ( size_t size )
 {
+    epicsAutoMutex locker ( cancelVerify::freeListMutex );
     return cancelVerify::freeList.allocate ( size );
 }
 
 inline void cancelVerify::operator delete ( void *pCadaver, size_t size )
 {
+    epicsAutoMutex locker ( cancelVerify::freeListMutex );
     cancelVerify::freeList.release ( pCadaver, size );
 }
 
@@ -246,6 +254,7 @@ private:
     epicsTimer &timer;
     bool failOutIfExpireIsCalled;
     static tsFreeList < class periodicVerify, 0x20 > freeList;
+    static epicsMutex freeListMutex;
 };
 
 periodicVerify::periodicVerify ( epicsTimerQueue &queue ) :
@@ -264,14 +273,17 @@ inline void periodicVerify::start ( const epicsTime &expireTime )
 }
 
 tsFreeList < class periodicVerify, 0x20 > periodicVerify::freeList;
+epicsMutex periodicVerify::freeListMutex;
 
 inline void * periodicVerify::operator new ( size_t size )
 {
+    epicsAutoMutex locker ( periodicVerify::freeListMutex );
     return periodicVerify::freeList.allocate ( size );
 }
 
 inline void periodicVerify::operator delete ( void *pCadaver, size_t size )
 {
+    epicsAutoMutex locker ( periodicVerify::freeListMutex );
     periodicVerify::freeList.release ( pCadaver, size );
 }
 

@@ -18,13 +18,14 @@
 //
 class casServerReg : public fdReg {
 public:
-        casServerReg (casIntfOS &osIn) :
-        fdReg (osIn.casIntfIO::getFD(), fdrRead), os (osIn) {}
-        ~casServerReg ();
+    casServerReg (casIntfOS &osIn) :
+    fdReg (osIn.casIntfIO::getFD(), fdrRead), os (osIn) {}
+    ~casServerReg ();
 private:
-        casIntfOS &os;
- 
-        void callBack ();
+    casIntfOS &os;
+    void callBack ();
+	casServerReg ( const casServerReg & );
+	casServerReg & operator = ( const casServerReg & );
 };
 
 //

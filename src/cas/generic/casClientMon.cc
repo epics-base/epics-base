@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.7  2001/01/11 21:54:53  jhill
+ * accomodate Marty's osi => epics name changes
+ *
  * Revision 1.6  2000/04/28 02:23:30  jhill
  * many, many changes
  *
@@ -91,8 +94,12 @@ caStatus casClientMon::callBack (const smartConstGDDPointer &value)
 	//
 	msg.m_cmmd = CA_PROTO_EVENT_ADD;
 	msg.m_postsize = 0u;
-	msg.m_dataType = this->getType();
-	msg.m_count = (ca_uint16_t) this->getCount();
+	unsigned type = this->getType();
+	assert ( type <= 0xffff );
+	msg.m_dataType = static_cast <ca_uint16_t> ( type );
+	unsigned long count = this->getCount();
+	assert ( count <= 0xffff );
+	msg.m_count = static_cast <ca_uint16_t> ( count );
 	msg.m_cid = this->getChannel().getSID();
 	msg.m_available = this->getClientId();
 

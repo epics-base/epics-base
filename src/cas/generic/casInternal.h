@@ -67,11 +67,14 @@ enum casResType {casChanT=1, casClientMonT, casPVT};
 class casRes : public chronIntIdRes<casRes>
 {
 public:
+	casRes ();
 	epicsShareFunc virtual ~casRes();
 	virtual casResType resourceType() const = 0;
 	virtual void show (unsigned level) const = 0;
 	virtual void destroy() = 0;
 private:
+	casRes ( const casRes & );
+	casRes & operator = ( const casRes & );
 };
 
 class ioBlockedList;
@@ -100,6 +103,8 @@ public:
 	epicsShareFunc virtual ~ioBlockedList ();
 	void signal ();
 	void addItemToIOBLockedList (ioBlocked &item);
+	ioBlockedList ( const ioBlockedList & );
+	ioBlockedList & operator = ( const ioBlockedList & );
 };
  
 class casMonitor;
@@ -193,6 +198,8 @@ private:
 	void disable();
 
 	void push (const smartConstGDDPointer &pValue);
+	casMonitor ( const casMonitor & );
+	casMonitor & operator = ( const casMonitor & );
 };
 
 //
@@ -268,6 +275,9 @@ private:
     epicsShareFunc virtual void destroy ();
 
 	epicsShareFunc virtual bool readOP() const;
+
+	casAsyncIOI ( const casAsyncIOI & );
+	casAsyncIOI & operator = ( const casAsyncIOI & );
 };
 
 class casDGClient;
@@ -366,6 +376,8 @@ protected:
 	unsigned                accessRightsEvPending:1;
 
 	epicsShareFunc virtual void destroy ();
+	casChannelI ( const casChannelI & );
+	casChannelI & operator = ( const casChannelI & );
 };
 
 //
@@ -374,8 +386,10 @@ protected:
 class casPVListChan : public casChannelI, public tsDLNode<casPVListChan>
 {
 public:
-        casPVListChan (const casCtx &ctx);
-        epicsShareFunc virtual ~casPVListChan();
+    casPVListChan (const casCtx &ctx);
+    epicsShareFunc virtual ~casPVListChan();
+	casPVListChan ( const casPVListChan & );
+	casPVListChan & operator = ( const casPVListChan & );
 };
 
 class caServerI;
@@ -481,5 +495,7 @@ private:
     inline void unlock () const;
 
     epicsShareFunc virtual void destroy (); // casPVI destructor noop
+	casPVI ( const casPVI & );
+	casPVI & operator = ( const casPVI & );
 };
 

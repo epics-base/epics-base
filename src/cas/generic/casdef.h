@@ -618,6 +618,8 @@ public:
 
 private:
     casPV *apiPointer (); //retruns NULL if casPVI isnt a base of casPV
+	casPV ( const casPV & );
+	casPV & operator = ( const casPV & );
 
 public:
     //
@@ -704,6 +706,9 @@ public:
 	// ***************
 	//
 	epicsShareFunc casPV *getPV ();
+
+	casChannel ( const casChannel & );
+	casChannel & operator = ( const casChannel & );
 
 	//
 	// only used when casStrmClient converts between
@@ -811,6 +816,9 @@ private:
 
     epicsShareFunc bool readOP() const;
 	epicsShareFunc caStatus cbFuncAsyncIO();
+
+	casAsyncReadIO ( const casAsyncReadIO & );
+	casAsyncReadIO & operator = ( const casAsyncReadIO & );
 };
 
 //
@@ -867,6 +875,8 @@ private:
 	caStatus	completionStatus;
 
 	epicsShareFunc caStatus cbFuncAsyncIO ();
+	casAsyncWriteIO ( const casAsyncWriteIO & );
+	casAsyncWriteIO & operator = ( const casAsyncWriteIO & );
 };
 
 //
@@ -914,6 +924,8 @@ private:
 	const caNetAddr dgOutAddr;
 
 	epicsShareFunc caStatus cbFuncAsyncIO();
+	casAsyncPVExistIO ( const casAsyncPVExistIO & );
+	casAsyncPVExistIO & operator = ( const casAsyncPVExistIO & );
 };
 
 //
@@ -958,6 +970,8 @@ private:
 	pvAttachReturn retVal;
 
 	epicsShareFunc caStatus cbFuncAsyncIO ();
+	casAsyncPVAttachIO ( const casAsyncPVAttachIO & );
+	casAsyncPVAttachIO & operator = ( const casAsyncPVAttachIO & );
 };
 
 //
@@ -967,7 +981,10 @@ private:
 class casAsyncPVCreateIO : private casAsyncPVAttachIO {
 public:
 	epicsShareFunc casAsyncPVCreateIO(const casCtx &ctx);
-	epicsShareFunc virtual ~casAsyncPVCreateIO(); 
+	epicsShareFunc virtual ~casAsyncPVCreateIO();
+private:
+	casAsyncPVCreateIO ( const casAsyncPVCreateIO & );
+	casAsyncPVCreateIO & operator = ( const casAsyncPVCreateIO & );
 };
 
 // TODO:

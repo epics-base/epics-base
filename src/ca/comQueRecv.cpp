@@ -136,8 +136,8 @@ epicsUInt16 comQueRecv::popUInt16 ()
         }
         else {
             // split between buffers runs slower
-            tmp  = this->popUInt8() << 8u; // X aCC 818
-            tmp |= this->popUInt8() << 0u; // X aCC 818
+            tmp  = static_cast <epicsUInt16> ( this->popUInt8() << 8u ); 
+            tmp |= static_cast <epicsUInt16> ( this->popUInt8() << 0u );
         }
         return tmp;
     }

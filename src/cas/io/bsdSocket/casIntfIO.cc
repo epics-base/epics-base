@@ -22,7 +22,6 @@ casIntfIO::casIntfIO (const caNetAddr &addrIn) :
 	sock (INVALID_SOCKET),
     addr (addrIn.getSockIP())
 {
-	int yes = TRUE;
 	int status;
 	osiSocklen_t addrSize;
     bool portChange;
@@ -48,6 +47,7 @@ casIntfIO::casIntfIO (const caNetAddr &addrIn) :
      * they exit ( even if SO_REUSEADDR isnt set ).
      */
 #   ifndef SO_REUSEADDR_ALLOWS_SIMULTANEOUS_TCP_SERVERS_TO_USE_SAME_PORT
+		int yes = TRUE;
 	    status = setsockopt (
 					    this->sock,
 					    SOL_SOCKET,

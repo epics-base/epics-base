@@ -27,8 +27,9 @@ public:
 	void show (unsigned level) const;
 private:
 	casDGIntfOS &os;
-
 	void callBack ();
+	casDGReadReg ( const casDGReadReg & );
+	casDGReadReg & operator = ( const casDGReadReg & );
 };
 
 //
@@ -43,8 +44,9 @@ public:
 	void show (unsigned level) const;
 private:
 	casDGIntfOS &os;
-
 	void callBack ();
+	casDGBCastReadReg ( const casDGBCastReadReg & );
+	casDGBCastReadReg & operator = ( const casDGBCastReadReg & );
 };
 
 //
@@ -59,8 +61,9 @@ public:
     void show (unsigned level) const;
 private:
     casDGIntfOS &os;
-
     void callBack ();
+	casDGWriteReg ( const casDGWriteReg & );
+	casDGWriteReg & operator = ( const casDGWriteReg & );
 };
 
 //
@@ -128,7 +131,7 @@ void casDGEvWakeup::show ( unsigned level ) const
 //
 // casDGEvWakeup::expire()
 //
-epicsTimerNotify::expireStatus casDGEvWakeup::expire ( const epicsTime & currentTime )
+epicsTimerNotify::expireStatus casDGEvWakeup::expire ( const epicsTime & /* currentTime */ )
 {
 	this->pOS->casEventSys::process();
     this->pOS = 0;
@@ -158,7 +161,7 @@ casDGIOWakeup::~casDGIOWakeup()
 // guarantees that we will not call processInput()
 // recursively
 //
-epicsTimerNotify::expireStatus casDGIOWakeup::expire( const epicsTime & currentTime )
+epicsTimerNotify::expireStatus casDGIOWakeup::expire( const epicsTime & /* currentTime */ )
 {
 	//
 	// in case there is something in the input buffer

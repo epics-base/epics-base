@@ -25,8 +25,10 @@ public:
     inline ~casStreamReadReg ();
     void show (unsigned level) const;
 private:
-    casStreamOS     &os;
+    casStreamOS &os;
     void callBack ();
+	casStreamReadReg ( const casStreamReadReg & );
+	casStreamReadReg & operator = ( const casStreamReadReg & );
 };
 
 //
@@ -64,14 +66,15 @@ inline casStreamReadReg::~casStreamReadReg ()
 //
 class casStreamWriteReg : public fdReg {
 public:
-        inline casStreamWriteReg (casStreamOS &osIn);
-        inline ~casStreamWriteReg ();
- 
-        void show (unsigned level) const;
+    inline casStreamWriteReg (casStreamOS &osIn);
+    inline ~casStreamWriteReg ();
+
+    void show (unsigned level) const;
 private:
-        casStreamOS     &os;
- 
-        void callBack ();
+    casStreamOS &os;
+    void callBack ();
+	casStreamWriteReg ( const casStreamWriteReg & );
+	casStreamWriteReg & operator = ( const casStreamWriteReg & );
 };
 
 //
@@ -134,7 +137,7 @@ void casStreamEvWakeup::show(unsigned level) const
 //
 // casStreamEvWakeup::expire()
 //
-epicsTimerNotify::expireStatus casStreamEvWakeup::expire( const epicsTime & currentTime )
+epicsTimerNotify::expireStatus casStreamEvWakeup::expire( const epicsTime & /* currentTime */ )
 {
     casStreamOS &os = *this->pOS;
     this->pOS = 0;
@@ -206,7 +209,7 @@ void casStreamIOWakeup::show ( unsigned level ) const
 // guarantees that we will not call processInput()
 // recursively
 //
-epicsTimerNotify::expireStatus casStreamIOWakeup::expire ( const epicsTime & currentTime )
+epicsTimerNotify::expireStatus casStreamIOWakeup::expire ( const epicsTime & /* currentTime */ )
 {
 	//
 	// in case there is something in the input buffer

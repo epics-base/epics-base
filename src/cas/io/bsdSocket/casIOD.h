@@ -55,6 +55,8 @@ private:
 	unsigned short dgPort;
 
     static SOCKET makeSockDG ();
+	casDGIntfIO ( const casDGIntfIO & );
+	casDGIntfIO & operator = ( const casDGIntfIO & );
 };
 
 struct ioArgsToNewStreamIO {
@@ -98,6 +100,8 @@ private:
 	SOCKET sock;
 	struct sockaddr_in addr;
 	xBlockingStatus blockingFlag;
+	casStreamIO ( const casStreamIO & );
+	casStreamIO & operator = ( const casStreamIO & );
 };
 
 class caServerIO;

@@ -23,6 +23,7 @@ of this distribution.
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <limits.h>
 
 #include "epicsAssert.h"
 #include "cantProceed.h"
@@ -113,7 +114,7 @@ struct event_user {
  */
 
 #define RNGINC(OLD)\
-((OLD)+1)>=EVENTQUESIZE ? 0 : ((OLD)+1)
+( (unsigned short) ( (OLD) >= (EVENTQUESIZE-1) ? 0 : (OLD)+1 ) )
 
 #define RNGSPACE(EVQ)\
 (   ( ((EVQ)->getix)>((EVQ)->putix) ) ? \
@@ -343,7 +344,7 @@ dbEventSubscription epicsShareAPI db_add_event (
     /*
      * Don't add events which will not be triggered
      */
-    if (!select) {
+    if ( select==0 || select > UCHAR_MAX ) {
         return NULL;
     }
 
@@ -385,7 +386,7 @@ dbEventSubscription epicsShareAPI db_add_event (
     pevent->user_sub =  user_sub;
     pevent->user_arg =  user_arg;
     pevent->paddr =     paddr;
-    pevent->select =    select;
+    pevent->select =    (unsigned char) select;
     pevent->pLastLog =  NULL; /* not yet in the queue */
     pevent->callBackInProgress = FALSE;
     pevent->enabled =   FALSE;
@@ -672,7 +673,7 @@ LOCAL void db_post_single_event_private (struct evSubscrip *event)
         else {
             firstEventFlag = 0;
         }
-        ev_que->putix = RNGINC(ev_que->putix);
+        ev_que->putix = RNGINC ( ev_que->putix );
     }
     else {
         /*

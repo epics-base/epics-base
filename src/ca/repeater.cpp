@@ -130,7 +130,10 @@ typedef struct {
 LOCAL makeSocketReturn makeSocket ( unsigned short port, bool reuseAddr )
 {
     int status;
-    struct sockaddr_in bd;
+	union {
+		struct sockaddr_in ia;
+		struct sockaddr sa;
+	} bd;
     makeSocketReturn msr;
     int flag;
 
@@ -147,12 +150,10 @@ LOCAL makeSocketReturn makeSocket ( unsigned short port, bool reuseAddr )
     if (port != PORT_ANY) {
 
         memset ( (char *) &bd, 0, sizeof (bd) );
-        bd.sin_family = AF_INET;
-        bd.sin_addr.s_addr = htonl (INADDR_ANY); 
-        bd.sin_port = htons (port);  
-        status = bind (msr.sock,
-                       reinterpret_cast <struct sockaddr *> (&bd),
-                       (int)sizeof(bd));
+        bd.ia.sin_family = AF_INET;
+        bd.ia.sin_addr.s_addr = htonl (INADDR_ANY); 
+        bd.ia.sin_port = htons (port);  
+        status = bind ( msr.sock, &bd.sa, (int) sizeof(bd) );
         if ( status < 0 ) {
             msr.errNumber = SOCKERRNO;
             msr.pErrStr = SOCKERRSTR ( msr.errNumber );

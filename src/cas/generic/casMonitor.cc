@@ -49,7 +49,7 @@ casMonitor::casMonitor(caResId clientIdIn, casChannelI &chan,
 	ciu(chan),
 	mask(maskIn),
 	clientId(clientIdIn),
-	dbrType(dbrTypeIn),
+	dbrType(static_cast <unsigned char> ( dbrTypeIn ) ),
 	nPend(0u),
 	ovf(false),
 	enabled(false)
@@ -58,6 +58,7 @@ casMonitor::casMonitor(caResId clientIdIn, casChannelI &chan,
 	// If these are nill it is a programmer error
 	//
 	assert (&this->ciu);
+	assert (dbrTypeIn<=0xff);
 
 	this->ciu.addMonitor(*this);
 

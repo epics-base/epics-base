@@ -111,9 +111,12 @@ casDGIntfIO::casDGIntfIO (caServerI &serverIn, const caNetAddr &addr,
     //
     {
         osiSockAddrNode *pAddr;
+		ELLLIST tmpList;
 
-        osiSockDiscoverBroadcastAddresses (&BCastAddrList, 
+		ellInit ( &tmpList );
+        osiSockDiscoverBroadcastAddresses (&tmpList, 
             this->sock, &serverAddr); // match addr 
+		removeDuplicatesAddresses ( &BCastAddrList, &tmpList, 1 );
         if (ellCount(&BCastAddrList)<1) {
             errMessage (S_cas_noInterface, "unable to continue");
             socket_close (this->sock);
@@ -165,7 +168,7 @@ casDGIntfIO::casDGIntfIO (caServerI &serverIn, const caNetAddr &addr,
             &BCastAddrList, pParam, beaconPort);
     }
  
-    removeDuplicatesAddresses ( &this->beaconAddrList, &BCastAddrList );
+    removeDuplicatesAddresses ( &this->beaconAddrList, &BCastAddrList, 0 );
 
 	//
     // Solaris specific:

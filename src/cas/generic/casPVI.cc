@@ -34,6 +34,8 @@
 #include "server.h"
 #include "casPVIIL.h" // caServerI inline func
 
+casRes::casRes () {}
+
 //
 // casPVI::casPVI()
 //

@@ -55,6 +55,8 @@ private:
     epicsTimer &timer;
 	class casDGIntfOS *pOS;
 	expireStatus expire( const epicsTime & currentTime );
+	casDGEvWakeup ( const casDGEvWakeup & );
+	casDGEvWakeup & operator = ( const casDGEvWakeup & );
 };
 
 //
@@ -70,6 +72,8 @@ private:
     epicsTimer &timer;
 	class casDGIntfOS *pOS;
 	expireStatus expire( const epicsTime & currentTime );
+	casDGIOWakeup ( const casDGIOWakeup & );
+	casDGIOWakeup & operator = ( const casDGIOWakeup & );
 };
 
 //
@@ -113,6 +117,8 @@ private:
 	void eventSignal ();
 	void eventFlush ();
 
+	casDGIntfOS ( const casDGIntfOS & );
+	casDGIntfOS & operator = ( const casDGIntfOS & );
 };
 
 //
@@ -134,6 +140,9 @@ public:
 private:
 	caServerI       &cas;
 	casServerReg    *pRdReg;
+
+	casIntfOS ( const casIntfOS & );
+	casIntfOS & operator = ( const casIntfOS & );
 };
 
 class casStreamWriteReg;
@@ -152,6 +161,8 @@ private:
     epicsTimer &timer;
 	casStreamOS	*pOS;
 	expireStatus expire ( const epicsTime & currentTime );
+	casStreamIOWakeup ( const casStreamIOWakeup & );
+	casStreamIOWakeup & operator = ( const casStreamIOWakeup & );
 };
 
 //
@@ -167,6 +178,8 @@ private:
     epicsTimer &timer;
 	casStreamOS	*pOS;
 	expireStatus expire ( const epicsTime & currentTime );
+	casStreamEvWakeup ( const casStreamEvWakeup & );
+	casStreamEvWakeup & operator = ( const casStreamEvWakeup & );
 };
 
 //
@@ -206,6 +219,9 @@ private:
 
 	void eventSignal ();
 	void eventFlush ();
+
+	casStreamOS ( const casStreamOS & );
+	casStreamOS & operator = ( const casStreamOS & );
 };
 
 // no additions below this line

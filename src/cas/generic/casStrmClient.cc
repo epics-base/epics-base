@@ -267,11 +267,13 @@ caStatus casStrmClient::readResponse (casChannelI *pChan, const caHdr &msg,
 		return localStatus;
 	}
 
+
 	//
 	// setup response message
 	//
 	*reply = msg; 
-	reply->m_postsize = size;
+	assert ( size <= 0xffff );
+	reply->m_postsize = static_cast <ca_uint16_t> ( size );
 	reply->m_cid = pChan->getCID();
 
 	//
@@ -300,7 +302,8 @@ caStatus casStrmClient::readResponse (casChannelI *pChan, const caHdr &msg,
 	if (msg.m_dataType == DBR_STRING && msg.m_count == 1u) {
 		/* add 1 so that the string terminator will be shipped */
 		strcnt = strlen((char *)(reply + 1u)) + 1u;
-		reply->m_postsize = strcnt;
+		assert ( strcnt <= 0xffff );
+		reply->m_postsize = static_cast <ca_uint16_t> (strcnt);
 	}
 
 	this->commitMsg ();
@@ -402,7 +405,6 @@ caStatus casStrmClient::readNotifyResponseECA_XXX (casChannelI *pChan,
 	caHdr 		*reply;
 	unsigned	size;
 	caStatus	status;
-	int        	strcnt;
 
 	size = dbr_size_n (msg.m_dataType, msg.m_count);
 	status = this->allocMsg(size, &reply);
@@ -422,7 +424,8 @@ caStatus casStrmClient::readNotifyResponseECA_XXX (casChannelI *pChan,
 	// setup response message
 	//
 	*reply = msg; 
-	reply->m_postsize = size;
+	assert ( size <= 0xffff );
+	reply->m_postsize = static_cast<ca_uint16_t> (size);
 
 	//
 	// cid field abused to store the status here
@@ -483,8 +486,9 @@ caStatus casStrmClient::readNotifyResponseECA_XXX (casChannelI *pChan,
 	//
 	if (msg.m_dataType == DBR_STRING && msg.m_count == 1u) {
 		/* add 1 so that the string terminator will be shipped */
-		strcnt = strlen((char *)(reply + 1u)) + 1u;
-		reply->m_postsize = strcnt;
+		size_t strcnt = strlen((char *)(reply + 1u)) + 1u;
+		assert ( strcnt < 0xffff );
+		reply->m_postsize = static_cast <ca_uint16_t> ( strcnt );
 	}
 
 	this->commitMsg ();
@@ -635,7 +639,6 @@ caStatus casStrmClient::monitorResponse (casChannelI &chan, const caHdr &msg,
 	caHdr *pReply;
 	unsigned size;
 	caStatus status;
-	int strcnt;
 	gddStatus gdds;
 
 	size = dbr_size_n (msg.m_dataType, msg.m_count);
@@ -657,7 +660,8 @@ caStatus casStrmClient::monitorResponse (casChannelI &chan, const caHdr &msg,
 	// setup response message
 	//
 	*pReply = msg;
-	pReply->m_postsize = size;
+	assert ( size <= 0xffff );
+	pReply->m_postsize = static_cast<ca_uint16_t> (size);
 
 	//
 	// verify read access
@@ -720,8 +724,9 @@ caStatus casStrmClient::monitorResponse (casChannelI &chan, const caHdr &msg,
 		if (msg.m_dataType == DBR_STRING && msg.m_count == 1u) {
 			// add 1 so that the string terminator 
 			// will be shipped 
-			strcnt = strlen((char *)(pReply + 1u)) + 1u;
-			pReply->m_postsize = strcnt;
+			size_t strcnt = strlen((char *)(pReply + 1u)) + 1u;
+			assert ( strcnt < 0xffff );
+			pReply->m_postsize = static_cast <ca_uint16_t> ( strcnt );
 		}
 	}
 	else {
@@ -1124,7 +1129,6 @@ caStatus casStrmClient::createChanResponse(const caHdr &hdr, const pvAttachRetur
 	casChannel 	*pChan;
 	casChannelI 	*pChanI;
 	caHdr 		*claim_reply; 
-	unsigned	nativeType;
     bufSizeT    nBytes;
 	caStatus	status;
 
@@ -1145,6 +1149,7 @@ caStatus casStrmClient::createChanResponse(const caHdr &hdr, const pvAttachRetur
     //
     // fetch the native type
     //
+	unsigned	nativeType;
 	status = pPV->bestDBRType(nativeType);
 	if (status) {
 		errMessage(status, "best external dbr type fetch failed");
@@ -1219,8 +1224,11 @@ caStatus casStrmClient::createChanResponse(const caHdr &hdr, const pvAttachRetur
 
 	*claim_reply = nill_msg;
 	claim_reply->m_cmmd = CA_PROTO_CLAIM_CIU;
-	claim_reply->m_dataType = nativeType;
-	claim_reply->m_count = pPV->nativeCount();
+	assert ( nativeType <= 0xffff );
+	claim_reply->m_dataType = static_cast <ca_uint16_t> (nativeType);
+	unsigned nativeCount = pPV->nativeCount();
+	assert ( nativeType <= 0xffff );
+	claim_reply->m_count = static_cast <ca_uint16_t> (nativeCount);
 	claim_reply->m_cid = hdr.m_cid;
 	claim_reply->m_available = pChanI->getSID();
     this->commitMsg();
@@ -1534,7 +1542,9 @@ caStatus casStrmClient::eventCancelAction ()
 	
 	reply->m_cmmd = CA_PROTO_EVENT_ADD;
 	reply->m_postsize = 0u;
-	reply->m_dataType = pMon->getType ();
+	unsigned type = pMon->getType ();
+	assert ( type <= 0xff );
+	reply->m_dataType = static_cast <unsigned char> ( type );
 	reply->m_count = (unsigned short) pMon->getCount ();
 	reply->m_cid = pciu->getCID ();
 	reply->m_available = pMon->getClientId ();
@@ -2036,7 +2046,7 @@ outBuf::flushCondition casStrmClient::xSend (char *pBufIn, bufSizeT nBytesAvaila
 	assert (nBytesAvailableToSend>=nBytesNeedToBeSent);
 	
 	totalBytes = 0u;
-	while (TRUE) {
+	while ( true ) {
 		stat = this->osdSend (&pBufIn[totalBytes],
             nBytesAvailableToSend-totalBytes, nActualBytesDelta);
         if (stat != outBuf::flushProgress) {

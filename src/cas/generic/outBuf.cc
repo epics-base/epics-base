@@ -103,8 +103,8 @@ caStatus outBuf::allocRawMsg (bufSizeT msgsize, void **ppMsg)
 //
 void outBuf::commitMsg ()
 {
-	caHdr 		*mp;
-    ca_uint16_t diff;
+	caHdr *mp;
+    unsigned diff;
 	ca_uint16_t	extSize;
 
 	mp = (caHdr *) &this->pBuf[this->stack];

@@ -309,6 +309,9 @@ void epicsShareAPI caRepeaterRegistrationMessage (
     int status;
     int len;
 
+	assert ( repeaterPort <= USHRT_MAX );
+	unsigned short port = static_cast <unsigned short> ( repeaterPort );
+
     /*
      * In 3.13 beta 11 and before the CA repeater calls local_addr() 
      * to determine a local address and does not allow registration 
@@ -338,16 +341,16 @@ void epicsShareAPI caRepeaterRegistrationMessage (
              */
             saddr.ia.sin_family = AF_INET;
             saddr.ia.sin_addr.s_addr = htonl ( INADDR_LOOPBACK );
-            saddr.ia.sin_port = static_cast <unsigned short> ( htons ( repeaterPort ) );
+            saddr.ia.sin_port = static_cast <unsigned short> ( htons ( port ) );
         }
         else {
-            saddr.ia.sin_port = static_cast <unsigned short> ( htons ( repeaterPort ) );
+            saddr.ia.sin_port = static_cast <unsigned short> ( htons ( port ) );
         }
     }
     else {
         saddr.ia.sin_family = AF_INET;
         saddr.ia.sin_addr.s_addr = htonl ( INADDR_LOOPBACK );
-        saddr.ia.sin_port = static_cast <unsigned short> ( htons ( repeaterPort ) );
+        saddr.ia.sin_port = static_cast <unsigned short> ( htons ( port ) );
     }
 
     memset ( (char *) &msg, 0, sizeof (msg) );
@@ -368,8 +371,7 @@ void epicsShareAPI caRepeaterRegistrationMessage (
 #   endif 
 
     status = sendto ( sock, (char *) &msg, len, 0,
-                      reinterpret_cast <struct sockaddr*> (&saddr),
-                      sizeof ( saddr ) );
+                      &saddr.sa, sizeof ( saddr ) );
     if ( status < 0 ) {
         int errnoCpy = SOCKERRNO;
         /*
@@ -418,7 +420,10 @@ void epicsShareAPI caStartRepeaterIfNotInstalled ( unsigned repeaterPort )
     bool installed = false;
     int status;
     SOCKET tmpSock;
-    struct sockaddr_in bd;
+    union {
+        struct sockaddr_in ia; 
+        struct sockaddr sa;
+    } bd;
     int flag;
 
     if ( repeaterPort > 0xffff ) {
@@ -430,12 +435,10 @@ void epicsShareAPI caStartRepeaterIfNotInstalled ( unsigned repeaterPort )
     if ( tmpSock != INVALID_SOCKET ) {
         ca_uint16_t port = static_cast < ca_uint16_t > ( repeaterPort );
         memset ( (char *) &bd, 0, sizeof ( bd ) );
-        bd.sin_family = AF_INET;
-        bd.sin_addr.s_addr = htonl ( INADDR_ANY ); 
-        bd.sin_port = htons ( port );   
-        status = bind ( tmpSock,
-                        reinterpret_cast <struct sockaddr *> (&bd),
-                        sizeof ( bd ) );
+        bd.ia.sin_family = AF_INET;
+        bd.ia.sin_addr.s_addr = htonl ( INADDR_ANY ); 
+        bd.ia.sin_port = htons ( port );   
+        status = bind ( tmpSock, &bd.sa, sizeof ( bd ) );
         if ( status < 0 ) {
             if ( SOCKERRNO == SOCK_EADDRINUSE ) {
                 installed = true;

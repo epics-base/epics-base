@@ -100,7 +100,7 @@ unsigned tcpiiu::sendBytes ( const void *pBuf,
                             unsigned nBytesInBuf )
 {
     int status;
-    unsigned nBytes;
+    unsigned nBytes = 0u;
 
     if ( this->state != iiu_connected ) {
         return 0u;
@@ -1020,7 +1020,7 @@ void tcpiiu::versionMessage ( const cacChannel::priLev & priority )
     this->sendQue.beginMsg ();
     this->sendQue.pushUInt16 ( CA_PROTO_VERSION ); // cmd
     this->sendQue.pushUInt16 ( 0u ); // postsize ( old possize field )
-    this->sendQue.pushUInt16 ( priority ); // old dataType field
+    this->sendQue.pushUInt16 ( static_cast <ca_uint16_t> ( priority ) ); // old dataType field
     this->sendQue.pushUInt16 ( CA_MINOR_PROTOCOL_REVISION ); // old count field
     this->sendQue.pushUInt32 ( 0u ); // ( old cid field )
     this->sendQue.pushUInt32 ( 0u ); // ( old available field )

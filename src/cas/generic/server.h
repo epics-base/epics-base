@@ -157,6 +157,8 @@ private:
 	virtual void eventFlush () = 0;
 	virtual void eventSignal () = 0;
     virtual casRes *lookupRes (const caResId &idIn, casResType type) = 0;
+	casEventSys ( const casEventSys & );
+	casEventSys & operator = ( const casEventSys & );
 };
 
 //
@@ -180,6 +182,8 @@ public:
 
 	virtual void destroy();
 private:
+	casClientMon ( const casClientMon & );
+	casClientMon & operator = ( const casClientMon & );
 };
 
 class casCtx {
@@ -301,12 +305,13 @@ private:
     bufSizeT    nextReadIndex;
     bufSizeT    ioMinSize;
     unsigned    ctxRecursCount;
-
     virtual unsigned getDebugLevel () const = 0;
     virtual bufSizeT incommingBytesPresent () const = 0;
     virtual fillCondition xRecv (char *pBuf, bufSizeT nBytesToRecv, 
         enum inBuf::fillParameter parm, bufSizeT &nByesRecv) = 0;
     virtual void clientHostName (char *pBuf, unsigned bufSize) const = 0;
+	inBuf ( const inBuf & );
+	inBuf & operator = ( const inBuf & );
 };
 
 //
@@ -404,6 +409,9 @@ private:
 	virtual flushCondition xSend (char *pBuf, bufSizeT nBytesAvailableToSend, 
 		bufSizeT nBytesNeedToBeSent, bufSizeT &nBytesSent) = 0;
 	virtual void clientHostName (char *pBuf, unsigned bufSize) const = 0;
+
+	outBuf ( const outBuf & );
+	outBuf & operator = ( const outBuf & );
 };
 
 //
@@ -468,6 +476,8 @@ protected:
 
 private:
 	tsDLList<casAsyncIOI>   ioInProgList;
+	casCoreClient ( const casCoreClient & );
+	casCoreClient & operator = ( const casCoreClient & );
 };
 
 //
@@ -553,6 +563,9 @@ private:
 	static void loadProtoJumpTable();
 	static pCASMsgHandler msgHandlers[CA_PROTO_LAST_CMMD+1u];
 	static int msgHandlersInit;
+
+	casClient ( const casClient & );
+	casClient & operator = ( const casClient & );
 };
 
 //
@@ -678,6 +691,9 @@ private:
 		const caHdr &msg, const smartConstGDDPointer &pDesc, const caStatus ecaStatus);
 	caStatus writeNotifyResponseECA_XXX (const caHdr &msg,
 			const caStatus status);
+
+	casStrmClient ( const casStrmClient & );
+	casStrmClient & operator = ( const casStrmClient & );
 };
 
 class casDGIntfIO;
@@ -761,6 +777,8 @@ private:
         bufSizeT cadg_nBytes;
     };
 
+	casDGClient ( const casDGClient & );
+	casDGClient & operator = ( const casDGClient & );
 };
 
 //
@@ -776,7 +794,9 @@ public:
 
 	virtual void destroy();
 private:
-	casEventRegistry        &reg;
+	casEventRegistry &reg;
+	casEventMaskEntry ( const casEventMaskEntry & );
+	casEventMaskEntry & operator = ( const casEventMaskEntry & );
 };
 
 //
@@ -796,8 +816,10 @@ public:
     
 private:
     unsigned maskBitAllocator;
-    
+
     casEventMask maskAllocator();
+	casEventRegistry ( const casEventRegistry & );
+	casEventRegistry & operator = ( const casEventRegistry & );
 };
 
 #include "casIOD.h" // IO dependent
@@ -910,6 +932,9 @@ private:
 
 	caStatus attachInterface (const caNetAddr &addr, bool autoBeaconAddr,
 			bool addConfigAddr);
+
+	caServerI ( const caServerI & );
+	caServerI & operator = ( const caServerI & );
 };
 
 #define CAServerConnectPendQueueSize 10

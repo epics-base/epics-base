@@ -478,7 +478,9 @@ const char	*pformat,
 		pMsgString[size-1u] = '\0';
 	}
 
-	reply->m_postsize = size + sizeof(caHdr);
+	size += sizeof(caHdr);
+	assert ( size < 0xffff );
+	reply->m_postsize = static_cast <ca_uint16_t> ( size );
 
     this->outBuf::commitMsg();
 

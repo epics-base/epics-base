@@ -33,9 +33,13 @@ class cac;
 class netiiu;
 
 class cacPrivateListOfIO {
+public:
+	cacPrivateListOfIO ();
 private:
     tsDLList < class baseNMIU > eventq;
     friend class cac;
+	cacPrivateListOfIO ( const cacPrivateListOfIO & );
+	cacPrivateListOfIO & operator = ( const cacPrivateListOfIO & );
 };
 
 class nciu : public cacChannel, public tsDLNode < nciu >,
@@ -83,15 +87,15 @@ private:
     cac & cacCtx;
     char * pNameStr;
     netiiu * piiu;
-    ca_uint32_t sid;        // server id
+    ca_uint32_t sid; // server id
     unsigned count;
-    unsigned retry;         // search retry number
-    ca_uint16_t retrySeqNo; // search retry seq number
-    ca_uint16_t nameLength; // channel name length
+    unsigned retry; // search retry number
+    unsigned short retrySeqNo; // search retry seq number
+    unsigned short nameLength; // channel name length
     ca_uint16_t typeCode;
     ca_uint8_t priority; 
     bool f_connected:1;
-    bool f_previousConn:1;  // T if connected in the past
+    bool f_previousConn:1; // T if connected in the past
     bool f_claimSent:1;
     bool f_firstConnectDecrementsOutstandingIO:1;
     bool f_connectTimeOutSeen:1;
@@ -116,6 +120,8 @@ private:
     static void stringVerify ( const char *pStr, const unsigned count );
     static tsFreeList < class nciu, 1024 > freeList;
     static epicsMutex freeListMutex;
+	nciu ( const nciu & );
+	nciu & operator = ( const nciu & );
 };
 
 inline void * nciu::operator new ( size_t size )
@@ -229,6 +235,10 @@ inline void nciu::accessRightsNotify () const
 inline cacChannel::priLev nciu::getPriority () const
 {
     return this->priority;
+}
+
+inline cacPrivateListOfIO::cacPrivateListOfIO () 
+{
 }
 
 #endif // ifdef nciuh

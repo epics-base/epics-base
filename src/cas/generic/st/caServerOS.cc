@@ -24,6 +24,8 @@ private:
     epicsTimer  &timer;
     caServerOS  &os;
     expireStatus expire ( const epicsTime & currentTime );
+	casBeaconTimer ( const casBeaconTimer & );
+	casBeaconTimer & operator = ( const casBeaconTimer & );
 };
 
 casBeaconTimer::casBeaconTimer ( double delay, caServerOS &osIn ) :
@@ -61,7 +63,7 @@ caServerOS::~caServerOS()
 //
 // casBeaconTimer::expire()
 //
-epicsTimerNotify::expireStatus casBeaconTimer::expire( const epicsTime & currentTime )	
+epicsTimerNotify::expireStatus casBeaconTimer::expire( const epicsTime & /* currentTime */ )	
 {
 	os.sendBeacon ();
     return expireStatus ( restart, os.getBeaconPeriod() );

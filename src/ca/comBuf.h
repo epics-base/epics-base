@@ -243,9 +243,9 @@ inline unsigned comBuf::copyIn ( const epicsInt16 *pValue, unsigned nElem )
     nElem = this->unoccupiedElem ( sizeof (*pValue), nElem );
     for ( unsigned i = 0u; i < nElem; i++ ) {
         this->buf[this->nextWriteIndex++] = 
-            static_cast < char > ( pValue[i] >> 8u );
+            static_cast < epicsUInt8 > ( pValue[i] >> 8u );
         this->buf[this->nextWriteIndex++] = 
-            static_cast < char > ( pValue[i] >> 0u );
+            static_cast < epicsUInt8 > ( pValue[i] >> 0u );
     }
     return nElem;
 }
@@ -255,9 +255,9 @@ inline unsigned comBuf::copyIn ( const epicsUInt16 *pValue, unsigned nElem )
     nElem = this->unoccupiedElem ( sizeof (*pValue), nElem );
     for ( unsigned i = 0u; i < nElem; i++ ) {
         this->buf[this->nextWriteIndex++] = 
-            static_cast < char > ( pValue[i] >> 8u );
+            static_cast < epicsUInt8 > ( pValue[i] >> 8u );
         this->buf[this->nextWriteIndex++] = 
-            static_cast < char > ( pValue[i] >> 0u );
+            static_cast < epicsUInt8 > ( pValue[i] >> 0u );
     }
     return nElem;
 }
@@ -267,13 +267,13 @@ inline unsigned comBuf::copyIn ( const epicsInt32 *pValue, unsigned nElem )
     nElem = this->unoccupiedElem ( sizeof (*pValue), nElem );
     for ( unsigned i = 0u; i < nElem; i++ ) {
         this->buf[this->nextWriteIndex++] = 
-            static_cast < char > ( pValue[i] >> 24u );
+            static_cast < epicsUInt8 > ( pValue[i] >> 24u );
         this->buf[this->nextWriteIndex++] = 
-            static_cast < char > ( pValue[i] >> 16u );
+            static_cast < epicsUInt8 > ( pValue[i] >> 16u );
         this->buf[this->nextWriteIndex++] = 
-            static_cast < char > ( pValue[i] >> 8u );
+            static_cast < epicsUInt8 > ( pValue[i] >> 8u );
         this->buf[this->nextWriteIndex++] = 
-            static_cast < char > ( pValue[i] >> 0u );
+            static_cast < epicsUInt8 > ( pValue[i] >> 0u );
     }
     return nElem;
 }
@@ -283,13 +283,13 @@ inline unsigned comBuf::copyIn ( const epicsUInt32 *pValue, unsigned nElem )
     nElem = this->unoccupiedElem ( sizeof (*pValue), nElem );
     for ( unsigned i = 0u; i < nElem; i++ ) {
         this->buf[this->nextWriteIndex++] = 
-            static_cast < char > ( pValue[i] >> 24u );
+            static_cast < epicsUInt8 > ( pValue[i] >> 24u );
         this->buf[this->nextWriteIndex++] = 
-            static_cast < char > ( pValue[i] >> 16u );
+            static_cast < epicsUInt8 > ( pValue[i] >> 16u );
         this->buf[this->nextWriteIndex++] = 
-            static_cast < char > ( pValue[i] >> 8u );
+            static_cast < epicsUInt8 > ( pValue[i] >> 8u );
         this->buf[this->nextWriteIndex++] = 
-            static_cast < char > ( pValue[i] >> 0u );
+            static_cast < epicsUInt8 > ( pValue[i] >> 0u );
     }
     return nElem;
 }
@@ -347,8 +347,9 @@ inline comBuf::statusPopUInt16 comBuf::popUInt16 ()
 {
     statusPopUInt16 tmp;
     if ( this->occupiedBytes () >= 2u ) {
-        tmp.val  = static_cast < epicsUInt16 > (   this->buf[ this->nextReadIndex++ ] << 8u
-                                                 | this->buf[ this->nextReadIndex++ ] << 0u );
+        unsigned byte1 = this->buf[ this->nextReadIndex++ ];
+        unsigned byte2 = this->buf[ this->nextReadIndex++ ];
+        tmp.val  = static_cast < epicsUInt16 > ( byte1 << 8u | byte2 );
         tmp.success = true;
     }
     else {
@@ -362,10 +363,14 @@ inline comBuf::statusPopUInt32 comBuf::popUInt32 ()
 {
     statusPopUInt32 tmp;
     if ( this->occupiedBytes () >= 4u ) {
-        tmp.val  = this->buf[ this->nextReadIndex++ ] << 24u;
-        tmp.val |= this->buf[ this->nextReadIndex++ ] << 16u;
-        tmp.val |= this->buf[ this->nextReadIndex++ ] << 8u;
-        tmp.val |= this->buf[ this->nextReadIndex++ ] << 0u;
+        unsigned tmpByte = this->buf[ this->nextReadIndex++ ];
+        tmp.val =  static_cast < epicsUInt32 > ( tmpByte << 24u );
+        tmpByte = this->buf[ this->nextReadIndex++ ];
+        tmp.val |= static_cast < epicsUInt32 > ( tmpByte << 16u );
+        tmpByte = this->buf[ this->nextReadIndex++ ];
+        tmp.val |= static_cast < epicsUInt32 > ( tmpByte << 8u );
+        tmpByte = this->buf[ this->nextReadIndex++ ];
+        tmp.val |= static_cast < epicsUInt32 > ( tmpByte );
         tmp.success = true;
     }
     else {

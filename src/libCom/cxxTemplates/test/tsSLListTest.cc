@@ -34,11 +34,13 @@ int main ()
 	list.add(*pFred);
 	list.add(*pFredII);
 	{
-		tsSLIter<fred> iter(list);
+		tsSLIterRm<fred> iter(list);
 		pFredBack = iter();
 		assert(pFredBack == pFredII);
+		pFredBack = iter();
+		assert(pFredBack == pFred);
+        iter.remove(); // removes pFred
 	}
-	list.remove(*pFredII);  // removes *pFred !!
 	list.add(*pFred);
 	pFredBack = list.get();
 	assert (pFredBack == pFred);

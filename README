@@ -32,6 +32,7 @@ This is to turn off the annoying messages GNU make produces upon
 1.1  To configure EPICS, edit the following files:
 
    base/config/CONFIG_SITE	- Build choices/HOST_ARCH/Vx location.
+   base/config/CONFIG_SITE.*    - Location of X, etc.
    base/config/CONFIG		- For overriding specific variables.
 
 1.2  To add a target architecture to EPICS:
@@ -118,7 +119,9 @@ contains the following variables:
  	ARCH_CLASS: 68k / sun4 / hp700 / etc.
 	Architecture dependent build flags.  The flag names / contents
 		depend on your architecture class.
-
+----------------------------------------------------------------------------
+CONFIG_SITE.BUILD_TYPE.ARCH_CLASS - Contains definitions of where to
+find things, like X11 / Motif, etc.
 ----------------------------------------------------------------------------
 CONFIG.BUILD_TYPE.ARCH_CLASS - Contains definitions pertaining to a
 particular architecture class.  This file's primary usefulness is to
@@ -165,54 +168,56 @@ RULES.Unix                   -         -             -
 
  src/db/Makefile.Vx     (An example EPICS makefile)
  ^  ^   ^
- |  |   +--- 3. RULES.Vx
- |  |             Default rules.
- |  |
- |  +------- 2. CONFIG
- |              ^ ^ ^ ^
- |              | | | |
- |              | | | +--- 1. CONFIG_SITE
- |              | | |               HOST_ARCH = sun4
- |              | | |               BUILD_ARCHS = $(HOST_ARCH) mv167 hkv2f
- |              | | |               VX_DIR = /vxworks
- |              | | |               More.
- |              | | +----- 2. CONFIG_COMMON
- |              | |                 General info about base.
- |              | +------- 3. CONFIG_ARCH.hkv2f
- |              |                   BUILD_TYPE = Vx
- |              |                   ARCH_CLASS = 68k 
- |              |                   Arch Specific Compiler Flag Setup
- |              +--------- 4. CONFIG.Vx.68k
+ |  |   +--- 3.  RULES.Vx
+ |  |              Default rules.
+ |  +------- 2.  CONFIG
+ |              ^ ^ ^ ^ ^
+ |              | | | | |
+ |              | | | | +- 1. CONFIG_SITE
+ |              | | | |             HOST_ARCH = sun4
+ |              | | | |             BUILD_ARCHS = $(HOST_ARCH) mv167 hkv2f
+ |              | | | |             VX_DIR = /vxworks
+ |              | | | |             More.
+ |              | | | +--- 2. CONFIG_COMMON
+ |              | | |               General info about base.
+ |              | | +----- 3. CONFIG_ARCH.hkv2f
+ |              | |                 BUILD_TYPE = Vx
+ |              | |                 ARCH_CLASS = 68k 
+ |              | |                 Arch Specific Compiler Flag Setup
+ |              | +------- 4. CONFIG_SITE.Vx.68k
+ |              |                   Directory locations
+ |              +--------- 5. CONFIG.Vx.68k
  |                                  Compiler/utility setup for ARCH_CLASS
- +---------- 1. Target.include
-                  T_A definition (target architecture).
+ +---------- 1.  Target.include
+                   T_A definition (target architecture)
 
 ----------------------------  sun4  example --------------------------------
             (files are numbered in the order of their inclusion)
 
- src/db/Makefile.Unix     (An example EPICS makefile)
+ src/db/Makefile.Unix   (An example EPICS makefile)
  ^  ^   ^
- |  |   +--- 3. RULES.Unix
- |  |             Default rules.
- |  |
- |  +------- 2. CONFIG
- |              ^ ^ ^ ^
- |              | | | |
- |              | | | +--- 1. CONFIG_SITE
- |              | | |               HOST_ARCH = sun4
- |              | | |               BUILD_ARCHS = $(HOST_ARCH) mv167 hkv2f
- |              | | |               VX_DIR = /vxworks
- |              | | |               Lots More.
- |              | | +----- 2. CONFIG_COMMON
- |              | |                 General info about base.
- |              | +------- 3. CONFIG_ARCH.sun4
- |              |                   BUILD_TYPE = Unix
- |              |                   ARCH_CLASS = sun4 
- |              |                   Arch Specific Compiler Flag Setup
- |              +--------- 4. CONFIG.Unix.sun4
+ |  |   +--- 3.  RULES.Unix
+ |  |              Default rules.
+ |  +------- 2.  CONFIG
+ |              ^ ^ ^ ^ ^
+ |              | | | | |
+ |              | | | | +- 1. CONFIG_SITE
+ |              | | | |             HOST_ARCH = sun4
+ |              | | | |             BUILD_ARCHS = $(HOST_ARCH) mv167 hkv2f
+ |              | | | |             VX_DIR = /vxworks
+ |              | | | |             More.
+ |              | | | +--- 2. CONFIG_COMMON
+ |              | | |               General info about base.
+ |              | | +----- 3. CONFIG_ARCH.sun4
+ |              | |                 BUILD_TYPE = Unix
+ |              | |                 ARCH_CLASS = sun4 
+ |              | |                 Arch Specific Compiler Flag Setup
+ |              | +------- 4. CONFIG_SITE.Unix.sun4
+ |              |                   Directory locations
+ |              +--------- 5. CONFIG.Unix.sun4
  |                                  Compiler/utility setup for ARCH_CLASS
- +---------- 1. Target.include
-                  T_A definition (target architecture).
+ +---------- 1.  Target.include
+                   T_A definition (target architecture)
 
 ----------------------------------------------------------------------------
    Part 4  ---  EPICS dependencies

@@ -258,6 +258,7 @@ static void dbAsciiIncludeNew(char *filename)
     inputFile	*pinputFileFirst;
     FILE	*fp;
     char	*currentPath;
+    char	*newCurrentPath;
     int		lenPathAndFilename = 0;
     int		lenstr;
 
@@ -282,7 +283,7 @@ static void dbAsciiIncludeNew(char *filename)
 	}
 	pinputFile = (inputFile *)ellNext(&pinputFile->node);
     }
-    lenPathAndFilename += strlen(filename) + 1;
+    lenPathAndFilename +=  strlen(filename) + 1;
     currentPath = dbCalloc(lenPathAndFilename,sizeof(char));
     pinputFile = pinputFileFirst;
     while(pinputFile) {
@@ -295,6 +296,22 @@ static void dbAsciiIncludeNew(char *filename)
     }
     strcat(currentPath,filename);
     fp = fopen(currentPath,"r");
+    if(!fp) {
+	newCurrentPath = dbCalloc(
+	    (strlen("./base/rec/") + strlen(currentPath) + 1),sizeof(char));
+	strcpy(newCurrentPath,"./base/rec/");
+	strcat(newCurrentPath,currentPath);
+	fp = fopen(newCurrentPath,"r");
+	free((void *)newCurrentPath);
+    }
+    if(!fp) {
+	newCurrentPath = dbCalloc(
+	    (strlen("./rec/") + strlen(currentPath) + 1),sizeof(char));
+	strcpy(newCurrentPath,"./rec/");
+	strcat(newCurrentPath,currentPath);
+	fp = fopen(newCurrentPath,"r");
+	free((void *)newCurrentPath);
+    }
     if(!fp) {
 	errPrintf(0,__FILE__, __LINE__,
 		"dbAsciiIncludeNew opening file %s\n",currentPath);
@@ -404,6 +421,7 @@ static void dbAsciiRecordtypeFieldHead(char *name,char *type)
     pdbFldDes = dbCalloc(1,sizeof(dbFldDes));
     allocTemp(pdbFldDes);
     pdbFldDes->name = name;
+    pdbFldDes->as_level = ASL1;
     for(i=0; i<DBF_NTYPES; i++) {
 	if(strcmp(type,pamapdbfType[i].strvalue)==0) {
 	    pdbFldDes->field_type = pamapdbfType[i].value;

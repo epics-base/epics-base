@@ -19,6 +19,7 @@ DEPLIBS = ./libDb.a\
 SRCS.c = \
 	dbAsciiYacc.c \
 	../dbAsciiTest.c\
+	../dbAsciiExpand.c\
 	../dbPvdLib.c\
 	../dbStaticNoRun.c\
 	../dbStaticLib.c\
@@ -27,6 +28,7 @@ SRCS.c = \
 
 OBJS = \
 	dbAsciiTest.o\
+	dbAsciiExpand.o\
 	dbAsciiToMenuH.o\
 	dbAsciiToRecordtypeH.o
 
@@ -35,6 +37,7 @@ LIBNAME = libDb.a
 
 PROD = \
 	dbAsciiTest\
+	dbAsciiExpand\
 	dbAsciiToMenuH\
 	dbAsciiToRecordtypeH
 

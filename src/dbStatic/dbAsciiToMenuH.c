@@ -36,13 +36,16 @@ int main(int argc,char **argv)
     char	*pext;
     FILE	*outFile;
     int		i;
+    char	*plastSlash;
 
     if(argc!=2) {
 	fprintf(stderr,"usage: dbAsciiToMenuH file.ascii\n");
 	exit(-1);
     }
-    outFilename = dbCalloc(1,strlen(argv[1])+1);
-    strcpy(outFilename,argv[1]);
+    plastSlash = strrchr(argv[1],'/');
+    plastSlash = (plastSlash ? plastSlash+1 : argv[1]);
+    outFilename = dbCalloc(1,strlen(plastSlash)+1);
+    strcpy(outFilename,plastSlash);
     pext = strstr(outFilename,".ascii");
     if(!pext) {
 	fprintf(stderr,"Input file MUST have .ascii extension\n");

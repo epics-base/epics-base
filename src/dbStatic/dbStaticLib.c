@@ -32,8 +32,10 @@ of this distribution.
 #define DBFLDTYPES_GBLSOURCE
 #define GUIGROUPS_GBLSOURCE
 #define SPECIAL_GBLSOURCE
-#define LINK_GBLSOURCE
 #include <dbDefs.h>
+#define LINK_GBLSOURCE
+#include <link.h>
+#undef LINK_GBLSOURCE
 #include <dbFldTypes.h>
 #include <epicsPrint.h>
 #include <errMdef.h>
@@ -48,7 +50,6 @@ of this distribution.
 #include <gpHash.h>
 #include <guigroup.h>
 #include <special.h>
-#include <link.h>
 
 int dbDebug = 0;
 #define messagesize	100
@@ -468,6 +469,159 @@ long dbWriteRecords(DBBASE *pdbbase,FILE *fp,char *precdesname,int level)
     return(0);
 }
 
+void dbWriteMenu(DBBASE *pdbbase,FILE *fp,char *menuName)
+{
+    dbMenu	*pdbMenu;
+    int		gotMatch;
+    int		i;
+
+    if(!pdbbase) {
+	printf("pdbBase not specified\n");
+	return;
+    }
+    pdbMenu = (dbMenu *)ellFirst(&pdbbase->menuList);
+    while(pdbMenu) {
+	if(menuName) {
+	    gotMatch = (strcmp(menuName,pdbMenu->name)==0) ? TRUE : FALSE;
+	}else {
+	    gotMatch=TRUE;
+	}
+	if(gotMatch) {
+	    fprintf(fp,"menu(%s) {\n",pdbMenu->name);
+	    for(i=0; i<pdbMenu->nChoice; i++) {
+		fprintf(fp,"\tchoice(%s,\"%s\")\n",pdbMenu->papChoiceName[i],
+		    pdbMenu->papChoiceValue[i]);
+	    }
+	    fprintf(fp,"}\n");
+	    if(menuName) break;
+	}
+	pdbMenu = (dbMenu *)ellNext(&pdbMenu->node);
+    }
+}
+
+void dbWriteRecDes(DBBASE *pdbbase,FILE *fp,char *recdesName)
+{
+    dbRecDes	*pdbRecDes;
+    dbFldDes	*pdbFldDes;
+    int		gotMatch;
+    int		i;
+
+    if(!pdbbase) {
+	printf("pdbBase not specified\n");
+	return;
+    }
+    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbbase->recDesList);
+    pdbRecDes; pdbRecDes = (dbRecDes *)ellNext(&pdbRecDes->node)) {
+	if(recdesName) {
+	    gotMatch = (strcmp(recdesName,pdbRecDes->name)==0) ? TRUE : FALSE;
+	}else {
+	    gotMatch=TRUE;
+	}
+	if(!gotMatch) continue;
+	fprintf(fp,"recordtype(%s) {\n",pdbRecDes->name);
+	for(i=0; i<pdbRecDes->no_fields; i++) {
+	    int	j;
+
+	    pdbFldDes = pdbRecDes->papFldDes[i];
+	    fprintf(fp,"\tfield(%s,",pdbFldDes->name);
+	    for(j=0; j<DBF_NTYPES; j++) {
+		if(pamapdbfType[j].value == pdbFldDes->field_type) break;
+	    }
+	    if(j>=DBF_NTYPES)
+		printf("\t     field_type: %d\n", pdbFldDes->field_type);
+	    else
+		fprintf(fp,"%s) {\n",pamapdbfType[j].strvalue);
+	    if(pdbFldDes->prompt)
+		fprintf(fp,"\t\tprompt(\"%s\")\n",pdbFldDes->prompt);
+	    if(pdbFldDes->initial)
+		fprintf(fp,"\t\tinitial(\"%s\")\n",pdbFldDes->initial);
+	    if(pdbFldDes->promptgroup) {
+		for(j=0; j<GUI_NTYPES; j++) {
+		    if(pamapguiGroup[j].value == pdbFldDes->promptgroup) {
+			fprintf(fp,"\t\tpromptgroup(%s)\n",
+				pamapguiGroup[j].strvalue);
+			break;
+		    }
+		}
+	    }
+	    if(pdbFldDes->special) {
+		for(j=0; j<SPC_NTYPES; j++) {
+		    if(pamapspcType[j].value == pdbFldDes->special) {
+			fprintf(fp,"\t\tspecial(%s)\n",
+				pamapspcType[j].strvalue);
+			break;
+		    }
+		}
+	    }
+	    if(pdbFldDes->extra)
+		fprintf(fp,"\t\textra(\"%s\")\n",pdbFldDes->extra);
+	    if(pdbFldDes->field_type==DBF_MENU) {
+		if(pdbFldDes->ftPvt)
+		    fprintf(fp,"\t\tmenu(%s)\n",
+			((dbMenu *)pdbFldDes->ftPvt)->name);
+		else
+		    printf("\t\t  menu: NOT FOUND\n");
+	    }
+	    if(pdbFldDes->field_type==DBF_STRING) {
+		fprintf(fp,"\t\tsize(%d)\n",
+		    pdbFldDes->size);
+	    }
+	    if(pdbFldDes->process_passive) fprintf(fp,"\t\tpp(TRUE)\n");
+	    if(pdbFldDes->base) fprintf(fp,"\t\tbase(HEX)\n");
+	    if(pdbFldDes->interest)
+		fprintf(fp,"\t\tinterest(%d)\n",pdbFldDes->interest);
+	    if(!pdbFldDes->as_level) fprintf(fp,"\t\tasl(ASL0)\n");
+	    fprintf(fp,"\t}\n");
+	}
+	fprintf(fp,"}\n");
+	if(recdesName) break;
+    }
+}
+
+void dbWriteDevice(DBBASE *pdbbase,FILE *fp)
+{
+    dbRecDes	*pdbRecDes;
+    devSup	*pdevSup;
+
+    if(!pdbbase) {
+	printf("pdbBase not specified\n");
+	return;
+    }
+    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbbase->recDesList);
+    pdbRecDes; pdbRecDes = (dbRecDes *)ellNext(&pdbRecDes->node)) {
+	for(pdevSup = (devSup *)ellFirst(&pdbRecDes->devList);
+	pdevSup; pdevSup = (devSup *)ellNext(&pdevSup->node)) {
+	    int j;
+
+	    for(j=0; j< LINK_NTYPES; j++) {
+		if(pamaplinkType[j].value==pdevSup->link_type) break;
+	    }
+	    if(j>=LINK_NTYPES) {
+		fprintf(fp,"link_type not valid\n");
+		continue;
+	    }
+	    fprintf(fp,"device(%s,%s,%s,\"%s\")\n",
+		pdbRecDes->name,
+		pamaplinkType[j].strvalue,
+		pdevSup->name,pdevSup->choice);
+	}
+    }
+}
+
+void dbWriteDriver(DBBASE *pdbbase,FILE *fp)
+{
+    drvSup	*pdrvSup;
+
+    if(!pdbbase) {
+	printf("pdbBase not specified\n");
+	return;
+    }
+    for(pdrvSup = (drvSup *)ellFirst(&pdbbase->drvList);
+    pdrvSup; pdrvSup = (drvSup *)ellNext(&pdrvSup->node)) {
+	fprintf(fp,"driver(%s)\n",pdrvSup->name);
+    }
+}
+
 long dbFindRecdes(DBENTRY *pdbentry,char *rectype)
 {
     dbBase	*pdbbase = pdbentry->pdbbase;
@@ -521,7 +675,7 @@ long dbCreateRecord(DBENTRY *pdbentry,char *precordName)
     dbRecordNode       	*pNewRecNode = NULL;
     long		status;
 
-    if(strlen(precordName)>PVNAME_SZ) return(S_dbLib_nameLength);
+    if((int)strlen(precordName)>PVNAME_SZ) return(S_dbLib_nameLength);
     if(!precdes) return(S_dbLib_recdesNotFound);
     /* clear callers entry */
     zeroDbentry(pdbentry);
@@ -644,7 +798,7 @@ long dbRenameRecord(DBENTRY *pdbentry,char *newName)
     long		status;
     DBENTRY		dbentry;
 
-    if(strlen(newName)>PVNAME_SZ) return(S_dbLib_nameLength);
+    if((int)strlen(newName)>PVNAME_SZ) return(S_dbLib_nameLength);
     if(!precnode) return(S_dbLib_recNotFound);
     dbInitEntry(pdbentry->pdbbase,&dbentry);
     status = dbFindRecord(&dbentry,newName);
@@ -1105,7 +1259,7 @@ long dbPutString(DBENTRY *pdbentry,char *pstring)
 		if(pstr[ind]!=' ' && pstr[ind]!='\t') break;
 		pstr[ind] = '\0';
 	    }
-	    if(!pstr || strlen(pstr)<=0 ) {
+	    if(!pstr || (int)strlen(pstr)<=0 ) {
 		if(plink->type==PV_LINK) dbCvtLinkToConstant(pdbentry);
 		if(plink->type!=CONSTANT) return(S_dbLib_badField);
 		return(0);
@@ -1124,8 +1278,9 @@ long dbPutString(DBENTRY *pdbentry,char *pstring)
 		    tempval = strtod(pstr,&end);
 		    if(*end == 0) {
 			if(plink->type==PV_LINK) dbCvtLinkToConstant(pdbentry);
-			if((!plink->value.constantStr)
-			|| (strlen(plink->value.constantStr)<strlen(pstr))) {
+			if((!plink->value.constantStr) ||
+			((int)strlen(plink->value.constantStr)<(int)strlen(pstr)
+			)) {
 			    free(plink->value.constantStr);
 			    plink->value.constantStr =
 				dbCalloc(strlen(pstr)+1,sizeof(char));
@@ -1874,7 +2029,7 @@ long  dbPutForm(DBENTRY *pdbentry,char **value)
 	    break;
 	}
 	if((!plink->value.constantStr)
-	|| (strlen(plink->value.constantStr)<strlen(*value))) {
+	|| ((int)strlen(plink->value.constantStr)<(int)strlen(*value))) {
 	    free(plink->value.constantStr);
 	    plink->value.constantStr = dbCalloc(strlen(*value)+1,sizeof(char));
 	}

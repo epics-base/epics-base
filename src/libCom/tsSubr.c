@@ -34,6 +34,7 @@
  *  .06 08-03-92 rac	added tsRound... routines
  *  .07 10-06-92 rac	minor fixes to the documentation
  *  .08 04-02-92 joh 	fixed number of days in a year uninitialized
+ *  .09 02-09-94 jbk 	tsLocalTime() now calls TScurrentTimeStamp() vxWorks
  *			for the EPOCH year
  *
  * make options
@@ -593,13 +594,7 @@ TS_STAMP *pStamp;	/* O pointer to time stamp buffer */
     pStamp->nsec = 987000000;
     pStamp->secPastEpoch = 30 * 86400 + 495;	/* 0815 Jan 31 of epoch year */
 #  else
-    extern TS_STAMP time_stamp;	/* VxWorks global time stamp */
-    int		key;
-
-    assert(pStamp != NULL);
-    key = intLock();
-    *pStamp = time_stamp;
-    intUnlock(key);
+	return TScurrentTimeStamp((struct timespec*)pStamp);
 #  endif
 #elif VMS
     assert(0);		/* not available on VMS */

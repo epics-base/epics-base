@@ -23,5 +23,10 @@ inline bool udpiiu::isCurrentThread () const
     return ( this->recvThreadId == epicsThreadGetIdSelf () );
 }
 
+inline unsigned udpiiu::getPort () const
+{
+    return this->localPort;
+}
+
 #endif // udpiiu_ILh
 

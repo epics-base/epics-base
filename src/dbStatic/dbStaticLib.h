@@ -198,7 +198,7 @@ epicsShareFunc void epicsShareAPI dbReportDeviceConfig(DBBASE *pdbbase,FILE *rep
 /* NOTE: These routines do NOT return if they fail.			*/
 epicsShareFunc void * epicsShareAPI dbCalloc(size_t nobj,size_t size);
 epicsShareFunc void * epicsShareAPI dbMalloc(size_t size);
-epicsShareFunc void epicsShareAPI dbCatString(char **string,int *stringLength,char *new,char *separator);
+epicsShareFunc void epicsShareAPI dbCatString(char **string,int *stringLength,char *pnew, char *separator);
 
 extern int dbStaticDebug;
 

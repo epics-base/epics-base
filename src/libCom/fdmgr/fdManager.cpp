@@ -98,11 +98,11 @@ epicsShareFunc fdManager::fdManager (osiTimerQueue &timerQueueIn) :
 	size_t i;
     int status;
 
-    status = osiSockAttach();
+    status = osiSockAttach ();
 	assert (status);
 
-	for (i=0u; i<sizeof(this->fdSets)/sizeof(this->fdSets[0u]); i++) {
-		FD_ZERO(&this->fdSets[i]);
+	for ( i=0u; i < sizeof (this->fdSets) / sizeof ( this->fdSets[0u] ); i++ ) {
+		FD_ZERO ( &this->fdSets[i] );
 	}
 	this->maxFD = 0;
 	this->processInProg = 0u;

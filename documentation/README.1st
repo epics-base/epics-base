@@ -362,11 +362,11 @@ Building EPICS base (Unix and Win32)
          even if the R3.13 extensions are built with R3.14 base.
 
          Win32 PATH
-         On WIN32 systems, building shared libraries is the default
-         setting and you will need to add  fullpathname to
-         $(INSTALL_LOCATION)/bin/$(EPICS_HOST_ARCH) to your path.
-         Building shared libraries is determined by the value of the
-         macro SHARED_LIBRARIES in CONFIG_SITE (either YES or NO).
+         On WIN32 systems, for R3.14.7 and later, it is no longer necessary
+         to add fullpathname to $(INSTALL_LOCATION)/bin/$(EPICS_HOST_ARCH)
+         to your path for finding dlls during EPICS builds. The win32
+         configure files in base now add this directory to the path
+         definition.
 
 
      Do site-specific build configuration 

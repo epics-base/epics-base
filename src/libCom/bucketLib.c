@@ -27,6 +27,7 @@
  *
  *      Modification Log:
  *      -----------------
+ * 	.01 091493 joh	fixed overzealous parameter check
  */
 
 
@@ -144,7 +145,6 @@ unsigned indexWidth;
 #endif
 {
 	BUCKET		*pb;
-	unsigned	nentries;
 
 	if(indexWidth>sizeof(BUCKETID)*NBBY){
 		return NULL;
@@ -162,11 +162,11 @@ unsigned indexWidth;
 		pb->indexShift = 0;
 	}
 	pb->nextIndexMask = (1<<pb->indexShift)-1;
-	nentries = 1<<(indexWidth-pb->indexShift);
-	pb->indexMask = nentries-1; 
+	pb->nEntries = 1<<(indexWidth-pb->indexShift);
+	pb->indexMask = (1<<indexWidth)-1; 
 
 	pb->pTable = (ITEMPTR *) calloc(
-			nentries, 
+			pb->nEntries, 
 			sizeof(ITEMPTR));
 	if(!pb->pTable){
 		return NULL;
@@ -343,13 +343,13 @@ BUCKET *pb;
 	pi = pb->pTable;
 
 	printf(	"Bucket: mask=%x entries in use=%d bytes in use=%d\n",
-		pb->indexMask<<pb->indexShift,
+		(pb->nEntries-1)<<pb->indexShift,
 		pb->nInUse,
-		sizeof(*pb)+(pb->indexMask+1)*sizeof(*pi));
+		sizeof(*pb)+pb->nEntries*sizeof(*pi));
 
 	if(pb->indexShift){
 		for(	pi = pb->pTable;
-			pi<=&pb->pTable[pb->indexMask];
+			pi<&pb->pTable[pb->nEntries];
 			pi++){
 			if(pi->pBucket){
 				bucketShow(pi->pBucket);

@@ -65,6 +65,9 @@
  * This driver currently needs work on error message generation.
  *
  * $Log$
+ * Revision 1.1  1995/03/30  19:34:56  jba
+ * Seperated drv files into ansi and old dirs. Added combine dir.
+ *
  * Revision 1.37  1995/03/24  21:24:25  winans
  * Probable race condition in PEP TX task.  Moved the final transmission
  * byte assignment into the point where the busy list is locked.  This
@@ -2532,6 +2535,11 @@ STATIC int pepTxTask(int link)
 	      if (bbDebug)
 	        printf("pepTxTask(%d): RAC_RESET_SLAVE sent\n", link);
 	      
+	      pBBLink[link]->l.PepLink.bbRegs->stat_ctl = *txMsg;
+	      if (bbDebug>30)
+		printf("pepTxTask(%d): outputting last byte %2.2X\n",
+		       link,*txMsg);
+
 	      pnode->status = BB_OK;
 	      
 	      if (pnode->finishProc != NULL) {

@@ -5,6 +5,12 @@
 //
 //
 // $Log$
+// Revision 1.7.2.1  1996/11/25 16:33:00  jhill
+// close() => socket_close()
+//
+// Revision 1.7  1996/11/22 19:27:04  jhill
+// suppressed error msg and returned correct # bytes pending
+//
 // Revision 1.6  1996/11/02 00:54:46  jhill
 // many improvements
 //
@@ -123,7 +129,7 @@ caStatus casStreamIO::init()
 casStreamIO::~casStreamIO()
 {
 	if (sock>=0) {
-		close(this->sock);
+		socket_close(this->sock);
 	}
 }
 

@@ -824,21 +824,17 @@ static long asAddMemberPvt(ASMEMBERPVT *pasMemberPvt,char *asgName)
     ASGMEMBER	*pasgmember;
     ASG		*pgroup;
     ASGCLIENT	*pasgclient;
-    size_t	len;
 
     if(*pasMemberPvt) {
 	pasgmember = *pasMemberPvt;
-	free((void *)pasgmember->asgName);
     } else {
 	pasgmember = asCalloc(1,sizeof(ASGMEMBER));
 	ellInit(&pasgmember->clientList);
 	*pasMemberPvt = pasgmember;
     }
-    len = (asgName ? (strlen(asgName)+1) : 1);
-    pasgmember->asgName = asCalloc(len,sizeof(char));
-    if(asgName) strcpy(pasgmember->asgName,asgName);
+    pasgmember->asgName = asgName;
     pgroup = (ASG *)ellFirst(&pasbase->asgList);
-    if(strlen(pasgmember->asgName)>0) while(pgroup) {
+    while(pgroup) {
 	if(strcmp(pgroup->name,pasgmember->asgName)==0) goto got_it;
 	pgroup = (ASG *)ellNext((ELLNODE *)pgroup);
     }

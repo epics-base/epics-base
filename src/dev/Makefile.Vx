@@ -8,6 +8,7 @@ SRCS = \
 	devAiDvx2502.c devAiSoft.c devAiSoftRaw.c \
 	devAiSymb.c devAiTestAsyn.c devAiXy566Di.c \
 	devAiXy566DiL.c devAiXy566Se.c devAoSoft.c \
+	devApsEg.c \
 	devAoSoftRaw.c devAoSymb.c devAoTestAsyn.c \
 	devAoVmiVme4100.c devBiMpv910.c devBiSoft.c \
 	devBiSoftRaw.c devBiTestAsyn.c devBiXVme210.c \
@@ -19,6 +20,10 @@ SRCS = \
 	devMbbiSoft.c devMbbiSoftRaw.c devMbbiTestAsyn.c \
 	devMbbiXVme210.c devMbboMpv902.c devMbboSoft.c \
 	devMbboSoftRaw.c devMbboTestAsyn.c devMbboXVme220.c \
+	devMbbiDirectMpv910.c devMbbiDirectSoft.c \
+	devMbbiDirectSoftRaw.c devMbbiDirectXVme210.c \
+	devMbboDirectMpv902.c devMbboDirectSoft.c \
+	devMbboDirectSoftRaw.c devMbboDirectXVme220.c \
 	devPtSoft.c devSmCompumotor1830.c devSmOms6Axis.c \
 	devSASoft.c devSiSoft.c devSiSymb.c \
 	devSiTestAsyn.c devSoSoft.c devSoSymb.c \
@@ -37,6 +42,7 @@ OBJS = \
 	$(OBDIR)/devAoSoft.o $(OBDIR)/devAoSoftRaw.o \
 	$(OBDIR)/devAoSymb.o $(OBDIR)/devAoTestAsyn.o \
 	$(OBDIR)/devAoVmiVme4100.o $(OBDIR)/devBiMpv910.o \
+	$(OBDIR)/devApsEg.o \
 	$(OBDIR)/devBiSoft.o $(OBDIR)/devBiSoftRaw.o \
 	$(OBDIR)/devBiTestAsyn.o $(OBDIR)/devBiXVme210.o \
 	$(OBDIR)/devBoMpv902.o $(OBDIR)/devBoSoft.o \
@@ -51,6 +57,10 @@ OBJS = \
 	$(OBDIR)/devMbbiXVme210.o $(OBDIR)/devMbboMpv902.o \
 	$(OBDIR)/devMbboSoft.o $(OBDIR)/devMbboSoftRaw.o \
 	$(OBDIR)/devMbboTestAsyn.o $(OBDIR)/devMbboXVme220.o \
+	$(OBDIR)/devMbbiDirectMpv910.o $(OBDIR)/devMbbiDirectSoft.o \
+	$(OBDIR)/devMbbiDirectSoftRaw.o $(OBDIR)/devMbbiDirectXVme210.o \
+	$(OBDIR)/devMbboDirectMpv902.o $(OBDIR)/devMbboDirectSoft.o \
+	$(OBDIR)/devMbboDirectSoftRaw.o $(OBDIR)/devMbboDirectXVme220.o \
 	$(OBDIR)/devPtSoft.o $(OBDIR)/devSmCompumotor1830.o \
 	$(OBDIR)/devSmOms6Axis.o $(OBDIR)/devSASoft.o \
 	$(OBDIR)/devSiSoft.o $(OBDIR)/devSiSymb.o \

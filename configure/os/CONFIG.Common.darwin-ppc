@@ -19,6 +19,13 @@ ARCH_CLASS = ppc
 SHARED_LIBRARIES=NO
 
 #
+# Special flags for Darwin
+#   No fancy precompiled headers
+#   No common blocks (as required when going to shared libraries)
+#
+OP_SYS_CFLAGS += -no-cpp-precomp -fno-common
+
+#
 # Need to get some fink-installed packages (readline, etc.).
 # If you don't have readline on your system you must remove
 # or comment out these lines and make the appropriate changes
@@ -27,3 +34,9 @@ SHARED_LIBRARIES=NO
 OP_SYS_CPPFLAGS += -I$(FINK_DIR)/include
 OP_SYS_LDFLAGS += -L$(FINK_DIR)/lib
 OP_SYS_LDLIBS += -lreadline
+
+#
+# Stuff that will be needed when going to shared libraries
+#
+SHRLIB_LDFLAGS = -dynamiclib
+SHRLIB_SUFFIX = $(addprefix .,$(SHRLIB_VERSION)).dylib

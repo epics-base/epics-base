@@ -11,5 +11,11 @@ include $(CONFIG)/CONFIG.gnuCommon
 
 GNU_DIR = /usr
 
-CC = $(GNU_BIN)/cc -no-cpp-precomp
-CCC = $(GNU_BIN)/c++ -no-cpp-precomp
+CC = $(GNU_BIN)/cc
+CCC = $(GNU_BIN)/c++
+
+#
+# Position-independent code is the default on Darwin.
+#
+CODE_CFLAGS = 
+CODE_CXXFLAGS = 

@@ -86,9 +86,9 @@ void netWriteNotifyIO::exception (
     cacRecycle & recycle,
     int status, const char * pContext )
 {
+    this->privateChanForIO.ioCompletionNotify ( guard, *this );
     this->notify.exception ( 
         guard, status, pContext, UINT_MAX, 0u );
-    this->privateChanForIO.ioCompletionNotify ( guard, *this );
     this->~netWriteNotifyIO ();
     recycle.recycleWriteNotifyIO ( guard, *this );
 }
@@ -99,9 +99,9 @@ void netWriteNotifyIO::exception (
     int status, const char *pContext, 
     unsigned type, arrayElementCount count )
 {
+    this->privateChanForIO.ioCompletionNotify ( guard, *this );
     this->notify.exception ( 
         guard, status, pContext, type, count );
-    this->privateChanForIO.ioCompletionNotify ( guard, *this );
     this->~netWriteNotifyIO ();
     recycle.recycleWriteNotifyIO ( guard, *this );
 }

@@ -17,7 +17,7 @@
 #ifndef comBuf_ILh
 #define comBuf_ILh
 
-#include <epicsAssert.h>
+#include "epicsAssert.h"
 #include "epicsTypes.h"
 #include "osiWireFormat.h"
 

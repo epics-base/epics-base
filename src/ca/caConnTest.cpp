@@ -2,9 +2,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <cadef.h>
-#include <epicsAssert.h>
-#include <osiTime.h>
+#include "cadef.h"
+#include "epicsAssert.h"
+#include "osiTime.h"
 
 static unsigned channelCount = 0u;
 static unsigned connCount = 0u;

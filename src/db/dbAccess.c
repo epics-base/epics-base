@@ -87,7 +87,7 @@
 #include	<dbAccess.h>
 #include	<dbStaticLib.h>
 #include	<dbScan.h>
-#include	<dbCommon.h>
+#include	<rec/dbCommon.h>
 #include	<dbFldTypes.h>
 #include 	<dbRecDes.h>
 #include 	<dbRecType.h>

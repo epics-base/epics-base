@@ -77,7 +77,7 @@
 #include	<dbScan.h>
 #include	<taskwd.h>
 #include	<callback.h>
-#include	<dbCommon.h>
+#include	<rec/dbCommon.h>
 #include	<dbBase.h>
 #include	<dbFldTypes.h>
 #include 	<dbRecDes.h>

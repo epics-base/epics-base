@@ -68,7 +68,7 @@
 #include 	<tsDefs.h>
 #include	<dbDefs.h>
 #include	<db_access.h>
-#include	<dbCommon.h>
+#include	<rec/dbCommon.h>
 #include	<task_params.h>
 
 

@@ -53,7 +53,7 @@
 #include	<dbRecDes.h>
 #include	<dbAccess.h>
 #include	<devSup.h>
-#include	<dbCommon.h>
+#include	<rec/dbCommon.h>
 #include	<sdrHeader.h>
 
 extern struct dbBase *pdbBase;

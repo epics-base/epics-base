@@ -51,7 +51,7 @@
 #include        <string.h>
 #include        <dbDefs.h>
 #include        <dbAccess.h>
-#include        <dbCommon.h>
+#include        <rec/dbCommon.h>
 #include        <errMdef.h>
 #include        <recSup.h>
 

@@ -117,14 +117,15 @@ void oldChannelNotify::readException ( int status, const char *pContext,
     unsigned type, arrayElementCount count, void *pValue )
 {
     ca_signal_formated ( status, 0, 0u, "ctx=%s type=%s count=%u ptr=%p", 
-        pContext, dbr_type_to_text ( type ), count, pValue );
+        pContext, dbr_type_to_text ( static_cast < int > ( type ) ), 
+        count, pValue );
 }
 
 void oldChannelNotify::writeException ( int status, const char *pContext,
     unsigned type, arrayElementCount count )
 {
     ca_signal_formated ( status, 0, 0u, "ctx=%s type=%s count=%u", 
-        pContext, dbr_type_to_text ( type ), count );
+        pContext, dbr_type_to_text ( static_cast < int > ( type ) ), count );
 }
 
 bool oldChannelNotify::includeFirstConnectInCountOfOutstandingIO () const

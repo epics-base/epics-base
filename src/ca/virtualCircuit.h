@@ -23,7 +23,6 @@
 #include "epicsTimer.h"
 #include "epicsMemory.h"
 #include "ipAddrToAsciiAsynchronous.h"
-#include "osiWireFormat.h"
 
 #include "comBuf.h"
 #include "netiiu.h"

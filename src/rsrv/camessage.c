@@ -162,7 +162,8 @@ va_list                 args
      * allocate plenty of space for a sprintf() buffer
      */
     success = cas_copy_in_header ( client, 
-        CA_PROTO_ERROR, 512, 0, 0, cid, status, &pReqOut );
+        CA_PROTO_ERROR, 512, 0, 0, cid, status, 
+        ( void * ) &pReqOut );
     if ( ! success ) {
         errlogPrintf ( "caserver: Unable to deliver err msg to client => \"%s\"\n",
             ca_message (status) );
@@ -312,7 +313,7 @@ unsigned            lineno
  * bad_udp_cmd_action()
  */
 LOCAL int bad_udp_cmd_action ( caHdrLargeArray *mp, 
-                       const void *pPayload, struct client *pClient )
+                       void *pPayload, struct client *pClient )
 {
     log_header ("invalid (damaged?) request code from UDP", 
         pClient, mp, pPayload, 0);
@@ -323,14 +324,14 @@ LOCAL int bad_udp_cmd_action ( caHdrLargeArray *mp,
  * udp_echo_action()
  */
 LOCAL int udp_echo_action ( caHdrLargeArray *mp, 
-                           const void *pPayload, struct client *pClient )
+                           void *pPayload, struct client *pClient )
 {
     char *pPayloadOut;
     int success;
     SEND_LOCK ( pClient );
     success = cas_copy_in_header ( pClient, mp->m_cmmd, mp->m_postsize, 
         mp->m_dataType, mp->m_count, mp->m_cid, mp->m_available,
-        &pPayloadOut );
+        ( void * ) &pPayloadOut );
     if ( success ) {
         memcpy ( pPayloadOut, pPayload, mp->m_postsize );
         cas_commit_msg ( pClient, mp->m_postsize );
@@ -362,24 +363,24 @@ LOCAL int bad_tcp_cmd_action ( caHdrLargeArray *mp, const void *pPayload,
 /*
  * tcp_noop_action()
  */
-LOCAL int tcp_noop_action ( caHdrLargeArray *mp, const void *pPayload, 
+LOCAL int tcp_noop_action ( caHdrLargeArray *mp, void *pPayload, 
                            struct client *client )
 {
     return RSRV_OK;
 }
 
 /*
- * echo_action()
+ * tcp_echo_action()
  */
-LOCAL int echo_action ( caHdrLargeArray *mp, 
-                       const void *pPayload, struct client *pClient )
+LOCAL int tcp_echo_action ( caHdrLargeArray *mp, 
+                       void *pPayload, struct client *pClient )
 {
     char *pPayloadOut;
     int success;
     SEND_LOCK ( pClient );
     success = cas_copy_in_header ( pClient, mp->m_cmmd, mp->m_postsize, 
         mp->m_dataType, mp->m_count, mp->m_cid, mp->m_available,
-        &pPayloadOut );
+        ( void * ) &pPayloadOut );
     if ( success ) {
         memcpy ( pPayloadOut, pPayload, mp->m_postsize );
         cas_commit_msg ( pClient, mp->m_postsize );
@@ -392,7 +393,7 @@ LOCAL int echo_action ( caHdrLargeArray *mp,
  * events_on_action ()
  */
 LOCAL int events_on_action ( caHdrLargeArray *mp, 
-                       const void *pPayload, struct client *pClient )
+                       void *pPayload, struct client *pClient )
 {
     db_event_flow_ctrl_mode_off ( pClient->evuser );
     return RSRV_OK;
@@ -402,7 +403,7 @@ LOCAL int events_on_action ( caHdrLargeArray *mp,
  * events_off_action ()
  */
 LOCAL int events_off_action ( caHdrLargeArray *mp, 
-                       const void *pPayload, struct client *pClient )
+                       void *pPayload, struct client *pClient )
 {
     db_event_flow_ctrl_mode_on ( pClient->evuser );
     return RSRV_OK;
@@ -446,7 +447,7 @@ LOCAL void no_read_access_event ( struct client *pClient,
      */
     success = cas_copy_in_header ( pClient, pevext->msg.m_cmmd, pevext->size, 
         pevext->msg.m_dataType, pevext->msg.m_count, ECA_NORDACCESS, 
-        pevext->msg.m_available, &pPayloadOut );
+        pevext->msg.m_available, ( void * ) &pPayloadOut );
     if ( success ) {
         memset ( pPayloadOut, 0, pevext->size );
         cas_commit_msg ( pClient, pevext->size );
@@ -685,7 +686,7 @@ LOCAL int read_action ( caHdrLargeArray *mp, void *pPayloadIn, struct client *pC
 /*
  * read_notify_action()
  */
-LOCAL int read_notify_action ( caHdrLargeArray *mp, const void *pPayload, struct client *client )
+LOCAL int read_notify_action ( caHdrLargeArray *mp, void *pPayload, struct client *client )
 {
     struct channel_in_use *pciu;
     struct event_ext evext;
@@ -1484,7 +1485,7 @@ LOCAL void putNotifyErrorReply ( struct client *client, caHdrLargeArray *mp, int
 /*
  * write_notify_action()
  */
-LOCAL int write_notify_action ( caHdrLargeArray *mp, const void *pPayload, 
+LOCAL int write_notify_action ( caHdrLargeArray *mp, void *pPayload, 
                                struct client  *client )
 {
     unsigned size;
@@ -1789,7 +1790,7 @@ LOCAL int clear_channel_reply ( caHdrLargeArray *mp, void *pPayload, struct clie
  * Much more efficient now since the event blocks hang off the channel in use
  * blocks not all together off the client block.
  */
-LOCAL int event_cancel_reply ( caHdrLargeArray *mp, const void *pPayload, struct client *client )
+LOCAL int event_cancel_reply ( caHdrLargeArray *mp, void *pPayload, struct client *client )
 {
      struct channel_in_use  *pciu;
      struct event_ext       *pevext;
@@ -1994,7 +1995,8 @@ LOCAL int search_reply ( caHdrLargeArray *mp, void *pPayload, struct client *cli
     SEND_LOCK ( client );
     success = cas_copy_in_header ( client, CA_PROTO_SEARCH, 
         sizeof(*pMinorVersion), type, count, 
-        sid, mp->m_available, &pMinorVersion );
+        sid, mp->m_available, 
+        ( void * ) &pMinorVersion );
     if ( ! success ) {
         SEND_UNLOCK ( client );
         return RSRV_ERROR;
@@ -2043,7 +2045,7 @@ LOCAL const pProtoStubTCP tcpJumpTable[] =
     client_name_action,
     host_name_action,
     bad_tcp_cmd_action,
-    echo_action,
+    tcp_echo_action,
     bad_tcp_cmd_action,
     bad_tcp_cmd_action,
     bad_tcp_cmd_action,
@@ -2086,7 +2088,6 @@ LOCAL const pProtoStubUDP udpJumpTable[] =
     bad_udp_cmd_action
 };
 
-
 /*
  * CAMESSAGE()
  */

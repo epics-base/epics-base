@@ -22,7 +22,7 @@ extern "C" void epicsShareAPI ca_test_event ( struct event_handler_args args )
 
   switch ( args.type ) {
   case	DBR_STRING:
-    printf ( "CAC: Value:\t<%s>\n", (dbr_string_t *) args.dbr );
+    printf ( "CAC: Value:\t<%s>\n", (char *) args.dbr );
     break;
   case	DBR_CHAR:
     printf ( "CAC: Value:\t<%d>\n", *(dbr_char_t *) args.dbr );

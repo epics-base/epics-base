@@ -1253,8 +1253,8 @@ void eventClearTest ( chid chan )
  * verify that we can at least write and read back the same array
  * if multiple elements are present
  */
-static arrayReadNotifyComplete = 0;
-static arrayWriteNotifyComplete = 0;
+static unsigned arrayReadNotifyComplete = 0;
+static unsigned arrayWriteNotifyComplete = 0;
 void arrayReadNotify ( struct event_handler_args args )
 {
     dbr_double_t *pWF = ( dbr_double_t * ) ( args.usr );

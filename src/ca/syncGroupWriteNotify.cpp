@@ -77,7 +77,8 @@ void syncGroupWriteNotify::exception (
 {
     ca_signal_formated ( status, __FILE__, __LINE__, 
             "CA sync group write request for channel \"%s\" failed because \"%s\" type=%s count=%u\n", 
-            this->chan->pName(), pContext, dbr_type_to_text ( type ), count);
+            this->chan->pName(), pContext, 
+            dbr_type_to_text ( static_cast < int > ( type ) ), count);
     //
     // This notify is left installed at this point as a place holder indicating that
     // all requests have not been completed. This notify is not uninstalled until

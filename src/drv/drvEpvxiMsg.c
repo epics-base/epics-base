@@ -771,7 +771,7 @@ unsigned        la;
 		logMsg(	"%s: vxiMsgClose(): bad sem id\n",
 			__FILE__);
 	}
-	status = vxiClose(la, vxiMsgLibDriverId); 
+	status = epvxiClose(la, vxiMsgLibDriverId); 
 	if(status<0){
 		logMsg(	"%s: vxiMsgClose(): close failed\n",
 			__FILE__);
@@ -804,7 +804,7 @@ unsigned	la;
 		vxiMsgLibDriverId = vxiUniqueDriverID();
 	}
   
-	status = vxiOpen(
+	status = epvxiOpen(
 			la, 
 			vxiMsgLibDriverId, 
 			(unsigned long)sizeof(*pvximdi),
@@ -825,7 +825,7 @@ unsigned	la;
 	pcsr = VXIBASE(la);
 
 	if(VXICLASS(pcsr) != VXI_MESSAGE_DEVICE){
-		vxiClose(la, vxiMsgLibDriverId);
+		epvxiClose(la, vxiMsgLibDriverId);
 		return VXI_NOT_MSG_DEVICE;
 	}
 
@@ -835,7 +835,7 @@ unsigned	la;
 		pvximdi->syncSem = semCreate();
 #	endif
 	if(!pvximdi->syncSem){
-		vxiClose(la, vxiMsgLibDriverId);
+		epvxiClose(la, vxiMsgLibDriverId);
 		return VXI_NO_MEMORY;
 	}
 

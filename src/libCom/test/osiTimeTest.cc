@@ -7,7 +7,7 @@
 #endif
 
 #include "osiTime.h"
-#include "osiSleep.h"
+#include "osiThread.h"
 #include "epicsAssert.h"
 
 #ifndef CLOCK_REALTIME
@@ -92,7 +92,7 @@ int main ()
 	//
 #if 0
 	while (1) {
-		osiSleep (10 /* sec */, 0 /* uSec */);
+		threadSleep (10.0);
 	}
 #endif
 

@@ -1,5 +1,5 @@
 
-CAS = ../..
+CAS = ../../..
 TOP = $(CAS)/../..
 
 include $(TOP)/config/CONFIG_BASE

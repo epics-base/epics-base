@@ -32,7 +32,8 @@ typedef struct ellCheckNode{
 typedef enum {
     putNotifyOK,
     putNotifyCanceled,
-    putNotifyError
+    putNotifyError,
+    putNotifyPutDisabled
 }putNotifyStatus;
 
 typedef struct putNotify{

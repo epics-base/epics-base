@@ -201,6 +201,14 @@ void epicsShareAPI dbPutNotify(putNotify *ppn)
     long	status=0;
 
     assert(precord);
+    /*check for putField disabled*/
+    if(precord->disp) {
+        if((void *)(&precord->disp) != ppn->paddr->pfield) {
+           ppn->status = putNotifyPutDisabled;
+           (*ppn->userCallback)(ppn);
+           return;
+        }
+    }
     /* Must handle DBF_XXXLINKs as special case.
      * Only dbPutField will change link fields. 
      * Also the record is not processed as a result

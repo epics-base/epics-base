@@ -240,56 +240,6 @@ rectangle {
 		width=1
 	}
 }
-"cartesian plot" {
-	object {
-		x=105
-		y=23
-		width=1000
-		height=217
-	}
-	plotcom {
-		title="Electron LINAC Beam Position"
-		clr=14
-		bclr=2
-	}
-	style="line"
-	erase_oldest="plot last n pts"
-	trace[0] {
-		xdata="$(user):PM:distancesWF"
-		ydata="$(user):PM:iTrajectoryWF"
-		data_clr=20
-	}
-	trace[1] {
-		xdata="$(user):PM:distancesWF"
-		ydata="$(user):PM:xTrajectoryWF"
-		data_clr=53
-	}
-	trace[2] {
-		xdata="$(user):PM:distancesWF"
-		ydata="$(user):PM:yTrajectoryWF"
-		data_clr=49
-	}
-	trace[3] {
-		xdata="$(user):PM:refLocationsWF"
-		ydata="$(user):PM:referenceHiWF"
-		data_clr=30
-	}
-	trace[4] {
-		xdata="$(user):PM:refLocationsWF"
-		ydata="$(user):PM:referenceLoWF"
-		data_clr=30
-	}
-	x_axis {
-		rangeStyle="user-specified"
-		maxRange=60.000000
-	}
-	y1_axis {
-		maxRange=0.000000
-	}
-	y2_axis {
-		maxRange=0.000000
-	}
-}
 valuator {
 	object {
 		x=224
@@ -4620,4 +4570,112 @@ image {
 	clr=14
 	bclr=51
 	label=" MEDM Demo Display"
+}
+text {
+	object {
+		x=337
+		y=161
+		width=591
+		height=38
+	}
+	"basic attribute" {
+		clr=14
+		fill="outline"
+	}
+	textix="beamTrajectory sequence program is installed."
+	align="horiz. centered"
+}
+text {
+	object {
+		x=333
+		y=81
+		width=591
+		height=38
+	}
+	"basic attribute" {
+		clr=14
+		fill="outline"
+	}
+	textix="A Cartesian plot of the beam trajectory"
+	align="horiz. centered"
+}
+text {
+	object {
+		x=352
+		y=121
+		width=591
+		height=38
+	}
+	"basic attribute" {
+		clr=14
+		fill="outline"
+	}
+	textix="will be displayed here when the"
+	align="horiz. centered"
+}
+composite {
+	object {
+		x=129
+		y=22
+		width=1000
+		height=217
+	}
+	"composite name"=""
+	children {
+		"cartesian plot" {
+			object {
+				x=129
+				y=22
+				width=1000
+				height=217
+			}
+			plotcom {
+				title="Electron LINAC Beam Position"
+				clr=14
+				bclr=2
+			}
+			style="line"
+			erase_oldest="plot last n pts"
+			trace[0] {
+				xdata="$(user):PM:distancesWF"
+				ydata="$(user):PM:iTrajectoryWF"
+				data_clr=20
+			}
+			trace[1] {
+				xdata="$(user):PM:distancesWF"
+				ydata="$(user):PM:xTrajectoryWF"
+				data_clr=53
+			}
+			trace[2] {
+				xdata="$(user):PM:distancesWF"
+				ydata="$(user):PM:yTrajectoryWF"
+				data_clr=49
+			}
+			trace[3] {
+				xdata="$(user):PM:refLocationsWF"
+				ydata="$(user):PM:referenceHiWF"
+				data_clr=30
+			}
+			trace[4] {
+				xdata="$(user):PM:refLocationsWF"
+				ydata="$(user):PM:referenceLoWF"
+				data_clr=30
+			}
+			x_axis {
+				rangeStyle="user-specified"
+				maxRange=60.000000
+			}
+			y1_axis {
+				maxRange=0.000000
+			}
+			y2_axis {
+				maxRange=0.000000
+			}
+		}
+	}
+	"dynamic attribute" {
+		vis="if not zero"
+		calc="A"
+		chan="$(user):trajSeqOnC"
+	}
 }

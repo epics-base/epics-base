@@ -3,8 +3,15 @@ record(bi,"$(user):autoC") {
         field(PINI,"YES")
         field(INP, "0")
         field(DTYP,"Soft Channel")
-        field(ZNAM,"Operator control")
+        field(ZNAM,"Operator Control")
         field(ONAM,"Computer-Auto")
+}
+record(bi,"$(user):trajSeqOnC") {
+        field(DESC, "Trajectory Sequence running")
+        field(INP, "0")
+        field(DTYP,"Soft Channel")
+        field(ZNAM,"Not Running")
+        field(ONAM,"Running")
 }
 record(bo,"$(user):gunOnC") {
         field(DESC,"Controls e-gun")
@@ -185,6 +192,116 @@ record(ao,"$(user):BM1:setCurrentC") {
         field(DRVL,"0")
         field(HOPR,"250")
         field(LOPR,"0")
+}
+record(ao,"$(user)A:H1:setCurrentC") {
+        field(DESC,"set output current")
+        field(PREC,"2")
+        field(EGU,"Amps")
+        field(DRVH,"5")
+        field(DRVL,"-5")
+        field(HOPR,"5")
+        field(LOPR,"-5")
+        field(OROC,".1")
+        field(OUT,"$(user):H1:setCurrentC.VAL PP NMS")
+}
+record(ao,"$(user)A:V1:setCurrentC") {
+        field(DESC,"set output current")
+        field(PREC,"2")
+        field(EGU,"Amps")
+        field(DRVH,"5")
+        field(DRVL,"-5")
+        field(HOPR,"5")
+        field(LOPR,"-5")
+        field(OROC,".1")
+        field(OUT,"$(user):V1:setCurrentC.VAL PP NMS")
+}
+record(ao,"$(user)A:H2:setCurrentC") {
+        field(DESC,"set output current")
+        field(PREC,"2")
+        field(EGU,"Amps")
+        field(DRVH,"5")
+        field(DRVL,"-5")
+        field(HOPR,"5")
+        field(LOPR,"-5")
+        field(OROC,".1")
+        field(OUT,"$(user):H2:setCurrentC.VAL PP NMS")
+}
+record(ao,"$(user)A:V2:setCurrentC") {
+        field(DESC,"set output current")
+        field(PREC,"2")
+        field(EGU,"Amps")
+        field(DRVH,"5")
+        field(DRVL,"-5")
+        field(HOPR,"5")
+        field(LOPR,"-5")
+        field(OROC,".1")
+        field(OUT,"$(user):V2:setCurrentC.VAL PP NMS")
+}
+record(ao,"$(user)A:H3:setCurrentC") {
+        field(DESC,"set output current")
+        field(PREC,"2")
+        field(EGU,"Amps")
+        field(DRVH,"5")
+        field(DRVL,"-5")
+        field(HOPR,"5")
+        field(LOPR,"-5")
+        field(OROC,".1")
+        field(OUT,"$(user):H3:setCurrentC.VAL PP NMS")
+}
+record(ao,"$(user)A:V3:setCurrentC") {
+        field(DESC,"set output current")
+        field(PREC,"2")
+        field(EGU,"Amps")
+        field(DRVH,"5")
+        field(DRVL,"-5")
+        field(HOPR,"5")
+        field(LOPR,"-5")
+        field(OROC,".1")
+        field(OUT,"$(user):V3:setCurrentC.VAL PP NMS")
+}
+record(ao,"$(user)A:H4:setCurrentC") {
+        field(DESC,"set output current")
+        field(PREC,"2")
+        field(EGU,"Amps")
+        field(DRVH,"5")
+        field(DRVL,"-5")
+        field(HOPR,"5")
+        field(LOPR,"-5")
+        field(OROC,".1")
+        field(OUT,"$(user):H4:setCurrentC.VAL PP NMS")
+}
+record(ao,"$(user)A:V4:setCurrentC") {
+        field(DESC,"set output current")
+        field(PREC,"2")
+        field(EGU,"Amps")
+        field(DRVH,"5")
+        field(DRVL,"-5")
+        field(HOPR,"5")
+        field(LOPR,"-5")
+        field(OROC,".1")
+        field(OUT,"$(user):V4:setCurrentC.VAL PP NMS")
+}
+record(ao,"$(user)A:H5:setCurrentC") {
+        field(DESC,"set output current")
+        field(PREC,"2")
+        field(EGU,"Amps")
+        field(DRVH,"5")
+        field(DRVL,"-5")
+        field(HOPR,"5")
+        field(LOPR,"-5")
+        field(OROC,".1")
+        field(OUT,"$(user):H5:setCurrentC.VAL PP NMS")
+}
+record(ao,"$(user)A:V5:setCurrentC") {
+        field(DESC,"set output current")
+        field(PREC,"2")
+        field(EGU,"Amps")
+        field(DRVH,"5")
+        field(DRVL,"-5")
+        field(HOPR,"5")
+        field(LOPR,"-5")
+        field(OROC,".1")
+        field(OUT,"$(user):V5:setCurrentC.VAL PP NMS")
 }
 record(calc,"$(user):randomM") {
         field(CALC,"(RNDM*.1)-.05")

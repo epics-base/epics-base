@@ -3,6 +3,9 @@ program beamTrajectory
 option -c;	/* don't wait for all channels to connect */
 option +r;	/* reentrant */
 
+short   seqRunning;
+assign  seqRunning to "{user}:trajSeqOnC";
+
 double   CM1_I;
 assign  CM1_I to "{user}:CM1:intensityM";
 monitor CM1_I;
@@ -107,6 +110,10 @@ state init
   {
         when()
             {
+            /* Indicate sequence is running */
+            seqRunning = 1;
+            pvPut(seqRunning);
+
             /* BPM Position from EGUN */
             bpmFixedLocations[0] =  0.0; 
             bpmFixedLocations[1] =  2.4; 

@@ -7,6 +7,9 @@ static char *sccsId = "@(#) $Id$";
 
 /*
  * $Log$
+ * Revision 1.50  1998/03/12 20:39:07  jhill
+ * fixed problem where 3.13.beta11 unable to connect to 3.11 with correct native type
+ *
  * Revision 1.49  1998/02/05 21:56:46  jhill
  * added no pend event in event call back test
  *
@@ -916,6 +919,30 @@ int doacctst(char *pname)
 					pT2++;
 				}
 			}
+
+			/*
+			 * read back the array as strings
+			 *
+			 * this demonstrates that we can operate close to the N*40<=16k limit
+			 */
+			if (ca_read_access(chix1)) {
+				/* clip to 16k message buffer limit */
+				unsigned maxElem = ((1<<14)-16)/MAX_STRING_SIZE;
+				unsigned nElem = min(maxElem, ca_element_count(chix1));
+				
+				char *pRS = malloc(nElem*MAX_STRING_SIZE);
+				assert(pRS);
+				status = ca_array_get(
+						DBR_STRING, 
+						nElem, 
+						chix1, 
+						pRS); 
+				SEVCHK(status, "array read request failed");
+				status = ca_pend_io(30.0);
+				SEVCHK(status, "array read failed");
+				free(pRS);
+			}
+
 			printf("done\n");
 			free(pRF);
 			free(pWF);

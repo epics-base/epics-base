@@ -92,14 +92,14 @@ void syncGroupReadNotify::show ( unsigned level ) const
     }
 }
 
-void * syncGroupReadNotify::operator new ( size_t )
+void * syncGroupReadNotify::operator new ( size_t ) // X aCC 361
 {
     // The HPUX compiler seems to require this even though no code
     // calls it directly
     throw std::logic_error ( "why is the compiler calling private operator new" );
 }
 
-void syncGroupReadNotify::operator delete ( void * p )
+void syncGroupReadNotify::operator delete ( void * )
 {
     // Visual C++ .net appears to require operator delete if
     // placement operator delete is defined? I smell a ms rat

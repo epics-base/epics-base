@@ -218,7 +218,6 @@ do
 		# Makefile.Vx
 		TOP = ../../..
 		include $(TOP)/config/CONFIG_APP
-		INSTALL_LOCATION = $(TOP)
 		#----------------------------------------
 		#  ADD MACRO DEFINITIONS AFTER THIS LINE
 		
@@ -257,12 +256,12 @@ do
 		include $(TOP)/config/RULES.Vx
 		#----------------------------------------
 		#  ADD RULES AFTER THIS LINE
+		inc:: $(INSTALL_INCREC)
 	END
 	cat > src/Makefile.Host <<-\END
 		# Makefile.Host
 		TOP = ../../..
 		include $(TOP)/config/CONFIG_APP
-		INSTALL_LOCATION = $(TOP)
 		#----------------------------------------
 		#  ADD MACRO DEFINITIONS AFTER THIS LINE
 

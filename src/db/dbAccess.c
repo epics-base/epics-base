@@ -38,6 +38,7 @@
  * .07  12-02-91	jba	Writing to PROC will always force record process
  * .08  02-05-92	jba	Changed function arguments from paddr to precord 
  * .09  03-02-92	jba	Added function dbValueSize to replace db_value_size
+ * .10  04-17-92	rcz	put in mrk's dbNameToAddr changes for dbBase
  */
 
 /* This is a major revision of the original implementation of database access.*/
@@ -119,6 +120,7 @@
 #include	<alarm.h>
 #include	<choice.h>
 #include	<dbDefs.h>
+#include	<dbBase.h>
 #include	<dbAccess.h>
 #include	<dbScan.h>
 #include	<dbCommon.h>
@@ -130,6 +132,14 @@
 #include	<errMdef.h>
 #include	<recSup.h>
 #include	<special.h>
+/*#include	<pvd.h>*/
+
+typedef struct pvdEntry{
+        NODE    next;
+        void    *precord;
+        short   recType;
+} PVDENTRY;
+extern struct dbBase *pdbBase;
 
 long jba_debug=0;
 
@@ -302,42 +312,41 @@ long dbNameToAddr(pname,paddr)
 	char          *pname;
 	struct dbAddr *paddr;
 {
-	char		*precName;
 	char		recName[PVNAME_SZ+1];
+	char		*precName=&recName[0];
+	PVDENTRY	*ppvdEntry;
 	char		*pfieldName;
 	short		field_offset;
-	short		record_number;
-	short		n;
+	int		lenName;
 	long		status=0;
 	struct rset	*prset;
 	struct recLoc	*precLoc;
-	char*		precord;
 	struct fldDes	*pfldDes;
-
 	/* convert the record name */
-	precName = &recName[0];
-	n=0;
-	while(*pname && (*pname != '.') && (n<PVNAME_SZ) ){
+	lenName=0;
+	while(*pname && (*pname != '.') && (lenName<PVNAME_SZ) ){
 		*precName = *pname;
 		pname++;
 		precName++;
-		n++;
+		lenName++;
 	}
 	*precName = 0;
-	if (pvdGetRec(&recName[0],&(paddr->record_type),&record_number) < 0){
+	if(pvdSearchRecord(&pdbBase,&recName[0],lenName,&ppvdEntry)) {
 		paddr->precord = (void *)-1;
 		paddr->record_type = -1;
 		return(S_db_notFound);
 	}
+	paddr->precord = ppvdEntry->precord;
+	paddr->record_type = ppvdEntry->recType;
 
 	/* convert the field name */
 	if(*pname=='.') pfieldName = pname +1;
-	else if(n==PVNAME_SZ && *(pname+1)=='.') pfieldName = pname+2;
+	else if(lenName==PVNAME_SZ && *(pname+1)=='.') pfieldName = pname+2;
 	else {/*Field name was not given. Use recName as a work area*/
 		recName[0] = 0;
 		pfieldName = &recName[0];
 	}
-	if (!(pfldDes=pvdGetFld(paddr->record_type,pfieldName))){
+	if (!(pfldDes=(struct fldDes*)pvdSearchField(&pdbBase,(short)paddr->record_type,(char*)pfieldName))){
 		paddr->field_type = -1;
 		paddr->pfield = (void *)-1;
 		paddr->field_size = -1;
@@ -353,13 +362,11 @@ long dbNameToAddr(pname,paddr)
 
 	/* get the memory location of the record and field */
 	if(!(precLoc=GET_PRECLOC(paddr->record_type))
-	|| !(precord=GET_PRECORD(precLoc,record_number))
 	|| (paddr->field_size+field_offset) > (precLoc->rec_size)) {
 	    recGblDbaddrError(S_db_notFound,paddr,"dbNameToAddr");
 	    return(S_db_notFound);
 	}
-	paddr->precord=(void *)precord;
-	paddr->pfield=precord+field_offset;
+	paddr->pfield=(char *)(paddr->precord)+field_offset;
 
 	/*if special is SPC_DBADDR then call cvt_dbaddr		*/
 	/*it may change pfield,no_elements,field_type,dbr_field_type,*/
@@ -372,6 +379,7 @@ long dbNameToAddr(pname,paddr)
 
 	return(status);
 }
+
 
 long dbGetLink(
 	struct db_link	*pdblink,

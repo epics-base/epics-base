@@ -1,0 +1,8 @@
+# $Id$
+
+# solaris-sparc is the new name for solaris
+-include $(EPICS_BASE)/config/CONFIG.Host.solaris
+
+ANSI=GCC
+CPLUSPLUS=G++
+

@@ -625,7 +625,7 @@ bool udpiiu::searchRespAction ( // X aCC 361
      * is appended to the end of each search reply.
      * This value is ignored by earlier clients.
      */
-    unsigned minorVersion;
+    ca_uint32_t minorVersion;
     if ( msg.m_postsize >= sizeof (minorVersion) ){
         /*
          * care is taken here not to break gcc 3.2 aggressive alias

@@ -45,6 +45,7 @@
  * .08  05-28-93	joh	Added an argument to devRegisterAddress() 
  * .09  05-28-93	joh	Added devAddressMap() 
  * .10  06-14-93        joh     Added devAllocAddress()
+ * .11  02-21-95        joh    	Fixed warning messages 
  *
  * NOTES:
  * .01	06-14-93 	joh	needs devAllocInterruptVector() routine
@@ -91,8 +92,8 @@ LOCAL char	addrListInit;
 typedef struct{
 	NODE		node;
 	const char	*pOwnerName;
-        void            *pFirst;
-	void		*pLast;
+        char		*pFirst;
+	char		*pLast;
 }rangeItem;
 
 /*
@@ -103,7 +104,8 @@ LOCAL char	*defaultHandlerNames[] = {
 			"_excStub",
 			"_excIntStub",
 			"_unsolicitedHandlerEPICS"};
-LOCAL void	*defaultHandlerAddr[NELEMENTS(defaultHandlerNames)];
+typedef void	myISR (void *pParam);
+LOCAL myISR	*defaultHandlerAddr[NELEMENTS(defaultHandlerNames)];
 
 /*
  * These routines are not exported
@@ -112,21 +114,21 @@ LOCAL void	initHandlerAddrList(void);
 LOCAL int 	vectorInUse(unsigned vectorNumber);
 LOCAL long	initAddrList(void);
 LOCAL long    	addrVerify(epicsAddressType addrType, void *address);
-LOCAL void 	(*isrFetch(unsigned vectorNumber))();
+LOCAL myISR	*isrFetch(unsigned vectorNumber);
 LOCAL long 	blockFind(
 			epicsAddressType	addrType,
-			void			*pBlockFirst,
-			void			*pBlockLast,
+			char			*pBlockFirst,
+			char			*pBlockLast,
 			/* size needed */
 			unsigned long		size,
 			/* n ls bits zero in base addr */
 			unsigned 		alignment,
 			/* base address found */
-			void			**ppBase);
+			char			**ppBase);
 LOCAL long 	report_conflict(
 			epicsAddressType        addrType,
-			void			*pFirst,
-			void			*pLast,
+			char			*pFirst,
+			char			*pLast,
 			const char		*pOwnerName);
 LOCAL long    	devInsertAddress(
 			LIST			*pRangeList,
@@ -140,25 +142,25 @@ LOCAL long 	devInstallAddr(
 			rangeItem		*pRange, 
 			const char		*pOwnerName,
 			epicsAddressType        addrType,
-			void			*pFirst,
-			void			*pLast,
+			char			*pFirst,
+			char			*pLast,
 			void                    **pLocalAddress);
 LOCAL long 	blockDivide(
 			epicsAddressType	addrType,
-			void			*pBlockFirst,
-			void			*pBlockLast,
+			char			*pBlockFirst,
+			char			*pBlockLast,
 			/* base address found */
-			void			**ppBase,	
+			char			**ppBase,	
 			unsigned long		requestSize
 );
 LOCAL long 	blockProbe(
 			epicsAddressType	addrType,
-			void			*pFirst,
-			void			*pLast
+			char			*pFirst,
+			char			*pLast
 );
 long locationProbe(
 			epicsAddressType	addrType,
-			void			*pLocation
+			char			*pLocation
 );
 
 /*
@@ -336,8 +338,8 @@ void                    *baseAddress,
 unsigned long		size,
 void                    **pLocalAddress)
 {
-	void		*pFirst;
-	void		*pLast;
+	char		*pFirst;
+	char		*pLast;
         rangeItem      	*pRange;
 	long		s;
 
@@ -357,7 +359,7 @@ void                    **pLocalAddress)
 		return S_dev_lowValue;
 	}
  
-	pFirst = baseAddress;
+	pFirst = (char *) baseAddress;
 	pLast = pFirst + size - 1;
 
 	FASTLOCK(&addrListLock);
@@ -407,25 +409,26 @@ LOCAL long devInstallAddr(
 rangeItem		*pRange, /* item on the free list to be split */
 const char		*pOwnerName,
 epicsAddressType        addrType,
-void			*pFirst,
-void			*pLast,
-void                    **pLocalAddress)
+char			*pFirst,
+char			*pLast,
+void			**ppLocalAddress)
 {
 	rangeItem 	*pNewRange;
 	int		s;
 
-	if(pLocalAddress){
-		int s1;
-		int s2;
+	if(ppLocalAddress){
+		char	*pAddr;
+		int 	s1;
+		int 	s2;
 
 		s1 = sysBusToLocalAdrs(
 	               	        EPICStovxWorksAddrType[addrType],
 	                        pLast,
-	                        (char **)pLocalAddress);
+	                        &pAddr);
         	s2 = sysBusToLocalAdrs(
 	               	        EPICStovxWorksAddrType[addrType],
 	                        pFirst,
-	                        (char **)pLocalAddress);
+	                        &pAddr);
 		if(s1 || s2){
 			errPrintf(
 				S_dev_vxWorksAddrMapFail,
@@ -437,6 +440,8 @@ void                    **pLocalAddress)
 				pLast-pFirst+1);
                	 	return S_dev_vxWorksAddrMapFail;
 		}
+
+		*ppLocalAddress = (void *) pAddr;
 	}
 
 	/*
@@ -505,8 +510,8 @@ void                    **pLocalAddress)
  */
 LOCAL long report_conflict(
 epicsAddressType        addrType,
-void			*pFirst,
-void			*pLast,
+char			*pFirst,
+char			*pLast,
 const char		*pOwnerName
 )
 {
@@ -567,6 +572,7 @@ epicsAddressType        addrType,
 void                    *baseAddress,
 const char		*pOwnerName)
 {
+	char		*charAddress = (char *) baseAddress;
         rangeItem       *pRange;
 	int 		s;
 
@@ -577,7 +583,7 @@ const char		*pOwnerName)
 		}
 	}
 
-	s = addrVerify(addrType, baseAddress);
+	s = addrVerify(addrType, charAddress);
 	if(s != SUCCESS){
 		return s;
 	}
@@ -585,10 +591,10 @@ const char		*pOwnerName)
 	FASTLOCK(&addrListLock);
         pRange = (rangeItem *) addrAlloc[addrType].node.next;
         while(pRange){
-		if(pRange->pFirst == baseAddress){
+		if(pRange->pFirst == charAddress){
 			break;
 		}
-		if(pRange->pFirst > baseAddress){
+		if(pRange->pFirst > charAddress){
 			pRange = NULL;
 			break;
 		}
@@ -608,7 +614,7 @@ const char		*pOwnerName)
 			__LINE__,
 	"unregister address for %s at 0X %X failed because %s owns it",
 			pOwnerName,
-			baseAddress,
+			charAddress,
 			pRange->pOwnerName);
 		return s;
 	}	
@@ -730,7 +736,7 @@ void                    **pLocalAddress)
 {
 	int		s;
 	rangeItem	*pRange;
-	void		*pBase;
+	char		*pBase;
 
 	s = addrVerify(addrType, (void *)size);
 	if(s){
@@ -745,9 +751,6 @@ void                    **pLocalAddress)
         pRange = (rangeItem *) addrFree[addrType].node.next;
 	while(pRange){
 		if(pRange->pLast-pRange->pFirst>=size-1){
-			void	*pF;
-			void	*pL;
-
 			s = blockFind(
 				addrType,
 				pRange->pFirst,
@@ -875,9 +878,11 @@ LOCAL long devListAddressMap(LIST *pRangeList)
 			printf("%s Address Map\n", epicsAddressTypeName[i]);
 		}
 		while(pri){
-			printf("0X %08X - %08X %s\n",
-				pri->pFirst,
-				pri->pLast,
+			printf("0X %0*lX - %0*lX %s\n",
+				(int) (sizeof (pri->pFirst) * 2U),
+				(unsigned long) pri->pFirst,
+				(int) (sizeof (pri->pFirst) * 2U),
+				(unsigned long) pri->pLast,
 				pri->pOwnerName);
 			pri = (rangeItem *) lstNext(&pri->node);
 		}
@@ -923,9 +928,9 @@ void 	unsolicitedHandlerEPICS(int vectorNumber)
 LOCAL 
 void initHandlerAddrList(void)
 {
-        int     i;
-        UINT8	type;
-        int     status;
+        int     	i;
+        SYM_TYPE	type;
+        int     	status;
  
         for(i=0; i<NELEMENTS(defaultHandlerNames); i++){
                 status =
@@ -951,18 +956,17 @@ void initHandlerAddrList(void)
  *
  *
  */
-LOCAL
-void (*isrFetch(unsigned vectorNumber))()
+LOCAL myISR *isrFetch(unsigned vectorNumber)
 {
-	void	(*psub)();
-	void	(*pCISR)();
+	myISR	*psub;
+	myISR	*pCISR;
 	void	*pParam;
 	int	s;
 
 	/*
 	 * fetch the handler or C stub attached at this vector
 	 */
-        psub = (void (*)()) intVecGet((FUNCPTR *)INUM_TO_IVEC(vectorNumber));
+        psub = (myISR *) intVecGet((FUNCPTR *)INUM_TO_IVEC(vectorNumber));
 
 	/*
 	 * from libvxWorks/veclist.c
@@ -993,7 +997,7 @@ unsigned       vectorNumber
 {
 	static int	init;
         int     	i;
-        void    	(*psub)();
+        myISR		*psub;
 
 	if(!init){
 		initHandlerAddrList();
@@ -1026,11 +1030,11 @@ unsigned       vectorNumber
  */
 LOCAL long blockFind(
 epicsAddressType	addrType,
-void			*pBlockFirst,
-void			*pBlockLast,
+char			*pBlockFirst,
+char			*pBlockLast,
 unsigned long		size,		/* size needed */
 unsigned 		alignment,	/* n ls bits zero in base addr */
-void			**ppBase	/* base address found */
+char			**ppBase	/* base address found */
 )
 {
 	int		s;
@@ -1041,7 +1045,7 @@ void			**ppBase	/* base address found */
 	 */
 	mask = devCreateMask(alignment);
 	if(mask&(long)pBlockFirst){
-		pBlockFirst = (void *) (mask | (unsigned long) pBlockFirst);
+		pBlockFirst = (char *) (mask | (unsigned long) pBlockFirst);
 		pBlockFirst++;
 	}
 
@@ -1088,17 +1092,17 @@ void			**ppBase	/* base address found */
  */
 LOCAL long blockDivide(
 epicsAddressType	addrType,
-void			*pBlockFirst,
-void			*pBlockLast,
-void			**ppBase,	/* base address found */
+char			*pBlockFirst,
+char			*pBlockLast,
+char			**ppBase,	/* base address found */
 unsigned long		requestSize
 )
 {
-	void		*pBlock;
+	char		*pBlock;
 	unsigned long	bs;
 	int		s;
 
-	s = blockProbe(addrType,pBlockFirst, pBlockFirst+(requestSize-1));
+	s = blockProbe(addrType, pBlockFirst, pBlockFirst+(requestSize-1));
 	if(!s){
 		*ppBase = pBlockFirst;
 		return SUCCESS;
@@ -1137,11 +1141,11 @@ unsigned long		requestSize
  */
 LOCAL long blockProbe(
 epicsAddressType	addrType,
-void			*pFirst,
-void			*pLast
+char			*pFirst,
+char			*pLast
 )
 {
-	void 	*pProbe;
+	char	*pProbe;
 	int	s;
 
 	pProbe = pFirst;
@@ -1161,10 +1165,10 @@ void			*pLast
  */
 long locationProbe(
 epicsAddressType	addrType,
-void			*pLocation
+char			*pLocation
 )
 {
-	void	*pPhysical;
+	char	*pPhysical;
 	int	s;
 
 	/*
@@ -1174,33 +1178,33 @@ void			*pLocation
 	s = sysBusToLocalAdrs(
              	        EPICStovxWorksAddrType[addrType],
 			pLocation,
-                        (char **)&pPhysical);
+                        &pPhysical);
 	if(s<0){
 		return S_dev_vxWorksAddrMapFail;
 	}
 
 
 	{
-		char 	*pChar;
-		char	byte;
+		int8_t	*pChar;
+		int8_t	byte;
 
-		pChar = pPhysical;
+		pChar = (int8_t *) pPhysical;
 		if(devPtrAlignTest(pChar)){
 			s = vxMemProbe(
-				pChar,
+				(char *) pChar,
 				READ,
 				sizeof(byte),
-				&byte);
+				(char *) &byte);
 			if(s!=ERROR){
 				return S_dev_addressOverlap;
 			}			
 		}
 	}
 	{
-		short	*pWord;
-		short	word;
+		int16_t	*pWord;
+		int16_t	word;
 
-		pWord = pPhysical;
+		pWord = (int16_t *)pPhysical;
 		if(devPtrAlignTest(pWord)){
 			s = vxMemProbe(
 				(char *)pWord,
@@ -1213,10 +1217,10 @@ void			*pLocation
 		}
 	}
 	{
-		long	*pLongWord;
-		long	longWord;
+		int32_t	*pLongWord;
+		int32_t	longWord;
 
-		pLongWord = pPhysical;
+		pLongWord = (int32_t *) pPhysical;
 		if(devPtrAlignTest(pLongWord)){
 			s = vxMemProbe(
 				(char *)pLongWord,

@@ -56,9 +56,10 @@
  *                        into them.
  * .13  03-02-95  nda     Post .val field when a new point is complete during a
  *                        scan. This will assist in poin by point plots.
+ * .14  03-02-95  nda     Bug fix on filling PxRA's. ALWAYS CALL CHCK_MOTORS.
  */
 
-#define VERSION 1.13
+#define VERSION 1.14
 
 
 
@@ -1042,6 +1043,7 @@ struct scanRecord *pscan;
 
     case CHCK_MOTORS:
         /* motors have stopped. Check readbacks and deadbands */
+        /* Also fill in PxRA (readback array) from RxCV or PxDV */
         if(!pscan->r1nv) {
             status = dbGet(pscan->r1db, DBR_FLOAT, &(pscan->r1cv),
                            &options, &nRequest, NULL);
@@ -1053,7 +1055,7 @@ struct scanRecord *pscan;
                 precPvt->scanErr = 1;
                 abortScan = 1;
             }
-        } else {  /* no readback PV, stuff with desired value */
+        } else {
             pscan->p1ra[pscan->cpt] = pscan->p1dv;
         }
         if(!pscan->r2nv) {
@@ -1340,18 +1342,10 @@ static long nRequest = 1;
   switch (precPvt->phase) {
     case MOVE_MOTORS:
         /* next processing of records means motors have stopped */
-        /* Schedule the next phase depending on readback PV validity */
+        /* Schedule the next phase as CHCK_MOTORS */
         /* This needs to come before moving motors */
 
-        if(precPvt->validRbPvs) {
-            precPvt->phase = CHCK_MOTORS; 
-        }
-        else if(precPvt->validDtPvs) {
-            precPvt->phase = TRIG_DETCTRS;
-        }
-        else {
-            precPvt->phase = READ_DETCTRS;
-        }
+        precPvt->phase = CHCK_MOTORS; 
 
         /* for each valid positioner, write the desired position */
         if(!precPvt->pscan->p1nv) {

@@ -255,5 +255,5 @@ $(COMMON_DIR)/epicsVersion.h: $(TOP)/configure/CONFIG_BASE_VERSION
 clean::
 	@$(RM) errSymTbl.c envData.c
 
-depends: $(INSTALL_LIBS)
+inc depends: $(INSTALL_LIBS)
 

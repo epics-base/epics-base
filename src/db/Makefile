@@ -79,5 +79,5 @@ $(COMMON_DIR)/dbCommon.h: ../dbCommonRecord.dbd ../dbCommon.dbd $(COMMON_DIR)
 	$(RM) $@
 	$(DBTORECORDTYPEH) -I .. $< $@
 
-depends: $(INSTALL_DBD)/dbCommon.dbd
+inc depends: $(INSTALL_DBD)/dbCommon.dbd
 

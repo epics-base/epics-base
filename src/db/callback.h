@@ -65,14 +65,19 @@ typedef void (*CALLBACKFUNC)();
 
 #ifdef __STDC__
 long callbackInit();
-void callbackRequest(CALLBACK *);
+void callbackRequest(CALLBACK *pCallback);
 void callbackRequestProcessCallback(CALLBACK *pCallback,
 	int Priority, void *pRec);
+void callbackRequestDelayed(CALLBACK *pCallback,double seconds);
+void callbackRequestProcessCallbackDelayed(CALLBACK *pCallback,
+	int Priority, void *pRec,double seconds);
 int callbackSetQueueSize(int size);
 #else
 long callbackInit();
 void callbackRequest();
 void callbackRequestProcessCallback();
+void callbackRequestDelayed();
+void callbackRequestProcessCallbackDelayed();
 int callbackSetQueueSize();
 #endif /*__STDC__*/
 

@@ -143,7 +143,6 @@ static void wdCallback(void *pind)
     int ind = *(int *)pind;
     taskwdRemove(callbackTaskId[ind]);
     if(!callbackRestart)return;
-    threadDestroy(callbackTaskId[ind]);
     semBinaryDestroy(callbackSem[ind]);
     ringDelete(callbackQ[ind]);
     start(ind);
@@ -166,5 +165,14 @@ void callbackRequestProcessCallback(CALLBACK *pCallback,
     callbackSetUser(pRec, pCallback);
     callbackRequest(pCallback);
 }
+
+void callbackRequestDelayed(CALLBACK *pCallback,double seconds)
+{
+    printf("callbackRequestDelayed not yet implemented\n");
+}
 
-
+void callbackRequestProcessCallbackDelayed(CALLBACK *pCallback,
+    int Priority, void *pRec,double seconds)
+{
+    printf("callbackRequestDelayed not yet implemented\n");
+}

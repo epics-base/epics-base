@@ -1,0 +1,14 @@
+epicsThreadClockGetResolution
+
+Consider adding a routine 
+    double epicsThreadClockGetResolution();
+It would return the clock tick rate where by clock we mean the thing that
+is like the vxWorks sysClockRateGet().
+
+
+The implementation should be:
+    Provide a default that determines the rate emperically at int time by
+    calling epicsThreadSleep for amaller and smaller delays until the actual
+    delay no longer decreases.
+    Each os/xxx can override the default if desired.
+

@@ -98,6 +98,10 @@ OP_SYS_CFLAGS = -DvxWorks -DV5_vxWorks -fno-builtin
 OP_SYS_LDFLAGS =
 OP_SYS_LDLIBS =
 
+# Fix for vxWorks headers using macros defined in
+# vxWorks.h but not including vxWorks.h
+OP_SYS_CFLAGS += -include $(VX_INCLUDE)/vxWorks.h
+
 #--------------------------------------------------
 # Optimization flag overrides
 GCC_OPT_YES = -O2 -fstrength-reduce

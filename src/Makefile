@@ -44,10 +44,10 @@ ifneq (,$(findstring RTEMS,$(BUILD_ARCHS)))
 DIRS += RTEMS
 endif
 DIRS += softIoc
-DIRS += excas
 DIRS += libCom/test
 DIRS += gdd
 DIRS += cas
+DIRS += excas
 
 include $(TOP)/configure/RULES_DIRS
 

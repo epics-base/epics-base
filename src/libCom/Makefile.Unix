@@ -30,6 +30,7 @@ OBJS = \
 	$(OBDIR)/postfix.o $(OBDIR)/sydSubr.o $(OBDIR)/sydSubrCA.o \
         $(OBDIR)/sydSubrCF.o $(OBDIR)/sydSubrSSF.o $(OBDIR)/tsSubr.o
 
+LIB = libCom.a
 LIBNAME = $(OBDIR)/libCom.a
 
 PROD =

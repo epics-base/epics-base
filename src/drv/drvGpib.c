@@ -53,16 +53,18 @@
 
 #include <vxWorks.h>
 #include <types.h>
+#if 0 /* COMMENTED OUT SOME INCLUDES */
 #include <iosLib.h>
 #include <taskLib.h>
 #include <semLib.h>
 #include <memLib.h>
-#include <rngLib.h>
-#include <wdLib.h>
-#include <dllEpicsLib.h>
-#include <vme.h>
 #include <sysLib.h>
+#endif /* COMMENTED OUT SOME INCLUDES */
+#include <vme.h>
+#include <wdLib.h>
+#include <rngLib.h>
 
+#include <dllEpicsLib.h>
 #include <task_params.h>
 #include <module_types.h>
 #include <drvSup.h>

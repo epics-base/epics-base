@@ -66,9 +66,6 @@ static struct rtems_bsdnet_ifconfig e3c509_driver_config = {
      extern int rtems_dec21140_driver_attach();
 #   endif
 #  endif
-#  if defined(HAVE_PPCBUG)
-#   define MY_DO_BOOTP NULL
-#  endif
 # endif
 
 static struct rtems_bsdnet_ifconfig bsp_driver_config = {

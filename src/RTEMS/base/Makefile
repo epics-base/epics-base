@@ -15,7 +15,10 @@ SRCS += rtems_config.c
 SRCS += rtems_netconfig.c
 SRCS += rtems_util.c
 SRCS += rtems_dummyreg.c
-SRCS += setBootConfigFromPPCBUGNVRAM.c
+
+SRCS_RTEMS-mvme2100 += setBootConfigFromPPCBUGNVRAM.c
+SRCS_RTEMS-mvme5500 += setBootConfigFromMOTLOADNVRAM.c
+SRCS += $(SRCS_$(T_A))
 
 LIBRARY_RTEMS = rtemsCom
 LIBRARY_SRCS = $(SRCS) $(BUILD_ARCHS)

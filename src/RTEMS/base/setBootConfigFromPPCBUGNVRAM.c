@@ -4,8 +4,6 @@
 #include <netinet/in.h>
 #include <rtems/rtems_bsdnet.h>
 
-#if defined(__PPC)
-
 struct ppcbug_nvram {
     rtems_unsigned32    PacketVersionIdentifier;
     rtems_unsigned32    NodeControlMemoryAddress;
@@ -45,6 +43,9 @@ setBootConfigFromPPCBUGNVRAM(void)
     static char server[INET_ADDRSTRLEN];
     static char gateway[INET_ADDRSTRLEN];
 
+    if (rtems_bsdnet_config.bootp != NULL)
+        return;
+
     /*
      * Get network configuation from PPCBUG.
      * The 'correct' way to do this would be to issue a .NETCFIG PPCBUG
@@ -80,5 +81,3 @@ setBootConfigFromPPCBUGNVRAM(void)
     rtems_bsdnet_bootp_boot_file_name = nvram.BootFilenameString;
     rtems_bsdnet_bootp_cmdline = nvram.ArgumentFilenameString;
 }
-
-#endif /* defined(__PPC) */

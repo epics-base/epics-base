@@ -20,8 +20,12 @@ endif
 #
 include $(EPICS_BASE)/config/CONFIG.$(T_A)
 #
-include $(EPICS_BASE)/config/CONFIG_SITE.$(T_A)
+-include $(EPICS_BASE)/config/CONFIG_SITE.$(T_A)
  
+#  User specific definitions
+#
+-include $(HOME)/.EPICS_CONFIG
+
 #  All EPICS options other than BUILD_TYPE
 #   may be overridden here.
 #
@@ -39,5 +43,3 @@ include $(EPICS_BASE)/config/CONFIG_SITE.$(T_A)
 #VX_WARN=YES
 #etc.
 #
--include $(HOME)/.EPICS_CONFIG
-

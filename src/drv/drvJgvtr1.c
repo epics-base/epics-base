@@ -49,6 +49,8 @@
  *	031992	joh	Took the vxMemProbe out of each arm and checked
  *			the card present bit instead.
  *	062592	 bg	Combined drvJgvtr1.c and jgvtr_driver.c
+ *	062992	joh	removed file pointer argument added to io
+ *			report by bg
  */
 
 /*
@@ -95,22 +97,6 @@ struct {
 	2,
 	report,
 	init};
-
-static long report(fp)
-    FILE	*fp;
-{
-    register int i;
-
-    jgvtr1_io_report(level,jg_num_read);
-    return(0);
-}
-
-static long init()
-{
-    int status;
-
-    return(0);
-}
 
 static char SccsId[] = "@(#)jgvtr1_driver.c	1.4\t11/14/88";
 
@@ -177,6 +163,22 @@ int			jgvtr1_max_card_count;
 	static
 	SEM_ID		jgvtr1_interrupt;	/* interrupt event */
 #endif
+
+
+static long report(level)
+int	level;
+{
+    jgvtr1_io_report(level, jg_num_read);
+    return(0);
+}
+
+
+static long init()
+{
+    int status;
+
+    return(0);
+}
 
 
 

@@ -105,7 +105,7 @@ public:
     const T * operator -> () const;
 
     tsSLIterConst<T> & operator ++ (); // prefix ++
-    tsSLIterConst<T> & operator ++ (int); // postfix ++
+    tsSLIterConst<T> operator ++ (int); // postfix ++
 
 #   if defined(_MSC_VER) && _MSC_VER < 1200
         tsSLIterConst (const class tsSLIterConst<T> &copyIn);
@@ -144,7 +144,7 @@ public:
     T * operator -> () const;
 
     tsSLIter <T> & operator ++ (); // prefix ++
-    tsSLIter <T> & operator ++ (int); // postfix ++
+    tsSLIter <T> operator ++ (int); // postfix ++
 
 #   if defined(_MSC_VER) && _MSC_VER < 1200
         tsSLIter (class tsSLIter<T> &copyIn);
@@ -338,7 +338,7 @@ inline tsSLIterConst<T> & tsSLIterConst<T>::operator ++ () // prefix ++
 }
 
 template < class T >
-inline tsSLIterConst<T> & tsSLIterConst<T>::operator ++ (int) // postfix ++
+inline tsSLIterConst<T> tsSLIterConst<T>::operator ++ (int) // postfix ++
 {
     tsSLIterConst<T> tmp = *this;
     tsSLNode < T > *pCurNode = this->pConstEntry;
@@ -428,7 +428,7 @@ inline tsSLIter<T> & tsSLIter<T>::operator ++ () // prefix ++
 }
 
 template < class T >
-inline tsSLIter<T> & tsSLIter<T>::operator ++ (int) // postfix ++
+inline tsSLIter<T> tsSLIter<T>::operator ++ (int) // postfix ++
 {
     tsSLIter<T> tmp = *this;
     this->tsSLIterConst<T>::operator ++ ();

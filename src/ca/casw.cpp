@@ -35,10 +35,12 @@ int main ( int, char ** )
     int status;
 
     serverPort =
-        envGetInetPortConfigParam ( &EPICS_CA_SERVER_PORT, CA_SERVER_PORT );
+        envGetInetPortConfigParam ( &EPICS_CA_SERVER_PORT,
+                                    static_cast <unsigned short> (CA_SERVER_PORT) );
 
     repeaterPort =
-        envGetInetPortConfigParam ( &EPICS_CA_REPEATER_PORT, CA_REPEATER_PORT );
+        envGetInetPortConfigParam ( &EPICS_CA_REPEATER_PORT,
+                                    static_cast <unsigned short> (CA_REPEATER_PORT) );
 
     caStartRepeaterIfNotInstalled ( repeaterPort );
 

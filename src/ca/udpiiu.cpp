@@ -61,10 +61,12 @@ udpiiu::udpiiu ( cac &cac ) :
     int status;
 
     this->repeaterPort = 
-        envGetInetPortConfigParam ( &EPICS_CA_REPEATER_PORT, CA_REPEATER_PORT );
+        envGetInetPortConfigParam ( &EPICS_CA_REPEATER_PORT,
+                                    static_cast <unsigned short> (CA_REPEATER_PORT) );
 
     this->serverPort = 
-        envGetInetPortConfigParam ( &EPICS_CA_SERVER_PORT, CA_SERVER_PORT );
+        envGetInetPortConfigParam ( &EPICS_CA_SERVER_PORT,
+                                    static_cast <unsigned short> (CA_SERVER_PORT) );
 
     this->sock = socket ( AF_INET, SOCK_DGRAM, IPPROTO_UDP );
     if ( this->sock == INVALID_SOCKET ) {

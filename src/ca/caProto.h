@@ -81,10 +81,8 @@
  * "EPICS_CA_SERVER_PORT"
  */
 #define CA_PORT_BASE            IPPORT_USERRESERVED + 56U
-#define CA_SERVER_PORT          static_cast <unsigned short> \
-                                (CA_PORT_BASE+CA_MAJOR_PROTOCOL_REVISION*2u)
-#define CA_REPEATER_PORT        static_cast <unsigned short> \
-                                (CA_PORT_BASE+CA_MAJOR_PROTOCOL_REVISION*2u+1u)
+#define CA_SERVER_PORT          (CA_PORT_BASE+CA_MAJOR_PROTOCOL_REVISION*2u)
+#define CA_REPEATER_PORT        (CA_PORT_BASE+CA_MAJOR_PROTOCOL_REVISION*2u+1u)
 /* 
  * 1500 (max of ethernet and 802.{2,3} MTU) - 20(IP) - 8(UDP) 
  * (the MTU of Ethernet is currently independent of its speed varient)

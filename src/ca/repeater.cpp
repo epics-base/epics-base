@@ -504,7 +504,8 @@ void ca_repeater ()
 
     assert ( osiSockAttach() );
 
-    port = envGetInetPortConfigParam ( &EPICS_CA_REPEATER_PORT, CA_REPEATER_PORT );
+    port = envGetInetPortConfigParam ( &EPICS_CA_REPEATER_PORT,
+                                       static_cast <unsigned short> (CA_REPEATER_PORT) );
 
     msr = makeSocket ( port, true );
     if ( msr.sock == INVALID_SOCKET ) {

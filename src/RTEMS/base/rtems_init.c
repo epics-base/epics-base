@@ -103,7 +103,7 @@ rtems_set_directory (void)
     l = strlen (path);
     if (gethostname (&path[l], pathsize - l - 2) || (path[l] == '\0'))
         LogFatal ("Can't get host name");
-    strcat (path, "/");
+    strcat (path, "/bin/scripts/");
     if (chdir (path) < 0)
         LogFatal ("Can't set initial TFTP directory");
 }
@@ -228,8 +228,8 @@ Init (rtems_task_argument ignored)
      * Run the EPICS startup script
      */
     printf ("***** Executing EPICS startup script *****\n");
-    rtems_set_directory ();
     iocshRegisterRTEMS ();
+    rtems_set_directory ();
     iocsh ("st.cmd");
 
     /*

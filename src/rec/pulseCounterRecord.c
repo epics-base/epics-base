@@ -126,8 +126,6 @@ struct callback {
         struct dbCommon *precord;
 	};
 
-void callbackRequest();
- 
 static void myCallback(CALLBACK *p)
 {
     struct callback *pcallback;

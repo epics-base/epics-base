@@ -1,4 +1,4 @@
-/* recMbbi.c */
+/* mbbiRecord.c */
 /* base/src/rec  $Id$ */
 /*
  *      Original Author: Bob Dalesio
@@ -262,9 +262,14 @@ static long get_enum_str(paddr,pstring)
 {
     struct mbbiRecord	*pmbbi=(struct mbbiRecord *)paddr->precord;
     char		*psource;
-    unsigned short	val=pmbbi->val;
+    int                 index;
+    unsigned short      *pfield = (unsigned short *)paddr->pfield;
+    unsigned short	val=*pfield;
 
-    if(val<= 15) {
+    index = dbGetFieldIndex(paddr);
+    if(index!=mbbiRecordVAL) {
+	strcpy(pstring,"Illegal_Value");
+    } else if(val<= 15) {
 	psource = (pmbbi->zrst);
 	psource += (val * sizeof(pmbbi->zrst));
 	strncpy(pstring,psource,sizeof(pmbbi->zrst));

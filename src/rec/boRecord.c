@@ -335,11 +335,17 @@ static long get_enum_str(paddr,pstring)
     char	  *pstring;
 {
     struct boRecord	*pbo=(struct boRecord *)paddr->precord;
+    int                 index;
+    unsigned short      *pfield = (unsigned short *)paddr->pfield;
 
-    if(pbo->val==0) {
+
+    index = dbGetFieldIndex(paddr);
+    if(index!=boRecordVAL) {
+	strcpy(pstring,"Illegal_Value");
+    } else if(*pfield==0) {
 	strncpy(pstring,pbo->znam,sizeof(pbo->znam));
 	pstring[sizeof(pbo->znam)] = 0;
-    } else if(pbo->val==1) {
+    } else if(*pfield==1) {
 	strncpy(pstring,pbo->onam,sizeof(pbo->onam));
 	pstring[sizeof(pbo->onam)] = 0;
     } else {

@@ -324,9 +324,14 @@ static long get_enum_str(paddr,pstring)
 {
     struct mbboRecord	*pmbbo=(struct mbboRecord *)paddr->precord;
     char		*psource;
-    unsigned short	val=pmbbo->val;
+    int                 index;
+    unsigned short      *pfield = (unsigned short *)paddr->pfield;
+    unsigned short	val=*pfield;
 
-    if(val<= 15) {
+    index = dbGetFieldIndex(paddr);
+    if(index!=mbboRecordVAL) {
+        strcpy(pstring,"Illegal_Value");
+    } else if(val<= 15) {
 	psource = (pmbbo->zrst);
 	psource += (val * sizeof(pmbbo->zrst));
 	strncpy(pstring,psource,sizeof(pmbbo->zrst));

@@ -191,11 +191,17 @@ static long get_enum_str(paddr,pstring)
     char	  *pstring;
 {
     struct biRecord	*pbi=(struct biRecord *)paddr->precord;
+    int                 index;
+    unsigned short      *pfield = (unsigned short *)paddr->pfield;
 
-    if(pbi->val==0) {
+
+    index = dbGetFieldIndex(paddr);
+    if(index!=biRecordVAL) {
+	strcpy(pstring,"Illegal_Value");
+    } else if(*pfield==0) {
 	strncpy(pstring,pbi->znam,sizeof(pbi->znam));
 	pstring[sizeof(pbi->znam)] = 0;
-    } else if(pbi->val==1) {
+    } else if(*pfield==1) {
 	strncpy(pstring,pbi->onam,sizeof(pbi->onam));
 	pstring[sizeof(pbi->onam)] = 0;
     } else {

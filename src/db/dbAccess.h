@@ -1,30 +1,20 @@
 /* dbAccess.h	*/
-/* $Id$
+/*****************************************************************
+                          COPYRIGHT NOTIFICATION
+*****************************************************************
+ 
+(C)  COPYRIGHT 1993 UNIVERSITY OF CHICAGO
+ 
+This software was developed under a United States Government license
+described on the COPYRIGHT_UniversityOfChicago file included as part
+of this distribution.
+**********************************************************************/
+
+/* $Id$ 
  *
  *      Original Author: Bob Dalesio
  *      Current Author:  Marty Kraimer
  *      Date:            6-1-90
- *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
  *
  * Modification Log:
  * -----------------
@@ -52,9 +42,6 @@
 #include <ellLib.h>
 #include <caeventmask.h>
 #include "dbAddr.h"
-
-
-	
 
 /*  The database field and request types are defined in dbFldTypes.h*/
 /* Data Base Request Options	*/
@@ -185,7 +172,7 @@ struct dbr_alDouble     {DBRalDouble};
 #define dbr_ctrlDouble_size sizeof(struct dbr_ctrlDouble)
 #define dbr_alLong_size sizeof(struct dbr_alLong)
 #define dbr_alDouble_size sizeof(struct dbr_alDouble)
-
+
 #ifndef INCerrMdefh
 #include <errMdef.h>
 #endif
@@ -212,7 +199,7 @@ struct dbr_alDouble     {DBRalDouble};
 #define S_db_bkptLogic  (M_dbAccess|61) /*Logic error in breakpoint routine*/
 #define S_db_cntSpwn    (M_dbAccess|63) /*Cannot spawn dbContTask*/
 #define S_db_cntCont    (M_dbAccess|65) /*Cannot resume dbContTask*/
-
+
 /* Global Database Access Routines*/
 #define dbGetLink(PLNK,DBRTYPE,PBUFFER,OPTIONS,NREQUEST) \
     (((((PLNK)->type == CONSTANT)&&(!(NREQUEST))) ||\
@@ -234,6 +221,7 @@ struct dbr_alDouble     {DBRalDouble};
 
 #ifdef __STDC__
 struct rset *dbGetRset(struct dbAddr *paddr);
+long dbPutAttribute(char *recordTypename,char *name,char*value);
 int dbIsValueField(struct dbFldDes *pdbFldDes);
 int dbGetFieldIndex(struct dbAddr *paddr);
 long dbGetNelements(struct link *plink,long *nelements);

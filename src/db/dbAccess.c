@@ -397,6 +397,21 @@ struct rset *dbGetRset(struct dbAddr *paddr)
 	return(pfldDes->pdbRecordType->prset);
 }
 
+long dbPutAttribute(char *recordTypename,char *name,char*value)
+{
+	DBENTRY		dbEntry;
+	DBENTRY		*pdbEntry = &dbEntry;
+	long		status=0;
+
+        if(!pdbbase) return(S_db_notFound);
+	dbInitEntry(pdbbase,pdbEntry);
+	status = dbFindRecordType(pdbEntry,recordTypename);
+	if(!status) status = dbPutRecordAttribute(pdbEntry,name,value);
+	dbFinishEntry(pdbEntry);
+	if(status) errMessage(status,"dbPutAttribute failure");
+	return(status);
+}
+
 int dbIsValueField(struct dbFldDes *pdbFldDes)
 {
     if(pdbFldDes->pdbRecordType->indvalFlddes == pdbFldDes->indRecordType)
@@ -634,13 +649,16 @@ long dbNameToAddr(const char *pname,DBADDR *paddr)
 
         if(!pdbbase) return(S_db_notFound);
 	dbInitEntry(pdbbase,&dbEntry);
-	if((status = dbFindRecord(&dbEntry,pname))) return(status);
-	paddr->precord = dbEntry.precnode->precord;
-	if(!dbEntry.pfield) {
-		if((status=dbFindField(&dbEntry,"VAL"))) return(status);
+	status = dbFindRecord(&dbEntry,pname);
+	if(!status && !dbEntry.pfield) status=dbFindField(&dbEntry,"VAL");
+	if(status) {
+	    dbFinishEntry(&dbEntry);
+	    return(status);
 	}
+	paddr->precord = dbEntry.precnode->precord;
 	paddr->pfield = dbEntry.pfield;
 	pflddes = dbEntry.pflddes;
+	dbFinishEntry(&dbEntry);
 	paddr->pfldDes = (void *)pflddes;
 	paddr->field_type = pflddes->field_type;
 	paddr->dbr_field_type = mapDBFToDBR[pflddes->field_type];
@@ -710,9 +728,9 @@ long dbGetLinkValue(struct link	*plink, short dbrType, void *pbuffer,
 	if(poptions) *poptions = 0;
 	if(pnRequest) *pnRequest = 0;
     } else if(plink->type==DB_LINK) {
-	dbCommon	*precord = plink->value.pv_link.precord;
 	struct pv_link	*ppv_link = &(plink->value.pv_link);
 	DBADDR		*paddr = ppv_link->pvt;
+	dbCommon	*precord = plink->value.pv_link.precord;
 
 	/* scan passive records with links that are process passive  */
 	if(ppv_link->pvlMask&pvlOptPP) {
@@ -743,7 +761,9 @@ long dbGetLinkValue(struct link	*plink, short dbrType, void *pbuffer,
 	    /*  attempt to make a fast link */
 	    if((!poptions || (*poptions == 0))
 	    && (no_elements == 1)
-	    && (!pnRequest || (*pnRequest == 1))) {
+	    && (!pnRequest || (*pnRequest == 1))
+	    && (paddr->special!=SPC_ATTRIBUTE) )
+	    {
 		ppv_link->getCvt = dbFastGetConvertRoutine[dbfType][dbrType];
 		status = (*ppv_link->getCvt) (paddr->pfield,pbuffer, paddr);
 	    }else{
@@ -816,47 +836,46 @@ long dbPutLinkValue(struct link *plink,short dbrType,
 }
 
 long dbGetField( DBADDR	*paddr,short dbrType,void *pbuffer,
-	long *options,long *nRequest,void *pflin)
+    long *options,long *nRequest,void *pflin)
 {
-	dbCommon	*precord = (dbCommon *)(paddr->precord);
-	long		status = 0;
-	short		dbfType = paddr->field_type;
+    short	dbfType = paddr->field_type;
+    dbCommon	*precord = (dbCommon *)(paddr->precord);
+    long	status = 0;
 
-	dbScanLock(precord);
-	if(dbfType>=DBF_INLINK && dbfType<=DBF_FWDLINK) {
-		DBENTRY	dbEntry;
-		dbFldDes *pfldDes = (dbFldDes *)paddr->pfldDes;
-		char	*rtnString;
-		char	*pbuf = (char *)pbuffer;
+    dbScanLock(precord);
+    if(dbfType>=DBF_INLINK && dbfType<=DBF_FWDLINK) {
+	DBENTRY	dbEntry;
+	dbFldDes *pfldDes = (dbFldDes *)paddr->pfldDes;
+	char	*rtnString;
+	char	*pbuf = (char *)pbuffer;
 
-		if(dbrType!=DBR_STRING) {
-			status = S_db_badDbrtype;
-			goto done;
-		}
-		if(options && (*options))
-			getOptions(paddr,(void **)&pbuf,options,pflin);
-		if(nRequest && *nRequest==0) goto done;
-		dbInitEntry(pdbbase,&dbEntry);
-		if((status = dbFindRecord(&dbEntry,precord->name))) goto done;
-		if((status = dbFindField(&dbEntry,pfldDes->name))) goto done;
-		rtnString = dbGetString(&dbEntry);
-		/*begin kludge for old db_access MAX_STRING_SIZE*/
-		if(strlen(rtnString)>=MAX_STRING_SIZE) {
-			strncpy(pbuf,rtnString,MAX_STRING_SIZE-1);
-			pbuf[MAX_STRING_SIZE-1] = 0;
-		} else {
-		    strcpy(pbuf,rtnString);
-		}
-		/*end kludge for old db_access MAX_STRING_SIZE*/
-		dbFinishEntry(&dbEntry);
-		goto done;
-			
-	} else {
-		status = dbGet(paddr,dbrType,pbuffer,options,nRequest,pflin);
+	if(dbrType!=DBR_STRING) {
+	    status = S_db_badDbrtype;
+	    goto done;
 	}
+	if(options && (*options))getOptions(paddr,(void **)&pbuf,options,pflin);
+	if(nRequest && *nRequest==0) goto done;
+	dbInitEntry(pdbbase,&dbEntry);
+	status = dbFindRecord(&dbEntry,precord->name);
+	if(!status) status = dbFindField(&dbEntry,pfldDes->name);
+	if(!status) {
+	    rtnString = dbGetString(&dbEntry);
+	    /*begin kludge for old db_access MAX_STRING_SIZE*/
+	    if(strlen(rtnString)>=MAX_STRING_SIZE) {
+	        strncpy(pbuf,rtnString,MAX_STRING_SIZE-1);
+	        pbuf[MAX_STRING_SIZE-1] = 0;
+	    } else {
+	        strcpy(pbuf,rtnString);
+	    }
+	    /*end kludge for old db_access MAX_STRING_SIZE*/
+	}
+	dbFinishEntry(&dbEntry);
+    } else {
+	status = dbGet(paddr,dbrType,pbuffer,options,nRequest,pflin);
+    }
 done:
-	dbScanUnlock(precord);
-	return(status);
+    dbScanUnlock(precord);
+    return(status);
 }
 
 long dbGet(DBADDR *paddr,short dbrType,void *pbuffer,long *options,
@@ -871,7 +890,12 @@ long dbGet(DBADDR *paddr,short dbrType,void *pbuffer,long *options,
 	long		status = 0;
 	char		message[80];
 
-
+	if(paddr->special == SPC_ATTRIBUTE) {
+	    if(dbrType!=DBR_STRING) return(S_db_badDbrtype);
+	    if(!paddr->pfield) return(S_db_badField);
+	    strcpy((char *)pbuffer,(char *)paddr->pfield);
+	    return(0);
+	}
 	prset=dbGetRset(paddr);
 	if(options && (*options)) {
 		void *pbuf = pbuffer;
@@ -940,133 +964,125 @@ long dbGet(DBADDR *paddr,short dbrType,void *pbuffer,long *options,
 
 long dbPutField(DBADDR *paddr,short dbrType,const void *pbuffer,long  nRequest)
 {
-	long		status = 0;
-	long		special=paddr->special;
-	dbFldDes	*pfldDes=(dbFldDes *)(paddr->pfldDes);
-	dbCommon 	*precord = (dbCommon *)(paddr->precord);
-	short		dbfType = paddr->field_type;
+    long	status = 0;
+    long	special=paddr->special;
+    dbFldDes	*pfldDes=(dbFldDes *)(paddr->pfldDes);
+    dbCommon 	*precord = (dbCommon *)(paddr->precord);
+    short	dbfType = paddr->field_type;
 
-	/*check for putField disabled*/
-	if(precord->disp) {
-		if((void *)(&precord->disp) != paddr->pfield) return(0);
+    if(special==SPC_ATTRIBUTE) return(S_db_noMod);
+    /*check for putField disabled*/
+    if(precord->disp) {
+	if((void *)(&precord->disp) != paddr->pfield) return(0);
+    }
+    if(dbfType>=DBF_INLINK && dbfType<=DBF_FWDLINK) {
+	DBLINK  *plink = (DBLINK *)paddr->pfield;
+	DBENTRY	dbEntry;
+	dbFldDes *pfldDes = (dbFldDes *)paddr->pfldDes;
+	char	buffer[MAX_STRING_SIZE+2];
+	int	len,j;
+	char	*lastblank;
+
+	if(dbrType!=DBR_STRING) return(S_db_badDbrtype);
+	/*begin kludge for old db_access MAX_STRING_SIZE*/
+	/*Allow M for MS and (N or NM) for NMS */
+	strcpy(buffer,(char *)pbuffer);
+	/*Strip trailing blanks*/
+	len = strlen(buffer);
+	for(j=len-1; j>0; j--) {
+	    if(buffer[j]==' ')
+		buffer[j] = 0;
+	    else
+		break;
 	}
-	if(dbfType>=DBF_INLINK && dbfType<=DBF_FWDLINK) {
-		DBLINK  	*plink = (DBLINK *)paddr->pfield;
-		DBENTRY		dbEntry;
-		dbFldDes 	*pfldDes = (dbFldDes *)paddr->pfldDes;
-		char		buffer[MAX_STRING_SIZE+2];
-		int		len,j;
-		char		*lastblank;
+	lastblank = strrchr(buffer,' ');
+	if(lastblank) {
+	    if(strcmp(lastblank,"M")==0) {
+		strcpy(lastblank,"MS");
+	    } else {
+		if((strcmp(lastblank,"N")==0) || (strcmp(lastblank,"NM")==0)) {
+		    strcpy(lastblank,"NMS");
+		}
+	    }
+	}
+	/*End kludge for old db_access MAX_STRING_SIZE*/
+	dbLockSetGblLock();
+	dbLockSetRecordLock(precord);
+	if((plink->type == DB_LINK)||(plink->type == CA_LINK)) {
+	    if(plink->type == DB_LINK) {
+		free(plink->value.pv_link.pvt);
+		plink->value.pv_link.pvt = 0;
+		plink->type = PV_LINK;
+		dbLockSetSplit(precord);
+	    } else if(plink->type == CA_LINK) {
+		dbCaRemoveLink(plink);
+	    }
+	    plink->value.pv_link.getCvt = 0;
+	    plink->value.pv_link.pvlMask = 0;
+	    plink->value.pv_link.lastGetdbrType = 0;
+	    plink->type = PV_LINK;
+	}
+	dbInitEntry(pdbbase,&dbEntry);
+	status=dbFindRecord(&dbEntry,precord->name);
+	if(!status) status=dbFindField(&dbEntry,pfldDes->name);
+	if(!status && special) status = putSpecial(paddr,0);
+	if(!status) status=dbPutString(&dbEntry,buffer);
+	dbFinishEntry(&dbEntry);
+	if(!status && special) status = putSpecial(paddr,1);
+	if(status) goto done;
+	if(plink->type == PV_LINK) {
+	    DBADDR		dbaddr;
 
-		if(dbrType!=DBR_STRING) return(S_db_badDbrtype);
-		/*begin kludge for old db_access MAX_STRING_SIZE*/
-		/*Allow M for MS and (N or NM) for NMS */
-		strcpy(buffer,(char *)pbuffer);
-		/*Strip trailing blanks*/
-		len = strlen(buffer);
-		for(j=len-1; j>0; j--) {
-		    if(buffer[j]==' ')
-			buffer[j] = 0;
-		    else
-			break;
-		}
-		lastblank = strrchr(buffer,' ');
-		if(lastblank) {
-		    if(strcmp(lastblank,"M")==0) {
-			strcpy(lastblank,"MS");
-		    } else {
-			if((strcmp(lastblank,"N")==0)
-			|| (strcmp(lastblank,"NM")==0)) {
-			    strcpy(lastblank,"NMS");
-			}
-		    }
-		}
-		/*End kludge for old db_access MAX_STRING_SIZE*/
-		dbLockSetGblLock();
-		dbLockSetRecordLock(precord);
-		if((plink->type == DB_LINK)||(plink->type == CA_LINK)) {
-		    if(plink->type == DB_LINK) {
-			free(plink->value.pv_link.pvt);
-			plink->value.pv_link.pvt = 0;
-			plink->type = PV_LINK;
-			dbLockSetSplit(precord);
-		    } else if(plink->type == CA_LINK) {
-			dbCaRemoveLink(plink);
-		    }
-		    plink->value.pv_link.getCvt = 0;
-		    plink->value.pv_link.pvlMask = 0;
-		    plink->value.pv_link.lastGetdbrType = 0;
-		    plink->type = PV_LINK;
-		}
-		dbInitEntry(pdbbase,&dbEntry);
-		if((status=dbFindRecord(&dbEntry,precord->name))) goto done;
-		if((status=dbFindField(&dbEntry,pfldDes->name)))  goto done;
-		/* check for special processing	is required */
-		if(special) {
-		    status = putSpecial(paddr,0);
-		    if(status) return(status);
-		}
-		if((status=dbPutString(&dbEntry,buffer))) goto done;
-		if(special) {
-		    status = putSpecial(paddr,1);
-		    if(status) return(status);
-		}
-		if(plink->type == PV_LINK) {
-			DBADDR		dbaddr;
+	    if(!(plink->value.pv_link.pvlMask &(pvlOptCA|pvlOptCP|pvlOptCPP))
+	    &&(dbNameToAddr(plink->value.pv_link.pvname,&dbaddr)==0)){
+		DBADDR	*pdbAddr;
 
-			if(!(plink->value.pv_link.pvlMask
-			     &(pvlOptCA|pvlOptCP|pvlOptCPP))
-			&&(dbNameToAddr(plink->value.pv_link.pvname,&dbaddr)==0)){
-				DBADDR	*pdbAddr;
+		plink->type = DB_LINK;
+		pdbAddr = dbCalloc(1,sizeof(struct dbAddr));
+		*pdbAddr = dbaddr; /*structure copy*/;
+		plink->value.pv_link.precord = precord;
+		plink->value.pv_link.pvt = pdbAddr;
+		dbLockSetMerge(precord,pdbAddr->precord);
+	    } else {/*It is a CA link*/
+	 	char	*pperiod;
 
-				plink->type = DB_LINK;
-				pdbAddr = dbCalloc(1,sizeof(struct dbAddr));
-				*pdbAddr = dbaddr; /*structure copy*/;
-				plink->value.pv_link.precord = precord;
-				plink->value.pv_link.pvt = pdbAddr;
-				dbLockSetMerge(precord,pdbAddr->precord);
-			} else {/*It is a CA link*/
-			    char	*pperiod;
-
-			    plink->type = CA_LINK;
-			    plink->value.pv_link.precord = precord;
-			    if(pfldDes->field_type==DBF_INLINK) {
-				plink->value.pv_link.pvlMask |= pvlOptInpNative;
-			    }
-			    dbCaAddLink(plink);
-			    if(pfldDes->field_type==DBF_FWDLINK) {
-				pperiod = strrchr(plink->value.pv_link.pvname,
-					'.');
-				if(pperiod && strstr(pperiod,"PROC"))
-				    plink->value.pv_link.pvlMask |= pvlOptFWD;
-			    }
-			}
+		plink->type = CA_LINK;
+		plink->value.pv_link.precord = precord;
+		if(pfldDes->field_type==DBF_INLINK) {
+		    plink->value.pv_link.pvlMask |= pvlOptInpNative;
 		}
-    		db_post_events(precord,plink,DBE_VALUE|DBE_LOG);
-		dbFinishEntry(&dbEntry);
+		dbCaAddLink(plink);
+		if(pfldDes->field_type==DBF_FWDLINK) {
+		    pperiod = strrchr(plink->value.pv_link.pvname,'.');
+		    if(pperiod && strstr(pperiod,"PROC"))
+			plink->value.pv_link.pvlMask |= pvlOptFWD;
+		}
+	    }
+	}
+    	db_post_events(precord,plink,DBE_VALUE|DBE_LOG);
 done:
-		dbLockSetGblUnlock();
-		return(status);
-	}
-	dbScanLock(precord);
-	status=dbPut(paddr,dbrType,pbuffer,nRequest);
-	if(status==0){
-        	if((paddr->pfield==(void *)&precord->proc)
-		||(pfldDes->process_passive && precord->scan==0 
-		&& dbrType<DBR_PUT_ACKT)) {
-		    if(precord->pact) {
-			if(precord->tpro)
-			    printf("active:    %s\n",precord->name);
-			precord->rpro = TRUE;
-		    } else {
-			/*indicate that dbPutField called dbProcess*/
-			precord->putf = TRUE;
-			status=dbProcess(precord);
-		    }
-		}
-	}
-	dbScanUnlock(precord);
+	dbLockSetGblUnlock();
 	return(status);
+    }
+    dbScanLock(precord);
+    status=dbPut(paddr,dbrType,pbuffer,nRequest);
+    if(status==0){
+        if((paddr->pfield==(void *)&precord->proc)
+	||(pfldDes->process_passive && precord->scan==0 
+	&& dbrType<DBR_PUT_ACKT)) {
+	    if(precord->pact) {
+		if(precord->tpro)
+		    printf("active:    %s\n",precord->name);
+		precord->rpro = TRUE;
+	    } else {
+		/*indicate that dbPutField called dbProcess*/
+		precord->putf = TRUE;
+		status=dbProcess(precord);
+	    }
+	}
+    }
+    dbScanUnlock(precord);
+    return(status);
 }
 
 static long putAckt(paddr,pbuffer,nRequest,no_elements,offset)
@@ -1120,6 +1136,7 @@ long dbPut(DBADDR *paddr,short dbrType,const void *pbuffer,long nRequest)
 	int		isValueField;
 	char		message[80];
 
+        if(special==SPC_ATTRIBUTE) return(S_db_noMod);
 	if(dbrType==DBR_PUT_ACKT && field_type<=DBF_DEVICE) {
 	    status=putAckt(paddr,pbuffer,(long)1,(long)1,(long)0);
 	    return(status);

@@ -139,7 +139,7 @@ int iocInit(char * pResourceFilename)
 	return(-1);
     }
 
-    epicsPrintf("Starting iocInit");
+    epicsPrintf("Starting iocInit\n");
     if (!pdbbase) {
 	epicsPrintf("iocInit aborting because No database\n");
 	return(-1);

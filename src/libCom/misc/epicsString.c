@@ -152,7 +152,7 @@ epicsShareFunc int epicsShareAPI epicsStrPrintEscaped(
        case '\'':  nout += fprintf(fp, "\\'");  break;
        case '\"':  nout += fprintf(fp, "\\\"");  break;
        default:
-           if (isprint(c))
+           if (isprint((int)c))
                nout += fprintf(fp, "%c", c);/* putchar(c) doesn't work on vxWorks */
            else
                nout += fprintf(fp, "\\%03o", (unsigned char)c);
@@ -186,7 +186,7 @@ epicsShareFunc int epicsShareAPI epicsStrSnPrintEscaped(
        case '\'':  len = epicsSnprintf(outpos, maxout, "\\'"); break;
        case '\"':  len = epicsSnprintf(outpos, maxout, "\\\""); break;
        default:
-           if (isprint(c))
+           if (isprint((int)c))
                len = epicsSnprintf(outpos, maxout, "%c", c);
            else
                len = epicsSnprintf(outpos, maxout, "\\%03o", (unsigned char)c);

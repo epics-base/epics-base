@@ -29,7 +29,7 @@ epicsShareFunc double epicsShareAPI epicsStrtod(
     double num = 1.0;
     double den = 0.0;
 
-    while (isspace(*cp))
+    while (isspace((int)*cp))
         cp++;
     if (*cp == '+') {
         cp++;
@@ -38,7 +38,7 @@ epicsShareFunc double epicsShareAPI epicsStrtod(
         num = -1.0;
         cp++;
     }
-    if (!isalpha(*cp))
+    if (!isalpha((int)*cp))
         return strtod(str, endp);
     if (epicsStrnCaseCmp("NAN", cp, 3) == 0) {
         num = 0.0;

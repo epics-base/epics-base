@@ -56,14 +56,8 @@ caRepeater_SRCS=caRepeater.c
 PROD_LIBS := ca Com
 SYS_PROD_LIBS_WIN32 := ws2_32 user32 advapi32
 
-TESTPROD := catime acctst 
+TESTPROD := catime acctst caEventRate
 
 include $(TOP)/config/RULES.Host
-
-pcatime : catime.o $(PRODDEPLIBS)
-	$(PURIFY) $(LINK.c) catime.o $(LDLIBS)
-
-pacctst : acctst.o $(PRODDEPLIBS)
-	$(PURIFY) $(LINK.c) acctst.o $(LDLIBS)
 
 #	EOF Makefile.Host

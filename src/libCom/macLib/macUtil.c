@@ -92,7 +92,7 @@ epicsShareAPI macParseDefns(
 
 	switch ( state ) {
 	  case preName:
-	    if ( !quote && !escape && ( isspace( *c ) || *c == ',' ) ) break;
+	    if ( !quote && !escape && ( isspace( (int) *c ) || *c == ',' ) ) break;
 	    ptr[num] = c;
 	    state = inName;
 	    /* fall through (may be empty name) */
@@ -100,7 +100,7 @@ epicsShareAPI macParseDefns(
 	  case inName:
 	    if ( quote || escape || ( *c != '=' && *c != ',' ) ) break;
 	    end[num] = c;
-	    while ( end[num] > ptr[num] && isspace( *( end[num] - 1 ) ) )
+	    while ( end[num] > ptr[num] && isspace( (int) *( end[num] - 1 ) ) )
 		end[num]--;
 	    num++;
 	    del[num] = FALSE;
@@ -110,7 +110,7 @@ epicsShareAPI macParseDefns(
 	    /* fall through (','; will delete) */
 
 	  case preValue:
-	    if ( !quote && !escape && isspace( *c ) ) break;
+	    if ( !quote && !escape && isspace( (int) *c ) ) break;
 	    ptr[num] = c;
 	    state = inValue;
 	    /* fall through (may be empty value) */
@@ -118,7 +118,7 @@ epicsShareAPI macParseDefns(
 	  case inValue:
 	    if ( quote || escape || *c != ',' ) break;
 	    end[num] = c;
-	    while ( end[num] > ptr[num] && isspace( *( end[num] - 1 ) ) )
+	    while ( end[num] > ptr[num] && isspace( (int) *( end[num] - 1 ) ) )
 		end[num]--;
 	    num++;
 	    del[num] = FALSE;
@@ -138,7 +138,7 @@ epicsShareAPI macParseDefns(
 	break;
       case inName:
 	end[num] = c;
-	while ( end[num] > ptr[num] && isspace( *( end[num] - 1 ) ) )
+	while ( end[num] > ptr[num] && isspace( (int) *( end[num] - 1 ) ) )
 	    end[num]--;
 	num++;
 	del[num] = TRUE;
@@ -146,7 +146,7 @@ epicsShareAPI macParseDefns(
 	ptr[num] = c;
       case inValue:
 	end[num] = c;
-	while ( end[num] > ptr[num] && isspace( *( end[num] - 1 ) ) )
+	while ( end[num] > ptr[num] && isspace( (int) *( end[num] - 1 ) ) )
 	    end[num]--;
 	num++;
 	del[num] = FALSE;

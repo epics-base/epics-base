@@ -291,7 +291,7 @@ long epicsShareAPI postfix(const char *pin,char *ppostfix,short *perror)
         strcpy(infix,pin);
 	/* convert infix expression to upper case */
 	for (pc=pinfix; *pc; pc++) {
-		if (islower(*pc)) *pc = toupper(*pc);
+		if (islower((int)*pc)) *pc = toupper((int)*pc);
 	}
 
 	/* place the expression elements into postfix */

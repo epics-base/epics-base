@@ -303,7 +303,7 @@ epicsShareFunc long epicsShareAPI
 			case FETCH:
 				++pd;
 				++post;
-				*pd = (*post < numArgs) ? parg[*post] : 0;
+				*pd = (*post < numArgs) ? parg[(int)*post] : 0;
 				break;
 
 			case STORE:
@@ -646,7 +646,7 @@ printf(") \n");
 				INC(ps);
 				++post;
 				ps->s = NULL;
-				ps->d = (*post < numArgs) ? parg[*post] : 0;
+				ps->d = (*post < numArgs) ? parg[(int)*post] : 0;
 				break;
 
 			case SFETCH:
@@ -654,8 +654,8 @@ printf(") \n");
 				++post;
 				if (*post < numSArgs) {
 					/* fetch from string variable */
-					ps->s = calloc(strlen(psarg[*post])+1, 1);
-					strcpy(ps->s, psarg[*post]);
+					ps->s = calloc(strlen(psarg[(int)*post])+1, 1);
+					strcpy(ps->s, psarg[(int)*post]);
 				} else {
 					/* fetch from variable that caller did not supply */
 					ps->s = calloc(1, 1);

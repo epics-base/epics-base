@@ -63,7 +63,7 @@ int dbTranslateEscape(char *to, const char *from)
 
                 pfrom++; /*skip the x*/
 		for(i=0; i<2; i++) {
-		    if(!isxdigit(*pfrom)) break;
+		    if(!isxdigit((int)*pfrom)) break;
 		    strval[i] = *pfrom++;
 		}
 		sscanf(strval,"%x",&ival);

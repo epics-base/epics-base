@@ -27,19 +27,19 @@
  * -----------------
  * .01	02-26-91         bg     Changed cursor to move only to controls.
  * .02	07-03-91	rac	changed to use "lopi" rather than "bw"
- * .02	08-14-91	 bg	Added error message for no file available
+ * .03	08-14-91	 bg	Added error message for no file available
                                 for a display. 
- * .03	08-26-91	 bg	Fixed cursor so it will not try to move
+ * .04	08-26-91	 bg	Fixed cursor so it will not try to move
                                 with arrow keys if a screen has no controls.
- * .04	09-12-91	 bg	Added semDelete for both keyboard and monitor
+ * .05	09-12-91	 bg	Added semDelete for both keyboard and monitor
                                 semaphores.
- * .05	10-2-91		 bg	Fixed bug in display_monitors.               
- * .06	12-12-91	 bg	Fixed lopi so if you try to write to a monitor
+ * .06	10-2-91		 bg	Fixed bug in display_monitors.               
+ * .07	12-12-91	 bg	Fixed lopi so if you try to write to a monitor
  * 	                        you will not crash.
- * .07  6-10-91          bg     Fixed allocation subroutines so they return NULL
+ * .08  6-10-91          bg     Fixed allocation subroutines so they return NULL
  *                              if they cannot get enough memory.  
- * .01	07-03-91	rac	changed "bw" to "lopi"
- * .02	07-03-91	rac	eliminate some gcc warnings
+ * .09	07-03-91	rac	changed "bw" to "lopi"
+ * .10	08-11-93	mrk	removed ifdef V5_vxWorks
  */
 
 #include <vxWorks.h>
@@ -316,15 +316,8 @@ VOID lopi()
 
   /* Create and initialize semaphores protecting the keyboard and the 
      monitor linked list. */ 
-#ifdef V5_vxWorks
   mon_sem = semBCreate(SEM_Q_PRIORITY, SEM_FULL);
   key_sem = semBCreate(SEM_Q_PRIORITY, SEM_FULL);
-#else
-  mon_sem = semCreate();
-  key_sem = semCreate();
-  semGive(mon_sem);
-  semGive(key_sem); 
-#endif
   data_flg = NO_NEW_DATA;;
   except_ptr  = except_alloc();
 

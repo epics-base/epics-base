@@ -13,8 +13,6 @@ DEPLIBS = ./libca.a\
 INC += cadef.h
 INC += caerr.h
 INC += caeventmask.h
-INC += calink.h
-INC += bsdProto.h
 
 SRCS.c = \
 	../iocinf.c ../access.c ../test_event.c ../service.c \

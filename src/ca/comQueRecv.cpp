@@ -198,8 +198,6 @@ epicsUInt16 comQueRecv::popUInt16 ()
         comBuf::throwInsufficentBytesException ();
     }
     // try first for all in one buffer efficent version
-    // (double check here avoids slow C++ exception)
-    // (hopefully optimizer removes inside check)
     epicsUInt16 tmp;
     comBuf::popStatus status = pComBuf->pop ( tmp );
     if ( status.success ) {
@@ -219,8 +217,6 @@ epicsUInt32 comQueRecv::popUInt32 ()
         comBuf::throwInsufficentBytesException ();
     }
     // try first for all in one buffer efficent version
-    // (double check here avoids slow C++ exception)
-    // (hopefully optimizer removes inside check)
     epicsUInt32 tmp;
     comBuf::popStatus status = pComBuf->pop ( tmp );
     if ( status.success ) {
@@ -232,3 +228,43 @@ epicsUInt32 comQueRecv::popUInt32 ()
     }
     return this->multiBufferPopUInt32 ();
 }
+
+bool comQueRecv::popOldMsgHeader ( caHdrLargeArray & msg )
+{
+    // try first for all in one buffer efficent version
+    comBuf * pComBuf = this->bufs.first ();
+    if ( ! pComBuf ) {
+        return false;
+    }
+    unsigned avail = pComBuf->occupiedBytes ();
+    if ( avail >= sizeof ( caHdr ) ) {
+        pComBuf->pop ( msg.m_cmmd );
+        ca_uint16_t smallPostsize;
+        pComBuf->pop ( smallPostsize );
+        msg.m_postsize = smallPostsize;
+        pComBuf->pop ( msg.m_dataType );
+        ca_uint16_t smallCount;
+        pComBuf->pop ( smallCount );
+        msg.m_count = smallCount;
+        pComBuf->pop ( msg.m_cid );
+        pComBuf->pop ( msg.m_available );
+        this->nBytesPending -= sizeof ( caHdr );
+        if ( avail == sizeof ( caHdr ) ) {
+            this->removeAndDestroyBuf ( *pComBuf );
+        }
+        return true;
+    }
+    else if ( this->occupiedBytes () >= sizeof ( caHdr ) ) {
+        msg.m_cmmd = this->popUInt16 ();
+        msg.m_postsize = this->popUInt16 ();
+        msg.m_dataType = this->popUInt16 ();
+        msg.m_count = this->popUInt16 ();
+        msg.m_cid = this->popUInt32 ();
+        msg.m_available = this->popUInt32 ();
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+

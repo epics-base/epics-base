@@ -751,21 +751,17 @@ bool tcpiiu::processIncoming (
 
         if ( ! this->msgHeaderAvailable ) {
             if ( ! this->oldMsgHeaderAvailable ) {
-                if ( nBytes < sizeof ( caHdr ) ) {
+                this->oldMsgHeaderAvailable = 
+                    this->recvQue.popOldMsgHeader ( this->curMsg );
+                if ( ! this->oldMsgHeaderAvailable ) {
                     this->flushIfRecvProcessRequested ();
                     return true;
-                } 
-                this->curMsg.m_cmmd = this->recvQue.popUInt16 ();
-                this->curMsg.m_postsize = this->recvQue.popUInt16 ();
-                this->curMsg.m_dataType = this->recvQue.popUInt16 ();
-                this->curMsg.m_count = this->recvQue.popUInt16 ();
-                this->curMsg.m_cid = this->recvQue.popUInt32 ();
-                this->curMsg.m_available = this->recvQue.popUInt32 ();
-                this->oldMsgHeaderAvailable = true;
+                }
             }
             if ( this->curMsg.m_postsize == 0xffff ) {
                 static const unsigned annexSize = 
-                    sizeof ( this->curMsg.m_postsize ) + sizeof ( this->curMsg.m_count );
+                    sizeof ( this->curMsg.m_postsize ) + 
+                    sizeof ( this->curMsg.m_count );
                 if ( this->recvQue.occupiedBytes () < annexSize ) {
                     this->flushIfRecvProcessRequested ();
                     return true;

@@ -49,7 +49,6 @@ public:
     unsigned occupiedBytes () const; 
     bool flushEarlyThreshold ( unsigned nBytesThisMsg ) const;
     bool flushBlockThreshold ( unsigned nBytesThisMsg ) const; 
-    bool dbr_type_ok ( unsigned type );
     void pushUInt16 ( const ca_uint16_t value );
     void pushUInt32 ( const ca_uint32_t value );
     void pushFloat32 ( const ca_float32_t value );
@@ -69,16 +68,26 @@ private:
     tsDLIter < comBuf > pFirstUncommited;
     wireSendAdapter & wire;
     unsigned nBytesPending;
-    typedef void ( comQueSend::*copyFunc_t ) (  
-        const void *pValue, unsigned nElem );
-    static const copyFunc_t dbrCopyVector [comQueSendCopyDispatchSize];
 
+    typedef void ( comQueSend::*copyScalarFunc_t ) ( const void * pValue );
+    static const copyScalarFunc_t dbrCopyScalar [comQueSendCopyDispatchSize];
+    void copy_dbr_string ( const void * pValue );
+    void copy_dbr_short ( const void * pValue ); 
+    void copy_dbr_float ( const void * pValue ); 
+    void copy_dbr_char ( const void * pValue ); 
+    void copy_dbr_long ( const void * pValue ); 
+    void copy_dbr_double ( const void * pValue ); 
+
+    typedef void ( comQueSend::*copyVectorFunc_t ) (  
+        const void *pValue, unsigned nElem );
+    static const copyVectorFunc_t dbrCopyVector [comQueSendCopyDispatchSize];
     void copy_dbr_string ( const void *pValue, unsigned nElem );
     void copy_dbr_short ( const void *pValue, unsigned nElem ); 
     void copy_dbr_float ( const void *pValue, unsigned nElem ); 
     void copy_dbr_char ( const void *pValue, unsigned nElem ); 
     void copy_dbr_long ( const void *pValue, unsigned nElem ); 
     void copy_dbr_double ( const void *pValue, unsigned nElem ); 
+
     void pushComBuf ( comBuf & ); 
     comBuf * newComBuf (); 
     void clearUncommitted (); 
@@ -127,17 +136,6 @@ private:
 };
 
 extern const char cacNillBytes[];
-
-inline bool comQueSend::dbr_type_ok ( unsigned type ) 
-{
-    if ( type >= comQueSendCopyDispatchSize ) {
-        return false;
-    }
-    if ( ! this->dbrCopyVector [type] ) {
-        return false;
-    }
-    return true;
-}
 
 inline void comQueSend::pushUInt16 ( const ca_uint16_t value ) 
 {

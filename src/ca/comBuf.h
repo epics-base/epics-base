@@ -183,93 +183,93 @@ inline unsigned comBuf::fillFromWire ( wireRecvAdapter & wire )
 inline bool comBuf::push ( const epicsInt8 value )
 {
     unsigned index = this->nextWriteIndex;
-    unsigned available = sizeof ( this->buf ) - index;
-    if ( sizeof ( value ) > available ) {
-        return false;
+    unsigned nextIndex = index + sizeof ( value );
+    if ( nextIndex <= sizeof ( this->buf ) ) {
+        this->buf[ index ] = static_cast < epicsUInt8 > ( value );
+        this->nextWriteIndex = nextIndex;
+        return true;
     }
-    this->buf[ index ] = static_cast < epicsUInt8 > ( value );
-    this->nextWriteIndex = index + sizeof ( value );
-    return true;
+    return false;
 }
 
 inline bool comBuf::push ( const epicsUInt8 value )
 {
     unsigned index = this->nextWriteIndex;
-    unsigned available = sizeof ( this->buf ) - index;
-    if ( sizeof ( value ) > available ) {
-        return false;
+    unsigned nextIndex = index + sizeof ( value );
+    if ( nextIndex <= sizeof ( this->buf ) ) {
+        this->buf[ index ] = value;
+        this->nextWriteIndex = nextIndex;
+        return true;
     }
-    this->buf[ index ] = value;
-    this->nextWriteIndex = index + sizeof ( value );
-    return true;
+    return false;
 }
 
 inline bool comBuf::push ( const epicsInt16 value )
 {
     unsigned index = this->nextWriteIndex;
-    unsigned available = sizeof ( this->buf ) - index;
-    if ( sizeof ( value ) > available ) {
-        return false;
+    unsigned nextIndex = index + sizeof ( value );
+    if ( nextIndex <= sizeof ( this->buf ) ) {
+        this->buf[ index + 0u ] = 
+            static_cast < epicsUInt8 > ( value >> 8u );
+        this->buf[ index + 1u ] = 
+            static_cast < epicsUInt8 > ( value >> 0u );
+        this->nextWriteIndex = nextIndex;
+        return true;
     }
-    this->buf[ index + 0u ] = 
-        static_cast < epicsUInt8 > ( value >> 8u );
-    this->buf[ index + 1u ] = 
-        static_cast < epicsUInt8 > ( value >> 0u );
-    this->nextWriteIndex = index + sizeof ( value );
-    return true;
+    return false;
 }
 
 inline bool comBuf::push ( const epicsUInt16 value )
 {
     unsigned index = this->nextWriteIndex;
-    unsigned available = sizeof ( this->buf ) - index;
-    if ( sizeof ( value ) > available ) {
-        return false;
+    unsigned nextIndex = index + sizeof ( value );
+    if ( nextIndex <= sizeof ( this->buf ) ) {
+        this->buf[ index + 0u ] = 
+            static_cast < epicsUInt8 > ( value >> 8u );
+        this->buf[ index + 1u ] = 
+            static_cast < epicsUInt8 > ( value >> 0u );
+        this->nextWriteIndex = nextIndex;
+        return true;
     }
-    this->buf[ index + 0u ] = 
-        static_cast < epicsUInt8 > ( value >> 8u );
-    this->buf[ index + 1u ] = 
-        static_cast < epicsUInt8 > ( value >> 0u );
-    this->nextWriteIndex = index + sizeof ( value );
-    return true;
+    return false;
 }
 
 inline bool comBuf::push ( const epicsInt32 value )
 {
     unsigned index = this->nextWriteIndex;
-    unsigned available = sizeof ( this->buf ) - index;
-    if ( sizeof ( value ) > available ) {
-        return false;
+    unsigned nextIndex = index + sizeof ( value );
+    if ( nextIndex <= sizeof ( this->buf ) ) {
+        this->buf[ index + 0u ] = 
+            static_cast < epicsUInt8 > ( value >> 24u );
+        this->buf[ index + 1u ] = 
+            static_cast < epicsUInt8 > ( value >> 16u );
+        this->buf[ index + 2u ] = 
+            static_cast < epicsUInt8 > ( value >> 8u );
+        this->buf[ index + 3u ] = 
+            static_cast < epicsUInt8 > ( value >> 0u );
+        this->nextWriteIndex = nextIndex;
+        return true;
     }
-    this->buf[ index + 0u ] = 
-        static_cast < epicsUInt8 > ( value >> 24u );
-    this->buf[ index + 1u ] = 
-        static_cast < epicsUInt8 > ( value >> 16u );
-    this->buf[ index + 2u ] = 
-        static_cast < epicsUInt8 > ( value >> 8u );
-    this->buf[ index + 3u ] = 
-        static_cast < epicsUInt8 > ( value >> 0u );
-    this->nextWriteIndex = index + sizeof ( value );
-    return true;
+    return false;
 }
 
 inline bool comBuf::push ( const epicsUInt32 value )
 {
     unsigned index = this->nextWriteIndex;
-    unsigned available = sizeof ( this->buf ) - index;
-    if ( sizeof ( value ) > available ) {
-        return false;
+    unsigned nextIndex = index + sizeof ( value );
+    if ( nextIndex <= sizeof ( this->buf ) ) {
+        this->buf[ index + 0u ] = 
+            static_cast < epicsUInt8 > ( value >> 24u );
+        this->buf[ index + 1u ] = 
+            static_cast < epicsUInt8 > ( value >> 16u );
+        this->buf[ index + 2u ] = 
+            static_cast < epicsUInt8 > ( value >> 8u );
+        this->buf[ index + 3u ] = 
+            static_cast < epicsUInt8 > ( value >> 0u );
+        this->nextWriteIndex = nextIndex;
+        return true;
     }
-    this->buf[ index + 0u ] = 
-        static_cast < epicsUInt8 > ( value >> 24u );
-    this->buf[ index + 1u ] = 
-        static_cast < epicsUInt8 > ( value >> 16u );
-    this->buf[ index + 2u ] = 
-        static_cast < epicsUInt8 > ( value >> 8u );
-    this->buf[ index + 3u ] = 
-        static_cast < epicsUInt8 > ( value >> 0u );
-    this->nextWriteIndex = index + sizeof ( value );
-    return true;
+    return false;
 }
 
 inline bool comBuf::push ( const epicsFloat32 & value )

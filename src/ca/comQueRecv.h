@@ -38,6 +38,7 @@ public:
     unsigned removeBytes ( unsigned nBytes );
     void pushLastComBufReceived ( comBuf & );
     void clear ();
+    bool popOldMsgHeader ( struct caHdrLargeArray & );
     epicsInt8 popInt8 ();
     epicsUInt8 popUInt8 ();
     epicsInt16 popInt16 ();

@@ -3,8 +3,6 @@ include $(TOP)/config/CONFIG_BASE
 
 USR_CFLAGS += -D_NO_PROTO
 
-INC := asDbLib.h asLib.h
-
 #	build lib As from asLib.c:
 #
 LIBSRCS := asLib.c
@@ -16,7 +14,7 @@ LIBRARY := As
 #
 SYS_PROD_LIBS_DEFAULT := m
 SYS_PROD_LIBS_WIN32   := -nil-
-PROD_LIBS         := As Com Db Com
+PROD_LIBS         := As Db Com
 
 PROD := ascheck
 

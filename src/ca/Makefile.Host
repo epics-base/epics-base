@@ -7,9 +7,6 @@ CMPLR = STRICT
 #
 #	includes to install from this subproject
 #
-INC += cadef.h
-INC += caerr.h
-INC += caeventmask.h
 INC += caProto.h
 
 #

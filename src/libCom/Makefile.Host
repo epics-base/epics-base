@@ -116,11 +116,11 @@ MAN3 = gpHash.3 freeList.3
 
 #	for bldErrSymTbl:
 #
-ERR_S_FILES += $(TOP)/src/as/asLib.h
+ERR_S_FILES += $(TOP)/src/include/asLib.h
 ERR_S_FILES += $(TOP)/src/db/dbAccess.h
 ERR_S_FILES += $(TOP)/src/db/devLib.h
-ERR_S_FILES += $(TOP)/src/db/devSup.h
-ERR_S_FILES += $(TOP)/src/db/drvSup.h
+ERR_S_FILES += $(TOP)/src/include/devSup.h
+ERR_S_FILES += $(TOP)/src/include/drvSup.h
 ERR_S_FILES += $(TOP)/src/db/recSup.h
 ERR_S_FILES += $(TOP)/src/dbStatic/dbStaticLib.h
 ERR_S_FILES += $(TOP)/src/drv/ansi/drvEpvxi.h

@@ -3,6 +3,9 @@
 
 /*
  * $Log$
+ * Revision 1.3  1998/09/29 14:11:03  mrk
+ * TSsetClockFromUnix was made global
+ *
  * Revision 1.2  1998/03/19 20:41:16  mrk
  * Checked for Y2K complience. It turns out it was even ok when NTP time overflows
  * in 2036. However it was modified so that no overflows should occur while convert

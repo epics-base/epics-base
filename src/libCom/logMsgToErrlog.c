@@ -33,7 +33,7 @@ static int errlogOpen ( DEV_HDR * pHdr, const char * pMode, int opt )
 
 static int errlogWrite ( DEV_HDR * pHdr, const char * pInBuf, int nbytes )
 {
-    errlogPrintf ( "%.*s", nbytes, pInBuf );
+    errlogPrintfNoConsole ( "%.*s", nbytes, pInBuf );
     return nbytes;
 }
 

@@ -84,6 +84,14 @@ epicsShareFunc int epicsShareAPI errlogInit(int bufsize);
 epicsShareFunc void epicsShareAPIV errPrintf(long status, const char *pFileName,
     int lineno, const char *pformat, ...);
 
+/* The following are added so that logMsg on vxWorks does not cause
+ * the message to appear twice on the console
+ */
+epicsShareFunc int errlogPrintfNoConsole(
+    const char *pformat, ...);
+epicsShareFunc int errlogVprintfNoConsole(
+    const char *pformat,va_list pvar);
+
 #else /* not epicsPrintUseProtoANSI */
 epicsShareFunc int epicsShareAPI errlogPrintf();
 epicsShareFunc int epicsShareAPI errlogVprintf();

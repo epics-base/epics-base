@@ -46,9 +46,9 @@
 
 LOCAL void errlogTask(void);
 
-LOCAL char *msgbufGetFree(void);
+LOCAL char *msgbufGetFree(int noConsoleMessage);
 LOCAL void msgbufSetSize(int size);
-LOCAL char * msgbufGetSend(void);
+LOCAL char * msgbufGetSend(int *noConsoleMessage);
 LOCAL void msgbufFreeSend(void);
 
 LOCAL void *pvtCalloc(size_t count,size_t size);
@@ -64,6 +64,7 @@ typedef struct msgNode {
     ELLNODE	node;
     char	*message;
     int		length;
+    int         noConsoleMessage;
 } msgNode;
 
 LOCAL struct {
@@ -107,7 +108,7 @@ epicsShareFunc int epicsShareAPIV errlogVprintf(
 	return 0;
     }
     errlogInit(0);
-    pbuffer = msgbufGetFree();
+    pbuffer = msgbufGetFree(0);
     if(!pbuffer) return(0);
     nchar = vsprintf(pbuffer,pFormat,pvar);
     msgbufSetSize(nchar+1);/*include the \0*/
@@ -125,11 +126,45 @@ epicsShareFunc int epicsShareAPI errlogMessage(const char *message)
 	return 0;
     }
     errlogInit(0);
-    pbuffer = msgbufGetFree();
+    pbuffer = msgbufGetFree(0);
     if(!pbuffer) return(0);
     strcpy(pbuffer,message);
     msgbufSetSize(strlen(message) +1);
     return 0;
+}
+
+epicsShareFunc int errlogPrintfNoConsole( const char *pFormat, ...)
+{
+    va_list     pvar;
+    int         nchar;
+
+    if(INT_CONTEXT()) {
+	logMsg("errlogPrintfNoConsole called from interrupt level\n",0,0,0,0,0,0);
+	return 0;
+    }
+    errlogInit(0);
+    va_start(pvar, pFormat);
+    nchar = errlogVprintfNoConsole(pFormat,pvar);
+    va_end (pvar);
+    return(nchar);
+}
+
+epicsShareFunc int errlogVprintfNoConsole(
+    const char *pFormat,va_list pvar)
+{
+    int nchar;
+    char *pbuffer;
+
+    if(INT_CONTEXT()) {
+	logMsg("errlogVprintfNoConsole called from interrupt level\n",0,0,0,0,0,0);
+	return 0;
+    }
+    errlogInit(0);
+    pbuffer = msgbufGetFree(1);
+    if(!pbuffer) return(0);
+    nchar = vsprintf(pbuffer,pFormat,pvar);
+    msgbufSetSize(nchar+1);/*include the \0*/
+    return nchar;
 }
 
 epicsShareFunc int epicsShareAPIV errlogSevPrintf(
@@ -163,7 +198,7 @@ epicsShareFunc int epicsShareAPIV errlogSevVprintf(
 	return 0;
     }
     errlogInit(0);
-    pnext = msgbufGetFree();
+    pnext = msgbufGetFree(0);
     if(!pnext) return(0);
     nchar = sprintf(pnext,"sevr=%s ",errlogGetSevEnumString(severity));
     pnext += nchar; totalChar += nchar;
@@ -251,7 +286,7 @@ epicsShareFunc void epicsShareAPIV errPrintf(long status, const char *pFileName,
 	return;
     }
     errlogInit(0);
-    pnext = msgbufGetFree();
+    pnext = msgbufGetFree(0);
     if(!pnext) return;
     if(pFileName){
 	nchar = sprintf(pnext,"filename=\"%s\" line number=%d\n",
@@ -325,14 +360,15 @@ epicsShareFunc int epicsShareAPI errlogInit(int bufsize)
 LOCAL void errlogTask(void)
 {
     listenerNode *plistenerNode;
+    int noConsoleMessage;
 
     while(TRUE) {
 	char	*pmessage;
 
 	pvtSemTake(pvtData.errlogTaskWaitForWork);
-	while((pmessage = msgbufGetSend())) {
+	while((pmessage = msgbufGetSend(&noConsoleMessage))) {
 	    pvtSemTake(pvtData.listenerLock);
-	    if(pvtData.toConsole) printf("%s",pmessage);
+	    if(pvtData.toConsole && !noConsoleMessage) printf("%s",pmessage);
 	    plistenerNode = (listenerNode *)ellFirst(&pvtData.listenerList);
 	    while(plistenerNode) {
 		(*plistenerNode->listener)(pmessage);
@@ -376,7 +412,7 @@ LOCAL msgNode *msgbufGetNode()
     return(pnextSend);
 }
 
-LOCAL char *msgbufGetFree()
+LOCAL char *msgbufGetFree(int noConsoleMessage)
 {
     msgNode	*pnextSend;
 
@@ -392,7 +428,11 @@ LOCAL char *msgbufGetFree()
 	ellAdd(&pvtData.msgQueue,&pnextSend->node);
     }
     pvtData.pnextSend = pnextSend = msgbufGetNode();
-    if(pnextSend) return(pnextSend->message);
+    if(pnextSend) {
+        pnextSend->noConsoleMessage = noConsoleMessage;
+        pnextSend->length = 0;
+        return(pnextSend->message);
+    }
     ++pvtData.missedMessages;
     semGive(pvtData.msgQueueLock);
     return(0);
@@ -434,7 +474,7 @@ LOCAL void msgbufSetSize(int size)
 /*Thus errlogTask is the ONLY task that removes messages from msgQueue	*/
 /*This is why each can lock and unlock msgQueue				*/
 /*This is necessary to prevent other tasks from waiting for errlogTask	*/
-LOCAL char * msgbufGetSend()
+LOCAL char * msgbufGetSend(int *noConsoleMessage)
 {
     msgNode	*pnextSend;
 
@@ -442,6 +482,7 @@ LOCAL char * msgbufGetSend()
     pnextSend = (msgNode *)ellFirst(&pvtData.msgQueue);
     semGive(pvtData.msgQueueLock);
     if(!pnextSend) return(0);
+    *noConsoleMessage = pnextSend->noConsoleMessage;
     return(pnextSend->message);
 }
 

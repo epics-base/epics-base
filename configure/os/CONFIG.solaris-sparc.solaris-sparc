@@ -65,10 +65,10 @@ GCC_CPP = $(GCC) -x c -E
 GCC_POSIX_CPPFLAGS += -D__EXTENSIONS__
 G++_POSIX_CPPFLAGS += -D__EXTENSIONS__
 
-GCC_STATIC_LDLIBS_YES= -lposix4
-GCC_STATIC_LDLIBS_NO= -lposix4
-G++_STATIC_LDLIBS_YES= -lposix4
-G++_STATIC_LDLIBS_NO= -lposix4
+GCC_STATIC_LDLIBS_YES= -lposix4 -lpthread -lthread
+GCC_STATIC_LDLIBS_NO= -lposix4 -lpthread -lthread
+G++_STATIC_LDLIBS_YES= -lposix4 -lpthread -lthread
+G++_STATIC_LDLIBS_NO= -lposix4 -lpthread -lthread
 
 RANLIB =
 # required by sun's C++ compiler

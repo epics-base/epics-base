@@ -41,7 +41,7 @@
 #include     <cvtTable.h>
 #include     <epicsPrint.h>
 
-extern struct dbBase *pdbBase;
+extern struct dbBase *pdbbase;
 
 
 
@@ -54,7 +54,7 @@ static brkTable *findBrkTable(short linr)
     int		len,ind;
 
 
-    pdbMenu = dbFindMenu(pdbBase,"menuConvert");
+    pdbMenu = dbFindMenu(pdbbase,"menuConvert");
     len = strlen(pdbMenu->papChoiceValue[linr]);
     if(len>=sizeof(name)) {
 	epicsPrintf("Break Tables(findBrkTable) choice name too long\n");
@@ -67,7 +67,7 @@ static brkTable *findBrkTable(short linr)
 	    break;
 	}
     }
-    pbrkTable = dbFindBrkTable(pdbBase,pname);
+    pbrkTable = dbFindBrkTable(pdbbase,pname);
     return(pbrkTable);
 }
 

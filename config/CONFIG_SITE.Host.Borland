@@ -6,3 +6,5 @@
  
 SHARED_LIBRARIES = YES
 
+BORLAND=C:\\Borland\\bcc55
+

@@ -29,6 +29,7 @@
 vpath %.h $(USER_VPATH)   
 vpath %.c $(USER_VPATH) ../os/$(ARCH_CLASS) ../os/generic ..
 vpath %.cc $(USER_VPATH) ../os/$(ARCH_CLASS) ../os/generic ..
+vpath %.cpp $(USER_VPATH) ../os/$(ARCH_CLASS) ../os/generic ..
 vpath %.rc $(USER_VPATH) ../os/$(ARCH_CLASS) ../os/generic ..
 
 #	check for add-on CFLAGS and CXXFLAGS
@@ -281,7 +282,9 @@ endif
 
 #---------------------------------------------------------------
 # always use c++ linker
+ifneq ($(strip $(CPLUSPLUS)),)
 LINK.c = $(LINK.cc)
+endif # CPLUSPLUS
 
 #---------------------------------------------------------------
 # Version number for base shared libraries (and win32 products)
@@ -532,6 +535,11 @@ ifeq ($(HOST_ARCH),Borland)
 	$(COMPILE.cc)  $<
 	$(LINK.cc) $(subst ../,,$(basename $<))$(OBJ) , $@ ,,$(LINKLIBS)  $(subst /,\\,$(LDLIBS))
 
+%$(EXE): %.cpp
+	@$(RM) $@
+	$(COMPILE.cc)  $<
+	$(LINK.cc) $(subst ../,,$(basename $<))$(OBJ) , $@ ,,$(LINKLIBS)  $(subst /,\\,$(LDLIBS))
+
 %$(EXE): %.C
 	@$(RM) $@
 	$(COMPILE.cc)  $<
@@ -549,6 +557,11 @@ else
 	$(COMPILE.cc)  $<
 	$(LINK.cc) $(subst ../,,$(basename $<))$(OBJ) $(LDLIBS)
 
+%$(EXE): %.cpp
+	@$(RM) $@
+	$(COMPILE.cc)  $<
+	$(LINK.cc) $(subst ../,,$(basename $<))$(OBJ) $(LDLIBS)
+
 %$(EXE): %.C
 	@$(RM) $@
 	$(COMPILE.cc)  $<
@@ -561,6 +574,10 @@ endif
 	$(COMPILE.c)  $<
 
 %$(OBJ): %.cc
+	@$(RM) $@
+	$(COMPILE.cc)  $<
+
+%$(OBJ): %.cpp
 	@$(RM) $@
 	$(COMPILE.cc)  $<
 

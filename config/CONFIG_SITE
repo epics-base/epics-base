@@ -21,6 +21,7 @@
 #	hp700
 #	sgi
 #	solaris
+#	solaris-x86
 #	sun4
 #
 #  HOST_ARCH now an environment variable
@@ -42,6 +43,7 @@ endif
 #       mv162lc
 #       mv167
 #       mv177
+#       mv2700
 #       niCpu030
 #       pc486
 #       ppc604
@@ -119,7 +121,7 @@ MAKE_INC_TARGET_FIRST=NO
 #     NOTE WIN32: YES results in a DLL. CONFIG_SITE.Host.WIN32
 #                 distribution file contains YES override
 #
-#     NOTE solaris and sun4: If YES then LD_LIBRARY_PATH must
+#     NOTE solaris,Linux, and sun4: If YES then LD_LIBRARY_PATH must
 #     include fullpathname $(INSTALL_LOCATION)/lib/$(HOST_ARCH)
 #     for both the base build and when invoking base executables
 SHARED_LIBRARIES=NO

@@ -107,10 +107,8 @@
 
 #ifdef __STDC__
 int coreRelease(void);
-int rsrv_init(void);
 #else
 int coreRelease();
-int rsrv_init();
 #endif /*__STDC__*/
 
 #endif /* INCdbDefsh */

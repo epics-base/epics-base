@@ -183,7 +183,7 @@ int		lock_needed;
  *	returns		1)	a valid ptr to msg buffer space
  *			2)	NULL (msg will not fit)
  */			
-struct extmsg *cas_alloc_msg(pclient, extsize)
+caHdr *cas_alloc_msg(pclient, extsize)
 struct client	*pclient;	/* ptr to per client struct */
 unsigned	extsize;	/* extension size */
 {
@@ -192,7 +192,7 @@ unsigned	extsize;	/* extension size */
 	
 	extsize = CA_MESSAGE_ALIGN(extsize);
 
-	msgsize = extsize + sizeof(struct extmsg);
+	msgsize = extsize + sizeof(caHdr);
 
 	newstack = pclient->send.stk + msgsize;
 	if(newstack > pclient->send.maxstk){
@@ -216,5 +216,5 @@ unsigned	extsize;	/* extension size */
 	/*
 	 * it fits END_MSG will push it on the stack
 	 */
-	return (struct extmsg *) &pclient->send.buf[pclient->send.stk];
+	return (caHdr *) &pclient->send.buf[pclient->send.stk];
 }

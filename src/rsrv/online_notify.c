@@ -75,7 +75,7 @@ int rsrv_online_notify_task()
 	unsigned long		maxdelay;
 	long			longStatus;
 	double			maxPeriod;
-	struct extmsg		msg;
+	caHdr			msg;
   	struct sockaddr_in	recv_addr;
 	int			status;
 	int			sock;
@@ -138,7 +138,7 @@ int rsrv_online_notify_task()
 		abort();
 
    	bfill((char *)&msg, sizeof msg, 0);
-	msg.m_cmmd = htons(IOC_RSRV_IS_UP);
+	msg.m_cmmd = htons(CA_PROTO_RSRV_IS_UP);
 
 	ellInit(&beaconAddrList);
 

@@ -32,11 +32,11 @@
  *	.02 joh	011091	added missing break to error message send 
  *			chix select switch
  *	.03 joh	071291	now timestanmps channel in use block
- *	.04 joh	071291	code for IOC_CLAIM_CIU command
+ *	.04 joh	071291	code for CA_PROTO_CLAIM_CIU command
  *	.05 joh 082691  use db_post_single_event() instead of read_reply()
  *			to avoid deadlock condition between the client
  *			and the server.
- *	.06 joh	110491	lock added for IOC_CLAIM_CIU command
+ *	.06 joh	110491	lock added for CA_PROTO_CLAIM_CIU command
  *	.07 joh	021292	Better diagnostics
  *	.08 joh	021492	use lstFind() to verify chanel in clear_channel()
  *	.09 joh 031692	dont send exeception to the client if bad msg
@@ -46,7 +46,7 @@
  *	.12 joh 090893	converted pointer to server id	
  *	.13 joh 091493	made events on action a subroutine for debugging
  *	.14 joh 020194	New command added for CAV4.1 - client name
- *	.15 joh 052594  Removed IOC_BUILD cmd 	
+ *	.15 joh 052594  Removed CA_PROTO_BUILD cmd 	
  */
 
 
@@ -72,39 +72,39 @@ static char *sccsId = "%W% %G%";
 
 #include <server.h>
 
-static struct extmsg nill_msg;
+static caHdr nill_msg;
 
 #define	RECORD_NAME(PADDR) ((PADDR)->precord)
 
 LOCAL void clear_channel_reply(
-struct extmsg *mp,
+caHdr *mp,
 struct client  *client
 );
 
 LOCAL void event_cancel_reply(
-struct extmsg *mp,
+caHdr *mp,
 struct client  *client
 );
 
 LOCAL EVENTFUNC	read_reply;
 
 LOCAL void read_sync_reply(
-struct extmsg *mp,
+caHdr *mp,
 struct client  *client
 );
 
 LOCAL void search_reply(
-struct extmsg *mp,
+caHdr *mp,
 struct client  *client
 );
 
 LOCAL void search_fail_reply(
-struct extmsg 	*mp,
+caHdr 	*mp,
 struct client  	*client
 );
 
 LOCAL void send_err(
-struct extmsg  *curp,
+caHdr  *curp,
 int            status,
 struct client  *client,
 char           *footnote,
@@ -112,18 +112,18 @@ char           *footnote,
 );
 
 LOCAL void log_header(
-struct extmsg 	*mp,
+caHdr 	*mp,
 int		mnum
 );
 
 LOCAL void event_add_action(
-struct extmsg *mp,
+caHdr *mp,
 struct client  *client
 );
 
 LOCAL void logBadIdWithFileAndLineno(
 struct client 	*client, 
-struct extmsg 	*mp,
+caHdr 	*mp,
 char		*pFileName,
 unsigned	lineno
 );
@@ -132,7 +132,7 @@ unsigned	lineno
 logBadIdWithFileAndLineno(CLIENT, MP, __FILE__, __LINE__)
 
 LOCAL struct channel_in_use *MPTOPCIU(
-struct extmsg *mp
+caHdr *mp
 );
 
 LOCAL void events_on_action(
@@ -142,28 +142,28 @@ struct client  *client
 LOCAL void write_notify_call_back(PUTNOTIFY *ppn);
 
 LOCAL void write_notify_action(
-struct extmsg *mp,
+caHdr *mp,
 struct client  *client
 );
 
 LOCAL void putNotifyErrorReply(
 struct client *client, 
-struct extmsg *mp, 
+caHdr *mp, 
 int statusCA
 );
 
 LOCAL void claim_ciu_action(
-struct extmsg *mp,
+caHdr *mp,
 struct client  *client
 );
 
 LOCAL void client_name_action(
-struct extmsg 	*mp,
+caHdr 	*mp,
 struct client  	*client
 );
 
 LOCAL void host_name_action(
-struct extmsg 	*mp,
+caHdr 	*mp,
 struct client  	*client
 );
 
@@ -204,7 +204,7 @@ struct message_buffer *recv
 	unsigned		msgsize;
 	unsigned		bytes_left;
 	int             	status;
-	struct extmsg 		*mp;
+	caHdr 		*mp;
 	struct channel_in_use 	*pciu;
 
 	if(!pCaBucket){
@@ -230,7 +230,7 @@ struct message_buffer *recv
 		if(bytes_left < sizeof(*mp))
 			return OK;
 
-		mp = (struct extmsg *) &recv->buf[recv->stk];
+		mp = (caHdr *) &recv->buf[recv->stk];
 
 		msgsize = mp->m_postsize + sizeof(*mp);
 
@@ -243,12 +243,12 @@ struct message_buffer *recv
 			log_header(mp, nmsg);
 
 		switch (mp->m_cmmd) {
-		case IOC_NOOP:	/* verify TCP */
+		case CA_PROTO_NOOP:	/* verify TCP */
 			break;
 
-		case IOC_ECHO:	/* verify TCP */
+		case CA_PROTO_ECHO:	/* verify TCP */
 		{
-			struct extmsg 	*reply; 
+			caHdr 	*reply; 
 
 			SEND_LOCK(client);
 			reply = ALLOC_MSG(client, 0);
@@ -258,28 +258,28 @@ struct message_buffer *recv
 			SEND_UNLOCK(client);
 			break;
 		}
-		case IOC_CLIENT_NAME:
+		case CA_PROTO_CLIENT_NAME:
 			client_name_action(mp, client);
 			break;
 
-		case IOC_HOST_NAME:
+		case CA_PROTO_HOST_NAME:
 			host_name_action(mp, client);
 			break;
 		
-		case IOC_EVENT_ADD:
+		case CA_PROTO_EVENT_ADD:
 			event_add_action(mp, client);
 			break;
 
-		case IOC_EVENT_CANCEL:
+		case CA_PROTO_EVENT_CANCEL:
 			event_cancel_reply(mp, client);
 			break;
 
-		case IOC_CLEAR_CHANNEL:
+		case CA_PROTO_CLEAR_CHANNEL:
 			clear_channel_reply(mp, client);
 			break;
 
-		case IOC_READ_NOTIFY:
-		case IOC_READ:
+		case CA_PROTO_READ_NOTIFY:
+		case CA_PROTO_READ:
 		{
 			struct event_ext evext;
 
@@ -308,15 +308,15 @@ struct message_buffer *recv
 			read_reply(&evext, &pciu->addr, TRUE, NULL);
 			break;
 		}
-		case IOC_SEARCH:
+		case CA_PROTO_SEARCH:
 			search_reply(mp, client);
 			break;
 
-		case IOC_WRITE_NOTIFY:
+		case CA_PROTO_WRITE_NOTIFY:
 			write_notify_action(mp, client);
 			break;
 
-		case IOC_WRITE:
+		case CA_PROTO_WRITE:
 			pciu = MPTOPCIU(mp);
 			if(!pciu){
 				logBadId(client, mp);
@@ -357,24 +357,24 @@ struct message_buffer *recv
 			}
 			break;
 
-		case IOC_EVENTS_ON:
+		case CA_PROTO_EVENTS_ON:
 			events_on_action(client);
 			break;
 
-		case IOC_EVENTS_OFF:
+		case CA_PROTO_EVENTS_OFF:
 			client->eventsoff = TRUE;
 			break;
 
-		case IOC_READ_SYNC:
+		case CA_PROTO_READ_SYNC:
 			read_sync_reply(mp, client);
 			break;
 
-		case IOC_CLAIM_CIU:
+		case CA_PROTO_CLAIM_CIU:
 			claim_ciu_action(mp, client);
 			break;
 
-		case IOC_READ_BUILD:
-		case IOC_BUILD:
+		case CA_PROTO_READ_BUILD:
+		case CA_PROTO_BUILD:
 			/*
 			 * starting with 3.12 CA ignores this 
 			 * protocol. No message is sent so that we avoid
@@ -424,7 +424,7 @@ struct message_buffer *recv
  * host_name_action()
  */
 LOCAL void host_name_action(
-struct extmsg 	*mp,
+caHdr 	*mp,
 struct client  	*client
 )
 {
@@ -483,7 +483,7 @@ struct client  	*client
  * client_name_action()
  */
 LOCAL void client_name_action(
-struct extmsg 	*mp,
+caHdr 	*mp,
 struct client  	*client
 )
 {
@@ -542,7 +542,7 @@ struct client  	*client
  * claim_ciu_action()
  */
 LOCAL void claim_ciu_action(
-struct extmsg *mp,
+caHdr *mp,
 struct client  *client
 )
 {
@@ -672,14 +672,14 @@ struct client  *client
 	}
 
 	if(v42){
-		struct extmsg 	*claim_reply; 
+		caHdr 	*claim_reply; 
 
 		SEND_LOCK(client);
-		claim_reply = (struct extmsg *) ALLOC_MSG(client, 0);
+		claim_reply = (caHdr *) ALLOC_MSG(client, 0);
 		assert (claim_reply);
 
 		*claim_reply = nill_msg;
-		claim_reply->m_cmmd = IOC_CLAIM_CIU;
+		claim_reply->m_cmmd = CA_PROTO_CLAIM_CIU;
 		claim_reply->m_type = pciu->addr.field_type;
 		claim_reply->m_count = pciu->addr.no_elements;
 		claim_reply->m_cid = pciu->cid;
@@ -749,7 +749,7 @@ void write_notify_reply(void *pArg)
 {
 	RSRVPUTNOTIFY		*ppnb;
 	struct client 		*pClient;
-	struct extmsg		*preply;
+	caHdr		*preply;
 	int			status;
 
 	pClient = pArg;
@@ -839,7 +839,7 @@ void write_notify_reply(void *pArg)
  * write_notify_action()
  */
 LOCAL void write_notify_action(
-struct extmsg *mp,
+caHdr *mp,
 struct client  *client
 )
 {
@@ -935,9 +935,9 @@ struct client  *client
 /*
  * putNotifyErrorReply
  */
-LOCAL void putNotifyErrorReply(struct client *client, struct extmsg *mp, int statusCA)
+LOCAL void putNotifyErrorReply(struct client *client, caHdr *mp, int statusCA)
 {
-	struct extmsg		*preply;
+	caHdr		*preply;
 
 	SEND_LOCK(client);
 	preply = ALLOC_MSG(client, 0);
@@ -1016,7 +1016,7 @@ struct client  *client
  *
  */
 LOCAL void event_add_action(
-struct extmsg *mp,
+caHdr *mp,
 struct client  *client
 )
 {
@@ -1024,6 +1024,11 @@ struct client  *client
 	struct event_ext *pevext;
 	int		status;
 	int		size;
+
+	if (client==prsrv_cast_client) {
+		printf("cas: add event from UDP???\n");
+		return;
+	}
 
 	pciu = MPTOPCIU(mp);
 	if(!pciu){
@@ -1129,11 +1134,11 @@ struct client  *client
  *
  */
 LOCAL void clear_channel_reply(
-struct extmsg *mp,
+caHdr *mp,
 struct client  *client
 )
 {
-        struct extmsg *reply;
+        caHdr *reply;
         struct event_ext *pevext;
         struct channel_in_use *pciu;
         int        status;
@@ -1189,7 +1194,7 @@ struct client  *client
 	 * send delete confirmed message
 	 */
 	SEND_LOCK(client);
-	reply = (struct extmsg *) ALLOC_MSG(client, 0);
+	reply = (caHdr *) ALLOC_MSG(client, 0);
 	if (!reply) {
 		SEND_UNLOCK(client);
 		taskSuspend(0);
@@ -1236,12 +1241,12 @@ struct client  *client
  * blocks not all together off the client block.
  */
 LOCAL void event_cancel_reply(
-struct extmsg *mp,
+caHdr *mp,
 struct client  *client
 )
 {
         struct channel_in_use 	*pciu;
-	struct extmsg 		*reply;
+	caHdr 		*reply;
 	struct event_ext 	*pevext;
 	int        		status;
 
@@ -1295,7 +1300,7 @@ struct client  *client
 	 * send delete confirmed message
 	 */
 	SEND_LOCK(client);
-	reply = (struct extmsg *) ALLOC_MSG(client, 0);
+	reply = (caHdr *) ALLOC_MSG(client, 0);
 	if (!reply) {
 		SEND_UNLOCK(client);
 		assert(0);
@@ -1329,7 +1334,7 @@ db_field_log		*pfl
 	struct event_ext *pevext = pArg;
 	struct client *client = pevext->pciu->client;
         struct channel_in_use *pciu = pevext->pciu;
-	struct extmsg *reply;
+	caHdr *reply;
 	int        status;
 	int        strcnt;
 	int		v41;
@@ -1345,7 +1350,7 @@ db_field_log		*pfl
 	if (pevext->send_lock)
 		SEND_LOCK(client);
 
-	reply = (struct extmsg *) ALLOC_MSG(client, pevext->size);
+	reply = (caHdr *) ALLOC_MSG(client, pevext->size);
 	if (!reply) {
 		send_err(&pevext->msg, ECA_TOLARGE, client, RECORD_NAME(paddr));
 		if (!eventsRemaining)
@@ -1367,7 +1372,7 @@ db_field_log		*pfl
 	 */
 	v41 = CA_V41(CA_PROTOCOL_VERSION,client->minor_version_number);
 	if(!asCheckGet(pciu->asClientPVT)){
-		if(reply->m_cmmd==IOC_READ){
+		if(reply->m_cmmd==CA_PROTO_READ){
 			if(v41){
 				status = ECA_NORDACCESS;
 			}
@@ -1402,7 +1407,7 @@ db_field_log		*pfl
 		/*
 		 * I cant wait to redesign this protocol from scratch!
 		 */
-		if(!v41||reply->m_cmmd==IOC_READ){
+		if(!v41||reply->m_cmmd==CA_PROTO_READ){
 			/*
 			 * old client & plain get 
 			 * continue to return an exception
@@ -1441,7 +1446,7 @@ db_field_log		*pfl
 		 * get calls still use the
 		 * m_cid field to identify the channel.
 		 */
-		if(	v41 && reply->m_cmmd!=IOC_READ){
+		if(	v41 && reply->m_cmmd!=CA_PROTO_READ){
 			reply->m_cid = ECA_NORMAL;
 		}
 		
@@ -1486,7 +1491,7 @@ struct client  		*client,
 struct event_ext 	*pevext
 )
 {
-	struct extmsg 	*reply;
+	caHdr 	*reply;
 	int 		v41;
 
 	v41 = CA_V41(CA_PROTOCOL_VERSION,client->minor_version_number);
@@ -1504,7 +1509,7 @@ struct event_ext 	*pevext
 		return;
 	}
 
-	reply = (struct extmsg *) ALLOC_MSG(client, pevext->size);
+	reply = (caHdr *) ALLOC_MSG(client, pevext->size);
 	if (!reply) {
 		send_err(
 			&pevext->msg, 
@@ -1542,14 +1547,14 @@ struct event_ext 	*pevext
  *
  */
 LOCAL void read_sync_reply(
-struct extmsg *mp,
+caHdr *mp,
 struct client  *client
 )
 {
-	FAST struct extmsg *reply;
+	FAST caHdr *reply;
 
 	SEND_LOCK(client);
-	reply = (struct extmsg *) ALLOC_MSG(client, 0);
+	reply = (caHdr *) ALLOC_MSG(client, 0);
 	if (!reply)
 		taskSuspend(0);
 
@@ -1570,12 +1575,12 @@ struct client  *client
  *
  */
 LOCAL void search_reply(
-struct extmsg *mp,
+caHdr *mp,
 struct client  *client
 )
 {
 	struct db_addr  	tmp_addr;
-	struct extmsg 		*search_reply;
+	caHdr 		*search_reply;
 	unsigned short		*pMinorVersion;
 	int        		status;
 	unsigned		sid;
@@ -1652,7 +1657,7 @@ struct client  *client
 
 	SEND_LOCK(client);
 
-	search_reply = (struct extmsg *) 
+	search_reply = (caHdr *) 
 		ALLOC_MSG(client, sizeof(*pMinorVersion));
 	assert (search_reply);
 
@@ -1769,19 +1774,19 @@ unsigned	cid
  *
  */
 LOCAL void search_fail_reply(
-struct extmsg *mp,
+caHdr *mp,
 struct client  *client
 )
 {
-	FAST struct extmsg *reply;
+	FAST caHdr *reply;
 
 	SEND_LOCK(client);
-	reply = (struct extmsg *) ALLOC_MSG(client, 0);
+	reply = (caHdr *) ALLOC_MSG(client, 0);
 	if (!reply) {
 		taskSuspend(0);
 	}
 	*reply = *mp;
-	reply->m_cmmd = IOC_NOT_FOUND;
+	reply->m_cmmd = CA_PROTO_NOT_FOUND;
 	reply->m_postsize = 0;
 
 	END_MSG(client);
@@ -1798,7 +1803,7 @@ struct client  *client
  *
  */
 LOCAL void send_err(
-struct extmsg  *curp,
+caHdr  *curp,
 int            status,
 struct client  *client,
 char           *pformat,
@@ -1808,7 +1813,7 @@ char           *pformat,
 	va_list			args;
         struct channel_in_use 	*pciu;
 	int        		size;
-	struct extmsg 		*reply;
+	caHdr 		*reply;
 	char			*pMsgString;
 
 	va_start(args, pformat);
@@ -1816,7 +1821,7 @@ char           *pformat,
 	/*
 	 * allocate plenty of space for a sprintf() buffer
 	 */
-	reply = (struct extmsg *) ALLOC_MSG(client, 512);
+	reply = (caHdr *) ALLOC_MSG(client, 512);
 	if (!reply){
 		int     logMsgArgs[6];
 		int	i;
@@ -1845,16 +1850,16 @@ char           *pformat,
 	}
 
 	reply[0] = nill_msg;
-	reply[0].m_cmmd = IOC_ERROR;
+	reply[0].m_cmmd = CA_PROTO_ERROR;
 	reply[0].m_available = status;
 
 	switch (curp->m_cmmd) {
-	case IOC_EVENT_ADD:
-	case IOC_EVENT_CANCEL:
-	case IOC_READ:
-	case IOC_READ_NOTIFY:
-	case IOC_WRITE:
-	case IOC_WRITE_NOTIFY:
+	case CA_PROTO_EVENT_ADD:
+	case CA_PROTO_EVENT_CANCEL:
+	case CA_PROTO_READ:
+	case CA_PROTO_READ_NOTIFY:
+	case CA_PROTO_WRITE:
+	case CA_PROTO_WRITE_NOTIFY:
 	        /*
 		 *
 		 * Verify the channel
@@ -1869,14 +1874,14 @@ char           *pformat,
 		}
 		break;
 
-	case IOC_SEARCH:
+	case CA_PROTO_SEARCH:
 		reply->m_cid = curp->m_cid;
 		break;
 
-	case IOC_EVENTS_ON:
-	case IOC_EVENTS_OFF:
-	case IOC_READ_SYNC:
-	case IOC_SNAPSHOT:
+	case CA_PROTO_EVENTS_ON:
+	case CA_PROTO_EVENTS_OFF:
+	case CA_PROTO_READ_SYNC:
+	case CA_PROTO_SNAPSHOT:
 	default:
 		reply->m_cid = ~0L;
 		break;
@@ -1910,7 +1915,7 @@ char           *pformat,
  */
 LOCAL void logBadIdWithFileAndLineno(
 struct client 	*client, 
-struct extmsg 	*mp,
+caHdr 	*mp,
 char		*pFileName,
 unsigned	lineno
 )
@@ -1934,7 +1939,7 @@ unsigned	lineno
  *
  */
 LOCAL void log_header(
-struct extmsg 	*mp,
+caHdr 	*mp,
 int		mnum
 )
 {
@@ -1958,7 +1963,7 @@ int		mnum
 		NULL,
 		NULL);
 
-  	if(mp->m_cmmd==IOC_WRITE && mp->m_type==DBF_STRING)
+  	if(mp->m_cmmd==CA_PROTO_WRITE && mp->m_type==DBF_STRING)
     		logMsg("CAS: The string written: %s \n",
 			(int)(mp+1),
 			NULL,
@@ -1980,15 +1985,15 @@ void cas_send_heartbeat(
 struct client	*pc
 )
 {
-        FAST struct extmsg 	*reply;
+        FAST caHdr 	*reply;
 
-        reply = (struct extmsg *) ALLOC_MSG(pc, 0);
+        reply = (caHdr *) ALLOC_MSG(pc, 0);
         if(!reply){
                 taskSuspend(0);
 	}
 
 	*reply = nill_msg;
-        reply->m_cmmd = IOC_NOOP;
+        reply->m_cmmd = CA_PROTO_NOOP;
 
         END_MSG(pc);
 
@@ -2002,7 +2007,7 @@ struct client	*pc
  *
  * used to be a macro
  */
-LOCAL struct channel_in_use *MPTOPCIU (struct extmsg *mp)
+LOCAL struct channel_in_use *MPTOPCIU (caHdr *mp)
 {
 	struct channel_in_use 	*pciu;
 	const unsigned		id = mp->m_cid;
@@ -2080,7 +2085,7 @@ LOCAL void casAccessRightsCB(ASCLIENTPVT ascpvt, asClientStatus type)
 LOCAL void access_rights_reply(struct channel_in_use *pciu)
 {
 	struct client		*pclient;
-        struct extmsg 		*reply;
+        caHdr 		*reply;
 	unsigned		ar;
 	int			v41;
 
@@ -2098,18 +2103,18 @@ LOCAL void access_rights_reply(struct channel_in_use *pciu)
 
 	ar = 0; /* none */
 	if(asCheckGet(pciu->asClientPVT)){
-		ar |= CA_ACCESS_RIGHT_READ;
+		ar |= CA_PROTO_ACCESS_RIGHT_READ;
 	}
 	if(asCheckPut(pciu->asClientPVT)){
-		ar |= CA_ACCESS_RIGHT_WRITE;
+		ar |= CA_PROTO_ACCESS_RIGHT_WRITE;
 	}
 
 	SEND_LOCK(pclient);
-        reply = (struct extmsg *)ALLOC_MSG(pclient, 0);
+        reply = (caHdr *)ALLOC_MSG(pclient, 0);
 	assert(reply);
 
 	*reply = nill_msg;
-        reply->m_cmmd = IOC_ACCESS_RIGHTS;
+        reply->m_cmmd = CA_PROTO_ACCESS_RIGHTS;
 	reply->m_cid = pciu->cid;
 	reply->m_available = ar;
         END_MSG(pclient);

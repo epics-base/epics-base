@@ -64,7 +64,7 @@ typedef int SOCKET;
 #include <dbDefs.h>
 #include <db_access.h>
 #include <dbEvent.h>
-#include <iocmsg.h>
+#include <caProto.h>
 #include <bucketLib.h>
 #include <taskwd.h>
 
@@ -122,7 +122,7 @@ struct client{
 typedef struct rsrv_put_notify{
 	ELLNODE		node;
 	PUTNOTIFY	dbPutNotify;
-	struct extmsg	msg;
+	caHdr		msg;
 	unsigned long	valueSize; /* size of block pointed to by dbPutNotify */
 	int		busy; /* put notify in progress */
 }RSRVPUTNOTIFY;
@@ -151,7 +151,7 @@ struct channel_in_use{
  */
 struct event_ext{
 ELLNODE				node;
-struct extmsg			msg;
+caHdr				msg;
 struct channel_in_use		*pciu;
 struct event_block		*pdbev;		/* ptr to db event block */
 unsigned			size;		/* for speed */
@@ -205,7 +205,7 @@ FASTUNLOCK(&(CLIENT)->lock);\
 }
 
 #define EXTMSGPTR(CLIENT)\
- ((struct extmsg *) &(CLIENT)->send.buf[(CLIENT)->send.stk])
+ ((caHdr *) &(CLIENT)->send.buf[(CLIENT)->send.stk])
 
 /*
  *	ALLOC_MSG 	get a ptr to space in the buffer
@@ -216,7 +216,7 @@ FASTUNLOCK(&(CLIENT)->lock);\
 
 #define END_MSG(CLIENT)\
   EXTMSGPTR(CLIENT)->m_postsize = CA_MESSAGE_ALIGN(EXTMSGPTR(CLIENT)->m_postsize),\
-  (CLIENT)->send.stk += sizeof(struct extmsg) + EXTMSGPTR(CLIENT)->m_postsize
+  (CLIENT)->send.stk += sizeof(caHdr) + EXTMSGPTR(CLIENT)->m_postsize
 
 
 #define LOCK_CLIENTQ	FASTLOCK(&clientQlock);
@@ -226,7 +226,7 @@ FASTUNLOCK(&(CLIENT)->lock);\
 struct client	*existing_client();
 int		camsgtask();
 void		cas_send_msg();
-struct extmsg 	*cas_alloc_msg();
+caHdr		*cas_alloc_msg();
 int		rsrv_online_notify_task();
 void		cac_send_heartbeat();
 

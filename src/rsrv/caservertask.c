@@ -312,15 +312,17 @@ LOCAL int req_server (void)
         threadSuspendSelf ();
     }
 
-    flag = 1;
-    status = setsockopt ( IOC_sock,  SOL_SOCKET, SO_REUSEADDR,
-                (char *) &flag, sizeof (flag) );
-    if ( status < 0 ) {
-        int errnoCpy = SOCKERRNO;
-        errlogPrintf (
-    "%s: set socket option SO_REUSEADDR failed because \"%s\"\n", 
-                __FILE__, SOCKERRSTR (errnoCpy) );
-    }
+#   ifndef SO_REUSEADDR_DOES_NOT_RELEASE_TCP_PORT
+        flag = 1;
+        status = setsockopt ( IOC_sock,  SOL_SOCKET, SO_REUSEADDR,
+                    (char *) &flag, sizeof (flag) );
+        if ( status < 0 ) {
+            int errnoCpy = SOCKERRNO;
+            errlogPrintf (
+        "%s: set socket option SO_REUSEADDR failed because \"%s\"\n", 
+                    __FILE__, SOCKERRSTR (errnoCpy) );
+        }
+#   endif
 
     /* listen and accept new connections */
     if ( listen ( IOC_sock, 10 ) < 0 ) {

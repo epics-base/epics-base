@@ -58,3 +58,12 @@ typedef int osiSocklen_t;
 #define FD_IN_FDSET(FD) (1)
 
 epicsShareFunc unsigned epicsShareAPI wsaMajorVersion ();
+
+/*
+ * Note: WINSOCK appears to assign a different functionality for 
+ * SO_REUSEADDR compared to other OS. With WINSOCK SO_REUSEADDR indicates
+ * that other servers can bind to the same TCP port on the same host!
+ * Also, servers are always enabled to reuse a port immediately after 
+ * they exit.
+ */
+#define SO_REUSEADDR_DOES_NOT_RELEASE_TCP_PORT

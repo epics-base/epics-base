@@ -47,6 +47,9 @@
  * .09 050494 pg        HPUX port changes.
  * .10 021694 joh	ANSI C	
  * $Log$
+ * Revision 1.38  2000/08/25 19:44:30  jhill
+ * fixed Linux uses unsigned where int is used on other OS
+ *
  * Revision 1.37  2000/02/10 17:47:13  jhill
  * dont include osiSockResource.h
  *
@@ -240,16 +243,18 @@ int main()
 		return IOCLS_ERROR;
 	}
 	
-	optval = TRUE;
-	status = setsockopt(    pserver->sock,
-							SOL_SOCKET,
-							SO_REUSEADDR,
-							(char *) &optval,
-							sizeof(optval));
-	if(status<0){
-		fprintf(stderr, "iocLogServer: setsockopt err %s\n", SOCKERRSTR(SOCKERRNO));
-		return IOCLS_ERROR;
-	}
+#   ifndef SO_REUSEADDR_DOES_NOT_RELEASE_TCP_PORT
+	    optval = TRUE;
+	    status = setsockopt(    pserver->sock,
+							    SOL_SOCKET,
+							    SO_REUSEADDR,
+							    (char *) &optval,
+							    sizeof(optval));
+	    if(status<0){
+		    fprintf(stderr, "iocLogServer: setsockopt err %s\n", SOCKERRSTR(SOCKERRNO));
+		    return IOCLS_ERROR;
+	    }
+#   endif
 
 	/* Zero the sock_addr structure */
 	memset((void *)&serverAddr, 0, sizeof serverAddr);

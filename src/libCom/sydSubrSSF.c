@@ -71,10 +71,10 @@
 #endif
 
 long sydSSFFunc();
-long sydSSFFuncGetGR();
-long sydSSFFuncReadData();
-long sydSSFFuncSeekSample();
-long sydSSFFuncSeekStamp();
+static long sydSSFFuncGetGR();
+static long sydSSFFuncReadData();
+static long sydSSFFuncSeekSample();
+static long sydSSFFuncSeekStamp();
 
 /*+/macro*********************************************************************
 * NAME	posXxx - text file search and positioning routines

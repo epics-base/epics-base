@@ -43,6 +43,7 @@
  * .10  10-15-90	mrk	extensible record and device support
  * .11  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
  * .12  12-02-91        jba     Added cmd control to io-interrupt processing
+ * .13  12-12-91        jba     Set cmd to zero in io-interrupt processing
  */
 
 #include	<vxWorks.h>
@@ -112,6 +113,7 @@ static long get_ioint_info(cmd,ptimer,io_type,card_type,card_number)
     short               *card_type;
     short               *card_number;
 {
+    *cmd=0;
     if(ptimer->out.type != VME_IO) return(S_dev_badInpType);
     *io_type = IO_TIMER;
     if(ptimer->dtyp==0)

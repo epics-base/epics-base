@@ -32,6 +32,7 @@
  * -----------------
  * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
  * .02  12-02-91        jba     Added cmd control to io-interrupt processing
+ * .03  12-12-91        jba     Set cmd to zero in io-interrupt processing
  * 	...
  */
 
@@ -114,6 +115,7 @@ static long get_ioint_info(cmd,pai,io_type,card_type,card_number)
     short               *card_type;
     short               *card_number;
 {
+    *cmd=0;
     if(pai->inp.type != VME_IO) return(S_dev_badInpType);
     *io_type = IO_AI;
     *card_type = DVX2502;

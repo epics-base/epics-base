@@ -137,7 +137,11 @@
 *	A zzz descriptor is the `master handle' which is used for
 *	handling business.
 *----------------------------------------------------------------------------*/
+#if defined(V5_vxWorks)
 #define ZzzLock semTake(pglZzzCtx->semLock, WAIT_FOREVER)
+#else
+#define ZzzLock semTake(pglZzzCtx->semLock)
+#endif
 #define ZzzUnlock semGive(pglZzzCtx->semLock)
 #define ZzzLockCheck semClear(pglZzzCtx->semLock)
 #define ZzzLockInitAndLock semInit(pglZzzCtx->semLock)

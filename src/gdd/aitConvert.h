@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.13  2001/07/03 00:58:18  jhill
+ * changed interface so that unreferenced table will not optimize away
+ *
  * Revision 1.12  2001/06/11 22:28:51  jhill
  * revert because workaround for RTEMS didnt build
  *
@@ -134,7 +137,7 @@ inline int aitConvertFromNet(aitEnum desttype, void* dest,
 
 #define aitUint64 aitUint32
 
-#if defined(__cplusplus) && !defined(__GNUC__)
+#if defined(__cplusplus)
 
 inline void aitToNetOrder16(aitUint16* dest,aitUint16* src)
 	{ *dest=htons(*src); }
@@ -183,7 +186,7 @@ inline void aitFromNetOrder64(aitUint64* dest, aitUint64* src)
 	(dest)[0]=ait_temp_var_; \
 }
 
-#endif /* __cpluspluc && !__GNUC__ */
+#endif /* __cpluspluc */
 
 #define aitToNetFloat64 aitToNetOrder64
 #define aitToNetFloat32 aitToNetOrder32

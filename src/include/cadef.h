@@ -315,6 +315,7 @@ struct	exception_handler_args{
 /************************************************************************/
 epicsShareFunc int epicsShareAPI ca_task_initialize (void);
 
+
 /************************************************************************/
 /*	Remove CA facility from your task				*/
 /*									*/
@@ -1099,6 +1100,40 @@ epicsShareFunc int epicsShareAPI ca_modify_user_name();
 epicsShareFunc int epicsShareAPI ca_modify_host_name();
 epicsShareFunc int epicsShareAPI ca_v42_ok();
 epicsShareFunc char * epicsShareAPI ca_version();
+#define ca_build_channel(NAME,XXXXX,CHIDPTR,YYYYY)\
+	ca_build_and_connect(NAME, XXXXX, 1, CHIDPTR, YYYYY, 0, 0)
+#define ca_array_build(NAME,XXXXX, ZZZZZZ, CHIDPTR,YYYYY)\
+	ca_build_and_connect(NAME, XXXXX, ZZZZZZ, CHIDPTR, YYYYY, 0, 0)
+#define ca_search(pChanName, pChanID)\
+	ca_search_and_connect(pChanName, pChanID, 0, 0)
+#define ca_bput(chan, pValue) \
+	ca_array_put(DBR_STRING, 1, chan, (READONLY dbr_string_t *) (pValue))
+#define ca_rput(chan,pValue) \
+	ca_array_put(DBR_FLOAT, 1, chan, (READONLY dbr_float_t *) pValue)
+#define ca_put(type, chan, pValue) ca_array_put(type, 1, chan, pValue)
+#define ca_bget(chan, pValue) \
+	ca_array_get(DBR_STRING, 1, chan, (dbr_string_t *)(pValue))
+#define ca_rget(chan, pValue) \
+	ca_array_get(DBR_FLOAT, 1, chan, (dbr_float_t *)(pValue))
+#define ca_get(type, chan, pValue) ca_array_get(type, 1, chan, pValue)
+#define ca_bget_callback(chan, pFunc, pArg)\
+	ca_array_get_callback(DBR_STRING, 1, chan, pFunc, pArg)
+#define ca_rget_callback(chan, pFunc, pArg)\
+	ca_array_get_callback(DBR_FLOAT, 1, chan, pFunc, pArg)
+#define ca_get_callback(type, chan, pFunc, pArg)\
+	ca_array_get_callback(type, 1, chan, pFunc, pArg)
+#define ca_add_event(type,chan,pFunc,pArg,pEventID)\
+	ca_add_array_event(type,1,chan,pFunc,pArg,0.0,0.0,0.0,pEventID)
+#define ca_add_delta_event(TYPE,CHID,ENTRY,ARG,DELTA,EVID)\
+        ca_add_array_event(TYPE,1,CHID,ENTRY,ARG,DELTA,DELTA,0.0,EVID)
+#define ca_add_general_event(TYPE,CHID,ENTRY,ARG,P_DELTA,N_DELTA,TO,EVID)\
+	ca_add_array_event(TYPE,1,CHID,ENTRY,ARG,P_DELTA,N_DELTA,TO,EVID)
+#define ca_add_array_event(TYPE,COUNT,CHID,ENTRY,ARG,P_DELTA,N_DELTA,TO,EVID)\
+ca_add_masked_array_event(TYPE,COUNT,CHID,ENTRY,ARG,P_DELTA,N_DELTA,TO,EVID, DBE_VALUE | DBE_ALARM)
+#define ca_poll() ca_pend((1e-12), 0/*FALSE*/)
+#define ca_pend_event(TIMEOUT) ca_pend((TIMEOUT), 0/*FALSE*/)
+#define ca_pend_io(TIMEOUT) ca_pend((TIMEOUT), 1/*TRUE*/)
+
 #ifdef vxWorks
 	epicsShareFunc int epicsShareAPI ca_channel_status()
 	epicsShareFunc int epicsShareAPI ca_import();

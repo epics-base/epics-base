@@ -11,9 +11,9 @@ include $(TOP)/configure/RULES_TOP
 
 release::
 	@echo TOP: Creating Release...
-	@./MakeRelease
+	@$(TOOLS)/MakeRelease
 
 built_release::
 	@echo TOP: Creating Fully Built Release...
-	@./MakeRelease -b $(INSTALL_LOCATION)
+	@$(TOOLS)/MakeRelease -b $(INSTALL_LOCATION)
 	

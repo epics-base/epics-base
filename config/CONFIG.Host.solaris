@@ -58,4 +58,5 @@ CCC_DEPENDS_FLAG = -xM1
 ARCH_DEP_CFLAGS = -DSOLARIS 
 # socket and nsl needed by libca.a
 ARCH_DEP_LDLIBS = -lsocket -lnsl
+ARCH_DEP_LDLIBS += posix4 pthread thread
 

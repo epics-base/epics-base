@@ -59,7 +59,7 @@ G++_STRICT = $(G++)  -Wtraditional
 
 #ARCH_DEP_CFLAGS = -D_X86_ -Dlinux -D_USE_BSD
 ARCH_DEP_CFLAGS = -D_X86_ -Dlinux
-ARCH_DEP_LDFLAGS =
+ARCH_DEP_LDFLAGS += -lpthread
 
 #glibc FAQ
 #	"_GNU_SOURCE:  glibc does not make the GNU extensions available 

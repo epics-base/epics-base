@@ -55,11 +55,19 @@
 static long	frac_multiplier[] =
 	{1,10,100,1000,10000,100000,1000000,10000000,100000000};
 
+#ifdef __STDC__
+int cvtFloatToString(flt_value,pstr_value,precision)
+	float flt_value;
+	char  *pstr_value;
+	unsigned short precision;
+{
+#else
 int cvtFloatToString(
 	float flt_value,
 	char  *pstr_value,
 	unsigned short precision)
 {
+#endif /*__STDC__*/
         unsigned short	got_one,i;
 	long		whole,iplace,number,fraction,fplace;
 	float		ftemp;
@@ -131,11 +139,19 @@ int cvtFloatToString(
 }
 
 
+#ifdef __STDC__
 int cvtDoubleToString(
 	double flt_value,
 	char  *pstr_value,
 	unsigned short precision)
 {
+#else
+int cvtDoubleToString(flt_value,pstr_value,precision)
+	double flt_value;
+	char  *pstr_value;
+	unsigned short precision;
+{
+#endif /*__STDC__*/
         unsigned short	got_one,i;
 	long		whole,iplace,number,fraction,fplace;
 	double		ftemp;
@@ -218,11 +234,19 @@ static float round_up[] = {.5, .05, .005,.0005,.00005,.000005,.0000005,
 	.00000005,.000000005,.0000000005,.00000000005,.000000000005,
 	.0000000000005,.00000000000005,.000000000000005,.0000000000000005};
 
+#ifdef __STDC__
 int cvtFloatToExpString(
   float			f_value,
   char			*pstr_value,
-  unsigned short	f_precision )
+  unsigned short	f_precision)
 {
+#else
+int cvtFloatToExpString(f_value,pstr_value,f_precision)
+  float			f_value;
+  char			*pstr_value;
+  unsigned short	f_precision ;
+{
+#endif /*__STDC__*/
 	register float	place,divisor;
 	register short	e,i;
 	short		number;
@@ -329,11 +353,19 @@ int cvtFloatToExpString(
  * resulting in the most "compact" expression of the value
  * ("f" notation if 10-4 < |value| < 10+4, otherwise "e" notation)
  */
+#ifdef __STDC__
 int cvtFloatToCompactString(
   float			f_value,
   char			*pstr_value,
   unsigned short	f_precision )
 {
+#else
+int cvtFloatToCompactString(f_value,pstr_value,f_precision)
+  float			f_value;
+  char			*pstr_value;
+  unsigned short	f_precision ;
+{
+#endif /*__STDC__*/
   if ((f_value < 1.e4 && f_value > 1.e-4) ||
 		(f_value > -1.e4 && f_value < -1.e-4)) {
     return(cvtFloatToString(f_value,pstr_value,f_precision));
@@ -351,11 +383,19 @@ int cvtFloatToCompactString(
  *	terminated strings
  */
 
+#ifdef __STDC__
 int cvtDoubleToExpString(
   double		f_value,
   char			*pstr_value,
   unsigned short	f_precision )
 {
+#else
+int cvtDoubleToExpString(f_value,pstr_value,f_precision)
+  double		f_value;
+  char			*pstr_value;
+  unsigned short	f_precision ;
+{
+#endif /*__STDC__*/
 	register float	place,divisor;
 	register short	e,i;
 	short		number;
@@ -463,11 +503,19 @@ int cvtDoubleToExpString(
  *	of the value ("f" notation if 10-4 < |value| < 10+4, otherwise
  *	"e" notation)
  */
+#ifdef __STDC__
 int cvtDoubleToCompactString(
   double		f_value,
   char			*pstr_value,
   unsigned short	f_precision )
 {
+#else
+int cvtDoubleToCompactString(f_value,pstr_value,f_precision)
+  double		f_value;
+  char			*pstr_value;
+  unsigned short	f_precision ;
+{
+#endif /*__STDC__*/
   if ((f_value < 1.e4 && f_value > 1.e-4) ||
 		(f_value > -1.e4 && f_value < -1.e-4)) {
     return(cvtDoubleToString(f_value,pstr_value,f_precision));
@@ -484,10 +532,17 @@ int cvtDoubleToCompactString(
 
 static char digit_to_ascii[10]={'0','1','2','3','4','5','6','7','8','9'};
 
+#ifdef __STDC__
 int cvtCharToString(
 	char source,
 	char *pdest)
 {
+#else
+int cvtCharToString(source,pdest)
+	char source;
+	char *pdest;
+{
+#endif /*__STDC__*/
     unsigned char val,temp;
     char	  digit[3];
     int		  i,j;
@@ -520,10 +575,17 @@ int cvtCharToString(
 }
 
 
+#ifdef __STDC__
 int cvtUcharToString(
     unsigned char source,
     char	  *pdest)
 {
+#else
+int cvtUcharToString(source,pdest)
+    unsigned char source;
+    char	  *pdest;
+{
+#endif /*__STDC__*/
     unsigned char val,temp;
     char	  digit[3];
     int		  i,j;
@@ -548,10 +610,17 @@ int cvtUcharToString(
 }
 
 
+#ifdef __STDC__
 int cvtShortToString(
     short source,
     char  *pdest)
 {
+#else
+int cvtShortToString(source,pdest)
+    short source;
+    char  *pdest;
+{
+#endif /*__STDC__*/
     short val,temp;
     char  digit[6];
     int	  i,j;
@@ -584,10 +653,17 @@ int cvtShortToString(
 }
 
 
+#ifdef __STDC__
 int cvtUshortToString(
     unsigned short source,
     char	  *pdest)
 {
+#else
+int cvtUshortToString(source,pdest)
+    unsigned short source;
+    char	  *pdest;
+{
+#endif /*__STDC__*/
     unsigned short val,temp;
     char	  digit[5];
     int		  i,j;
@@ -612,10 +688,17 @@ int cvtUshortToString(
 }
 
 
+#ifdef __STDC__
 int cvtLongToString(
     long source,
     char  *pdest)
 {
+#else
+int cvtLongToString(source,pdest)
+    long source;
+    char  *pdest;
+{
+#endif /*__STDC__*/
     long  val,temp;
     char  digit[11];
     int	  i,j;
@@ -648,10 +731,17 @@ int cvtLongToString(
 }
 
 
+#ifdef __STDC__
 int cvtUlongToString(
     unsigned long source,
     char	  *pdest)
 {
+#else
+int cvtUlongToString(source,pdest)
+    unsigned long source;
+    char	  *pdest;
+{
+#endif /*__STDC__*/
     unsigned long val,temp;
     char	  digit[10];
     int		  i,j;
@@ -682,10 +772,17 @@ static char hex_digit_to_ascii[16]={'0','1','2','3','4','5','6','7','8','9',
 		'a','b','c','d','e','f'};
 
 
+#ifdef __STDC__
 int cvtLongToHexString(
     long source,
     char  *pdest)
 {
+#else
+int cvtLongToHexString(source,pdest)
+    long source;
+    char  *pdest;
+{
+#endif /*__STDC__*/
     long  val,temp;
     char  digit[10];
     int	  i,j;
@@ -718,10 +815,17 @@ int cvtLongToHexString(
 }
 
 
+#ifdef __STDC__
 int cvtLongToOctalString(
     long source,
     char  *pdest)
 {
+#else
+int cvtLongToOctalString(source,pdest)
+    long source;
+    char  *pdest;
+{
+#endif /*__STDC__*/
     long  val,temp;
     char  digit[16];
     int	  i,j;
@@ -763,11 +867,19 @@ int cvtLongToOctalString(
  *
  * extract a bit field from the source unsigend long
  */
+#ifdef __STDC__
 unsigned long cvtBitsToUlong(
 unsigned long   src,
 unsigned        bitFieldOffset,
 unsigned        bitFieldLength)
 {
+#else
+unsigned long cvtBitsToUlong(src,bitFieldOffset,bitFieldLength)
+unsigned long   src;
+unsigned        bitFieldOffset;
+unsigned        bitFieldLength;
+{
+#endif /*__STDC__*/
         unsigned long   mask;
 
         src = src >> bitFieldOffset;
@@ -788,12 +900,21 @@ unsigned        bitFieldLength)
  * insert a bit field from the source unsigend long
  * into the destination unsigned long
  */
+#ifdef __STDC__
 unsigned long cvtUlongToBits(
 unsigned long   src,
 unsigned long   dest,
 unsigned        bitFieldOffset,
 unsigned        bitFieldLength)
 {
+#else
+unsigned long cvtUlongToBits(src,dest,bitFieldOffset,bitFieldLength)
+unsigned long   src;
+unsigned long   dest;
+unsigned        bitFieldOffset;
+unsigned        bitFieldLength;
+{
+#endif /*__STDC__*/
         unsigned long   mask;
 
         mask = (1<<bitFieldLength)-1;

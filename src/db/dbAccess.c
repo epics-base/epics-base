@@ -1211,7 +1211,7 @@ long epicsShareAPI dbPut(DBADDR *paddr,short dbrType,
 		status=(*dbPutConvertRoutine[dbrType][field_type])
 			(paddr,pbuffer,nRequest,no_elements,offset);
 		/* update array info	*/
-		if(prset && (prset->put_array_info) ) {
+		if(prset && (prset->put_array_info) && !status) {
 			status= (*prset->put_array_info)
 				(paddr,nRequest);
 		}

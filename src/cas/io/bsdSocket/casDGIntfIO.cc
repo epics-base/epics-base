@@ -176,7 +176,7 @@ casDGIntfIO::casDGIntfIO (caServerI &serverIn, const caNetAddr &addr,
         }
 
         status = bind (this->bcastRecvSock, &serverBCastAddr.sa,
-                        sizeof (serverBCastAddr.sa);
+                        sizeof (serverBCastAddr.sa) );
         if (status<0) {
             char buf[64];
             int errnoCpy = SOCKERRNO;
@@ -379,7 +379,8 @@ void casDGIntfIO::sendBeaconIO (char &msg, unsigned length, aitUint16 &portField
                         __FILE__, buf, SOCKERRSTR(SOCKERRNO));
                 }
                 else {
-                    assert (status == length);
+                    unsigned statusAsLength = static_cast < unsigned > ( status );
+                    assert ( statusAsLength == length );
                 }
             }
         }

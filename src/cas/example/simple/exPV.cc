@@ -204,12 +204,13 @@ void exPV::show(unsigned level) const
 {
 	if (level>1u) {
 		if ( this->pValue.valid () ) {
-			printf("exPV: cond=%d\n", this->pValue->getStat());
-			printf("exPV: sevr=%d\n", this->pValue->getSevr());
-			printf("exPV: value=%f\n", (double) *this->pValue);
+			printf ( "exPV: cond=%d\n", this->pValue->getStat () );
+			printf ( "exPV: sevr=%d\n", this->pValue->getSevr () );
+			printf ( "exPV: value=%f\n", static_cast < double > ( * this->pValue );
 		}
-		printf("exPV: interest=%d\n", this->interest);
-		printf("exPV: pScanTimer=%p\n", this->pScanTimer);
+		printf ( "exPV: interest=%d\n", this->interest );
+		printf ( "exPV: pScanTimer=%p\n", 
+            static_cast < const void * > ( this->pScanTimer ) );
 	}
 }
 

@@ -780,7 +780,7 @@ template < class T, class ID >
 inline resTableIter < T, ID > & resTableIter<T,ID>::operator =
     ( const resTableIter < T, ID > & rhs )
 {
-    this->pResTable = rhs.pTable;
+    this->pResTable = rhs.pResTable;
     this->index  = rhs.index; 
     this->iter   = rhs.iter;
     return *this;
@@ -864,7 +864,7 @@ template < class T, class ID >
 inline bool resTableIterConst<T,ID>::operator ==
     ( const resTableIterConst < T,ID > & rhs ) const
 {
-    return ( this->pTable    == rhs.pTable
+    return ( this->pResTable == rhs.pResTable
              && this->index  == rhs.index
              && this->iter   == rhs.iter );
 }
@@ -880,7 +880,7 @@ template < class T, class ID >
 inline resTableIterConst < T, ID > & resTableIterConst<T,ID>::operator =
     ( const resTableIterConst < T, ID > & rhs )
 {
-    this->pTable = rhs.pTable;
+    this->pResTable = rhs.pResTable;
     this->index = rhs.index; 
     this->iter = rhs.iter;
     return *this;

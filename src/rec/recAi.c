@@ -54,6 +54,8 @@
  * .14	03-21-90	lrd	add db_post_event for RVAL
  * .15	04-11-90	lrd	make locals static
  * .16  04-18-90	mrk	extensible record and device support
+ * .17  09-18-91	jba	fixed bug in break point table conversion
+ * .18  09-30-91	jba	Moved break point table conversion to libCom
  */
 
 #include	<vxWorks.h>
@@ -62,7 +64,6 @@
 #include	<lstLib.h>
 
 #include	<alarm.h>
-#include	<cvtTable.h>
 #include	<dbAccess.h>
 #include	<dbDefs.h>
 #include	<dbFldTypes.h>
@@ -132,6 +133,7 @@ extern unsigned int     gts_trigger_counter;
 
 void alarm();
 void convert();
+long cvtRawToEngBpt();
 void monitor();
 
 static long init_record(pai)
@@ -150,17 +152,9 @@ static long init_record(pai)
 	return(S_dev_missingSup);
     }
     pai->init = TRUE;
+
     if( pdset->init_record ) {
 	if((status=(*pdset->init_record)(pai,process))) return(status);
-    }
-    if(pai->linr >= 2) { /*must find breakpoint table*/
-	if( !cvtTable || (cvtTable->number < pai->linr)
-	||  (!(cvtTable->papBrkTable[pai->linr]))) {
-		errMessage(S_db_badField,"Breakpoint Table not Found");
-		return(S_db_badField);
-	}
-	pai->pbrk = (char *)(cvtTable->papBrkTable[pai->linr]);
-	pai->lbrk=0;
     }
     return(0);
 }
@@ -377,48 +371,12 @@ struct aiRecord	*pai;
 		val = (val * pai->eslo) + pai->egul;
 	}
 	else { /* must use breakpoint table */
-	    struct brkTable *pbrkTable;
-	    struct brkInt   *pInt;	
-	    struct brkInt   *pnxtInt;
-	    short	    lbrk;
-	    int		    number;
-
-	    pbrkTable = (struct brkTable *) pai->pbrk;
-	    number = pbrkTable->number;
-	    if(pai->init) lbrk = number/2; /* Just start in the middle */
-	    else {
-		lbrk = (pai->lbrk);
-		/*make sure we dont go off end of table*/
-		if( (lbrk+1) >= number ) lbrk--;
-	    }
-	    pInt = pbrkTable->papBrkInt[lbrk];
-	    pnxtInt = pbrkTable->papBrkInt[lbrk+1];
-	    /* find entry for increased value */
- 	    while( (pnxtInt->raw) <= val ) {
-		lbrk++;
-		pInt = pbrkTable->papBrkInt[lbrk];
-		if( lbrk >= number-1) {
-		    if(pai->nsev < VALID_ALARM) {
-			pai->nsta = SOFT_ALARM;
-			pai->nsev = VALID_ALARM;
-		    }
-		    break; /* out of while */
-		}
-		pnxtInt = pbrkTable->papBrkInt[lbrk+1];
-	    }
-	    while( (pInt->raw) > val) {
-		if(lbrk==0) {
-		    if(pai->nsev < VALID_ALARM) {
-			pai->nsta = SOFT_ALARM;
-			pai->nsev = VALID_ALARM;
-		    }
-		    break; /* out of while */
-		}
-		lbrk--;
-		pInt = pbrkTable->papBrkInt[lbrk];
-	    }
-	    pai->lbrk = lbrk;
-	    val = pInt->eng + (val - pInt->raw) * pInt->slope;
+                if (cvtRawToEngBpt(&val,pai->linr,pai->init,&pai->pbrk,&pai->lbrk)!=0) {
+	              if(pai->nsev < VALID_ALARM) {
+                           pai->nsta = SOFT_ALARM;
+                           pai->nsev = VALID_ALARM;
+                      }
+                }
 	}
 
 	/* apply smoothing algorithm */
@@ -490,3 +448,4 @@ static void monitor(pai)
 	}
 	return;
 }
+

@@ -337,6 +337,7 @@ static RING_ID callbackQ;
 static int	callbackTaskId = 0;
 struct callback {
 	void (*callback)();
+        int priority;
 	/*remainder is callback dependent*/
 };
 
@@ -666,7 +667,7 @@ callbackRequest(pcallback)
 	/* multiple writers are possible so block interrupts*/
 	lockKey = intLock();
         nput = rngBufPut(callbackQ,&pcallback,sizeof(pcallback));
-	intUnLock(lockKey);
+	intUnlock(lockKey);
 	if(nput!=sizeof(pcallback)) logMsg("callbackRequest ring buffer full");
 	semGive(&callbackSem);
 }

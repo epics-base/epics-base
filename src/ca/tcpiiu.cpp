@@ -120,7 +120,7 @@ void tcpiiu::connect ()
             this->cancelSendWatchdog ();
             ca_printf ( "Unable to connect because %d=\"%s\"\n", 
                 errnoCpy, SOCKERRSTR ( errnoCpy ) );
-            this->shutdown ();
+            this->cleanShutdown ();
             return;
         }
     }
@@ -177,31 +177,30 @@ extern "C" void cacSendThreadTCP ( void *pParam )
 unsigned tcpiiu::sendBytes ( const void *pBuf, unsigned nBytesInBuf )
 {
     int status;
+    unsigned nBytes;
 
     assert ( nBytesInBuf <= INT_MAX );
-
+    this->clientCtx ().enableCallbackPreemption ();
+    this->armSendWatchdog ();
     while ( true ) {
-        this->clientCtx ().enableCallbackPreemption ();
-        this->armSendWatchdog ();
         status = ::send ( this->sock, 
             static_cast < const char * > (pBuf), (int) nBytesInBuf, 0 );
-        this->clientCtx ().disableCallbackPreemption ();
         if ( status > 0 ) {
-            this->cancelSendWatchdog ();
-            return ( unsigned ) status;
+            nBytes = static_cast <unsigned> ( status );
+            break;
         }
         else {
             int localError = SOCKERRNO;
 
             if ( status == 0 ) {
-                this->cancelSendWatchdog ();
-                this->shutdown ();
-                return 0u;
+                this->cleanShutdown ();
+                nBytes = 0u;
+                break;
             }
 
             if ( localError == SOCK_SHUTDOWN ) {
-                this->cancelSendWatchdog ();
-                return 0u;
+                nBytes = 0u;
+                break;
             }
 
             if ( localError == SOCK_EINTR ) {
@@ -213,11 +212,14 @@ unsigned tcpiiu::sendBytes ( const void *pBuf, unsigned nBytesInBuf )
                 ca_printf ("CAC: unexpected TCP send error: %s\n", SOCKERRSTR (localError) );
             }
 
-            this->cancelSendWatchdog ();
-            this->shutdown ();
-            return 0u;
+            this->cleanShutdown ();
+            nBytes = 0u;
+            break;
         }
     }
+    this->cancelSendWatchdog ();
+    this->clientCtx ().disableCallbackPreemption ();
+    return nBytes;
 }
 
 unsigned tcpiiu::recvBytes ( void *pBuf, unsigned nBytesInBuf )
@@ -236,7 +238,7 @@ unsigned tcpiiu::recvBytes ( void *pBuf, unsigned nBytesInBuf )
         int localErrno = SOCKERRNO;
 
         if ( status == 0 ) {
-            this->shutdown ();
+            this->cleanShutdown ();
             return 0u;
         }
 
@@ -259,7 +261,7 @@ unsigned tcpiiu::recvBytes ( void *pBuf, unsigned nBytesInBuf )
                 name, SOCKERRSTR (localErrno) );
         }
 
-        this->shutdown ();
+        this->cleanShutdown ();
 
         return 0u;
     }
@@ -325,7 +327,7 @@ extern "C" void cacRecvThreadTCP (void *pParam)
         }
         else {
             semBinaryGive ( piiu->sendThreadExitSignal );
-            piiu->shutdown ();
+            piiu->cleanShutdown ();
         }
     }
     else {
@@ -508,23 +510,16 @@ tcpiiu::tcpiiu ( cac &cac, const osiSockAddr &addrIn,
 }
 
 /*
- *  tcpiiu::shutdown ()
+ *  tcpiiu::cleanShutdown ()
  */
-void tcpiiu::shutdown ()
+void tcpiiu::cleanShutdown ()
 {
     this->lock ();
     if ( this->state != iiu_disconnected ) {
         this->state = iiu_disconnected;
-        //
-        // using shutdown () here initiates a graceful socket
-        // shutdown sequence which will linger on the CA echo
-        // request until the IOC reboots. Unfortunately, this
-        // also has the side effect that the thread in recv ()
-        // does not promptly exit.
-        //
-        int status = socket_close ( this->sock );
+        int status = ::shutdown ( this->sock, SD_BOTH );
         if ( status ) {
-            errlogPrintf ("CAC TCP shutdown error was %s\n", 
+            errlogPrintf ("CAC TCP socket shutdown error was %s\n", 
                 SOCKERRSTR (SOCKERRNO) );
         }
         semBinaryGive ( this->sendThreadFlushSignal );
@@ -534,6 +529,28 @@ void tcpiiu::shutdown ()
     }
     this->unlock ();
 }
+
+/*
+ *  tcpiiu::forcedShutdown ()
+ */
+void tcpiiu::forcedShutdown ()
+{
+    this->lock ();
+    if ( this->state != iiu_disconnected ) {
+        this->state = iiu_disconnected;
+        int status = socket_close ( this->sock );
+        if ( status ) {
+            errlogPrintf ("CAC TCP socket close error was %s\n", 
+                SOCKERRSTR (SOCKERRNO) );
+        }
+        semBinaryGive ( this->sendThreadFlushSignal );
+        semBinaryGive ( this->recvThreadRingBufferSpaceAvailableSignal );
+        this->recvPending = true;
+        this->clientCtx ().signalRecvActivity ();
+    }
+    this->unlock ();
+}
+
 
 //
 // tcpiiu::~tcpiiu ()
@@ -546,7 +563,7 @@ tcpiiu::~tcpiiu ()
 
     this->fullyConstructedFlag = false;
 
-    this->shutdown ();
+    this->cleanShutdown ();
 
     if ( this->channelCount () ) {
         char hostNameTmp[64];
@@ -933,7 +950,7 @@ void tcpiiu::postMsg ()
         if ( this->curMsg.m_postsize > (unsigned) MAX_TCP ) {
             this->msgHeaderAvailable = false;
             ca_printf ("CAC: message body was too large (disconnecting)\n");
-            this->shutdown ();
+            this->cleanShutdown ();
             return;
         }
 
@@ -955,7 +972,7 @@ void tcpiiu::postMsg ()
             pData = (void *) calloc (1u, cacheSize);
             if ( ! pData ) {
                 ca_printf ("CAC: not enough memory for message body cache (disconnecting)\n");
-                this->shutdown ();
+                this->cleanShutdown ();
                 return;
             }
             if (this->pCurData) {
@@ -1056,7 +1073,7 @@ void tcpiiu::processIncomingAndDestroySelfIfDisconnected ()
 
 void tcpiiu::lastChannelDetachNotify ()
 {
-    this->shutdown ();
+    this->cleanShutdown ();
 }
 
 void tcpiiu::installChannelPendingClaim ( nciu &chan )

@@ -191,7 +191,6 @@ public:
 private:
     int lockAndReserveSpace ( unsigned msgSize, bufferReservoir & );
     virtual bool flushToWirePermit () = 0;
-    virtual void shutdown () = 0;
 
     void copy_dbr_string ( bufferReservoir &, const void *pValue, unsigned nElem );
     void copy_dbr_short ( bufferReservoir &, const void *pValue, unsigned nElem );
@@ -659,7 +658,7 @@ private:
 	bool again () const;
 	double delay () const;
 	const char *name () const;
-    virtual void shutdown () = 0;
+    virtual void forcedShutdown () = 0;
     virtual void echoRequest () = 0;
     virtual void hostName ( char *pBuf, unsigned bufLength ) const = 0;
 
@@ -681,7 +680,7 @@ private:
 	bool again () const;
 	double delay () const;
 	const char *name () const;
-    virtual void shutdown () = 0;
+    virtual void forcedShutdown () = 0;
     virtual void hostName ( char *pBuf, unsigned bufLength ) const = 0;
 
     const double period;
@@ -726,7 +725,8 @@ public:
         ipAddrToAsciiEngine & );
     ~tcpiiu ();
     void suicide ();
-    void shutdown ();
+    void cleanShutdown ();
+    void forcedShutdown ();
     static void * operator new (size_t size);
     static void operator delete (void *pCadaver, size_t size);
 

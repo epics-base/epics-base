@@ -34,7 +34,7 @@ void tcpRecvWatchdog::expire ()
         this->hostName ( hostName, sizeof (hostName) );
         ca_printf ( "CA server %s unresponsive for %g sec. Disconnecting.\n", 
             hostName, this->period + CA_ECHO_TIMEOUT );
-        this->shutdown ();
+        this->forcedShutdown ();
     }
     else {
         this->echoRequest ();

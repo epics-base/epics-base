@@ -29,7 +29,7 @@ void tcpSendWatchdog::expire ()
     this->hostName ( hostName, sizeof (hostName) );
     ca_printf ( "Request not accepted by CA server %s for %g sec. Disconnecting.\n", 
         hostName, this->period);
-    this->shutdown ();
+    this->forcedShutdown ();
 }
 
 void tcpSendWatchdog::destroy ()

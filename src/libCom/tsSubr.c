@@ -129,6 +129,7 @@
 static void tsStampFromLocal();
 static void tsStampToLocal();
 static void tsStampToLocalZone();
+static void tsInitMinWest();
 
 static int needToInitMinWest=1;
 static long tsMinWest=TS_MIN_WEST;
@@ -865,7 +866,8 @@ struct tsDetail *pT;	/* O pointer to time structure for conversion */
     return;
 }
 
-static tsInitMinWest()
+static void
+tsInitMinWest()
 {
     int		error=0;
 

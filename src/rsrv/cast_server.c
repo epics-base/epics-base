@@ -34,6 +34,7 @@
  *			client has a TCP connection.(bug introduced by .00)
  *	.03 joh 071291	changes to avoid confusion when a rebooted
  *			client uses the same port number
+ *	.04 joh 080591	changed printf() to a logMsg()
  *
  *	Improvements
  *	------------
@@ -202,7 +203,7 @@ cast_server()
 			if(prsrv_cast_client->recv.cnt != 
 				prsrv_cast_client->recv.stk){
 
-				printf(	"leftover CA UDP Message OF %d\n",
+				logMsg(	"leftover CA UDP Message of %d bytes ?\n",
 					prsrv_cast_client->recv.cnt-
 						prsrv_cast_client->recv.stk);
 			}

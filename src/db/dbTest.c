@@ -157,16 +157,14 @@ long dbl(char	*precordTypename,char *filename)
     DBENTRY	dbentry;
     DBENTRY	*pdbentry=&dbentry;
     long	status;
-    FILE	*stream;
+    FILE	*stream = NULL;
 
-    if(filename==0 || strlen(filename)==0) {
-        stream = stdout;
-    } else {
+    if(filename && strlen(filename)) {
         int fd;
 
         fd = open(filename, O_CREAT | O_WRONLY | O_TRUNC, 0644 );
         if(fd<0) {
-            fprintf(stderr,"%s could no be created\n",filename);
+            fprintf(stderr,"%s could not be created\n",filename);
             return(0);
         }
         stream = fdopen(fd,"w+");
@@ -180,18 +178,22 @@ long dbl(char	*precordTypename,char *filename)
 	status = dbFirstRecordType(pdbentry);
     else
 	status = dbFindRecordType(pdbentry,precordTypename);
-    if(status) fprintf(stream,"No record description\n");
+    if(status) {
+	if(stream) fprintf(stream,"No record description\n");
+	else printf("No record description\n");
+    }
     while(!status) {
 	status = dbFirstRecord(pdbentry);
 	while(!status) {
-	    fprintf(stream,"%s\n",dbGetRecordName(pdbentry));
+	    if(stream) fprintf(stream,"%s\n",dbGetRecordName(pdbentry));
+	    else printf("%s\n",dbGetRecordName(pdbentry));
 	    status = dbNextRecord(pdbentry);
 	}
 	if(precordTypename) break;
 	status = dbNextRecordType(pdbentry);
     }
     dbFinishEntry(pdbentry);
-    fclose(stream);
+    if(stream) fclose(stream);
     return(0);
 }
 

@@ -24,6 +24,7 @@
 // 1) A status code from the old client side interface is passed
 // to the exception notify callback. Should we just pass a string?
 // If so, then how do they detect the type of error and recover.
+// Perhaps we should  call a different vf for each type of exception.
 //
 // 2) Some exception types are present here but there is no common
 // exception base class in use.
@@ -52,6 +53,7 @@ class epicsShareClass cacWriteNotify { // X aCC 655
 public:
     virtual ~cacWriteNotify () = 0;
     virtual void completion () = 0;
+// we should probably have a different vf for each type of exception ????
     virtual void exception ( int status, const char *pContext, 
         unsigned type, arrayElementCount count ) = 0;
 };
@@ -63,6 +65,7 @@ public:
     virtual ~cacReadNotify () = 0;
     virtual void completion ( unsigned type, 
         arrayElementCount count, const void *pData ) = 0;
+// we should probably have a different vf for each type of exception ????
     virtual void exception ( int status, 
         const char *pContext, unsigned type, arrayElementCount count ) = 0;
 };
@@ -74,6 +77,7 @@ public:
     virtual ~cacStateNotify () = 0;
     virtual void current ( unsigned type, 
         arrayElementCount count, const void *pData ) = 0;
+// we should probably have a different vf for each type of exception ????
     virtual void exception ( int status, 
         const char *pContext, unsigned type, arrayElementCount count ) = 0;
 };
@@ -106,8 +110,10 @@ public:
     virtual void disconnectNotify () = 0;
     virtual void accessRightsNotify ( const caAccessRights & ) = 0;
     virtual void exception ( int status, const char *pContext ) = 0;
+// we should probably have a different vf for each type of exception ????
     virtual void readException ( int status, const char *pContext,
         unsigned type, arrayElementCount count, void *pValue ) = 0;
+// we should probably have a different vf for each type of exception ????
     virtual void writeException ( int status, const char *pContext,
         unsigned type, arrayElementCount count ) = 0;
     // not for public consumption -- can we get rid of this ????
@@ -186,6 +192,7 @@ private:
 class cacNotify { // X aCC 655
 public:
     virtual ~cacNotify () = 0;
+// we should probably have a different vf for each type of exception ????
     virtual void exception ( int status, const char *pContext, 
         const char *pFileName, unsigned lineNo ) = 0;
 // perhaps this should be phased out in deference to the exception mechanism

@@ -25,5 +25,5 @@ else
 endif
 
 clean:
-	@$(RM) cdCommands
+	@$(RM) cdCommands envPaths
 

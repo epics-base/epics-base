@@ -59,6 +59,9 @@
  *      ...
  *
  * $Log$
+ * Revision 1.4  1994/11/30  15:10:23  winans
+ * Added IRQ mode stuff
+ *
  * Revision 1.3  1994/11/17  21:11:58  winans
  * Major restructuring of init code.
  *
@@ -601,7 +604,7 @@ STATIC long SysmonInitMbbiRec(struct mbbiRecord *pmbbi)
 
     /* load temperature values up */
 
-    if (!strcmp(ParmTable[3].parm_name, pvmeio->parm))
+    if (!strcmp(ParmTable[SYSMON_PARM_TEMP].parm_name, pvmeio->parm))
     {
     	if (devSysmonDebug >= 10)
 		printf("devSysmon: mbbi record is Temperature\n");

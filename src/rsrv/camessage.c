@@ -52,6 +52,9 @@
 static char *sccsId = "$Id$";
 
 #include <assert.h>
+#include <string.h>
+#include <stdio.h>
+#include <stdarg.h>
 
 #include <vxWorks.h>
 #include <taskLib.h>
@@ -61,14 +64,13 @@ static char *sccsId = "$Id$";
 #include <tickLib.h>
 #include <stdioLib.h>
 #include <sysLib.h>
-#include <string.h>
 
-#include <ellLib.h>
 #include <db_access.h>
 #include <task_params.h>
-#include <server.h>
+#include <ellLib.h>
 #include <caerr.h>
 
+#include <server.h>
 
 static struct extmsg nill_msg;
 
@@ -105,7 +107,8 @@ LOCAL void send_err(
 struct extmsg  *curp,
 int            status,
 struct client  *client,
-char           *footnote
+char           *footnote,
+		...
 );
 
 LOCAL void log_header(
@@ -118,10 +121,15 @@ struct extmsg *mp,
 struct client  *client
 );
 
-LOCAL void logBadId(
-struct client *client, 
-struct extmsg *mp
+LOCAL void logBadIdWithFileAndLineno(
+struct client 	*client, 
+struct extmsg 	*mp,
+char		*pFileName,
+unsigned	lineno
 );
+
+#define logBadId(CLIENT, MP)\
+logBadIdWithFileAndLineno(CLIENT, MP, __FILE__, __LINE__)
 
 LOCAL struct channel_in_use *MPTOPCIU(
 struct extmsg *mp
@@ -167,6 +175,10 @@ asClientStatus type
 LOCAL void no_read_access_event(
 struct client  		*client,
 struct event_ext 	*pevext
+);
+
+LOCAL void access_rights_reply(
+struct channel_in_use *pciu
 );
 
 LOCAL unsigned long	bucketID;
@@ -430,7 +442,7 @@ struct client  	*client
 				asDbGetAsl(&pciu->addr),
 				client->pUserName,
 				client->pHostName);	
-		if(status){
+		if(status != 0 && status != S_asLib_asNotActive){
 			UNLOCK_CLIENT(prsrv_cast_client);
        			free_client(client);
 			exit(0);
@@ -489,7 +501,7 @@ struct client  	*client
 				asDbGetAsl(&pciu->addr),
 				client->pUserName,
 				client->pHostName);	
-		if(status){
+		if(status != 0 && status != S_asLib_asNotActive){
 			UNLOCK_CLIENT(prsrv_cast_client);
        			free_client(client);
 			exit(0);
@@ -509,6 +521,7 @@ struct extmsg *mp,
 struct client  *client
 )
 {
+	int			v42;
 	int			status;
 	struct channel_in_use 	*pciu;
 
@@ -534,6 +547,16 @@ struct client  *client
 		exit(0);
 	}
 
+	/*
+	 * remove channel in use block from
+	 * the UDP client where it could time
+	 * out and place it on the client
+	 * who is claiming it
+	 */
+	ellDelete(
+		&prsrv_cast_client->addrq, 
+		&pciu->node);
+	UNLOCK_CLIENT(prsrv_cast_client);
 
 	/* 
 	 * Any other client attachment is a severe error
@@ -554,31 +577,28 @@ struct client  *client
 	/*
 	 * set up access security for this channel
 	 */
-	status = asChangeClient(
-			pciu->asClientPVT,
+	status = asAddClient(
+			&pciu->asClientPVT,
+			asDbGetMemberPvt(&pciu->addr),
 			asDbGetAsl(&pciu->addr),
 			client->pUserName,
 			client->pHostName);	
-	if(status){
-		UNLOCK_CLIENT(prsrv_cast_client);
+	if(status != 0 && status != S_asLib_asNotActive){
+		LOCK_CLIENT(client);
+		send_err(mp, ECA_ALLOCMEM, client, "No room for security table");
+		UNLOCK_CLIENT(client);
        		free_client(client);
 		exit(0);
 	}
 
 	/*
-	 * remove channel in use block from
-	 * the UDP client where it could time
-	 * out and place it on the client
-	 * who is claiming it
+	 * store ptr to channel in use block 
+	 * in access security private
 	 */
-	ellDelete(
-		&prsrv_cast_client->addrq, 
-		&pciu->node);
-	UNLOCK_CLIENT(prsrv_cast_client);
-
-	pciu->client = client;
+	asPutClientPvt(pciu->asClientPVT, pciu);
 
 	LOCK_CLIENT(client);
+	pciu->client = client;
 	ellAdd(&client->addrq, &pciu->node);
 	UNLOCK_CLIENT(client);
 
@@ -590,13 +610,42 @@ struct client  *client
 	 */
 	pciu->client->minor_version_number = mp->m_available;
 
+	v42 = CA_V42(
+		CA_PROTOCOL_VERSION,
+		client->minor_version_number);
+
 	/*
 	 * register for asynch updates of access rights changes
 	 * (only after the lock is released, we are added to 
 	 * the correct client, and the clients version is
 	 * known)
 	 */
-	asRegisterClientCallback(pciu->asClientPVT, casAccessRightsCB);
+	status = asRegisterClientCallback(pciu->asClientPVT, casAccessRightsCB);
+	if(status == S_asLib_asNotActive){
+		/*
+		 * force the initial update
+		 */
+		access_rights_reply(pciu);
+	}
+	else{
+		assert(status==0);
+	}
+
+	if(v42){
+		struct extmsg 	*claim_reply; 
+
+		LOCK_CLIENT(client);
+		claim_reply = (struct extmsg *) ALLOC_MSG(client, 0);
+		assert (claim_reply);
+
+		*claim_reply = nill_msg;
+		claim_reply->m_cmmd = IOC_CLAIM_CIU;
+		claim_reply->m_type = pciu->addr.field_type;
+		claim_reply->m_count = pciu->addr.no_elements;
+		claim_reply->m_cid = pciu->cid;
+		END_MSG(client);
+		UNLOCK_CLIENT(client);
+	}
 }
 
 
@@ -960,15 +1009,6 @@ struct client  *client
 	ellAdd(	&pciu->eventq, &pevext->node);
 	UNLOCK_CLIENT(client);
 
-	/*
-	 * dont set up the event if no read access
-	 */
-	if(!asCheckGet(pciu->asClientPVT)){
-		pevext->pdbev = NULL;
-		no_read_access_event(client, pevext);
-		return;
-	}
-
 	pevext->pdbev = (struct event_block *)(pevext+1);
 
 	status = db_add_event(
@@ -1017,6 +1057,13 @@ struct client  *client
 	 */
 
 	db_post_single_event(pevext->pdbev);
+
+	/*
+	 * disable future labor if no read access
+	 */
+	if(!asCheckGet(pciu->asClientPVT)){
+		db_event_disable(pevext->pdbev);
+	}
 
 	return;
 }
@@ -1087,14 +1134,6 @@ struct client  *client
 	}
 
 	/*
-	 * remove from access control list
-	 */
-	status = asRemoveClient(&pciu->asClientPVT);
-	if(status){
-		taskSuspend(0);
-	}
-
-	/*
 	 * send delete confirmed message
 	 */
 	LOCK_CLIENT(client);
@@ -1108,6 +1147,15 @@ struct client  *client
 	END_MSG(client);
 	ellDelete(&client->addrq, &pciu->node);
 	UNLOCK_CLIENT(client);
+
+	/*
+	 * remove from access control list
+	 */
+	status = asRemoveClient(&pciu->asClientPVT);
+	assert(status == 0 || status == S_asLib_asNotActive);
+	if(status != 0 && status != S_asLib_asNotActive){
+		errMessage(status, RECORD_NAME(&pciu->addr));
+	}
 
 	FASTLOCK(&rsrv_free_addrq_lck);
 	status = bucketRemoveItem(pCaBucket, pciu->sid, pciu);
@@ -1314,7 +1362,7 @@ db_field_log		*pfl
 			 * operation directly to the
 			 * event/put/get callback.
 			 *
-			 * Fetched value is zerod in case they
+			 * Fetched value is set to zero in case they
 			 * use it even when the status indicates 
 			 * failure.
 			 *
@@ -1425,8 +1473,10 @@ struct event_ext 	*pevext
 		 * The m_cid field in the protocol
 		 * header is abused to carry the status
 		 */
-		bzero((char *)(reply+1), pevext->size);
+		*reply = pevext->msg;
+		reply->m_postsize = pevext->size;
 		reply->m_cid = ECA_NORDACCESS;
+		bzero((char *)(reply+1), pevext->size);
 		END_MSG(client);
 	}
 }
@@ -1520,40 +1570,20 @@ struct client  *client
 	pchannel->cid = mp->m_cid;
 
 	/*
-	 * set up access security for this channel
-	 *
-	 * done here rather than at channel claim so
-	 * that search reply will fail if there 
-	 * isnt enough memory.
-	 */
-	status = asAddClient(
-			&pchannel->asClientPVT,
-			asDbGetMemberPvt(&pchannel->addr),
-			asDbGetAsl(&pchannel->addr),
-			"",
-			"");	
-	if(status){
-		LOCK_CLIENT(client);
-		send_err(mp, ECA_ALLOCMEM, client, "No room for security table");
-		UNLOCK_CLIENT(client);
-		FASTLOCK(&rsrv_free_addrq_lck);
-		ellAdd(&rsrv_free_addrq, &pchannel->node);
-		FASTUNLOCK(&rsrv_free_addrq_lck);
-		return;
-	}
-	asPutClientPvt(pchannel->asClientPVT, pchannel);
-
-	/*
 	 * Existing build() interface to the client does not provide mechanism
 	 * to inform them that the channel connected but the value
 	 * couldnt be fetched so search/get combined op
 	 * to no read access channel not allowed.
 	 */
+#if 0
 	if (mp->m_cmmd == IOC_BUILD && !asCheckGet(pchannel->asClientPVT)) {
+#else
+	if (mp->m_cmmd == IOC_BUILD) {
+printf("Build access security bypassed\n");
+#endif
 		LOCK_CLIENT(client);
 		send_err(mp, ECA_NORDACCESS, client, RECORD_NAME(&tmp_addr));
 		UNLOCK_CLIENT(client);
-		asRemoveClient(&pchannel->asClientPVT);
 		FASTLOCK(&rsrv_free_addrq_lck);
 		ellAdd(&rsrv_free_addrq, &pchannel->node);
 		FASTUNLOCK(&rsrv_free_addrq_lck);
@@ -1573,7 +1603,6 @@ struct client  *client
 		LOCK_CLIENT(client);
 		send_err(mp, ECA_ALLOCMEM, client, "No room for hash table");
 		UNLOCK_CLIENT(client);
-		asRemoveClient(&pchannel->asClientPVT);
 		FASTLOCK(&rsrv_free_addrq_lck);
 		ellAdd(&rsrv_free_addrq, &pchannel->node);
 		FASTUNLOCK(&rsrv_free_addrq_lck);
@@ -1607,7 +1636,6 @@ struct client  *client
 			/* tell them that their request is to large */
 			send_err(mp, ECA_TOLARGE, client, RECORD_NAME(&tmp_addr));
 			UNLOCK_CLIENT(client);
-			asRemoveClient(&pchannel->asClientPVT);
 			FASTLOCK(&rsrv_free_addrq_lck);
 			bucketRemoveItem(
 					pCaBucket, 
@@ -1716,32 +1744,52 @@ LOCAL void send_err(
 struct extmsg  *curp,
 int            status,
 struct client  *client,
-char           *footnote
+char           *pformat,
+		...
 )
 {
+	va_list			args;
         struct channel_in_use 	*pciu;
 	int        		size;
 	struct extmsg 		*reply;
+	char			*pMsgString;
 
+	va_start(args, pformat);
 
 	/*
-	 * force string post size to be the true size rounded to even
-	 * boundary
+	 * allocate plenty of space for a sprintf() buffer
 	 */
-	size = strlen(footnote)+1;
-	size += sizeof(*curp);
-
-	reply = (struct extmsg *) ALLOC_MSG(client, size);
+	reply = (struct extmsg *) ALLOC_MSG(client, 512);
 	if (!reply){
-		printf(	"caserver: Unable to deliver err msg [%s]\n",
-			ca_message(status));
+		int     logMsgArgs[6];
+		int	i;
+
+		for(i=0; i< NELEMENTS(logMsgArgs); i++){
+			logMsgArgs[i] = va_arg(args, int);
+		}
+
+		logMsg(	"caserver: Unable to deliver err msg [%s]\n",
+			(int) ca_message(status),
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL);
+		logMsg(
+			pformat,
+			logMsgArgs[0],
+			logMsgArgs[1],
+			logMsgArgs[2],
+			logMsgArgs[3],
+			logMsgArgs[4],
+			logMsgArgs[5]);
+
 		return;
 	}
 
 	reply[0] = nill_msg;
 	reply[0].m_cmmd = IOC_ERROR;
 	reply[0].m_available = status;
-	reply[0].m_postsize = size;
 
 	switch (curp->m_cmmd) {
 	case IOC_EVENT_ADD:
@@ -1774,25 +1822,49 @@ char           *footnote
 		reply->m_cid = NULL;
 		break;
 	}
-	reply[1] = *curp;
-	strcpy((char *)(reply + 2), footnote);
 
+	/*
+	 * copy back the request protocol
+	 */
+	reply[1] = *curp;
+
+	/*
+	 * add their context string into the protocol
+	 */
+	pMsgString = (char *) (reply+2);
+	status = vsprintf(pMsgString, pformat, args);
+
+	/*
+	 * force string post size to be the true size rounded to even
+	 * boundary
+	 */
+	size = strlen(pMsgString)+1;
+	size += sizeof(*curp);
+	reply->m_postsize = size;
 	END_MSG(client);
 
 }
 
 
 /*
- * logBadId()
+ * logBadIdWithFileAndLineno()
  */
-LOCAL void logBadId(
-struct client *client, 
-struct extmsg *mp
+LOCAL void logBadIdWithFileAndLineno(
+struct client 	*client, 
+struct extmsg 	*mp,
+char		*pFileName,
+unsigned	lineno
 )
 {
 	log_header(mp,0);
 	LOCK_CLIENT(client);
-	send_err(mp, ECA_INTERNAL, client, "ID lookup failed");
+	send_err(
+		mp, 
+		ECA_INTERNAL, 
+		client, 
+		"Bad Resource ID at %s.%d",
+		pFileName,
+		lineno);
 	UNLOCK_CLIENT(client);
 }
 
@@ -1893,49 +1965,27 @@ LOCAL void casAccessRightsCB(ASCLIENTPVT ascpvt, asClientStatus type)
 {
 	struct client		*pclient;
 	struct channel_in_use 	*pciu;
-        struct extmsg 		*reply;
 	struct event_ext	*pevext;
 	int			status;
-	unsigned		ar;
-	int			v41;
 
 	pciu = asGetClientPvt(ascpvt);
-	if(!pciu){
-		printf("casAccessRightsCB() without channel pointer ??\n");
-		return;
-	}
+	assert(pciu);
+
 	pclient = pciu->client;
 	assert(pclient);
-	v41 = CA_V41(CA_PROTOCOL_VERSION,pclient->minor_version_number);
+
+	if(pclient == prsrv_cast_client){
+		return;
+	}
+
 
 	switch(type)
 	{
 	case asClientCOAR:
-		/*
-		 * noop if this is an old client
-		 */
-		if(!v41){
-			break;
-		}
 
-		ar = 0; /* none */
-		if(asCheckGet(ascpvt)){
-			ar |= CA_ACCESS_RIGHT_READ;
-		}
-		if(asCheckPut(ascpvt)){
-			ar |= CA_ACCESS_RIGHT_WRITE;
-		}
+		access_rights_reply(pciu);
 
 		LOCK_CLIENT(pclient);
-        	reply = (struct extmsg *)ALLOC_MSG(pclient, 0);
-		assert(reply);
-
-		*reply = nill_msg;
-        	reply->m_cmmd = IOC_ACCESS_RIGHTS;
-		reply->m_cid = pciu->cid;
-		reply->m_available = ar;
-
-        	END_MSG(pclient);
 
 		/*
 		 * Update all event call backs 
@@ -1943,34 +1993,16 @@ LOCAL void casAccessRightsCB(ASCLIENTPVT ascpvt, asClientStatus type)
 		for (pevext = (struct event_ext *) ellFirst(&pciu->eventq);
 		     pevext;
 		     pevext = (struct event_ext *) ellNext(&pevext->node)){
+			int readAccess;
 
-			if(pevext->pdbev && !(ar&CA_ACCESS_RIGHT_READ)){
-				status = db_cancel_event(pevext->pdbev);
-				assert(status == OK);
-				pevext->pdbev = NULL;
+			readAccess = asCheckGet(pciu->asClientPVT);
+
+			if(pevext->pdbev && !readAccess){
+				db_post_single_event(pevext->pdbev);
+				db_event_disable(pevext->pdbev);
 			}
-			else if(!pevext->pdbev && ar&CA_ACCESS_RIGHT_READ){
-				pevext->pdbev = 
-					(struct event_block *)(pevext+1);
-
-				status = db_add_event(
-						pclient->evuser,
-		    				&pciu->addr,
-		      				read_reply,
-		      				pevext,
-	   					pevext->mask,
-						pevext->pdbev);
-				if (status == ERROR) {
-					pevext->pdbev = NULL;
-						send_err(
-							&pevext->msg, 
-							ECA_ADDFAIL, 
-							pclient, 
-							RECORD_NAME(&pciu->addr));
-				}
-			}
-
-			if(pevext->pdbev){
+			else if(pevext->pdbev && readAccess){
+				db_event_enable(pevext->pdbev);
 				db_post_single_event(pevext->pdbev);
 			}
 		}
@@ -1984,3 +2016,45 @@ LOCAL void casAccessRightsCB(ASCLIENTPVT ascpvt, asClientStatus type)
 	}
 }
 
+
+/*
+ * access_rights_reply()
+ */
+LOCAL void access_rights_reply(struct channel_in_use *pciu)
+{
+	struct client		*pclient;
+        struct extmsg 		*reply;
+	unsigned		ar;
+	int			v41;
+
+	pclient = pciu->client;
+
+	assert(pclient != prsrv_cast_client);
+
+	/*
+	 * noop if this is an old client
+	 */
+	v41 = CA_V41(CA_PROTOCOL_VERSION,pclient->minor_version_number);
+	if(!v41){
+		return;
+	}
+
+	ar = 0; /* none */
+	if(asCheckGet(pciu->asClientPVT)){
+		ar |= CA_ACCESS_RIGHT_READ;
+	}
+	if(asCheckPut(pciu->asClientPVT)){
+		ar |= CA_ACCESS_RIGHT_WRITE;
+	}
+
+	LOCK_CLIENT(pclient);
+        reply = (struct extmsg *)ALLOC_MSG(pclient, 0);
+	assert(reply);
+
+	*reply = nill_msg;
+        reply->m_cmmd = IOC_ACCESS_RIGHTS;
+	reply->m_cid = pciu->cid;
+	reply->m_available = ar;
+        END_MSG(pclient);
+	UNLOCK_CLIENT(pclient);
+}

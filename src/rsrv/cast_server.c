@@ -58,6 +58,9 @@
 
 static char	*sccsId = "$Id$";
 
+#include <assert.h>
+#include <string.h>
+
 #include <vxWorks.h>
 #include <ellLib.h>
 #include <taskLib.h>
@@ -67,7 +70,6 @@ static char	*sccsId = "$Id$";
 #include <in.h>
 #include <logLib.h>
 #include <sockLib.h>
-#include <string.h>
 #include <errnoLib.h>
 #include <sysLib.h>
 #include <tickLib.h>
@@ -341,17 +343,6 @@ clean_addrq(struct client *pclient)
 			int status;
 
 			ellDelete(&pclient->addrq, &pciu->node);
-			status = asRemoveClient(&pciu->asClientPVT);
-			if(status){
-				logMsg(
-					"%s Bad client PVD at close",
-					(int)__FILE__,
-					NULL,
-					NULL,
-					NULL,
-					NULL,
-					NULL);
-			}
         		FASTLOCK(&rsrv_free_addrq_lck);
 			s = bucketRemoveItem(pCaBucket, pciu->sid, pciu);
 			if(s != BUCKET_SUCCESS){

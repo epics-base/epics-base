@@ -133,9 +133,9 @@ FASTUNLOCK(&(RECPTR)->mlok);
 int db_event_list(char *name)
 {
   	struct db_addr		addr;
-  	int				status;
-  	struct event_block		*pevent;
-  	register struct dbCommon	*precord;
+  	int			status;
+  	struct event_block	*pevent;
+  	struct dbCommon		*precord;
 
   	status = db_name_to_addr(name, &addr);
   	if(status==ERROR)
@@ -179,7 +179,7 @@ int db_event_list(char *name)
  */
 struct event_user *db_init_events(void)
 {
-  	register struct event_user	*evuser;
+  	struct event_user	*evuser;
 
   	evuser = (struct event_user *) calloc(1, sizeof(*evuser));
   	if(!evuser)
@@ -263,9 +263,9 @@ unsigned int		select,
 struct event_block	*pevent /* ptr to event blk (not required) */
 )
 {
-  	register struct dbCommon	*precord;
-  	register struct event_que	*ev_que;
-  	register struct event_que	*tmp_que;
+  	 struct dbCommon	*precord;
+  	 struct event_que	*ev_que;
+  	 struct event_que	*tmp_que;
 
 /* (MDA) in LANL stuff, this used to taskSuspend if invalid address
     in new code, the mechanism to help do this checking has been removed
@@ -329,10 +329,68 @@ struct event_block	*pevent /* ptr to event blk (not required) */
   		pevent->valque = FALSE;
 
   	LOCKREC(precord);
-  	ellAdd((ELLLIST*)&precord->mlis, (ELLNODE*)pevent);
+  	ellAdd(&precord->mlis, &pevent->node);
   	UNLOCKREC(precord);
 
   	return OK;
+}
+
+
+/*
+ * db_event_enable()
+ */
+int db_event_enable(struct event_block      *pevent)
+{
+  	struct dbCommon	*precord;
+	int		status;
+
+  	precord = (struct dbCommon *) pevent->paddr->precord;
+
+  	LOCKREC(precord);
+  	/* 
+	 * dont let a misplaced event corrupt the queue 
+	 */
+  	status = ellFind(&precord->mlis, &pevent->node);
+	if(status == ERROR){
+  		ellAdd(&precord->mlis, &pevent->node);
+	}
+  	UNLOCKREC(precord);
+
+	if(status != ERROR){
+		return ERROR;
+	}
+	else{
+		return OK;
+	}
+}
+
+
+/*
+ * db_event_disable()
+ */
+int db_event_disable(struct event_block      *pevent)
+{
+  	struct dbCommon	*precord;
+	int		status;
+
+  	precord = (struct dbCommon *) pevent->paddr->precord;
+
+  	LOCKREC(precord);
+  	/* 
+	 * dont let a misplaced event corrupt the queue 
+	 */
+  	status = ellFind(&precord->mlis, &pevent->node);
+	if(status == OK){
+  		ellDelete(&precord->mlis, &pevent->node);
+	}
+  	UNLOCKREC(precord);
+
+	if(status != OK){
+		return ERROR;
+	}
+	else{
+		return OK;
+	}
 }
 
 
@@ -364,8 +422,6 @@ int	db_cancel_event(struct event_block	*pevent)
   	if(status!=ERROR)
     		ellDelete((ELLLIST*)&precord->mlis, (ELLNODE*)pevent);
   	UNLOCKREC(precord);
-  	if(status == ERROR)
-    		return ERROR;
 
 	/*
 	 * Flush the event que so we know event block not left in use. This
@@ -510,10 +566,10 @@ int db_post_extra_labor(struct event_user *evuser)
  */
 int db_post_single_event(struct event_block	*pevent)
 {  
-  	register struct event_que	*ev_que = pevent->ev_que;
-  	int				success = FALSE;
-	struct dbCommon			*precord;
-  	register unsigned int		putix;
+  	struct event_que	*ev_que = pevent->ev_que;
+  	int			success = FALSE;
+	struct dbCommon		*precord;
+  	unsigned int		putix;
 
 	precord = (struct dbCommon *) pevent->paddr->precord;
 
@@ -572,9 +628,9 @@ union native_value	*pvalue,
 unsigned int		select
 )
 {  
-  	register struct event_block	*event;
-  	register struct event_que	*ev_que;
- 	register unsigned int		putix;
+  	 struct event_block	*event;
+  	 struct event_que	*ev_que;
+ 	 unsigned int		putix;
 
 	if (precord->mlis.count == 0) return OK;		/* no monitors set */
 
@@ -825,10 +881,10 @@ int			init_func_arg
  */
 LOCAL int event_read(struct event_que       *ev_que)
 {
-  	register struct event_block	*event;
- 	register unsigned int		getix;
-  	register unsigned int		nextgetix;
-	db_field_log			*pfl;
+  	struct event_block	*event;
+ 	unsigned int		getix;
+  	unsigned int		nextgetix;
+	db_field_log		*pfl;
 
 
 	/*

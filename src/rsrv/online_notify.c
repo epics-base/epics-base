@@ -38,6 +38,7 @@ static char *sccsId = "$Id$\t$Date$";
 /*
  * ansi includes
  */
+#include <assert.h>
 #include <string.h>
 
 /*

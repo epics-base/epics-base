@@ -556,6 +556,13 @@ int ca_task_initialize()
 		/* init sync group facility */
 		ca_sg_init();
 
+		/*
+		 * init broadcasted serch counters
+		 */
+		ca_static->ca_conn_n_tries = 0;
+		ca_static->ca_conn_next_retry = CA_CURRENT_TIME;
+		ca_static->ca_conn_retry_delay = CA_RECAST_DELAY;
+
 		ellInit(&ca_static->ca_iiuList);
 		ellInit(&ca_static->ca_ioeventlist);
 		ellInit(&ca_static->ca_free_event_list);
@@ -1457,9 +1464,12 @@ int ca_build_and_connect
 	chix->piiu = piiuCast;
 	ellAdd(&piiuCast->chidlist, &chix->node);
 
-	piiuCast->nconn_tries = 0;
-	piiuCast->next_retry = CA_CURRENT_TIME;
-	piiuCast->retry_delay = CA_RECAST_DELAY;
+	/*
+	 * reset broadcasted search counters
+	 */
+	ca_static->ca_conn_n_tries = 0;
+	ca_static->ca_conn_next_retry = CA_CURRENT_TIME;
+	ca_static->ca_conn_retry_delay = CA_RECAST_DELAY;
 
 	UNLOCK;
 
@@ -2315,10 +2325,21 @@ chid	chan;
 void	(*pfunc)();
 #endif /*__STDC__*/
 {
+	struct access_rights_handler_args args;
+
   	INITCHK;
   	LOOSECHIXCHK(chan);
 
     	chan->access_rights_func = pfunc;
+
+	/*
+	 * make certain that it runs at least once
+	 */
+	if(chan->state == cs_conn){
+		args.chid = chan;
+		args.ar = chan->ar;
+		(*chan->access_rights_func)(args);
+	}
 
   	return ECA_NORMAL;
 }
@@ -3297,20 +3318,20 @@ int		lineno;
 "CA.Client.Diagnostic..............................................\n");
 
   ca_printf(
-"    Message: [%s]\n", ca_message_text[CA_EXTRACT_MSG_NO(ca_status)]);
+"    Message: \"%s\"\n", ca_message_text[CA_EXTRACT_MSG_NO(ca_status)]);
 
   if(message)
     ca_printf(
-"    Severity: [%s] Context: [%s]\n", 
+"    Severity: \"%s\" Context: \"%s\"\n", 
 	severity[CA_EXTRACT_SEVERITY(ca_status)],
 	message);
   else
     ca_printf(
-"    Severity: [%s]\n", severity[CA_EXTRACT_SEVERITY(ca_status)]);
+"    Severity: %s\n", severity[CA_EXTRACT_SEVERITY(ca_status)]);
 
   if(pfilenm){
 	ca_printf(
-"    Source File: [%s] Line Number: [%d]\n",
+"    Source File: %s Line Number: %d\n",
 		pfilenm,
 		lineno);	
   }

@@ -77,7 +77,7 @@ static char *sccsId = "$Id$";
 
 LOCAL void reconnect_channel(
 IIU			*piiu,
-struct in_addr          *pnet_addr
+chid			chan
 );
 
 LOCAL int cacMsg(
@@ -85,10 +85,16 @@ struct ioc_in_use 	*piiu,
 struct in_addr  	*pnet_addr
 );
 
+LOCAL void perform_claim_channel(
+IIU			*piiu,
+struct in_addr          *pnet_addr
+);
+
 #else
 
-LOCAL void 	reconnect_channel();
 LOCAL int 	cacMsg();
+LOCAL void 	perform_claim_channel();
+LOCAL void 	reconnect_channel();
 
 #endif
 
@@ -152,14 +158,15 @@ unsigned long		blockSize;
 			piiu->curMsg.m_type = ntohs(piiu->curMsg.m_type);
 			piiu->curMsg.m_count = ntohs(piiu->curMsg.m_count);
 #if 0
-printf("%s Cmd=%3d Type=%3d Count=%4d Size=%4d Avail=%8x Cid=%6d\n",
-	piiu->host_name_str,
-	piiu->curMsg.m_cmmd,
-	piiu->curMsg.m_type,
-	piiu->curMsg.m_count,
-	piiu->curMsg.m_postsize,
-	piiu->curMsg.m_available,
-	piiu->curMsg.m_cid);
+			ca_printf("%s Cmd=%3d Type=%3d Count=%4d Size=%4d",
+				piiu->host_name_str,
+				piiu->curMsg.m_cmmd,
+				piiu->curMsg.m_type,
+				piiu->curMsg.m_count,
+				piiu->curMsg.m_postsize);
+			ca_printf(" Avail=%8x Cid=%6d\n",
+				piiu->curMsg.m_available,
+				piiu->curMsg.m_cid);
 #endif
 		}
 
@@ -507,7 +514,7 @@ struct in_addr  	*pnet_addr;
 	}
 	case IOC_SEARCH:
 	case IOC_BUILD:
-		reconnect_channel(piiu, pnet_addr);
+		perform_claim_channel(piiu, pnet_addr);
 		break;
 
 	case IOC_READ_SYNC:
@@ -671,6 +678,17 @@ struct in_addr  	*pnet_addr;
 		}
 		break;
 	}
+	case IOC_CLAIM_CIU:
+	{
+		chid	chan;
+
+		LOCK;
+		chan = bucketLookupItem(pBucket, piiu->curMsg.m_cid);
+		UNLOCK;
+		assert(chan);
+		reconnect_channel(piiu, chan);
+		break;
+	}
 	default:
 		ca_printf("CAC: post_msg(): Corrupt cmd in msg %x\n", 
 			piiu->curMsg.m_cmmd);
@@ -684,29 +702,27 @@ struct in_addr  	*pnet_addr;
 
 /*
  *
- *	reconnect_channel()
+ *	perform_claim_channel()
  *
  */
 #ifdef __STDC__
-LOCAL void reconnect_channel(
+LOCAL void perform_claim_channel(
 IIU			*piiu,
 struct in_addr          *pnet_addr
 )
 #else
-LOCAL void reconnect_channel(piiu,pnet_addr)
+LOCAL void perform_claim_channel(piiu,pnet_addr)
 IIU			*piiu;
 struct in_addr		*pnet_addr;
 #endif
 {
+	int			v42;
 	char			rej[64];
       	chid			chan;
-      	evid			pevent;
 	int			status;
-	enum channel_state	prev_cs;
 	IIU			*allocpiiu;
 	IIU			*chpiiu;
 	unsigned short		*pMinorVersion;
-	int			v41;
 
 	/*
 	 * ignore broadcast replies for deleted channels
@@ -723,7 +739,6 @@ struct in_addr		*pnet_addr;
 	}
 
 	chpiiu = chan->piiu;
-
 	if(!chpiiu){
 		ca_printf("cast reply to local channel??\n");
 		UNLOCK;
@@ -741,18 +756,13 @@ struct in_addr		*pnet_addr;
 	/*
 	 * Ignore duplicate search replies
 	 */
-	if (chan->state == cs_conn) {
+	if (chpiiu != piiuCast) {
 		caAddrNode	*pNode;
 
 		pNode = (caAddrNode *) chpiiu->destAddr.node.next;
 		assert(pNode);
-		if (pNode->destAddr.inetAddr.sin_addr.s_addr == 
+		if (pNode->destAddr.inetAddr.sin_addr.s_addr != 
 				pnet_addr->s_addr) {
-			ca_printf("<Extra> ");
-#		ifdef UNIX
-			fflush(stdout);
-#		endif
-		} else {
 
 			caHostFromInetAddr(pnet_addr,rej,sizeof(rej));
 			sprintf(
@@ -777,23 +787,6 @@ struct in_addr		*pnet_addr;
 	  	return;
 	}
 
-        /*	Update rmt chid fields from extmsg fields	*/
-        chan->type  = piiu->curMsg.m_type;      
-        chan->count = piiu->curMsg.m_count;      
-        chan->id.sid = piiu->curMsg.m_cid;
-
-	/*
-	 * Assume that we have access once connected briefly
-	 * until the server is able to tell us the correct
-	 * state for backwards compatibility.
-	 *
-	 * Their access rights call back does not get
-	 * called for the first time until the information 
-	 * arrives however.
-	 */
-	chan->ar.read_access = TRUE;
-	chan->ar.write_access = TRUE;
-
 	/*
 	 * Starting with CA V4.1 the minor version number
 	 * is appended to the end of each search reply.
@@ -807,32 +800,80 @@ struct in_addr		*pnet_addr;
 		allocpiiu->minor_version_number = CA_UKN_MINOR_VERSION;
 	}
 
+        ellDelete(&chpiiu->chidlist, &chan->node);
+	chan->piiu = allocpiiu;
+        ellAdd(&allocpiiu->chidlist, &chan->node);
+
+	/*
+	 * If this is the first channel to be
+	 * added to this IIU then communicate
+	 * the client's name to the server. 
+	 * (CA V4.1 or higher)
+	 */
+	if(ellCount(&allocpiiu->chidlist)==1){
+		issue_identify_client(allocpiiu);
+		issue_client_host_name(allocpiiu);
+	}
+
+	/*
+	 * claim the resource in the IOC
+	 * over TCP so problems with duplicate UDP port
+	 * after reboot go away
+	 */
+        chan->id.sid = piiu->curMsg.m_cid;
+	issue_claim_channel(allocpiiu, chan);
+
+	/*
+	 * Assume that we have access once connected briefly
+	 * until the server is able to tell us the correct
+	 * state for backwards compatibility.
+	 *
+	 * Their access rights call back does not get
+	 * called for the first time until the information 
+	 * arrives however.
+	 */
+	chan->ar.read_access = TRUE;
+	chan->ar.write_access = TRUE;
+
+	UNLOCK;
+
+	v42 = CA_V42(
+		CA_PROTOCOL_VERSION, 
+		allocpiiu->minor_version_number);
+	if(!v42){
+		reconnect_channel(piiu, chan);
+	}
+}
+
+
+/*
+ * reconnect_channel()
+ */
+#ifdef __STDC__
+LOCAL void reconnect_channel(
+IIU		*piiu,
+chid		chan
+)
+#else
+LOCAL void reconnect_channel(piiu,chan)
+IIU		*piiu;
+chid		chan;
+#endif
+{
+      	evid			pevent;
+	enum channel_state	prev_cs;
+	int			v41;
+
+	LOCK;
+
 	v41 = CA_V41(
 			CA_PROTOCOL_VERSION, 
-			allocpiiu->minor_version_number);
+			((IIU *)chan->piiu)->minor_version_number);
 
-        if(chpiiu != allocpiiu){
+        /*	Update rmt chid fields from extmsg fields	*/
+        chan->type  = piiu->curMsg.m_type;      
+        chan->count = piiu->curMsg.m_count;      
 
-		/*
-		 * The address changed (or was found for the first time)
-		 */
-	  	if(chpiiu != piiuCast)
-	   		ca_signal(ECA_NEWADDR, (char *)(chan+1));
-          	ellDelete(&chpiiu->chidlist, &chan->node);
-          	chan->piiu = chpiiu = allocpiiu; 
-          	ellAdd(&chpiiu->chidlist, &chan->node);
-
-		/*
-		 * If this is the first channel to be
-		 * added to this IIU then communicate
-		 * the client's name to the server. 
-		 * (CA V4.1 or higher)
-		 */
-		if(ellCount(&chpiiu->chidlist)==1){
-			issue_identify_client(chpiiu);
-			issue_client_host_name(chpiiu);
-		}
-        }
 
 	/*
 	 * set state to cs_conn before caling 
@@ -841,13 +882,6 @@ struct in_addr		*pnet_addr;
  	 */
 	prev_cs = chan->state;
 	chan->state = cs_conn;
-
-	/*
-	 * claim the resource in the IOC
-	 * over TCP so problems with duplicate UDP port
-	 * after reboot go away
-	 */
-	issue_claim_channel(chpiiu, chan);
 
 	/*
 	 * NOTE: monitor and callback reissue must occur prior to calling
@@ -876,6 +910,20 @@ struct in_addr		*pnet_addr;
 
       	UNLOCK;
 
+	/*
+	 * if less than v4.1 then the server will never
+	 * send access rights and we know that there
+	 * will always be access and call their call back
+	 * here
+	 */
+	if (chan->access_rights_func && !v41) {
+		struct access_rights_handler_args args;
+
+		args.chid = chan;
+		args.ar = chan->ar;
+		(*chan->access_rights_func) (args);
+	}
+
       	if(chan->connection_func){
 		struct connection_handler_args	args;
 
@@ -890,19 +938,6 @@ struct in_addr		*pnet_addr;
           	CLRPENDRECV(TRUE);
 	}
 
-	/*
-	 * if less than v4.1 then the server will never
-	 * send access rights so we know that there
-	 * will always be access and call their call back
-	 * here
-	 */
-	if (chan->access_rights_func && !v41) {
-		struct access_rights_handler_args args;
-
-		args.chid = chan;
-		args.ar = chan->ar;
-		(*chan->access_rights_func) (args);
-	}
 
 	UNLOCK;
 }

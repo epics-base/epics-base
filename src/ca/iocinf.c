@@ -209,8 +209,6 @@ int			net_proto;
 		return ECA_ALLOCMEM;
 	}
 
-	piiu->send_retry_count = SEND_RETRY_COUNT_INIT;
-
 	piiu->active = FALSE;
 
 	piiu->pcas = ca_static;
@@ -218,13 +216,6 @@ int			net_proto;
 	ellInit(&piiu->destAddr);
 
   	piiu->sock_proto = net_proto;
-
-	/*
-	 * reset the delay to the next retry or keepalive
-	 */
-	piiu->next_retry = CA_CURRENT_TIME;
-	piiu->retry_delay = CA_RECAST_DELAY;
-	piiu->nconn_tries = 0;
 
 	/*
 	 * set the minor version ukn until the server
@@ -382,7 +373,7 @@ int			net_proto;
 				&pNode->destAddr.sockAddr,
 				sizeof(pNode->destAddr.sockAddr));
       		if(status < 0){
-			ca_printf("CAC: no conn errno %d\n", MYERRNO);
+			ca_printf("CAC: no conn err=\"%s\"\n", strerror(MYERRNO));
         		status = socket_close(sock);
 			if(status<0){
 				SEVCHK(ECA_INTERNAL,NULL);
@@ -445,7 +436,8 @@ int			net_proto;
 				sizeof(true));
       		if(status<0){
 			free(piiu);
-        		ca_printf("CAC: sso (errno=%d)\n",MYERRNO);
+        		ca_printf("CAC: sso (err=\"%s\")\n",
+				strerror(MYERRNO));
         		status = socket_close(sock);
 			if(status < 0){
 				SEVCHK(ECA_INTERNAL,NULL);
@@ -466,7 +458,7 @@ int			net_proto;
 				(struct sockaddr *) &saddr, 
 				sizeof(saddr));
       		if(status<0){
-        		ca_printf("CAC: bind (errno=%d)\n",MYERRNO);
+        		ca_printf("CAC: bind (err=%s)\n",strerror(MYERRNO));
 			ca_signal(ECA_INTERNAL,"bind failed");
       		}
 
@@ -645,8 +637,8 @@ struct ioc_in_use 	*piiu;
 				MYERRNO != ENOBUFS && 
 				MYERRNO != EINTR){
 				ca_printf(
-					"CAC: error on socket send() %d\n",
-					MYERRNO);
+					"CAC: error on socket send() %s\n",
+					strerror(MYERRNO));
 			}
 
 			piiu->conn_up = FALSE;
@@ -714,13 +706,6 @@ struct ioc_in_use 	*piiu;
 	if(status>=0){
 		assert(status<=sendCnt);
 
-		/*
-		 * reset the delay to the next keepalive
-		 */
-    		if(status){
-			piiu->next_retry = time(NULL) + CA_RETRY_PERIOD;
-		}
-
 		CAC_RING_BUFFER_READ_ADVANCE(&piiu->send, status);
 		
 		sendCnt = cacRingBufferReadSize(&piiu->send, FALSE);
@@ -743,8 +728,8 @@ struct ioc_in_use 	*piiu;
 		MYERRNO != ECONNRESET &&
 		MYERRNO != ETIMEDOUT){
 		ca_printf(	
-			"CAC: error on socket send() %d\n",
-			MYERRNO);
+			"CAC: error on socket send() %s\n",
+			strerror(MYERRNO));
 	}
 
 	piiu->conn_up = FALSE;
@@ -906,8 +891,8 @@ int		flags;
 			char text[255];                                         
      			sprintf(
 				text,
-				"CAC: unexpected select fail: %d",
-				MYERRNO); 
+				"CAC: unexpected select fail: %s",
+				strerror(MYERRNO)); 
       			SEVCHK(ECA_INTERNAL,text);   
 		}
 	}
@@ -1020,8 +1005,9 @@ struct ioc_in_use	*piiu;
        	 	if(	MYERRNO != EPIPE && 
 			MYERRNO != ECONNRESET &&
 			MYERRNO != ETIMEDOUT){
-	  		ca_printf(	"CAC: unexpected recv error (errno=%d)\n",
-				MYERRNO);
+	  		ca_printf(	
+				"CAC: unexpected recv error (err=%s)\n",
+				strerror(MYERRNO));
 		}
 		piiu->conn_up = FALSE;
 		UNLOCK;
@@ -1040,11 +1026,10 @@ struct ioc_in_use	*piiu;
 	CAC_RING_BUFFER_WRITE_ADVANCE(&piiu->recv, status);
 
 	/*
-	 * reset the delay to the next keepalive
+	 * Record the time whenever we receive a message 
+	 * from this IOC
 	 */
-    	if(piiu != piiuCast){
-		piiu->next_retry = time(NULL) + CA_RETRY_PERIOD;
-	}
+	piiu->timeAtLastRecv = time(NULL);
 
 	UNLOCK;
 	return;
@@ -1153,7 +1138,7 @@ struct ioc_in_use	*piiu;
 			UNLOCK;
        			return;
 		}
-		ca_printf("Unexpected UDP failure %d\n", MYERRNO);
+		ca_printf("Unexpected UDP failure %s\n", strerror(MYERRNO));
 		piiu->conn_up = FALSE;
     	}
 	else if(status > 0){

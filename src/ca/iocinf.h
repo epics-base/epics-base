@@ -297,6 +297,7 @@ typedef struct ioc_in_use{
 	void			*pCurData;
 	unsigned long		curDataMax;
 	unsigned long		curDataBytes;
+	ca_time			timeAtLastRecv;
 #ifdef __STDC__
 	void			(*sendBytes)(struct ioc_in_use *);
 	void			(*recvBytes)(struct ioc_in_use *);
@@ -311,10 +312,6 @@ typedef struct ioc_in_use{
 	short			conn_up;	/* boolean: T-conn /F-disconn */
 	short			send_needed;	/* CA needs a send */
 	char			host_name_str[32];
-	unsigned		nconn_tries;
-	unsigned		send_retry_count;
-	ca_time			next_retry;
-	ca_time			retry_delay;
 
 #ifdef VMS	/* for qio ASTs */
 	unsigned long		putConvertBufSize;
@@ -354,13 +351,18 @@ struct  ca_static{
 	unsigned short	ca_post_msg_active; 
 	short		ca_repeater_contacted;
 	unsigned short	ca_send_msg_active;
+#if 0
 	struct in_addr	ca_castaddr;
+#endif
 	char		ca_sprintf_buf[256];
 	BUCKET		*ca_pBucket;
 	unsigned long	ca_nextBucketId;
 	bhe		*ca_beaconHash[BHT_INET_ADDR_MASK+1];
 	char		*ca_pUserName;
 	char		*ca_pHostName;
+	unsigned	ca_conn_n_tries;
+	ca_time		ca_conn_next_retry;
+	ca_time		ca_conn_retry_delay;
 #if defined(UNIX) || defined(vxWorks)
 	fd_set          ca_readch;  
 	fd_set          ca_writech;  

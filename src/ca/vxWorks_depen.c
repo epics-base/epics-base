@@ -111,6 +111,16 @@ int             tid;
                 return status;
         }
 
+	/*
+	 * just return success if they have already done
+	 * a ca import for this task
+	 */
+        pcas = (struct ca_static *)
+                taskVarGet(taskIdSelf(), (int *)&ca_static);
+        if (pcas != (struct ca_static *) ERROR){
+                return ECA_NORMAL;
+        }
+
         ptviu = calloc(1, sizeof(*ptviu));
         if(!ptviu){
                 return ECA_ALLOCMEM;

@@ -29,6 +29,7 @@ void 	null_event(struct event_handler_args args);
 void 	write_event(struct event_handler_args args);
 void 	conn(struct connection_handler_args args);
 void 	conn_cb(struct event_handler_args args);
+void 	accessSecurity_cb(struct access_rights_handler_args args);
 #else /*__STDC__*/
 int	doacctst();
 void 	test_sync_groups();
@@ -37,6 +38,7 @@ void 	null_event();
 void 	write_event();
 void 	conn();
 void 	conn_cb();
+void 	accessSecurity_cb();
 #endif /*__STDC__*/
 
 
@@ -122,10 +124,10 @@ char *pname;
 	for (i = 0; i < 10; i++) {
 
 		status = ca_array_build(pname,	/* channel ASCII name	 */
-					DBR_GR_FLOAT,	/* fetch external type	 */
-					NUM,	/* array element cnt	 */
+					TYPENOTCONN,/* fetch external type*/
+					0,	/* array element cnt	 */
 					&chix3,	/* ptr to chid		 */
-					ptr	/* pointer to recv buf	 */
+					NULL    /* pointer to recv buf	 */
 			);
 		SEVCHK(status, NULL);
 
@@ -179,13 +181,17 @@ char *pname;
 
 	status = ca_array_build(
 				pname,	/* channel ASCII name	 */
-				DBR_GR_FLOAT,	/* fetch external type	 */
-				NUM,	/* array element cnt	 */
+				TYPENOTCONN,	/* fetch external type	 */
+				0,	/* array element cnt	 */
 				&chix3,	/* ptr to chid		 */
-				ptr	/* pointer to recv buf	 */
+				NULL /* pointer to recv buf	 */
 		);
 	SEVCHK(status, NULL);
+	status = ca_replace_access_rights_event(chix3, accessSecurity_cb);
 
+	/*
+	 * verify clear before connect
+	 */
 	SEVCHK(ca_build_and_connect(
 				    pname,
 				    TYPENOTCONN,
@@ -194,6 +200,17 @@ char *pname;
 				    NULL,
 				    CONN_ROUTINE,
 				    NULL), NULL);
+	SEVCHK(ca_clear_channel(chix4), NULL);
+	SEVCHK(ca_build_and_connect(
+				    pname,
+				    TYPENOTCONN,
+				    0,
+				    &chix4,
+				    NULL,
+				    CONN_ROUTINE,
+				    NULL), NULL);
+	status = ca_replace_access_rights_event(chix4, accessSecurity_cb);
+	SEVCHK(status, NULL);
 	SEVCHK(ca_build_and_connect(
 				    pname,
 				    TYPENOTCONN,
@@ -202,6 +219,8 @@ char *pname;
 				    NULL,
 				    CONN_ROUTINE,
 				    NULL), NULL);
+	status = ca_replace_access_rights_event(chix2, accessSecurity_cb);
+	SEVCHK(status, NULL);
 	SEVCHK(ca_build_and_connect(
 				    pname,
 				    TYPENOTCONN,
@@ -210,10 +229,8 @@ char *pname;
 				    NULL,
 				    CONN_ROUTINE,
 				    NULL), NULL);
-#if 0
-	status = ca_replace_access_rights_event(chix1, ar_event);
-	SEVCHK(status,NULL);
-#endif
+	status = ca_replace_access_rights_event(chix1, accessSecurity_cb);
+	SEVCHK(status, NULL);
 
 	status = ca_pend_io(1000.0);
 	SEVCHK(status, NULL);
@@ -641,3 +658,23 @@ CA_SYNC_GID	gid;
 		SEVCHK(status, NULL);
 	}
 }
+
+
+/*
+ * accessSecurity_cb()
+ */
+#ifdef __STDC__
+void 	accessSecurity_cb(struct access_rights_handler_args args)
+#else /*__STDC__*/
+void 	accessSecurity_cb(args)
+struct access_rights_handler_args args;
+#endif /*__STDC__*/
+{
+
+	printf(	"%s on %s has %s/%s access\n",
+		ca_name(args.chid),
+		ca_host_name(args.chid),
+		ca_read_access(args.chid)?"read":"noread",
+		ca_write_access(args.chid)?"write":"nowrite");
+}
+

@@ -24,6 +24,7 @@
 /*			(now handled by the send needed flag)		*/
 /*	.10 102093 joh	improved broadcast schedualing for		*/
 /*			reconnects					*/
+/*	.11 042994 joh	removed client side heart beat			*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -38,7 +39,7 @@
 /************************************************************************/
 /*_end									*/
 
-static char 	*sccsId = "$Id$\t$Date$";
+static char 	*sccsId = "$Id$";
 
 #include 	"iocinf.h"
 
@@ -61,63 +62,30 @@ int	silent;
 	struct ioc_in_use	*piiu;
   	chid			chix;
   	unsigned int		retry_cnt = 0;
-  	unsigned int		keepalive_cnt = 0;
   	unsigned int		retry_cnt_no_handler = 0;
 	ca_time			current;
 
 	current = time(NULL);
 
-	/*
-	 * issue connection heartbeat
-	 */
-	LOCK;
-	for(	piiu = (struct ioc_in_use *) iiuList.node.next;
-		piiu;
-		piiu = (struct ioc_in_use *) piiu->node.next){
-
-		if(piiu == piiuCast || !piiu->conn_up){
-			continue;
-		}
-
-		if(piiu->next_retry == CA_CURRENT_TIME){
-			piiu->next_retry = current + CA_RETRY_PERIOD;
-			continue;
-		}
-
-		if(piiu->next_retry > current)
-			continue;
-
-		/*
-		 * periodic keepalive on unused channels
-		 */
-
-		/*
-		 * reset of delay to the next keepalive
-		 * occurs when the message is sent
-		 */
-		noop_msg(piiu);
-		keepalive_cnt++;
-	}
-	UNLOCK;
-
 	if(!piiuCast){
 		return;
 	}
 
-	if(piiuCast->next_retry == CA_CURRENT_TIME){
-		piiuCast->next_retry = current + piiuCast->retry_delay;
+	if(ca_static->ca_conn_next_retry == CA_CURRENT_TIME){
+		ca_static->ca_conn_next_retry = 
+			current + ca_static->ca_conn_retry_delay;
 	}
 
-	if(piiuCast->next_retry > current)
+	if(ca_static->ca_conn_next_retry > current)
 		return;
 
-    	if(piiuCast->nconn_tries++ > MAXCONNTRIES)
+    	if(ca_static->ca_conn_n_tries++ > MAXCONNTRIES)
       		return;
 
-	if(piiuCast->retry_delay<CA_RECAST_PERIOD){
-		piiuCast->retry_delay += piiuCast->retry_delay;
+	if(ca_static->ca_conn_retry_delay<CA_RECAST_PERIOD){
+		ca_static->ca_conn_retry_delay += ca_static->ca_conn_retry_delay;
 	}
-	piiuCast->next_retry = current + piiuCast->retry_delay;
+	ca_static->ca_conn_next_retry = current + ca_static->ca_conn_retry_delay;
 
 	LOCK;
 	for(	chix = (chid) piiuCast->chidlist.node.next;
@@ -313,20 +281,25 @@ struct in_addr  *pnet_addr;
 
 		next = currentTime + delay;
 
-		if(piiuCast->next_retry>next){
-			piiuCast->next_retry = next;
+		if(ca_static->ca_conn_next_retry>next){
+			ca_static->ca_conn_next_retry = next;
 		}
-		piiuCast->retry_delay = CA_RECAST_DELAY;
-	      	piiuCast->nconn_tries = 0;
+		ca_static->ca_conn_retry_delay = CA_RECAST_DELAY;
+		ca_static->ca_conn_n_tries = 0;
 	}
 
-#ifdef DEBUG
-	ca_printf("CAC: <Trying ukn online after pseudo random delay=%d sec> ",
-		piiuCast->retry_delay);
-#ifdef UNIX
-    	fflush(stdout);
-#endif
-#endif
+#	ifdef DEBUG
+
+		ca_printf(
+		"CAC: <Trying ukn online after pseudo random delay=%d sec> ",
+		ca_static->ca_conn_retry_delay);
+
+#		ifdef UNIX
+    			fflush(stdout);
+#		endif
+
+#	endif
+
 	UNLOCK;
 
 }

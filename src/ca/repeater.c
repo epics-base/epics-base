@@ -60,7 +60,7 @@
  *
  */
 
-static char *sccsId = "$Id$\t$Date$";
+static char *sccsId = "$Id$";
 
 #include	"iocinf.h"
 
@@ -125,8 +125,8 @@ int ca_repeater()
       	status = bind(sock, (struct sockaddr *)&bd, sizeof(bd));
      	if(status<0){
 		if(MYERRNO != EADDRINUSE){
-			ca_printf("CA Repeater: unexpected bind fail %d\n", 
-				MYERRNO);
+			ca_printf("CA Repeater: unexpected bind fail %s\n", 
+				strerror(MYERRNO));
 		}
 		socket_close(sock);
 		exit(0);
@@ -178,8 +178,8 @@ int ca_repeater()
             	                    		(struct sockaddr *)&pclient->from, 
                	                 		sizeof pclient->from);
    					if(status < 0){
-						ca_printf("CA Repeater: fanout err %d\n",
-							MYERRNO);
+						ca_printf("CA Repeater: fanout err %s\n",
+							strerror(MYERRNO));
 					}
 #ifdef DEBUG
 					ca_printf("Sent\n");
@@ -228,13 +228,13 @@ int ca_repeater()
        				(struct sockaddr *)&from, /* back to sender */
 				sizeof from);
       			if(status != sizeof confirm){
-				ca_printf("CA Repeater: confirm err %d\n",
-					MYERRNO);
+				ca_printf("CA Repeater: confirm err %s\n",
+					strerror(MYERRNO));
 			}
 		}
 		else{
-			ca_printf("CA Repeater: recv err %d\n",
-				MYERRNO);
+			ca_printf("CA Repeater: recv err %s\n",
+				strerror(MYERRNO));
 		}
 
 		/* remove any dead wood prior to pending */
@@ -278,8 +278,8 @@ int 			sock;
 		if(MYERRNO == EADDRINUSE)
 			present = TRUE;
 		else{
-			ca_printf("CA Repeater: client cleanup err %d\n",
-				MYERRNO);
+			ca_printf("CA Repeater: client cleanup err %s\n",
+				strerror(MYERRNO));
 		}
 	}
 

@@ -34,12 +34,16 @@
 /*
  * ANSI includes
  */
-#include "assert.h"
-#include "string.h"
-#include "stdLib.h"
+#include <assert.h>
+#include <string.h>
+#include <stdLib.h>
 
-#include "stsdef.h"
-#include "ssdef.h"
+/*
+ * VMS includes
+ */
+#include <stsdef.h>
+#include <ssdef.h>
+#include <jpidef.h>
 
 #include "iocinf.h"
 
@@ -60,21 +64,26 @@ char *localUserName()
 		short		item_code;
 		void		*pBuf;
 		void		*pRetSize;
-		unsigned long	end_of_list;
-	}item_list;
+	}item_list[3];
 	int		length;
 	char		pName[8]; /* the size of VMS account names */
 	short		nameLength;
 	char		*psrc;
 	char		*pdest;
 	int		status;
+	int		jobType;
+	int		jobTypeSize;
 	char 		*pTmp;
 
-	item_list.buffer_length = sizeof(pName);
-	item_list.item_code = JPI$ACCOUNT; /* fetch the account name */
-	item_list.pBuf = pName;
-	item_list.pRetSize = &nameLength;
-	item_list.end_of_list = NULL;
+	item_list[0].buffer_length = sizeof(pName);
+	item_list[0].item_code = JPI$_ACCOUNT; /* fetch the account name */
+	item_list[0].pBuf = pName;
+	item_list[0].pRetSize = &nameLength;
+	item_list[1].buffer_length = sizeof(jobtype);
+	item_list[1].item_code = JPI$_JOBTYPE; /* fetch the account name */
+	item_list[1].pBuf = &jobType;
+	item_list[1].pRetSize = &jobTypeSize;
+	item_list[2].buffer_length = 0;
 
 	status = sys$getjpiw(
 			NULL,
@@ -90,7 +99,7 @@ char *localUserName()
 
 	psrc = pName;
 	length = 0;
-	while(psrc<&pName[sizeof(pName)] && *psrc != ' '){
+	while(psrc<&pName[nameLength] && !isspace(*psrc)){
 		length++;
 		psrc++;
 	}
@@ -101,6 +110,14 @@ char *localUserName()
 	}
 	strncpy(pTmp, pName, length);
 	pTmp[length] = '\0';
+
+	/*
+	 * test for remote login
+	 */
+	if(jobTypeSize == sizeof(jobtype)){
+		if(jobType != JPI$K_LOCAL){
+		}
+	}
 
 	return pTmp;
 }

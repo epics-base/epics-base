@@ -328,14 +328,9 @@ LOCAL int terminate_one_client(struct client *client)
 				NULL);
 		}
 		status = asRemoveClient(&pciu->asClientPVT);
-		if(status){
-			logMsg( "%s Bad client PVD during client shutdown",
-				(int)__FILE__,
-				NULL,
-				NULL,
-				NULL,
-				NULL,
-				NULL);
+		if(status!=0 && status != S_asLib_asNotActive){
+			printf("And the status is %x \n", status);
+			errPrintf(status, __FILE__, __LINE__, "asRemoveClient");
 		}
 
 		/*

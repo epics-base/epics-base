@@ -19,13 +19,14 @@
 
 #define __IOCMSG__
 
-static char	*iocmsghSccsId = "$Id$ CA version 4.1";
+static char	*iocmsghSccsId = "$Id$ CA version 4.2";
 
 /* TCP/UDP port number (bumped each protocol change) */
 #define CA_PROTOCOL_VERSION	4
-#define CA_MINOR_VERSION	1
+#define CA_MINOR_VERSION	2
 #define CA_UKN_MINOR_VERSION	0 /* unknown minor version */
-#define CA_V41(MAJOR,MINOR)	( ((MAJOR)==4&&(MINOR)>0) || (MAJOR)>4 )
+#define CA_V41(MAJOR,MINOR)	( ((MAJOR)==4&&(MINOR)>=1) || (MAJOR)>4 )
+#define CA_V42(MAJOR,MINOR)	( ((MAJOR)==4&&(MINOR)>=2) || (MAJOR)>4 )
 #define	CA_PORT_BASE		IPPORT_USERRESERVED + 56
 #define CA_SERVER_PORT		(CA_PORT_BASE+CA_PROTOCOL_VERSION*2)
 #define CA_CLIENT_PORT		(CA_PORT_BASE+CA_PROTOCOL_VERSION*2+1)

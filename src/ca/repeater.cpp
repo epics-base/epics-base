@@ -296,13 +296,13 @@ LOCAL void register_new_client (struct sockaddr_in  *pFrom)
 
     if ( ! pclient ) {
         pclient = (struct one_client *) calloc ( 1, sizeof (*pclient) );
-        if (!pclient) {
+        if ( ! pclient ) {
             ca_printf ( "%s: no memory for new client\n", __FILE__ );
             return;
         }
 
         msr = makeSocket (PORT_ANY, FALSE);
-        if (msr.sock==INVALID_SOCKET) {
+        if ( msr.sock==INVALID_SOCKET ) {
             free ( pclient );
             ca_printf ( "%s: no client sock because %d=\"%s\"\n",
                     __FILE__, msr.errNumber, msr.pErrStr );
@@ -314,7 +314,7 @@ LOCAL void register_new_client (struct sockaddr_in  *pFrom)
         status = connect ( pclient->sock, 
                 (struct sockaddr *) pFrom, 
                 sizeof ( *pFrom ) );
-        if ( status<0 ) {
+        if ( status < 0 ) {
             int errnoCpy = SOCKERRNO;
             ca_printf (
             "%s: unable to connect client sock because \"%s\"\n",

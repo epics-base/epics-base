@@ -241,6 +241,36 @@ caStatus casEventSys::eventsOff()
 	return S_cas_success;
 }
 
+// this is a pure virtual function, but we nevertheless need a  
+// noop to be called if they post events when a channel is being 
+// destroyed when we are in the casStrmClient destructor
+void casEventSys::eventSignal()
+{
+}
+
+// this is a pure virtual function, but we nevertheless need a  
+// noop to be called if they call this when we are in the 
+// casStrmClient destructor
+caStatus casEventSys::disconnectChan (caResId id)
+{
+    return S_cas_success;
+}
+
+// this is a pure virtual function, but we nevertheless need a  
+// noop to be called if they call this when we are in the 
+// casStrmClient destructor
+void casEventSys::eventFlush ()
+{
+}
+
+// this is a pure virtual function, but we nevertheless need a  
+// noop to be called if they call this when we are in the 
+// casStrmClient destructor
+casRes * casEventSys::lookupRes ( const caResId &, casResType )
+{
+    return 0;
+}
+
 //
 // casEventPurgeEv::cbFunc()
 // 

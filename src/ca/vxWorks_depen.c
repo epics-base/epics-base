@@ -144,6 +144,12 @@ void cac_block_for_io_completion(struct timeval *pTV)
 	ticks = min(LOCALTICKS, ticks);
 
 	semTake(io_done_sem, ticks);
+	/*
+	 * force a time update because we are not
+	 * going to get one with a nill timeout in
+	 * ca_mux_io()
+	 */
+	cac_gettimeval (&ca_static->currentTime);
 #endif
 }
 
@@ -206,6 +212,12 @@ void cac_block_for_sg_completion(CASG *pcasg, struct timeval *pTV)
 	ticks = min(LOCALTICKS, ticks);
 
 	semTake (pcasg->sem, ticks);
+	/*
+	 * force a time update because we are not
+	 * going to get one with a nill timeout in
+	 * ca_mux_io()
+	 */
+	cac_gettimeval (&ca_static->currentTime);
 #endif
 }
 

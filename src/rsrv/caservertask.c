@@ -34,6 +34,8 @@
  *	.03 joh 080991	close the socket if task create fails
  *	.04 joh	090591	updated for v5 vxWorks
  *	.05 joh	103091	print task id and disconnect state in client_stat()
+ *	.06 joh	112691	dont print client disconnect message unless
+ *			debug is on.
  */
 
 #include <vxWorks.h>
@@ -178,7 +180,9 @@ register struct client *client;
 
 	if (client->proto == IPPROTO_TCP) {
 
-		logMsg("CA Connection %d Terminated\n", tmpsock);
+		if(CASDEBUG>0){
+			logMsg("CA Connection %d Terminated\n", tmpsock);
+		}
 
 		/*
 		 * Server task deleted first since close() is not reentrant
@@ -220,11 +224,7 @@ register struct client *client;
 		   &rsrv_free_addrq);
 	FASTUNLOCK(&rsrv_free_addrq_lck);
 
-	if(FASTLOCKFREE(&client->send.lock)<0){
-		logMsg("cas: couldnt free sem\n");
-	}
-
-	if(FASTLOCKFREE(&client->recv.lock)<0){
+	if(FASTLOCKFREE(&client->lock)<0){
 		logMsg("cas: couldnt free sem\n");
 	}
 

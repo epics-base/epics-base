@@ -78,6 +78,8 @@ static char *sccsID = "@(#)drvComet.c	1.11\t9/16/92";
 #include <fast_lock.h>
 #include <vme.h>
 #include <drvSup.h>
+#include <dbDefs.h>
+#include <dbScan.h>
 
 #define COMET_NCHAN			4
 #define COMET_CHANNEL_MEM_SIZE		0x20000	/* bytes */
@@ -140,12 +142,9 @@ struct comet_cr{
 #define	COMET_500KHZ		0x0003
 
 /* defines for the auxiliary control register */
-#define	ONE_SHOT		0x08
+#define	ONE_SHOT		0x10
+#define ALL_CHANNEL_MODE	0x80
 
-
-
-
-#define		FLAG_EOC		0x10
 
 /* comet configuration data */
 struct comet_config{
@@ -153,7 +152,10 @@ struct comet_config{
 	unsigned short	*pdata;		/* pointer to data area for this COMET card	*/
 	void		(*psub)();	/* subroutine to call on end of conversion	*/
 	void		*parg[4];	/* argument to return to the arming routine	*/
-        FAST_LOCK       lock;           /* mutual exclusion lock 			*/
+        FAST_LOCK	lock;           /* mutual exclusion lock */
+        IOSCANPVT 	ioscanpvt;
+	unsigned long 	nelements;	/* number of elements to digitize/read */
+
 };
 
 /* task ID for the comet done task */
@@ -182,45 +184,99 @@ struct {
 void
 cometDoneTask()
 {
-    register unsigned		card;
-    register struct comet_config	*pconfig;
-    register long			i;
+  register unsigned		card;
+  register struct comet_config	*pconfig;
+  register long			i;
 
-    while(TRUE){
+  while(TRUE)
+    {
 
-	if (scan_control <= 0)
-		taskDelay(2);
-	else{
-		taskDelay(scan_control);
+  if (scan_control <= 0)
+    taskDelay(2);
+  else
+    {
+      taskDelay(scan_control);
 
-		/* check each card for end of conversion */
-		for(card=0, pconfig = pcomet_config; card < 2;card++, pconfig++){
-			/* is the card present */
-			if (!pconfig->pcomet_csr)	continue;
+/*  printf("DoneTask: entering for loop...\n"); */
 
-			/* is the card armed */
-			if (!pconfig->psub)		continue;
+	/* check each card for end of conversion */
+      for(card=0, pconfig = pcomet_config; card < 2;card++, pconfig++)
+        {
+/* is the card present */
+          if (!pconfig->pcomet_csr)
+            {
+              if (card == 0)
+                {
+/*
+                  printf("DoneTask: checking card present?...\n"); 
+                  printf("DoneTask: pconfig->pcomet_csr %x...\n",pconfig->pcomet_csr);
+*/
+                }
+              continue;
+            }
 
-			/* is the digitizer finished conversion */
-			if (*(pconfig->pdata+FLAG_EOC) == 0xffff)	continue;
+/* is the card armed */
+          if (!pconfig->psub)
+            {
+              if (card == 0)
+                {
+/*                  printf("DoneTask: checking card armed?...\n"); */
+                }
+              continue;
+            }
 
-			/* reset each of the control registers */
-			pconfig->pcomet_csr->csrh = pconfig->pcomet_csr->csrl = 0;
-			pconfig->pcomet_csr->lcrh = pconfig->pcomet_csr->lcrl = 0;
-			pconfig->pcomet_csr->gdcrh = pconfig->pcomet_csr->gdcrl = 0;
-			pconfig->pcomet_csr->acr = 0;
+/* is the digitizer finished conversion */
+/*          printf("pconfig->pdata: %x \n", pconfig->pdata); */
+
+          if (*(pconfig->pdata+pconfig->nelements) == 0xffff)
+            {
+              if (card == 0)
+                {
+/*                 printf("DoneTask: finished conversion?...\n"); */
+                }
+              continue;
+            }
+
+/*  printf("DoneTask: pcomet_config->pcomet_csr %x...\n",pcomet_config->pcomet_csr); */
+/*	printf("DoneTask: DONE\n");  */
+
+
+#if 0
+	/* reset each of the control registers */
+	pconfig->pcomet_csr->csrh = pconfig->pcomet_csr->csrl = 0;
+	pconfig->pcomet_csr->lcrh = pconfig->pcomet_csr->lcrl = 0;
+	pconfig->pcomet_csr->gdcrh = pconfig->pcomet_csr->gdcrl = 0;
+	pconfig->pcomet_csr->acr = 0;
+#endif
 			
-			/* clear the pointer to the subroutine to allow rearming */
-			pconfig->psub = NULL;
+	/* clear the pointer to the subroutine to allow rearming */
+/*	pconfig->psub = NULL; */
 
-			/* post the event */
-			/* - is there a bus error for long references to this card?? copy into VME mem? */
-			if(pconfig->parg[0]) (*pconfig->psub)(pconfig->parg[0],0xffff,pconfig->pdata);
-			if(pconfig->parg[1]) (*pconfig->psub)(pconfig->parg[1],0xffff,pconfig->pdata+COMET_DATA_MEM_SIZE/4);
-			if(pconfig->parg[2]) (*pconfig->psub)(pconfig->parg[2],0xffff,pconfig->pdata+COMET_DATA_MEM_SIZE/2);
-			if(pconfig->parg[3]) (*pconfig->psub)(pconfig->parg[3],0xffff,pconfig->pdata+(COMET_DATA_MEM_SIZE/4)*3);
-		}
-   	}
+/* post the event */
+/* - is there a bus error for long references to this card?? copy into VME mem? */
+
+        if(pconfig->parg[0])
+          {
+            (*pconfig->psub)(pconfig->parg[0],pconfig->pdata);
+          }
+	if(pconfig->parg[1])
+          {
+           (*pconfig->psub)(pconfig->parg[1],(((char*)pconfig->pdata)+0x20000));
+          }
+
+	if(pconfig->parg[2])
+          {
+           (*pconfig->psub)(pconfig->parg[2],(((char*)pconfig->pdata)+0x40000));
+          }
+
+	if(pconfig->parg[3])
+          {
+           (*pconfig->psub)(pconfig->parg[3],(((char*)pconfig->pdata)+0x60000));
+          }
+
+
+        }
+    }
     }
 }
 
@@ -234,82 +290,93 @@ cometDoneTask()
  */
 comet_init()
 {
-	register struct comet_config	*pconfig;
-	short				readback,got_one,card;
-	int				status;
-	struct comet_cr			*pcomet_cr;
-	unsigned char			*extaddr;
+  register struct comet_config	*pconfig;
+  short				readback,got_one,card;
+  int				status;
+  struct comet_cr		*pcomet_cr;
+  unsigned char			*extaddr;
 
-	/* free memory and delete tasks from previous initialization */
-	if (cometDoneTaskId){
-		if ((status = taskDelete(cometDoneTaskId)) < 0)
-			logMsg("\nCOMET: Failed to delete cometDoneTask: %d",status);
-	}else{
-		pcomet_config = 
-		  (struct comet_config *)calloc(wf_num_cards[COMET],sizeof(struct  comet_config));
-		if (pcomet_config == 0){
-			logMsg("\nCOMET: Couldn't allocate memory for the configuration data");
-			return;
-		}
-	}
+/* free memory and delete tasks from previous initialization */
+  if (cometDoneTaskId)
+    {
+      if ((status = taskDelete(cometDoneTaskId)) < 0)
+        logMsg("\nCOMET: Failed to delete cometDoneTask: %d",status);
+    }
+  else
+    {
+      pcomet_config = (struct comet_config *)calloc(wf_num_cards[COMET],sizeof(struct  comet_config));
+      if (pcomet_config == 0)
+       {
+         logMsg("\nCOMET: Couldn't allocate memory for the configuration data");
+         return;
+       }
+    }
 
-	/* get the standard and short address locations */
-        if ((status = sysBusToLocalAdrs(VME_AM_SUP_SHORT_IO,wf_addrs[COMET],&pcomet_cr)) != OK){
-		logMsg("\nCOMET: failed to map VME A16 base address\n");
-		return;
+/* get the standard and short address locations */
+  if ((status = sysBusToLocalAdrs(VME_AM_SUP_SHORT_IO,wf_addrs[COMET],&pcomet_cr)) != OK){
+	logMsg("\nCOMET: failed to map VME A16 base address\n");
+	return;
         } 
-        if ((status = sysBusToLocalAdrs(VME_AM_EXT_SUP_DATA,wf_memaddrs[COMET],&extaddr)) != OK){
-		logMsg("\nCOMET: failed to map VME A32 base address\n");
-		return;
+  if ((status = sysBusToLocalAdrs(VME_AM_EXT_SUP_DATA,wf_memaddrs[COMET],&extaddr)) != OK){
+	logMsg("\nCOMET: failed to map VME A32 base address\n");
+	return;
         }
 
-	/* determine which cards are present */
-	got_one = FALSE;
-	pconfig = pcomet_config;
-	for (	card = 0; 
-		card < 2; 
-		card++, pconfig++, pcomet_cr++, extaddr+= COMET_DATA_MEM_SIZE){
+/* determine which cards are present */
+  got_one = FALSE;
+  pconfig = pcomet_config;
+
+  for (	card = 0; 
+	card < 2; 
+	card++, pconfig++, pcomet_cr++, extaddr+= COMET_DATA_MEM_SIZE){
+
+    /* is the card present */
+    if (vxMemProbe(pcomet_cr,READ,sizeof(readback),&readback) != OK)
+      {
+       continue;
+      }
+    if (vxMemProbe(extaddr,READ,sizeof(readback),&readback) != OK)
+      {
+        logMsg("\nCOMET: Found CSR but not data RAM %x\n",extaddr);
+        continue;
+      }
+
+  /* initialize the configuration data */
+  pconfig->pcomet_csr = pcomet_cr; 
+  pconfig->pdata = (unsigned short *) extaddr; 
+  got_one = TRUE;
 
 
+  FASTLOCKINIT(&pcomet_config[card].lock);
 
-		/* is the card present */
-  		if (vxMemProbe(pcomet_cr,READ,sizeof(readback),&readback) != OK)	continue;
-  		if (vxMemProbe(extaddr,READ,sizeof(readback),&readback) != OK){
-			logMsg("\nCOMET: Found CSR but not data RAM %x",extaddr);
-			continue;
-		}
+  /* initialize the card */
+  pcomet_cr->csrh = ARM_DIGITIZER | AUTO_RESET_LOC_CNT;
+  pcomet_cr->csrl = COMET_1MHZ;
+  pcomet_cr->lcrh = pcomet_cr->lcrl = 0;
+  pcomet_cr->gdcrh = 0;
+  pcomet_cr->gdcrl = 1;
+  pcomet_cr->cdr = 0;
 
-		/* initialize the configuration data */
-		pconfig->pcomet_csr = pcomet_cr; 
-		pconfig->pdata = (unsigned short *) extaddr; 
-		got_one = TRUE;
+  /* run it once */
+  pcomet_cr->csrl |= SOFTWARE_TRIGGER;
+  taskDelay(1);
+  /* reset */
+  pcomet_cr->csrl = COMET_5MHZ;
+  pcomet_cr->acr = ONE_SHOT | ALL_CHANNEL_MODE;
 
-       		FASTLOCKINIT(&pcomet_config[card].lock);
+  scanIoInit(&pconfig->ioscanpvt); 
 
-		/* initialize the card */
-		pcomet_cr->csrh = ARM_DIGITIZER | AUTO_RESET_LOC_CNT;
-		pcomet_cr->csrl = COMET_1MHZ;
-		pcomet_cr->lcrh = pcomet_cr->lcrl = 0;
-		pcomet_cr->gdcrh = 0;
-		pcomet_cr->gdcrl = 1;
-		pcomet_cr->cdr = 0;
+  } /*end of for loop*/
 
-		/* run it once */
-                pcomet_cr->csrl |= SOFTWARE_TRIGGER;
-                taskDelay(1);
-		/* reset */
-		pcomet_cr->csrl = COMET_5MHZ;
-	}
-
-
-	/* initialization for processing comet digitizers */	
-  	if(got_one){
-         
-		/* start the waveform readback task */
-		scan_control = 2;		/* scan rate in vxWorks clock ticks */
-		cometDoneTaskId = taskSpawn("cometWFTask",WFDONE_PRI,WFDONE_OPT,WFDONE_STACK,(FUNCPTR) cometDoneTask);
-	}         
+  /* initialization for processing comet digitizers */	
+  if(got_one)
+    {
+      /* start the waveform readback task */
+      scan_control = 2;	              /* scan rate in vxWorks clock ticks */
+      cometDoneTaskId = taskSpawn("cometWFTask",WFDONE_PRI,WFDONE_OPT,WFDONE_STACK,(FUNCPTR) cometDoneTask);
+    }         
 }
+
 
 static long report(level)
     int level;
@@ -332,60 +399,82 @@ static long init()
  * initiate waveform read
  *
  */
-comet_driver(card, signal, pcbroutine, parg)
-register int		card,signal;
+comet_driver(card, signal, pcbroutine, parg, nelements)
+register unsigned short	card,signal;
 unsigned int		*pcbroutine;
 unsigned int		*parg;	/* pointer to the waveform record */
+unsigned long nelements;
 {
-	register struct comet_cr			*pcomet_csr;
-	register struct comet_config			*pconfig;
-	register unsigned short				*pcomet_data;
+  register struct comet_cr			*pcomet_csr;
+  register struct comet_config			*pconfig;
+  register unsigned short			*pcomet_data;
+  register char 				*dummy;
 
-	/* check for valid card number */
-	if(card >= wf_num_cards[COMET])
-		return ERROR;
-	pconfig = (pcomet_config+card);
-	if(signal >= NELEMENTS(pconfig->parg))
-		return ERROR;
+/*  printf("comet_driver: BEGIN...\n"); */
+/*  printf("comet_driver: nelements: %d ...\n",nelements); */
 
-	/* check for card present */      
-	if(!pconfig->pcomet_csr)	return ERROR;
+  /* check for valid card number */
+  if(card >= wf_num_cards[COMET])
+    return ERROR;
+  pconfig = (pcomet_config+card);
+  if(signal >= NELEMENTS(pconfig->parg))
+    return ERROR;
+  pconfig->nelements = nelements * 2;
 
-	/* mutual exclusion area */
-       FASTLOCK(&pconfig->lock);
+/*  printf("comet_driver: check for card present...\n"); */
 
-	/* mark the card as armed */
-	if (pconfig->parg[signal] == 0) 
-		pconfig->parg[signal] = parg;
- 	if (pconfig->psub) return;
-	pconfig->psub = (void (*)()) pcbroutine;
+  /* check for card present */      
+  if(!pconfig->pcomet_csr)	return ERROR;
 
-	/* exit mutual exclusion area */
-        FASTUNLOCK(&pconfig->lock);
+  /* mutual exclusion area */
+  FASTLOCK(&pconfig->lock);
 
-	pcomet_csr = pconfig->pcomet_csr;
+/*  printf("comet_driver: mark the card as armed...\n"); */
 
-	/* reset each of the control registers */
-	pcomet_csr->csrh = pcomet_csr->csrl = 0;
-	pcomet_csr->lcrh = pcomet_csr->lcrl = 0;
-	pcomet_csr->gdcrh = pcomet_csr->gdcrl = 0;
-	pcomet_csr->acr = 0;
+  /* mark the card as armed */
+/*  if (pconfig->parg[signal] != 0) */
+  pconfig->parg[signal] = parg;
+/*  if (pconfig->psub) return; */
+  pconfig->psub = (void (*)()) pcbroutine;
+
+  /* exit mutual exclusion area */
+  FASTUNLOCK(&pconfig->lock);
+
+  pcomet_csr = pconfig->pcomet_csr;
+
+  /* reset each of the control registers */
+  pcomet_csr->csrh = pcomet_csr->csrl = 0;
+  pcomet_csr->lcrh = pcomet_csr->lcrl = 0;
+  pcomet_csr->gdcrh = pcomet_csr->gdcrl = 0;
+  pcomet_csr->acr = 0;
 	
-	/* arm the card */
-	*(pconfig->pdata+FLAG_EOC) = 0xffff;
-	if (scan_control > 0)
-		{
-		pcomet_csr->gdcrh = 0xff;		/* 64K samples per channel */
-		pcomet_csr->gdcrl = 0xff;		/* 64K samples per channel */
-		pcomet_csr->acr = ONE_SHOT;		/* disarm after the trigger */	
-		pcomet_csr->csrl = 0;			/* sample at 5MhZ	*/
-		/* arm, reset location counter to 0 on trigger, use external trigger */
-		pcomet_csr->csrh = ARM_DIGITIZER | AUTO_RESET_LOC_CNT | EXTERNAL_TRIG_ENABLED;
-		}
-	else
-		pcomet_csr->csrh |= ARM_DIGITIZER;
+  /* arm the card */
+  *(pconfig->pdata+pconfig->nelements) = 0xffff; 
+/*  printf("comet_driver: pconfig->pcomet_csr %x...\n",pconfig->pcomet_csr); */
 
-	return OK;
+  if (scan_control > 0)
+   {
+#if 0  /* for debugging purposes */
+      pcomet_csr->gdcrh = 0x03;         /* # samples per channel */
+      pcomet_csr->gdcrl = 0xe8;         /* # samples per channel */
+#endif
+
+     pcomet_csr->gdcrh = (pconfig->nelements >> 8) & 0xff;  /* # samples per channel */
+     pcomet_csr->gdcrl = pconfig->nelements & 0xff;  /* # samples per channel */
+      pcomet_csr->acr = ONE_SHOT | ALL_CHANNEL_MODE; /* disarm after the trigger */	
+      pcomet_csr->csrl = COMET_5MHZ;	/* sample at 5MhZ */
+
+  /* arm, reset location counter to 0 on trigger, use external trigger */
+      pcomet_csr->csrh = ARM_DIGITIZER | AUTO_RESET_LOC_CNT | EXTERNAL_TRIG_ENABLED;
+/*      printf("comet_driver: gdcrh: %x gdcrl: %x nelements: %x\n ",pcomet_csr->gdcrh,pcomet_csr->gdcrl, pconfig->nelements); */
+
+    }
+  else
+    pcomet_csr->csrh |= ARM_DIGITIZER;
+/*  printf("comet_driver: pconfig->pcomet_csr %x...\n",pconfig->pcomet_csr); */
+
+/*  printf("comet_driver: END...\n"); */
+  return OK;
 } 
 
 
@@ -512,7 +601,7 @@ comet_mode(card,mode,arg,val)
 	case SCANDONE:
 		if (!pcomet_config[card].psub)
   			return ERROR;
-		/*pcomet_config[card].psub = NULL;*/	/* clear the pointer to subroutine to allow rearming */
+	/*pcomet_config[card].psub = NULL;*/	/* clear the pointer to subroutine to allow rearming */
 		(*pcomet_config[card].psub)(pcomet_config[card].parg,0xffff,pcomet_config[card].pdata);
 		break;
 	default:
@@ -520,3 +609,28 @@ comet_mode(card,mode,arg,val)
 	}
  return OK;
 }
+
+/*********************************************/
+cometGetioscanpvt(card,scanpvt)
+short           card;
+IOSCANPVT       *scanpvt;
+{
+  register struct comet_config       *pconfig;
+
+  pconfig=pcomet_config;
+  pconfig+=card;
+
+  if ((card >= wf_num_cards[COMET]) || (card < 0))     /* make sure hardware exists */
+    return(0);
+
+/*
+This is present in the mix driver...I don't know if I really need it.
+  if (!pconfig->present)
+    return(0);
+*/
+
+  *scanpvt = pconfig->ioscanpvt;
+
+  return(0);
+}
+

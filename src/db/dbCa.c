@@ -260,6 +260,152 @@ long dbCaPutLink(struct link *plink,short dbrType,
     return(status);
 }
 
+long dbCaGetAttributes(struct link *plink,
+	void (*callback)(void *usrPvt),void *usrPvt)
+{
+    caLink	*pca;
+    long	status = 0;
+    STATUS	semStatus;
+    short	link_action = 0;
+    caAttributes *pcaAttributes;
+
+    if(!plink || (plink->type!=CA_LINK)) {
+	epicsPrintf("dbCaGetAttributes: called for non CA_LINK\n");
+	return(-1);
+    }
+    pca = (caLink *)plink->value.pv_link.pvt;
+    if(!pca) {
+	epicsPrintf("dbCaGetAttributes: record %s pv_link.pvt is NULL\n",
+		plink->value.pv_link.precord);
+	return(-1);
+    }
+    if(pca->pcaAttributes) {
+	epicsPrintf("dbCaGetAttributes: record %s duplicate call\n",
+		plink->value.pv_link.precord);
+	return(-1);
+    }
+    pcaAttributes = dbCalloc(1,sizeof(caAttributes));
+    pcaAttributes->callback = callback;
+    pcaAttributes->usrPvt = usrPvt;
+    semStatus = semTake(pca->lock,WAIT_FOREVER);
+    if(semStatus!=OK) {
+	epicsPrintf("dbCaGetLink: semStatus!OK\n");
+	return(-1);
+    }
+    pca->pcaAttributes = pcaAttributes;
+    link_action |= CA_GET_ATTRIBUTES;
+    semGive(pca->lock);
+    addAction(pca,link_action);
+    return(status);
+}
+
+caAttributes *getpcaAttributes(struct link *plink)
+{
+    caLink	*pca;
+
+    if(!plink || (plink->type!=CA_LINK)) return(NULL);
+    pca = (caLink *)plink->value.pv_link.pvt;
+    if(!pca) return(NULL);
+    if(ca_state(pca->chid)!=cs_conn) return(NULL);
+    return(pca->pcaAttributes);
+}
+
+long dbCaGetControlLimits(struct link *plink,double *low, double *high)
+{
+    caAttributes *pcaAttributes;
+
+    pcaAttributes = getpcaAttributes(plink);
+    if(!pcaAttributes) return(-1);
+    *low = pcaAttributes->data.lower_ctrl_limit;
+    *high = pcaAttributes->data.upper_ctrl_limit;
+    return(0);
+}
+
+long dbCaGetGraphicLimits(struct link *plink,double *low, double *high)
+{
+    caAttributes *pcaAttributes;
+
+    pcaAttributes = getpcaAttributes(plink);
+    if(!pcaAttributes) return(-1);
+    *low = pcaAttributes->data.lower_disp_limit;
+    *high = pcaAttributes->data.upper_disp_limit;
+    return(0);
+}
+
+long dbCaGetAlarmLimits(struct link *plink,
+	double *lolo, double *low, double *high, double *hihi)
+{
+    caAttributes *pcaAttributes;
+
+    pcaAttributes = getpcaAttributes(plink);
+    if(!pcaAttributes) return(-1);
+    *lolo = pcaAttributes->data.lower_alarm_limit;
+    *low = pcaAttributes->data.lower_warning_limit;
+    *high = pcaAttributes->data.upper_warning_limit;
+    *hihi = pcaAttributes->data.upper_alarm_limit;
+    return(0);
+}
+
+long dbCaGetPrecision(struct link *plink,short *precision)
+{
+    caAttributes *pcaAttributes;
+
+    pcaAttributes = getpcaAttributes(plink);
+    if(!pcaAttributes) return(-1);
+    *precision = pcaAttributes->data.precision;
+    return(0);
+}
+
+long dbCaGetUnits(struct link *plink,char *units,int unitsSize)
+{
+    caAttributes *pcaAttributes;
+
+    pcaAttributes = getpcaAttributes(plink);
+    if(!pcaAttributes) return(-1);
+    strncpy(units,pcaAttributes->data.units,unitsSize);
+    units[unitsSize-1] = 0;
+    return(0);
+}
+
+long dbCaGetNelements(struct link *plink,long *nelements)
+{
+    caLink	*pca;
+
+    if(!plink) return(-1);
+    if(plink->type != CA_LINK) return(-1);
+    pca = (caLink *)plink->value.pv_link.pvt;
+    if(!pca) return(-1);
+    if(ca_state(pca->chid)!=cs_conn) return(-1);
+    *nelements = pca->nelements;
+    return(0);
+}
+
+long dbCaGetSevr(struct link *plink,short *severity)
+{
+    caLink	*pca;
+
+    if(!plink) return(-1);
+    if(plink->type != CA_LINK) return(-1);
+    pca = (caLink *)plink->value.pv_link.pvt;
+    if(!pca) return(-1);
+    if(ca_state(pca->chid)!=cs_conn) return(-1);
+    *severity = pca->sevr;
+    return(0);
+}
+
+int dbCaIsLinkConnected(struct link *plink)
+{
+    caLink	*pca;
+
+    if(!plink) return(FALSE);
+    if(plink->type != CA_LINK) return(FALSE);
+    pca = (caLink *)plink->value.pv_link.pvt;
+    if(!pca) return(FALSE);
+    if(!pca->chid) return(FALSE);
+    if(ca_state(pca->chid)==cs_conn) return(TRUE);
+    return(FALSE);
+}
+
 static void eventCallback(struct event_handler_args arg)
 {
 	caLink		*pca = (caLink *)arg.usr;
@@ -322,6 +468,39 @@ static void eventCallback(struct event_handler_args arg)
 	    || ((ppv_link->pvlMask&pvlOptCPP)&&(precord->scan==0)))
 		scanOnce(precord);
 	}
+done:
+	semGive(pca->lock);
+}
+
+static void getAttribEventCallback(struct event_handler_args arg)
+{
+	caLink		*pca = (caLink *)arg.usr;
+	struct link	*plink;
+	STATUS		semStatus;
+struct dbr_ctrl_double  *dbr;
+	caAttributes	*pcaAttributes = NULL;
+
+	if(!pca) {
+		epicsPrintf("getAttribEventCallback why was arg.usr NULL\n");
+		return;
+	}
+	semStatus = semTake(pca->lock,WAIT_FOREVER);
+	if(semStatus!=OK) {
+	    epicsPrintf("getAttribEventCallback: semStatus!OK\n");
+	    return;
+	}
+	plink = pca->plink;
+	if(!plink) goto done;
+	if(!arg.dbr) {
+		epicsPrintf("getAttribEventCallback why was arg.dbr NULL\n");
+		goto done;
+	}
+	dbr = arg.dbr;
+	pcaAttributes = pca->pcaAttributes;
+	if(!pcaAttributes) goto done;
+	pcaAttributes->data = *dbr; /*copy entire structure*/
+	pcaAttributes->gotData = TRUE;
+	(pcaAttributes->callback)(pcaAttributes->usrPvt);
 done:
 	semGive(pca->lock);
 }
@@ -414,6 +593,7 @@ static void connectionCallback(struct connection_handler_args arg)
     if((plink->value.pv_link.pvlMask & pvlOptOutString) && (pca->gotOutString)){
 	link_action |= CA_WRITE_STRING;
     }
+    if(pca->pcaAttributes) link_action |= CA_GET_ATTRIBUTES;
 done:
     semGive(pca->lock);
     if(link_action) addAction(pca,link_action);
@@ -442,6 +622,7 @@ void dbCaTask()
 		    free(pca->pputNative);
 		    free(pca->pgetString);
 		    free(pca->pputString);
+		    free(pca->pcaAttributes);
 		    semDelete(pca->lock);
 		    free(pca);
 		    continue; /*No other link_action makes sense*/
@@ -495,6 +676,13 @@ void dbCaTask()
 		    status = ca_add_array_event(DBR_STS_STRING,1,
 				pca->chid, eventCallback,pca,0.0,0.0,0.0,
 				0);
+		    if(status!=ECA_NORMAL)
+			    epicsPrintf("dbCaTask ca_add_array_event %s\n",
+				ca_message(status));
+		}
+		if(link_action&CA_GET_ATTRIBUTES) {
+		    status = ca_get_callback(DBR_CTRL_DOUBLE,
+				pca->chid,getAttribEventCallback,pca);
 		    if(status!=ECA_NORMAL)
 			    epicsPrintf("dbCaTask ca_add_array_event %s\n",
 				ca_message(status));

@@ -298,6 +298,17 @@ void dbCaRemoveLink(struct link *plink);
 long dbCaGetLink(struct link *plink,short dbrType,void *pbuffer,
 	unsigned short *psevr,long *nRequest);
 long dbCaPutLink(struct link *plink,short dbrType,void *pbuffer,long nRequest);
+long dbCaGetAttributes(struct link *plink,
+	void (*callback)(void *usrPvt),void *usrPvt);
+long dbCaGetControlLimits(struct link *plink,double *low, double *high);
+long dbCaGetGraphicLimits(struct link *plink,double *low, double *high);
+long dbCaGetAlarmLimits(struct link *plink,
+	double *lolo, double *low, double *high, double *hihi);
+long dbCaGetNelements(struct link *plink,long *nelements);
+long dbCaGetPrecision(struct link *plink,short *precision);
+long dbCaGetSevr(struct link *plink,short *severity);
+long dbCaGetUnits(struct link *plink,char *units,int unitsSize);
+int dbCaIsLinkConnected(struct link *plink);
 
 #else
 struct rset *dbGetRset();

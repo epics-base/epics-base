@@ -30,6 +30,16 @@ of this distribution.
 #define	CA_WRITE_STRING			0x8
 #define	CA_MONITOR_NATIVE		0x10
 #define	CA_MONITOR_STRING		0x20
+#define	CA_GET_ATTRIBUTES		0x40
+
+typedef struct caAttributes
+{
+    void (*callback)(void *usrPvt);
+ struct dbr_ctrl_double	data;
+	void		*usrPvt;
+	int		gotData;
+}caAttributes;
+
 typedef struct caLink
 {
 	ELLNODE		node;
@@ -39,6 +49,7 @@ typedef struct caLink
 	void		*pputNative;
 	char		*pgetString;
 	char		*pputString;
+	caAttributes	*pcaAttributes;
 	long		nelements;
 	SEM_ID		lock;
 	unsigned long	nDisconnect;

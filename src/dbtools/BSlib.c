@@ -21,7 +21,11 @@
 #include <sockLib.h>
 #include <selectLib.h>
 #else
+#ifdef _OSF_SOURCE
+#include <sys/ioctl.h>
+#else
 #include <sys/sockio.h>
+#endif
 #include <sys/time.h>
 #include <netdb.h>
 #include <fcntl.h>
@@ -108,7 +112,7 @@ int BSmakeServer(char** argv)
 			perror("Cannot fork");
 			return -1;
         case 0: /* child */
-#if defined linux || defined SOLARIS || defined SGI
+#if defined linux || defined SOLARIS || defined SGI || defined _OSF_SOURCE
 			setpgrp();
 #else
             setpgrp(0,0);

@@ -1,5 +1,5 @@
 /* db_access.c */
-/* share/src/db  $Id$ */
+/* share/src/db	$Id$ */
 /* db_access.c - Interface between old database access and new */
 /*
  *      Author:          Bob Dalesio
@@ -34,6 +34,7 @@
  * .04  02-05-92 jba	Changed function arguments from paddr to precord 
  * .05  02-28-92 jba    ANSI C changes
  * .06  07-21-92 jba    ANSI C changes
+ * .07  02-02-94 mrk	added dbPutNotifyMapType
  */
 
 
@@ -1525,5 +1526,38 @@ char			*psrc;		/* where to get it from */
 	return(-1);
     }
     if(!RTN_SUCCESS(status)) return(-1);
+    return(0);
+}
+
+int dbPutNotifyMapType(ppn,oldtype)
+PUTNOTIFY *ppn;
+short oldtype;
+{
+    switch(oldtype) {
+    case(oldDBR_STRING):
+	ppn->dbrType = DBR_STRING;
+	break;
+/*  case(oldDBR_INT): */
+    case(oldDBR_SHORT):
+	ppn->dbrType = DBR_SHORT;
+	break;
+    case(oldDBR_FLOAT):
+	ppn->dbrType = DBR_FLOAT;
+	break;
+    case(oldDBR_ENUM):
+	 ppn->dbrType = DBR_ENUM;
+	break;
+    case(oldDBR_CHAR):
+	ppn->dbrType = DBR_UCHAR;
+	break;
+    case(oldDBR_LONG):
+	ppn->dbrType = DBR_LONG;
+	break;
+    case(oldDBR_DOUBLE):
+	 ppn->dbrType = DBR_DOUBLE;
+	break;
+    default:
+	return(-1);
+    }
     return(0);
 }

@@ -38,6 +38,7 @@
 #include "macLib.h"
 #include "dbmf.h"
 #include "epicsVersion.h"
+#include "getopt.h"
 
 static int line_num;
 static int yyerror();

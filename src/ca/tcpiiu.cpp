@@ -139,14 +139,8 @@ void tcpSendThread::run ()
     this->thread.exitWaitRelease ();
 
     {
-        // only one recv thread at a time may call callbacks
-        // - pendEvent() blocks until threads waiting for
-        // this lock get a chance to run
-        cacMessageProcessingMinder msgProcMinder ( this->iiu.cacRef );
-        {
-            epicsGuard < callbackMutex > guard ( this->cbMutex );
-            this->iiu.cacRef.uninstallIIU ( guard, this->iiu );
-        }
+        epicsGuard < callbackMutex > guard ( this->cbMutex );
+        this->iiu.cacRef.uninstallIIU ( guard, this->iiu );
     }
 
     delete & this->iiu;
@@ -332,48 +326,45 @@ void tcpRecvThread::run ()
             // - it take also the callback lock
             this->iiu.recvDog.messageArrivalNotify ( currentTime ); 
 
-            cacMessageProcessingMinder msgProcMinder ( this->iiu.cacRef );
-            {
-                // only one recv thread at a time may call callbacks
-                // - pendEvent() blocks until threads waiting for
-                // this lock get a chance to run
-                epicsGuard < callbackMutex > guard ( this->cbMutex );
+            // only one recv thread at a time may call callbacks
+            // - pendEvent() blocks until threads waiting for
+            // this lock get a chance to run
+            epicsGuard < callbackMutex > guard ( this->cbMutex );
 
-                // force the receive watchdog to be reset every 5 frames
-                unsigned contiguousFrameCount = 0;
-                while ( nBytesIn ) {
-                    if ( nBytesIn == pComBuf->capacityBytes () ) {
-                        if ( this->iiu.contigRecvMsgCount >= 
-                            contiguousMsgCountWhichTriggersFlowControl ) {
-                            this->iiu.busyStateDetected = true;
-                        }
-                        else { 
-                            this->iiu.contigRecvMsgCount++;
-                        }
+            // force the receive watchdog to be reset every 5 frames
+            unsigned contiguousFrameCount = 0;
+            while ( nBytesIn ) {
+                if ( nBytesIn == pComBuf->capacityBytes () ) {
+                    if ( this->iiu.contigRecvMsgCount >= 
+                        contiguousMsgCountWhichTriggersFlowControl ) {
+                        this->iiu.busyStateDetected = true;
                     }
-                    else {
-                        this->iiu.contigRecvMsgCount = 0u;
-                        this->iiu.busyStateDetected = false;
-                    }         
-                    this->iiu.unacknowledgedSendBytes = 0u;
-
-                    this->iiu.recvQue.pushLastComBufReceived ( *pComBuf );
-                    pComBuf = new ( this->iiu.comBufMemMgr ) comBuf;
-
-                    // execute receive labor
-                    bool protocolOK = this->iiu.processIncoming ( currentTime, guard );
-                    if ( ! protocolOK ) {
-                        this->iiu.cacRef.initiateAbortShutdown ( this->iiu );
-                        break;
+                    else { 
+                        this->iiu.contigRecvMsgCount++;
                     }
-
-                    if ( ! this->iiu.bytesArePendingInOS ()
-                        || ++contiguousFrameCount > 5 ) {
-                        break;
-                    }
-
-                    nBytesIn = pComBuf->fillFromWire ( this->iiu );
                 }
+                else {
+                    this->iiu.contigRecvMsgCount = 0u;
+                    this->iiu.busyStateDetected = false;
+                }         
+                this->iiu.unacknowledgedSendBytes = 0u;
+
+                this->iiu.recvQue.pushLastComBufReceived ( *pComBuf );
+                pComBuf = new ( this->iiu.comBufMemMgr ) comBuf;
+
+                // execute receive labor
+                bool protocolOK = this->iiu.processIncoming ( currentTime, guard );
+                if ( ! protocolOK ) {
+                    this->iiu.cacRef.initiateAbortShutdown ( this->iiu );
+                    break;
+                }
+
+                if ( ! this->iiu.bytesArePendingInOS ()
+                    || ++contiguousFrameCount > 5 ) {
+                    break;
+                }
+
+                nBytesIn = pComBuf->fillFromWire ( this->iiu );
             }
         }
 

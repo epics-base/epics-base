@@ -244,46 +244,43 @@ void udpiiu::recvMsg ( callbackMutex & cbMutex )
         this->recvBuf, sizeof ( this->recvBuf ), 0,
         & src.sa, & src_size );
 
-    cacMessageProcessingMinder msgProcMinder ( this->cacRef );
-    {
-        epicsGuard < callbackMutex > guard ( cbMutex );
+    epicsGuard < callbackMutex > guard ( cbMutex );
 
-        if ( status <= 0 ) {
+    if ( status <= 0 ) {
 
-            if ( status == 0 ) {
-                return;
-            }
-
-            int errnoCpy = SOCKERRNO;
-
-            if ( errnoCpy == SOCK_SHUTDOWN ) {
-                return;
-            }
-            if ( errnoCpy == SOCK_ENOTSOCK ) {
-                return;
-            }
-            if ( errnoCpy == SOCK_EBADF ) {
-                return;
-            }
-            if ( errnoCpy == SOCK_EINTR ) {
-                return;
-            }
-            // Avoid spurious ECONNREFUSED bug in linux
-            if ( errnoCpy == SOCK_ECONNREFUSED ) {
-                return;
-            }
-            // Avoid ECONNRESET from disconnected socket bug
-            // in windows
-            if ( errnoCpy == SOCK_ECONNRESET ) {
-                return;
-            }
-            this->printf ( "CAC: UDP recv error was \"%s\"\n", 
-                SOCKERRSTR (errnoCpy) );
+        if ( status == 0 ) {
+            return;
         }
-        else if ( status > 0 ) {
-            this->postMsg ( guard, src, this->recvBuf, 
-                (arrayElementCount) status, epicsTime::getCurrent() );
+
+        int errnoCpy = SOCKERRNO;
+
+        if ( errnoCpy == SOCK_SHUTDOWN ) {
+            return;
         }
+        if ( errnoCpy == SOCK_ENOTSOCK ) {
+            return;
+        }
+        if ( errnoCpy == SOCK_EBADF ) {
+            return;
+        }
+        if ( errnoCpy == SOCK_EINTR ) {
+            return;
+        }
+        // Avoid spurious ECONNREFUSED bug in linux
+        if ( errnoCpy == SOCK_ECONNREFUSED ) {
+            return;
+        }
+        // Avoid ECONNRESET from disconnected socket bug
+        // in windows
+        if ( errnoCpy == SOCK_ECONNRESET ) {
+            return;
+        }
+        this->printf ( "CAC: UDP recv error was \"%s\"\n", 
+            SOCKERRSTR (errnoCpy) );
+    }
+    else if ( status > 0 ) {
+        this->postMsg ( guard, src, this->recvBuf, 
+            (arrayElementCount) status, epicsTime::getCurrent() );
     }
 }
 
@@ -311,11 +308,8 @@ void udpRecvThread::run ()
     epicsThreadPrivateSet ( caClientCallbackThreadId, &this->iiu );
 
     if ( ellCount ( & this->iiu.dest ) == 0 ) { // X aCC 392
-        cacMessageProcessingMinder msgProcMinder ( this->iiu.cacRef );
-        {
-            epicsGuard < callbackMutex > cbGuard ( this->cbMutex );
-            genLocalExcep ( cbGuard, this->iiu.cacRef, ECA_NOSEARCHADDR, NULL );
-        }
+        epicsGuard < callbackMutex > cbGuard ( this->cbMutex );
+        genLocalExcep ( cbGuard, this->iiu.cacRef, ECA_NOSEARCHADDR, NULL );
     }
 
     do {

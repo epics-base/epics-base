@@ -273,7 +273,6 @@ static void monitor(plongin)
 	/* check for value change */
 	delta = plongin->mlst - plongin->val;
 	if(delta<0) delta = -delta;
-        /*If delta=0x80000000 then delta==-delta*/
         if (delta > plongin->mdel || delta==0x80000000) {
 		/* post events for value change */
 		monitor_mask |= DBE_VALUE;
@@ -284,7 +283,7 @@ static void monitor(plongin)
 	/* check for archive change */
 	delta = plongin->alst - plongin->val;
 	if(delta<0) delta = -delta;
-	if (delta > plongin->adel) {
+	if (delta > plongin->adel || delta==0x80000000) {
 		/* post events on value field for archive change */
 		monitor_mask |= DBE_LOG;
 		/* update last archive value monitored */

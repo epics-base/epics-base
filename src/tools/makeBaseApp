@@ -20,7 +20,7 @@ Cleanup() {
 	done
 	exit $rtncode
 }
-USAGE="Usage: <full path>makeBaseApp -e appname ... "
+USAGE="Usage: <full path>makeBaseApp [-e] appname ... "
 
 if [ "$PWD" = "$HOME" ]; then Cleanup 1 "In Home Directory" "$USAGE"; fi;
 

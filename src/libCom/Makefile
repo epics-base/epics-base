@@ -60,6 +60,7 @@ INC += tsStamp.h
 INC += osiMutex.h
 INC += osiEvent.h
 
+
 SRCS += osdSock.c
 SRCS += osiSock.c
 SRCS += osdAssert.c
@@ -150,6 +151,10 @@ SRCS += truncateFile.c
 SRC_DIRS += $(LIBCOM)/logClient
 INC += logClient.h
 SRCS += logClient.c
+
+SRC_DIRS += $(LIBCOM)/taskwd
+INC += taskwd.h
+SRCS += taskwd.c
 
 SRC_DIRS += $(LIBCOM)/timer
 INC += osiTimer.h

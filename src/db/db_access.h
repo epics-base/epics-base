@@ -117,6 +117,7 @@ typedef epicsUInt16	dbr_ushort_t;
 typedef epicsInt16	dbr_int_t;
 typedef epicsUInt16	dbr_enum_t;
 typedef epicsInt32	dbr_long_t;
+typedef epicsUInt32	dbr_ulong_t;
 typedef epicsFloat32	dbr_float_t;
 typedef epicsFloat64	dbr_double_t;
 typedef epicsUInt16	dbr_put_ackt_t;

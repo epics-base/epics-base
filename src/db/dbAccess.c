@@ -40,6 +40,8 @@
  * .09  03-02-92	jba	Added function dbValueSize to replace db_value_size
  * .10  04-17-92	rcz	put in mrk's dbNameToAddr changes for dbBase
  * .11  05-18-92	mrk	Changes for database internal structures
+ * .12  07-16-92	jba	Added disable alarm severity, ansi c changes
+ * .13  08-05-92	jba	Removed all references to dbr_field_type
  */
 
 /* This is a major revision of the original implementation of database access.*/
@@ -94,6 +96,10 @@
 #include	<special.h>
 
 extern struct dbBase *pdbBase;
+
+static short mapDBFToDBR[DBF_NTYPES] = { DBF_STRING, DBF_CHAR, DBF_UCHAR, DBF_SHORT, DBF_USHORT, 
+     DBF_LONG, DBF_ULONG, DBF_FLOAT, DBF_DOUBLE, DBF_ENUM, DBF_ENUM, DBF_ENUM, DBF_ENUM, DBF_ENUM, 
+     DBF_NOACCESS, DBF_NOACCESS, DBF_NOACCESS, DBF_NOACCESS};
 
 /* Added for Channel Access Links */
 long dbCaAddInlink();
@@ -240,23 +246,40 @@ long dbProcess(struct dbCommon *precord)
 		long	nRequest=1;
 
 		status = dbGetLink(&precord->sdis.value.db_link,precord,
-			DBR_SHORT,(caddr_t)(&(precord->disa)),&options,&nRequest);
-		if(!RTN_SUCCESS(status)) recGblRecordError(status,precord,"dbProcess");
+			DBF_SHORT,(caddr_t)(&(precord->disa)),&options,&nRequest);
+		if(!RTN_SUCCESS(status)) recGblRecordError(status,(void *)precord,"dbProcess");
 	} else if(precord->sdis.type == CA_LINK) {
 		status = dbCaGetLink(&(precord->sdis));
-		if(!RTN_SUCCESS(status)) recGblRecordError(status,precord,"dbProcess");
+		if(!RTN_SUCCESS(status)) recGblRecordError(status,(void *)precord,"dbProcess");
 	} /* endif */
-	/* if disabled just return success */
+	/* if disabled check disable alarm severity and return success */
 	if(precord->disa == precord->disv) {
+		struct valueDes valueDes;
+
 		if(trace && trace_lset==lset)
 			printf("disabled:  %s\n",precord->name);
+		/* raise disable alarm */
+		if(precord->stat==DISABLE_ALARM) goto all_done;
+		precord->sevr = precord->diss;
+		precord->stat = DISABLE_ALARM;
+		precord->nsev = 0;
+		precord->nsta = 0;
+		/* anyone waiting for an event on this record?*/
+		if(precord->mlis.count==0) goto all_done;
+		db_post_events(precord,&precord->stat,DBE_VALUE);
+		db_post_events(precord,&precord->sevr,DBE_VALUE);
+	        prset=(struct rset *)precord->rset;
+		if( prset && prset->get_value ){
+			(*prset->get_value)(precord,&valueDes);
+			db_post_events(precord,valueDes.pvalue,DBE_VALUE|DBE_ALARM);
+		}
 		goto all_done;
 	}
 
 	/* locate record processing routine */
 	if(!(prset=(struct rset *)precord->rset) || !(prset->process)) {
 		precord->pact=1;/*set pact TRUE so error is issued only once*/
-		recGblRecordError(S_db_noRSET,precord,"dbProcess");
+		recGblRecordError(S_db_noRSET,(void *)precord,"dbProcess");
 		status = S_db_noRSET;
 		if(trace && trace_lset==lset)
 			printf("failure:   %s\n",precord->name);
@@ -297,7 +320,7 @@ long dbNameToAddr(pname,paddr)
 	pfldDes = dbEntry.pfldDes;
 	paddr->pfldDes = (void *)pfldDes;
 	paddr->field_type = pfldDes->field_type;
-	paddr->dbr_field_type = pfldDes->dbr_field_type;
+	paddr->dbr_field_type = mapDBFToDBR[pfldDes->field_type];
 	paddr->field_size = pfldDes->size;
 	paddr->choice_set = pfldDes->choice_set;
 	paddr->special = pfldDes->special;
@@ -335,7 +358,7 @@ long dbGetLink(
 	if(pdblink->maximize_sevr) recGblSetSevr(pdest,LINK_ALARM,psource->sevr);
 	
 	status= dbGetField(paddr,dbrType,pbuffer,options,nRequest,NULL);
-	if(status) recGblRecordError(status,pdest,"dbGetLink");
+	if(status) recGblRecordError(status,(void *)pdest,"dbGetLink");
         return(status);
 }
 
@@ -349,7 +372,6 @@ long dbPutLink(
 {
 	struct dbAddr	*paddr=(struct dbAddr*)(pdblink->pdbAddr);
 	struct dbCommon *pdest=paddr->precord;
-	struct fldDes *pfldDes=(struct fldDes *)(paddr->pfldDes);
 	long	status;
 
 	status=dbPut(paddr,dbrType,pbuffer,nRequest);
@@ -358,7 +380,7 @@ long dbPutLink(
 
         if(paddr->pfield==(void *)&pdest->proc) status=dbProcess(pdest);
 	else if (pdblink->process_passive) status=dbScanPassive(pdest);
-	if(status) recGblRecordError(status,psource,"dbPutLink");
+	if(status) recGblRecordError(status,(void *)psource,"dbPutLink");
 	return(status);
 }
 

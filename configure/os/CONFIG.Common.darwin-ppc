@@ -43,6 +43,9 @@ SHRLIB_LDFLAGS = -dynamiclib -flat_namespace -undefined suppress \
 SHRLIB_SUFFIX = $(addprefix .,$(EPICS_VERSION).$(EPICS_REVISION).$(EPICS_MODIFICATION)).dylib
 SHRLIB_VERSION = $(EPICS_VERSION).$(EPICS_REVISION).$(EPICS_MODIFICATION)
 
-#  Command-line input support
-COMMANDLINE_LIBRARY=LIBTECLA
+#
+# Command-line input support
+# Install the fink libtecla1 package and uncomment the
+# following line to use libtecla command-line editing,
+#COMMANDLINE_LIBRARY=LIBTECLA
 LDLIBS_LIBTECLA = -ltecla_r -lncurses

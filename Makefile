@@ -10,5 +10,20 @@
 # $Id$
 #
 TOP = ../..
-include $(TOP)/config/CONFIG_EXTENSIONS
-include $(TOP)/config/RULES_ARCHS
+
+# If a <top>/configure directory exists, build with 3.14 rules, else
+# use <top>/config and the 3.13 rules.
+ifeq (0, $(words $(notdir $(wildcard $(TOP)/configure))))
+  include $(TOP)/config/CONFIG_EXTENSIONS
+  include $(TOP)/config/RULES_ARCHS
+else
+  include $(TOP)/configure/CONFIG
+
+  PROD = msi
+  HTMLS = msi.html
+
+  msi_SRCS = msi.c
+  PROD_LIBS += Com
+
+  include $(TOP)/configure/RULES
+endif

@@ -45,6 +45,6 @@ help:
 	@echo "Indiv. object targets are supported by O.<arch> level Makefile .e.g"
 	@echo "     xxxRecord.o 
 
-.PHONY : uninstall tar help
-.PHONY : $(addprefix uninstall$(DIVIDER), $(BUILDARCHS))
+.PHONY :: uninstall tar help
+.PHONY :: $(addprefix uninstall$(DIVIDER), $(BUILDARCHS))
 

@@ -83,10 +83,10 @@ cross : $(crossArchs)
 clean$(DIVIDER)% : 
 	$(RMDIR) O.$*
 
-.PHONY : $(HostActionTargets)
-.PHONY : $(CrossActionTargets)
-.PHONY : $(crossActionArchTargets)
-.PHONY : $(hostActionArchTargets)
-.PHONY : $(hostArchs) $(crossArchs)
-.PHONY : $(ACTIONS) clean all host cross
+.PHONY :: $(HostActionTargets)
+.PHONY :: $(CrossActionTargets)
+.PHONY :: $(crossActionArchTargets)
+.PHONY :: $(hostActionArchTargets)
+.PHONY :: $(hostArchs) $(crossArchs)
+.PHONY :: $(ACTIONS) clean all host cross
 

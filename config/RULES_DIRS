@@ -38,9 +38,9 @@ $(ACTIONS) $(actionArchTargets) :%: \
 	$(foreach dir, $(DIRS), $(dir)$(DIVIDER)%)
  
 
-.PHONY : $(DIRS) all install rebuild
-.PHONY : $(ARCHS) $(ACTIONS)
-.PHONY : $(dirActionTargets) $(dirArchTargets)
-.PHONY : $(dirActionArchTargets)
-.PHONY : $(actionArchTargets)
+.PHONY :: $(DIRS) all install rebuild
+.PHONY :: $(ARCHS) $(ACTIONS)
+.PHONY :: $(dirActionTargets) $(dirArchTargets)
+.PHONY :: $(dirActionArchTargets)
+.PHONY :: $(actionArchTargets)
 

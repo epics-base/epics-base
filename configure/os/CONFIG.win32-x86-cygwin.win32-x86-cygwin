@@ -1,0 +1,16 @@
+#  CONFIG.win32-x86-cygwin.win32-x86-cygwin
+#
+# $Id$
+#
+# Definitions for win32-x86-cygwin host - win32-x86-cygwin target builds
+# Sites may override these definitions in CONFIG_SITE.win32-x86-cygwin.win32-x86-cygwin
+#-------------------------------------------------------
+
+# Include common gnu compiler definitions
+include $(CONFIG)/CONFIG.gnuCommon
+
+## Shared libraries for cygwin not implemented yet
+SHARED_LIBRARIES=NO
+
+CC = $(GNU_BIN)/gcc
+CCC = $(GNU_BIN)/g++

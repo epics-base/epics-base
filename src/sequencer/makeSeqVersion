@@ -1,9 +1,9 @@
-#!/bin/csh -f
+#!/bin/sh
 #
 # makeSeqVersion - create the sequencer version module
 #
-set	VERSION = `cat $1`
-set	DATE = `date`
+VERSION=`cat $1`
+DATE=`date`
 echo	'/* seqVersion.c - version & date */'
 echo	'/* Created by makeVersion */'
 echo	'char *seqVersion = "@(#)SEQ Version '${VERSION}': '${DATE}'";'

@@ -68,7 +68,7 @@ OPT_CFLAGS_YES = /Ox
 # /Z7 include debugging info in object files
 # /Fr create source browser file
 # /GZ catch bugs occurring only in optimized code
-OPT_CFLAGS_NO = /Z7 /GZ /DEPICS_DEBUG /D_CRTDBG_MAP_ALLOC
+OPT_CFLAGS_NO = /Z7 /GZ /DEPICS_FREELIST_DEBUG /D_CRTDBG_MAP_ALLOC
 
 #
 # the following options are required when
@@ -125,7 +125,7 @@ OPT_CXXFLAGS_YES = /Ox
 # /Z7 include debugging info in object files
 # /Fr create source browser file
 # /GZ catch bugs occurring only in optimized code
-OPT_CXXFLAGS_NO = /Z7 /GZ /DEPICS_DEBUG /D_CRTDBG_MAP_ALLOC
+OPT_CXXFLAGS_NO = /Z7 /GZ /DEPICS_FREELIST_DEBUG /D_CRTDBG_MAP_ALLOC
 
 #
 # the following options are required when

@@ -53,20 +53,17 @@ Source, Argonne National Laboratory.</font></p>
 
 <h3><a target="_top" href="#Configuration">Configuration</a></h3>
 <ul>
-  <li><a href="#EPICS Environment Variables">EPICS Environment
-  Variables</a></li>
+  <li><a href="#EPICS">EPICS Environment Variables</a></li>
   <li><a href="#CA and Wide Area Networks">CA and Wide Area Networks</a></li>
-  <li><a href="#IP Network Administration Background Information">IP Network
-    Administration Background Information</a></li>
-  <li><a href="#WAN Environment">WAN Environment</a></li>
+  <li><a href="#Network">IP Network Administration Background
+  Information</a></li>
+  <li><a href="#Environmen">WAN Environment</a></li>
   <li><a href="#IP port numbers">IP port numbers</a></li>
-  <li><a
-    href="#Disconnect Time Out Interval / Server Beacon Period">Disconnect
-    Time Out Interval / Server Beacon Period</a></li>
-  <li><a href="#Configuring the Time Zone">Configuring the Time Zone</a></li>
-  <li><a href="#Configuring the maximum array size">Configuring the maximum
-    array size</a></li>
-  <li><a href="#Configuring a CA server">Configuring a CA server</a></li>
+  <li><a href="#Disconnect">Disconnect Time Out Interval / Server Beacon
+    Period</a></li>
+  <li><a href="#Configurin">Configuring the Time Zone</a></li>
+  <li><a href="#Configurin1">Configuring the maximum array size</a></li>
+  <li><a href="#Configurin2">Configuring a CA server</a></li>
 </ul>
 
 <h3><a href="#Notes">Function Call Interface General Guidelines</a></h3>
@@ -141,7 +138,7 @@ Call Interface Function Index</a></h3>
 <h3><a href="#Deprecated">Deprecated Function Call Interface Function
 Index</a></h3>
 <ul>
-  <li><a href="#ca_task_in">ca_task_initialize</a></li>
+  <li><a href="#L6771">ca_task_initialize</a></li>
   <li><a href="#ca_task_exit">ca_task_exit</a></li>
 </ul>
 
@@ -174,7 +171,7 @@ Index</a></h3>
   <li>Transport of large arrays</li>
 </ul>
 
-<h3>EPICS Environment Variable</h3>
+<h3><a name="EPICS">EPICS Environment Variables</a></h3>
 
 <p>All Channel Access (CA) configuration occurs through EPICS environment
 variables. When searching for an EPICS environment variable EPICS first looks
@@ -272,7 +269,8 @@ Since hardware broadcasting requires special hardware capabilities, we are
 required to provide additional configuration information when EPICS is
 extended to operate over a wide area network (WAN).</p>
 
-<h3>IP Network Administration Background Information</h3>
+<h3><a name="Network">IP Network Administration Background
+Information</a></h3>
 
 <p>Channel Access is implemented using internet protocols (IP). IP addresses
 are divided into host and network portions. The boundary between each portion
@@ -320,10 +318,10 @@ standardized facilities such as mail or file transfer. Port number between
 1024 and 5000 are typically reserved for ephemeral port number
 assignments.</p>
 
-<h3>WAN Environment</h3>
+<h3><a name="Environmen">WAN Environment</a></h3>
 
 <p>Typically vxWorks hosts boot with routes configured for the host's subnet.
-If a EPICSsystem is operating in a WAN environment it may be necessary to
+If a EPICS system is operating in a WAN environment it may be necessary to
 configure routes into the vxWorks system which enable a vxWorks based CA
 server to respond to requests originating outside it's subnet. An EPICS system
 manager can limit access to a particular host by not providing routes in that
@@ -422,7 +420,8 @@ already reserved the defaults.</p>
   </tbody>
 </table>
 
-<h3>Disconnect Time Out Interval / Server Beacon Period</h3>
+<h3><a name="Disconnect">Disconnect Time Out Interval / Server Beacon
+Period</a></h3>
 
 <p>If the CA client library does not see a beacon from a server that it is
 connected to for EPICS_CA_CONN_TMO seconds then an echo message is sent to the
@@ -441,7 +440,7 @@ point seconds. For efficient operation it is recommended that
 EPICS_CA_BEACON_PERIOD be set to at least one half of the value specified for
 EPICS_CA_CONN_TMO.</p>
 
-<h3>Configuring the Time Zone</h3>
+<h3><a name="Configurin">Configuring the Time Zone</a></h3>
 
 <p><em>Starting with EPICS R3.14 all of the libraries in the EPICS base
 distribution rely on facilities built into the operating system to determine
@@ -502,7 +501,7 @@ placed in the variable EPICS_TS_MIN_WEST.</p>
   </tbody>
 </table>
 
-<h3>Configuring the Maximum Array Size</h3>
+<h3><a name="Configurin1">Configuring the Maximum Array Size</a></h3>
 
 <p>The environment variable EPICS_CA_MAX_ARRAY_BYTES determines the size of
 the largest array that may pass through CA. This parameter must be set
@@ -512,7 +511,7 @@ communication. If EPICS_CA_MAX_ARRAY_BYTES  is larger than 16384 then a second
 free list of larger data buffers is established when clients request
 transportation of large arrays.</p>
 
-<h3>Configuring a CA Server</h3>
+<h3><a name="Configurin2">Configuring a CA Server</a></h3>
 
 <table cellspacing="1" cellpadding="1" width="75%" border="1">
   <tbody>
@@ -2244,7 +2243,7 @@ returned.</p>
 
 <h2><a name="Deprecated">Deprecated Functions</a></h2>
 
-<h3><a name="ca_task_in"><code>ca_task_initialize()</code></a></h3>
+<h3><code><a name="L6771">ca_task_initialize()</a></code></h3>
 <pre>#include &lt;cadef.h&gt;</pre>
 <pre>int ca_task_initialize();</pre>
 

@@ -129,7 +129,6 @@ protected:
         T *pEntry;
     };
     tsDLIterConstBD ( const T *pInitialEntry );
-private:
     friend class tsDLList <T>;
 };
 
@@ -235,11 +234,11 @@ inline void tsDLList<T>::clear ()
 // tsDLList<T>::remove ()
 //
 template <class T>
-inline void tsDLList<T>::remove (T &item)
+inline void tsDLList<T>::remove ( T &item )
 {
     tsDLNode<T> &theNode = item;
 
-    if (this->pLast == &item) {
+    if ( this->pLast == &item ) {
         this->pLast = theNode.pPrev;
     }
     else {
@@ -247,7 +246,7 @@ inline void tsDLList<T>::remove (T &item)
         nextNode.pPrev = theNode.pPrev; 
     }
 
-    if (this->pFirst == &item) {
+    if ( this->pFirst == &item ) {
         this->pFirst = theNode.pNext;
     }
     else {
@@ -266,8 +265,8 @@ inline T * tsDLList<T>::get()
 {
     T *pItem = this->pFirst;
 
-    if (pItem) {
-        this->remove (*pItem);
+    if ( pItem ) {
+        this->remove ( *pItem );
     }
     
     return pItem;
@@ -278,9 +277,9 @@ inline T * tsDLList<T>::get()
 //
 // (returns the first item on the list)
 template <class T>
-inline T * tsDLList<T>::pop()
+inline T * tsDLList<T>::pop ()
 {
-    return this->get();
+    return this->get ();
 }
 
 //
@@ -290,39 +289,22 @@ inline T * tsDLList<T>::pop()
 // (and removes all items from addList)
 //
 template <class T>
-inline void tsDLList<T>::add (tsDLList<T> &addList)
+inline void tsDLList<T>::add ( tsDLList<T> &addList )
 {
-    //
-    // NOOP if addList is empty
-    //
-    if ( addList.itemCount == 0u ) {
-        return;
-    }
-
-    if ( this->itemCount == 0u ) {
-        //
-        // this is empty so just init from 
-        // addList 
-        //
-        *this = addList;
-    }
-    else {
-        tsDLNode<T> *pLastNode = this->pLast;
-        tsDLNode<T> *pAddListFirstNode = addList.pFirst;
-
-        //
-        // add addList to the end of this
-        //
-        pLastNode->pNext = addList.pFirst;
-        pAddListFirstNode->pPrev = addList.pLast;
+    if ( addList.itemCount != 0u ) {
+        if ( this->itemCount == 0u ) {
+            this->pFirst = addList.pFirst;
+        }
+        else {
+            tsDLNode<T> *pLastNode = this->pLast;
+            tsDLNode<T> *pAddListFirstNode = addList.pFirst;
+            pLastNode->pNext = addList.pFirst;
+            pAddListFirstNode->pPrev = addList.pLast;
+        }
         this->pLast = addList.pLast;
         this->itemCount += addList.itemCount;
+        addList.clear();
     }
-
-    //
-    // leave addList empty
-    //
-    addList.clear();
 }
 
 //

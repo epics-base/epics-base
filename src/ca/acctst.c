@@ -2022,6 +2022,12 @@ void verifyTimeStamps ( chid chan )
     printf ("Time difference between client and server %g sec\n", diff );
 }
 
+void verifyImmediateTearDown ()
+{
+    ca_task_initialize ();
+    ca_task_exit ();
+}
+
 int acctst ( char *pName, unsigned channelCount, unsigned repetitionCount )
 {
     chid chan;
@@ -2033,6 +2039,8 @@ int acctst ( char *pName, unsigned channelCount, unsigned repetitionCount )
     printf ( "CA Client V%s, channel name \"%s\"\n", ca_version (), pName );
 
     epicsEnvSet ( "EPICS_CA_MAX_ARRAY_BYTES", "10000000" ); 
+
+    verifyImmediateTearDown ();
 
     verifyDataTypeMacros ();
 

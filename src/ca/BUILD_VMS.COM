@@ -5,11 +5,10 @@ $!
 $! Purpose   : To build the CHANNEL_ACCESS library and test programs for
 $!             VAX/VMS. This procedure assumes the following:
 $!             - You have copied *.c and *.h from the Epics channel access 
-$!               source directory  (.../src/ca) into this VMS directory
-$!             - You have copied envSubr.c, ellLib.c, and bucketLib.c 
-$!			from the Epics
+$!               source directory  (base/src/ca) into this VMS directory
+$!             - You have copied *.c and *.h from the Epics
 $!               libCom directory into this VMS directory
-$!             - You have copied *.h from the /src/epicsH directory into this
+$!             - You have copied *.h from the base/include directory into this
 $!               VMS directory
 $!             - You are using Multinet for TCP/IP access. If not, the logical
 $!               name definitions below will need to be changed

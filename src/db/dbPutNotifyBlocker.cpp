@@ -25,6 +25,7 @@
  *  505 665 1831
  */
 
+#include <string>
 #include <stdexcept>
 
 #include <limits.h>

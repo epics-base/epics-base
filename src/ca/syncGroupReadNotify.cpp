@@ -15,6 +15,7 @@
  *              (505) 665 1831
  */
 
+#include <string>
 #include <stdexcept>
 
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"

@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 
+#include <string>
 #include <stdexcept>
 
 #define epicsExportSharedSymbols

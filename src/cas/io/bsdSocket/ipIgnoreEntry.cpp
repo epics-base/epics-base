@@ -15,6 +15,7 @@
 //              johill@lanl.gov
 //
 
+#include <string>
 #include <stdexcept>
 
 #include "osiSock.h"

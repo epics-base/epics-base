@@ -38,7 +38,7 @@
 #   endif
 #   define CXX_THROW_SPECIFICATION
 #elif defined ( __BORLANDC__ ) 
-#   if __BORLANDC__ > 0x551
+#   if __BORLANDC__ >= 0x600
 #       define CXX_PLACEMENT_DELETE
 #   endif
 #   define CXX_THROW_SPECIFICATION

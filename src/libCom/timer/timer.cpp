@@ -18,6 +18,7 @@
  */
 
 #include <typeinfo>
+#include <string>
 #include <stdexcept>
 
 #define epicsExportSharedSymbols

@@ -30,6 +30,12 @@ typedef unsigned long arrayElementCount;
 #include "casAsyncIOI.h"
 #include "channelDestroyEvent.h"
 
+#if defined(__BORLANDC__) && defined(__linux__)
+namespace  std  {
+const nothrow_t  nothrow ;
+}
+#endif
+
 static const caHdr nill_msg = { 0u, 0u, 0u, 0u, 0u, 0u };
 
 casStrmClient::pCASMsgHandler const casStrmClient::msgHandlers[] =

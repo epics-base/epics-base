@@ -16,6 +16,7 @@
 //              johill@lanl.gov
 //
 
+#include <string>
 #include <stdexcept>
 #include <stdio.h>
 #include <string.h>

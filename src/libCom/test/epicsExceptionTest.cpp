@@ -24,6 +24,12 @@
 
 using namespace std;
 
+#if defined(__BORLANDC__) && defined(__linux__)
+namespace  std  {
+const nothrow_t  nothrow ;
+}
+#endif
+
 class myThread : public epicsThreadRunable {
 public:
     myThread ();

@@ -19,6 +19,7 @@
  *  Author: Jeff Hill
  */
 
+#include <string>
 #include <stdexcept>
 #include <limits.h>
 #include <float.h>

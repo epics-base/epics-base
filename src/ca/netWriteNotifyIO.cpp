@@ -19,6 +19,7 @@
  *  Author: Jeff Hill
  */
 
+#include <string>
 #include <stdexcept>
 
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"

@@ -128,6 +128,7 @@ INC += truncateFile.h
 INC += unixFileName.h
 INC += locationException.h
 INC += ipAddrToAsciiAsynchronous.h
+INC += cxxCompilerDepPlacementDelete.h
 SRCS += aToIPAddr.c
 SRCS += adjustment.c
 SRCS += cantProceed.c
@@ -142,7 +143,6 @@ INC += osiSock.h
 INC += osdSock.h
 INC += epicsInterrupt.h
 INC += osdInterrupt.h
-
 
 INC += epicsMutex.h
 INC += osdMutex.h
@@ -159,8 +159,7 @@ INC += osdThread.h
 INC += epicsThread.h
 INC += epicsTime.h
 INC += osdTime.h
-INC += osiSigPipeIgnore.h
-INC += osdSigPipeIgnore.h
+INC += epicsSignal.h
 INC += osiProcess.h
 INC += osiUnistd.h
 INC += osiWireFormat.h
@@ -176,6 +175,7 @@ SRCS += osdAssert.c
 SRCS += osdFindSymbol.c
 SRCS += osdInterrupt.c
 SRCS += osdPoolStatus.c
+SRCS += osdSignal.cpp
 SRCS += osdEnv.c
 osdEnv_CFLAGS_WIN32= -U__STDC__
 
@@ -183,7 +183,6 @@ SRCS += osdThread.c
 SRCS += osdMutex.c
 SRCS += osdEvent.c
 SRCS += osdTime.cpp
-SRCS += osdSigPipeIgnore.c
 SRCS += osdProcess.c
 SRCS += osdNetIntf.c
 

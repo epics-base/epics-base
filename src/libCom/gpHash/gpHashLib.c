@@ -68,7 +68,7 @@ typedef struct gphPvt {
     int		tableSize;
     int		nShift;
     ELLLIST	**paplist; /*pointer to array of pointers to ELLLIST */
-    semId	lock;
+    semMutexId	lock;
 }gphPvt;
 
 

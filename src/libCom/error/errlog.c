@@ -67,9 +67,9 @@ typedef struct msgNode {
 } msgNode;
 
 LOCAL struct {
-    semId	errlogTaskWaitForWork;
-    semId	msgQueueLock;
-    semId	listenerLock;
+    semBinaryId	errlogTaskWaitForWork;
+    semMutexId	msgQueueLock;
+    semMutexId	listenerLock;
     ELLLIST	listenerList;
     ELLLIST	msgQueue;
     msgNode	*pnextSend;

@@ -73,7 +73,7 @@ typedef struct {
     void	*head;
     allocMem	*mallochead;
     size_t	nBlocksAvailable;
-    semId	lock;
+    semMutexId	lock;
 }FREELISTPVT;
 
 epicsShareFunc void epicsShareAPI 

@@ -71,15 +71,15 @@ typedef struct {
     ELLNODE             node; /* must be the first field in struct */
     struct sockaddr_in  addr;
     FILE                *file;
-    semId               mutex;
+    semMutexId          mutex;
     SOCKET              sock;
     unsigned            connectTries;
     unsigned            connectCount;
     unsigned            connectReset;
 }logClient;
 
-LOCAL semId logClientGlobalMutex;    
-LOCAL semId logClientGlobalSignal;
+LOCAL semMutexId logClientGlobalMutex;    
+LOCAL semBinaryId logClientGlobalSignal;
 LOCAL ELLLIST logClientList;
 LOCAL threadId logClientThreadId;
 LOCAL logClient *pLogClientDefaultClient;
@@ -589,7 +589,7 @@ epicsShareFunc logClientId epicsShareAPI logClientInit ()
      */
     while (pClient->file==NULL) {
 
-        semMutexGive (logClientGlobalSignal);
+        semBinaryGive (logClientGlobalSignal);
 
         threadSleep (50e-3);
 

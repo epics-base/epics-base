@@ -30,9 +30,9 @@
 
 tsFreeList < dbChannelIO > dbChannelIO::freeList;
 
-dbChannelIO::dbChannelIO ( cacChannel &chan, const dbAddr &addrIn, dbServiceIO &serviceIO ) :
-    cacLocalChannelIO ( chan ), serviceIO ( serviceIO ), pGetCallbackCache ( 0 ), 
-    pBlocker (0), getCallbackCacheSize ( 0ul ), addr ( addrIn )
+dbChannelIO::dbChannelIO ( cac &cacCtx, cacChannel &chan, const dbAddr &addrIn, dbServiceIO &serviceIO ) :
+    cacLocalChannelIO ( cacCtx, chan ), serviceIO ( serviceIO ), pGetCallbackCache ( 0 ), 
+    pBlocker ( 0 ), getCallbackCacheSize ( 0ul ), addr ( addrIn )
 {
     chan.attachIO ( *this );
     this->connectNotify ();

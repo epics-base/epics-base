@@ -37,6 +37,8 @@
  * .02	12-03-91	jrw	changed the setup of the ibLink and niLink structs
  * .03	01-21-92	jrw	moved task parameters into task_params.h
  * .04	01-31-92	jrw	added ibSrqLock code
+ * .05	02-26-92	jrw	changed pnode references in the link task's
+ *				busy-list checking, was an endless loop
  *
  ******************************************************************************
  *
@@ -60,7 +62,6 @@
 #define NIGPIB_IVEC_BASE  100	/* Vectored interrupts (2 used for each link) */
 #define NIGPIB_IRQ_LEVEL  5	/* IRQ level */
 /**************** end of stuff that does not belong here **********************/
-
 
 #include <vxWorks.h>
 #include <types.h>
@@ -110,6 +111,8 @@ int	bbibDebug = 0;		/* Turns on ONLY bitbus related messages */
 int	ibSrqDebug = 0;		/* Turns on ONLY srq related debug messages */
 int	niIrqOneShot = 0;	/* Used for a one shot peek at the DMAC */
 int	ibSrqLock = 0;		/* set to 1 to stop ALL srq checking & polling */
+
+#define	STD_ADDRESS_MODE D_SUP|D_S24	/* mode to use when DMAC accesses RAM */
 
 static	int	defaultTimeout = 60;	/* in 60ths, for GPIB timeouts */
 
@@ -184,6 +187,9 @@ struct	niLink {
   char		r_isr1;
   char		r_isr2;
   int		first_read;
+
+  unsigned long	cmdSpins;	/* total taskDelays while in niGpibCmd() */
+  unsigned long	maxSpins;	/* most taskDelays in one call to niGpibCmd() */
 };
 
 static	struct	niLink	*pNiLink[NIGPIB_NUM_LINKS];	/* NULL if link not present */
@@ -231,6 +237,8 @@ reportGpib()
       if (pNiLink[i])
       {
         printf("Link %d (address 0x%08.8X) present and initialized.\n", i, pNiLink[i]->ibregs);
+	printf("        total niGpibCmd() taskDelay() calls = %lu\n", pNiLink[i]->cmdSpins);
+	printf("        worst case delay in niGpibCmd() = %lu\n", pNiLink[i]->maxSpins);
       }
       else
       {
@@ -325,13 +333,15 @@ initGpib()
       ibLinkInit(&(pNiLink[i]->ibLink));	/* allocate the sems etc... */
 
       pibregs->cfg2 = D_SFL;	/* can't set all bits at same time */
-      pibregs->cfg2 = D_SFL | D_SPAC | D_SC;	/* put board in operating mode */
+      pibregs->cfg2 = D_SFL | D_SC;	/* put board in operating mode */
 
       pNiLink[i]->ibregs = pibregs;
       pNiLink[i]->ioSem = semCreate();
       pNiLink[i]->watchDogId = wdCreate();
       pNiLink[i]->tmoLimit = defaultTimeout;
       pNiLink[i]->tmoFlag = 0;
+      pNiLink[i]->cmdSpins = 0;
+      pNiLink[i]->maxSpins = 0;
 
       pNiLink[i]->cc_array.cc_ccb = 0;	/* DMAC array chained structure */
       pNiLink[i]->cc_array.cc_ONE = 1;
@@ -386,11 +396,12 @@ initGpib()
       pNiLink[i]->ibregs->ch1.dcr = D_CS|D_IACK|D_IPCL;
       pNiLink[i]->ibregs->ch0.dcr = D_CS|D_IACK|D_IPCL;
       pNiLink[i]->ibregs->ch1.scr = 0;		/* no counting during DMA */
-      pNiLink[i]->ibregs->ch1.mfc = D_SUP|D_S24;
-      pNiLink[i]->ibregs->ch1.bfc = D_SUP|D_S24;
       pNiLink[i]->ibregs->ch0.scr = D_MCU;	/* count up during DMA cycles */
-      pNiLink[i]->ibregs->ch0.mfc = D_SUP|D_S24;
-  
+      pNiLink[i]->ibregs->ch0.mfc = STD_ADDRESS_MODE;
+      pNiLink[i]->ibregs->ch1.mfc = STD_ADDRESS_MODE;
+      pNiLink[i]->ibregs->ch1.bfc = STD_ADDRESS_MODE;
+
+
       /* attach the interrupt handler routines */
       intConnect((NIGPIB_IVEC_BASE + i*2) * 4, niIrq, i);
       intConnect((NIGPIB_IVEC_BASE + 1 + (i*2)) * 4, niIrqError, i);
@@ -585,6 +596,9 @@ int	link;
  * be made to init the bus and enable the interface card.
  *
  ******************************************************************************/
+#define	TOOLONG	100	/* how many times to try to send the same byte */
+#define	IDELAY	1000	/* how long to busy wait while sending a byte */
+
 static int
 niGpibCmd(link, buffer, length)
 int     link;
@@ -594,19 +608,21 @@ int     length;
   int	iDelay;		/* how long to spin before doing a taskWait */
   int	tooLong;	/* how long should I tolerate waiting */
   int	lenCtr;
+  unsigned 	spins;	/* how many taskDelay() calls made in this function */
 
   lenCtr = length;
+  spins = 0;
 
   if (ibDebug)
     printf("niGpibCmd(%d, 0x%08.8X, %d): command string >%s<\n", link, buffer, length, buffer);
 
-  tooLong = 60;		/* limit to wait for ctrlr's command buffer */
+  tooLong = TOOLONG;	/* limit to wait for ctrlr's command buffer */
   pNiLink[link]->ibregs->auxmr = AUX_TCA;	/* take control of the bus */
 
   while (lenCtr)
   {
     pNiLink[link]->r_isr2 &= ~HR_CO;
-    iDelay = 100;			/* wait till the ctlr is ready */
+    iDelay = IDELAY;			/* wait till the ctlr is ready */
     while (iDelay && (((pNiLink[link]->r_isr2 |= pNiLink[link]->ibregs->isr2) & HR_CO) == 0))
       iDelay--;
 
@@ -614,41 +630,51 @@ int     length;
     {
       pNiLink[link]->ibregs->cdor = *buffer++;	/* output a byte */
       lenCtr--;
-      tooLong = 60;	/* reset the limit again */
+      tooLong = TOOLONG;	/* reset the limit again */
     }
     else
     {
       if (!(tooLong--))
       {
 	/* errMsg() */
-	printf("niGpibCmd(%d, 0x%08.8X, %d): Timeout writing command >%s<\n", link, buffer, length, buffer);
+	printf("niGpibCmd(%d, 0x%08.8X, %d): Timeout while writing command >%s<\n", link, buffer, length, buffer);
 	pNiLink[link]->ibregs->auxmr = AUX_GTS;
+        if (spins > pNiLink[link]->maxSpins)
+	  pNiLink[link]->maxSpins = spins;
 	return(ERROR);
       }
+      spins++;
+      pNiLink[link]->cmdSpins++;
       taskDelay(1);			/* ctlr is taking too long */
     }
   }
-  tooLong = 60;
+  tooLong = TOOLONG;
   while(tooLong--)
   {
     pNiLink[link]->r_isr2 &= ~HR_CO;
-    iDelay = 100;			/* wait till the ctlr is ready */
+    iDelay = IDELAY;			/* wait till the ctlr is ready */
     while (iDelay && (((pNiLink[link]->r_isr2 |= pNiLink[link]->ibregs->isr2) & HR_CO) == 0))
       iDelay--;
-  
+
     if(iDelay)
     {
       pNiLink[link]->ibregs->auxmr = AUX_GTS;
+      if (spins > pNiLink[link]->maxSpins)
+	pNiLink[link]->maxSpins = spins;
       return(length);
     }
     else
     {
+      spins++;
+      pNiLink[link]->cmdSpins++;
       taskDelay(1);
     }
   }
   /* errMsg() */
   printf("niGpibCmd(%d, 0x%08.8X, %d): Timeout after writing command >%s<\n", link, buffer, length, buffer);
   pNiLink[link]->ibregs->auxmr = AUX_GTS;
+  if (spins > pNiLink[link]->maxSpins)
+    pNiLink[link]->maxSpins = spins;
   return(ERROR);
 }
 
@@ -1336,7 +1362,7 @@ struct  ibLink	*plink; 	/* a reference to the link structures covered */
     if ((pnode = (struct dpvtGpibHead *)lstFirst(&(plink->hiPriList))) != NULL)
     {
       while (plink->deviceStatus[pnode->device] == BUSY)
-        if ((pnode = (struct dpvtGpibHead *)lstNext(&(plink->hiPriList))) == NULL)
+        if ((pnode = (struct dpvtGpibHead *)lstNext(pnode)) == NULL)
           break;
     }
     if (pnode != NULL)
@@ -1358,7 +1384,7 @@ struct  ibLink	*plink; 	/* a reference to the link structures covered */
       if ((pnode = (struct dpvtGpibHead *)lstFirst(&(plink->loPriList))) != NULL)
       {
         while (plink->deviceStatus[pnode->device] == BUSY)
-          if ((pnode = (struct dpvtGpibHead *)lstNext(&(plink->loPriList))) == NULL)
+          if ((pnode = (struct dpvtGpibHead *)lstNext(pnode)) == NULL)
             break;
       }
       if (pnode != NULL)
@@ -1581,7 +1607,7 @@ int	device;
 int     (*handler)();   /* handler function to invoke upon SRQ detection */
 caddr_t	parm;		/* so caller can have a parm passed back */
 {
-  /*if(ibDebug || ibSrqDebug)*/
+  if(ibDebug || ibSrqDebug)
     printf("registerSrqCallback(%08.8X, %d, 0x%08.8X, %08.8X)\n", pibLink, device, handler, parm);
 
   pibLink->srqHandler[device] = handler;

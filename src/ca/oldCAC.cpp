@@ -223,11 +223,11 @@ void oldCAC::attachToClientCtx ()
     epicsThreadPrivateSet ( caClientContextId, this );
 }
 
-void oldCAC::incrementOutstandingIO ( unsigned ioSeqNo )
+void oldCAC::incrementOutstandingIO ( unsigned ioSeqNoIn )
 {
-    if ( this->ioSeqNo == ioSeqNo ) {
+    if ( this->ioSeqNo == ioSeqNoIn ) {
         epicsGuard < oldCACMutex > guard ( this->mutex );
-        if ( this->ioSeqNo == ioSeqNo ) {
+        if ( this->ioSeqNo == ioSeqNoIn ) {
             if ( this->pndRecvCnt < UINT_MAX ) {
                 this->pndRecvCnt++;
             }
@@ -239,16 +239,16 @@ void oldCAC::incrementOutstandingIO ( unsigned ioSeqNo )
     }
 }
 
-void oldCAC::decrementOutstandingIO ( unsigned ioSeqNo )
+void oldCAC::decrementOutstandingIO ( unsigned ioSeqNoIn )
 {
-    if ( this->ioSeqNo != ioSeqNo ) {
+    if ( this->ioSeqNo != ioSeqNoIn ) {
         return;
     }
 
     bool signalNeeded;
     {
         epicsGuard < oldCACMutex > guard ( this->mutex ); 
-        if ( this->ioSeqNo == ioSeqNo ) {
+        if ( this->ioSeqNo == ioSeqNoIn ) {
             if ( this->pndRecvCnt > 0u ) {
                 this->pndRecvCnt--;
                 if ( this->pndRecvCnt == 0u ) {

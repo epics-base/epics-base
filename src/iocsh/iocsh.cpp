@@ -218,27 +218,14 @@ iocsh (const char *pathname)
     int argBufCapacity = 0;
     struct iocshCommand *found;
     struct iocshFuncDef const *piocshFuncDef;
+    void *readlineContext;
     
     /*
      * See if command interpreter is interactive
      */
     if ((pathname == NULL) || (strcmp (pathname, "<telnet>") == 0)) {
-        const char *historySize;
         if ((prompt = getenv ("IOCSH_PS1")) == NULL)
             prompt = "epics> ";
-        if (((historySize = getenv ("IOCSH_HISTSIZE")) == NULL)
-         && ((historySize = getenv ("HISTSIZE")) == NULL))
-            historySize = "20";
-        if (pathname == NULL) {
-            epicsStifleHistory (atoi (historySize));
-            /*
-             * FIXME: Could enable tab-completion of commands here
-             */
-            epicsBindKeys();
-        }
-        else {
-            fp = stdin;
-        }
     }
     else {
         fp = fopen (pathname, "r");
@@ -254,23 +241,20 @@ iocsh (const char *pathname)
     }
 
     /*
+     * Create a command-line input context
+     */
+    if ((readlineContext = epicsReadlineBegin(fp)) == NULL) {
+        fprintf(stderr, "Can't allocate command-line object.\n");
+        if (fp)
+            fclose(fp);
+        return -1;
+    }
+
+    /*
      * Read commands till EOF or exit
      */
-    for (;;) {
-        /*
-         * Get a line
-         */
+    while ((line = epicsReadline(prompt, readlineContext)) != NULL) {
         lineno++;
-        free (line);
-        line = epicsReadline (fp, prompt);
-        if (line == NULL)
-            break;
-
-        /*
-         * If using readline, add non-blank lines to history
-         */
-        if ((fp == NULL) && *line)
-            epicsAddHistory (line);
 
         /*
          * Ignore comment lines
@@ -278,8 +262,11 @@ iocsh (const char *pathname)
         if (*line == '#')
             continue;
 
-	if ((prompt == NULL) && *line)
-	    puts(line);
+        /*
+         * Echo commands read from scripts
+         */
+        if ((prompt == NULL) && *line)
+            puts(line);
 
         /*
          * Break line into words
@@ -471,10 +458,10 @@ iocsh (const char *pathname)
     }
     if (fp && (fp != stdin))
         fclose (fp);
-    free (line);
     free (argv);
     free (argBuf);
     errlogFlush();
+    epicsReadlineEnd(readlineContext);
     return 0;
 }
 

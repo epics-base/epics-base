@@ -23,8 +23,8 @@ POSIX_LDLIBS_NO =
 # -D_BSD_SOURCE for gethostname() in unistd.h as needed by cacChannelIO.cpp.
 OP_SYS_CPPFLAGS += -D_BSD_SOURCE
 OP_SYS_CPPFLAGS += -Dlinux
-OP_SYS_LDFLAGS =
-OP_SYS_LDLIBS = -lreadline -lcurses -lrt
+OP_SYS_LDFLAGS +=
+OP_SYS_LDLIBS += -lrt
 
 ARCH_DEP_CPPFLAGS += -D_X86_
 ARCH_DEP_CFLAGS += -mcpu=pentium
@@ -36,4 +36,4 @@ ifdef CROSS
 endif
 
 #Allow R3.13 built extensions to load R3.14 shared libs
-SYS_SHRLIB_LIBS += pthread readline curses rt
+SYS_SHRLIB_LIBS += pthread rt

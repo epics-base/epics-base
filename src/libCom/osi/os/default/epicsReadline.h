@@ -17,10 +17,9 @@ extern "C" {
 #include <shareLib.h>
 #include <stdio.h>
 
-epicsShareFunc char * epicsShareAPI epicsReadline (FILE *fp, const char *prompt);
-epicsShareFunc void epicsShareAPI epicsStifleHistory (int n);
-epicsShareFunc void epicsShareAPI epicsAddHistory (const char *line);
-epicsShareFunc void epicsShareAPI epicsBindKeys (void);
+epicsShareFunc void * epicsShareAPI epicsReadlineBegin (FILE *in);
+epicsShareFunc char * epicsShareAPI epicsReadline (const char *prompt, void *context);
+epicsShareFunc void   epicsShareAPI epicsReadlineEnd (void *context);
 
 #ifdef __cplusplus
 }

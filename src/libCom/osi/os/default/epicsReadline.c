@@ -12,49 +12,231 @@
 #define epicsExportSharedSymbols
 
 #include <epicsReadline.h>
-#include <osdReadline.h>
 
-#if (defined (IOCSH_REAL_READLINE) && defined (IOCSH_FAKE_READLINE))
-# undef IOCSH_FAKE_READLINE
+#define EPICS_COMMANDLINE_LIBRARY_EPICS     0
+#define EPICS_COMMANDLINE_LIBRARY_LIBTECLA  1
+#define EPICS_COMMANDLINE_LIBRARY_READLINE  2
+
+#ifndef EPICS_COMMANDLINE_LIBRARY
+#define EPICS_COMMANDLINE_LIBRARY EPICS_COMMANDLINE_LIBRARY_EPICS
 #endif
 
-#if (defined (IOCSH_REAL_READLINE) || defined (IOCSH_FAKE_READLINE))
 
-#include <stdio.h>
-#include <stdlib.h>
+
+#if EPICS_COMMANDLINE_LIBRARY == EPICS_COMMANDLINE_LIBRARY_LIBTECLA
+#include <libtecla.h>
+#include <string.h>
 
-#if (defined (IOCSH_REAL_READLINE))
-# include <readline/readline.h>
-# include <readline/history.h>
-#endif
+/*
+ * Create a command-line context
+ */
+void * epicsShareAPI
+epicsReadlineBegin (FILE *in)
+{
+    GetLine *gl;
+    const char *histSize = getenv("IOCSH_HISTSIZE");
+    int i;
+
+    if (histSize == NULL)
+        i = 50;
+    else if ((i = atoi(histSize)) < 0)
+        i = 0;
+    gl = new_GetLine(200, i * 40);
+    if ((gl != NULL) && (in != NULL))
+        gl_change_terminal(gl, in, stdout, NULL);
+    return gl;
+}
 
 /*
  * Read a line of input
  */
 char * epicsShareAPI
-epicsReadline (FILE *fp, const char *prompt)
+epicsReadline (const char *prompt, void *context)
 {
+    char *line;
+    char *nl;
+
+    line = gl_get_line(context, prompt ? prompt : "", NULL, -1);
+    if ((line != NULL) && ((nl = strchr(line, '\n')) != NULL))
+        *nl = '\0';
+    return line;
+}
+
+/*
+ * Destroy a command-line context
+ */
+void epicsShareAPI
+epicsReadlineEnd(void *context)
+{
+    del_GetLine(context);
+}
+
+
+#elif EPICS_COMMANDLINE_LIBRARY == EPICS_COMMANDLINE_LIBRARY_READLINE
+
+#include <stdlib.h>
+#include <readline/readline.h>
+#include <readline/history.h>
+
+struct readlineContext {
+    FILE    *in;
+    char    *line;
+};
+
+/*
+ * Create a command-line context
+ */
+void * epicsShareAPI
+epicsReadlineBegin(FILE *in)
+{
+    struct readlineContext *readlineContext;
+
+    readlineContext = malloc(sizeof *readlineContext);
+    if (readlineContext != NULL) {
+        readlineContext->in = in;
+        readlineContext->line = NULL;
+        if (in == NULL) {
+            const char *histSize = getenv("IOCSH_HISTSIZE");
+            int i;
+
+            if (histSize == NULL)
+                i = 50;
+            else if ((i = atoi(histSize)) < 0)
+                i = 0;
+            stifle_history (i);
+            rl_bind_key ('\t', rl_insert);
+        }
+    }
+    return readlineContext;
+}
+
+/*
+ * Read a line of input
+ */
+char * epicsShareAPI
+epicsReadline (const char *prompt, void *context)
+{
+    struct readlineContext *readlineContext = context;
+
     int c;      /* char is unsigned on some archs, EOF is -ve */
     char *line = NULL;
     int linelen = 0;
     int linesize = 50;
 
-    if (fp == NULL)
-#ifdef IOCSH_REAL_READLINE
-        return readline (prompt);
-#else
-        fp = stdin;
-#endif
+    free (readlineContext->line);
+    readlineContext->line = NULL;
+    if (readlineContext->in == NULL) {
+        line = readline (prompt);
+    }
+    else {
+        line = (char *)malloc (linesize * sizeof *line);
+        if (line == NULL) {
+            printf ("Out of memory!\n");
+            return NULL;
+        }
+        if (prompt) {
+            fputs (prompt, stdout);
+            fflush (stdout);
+        }
+        while ((c = getc (readlineContext->in)) !=  '\n') {
+            if (c == EOF) {
+                free (line);
+                line = NULL;
+                break;
+            }
+            if ((linelen + 1) >= linesize) {
+                char *cp;
+    
+                linesize += 50;
+                cp = (char *)realloc (line, linesize * sizeof *line);
+                if (cp == NULL) {
+                    printf ("Out of memory!\n");
+                    free (line);
+                    line = NULL;
+                    break;
+                }
+                line = cp;
+            }
+            line[linelen++] = c;
+        }
+        if (line)
+            line[linelen] = '\0';
+    }
+    readlineContext->line = line;
+    if (line && line[0] != '#')
+        add_history (line);
+    return line;
+}
+
+/*
+ * Destroy a command-line context
+ */
+void epicsShareAPI
+epicsReadlineEnd (void *context)
+{
+    struct readlineContext *readlineContext = context;
+    
+    if (readlineContext) {
+        free(readlineContext->line);
+        free(readlineContext);
+    }
+}
+
+
+#elif EPICS_COMMANDLINE_LIBRARY == EPICS_COMMANDLINE_LIBRARY_EPICS
+
+struct readlineContext {
+    FILE    *in;
+    char    *line;
+};
+
+/*
+ * Create a command-line context
+ */
+void * epicsShareAPI
+epicsReadlineBegin(FILE *in)
+{
+    struct readlineContext *readlineContext;
+    
+    readlineContext = malloc(sizeof *readlineContext);
+    if (readlineContext != NULL) {
+        readlineContext->in = in;
+        readlineContext->line = NULL;
+    }
+    return readlineContext;
+}
+
+/*
+ * Read a line of input
+ */
+char * epicsShareAPI
+epicsReadline (const char *prompt, void *context)
+{
+    struct readlineContext *readlineContext = context;
+
+    int c;      /* char is unsigned on some archs, EOF is -ve */
+    char *line = NULL;
+    int linelen = 0;
+    int linesize = 50;
+    FILE *in;
+
+    free (readlineContext->line);
+    readlineContext->line = NULL;
+    if ((in = readlineContext->in) == NULL) {
+        in = stdin;
+        if (prompt != NULL) {
+            fputs (prompt, stdout);
+            fflush (stdout);
+        }
+    }
     line = (char *)malloc (linesize * sizeof *line);
     if (line == NULL) {
         printf ("Out of memory!\n");
         return NULL;
     }
     if (prompt) {
-        fputs (prompt, stdout);
-        fflush (stdout);
     }
-    while ((c = getc (fp)) !=  '\n') {
+    while ((c = getc (in)) !=  '\n') {
         if (c == EOF) {
             free (line);
             return NULL;
@@ -74,28 +256,26 @@ epicsReadline (FILE *fp, const char *prompt)
         line[linelen++] = c;
     }
     line[linelen] = '\0';
+    readlineContext->line = line;
     return line;
 }
 
-void epicsShareAPI epicsStifleHistory (int n)
+/*
+ * Destroy a command-line context
+ */
+void epicsShareAPI
+epicsReadlineEnd (void *context)
 {
-#if (defined (IOCSH_REAL_READLINE))
-    stifle_history (n);
-#endif
+    struct readlineContext *readlineContext = context;
+    
+    if (readlineContext) {
+        free(readlineContext->line);
+        free(readlineContext);
+    }
 }
 
-void epicsShareAPI epicsAddHistory (const char *line)
-{
-#if (defined (IOCSH_REAL_READLINE))
-    add_history (line);
-#endif
-}
+#else
 
-void epicsShareAPI epicsBindKeys (void)
-{
-#if (defined (IOCSH_REAL_READLINE))
-    rl_bind_key ('\t', rl_insert);
-#endif
-}
+# error "Unsupported EPICS_COMMANDLINE_LIBRARY"
 
-#endif /* defined (IOCSH_REAL_READLINE) || defined (IOCSH_FAKE_READLINE) */
+#endif

@@ -49,7 +49,7 @@ endif
 #       ppc604
 #       vxipc
 #
-CROSS_COMPILER_TARGET_ARCHS=vxWorks-68040 vxWorks-ppc604
+CROSS_COMPILER_TARGET_ARCHS=
 
 
 #  If only a subset of the host architectures perform

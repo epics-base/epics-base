@@ -25,14 +25,11 @@ OP_SYS_CFLAGS += -fno-common
 CPPSNCFLAGS += -no-cpp-precomp
 
 #
-# Need to get some fink-installed packages (readline, etc.).
-# If you don't have readline on your system you must remove
-# or comment out these lines and make the appropriate changes
-# to src/libCom/osi/os/Darwin/osdReadline.h
+# Need to get some fink-installed packages
 #
 OP_SYS_CPPFLAGS += -I$(FINK_DIR)/include
 OP_SYS_LDFLAGS += -L$(FINK_DIR)/lib
-OP_SYS_LDLIBS += -lreadline
+OP_SYS_LDLIBS +=
 
 #
 # Stuff that will be needed when going to shared libraries

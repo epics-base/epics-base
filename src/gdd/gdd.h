@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.16  1996/10/17 12:39:14  jbk
+ * removed strdup definition, fixed up the local/network byte order functions
+ *
  * Revision 1.15  1996/09/10 15:06:29  jbk
  * Adjusted dbMapper.cc so gdd to string function work correctly
  * Added checks in gdd.h so that get(pointer) functions work with scalars
@@ -909,8 +912,11 @@ inline gddStatus gdd::put(const aitInt8* const d)
 		aitString* p = (aitString*)dataAddress();
 		p->installString((char*)d);
 	}
-	else if(primitiveType()==aitEnumFixedString && dim==0)
-		strcpy(data.FString->fixed_string,(char*)d);
+	else if(primitiveType()==aitEnumFixedString && dim==0) {
+		strncpy(data.FString->fixed_string,(char*)d, 
+			sizeof(aitFixedString));
+		data.FString->fixed_string[sizeof(aitFixedString)-1u]='\0';
+	}
 	else
 		rc=genCopy(aitEnumInt8,d);
 

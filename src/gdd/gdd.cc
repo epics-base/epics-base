@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.12  1996/10/29 15:39:58  jbk
+// Much new doc added.  Fixed bug in gdd.cc.
+//
 // Revision 1.11  1996/08/27 13:05:05  jbk
 // final repairs to string functions, put() functions, and error code printing
 //
@@ -1082,10 +1085,16 @@ void gdd::get(aitString& d)
 }
 void gdd::get(aitFixedString& d)
 {
-	if(primitiveType()==aitEnumFixedString)
-		strcpy(d.fixed_string,data.FString->fixed_string);
-	else if(primitiveType()==aitEnumInt8 && dim==1)
-		strcpy(d.fixed_string,(char*)dataPointer());
+	if(primitiveType()==aitEnumFixedString){
+		strncpy(d.fixed_string,data.FString->fixed_string,
+			sizeof(d));
+		d.fixed_string[sizeof(d)-1u] = '\0';
+	}
+	else if(primitiveType()==aitEnumInt8 && dim==1) {
+		strncpy(d.fixed_string,(char*)dataPointer(), 
+			sizeof(d));
+		d.fixed_string[sizeof(d)-1u] = '\0';
+	}
 	else
 		get(aitEnumFixedString,&d);
 }
@@ -1111,8 +1120,11 @@ void gdd::getConvert(aitString& d)
 
 void gdd::getConvert(aitFixedString& d)
 {
-	if(primitiveType()==aitEnumInt8 && dim==1)
-		strcpy(d.fixed_string,(char*)dataPointer());
+	if(primitiveType()==aitEnumInt8 && dim==1){
+		strncpy(d.fixed_string,(char*)dataPointer(),
+			sizeof(d));
+		d.fixed_string[sizeof(d)-1u] = '\0';
+	}
 	else
 		get(aitEnumFixedString,d.fixed_string);
 }

@@ -5,6 +5,9 @@
 // $Id$
 //
 // $Log$
+// Revision 1.3  1996/08/22 21:05:37  jbk
+// More fixes to make strings and fixed string work better.
+//
 // Revision 1.2  1996/08/13 15:07:42  jbk
 // changes for better string manipulation and fixes for the units field
 //
@@ -84,7 +87,16 @@ static void aitConvertFixedStringString(void* d,const void* s,aitIndex c)
 	aitString* in = (aitString*)s;
 	aitFixedString* out = (aitFixedString*)d;
 
-	for(i=0;i<c;i++) strcpy(out[i].fixed_string,in[i].string());
+	//
+	// joh - changed this from strcpy() to stncpy() in order to:
+	// 1) shut up purify 
+	// 2) guarantee that all fixed strings will be terminated
+	// 3) guarantee that we will not overflow a fixed string
+	//
+	for(i=0;i<c;i++){
+		strncpy(out[i].fixed_string,in[i].string(),AIT_FIXED_STRING_SIZE);
+		out[i].fixed_string[AIT_FIXED_STRING_SIZE-1u] = '\0';
+	}
 }
 
 static void aitConvertToNetStringFixedString(void* d,const void* s,aitIndex c)

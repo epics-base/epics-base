@@ -5,6 +5,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.3  1996/08/13 15:07:44  jbk
+ * changes for better string manipulation and fixes for the units field
+ *
  * Revision 1.2  1996/06/27 14:33:13  jbk
  * changes data type to string conversions to use installString(), not copy()
  *
@@ -284,6 +287,12 @@ void MakeFStringFuncFrom(int i,int j,int k)
 		pr(dfd,"\t\titmp=(aitInt32)in[i];\n");
 	else if(j==aitEnumUint8)
 		pr(dfd,"\t\titmp=(aitUint32)in[i];\n");
+
+	/*
+	 * shut up purify
+	 * (sprintf is so slow that is unliekly to be significant overhead)
+	 */
+	pr(dfd,"\t\tmemset(out[i].fixed_string,\'\\0\',sizeof(aitFixedString));\n");
 
 	if(j==aitEnumInt8)
 		pr(dfd,"\t\tsprintf(out[i].fixed_string,aitStringType[aitEnumInt32],itmp);\n");

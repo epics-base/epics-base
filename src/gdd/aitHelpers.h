@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.8  1996/10/17 12:41:06  jbk
+ * network byte order stuff / added strDup function to Helpers
+ *
  * Revision 1.7  1996/08/22 21:05:39  jbk
  * More fixes to make strings and fixed string work better.
  *
@@ -42,6 +45,12 @@
 #include <assert.h> 
 #endif
 
+<<<<<<< aitHelpers.h
+#define NSecPerSec 1000000000u
+#define NSecPerUSec 1000u
+#define SecPerMin 60u
+
+=======
 inline char* strDup(const char* x)
 {
 	char* y = new char[strlen(x)+1];
@@ -53,6 +62,7 @@ const unsigned NSecPerSec = 1000000000u;
 const unsigned NSecPerUSec = 1000u;
 const unsigned SecPerMin = 60u;
 
+>>>>>>> 1.8
 class aitTimeStamp {
 	friend aitTimeStamp operator+ (const aitTimeStamp &lhs, const aitTimeStamp &rhs);
 	friend aitTimeStamp operator- (const aitTimeStamp &lhs, const aitTimeStamp &rhs);
@@ -263,7 +273,8 @@ inline int aitString::set(const char* p,aitUint32 l)
 	str=new char[len+1];
 	if(str)
 	{
-		strcpy(str, p);
+		strncpy(str, p, len);
+		str[len] = '\0';
 		type=aitStrMalloc;
 	}
 	else

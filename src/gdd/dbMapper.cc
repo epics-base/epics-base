@@ -4,6 +4,10 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.14  1996/09/10 15:06:28  jbk
+// Adjusted dbMapper.cc so gdd to string function work correctly
+// Added checks in gdd.h so that get(pointer) functions work with scalars
+//
 // Revision 1.13  1996/08/23 20:29:35  jbk
 // completed fixes for the aitString and fixed string management
 //
@@ -449,6 +453,7 @@ static int mapStsGddToChar(void* v, gdd* dd)
 	dbr_sts_char* dbv = (dbr_sts_char*)v;
 	int sz=mapGddToChar(&dbv->value,dd);
 	dd->getStatSevr(dbv->status,dbv->severity);
+	dbv->RISC_pad = '\0'; // shut up purify
 	return sz;
 }
 
@@ -481,6 +486,7 @@ static int mapStsGddToDouble(void* v, gdd* dd)
 	dbr_sts_double* dbv = (dbr_sts_double*)v;
 	int sz=mapGddToDouble(&dbv->value,dd);
 	dd->getStatSevr(dbv->status,dbv->severity);
+	dbv->RISC_pad = 0; // shut up purify
 	return sz;
 }
 
@@ -546,6 +552,7 @@ static int mapTimeGddToShort(void* v, gdd* dd)
 	int sz=mapGddToShort(&dbv->value,dd);
 	dd->getStatSevr(dbv->status,dbv->severity);
 	dd->getTimeStamp((aitTimeStamp*)&dbv->stamp);
+	dbv->RISC_pad = 0; // shut up purify
 	return sz;
 }
 
@@ -582,6 +589,7 @@ static int mapTimeGddToEnum(void* v, gdd* dd)
 	int sz=mapGddToEnum(&dbv->value,dd);
 	dd->getStatSevr(dbv->status,dbv->severity);
 	dd->getTimeStamp((aitTimeStamp*)&dbv->stamp);
+	dbv->RISC_pad = 0; // shut up purify
 	return sz;
 }
 
@@ -600,6 +608,8 @@ static int mapTimeGddToChar(void* v, gdd* dd)
 	int sz=mapGddToChar(&dbv->value,dd);
 	dd->getStatSevr(dbv->status,dbv->severity);
 	dd->getTimeStamp((aitTimeStamp*)&dbv->stamp);
+	dbv->RISC_pad0 = 0; // shut up purify
+	dbv->RISC_pad1 = '\0'; // shut up purify
 	return sz;
 }
 
@@ -636,6 +646,7 @@ static int mapTimeGddToDouble(void* v, gdd* dd)
 	int sz=mapGddToDouble(&dbv->value,dd);
 	dd->getStatSevr(dbv->status,dbv->severity);
 	dd->getTimeStamp((aitTimeStamp*)&dbv->stamp);
+	dbv->RISC_pad = 0; // shut up purify
 	return sz;
 }
 
@@ -718,7 +729,10 @@ static int mapGraphicGddToShort(void* v, gdd* dd)
 
 	aitString* str;
 	dd[gddAppTypeIndex_dbr_gr_short_units].getRef(str);
-	if(str->string()) strcpy(db->units,str->string());
+	if(str->string()) {
+		strncpy(db->units,str->string(), sizeof(db->units));
+		db->units[sizeof(db->units)-1u] = '\0';	
+	}
 
 	db->lower_disp_limit=dd[gddAppTypeIndex_dbr_gr_short_graphicLow];
 	db->upper_disp_limit=dd[gddAppTypeIndex_dbr_gr_short_graphicHigh];
@@ -746,7 +760,10 @@ static int mapControlGddToShort(void* v, gdd* dd)
 
 	aitString* str;
 	dd[gddAppTypeIndex_dbr_ctrl_short_units].getRef(str);
-	if(str->string()) strcpy(db->units,str->string());
+	if(str->string()) {
+		strncpy(db->units,str->string(), sizeof(db->units));
+		db->units[sizeof(db->units)-1u] = '\0';	
+	}
 
 	db->lower_disp_limit=dd[gddAppTypeIndex_dbr_ctrl_short_graphicLow];
 	db->upper_disp_limit=dd[gddAppTypeIndex_dbr_ctrl_short_graphicHigh];
@@ -845,7 +862,10 @@ static int mapGraphicGddToFloat(void* v, gdd* dd)
 
 	aitString* str;
 	dd[gddAppTypeIndex_dbr_gr_float_units].getRef(str);
-	if(str->string()) strcpy(db->units,str->string());
+	if(str->string()) {
+		strncpy(db->units,str->string(), sizeof(db->units));
+		db->units[sizeof(db->units)-1u] = '\0';	
+	}
 
 	db->precision=dd[gddAppTypeIndex_dbr_gr_float_precision];
 	db->lower_disp_limit=dd[gddAppTypeIndex_dbr_gr_float_graphicLow];
@@ -854,6 +874,7 @@ static int mapGraphicGddToFloat(void* v, gdd* dd)
 	db->upper_alarm_limit=dd[gddAppTypeIndex_dbr_gr_float_alarmHigh];
 	db->lower_warning_limit=dd[gddAppTypeIndex_dbr_gr_float_alarmLowWarning];
 	db->upper_warning_limit=dd[gddAppTypeIndex_dbr_gr_float_alarmHighWarning];
+	db->RISC_pad0 = 0; // shut up purify
 
 	vdd.getStatSevr(db->status,db->severity);
 
@@ -874,7 +895,10 @@ static int mapControlGddToFloat(void* v, gdd* dd)
 
 	aitString* str;
 	dd[gddAppTypeIndex_dbr_ctrl_float_units].getRef(str);
-	if(str->string()) strcpy(db->units,str->string());
+	if(str->string()) {
+		strncpy(db->units,str->string(), sizeof(db->units));
+		db->units[sizeof(db->units)-1u] = '\0';	
+	}
 
 	db->precision=dd[gddAppTypeIndex_dbr_ctrl_float_precision];
 	db->lower_disp_limit=dd[gddAppTypeIndex_dbr_ctrl_float_graphicLow];
@@ -885,6 +909,7 @@ static int mapControlGddToFloat(void* v, gdd* dd)
 	db->upper_alarm_limit=dd[gddAppTypeIndex_dbr_ctrl_float_alarmHigh];
 	db->lower_warning_limit=dd[gddAppTypeIndex_dbr_ctrl_float_alarmLowWarning];
 	db->upper_warning_limit=dd[gddAppTypeIndex_dbr_ctrl_float_alarmHighWarning];
+	db->RISC_pad = 0; // shut up purify
 
 	vdd.getStatSevr(db->status,db->severity);
 
@@ -926,7 +951,11 @@ static gdd* mapGraphicEnumToGdd(void* v, aitIndex /*count*/)
 			sz=db->no_str;
 	}
 
-	for(i=0;i<sz;i++) strcpy(str[i].fixed_string,&(db->strs[i][0]));
+	for (i=0;i<sz;i++) {
+		strncpy(str[i].fixed_string,&(db->strs[i][0]),
+			sizeof(aitFixedString));
+		str[i].fixed_string[sizeof(aitFixedString)-1u] = '\0';
+	}
 	menu.setBound(0,0,sz);
 
 	// should always be a scaler
@@ -964,7 +993,11 @@ static gdd* mapControlEnumToGdd(void* v, aitIndex /*count*/)
 			sz=db->no_str;
 	}
 
-	for(i=0;i<sz;i++) strcpy(str[i].fixed_string,&(db->strs[i][0]));
+	for (i=0;i<sz;i++) {
+		strncpy(str[i].fixed_string,&(db->strs[i][0]),
+			sizeof(aitFixedString));
+		str[i].fixed_string[sizeof(aitFixedString)-1u] = '\0';
+	}
 	menu.setBound(0,0,sz);
 
 	// should always be a scaler
@@ -989,8 +1022,11 @@ static int mapGraphicGddToEnum(void* v, gdd* dd)
 
 	if(str && str!=f)
 	{
-		for(i=0;i<db->no_str;i++)
-			strcpy(&(db->strs[i][0]),str[i].fixed_string);
+		for(i=0;i<db->no_str;i++) {
+			strncpy(&(db->strs[i][0]),str[i].fixed_string, 
+				sizeof(aitFixedString));
+			db->strs[i][sizeof(aitFixedString)-1u] = '\0';
+		}
 	}
 	return 1;
 }
@@ -1010,8 +1046,11 @@ static int mapControlGddToEnum(void* v, gdd* dd)
 
 	if(str && str!=f)
 	{
-		for(i=0;i<db->no_str;i++)
-			strcpy(&(db->strs[i][0]),str[i].fixed_string);
+		for(i=0;i<db->no_str;i++) {
+			strncpy(&(db->strs[i][0]),str[i].fixed_string, 
+				sizeof(aitFixedString));
+			db->strs[i][sizeof(aitFixedString)-1u] = '\0';
+		}
 	}
 	return 1;
 }
@@ -1091,7 +1130,10 @@ static int mapGraphicGddToChar(void* v, gdd* dd)
 
 	aitString* str;
 	dd[gddAppTypeIndex_dbr_gr_char_units].getRef(str);
-	if(str->string()) strcpy(db->units,str->string());
+	if(str->string()) {
+		strncpy(db->units,str->string(), sizeof(db->units));
+		db->units[sizeof(db->units)-1u] = '\0';	
+	}
 
 	db->lower_disp_limit=dd[gddAppTypeIndex_dbr_gr_char_graphicLow];
 	db->upper_disp_limit=dd[gddAppTypeIndex_dbr_gr_char_graphicHigh];
@@ -1099,6 +1141,7 @@ static int mapGraphicGddToChar(void* v, gdd* dd)
 	db->upper_alarm_limit=dd[gddAppTypeIndex_dbr_gr_char_alarmHigh];
 	db->lower_warning_limit=dd[gddAppTypeIndex_dbr_gr_char_alarmLowWarning];
 	db->upper_warning_limit=dd[gddAppTypeIndex_dbr_gr_char_alarmHighWarning];
+	db->RISC_pad = 0;
 
 	vdd.getStatSevr(db->status,db->severity);
 
@@ -1119,7 +1162,10 @@ static int mapControlGddToChar(void* v, gdd* dd)
 
 	aitString* str;
 	dd[gddAppTypeIndex_dbr_ctrl_char_units].getRef(str);
-	if(str->string()) strcpy(db->units,str->string());
+	if(str->string()) {
+		strncpy(db->units,str->string(), sizeof(db->units));
+		db->units[sizeof(db->units)-1u] = '\0';	
+	}
 
 	db->lower_disp_limit=dd[gddAppTypeIndex_dbr_ctrl_char_graphicLow];
 	db->upper_disp_limit=dd[gddAppTypeIndex_dbr_ctrl_char_graphicHigh];
@@ -1129,6 +1175,7 @@ static int mapControlGddToChar(void* v, gdd* dd)
 	db->upper_alarm_limit=dd[gddAppTypeIndex_dbr_ctrl_char_alarmHigh];
 	db->lower_warning_limit=dd[gddAppTypeIndex_dbr_ctrl_char_alarmLowWarning];
 	db->upper_warning_limit=dd[gddAppTypeIndex_dbr_ctrl_char_alarmHighWarning];
+	db->RISC_pad = '\0'; // shut up purify
 
 	vdd.getStatSevr(db->status,db->severity);
 
@@ -1216,7 +1263,10 @@ static int mapGraphicGddToLong(void* v, gdd* dd)
 
 	aitString* str;
 	dd[gddAppTypeIndex_dbr_gr_long_units].getRef(str);
-	if(str->string()) strcpy(db->units,str->string());
+	if(str->string()) {
+		strncpy(db->units,str->string(), sizeof(db->units));
+		db->units[sizeof(db->units)-1u] = '\0';	
+	}
 
 	db->lower_disp_limit=dd[gddAppTypeIndex_dbr_gr_long_graphicLow];
 	db->upper_disp_limit=dd[gddAppTypeIndex_dbr_gr_long_graphicHigh];
@@ -1244,7 +1294,10 @@ static int mapControlGddToLong(void* v, gdd* dd)
 
 	aitString* str;
 	dd[gddAppTypeIndex_dbr_ctrl_long_units].getRef(str);
-	if(str->string()) strcpy(db->units,str->string());
+	if(str->string()) {
+		strncpy(db->units,str->string(), sizeof(db->units));
+		db->units[sizeof(db->units)-1u] = '\0';	
+	}
 
 	db->lower_disp_limit=dd[gddAppTypeIndex_dbr_ctrl_long_graphicLow];
 	db->upper_disp_limit=dd[gddAppTypeIndex_dbr_ctrl_long_graphicHigh];
@@ -1343,7 +1396,10 @@ static int mapGraphicGddToDouble(void* v, gdd* dd)
 
 	aitString* str;
 	dd[gddAppTypeIndex_dbr_gr_double_units].getRef(str);
-	if(str->string()) strcpy(db->units,str->string());
+	if(str->string()) {
+		strncpy(db->units,str->string(), sizeof(db->units));
+		db->units[sizeof(db->units)-1u] = '\0';	
+	}
 
 	db->precision=dd[gddAppTypeIndex_dbr_gr_double_precision];
 	db->lower_disp_limit=dd[gddAppTypeIndex_dbr_gr_double_graphicLow];
@@ -1352,6 +1408,7 @@ static int mapGraphicGddToDouble(void* v, gdd* dd)
 	db->upper_alarm_limit=dd[gddAppTypeIndex_dbr_gr_double_alarmHigh];
 	db->lower_warning_limit=dd[gddAppTypeIndex_dbr_gr_double_alarmLowWarning];
 	db->upper_warning_limit=dd[gddAppTypeIndex_dbr_gr_double_alarmHighWarning];
+	db->RISC_pad0 = 0; // shut up purify
 
 	vdd.getStatSevr(db->status,db->severity);
 
@@ -1372,7 +1429,10 @@ static int mapControlGddToDouble(void* v, gdd* dd)
 
 	aitString* str;
 	dd[gddAppTypeIndex_dbr_ctrl_double_units].getRef(str);
-	if(str->string()) strcpy(db->units,str->string());
+	if(str->string()) {
+		strncpy(db->units,str->string(), sizeof(db->units));
+		db->units[sizeof(db->units)-1u] = '\0';	
+	}
 
 	db->precision=dd[gddAppTypeIndex_dbr_ctrl_double_precision];
 	db->lower_disp_limit=dd[gddAppTypeIndex_dbr_ctrl_double_graphicLow];
@@ -1383,6 +1443,7 @@ static int mapControlGddToDouble(void* v, gdd* dd)
 	db->upper_alarm_limit=dd[gddAppTypeIndex_dbr_ctrl_double_alarmHigh];
 	db->lower_warning_limit=dd[gddAppTypeIndex_dbr_ctrl_double_alarmLowWarning];
 	db->upper_warning_limit=dd[gddAppTypeIndex_dbr_ctrl_double_alarmHighWarning];
+	db->RISC_pad0 = '\0'; // shut up purify
 
 	vdd.getStatSevr(db->status,db->severity);
 

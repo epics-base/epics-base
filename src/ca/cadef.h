@@ -653,7 +653,7 @@ epicsShareFunc int epicsShareAPI ca_clear_event
  * timeOut  R   wait for this delay in seconds
  */
 epicsShareFunc int epicsShareAPI ca_pend_event (ca_real timeOut);
-#define ca_poll() ca_pend_event( ( 1e-12 ) )
+#define ca_poll() ca_pend_event(1e-12)
 
 /*
  * ca_pend_io()

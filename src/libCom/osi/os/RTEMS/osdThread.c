@@ -24,6 +24,7 @@
 #include <rtems/error.h>
 
 #include "errlog.h"
+#include "epicsMutex.h"
 #include "osiThread.h"
 #include "osiInterrupt.h"
 #include "cantProceed.h"
@@ -41,7 +42,7 @@ struct taskVar {
     unsigned int        threadVariableCapacity;
     void                **threadVariables;
 };
-static semMutexId taskVarMutex;
+static epicsMutexId taskVarMutex;
 static struct taskVar *taskVarHead;
 #define RTEMS_NOTEPAD_TASKVAR       11
 
@@ -49,7 +50,7 @@ static struct taskVar *taskVarHead;
  * Support for `once-only' execution
  */
 static int initialized;
-static semMutexId onceMutex;
+static epicsMutexId onceMutex;
 
 /*
  * Just map osi 0 to 99 into RTEMS 199 to 100
@@ -133,13 +134,13 @@ threadGetStackSize (threadStackSizeClass size)
 static void
 taskVarLock (void)
 {
-    semMutexTake (taskVarMutex);
+    epicsMutexLock (taskVarMutex);
 }
 
 static void
 taskVarUnlock (void)
 {
-    semMutexGive (taskVarMutex);
+    epicsMutexUnlock (taskVarMutex);
 }
 
 /*
@@ -230,8 +231,8 @@ threadInit (void)
 
         clockInit ();
         rtems_task_set_priority (RTEMS_SELF, threadGetOssPriorityValue(99), &old);
-        onceMutex = semMutexMustCreate();
-        taskVarMutex = semMutexMustCreate ();
+        onceMutex = epicsMutexMustCreate();
+        taskVarMutex = epicsMutexMustCreate ();
         rtems_task_ident (RTEMS_SELF, 0, &tid);
         setThreadInfo (tid, "_main_", NULL, NULL);
         initialized = 1;
@@ -437,13 +438,13 @@ threadId threadGetId (const char *name)
 void threadOnceOsd(threadOnceId *id, void(*func)(void *), void *arg)
 {
     if (!initialized) threadInit();
-    semMutexMustTake(onceMutex);
+    epicsMutexMustLock(onceMutex);
     if (*id == 0) {
             *id = -1;
             func(arg);
             *id = 1;
     }
-    semMutexGive(onceMutex);
+    epicsMutexUnlock(onceMutex);
 }
 
 /*

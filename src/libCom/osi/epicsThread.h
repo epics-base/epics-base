@@ -134,6 +134,7 @@ public:
     static void exit ();
     void resume ();
     void getName (char *name, size_t size) const;
+    epicsThreadId getId () const;
     unsigned int getPriority () const;
     void setPriority (unsigned int);
     bool priorityIsEqual (const epicsThread &otherThread) const;
@@ -180,69 +181,6 @@ private:
 #include "osdThread.h"
 
 #ifdef __cplusplus
-
-#include "epicsAssert.h"
-
-inline void epicsThread::resume ()
-{
-    epicsThreadResume (this->id);
-}
-
-inline void epicsThread::getName (char *name, size_t size) const
-{
-    epicsThreadGetName (this->id, name, size);
-}
-
-inline unsigned int epicsThread::getPriority () const
-{
-    return epicsThreadGetPriority (this->id);
-}
-
-inline void epicsThread::setPriority (unsigned int priority)
-{
-    epicsThreadSetPriority (this->id, priority);
-}
-
-inline bool epicsThread::priorityIsEqual (const epicsThread &otherThread) const
-{
-    if ( epicsThreadIsEqual (this->id, otherThread.id) ) {
-        return true;
-    }
-    return false;
-}
-
-inline bool epicsThread::isSuspended () const
-{
-    if ( epicsThreadIsSuspended (this->id) ) {
-        return true;
-    }
-    return false;
-}
-
-inline bool epicsThread::operator == (const epicsThread &rhs) const
-{
-    return (this->id == rhs.id);
-}
-
-inline void epicsThread::suspendSelf ()
-{
-    epicsThreadSuspendSelf ();
-}
-
-inline void epicsThread::sleep (double seconds)
-{
-    epicsThreadSleep (seconds);
-}
-
-//inline epicsThread & epicsThread::getSelf ()
-//{
-//    return * static_cast<epicsThread *> ( epicsThreadGetIdSelf () );
-//}
-
-inline const char *epicsThread::getNameSelf ()
-{
-    return epicsThreadGetNameSelf ();
-}
 
 template <class T>
 inline epicsThreadPrivate<T>::epicsThreadPrivate ()

@@ -18,7 +18,7 @@ epicsShareFunc void epicsShareAPI addAddrToChannelAccessAddressList
 epicsShareFunc void epicsShareAPI printChannelAccessAddressList 
     ( const ELLLIST *pList );
 
-epicsShareFunc void epicsShareAPI removeDuplicatesAddresses
+epicsShareFunc void epicsShareAPI removeDuplicateAddresses
     ( ELLLIST *pDestList, ELLLIST *pSrcList, int silent);
 
 #ifdef __cplusplus

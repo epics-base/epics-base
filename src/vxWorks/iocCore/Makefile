@@ -3,19 +3,19 @@ TOP=../../..
 include $(TOP)/configure/CONFIG
 
 TOP_BIN = $(TOP)/bin/$(T_A)
-LIBRARY_vxWorks = iocCore
+MUNCH_LIBRARY = iocCore
 
-iocCore_OBJS += $(TOP_BIN)/ComLibrary
-iocCore_OBJS += $(TOP_BIN)/caLibrary
-iocCore_OBJS += $(TOP_BIN)/dbStaticIocLibrary
-iocCore_OBJS += $(TOP_BIN)/registryIocLibrary
-iocCore_OBJS += $(TOP_BIN)/dbIocLibrary
-iocCore_OBJS += $(TOP_BIN)/asIocLibrary
-iocCore_OBJS += $(TOP_BIN)/miscIocLibrary
-iocCore_OBJS += $(TOP_BIN)/dbtoolsIocLibrary
-iocCore_OBJS += $(TOP_BIN)/rsrvIocLibrary
-iocCore_OBJS += $(TOP_BIN)/vxComLibrary
-iocCore_OBJS += $(TOP_BIN)/vxDbLibrary
+iocCore_OBJS += $(TOP_BIN)/ComLibrary.o
+iocCore_OBJS += $(TOP_BIN)/caLibrary.o
+iocCore_OBJS += $(TOP_BIN)/dbStaticIocLibrary.o
+iocCore_OBJS += $(TOP_BIN)/registryIocLibrary.o
+iocCore_OBJS += $(TOP_BIN)/dbIocLibrary.o
+iocCore_OBJS += $(TOP_BIN)/asIocLibrary.o
+iocCore_OBJS += $(TOP_BIN)/miscIocLibrary.o
+iocCore_OBJS += $(TOP_BIN)/dbtoolsIocLibrary.o
+iocCore_OBJS += $(TOP_BIN)/rsrvIocLibrary.o
+iocCore_OBJS += $(TOP_BIN)/vxComLibrary.o
+iocCore_OBJS += $(TOP_BIN)/vxDbLibrary.o
 
 
 include $(TOP)/configure/RULES

@@ -43,7 +43,7 @@ void netReadCopyIO::completionNotify ( unsigned type, unsigned long count, const
 #       ifdef CONVERSION_REQUIRED 
             (*cac_dbr_cvrt[type]) ( pData, this->pValue, FALSE, count );
 #       else
-            memcpy (pData, pValue, dbr_size_n ( type, count ) );
+            memcpy ( this->pValue, pData, dbr_size_n ( type, count ) );
 #       endif
         chan.decrementOutstandingIO (this->seqNumber);
     }

@@ -49,5 +49,5 @@ sf2db: sf2dbYacc.o
 sf2dbYacc.o: sf2dbLex.c
 
 clean::
-	/bin/rm -f sf2dbYacc.c sf2dbLex.c
+	$(RM) -f sf2dbYacc.c sf2dbLex.c
 

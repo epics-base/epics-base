@@ -16,19 +16,9 @@
 TOP=.
 include $(TOP)/config/CONFIG_BASE
 
-#
-# Directories to build defined in CONFIG_BASE
-#
+DIRS = src config
 
-include $(TOP)/config/RULES_DIRS
-
-uninstall:: $(foreach arch, $(BUILD_ARCHS), $(arch)$(DIVIDER)uninstall) 
-%$(DIVIDER)uninstall :
-	@rm -rf $(INSTALL_LOCATION_BIN)/$* $(INSTALL_LOCATION_LIB)/$* \
-		$(INSTALL_LOCATION)/dbd $(INSTALL_MAN) $(INSTALL_INCLUDE) 
-	@rm -rf  rec.bak rec
-	@DIR1=`pwd`;cd $(INSTALL_LOCATION);DIR2=`pwd`;cd $$DIR1;\
-	if [ "$$DIR1" != "$$DIR2" ]; then rm -fr $(INSTALL_LOCATION)/config; fi
+include $(TOP)/config/RULES_TOP
 
 release: 
 	@echo TOP: Creating Release...
@@ -37,4 +27,8 @@ release:
 built_release: install
 	@echo TOP: Creating Fully Built Release...
 	@./MakeRelease ${TOP} -b
+
+uninstall::
+	@DIR1=`pwd`;cd $(INSTALL_LOCATION);DIR2=`pwd`;cd $$DIR1;\
+	if [ "$$DIR1" != "$$DIR2" ]; then rm -fr $(INSTALL_LOCATION)/config; fi
 

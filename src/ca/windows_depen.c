@@ -32,6 +32,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.33  1998/03/12 20:39:11  jhill
+ * fixed problem where 3.13.beta11 unable to connect to 3.11 with correct native type
+ *
  * Revision 1.32  1998/02/27 01:05:04  jhill
  * integrated Timossi's win sock II changes
  *
@@ -52,6 +55,9 @@
  *
  * Revision 1.19  1995/11/29  19:15:42  jhill
  * added $Log$
+ * added Revision 1.33  1998/03/12 20:39:11  jhill
+ * added fixed problem where 3.13.beta11 unable to connect to 3.11 with correct native type
+ * added
  * added Revision 1.32  1998/02/27 01:05:04  jhill
  * added integrated Timossi's win sock II changes
  * added
@@ -235,8 +241,10 @@ char *localUserName()
  */
 void ca_spawn_repeater()
 {
-	int     status;
-	char	*pImageName;
+	int status;
+	char *pImageName;
+	STARTUPINFO startupInfo;
+	PROCESS_INFORMATION processInfo;
 
 	/*
  	 * running in the repeater process
@@ -250,13 +258,43 @@ void ca_spawn_repeater()
 	// the 2nd repeater exits when unable to attach to the 
 	// repeater's port)
 	//
-	status = _spawnlp (_P_DETACH, pImageName, pImageName, NULL);
-	if (status<0) {
+	GetStartupInfo (&startupInfo); 
+	startupInfo.lpReserved = NULL;
+	startupInfo.lpTitle = "EPICS CA Repeater";
+	startupInfo.dwFlags = STARTF_USESHOWWINDOW;
+	startupInfo.wShowWindow = SW_SHOWMINNOACTIVE;
+	
+	status =  CreateProcess( 
+		pImageName, // pointer to name of executable module 
+		NULL, // pointer to command line string (defaults to just the executable name above)
+		NULL, // pointer to process security attributes 
+		NULL, // pointer to thread security attributes 
+		FALSE, // handle inheritance flag 
+		CREATE_NEW_PROCESS_GROUP | DETACHED_PROCESS, // creation flags 
+		NULL, // pointer to new environment block (defaults to caller's environement)
+		NULL, // pointer to current directory name  (defaults to caller's current directory)
+		&startupInfo, // pointer to STARTUPINFO 
+		&processInfo // pointer to PROCESS_INFORMATION 
+	); 
+	if (!status) {
 		ca_printf ("!!WARNING!!\n");
 		ca_printf ("Unable to locate the EPICS executable \"%s\".\n",
 			pImageName);
 		ca_printf ("You may need to modify your environment.\n");
 	}
+
+	//
+	// use of spawn here causes problems when the ca repeater
+	// inheits open files (and sockets) from the spawning
+	// process
+	//
+	//status = _spawnlp (_P_DETACH, pImageName, pImageName, NULL);
+	//if (status<0) {
+	//	ca_printf ("!!WARNING!!\n");
+	//	ca_printf ("Unable to locate the EPICS executable \"%s\".\n",
+	//		pImageName);
+	//	ca_printf ("You may need to modify your environment.\n");
+	//}
 }
 
 
@@ -459,7 +497,17 @@ BOOL epicsShareAPI DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 
 #if _DEBUG			  /* for gui applications, setup console for error messages */
 		if (AllocConsole())	{
-			SetConsoleTitle(BASE_VERSION_STRING);
+			char title[256];
+			DWORD titleLength = GetConsoleTitle(title, sizeof(title));
+			if (titleLength) {
+				titleLength = strlen (title);
+				strncat (title, " " BASE_VERSION_STRING, sizeof(title));
+			}
+			else {
+				strncpy(title, BASE_VERSION_STRING, sizeof(title));
+			}
+			title[sizeof(title)-1]= '\0';
+			SetConsoleTitle(title);
     		freopen( "CONOUT$", "a", stderr );
 		}
 		fprintf(stderr, "Process attached to ca.dll version %s\n", EPICS_VERSION_STRING);
@@ -471,7 +519,7 @@ BOOL epicsShareAPI DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 			fprintf(stderr,
 	"A Windows Sockets II update for windows 95 is available at\n");
 			fprintf(stderr,
-	"http://www.microsoft.com/win32dev/netwrk/winsock2/ws295sdk.html");
+	"http://www.microsoft.com/windows95/info/ws2.htm");
 			return FALSE;
 		}
 		

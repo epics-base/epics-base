@@ -12,6 +12,9 @@
  *		   identification as MACRO ISR problem. 
  *	.02 022195 Compiler warnings fixed
  *	$Log$
+ *	Revision 1.14  1996/09/04 22:08:50  jhill
+ *	fixed gcc warnings
+ *
  * Revision 1.13  1995/08/12  01:12:37  jhill
  * doc
  *
@@ -32,6 +35,7 @@
 
 #include "vxWorks.h"
 #include "stdio.h"
+#include "string.h"
 #include "intLib.h"
 #include "vxLib.h"
 #include "iv.h"

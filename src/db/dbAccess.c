@@ -683,6 +683,58 @@ long epicsShareAPI dbNameToAddr(const char *pname,DBADDR *paddr)
 	return(status);
 }
 
+/* JOH 10-19-04 */
+static char * dbCopyInNameComponentOfPV (
+    char * pBuf, unsigned bufLen, const char * pComponent )
+{
+    unsigned compLen = strlen ( pComponent );
+    if ( compLen < bufLen ) {
+        strcpy ( pBuf, pComponent );
+        return pBuf + compLen;
+    }
+    else {
+        unsigned reducedSize = bufLen - 1u;
+        strncpy ( pBuf, pComponent, reducedSize );
+        pBuf[reducedSize] = '\0';
+        return pBuf + reducedSize;
+    }
+}
+/*
+ *  Copies PV name into pBuf of length bufLen
+ *
+ *    Returns the number of bytes written to pBuf
+ *      not including null termination.
+ *  JOH 10-19-04 
+ */
+unsigned dbNameOfPV (
+    const dbAddr * paddr, char * pBuf, unsigned bufLen )
+{
+    dbFldDes * pfldDes = paddr->pfldDes;
+    char * pBufTmp = pBuf;
+    if ( bufLen == 0u ) {
+        return 0u;
+    }
+    pBufTmp = dbCopyInNameComponentOfPV ( 
+        pBufTmp, bufLen, paddr->precord->name );
+    pBufTmp = dbCopyInNameComponentOfPV ( 
+        pBufTmp, bufLen - ( pBufTmp - pBuf ), "." );
+    pBufTmp = dbCopyInNameComponentOfPV ( 
+        pBufTmp, bufLen - ( pBufTmp - pBuf ), pfldDes->name );
+    return pBufTmp - pBuf;
+}
+/*
+ *    Returns the number of bytes in the PV name
+ *      not including null termination.
+ *    JOH 10-19-04 
+ */
+unsigned dbNameSizeOfPV ( const dbAddr * paddr )
+{
+    unsigned recNameLen = strlen ( paddr->precord->name );
+    dbFldDes * pfldDes = paddr->pfldDes;
+    unsigned fieldNameLen = strlen ( pfldDes->name );
+    return recNameLen + fieldNameLen + 1;
+}
+
 long epicsShareAPI dbValueSize(
 	short     dbr_type
 )

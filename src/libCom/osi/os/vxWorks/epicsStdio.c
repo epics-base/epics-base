@@ -10,13 +10,32 @@
 \*************************************************************************/
 
 #include "epicsStdio.h"
+#include "fioLib.h"
+#include "string.h"
+#include "dbDefs.h"
 
-int epicsVsnprintf(char *str, size_t size, const char *format, va_list ap)
-{
-    int nchars;
+struct outStr_s {
+    char *str;
+    int free;
+};
 
-    nchars = vsprintf(str,format,ap);
-    return(nchars);
+static STATUS outRoutine(char *buffer, int nchars, int outarg) {
+    struct outStr_s *poutStr = (struct outStr_s *) outarg;
+    int len = min(poutStr->free, nchars);
+    
+    strncat(poutStr->str, buffer, len);
+    poutStr->free -= nchars;
+    
+    return OK;
+}
+
+int epicsVsnprintf(char *str, size_t size, const char *format, va_list ap) {
+    struct outStr_s outStr;
+    
+    *str = '\0';
+    outStr.str = str;
+    outStr.free = size-1;
+    return fioFormatV(format, ap, outRoutine, (int) &outStr);
 }
 
 int epicsSnprintf(char *str, size_t size, const char *format, ...)

@@ -76,7 +76,7 @@ static int getOssPriorityValue(threadInfo *pthreadInfo)
     oss = (double)pthreadInfo->osiPriority * slope + minPriority;
     return((int)oss);
 }
-
+
 static threadInfo * init_threadInfo(const char *name,
     unsigned int priority, unsigned int stackSize,
     THREADFUNC funptr,void *parm)
@@ -95,11 +95,12 @@ static threadInfo * init_threadInfo(const char *name,
 #if defined (_POSIX_THREAD_ATTR_STACKSIZE)
 #if defined (OSITHREAD_USE_DEFAULT_STACK)
     stackSize = 0;
-#endif
+#else
     status = pthread_attr_setstacksize(
         &pthreadInfo->attr, (size_t)stackSize);
     if(errVerbose) checkStatus(status,"pthread_attr_setstacksize");
-#endif
+#endif /*OSITHREAD_USE_DEFAULT_STACK*/
+#endif /*_POSIX_THREAD_ATTR_STACKSIZE*/
     status = pthread_attr_setscope(&pthreadInfo->attr,PTHREAD_SCOPE_PROCESS);
     if(errVerbose) checkStatus(status,"pthread_attr_setscope");
     pthreadInfo->osiPriority = priority;
@@ -125,7 +126,7 @@ static threadInfo * init_threadInfo(const char *name,
     strcpy(pthreadInfo->name,name);
     return((threadId)pthreadInfo);
 }
-
+
 static void once(void)
 {
     threadInfo *pthreadInfo;

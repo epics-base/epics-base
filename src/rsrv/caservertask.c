@@ -421,7 +421,7 @@ void epicsShareAPI casr (unsigned level)
         CA_VERSION_STRING ( CA_MINOR_PROTOCOL_REVISION ) );
 
     LOCK_CLIENTQ
-    client = (struct client *) ellNext ( &clientQ );
+    client = (struct client *) ellNext ( &clientQ.node );
     if (!client) {
         printf("No clients connected.\n");
     }

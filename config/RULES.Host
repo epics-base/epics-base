@@ -409,11 +409,8 @@ else # PRODNAME not defined
 # We have to use the product's true dependancies and
 # call make again to determine if product should be rebuilt
 
-ifeq ($(strip $(SRCS) $(COND_PROD_SRCS)),)
-PROD_OBJS=$(addsuffix $(OBJ), $(basename $(PROD)))
-else
+ifneq ($(strip $(SRCS) $(COND_PROD_SRCS)),)
 PROD_OBJS=$(addsuffix $(OBJ), $(basename $(SRCS) $(COND_PROD_SRCS)))
-endif
 
 PROD_RESS=$(addsuffix $(RES), $(basename $(RCS)  $(COND_PROD_RCS)))
 
@@ -430,6 +427,7 @@ PROD_MAKE_COMMAND=$(MAKE) $@\
 $(PROD): $(PROD_OBJS) $(PROD_RESS) $(PROD_DEPLIBS) $(COND_PROD_DEPLIBS)
 	@$(PROD_MAKE_COMMAND)
 
+endif
 endif  #ifdef PRODNAME
 
 endif  #ifdef PROD

@@ -6,7 +6,9 @@ include $(TOP)/config/CONFIG_BASE
 
 #	install these scripts:
 #
-SCRIPTS       := makeBaseApp installEpics
+
+SCRIPTS += $(subst ../,,$(wildcard ../*.pl))
+SCRIPTS += installEpics
 
 include $(TOP)/config/RULES.Host
 

@@ -906,7 +906,7 @@ private:
 class recvProcessThread : public epicsThreadRunable {
 public:
     recvProcessThread ( class cac *pcacIn );
-    ~recvProcessThread ();
+    virtual ~recvProcessThread ();
     void run ();
     void signalShutDown ();
     void enable ();
@@ -936,7 +936,7 @@ private:
 class sendProcessThread : public epicsThreadRunable {
 public:
     sendProcessThread ( class cac &cacIn );
-    ~sendProcessThread ();
+    virtual ~sendProcessThread ();
     void run ();
     void signalShutDown ();
     void signalActivity ();
@@ -966,7 +966,7 @@ private:
     void exceptionNotify ( int status, const char *pContext, unsigned type, unsigned long count );
     void lock () const;
     void unlock () const;
-    ~syncGroupNotify (); // allocate only from pool
+    virtual ~syncGroupNotify (); // allocate only from pool
 
     struct CASG &sg;
     unsigned magic;

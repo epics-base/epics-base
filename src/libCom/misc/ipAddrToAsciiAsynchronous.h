@@ -31,8 +31,8 @@ class ipAddrToAsciiAsynchronous;
 class ipAddrToAsciiEngine : public epicsThreadRunable {
 public:
     epicsShareFunc ipAddrToAsciiEngine ( const char *pName );
-    epicsShareFunc ~ipAddrToAsciiEngine ();
-    virtual void run();
+    virtual epicsShareFunc ~ipAddrToAsciiEngine ();
+    virtual void run ();
     epicsShareFunc void show ( unsigned level ) const;
 private:
     epicsThread &thread;

@@ -49,6 +49,7 @@
  * .13	02-18-92	jrw	Changed return from the AO init function to 2
  * .14	02-26-92	jrw	added return codes to the output work functions
  * .15	02-27-92	jrw	added the setting of PACT to 1 when init fails
+ * .16	04-08-92	jrw	reordered initXx to clean up SRQ init code
  *
  * WISH LIST:
  *  It would be nice to read and write directly to/from the val field
@@ -785,36 +786,31 @@ struct link	*plink;
     if(pCmd->rspLen > 0)
 	pdpvt->rsp = (char *)(malloc(pCmd->rspLen));
 
-
-    /* If user spec'd the process on unsolicited SRQ parameter mark it */
-    if (pdpvt->parm == parmBlock->magicSrq)
-    {
-       if (pdpvt->phwpvt->unsolicitedDpvt != NULL)
-       {
-	 strcpy(message, pdbCommon->name);
-	 strcat(message,": init_record: can only have 1 SRQ scanned record per GPIB device");
-	 errMessage(S_db_badField,message);
-	 prec->pact = TRUE;		/* keep record from being processed */
-	 return(S_db_badField);
-       }
-       if (pdbCommon->scan == SCAN_IO_EVENT)
-       {
-	 pdpvt->phwpvt->unsolicitedDpvt = pdpvt;
-       }
-    }
-
-    /*
-     * Ok to re-register a handler for the same device.
-     * Just don't do it after init time is over!
-     */
     if(parmBlock->srqHandler != NULL)
     {
-        (*(drvGpib.registerSrqCallback))(pdpvt->head.pibLink, pdpvt->head.device, parmBlock->srqHandler, pdpvt->phwpvt);
-    }
+      /* If user spec'd the process on unsolicited SRQ parameter mark it */
+      if (pdpvt->parm == parmBlock->magicSrq)
+      {
+        if (pdpvt->phwpvt->unsolicitedDpvt != NULL)
+        {
+	  strcpy(message, pdbCommon->name);
+	  strcat(message,": init_record: can only have 1 SRQ scanned record per GPIB device");
+	  errMessage(S_db_badField,message);
+	  prec->pact = TRUE;		/* keep record from being processed */
+	  return(S_db_badField);
+        }
+        if (pdbCommon->scan == SCAN_IO_EVENT)
+        {
+          pdpvt->phwpvt->unsolicitedDpvt = pdpvt;
+        }
+      }
 
-    /* fill in the required stuff for the callcack task */
-    pdpvt->process = devGpibLib_processCallback;
-    pdpvt->processPri = priorityLow;
+     /*
+      * Ok to re-register a handler for the same device.
+      * Just don't do it after init time is over!
+      */
+      (*(drvGpib.registerSrqCallback))(pdpvt->head.pibLink, pdpvt->head.device, parmBlock->srqHandler, pdpvt->phwpvt);
+    }
 
     /* fill in the work routine pointer */
     pdpvt->head.workStart = (int (*)()) (((gDset*)(prec->dset))->funPtr[(((gDset*)(prec->dset))->number) + 1]);
@@ -858,7 +854,7 @@ struct aiRecord	*pai;
 	 return((*pCmd->convert)(pdpvt,pCmd->P1,pCmd->P2, pCmd->P3));
     }
     else
-    {	/* put pointer to dpvt field on ring buffer */
+    {	/* put pointer to dpvt field on transaction fifo */
 	if((*(drvGpib.qGpibReq))(pdpvt, pCmd->pri) == ERROR)
         {
             devGpibLib_setPvSevr(pai,MAJOR_ALARM,VALID_ALARM);
@@ -895,7 +891,7 @@ struct aoRecord	*pao;
 	 return((*pCmd->convert)(pdpvt,pCmd->P1,pCmd->P2, pCmd->P3));
     }
     else
-    {		/* put pointer to dvpt field on ring buffer */
+    {		/* put pointer to dvpt field on transaction fifo */
 	if((*(drvGpib.qGpibReq))(pdpvt, pCmd->pri) == ERROR)
         {
 	    devGpibLib_setPvSevr(pao,WRITE_ALARM,VALID_ALARM);
@@ -931,7 +927,7 @@ struct longinRecord *pli;
          return((*pCmd->convert)(pdpvt,pCmd->P1,pCmd->P2, pCmd->P3));
     }
     else
-    {   /* put pointer to dpvt field on ring buffer */
+    {   /* put pointer to dpvt field on transaction fifo */
         if((*(drvGpib.qGpibReq))(pdpvt, pCmd->pri) == ERROR)
         {
             devGpibLib_setPvSevr(pli,MAJOR_ALARM,VALID_ALARM);
@@ -968,7 +964,7 @@ struct longoutRecord *plo;
          return((*pCmd->convert)(pdpvt,pCmd->P1,pCmd->P2, pCmd->P3));
     }
     else
-    {           /* put pointer to dvpt field on ring buffer */
+    {           /* put pointer to dvpt field on transaction fifo */
         if((*(drvGpib.qGpibReq))(pdpvt, pCmd->pri) == ERROR)
         {
             devGpibLib_setPvSevr(plo,WRITE_ALARM,VALID_ALARM);
@@ -1005,7 +1001,7 @@ struct biRecord	*pbi;
 	 return((*pCmd->convert)(pdpvt,pCmd->P1,pCmd->P2, pCmd->P3));
     }
     else
-    {	/* put pointer to dvpt field on ring buffer */
+    {	/* put pointer to dvpt field on transaction fifo */
 	if((*(drvGpib.qGpibReq))(pdpvt, pCmd->pri) == ERROR)
         {
 	    devGpibLib_setPvSevr(pbi,READ_ALARM,VALID_ALARM);
@@ -1045,7 +1041,7 @@ struct boRecord	*pbo;
 	 return((*pCmd->convert)(pdpvt,pCmd->P1,pCmd->P2, pCmd->P3));
     }
     else
-    {	/* put pointer to dvpt field on ring buffer */
+    {	/* put pointer to dvpt field on transaction fifo */
 	if((*(drvGpib.qGpibReq))(pdpvt, pCmd->pri) == ERROR)
 	{
 	    devGpibLib_setPvSevr(pbo,WRITE_ALARM,VALID_ALARM);
@@ -1082,7 +1078,7 @@ struct mbbiRecord	*pmbbi;
 	 return((*pCmd->convert)(pdpvt,pCmd->P1,pCmd->P2, pCmd->P3));
     }
     else
-    {	/* put pointer to dvpt field on ring buffer */
+    {	/* put pointer to dvpt field on transaction fifo */
 	if((*(drvGpib.qGpibReq))(pdpvt, pCmd->pri) == ERROR)
 	{
 	    devGpibLib_setPvSevr(pmbbi,READ_ALARM,VALID_ALARM);
@@ -1119,7 +1115,7 @@ struct mbboRecord	*pmbbo;
 	 return((*pCmd->convert)(pdpvt,pCmd->P1,pCmd->P2, pCmd->P3));
     }
     else
-    {	/* put pointer to dvpt field on ring buffer */
+    {	/* put pointer to dvpt field on transaction fifo */
 	if((*(drvGpib.qGpibReq))(pdpvt, pCmd->pri) == ERROR)
 	{
 	    devGpibLib_setPvSevr(pmbbo,WRITE_ALARM,VALID_ALARM);
@@ -1155,7 +1151,7 @@ struct stringinRecord	*psi;
 	 return((*pCmd->convert)(pdpvt,pCmd->P1,pCmd->P2, pCmd->P3));
     }
     else
-    {	/* put pointer to dvpt field on ring buffer */
+    {	/* put pointer to dvpt field on transaction fifo */
 	if((*(drvGpib.qGpibReq))(pdpvt, pCmd->pri) == ERROR)
 	{
 	    devGpibLib_setPvSevr(psi,MAJOR_ALARM,VALID_ALARM);
@@ -1192,7 +1188,7 @@ struct stringoutRecord	*pso;
 	 return((*pCmd->convert)(pdpvt,pCmd->P1,pCmd->P2, pCmd->P3));
     }
     else
-    {	/* put pointer to dvpt field on ring buffer */
+    {	/* put pointer to dvpt field on transaction fifo */
 	if((*(drvGpib.qGpibReq))(pdpvt, pCmd->pri) == ERROR)
 	{
 	    devGpibLib_setPvSevr(pso,WRITE_ALARM,VALID_ALARM);
@@ -1236,8 +1232,8 @@ struct gpibDpvt *pdpvt;
     {
 	devGpibLib_setPvSevr(pai,READ_ALARM,VALID_ALARM);
 
-        pdpvt->head.header.callback.finishProc = pdpvt->process;
-        pdpvt->head.header.callback.priority = pdpvt->processPri;
+        pdpvt->head.header.callback.finishProc = devGpibLib_processCallback;
+        pdpvt->head.header.callback.priority = priorityLow;
         callbackRequest(pdpvt);
     }
     else
@@ -1283,8 +1279,8 @@ int		srqStatus;
     {
         devGpibLib_setPvSevr(pai,READ_ALARM,VALID_ALARM);
 
-        pdpvt->head.header.callback.finishProc = pdpvt->process;
-        pdpvt->head.header.callback.priority = pdpvt->processPri;
+        pdpvt->head.header.callback.finishProc = devGpibLib_processCallback;
+        pdpvt->head.header.callback.priority = priorityLow;
         callbackRequest(pdpvt);
     }
 
@@ -1330,8 +1326,8 @@ struct gpibDpvt *pdpvt;
             devGpibLib_setPvSevr(pai,READ_ALARM,VALID_ALARM);
         }
     }
-    pdpvt->head.header.callback.finishProc = pdpvt->process;
-    pdpvt->head.header.callback.priority = pdpvt->processPri;
+    pdpvt->head.header.callback.finishProc = devGpibLib_processCallback;
+    pdpvt->head.header.callback.priority = priorityLow;
     callbackRequest(pdpvt);
 
     return(0);
@@ -1374,8 +1370,8 @@ struct gpibDpvt *pdpvt;
 	devGpibLib_setPvSevr(pao,WRITE_ALARM,VALID_ALARM);
     }
 
-    pdpvt->head.header.callback.finishProc = pdpvt->process;
-    pdpvt->head.header.callback.priority = pdpvt->processPri;
+    pdpvt->head.header.callback.finishProc = devGpibLib_processCallback;
+    pdpvt->head.header.callback.priority = priorityLow;
     callbackRequest(pdpvt);		/* jrw */
     return(IDLE);
 }
@@ -1406,8 +1402,8 @@ struct gpibDpvt *pdpvt;
     {
 	devGpibLib_setPvSevr(pli,READ_ALARM,VALID_ALARM);
 
-        pdpvt->head.header.callback.finishProc = pdpvt->process;
-        pdpvt->head.header.callback.priority = pdpvt->processPri;
+        pdpvt->head.header.callback.finishProc = devGpibLib_processCallback;
+        pdpvt->head.header.callback.priority = priorityLow;
         callbackRequest(pdpvt);
     }
     else
@@ -1453,8 +1449,8 @@ int		srqStatus;
     {
         devGpibLib_setPvSevr(pli,READ_ALARM,VALID_ALARM);
 
-        pdpvt->head.header.callback.finishProc = pdpvt->process;
-        pdpvt->head.header.callback.priority = pdpvt->processPri;
+        pdpvt->head.header.callback.finishProc = devGpibLib_processCallback;
+        pdpvt->head.header.callback.priority = priorityLow;
         callbackRequest(pdpvt);
     }
 
@@ -1499,8 +1495,8 @@ struct gpibDpvt *pdpvt;
             devGpibLib_setPvSevr(pli,READ_ALARM,VALID_ALARM);
         }
     }
-    pdpvt->head.header.callback.finishProc = pdpvt->process;
-    pdpvt->head.header.callback.priority = pdpvt->processPri;
+    pdpvt->head.header.callback.finishProc = devGpibLib_processCallback;
+    pdpvt->head.header.callback.priority = priorityLow;
     callbackRequest(pdpvt);
 
     return(0);
@@ -1543,8 +1539,8 @@ struct gpibDpvt *pdpvt;
         devGpibLib_setPvSevr(plo,WRITE_ALARM,VALID_ALARM);
     }
 
-    pdpvt->head.header.callback.finishProc = pdpvt->process;
-    pdpvt->head.header.callback.priority = pdpvt->processPri;
+    pdpvt->head.header.callback.finishProc = devGpibLib_processCallback;
+    pdpvt->head.header.callback.priority = priorityLow;
     callbackRequest(pdpvt);             /* jrw */
     return(IDLE);
 }
@@ -1572,8 +1568,8 @@ struct gpibDpvt *pdpvt;
     {
 	devGpibLib_setPvSevr(pbi,READ_ALARM,VALID_ALARM);
 
-        pdpvt->head.header.callback.finishProc = pdpvt->process;
-        pdpvt->head.header.callback.priority = pdpvt->processPri;
+        pdpvt->head.header.callback.finishProc = devGpibLib_processCallback;
+        pdpvt->head.header.callback.priority = priorityLow;
         callbackRequest(pdpvt);
     }
     else   	/* interpret response that came back */   
@@ -1617,8 +1613,8 @@ int             srqStatus;
     {
         devGpibLib_setPvSevr(pbi,READ_ALARM,VALID_ALARM);
 
-        pdpvt->head.header.callback.finishProc = pdpvt->process;
-        pdpvt->head.header.callback.priority = pdpvt->processPri;
+        pdpvt->head.header.callback.finishProc = devGpibLib_processCallback;
+        pdpvt->head.header.callback.priority = priorityLow;
         callbackRequest(pdpvt);
     }
 
@@ -1666,8 +1662,8 @@ struct gpibDpvt *pdpvt;
 		devGpibLib_setPvSevr(pbi,READ_ALARM,VALID_ALARM);
 	}
     }
-    pdpvt->head.header.callback.finishProc = pdpvt->process;
-    pdpvt->head.header.callback.priority = pdpvt->processPri;
+    pdpvt->head.header.callback.finishProc = devGpibLib_processCallback;
+    pdpvt->head.header.callback.priority = priorityLow;
     callbackRequest(pdpvt);             /* jrw */
 
     return(0);
@@ -1711,8 +1707,8 @@ struct gpibDpvt *pdpvt;
 	devGpibLib_setPvSevr(pbo,WRITE_ALARM,VALID_ALARM);
     }
 
-    pdpvt->head.header.callback.finishProc = pdpvt->process;
-    pdpvt->head.header.callback.priority = pdpvt->processPri;
+    pdpvt->head.header.callback.finishProc = devGpibLib_processCallback;
+    pdpvt->head.header.callback.priority = priorityLow;
     callbackRequest(pdpvt);
     return(IDLE);
 }
@@ -1740,8 +1736,8 @@ struct gpibDpvt *pdpvt;
     {
 	devGpibLib_setPvSevr(pmbbi,WRITE_ALARM,VALID_ALARM);
 
-        pdpvt->head.header.callback.finishProc = pdpvt->process;
-        pdpvt->head.header.callback.priority = pdpvt->processPri;
+        pdpvt->head.header.callback.finishProc = devGpibLib_processCallback;
+        pdpvt->head.header.callback.priority = priorityLow;
         callbackRequest(pdpvt);
     }
     else 
@@ -1787,8 +1783,8 @@ int             srqStatus;
     {
         devGpibLib_setPvSevr(pmbbi,READ_ALARM,VALID_ALARM);
 
-        pdpvt->head.header.callback.finishProc = pdpvt->process;
-        pdpvt->head.header.callback.priority = pdpvt->processPri;
+        pdpvt->head.header.callback.finishProc = devGpibLib_processCallback;
+        pdpvt->head.header.callback.priority = priorityLow;
         callbackRequest(pdpvt);
     }
 
@@ -1836,8 +1832,8 @@ struct gpibDpvt *pdpvt;
 		devGpibLib_setPvSevr(pmbbi,READ_ALARM,VALID_ALARM);
 	}
     }
-    pdpvt->head.header.callback.finishProc = pdpvt->process;
-    pdpvt->head.header.callback.priority = pdpvt->processPri;
+    pdpvt->head.header.callback.finishProc = devGpibLib_processCallback;
+    pdpvt->head.header.callback.priority = priorityLow;
     callbackRequest(pdpvt);
 
     return(0);
@@ -1876,13 +1872,14 @@ struct gpibDpvt *pdpvt;
     }
 
     /* go access board with this message, unless convert was unsuccessful */
+    /* NOTE the use of val instead of rval for the EFASTO operation index! */
     if ((cnvrtStat == ERROR) || (devGpibLib_xxGpibWork(pdpvt, pCmd->type, pmbbo->val) == ERROR))
     {
 	devGpibLib_setPvSevr(pmbbo,WRITE_ALARM,VALID_ALARM);
     }
 
-    pdpvt->head.header.callback.finishProc = pdpvt->process;
-    pdpvt->head.header.callback.priority = pdpvt->processPri;
+    pdpvt->head.header.callback.finishProc = devGpibLib_processCallback;
+    pdpvt->head.header.callback.priority = priorityLow;
     callbackRequest(pdpvt);		/* jrw */
     return(IDLE);
 }
@@ -1913,8 +1910,8 @@ struct gpibDpvt *pdpvt;
     {
 	devGpibLib_setPvSevr(psi,READ_ALARM,VALID_ALARM);
 
-        pdpvt->head.header.callback.finishProc = pdpvt->process;
-        pdpvt->head.header.callback.priority = pdpvt->processPri;
+        pdpvt->head.header.callback.finishProc = devGpibLib_processCallback;
+        pdpvt->head.header.callback.priority = priorityLow;
         callbackRequest(pdpvt);             /* jrw */
     }
     else 
@@ -1960,8 +1957,8 @@ int             srqStatus;
     {
         devGpibLib_setPvSevr(psi,READ_ALARM,VALID_ALARM);
 
-        pdpvt->head.header.callback.finishProc = pdpvt->process;
-        pdpvt->head.header.callback.priority = pdpvt->processPri;
+        pdpvt->head.header.callback.finishProc = devGpibLib_processCallback;
+        pdpvt->head.header.callback.priority = priorityLow;
         callbackRequest(pdpvt);
     }
 
@@ -1998,8 +1995,8 @@ struct gpibDpvt *pdpvt;
         psi->val[40] = '\0';
 	psi->udf = FALSE;
     }
-    pdpvt->head.header.callback.finishProc = pdpvt->process;
-    pdpvt->head.header.callback.priority = pdpvt->processPri;
+    pdpvt->head.header.callback.finishProc = devGpibLib_processCallback;
+    pdpvt->head.header.callback.priority = priorityLow;
     callbackRequest(pdpvt);             /* jrw */
 
     return(0);
@@ -2041,8 +2038,8 @@ struct gpibDpvt *pdpvt;
 	devGpibLib_setPvSevr(pso,WRITE_ALARM,VALID_ALARM);
     }
 
-    pdpvt->head.header.callback.finishProc = pdpvt->process;
-    pdpvt->head.header.callback.priority = pdpvt->processPri;
+    pdpvt->head.header.callback.finishProc = devGpibLib_processCallback;
+    pdpvt->head.header.callback.priority = priorityLow;
     callbackRequest(pdpvt);		/* jrw */
     return(IDLE);
 }
@@ -2060,7 +2057,7 @@ int
 devGpibLib_xxGpibWork(pdpvt, cmdType, val)
 struct gpibDpvt *pdpvt;
 int	cmdType;
-unsigned short	val;
+unsigned short	val;	/* used for EFAST operations only */
 {
     int status = OK;
     short ibnode = pdpvt->head.device;
@@ -2088,9 +2085,6 @@ unsigned short	val;
     switch (cmdType) {
     case GPIBWRITE:		/* write the message to the GPIB listen adrs */
 
-        if(*parmBlock->debugFlag)
-            printf("devGpibLib_xxGpibWork : processing GPIBWRITE\n");
-
         status = (*(drvGpib.writeIb))(pdpvt->head.pibLink, ibnode,
 				pdpvt->msg, strlen(pdpvt->msg));
 
@@ -2115,9 +2109,6 @@ unsigned short	val;
     case GPIBREAD:		/* write the command string */
     case GPIBEFASTI:
 
-        if(*parmBlock->debugFlag)
-            printf("devGpibLib_xxGpibWork : processing GPIBREAD\n");
-
         status = (*(drvGpib.writeIb))(pdpvt->head.pibLink, ibnode, 
 				pCmd->cmd, strlen(pCmd->cmd));
         if (status == ERROR)
@@ -2134,7 +2125,7 @@ unsigned short	val;
             taskDelay(parmBlock->respond2Writes);
         }
 
-	/* This falls thru to the raw read code below! */
+	/* NOTICE -- This falls thru to the raw read code below! */
 
     case GPIBRAWREAD:   /* for SRQs, read the data w/o a sending a command */
 

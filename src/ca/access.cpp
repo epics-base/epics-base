@@ -206,8 +206,16 @@ extern "C" int epicsShareAPI ca_build_and_connect ( const char *name_str, chtype
  *  ca_search_and_connect() 
  */
 extern "C" int epicsShareAPI ca_search_and_connect (
-    const char *name_str, chid *chanptr,
-    caCh *conn_func, void *puser )
+    const char * name_str, chid * chanptr,
+    caCh * conn_func, void * puser )
+{
+    return ca_create_channel ( name_str, conn_func, 
+        puser, CA_PRIORITY_DEFAULT, chanptr );
+}
+
+extern "C" int epicsShareAPI ca_create_channel (
+     const char *name_str, caCh * conn_func, void * puser,
+     capri priority, chid * chanptr )
 {
     oldCAC *pcac;
     int caStatus = fetchClientContext ( &pcac );
@@ -215,26 +223,31 @@ extern "C" int epicsShareAPI ca_search_and_connect (
         return caStatus;
     }
 
-    if ( name_str == NULL || *name_str == '\0' ) {
-        return ECA_BADSTR;
-    }
-
-    oldChannelNotify *pChanNotify = new oldChannelNotify ( *pcac, name_str, conn_func, puser );
-    if ( ! pChanNotify ) {
-        return ECA_ALLOCMEM;
-    }
-
-    if ( pChanNotify->ioAttachOK() ) {
-        *chanptr = pChanNotify;
+    try {
+        oldChannelNotify * pChanNotify = new oldChannelNotify ( 
+            * pcac, name_str, conn_func, puser, priority );
+        if ( ! pChanNotify ) {
+            return ECA_ALLOCMEM;
+        }
         // make sure that their chan pointer is set prior to
         // calling connection call backs
+        *chanptr = pChanNotify;
         pChanNotify->initiateConnect ();
-        return ECA_NORMAL;
     }
-    else {
-        pChanNotify->destroy ();
+    catch ( cacChannel::badString & ) {
+        return ECA_BADSTR;
+    }
+    catch ( std::bad_alloc & ) {
         return ECA_ALLOCMEM;
     }
+    catch ( cacChannel::badPriority & ) {
+        return ECA_BADPRIORITY;
+    }
+    catch ( ... ) {
+        return ECA_INTERNAL;
+    }
+
+    return ECA_NORMAL;
 }
 
 /*
@@ -309,7 +322,7 @@ extern "C" int epicsShareAPI ca_array_get ( chtype type,
         pNotify->cancel ();
         return ECA_ALLOCMEM;
     }
-    catch ( cacChannel::msgBodyCacheTooSmall ) {
+    catch ( cacChannel::msgBodyCacheTooSmall & ) {
         pNotify->cancel ();
         return ECA_TOLARGE;
     }

@@ -426,6 +426,7 @@ void print_time_val_sts (pv* pv, int nElems)
     int i, printAbs;
     void* value = pv->value;
     epicsTimeStamp *ptsRef = &tsStart;
+    epicsTimeStamp tsNow;
 
     if (!tsInit)                /* Initialize start timestamp */
     {
@@ -434,15 +435,20 @@ void print_time_val_sts (pv* pv, int nElems)
         tsInit = 1;
     }
 
+    epicsTimeGetCurrent(&tsNow);
+    epicsTimeToStrftime(timeText, TIMETEXTLEN, timeFormatStr, &tsNow);
+
     printf("%-30s ", pv->name);
-    if (pv->status == ECA_DISCONN)
-        printf("*** not connected\n");
+    if (pv->status == ECA_NEWCONN)
+        printf("*** Not connected (PV not found)\n");
+    else if (pv->status == ECA_DISCONN)
+        printf("%s *** disconnected\n", timeText);
     else if (pv->status == ECA_NORDACCESS)
-        printf("*** no read access\n");
+        printf("%s *** no read access\n", timeText);
     else if (pv->status != ECA_NORMAL)
-        printf("*** CA error %s\n", ca_message(pv->status));
+        printf("%s *** CA error %s\n", timeText, ca_message(pv->status));
     else if (pv->value == 0)
-        printf("*** no data available (timeout)\n");
+        printf("%s *** no data available (timeout)\n", timeText);
     else
         switch (pv->dbrType) {
         case DBR_TIME_STRING:
@@ -473,6 +479,48 @@ void print_time_val_sts (pv* pv, int nElems)
 
 /*+**************************************************************************
  *
+ * Function:	create_pvs
+ *
+ * Description:	Creates an arbitrary number of PVs
+ *
+ * Arg(s) In:	pvs   -  Pointer to an array of pv structures
+ *              nPvs  -  Number of elements in the pvs array
+ *              pCB   -  Connection state change callback
+ *
+ * Arg(s) Out:	none
+ *
+ * Return(s):	Error code:
+ *                  0  -  All PVs created
+ *                  1  -  Some PV(s) not created
+ *
+ **************************************************************************-*/
+ 
+int create_pvs (pv* pvs, int nPvs, caCh *pCB)
+{
+    int n;
+    int result;
+    int returncode = 0;
+                                 /* Issue channel connections */
+    for (n = 0; n < nPvs; n++) {
+        result = ca_create_channel (pvs[n].name,
+                                    pCB,
+                                    &pvs[n],
+                                    CA_PRIORITY,
+                                    &pvs[n].chid);
+        if (result != ECA_NORMAL) {
+            fprintf(stderr, "CA error %s occurred while trying "
+                    "to create channel '%s'.\n", ca_message(result), pvs[n].name);
+            pvs[n].status = result;
+            returncode = 1;
+        }
+    }
+
+    return returncode;
+}
+
+
+/*+**************************************************************************
+ *
  * Function:	connect_pvs
  *
  * Description:	Connects an arbitrary number of PVs
@@ -490,36 +538,21 @@ void print_time_val_sts (pv* pv, int nElems)
  
 int connect_pvs (pv* pvs, int nPvs)
 {
-    int n;
-    int result;
-    int returncode = 0;
-                                 /* Issue channel connections */
-    for (n = 0; n < nPvs; n++) {
-        result = ca_create_channel (pvs[n].name,
-                                    0,
-                                    0,
-                                    CA_PRIORITY,
-                                    &pvs[n].chid);
-        if (result != ECA_NORMAL) {
-            fprintf(stderr, "CA error %s occurred while trying "
-                    "to create channel '%s'.\n", ca_message(result), pvs[n].name);
-            pvs[n].status = result;
+    int returncode = create_pvs ( pvs, nPvs, 0);
+    if ( returncode == 0 ) {
+                            /* Wait for channels to connect */
+        int result = ca_pend_io (caTimeout);
+        if (result == ECA_TIMEOUT)
+        {
+            if (nPvs > 1)
+            {
+                fprintf(stderr, "Channel connect timed out: some PV(s) not found.\n");
+            } else {
+                fprintf(stderr, "Channel connect timed out: '%s' not found.\n", 
+                        pvs[0].name);
+            }
             returncode = 1;
         }
     }
-                                /* Wait for channels to connect */
-    result = ca_pend_io (caTimeout);
-    if (result == ECA_TIMEOUT)
-    {
-        if (nPvs > 1)
-        {
-            fprintf(stderr, "Channel connect timed out: some PV(s) not found.\n");
-        } else {
-            fprintf(stderr, "Channel connect timed out: '%s' not found.\n", 
-                    pvs[0].name);
-        }
-        returncode = 1;
-    }
-
     return returncode;
 }

@@ -27,6 +27,7 @@
 
 #define VALID_DOUBLE_DIGITS 18  /* Max usable precision for a double */
 
+static unsigned long reqElems = 0;
 static int nConn = 0;                                     /* Number of connected PVs */
 static unsigned long eventMask = DBE_VALUE | DBE_ALARM;   /* Event mask used */
 
@@ -91,81 +92,69 @@ void event_handler (evargs args)
     }
 }
 
-
 
 /*+**************************************************************************
  *
- * Function:	camonitor
+ * Function:	connection_handler
  *
- * Description:	Issue read requests, wait for incoming data
- * 		and print the data according to the selected format
+ * Description:	CA connection_handler 
  *
- * Arg(s) In:	pvs       -  Pointer to an array of pv structures
- *              nPvs      -  Number of elements in the pvs array
- *              reqElems  -  Requested number of (array) elements
- *
- * Return(s):	Error code: 0 = OK, 1 = Error
+ * Arg(s) In:	args  -  connection_handler_args (see CA manual)
  *
  **************************************************************************-*/
- 
-int camonitor (pv *pvs, int nPvs, unsigned long reqElems)
+
+void connection_handler ( struct connection_handler_args args )
 {
-    int n, result;
-    chtype dbrType;
-
-    for (n = 0; n < nPvs; n++) {
-
-                                /* Set up pvs structure */
-                                /* -------------------- */
+    pv *ppv = ( pv * ) ca_puser ( args.chid );
+    if ( args.op == CA_OP_CONN_UP ) {
+        int dbrType;
+                                /* Set up pv structure */
+                                /* ------------------- */
 
                                 /* Get natural type and array count */
-        pvs[n].nElems  = ca_element_count(pvs[n].chid);
-        pvs[n].dbfType = ca_field_type(pvs[n].chid);
+        ppv->nElems  = ca_element_count(ppv->chid);
+        ppv->dbfType = ca_field_type(ppv->chid);
 
                                 /* Set up value structures */
-        dbrType = dbf_type_to_DBR_TIME(pvs[n].dbfType); /* Use native type */
+        dbrType = dbf_type_to_DBR_TIME(ppv->dbfType); /* Use native type */
         if (dbr_type_is_ENUM(dbrType))                  /* Enums honour -n option */
         {
             if (enumAsNr) dbrType = DBR_TIME_INT;
             else          dbrType = DBR_TIME_STRING;
         }
                                 /* Adjust array count */
-        if (reqElems == 0 || pvs[n].nElems < reqElems)
-            reqElems = pvs[n].nElems;
+        if (reqElems == 0 || ppv->nElems < reqElems)
+            reqElems = ppv->nElems;
                                 /* Remember dbrType and reqElems */
-        pvs[n].dbrType  = dbrType;
-        pvs[n].reqElems = reqElems;
-
+        ppv->dbrType  = dbrType;
+        ppv->reqElems = reqElems;
+        nConn++;
                                 /* Issue CA request */
                                 /* ---------------- */
-
-        if (ca_state(pvs[n].chid) == cs_conn)
-        {
-            nConn++;
-                                       /* Allocate value structure */
-            pvs[n].value = calloc(1, dbr_size_n(dbrType, reqElems));           
-
-            result = ca_create_subscription(dbrType,
-                                            reqElems,
-                                            pvs[n].chid,
-                                            eventMask,
-                                            event_handler,
-                                            (void*)&pvs[n],
-                                            NULL);
-            pvs[n].status = result;
-        } else {
-            pvs[n].status = ECA_DISCONN;
+        /* install monitor once with first connect */
+        if ( ! ppv->value ) {
+                                    /* Allocate value structure */
+            ppv->value = calloc(1, dbr_size_n(dbrType, reqElems));           
+            if ( ppv->value ) {
+                ppv->status = ca_create_subscription(dbrType,
+                                                reqElems,
+                                                ppv->chid,
+                                                eventMask,
+                                                event_handler,
+                                                (void*)ppv,
+                                                NULL);
+                if ( ppv->status != ECA_NORMAL ) {
+                    free ( ppv->value );
+                }
+            }
         }
     }
-
-    if (nConn)
-                                /* Wait for callbacks */
-                                /* ------------------ */
-        while (1) ca_pend_event(caTimeout);
-    else
-        return 1;       /* No connection? We're done. */
+    else if ( args.op == CA_OP_CONN_DOWN ) {
+        nConn--;
+        ppv->status = ECA_DISCONN;
+        print_time_val_sts(ppv, ppv->reqElems);
+    }
 }
-
 
 
 /*+**************************************************************************
@@ -186,10 +175,10 @@ int camonitor (pv *pvs, int nPvs, unsigned long reqElems)
 
 int main (int argc, char *argv[])
 {
+    int returncode = 0;
     int n = 0;
     int result;                 /* CA result */
 
-    int count = 0;              /* 0 = not specified by -# option */
     int opt;                    /* getopt() current option */
     int digits = 0;             /* getopt() no. of float digits */
 
@@ -224,11 +213,11 @@ int main (int argc, char *argv[])
             }
             break;
         case '#':               /* Array count */
-            if (sscanf(optarg,"%d", &count) != 1)
+            if (sscanf(optarg,"%ld", &reqElems) != 1)
             {
                 fprintf(stderr, "'%s' is not a valid array element count "
                         "- ignored. ('caget -h' for help.)\n", optarg);
-                count = 0;
+                reqElems = 0;
             }
             break;
         case 'm':               /* Select CA event mask */
@@ -316,14 +305,27 @@ int main (int argc, char *argv[])
     }
                                 /* Connect channels */
 
+                                      /* Copy PV names from command line */
     for (n = 0; optind < argc; n++, optind++)
-        pvs[n].name = argv[optind] ;       /* Copy PV names from command line */
+    {
+        pvs[n].name   = argv[optind];
+        pvs[n].status = ECA_NEWCONN;
+    }
+                                      /* Create CA connections */
+    returncode = create_pvs(pvs, nPvs, connection_handler);
+    if ( returncode ) {
+        return returncode;
+    }
+                                      /* Check for channels that didn't connect */
+    ca_pend_event(caTimeout);
+    for (n = 0; n < nPvs; n++)
+    {
+        if (pvs[n].status == ECA_NEWCONN)
+            print_time_val_sts(&pvs[n], pvs[n].reqElems);
+    }
 
-    connect_pvs(pvs, nPvs);
-
-                                /* Read and print data */
-
-    result = camonitor(pvs, nPvs, count);
+                                /* Read and print data forever */
+    ca_pend_event(0);
 
                                 /* Shut down Channel Access */
     ca_context_destroy();

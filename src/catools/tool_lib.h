@@ -80,7 +80,8 @@ extern char dblFormatStr[]; /* Format string to print doubles (see -e -f option)
 extern char *val2str (const void *v, unsigned type, int index);
 extern char *dbr2str (const void *value, unsigned type);
 extern void print_time_val_sts (pv *pv, int nElems);
-extern int  connect_pvs (pv *pvs, int nPvs);
+extern int  create_pvs (pv *pvs, int nPvs, caCh *pCB );
+extern int  connect_pvs (pv *pvs, int nPvs );
 
 /*
  * no additions below this endif

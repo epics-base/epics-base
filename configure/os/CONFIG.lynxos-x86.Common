@@ -1,0 +1,14 @@
+# CONFIG.lynxos-68k.Common
+#
+# $Id$
+# This file is maintained by the build community.
+#
+# Definitions for lynxos-68k host archs
+# Sites may override these definitions in CONFIG_SITE.lynxos-68k.Common
+#-------------------------------------------------------
+
+#Include definitions common to unix hosts
+include $(CONFIG)/os/CONFIG.UnixCommon.Common
+
+WIND_HOST_TYPE = lynxos
+

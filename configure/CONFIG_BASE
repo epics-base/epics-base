@@ -34,12 +34,11 @@ gdd_DIR             = $(EPICS_BASE_LIB)
 # For applications and extensions
 
 # add epics/base include directories
-ifneq ($(EPICS_BASE),$(TOP))
-ifneq ($(EPICS_BASE),$(INSTALL_LOCATION))
+ifneq ($(strip $(EPICS_BASE)),$(strip $(TOP)))
+ifneq ($(strip $(EPICS_BASE)),$(strip $(INSTALL_LOCATION)))
 INSTALL_INCLUDES += \
        -I$(EPICS_BASE_INCLUDE)/os/$(OS_CLASS) \
        -I$(EPICS_BASE_INCLUDE)
-
 endif
 endif
 

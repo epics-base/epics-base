@@ -27,42 +27,6 @@
  *              Argonne National Laboratory
  *
  *
- * History
- * $Log$
- * Revision 1.11  1998/06/16 02:24:24  jhill
- * better diagnostics
- *
- * Revision 1.10  1998/04/20 18:07:09  jhill
- * fixed exception message for DG clients
- *
- * Revision 1.9  1997/08/05 00:47:04  jhill
- * fixed warnings
- *
- * Revision 1.8  1997/06/30 22:54:25  jhill
- * use %p with pointers
- *
- * Revision 1.7  1997/04/10 19:34:01  jhill
- * API changes
- *
- * Revision 1.6  1996/12/11 00:58:35  jhill
- * better diagnostic
- *
- * Revision 1.5  1996/11/02 00:54:04  jhill
- * many improvements
- *
- * Revision 1.4  1996/09/04 20:19:02  jhill
- * include db_access.h
- *
- * Revision 1.3  1996/08/13 22:56:13  jhill
- * added init for mutex class
- *
- * Revision 1.2  1996/07/09 22:54:31  jhill
- * store msg copy in the ctx
- *
- * Revision 1.1.1.1  1996/06/20 00:28:14  jhill
- * ca server installation
- *
- *
  */
 
 #include <stdarg.h>
@@ -303,7 +267,7 @@ caStatus casClient::processMsg()
 		this->ctx.setData((void *)(rawMP+sizeof(*mp)));
 
 		if (this->getCAS().getDebugLevel()> 2u) {
-			this->dumpMsg(mp, (void *)(mp+1));
+			this->dumpMsg (mp, (void *)(mp+1));
 		}
 
 		//

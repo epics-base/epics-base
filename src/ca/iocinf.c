@@ -47,6 +47,9 @@
 /*			address in use so that test works on UNIX	*/
 /*			kernels that support multicast			*/
 /* $Log$
+ * Revision 1.66  1996/11/02 00:50:53  jhill
+ * many pc port, const in API, and other changes
+ *
  * Revision 1.65  1996/09/16 16:37:02  jhill
  * o dont print disconnect message when the last channel on a connection is
  * 	deleted and the conn goes away
@@ -957,7 +960,7 @@ LOCAL void tcp_recv_msg(struct ioc_in_use *piiu)
 				SOCKERRNO != ECONNRESET &&
 				SOCKERRNO != ETIMEDOUT){
 				ca_printf(	
-					"CAC: unexpected recv error (err=%s)\n",
+					"CAC: unexpected TCP recv error (err=%s)\n",
 					strerror(SOCKERRNO));
 			}
 			TAG_CONN_DOWN(piiu);

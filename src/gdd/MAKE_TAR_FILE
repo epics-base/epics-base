@@ -1,5 +1,8 @@
 # $Id$
 # $Log$
+# Revision 1.1  1996/06/25 19:11:23  jbk
+# new in EPICS base
+#
 #
 # *Revision 1.2  1996/06/24 03:15:25  jbk
 # *name changes and fixes for aitString and fixed string functions
@@ -7,5 +10,5 @@
 # *add new stuff
 #
 
-tar zcvf /tmp/gdd.tar.gz *.c *.cc *.h *.MRI Makefile* MAKE* README
+tar zcvf /tmp/gdd.tar.gz *.c *.cc *.h *.MRI Makefile* MAKE* README *.html *.gif
 

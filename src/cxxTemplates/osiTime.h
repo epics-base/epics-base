@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.1.1.1  1996/06/20 22:15:56  jhill
+ * installed  ca server templates
+ *
  *
  */
 
@@ -37,6 +40,7 @@
 #define osiTimehInclude
 
 #include <limits.h>
+#include <stdio.h>
 #ifndef assert // allows use of epicsAssert.h
 #include <assert.h> 
 #endif

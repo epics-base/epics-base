@@ -38,7 +38,7 @@ oldChannelNotify::oldChannelNotify ( oldCAC & cacIn, const char *pName,
     pConnCallBack ( pConnCallBackIn ), 
     pPrivate ( pPrivateIn ), pAccessRightsFunc ( cacNoopAccesRightsHandler ),
     ioSeqNo ( cacIn.sequenceNumberOfOutstandingIO () ),
-    prevConnected ( false )
+    currentlyConnected ( false ), prevConnected ( false )
 {
     // no need to worry about a connect preempting here because
     // the connect sequence will not start untill initiateConnect()
@@ -50,12 +50,13 @@ oldChannelNotify::oldChannelNotify ( oldCAC & cacIn, const char *pName,
 
 oldChannelNotify::~oldChannelNotify ()
 {
-
     delete & this->io;
 
     // no need to worry about a connect preempting here because
-    // the nciu as been deleted
-    this->cacCtx.decrementOutstandingIO ( this->ioSeqNo );
+    // the nciu has been deleted
+    if ( this->pConnCallBack == 0 && ! this->currentlyConnected ) {
+        this->cacCtx.decrementOutstandingIO ( this->ioSeqNo );
+    }
 }
 
 void oldChannelNotify::setPrivatePointer ( void *pPrivateIn )
@@ -76,7 +77,7 @@ int oldChannelNotify::replaceAccessRightsEvent ( caArh *pfunc )
     // handler could be called twice here with the same access rights state, but 
     // that will not upset the application.
     this->pAccessRightsFunc = pfunc ? pfunc : cacNoopAccesRightsHandler;
-    if ( this->io.connected () ) {
+    if ( this->currentlyConnected ) {
         struct access_rights_handler_args args;
         args.chid = this;
         caAccessRights tmp = this->io.accessRights ();
@@ -92,7 +93,7 @@ int oldChannelNotify::changeConnCallBack ( caCh * pfunc )
     epicsGuard < callbackMutex > callbackGuard =
             this->cacCtx.callbackGuardFactory ();
  
-    if ( ! this->prevConnected ) {
+    if ( ! this->currentlyConnected ) {
          if ( pfunc ) { 
             if ( ! this->pConnCallBack ) {
                 this->cacCtx.decrementOutstandingIO ( this->ioSeqNo );
@@ -111,6 +112,7 @@ int oldChannelNotify::changeConnCallBack ( caCh * pfunc )
 
 void oldChannelNotify::connectNotify ()
 {
+    this->currentlyConnected = true;
     this->prevConnected = true;
     if ( this->pConnCallBack ) {
         struct connection_handler_args  args;
@@ -127,6 +129,7 @@ void oldChannelNotify::connectNotify ()
 
 void oldChannelNotify::disconnectNotify ()
 {
+    this->currentlyConnected = false;
     if ( this->pConnCallBack ) {
         struct connection_handler_args args;
         args.chid = this;

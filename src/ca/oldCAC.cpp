@@ -228,13 +228,8 @@ void oldCAC::incrementOutstandingIO ( unsigned ioSeqNoIn )
     if ( this->ioSeqNo == ioSeqNoIn ) {
         epicsGuard < oldCACMutex > guard ( this->mutex );
         if ( this->ioSeqNo == ioSeqNoIn ) {
-            if ( this->pndRecvCnt < UINT_MAX ) {
-                this->pndRecvCnt++;
-            }
-            else {
-                throw std::logic_error ( 
-                    "oldCAC::incrementOutstandingIO() IO counter overflow" );
-            }
+            assert ( this->pndRecvCnt < UINT_MAX );
+            this->pndRecvCnt++;
         }
     }
 }
@@ -249,17 +244,13 @@ void oldCAC::decrementOutstandingIO ( unsigned ioSeqNoIn )
     {
         epicsGuard < oldCACMutex > guard ( this->mutex ); 
         if ( this->ioSeqNo == ioSeqNoIn ) {
-            if ( this->pndRecvCnt > 0u ) {
-                this->pndRecvCnt--;
-                if ( this->pndRecvCnt == 0u ) {
-                    signalNeeded = true;
-                }
-                else {
-                    signalNeeded = false;
-                }
+            assert ( this->pndRecvCnt > 0u );
+            this->pndRecvCnt--;
+            if ( this->pndRecvCnt == 0u ) {
+                signalNeeded = true;
             }
             else {
-                signalNeeded = true;
+                signalNeeded = false;
             }
         }
         else {

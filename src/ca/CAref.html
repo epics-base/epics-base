@@ -100,6 +100,7 @@ Call Interface Index</a></h3>
   <li><a href="#ca_clear_channel">ca_clear_channel</a></li>
   <li><a href="#ca_clear_event">ca_clear_event</a></li>
   <li><a href="#ca_client_status">ca_client_status</a></li>
+  <li><a href="#ca_client_status">ca_context_status</a></li>
   <li><a href="#ca_context_destroy">ca_context_destroy</a></li>
   <li><a href="#ca_create_channel">ca_create_channel</a></li>
   <li><a href="#ca_current_context">ca_current_context</a></li>
@@ -2292,7 +2293,10 @@ reissued.</p>
 <p><a href="#ca_get_callback">ca_get_callback</a>()</p>
 
 <h3><code><a name="ca_client_status">ca_client_status()</a></code></h3>
-<pre>int ca_client_status ( unsigned level );</pre>
+<pre>int ca_client_status ( unsigned level );
+</pre>
+<pre>int ca_context_status ( struct ca_client_context *, </pre>
+<pre>       unsigned level );</pre>
 
 <h4>Description</h4>
 
@@ -2301,6 +2305,8 @@ levels, status for each channel.</p>
 
 <h4>Arguments</h4>
 <dl>
+  <dt><code>CONTEXT</code></dt>
+    <dd><p>A pointer to the CA context to join with.</p></dd>
   <dt><code>LEVEL</code></dt>
     <dd><p>The interest level. Increasing level produces increasing
       detail.</p>

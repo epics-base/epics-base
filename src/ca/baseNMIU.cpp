@@ -22,7 +22,6 @@ baseNMIU::~baseNMIU ()
 {
 }
 
-// this is typically called by the user via cacNotifyIO
 void baseNMIU::cancel ()
 {
     unsigned i = 0u;

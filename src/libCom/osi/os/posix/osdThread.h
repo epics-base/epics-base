@@ -12,6 +12,14 @@
 
 #include <pthread.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 pthread_t epicsThreadGetPosixThreadId ( epicsThreadId id );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* osdThreadh */

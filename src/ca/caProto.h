@@ -51,7 +51,7 @@
 #   define CA_V46(MINOR) ((MINOR)>=6u)
 #   define CA_V47(MINOR) ((MINOR)>=7u)
 #   define CA_V48(MINOR) ((MINOR)>=8u)
-#   define CA_V49(MINOR) ((MINOR)>=9u)    /* large arrays */
+#   define CA_V49(MINOR) ((MINOR)>=9u)    /* large arrays, dispatch priorities */
 #   define CA_V410(MINOR) ((MINOR)>=10u)  /* beacon counter */
 #elif CA_MAJOR_PROTOCOL_REVISION > 4u
 #   define CA_V41(MINOR) ( 1u )

@@ -463,6 +463,13 @@ endif  #ifdef PROD
 #     Java classes and packages
 #
 
+ifdef JAVA
+DIRECTORY_TARGETS += $(INSTALL_JAVA)
+ifdef PACKAGE
+DIRECTORY_TARGETS += $(INSTALL_JAVA)/$(PACKAGE)
+endif
+endif
+
 vpath %.class $(INSTALL_JAVA)/$(PACKAGE)
 
 CLASSES += $(subst .java,.class,$(JAVA))
@@ -486,6 +493,9 @@ endif
 #JAR_DEPFILES +=  $(wildcard $(JAR_INPUT) $(addsuffix /*,$(JAR_INPUT)))
 JAR_DEPFILES +=  $(JAR_INPUT)
 
+$(DIRECTORY_TARGETS) :
+	$(MKDIR) $@
+
 build:: $(TESTCLASSES) $(JAR)
 
 buildInstall :: $(DIRECTORY_TARGETS) $(INSTALL_CLASSES) $(INSTALL_JAR) $(INSTALL_JAVADOC)
@@ -498,7 +508,7 @@ clean::
 	$(RM) $@
 	$(JAVACCMD) $<
 
-$(INSTALL_JAVA)/$(PACKAGE)/%.class:%.java $(INSTALL_JAVA)/$(PACKAGE)
+$(INSTALL_JAVA)/$(PACKAGE)/%.class:%.java 
 	@echo Creating java class file $@
 	@$(RM) $@
 	$(JAVACCMD) -d $(INSTALL_JAVA) $<
@@ -513,7 +523,7 @@ $(JAR):%.jar:  $(JAR_DEPFILES)
 	@$(RM) $@
 	$(JARCMD)
 
-$(INSTALL_JAVA)/%.jar: %.jar $(INSTALL_JAVA)
+$(INSTALL_JAVA)/%.jar: %.jar
 	@echo "Installing jar file $@"
 	@$(INSTALL) -d -m 644 $< $(@D)
 

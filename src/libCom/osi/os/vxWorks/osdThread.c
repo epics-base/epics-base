@@ -25,6 +25,8 @@ of this distribution.
 #include "cantProceed.h"
 #include "epicsAssert.h"
 
+BOOL vxTas(void *address);
+
 #if CPU_FAMILY == MC680X0
 #define ARCH_STACK_FACTOR 1
 #elif CPU_FAMILY == SPARC
@@ -69,6 +71,12 @@ epicsShareFunc unsigned int epicsShareAPI threadGetStackSize (threadStackSizeCla
     }
 
     return stackSizeTable[stackSizeClass];
+}
+
+void threadOnce(threadOnceId *id, void (*func)(void *), void *arg)
+{
+    if(vxTas(id))
+	func(arg);
 }
 
 static void createFunction(THREADFUNC func, void *parm)

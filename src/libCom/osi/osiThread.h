@@ -32,6 +32,9 @@ typedef enum {
 
 epicsShareFunc unsigned int epicsShareAPI threadGetStackSize(threadStackSizeClass size);
 
+/* threadOnceId is defined in osdThread.h; threadOnce() is defined after
+   osdThread.h has been included */
+
 typedef void *threadId;
 epicsShareFunc threadId epicsShareAPI threadCreate(const char *name,
     unsigned int priority, unsigned int stackSize,
@@ -109,6 +112,8 @@ private:
 #endif /* __cplusplus */
 
 #include "osdThread.h"
+
+void threadOnce(threadOnceId *id, void (*func)(void *), void *arg);
 
 #ifdef __cplusplus
 

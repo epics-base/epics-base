@@ -50,7 +50,8 @@ typedef struct threadInfo {
 
 static pthread_once_t once_control = PTHREAD_ONCE_INIT;
 static pthread_key_t getpthreadInfo;
-static semMutexId pthreadMutex;
+static semMutexId onceMutex;
+static semMutexId listMutex;
 static ELLLIST pthreadList;
 static commonAttr *pcommonAttr = 0;
 
@@ -133,7 +134,8 @@ static void once(void)
     int status;
 
     pthread_key_create(&getpthreadInfo,0);
-    pthreadMutex = semMutexMustCreate();
+    onceMutex = semMutexMustCreate();
+    listMutex = semMutexMustCreate();
     ellInit(&pthreadList);
     pcommonAttr = callocMustSucceed(1,sizeof(commonAttr),"osdThread::once");
     status = pthread_attr_init(&pcommonAttr->attr);
@@ -168,9 +170,29 @@ static void once(void)
     pthreadInfo = init_threadInfo("_main_",0,0,0,0);
     status = pthread_setspecific(getpthreadInfo,(void *)pthreadInfo);
     checkStatusQuit(status,"pthread_setspecific","start_routine");
-    semMutexMustTake(pthreadMutex);
+    semMutexMustTake(listMutex);
     ellAdd(&pthreadList,(ELLNODE *)pthreadInfo);
-    semMutexGive(pthreadMutex);
+    semMutexGive(listMutex);
+}
+
+void threadOnce(threadOnceId *id, void (*func)(void *), void *arg)
+{
+    int status;
+
+    status = pthread_once(&once_control,once);
+    checkStatusQuit(status,"pthread_once","threadOnce");
+
+    semMutexMustTake(onceMutex);
+    if(!(*id))
+    {
+	*id = 1;
+	semMutexGive(onceMutex);
+	func(arg);
+    }
+    else
+    {
+	semMutexGive(onceMutex);
+    }
 }
 
 static void * start_routine(void *arg)
@@ -180,15 +202,15 @@ static void * start_routine(void *arg)
     status = pthread_setspecific(getpthreadInfo,arg);
     checkStatusQuit(status,"pthread_setspecific","start_routine");
 
-    semMutexMustTake(pthreadMutex);
+    semMutexMustTake(listMutex);
     ellAdd(&pthreadList,(ELLNODE *)pthreadInfo);
-    semMutexGive(pthreadMutex);
+    semMutexGive(listMutex);
 
     (*pthreadInfo->createFunc)(pthreadInfo->createArg);
 
-    semMutexMustTake(pthreadMutex);
+    semMutexMustTake(listMutex);
     ellDelete(&pthreadList,(ELLNODE *)pthreadInfo);
-    semMutexGive(pthreadMutex);
+    semMutexGive(listMutex);
 
     semBinaryDestroy(pthreadInfo->suspendSem);
     status = pthread_attr_destroy(&pthreadInfo->attr);
@@ -357,13 +379,13 @@ void threadShow (void)
 
     status = pthread_once(&once_control,once);
     errlogPrintf ("        NAME       ID      PRI    STATE     WAIT\n");
-    semMutexMustTake(pthreadMutex);
+    semMutexMustTake(listMutex);
     for(pthreadInfo=(threadInfo *)ellFirst(&pthreadList); pthreadInfo;
 	pthreadInfo=(threadInfo *)ellNext((ELLNODE *)pthreadInfo)) {
 	errlogPrintf("%12.12s %8x %8d\n", pthreadInfo->name,(threadId)
 		pthreadInfo,pthreadInfo->osiPriority);
     }
-    semMutexGive(pthreadMutex);
+    semMutexGive(listMutex);
 }
 
 threadPrivateId threadPrivateCreate(void)

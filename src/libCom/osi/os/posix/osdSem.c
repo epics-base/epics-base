@@ -106,14 +106,14 @@ void semBinaryGive(semBinaryId id)
     int   status;
 
     status = pthread_mutex_lock(&pbinary->mutex);
-    checkStatusQuit(status,"pthread_mutex_lock","semBinaryTake");
+    checkStatusQuit(status,"pthread_mutex_lock","semBinaryGive");
     if(!pbinary->isFull) {
         pbinary->isFull = 1;
         status = pthread_cond_signal(&pbinary->cond);
         checkStatus(status,"pthread_cond_signal");
     }
     status = pthread_mutex_unlock(&pbinary->mutex);
-    checkStatusQuit(status,"pthread_mutex_unlock","semBinaryTake");
+    checkStatusQuit(status,"pthread_mutex_unlock","semBinaryGive");
 }
 
 semTakeStatus semBinaryTake(semBinaryId id)

@@ -40,7 +40,7 @@ nciu::nciu (cac *pcac, cacChannel &chan, const char *pNameIn) :
     }
     strcpy ( this->pNameStr, pNameIn );
 
-    LOCK (pcac);
+    pcac->lock ();
 
     pcac->installChannel (*this);
 
@@ -63,7 +63,7 @@ nciu::nciu (cac *pcac, cacChannel &chan, const char *pNameIn) :
 
     chan.attachIO (*this);
 
-    UNLOCK (pcac);
+    pcac->unlock ();
 }
 
 /*
@@ -76,6 +76,10 @@ nciu::~nciu ()
     if ( ! this->fullyConstructed () ) {
         return;
     }
+
+    // this must go in the derived class's destructor because
+    // this calls virtual functions in the cacChannelIO base
+    this->ioReleaseNotify ();
 
     if ( this->f_connected ) {
         caHdr hdr;
@@ -90,7 +94,7 @@ nciu::~nciu ()
         this->piiu->pushStreamMsg (&hdr, NULL, true);
     }
 
-    LOCK ( this->piiu->pcas );
+    this->piiu->pcas->lock ();
 
     /*
      * remove any IO blocks still attached to this channel
@@ -108,7 +112,7 @@ nciu::~nciu ()
 
     free ( reinterpret_cast <void *> (this->pNameStr) );
 
-    UNLOCK ( piiuCopy->pcas ); // remove clears this->piiu
+    piiuCopy->pcas->unlock (); // remove clears this->piiu
 }
 
 int nciu::read ( unsigned type, unsigned long countIn, cacNotify &notify )
@@ -145,11 +149,11 @@ int nciu::read ( unsigned type, unsigned long countIn, cacNotify &notify )
     type_u16 = (ca_uint16_t) type;
     count_u16 = (ca_uint16_t) countIn;
 
-    LOCK (this->piiu->pcas);
+    this->piiu->pcas->lock ();
     {
         netReadNotifyIO *monix = new netReadNotifyIO ( *this, notify );
         if ( ! monix ) {
-            UNLOCK (this->piiu->pcas);
+            this->piiu->pcas->unlock ();
             return ECA_ALLOCMEM;
         }
 
@@ -160,7 +164,7 @@ int nciu::read ( unsigned type, unsigned long countIn, cacNotify &notify )
         hdr.m_postsize = 0;
         hdr.m_cid = this->sid;
     }
-    UNLOCK (this->piiu->pcas);
+    this->piiu->pcas->unlock ();
 
     status = this->piiu->pushStreamMsg (&hdr, NULL, true);
     if ( status != ECA_NORMAL ) {
@@ -208,12 +212,12 @@ int nciu::read ( unsigned type, unsigned long countIn, void *pValue )
     type_u16 = ( ca_uint16_t ) type;
     count_u16 = ( ca_uint16_t ) countIn;
 
-    LOCK ( this->piiu->pcas );
+    this->piiu->pcas->lock ();
     {
         netReadCopyIO *monix = new netReadCopyIO ( *this, 
 		type, countIn, pValue, this->readSequence () );
         if ( ! monix ) {
-            UNLOCK ( this->piiu->pcas );
+            this->piiu->pcas->unlock ();
             return ECA_ALLOCMEM;
         }
 
@@ -224,7 +228,7 @@ int nciu::read ( unsigned type, unsigned long countIn, void *pValue )
         hdr.m_postsize = 0;
         hdr.m_cid = this->sid;
     }
-    UNLOCK ( this->piiu->pcas );
+    this->piiu->pcas->lock ();
 
     status = this->piiu->pushStreamMsg ( &hdr, NULL, true );
     if ( status != ECA_NORMAL ) {
@@ -250,9 +254,9 @@ LOCAL void free_put_convert (cac *pcac, void *pBuf)
     pBufHdr -= 1;
     assert ( pBufHdr->pBuf == (void *) ( pBufHdr + 1 ) );
 
-    LOCK (pcac);
+    pcac->lock ();
     ellAdd (&pcac->putCvrtBuf, &pBufHdr->node);
-    UNLOCK (pcac);
+    pcac->unlock ();
 
     return;
 }
@@ -290,24 +294,24 @@ LOCAL void *malloc_put_convert (cac *pcac, unsigned long size)
 {
     struct putCvrtBuf *pBuf;
 
-    LOCK (pcac);
+    pcac->lock ();
     while ( (pBuf = (struct putCvrtBuf *) ellGet(&pcac->putCvrtBuf)) ) {
-        if(pBuf->size >= size){
+        if ( pBuf->size >= size ) {
             break;
         }
         else {
-            free (pBuf);
+            free ( pBuf );
         }
     }
-    UNLOCK (pcac);
+    pcac->unlock ();
 
-    if (!pBuf) {
-        pBuf = (struct putCvrtBuf *) malloc (sizeof(*pBuf)+size);
+    if ( ! pBuf ) {
+        pBuf = (struct putCvrtBuf *) malloc ( sizeof (*pBuf) + size );
         if (!pBuf) {
             return NULL;
         }
         pBuf->size = size;
-        pBuf->pBuf = (void *) (pBuf+1);
+        pBuf->pBuf = (void *) ( pBuf + 1 );
     }
 
     return pBuf->pBuf;
@@ -487,17 +491,17 @@ int nciu::write (unsigned type, unsigned long countIn, const void *pValue, cacNo
      * so that we are not deleted without
      * reclaiming the resource
      */
-    LOCK (this->piiu->pcas);
+    this->piiu->pcas->lock ();
 
     monix = new netWriteNotifyIO (*this, notify);
     if ( ! monix ) {
-        UNLOCK (this->piiu->pcas);
+        this->piiu->pcas->unlock ();
         return ECA_ALLOCMEM;
     }
 
     newId = monix->getId ();
 
-    UNLOCK (this->piiu->pcas);
+    this->piiu->pcas->unlock ();
 
     status = this->issuePut (CA_PROTO_WRITE_NOTIFY, newId, 
 		type, countIn, pValue);
@@ -516,16 +520,16 @@ int nciu::subscribe (unsigned type, unsigned long countIn,
 {
     netSubscription *pNetMon;
 
-    LOCK (this->piiu->pcas);
+    this->piiu->pcas->lock ();;
 
     pNetMon = new netSubscription (*this, type, countIn, 
         static_cast <unsigned short> (mask), notify);
     if ( ! pNetMon ) {
-        UNLOCK (this->piiu->pcas);
+        this->piiu->pcas->unlock ();
         return ECA_ALLOCMEM;
     }
 
-    UNLOCK (this->piiu->pcas);
+    this->piiu->pcas->unlock ();
 
     pNetMon->subscriptionMsg ();
 
@@ -598,13 +602,13 @@ unsigned nciu::searchAttempts () const
 void nciu::connect ( tcpiiu &iiu, unsigned nativeType, 
 	unsigned long nativeCount, unsigned sidIn )
 {
-    LOCK ( iiu.pcas );
+    iiu.pcas->lock ();
 
     if ( this->connected () ) {
         ca_printf (
             "CAC: Ignored conn resp to conn chan CID=%u SID=%u?\n",
             this->getId (), sidIn );
-        UNLOCK ( iiu.pcas );
+        iiu.pcas->unlock ();
         return;
     }
 
@@ -635,12 +639,12 @@ void nciu::connect ( tcpiiu &iiu, unsigned nativeType,
         iter++;
     }
 
-    UNLOCK ( iiu.pcas );
+    iiu.pcas->unlock ();
 }
 
 void nciu::disconnect ()
 {
-    LOCK (this->piiu->pcas);
+    this->piiu->pcas->lock ();
 
     this->typeCode = USHRT_MAX;
     this->count = 0u;
@@ -665,7 +669,7 @@ void nciu::disconnect ()
     this->disconnectNotify ();
     this->accessRightsNotify (this->ar);
 
-    UNLOCK ( this->piiu->pcas );
+    this->piiu->pcas->unlock ();
 
     this->piiu->disconnect ( this );
 }
@@ -709,10 +713,10 @@ int nciu::searchMsg ()
      * move the channel to the end of the list so
      * that all channels get a equal chance 
      */
-    LOCK (this->piiu->pcas);
+    this->piiu->pcas->lock ();
     this->piiu->chidList.remove (*this);
     this->piiu->chidList.add (*this);
-    UNLOCK (this->piiu->pcas);
+    this->piiu->pcas->unlock ();
 
     return ECA_NORMAL;
 }
@@ -735,14 +739,15 @@ bool nciu::claimMsg ( tcpiiu *piiuIn )
     const char *pStr;
     int status;
 
-    LOCK (this->piiu->pcas);
-
+    this->piiu->pcas->lock ();
 
     if ( ! this->claimPending ) {
+        this->piiu->pcas->unlock ();
         return false;
     }
 
     if ( this->f_connected ) {
+        this->piiu->pcas->unlock ();
         return false;
     }
 
@@ -792,7 +797,7 @@ bool nciu::claimMsg ( tcpiiu *piiuIn )
     else {
         piiuIn->claimRequestsPending = true;
     }
-    UNLOCK (this->piiu->pcas);
+    this->piiu->pcas->unlock ();
 
     if ( status == ECA_NORMAL ) {
         return true;
@@ -804,18 +809,18 @@ bool nciu::claimMsg ( tcpiiu *piiuIn )
 
 void nciu::installIO ( baseNMIU &io )
 {
-    LOCK ( this->piiu->pcas );
+    this->piiu->pcas->lock ();
     this->piiu->pcas->installIO ( io );
     this->eventq.add ( io );
-    UNLOCK ( this->piiu->pcas );
+    this->piiu->pcas->unlock ();
 }
 
 void nciu::uninstallIO ( baseNMIU &io )
 {
-    LOCK ( this->piiu->pcas );
+    this->piiu->pcas->lock ();
     this->eventq.remove ( io );
     this->piiu->pcas->uninstallIO ( io );
-    UNLOCK ( this->piiu->pcas );
+    this->piiu->pcas->unlock ();
 }
 
 bool nciu::connected () const
@@ -887,14 +892,24 @@ int nciu::subscriptionMsg ( unsigned subscriptionId, unsigned typeIn,
     msg.m_info.m_mask = htons ( maskIn );
     msg.m_info.m_pad = 0; /* allow future use */    
 
-    LOCK ( this->piiu->pcas );
+    this->lock ();
     if ( this->f_connected ) {
         status = this->piiu->pushStreamMsg ( &msg.m_header, &msg.m_info, true );
     }
     else {
         status = ECA_NORMAL;
     }
-    UNLOCK ( this->piiu->pcas );
+    this->unlock ();
 
     return status;
+}
+
+void nciu::lock () const
+{
+    this->piiu->pcas->lock ();
+}
+
+void nciu::unlock () const
+{
+    this->piiu->pcas->unlock ();
 }

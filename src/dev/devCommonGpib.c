@@ -3,6 +3,9 @@
 
 /*
  * $Log$
+ * Revision 1.23  1995/01/06  16:55:52  winans
+ * Added the log parameter to the doc
+ *
  *
  *      Author: 		John Winans
  *      Origional Author:	Ned D. Arnold
@@ -2464,6 +2467,7 @@ void		(*process)();
   /* make sure the command type makes sendse for the record type */
 
   if (parmBlock->gpibCmds[((struct gpibDpvt *)pwf->dpvt)->parm].type != GPIBREAD &&
+      parmBlock->gpibCmds[((struct gpibDpvt *)pwf->dpvt)->parm].type != GPIBWRITE &&
       parmBlock->gpibCmds[((struct gpibDpvt *)pwf->dpvt)->parm].type != GPIBSOFT &&
       parmBlock->gpibCmds[((struct gpibDpvt *)pwf->dpvt)->parm].type != GPIBREADW)
   {
@@ -2540,9 +2544,11 @@ int
 devGpibLib_wfGpibWork(pdpvt)
 struct gpibDpvt *pdpvt;
 {
+	int				OperationStatus;
     struct waveformRecord *pwf= ((struct waveformRecord *)(pdpvt->precord));
     struct gpibCmd	*pCmd;
     struct devGpibParmBlock *parmBlock;
+   	short 			ibnode = pdpvt->head.device;
 
     parmBlock = (struct devGpibParmBlock *)(((gDset*)(pwf->dset))->funPtr[pwf->dset->number]);
 
@@ -2553,31 +2559,60 @@ struct gpibDpvt *pdpvt;
     if(*(parmBlock->debugFlag))
         printf("devGpibLib_wfGpibWork: starting ...command type = %d\n",pCmd->type);
 
-    if (devGpibLib_xxGpibWork(pdpvt, pCmd->type, -1) == ERROR) 
-    {
-	devGpibLib_setPvSevr(pwf,READ_ALARM,VALID_ALARM);
 
-#if 1
-	RegisterProcessCallback(&pdpvt->head.callback, priorityLow, pdpvt);
-#else
-        pdpvt->head.header.callback.callback = devGpibLib_processCallback;
-        pdpvt->head.header.callback.priority = priorityLow;
-        callbackRequest(&pdpvt->head.header.callback);
-#endif
+	/**** Handle writes internally... the generic routine will not work ****/
+	if (pCmd->type == GPIBWRITE)
+	{
+		/*
+		* check to see if this node has timed out within last 10 sec
+		*/
+		if(tickGet() < (pdpvt->phwpvt->tmoVal + parmBlock->timeWindow) )
+		{
+			if (*parmBlock->debugFlag)
+				printf("devGpibLib_xxGpibWork(): timeout flush\n");
+
+			OperationStatus = ERROR;
+		}
+		else
+		{
+
+   			OperationStatus = (*(drvGpib.writeIb))(pdpvt->head.pibLink, 
+			ibnode, pdpvt->msg, pCmd->msgLen, pdpvt->head.dmaTimeout);
+
+			if(*parmBlock->debugFlag)
+				printf("devGpibLib_xxGpibWork : done, status = %d\n",OperationStatus);
+
+			/* if error occurrs then mark it with time */
+			if(OperationStatus == ERROR)
+			{
+				(pdpvt->phwpvt->tmoCount)++;        /* count timeouts */
+				pdpvt->phwpvt->tmoVal = tickGet();  /* set last timeout time */
+			}
+		}
+	}
+	else
+	{
+		OperationStatus = devGpibLib_xxGpibWork(pdpvt, pCmd->type, -1);
+	}
+
+    if (OperationStatus == ERROR) 
+    {
+		devGpibLib_setPvSevr(pwf,READ_ALARM,VALID_ALARM);
+		RegisterProcessCallback(&pdpvt->head.callback, priorityLow, pdpvt);
     }
     else
     {
         if (pCmd->type != GPIBREADW)
             devGpibLib_wfGpibFinish(pdpvt);	/* If not waiting on SRQ, finish */
-	else
-	{
-            if (*(parmBlock->debugFlag) || ibSrqDebug)
-	      printf("%s: marking srq Handler for READW operation\n", parmBlock->name);
-            pdpvt->phwpvt->srqCallback = (int (*)())(((gDset*)(pwf->dset))->funPtr[pwf->dset->number + 2]);
-            pdpvt->phwpvt->parm = (caddr_t)pdpvt; /* mark the handler */
-	    return(BUSY);		/* indicate device still in use */
+		else
+		{
+			if (*(parmBlock->debugFlag) || ibSrqDebug)
+				printf("%s: marking srq Handler for READW operation\n", parmBlock->name);
+			pdpvt->phwpvt->srqCallback = (int (*)())(((gDset*)(pwf->dset))->funPtr[pwf->dset->number + 2]);
+			pdpvt->phwpvt->parm = (caddr_t)pdpvt; /* mark the handler */
+			return(BUSY);		/* indicate device still in use */
+		}
 	}
-    }
     return(IDLE);			/* indicate device is now idle */
 }
 
@@ -2608,13 +2643,7 @@ int		srqStatus;
     {
         devGpibLib_setPvSevr(pwf,READ_ALARM,VALID_ALARM);
 
-#if 1
 	RegisterProcessCallback(&pdpvt->head.callback, priorityLow, pdpvt);
-#else
-        pdpvt->head.header.callback.callback = devGpibLib_processCallback;
-        pdpvt->head.header.callback.priority = priorityLow;
-        callbackRequest(&pdpvt->head.header.callback);
-#endif
     }
 
     devGpibLib_wfGpibFinish(pdpvt);	/* and finish the processing */
@@ -2651,13 +2680,7 @@ struct gpibDpvt *pdpvt;
                devGpibLib_setPvSevr(pwf,READ_ALARM,VALID_ALARM);
     }
 
-#if 1
 	RegisterProcessCallback(&pdpvt->head.callback, priorityLow, pdpvt);
-#else
-        pdpvt->head.header.callback.callback = devGpibLib_processCallback;
-        pdpvt->head.header.callback.priority = priorityLow;
-        callbackRequest(&pdpvt->head.header.callback);
-#endif
 
     return(0);
 }

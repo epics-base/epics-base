@@ -4,6 +4,8 @@
 
 # the order of following list is important
 
+# for c++ build add the dirs gdd and cas after ca
+
 DIRS = \
     tools \
     include \
@@ -16,8 +18,6 @@ DIRS = \
     db \
     bpt \
     ca \
-    gdd \
-    cas \
     util \
     misc \
     sequencer \

@@ -79,7 +79,7 @@ private: // Data
 class epicsListNodePool {
 public:
     epicsListNodePool();
-    ~epicsListNodePool();
+    epicsShareFunc epicsShareAPI ~epicsListNodePool();
     
     // allocate & free nodes
     epicsListNode* allocate();
@@ -88,7 +88,7 @@ public:
     void swap(epicsListNodePool& pool);
 
 private: // Non-inline routines
-    void extend();
+    epicsShareFunc void epicsShareAPI extend();
 
 private: // Data
     epicsListLink _free;

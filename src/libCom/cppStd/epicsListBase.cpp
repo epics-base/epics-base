@@ -14,7 +14,7 @@
 epicsMutex epicsListNodePool::_mutex;
 epicsListLink epicsListNodePool::_store;
 
-epicsListNodePool::~epicsListNodePool() {
+epicsShareFunc epicsShareAPI epicsListNodePool::~epicsListNodePool() {
     while (_blocks.hasNext()) {
 	epicsListNodeBlock* block = 
 		static_cast<epicsListNodeBlock*>(_blocks.extract());
@@ -25,7 +25,7 @@ epicsListNodePool::~epicsListNodePool() {
     }
 }
 
-void epicsListNodePool::extend() {
+epicsShareFunc void epicsShareAPI epicsListNodePool::extend() {
     assert(!_free.hasNext());
     epicsListNodeBlock* block = 0;
     if (_store.hasNext()) {

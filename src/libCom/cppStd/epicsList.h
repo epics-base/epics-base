@@ -21,13 +21,16 @@
 
 // Reference numbers in comments are to sections in ISO/IEC 14882:1998(E)
 
+template <class T> class epicsListIterator;
+template <class T> class epicsListConstIterator;
+
 template <class T>
 class epicsList {
 public:
     // Types
     typedef size_t size_type;
-    class iterator;
-    class const_iterator;
+    typedef epicsListIterator<T> iterator;
+    typedef epicsListConstIterator<T> const_iterator;
     
     // Construct/copy/destroy (23.2.2.1)
     epicsList();
@@ -75,8 +78,8 @@ private: // Data
     epicsListNode _head;
     epicsListNodePool _pool;
 
-friend class iterator;
-friend class const_iterator;
+friend class epicsListIterator<T>;
+friend class epicsListConstIterator<T>;
 };
 
 // Specialized algorithms:
@@ -87,64 +90,64 @@ template <class T>
 // Mutable iterator
 
 template <class T>
-class epicsList<T>::iterator {
+class epicsListIterator {
 public:
-    iterator();
+    epicsListIterator();
 // The following are created automatically by C++:
-    // iterator(const iterator& rhs);
-    // iterator& operator=(const iterator& rhs);
+    // epicsListIterator(const epicsListIterator& rhs);
+    // epicsListIterator& operator=(const epicsListIterator& rhs);
     
     T operator*() const;
     T operator->() const;
     
-    iterator& operator++();
-    const iterator operator++(int);
-    iterator& operator--();
-    const iterator operator--(int);
+    epicsListIterator& operator++();
+    const epicsListIterator operator++(int);
+    epicsListIterator& operator--();
+    const epicsListIterator operator--(int);
     
-    bool operator==(const iterator& rhs) const;
-    bool operator==(const const_iterator& rhs) const;
-    bool operator!=(const iterator& rhs) const;
-    bool operator!=(const const_iterator& rhs) const;
+    bool operator==(const epicsListIterator& rhs) const;
+    bool operator==(const epicsListConstIterator<T>& rhs) const;
+    bool operator!=(const epicsListIterator& rhs) const;
+    bool operator!=(const epicsListConstIterator<T>& rhs) const;
 
 private: // Constructor for List use
-    iterator(epicsListNode* node);
+    epicsListIterator(epicsListNode* node);
 
 private:
     epicsListNode* _node;
 
 friend class epicsList<T>;
-friend class const_iterator;
+friend class epicsListConstIterator<T>;
 };
 
 
 // Constant iterator
 
 template <class T>
-class epicsList<T>::const_iterator {
+class epicsListConstIterator {
 public:
-    const_iterator();
-    const_iterator(const iterator& rhs);
-    const_iterator&  operator=(const iterator& rhs);
+    epicsListConstIterator();
+    epicsListConstIterator(const epicsListIterator<T>& rhs);
+    epicsListConstIterator&  operator=(const epicsListIterator<T>& rhs);
 // The following are created automatically by C++:
-    // const_iterator(const const_iterator& rhs);
-    // const_iterator&  operator=(const const_iterator& rhs);
+    // epicsListConstIterator(const epicsListConstIterator& rhs);
+    // epicsListConstIterator&  operator=(const epicsListConstIterator& rhs);
     
     const T operator*() const;
     const T operator->() const;
     
-    const_iterator& operator++();
-    const const_iterator operator++(int);
-    const_iterator& operator--();
-    const const_iterator operator--(int);
+    epicsListConstIterator& operator++();
+    const epicsListConstIterator operator++(int);
+    epicsListConstIterator& operator--();
+    const epicsListConstIterator operator--(int);
     
-    bool operator==(const const_iterator& rhs) const;
-    bool operator==(const iterator& rhs) const;
-    bool operator!=(const const_iterator& rhs) const;
-    bool operator!=(const iterator& rhs) const;
+    bool operator==(const epicsListConstIterator& rhs) const;
+    bool operator==(const epicsListIterator<T>& rhs) const;
+    bool operator!=(const epicsListConstIterator& rhs) const;
+    bool operator!=(const epicsListIterator<T>& rhs) const;
 
 private: // Constructor for List use
-    const_iterator(const epicsListNode* node);
+    epicsListConstIterator(const epicsListNode* node);
 
 private:
     const epicsListNode* _node;
@@ -197,28 +200,28 @@ inline epicsList<T>::size_type epicsList<T>::size() const {
 template <class T>
 inline T epicsList<T>::front() {
     if (empty())
-	throw STD_ logic_error("list::front: list empty");
+	throw STD_ logic_error("epicsList::front: list empty");
     return static_cast<T>(_head.next()->payload);
 }
 
 template <class T>
 inline const T epicsList<T>::front() const {
     if (empty())
-	throw STD_ logic_error("list::front: list empty");
+	throw STD_ logic_error("epicsList::front: list empty");
     return static_cast<const T>(_head.next()->payload);
 }
 
 template <class T>
 inline T epicsList<T>::back() {
     if (empty())
-	throw STD_ logic_error("list::back: list empty");
+	throw STD_ logic_error("epicsList::back: list empty");
     return static_cast<T>(_head.prev()->payload);
 }
 
 template <class T>
 inline const T epicsList<T>::back() const {
     if (empty())
-	throw STD_ logic_error("list::back: list empty");
+	throw STD_ logic_error("epicsList::back: list empty");
     return static_cast<const T>(_head.prev()->payload);
 }
 
@@ -233,7 +236,7 @@ inline void epicsList<T>::push_front(const T x) {
 template <class T>
 inline void epicsList<T>::pop_front() {
     if (empty())
-	throw STD_ logic_error("list::pop_front: list empty");
+	throw STD_ logic_error("epicsList::pop_front: list empty");
     epicsListNode* node = _head.next();
     node->unlink();
     _count--;
@@ -251,7 +254,7 @@ inline void epicsList<T>::push_back(const T x) {
 template <class T>
 inline void epicsList<T>::pop_back() {
     if (empty())
-	throw STD_ logic_error("list::pop_back: list empty");
+	throw STD_ logic_error("epicsList::pop_back: list empty");
     epicsListNode* node = _head.prev();
     node->unlink();
     _count--;
@@ -302,146 +305,146 @@ inline void epicsList<T>::clear() {
 }
 
 
-// epicsList<T>::iterator
+// epicsListIterator<T>
 template <class T>
-inline epicsList<T>::iterator::iterator() :
+inline epicsListIterator<T>::epicsListIterator() :
     _node(0) {}
 
 template <class T>
-inline epicsList<T>::iterator::iterator(epicsListNode* node) :
+inline epicsListIterator<T>::epicsListIterator(epicsListNode* node) :
     _node(node) {}
 
 template <class T>
-inline T epicsList<T>::iterator::operator*() const {
+inline T epicsListIterator<T>::operator*() const {
     return static_cast<T>(_node->payload);
 }
 
 template <class T>
-inline T epicsList<T>::iterator::operator->() const {
+inline T epicsListIterator<T>::operator->() const {
     return static_cast<T>(_node->payload);
 }
 
 template <class T>
-inline epicsList<T>::iterator& epicsList<T>::iterator::operator++() {
+inline epicsListIterator<T>& epicsListIterator<T>::operator++() {
     _node = _node->next();
     return *this;
 }
 
 template <class T>
-inline const epicsList<T>::iterator epicsList<T>::iterator::operator++(int) {
-    iterator temp = *this;
+inline const epicsListIterator<T> epicsListIterator<T>::operator++(int) {
+    epicsListIterator<T> temp = *this;
     ++(*this);
     return temp;
 }
 
 template <class T>
-inline epicsList<T>::iterator& epicsList<T>::iterator::operator--() {
+inline epicsListIterator<T>& epicsListIterator<T>::operator--() {
     _node = _node->prev();
     return *this;
 }
 
 template <class T>
-inline const epicsList<T>::iterator epicsList<T>::iterator::operator--(int) {
-    iterator temp = *this;
+inline const epicsListIterator<T> epicsListIterator<T>::operator--(int) {
+    epicsListIterator<T> temp = *this;
     --(*this);
     return temp;
 }
 
 template <class T>
-inline bool epicsList<T>::iterator::operator==(const iterator& rhs) const {
+inline bool epicsListIterator<T>::operator==(const epicsListIterator<T>& rhs) const {
     return (_node == rhs._node);
 }
 
 template <class T>
-inline bool epicsList<T>::iterator::operator==(const const_iterator& rhs) const {
+inline bool epicsListIterator<T>::operator==(const epicsListConstIterator<T>& rhs) const {
     return (rhs == *this);
 }
 
 template <class T>
-inline bool epicsList<T>::iterator::operator!=(const iterator& rhs) const {
+inline bool epicsListIterator<T>::operator!=(const epicsListIterator<T>& rhs) const {
     return !(_node == rhs._node);
 }
 
 template <class T>
-inline bool epicsList<T>::iterator::operator!=(const const_iterator& rhs) const {
+inline bool epicsListIterator<T>::operator!=(const epicsListConstIterator<T>& rhs) const {
     return !(rhs == *this);
 }
 
-// epicsList<T>::const_iterator
+// epicsListConstIterator<T>
 template <class T>
-inline epicsList<T>::const_iterator::const_iterator() :
+inline epicsListConstIterator<T>::epicsListConstIterator() :
     _node(0) {}
 
 template <class T>
-inline epicsList<T>::const_iterator::const_iterator(const iterator& rhs) :
+inline epicsListConstIterator<T>::epicsListConstIterator(const epicsListIterator<T>& rhs) :
     _node(rhs._node) {}
 
 template <class T>
-inline epicsList<T>::const_iterator::const_iterator(const epicsListNode* node) :
+inline epicsListConstIterator<T>::epicsListConstIterator(const epicsListNode* node) :
     _node(node) {}
 
 template <class T>
-inline epicsList<T>::const_iterator&
-epicsList<T>::const_iterator::operator=(const iterator& rhs){
+inline epicsListConstIterator<T>&
+epicsListConstIterator<T>::operator=(const epicsListIterator<T>& rhs){
     _node = rhs._node;
     return *this;
 }
 
 template <class T>
-inline const T epicsList<T>::const_iterator::operator*() const {
+inline const T epicsListConstIterator<T>::operator*() const {
     return static_cast<T>(_node->payload);
 }
 
 template <class T>
-inline const T epicsList<T>::const_iterator::operator->() const {
+inline const T epicsListConstIterator<T>::operator->() const {
     return static_cast<T>(_node->payload);
 }
 
 template <class T>
-inline epicsList<T>::const_iterator& epicsList<T>::const_iterator::operator++() {
+inline epicsListConstIterator<T>& epicsListConstIterator<T>::operator++() {
     _node = _node->next();
     return *this;
 }
 
 template <class T>
-inline const epicsList<T>::const_iterator epicsList<T>::const_iterator::operator++(int) {
-    const_iterator temp = *this;
+inline const epicsListConstIterator<T> epicsListConstIterator<T>::operator++(int) {
+    epicsListConstIterator<T> temp = *this;
     ++(*this);
     return temp;
 }
 
 template <class T>
-inline epicsList<T>::const_iterator& epicsList<T>::const_iterator::operator--() {
+inline epicsListConstIterator<T>& epicsListConstIterator<T>::operator--() {
     _node = _node->prev();
     return *this;
 }
 
 template <class T>
-inline const epicsList<T>::const_iterator epicsList<T>::const_iterator::operator--(int) {
-    const_iterator temp = *this;
+inline const epicsListConstIterator<T> epicsListConstIterator<T>::operator--(int) {
+    epicsListConstIterator<T> temp = *this;
     --(*this);
     return temp;
 }
 
 template <class T>
 inline bool 
-epicsList<T>::const_iterator::operator==(const const_iterator& rhs) const {
+epicsListConstIterator<T>::operator==(const epicsListConstIterator<T>& rhs) const {
     return (_node == rhs._node);
 }
 
 template <class T>
-inline bool epicsList<T>::const_iterator::operator==(const iterator& rhs) const {
+inline bool epicsListConstIterator<T>::operator==(const epicsListIterator<T>& rhs) const {
     return (_node == rhs._node);
 }
 
 template <class T>
 inline bool
-epicsList<T>::const_iterator::operator!=(const const_iterator& rhs) const {
+epicsListConstIterator<T>::operator!=(const epicsListConstIterator<T>& rhs) const {
     return !(_node == rhs._node);
 }
 
 template <class T>
-inline bool epicsList<T>::const_iterator::operator!=(const iterator& rhs) const {
+inline bool epicsListConstIterator<T>::operator!=(const epicsListIterator<T>& rhs) const {
     return !(_node == rhs._node);
 }
 

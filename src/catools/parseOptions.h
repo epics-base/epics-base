@@ -19,6 +19,16 @@
 #ifndef INCLparseOptionsh
 #define INCLparseOptionsh
 
+/* IMPORTANT NOTE:
+ * ---------------
+ * This library is a workaround for achieving getopt() functionality in
+ * EPICS Base 3.14.5 - it will be replaced as soon as possible without
+ * further notice.
+ *
+ * DO NOT WRITE ANY CODE BASED ON THIS LIBRARY - IT WILL BREAK.
+ *
+ */
+
 /* This is a minimal version of a parser whose function is somewhat getopt()
  * compatible. Subsequent calls return the command line options one by one.
  * The special option "--" forces the end of option scanning.

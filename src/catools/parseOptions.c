@@ -16,6 +16,16 @@
  *
  */
 
+/* IMPORTANT NOTE:
+ * ---------------
+ * This library is a workaround for achieving getopt() functionality in
+ * EPICS Base 3.14.5 - it will be replaced as soon as possible without
+ * further notice.
+ *
+ * DO NOT WRITE ANY CODE BASED ON THIS LIBRARY - IT WILL BREAK.
+ *
+ */
+
 #include <string.h>
 #include "parseOptions.h"
 
@@ -28,7 +38,10 @@ static unsigned int charIndex;
 int parseOptions (int argc, char * const argv[], const char *options)
 {
     unsigned int i;
-    char *opt = argv[optIndex];
+    char *opt;
+
+    if (optIndex >= argc) return -1;
+    opt = argv[optIndex];
 
     if (charIndex >= strlen(opt)) /* End of option group */
     {
@@ -46,8 +59,8 @@ int parseOptions (int argc, char * const argv[], const char *options)
                 {               /* New option group found */
                     charIndex++;
                     break;
-                }
-                optIndex++;
+                } else
+                    continue;
             }
                                 /* No more options */
             return -1;

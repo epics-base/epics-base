@@ -158,14 +158,6 @@ if($numberRegistrar>0) {
 	print "epicsShareFunc void epicsShareAPI $registrar[$i](void);\n";
     }
     print "}\n\n";
-    
-    print "static REGISTRARFUNC registrarFunctions[$i] = {\n";
-    for ($i=0; $i<$numberRegistrar; $i++) {
-        print "    &$registrar[$i]";
-        if($i < $numberRegistrar-1) { print ",";}
-        print "\n";
-    }
-    print "};\n\n";
 }
 
 #Now actual registration code.
@@ -226,11 +218,9 @@ if($numberDriverSupport>0) {
 END
 }
 if($numberRegistrar>0) {
-    print << "END" ;
-    for(i=0; i< $numberRegistrar;  i++ ) {
-        registrarFunctions[i]();
+    for($i=0; $i< $numberRegistrar;  $i++ ) {
+        print "    $registrar[$i]();\n";
     }
-END
 }
 print << "END" ;
     return(0);

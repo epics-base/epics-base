@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+  <title>EPICS Release Procedures Checklist</title>
+</head>
+
+<body>
+<h1>EPICS Base Release Procedures Checklist</h1>
+
+<blockquote>
+  <p>$Id$</p>
+</blockquote>
+
+<p>This document is a checklist of things that must be done when creating a
+new release of EPICS Base. Additions and ammendments to this list are
+welcome.</p>
+
+<p>The following roles are used, in addition to the names of individuals who
+have been responsible for specific tasks in the past:</p>
+<dl>
+  <dt><strong>Release Manager</strong></dt>
+    <dd>Responsible for the release</dd>
+  <dt><strong>Platform Developers</strong></dt>
+    <dd>Responsible for individual operating system platforms</dd>
+</dl>
+
+<p></p>
+
+<table border="1" width="100%">
+  <tbody>
+    <tr>
+      <th>Check</th>
+      <th>Who</th>
+      <th>Description</th>
+    </tr>
+    <tr>
+      <th colspan="3">Preparing for a release</th>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Marty Kraimer</td>
+      <td>Email all developers about the upcoming release and ask for a list
+        of remaining jobs that must be finished.</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>All developers</td>
+      <td>Check the Mantis bug tracker for any outstanding items and handle
+        appropriately. All bugs that have been fixed should have been marked
+        as resolved.</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Marty Kraimer</td>
+      <td>Set a date by which all CVS commits must be done, after which
+        commits should only be to fix problems that show up during Final
+        Testing.</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Release Manager</td>
+      <td>Ensure that documentation will be updated before the release date: 
+        <ul>
+          <li>Application Developers Guide</li>
+          <li>Release Notes</li>
+          <li>Known Problems</li>
+          <li>Other documents</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>?</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th colspan="3">Final testing</th>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Platform Developers</td>
+      <td>Run the Soft IOC tests in mrkSoftTest on all available
+      platforms.</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Marty Kraimer</td>
+      <td>Run the VME I/O tests in mrkHwdTest on all available vxWorks VME
+        platforms.</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Jeff Hill</td>
+      <td>Run the CA client side regression tests on all available host
+        platforms.</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>?</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th colspan="3">Make the release</th>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Janet Anderson</td>
+      <td>Edit and commit changes to the EPICS version number file.</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Janet Anderson</td>
+      <td>Tag the module in CVS. Version tags take the form
+        <code>R</code><i><code>x</code></i><code>-</code><i><code>y</code></i><code>-</code><i><code>z</code></i><code>[-{alpha,beta,</code><i><code>n</code></i><code>}]</code></td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Janet Anderson</td>
+      <td>Export the tagged version and create the
+        baseR<i>x.y.z</i>[{alpha,beta}<i>n</i>].tar.gz file of the result</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Janet Anderson</td>
+      <td>Test the tar file by extracting its contents and building it on at
+        least one supported platform</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Janet Anderson</td>
+      <td>Copy the tar file to the Base download area of the website</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Andrew Johnson</td>
+      <td>Create a new website subdirectory to hold the release
+        documentation, and copy in the files from the base/documentation
+        directory of the tarfile</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Andrew Johnson</td>
+      <td>Create a webpage for the new release with links to the release
+        documents and tar file</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>?</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th colspan="3">Announce it</th>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Andrew Johnson</td>
+      <td>Add the new release tar file to the website Base download index
+      page</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Andrew Johnson</td>
+      <td>Link to the release webpage from other relevent areas of the
+        website - update front page and sidebars</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Andrew Johnson</td>
+      <td>Add the new Version number to the Mantis bug tracker</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Andrew Johnson</td>
+      <td>Close all Mantis bug reports that were marked as resolved and which
+        have been fixed in this release</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Release Manager</td>
+      <td>Email tech-talk</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Andrew Johnson</td>
+      <td>Add an entry to the website News page, linking to the new
+      webpage</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>?</td>
+      <td>...</td>
+    </tr>
+  </tbody>
+</table>
+</body>
+</html>

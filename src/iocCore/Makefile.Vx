@@ -1,8 +1,6 @@
 TOP = ../../..
 include $(TOP)/config/CONFIG_BASE
 
-LINK.c=$(LD) $(LDFLAGS)
-
 IOC_CORE_OBJS = \
 	$(TOP)/src/as/O.$(T_A)/asLibrary \
 	$(TOP)/src/dbStatic/O.$(T_A)/dbStaticLib \

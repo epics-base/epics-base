@@ -380,7 +380,7 @@ int epicsShareAPI ca_add_masked_array_event (chtype type, unsigned long count, c
 
     status = pChan->subscribe ( type, count, mask, *pSubsr );
     if ( status == ECA_NORMAL ) {
-        *monixptr = pSubsr;
+        if(monixptr) *monixptr = pSubsr;
     }
 
     return status;

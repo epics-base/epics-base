@@ -16,6 +16,7 @@
  */
 
 #include "epicsGuard.h"
+#include "epicsVersion.h"
 
 #include "addrList.h"
 
@@ -23,7 +24,7 @@
 #include "server.h"
 #include "casCtxIL.h" // casCtx in line func
 
-static char *id="@(#) $Id$";
+static char *id="@(#) " EPICS_VERSION_STRING ", CA Portable Server Library" "$Date$";
 
 //
 // the maximum beacon period if EPICS_CA_BEACON_PERIOD isnt available

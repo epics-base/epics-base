@@ -1,3 +1,4 @@
+#
 # $Id$
 #
 #	Rules for making things specified in Makefile.Host
@@ -194,7 +195,7 @@ ifeq ($(LIBTYPE),SHARED)
 #	create name for dll, import file
 DLLNAME:=$(LIBRARY).dll
 #	libs defined that we need to link the DLL with?
-DLL_DEP_LIBS:=$(DLL_LIBS:%=$(INSTALL_LIB)/%.lib)
+DLL_DEP_LIBS:=$(DLL_LIBS:%=%.lib)
 endif # LIBTYPE=SHARED
 endif # WIN32
 
@@ -204,15 +205,13 @@ endif # LIBRARY and LIBOBJS
 #	dito for libraries used by PROD
 #
 ifdef PROD_LIBS
+#	add to USR_LDLIBS so that the libs are linked
 
 ifdef WIN32
-PRODDEPLIBS:=$(PROD_LIBS:%=$(INSTALL_LIB)/%.lib)
-#	add to USR_LDLIBS so that the libs are linked
-#	we need the full path because there is no "-L" option on WIN32....
+PRODDEPLIBS:=$(PROD_LIBS:%=%.lib)
 USR_LDLIBS += $(PRODDEPLIBS)
 else
 #	On Unix: library "ca" is linked with "-lca"  etc.
-#	A library may be just newly build in the local dir: add "-L."
 PRODDEPLIBS=$(PROD_LIBS:%=$(INSTALL_LIB)/lib%.a)
 USR_LDLIBS += -L$(INSTALL_LIB) $(PROD_LIBS:%=-l%) 
 endif
@@ -298,17 +297,6 @@ endif
 #
 all::	install
 
-#	Problem on WIN32:
-#	There seems to be no -L switch, so we have to specify the
-#	full library names (including the path).
-#	OK, so we prefix all libs by $(INSTALL_LIB) to be able to link
-#	with the installed libraries. This means, however, that
-#	libs have to be installed _before_ we build any PROD that uses them,
-#	because we cannot use them from the current O.WIN32 directory any more.
-#	Example: dbExpand etc. in dbStatic all need the db library.
-#
-#	Solution: place INSTALL_DLLS and _LIBS in build
-#
 build:: $(LIBNAME) $(DLLNAME) \
 	$(INSTALL_LOCATION_LIB) $(INSTALL_LIB)\
 	$(INSTALL_LIBS) $(INSTALL_DLLS) $(PROD) $(TESTPROD)
@@ -346,28 +334,20 @@ clean::
 $(DIRECTORY_TARGETS) :
 	$(MKDIR) $@
 
-# Problem: PRODDEPLIBS may contain libm.a etc. which we cannot locate
-# But: The order in build/install should make sure that libs are
-# in place before we build PROD anyway.
-# $(PROD): $(PRODDEPLIBS)
-
 #  The order of the following dependencies is
 #  VERY IMPORTANT !!!!
 
-#	generic rule to build executable from same-name-object:
-# 	(this should be handled by the implicit rule below)
+#	If you want to break this on WIN32, please forget
+#	that $(COMPILE.cc) is like $(COMPILE.c) for WIN32
+#	except the first one ends in -Tp to select 'C++'.
 #
-#%$(EXE):	%$(OBJ)
-#ifdef WIN32
-#	$(LINK.c) $< $(LDLIBS)
-#else
-#	$(RM) $@
-#	echo LINKING:
-#	$(LINK.c) $< $(LDLIBS)
-#endif
+#	EPICS uses .cc for C++, which is not recognized
+#	by MS Visual C++, so -Tp has to be directly in front of
+#	the source file.
+#	-> put the source file directly after $(COMPILE.cc),
 
 #	explicit list of source files given for PROD ?
-#	(otherwise implicit rule  .c -> $(OBJ) -> $(EXE)
+#	(otherwise implicit rules  .c -> $(EXE), .cc -> $(EXE)
 ifdef SRCS
 
 ifeq ($(findstring cc,$(suffix $(SRCS))),cc)
@@ -379,10 +359,9 @@ endif
 PROD_OBJS=$(addsuffix $(OBJ), $(basename $(SRCS)))
 
 $(PROD): $(PROD_OBJS) $(PRODDEPLIBS)
-	$(RM) $@
-	echo $(LDLIBS)
+	@$(RM) $@
 	$(PROD_LINKER) $(PROD_OBJS) $(LDLIBS)
-endif
+endif 
 
 #	explicit list of source files given for TESTPROD ?
 #	(otherwise implicit rule  .c -> $(OBJ) -> $(EXE)
@@ -397,28 +376,40 @@ endif
 TESTPROD_OBJS=$(addsuffix $(OBJ), $(basename $(TESTPROD_SRCS)))
 
 $(TESTPROD): $(TESTPROD_OBJS) $(PRODDEPLIBS)
-	$(RM) $@
+	@$(RM) $@
 	$(TESTPROD_LINKER) $(TESTPROD_OBJS) $(LDLIBS)
 endif
 
+#	Generic Rules for 'simple' targets that
+#	can be generated from a single source with same basename.
+#
+#	The usual two rules .c* -> $(OBJ) and then  $(OBJ) -> $(EXE)
+#	do not work because the $(OBJ)->$(EXE) rule wouldn't
+#	know if the original source was C or C++.
+#
+#	Hint: The $(subst...) construct removes the .c or .cc
+#	      as well as the '../' from the filename and adds $(OBJ):
+#	      e.g.  $< = '../abc.c'   ->  'abc.o'
 %$(EXE): %.c $(PRODDEPLIBS)
-	$(RM) $@
-	$(LINK.c)  $< $(LDLIBS)
+	@$(RM) $@
+	$(COMPILE.c)  $<
+	$(LINK.c)  $(subst ../,,$(basename $<))$(OBJ) $(LDLIBS)
 
 %$(EXE): %.cc $(PRODDEPLIBS)
-	$(RM) $@
-	$(LINK.cc)  $< $(LDLIBS)
+	@$(RM) $@
+	$(COMPILE.cc)  $<
+	$(LINK.cc) $(subst ../,,$(basename $<))$(OBJ) $(LDLIBS)
 
 %$(OBJ): %.c
-	$(RM) $@
+	@$(RM) $@
 	$(COMPILE.c)  $<
 
 %$(OBJ): %.cc
-	$(RM) $@
+	@$(RM) $@
 	$(COMPILE.cc)  $<
 
 %.c %.h: ../%.y
-	$(RM) y.tab.c y.tab.h
+	@$(RM) y.tab.c y.tab.h
 	$(YACC) $(YACCOPT) $<
 	@if [ -f y.tab.c ]; \
 		then \
@@ -434,9 +425,9 @@ endif
 	fi
 
 %.c: ../%.l
-	$(RM) lex.yy.c
+	@$(RM) lex.yy.c
 	$(LEX) $(LEXOPT) $<
-	$(RM) $@
+	@$(RM) $@
 	$(MV) lex.yy.c $@
 
 #state notation language rule
@@ -503,7 +494,6 @@ ifeq ($(DLL_DEF_FILE), $(wildcard $(DLL_DEF_FILE)))
 DLL_DEF := -def:$(DLL_DEF_FILE)
 endif
 
-#	Ugly trick:
 #	HOST_OPT_FLAGS is part of CFLAGS/CXXFLAGS,
 #	which in turn are used in COMPILE.c[c]
 #
@@ -516,14 +506,13 @@ endif
 #HOST_OPT_FLAGS += $(subst $@, -D_WINDLL, $(findstring $@,$(LIBOBJS)))
 
 $(DLLNAME): $(LIBOBJS)
-	link	$(WIN32LDFLAGS)\
-		-implib:$(LIBNAME) -out:$(DLLNAME) $(DLL_DEF) \
-		$(DLL_DEP_LIBS) $(LIBOBJS)
+	link $(WIN32_DLLFLAGS)\
+		-implib:$(LIBNAME) -out:$(DLLNAME) $(DLL_DEF)\
+		$(DLL_DEP_LIBS) $(ARCH_DEP_LDLIBS) $(HOST_LDLIBS) $(LIBOBJS)
 else
 #	still on WIN32, this time no DLL but plain lib requested:
 $(LIBNAME):	$(LIBOBJS)
-	lib -nologo -verbose -out:$(LIBNAME)\
-		$(LIBOBJS)
+	lib -nologo -verbose -out:$(LIBNAME) $(LIBOBJS)
 	lib -nologo -list $(LIBNAME)
 
 endif # LIBTYPE is SHARED ?
@@ -591,12 +580,10 @@ $(INSTALL_INCLUDE)/%: ../%
 
 $(INSTALL_DOC)/%: %
 	@echo "Installing doc $@"
-	@testmkdir $(INSTALL_DOC)
 	@$(INSTALL) -m 644 $< $(INSTALL_DOC)
 
 $(INSTALL_DOC)/%: ../%
 	@echo "Installing doc $@"
-	@testmkdir $(INSTALL_DOC)
 	@$(INSTALL) -m 644 $< $(INSTALL_DOC)
 
 $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)/%: ../%

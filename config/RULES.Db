@@ -13,14 +13,13 @@ buildInstall: .DEPENDS dbd $(DBFROMTEMPLATE) $(INDDBFROMTEMPLATE) $(PROD)
 
 inc build depends:
 
-dbd:
-	@if [ ! -d $(TOP)/dbd ]; then \
-		mkdir $(TOP)/dbd ; \
-	fi 
-	@if [ ! -d dbd ]; then \
-		echo "ln -s $(TOP)/dbd dbd" ; \
-		ln -s $(TOP)/dbd dbd ; \
-	fi
+$(TOP)/dbd:
+	$(MKDIR) $(TOP)/dbd
+
+dbd:	$(TOP)/dbd
+ifndef WIN32
+	ln -s $(TOP)/dbd dbd
+endif
 
 
 $(DBFROMTEMPLATE):%.db: %.template %.substitutions
@@ -30,16 +29,20 @@ $(DBFROMTEMPLATE):%.db: %.template %.substitutions
 
 $(INDDBFROMTEMPLATE):%.db: %.substitutions
 	$(RM) $@
+ifndef WIN32
 	$(SUBTOOL) $(PREFIX).template $*.substitutions > $@
+endif
 
 .DEPENDS: Makefile
 	@$(RM) $@
+ifndef WIN32
 	@for NAME in $(INDDBFROMTEMPLATE) garbage_marty ; do \
 	    if [ $$NAME != garbage_marty ] ; then \
 		PREFIX="`echo $$NAME | sed -e 's-[0-9]--g' | sed -e 's-\.db--g'`";\
 		echo "$$NAME: $$PREFIX.template" >> $@;\
 	    fi ; \
         done 
+endif
 
 clean::
 	@$(RM) dbd  $(DBFROMTEMPLATE) $(INDDBFROMTEMPLATE) .DEPENDS $(PROD)

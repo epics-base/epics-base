@@ -6,13 +6,12 @@
 # Unix Compiler and other Utilities
 OLDINSTALL = echo CONFIG.Vx.486 OLDINSTALL
 
-MV=mv
-RM=rm -f
-CP=cp
-RMDIR=rm -rf
-MKDIR=mkdir
-CHMOD = "/bin/chmod"
-WHAT = what
+CP   =$(PERL) $(EPICS_BASE)/src/tools/cp.pl
+MV   =$(PERL) $(EPICS_BASE)/src/tools/mv.pl
+RM   =$(PERL) $(EPICS_BASE)/src/tools/rm.pl -f
+MKDIR=$(PERL) $(EPICS_BASE)/src/tools/mkdir.pl
+RMDIR=$(PERL) $(EPICS_BASE)/src/tools/rm.pl -rf
+CHMOD=echo
 
 #	overrides defines in CONFIG_SITE that don't fit Tornado
 #

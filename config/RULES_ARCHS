@@ -52,14 +52,10 @@ $(crossArchs) :
 endif
 
 $(hostDirs) : 
-	$(MKDIR) $@
-	echo "T_A=$(subst O.,,$@)" > $@/Makefile
-	echo "include ../Makefile.$(BUILD_TYPE)" >> $@/Makefile
+	$(PERL) $(EPICS_BASE)/config/makeMakefile.pl $@ $(BUILD_TYPE)
 
 $(crossDirs) : 
-	$(MKDIR) $@
-	echo "T_A=$(subst O.,,$@)" > $@/Makefile
-	echo "include ../Makefile.Vx" >> $@/Makefile
+	$(PERL) $(EPICS_BASE)/config/makeMakefile.pl $@ Vx
 
 #
 # host/cross action targets

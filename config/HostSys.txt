@@ -49,16 +49,22 @@ A) In CONFIG.<WIN32, sun4, hp700, ... whatever you are using>:
 
 3) Make sure that the following (new) macros are defined:
 
+   CP   =$(PERL) $(EPICS_BASE)/src/tools/cp.pl
+   MV   =$(PERL) $(EPICS_BASE)/src/tools/mv.pl
+   RM   =$(PERL) $(EPICS_BASE)/src/tools/rm.pl -f
+   MKDIR=$(PERL) $(EPICS_BASE)/src/tools/mkdir.pl
+   RMDIR=$(PERL) $(EPICS_BASE)/src/tools/rm.pl -rf
+   or
    CP=cp
    MV=mv
    RM=rm -f
    MKDIR=mkdir
    RMDIR=rm -rf
+
    EXE=
    OBJ=.o
 
 4) LINK.c and LINK.cc must now include the target-flag, e.g.:
-
    LINK.c = $(CC) $(LDFLAGS) -o $@
 
    because the "-o $@" is also system dependent (it's -Fe$@ for WIN32)

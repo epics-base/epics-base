@@ -42,8 +42,12 @@ DIVIDER = .
 EYACC = $(EPICS_BASE)/bin/$(HOST_ARCH)/antelope$(EXE)
 ELEX = $(EPICS_BASE)/bin/$(HOST_ARCH)/e_flex$(EXE) -S$(EPICS_BASE_INCLUDE)/flex.skel.static
 
+# Default for perl if it's on the PATH,
+# otherwise override this in e.g. CONFIG_SITE
+PERL=perl
+
 # install from EPICS
-INSTALL = $(EPICS_BASE)/bin/$(HOST_ARCH)/installEpics
+INSTALL = $(PERL) $(EPICS_BASE)/bin/$(HOST_ARCH)/installEpics.pl
 INSTALL_PRODUCT = $(INSTALL)
 
 # dbtools from EPICS

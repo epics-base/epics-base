@@ -1,5 +1,5 @@
 #
-# $Id$: CONFIG.Unix.solaris,v $
+# $Id$
 #
 #  This file is maintained by the EPICS community.
 
@@ -41,7 +41,6 @@ WHAT = what
 
 EXE=
 OBJ=.o
-
 
 ACC_ANSI_INVOKE_W_NO = $(ACC) -Xa -w
 ACC_ANSI_INVOKE_W_YES = $(ACC) -Xa

@@ -3,24 +3,21 @@
 #	The current make-system for WIN32
 #	needs
 #	* gnumake (OK, sources for WIN32 are available)
-#	* several UNIX tools: sed, grep, ... (dito)
+#	* Perl    (e.g. from www.perl.com )
 #	* a UNIX-like shell (ouch!)
 #
 #	I found no fully operational shell and no sources for WIN32 so far,
 #	Cygnus' bash e.g. cannot handle this:
 #	(echo a>a; echo b>>a)
 #	Right now I use the knts that I wrote and simplified scripts.
-#	Jeff eliminated many shell-lines in Makefile.*,
-#	the final solution could be:
-#	1) replace shell, awk, grep, sed, ... by  Perl!
-#	2) use C code
+#	Jeff eliminated many shell-lines in Makefile.*.
 #
 
 #	Set this to the UNIX-like shell that you have:
 SHELL=knts
 
 # BUILD_TYPE
-#   Currently either Vx or Host (latter used to be Unix)
+#   Currently either Vx or Host (latter used to be Unix
 BUILD_TYPE=Host
 
 #	to identify the general architecture class:
@@ -29,28 +26,26 @@ BUILD_TYPE=Host
 #
 ARCH_CLASS=WIN32
 
-
-EXE=.exe
-OBJ=.obj
-
 #	ifdef WIN32   looks better that  ifeq ($(ARCH_CLASS),WIN32)  ??
 WIN32=1
 
 # Compiler and utility invocation (supply path to compiler here)
 #   (with warning flags built in)
 #  Paths to compilers
-YACC = $(EYACC)
-LEX = $(ELEX)
-CC = cl -nologo
-MV=mv
-RM=rm -f
-MKDIR=mkdir
-RMDIR=rm -rf
-WHAT = echo
+YACC  = $(EYACC)
+LEX   = $(ELEX)
+CC    = cl -nologo
+CP    = $(PERL) $(EPICS_BASE)/src/tools/cp.pl
+MV    = $(PERL) $(EPICS_BASE)/src/tools/mv.pl
+RM    = $(PERL) $(EPICS_BASE)/src/tools/rm.pl -f
+MKDIR = $(PERL) $(EPICS_BASE)/src/tools/mkdir.pl
+RMDIR = $(PERL) $(EPICS_BASE)/src/tools/rm.pl -rf
+EXE=.exe
+OBJ=.obj
 
 # Include files
-HOST_INCLUDES = -I. -I.. $(USR_INCLUDES) -I$(INSTALL_INCLUDE) -I$(EPICS_BASE_INCLUDE)	\
-		-I$(EPICS_BASE_INCLUDE)/os/$(ARCH_CLASS)
+HOST_INCLUDES = -I. -I.. $(USR_INCLUDES) -I$(INSTALL_INCLUDE) \
+	-I$(EPICS_BASE_INCLUDE)	-I$(EPICS_BASE_INCLUDE)/os/$(ARCH_CLASS)
  
 #	Operating system flags (from win32.mak)
 #
@@ -66,26 +61,23 @@ HOST_INCLUDES = -I. -I.. $(USR_INCLUDES) -I$(INSTALL_INCLUDE) -I$(EPICS_BASE_INC
 OP_SYS_FLAGS:=-MDd -Zi -VMG -VMV -DWIN32 -D_WIN32 -D_DEBUG -D_WINDOWS \
 	-D_X86_ -D_NTSDK -D_DLL -D__STDC__=0
 
+
+HOST_LDLIBS:=user32.lib kernel32.lib wsock32.lib advapi32.lib winmm.lib
+HOST_LDFLAGS:=-nologo -libpath:$(EPICS_BASE_LIB)
+
 #	Files and flags needed to link DLLs (used in RULES.Host)
 #
-#	Strange but seems to work without: WIN32LDFLAGS should contain
+#	Strange but seems to work without: WIN32_DLLFLAGS should contain
 #	an entry point:
 #		'-entry:_DllMainCRTStartup$(DLLENTRY)'
 DLLENTRY:=@12
-WIN32SYSTEMLIBS := user32.lib kernel32.lib wsock32.lib advapi32.lib winmm.lib
 
 #	yes, for MS it's I386 for 386, 486, Pentium!
 #	don't mix this with VxWorks which has different BSPs for [34]86 !
-WIN32LDFLAGS := $(WIN32SYSTEMLIBS) -nologo -subsystem:windows -dll\
-		-incremental:no -debug -machine:I386 
+WIN32_DLLFLAGS:=$(HOST_LDFLAGS) $(HOST_LDLIBS)\
+	-subsystem:windows -dll -incremental:no -debug -machine:I386 
 
-#
-#	The remaining lines are very similar to
-#	all other CONFIG.xxx files.
-#	This includes the GCC lines which may be removed?
-#
 
-HOST_LDLIBS:=$(WIN32SYSTEMLIBS)
 ARCH_DEP_CFLAGS =
 ARCH_DEP_CXXFLAGS = $(ARCH_DEP_CFLAGS)
 HOST_CFLAGS = $(HOST_SFLAGS) $(HOST_INCLUDES) $(OP_SYS_FLAGS)
@@ -104,10 +96,10 @@ CFLAGS = $(HOST_OPT_FLAGS) $(TARGET_CFLAGS) $(USR_CFLAGS) $(ARCH_DEP_CFLAGS) $(H
 CXXFLAGS = $(HOST_OPT_FLAGS) $(TARGET_CXXFLAGS) $(USR_CXXFLAGS) $(ARCH_DEP_CXXFLAGS) $(HOST_CXXFLAGS)
 CPPFLAGS += $(TARGET_CPPFLAGS) $(USR_CPPFLAGS)
 
-CXX = cl 
+CXX=cl -nologo
 
-LDFLAGS = $(SPECIAL_LDFLAGS) $(TARGET_LDFLAGS) $(USR_LDFLAGS) $(ARCH_DEP_LDFLAGS) $(HOST_LDFLAGS)
-LDLIBS = $(TARGET_LDLIBS) $(USR_LDLIBS) $(ARCH_DEP_LDLIBS) $(HOST_LDLIBS)
+LDFLAGS=$(SPECIAL_LDFLAGS) $(TARGET_LDFLAGS) $(USR_LDFLAGS) $(ARCH_DEP_LDFLAGS) $(HOST_LDFLAGS)
+LDLIBS=$(TARGET_LDLIBS) $(USR_LDLIBS) $(ARCH_DEP_LDLIBS) $(HOST_LDLIBS)
  
 # Override SUN defaults
 COMPILE.c = $(CC) $(CFLAGS) $(CPPFLAGS) -c
@@ -115,11 +107,10 @@ COMPILE.c = $(CC) $(CFLAGS) $(CPPFLAGS) -c
 #	Problem: MS Visual C++ does not recognize  *.cc as C++ source,
 #	we have to compile xx.cc  using the flag -Tp xx.cc,
 #	i.e.  -Tp  has to be immediately before the source file name
-
 COMPILE.cc = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -DEXPL_TEMPL -c -Tp
 
-LINK.c = $(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -Fe$@
-LINK.cc = $(CXX) $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) -Fe$@
+LINK.c=link $(LDFLAGS) -out:$@
+LINK.cc=$(LINK.c)
 
 #	The DEPENDS_RULE may be a script on other systems,
 #	if you need different rules for .c and .cc,

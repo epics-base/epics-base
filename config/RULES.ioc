@@ -1,5 +1,9 @@
 #RULES.ioc
+
+ifndef WIN32
 APPDIR := $(shell grep '.*".*App/' st.* | sed -e 's/.*"\(.*App\).*/\1/' | sort -u )
+endif
+
 ASCF = $(TOP)/../ascf
 TARGETBIN = $(TOP)/bin/$(ARCH)
 ARCHS = $(BUILD_ARCHS) host cross
@@ -15,6 +19,7 @@ buildInstall: makelinks
 inc build depends:
  
 makelinks:
+ifndef WIN32
 	@$(RM) ascf bin vxWorks vxWorks.sym dbd share $(APPDIR)
 	ln -s $(ASCF) ascf
 	ln -s $(TARGETBIN) bin
@@ -35,6 +40,7 @@ makelinks:
 			echo "$$dir not found" ; \
 		fi ; \
 	done
+endif
  
 clean::
 	@$(RM) ascf bin vxWorks vxWorks.sym dbd share $(APPDIR)

@@ -10,6 +10,10 @@
 # not allowed around the '=' signs or in unquoted values.
 # Makefile variables are not defined here.
 #
+# Note: This file is read by base/src/libCom/bldEnvdata.pl,
+# so the variable definitions in here should be kept 'simple':
+#	VAR=VALUE
+# each one on a single line.
 #
 
 

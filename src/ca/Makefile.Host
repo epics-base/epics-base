@@ -43,13 +43,11 @@ LIBRARY := ca
 #	build LIBRARY as a DLL on WIN32, other systems may ignore this
 LIBTYPE := SHARED
 
-#	WIN32 only: need additional lib to build the DLL and special def-file
-DLL_LIBS := Com
-
 PROD := caRepeater
 
 #	libs needed to build [TEST]PRODUCT
 PROD_LIBS := ca Com
+SYS_PROD_LIBS_WIN32 := ws2_32 winmm
 
 TESTPROD := catime acctst
 

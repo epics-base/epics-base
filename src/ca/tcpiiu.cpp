@@ -1343,12 +1343,12 @@ void tcpiiu::flushRequest ()
     this->sendThreadFlushEvent.signal ();
 }
 
-void tcpiiu::blockUntilBytesArePendingInOS () const
+void tcpiiu::blockUntilBytesArePendingInOS ()
 {
 #if 0
     FD_SET readBits;
     FD_ZERO ( & readBits );
-    while ( true ) {
+    while ( this->state == tcpiiu::iiucs_connected ) {
         FD_SET ( this->sock, & readBits );
         struct timeval tmo;
         tmo.tv_sec = 1;
@@ -1360,12 +1360,56 @@ void tcpiiu::blockUntilBytesArePendingInOS () const
             }
         }
         else if ( status < 0 ) {
-            return;
+            if ( SOCKERRNO != SOCK_EINTR ) {
+                return;
+            }
         }
     }
 #else
     char buf;
-    int status = ::recv ( this->sock, & buf, 1, MSG_PEEK );
+    while ( this->state == tcpiiu::iiucs_connected ) {
+        int status = ::recv ( this->sock, 
+            & buf, 1, MSG_PEEK );
+        if ( status > 0 ) {
+            break;
+        }
+        else if ( status == 0 ) {
+            this->cacRef.disconnectNotify ( *this );
+            return;
+        }
+        else {
+            int localErrno = SOCKERRNO;
+
+            if ( localErrno == SOCK_SHUTDOWN ) {
+                this->cacRef.disconnectNotify ( *this );
+                return;
+            }
+
+            if ( localErrno == SOCK_EINTR ) {
+                continue;
+            }
+            
+            if ( localErrno == SOCK_ECONNABORTED ) {
+                this->cacRef.disconnectNotify ( *this );
+                return;
+            }
+
+            if ( localErrno == SOCK_ECONNRESET ) {
+                this->cacRef.disconnectNotify ( *this );
+                return;
+            }
+
+            {
+                char name[64];
+                this->hostName ( name, sizeof ( name ) );
+                this->printf ( "Unexpected problem with circuit to CA server \"%s\" was \"%s\" - disconnecting\n", 
+                    name, SOCKERRSTR ( localErrno ) );
+            }
+
+            this->cacRef.initiateAbortShutdown ( *this );
+            return;
+        }
+    }
 #endif
 }
 

@@ -174,7 +174,7 @@ private:
     unsigned recvBytes ( void *pBuf, unsigned nBytesInBuf ) epicsThrows (());
     void connect ();
     const char * pHostName () const;
-    void blockUntilBytesArePendingInOS () const;
+    void blockUntilBytesArePendingInOS ();
 
     // send protocol stubs
     void echoRequest ( epicsGuard < cacMutex > & );

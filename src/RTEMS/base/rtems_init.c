@@ -25,7 +25,6 @@
 #include <rtems/error.h>
 #include <rtems/stackchk.h>
 #include <rtems/rtems_bsdnet.h>
-#include <rtems/tftp.h>
 
 #include <epicsThread.h>
 #include <errlog.h>
@@ -33,7 +32,9 @@
 #include <osiUnistd.h>
 #include <iocsh.h>
 
-#ifndef OMIT_NFS_SUPPORT
+#ifdef OMIT_NFS_SUPPORT
+# include <rtems/tftp.h>
+#else
 # ifndef RTEMS_EPICS_NFS_SERVER_PATH
 #  define RTEMS_EPICS_NFS_SERVER_PATH "/tftpboot/epics"
 # endif

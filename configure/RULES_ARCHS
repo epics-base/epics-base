@@ -25,7 +25,7 @@ ifeq (Makefile, $(wildcard Makefile))
 hostDirs = $(addprefix O.,$(hostArchs))
 $(hostActionArchTargets) : $(hostDirs)
 	$(MAKE) -C O.$(archPart) -f ../Makefile TOP=../$(TOP) T_A=$(archPart) $(actionPart)
-$(hostArchs) : % :: O.% 
+$(hostArchs) : % : O.% 
 	$(MAKE) -C O.$@ -f ../Makefile TOP=../$(TOP) T_A=$@
 else
 $(hostActionArchTargets) :
@@ -42,17 +42,17 @@ ifeq (Makefile, $(wildcard Makefile))
 crossDirs = $(addprefix O.,$(crossArchs))
 $(crossActionArchTargets) : $(crossDirs)
 	$(MAKE) -C O.$(archPart) -f ../Makefile TOP=../$(TOP) T_A=$(archPart) $(actionPart)
-$(crossArchs) : % :: O.%
+$(crossArchs) : % : O.%
 	$(MAKE) -C O.$@ -f ../Makefile TOP=../$(TOP) T_A=$@
 else
 $(crossActionArchTargets) :
 $(crossArchs) : 
 endif
 
-$(hostDirs) ::
+$(hostDirs) :
 	$(PERL) $(TOOLS)/makeMakefile.pl $@ $(TOP)
 
-$(crossDirs) ::
+$(crossDirs) :
 	$(PERL) $(TOOLS)/makeMakefile.pl $@ $(TOP)
 
 #
@@ -82,11 +82,11 @@ clean ::
 clean$(DIVIDER)% :: 
 	$(RMDIR) O.$*
 
-.PHONY :: $(HostActionTargets)
-.PHONY :: $(CrossActionTargets)
-.PHONY :: $(crossActionArchTargets)
-.PHONY :: $(hostActionArchTargets)
-.PHONY :: $(hostArchs) $(crossArchs)
-.PHONY :: $(ACTIONS) clean all host cross
+.PHONY : $(HostActionTargets)
+.PHONY : $(CrossActionTargets)
+.PHONY : $(crossActionArchTargets)
+.PHONY : $(hostActionArchTargets)
+.PHONY : $(hostArchs) $(crossArchs)
+.PHONY : $(ACTIONS) clean all host cross
 
 endif

@@ -1,0 +1,54 @@
+
+This is the source of the BSD version of yacc that is distributed in the NET2
+release of BSD Unix.  We chose this over Bison due to the bison license 
+agreement.  And if you are scratching you head over that comment, read the
+addendum in the xxx-info-1 file that comes with bison.
+
+Anyway, this BSD-yacc has been hacked on to make it generate an all-static
+parser C program so that it may be used on an IOC w/o getting things confused.
+They way we intend to use it is with the epics-hacked version of flex that
+also generates an all-static source program.  The general idea is that
+your yacc source (xxx.y) file could be formatted like this:
+
+=========================================================
+
+%%
+YOUR YACC PROGRAM
+%%
+
+int MyYaccParser(char *f1)
+{
+  static int FirstFlag = 1;
+ 
+  printf("processing file >%s<\n", f1);
+ 
+  yyin = fopen(f1, "r");
+  if (!FirstFlag) yyrestart(yyin);
+  FirstFlag = 0;
+  yyparse();
+  fclose(yyin);
+ 
+  return(0);
+}
+ 
+static int yyerror(char *str)
+{
+  printf("Error: %s\n", str);
+  return(0);
+}
+=========================================================
+
+The FirstFlag and yyrestart jazz is the flex-flavored version of how you
+restart the scanner if you want to parse another file.  Without it, the
+scanner can only be used one time.  Even if you think your code will only
+be used one time, it is desireable to put in the restart stuff anyway,
+because some day you (or your boss) will change your mind and without it
+the IOC will crash when you make your second call to your parser.
+
+Note also that there is a yyerror function present.  This is mandatory for the
+way we are using flex.  Without, results are indeterminate... because you will
+end up calling some other random yyerror() in the ioc.. probably the one for 
+the console command interpreter.
+
+
+--John

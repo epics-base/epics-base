@@ -47,6 +47,9 @@
  * .09 050494 pg        HPUX port changes.
  * .10 021694 joh	ANSI C	
  * $Log$
+ * Revision 1.17  1995/11/13  16:55:03  jba
+ * Added filio.h include for solaris build.
+ *
  * Revision 1.16  1995/11/08  23:48:26  jhill
  * improvents for better client reconnect
  *
@@ -67,6 +70,7 @@ static char	*pSCCSID = "@(#)iocLogServer.c	1.9\t05/05/94";
 #include	<sys/socket.h>
 #include	<sys/ioctl.h>
 #include	<netinet/in.h>
+#include	<arpa/inet.h>
 #include        <netdb.h>
 
 #   ifdef SOLARIS
@@ -354,7 +358,7 @@ static void acceptNewClient(void *pParam)
         }
 
 	strncpy(pclient->name, pname, sizeof(pclient->name));
-	pclient->name[sizeof(pclient->name) - 1] = NULL;
+	pclient->name[sizeof(pclient->name) - 1u] = NULL;
 
 	logTime(pclient);
 	

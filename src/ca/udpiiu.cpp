@@ -591,10 +591,6 @@ bool udpiiu::searchRespAction ( // X aCC 361
         epicsGuard < callbackMutex > & cbLocker, const caHdr &msg,
         const osiSockAddr &addr, const epicsTime & currentTime )
 {
-    osiSockAddr serverAddr;
-    unsigned minorVersion;
-    ca_uint16_t *pMinorVersion;
-
     if ( addr.sa.sa_family != AF_INET ) {
         return false;
     }
@@ -604,9 +600,16 @@ bool udpiiu::searchRespAction ( // X aCC 361
      * is appended to the end of each search reply.
      * This value is ignored by earlier clients.
      */
-    if ( msg.m_postsize >= sizeof (*pMinorVersion) ){
-        pMinorVersion = (ca_uint16_t *) ( &msg + 1 );
-        minorVersion = epicsNTOH16 ( *pMinorVersion );      
+    unsigned minorVersion;
+    if ( msg.m_postsize >= sizeof (minorVersion) ){
+        /*
+         * care is taken here not to break gcc 3.2 aggressive alias
+         * analysis rules
+         */
+        ca_uint8_t * pPayLoad = ( ca_uint8_t *) ( &msg + 1 );
+        unsigned byte1 = pPayLoad[0];
+        unsigned byte2 = pPayLoad[1];
+        minorVersion = ( byte1 << 8u ) | byte2;
     }
     else {
         minorVersion = CA_UKN_MINOR_VERSION;
@@ -616,6 +619,7 @@ bool udpiiu::searchRespAction ( // X aCC 361
      * the type field is abused to carry the port number
      * so that we can have multiple servers on one host
      */
+    osiSockAddr serverAddr;
     serverAddr.ia.sin_family = AF_INET;
     if ( CA_V48 ( minorVersion ) ) {
         if ( msg.m_cid != INADDR_BROADCAST ) {

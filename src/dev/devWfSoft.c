@@ -84,7 +84,7 @@ long status;
 	pwf->nord = 0;
 	break;
     case (PV_LINK) :
-        status = dbCaAddInlink(&(pwf->inp), (void *) pwf, "BPTR");
+        status = dbCaAddInlink(&(pwf->inp), (void *) pwf, "VAL");
         if(status) return(status);
 	break;
     case (DB_LINK) :

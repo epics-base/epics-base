@@ -7,6 +7,9 @@
 // Some BSD calls have crept in here
 //
 // $Log$
+// Revision 1.4  1997/08/05 00:47:20  jhill
+// fixed warnings
+//
 // Revision 1.3  1997/06/13 09:16:10  jhill
 // connect proto changes
 //
@@ -52,9 +55,9 @@ public:
 	caServerOS (caServerI &casIn) : 
 		cas (casIn), pBTmr (NULL) {}
 	caStatus init ();
-	~caServerOS ();
+	virtual ~caServerOS ();
 
-        caStatus start ();
+	caStatus start ();
 
 	inline caServerI * operator -> ();
 private:

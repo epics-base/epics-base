@@ -72,7 +72,6 @@ epicsMessageQueueCreate(unsigned int capacity, unsigned int maximumMessageSize)
         c1++;
     }
     rtems_interrupt_enable (level);
-printf("Return message queueu id %x\n", id);
     return id;
 }
 
@@ -236,7 +235,8 @@ epicsShareFunc int epicsShareAPI epicsMessageQueuePending(
     sc = rtems_message_queue_get_number_pending(id->id, &count);
     if (sc != RTEMS_SUCCESSFUL) {
         errlogPrintf("Message queue %x get number pending failed: %s\n",
-                                                    id, rtems_status_text(sc));
+                                                        (unsigned int)id,
+                                                        rtems_status_text(sc));
         return -1;
     }
     return count;

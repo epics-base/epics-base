@@ -1,49 +1,14 @@
-/* recLongout.c */
-/* share/src/rec @(#)recLongout.c	1.16     6/4/93 */
+/* recDfanout.c */
+/* share/src/rec @(#)recDfanout.c	1.16     6/4/93 */
 
-/* recLongout.c - Record Support Routines for Longout records */
+/* recDfanout.c - Record Support Routines for Dfanout records */
 /*
- * Author: 	Janet Anderson
- * Date:	9/23/91
- *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
+ * Author: 	Matt Bickley
+ * Date:	Sometime in 1994
  *
  * Modification Log:
  * -----------------
- * .01  11-11-91        jba     Moved set and reset of alarm stat and sevr to macros
- * .02  02-05-92	jba	Changed function arguments from paddr to precord
- * .03  02-28-92	jba	ANSI C changes
- * .04  04-10-92        jba     pact now used to test for asyn processing, not status
- * .05  04-18-92        jba     removed process from dev init_record parms
- * .06  06-02-92        jba     changed graphic/control limits for hihi,high,low,lolo
- * .07  07-15-92        jba     changed VALID_ALARM to INVALID alarm
- * .08  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
- * .09  07-21-92        jba     changed alarm limits for non val related fields
- * .10  08-06-92        jba     New algorithm for calculating analog alarms
- * .11  08-14-92        jba     Added simulation processing
- * .12  08-19-92        jba     Added code for invalid alarm output action
- * .13  09-10-92        jba     modified fetch of val from dol to call recGblGetLinkValue
- * .14  09-18-92        jba     pact now set in recGblGetLinkValue
- * .15  10-21-93        mhb     Started with longout record to make the data fanout
+ * .01  1994        mhb     Started with longout record to make the data fanout
  */
 
 
@@ -105,7 +70,6 @@ struct rset dfanoutRSET={
 
 static void alarm();
 static void monitor();
-static long writeValue();
 static long push_values();
 
 #define OUT_ARG_MAX 8
@@ -124,22 +88,6 @@ static long init_record(pdfanout,pass)
 
     if (pass==0) return(0);
 
-    /* dfanout.siml must be a CONSTANT or a PV_LINK or a DB_LINK */
-    switch (pdfanout->siml.type) {
-    case (CONSTANT) :
-        pdfanout->simm = pdfanout->siml.value.value;
-        break;
-    case (PV_LINK) :
-        status = dbCaAddInlink(&(pdfanout->siml), (void *) pdfanout, "SIMM");
-	if(status) return(status);
-	break;
-    case (DB_LINK) :
-        break;
-    default :
-        recGblRecordError(S_db_badField,(void *)pdfanout,
-                "dfanout: init_record Illegal SIML field");
-        return(S_db_badField);
-    }
 
     plink = &pdfanout->outa;
     for (i=0; i<OUT_ARG_MAX; i++, plink++) {
@@ -147,12 +95,6 @@ static long init_record(pdfanout,pass)
             status = dbCaAddOutlink(plink, (void *) pdfanout, Ofldnames[i]);
             if (status) return(status);
         }
-    }
-
-    /* dfanout.siol may be a PV_LINK */
-    if (pdfanout->siol.type == PV_LINK){
-        status = dbCaAddOutlink(&(pdfanout->siol), (void *) pdfanout, "VAL");
-	if(status) return(status);
     }
 
     /* get the initial value dol is a constant*/
@@ -184,37 +126,12 @@ static long process(pdfanout)
 		if(RTN_SUCCESS(status)) pdfanout->udf=FALSE;
 	}
 
-	/* check for alarms */
-	alarm(pdfanout);
-
-        if (pdfanout->nsev < INVALID_ALARM )
-                status=writeValue(pdfanout); /* write the new value */
-        else {
-                switch (pdfanout->ivoa) {
-                    case (IVOA_CONTINUE) :
-                        status=writeValue(pdfanout); /* write the new value */
-                        break;
-                    case (IVOA_NO_OUTPUT) :
-                        break;
-                    case (IVOA_OUTPUT_IVOV) :
-                        if(pdfanout->pact == FALSE){
-                                pdfanout->val=pdfanout->ivov;
-                        }
-                        status=writeValue(pdfanout); /* write the new value */
-                        break;
-                    default :
-                        status=-1;
-                        recGblRecordError(S_db_badField,(void *)pdfanout,
-                                "dfanout:process Illegal IVOA field");
-                }
-        }
-
-	/* check if device support set pact */
-	if ( !pact && pdfanout->pact ) return(0);
 	pdfanout->pact = TRUE;
 
 	recGblGetTimeStamp(pdfanout);
 
+    /* Push out the data to all the forward links */
+   status = push_values(pdfanout);
 	/* check for alarms */
 	alarm(pdfanout);
 	/* check event list */
@@ -223,8 +140,6 @@ static long process(pdfanout)
 	/* process the forward scan link record */
 	recGblFwdLink(pdfanout);
 
-    /* Push out the data to all the forward links */
-   status = push_values(pdfanout);
 
 	pdfanout->pact=FALSE;
 	return(status);
@@ -380,30 +295,6 @@ static void monitor(pdfanout)
 	return;
 }
 
-static long writeValue(pdfanout)
-	struct dfanoutRecord	*pdfanout;
-{
-	long		status;
-	long            nRequest=1;
-	long            options=0;
-
-	status=recGblGetLinkValue(&(pdfanout->siml),
-		(void *)pdfanout,DBR_ENUM,&(pdfanout->simm),&options,&nRequest);
-	if (!RTN_SUCCESS(status))
-		return(status);
-
-	if (pdfanout->simm == YES){
-		status=recGblPutLinkValue(&(pdfanout->siol),
-				(void *)pdfanout,DBR_LONG,&(pdfanout->val),&nRequest);
-	} else {
-		status=-1;
-		recGblSetSevr(pdfanout,SOFT_ALARM,INVALID_ALARM);
-		return(status);
-	}
-        recGblSetSevr(pdfanout,SIMM_ALARM,pdfanout->sims);
-
-	return(status);
-}
 static long push_values(pdfanout)
 struct dfanoutRecord *pdfanout;
 {

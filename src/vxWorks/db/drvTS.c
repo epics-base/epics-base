@@ -1,6 +1,9 @@
 
 /*
  * $Log$
+ * Revision 1.10  1995/08/16  19:03:21  jbk
+ * Many updates.  Added GPS ability and adjusted the printf's.
+ *
  * Revision 1.9  1995/05/22  15:21:39  jbk
  * updates to allow direct read of time stamps from event systems
  *
@@ -518,7 +521,7 @@ long TSinit()
 			TSdata.type=TS_direct_master;
 		else
 		{
-			if(TSdata.has_direct_time)
+			if(TSdata.has_event_system)
 				TSdata.type=TS_sync_master;
 			else
 				TSdata.type=TS_async_master;
@@ -1032,6 +1035,9 @@ static long TSsetClockFromUnix()
 
 	tp.tv_sec-=TS_1900_TO_VXWORKS_EPOCH;
 
+	if(MAKE_DEBUG>=9)
+		TSprintf("set time: %9.9lu.%9.9lu\n", tp.tv_sec,tp.tv_nsec);
+
 	/* set the vxWorks clock to the correct time */
 	if(clock_settime(CLOCK_REALTIME,&tp)<0)
 		{ Debug(1,"clock_settime failed\n",0); }
@@ -1039,9 +1045,6 @@ static long TSsetClockFromUnix()
 	/* adjust time to use the EPICS EPOCH of 1990 */
 	/* this is wrong if leap seconds accounted for */
 	tp.tv_sec -= TS_VXWORKS_TO_EPICS_EPOCH;
-
-	if(MAKE_DEBUG>=9)
-		TSprintf("set time: %9.9lu.%9.9lu\n", tp.tv_sec,tp.tv_nsec);
 
 	/* set the EPICS event time table sync entry (current time) */
 	TSdata.event_table[TSdata.sync_event]=tp;
@@ -1260,10 +1263,9 @@ static void TSsyncServer()
 			if(TSgetTime(&ts)==0)
 				TSdata.ts_sync_valid=1;
 			key=intLock();
-			/* adjust time from getTime() to EPICS epoch */
+			/* don't adjust time from getTime() to EPICS epoch */
 			TSdata.event_table[TSdata.sync_event].tv_nsec=ts.tv_nsec;
-			TSdata.event_table[TSdata.sync_event].tv_sec=ts.tv_sec-
-				TS_1900_TO_EPICS_EPOCH;
+			TSdata.event_table[TSdata.sync_event].tv_sec=ts.tv_sec;
 			intUnlock(key);
 		}
 		stran.master_time.tv_sec=
@@ -1672,7 +1674,10 @@ long TSaccurateTimeStamp(struct timespec* sp)
 /* get the current time from vxWorks time clock */
 static long TSgetCurrentTime(struct timespec* ts)
 {
-	return clock_gettime(CLOCK_REALTIME,ts);
+	long rc;
+	rc=clock_gettime(CLOCK_REALTIME,ts);
+	ts->tv_sec-=TS_VXWORKS_TO_EPICS_EPOCH;
+	return rc;
 }
 
 /* routine for causing sync to occur (not a hardware one) */
@@ -1892,3 +1897,22 @@ void TSprintMasterTime()
 	return;
 }
 
+/* gross and horrid example */
+long TSgetFirstOfYearVx(struct timespec* ts)
+{
+	time_t tloc;
+	struct tm t;
+
+	time(&tloc); /* retrieve the current time */
+	localtime_r(&tloc,&t);
+	t.tm_sec=0;
+	t.tm_min=0;
+	t.tm_hour=t.tm_isdst?1:0;
+	t.tm_mday=1;
+	t.tm_mon=0;
+	tloc=mktime(&t);
+	ts->tv_sec=tloc;
+	ts->tv_nsec=0;
+
+	return 0;
+}

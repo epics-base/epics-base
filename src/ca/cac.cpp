@@ -1759,10 +1759,16 @@ void cac::uninstallIIU ( tcpiiu & iiu )
             pChan->accessRightsNotify ();
         }
     }
-    this->serverTable.remove ( iiu );
+
     this->pSearchTmr->resetPeriod ( 0.0 );
+
+    this->serverTable.remove ( iiu );
+
+    iiu.destroy ();
+
     // signal iiu uninstal event so that cac can properly shut down
     this->iiuUninstal.signal();
+
 }
 
 void cac::preemptiveCallbackLock ()

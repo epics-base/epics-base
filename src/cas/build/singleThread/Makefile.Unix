@@ -2,17 +2,16 @@
 CAS = ../../..
 TOP = $(CAS)/../..
 SRC = $(CAS)/generic
+CA = $(CAS)/../ca
 IOSRC = $(CAS)/io/bsdSocket
 OSSRC = $(CAS)/os/posix
 VPATH = $(SRC) $(IOSRC) $(OSSRC) 
 
 include $(TOP)/config/CONFIG_BASE
 
-USR_INCLUDES = -I$(SRC) -I$(CAS)/../ca -I$(OSSRC) -I$(IOSRC) -I$(CAS)/../gdd  -I$(CAS)/../gdd/O.$(T_A)
+USR_INCLUDES = -I$(SRC) -I$(OSSRC) -I$(IOSRC) -I$(CA)
 
 DEPLIBS_BASE = $(EPICS_BASE_LIB)
-
-#CPLUSPLUS = G++
 
 SRCS.cc += $(SRC)/caServer.cc 
 SRCS.cc += $(SRC)/caServerI.cc 

@@ -26,9 +26,15 @@
  *              Advanced Photon Source
  *              Argonne National Laboratory
  *
+ * 	
  *      Modification Log:
  *      -----------------
+ * 	cjm 20-Nov-95 Add code for gettimeofday
+ *
  * $Log$
+ * Revision 1.18  1995/10/12  01:35:30  jhill
+ * Moved cac_mux_io() to iocinf.c
+ *
  * Revision 1.17  1995/08/22  00:27:56  jhill
  * added cvs style mod log
  *
@@ -44,7 +50,13 @@
 
 #include "iocinf.h"
 
+#ifdef UCX
+#include "ucx.h"
+#endif
+
+#if 0
 #define CONNECTION_TIMER_ID 56
+#endif
 
 
 /*
@@ -58,6 +70,51 @@ void cac_gettimeval(struct timeval  *pt)
         status = gettimeofday(pt, &tz);
 	assert(status==0);
 }
+
+
+/*
+ * gettimeofday
+ */
+#ifndef MULTINET
+int  gettimeofday(struct timeval *tp, struct timezone *tzp)
+{
+
+ unsigned int quadtime[2] ;
+ int status ;
+ int nanosecs ;
+ double secs ;
+ int bit31 ;
+ double dtime ;            /* vax 64 bit integer as a double */
+
+ if (tp != (struct timeval *)NULL)
+ {
+  status = sys$gettim(&quadtime) ;
+  if (status != SS$_NORMAL)
+    return -1 ;
+  else
+  {
+   bit31 = quadtime[0] & 0x80000000 ;
+   dtime = quadtime[1]*TWOPOWER32 + (quadtime[0] & 0x7fffffff) ;
+   if (bit31 != 0)
+     dtime = (dtime + TWOPOWER31)/ 10000000.0 ;
+   else
+     dtime = dtime / 10000000.0 ;
+   secs = dtime - UNIX_EPOCH_AS_MJD * 86400. ;
+   tp->tv_sec = (int)secs ;
+   tp->tv_usec = (int)((secs - tp->tv_sec)*1000000.0) ;
+  }
+ }
+
+ if (tzp != (struct timezone *)NULL)
+ {
+  tzp->tz_minuteswest = 0 ;
+  tzp->tz_dsttime = 0 ;
+ }
+
+ return 0 ;
+
+}
+#endif
 
 
 /*

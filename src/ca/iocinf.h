@@ -224,6 +224,7 @@ public:
     unsigned            claimPending:1; /* T if claim msg was sent      */
     unsigned            previousConn:1; /* T if connected in the past   */
 private:
+
     unsigned long       count;
     unsigned short      typeCode;
     unsigned            f_connected:1;
@@ -407,7 +408,7 @@ public:
     virtual void removeFromChanList (nciu *chan) = 0;
     virtual void disconnect (nciu *chan) = 0;
 
-    tsDLList<nciu> chidList;
+    tsDLList <nciu> chidList;
 };
 
 class udpiiu;
@@ -742,8 +743,6 @@ public:
     unsigned readSequence () const;
     int pend (double timeout, int early);
     bool ioComplete () const;
-    void lock ();
-    void unlock ();
     void exceptionNotify (int status, const char *pContext,
         const char *pFileName, unsigned lineNo);
     void exceptionNotify (int status, const char *pContext,
@@ -790,15 +789,16 @@ public:
     unsigned short          ca_server_port;
     char                    ca_sprintf_buf[256];
     char                    ca_new_err_code_msg_buf[128u];
-    unsigned                ca_manage_conn_active:1; 
-    unsigned                ca_flush_pending:1;
 
     ELLLIST                 ca_taskVarList;
 private:
     cacServiceList          services;
-    osiMutex                iiuListLock;
+    osiMutex                defaultMutex;
+    osiMutex                iiuListMutex;
     tsDLList <tcpiiu>       iiuListIdle;
     tsDLList <tcpiiu>       iiuListRecvPending;
+    tsDLList 
+        <cacLocalChannelIO> localChanList;
     chronIntIdResTable 
         < baseNMIU >        ioTable;
     chronIntIdResTable

@@ -397,12 +397,20 @@ static print_returned(type,pbuffer,count)
 		}
 		break;
 	case (DBR_SHORT):
-	case (DBR_ENUM):
 	{
 		short *pvalue = (short *)pbuffer;
 		for (i = 0; i < count; i++,pvalue++){
 			if(count!=1 && (i%10 == 0)) printf("\n");
 			printf("%d ",*(short *)pvalue);
+		}
+		break;
+	}
+	case (DBR_ENUM):
+	{
+		unsigned short *pvalue = (unsigned short *)pbuffer;
+		for (i = 0; i < count; i++,pvalue++){
+			if(count!=1 && (i%10 == 0)) printf("\n");
+			printf("%d ",*pvalue);
 		}
 		break;
 	}

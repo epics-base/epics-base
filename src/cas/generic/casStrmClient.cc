@@ -2040,7 +2040,7 @@ caStatus casStrmClient::writeScalarData ()
     // copy in, and convert to native type, the incoming data
     //
     gddStatus gddStat = aitConvert ( 
-        pDD->primitiveType(), pDD->dataAddress(), type, 
+        pDD->primitiveType(), pDD->dataVoid(), type, 
         this->ctx.getData(), 1, &this->ctx.getPV()->enumStringTable() );
 	caStatus status = S_cas_noConvert;
     if ( gddStat >= 0 ) { 

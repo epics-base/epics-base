@@ -108,8 +108,9 @@
 #include	<stdio.h>
 #include	<string.h>
 #include	<math.h>
-#include	"dbDefs.h"
+
 #define epicsExportSharedSymbols
+#include	"dbDefs.h"
 #include	"post.h"
 
 static double	local_random();

@@ -98,8 +98,8 @@
 #include	<string.h>
 #include	<ctype.h>
 
-#include	"dbDefs.h"
 #define epicsExportSharedSymbols
+#include	"dbDefs.h"
 #include	"post.h"
 
 
@@ -303,7 +303,7 @@ register short		*pno_bytes;
  *
  * convert an infix expression to a postfix expression
  */
-long postfix(char *pinfix,char *ppostfix,short *perror)
+long epicsShareAPI postfix(char *pinfix,char *ppostfix,short *perror)
 {
 	short		no_bytes;
 	register short	operand_needed;

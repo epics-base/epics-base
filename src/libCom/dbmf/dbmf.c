@@ -9,7 +9,6 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdio.h>
-#include "ellLib.h"
 
 #ifdef vxWorks
 #include <vxWorks.h>
@@ -24,6 +23,7 @@
 #endif
 
 #define epicsExportSharedSymbols
+#include "ellLib.h"
 #include "dbmf.h"
 
 /*Default values for dblfInit */

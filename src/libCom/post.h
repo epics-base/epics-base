@@ -34,7 +34,6 @@
  * .07  05-11-94        jba     added CONST_PI, CONST_D2R, and CONST_R2D
  */
 
-#include "shareLib.h"
 
 /*	defines for element table      */
 #define 	FETCH_A		0
@@ -115,8 +114,4 @@
 #define		NINT		75
 #define		END_STACK	127
 
-epicsShareFunc long epicsShareAPI 
-	calcPerform(double *parg, double *presult, char *post);
 
-epicsShareFunc long epicsShareAPI 
-	postfix(char *pinfix, char *ppostfix, short *perror);

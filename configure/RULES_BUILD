@@ -235,7 +235,7 @@ endif
 %.cpp: ../%.st
 	@echo "preprocessing $*.st"
 	@$(RM) $*.i
-	$(CPP) $(CPPSNCFLAGS) $< > $*.i
+	$(CPP) $(CPPSNCFLAGS) $(INCLUDES) $< > $*.i
 	@echo "converting $*.i"
 	@$(RM) $@
 	$(SNC) $(TARGET_SNCFLAGS) $(SNCFLAGS) $*.i -o $@

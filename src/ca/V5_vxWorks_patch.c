@@ -1,6 +1,6 @@
 #ifdef V5_vxWorks
 
-static char *sccsId = "$Id$\t$Date$";
+static char *sccsId = "@(#)V5_vxWorks_patch.c	1.2\t7/27/92";
 
 #include <taskLib.h>
 #include <taskVarLib.h>

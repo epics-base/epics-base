@@ -26,7 +26,7 @@
  *
  */
 
-static char	*sccsId = "$Id$\t$Date$";
+static char	*sccsId = "@(#)convert.c	1.5\t7/27/92";
 
 
 #include	<db_access.h>

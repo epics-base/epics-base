@@ -161,7 +161,7 @@ camessage(client, recv)
 					RECORD_NAME(MPTOPADDR(mp)));
 				UNLOCK_CLIENT(client);
 				FASTLOCK(&rsrv_free_eventq_lck);
-				lstAdd(&rsrv_free_eventq, pevext);
+				lstAdd((LIST *)&rsrv_free_eventq, (NODE *)pevext);
 				FASTUNLOCK(&rsrv_free_eventq_lck);
 				break;
 			}
@@ -173,8 +173,8 @@ camessage(client, recv)
 			 * to be printed since it will not be found on
 			 * the list.
 			 */
-			lstAdd(	&((struct channel_in_use *)mp->m_pciu)->eventq, 
-				pevext);
+			lstAdd(	(LIST *)&((struct channel_in_use *)mp->m_pciu)->eventq, 
+				(NODE *)pevext);
 
 			/*
 			 * allways send it once at event add
@@ -329,7 +329,7 @@ camessage(client, recv)
 			if(status < 0){
        				free_client(client);
 				logMsg("CAS: client timeout disconnect\n");
-				exit();
+				exit(0);
 			}
 			LOCK_CLIENT(client);
 			lstAdd(&client->addrq, mp->m_pciu);
@@ -401,7 +401,7 @@ struct client  *client;
 			taskSuspend(0);
 		}
 		FASTLOCK(&rsrv_free_eventq_lck);
-		lstAdd(&rsrv_free_eventq, pevext);
+		lstAdd((LIST *)&rsrv_free_eventq, (NODE *)pevext);
 		FASTUNLOCK(&rsrv_free_eventq_lck);
         }
 
@@ -418,11 +418,11 @@ struct client  *client;
 	*reply = *mp;
 
 	END_MSG(client);
-	lstDelete(&client->addrq, pciu);
+	lstDelete((LIST *)&client->addrq, (NODE *)pciu);
 	UNLOCK_CLIENT(client);
 
 	FASTLOCK(&rsrv_free_addrq_lck);
-	lstAdd(&rsrv_free_addrq, pciu);
+	lstAdd((LIST *)&rsrv_free_addrq, (NODE *)pciu);
 	FASTUNLOCK(&rsrv_free_addrq_lck);
 
 	return;
@@ -457,7 +457,7 @@ event_cancel_reply(mp, client)
 			status = db_cancel_event(pevext + 1);
 			if (status == ERROR)
 				taskSuspend(0);
-			lstDelete(peventq, pevext);
+			lstDelete((LIST *)peventq, (NODE *)pevext);
 
 			/*
 			 * send delete confirmed message
@@ -475,7 +475,7 @@ event_cancel_reply(mp, client)
 			UNLOCK_CLIENT(client);
 
 			FASTLOCK(&rsrv_free_eventq_lck);
-			lstAdd(&rsrv_free_eventq, pevext);
+			lstAdd((LIST *)&rsrv_free_eventq, (NODE *)pevext);
 			FASTUNLOCK(&rsrv_free_eventq_lck);
 
 			return;
@@ -655,7 +655,7 @@ build_reply(mp, client)
 	LOCK_CLIENT(client);
 
 	/* store the addr block in a Q so it can be deallocated */
-	lstAdd(addrq, pchannel);
+	lstAdd((LIST *)addrq, (NODE *)pchannel);
 
 	if (mp->m_cmmd == IOC_BUILD) {
 		FAST short      type = (mp + 1)->m_type;
@@ -706,7 +706,7 @@ build_reply(mp, client)
 	}
 	search_reply = (struct extmsg *) ALLOC_MSG(client, 0);
 	if (!search_reply)
-		taskSuspend();
+		taskSuspend(0);
 
 	*search_reply = *mp;
 	search_reply->m_postsize = 0;

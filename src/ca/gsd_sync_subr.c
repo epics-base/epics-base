@@ -81,7 +81,7 @@
 ***************************************************
 */
 
-static char *sccsId = "$Id$\t$Date$";
+static char *sccsId = "@(#)gsd_sync_subr.c	1.8\t11/5/92";
 
 #if defined(UNIX)
 #	include	<types.h>
@@ -160,7 +160,7 @@ struct gsd_sync_compctrl {
 };
 
 /*---------------------------------------------*/
-#define	ONESEC_IN_TICKS	60
+#define	ONESEC_IN_TICKS (sysClkRateGet())	
 #define	PEND_EVENT_DELAY	0.0001	/* standard 0.0001sec event delay */
 #define	USEC_TIME_OUT	100		/* 100 usec timeval's timeout */
 
@@ -601,7 +601,7 @@ float timeout_secs;
 
 	if(NULL == pCompctrl) {
 		ca_printf("gsd_sync_read: error NULL arg for pCompctrl\n");
-		return;
+		return 0;
 	}
 
 	if(flag == PREVIOUS_SYNC_DATA) {
@@ -1070,7 +1070,6 @@ struct gsd_sync_compctrl *pCompctrl;
 float timeout_secs;
 VOID **pfdctx;
 {
-	struct gsd_sync_ctrl *pCtrl = pCompctrl->pCtrl;
 	struct timeval new_gmt;
 	struct timezone zone;
 

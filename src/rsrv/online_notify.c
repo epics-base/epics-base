@@ -49,7 +49,7 @@ static char *sccsId = "$Id$\t$Date$";
 #include <task_params.h>
 #include <iocmsg.h>
 
-#define abort taskSuspend
+#define abort(A) taskSuspend(0)
 
 
 /*
@@ -91,7 +91,7 @@ void rsrv_online_notify_task()
 	status = local_addr(sock, &lcl);
 	if(status<0){
 		logMsg("CAS: online notify: Network interface unavailable\n");
-		abort();
+		abort(0);
 	}
 
       	status = setsockopt(	sock,
@@ -133,8 +133,11 @@ void rsrv_online_notify_task()
         		0,
        			&send_addr, 
 			sizeof send_addr);
-      		if(status != sizeof msg)
-			abort();
+      		if(status != sizeof msg){
+			logMsg( "%s: Socket send error was %d\n",
+				__FILE__,
+				errnoGet(taskIdSelf()) );
+		}
 
 		taskDelay(delay);
 		delay = min(delay << 1, maxdelay);

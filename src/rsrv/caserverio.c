@@ -35,7 +35,7 @@
  *	.06 joh	031992	improved diagnostics
  */
 
-static char *sccsId = "$Id$\t$Date$";
+static char *sccsId = "@(#)caserverio.c	1.10\t7/28/92";
 
 #include <vxWorks.h>
 #include <lstLib.h>

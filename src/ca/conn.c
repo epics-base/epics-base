@@ -17,6 +17,8 @@
 /*	.04 043092 joh	check to see if the conn is up when setting	*/
 /*			for CA_CUURRENT_TIME to be safe			*/
 /*	.05 072792 joh	better messages					*/
+/*	.06 111892 joh	tuned up cast retries				*/
+/*	.07 010493 joh	print retry count when `<Trying>'		*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -37,6 +39,7 @@ static char 	*sccsId = "$Id$\t$Date$";
 #	include		<stdio.h>
 #elif defined(VMS)
 #elif defined(vxWorks)
+#include		<vxWorks.h>
 #else
 	@@@@ dont compile @@@@
 #endif
@@ -45,7 +48,6 @@ static char 	*sccsId = "$Id$\t$Date$";
 #include		<db_access.h>
 #include		<iocmsg.h>
 #include 		<iocinf.h>
-
 
 
 /*
@@ -65,7 +67,6 @@ char			silent;
   	register unsigned int	retry_cnt = 0;
   	register unsigned int	keepalive_cnt = 0;
   	unsigned int		retry_cnt_no_handler = 0;
-  	char			string[128];
 	ca_time			current;
   	int			i;
 
@@ -75,13 +76,13 @@ char			silent;
   		int	search_type;
 
 		if(iiu[i].next_retry == CA_CURRENT_TIME){
-			if(iiu[i].conn_up){
+			if(!iiu[i].conn_up || i==BROADCAST_IIU){
 				iiu[i].next_retry = 
-					current + CA_RETRY_PERIOD;
+					current + iiu[i].retry_delay;
 			}
 			else{
 				iiu[i].next_retry = 
-					current + iiu[i].retry_delay;
+					current + CA_RETRY_PERIOD;
 			}
 			continue;
 		}
@@ -100,7 +101,15 @@ char			silent;
 			 */
 			noop_msg(&iiu[i]);
 			keepalive_cnt++;
-      			continue;
+
+			/*
+			 * allow execution to continue through
+			 * the connection retry code below
+			 * since we may be connected while 
+			 * some channels which have not been
+			 * verified to exist on the recently 
+			 * booted IOC.
+			 */
 		}
 
     		if(iiu[i].nconn_tries++ > MAXCONNTRIES)
@@ -119,14 +128,14 @@ char			silent;
      			retry_cnt++;
 
       			if(!(silent || chix->connection_func)){
-       				ca_signal(ECA_CHIDNOTFND, chix+1);
+       				ca_signal(ECA_CHIDNOTFND, (char *)(chix+1));
 				retry_cnt_no_handler++;
 			}
     		}
   	}
 
   	if(retry_cnt){
-    		ca_printf("<Trying> ");
+    		ca_printf("<Trying %d> ", retry_cnt);
 #ifdef UNIX
     		fflush(stdout);
 #endif
@@ -209,9 +218,9 @@ struct in_addr  *pnet_addr;
 	 */
 
 	/*
-	 * reset the retry cnt to 3
+	 * reset the retry cnt
 	 */
-      	iiu[BROADCAST_IIU].nconn_tries = MAXCONNTRIES-3;
+      	iiu[BROADCAST_IIU].nconn_tries = 0;
 
 	/*
 	 * This part is very important since many machines
@@ -238,10 +247,19 @@ struct in_addr  *pnet_addr;
 		port = saddr.sin_port;
 	}
 
-	iiu[BROADCAST_IIU].retry_delay = 
-		(port&0xf) + CA_RECAST_DELAY;
-	iiu[BROADCAST_IIU].next_retry = 
-		time(NULL) + iiu[BROADCAST_IIU].retry_delay;
+	{
+		int	delay;
+		int	next;
+
+		delay = (port&CA_RECAST_PORT_MASK) + CA_RECAST_PERIOD;
+		iiu[BROADCAST_IIU].retry_delay = 
+			min(iiu[BROADCAST_IIU].retry_delay, delay);
+
+		next = time(NULL) + iiu[BROADCAST_IIU].retry_delay;
+		iiu[BROADCAST_IIU].next_retry = 
+			min(next, iiu[BROADCAST_IIU].next_retry);
+	}
+
 #ifdef DEBUG
 	ca_printf("CAC: <Trying ukn online after pseudo random delay=%d sec> ",
 		iiu[BROADCAST_IIU].retry_delay);

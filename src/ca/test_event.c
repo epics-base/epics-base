@@ -14,7 +14,7 @@
  *
  */
 
-static char *sccsId = "$Id$\t$Date$";
+static char *sccsId = "@(#)test_event.c	1.6\t7/27/92";
 
 /*	System includes		*/
 

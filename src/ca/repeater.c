@@ -54,6 +54,8 @@
  *	.05 072392 joh	no longer needs to loop waiting for the timeout
  *			to expire because of the change introduced 
  *			in .04
+ *	.06 120492 joh	removed unnecessary includes
+ *	.07 120992 joh	now uses dll list routines
  *
  */
 
@@ -65,25 +67,22 @@ static char *sccsId = "$Id$\t$Date$";
 #	include		<sys/types.h>
 #	include		<sys/socket.h>
 #	include		<netinet/in.h>
-#	include		<sys/ioctl.h>
 #elif defined(UNIX)
 #	include		<errno.h>
 #	include		<sys/types.h>
 #	include		<sys/socket.h>
 #	include		<netinet/in.h>
-#	include		<sys/ioctl.h>
 #elif defined(vxWorks)
 #	include		<vxWorks.h>
 #	include		<errno.h>
 #	include		<types.h>
 #	include		<socket.h>
 #	include		<in.h>
-#	include		<ioctl.h>
 #else
 	@@@@ dont compile @@@@
 #endif
 
-#include		<lstLib.h>
+#include		<dllLib.h>
 #include		<iocmsg.h>
 #include		<os_depen.h>
 
@@ -173,7 +172,7 @@ ca_repeater()
   	struct one_client		*pclient;
   	struct one_client		*pnxtclient;
 
-	lstInit(&client_list);
+	dllInit(&client_list);
 
      	/* 	allocate a socket			*/
       	sock = socket(	AF_INET,	/* domain	*/
@@ -271,7 +270,7 @@ ca_repeater()
 					malloc(sizeof *pclient);
 				if(pclient){
 					pclient->from = from;
-					lstAdd(&client_list, pclient);
+					dllAdd(&client_list, pclient);
 #ifdef DEBUG
 					ca_printf("Added %x %d\n", from.sin_port, size);
 #endif
@@ -353,7 +352,7 @@ struct one_client		*pclient;
 	socket_close(sock);
 
 	if(!present){
-		lstDelete(&client_list, pclient);
+		dllDelete(&client_list, pclient);
 		free(pclient);
 #ifdef DEBUG
 		ca_printf("Deleted\n");

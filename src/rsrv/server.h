@@ -42,7 +42,7 @@
 #ifndef INCLserverh
 #define INCLserverh
 
-static char *serverhSccsId = "$Id$\t$Date$";
+static char *serverhSccsId = "@(#)server.h	1.10\t7/28/92";
 
 #ifndef INCLfast_lockh
 #include <fast_lock.h>

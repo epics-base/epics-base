@@ -1,4 +1,4 @@
- /************************************************************************/
+/************************************************************************/
 /*									*/
 /*	        	      L O S  A L A M O S			*/
 /*		        Los Alamos National Laboratory			*/
@@ -37,12 +37,14 @@
 /*	072392	joh	use SO_REUSEADDR when testing to see		*/
 /*			if the repeater has been started		*/
 /*	072792	joh	better messages					*/
+/*	101692	joh	defensive coding against unexpected errno's	*/
+/*      120992	GeG	support  VMS/UCX		                */
 /*									*/
 /*_begin								*/
 /************************************************************************/
 /*									*/
 /*	Title:	IOC socket interface module				*/
-/*	File:	/.../ca/iocinf.c					*/
+/*	File:	/.../ca/$Id$						*/
 /*	Environment: VMS. UNIX, vxWorks					*/
 /*	Equipment: VAX, SUN, VME					*/
 /*									*/
@@ -73,12 +75,17 @@ static char *sccsId = "$Id$\t$Date$";
 #	include		<sys/types.h>
 #	define		__TIME /* dont include VMS CC time.h under MULTINET */
 #	include		<sys/time.h>
-#	include		<vms/inetiodef.h>
 #	include		<tcp/errno.h>
 #	include		<sys/socket.h>
 #	include		<netinet/in.h>
 #	include		<netinet/tcp.h>
+#if defined(UCX)				/* GeG 09-DEC-1992 */
+#	include		<sys/ucx$inetdef.h>
+#	include		<ucx.h>
+#else
+#	include		<vms/inetiodef.h>
 #	include		<sys/ioctl.h>
+#endif
 #elif defined(UNIX)
 #	include		<sys/types.h>
 #	include		<sys/errno.h>
@@ -274,7 +281,6 @@ struct ioc_in_use		*piiu;
        			return ECA_SOCK;
       		}
 
-#ifdef KEEPALIVE
 		/*
 		 * This should cause the connection to be checked
 		 * periodically and an error to be returned if it is lost?
@@ -294,7 +300,6 @@ struct ioc_in_use		*piiu;
 			}
         		return ECA_SOCK;
     		}
-#endif
 
 #ifdef JUNKYARD
 		{
@@ -315,11 +320,9 @@ struct ioc_in_use		*piiu;
 		}
 #endif
 
-      		/* set TCP buffer sizes only if BSD 4.3 sockets */
-      		/* temporarily turned off */
-#ifdef JUNKYARD  
-
-        	i = (MAX_MSG_SIZE+sizeof(int)) * 2;
+#ifdef CA_SET_TCP_BUFFER_SIZES
+      		/* set TCP buffer sizes */
+        	i = MAX_MSG_SIZE;
         	status = setsockopt(
 				sock,
 				SOL_SOCKET,
@@ -333,6 +336,7 @@ struct ioc_in_use		*piiu;
 			}
           		return ECA_SOCK;
         	}
+        	i = MAX_MSG_SIZE;
         	status = setsockopt(
 				sock,
 				SOL_SOCKET,
@@ -347,6 +351,22 @@ struct ioc_in_use		*piiu;
           		return ECA_SOCK;
         	}
 #endif
+
+      		/* fetch the TCP send buffer size */
+		i = sizeof(piiu->tcp_send_buff_size); 
+        	status = getsockopt(
+				sock,
+				SOL_SOCKET,
+				SO_SNDBUF,
+				&piiu->tcp_send_buff_size,
+				&i);
+        	if(status < 0 || i != sizeof(piiu->tcp_send_buff_size)){
+          		status = socket_close(sock);
+			if(status<0){
+				SEVCHK(ECA_INTERNAL,NULL);
+			}
+          		return ECA_SOCK;
+        	}
 
       		/* connect */
       		status = connect(	
@@ -457,7 +477,12 @@ struct ioc_in_use		*piiu;
 
 	default:
       		ca_signal(ECA_INTERNAL,"alloc_ioc: ukn protocol\n");
+		/*
+		 * turn off gcc warnings
+		 */
+		return ECA_INTERNAL;
   	}
+
   	/* 	setup cac_send_msg(), recv_msg() buffers	*/
   	if(!piiu->send){
     		if(! (piiu->send = (struct buffer *) 
@@ -485,6 +510,7 @@ struct ioc_in_use		*piiu;
 
   	piiu->recv->stk = 0;
   	piiu->conn_up = TRUE;
+	piiu->active = FALSE;
   	if(fd_register_func){
 		LOCKEVENTS;
 		(*fd_register_func)(fd_register_arg, sock, TRUE);
@@ -584,12 +610,19 @@ notify_ca_repeater()
        			&saddr, 
 			sizeof saddr);
       		if(status < 0){
-			ca_printf("CAC: notify_ca_repeater: send to lcl addr failed\n");
-			abort();
+			if(	MYERRNO == EINTR || 
+				MYERRNO == ENOBUFS || 
+				MYERRNO == EWOULDBLOCK){
+				TCPDELAY;
+			}
+			else{
+				ca_printf(
+	"CAC: notify_ca_repeater: send to lcl addr failed\n");
+				abort();
+			}
 		}
 	}
 }
-
 
 
 /*
@@ -634,9 +667,11 @@ void cac_send_msg()
 		 * frees up push pull deadlock only
 		 * if recv not already in progress
 		 */
-#		ifdef 	UNIX
-			if(post_msg_active==0)
+#		if defined(UNIX)
+			if(post_msg_active==0){
 				recv_msg_select(&notimeout);
+			}
+#		elif defined(vxWorks)
 #		endif
 
 		done = TRUE;
@@ -651,9 +686,6 @@ void cac_send_msg()
 			}
     		}
 
-#ifndef UNIX
-		break;
-#else
 		if(done){
 			/*
 			 * allways double check that we
@@ -677,25 +709,30 @@ void cac_send_msg()
     				if(piiu->send->stk){
 					inaddr = &piiu->sock_addr.sin_addr;
 					iocname = piiu->host_name_str;
-#ifdef CLOSE_ON_EXPIRED			
-					ca_signal(ECA_DLCKREST, iocname);
-					close_ioc(piiu);
-#else
-					ca_signal(ECA_SERVBEHIND, iocname);
-#endif
+#define CLOSE_ON_EXPIRED /* kill conn if we pend to long on it */
+#					ifdef CLOSE_ON_EXPIRED		
+						ca_signal(
+							ECA_DLCKREST, 	
+							iocname);
+						close_ioc(piiu);
+#					else
+						ca_signal(
+							ECA_SERVBEHIND, 
+							iocname);
+#					endif
 				}
 			}
-#ifndef CLOSE_ON_EXPIRED			
-			retry_count = RETRY_INIT;
-#endif
+#			ifdef CLOSE_ON_EXPIRED			
+				break;
+#			else
+				retry_count = RETRY_INIT;
+#			endif
 		}
 		TCPDELAY;
-#endif
 	}
 
 	send_msg_active--;
 }
-
 
 
 /*
@@ -767,8 +804,9 @@ register struct ioc_in_use 	*piiu;
 ca_printf("CAC: sent zero ?\n");
 			TCPDELAY;
 		}
-#ifdef UNIX
-		else if(MYERRNO == EWOULDBLOCK){
+		else if(MYERRNO == EWOULDBLOCK ||
+			MYERRNO == ENOBUFS ||
+			MYERRNO == EINTR){
 			if(pmsg !=  piiu->send->buf){
 				/*
 				 * realign the message if this
@@ -782,7 +820,6 @@ ca_printf("CAC: sent zero ?\n");
 
 			return ERROR;
 		}
-#endif
 		else{
 			if(	MYERRNO != EPIPE && 
 				MYERRNO != ECONNRESET &&
@@ -865,7 +902,9 @@ struct timeval 	*ptimeout;
 					text,
 					"CAC: unexpected select fail: %d",
 					MYERRNO); 
-      				ca_signal(ECA_INTERNAL,text);                       			}                                                         		}                                                         
+      				ca_signal(ECA_INTERNAL,text);   
+			}
+		}                                                         
 
     		for(piiu=iiu;piiu<&iiu[nxtiiu];piiu++){
       			if(piiu->conn_up){
@@ -896,6 +935,7 @@ static void
 recv_msg(piiu)
 struct ioc_in_use	*piiu;
 {
+	piiu->active = TRUE;
 
   	switch(piiu->sock_proto){
   	case	IPPROTO_TCP:
@@ -915,10 +955,12 @@ struct ioc_in_use	*piiu;
   	}  
 
         if(piiu->send_needed){
+		LOCK
                 cac_send_msg_piiu(piiu);
+		UNLOCK
         }
 
-  	return;
+	piiu->active = FALSE;
 }
 
 
@@ -952,8 +994,8 @@ struct ioc_in_use	*piiu;
 		return;
 	}
     	else if(status <0){
-    		/* try again on status of -1 and EWOULDBLOCK */
-      		if(MYERRNO == EWOULDBLOCK){
+    		/* try again on status of -1 and no luck this time */
+      		if(MYERRNO == EWOULDBLOCK || MYERRNO == EINTR){
    			TCPDELAY;
 			return;
 		}
@@ -1064,7 +1106,7 @@ struct ioc_in_use	*piiu;
 			 * op would block which is ok to ignore till ready
 			 * later
 			 */
-      			if(MYERRNO == EWOULDBLOCK)
+      			if(MYERRNO == EWOULDBLOCK || MYERRNO == EINTR)
         			break;
       			ca_signal(ECA_INTERNAL,"unexpected udp recv error");
     		}
@@ -1237,7 +1279,8 @@ struct ioc_in_use	*piiu;
 	int				status;
 
 	if(piiu == &iiu[BROADCAST_IIU]){
-		ca_signal(ECA_INTERNAL, "Unable to perform UDP broadcast\n");
+		ca_signal(ECA_INTERNAL, 
+			"Unable to perform UDP broadcast\n");
 	}
 
   	if(!piiu->conn_up)
@@ -1251,6 +1294,7 @@ struct ioc_in_use	*piiu;
   	piiu->recv->stk = 0;
   	piiu->max_msg = MAX_UDP;
   	piiu->conn_up = FALSE;
+	piiu->active = FALSE;
 
 	/*
 	 * reset the delay to the next retry

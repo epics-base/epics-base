@@ -56,7 +56,7 @@
  * 	pend which could lock up the cast server.
  */
 
-static char	*sccsId = "$Id$\t$Date$";
+static char	*sccsId = "@(#)cast_server.c	1.13\t7/28/92";
 
 #include <vxWorks.h>
 #include <lstLib.h>
@@ -85,7 +85,7 @@ cast_server()
 {
   	struct sockaddr_in		sin;	
   	FAST int			status;
-  	int				count;
+  	int				count=0;
 	struct sockaddr_in		new_recv_addr;
   	int  				recv_addr_size;
   	unsigned			nchars;
@@ -128,7 +128,7 @@ cast_server()
 		CA_ONLINE_PRI,
 		CA_ONLINE_OPT,
 		CA_ONLINE_STACK,
-		rsrv_online_notify_task);
+		(FUNCPTR)rsrv_online_notify_task);
   	if(status<0){
     		logMsg("CAS: couldnt start up online notify task\n");
     		printErrno(errnoGet ());
@@ -276,9 +276,9 @@ struct client *pclient;
 		}
 
 		if (delay > timeout) {
-			lstDelete(&pclient->addrq, pciu);
+			lstDelete((LIST *)&pclient->addrq, (NODE *)pciu);
         		FASTLOCK(&rsrv_free_addrq_lck);
-			lstAdd(&rsrv_free_addrq, pciu);
+			lstAdd((LIST *)&rsrv_free_addrq, (NODE *)pciu);
        			FASTUNLOCK(&rsrv_free_addrq_lck);
 			ndelete++;
 			maxdelay = max(delay, maxdelay);

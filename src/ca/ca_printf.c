@@ -1,4 +1,4 @@
-static char *sccsId = "$Id$\t$Date$";
+static char *sccsId = "@(#)ca_printf.c	1.2\t7/27/92";
 
 #if defined(UNIX) || defined(VMS)
 #	include <stdio.h>

@@ -37,9 +37,13 @@
  *			if debug is on
  *	.06 joh 021192  better diagnostics
  *	.07 joh 031692  disconnect on bad message
+ *	.08 joh 111892	set TCP buffer size to be synergistic
+ *			with CA buffer size
+ *	.09 joh	111992	moved the event tasks prioity down
+ *			(added new arg to db_start_events())
  */
 
-static char *sccsId = "$Id$\t$Date$";
+static char *sccsId = "@(#)camsgtask.c	1.13\t11/20/92";
 
 #include <vxWorks.h>
 #include <lstLib.h>
@@ -103,6 +107,36 @@ FAST int 		sock;
       		return;
     	}
 
+#ifdef MATCHING_BUFFER_SIZES
+	/* 
+	 * set TCP buffer sizes to be synergistic 
+	 * with CA internal buffering
+	 */
+	i = MAX_MSG_SIZE;
+	status = setsockopt(
+			sock,
+			SOL_SOCKET,
+			SO_SNDBUF,
+			&i,
+			sizeof(i));
+	if(status < 0){
+		logMsg("CAS: SO_SNDBUF set failed\n");
+		close(sock);
+		return;
+	}
+	i = MAX_MSG_SIZE;
+	status = setsockopt(
+			sock,
+			SOL_SOCKET,
+			SO_RCVBUF,
+			(char *)&i,
+			sizeof(i));
+	if(status < 0){
+		logMsg("CAS: SO_RCVBUF set failed\n");
+		close(sock);
+		return;
+	}
+#endif
 
 	/*
  	 * performed in two steps purely for 
@@ -135,7 +169,7 @@ FAST int 		sock;
   	}
 
 	LOCK_CLIENTQ;
-	lstAdd(&clientQ, client);
+	lstAdd((LIST *)&clientQ, (NODE *)client);
 	UNLOCK_CLIENTQ;
 
 	client->evuser = (struct event_user *) db_init_events();
@@ -148,7 +182,8 @@ FAST int 		sock;
 			client->evuser, 
 			CA_EVENT_NAME, 
 			NULL, 
-			NULL);
+			NULL,
+			1);	/* one priority notch lower */
 	if (status == ERROR) {
 		logMsg("CAS: unable to start the event facility\n");
 		free_client(client);

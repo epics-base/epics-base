@@ -40,6 +40,12 @@
 /*			since it varies from os to os			*/
 /*	040592	joh	took out extra cac_send_msg() calls		*/
 /*	072792	joh	better messages					*/
+/*	110592	joh	removed ptr dereference from test for valid	*/
+/*			monitor handler function			*/
+/*	111792	joh	reset retry delay for cast iiu when host	*/
+/*			indicates the channel's address has changed	*/
+/*	120992	joh	converted to dll list routines			*/
+/*	122192	joh	now decrements the outstanding ack count	*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -124,11 +130,6 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 
 
 	while (*pbufcnt >= sizeof(*hdrptr)) {
-#ifdef DEBUG
-		ca_printf("CAC: bytes left %d, pending msgcnt %d\n",
-		       *pbufcnt,
-		       pndrecvcnt);
-#endif
 
 		/* byte swap the message up front */
 		t_available = (void *) hdrptr->m_available;
@@ -148,6 +149,12 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 #endif
 
 		msgcnt = sizeof(*hdrptr) + t_postsize;
+
+#ifdef DEBUG
+		ca_printf("CAC: bytes left %d, pending msgcnt %d\n",
+		       *pbufcnt,
+		       pndrecvcnt);
+#endif
 		if (*pbufcnt < msgcnt) {
 			post_msg_active--;
 			return OK;
@@ -183,7 +190,7 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 			 * call handler, only if they did not clear the
 			 * chid in the interim
 			 */
-			if (*monix->usr_func) {
+			if (monix->usr_func) {
 				args.usr = monix->usr_arg;
 				args.chid = monix->chan;
 				args.type = t_type;
@@ -195,9 +202,11 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 				UNLOCKEVENTS;
 			}
 			LOCK;
-			lstDelete(&pend_read_list, monix);
-			lstAdd(&free_event_list, monix);
+			dllDelete(&pend_read_list, monix);
+			dllAdd(&free_event_list, monix);
 			UNLOCK;
+
+			piiu->outstanding_ack_count--;
 
 			break;
 		}
@@ -218,9 +227,11 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 			 */
 			if (!t_postsize) {
 				LOCK;
-				lstDelete(&monix->chan->eventq, monix);
-				lstAdd(&free_event_list, monix);
+				dllDelete(&monix->chan->eventq, monix);
+				dllAdd(&free_event_list, monix);
 				UNLOCK;
+
+				piiu->outstanding_ack_count--;
 
 				break;
 			}
@@ -313,10 +324,15 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 			 * This relies on the IOC_READ_BUILD msg
 			 * returning prior to the IOC_BUILD msg.
 			 */
-			if (t_cmmd != IOC_READ_BUILD ||
-			    (chan->connection_func == NULL && 
-					chan->state == cs_never_conn))
+			if (t_cmmd == IOC_READ){
+				piiu->outstanding_ack_count--;
 				CLRPENDRECV(TRUE);
+			}
+			else if(chan->connection_func == NULL && 
+					chan->state == cs_never_conn){
+				CLRPENDRECV(TRUE);
+			}
+
 
 			break;
 		}
@@ -396,6 +412,7 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 			break;
 		}
 		case IOC_READ_SYNC:
+			piiu->outstanding_ack_count--;
 			piiu->read_seq++;
 			break;
 
@@ -423,17 +440,16 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 			struct ioc_in_use *piiu = &iiu[chix->iocix];
 
 			LOCK;
-			lstDelete(&piiu->chidlist, chix);
-			lstAdd(&iiu[BROADCAST_IIU].chidlist, chix);
+			dllDelete(&piiu->chidlist, chix);
+			dllAdd(&iiu[BROADCAST_IIU].chidlist, chix);
 			chix->iocix = BROADCAST_IIU;
 			if (!piiu->chidlist.count)
 				close_ioc(piiu);
-
 			/*
 			 * reset the delay to the next retry or keepalive
 			 */
-			piiu->next_retry = CA_CURRENT_TIME;
-			piiu->nconn_tries = 0;
+			iiu[BROADCAST_IIU].next_retry = CA_CURRENT_TIME;
+			iiu[BROADCAST_IIU].nconn_tries = 0;
 
 			manage_conn(TRUE);
 			UNLOCK;
@@ -457,12 +473,13 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 			     monix;
 			     monix = (evid) monix->node.next)
 				if (monix->chan == chix) {
-					lstDelete(&pend_read_list, monix);
-					lstAdd(&free_event_list, monix);
+					dllDelete(&pend_read_list, monix);
+					dllAdd(&free_event_list, monix);
 				}
-			lstConcat(&free_event_list, &chix->eventq);
-			lstDelete(&piiu->chidlist, chix);
+			dllConcat(&free_event_list, &chix->eventq);
+			dllDelete(&piiu->chidlist, chix);
 			free(chix);
+			piiu->outstanding_ack_count--;
 			if (!piiu->chidlist.count)
 				close_ioc(piiu);
 			UNLOCK;
@@ -556,6 +573,9 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 
 	}
 
+	if(piiu->outstanding_ack_count == 0){
+		piiu->bytes_pushing_an_ack = 0;
+	}
 
 	post_msg_active--;
 
@@ -605,11 +625,11 @@ struct in_addr			*pnet_addr;
 		 * The address changed (or was found for the first time)
 		 */
 	  	if(chan->iocix != BROADCAST_IIU)
-	   		ca_signal(ECA_NEWADDR, chan+1);
+	   		ca_signal(ECA_NEWADDR, (char *)(chan+1));
 		chpiiu = &iiu[chan->iocix];
-          	lstDelete(&chpiiu->chidlist, chan);
+          	dllDelete(&chpiiu->chidlist, chan);
           	chan->iocix = newiocix;
-          	lstAdd(&iiu[newiocix].chidlist, chan);
+          	dllAdd(&iiu[newiocix].chidlist, chan);
         }
 
 	/*
@@ -690,7 +710,7 @@ int 	lock;
  		LOCK;
 	}
 
-    	while(pioe = (struct pending_io_event *) lstGet(&ioeventlist)){
+    	while(pioe = (struct pending_io_event *) dllGet(&ioeventlist)){
       		(*pioe->io_done_sub)(pioe->io_done_arg);
       		free(pioe);
 	}
@@ -722,9 +742,9 @@ client_channel_exists(chan)
 
         for (piiu = iiu; piiu < pnext_iiu; piiu++) {
                 /*
-                 * lstFind returns the node number or ERROR
+                 * dllFind returns the node number or ERROR
                  */
-                status = lstFind(&piiu->chidlist, chan);
+                status = dllFind(&piiu->chidlist, chan);
                 if (status != ERROR) {
                         return TRUE;
                 }

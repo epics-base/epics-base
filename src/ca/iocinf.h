@@ -22,6 +22,11 @@
 /*	.11 031692 joh	added declaration for post_msg()		*/
 /*	.12 031892 joh	initial rebroadcast delay is now a #define	*/
 /*	.13 050492 joh	added exception channel fd set			*/
+/*	.14 111792 joh	increased MAXCONNTRIES from 3 to 30		*/
+/*	.15 112092 joh	added AST lck count var for VMS			*/
+/*	.16 120992 joh	switched to dll list routines			*/
+/*	.17 121892 joh	added TCP send buf size var			*/
+/*	.17 122192 joh	added outstanding ack var			*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -69,14 +74,17 @@ static char	*iocinfhSccsId = "$Id$\t$Date$";
 	DONT_COMPILE
 #endif
 
-#ifndef INClstLibh  
-#	include <lstLib.h> 
+#ifndef INCdllLibh  
+#	include <dllLib.h> 
 #endif
 
 #ifndef INCos_depenh
 #	include	<os_depen.h>
 #endif
 
+#ifndef min
+#define min(A,B) ((A)>(B)?(B):(A))
+#endif
 
 /* throw out requests prior to last ECA_TIMEOUT from ca_pend */
 #define	VALID_MSG(PIIU) (piiu->read_seq == piiu->cur_read_seq)
@@ -112,8 +120,10 @@ struct pending_io_event{
 };
 
 typedef unsigned long ca_time;
-#define CA_RETRY_PERIOD	5		/* int sec to next keepalive */
-#define CA_RECAST_DELAY	1		/* initial int sec to next recast */
+#define CA_RETRY_PERIOD	5	/* int sec to next keepalive */
+#define CA_RECAST_DELAY	1	/* initial int sec to next recast */
+#define CA_RECAST_PORT_MASK	0xf	/* random retry interval off port */
+#define CA_RECAST_PERIOD 30	/* ll on retry period long term */
 #define CA_CURRENT_TIME 0
 
 #define MAX_CONTIGUOUS_MSG_COUNT 2
@@ -152,6 +162,7 @@ typedef unsigned long ca_time;
 #elif defined(VMS)
 #	define io_done_flag	(ca_static->ca_io_done_flag)
 #	define peek_ast_buf	(ca_static->ca_peek_ast_buf)
+#	define ast_lock_count	(ca_static->ca_ast_lock_count)
 #else
 	DONT_COMPILE
 #endif
@@ -182,6 +193,7 @@ struct  ca_static{
 #elif defined(VMS)
   int			ca_io_done_flag;
   char			ca_peek_ast_buf;
+  long			ca_ast_lock_count;
 #elif defined(vxWorks)
   SEM_ID		ca_io_done_sem;
   void			*ca_evuser;
@@ -192,16 +204,21 @@ struct  ca_static{
   LIST			ca_dbfree_ev_list;
   LIST			ca_lcl_buff_list;
   int			ca_event_tid;
+  unsigned		ca_local_ticks;
 #else
   DONT_COMPILE
 #endif
   struct ioc_in_use{
+    unsigned		outstanding_ack_count;
+    unsigned		bytes_pushing_an_ack;
     unsigned		contiguous_msg_count;
     unsigned		client_busy;
+    char		active;
     int			sock_proto;
     struct sockaddr_in	sock_addr;
     int			sock_chan;
     int			max_msg;
+    int			tcp_send_buff_size;
     struct buffer	*send;
     struct buffer	*recv;
     unsigned		read_seq;
@@ -213,7 +230,7 @@ struct  ca_static{
     unsigned		nconn_tries;
     ca_time		next_retry;
     ca_time		retry_delay;
-#define MAXCONNTRIES 3
+#define MAXCONNTRIES 30
 #if defined(VMS)	/* for qio ASTs */
     struct sockaddr_in	recvfrom;
     struct iosb		iosb;

@@ -48,7 +48,12 @@ static char	*sccsId = "$Id$\t$Date$";
 #elif defined(VMS)
 #	include		<sys/types.h>
 #	include		<sys/socket.h>
-#	include		<sys/ioctl.h>
+#	if defined(UCX)			/* GeG 09-DEC-1992 */
+#     		include	<sys/ucx$inetdef.h>
+#     		include	<ucx.h>
+#	else
+#		include	<sys/ioctl.h>
+#	endif
 #elif defined(UNIX)
 #	include		<sys/types.h>
 #	include		<sys/socket.h>
@@ -79,6 +84,10 @@ flow_control(piiu)
 	register int    status;
 	register int    busy = piiu->client_busy;
 
+	/*
+	 * use of the additional system call here does not
+	 * seem to slow things down appreciably
+	 */
 	status = socket_ioctl(piiu->sock_chan,
 			      FIONREAD,
 			      &nbytes);
@@ -87,6 +96,10 @@ flow_control(piiu)
 		return;
 	}
 
+	/*	
+	 * I wish to avoid going into flow control however 
+	 * as this impacts the performance of batched fetches
+	 */
 	if (nbytes) {
 		piiu->contiguous_msg_count++;
 		if (!busy)
@@ -94,10 +107,16 @@ flow_control(piiu)
 			    MAX_CONTIGUOUS_MSG_COUNT) {
 				piiu->client_busy = TRUE;
 				ca_busy_message(piiu);
+#				if DEBUG	
+					printf("fc on\n");
+#				endif
 			}
 	} else {
 		piiu->contiguous_msg_count = 0;
 		if (busy) {
+#			ifdef DEBUG
+				printf("fc off\n");
+#			endif
 			ca_ready_message(piiu);
 			piiu->client_busy = FALSE;
 		}

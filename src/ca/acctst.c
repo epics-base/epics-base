@@ -4,7 +4,7 @@ static char *sccsId = "$Id$\t$Date$";
  * CA test/debug routine
  */
 
-#if 0
+#if 1
 #define CA_TEST_CHNL	"ca:ai_2000"
 #define CA_TEST_CHNL4	"ca:ai_2000"
 #else
@@ -63,18 +63,11 @@ main()
 	void            null_event();
 	struct dbr_gr_float *ptr;
 	struct dbr_gr_float *pgrfloat;
-	float           delay = .003;
-
 	long            status;
-	long            pid;
 	long            i, j;
-	float           delta = 1.0;
 	evid            monix;
-	char            string[41];
-	float           value;
 	float          *pfloat;
 	double         *pdouble;
-	struct dbr_ctrl_float *pctrl;
 	char            pstring[NUM][MAX_STRING_SIZE];
 	void            write_event();
 	void            conn();
@@ -240,7 +233,7 @@ main()
 
 		for(i=0; i<NELEMENTS(mid); i++){
 			SEVCHK(ca_add_event(DBR_GR_FLOAT, chix4, null_event,
-				0x55555555, &mid[i]),NULL);
+				(void *)0x55555555, &mid[i]),NULL);
 		}
 		/*
 		 * force all of the monitors requests to

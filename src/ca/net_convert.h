@@ -11,7 +11,7 @@
  *
  */
 
-static char *net_converthSccsId = "$Id$\t$Date$";
+static char *net_converthSccsId = "@(#)net_convert.h	1.5\t7/27/92";
 
 /************************************************************************/
 /*	So byte swapping can be performed in line for efficiency	*/

@@ -42,7 +42,7 @@
  *	.10 joh 022592	print more statistics in client_stat()
  */
 
-static char *sccsId = "$Id$\t$Date$";
+static char *sccsId = "@(#)caservertask.c	1.13\t7/28/92";
 
 #include <vxWorks.h>
 #include <lstLib.h>
@@ -53,6 +53,9 @@ static char *sccsId = "$Id$\t$Date$";
 #include <db_access.h>
 #include <task_params.h>
 #include <server.h>
+
+LOCAL int terminate_one_client();
+LOCAL void log_one_client();
 
 
 /*
@@ -114,7 +117,7 @@ req_server()
 					   CA_CLIENT_PRI,
 					   CA_CLIENT_OPT,
 					   CA_CLIENT_STACK,
-					   camsgtask,
+					   (FUNCPTR) camsgtask,
 					   i);
 			if (status == ERROR) {
 				logMsg("CAS: task creation failed\n");
@@ -140,11 +143,11 @@ register struct client *client;
 		/* remove it from the list of clients */
 		/* list delete returns no status */
 		LOCK_CLIENTQ;
-		lstDelete(&clientQ, client);
+		lstDelete((LIST *)&clientQ, (NODE *)client);
 		UNLOCK_CLIENTQ;
 		terminate_one_client(client);
 		LOCK_CLIENTQ;
-		lstAdd(&rsrv_free_clientQ, client);
+		lstAdd((LIST *)&rsrv_free_clientQ, (NODE *)client);
 		UNLOCK_CLIENTQ;
 	} else {
 		LOCK_CLIENTQ;
@@ -206,13 +209,13 @@ register struct client *client;
 
 	pciu = (struct channel_in_use *) & client->addrq;
 	while (pciu = (struct channel_in_use *) pciu->node.next){
-		while (pevext = (struct event_ext *) lstGet(&pciu->eventq)) {
+		while (pevext = (struct event_ext *) lstGet((LIST *)&pciu->eventq)) {
 
 			status = db_cancel_event(pevext + 1);
 			if (status == ERROR)
 				taskSuspend(0);
 			FASTLOCK(&rsrv_free_eventq_lck);
-			lstAdd(&rsrv_free_eventq, pevext);
+			lstAdd((LIST *)&rsrv_free_eventq, (NODE *)pevext);
 			FASTUNLOCK(&rsrv_free_eventq_lck);
 		}
 	}
@@ -252,12 +255,12 @@ client_stat()
 
 
 	LOCK_CLIENTQ;
-	client = (struct client *) lstNext(&clientQ);
+	client = (struct client *) lstNext((NODE *)&clientQ);
 	while (client) {
 
 		log_one_client(client);
 
-		client = (struct client *) lstNext(client);
+		client = (struct client *) lstNext((NODE *)client);
 	}
 	UNLOCK_CLIENTQ;
 
@@ -287,7 +290,7 @@ client_stat()
  *	log_one_client()
  *
  */
-static void 
+LOCAL void 
 log_one_client(client)
 struct client *client;
 {
@@ -330,8 +333,8 @@ struct client *client;
 		bytes_reserved += sizeof(struct channel_in_use);
 		bytes_reserved += 
 			(sizeof(struct event_ext)+db_sizeof_event_block())*
-				lstCount(&pciu->eventq);
-		pciu = (struct channel_in_use *) lstNext(pciu);
+				lstCount((LIST *)&pciu->eventq);
+		pciu = (struct channel_in_use *) lstNext((NODE *)pciu);
 	}
 
 
@@ -352,7 +355,7 @@ struct client *client;
 		printf(	"\t%s(%d) ", 
 			pciu->addr.precord,
 			pciu->eventq.count);
-		pciu = (struct channel_in_use *) lstNext(pciu);
+		pciu = (struct channel_in_use *) lstNext((NODE *)pciu);
 	}
 
 	printf("\n");

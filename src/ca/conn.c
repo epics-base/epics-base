@@ -40,6 +40,11 @@
 /*									*/
 /*
  * $Log$
+ * Revision 1.43.4.5  2003/06/13 00:27:27  jhill
+ * set retry number to 4 when there is a beacon anomaly or when a
+ * channel disconnects. This starts the searcch delay at .4 seconds
+ * instead of at 0.25 seconds.
+ *
  * Revision 1.43.4.4  2002/07/12 22:16:00  jba
  * Updated license comments.
  *
@@ -645,8 +650,12 @@ void mark_server_available (const struct sockaddr_in *pnet_addr)
 				piiuCast->sock_chan,
 				(struct sockaddr *)&saddr,
 				&saddr_length);
-		assert (status>=0);
-		port = ntohs(saddr.sin_port);
+        if ( status>=0 ) {
+		    port = ntohs(saddr.sin_port);
+        }
+        else {
+            port = 0;
+        }
 	}
 
 	{

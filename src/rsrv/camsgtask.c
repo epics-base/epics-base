@@ -141,8 +141,8 @@ void camsgtask ( struct client *client )
          */
         status = socket_ioctl (client->sock, FIONREAD, &nchars);
         if (status < 0) {
-            errlogPrintf("CAS: io ctl err %d\n",
-                SOCKERRNO);
+            errlogPrintf("CAS: io ctl err - %s\n",
+                SOCKERRSTR(SOCKERRNO));
             cas_send_msg(client, TRUE);
         }
         else if (nchars == 0){

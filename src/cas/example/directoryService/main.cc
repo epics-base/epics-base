@@ -31,7 +31,7 @@ extern int main (int argc, const char **argv)
 	char		pvPrefix[128] = "";
 	char		fileName[128] = "pvDirectory.txt";
 	unsigned	aliasCount = 0u;
-	aitBool		forever = aitTrue;
+	bool		forever = true;
 	int		nPV;
 	int		i;
 

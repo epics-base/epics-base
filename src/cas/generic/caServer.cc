@@ -26,49 +26,6 @@
  *              Advanced Photon Source
  *              Argonne National Laboratory
  *
- *
-<<<<<<< caServer.cc
-=======
- * History
- * $Log$
- * Revision 1.12  1999/08/07 00:55:35  jhill
- * solaris compiler issues
- *
- * Revision 1.11  1999/08/04 23:05:29  jhill
- * applied chronIntId name change
- *
- * Revision 1.10  1999/01/28 20:18:14  jhill
- * removed implicit int
- *
- * Revision 1.9  1998/12/19 00:04:49  jhill
- * renamed createPV() to pvAttach()
- *
- * Revision 1.8  1997/08/05 00:46:56  jhill
- * fixed warnings
- *
- * Revision 1.7  1997/06/25 05:09:00  jhill
- * removed templInst.cc
- *
- * Revision 1.6  1997/06/13 09:15:50  jhill
- * connect proto changes
- *
- * Revision 1.5  1997/04/10 19:33:52  jhill
- * API changes
- *
- * Revision 1.4  1996/11/02 00:53:53  jhill
- * many improvements
- *
- * Revision 1.3  1996/09/16 18:23:56  jhill
- * vxWorks port changes
- *
- * Revision 1.2  1996/06/21 02:30:52  jhill
- * solaris port
- *
- * Revision 1.1.1.1  1996/06/20 00:28:14  jhill
- * ca server installation
- *
- *
->>>>>>> 1.8
  */
 
 #include "dbMapper.h"		// ait to dbr types 
@@ -96,29 +53,20 @@
 //
 // caServer::caServer()
 //
-epicsShareFunc caServer::caServer(unsigned pvCountEstimateIn) :
-        	pCAS (new caServerI(*this, pvCountEstimateIn)),
-		valueEventMask(this->registerEvent("value")),
-		logEventMask(this->registerEvent("log")),
-		alarmEventMask(this->registerEvent("alarm"))
+epicsShareFunc caServer::caServer (unsigned pvCountEstimateIn)
 {
-	static int init;
+    static bool init = false;
+    
+    if (!init) {
+        gddMakeMapDBR(gddApplicationTypeTable::app_table);
+        init = true;
+    }    
 
-	if (!init) {
-		gddMakeMapDBR(gddApplicationTypeTable::app_table);
-		init = TRUE;
-	}
-
-	if (!this->pCAS) {
-		errMessage(S_cas_noMemory, NULL);
-		return;
-	}
-
-	if (!this->pCAS->ready()) {
-		delete this->pCAS;
-		this->pCAS = NULL;
-		return;
-	}
+    this->pCAS = new caServerI(*this, pvCountEstimateIn);
+    if (this->pCAS==NULL) {
+        errMessage (S_cas_noMemory, " - unable to create caServer");
+        throw S_cas_noMemory;
+    }
 }
 
 //
@@ -202,15 +150,57 @@ epicsShareFunc void caServer::setDebugLevel (unsigned level)
 //
 // caServer::getDebugLevel()
 //
-epicsShareFunc unsigned caServer::getDebugLevel ()
+epicsShareFunc unsigned caServer::getDebugLevel () const
 {
-        if (pCAS) {
-                return this->pCAS->getDebugLevel();
-        }
-        else {
-		printf("caServer:: no server internals attached\n");
-		return 0u;
-        }
+    if (pCAS) {
+        return this->pCAS->getDebugLevel();
+    }
+    else {
+        printf("caServer:: no server internals attached\n");
+        return 0u;
+    }
+}
+
+//
+// caServer::valueEventMask ()
+//
+epicsShareFunc casEventMask caServer::valueEventMask () const
+{
+    if (pCAS) {
+        return this->pCAS->valueEventMask();
+    }
+    else {
+        printf("caServer:: no server internals attached\n");
+        return casEventMask();
+    }
+}
+
+//
+// caServer::logEventMask ()
+//
+epicsShareFunc casEventMask caServer::logEventMask () const
+{
+    if (pCAS) {
+        return this->pCAS->logEventMask();
+    }
+    else {
+        printf("caServer:: no server internals attached\n");
+        return casEventMask();
+    }
+}
+
+//
+// caServer::alarmEventMask ()
+//
+epicsShareFunc casEventMask caServer::alarmEventMask () const
+{
+    if (pCAS) {
+        return this->pCAS->alarmEventMask();
+    }
+    else {
+        printf("caServer:: no server internals attached\n");
+        return casEventMask();
+    }
 }
 
 //

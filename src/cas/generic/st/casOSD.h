@@ -27,61 +27,92 @@ class casBeaconTimer;
 //
 class caServerOS {
 	friend class casServerReg;
+    friend class casBeaconTimer;
 public:
-	caServerOS (caServerI &casIn) : 
-		cas (casIn), pBTmr (NULL) {}
-	caStatus init ();
+	caServerOS ();
 	virtual ~caServerOS ();
 
-	caStatus start ();
-
-	inline caServerI * operator -> ();
 private:
-	caServerI	&cas;
 	casBeaconTimer	*pBTmr;
+
+	virtual double getBeaconPeriod() const = 0;
+	virtual void sendBeacon() = 0;
 };
 
-class casDGClient;
 class casDGReadReg;
+class casDGBCastReadReg;
+class casDGWriteReg;
+class casDGEvWakeup;
+class casDGIOWakeup;
 
 //
 // casDGIntfOS
 //
 class casDGIntfOS : public casDGIntfIO {
+    friend class casDGReadReg;
+    friend class casDGBCastReadReg;
+    friend class casDGWriteReg;
+    friend class casDGEvWakeup;
+    friend class casDGIOWakeup;
 public:
-	casDGIntfOS(casDGClient &client);
-	virtual ~casDGIntfOS();
 
-	caStatus start();
+    casDGIntfOS (caServerI &serverIn, const caNetAddr &addr, 
+        bool autoBeaconAddr=TRUE, bool addConfigBeaconAddr=FALSE);
 
-	void show(unsigned level) const;
+	virtual ~casDGIntfOS ();
 
-	void recvCB();
-	void sendCB();
+	void show (unsigned level) const;
+
 private:
-	casDGReadReg    *pRdReg;
+	casDGReadReg        *pRdReg;
+	casDGBCastReadReg   *pBCastRdReg; // fix for solaris bug
+	casDGWriteReg       *pWtReg;
+	casDGEvWakeup       *pEvWk;
+	casDGIOWakeup       *pIOWk;
+	unsigned char		sendBlocked;
+
+    void armRecv ();
+    void armSend ();
+
+    void disarmRecv ();
+    void disarmSend ();
+
+    void recvCB (inBuf::fillParameter parm);
+	void sendCB ();
+
+	void sendBlockSignal ();
+
+	void ioBlockedSignal ();
+
+	void eventSignal ();
+	void eventFlush ();
+
+    void processInput();
 };
 
 //
 // casIntfOS
 //
-class casIntfOS : public casIntfIO, public tsDLNode<casIntfOS> 
+class casIntfOS : public casIntfIO, public tsDLNode<casIntfOS>, 
+    public casDGIntfOS
 {
+	friend class casDGEvWakeup;
 	friend class casServerReg;
 public:
-	casIntfOS (caServerI &casIn) : 
-		cas (casIn), pRdReg (NULL) {}
-	caStatus init(const caNetAddr &addr, casDGClient &dgClientIn,
-			int autoBeaconAddr, int addConfigBeaconAddr);
+	casIntfOS (caServerI &casIn, const caNetAddr &addr, 
+        bool autoBeaconAddr=true, bool addConfigBeaconAddr=false);
 	virtual ~casIntfOS();
+
+    void show (unsigned level);
+
+    caNetAddr serverAddress () const;
+
+private:
+	caServerI       &cas;
+	casServerReg    *pRdReg;
 
 	void recvCB ();
 	void sendCB () {}; // NOOP satifies template
-
-	casDGIntfIO *newDGIntfIO (casDGClient &dgClientIn) const;
-private:
-	caServerI	&cas;
-	casServerReg	*pRdReg;
 };
 
 class casStreamWriteReg;
@@ -93,28 +124,13 @@ class casStreamIOWakeup;
 // casStreamOS
 //
 class casStreamOS : public casStreamIO {
+    friend class casStreamWriteReg;
+    friend class casStreamReadReg;
 	friend class casStreamEvWakeup;
 	friend class casStreamIOWakeup;
 public:
-	casStreamOS(caServerI &, const ioArgsToNewStreamIO &ioArgs);
-	caStatus init();
-	~casStreamOS();
-
-	//
-	// process any incomming messages
-	//
-	casProcCond processInput();
-	caStatus start();
-
-	void recvCB();
-	void sendCB();
-
-	void sendBlockSignal();
-	
-	void ioBlockedSignal();
-
-	void eventSignal();
-	void eventFlush();
+	casStreamOS (caServerI &, const ioArgsToNewStreamIO &ioArgs);
+	~casStreamOS ();
 
 	void show (unsigned level) const;
 private:
@@ -122,7 +138,7 @@ private:
 	casStreamReadReg	*pRdReg;
 	casStreamEvWakeup	*pEvWk;
 	casStreamIOWakeup	*pIOWk;
-	unsigned		sendBlocked:1;
+	unsigned char		sendBlocked;
 	//
 	//
 	//
@@ -130,34 +146,21 @@ private:
 	inline void armRecv ();
 	inline void disarmSend();
 	inline void disarmRecv();
-};
-
-class casDGEvWakeup;
-
-//
-// casDGOS
-//
-class casDGOS : public casDGIO {
-	friend class casDGEvWakeup;
-public:
-	casDGOS(caServerI &cas);
-	~casDGOS();
 
 	//
 	// process any incomming messages
 	//
-	casProcCond processInput();
+	casProcCond processInput ();
 
-	void sendBlockSignal();
+	void recvCB ();
+	void sendCB ();
 
-	void eventSignal();
-	void eventFlush();
+	void sendBlockSignal ();
+	
+	void ioBlockedSignal ();
 
-	void show(unsigned level) const;
-
-	caStatus start();
-private:
-	casDGEvWakeup	*pEvWk;
+	void eventSignal ();
+	void eventFlush ();
 };
 
 // no additions below this line

@@ -7,6 +7,9 @@
 // Some BSD calls have crept in here
 //
 // $Log$
+// Revision 1.5  1997/08/05 00:47:26  jhill
+// fixed warnings
+//
 // Revision 1.4  1997/06/13 09:16:17  jhill
 // connect proto changes
 //
@@ -39,18 +42,18 @@ class caServerOS;
 //
 class casBeaconTimer : public osiTimer {
 public:
-        casBeaconTimer (const osiTime &delay, caServerOS &osIn) : 
-		os (osIn), osiTimer(delay) {}
-        void expire();
-	const osiTime delay();
-	osiBool again();
-	const char *name()
-	{
-		return "casBeaconTimer";
-	}
+    casBeaconTimer (const osiTime &delay, caServerOS &osIn) : 
+      os (osIn), osiTimer(delay) {}
+    void expire();
+    const osiTime delay();
+    osiBool again();
+    const char *name()
+    {
+      return "casBeaconTimer";
+    }
 private:
-        caServerOS      &os;
-	int		taskId; 
+    caServerOS      &os;
+    int		taskId; 
 };
 
 class casServerReg;
@@ -66,38 +69,20 @@ void caServerEntry(caServerI *pCAS);
 // caServerOS
 //
 class caServerOS {
-	friend class casServerReg;
-	friend void caServerEntry(caServerI *pCAS);
+    friend class casServerReg;
+    friend void caServerEntry(caServerI *pCAS);
 public:
-	caServerOS (caServerI &casIn) : 
-		cas (casIn), pBTmr (NULL), tid(ERROR) {}
-	caStatus init ();
-	~caServerOS ();
+    caServerOS (caServerI &casIn) : 
+      cas (casIn), pBTmr (NULL), tid(ERROR) {}
 
-	inline caServerI * operator -> ();
+    caStatus init ();
+    ~caServerOS ();
 
+    inline caServerI * operator -> ();
+      
 private:
-	caServerI	&cas;
-	casBeaconTimer	*pBTmr;
-};
-
-//
-// casDGIntfOS
-//
-class casDGIntfOS : public casDGIO {
-public:
-        casDGIntfOS(casDGClient &client);
-        ~casDGIntfOS();
- 
-        caStatus start();
- 
-        void show(unsigned level) const;
- 
-        void recvCB();
-        void sendCB();
-private:
-        casDGClient     &client;
-	int		tid;
+//    caServerI       &cas;
+    casBeaconTimer  *pBTmr;
 };
 
 //
@@ -106,19 +91,19 @@ private:
 class casIntfOS : public casIntfIO, public tsDLNode<casIntfOS>
 {
 public:
-        casIntfOS (caServerI &casIn) :
-                cas (casIn), pRdReg (NULL) {}
-        caStatus init(const caNetAddr &addr, casDGClient &dgClientIn,
-                        int autoBeaconAddr, int addConfigBeaconAddr);
-        ~casIntfOS();
- 
-        void recvCB ();
-        void sendCB () {}; // NOOP satifies template
- 
-        casDGIO *newDGIO (casDGClient &dgClientIn) const;
+    casIntfOS (caServerI &casIn) :
+      cas (casIn), pRdReg (NULL) {}
+    caStatus init (caServerI &casIn, const caNetAddr &addr, 
+      bool autoBeaconAddr, bool addConfigBeaconAddr);
+    ~casIntfOS();
+
+    void recvCB ();
+    void sendCB () {}; // NOOP satifies template
+
+    casDGIO *newDGIO (casDGClient &dgClientIn) const;
 private:
-        caServerI       &cas;
-	int		tid;
+    caServerI       &cas;
+    int		tid;
 };
 
 // no additions below this line

@@ -8,15 +8,16 @@
 //
 extern int main (int argc, const char **argv)
 {
-	osiTime		begin(osiTime::getCurrent());
-	exServer	*pCAS;
-	unsigned 	debugLevel = 0u;
-	double		executionTime;
-	char		pvPrefix[128] = "";
-	unsigned	aliasCount = 1u;
-	unsigned	scanOn = 1u;
-	aitBool	forever = aitTrue;
-	int		i;
+	osiTime     begin (osiTime::getCurrent());
+	exServer    *pCAS;
+	unsigned    debugLevel = 0u;
+	double      executionTime;
+	char        pvPrefix[128] = "";
+	unsigned    aliasCount = 1u;
+	unsigned    scanOnAsUnsignedInt = true;
+    bool        scanOn;
+	bool        forever = aitTrue;
+	int         i;
 
 	for (i=1; i<argc; i++) {
 		if (sscanf(argv[i], "-d\t%u", &debugLevel)==1) {
@@ -32,7 +33,7 @@ extern int main (int argc, const char **argv)
 		if (sscanf(argv[i],"-c %u", &aliasCount)==1) {
 			continue;
 		}
-		if (sscanf(argv[i],"-s %u", &scanOn)==1) {
+		if (sscanf(argv[i],"-s %u", &scanOnAsUnsignedInt)==1) {
 			continue;
 		}
 		printf ("\"%s\"?\n", argv[i]);
@@ -43,7 +44,14 @@ extern int main (int argc, const char **argv)
 		return (1);
 	}
 
-	pCAS = new exServer(pvPrefix, aliasCount, (aitBool) scanOn);
+    if (scanOnAsUnsignedInt) {
+        scanOn = true;
+    }
+    else {
+        scanOn = false;
+    }
+
+	pCAS = new exServer (pvPrefix, aliasCount, scanOn);
 	if (!pCAS) {
 		return (-1);
 	}

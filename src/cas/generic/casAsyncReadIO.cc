@@ -26,40 +26,6 @@
  *              Advanced Photon Source
  *              Argonne National Laboratory
  *
- *
- * History
- * $Log$
- * Revision 1.7  1998/07/08 15:38:03  jhill
- * fixed lost monitors during flow control problem
- *
- * Revision 1.6  1998/06/18 00:08:30  jhill
- * deleted unused variables
- *
- * Revision 1.5  1998/06/16 02:18:53  jhill
- * use smart gdd ptr
- *
- * Revision 1.4  1997/08/05 00:47:01  jhill
- * fixed warnings
- *
- * Revision 1.3  1997/04/10 19:33:56  jhill
- * API changes
- *
- * Revision 1.2  1996/11/06 22:15:54  jhill
- * allow monitor init read to using rd async io
- *
- * Revision 1.1  1996/11/02 01:01:03  jhill
- * installed
- *
- * Revision 1.3  1996/09/04 20:13:16  jhill
- * initialize new member - asyncIO
- *
- * Revision 1.2  1996/06/26 21:18:50  jhill
- * now matches gdd api revisions
- *
- * Revision 1.1.1.1  1996/06/20 00:28:14  jhill
- * ca server installation
- *
- *
  */
 
 
@@ -69,25 +35,24 @@
 #include "casCtxIL.h" // casCtxI in line func
 
 //
-// casAsyncRdIOI::casAsyncRdIOI()
+// casAsyncReadIO::casAsyncReadIO()
 //
-epicsShareFunc casAsyncRdIOI::casAsyncRdIOI(const casCtx &ctx, casAsyncReadIO &ioIn) :
-	casAsyncIOI(*ctx.getClient(), ioIn),
+casAsyncReadIO::casAsyncReadIO(const casCtx &ctx) :
+	casAsyncIOI(*ctx.getClient()),
 	msg(*ctx.getMsg()), 
 	chan(*ctx.getChannel()), 
 	pDD(NULL),
 	completionStatus(S_cas_internal)
 {
-	assert (&this->msg);
 	assert (&this->chan);
 
 	this->chan.installAsyncIO(*this);
 }
 
 //
-// casAsyncRdIOI::~casAsyncRdIOI()
+// casAsyncReadIO::~casAsyncReadIO()
 //
-casAsyncRdIOI::~casAsyncRdIOI()
+casAsyncReadIO::~casAsyncReadIO()
 {
 	this->lock();
 
@@ -97,9 +62,9 @@ casAsyncRdIOI::~casAsyncRdIOI()
 }
 
 //
-// casAsyncRdIOI::postIOCompletion()
+// casAsyncReadIO::postIOCompletion()
 //
-epicsShareFunc caStatus casAsyncRdIOI::postIOCompletion(caStatus completionStatusIn,
+caStatus casAsyncReadIO::postIOCompletion(caStatus completionStatusIn,
 				gdd &valueRead)
 {
 	this->lock();
@@ -111,19 +76,18 @@ epicsShareFunc caStatus casAsyncRdIOI::postIOCompletion(caStatus completionStatu
 }
 
 //
-// casAsyncRdIOI::readOP()
+// casAsyncReadIO::readOP()
 //
-epicsShareFunc int casAsyncRdIOI::readOP()
+epicsShareFunc bool casAsyncReadIO::readOP() const
 {
-	return TRUE; // it is a read op
+	return true; // it is a read op
 }
 
-
 //
-// casAsyncRdIOI::cbFuncAsyncIO()
+// casAsyncReadIO::cbFuncAsyncIO()
 // (called when IO completion event reaches top of event queue)
 //
-caStatus casAsyncRdIOI::cbFuncAsyncIO()
+epicsShareFunc caStatus casAsyncReadIO::cbFuncAsyncIO()
 {
 	caStatus 	status;
 
@@ -146,11 +110,19 @@ caStatus casAsyncRdIOI::cbFuncAsyncIO()
 		break;
 
 	default:
-		this->reportInvalidAsynchIO(this->msg.m_cmmd);
-		status = S_cas_internal;
+        errPrintf (S_cas_invalidAsynchIO, __FILE__, __LINE__,
+            " - client request type = %u", this->msg.m_cmmd);
+		status = S_cas_invalidAsynchIO;
 		break;
 	}
 
 	return status;
 }
 
+//
+// void casAsyncReadIO::destroy ()
+//
+void casAsyncReadIO::destroy ()
+{
+    delete this;
+}

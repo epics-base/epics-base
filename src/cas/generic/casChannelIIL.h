@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.7  1999/08/04 23:18:59  jhill
+ * updated to new DLL terminators
+ *
  * Revision 1.6  1997/04/10 19:34:00  jhill
  * API changes
  *
@@ -58,19 +61,11 @@
 #include "casEventSysIL.h"
 
 //
-// casChannelI::operator -> ()
-//
-inline casChannel * casChannelI::operator -> () const
-{
-        return &this->chan;
-}
-
-//
 // casChannelI::lock()
 //
 inline void casChannelI::lock() const
 {
-	this->client.osiLock();
+	this->client.lock();
 }
 
 //
@@ -78,7 +73,7 @@ inline void casChannelI::lock() const
 //
 inline void casChannelI::unlock() const
 {
-	this->client.osiUnlock();
+	this->client.unlock();
 }
 
 //
@@ -144,12 +139,11 @@ inline casMonitor *casChannelI::findMonitor(const caResId clientIdIn)
 }
 
 //
-// casChannelI::clientDestroy()
+// casChannelI::destroyNoClientNotify()
 //
-inline void casChannelI::clientDestroy() 
+inline void casChannelI::destroyNoClientNotify() 
 {
-	this->clientDestroyPending=TRUE;
-	(*this)->destroy();
+	this->destroy ();
 }
 
 #include "casPVIIL.h"

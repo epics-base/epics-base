@@ -16,17 +16,17 @@ void exChannel::setOwner(const char * const /* pUserName */,
 //
 // exChannel::readAccess ()
 //
-aitBool exChannel::readAccess () const
+bool exChannel::readAccess () const
 {
-	return aitTrue;
+	return true;
 }
 
 //
 // exChannel::writeAccess ()
 //
-aitBool exChannel::writeAccess () const
+bool exChannel::writeAccess () const
 {
-	return aitTrue;
+	return true;
 }
 
 

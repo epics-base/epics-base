@@ -27,24 +27,6 @@
  *              Argonne National Laboratory
  *
  *
- * History
- * $Log$
- * Revision 1.5  1997/04/10 19:33:59  jhill
- * API changes
- *
- * Revision 1.4  1996/09/04 20:17:34  jhill
- * use ptr not ref to satisfy MSVISC++
- *
- * Revision 1.3  1996/08/13 22:52:31  jhill
- * changes for MVC++
- *
- * Revision 1.2  1996/07/01 19:56:09  jhill
- * one last update prior to first release
- *
- * Revision 1.1.1.1  1996/06/20 00:28:14  jhill
- * ca server installation
- *
- *
  */
 
 #include "server.h"
@@ -55,7 +37,7 @@
 // casChannel::casChannel()
 //
 epicsShareFunc casChannel::casChannel(const casCtx &ctx) : 
-	casPVListChan (ctx, *this) 
+	casPVListChan (ctx) 
 {
 }
 
@@ -66,12 +48,15 @@ epicsShareFunc casChannel::~casChannel()
 {
 }
 
+//
+// casChannel::getPV()
+//
 epicsShareFunc casPV *casChannel::getPV()
 {
 	casPVI *pPVI = &this->casChannelI::getPVI();
 
 	if (pPVI!=NULL) {
-		return pPVI->interfaceObjectPointer();
+		return pPVI->apiPointer();
 	}
 	else {
 		return NULL;
@@ -92,26 +77,26 @@ epicsShareFunc void casChannel::setOwner(const char * const /* pUserName */,
 //
 // casChannel::readAccess()
 //
-epicsShareFunc aitBool casChannel::readAccess () const 
+epicsShareFunc bool casChannel::readAccess () const 
 {
-	return aitTrue;
+	return true;
 }
 
 //
 // casChannel::writeAccess()
 //
-epicsShareFunc aitBool casChannel::writeAccess() const 
+epicsShareFunc bool casChannel::writeAccess() const 
 {
-	return aitTrue;
+	return true;
 }
 
 
 //
 // casChannel::confirmationRequested()
 //
-epicsShareFunc aitBool casChannel::confirmationRequested() const 
+epicsShareFunc bool casChannel::confirmationRequested() const 
 {
-	return aitFalse;
+	return false;
 }
 
 //

@@ -4,6 +4,9 @@
 //
 //
 // $Log$
+// Revision 1.6  1998/09/24 20:53:54  jhill
+// cosmetic
+//
 // Revision 1.5  1997/08/05 00:47:27  jhill
 // fixed warnings
 //
@@ -61,32 +64,22 @@ casStreamOS::casStreamOS(caServerI &cas, casMsgIO &ioIn) :
 	clientTId(NULL),
 	eventTId(NULL)
 {
+    caStatus status;
+    
+    this->eventSignalSem = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
+    if (this->eventSignalSem == NULL) {
+        throw S_cas_noMemory;
+    }
+    
+    //
+    // init the base classes
+    //
+    status = this->casStrmClient::init();
+    if (status) {
+        throw status;
+    }
 }
 
-//
-// casStreamOS::init()
-//
-caStatus casStreamOS::init()
-{
-	caStatus status;
-
-        this->eventSignalSem = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
-        if (this->eventSignalSem == NULL) {
-                return S_cas_noMemory;
-        }
-
-	//
-	// init the base classes
-	//
-	status = this->casStrmClient::init();
-	if (status) {
-		return status;
-	}
-
-	return S_cas_success;
-}
-
-
 //
 // casStreamOS::~casStreamOS()
 //
@@ -211,7 +204,7 @@ casProcCond casStreamOS::processInput()
 //
 int casStrmServer (casStreamOS *pStrmOS)
 {
-	casFillCondition fillCond;
+	inBuf::fillCondition fillCond;
 	casProcCond procCond;
  
         //

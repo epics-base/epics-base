@@ -27,35 +27,6 @@
  *              Argonne National Laboratory
  *
  *
- * History
- * $Log$
- * Revision 1.9  1998/06/16 02:29:57  jhill
- * use smart gdd ptr
- *
- * Revision 1.8  1997/05/05 04:50:11  jhill
- * moved pLog = NULL down
- *
- * Revision 1.7  1997/04/10 19:34:12  jhill
- * API changes
- *
- * Revision 1.6  1996/11/02 00:54:18  jhill
- * many improvements
- *
- * Revision 1.5  1996/09/16 18:24:03  jhill
- * vxWorks port changes
- *
- * Revision 1.4  1996/07/24 22:00:49  jhill
- * added pushOnToEventQueue()
- *
- * Revision 1.3  1996/07/01 19:56:11  jhill
- * one last update prior to first release
- *
- * Revision 1.2  1996/06/26 21:18:56  jhill
- * now matches gdd api revisions
- *
- * Revision 1.1.1.1  1996/06/20 00:28:16  jhill
- * ca server installation
- *
  *
  */
 
@@ -100,7 +71,7 @@ casMonitor::~casMonitor()
 {
 	casCoreClient &client = this->ciu.getClient();
 	
-	this->mutex.osiLock();
+	this->mutex.lock();
 	
 	this->disable();
 	
@@ -113,7 +84,7 @@ casMonitor::~casMonitor()
 
 	this->ciu.deleteMonitor(*this);
 	
-	this->mutex.osiUnlock();
+	this->mutex.unlock();
 }
 
 //
@@ -123,8 +94,8 @@ void casMonitor::enable()
 {
 	caStatus status;
 	
-	this->mutex.osiLock();
-	if (!this->enabled && this->ciu->readAccess()) {
+	this->mutex.lock();
+	if (!this->enabled && this->ciu.readAccess()) {
 		this->enabled = TRUE;
 		status = this->ciu.getPVI().registerEvent();
 		if (status) {
@@ -132,7 +103,7 @@ void casMonitor::enable()
 				"Server tool failed to register event\n");
 		}
 	}
-	this->mutex.osiUnlock();
+	this->mutex.unlock();
 }
 
 //
@@ -140,12 +111,12 @@ void casMonitor::enable()
 //
 void casMonitor::disable()
 {
-	this->mutex.osiLock();
+	this->mutex.lock();
 	if (this->enabled) {
 		this->enabled = FALSE;
 		this->ciu.getPVI().unregisterEvent();
 	}
-	this->mutex.osiUnlock();
+	this->mutex.unlock();
 }
 
 //
@@ -157,7 +128,7 @@ void casMonitor::push(gdd &newValue)
 	casMonEvent 	*pLog;
 	char			full;
 	
-	this->mutex.osiLock();
+	this->mutex.lock();
 	
 	//
 	// get a new block if we havent exceeded quotas
@@ -209,7 +180,7 @@ void casMonitor::push(gdd &newValue)
 	
 	client.addToEventQueue(*pLog);
 	
-	this->mutex.osiUnlock();
+	this->mutex.unlock();
 }
 
 //
@@ -223,9 +194,9 @@ caStatus casMonitor::executeEvent(casMonEvent *pEV)
 	pVal = pEV->getValue ();
 	assert (pVal!=NULL);
 	
-	this->mutex.osiLock();
+	this->mutex.lock();
 	status = this->callBack (*pVal);
-	this->mutex.osiUnlock();
+	this->mutex.unlock();
 	
 	//
 	// if the event isnt accepted we will try

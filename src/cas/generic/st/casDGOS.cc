@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.7  1999/08/05 00:07:56  jhill
+ * osiTimer constructor now requires delay of type double
+ *
  * Revision 1.6  1998/10/23 00:27:14  jhill
  * fixed problem where send was not always rearmed if this
  * was indirectly necessary in the send callback because
@@ -38,6 +41,8 @@
  *
  *
  */
+
+#if 0
 
 //
 // CA server
@@ -114,6 +119,8 @@ void casDGEvWakeup::expire()
 //
 void casDGOS::sendBlockSignal() 
 {
+	this->sendBlocked=TRUE;
+	this->armSend();
 }
 
 //
@@ -124,8 +131,9 @@ void casDGOS::eventSignal()
 	if (!this->pEvWk) {
 		this->pEvWk = new casDGEvWakeup(*this);
 		if (!this->pEvWk) {
-			errMessage(S_cas_noMemory,
+			errMessage (S_cas_noMemory,
 				"casDGOS::eventSignal()");
+            throw S_cas_noMemory;
 		}
 	}
 }
@@ -135,10 +143,15 @@ void casDGOS::eventSignal()
 //
 void casDGOS::eventFlush()
 {
-	this->flush();
+	//
+	// if there is nothing pending in the input
+	// queue, then flush the output queue
+	//
+	if (this->inBuf::bytesAvailable()==0u) {
+		this->armSend ();
+	}
 }
 
-
 //
 // casDGOS::casDGOS()
 //
@@ -148,7 +161,6 @@ casDGOS::casDGOS(caServerI &cas) :
 {
 }
 
-
 //
 // casDGOS::~casDGOS()
 //
@@ -171,7 +183,6 @@ void casDGOS::show(unsigned level) const
 	}
 }
 
-
 //
 // casDGOS::processInput ()
 // - a noop
@@ -181,12 +192,4 @@ casProcCond casDGOS::processInput ()
 	return casProcOk;
 }
 
-//
-// casDGOS::start()
-// - a noop
-//
-caStatus casDGOS::start()
-{
-	return S_cas_success;
-}
-
+#endif

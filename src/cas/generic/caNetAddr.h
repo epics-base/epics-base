@@ -16,6 +16,7 @@
 
 #ifdef caNetAddrSock
 #include "osiSock.h"
+#include "bsdSocketResource.h"
 #endif
 
 #include "epicsAssert.h"
@@ -26,10 +27,10 @@ public:
 	inline void checkSize(); 
 };
 
-enum caNetAddrType {casnaUDF, casnaSock}; // only IP addresses (and undefined) supported at this time
 class epicsShareClass caNetAddr {
 	friend class verifyCANetAddr;
 public:
+    enum caNetAddrType {casnaUDF, casnaInet};
 
 	// 
 	// clear()
@@ -47,10 +48,36 @@ public:
 		this->clear();
 	}
 
-	inline int isSock () const
+	inline bool isInet () const
 	{
-		return this->type == casnaSock;
+		return this->type == casnaInet;
 	}
+
+	inline bool isValid () const
+	{
+		return this->type != casnaUDF;
+	}
+
+	inline bool operator == (const caNetAddr &rhs) const
+	{
+        if (this->type != rhs.type) {
+            return false;
+        }
+#	ifdef caNetAddrSock
+        if (this->type==casnaInet) {
+            return (this->addr.ip.sin_addr.s_addr == rhs.addr.ip.sin_addr.s_addr) && 
+                (this->addr.ip.sin_port == rhs.addr.ip.sin_port);
+        }
+#   endif
+        else {
+            return false;
+        }
+	}
+
+	inline bool operator != (const caNetAddr &rhs) const
+    {
+        return ! this->operator == (rhs);
+    }
 
 	//
 	// This is specified so that compilers will not use one of 
@@ -67,6 +94,11 @@ public:
 		return *this;
 	}	
 
+    //
+    // convert to the string equivalent of the address
+    //
+    void stringConvert (char *pString, unsigned stringLength) const;
+
 	//
 	// conditionally drag BSD socket headers into the server
 	// and server tool
@@ -74,60 +106,59 @@ public:
 	// to use this #define caNetAddrSock
 	//
 #	ifdef caNetAddrSock
-		inline void setSockIP(unsigned long inaIn, unsigned short portIn)
+		inline void setSockIP (unsigned long inaIn, unsigned short portIn)
 		{
-			this->type = casnaSock;
-			this->addr.sock.sin_family = AF_INET;
-			this->addr.sock.sin_addr.s_addr = inaIn;
-			this->addr.sock.sin_port = portIn;
+			this->type = casnaInet;
+			this->addr.ip.sin_family = AF_INET;
+			this->addr.ip.sin_addr.s_addr = inaIn;
+			this->addr.ip.sin_port = portIn;
 		}	
 
-		inline void setSockIP(const struct sockaddr_in &sockIPIn)
+		inline void setSockIP (const struct sockaddr_in &sockIPIn)
 		{
-			this->type = casnaSock;
-			assert(sockIPIn.sin_family == AF_INET);
-			this->addr.sock = sockIPIn;
+			this->type = casnaInet;
+			assert (sockIPIn.sin_family == AF_INET);
+			this->addr.ip = sockIPIn;
 		}	
 
-		inline void setSock(const struct sockaddr &sock)
+		inline void setSock (const struct sockaddr &sock)
 		{
-			this->type = casnaSock;
+			assert (sock.sa_family == AF_INET);
+			this->type = casnaInet;
 			const struct sockaddr_in *psip = 
 				(const struct sockaddr_in *) &sock;
-			assert(sizeof(sock)==sizeof(this->addr.sock));
-			this->addr.sock = *psip;
+			this->addr.ip = *psip;
 		}	
 
-		inline caNetAddr(const struct sockaddr_in &sockIPIn)
+		inline caNetAddr (const struct sockaddr_in &sockIPIn)
 		{
-			this->setSockIP(sockIPIn);
+			this->setSockIP (sockIPIn);
 		}
 
 		inline caNetAddr operator = (const struct sockaddr_in &sockIPIn)
 		{
-			this->setSockIP(sockIPIn);
+			this->setSockIP (sockIPIn);
 			return *this;
 		}			
 
 		inline caNetAddr operator = (const struct sockaddr &sockIn)
 		{
-			this->setSock(sockIn);
+			this->setSock (sockIn);
 			return *this;
 		}		
 
 		inline struct sockaddr_in getSockIP() const
 		{
-			assert (this->type==casnaSock);
-			return this->addr.sock;
+			assert (this->type==casnaInet);
+			return this->addr.ip;
 		}
 
 		inline struct sockaddr getSock() const
 		{
 			struct sockaddr sa;
-			assert (this->type==casnaSock);
-			assert (sizeof(sa)==sizeof(this->addr.sock));
+			assert (this->type==casnaInet);
 			struct sockaddr_in *psain = (struct sockaddr_in *) &sa;
-			*psain = this->addr.sock;
+			*psain = this->addr.ip;
 
 			return sa;
 		}
@@ -147,7 +178,7 @@ public:
 private:
 	union {	
 #		ifdef caNetAddrSock		
-			struct sockaddr_in sock;
+			struct sockaddr_in ip;
 #		endif
 		//
 		// this must be as big or bigger 
@@ -174,5 +205,21 @@ inline void verifyCANetAddr::checkSize()
 	assert (ds==as);
 }
 
+//
+// caNetAddr::stringConvert ()
+//
+inline void caNetAddr::stringConvert (char *pString, unsigned stringLength) const
+{
+#   ifdef caNetAddrSock		
+    if (this->type==casnaInet) {
+        ipAddrToA (&this->addr.ip, pString, stringLength);
+        return;
+    }
+#   endif    
+    if (stringLength) {
+        strncpy (pString, "<Undefined Address>", stringLength);
+        pString[stringLength-1] = '\n';
+    }
+}
 
 #endif // caNetAddrH

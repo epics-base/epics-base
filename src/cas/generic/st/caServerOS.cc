@@ -4,21 +4,6 @@
  * caServerOS.c
  * $Id$
  *
- *
- * $Log$
- * Revision 1.2  1997/04/10 19:34:28  jhill
- * API changes
- *
- * Revision 1.1  1996/11/02 01:01:27  jhill
- * installed
- *
- * Revision 1.2  1996/08/05 19:28:49  jhill
- * space became tab
- *
- * Revision 1.1.1.1  1996/06/20 00:28:06  jhill
- * ca server installation
- *
- *
  */
 
 
@@ -32,23 +17,35 @@
 //
 class casBeaconTimer : public osiTimer {
 public:
-        casBeaconTimer (double delay, caServerOS &osIn) :
-                osiTimer(delay), os (osIn) {}
-        void expire();
-        double delay() const;
-        bool again() const;
-        const char *name() const;
+    casBeaconTimer (double delay, caServerOS &osIn) :
+        osiTimer(delay), os (osIn) {}
+    void expire();
+    double delay() const;
+    bool again() const;
+    const char *name() const;
 private:
-        caServerOS      &os;
- 
+    caServerOS      &os;
 };
 
 //
-// aServerOS::operator -> ()
+// caServerOS::caServerOS()
 //
-inline caServerI * caServerOS::operator -> ()
+caServerOS::caServerOS ()
 {
-	return &this->cas;
+	this->pBTmr = new casBeaconTimer(0.0, *this);
+	if (!this->pBTmr) {
+		throw S_cas_noMemory;
+	}
+}
+
+//
+// caServerOS::~caServerOS()
+//
+caServerOS::~caServerOS()
+{
+	if (this->pBTmr) {
+		delete this->pBTmr;
+	}
 }
 
 //
@@ -56,7 +53,7 @@ inline caServerI * caServerOS::operator -> ()
 //
 void casBeaconTimer::expire()	
 {
-	os->sendBeacon ();
+	os.sendBeacon ();
 }
 
 //
@@ -72,7 +69,7 @@ bool casBeaconTimer::again()	const
 //
 double casBeaconTimer::delay() const
 {
-	return os->getBeaconPeriod();
+	return os.getBeaconPeriod();
 }
 
 //
@@ -81,29 +78,5 @@ double casBeaconTimer::delay() const
 const char *casBeaconTimer::name() const
 {
 	return "casBeaconTimer";
-}
-
-//
-// caServerOS::init()
-//
-caStatus caServerOS::init()
-{
-	this->pBTmr = new casBeaconTimer((*this)->getBeaconPeriod(), *this);
-	if (!this->pBTmr) {
-		ca_printf("CAS: Unable to start server beacon\n");
-		return S_cas_noMemory;
-	}
-	
-	return S_cas_success;
-}
-
-//
-// caServerOS::~caServerOS()
-//
-caServerOS::~caServerOS()
-{
-	if (this->pBTmr) {
-		delete this->pBTmr;
-	}
 }
 

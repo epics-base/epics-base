@@ -51,6 +51,7 @@ inline casStreamReadReg::casStreamReadReg (casStreamOS &osIn) :
 //
 inline casStreamReadReg::~casStreamReadReg ()
 {
+    os.pRdReg = NULL; 
 #	if defined(DEBUG) 
 		printf ("Read off %d\n", this->os.getFD());
 		printf ("Recv backlog %u\n", 
@@ -95,6 +96,7 @@ inline casStreamWriteReg::casStreamWriteReg (casStreamOS &osIn) :
 //
 inline casStreamWriteReg::~casStreamWriteReg ()
 {
+    os.pWtReg = NULL; 
 #	if defined(DEBUG) 
 		printf ("Write off %d\n", this->os.getFD());
 		printf ("Recv backlog %u\n", 
@@ -231,6 +233,7 @@ inline void casStreamOS::armRecv()
 			this->pRdReg = new casStreamReadReg(*this);
 			if (!this->pRdReg) {
 				errMessage(S_cas_noMemory, "armRecv()");
+                throw S_cas_noMemory;
 			}
 		}
 	}
@@ -264,7 +267,6 @@ inline void casStreamOS::disarmRecv()
 {
 	if (this->pRdReg) {
 		delete this->pRdReg;
-		this->pRdReg = NULL;
 	}
 }
 
@@ -281,6 +283,7 @@ inline void casStreamOS::armSend()
 		this->pWtReg = new casStreamWriteReg(*this);
 		if (!this->pWtReg) {
 			errMessage(S_cas_noMemory, "armSend() failed");
+            throw S_cas_noMemory;
 		}
 	}
 }
@@ -292,7 +295,6 @@ inline void casStreamOS::disarmSend ()
 {
 	if (this->pWtReg) {
 		delete this->pWtReg;
-		this->pWtReg = NULL;
 	}
 }
 
@@ -306,6 +308,7 @@ void casStreamOS::ioBlockedSignal()
 		if (!this->pIOWk) {
 			errMessage(S_cas_noMemory,
 				"casStreamOS::ioBlockedSignal()");
+            throw S_cas_noMemory;
 		}			
 	}
 }
@@ -320,6 +323,7 @@ void casStreamOS::eventSignal()
 		if (!this->pEvWk) {
 			errMessage(S_cas_noMemory, 
 				"casStreamOS::eventSignal()");
+            throw S_cas_noMemory;
 		}
 	}
 }
@@ -338,41 +342,21 @@ void casStreamOS::eventFlush()
 	}
 }
 
-
 //
 // casStreamOS::casStreamOS()
 //
 casStreamOS::casStreamOS(caServerI &cas, const ioArgsToNewStreamIO &ioArgs) : 
-	casStreamIO(cas, ioArgs),
-	pWtReg(NULL),
-	pRdReg(NULL),
-	pEvWk(NULL),
-	pIOWk(NULL),
-	sendBlocked(FALSE)
+	casStreamIO (cas, ioArgs),
+	pWtReg (NULL),
+	pRdReg (NULL),
+	pEvWk (NULL),
+	pIOWk (NULL),
+	sendBlocked (FALSE)
 {
-}
-
-//
-// casStreamOS::init()
-//
-caStatus casStreamOS::init()
-{
-	caStatus status;
-
-	//
-	// init the base classes
-	//
-	status = this->casStreamIO::init();
-	if (status) {
-		return status;
-	}
-
 	this->xSetNonBlocking();
-
-	return S_cas_success;
+	this->armRecv();
 }
 
-
 //
 // casStreamOS::~casStreamOS()
 //
@@ -417,17 +401,6 @@ void casStreamOS::show(unsigned level) const
 	}
 }
 
-
-//
-// casClientStart ()
-//
-caStatus casStreamOS::start()
-{
-	this->armRecv();
-	return S_cas_success;
-}
-
-
 //
 // casStreamReadReg::show()
 //
@@ -454,7 +427,7 @@ void casStreamReadReg::callBack ()
 //
 void casStreamOS::recvCB()
 {
-	casFillCondition fillCond;
+	inBuf::fillCondition fillCond;
 	casProcCond procCond;
 
 	assert (this->pRdReg);
@@ -463,31 +436,34 @@ void casStreamOS::recvCB()
     // copy in new messages 
     //
     fillCond = this->fill();
-	procCond = this->processInput();
-	if (fillCond == casFillDisconnect ||
-		procCond == casProcDisconnect) {
+	if (fillCond == casFillDisconnect) {
 		delete this;
-	}	
-	else if (this->inBuf::full()==aitTrue) {
-		//
-		// If there isnt any space then temporarily 
-		// stop calling this routine until problem is resolved 
-		// either by:
-		// (1) sending or
-		// (2) a blocked IO op unblocks
-		//
-		// (casStreamReadReg is _not_ a onceOnly fdReg - 
-		// therefore an explicit delete is required here)
-		//
-		this->disarmRecv(); // this deletes the casStreamReadReg object
 	}
+    else {
+	    procCond = this->processInput();
+	    if (procCond == casProcDisconnect) {
+		    delete this;
+	    }	
+	    else if (this->inBuf::full()==aitTrue) {
+		    //
+		    // If there isnt any space then temporarily 
+		    // stop calling this routine until problem is resolved 
+		    // either by:
+		    // (1) sending or
+		    // (2) a blocked IO op unblocks
+		    //
+		    // (casStreamReadReg is _not_ a onceOnly fdReg - 
+		    // therefore an explicit delete is required here)
+		    //
+		    this->disarmRecv(); // this deletes the casStreamReadReg object
+	    }
+    }
 	//
 	// NO CODE HERE
 	// (see delete above)
 	//
 }
 
-
 //
 // casStreamOS::sendBlockSignal()
 //
@@ -497,7 +473,6 @@ void casStreamOS::sendBlockSignal()
 	this->armSend();
 }
 
-
 //
 // casStreamWriteReg::show()
 //
@@ -507,7 +482,6 @@ void casStreamWriteReg::show(unsigned level) const
 	printf ("casStreamWriteReg at %p\n", this);
 }
 
-
 //
 // casStreamWriteReg::callBack()
 //
@@ -526,31 +500,21 @@ void casStreamWriteReg::callBack()
 //
 void casStreamOS::sendCB()
 {
-	casFlushCondition flushCond;
+    outBuf::flushCondition flushCond;
 	casProcCond procCond; 
-
-	this->pWtReg = NULL; // allow rearm (send callbacks are one shots)
 
 	//
 	// attempt to flush the output buffer 
 	//
 	flushCond = this->flush();
-	if (flushCond==casFlushCompleted ||
-		flushCond==casFlushPartial) {
+	if (flushCond==flushProgress) {
 		if (this->sendBlocked) {
 			this->sendBlocked = FALSE;
 		}
 	}
-	else if (flushCond==casFlushDisconnect) {
+	else if (flushCond==outBuf::flushDisconnect) {
 		return;
 	}
-#if defined(DEBUG)
-	else if (flushCond==casFlushNone) {
-	}
-	else {
-		assert(0);
-	}
-#endif
 
 	//
 	// If we are unable to flush out all of the events 

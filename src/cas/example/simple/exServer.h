@@ -87,7 +87,7 @@ public:
 		{ return this->elementCount; }
 	void unlinkPV() { this->pPV=NULL; }
 
-	exPV *createPV (exServer &exCAS, aitBool preCreateFlag, aitBool scanOn);
+	exPV *createPV (exServer &exCAS, bool preCreateFlag, bool scanOn);
 	void deletePV ();
 
 private:
@@ -155,7 +155,7 @@ class exPV : public casPV, public tsSLNode<exPV> {
 	// allow the exScanTimer destructor to set dangling pScanTimer pointer to NULL
 	friend exScanTimer::~exScanTimer(); 
 public:
-	exPV (pvInfo &setup, aitBool preCreateFlag, aitBool scanOn);
+	exPV (pvInfo &setup, bool preCreateFlag, bool scanOn);
 	virtual ~exPV();
 
 	void show(unsigned level) const;
@@ -241,12 +241,12 @@ public:
 		const char * const pUserName, const char * const pHostName);
 
 protected:
-	smartGDDPointer	pValue;
-	exScanTimer		*pScanTimer;
-	pvInfo & 		info; 
-	aitBool		interest;
-	aitBool		preCreate;
-	aitBool		scanOn;
+	smartGDDPointer pValue;
+	exScanTimer     *pScanTimer;
+	pvInfo &        info; 
+	bool            interest;
+	bool            preCreate;
+	bool            scanOn;
 	static osiTime	currentTime;
 
 	virtual caStatus updateValue (gdd &value) = 0;
@@ -274,7 +274,7 @@ private:
 //
 class exScalarPV : public exPV {
 public:
-	exScalarPV (pvInfo &setup, aitBool preCreateFlag, aitBool scanOnIn) :
+	exScalarPV (pvInfo &setup, bool preCreateFlag, bool scanOnIn) :
 			exPV (setup, preCreateFlag, scanOnIn) {}
 	void scan();
 private:
@@ -286,7 +286,7 @@ private:
 //
 class exVectorPV : public exPV {
 public:
-	exVectorPV (pvInfo &setup, aitBool preCreateFlag, aitBool scanOnIn) :
+	exVectorPV (pvInfo &setup, bool preCreateFlag, bool scanOnIn) :
 			exPV (setup, preCreateFlag, scanOnIn) {}
 	void scan();
 
@@ -302,7 +302,7 @@ private:
 //
 class exServer : public caServer {
 public:
-	exServer(const char * const pvPrefix, unsigned aliasCount, aitBool scanOn);
+	exServer(const char * const pvPrefix, unsigned aliasCount, bool scanOn);
 	~exServer();
 
 	void show (unsigned level) const;
@@ -328,12 +328,14 @@ public:
 private:
 	resTable<pvEntry,stringId> stringResTbl;
 	unsigned simultAsychIOCount;
-	aitBool scanOn;
+	bool scanOn;
 
 	//
 	// list of pre-created PVs
 	//
 	static pvInfo pvList[];
+    static const unsigned pvListNElem;
+
 
 	//
 	// on-the-fly PVs 
@@ -350,7 +352,7 @@ public:
 	//
 	// exAsyncPV()
 	//
-	exAsyncPV (pvInfo &setup, aitBool preCreateFlag, aitBool scanOnIn) :
+	exAsyncPV (pvInfo &setup, bool preCreateFlag, bool scanOnIn) :
 		exScalarPV (setup, preCreateFlag, scanOnIn),
 		simultAsychIOCount(0u) {}
 
@@ -390,8 +392,8 @@ public:
 	virtual void setOwner(const char * const pUserName, 
 		const char * const pHostName);
 
-	virtual aitBool readAccess () const;
-	virtual aitBool writeAccess () const;
+	virtual bool readAccess () const;
+	virtual bool writeAccess () const;
 
 private:
 };
@@ -535,7 +537,7 @@ public:
 	// exAsyncCreateIO()
 	//
 	exAsyncCreateIO(pvInfo &pviIn, exServer &casIn, 
-		const casCtx &ctxIn, aitBool scanOnIn) :
+		const casCtx &ctxIn, bool scanOnIn) :
 		casAsyncPVAttachIO(ctxIn), exOSITimer(0.00001), 
 			pvi(pviIn), cas(casIn), scanOn(scanOnIn) {}
 
@@ -555,7 +557,7 @@ public:
 private:
 	pvInfo	&pvi;
 	exServer	&cas;
-	aitBool	scanOn;
+	bool	scanOn;
 };
 
 //

@@ -31,24 +31,3 @@
 #include "server.h"
 #include "dgInBufIL.h" // in line func for dgInBuf
 #include "bsdSocketResource.h"
-
-casDGIO::~casDGIO()
-{
-}
-
-//
-// casDGIO::clientHostName()
-//
-void casDGIO::clientHostName (char *pBufIn, unsigned bufSizeIn) const
-{
-        if (this->hasAddress()) {
-                struct sockaddr_in addr = this->getSender();
-                ipAddrToA (&addr, pBufIn, bufSizeIn);
-        }
-        else {
-                if (bufSizeIn>=1u) {
-                        pBufIn[0u] = '\0';
-                }
-        }
-}
-

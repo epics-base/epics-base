@@ -6,6 +6,9 @@
 //
 //
 // $Log$
+// Revision 1.7  1998/06/18 00:11:09  jhill
+// use ipAddrToA
+//
 // Revision 1.6  1998/06/16 02:35:51  jhill
 // use aToIPAddr and auto attach to winsock if its a static build
 //
@@ -37,27 +40,16 @@ const unsigned caServerConnectPendQueueSize = 5u;
 //
 // casIntfIO::casIntfIO()
 //
-casIntfIO::casIntfIO() : 
-	pNormalUDP(NULL),
-	pBCastUDP(NULL),
-	sock(INVALID_SOCKET)
-{
-	memset(&addr, '\0', sizeof(addr));
-}
-
-//
-// casIntfIO::init()
-//
-caStatus casIntfIO::init(const caNetAddr &addrIn, casDGClient &dgClientIn,
-		int autoBeaconAddr, int addConfigBeaconAddr)
+casIntfIO::casIntfIO (const caNetAddr &addrIn) : 
+    addr (addrIn.getSockIP()),
+	sock (INVALID_SOCKET)
 {
 	int yes = TRUE;
 	int status;
-	caStatus stat;
 	int addrSize;
 
 	if (!bsdSockAttach()) {
-		return S_cas_internal;
+		throw S_cas_internal;
 	}
 
 	/*
@@ -65,8 +57,8 @@ caStatus casIntfIO::init(const caNetAddr &addrIn, casDGClient &dgClientIn,
 	 */
 	this->sock = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (this->sock==INVALID_SOCKET) {
-		printf("No socket error was %s\n", SOCKERRSTR);
-		return S_cas_noFD;
+		printf("No socket error was %s\n", SOCKERRSTR(SOCKERRNO));
+		throw S_cas_noFD;
 	}
 
 	/*
@@ -80,11 +72,11 @@ caStatus casIntfIO::init(const caNetAddr &addrIn, casDGClient &dgClientIn,
 					sizeof (yes));
 	if (status<0) {
 		ca_printf("CAS: server set SO_REUSEADDR failed? %s\n",
-			SOCKERRSTR);
-		return S_cas_internal;
+			SOCKERRSTR(SOCKERRNO));
+        socket_close (this->sock);
+		throw S_cas_internal;
 	}
 
-	this->addr = addrIn.getSockIP();
 	status = bind(this->sock,(sockaddr *) &this->addr,
 					sizeof(this->addr));
 	if (status<0) {
@@ -94,7 +86,6 @@ caStatus casIntfIO::init(const caNetAddr &addrIn, casDGClient &dgClientIn,
 			// (so the getsockname() call below will
 			// work correctly)
 			//
-
 			this->addr.sin_port = ntohs (0);
 			status = bind(
 				this->sock,
@@ -103,22 +94,26 @@ caStatus casIntfIO::init(const caNetAddr &addrIn, casDGClient &dgClientIn,
 		}
 		if (status<0) {
 			char buf[64];
+            int errnoCpy = SOCKERRNO;
+
 			ipAddrToA (&this->addr, buf, sizeof(buf));
 			errPrintf(S_cas_bindFail,
 				__FILE__, __LINE__,
 				"- bind TCP IP addr=%s failed because %s",
-				buf, SOCKERRSTR);
-			return S_cas_bindFail;
+				buf, SOCKERRSTR(errnoCpy));
+            socket_close (this->sock);
+			throw S_cas_bindFail;
 		}
 	}
 
-	addrSize = sizeof(this->addr);
-	status = getsockname(this->sock, 
+	addrSize = sizeof (this->addr);
+	status = getsockname (this->sock, 
 			(struct sockaddr *)&this->addr, &addrSize);
 	if (status) {
 		ca_printf("CAS: getsockname() error %s\n", 
-			SOCKERRSTR);
-		return S_cas_internal;
+			SOCKERRSTR(SOCKERRNO));
+        socket_close (this->sock);
+		throw S_cas_internal;
 	}
 
 	//
@@ -129,57 +124,10 @@ caStatus casIntfIO::init(const caNetAddr &addrIn, casDGClient &dgClientIn,
 
     status = listen(this->sock, caServerConnectPendQueueSize);
     if(status < 0) {
-		ca_printf("CAS: listen() error %s\n", SOCKERRSTR);
-		return S_cas_internal;
+		ca_printf("CAS: listen() error %s\n", SOCKERRSTR(SOCKERRNO));
+        socket_close (this->sock);
+		throw S_cas_internal;
     }
-
-	//
-	// set up a DG socket bound to the specified interface
-	// (or INADDR_ANY)
-	//
-	this->pNormalUDP = this->newDGIntfIO(dgClientIn);
-	if (!this->pNormalUDP) {
-		return S_cas_noMemory;
-	}
-	stat = this->pNormalUDP->init(this->addr, this->portNumber(), 
-			autoBeaconAddr, addConfigBeaconAddr);
-	if (stat) {
-		return stat;
-	}
-	else {
-		this->pNormalUDP->start();
-	}
-
-	//
-	// If they are binding to a particular interface then
-	// we will also need to bind to the broadcast address 
-	// for that interface (if it has one)
-	//
-	if (this->addr.sin_addr.s_addr != htonl(INADDR_ANY)) {
-		this->pBCastUDP = this->newDGIntfIO(dgClientIn);
-		if (this->pBCastUDP) {
-			stat = this->pBCastUDP->init(addr, this->portNumber(), 
-					FALSE, FALSE, TRUE, this->pNormalUDP);
-			if (stat) {
-				if (stat==S_cas_noInterface) {
-					delete this->pBCastUDP;
-					this->pBCastUDP = NULL;
-				}
-				else {
-					errMessage(stat, 
-					"server will not receive broadcasts");
-				}
-			}
-			else {
-				this->pBCastUDP->start();
-			}
-		}
-		else {
-			errMessage(S_cas_noMemory,
-			"failed to create broadcast socket");
-		}
-	}
-	return S_cas_success;
 }
 
 //
@@ -190,12 +138,6 @@ casIntfIO::~casIntfIO()
 	if (this->sock != INVALID_SOCKET) {
 		socket_close(this->sock);
 	}
-	if (this->pNormalUDP) {
-		delete this->pNormalUDP;
-	}
-	if (this->pBCastUDP) {
-		delete this->pBCastUDP;
-	}
 
 	bsdSockRelease();
 }
@@ -205,36 +147,43 @@ casIntfIO::~casIntfIO()
 //
 casStreamOS *casIntfIO::newStreamClient(caServerI &cas) const
 {
-	struct sockaddr	newAddr;
-        SOCKET          newSock;
-        int             length;
-	casStreamOS	*pOS;
- 
-        length = sizeof(newAddr);
-        newSock = accept(this->sock, &newAddr, &length);
-        if (newSock==INVALID_SOCKET) {
-                if (SOCKERRNO!=SOCK_EWOULDBLOCK) {
-                        ca_printf(
-                                "CAS: %s accept error %s\n",
-                                __FILE__,
-                                SOCKERRSTR);
-                }
-                return NULL;
+    struct sockaddr	newAddr;
+    SOCKET          newSock;
+    int             length;
+    casStreamOS	*pOS;
+    
+    length = sizeof(newAddr);
+    newSock = accept(this->sock, &newAddr, &length);
+    if (newSock==INVALID_SOCKET) {
+        int errnoCpy = SOCKERRNO;
+        if (errnoCpy!=SOCK_EWOULDBLOCK) {
+            ca_printf ("CAS: %s accept error %s\n",
+                __FILE__,SOCKERRSTR(errnoCpy));
         }
-        else if (sizeof(newAddr)>(size_t)length) {
-		socket_close(newSock);
-                ca_printf("CAS: accept returned bad address len?\n");
-                return NULL;
+        return NULL;
+    }
+    else if (sizeof(newAddr)>(size_t)length) {
+        socket_close(newSock);
+        ca_printf("CAS: accept returned bad address len?\n");
+        return NULL;
+    }
+    
+    ioArgsToNewStreamIO args;
+    args.addr = newAddr;
+    args.sock = newSock;
+    pOS = new casStreamOS(cas, args);
+    if (!pOS) {
+        socket_close(newSock);
+    }
+    else {
+        if ( cas.getDebugLevel()>0u) {
+            char pName[64u];
+            
+            pOS->clientHostName (pName, sizeof (pName));
+            ca_printf("CAS: allocated client object for \"%s\"\n", pName);
         }
-
-	ioArgsToNewStreamIO args;
-	args.addr = newAddr;
-	args.sock = newSock;
-	pOS = new casStreamOS(cas, args);
-	if (!pOS) {
-		socket_close(newSock);
-	}
-	return pOS;
+    }
+    return pOS;
 }
 
 //
@@ -249,7 +198,7 @@ void casIntfIO::setNonBlocking()
         if (status<0) {
                 ca_printf(
                 "%s:CAS: server non blocking IO set fail because \"%s\"\n",
-                                __FILE__, SOCKERRSTR);
+                                __FILE__, SOCKERRSTR(SOCKERRNO));
         }
 }
  
@@ -279,20 +228,4 @@ unsigned casIntfIO::portNumber() const
 	return ntohs(this->addr.sin_port);
 }
 
-//
-// casIntfIO::requestBeacon()
-//
-void casIntfIO::requestBeacon()
-{
-	//
-	// the broadcast bound socket is not used here because
-	// it will have the wrong source address. This
-	// casDGIntfIO has a list of all beacon addresses
-	// that have been configured (no need to use
-	// this->pBCastUDP).
-	//
-	if (this->pNormalUDP) {
-		casDGClient::sendBeacon(*this->pNormalUDP);
-	}
-}
 

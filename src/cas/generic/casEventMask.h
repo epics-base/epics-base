@@ -26,28 +26,6 @@
  *              Advanced Photon Source
  *              Argonne National Laboratory
  *
- *
- * History
- * $Log$
- * Revision 1.6  1997/08/05 00:47:08  jhill
- * fixed warnings
- *
- * Revision 1.5  1997/04/10 19:34:08  jhill
- * API changes
- *
- * Revision 1.4  1996/12/11 01:02:35  jhill
- * removed casEventMaskEntry def
- *
- * Revision 1.3  1996/12/06 22:32:10  jhill
- * force virtual destructor
- *
- * Revision 1.2  1996/11/02 00:54:11  jhill
- * many improvements
- *
- * Revision 1.1.1.1  1996/06/20 00:28:16  jhill
- * ca server installation
- *
- *
  */
 
 
@@ -59,44 +37,44 @@
 class casEventRegistry;
 
 class epicsShareClass casEventMask {
-        friend inline casEventMask operator| (const casEventMask &lhs, 
-					const casEventMask &rhs);
-        friend inline casEventMask operator& (const casEventMask &lhs, 
-					const casEventMask &rhs);
-        friend inline int operator== (const casEventMask &lhs, 
-					const casEventMask &rhs);
-        friend inline int operator!= (const casEventMask &lhs, 
-					const casEventMask &rhs);
-	friend class casEventRegistry;
+    friend inline casEventMask operator| (const casEventMask &lhs, 
+        const casEventMask &rhs);
+    friend inline casEventMask operator& (const casEventMask &lhs, 
+        const casEventMask &rhs);
+    friend inline int operator== (const casEventMask &lhs, 
+        const casEventMask &rhs);
+    friend inline int operator!= (const casEventMask &lhs, 
+        const casEventMask &rhs);
+    friend class casEventRegistry;
 public:
-	void clear ()
-	{
-		this->mask = 0u;
-	}
-
-	casEventMask (casEventRegistry &reg, const char *pName);
-
-	casEventMask () 
-	{
-		this->clear();
-	}
-	
-	void show (unsigned level) const;
- 
-	int eventsSelected()
-	{
-		return this->mask!=0u;
-	}
-	int noEventsSelected()
-	{
-		return this->mask==0u;
-	}
-
-	inline void operator|= (const casEventMask &rhs);
-	inline void operator&= (const casEventMask &rhs);
-
+    void clear ()
+    {
+        this->mask = 0u;
+    }
+    
+    casEventMask (casEventRegistry &reg, const char *pName);
+    
+    casEventMask () 
+    {
+        this->clear();
+    }
+    
+    void show (unsigned level) const;
+    
+    int eventsSelected()
+    {
+        return this->mask!=0u;
+    }
+    int noEventsSelected()
+    {
+        return this->mask==0u;
+    }
+    
+    inline void operator|= (const casEventMask &rhs);
+    inline void operator&= (const casEventMask &rhs);
+    
 private:
-	unsigned mask;
+    unsigned mask;
 };
 
 inline casEventMask operator| (const casEventMask &lhs, const casEventMask &rhs)

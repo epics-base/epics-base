@@ -26,40 +26,6 @@
  *              Advanced Photon Source
  *              Argonne National Laboratory
  *
- *
- * History
- * $Log$
- * Revision 1.10  1998/06/16 02:31:36  jhill
- * allow the PV to be created before the server
- *
- * Revision 1.9  1997/08/05 00:47:11  jhill
- * fixed warnings
- *
- * Revision 1.8  1997/04/10 19:34:15  jhill
- * API changes
- *
- * Revision 1.7  1996/12/12 18:55:38  jhill
- * fixed client initiated pv delete calls interestDelete() VF bug
- *
- * Revision 1.6  1996/12/06 22:35:06  jhill
- * added destroyInProgress flag
- *
- * Revision 1.5  1996/11/02 00:54:22  jhill
- * many improvements
- *
- * Revision 1.4  1996/09/04 20:23:17  jhill
- * init new member cas and add arg to serverToolDebug()
- *
- * Revision 1.3  1996/07/01 19:56:13  jhill
- * one last update prior to first release
- *
- * Revision 1.2  1996/06/26 21:18:57  jhill
- * now matches gdd api revisions
- *
- * Revision 1.1.1.1  1996/06/20 00:28:15  jhill
- * ca server installation
- *
- *
  */
 
 
@@ -67,24 +33,16 @@
 #include "casPVIIL.h" // casPVI inline func
 #include "caServerIIL.h" // caServerI inline func
 
-
 //
 // casPVI::casPVI()
 //
-casPVI::casPVI (casPV &pvAdapterIn) : 
-	pCAS(NULL), // initially there is no server attachment
-	pv(pvAdapterIn),
-	nMonAttached(0u),
-	nIOAttached(0u),
-	destroyInProgress(FALSE)
+casPVI::casPVI () : 
+	pCAS (NULL), // initially there is no server attachment
+	nMonAttached (0u),
+	nIOAttached (0u)
 {
-	//
-	// this will always be true
-	//
-	assert (&this->pv!=NULL);
 }
 
-
 //
 // casPVI::~casPVI()
 //
@@ -99,9 +57,6 @@ casPVI::~casPVI()
 
 		this->pCAS->removeItem(*this);
 
-		assert (!this->destroyInProgress);
-		this->destroyInProgress = TRUE;
-
 		//
 		// delete any attached channels
 		//
@@ -113,7 +68,7 @@ casPVI::~casPVI()
 
 			tsDLIterBD<casPVListChan> tmp = iter;
 			++tmp;
-			(*iter)->destroy();
+			iter->destroyClientNotify ();
 			iter = tmp;
 		}
 
@@ -131,6 +86,17 @@ casPVI::~casPVI()
 	// when we destroyed the channels
 	//
 	casVerify (this->nMonAttached==0u);
+}
+
+//
+// casPVI::destroy()
+//
+// This version of destroy() is provided only because it can
+// be safely calle din the casPVI destructor as a side effect
+// of deleting the last channel.
+//
+void casPVI::destroy ()
+{
 }
 
 //
@@ -158,19 +124,6 @@ caStatus casPVI::attachToServer (caServerI &cas)
 	return S_cas_success;
 }
 
-
-//
-// casPVI::show()
-//
-void casPVI::show(unsigned level) const
-{
-	if (level>1u) {
-		printf ("CA Server PV: nChanAttached=%u nMonAttached=%u nIOAttached=%u\n",
-			this->chanList.count(), this->nMonAttached, this->nIOAttached);
-	}
-	(*this)->show(level);
-}
-
 //
 // casPVI::registerEvent()
 //
@@ -181,7 +134,7 @@ caStatus casPVI::registerEvent ()
 	this->lock();
 	this->nMonAttached++;
 	if (this->nMonAttached==1u) {
-		status = (*this)->interestRegister();
+		status = this->interestRegister ();
 	}
 	else {
 		status = S_cas_success;
@@ -202,8 +155,8 @@ void casPVI::unregisterEvent()
 	// Dont call casPV::interestDelete() when we are in 
 	// casPVI::~casPVI() (and casPV no longr exists)
 	//
-	if (this->nMonAttached==0u && !this->destroyInProgress) {
-		(*this)->interestDelete();
+	if (this->nMonAttached==0u) {
+        this->interestDelete();
 	}
 	this->unlock();
 }
@@ -216,7 +169,7 @@ void casPVI::unregisterEvent()
 caServer *casPVI::getExtServer() const
 {
 	if (this->pCAS) {
-		return this->pCAS->getAdapter();;
+		return this->pCAS->getAdapter();
 	}
 	else {
 		return NULL;
@@ -224,23 +177,34 @@ caServer *casPVI::getExtServer() const
 }
 
 //
-// casPVI::destroy()
+// casPVI::show()
 //
-// call the destroy in the server tool
-//
-void casPVI::destroy()
+epicsShareFunc void casPVI::show (unsigned level)  const
 {
-	//
-	// Flag that a server is no longer using this PV
-	//
-	this->pCAS = NULL;
-	this->pv.destroy();
+	if (level>1u) {
+		printf ("CA Server PV: nChanAttached=%u nMonAttached=%u nIOAttached=%u\n",
+			this->chanList.count(), this->nMonAttached, this->nIOAttached);
+	}
+	if (level>2u) {
+		printf ("\tBest external type = %d\n", this->bestExternalType());
+	}
 }
 
+//
 // casPVI::resourceType()
 //
 epicsShareFunc casResType casPVI::resourceType() const
 {
 	return casPVT;
 }
+
+//
+// casPVI::apiPointer()
+// retuns NULL if casPVI isnt a base of casPV
+//
+epicsShareFunc casPV *casPVI::apiPointer ()
+{
+    return NULL;
+}
+
 

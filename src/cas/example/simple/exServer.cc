@@ -35,6 +35,9 @@ pvInfo exServer::pvList[] = {
 	pvInfo (2.0, "alan", 10.0f, -10.0f, excasIoSync, 100u),
 	pvInfo (20.0, "albert", 10.0f, -10.0f, excasIoSync, 1000u)
 };
+
+const unsigned exServer::pvListNElem = NELEMENTS (exServer::pvList);
+
 //
 // static on-the-fly PVs
 //
@@ -44,17 +47,16 @@ pvInfo exServer::billy (2.0, "billy", 10.0f, -10.0f, excasIoAsync, 1u);
 //
 // exServer::exServer()
 //
-exServer::exServer(const char * const pvPrefix, unsigned aliasCount, aitBool scanOnIn) : 
-	caServer (NELEMENTS(this->pvList)+2u),
-    stringResTbl (NELEMENTS(this->pvList)*(aliasCount+1u)+2u),
+exServer::exServer(const char * const pvPrefix, unsigned aliasCount, bool scanOnIn) : 
+	caServer (pvListNElem+2u),
+    stringResTbl (pvListNElem*(aliasCount+1u)+2u),
 	simultAsychIOCount (0u),
 	scanOn (scanOnIn)
 {
 	unsigned i;
 	exPV *pPV;
 	pvInfo *pPVI;
-	pvInfo *pPVAfter = 
-		&exServer::pvList[NELEMENTS(exServer::pvList)];
+	pvInfo *pPVAfter = &exServer::pvList[pvListNElem];
 	char pvAlias[256];
 	const char * const pNameFmtStr = "%.100s%.20s";
 	const char * const pAliasFmtStr = "%.100s%.20s%u";
@@ -240,13 +242,13 @@ pvAttachReturn exServer::pvAttach
 //
 // pvInfo::createPV()
 //
-exPV *pvInfo::createPV (exServer &, aitBool preCreateFlag, aitBool scanOn)
+exPV *pvInfo::createPV (exServer &, bool preCreateFlag, bool scanOn)
 {
 	if (this->pPV) {
 		return this->pPV;
 	}
 
-	exPV		*pNewPV;
+	exPV *pNewPV;
 
 	//
 	// create an instance of the appropriate class

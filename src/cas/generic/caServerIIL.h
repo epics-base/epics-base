@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.6  1999/08/04 23:52:10  jhill
+ * chronIntIdResTable name change
+ *
  * Revision 1.5  1997/06/13 09:15:52  jhill
  * connect proto changes
  *
@@ -75,14 +78,14 @@ inline casRes *caServerI::lookupRes(const caResId &idIn, casResType type)
     chronIntId      id (idIn);
     casRes          *pRes;    
 
-	this->osiLock();
+	this->lock();
     pRes = this->chronIntIdResTable<casRes>::lookup (id);
 	if (pRes) {
 		if (pRes->resourceType()!=type) {
 			pRes = NULL;
 		}
 	}
-	this->osiUnlock();
+	this->unlock();
 	return pRes;
 }
 
@@ -119,24 +122,26 @@ inline casRes *caServerI::removeItem(casRes &res)
 }
 
 //
-// caServerI::ready()
-//
-inline aitBool caServerI::ready()
-{
-	if (this->haveBeenInitialized) {
-		return aitTrue;
-	}
-	else {
-		return aitFalse;
-	}
-}
-
-//
 // caServerI::setDebugLevel()
 //
 inline void caServerI::setDebugLevel(unsigned debugLevelIn)
 {
 	this->debugLevel = debugLevelIn;
+}
+
+inline casEventMask caServerI::valueEventMask() const
+{
+    return this->valueEvent;
+}
+
+inline casEventMask caServerI::logEventMask() const
+{
+    return this->logEvent;
+}
+
+inline casEventMask caServerI::alarmEventMask() const
+{
+    return this->alarmEvent;
 }
 
 #endif // caServerIIL_h

@@ -38,24 +38,13 @@
 #include "outBufIL.h"		// outBuf in line func
 
 //
-// casCoreClient::init()
-//
-caStatus casCoreClient::init()
-{
-        if (this->osiMutex::init()) {
-                return S_cas_noMemory;
-        }
-        return this->casEventSys::init();
-}
-
-//
 // casCoreClient::casCoreClient()
 //
-casCoreClient::casCoreClient (caServerI &serverInternal) : casEventSys(*this)
+casCoreClient::casCoreClient (caServerI &serverInternal)
 {
-	assert(&serverInternal);
-	ctx.setServer(&serverInternal);
-	ctx.setClient(this);
+	assert (&serverInternal);
+	ctx.setServer (&serverInternal);
+	ctx.setClient (this);
 }
  
 //
@@ -67,7 +56,7 @@ casCoreClient::~casCoreClient()
 		ca_printf ("CAS: Connection Terminated\n");
     }
 
-	this->osiLock();
+	this->lock();
 	tsDLIterBD<casAsyncIOI>   iterIO(this->ioInProgList.first());
 
 	//
@@ -79,11 +68,11 @@ casCoreClient::~casCoreClient()
 		//
 		tsDLIterBD<casAsyncIOI> tmpIO = iterIO;
 		++tmpIO;
-		iterIO->destroy();
+        iterIO->serverDestroy();
 		iterIO = tmpIO;
 	}
 
-	this->osiUnlock();
+	this->unlock();
 }
 
 //
@@ -115,7 +104,7 @@ void casCoreClient::show (unsigned level) const
 // one of these for each CA request type that has
 // asynchronous completion
 //
-caStatus casCoreClient::asyncSearchResponse(casDGIntfIO &,
+caStatus casCoreClient::asyncSearchResponse (
 		const caNetAddr &, const caHdr &, const pvExistReturn &)
 {
 	return S_casApp_noSupport;
@@ -171,18 +160,19 @@ void casCoreClient::removeChannel(casChannelI &)
 }
 
 //
-// casCoreClient::fetchRespAddr()
+// casCoreClient::fetchLastRecvAddr ()
 //
-caNetAddr casCoreClient::fetchRespAddr()
+caNetAddr casCoreClient::fetchLastRecvAddr () const
 {
 	return caNetAddr(); // sets addr type to UDF
 }
 
 //
-// casCoreClient::fetchOutIntf()
+// casCoreClient::lookupRes()
 //
-casDGIntfIO* casCoreClient::fetchOutIntf()
+casRes *casCoreClient::lookupRes(const caResId &idIn, casResType type)
 {
-	return NULL;
+	casRes *pRes;
+	pRes = this->ctx.getServer()->lookupRes(idIn, type);
+	return pRes;
 }
-

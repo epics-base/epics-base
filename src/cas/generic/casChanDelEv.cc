@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.4  1997/06/13 09:15:54  jhill
+ * connect proto changes
+ *
  * Revision 1.3  1997/04/10 19:33:58  jhill
  * API changes
  *
@@ -58,7 +61,7 @@ casChanDelEv::~casChanDelEv()
 caStatus casChanDelEv::cbFunc(casEventSys &eSys)
 {
 	caStatus status;
-	status = eSys.getCoreClient().disconnectChan(this->id);
+	status = eSys.disconnectChan (this->id);
 	if (status == S_cas_success) {
 		delete this;
 	}

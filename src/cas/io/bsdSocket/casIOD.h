@@ -21,48 +21,38 @@ class casDGClient;
 //
 // casDGIntfIO
 //
-class casDGIntfIO {
+class casDGIntfIO : public casDGClient {
 public:
-	casDGIntfIO (casDGClient &clientIn);
-	caStatus init(const caNetAddr &addr, unsigned connectWithThisPort,
-		int autoBeaconAddr=TRUE, int addConfigBeaconAddr=FALSE, 
-		int useBroadcastAddr=FALSE, casDGIntfIO *pAltOutIn=NULL);
+	casDGIntfIO (caServerI &serverIn, const caNetAddr &addr, 
+		bool autoBeaconAddr=TRUE, bool addConfigBeaconAddr=FALSE);
 	virtual ~casDGIntfIO();
 
-	int getFD() const;
-	void xSetNonBlocking();
-	void sendBeacon(char &msg, bufSizeT length, aitUint32 &m_ipa, aitUint16 &m_port);
-	casIOState state() const;
-	void clientHostName (char *pBuf, unsigned bufSize) const;
-	
-	xSendStatus osdSend (const char *pBuf, bufSizeT nBytesReq, 
-		bufSizeT &nBytesActual, const caNetAddr &addr);
-	xRecvStatus osdRecv (char *pBuf, bufSizeT nBytesReq, 
-		bufSizeT &nBytesActual, caNetAddr &addr);
+	int getFD () const;
+    int getBCastFD () const;
+    bool validBCastFD () const;
+
+	void xSetNonBlocking ();
+	void sendBeaconIO (char &msg, bufSizeT length, aitUint32 &m_ipa, aitUint16 &m_port);
+	casIOState state () const;
+
+	outBuf::flushCondition osdSend (const char *pBuf, bufSizeT nBytesReq,
+			const caNetAddr &addr);
+	inBuf::fillCondition osdRecv (char *pBuf, bufSizeT nBytesReq, 
+        fillParameter parm, bufSizeT &nBytesActual, caNetAddr &addr);
 	void osdShow (unsigned level) const;
 
 	static bufSizeT optimumOutBufferSize ();
 	static bufSizeT optimumInBufferSize ();
 
-	//
-	// The server's port number
-	// (to be used for connection requests)
-	//
-	unsigned serverPortNumber();
-
-	virtual caStatus start()=0; // OS specific
-
-	void processDG();
+    bufSizeT incommingBytesPresent () const;
 
 private:
 	ELLLIST beaconAddrList;
-    struct sockaddr lastRecvAddr;
-	casDGIntfIO *pAltOutIO;
-	casDGClient &client;
 	SOCKET sock;
-	casIOState sockState;
-	unsigned short connectWithThisPort;
+	SOCKET bcastRecvSock; // fix for solaris bug
 	unsigned short dgPort;
+
+    static SOCKET makeSockDG ();
 };
 
 struct ioArgsToNewStreamIO {
@@ -71,27 +61,11 @@ struct ioArgsToNewStreamIO {
 };
 
 //
-// casDGIO 
-//
-class casDGIO : public casDGClient {
-public:
-	casDGIO(caServerI &cas) :
-		casDGClient(cas) {}
-	~casDGIO();
-
-	//
-	// clientHostName()
-	//
-	void clientHostName (char *pBufIn, unsigned bufSizeIn) const;
-};
-
-//
 // casStreamIO
 //
 class casStreamIO : public casStrmClient {
 public:
 	casStreamIO(caServerI &cas, const ioArgsToNewStreamIO &args);
-	caStatus init();
 	~casStreamIO();
 
 	int getFD() const;
@@ -100,9 +74,9 @@ public:
 	casIOState state() const;
 	void clientHostName (char *pBuf, unsigned bufSize) const;
 	
-	xSendStatus osdSend (const char *pBuf, bufSizeT nBytesReq, 
+	outBuf::flushCondition osdSend (const char *pBuf, bufSizeT nBytesReq, 
 		bufSizeT &nBytesActual);
-	xRecvStatus osdRecv (char *pBuf, bufSizeT nBytesReq, 
+	inBuf::fillCondition osdRecv (char *pBuf, bufSizeT nBytesReq, 
 		bufSizeT &nBytesActual);
 
 	xBlockingStatus blockingState() const;
@@ -113,18 +87,12 @@ public:
 
 	void osdShow (unsigned level) const;
 
-	//
-	// The server's port number
-	// (to be used for connection requests)
-	//
-	unsigned serverPortNumber();
-
-	const caNetAddr getAddr()
+	const caNetAddr getAddr() const
 	{
 		return caNetAddr(this->addr);
 	}
+
 private:
-	casIOState sockState;
 	SOCKET sock;
 	struct sockaddr_in addr;
 	xBlockingStatus blockingFlag;
@@ -140,10 +108,7 @@ class casStreamOS;
 //
 class casIntfIO {
 public:
-	casIntfIO();
-	//constructor does not return status
-	caStatus init(const caNetAddr &addr, casDGClient &dgClientIn,
-		int autoBeaconAddr, int addConfigBeaconAddr); 
+	casIntfIO (const caNetAddr &addr);
 	virtual ~casIntfIO();
 	void show(unsigned level) const;
 
@@ -158,13 +123,10 @@ public:
 	// client can be created
 	// 
 	casStreamOS *newStreamClient(caServerI &cas) const;
-	
-	virtual casDGIntfIO *newDGIntfIO (casDGClient &dgClientIn) const = 0;
 
-	void requestBeacon();
+    caNetAddr serverAddress () const;
+
 private:
-	casDGIntfIO *pNormalUDP;	// attached to this intf's addr
-	casDGIntfIO *pBCastUDP;	// attached to this intf's broadcast addr
 	SOCKET sock;
 	struct sockaddr_in addr;
 };
@@ -174,14 +136,15 @@ private:
 //
 class caServerIO {
 public:
-	caServerIO() {} // make hp compiler happy
-	caStatus init(caServerI &cas); //constructor does not return status
+	caServerIO ();
 	virtual ~caServerIO();
 
 	//
 	// show status of IO subsystem
 	//
 	void show (unsigned level) const;
+
+    void locateInterfaces ();
 
 private:
 
@@ -193,6 +156,9 @@ private:
 	// static member func
 	//
 	static inline void staticInit();
+
+	virtual caStatus attachInterface (const caNetAddr &addr, bool autoBeaconAddr,
+			bool addConfigAddr) = 0;
 };
 
 

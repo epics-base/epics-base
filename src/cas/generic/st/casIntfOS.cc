@@ -12,6 +12,7 @@
 // CA server
 // 
 #include "server.h"
+#include "casIODIL.h"
 
 //
 // casServerReg
@@ -19,7 +20,7 @@
 class casServerReg : public fdReg {
 public:
         casServerReg (casIntfOS &osIn) :
-                fdReg (osIn.getFD(), fdrRead), os (osIn) {}
+      fdReg (osIn.casIntfIO::getFD(), fdrRead), os (osIn) {}
         ~casServerReg ();
 private:
         casIntfOS &os;
@@ -27,34 +28,25 @@ private:
         void callBack ();
 };
 
-
 //
-// casIntfOS::init()
+// casIntfOS::casIntfOS()
 //
-caStatus casIntfOS::init(const caNetAddr &addrIn, casDGClient &dgClientIn,
-		int autoBeaconAddr, int addConfigBeaconAddr)
-{
-	caStatus stat;
-
-	stat = this->casIntfIO::init(addrIn, dgClientIn,
-			autoBeaconAddr, addConfigBeaconAddr);
-	if (stat) {
-		return stat;
-	}
-
-	this->setNonBlocking();
-
-	if (this->pRdReg==NULL) {
-		this->pRdReg = new casServerReg(*this);
-		if (this->pRdReg==NULL) {
-			return S_cas_noMemory;
-		}
-	}
-	
-	return S_cas_success;
+casIntfOS::casIntfOS (caServerI &casIn, const caNetAddr &addrIn, 
+    bool autoBeaconAddr, bool addConfigBeaconAddr) : 
+    casDGIntfOS (casIn, addrIn, autoBeaconAddr, addConfigBeaconAddr),
+    cas (casIn), 
+    casIntfIO (addrIn)
+{    
+    this->setNonBlocking();
+    
+    this->pRdReg = new casServerReg(*this);
+    if (this->pRdReg==NULL) {
+        errMessage (S_cas_noMemory,
+				"casIntfOS::casIntfOS()");
+        throw S_cas_noMemory;
+    }
 }
 
-
 //
 // casIntfOS::~casIntfOS()
 //
@@ -65,15 +57,6 @@ casIntfOS::~casIntfOS()
 	}
 }
 
-//
-// casIntfOS::newDGIntfIO()
-//
-casDGIntfIO *casIntfOS::newDGIntfIO(casDGClient &dgClientIn) const
-{
-	return new casDGIntfOS(dgClientIn);
-}
-
-
 //
 // casServerReg::callBack()
 //
@@ -88,5 +71,23 @@ void casServerReg::callBack()
 //
 casServerReg::~casServerReg()
 {
+}
+
+//
+// casIntfOS::show ()
+//
+void casIntfOS::show (unsigned level)
+{
+    printf ("casIntfOS at %p\n", this);
+    this->casIntfIO::show (level);
+    this->casDGIntfOS::show (level);
+}
+
+//
+// casIntfOS::serverAddress ()
+//
+caNetAddr casIntfOS::serverAddress () const
+{
+    return this->casIntfIO::serverAddress();
 }
 

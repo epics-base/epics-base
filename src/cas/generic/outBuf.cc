@@ -27,27 +27,6 @@
  *              Argonne National Laboratory
  *
  *
- * History
- * $Log$
- * Revision 1.6  1996/12/06 22:36:29  jhill
- * use destroyInProgress flag now functional nativeCount()
- *
- * Revision 1.5  1996/11/02 00:54:30  jhill
- * many improvements
- *
- * Revision 1.4  1996/09/16 18:24:07  jhill
- * vxWorks port changes
- *
- * Revision 1.3  1996/09/04 20:27:01  jhill
- * doccasdef.h
- *
- * Revision 1.2  1996/08/13 22:53:59  jhill
- * fixed little endian problem
- *
- * Revision 1.1.1.1  1996/06/20 00:28:15  jhill
- * ca server installation
- *
- *
  */
 
 #include "server.h"
@@ -56,25 +35,14 @@
 //
 // outBuf::outBuf()
 //
-outBuf::outBuf(osiMutex &mutexIn, unsigned bufSizeIn) : 
-	mutex(mutexIn),
-	pBuf(NULL),
-	bufSize(bufSizeIn),
-	stack(0u)
-{
-}
-
-//
-// outBuf::init()
-//
-caStatus outBuf::init() 
+outBuf::outBuf (unsigned bufSizeIn) : 
+	bufSize (bufSizeIn), stack (0u), ctxRecursCount (0u)
 {
 	this->pBuf = new char [this->bufSize];
 	if (!this->pBuf) {
-		return S_cas_noMemory;
+		throw S_cas_noMemory;
 	}
 	memset (this->pBuf, '\0', this->bufSize);
-	return S_cas_success;
 }
 
 //
@@ -82,86 +50,66 @@ caStatus outBuf::init()
 //
 outBuf::~outBuf()
 {
-	if (this->pBuf) {
-		delete [] this->pBuf;
-	}
+    assert (this->ctxRecursCount==0);
+	delete [] this->pBuf;
 }
 
-
 //
-//	outBuf::allocMsg() 
+// outBuf::allocRawMsg ()
 //
-//	allocates space in the outgoing message buffer
-//
-//	(if space is avilable this leaves the send lock applied)
-//			
-caStatus outBuf::allocMsg (
-bufSizeT	extsize,	// extension size 
-caHdr		**ppMsg,
-int		lockRequired
-)
+caStatus outBuf::allocRawMsg (bufSizeT msgsize, void **ppMsg)
 {
-	bufSizeT msgsize;
 	bufSizeT stackNeeded;
 	
-	extsize = CA_MESSAGE_ALIGN(extsize);
+	msgsize = CA_MESSAGE_ALIGN (msgsize);
 
-	msgsize = extsize + sizeof(caHdr);
-	if (msgsize>this->bufSize || this->pBuf==NULL) {
+	this->mutex.lock ();
+
+	if (msgsize>this->bufSize) {
+	    this->mutex.unlock ();
 		return S_cas_hugeRequest;
 	}
 
 	stackNeeded = this->bufSize - msgsize;
 
-	//
-	// In some special situations we preallocate space for
-	// two messages and prefer not to lock twice 
-	// (so that lock/unlock pairs will match)
-	//
-	if (lockRequired) {
-		this->mutex.osiLock();
-	}
-
 	if (this->stack > stackNeeded) {
 		
-		/*
-		 * Try to flush the output queue
-		 */
-		this->flush(casFlushSpecified, msgsize);
+		//
+		// Try to flush the output queue
+		//
+		this->flush (this->stack-stackNeeded);
 
-		/*
-		 * If this failed then the fd is nonblocking 
-		 * and we will let select() take care of it
-		 */
+		//
+		// If this failed then the fd is nonblocking 
+		// and we will let select() take care of it
+		//
 		if (this->stack > stackNeeded) {
-			this->mutex.osiUnlock();
+			this->mutex.unlock();
 			this->sendBlockSignal();
 			return S_cas_sendBlocked;
 		}
 	}
 
-	/*
-	 * it fits so commitMsg() will move the stack pointer forward
-	 */
-	*ppMsg = (caHdr *) &this->pBuf[this->stack];
+	//
+	// it fits so commitMsg() will move the stack pointer forward
+	//
+	*ppMsg = (void *) &this->pBuf[this->stack];
 
 	return S_cas_success;
 }
 
-
-
-/*
- * outBuf::commitMsg()
- */
+//
+// outBuf::commitMsg ()
+//
 void outBuf::commitMsg ()
 {
 	caHdr 		*mp;
-	bufSizeT	extSize;
-	bufSizeT	diff;
+    ca_uint16_t diff;
+	ca_uint16_t	extSize;
 
 	mp = (caHdr *) &this->pBuf[this->stack];
 
-	extSize = CA_MESSAGE_ALIGN(mp->m_postsize);
+	extSize = static_cast <ca_uint16_t> ( CA_MESSAGE_ALIGN (mp->m_postsize) );
 
 	//
 	// Guarantee that all portions of outgoing messages 
@@ -169,133 +117,141 @@ void outBuf::commitMsg ()
 	//
 	diff = extSize - mp->m_postsize;
 	if (diff>0u) {
-		char 		*pExt = (char *) (mp+1);
-		memset(pExt + mp->m_postsize, '\0', diff);
+		memset ( reinterpret_cast<char *>(mp+1) + mp->m_postsize, '\0', diff );
 	}
-
-  	mp->m_postsize = extSize;
 
   	if (this->getDebugLevel()) {
 		ca_printf (
 "CAS Response => cmd=%d id=%x typ=%d cnt=%d psz=%d avail=%x outBuf ptr=%lx\n",
-			mp->m_cmmd,
-			mp->m_cid,
-			mp->m_type,
-			mp->m_count,
-			mp->m_postsize,
-			mp->m_available,
-			(long)mp);
+			mp->m_cmmd, mp->m_cid, mp->m_type, mp->m_count, mp->m_postsize,
+			mp->m_available, (long)mp);
 	}
 
-	/*
-	 * convert to network byte order
-	 * (data following header is handled elsewhere)
-	 */
+	//
+	// convert to network byte order
+	// (data following header is handled elsewhere)
+	//
 	mp->m_cmmd = htons (mp->m_cmmd);
-	mp->m_postsize = htons (mp->m_postsize);
+	mp->m_postsize = htons (extSize);
 	mp->m_type = htons (mp->m_type);
 	mp->m_count = htons (mp->m_count);
 	mp->m_cid = htonl (mp->m_cid);
 	mp->m_available = htonl (mp->m_available);
 
-	this->stack += sizeof(caHdr) + extSize;
-	assert (this->stack <= this->bufSize);
-
-	this->mutex.osiUnlock();
+    commitRawMsg (extSize + sizeof(*mp));
 }
 
 //
-// outBuf::flush()
+// outBuf::flush ()
 //
-casFlushCondition outBuf::flush(casFlushRequest req, bufSizeT spaceRequired)
+outBuf::flushCondition outBuf::flush (bufSizeT spaceRequired)
 {
 	bufSizeT 		nBytes;
-	bufSizeT 		stackNeeded;
-	bufSizeT 		nBytesNeeded;
-	xSendStatus		stat;
-	casFlushCondition	cond;
+    bufSizeT        nBytesRequired;
+	flushCondition	cond;
 
-	if (!this->pBuf) {
-		return casFlushDisconnect;
-	}
+	this->mutex.lock();
 
-	this->mutex.osiLock();
+    if (this->ctxRecursCount>0) {
+        this->mutex.unlock();
+        return flushNone;
+    }
 
-	if (req==casFlushAll) {
-		nBytesNeeded = this->stack;
-	}
-	else {
-		stackNeeded = this->bufSize - spaceRequired;
-		if (this->stack>stackNeeded) {
-			nBytesNeeded = this->stack - stackNeeded;
-		}
-		else {
-			nBytesNeeded = 0u;
-		}
-	}
-
-	if (nBytesNeeded==0u) {
-		this->mutex.osiUnlock();
-		return casFlushCompleted;
-	}
-
-	nBytes = 0u;
-	stat = this->xSend(this->pBuf, this->stack, 
-			nBytesNeeded, nBytes);
-	if (stat == xSendOK) {
-		if (nBytes) {
-			bufSizeT len;
-			char buf[64];
-
-			if (nBytes >= this->stack) {
-				this->stack=0u;	
-				cond = casFlushCompleted;
-			}
-			else {
-				len = this->stack-nBytes;
-				//
-				// memmove() is ok with overlapping buffers
-				//
-				memmove (this->pBuf, &this->pBuf[nBytes], len);
-				this->stack = len;
-				cond = casFlushPartial;
-			}
-
-			if (this->getDebugLevel()>2u) {
-				this->clientHostName(buf,sizeof(buf));
-				ca_printf(
-					"CAS: Sent a %d byte reply to %s\n",
-					nBytes, buf);
-			}
-		}
-		else {
-			cond = casFlushNone;
-		}
+	if (spaceRequired>this->bufSize) {
+		nBytesRequired = this->stack;
 	}
 	else {
-		cond = casFlushDisconnect;
+        bufSizeT stackPermitted;
+
+		stackPermitted = this->bufSize - spaceRequired;
+		if (this->stack>stackPermitted) {
+			nBytesRequired = this->stack - stackPermitted;
+		}
+		else {
+            nBytesRequired = 0u;
+		}
 	}
-	this->mutex.osiUnlock();
+
+	cond = this->xSend(this->pBuf, this->stack, 
+			nBytesRequired, nBytes);
+	if (cond==flushProgress) {
+		bufSizeT len;
+
+		if (nBytes >= this->stack) {
+			this->stack = 0u;	
+		}
+		else {
+			len = this->stack-nBytes;
+			//
+			// memmove() is ok with overlapping buffers
+			//
+			memmove (this->pBuf, &this->pBuf[nBytes], len);
+			this->stack = len;
+		}
+
+		if (this->getDebugLevel()>2u) {
+		    char buf[64];
+			this->clientHostName (buf, sizeof(buf));
+			ca_printf ("CAS: Sent a %d byte reply to %s\n",
+				nBytes, buf);
+		}
+    }
+	this->mutex.unlock();
 	return cond;
 }
 
 //
-// outBuf::show(unsigned level)
+// outBuf::pushCtx ()
 //
-void outBuf::show(unsigned level) const
+const outBufCtx outBuf::pushCtx (bufSizeT headerSize, bufSizeT maxBodySize, void *&pHeader)
 {
-	if (level>1u) {
-                printf(
-			"\tUndelivered response bytes =%d\n",
-                        this->bytesPresent());
-	}
+    bufSizeT totalSize = headerSize + maxBodySize;
+    caStatus status;
+
+    status = this->allocRawMsg (totalSize, &pHeader);
+    if (status!=S_cas_success) {
+        return outBufCtx ();
+    }
+    else if (this->ctxRecursCount==UINT_MAX) {
+        this->mutex.unlock();
+        return outBufCtx ();
+    }
+    else {
+        outBufCtx result (*this);
+        this->pBuf = this->pBuf + this->stack + headerSize;
+        this->stack = 0;
+        this->bufSize = maxBodySize;
+        this->ctxRecursCount++;
+        return result;
+    }
 }
 
 //
-// outBuf::sendBlockSignal()
+// outBuf::popCtx ()
 //
-void outBuf::sendBlockSignal()
+bufSizeT outBuf::popCtx (const outBufCtx &ctx)
 {
-	fprintf(stderr, "In virtula base sendBlockSignal() ?\n");
+    if (ctx.stat==outBufCtx::pushCtxSuccess) {
+        bufSizeT bytesAdded = this->stack;
+        this->pBuf = ctx.pBuf;
+        this->bufSize = ctx.bufSize;
+        this->stack = ctx.stack;
+        assert (this->ctxRecursCount>0u);
+        this->ctxRecursCount--;
+        return bytesAdded;
+    }
+    else {
+        return 0;
+    }
+}
+
+//
+// outBuf::show (unsigned level)
+//
+void outBuf::show (unsigned level) const
+{
+    if (level>1u) {
+        printf("\tUndelivered response bytes = %d\n", this->bytesPresent());
+    }
 }
 

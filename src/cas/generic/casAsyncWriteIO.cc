@@ -26,49 +26,31 @@
  *              Advanced Photon Source
  *              Argonne National Laboratory
  *
- *
- * History
- * $Log$
- * Revision 1.4  1997/08/05 00:47:02  jhill
- * fixed warnings
- *
- * Revision 1.3  1997/04/10 19:33:57  jhill
- * API changes
- *
- * Revision 1.2  1996/11/06 22:15:56  jhill
- * allow monitor init read to using rd async io
- *
- * Revision 1.1  1996/11/02 01:01:04  jhill
- * installed
- *
- *
  */
 
 
 #include "server.h"
-#include "casAsyncIOIIL.h" // casAsyncIOI in line func
 #include "casChannelIIL.h" // casChannelI in line func
+#include "casAsyncIOIIL.h" // casAsyncIOI in line func
 #include "casCtxIL.h" // casCtx in line func
 
 //
-// casAsyncWtIOI::casAsyncWtIOI()
+// casAsyncWriteIO::casAsyncWriteIO()
 //
-epicsShareFunc casAsyncWtIOI::casAsyncWtIOI(const casCtx &ctx, casAsyncWriteIO &ioIn) :
-	casAsyncIOI(*ctx.getClient(), ioIn),
+casAsyncWriteIO::casAsyncWriteIO(const casCtx &ctx) :
+	casAsyncIOI(*ctx.getClient()),
 	msg(*ctx.getMsg()), 
 	chan(*ctx.getChannel()),
 	completionStatus(S_cas_internal)
 {
-	assert (&this->msg);
 	assert (&this->chan);
-
 	this->chan.installAsyncIO(*this);
 }
 
 //
-// casAsyncWtIOI::~casAsyncWtIOI()
+// casAsyncWriteIO::~casAsyncWriteIO()
 //
-casAsyncWtIOI::~casAsyncWtIOI()
+casAsyncWriteIO::~casAsyncWriteIO()
 {
 	this->lock();
 	this->chan.removeAsyncIO(*this);
@@ -76,40 +58,47 @@ casAsyncWtIOI::~casAsyncWtIOI()
 }
 
 //
-// casAsyncWtIOI::postIOCompletion()
+// casAsyncWriteIO::postIOCompletion()
 //
-epicsShareFunc caStatus casAsyncWtIOI::postIOCompletion(caStatus completionStatusIn)
+caStatus casAsyncWriteIO::postIOCompletion(caStatus completionStatusIn)
 {
 	this->completionStatus = completionStatusIn;
 	return this->postIOCompletionI();
 }
 
-
 //
-// casAsyncWtIOI::cbFuncAsyncIO()
+// casAsyncWriteIO::cbFuncAsyncIO()
 // (called when IO completion event reaches top of event queue)
 //
-caStatus casAsyncWtIOI::cbFuncAsyncIO()
+epicsShareFunc caStatus casAsyncWriteIO::cbFuncAsyncIO()
 {
-	caStatus 	status;
-
-        switch (this->msg.m_cmmd) {
-        case CA_PROTO_WRITE:
-			status = client.writeResponse(this->msg,
-					this->completionStatus);
-					break;
- 
-        case CA_PROTO_WRITE_NOTIFY:
-			status = client.writeNotifyResponse(
-					this->msg, this->completionStatus);
-					break;
- 
-        default:
-			this->reportInvalidAsynchIO(this->msg.m_cmmd);
-			status = S_cas_internal;
-			break;
-        }
-
-	return status;
+    caStatus 	status;
+    
+    switch (this->msg.m_cmmd) {
+    case CA_PROTO_WRITE:
+        status = client.writeResponse(this->msg,
+            this->completionStatus);
+        break;
+        
+    case CA_PROTO_WRITE_NOTIFY:
+        status = client.writeNotifyResponse(
+            this->msg, this->completionStatus);
+        break;
+        
+    default:
+        errPrintf (S_cas_invalidAsynchIO, __FILE__, __LINE__,
+            " - client request type = %u", this->msg.m_cmmd);
+		status = S_cas_invalidAsynchIO;
+        break;
+    }
+    
+    return status;
 }
 
+//
+// void casAsyncWriteIO::destroy ()
+//
+void casAsyncWriteIO::destroy ()
+{
+    delete this;
+}

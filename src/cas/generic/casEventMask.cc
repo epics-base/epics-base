@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.14  1999/08/09 20:18:43  jhill
+ * back out stringIdentifier class
+ *
  * Revision 1.13  1999/08/07 01:02:31  jhill
  * solaris compiler issues
  *
@@ -126,11 +129,9 @@ casEventMask casEventRegistry::maskAllocator()
 {
 	casEventMask    evMask;
  
-	this->mutex.osiLock();
 	if (this->allocator<CHAR_BIT*sizeof(evMask.mask)) {
 		evMask.mask = 1u<<(this->allocator++);
 	}
-	this->mutex.osiUnlock();
 	return evMask;
 }
 
@@ -147,7 +148,6 @@ casEventMask casEventRegistry::registerEvent(const char *pName)
 	casEventMaskEntry       *pEntry;
 	casEventMask            mask;
 
-	this->mutex.osiLock();
 	pEntry = this->lookup (id);
 	if (pEntry) {
 		mask = *pEntry;
@@ -155,7 +155,7 @@ casEventMask casEventRegistry::registerEvent(const char *pName)
 	else {
 		mask = this->maskAllocator();
 		if (mask.mask == 0u) {
-			errMessage(S_cas_tooManyEvents, NULL);
+			errMessage (S_cas_tooManyEvents, NULL);
 		}
 		else {
 			pEntry = new casEventMaskEntry(*this, mask, pName);
@@ -166,10 +166,10 @@ casEventMask casEventRegistry::registerEvent(const char *pName)
 				mask.mask = 0u;
 				errMessage(S_cas_noMemory, 
 					"mask bit was lost during init");
+                throw S_cas_noMemory;
 			}
 		}
 	}
-	this->mutex.osiUnlock();
 	return mask;
 }
 
@@ -193,13 +193,11 @@ casEventMask::casEventMask (casEventRegistry &reg, const char *pName)
 //
 void casEventRegistry::show(unsigned level) const
 {
-	this->mutex.osiLock();
 	if (level>1u) {
 		printf ("casEventRegistry: bit allocator = %d\n", 
 				this->allocator);
 	}
 	this->resTable <casEventMaskEntry, stringId>::show(level);
-	this->mutex.osiUnlock();
 }
 
 //

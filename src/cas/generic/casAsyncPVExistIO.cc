@@ -36,61 +36,63 @@
 #include "casCoreClientIL.h"	// casCoreClient in line func
 
 //
-// casAsyncExIOI::casAsyncExIOI()
+// casAsyncPVExistIO::casAsyncPVExistIO()
 //
-epicsShareFunc casAsyncExIOI::casAsyncExIOI(
-	const casCtx &ctx, casAsyncPVExistIO &ioIn) :
-	casAsyncIOI(*ctx.getClient(), ioIn),
-	msg(*ctx.getMsg()),
-	retVal(pverDoesNotExistHere),
-	pOutDGIntfIO(ctx.getClient()->fetchOutIntf()),
-	dgOutAddr(ctx.getClient()->fetchRespAddr())
+casAsyncPVExistIO::casAsyncPVExistIO (const casCtx &ctx) :
+	casAsyncIOI ( *ctx.getClient () ),
+	msg ( *ctx.getMsg () ),
+	retVal (pverDoesNotExistHere),
+	dgOutAddr ( ctx.getClient ()->fetchLastRecvAddr () )
 {
-	assert (&this->msg);
-	this->client.installAsyncIO(*this);
+	this->client.installAsyncIO (*this);
 }
 
 //
-// casAsyncExIOI::~casAsyncExIOI()
+// casAsyncPVExistIO::~casAsyncPVExistIO ()
 //
-casAsyncExIOI::~casAsyncExIOI()
+casAsyncPVExistIO::~casAsyncPVExistIO ()
 {
-	this->client.removeAsyncIO(*this);
+	this->client.removeAsyncIO (*this);
 }
 
 //
-// casAsyncExIOI::postIOCompletion()
+// casAsyncPVExistIO::postIOCompletion ()
 //
-epicsShareFunc caStatus casAsyncExIOI::postIOCompletion(const pvExistReturn &retValIn)
+caStatus casAsyncPVExistIO::postIOCompletion (const pvExistReturn &retValIn)
 {
 	this->retVal = retValIn; 
-	return this->postIOCompletionI();
+	return this->postIOCompletionI ();
 }
 
 //
-// casAsyncExIOI::cbFuncAsyncIO()
+// casAsyncPVExistIO::cbFuncAsyncIO()
 // (called when IO completion event reaches top of event queue)
 //
-epicsShareFunc caStatus casAsyncExIOI::cbFuncAsyncIO()
+epicsShareFunc caStatus casAsyncPVExistIO::cbFuncAsyncIO()
 {
     caStatus 	status;
     
-    switch (this->msg.m_cmmd) {
-    case CA_PROTO_SEARCH:
+    if (this->msg.m_cmmd==CA_PROTO_SEARCH) {
         //
         // pass output DG address parameters
         //
-        assert(this->pOutDGIntfIO);
-        status = this->client.asyncSearchResponse(*this->pOutDGIntfIO,
+        status = this->client.asyncSearchResponse (
             this->dgOutAddr, this->msg, this->retVal);
-        break;
-        
-    default:
-        this->reportInvalidAsynchIO(this->msg.m_cmmd);
-        status = S_cas_internal;
-        break;
+    }
+    else {
+        errPrintf (S_cas_invalidAsynchIO, __FILE__, __LINE__,
+            " - client request type = %u", this->msg.m_cmmd);
+		status = S_cas_invalidAsynchIO;
     }
     
     return status;
+}
+
+//
+// void casAsyncPVExistIO::destroy ()
+//
+void casAsyncPVExistIO::destroy ()
+{
+    delete this;
 }
 

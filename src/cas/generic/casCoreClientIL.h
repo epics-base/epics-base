@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.2  1997/04/10 19:34:04  jhill
+ * API changes
+ *
  * Revision 1.1  1996/11/02 01:01:06  jhill
  * installed
  *
@@ -51,23 +54,13 @@ inline caServerI &casCoreClient::getCAS() const
 }
 
 //
-// casCoreClient::lookupRes()
-//
-inline casRes *casCoreClient::lookupRes(const caResId &idIn, casResType type)
-{
-	casRes *pRes;
-	pRes = this->ctx.getServer()->lookupRes(idIn, type);
-	return pRes;
-}
-
-//
 // casCoreClient::installAsyncIO()
 //
 inline void casCoreClient::installAsyncIO(casAsyncIOI &ioIn)
 {
-	this->osiLock();
+	this->lock();
 	this->ioInProgList.add(ioIn);
-	this->osiUnlock();
+	this->unlock();
 }
 
 //
@@ -75,10 +68,10 @@ inline void casCoreClient::installAsyncIO(casAsyncIOI &ioIn)
 //
 inline void casCoreClient::removeAsyncIO(casAsyncIOI &ioIn)
 {
-	this->osiLock();
+	this->lock();
 	this->ioInProgList.remove(ioIn);
 	this->ctx.getServer()->ioBlockedList::signal();
-	this->osiUnlock();
+	this->unlock();
 }
 
 #endif // casCoreClientIL_h

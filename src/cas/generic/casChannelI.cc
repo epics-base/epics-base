@@ -26,31 +26,6 @@
  *              Advanced Photon Source
  *              Argonne National Laboratory
  *
- *
- * History
- * $Log$
- * Revision 1.7  1998/09/24 20:33:03  jhill
- * cosmetic
- *
- * Revision 1.6  1998/07/08 15:38:03  jhill
- * fixed lost monitors during flow control problem
- *
- * Revision 1.5  1998/04/14 00:50:00  jhill
- * cosmetic
- *
- * Revision 1.4  1997/04/10 19:34:00  jhill
- * API changes
- *
- * Revision 1.3  1996/11/02 00:54:02  jhill
- * many improvements
- *
- * Revision 1.2  1996/09/04 20:18:03  jhill
- * init new chan member
- *
- * Revision 1.1.1.1  1996/06/20 00:28:14  jhill
- * ca server installation
- *
- *
  */
 
 #include "server.h"
@@ -59,34 +34,26 @@
 #include "casPVIIL.h" // casPVI inline func
 #include "casCtxIL.h" // casCtx inline func
 
-
 //
 // casChannelI::casChannelI()
 //
-casChannelI::casChannelI(const casCtx &ctx, casChannel &chanAdapter) :
-		client(* (casStrmClient *) ctx.getClient()), 
-		pv(*ctx.getPV()), 
-		chan(chanAdapter),
-		cid(ctx.getMsg()->m_cid),
-		clientDestroyPending(FALSE),
-		accessRightsEvPending(FALSE)
+casChannelI::casChannelI (const casCtx &ctx) :
+		client ( * (casStrmClient *) ctx.getClient ()), 
+        pv (*ctx.getPV()),
+		cid (ctx.getMsg()->m_cid),
+		accessRightsEvPending (FALSE)
 {
-	assert(&this->client);
-	assert(&this->pv);
-	assert(&this->chan);
+	assert (&this->client);
+	assert (&this->pv);
 
-	this->client.installChannel(*this);
+	this->client.installChannel (*this);
 }
 
-
 //
 // casChannelI::~casChannelI()
 //
 casChannelI::~casChannelI()
-{
-	casChanDelEv *pCDEV;
-	caStatus status;
-	
+{	
 	this->lock();
 	
 	//
@@ -99,14 +66,14 @@ casChannelI::~casChannelI()
 		//
 		tsDLIterBD<casAsyncIOI> tmpAIO = iterAIO;
 		++tmpAIO;
-		iterAIO->destroy();
+		iterAIO->serverDestroy();
 		iterAIO = tmpAIO;
 	}
 	
 	//
 	// cancel the monitors 
 	//
-	tsDLIterBD<casMonitor> iterMon(this->monitorList.first());
+	tsDLIterBD<casMonitor> iterMon (this->monitorList.first());
 	while ( iterMon!=tsDLIterBD<casMonitor>::eol() ) {
 		casMonitor *pMonitor;
 		//
@@ -126,40 +93,9 @@ casChannelI::~casChannelI()
 	//
 	this->pv.deleteSignal();
 	
-	//
-	// If we are not in the process of deleting the client
-	// then inform the client that we have deleted its 
-	// channel
-	//
-	if (!this->clientDestroyPending) {
-		pCDEV = new casChanDelEv(this->getCID());
-		if (pCDEV) {
-			this->client.casEventSys::addToEventQueue(*pCDEV);
-		}
-		else {	
-			status = this->client.disconnectChan (this->getCID());
-			if (status) {
-				//
-				// At this point there is no space in pool
-				// for a tiny object and there is also
-				// no outgoing buffer space in which to place
-				// a message in which we inform the client
-				// that his channel was deleted.
-				//
-				// => disconnect this client via the event
-				// queue because deleting the client here
-				// will result in bugs because no doubt this
-				// could be called by a client member function.
-				//
-				this->client.setDestroyPending();
-			}
-		}
-	}
-	
 	this->unlock();
 }
 
-
 //
 // casChannelI::clearOutstandingReads()
 //
@@ -177,14 +113,13 @@ void casChannelI::clearOutstandingReads()
 		//
 		tsDLIterBD<casAsyncIOI> tmp = iterIO;
 		++tmp;
-		iterIO->destroyIfReadOP();
+		iterIO->serverDestroyIfReadOP();
 		iterIO = tmp;
 	}
 
 	this->unlock();
 }
 
-
 //
 // casChannelI::show()
 //
@@ -195,18 +130,17 @@ void casChannelI::show(unsigned level) const
 	tsDLIterBD<casMonitor> iter(this->monitorList.first());
 	if ( iter!=tsDLIterBD<casMonitor>::eol() ) {
 		printf("List of CA events (monitors) for \"%s\".\n",
-			this->pv->getName());
+			this->pv.getName());
 	}
 	while ( iter!=tsDLIterBD<casMonitor>::eol() ) {
 		iter->show(level);
 		++iter;
 	}
 
-	(*this)->show(level);
+	this->show(level);
 
 	this->unlock();
 }
-
 
 //
 // casChannelI::cbFunc()
@@ -225,20 +159,51 @@ caStatus casChannelI::cbFunc(casEventSys &)
 }
 
 //
-// casChannelI::destroy()
-//
-// call the destroy in the server tool
-//
-void casChannelI::destroy()
-{
-        this->chan.destroy();
-}
-
-//
 // casChannelI::resourceType()
 //
 casResType casChannelI::resourceType() const
 {
 	return casChanT;
 }
+
+//
+// casChannelI::destroy()
+//
+// this noop version is safe to be called indirectly
+// from casChannelI::~casChannelI
+//
+epicsShareFunc void casChannelI::destroy()
+{
+}
+
+void casChannelI::destroyClientNotify ()
+{
+	casChanDelEv *pCDEV;
+    caStatus status;
+
+	pCDEV = new casChanDelEv (this->getCID());
+	if (pCDEV) {
+		this->client.casEventSys::addToEventQueue (*pCDEV);
+	}
+	else {	
+		status = this->client.disconnectChan (this->getCID());
+		if (status) {
+			//
+			// At this point there is no space in pool
+			// for a tiny object and there is also
+			// no outgoing buffer space in which to place
+			// a message in which we inform the client
+			// that his channel was deleted.
+			//
+			// => disconnect this client via the event
+			// queue because deleting the client here
+			// will result in bugs because no doubt this
+			// could be called by a client member function.
+			//
+			this->client.setDestroyPending();
+		}
+	}
+    this->destroy();
+}
+
 

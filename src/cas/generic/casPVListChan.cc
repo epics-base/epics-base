@@ -28,16 +28,6 @@
  *              Argonne National Laboratory
  *
  *
- * History
- * $Log$
- * Revision 1.2  1997/01/10 21:17:58  jhill
- * code around gnu g++ inline bug when -O isnt used
- *
- * Revision 1.1  1996/12/06 22:36:18  jhill
- * use destroyInProgress flag now functional nativeCount()
- *
- *
- *
  */
 
 #include "server.h"
@@ -50,9 +40,8 @@
 //
 // casPVListChan::casPVListChan()
 //
-casPVListChan::casPVListChan
-        (const casCtx &ctx, casChannel &chanAdapterIn) :
-        casChannelI(ctx, chanAdapterIn)
+casPVListChan::casPVListChan (const casCtx &ctx) :
+        casChannelI(ctx)
 {
         this->pv.installChannel(*this);
 }

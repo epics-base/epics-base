@@ -27,51 +27,6 @@
  *              Argonne National Laboratory
  *
  *
- * History
- * $Log$
- * Revision 1.13  1999/04/30 15:36:26  jhill
- * better range check on index to gddAitToDbr
- *
- * Revision 1.12  1998/06/16 02:21:49  jhill
- * dont require that a server must exist before a PV is created
- *
- * Revision 1.11  1997/08/05 00:47:12  jhill
- * fixed warnings
- *
- * Revision 1.10  1997/04/10 19:34:16  jhill
- * API changes
- *
- * Revision 1.9  1997/01/09 22:22:30  jhill
- * MSC cannot use the default constructor
- *
- * Revision 1.8  1996/12/06 22:36:17  jhill
- * use destroyInProgress flag now functional nativeCount()
- *
- * Revision 1.7.2.1  1996/11/25 16:31:55  jhill
- * MSC cannot use the default constructor localCASRef(this->cas)
- *
- * Revision 1.7  1996/11/02 00:54:23  jhill
- * many improvements
- *
- * Revision 1.6  1996/09/16 18:24:05  jhill
- * vxWorks port changes
- *
- * Revision 1.5  1996/09/04 20:23:59  jhill
- * added operator ->
- *
- * Revision 1.4  1996/07/01 19:56:13  jhill
- * one last update prior to first release
- *
- * Revision 1.3  1996/06/26 21:18:58  jhill
- * now matches gdd api revisions
- *
- * Revision 1.2  1996/06/21 02:30:55  jhill
- * solaris port
- *
- * Revision 1.1.1.1  1996/06/20 00:28:16  jhill
- * ca server installation
- *
- *
  */
 
 
@@ -89,25 +44,6 @@ inline caServerI *casPVI::getPCAS() const
 }
 
 //
-// casPVI::interfaceObjectPointer()
-//
-// casPVI must always be a base for casPV
-// (the constructor assert fails if this isnt the case)
-//
-inline casPV *casPVI::interfaceObjectPointer() const
-{
-	return &this->pv;
-}
-
-//
-// casPVI::operator -> ()
-//
-casPV * casPVI::operator -> () const
-{
-	return  interfaceObjectPointer();
-}
-
-//
 // casPVI::lock()
 //
 inline void casPVI::lock() const
@@ -119,7 +55,7 @@ inline void casPVI::lock() const
 	// comment in casPVI::deleteSignal()
 	//
 	if (this->pCAS) {
-		this->pCAS->osiLock();
+		this->pCAS->lock();
 	}
 	else {
 		fprintf (stderr, "PV lock call when not attached to server?\n");
@@ -132,7 +68,7 @@ inline void casPVI::lock() const
 inline void casPVI::unlock() const
 {
 	if (this->pCAS) {
-		this->pCAS->osiUnlock();
+		this->pCAS->unlock();
 	}
 	else {
 		fprintf (stderr, "PV unlock call when not attached to server?\n");
@@ -191,16 +127,17 @@ inline void casPVI::deleteSignal()
 		// lock when we add a new channel (and the
 		// PV lock is realy the server's lock)
 		//
-		pLocalCAS->osiLock();
+		pLocalCAS->lock();
 
-		if (this->chanList.count()==0u && !this->destroyInProgress) {
-			(*this)->destroy();
+		if (this->chanList.count()==0u) {
+            this->pCAS = NULL;
+			this->destroy ();
 			//
 			// !! dont access self after destroy !!
 			//
 		}
 
-		pLocalCAS->osiUnlock();
+		pLocalCAS->unlock();
 	}
 }
 
@@ -209,7 +146,7 @@ inline void casPVI::deleteSignal()
 //
 inline caStatus  casPVI::bestDBRType (unsigned &dbrType)
 {
-	unsigned bestAIT = (*this)->bestExternalType();
+	unsigned bestAIT = this->bestExternalType();
 
 	if (bestAIT<NELEMENTS(gddAitToDbr)&&bestAIT!=aitEnumInvalid) {
 		dbrType = gddAitToDbr[bestAIT];
@@ -253,12 +190,12 @@ inline void casPVI::postEvent (const casEventMask &select, gdd &event)
 //
 // CA only does 1D arrays for now 
 //
-inline aitIndex casPVI::nativeCount() 
+inline aitIndex casPVI::nativeCount () 
 {
-	if ((*this)->maxDimension()==0u) {
+	if (this->maxDimension()==0u) {
 		return 1u; // scalar
 	}
-	return (*this)->maxBound(0u);
+	return this->maxBound(0u);
 }
 
 #endif // casPVIIL_h

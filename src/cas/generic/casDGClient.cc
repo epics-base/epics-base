@@ -27,63 +27,12 @@
  *              Argonne National Laboratory
  *
  *
- * History
- * $Log$
- * Revision 1.16  1998/12/19 00:04:51  jhill
- * renamed createPV() to pvAttach()
- *
- * Revision 1.15  1998/04/20 18:11:01  jhill
- * better debug mesg
- *
- * Revision 1.14  1998/04/10 23:13:14  jhill
- * fixed byte swap problems, and use default port if server tool returns PV IP addr, but no port
- *
- * Revision 1.13  1998/02/05 22:54:19  jhill
- * moved inline func here
- *
- * Revision 1.12  1997/08/05 00:47:06  jhill
- * fixed warnings
- *
- * Revision 1.11  1997/06/30 22:54:27  jhill
- * use %p with pointers
- *
- * Revision 1.10  1997/06/13 09:15:56  jhill
- * connect proto changes
- *
- * Revision 1.9  1997/04/10 19:34:06  jhill
- * API changes
- *
- * Revision 1.8  1997/01/10 21:17:53  jhill
- * code around gnu g++ inline bug when -O isnt used
- *
- * Revision 1.7  1996/11/02 00:54:08  jhill
- * many improvements
- *
- * Revision 1.6  1996/09/16 18:24:00  jhill
- * vxWorks port changes
- *
- * Revision 1.5  1996/09/04 20:19:47  jhill
- * added missing byte swap on search reply port no
- *
- * Revision 1.4  1996/08/13 22:54:20  jhill
- * fixed little endian problem
- *
- * Revision 1.3  1996/08/05 19:26:15  jhill
- * made os specific code smaller
- *
- * Revision 1.2  1996/06/26 21:18:52  jhill
- * now matches gdd api revisions
- *
- * Revision 1.1.1.1  1996/06/20 00:28:15  jhill
- * ca server installation
- *
- *
  */
 #include "gddApps.h"
 
 #include "server.h"
 #include "caServerIIL.h" // caServerI inline func
-#include "dgOutBufIL.h" // dgOutBuf inline func
+#include "outBufIL.h" // inline func for outBuf
 #include "dgInBufIL.h" // dgInBuf inline func
 #include "casCtxIL.h" // casCtx inline func
 #include "casCoreClientIL.h" // casCoreClient inline func
@@ -95,31 +44,9 @@
 //
 // casDGClient::casDGClient()
 //
-casDGClient::casDGClient(caServerI &serverIn) :
-	dgInBuf(*(osiMutex *)this, casDGIntfIO::optimumInBufferSize()),
-	dgOutBuf(*(osiMutex *)this, casDGIntfIO::optimumOutBufferSize()),
-	casClient(serverIn, *this, *this),
-	pOutMsgIO(NULL),
-	pInMsgIO(NULL)
+casDGClient::casDGClient (caServerI &serverIn) :
+	casClient (serverIn, MAX_UDP+sizeof(cadg))
 {
-}
-
-//
-// casDGClient::init()
-//
-caStatus casDGClient::init() 
-{
-	caStatus status;
-
-	status = this->dgInBuf::init();
-	if (status) {
-		return status;
-	}
-	status = this->dgOutBuf::init();
-	if (status) {
-		return status;
-	}
-	return S_cas_success;
 }
 
 //
@@ -141,12 +68,16 @@ void casDGClient::destroy()
 //
 // casDGClient::show()
 //
-void casDGClient::show(unsigned level) const
+void casDGClient::show (unsigned level) const
 {
 	this->casClient::show(level);
 	printf("casDGClient at %p\n", this);
-	this->dgInBuf::show(level);
-	this->dgOutBuf::show(level);
+	if (level>=1u) {
+		char buf[64];
+		this->clientHostName (buf, sizeof(buf));
+        	printf ("Client Host=%s\n", buf);
+	}
+	this->inBuf::show(level);
 }
 
 //
@@ -159,7 +90,7 @@ caStatus casDGClient::searchAction()
 	const char	*pChanName = (const char *) dp;
 	caStatus	status;
 
-	if (this->ctx.getServer()->getDebugLevel()>2u) {
+	if (this->getCAS().getDebugLevel()>2u) {
 		char pName[64u];
 		this->clientHostName (pName, sizeof (pName));
 		printf("%s is searching for \"%s\"\n", pName, pChanName);
@@ -182,7 +113,7 @@ caStatus casDGClient::searchAction()
 	//
 	this->asyncIOFlag = 0u;
 	pvExistReturn pver = 
-		(*this->ctx.getServer())->pvExistTest(this->ctx, pChanName);
+		this->getCAS()->pvExistTest(this->ctx, pChanName);
 
 	//
 	// prevent problems when they initiate
@@ -190,158 +121,167 @@ caStatus casDGClient::searchAction()
 	// indicating so (and vise versa)
 	//
 	if (this->asyncIOFlag) {
-		pver = pverAsyncCompletion;
+        if (pver.getStatus()!=pverAsyncCompletion) {
+		    errMessage (S_cas_badParameter, 
+		        "- assuming asynch IO status from caServer::pvExistTest()");
+        }
+        status = S_cas_success;
 	}
-	else if (pver.getStatus() == pverAsyncCompletion) {
-		pver = pverDoesNotExistHere;
-		errMessage(S_cas_badParameter, 
-		"- expected asynch IO status from caServer::pvExistTest()");
+	else {
+	    //
+	    // otherwise we assume sync IO operation was initiated
+	    //
+        switch (pver.getStatus()) {
+        case pverExistsHere:
+		    status =  this->searchResponse (*mp, pver);
+            break;
+
+        case pverDoesNotExistHere:
+            status = S_cas_success;
+            break;
+
+        case pverAsyncCompletion:
+		    errMessage (S_cas_badParameter, 
+		        "- unexpected asynch IO status from caServer::pvExistTest() ignored");
+            status = S_cas_success;
+            break;
+
+        default:
+		    errMessage (S_cas_badParameter, 
+		        "- invalid return from caServer::pvExistTest() ignored");
+            status = S_cas_success;
+            break;
+	    }
 	}
-
-	//
-	// otherwise we assume sync IO operation was initiated
-	//
-	switch (pver.getStatus()) {
-	case pverDoesNotExistHere:
-	case pverAsyncCompletion:
-		status = S_cas_success;
-		break;
-
-	case pverExistsHere:
-		status = this->searchResponse(*mp, pver);
-		break;
-
-	default:
-		status = S_cas_badParameter;
-		break;
-	}
-
-	return status;
+    return status;
 }
 
-
 //
 // caStatus casDGClient::searchResponse()
 //
 caStatus casDGClient::searchResponse(const caHdr &msg, 
-	const pvExistReturn &retVal)
+                                     const pvExistReturn &retVal)
 {
-	caStatus	status;
-	caHdr 		*search_reply;
-	unsigned short	*pMinorVersion;
-
-	//
-	// normal search failure is ignored
-	//
-	if (retVal.getStatus()==pverDoesNotExistHere) {
-		return S_cas_success;
-	}
-
-	if (retVal.getStatus()!=pverExistsHere) {
-		fprintf(stderr, 
-"async exist completion with invalid return code \"pverAsynchCompletion\"?\n");
-		return S_cas_success;
-	}
-
-	//
-	// if we dont have a virtual out msg io pointer
-	// then ignore the request
-	//
-	if (!this->pOutMsgIO) {
-		return S_cas_success;
-	}
-
-	/*
-	 * starting with V4.1 the count field is used (abused)
-	 * by the client to store the minor version number of 
-	 * the client.
-	 *
-	 * Old versions expect alloc of channel in response
-	 * to a search request. This is no longer supported.
-	 */
-	if ( !CA_V44(CA_PROTOCOL_VERSION,msg.m_count) ) {
-		if (this->ctx.getServer()->getDebugLevel()>0u) {
-			char pName[64u];
-			this->clientHostName (pName, sizeof (pName));
-			printf("client \"%s\" using EPICS R3.11 CA connect protocol was ignored\n", pName);
-		}
-		//
-		// old connect protocol was dropped when the
-		// new API was added to the server (they must
-		// now use clients at EPICS 3.12 or higher)
-		//
-		status = this->sendErr(&msg, ECA_DEFUNCT, 
-			"R3.11 connect sequence from old client was ignored");
-		return status;
-	}
-
-	/*
-	 * obtain space for the reply message
-	 */
-	status = this->allocMsg(sizeof(*pMinorVersion), &search_reply);
-	if (status) {
-		return status;
-	}
-
-
-	*search_reply = msg;
-	search_reply->m_postsize = sizeof(*pMinorVersion);
-	/*
-	 * cid field is abused to carry the IP 
-	 * address in CA_V48 or higher
-	 * (this allows a CA servers to serve
-	 * as a directory service)
-	 *
-	 * type field is abused to carry the IP 
-	 * port number here CA_V44 or higher
-	 * (this allows multiple CA servers on one
-	 * host)
-	 */
-	if (CA_V48(CA_PROTOCOL_VERSION,msg.m_count)) {
-		if (retVal.addrIsValid()) {
-			caNetAddr addr = retVal.getAddr();
-			struct sockaddr_in ina = addr.getSockIP();
-			search_reply->m_cid = ntohl (ina.sin_addr.s_addr);
-			if (ina.sin_port==0u) {
-				//
-				// If they dont specify a port number then the default
-				// CA server port is assumed when it it is a server
-				// address redirect (it is never correct to use this
-				// server's port when it is a redirect).
-				//
-				search_reply->m_type = CA_SERVER_PORT;
-			}
-			else {
-				search_reply->m_type = ntohs (ina.sin_port);
-			}
-		}
-		else {
-			search_reply->m_cid = ~0U;
-			search_reply->m_type = this->pOutMsgIO->serverPortNumber();
-		}
-	}
-	else {
-		search_reply->m_cid = ~0U;
-		search_reply->m_type = this->pOutMsgIO->serverPortNumber();
-	}
-
-	search_reply->m_count = 0ul;
-
-	/*
-	 * Starting with CA V4.1 the minor version number
-	 * is appended to the end of each search reply.
-	 * This value is ignored by earlier clients. 
-	 */
-	pMinorVersion = (unsigned short *) (search_reply+1);
-	*pMinorVersion = htons (CA_MINOR_VERSION);
-
-	this->commitMsg();
-
-	return S_cas_success;
+    caStatus            status;
+    caHdr               *search_reply;
+    struct sockaddr_in  ina;
+    unsigned short      *pMinorVersion;
+    
+    //
+    // normal search failure is ignored
+    //
+    if (retVal.getStatus()==pverDoesNotExistHere) {
+        return S_cas_success;
+    }
+    
+    if (retVal.getStatus()!=pverExistsHere) {
+        fprintf(stderr, 
+            "async exist completion with invalid return code \"pverAsynchCompletion\"?\n");
+        return S_cas_success;
+    }
+    
+    //
+    // starting with V4.1 the count field is used (abused)
+    // by the client to store the minor version number of 
+    // the client.
+    //
+    // Old versions expect alloc of channel in response
+    // to a search request. This is no longer supported.
+    //
+    if ( !CA_V44(CA_PROTOCOL_VERSION,msg.m_count) ) {
+        if (this->getCAS().getDebugLevel()>0u) {
+            char pName[64u];
+            this->clientHostName (pName, sizeof (pName));
+            printf("client \"%s\" using EPICS R3.11 CA connect protocol was ignored\n", pName);
+        }
+        //
+        // old connect protocol was dropped when the
+        // new API was added to the server (they must
+        // now use clients at EPICS 3.12 or higher)
+        //
+        status = this->sendErr(&msg, ECA_DEFUNCT, 
+            "R3.11 connect sequence from old client was ignored");
+        return status;
+    }
+    
+    //
+    // obtain space for the reply message
+    //
+    status = this->allocMsg(sizeof(*pMinorVersion), &search_reply);
+    if (status) {
+        return status;
+    }
+    
+    *search_reply = msg;
+    search_reply->m_postsize = sizeof(*pMinorVersion);
+    //
+    // cid field is abused to carry the IP 
+    // address in CA_V48 or higher
+    // (this allows a CA servers to serve
+    // as a directory service)
+    //
+    // type field is abused to carry the IP 
+    // port number here CA_V44 or higher
+    // (this allows multiple CA servers on one
+    // host)
+    //
+    if (CA_V48(CA_PROTOCOL_VERSION,msg.m_count)) {        
+        if (retVal.addrIsValid()) {
+            caNetAddr addr = retVal.getAddr();
+            ina = addr.getSockIP();
+            //
+            // If they dont specify a port number then the default
+            // CA server port is assumed when it it is a server
+            // address redirect (it is never correct to use this
+            // server's port when it is a redirect).
+            //
+            if (ina.sin_port==0u) {
+                ina.sin_port = htons (CA_SERVER_PORT);
+            }
+        }
+        else {
+            caNetAddr addr = this->serverAddress ();
+            ina = addr.getSockIP();
+            //
+            // We dont fill in the servers address here
+            // because the server was not bound to a particular 
+            // interface, and we would need to waste CPU performing
+            // the following steps to determine the interface that
+            // will be used:
+            //
+            // o connect UDP socket to the destination IP
+            // o perform a getsockname() call
+            // o disconnect UDP socket from the destination IP
+            //
+            if ( ina.sin_addr.s_addr == INADDR_ANY ) {
+                ina.sin_addr.s_addr = ntohl(~0U);
+            }
+        }
+        search_reply->m_cid = ntohl (ina.sin_addr.s_addr);
+        search_reply->m_type = ntohs (ina.sin_port);
+    }
+    else {
+        caNetAddr addr = this->serverAddress ();
+        struct sockaddr_in ina = addr.getSockIP();
+        search_reply->m_cid = ~0U;
+        search_reply->m_type = ntohs (ina.sin_port);
+    }
+    
+    search_reply->m_count = 0ul;
+    
+    //
+    // Starting with CA V4.1 the minor version number
+    // is appended to the end of each search reply.
+    // This value is ignored by earlier clients. 
+    //
+    pMinorVersion = (unsigned short *) (search_reply+1);
+    *pMinorVersion = htons (CA_MINOR_VERSION);
+    
+    this->commitMsg();
+    
+    return S_cas_success;
 }
 
-
-
 //
 // 	casDGClient::searchFailResponse()
 //	(only when requested by the client
@@ -366,12 +306,11 @@ caStatus casDGClient::searchFailResponse(const caHdr *mp)
 	return S_cas_success;
 }
 
-
 //
 // casDGClient::sendBeacon()
 // (implemented here because this has knowledge of the protocol)
 //
-void casDGClient::sendBeacon(casDGIntfIO &io)
+void casDGClient::sendBeacon ()
 {
 	union {
 		caHdr	msg;
@@ -387,163 +326,232 @@ void casDGClient::sendBeacon(casDGIntfIO &io)
 	//
 	// send it to all addresses on the beacon list
 	//
-	io.sendBeacon(buf, sizeof(msg), msg.m_available, msg.m_count);
+	this->sendBeaconIO(buf, sizeof(msg), msg.m_available, msg.m_count);
 }
 
 //
-// casDGClient::ioBlockedSignal()
+// casDGClient::xSend()
 //
-void casDGClient::ioBlockedSignal() 
+outBuf::flushCondition casDGClient::xSend (char *pBufIn,
+        bufSizeT nBytesAvailableToSend, bufSizeT nBytesNeedToBeSent,
+        bufSizeT &nBytesSent)
 {
-	//
-	// NOOP
-	//
-	// The DG client never blocks - if we exceed the 
-	// max simultaneous io in progress limit 
-	// then we discard the current request 
-	// (the client will resend later)
-	//
+    outBuf::flushCondition stat;
+    bufSizeT totalBytes;
+    char *pBuf = pBufIn;
+    cadg *pHdr;
+
+    assert (nBytesAvailableToSend>=nBytesNeedToBeSent);
+
+    totalBytes = 0;
+    while (1) {
+        pHdr = reinterpret_cast<cadg *>(&pBuf[totalBytes]);
+
+        assert (totalBytes<=bufSizeT_MAX-pHdr->cadg_nBytes);
+        assert (totalBytes+pHdr->cadg_nBytes<=nBytesAvailableToSend);
+
+        if (pHdr->cadg_addr.isValid()) {
+	        stat = this->osdSend (reinterpret_cast<char *>(pHdr+1), 
+                pHdr->cadg_nBytes-sizeof(*pHdr), pHdr->cadg_addr);	
+	        if (stat!=outBuf::flushProgress) {
+                 break;
+            }
+        }
+
+        totalBytes += pHdr->cadg_nBytes;
+
+        if (totalBytes>=nBytesNeedToBeSent) {
+            break;
+        }
+    }
+
+    if (totalBytes) {
+		//
+		// !! this time fetch may be slowing things down !!
+		//
+		//this->lastSendTS = osiTime::getCurrent();
+        nBytesSent = totalBytes;
+        return outBuf::flushProgress;
+    }
+    else {
+        return outBuf::flushNone;
+    }
 }
 
 //
-// casDGClient::processDG()
+// casDGClient::xRecv ()
 //
-void casDGClient::processDG(casDGIntfIO &inMsgIO, casDGIntfIO &outMsgIO)
+inBuf::fillCondition casDGClient::xRecv (char *pBufIn, bufSizeT nBytesToRecv,
+        fillParameter parm, bufSizeT &nByesRecv)
 {
-        caStatus                status;
- 
-	//
-	// !! special locking required here in mt case
-	//
-    //
-    // force all replies to be sent to the client
-    // that made the request
-    //
-	this->pInMsgIO = &inMsgIO;
-	this->pOutMsgIO = &outMsgIO;
-    this->inBuf::clear();
-    this->outBuf::clear();
+    const char *pAfter = pBufIn + nBytesToRecv;
+    char *pBuf = pBufIn;
+    bufSizeT nDGBytesRecv;
+    inBuf::fillCondition stat;
+    cadg *pHdr;
 
-    //
-    // read in new input
-    //
-	if (this->fill() != casFillDisconnect) {
+    while (pAfter-pBuf >= MAX_UDP+sizeof(cadg)) {
+        pHdr = reinterpret_cast<cadg *>(pBuf);
+	    stat = this->osdRecv (reinterpret_cast<char *>(pHdr+1), MAX_UDP, parm, 
+            nDGBytesRecv, pHdr->cadg_addr);
+	    if (stat==casFillProgress) {
+            pHdr->cadg_nBytes = nDGBytesRecv + sizeof(*pHdr);
+            pBuf += pHdr->cadg_nBytes;
+		    //
+		    // !! this time fetch may be slowing things down !!
+		    //
+		    //this->lastRecvTS = osiTime::getCurrent();
+	    }
+        else {
+            break;
+        }
+    }
 
-		//
-		// verify that we have a message to process
-		//
-		if (this->inBuf::bytesPresent()>0u) {
-			this->setRecipient(this->getSender());
-
-			//
-			// process the message
-			//
-			status = this->processMsg();
-			if (status) {
-                char pName[64u];
-	            this->clientHostName (pName, sizeof (pName));
-				errPrintf (status, __FILE__, __LINE__,
-			        "- bad stateless protocol from \"%s\"", pName);
-			}
-			//
-			// force all replies to go to the sender
-			//
-			if (this->outBuf::bytesPresent()>0u) {
-				casVerify (this->flush()==casFlushCompleted);
-			}
-		}
-	}
-
-	//
-	// clear the input/output buffers so replies
-	// are always sent to the sender of the request
-	//
-	this->pInMsgIO = NULL;
-	this->pOutMsgIO = NULL;
-	this->inBuf::clear();
-	this->outBuf::clear();
+    nDGBytesRecv = pBuf - pBufIn;
+    if (nDGBytesRecv) {
+        nByesRecv = nDGBytesRecv;
+        return casFillProgress;
+    }
+    else {
+        return casFillNone;
+    }
 }
 
 //
 // casDGClient::asyncSearchResp()
 //
-caStatus casDGClient::asyncSearchResponse(
-	casDGIntfIO &outMsgIO, const caNetAddr &outAddr,
+//
+// this results in many small UDP frames which unfortunately
+// isnt particularly efficient
+//
+caStatus casDGClient::asyncSearchResponse (const caNetAddr &outAddr,
 	const caHdr &msg, const pvExistReturn &retVal)
 {
 	caStatus stat;
 
-	//
-	// !! special locking required here in mt case
-	//
-	this->pOutMsgIO = &outMsgIO;
-	this->dgOutBuf::clear();
-	this->setRecipient(outAddr);
+    //
+    // start a DG context in the output protocol stream
+    // and grab the send lock
+    //
+    void *pRaw;
+    const outBufCtx outctx = this->outBuf::pushCtx 
+                    (sizeof(cadg), MAX_UDP, pRaw);
+    if (outctx.pushResult()!=outBufCtx::pushCtxSuccess) {
+        return S_cas_sendBlocked;
+    }
 
-	stat = this->searchResponse(msg, retVal);
+    cadg *pRespHdr = reinterpret_cast<cadg *>(pRaw);
+	stat = this->searchResponse (msg, retVal);
 
-	this->dgOutBuf::flush();
-	this->dgOutBuf::clear();
-	this->pOutMsgIO = NULL;
+    pRespHdr->cadg_nBytes = this->outBuf::popCtx (outctx);
+    if (pRespHdr->cadg_nBytes>0) {
+        pRespHdr->cadg_addr = outAddr;
+        this->outBuf::commitRawMsg (pRespHdr->cadg_nBytes);
+    }
 
 	return stat;
 }
 
 //
-// casDGClient::xDGSend()
+// casDGClient::processDG ()
 //
-xSendStatus casDGClient::xDGSend (char *pBufIn, bufSizeT nBytesNeedToBeSent, 
-		bufSizeT &nBytesSent, const caNetAddr &recipient)
+caStatus casDGClient::processDG ()
 {
-	xSendStatus stat;
+    bufSizeT bytesLeft;
+    caStatus status;
+ 
+	status = S_cas_success;
+    while (bytesLeft = this->inBuf::bytesPresent()) {
+        bufSizeT dgInBytesConsumed;
+        const cadg *pReqHdr = reinterpret_cast<cadg *>(this->inBuf::msgPtr ());
 
-	if (!this->pOutMsgIO) {
-		return xSendDisconnect;
-	}
-	stat = this->pOutMsgIO->osdSend(pBufIn, nBytesNeedToBeSent, 
-				nBytesSent, recipient);	
-	if (stat==xSendOK) {
-		//
-		// !! this time fetch may be slowing things down !!
-		//
-		this->lastSendTS = osiTime::getCurrent();
-	}
-	return stat;
-}
+        if (bytesLeft<sizeof(*pReqHdr)) {
+            this->inBuf::removeMsg (bytesLeft);
+            ca_printf ("casDGClient::processMsg: incomplete DG header?");
+            status = S_cas_internal;
+            break;
+        }
 
-//
-// casDGClient::xDGRecv()
-//
-xRecvStatus casDGClient::xDGRecv (char *pBufIn, bufSizeT nBytesToRecv,
-			bufSizeT &nByesRecv, caNetAddr &sender)
-{
-	xRecvStatus stat;
+        //
+        // start a DG context in the output protocol stream
+        // and grab the send lock
+        //
+        void *pRaw;
+        const outBufCtx outctx = this->outBuf::pushCtx (sizeof(cadg), MAX_UDP, pRaw);
+        if ( outctx.pushResult() != outBufCtx::pushCtxSuccess ) {
+            status = S_cas_sendBlocked;
+            break;
+        }
+        
+        cadg *pRespHdr = reinterpret_cast <cadg *> (pRaw);
+        
+        //
+        // select the next DG in the input stream and start processing it
+        //
+        const bufSizeT reqBodySize = pReqHdr->cadg_nBytes-sizeof (*pReqHdr);
+        const inBufCtx inctx = this->inBuf::pushCtx (sizeof (*pReqHdr), reqBodySize);
+        if ( inctx.pushResult() != inBufCtx::pushCtxSuccess ) {
+            this->inBuf::removeMsg (bytesLeft);
+            this->outBuf::popCtx (outctx);
+            ca_printf ("casDGClient::processMsg: incomplete DG?\n");
+            status = S_cas_internal;
+            break;
+        }
 
-	if (!this->pInMsgIO) {
-		return xRecvDisconnect;
-	}
-	stat = this->pInMsgIO->osdRecv(pBufIn, nBytesToRecv, 
-						nByesRecv, sender);
-	if (stat==xRecvOK) {
-		//
-		// !! this time fetch may be slowing things down !!
-		//
-		this->lastRecvTS = osiTime::getCurrent();
-	}
-	return stat;
-}
+        this->lastRecvAddr = pReqHdr->cadg_addr;
 
-//
-// casDGClient::incommingBytesPresent()
-//
-bufSizeT casDGClient::incommingBytesPresent() const
-{
-	//
-	// !!!! perhaps this would run faster if we
-	// !!!! checked to see if UDP frames are in
-	// !!!! the queue from the same client
-	//
-	return 0u;
+        status = this->processMsg ();
+        dgInBytesConsumed = this->inBuf::popCtx (inctx);
+        if (dgInBytesConsumed>0) {
+
+            //
+            // at this point processMsg() bailed out because:
+            // a) it used all of the incoming DG or
+            // b) it used all of the outgoing DG
+            //
+            // In either case commit the DG to the protocol stream and 
+            // release the send lock
+            //
+            pRespHdr->cadg_nBytes = this->outBuf::popCtx (outctx) + sizeof(*pRespHdr);
+            if (pRespHdr->cadg_nBytes>sizeof(*pRespHdr)) {
+                pRespHdr->cadg_addr = pReqHdr->cadg_addr;
+                this->outBuf::commitRawMsg (pRespHdr->cadg_nBytes);
+            }
+
+            //
+            // check to see that all of the incoming UDP frame was used
+            //
+            if (dgInBytesConsumed<reqBodySize) {
+                //
+                // remove the bytes in the body that were consumed,
+                // but _not_ the header bytes
+                //
+                this->inBuf::removeMsg (dgInBytesConsumed);
+
+                //
+                // slide the UDP header forward and correct the byte count
+                //
+                {
+                    cadg *pReqHdrMove;
+                    cadg copy = *pReqHdr;
+                    pReqHdrMove = reinterpret_cast <cadg *> (this->inBuf::msgPtr ());
+                    pReqHdrMove->cadg_addr = copy.cadg_addr;
+                    pReqHdrMove->cadg_nBytes = copy.cadg_nBytes - dgInBytesConsumed;
+                }
+            }
+            else {
+                //
+                // remove the header and all of the body
+                //
+                this->inBuf::removeMsg ( pReqHdr->cadg_nBytes );
+            }
+        }
+
+        if (status!=S_cas_success) {
+            break;
+        }
+    }
+    return status;
 }
 
 //
@@ -555,18 +563,17 @@ unsigned casDGClient::getDebugLevel() const
 }
 
 //
-// casDGClient::fetchRespAddr()
+// casDGClient::fetchLastRecvAddr ()
 //
-caNetAddr casDGClient::fetchRespAddr()
+caNetAddr casDGClient::fetchLastRecvAddr () const
 {
-	return this->getRecipient();
-}
- 
-//
-// casDGClient::fetchOutIntf()
-//
-casDGIntfIO* casDGClient::fetchOutIntf()
-{
-	return this->pOutMsgIO;
+	return this->lastRecvAddr;
 }
 
+//
+// casDGClient::clientHostName()
+//
+void casDGClient::clientHostName (char *pBufIn, unsigned bufSizeIn) const
+{
+    this->lastRecvAddr.stringConvert (pBufIn, bufSizeIn);
+}

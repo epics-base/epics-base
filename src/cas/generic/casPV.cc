@@ -27,38 +27,7 @@
  *              Argonne National Laboratory
  *
  *
- * History
- * $Log$
- * Revision 1.9  1998/06/18 00:09:09  jhill
- * installed bwd compat casPV constructor
- *
- * Revision 1.8  1998/06/16 02:30:44  jhill
- * allow PV to be created before the server
- *
- * Revision 1.7  1997/08/05 00:47:10  jhill
- * fixed warnings
- *
- * Revision 1.6  1997/04/10 19:34:14  jhill
- * API changes
- *
- * Revision 1.5  1996/12/06 22:34:22  jhill
- * add maxDimension() and maxBound()
- *
- * Revision 1.4  1996/11/02 00:54:21  jhill
- * many improvements
- *
- * Revision 1.3  1996/07/01 19:56:12  jhill
- * one last update prior to first release
- *
- * Revision 1.2  1996/06/21 02:30:53  jhill
- * solaris port
- *
- * Revision 1.1.1.1  1996/06/20 00:28:15  jhill
- * ca server installation
- *
- *
  */
-
 
 //
 // Notes:
@@ -70,8 +39,7 @@
 #include "casPVIIL.h" 	// casPVI inline func
 #include "casCtxIL.h" 	// casCtx inline func
 
-epicsShareFunc casPV::casPV () :
-	casPVI (*this)
+epicsShareFunc casPV::casPV ()
 {
 }
 
@@ -79,8 +47,7 @@ epicsShareFunc casPV::casPV () :
 // This constructor is preserved for backwards compatibility only.
 // Please do _not_ use this constructor.
 //
-epicsShareFunc casPV::casPV (caServer &) :
-	casPVI (*this)
+epicsShareFunc casPV::casPV (caServer &)
 {
 }
 
@@ -89,14 +56,23 @@ epicsShareFunc casPV::~casPV()
 }
 
 //
-// casPV::show()
+// casPV::destroy()
 //
-epicsShareFunc void casPV::show(unsigned level)  const
+// (this default action will _never_ be called while in the
+// casPVI destructor)
+//
+void casPV::destroy ()
 {
-	if (level>2u) {
-		printf ("casPV: Best external type = %d\n",
-			this->bestExternalType());
-	}
+	delete this;
+}
+
+//
+// casPV::createChannel()
+//
+epicsShareFunc casChannel *casPV::createChannel (const casCtx &ctx, const char * const,
+		const char * const)
+{
+	return new casChannel (ctx);
 }
 
 //
@@ -172,20 +148,11 @@ epicsShareFunc aitIndex casPV::maxBound(unsigned /* dimension */) const
 }
 
 //
-// casPV::createChannel()
+// casPV::show (unsigned level) 
 //
-epicsShareFunc casChannel *casPV::createChannel (const casCtx &ctx, const char * const,
-		const char * const)
+epicsShareFunc void casPV::show (unsigned level) const
 {
-	return new casChannel (ctx);
-}
-
-//
-// casPV::destroy()
-//
-epicsShareFunc void casPV::destroy()
-{
-	delete this;
+    casPVI::show (level);
 }
 
 //
@@ -200,13 +167,19 @@ epicsShareFunc void casPV::postEvent (const casEventMask &select, gdd &event)
 // Find the server associated with this PV
 // ****WARNING****
 // this returns NULL if the PV isnt currently installed
-// into a server (this situation will exist only if
-// the pv isnt deleted in a derived classes replacement
-// for virtual casPV::destroy()
+// into a server.
 // ***************
 //
 epicsShareFunc caServer *casPV::getCAS() const
 {
 	return this->casPVI::getExtServer();
+}
+
+//
+// casPV::apiPointer()
+//
+casPV *casPV::apiPointer ()
+{
+    return this;
 }
 

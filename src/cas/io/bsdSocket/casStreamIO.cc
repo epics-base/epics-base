@@ -5,6 +5,9 @@
 //
 //
 // $Log$
+// Revision 1.18  1998/12/18 18:58:20  jhill
+// fixed warning
+//
 // Revision 1.17  1998/11/11 01:31:59  jhill
 // reduced socket buffer size
 //
@@ -64,24 +67,13 @@
 #include "server.h"
 #include "bsdSocketResource.h"
 
-
 //
 // casStreamIO::casStreamIO()
 //
 casStreamIO::casStreamIO(caServerI &cas, const ioArgsToNewStreamIO &args) :
-	casStrmClient(cas),
-	sockState(casOffLine), sock(args.sock), addr(args.addr),
-	blockingFlag(xIsBlocking)
+	casStrmClient(cas), sock(args.sock), addr(args.addr), blockingFlag(xIsBlocking)
 {
 	assert (sock>=0);
-}
-
-
-//
-// casStreamIO::init()
-//
-caStatus casStreamIO::init() 
-{
 	int yes = TRUE;
 	int	status;
 
@@ -98,8 +90,8 @@ caStatus casStreamIO::init()
 	if (status<0) {
 		ca_printf(
 			"CAS: %s TCP_NODELAY option set failed %s\n",
-			__FILE__, SOCKERRSTR);
-		return S_cas_internal;
+			__FILE__, SOCKERRSTR(SOCKERRNO));
+		throw S_cas_internal;
 	}
 
 	/*
@@ -115,8 +107,8 @@ caStatus casStreamIO::init()
 	if (status<0) {
 		ca_printf(
 			"CAS: %s SO_KEEPALIVE option set failed %s\n",
-			__FILE__, SOCKERRSTR);
-		return S_cas_internal;
+			__FILE__, SOCKERRSTR(SOCKERRNO));
+		throw S_cas_internal;
 	}
 
 	/*
@@ -141,7 +133,7 @@ caStatus casStreamIO::init()
 					sizeof(i));
 	if(status < 0){
 			ca_printf("CAS: SO_SNDBUF set failed\n");
-	return S_cas_internal;
+	    throw S_cas_internal;
 	}
 	i = MAX_MSG_SIZE;
 	status = setsockopt(
@@ -152,16 +144,12 @@ caStatus casStreamIO::init()
 					sizeof(i));
 	if(status < 0){
 			ca_printf("CAS: SO_RCVBUF set failed\n");
-	return S_cas_internal;
+	    throw S_cas_internal;
 	}
 #endif
 
-	this->sockState = casOnLine;
-
-	return this->casStrmClient::init();
 }
 
-
 //
 // casStreamIO::~casStreamIO()
 //
@@ -172,95 +160,69 @@ casStreamIO::~casStreamIO()
 	}
 }
 
-
 //
 // casStreamIO::osdSend()
 //
-xSendStatus casStreamIO::osdSend(const char *pInBuf, bufSizeT nBytesReq, 
-		bufSizeT &nBytesActual)
+outBuf::flushCondition casStreamIO::osdSend (const char *pInBuf, bufSizeT nBytesReq, 
+                                 bufSizeT &nBytesActual)
 {
-        int	status;
+    int	status;
+    
+    status = send (this->sock, (char *) pInBuf, nBytesReq, 0);
+    if (status == 0) {
+        return outBuf::flushDisconnect;
+    }
+    else if (status<0) {
+        int anerrno = SOCKERRNO;
+        
+        if (anerrno != SOCK_EWOULDBLOCK) {
+ 			char buf[64];
+            int errnoCpy = SOCKERRNO;
 
-        if (this->sockState!=casOnLine) {
-                return xSendDisconnect;
+            ipAddrToA (&this->addr, buf, sizeof(buf));
+			ca_printf(
+	"CAS: TCP socket send to \"%s\" failed because \"%s\"\n",
+				buf, SOCKERRSTR(errnoCpy));
         }
-
-        if (nBytesReq<=0u) {
-		nBytesActual = 0u;
-                return xSendOK;
-        }
-
-	status = send (
-			this->sock,
-			(char *) pInBuf,
-			nBytesReq,
-			0);
-	if (status == 0) {
-		this->sockState = casOffLine;
-		return xSendDisconnect;
-	}
-	else if (status<0) {
-		int anerrno = SOCKERRNO;
-
-		if (anerrno != SOCK_EWOULDBLOCK) {
-			this->sockState = casOffLine;
-		}
-		nBytesActual = 0u;
-		return xSendOK;
-	}
-	nBytesActual = (bufSizeT) status;
-	return xSendOK;
+        return outBuf::flushNone;
+    }
+    nBytesActual = (bufSizeT) status;
+    return outBuf::flushProgress;
 }
 
-
 //
 // casStreamIO::osdRecv()
 //
-xRecvStatus casStreamIO::osdRecv(char *pInBuf, bufSizeT nBytes, 
+inBuf::fillCondition casStreamIO::osdRecv (char *pInBuf, bufSizeT nBytes, 
 		bufSizeT &nBytesActual)
 {
-  	int 		nchars;
+  	int nchars;
 
-	if (this->sockState!= casOnLine) {
-		return xRecvDisconnect;
-	}
-
-	nchars = recv(this->sock, pInBuf, nBytes, 0);
+	nchars = recv (this->sock, pInBuf, nBytes, 0);
 	if (nchars==0) {
-		this->sockState = casOffLine;
-		return xRecvDisconnect;
+		return casFillDisconnect;
 	}
 	else if (nchars<0) {
+        int myerrno = SOCKERRNO;
 		char buf[64];
 
-		/*
-		 * normal conn lost conditions
-		 */
-		switch(SOCKERRNO){
-		case SOCK_EWOULDBLOCK:
-			nBytesActual = 0u;
-			return xRecvOK;
-
-		case SOCK_ECONNABORTED:
-		case SOCK_ECONNRESET:
-		case SOCK_ETIMEDOUT:
-			break;
-
-		default:
-			ipAddrToA(&this->addr, buf, sizeof(buf));
+        if (myerrno==SOCK_EWOULDBLOCK) {
+            return casFillNone;
+        }
+        else  {
+			ipAddrToA (&this->addr, buf, sizeof(buf));
 			ca_printf(
 		"CAS: client %s disconnected because \"%s\"\n",
-				buf, SOCKERRSTR);
-			break;
-		}
-		this->sockState = casOffLine;
-		return xRecvDisconnect;
+				buf, SOCKERRSTR(myerrno));
+		    return casFillDisconnect;
+        }
 	}
-	nBytesActual = (bufSizeT) nchars;
-	return xRecvOK;
+    else {
+    	nBytesActual = (bufSizeT) nchars;
+	    return casFillProgress;
+    }
 }
 
-
 //
 // casStreamIO::show()
 //
@@ -276,7 +238,6 @@ void casStreamIO::osdShow (unsigned level) const
 	}
 }
 
-
 //
 // casStreamIO::xSsetNonBlocking()
 //
@@ -285,18 +246,14 @@ void casStreamIO::xSetNonBlocking()
 	int status;
 	osiSockIoctl_t yes = TRUE;
 
-	if (this->sockState!=casOnLine) {
-		return;
-	}
-
 	status = socket_ioctl(this->sock, FIONBIO, &yes);
 	if (status>=0) {
 		this->blockingFlag = xIsntBlocking;
 	}
 	else {
 		ca_printf("%s:CAS: TCP non blocking IO set fail because \"%s\"\n", 
-				__FILE__, SOCKERRSTR);
-		this->sockState = casOffLine;
+				__FILE__, SOCKERRSTR(SOCKERRNO));
+	    throw S_cas_internal;
 	}
 }
 
@@ -308,45 +265,32 @@ xBlockingStatus casStreamIO::blockingState() const
 	return this->blockingFlag;
 }
 
-
 //
 // casStreamIO::incommingBytesPresent()
 //
 bufSizeT casStreamIO::incommingBytesPresent() const
 {
-	int status;
-	osiSockIoctl_t nchars;
-
-	status = socket_ioctl(this->sock, FIONREAD, &nchars);
-	if (status<0) {
-		char buf[64];
-
-		/*
-		 * normal conn lost conditions
-		 */
-		switch(SOCKERRNO){
-		case SOCK_ECONNABORTED:
-		case SOCK_ECONNRESET:
-		case SOCK_ETIMEDOUT:
-			break;
-
-		default:
-			ipAddrToA(&this->addr, buf, sizeof(buf));
-			ca_printf(
-		"CAS: FIONREAD for %s failed because \"%s\"\n",
-				buf, SOCKERRSTR);
-		}
-		return 0u;
-	}
-	else if (nchars<0) {
-		return 0u;
-	}
-	else {
-		return (bufSizeT) nchars;
-	}
+    int status;
+    osiSockIoctl_t nchars;
+    
+    status = socket_ioctl(this->sock, FIONREAD, &nchars);
+    if (status<0) {
+        char buf[64];
+        int errnoCpy = SOCKERRNO;
+        
+        ipAddrToA (&this->addr, buf, sizeof(buf) );
+        ca_printf ("CAS: FIONREAD for %s failed because \"%s\"\n",
+            buf, SOCKERRSTR(errnoCpy));
+        return 0u;
+    }
+    else if (nchars<0) {
+        return 0u;
+    }
+    else {
+        return (bufSizeT) nchars;
+    }
 }
 
-
 //
 // casStreamIO::clientHostName()
 //
@@ -365,10 +309,6 @@ bufSizeT casStreamIO::optimumBufferSize ()
 	int n;
 	int size;
 	int status;
-
-        if (this->sockState!=casOnLine) {
-                return MAX_TCP;
-        }
 
 	/* fetch the TCP send buffer size */
 	n = sizeof(size);
@@ -400,12 +340,3 @@ int casStreamIO::getFD() const
 {
 	return this->sock;
 }
-
-//
-// casStreamIO::state()
-//
-casIOState casStreamIO::state() const 
-{
-	return this->sockState;
-}
-

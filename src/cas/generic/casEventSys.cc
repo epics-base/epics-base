@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.9  1999/04/30 15:33:46  jhill
+ * better message
+ *
  * Revision 1.8  1998/07/23 16:48:15  jhill
  * eventsOff is no longere a private member
  *
@@ -74,7 +77,6 @@ void casEventSys::show(unsigned level) const
 {
 	printf ("casEventSys at %p\n", this);
 	if (level>=1u) {
-		printf ("\thas coreClient at %p\n", &this->coreClient);
 		printf ("\tnumEventBlocks = %u, maxLogEntries = %u\n",
 			this->numEventBlocks, this->maxLogEntries);	
 		printf ("\tthere are %d events in the queue\n",
@@ -84,7 +86,6 @@ void casEventSys::show(unsigned level) const
 	}
 }
 
-
 //
 // casEventSys::~casEventSys()
 //
@@ -92,7 +93,7 @@ casEventSys::~casEventSys()
 {
 	casEvent 	*pE;
 	
-	this->mutex.osiLock();
+	this->mutex.lock();
 
 	if (this->pPurgeEvent != NULL) {
 		this->eventLogQue.remove(*this->pPurgeEvent);
@@ -108,19 +109,18 @@ casEventSys::~casEventSys()
 		delete pE;
 	}
 
-	this->mutex.osiUnlock();
+	this->mutex.unlock();
 }
 
-
 //
 // casEventSys::installMonitor()
 //
 void casEventSys::installMonitor()
 {
-	this->mutex.osiLock();
+	this->mutex.lock();
 	this->numEventBlocks++;
 	this->maxLogEntries += averageEventEntries;
-	this->mutex.osiUnlock();
+	this->mutex.unlock();
 }
 
 //
@@ -128,14 +128,13 @@ void casEventSys::installMonitor()
 //
 void casEventSys::removeMonitor() 
 {       
-	this->mutex.osiLock();
+	this->mutex.lock();
 	assert (this->numEventBlocks>=1u);
 	this->numEventBlocks--;
 	this->maxLogEntries -= averageEventEntries;
-	this->mutex.osiUnlock();
+	this->mutex.unlock();
 }
 
-
 //
 // casEventSys::process()
 //
@@ -146,7 +145,7 @@ casProcCond casEventSys::process()
 	casProcCond	cond = casProcOk;
 	unsigned long	nAccepted = 0u;
 
-	this->mutex.osiLock();
+	this->mutex.lock();
 
 	while (!this->dontProcess) {
 
@@ -192,10 +191,10 @@ casProcCond casEventSys::process()
 	 * call flush function if they provided one 
 	 */
 	if (nAccepted > 0u) {
-		this->coreClient.eventFlush();
+		this->eventFlush ();
 	}
 
-	this->mutex.osiUnlock();
+	this->mutex.unlock();
 
 	//
 	// allows the derived class to be informed that it
@@ -218,7 +217,7 @@ casProcCond casEventSys::process()
 // 
 void casEventSys::eventsOn()
 {
-	this->mutex.osiLock();
+	this->mutex.lock();
 
 	//
 	// allow multiple events for each monitor
@@ -239,12 +238,12 @@ void casEventSys::eventsOn()
 		this->pPurgeEvent = NULL;
 	}
 
-	this->mutex.osiUnlock();
+	this->mutex.unlock();
 
     //
     // wakes up the event queue consumer
     //
-    this->coreClient.eventSignal();
+    this->eventSignal ();
 }
 
 //
@@ -252,7 +251,7 @@ void casEventSys::eventsOn()
 //
 caStatus casEventSys::eventsOff()
 {
-	this->mutex.osiLock();
+	this->mutex.lock();
 
 	//
 	// new events will replace the last event on
@@ -280,7 +279,7 @@ caStatus casEventSys::eventsOff()
 		}
 	}
 
-	this->mutex.osiUnlock();
+	this->mutex.unlock();
 
 	return S_cas_success;
 }
@@ -290,10 +289,10 @@ caStatus casEventSys::eventsOff()
 // 
 caStatus casEventPurgeEv::cbFunc (casEventSys &evSys)
 {
-	evSys.mutex.osiLock();
+	evSys.mutex.lock();
 	evSys.dontProcess = TRUE;
 	evSys.pPurgeEvent = NULL;
-	evSys.mutex.osiUnlock();
+	evSys.mutex.unlock();
 
 	delete this;
 

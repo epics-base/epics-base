@@ -242,3 +242,12 @@ implemented ANSI STD C++ "bool" type.
 o In class osiTimer type double, and not type osiTime, is returned from virtual member 
 function delay().
 
+o The public const event mask member data in the caServer class were changed to member 
+functions in order to avoid problems on some compiler where const event masks cant be
+created until the server is fully constructed. The constants have been replaced by the
+following member functions.
+	casEventMask valueEventMask() const; // DBE_VALUE registerEvent("value")
+	casEventMask logEventMask() const; 	// DBE_LOG registerEvent("log") 
+	casEventMask alarmEventMask() const; // DBE_ALARM registerEvent("alarm") 
+
+

@@ -26,32 +26,12 @@
  *              Advanced Photon Source
  *              Argonne National Laboratory
  *
- *
- * History
- * $Log$
- * Revision 1.9  1998/04/16 21:17:38  jhill
- * fixed spelling in comment
- *
- * Revision 1.8  1998/04/14 00:49:26  jhill
- * cosmetic
- *
- * Revision 1.7  1997/08/05 00:47:00  jhill
- * fixed warnings
- *
- * Revision 1.6  1997/04/10 19:33:56  jhill
- * API changes
- *
- * Revision 1.5  1996/12/13 00:08:35  jhill
- * dont unlock after destroy
- *
- * Revision 1.4  1996/11/02 00:53:58  jhill
- * many improvements
- *
- *
  */
 
 
 #include "server.h"
+#include "caServerIIL.h" // caServerI in line func
+#include "casCoreClientIL.h" // casCoreClient in line func
 #include "casEventSysIL.h" // casEventSys in line func
 #include "casAsyncIOIIL.h" // casAsyncIOI in line func
 #include "casCtxIL.h" // casCtx in line func
@@ -59,13 +39,12 @@
 //
 // casAsyncIOI::casAsyncIOI()
 //
-casAsyncIOI::casAsyncIOI(casCoreClient &clientIn, casAsyncIO &ioExternalIn) :
-	client(clientIn),
-	ioExternal(ioExternalIn),
-	inTheEventQueue(FALSE),
-	posted(FALSE),
-	ioComplete(FALSE),
-	serverDelete(FALSE)
+casAsyncIOI::casAsyncIOI (casCoreClient &clientIn) :
+	client (clientIn),
+	inTheEventQueue (FALSE),
+	posted (FALSE),
+	ioComplete (FALSE),
+	serverDelete (FALSE)
 {
 	//
 	// catch situation where they create more than one
@@ -89,7 +68,7 @@ casAsyncIOI::casAsyncIOI(casCoreClient &clientIn, casAsyncIO &ioExternalIn) :
 // 1) io completes, this is pulled off the queue, and result
 // 	is sent to the client
 // 2) client, channel, or PV is deleted
-// 3) server tool deletes the casAsyncIO obj
+// 3) server tool deletes the casAsyncXxxxIO obj
 //
 // Case 1)  => normal completion
 //
@@ -138,12 +117,11 @@ casAsyncIOI::~casAsyncIOI()
 	this->unlock();
 }
 
-
 //
 // casAsyncIOI::cbFunc()
 // (called when IO completion event reaches top of event queue)
 //
-epicsShareFunc caStatus casAsyncIOI::cbFunc(class casEventSys &)
+caStatus casAsyncIOI::cbFunc(class casEventSys &)
 {
 	casCoreClient	&theClient = this->client;
 	caStatus 	status;
@@ -153,7 +131,7 @@ epicsShareFunc caStatus casAsyncIOI::cbFunc(class casEventSys &)
 	// asynch IO's lock) here because we need to leave the lock
 	// applied around the destroy() call here.
 	//
-	theClient.osiLock();
+	theClient.lock();
 
 	this->inTheEventQueue = FALSE;
 
@@ -177,15 +155,13 @@ epicsShareFunc caStatus casAsyncIOI::cbFunc(class casEventSys &)
 	// dont use "this" after potentially destroying the
 	// object here
 	//
-	this->serverDelete = TRUE;
-	(*this)->destroy();
+	this->serverDestroy();
 
-	theClient.osiUnlock();
+	theClient.unlock();
 
 	return S_cas_success;
 }
 
-
 //
 // casAsyncIOI::postIOCompletionI()
 //
@@ -210,9 +186,8 @@ caStatus casAsyncIOI::postIOCompletionI()
 		// dont use "this" after potentially destroying the
 		// object here
 		//
-		this->serverDelete = TRUE;
 		this->unlock();
-		(*this)->destroy();
+		this->serverDestroy();
 		return S_cas_redundantPost;
 	}
 
@@ -253,47 +228,52 @@ caServer *casAsyncIOI::getCAS() const
 //
 // casAsyncIOI::readOP()
 //
-epicsShareFunc int casAsyncIOI::readOP()
+epicsShareFunc bool casAsyncIOI::readOP() const
 {
 	//
 	// not a read op
 	//
-	return FALSE;
+	return false;
 }
 
 //
-// casAsyncIOI::destroyIfReadOP()
+// casAsyncIOI::serverDestroyIfReadOP()
 //
-void casAsyncIOI::destroyIfReadOP()
+void casAsyncIOI::serverDestroyIfReadOP()
 {
-	casCoreClient &clientCopy = this->client;
-
-	//
-	// client lock used because this object's
-	// lock may be destroyed
-	//
-	clientCopy.osiLock();
- 
-	if (this->readOP()) {
-        	this->serverDelete = TRUE;
-        	(*this)->destroy();
-	}
- 
-	//
-	// NO REF TO THIS OBJECT BELOW HERE
-	// BECAUSE OF THE DELETE ABOVE
-	//
-
-	clientCopy.osiUnlock();
+    casCoreClient &clientCopy = this->client;
+    
+    //
+    // client lock used because this object's
+    // lock may be destroyed
+    //
+    clientCopy.lock();
+    
+    if (this->readOP()) {
+        this->serverDestroy();
+    }
+    
+    //
+    // NO REF TO THIS OBJECT BELOW HERE
+    // BECAUSE OF THE DELETE ABOVE
+    //
+    
+    clientCopy.unlock();
 }
 
 //
-// casAsyncIOI::reportInvalidAsynchIO()
+// void casAsyncIOI::serverDestroy ()
 //
-void casAsyncIOI::reportInvalidAsynchIO(unsigned request)
+void casAsyncIOI::serverDestroy ()
 {
-	ca_printf("Server tools selection of async IO type\n");
-	ca_printf("is inappropriate = %u and will be ignored\n",
-		request);
+	this->serverDelete = TRUE;
+	this->destroy();
 }
 
+//
+// void casAsyncIOI::destroy ()
+//
+void casAsyncIOI::destroy ()
+{
+    delete this;
+}

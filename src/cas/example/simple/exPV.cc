@@ -21,7 +21,7 @@ class exFixedStringDestructor: public gddDestructor {
 //
 // exPV::exPV()
 //
-exPV::exPV (pvInfo &setup, aitBool preCreateFlag, aitBool scanOnIn) : 
+exPV::exPV (pvInfo &setup, bool preCreateFlag, bool scanOnIn) : 
 	info (setup),
 	interest (aitFalse),
 	preCreate (preCreateFlag),
@@ -95,7 +95,7 @@ caStatus exPV::update(gdd &valueIn)
 	// post a value change event
 	//
 	if (this->interest==aitTrue && pCAS!=NULL) {
-		casEventMask select(pCAS->valueEventMask|pCAS->logEventMask);
+		casEventMask select(pCAS->valueEventMask()|pCAS->logEventMask());
 		this->postEvent (select, *this->pValue);
 	}
 

@@ -17,7 +17,7 @@ PROD = $(OBDIR)/dbLoadTemplate
 
 TARGET = $(OBDIR)/subtool
 
-depends: $(OBDIR)/dbLoadTemplate.c $(OBDIR)/dbLoadRecords.c
+pre_build: $(OBDIR)/dbLoadTemplate.c $(OBDIR)/dbLoadRecords.c
 
 $(OBDIR)/dbLoadRecords.c: $(OBDIR)/dbLoadRecords_lex.c dbLoadRecords.y
 	/bin/rm -f $@

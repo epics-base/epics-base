@@ -22,7 +22,7 @@ TARGET = $(OBDIR)/dbta $(OBDIR)/atdb $(OBDIR)/dbl $(OBDIR)/dbls
 $(OBDIR)/atdb: $(OBDIR)/atdb.o $(OBDIR)/atdb_yacc.o
 	$(LINK.c) -o $@ $? $(LDLIBS)
 
-depends: $(OBDIR)/atdb_yacc.o
+pre_build: $(OBDIR)/atdb_yacc.o
 
 $(OBDIR)/atdb_yacc.o: atdb_lex.c atdb_yacc.c
 	/bin/rm -f $(OBDIR)/atdb_yacc.o

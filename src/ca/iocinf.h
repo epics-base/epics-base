@@ -114,7 +114,7 @@ struct buffer{
 #define BROADCAST_IIU	0
 
 struct pending_io_event{
-  NODE			node;
+  DLLNODE			node;
   void			(*io_done_sub)();
   void			*io_done_arg;
 };
@@ -171,7 +171,7 @@ typedef unsigned long ca_time;
 struct  ca_static{
   unsigned short	ca_nxtiiu;
   long			ca_pndrecvcnt;
-  LIST			ca_ioeventlist;
+  DLLLIST			ca_ioeventlist;
   void			(*ca_exception_func)();
   void			*ca_exception_arg;
   void			(*ca_connection_func)();
@@ -180,8 +180,8 @@ struct  ca_static{
   void			*ca_fd_register_arg;
   short			ca_exit_in_progress;  
   unsigned short	ca_post_msg_active; 
-  LIST			ca_free_event_list;
-  LIST			ca_pend_read_list;
+  DLLLIST			ca_free_event_list;
+  DLLLIST			ca_pend_read_list;
   short			ca_repeater_contacted;
   unsigned short	ca_send_msg_active;
   short			ca_cast_available;
@@ -200,9 +200,9 @@ struct  ca_static{
   FAST_LOCK		ca_client_lock; 
   FAST_LOCK		ca_event_lock; /* dont allow events to preempt */
   int			ca_tid;
-  LIST			ca_local_chidlist;
-  LIST			ca_dbfree_ev_list;
-  LIST			ca_lcl_buff_list;
+  DLLLIST			ca_local_chidlist;
+  DLLLIST			ca_dbfree_ev_list;
+  DLLLIST			ca_lcl_buff_list;
   int			ca_event_tid;
   unsigned		ca_local_ticks;
 #else
@@ -223,7 +223,7 @@ struct  ca_static{
     struct buffer	*recv;
     unsigned		read_seq;
     unsigned 		cur_read_seq;
-    LIST		chidlist;		/* chans on this connection */
+    DLLLIST		chidlist;		/* chans on this connection */
     short		conn_up;		/* boolean: T-conn /F-disconn */
     short		send_needed;		/* CA needs a send */
     char		host_name_str[32];

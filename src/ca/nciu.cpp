@@ -137,11 +137,6 @@ void nciu::connect ( unsigned nativeType,
     // resubscribe for monitors from this channel 
     this->cacCtx.connectAllIO ( *this );
 
-static bool once = 0;
-if ( ! once ) {
-    printf ( "there is a problem here where we are calling through a defunct vf table\n" );
-    once = 1;
-}
     this->notify().connectNotify ();
 
     /*

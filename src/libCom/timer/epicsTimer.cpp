@@ -31,6 +31,8 @@
 #   pragma warning ( pop )
 #endif
 
+template class tsFreeList < epicsTimerForC, 0x20 >;
+
 epicsTimer::~epicsTimer () {}
 
 epicsTimerQueueNotify::~epicsTimerQueueNotify () {}

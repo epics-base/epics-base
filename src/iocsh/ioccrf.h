@@ -30,6 +30,10 @@ typedef union ioccrfArgBuf {
     double dval;
     char  *sval;
     void  *vval;
+    struct {
+     int    ac;
+     char **av;
+    }      aval;
 }ioccrfArgBuf;
 
 typedef struct ioccrfArg {

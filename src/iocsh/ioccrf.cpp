@@ -435,7 +435,7 @@ ioccrf (const char *pathname)
                     (*found->func)(argBuf);
                     break;
                 }
-                if ((arg+1) >= argBufCapacity) {
+                if (arg >= argBufCapacity) {
                     void *np;
 
                     argBufCapacity += 20;
@@ -448,8 +448,8 @@ ioccrf (const char *pathname)
                     argBuf = (ioccrfArgBuf *)np;
                 }
                 if (pioccrfFuncDef->arg[arg]->type == ioccrfArgArgv) {
-                    argBuf[arg].ival = argc-arg;
-                    argBuf[arg+1].vval = argv+arg;
+                    argBuf[arg].aval.ac = argc-arg;
+                    argBuf[arg].aval.av = argv+arg;
                     (*found->func)(argBuf);
                     break;
                 }

@@ -59,8 +59,8 @@ static void showCallFunc(const ioccrfArgBuf *args)
     const char *cp;
     epicsThreadId tid;
     unsigned long ltmp;
-    int argc = args[0].ival;
-    const char * const *argv = args[1].vval;
+    int argc = args[0].aval.ac;
+    const char * const *argv = args[0].aval.av;
     char *endp;
 
     if ((i < argc) && (*(cp = argv[i]) == '-')) {
@@ -77,7 +77,7 @@ static void showCallFunc(const ioccrfArgBuf *args)
         if (*endp) {
             tid = epicsThreadGetId (cp);
             if (!tid) {
-                printf ("*** argument %d (%s) is not a valid task name ***\n", i+1, cp);
+                printf ("*** argument %d (%s) is not a valid task name ***\n", i, cp);
                 continue;
             }
         }

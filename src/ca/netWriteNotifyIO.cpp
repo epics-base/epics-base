@@ -12,6 +12,7 @@
 
 #include "iocinf.h"
 #include "netWriteNotifyIO_IL.h"
+#include "nciu_IL.h"
 
 tsFreeList < class netWriteNotifyIO, 1024 > netWriteNotifyIO::freeList;
 

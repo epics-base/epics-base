@@ -15,6 +15,7 @@
 17may94,ajk	removed old event flag (-e) option.
 20jul95,ajk	Added unsigned types.
 22jul96,ajk	Added castS to action, event, delay, and exit functions.
+09mar98,wfl     Avoided compilation warnings under Tornado
 ***************************************************************************/
 /*#define	DEBUG	1*/
 
@@ -145,7 +146,7 @@ int		elem_num;
 
 	/* Now, fill in the dbCom structure */
 
-	printf("  \"%s\", ", db_name);/* unexpanded db channel name */
+	printf("  {\"%s\", ", db_name);/* unexpanded db channel name */
 
 	/* Ptr or offset to user variable */
 	printf("(void *)");
@@ -172,7 +173,7 @@ int		elem_num;
 	/* monitor flag */
 	printf("%d", mon_flag);
 
-	printf(",\n\n");
+	printf("},\n\n");
 
 	return;
 }
@@ -251,7 +252,7 @@ Expr		*sp;
 char		*ss_name;
 {
 
-	printf("\t/* State \"%s\"*/\n", sp->value);
+	printf("\t/* State \"%s\" */ {\n", sp->value);
 
 	printf("\t/* state name */       \"%s\",\n", sp->value);
 
@@ -261,7 +262,7 @@ char		*ss_name;
 
 	printf("\t/* delay function */   (DELAY_FUNC) D_%s_%s,\n", ss_name, sp->value);
 
-	printf("\t/* event mask array */ EM_%s_%s,\n\n", ss_name, sp->value);
+	printf("\t/* event mask array */ EM_%s_%s},\n\n", ss_name, sp->value);
 
 	return;
 }
@@ -358,7 +359,7 @@ gen_ss_array()
 			printf("\n\n");
 		nss++;
 
-		printf("\t/* State set \"%s\"*/\n", ssp->value);
+		printf("\t/* State set \"%s\" */ {\n", ssp->value);
 
 		printf("\t/* ss name */            \"%s\",\n", ssp->value);
 
@@ -367,7 +368,7 @@ gen_ss_array()
 		nstates = exprCount(ssp->left);
 		printf("\t/* number of states */   %d,\n", nstates, ssp->value);
 
-		printf("\t/* error state */        %d,\n", find_error_state(ssp));
+		printf("\t/* error state */        %d},\n", find_error_state(ssp));
 
 	}
 	printf("};\n");

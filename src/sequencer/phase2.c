@@ -16,6 +16,7 @@
 01mar94,ajk	Implemented assignment of array elements to db channels.
 01mar94,ajk	Changed algorithm for assigning event bits.
 13jan98,wfl	Supported E_COMMA token (for compound expressions).
+09mar98,wfl	Avoided compilation warnings under Tornado
 ***************************************************************************/
 /*#define	DEBUG	1*/
 
@@ -114,7 +115,6 @@ gen_preamble()
 
 	/* Forward references of tables: */
 	printf("\nextern struct seqProgram %s;\n", prog_name);
-	printf("extern struct seqChan seqChan[];\n");
 
 	return;
 }

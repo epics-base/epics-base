@@ -39,6 +39,52 @@ set FALSE when the raw value is successfully read.</p>
 <p>In do_sel udf is not set false at the beginning. If selm has an invalid
 value recGblSetSevr(psel,SOFT_ALARM,MAJOR_ALARM) is called.</p>
 
+<p><strong>CA Client Library</strong></p>
+
+<p><em>Scope:</em>   </p>
+
+<p>Almost all recent EPICS versions that promote the native type of unsigned
+database fields to the next larger integer or floating point type, because
+Channel Access clients use only signed types, are effected.   </p>
+
+<p>The problem is further restricted only to Channel Access clients that run
+within a vxWorks IOC communicating with local database fields stored in some
+unsigned integer type.  </p>
+
+<p> Furthermore, the CA client must enter a subscription with an external
+type that is identical to the CA "native" type only when the CA "native" type
+is promoted to some larger signed type from the fields unsigned integer field
+type.  </p>
+
+<p>The majority of EPICS users use only two CA client programs that attach to
+local in-memory process variables: The sequencer and the CA based database
+links. Both of these clients install monitor subscriptions that include
+timestamp and or alarm information. Therefore, they do not monitor in a
+native promoted type as described above, and are not involved.  </p>
+
+<p><em>Likely symptom:</em>   </p>
+
+<p>A field contiguous to a field in the database with an unsigned integer
+type is mysteriously damaged.   </p>
+
+<p><strong>IOC Resident CA Server</strong></p>
+
+<p><em>Scope:  </em></p>
+
+<p>EPICS R3.13.5 based IOCs only.   </p>
+
+<p>A client must issue a large number of monitor subscription install
+requests immediately after a large number of monitor subscription uninstall
+requests.</p>
+
+<p>This problem was discovered during regression testing of EPICS R3.14.</p>
+
+<p><em>Likely symptom: </em></p>
+
+<p>A Channel Access client, such as medm, does not receive its first  monitor
+subscription update. An "events lost" message will show up on the IOC's
+console, and in the log server.  </p>
+
 <h3>Changes since 3.13.4</h3>
 
 <p><b>convertRelease and checkRelease</b></p>

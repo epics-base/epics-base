@@ -264,7 +264,7 @@ void dbServiceIO::destroyAllIO ( dbChannelIO & chan )
     }
     while ( ( pIO = tmp.get() ) ) {
         // This prevents a db event callback from coming 
-        // through after the IO is deleted
+        // through after the notify IO is deleted
         pIO->unsubscribe ();
         // If they call ioCancel() here it will be ignored
         // because the IO has been unregistered above.

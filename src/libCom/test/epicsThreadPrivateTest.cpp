@@ -55,7 +55,8 @@ void epicsThreadPrivateTest ()
     priv.set ( &var );
     assert ( &var == priv.get() );
     epicsThreadCreate ( "epicsThreadPrivateTest", epicsThreadPriorityMax, 
-        epicsThreadStackSmall, epicsThreadPrivateTestThread, 0 );
+        epicsThreadGetStackSize ( epicsThreadStackSmall ), 
+        epicsThreadPrivateTestThread, 0 );
     while ( ! doneFlag ) {
         epicsThreadSleep ( 0.01 );
     }

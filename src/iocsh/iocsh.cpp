@@ -420,8 +420,7 @@ iocsh (const char *pathname)
     argc = 0;
     wasOkToBlock = epicsThreadIsOkToBlock(epicsThreadGetIdSelf());
     epicsThreadSetOkToBlock(epicsThreadGetIdSelf(), 1);
-    while ((raw = epicsReadline(prompt, readlineContext)) != NULL) {
-        lineno++;
+    for (;;) {
 
         /*
          * Undo redirection
@@ -434,6 +433,13 @@ iocsh (const char *pathname)
             }
         }
         stopRedirect(filename, lineno, redirects);
+
+        /*
+         * Read a line
+         */
+        if ((raw = epicsReadline(prompt, readlineContext)) == NULL)
+            break;
+        lineno++;
 
         /*
          * Ignore comment lines other than to echo

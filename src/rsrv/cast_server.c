@@ -325,6 +325,7 @@ int cast_server(void)
         /*
          * allow messages to batch up if more are comming
          */
+        nchars = 0; /* supress purify warning */
         status = socket_ioctl(IOC_cast_sock, FIONREAD, &nchars);
         if (status<0) {
             errlogPrintf ("CA cast server: Unable to fetch N characters pending\n");

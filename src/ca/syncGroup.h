@@ -54,6 +54,8 @@ class casgRecycle {             // X aCC 655
 public:
     virtual void recycleSyncGroupWriteNotify ( class syncGroupWriteNotify & io ) = 0;
     virtual void recycleSyncGroupReadNotify ( class syncGroupReadNotify & io ) = 0;
+protected:
+    virtual ~casgRecycle ();
 };
 
 class syncGroupNotify : public tsDLNode < syncGroupNotify > {

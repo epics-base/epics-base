@@ -26,6 +26,8 @@
 #include "cac.h"
 #include "sgAutoPtr.h"
 
+casgRecycle::~casgRecycle () {}
+
 CASG::CASG ( ca_client_context &cacIn ) :
     client ( cacIn ), magic ( CASG_MAGIC )
 {

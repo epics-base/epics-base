@@ -1,4 +1,5 @@
 #CONFIG
 include $(TOP)/configure/CONFIG_APP
 # Add any changes to make rules here
-#CROSS_COMPILER_TARGET_ARCHS = vxWorks-68040
+
+CROSS_COMPILER_TARGET_ARCHS = vxWorks-68040

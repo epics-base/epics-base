@@ -1,5 +1,20 @@
 TOP=../..
 
 include $(TOP)/configure/CONFIG
+#----------------------------------------
+#  ADD MACRO DEFINITIONS AFTER THIS LINE
 
-include $(TOP)/configure/RULES_ARCHS
+#USR_CFLAGS +=
+PROD_LIBS       += ca
+PROD_LIBS       += Db
+PROD_LIBS       += Com
+ca_DIR  = $(EPICS_BASE_LIB)
+Db_DIR  = $(EPICS_BASE_LIB)
+Com_DIR = $(EPICS_BASE_LIB)
+
+#PROD = 
+
+include $(TOP)/configure/RULES_BUILD
+#----------------------------------------
+#  ADD RULES AFTER THIS LINE
+

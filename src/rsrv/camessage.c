@@ -1355,7 +1355,9 @@ void write_notify_reply(void *pArg)
 		 */
 		FASTLOCK(&pClient->putNotifyLock);
 		ppnb = (RSRVPUTNOTIFY *)ellGet(&pClient->putNotifyQue);
-        ppnb->onExtraLaborQueue = FALSE;
+        if ( ppnb ) {
+            ppnb->onExtraLaborQueue = FALSE;
+        }
 		FASTUNLOCK(&pClient->putNotifyLock);
 		/*
 		 * break to loop exit

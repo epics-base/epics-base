@@ -49,11 +49,18 @@ occur when recGblGetTimeStamp is called.</p>
 <p><strong>calcoutRecord</strong></p>
 
 <p>nsev not sevr must be checked to decide if dbPutLink should be called.</p>
+
 <p>This is now fixed</p>
 
 <p><strong>calcPerform</strong></p>
-<p>This now returns a non zero value if the result is nan (not a number).</p>:wq
 
+<p>This now returns a non zero value if the result is nan (not a number).</p>
+
+<p><strong>CA server (rsrv)</strong></p>
+
+<p>Fixed race condition occuring when a put notify is canceled by a ca clear
+channel at the same instant that it completes. This problem was introduced in
+R3.13.5.</p>
 
 <h3>Changes since 3.13.5</h3>
 

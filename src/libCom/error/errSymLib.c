@@ -217,7 +217,7 @@ int epicsShareAPI ModSymFind(long status, char *pname, long *pvalue)
  ***************************************************************/
 int epicsShareAPI errSymFind(long status, char *name)
 {
-    long            value;
+    long            value = 0;
     unsigned short  modnum;
 
     if (!initialized) errSymBld();

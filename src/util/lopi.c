@@ -36,7 +36,9 @@
                                 semaphores.
  * .05	10-2-91		 bg	Fixed bug in display_monitors.               
  * .06	12-12-91	 bg	Fixed lopi so if you try to write to a monitor
- * 	...                     you will not crash.
+ * 	                        you will not crash.
+ * .07  6-10-91          bg     Fixed allocation subroutines so they return NULL
+ *                              if they cannot get enough memory.  
  */
 
 #include "lopi_def.h"
@@ -923,6 +925,7 @@ static struct mon_node *mon_alloc()
         logMsg("Insufficient memory in mon_alloc.\n ");
         close(err_fd);
         abort();
+        return NULL;
        }
      else 
        return monptr;
@@ -941,6 +944,7 @@ static struct txt_node *txt_alloc()
         logMsg("Insufficient memory in tx_alloc.\n ");
         close(err_fd);
         abort();
+        return NULL;
        }
      else 
        return txtptr;
@@ -959,6 +963,7 @@ static struct ev_node *ev_alloc()
         logMsg("Insufficient memory in ev_alloc.\n ");
         close(err_fd);
         abort();
+        return NULL;
        }
      else 
        return evptr;
@@ -977,6 +982,7 @@ static struct except_node *except_alloc()
         logMsg("Insufficient memory in except_alloc.\n ");
         close(err_fd);
         abort();
+        return NULL;
        }
      else 
        return ex_ptr;
@@ -995,6 +1001,7 @@ static struct window_node *win_alloc()
         logMsg("Insufficient memory in win_alloc.\n ");
         close(err_fd);
         abort();
+        return NULL;
        }
      else 
        return winptr;
@@ -1006,7 +1013,7 @@ static struct window_node *win_alloc()
 /*  points to the new node.                                                  */
 /*****************************************************************************/
 
-static add_ctl(win_array,win_ctr,c_line)
+static int add_ctl(win_array,win_ctr,c_line)
     struct window_node *win_array[MAX_DISP_NUM]; 
     short win_ctr; /* Counters. */
     char *c_line;
@@ -1106,7 +1113,7 @@ static add_ctl(win_array,win_ctr,c_line)
 
     c_ptr = win_array[win_ctr]->c_head->next;
    
-    if ((*chan_nm)  && (r_loc_flg) && (c_loc_flg))
+   if ((*chan_nm)  && (r_loc_flg) && (c_loc_flg))
       {
        while((c_ptr->next->l_crn_row != -1) && (c_ptr->l_crn_row < l_crn_row))
          {
@@ -1130,6 +1137,7 @@ static add_ctl(win_array,win_ctr,c_line)
        new_ptr->r_crn_col = r_crn_col; 
       }
       
+   return (0);
 
   }
 
@@ -1139,7 +1147,7 @@ static add_ctl(win_array,win_ctr,c_line)
 /* node.                                                                            */
 /************************************************************************************/
 
-static  add_mon(win_array,win_ctr,m_line)
+static int add_mon(win_array,win_ctr,m_line)
     struct window_node *win_array[MAX_DISP_NUM]; 
     short win_ctr; /* Counters. */
     char *m_line;
@@ -1240,7 +1248,7 @@ static  add_mon(win_array,win_ctr,m_line)
         else if ((! (c_loc_flg)) || (! (r_loc_flg)) )
           printf("Incomplete location information for display. Channel omitted.\n");
       }
-      
+   return (0); 
   }
 
 /************************************************************************************/
@@ -1249,7 +1257,7 @@ static  add_mon(win_array,win_ctr,m_line)
 /* node.                                                                            */
 /************************************************************************************/
 
-static add_txt(win_array,win_ctr,t_line)
+static  int add_txt(win_array,win_ctr,t_line)
     struct window_node *win_array[MAX_DISP_NUM]; 
     short win_ctr; /* Counters. */
     char *t_line;
@@ -1358,7 +1366,7 @@ static add_txt(win_array,win_ctr,t_line)
         else if ((!(r_loc_flg)) ||  (! (c_loc_flg)))
           printf("Incomplete location information. Text node omitted.\n");
       }
-      
+   return(0);   
   }
 
 /************************************************************************************/
@@ -1370,7 +1378,6 @@ static char *skip_to_digit(pstr)
   char *pstr;
    {
 
-    pstr;
     while (*pstr) 
       {
        if( (isdigit(*pstr)) )
@@ -1411,7 +1418,7 @@ static int to_short(pstr)
 /* control nodes. It is best to comment out print_menu when using this.              */
 /*************************************************************************************/
 
-static read_disp_lst(wnd_array,nfiles)
+static int read_disp_lst(wnd_array,nfiles)
 struct window_node *wnd_array[MAX_DISP_NUM];
 int nfiles;
 {
@@ -1477,6 +1484,7 @@ int nfiles;
      }
       lopi_j = 1; 
    }
+ return (0);
 }  
  
 
@@ -1484,7 +1492,7 @@ int nfiles;
 /*  This function puts text specified by the user in the display file on the screen.   */
 /***************************************************************************************/
 
-static display_text(disp_array,selected)
+static int display_text(disp_array,selected)
    struct window_node *disp_array[MAX_DISP_NUM];
    short selected;
    {
@@ -1505,6 +1513,7 @@ static display_text(disp_array,selected)
        txt_ptr = txt_ptr->next;
       }
    
+    return (0);
    }
 
 /***************************************************************************************/
@@ -1513,7 +1522,7 @@ static display_text(disp_array,selected)
 /* selects and F7.                                                                      */
 /***************************************************************************************/
 
-static display_file(disp_array,selected,screen_up,data_num,pdata_flg,k_buff,val_in)
+static int display_file(disp_array,selected,screen_up,data_num,pdata_flg,k_buff,val_in)
    struct window_node *disp_array[MAX_DISP_NUM];
    short selected;
    short *screen_up;
@@ -1721,7 +1730,7 @@ static display_file(disp_array,selected,screen_up,data_num,pdata_flg,k_buff,val_
        stop_monitors(disp_array,selected); 
    } 
  
-
+ return(0);
 }
 
 /********************************************************************************/
@@ -2212,7 +2221,7 @@ VOID lopi_conn_handler(lopi_connect_arg)
 /*  Frees memory allocated by lopi.c                                                   */
 /*************************************************************************************/
 
-free_mem(disp_array,dmenu,nlines,except_ptr)
+int free_mem(disp_array,dmenu,nlines,except_ptr)
    struct window_node *disp_array[MAX_DISP_NUM];
    int nlines;
    char *dmenu[MXMENU];    
@@ -2251,6 +2260,7 @@ free_mem(disp_array,dmenu,nlines,except_ptr)
 
         }
         free(except_ptr);
+   return (0);
   }
 
 /********************************************************************************/
@@ -2271,4 +2281,5 @@ put_value(c_ptr,val_in)
    status = ca_flush_io(); 
    if (status != ECA_NORMAL)
       logMsg("Message:%s\n",ca_message_text[CA_EXTRACT_MSG_NO(status)]);
+   return (0);
   }

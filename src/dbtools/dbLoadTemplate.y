@@ -54,7 +54,7 @@ int dbLoadRecords(char* pfilename, char* pattern);
 
 
 #ifdef vxWorks
-#define VAR_MAX_VAR_STRING 1500
+#define VAR_MAX_VAR_STRING 5000
 #define VAR_MAX_VARS 100
 #else
 #define VAR_MAX_VAR_STRING 50000

@@ -108,7 +108,9 @@ static void monitor();
 static long readValue();
 
 /*Following from timing system          */
+/*
 extern unsigned int     gts_trigger_counter;
+*/
 
 
 static long init_record(psa,pass)
@@ -156,6 +158,8 @@ static long process(psa)
                 return(S_dev_missingSup);
         }
         /* event throttling */
+	/* will not work with new event system*/
+/*
         if (psa->scan == SCAN_IO_EVENT){
                 if ((psa->evnt != 0)  && (gts_trigger_counter != 0)){
                         if ((gts_trigger_counter % psa->evnt) != 0){
@@ -163,7 +167,9 @@ static long process(psa)
                         }
                 }
         }
-        if (pact) return(0); 
+*/
+
+        if ( pact && psa->busy ) return(0); 
 	status=readValue(psa); /* read the new value */
         if (!pact && psa->pact) return(0);
         psa->pact = TRUE;

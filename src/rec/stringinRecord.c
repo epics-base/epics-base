@@ -189,10 +189,11 @@ static void monitor(pstringin)
 
     monitor_mask = recGblResetAlarms(pstringin);
     if(strncmp(pstringin->oval,pstringin->val,sizeof(pstringin->val))) {
-        db_post_events(pstringin,&(pstringin->val[0]),
-		monitor_mask|DBE_VALUE|DBE_LOG);
+	monitor_mask |= DBE_VALUE|DBE_LOG;
 	strncpy(pstringin->oval,pstringin->val,sizeof(pstringin->val));
     }
+    if(monitor_mask)
+	db_post_events(pstringin,&(pstringin->val[0]),monitor_mask);
     return;
 }
 

@@ -412,7 +412,7 @@ CALLBACK *pCallback;
   {
     if (seqRecDebug > 0)
       printf("link %d changed from %f to %f\n", pcb->index, myDouble, pcb->plinks[pcb->index]->dov);
-    db_post_events(pseq, &pcb->plinks[pcb->index]->dov, DBE_VALUE);
+    db_post_events(pseq, &pcb->plinks[pcb->index]->dov, DBE_VALUE|DBE_LOG);
   }
   else
   {

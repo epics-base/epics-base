@@ -294,7 +294,8 @@ static void monitor(pbi)
 		db_post_events(pbi,&pbi->val,monitor_mask);
 	}
 	if(pbi->oraw!=pbi->rval) {
-		db_post_events(pbi,&pbi->rval,monitor_mask|DBE_VALUE);
+		db_post_events(pbi,&pbi->rval,
+		    monitor_mask|DBE_VALUE|DBE_LOG);
 		pbi->oraw = pbi->rval;
 	}
 	return;

@@ -374,7 +374,8 @@ static void monitor(psel)
         	/* check all input fields for changes*/
         	for(i=0, pnew=&psel->a, pprev=&psel->la; i<SEL_MAX; i++, pnew++, pprev++) {
                 	if(*pnew != *pprev) {
-                        	db_post_events(psel,pnew,monitor_mask|DBE_VALUE);
+                        	db_post_events(psel,pnew,
+				    monitor_mask|DBE_VALUE|DBE_LOG);
                         	*pprev = *pnew;
                 	}
         	}

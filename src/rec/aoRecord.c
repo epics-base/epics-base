@@ -171,8 +171,8 @@ static long init_record(pao,pass)
     }
     /* get the initial value if dol is a constant*/
     if (pao->dol.type == CONSTANT) {
-	recGblInitConstantLink(&pao->dol,DBF_DOUBLE,&pao->val);
-	pao->udf = FALSE;
+	if(recGblInitConstantLink(&pao->dol,DBF_DOUBLE,&pao->val))
+	    pao->udf = FALSE;
     }
 
     /* must have write_ao function defined */
@@ -550,11 +550,13 @@ static void monitor(pao)
 		pao->omod = FALSE;
 		db_post_events(pao,&pao->oval,monitor_mask);
 		if(pao->oraw != pao->rval) {
-                	db_post_events(pao,&pao->rval,monitor_mask|DBE_VALUE);
+                	db_post_events(pao,&pao->rval,
+			    monitor_mask|DBE_VALUE|DBE_LOG);
 			pao->oraw = pao->rval;
 		}
 		if(pao->orbv != pao->rbv) {
-                	db_post_events(pao,&pao->rbv,monitor_mask|DBE_VALUE);
+                	db_post_events(pao,&pao->rbv,
+			    monitor_mask|DBE_VALUE|DBE_LOG);
 			pao->orbv = pao->rbv;
 		}
 	}

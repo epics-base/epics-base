@@ -88,8 +88,8 @@ static long init_record(pdfanout,pass)
 
     /* get the initial value dol is a constant*/
     if (pdfanout->dol.type == CONSTANT){
-	recGblInitConstantLink(&pdfanout->dol,DBF_LONG,&pdfanout->val);
-	pdfanout->udf=FALSE;
+	if(recGblInitConstantLink(&pdfanout->dol,DBF_LONG,&pdfanout->val))
+	    pdfanout->udf=FALSE;
     }
     return(0);
 }
@@ -245,10 +245,6 @@ static void monitor(pdfanout)
 	long		delta;
 
         monitor_mask = recGblResetAlarms(pdfanout);
-        monitor_mask |= (DBE_LOG|DBE_VALUE);
-        if(monitor_mask)
-           db_post_events(pdfanout,&pdfanout->val,monitor_mask);
-
         /* check for value change */
         delta = pdfanout->mlst - pdfanout->val;
         if(delta<0) delta = -delta;

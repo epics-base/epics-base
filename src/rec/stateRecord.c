@@ -127,7 +127,7 @@ static void monitor(pstate)
     /* get previous stat and sevr  and new stat and sevr*/
     monitor_mask = recGblResetAlarms(pstate);
     if(strncmp(pstate->oval,pstate->val,sizeof(pstate->val))) {
-        db_post_events(pstate,&(pstate->val[0]),monitor_mask|DBE_VALUE);
+        db_post_events(pstate,&(pstate->val[0]),monitor_mask|DBE_VALUE|DBE_LOG);
 	strncpy(pstate->oval,pstate->val,sizeof(pstate->val));
     }
     return;

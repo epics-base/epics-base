@@ -132,10 +132,12 @@ static void monitor(ppermissive)
     ppermissive->oval = val;
     ppermissive->oflg = wflg;
     if(oval != val) {
-	db_post_events(ppermissive,&ppermissive->val,monitor_mask|DBE_VALUE);
+	db_post_events(ppermissive,&ppermissive->val,
+	    monitor_mask|DBE_VALUE|DBE_LOG);
     }
     if(oflg != wflg) {
-        db_post_events(ppermissive,&ppermissive->wflg,monitor_mask|DBE_VALUE);
+        db_post_events(ppermissive,&ppermissive->wflg,
+	    monitor_mask|DBE_VALUE|DBE_LOG);
     }
     return;
 }

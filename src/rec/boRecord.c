@@ -204,10 +204,11 @@ static long init_record(pbo,pass)
     if (pbo->dol.type == CONSTANT) {
 	unsigned short ival = 0;
 
-	recGblInitConstantLink(&pbo->dol,DBF_USHORT,&ival);
-	if (ival  == 0)  pbo->val = 0;
-	else  pbo->val = 1;
-	pbo->udf = FALSE;
+	if(recGblInitConstantLink(&pbo->dol,DBF_USHORT,&ival)) {
+	    if (ival  == 0)  pbo->val = 0;
+	    else  pbo->val = 1;
+	    pbo->udf = FALSE;
+	}
     }
 
     pcallback = (struct callback *)(calloc(1,sizeof(struct callback)));
@@ -423,11 +424,13 @@ static void monitor(pbo)
                 db_post_events(pbo,&pbo->val,monitor_mask);
         }
 	if(pbo->oraw!=pbo->rval) {
-		db_post_events(pbo,&pbo->rval,monitor_mask|DBE_VALUE);
+		db_post_events(pbo,&pbo->rval,
+		    monitor_mask|DBE_VALUE|DBE_LOG);
 		pbo->oraw = pbo->rval;
 	}
 	if(pbo->orbv!=pbo->rbv) {
-		db_post_events(pbo,&pbo->rbv,monitor_mask|DBE_VALUE);
+		db_post_events(pbo,&pbo->rbv,
+		    monitor_mask|DBE_VALUE|DBE_LOG);
 		pbo->orbv = pbo->rbv;
 	}
         return;

@@ -209,8 +209,8 @@ static long init_record(psm,pass)
 
     /* get the initial value if dol is a constant*/
     if (psm->dol.type == CONSTANT ){
-	recGblInitConstantLink(&psm->dol,DBF_FLOAT,&psm->val);
-        psm->udf = FALSE;
+	if(recGblInitConstantLink(&psm->dol,DBF_FLOAT,&psm->val))
+            psm->udf = FALSE;
     }
 
     init_sm(psm);

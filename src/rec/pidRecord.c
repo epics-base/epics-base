@@ -118,8 +118,8 @@ static long init_record(ppid,pass)
 
         /* initialize the setpoint for constant setpoint */
         if (ppid->stpl.type == CONSTANT){
-	    recGblInitConstantLink(&ppid->stpl,DBF_FLOAT,&ppid->val);
-            ppid->udf = FALSE;
+	    if(recGblInitConstantLink(&ppid->stpl,DBF_FLOAT,&ppid->val))
+                ppid->udf = FALSE;
 	}
 
 	return(0);

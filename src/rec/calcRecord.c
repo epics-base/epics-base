@@ -210,7 +210,7 @@ static long special(paddr,after)
 		return(S_db_badField);
 	}
 	memcpy(pcalc->rpcl,rpbuf,sizeof(pcalc->rpcl));
-	db_post_events(pcalc,pcalc->calc,DBE_VALUE);
+	db_post_events(pcalc,pcalc->calc,DBE_VALUE|DBE_LOG);
 	return(0);
     default:
 	recGblDbaddrError(S_db_badChoice,paddr,"calc: special");

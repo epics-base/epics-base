@@ -138,8 +138,8 @@ static long init_record(pstringout,pass)
     }
     /* get the initial value dol is a constant*/
     if (pstringout->dol.type == CONSTANT){
-	recGblInitConstantLink(&pstringout->dol,DBF_STRING,pstringout->val);
-	pstringout->udf=FALSE;
+	if(recGblInitConstantLink(&pstringout->dol,DBF_STRING,pstringout->val))
+	    pstringout->udf=FALSE;
     }
     if( pdset->init_record ) {
 	if((status=(*pdset->init_record)(pstringout))) return(status);
@@ -226,10 +226,11 @@ static void monitor(pstringout)
 
     monitor_mask = recGblResetAlarms(pstringout);
     if(strncmp(pstringout->oval,pstringout->val,sizeof(pstringout->val))) {
-        db_post_events(pstringout,&(pstringout->val[0]),
-		monitor_mask|DBE_VALUE|DBE_LOG);
+	monitor_mask |= DBE_VALUE|DBE_LOG;
 	strncpy(pstringout->oval,pstringout->val,sizeof(pstringout->val));
     }
+    if(monitor_mask)
+	db_post_events(pstringout,&(pstringout->val[0]),monitor_mask);
     return;
 }
 

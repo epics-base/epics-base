@@ -293,11 +293,13 @@ static void monitor(pmbboDirect)
                 db_post_events(pmbboDirect,&pmbboDirect->val,monitor_mask);
 	}
         if(pmbboDirect->oraw!=pmbboDirect->rval) {
-                db_post_events(pmbboDirect,&pmbboDirect->rval,monitor_mask|DBE_VALUE);
+                db_post_events(pmbboDirect,&pmbboDirect->rval,
+		    monitor_mask|DBE_VALUE|DBE_LOG);
                 pmbboDirect->oraw = pmbboDirect->rval;
         }
         if(pmbboDirect->orbv!=pmbboDirect->rbv) {
-                db_post_events(pmbboDirect,&pmbboDirect->rbv,monitor_mask|DBE_VALUE);
+                db_post_events(pmbboDirect,&pmbboDirect->rbv,
+		    monitor_mask|DBE_VALUE|DBE_LOG);
                 pmbboDirect->orbv = pmbboDirect->rbv;
         }
         return;

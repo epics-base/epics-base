@@ -179,8 +179,8 @@ static long init_record(pmbbo,pass)
 	return(S_dev_missingSup);
     }
     if (pmbbo->dol.type == CONSTANT){
-	recGblInitConstantLink(&pmbbo->dol,DBF_USHORT,&pmbbo->val);
-	pmbbo->udf = FALSE;
+	if(recGblInitConstantLink(&pmbbo->dol,DBF_USHORT,&pmbbo->val))
+	    pmbbo->udf = FALSE;
     }
 
     /* initialize mask*/

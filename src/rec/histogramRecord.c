@@ -140,7 +140,7 @@ static void wdCallback(pcallback)
      if(phistogram->mcnt>0){
           dbScanLock((struct dbCommon *)phistogram);
           recGblGetTimeStamp(phistogram);
-          db_post_events(phistogram,&phistogram->bptr,DBE_VALUE);
+          db_post_events(phistogram,&phistogram->bptr,DBE_VALUE|DBE_LOG);
           phistogram->mcnt=0;
           dbScanUnlock((struct dbCommon *)phistogram);
      }
@@ -296,7 +296,7 @@ static void monitor(phistogram)
      /* post events for count change */
      if(phistogram->mcnt>phistogram->mdel){
           /* post events for count change */
-          monitor_mask |= DBE_VALUE;
+          monitor_mask |= DBE_VALUE|DBE_LOG;
           /* reset counts since monitor */
           phistogram->mcnt = 0;
      }

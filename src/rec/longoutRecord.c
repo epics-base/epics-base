@@ -143,8 +143,8 @@ static long init_record(plongout,pass)
     }
     /* get the initial value dol is a constant*/
     if (plongout->dol.type == CONSTANT) {
-	recGblInitConstantLink(&plongout->dol,DBF_LONG,&plongout->val);
-	plongout->udf=FALSE;
+	if(recGblInitConstantLink(&plongout->dol,DBF_LONG,&plongout->val))
+	    plongout->udf=FALSE;
     }
 
     if( pdset->init_record ) {

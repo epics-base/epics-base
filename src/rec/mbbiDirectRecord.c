@@ -118,13 +118,13 @@ static void refresh_bits(pmbbiDirect)
       if (pmbbiDirect->val & mask) {
          if (*bit == 0) {
             *bit = 1;
-            db_post_events(pmbbiDirect,bit,DBE_VALUE);
+            db_post_events(pmbbiDirect,bit,DBE_VALUE|DBE_LOG);
          }
       }
       else {
          if (*bit != 0) {
             *bit = 0;
-            db_post_events(pmbbiDirect,bit,DBE_VALUE);
+            db_post_events(pmbbiDirect,bit,DBE_VALUE|DBE_LOG);
          }
       }
    }
@@ -266,7 +266,8 @@ static void monitor(pmbbiDirect)
                 db_post_events(pmbbiDirect,&pmbbiDirect->val,monitor_mask);
 	}
         if(pmbbiDirect->oraw!=pmbbiDirect->rval) {
-                db_post_events(pmbbiDirect,&pmbbiDirect->rval,monitor_mask|DBE_VALUE);
+                db_post_events(pmbbiDirect,&pmbbiDirect->rval,
+		    monitor_mask|DBE_VALUE|DBE_LOG);
                 pmbbiDirect->oraw = pmbbiDirect->rval;
         }
         return;

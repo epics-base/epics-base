@@ -41,23 +41,29 @@ struct l_fp; /* NTP timestamp */
 
 class aitTimeStamp; /* GDD*/
 
-// extend ANSI C RTL "struct tm" to include nano seconds within a second
-// and a struct tm that is adjusted for the local timezone
+/*
+ * extend ANSI C RTL "struct tm" to include nano seconds within a second
+ * and a struct tm that is adjusted for the local timezone
+ */
 struct local_tm_nano_sec {
     struct tm ansi_tm; /* ANSI C time details */
     unsigned long nSec; /* nano seconds extension */
 };
 
-// extend ANSI C RTL "struct tm" to includes nano seconds within a second
-// and a struct tm that is adjusted for GMT (UTC)
+/*
+ * extend ANSI C RTL "struct tm" to includes nano seconds within a second
+ * and a struct tm that is adjusted for GMT (UTC)
+ */
 struct gm_tm_nano_sec {
     struct tm ansi_tm; /* ANSI C time details */
     unsigned long nSec; /* nano seconds extension */
 };
 
-// wrapping this in a struct allows conversion to and
-// from ANSI time_t but does not allow unexpected
-// conversions to occur
+/*
+ * wrapping this in a struct allows conversion to and
+ * from ANSI time_t but does not allow unexpected
+ * conversions to occur
+ */
 struct time_t_wrapper {
     time_t ts;
 };
@@ -76,7 +82,7 @@ private:
 class epicsShareClass epicsTime
 {
 public:
-    // exceptions
+    /* exceptions */
     class unableToFetchCurrentTime {};
     class formatProblemWithStructTM {};
 
@@ -86,59 +92,63 @@ public:
     static epicsTime getEvent ( const epicsTimeEvent & );
     static epicsTime getCurrent ();
 
-    // convert to and from EPICS epicsTimeStamp format
+    /* convert to and from EPICS epicsTimeStamp format */
     operator epicsTimeStamp () const;
     epicsTime ( const epicsTimeStamp & ts );
     epicsTime & operator = ( const epicsTimeStamp & );
 
-    // convert to and from ANSI time_t 
+    /* convert to and from ANSI time_t */
     operator time_t_wrapper () const;
     epicsTime ( const time_t_wrapper & );
     epicsTime & operator = ( const time_t_wrapper & );
 
-    // convert to and from ANSI Cs "struct tm" (with nano seconds)
-    // adjusted for the local time zone
+    /*
+     * convert to and from ANSI Cs "struct tm" (with nano seconds)
+     * adjusted for the local time zone
+     */
     operator local_tm_nano_sec () const;
     epicsTime ( const local_tm_nano_sec & );
     epicsTime & operator = ( const local_tm_nano_sec & );
 
-    // convert to ANSI Cs "struct tm" (with nano seconds)
-    // adjusted for GM time (UTC)
+    /*
+     * convert to ANSI Cs "struct tm" (with nano seconds)
+     * adjusted for GM time (UTC)
+     */
     operator gm_tm_nano_sec () const;
 
-    // convert to and from POSIX RTs "struct timespec"
+    /* convert to and from POSIX RTs "struct timespec" */
     operator struct timespec () const;
     epicsTime ( const struct timespec & );
     epicsTime & operator = ( const struct timespec & );
 
-    // convert to and from BSDs "struct timeval"
+    /* convert to and from BSDs "struct timeval" */
     operator struct timeval () const;
     epicsTime ( const struct timeval & );
     epicsTime & operator = ( const struct timeval & );
 
-    // convert to and from NTP timestamp format
+    /* convert to and from NTP timestamp format */
     operator l_fp () const;
     epicsTime ( const l_fp & );
     epicsTime & operator = ( const l_fp & );
 
-    // convert to and from GDDs aitTimeStamp format
+    /* convert to and from GDDs aitTimeStamp format */
     operator aitTimeStamp () const;
     epicsTime ( const aitTimeStamp & );
     epicsTime & operator = ( const aitTimeStamp & );
 
-    // convert to and from WIN32s FILETIME (implemented only on WIN32)
+    /* convert to and from WIN32s FILETIME (implemented only on WIN32) */
     operator struct _FILETIME () const;
     epicsTime ( const struct _FILETIME & );
     epicsTime & operator = ( const struct _FILETIME & );
 
-    // arithmetic operators
-    double operator- ( const epicsTime & ) const; // returns seconds
-    epicsTime operator+ ( const double & ) const; // add rhs seconds
-    epicsTime operator- ( const double & ) const; // subtract rhs seconds
-    epicsTime operator+= ( const double & ); // add rhs seconds
-    epicsTime operator-= ( const double & ); // subtract rhs seconds
+    /* arithmetic operators */
+    double operator- ( const epicsTime & ) const; /* returns seconds */
+    epicsTime operator+ ( const double & ) const; /* add rhs seconds */
+    epicsTime operator- ( const double & ) const; /* subtract rhs seconds */
+    epicsTime operator+= ( const double & ); /* add rhs seconds */
+    epicsTime operator-= ( const double & ); /* subtract rhs seconds */
 
-    // comparison operators
+    /* comparison operators */
     bool operator == ( const epicsTime & ) const;
     bool operator != ( const epicsTime & ) const;
     bool operator <= ( const epicsTime & ) const;
@@ -146,28 +156,29 @@ public:
     bool operator >= ( const epicsTime & ) const;
     bool operator > ( const epicsTime & ) const;
 
-    // convert current state to user-specified string
+    /* convert current state to user-specified string */
     size_t strftime ( char * pBuff, size_t bufLength, const char * pFormat ) const;
 
-    // dump current state to standard out
+    /* dump current state to standard out */
     void show ( unsigned interestLevel ) const;
 
 private:
-    // private because:
-    // a) application does not break when EPICS epoch is changed
-    // b) no assumptions about internal storage or internal precision
-    // in the application
-    // c) it would be easy to forget which argument is nanoseconds
-    // and which argument is seconds (no help from compiler)
-    //
+    /*
+     * private because:
+     * a) application does not break when EPICS epoch is changed
+     * b) no assumptions about internal storage or internal precision
+     * in the application
+     * c) it would be easy to forget which argument is nanoseconds
+     * and which argument is seconds (no help from compiler)
+     */
     epicsTime ( const unsigned long secPastEpoch, const unsigned long nSec );
     void addNanoSec ( long nanoSecAdjust );
 
-    unsigned long secPastEpoch; // seconds since O000 Jan 1, 1990 
-    unsigned long nSec; // nanoseconds within second 
+    unsigned long secPastEpoch; /* seconds since O000 Jan 1, 1990 */
+    unsigned long nSec; /* nanoseconds within second */
 
 public:
-    static void synchronize (); // depricated
+    static void synchronize (); /* depricated */
 };
 
 extern "C" {

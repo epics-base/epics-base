@@ -10,7 +10,7 @@ In addition you can identify the data with an integer application type value
 which can be translated into a text string.  A user can store data into and
 retreived data from a GDD in any desired data type.  A GDD can contain
 a list of GDDs.  This allows users to create and describe hierarchical
-data structures dynamically.  GDD organized in this fashion are known
+data structures dynamically.  GDDs organized in this fashion are known
 as containers.
 <P>
 As mentioned above, a GDD can describe an n-dimension array.  The user
@@ -24,9 +24,9 @@ what to do with referenced data.
 <P>
 To manage GDDs in a multi-tasking system or a system that
 uses many layers of software, GDDs implement reference counting.  With
-reference counting, only one copy of GDD can be shared by many subsystems.
+reference counting, only one instance of a GDD can be shared by many subsystems.
 The GDD creator function can pass it to many other functions without
-worrying about deleting it, when the last function using the GDD requests
+worrying about deleting it, only when the last function using the GDD requests
 that it be destroyed does it really go away.
 <P>
 As menitioned above, a GDD allows the user to describe the data in terms
@@ -40,7 +40,7 @@ string and optionally a prototype GDD.  The prototype GDD can be a
 container GDD.  The table allows users to retreive GDDs of a specific
 application type.
 <P>
-A GDD describe and manages a piece of data using the following information:
+A GDD describes and manages a piece of data using the following information:
 <P>
 <UL>
 	<LI>Application Type (user assigned integer value)
@@ -60,8 +60,8 @@ C++ compiler.
 
 <P><HR><H2>GDD Description</H2>
 The gdd class is the main class in the GDD library.  It controls almost
-all actions perfomed on the data.  The gdd class is further broken down
-into three subclasses for performing operations are specific types of GDDs:
+all actions performed on the data.  The gdd class is further broken down
+into three subclasses for performing operations on specific types of GDDs:
 gddContainer, gddAtomic, and gddScalar.  The gddContainer class aids in the
 creation of container type GDDs.  It adds functions such as "insert GDD",
 "remove GDD", and "give me GDD x from the container" to the basic gdd class.
@@ -70,9 +70,9 @@ class makes it easy to create scalar GDDs.
 <P>
 All GDDs must be created dynamically, <B>a GDD cannot be created on the
 stack</B> as a local variable.  The gdd class forbids the user from deleting
-the gdd.  In order for referencing counting to work correctly the <B>user must
-"unreference" the gdd instance instead of delete it</B>.  The gdd class does
-take over the memory management routines for itself and all it's subclass.
+the gdd.  In order for reference counting to work correctly the <B>user must
+"unreference" the gdd instance instead of deleting it</B>.  The gdd class does
+take over the memory management routines for itself and all it's subclasses.
 This means that you are not using the malloc()/free() memory management when
 GDDs are created and destroyed.  It is important to remember that since
 reference counting is used, <B>a GDD passed into a function must be referenced
@@ -89,7 +89,7 @@ with it.
 <P>
 For a GDD to be useful after it is created, it must be given information
 to describe the data to will hold.  This data was summarized in the overview
-section.  To further understand and the meaning of all these items and use
+section.  To further understand the meaning of all these items and use
 them correctly, each needs to be discussed.
 
 <P><HR><H3>Primitive Types</H3>
@@ -176,7 +176,7 @@ this portion of the library will be dicussed in detail later in this document.
 <P>
 A typical way that application type codes are used is in defining structures.
 A type code of 54 may be assigned the meaning "Temperature Reading".  The
-"Temperature Reading" structure may be a container with four GDD in it:
+"Temperature Reading" structure may be a container with four GDDs in it:
 a value, a high alarm limit, a low alarm limit, and units.  Each
 of these GDDs also have an application type code.  A generic program can
 actually be written to completely discover the contents of the
@@ -199,7 +199,7 @@ and time stamp.  Transfering this type of data in one GDD in fairly easy.
 If GDDs did not contain time stamps and status, then this actively changing
 data would need to be transfered as a structure of three GDDs: one for
 the value, one for the status, and one for the time stamp.  In addition
-to the three GDDs, a fourth that described the GDD container will need to
+to the three GDDs, a fourth that describes the GDD container will need to
 be transfered.
 
 <P><HR><H3>Dimension and Bounds Information</H3>
@@ -207,13 +207,13 @@ A GDD that is a scalar is self contained.  All information to describe
 the data within the GDD is contained within the GDD.  If the GDD describes
 a structure (a container), or the GDD describes an array, then dimension
 and array bounds information are needed.  A GDD can describe an array
-of array dimension.  Each dimension is required to have a description
+of any dimension.  Each dimension is required to have a description
 of it's size in terms of bounds.
 <P>
 Bounds, and consequencely a single dimension, in GDD are described by two
 fields, a start and an element count.  With this setup, and n-dimensional
 space can be described.  For example, a typical three dimension array
-wouldbe described as a(5,4,6), which is a 5x4x6 cube.  In a GDD this
+would be described as A(5,4,6), which is a 5x4x6 cube.  In a GDD this
 cube would be described with dimension=3, bounds={(0,5)(0,4)(0,6)}.  If
 we want to describe a subset of this array, we would normally do so by
 giving two endpoints of the sub-cube, such as (1,2,3)->(2,3,5).  In GDD
@@ -250,7 +250,7 @@ character array and delete it.
 The gddDestructor allows reference counting similar to the GDD class.
 Typically a data array will be associated with one instance of the
 gddDestructor class.  If more then one GDD needs to reference the array,
-the each GDD is registered with the same gddDestructor.  Each time
+then each GDD is registered with the same gddDestructor.  Each time
 the gddDestructor is registered, the reference count should be bumped
 up.  The gddDestructor "run" method will only be invoked when the
 reference count drops to zero.
@@ -277,7 +277,7 @@ Several important issues related to where the actual data is stored
 must be remembered when using GDDs:
 
 <OL>
-	<LI>If a gdd is a scalar, then the gdd hold the data it describes, the
+	<LI>If a gdd is a scalar, then the gdd holds the data it describes, the
 		dimension is zero, and the bounds are empty.
 	<LI>If a gdd is an array, then the gdd refers to the data it describes,
 		refers to bounds that describe it's structure, has a dimension
@@ -358,7 +358,7 @@ must be remembered when using GDDs:
 </PRE>
 
 <P><HR><H2>Application Type Table Description</H2>
-A facility within GDD library is designed to store application
+A facility within the GDD library is designed to store application
 type code to string mappings.  The facility can also be used to store
 and retrieve prototype GDDs by application type code.  The application
 type table is really a simple database containing records with the following
@@ -371,18 +371,19 @@ information:
 </UL>
 The type table has methods for registering or inserting records into the
 database.  Methods also exist to query the type name given a type code, and
-to query the type code given the type name.  Type codes are values are
-assigned to a type name when there are registered; the user is given the
+to query the type code given the type name.  Type codes are values
+assigned to a type name when the type name is registered; the user is given the
 type code value when the registeration takes place. A type code sometimes has
 a prototype GDD associated with it, especially if it is a container GDD.
-Methods also exist to retrieve a GDD given an application type code that
-matches the prototype for that type code.  The application type table
+Methods also exist to retrieve a new GDD given an application type code.  The
+new GDD structure will be a copy of the prototype GDD for that type code.
+The application type table
 is commonly used create GDDs.  A given application type code usually
 implies a certain structure to the data.  The prototype mechanism allows
 this imposed structure to be adhered to when the GDD is created.  This is
 particularly important when it comes to container type GDDs.  The type
 table basically copies the prototype when the user requests a GDD with a
-particular type code.  The application type table also packs GDD in
+particular type code.  The application type table also packs GDDs in
 an efficient manage, which allows very high performance creation and
 deletion of container GDDs and atomic GDDs.
 <P>
@@ -393,22 +394,23 @@ can be very time consuming.  For an array GDD, the bounds and a destructor
 must be allocated in addition to the GDD itself and referenced into the
 GDD.  For a container GDD, the GDD elements are really stored as a linked
 list.  To access the third element of a container, the linked list must be
-traversed.  With aitStrings GDD the situation is worse yet.  The GDD class
-allow for a given GDD to be packed or flattened into a simple linear buffer.
+traversed.  With aitString GDDs the situation is worse yet.  The GDD class
+allow for a given GDD to be packed or flattened into a single linear buffer.
 This mechanism includes packing GDD containers.  In the array case,
 the actual GDD is the first thing in the buffer, followed by any bounds
 information, followed by the actual data array.  The fields of the GDD
 work exactly as before, except that they reference bounds and data that is
 in the same buffer.  In the case of containers, all the GDDs are stored as
 an array of GDDs at the front of the buffer, followed by the bounds
-information for each of the GDDs, followed by each of the GDDs data array if
+information for each of the GDDs, followed by each of the GDD's data arrays if
 present.  There are many advantages of this configuration.  Since all the
 GDDs in a container are stored as an array instead of a linked list, the
 user can directly index a particular GDD within the container.  The
-application type table performs with packing on a GDD that is registered
+application type table performs this packing on a GDD that is registered
 as a prototype for a particular type code.  Since the GDD for a given
 type code is now a fixed size, the type code table can manage the GDDs on
-a free list.  Each type code with a prototype GDD contains a free list
+a free list.  Each type code database entry with a prototype GDD contains
+a free list
 of GDDs for that type code.  Creating a GDD using the type code table
 involves retrieving a preallocated, packed GDD from a particular free list
 and giving it to the user.  This operation is very fast and efficient since

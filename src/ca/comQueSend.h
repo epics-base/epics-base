@@ -35,8 +35,7 @@
 
 //
 // Notes.
-// o calling popNextComBufToSend() will clear 
-// any uncommitted bytes
+// o calling popNextComBufToSend() will clear any uncommitted bytes
 //
 class comQueSend {
 public:
@@ -62,7 +61,7 @@ public:
         ca_uint16_t request, unsigned dataType, ca_uint32_t nElem, 
         ca_uint32_t cid, ca_uint32_t requestDependent, 
         const void * pPayload, bool v49Ok ) 
-            epics_throws (( cacChannel::outOfBounds ));
+            epics_throws (( cacChannel::outOfBounds, cacChannel::badType ));
     void push_dbr_type ( unsigned type, const void *pVal, unsigned nElem ) epics_throws (());
     comBuf * popNextComBufToSend () epics_throws (());
 private:

@@ -254,7 +254,7 @@ void comQueSend::insertRequestHeader (
 void comQueSend::insertRequestWithPayLoad (
     ca_uint16_t request, unsigned dataType, ca_uint32_t nElem, 
     ca_uint32_t cid, ca_uint32_t requestDependent, const void * pPayload,
-    bool v49Ok ) epics_throws (( cacChannel::outOfBounds ))
+    bool v49Ok ) epics_throws (( cacChannel::badType, cacChannel::outOfBounds ))
 {
     if ( ! this->dbr_type_ok ( dataType ) ) {
         throw cacChannel::badType();

@@ -168,7 +168,7 @@ static unsigned osdPriorityMagFromPriorityOSI ( unsigned osiPriority, unsigned p
 static int epicsThreadGetOsdPriorityValue ( unsigned osiPriority ) 
 {
     const DWORD priorityClass = GetPriorityClass ( GetCurrentProcess () );
-    const unsigned * pStateList;
+    const int * pStateList;
     unsigned stateCount;
     unsigned magnitude;
 
@@ -206,7 +206,7 @@ static unsigned osiPriorityMagFromMagnitueOSD ( unsigned magnitude, unsigned osd
 static unsigned epicsThreadGetOsiPriorityValue ( int osdPriority ) 
 {
     const DWORD priorityClass = GetPriorityClass ( GetCurrentProcess () );
-    const unsigned * pStateList;
+    const int * pStateList;
     unsigned stateCount;
     unsigned magnitude;
 
@@ -459,7 +459,7 @@ static win32ThreadParam * epicsThreadParmCreate ( const char *pName )
     return pParmWIN32;
 }
 
-static win32ThreadParam * epicsThreadImplicitCreate ()
+static win32ThreadParam * epicsThreadImplicitCreate ( void )
 {
     win32ThreadParam *pParm;
     char name[64];

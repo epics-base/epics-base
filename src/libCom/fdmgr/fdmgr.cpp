@@ -96,7 +96,7 @@ epicsShareFunc void fdRegForOldFdmgr::callBack ()
 
 class oldFdmgr : public fdManager {
     friend class osiTimerForOldFdmgr;
-    friend extern epicsShareFunc int epicsShareAPI fdmgr_clear_timeout (fdctx *pfdctx, fdmgrAlarmId id);
+    friend epicsShareFunc int epicsShareAPI fdmgr_clear_timeout (fdctx *pfdctx, fdmgrAlarmId id);
 public:
 
     oldFdmgr ();

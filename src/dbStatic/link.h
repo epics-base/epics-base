@@ -63,10 +63,9 @@ typedef struct maplinkType{
 	int	value;
 }maplinkType;
 
-#ifndef LINK_GBLSOURCE
-extern  maplinkType pamaplinkType[];
-#else
-maplinkType pamaplinkType[LINK_NTYPES] = {
+epicsShareExtern maplinkType pamaplinkType[];
+#ifdef LINK_GBLSOURCE
+epicsShareDef maplinkType pamaplinkType[LINK_NTYPES] = {
 	{"CONSTANT",CONSTANT},
 	{"PV_LINK",PV_LINK},
 	{"VME_IO",VME_IO},

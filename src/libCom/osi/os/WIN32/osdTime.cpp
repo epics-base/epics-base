@@ -288,7 +288,8 @@ currentTime::currentTime () :
     }
     else {
         errlogPrintf ( 
-            "win32 osdTime.cpp detected questionable system date prior to EPICS epoch\n" );
+            "win32 osdTime.cpp detected questionable "
+            "system date prior to EPICS epoch\n" );
         this->epicsTimeLast = 0;
     }
 
@@ -340,11 +341,23 @@ void currentTime::getCurrentTime ( epicsTimeStamp & dest )
             offset = ( MAXLONGLONG - this->lastPerfCounter )
                                 + ( curPerfCounter.QuadPart + MAXLONGLONG );
 	    }
-        offset *= EPICS_TIME_TICKS_PER_SEC;
-        offset /= this->perfCounterFreq;
+        if ( offset < MAXLONGLONG / EPICS_TIME_TICKS_PER_SEC ) {
+            offset *= EPICS_TIME_TICKS_PER_SEC;
+            offset /= this->perfCounterFreq;
+        }
+        else {
+            double fpOffset = static_cast < double > ( offset );
+            fpOffset *= EPICS_TIME_TICKS_PER_SEC;
+            fpOffset /= static_cast < double > ( this->perfCounterFreq );
+            offset = static_cast < LONGLONG > ( fpOffset );
+        }
         LONGLONG epicsTimeCurrent = this->epicsTimeLast + offset;
         if ( this->epicsTimeLast > epicsTimeCurrent ) {
-            errlogPrintf ( "currentTime::getCurrentTime(): time discontinuity detected\n" );
+            double diff = this->epicsTimeLast - epicsTimeCurrent;
+            errlogPrintf ( 
+                "currentTime::getCurrentTime(): %f sec "
+                "time discontinuity detected\n",
+                diff );
         }
         this->epicsTimeLast = epicsTimeCurrent;
         this->lastPerfCounter = curPerfCounter.QuadPart;
@@ -489,7 +502,7 @@ epicsTimerNotify::expireStatus currentTime::expire ( const epicsTime & )
         // is to just assume the new time base
   	    this->epicsTimeLast = epicsTimeFromCurrentFileTime;
  	    this->perfCounterFreq = this->perfCounterFreqPLL;
-        debugPrintf ( ( "currentTime: time discontinuity detected\n" ) );
+        debugPrintf ( ( "currentTime: did someone adjust the date?\n" ) );
     } 
     else {
         // update the effective performance counter frequency that will bring 

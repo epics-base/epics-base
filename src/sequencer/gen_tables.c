@@ -31,7 +31,6 @@ int		nstates;	/* total # states in all state sets */
 
 gen_tables()
 {
-	extern	LIST	var_list;	/* variables (from parse) */
 	extern	Expr	*ss_list;	/* state sets (from parse) */
 	extern	char	*global_c_code;	/* global C code */
 
@@ -54,14 +53,15 @@ gen_tables()
 /* Generate database blocks with structure and data for each defined channel */
 gen_db_blocks()
 {
-	extern	LIST	chan_list;
-	Chan	*cp;
-	int	nchan;
+	extern		Chan *chan_list;
+	Chan		*cp;
+	int		nchan;
 
 	printf("\n/* Database Blocks */\n");
 	printf("static CHAN db_channels[NUM_CHANNELS] = {\n");
 	nchan = 0;
-	for (cp = firstChan(&chan_list); cp != NULL; cp = nextChan(cp))
+
+	for (cp = chan_list; cp != NULL; cp = cp->next)
 	{
 		/* Only process db variables */
 		if (cp->db_name != NULL)

@@ -8,6 +8,9 @@
 	Produces code and tables in C output file.
 	See also:  gen_ss_code.c
 	ENVIRONMENT: UNIX
+	HISTORY:
+19nov91,ajk	Replaced lstLib calls with built-in linked list.
+19nov91,ajk	Removed extraneous "static" from "UserVar" declaration.
 ***************************************************************************/
 
 #include	<stdio.h>
@@ -33,7 +36,7 @@ int	num_errors = 0;		/* number of errors detected in phase 2 processing */
 *-*************************************************************************/
 phase2()
 {
-	extern	LIST	var_list;	/* variables (from parse) */
+	extern	Var	*var_list;	/* variables (from parse) */
 	extern	Expr	*ss_list;	/* state sets (from parse) */
 	extern	Expr	*global_c_list;	/* global C code */
 
@@ -147,15 +150,15 @@ Expr		*ep;
 	extern char	*stype[];
 	extern int	warn_flag;
 
-	vp = (Var *)find_var(ep->value);
+	vp = (Var *)findVar(ep->value);
 	if (vp == 0)
-	{	/* variable not declared;  enter into variable list */
+	{	/* variable not declared; add it to the variable list */
 		if (warn_flag)
 			fprintf(stderr,
 			 "Warning:  variable \"%s\" is used but not declared.\n",
 			 ep->value);
 		vp = allocVar();
-		lstAdd(&var_list, (NODE *)vp);
+		addVar(vp);
 		vp->name = ep->value;
 		vp->type = V_NONE; /* undeclared type */
 		vp->length = 0;
@@ -171,7 +174,6 @@ Expr		*ep;
 /* Reconcile state names */
 reconcile_states()
 {
-	extern LIST	var_list;
 	extern int	num_errors;
 	Expr		*ssp, *sp, *sp1, tr;
 
@@ -212,7 +214,7 @@ Expr		*sp;	/* beginning of state list */
 /* Generate a C variable declaration for each variable declared in SNL */
 gen_var_decl()
 {
-	extern LIST	var_list;
+	extern Var	*var_list;
 	Var		*vp;
 	char		*vstr;
 	int		nv;
@@ -222,8 +224,8 @@ gen_var_decl()
 
 	/* Convert internal type to `C' type */
 	if (reent_flag)
-		printf("static struct UserVar {\n");
-	for (nv=0, vp = firstVar(&var_list); vp != NULL; nv++, vp = nextVar(vp))
+		printf("struct UserVar {\n");
+	for (nv=0, vp = var_list; vp != NULL; nv++, vp = vp->next)
 	{
 		switch (vp->type)
 		{
@@ -314,12 +316,12 @@ gen_global_c_code()
 /* Returns number of db channels defined & inserts index into each channel struct */
 db_chan_count()
 {
-	extern	LIST	chan_list;
+	extern	Chan	*chan_list;
 	int	nchan;
 	Chan	*cp;
 
 	nchan = 0;
-	for (cp = firstChan(&chan_list); cp != NULL; cp = nextChan(cp))
+	for (cp = chan_list; cp != NULL; cp = cp->next)
 	{
 		if (cp->db_name != NULL)
 		{
@@ -338,7 +340,7 @@ db_chan_count()
 /* Assign bits to event flags and database variables */
 assign_ef_bits()
 {
-	extern LIST		var_list;
+	extern Var		*var_list;
 	Var			*vp;
 	Chan			*cp;
 	int			ef_num;
@@ -349,7 +351,7 @@ assign_ef_bits()
 #ifdef	DEBUG
 	fprintf(stderr, "\nAssign values to event flags\n");
 #endif
-	for (vp = firstVar(&var_list); vp != NULL; vp = nextVar(vp))
+	for (vp = var_list; vp != NULL; vp = vp->next)
 	{
 		cp = vp->chan;
 		/* First see if this is an event flag  */

@@ -6,6 +6,8 @@
 	$Id$
 	DESCRIPTION: gen_ss_code.c -- routines to generate state set code
 	ENVIRONMENT: UNIX
+	HISTORY:
+19nov91,ajk	Changed find_var() to findVar().
 ***************************************************************************/
 #include	<stdio.h>
 #include	"parse.h"
@@ -400,7 +402,7 @@ Expr		*sp;		/* current State struct */
 	ep1 = ep->left; /* ptr to 1-st parameters */
 	if ( (ep1 != 0) && (ep1->type == E_VAR) )
 	{
-		vp = (Var *)find_var(ep1->value);
+		vp = (Var *)findVar(ep1->value);
 		cp = vp->chan;
 	}
 	else

@@ -6,6 +6,8 @@
 
 	$Id$
 	ENVIRONMENT: UNIX
+	HISTORY:
+20nov91,ajk	Added OPTION token.
 ***************************************************************************/
 /* Lexical analyzer for State Notation Compiler (snc).
  *
@@ -142,6 +144,7 @@ FPNUM	(\-?(([0-9]+)(\.[0-9]*)?)|(\.[0-9]+))
 <SNL>"string"	RETURN(STRING_DECL);
 <SNL>"to"	RETURN(TO);
 <SNL>"program"	RETURN(PROGRAM);
+<SNL>"option"	RETURN(OPTION);
 <SNL>"debug"	RETURN(DEBUG_PRINT);
 <SNL>"evflag"	RETURN(EVFLAG);
 <SNL>"sync"	RETURN(SYNC);

@@ -6,6 +6,8 @@
 
 	$Id$
 	ENVIRONMENT: UNIX
+	HISTORY:
+20nov91,ajk	Added new "option" statement.
 ***************************************************************************/
 /*	SNC - State Notation Compiler.
  *	The general structure of a state program is:
@@ -31,6 +33,11 @@
 #include	<ctype.h>
 #include	"parse.h"
 
+#ifndef	TRUE
+#define	TRUE	1
+#define	FALSE	0
+#endif	TRUE
+
 extern	int line_num; /* input file line no. */
 %}
 
@@ -46,7 +53,7 @@ extern	int line_num; /* input file line no. */
 %token	<pchar>	STATE STATE_SET
 %token	<pchar>	NUMBER NAME
 %token	<pchar>	DEBUG_PRINT
-%token	PROGRAM EXIT
+%token	PROGRAM EXIT OPTION
 %token	R_SQ_BRACKET L_SQ_BRACKET
 %token	BAD_CHAR L_BRACKET R_BRACKET
 %token	COLON SEMI_COLON EQUAL
@@ -103,6 +110,7 @@ defn_stmt	/* individual definitions for SNL (preceeds state sets) */
 |	decl_stmt
 |	debug_stmt
 |	sync_stmt
+|	option_stmt
 |	C_STMT			{ defn_c_stmt($1); }
 |	pp_code
 |	error { snc_err("definitions/declarations"); }
@@ -146,6 +154,11 @@ type		/* types for variables defined in SNL */
 sync_stmt	/* sync <variable> <event flag> */
 :	SYNC NAME TO NAME SEMI_COLON	{ sync_stmt($2, $4); }
 |	SYNC NAME NAME SEMI_COLON	{ sync_stmt($2, $3); /* archaic syntax */ }
+;
+
+option_stmt	/* option +/-<option>;  e.g. option +a; */
+:	OPTION PLUS NAME SEMI_COLON	{ option_stmt($3, TRUE); }
+|	OPTION MINUS NAME SEMI_COLON	{ option_stmt($3, FALSE); }
 ;
 
 state_set_list 	/* a program body is one or more state sets */

@@ -95,7 +95,7 @@ public:
 	//
 	// called if 
 	// 1) osiTimer exists and the osiTimerQueue is deleted
-	// 2) when the osiTimer expires and again() returs false
+	// 2) when the osiTimer expires and again() returns false
 	//
 	// osiTimer::destroy() does a "delete this"
     //

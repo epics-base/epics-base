@@ -239,35 +239,43 @@ xBlockingStatus casStreamIO::blockingState() const
 //
 // casStreamIO::incomingBytesPresent()
 //
-bufSizeT casStreamIO::incomingBytesPresent() const // X aCC 361
+bufSizeT casStreamIO::incomingBytesPresent () const // X aCC 361
 {
     int status;
     osiSockIoctl_t nchars = 0;
     
-    status = socket_ioctl(this->sock, FIONREAD, &nchars); // X aCC 392
-    if (status<0) {
-        char buf[64];
-        int errnoCpy = SOCKERRNO;
-        
-        ipAddrToA (&this->addr, buf, sizeof(buf) );
-        errlogPrintf ("CAS: FIONREAD for %s failed because \"%s\"\n",
-            buf, SOCKERRSTR(errnoCpy));
+    status = socket_ioctl ( this->sock, FIONREAD, &nchars ); // X aCC 392
+    if ( status < 0 ) {
+        int localError = SOCKERRNO;
+        if (
+            localError != SOCK_ECONNABORTED &&
+            localError != SOCK_ECONNRESET &&
+            localError != SOCK_EPIPE &&
+            localError != SOCK_ETIMEDOUT ) 
+        {
+            char buf[64];
+            int errnoCpy = SOCKERRNO;
+            
+            ipAddrToA ( &this->addr, buf, sizeof(buf) );
+            errlogPrintf ("CAS: FIONREAD for %s failed because \"%s\"\n",
+                buf, SOCKERRSTR ( errnoCpy ) );
+        }
         return 0u;
     }
-    else if (nchars<0) {
+    else if ( nchars < 0 ) {
         return 0u;
     }
     else {
-        return (bufSizeT) nchars;
+        return ( bufSizeT ) nchars;
     }
 }
 
 //
 // casStreamIO::hostName()
 //
-void casStreamIO::hostName (char *pInBuf, unsigned bufSizeIn) const
+void casStreamIO::hostName ( char *pInBuf, unsigned bufSizeIn ) const
 {
-	ipAddrToA (&this->addr, pInBuf, bufSizeIn);
+	ipAddrToA ( &this->addr, pInBuf, bufSizeIn );
 }
 
 //

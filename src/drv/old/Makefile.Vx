@@ -2,7 +2,12 @@
 TOP = ../../../..
 include $(TOP)/config/CONFIG_BASE
 
+#	The pc486 cross-compiler has no "nobitfield" option   -kuk-
+ifeq ($(ARCH_CLASS),pc486)
+USR_CFLAGS = -fshared-data -fvolatile -traditional
+else
 USR_CFLAGS = -fshared-data -fvolatile -mnobitfield -traditional
+endif
 
 INC += drvBB232.h
 INC += drvBitBusErr.h

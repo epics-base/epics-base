@@ -351,7 +351,7 @@ next_level:
 }
 
 static char *asAccessName[] = {"NONE","READ","WRITE"};
-void asDump(
+int asDump(
 	void (*memcallback)(struct asgMember *),
 	void (*clientcallback)(struct asgClient *))
 {
@@ -367,6 +367,7 @@ void asDump(
     ASGMEMBER	*pasgmember;
     ASGCLIENT	*pasgclient;
 
+    if(!asActive) return(0);
     puag = (UAG *)ellFirst(&pasbase->uagList);
     if(!puag) printf("No UAGs\n");
     while(puag) {
@@ -466,6 +467,7 @@ void asDump(
 	if(print_end_brace) printf("}\n");
 	pasg = (ASG *)ellNext((ELLNODE *)pasg);
     }
+    return(0);
 }
 
 

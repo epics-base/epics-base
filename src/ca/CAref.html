@@ -416,7 +416,7 @@ Channel Access port numbers have been registered with IANA.</p>
 
 <p>If a client needs to communicate with two servers that are residing at
 different port numbers then an extended syntax may be used with the
-EPICS_CA_ADDRESS_LIST environment variable. See <a href="#Environmen">WAN
+EPICS_CA_ADDR_LIST environment variable. See <a href="#Environmen">WAN
 Environment</a> below.</p>
 
 <h3><a name="Environmen">WAN Environment</a></h3>
@@ -475,8 +475,8 @@ broadcast addresses, but this will often be the most convenient choice.</p>
 
 <p>If a client needs to communicate with two servers that are residing at
 different port numbers then an extended syntax may be used with the
-EPICS_CA_ADDRESS_LIST environment variable. Each host name or IP address in
-the EPICS_CA_ADDR_LIST may be immediately followed by a colon and an IP port
+EPICS_CA_ADDR_LIST environment variable. Each host name or IP address in the
+EPICS_CA_ADDR_LIST may be immediately followed by a colon and an IP port
 number without intervening whitespace. Entries that do not specify a port
 number will default to EPICS_CA_SERVER_PORT.</p>
 
@@ -811,11 +811,11 @@ base&gt;/include/os/&lt;arch&gt;" in its header file search path.</p>
 
 <h3><a name="Required" id="Required">Required Libraries</a></h3>
 
-<p>An application that uses the CA client library functions described in this
-document will need to link with the EPICS CA Client Library and also the
-EPICS Common Library. The EPICS CA Client Library calls the EPICS Common
-Library. The following table shows the names of these libraries on UNIX and
-Windows systems.</p>
+<p>An application that uses the Channel Access Client Library functions
+described in this document will need to link with the EPICS CA Client Library
+and also the EPICS Common Library. The EPICS CA Client Library calls the
+EPICS Common Library. The following table shows the names of these libraries
+on UNIX and Windows systems.</p>
 
 <table border="1">
   <caption></caption>

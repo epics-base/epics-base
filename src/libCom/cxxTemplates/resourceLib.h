@@ -106,6 +106,7 @@ public:
     void verify () const;
     int add ( T & res ); // returns -1 (id exists in table), 0 (success)
     T * remove (const ID &idIn); // remove entry
+    void removeAll (tsSLList<T> & destination); // remove all entries
     T * lookup (const ID &idIn) const; // locate entry
     // Call (pT->*pCB) () for each entry
     void traverse ( void (T::*pCB)() );
@@ -299,6 +300,17 @@ T * resTable<T,ID>::remove ( const ID &idIn ) // X aCC 361
     }
     else {
         return 0;
+    }
+}
+
+template <class T, class ID>
+void resTable<T,ID>::removeAll ( tsSLList<T> & destination )
+{
+    const unsigned N = this->tableSize ();
+    for ( unsigned i = 0u; i < N; i++ ) {
+        while ( T * pItem = this->pTable[i].get() ) {
+            destination.add ( *pItem );
+        }
     }
 }
 

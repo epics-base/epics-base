@@ -102,12 +102,12 @@ int main(int argc,char **argv)
 	pmynode[npv] = (MYNODE *)calloc(1,sizeof(MYNODE));
 	npv++;
     }
-    SEVCHK(ca_task_initialize(),"ca_task_initialize");
+    SEVCHK(ca_context_create(ca_disable_preemptive_callback),"ca_context_create");
     SEVCHK(ca_add_exception_event(exceptionCallback,NULL),
 	"ca_add_exception_event");
     for(i=0; i<npv; i++) {
-	SEVCHK(ca_search_and_connect(pname[i],&pmynode[i]->mychid,
-		connectionCallback,&pmynode[i]),
+	SEVCHK(ca_create_channel(pname[i],connectionCallback,
+		&pmynode[i],20,&pmynode[i]->mychid),
 		"ca_search_and_connect");
 	SEVCHK(ca_replace_access_rights_event(pmynode[i]->mychid,
 		accessRightsCallback),
@@ -118,6 +118,5 @@ int main(int argc,char **argv)
     }
     /*Should never return from following call*/
     SEVCHK(ca_pend_event(0.0),"ca_pend_event");
-    ca_task_exit();
     return(0);
 }

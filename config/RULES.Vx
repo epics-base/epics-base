@@ -92,7 +92,7 @@ endif
 clean::
 	@echo "Cleaning"
 	@$(RM) *.i *.o *.a *.out $(TARGETS) $(PROD) $(LIBNAME) $(INC) \
-	$(DBDINSTALL) $(MENUS) $(RECTYPES) $(BPTS) $(DBDNAME)
+	$(DBDINSTALL) $(MENUS) $(RECTYPES) $(BPTS) $(DBDNAME) *.c 
 
 #  The order of the following dependencies is
 #  VERY IMPORTANT !!!!
@@ -159,8 +159,8 @@ endif
 	@$(RM) $@
 	$(SNC) $(TARGET_SNCFLAGS) $(SNCFLAGS) $*.i
 
-%.c: %.stt
-	@echo "converting $<
+%.c: ../%.stt
+	@echo "converting $<"
 	ln -s $< $*.st
 	$(SNC) $(TARGET_SNCFLAGS) $(SNCFLAGS) $*.st
 	@$(RM) $*.st

@@ -61,6 +61,7 @@ public:
     ca_uint32_t getCID () const;
     netiiu * getPIIU ();
     cac & getClient ();
+    int printf ( const char *pFormat, ... );
     void searchReplySetUp ( netiiu &iiu, unsigned sidIn, 
         ca_uint16_t typeIn, arrayElementCount countIn );
     void show ( unsigned level ) const;
@@ -75,12 +76,12 @@ public:
 protected:
     ~nciu (); // force pool allocation
 private:
-    cac &cacCtx;
     caAccessRights accessRightState;
-    unsigned count;
+    cac &cacCtx;
     char *pNameStr;
     netiiu *piiu;
     ca_uint32_t sid; // server id
+    unsigned count;
     unsigned retry; // search retry number
     ca_uint16_t retrySeqNo; // search retry seq number
     ca_uint16_t nameLength; // channel name length

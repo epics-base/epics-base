@@ -40,9 +40,9 @@ nciu::nciu ( cac &cacIn, netiiu &iiuIn, cacChannelNotify &chanIn,
             const char *pNameIn ) :
     cacChannel ( chanIn ), 
     cacCtx ( cacIn ),
-    count ( 0 ),
     piiu ( &iiuIn ),
     sid ( UINT_MAX ),
+    count ( 0 ),
     retry ( 0u ),
     retrySeqNo ( 0u ),
     nameLength ( strlen ( pNameIn ) + 1 ),
@@ -477,6 +477,21 @@ void nciu::show ( unsigned level ) const
         ::printf ( "\tname length=%u\n", this->nameLength );
     }
 }
+
+int nciu::printf ( const char *pFormat, ... )
+{
+    va_list theArgs;
+    int status;
+
+    va_start ( theArgs, pFormat );
+    
+    status = this->cacCtx.vPrintf ( pFormat, theArgs );
+    
+    va_end ( theArgs );
+    
+    return status;
+}
+
 
 
 

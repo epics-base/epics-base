@@ -57,6 +57,7 @@ semTakeStatus semBinaryTakeTimeout(
     status = semTake((SEM_ID)id,ticks);
     if(status==OK) return(semTakeOK);
     if(errno==S_objLib_OBJ_TIMEOUT) return(semTakeTimeout);
+    if(ticks<=0) return(semTakeTimeout);
     return(semTakeError);
 }
 

@@ -42,16 +42,46 @@
  * .08  01-10-92	 bg     Added levels to io_report and warning message
  *                              that raw values cannot be read from vmi4100
  *                              card even it the level is 1.
+ * .09	08-05-92	joh	arguments to init routine now conform with the
+ *				standard
+ * .10	08-05-92	joh	added EPICS driver dispatch table	
+ * .11	08-05-92	joh	moved parameters from ao_driver.h to here
  */
 
 #include <vxWorks.h>
 #include <vme.h>
+#include <dbDefs.h>
+#include <drvSup.h>
 #include "module_types.h"
-#include "ao_driver.h"
 
+/* VMIVME 4100 defines */
+#define MAX_AO_VMI_CARDS        8
+#define VMI_ENABLE_OUT          0xc100 /*Fail LED off, enable P3 output.*/
+
+/* memory structure of the Xycom 4100 Interface */
+
+union aoVMI{
+        unsigned short csr;
+        unsigned short data[16];
+};
+
+long	vmi4100_io_report();
+long	vmi4100_init();
+
+struct {
+        long    	number;
+        DRVSUPFUN	report;
+        DRVSUPFUN       init;
+} drvVmi4100={
+        2,
+        vmi4100_io_report,
+        vmi4100_init};
+
+LOCAL
 unsigned short	*pao_vmi4100[MAX_AO_VMI_CARDS];
 
-static int vmi4100_addr;
+LOCAL
+int vmi4100_addr;
 
 
 /*
@@ -59,10 +89,10 @@ static int vmi4100_addr;
  *
  * intialize the VMI analog outputs
  */
-vmi4100_init(pcards_present,base_addr)
-register unsigned short **pcards_present;
-register unsigned short *base_addr;  
+long vmi4100_init()
 {
+	register unsigned short **pcards_present = pao_vmi4100;
+	register unsigned short *base_addr = ao_addrs[VMI4100];  
 	short			shval;
         int                     status;
 	register union aoVMI	*pcard;
@@ -88,7 +118,10 @@ register unsigned short *base_addr;
                         
                  }
         }
+
+	return OK;
 }
+
 
 /*
  * vmi4100_driver
@@ -137,7 +170,7 @@ unsigned short 		*pval;
  * VME analog output driver
  */
 
-vmi4100_io_report(level)
+long vmi4100_io_report(level)
   short int level;
  {
     register int i;
@@ -153,5 +186,7 @@ vmi4100_io_report(level)
                      
                  }
         }
+
+	return OK;
  }
                    

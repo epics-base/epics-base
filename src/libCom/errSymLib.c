@@ -189,7 +189,7 @@ unsigned short errnum;
 
 	modnum = errNum >> 16;
 	errnum = errNum & 0xffff;
-	return((((modnum - 500) * 20) + errnum) % NHASH);
+	return((unsigned short)(((modnum - 500) * 20) + errnum) % NHASH);
 }
 
 /****************************************************************
@@ -331,7 +331,6 @@ va_list	pvar;
 {
 	static char	ctxToLarge[] = "** Context String Overflow **";
 	char 		name[256];
-	long 		value;
 	int 		rtnval;
 	int		namelen;
 	int		formatlen;
@@ -340,25 +339,22 @@ va_list	pvar;
 
 
 	name[0] = '\0';
-	value = (status? status : MYERRNO );
-	if (!value)
-	    return(0);
-
-	if(status == -1){
+	if(status==0) status = MYERRNO;
+	if(status >= -1){
 		rtnval = 0;
 	}
-	else if(status < 0){
+	else {
 		rtnval = status;
 	}
-	else{
-		rtnval = errSymFind(value,name);
-	}
-	modnum = status >> 16;
-	errnum = status & 0xffff;
-	if(rtnval) {
+	if(status>0) {
+	    rtnval = errSymFind(status,name);
+	    modnum = status >> 16;
+	    errnum = status & 0xffff;
+	    if(rtnval) {
 		sprintf(name, 
 			"Error status (module %hu, number %hu) not in symbol table", 
 			modnum, errnum);
+	    }
 	}
 	if(pFormatString){
 		namelen = strlen(name);
@@ -619,7 +615,7 @@ unsigned short endErrNum;
 	return;
 
     /* print range of error messages */
-    for (errnum = begErrNum; errnum < endErrNum+1; errnum++) {
+    for (errnum = begErrNum; errnum <= endErrNum; errnum++) {
 	errNum = modnum << 16;
 	errNum |= (errnum & 0xffff);
 	errSymTestPrint(errNum);

@@ -146,7 +146,7 @@ static void wdCallback(pcallback)
      if(phistogram->sdel>0) {
           /* start new watchdog timer on monitor */
           wait_time = (float)(phistogram->sdel * vxTicksPerSecond);
-          wdStart(pcallback->wd_id,wait_time,callbackRequest,(int)pcallback);
+          wdStart(pcallback->wd_id,wait_time,(FUNCPTR)callbackRequest,(int)pcallback);
      }
 
      return;
@@ -191,7 +191,7 @@ static long init_record(phistogram,pass)
   
           /* start new watchdog timer on monitor */
           wait_time = (float)(phistogram->sdel * vxTicksPerSecond);
-          wdStart(pcallback->wd_id,wait_time,callbackRequest,(int)pcallback);
+          wdStart(pcallback->wd_id,wait_time,(FUNCPTR)callbackRequest,(int)pcallback);
      }
 
     /* histogram.siml must be a CONSTANT or a PV_LINK or a DB_LINK */

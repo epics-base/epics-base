@@ -134,6 +134,8 @@ struct ab_region {
 #define AB_BO_INTERFACE 0x0040
 #define AB_AI_INTERFACE 0x0060
 #define AB_AO_INTERFACE 0x0080
+#define AB_BT_READ	0x00A0
+#define AB_BT_WRITE	0x00C0
 
 
 /* scale data - 16 bit min and a 16 bit max */

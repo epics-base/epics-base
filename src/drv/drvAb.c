@@ -341,7 +341,6 @@ int ab_reboot_hook();
 
 static long init()
 {
-
     return(ab_driver_init());
 }
 
@@ -526,14 +525,98 @@ static void 	wtrans();
 int 	abScanTask();
 void	ab_reset_task();
 int	ab_reset();
+
+typedef enum{abbtSuccess,abbtCardUsed,abbtBusy,
+	abbtTimeout,abbtLinkDown,abbtError} abbtStatus;
+/*definitions for BT_READ and BT_WRITE */
+typedef struct {
+	void 		(*callback)();
+	unsigned short	*pbuffer;
+	abbtStatus 	status;
+	unsigned short	nwords;
+	void		*userPvt;
+} ABBTREQUEST;
 
+ABBTREQUEST	*pabbtrequest[AB_MAX_LINKS][AB_MAX_ADAPTERS][AB_MAX_CARDS];
+
+static void abBtCallback(link,adapter,card)
+unsigned short 	link;
+unsigned short 	adapter;
+unsigned short 	card;
+{
+    ABBTREQUEST	*preq=pabbtrequest[link][adapter][card];
+    unsigned short *pcard = &ab_config[link][adapter][card];
+
+    if(!preq ) {
+	printf("Allen Bradley: abBtCallback Logic Error");
+	return;
+    }
+    (preq->callback)(preq);
+    pcard = &ab_config[link][adapter][card];
+    *pcard &= ~(AB_INTERFACE_TYPE|AB_INIT_BIT|AB_SENT_INIT);
+    pabbtrequest[link][adapter][card] = NULL;
+}
+
+int ab_bt_read(link,adapter,card,preq)
+unsigned short 	link;
+unsigned short 	adapter;
+unsigned short 	card;
+ABBTREQUEST	*preq;
+{
+	/* pointer to the Allen-Bradley configuration table */
+        unsigned short *pcard = &ab_config[link][adapter][card];
+	abbtStatus	status;
+
+        /* If card is initialized then error */
+        if (*pcard & AB_INTERFACE_TYPE) { 
+	    if(((*pcard & AB_INTERFACE_TYPE)==AB_BT_READ) 
+	    || ((*pcard & AB_INTERFACE_TYPE)==AB_BT_WRITE)) {
+		status = abbtBusy;
+	    } else {
+		status = abbtCardUsed;
+	    }
+	    return(status);
+	}
+	if(ab_adapter_status[link][adapter]) return(abbtLinkDown);
+	pabbtrequest[link][adapter][card] = preq;
+	ab_btq_cnt[link][adapter][card] = 0;
+	*pcard |= AB_BT_READ | AB_INIT_BIT;
+	return(abbtSuccess);
+}
+
+int ab_bt_write(link,adapter,card,preq)
+unsigned short 	link;
+unsigned short 	adapter;
+unsigned short 	card;
+ABBTREQUEST	*preq;
+{
+	/* pointer to the Allen-Bradley configuration table */
+        unsigned short *pcard = &ab_config[link][adapter][card];
+	abbtStatus	status;
+
+        /* If card is initialized then error */
+        if (*pcard & AB_INTERFACE_TYPE) { 
+	    if(((*pcard & AB_INTERFACE_TYPE)==AB_BT_READ) 
+	    || ((*pcard & AB_INTERFACE_TYPE)==AB_BT_WRITE)) {
+		status = abbtBusy;
+	    } else {
+		status = abbtCardUsed;
+	    }
+	    return(status);
+	}
+	if(ab_adapter_status[link][adapter]) return(abbtLinkDown);
+	ab_btq_cnt[link][adapter][card] = 0;
+	pabbtrequest[link][adapter][card] = preq;
+	*pcard |= AB_BT_WRITE | AB_INIT_BIT;
+	return(abbtSuccess);
+}
 
 /*
  * READ_AB_ADAPTER
  *
  * read an adapter of AB IO 
  */
-read_ab_adapter(link,adapter,pass)
+void read_ab_adapter(link,adapter,pass)
 register unsigned short	link;
 register unsigned short	adapter;
 register short	pass;
@@ -548,11 +631,37 @@ register short	pass;
       card < AB_MAX_CARDS;
       card++, pcard++){
 
-	/* card determined not present */
-	if (*pcard == AB_NO_CARD) continue;
-
-	/* card present */
 	if (*pcard & AB_INTERFACE_TYPE){
+	    if((*pcard & AB_INTERFACE_TYPE)==AB_BT_READ) {
+		ABBTREQUEST	*preq = pabbtrequest[link][adapter][card];
+		abbtStatus	status = abbtSuccess;
+		unsigned short	count;
+		
+
+		count = ab_btq_cnt[link][adapter][card]++ ;
+		if(count>1 && count<50) continue;
+		if(count>=50) status = abbtTimeout;
+		else if(bt_queue(AB_READ,link,adapter,card,
+			preq->nwords,preq->pbuffer)!=OK) status = abbtError;
+		preq->status = status;
+		if(status) abBtCallback(link,adapter,card);
+		continue;
+	    }
+	    if((*pcard & AB_INTERFACE_TYPE)==AB_BT_WRITE) {
+		ABBTREQUEST	*preq = pabbtrequest[link][adapter][card];
+		abbtStatus	status = abbtSuccess;
+		unsigned short	count;
+
+		ab_btq_cnt[link][adapter][card]++;
+		count = ab_btq_cnt[link][adapter][card]++ ;
+		if(count>1 && count<50) continue;
+		if(count>=50) status = abbtTimeout;
+		else if(bt_queue(AB_WRITE,link,adapter,card,
+			preq->nwords,preq->pbuffer)!=OK) status = abbtError;
+		preq->status = status;
+		if(status) abBtCallback(link,adapter,card);
+		continue;
+	    }
 
 	    /* need intialization */ /* jcr */
 	    if ((*pcard  & AB_INIT_BIT) == 0){
@@ -573,6 +682,8 @@ register short	pass;
 		}
 		continue;
 	    }
+	    /* need block transfer */
+	    btq_err = OK;	/* assume success */
 
 	    /* don't make another block transfer request if one's outstanding... */
 	    if((ab_btq_cnt[link][adapter][card] % 10) != 0) {
@@ -587,8 +698,6 @@ register short	pass;
 		continue;
 	    }
 
-	    /* need block transfer */
-	    btq_err = OK;	/* assume success */
 	    if ((*pcard & AB_INTERFACE_TYPE) == AB_AI_INTERFACE){
 		    switch (*pcard&AB_CARD_TYPE){
 		    case (AB1771IrPlatinum) :
@@ -718,7 +827,7 @@ short			link;
         case (AB1771IFE):
 	    *pmsg = 0xffff;/*IFE_RANGE;			 -10 to +10 volts */
 	    *(pmsg+1) = 0xffff;/*IFE_RANGE;		 -10 to +10 volts */
-	    *(pmsg+2) = 0x0700;/*IFE_DATA_FORMAT; /* signed magnitude, differential */
+	    *(pmsg+2) = 0x0700;/*IFE_DATA_FORMAT; signed magnitude, differential */
 	    *(pmsg+3) = 0x0ffff;
 	    for (i = 6; i <= 36; i+=2) *(pmsg+i) = 0x4095;
 	    length = 37;
@@ -734,14 +843,14 @@ short			link;
         case (AB1771IFE_4to20MA):
 	    *pmsg = 0x0000;/*IFE_RANGE;			 4to20 MilliAmps  */
 	    *(pmsg+1) = 0x0000;/*IFE_RANGE;		 4to20 MilliApms  */
-	    *(pmsg+2) = 0x0700;/*IFE_DATA_FORMAT; /* signed magnitude, double */
+	    *(pmsg+2) = 0x0700;/*IFE_DATA_FORMAT; signed magnitude, double */
 	    for (i = 6; i <= 36; i+=2) *(pmsg+i) = 0x4095;
 	    length = 37;
             break;
         case (AB1771IFE_0to5V):
 	    *pmsg = 0x5555;/*IFE_RANGE;			 0 to 5 Volts  */
 	    *(pmsg+1) = 0x5555;/*IFE_RANGE;		 0 to 5 Volts  */
-	    *(pmsg+2) = 0x0700;/*IFE_DATA_FORMAT; /* signed magnitude, double */
+	    *(pmsg+2) = 0x0700;/*IFE_DATA_FORMAT; signed magnitude, double */
 	    for (i = 6; i <= 36; i+=2) *(pmsg+i) = 0x4095;
 	    length = 37;
             break;
@@ -976,6 +1085,23 @@ abDoneTask(){
 
 	    /* zero counter to indicate that a requested BT was received */
 	    ab_btq_cnt[link][adapter][card] = 0;
+	    if(((*pcard & AB_INTERFACE_TYPE)==AB_BT_READ) 
+	    || ((*pcard & AB_INTERFACE_TYPE)==AB_BT_WRITE)) {
+		ABBTREQUEST	*preq = pabbtrequest[link][adapter][card];
+
+	        /* block transfer timeout */
+		if (presponse->status == 0x23)  {
+			preq->status = abbtTimeout;
+		} else {
+			preq->status = abbtSuccess;
+		}
+		if((*pcard & AB_INTERFACE_TYPE)==AB_BT_READ) {
+			for(i=0; i<preq->nwords; i++)
+				preq->pbuffer[i] = presponse->data[i];
+		}
+		abBtCallback(link,adapter,card);
+		continue;
+	    }
 
 	    /* block transfer timeout */
 	    if (presponse->status == 0x23){
@@ -1291,6 +1417,9 @@ ab_driver_init()
 		  0);
 		bfill(&ab_btdata[link][0][0][0],
 		  AB_MAX_ADAPTERS*AB_MAX_CARDS*AB_CHAN_CARD*sizeof(short),
+		  0);
+		bfill(&pabbtrequest[link][0][0],
+		  AB_MAX_ADAPTERS*AB_MAX_CARDS*sizeof(ABBTREQUEST *),
 		  0);
 
 		/* initialize each 6008 that exists */

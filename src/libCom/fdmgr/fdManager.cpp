@@ -1,52 +1,38 @@
 
-//
-// $Id$
-//
-//
-// $Log$
-// Revision 1.14  1998/06/16 02:06:32  jhill
-// lazy init sock lib when its a static build & recoverfrom select differences in winsock
-//
-// Revision 1.13  1998/05/29 20:22:44  jhill
-// made hashing routine portable
-//
-// Revision 1.12  1998/02/05 21:12:09  jhill
-// removed questionable inline
-//
-// Revision 1.11  1997/08/05 00:37:00  jhill
-// removed warnings
-//
-// Revision 1.10  1997/06/25 05:45:49  jhill
-// cleaned up pc port
-//
-// Revision 1.9  1997/06/13 09:39:09  jhill
-// fixed warnings
-//
-// Revision 1.8  1997/05/29 21:37:38  tang
-// add ifdef for select call to support HP-UX
-//
-// Revision 1.7  1997/05/27 14:53:11  tang
-// fd_set cast in select for both Hp and Sun
-//
-// Revision 1.6  1997/05/08 19:49:12  tang
-// added int * cast in select for HP port compatibility
-//
-// Revision 1.5  1997/04/23 17:22:57  jhill
-// fixed WIN32 DLL symbol exports
-//
-// Revision 1.4  1997/04/10 19:45:33  jhill
-// API changes and include with  not <>
-//
-// Revision 1.3  1996/11/02 02:04:42  jhill
-// fixed several subtle bugs
-//
-// Revision 1.2  1996/09/04 21:50:16  jhill
-// added hashed fd to fdi convert
-//
-// Revision 1.1  1996/08/13 22:48:23  jhill
-// dfMgr =>fdManager
-//
-//
+/*
+ *      $Id$
+ *
+ *      File descriptor management C++ class library
+ *      (for multiplexing IO in a single threaded environment)
+ *
+ *      Author  Jeffrey O. Hill
+ *              johill@lanl.gov
+ *              505 665 1831
+ *
+ *      Experimental Physics and Industrial Control System (EPICS)
+ *
+ *      Copyright 1991, the Regents of the University of California,
+ *      and the University of Chicago Board of Governors.
+ *
+ *      This software was produced under  U.S. Government contracts:
+ *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
+ *      and (W-31-109-ENG-38) at Argonne National Laboratory.
+ *
+ *      Initial development by:
+ *              The Controls and Automation Group (AT-8)
+ *              Ground Test Accelerator
+ *              Accelerator Technology Division
+ *              Los Alamos National Laboratory
+ *
+ *      Co-developed with
+ *              The Controls and Computing Group
+ *              Accelerator Systems Division
+ *              Advanced Photon Source
+ *              Argonne National Laboratory
+ *
+ *
+ *
+ */
 
 //
 //
@@ -67,8 +53,9 @@
 #define epicsExportSharedSymbols
 #define instantiateRecourceLib
 #include "osiTimer.h"
-#include "fdManager.h"
 #include "osiSleep.h"
+#include "tsMinMax.h"
+#include "fdManager.h"
 #include "bsdSocketResource.h"
  
 //
@@ -83,7 +70,6 @@
         // This explicitly instantiates the template class's member
         // functions used by fdManager 
         //
-		//
 		// instantiated by "fdManager fileDescriptorManager;" statement below?
 		// (according to ms vis C++)
 		//
@@ -95,7 +81,8 @@ epicsShareDef fdManager fileDescriptorManager;
 //
 // fdManager::fdManager()
 //
-epicsShareFunc fdManager::fdManager()
+epicsShareFunc fdManager::fdManager() :
+	fdTbl (1<<hashTableIndexBits)
 {
 	size_t	i;
 
@@ -107,12 +94,6 @@ epicsShareFunc fdManager::fdManager()
 	this->maxFD = 0;
 	this->processInProg = 0u;
 	this->pCBReg = 0;
-	//
-	// should throw an exception here 
-	// when most compilers are implementing
-	// exceptions
-	//
-	assert (this->fdTbl.init(0x100)>=0);
 }
 
 //
@@ -123,11 +104,11 @@ epicsShareFunc fdManager::~fdManager()
 	fdReg	*pReg;
 
 	while ( (pReg = this->regList.get()) ) {
-		pReg->state = fdrLimbo;
+		pReg->state = fdReg::limbo;
 		pReg->destroy();
 	}
 	while ( (pReg = this->activeList.get()) ) {
-		pReg->state = fdrLimbo;
+		pReg->state = fdReg::limbo;
 		pReg->destroy();
 	}
 	bsdSockRelease();
@@ -136,13 +117,10 @@ epicsShareFunc fdManager::~fdManager()
 //
 // fdManager::process()
 //
-epicsShareFunc void fdManager::process (const osiTime &delay)
+epicsShareFunc void fdManager::process (double delay)
 {
-	static const tsDLIterBD<fdReg> eol; // end of list
-	tsDLIterBD<fdReg> iter;
-	tsDLIterBD<fdReg> tmp;
-	osiTime minDelay;
-	osiTime zeroDelay;
+	static const tsDLIterBD<fdReg> eol (0); // end of list
+	double minDelay;
 	fdReg *pReg;
 	struct timeval tv;
 	int status;
@@ -163,23 +141,25 @@ epicsShareFunc void fdManager::process (const osiTime &delay)
 	// more than once here so that fd activity get serviced
 	// in a reasonable length of time.
 	//
-	minDelay = staticTimerQueue.delayToFirstExpire();
-	if (zeroDelay>=minDelay) {
-		staticTimerQueue.process();
-		minDelay = staticTimerQueue.delayToFirstExpire();
+	minDelay = osiDefaultTimerQueue.delayToFirstExpire();
+	if (minDelay<=0.0) {
+		osiDefaultTimerQueue.process();
+		minDelay = osiDefaultTimerQueue.delayToFirstExpire();
 	} 
 
 	if (minDelay>=delay) {
 		minDelay = delay;
 	}
 
-	for (iter=this->regList.first(); iter!=eol; ++iter) {
+    tsDLIterBD<fdReg> iter (this->regList.first());
+	while (iter!=eol) {
 		FD_SET(iter->getFD(), &this->fdSets[iter->getType()]); 
 		ioPending = 1;
+        ++iter;
 	}
 
-	tv.tv_sec = minDelay.getSecTruncToLong ();
-	tv.tv_usec = minDelay.getUSecTruncToLong ();
+	tv.tv_sec = static_cast<long> (minDelay);
+	tv.tv_usec = static_cast<long> ((minDelay-tv.tv_sec)*osiTime::uSecPerSec);
 
 	/*
  	 * win32 requires this (others will
@@ -198,10 +178,10 @@ epicsShareFunc void fdManager::process (const osiTime &delay)
 	}
 	else {
 		status = select (this->maxFD, &this->fdSets[fdrRead], 
-			&this->fdSets[fdrWrite], &this->fdSets[fdrExcp], &tv);
+			&this->fdSets[fdrWrite], &this->fdSets[fdrException], &tv);
 	}
 
-	staticTimerQueue.process();
+	osiDefaultTimerQueue.process();
 	if (status==0) {
 		this->processInProg = 0;
 		return;
@@ -223,13 +203,13 @@ epicsShareFunc void fdManager::process (const osiTime &delay)
 	//
 	iter=this->regList.first();
 	while (iter!=eol) {
-		tmp = iter;
+        tsDLIterBD<fdReg> tmp = iter;
 		tmp++;
 		if (FD_ISSET(iter->getFD(), &this->fdSets[iter->getType()])) {
 			FD_CLR(iter->getFD(), &this->fdSets[iter->getType()]);
 			this->regList.remove(*iter);
 			this->activeList.add(*iter);
-			iter->state = fdrActive;
+			iter->state = fdReg::active;
 		}
 		iter=tmp;
 	}
@@ -239,10 +219,10 @@ epicsShareFunc void fdManager::process (const osiTime &delay)
 	// above list while in a "callBack()" routine
 	//
 	while ( (pReg = this->activeList.get()) ) {
-		pReg->state = fdrLimbo;
+		pReg->state = fdReg::limbo;
 
 		//
-		// Tag current reg so that we
+		// Tag current fdReg so that we
 		// can detect if it was deleted 
 		// during the call back
 		//
@@ -261,7 +241,7 @@ epicsShareFunc void fdManager::process (const osiTime &delay)
 			}
 			else {
 				this->regList.add(*pReg);
-				pReg->state = fdrPending;
+				pReg->state = fdReg::pending;
 			}
 		}
 	}
@@ -282,7 +262,7 @@ epicsShareFunc void fdReg::destroy()
 //
 epicsShareFunc fdReg::~fdReg()
 {
-	fileDescriptorManager.removeReg(*this);
+	this->manager.removeReg(*this);
 }
 
 //
@@ -311,66 +291,27 @@ void fdRegId::show(unsigned level) const
 }
 
 //
-// fdRegId::resourceHash()
-//
-resTableIndex fdRegId::resourceHash (unsigned) const
-{
-	resTableIndex hashid = (unsigned) this->fd;
-
-	//
-	// This assumes worst case hash table index width of 1 bit.
-	// We will iterate this loop 5 times on a 32 bit architecture.
-	//
-	// A good optimizer will unroll this loop?
-	// Experiments using the microsoft compiler show that this isnt 
-	// slower than switching on the architecture size and urolling the
-	// loop explicitly (that solution has resulted in portability
-	// problems in the past).
-	//
-	for (unsigned i=(CHAR_BIT*sizeof(unsigned))/2u; i>0u; i >>= 1u) {
-		hashid ^= (hashid>>i);
-	}
-
-	//
-	// evenly distribute based on the type of interest also
-	//
-	hashid ^= this->type;
-
-	//
-	// the result here is always masked to the
-	// proper size after it is returned to the resource class
-	//
-	return hashid;
-}
-
-//
-// fdManager::installReg()
+// fdManager::installReg ()
 //
 epicsShareFunc void fdManager::installReg (fdReg &reg)
 {
-	int status;
-
-	this->maxFD = fdManagerMaxInt(this->maxFD, reg.getFD()+1);
-	this->regList.add(reg);
-	reg.state = fdrPending;
-	status = this->fdTbl.add(reg);
-	if (status) {
-		fprintf (stderr, 
-			"**** Warning - duplicate fdReg object\n");
-		fprintf (stderr, 
-			"**** will not be seen by fdManager::lookUpFD()\n");
-	}
+    this->maxFD = tsMax(this->maxFD, reg.getFD()+1);
+	this->regList.add (reg);
+	reg.state = fdReg::pending;
+	if (this->fdTbl.add (reg)!=0) {
+        throw fdInterestSubscriptionAlreadyExits();
+    }
 }
 
 //
-// fdManager::removeReg()
+// fdManager::removeReg ()
 //
-void fdManager::removeReg(fdReg &reg)
+void fdManager::removeReg (fdReg &regIn)
 {
 	fdReg *pItemFound;
 
-	pItemFound = this->fdTbl.remove(reg);
-	if (pItemFound!=&reg) {
+	pItemFound = this->fdTbl.remove (regIn);
+	if (pItemFound!=&regIn) {
 		fprintf(stderr, 
 			"fdManager::removeReg() bad fd registration object\n");
 		return;
@@ -380,18 +321,18 @@ void fdManager::removeReg(fdReg &reg)
 	// signal fdManager that the fdReg was deleted
 	// during the call back
 	//
-	if (this->pCBReg == &reg) {
+	if (this->pCBReg == &regIn) {
 		this->pCBReg = 0;
 	}
 	
-	switch (reg.state) {
-	case fdrActive:
-        this->activeList.remove(reg);
+	switch (regIn.state) {
+	case fdReg::active:
+        this->activeList.remove (regIn);
 		break;
-	case fdrPending:
-        this->regList.remove(reg);
+	case fdReg::pending:
+        this->regList.remove (regIn);
 		break;
-	case fdrLimbo:
+	case fdReg::limbo:
 		break;
 	default:
 		//
@@ -399,15 +340,15 @@ void fdManager::removeReg(fdReg &reg)
 		//
 		assert(0);
 	}
-	reg.state = fdrLimbo;
+	regIn.state = fdReg::limbo;
 
-	FD_CLR(reg.getFD(), &this->fdSets[reg.getType()]);
+	FD_CLR(regIn.getFD(), &this->fdSets[regIn.getType()]);
 }
 
 //
 // lookUpFD()
 //
-epicsShareFunc fdReg *fdManager::lookUpFD(const SOCKET fd, const fdRegType type)
+epicsShareFunc fdReg *fdManager::lookUpFD (const SOCKET fd, const fdRegType type)
 {
 	if (fd<0) {
 		return NULL;
@@ -420,13 +361,14 @@ epicsShareFunc fdReg *fdManager::lookUpFD(const SOCKET fd, const fdRegType type)
 // fdReg::fdReg()
 //
 fdReg::fdReg (const SOCKET fdIn, const fdRegType typIn, 
-		const unsigned onceOnlyIn) : 
-	fdRegId(fdIn,typIn), state(fdrLimbo), onceOnly(onceOnlyIn)
-{
+		const bool onceOnlyIn, fdManager &managerIn) : 
+	fdRegId (fdIn,typIn), state (limbo), 
+	onceOnly (onceOnlyIn), manager (managerIn)
+{ 
 	if (!FD_IN_FDSET(fdIn)) {
 		fprintf (stderr, "%s: fd > FD_SETSIZE ignored\n", 
 			__FILE__);
 		return;
 	}
-	fileDescriptorManager.installReg(*this);
+	this->manager.installReg (*this);
 }

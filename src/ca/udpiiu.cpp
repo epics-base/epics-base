@@ -81,7 +81,7 @@ udpiiu::udpiiu ( epicsTimerQueueActive & timerQueue, callbackMutex & cbMutex, ca
     // The udpiiu and the search timer share the same lock because
     // this is much more efficent with recursive locks. Also, access
     // to the udp's netiiu base list is protected.
-    pSearchTmr ( new searchTimer ( *this, timerQueue ) ),
+    pSearchTmr ( new searchTimer ( *this, timerQueue, this->mutex ) ),
     pRepeaterSubscribeTmr ( new repeaterSubscribeTimer ( *this, timerQueue ) ),
     repeaterPort ( 0 ),
     serverPort ( 0 ),
@@ -643,7 +643,8 @@ bool udpiiu::searchRespAction ( // X aCC 361
     if ( success ) {
         // deadlock can result if this is called while holding the primary
         // mutex (because the primary mutex is used in the search timer callback)
-        this->pSearchTmr->notifySearchResponse ( this->lastReceivedSeqNo,
+        epicsGuard < udpMutex > guard ( this->mutex );
+        this->pSearchTmr->notifySearchResponse ( guard, this->lastReceivedSeqNo,
             this->lastReceivedSeqNoIsValid, currentTime );
     }
 
@@ -856,10 +857,9 @@ bool udpiiu::pushDatagramMsg ( const caHdr & msg, const void *pExt, ca_uint16_t 
     return true;
 }
 
-void udpiiu::datagramFlush ( const epicsTime & currentTime )
+void udpiiu::datagramFlush ( 
+    epicsGuard < udpMutex > &, const epicsTime & currentTime )
 {
-    epicsGuard < udpMutex > guard ( this->mutex );
-
     // dont send the version header by itself
     if ( this->nBytesInXmitBuf <= sizeof ( caHdr ) ) {
         return;
@@ -994,14 +994,12 @@ void udpiiu::repeaterConfirmNotify ()
 
 void udpiiu::beaconAnomalyNotify ( const epicsTime & currentTime ) 
 {
-    {
-        epicsGuard <udpMutex> guard ( this->mutex );
+    epicsGuard <udpMutex> guard ( this->mutex );
 
-        tsDLIter < nciu > chan = this->channelList.firstIter ();
-        while ( chan.valid () ) {
-            chan->beaconAnomalyNotify ();
-            chan++;
-        }
+    tsDLIter < nciu > chan = this->channelList.firstIter ();
+    while ( chan.valid () ) {
+        chan->beaconAnomalyNotify ();
+        chan++;
     }
 
     static const double portTicksPerSec = 1000u;
@@ -1022,14 +1020,13 @@ void udpiiu::beaconAnomalyNotify ( const epicsTime & currentTime )
     double delay = ( this->localPort & portBasedDelayMask );
     delay /= portTicksPerSec; 
 
-    this->pSearchTmr->beaconAnomalyNotify ( currentTime, delay );
+    this->pSearchTmr->beaconAnomalyNotify ( guard, currentTime, delay );
 }
 
-bool udpiiu::searchMsg ( unsigned & retryNoForThisChannel )
+bool udpiiu::searchMsg ( epicsGuard < udpMutex > & guard, 
+                        unsigned & retryNoForThisChannel )
 {
     bool success;
-
-    epicsGuard < udpMutex > guard ( this->mutex );
 
     if ( nciu *pChan = this->channelList.get () ) {
         success = pChan->searchMsg ( *this, retryNoForThisChannel );
@@ -1051,15 +1048,17 @@ void udpiiu::installChannel ( const epicsTime & currentTime, nciu & chan )
 {
     bool firstChannel = false;
 
-    {
-        epicsGuard < udpMutex> guard ( this->mutex );
-        this->channelList.add ( chan );
-        if ( this->channelList.count() == 1 ) {
-            firstChannel = true;
-        }
+    epicsGuard < udpMutex> guard ( this->mutex );
+    // add it to the front of the list so that 
+    // a search request is sent immediately, and 
+    // so that the new channel's retry count is 
+    // seen when calculating the minimum retry 
+    // which is used to compute the search interval
+    this->channelList.push ( chan );
+    if ( this->channelList.count() == 1 ) {
+        firstChannel = true;
     }
-
-    this->pSearchTmr->newChannleNotify ( currentTime, firstChannel );
+    this->pSearchTmr->newChannelNotify ( guard, currentTime, firstChannel );
 }
 
 int udpiiu::printf ( const char *pformat, ... )

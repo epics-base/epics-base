@@ -36,6 +36,10 @@ epicsShareFunc int epicsShareAPI epicsSocketAccept (
     int sock, struct sockaddr * pAddr, osiSocklen_t * addrlen );
 epicsShareFunc void epicsShareAPI epicsSocketDestroy ( 
     SOCKET );
+epicsShareFunc void epicsShareAPI 
+    epicsSocketEnableAddressReuseDuringTimeWaitState ( SOCKET s );
+epicsShareFunc void epicsShareAPI 
+    epicsSocketEnableAddressUseForDatagramFanout ( SOCKET s );
 
 /*
  * Fortunately, on most systems the combination of a shutdown of both

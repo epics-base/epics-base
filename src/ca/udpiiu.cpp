@@ -505,14 +505,9 @@ void epicsShareAPI caStartRepeaterIfNotInstalled ( unsigned repeaterPort )
      * turn on reuse only after the test so that
      * this works on kernels that support multicast
      */
-    flag = true;
-    status = setsockopt ( tmpSock, SOL_SOCKET, SO_REUSEADDR, 
-                (char *) &flag, sizeof ( flag ) );
-    if ( status < 0 ) {
-        fprintf ( stderr, "caStartRepeaterIfNotInstalled () : set socket option reuseaddr set failed\n" );
-    }
+    epicsSocketEnableAddressReuseDuringTimeWaitState ( tmpSock );
 
-     epicsSocketDestroy ( tmpSock );
+    epicsSocketDestroy ( tmpSock );
 
     if ( ! installed ) {
         

@@ -170,19 +170,7 @@ void cast_server(void *pParm)
     }
 #endif
 
-    {
-        int flag = 1;
-        status = setsockopt ( IOC_cast_sock,  SOL_SOCKET, SO_REUSEADDR,
-                    (char *) &flag, sizeof (flag) );
-        if ( status < 0 ) {
-            char sockErrBuf[64];
-            epicsSocketConvertErrnoToString ( 
-                sockErrBuf, sizeof ( sockErrBuf ) );
-            errlogPrintf (
-        "%s: set socket option SO_REUSEADDR failed because \"%s\"\n", 
-                    __FILE__, sockErrBuf );
-        }
-    }
+    epicsSocketEnableAddressUseForDatagramFanout ( IOC_cast_sock );
     
     /*  Zero the sock_addr structure */
     memset((char *)&sin, 0, sizeof(sin));
@@ -200,18 +188,6 @@ void cast_server(void *pParm)
         epicsThreadSuspendSelf ();
     }
 
-    flag = 1;
-    status = setsockopt ( IOC_cast_sock,  SOL_SOCKET, SO_REUSEADDR,
-                (char *)&flag, sizeof (flag) );
-    if ( status < 0 ) {
-        char sockErrBuf[64];
-        epicsSocketConvertErrnoToString ( 
-            sockErrBuf, sizeof ( sockErrBuf ) );
-        errlogPrintf (
-    "%s: set socket option SO_REUSEADDR failed because \"%s\"\n", 
-                __FILE__, sockErrBuf );
-    }
-     
     /*
      * setup new client structure but reuse old structure if
      * possible

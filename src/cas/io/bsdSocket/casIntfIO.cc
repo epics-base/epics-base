@@ -57,30 +57,7 @@ casIntfIO::casIntfIO ( const caNetAddr & addrIn ) :
 		throw S_cas_noFD;
 	}
 
-    /*
-     * Note: WINSOCK appears to assign a different functionality for 
-     * SO_REUSEADDR compared to other OS. With WINSOCK SO_REUSEADDR indicates
-     * that simultaneously servers can bind to the same TCP port on the same host!
-     * Also, servers are always enabled to reuse a port immediately after 
-     * they exit ( even if SO_REUSEADDR isnt set ).
-     */
-#   ifndef SO_REUSEADDR_ALLOWS_SIMULTANEOUS_TCP_SERVERS_TO_USE_SAME_PORT
-		int yes = true;
-	    status = setsockopt (
-					    this->sock,
-					    SOL_SOCKET,
-					    SO_REUSEADDR,
-					    (char *) &yes,
-					    sizeof (yes));
-	    if ( status < 0 ) {
-            char sockErrBuf[64];
-            epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
-		    errlogPrintf ( "CAS: server set SO_REUSEADDR failed? %s\n",
-			    sockErrBuf );
-            epicsSocketDestroy (this->sock);
-		    throw S_cas_internal;
-	    }
-#   endif
+    epicsSocketEnableAddressReuseDuringTimeWaitState ( this->sock );
 
 	status = bind ( this->sock,
                       reinterpret_cast <sockaddr *> (&this->addr),

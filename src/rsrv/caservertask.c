@@ -94,28 +94,7 @@ LOCAL void req_server (void *pParm)
         epicsThreadSuspendSelf ();
     }
 
-    /*
-     * Note: WINSOCK appears to assign a different functionality for 
-     * SO_REUSEADDR compared to other OS. With WINSOCK SO_REUSEADDR indicates
-     * that simultaneously servers can bind to the same TCP port on the same host!
-     * Also, servers are always enabled to reuse a port immediately after 
-     * they exit ( even if SO_REUSEADDR isnt set ).
-     */
-#   ifndef SO_REUSEADDR_ALLOWS_SIMULTANEOUS_TCP_SERVERS_TO_USE_SAME_PORT
-    {
-        int flag = 1;
-        status = setsockopt ( IOC_sock,  SOL_SOCKET, SO_REUSEADDR,
-                    (char *) &flag, sizeof (flag) );
-        if ( status < 0 ) {
-            char sockErrBuf[64];
-            epicsSocketConvertErrnoToString ( 
-                sockErrBuf, sizeof ( sockErrBuf ) );
-            errlogPrintf (
-        "%s: set socket option SO_REUSEADDR failed because \"%s\"\n", 
-                    __FILE__, sockErrBuf );
-        }
-    }
-#   endif
+    epicsSocketEnableAddressReuseDuringTimeWaitState ( IOC_sock );
 
     /* Zero the sock_addr structure */
     memset ( (void *) &serverAddr, 0, sizeof ( serverAddr ) );

@@ -572,18 +572,7 @@ SOCKET casDGIntfIO::makeSockDG ()
     // two UDP servers on the same port number (requires
     // setting SO_REUSEADDR prior to the bind step below).
     //
-    status = setsockopt(
-        newSock,
-        SOL_SOCKET,
-        SO_REUSEADDR,
-        (char *) &yes,
-        sizeof (yes));
-    if (status<0) {
-        epicsSocketDestroy (newSock);
-        errMessage(S_cas_internal,
-            "CAS: unable to set SO_REUSEADDR on UDP socket?\n");
-        return INVALID_SOCKET;
-    }
+    epicsSocketEnableAddressUseForDatagramFanout ( newSock );
 
     return newSock;
 }

@@ -178,6 +178,7 @@ SRCS += epicsTime.cpp
 SRCS += epicsMessageQueue.cpp
 
 SRCS += osdSock.c
+SRCS += osdSockAddrReuse.cpp
 SRCS += osiSock.c
 SRCS += systemCallIntMech.cpp
 SRCS += epicsSocketConvertErrnoToString.cpp

@@ -135,14 +135,8 @@ static bool makeSocket ( unsigned short port, bool reuseAddr, SOCKET * pSock )
             epicsSocketDestroy ( sock );
             return false;
         }
-        if (reuseAddr) {
-            flag = true;
-            status = setsockopt ( sock,  SOL_SOCKET, SO_REUSEADDR,
-                        (char *) &flag, sizeof (flag) );
-            if ( status < 0 ) {
-                epicsSocketDestroy ( sock );
-                return false;
-            }
+        if ( reuseAddr ) {
+            epicsSocketEnableAddressReuseDuringTimeWaitState ( sock );
         }
     }
     *pSock = sock;

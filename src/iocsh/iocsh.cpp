@@ -400,13 +400,13 @@ iocsh (const char *pathname)
                                 const char *cp = piocshFuncDef->arg[a]->name;
                                 if ((piocshFuncDef->arg[a]->type == iocshArgArgv)
                                  || (strchr (cp, ' ') == NULL)) {
-                                    printf (" %s", cp);
+                                    fprintf (stdout, " %s", cp);
                                 }
                                 else {
-                                    printf (" '%s'", cp);
+                                    fprintf (stdout, " '%s'", cp);
                                 }
                             }
-                            putchar ('\n');
+                            fprintf (stdout,"\n");;
                         }
                     }
                 }

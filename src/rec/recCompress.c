@@ -104,16 +104,17 @@ struct rset compressRSET={
 	get_control_double,
 	get_alarm_double };
 
-#define NTO1LOW	 0
-#define NTO1HIGH 1
-#define NTO1AVG  2
+#define compressNTO1LOW	 0
+#define compressNTO1HIGH 1
+#define compressNTO1AVG  2
 #define AVERAGE  3
 #define CIRBUF   4
 void alarm();
 void monitor();
 void put_value();
 int compress_array();
-int compress_value();
+int compress_scalar();
+int array_average();
 
 static long init_record(pcompress)
     struct compressRecord	*pcompress;
@@ -121,16 +122,16 @@ static long init_record(pcompress)
 
     /* This routine may get called twice. Once by cvt_dbaddr. Once by iocInit*/
     if(pcompress->bptr==NULL) {
-	pcompress->bptr = (float *)calloc(pcompress->nsam,sizeof(float));
+	pcompress->bptr = (double *)calloc(pcompress->nsam,sizeof(double));
 	/* allocate memory for the summing buffer for conversions requiring it */
 	if (pcompress->alg == AVERAGE){
-                pcompress->sptr = (float *)calloc(pcompress->nsam,sizeof(float));
+                pcompress->sptr = (double *)calloc(pcompress->nsam,sizeof(double));
 	}
     }
     if(pcompress->wptr==NULL && pcompress->inp.type==DB_LINK) {
 	 struct dbAddr *pdbAddr = (struct dbAddr *)(pcompress->inp.value.db_link.pdbAddr);
 
-	 pcompress->wptr = (float *)calloc(pdbAddr->no_elements,sizeof(float));
+	 pcompress->wptr = (double *)calloc(pdbAddr->no_elements,sizeof(double));
     }
     return(0);
 }
@@ -159,7 +160,7 @@ static long process(paddr)
 		long		no_elements=pdbAddr->no_elements;
 		int			alg=pcompress->alg;
 
-		(void)dbGetLink(&pcompress->inp.value.db_link,pcompress,DBR_FLOAT,pcompress->wptr,
+		(void)dbGetLink(&pcompress->inp.value.db_link,pcompress,DBR_DOUBLE,pcompress->wptr,
 				&options,&no_elements);
 		if(alg==AVERAGE) {
 			status = array_average(pcompress,pcompress->wptr,no_elements);
@@ -169,7 +170,7 @@ static long process(paddr)
 		} else if(pdbAddr->no_elements>1) {
 			status = compress_array(pcompress,pcompress->wptr,no_elements);
 		}else if(no_elements==1){
-			status = compress_value(pcompress,pcompress->wptr);
+			status = compress_scalar(pcompress,pcompress->wptr);
 		}else status=1;
 	}
 
@@ -211,9 +212,9 @@ static long get_value(pcompress,pvdes)
     struct compressRecord *pcompress;
     struct valueDes	*pvdes;
 {
-    pvdes->field_type = DBF_FLOAT;
+    pvdes->field_type = DBF_DOUBLE;
     pvdes->no_elements=pcompress->nuse;
-    (float *)(pvdes->pvalue) = pcompress->bptr;
+    (double *)(pvdes->pvalue) = pcompress->bptr;
     return(0);
 }
 
@@ -227,9 +228,9 @@ static long cvt_dbaddr(paddr)
 
     paddr->pfield = (caddr_t)(pcompress->bptr);
     paddr->no_elements = pcompress->nsam;
-    paddr->field_type = DBF_FLOAT;
-    paddr->field_size = sizeof(float);
-    paddr->dbr_field_type = DBF_FLOAT;
+    paddr->field_type = DBF_DOUBLE;
+    paddr->field_size = sizeof(double);
+    paddr->dbr_field_type = DBF_DOUBLE;
     return(0);
 }
 
@@ -318,10 +319,6 @@ static void monitor(pcompress)
         pcompress->nsta = 0;
         pcompress->nsev = 0;
 
-	/* anyone waiting for an event on this record */
-	if(pcompress->mlis.count == 0) return;
-
-        /* Flags which events to fire on the value field */
         monitor_mask = 0;
 
         /* alarm condition changed this scan */
@@ -332,21 +329,21 @@ static void monitor(pcompress)
                 db_post_events(pcompress,&pcompress->stat,DBE_VALUE);
                 db_post_events(pcompress,&pcompress->sevr,DBE_VALUE);
         }
-	monitor_mask |= DBE_LOG|DBE_VALUE;
+	monitor_mask |= (DBE_LOG|DBE_VALUE);
 	if(monitor_mask) db_post_events(pcompress,pcompress->bptr,monitor_mask);
 	return;
 }
 
 static void put_value(pcompress,psource,n)
     struct compressRecord       *pcompress;
-    float			*psource;
+    double			*psource;
     long			n;
 {
 /* treat bptr as pointer to a circular buffer*/
-	float *pdest;
-	short offset=pcompress->off;
-	short nuse=pcompress->nuse;
-	short nsam=pcompress->nsam;
+	double *pdest;
+	long offset=pcompress->off;
+	long nuse=pcompress->nuse;
+	long nsam=pcompress->nsam;
 	long  i;
 
 	pdest = pcompress->bptr + offset;
@@ -366,15 +363,15 @@ static void put_value(pcompress,psource,n)
 
 static int compress_array(pcompress,psource,no_elements)
 struct compressRecord	*pcompress;
-float			*psource;
+double			*psource;
 long			no_elements;
 {
 	long		i,j;
-	int		nnew;
-	short		nsam=pcompress->nsam;
-	float		*pdest;
-	float		value;
-	short		n;
+	long		nnew;
+	long		nsam=pcompress->nsam;
+	double		*pdest;
+	double		value;
+	long		n;
 
 	/* skip out of limit data */
 	if (pcompress->ilil < pcompress->ihil){
@@ -394,7 +391,7 @@ long			no_elements;
 
 	/* compress according to specified algorithm */
 	switch (pcompress->alg){
-	case (NTO1LOW):
+	case (compressNTO1LOW):
 	    /* compress N to 1 keeping the lowest value */
 	    for (i = 0; i < nnew; i++){
 		value = *psource++;
@@ -404,7 +401,7 @@ long			no_elements;
 		put_value(pcompress,&value,1);
 	    }
 	    break;
-	case (NTO1HIGH):
+	case (compressNTO1HIGH):
 	    /* compress N to 1 keeping the highest value */
 	    for (i = 0; i < nnew; i++){
 		value = *psource++;
@@ -414,7 +411,7 @@ long			no_elements;
 		put_value(pcompress,&value,1);
 	    }
 	    break;
-	case (NTO1AVG):
+	case (compressNTO1AVG):
 	    /* compress N to 1 keeping the average value */
 	    for (i = 0; i < nnew; i++){
 		value = 0;
@@ -430,24 +427,24 @@ long			no_elements;
 
 static int array_average(pcompress,psource,no_elements)
 struct compressRecord	*pcompress;
-float			*psource;
+double			*psource;
 long			no_elements;
 {
 	long	i;
-	int	nnow;
-	short	nsam=pcompress->nsam;
-	float	*psum;
-	float	multiplier;
-	short	inx=pcompress->inx;
+	long	nnow;
+	long	nsam=pcompress->nsam;
+	double	*psum;
+	double	multiplier;
+	long	inx=pcompress->inx;
 	struct dbAddr *pdbAddr = (struct dbAddr *)(pcompress->inp.value.db_link.pdbAddr);
 	long	ninp=pdbAddr->no_elements;
-	short	nuse,n;
+	long	nuse,n;
 
 	nuse = nsam;
 	if(nuse>ninp) nuse = ninp;
 	nnow=nuse;
 	if(nnow>no_elements) nnow=no_elements;
-	psum = (float *)pcompress->sptr;
+	psum = (double *)pcompress->sptr;
 
 	/* add in the new waveform */
 	if (inx == 0){
@@ -465,8 +462,8 @@ long			no_elements;
 	n = pcompress->n;
 	if(inx<n) return(1);
 	if(n>1) {
-		psum = (float *)pcompress->sptr;
-		multiplier = 1.0/((float)n);
+		psum = (double *)pcompress->sptr;
+		multiplier = 1.0/((double)n);
 		for (i = 0; i < nuse; i++, psum++)
 	    		*psum = *psum * multiplier;
 	}
@@ -474,25 +471,25 @@ long			no_elements;
 	return(0);
 }
 
-static int compress_value(pcompress,psource)
+static int compress_scalar(pcompress,psource)
 struct	compressRecord	*pcompress;
-float			*psource;
+double			*psource;
 {
-	float	value = *psource;
-	float	*pdest=&pcompress->cvb;
-	short	inx = pcompress->inx;
+	double	value = *psource;
+	double	*pdest=&pcompress->cvb;
+	long	inx = pcompress->inx;
 
 	/* compress according to specified algorithm */
 	switch (pcompress->alg){
-	case (NTO1LOW):
+	case (compressNTO1LOW):
 	    if ((value < *pdest) || (inx == 0))
 		*pdest = value;
 	    break;
-	case (NTO1HIGH):
+	case (compressNTO1HIGH):
 	    if ((value > *pdest) || (inx == 0))
 		*pdest = value;
 	    break;
-	case (NTO1AVG):
+	case (compressNTO1AVG):
 	    if (inx == 0)
 		*pdest = value;
 	    else {

@@ -89,19 +89,58 @@ struct rset fanoutRSET={
 	get_graphic_double,
 	get_control_double,
 	get_alarm_double };
+
+#define SELECT_ALL  0
+#define SELECTED 1
 
 static long process(paddr)
     struct dbAddr	*paddr;
 {
     struct fanoutRecord	*pfanout=(struct fanoutRecord *)(paddr->precord);
+    short           stat,sevr,nsta,nsev;
 
-	pfanout->pact = TRUE;
+    pfanout->pact = TRUE;
+    if(pfanout->selm==SELECT_ALL) {
         if (pfanout->lnk1.type==DB_LINK) dbScanPassive(pfanout->lnk1.value.db_link.pdbAddr);
         if (pfanout->lnk2.type==DB_LINK) dbScanPassive(pfanout->lnk2.value.db_link.pdbAddr);
         if (pfanout->lnk3.type==DB_LINK) dbScanPassive(pfanout->lnk3.value.db_link.pdbAddr);
         if (pfanout->lnk4.type==DB_LINK) dbScanPassive(pfanout->lnk4.value.db_link.pdbAddr);
         if (pfanout->lnk5.type==DB_LINK) dbScanPassive(pfanout->lnk5.value.db_link.pdbAddr);
         if (pfanout->lnk6.type==DB_LINK) dbScanPassive(pfanout->lnk6.value.db_link.pdbAddr);
-	pfanout->pact=FALSE;
-	return(0);
+    } else if(pfanout->selm==SELECTED) {
+	if(pfanout->seln<1 || pfanout->seln>6) {
+	    if(pfanout->nsev<MAJOR_ALARM) {
+		pfanout->nsev = MAJOR_ALARM;
+		pfanout->nsta = SOFT_ALARM;
+	    }
+	} else {
+	    struct link *plink;
+
+	    plink=&(pfanout->lnk1);
+	    plink += (pfanout->seln-1);
+	    dbScanPassive(plink->value.db_link.pdbAddr);
+	}
+    } else {
+	if(pfanout->nsev<MAJOR_ALARM) {
+	    pfanout->nsev = MAJOR_ALARM;
+	    pfanout->nsta = SOFT_ALARM;
+	}
+    }
+    /* check monitors*/
+    /* get previous stat and sevr  and new stat and sevr*/
+    stat=pfanout->stat;
+    sevr=pfanout->sevr;
+    nsta=pfanout->nsta;
+    nsev=pfanout->nsev;
+    /*set current stat and sevr*/
+    pfanout->stat = nsta;
+    pfanout->sevr = nsev;
+    pfanout->nsta = 0;
+    pfanout->nsev = 0;
+    if((stat!=nsta || sevr!=nsev)){
+	db_post_events(pfanout,&pfanout->stat,DBE_VALUE);
+	db_post_events(pfanout,&pfanout->sevr,DBE_VALUE);
+    }
+    pfanout->pact=FALSE;
+    return(0);
 }

@@ -135,6 +135,7 @@ static long init_record(pmbbi)
 {
     struct mbbidset *pdset;
     long status;
+    int i;
 
     init_common(pmbbi);
     if(!(pdset = (struct mbbidset *)(pmbbi->dset))) {
@@ -145,6 +146,12 @@ static long init_record(pmbbi)
     if( (pdset->number < 5) || (pdset->read_mbbi == NULL) ) {
 	recGblRecordError(S_dev_missingSup,pmbbi,"mbbi: init_record");
 	return(S_dev_missingSup);
+    }
+    /* initialize mask*/
+    pmbbi->mask = 0;
+    for (i=0; i<pmbbi->nobt; i++) {
+	pmbbi->mask <<= 1; /* shift left 1 bit*/
+	pmbbi->mask |= 1;  /* set low order bit*/
     }
     if( pdset->init_record ) {
 	if((status=(*pdset->init_record)(pmbbi,process))) return(status);
@@ -158,7 +165,6 @@ static long process(paddr)
     struct mbbiRecord	*pmbbi=(struct mbbiRecord *)(paddr->precord);
 	struct mbbidset	*pdset = (struct mbbidset *)(pmbbi->dset);
 	long		status;
-	unsigned short  val;
 
 	if( (pdset==NULL) || (pdset->read_mbbi==NULL) ) {
 		pmbbi->pact=TRUE;
@@ -168,29 +174,31 @@ static long process(paddr)
 
 	status=(*pdset->read_mbbi)(pmbbi); /* read the new value */
 	pmbbi->pact = TRUE;
-	if(status==1) return(0);
 	if(status==0) { /* convert the value */
         	unsigned long 	*pstate_values;
         	short  		i;
 		unsigned long rval = pmbbi->rval;
 
+		if(pmbbi->shft>0) rval >>= pmbbi->shft;
 		if (pmbbi->sdef){
 			pstate_values = &(pmbbi->zrvl);
-			val = udfUshort;        /* initalize to unknown state*/
-			if(rval!=udfUlong)for (i = 0; i < 16; i++){
-			    if (*pstate_values == rval){
-                                val = i;
-                                break;
-			    }
-			    pstate_values++;
+			pmbbi->val = udfUshort;/* initalize to unknown state*/
+			if(rval!=udfUlong) {
+				for (i = 0; i < 16; i++){
+			    		if (*pstate_values == rval){
+                                		pmbbi->val = i;
+                                		break;
+			    		}
+			    		pstate_values++;
+				}
 			}
 		}else{
 			/* the raw value is the desired value */
-			*((unsigned short *)(&val)) =  (unsigned short)(pmbbi->rval);
+			pmbbi->val =  (unsigned short)rval;
 		}
-		pmbbi->val = val;
 	}
-	if(status == 2) status = 0;
+	else if(status==1) return(0);
+	else if(status == 2) status = 0;
 
 	/* check for alarms */
 	alarm(pmbbi);
@@ -292,12 +300,12 @@ static void alarm(pmbbi)
     struct mbbiRecord	*pmbbi;
 {
 	unsigned short *severities;
-	short		val=pmbbi->val;
+	unsigned short	val=pmbbi->val;
 
 
         /* check for  state alarm */
         /* unknown state */
-        if ((val < 0) || (val > 15)){
+        if (val > 15){
                 if (pmbbi->nsev<pmbbi->unsv){
                         pmbbi->nsta = STATE_ALARM;
                         pmbbi->nsev = pmbbi->unsv;
@@ -312,6 +320,7 @@ static void alarm(pmbbi)
 	}
 
         /* check for cos alarm */
+	if(pmbbi->lalm==udfUshort) pmbbi->lalm = val;
 	if(val == pmbbi->lalm) return;
         if (pmbbi->nsev<pmbbi->cosv){
                 pmbbi->nsta = COS_ALARM;
@@ -339,10 +348,6 @@ static void monitor(pmbbi)
         pmbbi->nsta = 0;
         pmbbi->nsev = 0;
 
-	/* anyone waiting for an event on this record */
-	if (pmbbi->mlis.count == 0) return;
-
-	/* Flags which events to fire on the value field */
 	monitor_mask = 0;
 
         /* alarm condition changed this scan */
@@ -365,7 +370,7 @@ static void monitor(pmbbi)
                 db_post_events(pmbbi,&pmbbi->val,monitor_mask);
 	}
         if(pmbbi->oraw!=pmbbi->rval) {
-                db_post_events(pmbbi,&pmbbi->rval,monitor_mask);
+                db_post_events(pmbbi,&pmbbi->rval,monitor_mask|DBE_VALUE);
                 pmbbi->oraw = pmbbi->rval;
         }
         return;

@@ -1,7 +1,7 @@
-/* devBiSoft.c */
+/* devBiSoftRaw.c */
 /* share/src/dev $Id$ */
 
-/* devBiSoft.c - Device Support Routines for  Soft Binary Input*/
+/* devBiSoftRaw.c - Device Support Routines for  Soft Binary Input*/
 
 
 #include	<vxWorks.h>
@@ -17,7 +17,7 @@
 #include	<biRecord.h>
 
 
-/* Create the dset for devBiSoft */
+/* Create the dset for devBiSoftRaw */
 long init_record();
 long read_bi();
 
@@ -28,7 +28,7 @@ struct {
 	DEVSUPFUN	init_record;
 	DEVSUPFUN	get_ioint_info;
 	DEVSUPFUN	read_bi;
-}devBiSoft={
+}devBiSoftRaw={
 	5,
 	NULL,
 	NULL,
@@ -45,7 +45,7 @@ static long init_record(pbi)
     /* bi.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
     switch (pbi->inp.type) {
     case (CONSTANT) :
-        pbi->val = pbi->inp.value.value;
+        pbi->rval = pbi->inp.value.value;
         break;
     case (PV_LINK) :
         break;
@@ -55,7 +55,7 @@ static long init_record(pbi)
         break;
     default :
 	strcpy(message,pbi->name);
-	strcat(message,": devBiSoft (init_record) Illegal INP field");
+	strcat(message,": devBiSoftRaw (init_record) Illegal INP field");
 	errMessage(S_db_badField,message);
 	return(S_db_badField);
     }
@@ -67,7 +67,6 @@ static long read_bi(pbi)
 {
     char message[100];
     long status,options,nRequest;
-    unsigned short val;
 
     /* bi.inp must be a CONSTANT or a DB_LINK or a CA_LINK*/
     switch (pbi->inp.type) {
@@ -76,8 +75,8 @@ static long read_bi(pbi)
     case (DB_LINK) :
         options=0;
         nRequest=1;
-        status = dbGetLink(&(pbi->inp.value.db_link),pbi,DBR_USHORT,
-                &val,&options,&nRequest);
+        status = dbGetLink(&(pbi->inp.value.db_link),pbi,DBR_ULONG,
+                &pbi->rval,&options,&nRequest);
         if(status!=0) {
                 if(pbi->nsev<VALID_ALARM) {
                         pbi->nsev = VALID_ALARM;
@@ -94,7 +93,7 @@ static long read_bi(pbi)
                 pbi->nsta = SOFT_ALARM;
                 if(pbi->stat!=SOFT_ALARM) {
                         strcpy(message,pbi->name);
-                        strcat(message,": devBiSoft (read_bi) Illegal INP field");
+                        strcat(message,": devBiSoftRaw (read_bi) Illegal INP field");
                         errMessage(S_db_badField,message);
                 }
         }

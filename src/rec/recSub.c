@@ -87,10 +87,11 @@ struct rset subRSET={
 	get_control_double,
 	get_alarm_double };
 
+#define ARG_MAX 12
 void alarm();
 void monitor();
 long do_sub();
-void fetch_values();
+long fetch_values();
 
 static long init_record(psub)
     struct subRecord	*psub;
@@ -100,14 +101,15 @@ static long init_record(psub)
     char	temp[40];
     long	status;
     STATUS	ret;
+    struct link *plink;
+    int i;
+    double *pvalue;
 
-    if(psub->inpa.type==CONSTANT) psub->a = psub->inpa.value.value;
-    if(psub->inpb.type==CONSTANT) psub->b = psub->inpb.value.value;
-    if(psub->inpc.type==CONSTANT) psub->c = psub->inpc.value.value;
-    if(psub->inpd.type==CONSTANT) psub->d = psub->inpd.value.value;
-    if(psub->inpe.type==CONSTANT) psub->e = psub->inpe.value.value;
-    if(psub->inpf.type==CONSTANT) psub->f = psub->inpf.value.value;
-
+    plink = &psub->inpa;
+    pvalue = &psub->a;
+    for(i=0; i<ARG_MAX; i++, plink++, pvalue++) {
+        if(plink->type==CONSTANT) *pvalue = plink->value.value;
+    }
 
     /* convert the initialization subroutine name  */
     temp[0] = 0;			/* all global variables start with _ */
@@ -145,14 +147,14 @@ static long process(paddr)
     struct dbAddr	*paddr;
 {
 	struct subRecord *psub=(struct subRecord *)(paddr->precord);
-	long		 status;
+	long		 status=0;
 
         if(!psub->pact){
 		psub->pact = TRUE;
-		fetch_values(psub);
+		status = fetch_values(psub);
 		psub->pact = FALSE;
 	}
-        status = do_sub(psub);
+        if(status==0) status = do_sub(psub);
         psub->pact = TRUE;
 	if(status==1) return(0);
         /* check for alarms */
@@ -169,9 +171,9 @@ static long get_value(psub,pvdes)
     struct subRecord		*psub;
     struct valueDes	*pvdes;
 {
-    pvdes->field_type = DBF_FLOAT;
+    pvdes->field_type = DBF_DOUBLE;
     pvdes->no_elements=1;
-    (float *)(pvdes->pvalue) = &psub->val;
+    (double *)(pvdes->pvalue) = &psub->val;
     return(0);
 }
 
@@ -234,9 +236,10 @@ static long get_alarm_double(paddr,pad)
 static void alarm(psub)
     struct subRecord	*psub;
 {
-	float	ftemp;
-	float	val=psub->val;
+	double	ftemp;
+	double	val=psub->val;
 
+	if(val>0.0 && val<udfDtest)return;
         /* if difference is not > hysterisis use lalm not val */
         ftemp = psub->lalm - psub->val;
         if(ftemp<0.0) ftemp = -ftemp;
@@ -287,10 +290,10 @@ static void monitor(psub)
     struct subRecord	*psub;
 {
 	unsigned short	monitor_mask;
-	float		delta;
+	double		delta;
         short           stat,sevr,nsta,nsev;
-	float           *pnew;
-	float           *pprev;
+	double           *pnew;
+	double           *pprev;
 	int             i;
 
         /* get previous stat and sevr  and new stat and sevr*/
@@ -304,10 +307,6 @@ static void monitor(psub)
         psub->nsta = 0;
         psub->nsev = 0;
 
-        /* anyone waiting for an event on this record */
-        if (psub->mlis.count == 0) return;
-
-        /* Flags which events to fire on the value field */
         monitor_mask = 0;
 
         /* alarm condition changed this scan */
@@ -339,33 +338,48 @@ static void monitor(psub)
         /* send out monitors connected to the value field */
         if (monitor_mask){
                 db_post_events(psub,&psub->val,monitor_mask);
-        }
-	/* check all input fields for changes*/
-	for(i=0, pnew=&psub->a, pprev=&psub->la; i<6; i++, pnew++, pprev++) {
-		if(*pnew != *pprev) {
-			db_post_events(psub,pnew,monitor_mask|DBE_VALUE);
-			*pprev = *pnew;
+		/* check all input fields for changes*/
+		for(i=0, pnew=&psub->a, pprev=&psub->la; i<ARG_MAX; i++, pnew++, pprev++) {
+			if(*pnew != *pprev) {
+				db_post_events(psub,pnew,monitor_mask|DBE_VALUE);
+				*pprev = *pnew;
+			}
 		}
-	}
+        }
         return;
 }
 
-static void fetch_values(psub)
+static long fetch_values(psub)
 struct subRecord *psub;
 {
         struct link     *plink; /* structure of the link field  */
-        float           *pvalue;
+        double           *pvalue;
         long            options,nRequest;
         int             i;
+	long		status;
 
-        for(i=0, plink=&psub->inpa, pvalue=&psub->a; i<6; i++, plink++, pvalue++) {
+        for(i=0, plink=&psub->inpa, pvalue=&psub->a; i<ARG_MAX; i++, plink++, pvalue++) {
                 if(plink->type!=DB_LINK) continue;
                 options=0;
                 nRequest=1;
-                (void)dbGetLink(&plink->value.db_link,psub,DBR_FLOAT,
+                status=dbGetLink(&plink->value.db_link,psub,DBR_DOUBLE,
                         pvalue,&options,&nRequest);
+                if(status!=0) {
+                        if(psub->nsev<VALID_ALARM) {
+                                psub->nsev=VALID_ALARM;
+                                psub->nsta=LINK_ALARM;
+                        }
+                        return(-1);
+                }
+                if(*pvalue>0.0 && *pvalue<udfDtest) {
+                        if(psub->nsev<VALID_ALARM) {
+                                psub->nsev=VALID_ALARM;
+                                psub->nsta=SOFT_ALARM;
+                        }
+                        return(-1);
+                }
         }
-        return;
+        return(0);
 }
 
 static long do_sub(psub)
@@ -378,9 +392,9 @@ struct subRecord *psub;  /* pointer to subroutine record  */
 	/* call the subroutine */
 	psubroutine = (FUNCPTR)(psub->sadr);
 	if(psubroutine==NULL) {
-		if(psub->nsev<MAJOR_ALARM) {
+		if(psub->nsev<VALID_ALARM) {
 			psub->nsta = BAD_SUB_ALARM;
-			psub->nsev = MAJOR_ALARM;
+			psub->nsev = VALID_ALARM;
 		}
 		return(0);
 	}

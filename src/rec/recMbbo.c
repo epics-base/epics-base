@@ -111,7 +111,7 @@ struct mbbodset { /* multi bit binary input dset */
 	DEVSUPFUN	init;
 	DEVSUPFUN	init_record; /*returns: (-1,0)=>(failure,success)*/
 	DEVSUPFUN	get_ioint_info;
-	DEVSUPFUN	write_mbbo;/*(-1,0,1)=>(failure,success,don't Continue*/
+	DEVSUPFUN	write_mbbo;/*(0,1)=>(success,don't Continue*/
 };
 
 
@@ -136,13 +136,13 @@ static void init_common(pmbbo)
         }
         return;
 }
-
+
 static long init_record(pmbbo)
     struct mbboRecord	*pmbbo;
 {
     struct mbbodset *pdset;
     long status;
-    unsigned short  rbv;
+    int	i;
 
     init_common(pmbbo);
 
@@ -155,31 +155,41 @@ static long init_record(pmbbo)
 	recGblRecordError(S_dev_missingSup,pmbbo,"mbbo: init_record");
 	return(S_dev_missingSup);
     }
-    if( pdset->init_record ) {
-	if((status=(*pdset->init_record)(pmbbo,process))) return(status);
-        if (pmbbo->sdef){
-    		unsigned long   *pstate_values;
-    		short           i;
-		unsigned long rval = pmbbo->rval;
-
-                pstate_values = &(pmbbo->zrvl);
-                rbv = udfUshort;        /* initalize to unknown state*/
-                if(rval!=udfUlong) for (i = 0; i < 16; i++){
-                        if (*pstate_values == rval){
-                                rbv = i;
-                                break;
-                        }
-                        pstate_values++;
-                }
-        }else{
-                /* the raw  is the desired rbv */
-                rbv =  (unsigned short)(pmbbo->rval);
-        }
-        pmbbo->rbv = rbv;
-	pmbbo->val = rbv;
-    }
-    if ((pmbbo->dol.type == CONSTANT) && (pmbbo->dol.value.value != udfFloat)){
+    if ((pmbbo->dol.type == CONSTANT)
+    && (pmbbo->dol.value.value<0.0 || pmbbo->dol.value.value>=udfFtest)){
 	pmbbo->val = pmbbo->dol.value.value;
+    }
+    /* initialize mask*/
+    pmbbo->mask = 0;
+    for (i=0; i<pmbbo->nobt; i++) {
+        pmbbo->mask <<= 1; /* shift left 1 bit*/
+        pmbbo->mask |= 1;  /* set low order bit*/
+    }
+    if( pdset->init_record ) {
+	unsigned long rval;
+
+	if((status=(*pdset->init_record)(pmbbo,process))) return(status);
+	rval = pmbbo->rval;
+	if(pmbbo->shft>0 && rval!=udfUlong) rval >>= pmbbo->shft;
+        if (pmbbo->sdef){
+	    unsigned long   *pstate_values;
+	    short           i;
+
+	    pstate_values = &(pmbbo->zrvl);
+	    pmbbo->val = udfUshort;        /* initalize to unknown state*/
+	    if(rval!=udfUlong) {
+		for (i = 0; i < 16; i++){
+		    if (*pstate_values == rval){
+			pmbbo->val = i;
+			break;
+		   }
+		   pstate_values++;
+		}
+	    }
+        }else{
+	    /* the raw  is the desired val */
+	    pmbbo->val =  (unsigned short)rval;
+        }
     }
     return(0);
 }
@@ -188,64 +198,74 @@ static long process(paddr)
     struct dbAddr	*paddr;
 {
     struct mbboRecord	*pmbbo=(struct mbboRecord *)(paddr->precord);
-	struct mbbodset	*pdset = (struct mbbodset *)(pmbbo->dset);
-	long		status;
-	unsigned short	rbv;
+    struct mbbodset	*pdset = (struct mbbodset *)(pmbbo->dset);
+    long		status=0;
+    unsigned short	rbv;
 
-	if( (pdset==NULL) || (pdset->write_mbbo==NULL) ) {
-		pmbbo->pact=TRUE;
-		recGblRecordError(S_dev_missingSup,pmbbo,"write_mbbo");
-		return(S_dev_missingSup);
+    if( (pdset==NULL) || (pdset->write_mbbo==NULL) ) {
+	pmbbo->pact=TRUE;
+	recGblRecordError(S_dev_missingSup,pmbbo,"write_mbbo");
+	return(S_dev_missingSup);
+    }
+
+    if (!pmbbo->pact) {
+	if(pmbbo->dol.type==DB_LINK && pmbbo->omsl==CLOSED_LOOP){
+	    long options=0;
+	    long nRequest=1;
+	    long status;
+	    unsigned short val;
+
+	    pmbbo->pact = TRUE;
+	    status = dbGetLink(&pmbbo->dol.value.db_link,pmbbo,DBR_USHORT,
+			&val,&options,&nRequest);
+	    pmbbo->pact = FALSE;
+	    if(status==0) {
+		pmbbo->val=val;
+	    } else {
+		if(pmbbo->nsev < VALID_ALARM) {
+		    pmbbo->nsev = VALID_ALARM;
+		    pmbbo->nsta = LINK_ALARM;
+		}
+		goto DONT_WRITE;
+	    }
 	}
+	if(pmbbo->val==udfEnum) {
+		if(pmbbo->nsev < VALID_ALARM) {
+		    pmbbo->nsev = VALID_ALARM;
+		    pmbbo->nsta = SOFT_ALARM;
+		}
+		goto DONT_WRITE;
+	}
+	if(pmbbo->sdef) {
+	    unsigned long *pvalues = &(pmbbo->zrvl);
 
-       /* fetch the desired output if there is a database link */
-       if (!pmbbo->pact && pmbbo->dol.type==DB_LINK && pmbbo->omsl==CLOSED_LOOP){
-		long options=0;
-		long nRequest=1;
-		short savepact=pmbbo->pact;
+	    if(pmbbo->val>15) {
+		if(pmbbo->nsev<VALID_ALARM ) {
+		    pmbbo->nsta = SOFT_ALARM;
+		    pmbbo->nsev = VALID_ALARM;
+		}
+		goto DONT_WRITE;
+	    }
+	    pmbbo->rval = pvalues[pmbbo->val];
+	} else pmbbo->rval = (unsigned long)(pmbbo->val);
+	if(pmbbo->shft>0) pmbbo->rval <<= pmbbo->shft;
+    }
 
-		pmbbo->pact = TRUE;
-               (void)dbGetLink(&pmbbo->dol.value.db_link,pmbbo,DBR_ENUM,
-			&(pmbbo->val),&options,&nRequest);
-		pmbbo->pact = savepact;
-        }
+    status=(*pdset->write_mbbo)(pmbbo); /* write the new value */
+DONT_WRITE:
+    pmbbo->pact = TRUE;
 
-	status=(*pdset->write_mbbo)(pmbbo); /* write the new value */
-	pmbbo->pact = TRUE;
-
-	/* status is one if an asynchronous record is being processed*/
-	if(status==1) return(0);
-
-	/* calculate the readback value */
-        if (pmbbo->sdef){
-		unsigned long   *pstate_values;
-		short      	i;
-		unsigned long   rval = pmbbo->rval;
-
-               	pstate_values = &(pmbbo->zrvl);
-               	rbv = udfShort;        /* initalize to unknown state*/
-               	if(rval!=udfUlong) for (i = 0; i < 16; i++){
-                       	if (*pstate_values == rval){
-                               	rbv = i;
-                               	break;
-                       	}
-                       	pstate_values++;
-               	}
-        }else{
-               	/* the raw value is the desired value */
-               	rbv =  (unsigned short)(pmbbo->rval);
-        }
-        pmbbo->rbv = rbv;
-
-	/* check for alarms */
-	alarm(pmbbo);
-	/* check event list */
-	monitor(pmbbo);
-	/* process the forward scan link record */
-	if (pmbbo->flnk.type==DB_LINK) dbScanPassive(pmbbo->flnk.value.db_link.pdbAddr);
-
-	pmbbo->pact=FALSE;
-	return(status);
+    /* status is one if an asynchronous record is being processed*/
+    if(status==1) return(0);
+    /* check for alarms */
+    alarm(pmbbo);
+    /* check event list */
+    monitor(pmbbo);
+    /* process the forward scan link record */
+    if(pmbbo->flnk.type==DB_LINK)
+	dbScanPassive(pmbbo->flnk.value.db_link.pdbAddr);
+    pmbbo->pact=FALSE;
+    return(status);
 }
 
 static long special(paddr,after)
@@ -333,12 +353,12 @@ static void alarm(pmbbo)
     struct mbboRecord	*pmbbo;
 {
 	unsigned short *severities;
-	short		val=pmbbo->val;
+	unsigned short	val=pmbbo->val;
 
 
         /* check for  state alarm */
         /* unknown state */
-        if ((val < 0) || (val > 15)){
+        if (val > 15){
                 if (pmbbo->nsev<pmbbo->unsv){
                         pmbbo->nsta = STATE_ALARM;
                         pmbbo->nsev = pmbbo->unsv;
@@ -353,6 +373,7 @@ static void alarm(pmbbo)
 	}
 
         /* check for cos alarm */
+	if(pmbbo->lalm==udfUshort) pmbbo->lalm = val;
 	if(val == pmbbo->lalm) return;
         if (pmbbo->nsev<pmbbo->cosv){
                 pmbbo->nsta = COS_ALARM;
@@ -380,10 +401,6 @@ static void monitor(pmbbo)
         pmbbo->nsta = 0;
         pmbbo->nsev = 0;
 
-	/* anyone waiting for an event on this record */
-	if (pmbbo->mlis.count == 0) return;
-
-	/* Flags which events to fire on the value field */
 	monitor_mask = 0;
 
         /* alarm condition changed this scan */

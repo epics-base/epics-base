@@ -121,6 +121,7 @@ struct bodset { /* binary output dset */
 /* control block for callback*/
 struct callback {
         void (*callback)();
+	int priority;
         struct dbAddr dbAddr;
         WDOG_ID wd_id;
 };
@@ -159,20 +160,26 @@ static long init_record(pbo)
 	recGblRecordError(S_dev_missingSup,pbo,"bo: init_record");
 	return(S_dev_missingSup);
     }
-    /* get the intial value */
-    if (pbo->dol.type == CONSTANT & pbo->dol.value.value!=udfFloat){
-	if (pbo->dol.value.value == 1)  pbo->val = 1;
-	else                            pbo->val = 0;
-    }
-    if( pdset->init_record ) {
-	if((status=(*pdset->init_record)(pbo,process))) return(status);
+    /* get the initial value */
+    if (pbo->dol.type == CONSTANT
+    && (pbo->dol.value.value<0.0 || pbo->dol.value.value>=udfFtest)){
+	if (pbo->dol.value.value == 0)  pbo->val = 0;
+	else                            pbo->val = 1;
     }
     pcallback = (struct callback *)(calloc(1,sizeof(struct callback)));
     pbo->dpvt = (caddr_t)pcallback;
     pcallback->callback = myCallback;
+    pcallback->priority = priorityMedium;
     if(dbNameToAddr(pbo->name,&(pcallback->dbAddr))) {
             logMsg("dbNameToAddr failed in init_record for recBo\n");
             exit(1);
+    }
+    if( pdset->init_record ) {
+	if((status=(*pdset->init_record)(pbo,process))) return(status);
+	if(pbo->rval!=udfUlong) { /* convert*/
+	    if(pbo->rval==0) pbo->val = 0;
+	    else pbo->val = 1;
+	}
     }
     return(0);
 }
@@ -190,36 +197,41 @@ static long process(paddr)
 		recGblRecordError(S_dev_missingSup,pbo,"write_bo");
 		return(S_dev_missingSup);
 	}
+        if (!pbo->pact) {
+		if((pbo->dol.type == DB_LINK) && (pbo->omsl == CLOSED_LOOP)){
+			long options=0;
+			long nRequest=1;
+			unsigned short val;
 
-
-        /* fetch the desired output if there is a database link */
-        if ( !(pbo->pact) && (pbo->dol.type == DB_LINK) && (pbo->omsl == CLOSED_LOOP)){
-               long options=0;
-                long nRequest=1;
-                short savepact=pbo->pact;
-		unsigned short val;
-
-                pbo->pact = TRUE;
-                status = dbGetLink(&pbo->dol.value.db_link,pbo,
-			DBR_USHORT,&(pbo->val),&options,&nRequest);
-		if(status) {
-			if(pbo->nsev < VALID_ALARM) {
-				pbo->nsev = VALID_ALARM;
-				pbo->nsta = LINK_ALARM;
+			pbo->pact = TRUE;
+			status = dbGetLink(&pbo->dol.value.db_link,pbo,
+				DBR_USHORT,&val,&options,&nRequest);
+			pbo->pact = FALSE;
+			if(status==0){
+				pbo->val = val;
+			}else {
+				if(pbo->nsev < VALID_ALARM) {
+					pbo->nsev = VALID_ALARM;
+					pbo->nsta = LINK_ALARM;
+				}
 			}
 		}
-		else if(val==0) pbo->val = 0;
-		else pbo->val = 1;
-                pbo->pact = savepact;
-        }
-
-	status=(*pdset->write_bo)(pbo); /* write the new value */
+		if(pbo->mask != udfUlong) {
+			if(pbo->val==0) pbo->rval = 0;
+			else pbo->rval = pbo->mask;
+		}
+	}
+	if(pbo->val==udfEnum) {
+		if(pbo->nsev < VALID_ALARM) {
+			pbo->nsev = VALID_ALARM;
+			pbo->nsta = SOFT_ALARM;
+		}
+		status = 0;
+	} else status=(*pdset->write_bo)(pbo); /* write the new value */
 	pbo->pact = TRUE;
-
 	/* status is one if an asynchronous record is being processed*/
 	if(status==1) return(0);
-
-	wait_time = (int)(pbo->high) * vxTicksPerSecond;   /* seconds to ticks */
+	wait_time = (int)(pbo->high) * vxTicksPerSecond; /* seconds to ticks */
 	if(pbo->val==1 && wait_time>0) {
 		struct callback *pcallback;
 	
@@ -227,8 +239,6 @@ static long process(paddr)
         	if(pcallback->wd_id==NULL) pcallback->wd_id = wdCreate();
                	wdStart(pcallback->wd_id,wait_time,callbackRequest,pcallback);
 	}
-	
-
 	/* check for alarms */
 	alarm(pbo);
 	/* check event list */
@@ -312,6 +322,7 @@ static void alarm(pbo)
         }
 
         /* check for cos alarm */
+	if(pbo->lalm==udfUshort) pbo->lalm = val;
 	if(val == pbo->lalm) return;
         if (pbo->nsev<pbo->cosv) {
                 pbo->nsta = COS_ALARM;
@@ -338,10 +349,6 @@ static void monitor(pbo)
         pbo->nsta = 0;
         pbo->nsev = 0;
 
-        /* anyone waiting for an event on this record */
-        if (pbo->mlis.count == 0) return;
-
-        /* Flags which events to fire on the value field */
         monitor_mask = 0;
 
         /* alarm condition changed this scan */

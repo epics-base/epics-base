@@ -75,8 +75,8 @@ static long read_mbbi(pmbbi)
     case (DB_LINK) :
         options=0;
         nRequest=1;
-        status = dbGetLink(&(pmbbi->inp.value.db_link),pmbbi,DBR_ULONG,
-                &(pmbbi->rval),&options,&nRequest);
+        status = dbGetLink(&(pmbbi->inp.value.db_link),pmbbi,DBR_USHORT,
+                &(pmbbi->val),&options,&nRequest);
         if(status!=0) {
                 if(pmbbi->nsev<VALID_ALARM) {
                         pmbbi->nsev = VALID_ALARM;

@@ -102,7 +102,9 @@ struct bidset { /* binary input dset */
 	DEVSUPFUN	init;
 	DEVSUPFUN	init_record; /*returns: (-1,0)=>(failure,success)*/
 	DEVSUPFUN	get_ioint_info;
-	DEVSUPFUN	read_bi;/*(-1,0,1)=>(failure,success,don't Continue*/
+	DEVSUPFUN	read_bi;/*(0,1,2)=> success and */
+                        /*(convert,don't continue, don't convert)*/
+                        /* if convert then raw value stored in rval */
 };
 void alarm();
 void monitor();
@@ -143,10 +145,13 @@ static long process(paddr)
 
 	status=(*pdset->read_bi)(pbi); /* read the new value */
 	pbi->pact = TRUE;
-
+	if(status==0) { /* convert rval to val */
+		if(pbi->rval==0) pbi->val =0;
+		else pbi->val = 1;
+	}
 	/* status is one if an asynchronous record is being processed*/
-	if(status==1) return(1);
-
+	else if(status==1) return(0);
+	else if(status==2) status=0;
 	/* check for alarms */
 	alarm(pbi);
 	/* check event list */
@@ -217,6 +222,14 @@ static void alarm(pbi)
 	unsigned short val = pbi->val;
 
 
+        if(val==udfUshort){
+                if (pbi->nsev<VALID_ALARM){
+                        pbi->nsta = SOFT_ALARM;
+                        pbi->nsev = VALID_ALARM;
+                }
+                return;
+        }
+
 	if(val>1)return;
         /* check for  state alarm */
         if (val == 0){
@@ -232,6 +245,7 @@ static void alarm(pbi)
         }
 
         /* check for cos alarm */
+	if(pbi->lalm==udfUshort) pbi->lalm = val;
 	if(val == pbi->lalm) return;
         if (pbi->nsev<pbi->cosv) {
                 pbi->nsta = COS_ALARM;
@@ -258,10 +272,6 @@ static void monitor(pbi)
         pbi->nsta = 0;
         pbi->nsev = 0;
 
-	/* anyone waiting for an event on this record */
-	if (pbi->mlis.count == 0) return;
-
-	/* Flags which events to fire on the value field */
 	monitor_mask = 0;
 
 	/* alarm condition changed this scan */

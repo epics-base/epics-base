@@ -36,19 +36,7 @@ struct {
 	init_record,
 	NULL,
 	write_mbbo};
-static long masks[] = {
-        0x00000000,
-        0x00000001,     0x00000003,     0x00000007,     0x0000000f,
-        0x0000001f,     0x0000003f,     0x0000007f,     0x000000ff,
-        0x000001ff,     0x000003ff,     0x000007ff,     0x00000fff,
-        0x00001fff,     0x00003fff,     0x00007fff,     0x0000ffff,
-        0x0001ffff,     0x0003ffff,     0x0007ffff,     0x000fffff,
-        0x001fffff,     0x003fffff,     0x007fffff,     0x00ffffff,
-        0x01ffffff,     0x03ffffff,     0x07ffffff,     0x0fffffff,
-        0x1fffffff,     0x3fffffff,     0x7fffffff,     0xffffffff
-};
 
-
 static long init_record(pmbbo)
     struct mbboRecord	*pmbbo;
 {
@@ -61,9 +49,10 @@ static long init_record(pmbbo)
     switch (pmbbo->out.type) {
     case (VME_IO) :
 	pvmeio = &(pmbbo->out.value.vmeio);
-	pmbbo->mask = masks[pmbbo->nobt]<<pvmeio->signal;
+	pmbbo->shft = pvmeio->signal;
+	pmbbo->mask = pmbbo->shft;
 	status = bo_read(pvmeio->card,pmbbo->mask,&value,XY220);
-	if(status==0) pmbbo->rval = value>> pvmeio->signal;
+	if(status==0) pmbbo->rbv = pmbbo->rval = value;
 	break;
     default :
 	strcpy(message,pmbbo->name);
@@ -83,24 +72,10 @@ static long write_mbbo(pmbbo)
 
 	
 	pvmeio = &(pmbbo->out.value.vmeio);
-	if(pmbbo->sdef) {
-		unsigned long *pvalues = &(pmbbo->zrvl);
-
-		if(pmbbo->val>15) {
-			if(pmbbo->nsev<MAJOR_ALARM ) {
-				pmbbo->nsta = SOFT_ALARM;
-				pmbbo->nsev = MAJOR_ALARM;
-			}
-			return(0);
-		}
-		value=pvalues[pmbbo->val];
-		pmbbo->rval = value<<pvmeio->signal;
-	} else pmbbo->rval = ((unsigned long)(pmbbo->val))<<pvmeio->signal;
-
 	status = bo_driver(pvmeio->card,pmbbo->rval,pmbbo->mask,XY220);
 	if(status==0) {
 		status = bo_read(pvmeio->card,pmbbo->mask,&value,XY220);
-		if(status==0) pmbbo->rval = value>> pvmeio->signal;
+		if(status==0) pmbbo->rbv = value;
 		else if(pmbbo->nsev<MAJOR_ALARM ) {
 			pmbbo->nsta = READ_ALARM;
 			pmbbo->nsev = MAJOR_ALARM;

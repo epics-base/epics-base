@@ -35,18 +35,7 @@ struct {
 	init_record,
 	NULL,
 	write_bo};
-static long masks[] = {
-        0x00000001,0x00000002,0x00000004,0x00000008,
-        0x00000010,0x00000020,0x00000040,0x00000080,
-        0x00000100,0x00000200,0x00000400,0x00000800,
-        0x00001000,0x00002000,0x00004000,0x00008000,
-        0x00010000,0x00020000,0x00040000,0x00080000,
-        0x00100000,0x00200000,0x00400000,0x00800000,
-        0x01000000,0x02000000,0x04000000,0x08000000,
-        0x10000000,0x20000000,0x40000000,0x80000000,
-};
 
-
 static long init_record(pbo)
     struct boRecord	*pbo;
 {
@@ -58,10 +47,12 @@ static long init_record(pbo)
     switch (pbo->out.type) {
     case (VME_IO) :
         pvmeio = (struct vmeio *)(&pbo->out.value);
+	pbo->mask = 1;
+	pbo->mask <<= pvmeio->signal;
         /* read the value via bo driver */
-        status = bo_read(pvmeio->card,masks[pvmeio->signal],&value,BB902);
+        status = bo_read(pvmeio->card,pbo->mask,&value,BB902);
 	if(status == 0) {
-        	pbo->rbv = pbo->val = (value == 0)?0:1;
+		pbo->rval = value;
 	} else if(status == -1) {
 		strcpy(message,pbo->name);
 		strcat(message,": devBoMpv902 (init_record) card does not exist");
@@ -82,7 +73,7 @@ static long init_record(pbo)
     }
     return(0);
 }
-
+
 static long write_bo(pbo)
     struct boRecord	*pbo;
 {
@@ -91,9 +82,7 @@ static long write_bo(pbo)
 
 	
 	pvmeio = (struct vmeio *)&(pbo->out.value);
-	if(pbo->val == 0) pbo->rval = 0;
-	else pbo->rval = masks[pvmeio->signal];
-	status = bo_driver(pvmeio->card,pbo->rval,masks[pvmeio->signal],BB902);
+	status = bo_driver(pvmeio->card,pbo->rval,pbo->mask,BB902);
 	if(status!=0) {
 		if(pbo->nsev<MAJOR_ALARM ) {
 			pbo->nsta = WRITE_ALARM;

@@ -170,7 +170,7 @@ static long process(paddr)
 		return(S_dev_missingSup);
 	}
 
-	/*pact must not be set true until read_ai completes*/
+	/*pact must not be set true until read_ai is called*/
 	status=(*pdset->read_ai)(pai); /* read the new value */
 	pai->pact = TRUE;
 	/* status is one if an asynchronous record is being processed*/
@@ -280,9 +280,16 @@ static long get_alarm_double(paddr,pad)
 static void alarm(pai)
     struct aiRecord	*pai;
 {
-	float	ftemp;
-	float	val=pai->val;
+	double	ftemp;
+	double	val=pai->val;
 
+	if(val>0.0 && val<udfDtest){
+		if (pai->nsev<VALID_ALARM){
+			pai->nsta = SOFT_ALARM;
+			pai->nsev = VALID_ALARM;
+		}
+		return;
+	}
 	/* if difference is not > hysterisis use lalm not val */
 	ftemp = pai->lalm - pai->val;
 	if(ftemp<0.0) ftemp = -ftemp;
@@ -333,10 +340,10 @@ static void alarm(pai)
 static void convert(pai)
 struct aiRecord	*pai;
 {
-	float			 val;
+	double			 val;
 
 
-	val = pai->rval;
+	val = pai->rval + pai->roff;
 	/* adjust slope and offset */
 	if(pai->aslo != 0.0) val = val * pai->aslo + pai->aoff;
 
@@ -406,7 +413,7 @@ static void monitor(pai)
     struct aiRecord	*pai;
 {
 	unsigned short	monitor_mask;
-	float		delta;
+	double		delta;
 	short		stat,sevr,nsta,nsev;
 
 	/* get previous stat and sevr  and new stat and sevr*/
@@ -420,10 +427,6 @@ static void monitor(pai)
 	pai->nsta = 0;
 	pai->nsev = 0;
 
-	/* anyone waiting for an event on this record */
-	if (pai->mlis.count == 0) return;
-
-	/* Flags which events to fire on the value field */
 	monitor_mask = 0;
 
 	/* alarm condition changed this scan */

@@ -1,7 +1,8 @@
-/* devBiSoft.c */
-/* share/src/dev @(#)devBiSoftRaw.c	1.1     3/20/91 */
 
-/* devBiSoft.c - Device Support Routines for  Soft Binary Input*/
+/* devMbbiSoftRaw.c */
+/* share/src/dev $Id$ */
+
+/* devMbbiSoftRaw.c - Device Support Routines for  Soft Multibit Binary Input*/
 
 
 #include	<vxWorks.h>
@@ -14,12 +15,12 @@
 #include	<devSup.h>
 #include	<link.h>
 #include	<module_types.h>
-#include	<biRecord.h>
+#include	<mbbiRecord.h>
 
 
-/* Create the dset for devBiSoft */
+/* Create the dset for devMbbiSoftRaw */
 long init_record();
-long read_bi();
+long read_mbbi();
 
 struct {
 	long		number;
@@ -27,25 +28,24 @@ struct {
 	DEVSUPFUN	init;
 	DEVSUPFUN	init_record;
 	DEVSUPFUN	get_ioint_info;
-	DEVSUPFUN	read_bi;
-}devBiSoft={
+	DEVSUPFUN	read_mbbi;
+}devMbbiSoftRaw={
 	5,
 	NULL,
 	NULL,
 	init_record,
 	NULL,
-	read_bi};
+	read_mbbi};
 
 
-static long init_record(pbi)
-    struct biRecord	*pbi;
+static long init_record(pmbbi)
+    struct mbbiRecord	*pmbbi;
 {
     char message[100];
-
-    /* bi.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
-    switch (pbi->inp.type) {
+    /* mbbi.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
+    switch (pmbbi->inp.type) {
     case (CONSTANT) :
-        pbi->val = pbi->inp.value.value;
+        pmbbi->rval = pmbbi->inp.value.value;
         break;
     case (PV_LINK) :
         break;
@@ -54,34 +54,34 @@ static long init_record(pbi)
     case (CA_LINK) :
         break;
     default :
-	strcpy(message,pbi->name);
-	strcat(message,": devBiSoft (init_record) Illegal INP field");
+	strcpy(message,pmbbi->name);
+	strcat(message,": devMbbiSoftRaw (init_record) Illegal INP field");
 	errMessage(S_db_badField,message);
 	return(S_db_badField);
     }
     return(0);
 }
 
-static long read_bi(pbi)
-    struct biRecord	*pbi;
+static long read_mbbi(pmbbi)
+    struct mbbiRecord	*pmbbi;
 {
     char message[100];
     long status,options,nRequest;
-    unsigned short val;
 
-    /* bi.inp must be a CONSTANT or a DB_LINK or a CA_LINK*/
-    switch (pbi->inp.type) {
+    /* mbbi.inp must be a CONSTANT or a DB_LINK or a CA_LINK*/
+    switch (pmbbi->inp.type) {
     case (CONSTANT) :
+	return(2);
         break;
     case (DB_LINK) :
         options=0;
         nRequest=1;
-        status = dbGetLink(&(pbi->inp.value.db_link),pbi,DBR_USHORT,
-                &val,&options,&nRequest);
+        status = dbGetLink(&(pmbbi->inp.value.db_link),pmbbi,DBR_ULONG,
+                &(pmbbi->rval),&options,&nRequest);
         if(status!=0) {
-                if(pbi->nsev<VALID_ALARM) {
-                        pbi->nsev = VALID_ALARM;
-                        pbi->nsta = LINK_ALARM;
+                if(pmbbi->nsev<VALID_ALARM) {
+                        pmbbi->nsev = VALID_ALARM;
+                        pmbbi->nsta = LINK_ALARM;
                 }
 		return(2);
         }
@@ -89,15 +89,16 @@ static long read_bi(pbi)
     case (CA_LINK) :
         break;
     default :
-        if(pbi->nsev<MAJOR_ALARM) {
-                pbi->nsev = MAJOR_ALARM;
-                pbi->nsta = SOFT_ALARM;
-                if(pbi->stat!=SOFT_ALARM) {
-                        strcpy(message,pbi->name);
-                        strcat(message,": devBiSoft (read_bi) Illegal INP field");
+        if(pmbbi->nsev<MAJOR_ALARM) {
+                pmbbi->nsev = MAJOR_ALARM;
+                pmbbi->nsta = SOFT_ALARM;
+                if(pmbbi->stat!=SOFT_ALARM) {
+                        strcpy(message,pmbbi->name);
+                        strcat(message,": devMbbiSoftRaw (read_mbbi) Illegal INP field");
                         errMessage(S_db_badField,message);
                 }
         }
+	return(2);
     }
-    return(2);
+    return(0);
 }

@@ -1,7 +1,7 @@
-/* recSm.c */
+/* recSteppermotor.c */
 /* share/src/rec $Id$ */
 
-/* recSm.c - Record Support Routines for Steppermotor records
+/* recSteppermotor.c - Record Support Routines for Steppermotor records
  *
  * Author: 	Bob Dalesio
  * Date:        12-11-89
@@ -55,7 +55,7 @@
 #include	<link.h>
 #include	<recSup.h>
 #include	<special.h>
-#include	<smRecord.h>
+#include	<steppermotorRecord.h>
 #include	<steppermotor.h>
 
 /* Create RSET - Record Support Entry Table*/
@@ -77,7 +77,7 @@ long get_graphic_double();
 long get_control_double();
 long get_alarm_double();
 
-struct rset smRSET={
+struct rset steppermotorRSET={
 	RSETNUMBER,
 	report,
 	initialize,
@@ -117,7 +117,7 @@ void sm_get_position();
 
 
 static long init_record(psm)
-    struct smRecord	*psm;
+    struct steppermotorRecord	*psm;
 {
 
     init_sm(psm);
@@ -128,7 +128,7 @@ static long init_record(psm)
 static long process(paddr)
     struct dbAddr	*paddr;
 {
-	struct smRecord	*psm=(struct smRecord *)(paddr->precord);
+	struct steppermotorRecord	*psm=(struct steppermotorRecord *)(paddr->precord);
 
 	/* intialize the stepper motor record when the init bit is 0 */
 	/* the init is set when the readback returns */
@@ -156,7 +156,7 @@ static long process(paddr)
 }
 
 static long get_value(psm,pvdes)
-    struct smRecord		*psm;
+    struct steppermotorRecord		*psm;
     struct valueDes	*pvdes;
 {
     pvdes->field_type = DBF_FLOAT;
@@ -169,7 +169,7 @@ static long get_units(paddr,units)
     struct dbAddr *paddr;
     char	  *units;
 {
-    struct smRecord	*psm=(struct smRecord *)paddr->precord;
+    struct steppermotorRecord	*psm=(struct steppermotorRecord *)paddr->precord;
 
     strncpy(units,psm->egu,sizeof(psm->egu));
     return(0);
@@ -179,7 +179,7 @@ static long get_precision(paddr,precision)
     struct dbAddr *paddr;
     long	  *precision;
 {
-    struct smRecord	*psm=(struct smRecord *)paddr->precord;
+    struct steppermotorRecord	*psm=(struct steppermotorRecord *)paddr->precord;
 
     *precision = psm->prec;
     return(0);
@@ -189,7 +189,7 @@ static long get_graphic_double(paddr,pgd)
     struct dbAddr *paddr;
     struct dbr_grDouble	*pgd;
 {
-    struct smRecord	*psm=(struct smRecord *)paddr->precord;
+    struct steppermotorRecord	*psm=(struct steppermotorRecord *)paddr->precord;
 
     pgd->upper_disp_limit = psm->hopr;
     pgd->lower_disp_limit = psm->lopr;
@@ -200,7 +200,7 @@ static long get_control_double(paddr,pcd)
     struct dbAddr *paddr;
     struct dbr_ctrlDouble *pcd;
 {
-    struct smRecord	*psm=(struct smRecord *)paddr->precord;
+    struct steppermotorRecord	*psm=(struct steppermotorRecord *)paddr->precord;
 
     pcd->upper_ctrl_limit = psm->hopr;
     pcd->lower_ctrl_limit = psm->lopr;
@@ -211,7 +211,7 @@ static long get_alarm_double(paddr,pad)
     struct dbAddr *paddr;
     struct dbr_alDouble	*pad;
 {
-    struct smRecord	*psm=(struct smRecord *)paddr->precord;
+    struct steppermotorRecord	*psm=(struct steppermotorRecord *)paddr->precord;
 
     pad->upper_alarm_limit = psm->hihi;
     pad->upper_warning_limit = psm->high;
@@ -222,7 +222,7 @@ static long get_alarm_double(paddr,pad)
 
 
 static void alarm(psm)
-    struct smRecord	*psm;
+    struct steppermotorRecord	*psm;
 {
 	float deviation;
 
@@ -268,7 +268,7 @@ static void alarm(psm)
 }
 
 static void monitor(psm)
-    struct smRecord	*psm;
+    struct steppermotorRecord	*psm;
 {
 	unsigned short	monitor_mask;
         float           delta;
@@ -284,12 +284,6 @@ static void monitor(psm)
         psm->sevr = nsev;
         psm->nsta = 0;
         psm->nsev = 0;
-
-        /* anyone waiting for an event on this record */
-        if (psm->mlis.count == 0) {
-		psm->mlst = psm->alst = psm->val;
-		return;
-	}
 
         /* Flags which events to fire on the value field */
         monitor_mask = 0;
@@ -335,7 +329,7 @@ static void monitor(psm)
  */
 static void smcb_callback(psm_data,psm)
 struct motor_data	*psm_data;
-struct smRecord	*psm;
+struct steppermotorRecord	*psm;
 {
     short           stat,sevr,nsta,nsev;
    
@@ -467,7 +461,7 @@ struct smRecord	*psm;
  * INIT_SM
  */
 static void init_sm(psm)
-struct smRecord      *psm;
+struct steppermotorRecord      *psm;
 {
 	int	acceleration,velocity;
 	short	card,channel;
@@ -546,7 +540,7 @@ struct smRecord      *psm;
  *
  */
 static void convert_sm(psm)
-struct smRecord	*psm;
+struct steppermotorRecord	*psm;
 {
 	double	temp;
 
@@ -570,7 +564,7 @@ struct smRecord	*psm;
  * control a stepper motor through position
  */
 static void positional_sm(psm)
-struct smRecord	*psm;
+struct steppermotorRecord	*psm;
 {
 	short	card,channel;
 
@@ -677,7 +671,7 @@ struct smRecord	*psm;
  * control a velocity stepper motor
  */
 static void velocity_sm(psm)
-struct smRecord	*psm;
+struct steppermotorRecord	*psm;
 {
 	float	chng_vel;
 	int	acceleration,velocity;
@@ -764,7 +758,7 @@ struct smRecord	*psm;
  * get the stepper motor readback position
  */
 static void sm_get_position(psm)
-struct smRecord	*psm;
+struct steppermotorRecord	*psm;
 {
 	short	reset;
 	float		new_pos,delta;

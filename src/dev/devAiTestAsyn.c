@@ -41,6 +41,7 @@ struct {
 /* control block for callback*/
 struct callback {
 	void (*callback)();
+	int priority;
 	struct dbAddr dbAddr;
 	WDOG_ID wd_id;
 	void (*process)();
@@ -73,6 +74,7 @@ static long init_record(pai,process)
 	pcallback = (struct callback *)(calloc(1,sizeof(struct callback)));
 	pai->dpvt = (caddr_t)pcallback;
 	pcallback->callback = myCallback;
+	pcallback->priority = priorityLow;
 	if(dbNameToAddr(pai->name,&(pcallback->dbAddr))) {
 		logMsg("dbNameToAddr failed in init_record for devAiTestAsyn\n");
 		exit(1);
@@ -96,7 +98,7 @@ static long read_ai(pai)
     char message[100];
     long status,options,nRequest;
     struct callback *pcallback=(struct callback *)(pai->dpvt);
-    short	wait_time;
+    int		wait_time;
 
     /* ai.inp must be a CONSTANT*/
     switch (pai->inp.type) {
@@ -105,7 +107,7 @@ static long read_ai(pai)
 		printf("%s Completed\n",pai->name);
 		return(0); /* don`t convert*/
 	} else {
-		wait_time = (short)(pai->rval * vxTicksPerSecond);
+		wait_time = (int)(pai->rval * vxTicksPerSecond);
 		if(wait_time<=0) return(0);
 		printf("%s Starting asynchronous processing\n",pai->name);
 		wdStart(pcallback->wd_id,wait_time,callbackRequest,pcallback);

@@ -83,6 +83,8 @@ struct rset stateRSET={
 	get_graphic_double,
 	get_control_double,
 	get_alarm_double };
+
+void monitor();
 
 static long process(paddr)
     struct dbAddr	*paddr;
@@ -90,11 +92,7 @@ static long process(paddr)
 	struct stateRecord	*pstate=(struct stateRecord *)(paddr->precord);
 
         pstate->pact=TRUE;
-	if(strncmp(pstate->oval,pstate->val,sizeof(pstate->val))) {
-        	if(pstate->mlis.count != 0)
-                	db_post_events(pstate,&(pstate->val[0]),DBE_VALUE);
-		strncpy(pstate->oval,pstate->val,sizeof(pstate->val));
-	}
+	monitor(pstate);
         /* process the forward scan link record */
         if (pstate->flnk.type==DB_LINK) dbScanPassive(pstate->flnk.value.db_link.pdbAddr);
         pstate->pact=FALSE;
@@ -111,3 +109,40 @@ static long get_value(pstate,pvdes)
     return(0);
 }
 
+
+static void monitor(pstate)
+    struct stateRecord             *pstate;
+{
+    unsigned short  monitor_mask;
+    short           stat,sevr,nsta,nsev;
+
+    /* get previous stat and sevr  and new stat and sevr*/
+    stat=pstate->stat;
+    sevr=pstate->sevr;
+    nsta=pstate->nsta;
+    nsev=pstate->nsev;
+    /*set current stat and sevr*/
+    pstate->stat = nsta;
+    pstate->sevr = nsev;
+    pstate->nsta = 0;
+    pstate->nsev = 0;
+
+    /* Flags which events to fire on the value field */
+    monitor_mask = 0;
+
+    /* alarm condition changed this scan */
+    if (stat!=nsta || sevr!=nsev) {
+            /* post events for alarm condition change*/
+            monitor_mask = DBE_ALARM;
+            /* post stat and nsev fields */
+            db_post_events(pstate,&pstate->stat,DBE_VALUE);
+            db_post_events(pstate,&pstate->sevr,DBE_VALUE);
+    }
+
+    if(strncmp(pstate->oval,pstate->val,sizeof(pstate->val))) {
+       	if(pstate->mlis.count != 0)
+             db_post_events(pstate,&(pstate->val[0]),monitor_mask|DBE_VALUE);
+	strncpy(pstate->oval,pstate->val,sizeof(pstate->val));
+    }
+    return;
+}

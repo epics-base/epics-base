@@ -107,7 +107,7 @@ static long special_linconv(pao,after)
     pao->eslo = (pao->eguf -pao->egul)/4095.0;
     return(0);
 }
-
+
 static void read_ao(pao)
 struct aoRecord      *pao;
 {
@@ -116,15 +116,7 @@ struct aoRecord      *pao;
 
 	/* get the value from the ao driver */
 	ao_read(pvmeio->card,pvmeio->signal,VMI4100,&value);
-	/* convert raw readback to egu */
-	switch (pao->linr){
-		case (LINEAR):
-			pao->rbv = (value * pao->eslo) + pao->egul;
-			break;
-		default:
-			pao->rbv = value;
-	}
-	pao->val = pao->rbv;
+	pao->rbv = pao->rval = value;
 	return;
 }
 

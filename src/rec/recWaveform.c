@@ -295,9 +295,6 @@ static void monitor(pwf)
         pwf->nsta = 0;
         pwf->nsev = 0;
 
-        /* anyone waiting for an event on this record */
-        if(pwf->mlis.count == 0) return;
-
         /* Flags which events to fire on the value field */
         monitor_mask = 0;
 
@@ -309,7 +306,7 @@ static void monitor(pwf)
                 db_post_events(pwf,&pwf->stat,DBE_VALUE);
                 db_post_events(pwf,&pwf->sevr,DBE_VALUE);
         }
-	monitor_mask |= DBE_LOG|DBE_VALUE;
+	monitor_mask |= (DBE_LOG|DBE_VALUE);
         if(monitor_mask) db_post_events(pwf,pwf->bptr,monitor_mask);
 	return;
 

@@ -108,7 +108,13 @@ static long process(paddr)
 	long		 status;
 
 	ppid->pact = TRUE;
-	status=do_pid(ppid);
+	if(ppid->val>0.0 && ppid->val<udfFtest) {
+		if (ppid->nsev<VALID_ALARM) {
+			ppid->nsta = SOFT_ALARM;
+			ppid->nsev = VALID_ALARM;
+                }
+		status = 0;
+	} else status=do_pid(ppid);
 	if(status==1) {
 		ppid->pact = FALSE;
 		return(0);
@@ -265,10 +271,6 @@ static void monitor(ppid)
         ppid->nsta = 0;
         ppid->nsev = 0;
 
-        /* anyone waiting for an event on this record */
-        if (ppid->mlis.count == 0) return;
-
-        /* Flags which events to fire on the value field */
         monitor_mask = 0;
 
         /* alarm condition changed this scan */
@@ -298,24 +300,30 @@ static void monitor(ppid)
                 ppid->alst = ppid->val;
         }
 
-        /* send out monitors connected to the value field */
+        /* send out all monitors  for value changes*/
         if (monitor_mask){
                 db_post_events(ppid,&ppid->val,monitor_mask);
         }
-	if(ppid->ocva != ppid->cval) { 
-		db_post_events(ppid,&ppid->cval,monitor_mask|DBE_VALUE);
-		ppid->ocva = ppid->cval;
-	}
-	if(ppid->oout != ppid->out) { 
-		db_post_events(ppid,&ppid->out,monitor_mask|DBE_VALUE);
+	delta = ppid->oout - ppid->out;
+	if(delta<0.0) delta = -delta;
+	if(delta > ppid->odel) {
 		ppid->oout = ppid->out;
+		monitor_mask = DBE_LOG|DBE_VALUE;
+		db_post_events(ppid,&ppid->out,monitor_mask);
+		db_post_events(ppid,&ppid->p,monitor_mask);
+		db_post_events(ppid,&ppid->i,monitor_mask);
+		db_post_events(ppid,&ppid->d,monitor_mask);
+		db_post_events(ppid,&ppid->ct,monitor_mask);
+		db_post_events(ppid,&ppid->dt,monitor_mask);
+		db_post_events(ppid,&ppid->err,monitor_mask);
+		db_post_events(ppid,&ppid->derr,monitor_mask);
 	}
         return;
 }
 
 /* A discrete form of the PID algorithm is as follows
  * M(n) = KP*(E(n) + KI*SUMi(E(i)*dT(i))
- *		   + KD*(E(n) -E(n-1))/dT(i) + Mr
+ *		   + KD*(E(n) -E(n-1))/dT(n) + Mr
  * where
  *	M(n)	Value of manipulated variable at nth sampling instant
  *	KP,KI,KD Proportional, Integral, and Differential Gains
@@ -348,6 +356,9 @@ struct pidRecord     *ppid;
 	float		de;	/*change in error	*/
 	float		dep;	/*prev change in error	*/
 	float		out;	/*output value		*/
+	float		p;	/*proportional contribution*/
+	float		i;	/*integral contribution*/
+	float		d;	/*derivative contribution*/
 
         /* fetch the controlled value */
         if (ppid->cvl.type != DB_LINK) { /* nothing to control*/
@@ -385,15 +396,18 @@ struct pidRecord     *ppid;
 	/* compute time difference and make sure it is large enough*/
 	ctp = ppid->ct;
 	ct = tickGet();
-	if(ctp==ct) return(1);
-	if(ctp<ct) {
-		dt = (float)(ct-ctp);
-	}else { /* clock has overflowed */
-		dt = (unsigned long)(0xffffffff) - ctp;
-		dt = dt + ct + 1;
+	if(ctp==0) {/*this happens the first time*/
+		dt=0.0;
+	} else {
+		if(ctp<ct) {
+			dt = (float)(ct-ctp);
+		}else { /* clock has overflowed */
+			dt = (unsigned long)(0xffffffff) - ctp;
+			dt = dt + ct + 1;
+		}
+		dt = dt/vxTicksPerSecond;
+		if(dt<ppid->mdt) return(1);
 	}
-	dt = dt/vxTicksPerSecond;
-	if(dt<ppid->mdt) return(1);
 	/* get the rest of values needed */
 	dtp = ppid->dt;
 	kp = ppid->kp;
@@ -403,10 +417,11 @@ struct pidRecord     *ppid;
 	dep = ppid->derr;
 	e = val - cval;
 	de = e - ep;
-	out = de;
-	out = out + e*dt*ki;
-	if(dtp!=0.0) out = out + kd*(de/dt - dep/dtp);
-	out = kp*out;
+	p = kp*de;
+	i = kp*e*dt*ki;
+	if(dtp>0.0 && dt>0.0) d = kp*kd*(de/dt - dep/dtp);
+	else d = 0.0;
+	out = p + i + d;
 	/* update record*/
 	ppid->ct  = ct;
 	ppid->dt   = dt;
@@ -414,5 +429,8 @@ struct pidRecord     *ppid;
 	ppid->derr = de;
 	ppid->cval  = cval;
 	ppid->out  = out;
+	ppid->p  = p;
+	ppid->i  = i;
+	ppid->d  = d;
 	return(0);
 }

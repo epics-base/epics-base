@@ -125,7 +125,7 @@ struct aodset { /* analog input dset */
 #define LINEAR 1
 
 void alarm();
-void convert();
+int convert();
 void monitor();
 
 
@@ -139,6 +139,10 @@ static long init_record(pao)
 	recGblRecordError(S_dev_noDSET,pao,"ao: init_record");
 	return(S_dev_noDSET);
     }
+    /* get the initial value if dol is a constant*/
+    if (pao->dol.type == CONSTANT){
+            pao->val = pao->dol.value.value;
+    }
     /* must have write_ao function defined */
     if( (pdset->number < 6) || (pdset->write_ao ==NULL) ) {
 	recGblRecordError(S_dev_missingSup,pao,"ao: init_record");
@@ -146,10 +150,13 @@ static long init_record(pao)
     }
     if( pdset->init_record ) {
 	if((status=(*pdset->init_record)(pao,process))) return(status);
-    }
-    /* get the intial value */
-    if ((pao->dol.type == CONSTANT) && (pao->dol.value.value != udfFloat)){
-            pao->val = pao->dol.value.value;
+	if(pao->rval != udfLong) { /* convert */
+            if (pao->linr == LINEAR){
+                pao->val = (pao->rval + pao->roff)*pao->eslo + pao->egul;
+            }else{
+                pao->val = pao->rval;
+            }
+	}
     }
     return(0);
 }
@@ -159,7 +166,7 @@ static long process(paddr)
 {
 	struct aoRecord	*pao=(struct aoRecord *)(paddr->precord);
 	struct aodset	*pdset = (struct aodset *)(pao->dset);
-	long		 status;
+	long		 status=0;
 
 	if( (pdset==NULL) || (pdset->write_ao==NULL) ) {
 		pao->pact=TRUE;
@@ -167,8 +174,11 @@ static long process(paddr)
 		return(S_dev_missingSup);
 	}
 
-	if(pao->pact == FALSE) convert(pao);
-	status=(*pdset->write_ao)(pao);
+	if(pao->pact == FALSE) { /* convert and if success write*/
+		if(convert(pao)==0) status=(*pdset->write_ao)(pao);
+	} else {
+		status=(*pdset->write_ao)(pao);
+	}
 	pao->pact = TRUE;
 	if(status==1) return(0);
 
@@ -278,6 +288,14 @@ static void alarm(pao)
 	float	ftemp;
 	float	val=pao->val;
 
+        if(val>0.0 && val<udfFtest){
+                if (pao->nsev<VALID_ALARM){
+                        pao->nsta = SOFT_ALARM;
+                        pao->nsev = VALID_ALARM;
+                }
+                return;
+        }
+
         /* if difference is not > hysterisis use lalm not val */
         ftemp = pao->lalm - pao->val;
         if(ftemp<0.0) ftemp = -ftemp;
@@ -326,12 +344,11 @@ static void alarm(pao)
 }
 
 
-static void convert(pao)
+static int convert(pao)
     struct aoRecord  *pao;
 {
 	float		value;
 
-        /* fetch the desired output if there is a database link */
         if ((pao->dol.type == DB_LINK) && (pao->omsl == CLOSED_LOOP)){
 		long		nRequest;
 		long		options;
@@ -342,17 +359,26 @@ static void convert(pao)
 		nRequest=1;
 		save_pact = pao->pact;
 		pao->pact = TRUE;
-                status = dbGetLink(&pao->dol.value,DBR_FLOAT,&value,&options,&nRequest);
+                status = dbGetLink(&pao->dol.value.db_link,pao,DBR_FLOAT,
+			&value,&options,&nRequest);
 		pao->pact = save_pact;
 		if(status) {
 			if(pao->nsev<VALID_ALARM) {
 				pao->nsta = LINK_ALARM;
 				pao->nsev=VALID_ALARM;
 			}
-			return;
+			return(1);
 		}
                 if (pao->oif == OUTPUT_INCREMENTAL) value += pao->val;
         } else value = pao->val;
+
+	if(value>0.0 && value<udfFtest) {
+		if(pao->nsev<VALID_ALARM) {
+			pao->nsta = SOFT_ALARM;
+			pao->nsev = VALID_ALARM;
+		}
+		return(1);
+	}
 
         /* check drive limits */
 	if(pao->drvh > pao->drvl) {
@@ -361,10 +387,10 @@ static void convert(pao)
 	}
 	pao->val = value;
 
-	if(pao->oval == udfFloat) pao->oval = value;
+	if(pao->oval>0.0 && pao->oval<udfFtest) pao->oval = value;
 	/* now set value equal to desired output value */
         /* apply the output rate of change */
-        if (pao->oroc){
+        if (pao->oroc<0.0 || pao->oroc>=udfFtest){/*must be defined and >0*/
 		float		diff;
 
                 diff = value - pao->oval;
@@ -374,14 +400,17 @@ static void convert(pao)
         }
 	pao->oval = value;
 
-
         /* convert */
         if (pao->linr == LINEAR){
                 if (pao->eslo == 0.0) pao->rval = 0;
-                else pao->rval = (value - pao->egul) / pao->eslo;
+                else {
+			pao->rval = (value - pao->egul) / pao->eslo;
+			pao->rval -= pao->roff;
+		}
         }else{
                 pao->rval = value;
         }
+	return(0);
 }
 
 
@@ -403,10 +432,6 @@ static void monitor(pao)
         pao->nsta = 0;
         pao->nsev = 0;
 
-	/* anyone waiting for an event on this record */
-	if (pao->mlis.count == 0) return;
-
-	/* Flags which events to fire on the value field */
 	monitor_mask = 0;
 
 	/* alarm condition changed this scan */
@@ -426,7 +451,6 @@ static void monitor(pao)
                 /* update last value monitored */
                 pao->mlst = pao->val;
         }
-
         /* check for archive change */
         delta = pao->alst - pao->val;
         if(delta<0.0) delta = -delta;
@@ -437,20 +461,22 @@ static void monitor(pao)
                 pao->alst = pao->val;
         }
 
+
         /* send out monitors connected to the value field */
         if (monitor_mask){
                 db_post_events(pao,&pao->val,monitor_mask);
 	}
-	if(pao->oraw != pao->rval) {
-		monitor_mask |= DBE_VALUE;
-                db_post_events(pao,&pao->rval,monitor_mask);
+	if(pao->oval!=pao->val) monitor_mask |= (DBE_VALUE|DBE_LOG);
+	if(monitor_mask) {
 		db_post_events(pao,&pao->oval,monitor_mask);
-		pao->oraw = pao->rval;
-	}
-	if(pao->orbv != pao->rbv) {
-		monitor_mask |= DBE_VALUE;
-                db_post_events(pao,&pao->rbv,monitor_mask);
-		pao->orbv = pao->rbv;
+		if(pao->oraw != pao->rval) {
+                	db_post_events(pao,&pao->rval,monitor_mask|DBE_VALUE);
+			pao->oraw = pao->rval;
+		}
+		if(pao->orbv != pao->rbv) {
+                	db_post_events(pao,&pao->rbv,monitor_mask|DBE_VALUE);
+			pao->orbv = pao->rbv;
+		}
 	}
 	return;
 }

@@ -35,26 +35,19 @@ struct {
 	init_record,
 	NULL,
 	read_bi};
-static long masks[] = {
-        0x00000001,0x00000002,0x00000004,0x00000008,
-        0x00000010,0x00000020,0x00000040,0x00000080,
-        0x00000100,0x00000200,0x00000400,0x00000800,
-        0x00001000,0x00002000,0x00004000,0x00008000,
-        0x00010000,0x00020000,0x00040000,0x00080000,
-        0x00100000,0x00200000,0x00400000,0x00800000,
-        0x01000000,0x02000000,0x04000000,0x08000000,
-        0x10000000,0x20000000,0x40000000,0x80000000,
-};
 
-
 static long init_record(pbi)
     struct biRecord	*pbi;
 {
     char message[100];
+    struct vmeio *pvmeio;
 
     /* bi.inp must be an VME_IO */
     switch (pbi->inp.type) {
     case (VME_IO) :
+	pvmeio = (struct vmeio *)&(pbi->inp.value);
+	pbi->mask=1;
+	pbi->mask <<= pvmeio->signal;
 	break;
     default :
 	strcpy(message,pbi->name);
@@ -64,7 +57,7 @@ static long init_record(pbi)
     }
     return(0);
 }
-
+
 static long read_bi(pbi)
     struct biRecord	*pbi;
 {
@@ -74,16 +67,16 @@ static long read_bi(pbi)
 
 	
 	pvmeio = (struct vmeio *)&(pbi->inp.value);
-	status = bi_driver(pvmeio->card,masks[pvmeio->signal],XY210,&value);
+	status = bi_driver(pvmeio->card,pbi->mask,XY210,&value);
 	if(status==0) {
 		pbi->rval = value;
-		if(value == 0) pbi->val = 0;
-		else pbi->val = 1;
+		return(0);
 	} else {
-		if(pbi->nsev<MAJOR_ALARM ) {
+		if(pbi->nsev<VALID_ALARM ) {
 			pbi->nsta = READ_ALARM;
-			pbi->nsev = MAJOR_ALARM;
+			pbi->nsev = VALID_ALARM;
 		}
+		return(2);
 	}
 	return(status);
 }

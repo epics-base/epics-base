@@ -60,19 +60,26 @@ static long init_record(pmbbo)
     }
     return(0);
 }
-
+
 static long write_mbbo(pmbbo)
     struct mbboRecord	*pmbbo;
 {
     char message[100];
+    long status;
 
     /* mbbo.out must be a CONSTANT or a DB_LINK or a CA_LINK*/
     switch (pmbbo->out.type) {
     case (CONSTANT) :
         break;
     case (DB_LINK) :
-        (void)dbPutLink(&pmbbo->out.value.db_link,pmbbo,DBR_ENUM,
+        status = dbPutLink(&pmbbo->out.value.db_link,pmbbo,DBR_USHORT,
                 &pmbbo->val,1L);
+        if(status!=0) {
+                if(pmbbo->nsev<MAJOR_ALARM) {
+                        pmbbo->nsev = MAJOR_ALARM;
+                        pmbbo->nsta = LINK_ALARM;
+                }
+        }
         break;
     case (CA_LINK) :
         break;
@@ -82,7 +89,7 @@ static long write_mbbo(pmbbo)
                 pmbbo->nsta = SOFT_ALARM;
                 if(pmbbo->stat!=SOFT_ALARM) {
                         strcpy(message,pmbbo->name);
-                        strcat(message,": devMbboSoft (write_mbbo) Illegal INP field");
+                        strcat(message,": devMbboSoft (write_mbbo) Illegal OUT field");
                         errMessage(S_db_badField,message);
                 }
         }

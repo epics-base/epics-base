@@ -92,7 +92,7 @@ static long write_ao(pao)
 		pao->nsta = SOFT_ALARM;
 		if(pao->stat!=SOFT_ALARM) {
 			strcpy(message,pao->name);
-			strcat(message,": devAoSoft (write_ao) Illegal INP field");
+			strcat(message,": devAoSoft (write_ao) Illegal OUT field");
 			errMessage(S_db_badField,message);
 		}
 	}

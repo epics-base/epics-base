@@ -116,7 +116,6 @@ static long init_record(ptimer)
     return(0);
 }
 
-
 static long process(paddr)
     struct dbAddr	*paddr;
 {
@@ -145,7 +144,7 @@ static long get_value(ptimer,pvdes)
     (short *)(pvdes->pvalue) = &ptimer->val;
     return(0);
 }
-
+
 static void monitor(ptimer)
     struct timerRecord *ptimer;
 {
@@ -162,9 +161,6 @@ static void monitor(ptimer)
         ptimer->sevr = nsev;
         ptimer->nsta = 0;
         ptimer->nsev = 0;
-
-        /* anyone waiting for an event on this record */
-        if (ptimer->mlis.count == 0) return;
 
         /* Flags which events to fire on the value field */
         monitor_mask = 0;
@@ -190,7 +186,7 @@ static void monitor(ptimer)
  * These constants are indexed by the time units field in the timer record.
  * Values are converted to seconds.
  */
-static double constants[] = {1000,1000000,1000000000,1000000000000};
+static double constants[] = {1e3,1e6,1e9,1e12};
 /*
  * CONVERT_TIMER
  *

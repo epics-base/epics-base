@@ -54,13 +54,14 @@
  * .17  04-06-90        lrd     change conditional to check for 0 and non-zero
  *                              instead of 0 and 1 (more 'C' like)
  * .18  10-10-90	mrk	Made changes for new record support
+ *				Note that all calc specific details moved
+ *				to libCalc
  */
 
 #include	<vxWorks.h>
 #include	<types.h>
 #include	<stdioLib.h>
 #include	<lstLib.h>
-#include	<math.h>
 
 #include	<alarm.h>
 #include	<dbAccess.h>
@@ -71,7 +72,6 @@
 #include	<recSup.h>
 #include	<special.h>
 #include	<calcRecord.h>
-#include	<post.h>
 
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
@@ -114,23 +114,26 @@ struct rset calcRSET={
 
 void alarm();
 void monitor();
-int do_calc();
+long calcPerform();
 long postfix();
-void fetch_values();
+int fetch_values();
+#define ARG_MAX 12
 
 static long init_record(pcalc)
     struct calcRecord	*pcalc;
 {
     long status;
+    struct link *plink;
+    int i;
+    double *pvalue;
     short error_number;
     char rpbuf[80];
 
-    if(pcalc->inpa.type==CONSTANT) pcalc->a = pcalc->inpa.value.value;
-    if(pcalc->inpb.type==CONSTANT) pcalc->b = pcalc->inpb.value.value;
-    if(pcalc->inpc.type==CONSTANT) pcalc->c = pcalc->inpc.value.value;
-    if(pcalc->inpd.type==CONSTANT) pcalc->d = pcalc->inpd.value.value;
-    if(pcalc->inpe.type==CONSTANT) pcalc->e = pcalc->inpe.value.value;
-    if(pcalc->inpf.type==CONSTANT) pcalc->f = pcalc->inpf.value.value;
+    plink = &pcalc->inpa;
+    pvalue = &pcalc->a;
+    for(i=0; i<ARG_MAX; i++, plink++, pvalue++) {
+        if(plink->type==CONSTANT) *pvalue = plink->value.value;
+    }
     status=postfix(pcalc->calc,rpbuf,&error_number);
     if(status) return(status);
     bcopy(rpbuf,pcalc->rpcl,sizeof(pcalc->rpcl));
@@ -143,11 +146,12 @@ static long process(paddr)
     struct calcRecord	*pcalc=(struct calcRecord *)(paddr->precord);
 
 	pcalc->pact = TRUE;
-	fetch_values(pcalc);
-	if(do_calc(pcalc)) {
-		if(pcalc->nsev<VALID_ALARM) {
-			pcalc->nsta = CALC_ALARM;
-			pcalc->nsev = VALID_ALARM;
+	if(fetch_values(pcalc)==0) {
+		if(calcPerform(&pcalc->a,&pcalc->val,pcalc->rpcl)) {
+			if(pcalc->nsev<VALID_ALARM) {
+				pcalc->nsta = CALC_ALARM;
+				pcalc->nsev = VALID_ALARM;
+			}
 		}
 	}
 	/* check for alarms */
@@ -176,6 +180,7 @@ static long special(paddr,after)
 	status=postfix(pcalc->calc,rpbuf,&error_number);
 	if(status) return(status);
 	bcopy(rpbuf,pcalc->rpcl,sizeof(pcalc->rpcl));
+	db_post_events(pcalc,pcalc->calc,DBE_VALUE);
 	return(0);
     default:
 	recGblDbaddrError(S_db_badChoice,paddr,"calc: special");
@@ -187,9 +192,9 @@ static long get_value(pcalc,pvdes)
     struct calcRecord		*pcalc;
     struct valueDes	*pvdes;
 {
-    pvdes->field_type = DBF_FLOAT;
+    pvdes->field_type = DBF_DOUBLE;
     pvdes->no_elements=1;
-    (float *)(pvdes->pvalue) = &pcalc->val;
+    (double *)(pvdes->pvalue) = &pcalc->val;
     return(0);
 }
 
@@ -251,9 +256,16 @@ static long get_alarm_double(paddr,pad)
 static void alarm(pcalc)
     struct calcRecord	*pcalc;
 {
-	float	ftemp;
-	float	val=pcalc->val;
+	double	ftemp;
+	double	val=pcalc->val;
 
+	if(val>0.0 && val<udfDtest) {
+		if(pcalc->nsev<VALID_ALARM) {
+			pcalc->nsev = VALID_ALARM;
+			pcalc->nsta = SOFT_ALARM;
+		}
+		return;
+	}
         /* if difference is not > hysterisis use lalm not val */
         ftemp = pcalc->lalm - pcalc->val;
         if(ftemp<0.0) ftemp = -ftemp;
@@ -305,10 +317,10 @@ static void monitor(pcalc)
     struct calcRecord	*pcalc;
 {
 	unsigned short	monitor_mask;
-	float		delta;
+	double		delta;
         short           stat,sevr,nsta,nsev;
-	float		*pnew;
-	float		*pprev;
+	double		*pnew;
+	double		*pprev;
 	int		i;
 
         /* get previous stat and sevr  and new stat and sevr*/
@@ -322,10 +334,6 @@ static void monitor(pcalc)
         pcalc->nsta = 0;
         pcalc->nsev = 0;
 
-        /* anyone waiting for an event on this record */
-        if (pcalc->mlis.count == 0) return;
-
-        /* Flags which events to fire on the value field */
         monitor_mask = 0;
 
         /* alarm condition changed this scan */
@@ -358,367 +366,47 @@ static void monitor(pcalc)
         /* send out monitors connected to the value field */
         if (monitor_mask){
                 db_post_events(pcalc,&pcalc->val,monitor_mask);
-        }
-	/* check all input fields for changes*/
-	for(i=0, pnew=&pcalc->a, pprev=&pcalc->la; i<6; i++, pnew++, pprev++) {
-		if(*pnew != *pprev) {
-			db_post_events(pcalc,pnew,monitor_mask|DBE_VALUE);
-			*pprev = *pnew;
+		/* check all input fields for changes*/
+		for(i=0, pnew=&pcalc->a, pprev=&pcalc->la; i<ARG_MAX; i++, pnew++, pprev++) {
+			if(*pnew != *pprev) {
+				db_post_events(pcalc,pnew,monitor_mask|DBE_VALUE);
+				*pprev = *pnew;
+			}
 		}
-	}
+        }
         return;
 }
 
-static void fetch_values(pcalc)
+static int fetch_values(pcalc)
 struct calcRecord *pcalc;
 {
 	struct link	*plink;	/* structure of the link field  */
-	float		*pvalue;
+	double		*pvalue;
 	long		options,nRequest;
 	int		i;
+	long	status;
 
-	for(i=0, plink=&pcalc->inpa, pvalue=&pcalc->a; i<6; i++, plink++, pvalue++) {
+	for(i=0, plink=&pcalc->inpa, pvalue=&pcalc->a; i<ARG_MAX; i++, plink++, pvalue++) {
 		if(plink->type!=DB_LINK) continue;
 		options=0;
 		nRequest=1;
-		(void)dbGetLink(&plink->value.db_link,pcalc,DBR_FLOAT,
+		status = dbGetLink(&plink->value.db_link,pcalc,DBR_DOUBLE,
 			pvalue,&options,&nRequest);
-	}
-	return;
-}
-
-/* the floating point math routines need to be declared as doubles */
-static double   random();       /* random number generator      */
-double  sqrt(),log(),log10();
-double  acos(),asin(),atan();
-double  cos(),sin(),tan();
-double  cosh(),sinh(),tanh();
-
-/*
- *	DO_CALC
- *
- *	execute the calculation
- */
-#define	NOT_SET		0
-#define	TRUE_COND	1
-#define	FALSE_COND	2
-
-static int do_calc(pcalc)
-struct calcRecord *pcalc;  /* pointer to calculation record  */
-{
-	char	*post;		/* postfix expression	*/
-	double	*pstacktop;	/* stack of values	*/
-	double	stack[80];
-	int	temp;
-	short	i;
-	double	*top;
-	int	itop;		/* integer top value	*/
-	int	inexttop;	/* ineteger next to top value 	*/
-	short	cond_flag;	/* conditional else flag	*/
-
-	/* initialize flag  */
-	cond_flag = NOT_SET;
-	pstacktop = &stack[0];
-
-	/* set post to postfix expression in calc structure */
-	post = &pcalc->rpcl[0];
-	top = pstacktop;
-
-	/* polish calculator loop */
-	while (*post != END_STACK){
-		switch (*post){
-		case FETCH_A:
-			++pstacktop;
-			*pstacktop = pcalc->a;
-			break;
-
-		case FETCH_B:
-			++pstacktop;
-			*pstacktop = pcalc->b;
-			break;
-
-		case FETCH_C:
-			++pstacktop;
-			*pstacktop = pcalc->c;
-			break;
-
-		case FETCH_D:
-			++pstacktop;
-			*pstacktop = pcalc->d;
-			break;
-
-		case FETCH_E:
-			++pstacktop;
-			*pstacktop = pcalc->e;
-			break;
-
-		case FETCH_F:
-			++pstacktop;
-			*pstacktop = pcalc->f;
-			break;
-
-		case ADD:
-			--pstacktop;
-			*pstacktop = *pstacktop + *(pstacktop+1);
-			break;
-
-		case SUB:
-			--pstacktop;
-			*pstacktop = *pstacktop - *(pstacktop+1);
-			break;
-
-		case MULT:
-			--pstacktop;
-			*pstacktop = *pstacktop * *(pstacktop+1);
-			break;
-
-		case DIV:
-			--pstacktop;
-			if (*(pstacktop+1) == 0) /* can't divide by zero */
-				return(-1);
-			*pstacktop = *pstacktop / *(pstacktop+1);
-			break;
-
-		case COND_ELSE:
-			/* first conditional set cond_flag */
-			/* true */
-			if ((*pstacktop != 0.0) && (cond_flag == NOT_SET)){
-				cond_flag  = TRUE_COND;
-				--pstacktop;		/* remove condition */
-			/* false */
-			}else if ((*pstacktop==0.0) && (cond_flag==NOT_SET)){
-				cond_flag  = FALSE_COND;
-				--pstacktop;		/* remove condition */
-				/* check for else condition */
-				i = 1;
-				while (*(post+i) != COND_ELSE){
-					/* no else value */
-					if (*(post+i) == END_STACK){
-						/* skip to end of expression */
-						while (*(post+1) != END_STACK)
-							++post;
-						/* use last value as result */
-						++pstacktop;
-						*pstacktop = pcalc->val;
-					}
-					i++;
-				}
-			}else if (cond_flag == TRUE_COND){
-				/* skip expression - result is on stack */
-				while ((*(post+1) != COND_ELSE)
-				  && (*(post+1) != END_STACK))
-					++post;
-			}else if (cond_flag == FALSE_COND){
-				/* remove true answer from stack top */
-				--pstacktop;
+		if(status!=0) {
+			if(pcalc->nsev<VALID_ALARM) {
+				pcalc->nsev=VALID_ALARM;
+				pcalc->nsta=LINK_ALARM;
 			}
-			break;
-				
-		case ABS_VAL:
-			if (*pstacktop < 0) *pstacktop = -*pstacktop;
-			break;
-
-		case UNARY_NEG:
-			*pstacktop = -1* (*pstacktop);
-			break;
-
-		case SQU_RT:
-			if (*pstacktop < 0) return(-1);	/* undefined */
-			*pstacktop = sqrt(*pstacktop);
-			break;
-
-		case LOG_10:
-			*pstacktop = log10(*pstacktop);
-			break;
-
-		case LOG_E:
-			*pstacktop = log(*pstacktop);
-			break;
-
-		case RANDOM:
-			++pstacktop;
-			*pstacktop = random();
-			break;
-
-		case EXPON:
-			--pstacktop;
-			if (*pstacktop < 0){
-				temp = (int) *(pstacktop+1);
-				/* is exponent an integer */
-				if ((*(pstacktop+1) - (double)temp) != 0) return (-1);
-        			*pstacktop = exp(*(pstacktop+1) * log(-*pstacktop));
-				/* is value negative */
-				if ((temp % 2) > 0) *pstacktop = -*pstacktop;
-			}else{
-        			*pstacktop = exp(*(pstacktop+1) * log(*pstacktop));
+			return(-1);
+		}
+		if(*pvalue>0.0 && *pvalue<udfDtest) {
+			if(pcalc->nsev<VALID_ALARM) {
+				pcalc->nsev=VALID_ALARM;
+				pcalc->nsta=SOFT_ALARM;
 			}
-			break;
-
-		case MODULO:
-			--pstacktop;
-			itop = (int)*pstacktop;
-			inexttop = (int)*(pstacktop+1);
-			if (inexttop == 0)
-				return(-1);
-			i =  itop % inexttop;
-			*pstacktop = i;
-			break;
-
-		case REL_OR:
-			--pstacktop;
-			*pstacktop = (*pstacktop || *(pstacktop+1));
-			break;
-
-		case REL_AND:
-			--pstacktop;
-			*pstacktop = (*pstacktop && *(pstacktop+1));
-			break;
-
-		case BIT_OR:
-			/* force double values into integers and or them */
-			itop = (int)*pstacktop;
-			inexttop = (int)*(pstacktop-1);
-			--pstacktop;
-			*pstacktop = (inexttop | itop);
-			break;
-
-		case BIT_AND:
-			/* force double values into integers and and them */
-			itop = (int)*pstacktop;
-			inexttop = (int)*(pstacktop-1);
-			--pstacktop;
-			*pstacktop = (inexttop & itop);
-			break;
-
-		case BIT_EXCL_OR:
-			/*force double values to integers to exclusive or them*/
-			itop = (int)*pstacktop;
-			inexttop = (int)*(pstacktop-1);
-			--pstacktop;
-			*pstacktop = (inexttop ^ itop);
-			break;
-
-		case GR_OR_EQ:
-			--pstacktop;
-			*pstacktop = *pstacktop >= *(pstacktop+1);
-			break;
-
-		case GR_THAN:
-			--pstacktop;
-			*pstacktop = *pstacktop > *(pstacktop+1);
-			break;
-
-		case LESS_OR_EQ:
-			--pstacktop;
-			*pstacktop = *pstacktop <= *(pstacktop+1);
-			break;
-
-		case LESS_THAN:
-			--pstacktop;
-			*pstacktop = *pstacktop < *(pstacktop+1);
-			break;
-
-		case NOT_EQ:
-			--pstacktop;
-			*pstacktop = *pstacktop != *(pstacktop+1);
-			break;
-
-		case EQUAL:
-			--pstacktop;
-			*pstacktop = (*pstacktop == *(pstacktop+1));
-			break;
-
-		case RIGHT_SHIFT:
-			itop = (int)*pstacktop;
-			inexttop = (int)*(pstacktop-1);
-			--pstacktop;
-			*pstacktop = (inexttop >> itop);
-			break;
-
-		case LEFT_SHIFT:
-			itop = (int)*pstacktop;
-			inexttop = (int)*(pstacktop-1);
-			--pstacktop;
-			*pstacktop = (inexttop << itop);
-			break;
-
-		case ACOS:
-			*pstacktop = acos(*pstacktop);
-			break;
-
-		case ASIN:
-			*pstacktop = asin(*pstacktop);
-			break;
-
-		case ATAN:
-			*pstacktop = atan(*pstacktop);
-			break;
-
-		case COS:
-			*pstacktop = cos(*pstacktop);
-			break;
-
-		case SIN:
-			*pstacktop = sin(*pstacktop);
-			break;
-
-		case TAN:
-			*pstacktop = tan(*pstacktop);
-			break;
-
-		case COSH:
-			*pstacktop = cosh(*pstacktop);
-			break;
-
-		case SINH:
-			*pstacktop = sinh(*pstacktop);
-			break;
-
-		case TANH:
-			*pstacktop = tanh(*pstacktop);
-			break;
-
-		default:
-			printf("%d bad expression element\n",*post);
-			break;
+			return(-1);
 		}
 
-		/* move ahead in postfix expression */
-		++post;
-	}
-
-	/* if everything is peachy,the stack should end at its first position */
-	if (++top == pstacktop)
-		pcalc->val = *pstacktop;
-	else {
-		if(pcalc->nsev < MAJOR_ALARM) {
-			pcalc->nsev = MAJOR_ALARM;
-			pcalc->nsta = CALC_ALARM;
-		}
 	}
 	return(0);
-}
-
-/*
- * RANDOM
- *
- * generates a random number between 0 and 1 using the
- * seed = (multy * seed) + addy		Random Number Generator by Knuth
- *						SemiNumerical Algorithms
- *						Chapter 1
- * randy = 1.0 / (seed & 0xff)		To normalize the number between 0 - 1
- */
-static unsigned short seed = 0xa3bf;
-static unsigned short multy = 191 * 8 + 5;  /* 191 % 8 == 5 */
-static unsigned short addy = 0x3141;
-static double random()
-{
-	double	randy;
-
-	/* random number */
-	seed = (seed * multy) + addy;
-	randy = 1.0 / (seed & 0xff);
-
-	/* between 0 - 1 */
-	return(randy);
 }

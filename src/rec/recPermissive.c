@@ -82,25 +82,75 @@ struct rset permissiveRSET={
 	get_graphic_double,
 	get_control_double,
 	get_alarm_double };
+
+void monitor();
 
 static long process(paddr)
     struct dbAddr	*paddr;
 {
-	struct permissiveRecord	*ppermissive=(struct permissiveRecord *)(paddr->precord);
+    struct permissiveRecord    *ppermissive=(struct permissiveRecord *)(paddr->precord);
 
-	ppermissive->pact=TRUE;
-	if(ppermissive->mlis.count!=0)
-		db_post_events(ppermissive,&ppermissive->val,DBE_VALUE);
-	ppermissive->pact=FALSE;
-	return(0);
+    ppermissive->pact=TRUE;
+    monitor(ppermissive);
+    if (ppermissive->flnk.type==DB_LINK)
+        dbScanPassive(ppermissive->flnk.value.db_link.pdbAddr);
+    ppermissive->pact=FALSE;
+    return(0);
 }
+
+
 static long get_value(ppermissive,pvdes)
     struct permissiveRecord             *ppermissive;
     struct valueDes     *pvdes;
 {
-    pvdes->field_type = DBF_SHORT;
+    pvdes->field_type = DBF_USHORT;
     pvdes->no_elements=1;
-    (short *)(pvdes->pvalue) = &(ppermissive->val);
+    (unsigned short *)(pvdes->pvalue) = &(ppermissive->val);
     return(0);
 }
+
+static void monitor(ppermissive)
+    struct permissiveRecord             *ppermissive;
+{
+    unsigned short  monitor_mask;
+    short           stat,sevr,nsta,nsev;
+    unsigned short  val,oval,wflg,oflg;
 
+    /* get previous stat and sevr  and new stat and sevr*/
+    stat=ppermissive->stat;
+    sevr=ppermissive->sevr;
+    nsta=ppermissive->nsta;
+    nsev=ppermissive->nsev;
+    /*set current stat and sevr*/
+    ppermissive->stat = nsta;
+    ppermissive->sevr = nsev;
+    ppermissive->nsta = 0;
+    ppermissive->nsev = 0;
+    /* get val,oval,wflg,oflg*/
+    val=ppermissive->val;
+    oval=ppermissive->oval;
+    wflg=ppermissive->wflg;
+    oflg=ppermissive->oflg;
+    /*set  oval and oflg*/
+    ppermissive->oval = val;
+    ppermissive->oflg = wflg;
+
+    monitor_mask = 0;
+
+    /* alarm condition changed this scan */
+    if (stat!=nsta || sevr!=nsev) {
+            /* post events for alarm condition change*/
+            monitor_mask = DBE_ALARM;
+            /* post stat and nsev fields */
+            db_post_events(ppermissive,&ppermissive->stat,DBE_VALUE);
+            db_post_events(ppermissive,&ppermissive->sevr,DBE_VALUE);
+    }
+
+    if(oval != val) {
+	db_post_events(ppermissive,&ppermissive->val,monitor_mask|DBE_VALUE);
+    }
+    if(oflg != wflg) {
+        db_post_events(ppermissive,&ppermissive->wflg,monitor_mask|DBE_VALUE);
+    }
+    return;
+}

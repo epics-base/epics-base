@@ -36,7 +36,6 @@ struct {
 	NULL,
 	write_bo};
 
-
 static long init_record(pbo)
     struct boRecord	*pbo;
 {
@@ -60,7 +59,7 @@ static long init_record(pbo)
     }
     return(0);
 }
-
+
 static long write_bo(pbo)
     struct boRecord	*pbo;
 {

@@ -352,10 +352,10 @@ void recGblGetTimeStamp(void* prec)
         recGblGetLinkValue(&(pr->tsel),(void*)pr,
             DBR_SHORT,&(pr->tse),&options,&nRequest);
  
-        TSgetTimeStamp(pr->tse,(struct timespec*)&pr->time);
+        TSgetTimeStamp((int)pr->tse,(struct timespec*)&pr->time);
     }
     else
-        TSgetTimeStamp(pr->tsel.value.value,(struct timespec*)&pr->time);
+        TSgetTimeStamp((int)pr->tse,(struct timespec*)&pr->time);
 }
 
 

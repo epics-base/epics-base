@@ -7,6 +7,9 @@ static char *sccsId = "@(#) $Id$";
 
 /*
  * $Log$
+ * Revision 1.36  1996/07/24 21:55:33  jhill
+ * fixed gnu warnings
+ *
  * Revision 1.35  1996/07/01 19:49:15  jhill
  * turned on analog value wrap-around test
  *
@@ -141,6 +144,11 @@ int doacctst(char *pname)
 	lib$init_timer();
 #endif /*VMS*/
 
+	printf("CA Client V%s\n", ca_version());
+
+	/*
+	 * CA pend event delay accuracy test
+	 */
 	{
 		TS_STAMP	end_time;
 		TS_STAMP	start_time;
@@ -158,12 +166,28 @@ int doacctst(char *pname)
 		accuracy = 100.0*(delay-request)/request;
 		printf("CA pend event delay accuracy = %f %%\n",
 			accuracy);
-		assert (abs(accuracy) < 10.0);
+		assert (fabs(accuracy) < 10.0);
 	}
 
 	size = dbr_size_n(DBR_GR_FLOAT, NUM);
 	ptr = (struct dbr_gr_float *) malloc(size);  
 
+	/*
+	 * verify that we dont print a disconnect message when 
+	 * we delete the last channel
+	 * (this fails if we see a disconnect message)
+	 */
+	status = ca_search( pname, &chix3);
+	SEVCHK(status, NULL);
+	status = ca_pend_io(1000.0);
+	SEVCHK(status, NULL);
+	status = ca_clear_channel(chix3);
+	SEVCHK(status, NULL);
+
+	/*
+	 * verify lots of disconnects 
+	 * verify channel connected state variables
+	 */
 	printf("Connect/disconnect test");
 	fflush(stdout);
 	for (i = 0; i < 10; i++) {
@@ -290,32 +314,32 @@ int doacctst(char *pname)
 		ca_read_access(chix1) && 
 		ca_write_access(chix1)){
 
-		dbr_double_t incr;
-		dbr_double_t epsil;
-		dbr_double_t base;
+		dbr_float_t incr;
+		dbr_float_t epsil;
+		dbr_float_t base;
 		unsigned long iter;
 
 		printf ("float test ...");
 		fflush(stdout);
-		epsil = FLT_EPSILON*4;
+		epsil = FLT_EPSILON*4.0F;
 		base = FLT_MIN;
 		for (i=FLT_MIN_EXP; i<FLT_MAX_EXP; i+=FLT_MAX_EXP/10) {
-			incr = ldexp (0.5,i);
-			iter = FLT_MAX/fabs(incr);
+			incr = (dbr_float_t) ldexp (0.5F,i);
+			iter = (unsigned long) (FLT_MAX/fabs(incr));
 			iter = min (iter,10);
 			floatTest(chix1, base, incr, epsil, iter);
 		}
 		base = FLT_MAX;
 		for (i=FLT_MIN_EXP; i<FLT_MAX_EXP; i+=FLT_MAX_EXP/10) {
-			incr =  - ldexp (0.5,i);
-			iter = FLT_MAX/fabs(incr);
+			incr =  (dbr_float_t) - ldexp (0.5F,i);
+			iter = (unsigned long) (FLT_MAX/fabs(incr));
 			iter = min (iter,10);
 			floatTest(chix1, base, incr, epsil, iter);
 		}
 		base = - FLT_MAX;
 		for (i=FLT_MIN_EXP; i<FLT_MAX_EXP; i+=FLT_MAX_EXP/10) {
-			incr = ldexp (0.5,i);
-			iter = FLT_MAX/fabs(incr);
+			incr = (dbr_float_t) ldexp (0.5F,i);
+			iter = (unsigned long) (FLT_MAX/fabs(incr));
 			iter = min (iter,10);
 			floatTest(chix1, base, incr, epsil, iter);
 		}
@@ -341,21 +365,21 @@ int doacctst(char *pname)
 		base = DBL_MIN;
 		for (i=DBL_MIN_EXP; i<DBL_MAX_EXP; i+=DBL_MAX_EXP/10) {
 			incr = ldexp (0.5,i);
-			iter = DBL_MAX/fabs(incr);
+			iter = (umsigned long) (DBL_MAX/fabs(incr));
 			iter = min (iter,10);
 			doubleTest(chix1, base, incr, epsil, iter);
 		}
 		base = DBL_MAX;
 		for (i=DBL_MIN_EXP; i<DBL_MAX_EXP; i+=DBL_MAX_EXP/10) {
 			incr =  - ldexp (0.5,i);
-			iter = DBL_MAX/fabs(incr);
+			iter = (umsigned long) (DBL_MAX/fabs(incr));
 			iter = min (iter,10);
 			doubleTest(chix1, base, incr, epsil, iter);
 		}
 		base = - DBL_MAX;
 		for (i=DBL_MIN_EXP; i<DBL_MAX_EXP; i+=DBL_MAX_EXP/10) {
 			incr = ldexp (0.5,i);
-			iter = DBL_MAX/fabs(incr);
+			iter = (umsigned long) (DBL_MAX/fabs(incr));
 			iter = min (iter,10);
 			doubleTest(chix1, base, incr, epsil, iter);
 		}
@@ -366,8 +390,8 @@ int doacctst(char *pname)
 	 * ca_pend_io() must block
 	 */
 	if(ca_read_access(chix4)){
-		dbr_float_t	req = 3.3;
-		dbr_float_t	resp = 0.0;
+		dbr_float_t	req = 3.3F;
+		dbr_float_t	resp = 0.0F;
 
 		printf ("get TMO test ...");
 		fflush(stdout);
@@ -378,10 +402,10 @@ int doacctst(char *pname)
 			assert (resp == req);
 		}
 		else {
-			assert (resp == 0.0);
+			assert (resp == 0.0F);
 		}
 			
-		resp = 0.0;
+		resp = 0.0F;
 		SEVCHK (ca_put(DBR_FLOAT, chix4, &req),NULL);
 		SEVCHK (ca_get(DBR_FLOAT, chix4, &resp),NULL);
 		SEVCHK (ca_pend_io(2000.0),NULL);
@@ -657,7 +681,7 @@ int doacctst(char *pname)
 		accuracy = 100.0*(delay-request)/request;
 		printf("CA pend event delay accuracy = %f %%\n",
 			accuracy);
-		assert (abs(accuracy) < 10.0);
+		assert (fabs(accuracy) < 10.0);
 	}
 
 	{

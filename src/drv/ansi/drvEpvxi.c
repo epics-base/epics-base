@@ -88,6 +88,17 @@
  * NOTES 
  * -----
  *
+ * When using MXI-2 modules to connect VME/VXI Chassis' together, it is
+ * almost essential to let the MXI board be the VMEbus system controller
+ * by installing it in slot 0 (ensure that your CPU doesn't also try to
+ * take on this role, which might involve changing a jumper).  This is
+ * because MXI cycles can be slow, and only the MXI board knows when to
+ * extend the bus timeout.  You'll get unexplained bus errors from VXI
+ * modules that are beyond the MXI bus otherwise.  If you can't do this
+ * you'll need to disable the bus timeout timer function of the system
+ * controller in your startup script, for example:
+ *     MVME16x/17x:	*0xfff4004c = 0x000095e7
+ *     MVME2700:	*0xfd050404 = 0x00000602
  *
  */
 
@@ -150,21 +161,22 @@ static char *sccsId = "$Id$\t$Date$";
 #include <vme.h>
 #include <iv.h>
 #include <vxLib.h>
-#include <sysSymTbl.h>
 #include <taskLib.h>
 #include <sysLib.h>
 #include <logLib.h>
 #include <intLib.h>
 #include <tickLib.h>
 
-#include	"dbDefs.h"
-#include	"errlog.h"
-#include <devLib.h>
+#include "dbDefs.h"
+#include "errlog.h"
+#include "epicsDynLink.h"
+#include "devLib.h"
 #define SRCepvxiLib	/* allocate externals here */
-#include <drvEpvxi.h>
-#include <drvHp1404a.h>
+#include "drvEpvxi.h"
+#include "drvHp1404a.h"
 
-#define NICPU030
+/* Define to build special code for the National Instruments CPU030 */
+/* #define NICPU030 */
 
 /*
  * required to use private assert() here
@@ -224,8 +236,10 @@ LOCAL char	niCpu030Initialized;
 LOCAL VXIE	root_extender;
 LOCAL ELLLIST	crateList;
 
+#if (CPU_FAMILY != PPC)
 LOCAL char 		*ignore_list[] = {"_excStub","_excIntStub"};
 LOCAL void 		*ignore_addr_list[NELEMENTS(ignore_list)];
+#endif
 LOCAL unsigned 		last_la;
 LOCAL unsigned 		first_la;
 
@@ -251,6 +265,15 @@ char	epvxiSymbolTableMakeIdString[] = "%03x";
 #define EPVXI_MAX_SYMBOLS_LOG2	8
 #define EPVXI_MAX_SYMBOLS  	(1<<EPVXI_MAX_SYMBOLS_LOG2) 
 #define EPVXI_MAX_SYMBOL_LENGTH (sizeof(epvxiSymbolTableDeviceIdString)+10) 
+
+/* Global to control whether to disable MXI devices that fail the self-test.
+ * Needed because CPUs with a Universe VME interface don't read the bottom
+ * 4 bits of a few registers reliably, although this doesn't affect normal
+ * operation of the extender functions at all.  Set this on such IOCs.
+ *
+ * NB: Disabling a failed MXI is bad for any devices beyond it anyway...
+ */
+int vxi_use_failed_mxi = 0;
 
 /*
  * NIVXI trigger routing
@@ -307,9 +330,18 @@ LOCAL void	vxi_allocate_int_lines(
 LOCAL EPVXISTAT 	epvxiSymbolTableInit(
 	void
 );
+#ifdef NICPU030
 LOCAL EPVXISTAT	nicpu030_init(
 	VXIE		*pvxie
 );
+LOCAL void	nivxi_cpu030_set_modid(
+	VXISZ		*pvxisz,
+	unsigned        slot
+);
+LOCAL void	nivxi_cpu030_clr_all_modid(
+	VXISZ		*pvxisz
+);
+#endif
 LOCAL void	vxi_find_sc_devices(
 	VXIE		*pvxie
 );
@@ -326,13 +358,6 @@ LOCAL void	set_reg_modid(
 	unsigned	slot
 );
 LOCAL void	clr_all_reg_modid(
-	VXISZ		*pvxisz
-);
-LOCAL void	nivxi_cpu030_set_modid(
-	VXISZ		*pvxisz,
-	unsigned        slot
-);
-LOCAL void	nivxi_cpu030_clr_all_modid(
 	VXISZ		*pvxisz
 );
 LOCAL void	open_slot0_device(
@@ -2684,7 +2709,7 @@ LOCAL EPVXISTAT vxi_self_test(void)
 		if(VXIPASSEDSTATUS(wd)){
 			(*ppvxidi)->st_passed = TRUE;	
 		}
-		else{
+		else if (!VXIMXI(pcsr) || !vxi_use_failed_mxi) {
 			errMessage(
 				S_epvxi_selfTestFailed,
 				"VXI resman: device self test failed");
@@ -3076,6 +3101,7 @@ unsigned 	dest_size
  */
 LOCAL EPVXISTAT vxi_init_ignore_list(void)
 {
+#if (CPU_FAMILY != PPC)
   	int 		i;
 	SYM_TYPE	type;
 	EPVXISTAT	status;
@@ -3094,7 +3120,7 @@ LOCAL EPVXISTAT vxi_init_ignore_list(void)
 			return status;
 		}
 	}
-
+#endif
 	return VXI_SUCCESS;
 }
 
@@ -3109,15 +3135,17 @@ LOCAL EPVXISTAT vxi_vec_inuse(
 unsigned	addr
 )
 {
+	void	*psub = (void *) intVecGet((FUNCPTR *)INUM_TO_IVEC(addr));
+#if (CPU_FAMILY == PPC)
+	return (psub != 0);
+#else
   	int 	i;
-	void	*psub;
-
-	psub = (void *) intVecGet((FUNCPTR *)INUM_TO_IVEC(addr));
   	for(i=0; i<NELEMENTS(ignore_list); i++)
 		if(ignore_addr_list[i] == psub)
 			return FALSE;
 
 	return TRUE;
+#endif
 }
 
 
@@ -3836,11 +3864,13 @@ unsigned 	level
 		}
 	}
 
+#ifdef NICPU030
 	/*
 	 * special support for the niCPU030
 	 * since it does not see itself
 	 */
 	nicpu030_init(&root_extender);
+#endif
 
 	if(niCpu030Initialized){
 		if(pnivxi_func[(unsigned)e_GetMyLA]){
@@ -4371,7 +4401,7 @@ char *pmodel_name
 
 		free(pcopy);
 
-		status = symFindByNameEPICS(
+		status = symFindByNameAndTypeEPICS(
 				epvxiSymbolTable, 
 				name, 
 				&pold_model_name, 

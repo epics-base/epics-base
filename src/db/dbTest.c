@@ -369,14 +369,14 @@ long epicsShareAPI dbtr(char *pname)
         printf("record active\n");
         return(1);
     }
-    if(semMutexTakeNoWait(precord->mlok)==semTakeOK) {
-        semMutexGive(precord->mlok);
+    if(semMutexTakeNoWait(precord->mlok)!=semTakeOK) {
         printf("record locked\n");
         return(1);
     }
     status=dbProcess(precord);
+    semMutexGive(precord->mlok);
     if(status)
-	recGblRecordError(status,precord,"dbtr(dbProcess)");
+        recGblRecordError(status,precord,"dbtr(dbProcess)");
     dbpr(pname,3);
     return(0);
 }

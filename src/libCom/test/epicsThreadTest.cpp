@@ -11,6 +11,7 @@
 
 /* Author:  Marty Kraimer Date:    26JAN2000  */
 /*          sleep accuracy tests by Jeff Hill */
+/*          epicsThreadGetIdSelf performance by Jeff Hill */
 
 #include <stddef.h>
 #include <stdlib.h>
@@ -82,6 +83,29 @@ static void threadSleepTest()
     printf ( "Average error %f sec\n", errorSum / ( i + 1 ) );
 }
 
+static void epicsThreadGetIdSelfPerfTest ()
+{
+    static const unsigned N = 10000;
+    static const double microSecPerSec = 1e6;
+    epicsTime begin = epicsTime::getCurrent ();
+    for ( unsigned i = 0u; i < N; i++ ) {
+        epicsThreadGetIdSelf ();
+        epicsThreadGetIdSelf ();
+        epicsThreadGetIdSelf ();
+        epicsThreadGetIdSelf ();
+        epicsThreadGetIdSelf ();
+
+        epicsThreadGetIdSelf ();
+        epicsThreadGetIdSelf ();
+        epicsThreadGetIdSelf ();
+        epicsThreadGetIdSelf ();
+        epicsThreadGetIdSelf ();
+    };
+    epicsTime end = epicsTime::getCurrent ();
+    printf ( "It takes %f micro sec to call epicsThreadGetIdSelf ()\n",
+        microSecPerSec * ( end - begin ) / (10 * N) );
+}
+
 extern "C" void threadTest(int ntasks,int verbose)
 {
     myThread **papmyThread;
@@ -89,6 +113,8 @@ extern "C" void threadTest(int ntasks,int verbose)
     char **name;
     int startPriority,minPriority,maxPriority;
     int errVerboseSave = errVerbose;
+
+    epicsThreadGetIdSelfPerfTest ();
 
     threadSleepTest();
 

@@ -8,6 +8,10 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.15  1996/09/10 15:06:29  jbk
+ * Adjusted dbMapper.cc so gdd to string function work correctly
+ * Added checks in gdd.h so that get(pointer) functions work with scalars
+ *
  * Revision 1.14  1996/09/07 13:03:05  jbk
  * fixes to destroyData function
  *
@@ -87,23 +91,6 @@
 #       include <stdlib.h>
 #       include <unistd.h>
 #       include <sys/time.h>
-#endif
-
-// strdup is not defined under POSIX
-#if defined(_POSIX_C_SOURCE) || defined(vxWorks)
-#ifdef __GNUC__
-#define strdup(X) strcpy(new char[strlen(X)+1],X)
-#else
-#ifndef __EXTENSIONS__
-inline char* strdup(const char* x)
-{
-	char* y;
-	y = new char[strlen(x)+1];
-	strcpy(y,x);
-	return y;
-}
-#endif
-#endif
 #endif
 
 #ifndef vxWorks
@@ -393,13 +380,16 @@ public:
 
 	int isManaged(void) const;
 	int isFlat(void) const;
-	int isNetworkByteOrder(void) const;
+	int isLocalDataFormat(void) const;
+	int isNetworkDataFormat(void) const;
 	int isConstant(void) const;
 	int isNoRef(void) const;
 
 	void markConstant(void);
 	void markManaged(void);
 	void markUnmanaged(void);
+	void markLocalDataFormat(void);
+	void markNotLocalDataFormat(void);
 
 	// The only way for a user to get rid of a DD is to Unreference it.
 	// NoReferencing() means that the DD cannot be referenced.
@@ -650,12 +640,16 @@ inline int gdd::isManaged(void) const	{ return flags&GDD_MANAGED_MASK; }
 inline int gdd::isFlat(void) const		{ return flags&GDD_FLAT_MASK; }
 inline int gdd::isNoRef(void) const		{ return flags&GDD_NOREF_MASK; }
 inline int gdd::isConstant(void) const	{ return flags&GDD_CONSTANT_MASK; }
-inline int gdd::isNetworkByteOrder(void) const { return flags&GDD_NET_MASK; }
+inline int gdd::isLocalDataFormat(void) const { return flags&GDD_NET_MASK; }
+inline int gdd::isNetworkDataFormat(void) const
+	{ return !isLocalDataFormat() || aitLocalNetworkDataFormatSame; }
 
 inline void gdd::markConstant(void)		{ flags|=GDD_CONSTANT_MASK; }
 inline void gdd::markFlat(void)			{ flags|=GDD_FLAT_MASK; }
 inline void gdd::markManaged(void)		{ flags|=GDD_MANAGED_MASK; }
 inline void gdd::markUnmanaged(void)	{ flags&=~GDD_MANAGED_MASK; }
+inline void gdd::markLocalDataFormat(void)		{ flags|=GDD_NET_MASK; }
+inline void gdd::markNotLocalDataFormat(void)	{ flags&=~GDD_NET_MASK; }
 
 inline void gdd::getTimeStamp(struct timespec* const ts) const
 	{ ts->tv_sec=time_stamp.tv_sec; ts->tv_nsec=time_stamp.tv_nsec; }

@@ -11,8 +11,6 @@ name  [a-zA-Z0-9_\-:\.\[\]<>;]
 notquote [^\"]
 escapequote \\\"
 string {notquote}|{escapequote}
-
-
 %{
 #undef YY_INPUT
 #define YY_INPUT(b,r,ms) (r=(*db_yyinput)(b,ms))

@@ -119,27 +119,33 @@ outBufClient::flushCondition casStreamIO::osdSend ( const char *pInBuf, bufSizeT
     else if (status<0) {
         int anerrno = SOCKERRNO;
         
-        if (anerrno != SOCK_EWOULDBLOCK) {
-            int errnoCpy = SOCKERRNO;
-            if (  
-                errnoCpy != SOCK_ECONNABORTED &&
-                errnoCpy != SOCK_ECONNRESET &&
-                errnoCpy != SOCK_EPIPE &&
-                errnoCpy != SOCK_ETIMEDOUT ) {
-
- 			    char buf[64];
-                ipAddrToA (&this->addr, buf, sizeof(buf));
-                char sockErrBuf[64];
-                epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
-			    errlogPrintf (
-	"CAS: TCP socket send to \"%s\" failed because \"%s\"\n",
-				    buf, sockErrBuf );
-            }
-            return outBufClient::flushDisconnect;
-        }
-        else {
+        if ( anerrno == SOCK_EINTR || 
+                anerrno == SOCK_EWOULDBLOCK ) {
             return outBufClient::flushNone;
         }
+
+        if ( anerrno == SOCK_ENOBUFS ) {
+            errlogPrintf ( 
+                "cas: system low on network buffers - hybernating for 1 second\n" );
+            epicsThreadSleep ( 1.0 );
+            return outBufClient::flushNone;
+        }
+
+        if (  
+            anerrno != SOCK_ECONNABORTED &&
+            anerrno != SOCK_ECONNRESET &&
+            anerrno != SOCK_EPIPE &&
+            anerrno != SOCK_ETIMEDOUT ) {
+
+            char sockErrBuf[64];
+            epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+ 			char buf[64];
+            ipAddrToA (&this->addr, buf, sizeof(buf));
+			errlogPrintf (
+"CAS: TCP socket send to \"%s\" failed because \"%s\"\n",
+				buf, sockErrBuf );
+        }
+        return outBufClient::flushDisconnect;
     }
     nBytesActual = (bufSizeT) status;
     return outBufClient::flushProgress;
@@ -153,31 +159,38 @@ casStreamIO::osdRecv ( char * pInBuf, bufSizeT nBytes, // X aCC 361
     int nchars;
     
     nchars = recv (this->sock, pInBuf, nBytes, 0);
-    if (nchars==0) {
+    if ( nchars == 0 ) {
         return casFillDisconnect;
     }
-    else if (nchars<0) {
+    else if ( nchars < 0 ) {
         int myerrno = SOCKERRNO;
         char buf[64];
 
-        if (myerrno==SOCK_EWOULDBLOCK) {
+        if ( myerrno == SOCK_EWOULDBLOCK ||
+                myerrno == SOCK_EINTR ) {
             return casFillNone;
         }
-        else  {
-            if (
-                myerrno != SOCK_ECONNABORTED &&
-                myerrno != SOCK_ECONNRESET &&
-                myerrno != SOCK_EPIPE &&
-                myerrno != SOCK_ETIMEDOUT ) {
-                ipAddrToA (&this->addr, buf, sizeof(buf));
-                char sockErrBuf[64];
-                epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
-                errlogPrintf(
-		    "CAS: client %s disconnected because \"%s\"\n",
-                    buf, sockErrBuf );
-            }
-            return casFillDisconnect;
+
+        if ( myerrno == SOCK_ENOBUFS ) {
+            errlogPrintf ( 
+                "CAS: system low on network buffers - hybernating for 1 second\n" );
+            epicsThreadSleep ( 1.0 );
+            return casFillNone;
         }
+
+        if (
+            myerrno != SOCK_ECONNABORTED &&
+            myerrno != SOCK_ECONNRESET &&
+            myerrno != SOCK_EPIPE &&
+            myerrno != SOCK_ETIMEDOUT ) {
+            ipAddrToA (&this->addr, buf, sizeof(buf));
+            char sockErrBuf[64];
+            epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+            errlogPrintf(
+		"CAS: client %s disconnected because \"%s\"\n",
+                buf, sockErrBuf );
+        }
+        return casFillDisconnect;
     }
     else {
     	nBytesActual = (bufSizeT) nchars;

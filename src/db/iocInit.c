@@ -39,6 +39,7 @@
  * .09  12-02-91        mrk     Added finishDevSup 
  * .10  02-10-92        jba     Changed error messages
  * .11  02-28-92        jba     ANSI C changes
+ * .12  03-26-92        mrk     changed test if(status) to if(rtnval)
  *				
  */
 
@@ -417,7 +418,7 @@ static long initDatabase()
 		nset++;
 		rtnval = addToSet(precord,i,lookAhead,i,j,nset);
 		if(status==0) status=rtnval;
-		if(status) return(status);
+		if(rtnval) return(status); /*I really mean rtnval*/
 	}
     }    
     dbScanLockInit(nset);

@@ -1,0 +1,45 @@
+Booting IOCs and startup files
+
+For Systems that do not support soft links the following is necessary
+
+The boot parameters must contain:
+
+file name     : <full path namevxWorks>
+startup script: <full path name to startup script>
+
+For example
+
+file name     :home/phoebus/MRK/examplePerl/bin/mv167/vxWorks
+startup script:home/phoebus/MRK/examplePerl/iocBoot/iocexample/st.cmd
+
+The st.cmd file must be of the form:
+
+cd "<full path name to ioc directory>"
+...
+
+dbLoadDatabase("../../dbd/<xxx>App.dbd")
+dbLoadRecords("../../xxxApp/Db/xxx.db")
+...
+
+For systems that do support soft links the following is possible
+
+The boot parameters can be:
+
+file name     :/home/phoebus/MRK/examplePerl/iocBoot/iocexample/vxWorks
+startup script:st.cmd
+
+The st.cmd file can be of the form:
+
+cd "<full path name to ioc directory>"
+...
+ 
+dbLoadDatabase("dbd/<xxx>App.dbd")
+dbLoadRecords("xxxApp/Db/xxx.db")
+
+
+In addition if the APS board support mods are in effect the cd command
+is not necessary.
+
+If NFS is desired then:
+
+Marty explain.

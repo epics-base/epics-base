@@ -1,0 +1,1901 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.03 [en] (X11; U; SunOS 5.5.1 sun4u) [Netscape]">
+   <TITLE>EPICS: IOC Applications: Building and Source Release Control</TITLE>
+</HEAD>
+<BODY>
+
+<CENTER>
+<H1>
+EPICS IOC Applications<BR>
+Building&nbsp;<BR>
+and&nbsp;<BR>
+Source Release Control</H1></CENTER>
+
+<CENTER>
+<H2>
+Marty Kraimer and Janet Anderson&nbsp;<BR>
+Argonne National Laboratory, Advanced Photon Source&nbsp;<BR>
+Oct 10, 1997&nbsp;<BR>
+EPICS Release 3.13.0.beta12</H2></CENTER>
+
+<CENTER>
+<H2>
+Acknowledgements</H2></CENTER>
+Between release 3.13.0.beta11 and 3.13.0.beta12 makeBase App was changed
+from one very long perl script to a four page perl script plus template
+files. In addition other improvements were made including support for capfast.
+The following people contributed to this effort: Rozelle Wright (LANL,
+Ralph Lange (BESSY), and Thomas Birke (BESSY).
+<CENTER>
+<H2>
+Quick Start</H2></CENTER>
+If you are new to EPICS or are trying a new release, then follow the instructions
+in section <A HREF="#QuickStart">Quick Start</A>. Look at all the files
+that are generated. They give examples of how to manage each of the IOC
+components.
+<CENTER>
+<H2>
+FUTURE WORK</H2></CENTER>
+The procedures described in this document use soft links in two places.
+Since soft links are not supported on winXX some changes will be necessary
+to use the procedures on winXX.
+
+<P>This document discusses template files. In the future these will no
+longer be used. Our intention is to let makeBaseApp evolve such that template
+files are no longer necessary. For now the template files can be obtained
+via the WWW APS software distribution system.
+
+<P>Currently two versions of makeBaseApp exist: A bourne shell version
+and a perl version. For beta11, the bourne shell version is the primary
+version. In the next release of base only the perl version will be supported.
+Starting soon the perl version will be made available via the WWW as a
+separate product. Thus new versions can be distributed without waiting
+for new versions of base.
+<CENTER>
+<H2>
+Index</H2></CENTER>
+
+<UL>
+<LI>
+<A HREF="#Overview">Overview</A></LI>
+
+<LI>
+<A HREF="#QuickStart">Quick Start</A></LI>
+
+<LI>
+<A HREF="#Introduction">Introduction</A></LI>
+
+<LI>
+<A HREF="#DirectoryStructure">Directory Structure</A></LI>
+
+<LI>
+<A HREF="#makeBaseApp">makeBaseApp</A></LI>
+
+<LI>
+<A HREF="#ST.CMD">ST.CMD</A></LI>
+
+<LI>
+<A HREF="#SwitchNewRelease">Switching to a new Release</A></LI>
+
+<LI>
+<A HREF="#MAKE">MAKE</A></LI>
+
+<LI>
+<A HREF="#makeFiles">Description of Makefiles</A></LI>
+
+<LI>
+<A HREF="#CVS">CVS</A></LI>
+
+<LI>
+<A HREF="#Templates">Templates</A></LI>
+
+<LI>
+<A HREF="#MultipleTop">Multiple Top Level Applications</A></LI>
+</UL>
+
+<CENTER>
+<H2>
+<A NAME="Overview"></A>Overview</H2></CENTER>
+Several EPICS Application Source/Release systems are available. Your site
+may have adapted one of them. Consult your EPICS system manager. This manual
+describes procedures that can be used for simple or complicated applications.
+<BR>&nbsp;
+
+<P>This document describes how to create and build IOC applications. This
+includes:
+<UL>
+<LI>
+IOC databases.</LI>
+
+<LI>
+vxWorks startup files.</LI>
+
+<LI>
+State Notation Programs.</LI>
+
+<LI>
+New record types, device support, drivers.</LI>
+
+<LI>
+Access security configuration files</LI>
+
+<LI>
+Other code to be executed in an IOC.</LI>
+
+<LI>
+Special Host code.</LI>
+</UL>
+In addition procedures are described for managing large applications. The
+principle features are:
+<UL>
+<LI>
+All editable files are placed under CVS control.</LI>
+
+<LI>
+The complete set of operational IOC software can be stored under a single
+operations directory structure.</LI>
+
+<LI>
+The IOC software is divided into &lt;<TT>top</TT>> areas. Each &lt;<TT>top</TT>>
+is maintained separately. Different &lt;<TT>top</TT>> areas can be on different
+releases of external software such as epics base releases.</LI>
+
+<LI>
+Support such as special record/device/driver support can be shared across
+&lt;<TT>top</TT>> areas. This is done by having a special &lt;<TT>top</TT>>
+called <TT>share</TT>. <TT>share</TT> is built and made into releases.
+Other &lt;<TT>top</TT>> areas attach to releases of <TT>share</TT>.</LI>
+
+<LI>
+Access security configuration files can be shared across &lt;<TT>top</TT>>
+areas. This is done by having a special &lt;<TT>top</TT>> area called <TT>ascf</TT>.
+Normally this would not be made into releases since it must be easily modified
+by operations. The ascf directory <B>MUST</B> reside in the same directory
+as the &lt;<TT>top</TT>> areas that use it.</LI>
+
+<LI>
+Each application developer makes changes in a private copy of a subset
+of the directories, normally located in the developer's home directory.</LI>
+
+<LI>
+<TT>cvs</TT> and <TT>gnumake</TT> are the only tools users execute to build
+applications.</LI>
+
+<LI>
+Template makefiles are provided for creating new application directories.</LI>
+</UL>
+
+<H3>
+User Prerequisites</H3>
+This manual assumes that the reader:
+<UL>
+<LI>
+Understands the C language</LI>
+
+<LI>
+Knows how to use a text editor</LI>
+
+<LI>
+Has at least a superficial knowledge of the make utility</LI>
+</UL>
+
+<H3>
+System Prerequisites</H3>
+Before you can generate EPICS IOC applications your HOSTand/or EPICS System
+Manager must have done the following:
+<UL>
+<LI>
+Installed vxWorks and a board support package. Consult the vxWorks documentation
+for details.</LI>
+
+<LI>
+Installed EPICS base. This can be a specific EPICS release or the master
+EPICS tree.</LI>
+</UL>
+
+<H3>
+Make vs. Gnumake</H3>
+EPICS provides an extensive set of make rules. These rules only work with
+the GNU version of make, gnumake, which is supplied by the Free Software
+Foundation. Thus, on most Unix systems, the native make will not work.
+On some systems, e.g. Linux, GNU make may be the default. This manual always
+uses gnumake in the examples.
+<CENTER>
+<H2>
+<A NAME="QuickStart"></A>Quick Start</H2></CENTER>
+This section explains how to quickly create an example IOC application
+in a directory <B>&lt;top></B> and named <B>example</B>.
+<H3>
+Check Environment</H3>
+Execute the command:
+<PRE>echo $HOST_ARCH</PRE>
+This should display your workstation architecture.
+<H3>
+Create example Application</H3>
+Execute the commands:
+<PRE>mkdir &lt;top>
+cd &lt;top>
+&lt;base>/bin/&lt;arch>/makeBaseApp.pl -e</PRE>
+where:
+
+<P><TT>&lt;top></TT> - Is any directory name you chose
+<BR><TT>&lt;base></TT> - Full path name to EPICS base.
+<BR><TT>&lt;arch></TT> - Your host architecture.
+
+<P>For example at ANL/APS the following commands create an application:
+<PRE>cd
+mkdir myapp
+cd myapp
+/usr/local/epics/baseR3.13.0.beta11/bin/solaris/makeBaseApp.pl -e</PRE>
+
+<H3>
+Inspect Files</H3>
+Spend some time looking at the files that appear under <TT>&lt;top>.</TT>
+Do this <B>BEFORE</B> building.
+<H3>
+Build</H3>
+In directory &lt;top> execute the command:
+<PRE>gnumake</PRE>
+
+<H3>
+Inspect Files</H3>
+Again look at all the files that appear under <TT>&lt;top></TT>.
+<H3>
+boot Parameters</H3>
+The next step is to set the IOC boot parameters via the console serial
+port on your IOC. Life is much easier if you find out how to connect the
+serial port to a window on your workstation. See your EPICS system manager
+for details.
+
+<P>The vxWorks boot parameters look something like the following:
+<PRE>boot device&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; : xxx
+<TT>processor number&nbsp;&nbsp;&nbsp;&nbsp; : 0
+host name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; : xxx
+file name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; : &lt;top>/iocBoot/iocexample/vxWorks
+inet on ethernet (e) : xxx.xxx.xxx.xxx:&lt;netmask>
+inet on backplane (b):
+host inet (h)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; : xxx.xxx.xxx.xxx
+gateway inet (g)&nbsp;&nbsp;&nbsp;&nbsp; :
+user (u)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; : xxx
+ftp password (pw) (blank = use rsh): xxx
+flags (f)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; : 0x0
+target name (tn)&nbsp;&nbsp;&nbsp;&nbsp; : &lt;hostid for channel access security>
+startup script (s)&nbsp;&nbsp; : st.cmd
+other (o)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; :</TT></PRE>
+NOTE: For a winXX host the following are needed:
+<PRE><TT>file name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; : &lt;top>/bin/&lt;target_arch>/vxWorks</TT></PRE>
+
+<PRE><TT>...</TT></PRE>
+
+<PRE><TT>startup script (s)&nbsp;&nbsp; : &lt;top>/iocBoot/iocexample/st.cmd</TT></PRE>
+The actual values for each field are site and IOC dependent. Consult your
+EPICS system manager for help. Two fields that you can change at will are
+the vxWorks boot image and the location of the startup script.
+<H3>
+boot</H3>
+You are now ready to boot your IOC. If your boot parameters are defined
+properly, just press the reset button on your IOC. You will find it VERY
+convenient to have the console port of the IOC attached to a scrolling
+window on your workstation.
+<H3>
+Test</H3>
+See the description of the example given in section makeBaseApp below.
+Also try some of the vxWorks shell commands described in chapter "IOC Test
+facilities" of the Application Developer's Guide.
+<CENTER>
+<H2>
+<A NAME="Introduction"></A>Introduction</H2></CENTER>
+
+<H3>
+Background</H3>
+Before EPICS base release 3.13, APS/ASD used an Application Source Release
+control system called appSR. appSR uses sccs for source file control. Since
+appSR was written several things that impact S/R control have changed.
+<UL>
+<LI>
+With release 3.13 the method of configuring record/device/driver support
+changed.</LI>
+
+<LI>
+Both epics base and extensions have switched from sccs to <TT>cvs</TT>.</LI>
+
+<LI>
+<TT>base/config</TT>, i.e. definitions and rules for GNU make, has evolved
+so that is now possible to create makefiles that are much simpler, more
+powerful, and extendable.</LI>
+</UL>
+For the above reasons we decided to redo the APS/ASD IOC Applications S/R
+control system. Our goals were:
+<UL>
+<LI>
+SCCS will go away.</LI>
+
+<LI>
+All functionality performed by appSR will be done via <TT>cvs</TT> and
+GNU make.</LI>
+</UL>
+A major decision is <I>What Directory Structure should we use</I>. Before
+the original appSR was written a <B>lot</B> of discussion went into this
+topic. There were several meetings between the Application Developers and
+Bob Zieman, who implemented appSR. This directory structure was used to
+implement the entire APS/ASD contol system software. Thus a lot of correct
+decisions were made. The only major problem is that it was not easy to
+share code, mainly record/device/driver support, across &lt;<TT>top</TT>>
+areas. This resulted in sharing by copying source modules from one &lt;<TT>top</TT>>
+area to another. When one developer would make changes to a source module,
+the other developers would often not even be aware of the changes. Thus
+over time the source modules evolved in different directions.
+
+<P>Since the overall directory layout appears to be correct, it is kept
+in the new system. A brief description of the APS/ASD environment may help
+explain why the directory layout works.
+<UL>
+<LI>
+APS accelerator.</LI>
+
+<UL>
+<LI>
+The APS accelerator complex is composed of four major subsystems: Linac,
+PAR (Positron Accumulator Ring), Booster Syncrotron, and Storage Ring.
+Each subsystem is controlled by a separate set of IOCs. Thus it is entirely
+appropriate to have separate &lt;<TT>top</TT>> areas for each subsystem.</LI>
+
+<LI>
+Each subsystem can be viewed as a separate set of applications, e.g. RF,
+Magnet Power Supplies, Diagnostics, etc.</LI>
+</UL>
+
+<LI>
+IOC responsibilities.</LI>
+
+<UL>
+<LI>
+A particular application may be spread over multiple iocs. For example
+the control for storage ring applications is normally spread over many
+iocs just because of the size of the storage ring.</LI>
+
+<LI>
+A particular ioc may contain parts of multiple applications. For example
+vacuum and power supplies normally share iocs.</LI>
+</UL>
+
+<LI>
+Application Developers.</LI>
+
+<UL>
+<LI>
+For the Linac, a single Application Developer has final responsibility
+for all controls applications, i.e. RF, vacuum, Diagnostics, etc.</LI>
+
+<LI>
+For the par, booster, and sr, Application Developers are assigned application
+areas. For example the same person is responsible for almost all diagnostic
+controls for the par, booster, and storage ring.</LI>
+</UL>
+</UL>
+One other topic to discuss before describing the overall directory structure
+is the <I>idealized</I> Application Development Cycle. It consists of the
+following steps:
+<OL>
+<LI>
+Define I/O requirements.</LI>
+
+<BR>This involves meeting with the user, in this case the Engineers who
+are responsible for the application in order to decide the types and number
+of I/O modules needed.
+<LI>
+Assemble control hardware and software.</LI>
+
+<BR>This includes IOCs, I/O modules, software device/driver support, etc.
+If EPICS software support is not already available it has to be written
+and tested.
+<LI>
+Build databases, sequence programs, etc.</LI>
+</OL>
+In reality there is overlap between these steps. In addition as new needs
+arise the three steps again have to be performed. However, an application
+developer tends to spend a large part of his/her attention on each step
+before moving on to the next step.
+
+<P>The application structure described in the next section is designed
+to meet these needs.
+<H3>
+Overview of Application Source Release Control</H3>
+The application directory structure appears as follows:
+<PRE>&nbsp;&nbsp;&nbsp; iocsys/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;top>/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; config/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; xxxApp/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; src/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; xxxDb/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; xxxApp/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ...
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; iocBoot/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; iocxxx/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; iocxxx/</PRE>
+Each &lt;<TT>top</TT>> area is a separately managed set of applications.
+Separately managed means that each &lt;<TT>top</TT>> can be using it's
+own release of software obtained from outside the application, e.g. a release
+of EPICS base.
+
+<P>Within a &lt;<TT>top</TT>> area, multiple xxxApp subdirectories and
+a single iocBoot directory appear. The xxxApp areas are created by application
+developers as needed. The iocBoot directory contains a subdirectory for
+each ioc that belongs to that &lt;<TT>top</TT>> area. No IOC belongs to
+more than one &lt;<TT>top</TT>> area. All software components needed by
+IOCs are built in the xxxApp directories. Each IOC is booted from it's
+subdirectory under iocBoot. The only important source file in a boot directory
+is the st.cmd file which is executed after vxWorks is started on an ioc.
+The st.cmd file merely loads various files built in the xxxApp directories.
+
+<P>Application developers decide what constitutes a &lt;<TT>top</TT>>.
+For example, at APS, the Linac is completely contained in a single &lt;<TT>top</TT>>
+area, while the RF is spread over three &lt;<TT>top</TT>> areas: parrf,
+boosterrf, and srrf. No &lt;<TT>top</TT>> area, however, contains iocxxx
+directories from multiple subsystems.
+
+<P>Now lets describe how the application developers use the above structure.
+
+<P>Under xxxApp are source and database directories. A source directory
+contains source files for building executables and database description
+files. Makefiles specify what to build. These makefiles can specify components
+obtained from outside the &lt;<TT>top</TT>> area, such as EPICS base. After
+modifing files in this directory the command:
+<PRE>&nbsp;&nbsp;&nbsp; gnumake</PRE>
+will rebuild components that depend on the modified files. (It will be
+seen below that the generated components are actually copied to an install
+directory)
+
+<P>The database directories contain IOC database files and/or template
+and substitution files used to generate database files. If templates are
+used then whenever a template or substitution file is modified the command
+<TT>gnumake</TT> will recreate the database file(s).
+
+<P>After changes are made in any xxxApp directory the affected IOCs can
+be rebooted from the appropriate iocBoot subdirectory. If new components
+are added it may be necessary to modify st.cmd files.
+<H3>
+share</H3>
+As mentioned above the one major defect with the old appSR system is that
+there was no easy way to share code across &lt;<TT>top</TT>> areas. To
+solve this problem a new &lt;<TT>top</TT>> area called <TT>share</TT> is
+present. It is structured somewhat differently than other &lt;<TT>top</TT>>
+areas but development in it is done just like in any other &lt;<TT>top</TT>>.
+Releases of <TT>share</TT> are created. A release contains built and installed
+object modules. Other &lt;<TT>top</TT>> areas take things from releases
+of <TT>share</TT> rather then from <TT>share</TT> itself.
+
+<P>The releases of <TT>share</TT>, which are dependent on releases of epics
+base, are named:
+<PRE>&nbsp;&nbsp;&nbsp; baseXXXshareYYY</PRE>
+where XXX is the epics base release and YYY is a release of <TT>share</TT>
+for that base release. The <TT>share</TT> releases are stored at locations:
+<PRE>&nbsp;&nbsp;&nbsp; /usr/local/iocapps/iocsys/baseXXXshareYYY</PRE>
+If it is necessary to obtain a bug fix or enhancement to a single module
+from EPICS base or a <TT>share</TT> release, the application developer
+has at least two choices. The first is to build a new release of base or
+<TT>share</TT>. A second choice is to copy the source module to an appropriate
+<TT>src</TT> directory and build it there. In this case you should do something
+so that you remember to use the version from <TT>share</TT> after <TT>share</TT>
+is rebuilt.
+
+<P><B>Note: </B>Other software packages can be handled like <TT>share</TT>.
+For example at APS/ASD our applications use releases of <TT>sharerf</TT>,
+<TT>epicsHideos,</TT> and <TT>hideos</TT>.
+<H3>
+Tools</H3>
+The following tools are used:
+<UL>
+<LI>
+<TT>cvs</TT></LI>
+
+<LI>
+gnumake - GNU make plus EPICS supplied configuration definitions, make
+rules, and script files.</LI>
+</UL>
+
+<H3>
+Classes of Users</H3>
+
+<DL>
+<DT>
+<B>Application System Manager </B>:</DT>
+
+<DD>
+The Application System Manager is responsible for the Operations Area.</DD>
+
+<DT>
+<B>Application Developer </B>:</DT>
+
+<DD>
+Anyone who tests, modifies, or extends an application's software. If multiple
+developers are working on the same system each should develop in a private
+development area.</DD>
+</DL>
+
+<H3>
+References</H3>
+Version Management with CVS for CVS 1.9, Per Cederqvist et al.
+
+<P>GNU Make, Edition .51 for make Version 3.75 Beta, May 1996, Richard
+M. Stallman and Ronald McGrath
+
+<P>EPICS: Application Developer's Guide R3.13, Marty Kraimer
+<CENTER>
+<H2>
+<A NAME="DirectoryStructure"></A>Directory Structure</H2></CENTER>
+
+<H3>
+Structure</H3>
+
+<PRE>&nbsp;&nbsp;&nbsp; &lt;top>/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Makefile
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; config/
+*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CONFIG
+*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CONFIG_APP
+*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; RELEASE
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; RULES.Db
+*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; RULES.Host
+*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; RULES.Vx
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; RULES.ioc
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; RULES.iocBoot
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; RULES_ARCHS
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; RULES_DIRS
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; RULES_TOP
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; xxxApp/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; src/ or xxxSrc
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Makefile
+*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Makefile.Host
+*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Makefile.Vx
+*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; base.dbd
+*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; baseLIBOBJS
+*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;app>Include.dbd
+*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;example and/or user supplied code>
+*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;example and/or user supplied state programs>
+*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;user menu, recordtype, device, driver database defs>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Db/ or xxxDb
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Makefile
+*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;record instance files>
+*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;record template and substitution files>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; privately managed directories
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; iocBoot/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Makefile
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; nfsCommands
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; iocxxx/
+*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Makefile
+*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; st.cmd
+**&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; dbd/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;installed database description files>
+**&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; include/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;installed include files>
+**&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; bin/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;host_arch>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt; installed Host executables >
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;ioc_arch>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;installed ioc products>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ...
+**&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; lib/
+**&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; man/</PRE>
+Files marked with an "*" are user created and/or edited. Each such file
+is discussed in this chapter.
+
+<P>Files marked with "**" are directories created by gnumake. Since <TT>gnumake
+uninstall</TT> removes all files in these directories, no permanent files
+should be created in these directories.
+<H3>
+Directories</H3>
+The directories are:
+<DL>
+<DT>
+<TT>config</TT></DT>
+
+<DD>
+Directory containing configuration files for gnumake.</DD>
+
+<DT>
+<TT>xxxApp</TT></DT>
+
+<DD>
+Directory containing source files and database files. An arbitrary number
+of <TT>xxxApp</TT> directories are allowed. Each must have <TT>App</TT>
+appended to the name because Makefile looks for it.</DD>
+
+<DL>
+<DT>
+<TT>src</TT> or <TT>xxxSrc</TT></DT>
+
+<DD>
+Directory containing source files. An arbitrary number of source directories
+can appear under each xxxApp. The names must be <TT>src</TT> or end in
+<TT>Src</TT>. A source directory is where C code, sequence programs, scripts,
+etc. are created and built.</DD>
+
+<DT>
+<TT>xxxDb</TT></DT>
+
+<DD>
+Directory containing record instance files. An arbitrary number of Db directories
+can exist under each xxxApp, but each must have Db appended to the name
+because the Makefile looks for it. Each Db directory can contain record
+instance, template, and substitution files. The name Db, without any suffix,
+is also permitted.</DD>
+</DL>
+
+<DT>
+<TT>iocBoot</TT></DT>
+
+<DD>
+Directory containing a subdirectory for each ioc.</DD>
+
+<DL>
+<DT>
+<TT>iocxxx</TT></DT>
+
+<DD>
+Directory from which ioc <TT>iocxxx </TT>is booted. Each must have <TT>ioc</TT>
+prepended to the name because <TT>iocBoot/Makefile</TT> looks for it.</DD>
+</DL>
+
+<DT>
+<TT>dbd</TT></DT>
+
+<DD>
+Installed Database Definitions Directory.</DD>
+
+<DT>
+<TT>include</TT></DT>
+
+<DD>
+Include Directory. The directory in which include files generated from
+menu and record type definitions are installed.</DD>
+
+<DT>
+<TT>bin</TT></DT>
+
+<DD>
+Bin Directory. This directory contains a subdirectory for the host architecture
+and for each target architectiure. These are the directories in which executables,
+binaries, etc. are installed.</DD>
+
+<DT>
+<TT>lib</TT></DT>
+
+<DD>
+Library Directory. This directory contains a subdirectory for the host
+architecture and for each target architectiure. These are the directories
+in which libraries are installed.</DD>
+
+<DT>
+<TT>man</TT></DT>
+
+<DD>
+Man pages Directory. This directory contains a subdirectory for each section
+of the Unix style man pages. This is where man pages are installed.</DD>
+</DL>
+
+<H3>
+Makefiles</H3>
+The makefiles are described below in section <A HREF="#makeFiles">Description
+of Makefiles</A> below.
+<H3>
+&lt;top>/config/*</H3>
+These files contain definitions included in the various makefiles.
+<DL>
+<DT>
+CONFIG</DT>
+
+<DD>
+This is the file in which you add to or modify make variables in epics
+base. A useful definition to override is:</DD>
+
+<PRE>&nbsp;&nbsp;&nbsp; CROSS_COMPILER_TARGET_ARCHS =</PRE>
+This specifies the vxWorks architecture to build. If your site builds base
+for multiple target architectures but your iocs only use a single architecture,
+overriding this variables saves build time.
+<DT>
+CONFIG_APP</DT>
+
+<DD>
+You should not edit this file unless you are using external products besides
+<TT>epics_base</TT>,and&nbsp; <TT>share</TT>. If you are using additional
+external products follow the model used by the template file <TT>share/config/CONFIG_APP.</TT></DD>
+
+<DT>
+RELEASE</DT>
+
+<DD>
+This file specifies the location of external products such as epics base.
+The procedures for going to a new release of an external product are described
+later in this chapter. One step in the procedures is to edit this file.
+The config files created by makeBaseApp provide support for the following
+variables:</DD>
+
+<DL 
+<DT><TT>EPICS_BASE</TT>
+<DD>
+This variable must be defined.</DD>
+
+<DT>
+<TT>SHARE</TT></DT>
+
+<DD>
+This variable which is optional, specifies the location of a release of
+a <TT>&lt;top></TT> area containing code that can be shared by other applications.</DD>
+</DL>
+<B>IMPORTANT:</B>Each of the above variables must be specified with a full
+path name.
+<DT>
+RULES.Db</DT>
+
+<DD>
+This file contains rules for building database files from templates.</DD>
+
+<DT>
+RULES.Host</DT>
+
+<DD>
+The template file includes the <TT>RULES.Host</TT> from base. If you want
+to add rules that apply to all <TT>Makefile.Host</TT> files then this is
+the place to add the rules.</DD>
+
+<DT>
+RULES.Vx</DT>
+
+<DD>
+The template file includes the <TT>RULES.Vx</TT> from base. If you want
+to add rules that apply to all <TT>Makefile.Vx</TT> files then this is
+the place to add the rules.</DD>
+
+<DT>
+RULES.ioc</DT>
+
+<DD>
+This is a file containing rules for the Makefiles in the directories from
+which iocs are booted. It makes the soft links needed to boot an ioc. It
+should not be necessary to modify this file.</DD>
+
+<DT>
+RULES.iocBoot</DT>
+
+<DD>
+This is a file containing rules for the Makefiles in the iocBoot directory.
+It should not be necessary to modify this file.</DD>
+
+<DT>
+RULES_ARCHS</DT>
+
+<DD>
+This file includes the <TT>RULES_ARCHS</TT> from base. It is seldom necessary
+to modify this file.</DD>
+
+<DT>
+RULES_DIRS</DT>
+
+<DD>
+This file includes the <TT>RULES_DIRS</TT> from base. It is seldom necessary
+to modify this file.</DD>
+
+<DT>
+RULES_TOP</DT>
+
+<DD>
+All applications except SHARE just include SHARE/config/RULES_TOP.</DD>
+</DL>
+
+<H3>
+base.dbd and &lt;app>Include.dbd</H3>
+These files are used to configure database definitions for the following:
+<UL>
+<LI>
+menus</LI>
+
+<LI>
+record types</LI>
+
+<LI>
+device support</LI>
+
+<LI>
+driver support</LI>
+
+<LI>
+breakpoint tables</LI>
+</UL>
+When <TT>gnumake</TT> is executed, an expanded file, i.e. a file with all
+include statements expanded, is installed into:
+<PRE>&nbsp;&nbsp;&nbsp; &lt;top>/dbd/</PRE>
+with the name specified by DBDNAME in Makefile.Vx.
+
+<P><TT>base.dbd </TT>contains definitions obtained from the base release.
+It contains definitions like:
+<PRE>&nbsp;&nbsp;&nbsp; include "menuGlobal.dbd"
+&nbsp;&nbsp;&nbsp; include "menuConvert.dbd"
+&nbsp;&nbsp;&nbsp; include "aiRecord.dbd"
+&nbsp;&nbsp;&nbsp; #include "aaiRecord.dbd"
+&nbsp;&nbsp;&nbsp; ...
+&nbsp;&nbsp;&nbsp; device(ai,CONSTANT,devAiSoft,"Soft Channel")
+&nbsp;&nbsp;&nbsp; #device(ai,CONSTANT,devAiSoftRaw,"Raw Soft Channel")
+&nbsp;&nbsp;&nbsp; ...
+&nbsp;&nbsp;&nbsp; #driver(drvXy010)
+&nbsp;&nbsp;&nbsp; #driver(drvVxi)
+&nbsp;&nbsp;&nbsp; ...</PRE>
+Thus it has a definition for all menus, record types, devices, and drivers
+supplied in EPICS base. Some record types and ALL hardware device and driver
+support are proceeded by the comment symbol "#". You are expected to edit
+this file and select the desired support routines, by removing the "#"
+from the desired support.
+
+<P>File <TT>&lt;app>Include.dbd</TT>, which contains definitions like:
+<PRE>&nbsp;&nbsp;&nbsp; include "base.dbd"
+&nbsp;&nbsp;&nbsp; #local menu, record, device, driver, breakpoint definitions</PRE>
+is the place where you define locally built support.
+<H3>
+baseLIBOBJS</H3>
+This file defines all the object modules for record, device, and driver
+support supplied by EPICS. Since the file is intimately related to base.dbd,
+if base.dbd (is, is not) used in a particular xxxApp/src directory, then
+baseLIBOBJS should (be, not be) used in that directory.
+
+<P>baseLIBOBJS contains definitions as follows:
+<PRE>&nbsp;&nbsp;&nbsp; #LIBOBJS += $(EPICS_BASE_BIN)/aaiRecord.o
+&nbsp;&nbsp;&nbsp; #LIBOBJS += $(EPICS_BASE_BIN)/aaoRecord.o
+&nbsp;&nbsp;&nbsp; LIBOBJS += $(EPICS_BASE_BIN)/aiRecord.o
+&nbsp;&nbsp;&nbsp; ...
+&nbsp;&nbsp;&nbsp; #
+&nbsp;&nbsp;&nbsp; # Device Support
+&nbsp;&nbsp;&nbsp; #
+&nbsp;&nbsp;&nbsp; #LIBOBJS += $(EPICS_BASE_BIN)/devAaiCamac.o
+&nbsp;&nbsp;&nbsp; ...
+&nbsp;&nbsp;&nbsp; #
+&nbsp;&nbsp;&nbsp; # Driver support ANSI
+&nbsp;&nbsp;&nbsp; #
+&nbsp;&nbsp;&nbsp; #LIBOBJS += $(EPICS_BASE_BIN)/drvAb.o
+&nbsp;&nbsp;&nbsp; ...</PRE>
+Thus it has a definition for all record, device, and drivers supplied in
+EPICS base. Some record types and ALL hardware device and driver support
+are proceeded by the comment symbol "#". You are expected to edit this
+file and select the desired support routines, by removing the '#' from
+the front of the appropriate lines. Makefile.Vx contains rules that will
+combine all support into a single module called xxxSupport.
+
+<P><B>APOLOGY</B>: It would be nice if this file could be automatically
+generated. This is not possible because there is no naming convention for
+device support source files.
+<H3>
+st.cmd</H3>
+The vxWorks startup file is described in a later section.
+<CENTER>
+<H2>
+<A NAME="makeBaseApp"></A>makeBaseApp</H2></CENTER>
+<B>NOTE: </B>two versions of makeBaseApp exist. makeBaseApp is a bourne
+script and makeBaseApp.pl is a perl script. They produce nearly identical
+results.
+
+<P><TT>makeBaseApp</TT> is executed by issuing the commands:
+<PRE>&nbsp;&nbsp;&nbsp; mkdir &lt;top>&nbsp;&nbsp;&nbsp; # If &lt;top> does not exist
+&nbsp;&nbsp;&nbsp; cd &lt;top>
+&nbsp;&nbsp;&nbsp; &lt;base>/bin/&lt;arch>/makeBaseApp [-e] &lt;app> ...
+
+makeBaseApp does the following:</PRE>
+
+<UL>
+<LI>
+If the user is in his/her home directory, makeBaseApp fails. This prevents
+the user from accidently cluttering up their home directory.</LI>
+
+<LI>
+<TT>EPICS_BASE</TT> is obtained from the command itself. This is why makeBaseApp
+must be executed via a full path name to the makeBaseApp in the epics base
+release you are using.</LI>
+
+<LI>
+If Makefile does not exist, it is created.</LI>
+
+<LI>
+If directory <TT>config</TT> does not exist, then it and all the config
+files are created.</LI>
+
+<LI>
+For each &lt;app> that does not exist, it creates a directory and populates
+it as follows:</LI>
+
+<PRE>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;app>App
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; src/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Makefile
+&nbsp;&nbsp;&nbsp; *&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Makefile.Host
+&nbsp;&nbsp;&nbsp; *&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Makefile.Vx
+&nbsp;&nbsp;&nbsp; *&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;app>Include.dbd
+&nbsp;&nbsp;&nbsp; *&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; base.dbd
+&nbsp;&nbsp;&nbsp; *&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; baseLIBOBJS
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Db/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Makefile</PRE>
+The user can rename <TT>Db</TT> to <TT>&lt;anything>Db;</TT>
+<LI>
+If iocBoot or iocBoot/ioc&lt;app> do not exist, they are created and populated
+as follows:</LI>
+
+<PRE>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; iocBoot
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Makefile
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ioc&lt;app>
+&nbsp;&nbsp;&nbsp; *&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Makefile
+&nbsp;&nbsp;&nbsp; *&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; st.cmd</PRE>
+The user can rename <TT>ioc&lt;app></TT> to <TT>ioc&lt;anything>Db;</TT>
+<LI>
+If the <TT>-e</TT> option is specified the following files are created.</LI>
+
+<PRE>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;app>App
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Db/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; dbExample.db
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; src/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; caExample.c
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sncExample.st
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; xxxRecord.dbd
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; xxxRecord.c
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; devXxxSoft.c</PRE>
+</UL>
+The user is expected to edit (or possibly remove) the files marked with
+an "*". The directory Db can be renamed as long as the last two characters
+remain Db. Additional xxxDb directories can be created manually. After
+each xxxDb directory is created, the Makefile can be copied from another
+Db directory.
+
+<P>The directory <TT>src</TT> can be renamed as long as the new name ends
+in <TT>Src</TT>. Additional source directories can be manually created.
+After each directory is created makefiles can be copied from another source
+directory and edited.
+
+<P><B>IMPORTANT</B>: After creating new applications with makeBaseApp,
+&lt;app>/iocBoot/ioc&lt;app>/Makefile must be edited to specify the ioc
+architecture.
+
+<P>The remainder of this section gives a brief description of the files
+generated if makeBaseApp is executed with the <TT>-e</TT> option.
+<DL>
+<DT>
+<B>caExample.c</B></DT>
+
+<DD>
+A Host application that interfaces to Channel Access. It is executed from
+a Unix shell by issuing the command:</DD>
+
+<PRE>&nbsp;&nbsp;&nbsp; caExample "pvname"</PRE>
+It issues a Channel Access get request for the specified process variable
+and prints the value. If you have booted an ioc from the example then try
+the following:
+<UL>
+<LI>
+On the ioc console type the command:</LI>
+
+<PRE>&nbsp;&nbsp;&nbsp; dbl</PRE>
+This produces a list of all the records the ioc contains.
+<LI>
+On the host system change to the directory: &lt;top>/bin/&lt;host_arch>/</LI>
+
+<LI>
+Execute the command:</LI>
+
+<PRE>&nbsp;&nbsp;&nbsp; caExample "pvname"</PRE>
+where pvname is one of the record names shown by dbl</UL>
+
+<DT>
+<B>dbExample.db</B></DT>
+
+<DD>
+This is an example of record instances. Each name is proceeded by <TT>&lt;userid></TT>,
+which is the userid of the person who executed makeBaseApp. The records
+are:</DD>
+
+<DL>
+<DT>
+<B>&lt;userid>aiExample</B></DT>
+
+<DD>
+This is a passive ai (analog input) record which obtains its input from
+record calcExample,</DD>
+
+<DT>
+<B>&lt;userid>calcExample</B></DT>
+
+<DD>
+This is a calc (calculation) record that acts as a counter that continually
+counts from 0 to 9. It is scanned once a second. It also has a forward
+link to aiExample. Since aiExample is passive it will also scan once a
+second.</DD>
+
+<DT>
+<B>&lt;userid>xxxExample</B></DT>
+
+<DD>
+This is a sample record of type xxx, as described below. It is a passive
+record. You can change its VAL field via a Channel Access client or via
+the dbpf IOC command.</DD>
+</DL>
+
+<DT>
+<B>sncExample.st</B></DT>
+
+<DD>
+This is a sequencer, i.e. state notation language, example. It prints a
+message on the IOC console every time the VAL field of record &lt;userid>xxxExample
+becomes > 5.0 and also every time it becomes &lt;=5.0..</DD>
+
+<DT>
+<B>xxxRecord.dbd xxxRecord.c</B></DT>
+
+<DD>
+A skeleton record support module. The record support module is the one
+described in the Application Developer's Guide.</DD>
+
+<DT>
+<B>devXxxSoft.c></B></DT>
+
+<DD>
+A device support module for xxxRecord. The device support module provides
+synchronous support for the record support.</DD>
+</DL>
+
+<CENTER>
+<H2>
+<A NAME="ST.CMD"></A>ST.CMD</H2></CENTER>
+NOTE: The commands dbLoadDatabase, dbExpand, and dbLoadRecords are described
+in Chapter 4, "Database Definition" of the Application Developer's Guide.
+
+<P>This file is the vxWorks startup file. The version created by makeBaseApp
+is:
+<UL>
+<PRE>&nbsp;&nbsp;&nbsp; # Example vxWorks startup file
+&nbsp;&nbsp;&nbsp; #Following must be added for many board support packages
+&nbsp;&nbsp;&nbsp; #cd &lt;full path to target bin directory></PRE>
+
+<PRE>&nbsp;&nbsp;&nbsp; ld &lt; bin/iocCore
+&nbsp;&nbsp;&nbsp; ld &lt; bin/xxxLib
+&nbsp;&nbsp;&nbsp; #ld &lt; bin/seq
+
+&nbsp;&nbsp;&nbsp; dbLoadDatabase("dbd/xxxApp.dbd")
+&nbsp;&nbsp;&nbsp; dbLoadRecords("xxxApp/xxxDb/xxx.db","user=USER")
+
+&nbsp;&nbsp;&nbsp; iocInit
+
+&nbsp;&nbsp;&nbsp; #start sequence programs
+&nbsp;&nbsp;&nbsp; #seq &amp;sncxxx</PRE>
+</UL>
+The first <TT>ld</TT> command loads the core EPICS components. File <TT>xxxLib</TT>
+is installed when gnumake is run in the <TT>&lt;top>/xxxApp/src</TT> directory.
+It contains the executable for all record, device, and driver support as
+well as any other application specific object modules. If an IOC wants
+to use support generated in a sub-application src directory, this statement
+will have to be changed to coincide with the LIBNAME value.
+
+<P>The dbLoadDatabase command loads the definitions of all menus, record
+types, device support, driver support, and breakpoint tables needed in
+this IOC. These are actually expanded files created by dbExpand and installed
+into <TT>dbd</TT>. If an application wants to use database definitions
+generated in a sub-application src directory, this statement will have
+to be changed to coincide with the DBDNAME value.
+
+<P>The command:
+<PRE>&nbsp;&nbsp;&nbsp; dbLoadRecords("xxxApp/xxxDb/xxx.db","user=USER")</PRE>
+is an example command for loading record instances. One of these commands
+is supplied for each record instance file.
+
+<P>The <TT>iocInit</TT> command initializes the EPICS system.
+
+<P>The remaining commands in the file show how to load and start sequence
+programs.
+<CENTER>
+<H2>
+<A NAME="SwitchNewRelease"></A>SWITCHING TO A NEW RELEASE</H2></CENTER>
+The file <TT>&lt;top>/config/RELEASE</TT> contains definitions for components
+obtained form outside <TT>&lt;top></TT>. If you want to link to a new release
+of anything defined in the file do the following:
+<PRE>cd &lt;top>
+gnumake clean uninstall
+vi &lt;top>/config/RELEASE
+cd &lt;top>
+gnumake</PRE>
+Note that all definitions in <TT>&lt;top>/config/RELEASE</TT> must be complete
+path definitions, i.e. relative path names are not permitted.
+<CENTER>
+<H2>
+<A NAME="MAKE"></A>MAKE</H2></CENTER>
+
+<H3>
+Where Executed</H3>
+Make can be executed in any subdirectory where a Makefile appears, which
+is almost every subdirectory.
+<DL>
+<DT>
+<TT>&lt;top></TT></DT>
+
+<DD>
+The most useful commands at the top level directory are:</DD>
+
+<UL>
+<LI>
+<TT>gnumake clean uninstall</TT></LI>
+
+<BR>This command removes everything created by make.
+<LI>
+<TT>gnumake</TT></LI>
+
+<BR>This rebuilds and installs everything which is not up to date.
+<BR>NOTE: executing gnumake without arguments is the same as "gnumake install"
+<LI>
+<TT>gnumake rebuild</TT></LI>
+
+<BR>This is the same as
+<PRE>&nbsp;&nbsp;&nbsp; gnumake clean install</PRE>
+NOTE: If you are confused about the state of the generated files, just
+execute "<TT>gnumake rebuild</TT> ".
+<LI>
+<TT>gnumake tar</TT></LI>
+
+<BR>This command makes a tar image of the entire &lt;top> directory with
+the CVS directories excluded.</UL>
+
+<DT>
+<TT>xxxApp</TT></DT>
+
+<DD>
+The most useful command at this level is</DD>
+
+<PRE>&nbsp;&nbsp;&nbsp; gnumake rebuild</PRE>
+which is the same as issuing "gnumake rebuild" in each subdirectory of
+<TT>xxxApp</TT>.
+<DT>
+<TT>xxxApp/src</TT> or <TT>xxxApp/xxxSrc</TT></DT>
+
+<DD>
+Running the command:</DD>
+
+<PRE>&nbsp;&nbsp;&nbsp; gnumake</PRE>
+
+<DD>
+in a <TT>src</TT> directory builds all out of date Host and IOC components
+described by the files <TT>Makefile.Host</TT> and <TT>Makefile.Vx</TT>.
+The builds are performed in subdirectories <TT>O.&lt;arch></TT>.</DD>
+
+
+<P>It is possible to build for a single architecture via the command:
+<PRE>&nbsp;&nbsp;&nbsp; gnumake &lt;arch></PRE>
+For example, if your IOC is an MV167 system, then the directory is <TT>O.mv167</TT>,
+and the make command is:
+<PRE>&nbsp;&nbsp;&nbsp; gnumake mv167</PRE>
+Another useful command is:
+<PRE>&nbsp;&nbsp;&nbsp; gnumake clean</PRE>
+This removes everything generated in the O. directories. ".&lt;arch>" can
+be appended to invoke clean for a particular architecture.
+<DT>
+<TT>xxxApp/xxxDb</TT></DT>
+
+<DD>
+Executing gnumake in this directory creates the link for dbd and also generates
+database instance files from templates.</DD>
+
+<DT>
+<TT>iocBoot</TT></DT>
+
+<DD>
+The most useful command at this level is</DD>
+
+<PRE>&nbsp;&nbsp;&nbsp; gnumake</PRE>
+which is the same as issuing "gnumake" in each subdirectory of <TT>iocBoot</TT>.
+
+<P>If the Makefile includes <TT>RULES.iocBoot</TT> then a file nfsCommands
+must exist in the <TT>iocBoot</TT> directory. Running make generates a
+file <TT>nfs.cmd</TT>, which contains everthing in the nfsCommands file
+in addition to a command to cd to the iocBoot directory. The <TT>st.cmd</TT>
+file in the iocxxx directory can then start with the commands:
+<PRE>&nbsp;&nbsp;&nbsp; &lt; ../nfs.cmd
+&nbsp;&nbsp;&nbsp; cd "iocxxx"</PRE>
+This provides an easy way to use NFS for all file access from the ioc.
+See the template files for examples.
+<DT>
+<TT>iocBoot/iocxxx</TT></DT>
+
+<DD>
+Executing gnumake in this directory creates soft links for use by the <TT>st.cmd</TT>
+file.</DD>
+</DL>
+
+<H3>
+make targets</H3>
+The following is a summary of targets that can be specified for gnumake:
+<UL>
+<LI>
+<TT>&lt;action></TT></LI>
+
+<LI>
+<TT>&lt;arch></TT></LI>
+
+<LI>
+<TT>&lt;action>.&lt;arch></TT></LI>
+
+<LI>
+<TT>&lt;dir></TT></LI>
+
+<LI>
+<TT>&lt;dir>.&lt;action></TT></LI>
+
+<LI>
+<TT>&lt;dir>.&lt;arch></TT></LI>
+
+<LI>
+<TT>&lt;dir>.&lt;action>.&lt;arch></TT></LI>
+</UL>
+where:
+<DL>
+<DT>
+<TT>&lt;arch></TT></DT>
+
+<DD>
+<TT>sun4, solaris, hp700, mv167, etc.</TT></DD>
+
+<BR><TT>or</TT>
+<BR><TT>host - Builds for host architecture only.</TT>
+<BR><TT>or</TT>
+<BR><TT>cross - builds for vxWorks architecture(s) only.</TT>
+<DT>
+<TT>&lt;action></TT></DT>
+
+<DD>
+<TT>clean, inc, install, build, rebuild, buildInstall, uninstall, or tar</TT></DD>
+
+<BR><TT>NOTE: uninstall and tar can only be specified at &lt;top></TT>
+<DT>
+<TT>&lt;dir></TT></DT>
+
+<DD>
+subdirectory name</DD>
+</DL>
+
+<CENTER>
+<H2>
+<A NAME="makeFiles"></A>Description of Makefiles</H2></CENTER>
+
+<H3>
+&lt;top>/Makefile</H3>
+This makefile performs a make in the xxxApp and iocBoot subdirectories.
+In addition it allows other top level make options described below. There
+is seldom need to modify this file.
+<H3>
+&lt;top>/xxxApp/Makefile</H3>
+This makefile just executes make in <TT>src</TT> and each <TT>*Db </TT>subdirectory.
+<H3>
+<B>&lt;top>/xxxApp/src/Makefile.Host</B></H3>
+This file specifies Host components, which can be defined in <TT>Makefile.Host</TT>.
+Replace &lt;arch_class> in the following by the specific architecture class.
+<PRE>USR_CFLAGS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; C compiler flags for all systems
+USR_CFLAGS_&lt;arch_class>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; os-specific C compiler flags
+USR_CFLAGS_DEFAULT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; C compiler flags for systems with no
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; USR_CFLAGS_&lt;arch_class> specified
+
+USR_CXXFLAGS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; C++ compiler flags for all systems
+USR_CXXFLAGS_&lt;arch_class>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; os-specific C++ compiler flags
+USR_CXXFLAGS_DEFAULT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; C++ compiler flags for systems with no
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; USR_CXXFLAGS_&lt;arch_class> specified
+
+INC&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; include-files to install for all systems
+INC_&lt;arch_class>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; os-specific includes go to the
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; include/os-directory:
+INC_DEFAULT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; include-files to install for systems
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; with no INC_&lt;arch_class> specified
+
+LIBSRCS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; source files for building library,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; specified as OIBSRCS := xxx.c yyy.c zzz.c
+LIBSRCS_&lt;arch_class>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; os-specific library source files&nbsp;
+LIBSRCS_DEFAULT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; library source files for systems with no
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; USR_CFLAGS_&lt;arch_class> specified
+
+PROD_LIBS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; libs needed to link PROD for all systems
+PROD_LIBS_&lt;arch_class>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; os-specific libs needed to link PROD
+PROD_LIBS_DEFAULT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; libs needed to link PROD for systems with
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; no PROD_LIBS_&lt;arch_class> specified
+
+PROD&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Product names (without execution suffix)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; to build and install
+PROD_&lt;arch_class>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; os-specific products to build and install
+PROD_DEFAULT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; products to build and install for systems
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; with no PROD_&lt;arch_class> specified
+
+SCRIPTS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; scripts to install
+SCRIPTS_&lt;arch_class>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; os-specific scripts to install
+SCRIPTS_DEFAULT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; scripts to install for systems with no
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PROD_&lt;arch_class> specifieD
+
+LIBTYPE:=SHARED&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Library type. IF shared library is
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; desired LIBTYPE must be defined&nbsp;
+
+SRCS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Source files needed to build PROD
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (e.g. SRCS=a.c b.c c.c )
+
+USER_VPATH&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; List of directories that gnumake should
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; search for files not in current dir.
+
+LIBRARY&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Name of library to build. The name should
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; NOT include a prefix or extension, i.e.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; specify Ca NOT libCa.a
+
+TESTPROD&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Product names (without execution suffix)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; to build but not install
+
+INSTALL_DIR&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Location of install directory (default $(TOP))
+
+MAN1,MAN2,MAN3...&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Name of man files to be installed
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; into $(INSTALL_DIR)/man/mani directory
+
+DOCS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Name of text files to be installed into
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; the $(INSTALL_DIR)/doc directory
+
+TEMPLATES_DIR&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Template directory to be created,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; $(INSTALL_DIR)/templates/$(TEMPLATE_DIR)
+TEMPLATES&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; List of template files to be installed
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; into $(TEMPLATE_DIR)
+
+
+USR_CPPFLAGS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cpp flags
+USR_INCLUDES&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Directories to search for include files
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (e.g. -I$(EPICS_EXTENSIONS_BIN) )
+USR_LDFLAGS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; linker options
+USR_LDLIBS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; load libraries (e.g. -lXt -lX11 )
+
+YACCOPT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; yacc options
+LEXOPT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; lex options
+SNCFLAGS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; snc options
+E2DB_FLAGS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; e2db options
+SCH2EDIF_FLAGS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sch2edif options
+RANLIBFLAGS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ranlib options
+
+&lt;target>_CFLAGS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; target specific C compiler flags (e.g. xxxRecord_CFLAGS )
+&lt;target>_CXXFLAGS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; target specific C++ compiler flags
+&lt;target>_CPPFLAGS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; target specific cpp flags
+&lt;target>_LDFLAGS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; target specific ld flags
+&lt;target>_LDLIBS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; target specific ld libraries (e.g. -lX11 -lXt )
+
+
+UNIX_WARN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Are compiler warning messages desired
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (YES or NO) (default is NO)
+UNIX_OPT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Optimization level&nbsp; (default is no optimization)
+
+STATIC_BUILD&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Is static build desired (YES or NO)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (default is NO)</PRE>
+
+<H3>
+<B>&lt;top>/xxxApp/src/Makefile.Vx</B></H3>
+The following components can be built:
+<DL>
+<DT>
+Breakpoint Tables</DT>
+
+<DD>
+For each breakpoint table add the following definition</DD>
+
+<PRE>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; BPTS += &lt;table name>.dbd</PRE>
+
+<DT>
+Record Support</DT>
+
+<DD>
+For each new record type, the following definitions must be added to the
+makefile:</DD>
+
+<DL>
+<PRE>&nbsp;&nbsp;&nbsp; RECTYPES += &lt;rectype>Record.h
+&nbsp;&nbsp;&nbsp; LIBOBJS += &lt;rectype>Record.o</PRE>
+</DL>
+
+<DD>
+and the record support files:</DD>
+
+<DL>
+<DL>
+<PRE>&lt;Record>Record.dbd
+&lt;Record>Record.c</PRE>
+</DL>
+</DL>
+
+<DD>
+must exist.</DD>
+
+<DD>
+If a <TT>menuXXX.dbd</TT> file is present, then add the following definition.</DD>
+
+<DL>
+<PRE>&nbsp;&nbsp;&nbsp; MENUS += menu&lt;name>.h</PRE>
+</DL>
+
+<DT>
+Device, Driver, other C modules</DT>
+
+<DD>
+For each such module, add a definition:</DD>
+
+<DL>
+<PRE>&nbsp;&nbsp;&nbsp; LIBOBJS += &lt;name>.o</PRE>
+</DL>
+
+<DD>
+Each file will be placed in the library specified by LIBNAME.</DD>
+
+<BR>It is also possible to generate object files not placed in LIBNAME
+via the definitions:
+<PRE>&nbsp;&nbsp;&nbsp; PROD += &lt;name>.o
+&nbsp;&nbsp;&nbsp; or
+&nbsp;&nbsp;&nbsp; TARGETS += &lt;name>.o</PRE>
+
+<DL>Both will cause the specified file to be generated, PROD will also
+install the generated file into &lt;top>/bin/&lt;target_arch>.</DL>
+
+<DT>
+LIBNAME</DT>
+
+<DD>
+A file containing all LIBOBJS is installed into &lt;top>/bin/&lt;arch>
+with the name specified by LIBNAME. If <TT>Makefile.Vx</TT> appears in
+<TT>xxxApp/src</TT>, the definition should be:</DD>
+
+<DL>
+<PRE>&nbsp;&nbsp;&nbsp; LIBNAME = xxxLib
+&nbsp;&nbsp;&nbsp; LIBNAME_CXX = xxxLib</PRE>
+The first is for c libraries and the second for c++ libraries.</DL>
+
+<DT>
+Expanded Database Definition File</DT>
+
+<DL>Files containing database definition files are expanded by utility
+dbExpand and installed into &lt;top>/dbd. The following variables are available.
+<PRE>&nbsp;&nbsp;&nbsp; DBDEXPAND += xxxInclude.dbd
+&nbsp;&nbsp;&nbsp; DBDNAME = xxxApp.dbd
+&nbsp;&nbsp;&nbsp; USER_DBDFLAGS += -I &lt;include path>
+&nbsp;&nbsp;&nbsp; USER_DBDFLAGS += -S &lt;macro substitutions>
+
+&nbsp;&nbsp;&nbsp; DBDINSTALL += xxx.dbd</PRE>
+where:
+<DL>
+<LI>
+<TT>DBDEXPAND</TT> - A file containing database definitions.</LI>
+
+<LI>
+<TT>DBDNAME</TT> - The name of the file containing expanded definitions
+to be created and installed into <TT>&lt;top>/dbd</TT>.</LI>
+
+<LI>
+<TT>USER_DBDFLAGS</TT> - Flags for dbExpand. Currently only an include
+path and macro substitution are supported.</LI>
+
+<LI>
+<TT>DBDINSTALL</TT> - Installs the file into <TT>&lt;top>/dbd</TT>.</LI>
+</DL>
+</DL>
+
+<DT>
+State Notation Programs</DT>
+
+<DD>
+For each state notation program, add the definition:</DD>
+
+<DL>
+<PRE>&nbsp;&nbsp;&nbsp; LIBOBJS += &lt;name>.o</PRE>
+</DL>
+
+<DD>
+The state notation programs must be named <TT>&lt;name>.st</TT>.</DD>
+
+<DT>
+Scripts, etc.</DT>
+
+<DD>
+A definition of the form:</DD>
+
+<DL>
+<PRE>&nbsp;&nbsp;&nbsp; SCRIPTS += &lt;name></PRE>
+</DL>
+
+<DD>
+results in file <TT>&lt;name></TT> being installed from the src directory
+to the <TT>&lt;top>/bin/&lt;arch></TT> directory.</DD>
+
+<DT>
+<TT>vxWorks, vxWorks.sym, iocCore, and seq</TT></DT>
+
+<DD>
+In order to have vxWorks, vxWorks.sym, iocCore, and seq in the bin directory,
+the following must appear:</DD>
+
+<DL>
+<PRE>INSTALLS += vxWorks vxWorks.sym iocCore seq</PRE>
+</DL>
+
+<DD>
+NOTE: <TT>INSTALLS </TT>only needs to appear in one application.</DD>
+</DL>
+
+<DL>Other definitions
+<PRE>USR_CFLAGS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; C compiler flags
+USR_CXXFLAGS&nbsp;&nbsp;&nbsp; C++ compiler flags
+USR_INCLUDES&nbsp;&nbsp;&nbsp; Include directory (e.g. -I$(EPICS_EXTENSIONS_BIN) )
+USR_LDFLAGS&nbsp;&nbsp;&nbsp;&nbsp; linker options
+
+INC&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; include-files to install
+MAN1,MAN2,...&nbsp;&nbsp; Man files to be installed&nbsp;
+BIN_INSTALLS&nbsp;&nbsp;&nbsp; Files in any directory to install to $(INSTALL_BIN)
+DOCS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Text files to install into&nbsp; $(INSTALL_DIR)/doc
+
+
+YACCOPT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; yacc options
+LEXOPT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; lex options
+CPPFLAGS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cpp options
+SNCFLAGS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; snc options
+E2DB_FLAGS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; e2db options
+SCH2EDIF_FLAGS&nbsp; sch2edif options
+
+&lt;target>_CFLAGS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; target specific C compiler flags
+&lt;target>_CXXFLAGS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; target specific C++ compiler flags
+&lt;target>_CPPFLAGS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; target specific cpp flags
+&lt;target>_SNCFLAGS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; target specific state notation language flags
+&lt;target>_LDFLAGS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; target specific ld flags
+
+VX_WARN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Compiler warning messages desired (YES or NO) (default NO)
+VX_OPT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Optimization level&nbsp; (default is no optimization)
+
+
+INSTALL_DIR&nbsp;&nbsp;&nbsp;&nbsp; Installation directory (defaults to $(TOP))</PRE>
+</DL>
+
+<H3>
+<B><TT>&lt;top>/xxxApp/xxxDb/Makefile</TT></B></H3>
+This makefile performs the following functions:
+<UL>
+<LI>
+Creates a soft link to the <TT>&lt;top>/dbd</TT> directory.</LI>
+
+<BR>This is useful for running database configuration tools in this directory.
+<LI>
+creates xxx.db given xxx.template and xxx.substitutions</LI>
+
+<BR>Thus given a template and a substitutions file, it creates a db file.
+For each such file the following rule must be added by the user:
+<PRE>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; DBFROMTEMPLATE += xxx.db</PRE>
+
+<LI>
+creates xxxi.db given xxx.template and xxxi.substitutions</LI>
+
+<BR>Thus given a template and a a set of related substitutions files, it
+creates a db file. For each such file the following rule must be added
+by the user:
+<PRE>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; INDDBFROMTEMPLATE += xxxi.db</PRE>
+
+<PRE>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; NOTE: i is a positive integer</PRE>
+Note that the name of the substitutions file must be the same as the template
+except that "i" is appended to the file name.</UL>
+
+<H3>
+<B><TT>&lt;top>/iocBoot/Makefile</TT></B></H3>
+This executes make in each subdirectory.
+<H3>
+<B><TT>&lt;top>iocBoot/iocxxx/Makefile</TT></B></H3>
+This makefile creates soft links used in the <TT>st.cmd</TT> file. make
+sure that the definition:
+<PRE>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ARCH = &lt;arch></PRE>
+refers to the correct architecture for your ioc processor.
+<CENTER>
+<H2>
+<A NAME="CVS"></A>CVS</H2></CENTER>
+The CVS utility is used to put all user editable files under source/release
+control. This section gives a brief description of the commands normally
+used by application developers. Consult the CVS manual for more details.
+<H3>
+CVSROOT</H3>
+Your environment variable CVSROOT should point to the CVS repository for
+IOC Applications. The following command displays the location of CVSROOT:
+<PRE>&nbsp;&nbsp;&nbsp; echo $CVSROOT</PRE>
+At APS/ASD the command should show:
+<PRE>&nbsp;&nbsp;&nbsp; /usr/local/iocapps/cvsroot</PRE>
+
+<H3>
+Commands</H3>
+This section gives a brief description of the CVS commands. Wherever &lt;filename>
+is shown a list of filenames is allowed. If &lt;filename> is not specified
+then most commands apply to the entire directory and all subdirectories.
+
+<P>A useful option for <TT>cvs</TT> is:
+<PRE>&nbsp;&nbsp;&nbsp; cvs -n &lt;command></PRE>
+This will execute the command without making any changes.
+<DL>
+<DT>
+<B>help</B></DT>
+
+<DD>
+Typing</DD>
+
+<PRE>&nbsp;&nbsp;&nbsp; cvs help</PRE>
+gives overall cvs help.
+<DT>
+<B>Initial Checkout</B></DT>
+
+<DD>
+Each user performs application development in his/her private area. The
+developer must checkout <TT>iocsys/ascf.</TT> Then entire <TT>&lt;top></TT>
+areas can be checked out or else just a subset of a <TT>&lt;top> </TT>area.</DD>
+
+
+<P>The first step is to checkout ascf. The easiest way is to create the
+application area with a high level directory called iocsys. The following
+commands are issued:
+<PRE>&nbsp;&nbsp;&nbsp; cd &lt;anywhere>
+&nbsp;&nbsp;&nbsp; cvs checkout iocsys/ascf</PRE>
+<TT>iocsys</TT> will appear as a subdirectory of <TT>&lt;anywhere></TT>.
+If <TT>&lt;anywhere></TT> is null then iocsys appears in the user's home
+directory.
+<DT>
+<B>Checkout Entire <TT>&lt;top></TT> Area</B></DT>
+
+<DD>
+To check out an entire <TT>&lt;top></TT> area issue the commands:</DD>
+
+<PRE>&nbsp;&nbsp;&nbsp; cd &lt;anywhere>
+&nbsp;&nbsp;&nbsp; cvs checkout iocsys/&lt;top></PRE>
+
+<DD>
+<TT>iocsys/&lt;top></TT> appears under <TT>&lt;anywhere></TT></DD>
+
+<DT>
+<B>Checkout Subset of <TT>&lt;top></TT> Area</B></DT>
+
+<DD>
+It is possible to checkout a subset of the the <TT>xxxApps</TT> and a subset
+of the <TT>iocBoot</TT> directories. The commands to accomplish this are:</DD>
+
+<PRE>&nbsp;&nbsp;&nbsp; cd &lt;anywhere>
+&nbsp;&nbsp;&nbsp; cvs checkout iocsys/&lt;top>/Makefile
+&nbsp;&nbsp;&nbsp; cvs checkout iocsys/&lt;top>/config
+&nbsp;&nbsp;&nbsp; cvs checkout iocsys/&lt;top>/xxxApp
+&nbsp;&nbsp;&nbsp; ...</PRE>
+The entire iocBoot directory can be checked out via the command:
+<PRE>&nbsp;&nbsp;&nbsp; cvs checkout iocsys/&lt;top>/iocBoot</PRE>
+A subset of the iocBoot directory can be checked out via the commands:
+<PRE>&nbsp;&nbsp;&nbsp; cvs checkout iocsys/&lt;top>/iocBoot/Makefile
+&nbsp;&nbsp;&nbsp; cvs checkout iocsys/&lt;top>/iocBoot/iocxxx
+&nbsp;&nbsp;&nbsp; ...</PRE>
+
+<DT>
+<B>watch</B></DT>
+
+<DD>
+Files (or complete directory trees including and entire &lt;top> area)
+can have a watch placed on them. When a watch is placed on a directory
+<TT>cvs</TT> creates working copies read only. Users must execute a cvs
+edit command to obtain a read/write file. Facilities are provided to list
+all people editing a file and to be sent an e-mail message whenever someone
+executes the cve edit or commit commands for a watched file. Please read
+the <TT>cvs</TT> manual for details.</DD>
+
+<DT>
+<B>edit</B></DT>
+
+<DD>
+If you want to edit a file and it is read only because a watch is in effect
+then execute the command:</DD>
+
+<PRE>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cvs edit &lt;filename></PRE>
+
+<DT>
+<B>unedit</B></DT>
+
+<DD>
+If you have started editing a file and decide to abandon your changes or
+not make any changes issue the command:</DD>
+
+<PRE>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cvs unedit &lt;filename></PRE>
+
+<DT>
+<B>add</B></DT>
+
+<DD>
+The command:</DD>
+
+<PRE>&nbsp;&nbsp;&nbsp; cvs add &lt;filename></PRE>
+places a directory or file under CVS control. This command must be given
+for each directory and file to be added to the repository.
+<DT>
+<B>remove</B></DT>
+
+<DD>
+The command:</DD>
+
+<PRE>&nbsp;&nbsp;&nbsp; cvs rm &lt;filename></PRE>
+removes the specified file from the repository. The file is not actually
+deleted but is moved to the "attic". Thus previous versions can still be
+retrieved.
+<DT>
+<B>diff</B></DT>
+
+<DD>
+The command:</DD>
+
+<PRE>&nbsp;&nbsp;&nbsp; cvs diff &lt;filename></PRE>
+compares the working copy of the file with the version that was checked
+out out or updated from the repository.
+
+<P>The diff command has options that allow you to see the differences between
+any two versions committed to the repository.
+<DT>
+<B>update</B></DT>
+
+<DD>
+The command:</DD>
+
+<PRE>&nbsp;&nbsp;&nbsp; cvs update -d -A &lt;filename></PRE>
+brings the development area into sync with the latest versions committed
+to the repository. A message is given for each file or directory that is
+modified. A message starting with the letter
+<PRE>&nbsp;&nbsp;&nbsp; C</PRE>
+means that a conflict exists. Conflicts must be resolved manually.
+
+<P>The two specified options (add new directories and reset sticky tags)
+should normally be specified.
+<DT>
+<B>commit</B></DT>
+
+<DD>
+The command:</DD>
+
+<PRE>cvs commit &lt;filename></PRE>
+commits changes to the repository. You are asked for comments via your
+favorite editor.
+<DT>
+<B>status</B></DT>
+
+<DD>
+The command:</DD>
+
+<PRE>cvs status &lt;filename></PRE>
+Shows the status of the file. The -v option shows all tag information for
+the file.
+<DT>
+<B>log</B></DT>
+
+<DD>
+The command:</DD>
+
+<PRE>cvs log &lt;filename></PRE>
+displays a list of all commits to the specified file..
+<DT>
+<B>.cvsignore</B></DT>
+
+<DD>
+Any directory can contain a file with the name <TT>.cvsignore</TT>. It
+contains a list of file and directory names that should be ignored by CVS.
+For example all generated directories and files should be listed in .cvsignore.</DD>
+
+<DT>
+<B>tags</B></DT>
+
+<DD>
+The command:</DD>
+
+<DL>
+<PRE>tag &lt;official release name></PRE>
+</DL>
+
+<DD>
+is used by the Application System Manager to tag official application releases.</DD>
+
+<DT>
+<B>import</B></DT>
+
+<DD>
+This command is used to put an existing tree of files into the <TT>cvs</TT>
+repository. Assume that a developer has created a new directory tree for
+a new <TT>&lt;top></TT> application in a directory <TT>newapp</TT>. It
+can be imported into the repository via the command:</DD>
+
+<DL>
+<DL>
+<PRE>cvs import -m "Creating" iocsys/newapp newapp start</PRE>
+</DL>
+</DL>
+</DL>
+
+<CENTER>
+<H2>
+<A NAME="Templates"></A>TEMPLATES</H2></CENTER>
+The following directory structure contains templates for Makefiles and
+for rules:
+<PRE>&nbsp;&nbsp;&nbsp; iocsys/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; template/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; share/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Makefile
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; config/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CONFIG
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CONFIG_APP
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; RELEASE
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; RULES.Db
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; RULES.Host
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; RULES.Vx
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; RULES.ioc&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; RULES_ARCHS
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; RULES_DIRS
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; RULES_TOP
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; makeSoftLinks
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; db/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Makefile
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; xxiocstatus.db
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; xxxApp/
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; top/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Makefile
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; config/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CONFIG
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CONFIG_APP
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; RELEASE
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; RULES.Db
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; RULES.Host
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; RULES.Vx
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; RULES.ioc&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; RULES_ARCHS
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; RULES_DIRS
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; RULES_TOP
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; xxxApp/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Makefile
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; src/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Makefile
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Makefile.Host
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Makefile.Vx
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; base.dbd
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; baseLIBOBJS
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; xxxDb/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Makefile
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; iocBoot/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Makefile
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; nfsCommands
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; iocxxx/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Makefile
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; st.cmd</PRE>
+A set of template files can be obtained via the WWW epics software distribution
+facility at APS.
+<CENTER>
+<H2>
+<A NAME="MultipleTop"></A>Multiple Top Level Applications</H2></CENTER>
+APS/ASD manages its entire set of &lt;<TT>top</TT>> level applications
+under a single directory structure:
+<PRE>&nbsp;&nbsp;&nbsp; /usr/local/iocapps/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CVSROOT/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; iocsys/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;share releases>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ascf/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; share/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sharerf/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; linac/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; booster/&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; par/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; parrf/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; boosterrf/&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; srrf/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; srbpm/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; srfb/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; time/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sitesys/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sr/</PRE>
+where
+<UL>
+<LI>
+<TT>ascf</TT> - directory for access configuration files.</LI>
+
+<LI>
+<TT>share</TT>- This, which is organized like a <TT>&lt;top></TT>, contains
+files that are shared between other <TT>&lt;top></TT> areas. The other
+areas actually uses releases of share just like they use releases of EPICS
+base.</LI>
+
+<LI>
+<TT>sharerf</TT> - Like share except for use by parrf, boosterrf, and srrf.</LI>
+
+<LI>
+<TT>linac, ..., sr</TT> are each <TT>&lt;top> </TT>directories.</LI>
+</UL>
+
+</BODY>
+</HTML>

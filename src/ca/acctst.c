@@ -2249,9 +2249,12 @@ void verifyReasonableBeaconPeriod ( chid chan )
     }
 }
 
-void verifyOldPend ()
+void verifyOldPend ( unsigned interestLevel)
 {
     int status;
+
+    showProgressBegin ( "verifyOldPend", interestLevel );
+
     /*
      * verify that the old ca_pend() is in the symbol table
      */
@@ -2259,9 +2262,11 @@ void verifyOldPend ()
     assert ( status == ECA_NORMAL );
     status = ca_pend ( 1e-12, 0 );
     assert ( status == ECA_TIMEOUT );
+
+    showProgressEnd ( interestLevel );
 }
 
-void verifyTimeStamps ( chid chan )
+void verifyTimeStamps ( chid chan, unsigned interestLevel )
 {
     struct dbr_time_double first;
     struct dbr_time_double last;
@@ -2270,6 +2275,8 @@ void verifyTimeStamps ( chid chan )
     size_t length;
     double diff;
     int status;
+
+    showProgressBegin ( "verifyTimeStamps", interestLevel );
 
     status = epicsTimeGetCurrent ( & localTime );
     assert ( status >= 0 );
@@ -2297,19 +2304,23 @@ void verifyTimeStamps ( chid chan )
     diff = epicsTimeDiffInSeconds ( & first.stamp, & localTime );
     printf ("Time difference between client and server %g sec\n", 
         diff );
+
+    showProgressEnd ( interestLevel );
 }
 
 /*
  * attempts to verify from the client side that
  * channel priorities work correctly
  */
-void verifyChannelPriorities ( const char *pName )
+void verifyChannelPriorities ( const char *pName, unsigned interestLevel )
 {
     static const unsigned nPrio = 30;
     chid chanArray[ 30 ];
     double value;
     unsigned i;
     int status;
+
+    showProgressBegin ( "verifyChannelPriorities", interestLevel );
 
     for ( i = 0u; i < nPrio; i++ ) {
         unsigned priority = 
@@ -2336,12 +2347,14 @@ void verifyChannelPriorities ( const char *pName )
         SEVCHK ( status, "prioritized channel get failed" );
     }
     status = ca_pend_io ( 10.0 );
-    SEVCHK ( status, "prioritized channel pen io failed" );
+    SEVCHK ( status, "prioritized channel pend io failed" );
 
     for ( i = 0u; i < nPrio; i++ ) {
         status = ca_clear_channel ( chanArray[i] );
         SEVCHK ( status, "prioritized channel clear failed" );
     }
+
+    showProgressEnd ( interestLevel );
 }
 
 void verifyImmediateTearDown ()
@@ -2412,9 +2425,9 @@ int acctst ( char *pName, unsigned interestLevel, unsigned channelCount,
 
     grEnumTest ( chan, interestLevel );
     test_sync_groups ( chan, interestLevel );
-    verifyChannelPriorities ( pName );
-    verifyTimeStamps ( chan );
-    verifyOldPend ();
+    verifyChannelPriorities ( pName, interestLevel );
+    verifyTimeStamps ( chan, interestLevel );
+    verifyOldPend ( interestLevel );
     exceptionTest ( chan, interestLevel );
     arrayTest ( chan, maxArrayBytes, interestLevel ); 
     verifyMonitorSubscriptionFlushIO ( chan, interestLevel );

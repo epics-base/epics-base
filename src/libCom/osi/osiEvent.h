@@ -27,13 +27,15 @@ public:
     class invalidSemaphore {}; /* exception */
     class noMemory {}; /* exception */
 private:
+    osiEvent ( const osiEvent & );
+    osiEvent & operator = ( const osiEvent & );
     semBinaryId id;
 };
 
-inline osiEvent::osiEvent ()
+inline osiEvent::osiEvent () :
+    id ( semBinaryCreate (semEmpty) )
 {
-    this->id = semBinaryCreate (semEmpty);
-    if (this->id==0) {
+    if ( this->id == 0 ) {
         throwWithLocation ( noMemory () );
     }
 }

@@ -16,6 +16,8 @@
  *
  */
 
+#include <db_access.h>
+
 #ifdef CA_LITTLE_ENDIAN 
 #  	ifndef ntohs
 #    		define ntohs(SHORT)\
@@ -64,29 +66,29 @@
 #endif
 
 #if defined(CA_FLOAT_IEEE) && !defined(CA_LITTLE_ENDIAN)
-#	define htond(IEEEhost, IEEEnet) \
-		(*(double *)(IEEEnet) = *(double *)(IEEEhost))
-#	define ntohd(IEEEnet, IEEEhost) \
-		(*(double *)(IEEEhost) = *(double *)(IEEEnet))
-#	define htonf(IEEEhost, IEEEnet) \
-		(*(float *)(IEEEnet) = *(float *)(IEEEhost))
-#	define ntohf(IEEEnet, IEEEhost) \
-		(*(float *)(IEEEhost) = *(float *)(IEEEnet))
+#	define dbr_htond(IEEEhost, IEEEnet) \
+		(*(dbr_double_t *)(IEEEnet) = *(dbr_double_t *)(IEEEhost))
+#	define dbr_ntohd(IEEEnet, IEEEhost) \
+		(*(dbr_double_t *)(IEEEhost) = *(dbr_double_t *)(IEEEnet))
+#	define dbr_htonf(IEEEhost, IEEEnet) \
+		(*(dbr_float_t *)(IEEEnet) = *(dbr_float_t *)(IEEEhost))
+#	define dbr_ntohf(IEEEnet, IEEEhost) \
+		(*(dbr_float_t *)(IEEEhost) = *(dbr_float_t *)(IEEEnet))
 #elif defined(CA_FLOAT_IEEE) && defined(CA_LITTLE_ENDIAN)
-#	define ntohf(NET,HOST)  \
-		{*((u_long *)(HOST)) = ntohl(*((u_long *)(NET )));}
-#	define htonf(HOST,NET) \
-		{*((u_long *)(NET) ) = htonl(*((u_long *)(HOST)));}
-#	define ntohd(NET,HOST) \
-		{ ((u_long *)(HOST))[1] = ntohl(((u_long *)(NET))[0]) ; \
-		((u_long *)(HOST))[0] = ntohl(((u_long *)(NET))[1]) ;}
-#	define htond(HOST,NET) \
-		{ ((u_long *)(NET))[1] = htonl(((u_long *)(HOST))[0]) ; \
-		((u_long *)(NET))[0] = htonl(((u_long *)(HOST))[1]) ;}
+#	define dbr_ntohf(NET,HOST)  \
+		{*((dbr_long_t *)(HOST)) = ntohl(*((dbr_long_t *)(NET )));}
+#	define dbr_htonf(HOST,NET) \
+		{*((dbr_long_t *)(NET) ) = htonl(*((dbr_long_t *)(HOST)));}
+#	define dbr_ntohd(NET,HOST) \
+		{ ((dbr_long_t *)(HOST))[1] = ntohl(((dbr_long_t *)(NET))[0]) ; \
+		((dbr_long_t *)(HOST))[0] = ntohl(((dbr_long_t *)(NET))[1]) ;}
+#	define dbr_htond(HOST,NET) \
+		{ ((dbr_long_t *)(NET))[1] = htonl(((dbr_long_t *)(HOST))[0]) ; \
+		((dbr_long_t *)(NET))[0] = htonl(((dbr_long_t *)(HOST))[1]) ;}
 #else
-	void htond(double *pHost, double *pNet);
-	void ntohd(double *pNet, double *pHost);
-	void htonf(float *pHost, float *pNet);
-	void ntohf(float *pNet, float *pHost);
+	void dbr_htond(dbr_double_t *pHost, dbr_double_t *pNet);
+	void dbr_ntohd(dbr_double_t *pNet, dbr_double_t *pHost);
+	void dbr_htonf(dbr_float_t *pHost, dbr_float_t *pNet);
+	void dbr_ntohf(dbr_float_t *pNet, dbr_float_t *pHost);
 #endif
 

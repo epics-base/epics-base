@@ -329,9 +329,7 @@ static long get_precision(paddr,precision)
 {
     struct boRecord	*pbo=(struct boRecord *)paddr->precord;
 
-    *precision = pbo->prec;
-    if(paddr->pfield == (void *)&pbo->val) return(0);
-    recGblGetPrec(paddr,precision);
+    if(paddr->pfield == (void *)&pbo->high) return(2);
     return(0);
 }
 

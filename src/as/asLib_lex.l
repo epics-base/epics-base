@@ -1,5 +1,5 @@
 integer	[0-9]
-name	[a-zA-Z0-9_]
+name	[a-zA-Z0-9_\.]
 pvname  [a-zA-Z0-9_:\.\[\]<>]
 string   [a-zA-Z0-9_\,\./\*#\[\]%: ;!|\'\-&\(\)@\?\+<>=\$]
 
@@ -20,9 +20,9 @@ yyreset()
 %%
 
 UAG	{return(tokenUAG);}
-LAG	{return(tokenLAG);}
+HAG	{return(tokenHAG);}
 ASG	{return(tokenASG);}
-LEVEL	{return(tokenLEVEL);}
+RULE	{return(tokenRULE);}
 CALC	{return(tokenCALC);}
 INP[A-L] {/* If A-L is changed then ASMAXINP must also be changed*/
 	yylval.Int = (unsigned char)yytext[3];

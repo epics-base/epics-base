@@ -61,7 +61,7 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #include <stdio.h>
 #include <dbDefs.h>
 #include <taskwd.h>
-#include <asLib.h>
+#include <asDbLib.h>
 #include <cadef.h>
 #include <caerr.h>
 #include <caeventmask.h>
@@ -85,7 +85,6 @@ static void connectCallback(struct connection_handler_args cha)
     ASGINP		*pasginp;
     ASG			*pasg;
     CAPVT		*pcapvt;
-    enum channel_state	state;
     int			Ilocked=FALSE;
 
     if(!caInitializing) {
@@ -107,8 +106,6 @@ static void eventCallback(struct event_handler_args eha)
     ASGINP		*pasginp;
     CAPVT		*pcapvt;
     ASG			*pasg;
-    int			inpOk=TRUE;
-    enum channel_state	state;
     struct dbr_sts_double *pdata = eha.dbr;
     int			Ilocked=FALSE;
 
@@ -141,15 +138,18 @@ static void asCaTask(void)
     taskwdInsert(taskIdSelf(),NULL,NULL);
     SEVCHK(ca_task_initialize(),"ca_task_initialize");
     caInitializing = TRUE;
+    FASTLOCK(&asLock);
     pasg = (ASG *)ellFirst(&pasbase->asgList);
     while(pasg) {
 	pasginp = (ASGINP *)ellFirst(&pasg->inpList);
 	while(pasginp) {
 	    pasg->inpBad |= (1<<pasginp->inpIndex);
 	    pcapvt = pasginp->capvt = asCalloc(1,sizeof(CAPVT));
+	    /*Note calls connectCallback immediately called for local Pvs*/
 	    SEVCHK(ca_build_and_connect(pasginp->inp,TYPENOTCONN,0,
 		&pcapvt->chid,0,connectCallback,pasginp),
 		"ca_build_and_connect");
+	    /*Note calls eventCallback immediately called for local Pvs*/
 	    SEVCHK(ca_add_event(DBR_STS_DOUBLE,pcapvt->chid,
 		eventCallback,pasginp,&pcapvt->evid),
 		"ca_add_event");
@@ -157,7 +157,6 @@ static void asCaTask(void)
 	}
 	pasg = (ASG *)ellNext((ELLNODE *)pasg);
     }
-    FASTLOCK(&asLock);
     asComputeAllAsg();
     caInitializing = FALSE;
     FASTUNLOCK(&asLock);
@@ -167,7 +166,7 @@ static void asCaTask(void)
     
 void asCaStart(void)
 {
-    taskid = taskSpawn("asCa",CA_CLIENT_PRI-1,VX_FP_TASK,CA_CLIENT_STACK,
+    taskid = taskSpawn("asCaTask",CA_CLIENT_PRI-1,VX_FP_TASK,CA_CLIENT_STACK,
 	(FUNCPTR)asCaTask,0,0,0,0,0,0,0,0,0,0);
     if(taskid==ERROR) {
 	errMessage(0,"asCaStart: taskSpawn Failure\n");
@@ -180,7 +179,6 @@ void asCaStop(void)
 {
     ASG		*pasg;
     ASGINP	*pasginp;
-    CAPVT	*pcapvt;
     STATUS	status;
 
     if(taskid==0 || taskid==ERROR) return;

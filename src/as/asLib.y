@@ -6,14 +6,14 @@ static int myParse();
 static int yyFailed = FALSE;
 static int line_num=1;
 static UAG *yyUag=NULL;
-static LAG *yyLag=NULL;
+static HAG *yyHag=NULL;
 static ASG *yyAsg=NULL;
-static ASGLEVEL *yyAsgLevel=NULL;
+static ASGRULE *yyAsgRule=NULL;
 %}
 
 %start asconfig
 
-%token tokenUAG tokenLAG tokenASG tokenLEVEL tokenCALC 
+%token tokenUAG tokenHAG tokenASG tokenRULE tokenCALC 
 %token <Str> tokenINP
 %token <Int> tokenINTEGER
 %token <Str> tokenNAME tokenPVNAME tokenSTRING
@@ -33,8 +33,8 @@ asconfig:	asconfig asconfig_item
 
 asconfig_item:	tokenUAG uag_head uag_body
 	|	tokenUAG uag_head
-	|	tokenLAG lag_head lag_body
-	|	tokenLAG lag_head
+	|	tokenHAG hag_head hag_body
+	|	tokenHAG hag_head
 	|	tokenASG asg_head asg_body
 	|	tokenASG asg_head
 	;
@@ -70,28 +70,28 @@ uag_user_list_name:	tokenNAME
 	}
 	;
 
-lag_head:	'(' tokenNAME ')'
+hag_head:	'(' tokenNAME ')'
 	{
-		yyLag = asLagAdd($2);
-		if(!yyLag) yyerror($2);
+		yyHag = asHagAdd($2);
+		if(!yyHag) yyerror($2);
 		free((void *)$2);
 	}
 	;
 
-lag_body:	'{' lag_user_list '}'
+hag_body:	'{' hag_user_list '}'
 	;
 
-lag_user_list:	lag_user_list ',' lag_user_list_name
-	|	lag_user_list_name
+hag_user_list:	hag_user_list ',' hag_user_list_name
+	|	hag_user_list_name
 	;
 
-lag_user_list_name:	tokenNAME
+hag_user_list_name:	tokenNAME
 	{
 		long	status;
 
-		status = asLagAddLocation(yyLag,$1);
+		status = asHagAddHost(yyHag,$1);
 		if(status) {
-			errMessage(status,"Error while adding LAG");
+			errMessage(status,"Error while adding HAG");
 			yyerror($1);
 		}
 		free((void *)$1);
@@ -113,7 +113,7 @@ asg_body:	'{' asg_body_list '}'
 asg_body_list:	asg_body_list asg_body_item
 	|	asg_body_item
 
-asg_body_item:	inp_config | level_config 
+asg_body_item:	inp_config | rule_config 
 	;
 
 inp_config:	tokenINP '(' inp_body ')'
@@ -132,10 +132,10 @@ inp_config:	tokenINP '(' inp_body ')'
 inp_body:	tokenNAME | tokenPVNAME
 	;
 
-level_config:	tokenLEVEL level_head level_body
-	|	tokenLEVEL level_head
+rule_config:	tokenRULE rule_head rule_body
+	|	tokenRULE rule_head
 
-level_head:	'(' tokenINTEGER ',' tokenNAME ')'
+rule_head:	'(' tokenINTEGER ',' tokenNAME ')'
 	{
 		asAccessRights	rights;
 
@@ -149,26 +149,26 @@ level_head:	'(' tokenINTEGER ',' tokenNAME ')'
 			yyerror("Illegal access type");
 			rights = asNOACCESS;
 		}
-		yyAsgLevel = asAsgAddLevel(yyAsg,rights,$2);
+		yyAsgRule = asAsgAddRule(yyAsg,rights,$2);
 		free((void *)$4);
 	}
 	;
 
 
-level_body:	'{' level_list '}'
+rule_body:	'{' rule_list '}'
 	;
 
-level_list:	level_list level_list_item
-	|	level_list_item
+rule_list:	rule_list rule_list_item
+	|	rule_list_item
 	;
 
-level_list_item: tokenUAG '(' level_uag_list ')'
-	|	tokenLAG  '(' level_lag_list ')'
+rule_list_item: tokenUAG '(' rule_uag_list ')'
+	|	tokenHAG  '(' rule_hag_list ')'
 	|	tokenCALC '(' tokenSTRING ')'
 	{
 		long status;
 
-		status = asAsgLevelCalc(yyAsgLevel,$3);
+		status = asAsgRuleCalc(yyAsgRule,$3);
 		if(status){
 		    errMessage(status,$3);
 		    yyerror("CALC failure");
@@ -177,15 +177,15 @@ level_list_item: tokenUAG '(' level_uag_list ')'
 	}
 	;
 
-level_uag_list:	level_uag_list ',' level_uag_list_name
-	|	level_uag_list_name
+rule_uag_list:	rule_uag_list ',' rule_uag_list_name
+	|	rule_uag_list_name
 	;
 
-level_uag_list_name:	tokenNAME
+rule_uag_list_name:	tokenNAME
 	{
 		long status;
 
-		status = asAsgLevelUagAdd(yyAsgLevel,$1);
+		status = asAsgRuleUagAdd(yyAsgRule,$1);
 		if(status) {
 		    errMessage(status,"Error while adding UAG");
 		    yyerror($1);
@@ -194,17 +194,17 @@ level_uag_list_name:	tokenNAME
 	}
 	;
 
-level_lag_list:	level_lag_list ',' level_lag_list_name
-	|	level_lag_list_name
+rule_hag_list:	rule_hag_list ',' rule_hag_list_name
+	|	rule_hag_list_name
 	;
 
-level_lag_list_name:	tokenNAME
+rule_hag_list_name:	tokenNAME
 	{
 		long status;
 
-		status = asAsgLevelLagAdd(yyAsgLevel,$1);
+		status = asAsgRuleHagAdd(yyAsgRule,$1);
 		if(status) {
-		    errMessage(status,"Error while adding LAG");
+		    errMessage(status,"Error while adding HAG");
 		    yyerror($1);
 		}
 		free((void *)$1);

@@ -158,6 +158,7 @@ static void asInitTask(ASDBCALLBACK *pcallback)
 	FASTLOCKINIT(&asLock);
 	asLockInit = FALSE;
     }
+    if(asActive)asCaStop();
     FASTLOCK(&asLock);
     my_buffer = calloc(1,BUF_SIZE);
     my_buffer_ptr = my_buffer;
@@ -177,25 +178,23 @@ static void asInitTask(ASDBCALLBACK *pcallback)
     status = asInitialize(my_yyinput);
     if(fclose(stream)==EOF) errMessage(0,"asInit fclose failure");
     free((void *)my_buffer);
-    if(!status) {
-	asCaStop();
+    if(asActive) {
 	asDbAddRecords();
 	asCaStart();
     }
     FASTUNLOCK(&asLock);
+    taskwdRemove(taskIdSelf());
+    initTaskId = 0;
     if(pcallback) {
 	pcallback->status = status;
 	callbackRequest(&pcallback->callback);
     }
-    taskwdRemove(taskIdSelf());
-    initTaskId = 0;
     status = taskDelete(taskIdSelf());
     if(status!=OK) errMessage(0,"asInitTask: taskDelete Failure");
 }
 
 int asInit(ASDBCALLBACK *pcallback)
 {
-    long status;
 
     if(!pacf) return(0);
     if(initTaskId) {
@@ -230,7 +229,7 @@ static void myCallback(CALLBACK *pcallback)
     prset=(struct rset *)(precord->rset);
     precord->val = 0.0;
     if(pasdbcallback->status) {
-	recGblSetSevr(precord,READ_ALARM,INVALID_ALARM);
+	recGblSetSevr(precord,READ_ALARM,precord->brsv);
 	recGblRecordError(pasdbcallback->status,precord,"asInit Failed");
     }
     dbScanLock((struct dbCommon *)precord);
@@ -317,7 +316,6 @@ int astac(char *pname,char *user,char *location)
     return(0);
 }
 
-static char *asAccessName[] = {"NONE","READ","WRITE"};
 static void myMemberCallback(ASMEMBERPVT memPvt)
 {
     struct dbCommon	*precord;
@@ -343,18 +341,20 @@ int aspuag(char *uagname)
     return(0);
 }
 
-int asplag(char *lagname)
+int asphag(char *hagname)
 {
     FASTLOCK(&asLock);
-    asDumpLag(lagname);
+    asDumpHag(hagname);
     FASTUNLOCK(&asLock);
+    return(0);
 }
 
-int asplev(char *asgname)
+int asprules(char *asgname)
 {
     FASTLOCK(&asLock);
-    asDumpLev(asgname);
+    asDumpRules(asgname);
     FASTUNLOCK(&asLock);
+    return(0);
 }
 
 int aspmem(char *asgname,int clients)
@@ -362,4 +362,5 @@ int aspmem(char *asgname,int clients)
     FASTLOCK(&asLock);
     asDumpMem(asgname,myMemberCallback,clients);
     FASTUNLOCK(&asLock);
+    return(0);
 }

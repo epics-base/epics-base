@@ -46,6 +46,7 @@
  * .15  07-15-93	mrk	Changes for new dbStaticLib
  * .16  02-02-94	mrk	added dbPutNotify and caching
  * .17  02-02-94	mrk	added init code for tsel
+ * .18  04-26-94	mrk	Removed call to recGblRecordError from dbPutLink
  */
 
 /* This is a major revision of the original implementation of database access.*/
@@ -425,7 +426,6 @@ long dbPutLink(
 	    /* otherwise ask for the record to be processed*/
 	    else status=dbScanPassive(psource,pdest);
 	}
-	if(status) recGblRecordError(status,(void *)psource,"dbPutLink");
 	return(status);
 }
 

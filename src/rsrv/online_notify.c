@@ -4,7 +4,7 @@
  *	tell CA clients this a server has joined the network
  *
  *	@(#)online_notify.c
- *   $Id$
+ *   @(#)online_notify.c	1.3	6/27/91
  *	Author:	Jeffrey O. Hill
  *		hill@luke.lanl.gov
  *		(505) 665 1831
@@ -77,9 +77,6 @@ void rsrv_online_notify_task()
   	int			true = TRUE;
 	int 			i;
 
-	struct sockaddr_in	*local_addr();
-  	struct in_addr		broadcast_addr();
-
   	/* 
   	 *  Open the socket.
   	 *  Use ARPA Internet address format and datagram socket.
@@ -91,7 +88,11 @@ void rsrv_online_notify_task()
     		abort(0);
   	}
 
-	lcl = *(local_addr(sock));
+	status = local_addr(sock, &lcl);
+	if(status<0){
+		logMsg("online notify: Network interface unavailable\n");
+		abort();
+	}
 
       	status = setsockopt(	sock,
 				SOL_SOCKET,
@@ -118,8 +119,12 @@ void rsrv_online_notify_task()
  	/*  Zero the sock_addr structure */
   	bfill(&send_addr, sizeof send_addr, 0);
   	send_addr.sin_family 	= AF_INET;
-  	send_addr.sin_addr	= broadcast_addr();
   	send_addr.sin_port 	= htons(CA_CLIENT_PORT);
+	status = broadcast_addr(&send_addr.sin_addr);
+	if(status<0){
+		logMsg("online notify: no interface to broadcast on\n");
+		abort(0);
+	}
 
  	while(TRUE){
         	status = sendto(

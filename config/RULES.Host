@@ -353,7 +353,7 @@ PROD_OBJS=$(addsuffix $(OBJ), $(basename $(SRCS)))
 COND_PROD_OBJS=$(addsuffix $(OBJ), $(basename $(COND_PROD_SRCS)))
 
 $(PROD): $(PROD_OBJS) $(COND_PROD_OBJS) $(PROD_DEPLIBS) $(COND_PROD_DEPLIBS)
-	$(MAKE) $@ PRODNAME="$@" \
+	@$(MAKE) $@ PRODNAME="$@" \
 	PRODNAME_SRCS="$(SRCS) $($(basename $@)_SRCS)" \
 	PRODNAME_LIBS="$($(basename $@)_LIBS)"
 

@@ -145,9 +145,13 @@ void caServerI::removeClient (casStrmClient *pClient)
 //
 // caServerI::connectCB()
 //
-void caServerI::connectCB (casIntfOS &intf)
+void caServerI::connectCB ( casIntfOS & intf )
 {
-    intf.newStreamClient (*this);
+    casStreamOS * pClient = intf.newStreamClient ( *this );
+    if ( pClient ) {
+        pClient->sendVersion ();
+        pClient->flush ();
+    }
 }
 
 //

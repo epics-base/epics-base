@@ -77,7 +77,7 @@ static void threadSleepQuantumTest ()
     printf ( "Estimating sleep quantum" );
     fflush ( stdout );
     for ( unsigned i = 0u; i < iterations; i++ ) {
-        // try to gurantee a uniform probability density function
+        // try to guarantee a uniform probability density function
         // by intentionally burning some CPU until we are less 
         // likely to be aligned with the schedualing clock
         double interval = rand ();

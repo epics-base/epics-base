@@ -1,4 +1,3 @@
-/* task_params.h  */
 /* $Id$ */
 
 /*  Parameters for tasks on IOC  */
@@ -51,6 +50,9 @@
  *				to 60 sec
  * .17	03-18-94	mcn	added entries for breakpoint tasks
  * $Log$
+ * Revision 1.3  1998/05/20 21:00:43  mrk
+ * raised DB_CA_PRI to just higher than sequencer
+ *
  * Revision 1.2  1998/01/20 21:49:54  mrk
  * added the arch_stack_factor for 64 bit architectures; changes for errlog
  *
@@ -71,6 +73,9 @@
  *
  * Revision 1.27  1995/11/29 19:27:59  jhill
  * added $Log$
+ * added Revision 1.3  1998/05/20 21:00:43  mrk
+ * added raised DB_CA_PRI to just higher than sequencer
+ * added
  * added Revision 1.2  1998/01/20 21:49:54  mrk
  * added added the arch_stack_factor for 64 bit architectures; changes for errlog
  * added
@@ -99,7 +104,6 @@
 #define VXTASKIDSELF 0
 
 /* Task Names */
-#define IOEVENTSCAN_NAME	"scanIo"
 #define EVENTSCAN_NAME		"scanEvent"
 #define SCANONCE_NAME          	"scanOnce"
 #define SMCMD_NAME		"smCommand"
@@ -122,7 +126,6 @@
 #define SMIOTEST_NAME		"smInout"
 #define SMROTTEST_NAME		"smRotate"
 #define EVENT_PEND_NAME		"event task"
-#define	TIMESTAMP_NAME		"timeStamp"
 #define XY240_NAME              "xy 240 scan"
 #define	GPIBLINK_NAME		"gpibLink"
 #define BBLINK_NAME		"bbLinkTask"
@@ -133,29 +136,27 @@
 #define LOG_RESTART_NAME	"logRestart"
 
 /* Task priorities */
-#define	SCANONCE_PRI 	65      /* scan one time */
+#define	SCANONCE_PRI 	85      /* scan one time */
 /*DO NOT RUN ANY RECORD PROCESSING TASKS AT HIGHER PRIORITY THAN _netTask=50*/
-#define	CALLBACK_PRI_LOW 65      /* callback task - generall callback task */
-#define	CALLBACK_PRI_MEDIUM 57      /* callback task - generall callback task */
-#define	CALLBACK_PRI_HIGH 51      /* callback task - generall callback task */
-#define IOEVENTSCAN_PRI 51      /* I/O Event Scanner - Runs on I/O interrupt */
-#define EVENTSCAN_PRI   52      /* Event Scanner - Runs on a global event */
-#define	TIMESTAMP_PRI	32	/* Time-stamp task - interrupt */
-#define SMCMD_PRI 	42      /* Stepper Motor Command Task - Waits for cmds */
-#define SMRESP_PRI      43      /* Stepper Motor Resp Task - Waits for resps */
-#define ABCOS_PRI       43      /* Allen-Bradley Binary Input COS io_event wakeup */
-#define ABDONE_PRI      44      /* Allen-Bradley Resp Task - Interrupt Driven */
-#define ABSCAN_PRI      45      /* Allen-Bradley Scan Task - Base Rate .1 secs */
-#define	BBLINK_PRI	46
-#define	BBWDTASK_PRI	45	/* BitBus watchdog task */
-#define	BBRXLINK_PRI	46	/* BitBus link task */
-#define	BBTXLINK_PRI	47	/* BitBus link task */
-#define	GPIBLINK_PRI	47	/* GPIB link task */
-#define MOMENTARY_PRI   48      /* Momentary output - posted from watchdog */
-#define WFDONE_PRI      49      /* Waveform Task - Base Rate of .1 second */
-#define PERIODSCAN_PRI  58      /* Periodic Scanners - Slowest rate	*/
-#define DB_CA_PRI       68	/*database to channel access*/
-#define	SEQUENCER_PRI	70
+#define	CALLBACK_PRI_LOW 85      /* callback task - generall callback task */
+#define	CALLBACK_PRI_MEDIUM 75      /* callback task - generall callback task */
+#define	CALLBACK_PRI_HIGH 71      /* callback task - generall callback task */
+#define EVENTSCAN_PRI   72      /* Event Scanner - Runs on a global event */
+#define SMCMD_PRI 	62      /* Stepper Motor Command Task - Waits for cmds */
+#define SMRESP_PRI      63      /* Stepper Motor Resp Task - Waits for resps */
+#define ABCOS_PRI       63      /* Allen-Bradley Binary Input COS io_event wakeup */
+#define ABDONE_PRI      64      /* Allen-Bradley Resp Task - Interrupt Driven */
+#define ABSCAN_PRI      65      /* Allen-Bradley Scan Task - Base Rate .1 secs */
+#define	BBLINK_PRI	66
+#define	BBWDTASK_PRI	65	/* BitBus watchdog task */
+#define	BBRXLINK_PRI	66	/* BitBus link task */
+#define	BBTXLINK_PRI	67	/* BitBus link task */
+#define	GPIBLINK_PRI	67	/* GPIB link task */
+#define MOMENTARY_PRI   68      /* Momentary output - posted from watchdog */
+#define WFDONE_PRI      69      /* Waveform Task - Base Rate of .1 second */
+#define PERIODSCAN_PRI  78      /* Periodic Scanners - Slowest rate	*/
+#define DB_CA_PRI       88	/*database to channel access*/
+#define	SEQUENCER_PRI	90
 #define XY240_PRI       111     /* xy 240 dio scanner */
 #define	SCANNER_PRI	150	
 #define	REQ_SRVR_PRI	181	/* Channel Access TCP request server*/
@@ -181,7 +182,6 @@
 
 /* Task creation options */
 #define ERRLOG_OPT	VX_FP_TASK
-#define IOEVENTSCAN_OPT	VX_FP_TASK
 #define EVENTSCAN_OPT	VX_FP_TASK
 #define SCANONCE_OPT	VX_FP_TASK
 #define CALLBACK_OPT	VX_FP_TASK
@@ -205,7 +205,6 @@
 #define SMIOTEST_OPT	VX_FP_TASK
 #define SMROTTEST_OPT	VX_FP_TASK
 #define EVENT_PEND_OPT	VX_FP_TASK
-#define	TIMESTAMP_OPT	VX_FP_TASK
 #define	GPIBLINK_OPT	VX_FP_TASK|VX_STDIO
 #define	BBLINK_OPT	VX_FP_TASK|VX_STDIO
 #define	BBTXLINK_OPT	VX_FP_TASK|VX_STDIO

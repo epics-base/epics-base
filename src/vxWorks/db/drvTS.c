@@ -13,6 +13,9 @@
 
 /*
  * $Log$
+ * Revision 1.35  2000/06/16 14:08:54  mrk
+ * get rid of tsSubr; more call to TSinit to os/osdThead
+ *
  * Revision 1.34  2000/02/22 19:07:16  mrk
  * change osiSockResource.h to osiSock.h
  *
@@ -185,6 +188,7 @@
 #include "drvSup.h"
 #include "drvTS.h"
 #include "osiSock.h"
+#include "iocClock.h"
 
 #define TSprintf epicsPrintf
 
@@ -566,6 +570,8 @@ long TSinit(void)
     Debug0(5,"In TSinit()\n");
     
     if(TSinitialized) return(0);
+    /*register with iocClock */
+    iocClockRegister(TScurrentTimeStamp,TSgetTimeStamp);
     TSinitialized = 1;
     /* 0=default, 1=none, 2=direct */
     

@@ -87,9 +87,9 @@ div.Section1
 <h2>
 Building EPICS R3.13 applications with R3.14.0alpha3 base</h2></center>
 
-<p><br>This document describes how to convert a R3.13 vxWorks application
+<p><br>This document describes how to modify a R3.13 vxWorks application
 so that it builds with release R3.14.0alpha3.&nbsp; It describes an easy
-way to convert applications subject to the following restrictions:
+way to modify applications subject to the following restrictions:
 <ul>
 <li>
 The application still uses config rules rather than the configure rules
@@ -151,7 +151,8 @@ to
 <pre>LIBOBJS = $(SEQ_BIN)/seqLibrary.o</pre>
 
 <p><br>in application src/Makefile.Vx files to link seq library into your
-application library, and add
+application library,.
+<br>Also add
 <pre>SEQ=&lt;full path to seq module directory></pre>
 to config/RELEASE.</blockquote>
 
@@ -268,10 +269,10 @@ definition).</blockquote>
 <h3>
 dbLoadtemplate tool changes</h3>
 
-<blockquote>The host tool dbLoadTemplate has been replace by a new extension,
+<blockquote>The host tool dbLoadTemplate has been replaced by a new extension,
 msi. dbLoadTemplate is still supported on iocs. Build the msi extension
-with base R3.14 and change definitions the following definitions in your
-application files.
+with base R3.14 and change the following definitions in your application
+files.
 <p>In config/RULES.Db replace the line
 <pre>DBLOADTEMPLATE=$(EPICS_BASE_HOST_BIN)/dbLoadTemplate$(EXE)</pre>
 with

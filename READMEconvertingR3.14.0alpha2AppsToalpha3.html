@@ -26,7 +26,7 @@ Remove baseLIBOBJS</h3>
 so baseLIBOBJS is no longer needed and the file and references to it in
 the Makefile can be deleted. e.g. remove
 <blockquote><tt>-include ../baseLIBOBJS</tt></blockquote>
-and, if there are no LIBOBJS&nbsp;definitions in the Makefile, remove
+and, if there are no LIBOBJS definitions in the Makefile, remove
 <blockquote><tt>example_OBJS += $(LIBOBJS)</tt></blockquote>
 </blockquote>
 
@@ -39,8 +39,8 @@ i.e. add the lines
 <br><tt>example_LIBS += softDevIoc</tt></blockquote>
 and remove any references to iocCoreLibrary, e.g. remove the line
 <blockquote><tt>example_OBJS_vxWorks += $(EPICS_BASE_BIN)/iocCoreLibrary</tt></blockquote>
-The order of references to base librararies is important so recIoc and
-softDevIoc&nbsp; before the the other base library references.</blockquote>
+The order of references to base librararies is important so place recIoc
+and softDevIoc&nbsp; before the the other base library references.</blockquote>
 
 <h3>
 iocrf renamed to iocsh</h3>
@@ -81,16 +81,15 @@ file created. Thus, in your application src Makefiles,
 <br>and change <tt>PROD = &lt;name></tt>
 <br>to <tt>PROD_IOC = &lt;name></tt>.</blockquote>
 In the iocBoot/ioc&lt;name>/st.cmd files,
-<blockquote>change <tt>ld &lt;name>Library.munch</tt>
+<blockquote>change <tt>ld &lt; &lt;name>Library.munch</tt>
 <br>to <tt>ld &lt; &lt;name>.munch</tt></blockquote>
 </blockquote>
 
 <h3>
 registerRecordDeviceDriver changes</h3>
 
-<blockquote>PROD targets will now be built for all target architectures.
-If a product should be built only for host architectures change PROD to
-PROD_HOST .e.g.&nbsp; in your application src Makefiles
+<blockquote>The created file registerRecordDeviceDriver.cpp&amp;nbsp; is
+now used for all target architectures. Thus in your application src Makefiles
 <blockquote>change <tt>example_SRCS_DEFAULT += example_registerRecordDeviceDriver.cpp</tt>
 <br>to&nbsp; <tt>example_SRCS += example_registerRecordDeviceDriver.cpp</tt></blockquote>
 </blockquote>

@@ -63,7 +63,6 @@
  * 1-17-02 -joh-
  */
 
-#undef epicsShareSym
 #undef epicsShareExtern
 #undef epicsShareDef
 #undef epicsShareClass
@@ -88,24 +87,20 @@
 #           define epicsShareExtern extern 
 #           define epicsShareClass 
 #           define epicsShareFunc
-#           define epicsShareSym extern
 #       else
 #           define epicsShareExtern __declspec(dllexport) extern 
 #           define epicsShareClass  __declspec(dllexport) 
 #           define epicsShareFunc  __declspec(dllexport)
-#           define epicsShareSym __declspec(dllexport) extern
 #       endif
 #   else
 #       if defined(_DLL) /* this indicates that we are being compiled to call a DLL */
 #           define epicsShareExtern __declspec(dllimport) extern 
 #           define epicsShareClass  __declspec(dllimport) 
 #           define epicsShareFunc  __declspec(dllimport)
-#           define epicsShareSym __declspec(dllimport) extern
 #       else
 #           define epicsShareExtern extern
 #           define epicsShareClass
 #           define epicsShareFunc
-#           define epicsShareSym extern
 #       endif
 #   endif
     /*

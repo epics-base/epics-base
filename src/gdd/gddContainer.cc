@@ -8,6 +8,9 @@
 //
 // $Id$
 // $Log$
+// Revision 1.3  1999/04/30 15:24:53  jhill
+// fixed improper container index bug
+//
 // Revision 1.2  1997/04/23 17:13:03  jhill
 // fixed export of symbols from WIN32 DLL
 //
@@ -19,10 +22,14 @@
 
 // --------------------The gddContainer functions---------------------
 
-gddCursor gddContainer::getCursor(void) const
+gddCursor gddContainer::getCursor(void)
 {
-	gddCursor ec(this);
-	return ec;
+	return 	gddCursor (this);
+}
+
+constGddCursor gddContainer::getCursor(void) const
+{
+	return constGddCursor (this);
 }
 
 gddContainer::gddContainer(void):gdd(0,aitEnumContainer,1) { }
@@ -127,10 +134,10 @@ gddStatus gddContainer::remove(aitIndex index)
 
 // ------------------------cursor functions-------------------------------
 
-gdd* gddCursor::operator[](int index)
+const gdd* constGddCursor::operator[](int index)
 {
 	int i,start;
-	gdd* dd;
+	const gdd* dd;
 
 	if(index>=curr_index)
 	{

@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.4  1999/04/30 15:24:53  jhill
+ * fixed improper container index bug
+ *
  * Revision 1.3  1998/06/16 03:16:27  jhill
  * fixed big problems with leaked ait/fixedString in gdd union
  *
@@ -20,7 +23,7 @@
  */
 
 inline void gdd::setData(void* d)					{ data.Pointer=d; }
-inline gddDestructor* gdd::destructor(void) const	{ return destruct; }
+inline const gddDestructor* gdd::destructor(void) const	{ return destruct; }
 
 inline gdd::gdd(void)					{ init(0,aitEnumInvalid,0); }
 inline gdd::gdd(int app)				{ init(app,aitEnumInvalid,0); }
@@ -32,6 +35,7 @@ inline const gddBounds* gdd::getBounds(void) const	{ return bounds; }
 inline const gddBounds* gdd::getBounds(int bn) const { return &bounds[bn]; }
 
 inline gdd* gdd::next(void) { return nextgdd; }
+inline const gdd* gdd::next(void) const { return nextgdd; }
 inline void gdd::setNext(gdd* n) { nextgdd=n; }
 inline unsigned gdd::dimension(void) const	{ return dim; }
 inline aitType& gdd::getData(void) 			{ return data; }
@@ -42,10 +46,18 @@ inline void gdd::setApplType(int t)			{ appl_type=(aitUint16)t; }
 inline gddStatus gdd::copyInfo(gdd* dd)		{ return copyStuff(dd,0); }
 inline gddStatus gdd::copy(gdd* dd)			{ return copyStuff(dd,1); }
 inline gddStatus gdd::Dup(gdd* dd)			{ return copyStuff(dd,2); }
-inline void* gdd::dataAddress(void)	const	{ return (void*)&data; }
-inline void* gdd::dataPointer(void)	const	{ return data.Pointer; }
+inline const void* gdd::dataAddress(void)	const	{ return (void*)&data; }
+inline void* gdd::dataAddress(void) { return (void*)&data; }
+inline const void* gdd::dataPointer(void)	const { return data.Pointer; }
+inline void* gdd::dataPointer(void) { return data.Pointer; }
 
-inline void* gdd::dataVoid(void) const
+inline const void* gdd::dataVoid(void) const
+{
+	return (dimension()||primitiveType()==aitEnumFixedString)?
+		dataPointer():dataAddress();
+}
+
+inline void* gdd::dataVoid(void)
 {
 	return (dimension()||primitiveType()==aitEnumFixedString)?
 		dataPointer():dataAddress();
@@ -57,7 +69,10 @@ inline aitUint32 gdd::align8(unsigned long count) const
 	return (tmp!=count)?tmp+8:tmp;
 }
 
-inline void* gdd::dataPointer(aitIndex f) const
+inline const void* gdd::dataPointer(aitIndex f) const
+	{ return (void*)(((aitUint8*)dataPointer())+aitSize[primitiveType()]*f); }
+
+inline void* gdd::dataPointer(aitIndex f) 
 	{ return (void*)(((aitUint8*)dataPointer())+aitSize[primitiveType()]*f); }
 
 inline int gdd::isManaged(void) const	{ return flags&GDD_MANAGED_MASK; }
@@ -75,19 +90,23 @@ inline void gdd::markUnmanaged(void)	{ flags&=~GDD_MANAGED_MASK; }
 inline void gdd::markLocalDataFormat(void)		{ flags&=~GDD_NET_MASK; }
 inline void gdd::markNotLocalDataFormat(void)	{ flags|=GDD_NET_MASK; }
 
-inline void gdd::getTimeStamp(struct timespec* const ts) const
-	{ ts->tv_sec=time_stamp.tv_sec; ts->tv_nsec=time_stamp.tv_nsec; }
-inline void gdd::setTimeStamp(const struct timespec* const ts) {
-	time_stamp.tv_sec=(aitUint32)ts->tv_sec;
-	time_stamp.tv_nsec=(aitUint32)ts->tv_nsec; }
-inline void gdd::getTimeStamp(aitTimeStamp* const ts) const { *ts=time_stamp; }
+inline void gdd::getTimeStamp(struct timespec* const ts) const { time_stamp.get(*ts); }
+inline void gdd::setTimeStamp(const struct timespec* const ts) { time_stamp=*ts; }
+
+inline void gdd::getTimeStamp(aitTimeStamp* const ts) const { *ts = time_stamp; }
 inline void gdd::setTimeStamp(const aitTimeStamp* const ts) { time_stamp=*ts; }
 
+inline void gdd::getTimeStamp(struct TS_STAMP* const ts) const { time_stamp.get(*ts); }
+inline void gdd::setTimeStamp(const struct TS_STAMP* const ts) { time_stamp=*ts; }
+
+inline void gdd::getTimeStamp(osiTime* const ts) const { time_stamp.get(*ts); }
+inline void gdd::setTimeStamp(const osiTime* const ts) { time_stamp=*ts; }
+
 inline void gdd::setStatus(aitUint32 s)		{ status=s; }
-inline void gdd::getStatus(aitUint32& s)	{ s=status; }
+inline void gdd::getStatus(aitUint32& s) const { s=status; }
 inline void gdd::setStatus(aitUint16 high, aitUint16 low)
 	{ status=(((aitUint32)high)<<16)|low; }
-inline void gdd::getStatus(aitUint16& high, aitUint16& low)
+inline void gdd::getStatus(aitUint16& high, aitUint16& low) const
 	{ high=(aitUint16)(status>>16); low=(aitUint16)(status&0x0000ffff); }
 
 inline void gdd::setStat(aitUint16 s)

@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.28  1999/05/03 17:33:02  jhill
+// derive from gddDestructor so that same form of new and delete are used
+//
 // Revision 1.27  1999/04/30 15:24:53  jhill
 // fixed improper container index bug
 //
@@ -523,13 +526,13 @@ gddStatus gdd::copyStuff(gdd* dd,int ctype)
 size_t gdd::getDataSizeBytes(void) const
 {
 	size_t sz=0;
-	gdd* pdd;
+	const gdd* pdd;
 	aitString* str;
 
 	if(isContainer())
 	{
 		const gddContainer* cdd=(const gddContainer*)this;
-		gddCursor cur=cdd->getCursor();
+		constGddCursor cur=cdd->getCursor();
 		for(pdd=cur.first();pdd;pdd=cur.next())
 			sz+=pdd->getTotalSizeBytes();
 	}
@@ -567,7 +570,7 @@ size_t gdd::getTotalSizeBytes(void) const
 {
 	size_t sz;
 	unsigned long tsize;
-	gdd* pdd;
+	const gdd* pdd;
 
 	// add up size of bounds + size of this DD
 	sz=sizeof(gdd)+(sizeof(gddBounds)*dimension());
@@ -602,7 +605,7 @@ size_t gdd::getTotalSizeBytes(void) const
 	else if(isContainer())
 	{
 		const gddContainer* cdd=(const gddContainer*)this;
-		gddCursor cur=cdd->getCursor();
+		constGddCursor cur=cdd->getCursor();
 		for(pdd=cur.first();pdd;pdd=cur.next())
 			sz+=pdd->getTotalSizeBytes();
 	}
@@ -1354,7 +1357,7 @@ gddStatus gdd::put(const gdd* dd)
 	return rc;
 }
 
-size_t gdd::outHeader(void* buf,aitUint32 bufsize)
+size_t gdd::outHeader(void* buf,aitUint32 bufsize) const
 {
 	// simple encoding for now..  will change later
 	// this is the SLOW, simple version
@@ -1413,7 +1416,7 @@ size_t gdd::outHeader(void* buf,aitUint32 bufsize)
 	}
 	return sz;
 }
-size_t gdd::outData(void* buf,aitUint32 bufsize, aitEnum e, aitDataFormat f)
+size_t gdd::outData(void* buf,aitUint32 bufsize, aitEnum e, aitDataFormat f) const
 {
 	// put data into user's buffer in the format that the user wants (e/f).
 	// if e is invalid, then use whatever format this gdd describes.
@@ -1434,7 +1437,7 @@ size_t gdd::outData(void* buf,aitUint32 bufsize, aitEnum e, aitDataFormat f)
 
 	return len;
 }
-size_t gdd::out(void* buf,aitUint32 bufsize,aitDataFormat f)
+size_t gdd::out(void* buf,aitUint32 bufsize,aitDataFormat f) const
 {
 	size_t index = outHeader(buf,bufsize);
 	size_t rc;

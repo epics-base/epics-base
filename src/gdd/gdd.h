@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.26  1999/04/30 15:24:53  jhill
+ * fixed improper container index bug
+ *
  * Revision 1.25  1998/05/05 21:09:52  jhill
  * removed backslash which conuses cpp
  *
@@ -112,7 +115,6 @@
 #       include <stdlib.h>
 #elif defined(vxWorks)
 #       include <time.h>
-#       include <timers.h> // for timespec under v51 vxWorks
 #elif defined(UNIX)
         // hopefully a posix compliant OS
 #       include <stdlib.h>
@@ -132,6 +134,10 @@
 class gddContainer;
 class gddArray;
 class gddScalar;
+
+struct TS_STAMP;
+class osiTime;
+struct timespec;
 
 // Not Complete in this prototype:
 // - Read only DD.
@@ -199,8 +205,9 @@ public:
 	const aitType& getData(void) const;
 	aitType* dataUnion(void);
 	const aitType* dataUnion(void) const;
-	gddDestructor* destructor(void) const;
+	const gddDestructor* destructor(void) const;
 	gdd* next(void);
+	const gdd* next(void) const;
 	void setNext(gdd*);
 
 	const gddBounds* getBounds(void) const;
@@ -220,19 +227,29 @@ public:
 	gddStatus getBound(unsigned dim_to_get, aitIndex& first, aitIndex& count) const;
 	gddStatus registerDestructor(gddDestructor*);
 	gddStatus replaceDestructor(gddDestructor*);
-	void* dataVoid(void) const;
-	void* dataAddress(void) const;
-	void* dataPointer(void) const;
-	void* dataPointer(aitIndex element_offset) const;
+	const void* dataVoid(void) const;
+	void* dataVoid(void);
+	const void* dataAddress(void) const;
+	void* dataAddress(void);
+	const void* dataPointer(void) const;
+	void* dataPointer(void);
+	const void* dataPointer(aitIndex element_offset) const;
+	void* dataPointer(aitIndex element_offset);
 
 	void getTimeStamp(struct timespec* const ts) const;
 	void getTimeStamp(aitTimeStamp* const ts) const;
+	void getTimeStamp(struct TS_STAMP* const ts) const;
+	void getTimeStamp(osiTime* const ts) const;
+
 	void setTimeStamp(const struct timespec* const ts);
 	void setTimeStamp(const aitTimeStamp* const ts);
+	void setTimeStamp(const struct TS_STAMP* const ts);
+	void setTimeStamp(const osiTime* const ts);
+
 	void setStatus(aitUint32);
 	void setStatus(aitUint16 high, aitUint16 low);
-	void getStatus(aitUint32&);
-	void getStatus(aitUint16& high, aitUint16& low);
+	void getStatus(aitUint32&) const;
+	void getStatus(aitUint16& high, aitUint16& low) const;
 
 	void setStat(aitUint16);
 	void setSevr(aitUint16);
@@ -523,10 +540,10 @@ public:
 	// data in the user's buffer will be assumed to be the same as the
 	// type defined in the gdd.
 
-	size_t out(void* buf,aitUint32 bufsize,aitDataFormat =aitNetworkDataFormat);
-	size_t outHeader(void* buf,aitUint32 bufsize);
+	size_t out(void* buf,aitUint32 bufsize,aitDataFormat =aitNetworkDataFormat) const;
+	size_t outHeader(void* buf,aitUint32 bufsize) const;
 	size_t outData(void* buf,aitUint32 bufsize,
-		aitEnum = aitEnumInvalid, aitDataFormat = aitNetworkDataFormat);
+		aitEnum = aitEnumInvalid, aitDataFormat = aitNetworkDataFormat) const;
 
 	size_t in(void* buf, aitDataFormat =aitNetworkDataFormat);
 	size_t inHeader(void* buf);

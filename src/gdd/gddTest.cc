@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.10  1999/04/30 00:05:20  jhill
+// allow const / use cursor in dump
+//
 // Revision 1.9  1997/08/05 00:51:16  jhill
 // fixed problems in aitString and the conversion matrix
 //
@@ -290,7 +293,7 @@ void gddContainer::dump(void) const
 	gdd::dumpInfo();
 	fprintf(stderr," total in container = %d\n",total());
 
-	gddCursor cur = this->getCursor();
+	constGddCursor cur = this->getCursor();
 	for(dd=cur.first();dd;dd=cur.next())
 	{
 		if(dd->isAtomic())		{ add=(gddAtomic*)dd; add->dump(); }

@@ -13,8 +13,8 @@
 #ifndef inetAddrIDh
 #define inetAddrIDh
 
-#include "resourceLib.h"
 #include "osiSock.h"
+#include "resourceLib.h"
 
 class inetAddrID {
 public:
@@ -31,8 +31,8 @@ private:
 static const unsigned inetAddrMinIndexBitWidth = 8u;
 static const unsigned inetAddrMaxIndexBitWidth = 32u;
 
-inline inetAddrID::inetAddrID ( const struct sockaddr_in &addrIn ) :
-    addr (addrIn)
+inline inetAddrID::inetAddrID ( const struct sockaddr_in & addrIn ) :
+    addr ( addrIn )
 {
 }
 

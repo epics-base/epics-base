@@ -18,6 +18,7 @@
 
 #include "macLib.h"
 #include "envDefs.h"
+#include "errlog.h"
 
 int
 check(char *str, char *expect)
@@ -54,5 +55,7 @@ int macEnvExpandTest(void)
     bad |= check ("${FOO}", "VAL1");
     epicsEnvSet("BAR","${STR2}");
     bad |= check ("${FOO}", "VAL2");
+    
+    errlogFlush();
     return bad;
 }

@@ -37,6 +37,7 @@
  * .05  04-10-92        jba     pact now used to test for asyn processing, not return value
  * .05  04-13-92        jba     Removed filename fp from report
  * .06  09-20-93        jbk     disallowed load reg values < 2
+ * .07	12-16-94	awr(LBL) bug fix pulseDelay clk rate calculation
  *      ...
  */
 
@@ -895,7 +896,7 @@ static long write_pt(pr)
     load = loadCount + .5;
     hold = holdCount + .5;
 
-    if(load < 2) load=2;
+    if(load < 3) load=3;
 
     /* compute mode */
     mode = 0x0062; /*MODE J: reload load or hold, count repeatedly, TC toggled*/

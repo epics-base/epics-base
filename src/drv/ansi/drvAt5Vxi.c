@@ -126,13 +126,15 @@ LOCAL void 	at5vxi_int_service(
 );
 
 LOCAL void 	at5vxi_init_card(
-	unsigned 	addr
+	unsigned 	addr,
+	void		*pArg
 );
 
 LOCAL int	at5vxi_shutdown(void);
 
 LOCAL void 	at5vxi_shutdown_card(
-	unsigned la
+	unsigned la,
+	void *pArg
 );
 
 LOCAL at5VxiStatus at5vxi_report_timing(
@@ -505,7 +507,8 @@ LOCAL int	at5vxi_shutdown(void)
  */
 LOCAL 
 void 	at5vxi_shutdown_card(
-	unsigned 	la
+	unsigned 	la,
+	void		*pArg
 )
 {
 #ifndef CONTINUOUS_OPERATION
@@ -527,7 +530,8 @@ void 	at5vxi_shutdown_card(
  */
 LOCAL 
 void 	at5vxi_init_card(
-	unsigned 		addr
+	unsigned 		addr,
+	void			*pArg
 )
 {
 	at5VxiStatus		r0;

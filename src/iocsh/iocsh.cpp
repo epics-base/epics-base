@@ -25,6 +25,7 @@
 #include "epicsString.h"
 #include "epicsThread.h"
 #include "epicsMutex.h"
+#include "envDefs.h"
 #include "registry.h"
 #define epicsExportSharedSymbols
 #include "iocsh.h"
@@ -299,7 +300,7 @@ iocsh (const char *pathname)
      * See if command interpreter is interactive
      */
     if ((pathname == NULL) || (strcmp (pathname, "<telnet>") == 0)) {
-        if ((prompt = getenv ("IOCSH_PS1")) == NULL)
+        if ((prompt = envGetConfigParamPtr(&IOCSH_PS1)) == NULL)
             prompt = "epics> ";
     }
     else {
@@ -538,8 +539,8 @@ iocsh (const char *pathname)
                     break;
             }
             if((prompt != NULL) && (strcmp(argv[0], "epicsEnvSet") == 0)) {
-                char *newPrompt;
-                if ((newPrompt = getenv ("IOCSH_PS1")) != NULL)
+                const char *newPrompt;
+                if ((newPrompt = envGetConfigParamPtr(&IOCSH_PS1)) != NULL)
                     prompt = newPrompt;
             }
         }

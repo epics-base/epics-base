@@ -15,34 +15,42 @@
 #
 #	CONFIG_SITE_ENV - EPICS Environment Parameter Site configuration file
 #
-# This file is interpreted by the Bourne Shell, so spaces are 
-# not allowed around the '=' signs or in unquoted values.
-# Makefile variables are not defined here.
-#
-# Note: This file is read by base/src/libCom/env/bldEnvdata.pl,
-# so the variable definitions in here should be kept 'simple':
-#	VAR=VALUE
-# each one on a single line.
+# This file is read by the script base/src/libCom/env/bldEnvdata.pl
+# Variable definitions must take the form
+#	VAR = VALUE
+# or
+#	VAR = "Value containing spaces"
+# with each one on its own line.
+# Enclosing spaces and "" will be trimmed.
 #
 
 #  Site-specific environment settings
 
 # Time service:
-# EPICS_TIMEZONE needed for vxWorks
-# EPICS_TIMEZONE=<name>::<minutesWest>:<start daylight>:<end daylight>
-#NOTE: start and end are mmddhh that bis mounth,day,hour
-# eg EPICS_TIMEZONE=CUS::360:033102:102802
+# EPICS_TIMEZONE
+#	local timezone info for vxWorks IOCs.  The format required is
+#	<name>::<minutesWest>:<start daylight>:<end daylight>
+#	where the start and end are mmddhh - that is month,day,hour
+#	eg EPICS_TIMEZONE=CUS::360:033102:102802
 #
-#  DST for 2004  US: Apr  4 - Oct 31
-#                EU: Mar 28 - Oct 31
-#  (see: http://www.worldtimezone.org/daylight.html)
+#	DST for 2004  US: Apr  4 - Oct 31
+#	              EU: Mar 28 - Oct 31
+#	(see: http://www.worldtimezone.org/daylight.html)
 #
-# EPICS_TS_NTP_INET ntp or Unix time server ip addr.
+# EPICS_TS_NTP_INET
+#	NTP or Unix time server ip address.  Uses boot host if not set.
 
 EPICS_TIMEZONE=CUS::360:040402:103102
 #EPICS_TIMEZONE=MET::-60:032802:103102
 EPICS_TS_NTP_INET=
 
+# IOC Shell:
+# IOCSH_PS1
+#	Prompt string
+# IOCSH_HISTSIZE
+#	Number of lines of command history to keep.
+IOCSH_PS1="epics> "
+IOCSH_HISTSIZE=50
 
 # Log Server:
 # EPICS_IOC_LOG_INET 
@@ -52,7 +60,7 @@ EPICS_TS_NTP_INET=
 # EPICS_IOC_LOG_FILE_LIMIT 
 #	maximum log file size.
 # EPICS_IOC_LOG_FILE_COMMAND 
-# 	A shell command string used to obtain a new 
+#	A shell command string used to obtain a new 
 #       path name in response to SIGHUP - the new path name will
 #       replace any path name supplied in EPICS_IOC_LOG_FILE_NAME
 

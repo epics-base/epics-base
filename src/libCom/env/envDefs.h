@@ -73,6 +73,8 @@ epicsShareExtern READONLY ENV_PARAM EPICS_IOC_LOG_FILE_NAME;
 epicsShareExtern READONLY ENV_PARAM EPICS_IOC_LOG_FILE_COMMAND;
 epicsShareExtern READONLY ENV_PARAM EPICS_CMD_PROTO_PORT;
 epicsShareExtern READONLY ENV_PARAM EPICS_AR_PORT;
+epicsShareExtern READONLY ENV_PARAM IOCSH_PS1;
+epicsShareExtern READONLY ENV_PARAM IOCSH_HISTSIZE;
 
 /*
  * bldEnvData looks for "epicsShareExtern ENV_PARAM" so
@@ -94,8 +96,6 @@ epicsShareFunc long epicsShareAPI
 	envGetDoubleConfigParam(const ENV_PARAM *pParam, double *pDouble);
 epicsShareFunc long epicsShareAPI 
 	envGetLongConfigParam(const ENV_PARAM *pParam, long *pLong);
-epicsShareFunc const char * epicsShareAPI 
-	envGetConfigParamPtr(const ENV_PARAM *pParam);
 epicsShareFunc unsigned short epicsShareAPI envGetInetPortConfigParam 
         (const ENV_PARAM *pEnv, unsigned short defaultPort);
 epicsShareFunc long epicsShareAPI epicsPrtEnvParams(void);

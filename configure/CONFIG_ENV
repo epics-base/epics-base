@@ -15,16 +15,14 @@
 #
 #   CONFIG_ENV - EPICS Environment Parameter configuration file
 #
-# This file is interpreted by the Bourne Shell, so spaces are 
-# not allowed around the '=' signs or in unquoted values.
-# Makefile variables are not defined here.
+# This file is read by the script base/src/libCom/env/bldEnvdata.pl
+# Variable definitions must take the form
+#	VAR = VALUE
+# or
+#	VAR = "Value containing spaces"
+# with each one on its own line.
+# Enclosing spaces and "" will be trimmed.
 #
-# Note: This file is read by base/src/libCom/env/bldEnvdata.pl,
-# so the variable definitions in here should be kept 'simple':
-#   VAR=VALUE
-# each one on a single line.
-#
-
 
 #  Default environment settings
 

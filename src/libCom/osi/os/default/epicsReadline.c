@@ -10,10 +10,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
+#include "envDefs.h"
 
 #define epicsExportSharedSymbols
 
-#include <epicsReadline.h>
+#include "epicsReadline.h"
 
 #define EPICS_COMMANDLINE_LIBRARY_EPICS     0
 #define EPICS_COMMANDLINE_LIBRARY_LIBTECLA  1
@@ -36,13 +37,10 @@ void * epicsShareAPI
 epicsReadlineBegin (FILE *in)
 {
     GetLine *gl;
-    const char *histSize = getenv("IOCSH_HISTSIZE");
-    int i;
+    long i = 50;
 
-    if (histSize == NULL)
-        i = 50;
-    else if ((i = atoi(histSize)) < 0)
-        i = 0;
+    envGetLongConfigParam(&IOCSH_HISTSIZE, &i);
+    if (i < 0) i = 0;
     gl = new_GetLine(200, i * 40);
     if ((gl != NULL) && (in != NULL))
         gl_change_terminal(gl, in, stdout, NULL);
@@ -97,13 +95,10 @@ epicsReadlineBegin(FILE *in)
         readlineContext->in = in;
         readlineContext->line = NULL;
         if (in == NULL) {
-            const char *histSize = getenv("IOCSH_HISTSIZE");
-            int i;
+            long i = 50;
 
-            if (histSize == NULL)
-                i = 50;
-            else if ((i = atoi(histSize)) < 0)
-                i = 0;
+            envGetLongConfigParam(&IOCSH_HISTSIZE, &i);
+            if (i < 0) i = 0;
             stifle_history (i);
             rl_bind_key ('\t', rl_insert);
         }
@@ -211,13 +206,10 @@ epicsReadlineBegin(FILE *in)
         readlineContext->ledId = ERROR;
         readlineContext->in = in;
         if (in == NULL) {
-            const char *histSize = getenv("IOCSH_HISTSIZE");
-            int i;
+            long i = 50;
 
-            if (histSize == NULL)
-                i = 50;
-            else if ((i = atoi(histSize)) < 0)
-                i = 1;
+            envGetLongConfigParam(&IOCSH_HISTSIZE, &i);
+            if (i < 1) i = 1;
             readlineContext->ledId = ledOpen(fileno(stdin), fileno(stdout), i);
             if (readlineContext->ledId == ERROR) {
                 readlineContext->in = stdin;

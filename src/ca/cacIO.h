@@ -266,17 +266,17 @@ inline void caAccessRights::clrOperatorConfirmationRequest ()
 
 inline bool caAccessRights::readPermit () const
 {
-    return this->f_readPermit;
+    return static_cast < bool > ( this->f_readPermit );
 }
 
 inline bool caAccessRights::writePermit () const
 {
-    return this->f_writePermit;
+    return static_cast < bool > ( this->f_writePermit );
 }
 
 inline bool caAccessRights::operatorConfirmationRequest () const
 {
-    return this->f_operatorConfirmationRequest;
+    return static_cast < bool > ( this->f_operatorConfirmationRequest );
 }
 
 #endif // ifndef cacIOh

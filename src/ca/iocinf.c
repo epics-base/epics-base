@@ -47,6 +47,9 @@
 /*			address in use so that test works on UNIX	*/
 /*			kernels that support multicast			*/
 /* $Log$
+ * Revision 1.80  1998/06/18 00:07:12  jhill
+ * use ipAddrToA
+ *
  * Revision 1.79  1998/06/17 00:39:05  jhill
  * fixed problem where beta 12 briefly didnt communicate with old CA repeaters
  *
@@ -252,7 +255,7 @@ int				net_proto
 
   	switch(piiu->sock_proto)
   	{
-    		case	IPPROTO_TCP:
+	case	IPPROTO_TCP:
 
 		pNode = (caAddrNode *)calloc(1,sizeof(*pNode));
 		if(!pNode){
@@ -260,7 +263,7 @@ int				net_proto
 			UNLOCK;
 			return ECA_ALLOCMEM;
 		}
-      		memset((char *)&pNode->destAddr,0,sizeof(pNode->destAddr));
+		memset((char *)&pNode->destAddr,0,sizeof(pNode->destAddr));
 
 		pNode->destAddr.in = *pina;
 		ellAdd(&piiu->destAddr, &pNode->node);
@@ -269,39 +272,39 @@ int				net_proto
 		piiu->procInput = ca_process_tcp; 
 		piiu->minfreespace = 1;	
 
-      		/* 	allocate a socket	*/
-      		sock = socket(	AF_INET,	/* domain	*/
-				SOCK_STREAM,	/* type		*/
-				0);		/* deflt proto	*/
-      		if(sock == INVALID_SOCKET){
+		/* 	allocate a socket	*/
+		sock = socket(	AF_INET,	/* domain	*/
+						SOCK_STREAM,	/* type		*/
+						0);		/* deflt proto	*/
+		if(sock == INVALID_SOCKET){
 			free(pNode);
 			free(piiu);
 			UNLOCK;
-        		return ECA_SOCK;
+			return ECA_SOCK;
 		}
 
-      		piiu->sock_chan = sock;
+		piiu->sock_chan = sock;
 
 		/*
 		 * see TCP(4P) this seems to make unsollicited single events
 		 * much faster. I take care of queue up as load increases.
 		 */
-     		 status = setsockopt(
-				sock,
-				IPPROTO_TCP,
-				TCP_NODELAY,
-				(char *)&true,
-				sizeof(true));
-      		if(status < 0){
+		status = setsockopt(
+					sock,
+					IPPROTO_TCP,
+					TCP_NODELAY,
+					(char *)&true,
+					sizeof(true));
+		if(status < 0){
 			free(pNode);
 			free(piiu);
-        		status = socket_close(sock);
+			status = socket_close(sock);
 			if(status<0){
 				SEVCHK(ECA_INTERNAL,NULL);
 			}
 			UNLOCK;
-       			return ECA_SOCK;
-      		}
+			return ECA_SOCK;
+		}
 
 		/*
 		 * This should cause the connection to be checked
@@ -309,22 +312,23 @@ int				net_proto
 		 * 
 		 * In practice the conn is checked very infrequently.
 		 */
-      		status = setsockopt(
-				sock,
-				SOL_SOCKET,
-				SO_KEEPALIVE,
-				(char *)&true,
-				sizeof true);
-      		if(status < 0){
+
+		status = setsockopt(
+			sock,
+			SOL_SOCKET,
+			SO_KEEPALIVE,
+			(char *)&true,
+			sizeof true);
+		if(status < 0){
 			free(pNode);
 			free(piiu);
-        		status = socket_close(sock);
+				status = socket_close(sock);
 			if(status<0){
 				SEVCHK(ECA_INTERNAL,NULL);
 			}
 			UNLOCK;
-        		return ECA_SOCK;
-    		}
+			return ECA_SOCK;
+		}
 
 #ifdef JUNKYARD
 		{
@@ -402,23 +406,23 @@ int				net_proto
 		 */
 		cac_connect_iiu (piiu);
 
-      		break;
+		break;
 
-    	case	IPPROTO_UDP:
+	case	IPPROTO_UDP:
 	
 		piiu->recvBytes = udp_recv_msg; 
 		piiu->sendBytes = cac_udp_send_msg_piiu; 
 		piiu->procInput = ca_process_udp; 
 		piiu->minfreespace = ETHERNET_MAX_UDP+2*sizeof(struct udpmsglog);	
 
-      		/* 	allocate a socket			*/
-      		sock = socket(	AF_INET,	/* domain	*/
-				SOCK_DGRAM,	/* type		*/
-				0);		/* deflt proto	*/
-      		if(sock == INVALID_SOCKET){
+		/* 	allocate a socket			*/
+		sock = socket(	AF_INET,	/* domain	*/
+			SOCK_DGRAM,	/* type		*/
+			0);		/* deflt proto	*/
+		if(sock == INVALID_SOCKET){
 			free (piiu);
 			UNLOCK;
-        	return ECA_SOCK;
+			return ECA_SOCK;
 		}
 
       	piiu->sock_chan = sock;
@@ -433,14 +437,14 @@ int				net_proto
 			(char *)&true,
 			sizeof(true));
 		if(status<0){
-		free(piiu);
+			free(piiu);
 			ca_printf("CAC: sso (err=\"%s\")\n",
 			SOCKERRSTR);
 			status = socket_close(sock);
-		if(status < 0){
-			SEVCHK(ECA_INTERNAL,NULL);
-		}
-		UNLOCK;
+			if(status < 0){
+				SEVCHK(ECA_INTERNAL,NULL);
+			}
+			UNLOCK;
 			return ECA_CONN;
 		}
 
@@ -547,7 +551,7 @@ int				net_proto
  */
 LOCAL void cac_set_iiu_non_blocking (struct ioc_in_use *piiu)
 {
-  	osiSockIoctl_t	true = TRUE;
+  	osiSockIoctl_t value = TRUE;
 	int	status;
 
 	/*	
@@ -557,7 +561,7 @@ LOCAL void cac_set_iiu_non_blocking (struct ioc_in_use *piiu)
 	status = socket_ioctl(
 			piiu->sock_chan,
 			FIONBIO,
-			&true);
+			&value);
 	if(status<0){
 		ca_printf(
 			"CAC: failed to set non-blocking because \"%s\"\n",

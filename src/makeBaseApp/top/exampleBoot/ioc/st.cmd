@@ -5,7 +5,7 @@
 
 < cdCommands
 
-#< nfsCommands
+#< ../nfsCommands
 
 cd appbin
 ld < iocCore

@@ -876,5 +876,7 @@ extern int yylex PROTO(());
 /* The Unix kernel calls used here */
 
 extern int read PROTO((int, char*, int));
+#ifndef _WIN32
 extern int unlink PROTO((char*));
+#endif
 extern int write PROTO((int, char*, int));

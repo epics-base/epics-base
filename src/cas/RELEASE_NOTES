@@ -8,6 +8,8 @@ in the supplied buffer and not in a gdd data descriptor. See
 "casdef.h".
 old API:
         //
+        // pvExistTest()
+        //
         // The server tool is encouraged to accept multiple PV name
         // aliases for the same PV here. However, a unique canonical name
         // must be selected for each PV.
@@ -26,24 +28,36 @@ old API:
                                 gdd &canonicalPVName) = 0;
 new API:
         //
+        // pvExistTest()
+        //
         // The server tool is encouraged to accept multiple PV name
         // aliases for the same PV here. However, one unique canonical name
-        // must be selected by the srever tool and returned to the 
-        // server lib for each PV. The server will use this canonical 
-        // name to prevent internal duplication of data structures for 
+        // must be selected by the srever tool and returned to the
+        // server lib for each PV. The server will use this canonical
+        // name to prevent internal duplication of data structures for
         // process variables that have multiple aliases.
         //
-        // o returns S_casApp_success and fills in the canonical name
-        // buffer if the PV is in this server tool
+        // o returns S_casApp_success and a valid canonical name string
+        // when the PV is in this server tool
         //
         // o returns S_casApp_pvNotFound if the PV does not exist in
         // the server tool
         //
-	virtual caStatus pvExistTest (const casCtx &ctx,
-			const char *pPVName, char *pCanonicalNameBuf,
-			const unsigned canonicalNameBufSize);
+        // Examples:
+        // caServerXXX::pvExistTest(const casCtx &ctx, const char *pPVName)
+        // {
+        //      return pvExistReturn(S_casApp_success, pPVName); // common
+        //      return pvExistReturn(S_casApp_pvNotFound); // no PV by that name
+        //
+        //      char pName[9] = "myPVName";
+        //      return pvExistReturn(S_casApp_success, pName); // also common
+        //      return pvExistReturn(S_casApp_asyncCompletion); // not now
+        // }
+        //
+        virtual pvExistReturn pvExistTest (const casCtx &ctx,
+				const char *pPVName)=0;
 
-o The server tool must use one of class casAsyncReadIO, casAsyncWriteIO, or
+o The server tool must now use one of class casAsyncReadIO, casAsyncWriteIO, or
 casAsyncPVExistIO in place of casAsyncIO. See "casdef.h". 
 
 

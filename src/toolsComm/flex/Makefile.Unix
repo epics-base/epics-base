@@ -8,7 +8,7 @@ USR_CFLAGS = -DDEFAULT_SKELETON_FILE=\"$(SKELETON_FILE)\"
 
 LDLIBS = -s
 
-CC = cc
+CC = $(oldCC)
 
 SRCS = \
 	ccl.c dfa.c ecs.c gen.c main.c \

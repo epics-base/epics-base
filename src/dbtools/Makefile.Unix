@@ -1,8 +1,6 @@
 EPICS = ../../..
 include $(EPICS)/config/CONFIG
 
-CC = acc -Xt 
-
 LEX = $(ELEX)
 YACC = $(EYACC)
 

@@ -5,7 +5,7 @@ include $(EPICS)/config/CONFIG
 LDLIBS = -lm -s
 USR_CFLAGS = -D_NO_PROTO
 
-CC = cc
+CC = $(oldCC)
 
 SRCS = \
 	closure.c error.c lalr.c lr0.c main.c \

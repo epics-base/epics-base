@@ -3,9 +3,6 @@ include $(EPICS)/config/CONFIG
 
 USR_CFLAGS = -D_NO_PROTO
 
-
-CC = acc -Xt
-
 SRCS = \
 	arAccessLib.c arCSCheck.c arChanIO.c bfSubr.c bucketLib.c \
 	calcPerform.c cmdSubr.c cvtFast.c cvtNumbers.c ellLib.c \

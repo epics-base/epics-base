@@ -8,8 +8,7 @@ USR_LDLIBS = -lm -s
 
 USR_CFLAGS = -UvxWorks
 
-CC = acc -Xs
-#CC = cc
+CC = $(oldCC)
 
 SRCS = \
 	apCreateShadow.c apStatusSync.c bfRing.c ca_test.c calcTest.c \

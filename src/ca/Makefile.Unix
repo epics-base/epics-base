@@ -5,8 +5,6 @@ USR_LDLIBS = -lm -s
 USR_LDLIBS =
 USR_CFLAGS = -DACCESS_SECURITY -D_NO_PROTO
 
-CC = acc -Xt
-
 SRCS = \
 	iocinf.c access.c test_event.c service.c flow_control.c \
 	repeater.c conn.c acctst.c syncgrp.c if_depen.c \

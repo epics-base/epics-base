@@ -558,7 +558,7 @@ static long special(paddr,after)
         db_post_events(pwait,&pwait->clcv,DBE_VALUE);
         memcpy(pwait->rpcl,rpbuf,sizeof(pwait->rpcl));
         db_post_events(pwait,pwait->calc,DBE_VALUE);
-        db_post_events(pwait,pwait->clcv,DBE_VALUE);
+        db_post_events(pwait,&pwait->clcv,DBE_VALUE);
         return(0);
         break;
     default:

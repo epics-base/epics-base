@@ -54,25 +54,26 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
  *
  */
 
-#include	<vxWorks.h>
-#include	<types.h>
-#include	<stdioLib.h>
-#include	<lstLib.h>
+#include <vxWorks.h>
+#include <types.h>
+#include <stdioLib.h>
+#include <lstLib.h>
 
 #include "dbDefs.h"
 #include "epicsPrint.h"
-#include	<alarm.h>
-#include	<dbAccess.h>
-#include	<dbEvent.h>
-#include	<dbFldTypes.h>
-#include	<devSup.h>
-#include	<errMdef.h>
-#include	<recSup.h>
+#include "alarm.h"
+#include "dbAccess.h"
+#include "dbEvent.h"
+#include "dbFldTypes.h"
+#include "devSup.h"
+#include "errMdef.h"
+#include "recSup.h"
+#include "module_types.h"
 
 #define GEN_SIZE_OFFSET
-#include	<egRecord.h>
+#include "egRecord.h"
 #undef  GEN_SIZE_OFFSET
-#include	<egDefs.h>
+#include "egDefs.h"
 
 #define STATIC	static
 

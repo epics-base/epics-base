@@ -16,4 +16,4 @@
  */
 epicsShareFunc void epicsShareAPI epicsSignalInstallSigPipeIgnore ( void ) {}
 epicsShareFunc void epicsShareAPI epicsSignalInstallSigUrgIgnore ( void ) {}
-epicsShareFunc void epicsShareAPI epicsSignalRaiseSigUrg ( struct epicsThreadOSD * threadId ) {}
+epicsShareFunc void epicsShareAPI epicsSignalRaiseSigUrg ( struct epicsThreadOSD * /* threadId */ ) {}

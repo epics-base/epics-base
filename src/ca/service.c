@@ -831,7 +831,7 @@ const struct in_addr	*pnet_addr
 	 */
 	ina.sin_family = AF_INET;
 	if (CA_V48 (CA_PROTOCOL_VERSION,minorVersion)) {
-		if (piiu->curMsg.m_cid != ~0ul) {
+		if (piiu->curMsg.m_cid != INADDR_BROADCAST) {
 			ina.sin_addr.s_addr = htonl(piiu->curMsg.m_cid);
 		}
 		else {

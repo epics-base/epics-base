@@ -2472,6 +2472,8 @@ int dbAllocForm(DBENTRY *psave)
 	    epicsPrintf("dbAllocForm called but not DBF_DEVICE or DBF_xxxLINK\n");
 	    goto done;
 	}
+        plink = (DBLINK *)(pdbentry->pfield);
+        if(plink->type==MACRO_LINK) goto done;
         if(strcmp(pflddes->name,"INP")==0 || strcmp(pflddes->name,"OUT")==0){
             status = setLinkType(pdbentry);
             if(status) {

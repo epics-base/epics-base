@@ -103,12 +103,8 @@ PRODTARGETS += $(PRODNAME) $(MUNCHNAME) $(CTDT_SRCS) $(CTDT_OBJS) $(NMS)
 #
 
 LIBTARGETS += $(LIBNAME)
-ifneq (,$(strip $(LIBTARGETS)))
 LIBTARGETS += $(INSTALL_LIBS)
-ifeq ($(strip $(SHARED_LIBRARIES)),YES)
 LIBTARGETS += $(SHRLIBNAME) $(INSTALL_SHRLIBS) $(INSTALL_DLL_LINK_LIBS)
-endif # SHARED_LIBRARIES=YES
-endif # LIBTARGETS
 
 #---------------------------------------------------------------
 ifneq ($(CONFIG),$(TOP)/configure)
@@ -181,7 +177,7 @@ $(DIRECTORY_TARGETS) :
 
 $(TESTPRODNAME) $(PRODNAME):%$(EXE): $(PRODUCT_OBJS) $(PROD_RESS) $(PROD_DEPLIBS)
 	@$(RM) $@
-	$(LINK.cpp)
+	$(PURIFY_$(OS_CLASS)) $(LINK.cpp)
 
 # object libs for R3.13 vxWorks compatibility only
 $(OBJLIBNAME):%$(OBJ): $(OBJLIB_LD_OBJS)

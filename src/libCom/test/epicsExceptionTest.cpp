@@ -30,6 +30,17 @@ const nothrow_t  nothrow ;
 }
 #endif
 
+// some interesting bugs found in the MS implementation of new
+#if defined ( _MSC_VER )
+#   if _MSC_VER > 1310  /* this gets fixed some release after visual studio 7 we hope */
+        static const size_t unsuccessfulNewSize = numeric_limits<size_t>::max();
+#   else
+        static const size_t unsuccessfulNewSize = numeric_limits<size_t>::max()-100;
+#   endif
+#else
+    static const size_t unsuccessfulNewSize = numeric_limits<size_t>::max();
+#endif
+
 class myThread : public epicsThreadRunable {
 public:
     myThread ();
@@ -44,7 +55,7 @@ static void epicsExceptionTestPrivate ()
 {
     int excep = false;
     try {
-        new char [numeric_limits<DST_T>::max (size_t)];
+        new char [unsuccessfulNewSize];
         assert ( 0 );
     }
     catch ( const bad_alloc & ) {
@@ -54,7 +65,8 @@ static void epicsExceptionTestPrivate ()
         assert ( 0 );
     }
     try {
-        char * p = new ( nothrow ) char [LONG_MAX];
+        char * p = new ( nothrow ) 
+            char [unsuccessfulNewSize];
         assert ( p == 0);
     }
     catch( ... ) {

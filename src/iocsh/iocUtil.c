@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <logClient.h>
+#include <envDefs.h>
 
 #include "osiUnistd.h"
 #include "epicsThread.h"
@@ -60,7 +61,7 @@ static void showCallFunc(const ioccrfArgBuf *args)
     epicsThreadId tid;
     unsigned long ltmp;
     int argc = args[0].aval.ac;
-    const char * const *argv = args[0].aval.av;
+    char **argv = args[0].aval.av;
     char *endp;
 
     if ((i < argc) && (*(cp = argv[i]) == '-')) {
@@ -118,15 +119,31 @@ static void putenvCallFunc(const ioccrfArgBuf *args)
     }
 }
 
-/* env */
-static const ioccrfFuncDef showenvFuncDef = {"env",0,NULL};
-static void showenvCallFunc(const ioccrfArgBuf *args)
+/* epicsPrtEnvParams */
+static const ioccrfFuncDef epicsPrtEnvParamsFuncDef = {"epicsPrtEnvParams",0,NULL};
+static void epicsPrtEnvParamsCallFunc(const ioccrfArgBuf *args)
 {
-    extern char **environ;
-    char **sp;
+    epicsPrtEnvParams ();
+}
 
-    for (sp = environ ; (sp != NULL) && (*sp != NULL) ; sp++)
-        printf ("%s\n", *sp);
+/* printEnv */
+static const ioccrfArg printEnvArg0 = { "name ...", ioccrfArgArgv};
+static const ioccrfArg * const printEnvArgs[1] = {&printEnvArg0};
+static const ioccrfFuncDef printEnvFuncDef = {"printEnv",1,printEnvArgs};
+static void printEnvCallFunc(const ioccrfArgBuf *args)
+{
+    int i = 1;
+    const char *cp;
+    int argc = args[0].aval.ac;
+    char **argv = args[0].aval.av;
+
+    for (i = 1 ; i < argc ; i++) {
+        cp = getenv (argv[i]);
+        if (cp == NULL)
+            printf ("%s is not an environment variable.\n", argv[i]);
+        else
+            printf ("%s\n", cp);
+    }
 }
 
 /* iocLogInit */
@@ -143,6 +160,7 @@ void epicsShareAPI iocUtilRegister(void)
     ioccrfRegister(&pwdFuncDef,pwdCallFunc);
     ioccrfRegister(&showFuncDef,showCallFunc);
     ioccrfRegister(&putenvFuncDef,putenvCallFunc);
-    ioccrfRegister(&showenvFuncDef,showenvCallFunc);
+    ioccrfRegister(&epicsPrtEnvParamsFuncDef,epicsPrtEnvParamsCallFunc);
+    ioccrfRegister(&printEnvFuncDef,printEnvCallFunc);
     ioccrfRegister(&iocLogInitFuncDef,iocLogInitCallFunc);
 }

@@ -14,7 +14,7 @@
 
 #Syntax:
 # ARCH_<host_arch> = <epics_host_arch>
-#ARCH_solaris = solaris-sparc-gnu
+ARCH_solarisGnu = solaris-sparc-gnu
 ARCH_solaris = solaris-sparc
 ARCH_sun4 = sun4-sparc
 ARCH_Linux = linux-x86
@@ -22,6 +22,7 @@ ARCH_WIN32 = win32-x86
 ARCH_hp700 = hpux-m68k
 ARCH_alpha = osf-alpha
 ARCH_Borland = win32-x86-borland
+ARCH_cygwin32 = win32-x86-cygwin
 
 ifndef EPICS_HOST_ARCH
 ifdef HOST_ARCH

@@ -328,12 +328,14 @@ void nciu::connect ( unsigned nativeType,
         return;
     }
 
-    this->lockPIIU ();
-    bool v41Ok = this->piiu->ca_v41_ok ();
-    this->unlockPIIU ();
-
     this->lock ();
-
+    bool v41Ok;
+    if ( this->piiu ) {
+        v41Ok = this->piiu->ca_v41_ok ();
+    }
+    else {
+        v41Ok = false;
+    }    
     this->typeCode = nativeType;
     this->count = nativeCount;
     this->sid = sidIn;

@@ -680,12 +680,11 @@ void dbCaTask()
                 continue; /*No other link_action makes sense*/
             }
             if(link_action&CA_CONNECT) {
-                status = ca_search_and_connect(
-                      pca->pvname,
-                      &(pca->chid),
-                      connectionCallback,(void *)pca);
+                status = ca_create_channel(
+                      pca->pvname,connectionCallback,(void *)pca,
+                      CA_PRIORITY_DB_LINKS, &(pca->chid));
                 if(status!=ECA_NORMAL) {
-                errlogPrintf("dbCaTask ca_search_and_connect %s\n",
+                errlogPrintf("dbCaTask ca_create_channel %s\n",
                     ca_message(status));
                     continue;
                 }

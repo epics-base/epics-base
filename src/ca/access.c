@@ -29,7 +29,7 @@
 /*			additions, added better string bounds checking	*/
 /*	060591	joh	delinting					*/
 /*	061391	joh	RISC alignment in outgoing messages		*/
-/*	070191	joh	allways use memcpy in ca_put			*/
+/*	070191	joh	always use memcpy in ca_put			*/
 /*	071291	joh	added CLAIM_CIU message				*/
 /*	072391	joh	added event locking for vxWorks			*/
 /*	072591	joh	quick POLL in ca_pend_io() should return 	*/
@@ -1116,7 +1116,7 @@ void build_msg(chix, reply_type)
 	}
 	/* 
 	 * channel name string - forces a NULL at the end because 
-	 * strcnt is allways >= strlen + 1 
+	 * strcnt is always >= strlen + 1 
 	 */
 	mptr++;
 	strncpy(mptr, chix + 1, chix->name_length);

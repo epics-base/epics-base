@@ -78,7 +78,6 @@ static long init_record(pmbbi)
 
     if (pmbbi->inp.type == CONSTANT) {
 	recGblInitConstantLink(&pmbbi->inp,DBF_ULONG,&pmbbi->rval);
-	pmbbi->udf = FALSE;
     }
     return(0);
 }

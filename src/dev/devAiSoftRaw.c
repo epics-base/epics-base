@@ -83,7 +83,6 @@ static long init_record(pai)
     switch (pai->inp.type) {
     case (CONSTANT) :
 	recGblInitConstantLink(&pai->inp,DBF_LONG,&pai->rval);
-	pai->udf = FALSE;
 	break;
     case (PV_LINK) :
     case (DB_LINK) :

@@ -80,7 +80,6 @@ static long init_record(pbi)
     switch (pbi->inp.type) {
     case (CONSTANT) :
 	recGblInitConstantLink(&pbi->inp,DBF_ULONG,&pbi->rval);
-	pbi->udf = FALSE;
         break;
     case (DB_LINK) :
     case (PV_LINK) :

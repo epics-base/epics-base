@@ -80,9 +80,6 @@ static char *sccsId = "@(#)service.c	1.17\t6/2/93";
 #  else
 #    if defined(vxWorks)
 #	include		<vxWorks.h>
-#	ifndef V5_vxWorks
-#		include	<types.h>
-#	endif
 #    else
 	@@@@ dont compile @@@@
 #    endif

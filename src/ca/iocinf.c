@@ -97,11 +97,7 @@ static char *sccsId = "$Id$\t$Date$";
 #  else
 #    if defined(vxWorks)
 #	include		<vxWorks.h>
-#	ifdef V5_vxWorks
-#		include		<systime.h>
-#	else
-#		include		<utime.h>
-#	endif
+#	include		<systime.h>
 #	include		<ioLib.h>
 #	include		<errno.h>
 #	include		<socket.h>

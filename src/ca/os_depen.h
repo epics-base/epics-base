@@ -49,9 +49,6 @@ static char *os_depenhSccsId = "@(#)os_depen.h	1.12\t2/19/93";
 #	ifndef INCtaskLibh
 #		include <taskLib.h>
 #	endif
-#	ifndef V5_vxWorks
-		IMPORT ULONG taskIdCurrent;
-#	endif
 #  else
 #    if defined(VMS)
 #    else
@@ -201,11 +198,7 @@ static char *os_depenhSccsId = "@(#)os_depen.h	1.12\t2/19/93";
 
 
 #if defined(vxWorks)
-#ifdef V5_vxWorks
 #  	define POST_IO_EV semGive(io_done_sem)
-#else
-#  	define POST_IO_EV vrtxPost(&io_done_sem->count, TRUE)
-#endif
 #else
 #  if defined(VMS)
 #  	define POST_IO_EV sys$setef(io_done_flag)

@@ -111,7 +111,7 @@
 /************************************************************************/
 /*_end									*/
 
-static char *sccsId = "$Id$\t$Date$";
+static char *sccsId = "@(#)access.c	1.34\t8/5/93";
 
 /*
  * allocate error message string array 
@@ -372,11 +372,7 @@ int ca_task_initialize
 
 			FASTLOCKINIT(&client_lock);
 			FASTLOCKINIT(&event_lock);
-#    ifdef V5_vxWorks
 			io_done_sem = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
-#    else
-			io_done_sem = semCreate();
-#    endif
 			if(!io_done_sem){
 				abort();
 			}
@@ -585,11 +581,9 @@ ca_add_task_variable()
 			ca_printf("CAC: adding delete hook\n");
 #		endif
 
-#		ifdef V5_vxWorks
-			status = taskVarInit();
-			if (status != OK)
-				return ERROR;
-#		endif
+		status = taskVarInit();
+		if (status != OK)
+			return ERROR;
 		status = taskDeleteHookAdd(ca_task_exit_tcb);
 		if (status != OK) {
 			logMsg("ca_init_task: could not add CA delete routine\n");
@@ -636,7 +630,6 @@ int ca_task_exit
  *
  */
 #ifdef vxWorks                                                 
-#ifdef V5_vxWorks
 static void
 ca_task_exit_tcb(ptcb)
 WIND_TCB 	*ptcb;
@@ -654,14 +647,6 @@ WIND_TCB 	*ptcb;
 	 */
   	ca_task_exit_tid((int) ptcb);
 }
-#else
-static void
-ca_task_exit_tcb(ptcbx)
-TCBX 	*ptcbx;
-{
-	ca_task_exit_tid((int) ptcbx->taskId);
-}
-#endif
 #endif
 
 
@@ -697,13 +682,8 @@ ca_process_exit()
 
 #	if defined(vxWorks)
 
-#		ifdef V5_vxWorks
-			ca_temp = (struct ca_static *) 
+		ca_temp = (struct ca_static *) 
 				taskVarGetPatch(tid, &ca_static);
-#		else
-			ca_temp = (struct ca_static *) 
-				taskVarGet(tid, &ca_static);
-#		endif
 
 		if (ca_temp == (struct ca_static *) ERROR){
 #			if DEBUG
@@ -804,11 +784,19 @@ ca_process_exit()
 		 * event blocks
 		 */
 		for (i = 0; i < ca_temp->ca_nxtiiu; i++) {
-			if (ca_temp->ca_iiu[i].conn_up)
-				if (socket_close(ca_temp->ca_iiu[i].sock_chan) < 0)
+			if (ca_temp->ca_iiu[i].conn_up){
+				if(fd_register_func){
+					(*fd_register_func)(
+						fd_register_arg,
+						ca_temp->ca_iiu[i].sock_chan,
+						FALSE);
+				}
+				if (socket_close(ca_temp->ca_iiu[i].sock_chan) < 0){
 					ca_signal(
 						ECA_INTERNAL, 
 						"Corrupt iiu list- at close");
+				}
+			}
 			free((char *)ca_temp->ca_iiu[i].send);
 			free((char *)ca_temp->ca_iiu[i].recv);
 		}
@@ -851,16 +839,12 @@ ca_process_exit()
 				ca_signal(ECA_INTERNAL, "couldnt free memory");
 			if(FASTLOCKFREE(&ca_temp->ca_event_lock) < 0)
 				ca_signal(ECA_INTERNAL, "couldnt free memory");
-#			ifdef V5_vxWorks
-				status = semDelete(ca_temp->ca_io_done_sem);
-				if(status < 0){
-					ca_signal(
-						ECA_INTERNAL, 
-						"couldnt free sem");
-				}
-#			else
-				semDelete(ca_temp->ca_io_done_sem);
-#			endif
+			status = semDelete(ca_temp->ca_io_done_sem);
+			if(status < 0){
+				ca_signal(
+					ECA_INTERNAL, 
+					"couldnt free sem");
+			}
 #		endif
 
 		free((char *)ca_temp);
@@ -2336,14 +2320,7 @@ int			early;
     		}
 #else
 #  if defined(vxWorks)
-#    ifdef	V5_vxWorks
-			semTake(io_done_sem, LOCALTICKS);
-#    else
-			{
-				int dummy;
-				vrtxPend(&io_done_sem->count, LOCALTICKS, &dummy);
-			}
-#    endif
+		semTake(io_done_sem, LOCALTICKS);
 #  else
 #    if defined(VMS)
     		{

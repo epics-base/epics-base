@@ -40,9 +40,6 @@ static char	*sccsId = "@(#)flow_control.c	1.7\t6/2/93";
 #	include		<ioLib.h>
 #	include		<socket.h>
 #	include		<ioctl.h>
-#	ifndef V5_vxWorks
-#		include	<types.h>
-#	endif
 #else
 #  if defined(VMS)
 #	include		<sys/types.h>

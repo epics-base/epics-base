@@ -66,11 +66,7 @@ static char	*iocinfhSccsId = "@(#)iocinf.h	1.15\t6/2/93";
 #	include	<netinet/in.h>
 #  else
 #    if defined(vxWorks)
-#	ifdef V5_vxWorks
-#  		include	<vxWorks.h>
-#	else
-#  		include	<types.h>
-#	endif
+#	include	<vxWorks.h>
 #	include	<in.h>
 #    else
 	DONT_COMPILE

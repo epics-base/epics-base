@@ -1,4 +1,3 @@
-#ifdef V5_vxWorks
 
 static char *sccsId = "@(#)V5_vxWorks_patch.c	1.2\t7/27/92";
 
@@ -64,4 +63,3 @@ int taskVarGetPatch (tid, pVar)
     return (ERROR);
     }
 
-#endif

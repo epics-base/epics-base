@@ -4,7 +4,7 @@
  *
  *	Experimental Physics and Industrial Control System (EPICS)
  *
- *	Copyright 1991, the Regents of the University of California,
+ *	Copyright 1991-92, the Regents of the University of California,
  *	and the University of Chicago Board of Governors.
  *
  *	This software was produced under  U.S. Government contracts:
@@ -30,6 +30,8 @@
  * .02  06-19-91	rac	replace <fields.h> with <alarm.h>
  * .03	08-15-91	rac	use new call for sydOpen
  * .04	09-23-91	rac	allow async completion of ca_search
+ * .05	02-13-92	rac	use ADEL for monitoring; perform time-stamp
+ *				rounding if requested
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -244,12 +246,12 @@ chid	pCh;		/* channel pointer */
 	return retStat;
     }
     if (pSChan->evid == NULL) {
-	stat = ca_add_array_event(pSChan->dbrType, pSChan->elCount, pCh,
-			sydCAFuncMonHandler, NULL, 0., 0., 0., &pSChan->evid);
+	stat = ca_add_masked_array_event(pSChan->dbrType, pSChan->elCount, pCh,
+		sydCAFuncMonHandler, NULL, 0., 0., 0., &pSChan->evid, DBE_LOG);
 	if (stat != ECA_NORMAL) {
 	    retStat = S_syd_ERROR;
 	    (void)printf(
-		"sydCAFunc: error on ca_add_array_event(GR) for %s :\n%s\n",
+		"sydCAFunc: error on ca_add_masked_array_event for %s :\n%s\n",
 		pSChan->name, ca_message(stat));
 	    ca_clear_channel(pCh);
 	    return retStat;
@@ -315,6 +317,8 @@ struct connection_handler_args arg;
 *	removes it with sydSampleGet, then the oldest unretrieved data
 *	is lost.
 *
+*	If time stamp rounding is to be done, it is done here.
+*
 * RETURNS
 *	void
 *
@@ -350,6 +354,7 @@ struct event_handler_args arg;
     long	stat;
     int		i, i1, j;
     long	inStatus;
+    unsigned long roundTemp;
     union db_access_val *pBuf;
 
     pCh = arg.chid;
@@ -366,6 +371,17 @@ struct event_handler_args arg;
     if (!dbr_type_is_TIME(arg.type))
 	return;
 
+    if (pSspec->roundNsec > 0) {
+	roundTemp = pBuf->tfltval.stamp.nsec;
+	roundTemp = ( (roundTemp + pSspec->roundNsec/2) /
+				pSspec->roundNsec ) * pSspec->roundNsec;
+	if (roundTemp < 1000000000)
+	    pBuf->tfltval.stamp.nsec = roundTemp;
+	else {
+	    pBuf->tfltval.stamp.nsec = roundTemp - 1000000000;
+	    pBuf->tfltval.stamp.secPastEpoch += 1;;
+	}
+    }
     if (pSChan->lastInBuf == pSChan->firstInBuf &&
 		pBuf->tfltval.stamp.secPastEpoch != 0) {
 	if (pSspec->refTs.secPastEpoch == 0 ||

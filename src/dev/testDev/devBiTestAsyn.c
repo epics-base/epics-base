@@ -88,7 +88,7 @@ static long read_bi(pbi)
     switch (pbi->inp.type) {
     case (CONSTANT) :
 	if(pbi->pact) {
-		printf("%s Completed\n",pbi->name);
+		printf("Completed asynchronous processing: %s\n",pbi->name);
 		return(2); /* don't convert */
 	} else {
                 if(pbi->disv<=0) return(2);

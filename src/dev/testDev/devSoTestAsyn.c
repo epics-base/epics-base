@@ -86,7 +86,8 @@ static long write_stringout(pstringout)
     switch (pstringout->out.type) {
     case (CONSTANT) :
 	if(pstringout->pact) {
-		printf("%s Completed\n",pstringout->name);
+		printf("Completed asynchronous processing: %s\n",
+                    pstringout->name);
 		return(0); /* don`t convert*/
 	} else {
                 if(pstringout->disv<=0) return(2);

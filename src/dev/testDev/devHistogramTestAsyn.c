@@ -84,7 +84,8 @@ static long read_histogram(phistogram)
     switch (phistogram->svl.type) {
     case (CONSTANT) :
 	if(phistogram->pact) {
-		printf("%s Completed\n",phistogram->name);
+		printf("Completed asynchronous processing: %s\n",
+                    phistogram->name);
 		return(0); /*add count*/
 	} else {
                 if(phistogram->disv<=0) return(2);

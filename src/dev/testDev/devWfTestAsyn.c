@@ -87,7 +87,7 @@ static long read_wf(pwf)
     switch (pwf->inp.type) {
     case (CONSTANT) :
 	if(pwf->pact) {
-		printf("%s Completed\n",pwf->name);
+		printf("Completed asynchronous processing: %s\n",pwf->name);
 		return(0); /* don`t convert*/
 	} else {
                 if(pwf->disv<=0) return(2);

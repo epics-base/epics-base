@@ -87,7 +87,8 @@ static long read_stringin(pstringin)
     switch (pstringin->inp.type) {
     case (CONSTANT) :
 	if(pstringin->pact) {
-		printf("%s Completed\n",pstringin->name);
+		printf("Completed asynchronous processing: %s\n",
+                    pstringin->name);
 		return(0);
 	} else {
                 if(pstringin->disv<=0) return(2);

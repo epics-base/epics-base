@@ -88,7 +88,7 @@ static long read_mbbi(pmbbi)
     switch (pmbbi->inp.type) {
     case (CONSTANT) :
 	if(pmbbi->pact) {
-		printf("%s Completed\n",pmbbi->name);
+		printf("Completed asynchronous processing: %s\n",pmbbi->name);
 		return(2); /* don't convert */
 	} else {
                 if(pmbbi->disv<=0) return(2);

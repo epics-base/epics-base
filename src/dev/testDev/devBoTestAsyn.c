@@ -87,7 +87,7 @@ static long write_bo(pbo)
     switch (pbo->out.type) {
     case (CONSTANT) :
 	if(pbo->pact) {
-		printf("%s Completed\n",pbo->name);
+		printf("Completed asynchronous processing: %s\n",pbo->name);
 		return(0);
 	} else {
                 if(pbo->disv<=0) return(2);

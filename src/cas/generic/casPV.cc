@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.4  1996/11/02 00:54:21  jhill
+ * many improvements
+ *
  * Revision 1.3  1996/07/01 19:56:12  jhill
  * one last update prior to first release
  *
@@ -132,9 +135,27 @@ caStatus casPV::write(const casCtx &, gdd &)
 //
 // casPV::bestExternalType()
 //
-aitEnum casPV::bestExternalType() 
+aitEnum casPV::bestExternalType() const
 {
 	return aitEnumString;
+}
+
+//
+// casPV::maxDimension()
+// (base returns zero - scaler)
+//
+unsigned casPV::maxDimension() const
+{
+	return 0u;
+}
+
+//
+// casPV::maxBound()
+// (base returns scaler bound independent of the dimension arg)
+//
+aitIndex casPV::maxBound(unsigned /* dimension */) const
+{
+	return 1u;
 }
 
 //

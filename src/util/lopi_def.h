@@ -62,7 +62,7 @@ char *skipblanks();
 int getline();
 VOID lopi_conn_handler();
 VOID lopi_exception_handler();
-VOID add_ctl();
+LOCAL VOID add_ctl();
 VOID add_mon();
 VOID add_txt();
 char *skip_to_digit();

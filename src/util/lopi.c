@@ -1,4 +1,4 @@
-/*      $Id$	
+/*      @(#)lopi.c	1.6   6/23/92	
  *	Author: Betty Ann Gunther
  *	Date:	02-15-91
  *
@@ -1013,7 +1013,7 @@ static struct window_node *win_alloc()
 /*  points to the new node.                                                  */
 /*****************************************************************************/
 
-static int add_ctl(win_array,win_ctr,c_line)
+static void add_ctl(win_array,win_ctr,c_line)
     struct window_node *win_array[MAX_DISP_NUM]; 
     short win_ctr; /* Counters. */
     char *c_line;
@@ -1137,7 +1137,7 @@ static int add_ctl(win_array,win_ctr,c_line)
        new_ptr->r_crn_col = r_crn_col; 
       }
       
-   return (0);
+   return;
 
   }
 
@@ -1147,7 +1147,7 @@ static int add_ctl(win_array,win_ctr,c_line)
 /* node.                                                                            */
 /************************************************************************************/
 
-static int add_mon(win_array,win_ctr,m_line)
+static VOID add_mon(win_array,win_ctr,m_line)
     struct window_node *win_array[MAX_DISP_NUM]; 
     short win_ctr; /* Counters. */
     char *m_line;
@@ -1248,7 +1248,7 @@ static int add_mon(win_array,win_ctr,m_line)
         else if ((! (c_loc_flg)) || (! (r_loc_flg)) )
           printf("Incomplete location information for display. Channel omitted.\n");
       }
-   return (0); 
+   return; 
   }
 
 /************************************************************************************/
@@ -1257,7 +1257,7 @@ static int add_mon(win_array,win_ctr,m_line)
 /* node.                                                                            */
 /************************************************************************************/
 
-static  int add_txt(win_array,win_ctr,t_line)
+static VOID add_txt(win_array,win_ctr,t_line)
     struct window_node *win_array[MAX_DISP_NUM]; 
     short win_ctr; /* Counters. */
     char *t_line;
@@ -1366,7 +1366,7 @@ static  int add_txt(win_array,win_ctr,t_line)
         else if ((!(r_loc_flg)) ||  (! (c_loc_flg)))
           printf("Incomplete location information. Text node omitted.\n");
       }
-   return(0);   
+   return;   
   }
 
 /************************************************************************************/
@@ -1418,7 +1418,7 @@ static int to_short(pstr)
 /* control nodes. It is best to comment out print_menu when using this.              */
 /*************************************************************************************/
 
-static int read_disp_lst(wnd_array,nfiles)
+static VOID read_disp_lst(wnd_array,nfiles)
 struct window_node *wnd_array[MAX_DISP_NUM];
 int nfiles;
 {
@@ -1484,7 +1484,7 @@ int nfiles;
      }
       lopi_j = 1; 
    }
- return (0);
+ return;
 }  
  
 
@@ -1492,7 +1492,7 @@ int nfiles;
 /*  This function puts text specified by the user in the display file on the screen.   */
 /***************************************************************************************/
 
-static int display_text(disp_array,selected)
+static VOID display_text(disp_array,selected)
    struct window_node *disp_array[MAX_DISP_NUM];
    short selected;
    {
@@ -1513,7 +1513,7 @@ static int display_text(disp_array,selected)
        txt_ptr = txt_ptr->next;
       }
    
-    return (0);
+    return;
    }
 
 /***************************************************************************************/
@@ -1522,7 +1522,7 @@ static int display_text(disp_array,selected)
 /* selects and F7.                                                                      */
 /***************************************************************************************/
 
-static int display_file(disp_array,selected,screen_up,data_num,pdata_flg,k_buff,val_in)
+static VOID display_file(disp_array,selected,screen_up,data_num,pdata_flg,k_buff,val_in)
    struct window_node *disp_array[MAX_DISP_NUM];
    short selected;
    short *screen_up;
@@ -1730,7 +1730,7 @@ static int display_file(disp_array,selected,screen_up,data_num,pdata_flg,k_buff,
        stop_monitors(disp_array,selected); 
    } 
  
- return(0);
+ return;
 }
 
 /********************************************************************************/
@@ -2221,7 +2221,7 @@ VOID lopi_conn_handler(lopi_connect_arg)
 /*  Frees memory allocated by lopi.c                                                   */
 /*************************************************************************************/
 
-int free_mem(disp_array,dmenu,nlines,except_ptr)
+void free_mem(disp_array,dmenu,nlines,except_ptr)
    struct window_node *disp_array[MAX_DISP_NUM];
    int nlines;
    char *dmenu[MXMENU];    
@@ -2260,7 +2260,7 @@ int free_mem(disp_array,dmenu,nlines,except_ptr)
 
         }
         free(except_ptr);
-   return (0);
+   return;
   }
 
 /********************************************************************************/
@@ -2268,7 +2268,7 @@ int free_mem(disp_array,dmenu,nlines,except_ptr)
 /* points to.                                                                   */
 /********************************************************************************/
 
-put_value(c_ptr,val_in)
+void put_value(c_ptr,val_in)
   char val_in[MAX_STRING_SIZE];  /* Array containing value to be put. */
   struct mon_node *c_ptr;     /* Pointer to record of channel to which value is to
                                  be passes. */
@@ -2281,5 +2281,5 @@ put_value(c_ptr,val_in)
    status = ca_flush_io(); 
    if (status != ECA_NORMAL)
       logMsg("Message:%s\n",ca_message_text[CA_EXTRACT_MSG_NO(status)]);
-   return (0);
+   return; 
   }

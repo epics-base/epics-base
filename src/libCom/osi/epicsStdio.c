@@ -90,8 +90,9 @@ int epicsShareAPI epicsShareAPI epicsStdoutPrintf(const char *pFormat, ...)
 {
     va_list     pvar;
     int         nchar;
+    FILE        *stream = epicsGetStdout();
     va_start(pvar, pFormat);
-    nchar = vprintf(pFormat,pvar);
+    nchar = vfprintf(stream,pFormat,pvar);
     va_end (pvar);
     return(nchar);
 }

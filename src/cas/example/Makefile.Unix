@@ -4,6 +4,8 @@ TOP = $(CAS)/../..
 
 include $(TOP)/config/CONFIG_BASE
 
+CXXCMPLR = STRICT
+
 USR_INCLUDES = 
 USR_LDLIBS = -lcas -lca -lCom -lgdd 
 

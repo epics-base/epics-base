@@ -12,16 +12,16 @@ of this distribution.
 #define INCepicsRingPointerh
 
 /* NOTES
-    If there is only one writer it is not necessary to lock push
-    If there is a single reader it is not necessary to lock pop
-*/
+ *   If there is only one writer it is not necessary to lock push
+ *   If there is a single reader it is not necessary to lock pop
+ */
 
 #include "shareLib.h"
 
 #ifdef __cplusplus
-template <class T> class epicsRingPointer
-{
-public:
+template <class T>
+class epicsRingPointer {
+public: // Functions
     epicsRingPointer(int size);
     ~epicsRingPointer();
     bool push(T *p);
@@ -32,20 +32,22 @@ public:
     int getSize() const;
     bool isEmpty() const;
     bool isFull() const;
-private:
+
+private: // Prevent compiler-generated member functions
+    // default constructor, copy constructor, assignment operator
+    epicsRingPointer();
+    epicsRingPointer(const epicsRingPointer &);
+    epicsRingPointer& operator=(const epicsRingPointer &);
+
+private: // Data
     int nextPush;
     int nextPop;
     int size;
     T **buffer;
-    // copy constructor and assignment operator not allowed
-    epicsRingPointer(const epicsRingPointer &);
-    epicsRingPointer& operator=(const epicsRingPointer &);
 };
-#endif /*__cplusplus */
 
-#ifdef __cplusplus
 extern "C" {
-#endif
+#endif /*__cplusplus */
 
 typedef void *epicsRingPointerId;
 
@@ -65,23 +67,28 @@ epicsShareFunc int  epicsShareAPI epicsRingPointerIsFull(epicsRingPointerId id);
 #ifdef __cplusplus
 }
 #endif
+/* END OF DECLARATIONS */
 
-/* Following is implementation */
+/* INLINE FUNCTIONS */
+
 /* Algorithm note
-*  Space is allocated for one additional element.
-*  A put request is rejected if the it would cause nextPush to equal nextPop
-*  The algorithm does not require locking puts for a single writer
-*      or locking of gets for a single reader
-*/
+ *  Space is allocated for one additional element.
+ *  A put request is rejected if the it would cause nextPush to equal nextPop
+ *  The algorithm does not require locking puts for a single writer
+ *      or locking of gets for a single reader
+ */
 #ifdef __cplusplus
 
-template <class T> inline epicsRingPointer<T>::epicsRingPointer(int sz)
-: nextPush(0), nextPop(0), size(sz+1), buffer(new T* [sz+1]) {}
+template <class T>
+inline epicsRingPointer<T>::epicsRingPointer(int sz) :
+    nextPush(0), nextPop(0), size(sz+1), buffer(new T* [sz+1]) {}
 
-template <class T> inline epicsRingPointer<T>::~epicsRingPointer()
-{delete [] buffer;}
+template <class T>
+inline epicsRingPointer<T>::~epicsRingPointer()
+{   delete [] buffer;}
 
-template <class T> inline bool epicsRingPointer<T>::push(T *p)
+template <class T>
+inline bool epicsRingPointer<T>::push(T *p)
 {
     int newNext = nextPush +1;
     if(newNext>=size) newNext=0;
@@ -91,7 +98,8 @@ template <class T> inline bool epicsRingPointer<T>::push(T *p)
     return(true);
 }
 
-template <class T> inline T* epicsRingPointer<T>::pop()
+template <class T>
+inline T* epicsRingPointer<T>::pop()
 {
     if(nextPop == nextPush) return(0);
     T*p  = buffer[nextPop];
@@ -102,30 +110,36 @@ template <class T> inline T* epicsRingPointer<T>::pop()
     return(p);
 }
 
-template <class T> inline void epicsRingPointer<T>::flush()
-{ nextPop = nextPush = 0;}
+template <class T>
+inline void epicsRingPointer<T>::flush()
+{   nextPop = nextPush = 0;}
 
-template <class T> inline int epicsRingPointer<T>::getFree() const
+template <class T>
+inline int epicsRingPointer<T>::getFree() const
 {
     int n = nextPop - nextPush - 1;
     if (n < 0) n += size;
     return n;
 }
 
-template <class T> inline int epicsRingPointer<T>::getUsed() const
+template <class T>
+inline int epicsRingPointer<T>::getUsed() const
 {
     int n = nextPush - nextPop;
     if (n < 0) n += size;
     return n;
 }
 
-template <class T> inline int epicsRingPointer<T>::getSize() const
-{return(size-1);}
+template <class T>
+inline int epicsRingPointer<T>::getSize() const
+{   return(size-1);}
 
-template <class T> inline bool epicsRingPointer<T>::isEmpty() const
-{return(nextPush==nextPop);}
+template <class T>
+inline bool epicsRingPointer<T>::isEmpty() const
+{   return(nextPush==nextPop);}
 
-template <class T> inline bool epicsRingPointer<T>::isFull() const
+template <class T>
+inline bool epicsRingPointer<T>::isFull() const
 {
     int count = nextPush - nextPop +1;
     return((count == 0) || (count == size));

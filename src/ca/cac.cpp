@@ -128,6 +128,11 @@ extern "C" void cacOnceFunc ( void * )
 //
 cac::cac ( cacNotify & notifyIn, bool enablePreemptiveCallbackIn ) :
     ipToAEngine ( "caIPAddrToAsciiEngine" ), 
+    programBeginTime ( epicsTime::getCurrent() ),
+    connTMO ( CA_CONN_VERIFY_PERIOD ),
+    timerQueue ( epicsTimerQueueActive::allocate ( false, 
+        lowestPriorityLevelAbove(epicsThreadGetPrioritySelf()) ) ),
+    pUserName ( 0 ),
     pudpiiu ( 0 ),
     pSearchTmr ( 0 ),
     pRepeaterSubscribeTmr ( 0 ),
@@ -135,116 +140,94 @@ cac::cac ( cacNotify & notifyIn, bool enablePreemptiveCallbackIn ) :
     tcpLargeRecvBufFreeList ( 0 ),
     pCallbackLocker ( 0 ),
     notify ( notifyIn ),
-    initializingThreadsPriority ( epicsThreadGetPrioritySelf () ),
+    initializingThreadsPriority ( epicsThreadGetPrioritySelf() ),
     maxRecvBytesTCP ( MAX_TCP ),
     pndRecvCnt ( 0u ), 
     readSeq ( 0u ),
     recvThreadsPendingCount ( 0u )
 {
-	long status;
-    unsigned abovePriority;
-
-    epicsThreadOnce ( &cacOnce, cacOnceFunc, 0 );
-
 	if ( ! osiSockAttach () ) {
         throwWithLocation ( caErrorCode (ECA_INTERNAL) );
 	}
 
-    {
-        epicsThreadBooleanStatus tbs;
+    epicsThreadOnce ( &cacOnce, cacOnceFunc, 0 );
 
-        tbs = epicsThreadLowestPriorityLevelAbove ( this->initializingThreadsPriority, &abovePriority );
-        if ( tbs != epicsThreadBooleanStatusSuccess ) {
-            abovePriority = this->initializingThreadsPriority;
+    try {
+	    long status;
+
+        installSigPipeIgnore ();
+
+        {
+            char tmp[256];
+            size_t len;
+            osiGetUserNameReturn gunRet;
+
+            gunRet = osiGetUserName ( tmp, sizeof (tmp) );
+            if ( gunRet != osiGetUserNameSuccess ) {
+                tmp[0] = '\0';
+            }
+            len = strlen ( tmp ) + 1;
+            this->pUserName = new ( std::nothrow ) char [ len ];
+            if ( ! this->pUserName ) {
+                throw std::bad_alloc ();
+            }
+            strncpy ( this->pUserName, tmp, len );
         }
-    }
 
-    installSigPipeIgnore ();
-
-    {
-        char tmp[256];
-        size_t len;
-        osiGetUserNameReturn gunRet;
-
-        gunRet = osiGetUserName ( tmp, sizeof (tmp) );
-        if ( gunRet != osiGetUserNameSuccess ) {
-            tmp[0] = '\0';
+        status = envGetDoubleConfigParam ( &EPICS_CA_CONN_TMO, &this->connTMO );
+        if ( status ) {
+            this->connTMO = CA_CONN_VERIFY_PERIOD;
+            this->printf ( "EPICS \"%s\" double fetch failed\n", EPICS_CA_CONN_TMO.name);
+            this->printf ( "Defaulting \"%s\" = %f\n", EPICS_CA_CONN_TMO.name, this->connTMO);
         }
-        len = strlen ( tmp ) + 1;
-        // Tornado II doesnt like new ( std::nothrow )
-        this->pUserName = new /*( std::nothrow )*/ char [ len ];
-        if ( ! this->pUserName ) {
+
+        long maxBytesAsALong;
+        status =  envGetLongConfigParam ( &EPICS_CA_MAX_ARRAY_BYTES, &maxBytesAsALong );
+        if ( status || maxBytesAsALong < 0 ) {
+            errlogPrintf ( "cac: EPICS_CA_MAX_ARRAY_BYTES was not a positive integer\n" );
+        }
+        else {
+            /* allow room for the protocol header so that they get the array size they requested */
+            static const unsigned headerSize = sizeof ( caHdr ) + 2 * sizeof ( ca_uint32_t );
+            ca_uint32_t maxBytes = ( unsigned ) maxBytesAsALong;
+            if ( maxBytes < 0xffffffff - headerSize ) {
+                maxBytes += headerSize;
+            }
+            else {
+                maxBytes = 0xffffffff;
+            }
+            if ( maxBytes < MAX_TCP ) {
+                errlogPrintf ( "cac: EPICS_CA_MAX_ARRAY_BYTES was rounded up to %u\n", MAX_TCP );
+            }
+            else {
+                this->maxRecvBytesTCP = maxBytes;
+            }
+        }
+        freeListInitPvt ( &this->tcpSmallRecvBufFreeList, MAX_TCP, 1 );
+        if ( ! this->tcpSmallRecvBufFreeList ) {
             throw std::bad_alloc ();
         }
-        strncpy ( this->pUserName, tmp, len );
-    }
 
-    this->programBeginTime = epicsTime::getCurrent ();
+        freeListInitPvt ( &this->tcpLargeRecvBufFreeList, this->maxRecvBytesTCP, 1 );
+        if ( ! this->tcpLargeRecvBufFreeList ) {
+            throw std::bad_alloc ();
+        }
 
-    status = envGetDoubleConfigParam ( &EPICS_CA_CONN_TMO, &this->connTMO );
-    if ( status ) {
-        this->connTMO = CA_CONN_VERIFY_PERIOD;
-        this->printf ( "EPICS \"%s\" double fetch failed\n", EPICS_CA_CONN_TMO.name);
-        this->printf ( "Defaulting \"%s\" = %f\n", EPICS_CA_CONN_TMO.name, this->connTMO);
-    }
-
-    long maxBytesAsALong;
-    status =  envGetLongConfigParam ( &EPICS_CA_MAX_ARRAY_BYTES, &maxBytesAsALong );
-    if ( status || maxBytesAsALong < 0 ) {
-        errlogPrintf ( "cac: EPICS_CA_MAX_ARRAY_BYTES was not a positive integer\n" );
-    }
-    else {
-        /* allow room for the protocol header so that they get the array size they requested */
-        static const unsigned headerSize = sizeof ( caHdr ) + 2 * sizeof ( ca_uint32_t );
-        ca_uint32_t maxBytes = ( unsigned ) maxBytesAsALong;
-        if ( maxBytes < 0xffffffff - headerSize ) {
-            maxBytes += headerSize;
-        }
-        else {
-            maxBytes = 0xffffffff;
-        }
-        if ( maxBytes < MAX_TCP ) {
-            errlogPrintf ( "cac: EPICS_CA_MAX_ARRAY_BYTES was rounded up to %u\n", MAX_TCP );
-        }
-        else {
-            this->maxRecvBytesTCP = maxBytes;
+        if ( ! enablePreemptiveCallbackIn ) {
+            this->pCallbackLocker = new callbackAutoMutex ( *this );
         }
     }
-    freeListInitPvt ( &this->tcpSmallRecvBufFreeList, MAX_TCP, 1 );
-    if ( ! this->tcpSmallRecvBufFreeList ) {
+    catch ( ... ) {
         osiSockRelease ();
         delete [] this->pUserName;
-        throw std::bad_alloc ();
-    }
-
-    freeListInitPvt ( &this->tcpLargeRecvBufFreeList, this->maxRecvBytesTCP, 1 );
-    if ( ! this->tcpLargeRecvBufFreeList ) {
-        osiSockRelease ();
-        delete [] this->pUserName;
-        freeListCleanup ( this->tcpSmallRecvBufFreeList );
-        throw std::bad_alloc ();
-    }
-
-    this->pTimerQueue = & epicsTimerQueueActive::allocate ( false, abovePriority );
-    if ( ! this->pTimerQueue ) {
-        osiSockRelease ();
-        delete [] this->pUserName;
-        freeListCleanup ( this->tcpSmallRecvBufFreeList );
-        freeListCleanup ( this->tcpLargeRecvBufFreeList );
-        throw std::bad_alloc ();
-    }
-
-    if ( ! enablePreemptiveCallbackIn ) {
-        // Tornado II doesnt like new ( std::nothrow )
-        this->pCallbackLocker = new /*( std::nothrow )*/ callbackAutoMutex ( *this );
-        if ( ! this->pCallbackLocker ) {
-            osiSockRelease ();
-            delete [] this->pUserName;
+        if ( this->tcpSmallRecvBufFreeList ) {
             freeListCleanup ( this->tcpSmallRecvBufFreeList );
-            freeListCleanup ( this->tcpLargeRecvBufFreeList );
-            this->pTimerQueue->release ();
-            throw std::bad_alloc ();
         }
+        if ( this->tcpLargeRecvBufFreeList ) {
+            freeListCleanup ( this->tcpLargeRecvBufFreeList );
+        }
+        this->timerQueue.release ();
+        throw;
     }
 }
 
@@ -315,7 +298,31 @@ cac::~cac ()
 
     osiSockRelease ();
 
-    this->pTimerQueue->release ();
+    this->timerQueue.release ();
+}
+
+unsigned cac::lowestPriorityLevelAbove ( unsigned priority )
+{
+    unsigned abovePriority;
+    epicsThreadBooleanStatus tbs;
+    tbs = epicsThreadLowestPriorityLevelAbove ( 
+        priority, & abovePriority );
+    if ( tbs != epicsThreadBooleanStatusSuccess ) {
+        abovePriority = priority;
+    }
+    return abovePriority;
+}
+
+unsigned cac::highestPriorityLevelBelow ( unsigned priority )
+{
+    unsigned belowPriority;
+    epicsThreadBooleanStatus tbs;
+    tbs = epicsThreadHighestPriorityLevelBelow ( 
+        priority, & belowPriority );
+    if ( tbs != epicsThreadBooleanStatusSuccess ) {
+        belowPriority = priority;
+    }
+    return belowPriority;
 }
 
 //
@@ -373,10 +380,8 @@ void cac::show ( unsigned level ) const
         this->sgTable.show ( level - 3u );
         ::printf ( "Beacon source identifier hash table:\n" );
         this->beaconTable.show ( level - 3u );
-        if ( this->pTimerQueue ) {
-            ::printf ( "Timer queue:\n" );
-            this->pTimerQueue->show ( level - 3u );
-        }
+        ::printf ( "Timer queue:\n" );
+        this->timerQueue.show ( level - 3u );
         if ( this->pSearchTmr ) {
             ::printf ( "search message timer:\n" );
             this->pSearchTmr->show ( level - 3u );
@@ -682,14 +687,14 @@ bool cac::setupUDP ()
     }
 
     if ( ! this->pSearchTmr ) {
-        this->pSearchTmr = new searchTimer ( *this->pudpiiu, *this->pTimerQueue, this->mutex );
+        this->pSearchTmr = new searchTimer ( *this->pudpiiu, this->timerQueue, this->mutex );
         if ( ! this->pSearchTmr ) {
             return false;
         }
     }
 
     if ( ! this->pRepeaterSubscribeTmr ) {
-        this->pRepeaterSubscribeTmr = new repeaterSubscribeTimer ( *this->pudpiiu, *this->pTimerQueue );
+        this->pRepeaterSubscribeTmr = new repeaterSubscribeTimer ( *this->pudpiiu, this->timerQueue );
         if ( ! this->pRepeaterSubscribeTmr ) {
             return false;
         }
@@ -750,7 +755,7 @@ bool cac::lookupChannelAndTransferToTCP ( unsigned cid, unsigned sid,
         }
         else {
             try {
-                piiu = new tcpiiu ( *this, this->connTMO, *this->pTimerQueue,
+                piiu = new tcpiiu ( *this, this->connTMO, this->timerQueue,
                             addr, minorVersionNumber, this->ipToAEngine,
                             chan->getPriority() );
                 if ( ! piiu ) {
@@ -1850,3 +1855,4 @@ void cac::udpWakeup ()
         this->pudpiiu->wakeupMsg ();
     }
 }
+

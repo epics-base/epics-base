@@ -52,6 +52,19 @@ typedef struct {
     chid		chid;
 } CAPVT;
 
+static void exceptionCallback(struct exception_handler_args args)
+{
+    chid        chid = args.chid;
+    long        stat = args.stat; /* Channel access status code*/
+    const char  *channel;
+    static char *noname = "unknown";
+
+    channel = (chid ? ca_name(chid) : noname);
+
+    errlogPrintf("asCa:exceptionCallback stat %s channel %s\n",
+        ca_message(stat),channel);
+}
+
 /*connectCallback only handles disconnects*/
 LOCAL void connectCallback(struct connection_handler_args arg)
 {
@@ -135,6 +148,8 @@ LOCAL void asCaTask(void)
 
     taskwdInsert(taskIdSelf(),NULL,NULL);
     SEVCHK(ca_task_initialize(),"ca_task_initialize");
+    SEVCHK(ca_add_exception_event(exceptionCallback,NULL),
+        "ca_add_exception_event");
     while(TRUE) { 
         if(semTake(asCaTaskAddChannels,WAIT_FOREVER)!=OK) {
 	    epicsPrintf("asCa semTake error for asCaTaskClearChannels\n");

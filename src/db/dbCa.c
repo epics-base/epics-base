@@ -432,6 +432,20 @@ int dbCaGetLinkDBFtype(struct link *plink)
 }
 
 
+static void exceptionCallback(struct exception_handler_args args)
+{
+    chid        chid = args.chid;
+    long        stat = args.stat; /* Channel access status code*/
+    const char  *channel;
+    static char *noname = "unknown";
+
+    channel = (chid ? ca_name(chid) : noname);
+
+    errlogPrintf("dbCa:exceptionCallback stat %s channel %s\n",
+        ca_message(stat),channel);
+}
+
+
 static void eventCallback(struct event_handler_args arg)
 {
 	caLink		*pca = (caLink *)arg.usr;
@@ -635,6 +649,8 @@ void dbCaTask()
     int		status;
 
     SEVCHK(ca_task_initialize(),NULL);
+    SEVCHK(ca_add_exception_event(exceptionCallback,NULL),
+        "ca_add_exception_event");
     /*Dont do anything until iocInit initializes database*/
     while(!interruptAccept) taskDelay(10);
     /* channel access event loop */

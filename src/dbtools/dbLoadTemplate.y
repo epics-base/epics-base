@@ -35,6 +35,7 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "macLib.h"
 #include "dbAccess.h"

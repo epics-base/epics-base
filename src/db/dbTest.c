@@ -974,7 +974,7 @@ static int dbpr_report(pname, paddr, interest_level, pMsgBuff, tab_size)
     char            field_name[FLDNAME_SZ + 1];	/* pv field name */
     char           *pPvName;
     char            PvName[PVNAME_SZ + FLDNAME_SZ + 4];	/* recordname.<pvname> */
-    short           n;
+    short           n,n2;
     long            status;
     long            buffer[100];
     caddr_t         pbuffer;
@@ -1000,7 +1000,9 @@ static int dbpr_report(pname, paddr, interest_level, pMsgBuff, tab_size)
 	  dbprGetRecTypDes(paddr->record_type)))
 	return (-1);
 
-    for (fldNum = 0; fldNum <= precTypDes->no_fields - 1; fldNum++) {
+    for (n2 = 0; n2 <= precTypDes->no_fields - 1; n2++) {
+        fldNum = precTypDes->sortFldInd[n2];
+
 	/* get ptr to field descriptor */
 	if (!(pfldDes = (struct fldDes *)
 	      dbprGetFldRec(paddr->record_type, fldNum))) {

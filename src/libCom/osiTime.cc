@@ -237,7 +237,7 @@ osiTime::operator tm_nano_sec () const
 	ansiTimeTicks = *this;
 
 	// from POSIX RT
-	localtime_r (&ansiTimeTicks.ts, &tm.tm);
+	localtime_r (&ansiTimeTicks.ts, &tm.ansi_tm);
 
 	tm.nsec = this->nSec;
 
@@ -250,7 +250,7 @@ osiTime::operator tm_nano_sec () const
 osiTime::osiTime (const struct tm_nano_sec &tm)
 {
 	time_t ansiTimeTicks;
-	struct tm tmp = tm.tm;
+	struct tm tmp = tm.ansi_tm;
 
 	ansiTimeTicks = mktime (&tmp);
 	assert (ansiTimeTicks!=(time_t)-1);
@@ -280,13 +280,13 @@ inline osiTime::osiTime (const struct timespec &ts)
 {
 	this->sec = osiTime::time_tToInternalSec (ts.tv_sec);
 	assert (ts.tv_nsec>=0);
-	unsigned long nSec = static_cast<unsigned long> (ts.tv_nsec);
-	if (nSec<nSecPerSec) {
-		this->nSec = nSec;
+	unsigned long nSecIn = static_cast<unsigned long> (ts.tv_nsec);
+	if (nSecIn<nSecPerSec) {
+		this->nSec = nSecIn;
 	}
 	else {
-		this->sec += nSec / nSecPerSec;
-		this->nSec = nSec % nSecPerSec;
+		this->sec += nSecIn / nSecPerSec;
+		this->nSec = nSecIn % nSecPerSec;
 	}
 }
 
@@ -349,7 +349,7 @@ void osiTime::show (unsigned) const
 	char bigBuffer[256];
 	tm_nano_sec tmns = *this;
 
-	status = strftime (bigBuffer, sizeof(bigBuffer), "%c", &tmns.tm);
+	status = strftime (bigBuffer, sizeof(bigBuffer), "%c", &tmns.ansi_tm);
 	if (status>0) {
 		printf ("osiTime: %s %f\n", bigBuffer, 
 			static_cast <double> (tmns.nsec) / nSecPerSec);

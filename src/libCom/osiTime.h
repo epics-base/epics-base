@@ -47,7 +47,7 @@ struct timespec; // POSIX real time
 // an extended ANSI C RTL "struct tm" which includes nano seconds. 
 //
 struct tm_nano_sec {
-	tm tm; // ANSI C time details
+	tm ansi_tm; // ANSI C time details
 	unsigned long nsec; // nano seconds extension
 };
 

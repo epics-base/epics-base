@@ -1,5 +1,8 @@
 /* $Id$
  * $Log$
+ * Revision 1.9  1998/11/23 23:51:04  jhill
+ * fixed warning
+ *
  * Revision 1.8  1998/11/23 23:49:29  jhill
  * added build date to corerelease()
  *
@@ -29,8 +32,9 @@
 #include    <stdio.h>
 #include    <epicsVersion.h>
 
-    char *epicsRelease= "@(#)EPICS IOC CORE";
-    char *epicsRelease1 = epicsReleaseVersion;
+char *epicsRelease= "@(#)EPICS IOC CORE built on " __DATE__;
+char *epicsRelease1 = epicsReleaseVersion;
+
 int coreRelease()
 {
     printf ("############################################################################\n");

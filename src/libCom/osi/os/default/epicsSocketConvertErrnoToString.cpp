@@ -16,8 +16,10 @@
  *
  */
 
+#include <string.h>
+
 #define epicsExportSharedSymbols
-#incude "osiSock.h"
+#include "osiSock.h"
 
 /*
  * epicsSocketConvertErrnoToString()

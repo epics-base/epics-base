@@ -1417,8 +1417,10 @@ static void dbprReportDevice(
 
     if(!pdbDeviceMenu) {
 	sprintf(pmsg,"%s menu not found",pdbFldDes->name);
-    } else {
+    } else if(pdbDeviceMenu->nChoice>0) {
 	sprintf(pmsg,"%4s: %s",pdbFldDes->name,pdbDeviceMenu->papChoice[value]);
+    } else {
+	sprintf(pmsg,"DTYP: none");
     }
     dbpr_msgOut(pMsgBuff,tab_size);
     return;

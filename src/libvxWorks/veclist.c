@@ -211,6 +211,7 @@ union pointer{
 	struct char_array 	char_overlay;
 };
 
+LOCAL
 void *fetch_pointer(unsigned char *plow_byte)
 {
 	union pointer	p;

@@ -1,0 +1,16 @@
+recordtype(state) {
+	include "dbCommon.ascii" 
+	field(VAL,DBF_STRING) {
+		prompt("Value")
+		promptgroup(GUI_DISPLAY)
+		asl(ASL0)
+		pp(TRUE)
+		size(20)
+	}
+	field(OVAL,DBF_STRING) {
+		prompt("Prev Value")
+		special(SPC_NOMOD)
+		interest(3)
+		size(20)
+	}
+}

@@ -1,0 +1,220 @@
+recordtype(ai) {
+	include "dbCommon.ascii" 
+	field(VAL,DBF_DOUBLE) {
+		prompt("Current EGU Value")
+		asl(ASL0)
+		pp(TRUE)
+	}
+	field(INP,DBF_INLINK) {
+		prompt("Input Specification")
+		promptgroup(GUI_INPUTS)
+		special(SPC_NOMOD)
+		interest(1)
+	}
+	field(PREC,DBF_SHORT) {
+		prompt("Display Precision")
+		promptgroup(GUI_DISPLAY)
+		interest(1)
+	}
+	field(LINR,DBF_MENU) {
+		prompt("Linearization")
+		promptgroup(GUI_CONVERT)
+		special(SPC_LINCONV)
+		pp(TRUE)
+		interest(1)
+		menu(menuConvert)
+	}
+	field(EGUF,DBF_FLOAT) {
+		prompt("Engineer Units Full")
+		promptgroup(GUI_CONVERT)
+		special(SPC_LINCONV)
+		pp(TRUE)
+		interest(1)
+	}
+	field(EGUL,DBF_FLOAT) {
+		prompt("Engineer Units Low")
+		promptgroup(GUI_CONVERT)
+		special(SPC_LINCONV)
+		pp(TRUE)
+		interest(1)
+	}
+	field(EGU,DBF_STRING) {
+		prompt("Engineering Units")
+		promptgroup(GUI_DISPLAY)
+		interest(1)
+		size(16)
+	}
+	field(HOPR,DBF_FLOAT) {
+		prompt("High Operating Range")
+		promptgroup(GUI_DISPLAY)
+		interest(1)
+	}
+	field(LOPR,DBF_FLOAT) {
+		prompt("Low Operating Range")
+		promptgroup(GUI_DISPLAY)
+		interest(1)
+	}
+	field(AOFF,DBF_FLOAT) {
+		prompt("Adjustment Offset")
+		promptgroup(GUI_CONVERT)
+		pp(TRUE)
+		interest(1)
+	}
+	field(ASLO,DBF_FLOAT) {
+		prompt("Adjustment Slope")
+		promptgroup(GUI_CONVERT)
+		pp(TRUE)
+		interest(1)
+		initial("1")
+	}
+	field(SMOO,DBF_FLOAT) {
+		prompt("Smoothing")
+		promptgroup(GUI_CONVERT)
+		interest(1)
+	}
+	field(HIHI,DBF_FLOAT) {
+		prompt("Hihi Alarm Limit")
+		promptgroup(GUI_ALARMS)
+		pp(TRUE)
+		interest(1)
+	}
+	field(LOLO,DBF_FLOAT) {
+		prompt("Lolo Alarm Limit")
+		promptgroup(GUI_ALARMS)
+		pp(TRUE)
+		interest(1)
+	}
+	field(HIGH,DBF_FLOAT) {
+		prompt("High Alarm Limit")
+		promptgroup(GUI_ALARMS)
+		pp(TRUE)
+		interest(1)
+	}
+	field(LOW,DBF_FLOAT) {
+		prompt("Low Alarm Limit")
+		promptgroup(GUI_ALARMS)
+		pp(TRUE)
+		interest(1)
+	}
+	field(HHSV,DBF_MENU) {
+		prompt("Hihi Severity")
+		promptgroup(GUI_ALARMS)
+		pp(TRUE)
+		interest(1)
+		menu(menuAlarmSevr)
+	}
+	field(LLSV,DBF_MENU) {
+		prompt("Lolo Severity")
+		promptgroup(GUI_ALARMS)
+		pp(TRUE)
+		interest(1)
+		menu(menuAlarmSevr)
+	}
+	field(HSV,DBF_MENU) {
+		prompt("High Severity")
+		promptgroup(GUI_ALARMS)
+		pp(TRUE)
+		interest(1)
+		menu(menuAlarmSevr)
+	}
+	field(LSV,DBF_MENU) {
+		prompt("Low Severity")
+		promptgroup(GUI_ALARMS)
+		pp(TRUE)
+		interest(1)
+		menu(menuAlarmSevr)
+	}
+	field(HYST,DBF_DOUBLE) {
+		prompt("Alarm Deadband")
+		promptgroup(GUI_ALARMS)
+		interest(1)
+	}
+	field(ADEL,DBF_DOUBLE) {
+		prompt("Archive Deadband")
+		promptgroup(GUI_DISPLAY)
+		interest(1)
+	}
+	field(MDEL,DBF_DOUBLE) {
+		prompt("Monitor Deadband")
+		promptgroup(GUI_DISPLAY)
+		interest(1)
+	}
+	field(LALM,DBF_DOUBLE) {
+		prompt("Last Value Alarmed")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(ALST,DBF_DOUBLE) {
+		prompt("Last Value Archived")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(MLST,DBF_DOUBLE) {
+		prompt("Last Val Monitored")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(ESLO,DBF_DOUBLE) {
+		prompt("Rawto EGU Slope")
+		special(SPC_NOMOD)
+		interest(2)
+		initial("1")
+	}
+	field(ROFF,DBF_LONG) {
+		prompt("Raw Offset")
+		pp(TRUE)
+		interest(2)
+	}
+	field(PBRK,DBF_NOACCESS) {
+		prompt("Ptrto brkTable")
+		special(SPC_NOMOD)
+		interest(4)
+		size(4)
+		extra("void *	pbrk")
+	}
+	field(INIT,DBF_SHORT) {
+		prompt("Initialized?")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LBRK,DBF_SHORT) {
+		prompt("LastBreak Point")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(RVAL,DBF_LONG) {
+		prompt("Current Raw Value")
+		pp(TRUE)
+	}
+	field(ORAW,DBF_LONG) {
+		prompt("Previous Raw Value")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(SIOL,DBF_INLINK) {
+		prompt("Sim Input Specifctn")
+		promptgroup(GUI_INPUTS)
+		special(SPC_NOMOD)
+		interest(1)
+	}
+	field(SVAL,DBF_DOUBLE) {
+		prompt("Simulation Value")
+	}
+	field(SIML,DBF_INLINK) {
+		prompt("Sim Mode Location")
+		promptgroup(GUI_INPUTS)
+		special(SPC_NOMOD)
+		interest(1)
+	}
+	field(SIMM,DBF_MENU) {
+		prompt("Simulation Mode")
+		interest(1)
+		menu(menuYesNo)
+	}
+	field(SIMS,DBF_MENU) {
+		prompt("Sim mode Alarm Svrty")
+		promptgroup(GUI_INPUTS)
+		interest(2)
+		menu(menuAlarmSevr)
+	}
+}

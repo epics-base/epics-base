@@ -1,0 +1,177 @@
+recordtype(dfanout) {
+	include "dbCommon.ascii" 
+	field(VAL,DBF_LONG) {
+		prompt("Desired Output")
+		asl(ASL0)
+		pp(TRUE)
+	}
+	field(OUTA,DBF_OUTLINK) {
+		prompt("Output Spec A")
+		promptgroup(GUI_OUTPUT)
+		special(SPC_NOMOD)
+		interest(1)
+	}
+	field(OUTB,DBF_OUTLINK) {
+		prompt("Output Spec B")
+		promptgroup(GUI_OUTPUT)
+		special(SPC_NOMOD)
+		interest(1)
+	}
+	field(OUTC,DBF_OUTLINK) {
+		prompt("Output Spec C")
+		promptgroup(GUI_OUTPUT)
+		special(SPC_NOMOD)
+		interest(1)
+	}
+	field(OUTD,DBF_OUTLINK) {
+		prompt("Output Spec D")
+		promptgroup(GUI_OUTPUT)
+		special(SPC_NOMOD)
+		interest(1)
+	}
+	field(OUTE,DBF_OUTLINK) {
+		prompt("Output Spec E")
+		promptgroup(GUI_OUTPUT)
+		special(SPC_NOMOD)
+		interest(1)
+	}
+	field(OUTF,DBF_OUTLINK) {
+		prompt("Output Spec F")
+		promptgroup(GUI_OUTPUT)
+		special(SPC_NOMOD)
+		interest(1)
+	}
+	field(OUTG,DBF_OUTLINK) {
+		prompt("Output Spec G")
+		promptgroup(GUI_OUTPUT)
+		special(SPC_NOMOD)
+		interest(1)
+	}
+	field(OUTH,DBF_OUTLINK) {
+		prompt("Output Spec H")
+		promptgroup(GUI_OUTPUT)
+		special(SPC_NOMOD)
+		interest(1)
+	}
+	field(DOL,DBF_INLINK) {
+		prompt("Desired Output Loc")
+		promptgroup(GUI_INPUTS)
+		special(SPC_NOMOD)
+		interest(1)
+	}
+	field(OMSL,DBF_MENU) {
+		prompt("Output Mode Select")
+		promptgroup(GUI_OUTPUT)
+		interest(1)
+		menu(menuOmsl)
+	}
+	field(EGU,DBF_STRING) {
+		prompt("Units name")
+		promptgroup(GUI_DISPLAY)
+		interest(1)
+		size(16)
+	}
+	field(HOPR,DBF_LONG) {
+		prompt("High Operating Range")
+		promptgroup(GUI_DISPLAY)
+		interest(1)
+	}
+	field(LOPR,DBF_LONG) {
+		prompt("Low Operating Range")
+		promptgroup(GUI_DISPLAY)
+		interest(1)
+	}
+	field(HIHI,DBF_LONG) {
+		prompt("Hihi Alarm Limit")
+		promptgroup(GUI_ALARMS)
+		pp(TRUE)
+		interest(1)
+	}
+	field(LOLO,DBF_LONG) {
+		prompt("Lolo Alarm Limit")
+		promptgroup(GUI_ALARMS)
+		pp(TRUE)
+		interest(1)
+	}
+	field(HIGH,DBF_LONG) {
+		prompt("High Alarm Limit")
+		promptgroup(GUI_ALARMS)
+		pp(TRUE)
+		interest(1)
+	}
+	field(LOW,DBF_LONG) {
+		prompt("Low Alarm Limit")
+		promptgroup(GUI_ALARMS)
+		pp(TRUE)
+		interest(1)
+	}
+	field(HHSV,DBF_MENU) {
+		prompt("Hihi Severity")
+		promptgroup(GUI_ALARMS)
+		pp(TRUE)
+		interest(1)
+		menu(menuAlarmSevr)
+	}
+	field(LLSV,DBF_MENU) {
+		prompt("Lolo Severity")
+		promptgroup(GUI_ALARMS)
+		pp(TRUE)
+		interest(1)
+		menu(menuAlarmSevr)
+	}
+	field(HSV,DBF_MENU) {
+		prompt("High Severity")
+		promptgroup(GUI_ALARMS)
+		pp(TRUE)
+		interest(1)
+		menu(menuAlarmSevr)
+	}
+	field(LSV,DBF_MENU) {
+		prompt("Low Severity")
+		promptgroup(GUI_ALARMS)
+		pp(TRUE)
+		interest(1)
+		menu(menuAlarmSevr)
+	}
+	field(HYST,DBF_LONG) {
+		prompt("Alarm Deadband")
+		promptgroup(GUI_ALARMS)
+		interest(1)
+	}
+	field(ADEL,DBF_LONG) {
+		prompt("Archive Deadband")
+		promptgroup(GUI_DISPLAY)
+		interest(1)
+	}
+	field(MDEL,DBF_LONG) {
+		prompt("Monitor Deadband")
+		promptgroup(GUI_DISPLAY)
+		interest(1)
+	}
+	field(LALM,DBF_LONG) {
+		prompt("Last Value Alarmed")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(ALST,DBF_LONG) {
+		prompt("Last Value Archived")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(MLST,DBF_LONG) {
+		prompt("Last Val Monitored")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(IVOA,DBF_MENU) {
+		prompt("INVALID output action")
+		promptgroup(GUI_OUTPUT)
+		interest(2)
+		menu(menuIvoa)
+	}
+	field(IVOV,DBF_LONG) {
+		prompt("INVALID output value")
+		promptgroup(GUI_OUTPUT)
+		interest(2)
+	}
+}

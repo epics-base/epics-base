@@ -1,0 +1,78 @@
+recordtype(subArray) {
+	include "dbCommon.ascii" 
+	field(VAL,DBF_NOACCESS) {
+		prompt("Value")
+		asl(ASL0)
+		special(SPC_DBADDR)
+		pp(TRUE)
+		size(4)
+		extra("void *		val")
+	}
+	field(PREC,DBF_SHORT) {
+		prompt("Display Precision")
+		promptgroup(GUI_COMMON)
+		interest(1)
+	}
+	field(FTVL,DBF_MENU) {
+		prompt("Field Type of Value")
+		promptgroup(GUI_ALARMS)
+		special(SPC_NOMOD)
+		interest(1)
+		menu(menuFtype)
+	}
+	field(INP,DBF_INLINK) {
+		prompt("Input Specification")
+		promptgroup(GUI_BITS1)
+		special(SPC_NOMOD)
+		interest(1)
+	}
+	field(EGU,DBF_STRING) {
+		prompt("Engineering Units Name")
+		promptgroup(GUI_BITS2)
+		interest(1)
+		size(16)
+	}
+	field(HOPR,DBF_FLOAT) {
+		prompt("High Operating Range")
+		promptgroup(GUI_CALC)
+		interest(1)
+	}
+	field(LOPR,DBF_FLOAT) {
+		prompt("Low Operating Range")
+		promptgroup(GUI_CLOCK)
+		interest(1)
+	}
+	field(MALM,DBF_ULONG) {
+		prompt("Maximum Elements  ")
+		promptgroup(GUI_CLOCK)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("1")
+	}
+	field(NELM,DBF_ULONG) {
+		prompt("Number of Elements")
+		promptgroup(GUI_COMPRESS)
+		pp(TRUE)
+		initial("1")
+	}
+	field(INDX,DBF_ULONG) {
+		prompt("Substring Index")
+		promptgroup(GUI_CONVERT)
+		pp(TRUE)
+	}
+	field(BUSY,DBF_SHORT) {
+		prompt("Busy Indicator")
+		special(SPC_NOMOD)
+	}
+	field(NORD,DBF_LONG) {
+		prompt("Number elements read")
+		special(SPC_NOMOD)
+	}
+	field(BPTR,DBF_NOACCESS) {
+		prompt("Buffer Pointer")
+		special(SPC_NOMOD)
+		interest(4)
+		size(4)
+		extra("void *		bptr")
+	}
+}

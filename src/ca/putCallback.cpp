@@ -15,22 +15,11 @@
  *	505 665 1831
  */
 
+#define epicsExportSharedSymbols
 #include "iocinf.h"
 #include "oldAccess.h"
 
-#if defined ( _MSC_VER )
-#   pragma warning ( push )
-#   pragma warning ( disable: 4660 )
-#endif
-
-template class tsFreeList < class putCallback, 1024 >;
-
-#if defined ( _MSC_VER )
-#   pragma warning ( pop )
-#endif
-
-tsFreeList < class putCallback, 1024 > putCallback::freeList;
-epicsMutex putCallback::freeListMutex;
+epicsSingleton < tsFreeList < class putCallback, 1024 > > putCallback::pFreeList;
 
 putCallback::putCallback ( oldChannelNotify &chanIn, 
                                  caEventCallBackFunc *pFuncIn, void *pPrivateIn ) :

@@ -21,19 +21,7 @@
 #include "iocinf.h"
 #include "hostNameCache.h"
 
-#if defined ( _MSC_VER )
-#   pragma warning ( push )
-#   pragma warning ( disable: 4660 )
-#endif
-
-template class tsFreeList < hostNameCache, 16 >;
-
-#if defined ( _MSC_VER )
-#   pragma warning ( pop )
-#endif
-
-tsFreeList < hostNameCache, 16 > hostNameCache::freeList;
-epicsMutex hostNameCache::freeListMutex;
+epicsSingleton < tsFreeList < hostNameCache, 16 > > hostNameCache::pFreeList;
 
 hostNameCache::hostNameCache ( const osiSockAddr &addr, ipAddrToAsciiEngine &engine ) :
     ipAddrToAsciiAsynchronous ( addr ),
@@ -73,10 +61,10 @@ void hostNameCache::hostName ( char *pBuf, unsigned bufSize ) const
 
 void * hostNameCache::operator new ( size_t size )
 {
-    return hostNameCache::freeList.allocate ( size );
+    return hostNameCache::pFreeList->allocate ( size );
 }
 
 void hostNameCache::operator delete ( void *pCadaver, size_t size )
 {
-    hostNameCache::freeList.release ( pCadaver, size );
+    hostNameCache::pFreeList->release ( pCadaver, size );
 }

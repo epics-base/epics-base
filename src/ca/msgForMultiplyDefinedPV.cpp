@@ -25,25 +25,14 @@
 #include "caerr.h" // for ECA_DBLCHNL
 #undef epicsExportSharedSymbols
 
-#if defined ( _MSC_VER )
-#   pragma warning ( push )
-#   pragma warning ( disable: 4660 )
-#endif
-
-template class tsFreeList < class msgForMultiplyDefinedPV, 16 >;
-
-#if defined ( _MSC_VER )
-#   pragma warning ( pop )
-#endif
-
-tsFreeList < class msgForMultiplyDefinedPV, 16 > 
-	msgForMultiplyDefinedPV::freeList;
-epicsMutex msgForMultiplyDefinedPV::freeListMutex;
+epicsSingleton < tsFreeList < class msgForMultiplyDefinedPV, 16 > >
+	msgForMultiplyDefinedPV::pFreeList;
 
 msgForMultiplyDefinedPV::msgForMultiplyDefinedPV ( 
-    cac &cacRefIn, const char *pChannelName, const char *pAcc, 
-        const osiSockAddr &rej ) :
-    ipAddrToAsciiAsynchronous ( rej ), cacRef ( cacRefIn )
+    callbackMutex & mutexIn, cac & cacRefIn, 
+    const char * pChannelName, const char * pAcc, const osiSockAddr &rej ) :
+    ipAddrToAsciiAsynchronous ( rej ), cacRef ( cacRefIn ),
+    mutex ( mutexIn )
 {
     strncpy ( this->acc, pAcc, sizeof ( this->acc ) );
     this->acc[ sizeof ( this->acc ) - 1 ] = '\0';
@@ -51,11 +40,11 @@ msgForMultiplyDefinedPV::msgForMultiplyDefinedPV (
     this->channel[ sizeof ( this->channel ) - 1 ] = '\0';
 }
 
-void msgForMultiplyDefinedPV::ioCompletionNotify ( const char *pHostNameRej )
+void msgForMultiplyDefinedPV::ioCompletionNotify ( const char * pHostNameRej )
 {
     char buf[256];
     sprintf ( buf, "Channel: \"%.64s\", Connecting to: %.64s, Ignored: %.64s",
             this->channel, this->acc, pHostNameRej );
-    callbackAutoMutex autoMutex ( this->cacRef );
+    epicsGuard < callbackMutex > guard ( this->mutex );
     genLocalExcep ( this->cacRef, ECA_DBLCHNL, buf );
 }

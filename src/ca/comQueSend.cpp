@@ -59,12 +59,10 @@
 
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
+#define epicsExportSharedSymbols
 #include "iocinf.h"
 #include "virtualCircuit.h"
-
-#define epicsExportSharedSymbols
 #include "db_access.h" // for dbr_short_t etc
-#undef epicsExportSharedSymbols
 
 comQueSend::comQueSend ( wireSendAdapter & wireIn ) :
     wire ( wireIn ), nBytesPending ( 0u )

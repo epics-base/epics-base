@@ -30,6 +30,7 @@
 
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
+#define epicsExportSharedSymbols
 #include "iocinf.h"
 #include "syncGroup.h"
 #include "oldAccess.h"
@@ -46,7 +47,7 @@ void syncGroupReadNotify::begin ( unsigned type, arrayElementCount count )
 }
 
 syncGroupReadNotify * syncGroupReadNotify::factory ( 
-    tsFreeList < class syncGroupReadNotify, 128 > &freeList, 
+    tsFreeList < class syncGroupReadNotify, 128, epicsMutexNOOP > &freeList, 
     struct CASG &sg, chid chan, void *pValueIn )
 {
     return new ( freeList ) syncGroupReadNotify ( sg, chan, pValueIn);
@@ -60,6 +61,9 @@ void syncGroupReadNotify::destroy ( casgRecycle &recycle )
 
 syncGroupReadNotify::~syncGroupReadNotify ()
 {
+    if ( this->idIsValid ) {
+        this->chan->ioCancel ( this-> id );
+    }
 }
 
 void syncGroupReadNotify::completion (
@@ -99,14 +103,14 @@ void syncGroupReadNotify::show ( unsigned level ) const
 }
 
 void * syncGroupReadNotify::operator new ( size_t size, 
-    tsFreeList < class syncGroupReadNotify, 128 > & freeList )
+    tsFreeList < class syncGroupReadNotify, 128, epicsMutexNOOP > & freeList )
 {
     return freeList.allocate ( size );
 }
 
 #if ! defined ( NO_PLACEMENT_DELETE )
 void syncGroupReadNotify::operator delete ( void *pCadaver, size_t size, 
-    tsFreeList < class syncGroupReadNotify, 128 > &freeList )
+    tsFreeList < class syncGroupReadNotify, 128, epicsMutexNOOP > &freeList )
 {
     freeList.release ( pCadaver, size );
 }

@@ -91,8 +91,7 @@ private:
     osiSockAddr from;
     SOCKET sock;
     unsigned short port () const;
-    static tsFreeList < class repeaterClient, 0x20 > freeList;
-    static epicsMutex freeListMutex;
+    static epicsSingleton < tsFreeList < class repeaterClient, 0x20 > > pFreeList;
 };
 
 /* 
@@ -101,19 +100,7 @@ private:
  */
 static tsDLList < repeaterClient > client_list;
 
-#if defined ( _MSC_VER )
-#   pragma warning ( push )
-#   pragma warning ( disable: 4660 )
-#endif
-
-template class tsFreeList < repeaterClient, 0x20 >;
-
-#if defined ( _MSC_VER )
-#   pragma warning ( pop )
-#endif
-
-tsFreeList < repeaterClient, 0x20 > repeaterClient::freeList;
-epicsMutex repeaterClient::freeListMutex;
+epicsSingleton < tsFreeList < repeaterClient, 0x20 > > repeaterClient::pFreeList;
 
 static char buf [MAX_UDP_RECV]; 
 
@@ -267,14 +254,12 @@ repeaterClient::~repeaterClient ()
 
 inline void * repeaterClient::operator new ( size_t size )
 { 
-    epicsAutoMutex locker ( repeaterClient::freeListMutex );
-    return repeaterClient::freeList.allocate ( size );
+    return repeaterClient::pFreeList->allocate ( size );
 }
 
 inline void repeaterClient::operator delete ( void *pCadaver, size_t size )
 { 
-    epicsAutoMutex locker ( repeaterClient::freeListMutex );
-    repeaterClient::freeList.release ( pCadaver, size );
+    repeaterClient::pFreeList->release ( pCadaver, size );
 }
 
 inline void repeaterClient::destroy ()

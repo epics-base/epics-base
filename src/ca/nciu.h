@@ -17,17 +17,29 @@
 #ifndef nciuh  
 #define nciuh
 
+#ifdef epicsExportSharedSymbols
+#define nciuh_restore_epicsExportSharedSymbols
+#undef epicsExportSharedSymbols
+#endif
+
+#include "shareLib.h"
+
 #include "resourceLib.h"
 #include "tsDLList.h"
 #include "tsFreeList.h"
 #include "epicsMutex.h"
+#include "epicsSingleton.h"
+
+#ifdef nciuh_restore_epicsExportSharedSymbols
+#define epicsExportSharedSymbols
+#endif
+
+#include "shareLib.h"
 
 #define CA_MINOR_PROTOCOL_REVISION 10
 #include "caProto.h"
 
-#define epicsExportSharedSymbols
 #include "cacIO.h"
-#undef epicsExportSharedSymbols
 
 class cac;
 class netiiu;
@@ -118,22 +130,19 @@ private:
     void hostName ( char *pBuf, unsigned bufLength ) const;
     void notifyStateChangeFirstConnectInCountOfOutstandingIO ();
     static void stringVerify ( const char *pStr, const unsigned count );
-    static tsFreeList < class nciu, 1024 > freeList;
-    static epicsMutex freeListMutex;
+    static epicsSingleton < tsFreeList < class nciu, 1024 > > pFreeList;
 	nciu ( const nciu & );
 	nciu & operator = ( const nciu & );
 };
 
 inline void * nciu::operator new ( size_t size )
 { 
-    epicsAutoMutex locker ( nciu::freeListMutex );
-    return nciu::freeList.allocate ( size );
+    return nciu::pFreeList->allocate ( size );
 }
 
 inline void nciu::operator delete ( void *pCadaver, size_t size )
 { 
-    epicsAutoMutex locker ( nciu::freeListMutex );
-    nciu::freeList.release ( pCadaver, size );
+    nciu::pFreeList->release ( pCadaver, size );
 }
 
 inline bool nciu::identifierEquivelence ( unsigned idToMatch )

@@ -38,12 +38,11 @@ public:
     bool searchMsg ( unsigned short retrySeqNumber, unsigned &retryNoForThisChannel );
     void resetChannelRetryCounts ();
     void attachChannel ( nciu &chan );
-    void detachChannel ( class callbackAutoMutex & cbLocker, nciu &chan );
+    void detachChannel ( epicsGuard < class callbackMutex > & cbLocker, nciu &chan );
     nciu * firstChannel ();
     int printf ( const char *pformat, ... );
     virtual void hostName (char *pBuf, unsigned bufLength) const;
     virtual const char * pHostName () const; // deprecated - please do not use
-    virtual bool isVirtualCircuit ( const char *pChannelName, const osiSockAddr &addr ) const;
     virtual bool ca_v42_ok () const;
     virtual bool pushDatagramMsg ( const caHdr &hdr, const void *pExt, ca_uint16_t extsize);
     virtual void writeRequest ( nciu &, unsigned type, unsigned nElem, const void *pValue );
@@ -56,7 +55,8 @@ public:
     virtual void flushRequest ();
     virtual bool flushBlockThreshold () const;
     virtual void flushRequestIfAboveEarlyThreshold ();
-    virtual void blockUntilSendBacklogIsReasonable ( epicsMutex *, epicsMutex & );
+    virtual void blockUntilSendBacklogIsReasonable 
+        ( epicsGuard < callbackMutex > *, epicsGuard < epicsMutex > & );
     virtual void requestRecvProcessPostponedFlush ();
     virtual osiSockAddr getNetworkAddress () const;
 protected:
@@ -64,7 +64,7 @@ protected:
 private:
     tsDLList < nciu > channelList;
     cac *pClientCtx;
-    virtual void lastChannelDetachNotify ( class callbackAutoMutex & cbLocker );
+    virtual void lastChannelDetachNotify ( epicsGuard < class callbackMutex > & cbLocker );
 	netiiu ( const netiiu & );
 	netiiu & operator = ( const netiiu & );
 };
@@ -97,7 +97,7 @@ inline void netiiu::attachChannel ( class nciu &chan )
 
 // cac lock must also be applied when calling this
 inline void netiiu::detachChannel ( 
-    class callbackAutoMutex & cbLocker, class nciu & chan )
+    epicsGuard < callbackMutex > & cbLocker, class nciu & chan )
 {
     this->channelList.remove ( chan );
     if ( this->channelList.count () == 0u ) {

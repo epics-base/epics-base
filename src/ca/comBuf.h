@@ -23,6 +23,7 @@
 #include "epicsAssert.h"
 #include "epicsTypes.h"
 #include "tsFreeList.h"
+#include "epicsSingleton.h"
 #include "tsDLList.h"
 #include "osiWireFormat.h"
 
@@ -91,8 +92,7 @@ private:
     epicsUInt8 buf [ comBufSize ];
     unsigned unoccupiedElem ( unsigned elemSize, unsigned nElem );
     unsigned occupiedElem ( unsigned elemSize, unsigned nElem );
-    static tsFreeList < class comBuf, 0x20 > freeList;
-    static epicsMutex freeListMutex;
+    static epicsSingleton < tsFreeList < class comBuf, 0x20 > > pFreeList;
 };
 
 inline comBuf::comBuf () : commitIndex ( 0u ),
@@ -118,14 +118,12 @@ inline void comBuf::clear ()
 
 inline void * comBuf::operator new ( size_t size, const std::nothrow_t & )
 {
-    epicsAutoMutex locker ( comBuf::freeListMutex );
-    return comBuf::freeList.allocate ( size );
+    return comBuf::pFreeList->allocate ( size );
 }
-
+    
 inline void comBuf::operator delete ( void *pCadaver, size_t size )
 {
-    epicsAutoMutex locker ( comBuf::freeListMutex );
-    comBuf::freeList.release ( pCadaver, size );
+    comBuf::pFreeList->release ( pCadaver, size );
 }
 
 inline unsigned comBuf::unoccupiedBytes () const

@@ -19,17 +19,6 @@
 #include "cac.h"
 #include "netiiu.h"
 
-#if defined ( _MSC_VER )
-#   pragma warning ( push )
-#   pragma warning ( disable: 4660 )
-#endif
-
-template class tsDLNode < nciu >;
-
-#if defined ( _MSC_VER )
-#   pragma warning ( pop )
-#endif
-
 netiiu::netiiu ( cac *pClientCtxIn ) : pClientCtx ( pClientCtxIn )
 {
 }
@@ -102,12 +91,7 @@ bool netiiu::pushDatagramMsg ( const caHdr &, const void *, ca_uint16_t )
     return false;
 }
 
-bool netiiu::isVirtualCircuit ( const char *, const osiSockAddr & ) const
-{
-    return false;
-}
-
-void netiiu::lastChannelDetachNotify ( class callbackAutoMutex & /* cbLocker */ )
+void netiiu::lastChannelDetachNotify ( class epicsGuard < class callbackMutex > & /* cbLocker */ )
 {
 }
 
@@ -175,7 +159,8 @@ void netiiu::flushRequestIfAboveEarlyThreshold ()
 {
 }
 
-void netiiu::blockUntilSendBacklogIsReasonable ( epicsMutex *, epicsMutex & )
+void netiiu::blockUntilSendBacklogIsReasonable 
+    ( epicsGuard < callbackMutex > *, epicsGuard < epicsMutex > & )
 {
 }
 

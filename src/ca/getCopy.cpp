@@ -17,23 +17,12 @@
 
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
+#define epicsExportSharedSymbols
 #include "iocinf.h"
 #include "oldAccess.h"
 #include "cac.h"
 
-#if defined ( _MSC_VER )
-#   pragma warning ( push )
-#   pragma warning ( disable: 4660 )
-#endif
-
-template class tsFreeList < class getCopy, 1024 >;
-
-#if defined ( _MSC_VER )
-#   pragma warning ( pop )
-#endif
-
-tsFreeList < class getCopy, 1024 > getCopy::freeList;
-epicsMutex getCopy::freeListMutex;
+epicsSingleton < tsFreeList < class getCopy, 1024 > > getCopy::pFreeList;
 
 getCopy::getCopy ( oldCAC &cacCtxIn, oldChannelNotify &chanIn, 
                   unsigned typeIn, arrayElementCount countIn, void *pValueIn ) :

@@ -20,6 +20,7 @@
 
 #include "ipAddrToAsciiAsynchronous.h"
 #include "tsFreeList.h"
+#include "epicsSingleton.h"
 
 class hostNameCache : public ipAddrToAsciiAsynchronous {
 public:
@@ -33,8 +34,7 @@ public:
 private:
     bool ioComplete;
     char hostNameBuf [128];
-    static tsFreeList < class hostNameCache, 16 > freeList;
-    static epicsMutex freeListMutex;
+    static epicsSingleton < tsFreeList < class hostNameCache, 16 > > pFreeList;
 };
 
 #endif // #ifndef hostNameCacheh

@@ -86,6 +86,8 @@ of this distribution.
 #   undef epicsExportSharedSymbols
 #endif
 
+#include "shareLib.h"
+
 #include "epicsTypes.h"
 #include "epicsTime.h"
 

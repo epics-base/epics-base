@@ -12,19 +12,16 @@
  */
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
+#define epicsExportSharedSymbols
 #include "localHostName.h"
 #include "iocinf.h"
 #include "virtualCircuit.h"
 #include "inetAddrID.h"
 #include "cac.h"
 #include "netiiu.h"
-#include "msgForMultiplyDefinedPV.h"
 #include "hostNameCache.h"
-
-#define epicsExportSharedSymbols
 #include "net_convert.h"
 #include "bhe.h"
-#undef epicsExportSharedSymbols
 
 // nill message alignment pad bytes
 static const char nillBytes [] = 
@@ -33,67 +30,75 @@ static const char nillBytes [] =
     0, 0, 0, 0
 };
 
-//
-//  cacSendThreadTCP ()
-//
-// care is taken to not hold the lock while sending a message
-//
-extern "C" void cacSendThreadTCP ( void *pParam )
+tcpSendThread::tcpSendThread ( class tcpiiu & iiuIn,
+    const char * pName, unsigned stackSize, unsigned priority ) :
+        iiu ( iiuIn ), thread ( *this, pName, stackSize, priority )
 {
-    tcpiiu *piiu = ( tcpiiu * ) pParam;
+}
 
+tcpSendThread::~tcpSendThread ()
+{
+}
+
+void tcpSendThread::start ()
+{
+    this->thread.start ();
+}
+
+void tcpSendThread::run ()
+{
     try {
         while ( true ) {
             bool flowControlLaborNeeded;
             bool echoLaborNeeded;
 
-            piiu->sendThreadFlushEvent.wait ();
+            this->iiu.sendThreadFlushEvent.wait ();
 
-            if ( piiu->state != iiu_connected ) {
+            if ( this->iiu.state != iiu_connected ) {
                 break;
             }
 
             {
-                epicsAutoMutex autoMutex ( piiu->pCAC()->mutexRef() );
+                epicsGuard < epicsMutex > autoMutex ( this->iiu.pCAC()->mutexRef() );
                 flowControlLaborNeeded = 
-                    piiu->busyStateDetected != piiu->flowControlActive;
-                echoLaborNeeded = piiu->echoRequestPending;
-                piiu->echoRequestPending = false;
+                    this->iiu.busyStateDetected != this->iiu.flowControlActive;
+                echoLaborNeeded = this->iiu.echoRequestPending;
+                this->iiu.echoRequestPending = false;
             }
 
             if ( flowControlLaborNeeded ) {
-                if ( piiu->flowControlActive ) {
-                    piiu->disableFlowControlRequest ();
-                    piiu->flowControlActive = false;
+                if ( this->iiu.flowControlActive ) {
+                    this->iiu.disableFlowControlRequest ();
+                    this->iiu.flowControlActive = false;
                     debugPrintf ( ( "fc off\n" ) );
                 }
                 else {
-                    piiu->enableFlowControlRequest ();
-                    piiu->flowControlActive = true;
+                    this->iiu.enableFlowControlRequest ();
+                    this->iiu.flowControlActive = true;
                     debugPrintf ( ( "fc on\n" ) );
                 }
             }
 
             if ( echoLaborNeeded ) {
-                if ( CA_V43 ( piiu->minorProtocolVersion ) ) {
-                    piiu->echoRequest ();
+                if ( CA_V43 ( this->iiu.minorProtocolVersion ) ) {
+                    this->iiu.echoRequest ();
                 }
                 else {
-                    piiu->versionMessage ( piiu->priority() );
+                    this->iiu.versionMessage ( this->iiu.priority() );
                 }
             }
 
-            if ( ! piiu->flush () ) {
+            if ( ! this->iiu.flush () ) {
                 break;
             }
         }
     }
     catch ( ... ) {
-        piiu->printf ("cac: tcp send thread received an exception - disconnecting\n");
-        piiu->forcedShutdown ();
+        this->iiu.printf ("cac: tcp send thread received an exception - disconnecting\n");
+        this->iiu.forcedShutdown ();
     }
 
-    piiu->sendThreadExitEvent.signal ();
+    this->iiu.sendThreadExitEvent.signal ();
 }
 
 unsigned tcpiiu::sendBytes ( const void *pBuf, 
@@ -205,39 +210,40 @@ unsigned tcpiiu::recvBytes ( void *pBuf, unsigned nBytesInBuf )
     return static_cast <unsigned> ( status );
 }
 
-/*
- *  cacRecvThreadTCP ()
- */
-extern "C" void cacRecvThreadTCP ( void *pParam )
+tcpRecvThread::tcpRecvThread ( class tcpiiu & iiuIn, class callbackMutex & cbMutexIn,
+        const char * pName, unsigned int stackSize, unsigned int priority  ) :
+    thread ( *this, pName, stackSize, priority ),
+        iiu ( iiuIn ), cbMutex ( cbMutexIn ) {}
+
+tcpRecvThread::~tcpRecvThread ()
 {
-    tcpiiu *piiu = ( tcpiiu * ) pParam;
+}
 
-    piiu->pCAC()->attachToClientCtx ();
+void tcpRecvThread::start ()
+{
+    this->thread.start ();
+}
 
-    epicsThreadPrivateSet ( caClientCallbackThreadId, piiu );
+void tcpRecvThread::run ()
+{
+    this->iiu.pCAC()->attachToClientCtx ();
 
-    piiu->connect ();
+    epicsThreadPrivateSet ( caClientCallbackThreadId, &this->iiu );
 
-    piiu->versionMessage ( piiu->priority() );
+    this->iiu.connect ();
 
-    if ( piiu->state == iiu_connected ) {
-        unsigned priorityOfSend = cac::lowestPriorityLevelAbove 
-            ( piiu->pCAC()->getInitializingThreadsPriority() );
-        priorityOfSend = cac::lowestPriorityLevelAbove ( priorityOfSend );
-        epicsThreadId tid = epicsThreadCreate ( "CAC-TCP-send", priorityOfSend,
-                epicsThreadGetStackSize ( epicsThreadStackMedium ), cacSendThreadTCP, piiu );
-        if ( ! tid ) {
-            piiu->sendThreadExitEvent.signal ();
-            piiu->cleanShutdown ();
-        }
+    this->iiu.versionMessage ( this->iiu.priority() );
+
+    if ( this->iiu.state == iiu_connected ) {
+        this->iiu.sendThread.start ();
     }
     else {
-        piiu->sendThreadExitEvent.signal ();
-        piiu->cleanShutdown ();
+        this->iiu.sendThreadExitEvent.signal ();
+        this->iiu.cleanShutdown ();
     }
 
     comBuf * pComBuf = new ( std::nothrow ) comBuf;
-    while ( piiu->state == iiu_connected ) {
+    while ( this->iiu.state == iiu_connected ) {
         if ( ! pComBuf ) {
             // no way to be informed when memory is available
             epicsThreadSleep ( 0.5 );
@@ -253,19 +259,19 @@ extern "C" void cacRecvThreadTCP ( void *pParam )
         // appear to impact performance.
         //
         unsigned nBytesIn;
-        if ( piiu->pCAC()->preemptiveCallbakIsEnabled() ) {
-            nBytesIn = pComBuf->fillFromWire ( *piiu );
+        if ( this->iiu.pCAC()->preemptiveCallbakIsEnabled() ) {
+            nBytesIn = pComBuf->fillFromWire ( this->iiu );
             if ( nBytesIn == 0u ) {
                 break;
             }
         }
         else {
             char buf;
-            ::recv ( piiu->sock, &buf, 1, MSG_PEEK );
+            ::recv ( this->iiu.sock, &buf, 1, MSG_PEEK );
             nBytesIn = 0u; // make gnu hoppy
         }
  
-        if ( piiu->state != iiu_connected ) {
+        if ( this->iiu.state != iiu_connected ) {
             break;
         }
 
@@ -274,15 +280,15 @@ extern "C" void cacRecvThreadTCP ( void *pParam )
         // because cancel is blocking for the completion
         // of the recvDog expire which takes the lock
         // - it take also the callback lock
-        piiu->recvDog.messageArrivalNotify (); 
+        this->iiu.recvDog.messageArrivalNotify (); 
 
         // only one recv thread at a time may call callbacks
         // - pendEvent() blocks until threads waiting for
         // this lock get a chance to run
-        callbackAutoMutex cbLocker ( *piiu->pCAC() );
+        epicsGuard < callbackMutex > guard ( this->cbMutex );
 
-        if ( ! piiu->pCAC()->preemptiveCallbakIsEnabled() ) {
-            nBytesIn = pComBuf->fillFromWire ( *piiu );
+        if ( ! this->iiu.pCAC()->preemptiveCallbakIsEnabled() ) {
+            nBytesIn = pComBuf->fillFromWire ( this->iiu );
             if ( nBytesIn == 0u ) {
                 // outer loop checks to see if state is connected
                 // ( properly set by fillFromWire() )
@@ -295,27 +301,27 @@ extern "C" void cacRecvThreadTCP ( void *pParam )
         while ( contiguousFrameCount++ < 50 ) {
 
             if ( nBytesIn == pComBuf->capacityBytes () ) {
-                if ( piiu->contigRecvMsgCount >= 
+                if ( this->iiu.contigRecvMsgCount >= 
                     contiguousMsgCountWhichTriggersFlowControl ) {
-                    piiu->busyStateDetected = true;
+                    this->iiu.busyStateDetected = true;
                 }
                 else { 
-                    piiu->contigRecvMsgCount++;
+                    this->iiu.contigRecvMsgCount++;
                 }
             }
             else {
-                piiu->contigRecvMsgCount = 0u;
-                piiu->busyStateDetected = false;
+                this->iiu.contigRecvMsgCount = 0u;
+                this->iiu.busyStateDetected = false;
             }         
-            piiu->unacknowledgedSendBytes = 0u;
+            this->iiu.unacknowledgedSendBytes = 0u;
 
-            piiu->recvQue.pushLastComBufReceived ( *pComBuf );
+            this->iiu.recvQue.pushLastComBufReceived ( *pComBuf );
             pComBuf = 0;
 
             // execute receive labor
-            bool noProtocolViolation = piiu->processIncoming ( cbLocker );
+            bool noProtocolViolation = this->iiu.processIncoming ( guard );
             if ( ! noProtocolViolation ) {
-                piiu->state = iiu_disconnected;
+                this->iiu.state = iiu_disconnected;
                 break;
             }
 
@@ -329,12 +335,12 @@ extern "C" void cacRecvThreadTCP ( void *pParam )
             {
                 int status;
                 osiSockIoctl_t bytesPending = 0;
-                status = socket_ioctl ( piiu->sock, // X aCC 392
+                status = socket_ioctl ( this->iiu.sock, // X aCC 392
                                         FIONREAD, & bytesPending );
                 if ( status || bytesPending == 0u ) {
                     break;
                 }
-                nBytesIn = pComBuf->fillFromWire ( *piiu );
+                nBytesIn = pComBuf->fillFromWire ( this->iiu );
                 if ( nBytesIn == 0u ) {
                     // outer loop checks to see if state is connected
                     // ( properly set by fillFromWire() )
@@ -348,22 +354,32 @@ extern "C" void cacRecvThreadTCP ( void *pParam )
         pComBuf->destroy ();
     }
 
-    piiu->stopThreads ();
+    this->iiu.stopThreads ();
 
-    piiu->pCAC()->uninstallIIU ( *piiu );
+    // arrange for delete through the timer thread
+    this->iiu.killTimer.start ();
 }
 
 //
 // tcpiiu::tcpiiu ()
 //
-tcpiiu::tcpiiu ( cac & cac, double connectionTimeout, 
+tcpiiu::tcpiiu ( cac & cac, callbackMutex & cbMutex, double connectionTimeout, 
         epicsTimerQueue & timerQueue, const osiSockAddr & addrIn, 
         unsigned minorVersion, ipAddrToAsciiEngine & engineIn, 
         const cacChannel::priLev & priorityIn ) :
-    netiiu ( &cac ),
+    netiiu ( & cac ),
     caServerID ( addrIn.ia, priorityIn ),
+    recvThread ( *this, cbMutex, "CAC-TCP-recv", 
+        epicsThreadGetStackSize ( epicsThreadStackBig ),
+        cac::highestPriorityLevelBelow ( cac.getInitializingThreadsPriority() ) ),
+    sendThread ( *this, "CAC-TCP-send",
+        epicsThreadGetStackSize ( epicsThreadStackMedium ),
+        cac::lowestPriorityLevelAbove (
+            cac::lowestPriorityLevelAbove (
+                this->pCAC()->getInitializingThreadsPriority() ) ) ),
     recvDog ( *this, connectionTimeout, timerQueue ),
     sendDog ( *this, connectionTimeout, timerQueue ),
+    killTimer ( cac, *this, timerQueue ),
     sendQue ( *this ),
     curDataMax ( MAX_TCP ),
     curDataBytes ( 0ul ),
@@ -468,25 +484,10 @@ tcpiiu::tcpiiu ( cac & cac, double connectionTimeout,
 
 // this must always be called by the udp thread when it holds 
 // the callback lock.
-bool tcpiiu::start ( callbackAutoMutex & cbGuard )
+void tcpiiu::start ( epicsGuard < callbackMutex > & cbGuard )
 {
-    // this is done here after we release the priamry
-    // lock so that we will hold the callback lock but
-    // not the primary lock when the fd is registered
-    // with the user
+    this->recvThread.start ();
     this->pCAC()->notifyNewFD ( cbGuard, this->sock );
-
-    unsigned priorityOfRecv = cac::highestPriorityLevelBelow 
-        ( this->pCAC()->getInitializingThreadsPriority() );
-
-    epicsThreadId tid = epicsThreadCreate ( "CAC-TCP-recv", priorityOfRecv,
-            epicsThreadGetStackSize ( epicsThreadStackBig ), 
-            cacRecvThreadTCP, this );
-    if ( tid == 0 ) {
-        this->printf ("CA: unable to create CA client receive thread\n");
-        return false;
-    }
-    return true;
 }
 
 /*
@@ -507,7 +508,7 @@ void tcpiiu::connect ()
 
             this->sendDog.cancel ();
 
-            epicsAutoMutex autoMutex ( this->pCAC()->mutexRef() );
+            epicsGuard < epicsMutex > autoMutex ( this->pCAC()->mutexRef() );
 
             if ( this->state == iiu_connecting ) {
                 // put the iiu into the connected state
@@ -559,7 +560,7 @@ void tcpiiu::forcedShutdown ()
 // caller must hold callback mutex and also primary cac mutex  
 // when calling this routine
 //
-void tcpiiu::shutdown ( class callbackAutoMutex & cbLocker, bool discardPendingMessages )
+void tcpiiu::shutdown ( epicsGuard < callbackMutex > & cbLocker, bool discardPendingMessages )
 {
     if ( ! this->sockCloseCompleted ) {
         this->pCAC()->notifyDestroyFD ( cbLocker, this->sock );
@@ -671,50 +672,9 @@ tcpiiu::~tcpiiu ()
     }
 }
 
-bool tcpiiu::isVirtualCircuit ( const char *pChannelName, const osiSockAddr &addrIn ) const
-{
-    osiSockAddr addrTmp = this->address ();
-
-    if ( addrTmp.sa.sa_family == AF_UNSPEC ) {
-        return false;
-    }
-
-    bool match;
-
-    if ( addrTmp.sa.sa_family != addrIn.sa.sa_family ) {
-        match = false;
-    }
-    else if ( addrTmp.sa.sa_family != AF_INET ) {
-        match = false;
-    }
-    else if ( addrTmp.ia.sin_addr.s_addr !=  addrIn.ia.sin_addr.s_addr ) {
-        match = false;
-    }
-    else if ( addrTmp.ia.sin_port !=  addrIn.ia.sin_port ) { 
-        match = false;
-    }
-    else {
-        match = true;
-    }
-
-    if ( ! match ) {
-        epicsAutoMutex locker ( this->pCAC()->mutexRef() );
-        char acc[64];
-        this->pHostNameCache->hostName ( acc, sizeof ( acc ) );
-        assert ( this->pCAC () );
-        msgForMultiplyDefinedPV *pMsg = new msgForMultiplyDefinedPV ( 
-            *this->pCAC (), pChannelName, acc, addrIn );
-        if ( pMsg ) {
-            this->pCAC ()->ipAddrToAsciiAsynchronousRequestInstall ( *pMsg );
-        }
-    }
-
-    return true;
-}
-
 void tcpiiu::show ( unsigned level ) const
 {
-    epicsAutoMutex locker ( this->pCAC()->mutexRef() );
+    epicsGuard < epicsMutex > locker ( this->pCAC()->mutexRef() );
     char buf[256];
     this->pHostNameCache->hostName ( buf, sizeof ( buf ) );
     ::printf ( "Virtual circuit to \"%s\" at version V%u.%u state %u\n", 
@@ -743,7 +703,7 @@ void tcpiiu::show ( unsigned level ) const
 bool tcpiiu::setEchoRequestPending () // X aCC 361
 {
     {
-        epicsAutoMutex locker ( this->pCAC()->mutexRef() );
+        epicsGuard < epicsMutex > locker ( this->pCAC()->mutexRef() );
         this->echoRequestPending = true;
     }
     this->flushRequest ();
@@ -760,7 +720,7 @@ bool tcpiiu::setEchoRequestPending () // X aCC 361
 //
 // tcpiiu::processIncoming()
 //
-bool tcpiiu::processIncoming ( callbackAutoMutex & cbLocker )
+bool tcpiiu::processIncoming ( epicsGuard < callbackMutex > & guard )
 {
     while ( true ) {
 
@@ -835,7 +795,7 @@ bool tcpiiu::processIncoming ( callbackAutoMutex & cbLocker )
                     return true;
                 }
             }
-            bool msgOK = this->pCAC()->executeResponse ( cbLocker, *this, 
+            bool msgOK = this->pCAC()->executeResponse ( guard, *this, 
                                 this->curMsg, this->pCurData );
             if ( ! msgOK ) {
                 return false;
@@ -911,7 +871,7 @@ void tcpiiu::hostNameSetRequest ()
         this->flushRequest ();
     }
 
-    epicsAutoMutex locker ( this->pCAC()->mutexRef() );
+    epicsGuard < epicsMutex > locker ( this->pCAC()->mutexRef() );
 
     this->sendQue.beginMsg ();
     this->sendQue.pushUInt16 ( CA_PROTO_HOST_NAME ); // cmd
@@ -943,7 +903,7 @@ void tcpiiu::userNameSetRequest ()
         this->flushRequest ();
     }
 
-    epicsAutoMutex locker (  this->pCAC()->mutexRef()  );
+    epicsGuard < epicsMutex > locker (  this->pCAC()->mutexRef()  );
     this->sendQue.beginMsg ();
     this->sendQue.pushUInt16 ( CA_PROTO_CLIENT_NAME ); // cmd
     this->sendQue.pushUInt16 ( static_cast <epicsUInt16> ( postSize ) ); // postsize
@@ -962,7 +922,7 @@ void tcpiiu::disableFlowControlRequest ()
         this->flushRequest ();
     }
 
-    epicsAutoMutex locker (  this->pCAC()->mutexRef() );
+    epicsGuard < epicsMutex > locker (  this->pCAC()->mutexRef() );
     this->sendQue.beginMsg ();
     this->sendQue.pushUInt16 ( CA_PROTO_EVENTS_ON ); // cmd
     this->sendQue.pushUInt16 ( 0u ); // postsize
@@ -979,7 +939,7 @@ void tcpiiu::enableFlowControlRequest ()
         this->flushRequest ();
     }
 
-    epicsAutoMutex locker ( this->pCAC()->mutexRef()  );
+    epicsGuard < epicsMutex > locker ( this->pCAC()->mutexRef()  );
     this->sendQue.beginMsg ();
     this->sendQue.pushUInt16 ( CA_PROTO_EVENTS_OFF ); // cmd
     this->sendQue.pushUInt16 ( 0u ); // postsize
@@ -998,7 +958,7 @@ void tcpiiu::versionMessage ( const cacChannel::priLev & priority )
         this->flushRequest ();
     }
 
-    epicsAutoMutex locker (  this->pCAC()->mutexRef() );
+    epicsGuard < epicsMutex > locker (  this->pCAC()->mutexRef() );
     this->sendQue.beginMsg ();
     this->sendQue.pushUInt16 ( CA_PROTO_VERSION ); // cmd
     this->sendQue.pushUInt16 ( 0u ); // postsize ( old possize field )
@@ -1015,7 +975,7 @@ void tcpiiu::echoRequest ()
         this->flushRequest ();
     }
 
-    epicsAutoMutex locker ( this->pCAC()->mutexRef() );
+    epicsGuard < epicsMutex > locker ( this->pCAC()->mutexRef() );
     this->sendQue.beginMsg ();
     this->sendQue.pushUInt16 ( CA_PROTO_ECHO ); // cmd
     this->sendQue.pushUInt16 ( 0u ); // postsize
@@ -1243,7 +1203,7 @@ void tcpiiu::subscriptionCancelRequest ( nciu & chan, netSubscription & subscr )
 // caller must hold both the callback mutex and
 // also the cac primary mutex
 //
-void tcpiiu::lastChannelDetachNotify ( class callbackAutoMutex & cbLocker ) 
+void tcpiiu::lastChannelDetachNotify ( epicsGuard < callbackMutex > & cbLocker ) 
 {
     this->shutdown ( cbLocker, false );
 }
@@ -1254,7 +1214,7 @@ bool tcpiiu::flush ()
         comBuf * pBuf;
 
         {
-            epicsAutoMutex autoMutex ( this->pCAC()->mutexRef() );
+            epicsGuard < epicsMutex > autoMutex ( this->pCAC()->mutexRef() );
             pBuf = this->sendQue.popNextComBufToSend ();
             if ( pBuf ) {
                 this->unacknowledgedSendBytes += pBuf->occupiedBytes ();
@@ -1284,7 +1244,7 @@ bool tcpiiu::flush ()
         pBuf->destroy ();
 
         if ( ! success ) {
-            epicsAutoMutex autoMutex ( this->pCAC()->mutexRef() );
+            epicsGuard < epicsMutex > autoMutex ( this->pCAC()->mutexRef() );
             while ( ( pBuf = this->sendQue.popNextComBufToSend () ) ) {
                 pBuf->destroy ();
             }
@@ -1294,19 +1254,19 @@ bool tcpiiu::flush ()
             return false;
         }
     }
-    return false;               // to make compiler happy...
+    return false; // happy compiler
 }
 
 // ~tcpiiu() will not return while this->blockingForFlush is greater than zero
 void tcpiiu::blockUntilSendBacklogIsReasonable ( 
-          epicsAutoMutex *pCallbackLocker, epicsAutoMutex & primaryLocker )
+          epicsGuard < callbackMutex > *pCallbackLocker, epicsGuard < epicsMutex > & primaryLocker )
 {
     assert ( this->blockingForFlush < UINT_MAX );
     this->blockingForFlush++;
     while ( this->sendQue.flushBlockThreshold(0u) && this->state == iiu_connected ) {
-        epicsAutoMutexRelease autoRelease ( primaryLocker );
+        epicsGuardRelease < epicsMutex > autoRelease ( primaryLocker );
         if ( pCallbackLocker ) {
-            epicsAutoMutexRelease autoReleaseCallback ( *pCallbackLocker );
+            epicsGuardRelease < callbackMutex > autoReleaseCallback ( *pCallbackLocker );
             this->flushBlockEvent.wait ();
         }
         else {
@@ -1361,8 +1321,4 @@ const char * tcpiiu::pHostName () const
     this->hostName ( nameBuf, sizeof ( nameBuf ) );
     return nameBuf; // ouch !!
 }
-
-
-
-
 

@@ -10,22 +10,11 @@
  *  Author: Jeff Hill
  */
 
+#define epicsExportSharedSymbols
 #include "iocinf.h"
 #include "oldAccess.h"
 
-#if defined ( _MSC_VER )
-#   pragma warning ( push )
-#   pragma warning ( disable: 4660 )
-#endif
-
-template class tsFreeList < struct oldSubscription, 1024 >;
-
-#if defined ( _MSC_VER )
-#   pragma warning ( pop )
-#endif
-
-tsFreeList < struct oldSubscription, 1024 > oldSubscription::freeList;
-epicsMutex oldSubscription::freeListMutex;
+epicsSingleton < tsFreeList < struct oldSubscription, 1024 > > oldSubscription::pFreeList;
 
 oldSubscription::~oldSubscription ()
 {

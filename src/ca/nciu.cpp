@@ -23,30 +23,15 @@
 
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
+#define epicsExportSharedSymbols
 #include "iocinf.h"
 #include "cac.h"
 #include "osiWireFormat.h"
-
-#define epicsExportSharedSymbols
 #include "udpiiu.h"
 #include "cadef.h"
 #include "db_access.h" // for INVALID_DB_REQ
-#undef epicsExportSharedSymbols
 
-#if defined ( _MSC_VER )
-#   pragma warning ( push )
-#   pragma warning ( disable: 4660 )
-#endif
-
-template class tsFreeList < nciu, 1024, 0 >; 
-template class tsDLNode < baseNMIU >;
-
-#if defined ( _MSC_VER )
-#   pragma warning ( pop )
-#endif
-
-tsFreeList < class nciu, 1024 > nciu::freeList;
-epicsMutex nciu::freeListMutex;
+epicsSingleton < tsFreeList < class nciu, 1024 > > nciu::pFreeList;
 
 nciu::nciu ( cac & cacIn, netiiu & iiuIn, cacChannelNotify & chanIn, 
             const char *pNameIn, cacChannel::priLev pri ) :
@@ -338,26 +323,26 @@ void nciu::initiateConnect ()
 
 void nciu::hostName ( char *pBuf, unsigned bufLength ) const
 {   
-    epicsAutoMutex locker ( this->cacCtx.mutexRef() );
+    epicsGuard < epicsMutex > locker ( this->cacCtx.mutexRef() );
     this->piiu->hostName ( pBuf, bufLength );
 }
 
 // deprecated - please do not use, this is _not_ thread safe
 const char * nciu::pHostName () const
 {
-    epicsAutoMutex locker ( this->cacCtx.mutexRef() );
+    epicsGuard < epicsMutex > locker ( this->cacCtx.mutexRef() );
     return this->piiu->pHostName (); // ouch !
 }
 
 bool nciu::ca_v42_ok () const
 {
-    epicsAutoMutex locker ( this->cacCtx.mutexRef() );
+    epicsGuard < epicsMutex > locker ( this->cacCtx.mutexRef() );
     return this->piiu->ca_v42_ok ();
 }
 
 short nciu::nativeType () const
 {
-    epicsAutoMutex locker ( this->cacCtx.mutexRef() );
+    epicsGuard < epicsMutex > locker ( this->cacCtx.mutexRef() );
     short type;
     if ( this->f_connected ) {
         if ( this->typeCode < SHRT_MAX ) {
@@ -375,7 +360,7 @@ short nciu::nativeType () const
 
 arrayElementCount nciu::nativeElementCount () const
 {
-    epicsAutoMutex locker ( this->cacCtx.mutexRef() );
+    epicsGuard < epicsMutex > locker ( this->cacCtx.mutexRef() );
     arrayElementCount countOut;
     if ( this->f_connected ) {
         countOut = this->count;
@@ -388,14 +373,14 @@ arrayElementCount nciu::nativeElementCount () const
 
 caAccessRights nciu::accessRights () const
 {
-    epicsAutoMutex locker ( this->cacCtx.mutexRef() );
+    epicsGuard < epicsMutex > locker ( this->cacCtx.mutexRef() );
     caAccessRights tmp = this->accessRightState;
     return tmp;
 }
 
 unsigned nciu::searchAttempts () const
 {
-    epicsAutoMutex locker ( this->cacCtx.mutexRef() );
+    epicsGuard < epicsMutex > locker ( this->cacCtx.mutexRef() );
     return this->retry;
 }
 
@@ -406,7 +391,7 @@ double nciu::beaconPeriod () const
 
 void nciu::notifyStateChangeFirstConnectInCountOfOutstandingIO ()
 {
-    epicsAutoMutex locker ( this->cacCtx.mutexRef() );
+    epicsGuard < epicsMutex > locker ( this->cacCtx.mutexRef() );
     // test is performed via a callback so that locking is correct
     if ( ! this->f_connectTimeOutSeen && ! this->f_previousConn ) {
         if ( this->notify ().includeFirstConnectInCountOfOutstandingIO () ) { 
@@ -426,7 +411,7 @@ void nciu::notifyStateChangeFirstConnectInCountOfOutstandingIO ()
 
 void nciu::show ( unsigned level ) const
 {
-    epicsAutoMutex locker ( this->cacCtx.mutexRef() );
+    epicsGuard < epicsMutex > locker ( this->cacCtx.mutexRef() );
     if ( this->f_connected ) {
         char hostNameTmp [256];
         this->hostName ( hostNameTmp, sizeof ( hostNameTmp ) );

@@ -68,7 +68,7 @@ void searchTimer::resetPeriod ( double delayToNextTry )
     bool start;
 
     {
-        epicsAutoMutex locker ( this->mutex );
+        epicsGuard < epicsMutex > locker ( this->mutex );
 
         // upper bound
         double newPeriod = this->roundTripDelayEstimate * 2.0;
@@ -157,7 +157,7 @@ void searchTimer::notifySearchResponse ( unsigned short retrySeqNoIn,
     bool reschedualNeeded;
 
     {
-        epicsAutoMutex locker ( this->mutex );
+        epicsGuard < epicsMutex > locker ( this->mutex );
 
         if ( this->retrySeqAtPassBegin <= retrySeqNoIn ) {
             if ( this->searchResponses < UINT_MAX ) {
@@ -204,7 +204,7 @@ void searchTimer::notifySearchResponse ( unsigned short retrySeqNoIn,
 //
 epicsTimerNotify::expireStatus searchTimer::expire ( const epicsTime & currentTime ) // X aCC 361
 {
-    epicsAutoMutex locker ( this->mutex );
+    epicsGuard < epicsMutex > locker ( this->mutex );
     unsigned nFrameSent = 0u;
     unsigned nChanSent = 0u;
 

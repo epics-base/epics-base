@@ -29,10 +29,9 @@
 
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
+#define epicsExportSharedSymbols
 #include "iocinf.h"
 #include "oldAccess.h"
-
-#define epicsExportSharedSymbols
 #include "syncGroup.h"
 
 /*

@@ -17,15 +17,27 @@
 #ifndef syncGrouph  
 #define syncGrouph
 
+#ifdef epicsExportSharedSymbols
+#define syncGrouph_restore_epicsExportSharedSymbols
+#undef epicsExportSharedSymbols
+#endif
+
+#include "shareLib.h"
+
 #include "tsDLList.h"
 #include "tsFreeList.h"
+#include "epicsSingleton.h"
 #include "resourceLib.h"
 #include "epicsEvent.h"
 
+#ifdef syncGrouph_restore_epicsExportSharedSymbols
 #define epicsExportSharedSymbols
+#endif
+
+#include "shareLib.h"
+
 #include "cadef.h"
 #include "cacIO.h"
-#undef epicsExportSharedSymbols
 
 static const unsigned CASG_MAGIC = 0xFAB4CAFE;
 
@@ -58,7 +70,7 @@ protected:
 class syncGroupReadNotify : public syncGroupNotify, public cacReadNotify {
 public:
     static syncGroupReadNotify * factory ( 
-        tsFreeList < class syncGroupReadNotify, 128 > &, 
+        tsFreeList < class syncGroupReadNotify, 128, epicsMutexNOOP > &, 
         struct CASG &, chid, void *pValueIn );
     void begin ( unsigned type, arrayElementCount count );
     void destroy ( casgRecycle & );
@@ -69,10 +81,10 @@ private:
     void *pValue;
     syncGroupReadNotify ( struct CASG &sgIn, chid, void *pValueIn );
     void * operator new ( size_t, 
-        tsFreeList < class syncGroupReadNotify, 128 > & );
+        tsFreeList < class syncGroupReadNotify, 128, epicsMutexNOOP > & );
 #   if ! defined ( NO_PLACEMENT_DELETE )
     void operator delete ( void *, size_t, 
-        tsFreeList < class syncGroupReadNotify, 128 > & );
+        tsFreeList < class syncGroupReadNotify, 128, epicsMutexNOOP > & );
 #   endif
     void completion (
         unsigned type, arrayElementCount count, const void *pData );
@@ -85,7 +97,7 @@ private:
 class syncGroupWriteNotify : public syncGroupNotify, public cacWriteNotify {
 public:
     static syncGroupWriteNotify * factory ( 
-        tsFreeList < class syncGroupWriteNotify, 128 > &, 
+        tsFreeList < class syncGroupWriteNotify, 128, epicsMutexNOOP > &, 
         struct CASG &, chid );
     void begin ( unsigned type, arrayElementCount count, 
                             const void * pValueIn );
@@ -97,10 +109,10 @@ private:
     void *pValue;
     syncGroupWriteNotify  ( struct CASG &, chid );
     void * operator new ( size_t, 
-        tsFreeList < class syncGroupWriteNotify, 128 > & );
+        tsFreeList < class syncGroupWriteNotify, 128, epicsMutexNOOP > & );
 #   if ! defined ( NO_PLACEMENT_DELETE )
     void operator delete ( void *, size_t, 
-        tsFreeList < class syncGroupWriteNotify, 128 > & );
+        tsFreeList < class syncGroupWriteNotify, 128, epicsMutexNOOP > & );
 #   endif
     void completion ();
     void exception ( int status, const char *pContext, 
@@ -140,12 +152,11 @@ private:
     epicsEvent sem;
     oldCAC & client;
     unsigned magic;
-    tsFreeList < class syncGroupReadNotify, 128 > freeListReadOP;
-    tsFreeList < class syncGroupWriteNotify, 128 > freeListWriteOP;
+    tsFreeList < class syncGroupReadNotify, 128, epicsMutexNOOP > freeListReadOP;
+    tsFreeList < class syncGroupWriteNotify, 128, epicsMutexNOOP > freeListWriteOP;
     void recycleSyncGroupWriteNotify ( syncGroupWriteNotify &io );
     void recycleSyncGroupReadNotify ( syncGroupReadNotify &io );
-    static tsFreeList < struct CASG, 128 > freeList;
-    static epicsMutex freeListMutex;
+    static epicsSingleton < tsFreeList < struct CASG, 128 > > pFreeList;
 
     void destroyPendingIO ( syncGroupNotify * );
     void destroyCompletedIO ();

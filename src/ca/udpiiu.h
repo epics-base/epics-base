@@ -23,12 +23,16 @@
 #   undef epicsExportSharedSymbols
 #endif
 
+#include "shareLib.h"
+
 #   include "osiSock.h"
 #   include "epicsThread.h"
 
 #ifdef udpiiuh_accessh_epicsExportSharedSymbols
 #   define epicsExportSharedSymbols
 #endif
+
+#include "shareLib.h"
 
 #include "netiiu.h"
 
@@ -40,16 +44,33 @@ extern "C" epicsShareFunc void caRepeaterThread ( void *pDummy );
 epicsShareFunc void ca_repeater ( void );
 
 class epicsTime;
+class callbackMutex;
+
+class udpRecvThread : 
+        public epicsThreadRunable {
+public:
+    udpRecvThread ( class udpiiu & iiuIn, callbackMutex & cbMutexIn,
+        const char * pName, unsigned stackSize, unsigned priority );
+    virtual ~udpRecvThread ();
+    void start ();
+private:
+    class udpiiu & iiu;
+    callbackMutex & cbMutex;
+    epicsThread thread;
+    void run();
+};
 
 class udpiiu : public netiiu {
 public:
-    udpiiu ( callbackAutoMutex &, class cac & );
+    udpiiu ( callbackMutex &, class cac & );
+    void start ( epicsGuard < callbackMutex > & );
     virtual ~udpiiu ();
     void shutdown ();
-    void recvMsg ();
-    void postMsg ( callbackAutoMutex &, const osiSockAddr & net_addr, 
-              char *pInBuf, arrayElementCount blockSize,
-              const epicsTime &currenTime );
+    void recvMsg ( callbackMutex & );
+    void postMsg ( epicsGuard < callbackMutex > &, 
+            const osiSockAddr & net_addr, 
+            char *pInBuf, arrayElementCount blockSize,
+            const epicsTime &currenTime );
     void repeaterRegistrationMessage ( unsigned attemptNumber );
     void datagramFlush ();
     unsigned getPort () const;
@@ -63,8 +84,8 @@ public:
 private:
     char xmitBuf [MAX_UDP_SEND];   
     char recvBuf [MAX_UDP_RECV];
+    udpRecvThread recvThread;
     ELLLIST dest;
-    epicsThreadId recvThreadId;
     epicsEventId recvThreadExitSignal;
     unsigned nBytesInXmitBuf;
     SOCKET sock;
@@ -77,38 +98,33 @@ private:
     bool pushDatagramMsg ( const caHdr &msg, const void *pExt, ca_uint16_t extsize );
 
     typedef bool ( udpiiu::*pProtoStubUDP ) ( 
-        callbackAutoMutex &, const caHdr &, 
+        epicsGuard < callbackMutex > &, const caHdr &, 
         const osiSockAddr &, const epicsTime & );
 
     // UDP protocol dispatch table
     static const pProtoStubUDP udpJumpTableCAC[];
 
     // UDP protocol stubs
-    bool noopAction ( callbackAutoMutex &, const caHdr &, 
+    bool noopAction ( epicsGuard < callbackMutex > &, const caHdr &, 
         const osiSockAddr &, const epicsTime & );
-    bool badUDPRespAction ( callbackAutoMutex &, const caHdr &msg, 
+    bool badUDPRespAction ( epicsGuard < callbackMutex > &, const caHdr &msg, 
         const osiSockAddr &netAddr, const epicsTime & );
-    bool searchRespAction ( callbackAutoMutex &, const caHdr &msg, 
+    bool searchRespAction ( epicsGuard < callbackMutex > &, const caHdr &msg, 
         const osiSockAddr &net_addr, const epicsTime & );
-    bool exceptionRespAction ( callbackAutoMutex &, const caHdr &msg, 
+    bool exceptionRespAction ( epicsGuard < callbackMutex > &, const caHdr &msg, 
         const osiSockAddr &net_addr, const epicsTime & );
-    bool beaconAction ( callbackAutoMutex &, const caHdr &msg, 
+    bool beaconAction ( epicsGuard < callbackMutex > &, const caHdr &msg, 
         const osiSockAddr &net_addr, const epicsTime & );
-    bool notHereRespAction ( callbackAutoMutex &, const caHdr &msg, 
+    bool notHereRespAction ( epicsGuard < callbackMutex > &, const caHdr &msg, 
         const osiSockAddr &net_addr, const epicsTime & );
-    bool repeaterAckAction ( callbackAutoMutex &, const caHdr &msg, 
+    bool repeaterAckAction ( epicsGuard < callbackMutex > &, const caHdr &msg, 
         const osiSockAddr &net_addr, const epicsTime & );
 
-    friend void cacRecvThreadUDP ( void *pParam );
+    friend void udpRecvThread::run ();
 
 	udpiiu ( const udpiiu & );
 	udpiiu & operator = ( const udpiiu & );
 };
-
-inline bool udpiiu::isCurrentThread () const
-{
-    return ( this->recvThreadId == epicsThreadGetIdSelf () );
-}
 
 inline unsigned udpiiu::getPort () const
 {

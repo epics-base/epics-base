@@ -12,13 +12,11 @@
 
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
+#define epicsExportSharedSymbols
 #include "iocinf.h"
 #include "nciu.h"
 #include "cac.h"
-
-#define epicsExportSharedSymbols
 #include "db_access.h" // for dbf_type_to_text
-#undef epicsExportSharedSymbols
 
 netSubscription::netSubscription ( nciu &chan, 
         unsigned typeIn, arrayElementCount countIn, 

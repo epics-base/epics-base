@@ -52,8 +52,14 @@ const udpiiu::pProtoStubUDP udpiiu::udpJumpTableCAC [] =
 //
 // udpiiu::udpiiu ()
 //
-udpiiu::udpiiu ( callbackAutoMutex &cbLocker, cac & cac ) :
-    netiiu ( &cac ), shutdownCmd ( false ), 
+udpiiu::udpiiu ( callbackMutex & cbMutex, cac & cac ) :
+    netiiu ( &cac ), 
+        recvThread ( *this, cbMutex,
+            "CAC-UDP", 
+            epicsThreadGetStackSize ( epicsThreadStackMedium ),
+            cac::lowestPriorityLevelAbove 
+                ( this->pCAC()->getInitializingThreadsPriority () ) ),
+        shutdownCmd ( false ), 
         sockCloseCompleted ( false )
 {
     static const unsigned short PORT_ANY = 0u;
@@ -157,23 +163,13 @@ udpiiu::udpiiu ( callbackAutoMutex &cbLocker, cac & cac ) :
         genLocalExcep ( *this->pCAC (), ECA_NOSEARCHADDR, NULL );
     }
   
-    {
-        unsigned priorityOfRecv = cac::lowestPriorityLevelAbove 
-            ( this->pCAC ()->getInitializingThreadsPriority() );
-
-        this->recvThreadId = epicsThreadCreate ( "CAC-UDP", priorityOfRecv,
-                epicsThreadGetStackSize (epicsThreadStackMedium), cacRecvThreadUDP, this );
-        if ( this->recvThreadId == 0 ) {
-            this->printf ("CA: unable to create UDP receive thread\n");
-            epicsEventDestroy (this->recvThreadExitSignal);
-            socket_close (this->sock);
-            throw std::bad_alloc ();
-        }
-    }
-
     caStartRepeaterIfNotInstalled ( this->repeaterPort );
+}
 
-    this->pCAC ()->notifyNewFD ( cbLocker, this->sock );
+void udpiiu::start ( epicsGuard < callbackMutex > & cbGuard )
+{
+    this->recvThread.start ();
+    this->pCAC()->notifyNewFD ( cbGuard, this->sock );
 }
 
 /*
@@ -196,7 +192,7 @@ udpiiu::~udpiiu ()
 //
 //  udpiiu::recvMsg ()
 //
-void udpiiu::recvMsg ()
+void udpiiu::recvMsg ( callbackMutex & cbMutex )
 {
     osiSockAddr src;
     int status;
@@ -217,7 +213,7 @@ void udpiiu::recvMsg ()
     }
 
     {
-        callbackAutoMutex autoMutex ( *this->pCAC() );
+        epicsGuard < callbackMutex > guard ( cbMutex );
 
         if ( ! this->pCAC()->preemptiveCallbakIsEnabled() ) {
             osiSocklen_t src_size = sizeof ( src );
@@ -257,24 +253,34 @@ void udpiiu::recvMsg ()
                 SOCKERRSTR (errnoCpy) );
         }
         else if ( status > 0 ) {
-            this->postMsg ( autoMutex, src, this->recvBuf, 
+            this->postMsg ( guard, src, this->recvBuf, 
                 (arrayElementCount) status, epicsTime::getCurrent() );
         }
     }
     return;
 }
 
-/*
- *  cacRecvThreadUDP ()
- */
-extern "C" void cacRecvThreadUDP ( void *pParam )
+udpRecvThread::udpRecvThread ( udpiiu & iiuIn, callbackMutex & cbMutexIn,
+    const char * pName, unsigned stackSize, unsigned priority ) :
+        iiu ( iiuIn ), cbMutex ( cbMutexIn ), 
+        thread ( *this, pName, stackSize, priority ) {}
+
+udpRecvThread::~udpRecvThread () 
 {
-    udpiiu *piiu = (udpiiu *) pParam;
-    epicsThreadPrivateSet ( caClientCallbackThreadId, pParam );
+}
+
+void udpRecvThread::start ()
+{
+    this->thread.start ();
+}
+
+void udpRecvThread::run ()
+{
+    epicsThreadPrivateSet ( caClientCallbackThreadId, &this->iiu );
     do {
-        piiu->recvMsg ();
-    } while ( ! piiu->shutdownCmd );
-    epicsEventSignal ( piiu->recvThreadExitSignal );
+        this->iiu.recvMsg ( this->cbMutex );
+    } while ( ! this->iiu.shutdownCmd );
+    epicsEventSignal ( this->iiu.recvThreadExitSignal );
 }
 
 /*
@@ -492,7 +498,7 @@ void udpiiu::shutdown ()
     epicsEventMustWait ( this->recvThreadExitSignal );
 }
 
-bool udpiiu::badUDPRespAction ( callbackAutoMutex &, const caHdr &msg, 
+bool udpiiu::badUDPRespAction ( epicsGuard < callbackMutex > &, const caHdr &msg, 
     const osiSockAddr &netAddr, const epicsTime &currentTime )
 {
     char buf[64];
@@ -504,13 +510,13 @@ bool udpiiu::badUDPRespAction ( callbackAutoMutex &, const caHdr &msg,
     return false;
 }
 
-bool udpiiu::noopAction ( callbackAutoMutex &,
+bool udpiiu::noopAction ( epicsGuard < callbackMutex > &,
                          const caHdr &, const osiSockAddr &, const epicsTime & )
 {
     return true;
 }
 
-bool udpiiu::searchRespAction ( callbackAutoMutex & cbLocker,
+bool udpiiu::searchRespAction ( epicsGuard < callbackMutex > & cbLocker,
                                 const caHdr &msg, // X aCC 361
                                 const osiSockAddr &addr, const epicsTime &currentTime )
 {
@@ -574,7 +580,7 @@ bool udpiiu::searchRespAction ( callbackAutoMutex & cbLocker,
     }
 }
 
-bool udpiiu::beaconAction ( callbackAutoMutex &, const caHdr &msg, 
+bool udpiiu::beaconAction ( epicsGuard < callbackMutex > &, const caHdr &msg, 
     const osiSockAddr &net_addr, const epicsTime &currentTime )
 {
     struct sockaddr_in ina;
@@ -618,20 +624,20 @@ bool udpiiu::beaconAction ( callbackAutoMutex &, const caHdr &msg,
     return true;
 }
 
-bool udpiiu::repeaterAckAction ( callbackAutoMutex &, const caHdr &,  
+bool udpiiu::repeaterAckAction ( epicsGuard < callbackMutex > &, const caHdr &,  
         const osiSockAddr &, const epicsTime &)
 {
     this->pCAC ()->repeaterSubscribeConfirmNotify ();
     return true;
 }
 
-bool udpiiu::notHereRespAction ( callbackAutoMutex &, const caHdr &,  
+bool udpiiu::notHereRespAction ( epicsGuard < callbackMutex > &, const caHdr &,  
         const osiSockAddr &, const epicsTime & )
 {
     return true;
 }
 
-bool udpiiu::exceptionRespAction ( callbackAutoMutex &, const caHdr &msg, 
+bool udpiiu::exceptionRespAction ( epicsGuard < callbackMutex > &, const caHdr &msg, 
         const osiSockAddr &net_addr, const epicsTime &currentTime )
 {
     const caHdr &reqMsg = * ( &msg + 1 );
@@ -653,7 +659,7 @@ bool udpiiu::exceptionRespAction ( callbackAutoMutex &, const caHdr &msg,
     return true;
 }
 
-void udpiiu::postMsg ( callbackAutoMutex & cbLocker, 
+void udpiiu::postMsg ( epicsGuard < callbackMutex > & guard, 
               const osiSockAddr & net_addr, 
               char * pInBuf, arrayElementCount blockSize,
               const epicsTime & currentTime )
@@ -717,7 +723,7 @@ void udpiiu::postMsg ( callbackAutoMutex & cbLocker,
         else {
             pStub = &udpiiu::badUDPRespAction;
         }
-        bool success = ( this->*pStub ) ( cbLocker, *pCurMsg, net_addr, currentTime );
+        bool success = ( this->*pStub ) ( guard, *pCurMsg, net_addr, currentTime );
         if ( ! success ) {
             char buf[256];
             sockAddrToDottedIP ( &net_addr.sa, buf, sizeof ( buf ) );

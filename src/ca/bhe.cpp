@@ -12,38 +12,21 @@
 
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
+#define epicsExportSharedSymbols
 #include "iocinf.h"
 #include "virtualCircuit.h"
-
-#define epicsExportSharedSymbols
 #include "bhe.h"
-#undef epicsExportSharedSymbols 
 
-#if defined ( _MSC_VER )
-#   pragma warning ( push )
-#   pragma warning ( disable: 4660 )
-#endif
-
-template class tsDLNode < tcpiiu >;
-template class tsFreeList < class bhe, 1024 >;
-
-#if defined ( _MSC_VER )
-#   pragma warning ( pop )
-#endif
-
-tsFreeList < class bhe, 1024 > bhe::freeList;
-epicsMutex bhe::freeListMutex;
+epicsSingleton < tsFreeList < class bhe, 1024 > > bhe::pFreeList;
 
 void * bhe::operator new ( size_t size )
 { 
-    epicsAutoMutex locker ( bhe::freeListMutex );
-    return bhe::freeList.allocate ( size );
+    return bhe::pFreeList->allocate ( size );
 }
 
 void bhe::operator delete ( void *pCadaver, size_t size )
 { 
-    epicsAutoMutex locker ( bhe::freeListMutex );
-    bhe::freeList.release ( pCadaver, size );
+    bhe::pFreeList->release ( pCadaver, size );
 }
 
 bhe::~bhe ()

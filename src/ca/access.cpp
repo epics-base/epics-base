@@ -28,6 +28,7 @@
  */
 #define CAC_VERSION_GLOBAL
 
+#define epicsExportSharedSymbols
 #include "iocinf.h"
 #include "oldAccess.h"
 #include "autoPtrDestroy.h"

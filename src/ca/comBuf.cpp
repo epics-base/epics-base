@@ -19,19 +19,7 @@
 #include "iocinf.h"
 #include "comBuf.h"
 
-#if defined ( _MSC_VER )
-#   pragma warning ( push )
-#   pragma warning ( disable: 4660 )
-#endif
-
-template class tsFreeList < class comBuf, 0x20 >;
-
-#if defined ( _MSC_VER )
-#   pragma warning ( pop )
-#endif
-
-tsFreeList < class comBuf, 0x20 > comBuf::freeList;
-epicsMutex comBuf::freeListMutex;
+epicsSingleton < tsFreeList < class comBuf, 0x20 > > comBuf::pFreeList;
 
 bool comBuf::flushToWire ( wireSendAdapter &wire )
 {

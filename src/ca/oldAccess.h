@@ -18,14 +18,24 @@
 #ifndef oldAccessh
 #define oldAccessh
 
+#ifdef epicsExportSharedSymbols
+#   define oldAccessh_restore_epicsExportSharedSymbols
+#undef epicsExportSharedSymbols
+#endif
+
+#include "shareLib.h"
+
 #include "tsFreeList.h"
 
-#include "cac.h"
+#ifdef oldAccessh_restore_epicsExportSharedSymbols
+#   define epicsExportSharedSymbols
+#endif
 
-#define epicsExportSharedSymbols
+#include "shareLib.h"
+
+#include "cac.h"
 #include "cacIO.h"
 #include "cadef.h"
-#undef epicsExportSharedSymbols
 
 struct oldChannelNotify : public cacChannelNotify {
 public:
@@ -87,8 +97,7 @@ private:
     void writeException ( int status, const char *pContext,
         unsigned type, arrayElementCount count );
     bool includeFirstConnectInCountOfOutstandingIO () const;
-    static tsFreeList < struct oldChannelNotify, 1024 > freeList;
-    static epicsMutex freeListMutex;
+    static epicsSingleton < tsFreeList < struct oldChannelNotify, 1024 > > pFreeList;
 	oldChannelNotify ( const oldChannelNotify & );
 	oldChannelNotify & operator = ( const oldChannelNotify & );
 };
@@ -115,8 +124,7 @@ private:
         unsigned type, arrayElementCount count, const void *pData);
     void exception ( int status, 
         const char *pContext, unsigned type, arrayElementCount count );
-    static tsFreeList < class getCopy, 1024 > freeList;
-    static epicsMutex freeListMutex;
+    static epicsSingleton < tsFreeList < class getCopy, 1024 > > pFreeList;
 	getCopy ( const getCopy & );
 	getCopy & operator = ( const getCopy & );
 };
@@ -138,8 +146,7 @@ private:
         unsigned type, arrayElementCount count, const void *pData);
     void exception ( int status, 
         const char *pContext, unsigned type, arrayElementCount count );
-    static tsFreeList < class getCallback, 1024 > freeList;
-    static epicsMutex freeListMutex;
+    static epicsSingleton < tsFreeList < class getCallback, 1024 > > pFreeList;
 	getCallback ( const getCallback & );
 	getCallback & operator = ( const getCallback & );
 };
@@ -160,8 +167,7 @@ private:
     void completion ();
     void exception ( int status, const char *pContext, 
         unsigned type, arrayElementCount count );
-    static tsFreeList < class putCallback, 1024 > freeList;
-    static epicsMutex freeListMutex;
+    static epicsSingleton < tsFreeList < class putCallback, 1024 > > pFreeList;
 	putCallback ( const putCallback & );
 	putCallback & operator = ( const putCallback & );
 };
@@ -187,8 +193,7 @@ private:
         unsigned type, arrayElementCount count, const void *pData );
     void exception ( int status, 
         const char *pContext, unsigned type, arrayElementCount count );
-    static tsFreeList < struct oldSubscription, 1024 > freeList;
-    static epicsMutex freeListMutex;
+    static epicsSingleton < tsFreeList < struct oldSubscription, 1024 > > pFreeList;
 	oldSubscription ( const oldSubscription & );
 	oldSubscription & operator = ( const oldSubscription & );
 };
@@ -379,14 +384,12 @@ inline void oldSubscription::destroy ()
 
 inline void * oldSubscription::operator new ( size_t size )
 {
-    epicsAutoMutex locker ( oldSubscription::freeListMutex );
-    return oldSubscription::freeList.allocate ( size );
+    return oldSubscription::pFreeList->allocate ( size );
 }
 
 inline void oldSubscription::operator delete ( void *pCadaver, size_t size )
 {
-    epicsAutoMutex locker ( oldSubscription::freeListMutex );
-    oldSubscription::freeList.release ( pCadaver, size );
+    oldSubscription::pFreeList->release ( pCadaver, size );
 }
 
 inline oldChannelNotify & oldSubscription::channel () const
@@ -396,14 +399,12 @@ inline oldChannelNotify & oldSubscription::channel () const
 
 inline void * getCopy::operator new ( size_t size )
 {
-    epicsAutoMutex locker ( getCopy::freeListMutex );
-    return getCopy::freeList.allocate ( size );
+    return getCopy::pFreeList->allocate ( size );
 }
 
 inline void getCopy::operator delete ( void *pCadaver, size_t size )
 {
-    epicsAutoMutex locker ( getCopy::freeListMutex );
-    getCopy::freeList.release ( pCadaver, size );
+    getCopy::pFreeList->release ( pCadaver, size );
 }
 
 inline void putCallback::destroy ()
@@ -413,14 +414,12 @@ inline void putCallback::destroy ()
 
 inline void * putCallback::operator new ( size_t size )
 {
-    epicsAutoMutex locker ( putCallback::freeListMutex );
-    return putCallback::freeList.allocate ( size );
+    return putCallback::pFreeList->allocate ( size );
 }
 
 inline void putCallback::operator delete ( void *pCadaver, size_t size )
 {
-    epicsAutoMutex locker ( putCallback::freeListMutex );
-    putCallback::freeList.release ( pCadaver, size );
+    putCallback::pFreeList->release ( pCadaver, size );
 }
 
 inline void getCallback::destroy ()
@@ -430,14 +429,12 @@ inline void getCallback::destroy ()
 
 inline void * getCallback::operator new ( size_t size )
 {
-    epicsAutoMutex locker ( getCallback::freeListMutex );
-    return getCallback::freeList.allocate ( size );
+    return getCallback::pFreeList->allocate ( size );
 }
 
 inline void getCallback::operator delete ( void *pCadaver, size_t size )
 {
-    epicsAutoMutex locker ( getCallback::freeListMutex );
-    getCallback::freeList.release ( pCadaver, size );
+    getCallback::pFreeList->release ( pCadaver, size );
 }
 
 inline void oldCAC::registerService ( cacService &service )

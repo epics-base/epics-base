@@ -20,15 +20,17 @@
 
 #include "ipAddrToAsciiAsynchronous.h"
 #include "tsFreeList.h"
+#include "epicsSingleton.h"
 #include "epicsMutex.h"
 
 class cac;
+class callbackMutex;
 
 class msgForMultiplyDefinedPV : public ipAddrToAsciiAsynchronous {
 public:
-    msgForMultiplyDefinedPV ( 
-        cac &cacRefIn, const char *pChannelName, const char *pAcc, 
-        const osiSockAddr &rej );
+    msgForMultiplyDefinedPV ( callbackMutex &,
+        cac & cacRefIn, const char * pChannelName, const char * pAcc, 
+        const osiSockAddr & rej );
     msgForMultiplyDefinedPV ( const osiSockAddr &addr, ipAddrToAsciiEngine &engine );
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
@@ -36,23 +38,21 @@ private:
     void ioCompletionNotify ( const char *pHostName );
     char acc[64];
     char channel[64];
-    cac &cacRef;
-    static tsFreeList < class msgForMultiplyDefinedPV, 16 > freeList;
-    static epicsMutex freeListMutex;
+    cac & cacRef;
+    callbackMutex & mutex;
+    static epicsSingleton < tsFreeList < class msgForMultiplyDefinedPV, 16 > > pFreeList;
 	msgForMultiplyDefinedPV ( const msgForMultiplyDefinedPV & );
 	msgForMultiplyDefinedPV & operator = ( const msgForMultiplyDefinedPV & );
 };
 
 inline void * msgForMultiplyDefinedPV::operator new ( size_t size )
 {
-    epicsAutoMutex locker ( msgForMultiplyDefinedPV::freeListMutex );
-    return msgForMultiplyDefinedPV::freeList.allocate ( size );
+    return msgForMultiplyDefinedPV::pFreeList->allocate ( size );
 }
 
 inline void msgForMultiplyDefinedPV::operator delete ( void *pCadaver, size_t size )
 {
-    epicsAutoMutex locker ( msgForMultiplyDefinedPV::freeListMutex );
-    msgForMultiplyDefinedPV::freeList.release ( pCadaver, size );
+    msgForMultiplyDefinedPV::pFreeList->release ( pCadaver, size );
 }
 
 #endif // ifdef msgForMultiplyDefinedPVh

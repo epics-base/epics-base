@@ -52,7 +52,7 @@ private:
 class netSubscription : public baseNMIU  {
 public:
     static netSubscription * factory ( 
-        tsFreeList < class netSubscription, 1024 > &, 
+        tsFreeList < class netSubscription, 1024, epicsMutexNOOP > &, 
         nciu &chan, unsigned type, arrayElementCount count, 
         unsigned mask, cacStateNotify &notify );
     void show ( unsigned level ) const;
@@ -79,10 +79,10 @@ private:
         unsigned mask, cacStateNotify &notify );
     class netSubscription * isSubscription ();
     void * operator new ( size_t, 
-        tsFreeList < class netSubscription, 1024 > & );
+        tsFreeList < class netSubscription, 1024, epicsMutexNOOP > & );
 #   if ! defined ( NO_PLACEMENT_DELETE )
     void operator delete ( void *, size_t, 
-        tsFreeList < class netSubscription, 1024 > & );
+        tsFreeList < class netSubscription, 1024, epicsMutexNOOP > & );
 #   endif
 	netSubscription ( const netSubscription & );
 	netSubscription & operator = ( const netSubscription & );
@@ -91,7 +91,7 @@ private:
 class netReadNotifyIO : public baseNMIU {
 public:
     static netReadNotifyIO * factory ( 
-        tsFreeList < class netReadNotifyIO, 1024 > &, 
+        tsFreeList < class netReadNotifyIO, 1024, epicsMutexNOOP > &, 
         nciu &chan, cacReadNotify &notify );
     void show ( unsigned level ) const;
     void destroy ( class cacRecycle & );
@@ -107,10 +107,10 @@ private:
     cacReadNotify &notify;
     netReadNotifyIO ( nciu &chan, cacReadNotify &notify );
     void * operator new ( size_t, 
-        tsFreeList < class netReadNotifyIO, 1024 > & );
+        tsFreeList < class netReadNotifyIO, 1024, epicsMutexNOOP > & );
 #   if ! defined ( NO_PLACEMENT_DELETE )
     void operator delete ( void *, size_t, 
-        tsFreeList < class netReadNotifyIO, 1024 > & );
+        tsFreeList < class netReadNotifyIO, 1024, epicsMutexNOOP > & );
 #   endif
 	netReadNotifyIO ( const netReadNotifyIO & );
 	netReadNotifyIO & operator = ( const netReadNotifyIO & );
@@ -119,7 +119,7 @@ private:
 class netWriteNotifyIO : public baseNMIU {
 public:
     static netWriteNotifyIO * factory ( 
-        tsFreeList < class netWriteNotifyIO, 1024 > &, 
+        tsFreeList < class netWriteNotifyIO, 1024, epicsMutexNOOP > &, 
         nciu &chan, cacWriteNotify &notify );
     void show ( unsigned level ) const;
     void destroy ( class cacRecycle & );
@@ -135,10 +135,10 @@ private:
     cacWriteNotify &notify;
     netWriteNotifyIO ( nciu &chan, cacWriteNotify &notify );
     void * operator new ( size_t, 
-        tsFreeList < class netWriteNotifyIO, 1024 > & );
+        tsFreeList < class netWriteNotifyIO, 1024, epicsMutexNOOP > & );
 #   if ! defined ( NO_PLACEMENT_DELETE )
     void operator delete ( void *, size_t, 
-        tsFreeList < class netWriteNotifyIO, 1024 > & );
+        tsFreeList < class netWriteNotifyIO, 1024, epicsMutexNOOP > & );
 #   endif
 	netWriteNotifyIO ( const netWriteNotifyIO & );
 	netWriteNotifyIO & operator = ( const netWriteNotifyIO & );
@@ -155,7 +155,7 @@ inline class nciu & baseNMIU::channel () const
 }
 
 inline void * netSubscription::operator new ( size_t size, 
-    tsFreeList < class netSubscription, 1024 > &freeList )
+    tsFreeList < class netSubscription, 1024, epicsMutexNOOP > &freeList )
 {
     return freeList.allocate ( size );
 }
@@ -167,15 +167,14 @@ inline void * netSubscription::operator new ( size_t size,
 // a future version of netSubscription::netSubscription()
 #if ! defined ( NO_PLACEMENT_DELETE )
 inline void netSubscription::operator delete ( void *pCadaver, size_t size, 
-    tsFreeList < class netSubscription, 1024 > &freeList )
+    tsFreeList < class netSubscription, 1024, epicsMutexNOOP > &freeList )
 {
     freeList.release ( pCadaver, size );
 }
-#error
 #endif
 
 inline netSubscription * netSubscription::factory ( 
-    tsFreeList < class netSubscription, 1024 > &freeList, 
+    tsFreeList < class netSubscription, 1024, epicsMutexNOOP > &freeList, 
     nciu &chan, unsigned type, arrayElementCount count, 
     unsigned mask, cacStateNotify &notify )
 {
@@ -205,14 +204,14 @@ inline unsigned netSubscription::getMask () const
 }
 
 inline netReadNotifyIO * netReadNotifyIO::factory ( 
-    tsFreeList < class netReadNotifyIO, 1024 > &freeList, 
+    tsFreeList < class netReadNotifyIO, 1024, epicsMutexNOOP > &freeList, 
     nciu &chan, cacReadNotify &notify )
 {
     return new ( freeList ) netReadNotifyIO ( chan, notify );
 }
 
 inline void * netReadNotifyIO::operator new ( size_t size, 
-    tsFreeList < class netReadNotifyIO, 1024 > &freeList )
+    tsFreeList < class netReadNotifyIO, 1024, epicsMutexNOOP > &freeList )
 {
     return freeList.allocate ( size );
 }
@@ -224,20 +223,20 @@ inline void * netReadNotifyIO::operator new ( size_t size,
 // a future version of netReadNotifyIO::netReadNotifyIO()
 #if ! defined ( NO_PLACEMENT_DELETE )
 inline void netReadNotifyIO::operator delete ( void *pCadaver, size_t size, 
-    tsFreeList < class netReadNotifyIO, 1024 > &freeList ) {
+    tsFreeList < class netReadNotifyIO, 1024, epicsMutexNOOP > &freeList ) {
     freeList.release ( pCadaver, size );
 }
 #endif
 
 inline netWriteNotifyIO * netWriteNotifyIO::factory ( 
-    tsFreeList < class netWriteNotifyIO, 1024 > &freeList, 
+    tsFreeList < class netWriteNotifyIO, 1024, epicsMutexNOOP > &freeList, 
     nciu &chan, cacWriteNotify &notify )
 {
     return new ( freeList ) netWriteNotifyIO ( chan, notify );
 }
 
 inline void * netWriteNotifyIO::operator new ( size_t size, 
-        tsFreeList < class netWriteNotifyIO, 1024 > &freeList )
+        tsFreeList < class netWriteNotifyIO, 1024, epicsMutexNOOP > &freeList )
 { 
     return freeList.allocate ( size );
 }
@@ -249,7 +248,7 @@ inline void * netWriteNotifyIO::operator new ( size_t size,
 // a future version of netWriteNotifyIO::netWriteNotifyIO()
 #if ! defined ( NO_PLACEMENT_DELETE )
 inline void netWriteNotifyIO::operator delete ( void *pCadaver, size_t size, 
-    tsFreeList < class netWriteNotifyIO, 1024 > &freeList )
+    tsFreeList < class netWriteNotifyIO, 1024, epicsMutexNOOP > &freeList )
 {
     freeList.release ( pCadaver, size );
 }

@@ -14,7 +14,6 @@
 #ifndef bheh
 #define bheh
 
-#include "shareLib.h"
 
 #include <limits.h>
 #include <float.h>
@@ -24,15 +23,19 @@
 #   undef epicsExportSharedSymbols
 #endif
 
+#include "shareLib.h"
+
 #include "tsSLList.h"
 #include "tsDLList.h"
 #include "tsFreeList.h"
+#include "epicsSingleton.h"
 #include "epicsTime.h"
-#include "epicsMutex.h"
 
 #ifdef bhehEpicsExportSharedSymbols
 #   define epicsExportSharedSymbols
 #endif
+
+#include "shareLib.h"
 
 #include "inetAddrID.h"
 
@@ -59,8 +62,7 @@ private:
     double averagePeriod;
     unsigned lastBeaconNumber;
     void beaconAnomalyNotify ();
-    static tsFreeList < class bhe, 1024 > freeList;
-    static epicsMutex freeListMutex;
+    static epicsSingleton < tsFreeList < class bhe, 1024 > > pFreeList;
 	bhe ( const bhe & );
 	bhe & operator = ( const bhe & );
 };

@@ -16,23 +16,12 @@
 
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
+#define epicsExportSharedSymbols
 #include "iocinf.h"
 #include "oldAccess.h"
 #include "cac.h"
 
-#if defined ( _MSC_VER )
-#   pragma warning ( push )
-#   pragma warning ( disable: 4660 )
-#endif
-
-template class tsFreeList < struct oldChannelNotify, 1024 >;
-
-#if defined ( _MSC_VER )
-#   pragma warning ( pop )
-#endif
-
-tsFreeList < struct oldChannelNotify, 1024 > oldChannelNotify::freeList;
-epicsMutex oldChannelNotify::freeListMutex;
+epicsSingleton < tsFreeList < struct oldChannelNotify, 1024 > > oldChannelNotify::pFreeList;
 
 extern "C" void cacNoopConnHandler ( struct connection_handler_args )
 {
@@ -144,12 +133,10 @@ bool oldChannelNotify::includeFirstConnectInCountOfOutstandingIO () const
 
 void * oldChannelNotify::operator new ( size_t size )
 {
-    epicsAutoMutex locker ( oldChannelNotify::freeListMutex );
-    return oldChannelNotify::freeList.allocate ( size );
+    return oldChannelNotify::pFreeList->allocate ( size );
 }
 
 void oldChannelNotify::operator delete ( void *pCadaver, size_t size )
 {
-    epicsAutoMutex locker ( oldChannelNotify::freeListMutex );
-    oldChannelNotify::freeList.release ( pCadaver, size );
+    oldChannelNotify::pFreeList->release ( pCadaver, size );
 }

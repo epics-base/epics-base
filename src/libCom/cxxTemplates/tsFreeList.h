@@ -72,8 +72,8 @@
 template < class T, unsigned DEBUG_LEVEL >
 union tsFreeListItem {
 public:
-    tsFreeListItem < T, DEBUG_LEVEL > *pNext;
     char pad[ sizeof ( T ) ];
+    tsFreeListItem < T, DEBUG_LEVEL > *pNext;
 };
 
 template < class T, unsigned N = 0x400, unsigned DEBUG_LEVEL = 0u >

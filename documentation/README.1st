@@ -119,6 +119,18 @@ Software requirements
      more board support packages. Consult the vxWorks documentation for
      details. 
 
+     GNU readline or Tecla library 
+     GNU readline and Tecla librararies can be used by the IOC shell to
+     provide command line editing and command line history recall and edit.
+     GNU readline (or Tecla library) must be installed on your target system
+     when COMMANDLINE_LIBRARY is set to READLINE (or TECLA) for that target.
+     EPICS (EPICS shell) is the default specified in CONFIG_COMMON.  A READLINE
+     override is defined for linux-x86 in the EPICS distribution. Comment out
+     COMMANDLINE_LIBRARY=READLINE in configure/os/CONFIG_SITE.Common.linux-x86 
+     if readline is not installed on linux-x86. Command-line editing and
+     history will then be those supplied by the os. On vxWorks the ledLib
+     command-line input libraries are used.
+
 Host system storage requirements
 
      The GNU zipped tar file is approximately 1.4 MB in size. The unzipped

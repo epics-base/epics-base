@@ -127,6 +127,7 @@ the host vendor's C and C++ compilers as well as the GNU gcc and g++ compilers.
 The GNU cross-compilers have been used for all cross-compiled targets.
 You may need the host vendor's C++ compiler in your search path to do EPICS
 builds. Check definitions of CC and CCC in base/configure/os/CONFIG.&lt;host>.&lt;host>.
+</blockquote>
 
 <h3>
 Software requirements</h3>
@@ -150,7 +151,20 @@ to Tornado 2 should be specified in the base/configure/RELEASE or
 base/configure/RELEASE.&lt;hostarch>
 file. You will also need one or more board support packages. Consult the
 vxWorks documentation for details.
+<p><b>GNU readline or Tecla library</b>
+<br>
+GNU readline and Tecla librararies can be used by the IOC shell to
+provide command line editing and command line history recall and edit.
+GNU readline (or Tecla library) must be installed on your target system
+when COMMANDLINE_LIBRARY is set to READLINE (or TECLA) for that target.
+EPICS (EPICS shell) is the default specified in CONFIG_COMMON.  A READLINE
+override is defined for linux-x86 in the EPICS distribution. Comment out
+COMMANDLINE_LIBRARY=READLINE in configure/os/CONFIG_SITE.Common.linux-x86 
+if readline is not installed on linux-x86. Command-line editing and
+history will then be those supplied by the os. On vxWorks the ledLib
+command-line input libraries are used.
 </blockquote>
+
 
 <h3>
 Host system storage requirements</h3>
@@ -164,7 +178,7 @@ files for each target take approximately 10 MB.</blockquote>
 Documentation</h3>
 
 <blockquote>EPICS documentation is available on the WWW via the EPICS home
-page at APS: URL <a href="http://www.aps.anl.gov/epics">http://www.aps.anl.gov/epics</a></blockquote>
+page at APS: URL <a href="http://www.aps.anl.gov/epics">http://www.aps.anl.gov/epics</a>
 
 available on the IOC software, Base R3.14, release number, web page
 which can be accessed from the APS EPICS home page.</blockquote>

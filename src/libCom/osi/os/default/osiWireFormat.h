@@ -26,7 +26,7 @@
 // network byte stream.
 //
 
-// this endian test should vanish during optimization
+// this endian test will hopefully vanish during optimization
 // and therefore be executed only at compile time
 inline bool osiLittleEndian ()
 {
@@ -34,7 +34,6 @@ inline bool osiLittleEndian ()
         epicsUInt32 uint;
         epicsUInt8 uchar[4];
     } osiWireFormatEndianTest;
-
     osiWireFormatEndianTest.uint = 1;
     if ( osiWireFormatEndianTest.uchar[0] == 1 ) {
         return true;
@@ -44,41 +43,92 @@ inline bool osiLittleEndian ()
     }
 }
 
-inline void osiConvertToWireFormat ( const epicsFloat32 &value, unsigned char *pWire )
+inline void osiConvertToWireFormat ( const epicsFloat32 &value, epicsUInt8 *pWire )
 {
-    const epicsUInt32 * pValue = reinterpret_cast < const epicsUInt32 * > ( &value );
-    pWire[0u] = static_cast < unsigned char > ( *pValue >> 24u );
-    pWire[1u] = static_cast < unsigned char > ( *pValue >> 16u );
-    pWire[2u] = static_cast < unsigned char > ( *pValue >> 8u );
-    pWire[3u] = static_cast < unsigned char > ( *pValue >> 0u );
+    union {
+        epicsUInt32 utmp;
+        epicsFloat32 ftmp;
+    };
+    ftmp = value;
+    pWire[0] = static_cast < unsigned char > ( utmp >> 24u );
+    pWire[1] = static_cast < unsigned char > ( utmp >> 16u );
+    pWire[2] = static_cast < unsigned char > ( utmp >> 8u );
+    pWire[3] = static_cast < unsigned char > ( utmp >> 0u );
 }
 
-inline void osiConvertToWireFormat ( const epicsFloat64 &value, unsigned char *pWire )
+inline void osiConvertToWireFormat ( const epicsFloat64 &value, epicsUInt8 *pWire )
 {
-    const epicsUInt32 *pValue = reinterpret_cast < const epicsUInt32 *> ( &value );
+    const epicsUInt32 * pValue = reinterpret_cast < const epicsUInt32 *> ( &value );
+    union {
+        epicsUInt8 btmp[8];
+        epicsFloat64 ftmp;
+    };
+    ftmp = value;
     // this endian test should vanish during optimization
     if ( osiLittleEndian () ) {
         // little endian
-        pWire[0u] = static_cast < unsigned char > ( pValue[1] >> 24u );
-        pWire[1u] = static_cast < unsigned char > ( pValue[1] >> 16u );
-        pWire[2u] = static_cast < unsigned char > ( pValue[1] >> 8u );
-        pWire[3u] = static_cast < unsigned char > ( pValue[1] >> 0u );
-        pWire[4u] = static_cast < unsigned char > ( pValue[0] >> 24u );
-        pWire[5u] = static_cast < unsigned char > ( pValue[0] >> 16u );
-        pWire[6u] = static_cast < unsigned char > ( pValue[0] >> 8u );
-        pWire[7u] = static_cast < unsigned char > ( pValue[0] >> 0u );
+        pWire[0] = btmp[7];
+        pWire[1] = btmp[6];
+        pWire[2] = btmp[5];
+        pWire[3] = btmp[4];
+        pWire[4] = btmp[3];
+        pWire[5] = btmp[2];
+        pWire[6] = btmp[1];
+        pWire[7] = btmp[0];
     }
     else {
         // big endian
-        pWire[0u] = static_cast < unsigned char > ( pValue[0] >> 24u );
-        pWire[1u] = static_cast < unsigned char > ( pValue[0] >> 16u );
-        pWire[2u] = static_cast < unsigned char > ( pValue[0] >> 8u );
-        pWire[3u] = static_cast < unsigned char > ( pValue[0] >> 0u );
-        pWire[4u] = static_cast < unsigned char > ( pValue[1] >> 24u );
-        pWire[5u] = static_cast < unsigned char > ( pValue[1] >> 16u );
-        pWire[6u] = static_cast < unsigned char > ( pValue[1] >> 8u );
-        pWire[7u] = static_cast < unsigned char > ( pValue[1] >> 0u );
+        pWire[0] = btmp[0];
+        pWire[1] = btmp[1];
+        pWire[2] = btmp[2];
+        pWire[3] = btmp[3];
+        pWire[4] = btmp[4];
+        pWire[5] = btmp[5];
+        pWire[6] = btmp[6];
+        pWire[7] = btmp[7];
     }
+}
+
+inline void osiConvertFromWireFormat ( epicsFloat32 &value, epicsUInt8 *pWire )
+{
+    union {
+        epicsUInt32 utmp;
+        epicsFloat32 ftmp;
+    };
+    utmp  = pWire[0] << 24u;
+    utmp |= pWire[1] << 16u;
+    utmp |= pWire[2] <<  8u;
+    utmp |= pWire[3] <<  0u;
+    value = ftmp;
+}
+
+inline void osiConvertFromWireFormat ( epicsFloat64 &value, epicsUInt8 *pWire )
+{
+    union {
+        epicsUInt8 btmp[8];
+        epicsFloat64 ftmp;
+    };
+    if ( osiLittleEndian () ) {
+        btmp[7] = pWire[0];
+        btmp[6] = pWire[1];
+        btmp[5] = pWire[2];
+        btmp[4] = pWire[3];
+        btmp[3] = pWire[4];
+        btmp[2] = pWire[5];
+        btmp[1] = pWire[6];
+        btmp[0] = pWire[7];
+    }
+    else {
+        btmp[0] = pWire[0];
+        btmp[1] = pWire[1];
+        btmp[2] = pWire[2];
+        btmp[3] = pWire[3];
+        btmp[4] = pWire[4];
+        btmp[5] = pWire[5];
+        btmp[6] = pWire[6];
+        btmp[7] = pWire[7];
+    }
+    value = ftmp;
 }
 
 #endif // osiWireFormat

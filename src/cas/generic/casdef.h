@@ -30,6 +30,9 @@
  * 	Modification Log:
  * 	-----------------
  * 	$Log$
+ * 	Revision 1.23  1999/04/30 15:39:41  jhill
+ * 	doc
+ * 	
  * 	Revision 1.22  1998/12/19 00:04:52  jhill
  * 	renamed createPV() to pvAttach()
  *
@@ -419,12 +422,12 @@ public:
 	// It is a responsibility of the server tool to detect attempts by 
 	// the server library to attach to an existing PV. If the PV does not 
 	// exist then the server tool should create it. Otherwise, the server 
-	// tool should return a pointer to the preexisting PV. 
+	// tool typically will return a pointer to the preexisting PV. 
 	//
 	// The server tool is encouraged to accept multiple PV name aliases 
 	// for the same PV here. 
 	//
-	// In all situations the server tool should avoid PV duplication 
+	// In most situations the server tool should avoid PV duplication 
 	// by returning a pointer to an existing PV if the PV alias name
 	// matches a preexisting PV's name or any of its aliases.
 	//
@@ -440,6 +443,17 @@ public:
 	// The server library will retry the request whenever an
 	// asynchronous IO operation (create or exist) completes
 	// against the server.
+	//
+	// In certain specialized rare situations the server tool may choose
+	// to create client private process variables that are not shared between
+	// clients. In this situation there might be several process variables
+	// with the same name. One for each client. For example, a server tool
+	// might be written that provides access to archival storage of the
+	// historic values of a set of process variables. Each client would 
+	// specify its date of interest by writing into a client private process 
+	// variable. Next the client would determine the current value of its 
+	// subset of named process variables at its privately specified date by 
+	// attaching to additional client private process variables.
 	//
 	epicsShareFunc virtual pvAttachReturn pvAttach (const casCtx &ctx,
 		const char *pPVAliasName);
@@ -471,6 +485,9 @@ public:
 //
 // casPV() - Channel Access Server Process Variable API Class
 //
+// Objects of this type are created by the caServer::pvAttach()
+// object factory virtual function.
+//
 // Deletion Responsibility
 // -------- --------------
 // o the server lib will not call "delete" directly for any
@@ -486,7 +503,7 @@ public:
 // client attachment to this PV (and reclaim any resources
 // allocated by the server library on its behalf)
 //
-// HINT: if the server tool precreates the PV during initialization
+// NOTE: if the server tool precreates the PV during initialization
 // then it may decide to provide a "destroy()" implementation in the
 // derived class which is a noop.
 //
@@ -522,7 +539,7 @@ public:
 	// a transaction (PV state must not be modified during a
 	// transaction)
 	//
-	// HINT: their may be many read/write operations performed within
+	// NOTE: there may be many read/write operations performed within
 	// a single transaction if a large array is being transferred
 	//
 	epicsShareFunc virtual caStatus beginTransaction ();
@@ -682,6 +699,12 @@ public:
 
 //
 // casChannel - Channel Access Server - Channel API Class
+//
+// Objects of this type are created by the casPV::createChannel()
+// object factory virtual function.
+//
+// A casChannel object is created each time that a CA client 
+// attaches to a process variable.
 //
 // Deletion Responsibility
 // -------- --------------

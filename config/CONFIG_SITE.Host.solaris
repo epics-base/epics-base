@@ -6,6 +6,6 @@
 
 # APS overrides of definitions 
 
-GCC = /opt/gnu/bin/gcc
-G++ = /opt/gnu/bin/g++
+#GCC = /opt/gnu/bin/gcc
+#G++ = /opt/gnu/bin/g++
 

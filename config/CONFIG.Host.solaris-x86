@@ -8,6 +8,3 @@
 # Solaris on x86
 ARCH_DEP_CPPFLAGS += -D_X86_
 
-GCC = gcc
-G++ = g++
-

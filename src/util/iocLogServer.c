@@ -286,13 +286,13 @@ static void acceptNewClient(struct ioc_log_server *pserver)
   		struct hostent      *pent;   
 
     		pent = gethostbyaddr(
-				&addr.sin_addr, 
+				(char *)&addr.sin_addr, 
 				sizeof addr.sin_addr, 
 				AF_INET);
 		if(pent){
 			pname = pent->h_name;
 		}else{
-			pname = (char *) inet_ntoa(&addr.sin_addr);
+			pname = (char *) inet_ntoa(addr.sin_addr);
 		}
         }
 
@@ -405,8 +405,10 @@ static void readFromClient(struct iocLogClient *pclient)
 			       pclient->insock);
 		if(close(pclient->insock)<0)
 			abort();
+#ifndef __hpux /* definition is void free() on HP */
 		if(free(pclient)<0)
 			abort();
+#endif
 		return;
 	}
 

@@ -201,50 +201,86 @@ int epicsTime_gmtime ( const time_t *pAnsiTime, struct tm *pTM )
 }
 
 // synthesize a reentrant localtime on WIN32
-int epicsTime_localtime ( const time_t *pAnsiTime, struct tm *pTM )
+int epicsTime_localtime ( 
+    const time_t * pAnsiTime, struct tm * pTM )
 {
     FILETIME ft;
-    UnixTimeToFileTime ( pAnsiTime, &ft );
-
-    FILETIME lft;
-    BOOL status = FileTimeToLocalFileTime ( &ft, &lft );
-    if ( ! status ) {
-		return epicsTimeERROR;
-    }
-
-    SYSTEMTIME st;
-    status = FileTimeToSystemTime ( &lft, &st );
-    if ( ! status ) {
-		return epicsTimeERROR;
-    }
-    pTM->tm_sec = st.wSecond; // seconds after the minute - [0,59]
-    pTM->tm_min = st.wMinute; // minutes after the hour - [0,59]
-    pTM->tm_hour = st.wHour; // hours since midnight - [0,23]
-    assert ( st.wDay >= 1 && st.wDay <= 31 );
-    pTM->tm_mday = st.wDay; // day of the month - [1,31]
-    assert ( st.wMonth >= 1 && st.wMonth <= 12 );
-    pTM->tm_mon = st.wMonth - 1; // months since January - [0,11]
-    assert ( st.wYear >= 1900 );
-    pTM->tm_year = st.wYear - 1900; // years since 1900
-    pTM->tm_wday = st.wDayOfWeek; // days since Sunday - [0,6] 
-    pTM->tm_yday = dayOfYear ( st.wDay, st.wMonth, st.wYear ) - 1;
+    UnixTimeToFileTime ( pAnsiTime, & ft );
 
     TIME_ZONE_INFORMATION tzInfo;
-    DWORD tzStatus = GetTimeZoneInformation ( &tzInfo );
-    switch ( tzStatus ) {
-    case TIME_ZONE_ID_UNKNOWN:
-        pTM->tm_isdst = -1;
-        break;
-    case TIME_ZONE_ID_STANDARD:
-        pTM->tm_isdst = 0;
-        break;
-    case TIME_ZONE_ID_DAYLIGHT:
-        pTM->tm_isdst = 1;
-        break;
-    default:
-        pTM->tm_isdst = -1;
-        break;
+    DWORD tzStatus = GetTimeZoneInformation ( & tzInfo );
+    if ( tzStatus == TIME_ZONE_ID_INVALID ) {
+		return epicsTimeERROR;
     }
+  
+    //
+    // There are remarkable weaknessess in the FileTimeToLocalFileTime 
+    // interface so we dont use it here. Unfortunately, there is no 
+    // corresponding function that works on file time.
+    //
+    SYSTEMTIME st;
+    BOOL success = FileTimeToSystemTime ( & ft, & st );
+    if ( ! success ) {
+		return epicsTimeERROR;
+    }
+    SYSTEMTIME lst;
+    success = SystemTimeToTzSpecificLocalTime (
+        & tzInfo, & st, & lst ); 
+    if ( ! success ) {
+		return epicsTimeERROR;
+    }
+
+    //
+    // We must convert back to file time so that we can determine if DST
+    // is active...
+    //
+    FILETIME lft;
+    success = SystemTimeToFileTime ( & lst, & lft );
+    if ( ! success ) {
+		return epicsTimeERROR;
+    }
+
+    int is_dst = -1; // unknown state of dst
+    if ( tzStatus != TIME_ZONE_ID_UNKNOWN && 
+            tzInfo.StandardDate.wMonth != 0 && 
+            tzInfo.DaylightDate.wMonth != 0) {
+        // determine if the specified date is 
+        // in daylight savings time 
+        tzInfo.StandardDate.wYear = st.wYear; 
+        FILETIME StandardDateFT;
+        success = SystemTimeToFileTime ( 
+            & tzInfo.StandardDate, & StandardDateFT );
+        if ( ! success ) {
+		    return epicsTimeERROR;
+        }
+        tzInfo.DaylightDate.wYear = st.wYear; 
+        FILETIME DaylightDateFT;
+        success = SystemTimeToFileTime ( 
+            & tzInfo.DaylightDate, & DaylightDateFT );
+        if ( ! success ) {
+		    return epicsTimeERROR;
+        }
+        if ( CompareFileTime ( & lft, & DaylightDateFT ) >= 0
+                && CompareFileTime ( & lft, & StandardDateFT ) < 0 ) {
+            is_dst = 1;
+        }
+        else {
+            is_dst = 0;
+        }
+    }
+
+    pTM->tm_sec = lst.wSecond; // seconds after the minute - [0,59]
+    pTM->tm_min = lst.wMinute; // minutes after the hour - [0,59]
+    pTM->tm_hour = lst.wHour; // hours since midnight - [0,23]
+    assert ( lst.wDay >= 1 && lst.wDay <= 31 );
+    pTM->tm_mday = lst.wDay; // day of the month - [1,31]
+    assert ( lst.wMonth >= 1 && lst.wMonth <= 12 );
+    pTM->tm_mon = lst.wMonth - 1; // months since January - [0,11]
+    assert ( lst.wYear >= 1900 );
+    pTM->tm_year = lst.wYear - 1900; // years since 1900
+    pTM->tm_wday = lst.wDayOfWeek; // days since Sunday - [0,6] 
+    pTM->tm_yday = dayOfYear ( lst.wDay, lst.wMonth, lst.wYear ) - 1;
+    pTM->tm_isdst = is_dst;
 
 	return epicsTimeOK;
 }

@@ -20,6 +20,10 @@ CROSS2 = $(CROSS_COMPILER_TARGET_ARCHS$(filter-out 1,$(words $(filter $(EPICS_HO
 BUILD_ARCHS = $(EPICS_HOST_ARCH) $(CROSS1) $(CROSS2)
 
 #-------------------------------------------------------
+# Ext, app, and module configure dir targets
+CONFIG_TARGETS += CONFIG_APP_INCLUDE RULES_INCLUDE
+
+#-------------------------------------------------------
 # Cross compile default, HOST or CROSS, CONFIG.crossCommon will override
 BUILD_CLASS = HOST
 

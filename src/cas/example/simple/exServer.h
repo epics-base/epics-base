@@ -316,7 +316,7 @@ public:
 
 	void show (unsigned level) const;
 	pvExistReturn pvExistTest (const casCtx&, const char *pPVName);
-	pvCreateReturn createPV (const casCtx &ctx, const char *pPVName);
+	pvAttachReturn pvAttach (const casCtx &ctx, const char *pPVName);
 
 	void installAliasName(pvInfo &info, const char *pAliasName);
 	inline void removeAliasName(pvEntry &entry);
@@ -538,14 +538,14 @@ private:
 // exAsyncCreateIO
 // (PV create async IO)
 //
-class exAsyncCreateIO : public casAsyncPVCreateIO, public exOSITimer {
+class exAsyncCreateIO : public casAsyncPVAttachIO, public exOSITimer {
 public:
 	//
 	// exAsyncCreateIO()
 	//
 	exAsyncCreateIO(pvInfo &pviIn, exServer &casIn, 
 		const casCtx &ctxIn, aitBool scanOnIn) :
-		casAsyncPVCreateIO(ctxIn), exOSITimer(0.00001), 
+		casAsyncPVAttachIO(ctxIn), exOSITimer(0.00001), 
 			pvi(pviIn), cas(casIn), scanOn(scanOnIn) {}
 
 	~exAsyncCreateIO()

@@ -29,22 +29,8 @@
  *
  * History
  * $Log$
- * Revision 1.2  1997/06/13 09:15:54  jhill
- * connect proto changes
- *
- * Revision 1.1  1997/04/10 19:38:14  jhill
- * installed
- *
- * Revision 1.2  1996/11/06 22:15:53  jhill
- * allow monitor init read to using rd async io
- *
- * Revision 1.1  1996/11/02 01:01:02  jhill
- * installed
- *
- *
  *
  */
-
 
 #include "server.h"
 #include "casAsyncIOIIL.h" 	// casAsyncIOI in line func
@@ -53,54 +39,54 @@
 #include "casCoreClientIL.h"	// casCoreClient in line func
 
 //
-// casAsyncPVCIOI::casAsyncPVCIOI()
+// casAsyncAtIOI::casAsyncAtIOI()
 //
-epicsShareFunc casAsyncPVCIOI::casAsyncPVCIOI(const casCtx &ctx, 
-			casAsyncPVCreateIO &ioIn) :
-	casAsyncIOI(*ctx.getClient(), ioIn),
-	msg(*ctx.getMsg()),
-	retVal(S_cas_badParameter)
+epicsShareFunc casAsyncAtIOI::casAsyncAtIOI (const casCtx &ctx, 
+			casAsyncPVAttachIO &ioIn) :
+	casAsyncIOI (*ctx.getClient(), ioIn),
+	msg (*ctx.getMsg()),
+	retVal (S_cas_badParameter)
 {
 	assert (&this->msg);
-	this->client.installAsyncIO(*this);
+	this->client.installAsyncIO (*this);
 }
 
 //
-// casAsyncPVCIOI::~casAsyncPVCIOI()
+// casAsyncAtIOI::~casAsyncAtIOI()
 //
-casAsyncPVCIOI::~casAsyncPVCIOI()
+casAsyncAtIOI::~casAsyncAtIOI()
 {
-	this->client.removeAsyncIO(*this);
+	this->client.removeAsyncIO (*this);
 }
 
 //
-// casAsyncPVCIOI::postIOCompletion()
+// casAsyncAtIOI::postIOCompletion()
 //
-epicsShareFunc caStatus casAsyncPVCIOI::postIOCompletion(const pvCreateReturn &retValIn)
+epicsShareFunc caStatus casAsyncAtIOI::postIOCompletion(const pvAttachReturn &retValIn)
 {
 	this->retVal = retValIn; 
-	return this->postIOCompletionI();
+	return this->postIOCompletionI ();
 }
 
 
 //
-// casAsyncPVCIOI::cbFuncAsyncIO()
+// casAsyncAtIOI::cbFuncAsyncIO()
 // (called when IO completion event reaches top of event queue)
 //
-caStatus casAsyncPVCIOI::cbFuncAsyncIO()
+caStatus casAsyncAtIOI::cbFuncAsyncIO()
 {
 	caStatus 	status;
 
-        switch (this->msg.m_cmmd) {
-        case CA_PROTO_CLAIM_CIU:
-		status = this->client.createChanResponse(this->msg, this->retVal);
-                break;
- 
-        default:
-                this->reportInvalidAsynchIO(this->msg.m_cmmd);
-                status = S_cas_internal;
-                break;
-        }
+	switch (this->msg.m_cmmd) {
+	case CA_PROTO_CLAIM_CIU:
+		status = this->client.createChanResponse (this->msg, this->retVal);
+		break;
+
+	default:
+		this->reportInvalidAsynchIO (this->msg.m_cmmd);
+		status = S_cas_internal;
+		break;
+	}
 
 	return status;
 }

@@ -30,6 +30,9 @@
  * 	Modification Log:
  * 	-----------------
  * 	$Log$
+ * 	Revision 1.21  1998/12/07 23:21:53  jhill
+ * 	doc
+ *
  * 	Revision 1.20  1998/09/24 20:40:56  jhill
  * 	new error message
  *
@@ -252,14 +255,41 @@ private:
 
 class casPV;
 
-class epicsShareClass pvCreateReturn {
+//
+// pvAttachReturn
+//
+class epicsShareClass pvAttachReturn {
 public:
-	pvCreateReturn(caStatus statIn)
-		{ this->pPV = NULL; this->stat = statIn; }
-	pvCreateReturn(casPV &pv) 
-		{ this->pPV = &pv; this->stat = S_casApp_success; }
+	pvAttachReturn ()
+	{ 
+		this->pPV = NULL; 
+		//
+		// A pv name is required for success
+		//
+		this->stat = S_cas_badParameter; 
+	}
 
-	const pvCreateReturn &operator = (caStatus rhs)
+	pvAttachReturn (caStatus statIn)
+	{ 
+		this->pPV = NULL; 
+		if (statIn==S_casApp_success) {
+			//
+			// A pv name is required for success
+			//
+			this->stat = S_cas_badParameter;
+		}
+		else {
+			this->stat = statIn;
+		}
+	}
+
+	pvAttachReturn (casPV &pv) 
+	{ 
+		this->pPV = &pv; 
+		this->stat = S_casApp_success; 
+	}
+
+	const pvAttachReturn &operator = (caStatus rhs)
 	{
 		this->pPV = NULL;
 		if (rhs == S_casApp_success) {
@@ -272,7 +302,7 @@ public:
 	}
 	
 	// 
-	// const pvCreateReturn &operator = (casPV &pvIn)
+	// const pvAttachReturn &operator = (casPV &pvIn)
 	//
 	// The above assignement operator is not included 
 	// because it does not match the strict definition of an 
@@ -281,7 +311,7 @@ public:
 	// pointer here because the server library _will_ make
 	// controlled modification of the PV in the future.
 	//
-	const pvCreateReturn &operator = (casPV *pPVIn)
+	const pvAttachReturn &operator = (casPV *pPVIn)
 	{
 		if (pPVIn!=NULL) {
 			this->stat = S_casApp_success;
@@ -298,6 +328,16 @@ public:
 private:
 	casPV *pPV;
 	caStatus stat;
+};
+
+//
+// pvCreateReturn (depricated)
+// (the class "pvCreateReturn" will be deleted in a future release)
+//
+class epicsShareClass pvCreateReturn : public pvAttachReturn {
+public:
+	pvCreateReturn (caStatus statIn) : pvAttachReturn(statIn) {};
+	pvCreateReturn (casPV &pvIn) : pvAttachReturn (pvIn) {};
 };
 
 #include "casEventMask.h"	// EPICS event select class 
@@ -363,24 +403,27 @@ public:
 		const char *pPVAliasName);
 
 	//
-	// createPV() 
+	// pvAttach() 
 	//
-	// This function is called _every_ time that a PV is attached to
-	// by a client. The name supplied here will be either a canonical PV  
-	// name or an alias PV name.
+	// This function is called _every_ time that a client attaches to the PV.
+	// The name supplied here will be either a canonical PV name or an alias 
+	// PV name.
 	//	
 	// The request is allowed to complete asynchronously
 	// (see Asynchronous IO Classes below).
 	//
 	// IMPORTANT: 
-	// It is a responsibility of the server tool 
-	// to detect attempts by the server lib to create a 2nd PV with 
-	// the same name as an existing PV. It is also the responsibility 
-	// of the server tool to detect attempts by the server lib to 
-	// create a 2nd PV with a name that is an alias of an existing PV. 
-	// In these situations the server tool should avoid PV duplication 
-	// by returning a pointer to an existing PV (and not create a new 
-	// PV).
+	// It is a responsibility of the server tool to detect attempts by 
+	// the server library to attach to an existing PV. If the PV does not 
+	// exist then the server tool should create it. Otherwise, the server 
+	// tool should return a pointer to the preexisting PV. 
+	//
+	// The server tool is encouraged to accept multiple PV name aliases 
+	// for the same PV here. 
+	//
+	// In all situations the server tool should avoid PV duplication 
+	// by returning a pointer to an existing PV if the PV alias name
+	// matches a preexisting PV's name or any of its aliases.
 	//
 	// example return from this procedure:
 	// return pPV;	// success (pass by pointer)
@@ -395,7 +438,7 @@ public:
 	// asynchronous IO operation (create or exist) completes
 	// against the server.
 	//
-	epicsShareFunc virtual pvCreateReturn createPV (const casCtx &ctx,
+	epicsShareFunc virtual pvAttachReturn pvAttach (const casCtx &ctx,
 		const char *pPVAliasName);
 
 	//
@@ -411,6 +454,15 @@ public:
 	// caServer to a caServerI 
 	//
 	friend class casPVI;
+
+	//
+	// createPV() (deprecated)
+	// The virtual member function "createPV" will be deleted in a 
+	// future release. The base implementation of pvAttach() currently
+	// calls createPV().
+	//
+	epicsShareFunc virtual pvCreateReturn createPV (const casCtx &ctx,
+		const char *pPVAliasName);
 };
 
 //
@@ -711,7 +763,7 @@ public:
 //	Virtual Function		Asynchronous IO Class
 //	-----------------		---------------------
 // 	caServer::pvExistTest()		casAsyncPVExistIO
-// 	caServer::createPV()		casAsyncCreatePVIO
+// 	caServer::pvAttach()		casAsyncPVAttachIO
 // 	casPV::read()			casAsyncReadIO
 // 	casPV::write()			casAsyncWriteIO
 //
@@ -911,30 +963,30 @@ public:
 };
 
 //
-// casAsyncPVCreateIO 
-// - for use with caServer::createPV()
+// casAsyncPVAttachIO 
+// - for use with caServer::pvAttach()
 //
-class casAsyncPVCreateIO : public casAsyncIO, private casAsyncPVCIOI {
+class casAsyncPVAttachIO : public casAsyncIO, private casAsyncAtIOI {
 public:
 	//
-	// casAsyncPVCreateIO()
+	// casAsyncPVAttachIO()
 	//
-	epicsShareFunc casAsyncPVCreateIO(const casCtx &ctx) : 
-		casAsyncPVCIOI(ctx, *this) {}
+	epicsShareFunc casAsyncPVAttachIO (const casCtx &ctx) : 
+		casAsyncAtIOI(ctx, *this) {}
 
 	//
 	// force virtual destructor 
 	//
-	epicsShareFunc virtual ~casAsyncPVCreateIO(); 
+	epicsShareFunc virtual ~casAsyncPVAttachIO(); 
 
 	//
 	// place notification of IO completion on the event queue
 	// (this function does not delete the casAsyncIO object). 
 	// Only the first call to this function has any effect.
 	//
-	epicsShareFunc caStatus postIOCompletion(const pvCreateReturn &retValIn)
+	epicsShareFunc caStatus postIOCompletion(const pvAttachReturn &retValIn)
 	{
-		return this->casAsyncPVCIOI::postIOCompletion (retValIn);
+		return this->casAsyncAtIOI::postIOCompletion (retValIn);
 	}
 
 	//
@@ -946,8 +998,19 @@ public:
 	//
 	epicsShareFunc caServer *getCAS() const
 	{
-		return this->casAsyncPVCreateIO::getCAS();
+		return this->casAsyncAtIOI::getCAS();
 	}
+};
+
+//
+// casAsyncPVCreateIO (deprecated)
+// (this class will be deleted in a future release)
+//
+class casAsyncPVCreateIO : public casAsyncPVAttachIO {
+public:
+	epicsShareFunc casAsyncPVCreateIO(const casCtx &ctx) : 
+		casAsyncPVAttachIO (ctx) {}
+	epicsShareFunc virtual ~casAsyncPVCreateIO(); 
 };
 
 #endif // ifdef includecasdefh (this must be the last line in this file) 

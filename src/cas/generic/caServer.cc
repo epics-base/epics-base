@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.8  1997/08/05 00:46:56  jhill
+ * fixed warnings
+ *
  * Revision 1.7  1997/06/25 05:09:00  jhill
  * removed templInst.cc
  *
@@ -128,6 +131,17 @@ epicsShareFunc pvExistReturn caServer::pvExistTest (const casCtx &, const char *
 epicsShareFunc pvCreateReturn caServer::createPV (const casCtx &, const char *)
 {
 	return S_casApp_pvNotFound;
+}
+
+//
+// caServer::pvAttach()
+//
+epicsShareFunc pvAttachReturn caServer::pvAttach (const casCtx &ctx, const char *pAliasName)
+{
+	//
+	// remain backwards compatible (call deprecated routine)
+	//
+	return this->createPV(ctx, pAliasName);
 }
 
 //

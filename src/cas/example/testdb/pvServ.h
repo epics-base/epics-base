@@ -2,6 +2,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.3  1997/06/13 09:15:48  jhill
+ * connect proto changes
+ *
  * Revision 1.2  1997/03/05 21:16:23  jbk
  * Fixes cvs log id at top
  *
@@ -73,7 +76,7 @@ public:
 	virtual ~serv(void);
 
 	virtual pvExistReturn pvExistTest(const casCtx& c,const char* pvname);
-	virtual pvCreateReturn createPV(const casCtx& c,const char* pvname);
+	virtual pvAttachReturn pvAttach(const casCtx& c,const char* pvname);
 
 	int InitDB(void);
 	int Main(void);

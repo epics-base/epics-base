@@ -29,6 +29,11 @@
  *
  * History
  * $Log$
+ * Revision 1.26  1998/10/28 23:51:01  jhill
+ * server nolonger throws exception when a poorly formed get/put call back
+ * request arrives. Instead a get/put call back response is sent which includes
+ * unsuccessful status
+ *
  * Revision 1.25  1998/09/24 20:40:07  jhill
  * o block if unable to get buffer space for the exception message
  * o subtle changes related to properly dealing with situations where
@@ -962,10 +967,11 @@ caStatus casStrmClient::clientNameAction()
  */
 caStatus casStrmClient::claimChannelAction()
 {
-	const caHdr 	*mp = this->ctx.getMsg();
-	char		*pName = (char *) this->ctx.getData();
-	unsigned	nameLength;
-	caStatus	status;
+	const caHdr *mp = this->ctx.getMsg();
+	char *pName = (char *) this->ctx.getData();
+	caServerI &cas = *this->ctx.getServer();
+	unsigned nameLength;
+	caStatus status;
 
 	/*
 	 * The available field is used (abused)
@@ -994,7 +1000,6 @@ caStatus casStrmClient::claimChannelAction()
 		return S_cas_badProtocol; // disconnect client
 	}
 
-
 	if (mp->m_postsize == 0u) {
 		return S_cas_badProtocol; // disconnect client
 	}
@@ -1014,8 +1019,12 @@ caStatus casStrmClient::claimChannelAction()
 	//
 	this->osiLock();
 	this->asyncIOFlag = 0u;
-	const pvCreateReturn pvcr =  
-			(*this->ctx.getServer())->createPV (this->ctx, pName);
+
+	//
+	// attach to the PV
+	//
+	pvAttachReturn pvar = cas->pvAttach (this->ctx, pName);
+
 	//
 	// prevent problems when they initiate
 	// async IO but dont return status
@@ -1024,18 +1033,17 @@ caStatus casStrmClient::claimChannelAction()
 	if (this->asyncIOFlag) {
 		status = S_cas_success;	
 	}
-	else if (pvcr.getStatus() == S_casApp_asyncCompletion) {
-		status = this->createChanResponse(*mp, 
-			pvCreateReturn(S_cas_badParameter));
+	else if (pvar.getStatus() == S_casApp_asyncCompletion) {
+		status = this->createChanResponse(*mp, S_cas_badParameter);
 		errMessage(S_cas_badParameter, 
-		"- expected asynch IO creation from caServer::createPV()");
+		"- expected asynch IO creation from caServer::pvAttach()");
 	}
-	else if (pvcr.getStatus() == S_casApp_postponeAsyncIO) {
+	else if (pvar.getStatus() == S_casApp_postponeAsyncIO) {
 		status = S_casApp_postponeAsyncIO;
 		this->ctx.getServer()->addItemToIOBLockedList(*this);
 	}
 	else {
-		status = this->createChanResponse(*mp, pvcr);
+		status = this->createChanResponse(*mp, pvar);
 	}
 	this->osiUnlock();
 	return status;
@@ -1046,7 +1054,7 @@ caStatus casStrmClient::claimChannelAction()
 //
 // LOCK must be applied
 //
-caStatus casStrmClient::createChanResponse(const caHdr &hdr, const pvCreateReturn &pvcr)
+caStatus casStrmClient::createChanResponse(const caHdr &hdr, const pvAttachReturn &pvar)
 {
 	casPVI		*pPV;
 	casChannel 	*pChan;
@@ -1056,11 +1064,11 @@ caStatus casStrmClient::createChanResponse(const caHdr &hdr, const pvCreateRetur
 	unsigned	dbrType;
 	caStatus	status;
 
-	if (pvcr.getStatus() != S_cas_success) {
-		return this->channelCreateFailed(&hdr, pvcr.getStatus());
+	if (pvar.getStatus() != S_cas_success) {
+		return this->channelCreateFailed(&hdr, pvar.getStatus());
 	}
 
-	pPV = pvcr.getPV();
+	pPV = pvar.getPV();
 
 	//
 	// If status is ok and the PV isnt set then guess that the
@@ -1096,7 +1104,7 @@ caStatus casStrmClient::createChanResponse(const caHdr &hdr, const pvCreateRetur
 	pChan = (*pPV)->createChannel(this->ctx, 
 			this->pUserName, this->pHostName);
 	if (!pChan) {
-		pvcr.getPV()->deleteSignal();
+		pvar.getPV()->deleteSignal();
 		return this->channelCreateFailed(&hdr, S_cas_noMemory);
 	}
 
@@ -1175,7 +1183,7 @@ caStatus        createStatus)
  
 	if (createStatus == S_casApp_asyncCompletion) {
 		errMessage(S_cas_badParameter, 
-	"- no asynchronous IO create in createPV() ?");
+	"- no asynchronous IO create in pvAttach() ?");
 		errMessage(S_cas_badParameter, 
 	"- or S_casApp_asyncCompletion was async IO competion code ?");
 	}

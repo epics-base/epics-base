@@ -1,6 +1,9 @@
 
 // $Id$
 // $Log$
+// Revision 1.4  1997/06/25 05:56:38  jhill
+// align with API changes
+//
 // Revision 1.3  1997/06/13 09:15:47  jhill
 // connect proto changes
 //
@@ -172,29 +175,29 @@ pvExistReturn serv::pvExistTest(const casCtx&,const char* pvname)
 	return pvExistReturn(rc);
 }
 
-pvCreateReturn serv::createPV(const casCtx& in,const char* pvname)
+pvAttachReturn serv::pvAttach(const casCtx& in,const char* pvname)
 {
 	casPV* pPV=NULL;
 	int val;
 
-	Debug1("createPV: %s\n",pvname);
+	Debug1("pvAttach: %s\n",pvname);
 
 	if(strncmp(pvname,prefix,prefix_len)==0)
 	{
 		// we may have this one, number is after underscore
 		if(sscanf(&pvname[prefix_len+1],"%d",&val)==1)
 		{
-			Debug("createPV: I am making this PV\n");
+			Debug("pvAttach: I am making this PV\n");
 			if(val>=0 && val<pv_total)
 				pPV=new servPV(*this,pvname,db_sync[val]);
 		}
 	}
 
 	if (pPV) {
-		return pvCreateReturn(*pPV);
+		return pvAttachReturn(*pPV);
 	}
 	else {
-		return pvCreateReturn(S_casApp_pvNotFound);
+		return pvAttachReturn(S_casApp_pvNotFound);
 	}
 }
 

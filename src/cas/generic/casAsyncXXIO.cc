@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.4  1998/02/05 22:51:34  jhill
+ * include resourceLib.h
+ *
  * Revision 1.3  1997/08/05 00:47:02  jhill
  * fixed warnings
  *
@@ -88,3 +91,10 @@ epicsShareFunc casAsyncPVCreateIO::~casAsyncPVCreateIO()
 {
 }
 
+//
+// This must be virtual so that derived destructor will
+// be run indirectly. Therefore it cannot be inline.
+//
+epicsShareFunc casAsyncPVAttachIO::~casAsyncPVAttachIO()
+{
+}

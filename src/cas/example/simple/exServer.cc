@@ -197,9 +197,9 @@ pvExistReturn exServer::pvExistTest
 }
 
 //
-// exServer::createPV()
+// exServer::pvAttach()
 //
-pvCreateReturn exServer::createPV 
+pvAttachReturn exServer::pvAttach 
 	(const casCtx &ctx, const char *pName)
 {
 	//
@@ -360,10 +360,10 @@ void exAsyncCreateIO::expire()
 
 	pPV = this->pvi.createPV(this->cas, aitFalse, this->scanOn);
 	if (pPV) {
-		this->postIOCompletion (pvCreateReturn(*pPV));
+		this->postIOCompletion (pvAttachReturn(*pPV));
 	}
 	else {
-		this->postIOCompletion (pvCreateReturn(S_casApp_noMemory));
+		this->postIOCompletion (pvAttachReturn(S_casApp_noMemory));
 	}
 }
 

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.18  1998/11/18 18:52:49  jhill
+ * fixed casChannelI undefined symbols on WIN32
+ *
  * Revision 1.17  1998/10/23 00:28:20  jhill
  * fixed HP-UX warnings
  *
@@ -278,7 +281,7 @@ class casAsyncIO;
 class casAsyncReadIO;
 class casAsyncWriteIO;
 class casAsyncPVExistIO;
-class casAsyncPVCreateIO;
+class casAsyncPVAttachIO;
 
 class casAsyncIOI : public casEvent, public tsDLNode<casAsyncIOI> {
 public:
@@ -376,7 +379,7 @@ class casDGIntfIO;
 //
 // casAsyncExIOI 
 //
-// (server internal asynchronous read IO class)
+// (server internal asynchronous PV exist test IO class)
 //
 class casAsyncExIOI : public casAsyncIOI { 
 public:
@@ -398,25 +401,25 @@ private:
 };
 
 //
-// casAsyncPVCIOI 
+// casAsyncAtIOI 
 //
-// (server internal asynchronous read IO class)
+// (server internal asynchronous PV attach IO class)
 //
-class casAsyncPVCIOI : public casAsyncIOI { 
+class casAsyncAtIOI : public casAsyncIOI { 
 public:
-	epicsShareFunc casAsyncPVCIOI(const casCtx &ctx, casAsyncPVCreateIO &ioIn);
-	virtual ~casAsyncPVCIOI();
+	epicsShareFunc casAsyncAtIOI(const casCtx &ctx, casAsyncPVAttachIO &ioIn);
+	virtual ~casAsyncAtIOI();
 
 	//
 	// place notification of IO completion on the event queue
 	//
-	epicsShareFunc caStatus postIOCompletion(const pvCreateReturn &retVal);
+	epicsShareFunc caStatus postIOCompletion(const pvAttachReturn &retVal);
 
 	epicsShareFunc caStatus cbFuncAsyncIO();
 	casAsyncIO &getAsyncIO();
 private:
 	caHdr const	msg;
-	pvCreateReturn 	retVal;
+	pvAttachReturn retVal;
 };
 
 class casChannel;

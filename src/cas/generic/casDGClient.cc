@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.15  1998/04/20 18:11:01  jhill
+ * better debug mesg
+ *
  * Revision 1.14  1998/04/10 23:13:14  jhill
  * fixed byte swap problems, and use default port if server tool returns PV IP addr, but no port
  *
@@ -164,7 +167,7 @@ caStatus casDGClient::searchAction()
 	// monitor prior to calling PV exist test so that when
 	// the server runs out of memory we dont reply to
 	// search requests, and therefore dont thrash through
-	// caServer::pvExistTest() and casCreatePV::createPV()
+	// caServer::pvExistTest() and casCreatePV::pvAttach()
 	//
 #ifdef vxWorks
 #	error code needs to be implemented here when we port

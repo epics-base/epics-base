@@ -199,3 +199,28 @@ Changes between epics 3.13 Beta 11 and 3.13 Beta 12
 o The constructor for class casPV no longer requires a reference to the
 server. For backwards compatibility a reference to the server may still be 
 supplied, but it will not be used.
+
+Changes after epics 3.13.1
+
+**** API Change ****
+o The virtual function caServer::createPV() has been deprecated in favor of the new 
+virtual function caServer::attachPV() which provides exactly the same functionality.
+The name was changed so that the purpose of this virtual function is more clear
+to server tool designers. To remain backwards compatible the virtual function
+caServer::createPV() is called by the base implementation of caServer::attachPV().
+In a future release all calls to the virtual member function caServer::createPV() 
+will be eliminated.
+
+o The class pvCreateReturn has been deprecated in favor of the new class
+pvAttachReturn which provides exactly the same functionality. The name was 
+changed so that the purpose of this class is more clear to server tool 
+designers. To remain backwards compatible the class pvCreateReturn derives from
+public base class pvAttachReturn. In a future release the class pvCreateReturn
+will be eliminated.
+
+o The class casAsyncPVCreateIO has been deprecated in favor of the new class
+casAsyncPVAttachIO which provides exactly the same functionality. The name was 
+changed so that the purpose of this class is more clear to server tool 
+designers. To remain backwards compatible the class casAsyncPVCreateIO derives from
+public base class casAsyncPVAttachIO. In a future release the class casAsyncPVCreateIO
+will be eliminated.

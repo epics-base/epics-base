@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.30  1998/12/01 18:54:45  jhill
+ * Use EPICS_CA_BEACON_PERIOD
+ *
  * Revision 1.29  1998/10/28 23:51:01  jhill
  * server nolonger throws exception when a poorly formed get/put call back
  * request arrives. Instead a get/put call back response is sent which includes
@@ -527,7 +530,7 @@ public:
 		casDGIntfIO &outMsgIO, const caNetAddr &outAddr, 
 		const caHdr &, const pvExistReturn &);
 	virtual caStatus createChanResponse(
-		const caHdr &, const pvCreateReturn &);
+		const caHdr &, const pvAttachReturn &);
 	virtual caStatus readResponse(
 		casChannelI *, const caHdr &, gdd *, const caStatus); 
 	virtual caStatus readNotifyResponse(
@@ -677,7 +680,7 @@ public:
 	// one function for each CA request type that has
 	// asynchronous completion
 	//
-	virtual caStatus createChanResponse(const caHdr &, const pvCreateReturn &);
+	virtual caStatus createChanResponse(const caHdr &, const pvAttachReturn &);
 	caStatus readResponse(casChannelI *pChan, const caHdr &msg,
 			gdd *pDesc, const caStatus status);
 	caStatus readNotifyResponse(casChannelI *pChan, const caHdr &msg,

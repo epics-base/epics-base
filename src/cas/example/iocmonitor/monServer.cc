@@ -4,6 +4,9 @@
 // 
 // $Id$
 // $Log$
+// Revision 1.2  1997/05/13 14:23:02  jbk
+// added comments at top
+//
  
 #include <stdio.h>
 #include <string.h>
@@ -158,7 +161,7 @@ pvExistReturn monServer::pvExistTest(const casCtx& c,const char* pvname)
 		return pvExistReturn(S_casApp_pvNotFound);
 }
 
-casPV* monServer::createPV(const casCtx& c,const char* pvname)
+casPV* monServer::pvAttach(const casCtx& c,const char* pvname)
 {
 	monNode* node;
 

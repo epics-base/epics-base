@@ -29,6 +29,11 @@
  *
  * History
  * $Log$
+ * Revision 1.10  1998/10/28 23:51:00  jhill
+ * server nolonger throws exception when a poorly formed get/put call back
+ * request arrives. Instead a get/put call back response is sent which includes
+ * unsuccessful status
+ *
  * Revision 1.9  1998/07/08 15:38:04  jhill
  * fixed lost monitors during flow control problem
  *
@@ -153,7 +158,7 @@ caStatus casCoreClient::asyncSearchResponse(casDGIntfIO &,
 {
 	return S_casApp_noSupport;
 }
-caStatus casCoreClient::createChanResponse(const caHdr &, const pvCreateReturn &)
+caStatus casCoreClient::createChanResponse(const caHdr &, const pvAttachReturn &)
 {
 	return S_casApp_noSupport;
 }

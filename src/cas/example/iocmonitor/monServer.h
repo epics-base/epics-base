@@ -7,6 +7,9 @@
  * 
  * $Id$
  * $Log$
+ * Revision 1.2  1997/05/13 14:23:02  jbk
+ * added comments at top
+ *
  */
 
 #include "casdef.h"
@@ -47,7 +50,7 @@ public:
 
 	// CAS virtual overloads
 	virtual pvExistReturn pvExistTest(const casCtx& c,const char* pvname);
-	virtual casPV* createPV(const casCtx& c,const char* pvname);
+	virtual casPV* pvAttach(const casCtx& c,const char* pvname);
 
 	// CAS application management functions
 	int repeaterConnect(void);

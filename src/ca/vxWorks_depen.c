@@ -104,7 +104,6 @@ void cac_mux_io(struct timeval  *ptimeout)
 
 #if NOASYNCRECV
 	cac_clean_iiu_list();
-	manage_conn(TRUE);
 #endif
         timeout = *ptimeout;
 	do{
@@ -118,6 +117,7 @@ void cac_mux_io(struct timeval  *ptimeout)
 
 #if NOASYNCRECV 
 	ca_process_input_queue();
+	manage_conn(TRUE);
 #endif
 }
 
@@ -756,7 +756,7 @@ void ca_spawn_repeater()
 /*
  * ca_repeater_task()
  */
-void ca_repeater_task()
+LOCAL void ca_repeater_task()
 {
 	taskwdInsert((int)taskIdCurrent, NULL, NULL);
         ca_repeater();
@@ -847,6 +847,7 @@ void cac_recv_task(int  tid)
 {
         struct timeval  timeout;
         int             status;
+	int		count;
 
         taskwdInsert((int) taskIdCurrent, NULL, NULL);
 
@@ -861,18 +862,16 @@ void cac_recv_task(int  tid)
 #if NOASYNCRECV 
 		taskDelay(60);
 #else
-        	manage_conn(TRUE);
-
-                timeout.tv_usec = 0;
-                timeout.tv_sec = 1;
-
         	cac_clean_iiu_list();
 
-		cac_select_io(
-			&timeout, 
-			CA_DO_RECVS);
+                timeout.tv_usec = 50000;
+                timeout.tv_sec = 0;
+		count = cac_select_io(
+				&timeout, 
+				CA_DO_SENDS | CA_DO_RECVS);
 
-                ca_process_input_queue();
+		ca_process_input_queue();
+        	manage_conn(TRUE);
 #endif
         }
 }

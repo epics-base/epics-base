@@ -10,5 +10,5 @@
 # Add your declarations here
 
 TEMPLATE_TOP=_TEMPLATE_TOP_
-SHARE=_EPICS_BASE__shareR1.0
+#SHARE=
 EPICS_BASE=_EPICS_BASE_

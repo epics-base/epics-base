@@ -89,7 +89,7 @@ static long get_value();
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
-static static long get_units();
+static long get_units();
 static long get_precision();
 #define get_enum_str NULL
 #define get_enum_strs NULL

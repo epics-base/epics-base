@@ -800,7 +800,7 @@ extern "C" {
     {
         return osiTime (*pLeft) >= osiTime (*pRight);
     }
-    epicsShareFunc size_t epicsShareAPI tsStrftime (char *pBuff, size_t bufLength, const char *pFormat, const TS_STAMP *pTS)
+    epicsShareFunc size_t epicsShareAPI tsStampToStrftime (char *pBuff, size_t bufLength, const char *pFormat, const TS_STAMP *pTS)
     {
 	return osiTime(*pTS).strftime (pBuff, bufLength, pFormat);
     }

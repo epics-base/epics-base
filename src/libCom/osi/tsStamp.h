@@ -82,7 +82,7 @@ epicsShareFunc int epicsShareAPI tsStampGreaterThanEqual (const TS_STAMP *pLeft,
 /*
  * convert to ASCII string
  */
-epicsShareFunc size_t epicsShareAPI tsStrftime (char *pBuff, size_t bufLength, const char *pFormat, const TS_STAMP *pTS);
+epicsShareFunc size_t epicsShareAPI tsStampToStrftime (char *pBuff, size_t bufLength, const char *pFormat, const TS_STAMP *pTS);
 
 /*
  * dump current state to standard out

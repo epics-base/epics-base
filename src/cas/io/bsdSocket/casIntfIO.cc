@@ -145,11 +145,11 @@ casIntfIO::~casIntfIO()
 //
 casStreamOS *casIntfIO::newStreamClient(caServerI &cas) const
 {
+    static bool oneMsgFlag = false;
     struct sockaddr	newAddr;
-    SOCKET          newSock;
-    osiSocklen_t    length;
+    SOCKET newSock;
+    osiSocklen_t length;
     casStreamOS	*pOS;
-    bool oneMsgFlag = false;
     
     length = ( osiSocklen_t ) sizeof(newAddr);
     newSock = accept(this->sock, &newAddr, &length);

@@ -94,7 +94,7 @@ LOCAL makeSocketReturn makeSocket (unsigned short port, int reuseAddr)
     int flag;
 
     msr.sock = socket (AF_INET, SOCK_DGRAM, 0);     
-    if (msr.sock == INVALID_SOCKET) {
+    if ( msr.sock == INVALID_SOCKET ) {
         msr.errNumber = SOCKERRNO;
         msr.pErrStr = SOCKERRSTR (msr.errNumber);
         return msr;

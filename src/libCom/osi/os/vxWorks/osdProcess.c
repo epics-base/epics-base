@@ -15,6 +15,7 @@
 
 #define epicsExportSharedSymbols
 #include "osiProcess.h"
+#include "errlog.h"
 
 epicsShareFunc osiGetUserNameReturn epicsShareAPI osiGetUserName (char *pBuf, unsigned bufSizeIn)
 {
@@ -37,4 +38,11 @@ epicsShareFunc osiGetUserNameReturn epicsShareAPI osiGetUserName (char *pBuf, un
     strncpy ( pBuf, pName, (size_t) bufSizeIn );
 
     return osiGetUserNameSuccess;
+}
+
+epicsShareFunc osiSpawnDetachedProcessReturn epicsShareAPI osiSpawnDetachedProcess
+    (const char *pProcessName, const char *pBaseExecutableName)
+{
+    errlogPrintf("osiSpawnDetachedProcess not implemented on vxWorks\n");
+    return osiSpawnDetachedProcessFail;
 }

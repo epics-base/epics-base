@@ -13,6 +13,9 @@ of this distribution.
 #include <time.h>
 #include <objLib.h>
 #include <sysLib.h>
+/* The following not defined in an vxWorks header */
+int sysClkRateGet(void);
+
 
 #include "osiSem.h"
 

@@ -1,7 +1,13 @@
 #define epicsExportSharedSymbols
 #include "osiTime.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 extern long TSgetTimeStamp(int event_number,TS_STAMP* ts);
+#ifdef __cplusplus
+}
+#endif
 
 //
 // osiTime::osdGetCurrent ()

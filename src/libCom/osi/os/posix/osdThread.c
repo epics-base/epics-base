@@ -125,13 +125,13 @@ static void myAtExit(void)
     pthreadSelf = (epicsThreadOSD *)pthread_getspecific(getpthreadInfo);
     if(pthreadSelf==NULL)
         pthreadSelf = createImplicit();
-    pthreadInfo=(epicsThreadOSD *)ellFirst(&pthreadList);
+    pthreadInfo=(epicsThreadOSD *)ellLast(&pthreadList);
     while(pthreadInfo) {
         if(pthreadInfo != pthreadSelf /*dont cancel this thread*/
         && (strcmp("_main_",pthreadInfo->name)!=0)){/* dont cancel main*/
             pthread_cancel(pthreadInfo->tid);
         }
-        pthreadInfo=(epicsThreadOSD *)ellNext(&pthreadInfo->node);
+        pthreadInfo=(epicsThreadOSD *)ellPrevious(&pthreadInfo->node);
     }
     status = pthread_mutex_unlock(&listLock);
     checkStatusQuit(status,"pthread_mutex_unlock","myAtExit");

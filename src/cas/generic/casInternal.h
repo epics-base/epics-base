@@ -123,7 +123,7 @@ private:
     void eventSysDestroyNotify ( casCoreClient & );
 };
 
-class casMonitorCallbackInterface {
+class casMonitorCallbackInterface { // X aCC 655
 public:
 	virtual caStatus casMonitorCallBack ( casMonitor &,
         const smartConstGDDPointer & pValue ) = 0;

@@ -112,7 +112,7 @@ OSITHREAD_USE_DEFAULT_STACK = NO
 
 #--------------------------------------------------
 # Link definitions
-LINK.cpp = $(LD) -o $@ $(LDFLAGS) $(PROD_LD_OBJS) $(PROD_LD_RESS) $(LDLIBS)
+LINK.cpp = $(LD) -o $@ $(STATIC_LDFLAGS) $(LDFLAGS) $(PROD_LD_OBJS) $(PROD_LD_RESS) $(LDLIBS)
 
 #--------------------------------------------------
 # Allow site overrides

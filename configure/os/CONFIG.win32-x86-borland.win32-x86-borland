@@ -138,7 +138,7 @@ OPT_CXXFLAGS_NO =
 #
 STATIC_LDLIBS_YES=
 STATIC_LDLIBS_NO=
- 
+
 PROD_VERSION=3.13
 # -c case sensitive linking
 # -C clear state before linking
@@ -264,7 +264,7 @@ LDFLAGS += -c -C -Gn -Tpe -x -w -L$(BORLAND_LIB) -L$(BORLAND_LIB)\\Psdk
 LINKSTARTUP = c0x32.obj
 LINKLIBS=import32.lib cw32$(LIBSUF).lib
 
-LINK.cpp = $(WINLINK) $(LDFLAGS) $(LINKSTARTUP) $(subst /,\\,$(PROD_LD_OBJS))
+LINK.cpp = $(WINLINK) $(STATIC_LDFLAGS) $(LDFLAGS) $(LINKSTARTUP) $(subst /,\\,$(PROD_LD_OBJS))
 LINK.cpp += , $@ ,,$(LINKLIBS)  $(subst /,\\,$(LDLIBS))
 
 #--------------------------------------------------

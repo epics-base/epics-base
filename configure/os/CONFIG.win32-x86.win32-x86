@@ -265,11 +265,11 @@ SHRLIB_LDLIBS = $(DLL_DEPLIBS) $($*_SYS_DLL_LIBS:%=%.lib) \
 
 #--------------------------------------------------
 # Linker definition
-LINK.cpp = $(WINLINK) -nologo $(LDFLAGS) -out:$@ $(PROD_LD_OBJS) $(PROD_LD_RESS) $(LDLIBS)
+LINK.cpp = $(WINLINK) -nologo $(STATIC_LDFLAGS) $(LDFLAGS) -out:$@ \
+	$(PROD_LD_OBJS) $(PROD_LD_RESS) $(LDLIBS)
 
 
 #--------------------------------------------------
 
 # override of CONFIG_SITE
 SHARED_LIBRARIES = YES
-

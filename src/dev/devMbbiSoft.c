@@ -48,6 +48,9 @@
 #include	<devSup.h>
 #include	<module_types.h>
 #include	<mbbiRecord.h>
+/* Added for Channel Access Links */
+long dbCaAddInlink();
+long dbCaGetLink();
 
 
 /* Create the dset for devMbbiSoft */
@@ -74,6 +77,9 @@ static long init_record(pmbbi)
     struct mbbiRecord	*pmbbi;
 {
     char message[100];
+/* Added for Channel Access Links */
+long status;
+
     /* mbbi.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
     switch (pmbbi->inp.type) {
     case (CONSTANT) :
@@ -81,6 +87,8 @@ static long init_record(pmbbi)
 	pmbbi->udf = FALSE;
         break;
     case (PV_LINK) :
+        status = dbCaAddInlink(&(pmbbi->inp), (void *) pmbbi, "VAL");
+        if(status) return(status);
         break;
     case (DB_LINK) :
         break;
@@ -115,6 +123,12 @@ static long read_mbbi(pmbbi)
         } else pmbbi->udf = FALSE;
         break;
     case (CA_LINK) :
+        if (dbCaGetLink(&(pmbbi->inp)))
+        {
+            recGblSetSevr(pmbbi,LINK_ALARM,VALID_ALARM);
+        } 
+        else 
+            pmbbi->udf = FALSE;
         break;
     default :
         if(recGblSetSevr(pmbbi,SOFT_ALARM,VALID_ALARM)){

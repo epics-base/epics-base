@@ -102,6 +102,14 @@ void alarm();
 void monitor();
 int fetch_values();
 int do_sel();
+/* Added for Channel Access Links */
+#define ARG_MAX 12
+long dbCaAddInlink();
+long dbCaGetLink();
+ /* Fldnames should have as many as ARG_MAX */
+ static char Fldnames[ARG_MAX][FLDNAME_SZ] =
+     {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"};
+
 
 static long init_record(psel)
     struct selRecord     *psel;
@@ -109,14 +117,27 @@ static long init_record(psel)
     struct link *plink;
     int i;
     double *pvalue;
+/* Added for Channel Access Links */
+    long status;
 
     /* get seln initial value if nvl is a constant*/
     if (psel->nvl.type == CONSTANT ) psel->seln = psel->nvl.value.value;
+    if (psel->nvl.type == PV_LINK)
+    {
+	status = dbCaAddInlink(&(psel->nvl), (void *) psel, "SELN");
+	if(status) return(status);
+    } /* endif */
 
     plink = &psel->inpa;
     pvalue = &psel->a;
     for(i=0; i<SEL_MAX; i++, plink++, pvalue++) {
-	if(plink->type==CONSTANT) *pvalue = plink->value.value;
+	if(plink->type==CONSTANT) 
+	    *pvalue = plink->value.value;
+        if (plink->type == PV_LINK)
+        {
+            status = dbCaAddInlink(plink, (void *) psel, Fldnames[i]);
+            if(status) return(status);
+        } /* endif */
     }
     return(0);
 }
@@ -442,8 +463,22 @@ struct selRecord *psel;
 				return(-1);
 			}
 		}
+                if(psel->nvl.type == CA_LINK ){
+                        if(dbCaGetLink(&(psel->nvl)) !=NULL) {
+                                recGblSetSevr(psel,LINK_ALARM,VALID_ALARM);
+                                return(-1);
+                        }
+                }
 		plink += psel->seln;
 		pvalue += psel->seln;
+                if (plink->type == CA_LINK)
+                {
+                    if (dbCaGetLink(plink))
+                    {
+                        recGblSetSevr(psel,LINK_ALARM,VALID_ALARM);
+                        return(-1);
+                    } /* endif */
+                } /* endif */
                 if(plink->type==DB_LINK) {
 		        nRequest=1;
 		        status=dbGetLink(&plink->value.db_link,(struct dbCommon *)psel,DBR_DOUBLE,
@@ -457,6 +492,14 @@ struct selRecord *psel;
 	}
 	/* fetch all inputs*/
 	for(i=0; i<SEL_MAX; i++, plink++, pvalue++) {
+                if (plink->type == CA_LINK)
+                {
+                    if (dbCaGetLink(plink))
+                    {
+                        recGblSetSevr(psel,LINK_ALARM,VALID_ALARM);
+                        return(-1);
+                    } /* endif */
+                } /* endif */
 		if(plink->type==DB_LINK) {
 			nRequest=1;
 			status = dbGetLink(&plink->value.db_link,(struct dbCommon *)psel,DBR_DOUBLE,

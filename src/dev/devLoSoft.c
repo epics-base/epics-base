@@ -46,6 +46,11 @@
 #include	<module_types.h>
 #include	<longoutRecord.h>
 
+/* added for Channel Access Links */
+long dbCaAddOutlink();
+long dbCaPutLink();
+long init_record();
+
 /* Create the dset for devLoSoft */
 long write_longout();
 
@@ -60,16 +65,34 @@ struct {
 	5,
 	NULL,
 	NULL,
-	NULL,
+	init_record,
 	NULL,
 	write_longout};
  
 
+static long init_record(plongout)
+struct longoutRecord *plongout;
+{
+ 
+long status;
+ 
+    if (plongout->out.type == PV_LINK)
+        status = dbCaAddOutlink(&(plongout->out), (void *) plongout, "VAL");
+    else
+        status = 0L;
+ 
+    return status;
+ 
+} /* end init_record() */
+
 static long write_longout(plongout)
     struct longoutRecord	*plongout;
 {
     char message[100];
     long status;
+/* added for Channel Access Links */
+long options;
+long nrequest;
 
     /* longout.out must be a CONSTANT or a DB_LINK or a CA_LINK*/
     switch (plongout->out.type) {
@@ -83,6 +106,9 @@ static long write_longout(plongout)
         }
 	break;
     case (CA_LINK) :
+        options = 0L;
+        nrequest = 1L;
+        status = dbCaPutLink(&(plongout->out), &options, &nrequest);
 	break;
     default :
         if(recGblSetSevr(plongout,SOFT_ALARM,VALID_ALARM)){

@@ -48,6 +48,9 @@
 #include	<devSup.h>
 #include	<link.h>
 #include	<waveformRecord.h>
+/* Added for Channel Access Links */
+long dbCaAddInlink();
+long dbCaGetLink();
 
 /* Create the dset for devWfSoft */
 long init_record();
@@ -72,6 +75,8 @@ static long init_record(pwf)
     struct waveformRecord	*pwf;
 {
     char message[100];
+/* Added for Channel Access Links */
+long status;
 
     /* wf.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
     switch (pwf->inp.type) {
@@ -79,6 +84,8 @@ static long init_record(pwf)
 	pwf->nord = 0;
 	break;
     case (PV_LINK) :
+        status = dbCaAddInlink(&(pwf->inp), (void *) pwf, "BPTR");
+        if(status) return(status);
 	break;
     case (DB_LINK) :
 	break;
@@ -113,6 +120,12 @@ static long read_wf(pwf)
 	pwf->nord = nRequest;
 	break;
     case (CA_LINK) :
+        if (dbCaGetLink(&(pwf->inp)))
+        {
+            recGblSetSevr(pwf,LINK_ALARM,VALID_ALARM);
+        } 
+        else 
+            pwf->udf = FALSE;
 	break;
     default :
         if(recGblSetSevr(pwf,SOFT_ALARM,VALID_ALARM)){

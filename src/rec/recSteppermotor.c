@@ -165,6 +165,9 @@ void convert_sm();
 void positional_sm();
 void velocity_sm();
 void sm_get_position();
+/* Added for Channel Access Links */
+long dbCaAddInlink();
+long dbCaGetLink();
 
 
 
@@ -193,6 +196,11 @@ static long init_record(psm)
             psm->udf = FALSE;
             psm->val = psm->dol.value.value;
     }
+    if (psm->dol.type == PV_LINK)
+    {
+	status = dbCaAddInlink(&(psm->dol), (void *) psm, "VAL");
+	if(status) return(status);
+    } /* endif */
     init_sm(psm);
     return(0);
 }
@@ -732,7 +740,8 @@ struct steppermotorRecord	*psm;
 	}
 
 	/* fetch the desired value if there is a database link */
-        if (psm->dol.type == DB_LINK && psm->omsl == CLOSED_LOOP){
+        if (psm->omsl == CLOSED_LOOP){
+	    if (psm->dol.type == DB_LINK){
 		long options=0;
 		long nRequest=1;
 
@@ -741,6 +750,13 @@ struct steppermotorRecord	*psm;
 			recGblSetSevr(psm,LINK_ALARM,VALID_ALARM);
 			return;
 		} else psm->udf = FALSE;
+	    }
+            if (psm->dol.type == CA_LINK){
+                if(dbCaGetLink(&(psm->dol))){
+                        recGblSetSevr(psm,LINK_ALARM,VALID_ALARM);
+                        return;
+                } else psm->udf = FALSE;
+            }
 	}
 
         /* check drive limits */
@@ -787,7 +803,8 @@ struct steppermotorRecord	*psm;
 	int	acceleration,velocity;
 
 	/* fetch the desired value if there is a database link */
-        if (psm->dol.type == DB_LINK && psm->omsl == CLOSED_LOOP){
+        if (psm->omsl == CLOSED_LOOP){
+	    if (psm->dol.type == DB_LINK){
 		long options=0;
 		long nRequest=1;
 
@@ -796,6 +813,13 @@ struct steppermotorRecord	*psm;
 			recGblSetSevr(psm,LINK_ALARM,VALID_ALARM);
 			return;
 		} else psm->udf=FALSE;
+	    }
+	    if (psm->dol.type == CA_LINK){
+		if(dbCaGetLink(&(psm->dol))){
+			recGblSetSevr(psm,LINK_ALARM,VALID_ALARM);
+			return;
+		} else psm->udf=FALSE;
+	    }
 	}
 
 	

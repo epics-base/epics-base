@@ -47,6 +47,10 @@
 #include	<module_types.h>
 #include	<boRecord.h>
 
+/* added for Channel Access Links */
+long dbCaAddOutlink();
+long dbCaPutLink();
+long init_record();
 
 /* Create the dset for devBoSoftRaw */
 long write_bo();
@@ -62,18 +66,35 @@ struct {
 	5,
 	NULL,
 	NULL,
-	NULL,
+	init_record,
 	NULL,
 	write_bo};
 
 
 
+static long init_record(pbo)
+struct boRecord *pbo;
+{
+ 
+long status;
+ 
+    if (pbo->out.type == PV_LINK)
+        status = dbCaAddOutlink(&(pbo->out), (void *) pbo, "RVAL");
+    else
+        status = 0L;
+ 
+    return status;
+ 
+} /* end init_record() */
 
 static long write_bo(pbo)
     struct boRecord	*pbo;
 {
     char message[100];
     long status;
+/* added for Channel Access Links */
+long options;
+long nrequest;
 
     /* bo.out must be a CONSTANT or a DB_LINK or a CA_LINK*/
     switch (pbo->out.type) {
@@ -87,6 +108,9 @@ static long write_bo(pbo)
         }
         break;
     case (CA_LINK) :
+        options = 0L;
+        nrequest = 1L;
+        status = dbCaPutLink(&(pbo->out), &options, &nrequest);
         break;
     default :
         if(recGblSetSevr(pbo,SOFT_ALARM,VALID_ALARM)){

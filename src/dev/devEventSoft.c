@@ -46,7 +46,9 @@
 #include	<devSup.h>
 #include	<module_types.h>
 #include	<eventRecord.h>
-
+/* Added for Channel Access Links */
+long dbCaAddInlink();
+long dbCaGetLink();
 
 /* Create the dset for devEventSoft */
 long init_record();
@@ -71,6 +73,8 @@ static long init_record(pevent)
     struct eventRecord	*pevent;
 {
     char message[100];
+/* Added for Channel Access Links */
+long status;
 
     /* event.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
     switch (pevent->inp.type) {
@@ -81,6 +85,8 @@ static long init_record(pevent)
 	pevent->udf= FALSE;
         break;
     case (PV_LINK) :
+        status = dbCaAddInlink(&(pevent->inp), (void *) pevent, "VAL");
+        if(status) return(status);
         break;
     case (DB_LINK) :
         break;
@@ -115,6 +121,12 @@ static long read_event(pevent)
         } else pevent->udf = FALSE;
         break;
     case (CA_LINK) :
+        if (dbCaGetLink(&(pevent->inp)))
+        {
+            recGblSetSevr(pevent,LINK_ALARM,VALID_ALARM);
+        } 
+        else 
+            pevent->udf = FALSE;
         break;
     default :
         if(recGblSetSevr(pevent,SOFT_ALARM,VALID_ALARM)){

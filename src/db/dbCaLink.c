@@ -57,6 +57,9 @@
 /* needed for spawnTask priority parms */
 #include <taskLib.h>
 
+/* needed for #define memcpy() */
+#include <string.h>
+
 #include <task_params.h>
 
 #include <errMdef.h>
@@ -87,7 +90,7 @@ struct input_pvar
     short dest_old_dbr_sts_type; /* for checking in my_event_handler() */
     short revised_dest_new_dbr_type;
     unsigned short source_severity;
-    int dest_old_dbr_element_size; /* for calloc() and bcopy() */
+    int dest_old_dbr_element_size; /* for calloc() and memcpy() */
     FAST_LOCK lock;
     BOOL maximize_severity;
     BOOL needs_reading;
@@ -946,6 +949,8 @@ BOOL done;
 	    if (RTN_SUCCESS(status) && Pvar_disconnectedlist_hdr)
 	    {
 
+		/* there are nodes on the disconnected list */
+
 		FASTLOCK(&Buffer);
 
 		if (Pvar_writelist_hdr)
@@ -969,6 +974,9 @@ BOOL done;
 
 		FASTUNLOCK(&Buffer);
 
+		/* kludge suggested by Jeff Hill so that we can have reliable */
+		/* connection management for  vxWorks hosted CA clients       */
+		process_asynch_events((float) 0.1);
 	    } /* endif */
 	} /* endwhile */
     } /* endif */
@@ -1454,9 +1462,13 @@ char print_line[500];
 			    pi->needs_reading = TRUE;
 			    pi->last_rcvd_nelements = arg.count;
 
-			    bcopy(
-			    (char *) ((struct dbr_sts_string *) arg.dbr)->value,
+/* bcopy( */
+/* (char *) ((struct dbr_sts_string *) arg.dbr)->value, */
+/* (char *) pi->pvalue,  */
+/* (arg.count * pi->dest_old_dbr_element_size)); */
+			    memcpy(
 				(char *) pi->pvalue, 
+			    (char *) ((struct dbr_sts_string *) arg.dbr)->value,
 				(arg.count * pi->dest_old_dbr_element_size));
 			    pi->source_severity = 
 		(unsigned short) ((struct dbr_sts_string *) arg.dbr)->severity;
@@ -1471,9 +1483,13 @@ char print_line[500];
 			    pi->needs_reading = TRUE;
 			    pi->last_rcvd_nelements = arg.count;
 
-			    bcopy(
-			(char *) &(((struct dbr_sts_short *) arg.dbr)->value),
+/* bcopy( */
+/* (char *) &(((struct dbr_sts_short *) arg.dbr)->value), */
+/* (char *) pi->pvalue,  */
+/* (arg.count * pi->dest_old_dbr_element_size)); */
+			    memcpy(
 				(char *) pi->pvalue, 
+			(char *) &(((struct dbr_sts_short *) arg.dbr)->value),
 				(arg.count * pi->dest_old_dbr_element_size));
 			    pi->source_severity = 
 		(unsigned short) ((struct dbr_sts_short *) arg.dbr)->severity;
@@ -1487,9 +1503,13 @@ char print_line[500];
 			    pi->needs_reading = TRUE;
 			    pi->last_rcvd_nelements = arg.count;
 
-			    bcopy(
-			(char *) &(((struct dbr_sts_float *) arg.dbr)->value),
+/* bcopy( */
+/* (char *) &(((struct dbr_sts_float *) arg.dbr)->value), */
+/* (char *) pi->pvalue,  */
+/* (arg.count * pi->dest_old_dbr_element_size)); */
+			    memcpy(
 				(char *) pi->pvalue, 
+			(char *) &(((struct dbr_sts_float *) arg.dbr)->value),
 				(arg.count * pi->dest_old_dbr_element_size));
 			    pi->source_severity = 
 		(unsigned short) ((struct dbr_sts_float *) arg.dbr)->severity;
@@ -1503,9 +1523,13 @@ char print_line[500];
 			    pi->needs_reading = TRUE;
 			    pi->last_rcvd_nelements = arg.count;
 
-			    bcopy(
-			(char *) &(((struct dbr_sts_enum *) arg.dbr)->value),
+/* bcopy( */
+/* (char *) &(((struct dbr_sts_enum *) arg.dbr)->value), */
+/* (char *) pi->pvalue,  */
+/* (arg.count * pi->dest_old_dbr_element_size)); */
+			    memcpy(
 				(char *) pi->pvalue, 
+			(char *) &(((struct dbr_sts_enum *) arg.dbr)->value),
 				(arg.count * pi->dest_old_dbr_element_size));
 			    pi->source_severity = 
 		(unsigned short) ((struct dbr_sts_enum *) arg.dbr)->severity;
@@ -1519,9 +1543,13 @@ char print_line[500];
 			    pi->needs_reading = TRUE;
 			    pi->last_rcvd_nelements = arg.count;
 
-			    bcopy(
-			(char *) &(((struct dbr_sts_char *) arg.dbr)->value),
+/* bcopy( */
+/* (char *) &(((struct dbr_sts_char *) arg.dbr)->value), */
+/* (char *) pi->pvalue,  */
+/* (arg.count * pi->dest_old_dbr_element_size)); */
+			    memcpy(
 				(char *) pi->pvalue, 
+			(char *) &(((struct dbr_sts_char *) arg.dbr)->value),
 				(arg.count * pi->dest_old_dbr_element_size));
 			    pi->source_severity = 
 		(unsigned short) ((struct dbr_sts_char *) arg.dbr)->severity;
@@ -1534,9 +1562,13 @@ char print_line[500];
 			    pi->needs_reading = TRUE;
 			    pi->last_rcvd_nelements = arg.count;
 
-			    bcopy(
-			(char *) &(((struct dbr_sts_long *) arg.dbr)->value),
+/* bcopy( */
+/* (char *) &(((struct dbr_sts_long *) arg.dbr)->value), */
+/* (char *) pi->pvalue,  */
+/* (arg.count * pi->dest_old_dbr_element_size)); */
+			    memcpy(
 				(char *) pi->pvalue, 
+			(char *) &(((struct dbr_sts_long *) arg.dbr)->value),
 				(arg.count * pi->dest_old_dbr_element_size));
 			    pi->source_severity = 
 		(unsigned short) ((struct dbr_sts_long *) arg.dbr)->severity;
@@ -1549,9 +1581,13 @@ char print_line[500];
 			    pi->needs_reading = TRUE;
 			    pi->last_rcvd_nelements = arg.count;
 
-			    bcopy(
-			(char *) &(((struct dbr_sts_double *) arg.dbr)->value),
+/* bcopy( */
+/* (char *) &(((struct dbr_sts_double *) arg.dbr)->value), */
+/* (char *) pi->pvalue,  */
+/* (arg.count * pi->dest_old_dbr_element_size)); */
+			    memcpy(
 				(char *) pi->pvalue, 
+			(char *) &(((struct dbr_sts_double *) arg.dbr)->value),
 				(arg.count * pi->dest_old_dbr_element_size));
 			    pi->source_severity = 
 		(unsigned short) ((struct dbr_sts_double *) arg.dbr)->severity;

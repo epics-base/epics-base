@@ -49,6 +49,10 @@
 #include	<module_types.h>
 #include	<mbboRecord.h>
 
+/* added for Channel Access Links */
+long dbCaAddOutlink();
+long dbCaPutLink();
+long init_record();
 
 /* Create the dset for devMbboSoft */
 long write_mbbo();
@@ -64,18 +68,35 @@ struct {
 	5,
 	NULL,
 	NULL,
-	NULL,
+	init_record,
 	NULL,
 	write_mbbo};
 
 
 
+static long init_record(pmbbo)
+struct mbboRecord *pmbbo;
+{
+ 
+long status;
+ 
+    if (pmbbo->out.type == PV_LINK)
+        status = dbCaAddOutlink(&(pmbbo->out), (void *) pmbbo, "VAL");
+    else
+        status = 0L;
+ 
+    return status;
+ 
+} /* end init_record() */
 
 static long write_mbbo(pmbbo)
     struct mbboRecord	*pmbbo;
 {
     char message[100];
     long status;
+/* added for Channel Access Links */
+long options;
+long nrequest;
 
     /* mbbo.out must be a CONSTANT or a DB_LINK or a CA_LINK*/
     switch (pmbbo->out.type) {
@@ -89,6 +110,9 @@ static long write_mbbo(pmbbo)
         }
         break;
     case (CA_LINK) :
+        options = 0L;
+        nrequest = 1L;
+        status = dbCaPutLink(&(pmbbo->out), &options, &nrequest);
         break;
     default :
         if(recGblSetSevr(pmbbo,SOFT_ALARM,VALID_ALARM)){

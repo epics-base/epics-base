@@ -49,7 +49,9 @@
 #include	<devSup.h>
 #include	<module_types.h>
 #include	<biRecord.h>
-
+/* Added for Channel Access Links */
+long dbCaAddInlink();
+long dbCaGetLink();
 
 /* Create the dset for devBiSoftRaw */
 long init_record();
@@ -75,6 +77,8 @@ static long init_record(pbi)
     struct biRecord	*pbi;
 {
     char message[100];
+/* Added for Channel Access Links */
+long status;
 
     /* bi.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
     switch (pbi->inp.type) {
@@ -82,6 +86,8 @@ static long init_record(pbi)
         pbi->rval = pbi->inp.value.value;
         break;
     case (PV_LINK) :
+        status = dbCaAddInlink(&(pbi->inp), (void *) pbi, "RVAL");
+        if(status) return(status);
         break;
     case (DB_LINK) :
         break;
@@ -116,6 +122,12 @@ static long read_bi(pbi)
         }
         break;
     case (CA_LINK) :
+        if (dbCaGetLink(&(pbi->inp)))
+        {
+            recGblSetSevr(pbi,LINK_ALARM,VALID_ALARM);
+        } 
+        else 
+            pbi->udf = FALSE;
         break;
     default :
         if(recGblSetSevr(pbi,SOFT_ALARM,VALID_ALARM)){

@@ -46,7 +46,9 @@
 #include	<devSup.h>
 #include	<module_types.h>
 #include	<longinRecord.h>
-
+/* Added for Channel Access Links */
+long dbCaAddInlink();
+long dbCaGetLink();
 
 /* Create the dset for devLiSoft */
 long init_record();
@@ -71,6 +73,8 @@ static long init_record(plongin)
     struct longinRecord	*plongin;
 {
     char message[100];
+/* Added for Channel Access Links */
+long status;
 
     /* longin.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
     switch (plongin->inp.type) {
@@ -79,6 +83,8 @@ static long init_record(plongin)
 	plongin->udf = FALSE;
 	break;
     case (PV_LINK) :
+        status = dbCaAddInlink(&(plongin->inp), (void *) plongin, "VAL");
+        if(status) return(status);
         break;
     case (DB_LINK) :
         break;
@@ -113,6 +119,12 @@ static long read_longin(plongin)
         } else plongin->udf = FALSE;
         break;
     case (CA_LINK) :
+        if (dbCaGetLink(&(plongin->inp)))
+        {
+            recGblSetSevr(plongin,LINK_ALARM,VALID_ALARM);
+        } 
+        else 
+            plongin->udf = FALSE;
         break;
     default :
         if(recGblSetSevr(plongin,SOFT_ALARM,VALID_ALARM)){

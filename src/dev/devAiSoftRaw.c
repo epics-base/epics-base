@@ -50,6 +50,9 @@
 #include	<devSup.h>
 #include	<link.h>
 #include	<aiRecord.h>
+/* Added for Channel Access Links */
+long dbCaAddInlink();
+long dbCaGetLink();
 
 /* Create the dset for devAiSoftRaw */
 long init_record();
@@ -77,6 +80,8 @@ static long init_record(pai)
     struct aiRecord	*pai;
 {
     char message[100];
+/* Added for Channel Access Links */
+long status;
 
     /* ai.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
     switch (pai->inp.type) {
@@ -84,6 +89,8 @@ static long init_record(pai)
 	pai->rval = pai->inp.value.value;
 	break;
     case (PV_LINK) :
+        status = dbCaAddInlink(&(pai->inp), (void *) pai, "RVAL");
+        if(status) return(status);
 	break;
     case (DB_LINK) :
 	break;
@@ -119,6 +126,12 @@ static long read_ai(pai)
 
 	break;
     case (CA_LINK) :
+        if (dbCaGetLink(&(pai->inp)))
+        {
+            recGblSetSevr(pai,LINK_ALARM,VALID_ALARM);
+        } 
+        else 
+            pai->udf = FALSE;
 	break;
     default :
         if(recGblSetSevr(pai,SOFT_ALARM,VALID_ALARM)){

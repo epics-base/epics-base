@@ -102,6 +102,10 @@ struct rset timerRSET={
 	get_control_double,
 	get_alarm_double };
 
+/* Added for Channel Access Links */
+long dbCaAddInlink();
+long dbCaGetLink();
+
 /* because the driver does all the work just declare device support here*/
 static long get_ioint_info();
 struct dset devTmMizar8310={4,NULL,NULL,NULL,get_ioint_info};
@@ -138,10 +142,19 @@ void write_timer();
 static long init_record(ptimer)
     struct timerRecord	*ptimer;
 {
+
+/* Added for Channel Access Links */
+long status;
+
     /* get the delay initial value if torg is a constant*/
     if (ptimer->torg.type == CONSTANT ){
             ptimer->trdl = ptimer->torg.value.value;
     }
+    if (ptimer->torg.type == PV_LINK )
+    {
+	status = dbCaAddInlink(&(ptimer->torg), (void *) ptimer, "TRDL");
+	if(status) return(status);
+    } /* endif */
 
 
     /* read to maintain time pulses over a restart */
@@ -288,6 +301,15 @@ struct timerRecord	*ptimer;
                        return;
                 }
         }
+	if (ptimer->torg.type == CA_LINK) 
+	{
+	    status = dbCaGetLink(&(ptimer->torg));
+	    if(status!=0)
+	    {
+	       recGblSetSevr(ptimer,LINK_ALARM,VALID_ALARM);
+	       return;
+	    } /* endif */
+        } /* endif */
 	if (ptimer->out.type != VME_IO) {
                 recGblSetSevr(ptimer,WRITE_ALARM,VALID_ALARM);
 		return;

@@ -604,9 +604,11 @@ short old_dbr_type;
     {
 	case DBR_STRING: old_dbr_type = oldDBR_STRING; break;
 	case DBR_CHAR:   old_dbr_type = oldDBR_CHAR;   break;
-	case DBR_UCHAR:  old_dbr_type = oldDBR_CHAR;   break;
+	/* case DBR_UCHAR:  old_dbr_type = oldDBR_CHAR;   break; */
+	case DBR_UCHAR:  old_dbr_type = oldDBR_SHORT;  break;
 	case DBR_SHORT:  old_dbr_type = oldDBR_SHORT;  break;
-	case DBR_USHORT: old_dbr_type = oldDBR_ENUM;   break;
+	/* case DBR_USHORT: old_dbr_type = oldDBR_ENUM;   break; */
+	case DBR_USHORT: old_dbr_type = oldDBR_LONG;   break;
 	case DBR_LONG:   old_dbr_type = oldDBR_LONG;   break;
 	case DBR_ULONG:  old_dbr_type = oldDBR_LONG;   break;
 	case DBR_FLOAT:  old_dbr_type = oldDBR_FLOAT;  break;

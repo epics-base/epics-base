@@ -96,16 +96,28 @@ struct rset pidRSET={
 void alarm();
 void monitor();
 long do_pid();
+/* Added for Channel Access Links */
+long dbCaAddInlink();
+long dbCaGetLink();
 
 
 static long init_record(ppid)
     struct pidRecord     *ppid;
 {
+/* Added for Channel Access Links */
+long status;
+
         /* initialize the setpoint for constant setpoint */
         if (ppid->stpl.type == CONSTANT){
                 ppid->val = ppid->stpl.value.value;
                 ppid->udf = FALSE;
 	}
+        if (ppid->stpl.type == PV_LINK)
+        {
+            status = dbCaAddInlink(&(ppid->stpl), (void *) ppid, "VAL");
+            if(status) return(status);
+        } /* endif */
+
 	return(0);
 }
 
@@ -370,6 +382,12 @@ struct pidRecord     *ppid;
         	nRequest=1;
         	if(dbGetLink(&(ppid->stpl.value.db_link),(struct dbCommon *)ppid,DBR_FLOAT,
 		&(ppid->val),&options,&nRequest)!=NULL) {
+                        recGblSetSevr(ppid,LINK_ALARM,VALID_ALARM);
+                        return(0);
+                } else ppid->udf=FALSE;
+        }
+        if(ppid->stpl.type == CA_LINK && ppid->smsl == CLOSED_LOOP){
+                if(dbCaGetLink(&(ppid->stpl))!=NULL) {
                         recGblSetSevr(ppid,LINK_ALARM,VALID_ALARM);
                         return(0);
                 } else ppid->udf=FALSE;

@@ -46,6 +46,11 @@
 #include	<module_types.h>
 #include	<stringoutRecord.h>
 
+/* added for Channel Access Links */
+long dbCaAddOutlink();
+long dbCaPutLink();
+long init_record();
+
 /* Create the dset for devSoSoft */
 long write_stringout();
 
@@ -60,16 +65,34 @@ struct {
 	5,
 	NULL,
 	NULL,
-	NULL,
+	init_record,
 	NULL,
 	write_stringout};
  
 
+static long init_record(pstringout)
+struct stringoutRecord *pstringout;
+{
+ 
+long status;
+ 
+    if (pstringout->out.type == PV_LINK)
+        status = dbCaAddOutlink(&(pstringout->out), (void *) pstringout, "VAL");
+    else
+        status = 0L;
+ 
+    return status;
+ 
+} /* end init_record() */
+
 static long write_stringout(pstringout)
     struct stringoutRecord	*pstringout;
 {
     char message[100];
     long status;
+/* added for Channel Access Links */
+long options;
+long nrequest;
 
     /* stringout.out must be a CONSTANT or a DB_LINK or a CA_LINK*/
     switch (pstringout->out.type) {
@@ -83,6 +106,9 @@ static long write_stringout(pstringout)
         }
 	break;
     case (CA_LINK) :
+        options = 0L;
+        nrequest = 1L;
+        status = dbCaPutLink(&(pstringout->out), &options, &nrequest);
 	break;
     default :
         if(recGblSetSevr(pstringout,SOFT_ALARM,VALID_ALARM)){

@@ -46,6 +46,9 @@
 #include	<devSup.h>
 #include	<module_types.h>
 #include	<stringinRecord.h>
+/* Added for Channel Access Links */
+long dbCaAddInlink();
+long dbCaGetLink();
 
 
 /* Create the dset for devSiSoft */
@@ -71,6 +74,8 @@ static long init_record(pstringin)
     struct stringinRecord	*pstringin;
 {
     char message[100];
+/* Added for Channel Access Links */
+long status;
 
     /* stringin.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
     switch (pstringin->inp.type) {
@@ -82,6 +87,8 @@ static long init_record(pstringin)
 	pstringin->udf= FALSE;
         break;
     case (PV_LINK) :
+        status = dbCaAddInlink(&(pstringin->inp), (void *) pstringin, "VAL");
+        if(status) return(status);
         break;
     case (DB_LINK) :
         break;
@@ -116,6 +123,12 @@ static long read_stringin(pstringin)
         } else pstringin->udf = FALSE;
         break;
     case (CA_LINK) :
+        if (dbCaGetLink(&(pstringin->inp)))
+        {
+            recGblSetSevr(pstringin,LINK_ALARM,VALID_ALARM);
+        } 
+        else 
+            pstringin->udf = FALSE;
         break;
     default :
         if(recGblSetSevr(pstringin,SOFT_ALARM,VALID_ALARM)){

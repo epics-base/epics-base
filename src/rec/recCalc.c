@@ -1,5 +1,5 @@
 /* recCalc.c */
-/* share/src/rec $Id$ */
+/* share/src/rec @(#)recCalc.c	1.15     4/6/92 */
 
 /* recCalc.c - Record Support Routines for Calculation records */
 /*
@@ -123,10 +123,10 @@ void monitor();
 long calcPerform();
 long postfix();
 int fetch_values();
-#define ARG_MAX 12
-/* Database Channel Access Link Functions */
-void dbCaAddInlink();
+/* Added for Channel Access Links */
+long dbCaAddInlink();
 long dbCaGetLink();
+#define ARG_MAX 12
 
  /* Fldnames should have as many as ARG_MAX */
  static char Fldnames[ARG_MAX][FLDNAME_SZ] =
@@ -143,22 +143,16 @@ static long init_record(pcalc)
     short error_number;
     char rpbuf[80];
 
-char dest_pvarname[((PVNAME_SZ)+(FLDNAME_SZ)+2)];
-struct dbAddr dest_dbaddr;
-
     plink = &pcalc->inpa;
     pvalue = &pcalc->a;
     for(i=0; i<ARG_MAX; i++, plink++, pvalue++) {
-        if(plink->type==CONSTANT) *pvalue = plink->value.value;
+        if(plink->type==CONSTANT) 
+	    *pvalue = plink->value.value;
         if (plink->type == PV_LINK)
-        {
-            sprintf(dest_pvarname, "%s.%s", pcalc->name, Fldnames[i]);
-
-            if (dbNameToAddr(dest_pvarname, &dest_dbaddr))
-        printf("ERROR: recCalc.c init_record() problem in dbNameToAddr()\n");
-            else
-            dbCaAddInlink(plink, (void *) pcalc, Fldnames[i]);
-        } /* endif */
+	{
+            status = dbCaAddInlink(plink, (void *) pcalc, Fldnames[i]);
+	    if(status) return(status);
+	} /* endif */
     }
     status=postfix(pcalc->calc,rpbuf,&error_number);
     if(status) return(status);
@@ -392,7 +386,10 @@ struct calcRecord *pcalc;
                 if (plink->type == CA_LINK)
                 {
                     if (dbCaGetLink(plink))
-                        printf("fetch_values() problem in dbCaGetLink()\n");
+		    {
+			recGblSetSevr(pcalc,LINK_ALARM,VALID_ALARM);
+			return(-1);
+		    } /* endif */
                 }
                 else
                 {

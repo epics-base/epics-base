@@ -99,16 +99,28 @@ struct rset fanoutRSET={
 #define SELECT_ALL  0
 #define SELECTED 1
 #define SELECT_MASK 2
+/* Added for Channel Access Links */
+long dbCaAddInlink();
+long dbCaGetLink();
 
 
 static long init_record(pfanout)
     struct fanoutRecord        *pfanout;
 {
 
+/* Added for Channel Access Links */
+long status;
+
     /* get link selection if sell is a constant and nonzero*/
     if (pfanout->sell.type==CONSTANT && pfanout->sell.value.value!=0 ){
             pfanout->seln = pfanout->sell.value.value;
     }
+    if (pfanout->sell.type == PV_LINK)
+    {
+	status = dbCaAddInlink(&(pfanout->sell), (void *) pfanout, "SELN");
+	if(status) return(status);
+    } /* endif */
+
     return(0);
 }
 
@@ -135,6 +147,14 @@ static long process(pfanout)
 		recGblSetSevr(pfanout,LINK_ALARM,VALID_ALARM);
          }
     }
+    if (pfanout->sell.type == CA_LINK)
+    {
+	status = dbCaGetLink(&(pfanout->sell));
+         if(status!=0) {
+		recGblSetSevr(pfanout,LINK_ALARM,VALID_ALARM);
+         }
+    }
+
     switch (pfanout->selm){
     case (SELECT_ALL):
         if (pfanout->lnk1.type==DB_LINK) 

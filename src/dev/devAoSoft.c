@@ -1,5 +1,5 @@
 /* devAoSoft.c */
-/* share/src/dev $Id$ */
+/* share/src/dev @(#)devAoSoft.c	1.13     4/6/92 */
 
 /* Device Support Routines for soft Analog Output Records*/
 /*
@@ -51,7 +51,7 @@
 #include	<aoRecord.h>
 
 /* added for Channel Access Links */
-void dbCaAddOutlink();
+long dbCaAddOutlink();
 long dbCaPutLink();
 long init_record();
 
@@ -79,20 +79,14 @@ static long init_record(pao)
 struct aoRecord *pao;
 {
 
-char source_pvarname[((PVNAME_SZ)+(FLDNAME_SZ)+2)];
-struct dbAddr source_dbaddr;
+long status;
 
     if (pao->out.type == PV_LINK)
-    {
-        sprintf(source_pvarname, "%s.OVAL", pao->name);
+	status = dbCaAddOutlink(&(pao->out), (void *) pao, "OVAL");
+    else
+	status = 0L;
 
-        if (dbNameToAddr(source_pvarname, &source_dbaddr))
-        printf("ERROR: devAoSoft.c init_record() problem in dbNameToAddr()\n");
-        else
-            dbCaAddOutlink(&(pao->out), (void *) pao, "OVAL");
-    } /* endif */
-
-    return ((long) 0);
+    return status;
 
 } /* end init_record() */
 
@@ -117,8 +111,8 @@ long nrequest;
         }
 	break;
     case (CA_LINK) :
-        options = (long) 0;
-        nrequest = (long) 1;
+        options = 0L;
+        nrequest = 1L;
         status = dbCaPutLink(&(pao->out), &options, &nrequest);
 	break;
     default :

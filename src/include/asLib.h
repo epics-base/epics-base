@@ -98,7 +98,8 @@ epicsShareFunc int epicsShareAPI asDumpHash(void);
 
 /*Private declarations */
 #define ASMAXINP 12
-extern int asActive;
+epicsShareExtern int asActive;
+
 /* definition of access rights*/
 typedef enum{asNOACCESS,asREAD,asWRITE} asAccessRights;
 
@@ -109,6 +110,8 @@ typedef struct asBase{
 	ELLLIST	asgList;
 	void	*phash;
 } ASBASE;
+epicsShareExtern volatile ASBASE *pasbase;
+
 /*Defs for User Access Groups*/
 typedef struct{
 	ELLNODE	node;
@@ -187,6 +190,6 @@ typedef struct asgClient {
 
 epicsShareFunc long epicsShareAPI asComputeAsg(ASG *pasg);
 /*following is "friend" function*/
-void * asCalloc(size_t nobj,size_t size);
+epicsShareFunc void * epicsShareAPI asCalloc(size_t nobj,size_t size);
 
 #endif /*INCasLibh*/

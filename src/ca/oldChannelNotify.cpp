@@ -37,6 +37,7 @@
 #include "iocinf.h"
 #include "oldAccess.h"
 #include "cac.h"
+#include "autoPtrFreeList.h"
 
 extern "C" void cacNoopAccesRightsHandler ( struct access_rights_handler_args )
 {
@@ -75,63 +76,6 @@ void  oldChannelNotify::destructor (
         this->cacCtx.decrementOutstandingIO ( guard, this->ioSeqNo );
     }
     this->~oldChannelNotify ();
-}
-
-int oldChannelNotify::changeConnCallBack ( 
-    epicsGuard < epicsMutex > & guard, caCh * pfunc )
-{
-    guard.assertIdenticalMutex ( this->cacCtx.mutexRef () );
-    if ( ! this->currentlyConnected ) {
-         if ( pfunc ) { 
-            if ( ! this->pConnCallBack ) {
-                this->cacCtx.decrementOutstandingIO ( guard, this->ioSeqNo );
-            }
-        }
-        else {
-            if ( this->pConnCallBack ) {
-                this->cacCtx.incrementOutstandingIO ( guard, this->ioSeqNo );
-            }
-        }
-    }
-    pConnCallBack = pfunc;
-
-    return ECA_NORMAL;
-}
-
-void oldChannelNotify::setPrivatePointer ( 
-    epicsGuard < epicsMutex > & guard, void *pPrivateIn )
-{
-    guard.assertIdenticalMutex ( this->cacCtx.mutexRef () );
-    this->pPrivate = pPrivateIn;
-}
-
-void * oldChannelNotify::privatePointer (
-    epicsGuard < epicsMutex > & guard ) const
-{
-    guard.assertIdenticalMutex ( this->cacCtx.mutexRef () );
-    return this->pPrivate;
-}
-
-int oldChannelNotify::replaceAccessRightsEvent ( 
-    epicsGuard < epicsMutex > & guard, caArh * pfunc )
-{
-    // The order of the following is significant to guarantee that the
-    // access rights handler is always gets called even if the channel connects
-    // while this is running. There is some very small chance that the
-    // handler could be called twice here with the same access rights state, but 
-    // that will not upset the application.
-    this->pAccessRightsFunc = pfunc ? pfunc : cacNoopAccesRightsHandler;
-    caAccessRights tmp = this->io.accessRights ( guard );
-      
-    if ( this->currentlyConnected ) {
-        struct access_rights_handler_args args;
-        args.chid = this;
-        args.ar.read_access = tmp.readPermit ();
-        args.ar.write_access = tmp.writePermit ();
-        epicsGuardRelease < epicsMutex > unguard ( guard );
-        ( *this->pAccessRightsFunc ) ( args );
-    }
-    return ECA_NORMAL;
 }
 
 void oldChannelNotify::connectNotify ( 
@@ -238,6 +182,231 @@ void oldChannelNotify::operator delete ( void * )
         __FILE__, __LINE__ );
 }
 
+/*
+ * ca_get_host_name ()
+ */
+unsigned epicsShareAPI ca_get_host_name ( 
+    chid pChan, char * pBuf, unsigned bufLength )
+{
+    epicsGuard < epicsMutex > guard ( pChan->cacCtx.mutexRef() );
+    return pChan->io.getHostName ( guard, pBuf, bufLength );
+}
+
+/*
+ * ca_host_name ()
+ *
+ * !!!! not thread safe !!!!
+ *
+ */
+const char * epicsShareAPI ca_host_name ( 
+    chid pChan )
+{
+    epicsGuard < epicsMutex > guard ( pChan->cacCtx.mutexRef () );
+    return pChan->io.pHostName ( guard );
+}
+
+/*
+ * ca_set_puser ()
+ */
+void epicsShareAPI ca_set_puser ( 
+    chid pChan, void * puser )
+{
+    epicsGuard < epicsMutex > guard ( pChan->cacCtx.mutexRef () );
+    pChan->pPrivate = puser;
+}
+
+/*
+ * ca_get_puser ()
+ */
+void * epicsShareAPI ca_puser ( 
+    chid pChan )
+{
+    epicsGuard < epicsMutex > guard ( pChan->cacCtx.mutexRef () );
+    return pChan->pPrivate;
+}
+
+/*
+ *  Specify an event subroutine to be run for connection events
+ */
+int epicsShareAPI ca_change_connection_event ( chid pChan, caCh * pfunc )
+{
+    epicsGuard < epicsMutex > guard ( pChan->cacCtx.mutexRef () );
+    if ( ! pChan->currentlyConnected ) {
+         if ( pfunc ) { 
+            if ( ! pChan->pConnCallBack ) {
+                pChan->cacCtx.decrementOutstandingIO ( guard, pChan->ioSeqNo );
+            }
+        }
+        else {
+            if ( pChan->pConnCallBack ) {
+                pChan->cacCtx.incrementOutstandingIO ( guard, pChan->ioSeqNo );
+            }
+        }
+    }
+    pChan->pConnCallBack = pfunc;
+    return ECA_NORMAL;
+}
+
+/*
+ * ca_replace_access_rights_event
+ */
+int epicsShareAPI ca_replace_access_rights_event ( 
+    chid pChan, caArh *pfunc )
+{
+    epicsGuard < epicsMutex > guard ( pChan->cacCtx.mutexRef () );
+
+    // The order of the following is significant to guarantee that the
+    // access rights handler is always gets called even if the channel connects
+    // while this is running. There is some very small chance that the
+    // handler could be called twice here with the same access rights state, but 
+    // that will not upset the application.
+    pChan->pAccessRightsFunc = pfunc ? pfunc : cacNoopAccesRightsHandler;
+    caAccessRights tmp = pChan->io.accessRights ( guard );
+      
+    if ( pChan->currentlyConnected ) {
+        struct access_rights_handler_args args;
+        args.chid = pChan;
+        args.ar.read_access = tmp.readPermit ();
+        args.ar.write_access = tmp.writePermit ();
+        epicsGuardRelease < epicsMutex > unguard ( guard );
+        ( *pChan->pAccessRightsFunc ) ( args );
+    }
+    return ECA_NORMAL;
+}
+
+/*
+ * ca_array_get ()
+ */
+int epicsShareAPI ca_array_get ( chtype type, 
+            arrayElementCount count, chid pChan, void *pValue )
+{
+    int caStatus;
+    try {
+        if ( type < 0 ) {
+            return ECA_BADTYPE;
+        }
+        unsigned tmpType = static_cast < unsigned > ( type );
+        epicsGuard < epicsMutex > guard ( pChan->cacCtx.mutexRef () );
+        pChan->eliminateExcessiveSendBacklog ( 
+            pChan->getClientCtx().pCallbackGuard.get(), guard );
+        autoPtrFreeList < getCopy, 0x400, epicsMutexNOOP > pNotify 
+            ( pChan->getClientCtx().getCopyFreeList,
+                new ( pChan->getClientCtx().getCopyFreeList ) 
+                    getCopy ( guard, pChan->getClientCtx(), *pChan, 
+                                tmpType, count, pValue ) );
+        pChan->io.read ( guard, type, count, *pNotify, 0 );
+        pNotify.release ();
+        caStatus = ECA_NORMAL;
+    }
+    catch ( cacChannel::badString & )
+    {
+        caStatus = ECA_BADSTR;
+    }
+    catch ( cacChannel::badType & )
+    {
+        caStatus = ECA_BADTYPE;
+    }
+    catch ( cacChannel::outOfBounds & )
+    {
+        caStatus = ECA_BADCOUNT;
+    }
+    catch ( cacChannel::noReadAccess & )
+    {
+        caStatus = ECA_NORDACCESS;
+    }
+    catch ( cacChannel::notConnected & )
+    {
+        caStatus = ECA_DISCONN;
+    }
+    catch ( cacChannel::unsupportedByService & )
+    {
+        caStatus = ECA_UNAVAILINSERV;
+    }
+    catch ( cacChannel::requestTimedOut & )
+    {
+        caStatus = ECA_TIMEOUT;
+    }
+    catch ( std::bad_alloc & )
+    {
+        caStatus = ECA_ALLOCMEM;
+    }
+    catch ( cacChannel::msgBodyCacheTooSmall & ) {
+        caStatus = ECA_TOLARGE;
+    }
+    catch ( ... )
+    {
+        caStatus = ECA_GETFAIL;
+    }
+    return caStatus;
+}
+
+/*
+ * ca_array_get_callback ()
+ */
+int epicsShareAPI ca_array_get_callback ( chtype type, 
+            arrayElementCount count, chid pChan,
+            caEventCallBackFunc *pfunc, void *arg )
+{
+    int caStatus;
+    try {
+        if ( type < 0 ) {
+            return ECA_BADTYPE;
+        }
+        unsigned tmpType = static_cast < unsigned > ( type );
+
+        epicsGuard < epicsMutex > guard ( pChan->cacCtx.mutexRef () );
+        pChan->eliminateExcessiveSendBacklog ( 
+            pChan->getClientCtx().pCallbackGuard.get(), guard );
+        autoPtrFreeList < getCallback, 0x400, epicsMutexNOOP > pNotify 
+            ( pChan->getClientCtx().getCallbackFreeList,
+            new ( pChan->getClientCtx().getCallbackFreeList )
+                getCallback ( *pChan, pfunc, arg ) );
+        pChan->io.read ( guard, tmpType, count, *pNotify, 0 );
+        pNotify.release ();
+        caStatus = ECA_NORMAL;
+    }
+    catch ( cacChannel::badString & )
+    {
+        caStatus = ECA_BADSTR;
+    }
+    catch ( cacChannel::badType & )
+    {
+        caStatus = ECA_BADTYPE;
+    }
+    catch ( cacChannel::outOfBounds & )
+    {
+        caStatus = ECA_BADCOUNT;
+    }
+    catch ( cacChannel::noReadAccess & )
+    {
+        caStatus = ECA_NORDACCESS;
+    }
+    catch ( cacChannel::notConnected & )
+    {
+        caStatus = ECA_DISCONN;
+    }
+    catch ( cacChannel::unsupportedByService & )
+    {
+        caStatus = ECA_UNAVAILINSERV;
+    }
+    catch ( cacChannel::requestTimedOut & )
+    {
+        caStatus = ECA_TIMEOUT;
+    }
+    catch ( std::bad_alloc & )
+    {
+        caStatus = ECA_ALLOCMEM;
+    }
+    catch ( cacChannel::msgBodyCacheTooSmall ) {
+        caStatus = ECA_TOLARGE;
+    }
+    catch ( ... )
+    {
+        caStatus = ECA_GETFAIL;
+    }
+    return caStatus;
+}
+
 void oldChannelNotify::read ( 
     epicsGuard < epicsMutex > & guard,
     unsigned type, arrayElementCount count, 
@@ -246,11 +415,206 @@ void oldChannelNotify::read (
     this->io.read ( guard, type, count, notify, pId );
 }
 
-void oldChannelNotify::write ( 
-    epicsGuard < epicsMutex > & guard,
-    unsigned type, arrayElementCount count, const void * pValue )
+/*
+ *  ca_array_put_callback ()
+ */
+int epicsShareAPI ca_array_put_callback ( chtype type, arrayElementCount count, 
+    chid pChan, const void *pValue, caEventCallBackFunc *pfunc, void *usrarg )
 {
-    this->io.write ( guard, type, count, pValue );
+    int caStatus;
+    try {
+        if ( type < 0 ) {
+            return ECA_BADTYPE;
+        }
+        epicsGuard < epicsMutex > guard ( pChan->cacCtx.mutexRef () );
+        pChan->eliminateExcessiveSendBacklog ( 
+            pChan->getClientCtx().pCallbackGuard.get(), guard );
+        unsigned tmpType = static_cast < unsigned > ( type );
+        autoPtrFreeList < putCallback, 0x400, epicsMutexNOOP > pNotify
+                ( pChan->getClientCtx().putCallbackFreeList,
+                    new ( pChan->getClientCtx().putCallbackFreeList )
+                        putCallback ( *pChan, pfunc, usrarg ) );
+        pChan->io.write ( guard, tmpType, count, pValue, *pNotify, 0 );
+        pNotify.release ();
+        caStatus = ECA_NORMAL;
+    }
+    catch ( cacChannel::badString & )
+    {
+        caStatus = ECA_BADSTR;
+    }
+    catch ( cacChannel::badType & )
+    {
+        caStatus = ECA_BADTYPE;
+    }
+    catch ( cacChannel::outOfBounds & )
+    {
+        caStatus = ECA_BADCOUNT;
+    }
+    catch ( cacChannel::noWriteAccess & )
+    {
+        caStatus = ECA_NOWTACCESS;
+    }
+    catch ( cacChannel::notConnected & )
+    {
+        caStatus = ECA_DISCONN;
+    }
+    catch ( cacChannel::unsupportedByService & )
+    {
+        caStatus = ECA_UNAVAILINSERV;
+    }
+    catch ( cacChannel::requestTimedOut & )
+    {
+        caStatus = ECA_TIMEOUT;
+    }
+    catch ( std::bad_alloc & )
+    {
+        caStatus = ECA_ALLOCMEM;
+    }
+    catch ( ... )
+    {
+        caStatus = ECA_PUTFAIL;
+    }
+    return caStatus;
+}
+
+/*
+ *  ca_array_put ()
+ */
+int epicsShareAPI ca_array_put ( chtype type, arrayElementCount count, 
+                                chid pChan, const void * pValue )
+{
+    if ( type < 0 ) {
+        return ECA_BADTYPE;
+    }
+    unsigned tmpType = static_cast < unsigned > ( type );
+
+    int caStatus;
+    try {
+        epicsGuard < epicsMutex > guard ( pChan->cacCtx.mutexRef () );
+        pChan->eliminateExcessiveSendBacklog ( 
+            pChan->getClientCtx().pCallbackGuard.get(), guard );
+        pChan->io.write ( guard, tmpType, count, pValue );
+        caStatus = ECA_NORMAL;
+    }
+    catch ( cacChannel::badString & )
+    {
+        caStatus = ECA_BADSTR;
+    }
+    catch ( cacChannel::badType & )
+    {
+        caStatus = ECA_BADTYPE;
+    }
+    catch ( cacChannel::outOfBounds & )
+    {
+        caStatus = ECA_BADCOUNT;
+    }
+    catch ( cacChannel::noWriteAccess & )
+    {
+        caStatus = ECA_NOWTACCESS;
+    }
+    catch ( cacChannel::notConnected & )
+    {
+        caStatus = ECA_DISCONN;
+    }
+    catch ( cacChannel::unsupportedByService & )
+    {
+        caStatus = ECA_UNAVAILINSERV;
+    }
+    catch ( cacChannel::requestTimedOut & )
+    {
+        caStatus = ECA_TIMEOUT;
+    }
+    catch ( std::bad_alloc & )
+    {
+        caStatus = ECA_ALLOCMEM;
+    }
+    catch ( ... )
+    {
+        caStatus = ECA_PUTFAIL;
+    }
+    return caStatus;
+}
+
+int epicsShareAPI ca_create_subscription ( 
+        chtype type, arrayElementCount count, chid pChan, 
+        long mask, caEventCallBackFunc * pCallBack, void * pCallBackArg, 
+        evid * monixptr )
+{
+    if ( type < 0 ) {
+        return ECA_BADTYPE;
+    }
+    unsigned tmpType = static_cast < unsigned > ( type );
+
+    if ( INVALID_DB_REQ (type) ) {
+        return ECA_BADTYPE;
+    }
+
+    if ( pCallBack == NULL ) {
+        return ECA_BADFUNCPTR;
+    }
+
+    static const long maskMask = 0xffff;
+    if ( ( mask & maskMask ) == 0) {
+        return ECA_BADMASK;
+    }
+
+    if ( mask & ~maskMask ) {
+        return ECA_BADMASK;
+    }
+
+    try {
+        epicsGuard < epicsMutex > guard ( pChan->cacCtx.mutexRef () );
+        try {
+            // if this stalls out on a live circuit then an exception 
+            // can be forthcoming which we must ignore (this is a
+            // special case preserving legacy ca_create_subscription
+            // behavior)
+            pChan->eliminateExcessiveSendBacklog ( 
+                pChan->getClientCtx().pCallbackGuard.get(), guard );
+        }
+        catch ( cacChannel::notConnected & ) {
+            // intentionally ignored (its ok to subscribe when not connected)
+        }
+        new ( pChan->getClientCtx().subscriptionFreeList )
+            oldSubscription  ( 
+                guard, *pChan, pChan->io, tmpType, count, mask,
+                pCallBack, pCallBackArg, monixptr );
+        // dont touch object created after above new because
+        // the first callback might have canceled, and therefore
+        // destroyed, it
+        return ECA_NORMAL;
+    }
+    catch ( cacChannel::badType & )
+    {
+        return ECA_BADTYPE;
+    }
+    catch ( cacChannel::outOfBounds & )
+    {
+        return ECA_BADCOUNT;
+    }
+    catch ( cacChannel::badEventSelection & )
+    {
+        return ECA_BADMASK;
+    }
+    catch ( cacChannel::noReadAccess & )
+    {
+        return ECA_NORDACCESS;
+    }
+    catch ( cacChannel::unsupportedByService & )
+    {
+        return ECA_UNAVAILINSERV;
+    }
+    catch ( std::bad_alloc & )
+    {
+        return ECA_ALLOCMEM;
+    }
+    catch ( cacChannel::msgBodyCacheTooSmall & ) {
+        return ECA_TOLARGE;
+    }
+    catch ( ... )
+    {
+        return ECA_INTERNAL;
+    }
 }
 
 void oldChannelNotify::write ( 
@@ -260,12 +624,93 @@ void oldChannelNotify::write (
     this->io.write ( guard, type, count, pValue, notify, pId );
 }
 
-void oldChannelNotify::subscribe ( 
-    epicsGuard < epicsMutex > & guard, unsigned type, 
-    arrayElementCount count, unsigned mask, cacStateNotify & notify,
-    cacChannel::ioid & idOut)
+/*
+ * ca_field_type()
+ */
+short epicsShareAPI ca_field_type ( chid pChan ) 
 {
-    this->io.subscribe ( guard, type, count, mask, notify, &idOut );
+    epicsGuard < epicsMutex > guard ( pChan->cacCtx.mutexRef () );
+    return pChan->io.nativeType ( guard );
+}
+
+/*
+ * ca_element_count ()
+ */
+arrayElementCount epicsShareAPI ca_element_count ( chid pChan ) 
+{
+    epicsGuard < epicsMutex > guard ( pChan->cacCtx.mutexRef () );
+    return pChan->io.nativeElementCount ( guard );
+}
+
+/*
+ * ca_state ()
+ */
+enum channel_state epicsShareAPI ca_state ( chid pChan ) // X aCC 361
+{
+    epicsGuard < epicsMutex > guard ( pChan->cacCtx.mutexRef () );
+    if ( pChan->io.connected ( guard ) ) {
+        return cs_conn;
+    }
+    else if ( pChan->prevConnected ){
+        return cs_prev_conn;
+    }
+    else {
+        return cs_never_conn;
+    }
+}
+
+/*
+ * ca_read_access ()
+ */
+unsigned epicsShareAPI ca_read_access ( chid pChan )
+{
+    epicsGuard < epicsMutex > guard ( pChan->cacCtx.mutexRef () );
+    return pChan->io.accessRights(guard).readPermit();
+}
+
+/*
+ * ca_write_access ()
+ */
+unsigned epicsShareAPI ca_write_access ( chid pChan )
+{
+    epicsGuard < epicsMutex > guard ( pChan->cacCtx.mutexRef () );
+    return pChan->io.accessRights(guard).writePermit();
+}
+
+/*
+ * ca_name ()
+ */
+const char * epicsShareAPI ca_name ( chid pChan )
+{
+    epicsGuard < epicsMutex > guard ( pChan->cacCtx.mutexRef () );
+    return pChan->io.pName ( guard );
+}
+
+unsigned epicsShareAPI ca_search_attempts ( chid pChan )
+{
+    epicsGuard < epicsMutex > guard ( pChan->cacCtx.mutexRef () ); 
+    return pChan->io.searchAttempts ( guard );
+}
+
+double epicsShareAPI ca_beacon_period ( chid pChan )
+{
+    epicsGuard < epicsMutex > guard ( pChan->cacCtx.mutexRef () );
+    return pChan->io.beaconPeriod ( guard );
+}
+
+double epicsShareAPI ca_receive_watchdog_delay ( chid pChan )
+{
+    epicsGuard < epicsMutex > guard ( pChan->cacCtx.mutexRef () );
+    return pChan->io.receiveWatchdogDelay ( guard );
+}
+
+/*
+ * ca_v42_ok(chid chan)
+ */
+int epicsShareAPI ca_v42_ok ( chid pChan )
+{
+    epicsGuard < epicsMutex > guard ( pChan->cacCtx.mutexRef () );
+    return pChan->io.ca_v42_ok ( guard );
 }
 
 

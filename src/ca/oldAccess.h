@@ -55,16 +55,60 @@ public:
     void destructor ( 
         epicsGuard < epicsMutex > & cbGuard,
         epicsGuard < epicsMutex > & guard );
-    void setPrivatePointer ( 
-        epicsGuard < epicsMutex > &, void * );
-    void * privatePointer (
-        epicsGuard < epicsMutex > & ) const;
-    int changeConnCallBack ( 
-        epicsGuard < epicsMutex > &, caCh *pfunc );
-    int replaceAccessRightsEvent ( 
-        epicsGuard < epicsMutex > &, caArh *pfunc );
-    const char * pName (
-        epicsGuard < epicsMutex > & ) const;
+
+    // legacy C API
+    friend unsigned epicsShareAPI ca_get_host_name ( 
+        chid pChan, char * pBuf, unsigned bufLength );
+    friend const char * epicsShareAPI ca_host_name ( 
+        chid pChan );
+    friend const char * epicsShareAPI ca_name ( 
+        chid pChan );
+    friend void epicsShareAPI ca_set_puser ( 
+        chid pChan, void * puser );
+    friend void * epicsShareAPI ca_puser ( 
+        chid pChan );
+    friend int epicsShareAPI ca_change_connection_event ( 
+        chid pChan, caCh * pfunc );
+    friend int epicsShareAPI ca_replace_access_rights_event ( 
+        chid pChan, caArh *pfunc );
+    friend int epicsShareAPI ca_array_get ( chtype type, 
+        arrayElementCount count, chid pChan, void * pValue );
+    friend int epicsShareAPI ca_array_get_callback ( chtype type, 
+        arrayElementCount count, chid pChan,
+        caEventCallBackFunc *pfunc, void *arg );
+    friend int epicsShareAPI ca_array_put ( 
+        chtype type, arrayElementCount count, 
+        chid pChan, const void * pValue );
+    friend int epicsShareAPI ca_array_put_callback ( 
+        chtype type, arrayElementCount count, 
+        chid pChan, const void *pValue, 
+        caEventCallBackFunc *pfunc, void *usrarg );
+    friend double epicsShareAPI ca_beacon_period ( 
+        chid pChan );
+    friend unsigned epicsShareAPI ca_search_attempts ( 
+        chid pChan );
+    friend unsigned epicsShareAPI ca_write_access ( 
+        chid pChan );
+    friend unsigned epicsShareAPI ca_read_access ( 
+        chid pChan );
+    friend short epicsShareAPI ca_field_type ( 
+        chid pChan );
+    friend arrayElementCount epicsShareAPI ca_element_count ( 
+        chid pChan );
+    friend int epicsShareAPI ca_v42_ok ( 
+        chid pChan );
+    friend int epicsShareAPI ca_create_subscription ( 
+        chtype type, arrayElementCount count, chid pChan, 
+        long mask, caEventCallBackFunc * pCallBack, 
+        void * pCallBackArg, evid * monixptr );
+    friend enum channel_state epicsShareAPI ca_state ( 
+        chid pChan ); 
+    friend double epicsShareAPI ca_receive_watchdog_delay ( 
+        chid pChan );
+
+    unsigned getName (
+        epicsGuard < epicsMutex > &,
+        char * pBuf, unsigned bufLen ) const throw ();
     void show ( 
         epicsGuard < epicsMutex > &,
         unsigned level ) const;
@@ -77,22 +121,10 @@ public:
         epicsGuard < epicsMutex > &,
         unsigned type, arrayElementCount count, 
         cacReadNotify &notify, cacChannel::ioid *pId = 0 );
-    void read ( 
-        epicsGuard < epicsMutex > &,
-        unsigned type, arrayElementCount count, 
-        void *pValue );
-    void write ( 
-        epicsGuard < epicsMutex > &,
-        unsigned type, arrayElementCount count, 
-        const void *pValue );
     void write ( 
         epicsGuard < epicsMutex > &,
         unsigned type, arrayElementCount count, const void *pValue, 
         cacWriteNotify &, cacChannel::ioid *pId = 0 );
-    void subscribe ( 
-        epicsGuard < epicsMutex > &,
-        unsigned type, arrayElementCount count, unsigned mask, 
-        cacStateNotify &, cacChannel::ioid & );
     void ioCancel ( 
         epicsGuard < epicsMutex > & callbackControl, 
         epicsGuard < epicsMutex > & mutualExclusionGuard, 
@@ -100,29 +132,6 @@ public:
     void ioShow ( 
         epicsGuard < epicsMutex > & guard,
         const cacChannel::ioid &, unsigned level ) const;
-    short nativeType (
-        epicsGuard < epicsMutex > & ) const;
-    arrayElementCount nativeElementCount (
-        epicsGuard < epicsMutex > & ) const;
-    caAccessRights accessRights (
-        epicsGuard < epicsMutex > & ) const;
-    unsigned searchAttempts (
-        epicsGuard < epicsMutex > & ) const; 
-    double beaconPeriod (
-        epicsGuard < epicsMutex > & ) const; 
-    double receiveWatchdogDelay (
-        epicsGuard < epicsMutex > & ) const; 
-    bool ca_v42_ok (
-        epicsGuard < epicsMutex > & ) const; 
-    bool connected (
-        epicsGuard < epicsMutex > & ) const; 
-    bool previouslyConnected (
-        epicsGuard < epicsMutex > & ) const;
-    void hostName ( 
-        epicsGuard < epicsMutex > &,
-        char *pBuf, unsigned bufLength ) const; // defaults to local host name
-    const char * pHostName (
-        epicsGuard < epicsMutex > & ) const; // deprecated - please do not use
     ca_client_context & getClientCtx ();
     void * operator new ( size_t size, 
         tsFreeList < struct oldChannelNotify, 1024, epicsMutexNOOP > & );
@@ -243,26 +252,28 @@ private:
     void operator delete ( void * );
 };
 
-struct oldSubscription : public cacStateNotify {
+struct oldSubscription : private cacStateNotify {
 public:
-    oldSubscription ( 
-        oldChannelNotify &, caEventCallBackFunc *pFunc, void *pPrivate );
+    oldSubscription (
+        epicsGuard < epicsMutex > & guard,
+        oldChannelNotify & chanIn, cacChannel & io, 
+        unsigned type, arrayElementCount nElem, unsigned mask,
+        caEventCallBackFunc * pFuncIn, void * pPrivateIn,
+        evid * );
     ~oldSubscription ();
-    void begin ( epicsGuard < epicsMutex > & guard, unsigned type, 
-        arrayElementCount nElem, unsigned mask );
     oldChannelNotify & channel () const;
+    void cancel ( 
+        epicsGuard < epicsMutex > & cbGuard, 
+        epicsGuard < epicsMutex > & guard );
     void * operator new ( size_t size, 
         tsFreeList < struct oldSubscription, 1024, epicsMutexNOOP > & );
     epicsPlacementDeleteOperator (( void *, 
         tsFreeList < struct oldSubscription, 1024, epicsMutexNOOP > & ))
-    void ioCancel ( epicsGuard < epicsMutex > & cbGuard,
-                    epicsGuard < epicsMutex > & guard );
 private:
     oldChannelNotify & chan;
     cacChannel::ioid id;
     caEventCallBackFunc * pFunc;
     void * pPrivate;
-    bool subscribed;
     void current (
         epicsGuard < epicsMutex > &, unsigned type, 
         arrayElementCount count, const void *pData );
@@ -333,6 +344,34 @@ public:
     void destroySubscription ( epicsGuard < epicsMutex > &, oldSubscription & );
     epicsMutex & mutexRef () const;
 
+    friend int epicsShareAPI ca_create_channel (
+        const char * name_str, caCh * conn_func, void * puser,
+        capri priority, chid * chanptr );
+    friend int epicsShareAPI ca_clear_channel ( chid pChan );
+    friend int epicsShareAPI ca_array_get ( chtype type, 
+        arrayElementCount count, chid pChan, void * pValue );
+    friend int epicsShareAPI ca_array_get_callback ( chtype type, 
+        arrayElementCount count, chid pChan,
+        caEventCallBackFunc *pfunc, void *arg );
+    friend int epicsShareAPI ca_array_put ( chtype type, 
+        arrayElementCount count, chid pChan, const void * pValue );
+    friend int epicsShareAPI ca_array_put_callback ( chtype type, 
+        arrayElementCount count, chid pChan, const void * pValue, 
+        caEventCallBackFunc *pfunc, void *usrarg );
+    friend int epicsShareAPI ca_create_subscription ( 
+        chtype type, arrayElementCount count, chid pChan, 
+        long mask, caEventCallBackFunc * pCallBack, void * pCallBackArg, 
+        evid *monixptr );
+
+    // legacy C API
+    friend int epicsShareAPI ca_flush_io ();
+    friend int epicsShareAPI ca_clear_subscription ( evid pMon );
+    friend int epicsShareAPI ca_sg_create ( CA_SYNC_GID * pgid );
+    friend int epicsShareAPI ca_sg_delete ( const CA_SYNC_GID gid );
+    friend int epicsShareAPI ca_sg_block ( const CA_SYNC_GID gid, ca_real timeout );
+    friend int epicsShareAPI ca_sg_reset ( const CA_SYNC_GID gid );
+    friend int epicsShareAPI ca_sg_test ( const CA_SYNC_GID gid );
+
     // exceptions
     class noSocket {};
 private:
@@ -368,55 +407,13 @@ private:
     cacContext & createNetworkContext ( 
         epicsMutex & mutualExclusion, epicsMutex & callbackControl );
     void clearSubscriptionPrivate ( 
-        evid pMon, epicsGuard < epicsMutex > & cbGuard  );
+        epicsGuard < epicsMutex > & cbGuard, oldSubscription & subscr );
 
 	ca_client_context ( const ca_client_context & );
 	ca_client_context & operator = ( const ca_client_context & );
 
     static cacService * pDefaultService;
     static epicsMutex defaultServiceInstallMutex;
-
-    friend int epicsShareAPI ca_create_channel (
-        const char * name_str, caCh * conn_func, void * puser,
-        capri priority, chid * chanptr );
-    friend int epicsShareAPI ca_clear_channel ( chid pChan );
-    friend int epicsShareAPI ca_array_get ( chtype type, 
-        arrayElementCount count, chid pChan, void * pValue );
-    friend int epicsShareAPI ca_array_get_callback ( chtype type, 
-        arrayElementCount count, chid pChan,
-        caEventCallBackFunc *pfunc, void *arg );
-    friend int epicsShareAPI ca_array_put ( chtype type, 
-        arrayElementCount count, chid pChan, const void * pValue );
-    friend int epicsShareAPI ca_array_put_callback ( chtype type, 
-        arrayElementCount count, chid pChan, const void * pValue, 
-        caEventCallBackFunc *pfunc, void *usrarg );
-    friend int epicsShareAPI ca_create_subscription ( 
-        chtype type, arrayElementCount count, chid pChan, 
-        long mask, caEventCallBackFunc * pCallBack, void * pCallBackArg, 
-        evid *monixptr );
-    friend int epicsShareAPI ca_clear_subscription ( evid pMon );
-    friend int epicsShareAPI ca_flush_io ();
-    friend int epicsShareAPI ca_sg_create ( CA_SYNC_GID * pgid );
-    friend int epicsShareAPI ca_sg_delete ( const CA_SYNC_GID gid );
-    friend int epicsShareAPI ca_sg_block ( const CA_SYNC_GID gid, ca_real timeout );
-    friend int epicsShareAPI ca_sg_reset ( const CA_SYNC_GID gid );
-    friend int epicsShareAPI ca_sg_test ( const CA_SYNC_GID gid );
-    friend int epicsShareAPI ca_change_connection_event ( chid pChan, caCh *pfunc );
-    friend int epicsShareAPI ca_replace_access_rights_event ( chid pChan, caArh *pfunc );
-    friend void epicsShareAPI ca_get_host_name ( chid pChan, char *pBuf, unsigned bufLength );
-    friend const char * epicsShareAPI ca_host_name ( chid pChan );
-    friend int epicsShareAPI ca_v42_ok ( chid pChan );
-    friend short epicsShareAPI ca_field_type ( chid pChan );
-    friend arrayElementCount epicsShareAPI ca_element_count ( chid pChan );
-    friend enum channel_state epicsShareAPI ca_state ( chid pChan );
-    friend void epicsShareAPI ca_set_puser ( chid pChan, void *puser );
-    friend void * epicsShareAPI ca_puser ( chid pChan );
-    friend unsigned epicsShareAPI ca_read_access ( chid pChan );
-    friend unsigned epicsShareAPI ca_write_access ( chid pChan );
-    friend unsigned epicsShareAPI ca_search_attempts ( chid pChan );
-    friend double epicsShareAPI ca_beacon_period ( chid pChan );
-    friend double epicsShareAPI ca_receive_watchdog_delay ( chid pChan );
-    friend const char * epicsShareAPI ca_name ( chid pChan );
 };
 
 int fetchClientContext ( ca_client_context * * ppcac );
@@ -426,10 +423,11 @@ inline ca_client_context & oldChannelNotify::getClientCtx ()
     return this->cacCtx;
 }
 
-inline const char * oldChannelNotify::pName (
-    epicsGuard < epicsMutex > & guard ) const 
+inline unsigned oldChannelNotify::getName (
+    epicsGuard < epicsMutex > & guard,
+    char * pBuf, unsigned bufLen ) const throw ()
 {
-    return this->io.pName ( guard );
+    return this->io.getName ( guard, pBuf, bufLen );
 }
 
 inline void oldChannelNotify::show ( 
@@ -468,75 +466,6 @@ inline void oldChannelNotify::ioShow (
     this->io.ioShow ( guard, id, level );
 }
 
-inline short oldChannelNotify::nativeType (
-    epicsGuard < epicsMutex > & guard ) const
-{
-    return this->io.nativeType ( guard );
-}
-
-inline arrayElementCount oldChannelNotify::nativeElementCount (
-    epicsGuard < epicsMutex > & guard ) const
-{
-    return this->io.nativeElementCount ( guard );
-}
-
-inline caAccessRights oldChannelNotify::accessRights (
-    epicsGuard < epicsMutex > & guard ) const
-{
-    return this->io.accessRights ( guard );
-}
-
-inline unsigned oldChannelNotify::searchAttempts (
-    epicsGuard < epicsMutex > & guard ) const
-{
-    return this->io.searchAttempts ( guard );
-}
-
-inline double oldChannelNotify::beaconPeriod (
-    epicsGuard < epicsMutex > & guard ) const
-{
-    return this->io.beaconPeriod ( guard );
-}
-
-inline double oldChannelNotify::receiveWatchdogDelay (
-    epicsGuard < epicsMutex > & guard ) const
-{
-    return this->io.receiveWatchdogDelay ( guard );
-}
-
-inline bool oldChannelNotify::ca_v42_ok (
-    epicsGuard < epicsMutex > & guard ) const
-{
-    return this->io.ca_v42_ok ( guard );
-}
-
-inline bool oldChannelNotify::connected (
-    epicsGuard < epicsMutex > & guard ) const
-{
-    guard.assertIdenticalMutex ( this->cacCtx.mutexRef () );
-    return this->currentlyConnected;
-}
-
-inline bool oldChannelNotify::previouslyConnected (
-    epicsGuard < epicsMutex > & guard ) const
-{
-    guard.assertIdenticalMutex ( this->cacCtx.mutexRef () );
-    return this->prevConnected;
-}
-
-inline void oldChannelNotify::hostName ( 
-    epicsGuard < epicsMutex > & guard,
-    char *pBuf, unsigned bufLength ) const
-{
-    this->io.hostName ( guard, pBuf, bufLength );
-}
-
-inline const char * oldChannelNotify::pHostName (
-    epicsGuard < epicsMutex > & guard ) const
-{
-    return this->io.pHostName ( guard );
-}
-
 inline void * oldChannelNotify::operator new ( size_t size, 
     tsFreeList < struct oldChannelNotify, 1024, epicsMutexNOOP > & freeList )
 {
@@ -551,24 +480,6 @@ inline void oldChannelNotify::operator delete ( void *pCadaver,
 }
 #endif
 
-inline oldSubscription::oldSubscription  (
-    oldChannelNotify & chanIn, caEventCallBackFunc * pFuncIn, 
-        void * pPrivateIn ) :
-    chan ( chanIn ), id ( UINT_MAX ), pFunc ( pFuncIn ), 
-        pPrivate ( pPrivateIn ), subscribed ( false )
-{
-}
-
-inline void oldSubscription::begin (
-    epicsGuard < epicsMutex > & guard, unsigned type, 
-    arrayElementCount nElem, unsigned mask )
-{
-    this->subscribed = true;
-    this->chan.subscribe ( guard, type, nElem, mask, *this, this->id );
-    // dont touch this pointer after this point because the
-    // 1st update callback might cancel the subscription
-}
-
 inline void * oldSubscription::operator new ( size_t size, 
     tsFreeList < struct oldSubscription, 1024, epicsMutexNOOP > & freeList )
 {
@@ -582,6 +493,13 @@ inline void oldSubscription::operator delete ( void *pCadaver,
     freeList.release ( pCadaver );
 }
 #endif
+
+inline void oldSubscription::cancel ( 
+    epicsGuard < epicsMutex > & cbGuard, 
+    epicsGuard < epicsMutex > & guard ) 
+{
+    this->chan.ioCancel ( cbGuard, guard, this->id );
+}
 
 inline oldChannelNotify & oldSubscription::channel () const
 {
@@ -632,7 +550,7 @@ inline void getCallback::operator delete ( void * pCadaver,
 
 inline bool ca_client_context::preemptiveCallbakIsEnabled () const
 {
-    return ! this->pCallbackGuard.get ();
+    return this->pCallbackGuard.get () == 0;
 }
 
 inline bool ca_client_context::ioComplete () const

@@ -1,4 +1,4 @@
-program snctest
+program sncExample
 float v;
 assign v to "{user}:xxxExample";
 monitor v;

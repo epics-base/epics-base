@@ -40,17 +40,6 @@ example_LIBS += dbStaticIoc
 example_LIBS += ca
 example_LIBS += Com
 
-iocsh_DIR        = $(EPICS_BASE_LIB)
-miscIoc_DIR      = $(EPICS_BASE_LIB)
-rsrvIoc_DIR      = $(EPICS_BASE_LIB)
-dbtoolsIoc_DIR   = $(EPICS_BASE_LIB)
-asIoc_DIR        = $(EPICS_BASE_LIB)
-dbIoc_DIR        = $(EPICS_BASE_LIB)
-registryIoc_DIR  = $(EPICS_BASE_LIB)
-dbStaticIoc_DIR  = $(EPICS_BASE_LIB)
-ca_DIR           = $(EPICS_BASE_LIB)
-Com_DIR          = $(EPICS_BASE_LIB)
-
 example_SRCS += xxxRecord.c
 example_SRCS += devXxxSoft.c
 example_SRCS += caMonitor.c
@@ -61,18 +50,40 @@ example_SRCS_DEFAULT += exampleMain.c
 example_SRCS_vxWorks += -nil-
 
 example_OBJS_vxWorks += $(EPICS_BASE_BIN)/iocCoreLibrary
+
 #The following adds drvTS support for vxWorks
 #example_OBJS_vxWorks += $(EPICS_BASE_BIN)/drvTS
 
-#example_SRCS += sncExample.stt
+#NOTES:
+#      1)It is not possible to build sncExample both as a component of example
+#        and standalone. You must choose only one.
+#      2)To build sncExample SNCSEQ must be defined in <top>/configure/RELEASE
 
-#seq_DIR    = $(SNCSEQ_LIB)
+#The following builds sncExample as a component of example
+#example_SRCS += sncExample.stt
 #example_OBJS_vxWorks += $(SNCSEQ_BIN)/seqLibrary
 #example_OBJS_vxWorks += $(SNCSEQ_BIN)/pvLibrary
-#example_OBJS_vxWorks += $(SNCSEQ_BIN)/pvCaLibrary
+#seq_DIR    = $(SNCSEQ_LIB)
 #example_LIBS += seq
 #example_LIBS += pv
-#example_LIBS += pvCa
+
+#The following builds sncExample as a standalone application
+#PROD += sncExample
+#sncExample_SNCFLAGS += +m
+#sncExample_SRCS += sncExample.stt
+#seq_DIR    = $(SNCSEQ_LIB)
+#sncExample_LIBS += seq
+#sncExample_LIBS += pv
+#sncExample_LIBS += iocsh
+#sncExample_LIBS += miscIoc
+#sncExample_LIBS += rsrvIoc
+#sncExample_LIBS += dbtoolsIoc
+#sncExample_LIBS += asIoc
+#sncExample_LIBS += dbIoc
+#sncExample_LIBS += registryIoc
+#sncExample_LIBS += dbStaticIoc
+#sncExample_LIBS += ca
+#sncExample_LIBS += Com
 
 -include ../baseLIBOBJS
 example_OBJS += $(LIBOBJS)

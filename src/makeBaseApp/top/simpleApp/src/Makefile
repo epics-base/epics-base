@@ -8,9 +8,6 @@ include $(TOP)/configure/CONFIG
 PROD_LIBS       += ca
 PROD_LIBS       += Db
 PROD_LIBS       += Com
-ca_DIR  = $(EPICS_BASE_LIB)
-Db_DIR  = $(EPICS_BASE_LIB)
-Com_DIR = $(EPICS_BASE_LIB)
 
 #PROD = 
 

@@ -43,6 +43,7 @@ typedef u_long FAR osiSockIoctl_t;
 #define SOCK_EINTR WSAEINTR
 #define SOCK_EPIPE EPIPE
 #define SOCK_EMFILE WSAEMFILE
+#define SOCK_SHUTDOWN WSAESHUTDOWN
 
 /*
  *	Under WIN32, FD_SETSIZE is the max. number of sockets,

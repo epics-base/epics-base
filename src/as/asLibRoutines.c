@@ -52,6 +52,10 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
  * .01  10-15-93	mrk	Initial Implementation
  */
 
+#ifdef vxWorks
+#include <vxWorks.h>
+#include <taskLib.h>
+#endif
 #include <dbDefs.h>
 #include <asLib.h>
 #include <string.h>
@@ -60,9 +64,6 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #include <stdio.h>
 #include <gpHash.h>
 #include <freeList.h>
-#ifdef vxWorks
-#include <taskLib.h>
-#endif
 
 /*Declare storage for Global Variables */
 ASBASE		*pasbase=NULL;

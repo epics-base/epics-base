@@ -68,6 +68,8 @@
 #include <sys/types.h>
 #include <sys/time.h>
 
+#include <sys/resource.h>
+
 
 
 /*-----------------------------------------------------------------------------
@@ -223,7 +225,7 @@ int	portNum;	/* I port number for server */
 		    printf("null message from server\n");
 	    }
 	}
-	usleep(100000);
+	sleep(1);
     }
 
 cmdclTaskWrapup:
@@ -285,7 +287,14 @@ char	*buf;
     int         fdSetWidth;     /* width of select bit mask */
     struct timeval fdSetTimeout;/* timeout interval for select */
 
+    struct rlimit rlp;
+
+/* MDA - replace obsolete system call
     fdSetWidth = getdtablesize();
+*/
+    getrlimit(RLIMIT_NOFILE,&rlp);
+    fdSetWidth = rlp.rlim_cur;
+
     fdSetTimeout.tv_sec = 0;
     fdSetTimeout.tv_usec = 0;
     FD_ZERO(&fdSet);

@@ -78,6 +78,18 @@ extern struct ca_static *ca_static;
 	}
 #endif
 
+
+/* nint, exp10 aren't ANSI-C or POSIX */
+# ifndef sun
+#  ifndef nint
+#   define nint(value) (value>=0 ? (int)((value)+.5) : (int)((value)-.5))
+#  endif
+#  ifndef exp10
+#   define exp10(value) (exp(value * log(10.)))
+#  endif
+# endif
+
+
 #define FLD_DIM 20
 static int	nFld;
 static char	*(fields[FLD_DIM]);

@@ -1,3 +1,6 @@
+#ifndef sun
+
+#else
 /*	@(#)guiSubr.c	1.10 11/12/92
  *	Author:	Roger A. Cole
  *	Date:	02-08-91
@@ -3439,3 +3442,5 @@ void	*callbackArg;	/* I argument to pass to callback function */
 					(int)(fmod(seconds, 1.)*1000000.);
     notify_set_itimer_func(callbackArg, callbackFn, ITIMER_REAL, &t, NULL);
 }
+
+#endif

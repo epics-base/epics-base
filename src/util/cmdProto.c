@@ -238,7 +238,10 @@ char   *argv[];		/* command line args */
         fflush(stdout);         	/* flushes needed for socket I/O */
         fflush(stderr);
         fflush(pglZzzCxCmd->dataOut);
+	sleep(1);
+/* MDA - usleep isn't POSIX
 	usleep(100000);		/* sleep .1 second */
+*/
     }
 
     return OK;

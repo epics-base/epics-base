@@ -1,3 +1,5 @@
+#ifndef sun
+#else
 /*	@(#)sydPlot.c	1.10 2/23/93
  *	Author:	Roger A. Cole
  *	Date:	12-04-90
@@ -4069,3 +4071,4 @@ SYD_PL_MSTR *pMstr;	/* I pointer to master plot structure */
 	pSlave = pSlave->pNext;
     }
 }
+#endif

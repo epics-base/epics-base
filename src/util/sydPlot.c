@@ -35,6 +35,7 @@
  *				PostScript; for non-user-window plotting,
  *				defer the pprWinIsMono call until after
  *				the window is mapped
+ * .06	12-03-91	rac	add some intelligence to auto ranging
  *
  * make options
  *	-DXWINDOWS	makes a version for X11
@@ -132,7 +133,8 @@
 *
 * DESCRIPTION
 *	Sets the endpoints of the axis for the plot slave structure to
-*	be the minimum and maximum of the data for the slave.
+*	`nice' values based on the minimum and maximum of the data for the
+*	slave.  The number of intervals to divide the axis is also set.
 *
 * RETURNS
 *	void
@@ -146,8 +148,98 @@ void
 sydPlotAxisAutoRange(pSlave)
 SYD_PL_SLAVE *pSlave;	/* I pointer to plot slave structure */
 {
-    pSlave->originVal = pSlave->pSChan->minDataVal;
-    pSlave->extentVal = pSlave->pSChan->maxDataVal;
+    SYD_CHAN	*pSChan=pSlave->pSChan;
+    double	origin, extent;
+    double	big, small;
+    double	bLog, sLog, dLog;
+    int		bLogChr, sLogChr;
+    double	dLogChrD;
+    int		eSign, oSign;
+    int		nInt;
+
+    if (pSChan->dbrType == DBR_TIME_ENUM)
+	return;
+    origin = pSlave->pSChan->minDataVal;
+    extent = pSlave->pSChan->maxDataVal;
+    if (origin == extent)
+	extent = origin + 1.;
+    if (origin >= 0.)
+	oSign = 1;
+    else {
+	oSign = -1;
+	origin = 0. - origin;
+    }
+    if (extent >= 0.)
+	eSign = 1;
+    else {
+	eSign = -1;
+	extent = 0. - extent;
+    }
+
+/*-----------------------------------------------------------------------------
+* figure out what endpoints to use
+*----------------------------------------------------------------------------*/
+    if (origin < extent) {
+	small = origin;
+	big = extent;
+    }
+    else {
+	small = extent;
+	big = origin;
+    }
+    sLogChr = sLog = log10(small);
+    bLogChr = bLog = log10(big);
+    if (sLogChr == bLogChr && oSign == eSign) {	/* same decade */
+	dLog = log10(big - small);
+	dLogChrD = (int)dLog;
+	dLog -= dLogChrD;
+	small = small - fmod(small, exp10(dLogChrD));
+	big = big - fmod(big, exp10(dLogChrD)) + exp10(dLogChrD);
+	if (origin < extent) {
+	    origin = small;
+	    extent = big;
+	}
+	else {
+	    extent = small;
+	    origin = big;
+	}
+    }
+    else {
+	dLog = bLog;
+	dLogChrD = (int)dLog;
+	dLog -= dLogChrD;
+	big = big - fmod(big, exp10(dLogChrD)) + exp10(dLogChrD);
+	extent = big;
+	if (oSign == eSign)
+	    origin = 0.;
+	else
+	    origin = big;
+	small = 0.;
+    }
+/*-----------------------------------------------------------------------------
+* figure out how many axis intervals to use
+*----------------------------------------------------------------------------*/
+    dLog = log10(big - small);
+    dLogChrD = (int)dLog;
+    dLog -= dLogChrD;
+    nInt = ceil(exp10(dLog));
+    if (oSign == eSign) {
+	if      (nInt == 1 || nInt == 10)	nInt = 5;
+	else if (nInt == 2 || nInt == 8)	nInt = 4;
+	else if (nInt == 3)			nInt = 6;
+	else if (nInt == 9)			nInt = 3;
+    }
+    else {
+	if      (nInt == 1)				nInt = 4;
+	else if (nInt == 2 || nInt == 4 || nInt == 8)	nInt = 8;
+	else if (nInt == 3 || nInt == 6 || nInt == 9)	nInt = 6;
+	else if (nInt == 5 || nInt == 10)		nInt = 5;
+	else						nInt *= 2;
+    }
+
+    pSlave->originVal = origin * oSign;
+    pSlave->extentVal = extent * eSign;
+    pSlave->nInt = nInt;
 }
 
 /*+/subr**********************************************************************

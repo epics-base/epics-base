@@ -27,6 +27,9 @@
  * Modification Log: 
  * -----------------
  * $Log$
+ * Revision 1.4  1995/12/19  19:40:04  jhill
+ * added author name
+ *
  * Revision 1.3  1995/08/12  00:59:11  jhill
  * use $log in header
  *
@@ -39,6 +42,7 @@
 
 #include <epicsAssert.h>
 #include <epicsPrint.h>
+#include <epicsVersion.h>
 
 
 /*
@@ -80,6 +84,7 @@ void epicsAssert (const char *pFile, const unsigned line, const char *pMsg,
 "this message to \"tech-talk@aps.anl.gov\"\n");
 
 	}
+	epicsPrintf ("This problem occurred in \"%s\"\n", epicsReleaseVersion);
 
 	abort ();
 }

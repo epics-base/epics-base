@@ -8,7 +8,7 @@
 #include "epicsAssert.h"
 
 static bool doneFlag = false;
-void epicsThreadPrivateTestThread ( void *pParm )
+extern "C" void epicsThreadPrivateTestThread ( void *pParm )
 {
     epicsThreadPrivateId id = static_cast < epicsThreadPrivateId > ( pParm );
     assert ( 0 == epicsThreadPrivateGet ( id ) );

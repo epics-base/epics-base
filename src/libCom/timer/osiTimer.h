@@ -117,7 +117,7 @@ private:
 	enum state {statePending, stateExpired, stateLimbo};
 
 	osiTime exp; // experation time
-	state state; // current state
+	state curState; // current state
 	osiTimerQueue &queue;
 
 	//

@@ -95,7 +95,7 @@ epicsShareFunc void osiTimer::arm (double *pInitialDelay)
 #		endif
 		--iter;
 	}
-	this->state = osiTimer::statePending;
+	this->curState = osiTimer::statePending;
 	
 #	ifdef DEBUG
 	this->queue.show(10u);
@@ -133,7 +133,7 @@ epicsShareFunc osiTimer::~osiTimer()
 	if (this == this->queue.pExpireTmr) {
 		this->queue.pExpireTmr = 0;
 	}
-	switch (this->state) {
+	switch (this->curState) {
 	case osiTimer::statePending:
 		this->queue.pending.remove(*this);
 		break;
@@ -145,7 +145,7 @@ epicsShareFunc osiTimer::~osiTimer()
 	default:
 		assert(0);
 	}
-	this->state = osiTimer::stateLimbo;
+	this->curState = osiTimer::stateLimbo;
 }
 
 //
@@ -191,7 +191,7 @@ epicsShareFunc void osiTimer::show (unsigned level) const
 	}
 	if (level>=1u) {
 		printf ("\tdelay to expire = %f, state = %d\n", 
-			delay, this->state);
+			delay, this->curState);
 	}
 }
 
@@ -241,7 +241,7 @@ void osiTimerQueue::process()
 		tsDLIterBD<osiTimer> tmp = iter;
 		++tmp;
 		this->pending.remove(*iter);
-		iter->state = osiTimer::stateExpired;
+		iter->curState = osiTimer::stateExpired;
 		this->expired.add(*iter);
 		iter = tmp;
 	}
@@ -252,7 +252,7 @@ void osiTimerQueue::process()
 	//
 	while ( (pTmr = this->expired.get()) ) {
 		
-		pTmr->state = osiTimer::stateLimbo;
+		pTmr->curState = osiTimer::stateLimbo;
 		
 #ifdef DEBUG
 		double diff = cur-pTmr->exp;
@@ -310,7 +310,7 @@ osiTimerQueue::~osiTimerQueue()
 	// destroy any unexpired timers
 	//
 	while ( (pTmr = this->pending.get()) ) {	
-		pTmr->state = osiTimer::stateLimbo;
+		pTmr->curState = osiTimer::stateLimbo;
 		pTmr->destroy();
 	}
 
@@ -318,7 +318,7 @@ osiTimerQueue::~osiTimerQueue()
 	// destroy any expired timers
 	//
 	while ( (pTmr = this->expired.get()) ) {	
-		pTmr->state = osiTimer::stateLimbo;
+		pTmr->curState = osiTimer::stateLimbo;
 		pTmr->destroy();
 	}
 }
@@ -348,7 +348,7 @@ epicsShareFunc void osiTimer::reschedule (double newDelay)
 	if (this == this->queue.pExpireTmr) {
 		this->queue.pExpireTmr = 0;
 	}
-	switch (this->state) {
+	switch (this->curState) {
 	case osiTimer::statePending:
 		this->queue.pending.remove(*this);
 		break;
@@ -360,7 +360,7 @@ epicsShareFunc void osiTimer::reschedule (double newDelay)
 	default:
 		assert(0);
 	}
-	this->state = osiTimer::stateLimbo;
+	this->curState = osiTimer::stateLimbo;
 	this->arm (&newDelay);
 }
 

@@ -30,11 +30,9 @@
 
 #include <stdio.h>
 #include <limits.h>
-#ifndef assert // allow other versions of assert
-#include <assert.h>
-#endif
 
 #define epicsExportSharedSymbols
+#include <epicsAssert.h>
 #include <tsDefs.h> 
 #include <osiTime.h>
 #include <envDefs.h>

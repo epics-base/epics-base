@@ -29,6 +29,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.39.4.2  1999/09/02 21:16:43  jhill
+ * fixed missing paramter to checkConnWatchDogs() func
+ *
  * Revision 1.39.4.1  1999/07/15 21:07:33  jhill
  * fixed bug where client disconnects while waiting to send TCP
  *
@@ -462,7 +465,7 @@ int ca_task_initialize ()
                                         ca_extra_event_labor,
                                         pcas);
 	assert(status==0);
-	strcpy(name, "EV ");
+	strcpy(name, "EV_");
 	strncat(
 		name,
 		taskName(VXTHISTASKID),

@@ -20,6 +20,7 @@ TEMPLATES += top/src/Makefile
 
 TEMPLATES += top/exampleExt/Makefile
 TEMPLATES += top/exampleExt/caExample.c
+TEMPLATES += top/exampleExt/RELEASE_NOTES.HTM
 
 TEMPLATES += top/simpleExt/Makefile
 

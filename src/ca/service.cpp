@@ -25,7 +25,7 @@ typedef void (*pProtoStubUDP) (udpiiu *piiu, const struct sockaddr_in *pnet_addr
 /*
  * tcp_noop_action ()
  */
-LOCAL void tcp_noop_action (tcpiiu *piiu)
+LOCAL void tcp_noop_action (tcpiiu * /* piiu */)
 {
     return;
 }
@@ -542,7 +542,7 @@ LOCAL void repeater_ack_action (udpiiu *piiu, const struct sockaddr_in *pnet_add
 /*
  * not_here_resp_action ()
  */
-LOCAL void not_here_resp_action (udpiiu *piiu, const struct sockaddr_in *pnet_addr)
+LOCAL void not_here_resp_action (udpiiu * /* piiu */, const struct sockaddr_in * /*pnet_addr*/)
 {
     return;
 }
@@ -742,8 +742,8 @@ LOCAL void verifyAndDisconnectChan (tcpiiu *piiu)
  */
 LOCAL void bad_tcp_resp_action (tcpiiu *piiu)
 {
-    ca_printf (piiu->niiu.iiu.pcas, "CAC: Bad response code in TCP message = %u\n", 
-        piiu->niiu.curMsg.m_cmmd);
+    ca_printf (piiu->niiu.iiu.pcas, "CAC: Bad response code in TCP message from %s was %u\n", 
+        piiu->host_name_str, piiu->niiu.curMsg.m_cmmd);
 }
 
 /*
@@ -751,8 +751,10 @@ LOCAL void bad_tcp_resp_action (tcpiiu *piiu)
  */
 LOCAL void bad_udp_resp_action (udpiiu *piiu, const struct sockaddr_in *pnet_addr)
 {
-    ca_printf (piiu->niiu.iiu.pcas, "CAC: Bad response code in UDP message = %u\n", 
-        piiu->niiu.curMsg.m_cmmd);
+    char buf[256];
+    ipAddrToA ( pnet_addr, buf, sizeof (buf) );
+    ca_printf (piiu->niiu.iiu.pcas, "CAC: Bad response code in UDP message from %s was %u\n", 
+        buf, piiu->niiu.curMsg.m_cmmd);
 }
 
 /*

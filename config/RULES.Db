@@ -42,17 +42,17 @@ endif
 
 #Creates database in current directory from capfast schematics 
 $(DBFROMSCH):%.db: %.db.opt
-      @echo "Installing database $@"
-      @$(MV) $< $(<:%.opt=%)
+	@echo "Installing database $@"
+	@$(MV) $< $(<:%.opt=%)
 
 %.db.opt: %.edf
-      $(E2DB) $(E2DB_SYSFLAGS) $(E2DB_FLAGS) -n $@ $<
-      $(DB_OPTIMIZE)
-       -@(echo '1,$$g/VAR(/s/VAR(/$$(/g';echo 'w';echo 'q') | ed $@
+	$(E2DB) $(E2DB_SYSFLAGS) $(E2DB_FLAGS) -n $@ $<
+	$(DB_OPTIMIZE)
+	-@(echo '1,$$g/VAR(/s/VAR(/$$(/g';echo 'w';echo 'q') | ed $@
 
 %.edf: ./%.sch $(DEPSCHS)
-      @if [ ! -f cad.rc -a -r ../cad.rc ] ; then ln -s ../cad.rc ; fi
-      $(SCH2EDIF) $(SCH2EDIF_SYSFLAGS) $(SCH2EDIF_FLAGS) $<
+	@if [ ! -f cad.rc -a -r ../cad.rc ] ; then ln -s ../cad.rc ; fi
+	$(SCH2EDIF) $(SCH2EDIF_SYSFLAGS) $(SCH2EDIF_FLAGS) $<
 
 ######end section added for captast schematics
 

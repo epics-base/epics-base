@@ -216,11 +216,15 @@ void epicsShareAPI dbLockSetRecordLock(dbCommon *precord)
     }
     assert(plockSet->thread_id!=epicsThreadGetIdSelf());
     plockSet->state = lockSetStateRecordLock;
-    epicsMutexUnlock(lockSetModifyLock);
-    /*Wait until owner finishes*/
-    epicsMutexMustLock(plockSet->lock);
-    epicsMutexUnlock(plockSet->lock);
-    epicsMutexMustLock(lockSetModifyLock);
+    /*Wait until owner finishes and all waiting get to change state*/
+    while(1) {
+        epicsMutexUnlock(lockSetModifyLock);
+        epicsMutexMustLock(plockSet->lock);
+        epicsMutexUnlock(plockSet->lock);
+        epicsMutexMustLock(lockSetModifyLock);
+        if(plockSet->nWaiting == 0 && plockSet->nRecursion==0) break;
+        epicsThreadSleep(.1);
+    }
     assert(plockSet->nWaiting == 0 && plockSet->nRecursion==0);
     assert(plockSet->type==listTypeScanLock);
     ellDelete(&lockSetList[plockSet->type],&plockSet->node);
@@ -262,16 +266,22 @@ void epicsShareAPI dbScanLock(dbCommon *precord)
             case lockSetStateScanLock:
                 if(plockSet->thread_id!=idSelf) {
                     plockSet->nWaiting +=1;
-if(!plockSet->thread_id)
-printf("lockSetStateScanLock nWaiting %d req %s own %s\n",
-plockSet->nWaiting,precord->name,plockSet->precord->name);
+if(!plockSet->thread_id) {
+printf("lockSetStateScanLock thread_id 0 requestor %s\n",precord->name);
+printf(" type %d state %d nRecursion %d nWaiting %d owner %p",
+plockSet->type,plockSet->state,plockSet->nRecursion,plockSet->nWaiting,plockSet->precord);
+if(plockSet->precord)printf(" owner %s",plockSet->precord->name);
+printf("\n");
+}
 /*assert(plockSet->thread_id);*/
                     epicsMutexUnlock(lockSetModifyLock);
                     epicsMutexMustLock(plockSet->lock);
                     epicsMutexMustLock(lockSetModifyLock);
                     plockSet->nWaiting -=1;
-                    if(plockSet->state==lockSetStateRecordLock)
+                    if(plockSet->state==lockSetStateRecordLock) {
+                       epicsMutexUnlock(plockSet->lock);
                        goto getGlobalLock;
+                    }
                     plockSet->nRecursion = 1;
                     plockSet->thread_id = idSelf;
                     plockSet->precord = precord;
@@ -455,6 +465,8 @@ void epicsShareAPI dbLockSetSplit(dbCommon *psource)
         plockRecord = pnext;
     }
     ellDelete(&lockSetList[plockSet->type],&plockSet->node);
+    plockSet->state = lockSetStateFree;
+    plockSet->type = listTypeFree;
     ellAdd(&lockSetList[listTypeFree],&plockSet->node);
     epicsMutexUnlock(lockSetModifyLock);
     /*Now recompute lock sets */

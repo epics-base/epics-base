@@ -17,6 +17,7 @@
  */
 
 #include "iocinf.h"
+#include "cac_IL.h"
 
 recvProcessThread::recvProcessThread (cac *pcacIn) :
     osiThread ( "CAC-recv-process", threadGetStackSize (threadStackSmall), 

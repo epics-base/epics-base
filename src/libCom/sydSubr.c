@@ -44,6 +44,8 @@
  *				sydSamplePrint; sydInputStoreInSet;
  * .07	11-02-91	rac	add sydSampleWriteSSF, sydSampleSetWriteSSF
  * .08	12-08-91	rac	fix alignment for printing of channel names
+ * .09	01-20-92	rac	add a code for VALID_ALARM and handle
+ *				invalid values properly
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -1523,7 +1525,7 @@ SYD_SPEC *pSspec;	/* IO pointer to synchronous set spec */
 *	Stores a sample acquired by sydInputGet into the next available
 *	sample set buffer.  Flags for the sample set buffer are set
 *	appropriately.  The minDataVal and maxDataVal for the channel
-*	are updated.
+*	are updated (unless the alarm severity indicates INVALID).
 *
 * RETURNS
 *	void
@@ -1603,7 +1605,11 @@ int	ignorePartial;	/* I 0,1 to store,ignore partial samples */
 *	for the channel.
 *----------------------------------------------------------------------------*/
 		useVal = 1;
-		if (pSChan->reused) {
+		if (alSev == VALID_ALARM) {
+		    useVal = 0;
+		    pSChan->pDataCodeL[sub] = 'I';
+		}
+		else if (pSChan->reused) {
 		    pSChan->pFlags[sub].filled = 1;
 		    pSChan->pDataCodeL[sub] = 'F';
 		}
@@ -1635,19 +1641,19 @@ int	ignorePartial;	/* I 0,1 to store,ignore partial samples */
 *	now go ahead and store the sample into the set.  Also adjust the
 *	maximum and minimum, as needed.
 *----------------------------------------------------------------------------*/
-		if (!useVal)
-		    ;	/* no action */
-		else if (type == DBR_TIME_FLOAT) {
+		if (type == DBR_TIME_FLOAT) {
 		    float	*pSrc, *pDest;
 		    pSrc = &pSChan->pInBuf[i]->tfltval.value;
 		    pDest = ((float *)pSChan->pData) + sub * pSChan->elCount;
-		    if (pSspec->sampleCount == 0)
+		    if (useVal && pSspec->sampleCount == 0)
 			pSChan->maxDataVal = pSChan->minDataVal = (double)*pSrc;
 		    for (el=0; el<pSChan->elCount; el++) {
-			if ((double)*pSrc > pSChan->maxDataVal)
-			    pSChan->maxDataVal = (double)*pSrc;
-			if ((double)*pSrc < pSChan->minDataVal)
-			    pSChan->minDataVal = (double)*pSrc;
+			if (useVal) {
+			    if ((double)*pSrc > pSChan->maxDataVal)
+				pSChan->maxDataVal = (double)*pSrc;
+			    if ((double)*pSrc < pSChan->minDataVal)
+				pSChan->minDataVal = (double)*pSrc;
+			}
 			*pDest++ = *pSrc++;
 		    }
 		}
@@ -1655,15 +1661,17 @@ int	ignorePartial;	/* I 0,1 to store,ignore partial samples */
 		    short	*pSrc, *pDest;
 		    pSrc = &pSChan->pInBuf[i]->tshrtval.value;
 		    pDest = ((short *)pSChan->pData) + sub * pSChan->elCount;
-		    if (pSspec->sampleCount == 0) {
+		    if (useVal && pSspec->sampleCount == 0) {
 			pSChan->maxDataVal = (double)*pSrc;
 			pSChan->minDataVal = (double)*pSrc;
 		    }
 		    for (el=0; el<pSChan->elCount; el++) {
-			if ((double)*pSrc > pSChan->maxDataVal)
-			    pSChan->maxDataVal = (double)*pSrc;
-			if ((double)*pSrc < pSChan->minDataVal)
-			    pSChan->minDataVal = (double)*pSrc;
+			if (useVal) {
+			    if ((double)*pSrc > pSChan->maxDataVal)
+				pSChan->maxDataVal = (double)*pSrc;
+			    if ((double)*pSrc < pSChan->minDataVal)
+				pSChan->minDataVal = (double)*pSrc;
+			}
 			*pDest++ = *pSrc++;
 		    }
 		}
@@ -1671,13 +1679,15 @@ int	ignorePartial;	/* I 0,1 to store,ignore partial samples */
 		    double	*pSrc, *pDest;
 		    pSrc = &pSChan->pInBuf[i]->tdblval.value;
 		    pDest = ((double *)pSChan->pData) + sub * pSChan->elCount;
-		    if (pSspec->sampleCount == 0)
+		    if (useVal && pSspec->sampleCount == 0)
 			pSChan->maxDataVal = pSChan->minDataVal = *pSrc;
 		    for (el=0; el<pSChan->elCount; el++) {
-			if (*pSrc > pSChan->maxDataVal)
-			    pSChan->maxDataVal = *pSrc;
-			if (*pSrc < pSChan->minDataVal)
-			    pSChan->minDataVal = *pSrc;
+			if (useVal) {
+			    if (*pSrc > pSChan->maxDataVal)
+				pSChan->maxDataVal = *pSrc;
+			    if (*pSrc < pSChan->minDataVal)
+				pSChan->minDataVal = *pSrc;
+			}
 			*pDest++ = *pSrc++;
 		    }
 		}
@@ -1685,13 +1695,15 @@ int	ignorePartial;	/* I 0,1 to store,ignore partial samples */
 		    long	*pSrc, *pDest;
 		    pSrc = &pSChan->pInBuf[i]->tlngval.value;
 		    pDest = ((long *)pSChan->pData) + sub * pSChan->elCount;
-		    if (pSspec->sampleCount == 0)
+		    if (useVal && pSspec->sampleCount == 0)
 			pSChan->maxDataVal = pSChan->minDataVal = (double)*pSrc;
 		    for (el=0; el<pSChan->elCount; el++) {
-			if ((double)*pSrc > pSChan->maxDataVal)
-			    pSChan->maxDataVal = (double)*pSrc;
-			if ((double)*pSrc < pSChan->minDataVal)
-			    pSChan->minDataVal = (double)*pSrc;
+			if (useVal) {
+			    if ((double)*pSrc > pSChan->maxDataVal)
+				pSChan->maxDataVal = (double)*pSrc;
+			    if ((double)*pSrc < pSChan->minDataVal)
+				pSChan->minDataVal = (double)*pSrc;
+			}
 			*pDest++ = *pSrc++;
 		    }
 		}
@@ -1700,13 +1712,15 @@ int	ignorePartial;	/* I 0,1 to store,ignore partial samples */
 		    pSrc = pSChan->pInBuf[i]->tstrval.value;
 		    pDest = ((char *)pSChan->pData) +
 					sub * db_strval_dim * pSChan->elCount;
-		    if (pSspec->sampleCount == 0)
+		    if (useVal && pSspec->sampleCount == 0)
 			pSChan->maxDataVal = pSChan->minDataVal = (double)*pSrc;
 		    for (el=0; el<pSChan->elCount; el++) {
-			if ((double)*pSrc > pSChan->maxDataVal)
-			    pSChan->maxDataVal = (double)*pSrc;
-			if ((double)*pSrc < pSChan->minDataVal)
-			    pSChan->minDataVal = (double)*pSrc;
+			if (useVal) {
+			    if ((double)*pSrc > pSChan->maxDataVal)
+				pSChan->maxDataVal = (double)*pSrc;
+			    if ((double)*pSrc < pSChan->minDataVal)
+				pSChan->minDataVal = (double)*pSrc;
+			}
 			strcpy(pDest, pSrc);
 			pDest += db_strval_dim;
 			pSrc += db_strval_dim;
@@ -1717,13 +1731,15 @@ int	ignorePartial;	/* I 0,1 to store,ignore partial samples */
 		    pSrc = &pSChan->pInBuf[i]->tchrval.value;
 		    pDest = ((unsigned char *)pSChan->pData) +
 						sub * pSChan->elCount;
-		    if (pSspec->sampleCount == 0)
+		    if (useVal && pSspec->sampleCount == 0)
 			pSChan->maxDataVal = pSChan->minDataVal = (double)*pSrc;
 		    for (el=0; el<pSChan->elCount; el++) {
-			if ((double)*pSrc > pSChan->maxDataVal)
-			    pSChan->maxDataVal = (double)*pSrc;
-			if ((double)*pSrc < pSChan->minDataVal)
-			    pSChan->minDataVal = (double)*pSrc;
+			if (useVal) {
+			    if ((double)*pSrc > pSChan->maxDataVal)
+				pSChan->maxDataVal = (double)*pSrc;
+			    if ((double)*pSrc < pSChan->minDataVal)
+				pSChan->minDataVal = (double)*pSrc;
+			}
 			*pDest++ = *pSrc++;
 		    }
 		}
@@ -1731,13 +1747,15 @@ int	ignorePartial;	/* I 0,1 to store,ignore partial samples */
 		    short	*pSrc, *pDest;
 		    pSrc = &pSChan->pInBuf[i]->tenmval.value;
 		    pDest = ((short *)pSChan->pData) + sub * pSChan->elCount;
-		    if (pSspec->sampleCount == 0)
+		    if (useVal && pSspec->sampleCount == 0)
 			pSChan->maxDataVal = pSChan->minDataVal = (double)*pSrc;
 		    for (el=0; el<pSChan->elCount; el++) {
-			if ((double)*pSrc > pSChan->maxDataVal)
-			    pSChan->maxDataVal = (double)*pSrc;
-			if ((double)*pSrc < pSChan->minDataVal)
-			    pSChan->minDataVal = (double)*pSrc;
+			if (useVal) {
+			    if ((double)*pSrc > pSChan->maxDataVal)
+				pSChan->maxDataVal = (double)*pSrc;
+			    if ((double)*pSrc < pSChan->minDataVal)
+				pSChan->minDataVal = (double)*pSrc;
+			}
 			*pDest++ = *pSrc++;
 		    }
 		}
@@ -1950,9 +1968,9 @@ int	samp;		/* I sample number in synchronous set */
     (void)fprintf(out, "%.3f", pSspec->pDeltaSec[samp]);
     for (pSChan=pSspec->pChanHead; pSChan!=NULL; pSChan=pSChan->pNext) {
 	if (option == 1)
-	    sydSamplePrint1(pSChan, out, '\t', 0, 0, 0, 1, samp);
+	    sydSamplePrint1(pSChan, out, '\t', 0, 0, 0, 1, 1, samp);
 	else if (option == 2)
-	    sydSamplePrint1(pSChan, out, '\t', 1, 0, 0, 1, samp);
+	    sydSamplePrint1(pSChan, out, '\t', 1, 0, 0, 1, 1, samp);
     }
     (void)fprintf(out, "\n");
 }
@@ -2038,7 +2056,11 @@ int	samp;		/* I sample number in synchronous set */
 		for (i=0; i<nPasses; i++) {
 		    pSChan = pNext;
 		    for (colNum=0; colNum<nCol && pSChan != NULL; colNum++) {
-			if (nameSub < strlen(pSChan->name)) {
+			if (i == 0 && strlen(pSChan->name) < colWidth) {
+			    (void)fprintf(out, " %*.*s",
+				colWidth-1, colWidth-1, &pSChan->name[nameSub]);
+			}
+			else if (nameSub < strlen(pSChan->name)) {
 			    (void)fprintf(out, " %-*.*s",
 				colWidth-1, colWidth-1, &pSChan->name[nameSub]);
 			}
@@ -2087,7 +2109,7 @@ int	samp;		/* I sample number in synchronous set */
 		(void)fprintf(out, "  %21s", " ");	/* skip * and stamp */
 		colNum = 0;
 	    }
-	    sydSamplePrint1(pSChan, out, ' ', 0, 1, 0, colWidth, samp);
+	    sydSamplePrint1(pSChan, out, ' ', 0, 1, 0, colWidth, 0, samp);
 	    colNum++;
 	}
     }
@@ -2106,7 +2128,6 @@ int	samp;		/* I sample number in synchronous set */
 *
 * BUGS
 * o	doesn't yet print entire array
-* o	for spreadsheet, status flag, if written, should be in " "
 *
 * SEE ALSO
 *
@@ -2114,7 +2135,8 @@ int	samp;		/* I sample number in synchronous set */
 *
 *-*/
 static void
-sydSamplePrint1(pSChan, out, sep, preFlag, postFlag, showArray, colWidth, sampNum)
+sydSamplePrint1(pSChan, out, sep, preFlag, postFlag, showArray, colWidth,
+	quotes, sampNum)
 SYD_CHAN *pSChan;	/* I pointer to sync channel */
 FILE	*out;		/* I file pointer for writing value */
 char	sep;		/* I character to use a a prefix for each field,
@@ -2124,6 +2146,7 @@ int	postFlag;	/* I != 0 prints status flag following value */
 int	showArray;	/* I != 0 to show all array elements, not just 1st */
 int	colWidth;	/* I >0 specifies column width, in characters;
 				== 2 requests only printing status code*/
+int	quotes;		/* I != 0 prints status, etc., in quotes */
 int	sampNum;	/* I sample number in sync set */
 {
     int		i;
@@ -2144,20 +2167,48 @@ int	sampNum;	/* I sample number in sync set */
     }
 
     if (preFlag) {
-	if (pSChan->pData == NULL)
-	    (void)fprintf(out, "%c%c%c", sep,'M','D');
+	if (pSChan->pData == NULL) {
+	    if (!quotes)
+		(void)fprintf(out, "%c%c%c", sep,'M','D');
+	    else
+		(void)fprintf(out, "%c\"%c%c\"", sep,'M','D');
+	}
 	else {
-	    (void)fprintf(out, "%c%c%c", sep,
-		pSChan->pDataCodeL[sampNum], pSChan->pDataCodeR[sampNum]);
+	    if (!quotes) {
+		(void)fprintf(out, "%c%c%c", sep,
+		    pSChan->pDataCodeL[sampNum], pSChan->pDataCodeR[sampNum]);
+	    }
+	    else {
+		(void)fprintf(out, "%c\"%c%c\"", sep,
+		    pSChan->pDataCodeL[sampNum], pSChan->pDataCodeR[sampNum]);
+	    }
 	}
     }
     (void)fputc(sep, out);
-    if (pSChan->pData == NULL)
-	(void)fprintf(out, "%*s", colWidth, "no_data");
-    else if (pSChan->pFlags[sampNum].eof)
-	(void)fprintf(out, "%*s", colWidth, "EOF");
-    else if (pSChan->pFlags[sampNum].missing)
-	(void)fprintf(out, "%*s", colWidth, "no_data");
+    if (pSChan->pData == NULL) {
+	if (!quotes)
+	    (void)fprintf(out, "%*s", colWidth, "no_data");
+	else
+	    (void)fprintf(out, "\"%*s\"", colWidth, "no_data");
+    }
+    else if (pSChan->pFlags[sampNum].eof) {
+	if (!quotes)
+	    (void)fprintf(out, "%*s", colWidth, "EOF");
+	else
+	    (void)fprintf(out, "\"%*s\"", colWidth, "EOF");
+    }
+    else if (pSChan->pFlags[sampNum].missing) {
+	if (!quotes)
+	    (void)fprintf(out, "%*s", colWidth, "no_data");
+	else
+	    (void)fprintf(out, "\"%*s\"", colWidth, "no_data");
+    }
+    else if (pSChan->pDataCodeL[sampNum] == 'I' && !preFlag && !postFlag) {
+	if (!quotes)
+	    (void)fprintf(out, "%*s", colWidth, "invalid");
+	else
+	    (void)fprintf(out, "\"%*s\"", colWidth, "invalid");
+    }
     else {
 	if (type == DBR_TIME_STRING)
 	    (void)fprintf(out, "%*s", colWidth, ((char *)pSChan->pData)[sampNum]);
@@ -2187,11 +2238,21 @@ int	sampNum;	/* I sample number in sync set */
     }
 
     if (postFlag) {
-	if (pSChan->pData == NULL)
-	    (void)fprintf(out, "%c%c%c", sep,'M','D');
+	if (pSChan->pData == NULL) {
+	    if (!quotes)
+		(void)fprintf(out, "%c%c%c", sep,'M','D');
+	    else
+		(void)fprintf(out, "%c\"%c%c\"", sep,'M','D');
+	}
 	else {
-	    (void)fprintf(out, "%c%c%c", sep,
-		pSChan->pDataCodeL[sampNum], pSChan->pDataCodeR[sampNum]);
+	    if (!quotes) {
+		(void)fprintf(out, "%c%c%c", sep,
+		    pSChan->pDataCodeL[sampNum], pSChan->pDataCodeR[sampNum]);
+	    }
+	    else {
+		(void)fprintf(out, "%c\"%c%c\"", sep,
+		    pSChan->pDataCodeL[sampNum], pSChan->pDataCodeR[sampNum]);
+	    }
 	}
     }
 }
@@ -2280,7 +2341,7 @@ int	samp;		/* I sample number in synchronous set */
 	    (void)fprintf(pFile, "%s %s %d %d", SydChanName(pSChan),
 		dbf_type_to_text(SydChanDbfType(pSChan)),
 		pSChan->pDataAlSev[samp], pSChan->pDataAlStat[samp]);
-	    sydSamplePrint1(pSChan, pFile, ' ', 0, 0, 1, 1, samp);
+	    sydSamplePrint1(pSChan, pFile, ' ', 0, 0, 1, 1, 0, samp);
 	    (void)fprintf(pFile, "\n");
 	}
     }

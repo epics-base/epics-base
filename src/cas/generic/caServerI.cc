@@ -121,12 +121,17 @@ void serverToolDebugFunc (const char *pFile, unsigned line, const char *pComment
 caStatus caServerI::attachInterface ( const caNetAddr & addrIn, 
         bool autoBeaconAddr, bool addConfigBeaconAddr)
 {    
-    casIntfOS * pIntf = new casIntfOS ( *this, this->clientBufMemMgr, 
-        addrIn, autoBeaconAddr, addConfigBeaconAddr );
-    
-    {
-        epicsGuard < epicsMutex > locker ( this->mutex );
-        this->intfList.add ( *pIntf );
+    try {
+        casIntfOS * pIntf = new casIntfOS ( *this, this->clientBufMemMgr, 
+            addrIn, autoBeaconAddr, addConfigBeaconAddr );
+        
+        {
+            epicsGuard < epicsMutex > locker ( this->mutex );
+            this->intfList.add ( *pIntf );
+        }
+    }
+    catch ( ... ) {
+        return S_cas_bindFail;
     }
 
     return S_cas_success;

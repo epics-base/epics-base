@@ -24,17 +24,15 @@
 
 epicsShareFunc osiGetUserNameReturn epicsShareAPI osiGetUserName (char *pBuf, unsigned bufSizeIn)
 {
-    const char *pName;
     struct passwd *p;
 
     p = getpwuid ( getuid () );
-    if (p) {
-        pName = p->pw_name;
-        if (!pName) {
-            size_t len = strlen (pName);
+    if ( p ) {
+        if ( p->pw_name ) {
+            size_t len = strlen ( p->pw_name );
             unsigned uiLength;
 
-            if ( len>UINT_MAX || len<=0 ) {
+            if ( len > UINT_MAX || len <= 0 ) {
                 return osiGetUserNameFail;
             }
             uiLength = (unsigned) len;
@@ -43,7 +41,7 @@ epicsShareFunc osiGetUserNameReturn epicsShareAPI osiGetUserName (char *pBuf, un
                 return osiGetUserNameFail;
             }
 
-            strncpy ( pBuf, pName, (size_t) bufSizeIn );
+            strncpy ( pBuf, p->pw_name, (size_t) bufSizeIn );
 
             return osiGetUserNameSuccess;
         }

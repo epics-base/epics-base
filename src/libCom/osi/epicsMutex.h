@@ -12,19 +12,20 @@ typedef enum {
 
 #ifdef __cplusplus
 
-class epicsShareClass epicsMutex {
+class epicsMutex {
 public:
-    epicsMutex ();
-    ~epicsMutex ();
+    epicsShareFunc epicsMutex ();
+    epicsShareFunc ~epicsMutex ();
+    epicsShareFunc void show ( unsigned level ) const;
     void lock (); /* blocks until success */
+    void unlock ();
     bool lock ( double timeOut ); /* true if successful */
     bool tryLock (); /* true if successful */
-    void unlock ();
-    void show ( unsigned level ) const;
 
     class invalidSemaphore {}; // exception
 private:
     epicsMutexId id;
+    epicsShareFunc static void throwInvalidSemaphore ();
     epicsMutex ( const epicsMutex & );
     epicsMutex & operator = ( const epicsMutex & );
 };
@@ -68,5 +69,52 @@ epicsShareFunc void epicsShareAPI epicsMutexShowAll(
 #endif
 
 #include "osdMutex.h"
+
+#ifdef __cplusplus
+
+inline void epicsMutex::lock ()
+{
+    epicsMutexLockStatus status = epicsMutexLock ( this->id );
+    if ( status != epicsMutexLockOK ) {
+        epicsMutex::throwInvalidSemaphore ();
+    }
+}
+
+inline bool epicsMutex::lock ( double timeOut )
+{
+    epicsMutexLockStatus status = epicsMutexLockWithTimeout ( this->id, timeOut );
+    if ( status == epicsMutexLockOK ) {
+        return true;
+    } 
+    else if ( status == epicsMutexLockTimeout ) {
+        return false;
+    } 
+    else {
+        epicsMutex::throwInvalidSemaphore ();
+        return false; // never here, compiler is happy
+    }
+}
+
+inline bool epicsMutex::tryLock ()
+{
+    epicsMutexLockStatus status = epicsMutexTryLock ( this->id );
+    if ( status == epicsMutexLockOK ) {
+        return true;
+    } 
+    else if ( status == epicsMutexLockTimeout ) {
+        return false;
+    } 
+    else {
+        epicsMutex::throwInvalidSemaphore ();
+        return false; // never here, but compiler is happy
+    }
+}
+
+inline void epicsMutex::unlock ()
+{
+    epicsMutexUnlock ( this->id );
+}
+
+#endif /* __cplusplus */
 
 #endif /* epicsMutexh */

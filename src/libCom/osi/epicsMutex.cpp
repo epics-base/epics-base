@@ -140,46 +140,13 @@ epicsMutex ::~epicsMutex ()
     epicsMutexDestroy ( this->id );
 }
 
-void epicsMutex :: lock ()
-{
-    epicsMutexLockStatus status = epicsMutexLock ( this->id );
-    if ( status != epicsMutexLockOK ) {
-        throwWithLocation ( invalidSemaphore () );
-    }
-}
-
-bool epicsMutex :: lock ( double timeOut )
-{
-    epicsMutexLockStatus status = epicsMutexLockWithTimeout ( this->id, timeOut );
-    if (status==epicsMutexLockOK) {
-        return true;
-    } else if (status==epicsMutexLockTimeout) {
-        return false;
-    } else {
-        throwWithLocation ( invalidSemaphore () );
-    }
-    return false; // never here, compiler is happy
-}
-
-bool epicsMutex :: tryLock ()
-{
-    epicsMutexLockStatus status = epicsMutexTryLock ( this->id );
-    if ( status == epicsMutexLockOK ) {
-        return true;
-    } else if ( status == epicsMutexLockTimeout ) {
-        return false;
-    } else {
-        throwWithLocation ( invalidSemaphore () );
-    }
-    return false; // never here, but compiler is happy
-}
-
-void epicsMutex :: unlock ()
-{
-    epicsMutexUnlock ( this->id );
-}
-
 void epicsMutex :: show ( unsigned level ) const
 {
     epicsMutexShow ( this->id, level );
 }
+
+void epicsMutex :: throwInvalidSemaphore ()
+{
+    throw invalidSemaphore ();
+}
+

@@ -66,6 +66,7 @@ inline bool osiEvent::wait (double timeOut)
     else {
 #       ifdef noExceptionsFromCXX
             assert (0);
+            return false;
 #       else            
             throw invalidSemaphore ();
 #       endif
@@ -85,6 +86,7 @@ inline bool osiEvent::tryWait ()
     else {
 #       ifdef noExceptionsFromCXX
             assert (0);
+            return false;
 #       else            
             throw invalidSemaphore ();
 #       endif

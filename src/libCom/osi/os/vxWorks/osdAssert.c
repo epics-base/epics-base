@@ -33,6 +33,8 @@
 #include <string.h>
 #include <errno.h>
 
+#include <taskLib.h>
+
 #define epicsExportSharedSymbols
 #include "osiThread.h"
 #include "epicsPrint.h"

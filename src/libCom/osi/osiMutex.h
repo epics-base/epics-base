@@ -61,6 +61,7 @@ inline bool osiMutex::lock (double timeOut) const
     else {
 #       ifdef noExceptionsFromCXX
             assert (0);
+            return false;
 #       else            
             throw invalidSemaphore ();
 #       endif
@@ -80,6 +81,7 @@ inline bool osiMutex::tryLock () const
     else {
 #       ifdef noExceptionsFromCXX
             assert (0);
+            return false;
 #       else            
             throw invalidSemaphore ();
 #       endif

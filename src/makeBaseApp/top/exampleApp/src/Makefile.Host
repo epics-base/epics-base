@@ -17,6 +17,7 @@ Db_DIR  = $(EPICS_BASE_LIB)
 Com_DIR = $(EPICS_BASE_LIB)
 
 PROD += caExample
+caExample_SRCS = caExample.c
 
 include $(TOP)/config/RULES.Host
 #----------------------------------------

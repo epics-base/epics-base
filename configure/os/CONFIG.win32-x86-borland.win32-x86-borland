@@ -237,9 +237,9 @@ OBJECT_LIB_EXT = $(OBJECT_LIB_EXT_$(STATIC_BUILD))
 
 #--------------------------------------------------
 # Products dependancy definitions
-PROD_DEPLIBS = $(foreach lib,$(PROD_LDLIBS) $(USR_LDLIBS),$(firstword \
+PROD_DEPLIBS = $(foreach lib,$(PROD_LIBS) $(USR_LIBS),$(firstword \
 		$($(lib)_DIR)/$(lib)$(OBJECT_LIB_EXT)))
-DEPLIB_LDLIBS = $($*_DEPLIBS) $(PROD_DEPLIBS) \
+PROD_LDLIBS = $($*_DEPLIBS) $(PROD_DEPLIBS) \
 		$($*_SYS_LIBS:%=%.lib) $(SYS_PROD_LIBS:%=%.lib)
 
 #--------------------------------------------------

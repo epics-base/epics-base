@@ -28,17 +28,15 @@ MUNCH_SUFFIX = .munch
 LIBNAME = $(BUILD_LIBRARY:%=$(LIB_PREFIX)%$(LIB_SUFFIX))
 
 #--------------------------------------------------
-# Prod: dependancy definitions
-PROD_DEPLIBS = $(foreach lib,$(PROD_LDLIBS) $(USR_LDLIBS),$(firstword $(wildcard  \
+# Prod: DEPLIBS, LDFLAGS, and LDLIBS definitions
+PROD_DEPLIBS = $(foreach lib,$(PROD_LIBS) $(USR_LIBS),$(firstword $(wildcard  \
 $($(lib)_DIR)/$(LIB_PREFIX)$(lib).*)))
 
-#--------------------------------------------------
-# Prod: LDFLAGS and LDLIBS definitions
-DEPLIB_DIRS = $(dir $($*_DEPLIBS)) $(dir $(PROD_DEPLIBS))
-DEPLIB_LDFLAGS += $(sort $(DEPLIB_DIRS:%=-L%))
-
-DEPLIB_LDLIBS = $($*_LDLIBS:%=-l%) $(PROD_LDLIBS:%=-l%) $(USR_LDLIBS:%=-l%)\
+PROD_LDLIBS = $($*_LIBS:%=-l%) $(PROD_LIBS:%=-l%) $(USR_LIBS:%=-l%)\
  $($*_SYS_LIBS:%=-l%) $(SYS_PROD_LIBS:%=-l%)
+
+PROD_DEPLIB_DIRS = $(dir $($*_DEPLIBS)) $(dir $(PROD_DEPLIBS))
+PROD_LDFLAGS += $(sort $(PROD_DEPLIB_DIRS:%=-L%))
 
 #-------------------------------------------------------
 # Prod definitions
@@ -84,7 +82,8 @@ export WIND_HOST_TYPE
 #--------------------------------------------------
 # Operating system flags
 OP_SYS_CPPFLAGS = -DvxWorks
-OP_SYS_CFLAGS = -fno-builtin 
+OP_SYS_CFLAGS = -fno-builtin
+#OP_SYS_CFLAGS = -fno-builtin -fdollars-in-identifiers
 OP_SYS_LDFLAGS =
 OP_SYS_LDLIBS =
 

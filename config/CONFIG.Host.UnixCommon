@@ -20,12 +20,12 @@ SHRLIB_SUFFIX = .so
 
 SHRLIBNAME = lib$(LIBRARY)$(SHRLIB_SUFFIX)$(SHRLIB_VERSION:%=.%)
 
-DLL_LIBS = $(patsubst $(LIBRARY),, $(PROD_LIBS) $(USR_LIBS))
-DLL_LDLIBS = $(PRODNAME_LIBS:%=-l%) $(DLL_LIBS:%=-l%)
+SYS_DLL_LIBS += $(SYS_DLL_LIBS_$(OS_CLASS))
+DLL_LIBS = $(patsubst $(LIBRARY),, $(PROD_LIBS) $(USR_LIBS)) $(SYS_DLL_LIBS)
 
 INSTALL_SHRLIB = $(INSTALL_LIB)
 
-LINK.shrlib= $(SHRLIB_LINKER) -o $@ $(CFLAGS) $(CPPFLAGS) $(SHRLIB_LDFLAGS) $(LDFLAGS)
+LINK.shrlib= $(SHRLIB_LINKER) -o $@ $(CFLAGS) $(CPPFLAGS) $(SHRLIB_LDFLAGS) $(DLL_LDFLAGS) $(LDFLAGS)
 
 #-------------------------------------------------------
 # Unix command definitions
@@ -48,16 +48,19 @@ COND_PROD_DEPLIBS = $(foreach prod,$(PROD), $(foreach lib, $($(basename $(prod))
 PRODNAME_DEPLIBS = $(foreach lib,$(PRODNAME_LIBS),$(firstword $(wildcard $($(lib)_DIR)/lib$(lib).* $(EPICS_BASE_LIB)/lib$(lib).*)))
 PROD_DEPLIBS = $(foreach lib,$(PROD_LIBS),$(firstword $(wildcard $($(lib)_DIR)/lib$(lib).* $(EPICS_BASE_LIB)/lib$(lib).*)))
 USR_DEPLIBS = $(foreach lib,$(USR_LIBS),$(firstword $(wildcard $($(lib)_DIR)/lib$(lib).* $(EPICS_BASE_LIB)/lib$(lib).*)))
-
+DLL_DEPLIBS = $(foreach lib,$(DLL_LIBS),$(firstword $(wildcard $($(lib)_DIR)/lib$(lib).* $(EPICS_BASE_LIB)/lib$(lib).*)))
 #--------------------------------------------------
 # Determine ld flags
 USR_DIRS = $(dir $(PRODNAME_DEPLIBS)) $(dir $(PROD_DEPLIBS))\
  $(dir $(USR_DEPLIBS))
 USR_LDFLAGS += $(sort $(USR_DIRS:%=-L%))
+DLL_DIRS = $(dir $(DLL_DEPLIBS))
+DLL_LDFLAGS = $(sort $(DLL_DIRS:%=-L%))
 
 # Determine ld libs
 USR_LDLIBS = $(PRODNAME_LIBS:%=-l%) $(PROD_LIBS:%=-l%) $(USR_LIBS:%=-l%)\
  $(SYS_PROD_LIBS:%=-l%)
+DLL_LDLIBS = $(DLL_LIBS:%=-l%)
 
 #--------------------------------------------------
 # Operating system definitions

@@ -37,3 +37,6 @@ ifdef CROSS
    CMPLR_PREFIX=$(addsuffix -,$(GNU_TARGET))
 endif
 
+#Allow R3.13 built extensions to load R3.14 shared libs
+SYS_SHRLIB_LIBS += posix4 pthread Crun
+

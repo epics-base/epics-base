@@ -32,11 +32,14 @@ OP_SYS_LDLIBS += -lsocket -lnsl
 
 #  -R does not work unless full path names are specified
 # use loader's -R option
-DEPLIB_LDFLAGS += $(sort $(DEPLIB_DIRS:%=-R%))
+PROD_LDFLAGS += $(sort $(DEPLIB_DIRS:%=-R%))
 
 ifdef CROSS
    GNU_TARGET=sparc-sun-solaris2
    CMPLR_SUFFIX=
    CMPLR_PREFIX=$(addsuffix -,$(GNU_TARGET))
 endif
+
+#Allow R3.13 built extensions to load R3.14 shared libs
+SYS_SHRLIB_LIBS += posix4 pthread Crun
 

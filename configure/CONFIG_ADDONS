@@ -203,13 +203,12 @@ endif
 endif
 
 ifneq ($(strip $(PROD_LIBS_$(OS_CLASS))),)
-PROD_LDLIBS += $(subst -nil-,,$(PROD_LIBS_$(OS_CLASS)))
+PROD_LIBS += $(subst -nil-,,$(PROD_LIBS_$(OS_CLASS)))
 else
 ifdef PROD_LIBS_DEFAULT
-PROD_LDLIBS += $(PROD_LIBS_DEFAULT)
+PROD_LIBS += $(PROD_LIBS_DEFAULT)
 endif
 endif
-PROD_LDLIBS += $(PROD_LIBS)
 
 ifneq ($(strip $(SHRLIB_LIBS_$(OS_CLASS))),)
 SHRLIB_LIBS += $(subst -nil-,,$(SHRLIB_LIBS_$(OS_CLASS)))
@@ -220,13 +219,12 @@ endif
 endif
 
 ifneq ($(strip $(USR_LIBS_$(OS_CLASS))),)
-USR_LDLIBS += $(subst -nil-,,$(USR_LIBS_$(OS_CLASS)))
+USR_LIBS += $(subst -nil-,,$(USR_LIBS_$(OS_CLASS)))
 else
 ifdef USR_LIBS_DEFAULT
-USR_LDLIBS += $(USR_LIBS_DEFAULT)
+USR_LIBS += $(USR_LIBS_DEFAULT)
 endif
 endif
-USR_LDLIBS += $(USR_LIBS)
 
 #
 #	concat specific library contents (if defined) to SYS_PROD_LIBS

@@ -33,29 +33,27 @@ LIBNAME = $(BUILD_LIBRARY:%=$(LIB_PREFIX)%$(LIB_SUFFIX))
 SHRLIBNAME_YES = $(BUILD_LIBRARY:%=$(LIB_PREFIX)%$(SHRLIB_SUFFIX))
 
 #-------------------------------------------------------
-# shrlib: dependancy definitions
+# shrlib: DEPLIBS, LDFLAGS, and LDLIBS definitions
 SHRLIB_DEPLIBS = $(foreach lib,$(SHRLIB_LIBS),$(firstword $(wildcard  \
 $($(lib)_DIR)/$(LIB_PREFIX)$(lib).*)))
 
-# Shared library definitions
 SHRLIB_LDFLAGS = $(SHRLIB_LDFLAGS_$(strip $(SHARED_LIBRARIES)))
-SHRLIB_LDLIBS = $($*_LIBS:%=-l%)
+SHRLIB_LDLIBS = $($*_LIBS:%=-l%) $(SHRLIB_LIBS:%=-l%) \
+ $($*_SYS_LIBS:%=-l%) $(SYS_SHRLIB_LIBS:%=-l%)
 
 SHRLIB_DEPLIB_DIRS = $(dir $($*_DEPLIBS)) $(dir $(SHRLIB_DEPLIBS))
 SHRLIB_LDFLAGS += $(sort $(SHRLIB_DEPLIB_DIRS:%=-L%))
 
 #--------------------------------------------------
-# Prod: dependancy definitions
-PROD_DEPLIBS = $(foreach lib,$(PROD_LDLIBS) $(USR_LDLIBS),$(firstword $(wildcard  \
+# Prod: DEPLIBS, LDFLAGS, and LDLIBS definitions
+PROD_DEPLIBS = $(foreach lib,$(PROD_LIBS) $(USR_LIBS),$(firstword $(wildcard  \
 $($(lib)_DIR)/$(LIB_PREFIX)$(lib).*)))
 
-#--------------------------------------------------
-# Prod: LDFLAGS and LDLIBS definitions
-DEPLIB_DIRS = $(dir $($*_DEPLIBS)) $(dir $(PROD_DEPLIBS))
-DEPLIB_LDFLAGS += $(sort $(DEPLIB_DIRS:%=-L%))
-
-DEPLIB_LDLIBS = $($*_LDLIBS:%=-l%) $(PROD_LDLIBS:%=-l%) $(USR_LDLIBS:%=-l%)\
+PROD_LDLIBS = $($*_LIBS:%=-l%) $(PROD_LIBS:%=-l%) $(USR_LIBS:%=-l%)\
  $($*_SYS_LIBS:%=-l%) $(SYS_PROD_LIBS:%=-l%)
+
+PROD_DEPLIB_DIRS = $(dir $($*_DEPLIBS)) $(dir $(PROD_DEPLIBS))
+PROD_LDFLAGS += $(sort $(PROD_DEPLIB_DIRS:%=-L%))
 
 #--------------------------------------------------
 # Operating system definitions

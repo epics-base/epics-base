@@ -60,7 +60,10 @@ G++_STRICT = $(G++)  -Wtraditional
 
 #ARCH_DEP_CFLAGS = -D_X86_ -Dlinux -D_USE_BSD
 ARCH_DEP_CFLAGS = -D_X86_ -Dlinux
-ARCH_DEP_LDFLAGS += -lpthread -lreadline -lcurses -lrt
+ARCH_DEP_LDLIBS += -lpthread -lreadline -lcurses -lrt
+
+#Allows R3.13 built extensions to load R3.14 shared libs
+SYS_DLL_LIBS_Linux += pthread readline curses rt
 
 #glibc FAQ
 #	"_GNU_SOURCE:  glibc does not make the GNU extensions available 

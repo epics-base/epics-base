@@ -236,8 +236,8 @@ USR_DEPLIBS = $(foreach lib,$(USR_LIBS),$(firstword $($(lib)_DIR) $(EPICS_BASE_L
 
 # by default the libraries used when linking the DLL are just
 # PROD_LIBS ans SYS_PROD_LIBS minus the DLL name
-DLL_LIBS = $(subst $(LIBRARY),, $(PROD_LIBS))
- 
+DLL_LIBS = $(patsubst $(LIBRARY),, $(PROD_LIBS))
+
 #
 #	EPICS libs that we need to link the DLL with
 #	(it isnt necessary to rebuild the dll if these change)

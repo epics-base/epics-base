@@ -17,24 +17,22 @@
 
 #include "limits.h"
 
-#include "tsFreeList.h"
-#include "osiMutex.h"
 #include "cadef.h"
 #include "cacIO.h"
+#include "tsFreeList.h"
+#include "osiMutex.h"
 
 #define epicsExportSharedSymbols
 #include "db_access_routines.h"
 #include "dbCAC.h"
-#include "dbLock.h"
-#include "dbCommon.h"
-
-extern "C" unsigned short dbDBRnewToDBRold[DBR_ENUM+1];
+#include "dbChannelIOIL.h"
+#include "dbNotifyBlockerIL.h"
 
 tsFreeList < dbChannelIO > dbChannelIO::freeList;
 
 dbChannelIO::dbChannelIO ( cacChannel &chan, const dbAddr &addrIn, dbServiceIO &serviceIO ) :
     cacLocalChannelIO ( chan ), serviceIO ( serviceIO ), pGetCallbackCache ( 0 ), 
-    getCallbackCacheSize ( 0ul ), pBlocker (0), addr ( addrIn )
+    pBlocker (0), getCallbackCacheSize ( 0ul ), addr ( addrIn )
 {
     chan.attachIO ( *this );
     this->connectNotify ();
@@ -42,17 +40,21 @@ dbChannelIO::dbChannelIO ( cacChannel &chan, const dbAddr &addrIn, dbServiceIO &
 
 dbChannelIO::~dbChannelIO ()
 {
+    // this must go in the derived class's destructor because
+    // this calls virtual functions in the cacChannelIO base
+    this->ioReleaseNotify ();
+
+    this->lock ();
+
     /*
      * remove any subscriptions attached to this channel
      */
-    this->lock ();
     tsDLIterBD <dbSubscriptionIO> iter = this->eventq.first ();
     while ( iter != iter.eol () ) {
         tsDLIterBD <dbSubscriptionIO> next = iter.itemAfter ();
         iter->destroy ();
         iter = next;
     }
-    this->unlock ();
 
     if ( this->pBlocker ) {
         this->pBlocker->destroy ();
@@ -61,26 +63,8 @@ dbChannelIO::~dbChannelIO ()
     if ( this->pGetCallbackCache ) {
         delete [] this->pGetCallbackCache;
     }
-}
 
-void dbChannelIO::destroy () 
-{
-    delete this;
-}
-
-void * dbChannelIO::operator new ( size_t size )
-{
-    return dbChannelIO::freeList.allocate ( size );
-}
-
-void dbChannelIO::operator delete ( void *pCadaver, size_t size )
-{
-    dbChannelIO::freeList.release ( pCadaver, size );
-}
-
-const char *dbChannelIO::pName () const 
-{
-    return addr.precord->name;
+    this->unlock ();
 }
 
 int dbChannelIO::read ( unsigned type, unsigned long count, void *pValue )
@@ -111,7 +95,7 @@ int dbChannelIO::read ( unsigned type, unsigned long count, cacNotify &notify )
         return ECA_BADCOUNT;
     }
 
-    dbScanLock ( this->addr.precord );
+    this->lock ();
     if ( this->getCallbackCacheSize < size) {
         if ( this->pGetCallbackCache ) {
             delete [] this->pGetCallbackCache;
@@ -119,7 +103,7 @@ int dbChannelIO::read ( unsigned type, unsigned long count, cacNotify &notify )
         this->pGetCallbackCache = new char [size];
         if ( ! this->pGetCallbackCache ) {
             this->getCallbackCacheSize = 0ul;
-            dbScanUnlock ( this->addr.precord );
+            this->unlock ();
             return ECA_ALLOCMEM;
         }
         this->getCallbackCacheSize = size;
@@ -132,8 +116,8 @@ int dbChannelIO::read ( unsigned type, unsigned long count, cacNotify &notify )
     else { 
         notify.completionNotify ( type, count, this->pGetCallbackCache );
     }
+    this->unlock ();
     notify.destroy ();
-    dbScanUnlock ( this->addr.precord );
     return ECA_NORMAL;
 }
 
@@ -155,31 +139,27 @@ int dbChannelIO::write ( unsigned type, unsigned long count, const void *pValue 
 int dbChannelIO::write ( unsigned type, unsigned long count, 
                         const void *pValue, cacNotify &notify ) 
 {
-    dbPutNotifyIO *pIO;
-
     if ( count > LONG_MAX ) {
         return ECA_BADCOUNT;
     }
 
-    this->lock ();
     if ( ! this->pBlocker ) {
-        this->pBlocker = new dbPutNotifyBlocker ( *this );
+        this->lock ();
         if ( ! this->pBlocker ) {
-            this->unlock ();
-            return ECA_ALLOCMEM;
+            this->pBlocker = new dbPutNotifyBlocker ( *this );
+            if ( ! this->pBlocker ) {
+                this->unlock ();
+                return ECA_ALLOCMEM;
+            }
         }
-    }
-    this->unlock ();
-
-    pIO = new dbPutNotifyIO ( notify, *this->pBlocker );
-    if ( ! pIO ) {
-        return ECA_ALLOCMEM;
+        this->unlock ();
     }
 
-    int status = pIO->initiate ( this->addr, type, count, pValue );
-    if ( status != ECA_NORMAL ) {
-        pIO->destroy ();
-    }
+    // must release the lock here so that this can block
+    // for put notify completion without monopolizing the lock
+    int status = this->pBlocker->initiatePutNotify ( notify, 
+        this->addr, type, count, pValue );
+
     return status;
 }
 
@@ -198,28 +178,4 @@ int dbChannelIO::subscribe ( unsigned type, unsigned long count,
     return status;
 }
 
-short dbChannelIO::nativeType () const 
-{
-    return dbDBRnewToDBRold[this->addr.field_type];
-}
 
-unsigned long dbChannelIO::nativeElementCount () const 
-{
-    if ( this->addr.no_elements >= 0u ) {
-        return static_cast < unsigned long > ( this->addr.no_elements );
-    }
-    else {
-        return 0u;
-    }
-}
-
-void dbChannelIO::subscriptionUpdate ( unsigned type, unsigned long count, 
-        const struct db_field_log *pfl, cacNotifyIO &notify )
-{
-    this->serviceIO.subscriptionUpdate ( this->addr, type, count, pfl, notify );
-}
-
-dbEventSubscription dbChannelIO::subscribe ( dbSubscriptionIO &subscr, unsigned mask )
-{
-    return this->serviceIO.subscribe ( this->addr, subscr, mask );
-}

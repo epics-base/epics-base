@@ -28,54 +28,27 @@
 
 #define epicsExportSharedSymbols
 #include "dbCAC.h"
+#include "dbPutNotifyIOIL.h"
 
 #define S_db_Blocked 	(M_dbAccess|39)
 #define S_db_Pending 	(M_dbAccess|37)
 
 tsFreeList <dbPutNotifyIO> dbPutNotifyIO::freeList;
 
-extern "C" void putNotifyCompletion ( putNotify *ppn )
-{
-    dbPutNotifyIO *pNotify = static_cast < dbPutNotifyIO * > ( ppn->usrPvt );
-    if ( pNotify->pn.status ) {
-        if (pNotify->pn.status == S_db_Blocked) {
-            pNotify->cacNotifyIO::exceptionNotify ( ECA_PUTCBINPROG, "put notify blocked" );
-        }
-        else {
-            pNotify->cacNotifyIO::exceptionNotify ( ECA_PUTFAIL,  "put notify unsuccessful");
-        }
-    }
-    else {
-        pNotify->cacNotifyIO::completionNotify ();
-    }
-    pNotify->ioComplete = true;
-    pNotify->destroy ();
-}
-
 dbPutNotifyIO::dbPutNotifyIO ( cacNotify &notifyIn, dbPutNotifyBlocker &blockerIn ) :
-    cacNotifyIO ( notifyIn ), blocker ( blockerIn ), ioComplete ( false )
+    cacNotifyIO ( notifyIn ), blocker ( blockerIn )
 {
     memset ( &this->pn, '\0', sizeof ( this->pn ) );
     this->pn.userCallback = putNotifyCompletion;
-    this->pn.usrPvt = this;
-    // wait for current put notify to complete
-    this->blocker.chan.lock ();
-    while ( this->blocker.pPN ) {
-        this->blocker.chan.unlock ();
-        this->blocker.block.wait ( 1.0 );
-        this->blocker.chan.lock ();
-    }
-    this->blocker.pPN = this;
-    this->blocker.chan.unlock ();
+    this->pn.usrPvt = &blockerIn;
 }
 
 dbPutNotifyIO::~dbPutNotifyIO ()
 {
-    if ( ! this->ioComplete ) {
+    if ( this->pn.paddr ) {
         dbNotifyCancel ( &this->pn );
     }
-    this->blocker.pPN = 0;
-    this->blocker.block.signal ();
+    this->blocker.putNotifyDestroyNotify ();
 }
 
 int dbPutNotifyIO::initiate ( struct dbAddr &addr, unsigned type, 
@@ -94,28 +67,35 @@ int dbPutNotifyIO::initiate ( struct dbAddr &addr, unsigned type,
     this->pn.paddr = &addr;
     status = this->pn.dbrType = dbPutNotifyMapType ( &this->pn, static_cast <short> ( type ) );
     if (status) {
+        this->pn.paddr = 0;
         return ECA_BADTYPE;
     }
 
     status = ::dbPutNotify ( &this->pn );
     if ( status && status != S_db_Pending ) {
+        this->pn.paddr = 0;
         this->pn.status = status;
         this->cacNotifyIO::exceptionNotify ( ECA_PUTFAIL,  "dbPutNotify() returned failure");
     }
     return ECA_NORMAL;
 }
 
-void dbPutNotifyIO::destroy () 
+void dbPutNotifyIO::completion () 
 {
-    delete this;
+    if ( ! this->pn.paddr ) {
+        errlogPrintf ( "completion pn=%p\n", this );
+    }
+    this->pn.paddr = 0;
+    if ( this->pn.status ) {
+        if ( this->pn.status == S_db_Blocked ) {
+            this->cacNotifyIO::exceptionNotify ( ECA_PUTCBINPROG, "put notify blocked" );
+        }
+        else {
+            this->cacNotifyIO::exceptionNotify ( ECA_PUTFAIL,  "put notify unsuccessful");
+        }
+    }
+    else {
+        this->cacNotifyIO::completionNotify ();
+    }
 }
 
-void * dbPutNotifyIO::operator new ( size_t size )
-{
-    return dbPutNotifyIO::freeList.allocate ( size );
-}
-
-void dbPutNotifyIO::operator delete ( void *pCadaver, size_t size )
-{
-    dbPutNotifyIO::freeList.release ( pCadaver, size );
-}

@@ -25,6 +25,7 @@
 
 #define epicsExportSharedSymbols
 #include "dbCAC.h"
+#include "dbChannelIOIL.h"
 #include "db_access_routines.h"
 
 tsFreeList < dbSubscriptionIO > dbSubscriptionIO::freeList;

@@ -18,9 +18,13 @@
  * 1) This interface is preliminary and will change in the future
  */
 
+
 #include "dbNotify.h"
 #include "dbEvent.h"
 #include "dbAddr.h"
+#include "dbLock.h"
+#include "dbCommon.h"
+#include "db_convert.h"
 
 extern "C" void putNotifyCompletion ( putNotify *ppn );
 
@@ -29,19 +33,18 @@ class dbPutNotifyBlocker;
 
 class dbPutNotifyIO : public cacNotifyIO {
 public:
-    dbPutNotifyIO ( cacNotify &notify, dbPutNotifyBlocker &blockerIn );
+    dbPutNotifyIO ( cacNotify &notify, dbPutNotifyBlocker &blocker );
     int initiate ( struct dbAddr &addr, unsigned type, 
         unsigned long count, const void *pValue);
+    void completion ();
     void destroy ();
     static void * operator new ( size_t size );
     static void operator delete ( void *pCadaver, size_t size );
 private:
     putNotify pn;
     dbPutNotifyBlocker &blocker;
-    bool ioComplete;
     static tsFreeList < dbPutNotifyIO > freeList;
     ~dbPutNotifyIO (); // must allocate out of pool
-    friend void putNotifyCompletion ( putNotify *ppn );
 };
 
 extern "C" void dbSubscriptionEventCallback ( void *pPrivate, struct dbAddr *paddr,
@@ -61,8 +64,6 @@ private:
     unsigned long count;
     static tsFreeList < dbSubscriptionIO > freeList;
     ~dbSubscriptionIO (); // must be allocated from pool
-    friend dbPutNotifyIO::dbPutNotifyIO ( cacNotify &notify, dbPutNotifyBlocker &blockerIn );
-    friend dbPutNotifyIO::~dbPutNotifyIO ( );
     friend void dbSubscriptionEventCallback ( void *pPrivate, struct dbAddr *paddr,
 	    int eventsRemaining, struct db_field_log *pfl );
 };
@@ -73,6 +74,9 @@ class dbPutNotifyBlocker {
 public:
     dbPutNotifyBlocker ( dbChannelIO &chanIn );
     void destroy ();
+    int initiatePutNotify (cacNotify &notify, struct dbAddr &addr, 
+            unsigned type, unsigned long count, const void *pValue);
+    void putNotifyDestroyNotify ();
     static void * operator new ( size_t size );
     static void operator delete ( void *pCadaver, size_t size );
 private:
@@ -82,9 +86,9 @@ private:
 
     static tsFreeList < dbPutNotifyBlocker > freeList;
     ~dbPutNotifyBlocker (); // must allocate out of pool
-
-    friend dbPutNotifyIO::dbPutNotifyIO ( cacNotify &notify, dbPutNotifyBlocker &blockerIn );
-    friend dbPutNotifyIO::~dbPutNotifyIO ();
+    void lock () const;
+    void unlock () const;
+    friend void putNotifyCompletion ( putNotify *ppn );
 };
 
 class dbChannelIO : public cacLocalChannelIO {
@@ -119,10 +123,14 @@ private:
     short nativeType () const;
     unsigned long nativeElementCount () const;
 
+    void lock () const;
+    void unlock () const;
+
     friend dbSubscriptionIO::dbSubscriptionIO ( dbChannelIO &chanIO, cacNotify &, unsigned type, unsigned long count );
     friend dbSubscriptionIO::~dbSubscriptionIO ();
-    friend dbPutNotifyBlocker::dbPutNotifyBlocker ( dbChannelIO &chanIn );
-    friend dbPutNotifyBlocker::~dbPutNotifyBlocker ();
+
+    friend void dbPutNotifyBlocker::lock () const;
+    friend void dbPutNotifyBlocker::unlock () const;
 };
 
 class dbServiceIO : public cacServiceIO {
@@ -139,3 +147,4 @@ private:
     unsigned long eventCallbackCacheSize;
     osiMutex mutex;
 };
+

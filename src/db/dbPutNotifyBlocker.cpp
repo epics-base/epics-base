@@ -20,6 +20,7 @@
 #include "string.h"
 
 #include "osiMutex.h"
+#include "osiTime.h"
 #include "tsFreeList.h"
 #include "errMdef.h"
 
@@ -28,6 +29,9 @@
 
 #define epicsExportSharedSymbols
 #include "dbCAC.h"
+#include "dbChannelIOIL.h"
+#include "dbNotifyBlockerIL.h"
+#include "dbPutNotifyIOIL.h"
 
 #define S_db_Blocked 	(M_dbAccess|39)
 #define S_db_Pending 	(M_dbAccess|37)
@@ -35,28 +39,70 @@
 tsFreeList <dbPutNotifyBlocker> dbPutNotifyBlocker::freeList;
 
 dbPutNotifyBlocker::dbPutNotifyBlocker ( dbChannelIO &chanIn ) :
-    chan ( chanIn ), pPN (0)
+    pPN (0), chan ( chanIn )
 {
 }
 
 dbPutNotifyBlocker::~dbPutNotifyBlocker ()
 {
+    this->lock ();
     if ( this->pPN ) {
         this->pPN->destroy ();
     }
+    this->unlock ();
 }
 
-void dbPutNotifyBlocker::destroy ()
+void dbPutNotifyBlocker::putNotifyDestroyNotify ()
 {
-    delete this;
+    this->lock ();
+    this->pPN = 0;
+    this->unlock ();
 }
 
-void * dbPutNotifyBlocker::operator new ( size_t size )
+
+int dbPutNotifyBlocker::initiatePutNotify ( cacNotify &notify, 
+        struct dbAddr &addr, unsigned type, unsigned long count, 
+        const void *pValue )
 {
-    return dbPutNotifyBlocker::freeList.allocate ( size );
+    dbPutNotifyIO *pIO = new dbPutNotifyIO ( notify, *this );
+    if ( ! pIO ) {
+        return ECA_ALLOCMEM;
+    }
+
+    // wait for current put notify to complete
+    this->lock ();
+    if ( this->pPN ) {
+        osiTime begin = osiTime::getCurrent ();
+        do {
+            this->unlock ();
+            this->block.wait ( 1.0 );
+            if ( osiTime::getCurrent () - begin > 30.0 ) {
+                pIO->destroy ();
+                return ECA_PUTCBINPROG;
+            }
+            this->lock ();
+        } while ( this->pPN );
+    }
+    this->pPN = pIO;
+    int status = this->pPN->initiate ( addr, type, count, pValue );
+    if ( status != ECA_NORMAL ) {
+        this->pPN->destroy ();
+        this->pPN = 0;
+    }
+    this->unlock ();
+    return status;
 }
 
-void dbPutNotifyBlocker::operator delete ( void *pCadaver, size_t size )
+extern "C" void putNotifyCompletion ( putNotify *ppn )
 {
-    dbPutNotifyBlocker::freeList.release ( pCadaver, size );
+    dbPutNotifyBlocker *pBlocker = static_cast < dbPutNotifyBlocker * > ( ppn->usrPvt );
+    pBlocker->lock ();
+    pBlocker->pPN->completion ();
+    pBlocker->pPN->destroy ();
+    pBlocker->pPN = 0;
+    pBlocker->unlock ();
+    pBlocker->block.signal ();
 }
+
+
+

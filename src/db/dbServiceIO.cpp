@@ -26,6 +26,7 @@
 #define epicsExportSharedSymbols
 #include "db_access_routines.h"
 #include "dbCAC.h"
+#include "dbChannelIOIL.h"
 
 class dbServiceIOLoadTimeInit {
 public:
@@ -115,8 +116,9 @@ extern "C" void cacAttachClientCtx ( void * pPrivate )
 dbEventSubscription dbServiceIO::subscribe ( struct dbAddr &addr, dbSubscriptionIO &subscr, unsigned mask )
 {
     static const int slightlyHigherPriority = -1;
-    int status;
     caClientCtx clientCtx;
+    dbEventSubscription es;
+    int status;
 
     status = ca_current_context ( &clientCtx );
     if ( status != ECA_NORMAL ) {
@@ -140,6 +142,11 @@ dbEventSubscription dbServiceIO::subscribe ( struct dbAddr &addr, dbSubscription
     }
     this->mutex.unlock ();
 
-    return db_add_event ( this->ctx, &addr,
+    es = db_add_event ( this->ctx, &addr,
         dbSubscriptionEventCallback, (void *) &subscr, mask );
+    if (es) {
+        db_post_single_event ( es );
+    }
+
+    return es;
 }

@@ -570,6 +570,7 @@ void tcpiiu::cleanShutdown ()
 void tcpiiu::shutdown ( bool discardPendingMessages )
 {
     if ( ! this->sockCloseCompleted ) {
+        iiu_conn_state oldState = this->state;
         this->state = iiu_disconnected;
         this->sockCloseCompleted = true;
 
@@ -590,17 +591,19 @@ void tcpiiu::shutdown ( bool discardPendingMessages )
         }
         // linux threads in recv() dont wakeup unless we also
         // call shutdown ( close() by itself is not enough )
-        int status = ::shutdown ( this->sock, SD_BOTH );
-        if ( status ) {
-            errlogPrintf ("CAC TCP socket shutdown error was %s\n", 
-                SOCKERRSTR (SOCKERRNO) );
+        if ( oldState == iiu_connected ) {
+            int status = ::shutdown ( this->sock, SD_BOTH );
+            if ( status ) {
+                errlogPrintf ("CAC TCP socket shutdown error was %s\n", 
+                    SOCKERRSTR (SOCKERRNO) );
+            }
         }
         //
         // on winsock and probably vxWorks shutdown() does not
         // unblock a thread in recv() so we use close() and introduce
         // some complexity because we must unregister the fd early
         //
-        status = socket_close ( this->sock );
+        int status = socket_close ( this->sock );
         if ( status ) {
             errlogPrintf ("CAC TCP socket close error was %s\n", 
                 SOCKERRSTR (SOCKERRNO) );

@@ -282,17 +282,9 @@ void
 runScriptRTEMS (const char *name)
 {
     char *cp;
-    FILE *fp;
 
     cp = rtems_tftp_path (name);
-    fp = fopen (cp, "r");
-    if (fp == NULL) {
-        printf ("Can't open script (%s)\n", name);
-    }
-    else {
-        ioccrf (fp, name);
-        fclose (fp);
-    }
+    ioccrf (cp);
     free (cp);
 }
 
@@ -319,9 +311,8 @@ Init (rtems_task_argument ignored)
      * Create a reasonable environment
      */
     putenv ("TERM=xterm");
-    putenv ("PS1=rtems> ");
-    putenv ("HISTSIZE=10");
-    putenv ("IFS= \t,()");
+    putenv ("IOCSH_PS1=rtems> ");
+    putenv ("IOCSH_HISTSIZE=20");
 
     /*
      * Start network
@@ -354,6 +345,6 @@ Init (rtems_task_argument ignored)
      * Everything's running!
      */
     threadSleep (2.0);
-    ioccrf (NULL, NULL);
+    ioccrf (NULL);
     LogFatal ("Console command interpreter terminated");
 }

@@ -12,6 +12,7 @@ of this distribution.
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <errno.h>
 
 #include "cantProceed.h"
 #include "registry.h"
@@ -114,15 +115,15 @@ my_readline (FILE *fp, const char *prompt)
  * Report an error
  */
 static void
-showError (const char *name, int lineno, const char *msg, ...)
+showError (const char *filename, int lineno, const char *msg, ...)
 {
     va_list ap;
 
     va_start (ap, msg);
-    if (name)
-        printf ("%s -- Line %d -- ", name, lineno);
-    vprintf (msg, ap);
-    printf ("\n");
+    if (filename)
+        fprintf (stderr, "%s -- Line %d -- ", filename, lineno);
+    vfprintf (stderr, msg, ap);
+    fprintf (stderr, "\n");
     va_end (ap);
 }
 
@@ -183,9 +184,11 @@ cvtArg (const char *filename, int lineno, char *arg, argvalue *pargvalue, ioccrf
 /*
  * The body of the command interpreter
  */
-void epicsShareAPI
-ioccrf (FILE *fp, const char *filename)
+int epicsShareAPI
+ioccrf (const char *pathname)
 {
+    FILE *fp;
+    const char *filename = NULL;
     int icin, icout;
     int c, quote, inword, backslash;
     char *line = NULL;
@@ -195,8 +198,7 @@ ioccrf (FILE *fp, const char *filename)
     int argvsize = 0;
     int sep;
     const char *prompt;
-    const char *ifs;
-    const char *historySize;
+    const char *ifs = " \t(),";
     ioccrfFunc *pioccrfFunc;
     ioccrfFuncDef *pioccrfFuncDef;
     int arg;
@@ -204,22 +206,16 @@ ioccrf (FILE *fp, const char *filename)
     ioccrfArg *pioccrfArg;
     
     /*
-     * Pick up items from environment
-     */
-    if ((prompt = getenv ("PS1")) == NULL)
-        prompt = "-> ";
-    if ((ifs = getenv ("IFS")) == NULL)
-        ifs = " \t(),";
-
-    /*
      * See if command interpreter is interactive
      */
-    if (fp == NULL)
+    if (pathname == NULL) {
+        const char *historySize;
         fp = stdin;
-    if (fp == stdin) {
-        filename = NULL;
-        if ((historySize = getenv ("HISTSIZE")) == NULL)
-            historySize="10";
+        if ((prompt = getenv ("IOCSH_PS1")) == NULL)
+            prompt = "iocsh> ";
+        if (((historySize = getenv ("IOCSH_HISTSIZE")) == NULL)
+         && ((historySize = getenv ("HISTSIZE")) == NULL))
+            historySize = "10";
         stifle_history (atoi (historySize));
         /*
          * FIXME: Could enable tab-completion of commands here
@@ -227,11 +223,20 @@ ioccrf (FILE *fp, const char *filename)
         rl_bind_key ('\t', rl_insert);
     }
     else {
+        fp = fopen (pathname, "r");
+        if (fp == NULL) {
+            fprintf (stderr, "Can't open %s: %s\n", pathname, strerror (errno));
+            return -1;
+        }
+        if ((filename = strrchr (pathname, '/')) == NULL)
+            filename = pathname;
+        else
+            filename++;
         prompt = NULL;
     }
 
     /*
-     * Read commands till EOF
+     * Read commands till EOF or exit
      */
     for (;;) {
         /*
@@ -380,6 +385,8 @@ ioccrf (FILE *fp, const char *filename)
             }
         }
     }
+    if (fp != stdin)
+        fclose (fp);
     free (line);
     free (argv);
     while (argvalueHead) {
@@ -387,6 +394,7 @@ ioccrf (FILE *fp, const char *filename)
         free (argvalueHead);
         argvalueHead = pargvalue;
     }
+    return 0;
 }
 
 /* Readline automatic completion code could go here! */

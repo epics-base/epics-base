@@ -42,7 +42,7 @@ epicsShareFunc void epicsShareAPI ioccrfRegister(
     ioccrfFuncDef *pioccrfFuncDef,ioccrfCallFunc func);
 
 
-epicsShareFunc void epicsShareAPI ioccrf(FILE *, const char *filename);
+epicsShareFunc int epicsShareAPI ioccrf(const char *pathname);
 
 #ifdef __cplusplus
 }

@@ -23,18 +23,7 @@ static void runScriptCallFunc(ioccrfArg **args)
 #ifdef __rtems__
    runScriptRTEMS ((char *)args[0]->value);
 #else
-    char *cp;
-    FILE *fp;
-
-    cp = (char *)args[0]->value;
-    fp = fopen (cp, "r");
-    if (fp == NULL) {
-        printf ("Can't open script (%s)\n", cp);
-    }
-    else {
-        ioccrf (fp, cp);
-        fclose (fp);
-    }
+    ioccrf ((char *)args[0]->value);
 #endif
 }
 

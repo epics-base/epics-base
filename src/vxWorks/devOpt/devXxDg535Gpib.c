@@ -202,7 +202,6 @@ static	struct	devGpibNames	intExtSsBmStop = { 5, intExtSsBmStopList,
 
 char  *pchanName[8] = {" ", "T + ", "A + ", "B  + ", " ", "C + ", "D + ", " "};
 
-
 /******************************************************************************
  *
  * String arrays for EFAST operations.  Note that the last entry must be 
@@ -682,7 +681,7 @@ struct  devGpibParmBlock devSupParms = {
   NULL,                 /* hwpvt list head */
   gpibCmds,             /* GPIB command array */
   NUMPARAMS,            /* number of supported parameters */
-  4,			/* magic SRQ param number (-1 if none) */
+  -1,			/* magic SRQ param number (-1 if none) */
   "devXxDg535Gpib",	/* device support module type name */
   DMA_TIME,		/* # of clock ticks to wait for DMA completions */
 

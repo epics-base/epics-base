@@ -7,6 +7,9 @@ static char *sccsId = "@(#) $Id$";
 
 /*
  * $Log$
+ * Revision 1.39  1996/11/02 00:50:36  jhill
+ * many pc port, const in API, and other changes
+ *
  * Revision 1.37  1996/09/16 16:31:01  jhill
  * fixed NT warnings
  *
@@ -47,6 +50,7 @@ static char *sccsId = "@(#) $Id$";
 #include	<stdlib.h>
 #include	<math.h>
 #include	<float.h>
+#include	<string.h>
 
 #include	"os_depen.h"
 

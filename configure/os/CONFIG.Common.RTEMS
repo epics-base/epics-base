@@ -29,13 +29,14 @@ include $(CONFIG.CC)
 
 #-------------------------------------------------------
 # RTEMS cross-development tools
-CC = $(CC_FOR_TARGET) $(GCCSPECS) -fasm
+CC = $(RTEMS_BASE)/bin/$(CC_FOR_TARGET) $(GCCSPECS) -fasm
 CCC = $(CC)
-CPP = $(CC_FOR_TARGET) -x c -E
-AR = $(AR_FOR_TARGET)
-LD = $(LD_FOR_TARGET) -r
+CPP = $(RTEMS_BASE)/bin/$(CC_FOR_TARGET) -x c -E
+AR = $(RTEMS_BASE)/bin/$(AR_FOR_TARGET)
+LD = $(RTEMS_BASE)/bin/$(LD_FOR_TARGET) -r
 RTEMS_LDFLAGS := $(LDFLAGS)
 LINK.cpp = $(CCC) -o $@ $(RTEMS_LDFLAGS) $(LDFLAGS) $(LINK_OBJS) $(PROD_LD_OBJS) $(PROD_LD_RESS) $(LDLIBS)
+RANLIB := $(RTEMS_BASE)/bin/$(RANLIB)
 
 #-------------------------------------------------------
 # Build types

@@ -470,7 +470,7 @@ void resTable<T,ID>::splitBucket ()
         // Currently the Tornado compiler cant deal with ~tsSLList<T>() but since 
         // its a NOOP we can find a workaround ...
         //
-#       if ! defined (__GNUC__) || __GNUC__ > 2 || ( __GNUC__ == 2 && __GNUC_MINOR__ >= 72 )
+#       if ! defined (__GNUC__) || __GNUC__ > 2 || ( __GNUC__ == 2 && __GNUC_MINOR__ >= 92 )
             for ( i = 0; i < oldTableSize; i++ ) {
                 this->pTable[i].~tsSLList<T>();
             }

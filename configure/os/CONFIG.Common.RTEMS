@@ -15,7 +15,8 @@
 
 #-------------------------------------------------------
 # Where to find RTEMS
-RTEMS_BASE=/opt/rtems
+RTEMS_BASE=/opt/rtems-4.7
+RTEMS_VERSION=4.7
 
 #-------------------------------------------------------
 # RTEMS tools are similar to UNIX tools
@@ -23,7 +24,7 @@ RTEMS_BASE=/opt/rtems
 
 #-------------------------------------------------------
 # Pick up the RTEMS tool/path definitions from the RTEMS BSP directory.
-include $(RTEMS_BASE)/$(RTEMS_TARGET_CPU)-rtems/$(subst RTEMS-,,$(T_A))/Makefile.inc
+include $(RTEMS_BASE)/$(RTEMS_TARGET_CPU)-rtems$(RTEMS_VERSION)/$(subst RTEMS-,,$(T_A))/Makefile.inc
 include $(RTEMS_CUSTOM)
 include $(CONFIG.CC)
 

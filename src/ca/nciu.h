@@ -27,11 +27,9 @@
 #define nciuh
 
 #ifdef epicsExportSharedSymbols
-#define nciuh_restore_epicsExportSharedSymbols
-#undef epicsExportSharedSymbols
+#   define nciuh_restore_epicsExportSharedSymbols
+#   undef epicsExportSharedSymbols
 #endif
-
-#include "shareLib.h"
 
 #include "resourceLib.h"
 #include "tsDLList.h"
@@ -40,10 +38,9 @@
 #include "epicsSingleton.h"
 
 #ifdef nciuh_restore_epicsExportSharedSymbols
-#define epicsExportSharedSymbols
+#   define epicsExportSharedSymbols
+#   include "shareLib.h"
 #endif
-
-#include "shareLib.h"
 
 #define CA_MINOR_PROTOCOL_REVISION 11
 #include "caProto.h"

@@ -32,13 +32,12 @@
 #   undef epicsExportSharedSymbols
 #endif
 
-#include "shareLib.h"
-
 #include "epicsMutex.h"
 #include "epicsTimer.h"
 
 #ifdef searchTimerh_epicsExportSharedSymbols
 #   define epicsExportSharedSymbols
+#   include "shareLib.h"
 #endif
 
 #include "caProto.h"

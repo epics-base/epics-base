@@ -27,11 +27,9 @@
 #define syncGrouph
 
 #ifdef epicsExportSharedSymbols
-#define syncGrouph_restore_epicsExportSharedSymbols
-#undef epicsExportSharedSymbols
+#   define syncGrouph_restore_epicsExportSharedSymbols
+#   undef epicsExportSharedSymbols
 #endif
-
-#include "shareLib.h"
 
 #include "tsDLList.h"
 #include "tsFreeList.h"
@@ -40,10 +38,9 @@
 #include "epicsEvent.h"
 
 #ifdef syncGrouph_restore_epicsExportSharedSymbols
-#define epicsExportSharedSymbols
+#   define epicsExportSharedSymbols
+#   include "shareLib.h"
 #endif
-
-#include "shareLib.h"
 
 #include "cadef.h"
 #include "cacIO.h"

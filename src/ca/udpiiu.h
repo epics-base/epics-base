@@ -32,8 +32,6 @@
 #   undef epicsExportSharedSymbols
 #endif
 
-#include "shareLib.h"
-
 #include "osiSock.h"
 #include "epicsThread.h"
 #include "epicsMemory.h"
@@ -41,9 +39,9 @@
 
 #ifdef udpiiuh_accessh_epicsExportSharedSymbols
 #   define epicsExportSharedSymbols
+#   include "shareLib.h"
 #endif
 
-#include "shareLib.h"
 
 #include "netiiu.h"
 

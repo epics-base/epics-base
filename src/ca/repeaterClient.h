@@ -28,20 +28,17 @@
 #define repeaterClienth
 
 #ifdef epicsExportSharedSymbols
-#define repeaterClienth_restore_epicsExportSharedSymbols
-#undef epicsExportSharedSymbols
+#   define repeaterClienth_restore_epicsExportSharedSymbols
+#   undef epicsExportSharedSymbols
 #endif
-
-#include "shareLib.h"
 
 #include "tsDLList.h"
 #include "epicsSingleton.h"
 
 #ifdef repeaterClienth_restore_epicsExportSharedSymbols
-#define epicsExportSharedSymbols
+#   define epicsExportSharedSymbols
+#   include "shareLib.h"
 #endif
-
-#include "shareLib.h"
 
 union osiSockAddr;
 

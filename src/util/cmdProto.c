@@ -1,4 +1,4 @@
-/*	$Id$
+/* share/src/util $Id$
  *	Author:	Roger A. Cole
  *	Date:	10-24-90
  *
@@ -260,6 +260,13 @@ char	*option;	/* I NULL, "hostName", or "server" */
 {
     long	stat;		/* status return from calls */
     int		serverStart=0;	/* 1 says start as server */
+    char	portText[10];
+
+    if (envGetConfigParam(&EPICS_CMD_PROTO_PORT, 10, portText) == NULL) {
+	printf("error getting %s\n", EPICS_CMD_PROTO_PORT.name);
+	return ERROR;
+    }
+    sscanf(portText, "%d", &glZzzIPPort);
 
 /*-----------------------------------------------------------------------------
 * if the option is present and not "server", then run as a client
@@ -269,12 +276,6 @@ char	*option;	/* I NULL, "hostName", or "server" */
 #ifdef vxWorks
 	    (void)printf("can't operate as client under VxWorks\n");
 #else
-	    char	portText[10];
-	    if (envGetConfigParam(&EPICS_CMD_PROTO_PORT, 10, portText) == NULL) {
-		printf("error getting %s\n", EPICS_CMD_PROTO_PORT.name);
-		return ERROR;
-	    }
-	    sscanf(portText, "%d", &glZzzIPPort);
 	    execl("cmdClient", "cmdClient", option, portText, (char *)0);
 	    (void)printf("couldn't exec to cmdClient\n");
 #endif

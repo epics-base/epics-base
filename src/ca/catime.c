@@ -648,7 +648,7 @@ LOCAL void measure_get_latency (ti *pItems, unsigned iterations)
 
 	mean = X/iterations;
 	stdDev = sqrt (XX/iterations - mean*mean);
-	printf ("Round trip get delays - mean=%f std dev=%f min=%f max=%f\n",
+	printf ("Round trip get delays - mean=%f sec, std dev=%f sec, min=%f sec max=%f sec\n",
 		mean, stdDev, min, max);
 }
 

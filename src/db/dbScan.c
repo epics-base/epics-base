@@ -40,6 +40,7 @@
  * .08  02-02-94	mrk	added scanOnce
  * .09  02-03-94	mrk	If scanAdd fails set precord->scan=SCAN_PASSIVE
  * .10  02-22-94	mrk	Make init work if 1st record has 28 char name
+ * .11  05-04-94	mrk	Call taskwdRemove only if spawing again
  */
 
 #include	<vxWorks.h>
@@ -514,9 +515,10 @@ static void wdPeriodic(long ind)
 {
     struct scan_list *psl;
 
+    if(!scanRestart)return;
     psl = papPeriodic[ind];
     taskwdRemove(periodicTaskId[ind]);
-    if(!scanRestart)return;
+    /*Unlock so that task can be resumed*/
     FASTUNLOCK(&psl->lock);
     spawnPeriodic(ind);
 }
@@ -571,8 +573,8 @@ static void wdEvent(void)
     int i;
     struct scan_list *psl;
 
-    taskwdRemove(eventTaskId);
     if(!scanRestart) return;
+    taskwdRemove(eventTaskId);
     if(semFlush(eventSem)!=OK)
 	errMessage(0,"semFlush failed while restarting eventTask");
     rngFlush(eventQ);

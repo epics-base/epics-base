@@ -678,6 +678,7 @@ void epicsThreadPrivateDelete(epicsThreadPrivateId id)
     assert(epicsThreadOnceCalled);
     status = pthread_key_delete(*key);
     checkStatusQuit(status,"pthread_key_delete","epicsThreadPrivateDelete");
+    free((void *)key);
 }
 
 void epicsThreadPrivateSet (epicsThreadPrivateId id, void *value)

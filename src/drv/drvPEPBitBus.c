@@ -640,10 +640,12 @@ int	link;
 	      printf("xvmeRxTask(%d): invoking the callbackRequest\n", link);
 	    callbackRequest(rxDpvtHead); /* schedule completion processing */
 	  }
-	  
-	  /* If there is a semaphore for synchronous I/O, unlock it */
-	  if (rxDpvtHead->psyncSem != NULL)
-	    semGive(*(rxDpvtHead->psyncSem));
+	  else
+	  {
+	    /* If there is a semaphore for synchronous I/O, unlock it */
+	    if (rxDpvtHead->psyncSem != NULL)
+	      semGive(*(rxDpvtHead->psyncSem));
+	  }
 	}
 	/* Reset the state of the RxTask to expect a new message */
 	rxMsg = (unsigned char *) NULL;
@@ -833,11 +835,12 @@ int	link;
 	    }
 	  callbackRequest(pnode);     /* schedule completion processing */
 	}
-
-	/* Release a completion lock if one was spec'd */
-	if (pnode->psyncSem != NULL && plink->nukeEm == 0)
-	  semGive(*(pnode->psyncSem));
-	
+	else
+	{
+	  /* Release a completion lock if one was spec'd */
+	  if (pnode->psyncSem != NULL && plink->nukeEm == 0)
+	    semGive(*(pnode->psyncSem));
+	}
         /* If we are not going to reboot the link... */
         if ( plink->nukeEm == 0 ) {
 	  /* Send out a RAC_RESET/RAC_OFFLINE pair */
@@ -1076,11 +1079,12 @@ int	link;
 			 link);
 		callbackRequest(pnode); /* schedule completion processing */
 	      }
-    
-	      /* If there is a semaphore for synchronous I/O, unlock it */
-	      if (pnode->psyncSem != NULL)
-		semGive(*(pnode->psyncSem));
-
+    	      else
+	      {
+	        /* If there is a semaphore for synchronous I/O, unlock it */
+	        if (pnode->psyncSem != NULL)
+		  semGive(*(pnode->psyncSem));
+	      }
 	      taskDelay(15);
 	    }
 	  } else {  /* if abortFlag != 0 */
@@ -1148,8 +1152,8 @@ int     prio;
 
   if (checkLink(pdpvt->link) == ERROR) {
     sprintf(message, 
-	    "invalid linkeepoo requested in call to qbbreq(%08.8X, %d)\n", 
-	    pdpvt, prio);
+	    "invalid link number requested in call to qbbreq(%08.8X, %d) %d\n", 
+	    pdpvt, prio, pdpvt->link);
     errMessage(S_BB_rfu1, message);
     return(ERROR);
   }

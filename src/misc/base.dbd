@@ -33,7 +33,6 @@ include "stringoutRecord.dbd"
 include "subRecord.dbd"
 include "subArrayRecord.dbd"
 include "waveformRecord.dbd"
-include "spectrumRecord.dbd"
 
 # "Soft Channel", "Raw Soft Channel", and "Async Soft Channel" device support
 include "devSoft.dbd"

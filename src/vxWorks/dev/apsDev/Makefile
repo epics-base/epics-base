@@ -7,7 +7,7 @@ INC += devApsEr.h
 SRCS += devApsEg.c
 SRCS += devApsEr.c
 
-OBJS_vxWorks += $(SRCS:%.c=%.o)
+OBJS_vxWorks += $(SRCS:%.c=%)
 
 include $(TOP)/configure/RULES
 

@@ -6,7 +6,7 @@ INC += devCommonGpib.h
 
 SRCS += devCommonGpib.c
 
-OBJS_vxWorks += $(SRCS:%.c=%.o)
+OBJS_vxWorks += $(SRCS:%.c=%)
 
 include $(TOP)/configure/RULES
 

@@ -14,6 +14,6 @@ SRCS += devSiTestAsyn.c
 SRCS += devSoTestAsyn.c
 SRCS += devWfTestAsyn.c
 
-OBJS_IOC = $(SRCS:%.c=%.o)
+OBJS_IOC = $(SRCS:%.c=%)
 
 include $(TOP)/configure/RULES

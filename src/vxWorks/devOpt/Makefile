@@ -12,7 +12,7 @@ SRCS+= devXxDc5009Gpib.c
 SRCS+= devXxK263Gpib.c
 SRCS+= devXxSkeletonGpib.c
 
-OBJS_vxWorks += $(SRCS:%.c=%.o)
+OBJS_vxWorks += $(SRCS:%.c=%)
 
 LIBRARY_vxWorks += devLibOpt
 

@@ -28,7 +28,7 @@ SRCS += devSiSoft.c
 SRCS += devSoSoft.c
 SRCS += devWfSoft.c
 
-OBJS_IOC = $(SRCS:%.c=%.o)
+OBJS_IOC = $(SRCS:%.c=%)
 
 include $(TOP)/configure/RULES
 

@@ -20,9 +20,9 @@ registryLibrary_SRCS += registryRecordType.c
 registryLibrary_SRCS += registryDeviceSupport.c
 registryLibrary_SRCS += registryDriverSupport.c
 
-PROD = registerRecordDeviceDriver.o
-
 LIBRARY = registryLibrary
+
+OBJS = registerRecordDeviceDriver
 
 include $(TOP)/configure/RULES
 

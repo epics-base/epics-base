@@ -60,8 +60,6 @@ LIBRARY = dbLib
 
 include $(TOP)/configure/RULES
 
-$(LIBOBJS_HOST): dbCommon.h
-
 dbCommon.h: ../dbCommonRecord.dbd ../dbCommon.dbd
 	$(RM) $@
 	$(EPICS_BASE_HOST_BIN)/dbToRecordtypeH$(HOSTEXE) \

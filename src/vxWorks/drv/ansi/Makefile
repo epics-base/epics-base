@@ -24,9 +24,7 @@ SRCS += drvStc.c
 
 #SRCS += drvVmic2534.c
 
-OBJS_vxWorks += $(SRCS:%.c=%.o)
-
-MAN3 = drvEpvxi.3
+OBJS_vxWorks += $(SRCS:%.c=%)
 
 include $(TOP)/configure/RULES
 

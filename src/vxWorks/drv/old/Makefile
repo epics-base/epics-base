@@ -43,7 +43,7 @@ SRCS += drvXy220.c
 SRCS += drvXy240.c
 SRCS += drvXy566.c
 
-OBJS_vxWorks += $(SRCS:%.c=%.o)
+OBJS_vxWorks += $(SRCS:%.c=%)
 
 include $(TOP)/configure/RULES
 

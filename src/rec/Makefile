@@ -45,49 +45,43 @@ RECTYPES += subArrayRecord.h
 RECTYPES += timerRecord.h
 RECTYPES += waveformRecord.h
 
-OBJS_IOC += aaiRecord.o
-OBJS_IOC += aaoRecord.o
-OBJS_IOC += aiRecord.o
-OBJS_IOC += aoRecord.o
-OBJS_IOC += biRecord.o
-OBJS_IOC += boRecord.o
-OBJS_IOC += calcRecord.o
-OBJS_IOC += calcoutRecord.o
-OBJS_IOC += compressRecord.o
-OBJS_IOC += dfanoutRecord.o
-OBJS_IOC += egRecord.o
-OBJS_IOC += egeventRecord.o
-OBJS_IOC += erRecord.o
-OBJS_IOC += ereventRecord.o
-OBJS_IOC += eventRecord.o
-OBJS_IOC += fanoutRecord.o
-OBJS_IOC += gsubRecord.o
-OBJS_IOC += histogramRecord.o
-OBJS_IOC += longinRecord.o
-OBJS_IOC += longoutRecord.o
-OBJS_IOC += mbbiRecord.o
-OBJS_IOC += mbbiDirectRecord.o
-OBJS_IOC += mbboRecord.o
-OBJS_IOC += mbboDirectRecord.o
-OBJS_IOC += permissiveRecord.o
-OBJS_IOC += pulseCounterRecord.o
-OBJS_IOC += pulseDelayRecord.o
-OBJS_IOC += pulseTrainRecord.o
-OBJS_IOC += selRecord.o
-OBJS_IOC += seqRecord.o
-OBJS_IOC += stateRecord.o
-OBJS_IOC += stringinRecord.o
-OBJS_IOC += stringoutRecord.o
-OBJS_IOC += subRecord.o
-OBJS_IOC += subArrayRecord.o
-OBJS_IOC += timerRecord.o
-OBJS_IOC += waveformRecord.o
+OBJS_IOC += aaiRecord
+OBJS_IOC += aaoRecord
+OBJS_IOC += aiRecord
+OBJS_IOC += aoRecord
+OBJS_IOC += biRecord
+OBJS_IOC += boRecord
+OBJS_IOC += calcRecord
+OBJS_IOC += calcoutRecord
+OBJS_IOC += compressRecord
+OBJS_IOC += dfanoutRecord
+OBJS_IOC += egRecord
+OBJS_IOC += egeventRecord
+OBJS_IOC += erRecord
+OBJS_IOC += ereventRecord
+OBJS_IOC += eventRecord
+OBJS_IOC += fanoutRecord
+OBJS_IOC += gsubRecord
+OBJS_IOC += histogramRecord
+OBJS_IOC += longinRecord
+OBJS_IOC += longoutRecord
+OBJS_IOC += mbbiRecord
+OBJS_IOC += mbbiDirectRecord
+OBJS_IOC += mbboRecord
+OBJS_IOC += mbboDirectRecord
+OBJS_IOC += permissiveRecord
+OBJS_IOC += pulseCounterRecord
+OBJS_IOC += pulseDelayRecord
+OBJS_IOC += pulseTrainRecord
+OBJS_IOC += selRecord
+OBJS_IOC += seqRecord
+OBJS_IOC += stateRecord
+OBJS_IOC += stringinRecord
+OBJS_IOC += stringoutRecord
+OBJS_IOC += subRecord
+OBJS_IOC += subArrayRecord
+OBJS_IOC += timerRecord
+OBJS_IOC += waveformRecord
 
 include $(TOP)/configure/RULES
 
-aaiRecord.o : aaiRecord.h
-
-%Record.o : %Record.h
-
-
-$(OBJS_IOC) : $(RECTYPES)

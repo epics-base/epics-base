@@ -1,7 +1,12 @@
 
 TOP=../../..
 
-include $(TOP)/config/CONFIG_BASE
+include $(TOP)/configure/CONFIG
 
-include $(TOP)/config/RULES_ARCHS
+osiTimeTest_LIBS += Com
+osiTimeTest_SRCS += osiTimeTest.cc
+PROD_DEFAULT = osiTimeTest
+PROD_vxWorks = -nil-
+
+include $(TOP)/configure/RULES_BUILD
 

@@ -54,6 +54,8 @@
 /*	022692	joh	Use channel state enum to determine if I need	*/
 /*			to send channel clear message to the IOC 	*/
 /*			instead of the IOC in use conn up flag		*/
+/*	031292 	joh	clear pend recv cnt even if its a poll in	*/
+/*			ca_pend_io()					*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -188,6 +190,7 @@ void	check_for_fp();
 int	ca_add_task_variable();
 void    issue_get_callback();
 void    ca_event_handler();
+void 	ca_pend_io_cleanup();
 
 
 /*
@@ -2107,11 +2110,12 @@ int			early;
   	if((timeout*SYSFREQ)<LOCALTICKS && timeout != 0.0){
 
 		/*
-		 * on UNIX call recv_msg() with zero timeout. on vxWorks and VMS
-		 * recv_msg() need not be called.
+		 * on UNIX call recv_msg() with zero timeout. on vxWorks 
+		 * and VMS recv_msg() need not be called.
 		 * 
-		 * cac_send_msg() only calls recv_msg on UNIX if the buffer needs to be
-		 * flushed.
+		 * cac_send_msg() only calls recv_msg on UNIX if the 
+		 * buffer needs to be flushed.
+		 *
 		 */
 #ifdef UNIX
 		{
@@ -2121,16 +2125,22 @@ int			early;
 			 */
   	  		notimeout.tv_sec = 0;
   	 		notimeout.tv_usec = 0;
-  			LOCK;
    			recv_msg_select(&notimeout);
-      			manage_conn(TRUE);
-  			UNLOCK;
 		}
 #endif
-    		if(pndrecvcnt<1 && early)
-        		return ECA_NORMAL;
+  		LOCK;
+      		manage_conn(!early);
+		if(pndrecvcnt<1 && early){
+			ca_pend_io_cleanup();
+		}
+  		UNLOCK;
 
-      	 	return ECA_TIMEOUT;
+    		if(pndrecvcnt<1 && early){
+        		return ECA_NORMAL;
+		}
+		else{
+      	 		return ECA_TIMEOUT;
+		}
   	}
 
   	beg_time = time(NULL);
@@ -2185,41 +2195,47 @@ int			early;
 
     		if(timeout != 0.0){
       			if(timeout < time(NULL)-beg_time){
-	  			struct ioc_in_use	*piiu;
-
 				LOCK;
-        			manage_conn(FALSE);
-
-				/*
-				 * set pending IO count back to zero and
-				 * send a sync to each IOC and back. dont 
-				 * count reads until we recv the sync
-				 */
-				for(	piiu = &iiu[BROADCAST_IIU+1]; 
-					piiu<&iiu[nxtiiu]; 
-					piiu++){
-					
-					if(piiu->conn_up){
-						struct extmsg *mptr;
-
-	 					piiu->cur_read_seq++;
-						mptr = CAC_ALLOC_MSG(piiu, 0);
-    	    					*mptr = nullmsg;
-    	    					mptr->m_cmmd = 
-							htons(IOC_READ_SYNC);
-						CAC_ADD_MSG(piiu);
-					}
+      				manage_conn(!early);
+				if(early){
+					ca_pend_io_cleanup();
 				}
-				pndrecvcnt = 0;
 				UNLOCK;
-
         			return ECA_TIMEOUT;
       			}
   		}    
 	}
 }
 
+
+/*
+ *
+ * set pending IO count back to zero and
+ * send a sync to each IOC and back. dont
+ * count reads until we recv the sync
+ *
+ */
+static	void 
+ca_pend_io_cleanup()
+{
+	struct ioc_in_use       *piiu;
 
+	for(    piiu = &iiu[BROADCAST_IIU+1];
+		piiu<&iiu[nxtiiu];
+		piiu++){
+
+		if(piiu->conn_up){
+			struct extmsg *mptr;
+
+			piiu->cur_read_seq++;
+			mptr = CAC_ALLOC_MSG(piiu, 0);
+			*mptr = nullmsg;
+			mptr->m_cmmd = htons(IOC_READ_SYNC);
+			CAC_ADD_MSG(piiu);
+		}
+	}
+	pndrecvcnt = 0;
+}
 
 
 

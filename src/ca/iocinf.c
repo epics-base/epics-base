@@ -911,7 +911,7 @@ struct ioc_in_use	*piiu;
 	}
  	status = recv(	sock,
 			&rcvb->buf[rcvb->stk],
-			sizeof(rcvb->buf),
+			sizeof(rcvb->buf) - rcvb->stk,
 			0);
 	if(status == 0){
 		LOCK;
@@ -954,10 +954,17 @@ struct ioc_in_use	*piiu;
 
   	/* post message to the user */
 	byte_cnt = rcvb->stk;
-  	post_msg(	rcvb->buf, 
+  	status = post_msg(
+			rcvb->buf, 
 			&byte_cnt, 
 			&piiu->sock_addr.sin_addr, 
 			piiu);
+	if(status != OK){
+	 	LOCK;
+                close_ioc(piiu);
+                UNLOCK;
+		return;
+	}
 	if(byte_cnt>0){
 		/*
 		 * realign partial message
@@ -1064,11 +1071,12 @@ struct ioc_in_use	*piiu;
 
   		/* post message to the user */
 		msgcount = pmsglog->nbytes;
-  		post_msg(	pmsglog+1, 
+  		status = post_msg(
+				pmsglog+1, 
 				&msgcount,
 				&pmsglog->addr.sin_addr,
 				piiu);
-		if(msgcount != 0){
+		if(status != OK || msgcount != 0){
 			printf(	"CAC: UDP alignment problem %d\n",
 				msgcount);
 		}

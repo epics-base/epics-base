@@ -56,6 +56,10 @@ class gddScalar;
 struct epicsTimeStamp;
 struct timespec;
 
+extern "C" {
+  static void gdd_staticInit(void *);
+}
+
 // Not Complete in this prototype:
 // - Read only DD.
 // - Small array management using free lists
@@ -503,7 +507,8 @@ private:
 
     static epicsMutex * pGlobalMutex;
     static epicsThreadOnceId staticInitOnce;
-    static void staticInit ( void * );
+    static void staticInit (void);
+friend void gdd_staticInit(void *);
 
 	const gdd* indexDD (aitIndex index) const;
 };

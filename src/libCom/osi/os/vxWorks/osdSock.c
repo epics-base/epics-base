@@ -18,6 +18,8 @@
 #include <hostLib.h>
 #include <inetLib.h>
 
+#include "errlog.h"
+
 #define epicsExportSharedSymbols
 #include "osiSock.h"
 

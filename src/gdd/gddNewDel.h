@@ -62,7 +62,7 @@ void gddGlobalCleanupAdd ( void * pBuf );
     void operator delete(void*); \
     char* newdel_next(void) { char** x=(char**)&(fld); return *x; } \
     void newdel_setNext(char* n) { char** x=(char**)&(fld); *x=n; } \
-    static void gddNewDelInit ( void * ) { pNewdel_lock = new epicsMutex; } 
+    static void gddNewDelInit (void) { pNewdel_lock = new epicsMutex; } \
 
 
 // declaration of the static variable for the free list
@@ -87,10 +87,12 @@ void gddGlobalCleanupAdd ( void * pBuf );
 
 // code for the new function
 #define gdd_NEWDEL_NEW(clas) \
+ extern "C" { void clas##_gddNewDelInit ( void * ) { \
+    clas::gddNewDelInit(); } } \
  void* clas::operator new(size_t size) { \
     int tot; \
     clas *nn,*dn; \
-    epicsThreadOnce ( &once, gddNewDelInit, 0 ); \
+    epicsThreadOnce ( &once, clas##_gddNewDelInit, 0 ); \
     if(!clas::newdel_freelist) { \
         tot=gdd_CHUNK_NUM; \
         nn=(clas*)malloc(gdd_CHUNK(clas)); \

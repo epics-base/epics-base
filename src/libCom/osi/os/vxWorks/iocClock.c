@@ -23,6 +23,7 @@
 #include <sntpcLib.h>
 #include <time.h>
 #include <errno.h>
+#include <envLib.h>
 
 #include "epicsTypes.h"
 #include "cantProceed.h"

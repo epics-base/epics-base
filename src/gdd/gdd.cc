@@ -30,7 +30,13 @@ gdd_NEWDEL_STAT(gdd)
 epicsMutex * gdd::pGlobalMutex = 0;
 epicsThreadOnceId gdd::staticInitOnce = EPICS_THREAD_ONCE_INIT;
 
-void gdd::staticInit ( void * )
+// Can't pass C++ linkage static member function gdd::staticInit
+// into epicsThreadOnce(); we need a C linkage function for that:
+extern "C" {
+  static void gdd_staticInit(void *) { gdd::staticInit(); } 
+}
+
+void gdd::staticInit (void)
 {
     gdd::pGlobalMutex = new epicsMutex;
     assert ( gdd::pGlobalMutex );
@@ -95,7 +101,7 @@ gdd::gdd(int app, aitEnum prim, int dimen, aitUint32* val)
 
 void gdd::init(int app, aitEnum prim, int dimen)
 {
-    epicsThreadOnce ( & gdd::staticInitOnce, gdd::staticInit, 0 );
+    epicsThreadOnce ( & gdd::staticInitOnce, gdd_staticInit, 0 );
 
 	setApplType(app);
 	//

@@ -93,7 +93,7 @@ public:
 	gddStatus destroy(void* thing_to_remove);
 	virtual void run(void* thing_to_remove);
 
-	gdd_NEWDEL_FUNC(arg); // for using generic new and remove
+	gdd_NEWDEL_FUNC(arg) // for using generic new and remove
 protected:
 	aitUint16 ref_cnt;
 	void* arg;
@@ -114,7 +114,7 @@ class epicsShareClass gddBounds1D
 public:
 	gddBounds1D(void) { }
 	gddBounds* boundArray(void);
-	gdd_NEWDEL_FUNC(b[0]); // required for using generic new and remove
+	gdd_NEWDEL_FUNC(b[0]) // required for using generic new and remove
 private:
 	gddBounds b[1];
 	gdd_NEWDEL_DATA // required for using generic new/remove
@@ -126,7 +126,7 @@ class epicsShareClass gddBounds2D
 public:
 	gddBounds2D(void) { }
 	gddBounds* boundArray(void);
-	gdd_NEWDEL_FUNC(b[0]); // required for using generic new and remove
+	gdd_NEWDEL_FUNC(b[0]) // required for using generic new and remove
 private:
 	gddBounds b[2];
 	gdd_NEWDEL_DATA // required for using generic new/remove
@@ -138,7 +138,7 @@ class epicsShareClass gddBounds3D
 public:
 	gddBounds3D(void) { }
 	gddBounds* boundArray(void);
-	gdd_NEWDEL_FUNC(b[0]); // for using generic new and remove
+	gdd_NEWDEL_FUNC(b[0]) // for using generic new and remove
 private:
 	gddBounds b[3];
 	gdd_NEWDEL_DATA // required for using generic new/remove

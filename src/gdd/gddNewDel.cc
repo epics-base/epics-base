@@ -38,10 +38,13 @@ private:
 static gddCleanUp * pBufferCleanUpGDD = NULL;
 
 static epicsThreadOnceId gddCleanupOnce = EPICS_THREAD_ONCE_INIT;
+
+extern "C" {
 static void gddCleanupInit ( void * )
 {
     pBufferCleanUpGDD = new gddCleanUp;
     assert ( pBufferCleanUpGDD );
+}
 }
 
 void gddGlobalCleanupAdd ( void * pBuf )

@@ -187,6 +187,7 @@ epicsReadlineEnd (void *context)
 
 #if defined(vxWorks)
 
+#include <string.h>
 #include <ledLib.h>
 #define LEDLIB_LINESIZE 1000
 

@@ -1967,7 +1967,8 @@ long epicsShareAPI dbPutString(DBENTRY *pdbentry,char *pstring)
     case DBF_FLOAT:
     case DBF_DOUBLE:
     case DBF_MENU:
-	return(dbPutStringNum(pdbentry,pstring));
+        status = dbPutStringNum(pdbentry,pstring);
+        break;
     case DBF_DEVICE:  {
 	    DBENTRY	dbEntry;
 	    char	*name;

@@ -35,7 +35,7 @@
  */
 #define CONFIGURE_RTEMS_INIT_TASKS_TABLE
 
-#define CONFIGURE_EXECUTIVE_RAM_SIZE        (1024*1024)
+#define CONFIGURE_EXECUTIVE_RAM_SIZE        (2000*1024)
 #define CONFIGURE_MAXIMUM_TASKS             rtems_resource_unlimited(30)
 #define CONFIGURE_MAXIMUM_SEMAPHORES        rtems_resource_unlimited(500)
 #define CONFIGURE_MAXIMUM_TIMERS            rtems_resource_unlimited(20)
@@ -324,6 +324,25 @@ rtems_reboot (const char *name)
 }
 
 /*
+ * Set up the console serial line (no handshaking)
+ */
+static void
+initConsole (void)
+{
+    struct termios t;
+
+    if (tcgetattr (fileno (stdin), &t) < 0) {
+        printf ("tcgetattr failed: %s\n", strerror (errno));
+        return;
+    }
+    t.c_iflag &= ~(IXOFF | IXON | IXANY);
+    if (tcsetattr (fileno (stdin), TCSANOW, &t) < 0) {
+        printf ("tcsetattr failed: %s\n", strerror (errno));
+        return;
+    }
+}
+
+/*
  * RTEMS Startup task
  */
 rtems_task
@@ -332,6 +351,7 @@ Init (rtems_task_argument ignored)
     /*
      * Create a reasonable environment
      */
+    initConsole ();
     putenv ("TERM=xterm");
     putenv ("IOCSH_PS1=rtems> ");
     putenv ("IOCSH_HISTSIZE=20");

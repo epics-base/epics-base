@@ -19,12 +19,24 @@
 #ifndef includecasdefh
 #define includecasdefh
 
+#ifdef epicsExportSharedSymbols
+#   define epicsExportSharedSymbols_casdefh
+#   undef epicsExportSharedSymbols
+#endif
+
 //
 // EPICS
 //
 #include "alarm.h"      // EPICS alarm severity/condition 
 #include "errMdef.h"    // EPICS error codes 
 #include "gdd.h"        // EPICS data descriptors 
+
+#ifdef epicsExportSharedSymbols_casdefh
+#   define epicsExportSharedSymbols
+#endif
+
+#include "caNetAddr.h"
+
 #include "shareLib.h"   // EPICS compiler specific sharable lib keywords
 
 typedef aitUint32 caStatus;
@@ -85,15 +97,6 @@ typedef aitUint32 caStatus;
 #define S_casApp_undefined (M_casApp | 9) /*undefined value*/
 #define S_casApp_postponeAsyncIO (M_casApp | 10) /*postpone asynchronous IO*/
 
-#include "caNetAddr.h"
-
-class caNetworkAddress {
-public:
-    virtual bool operator = ( const caNetworkAddress & ) const = 0;
-    virtual void hostName ( char * pBuf, unsigned bufSize ) const = 0;
-    virtual caNetworkAddress & duplicate () const = 0;
-};
-
 //
 // pv exist test return
 //
@@ -102,43 +105,24 @@ public:
 // to do so return pverDoesNotExistHere (and the client will
 // retry the request later).
 //
-enum pvExistReturnEnum {pverExistsHere, pverDoesNotExistHere, 
-	pverAsyncCompletion};
+enum pvExistReturnEnum { pverExistsHere, pverDoesNotExistHere, 
+	pverAsyncCompletion };
 
 class epicsShareClass pvExistReturn { // X aCC 361
 public:
-	//
 	// most server tools will use this
-	//
-	pvExistReturn (pvExistReturnEnum s=pverDoesNotExistHere) :
-		status(s) {}
-	//
-	// directory service server tools 
-	// will use this
-	//
-	// (see caNetAddr.h)
-	//
-	pvExistReturn (const caNetAddr &addressIn) :
-		status(pverExistsHere), address(addressIn) {}
-
-	const pvExistReturn &operator = (pvExistReturnEnum rhs)
-	{
-		this->status = rhs;
-		this->address.clear();
-		return *this;
-	}
-	const pvExistReturn &operator = (const caNetAddr &rhs)
-	{
-		this->status = pverExistsHere;
-		this->address = rhs;
-		return *this;
-	}
-	pvExistReturnEnum getStatus() const {return this->status;}
-	int addrIsValid() const {return this->address.isValid();}
-	caNetAddr getAddr() const {return this->address;}
+	pvExistReturn ( pvExistReturnEnum s = pverDoesNotExistHere );
+	// directory service server tools will use this (see caNetAddr.h)
+	pvExistReturn ( const caNetAddr & addressIn );
+    ~pvExistReturn ();
+	const pvExistReturn & operator = ( pvExistReturnEnum rhs );
+	const pvExistReturn & operator = ( const caNetAddr & rhs );
+	pvExistReturnEnum getStatus () const;
+    caNetAddr getAddr () const;
+    bool addrIsValid () const;
 private:
-	pvExistReturnEnum	status;
-	caNetAddr		address;
+	caNetAddr address;
+	pvExistReturnEnum status;
 };
 
 class casPV;
@@ -148,84 +132,16 @@ class casPV;
 //
 class epicsShareClass pvAttachReturn {
 public:
-	pvAttachReturn ()
-	{ 
-		this->pPV = NULL; 
-		//
-		// A pv name is required for success
-		//
-		this->stat = S_cas_badParameter; 
-	}
-
-	pvAttachReturn (caStatus statIn)
-	{ 
-		this->pPV = NULL; 
-		if (statIn==S_casApp_success) {
-			//
-			// A pv name is required for success
-			//
-			this->stat = S_cas_badParameter;
-		}
-		else {
-			this->stat = statIn;
-		}
-	}
-
-	pvAttachReturn (casPV &pv) 
-	{ 
-		this->pPV = &pv; 
-		this->stat = S_casApp_success; 
-	}
-
-	const pvAttachReturn &operator = (caStatus rhs)
-	{
-		this->pPV = NULL;
-		if (rhs == S_casApp_success) {
-			this->stat = S_cas_badParameter;
-		}
-		else {
-			this->stat = rhs;
-		}
-		return *this;
-	}
-	
-	// 
-	// const pvAttachReturn &operator = (casPV &pvIn)
-	//
-	// The above assignment operator is not included 
-	// because it does not match the strict definition of an 
-	// assignment operator unless "const casPV &"
-	// is passed in, and we cant use a const PV
-	// pointer here because the server library _will_ make
-	// controlled modification of the PV in the future.
-	//
-	const pvAttachReturn &operator = (casPV *pPVIn)
-	{
-		if (pPVIn!=NULL) {
-			this->stat = S_casApp_success;
-		}
-		else {
-			this->stat = S_casApp_pvNotFound;
-		}
-		this->pPV = pPVIn;
-		return *this;
-	}	
-	const caStatus getStatus() const { return this->stat; }
-	casPV *getPV() const { return this->pPV; }
-	
+	pvAttachReturn ();
+	pvAttachReturn ( caStatus statIn );
+	pvAttachReturn ( casPV & pv );
+	const pvAttachReturn & operator = ( caStatus rhs );
+	const pvAttachReturn & operator = ( casPV * pPVIn );
+    caStatus getStatus() const ;
+	casPV * getPV() const;
 private:
-	casPV *pPV;
+	casPV * pPV;
 	caStatus stat;
-};
-
-//
-// pvCreateReturn (deprecated)
-// (the class "pvCreateReturn" will be deleted in a future release)
-//
-class epicsShareClass pvCreateReturn : public pvAttachReturn {
-public:
-	pvCreateReturn (caStatus statIn) : pvAttachReturn(statIn) {};
-	pvCreateReturn (casPV &pvIn) : pvAttachReturn (pvIn) {};
 };
 
 #include "casEventMask.h"	// EPICS event select class 
@@ -266,8 +182,8 @@ public:
 	// The client library will retry the request at some time
 	// in the future.
 	//
-	epicsShareFunc virtual pvExistReturn pvExistTest ( const casCtx &ctx, 
-		const char *pPVAliasName );
+	epicsShareFunc virtual pvExistReturn pvExistTest ( const casCtx & ctx, 
+		const char * pPVAliasName );
 
 	//
 	// pvAttach() 
@@ -361,7 +277,7 @@ private:
 	caServerI *pCAS;
 
 	// deprecated interfaces (will be deleted in a future release)
-	epicsShareFunc virtual pvCreateReturn createPV (const casCtx &ctx,
+	epicsShareFunc virtual class pvCreateReturn createPV ( const casCtx & ctx,
 		const char *pPVAliasName);
 };
 
@@ -866,7 +782,7 @@ public:
 	//
 	// casAsyncPVExistIO()
 	//
-	epicsShareFunc casAsyncPVExistIO (const casCtx &ctx);
+	epicsShareFunc casAsyncPVExistIO ( const casCtx & ctx );
 	epicsShareFunc virtual ~casAsyncPVExistIO (); 
 
 	//
@@ -875,7 +791,7 @@ public:
     //
 	// only the first call to this function has any effect.
 	//
-	epicsShareFunc caStatus postIOCompletion (const pvExistReturn &retValIn);
+	epicsShareFunc caStatus postIOCompletion ( const pvExistReturn & retValIn );
 
 	//
 	// Find the server associated with this async IO 
@@ -884,7 +800,7 @@ public:
 	// into a server
 	// ***************
 	//
-	epicsShareFunc caServer *getCAS() const;
+	epicsShareFunc caServer * getCAS() const;
 
 	//
 	// called by the server lib after the response message
@@ -893,7 +809,7 @@ public:
 	//
 	// default destroy executes a "delete this"
 	//
-	epicsShareFunc virtual void destroy();
+	epicsShareFunc virtual void destroy ();
 
 private:
 	const caHdrLargeArray msg;
@@ -964,6 +880,16 @@ public:
 private:
 	casAsyncPVCreateIO ( const casAsyncPVCreateIO & );
 	casAsyncPVCreateIO & operator = ( const casAsyncPVCreateIO & );
+};
+
+//
+// pvCreateReturn (deprecated)
+// (the class "pvCreateReturn" will be deleted in a future release)
+//
+class epicsShareClass pvCreateReturn : public pvAttachReturn {
+public:
+	pvCreateReturn (caStatus statIn) : pvAttachReturn(statIn) {};
+	pvCreateReturn (casPV &pvIn) : pvAttachReturn (pvIn) {};
 };
 
 // TODO:

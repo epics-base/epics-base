@@ -27,8 +27,7 @@ casAsyncReadIO::casAsyncReadIO ( const casCtx & ctx ) :
 	casAsyncIOI ( *ctx.getClient() ), msg ( *ctx.getMsg() ), 
 	chan( *ctx.getChannel () ), pDD ( NULL ), completionStatus ( S_cas_internal )
 {
-	assert ( &this->chan );
-
+	assert ( & this->chan );
 	this->chan.installAsyncIO ( *this );
 }
 
@@ -72,7 +71,7 @@ epicsShareFunc caStatus casAsyncReadIO::cbFuncAsyncIO()
 {
 	caStatus 	status;
 
-	switch (this->msg.m_cmmd) {
+	switch ( this->msg.m_cmmd ) {
 	case CA_PROTO_READ:
 		status = client.readResponse (&this->chan, this->msg,
 				*this->pDD, this->completionStatus);

@@ -1707,7 +1707,7 @@ void dbr_ntohf(dbr_float_t *pNet, dbr_float_t *pHost)
 
 #endif /*CA_FLOAT_MIT*/
 
-#if defined(CA_FLOAT_IEEE) && 0
+#if defined(CA_FLOAT_IEEE) && 1
 
 /*
  * dbr_htond ()
@@ -1716,8 +1716,8 @@ void dbr_ntohf(dbr_float_t *pNet, dbr_float_t *pHost)
 void dbr_htond (dbr_double_t *IEEEhost, dbr_double_t *IEEEnet)
 {
 #ifdef CA_LITTLE_ENDIAN
-    	ca_uint32_t	*pHost = (ca_uint32_t *) IEEEhost;
-    	ca_uint32_t	*pNet = (ca_uint32_t *) IEEEnet;
+	ca_uint32_t	*pHost = (ca_uint32_t *) IEEEhost;
+	ca_uint32_t	*pNet = (ca_uint32_t *) IEEEnet;
 	ca_uint32_t	tmp;
 
     	/*
@@ -1740,8 +1740,8 @@ void dbr_htond (dbr_double_t *IEEEhost, dbr_double_t *IEEEnet)
 void dbr_ntohd (dbr_double_t *IEEEnet, dbr_double_t *IEEEhost)
 {
 #ifdef CA_LITTLE_ENDIAN
-    	ca_uint32_t	*pHost = (ca_uint32_t *) IEEEhost;
-    	ca_uint32_t	*pNet = (ca_uint32_t *) IEEEnet;
+	ca_uint32_t	*pHost = (ca_uint32_t *) IEEEhost;
+	ca_uint32_t	*pNet = (ca_uint32_t *) IEEEnet;
 	ca_uint32_t	tmp;
 
     	/*

@@ -102,19 +102,22 @@ epicsShareExtern CACVRTFUNC *cac_dbr_cvrt[LAST_BUFFER_TYPE+1];
  *	so we need a tmp variable in e.g. 'double' conversions.
  */
 
-#ifdef CA_LITTLE_ENDIAN 
+#if defined(CA_LITTLE_ENDIAN)
+#if 0
+( (dbr_short_t) ((((dbr_ushort_t)SHORT)>>8) | (((dbr_ushort_t)SHORT)<<8))
 #  	ifndef ntohs
 #    		define ntohs(SHORT)\
    (	(dbr_short_t)\
-	(((SHORT) & (dbr_short_t) 0x00ff) << 8 |\
-	((SHORT) & (dbr_short_t) 0xff00) >> 8) )
+	((((dbr_ushort_t)SHORT) & (dbr_ushort_t) 0x00ff) << 8 |\
+	(((dbr_ushort_t)SHORT) & (dbr_ushort_t) 0xff00) >> 8) )
 #  	endif
 #  	ifndef htons
 #    		define htons(SHORT)\
    (	(dbr_short_t)\
-	(((SHORT) & (dbr_short_t) 0x00ff) << 8 |\
-	((SHORT) & (dbr_short_t) 0xff00) >> 8) )
+	((((dbr_ushort_t)SHORT) & (dbr_ushort_t) 0x00ff) << 8 |\
+	(((dbr_ushort_t)SHORT) & (dbr_ushort_t) 0xff00) >> 8) )
 #  	endif
+#endif
 #else
 #  	ifndef ntohs
 #    		define ntohs(SHORT)	(SHORT)
@@ -125,7 +128,8 @@ epicsShareExtern CACVRTFUNC *cac_dbr_cvrt[LAST_BUFFER_TYPE+1];
 #endif
 
 
-#ifdef CA_LITTLE_ENDIAN 
+#if defined(CA_LITTLE_ENDIAN)
+#if 0
 #  	ifndef ntohl
 #  	define ntohl(LONG)\
   	( (dbr_long_t) (\
@@ -144,7 +148,8 @@ epicsShareExtern CACVRTFUNC *cac_dbr_cvrt[LAST_BUFFER_TYPE+1];
          	( ((dbr_ulong_t)(LONG)) & 0x0000ff00 ) << 8u )\
   	)
 #  	endif
-#	else 
+#endif
+#else 
 #  	ifndef ntohl
 #    		define ntohl(LONG)	(LONG)
 #  	endif
@@ -162,7 +167,7 @@ epicsShareExtern CACVRTFUNC *cac_dbr_cvrt[LAST_BUFFER_TYPE+1];
 		(*(dbr_float_t *)(IEEEnet) = *(dbr_float_t *)(IEEEhost))
 #	define dbr_ntohf(IEEEnet, IEEEhost) \
 		(*(dbr_float_t *)(IEEEhost) = *(dbr_float_t *)(IEEEnet))
-#elif defined(CA_FLOAT_IEEE) && defined(CA_LITTLE_ENDIAN)
+#elif defined(CA_FLOAT_IEEE) && defined(CA_LITTLE_ENDIAN) && 0
 #	define dbr_ntohf(NET,HOST)  \
 		{*((dbr_long_t *)(HOST)) = ntohl(*((dbr_long_t *)(NET )));}
 #	define dbr_htonf(HOST,NET) \

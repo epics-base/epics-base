@@ -32,6 +32,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.41  1998/07/07 23:01:42  jhill
+ * use high precision timers
+ *
  * Revision 1.40  1998/06/22 22:32:03  jhill
  * EPICS_DLL => EPICS_DLL_NO (so we are backwards compatible
  *
@@ -76,6 +79,9 @@
  *
  * Revision 1.19  1995/11/29  19:15:42  jhill
  * added $Log$
+ * added Revision 1.41  1998/07/07 23:01:42  jhill
+ * added use high precision timers
+ * added
  * added Revision 1.40  1998/06/22 22:32:03  jhill
  * added EPICS_DLL => EPICS_DLL_NO (so we are backwards compatible
  * added
@@ -742,20 +748,25 @@ BOOL epicsShareAPI DllMain (HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 		}
 #		endif	
 
+#if 0
 		status = ca_task_initialize();
 		if (status!=ECA_NORMAL) {
 			return FALSE;
 		}
+#endif
+
 #		ifdef _DEBUG
 			fprintf(stderr, "Process attached to ca.dll version %s\n", EPICS_VERSION_STRING);
 #		endif
 		break;
 
 	case DLL_PROCESS_DETACH:
+#if 0
 		status = ca_task_exit ();
 		if (status!=ECA_NORMAL) {
 			return FALSE;
 		}
+#endif
 #		ifdef _DEBUG
 			fprintf(stderr, "Process detached from ca.dll version %s\n", EPICS_VERSION_STRING);
 #		endif

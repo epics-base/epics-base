@@ -119,7 +119,6 @@ int iocInit()
     callbackInit();
     /* let threads start */
     threadSleep(.1);
-    registerRecordDeviceDriver(pdbbase);
     initHooks(initHookAfterCallbackInit);
     dbCaLinkInit(); initHooks(initHookAfterCaLinkInit);
     initDrvSup(); initHooks(initHookAfterInitDrvSup);

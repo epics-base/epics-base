@@ -35,13 +35,6 @@
  * .02	12-10-91	jrw	moved some stuff over to drvBitBusInterface.h
  * .03  07-01-94	jrw	Bigtime hacking... merged PEP and Xycom.
  *
- * $Log$
- * Revision 1.9  1994/11/17  21:15:26  winans
- * Turned off the debugging system (it consumed an additional 30% of CPU)
- *
- * Revision 1.8  1994/10/04  18:42:44  winans
- * Added an extensive debugging facility.
- *
  *
  */
 

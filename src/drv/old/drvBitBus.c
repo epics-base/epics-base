@@ -64,51 +64,10 @@
  * NOTES:
  * This driver currently needs work on error message generation.
  *
- * $Log$
- * Revision 1.4  1997/03/13 16:57:49  mrk
- * Test version to diagnose bitbus problems
- *
- * Revision 1.3  1996/05/03 19:04:44  winans
- * Fixed a reversed set of parms to a semBCreate().
- * Changed the data type of a parameter to memory probe call.
- *
- * Revision 1.2  1995/09/26 14:50:31  winans
- * Added code to send last byte of a RAC_RESET in pepTxTask().  It was left
- * out in a previous mod that modes the last byte transmission into a locked
- * region in order to prevent a TxTask/RxTask race condition.
- *
- * Revision 1.1  1995/03/30  19:34:56  jba
- * Seperated drv files into ansi and old dirs. Added combine dir.
- *
- * Revision 1.37  1995/03/24  21:24:25  winans
- * Probable race condition in PEP TX task.  Moved the final transmission
- * byte assignment into the point where the busy list is locked.  This
- * is how the Xycom TX task has worked all along.  This change fixed
- * seems to have fixed an apparant race condition where the receive task
- * gets a response to a transmitted message BEFORE the TX task gets
- * it on the busy list.
- *
- * Revision 1.36  1994/12/16  16:11:26  winans
- * Added debug flag guards to ALL printing.  The default debug level is set
- * to 1 -- this provides the same output as the old version.
- *
- * Revision 1.35  1994/12/12  16:02:57  winans
- * Rewrote the init code so that it always returns a zero (don't kill the
- * startup.cmd file.)  It is possible that this could cause some confusion
- * to the database, should it decide to then use a link that did not init
- * properly.
- *
- * Revision 1.34  1994/10/19  18:31:22  winans
- * ANSIfied the bitbus driver so that the compiler stopped warning about
- * exery third line of code.
- *
- * Revision 1.33  1994/10/04  18:42:42  winans
- * Added an extensive debugging facility.
- *
- *
  */
 
 #include <vxWorks.h>
+#include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

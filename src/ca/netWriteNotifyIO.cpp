@@ -39,7 +39,9 @@ void netWriteNotifyIO::completionNotify ()
     this->cacNotifyIO::completionNotify ();
 }
 
-void netWriteNotifyIO::completionNotify ( unsigned type, unsigned long count, const void *pData )
+void netWriteNotifyIO::completionNotify ( 
+    unsigned /* type */, unsigned long /* count */, 
+    const void * /* pData */ )
 {
     this->cacNotifyIO::completionNotify ();
 }

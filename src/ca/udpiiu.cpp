@@ -588,7 +588,8 @@ void udpiiu::shutdown ()
 /*
  * bad_udp_resp_action ()
  */
-LOCAL void bad_udp_resp_action (udpiiu *piiu, caHdr *pMsg, const struct sockaddr_in *pnet_addr)
+LOCAL void bad_udp_resp_action (udpiiu * /* piiu */, 
+	caHdr *pMsg, const struct sockaddr_in *pnet_addr)
 {
     char buf[256];
     ipAddrToA ( pnet_addr, buf, sizeof (buf) );
@@ -740,7 +741,8 @@ LOCAL void search_resp_action (udpiiu *piiu, caHdr *pMsg, const struct sockaddr_
 /*
  * beacon_action ()
  */
-LOCAL void beacon_action (udpiiu *piiu, caHdr *pMsg, const struct sockaddr_in *pnet_addr)
+LOCAL void beacon_action ( udpiiu * piiu, 
+	caHdr *pMsg, const struct sockaddr_in *pnet_addr)
 {
     struct sockaddr_in ina;
 
@@ -787,7 +789,8 @@ LOCAL void beacon_action (udpiiu *piiu, caHdr *pMsg, const struct sockaddr_in *p
 /*
  * repeater_ack_action ()
  */
-LOCAL void repeater_ack_action (udpiiu *piiu, caHdr *pMsg,  const struct sockaddr_in * /* pnet_addr */)
+LOCAL void repeater_ack_action (udpiiu * piiu, 
+	caHdr * /* pMsg */,  const struct sockaddr_in * /* pnet_addr */)
 {
     piiu->repeaterContacted = 1u;
 #   ifdef DEBUG
@@ -972,7 +975,7 @@ void udpiiu::removeFromChanList (nciu *chan)
     UNLOCK (this->pcas);
 }
 
-void udpiiu::disconnect (nciu *chan)
+void udpiiu::disconnect ( nciu * /* chan */ )
 {
     // NOOP
 }
@@ -1015,7 +1018,8 @@ int udpiiu::pushDatagramMsg (const caHdr *pMsg, const void *pExt, ca_uint16_t ex
     return ECA_NORMAL;
 }
 
-int udpiiu::pushStreamMsg ( const caHdr *pmsg, const void *pext, bool blockingOk )
+int udpiiu::pushStreamMsg ( const caHdr * /* pmsg */, 
+	const void * /* pext */, bool /* blockingOk */ )
 {
     ca_printf ("in pushStreamMsg () for a udp iiu?\n");
     return ECA_DISCONNCHID;

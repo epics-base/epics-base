@@ -37,13 +37,16 @@ void netReadCopyIO::completionNotify ()
     this->exceptionNotify ( ECA_INTERNAL, "get completion callback with no data?" );
 }
 
-void netReadCopyIO::completionNotify ( unsigned type, unsigned long count, const void *pData )
+void netReadCopyIO::completionNotify ( unsigned typeIn, 
+    unsigned long countIn, const void *pDataIn )
 {
-    if ( type <= (unsigned) LAST_BUFFER_TYPE ) {
+    if ( typeIn <= (unsigned) LAST_BUFFER_TYPE ) {
 #       ifdef CONVERSION_REQUIRED 
-            (*cac_dbr_cvrt[type]) ( pData, this->pValue, FALSE, count );
+            (*cac_dbr_cvrt[type]) ( pDataIn, this->pValue, 
+			FALSE, countIn );
 #       else
-            memcpy ( this->pValue, pData, dbr_size_n ( type, count ) );
+            memcpy ( this->pValue, pDataIn, 
+                 dbr_size_n ( typeIn, countIn ) );
 #       endif
         chan.decrementOutstandingIO (this->seqNumber);
     }
@@ -57,10 +60,12 @@ void netReadCopyIO::exceptionNotify ( int status, const char *pContext )
     ca_signal (status, pContext);
 }
 
-void netReadCopyIO::exceptionNotify ( int status, const char *pContext, unsigned type, unsigned long count )
+void netReadCopyIO::exceptionNotify ( int status, 
+    const char *pContextIn, unsigned typeIn, unsigned long countIn )
 {
-    ca_signal_formated (status, __FILE__, __LINE__, "%s type=%d count=%ld\n", 
-        pContext, type, count);
+    ca_signal_formated (status, __FILE__, __LINE__, 
+        "%s type=%d count=%ld\n", 
+        pContextIn, typeIn, countIn);
 }
 
 void * netReadCopyIO::operator new ( size_t size )

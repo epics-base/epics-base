@@ -42,3 +42,4 @@ inline unsigned inetAddrID::minIndexBitWidth ()
 {
     return 8u;
 }
+

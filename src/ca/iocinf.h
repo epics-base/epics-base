@@ -147,8 +147,8 @@ public:
 protected:
     class cacChannelIO *pChannelIO;
 
-    virtual void lock () const;
-    virtual void unlock () const;
+    virtual void lock ();
+    virtual void unlock ();
 
 private:
     virtual void ioAttachNotify ();
@@ -392,7 +392,7 @@ class netiiu : public baseIIU {
 public:
     netiiu (class cac *pcac);
     ~netiiu ();
-    void show (unsigned level);
+    void show (unsigned level) const;
 
     virtual bool compareIfTCP (nciu &chan, const sockaddr_in &) const = 0;
     virtual void hostName (char *pBuf, unsigned bufLength) const = 0;
@@ -582,7 +582,7 @@ public:
     bool                    pushPending;
     bool                    beaconAnomaly;
 
-	virtual void show (unsigned level) const;
+    virtual void show (unsigned level) const;
 
 private:
 
@@ -670,8 +670,8 @@ private:
     void completionNotify ( unsigned type, unsigned long count, const void *pData );
     void exceptionNotify ( int status, const char *pContext );
     void exceptionNotify ( int status, const char *pContext, unsigned type, unsigned long count );
-    void lock () const;
-    void unlock () const;
+    void lock ();
+    void unlock ();
     ~syncGroupNotify (); // allocate only from pool
 
     struct CASG &sg;
@@ -739,8 +739,8 @@ public:
     unsigned readSequence () const;
     int pend (double timeout, int early);
     bool ioComplete () const;
-    void lock () const;
-    void unlock () const;
+    void lock ();
+    void unlock ();
     void exceptionNotify (int status, const char *pContext,
         const char *pFileName, unsigned lineNo);
     void exceptionNotify (int status, const char *pContext,

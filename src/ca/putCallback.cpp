@@ -47,7 +47,8 @@ void putCallback::completionNotify ()
     (*this->pFunc) (args);
 }
 
-void putCallback::exceptionNotify (int status, const char *pContext)
+void putCallback::exceptionNotify (int status, 
+    const char * /* pContext */ )
 {
     struct event_handler_args args;
 

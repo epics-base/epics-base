@@ -98,7 +98,7 @@ void syncGroupNotify::completionNotify ( unsigned type, unsigned long count, con
     }
 }
 
-void syncGroupNotify::show (unsigned level) const
+void syncGroupNotify::show ( unsigned /* level */ ) const
 {
     printf ( "pending sg op: pVal=%p, magic=%u seqNo=%lu sg=%p\n",
          this->pValue, this->magic, this->seqNo, &this->sg);
@@ -115,6 +115,16 @@ void syncGroupNotify::exceptionNotify ( int status, const char *pContext, unsign
     ca_signal_formated ( status, __FILE__, __LINE__, 
             "CA Sync Group request failed with type=%d count=%ld because \"%s\"\n", 
             type, count, pContext);
+}
+
+void syncGroupNotify::lock ()
+{
+    this->sg.mutex.lock ();
+}
+
+void syncGroupNotify::unlock ()
+{
+    this->sg.mutex.unlock ();
 }
 
 void * syncGroupNotify::operator new (size_t size)

@@ -109,7 +109,7 @@ nciu::~nciu ()
     UNLOCK ( piiuCopy->pcas ); // remove clears this->piiu
 }
 
-int nciu::read ( unsigned type, unsigned long count, cacNotify &notify )
+int nciu::read ( unsigned type, unsigned long countIn, cacNotify &notify )
 {
     int status;
     caHdr hdr;
@@ -129,11 +129,11 @@ int nciu::read ( unsigned type, unsigned long count, cacNotify &notify )
     if ( ! this->ar.read_access ) {
         return ECA_NORDACCESS;
     }
-    if ( count > this->count || count > 0xffff ) {
+    if ( countIn > this->count || countIn > 0xffff ) {
         return ECA_BADCOUNT;
     }
-    if ( count == 0 ) {
-        count = this->count;
+    if ( countIn == 0 ) {
+        countIn = this->count;
     }
 
     /*
@@ -141,7 +141,7 @@ int nciu::read ( unsigned type, unsigned long count, cacNotify &notify )
      * them down to a smaller size
      */
     type_u16 = (ca_uint16_t) type;
-    count_u16 = (ca_uint16_t) count;
+    count_u16 = (ca_uint16_t) countIn;
 
     LOCK (this->piiu->pcas);
     {
@@ -172,7 +172,7 @@ int nciu::read ( unsigned type, unsigned long count, cacNotify &notify )
     return status;
 }
 
-int nciu::read ( unsigned type, unsigned long count, void *pValue )
+int nciu::read ( unsigned type, unsigned long countIn, void *pValue )
 {
     int status;
     caHdr hdr;
@@ -192,11 +192,11 @@ int nciu::read ( unsigned type, unsigned long count, void *pValue )
     if ( ! this->ar.read_access ) {
         return ECA_NORDACCESS;
     }
-    if ( count > this->count || count > 0xffff ) {
+    if ( countIn > this->count || countIn > 0xffff ) {
         return ECA_BADCOUNT;
     }
-    if ( count == 0 ) {
-        count = this->count;
+    if ( countIn == 0 ) {
+        countIn = this->count;
     }
 
     /*
@@ -204,11 +204,12 @@ int nciu::read ( unsigned type, unsigned long count, void *pValue )
      * them down to a smaller size
      */
     type_u16 = ( ca_uint16_t ) type;
-    count_u16 = ( ca_uint16_t ) count;
+    count_u16 = ( ca_uint16_t ) countIn;
 
     LOCK ( this->piiu->pcas );
     {
-        netReadCopyIO *monix = new netReadCopyIO ( *this, type, count, pValue, this->readSequence () );
+        netReadCopyIO *monix = new netReadCopyIO ( *this, 
+		type, countIn, pValue, this->readSequence () );
         if ( ! monix ) {
             UNLOCK ( this->piiu->pcas );
             return ECA_ALLOCMEM;
@@ -314,8 +315,8 @@ LOCAL void *malloc_put_convert (cac *pcac, unsigned long size)
 /*
  * nciu::issuePut ()
  */
-int nciu::issuePut (ca_uint16_t cmd, unsigned id, chtype type, 
-                     unsigned long count, const void *pvalue)
+int nciu::issuePut ( ca_uint16_t cmd, unsigned idIn, chtype type, 
+                     unsigned long countIn, const void *pvalue )
 { 
     int status;
     caHdr hdr;
@@ -344,17 +345,17 @@ int nciu::issuePut (ca_uint16_t cmd, unsigned id, chtype type,
     if ( ! this->ar.write_access ) {
         return ECA_NOWTACCESS;
     }
-    if ( count > this->count || count > 0xffff || count == 0 ) {
+    if ( countIn > this->count || countIn > 0xffff || countIn == 0 ) {
             return ECA_BADCOUNT;
     }
     if (type==DBR_STRING) {
-        status = check_a_dbr_string ( (char *) pvalue, count );
+        status = check_a_dbr_string ( (char *) pvalue, countIn );
         if (status != ECA_NORMAL) {
             return status;
         }
     }
-    postcnt = dbr_size_n (type,count);
-    if (postcnt>0xffff) {
+    postcnt = dbr_size_n ( type, countIn );
+    if ( postcnt > 0xffff ) {
         return ECA_TOLARGE;
     }
 
@@ -363,9 +364,9 @@ int nciu::issuePut (ca_uint16_t cmd, unsigned id, chtype type,
      * them down to a smaller size
      */
     type_u16 = (ca_uint16_t) type;
-    count_u16 = (ca_uint16_t) count;
+    count_u16 = (ca_uint16_t) countIn;
 
-    if (type == DBR_STRING && count == 1) {
+    if (type == DBR_STRING && countIn == 1) {
         char *pstr = (char *)pvalue;
 
         postcnt = strlen(pstr)+1;
@@ -432,7 +433,7 @@ int nciu::issuePut (ca_uint16_t cmd, unsigned id, chtype type,
                 return ECA_BADTYPE;
             }
 
-            if (++i>=count) {
+            if ( ++i >= countIn ) {
                 break;
             }
 
@@ -448,7 +449,7 @@ int nciu::issuePut (ca_uint16_t cmd, unsigned id, chtype type,
     hdr.m_dataType = htons (type_u16);
     hdr.m_count = htons (count_u16);
     hdr.m_cid = this->sid;
-    hdr.m_available = id;
+    hdr.m_available = idIn;
     hdr.m_postsize = (ca_uint16_t) postcnt;
 
     status = this->piiu->pushStreamMsg (&hdr, pvalue, true);
@@ -460,15 +461,15 @@ int nciu::issuePut (ca_uint16_t cmd, unsigned id, chtype type,
     return status;
 }
 
-int nciu::write (unsigned type, unsigned long count, const void *pValue)
+int nciu::write (unsigned type, unsigned long countIn, const void *pValue)
 {
-    return this->issuePut (CA_PROTO_WRITE, ~0U, type, count, pValue);
+    return this->issuePut (CA_PROTO_WRITE, ~0U, type, countIn, pValue);
 }
 
-int nciu::write (unsigned type, unsigned long count, const void *pValue, cacNotify &notify)
+int nciu::write (unsigned type, unsigned long countIn, const void *pValue, cacNotify &notify)
 {
     netWriteNotifyIO *monix;
-    unsigned id;
+    unsigned newId; 
     int status;
 
     if ( ! this->f_connected ) {
@@ -492,29 +493,30 @@ int nciu::write (unsigned type, unsigned long count, const void *pValue, cacNoti
         return ECA_ALLOCMEM;
     }
 
-    id = monix->getId ();
+    newId = monix->getId ();
 
     UNLOCK (this->piiu->pcas);
 
-    status = this->issuePut (CA_PROTO_WRITE_NOTIFY, id, type, count, pValue);
+    status = this->issuePut (CA_PROTO_WRITE_NOTIFY, id, 
+		type, countIn, pValue);
     if ( status != ECA_NORMAL ) {
         /*
          * we need to be careful about touching the monix
          * pointer after the lock has been released
          */
-        this->piiu->pcas->safeDestroyNMIU (id);
+        this->piiu->pcas->safeDestroyNMIU ( newId );
     }
     return status;
 }
 
-int nciu::subscribe (unsigned type, unsigned long count, 
+int nciu::subscribe (unsigned type, unsigned long countIn, 
                          unsigned mask, cacNotify &notify)
 {
     netSubscription *pNetMon;
 
     LOCK (this->piiu->pcas);
 
-    pNetMon = new netSubscription (*this, type, count, 
+    pNetMon = new netSubscription (*this, type, countIn, 
         static_cast <unsigned short> (mask), notify);
     if ( ! pNetMon ) {
         UNLOCK (this->piiu->pcas);
@@ -591,21 +593,22 @@ unsigned nciu::searchAttempts () const
     return this->retry;
 }
 
-void nciu::connect (tcpiiu &iiu, unsigned nativeType, unsigned long nativeCount, unsigned sid)
+void nciu::connect ( tcpiiu &iiu, unsigned nativeType, 
+	unsigned long nativeCount, unsigned sidIn )
 {
     LOCK ( iiu.pcas );
 
     if ( this->connected () ) {
         ca_printf (
             "CAC: Ignored conn resp to conn chan CID=%u SID=%u?\n",
-            this->getId (), this->sid );
+            this->getId (), sidIn );
         UNLOCK ( iiu.pcas );
         return;
     }
 
     this->typeCode = nativeType;
     this->count = nativeCount;
-    this->sid = sid;
+    this->sid = sidIn;
     this->f_connected = true;
     this->previousConn = true;
 
@@ -670,11 +673,11 @@ void nciu::disconnect ()
  */
 int nciu::searchMsg ()
 {
-    udpiiu      *piiu = this->piiu->pcas->pudpiiu;
+    udpiiu      *pudpiiu = this->piiu->pcas->pudpiiu;
     int         status;
     caHdr       msg;
 
-    if ( this->piiu != static_cast<netiiu *> (piiu) ) {
+    if ( this->piiu != static_cast<netiiu *> (pudpiiu) ) {
         return ECA_INTERNAL;
     }
 
@@ -712,17 +715,18 @@ int nciu::searchMsg ()
     return ECA_NORMAL;
 }
 
-void nciu::searchReplySetUp (unsigned sid, unsigned typeCode, unsigned long count)
+void nciu::searchReplySetUp ( unsigned sidIn, 
+    unsigned typeIn, unsigned long countIn )
 {
-    this->typeCode  = typeCode;      
-    this->count = count;
-    this->sid = sid;
+    this->typeCode  = typeIn;      
+    this->count = countIn;
+    this->sid = sidIn;
 }
 
 /*
  * nciu::claimMsg ()
  */
-bool nciu::claimMsg (tcpiiu *piiu)
+bool nciu::claimMsg ( tcpiiu *piiuIn )
 {
     caHdr hdr;
     unsigned size;
@@ -743,7 +747,7 @@ bool nciu::claimMsg (tcpiiu *piiu)
     hdr = cacnullmsg;
     hdr.m_cmmd = htons (CA_PROTO_CLAIM_CIU);
 
-    if ( CA_V44 (CA_PROTOCOL_VERSION, piiu->minor_version_number) ) {
+    if ( CA_V44 (CA_PROTOCOL_VERSION, piiuIn->minor_version_number) ) {
         hdr.m_cid = this->getId ();
         pStr = this->pNameStr;
         size = this->nameLength;
@@ -769,22 +773,22 @@ bool nciu::claimMsg (tcpiiu *piiu)
      * of a push pull deadlock (since this is sent when 
      * parsing the UDP input buffer).
      */
-    status = piiu->pushStreamMsg (&hdr, pStr, false);
+    status = piiuIn->pushStreamMsg (&hdr, pStr, false);
     if ( status == ECA_NORMAL ) {
 
         /*
          * move to the end of the list once the claim has been sent
          */
         this->claimPending = FALSE;
-        piiu->chidList.remove (*this);
-        piiu->chidList.add (*this);
+        piiuIn->chidList.remove (*this);
+        piiuIn->chidList.add (*this);
 
-        if ( ! CA_V42 (CA_PROTOCOL_VERSION, piiu->minor_version_number) ) {
-            this->connect (*piiu, this->typeCode, this->count, this->sid);
+        if ( ! CA_V42 (CA_PROTOCOL_VERSION, piiuIn->minor_version_number) ) {
+            this->connect (*piiuIn, this->typeCode, this->count, this->sid);
         }
     }
     else {
-        piiu->claimRequestsPending = true;
+        piiuIn->claimRequestsPending = true;
     }
     UNLOCK (this->piiu->pcas);
 

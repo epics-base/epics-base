@@ -99,3 +99,4 @@ private:
     ~oldSubscription (); // must allocate from pool
     static tsFreeList < struct oldSubscription, 1024 > freeList;
 };
+

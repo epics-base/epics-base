@@ -87,7 +87,7 @@ extern "C" void ca_default_exception_handler (struct exception_handler_args args
     }
 }
 
-void caClientExitHandler ()
+extern "C" void caClientExitHandler ()
 {
     if ( caClientContextId ) {
         threadPrivateDelete ( caClientContextId );
@@ -335,8 +335,9 @@ int epicsShareAPI ca_add_exception_event (caExceptionHandler *pfunc, void *arg)
  *  ca_add_masked_array_event
  */
 int epicsShareAPI ca_add_masked_array_event (chtype type, unsigned long count, chid pChan, 
-        caEventCallBackFunc *pCallBack, void *pCallBackArg, ca_real p_delta, 
-        ca_real n_delta, ca_real timeout, evid *monixptr, long mask)
+        caEventCallBackFunc *pCallBack, void *pCallBackArg, 
+        ca_real, ca_real, ca_real, 
+        evid *monixptr, long mask)
 {
     static const long maskMask = USHRT_MAX;
     oldSubscription *pSubsr;
@@ -384,7 +385,6 @@ int epicsShareAPI ca_add_masked_array_event (chtype type, unsigned long count, c
 
     return status;
 }
-
 
 /*
  *
@@ -831,7 +831,7 @@ unsigned epicsShareAPI ca_get_ioc_connection_count ()
     return pcac->connectionCount ();
 }
 
-void netiiu::show (unsigned /* level */)
+void netiiu::show (unsigned /* level */) const
 {
 	nciu *pChan;
 

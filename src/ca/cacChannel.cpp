@@ -238,12 +238,12 @@ void cacChannel::connectTimeoutNotify ()
 {
 }
 
-void cacChannel::lock () const
+void cacChannel::lock ()
 {
     this->defaultMutex.lock();
 }
 
-void cacChannel::unlock () const
+void cacChannel::unlock ()
 {
     this->defaultMutex.unlock();
 }

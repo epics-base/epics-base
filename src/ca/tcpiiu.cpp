@@ -354,12 +354,12 @@ tcpiiu::tcpiiu (cac *pcac, const struct sockaddr_in &ina, unsigned minorVersion,
     netiiu (pcac),
     bhe (bheIn)
 {
-    SOCKET sock;
+    SOCKET newSocket;
     int status;
     int flag;
 
-    sock = socket ( AF_INET, SOCK_STREAM, IPPROTO_TCP );
-    if (sock == INVALID_SOCKET) {
+    newSocket = socket ( AF_INET, SOCK_STREAM, IPPROTO_TCP );
+    if ( newSocket == INVALID_SOCKET ) {
         ca_printf ("CAC: unable to create virtual circuit because \"%s\"\n",
             SOCKERRSTR (SOCKERRNO));
         this->fc = false;
@@ -371,7 +371,7 @@ tcpiiu::tcpiiu (cac *pcac, const struct sockaddr_in &ina, unsigned minorVersion,
     //
 #if 0
     flag = TRUE;
-    status = setsockopt ( sock, IPPROTO_TCP, TCP_NODELAY,
+    status = setsockopt ( newSocket, IPPROTO_TCP, TCP_NODELAY,
                 (char *)&flag, sizeof(flag) );
     if (status < 0) {
         ca_printf ("CAC: problems setting socket option TCP_NODELAY = \"%s\"\n",
@@ -379,7 +379,7 @@ tcpiiu::tcpiiu (cac *pcac, const struct sockaddr_in &ina, unsigned minorVersion,
     }
 #endif
     flag = TRUE;
-    status = setsockopt ( sock, SOL_SOCKET, SO_KEEPALIVE,
+    status = setsockopt ( newSocket , SOL_SOCKET, SO_KEEPALIVE,
                 (char *)&flag, sizeof (flag) );
     if (status < 0) {
         ca_printf ("CAC: problems setting socket option SO_KEEPALIVE = \"%s\"\n",
@@ -395,14 +395,14 @@ tcpiiu::tcpiiu (cac *pcac, const struct sockaddr_in &ina, unsigned minorVersion,
          * if this change is made joh 11-10-98
          */        
         i = MAX_MSG_SIZE;
-        status = setsockopt ( piiu->sock, SOL_SOCKET, SO_SNDBUF,
+        status = setsockopt ( newSocket, SOL_SOCKET, SO_SNDBUF,
                 (char *)&i, sizeof (i) );
         if (status < 0) {
             ca_printf ("CAC: problems setting socket option SO_SNDBUF = \"%s\"\n",
                 SOCKERRSTR (SOCKERRNO));
         }
         i = MAX_MSG_SIZE;
-        status = setsockopt (piiu->sock, SOL_SOCKET, SO_RCVBUF,
+        status = setsockopt (newSocket, SOL_SOCKET, SO_RCVBUF,
                 (char *)&i, sizeof (i) );
         if (status < 0) {
             ca_printf ("CAC: problems setting socket option SO_RCVBUF = \"%s\"\n",
@@ -411,7 +411,7 @@ tcpiiu::tcpiiu (cac *pcac, const struct sockaddr_in &ina, unsigned minorVersion,
     }
 #endif
 
-    this->sock = sock;
+    this->sock = newSocket;
     this->minor_version_number = minorVersion;
     this->dest.ia = ina;
     this->contiguous_msg_count = 0u;
@@ -430,7 +430,7 @@ tcpiiu::tcpiiu (cac *pcac, const struct sockaddr_in &ina, unsigned minorVersion,
     status = cacRingBufferConstruct (&this->recv);
     if (status) {
         ca_printf ("CA: unable to create recv ring buffer\n");
-        socket_close (sock);
+        socket_close ( newSocket );
         this->fc = false;
         return;
     }
@@ -439,7 +439,7 @@ tcpiiu::tcpiiu (cac *pcac, const struct sockaddr_in &ina, unsigned minorVersion,
     if (status) {
         ca_printf ("CA: unable to create send ring buffer\n");
         cacRingBufferDestroy (&this->recv);
-        socket_close (sock);
+        socket_close ( newSocket );
         this->fc = false;
         return;
     }
@@ -461,7 +461,7 @@ tcpiiu::tcpiiu (cac *pcac, const struct sockaddr_in &ina, unsigned minorVersion,
         ca_printf ("CA: unable to create CA client send thread exit semaphore\n");
         cacRingBufferDestroy (&this->recv);
         cacRingBufferDestroy (&this->send);
-        socket_close (sock);
+        socket_close ( newSocket );
         this->fc = false;
         return;
     }
@@ -472,7 +472,7 @@ tcpiiu::tcpiiu (cac *pcac, const struct sockaddr_in &ina, unsigned minorVersion,
         semBinaryDestroy (this->sendThreadExitSignal);
         cacRingBufferDestroy (&this->recv);
         cacRingBufferDestroy (&this->send);
-        socket_close (sock);
+        socket_close ( newSocket );
         this->fc = false;
         return;
     }
@@ -497,7 +497,7 @@ tcpiiu::tcpiiu (cac *pcac, const struct sockaddr_in &ina, unsigned minorVersion,
             semBinaryDestroy (this->sendThreadExitSignal);
             cacRingBufferDestroy (&this->recv);
             cacRingBufferDestroy (&this->send);
-            socket_close (sock);
+            socket_close ( newSocket );
             this->fc = false;
             return;
         }
@@ -514,15 +514,15 @@ tcpiiu::tcpiiu (cac *pcac, const struct sockaddr_in &ina, unsigned minorVersion,
  */
 void tcpiiu::shutdown ()
 {
-    LOCK (this->pcas);
-    if (this->state != iiu_disconnected) {
+    LOCK ( this->pcas );
+    if ( this->state != iiu_disconnected ) {
         this->state = iiu_disconnected;
-        ::shutdown (this->sock, SD_BOTH);
-        cacRingBufferShutDown (&this->send);
-        cacRingBufferShutDown (&this->recv);
-        this->pcas->signalRecvActivityIIU (*this);
+        ::shutdown ( this->sock, SD_BOTH );
+        cacRingBufferShutDown ( &this->send );
+        cacRingBufferShutDown ( &this->recv );
+        this->pcas->signalRecvActivityIIU ( *this );
     }
-    UNLOCK (this->pcas);
+    UNLOCK ( this->pcas );
 }
 
 //
@@ -613,7 +613,7 @@ void tcpiiu::flush ()
     }
 }
 
-void tcpiiu::show ( unsigned level ) const
+void tcpiiu::show ( unsigned /* level */ ) const
 {
 }
 
@@ -1262,7 +1262,7 @@ int tcpiiu::post_msg (char *pInBuf, unsigned long blockSize)
          * make sure we have a large enough message body cache
          */
         if ( this->curMsg.m_postsize > this->curDataMax ) {
-            void *pCurData;
+            void *pData;
             size_t cacheSize;
 
             /* 
@@ -1273,14 +1273,14 @@ int tcpiiu::post_msg (char *pInBuf, unsigned long blockSize)
              * bytes (instead of the actual string size).
              */
             cacheSize = max ( this->curMsg.m_postsize, MAX_STRING_SIZE );
-            pCurData = (void *) calloc (1u, cacheSize);
-            if (!pCurData) {
+            pData = (void *) calloc (1u, cacheSize);
+            if (!pData) {
                 return ECA_ALLOCMEM;
             }
             if (this->pCurData) {
                 free (this->pCurData);
             }
-            this->pCurData = pCurData;
+            this->pCurData = pData;
             this->curDataMax = this->curMsg.m_postsize;
         }
 

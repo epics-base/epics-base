@@ -37,7 +37,8 @@ void oldSubscription::completionNotify (unsigned type, unsigned long count, cons
     (*this->pFunc) (args);
 }
 
-void oldSubscription::exceptionNotify (int status, const char *pContext)
+void oldSubscription::exceptionNotify (int status, 
+    const char * /* pContext */ )
 {
     struct event_handler_args args;
 

@@ -46,7 +46,8 @@ void getCallback::completionNotify ( unsigned type, unsigned long count, const v
     (*this->pFunc) (args);
 }
 
-void getCallback::exceptionNotify (int status, const char *pContext)
+void getCallback::exceptionNotify (int status, 
+    const char * /* pContext */)
 {
     struct event_handler_args   args;
     args.usr = this->pPrivate;

@@ -25,20 +25,20 @@ netSubscription::~netSubscription ()
 {
     if ( this->chan.connected () ) {
         caHdr hdr;
-        ca_uint16_t type, count;
+        ca_uint16_t type_16, count_16;
     
-        type = (ca_uint16_t) this->chan.nativeType ();
+        type_16 = (ca_uint16_t) this->chan.nativeType ();
         if ( this->chan.nativeElementCount () > 0xffff ) {
-            count = 0xffff;
+            count_16 = 0xffff;
         }
         else {
-            count = (ca_uint16_t) this->chan.nativeElementCount ();
+            count_16 = (ca_uint16_t) this->chan.nativeElementCount ();
         }
 
         hdr.m_cmmd = htons (CA_PROTO_EVENT_CANCEL);
         hdr.m_available = this->id;
-        hdr.m_dataType = htons (type);
-        hdr.m_count = htons (count);
+        hdr.m_dataType = htons ( type_16 );
+        hdr.m_count = htons ( count_16 );
         hdr.m_cid = this->chan.sid;
         hdr.m_postsize = 0;
 
@@ -53,7 +53,7 @@ void netSubscription::destroy()
 
 int netSubscription::subscriptionMsg ()
 {
-    unsigned long count;
+    unsigned long tmpCount;
     struct monops msg;
     ca_float32_t p_delta;
     ca_float32_t n_delta;
@@ -64,26 +64,28 @@ int netSubscription::subscriptionMsg ()
      * specify zero
      */
     if ( this->count > this->chan.nativeElementCount () ){
-        count = this->chan.nativeElementCount ();
+        tmpCount = this->chan.nativeElementCount ();
     }
     else {
-        count = this->count;
+        tmpCount = this->count;
     }
 
     /*
      * dont allow overflow when converting to ca_uint16_t
      */
-    if ( count > 0xffff ) {
-        count = 0xffff;
+    if ( tmpCount > 0xffff ) {
+        tmpCount = 0xffff;
     }
 
     /* msg header    */
     msg.m_header.m_cmmd = htons (CA_PROTO_EVENT_ADD);
     msg.m_header.m_available = this->id;
-    msg.m_header.m_dataType = htons ( static_cast <ca_uint16_t> (this->type) );
-    msg.m_header.m_count = htons ( static_cast <ca_uint16_t> (count) );
+    msg.m_header.m_dataType = 
+   	htons ( static_cast <ca_uint16_t> (this->type) );
+    msg.m_header.m_count = 
+        htons ( static_cast <ca_uint16_t> ( tmpCount ) );
     msg.m_header.m_cid = this->chan.sid;
-    msg.m_header.m_postsize = sizeof (msg.m_info);
+    msg.m_header.m_postsize = sizeof ( msg.m_info );
 
     /* msg body  */
     p_delta = 0.0;
@@ -98,7 +100,7 @@ int netSubscription::subscriptionMsg ()
     return this->chan.piiu->pushStreamMsg (&msg.m_header, &msg.m_info, true);
 }
 
-void netSubscription::disconnect ( const char *pHostName )
+void netSubscription::disconnect ( const char * /* pHostName */ )
 {
 }
 
@@ -107,9 +109,10 @@ void netSubscription::completionNotify ()
     this->cacNotifyIO::completionNotify ();
 }
 
-void netSubscription::completionNotify ( unsigned type, unsigned long count, const void *pData )
+void netSubscription::completionNotify ( unsigned typeIn, 
+	unsigned long countIn, const void *pDataIn )
 {
-    this->cacNotifyIO::completionNotify ( type, count, pData );
+    this->cacNotifyIO::completionNotify ( typeIn, countIn, pDataIn );
 }
 
 void netSubscription::exceptionNotify ( int status, const char *pContext )
@@ -117,7 +120,10 @@ void netSubscription::exceptionNotify ( int status, const char *pContext )
     this->cacNotifyIO::exceptionNotify ( status, pContext );
 }
 
-void netSubscription::exceptionNotify ( int status, const char *pContext, unsigned type, unsigned long count )
+void netSubscription::exceptionNotify ( int statusIn, 
+    const char *pContextIn, unsigned typeIn, unsigned long countIn )
 {
-    this->cacNotifyIO::exceptionNotify ( status, pContext, type, count );
+    this->cacNotifyIO::exceptionNotify ( statusIn, 
+          pContextIn, typeIn, countIn );
 }
+

@@ -12,6 +12,18 @@
 
 <h2 align="center">Changes since 3.14.6</h2>
 
+<h4>selRecord</h4>
+<p>The select record type has for a long time made use of a coule of magic
+numbers (1e+30 and -1e+30) to mean "not a real value", which prevents the record
+from working properly if one or other of these appears as an actual data value. 
+These have been changed to use +Inf and -Inf or NaN instead, so +/-1e+30 may be
+used as a data value.</p>
+
+<h4>ai, ao, dfanout and subroutine Records</h4>
+<p>These record types have been modified to respond better to NaN values as
+follows: if the VAL field contains a NaN value, the UDF field will be set and an
+undefined value alarm will be triggered.</p>
+
 <h4>epicsStdlib.h/epicsStrtod()</h4>
 <p>epicsStdlib.h declares epicsStrtod() which provides a version of
 strtod which handles NAN/INF on all architectures.  All uses of strtod() in

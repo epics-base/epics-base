@@ -125,12 +125,12 @@ SRCS += fdManager.cpp
 SRC_DIRS += $(LIBCOM)/freeList
 INC += freeList.h
 SRCS += freeListLib.c
-HTMLS += $(LIBCOM)/freeList/freeList.html
+HTMLS += freeList/freeList.html
 
 SRC_DIRS += $(LIBCOM)/gpHash
 INC += gpHash.h
 SRCS += gpHashLib.c
-HTMLS += $(LIBCOM)/gpHash/gpHash.html
+HTMLS += gpHash/gpHash.html
 
 SRC_DIRS += $(LIBCOM)/macLib
 INC += macLib.h
@@ -163,7 +163,7 @@ SRCS_WIN32 += dllmain.cpp
 # For RTEMS CommandInterpreter
 INC_RTEMS := CommandInterpreter.h
 SRCS_RTEMS := CommandInterpreter.c
-HTMLS_RTEMS += $(LIBCOM)/osi/os/RTEMS/CommandInterpreter.3.html
+HTMLS_RTEMS += osi/os/RTEMS/CommandInterpreter.3.html
 
 #why is this here ?
 USR_CFLAGS = -D_NO_PROTO 

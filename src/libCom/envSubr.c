@@ -43,18 +43,20 @@
 *	parameters under UNIX and VxWorks.  They may be used for other
 *	purposes, as well.
 *
+*	Many EPICS environment parameters are predefined in envDefs.h.
+*
 * QUICK REFERENCE
 * #include <envDefs.h>
 * ENV_PARAM	param;
-*  char *envGetConfigParam(          pParam,    bufDim,    pBuf                 )
-*  int	 envGetIntegerConfigParam(   pParam,    pLong    			)
-*  int	 envGetRealConfigParam(      pParam,    pDouble    			)
-*  int	 envGetInetAddrConfigParam(  pParam,    pAddr    			)
-*  long  envPrtConfigParam(          pParam                      		)
-*  long  envSetConfigParam(          pParam,    valueString                     )
+*  char *envGetConfigParam(          pParam,    bufDim,    pBuf       )
+*  long  envGetLongConfigParam(      pParam,    pLong                 )
+*  long  envGetDoubleConfigParam(    pParam,    pDouble               )
+*  long  envGetInetAddrConfigParam(  pParam,    pAddr                 )
+*  long  envPrtConfigParam(          pParam                           )
+*  long  envSetConfigParam(          pParam,    valueString           )
 *
 * SEE ALSO
-*	$epics/share/bin/envSetupParams, envSubr.h
+*	$epics/share/bin/envSetupParams, envDefs.h
 *
 *-***************************************************************************/
 
@@ -72,13 +74,6 @@
 
 #define ENV_PRIVATE_DATA
 #include <envDefs.h>
-
-#ifndef ERROR
-#define ERROR 	(-1)
-#endif
-#ifndef OK
-#define OK	1
-#endif
 
 
 /*+/subr**********************************************************************
@@ -145,172 +140,164 @@ char	*pBuf;		/* I pointer to parameter buffer  */
 }
 
 /*+/subr**********************************************************************
+* NAME	envGetDoubleConfigParam - get value of a double configuration parameter
 *
-* NAME	envGetIntegerConfigParam - get value of an integer configuration parameter
+* DESCRIPTION
+*	Gets the value of a configuration parameter and copies it into the
+*	caller's real (double) buffer.  If the configuration parameter isn't
+*	found in the environment, then the default value for the parameter
+*	is copied.  
 *
-* Author:	Jeffrey O. Hill
-* Date:		080791
+*	If no parameter is found and there is no default, then -1 is 
+*	returned and the caller's buffer is unmodified.
+*
+* RETURNS
+*	0, or
+*	-1 if an error is encountered
+*
+* EXAMPLE
+* 1.	Get the value for the real environment parameter EPICS_THRESHOLD.
+*
+*	#include <envDefs.h>
+*	double	threshold;
+*	long	status;
+*
+*	status = envGetDoubleConfigParam(&EPICS_THRESHOLD, &threshold);
+*	if (status == 0) {
+*	    printf("the threshold is: %lf\n", threshold);
+*	}
+*	else {
+*	    printf("%s could not be found or was not a real number\n",
+*			EPICS_THRESHOLD.name);
+*	}
+*
+*-*/
+long
+envGetDoubleConfigParam(pParam, pDouble)
+ENV_PARAM *pParam;	/* I pointer to config param structure */
+double	*pDouble;	/* O pointer to place to store value */
+{
+    char	text[128];
+    char	*ptext;
+    int		count;
+
+    ptext = envGetConfigParam(pParam, sizeof text, text);
+    if (ptext != NULL) {
+	count = sscanf(text, "%lf", pDouble);
+	if (count == 1) {
+	    return 0;
+	}
+    }
+    (void)printf("illegal value for %s:%s\n", pParam->name, text);
+
+    return -1;
+}
+
+/*+/subr**********************************************************************
+* NAME	envGetInetAddrConfigParam - get value of an inet addr config parameter
+*
+* DESCRIPTION
+*	Gets the value of a configuration parameter and copies it into
+*	the caller's (struct in_addr) buffer.  If the configuration parameter
+*	isn't found in the environment, then the default value for
+*	the parameter is copied.  
+*
+*	If no parameter is found and there is no default, then -1 is 
+*	returned and the callers buffer is unmodified.
+*
+* RETURNS
+*	0, or
+*	-1 if an error is encountered
+*
+* EXAMPLE
+* 1.	Get the value for the inet address environment parameter EPICS_INET.
+*
+*	#include <envDefs.h>
+*	struct	in_addr	addr;
+*	long	status;
+*
+*	status = envGetInetAddrConfigParam(&EPICS_INET, &addr);
+*	if (status == 0) {
+*	    printf("the s_addr is: %x\n", addr.s_addr);
+*	}
+*	else {
+*	    printf("%s could not be found or was not an inet address\n",
+*			EPICS_INET.name);
+*	}
+*
+*-*/
+long
+envGetInetAddrConfigParam(pParam, pAddr)
+ENV_PARAM *pParam;	/* I pointer to config param structure */
+struct in_addr *pAddr;	/* O pointer to struct to receive inet addr */
+{
+    char	text[128];
+    char	*ptext;
+    long	status;
+
+    ptext = envGetConfigParam(pParam, sizeof text, text);
+    if (ptext) {
+	status = inet_addr(text);
+	if (status != -1) {
+	    pAddr->s_addr = status;
+	    return 0;
+	}
+    }
+    (void)printf("illegal value for %s:%s\n", pParam->name, text);
+    return -1;
+}
+
+/*+/subr**********************************************************************
+* NAME	envGetLongConfigParam - get value of an integer config parameter
 *
 * DESCRIPTION
 *	Gets the value of a configuration parameter and copies it
 *	into the caller's integer (long) buffer.  If the configuration 
 *	parameter isn't found in the environment, then the default value for
 *	the parameter is copied.  
-*	If no parameter is found and there is no default, then ERROR is 
+*
+*	If no parameter is found and there is no default, then -1 is 
 *	returned and the callers buffer is unmodified.
 *
 * RETURNS
-*	OK if the parameter is found and it is an integer or ERROR
+*	0, or
+*	-1 if an error is encountered
 *
-* EXAMPLES
-* 1.	Get the value for the integer environment parameter EPICS_NUMBER_OF_ITEMS.
+* EXAMPLE
+* 1.	Get the value as a long for the integer environment parameter
+*	EPICS_NUMBER_OF_ITEMS.
 *
 *	#include <envDefs.h>
-*	long		count;
-*	int		status;
+*	long	count;
+*	long	status;
 *
-*	status = envGetIntegerConfigParam(&EPICS_NUMBER_OF_ITEMS, &count);
-*	if(status == OK){
-*		printf("and the count is: %d\n", count);
+*	status = envGetLongConfigParam(&EPICS_NUMBER_OF_ITEMS, &count);
+*	if (status == 0) {
+*	    printf("and the count is: %d\n", count);
 *	}
-*	else{
-*		printf("%s could not be found or was not an integer\n"
+*	else {
+*	    printf("%s could not be found or was not an integer\n",
 *			EPICS_NUMBER_OF_ITEMS.name);
 *	}
-*			
-*
 *
 *-*/
-int
-envGetIntegerConfigParam(pparam, pretval)
-ENV_PARAM	*pparam;
-long		*pretval;
+long
+envGetLongConfigParam(pParam, pLong)
+ENV_PARAM *pParam;	/* I pointer to config param structure */
+long	*pLong;		/* O pointer to place to store value */
 {
-	char	text[128];
-	char	*ptext;
-	int	count;
+    char	text[128];
+    char	*ptext;
+    int		count;
 
-	ptext = envGetConfigParam(pparam, sizeof text, text);
-	if(ptext){
-		count = sscanf(text, "%ld", pretval);
-		if(count == 1){
-			return OK;
-		}
-	}
-	return ERROR;
-}
-
-/*+/subr**********************************************************************
-*
-* NAME	envGetRealConfigParam - get value of an real configuration parameter
-*
-* Author:	Jeffrey O. Hill
-* Date:		080791
-*
-* DESCRIPTION
-*	Gets the value of a configuration parameter and copies it
-*	into the caller's real (double) buffer.  If the configuration parameter
-*	isn't found in the environment, then the default value for
-*	the parameter is copied.  
-*	If no parameter is found and there is no default, then ERROR is 
-*	returned and the callers buffer is unmodified.
-*
-* RETURNS
-*	OK if the parameter is found and it is a real number or ERROR
-*
-* EXAMPLES
-* 1.	Get the value for the real environment parameter EPICS_THRESHOLD.
-*
-*	#include <envDefs.h>
-*	double		threshold;
-*	int		status;
-*
-*	status = envGetIntegerConfigParam(&EPICS_THRESHOLD, &threshold);
-*	if(status == OK){
-*		printf("and the threshold is: %lf\n", threshold);
-*	}
-*	else{
-*		printf("%s could not be found or was not a real number\n"
-*			EPICS_THRESHOLD.name);
-*	}
-*			
-*
-*
-*-*/
-int
-envGetRealConfigParam(pparam, pretval)
-ENV_PARAM	*pparam;
-double		*pretval;
-{
-	char	text[128];
-	char	*ptext;
-	int	count;
-
-	ptext = envGetConfigParam(pparam, sizeof text, text);
-	if(ptext){
-		count = sscanf(text, "%lf", pretval);
-		if(count == 1){
-			return OK;
-		}
-	}
-	return ERROR;
-}
-
-/*+/subr**********************************************************************
-*
-* NAME	envGetInetAddrConfigParam - get value of an inet addr configuration parameter
-*
-* Author:	Jeffrey O. Hill
-* Date:		080791
-*
-* DESCRIPTION
-*	Gets the value of a configuration parameter and copies it
-*	into the caller's (struct in_addr) buffer.  If the configuration parameter
-*	isn't found in the environment, then the default value for
-*	the parameter is copied.  
-*	If no parameter is found and there is no default, then ERROR is 
-*	returned and the callers buffer is unmodified.
-*
-* RETURNS
-*	OK if the parameter is found and it is an inet address or ERROR
-*
-* EXAMPLES
-* 1.	Get the value for the inet address environment parameter EPICS_INET.
-*
-*	#include <envDefs.h>
-*	struct	in_addr	addr
-*	int		status;
-*
-*	status = envGetInetAddrConfigParam(&EPICS_INET, &addr);
-*	if(status == OK){
-*		printf("and the threshold is: %x\n", addr.s_addr);
-*	}
-*	else{
-*		printf("%s could not be found or was not an inet address\n"
-*			EPICS_INET.name);
-*	}
-*			
-*
-*
-*-*/
-int
-envGetInetAddrConfigParam(pparam, paddr)
-ENV_PARAM	*pparam;
-struct in_addr	*paddr;
-{
-	char	text[128];
-	char	*ptext;
-	long	status;
-
-	ptext = envGetConfigParam(pparam, sizeof text, text);
-	if(ptext){
-		status = inet_addr(text);
-		if(status != ERROR){
-			paddr->s_addr = status;
-			return OK;
-		}
-	}
-	return ERROR;
+    ptext = envGetConfigParam(pParam, sizeof text, text);
+    if (ptext) {
+	count = sscanf(text, "%ld", pLong);
+	if (count == 1)
+		return 0;
+    }
+    (void)printf("illegal value for %s:%s\n", pParam->name, text);
+    return -1;
 }
 
 /*+/subr**********************************************************************

@@ -6,6 +6,8 @@ INC += fast_lock.h
 INC += drvTS.h
 INC += devLib.h
 INC += epicsDynLink.h
+INC += module_types.h
+INC += task_params.h
 
 SRCS += drvTS.c
 SRCS += devLib.c

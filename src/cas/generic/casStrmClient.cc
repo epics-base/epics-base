@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.24  1998/07/08 15:38:07  jhill
+ * fixed lost monitors during flow control problem
+ *
  * Revision 1.23  1998/06/16 02:32:30  jhill
  * use smart gdd ptr
  *
@@ -831,6 +834,7 @@ caStatus casStrmClient::hostNameAction()
 	char 			*pName = (char *) this->ctx.getData();
 	unsigned		size;
 	char 			*pMalloc;
+	caStatus		status;
 
 	size = strlen(pName)+1u;
 	/*
@@ -838,7 +842,10 @@ caStatus casStrmClient::hostNameAction()
 	 */
 	pMalloc = new char [size];
 	if(!pMalloc){
-		this->sendErr(mp, ECA_ALLOCMEM, pName);
+		status = this->sendErr(mp, ECA_ALLOCMEM, pName);
+		if (status) {
+			return status;
+		}
 		return S_cas_internal;
 	}
 	strncpy(
@@ -876,6 +883,7 @@ caStatus casStrmClient::clientNameAction()
 	char 			*pName = (char *) this->ctx.getData();
 	unsigned		size;
 	char 			*pMalloc;
+	caStatus		status;
 
 	size = strlen(pName)+1;
 
@@ -884,7 +892,10 @@ caStatus casStrmClient::clientNameAction()
 	 */
 	pMalloc = new char [size];
 	if(!pMalloc){
-		this->sendErr(mp, ECA_ALLOCMEM, pName);
+		status = this->sendErr(mp, ECA_ALLOCMEM, pName);
+		if (status) {
+			return status;
+		}
 		return S_cas_internal;
 	}
 	strncpy(
@@ -942,8 +953,11 @@ caStatus casStrmClient::claimChannelAction()
 		// new API was added to the server (they must
 		// now use clients at EPICS 3.12 or higher)
 		//
-		this->sendErr(mp, ECA_DEFUNCT,
+		status = this->sendErr(mp, ECA_DEFUNCT,
 				"R3.11 connect sequence from old client was ignored");
+		if (status) {
+			return status;
+		}
 		return S_cas_badProtocol; // disconnect client
 	}
 
@@ -1123,8 +1137,8 @@ caStatus casStrmClient::channelCreateFailed(
 const caHdr     *mp,
 caStatus        createStatus)
 {
-        caStatus        status;
-        caHdr   	*reply;
+    caStatus status;
+    caHdr *reply;
  
 	if (createStatus == S_casApp_asyncCompletion) {
 		errMessage(S_cas_badParameter, 
@@ -1148,7 +1162,10 @@ caStatus        createStatus)
 		createStatus = S_cas_success;
 	}
 	else {
-		this->sendErrWithEpicsStatus(mp, createStatus, ECA_ALLOCMEM);
+		status = this->sendErrWithEpicsStatus(mp, createStatus, ECA_ALLOCMEM);
+		if (status) {
+			return status;
+		}
 	}
 
 	return createStatus;
@@ -1248,8 +1265,7 @@ caStatus casStrmClient::eventAddAction ()
 	if (mask.noEventsSelected()) {
 		char errStr[40];
 		sprintf(errStr, "event add req with mask=0X%X\n", caProtoMask);
-		this->sendErr(mp, ECA_BADMASK, errStr);
-		return S_cas_success;
+		return this->sendErr(mp, ECA_BADMASK, errStr);
 	}
 
 	//
@@ -1292,13 +1308,15 @@ caStatus casStrmClient::eventAddAction ()
 		pMonitor = new casClientMon(*pciu, mp->m_available, 
 					mp->m_count, mp->m_type, mask, *this);
 		if (!pMonitor) {
-			this->sendErr(mp, ECA_ALLOCMEM, NULL);
-			//
-			// If we cant allocate space for a monitor then
-			// delete (disconnect) the channel
-			//
-			(*pciu)->destroy();
-			status = S_cas_success;
+			status = this->sendErr(mp, ECA_ALLOCMEM, NULL);
+			if (status==S_cas_success) {
+				//
+				// If we cant allocate space for a monitor then
+				// delete (disconnect) the channel
+				//
+				(*pciu)->destroy();
+			}
+			return status;
 		}
 	}
 
@@ -1323,10 +1341,25 @@ caStatus casStrmClient::clearChannelAction ()
 	 */
 	pciu = this->resIdToChannel (mp->m_cid);
 	if (pciu==NULL) {
-		logBadId (mp, dp, ECA_BADCHID);
-	}
-	else {
-		pciu->clientDestroy ();
+		/*
+		 * it is possible that the channel delete arrives just 
+		 * after the server tool has deleted the PV so we will
+		 * not disconnect the client in this case. Nevertheless,
+		 * we send a warning message in case either the client 
+		 * or server has become corrupted
+		 *
+		 * return early here if we are unable to send the warning
+		 * so that send block conditions will be handled
+		 */
+		status = logBadId (mp, dp, ECA_BADCHID, mp->m_cid);
+		if (status) {
+			return status;
+		}
+		//
+		// after sending the warning then go ahead and send the
+		// delete confirm message even if the channel couldnt be
+		// located so that the client can finish cleaning up
+		//
 	}
 
 	/*
@@ -1336,6 +1369,15 @@ caStatus casStrmClient::clearChannelAction ()
 	if (status) {
 		return status;
 	}
+
+	//
+	// only execute the request after we have allocated
+	// space for the response
+	//
+	if (pciu) {
+		pciu->clientDestroy ();
+	}
+
 	*reply = *mp;
 	this->commitMsg ();
 
@@ -1359,17 +1401,17 @@ caStatus casStrmClient::eventCancelAction ()
 	
 	/*
 	 * Verify the channel
-	 *
-	 * if the monitor delete arrives just after the server tool
-	 * has deleted the PV then the client will deallocate the 
-	 * monitor structure when it receives the PV disconnect message.
-	 *
-	 * otherwise the client or server ha become corrupted
 	 */
 	pciu = this->resIdToChannel (mp->m_cid);
 	if (!pciu) {
-		logBadId (mp, dp, ECA_BADCHID);
-		return S_cas_success;
+		/*
+		 * it is possible that the event delete arrives just 
+		 * after the server tool has deleted the PV. In this
+		 * rare situation we are unable to look up the client's
+		 * resource id for the return message and so we must force
+		 * the client to reconnect.
+		 */
+		return logBadId (mp, dp, ECA_BADCHID, mp->m_cid);
 	}
 
 	/*
@@ -1377,10 +1419,12 @@ caStatus casStrmClient::eventCancelAction ()
 	 */
 	pMon = pciu->findMonitor (mp->m_available);
 	if (!pMon) {
-		logBadId (mp, dp, ECA_BADMONID);
-		return S_cas_success;
+		//
+		// this indicates client or server library corruption
+		//
+		return logBadId (mp, dp, ECA_BADMONID, mp->m_cid);
 	}
-	
+
 	/*
 	 * allocate delete confirmed message
 	 */
@@ -1430,8 +1474,7 @@ caStatus casStrmClient::noReadAccessEvent(casClientMon *pMon)
 	status = this->allocMsg(size, &reply);
 	if (status) {
 		if(status == S_cas_hugeRequest){
-			status = this->sendErr(&falseReply, ECA_TOLARGE, NULL);
-			return status;
+			return this->sendErr(&falseReply, ECA_TOLARGE, NULL);
 		}
 		return status;
 	}

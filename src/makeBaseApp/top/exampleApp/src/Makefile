@@ -5,55 +5,37 @@ include $(TOP)/configure/CONFIG
 #  ADD MACRO DEFINITIONS AFTER THIS LINE
 #=============================
 
-#USR_CFLAGS += 
-
-PROD_HOST += caExample
-caExample_SRCS	+= caExample.c
-caExample_LIBS	+= ca
-caExample_LIBS	+= Com
-
-PROD_HOST += caMonitor
-caMonitor_SRCS	+= caMonitor.c
-caMonitor_LIBS	+= ca
-caMonitor_LIBS	+= Com
-
-ca_DIR           = $(EPICS_BASE_LIB)
-Com_DIR          = $(EPICS_BASE_LIB)
-
-
-#=============================
-
 # xxxRecord.h will be created from xxxRecord.dbd
 DBDINC += xxxRecord
 
 # <name>.dbd will be created from <name>Include.dbd
-DBD += example.dbd
+DBD += _APPNAME_.dbd
 
 #=============================
 
-PROD_IOC = example
+PROD_IOC = _APPNAME_
 
-example_SRCS += xxxRecord.c
-example_SRCS += devXxxSoft.c
-example_SRCS += dbSubExample.c
+_APPNAME__SRCS += xxxRecord.c
+_APPNAME__SRCS += devXxxSoft.c
+_APPNAME__SRCS += dbSubExample.c
 
 # <name>_registerRecordDeviceDriver.cpp will be created from <name>.dbd
-example_SRCS += example_registerRecordDeviceDriver.cpp
-example_SRCS_DEFAULT += exampleMain.cpp
-example_SRCS_vxWorks += -nil-
+_APPNAME__SRCS += _APPNAME__registerRecordDeviceDriver.cpp
+_APPNAME__SRCS_DEFAULT += _APPNAME_Main.cpp
+_APPNAME__SRCS_vxWorks += -nil-
 
 #The following adds support from base/src/vxWorks
-example_OBJS_vxWorks += $(EPICS_BASE_BIN)/vxComLibrary
+_APPNAME__OBJS_vxWorks += $(EPICS_BASE_BIN)/vxComLibrary
 
 #NOTES:
-#      1)It is not possible to build sncExample both as a component of example
+#      1)It is not possible to build sncExample both as a component of _APPNAME_
 #        and standalone. You must choose only one.
 #      2)To build sncExample SNCSEQ must be defined in <top>/configure/RELEASE
 
-#The following builds sncExample as a component of example
-#example_SRCS += sncExample.stt
-#example_LIBS += seq
-#example_LIBS += pv
+#The following builds sncExample as a component of _APPNAME_
+#_APPNAME__SRCS += sncExample.stt
+#_APPNAME__LIBS += seq
+#_APPNAME__LIBS += pv
 #seq_DIR    = $(SNCSEQ_LIB)
 #pv_DIR     = $(SNCSEQ_LIB)
 
@@ -77,23 +59,23 @@ example_OBJS_vxWorks += $(EPICS_BASE_BIN)/vxComLibrary
 #sncExample_LIBS += Com
 
 # Use win32 object libs for registered support
-example_LIBS_win32 += recIocObj
-example_LIBS_win32 += softDevIocObj
-example_LIBS_win32 += testDevIocObj
-example_LIBS_DEFAULT += recIoc
-example_LIBS_DEFAULT += softDevIoc
-example_LIBS_DEFAULT += testDevIoc
+_APPNAME__LIBS_win32 += recIocObj
+_APPNAME__LIBS_win32 += softDevIocObj
+_APPNAME__LIBS_win32 += testDevIocObj
+_APPNAME__LIBS_DEFAULT += recIoc
+_APPNAME__LIBS_DEFAULT += softDevIoc
+_APPNAME__LIBS_DEFAULT += testDevIoc
 
-example_LIBS += iocsh
-example_LIBS += miscIoc
-example_LIBS += rsrvIoc
-example_LIBS += dbtoolsIoc
-example_LIBS += asIoc
-example_LIBS += dbIoc
-example_LIBS += registryIoc
-example_LIBS += dbStaticIoc
-example_LIBS += ca
-example_LIBS += Com
+_APPNAME__LIBS += iocsh
+_APPNAME__LIBS += miscIoc
+_APPNAME__LIBS += rsrvIoc
+_APPNAME__LIBS += dbtoolsIoc
+_APPNAME__LIBS += asIoc
+_APPNAME__LIBS += dbIoc
+_APPNAME__LIBS += registryIoc
+_APPNAME__LIBS += dbStaticIoc
+_APPNAME__LIBS += ca
+_APPNAME__LIBS += Com
 
 #===========================
 

@@ -1,0 +1,50 @@
+include "menuGlobal.dbd"
+include "menuConvert.dbd"
+include "aiRecord.dbd"
+include "aoRecord.dbd"
+include "biRecord.dbd"
+include "boRecord.dbd"
+include "calcRecord.dbd"
+include "calcoutRecord.dbd"
+include "compressRecord.dbd"
+include "dfanoutRecord.dbd"
+include "eventRecord.dbd"
+include "fanoutRecord.dbd"
+include "longinRecord.dbd"
+include "longoutRecord.dbd"
+include "mbbiRecord.dbd"
+include "mbbiDirectRecord.dbd"
+include "mbboRecord.dbd"
+include "mbboDirectRecord.dbd"
+include "permissiveRecord.dbd"
+include "selRecord.dbd"
+include "seqRecord.dbd"
+include "stateRecord.dbd"
+include "stringinRecord.dbd"
+include "stringoutRecord.dbd"
+include "subRecord.dbd"
+include "subArrayRecord.dbd"
+include "waveformRecord.dbd"
+device(ai,CONSTANT,devAiSoft,"Soft Channel")
+device(ai,CONSTANT,devAiSoftRaw,"Raw Soft Channel")
+device(ao,CONSTANT,devAoSoft,"Soft Channel")
+device(ao,CONSTANT,devAoSoftRaw,"Raw Soft Channel")
+device(bi,CONSTANT,devBiSoft,"Soft Channel")
+device(bi,CONSTANT,devBiSoftRaw,"Raw Soft Channel")
+device(bo,CONSTANT,devBoSoft,"Soft Channel")
+device(bo,CONSTANT,devBoSoftRaw,"Raw Soft Channel")
+device(event,CONSTANT,devEventSoft,"Soft Channel")
+device(longin,CONSTANT,devLiSoft,"Soft Channel")
+device(longout,CONSTANT,devLoSoft,"Soft Channel")
+device(mbbi,CONSTANT,devMbbiSoft,"Soft Channel")
+device(mbbi,CONSTANT,devMbbiSoftRaw,"Raw Soft Channel")
+device(mbbiDirect,CONSTANT,devMbbiDirectSoft,"Soft Channel")
+device(mbbiDirect,CONSTANT,devMbbiDirectSoftRaw,"Raw Soft Channel")
+device(mbbo,CONSTANT,devMbboSoft,"Soft Channel")
+device(mbbo,CONSTANT,devMbboSoftRaw,"Raw Soft Channel")
+device(mbboDirect,CONSTANT,devMbboDirectSoft,"Soft Channel")
+device(mbboDirect,CONSTANT,devMbboDirectSoftRaw,"Raw Soft Channel")
+device(stringin,CONSTANT,devSiSoft,"Soft Channel")
+device(stringout,CONSTANT,devSoSoft,"Soft Channel")
+device(subArray,CONSTANT,devSASoft,"Soft Channel")
+device(waveform,CONSTANT,devWfSoft,"Soft Channel")

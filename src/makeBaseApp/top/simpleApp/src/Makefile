@@ -3,73 +3,56 @@ TOP=../..
 include $(TOP)/configure/CONFIG
 #----------------------------------------
 #  ADD MACRO DEFINITIONS AFTER THIS LINE
+#=============================
 
-#=======Create Host Programs=======
-ca_DIR = $(EPICS_BASE_LIB)
-Com_DIR = $(EPICS_BASE_LIB)
+#_APPNAME_.dbd will be created from _APPNAME_Include.dbd
+DBD += _APPNAME_.dbd
 
-#USR_CFLAGS +=
+#_APPNAME__registerRecordDeviceDriver.cpp will be created from _APPNAME_.dbd
+_APPNAME__SRCS += _APPNAME__registerRecordDeviceDriver.cpp
 
-# For Each Host Product define the following:1
-#PROD_HOST = <product>
-#<product>_SRCS += xxx.c 
-#...
-#<product>_LIBS += ca
-#<product>_LIBS += Com
+#=============================
 
-#========Database Products================
+PROD_IOC = _APPNAME_
 
-# xxxRecord.h will be created from xxxRecord.dbd
-#DBDINC += xxxRecord
+## Build and add other local sources like this:
+#_APPNAME__SRCS += xxx.c xxx.cpp xxx.stt
 
-#<name>.dbd will be created from <name>Include.dbd
-#DBD += <name>.dbd
+## If _APPNAME_ is to be built for both vxWorks and for the host then
+_APPNAME__SRCS_DEFAULT += _APPNAME_Main.cpp
+_APPNAME__SRCS_vxWorks += -nil-
 
-#=======Create an IOC program=====
-
-#PROD_IOC = <name>
-
-#<name>_SRCS += xxx.c # .cpp .stt etc
-#...
-#<name>_registerRecordDeviceDriver.cpp will be created from <name>.dbd
-#<name>_SRCS += <name>_registerRecordDeviceDriver.cpp
-
-## If <name> is to be built for both vxWorks and for the host then
-#<name>_SRCS_DEFAULT += <name>Main.cpp
-#<name>_SRCS_vxWorks += -nil-
-
-#The following adds support from base/src/vxWorks
-#<name>_OBJS_vxWorks += $(EPICS_BASE_BIN)/vxComLibrary
+## The following adds support from base/src/vxWorks
+_APPNAME__OBJS_vxWorks += $(EPICS_BASE_BIN)/vxComLibrary
 
 ##Define all possible libraries
 ## Use win32 object libs for registered support
-#<name>_LIBS_win32 += recIocObj
-#<name>_LIBS_win32 += softDevIocObj
-#<name>_LIBS_win32 += testDevIocObj
-#<name>_LIBS_DEFAULT += recIoc
-#<name>_LIBS_DEFAULT += softDevIoc
-#<name>_LIBS_DEFAULT += testDevIoc
+_APPNAME__LIBS_win32 += recIocObj
+_APPNAME__LIBS_win32 += softDevIocObj
+_APPNAME__LIBS_win32 += testDevIocObj
+_APPNAME__LIBS_DEFAULT += recIoc
+_APPNAME__LIBS_DEFAULT += softDevIoc
+_APPNAME__LIBS_DEFAULT += testDevIoc
 
-#<name>_LIBS += iocsh
-#<name>_LIBS += miscIoc
-#<name>_LIBS += rsrvIoc
-#<name>_LIBS += dbtoolsIoc
-#<name>_LIBS += asIoc
-#<name>_LIBS += dbIoc
-#<name>_LIBS += registryIoc
-#<name>_LIBS += dbStaticIoc
-#<name>_LIBS += ca
-#<name>_LIBS += Com
+_APPNAME__LIBS += iocsh
+_APPNAME__LIBS += miscIoc
+_APPNAME__LIBS += rsrvIoc
+_APPNAME__LIBS += dbtoolsIoc
+_APPNAME__LIBS += asIoc
+_APPNAME__LIBS += dbIoc
+_APPNAME__LIBS += registryIoc
+_APPNAME__LIBS += dbStaticIoc
+_APPNAME__LIBS += ca
+_APPNAME__LIBS += Com
 
-## If sequence programs are being built
-#<name>_LIBS += seq
-#<name>_LIBS += pv
+## For sequence programs, use
+#_APPNAME__SRCS += sncExample.stt
+#_APPNAME__LIBS += seq
+#_APPNAME__LIBS += pv
 #seq_DIR    = $(SNCSEQ_LIB)
 #pv_DIR     = $(SNCSEQ_LIB)
-
 
 
 include $(TOP)/configure/RULES
 #----------------------------------------
 #  ADD RULES AFTER THIS LINE
-

@@ -5,12 +5,14 @@ typedef long (*processMethod)(subRecord *precord);
 
 long mySubInit(subRecord *precord,processMethod process)
 {
-    printf("%s mySubInit process %p\n",precord->name, (void*) process);
+    printf("Record %s called mySubInit(%#p, %#p)\n",
+	   precord->name, precord, (void*) process);
     return(0);
 }
 
 long mySubProcess(subRecord *precord)
 {
-    printf("%s mySubProcess\n",precord->name);
+    printf("Record %s called mySubProcess(%#p)\n",
+	   precord->name, precord);
     return(0);
 }

@@ -1,3 +1,7 @@
 To start the ioc from this directory execute the command
 
-    ../../bin/_ARCH_/example st.cmd
+    ../../bin/_ARCH_/<appname> st.cmd
+
+You may need to change the name of the .dbd file given in
+st.cmd's dbLoadDatabase command before starting the ioc.
+

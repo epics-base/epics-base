@@ -103,7 +103,6 @@ epicsShareFunc int epicsShareAPI epicsStrCaseCmp(
         s1++;
         s2++;
     }
-    return(0);
 }
 
 epicsShareFunc int epicsShareAPI epicsStrnCaseCmp(

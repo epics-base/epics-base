@@ -24,7 +24,11 @@
 #ifdef _OSF_SOURCE
 #include <sys/ioctl.h>
 #else
+#ifdef linux
+#include <sys/socketio.h>
+#else
 #include <sys/sockio.h>
+#endif
 #endif
 #include <sys/time.h>
 #include <netdb.h>

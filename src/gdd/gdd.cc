@@ -1122,7 +1122,6 @@ gddStatus gdd::clear(void)
 
 gddStatus gdd::reset(aitEnum prim, int dimen, aitIndex* cnt)
 {
-	int app=applicationType();
 	int i;
 	gddStatus rc;
 

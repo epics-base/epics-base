@@ -47,6 +47,9 @@
  * .09 050494 pg        HPUX port changes.
  * .10 021694 joh	ANSI C	
  * $Log$
+ * Revision 1.33  1999/09/02 21:41:09  jhill
+ * improved the way that socket error numbers are converted to strings
+ *
  * Revision 1.32  1999/08/31 15:51:00  jhill
  * move to proper date in file if open old log
  *
@@ -518,10 +521,22 @@ static void acceptNewClient(void *pParam)
 	size = sizeof(addr);
 	pclient->insock = accept(pserver->sock, (struct sockaddr *)&addr, &size);
 	if (pclient->insock<0 || size<sizeof(addr)) {
+        static unsigned acceptErrCount;
+        static int lastErrno;
+        int thisErrno;
+
 		free(pclient);
-		if (SOCKERRNO!=SOCK_EWOULDBLOCK) {
-			fprintf(stderr, "Accept Error %d\n", SOCKERRNO);
+		if (SOCKERRNO==SOCK_EWOULDBLOCK || SOCKERRNO==SOCK_EINTR) {
+            return;
 		}
+
+        thisErrno = SOCKERRNO;
+        if (acceptErrCount%1000 || lastErrno!=thisErrno) {
+            fprintf(stderr, "Accept Error %d\n", SOCKERRNO);
+        }
+        acceptErrCount++;
+        lastErrno = thisErrno;
+
 		return;
 	}
 

@@ -61,7 +61,8 @@ typedef enum {
     putNotifyRestartCallbackRequested,
     putNotifyRestartInProgress,
     putNotifyPutInProgress,
-    putNotifyUserCallbackRequested
+    putNotifyUserCallbackRequested,
+    putNotifyUserCallbackActive
 }putNotifyState;
 
 /* putNotify groups can span locksets if links are dynamically modified*/
@@ -149,11 +150,15 @@ STATIC void putNotifyPvt(putNotify *ppn,dbCommon *precord)
     if(ppn->state==putNotifyRestartCallbackRequested) {
         restartCheck(precord->ppnr);
     }
-    ppn->state = putNotifyNotActive;
+    ppn->state = putNotifyUserCallbackActive;
     assert(precord->ppn!=ppn);
     epicsMutexUnlock(notifyLock);
     dbScanUnlock(precord);
     (*ppn->userCallback)(ppn);
+    epicsMutexMustLock(notifyLock);
+    if(ppn->requestCancel) epicsEventSignal(*ppn->pcancelEvent);
+    ppn->state = putNotifyNotActive;
+    epicsMutexUnlock(notifyLock); 
     return;
 }
 
@@ -187,13 +192,17 @@ STATIC void notifyCallback(CALLBACK *pcallback)
         return;
     }
     /* All done. Clean up and call userCallback */
-    ppn->state = putNotifyNotActive;
+    ppn->state = putNotifyUserCallbackActive;
     assert(precord->ppn!=ppn);
     epicsMutexUnlock(notifyLock);
     dbScanUnlock(precord);
     (*ppn->userCallback)(ppn);
+    epicsMutexMustLock(notifyLock);
+    if(ppn->requestCancel) epicsEventSignal(*ppn->pcancelEvent);
+    ppn->state = putNotifyNotActive;
+    epicsMutexUnlock(notifyLock); 
 }
-
+
 void epicsShareAPI dbPutNotify(putNotify *ppn)
 {
     dbCommon	*precord = ppn->paddr->precord;
@@ -253,7 +262,8 @@ void epicsShareAPI dbNotifyCancel(putNotify *ppn)
     state = ppn->state;
     /*If callback is scheduled or active wait for it to complete*/
     if(state==putNotifyUserCallbackRequested
-    || state==putNotifyRestartCallbackRequested) {
+    || state==putNotifyRestartCallbackRequested
+    || state==putNotifyUserCallbackActive) {
         epicsEventId eventId;
         eventId = epicsEventCreate(epicsEventEmpty);
         ppn->pcancelEvent = &eventId;
@@ -265,7 +275,6 @@ void epicsShareAPI dbNotifyCancel(putNotify *ppn)
         epicsMutexMustLock(notifyLock);
         ppn->pcancelEvent = 0;
         epicsEventDestroy(eventId);
-        state = ppn->state;
         epicsMutexUnlock(notifyLock);
         dbScanUnlock(precord);
         return;
@@ -346,21 +355,41 @@ void epicsShareAPI dbNotifyAdd(dbCommon *pfrom, dbCommon *pto)
     epicsMutexUnlock(notifyLock);
 }
 
+typedef struct tpnInfo {
+    epicsEventId callbackDone;
+    putNotify    *ppn;
+}tpnInfo;
+
 STATIC void dbtpnCallback(putNotify *ppn)
 {
-    putNotifyStatus	status = ppn->status;
+    putNotifyStatus status = ppn->status;
+    tpnInfo         *ptpnInfo = (tpnInfo *)ppn->usrPvt;
 
     if(status==0)
 	printf("dbtpnCallback: success record=%s\n",ppn->paddr->precord->name);
     else
-        errlogPrintf("%s dbtpnCallback putNotify.status %d\n",ppn->paddr->precord->name,(int)status);
+        printf("%s dbtpnCallback putNotify.status %d\n",ppn->paddr->precord->name,(int)status);
+    epicsEventSignal(ptpnInfo->callbackDone);
+}
+
+static void tpnThread(void *pvt)
+{
+    tpnInfo   *ptpnInfo = (tpnInfo *)pvt;
+    putNotify *ppn = (putNotify *)ptpnInfo->ppn;
+
+    dbPutNotify(ppn);
+    epicsEventWait(ptpnInfo->callbackDone);
+    dbNotifyCancel(ppn);
+    epicsEventDestroy(ptpnInfo->callbackDone);
     free((void *)ppn->paddr);
     free(ppn);
+    free(ptpnInfo);
 }
 
 long epicsShareAPI dbtpn(char	*pname,char *pvalue)
 {
     long	status;
+    tpnInfo     *ptpnInfo;
     DBADDR	*pdbaddr=NULL;
     putNotify	*ppn=NULL;
     char	*psavevalue;
@@ -383,7 +412,13 @@ long epicsShareAPI dbtpn(char	*pname,char *pvalue)
     ppn->nRequest = 1;
     ppn->dbrType = DBR_STRING;
     ppn->userCallback = dbtpnCallback;
-    dbPutNotify(ppn);
+    ptpnInfo = dbCalloc(1,sizeof(tpnInfo));
+    ptpnInfo->ppn = ppn;
+    ptpnInfo->callbackDone = epicsEventCreate(epicsEventEmpty);
+    ppn->usrPvt = ptpnInfo;
+    epicsThreadCreate("dbtpn",epicsThreadPriorityHigh,
+        epicsThreadGetStackSize(epicsThreadStackMedium),
+        tpnThread,ptpnInfo);
     return(0);
 }
 

@@ -347,3 +347,4 @@ fdReg::fdReg (const SOCKET fdIn, const fdRegType typIn,
     this->manager.installReg (*this);
 }
 
+template class resTable<fdReg, fdRegId>;

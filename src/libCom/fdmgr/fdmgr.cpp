@@ -97,6 +97,7 @@ private:
 #endif
 
 template class chronIntIdResTable <timerForOldFdmgr>;
+template class resTable<timerForOldFdmgr, chronIntId>;
 
 #ifdef _MSC_VER
 #   pragma warning ( pop )

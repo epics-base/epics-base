@@ -3,9 +3,6 @@ include $(TOP)/config/CONFIG_BASE
 
 LINK.c=$(LD) $(LDFLAGS)
 
-# JRW -- Don't define a SRCS.c or SRCS.cc if it is empty
-# SRCS.c =
-
 IOC_CORE_OBJS = \
 	$(TOP)/src/as/O.$(T_A)/asLibrary \
 	$(TOP)/src/dbStatic/O.$(T_A)/dbStaticLib \
@@ -18,17 +15,12 @@ IOC_CORE_OBJS = \
 	$(TOP)/src/dbtools/O.$(T_A)/dbSubs \
 	$(TOP)/src/bpt/O.$(T_A)/pbtLib
 
-PROD = iocCore vxWorks vxWorks.sym
+PROD = iocCore
+
+vpath vxWorks% $(VX_CONFIG_DIR)/$(T_A)
+INSTALLS = vxWorks vxWorks.sym
 
 include $(TOP)/config/RULES.Vx
-
-vxWorks: $(VX_IMAGE)
-	@$(RM) $@
-	@cp -p  $< .
-
-vxWorks.sym: $(VX_IMAGE_SYM)
-	@$(RM) $@
-	@cp -p $< .
 
 iocCore: $(IOC_CORE_OBJS)
 	$(LINK.c) $@ $(IOC_CORE_OBJS)

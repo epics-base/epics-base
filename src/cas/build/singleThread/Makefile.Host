@@ -38,7 +38,6 @@ LIBSRCS += casMonEvent.cc
 LIBSRCS += inBuf.cc
 LIBSRCS += outBuf.cc
 LIBSRCS += dgInBuf.cc 
-LIBSRCS += dgOutBuf.cc
 LIBSRCS += casCtx.cc 
 LIBSRCS += casEventMask.cc
 LIBSRCS += ioBlocked.cc

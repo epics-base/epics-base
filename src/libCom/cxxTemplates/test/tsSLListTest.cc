@@ -34,14 +34,22 @@ main ()
 
 	list.add(*pFred);
 	list.add(*pFredII);
-	pFredBack = list.first();
+	pFredBack = iter();
 	assert(pFredBack == pFredII);
-	list.remove(*pFred, *pFredII);
-	list.add(*pFred);
-	pFredBack = list.get();
-	assert (pFredBack == pFred);
+	list.remove(*pFred); // removes pFredII
+	list.add(*pFredII);
 	pFredBack = list.get();
 	assert (pFredBack == pFredII);
+	pFredBack = list.get();
+	assert (pFredBack == pFred);
+	list.add(*pFredII);
+	list.add(*pFred);
+	iter.reset();
+	pFredBack = iter();
+	iter.remove();
+	iter.remove();
+	pFredBack = list.get();
+	assert (pFredBack == 0);
 	list.add(*pFred);
 	list.add(*pFredII);
 	list.add(* new fred("C"));

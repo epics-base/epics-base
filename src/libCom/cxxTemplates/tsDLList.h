@@ -31,6 +31,9 @@
  *
  * History
  * $Log$
+ * Revision 1.1.1.1  1996/06/20 22:15:55  jhill
+ * installed  ca server templates
+ *
  *
  */
 
@@ -42,6 +45,7 @@
 //
 template <class T>
 class tsDLList {
+friend class tsDLIter<T>;
 private:
 	//
 	// clear()
@@ -59,7 +63,8 @@ public:
 	}
 
 	//
-	// adds addList to this (and removes all items from addList)
+	// installs items in addList on the list 
+	// (and removes all items from addList)
 	//
 	tsDLList (tsDLList<T> &addList)  
 	{
@@ -68,23 +73,8 @@ public:
 	}
 
 	//
-	// first()
-	//
-	T *first() const
-	{
-		return (T *) this->pFirst; 
-	}
-
-	//
-	// last()
-	//
-	T *last() const
-	{
-		return (T *) this->pLast; 
-	}
-
-	//
 	// count()
+	// (returns the number of items on the list)
 	//
 	unsigned count() const
 	{
@@ -93,7 +83,8 @@ public:
 
 	//
 	// add() - 
-	// adds addList to this (and removes all items from addList)
+	// adds addList to the end of the list
+	// (and removes all items from addList)
 	//
 	void add (tsDLList<T> &addList)
 	{
@@ -129,7 +120,8 @@ public:
 
 
 	//
-	// add() - an item
+	// add() 
+	// (add an item to the end of the list)
 	//
 	void add (T &item)
 	{
@@ -149,30 +141,54 @@ public:
 	}
 
 	//
-	// insert()
-	// pItemBefore==0 => make item be the first item on the list
-	// pItemBefore!=0 => place item in the list immediately after
-	//			pItemBefore
+	// get ()
 	//
-	void insert (T &item, T *pItemBefore=0)
+	T * get()
 	{
-		if (pItemBefore) {
-			item.tsDLNode<T>::pPrev = pItemBefore;
-			item.tsDLNode<T>::pNext = 
-				pItemBefore->tsDLNode<T>::pNext;
-			pItemBefore->tsDLNode<T>::pNext = &item;
+		T *pItem = this->pFirst;
+
+		if (pItem) {
+			this->remove (*pItem);
 		}
-		else {
-			item.tsDLNode<T>::pPrev = 0;
-			item.tsDLNode<T>::pNext = this->pFirst;
-			this->pFirst = &item;
-		}
+		
+		return pItem;
+	}
+
+	//
+	// insertAfter()
+	// (place item in the list immediately after itemBefore)
+	//
+	void insertAfter (T &item, T &itemBefore)
+	{
+		item.tsDLNode<T>::pPrev = &itemBefore;
+		item.tsDLNode<T>::pNext = itemBefore.tsDLNode<T>::pNext;
+		itemBefore.tsDLNode<T>::pNext = &item;
 
 		if (item.tsDLNode<T>::pNext) {
 			item.tsDLNode<T>::pNext->tsDLNode<T>::pPrev = &item;
 		}
 		else {
 			this->pLast = &item;
+		}
+
+		this->itemCount++;
+	}
+
+	//
+	// insertBefore ()
+	// (place item in the list immediately before itemAfter)
+	//
+	void insertBefore (T &item, T &itemAfter)
+	{
+		item.tsDLNode<T>::pNext = &itemAfter;
+		item.tsDLNode<T>::pPrev = itemAfter.tsDLNode<T>::pPrev;
+		itemAfter.tsDLNode<T>::pPrev = &item;
+
+		if (item.tsDLNode<T>::pPrev) {
+			item.tsDLNode<T>::pPrev->tsDLNode<T>::pNext = &item;
+		}
+		else {
+			this->pFirst = &item;
 		}
 
 		this->itemCount++;
@@ -202,19 +218,43 @@ public:
 		this->itemCount--;
 	}
 
-	//
-	// get ()
-	//
-	T * get()
-	{
-		T *pItem = this->pFirst;
 
-		if (pItem) {
-			this->remove (*pItem);
-		}
-		
-		return pItem;
+	//
+	// pop ()
+	// (returns the first item on the list)
+	T * pop()
+	{
+		return this->get();
 	}
+
+	//
+	// push ()
+	// (add an item at the beginning of the list)
+	//
+	void push (T &item)
+	{
+		item.tsDLNode<T>::pPrev = 0;
+		item.tsDLNode<T>::pNext = this->pFirst;
+
+		if (this->itemCount) {
+			this->pFirst->tsDLNode<T>::pPrev = &item;
+		}
+		else {
+			this->pLast = &item;
+		}
+
+		this->pFirst = &item;
+
+		this->itemCount++;
+	}
+	
+	//
+	// find 
+	// returns -1 if the item isnt on the list
+	// and the node number (beginning with zero if
+	// it is)
+	//
+	int find(T &item);
 
 private:
 	T		*pFirst;
@@ -232,13 +272,10 @@ friend class tsDLIter<T>;
 public:
 	tsDLNode() : pNext(0), pPrev(0) {}
 	//
-	// when someone copies int a class deriving from this
+	// when someone copies in a class deriving from this
 	// do _not_ change the node pointers
 	//
 	void operator = (tsDLNode<T> &) {}
-	
-	T *getPrev() {return this->pPrev;}
-	T *getNext() {return this->pNext;}
 private:
 	T	*pNext;
 	T	*pPrev;
@@ -269,11 +306,29 @@ public:
 		this->reset(listIn);
 	}
 
-	T * operator () () 
+	T * current () 
+	{
+		return this->pCurrent;
+	}
+
+	T * prev () 
 	{
 		T *pCur = this->pCurrent;
 		if (pCur==0) {
-			pCur = this->list.first();
+			pCur = this->list.pLast;
+		}
+		else {
+			pCur = pCur->tsDLNode<T>::pPrev;
+		}
+		this->pCurrent = pCur;
+		return pCur;
+	}
+
+	T * next () 
+	{
+		T *pCur = this->pCurrent;
+		if (pCur==0) {
+			pCur = this->list.pFirst;
 		}
 		else {
 			pCur = pCur->tsDLNode<T>::pNext;
@@ -281,10 +336,58 @@ public:
 		this->pCurrent = pCur;
 		return pCur;
 	}
+
+	T * operator () () 
+	{
+		return this->next();
+	}
+
+	//
+	// remove ()
+	// remove current item 
+	// (and move current to be the next item
+	// in the list)
+	//
+	void remove ()
+	{
+		T *pCur = this->pCurrent;
+		if (pCur) {
+			//
+			// move current to the next item
+			//
+			this->next();
+			//
+			// delete current item
+			//
+			this->list.remove(*pCur);
+		}
+	}
 private:
 	tsDLList<T>	&list;
 	T      		*pCurrent;
 };
+
+//
+// find 
+// returns -1 if the item isnt on the list
+// and the node number (beginning with zero if
+// it is)
+//
+template <class T>
+inline int tsDLList<T>::find(T &item)
+{
+	tsDLIter<T>	iter(*this);
+	tsDLNode<T>	*pItem;
+	int		itemNo=0;
+
+	while ( (pItem = iter()) ) {
+		if (pItem == &item) {
+			return itemNo;
+		}
+		itemNo++;
+	}
+	return -1;
+}
 
 #endif // tsDLListH_include
 

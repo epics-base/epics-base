@@ -31,6 +31,9 @@
  *
  * History
  * $Log$
+ * Revision 1.1.1.1  1996/06/20 22:15:55  jhill
+ * installed  ca server templates
+ *
  *
  */
 
@@ -40,15 +43,6 @@
 template <class T>
 class tsSLList : public tsSLNode<T> {
 public:
-	tsSLList () {}
-
-	//
-	// first()
-	//
-	T *first() const
-	{
-		return this->tsSLNode<T>::pNext; 
-	}
 
 	//
 	// insert()
@@ -71,12 +65,16 @@ public:
 
 	//
 	// remove ()
+	// **** removes item after "itemBefore" ****
 	// (itemBefore might be the list header object and therefore
 	// will not always be of type T)
 	//
-	void remove (T &item, tsSLNode<T> &itemBefore)
+	void remove (tsSLNode<T> &itemBefore)
 	{
-		itemBefore.tsSLNode<T>::pNext = item.tsSLNode<T>::pNext;
+		T *pItem = itemBefore.tsSLNode<T>::pNext;
+		if (pItem) {
+			itemBefore.tsSLNode<T>::pNext = pItem->tsSLNode<T>::pNext;
+		}
 	}
 
 	//
@@ -85,9 +83,7 @@ public:
 	T * get()
 	{
 		T *pItem = this->tsSLNode<T>::pNext;
-		if (pItem) {
-			this->remove(*pItem, *this);
-		}
+		this->remove(*this);
 		return pItem;
 	}
 };
@@ -103,12 +99,11 @@ public:
 	tsSLNode() : pNext(0) {}
 
 	//
-	// when someone copies int a class deriving from this
+	// when someone copies into a class deriving from this
 	// do _not_ change the node pointers
 	//
 	void operator = (tsSLNode<T> &) {}
 
-	T *next() {return this->pNext;}
 private:
 	T	*pNext;
 };
@@ -118,6 +113,7 @@ class tsSLIter {
 public:
 	tsSLIter(tsSLList<T> &listIn) : 
 		pCurrent(0), pPrevious(0), list(listIn) {}
+
 	void operator = (tsSLList<T> &listIn) 
 	{
 		list = listIn;
@@ -125,7 +121,12 @@ public:
 		pPrevious = 0;
 	}
 
-	T * operator () () 
+	T * current () 
+	{
+		return this->pCurrent;
+	}
+
+	T * next () 
 	{
 		tsSLNode<T> *pPrev = this->pCurrent;
 		T *pCur;
@@ -138,11 +139,28 @@ public:
 		return pCur;
 	}
 
-	tsSLNode<T> * prev () const
+	// this should move current?
+	//tsSLNode<T> * prev () const
+	//{
+	//	return this->pPrevious;
+	//}
+
+	T * operator () () 
 	{
-		return this->pPrevious;
+		return this->next();
 	}
 
+	//
+	// remove current node
+	//
+	void remove ()
+	{
+		if (this->pCurrent) {
+			this->pCurrent = 
+				this->pCurrent->tsSLNode<T>::pNext; 
+			this->pPrevious->pNext = this->pCurrent;
+		}
+	}
 private:
 	T      		*pCurrent;
 	tsSLNode<T> 	*pPrevious;

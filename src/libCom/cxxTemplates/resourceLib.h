@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.1.1.1  1996/06/20 22:15:55  jhill
+ * installed  ca server templates
+ *
  *
  *	NOTES:
  *	.01 Storage for identifier must persist until an item is deleted
@@ -38,8 +41,10 @@
 #ifndef INCresourceLibh
 #define INCresourceLibh 
 
-#include <tsSLList.h>
+#include <limits.h>
 #include <math.h>
+
+#include <tsSLList.h>
 
 typedef int 		resLibStatus;
 typedef	unsigned 	resTableIndex;
@@ -94,14 +99,11 @@ public:
 		while (pList<&this->pTable[this->hashIdMask+1]) {
 			tsSLIter<T> iter(*pList);
 			T *pItem;
-			T *pNextItem;
 
-			pItem = iter();
-			while (pItem) {
-				pNextItem = iter();
+			while ( (pItem = iter()) ) {
+				iter.remove();
 				delete pItem;
         			this->nInUse--;
-				pItem = pNextItem;
 			}
 			pList++;
 		}
@@ -158,11 +160,11 @@ public:
 		//
 		// T must derive from ID
 		//
-		tsSLList<T> &list = this->pTable[this->hash(res)];
-		tsSLNode<T> *pPrev;
+		tsSLList<T> list(this->pTable[this->hash(res)]);
+		tsSLIter<T> iter(list);
 
-		pPrev = this->find(list, res);
-		if (pPrev) {
+		this->find(iter, res);
+		if (iter.current()) {
 			return -1;
 		}
 		list.add(res);
@@ -172,31 +174,23 @@ public:
 
 	T *remove (const ID &idIn)
 	{
-		tsSLList<T> &list = this->pTable[this->hash(idIn)];
-		tsSLNode<T> *pPrev;
-		T *pItem;
+		tsSLIter<T> iter(this->pTable[this->hash(idIn)]);
 
-		pPrev = this->find(list, idIn);
-		if (!pPrev) {
-			return 0;
+		this->find(iter, idIn);
+		if (iter.current()) {
+			this->nInUse--;
+			iter.remove();
 		}
-		this->nInUse--;
-		pItem = pPrev->next();
-		list.remove(*pItem, *pPrev);
-		return pItem;
+		return iter.current();
 	}
 
 
 	T *lookup (const ID &idIn)
 	{
-		tsSLList<T> &list = this->pTable[this->hash(idIn)];
-		tsSLNode<T> *pPrev;
+		tsSLIter<T> iter(this->pTable[this->hash(idIn)]);
 
-		pPrev = this->find(list, idIn);
-		if (pPrev) {
-			return pPrev->next();
-		}
-		return NULL;
+		this->find(iter, idIn);
+		return iter.current();
 	}
 
 private:
@@ -213,22 +207,25 @@ private:
 	}
 
 	//
-	// beware - this returns a pointer to the node just prior to the
-	// the item found on the list
+	// find
+	// searches from where the iterator points to the
+	// end of the list for idIn
 	//
-	tsSLNode<T> *find(tsSLList<T> &list, const ID &idIn)
+	// iterator points to the item found upon return
+	// (or NULL if nothing matching was found)
+	//
+	void find (tsSLIter<T> &iter, const ID &idIn)
 	{
-		tsSLIter<T>	iter(list);
 		T		*pItem;
 		ID		*pId;
 
 		while ( (pItem = iter()) ) {
 			pId = pItem;
 			if (*pId == idIn) {
-				return iter.prev(); 
+				break;
 			}
 		}
-		return NULL;
+		return;
 	}
 };
 

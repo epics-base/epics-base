@@ -86,6 +86,12 @@ extern SYMTAB_ID  statSymTbl;
 
 #endif
 
+#ifdef __STDC__
+static unsigned short errhash(long errNum);
+#else /*__STDC__*/
+static unsigned short errhash();
+#endif /*__STDC__*/
+
 
 #ifdef vxWorks
 #define MYERRNO	(errnoGet()&0xffff)

@@ -1,6 +1,5 @@
 TOP = ../../..
 include $(TOP)/config/CONFIG_BASE
-USR_CFLAGS += -Wall -pedantic
 
 USR_INCLUDES = -I$(TOP)/src/include/os/vxWorks
 
@@ -32,6 +31,7 @@ SRCS.c += ../os/vxWorks/ipAddrToA.c
 SRCS.c += ../os/vxWorks/sigPipeIgnore.c
 SRCS.c += ../impLib.c
 SRCS.c += ../dbmf.c
+SRCS.c += ../epicsString.c
 
 LIBOBJS += calcPerform.o
 LIBOBJS += cvtFast.o
@@ -58,6 +58,7 @@ LIBOBJS += ipAddrToA.o
 LIBOBJS += sigPipeIgnore.o
 LIBOBJS += impLib.o
 LIBOBJS += dbmf.o
+LIBOBJS += epicsString.o
 
 LIBNAME = libCom
 

@@ -146,7 +146,6 @@ do
     mkdir Db
 	cat > Db/Makefile <<-\END
 		TOP = ../..
-		T_A=$(HOST_ARCH)
 		include $(TOP)/config/CONFIG_APP
 		
 		include $(TOP)/config/RULES.Db

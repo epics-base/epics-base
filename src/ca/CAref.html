@@ -617,7 +617,7 @@ the correct time zone. Nevertheless, several programs commonly used with
 EPICS still use the original "tssubr" library and therefore they still rely
 on proper configuration of EPICS_TS_MIN_WEST.</em></p>
 
-<p>While the CA client library does not translate in between the local time
+<p>While the CA client library does not translate inbetween the local time
 and the time zone independent internal storage of EPICS time stamps, many
 EPICS client side applications call core EPICS libraries which provide these
 services. To set the correct time zone users must compute the number of
@@ -658,6 +658,10 @@ placed in the variable EPICS_TS_MIN_WEST.</p>
     <tr>
       <td>Japan</td>
       <td>-540</td>
+    </tr>
+    <tr>
+      <td>China</td>
+      <td>-420</td>
     </tr>
     <tr>
       <td>Germany</td>

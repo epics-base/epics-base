@@ -82,7 +82,8 @@ int	msgDebug = 0;
 #endif
 
 static	long	 drvMsg_write(), drvMsg_AiFmt();
-static	long	drvMsg_AoFmt(), drvMsg_proc();
+static	long	drvMsg_AoFmt();
+long drvMsg_proc();
 static	long	drvMsg_BiFmt(), drvMsg_BoFmt(), drvMsg_MiFmt(), drvMsg_MoFmt();
 static	long	drvMsg_LiFmt(), drvMsg_LoFmt(), drvMsg_SiFmt(), drvMsg_SoFmt();
 static	long	drvMsg_SiRaw(), drvMsg_SoRaw();
@@ -477,6 +478,7 @@ struct dbCommon	*prec;
 long
 drvMsg_qXact(xact, prio)
 msgXact	*xact;
+int	prio;
 {
   msgLink	*pmsgLink = xact->phwpvt->pmsgLink;
 

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.4  1998/07/08 15:38:04  jhill
+ * fixed lost monitors during flow control problem
+ *
  * Revision 1.3  1997/08/05 00:47:05  jhill
  * fixed warnings
  *
@@ -80,7 +83,7 @@ caStatus casClientMon::callBack(gdd &value)
 	//
 	msg.m_cmmd = CA_PROTO_EVENT_ADD;
 	msg.m_postsize = 0u;
-	msg.m_type = this->getType();
+	msg.m_dataType = this->getType();
 	msg.m_count = (ca_uint16_t) this->getCount();
 	msg.m_cid = this->getChannel().getSID();
 	msg.m_available = this->getClientId();

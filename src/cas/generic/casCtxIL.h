@@ -73,7 +73,7 @@ inline void casCtx::setMsg(const char *pBuf)
 	memcpy (&this->msg, pBuf, sizeof(this->msg));
 	this->msg.m_cmmd = ntohs (this->msg.m_cmmd);
 	this->msg.m_postsize = ntohs (this->msg.m_postsize);
-	this->msg.m_type = ntohs (this->msg.m_type);
+	this->msg.m_dataType = ntohs (this->msg.m_dataType);
 	this->msg.m_count = ntohs (this->msg.m_count);
 	this->msg.m_cid = ntohl (this->msg.m_cid);
 	this->msg.m_available = ntohl (this->msg.m_available);

@@ -474,7 +474,7 @@ const char	*pformat,
 	 */
 	reply[1].m_postsize = htons (curp->m_postsize);
 	reply[1].m_cmmd = htons (curp->m_cmmd);
-	reply[1].m_type = htons (curp->m_type);
+	reply[1].m_dataType = htons (curp->m_dataType);
 	reply[1].m_count = htons (curp->m_count);
 	reply[1].m_cid = curp->m_cid;
 	reply[1].m_available = curp->m_available;
@@ -582,12 +582,12 @@ void casClient::dumpMsg(const caHdr *mp, const void *dp)
 		pName,
 		mp->m_cmmd,
 		pPVName,
-		mp->m_type,
+		mp->m_dataType,
 		mp->m_count,
 		mp->m_postsize,
 		mp->m_available);
 
-  	if (mp->m_cmmd==CA_PROTO_WRITE && mp->m_type==DBR_STRING && dp) {
+  	if (mp->m_cmmd==CA_PROTO_WRITE && mp->m_dataType==DBR_STRING && dp) {
     		ca_printf("CAS: The string written: %s \n", (char *)dp);
 	}
 }

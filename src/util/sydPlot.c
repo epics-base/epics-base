@@ -31,6 +31,10 @@
  *				documentation
  * .04	10-01-91	rac	properly handle channels which aren't
  *				connected yet
+ * .05	10-20-91	rac	avoid an abort on printing a plot to
+ *				PostScript; for non-user-window plotting,
+ *				defer the pprWinIsMono call until after
+ *				the window is mapped
  *
  * make options
  *	-DXWINDOWS	makes a version for X11
@@ -484,7 +488,8 @@ int	fullInit;	/* I 0 or 1 to do partial or full initialization */
     else {
 	pMstr->pWin = pprWinOpen(winType, dispName, winTitle, 
 			pMstr->x, pMstr->y, pMstr->width, pMstr->height);
-	return S_syd_ERROR;
+	if (pMstr->pWin == NULL)
+	    return S_syd_ERROR;
     }
 
     pMstr->winType = winType;
@@ -502,10 +507,6 @@ SYD_PL_MSTR *pMstr;
     pMstr->markPlot = 0;
     pMstr->showStat = 0;
     pMstr->fillUnder = 0;
-    if (pprWinIsMono(pMstr->pWin))
-	pMstr->noColor = 1;
-    else
-	pMstr->noColor = 0;
 #ifdef XWINDOWS
     pMstr->pDisp = NULL;
     pMstr->window = NULL;
@@ -580,6 +581,10 @@ GC	gc;		/* I X11 gc handle */
     pMstr->plotAxis = SYD_PLAX_UNDEF;
     pMstr->pSspec = pSspec;
     sydPlotInit_common(pMstr);
+    if (pprWinIsMono(pMstr->pWin))
+	pMstr->noColor = 1;
+    else
+	pMstr->noColor = 0;
     pMstr->pDisp = pDisp;
     pMstr->window = window;
 
@@ -811,6 +816,12 @@ SYD_PL_MSTR *pMstr;	/* I pointer to plot master structure */
 	pMstr->nInt = 5;
     }
 
+    if (pprWinMap(pMstr->pWin) != 0)
+	return S_syd_ERROR;
+    if (pprWinIsMono(pMstr->pWin))
+	pMstr->noColor = 1;
+    else
+	pMstr->noColor = 0;
     stat = pprWinLoop(pMstr->pWin, sydPlot, pMstr);
     if (stat != OK)
 	return S_syd_ERROR;

@@ -226,6 +226,7 @@ void epicsShareAPI gphFreeMem(void *pvt)
 	}
 	free((void *)paplist[hashInd]);
     }
+    epicsMutexDestroy(pgphPvt->lock);
     free((void *)paplist);
     free((void *)pgphPvt);
 }

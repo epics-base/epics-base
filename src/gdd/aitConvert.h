@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.7  1999/10/28 23:33:41  jhill
+ * use fully qualified namespace names for C++ RTL classes
+ *
  * Revision 1.6  1999/10/28 00:27:51  jhill
  * special case enum to string conversion
  *
@@ -34,8 +37,12 @@
 
 #include <sys/types.h>
 
+#if _MSC_VER <= 1200
+#pragma warning (disable:4786)
+#endif
 #include <vector>
 #include <string>
+
 
 #include "shareLib.h"
 #include "osiSock.h"

@@ -1,3 +1,4 @@
+#!/usr/local/bin/perl
 #*************************************************************************
 # Copyright (c) 2002 The University of Chicago, as Operator of Argonne
 #     National Laboratory.
@@ -7,7 +8,6 @@
 # and higher are distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
-#!/usr/local/bin/perl
 #
 #	makeStatTbl.pl - Create Error Symbol Table
 #

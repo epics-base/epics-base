@@ -1,3 +1,4 @@
+#!/usr/bin/perl 
 #*************************************************************************
 # Copyright (c) 2002 The University of Chicago, as Operator of Argonne
 #     National Laboratory.
@@ -7,7 +8,6 @@
 # and higher are distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
-#!/usr/bin/perl 
 #
 # makeVersion - create the snc version module
 #

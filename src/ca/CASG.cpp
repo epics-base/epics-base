@@ -300,4 +300,19 @@ int CASG::printf ( const char *pformat, ... )
     return status;
 }
 
+void CASG::exception ( int status, const char *pContext, 
+    const char *pFileName, unsigned lineNo )
+{
+    this->client.exception ( status, pContext, pFileName, lineNo );
+}
+
+void CASG::exception ( int status, const char *pContext,
+    const char *pFileName, unsigned lineNo, oldChannelNotify &chan, 
+    unsigned type, arrayElementCount count, unsigned op )
+{
+    this->client.exception ( status, pContext, pFileName, 
+        lineNo, chan, type, count, op );
+}
+
+
  

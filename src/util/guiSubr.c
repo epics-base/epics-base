@@ -39,9 +39,15 @@
  *			printer command frame and print routine;
  *			add "puts" for text subwindows
  *  .06 03-15-92 rac	add guiLock as a locking mechanism
+ *  .07 03-23-92 rac	add guiTimer; fix guiEditorCreate for sane behavior;
+ *			add guiXxxPrintf routines; assume make for XVIEW;
+ *			add guiCanvas; rearrange guiEditor panel and add
+ *			a status message; add guiCFshow and guiCFshowPin;
+ *			change guiCFShow so that it will expose hidden
+ *			command frames (this requires OpenWindows Version 3);
+ *			for guiGetNameFromSeln, require that selection be
+ *			in caller's window;
  *
- * make options
- *	-DXWINDOWS	to use xview/X Window System
  */
 #if 0	/* allow embedding comments in the header below */
 /*+/mod***********************************************************************
@@ -56,12 +62,17 @@
 *	For more information, see USAGE, below.
 *
 * QUICK REFERENCE
+* #include <guiSubr.h>
 *
 *     Textsw guiBrowser(parent, panel, nCol, nLines, fileName)
 * Panel_item guiButton(label, panel, <>pX, pY, <>pHt, proc, menu,
 *                                      key1, val1, key2, val2)
 *       void guiButtonCenter(button1, button2, panel)
+*     Canvas guiCanvas(parentFrame, x, y, proc, >pBgColor, >pFgColor,
+*                                      key1, val1, key2, val2)
 *       void guiCFdismiss_xvo(item)
+*       void guiCFshow(frame)
+*       void guiCFshowPin(frame)
 *       void guiCFshow_mi(menu, menuItem)
 *       void guiCFshow_xvo(item)
 *       void guiCFshowPin_mi(menu, menuItem)
@@ -69,18 +80,27 @@
 * Panel_item guiCheckbox(label, panel, nItems, <>pX, pY, <>pHt, proc,
 *                                      key1, val1, key2, val2)
 *       void guiCheckboxItem(label,checkbox,itemNum,dfltFlag,<>pX,pY,<>pHt)
+* Panel_item guiChoice(label, item1, item2, ..., NULL, panel, excl, nRow, nCol,
+*                      <>pX, pY, <>pHt, proc, key1, val1, key2, val2) 
 *  GUI_EDIT *guiEditor(pGuiCtx, title, dirName, fileName, pPrtCtx,
 *                                        addExtrasFn, addExtrasArg)
 *            void addExtrasFn(pGuiCtx, pEdit, panel, pX,pY,pHt, addExtrasArg)
+*      char *guiEditorGets(pEditor, pBuf, dim, <>pCharPos)
+*       void guiEditorLoadFile(pEditor, dirName, fileName)
 *       void guiEditorNewEntry_pb(item)
+*       void guiEditorPrintf(pEditor, fmt, ...)
+*        int guiEditorPuts(pEditor, pBuf, <>pCharPos)
+*       void guiEditorReset(pEditor)
 *       void guiEditorShowCF(pEditor)
 *       void guiEditorShowCF_mi(menu, menuItem)
 *       void guiEditorShowCF_xvo(item)
+*       void guiEditorStatusPrintf(pEditor, fmt, ...)
 *      char *guiFileSelect(pGuiCtx, title, dir, file, dim, callbackFn, pArg)
 *               void callbackFn(pArg, newPath, newDir, newFileName);
 *      Frame guiFrame(label, x, y, width, height, >ppDisp, >pServer)
 *      Frame guiFrameCmd(label, parentFrame, pPanel, resizeProc)
 *      char *guiGetNameFromSeln(pGuiCtx, textSw, headFlag, tailFlag)
+*      char *guiGetSelnInTextsw(pGuiCtx, textSw)
 *       Icon guiIconCreate(frame, iconBits)
 *      Panel guiInit(pGuiCtx, pArgc, argv, label, x, y, width, height)
 *        int guiLock(pGuiCtx, text, lockPath, flag)
@@ -89,20 +109,26 @@
 *  Menu_item guiMenuItem(label, menu, proc, inact, dflt,
 *                                      key1, val1, key2, val2)
 * Panel_item guiMessage(label, panel, <>pX, pY, <>pHt)
+*       void guiMessagePrintf(Panel_item, fmt, ...)
 *       void guiNotice(pGuiCtx, msg)
 *       void guiNoticeFile(pGuiCtx, msg, fName)
 *       void guiNoticeName(pGuiCtx, msg, name)
+*       void guiNoticePrintf(pGuiCtx, fmt, ...)
 *   GUI_PRT *guiPrinter(pGuiCtx, parentFrame, title, useEnscript)
 *       void guiPrinterShowCF_mi(menu, menuItem)
 *       void guiPrinterShowCF_xvo(Xv_opaque)
 *       void guiPrintFile(pPrtCtx, path)
+*       void guiPrintGetCmd(pPrtCtx, path, commandBuf)
 *       void guiShellCmd(pGuiCtx, cmdBuf, clientNum, callbackFn, callbackArg)
 *               void callbackFn(callbackArg, resultBuf)
 * Panel_item guiTextField(label, panel, <>pX, pY, <>pHt, proc, nStr, nDsp,
 *                                      key1, val1, key2, val2)
+*       void guiTextFieldPrintf(Panel_item, fmt, ...)
 *      char *guiTextswGets(textsw, pBuf, dim, <>pCharPos)
+*       void guiTextswPrintf(textsw, fmt, ...)
 *        int guiTextswPuts(textsw, pBuf, <>pCharPos)
 *       void guiTextswReset(textsw)
+*       void guiTimer(seconds, callbackFn, callbackArg)
 *
 * NOTES
 * 1.	Many guiXxx routines have <>pX,pY,<>pHt as arguments.  pX,pY specifies
@@ -190,6 +216,7 @@
 *     window_fit(panel);
 *     window_fit(testCtx.guiCtx.baseFrame);
 *     xv_main_loop(testCtx.guiCtx.baseFrame);
+*     printf("exiting\n");
 *     return 0;
 * }
 *
@@ -259,16 +286,20 @@
 #endif
 
 #include <stdio.h>
+#include <varargs.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <math.h>
 #include <sys/ioctl.h>	/* for use with notifier */
-#include <sys/wait.h>	/* for use with notifier */
-#include <signal.h>	/* for use with notifier */
 #include <sys/fcntl.h>
+#include <signal.h>	/* for use with notifier */
+#include <sys/wait.h>	/* for use with notifier */
 
-#if defined XWINDOWS
+#define XVIEW
+#if defined XVIEW
 #   include <xview/xview.h>
 #   include <xview/frame.h>
+#   include <xview/icon.h>
 #   include <xview/notice.h>
 #   include <xview/notify.h>
 #   include <xview/openmenu.h>
@@ -276,7 +307,7 @@
 #   include <xview/textsw.h>
 #   include <xview/seln.h>
 #   include <xview/svrimage.h>
-#   include <xview/icon.h>
+#   include <X11/Xos.h>	/* for <sys/time.h> */
 #endif
 
 #include <guiSubr.h>
@@ -312,6 +343,7 @@ typedef enum {
 void edit_pb();
 void quit_pb();
 void extra();
+void testTime();
 
 /*+/subr**********************************************************************
 * NAME	main - test program
@@ -326,7 +358,9 @@ char	*argv[];
 #include "guiTest.icon"
     };
     Panel	panel;
+    Panel_item	choice;
     int		y=5, x=5, ht=0;
+    int		x1;
 
     panel = guiInit(&testCtx.guiCtx,
 			&argc, argv, "gui test program", 100, 100, 0,0);
@@ -338,10 +372,32 @@ char	*argv[];
 
     guiButton("Edit", panel, &x,&y,&ht, edit_pb, NULL, PCTX,&testCtx,0,NULL);
     guiButton("Quit", panel, &x,&y,&ht, quit_pb, NULL, PCTX,&testCtx,0,NULL);
+    y += 5 + ht; x = 5; ht = 0;
+    choice = guiChoice("exclusive    ",
+		"abc", "def", "ghi", "jkl", "mno", NULL,
+		panel, 1, 0, 2, &x,&y,&ht, NULL, 0,NULL,0,NULL);
+    y += 5 + ht; x = 5; ht = 0;
+    choice = guiChoice("non-exclusive",
+		"abc", "def", "ghi", "jkl", "mno", NULL,
+		panel, 0, 2, 0, &x,&y,&ht, NULL, 0,NULL,0,NULL);
+    y += 5 + ht; x = 5; ht = 0;
+    guiMessage("exclusive", panel, &x,&y,&ht);
+    x1 = 150;
+    choice = guiChoice("",
+		"abc", "def", "ghi", "jkl", "mno", NULL,
+		panel, 1, 0, 2, &x1,&y,&ht, NULL, 0,NULL,0,NULL);
+    y += 5 + ht; x = 5; ht = 0;
+    guiMessage("non-exclusive", panel, &x,&y,&ht);
+    x1 = 150;
+    choice = guiChoice("",
+		"abc", "def", "ghi", "jkl", "mno", NULL,
+		panel, 0, 2, 0, &x1,&y,&ht, NULL, 0,NULL,0,NULL);
 
     window_fit(panel);
     window_fit(testCtx.guiCtx.baseFrame);
+    guiTimer(10., testTime, &testCtx);
     xv_main_loop(testCtx.guiCtx.baseFrame);
+    printf("exiting\n");
     return 0;
 }
 static void edit_pb(item)
@@ -372,7 +428,40 @@ Panel_item item;
 
     xv_destroy_safe(pCtx->guiCtx.baseFrame);
 }
+
+void testTime(pCtx, dummy)
+TEST_CTX *pCtx;
+int	dummy;
+{
+    printf("timer %x\n", pCtx);
+}
 #endif
+
+/*+/internal******************************************************************
+* NAME	guiAbove - move a frame "above" in the stacking order
+*
+* BUGS
+* o	this doesn't work under OpenWindows version 2; under version 3,
+*	the function can actually be invoked.
+*
+*-*/
+guiAbove(frame)
+Frame	frame;
+{
+#if 0
+    XWindowChanges chg;
+    Display	*pDisp=(Display *)xv_get(frame, XV_DISPLAY);
+    Window	win=(Window)xv_get(frame, XV_XID);
+
+    chg.stack_mode = TopIf;
+    XConfigureWindow(pDisp, win, CWStackMode, &chg);
+#if 0
+    XRaiseWindow(pDisp, win);
+#endif
+#endif
+    xv_set(frame, XV_SHOW, TRUE, NULL);
+}
+
 
 
 /*+/subr**********************************************************************
@@ -518,6 +607,97 @@ Panel	panel;		/* I panel containing button(s) */
 }
 
 /*+/subr**********************************************************************
+* NAME	guiCanvas - create a canvas within a frame
+*
+* DESCRIPTION
+*
+* RETURNS
+*	Canvas handle
+*
+* EXAMPLE
+*	Canvas	canvas;
+*
+*	canvas = guiCanvas(baseFrame, 0, 100, canvasEvent, NULL, NULL,
+*			0,NULL,0,NULL);
+*
+* void
+* canvasEvent(canvas, event)
+* Canvas	canvas;
+* Event		*event;
+* {
+*	if (event_id(event) == WIN_REPAINT) {
+*		repaint activity
+*	}
+*	else if (event_id(event) == MS_LEFT && event_is_up(event)) {
+*	    left mouse release activity
+*	}
+* {
+*-*/
+Canvas
+guiCanvas(parentFrame, x, y, proc, pBgColor, pFgColor, key1, val1, key2, val2)
+Frame	parentFrame;	/* I parent frame to contain canvas */
+int	x;		/* I x position in frame, in pixels */
+int	y;		/* I y position in frame, in pixels */
+void	(*proc)();	/* I pointer to procedure to handle resize & events */
+unsigned long *pBgColor;/* O pointer to background pixel value, or NULL */
+unsigned long *pFgColor;/* O pointer to foreground pixel value, or NULL */
+enum	key1;		/* I key for context information for canvas */
+void	*val1;		/* I value associated with key */
+enum	key2;		/* I key for context information for canvas */
+void	*val2;		/* I value associated with key */
+{
+    Canvas	canvas;
+    Xv_window	paintWin;
+    unsigned long *colors;
+
+    canvas = (Canvas)xv_create(parentFrame, CANVAS,
+	XV_X, x, XV_Y, y,
+	CANVAS_X_PAINT_WINDOW,	TRUE,
+	CANVAS_FIXED_IMAGE,	FALSE,
+	WIN_RETAINED,		FALSE,
+	CANVAS_AUTO_CLEAR,	TRUE,
+	CANVAS_AUTO_SHRINK,	TRUE,
+	CANVAS_AUTO_EXPAND,	TRUE,
+	NULL);
+    if (canvas == NULL) {
+	(void)printf("error creating canvas\n");
+	exit(1);
+    }
+    paintWin = canvas_paint_window(canvas);
+    if (xv_set(paintWin, WIN_COLLAPSE_EXPOSURES, TRUE,
+		WIN_CONSUME_EVENTS, WIN_MOUSE_BUTTONS, WIN_REPAINT, NULL,
+		NULL) != XV_OK) {
+	(void)printf("error setting events for canvas\n");
+	exit(1);
+    }
+    if (proc != NULL) {
+	if (xv_set(paintWin, WIN_EVENT_PROC, proc, NULL) != XV_OK) {
+	    (void)printf("error adding event procedure for canvas\n");
+	    exit(1);
+	}
+    }
+    if (key1 != 0) {
+	if (xv_set(paintWin, XV_KEY_DATA, key1, val1, NULL) != XV_OK) {
+	    (void)printf("error adding key1 to canvas\n");
+	    exit(1);
+	}
+    }
+    if (key2 != 0) {
+	if (xv_set(paintWin, XV_KEY_DATA, key2, val2, NULL) != XV_OK) {
+	    (void)printf("error adding key2 to canvas\n");
+	    exit(1);
+	}
+    }
+
+    colors = (unsigned long *)xv_get(paintWin, WIN_X_COLOR_INDICES);
+    if (pBgColor != NULL)
+	*pBgColor=colors[(unsigned long)xv_get(paintWin,WIN_BACKGROUND_COLOR)];
+    if (pFgColor != NULL)
+	*pFgColor=colors[(unsigned long)xv_get(paintWin,WIN_FOREGROUND_COLOR)];
+    return canvas;
+}
+
+/*+/subr**********************************************************************
 * NAME	guiCF - command frame dismiss and show routines
 *
 * DESCRIPTION
@@ -556,34 +736,42 @@ Xv_opaque item;
     xv_set(frame, XV_SHOW, FALSE, FRAME_CMD_PUSHPIN_IN, FALSE, NULL);
 }
 void
-guiCFshow_mi(menu, menuItem)
-Menu	menu;
-Menu_item menuItem;
-{   GUI_CTX	*pGuiCtx=(GUI_CTX *)xv_get(menu, XV_KEY_DATA, GUI_PCTX);
-    Frame	frame=(Frame)xv_get(menuItem, XV_KEY_DATA, GUI_CF);
-    xv_set(frame, XV_SHOW, TRUE, NULL);
+guiCFshow(frame)
+Frame	frame;
+{
+    if ((int)xv_get(frame, XV_SHOW) == TRUE)
+	guiAbove(frame);
+    else
+	xv_set(frame, XV_SHOW, TRUE, NULL);
 }
 void
-guiCFshowPin_mi(menu, menuItem)
-Menu	menu;
-Menu_item menuItem;
-{   GUI_CTX	*pGuiCtx=(GUI_CTX *)xv_get(menu, XV_KEY_DATA, GUI_PCTX);
-    Frame	frame=(Frame)xv_get(menuItem, XV_KEY_DATA, GUI_CF);
-    xv_set(frame, XV_SHOW, TRUE, FRAME_CMD_PUSHPIN_IN, TRUE, NULL);
+guiCFshowPin(frame)
+Frame	frame;
+{
+    if ((int)xv_get(frame, XV_SHOW) == TRUE)
+	guiAbove(frame);
+    else
+	xv_set(frame, XV_SHOW, TRUE, FRAME_CMD_PUSHPIN_IN, TRUE, NULL);
 }
-void
-guiCFshow_xvo(item)
+
+void guiCFshow_mi(menu, menuItem) Menu menu; Menu_item menuItem;
+{   guiCFshow_xvo(menuItem); }
+
+void guiCFshow_xvo(item)
 Xv_opaque item;
 {   GUI_CTX	*pGuiCtx=(GUI_CTX *)xv_get(item, XV_KEY_DATA, GUI_PCTX);
     Frame	frame=(Frame)xv_get(item, XV_KEY_DATA, GUI_CF);
-    xv_set(frame, XV_SHOW, TRUE, NULL);
+    guiCFshow(frame);
 }
-void
-guiCFshowPin_xvo(item)
+
+void guiCFshowPin_mi(menu, menuItem) Menu menu; Menu_item menuItem;
+{   guiCFshowPin_xvo(menuItem); }
+
+void guiCFshowPin_xvo(item)
 Xv_opaque item;
 {   GUI_CTX	*pGuiCtx=(GUI_CTX *)xv_get(item, XV_KEY_DATA, GUI_PCTX);
     Frame	frame=(Frame)xv_get(item, XV_KEY_DATA, GUI_CF);
-    xv_set(frame, XV_SHOW, TRUE, FRAME_CMD_PUSHPIN_IN, TRUE, NULL);
+    guiCFshowPin(frame);
 }
 
 /*+/subr**********************************************************************
@@ -754,18 +942,146 @@ int	*pHt;		/* IO ptr to height used by label, in pixels, or NULL */
 	xv_set(checkbox, PANEL_VALUE, itemNum, NULL);
 }
 
-void guiEditorCancelFile_pb();
-void guiEditorCreateFile_pb();
+#if 0
+/*+/macros********************************************************************
+* NAME	guiChoice - set up a choice list
+*
+* SYNOPSIS
+*   Panel_item 
+*   guiChoice(label, item1, item2, ..., NULL, panel, excl, nRow, nCol,
+*			pX,pY,pHt, proc, key1, val1, key2, val2) 
+*   char	*label;	/* I label for choice list */
+*   char	*item1;	/* I label for first choice item */
+*   char	*item2;	/* I label for second choice item */
+*   ...
+*   Panel	panel;	/* I handle of panel containing choice list */
+*   int		excl;	/* I 1 for exclusive choice list, else 0 */
+*   int		nRow;	/* I number of rows for organizing buttons */
+*   int		nCol;	/* I number of columns for organizing buttons */
+*   int		*pX;	/* IO pointer to x position in panel, in pixels */
+*   int		*pY;	/* I pointer to y position in panel, in pixels */
+*   int		*pHt;	/* IO ptr to height used by label, in pixels, or NULL */
+*   void	(*proc)();/* I pointer to procedure to handle making a choice */
+*   enum	key1;	/* I key for context information for object */
+*   void	*val1;	/* I value associated with key */
+*   enum	key2;	/* I key for context information for object */
+*   void	*val2;	/* I value associated with key */
+*
+*-*/
+#endif
+Panel_item
+guiChoice(va_alist)
+va_dcl
+{
+    va_list	pArg;
+
+    Panel_item  item; 
+    int		height, lastItem;
+    char	*label, *I[100];
+    Panel	panel;
+    int		excl, nRow, nCol;
+    int		*pX;
+    int		*pY;
+    int		*pHt;
+    void	(*proc)();
+    int		key1;
+    void	*val1;
+    int		key2;
+    void	*val2;
+    typedef	void FN();
+    int		type, df;
+
+    va_start(pArg);
+    label = va_arg(pArg, char *);
+    for (lastItem=0; lastItem<100; lastItem++) {
+	I[lastItem] = va_arg(pArg, char *);
+	if (I[lastItem] == NULL)
+	    break;
+    }
+    panel = va_arg(pArg, Panel);
+    excl = va_arg(pArg, int);
+    nRow = va_arg(pArg, int);
+    nCol = va_arg(pArg, int);
+    pX = va_arg(pArg, int *);
+    pY = va_arg(pArg, int *);
+    pHt = va_arg(pArg, int *);
+    proc = va_arg(pArg, FN *);
+    key1 = va_arg(pArg, int);
+    val1 = va_arg(pArg, void *);
+    key2 = va_arg(pArg, int);
+    val2 = va_arg(pArg, void *);
+
+    va_end(pArg);
+
+    if (excl == 1)	type = TRUE, df = 0;
+    else		type = FALSE, df = 1;
+#define Ps xv_create(panel,PANEL_CHOICE,PANEL_CHOOSE_ONE,type,\
+	PANEL_VALUE,df,PANEL_LABEL_STRING,label,PANEL_CHOICE_STRINGS,
+#define Pe , NULL, XV_X, *pX, XV_Y, *pY, NULL); break;
+    switch (lastItem) {
+	case 1: item = Ps I[0] Pe
+	case 2: item = Ps I[0],I[1] Pe
+	case 3: item = Ps I[0],I[1],I[2] Pe
+	case 4: item = Ps I[0],I[1],I[2],I[3] Pe
+	case 5: item = Ps I[0],I[1],I[2],I[3],I[4] Pe
+	case 6: item = Ps I[0],I[1],I[2],I[3],I[4],I[5] Pe
+	case 7: item = Ps I[0],I[1],I[2],I[3],I[4],I[5],I[6] Pe
+	case 8: item = Ps I[0],I[1],I[2],I[3],I[4],I[5],I[6],I[7] Pe
+	case 9: item = Ps I[0],I[1],I[2],I[3],I[4],I[5],I[6],I[7],I[8] Pe
+	case 10: item = Ps I[0],I[1],I[2],I[3],I[4],I[5],I[6],I[7],I[8],I[9] Pe
+	dflt:
+		printf("can't handle more than 10 choices right now\n");
+		exit(1);
+    }
+    if (item == NULL) {
+	(void)printf("error creating choice\n");
+	exit(1);
+    }
+    if (nRow > 0)
+	xv_set(item, PANEL_CHOICE_NROWS, nRow, NULL);
+    else if (nCol > 0)
+	xv_set(item, PANEL_CHOICE_NCOLS, nCol, NULL);
+
+    if (proc != NULL) {
+	if (xv_set(item, PANEL_NOTIFY_PROC, proc, NULL) != XV_OK) {
+	    (void)printf("error adding proc to choice\n");
+	    exit(1);
+	}
+    }
+    if (key1 != 0) {
+	if (xv_set(item, XV_KEY_DATA, key1, val1, NULL) != XV_OK) {
+	    (void)printf("error adding key1 to choice\n");
+	    exit(1);
+	}
+    }
+    if (key2 != 0) {
+	if (xv_set(item, XV_KEY_DATA, key2, val2, NULL) != XV_OK) {
+	    (void)printf("error adding key2 to choice\n");
+	    exit(1);
+	}
+    }
+
+    *pX += (int)xv_get(item, XV_WIDTH);
+    if (pHt != NULL) {
+	height = xv_get(item, XV_HEIGHT);
+	if (height > *pHt)
+	    *pHt = height;
+    }
+    return item;
+}
+
+void guiEditorCancelFile_mi();
+void guiEditorCreateFile_mi();
 char *guiEditorGetPath();
-void guiEditorLoadFile();
-void guiEditorLoadFile_xvo();
-void guiEditorPickFile_pb();
+void guiEditorLoadFile_1();
+void guiEditorLoadFile_mi();
+void guiEditorPickFile_mi();
 void guiEditorPick_callback();
 void guiEditorPrintFile_mi();
-void guiEditorSaveFile_pb();
+void guiEditorSaveFile_mi();
 void guiEditorUpdateSet();
 void guiEditorUpdateRst();
-void guiEditorUpdate_xvo();
+void guiEditorUpdate_mi();
 
 /*+/subr**********************************************************************
 * NAME	guiEditor - create a text editor command frame
@@ -813,21 +1129,24 @@ void	*arg;		/* I argument to pass to addExtrasFn */
 {
     GUI_EDIT	*pEdit;
     Panel	panel;
+    Menu	menu;
     Textsw	textsw;
     Panel_item	ck;
     int		y=5, x=5, ht=0, ht1;
 
 /*-----------------------------------------------------------------------------
-* Dir: [<]___________[>]  File: [<]_____________________[>]  List dir
-* Create  Load  [] read  []edit  Save  Cancel  Print v
-*                                                    print
-*                                                    setup...
-* ..................status message..............................
+* Dir: [<]_____________________[>]  File: [<]_______________[>]
+* File v       Edit v    status......
+*   load         edit
+*   save         read-only
+*   list dir...  discard edits
+*   create
+*   print
+*   printer setup...
 *----------------------------------------------------------------------------*/
 
-    if ((pEdit=(GUI_EDIT *)malloc(sizeof(GUI_EDIT))) == NULL) {
+    if ((pEdit=(GUI_EDIT *)malloc(sizeof(GUI_EDIT))) == NULL)
 	return NULL;
-    }
     bzero((char *)pEdit, sizeof(*pEdit));
     pEdit->pGuiCtx = pGuiCtx;
     pEdit->pPrtCtx = pPrtCtx;
@@ -837,46 +1156,42 @@ void	*arg;		/* I argument to pass to addExtrasFn */
     strcpy(pEdit->title, title);
 
     pEdit->dir_PT = guiTextField("Dir:", panel, &x,&y,&ht,
-		NULL, GUI_TDIM-1, 30, 0, NULL, 0, NULL);
+		NULL, GUI_TDIM-1, 40, 0, NULL, 0, NULL);
     pEdit->file_PT = guiTextField("File:", panel, &x,&y,&ht,
 		NULL, GUI_TDIM-1, 20, 0, NULL, 0, NULL);
-    guiButton("List dir...", panel, &x, &y, &ht, guiEditorPickFile_pb, NULL,
-		    GUI_PCTX, pGuiCtx, GUI_PEDIT, pEdit);
+    if (dir == NULL)
+	dir = pGuiCtx->pwd;
     xv_set(pEdit->dir_PT, PANEL_VALUE, dir, NULL);
     xv_set(pEdit->file_PT, PANEL_VALUE, file, NULL);
     y += ht + 5; x = 5; ht = 0;
 
-    guiButton("Create", panel, &x, &y, &ht, guiEditorCreateFile_pb, NULL,
+    menu = guiMenu(NULL, 0, NULL, 0, NULL);
+    guiMenuItem("Load", menu, guiEditorLoadFile_mi, 0, 1,
 		    GUI_PCTX, pGuiCtx, GUI_PEDIT, pEdit);
-    guiButton("Load", panel, &x, &y, &ht, guiEditorLoadFile_xvo, NULL,
+    guiMenuItem("Save", menu, guiEditorSaveFile_mi, 0, 0,
 		    GUI_PCTX, pGuiCtx, GUI_PEDIT, pEdit);
-    ck = pEdit->update_PCB = xv_create(panel, PANEL_CHECK_BOX,
-		XV_X, x, XV_Y, y,
-		PANEL_LAYOUT,		PANEL_HORIZONTAL,
-		PANEL_CHOICE_STRINGS,	"read    ", "edit", NULL,
-		PANEL_VALUE,		0,
-		PANEL_CHOOSE_ONE,	TRUE,
-		PANEL_NOTIFY_PROC,	guiEditorUpdate_xvo,
-		XV_KEY_DATA,		GUI_PCTX, pGuiCtx,
-		XV_KEY_DATA,		GUI_PEDIT, pEdit,
-		NULL);
-    x += (int)xv_get(ck, XV_WIDTH) + 10;
-    ht1 = xv_get(ck, XV_HEIGHT);
-    if (ht1 > ht)
-	ht = ht1;
-    guiButton("Save", panel, &x, &y, &ht, guiEditorSaveFile_pb, NULL,
+    guiMenuItem("List dir...", menu, guiEditorPickFile_mi, 0, 0,
 		    GUI_PCTX, pGuiCtx, GUI_PEDIT, pEdit);
-    guiButton("Cancel", panel, &x, &y, &ht, guiEditorCancelFile_pb, NULL,
+    guiMenuItem("Create", menu, guiEditorCreateFile_mi, 0, 0,
 		    GUI_PCTX, pGuiCtx, GUI_PEDIT, pEdit);
     if (pPrtCtx != NULL) {
-	Menu	menu;
-	menu = guiMenu(NULL, 0, NULL, 0, NULL);
-	guiMenuItem("Print file", menu, guiEditorPrintFile_mi, 0,1,
+	guiMenuItem("Print file", menu, guiEditorPrintFile_mi, 0, 0,
 		    GUI_PEDIT, pEdit, GUI_PPRT, pEdit->pPrtCtx);
-	guiMenuItem("Printer setup...", menu, guiPrinterShowCF_mi, 0,0,
+	guiMenuItem("Printer setup...", menu, guiPrinterShowCF_mi, 0, 0,
 		    GUI_PPRT, pEdit->pPrtCtx, 0, NULL);
-	guiButton("Print", panel, &x, &y, &ht, NULL, menu, 0, NULL, 0, NULL);
     }
+    guiButton("File", panel, &x, &y, &ht, NULL, menu, 0,NULL,0,NULL);
+
+    menu = guiMenu(NULL, 0, NULL, 0, NULL);
+    guiMenuItem("set edit mode", menu, guiEditorUpdate_mi, 0, 1,
+		    GUI_PEDIT, pEdit, GUI_INT, 1);
+    guiMenuItem("set read-only mode", menu, guiEditorUpdate_mi, 0, 0,
+		    GUI_PEDIT, pEdit, GUI_INT, 0);
+    guiMenuItem("discard edits", menu, guiEditorCancelFile_mi, 0, 0,
+		    GUI_PCTX, pGuiCtx, GUI_PEDIT, pEdit);
+    guiButton("Edit", panel, &x, &y, &ht, NULL, menu, 0,NULL,0,NULL);
+    pEdit->status_PM = guiMessage("", panel, &x, &y, &ht);
+    y += ht + 5; x = 5; ht = 0;
 
     if (addExtrasFn != NULL)
 	addExtrasFn(pGuiCtx, pEdit, panel, &x,&y,&ht, arg);
@@ -901,56 +1216,80 @@ void	*arg;		/* I argument to pass to addExtrasFn */
     xv_set(pEdit->text_TSW, WIN_WIDTH, WIN_EXTEND_TO_EDGE, NULL);
     window_fit(pEdit->edit_CF);
     if (file != NULL && file[0] != '\0')
-	guiEditorLoadFile(pEdit);
+	guiEditorLoadFile_1(pEdit);
     return pEdit;
 }
 
 /*+/internal******************************************************************
-* NAME	guiEditorCancelFile_pb
+* NAME	guiEditorCancelFile_mi
 *
 *-*/
 static void
-guiEditorCancelFile_pb(item)
-Panel_item item;
+guiEditorCancelFile_mi(menu, item)
+Menu	menu;
+Menu_item item;
 {   GUI_EDIT	*pEdit=(GUI_EDIT *)xv_get(item, XV_KEY_DATA, GUI_PEDIT);
 
     if (pEdit->loaded == 0)
 	return;
     textsw_reset(pEdit->text_TSW, 0, 0);
     guiEditorUpdateRst(pEdit);
-    guiEditorLoadFile(pEdit);
+    guiEditorLoadFile_1(pEdit);
+    guiMessagePrintf(pEdit->status_PM, "updates discarded; read-only mode");
 }
 
 /*+/internal******************************************************************
-* NAME	guiEditorCreateFile_pb
+* NAME	guiEditorCreateFile_mi
 *
 *-*/
 static void
-guiEditorCreateFile_pb(item)
-Panel_item item;
+guiEditorCreateFile_mi(menu, item)
+Menu	menu;
+Menu_item item;
 {   GUI_EDIT	*pEdit=(GUI_EDIT *)xv_get(item, XV_KEY_DATA, GUI_PEDIT);
     FILE	*pFile;
     int		fd;
+    char	path[GUI_TDIM*3];
+    int		upd=pEdit->updFlag;
 
+    path[0] = '\0';
+    textsw_append_file_name(pEdit->text_TSW, path);
+
+#if 0
     if (pEdit->loaded)
 	guiEditorUpdateRst(pEdit);
     if (pEdit->updFlag)
-	return;
+	goto createFail;
+#endif
     if (guiEditorGetPath(pEdit, 1) == NULL)
-	return;
+	goto createFail;
     if ((pFile = fopen(pEdit->path, "r")) != NULL) {
 	fclose(pFile);
 	guiNoticeFile(pEdit->pGuiCtx, "file already exists:", pEdit->path);
-	return;
+	goto createFail;
     }
     if ((fd = open(pEdit->path, O_WRONLY|O_CREAT, 0664)) < 0) {
 	guiNoticeFile(pEdit->pGuiCtx, "couldn't create file:", pEdit->path);
-	return;
+	goto createFail;
     }
     close(fd);
-    textsw_reset(pEdit->text_TSW, 0, 0);
-    pEdit->loaded = 1;
+    if (pEdit->updFlag == 1) {
+	pEdit->updFlag = 0;
+	guiLock(pEdit->pGuiCtx, pEdit->file, pEdit->lockFile, 0);
+    }
+    if (pEdit->loaded)
+	textsw_store_file(pEdit->text_TSW, pEdit->path, 0, 0);
+    guiEditorLoadFile_1(pEdit);
     guiEditorUpdateSet(pEdit);
+    if (upd) {
+	guiMessagePrintf(pEdit->status_PM, "%s created from %s; edit mode",
+			pEdit->file, path);
+    }
+    else
+	guiMessagePrintf(pEdit->status_PM,"%s created; edit mode",pEdit->file);
+    return;
+createFail:
+    guiMessagePrintf(pEdit->status_PM, "create failed");
 }
 
 /*+/internal******************************************************************
@@ -977,38 +1316,117 @@ int	notice;		/* 1 if want you want a notice issued on problems */
     if (strlen(pEdit->path) > 0)
 	strcat(pEdit->path, "/");
     strcat(pEdit->path, name);
-    strcpy(pEdit->file, name);
-    strcpy(pEdit->dir, dir);
     return pEdit->path;
 }
 
+
+/*+/subr**********************************************************************
+* NAME	guiEditorGets - get the next '\n' terminated string from editor
+*
+* DESCRIPTION
+*	Reads the next string from the editor text subwindow into the caller's
+*	buffer.  Reading stops when a newline is encountered or when the
+*	caller's buffer is full; the newline IS stored in the buffer.
+*	The string in the buffer is always null terminated.
+*
+*	The caller must supply the character index (starting with 0) of
+*	the position in the textsw where reading is to start.  On return,
+*	the caller's index is set to the next available character for
+*	reading.
+*
+* RETURNS
+*	pointer to string, or
+*	NULL if there are no more characters in text subwindow
+*
+*-*/
+char *
+guiEditorGets(pEdit, pBuf, dim, pCharPos)
+GUI_EDIT *pEdit;	/* I pointer to guiEditor */
+char	*pBuf;		/* I pointer to buffer to receive string */
+int	dim;		/* I dimension of buffer */
+int	*pCharPos;	/* IO index of character to start reading */
+{
+    Textsw	textsw=pEdit->text_TSW;
+    Textsw_index nextPos;
+    int		i;
+    char	*pStr;
+
+    if (pEdit->loaded == 0) {
+	guiNotice(pEdit->pGuiCtx, "no file loaded");
+	return NULL;
+    }
+    nextPos = (Textsw_index)xv_get(textsw, TEXTSW_CONTENTS, *pCharPos,
+			pBuf, dim-1);
+    if (nextPos == *pCharPos)
+	return NULL;
+    for (i=0; i<dim-1; i++) {
+	if (*pCharPos >= nextPos) {
+	    pBuf[i] = '\0';
+	    return pBuf;
+	}
+	(*pCharPos)++;
+	if (pBuf[i] == '\n') {
+	    pBuf[i+1] = '\0';
+	    return pBuf;
+	}
+    }
+    pBuf[i] = '\0';
+    return pBuf;
+}
+
 /*+/internal******************************************************************
-* NAME	guiEditorLoadFile_xvo
+* NAME	guiEditorLoadFile_mi
 *
 *-*/
 static void
-guiEditorLoadFile_xvo(item)
-Xv_opaque item;
+guiEditorLoadFile_mi(menu, item)
+Menu	menu;
+Menu_item item;
 {   GUI_EDIT	*pEdit=(GUI_EDIT *)xv_get(item, XV_KEY_DATA, GUI_PEDIT);
-    guiEditorLoadFile(pEdit);
+    guiEditorLoadFile_1(pEdit);
+}
+/*+/subr**********************************************************************
+* NAME	guiEditorLoadFile - load a file for editing
+*
+* DESCRIPTION
+*	Loads the specified file into the editor window.  If the editor
+*	window already holds a file which has been edited, a notice pops
+*	up and the load of the new file is not performed.
+*
+*-*/
+void
+guiEditorLoadFile(pEdit, dir, file)
+GUI_EDIT *pEdit;	/* I pointer to guiEditor */
+char	*dir;		/* I directory */
+char	*file;		/* I file name */
+{
+    guiEditorShowCF(pEdit);
+    guiEditorUpdateRst(pEdit);
+    if (pEdit->updFlag == 1) {
+	guiMessagePrintf(pEdit->status_PM, "%s not loaded", file);
+	return;
+    }
+    xv_set(pEdit->dir_PT, PANEL_VALUE, dir, NULL);
+    xv_set(pEdit->file_PT, PANEL_VALUE, file, NULL);
+    guiEditorLoadFile_1(pEdit);
 }
 /*+/internal******************************************************************
-* NAME	guiEditorLoadFile
+* NAME	guiEditorLoadFile_1
 *
 *-*/
 static void
-guiEditorLoadFile(pEdit)
+guiEditorLoadFile_1(pEdit)
 GUI_EDIT *pEdit;
 {
     Textsw_status status;
 
     if ((int)xv_get(pEdit->text_TSW, TEXTSW_MODIFIED)) {
-	xv_set(pEdit->update_PCB, PANEL_VALUE, 1, NULL);
-	guiNotice(pEdit->pGuiCtx, "text has been modified; use Save or Cancel");
-	return;
+	guiNotice(pEdit->pGuiCtx,
+		"text has been modified; use \"Save\" or \"discard edits\"");
+	goto loadFailed;
     }
     if (guiEditorGetPath(pEdit, 1) == NULL)
-	return;
+	goto loadFailed;
     if (pEdit->updFlag) {
 	guiEditorUpdateRst(pEdit);
 	pEdit->updFlag = 0;
@@ -1022,7 +1440,13 @@ GUI_EDIT *pEdit;
     else {
 	guiNoticeFile(pEdit->pGuiCtx, "couldn't open file", pEdit->path);
 	pEdit->loaded = 0;
+	goto loadFailed;
     }
+    guiMessagePrintf(pEdit->status_PM,
+			"%s loaded; read-only mode set", pEdit->file);
+    return;
+loadFailed:
+    guiMessagePrintf(pEdit->status_PM, "load failed");
 }
 
 /*+/subr**********************************************************************
@@ -1076,8 +1500,8 @@ Panel_item item;
 	guiNotice(pEdit->pGuiCtx, "no file has been loaded");
 	return;
     }
-    if (xv_get(pEdit->update_PCB, PANEL_VALUE) == 0) {
-	guiNotice(pEdit->pGuiCtx, "edit mode must be selected");
+    if (pEdit->updFlag == 0) {
+	guiNotice(pEdit->pGuiCtx, "edit mode must be set");
 	return;
     }
     xv_set(tsw, TEXTSW_INSERTION_POINT, TEXTSW_INFINITY, NULL);
@@ -1085,20 +1509,18 @@ Panel_item item;
 		(Textsw_index)xv_get(tsw, TEXTSW_INSERTION_POINT));
     tsLocalTime(&nowTs);
     tsStampToText(&nowTs, TS_TEXT_MONDDYYYY, now);
-    textsw_insert(tsw, "\n== ", 4);
-    textsw_insert(tsw, now, 21);	/* don't print fractions of sec */
-    textsw_insert(tsw, "  ", 2);
-    textsw_insert(tsw, pEdit->pGuiCtx->user, strlen(pEdit->pGuiCtx->user));
-    textsw_insert(tsw, " ==", 3);
+    now[21] = '\0';	/* don't print fractions of sec */
+    guiEditorPrintf(pEdit, "\n== %s  %s ==\n", now, pEdit->pGuiCtx->user);
 }
 
 /*+/internal******************************************************************
-* NAME	guiEditorPickFile_pb
+* NAME	guiEditorPickFile_mi
 *
 *-*/
 static void
-guiEditorPickFile_pb(item)
-Panel_item item;
+guiEditorPickFile_mi(menu, item)
+Menu	menu;
+Menu_item item;
 {   GUI_CTX	*pGuiCtx=(GUI_CTX *)xv_get(item, XV_KEY_DATA, GUI_PCTX);
     GUI_EDIT	*pEdit=(GUI_EDIT *)xv_get(item, XV_KEY_DATA, GUI_PEDIT);
     char	title[GUI_TDIM*2];
@@ -1122,7 +1544,9 @@ char	*newFileName;
 {
     xv_set(pEdit->dir_PT, PANEL_VALUE, newDir, NULL);
     xv_set(pEdit->file_PT, PANEL_VALUE, newFileName, NULL);
-    guiEditorLoadFile(pEdit);
+    guiEditorLoadFile_1(pEdit);
+    guiMessagePrintf(pEdit->status_PM,
+		"%s loaded; read-only mode set", newFileName);
 }
 
 /*+/internal******************************************************************
@@ -1137,22 +1561,130 @@ Menu_item item;
 
     if (!pEdit->loaded) {
 	guiNotice(pEdit->pGuiCtx, "no file has been loaded");
-	return;
+	goto printFailed;
     }
     if ((int)xv_get(pEdit->text_TSW, TEXTSW_MODIFIED)) {
 	guiNotice(pEdit->pGuiCtx, "file is modified; save before printing");
-	return;
+	goto printFailed;
     }
     guiPrintFile(pEdit->pPrtCtx, pEdit->path);
+    guiMessagePrintf(pEdit->status_PM, "printout sent to %s",
+		(char *)xv_get(pEdit->pPrtCtx->printer_PT, PANEL_VALUE));
+    return;
+printFailed:
+    guiMessagePrintf(pEdit->status_PM, "print failed");
+}
+
+#if 0
+/*+/macros********************************************************************
+* NAME	guiEditorPrintf - do a printf to a guiEditor
+*
+* SYNOPSIS
+*	void
+*	guiEditorPrintf(pEdit, fmt, ...)
+*	GUI_EDIT *pEdit;/* I pointer to guiEditor */
+*	Textsw	textsw;	/* I handle from guiTextsw */
+*	char	*fmt;	/* I printf format string */
+*	...		/* I other arguments, for printing */
+*
+*-*/
+#endif
+void guiEditorPrintf(va_alist)
+va_dcl
+{
+    va_list	pArgs;
+    GUI_EDIT	*pEdit;
+    Textsw	textsw;
+    char	*fmt;
+    char	message[500];
+    int		n, L;
+
+    va_start(pArgs);
+    pEdit = va_arg(pArgs, GUI_EDIT *);
+    if (pEdit->loaded == 0) {
+	guiNotice(pEdit->pGuiCtx, "no file loaded");
+	return;
+    }
+    textsw = pEdit->text_TSW;
+    fmt = va_arg(pArgs, char *);
+    vsprintf(message, fmt, pArgs);
+    va_end(pArgs);
+    L = strlen(message);
+    n = textsw_insert(textsw, message, L);
+    if (n != L)
+        return;
+    n = (int)xv_get(textsw, TEXTSW_INSERTION_POINT);
+    textsw_possibly_normalize(textsw, n);
+}
+
+/*+/subr**********************************************************************
+* NAME	guiEditorPuts - write string to guiEditor
+*
+* DESCRIPTION
+*	Writes the string to the text subwindow of a guiEditor.
+*
+*	The caller must supply the character index (starting with 0) of
+*	the position in the textsw where writing is to start.  On return,
+*	the caller's index is set to the next available character for
+*	writing.
+*
+* RETURNS
+*	0, or
+*	EOF	if an error occurs during the write
+*
+*-*/
+int
+guiEditorPuts(pEdit, pBuf, pCharPos)
+GUI_EDIT *pEdit;	/* I pointer to guiEditor */
+char	*pBuf;		/* I pointer to buffer to write to text subwindow */
+int	*pCharPos;	/* IO index of character position to start writing */
+{
+    Textsw	textsw=pEdit->text_TSW;
+    Textsw_index	n;
+    int		L=strlen(pBuf);
+
+    if (pEdit->loaded == 0) {
+	guiNotice(pEdit->pGuiCtx, "no file loaded");
+	return EOF;
+    }
+    xv_set(textsw, TEXTSW_INSERTION_POINT, *pCharPos, NULL);
+    n = textsw_insert(textsw, pBuf, L);
+    if (n != L)
+	return EOF;
+    *pCharPos = (int)xv_get(textsw, TEXTSW_INSERTION_POINT);
+    textsw_possibly_normalize(textsw, *pCharPos);
+    return 0;
+}
+
+/*+/subr**********************************************************************
+* NAME	guiEditorReset - reset an editor text subwindow, discarding contents
+*
+* DESCRIPTION
+*
+* RETURNS
+*	void
+*
+*-*/
+void
+guiEditorReset(pEdit)
+GUI_EDIT *pEdit;	/* I pointer to guiEditor */
+{
+    Textsw	textsw=pEdit->text_TSW;
+
+    if (pEdit->loaded == 0)
+	return;
+    textsw_reset(textsw, 0, 0);
+    guiEditorUpdateRst(pEdit);
 }
 
 /*+/internal******************************************************************
-* NAME	guiEditorSaveFile_pb
+* NAME	guiEditorSaveFile_mi
 *
 *-*/
 static void
-guiEditorSaveFile_pb(item)
-Panel_item item;
+guiEditorSaveFile_mi(menu, item)
+Menu	menu;
+Menu_item item;
 {   GUI_EDIT	*pEdit=(GUI_EDIT *)xv_get(item, XV_KEY_DATA, GUI_PEDIT);
     unsigned	stat;
 
@@ -1165,11 +1697,13 @@ Panel_item item;
 	    stat = textsw_store_file(pEdit->text_TSW, pEdit->path, 0, 0);
 	    if (stat != 0) {
 		guiNoticeFile(pEdit->pGuiCtx,"unable to save in:",pEdit->path);
+		guiMessagePrintf(pEdit->status_PM, "save failed");
 		return;
 	    }
 	}
-	guiEditorUpdateRst(pEdit);
     }
+    guiEditorUpdateRst(pEdit);
+    guiMessagePrintf(pEdit->status_PM, "saved in %s", pEdit->file);
 }
 
 #if 0
@@ -1198,7 +1732,10 @@ void
 guiEditorShowCF(pEdit)
 GUI_EDIT *pEdit;	/* I pointer to editor context */
 {
-    xv_set(pEdit->edit_CF, XV_SHOW, TRUE, FRAME_CMD_PUSHPIN_IN, TRUE, NULL);
+    if ((int)xv_get(pEdit->edit_CF, XV_SHOW) == TRUE)
+	guiAbove(pEdit->edit_CF);
+    else
+	xv_set(pEdit->edit_CF, XV_SHOW, TRUE, FRAME_CMD_PUSHPIN_IN, TRUE, NULL);
 }
 void
 guiEditorShowCF_mi(menu, menuItem)
@@ -1213,22 +1750,50 @@ Xv_opaque item;
 {   GUI_EDIT *pEdit=(GUI_EDIT *)xv_get(item, XV_KEY_DATA, GUI_PEDIT);
     guiEditorShowCF(pEdit);
 }
-
-/*+/internal******************************************************************
-* NAME	guiEditorUpdate_xvo
+
+#if 0
+/*+/macro*********************************************************************
+* NAME	guiEditorStatusPrintf - do a printf to the guiEditor status line
+*
+* SYNOPSIS
+*	void
+*	guiEditorStatusPrintf(pEdit, fmt, ...)
+*	GUI_EDIT *pEdit;/* I pointer to guiEditor */
+*	char	*fmt;	/* I printf format string */
+*	...		/* I other arguments, for printing */
 *
 *-*/
-void guiEditorUpdate_xvo(item, value)
-Xv_opaque item;
-int	value;
+#endif
+void guiEditorStatusPrintf(va_alist)
+va_dcl
+{
+    GUI_EDIT	*pEdit;
+    va_list	pArgs;
+    Xv_opaque	item;
+    char	*fmt;
+    char	message[500];
+
+    va_start(pArgs);
+    pEdit = va_arg(pArgs, GUI_EDIT *);
+    fmt = va_arg(pArgs, char *);
+    vsprintf(message, fmt, pArgs);
+    va_end(pArgs);
+    xv_set(pEdit->status_PM, PANEL_LABEL_STRING, message, NULL);
+}
+
+/*+/internal******************************************************************
+* NAME	guiEditorUpdate_mi
+*
+*-*/
+void guiEditorUpdate_mi(menu, item)
+Menu	menu;
+Menu_item item;
 {   GUI_EDIT	*pEdit=(GUI_EDIT *)xv_get(item, XV_KEY_DATA, GUI_PEDIT);
-    if (value < 0)
-	return;
-    else if (value == 0)
+    int		value=(int)xv_get(item, XV_KEY_DATA, GUI_INT);
+    if (value == 0)
 	guiEditorUpdateRst(pEdit);
-    else if (value == 1) {
+    else
 	guiEditorUpdateSet(pEdit);
-    }
 }
 
 /*+/internal******************************************************************
@@ -1238,83 +1803,22 @@ int	value;
 void guiEditorUpdateRst(pEdit)
 GUI_EDIT *pEdit;
 {
-    if ((int)xv_get(pEdit->text_TSW, TEXTSW_MODIFIED)) {
-	xv_set(pEdit->update_PCB, PANEL_VALUE, 1, NULL);
-	guiNotice(pEdit->pGuiCtx, "text has been modified; use Save or Cancel");
-	return;
-    }
-    xv_set(pEdit->text_TSW, TEXTSW_BROWSING, TRUE, NULL);
-    xv_set(pEdit->update_PCB, PANEL_VALUE, 0, NULL);
-    if (pEdit->updFlag == 1) {
-	pEdit->updFlag = 0;
-	guiLock(pEdit->pGuiCtx, pEdit->file, pEdit->lockFile, 0);
-	xv_set(pEdit->update_PCB, PANEL_VALUE, 0, NULL);
-    }
-}
-
-
-/*+/subr**********************************************************************
-* NAME	guiLock - provide a "global" lock and unlock mechanism
-*
-* DESCRIPTION
-*
-* RETURNS
-*	1	if lock succeeds
-*	0	if unlock succeeds
-*	-1	if either operation fails
-*
-*-*/
-int
-guiLock(pGuiCtx, text, lockPath, lock)
-GUI_CTX	*pGuiCtx;	/* I pointer to gui context block */
-char	*text;		/* I name or description for error messages */
-char	*lockPath;	/* I pointer to path for lock file */
-int	lock;		/* I 0,1 to reset,set the lock */
-{
-    FILE	*pFile;
-    char	msgLock[2*GUI_TDIM];
-    char	msgWho[2*GUI_TDIM];
-    TS_STAMP	ts;
-    char	tsText[32];
-    int		noticeVal;
-
-    if (lock) {
-	if ((pFile = fopen(lockPath, "r+")) != NULL) {
-	    fread(msgWho, GUI_TDIM, 1, pFile);
-	    fclose(pFile);
-	    if (strncmp(msgWho, "unlocked", 8) != 0) {
-		sprintf(msgLock, "%s is locked:", text);
-		noticeVal = notice_prompt(pGuiCtx->baseFrame, NULL,
-		    NOTICE_MESSAGE_STRINGS,	msgLock, msgWho,
-			"you can cancel the operation or force an unlock", NULL,
-		    NOTICE_BUTTON_YES,	"Cancel",
-		    NOTICE_BUTTON_NO,	"Unlock",
-		    NULL);
-		if (noticeVal == NOTICE_YES)
-		    return -1;
-	    }
+    if ((int)xv_get(pEdit->text_TSW, TEXTSW_MODIFIED))
+	guiNotice(pEdit->pGuiCtx,
+		"text has been modified; use \"Save\" or \"discard edits\"");
+    else {
+	xv_set(pEdit->text_TSW, TEXTSW_BROWSING, TRUE, NULL);
+	if (pEdit->updFlag == 1) {
+	    pEdit->updFlag = 0;
+	    guiLock(pEdit->pGuiCtx, pEdit->file, pEdit->lockFile, 0);
 	}
     }
-    if ((pFile = fopen(lockPath, "w+")) == NULL) {
-	guiNoticeFile(pGuiCtx, "couldn't open lock file", lockPath);
-	return -1;
-    }
-    if (lock) {
-	tsLocalTime(&ts);
-	tsStampToText(&ts, TS_TEXT_MONDDYYYY, tsText);
-	sprintf(msgWho, "by:%s  on:%s  at:%.21s",
-			pGuiCtx->user, pGuiCtx->host, tsText);
-	fwrite(msgWho, strlen(msgWho)+1, 1, pFile);
-	fclose(pFile);
-	return 1;
-    }
-    else {
-	fwrite("unlocked", 9, 1, pFile);
-	fclose(pFile);
-	unlink(lockPath);
-	return 0;
-    }
+    if (pEdit->updFlag == 1)
+	guiMessagePrintf(pEdit->status_PM, "edit mode");
+    else
+	guiMessagePrintf(pEdit->status_PM, "read-only mode");
 }
+
 /*+/internal******************************************************************
 * NAME	guiEditorUpdateSet
 *
@@ -1329,9 +1833,8 @@ GUI_EDIT *pEdit;
     FILE	*pFile;
 
     if (pEdit->updFlag == 1) {
-	xv_set(pEdit->update_PCB, PANEL_VALUE, 1, NULL);
 	guiEditorUpdateRst(pEdit);
-	return;
+	goto updateDone;
     }
     if (!pEdit->loaded) {
 	guiNotice(pEdit->pGuiCtx, "no file has been loaded");
@@ -1342,7 +1845,7 @@ GUI_EDIT *pEdit;
     if ((pFile = fopen(pEdit->path, "r+")) == NULL) {
 	guiNoticeFile(pEdit->pGuiCtx, "file isn't writeable:", pEdit->file);
 	guiEditorUpdateRst(pEdit);
-	return;
+	goto updateDone;
     }
     fclose(pFile);
 
@@ -1352,18 +1855,22 @@ GUI_EDIT *pEdit;
     strcat(lockFile, ".lock");
     if (guiLock(pEdit->pGuiCtx, pEdit->file, lockFile, 1) != 1)  {
 	guiEditorUpdateRst(pEdit);	/* lock attempt didn't succeed */
-	return;
+	goto updateDone;
     }
     xv_set(tsw, TEXTSW_FIRST_LINE, top);
     xv_set(tsw, TEXTSW_BROWSING, FALSE, NULL);
-    xv_set(pEdit->update_PCB, PANEL_VALUE, 1, NULL);
     pEdit->updFlag = 1;
     strcpy(pEdit->lockFile, lockFile);
+updateDone:
+    if (pEdit->updFlag == 1)
+	guiMessagePrintf(pEdit->status_PM, "edit mode");
+    else
+	guiMessagePrintf(pEdit->status_PM, "read-only mode");
 }
 
 
-void guiFileSelCom_pb();
-void guiFileSelLs_pb();
+void guiFileSelCom_mi();
+void guiFileSelLs_mi();
 void guiFileSelLsDone();
 
 /*+/subr**********************************************************************
@@ -1386,7 +1893,8 @@ void guiFileSelLsDone();
 * o	doesn't support wildcard lists (e.g., ls *.c)
 *
 *-*/
-void guiFileSelect(pGuiCtx, title, dir, file, dim, callback, pArg)
+void
+guiFileSelect(pGuiCtx, title, dir, file, dim, callback, pArg)
 GUI_CTX	*pGuiCtx;	/* I pointer to gui context */
 char	*title;		/* I title for command frame title bar */
 char	*dir;		/* I directory */
@@ -1397,6 +1905,7 @@ void	*pArg;		/* I argument to pass to callback routine */
 {
     Frame	frame;
     Panel	panel;
+    Menu	menu;
     int		x=5, y=5, ht=0;
     char	message[GUI_TDIM*3];
 
@@ -1411,16 +1920,19 @@ void	*pArg;		/* I argument to pass to callback routine */
 	frame = guiFrameCmd(title, pGuiCtx->baseFrame, &panel, NULL);
 	xv_set(frame, XV_KEY_DATA, GUI_PCTX, pGuiCtx, NULL);
 	pGuiCtx->fsFrame = frame;
-	guiButton("List", panel, &x,&y,&ht, guiFileSelLs_pb, NULL,
-			GUI_PCTX, pGuiCtx, 0, NULL);
-	pGuiCtx->fsDir_PT = guiTextField("Directory:",
-	    panel, &x,&y,&ht, NULL, dim-1, 59, GUI_PCTX, pGuiCtx, 0, NULL);
+	pGuiCtx->fsDir_PT = guiTextField("Dir:", panel, &x,&y,&ht,
+		NULL, dim-1, 40, 0, NULL, 0, NULL);
+	pGuiCtx->fsFile_PT = guiTextField("File:", panel, &x,&y,&ht,
+		NULL, dim-1, 20, 0, NULL, 0, NULL);
 	y += ht + 10; x = 5; ht = 0;
-	guiButton("Load file", panel, &x,&y,&ht,
-			guiFileSelCom_pb, NULL, GUI_PCTX, pGuiCtx, 0, NULL);
-	pGuiCtx->fsFile_PT = guiTextField("File:",
-	    panel, &x,&y,&ht, NULL, dim-1, 59, GUI_PCTX, pGuiCtx, 0, NULL);
-	y += ht + 10; x = 5; ht = 0;
+
+	menu = guiMenu(NULL, 0, NULL, 0, NULL);
+	guiMenuItem("Load", menu, guiFileSelCom_mi, 0, 1,
+		    GUI_PCTX, pGuiCtx, 0, NULL);
+	guiMenuItem("List dir...", menu, guiFileSelLs_mi, 0, 0,
+		    GUI_PCTX, pGuiCtx, 0, NULL);
+	guiButton("File", panel, &x, &y, &ht, NULL, menu, 0,NULL,0,NULL);
+
 	pGuiCtx->fsStatus_PM = guiMessage(" ", panel, &x, &y, &ht);
 	y += ht + 5; x = 5; ht = 0;
 
@@ -1430,7 +1942,7 @@ void	*pArg;		/* I argument to pass to callback routine */
     xv_set(pGuiCtx->fsDir_PT, PANEL_VALUE, dir, NULL);
     xv_set(pGuiCtx->fsFile_PT, PANEL_VALUE, file, NULL);
     window_fit(frame);
-    xv_set(frame, XV_SHOW, TRUE, FRAME_CMD_PUSHPIN_IN, TRUE, NULL);
+    xv_set(frame, XV_SHOW, TRUE, NULL);
     if (dir[0] == '\0') {
 	guiNotice(pGuiCtx, "directory must be specified");
 	return;
@@ -1445,12 +1957,13 @@ void	*pArg;		/* I argument to pass to callback routine */
 }
 
 /*+/internal******************************************************************
-* NAME	guiFileSelCom_pb
+* NAME	guiFileSelCom_mi
 *
 *-*/
 static void
-guiFileSelCom_pb(item)
-Panel_item item;
+guiFileSelCom_mi(menu, item)
+Menu	menu;
+Menu_item item;
 {   GUI_CTX	*pGuiCtx=(GUI_CTX *)xv_get(item, XV_KEY_DATA, GUI_PCTX);
     char	*pSel, *dir, *file, path[240];
 
@@ -1478,12 +1991,13 @@ Panel_item item;
 }
 
 /*+/internal******************************************************************
-* NAME	guiFileSelLs_pb
+* NAME	guiFileSelLs_mi
 *
 *-*/
 static void
-guiFileSelLs_pb(item)
-Panel_item item;
+guiFileSelLs_mi(menu, item)
+Menu	menu;
+Menu_item item;
 {   GUI_CTX	*pGuiCtx=(GUI_CTX *)xv_get(item, XV_KEY_DATA, GUI_PCTX);
     char	message[GUI_TDIM];
     char	*dir=(char *)xv_get(pGuiCtx->fsDir_PT, PANEL_VALUE);
@@ -1534,7 +2048,7 @@ GUI_CTX	*pGuiCtx;
 *	guiFrameCmd, guiIconCreate
 *-*/
 Frame
-guiFrame(label, x, y, width, height,ppDisp, pServer)
+guiFrame(label, x, y, width, height, ppDisp, pServer)
 char	*label;		/* I label for frame and icon */
 int	x;		/* I x coordinate for frame, in pixels */
 int	y;		/* I y coordinate for frame, in pixels */
@@ -1628,23 +2142,18 @@ void	(*resizeProc)();/* I function to handle resize, or NULL */
 * DESCRIPTION
 *	Examines the selected text to extract a name to return to the caller.
 *	A `name' is considered to be a string of characters delimited by
-*	white space.
+*	white space.  The entire line containing the selection is treated
+*	as being selected.
 *
-*	If the selected text is within the caller's text subwindow, then
-*	the entire line containing the selection is treated as being
-*	selected.
+*	The selected text must be within the caller's text subwindow.
 *
-*	The actual action taken depends on the arguments and whether the
-*	selected text is in the caller's text subwindow:
+*	The actual action taken depends on the arguments:
 *
-*	in textsw  head  tail            pointer is returned to:
-*	---------  ----  ----  -----------------------------------------------
-*	  yes       0     0    entire line containing selection
-*	  yes       1     0    first word of line containing selection
-*	  yes       0     1    last word of line containing selection
-*	   no       0     0    selected text
-*	   no       1     0    selected text
-*	   no       0     1    selected text
+*	head  tail            pointer is returned to:
+*	----  ----  -----------------------------------------------
+*	  0     0    entire line containing selection
+*	  1     0    first word of line containing selection
+*	  0     1    last word of line containing selection
 *
 * RETURNS
 *	char * to name
@@ -1662,10 +2171,77 @@ Textsw	textSw;		/* I handle to text subwindow to treat special */
 int	headFlag;	/* I 1 to return only the head of the line */
 int	tailFlag;	/* I 1 to return only the tail of the line */
 {
+    int		i, bufLen;
+    char	*pSel, *buf;
+
+    buf = pSel = guiGetSelnInTextsw(pGuiCtx, textSw);
+    if (pSel == NULL)
+	return NULL;
+    bufLen = strlen(pSel);
+    if (headFlag) {
+/*-----------------------------------------------------------------------------
+*	skip leading blanks, then look for the first white space; return
+*	what's in between to the caller
+*----------------------------------------------------------------------------*/
+	pSel = buf;
+	while (*pSel == ' ') {
+	    pSel++;		/* skip leading blanks */
+	    bufLen--;
+	}
+	i = 0;
+	while (i < bufLen-1) {
+	    if (isspace(pSel[i]))
+		break;
+	    i++;
+	}
+	pSel[i] = '\0';
+    }
+    else if (tailFlag) {
+/*-----------------------------------------------------------------------------
+*	looking backward from end, find the first white space; return the
+*	"tail" of the line to the caller
+*----------------------------------------------------------------------------*/
+	i = bufLen - 1;
+	while (i > 0) {
+	    if (buf[i] == '\n')
+		buf[i] = '\0';
+	    else if (isspace(buf[i])) {
+		i++;
+		break;
+	    }
+	    i--;
+	}
+	pSel = &buf[i];
+    }
+
+    return pSel;
+}
+
+/*+/subr**********************************************************************
+* NAME	guiGetSelnInTextsw - get selected text if it's in callers textsw
+*
+* DESCRIPTION
+*	Checks to see if there's a text selection in the caller's text
+*	subwindow.  If so, a pointer to it is returned.
+*
+* RETURNS
+*	char * to selected text
+*
+* BUGS
+* o	this routine isn't reentrant
+* o	if the caller wants a permanent copy of the name, it must be copied
+*	prior to the next call to guiGetSelnInTextsw
+*
+*-*/
+char *
+guiGetSelnInTextsw(pGuiCtx, textSw)
+GUI_CTX	*pGuiCtx;	/* I pointer to gui context */
+Textsw	textSw;		/* I handle to text subwindow to treat special */
+{
     Seln_holder	holder;
     Seln_request *pResponse;
     static char	buf[GUI_TDIM*2];
-    int		bufLen, i;
+    int		bufLen;
     char	*pSel;
 
     holder = selection_inquire(pGuiCtx->server, SELN_PRIMARY);
@@ -1676,60 +2252,24 @@ int	tailFlag;	/* I 1 to return only the tail of the line */
     bufLen = strlen(pSel);
     if (bufLen == 0)
 	pSel = NULL;	/* no selection */
-    else {
-	if (seln_holder_same_client(&holder, textSw)) {
-	    pResponse = selection_ask(pGuiCtx->server, &holder,
+    else if (seln_holder_same_client(&holder, textSw)) {
+	pResponse = selection_ask(pGuiCtx->server, &holder,
 		SELN_REQ_FAKE_LEVEL,	SELN_LEVEL_LINE,
 		SELN_REQ_CONTENTS_ASCII, NULL,
 		NULL);
-	    pSel = pResponse->data;
-	    pSel += sizeof(SELN_REQ_FAKE_LEVEL);
-	    pSel += sizeof(SELN_LEVEL_LINE);
-	    pSel += sizeof(SELN_REQ_CONTENTS_ASCII);
-	    bufLen = strlen(pSel);
-	    if (bufLen > sizeof(buf)-1) {
-		guiNotice(pGuiCtx, "too much text selected");
-		return (char *)NULL;
-	    }
-	    strcpy(buf, pSel);
-
-	    if (headFlag) {
-/*-----------------------------------------------------------------------------
-*	skip leading blanks, then look for the first white space; return
-*	what's in between to the caller
-*----------------------------------------------------------------------------*/
-		pSel = buf;
-		while (*pSel == ' ') {
-		    pSel++;		/* skip leading blanks */
-		    bufLen--;
-		}
-		i = 0;
-		while (i < bufLen-1) {
-		    if (isspace(pSel[i]))
-			break;
-		    i++;
-		}
-		pSel[i] = '\0';
-	    }
-	    else if (tailFlag) {
-/*-----------------------------------------------------------------------------
-*	looking backward from end, find the first white space; return the
-*	"tail" of the line to the caller
-*----------------------------------------------------------------------------*/
-		i = bufLen - 1;
-		while (i > 0) {
-		    if (buf[i] == '\n')
-			buf[i] = '\0';
-		    else if (isspace(buf[i])) {
-			i++;
-			break;
-		    }
-		    i--;
-		}
-		pSel = &buf[i];
-	    }
+	pSel = pResponse->data;
+	pSel += sizeof(SELN_REQ_FAKE_LEVEL);
+	pSel += sizeof(SELN_LEVEL_LINE);
+	pSel += sizeof(SELN_REQ_CONTENTS_ASCII);
+	bufLen = strlen(pSel);
+	if (bufLen > sizeof(buf)-1) {
+	    guiNotice(pGuiCtx, "too much text selected");
+	    return (char *)NULL;
 	}
+	strcpy(buf, pSel);
     }
+    else
+	pSel = NULL;
     return pSel;
 }
 
@@ -1775,8 +2315,8 @@ short	*iconBits;	/* I array of bits for the icon (64 by 64 assuemd) */
 		XV_HEIGHT,		64,
 		SERVER_IMAGE_BITS, iconBits,
 		NULL);
-    icon = (Icon)xv_create(frame, ICON,
-		ICON_IMAGE, icon_image, NULL);
+    icon = (Icon)xv_create(frame, ICON, ICON_IMAGE, icon_image,
+		ICON_TRANSPARENT, TRUE, NULL);
     xv_set(frame, FRAME_ICON, icon, NULL);
 
     return icon;
@@ -1814,7 +2354,6 @@ int	y;		/* I y coordinate for frame, in pixels */
 int	width;		/* I width of frame, in pixels, or 0 */
 int	height;		/* I height of frame, in pixels, or 0 */
 {
-    void guiInitHostname();
     char	*user, *pwd;
 
     xv_init(XV_INIT_ARGC_PTR_ARGV, pArgc, argv, 0);
@@ -1828,23 +2367,73 @@ int	height;		/* I height of frame, in pixels, or 0 */
     strncpy(pGuiCtx->user, user, GUI_TDIM-1);
     if (pGuiCtx->host[0] == '\0' || pGuiCtx->host[0] == ':' ||
 			strncmp(pGuiCtx->host, "unix", 4) == 0) {
-	guiShellCmd_work(pGuiCtx, "hostname", GUI_HOSTNAME_CLIENT,
-			guiInitHostname, pGuiCtx, 1);
+	gethostname(pGuiCtx->host, GUI_TDIM);
     }
 
     return (Panel)xv_create(pGuiCtx->baseFrame, PANEL,
 	    XV_X, 0, XV_Y, 0, PANEL_LAYOUT, PANEL_HORIZONTAL, NULL);
 }
-void guiInitHostname(pGuiCtx, result)
-GUI_CTX	*pGuiCtx;
-char	*result;
+
+/*+/subr**********************************************************************
+* NAME	guiLock - provide a "global" lock and unlock mechanism
+*
+* DESCRIPTION
+*
+* RETURNS
+*	1	if lock succeeds
+*	0	if unlock succeeds
+*	-1	if either operation fails
+*
+*-*/
+int
+guiLock(pGuiCtx, text, lockPath, lock)
+GUI_CTX	*pGuiCtx;	/* I pointer to gui context block */
+char	*text;		/* I name or description for error messages */
+char	*lockPath;	/* I pointer to path for lock file */
+int	lock;		/* I 0,1 to reset,set the lock */
 {
-    int		i;
-    if (result[0] != '\0') {
-	strcpy(pGuiCtx->host, result);
-	i = strlen(result);
-	if (result[i-1] == '\n')
-	    pGuiCtx->host[i-1] = '\0';
+    FILE	*pFile;
+    char	msgLock[2*GUI_TDIM];
+    char	msgWho[2*GUI_TDIM];
+    TS_STAMP	ts;
+    char	tsText[32];
+    int		noticeVal;
+
+    if (lock) {
+	if ((pFile = fopen(lockPath, "r+")) != NULL) {
+	    fread(msgWho, GUI_TDIM, 1, pFile);
+	    fclose(pFile);
+	    if (strncmp(msgWho, "unlocked", 8) != 0) {
+		sprintf(msgLock, "%s is locked:", text);
+		noticeVal = notice_prompt(pGuiCtx->baseFrame, NULL,
+		    NOTICE_MESSAGE_STRINGS,	msgLock, msgWho,
+			"you can cancel the operation or force an unlock", NULL,
+		    NOTICE_BUTTON_YES,	"Cancel",
+		    NOTICE_BUTTON_NO,	"Unlock",
+		    NULL);
+		if (noticeVal == NOTICE_YES)
+		    return -1;
+	    }
+	}
+    }
+    if ((pFile = fopen(lockPath, "w+")) == NULL) {
+	guiNoticeFile(pGuiCtx, "couldn't open lock file", lockPath);
+	return -1;
+    }
+    if (lock) {
+	tsLocalTime(&ts);
+	tsStampToText(&ts, TS_TEXT_MONDDYYYY, tsText);
+	sprintf(msgWho, "by:%s  on:%s  at:%.21s",
+			pGuiCtx->user, pGuiCtx->host, tsText);
+	fwrite(msgWho, strlen(msgWho)+1, 1, pFile);
+	fclose(pFile);
+	return 1;
+    }
+    else {
+	fwrite("unlocked", 9, 1, pFile);
+	fclose(pFile);
+	unlink(lockPath);
+	return 0;
     }
 }
 
@@ -1973,13 +2562,14 @@ void	*val2;		/* I value associated with key */
 * o	text
 *
 * SEE ALSO
+*	guiMessagePrintf
 *
 * EXAMPLE
 *
 *-*/
 Panel_item
 guiMessage(label, panel, pX, pY, pHt)
-char	*label;		/* I label for sageutton */
+char	*label;		/* I label for button */
 Panel	panel;		/* I handle of panel containing message */
 int	*pX;		/* IO pointer to x position in panel, in pixels */
 int	*pY;		/* I pointer to y position in panel, in pixels */
@@ -2002,6 +2592,35 @@ int	*pHt;		/* IO ptr to height of message, in pixels, or NULL */
     }
 
     return item;
+}
+
+#if 0
+/*+/macro*********************************************************************
+* NAME	guiMessagePrintf - do a printf to a guiMessage object
+*
+* SYNOPSIS
+*	void
+*	guiMessagePrintf(panelMessage, fmt, ...)
+*	Panel_item panelMessage;/* I handle from guiMessage */
+*	char	*fmt;	/* I printf format string */
+*	...		/* I other arguments, for printing */
+*
+*-*/
+#endif
+void guiMessagePrintf(va_alist)
+va_dcl
+{
+    va_list	pArgs;
+    Xv_opaque	item;
+    char	*fmt;
+    char	message[500];
+
+    va_start(pArgs);
+    item = va_arg(pArgs, Xv_opaque);
+    fmt = va_arg(pArgs, char *);
+    vsprintf(message, fmt, pArgs);
+    va_end(pArgs);
+    xv_set(item, PANEL_LABEL_STRING, message, NULL);
 }
 
 /*+/macro*********************************************************************
@@ -2068,6 +2687,35 @@ char	*name;
     return;
 }
 
+#if 0
+/*+/macro*********************************************************************
+* NAME	guiNoticePrintf - do a printf to a guiNotice
+*
+* SYNOPSIS
+*	void
+*	guiNoticePrintf(pGuiCtx, fmt, ...)
+*	GUI_CTX	*pGuiCTx;/* I pointer to gui context */
+*	char	*fmt;	/* I printf format string */
+*	...		/* I other arguments, for printing */
+*
+*-*/
+#endif
+void guiNoticePrintf(va_alist)
+va_dcl
+{
+    va_list	pArgs;
+    GUI_CTX	*pCtx;
+    char	*fmt;
+    char	message[500];
+
+    va_start(pArgs);
+    pCtx = va_arg(pArgs, GUI_CTX *);
+    fmt = va_arg(pArgs, char *);
+    vsprintf(message, fmt, pArgs);
+    va_end(pArgs);
+    guiNotice(pCtx, message);
+}
+
 /*+/subr**********************************************************************
 * NAME	guiPrinter - create a printer context and command frame
 *
@@ -2117,7 +2765,7 @@ int	useEnscript;	/* I 0,1 to use lpr,enscript for printing */
     if ((pPrt=(GUI_PRT *)malloc(sizeof(GUI_PRT))) == NULL) {
 	return NULL;
     }
-    bzero((char *)pPrt, sizeof(*pPrt));
+    bzero((char *)pPrt, sizeof(GUI_PRT));
     pPrt->pGuiCtx = pGuiCtx;
     pPrt->print_CF = guiFrameCmd(title, parentFrame, &panel, NULL);
 
@@ -2165,6 +2813,29 @@ GUI_PRT	*pPrtCtx;	/* I pointer to printer context */
 char	*path;		/* I pathname of file to be printed */
 {
     char	command[GUI_TDIM*3];
+
+    guiPrintGetCmd(pPrtCtx, path, command);
+    guiShellCmd(pPrtCtx->pGuiCtx, command, GUI_PRINT_CLIENT, NULL, NULL);
+}
+
+/*+/subr**********************************************************************
+* NAME	guiPrintGetCmd
+*
+* DESCRIPTION
+*	Get a print command, using the settings in the printer context block.
+*
+* RETURNS
+*	void
+*
+* SEE ALSO
+*	guiPrinter
+*
+*-*/
+void
+guiPrintGetCmd(pPrtCtx, path, command)
+GUI_PRT	*pPrtCtx;	/* I pointer to printer context */
+char	*path;		/* I pathname of file to be printed, or NULL */
+{
     char	mode[8];
 
     
@@ -2177,14 +2848,12 @@ char	*path;		/* I pathname of file to be printed */
 		(char *)xv_get(pPrtCtx->point_PT, PANEL_VALUE),
 		(char *)xv_get(pPrtCtx->printer_PT, PANEL_VALUE),
 		mode, path);
-	guiShellCmd(pPrtCtx->pGuiCtx, command, GUI_PRINT_CLIENT, NULL, NULL);
     }
     else {
 	if (mode[0] != '\0')
 	    guiNotice(pPrtCtx->pGuiCtx, "landscape is ignored when using lpr");
 	sprintf(command, "lpr -P%s %s",
 		(char *)xv_get(pPrtCtx->printer_PT, PANEL_VALUE), path);
-	guiShellCmd(pPrtCtx->pGuiCtx, command, GUI_PRINT_CLIENT, NULL, NULL);
     }
 }
 
@@ -2239,7 +2908,10 @@ guiPrinterShowCF_mi(menu, item)
 Menu	menu;
 Menu_item item;
 {   GUI_PRT	*pPrtCtx=(GUI_PRT *)xv_get(item, XV_KEY_DATA, GUI_PPRT);
-    xv_set(pPrtCtx->print_CF, XV_SHOW, TRUE, NULL);
+    if ((int)xv_get(pPrtCtx->print_CF, XV_SHOW) == TRUE)
+	guiAbove(pPrtCtx->print_CF);
+    else
+	xv_set(pPrtCtx->print_CF, XV_SHOW, TRUE, NULL);
 }
 
 /*+/internal******************************************************************
@@ -2250,7 +2922,10 @@ void
 guiPrinterShowCF_xvo(item)
 Xv_opaque item;
 {   GUI_PRT	*pPrtCtx=(GUI_PRT *)xv_get(item, XV_KEY_DATA, GUI_PPRT);
-    xv_set(pPrtCtx->print_CF, XV_SHOW, TRUE, NULL);
+    if ((int)xv_get(pPrtCtx->print_CF, XV_SHOW) == TRUE)
+	guiAbove(pPrtCtx->print_CF);
+    else
+	xv_set(pPrtCtx->print_CF, XV_SHOW, TRUE, NULL);
 }
 
 /*+/subr**********************************************************************
@@ -2350,7 +3025,7 @@ int	mode;		/* I 0,1,2 for popen,execvp,execvp_with_argv */
 *----------------------------------------------------------------------------*/
 
     if (mode == 1) {
-	pBuf = buf = (char *)malloc(sizeof(cmdBuf));
+	pBuf = buf = (char *)malloc(strlen(cmdBuf)+1);
 	strcpy(pBuf, cmdBuf);
 	for (i=0; i<19; i++) {
 	    if (nextNonSpaceField(&pBuf, &argv[i], &dlm) <= 1)
@@ -2563,6 +3238,35 @@ void	*val2;		/* I value associated with key */
     return item;
 }
 
+#if 0
+/*+/macro*********************************************************************
+* NAME	guiTextFieldPrintf - do a printf to a text entry field
+*
+* SYNOPSIS
+*	void
+*	guiTextFieldPrintf(panelItem, fmt, ...)
+*	Panel_item panelItem;/* I handle from guiTextField */
+*	char	*fmt;	/* I printf format string */
+*	...		/* I other arguments, for printing */
+*
+*-*/
+#endif
+void guiTextFieldPrintf(va_alist)
+va_dcl
+{
+    va_list	pArgs;
+    Xv_opaque	item;
+    char	*fmt;
+    char	message[500];
+
+    va_start(pArgs);
+    item = va_arg(pArgs, Xv_opaque);
+    fmt = va_arg(pArgs, char *);
+    vsprintf(message, fmt, pArgs);
+    va_end(pArgs);
+    xv_set(item, PANEL_VALUE, message, NULL);
+}
+
 /*+/subr**********************************************************************
 * NAME	guiTextswGets - get the next '\n' terminated string from textsw
 *
@@ -2610,6 +3314,41 @@ int	*pCharPos;	/* IO index of character to start reading */
     }
     pBuf[i] = '\0';
     return pBuf;
+}
+
+#if 0
+/*+/macro*********************************************************************
+* NAME	guiTextswPrintf - do a printf to a guiTextsw
+*
+* SYNOPSIS
+*	void
+*	guiTextswPrintf(textsw, fmt, ...)
+*	Textsw	textsw;	/* I handle from guiTextsw */
+*	char	*fmt;	/* I printf format string */
+*	...		/* I other arguments, for printing */
+*
+*-*/
+#endif
+void guiTextswPrintf(va_alist)
+va_dcl
+{
+    va_list	pArgs;
+    Textsw	textsw;
+    char	*fmt;
+    char	message[500];
+    int		n, L;
+
+    va_start(pArgs);
+    textsw = va_arg(pArgs, Textsw);
+    fmt = va_arg(pArgs, char *);
+    vsprintf(message, fmt, pArgs);
+    va_end(pArgs);
+    L = strlen(message);
+    n = textsw_insert(textsw, message, L);
+    if (n != L)
+        return;
+    n = (int)xv_get(textsw, TEXTSW_INSERTION_POINT);
+    textsw_possibly_normalize(textsw, n);
 }
 
 /*+/subr**********************************************************************
@@ -2660,4 +3399,39 @@ guiTextswReset(textsw)
 Textsw	textsw;		/* I the text subwindow */
 {
     textsw_reset(textsw, 0, 0);
+}
+
+/*+/subr**********************************************************************
+* NAME	guiTimer - create a timer
+*
+* DESCRIPTION
+*	Creates and starts an interval timer.  The interval may include
+*	fractions of seconds.
+*
+*	The timer callback function has the form of the usual Unix itimer
+*	function:
+*
+*	void callbackFn(callbackArg, dummy)
+*	void	*callbackArg
+*	int     dummy;
+*	{
+*	}
+*
+* BUGS
+* o	a mechanism for cancelling the timer or changing its interval isn't
+*	yet part of guiSubr
+*
+*-*/
+void
+guiTimer(seconds, callbackFn, callbackArg)
+double	seconds;	/* I number of seconds for timer interval */
+void	(*callbackFn)();/* I name of callback function */
+void	*callbackArg;	/* I argument to pass to callback function */
+{
+    struct itimerval t;
+
+    t.it_interval.tv_sec = t.it_value.tv_sec = (int)aint(seconds);
+    t.it_interval.tv_usec = t.it_value.tv_usec =
+					(int)(fmod(seconds, 1.)*1000000.);
+    notify_set_itimer_func(callbackArg, callbackFn, ITIMER_REAL, &t, NULL);
 }

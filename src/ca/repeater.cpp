@@ -535,15 +535,15 @@ void ca_repeater ()
                     &from.sa, &from_size );
         if ( size < 0 ) {
             int errnoCpy = SOCKERRNO;
-#           ifdef linux
-                /*
-                 * Avoid spurious ECONNREFUSED bug
-                 * in linux
-                 */
-                if ( errnoCpy == SOCK_ECONNREFUSED ) {
-                    continue;
-                }
-#           endif
+            // Avoid spurious ECONNREFUSED bug in linux
+            if ( errnoCpy == SOCK_ECONNREFUSED ) {
+                continue;
+            }
+            // Avoid ECONNRESET from connected socket 
+            // in windows
+            if ( errnoCpy == SOCK_ECONNRESET ) {
+                continue;
+            }
             fprintf ( stderr, "CA Repeater: unexpected UDP recv err: %s\n",
                 SOCKERRSTR (errnoCpy) );
             continue;

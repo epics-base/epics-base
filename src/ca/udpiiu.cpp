@@ -250,15 +250,15 @@ void udpiiu::recvMsg ()
             if ( errnoCpy == SOCK_EINTR ) {
                 return;
             }
-    #       ifdef linux
-                /*
-                 * Avoid spurious ECONNREFUSED bug
-                 * in linux
-                 */
-                if ( errnoCpy == SOCK_ECONNREFUSED ) {
-                    return;
-                }
-    #       endif
+            // Avoid spurious ECONNREFUSED bug in linux
+            if ( errnoCpy == SOCK_ECONNREFUSED ) {
+                return;
+            }
+            // Avoid ECONNRESET from disconnected socket bug
+            // in windows
+            if ( errnoCpy == SOCK_ECONNRESET ) {
+                return;
+            }
             this->printf ( "Unexpected UDP recv error was \"%s\"\n", 
                 SOCKERRSTR (errnoCpy) );
         }

@@ -341,8 +341,10 @@ extern "C" void cacRecvThreadTCP ( void *pParam )
             if ( pComBuf ) {
                 unsigned nBytesIn = pComBuf->fillFromWire ( *piiu );
                 if ( nBytesIn ) {
-                    osiAutoMutex autoMutex ( piiu->mutex );
-                    piiu->recvQue.pushLastComBufReceived ( *pComBuf );
+                    {
+                        osiAutoMutex autoMutex ( piiu->mutex );
+                        piiu->recvQue.pushLastComBufReceived ( *pComBuf );
+                    }
                     piiu->pCAC ()->signalRecvActivity ();
                 }
                 else {
@@ -667,13 +669,6 @@ void tcpiiu::forcedShutdown ()
 void tcpiiu::disconnect ()
 {
     assert ( this->fullyConstructedFlag );
-
-    if ( this->channelCount () ) {
-        char hostNameTmp[64];
-        this->hostName ( hostNameTmp, sizeof ( hostNameTmp ) );
-        assert ( this->pCAC () );
-        genLocalExcep ( *this->pCAC (), ECA_DISCONN, hostNameTmp );
-    }
 
     {
         osiAutoMutex autoMutex ( this->mutex );
@@ -1127,9 +1122,6 @@ void tcpiiu::eventRespAction ()
      * not find a matching IO block
      */
     if ( ! this->curMsg.m_postsize ) {
-        this->mutex.lock ();
-        this->ioTable.remove ( this->curMsg.m_available );
-        this->mutex.unlock ();
         return;
     }
 
@@ -1701,7 +1693,8 @@ int tcpiiu::clearChannelRequest ( nciu &chan )
         else {
             baseNMIU *pNMIU;
             while ( ( pNMIU = chan.tcpiiuPrivateListOfIO::eventq.get () ) ) {
-                this->ioTable.remove ( *pNMIU );
+                baseNMIU *pFound = this->ioTable.remove ( *pNMIU );
+                assert ( pFound == pNMIU );
                 pNMIU->subscriptionCancelMsg ();
                 delete pNMIU;
             }
@@ -1815,14 +1808,15 @@ bool tcpiiu::flushToWire ( bool userThread )
         return true;
     }
 
+    // enable callback processing prior to taking the flush lock
+    if ( userThread ) {
+        this->pCAC ()->enableCallbackPreemption ();
+    }
+
     // only one thread at a time can perform a flush. Nevertheless,
     // the primary lock must not be held while sending in order
     // to prevent push pull deadlocks
     osiAutoMutex autoFlushMutex ( this->flushMutex );
-
-    if ( userThread ) {
-        this->pCAC ()->enableCallbackPreemption ();
-    }
 
     while ( true ) {
         comBuf * pBuf;
@@ -1965,7 +1959,8 @@ void tcpiiu::subscribeAllIO ( nciu &chan )
 {
     osiAutoMutex autoMutex ( this->mutex );
     if ( chan.verifyConnected ( *this ) ) {
-        tsDLIterBD < baseNMIU > iter = chan.tcpiiuPrivateListOfIO::eventq.first ();
+        tsDLIterBD < baseNMIU > iter = 
+            chan.tcpiiuPrivateListOfIO::eventq.first ();
         while ( iter.valid () ) {
             iter->subscriptionMsg ();
             iter++;
@@ -1978,11 +1973,28 @@ void tcpiiu::disconnectAllIO ( nciu &chan )
 {
     osiAutoMutex autoMutex ( this->mutex );
     if ( chan.verifyConnected ( *this ) ) {
-        tsDLIterBD < baseNMIU > iter = chan.tcpiiuPrivateListOfIO::eventq.first ();
+        tsDLIterBD < baseNMIU > iter = 
+            chan.tcpiiuPrivateListOfIO::eventq.first ();
         while ( iter.valid () ) {
             tsDLIterBD < baseNMIU > next = iter.itemAfter ();
-            iter->disconnect ( this->pHostName () );
+            this->ioTable.remove ( *iter );
+            if ( ! iter->isSubscription () ) {
+                iter->exceptionNotify ( ECA_DISCONN, this->pHostName () );
+                chan.tcpiiuPrivateListOfIO::eventq.remove ( *iter );
+                iter->destroy ();
+            }
             iter = next;
+        }
+    }
+}
+
+void tcpiiu::unistallSubscription ( nciu &chan, netSubscription &subscr )
+{
+    osiAutoMutex autoMutex ( this->mutex );
+    if ( chan.verifyConnected ( *this ) ) {
+        baseNMIU *p = this->ioTable.remove ( subscr );
+        if ( p ) {
+            chan.tcpiiuPrivateListOfIO::eventq.remove ( subscr );
         }
     }
 }

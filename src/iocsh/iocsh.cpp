@@ -263,6 +263,10 @@ cvtArg (const char *filename, int lineno, char *arg, iocshArgBuf *argBuf, const 
 
     case iocshArgPersistentString:
         argBuf->sval = epicsStrDup(arg);
+        if (argBuf->sval == NULL) {
+            showError (filename, lineno, "Out of memory");
+            return 0;
+        }
         break;
 
     case iocshArgPdbbase:

@@ -121,9 +121,7 @@ SRCS.c += ../devVmic2534.c
 #	SRCS.c += ../devMbbiDirectCan.c
 #	SRCS.c += ../devMbboDirectCan.c
 
-LIBOBJS = $(SRCS.c:../%.c=%.o)
-PROD = $(LIBOBJS)
-LIBNAME = devSup
+PROD = $(SRCS.c:../%.c=%.o)
 
 include $(TOP)/config/RULES.Vx
 

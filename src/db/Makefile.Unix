@@ -3,6 +3,7 @@ include Target.include
 include $(EPICS)/config/CONFIG_BASE
 
 USR_LDLIBS = -lDb -lCom
+USR_LDFLAGS = -L.
 
 DEPLIBS_BASE = $(EPICS_BASE_LIB)
 DEPLIBS = ./libDb.a\

@@ -4,6 +4,7 @@ include $(EPICS)/config/CONFIG_BASE
 
 USR_CFLAGS = -D_NO_PROTO
 USR_LDLIBS = -lAs -lCom -lDb -lCom -s
+USR_LDFLAGS = -L.
 
 DEPLIBS_BASE = $(EPICS_BASE_LIB)
 DEPLIBS = ./libAs.a\

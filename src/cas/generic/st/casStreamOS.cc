@@ -225,17 +225,9 @@ void casStreamIOWakeup::show ( unsigned level ) const
 //
 epicsTimerNotify::expireStatus casStreamIOWakeup::expire ( const epicsTime & /* currentTime */ )
 {
-	//
-	// in case there is something in the input buffer
-	// and currently nothing to be read from TCP 
-	//
-	// processInput() does an armRecv() so
-	// if recv is not armed, there is space in
-	// the input buffer, and there eventually will
-	// be something to read from TCP this works
-	//
-	this->pOS->processInput();
+    casStreamOS	& tmpOS = *this->pOS;
     this->pOS = 0;
+	tmpOS.processInput();
     return noRestart;
 }
 

@@ -45,7 +45,6 @@
 
 /* Global Database Test Routines - All can be invoked via vxWorks shell*/
 long dba(char*pname);		/*dbAddr info */
-long dbel(char*pname);		/*CA event list */
 long dbl(char	*precordTypename,char *filename,char *fields);  /*list records*/
 long dbnr(int verbose);		/*list number of records of each type*/
 long dbgrep(char *pmask);	/*list records with mask*/
@@ -118,36 +117,6 @@ long dba(char*pname)
     status=dbNameToAddr(pname,&addr);
     printDbAddr(status,&addr);
     return(status);
-}
-
-long dbel(char*pname)
-{
-    DBADDR 		addr;
-    long		status;
-    struct event_block  *peb;
-    dbFldDes 		*pdbFldDes;
-
-    status=dbNameToAddr(pname,&addr);
-    if(status) {
-	errMessage(status," dbNameToAddr failed");
-	return(status);
-    }
-    peb = (struct event_block *)ellFirst(&addr.precord->mlis);
-    if(!peb) {
-	printf("Event List Empty\n");
-	return(0);
-    }
-    while(peb) {
-	pdbFldDes = ((DBADDR *)peb->paddr)->pfldDes;
-	printf("%4.4s",pdbFldDes->name);
-	if(peb->select&&DBE_VALUE) printf(" VALUE");
-	if(peb->select&&DBE_LOG) printf(" LOG");
-	if(peb->select&&DBE_ALARM) printf(" ALARM");
-	printf("\n");
-	peb = (struct event_block *)ellNext((struct event_block *)peb);
-    }
-    db_event_list(pname);
-    return(0);
 }
 
 long dbl(char	*precordTypename,char *filename,char *fields)

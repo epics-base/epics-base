@@ -2101,8 +2101,13 @@ int camessage (struct client  *client, struct message_buffer *recv)
         tmp_postsize = ntohs (mp->m_postsize);
         msgsize = tmp_postsize + sizeof(*mp);
         
-        if (msgsize > bytes_left) 
+        if (msgsize > bytes_left) {
+            if ( msgsize > recv->cnt ) {
+                log_header ( "rsrv: CA message received was too large", client, mp, nmsg );
+                return RSRV_ERROR;
+            }
             return RSRV_OK;
+        }
         
         /* Have complete message (header + content)
          * -> convert the header elements

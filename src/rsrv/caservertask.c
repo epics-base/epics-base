@@ -120,14 +120,14 @@ struct client *create_base_client ()
     client->proto = IPPROTO_UDP;
     client->minor_version_number = CA_UKN_MINOR_VERSION;
     
-    client->send.maxstk = MAX_UDP;
+    client->send.maxstk = MAX_UDP_SEND;
     
     client->lock = semMutexMustCreate();
     client->putNotifyLock = semMutexMustCreate();
     client->addrqLock = semMutexMustCreate();
     client->eventqLock = semMutexMustCreate();
     
-    client->recv.maxstk = ETHERNET_MAX_UDP;
+    client->recv.maxstk = MAX_UDP_RECV;
     return client;
 }
 

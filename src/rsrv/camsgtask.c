@@ -64,7 +64,8 @@ void camsgtask (struct client *client)
                 (int)(sizeof(client->recv.buf)-client->recv.cnt), 0);
         if (nchars==0){
             if (CASDEBUG>0) {
-                errlogPrintf ("CAS: nill message disconnect\n");
+                errlogPrintf ( "CAS: nill message disconnect ( %u bytes request )\n",
+                    sizeof (client->recv.buf) - client->recv.cnt );
             }
             break;
         }

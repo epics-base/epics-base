@@ -532,6 +532,12 @@ static smartGDDPointer createDBRDD (unsigned dbrType, aitIndex dbrCount)
 	if ( ! pDescRet.valid () ) {
 		return pDescRet;
 	}
+
+	//
+	// smart pointer class maintains the ref count from here down
+	//
+	gddStatus = pDescRet->unreference();
+	assert (!gddStatus);
 	
 	if ( pDescRet->isContainer () ) {
 		

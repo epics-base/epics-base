@@ -29,6 +29,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.35  1998/04/13 19:14:35  jhill
+ * fixed task variable problem
+ *
  * Revision 1.34  1998/02/05 22:39:46  jhill
  * use inversion safe mutex
  *
@@ -874,73 +877,64 @@ LOCAL void ca_repeater_task()
 /*
  *      CA_EXTRA_EVENT_LABOR
  */
-LOCAL void ca_extra_event_labor(void *pArg)
+LOCAL void ca_extra_event_labor (void *pArg)
 {
-        int                     status;
-        CACLIENTPUTNOTIFY       *ppnb;
-        struct CA_STATIC        *pcas;
-        struct event_handler_args args;
-
-        pcas = pArg;
-
-        while(TRUE){
-                /*
-                 * independent lock used here in order to
-                 * avoid any possibility of blocking
-                 * the database (or indirectly blocking
-                 * one client on another client).
-                 */
-                semTake(pcas->ca_putNotifyLock, WAIT_FOREVER);
-                ppnb = (CACLIENTPUTNOTIFY *)ellGet(&pcas->ca_putNotifyQue);
-                semGive(pcas->ca_putNotifyLock);
-
-                /*
-                 * break to loop exit
-                 */
-                if(!ppnb){
-                        break;
-                }
-
-                /*
-                 * setup arguments and call user's function
-                 */
-                args.usr = ppnb->caUserArg;
-                args.chid = ppnb->dbPutNotify.usrPvt;
-                args.type = ppnb->dbPutNotify.dbrType;
-                args.count = ppnb->dbPutNotify.nRequest;
-                args.dbr = NULL;
-                if(ppnb->dbPutNotify.status){
-                        if(ppnb->dbPutNotify.status == S_db_Blocked){
-                                args.status = ECA_PUTCBINPROG;
-                        }
-                        else{
-                                args.status = ECA_PUTFAIL;
-                        }
-                }
-                else{
-                        args.status = ECA_NORMAL;
-                }
-
-		    semTake(pcas->ca_client_lock, WAIT_FOREVER);
-                (*ppnb->caUserCallback) (args);
-		    semGive(pcas->ca_client_lock);
-
-                ppnb->busy = FALSE;
-        }
-
-        /*
-         * wakeup the TCP thread if it is waiting for a cb to complete
-         */
-        status = semGive(pcas->ca_blockSem);
-        if(status != OK){
-                logMsg(	"CA block sem corrupted\n",
-			0,
-			0,
-			0,
-			0,
-			0,
-			0);
-        }
+	int                     status;
+	CACLIENTPUTNOTIFY       *ppnb;
+	struct event_handler_args args;
+	
+	while (TRUE) {
+		/*
+		 * independent lock used here in order to
+		 * avoid any possibility of blocking
+		 * the database (or indirectly blocking
+		 * one client on another client).
+		 */
+		semTake (ca_static->ca_putNotifyLock, WAIT_FOREVER);
+		ppnb = (CACLIENTPUTNOTIFY *) ellGet (&ca_static->ca_putNotifyQue);
+		semGive (ca_static->ca_putNotifyLock);
+		
+		/*
+		 * break to loop exit
+		 */
+		if (!ppnb) {
+			break;
+		}
+		
+		/*
+		 * setup arguments and call user's function
+		 */
+		args.usr = ppnb->caUserArg;
+		args.chid = ppnb->dbPutNotify.usrPvt;
+		args.type = ppnb->dbPutNotify.dbrType;
+		args.count = ppnb->dbPutNotify.nRequest;
+		args.dbr = NULL;
+		if (ppnb->dbPutNotify.status) {
+			if (ppnb->dbPutNotify.status == S_db_Blocked) {
+				args.status = ECA_PUTCBINPROG;
+			}
+			else {
+				args.status = ECA_PUTFAIL;
+			}
+		}
+		else {
+			args.status = ECA_NORMAL;
+		}
+		
+		LOCK;
+		(*ppnb->caUserCallback) (args);
+		UNLOCK;
+		
+		ppnb->busy = FALSE;
+	}
+	
+	/*
+	 * wakeup the TCP thread if it is waiting for a cb to complete
+	 */
+	status = semGive (ca_static->ca_blockSem);
+	if (status != OK) {
+		logMsg ("CA block sem corrupted\n", 0, 0, 0, 0, 0, 0);
+	}
 }
 
 

@@ -6,21 +6,21 @@
 #include "epicsThread.h"
 #include "epicsSignal.h"
 
-static SOCKET s;
+static SOCKET joltTestSock;
 static bool blockingSockWakeup = false;
 
 void socketJoltTest ( void * )
 {
     epicsSignalInstallSigAlarmIgnore ();
     char buf [1];
-    recv ( s, buf, (int) sizeof ( buf ), 0 );
+    recv ( joltTestSock, buf, (int) sizeof ( buf ), 0 );
     blockingSockWakeup = true;
 }
 
 void blockingSockTest ()
 {
-    s = epicsSocketCreate ( AF_INET, SOCK_DGRAM, IPPROTO_UDP );
-    assert ( s != INVALID_SOCKET );
+    joltTestSock = epicsSocketCreate ( AF_INET, SOCK_DGRAM, IPPROTO_UDP );
+    assert ( joltTestSock != INVALID_SOCKET );
 
     epicsUInt16 port = 5071;
     union {
@@ -31,7 +31,7 @@ void blockingSockTest ()
     bd.ia.sin_family = AF_INET;
     bd.ia.sin_addr.s_addr = epicsHTON32 ( INADDR_ANY ); 
     bd.ia.sin_port = epicsHTON16 ( port );   
-    int status = bind ( s, &bd.sa, sizeof ( bd ) );
+    int status = bind ( joltTestSock, &bd.sa, sizeof ( bd ) );
     assert ( status == 0 );
 
     blockingSockWakeup = false;
@@ -43,7 +43,7 @@ void blockingSockTest ()
     epicsThreadSleep ( 1.0 );
     assert ( ! blockingSockWakeup );
 
-    status = shutdown ( s, SHUT_RDWR );
+    status = shutdown ( joltTestSock, SHUT_RDWR );
     assert ( status == 0 );
     epicsThreadSleep ( 1.0 );
     char * pStr = "esscimqi_?????";
@@ -57,7 +57,7 @@ void blockingSockTest ()
             pStr = "esscimqi_socketSigAlarmRequired";
         }
         else {
-            epicsSocketDestroy ( s );
+            epicsSocketDestroy ( joltTestSock );
             epicsThreadSleep ( 1.0 );
             if ( blockingSockWakeup ) {
                 pStr = "esscimqi_socketCloseRequired";

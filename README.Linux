@@ -1,16 +1,10 @@
                      Special Notes on Linux
-1) The epics makefiles use GNU make which is the make that comes
-   with Linux.  You need to make a link from make to gnumake and
-   have it in your path.  After you have defined the EPICS environement
-   variable, you can use:
 
-   ln -s /usr/bin/make $EPICS/base/tools/gnumake
+At this point, support for Linux only involves channel access
+clients.  Since Vxworks is not available for Linux, you must
+use other platforms for developing server side code.
 
-2) At this point, support for Linux only involves channel access
-   clients.  Since Vxworks is not available for Linux, you must
-   use other platforms for developing server side code.
-
-3) You MUST start caRepeater by hand before running a client.  
+You MUST start caRepeater by hand before running a client.  
 Prior to running a client, you must run:
 
 caRepeater &

@@ -16,11 +16,13 @@
 17Jul92,rcz	Changed semBCreate call for V5 vxWorks, maybe should be semMCreate ???
 ***************************************************************************/
 #define	DEBUG
+#define		ANSI
 #include	"seq.h"
 
-LOCAL SEM_ID	seqProgListSemId;
-LOCAL int	seqProgListInited = FALSE;
-LOCAL LIST	seqProgList;
+LOCAL	SEM_ID	seqProgListSemId;
+LOCAL	int	seqProgListInited = FALSE;
+LOCAL	LIST	seqProgList;
+LOCAL	VOID	seqProgListInit();
 
 typedef struct prog_node
 {
@@ -135,7 +137,7 @@ SPROG		*pSP;
 	}
 
 	pNode->pSP = pSP;
-	lstAdd(&seqProgList, pNode);
+	lstAdd((LIST *)&seqProgList, (NODE *)pNode);
 	semGive(seqProgListSemId);
 #ifdef DEBUG
 	printf("Added task %d to list.\n", pSP->task_id);
@@ -162,7 +164,7 @@ SPROG		*pSP;
 	{
 		if (pNode->pSP == pSP)
 		{
-			lstDelete(&seqProgList, pNode);
+			lstDelete((LIST *)&seqProgList, (NODE *)pNode);
 			semGive(seqProgListSemId);
 
 #ifdef DEBUG
@@ -179,7 +181,7 @@ SPROG		*pSP;
 /*
  * seqProgListInit() - initialize the state program list.
  */
-seqProgListInit()
+LOCAL VOID seqProgListInit()
 {
 	/* Init linked list */
 	lstInit(&seqProgList);

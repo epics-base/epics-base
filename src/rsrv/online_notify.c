@@ -49,19 +49,25 @@ static char *sccsId = "@(#) $Id$";
  */
 #include "osiSock.h"
 #include "osiThread.h"
-#include "osiClock.h"
+#include "tsStamp.h"
 #include "errlog.h"
 #include "envDefs.h"
 #include "server.h"
 
+LOCAL powerOfTwo[10] = {
+2.0,4.0,8.0,16.0,32.0,64.0,128.0,256.0,512.0,1024.0
+};
+
 /*
  *	RSRV_ONLINE_NOTIFY_TASK
  */
+
+
 int rsrv_online_notify_task()
 {
     caAddrNode          *pNode;
-    unsigned long       delay;
-    unsigned long       maxdelay;
+    double       	delay;
+    double       	maxdelay;
     long                longStatus;
     double              maxPeriod;
     caHdr               msg;
@@ -70,6 +76,7 @@ int rsrv_online_notify_task()
     SOCKET              sock;
     int                 true = TRUE;
     unsigned short      port;
+    int 		indPowerofTwo = 0;
     
     taskwdInsert(threadGetIdSelf(),NULL,NULL);
     
@@ -88,11 +95,10 @@ int rsrv_online_notify_task()
     }
     
     /*
-     * 1 tick initial delay between beacons, but max of 1/60 sec
+     * 1/50 second initial delay between beacons
      */
-    delay = 1ul;
-    if(clockGetRate() > 60.0) delay = clockGetRate()/60.0;
-    maxdelay = (unsigned long) maxPeriod*sysClkRateGet();
+    delay = .02;
+    maxdelay = maxPeriod;
     
     /* 
      *  Open the socket.
@@ -174,8 +180,9 @@ int rsrv_online_notify_task()
             
             pNode = (caAddrNode *)pNode->node.next;
         }
-        threadSleep(delay/(double)clockGetRate());
-        delay = min(delay << 1, maxdelay);
+        threadSleep(delay);
+	delay = delay + powerOfTwo[indPowerofTwo++];
+	if(delay>=maxdelay) delay = maxdelay;
     }
 }
 

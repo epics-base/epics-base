@@ -58,7 +58,7 @@ static char *sccsId = "@(#) $Id$";
 #include <errno.h>
 
 #include "osiSock.h"
-#include "osiClock.h"
+#include "tsStamp.h"
 #include "errlog.h"
 #include "ellLib.h"
 #include "taskwd.h"
@@ -72,7 +72,6 @@ static char *sccsId = "@(#) $Id$";
 
 LOCAL int terminate_one_client(struct client *client);
 LOCAL void log_one_client(struct client *client, unsigned level);
-LOCAL unsigned long delay_in_ticks(unsigned long prev);
 
 
 /*
@@ -391,11 +390,12 @@ LOCAL void log_one_client(struct client *client, unsigned level)
 	int			i;
 	struct channel_in_use	*pciu;
 	char			*pproto;
-	float			send_delay;
-	float			recv_delay;
+	double			send_delay;
+	double			recv_delay;
 	unsigned long		bytes_reserved;
 	char			*state[] = {"up", "down"};
-    char            clientHostName[256];
+	TS_STAMP 		current;
+	char            clientHostName[256];
 
     ipAddrToA (&client->addr, clientHostName, sizeof(clientHostName));
 
@@ -409,8 +409,10 @@ LOCAL void log_one_client(struct client *client, unsigned level)
 		pproto = "UKN";
 	}
 
-	send_delay = delay_in_ticks(client->ticks_at_last_send);
-	recv_delay = delay_in_ticks(client->ticks_at_last_recv);
+
+	tsStampGetCurrent(&current);
+	send_delay = tsStampDiffInSeconds(&current,&client->time_at_last_send);
+	recv_delay = tsStampDiffInSeconds(&current,&client->time_at_last_recv);
 
 	printf(	
     "%s(%s): User=\"%s\", V%d.%u, Channel Count=%d\n", 
@@ -427,8 +429,7 @@ LOCAL void log_one_client(struct client *client, unsigned level)
 			client->sock); 
 		printf( 
 		"\tSecs since last send %6.2f, Secs since last receive %6.2f\n", 
-			send_delay/clockGetRate(),
-			recv_delay/clockGetRate());
+			send_delay, recv_delay);
 		printf( 
 		"\tUnprocessed request bytes=%lu, Undelivered response bytes=%lu, State=%s\n", 
 			client->send.stk,
@@ -488,25 +489,3 @@ LOCAL void log_one_client(struct client *client, unsigned level)
 		semBinaryShow (client->blockSem);
 	}
 }
-
-
-/*
- * delay_in_ticks()
- */
-unsigned long delay_in_ticks(unsigned long prev)
-{
-	unsigned long delay;
-	unsigned long current;
-
-	current = clockGetCurrentTick();
-	if (current >= prev) {
-		delay = current - prev;
-	} 
-	else {
-		delay = 1 + current + (ULONG_MAX - prev);
-	}
-
-	return delay;
-}	
-
-

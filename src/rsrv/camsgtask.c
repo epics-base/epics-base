@@ -53,7 +53,7 @@ static char *sccsId = "@(#) $Id$";
 #include <errno.h>
 
 #include "osiSock.h"
-#include "osiClock.h"
+#include "tsStamp.h"
 #include "os_depen.h"
 #include "osiThread.h"
 #include "errlog.h"
@@ -246,7 +246,7 @@ SOCKET 		sock;
 			break;
 		}
 
-		client->ticks_at_last_recv = clockGetRate();
+		tsStampGetCurrent(&client->time_at_last_recv);
 		client->recv.cnt += (unsigned long) nchars;
 
 		status = camessage(client, &client->recv);

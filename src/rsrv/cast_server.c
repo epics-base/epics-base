@@ -67,7 +67,7 @@ static char	*sccsId = "@(#) $Id$";
 #include <errno.h>
 
 #include "osiSock.h"
-#include "osiClock.h"
+#include "tsStamp.h"
 #include "os_depen.h"
 #include "osiThread.h"
 #include "errlog.h"
@@ -200,7 +200,7 @@ int cast_server(void)
         else {
             prsrv_cast_client->recv.cnt = (unsigned long) status;
             prsrv_cast_client->recv.stk = 0ul;
-            prsrv_cast_client->ticks_at_last_recv = clockGetRate();
+	    tsStampGetCurrent(&prsrv_cast_client->time_at_last_recv);
 
             /*
              * If we are talking to a new client flush to the old one 
@@ -283,20 +283,20 @@ int cast_server(void)
  *
  * 
  */
-#define		TIMEOUT	60 /* sec */
+#define		TIMEOUT	60.0 /* sec */
 
 LOCAL void clean_addrq()
 {
 	struct channel_in_use	*pciu;
 	struct channel_in_use	*pnextciu;
-	unsigned long 		current;
-	unsigned long   	delay;
-	unsigned long   	maxdelay = 0;
+	TS_STAMP		current;
+	double   		delay;
+	double   		maxdelay = 0;
 	unsigned		ndelete=0;
-  	unsigned long		timeout = TIMEOUT*clockGetRate();
+	double			timeout = TIMEOUT;
 	int			s;
 
-	current = clockGetRate();
+	tsStampGetCurrent(&current);
 
 	semMutexMustTake(prsrv_cast_client->addrqLock);
 	pnextciu = (struct channel_in_use *) 
@@ -305,13 +305,8 @@ LOCAL void clean_addrq()
 	while( (pciu = pnextciu) ) {
 		pnextciu = (struct channel_in_use *)pciu->node.next;
 
-		if (current >= pciu->ticks_at_creation) {
-			delay = current - pciu->ticks_at_creation;
-		} 
-		else {
-			delay = current + (~0L - pciu->ticks_at_creation);
-		}
-
+		delay = tsStampDiffInSeconds(&pciu->time_at_creation,
+			&current);
 		if (delay > timeout) {
 
 			ellDelete(&prsrv_cast_client->addrq, &pciu->node);
@@ -325,15 +320,15 @@ LOCAL void clean_addrq()
        			UNLOCK_CLIENTQ;
 			freeListFree(rsrvChanFreeList, pciu);
 			ndelete++;
-			maxdelay = max(delay, maxdelay);
+			if(delay>maxdelay) maxdelay = delay;
 		}
 	}
 	semMutexGive(prsrv_cast_client->addrqLock);
 
 #	ifdef DEBUG
 	if(ndelete){
-		epicsPrintf ("CAS: %d CA channels have expired after %d sec\n",
-			ndelete, maxdelay / clockGetRate());
+		epicsPrintf ("CAS: %d CA channels have expired after %f sec\n",
+			ndelete, maxdelay);
 	}
 #	endif
 
@@ -404,8 +399,8 @@ struct client *create_udp_client(SOCKET sock)
 	client->recv.cnt = 0ul;
 	client->evuser = NULL;
 	client->disconnect = FALSE;	/* for TCP only */
-	client->ticks_at_last_send = clockGetRate();
-	client->ticks_at_last_recv = clockGetRate();
+	tsStampGetCurrent(&client->time_at_last_send);
+	tsStampGetCurrent(&client->time_at_last_recv);
 	client->proto = IPPROTO_UDP;
 	client->sock = sock;
 	client->minor_version_number = CA_UKN_MINOR_VERSION;

@@ -62,7 +62,7 @@ static char *sccsId = "%W% %G%";
 
 #include "osiSock.h"
 #include "osiThread.h"
-#include "osiClock.h"
+#include "tsStamp.h"
 #include "errlog.h"
 #include "db_access.h"
 #include "special.h"
@@ -923,7 +923,7 @@ unsigned	cid
 		return NULL;
 	}
 	ellInit(&pchannel->eventq);
-	pchannel->ticks_at_creation = clockGetRate();
+	tsStampGetCurrent(&pchannel->time_at_creation);
 	pchannel->addr = *pAddr;
 	pchannel->client = client;
 	/*

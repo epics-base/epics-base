@@ -125,8 +125,8 @@ struct client{
   ELLLIST			putNotifyQue;
   struct sockaddr_in		addr;
 
-  unsigned long			ticks_at_last_send;
-  unsigned long			ticks_at_last_recv;
+  TS_STAMP			time_at_last_send;
+  TS_STAMP			time_at_last_recv;
   void				*evuser;
   char				*pUserName;
   char				*pHostName;
@@ -162,7 +162,7 @@ struct channel_in_use{
   	RSRVPUTNOTIFY	*pPutNotify; /* potential active put notify */
   	const unsigned 	cid;	/* client id */
   	const unsigned 	sid;	/* server id */
-  	unsigned long	ticks_at_creation;	/* for UDP timeout */
+	TS_STAMP	time_at_creation;	/* for UDP timeout */
   	struct dbAddr	addr;
   	ASCLIENTPVT	asClientPVT;
 };

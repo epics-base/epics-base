@@ -46,7 +46,7 @@ static char *sccsId = "@(#) $Id$";
 #include <sys/types.h>
 
 #include "osiSock.h"
-#include "osiClock.h"
+#include "tsStamp.h"
 #include "ellLib.h"
 #include "errlog.h"
 #include "server.h"
@@ -172,8 +172,7 @@ int		lock_needed;
 		}
 
   		pclient->send.stk = 0;
-
-		pclient->ticks_at_last_send = clockGetRate();
+		tsStampGetCurrent(&pclient->time_at_last_send);
 	}
 
 

@@ -256,7 +256,7 @@ set_directory (const char *commandline)
     directoryPath[l] = '/';
     directoryPath[l+1] = '\0';
     if (chdir (directoryPath) < 0)
-        LogFatal ("Can't set initial directory: %s\n", strerror(errno));
+        LogFatal ("Can't set initial directory(%s): %s\n", directoryPath, strerror(errno));
     free(directoryPath);
 }
 

@@ -376,7 +376,8 @@ casDGReadReg::~casDGReadReg()
 void casDGReadReg::show(unsigned level) const
 {
 	this->fdReg::show(level);
-	printf("casDGReadReg at %p\n", this);
+	printf("casDGReadReg at %p\n", 
+		static_cast <const void *> ( this) );
 }
 
 //

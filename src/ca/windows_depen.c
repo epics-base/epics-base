@@ -32,6 +32,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.40  1998/06/22 22:32:03  jhill
+ * EPICS_DLL => EPICS_DLL_NO (so we are backwards compatible
+ *
  * Revision 1.39  1998/06/16 00:41:22  jhill
  * consolodated code here into libCom
  *
@@ -73,6 +76,9 @@
  *
  * Revision 1.19  1995/11/29  19:15:42  jhill
  * added $Log$
+ * added Revision 1.40  1998/06/22 22:32:03  jhill
+ * added EPICS_DLL => EPICS_DLL_NO (so we are backwards compatible
+ * added
  * added Revision 1.39  1998/06/16 00:41:22  jhill
  * added consolodated code here into libCom
  * added
@@ -115,26 +121,25 @@
  *
  */
 
+#include <math.h>
+
+#ifndef _WIN32
+#error This source is specific to WIN32
+#endif
+
 /*
  * Windows includes
  */
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <process.h>
-#include <mmsystem.h>
 
 #include "epicsVersion.h"
 #include "bsdSocketResource.h"
 #include "iocinf.h"
 
-#ifndef _WIN32
-#error This source is specific to WIN32
-#endif
-
-long offset_time;  /* time diff (sec) between 1970 and when windows started */
-DWORD prev_time;
-static UINT wTimerRes;
-static void init_timers();
+static long offset_time;  /* time diff (sec) between 1970 and when windows started */
+static LARGE_INTEGER time_prev, time_freq;
 
 
 /*
@@ -142,25 +147,52 @@ static void init_timers();
  */
 void cac_gettimeval(struct timeval  *pt)
 {
-    /**
-	The multi-media timers used here should be good to a millisecond
-	resolution. However, since the timer rolls back to 0 every 49.7
-	days (2^32 ms, 4,294,967.296 sec), it's not very good for
-	time stamping over long periods (if Windows is restarted more
-	often than 49 days, it wont be a problem).  An attempt is made
-	to keep the time returned increasing, but there is no guarantee
-	the UTC time is right after 49 days.
-	**/
+	LARGE_INTEGER time_cur, time_sec, time_remainder;
 
-	DWORD win_sys_time;	/* time (ms) since windows started */
-
-	win_sys_time = timeGetTime();
-	if (prev_time > win_sys_time)	{	/* must have been a timer roll-over */
-		offset_time += 4294967;		/* add number of seconds in 49.7 days */
+	/*
+	 * dont need to check status since it was checked once
+	 * during initialization to see if the CPU has HR
+	 * counters (Intel and Mips processors do)
+	 */
+	QueryPerformanceCounter (&time_cur);
+	if (time_prev.QuadPart > time_cur.QuadPart)	{	/* must have been a timer roll-over */
+		double offset;
+		/*
+		 * must have been a timer roll-over
+		 * It takes 9.223372036855e+18/time_freq sec
+		 * to roll over this counter (time_freq is 1193182
+		 * sec on my system). This is currently about 245118 years.
+		 *
+		 * attempt to add number of seconds in a 64 bit integer
+		 * in case the timer resolution improves
+		 */
+		offset = pow(2.0, 63.0)-1.0/time_freq.QuadPart;
+		if (offset<=LONG_MAX) {
+			offset_time += (long) offset;
+		}
+		else {
+			/*
+			 * this problem cant be fixed, but hopefully will never occurr
+			 */
+			fprintf (stderr, "%s.%d Timer overflowed\n", __FILE__, __LINE__);
+		}
 	}
-	pt->tv_sec = (long)win_sys_time/1000 + offset_time;	/* time (sec) since 1970 */
-	pt->tv_usec = (long)((win_sys_time % 1000) * 1000);
-	prev_time = win_sys_time;
+	time_sec.QuadPart = time_cur.QuadPart / time_freq.QuadPart;
+	time_remainder.QuadPart = time_cur.QuadPart % time_freq.QuadPart;
+	if (time_sec.QuadPart > LONG_MAX-offset_time) {
+		/*
+		 * this problem cant be fixed, but hopefully will never occurr
+		 */
+		fprintf (stderr, "%s.%d Timer value larger than storage\n", __FILE__, __LINE__);
+		pt->tv_sec = 0;
+		pt->tv_usec = 0;
+	}
+	else {
+		/* add time (sec) since 1970 */
+		pt->tv_sec = offset_time + (long)time_sec.QuadPart;	
+		pt->tv_usec = (long)((time_remainder.QuadPart*1000000)/time_freq.QuadPart);
+	}
+	time_prev = time_cur;
 }
 
 
@@ -204,7 +236,6 @@ void cac_block_for_sg_completion(CASG *pcasg, struct timeval *pTV)
 int epicsShareAPI ca_task_initialize(void)
 {
 	int status;
-	TIMECAPS tc;
 
 	if (ca_static) {
 		return ECA_NORMAL;
@@ -217,6 +248,20 @@ int epicsShareAPI ca_task_initialize(void)
 	}
 
 	/*
+	 * initialize elapsed time counters
+	 *
+	 * All CPUs running win32 currently have HR
+	 * counters (Intel and Mips processors do)
+	 */
+	if (QueryPerformanceCounter (&time_prev)==0) {
+		return ECA_INTERNAL;
+	}
+	if (QueryPerformanceFrequency (&time_freq)==0) {
+		return ECA_INTERNAL;
+	}
+	offset_time = (long)time(NULL) - (long)(time_prev.QuadPart/time_freq.QuadPart);
+
+	/*
 	 * this code moved here from dllMain() so that the code will also run
 	 * in object libraries
 	 */
@@ -225,26 +270,9 @@ int epicsShareAPI ca_task_initialize(void)
 		ca_static = NULL;
 		return ECA_INTERNAL;
 	}
-	 	
-	/* setup multi-media timer */
-	if (timeGetDevCaps(&tc, sizeof(TIMECAPS)) != TIMERR_NOERROR) {
-		fprintf(stderr,"cant get timer info \n");
-		bsdSockRelease ();
-		free (ca_static);
-		ca_static = NULL;
-		return ECA_INTERNAL;
-	}
-	/* set for 1 ms resoulution */
-	wTimerRes = min(max(tc.wPeriodMin, 1), tc.wPeriodMax);
-	status = timeBeginPeriod(wTimerRes);
-	if (status != TIMERR_NOERROR)
-		fprintf(stderr,"timer setup failed\n");
-	offset_time = (long)time(NULL) - (long)timeGetTime()/1000;
-	prev_time =  timeGetTime();
 
 	status = ca_os_independent_init ();
 	if (status != ECA_NORMAL) {
-		timeEndPeriod (wTimerRes);
 		bsdSockRelease ();
 		free (ca_static);
 		ca_static = NULL;
@@ -274,8 +302,6 @@ int epicsShareAPI ca_task_exit (void)
 	 * this code moved here from dllMain() so that the code will also run
 	 * in object libraries
 	 */
-	timeEndPeriod (wTimerRes);
-
 	bsdSockRelease ();
 
 	return ECA_NORMAL;
@@ -284,30 +310,26 @@ int epicsShareAPI ca_task_exit (void)
 
 /*
  *
- * This should work on any POSIX compliant OS
+ * obtain the local user name
  *
  * o Indicates failure by setting ptr to nill
  */
 char *localUserName()
 {
-    	int     length;
-    	char    *pName;
-    	char    *pTmp;
-	char    Uname[] = "";
+	TCHAR tmpStr[256];
+	DWORD bufsize = sizeof(tmpStr);
+	char *pTmp;
 
-    	pName = getenv("USERNAME");
-	if (!pName) {
-		pName = Uname;
+	if (!GetUserName(tmpStr, &bufsize)) {
+		tmpStr[0] = '\0';
+		bufsize = 1;
 	}
-    	length = strlen(pName)+1;
 
-	pTmp = malloc(length);
-	if(!pTmp){
-		return pTmp;
+	pTmp = malloc (bufsize);
+	if (pTmp!=NULL) {
+		strncpy(pTmp, tmpStr, bufsize-1);
+		pTmp[bufsize-1] = '\0';
 	}
-	strncpy(pTmp, pName, length-1);
-	pTmp[length-1] = '\0';
-
 	return pTmp;
 }
 
@@ -319,15 +341,9 @@ char *localUserName()
 void ca_spawn_repeater()
 {
 	BOOL status;
-	char *pImageName;
+	char *pImageName = "caRepeater.exe";
 	STARTUPINFO startupInfo;
 	PROCESS_INFORMATION processInfo;
-
-	/*
- 	 * running in the repeater process
-	 * if here
-	 */
-	pImageName = "caRepeater.exe";
 
 	//
 	// This is not called if the repeater is known to be 
@@ -373,12 +389,18 @@ void ca_spawn_repeater()
 					"Failed to start the EPICS CA Repeater -",
 					pImageName, 
 					errStrMsgBuf,
-					"Changes may be required in your \"path\" environement variable."};
+					"Changes may be required in your \"path\" environment variable.",
+					"PATH = ",
+					getenv ("path")};
+
+			if (pFmtArgs[5]==NULL) {
+				pFmtArgs[5] = "<empty string>";
+			}
 
 			W32status = FormatMessage( 
 				FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_STRING | 
 					FORMAT_MESSAGE_ARGUMENT_ARRAY | 80,
-				"%1 \"%2\". %3 %4",
+				"%1 \"%2\". %3 %4 %5 \"%6\"",
 				0,
 				MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
 					(LPTSTR) &complteMsgBuf,
@@ -697,13 +719,29 @@ void epicsShareAPI caDiscoverInterfaces(ELLLIST *pList, SOCKET socket,
  * most of the code here was moved to ca_task_initialize and ca_task_exit()
  * so that the code will also run in object libraries
  */
-BOOL epicsShareAPI DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
+BOOL epicsShareAPI DllMain (HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 {
 	int status;
 
 	switch (dwReason)  {
 
 	case DLL_PROCESS_ATTACH:
+#		if defined(_DEBUG) && 0
+		{
+			char name[256];
+			char mname[80];
+			DWORD nchars;
+
+			nchars = GetModuleFileName (hModule, mname, 80);
+			if (!nchars) {
+				strcpy (mname,"Unknown");
+			}
+			sprintf(name,"Process Attach\n\nBuild Date: %s\nBuild Time: %s\n"
+			  "Module Name: %s", __DATE__, __TIME__, mname);
+			MessageBox (NULL, name, "CA.DLL Version", MB_OK);
+		}
+#		endif	
+
 		status = ca_task_initialize();
 		if (status!=ECA_NORMAL) {
 			return FALSE;

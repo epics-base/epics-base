@@ -19,22 +19,22 @@ INSTALL_DBS = $(DBDINSTALL:%= $(INSTALL_DBD)/%)
 INSTALL_DBDNAME = $(DBDNAME:%= $(INSTALL_DBD)/%)
 INSTALL_DATA=$(INSTALLDB:%=$(INSTALL_DB)/%)
 
-all::	install
+all:	install
 
-inc::	$(INSTALL_DBS)
+inc:	$(INSTALL_DBS)
 
-rebuild:: clean install
+rebuild: clean install
 
-install:: inc buildInstall 
+install: inc buildInstall 
 
-buildInstall:: build $(INSTALL_BPTS) $(INSTALL_DATA)
+buildInstall: build $(INSTALL_BPTS) $(INSTALL_DATA)
 
 clean::
 	@echo "Cleaning"
 	@$(RM) $(DB) $(DBDNAME) *.template *.substitutions *.db.raw \
 	*.db-stamp *.edf esiread.cnf
 
-depends::
+depends:
 
 ##################################################### "Foreign" templates
 
@@ -44,9 +44,9 @@ DB_STAMP	= $(patsubst %.db, %.db-stamp, $(DB))
 DB_REALTARGET	= $(patsubst %.db-stamp, %.db, $@)
 
 ifneq '$(TEMPLATE_LINKS)' ''
-build:: $(notdir $(TEMPLATE_LINKS))
+build: $(notdir $(TEMPLATE_LINKS))
 endif
-build:: $(INSTALL_DBDNAME) $(TEMPLATE_FILES) $(DB_STAMP)
+build: $(INSTALL_DBDNAME) $(TEMPLATE_FILES) $(DB_STAMP)
 
 $(notdir $(TEMPLATE_LINKS)): %.template:
 ifndef WIN32

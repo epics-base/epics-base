@@ -33,6 +33,8 @@ static const unsigned epicsThreadPriorityCAServerLow = 20;
 static const unsigned epicsThreadPriorityCAServerHigh = 40;
 static const unsigned epicsThreadPriorityScanLow = 60;
 static const unsigned epicsThreadPriorityScanHigh = 70;
+static const unsigned epicsThreadPriorityIocsh = 91;
+static const unsigned epicsThreadPriorityBaseMax = 91;
 
 /* stack sizes for each stackSizeClass are implementation and CPU dependent */
 typedef enum {

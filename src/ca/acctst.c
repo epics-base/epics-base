@@ -7,6 +7,9 @@ static char *sccsId = "@(#) $Id$";
 
 /*
  * $Log$
+ * Revision 1.51  1998/04/15 21:50:26  jhill
+ * added array as string test
+ *
  * Revision 1.50  1998/03/12 20:39:07  jhill
  * fixed problem where 3.13.beta11 unable to connect to 3.11 with correct native type
  *
@@ -80,7 +83,11 @@ static char *sccsId = "@(#) $Id$";
 #include	<math.h>
 #include	<float.h>
 #include	<string.h>
-#include	<assert.h>
+
+/*
+ * EPICS
+ */
+#include	<epicsAssert.h>
 
 /*
  * CA 

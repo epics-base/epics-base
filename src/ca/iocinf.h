@@ -1,3 +1,4 @@
+/* $Id */
 /************************************************************************/
 /*									*/
 /*	        	      L O S  A L A M O S			*/
@@ -28,6 +29,7 @@
 /*	.17 121892 joh	added TCP send buf size var			*/
 /*	.18 122192 joh	added outstanding ack var			*/
 /*	.19 012094 joh	added minor version (for each server)		*/
+/* $Log$								*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -616,5 +618,6 @@ void caSetDefaultPrintfHandler ();
  */
 #define M_dbAccess      (501 <<16) /*Database Access Routines */
 #define S_db_Blocked (M_dbAccess|39) /*Request is Blocked*/
+#define S_db_Pending (M_dbAccess|37) /*Request is pending*/
 
 #endif /* this must be the last line in this file */

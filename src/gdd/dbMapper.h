@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.8  1999/10/28 23:33:41  jhill
+ * use fully qualified namespace names for C++ RTL classes
+ *
  * Revision 1.7  1999/10/28 00:25:44  jhill
  * defined new dbr types
  *
@@ -39,10 +42,8 @@
 #include "aitTypes.h"
 #include "gdd.h"
 
-extern "C" {
 #include "db_access.h"
 #include "cadef.h"
-}
 
 class gddApplicationTypeTable;
 
@@ -74,7 +75,7 @@ typedef struct gddDbrToAitTable gddDbrToAitTable;
 
 #define DBM_N_DBR_TYPES 39
 epicsShareExtern gddDbrToAitTable gddDbrToAit[DBM_N_DBR_TYPES];
-epicsShareExtern const chtype gddAitToDbr[12];
+epicsShareExtern const int gddAitToDbr[aitConvertLast+1];
 epicsShareExtern const gddDbrMapFuncTable gddMapDbr[DBM_N_DBR_TYPES];
 
 epicsShareFunc void gddMakeMapDBR(gddApplicationTypeTable& tt);

@@ -157,6 +157,11 @@ SRC_DIRS += $(LIBCOM)/timer
 INC += osiTimer.h
 SRCS += osiTimer.cpp
 
+#tsDefs contains R3.13 compatibility tsStamp code
+SRC_DIRS += $(LIBCOM)/tsDefs
+INC += tsDefs.h
+SRCS += tsDefs.c
+
 #       For WIN32 we supply getopt as part of libCom:
 INC_WIN32 := getopt.h
 SRCS_WIN32 := getopt.c

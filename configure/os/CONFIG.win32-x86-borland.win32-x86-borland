@@ -84,7 +84,8 @@ OPT_CFLAGS_YES = -k- -H- -R- -O1 -v- -vi
 OPT_CFLAGS_NO =
 
 # OS vendor c preprocessor
-CPP = $(BORLAND_BIN)/cl  /E
+CPP = $(BORLAND_BIN)/cpp32  -Sr
+PREPROCESS.cpp = $(CPP) $(CPPFLAGS) $(subst /,\\,$(INCLUDES)) -o$@ $<
 
 # Configure OS vendor C++ compiler
 #

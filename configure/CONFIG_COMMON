@@ -292,6 +292,10 @@ COMPILE.c = $(CC) -c $(CPPFLAGS) $(CFLAGS) $(call PATH_FILTER,$(INCLUDES)) $(SOU
 COMPILE.cpp = $(CCC) -c $(CPPFLAGS) $(CXXFLAGS) $(call PATH_FILTER,$(INCLUDES)) $(SOURCE_CXXFLAG)
 
 #--------------------------------------------------
+# C preprocessor command
+PREPROCESS.cpp = $(CPP) $(CPPFLAGS) $(INCLUDES) $< > $@
+
+#--------------------------------------------------
 # Depends command
 
 HDEPENDS_FLAGS =

@@ -135,6 +135,11 @@ CFLAGS_ctdt = $(filter-out -pedantic,$(CFLAGS)) -fdollars-in-identifiers
 COMPILE.ctdt = $(CC) -c $(CPPFLAGS) $(CFLAGS_ctdt) $(call PATH_FILTER,$(INCLUDES)) $(SOURCE_FLAG)
 
 #--------------------------------------------------
+# C preprocessor command
+VXCPPFLAGS = $(filterout $(OP_SYS_INCLUDE_CPPFLAGS),$(CPPFLAGS))
+PREPROCESS.cpp = $(CPP) $(VXCPPFLAGS) $(INCLUDES) $< > $@
+
+#--------------------------------------------------
 # Allow site overrides
 -include $(CONFIG)/os/CONFIG_SITE.Common.vxWorksCommon
 -include $(CONFIG)/os/CONFIG_SITE.$(EPICS_HOST_ARCH).vxWorksCommon

@@ -116,12 +116,6 @@ struct event_user {
 #define RNGINC(OLD)\
 ( (unsigned short) ( (OLD) >= (EVENTQUESIZE-1) ? 0 : (OLD)+1 ) )
 
-#define RNGSPACE(EVQ)\
-(   ( ((EVQ)->getix)>((EVQ)->putix) ) ? \
-    ( ((EVQ)->getix)-((EVQ)->putix) ) : \
-    ( ( EVENTQUESIZE+((EVQ)->getix) )- ((EVQ)->putix) ) \
-)
-
 #define LOCKEVQUE(EV_QUE)\
 epicsMutexMustLock((EV_QUE)->writelock);
 
@@ -141,6 +135,19 @@ LOCAL void *dbevEventBlockFreeList;
 static char *EVENT_PEND_NAME = "eventTask";
 
 static struct evSubscrip canceledEvent;
+
+static unsigned short ringSpace ( const struct event_que *pevq ) 
+{
+    if ( pevq->evque[pevq->putix] == EVENTQEMPTY ) {
+        if ( pevq->getix > pevq->putix ) {
+            return ( unsigned short ) ( pevq->getix - pevq->putix );
+        }
+        else {
+            return ( unsigned short ) ( ( EVENTQUESIZE + pevq->getix ) - pevq->putix ); 
+        }
+    }
+    return 0;
+}
 
 /*
  *  db_event_list ()
@@ -187,7 +194,7 @@ int epicsShareAPI dbel ( const char *pname, unsigned level )
 
             /* they should never see this one */
             if ( pevent->ev_que->evUser->queovr ) {
-                printf ( " !! joint event discard count=%d !!", 
+                printf ( " !! event discard count=%d !!", 
                     pevent->ev_que->evUser->queovr );
             }
 
@@ -202,34 +209,34 @@ int epicsShareAPI dbel ( const char *pname, unsigned level )
             }
 
             if ( level > 1 ) {
-                unsigned nEntriesFree = RNGSPACE ( pevent->ev_que );
+                unsigned nEntriesFree = ringSpace ( pevent->ev_que );
                 if ( nEntriesFree == 0u ) {
-                    printf ( " thread=%p queue full", 
+                    printf ( ", thread=%p, queue full", 
                         (void *) pevent->ev_que->evUser->taskid );
                 }
                 else if ( nEntriesFree == EVENTQUESIZE ) {
-                    printf ( " thread=%p queue empty", 
+                    printf ( ", thread=%p, queue empty", 
                         (void *) pevent->ev_que->evUser->taskid );
                 }
                 else {
-                    printf ( " thread=%p unused entries=%u", 
+                    printf ( ", thread=%p, unused entries=%u", 
                         (void *) pevent->ev_que->evUser->taskid, nEntriesFree );
                 }
             }
 
             if ( level > 2 ) {
                 if ( pevent->nreplace ) {
-                    printf (" discarded by replacement=%ld", pevent->nreplace);
+                    printf (", discarded by replacement=%ld", pevent->nreplace);
                 }
                 if ( ! pevent->valque ) {
-                    printf (" queueing disabled" );
+                    printf (", queueing disabled" );
                 }
-                printf (" joint duplicate count =%u\n", 
+                printf (", duplicate count =%u\n", 
                     pevent->ev_que->nDuplicates );
             }
 
             if ( level > 3 ) {
-                printf ( " ev %p ev que %p ev user %p", 
+                printf ( ", ev %p, ev que %p, ev user %p", 
                     ( void * ) pevent, 
                     ( void * ) pevent->ev_que, 
                     ( void * ) pevent->ev_que->evUser );
@@ -604,8 +611,8 @@ LOCAL void db_post_single_event_private (struct evSubscrip *event)
 {  
     struct event_que    *ev_que;
     db_field_log        *pLog;
-    int             firstEventFlag;
-    unsigned        rngSpace;
+    int                 firstEventFlag;
+    unsigned            rngSpace;
 
     ev_que = event->ev_que;
 
@@ -637,7 +644,7 @@ LOCAL void db_post_single_event_private (struct evSubscrip *event)
      * {flowCtrlMode, not room for one more of each monitor attached}
      * then replace the last event on the queue (for this monitor)
      */
-    rngSpace = RNGSPACE(ev_que);
+    rngSpace = ringSpace ( ev_que );
     if ( event->npend>0u && 
         (ev_que->evUser->flowCtrlMode || rngSpace<=EVENTSPERQUE) ) {
         /*

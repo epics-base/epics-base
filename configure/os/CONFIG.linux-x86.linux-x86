@@ -11,9 +11,6 @@ include $(CONFIG)/CONFIG.gnuCommon
 
 GNU_DIR = /usr
 
-CC = $(GNU_BIN)/gcc
-CCC = $(GNU_BIN)/g++
-
 STATIC_LDFLAGS_YES= -Wl,-Bstatic
 STATIC_LDFLAGS_NO=
 STATIC_LDLIBS_YES= -Wl,-Bdynamic

@@ -7,27 +7,12 @@
 # Sites may override these definitions in CONFIG_SITE.Common.linux-x86
 #-------------------------------------------------------
 
-# Include definitions common to all Unix targets
-include $(CONFIG)/os/CONFIG.Common.UnixCommon
+# Include definitions common to all linux targets
+include $(CONFIG)/os/CONFIG.Common.linuxCommon
 
-OS_CLASS = Linux
 ARCH_CLASS = x86
 
-CODE_CPPFLAGS = -D_REENTRANT
-
-POSIX_CPPFLAGS_YES = -D_POSIX_C_SOURCE=199506L -D_POSIX_THREADS -D_XOPEN_SOURCE=500
-POSIX_CPPFLAGS_NO =
-POSIX_LDLIBS_YES = -lpthread
-
-# -D_BSD_SOURCE for gethostname() in unistd.h as needed by cacChannelIO.cpp.
-OP_SYS_CPPFLAGS += -D_BSD_SOURCE
-OP_SYS_CPPFLAGS += -Dlinux
-OP_SYS_LDLIBS += -lrt
-
 ARCH_DEP_CPPFLAGS += -D_X86_
-
-# Set runtime path for shared libraries
-RUNTIME_LDFLAGS = $(SHRLIB_SEARCH_FULLPATHDIRS:%=-Wl,-rpath,%)
 
 ifeq ($(BUILD_CLASS),CROSS)
 ifeq ($(EPICS_HOST_ARCH),linux-x86)
@@ -47,6 +32,4 @@ else
    CMPLR_PREFIX=$(addsuffix -,$(GNU_TARGET))
 endif
 endif
-
-LDLIBS_READLINE = -lreadline -lcurses
 

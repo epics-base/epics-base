@@ -10,8 +10,6 @@
 # Include common gnu compiler definitions
 include $(CONFIG)/CONFIG.gnuCommon
 
-CC = $(GNU_BIN)/gcc
-CCC = $(GNU_BIN)/g++
 AR = ar -rc
 RANLIB=
 LD = ld -r

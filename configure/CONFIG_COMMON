@@ -103,6 +103,8 @@ GNU=NO
 DEP=.depends
 OBJ = .
 RES = .
+CMPLR_SUFFIX=
+CMPLR_PREFIX=
 
 #-------------------------------------------------------
 # tools for installing libraries and products

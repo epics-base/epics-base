@@ -24,6 +24,11 @@ LIB_SUFFIX = .a
 MUNCH_SUFFIX = .munch
 
 #-------------------------------------------------------
+# Compiler definitions
+CC = $(GNU_BIN)/$(CMPLR_PREFIX)cc$(CMPLR_SUFFIX)
+CCC = $(GNU_BIN)/$(CMPLR_PREFIX)cc$(CMPLR_SUFFIX)
+
+#-------------------------------------------------------
 # Library definitions
 LIBNAME = $(BUILD_LIBRARY:%=$(LIB_PREFIX)%$(LIB_SUFFIX))
 

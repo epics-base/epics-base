@@ -13,6 +13,10 @@
 
 include $(CONFIG)/RULES_DIRS
 
+UNINSTALL_DIRS += $(INSTALL_DBD) $(INSTALL_INCLUDE) $(INSTALL_DOC)\
+        $(INSTALL_HTML) $(INSTALL_JAVA) $(INSTALL_TEMPLATES) \
+        $(INSTALL_DB)
+
 uninstallArchTargets = $(foreach arch,$(BUILD_ARCHS), uninstall$(DIVIDER)$(arch))
 archPart = $(word 2, $(subst $(DIVIDER), ,$@))
 
@@ -36,17 +40,13 @@ cvsclean:
 
 realuninstall:
 	@$(RMDIR) $(INSTALL_LOCATION_BIN) $(INSTALL_LOCATION_LIB)
-	@$(RMDIR) $(INSTALL_DBD) $(INSTALL_INCLUDE) $(INSTALL_DOC)\
-		$(INSTALL_HTML) $(INSTALL_JAVA) $(INSTALL_TEMPLATES) \
-		$(INSTALL_DB)
+	@$(RMDIR) $(UNINSTALL_DIRS)
 
 uninstall: $(addprefix uninstall$(DIVIDER),$(BUILD_ARCHS))
 	@$(MAKE) -f Makefile  cleandirs
 
 uninstallDirs:
-	@$(RMDIR) $(INSTALL_DBD) $(INSTALL_INCLUDE) $(INSTALL_DOC)\
-		$(INSTALL_HTML) $(INSTALL_JAVA) $(INSTALL_TEMPLATES) \
-		$(INSTALL_DB)
+	@$(RMDIR) $(UNINSTALL_DIRS)
 
 help:
 	@echo "Usage: gnumake [options] [target] ..."

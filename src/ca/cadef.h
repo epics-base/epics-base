@@ -278,7 +278,7 @@ epicsShareFunc void epicsShareAPI ca_test_event
 struct	exception_handler_args{
 	void		*usr;	/* User argument supplied when event added 	*/
 	struct channel_in_use
-			*chid;	/* Channel id			 		*/
+			*chid;	/* Channel id (may be NULL)			 		*/
 	long 		type;	/* Requested type for the operation		*/
 	long 		count;	/* Requested count for the operation		*/
 	void 		*addr;	/* User's address to write results of CA_OP_GET	*/

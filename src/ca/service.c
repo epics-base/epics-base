@@ -81,12 +81,12 @@ chid			chan
 
 LOCAL int cacMsg(
 struct ioc_in_use 	*piiu,
-struct in_addr  	*pnet_addr
+const struct in_addr  	*pnet_addr
 );
 
 LOCAL void perform_claim_channel(
 IIU			*piiu,
-struct in_addr          *pnet_addr
+const struct in_addr    *pnet_addr
 );
 
 #ifdef CONVERSION_REQUIRED 
@@ -103,7 +103,7 @@ extern CACVRTFUNC *cac_dbr_cvrt[];
  */
 int post_msg(
 struct ioc_in_use 	*piiu,
-struct in_addr  	*pnet_addr,
+const struct in_addr  	*pnet_addr,
 char			*pInBuf,
 unsigned long		blockSize
 )
@@ -236,7 +236,7 @@ unsigned long		blockSize
  */
 LOCAL int cacMsg(
 struct ioc_in_use 	*piiu,
-struct in_addr  	*pnet_addr
+const struct in_addr  	*pnet_addr
 )
 {
 	evid            monix;
@@ -293,9 +293,8 @@ struct in_addr  	*pnet_addr
 		}
 		LOCK;
 		ellDelete(&pend_write_list, &monix->node);
-		UNLOCK;
-
 		caIOBlockFree(monix);
+		UNLOCK;
 
 		break;
 
@@ -366,8 +365,8 @@ struct in_addr  	*pnet_addr
 		}
 		LOCK;
 		ellDelete(&pend_read_list, &monix->node);
-		UNLOCK;
 		caIOBlockFree(monix);
+		UNLOCK;
 
 		break;
 	}
@@ -398,8 +397,8 @@ struct in_addr  	*pnet_addr
 		if (!piiu->curMsg.m_postsize) {
 			LOCK;
 			ellDelete(&monix->chan->eventq, &monix->node);
-			UNLOCK;
 			caIOBlockFree(monix);
+			UNLOCK;
 
 			break;
 		}
@@ -509,8 +508,8 @@ struct in_addr  	*pnet_addr
 		}
 		LOCK;
 		ellDelete(&pend_read_list, &pIOBlock->node);
-		UNLOCK;
 		caIOBlockFree(pIOBlock);
+		UNLOCK;
 		break;
 	}
 	case IOC_SEARCH:
@@ -548,6 +547,7 @@ struct in_addr  	*pnet_addr
 
 	case IOC_ERROR:
 	{
+		ELLLIST		*pList = NULL;
 		evid		monix;
 		char		nameBuf[64];
 		char           	context[255];
@@ -584,32 +584,30 @@ struct in_addr  	*pnet_addr
 		 */
 		monix = NULL;
 		args.addr = NULL;
+		LOCK;
 		switch (ntohs(req->m_cmmd)) {
 		case IOC_READ_NOTIFY:
-			LOCK;
 			monix = (evid) bucketLookupItemUnsignedId(
 					pFastBucket, 
 					&req->m_available);
-			UNLOCK;
+			pList = &pend_read_list;
 			op = CA_OP_GET;
 			break;
 		case IOC_READ:
-			LOCK;
 			monix = (evid) bucketLookupItemUnsignedId(
 					pFastBucket, 
 					&req->m_available);
-			UNLOCK;
 			if(monix){
 				args.addr = monix->usr_arg;
 			}
+			pList = &pend_read_list;
 			op = CA_OP_GET;
 			break;
 		case IOC_WRITE_NOTIFY:
-			LOCK;
 			monix = (evid) bucketLookupItemUnsignedId(
 					pFastBucket, 
 					&req->m_available);
-			UNLOCK;
+			pList = &pend_write_list;
 			op = CA_OP_PUT;
 			break;
 		case IOC_WRITE:
@@ -619,19 +617,18 @@ struct in_addr  	*pnet_addr
 			op = CA_OP_SEARCH;
 			break;
 		case IOC_EVENT_ADD:
-			LOCK;
 			monix = (evid) bucketLookupItemUnsignedId(
 					pFastBucket, 
 					&req->m_available);
-			UNLOCK;
 			op = CA_OP_ADD_EVENT;
+			if (monix) {
+				pList = &monix->chan->eventq;
+			}
 			break;
 		case IOC_EVENT_CANCEL:
-			LOCK;
 			monix = (evid) bucketLookupItemUnsignedId(
 					pFastBucket, 
 					&req->m_available);
-			UNLOCK;
 			op = CA_OP_CLEAR_EVENT;
 			break;
 		default:
@@ -640,10 +637,15 @@ struct in_addr  	*pnet_addr
 		}
 
 		if (monix) {
+			if (pList) {
+				ellDelete(pList, &monix->node);
+			}
+			else {
+				printf ("CAC - Protocol err - no list for IO blk\n");
+			}
 			caIOBlockFree(monix);
 		}
 
-		LOCK;
 		args.chid = bucketLookupItemUnsignedId
 				(pSlowBucket, &piiu->curMsg.m_cid);
 		UNLOCK;
@@ -728,16 +730,18 @@ struct in_addr  	*pnet_addr
  */
 LOCAL void perform_claim_channel(
 IIU			*piiu,
-struct in_addr          *pnet_addr
+const struct in_addr	*pnet_addr
 )
 {
 	int		v42;
+	int		port;
 	char		rej[64];
       	chid		chan;
 	int		status;
 	IIU		*allocpiiu;
 	IIU		*chpiiu;
 	unsigned short	*pMinorVersion;
+	unsigned	minorVersion;
 
 	/*
 	 * ignore broadcast replies for deleted channels
@@ -792,8 +796,31 @@ struct in_addr          *pnet_addr
 		return;
 	}
 
-        status = alloc_ioc(pnet_addr, &allocpiiu);
-	switch(status){
+	/*
+	 * Starting with CA V4.1 the minor version number
+	 * is appended to the end of each search reply.
+	 * This value is ignored by earlier clients.
+	 */
+	if(piiu->curMsg.m_postsize >= sizeof(*pMinorVersion)){
+		pMinorVersion = (unsigned short *)(piiu->pCurData);
+        	minorVersion = ntohs(*pMinorVersion);      
+	}
+	else{
+		minorVersion = CA_UKN_MINOR_VERSION;
+	}
+
+	/*
+	 * the type field is abused to carry the port number
+	 * so that we can have multiple servers on one host
+	 */
+	if (CA_V45 (CA_PROTOCOL_VERSION,minorVersion)) {
+		port = piiu->curMsg.m_type;
+	}
+	else {
+		port = ca_static->ca_server_port;
+	}
+        status = alloc_ioc (pnet_addr, port, &allocpiiu);
+	switch (status) {
 
 	case ECA_NORMAL:
 		break;
@@ -818,22 +845,11 @@ struct in_addr          *pnet_addr
 
 	}
 
-	/*
-	 * Starting with CA V4.1 the minor version number
-	 * is appended to the end of each search reply.
-	 * This value is ignored by earlier clients.
-	 */
-	if(piiu->curMsg.m_postsize >= sizeof(*pMinorVersion)){
-		pMinorVersion = (unsigned short *)(piiu->pCurData);
-        	allocpiiu->minor_version_number = ntohs(*pMinorVersion);      
-	}
-	else{
-		allocpiiu->minor_version_number = CA_UKN_MINOR_VERSION;
-	}
+	allocpiiu->minor_version_number = minorVersion;
 
-        ellDelete(&chpiiu->chidlist, &chan->node);
+        ellDelete (&chpiiu->chidlist, &chan->node);
 	chan->piiu = allocpiiu;
-        ellAdd(&allocpiiu->chidlist, &chan->node);
+        ellAdd (&allocpiiu->chidlist, &chan->node);
 	ca_static->ca_search_responses++;
 
 	/*
@@ -842,7 +858,7 @@ struct in_addr          *pnet_addr
 	 * the client's name to the server. 
 	 * (CA V4.1 or higher)
 	 */
-	if(ellCount(&allocpiiu->chidlist)==1){
+	if (ellCount(&allocpiiu->chidlist)==1) {
 		issue_identify_client(allocpiiu);
 		issue_client_host_name(allocpiiu);
 	}

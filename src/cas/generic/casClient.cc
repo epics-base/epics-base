@@ -542,7 +542,7 @@ caStatus casClient::sendErrWithEpicsStatus ( const caHdrLargeArray * pMsg,
  */
 caStatus casClient::logBadIdWithFileAndLineno ( const caHdrLargeArray * mp,
     const void	* dp, const int cacStatus, const char * pFileName, 
-    const unsigned lineno, const unsigned id
+    const unsigned lineno, const unsigned idIn
 )
 {
 	int status;
@@ -559,7 +559,7 @@ caStatus casClient::logBadIdWithFileAndLineno ( const caHdrLargeArray * mp,
 
 	status = this->sendErr (
 			mp, cacStatus, "Bad Resource ID=%u detected at %s.%d",
-			id, pFileName, lineno);
+			idIn, pFileName, lineno);
 
 	return status;
 }

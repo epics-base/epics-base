@@ -1899,7 +1899,7 @@ outBufClient::flushCondition casStrmClient::xSend ( char * pBufIn,
                                              bufSizeT nBytesNeedToBeSent,
                                              bufSizeT & nActualBytes )
 {
-    outBufClient::flushCondition stat;
+    outBufClient::flushCondition stat = outBufClient::flushDisconnect;
     bufSizeT nActualBytesDelta;
     bufSizeT totalBytes;
 
@@ -1916,10 +1916,11 @@ outBufClient::flushCondition casStrmClient::xSend ( char * pBufIn,
 		        // !! this time fetch may be slowing things down !!
 		        //
 		        //this->lastSendTS = epicsTime::getCurrent();
-                return outBufClient::flushProgress;
+                stat = outBufClient::flushProgress;
+                break;
             }
             else {
-                return stat;
+                break;
             }
         }
 		
@@ -1931,10 +1932,11 @@ outBufClient::flushCondition casStrmClient::xSend ( char * pBufIn,
 		    //
 		    //this->lastSendTS = epicsTime::getCurrent();
             nActualBytes = totalBytes;
-            return outBufClient::flushProgress;
+            stat = outBufClient::flushProgress;
+            break;
         }
     }
-	return outBufClient::flushDisconnect; // happy compiler 
+	return stat;
 }
 
 //

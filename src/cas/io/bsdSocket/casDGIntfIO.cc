@@ -402,20 +402,19 @@ void casDGIntfIO::sendBeaconIO ( char &msg, unsigned length,
                 __FILE__, buf, SOCKERRSTR(SOCKERRNO));
         }
         else {
-            osiSockAddr addr;
-
-            osiSocklen_t size = ( osiSocklen_t ) sizeof (addr.sa);
-            status = getsockname (this->beaconSock, &addr.sa, &size);
-            if (status<0) {
+            osiSockAddr sockAddr;
+            osiSocklen_t size = ( osiSocklen_t ) sizeof ( sockAddr.sa );
+            status = getsockname ( this->beaconSock, &sockAddr.sa, &size );
+            if ( status < 0 ) {
                 errlogPrintf ( "%s: CA beacon routing (getsockname) error was \"%s\"\n",
                     __FILE__, SOCKERRSTR(SOCKERRNO));
             }
-            else if (addr.sa.sa_family==AF_INET) {
-                addrField = addr.ia.sin_addr.s_addr;
+            else if ( sockAddr.sa.sa_family == AF_INET ) {
+                addrField = sockAddr.ia.sin_addr.s_addr;
 
                 status = send ( this->beaconSock, &msg, length, 0 );
-                if (status < 0) {
-                    ipAddrToA (&pAddr->addr.ia, buf, sizeof(buf));
+                if ( status < 0 ) {
+                    ipAddrToA ( &pAddr->addr.ia, buf, sizeof(buf) );
                     errlogPrintf ( "%s: CA beacon (send to \"%s\") error was \"%s\"\n",
                         __FILE__, buf, SOCKERRSTR(SOCKERRNO));
                 }

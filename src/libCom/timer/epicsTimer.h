@@ -42,7 +42,7 @@ public:
     };
 
     epicsShareFunc virtual ~epicsTimerNotify () = 0;
-    /* return "noRestart" or "expireStatus ( restart, 30.0 /* sec */ )" */
+    /* return "noRestart" or "expireStatus ( restart, 30.0 )" */
     virtual expireStatus expire ( const epicsTime & currentTime ) = 0;
     epicsShareFunc virtual void show ( unsigned int level ) const;
 };

@@ -26,7 +26,7 @@ typedef void (*REGISTRAR)(void);
 
 #define epicsExportAddress(typ,obj) \
 epicsShareExtern typ *EPICS_EXPORT_POBJ(typ,obj); \
-epicsShareDef typ *EPICS_EXPORT_POBJ(typ,obj) = (typ *)&obj
+epicsShareDef typ *EPICS_EXPORT_POBJ(typ,obj) = (typ *)(char *)&obj
 
 #define epicsExportRegistrar(func) \
 epicsShareFunc REGISTRAR EPICS_EXPORT_PFUNC(func) = (REGISTRAR)(void*)&func

@@ -30,6 +30,28 @@ necessary to make certain that an assert() failure does not occur if failure
 status is returned, and that a proper response is made to this off-normal
 situation.</p>
 
+<h3>IP kernel deadlock vulnerability occurring when vxWorks's tNetTask calls
+logMsg because of a transient mbuf starvation</h3>
+
+<h4>Scope</h4>
+
+<p>You must be running the logClient and logging to an iocLogServer and also
+temporarily run the IOC out of network buffers.</p>
+
+<h4>Symptoms</h4>
+
+<p>IP kernel locks up during a transient mbuf starvation situation. No
+network communication.</p>
+
+<h4>Fix</h4>
+
+<p>The fix was to not call logFdAdd for the log client's socket and instead
+create a specialized vxWorks device driver which calls errlogPrintf for each
+incoming message and then call logFdAdd for a file descriptor opened with
+that device driver. The desirable functional change being errlogPrintf's
+capability to discard messages when it gets behind (because of a transient
+mbuf starvation situation).</p>
+
 <h1>EPICS Release 3.13.8</h1>
 
 <h2>Changes since 3.13.7</h2>

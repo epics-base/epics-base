@@ -53,7 +53,6 @@ static void  forcePort (ELLLIST *pList, unsigned short port)
     }
 }
 
-
 /*
  *  RSRV_ONLINE_NOTIFY_TASK
  */
@@ -70,17 +69,25 @@ int rsrv_online_notify_task()
     int                 true = TRUE;
     unsigned short      port;
     ca_uint32_t         beaconCounter = 0;
+    char                * pStr;
+    int                 autoBeaconAddr;
+    ELLLIST             autoAddrList;
+    char                buf[16];
     
     taskwdInsert (epicsThreadGetIdSelf(),NULL,NULL);
     
-    longStatus = envGetDoubleConfigParam (
-                &EPICS_CA_BEACON_PERIOD, &maxPeriod);
+    if ( envGetConfigParamPtr ( & EPICS_CAS_BEACON_PERIOD ) ) {
+        longStatus = envGetDoubleConfigParam ( & EPICS_CAS_BEACON_PERIOD, & maxPeriod );
+    }
+    else {
+        longStatus = envGetDoubleConfigParam ( & EPICS_CA_BEACON_PERIOD, & maxPeriod );
+    }
     if (longStatus || maxPeriod<=0.0) {
         maxPeriod = 15.0;
         epicsPrintf ("EPICS \"%s\" float fetch failed\n",
-                        EPICS_CA_BEACON_PERIOD.name);
+                        EPICS_CAS_BEACON_PERIOD.name);
         epicsPrintf ("Setting \"%s\" = %f\n",
-            EPICS_CA_BEACON_PERIOD.name, maxPeriod);
+            EPICS_CAS_BEACON_PERIOD.name, maxPeriod);
     }
     
     delay = 0.02; /* initial beacon period in sec */
@@ -103,33 +110,87 @@ int rsrv_online_notify_task()
         epicsThreadSuspendSelf ();
     }
     
-#if 0
-    {
-        struct sockaddr_in  recv_addr;
-
-        memset((char *)&recv_addr, 0, sizeof recv_addr);
-        recv_addr.sin_family = AF_INET;
-        recv_addr.sin_addr.s_addr = htonl(INADDR_ANY); /* let slib pick lcl addr */
-        recv_addr.sin_port = htons(0);   /* let slib pick port */
-        status = bind (sock, (struct sockaddr *)&recv_addr, sizeof recv_addr);
-        if(status<0)
-            abort();
-    }
-#endif
-    
     memset((char *)&msg, 0, sizeof msg);
     msg.m_cmmd = htons (CA_PROTO_RSRV_IS_UP);
     msg.m_count = htons (ca_server_port);
     msg.m_dataType = htons (CA_MINOR_PROTOCOL_REVISION);
     
-    ellInit (&beaconAddrList);
-    
+    ellInit ( & beaconAddrList );
+    ellInit ( & autoAddrList );
+
+    pStr = envGetConfigParam(&EPICS_CAS_AUTO_BEACON_ADDR_LIST, sizeof(buf), buf);
+    if ( ! pStr ) {
+	    pStr = envGetConfigParam(&EPICS_CA_AUTO_ADDR_LIST, sizeof(buf), buf);
+    }
+	if (pStr) {
+		if (strstr(pStr,"no")||strstr(pStr,"NO")) {
+			autoBeaconAddr = FALSE;
+		}
+		else if (strstr(pStr,"yes")||strstr(pStr,"YES")) {
+			autoBeaconAddr = TRUE;
+		}
+		else {
+			fprintf(stderr, 
+		"CAS: EPICS_CA(S)_AUTO_ADDR_LIST = \"%s\"? Assuming \"YES\"\n", pStr);
+			autoBeaconAddr = TRUE;
+		}
+	}
+	else {
+		autoBeaconAddr = TRUE;
+	}
+
     /*
      * load user and auto configured
      * broadcast address list
      */
-    port = envGetInetPortConfigParam (&EPICS_CA_REPEATER_PORT, CA_REPEATER_PORT);
-    configureChannelAccessAddressList (&beaconAddrList, sock, port);
+    if (envGetConfigParamPtr(&EPICS_CAS_BEACON_PORT)) {
+        port = envGetInetPortConfigParam (&EPICS_CAS_BEACON_PORT, 
+            (unsigned short) CA_REPEATER_PORT );
+    }
+    else {
+        port = envGetInetPortConfigParam (&EPICS_CA_REPEATER_PORT, 
+            (unsigned short) CA_REPEATER_PORT );
+    }
+
+    /*
+     * discover beacon addresses associated with this interface
+     */
+    if ( autoBeaconAddr ) {
+        osiSockAddr addr;
+		ELLLIST tmpList;
+
+		ellInit ( &tmpList );
+        addr.ia.sin_family = AF_UNSPEC;
+        osiSockDiscoverBroadcastAddresses (&tmpList, sock, &addr); 
+		removeDuplicateAddresses ( &autoAddrList, &tmpList, 1 );
+
+        forcePort ( &autoAddrList, port );
+    }
+            
+    /*
+     * by default use EPICS_CA_ADDR_LIST for the
+     * beacon address list
+     */
+    {
+        const ENV_PARAM *pParam;
+        
+        if (envGetConfigParamPtr(&EPICS_CAS_INTF_ADDR_LIST) || 
+            envGetConfigParamPtr(&EPICS_CAS_BEACON_ADDR_LIST)) {
+            pParam = &EPICS_CAS_BEACON_ADDR_LIST;
+        }
+        else {
+            pParam = &EPICS_CA_ADDR_LIST;
+        }
+    
+        /* 
+         * add in the configured addresses
+         */
+        addAddrToChannelAccessAddressList (
+            &autoAddrList, pParam, port);
+    }
+ 
+    removeDuplicateAddresses ( &beaconAddrList, &autoAddrList, 0 );
+
     if ( ellCount ( &beaconAddrList ) == 0 ) {
         errlogPrintf ("The CA server's beacon address list was empty after initialization?\n");
     }

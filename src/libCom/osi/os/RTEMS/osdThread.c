@@ -478,29 +478,40 @@ threadShowHeader (void)
     printf ("+-----------+--------+---+-----------+--------+\n");
 }
 
+static void
+threadShowInfo (struct taskVar *v, unsigned int level)
+{
+	printf ("%12.12s %8.8x", v->name, v->id);
+	showInternalTaskInfo (v->id);
+	printf ("\n");
+}
+
 void threadShow (threadId id, unsigned int level)
 {
     struct taskVar *v;
-    int shown = 0;
 
+    if (!id) {
+	threadShowHeader ();
+	return;
+    }
     taskVarLock ();
     for (v = taskVarHead ; v != NULL ; v = v->forw) {
-	if ((id == 0) || ((rtems_id)id == v->id)) {
-	    if (!shown) {
-		threadShowHeader ();
-		shown++;
-	    }
-	    printf ("%12.12s %8.8x", v->name, v->id);
-	    showInternalTaskInfo (v->id);
-	    printf ("\n");
+	if ((rtems_id)id == v->id) {
+	    threadShowInfo (v, level);
+	    return;
 	}
     }
     taskVarUnlock ();
-    if (id && !shown)
-	printf ("*** Thread %#x does not exist.\n", (unsigned int)id);
+    printf ("*** Thread %x does not exist.\n", (unsigned int)id);
 }
 
 void threadShowAll (unsigned int level)
 {
-    threadShow (0, level);
+    struct taskVar *v;
+
+    threadShowHeader ();
+    taskVarLock ();
+    for (v = taskVarHead ; v != NULL ; v = v->forw)
+	threadShowInfo (v, level);
+    taskVarUnlock ();
 }

@@ -79,7 +79,7 @@ int after;
 
 
 static long get_ioint_info(
-	int 			*cmd,
+	int 			cmd,
 	struct eventRecord 	*pr,
 	IOSCANPVT		*ppvt)
 {

@@ -184,7 +184,7 @@ static long init_1771Ife(struct aiRecord	*pai)
 	   pabio->card,pabio->signal,pabio->plc_flag,&value,pai->linr);
     return(0);
 }
-
+
 static long read_1771Ife(struct aiRecord	*pai)
 {
 	struct abio *pabio;
@@ -241,7 +241,7 @@ static long init_1771Ife0to5V(struct aiRecord	*pai)
 	   pabio->card,pabio->signal,pabio->plc_flag,&value,pai->linr);
     return(0);
 }
-
+
 static long read_1771Ife0to5V(struct aiRecord	*pai)
 {
 	struct abio *pabio;
@@ -298,7 +298,7 @@ static long init_1771IfeMa(struct aiRecord	*pai)
 	   pabio->card,pabio->signal,pabio->plc_flag,&value,pai->linr);
     return(0);
 }
-
+
 static long read_1771IfeMa(struct aiRecord *pai)
 {
 	struct abio *pabio;
@@ -355,7 +355,7 @@ static long init_1771IfeSe(struct aiRecord *pai)
 	   pabio->card,pabio->signal,pabio->plc_flag,&value,pai->linr);
     return(0);
 }
-
+
 static long read_1771IfeSe(struct aiRecord *pai)
 {
 	struct abio *pabio;
@@ -412,7 +412,7 @@ static long init_1771Il(struct aiRecord	*pai)
 	   pabio->card,pabio->signal,pabio->plc_flag,&value,pai->linr);
     return(0);
 }
-
+
 static long read_1771Il(struct aiRecord	*pai)
 {
 	struct abio *pabio;
@@ -557,7 +557,7 @@ static long init_1771Ofe(struct aoRecord *pao)
     else return(2);
     return(0);
 }
-
+
 static long write_1771Ofe(struct aoRecord *pao)
 {
 	struct abio *pabio;

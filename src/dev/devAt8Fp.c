@@ -1,4 +1,4 @@
-/* devFp.c */
+/* devAt8At8Fp.c */
 /* share/src/dev $Id$ */
 
 /*
@@ -74,10 +74,10 @@ typedef struct {
 	} BINARYDSET;
 
 
-BINARYDSET devBiFp=  {6,NULL,NULL,init_bi,  bi_ioinfo,  read_bi};
-BINARYDSET devBoFp=  {6,NULL,NULL,init_bo,       NULL,  write_bo};
-BINARYDSET devMbbiFp={6,NULL,NULL,init_mbbi,mbbi_ioinfo,read_mbbi};
-BINARYDSET devMbboFp={6,NULL,NULL,init_mbbo,       NULL,write_mbbo};
+BINARYDSET devBiAt8Fp=  {6,NULL,NULL,init_bi,  bi_ioinfo,  read_bi};
+BINARYDSET devBoAt8Fp=  {6,NULL,NULL,init_bo,       NULL,  write_bo};
+BINARYDSET devMbbiAt8Fp={6,NULL,NULL,init_mbbi,mbbi_ioinfo,read_mbbi};
+BINARYDSET devMbboAt8Fp={6,NULL,NULL,init_mbbo,       NULL,write_mbbo};
 
 static long init_bi( struct biRecord	*pbi)
 {
@@ -93,7 +93,7 @@ static long init_bi( struct biRecord	*pbi)
 	break;
     default :
 	recGblRecordError(S_db_badField,(void *)pbi,
-		"devBiFp (init_record) Illegal INP field");
+		"devBiAt8Fp (init_record) Illegal INP field");
 	return(S_db_badField);
     }
     return(0);
@@ -145,7 +145,7 @@ static long init_bo(struct boRecord	*pbo)
     default :
 	status = S_db_badField;
 	recGblRecordError(status,(void *)pbo,
-	    "devBoFp (init_record) Illegal OUT field");
+	    "devBoAt8Fp (init_record) Illegal OUT field");
     }
     return(status);
 }
@@ -175,7 +175,7 @@ static long init_mbbi(struct mbbiRecord	*pmbbi)
 	break;
     default :
 	recGblRecordError(S_db_badField,(void *)pmbbi,
-		"devMbbiFp (init_record) Illegal INP field");
+		"devMbbiAt8Fp (init_record) Illegal INP field");
 	return(S_db_badField);
     }
     return(0);
@@ -198,7 +198,7 @@ static long read_mbbi(struct mbbiRecord	*pmbbi)
 
 	
 	pvmeio = (struct vmeio *)&(pmbbi->inp.value);
-	status = at5vxi_read(pvmeio->card,pmbbi->mask,&value);
+	status = fp_read(pvmeio->card,pmbbi->mask,&value);
 	if(status==0) {
 		pmbbi->rval = value;
 	} else {
@@ -226,7 +226,7 @@ static long init_mbbo(struct mbboRecord	*pmbbo)
     default :
 	status = S_db_badField;
 	recGblRecordError(status,(void *)pmbbo,
-		"devMbboFp (init_record) Illegal OUT field");
+		"devMbboAt8Fp (init_record) Illegal OUT field");
     }
     return(status);
 }

@@ -23,10 +23,13 @@ cacChannelIO::~cacChannelIO ()
     this->chan.pChannelIO = 0;
 }
 
-cacLocalChannelIO::cacLocalChannelIO ( cacChannel &chan ) :
-  cacChannelIO (chan) {};
+cacLocalChannelIO::cacLocalChannelIO ( cac &cacCtxIn, cacChannel &chan ) :
+  cacChannelIO ( chan ), cacCtx ( cacCtxIn ) {};
 
-cacLocalChannelIO::~cacLocalChannelIO () {}
+cacLocalChannelIO::~cacLocalChannelIO ()
+{
+    this->cacCtx.uninstallLocalChannel ( *this );
+}
 
 void cacChannelIO::connectNotify ()
 {
@@ -60,9 +63,9 @@ channel_state cacChannelIO::state () const
 
 caar cacChannelIO::accessRights () const 
 {
-    caar ar;
-    ar.read_access = true;
-    ar.write_access = true;
+    // static here avoids undefined memory read warning from
+    // error checking codes
+    static caar ar = { true, true };
     return ar;
 }
 

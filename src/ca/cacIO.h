@@ -21,6 +21,7 @@
 #include "shareLib.h"
 
 class cacNotifyIO;
+class cac;
 
 class epicsShareClass cacNotify {
 public:
@@ -144,13 +145,15 @@ private:
 class cacLocalChannelIO : 
     public cacChannelIO, public tsDLNode < cacLocalChannelIO > {
 public:
-    epicsShareFunc cacLocalChannelIO ( cacChannel &chan );
-    epicsShareFunc virtual ~cacLocalChannelIO () = 0;
+    epicsShareFunc cacLocalChannelIO ( cac&, cacChannel &chan );
+    epicsShareFunc virtual ~cacLocalChannelIO ();
+private:
+    cac &cacCtx;
 };
 
 struct cacServiceIO : public tsDLNode < cacServiceIO > {
 public:
-    epicsShareFunc virtual cacLocalChannelIO *createChannelIO ( cacChannel &chan, const char *pName ) = 0;
+    epicsShareFunc virtual cacLocalChannelIO *createChannelIO ( const char *pName, cac &, cacChannel & ) = 0;
     epicsShareFunc virtual void show ( unsigned level ) const = 0;
 private:
 };
@@ -159,7 +162,7 @@ class cacServiceList : private osiMutex {
 public:
     epicsShareFunc cacServiceList ();
     epicsShareFunc void registerService ( cacServiceIO &service );
-    epicsShareFunc cacLocalChannelIO * createChannelIO ( const char *pName, cacChannel &chan );
+    epicsShareFunc cacLocalChannelIO * createChannelIO ( const char *pName, cac &, cacChannel & );
     epicsShareFunc void show ( unsigned level ) const;
 private:
     tsDLList < cacServiceIO > services;

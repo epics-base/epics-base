@@ -899,9 +899,9 @@ bool cac::createChannelIO (const char *pName, cacChannel &chan)
 {
     cacLocalChannelIO *pIO;
 
-    pIO = this->services.createChannelIO ( pName, chan );
+    pIO = this->services.createChannelIO ( pName, *this, chan );
     if ( ! pIO ) {
-        pIO = cacGlobalServiceList.createChannelIO ( pName, chan );
+        pIO = cacGlobalServiceList.createChannelIO ( pName, *this, chan );
         if ( ! pIO ) {
             if ( ! this->pudpiiu ) {
                 if ( ! this->setupUDP () ) {
@@ -927,6 +927,13 @@ bool cac::createChannelIO (const char *pName, cacChannel &chan)
     this->localChanList.add ( *pIO );
     this->defaultMutex.unlock ();
     return true;
+}
+
+void cac::uninstallLocalChannel ( cacLocalChannelIO &localIO )
+{
+    this->defaultMutex.lock ();
+    this->localChanList.remove ( localIO );
+    this->defaultMutex.unlock ();
 }
 
 bool cac::setupUDP ()

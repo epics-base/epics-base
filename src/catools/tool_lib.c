@@ -109,13 +109,13 @@ char *val2str (const void *v, unsigned type, int index)
 
     switch (base_type) {
     case DBR_STRING:
-        sprintf(str, "%s",  ((dbr_string_t*)val_ptr)[index]);
+        sprintf(str, "%s",  ((dbr_string_t*) val_ptr)[index]);
         break;
     case DBR_FLOAT:
         sprintf(str, dblFormatStr, ((dbr_float_t*) val_ptr)[index]);
         break;
     case DBR_DOUBLE:
-        sprintf(str, dblFormatStr, ((dbr_double_t*)val_ptr)[index]);
+        sprintf(str, dblFormatStr, ((dbr_double_t*) val_ptr)[index]);
         break;
     case DBR_CHAR:
         ch = ((dbr_char_t*) val_ptr)[index];
@@ -125,10 +125,10 @@ char *val2str (const void *v, unsigned type, int index)
             sprintf(str, "%d",ch);
         break;
     case DBR_INT:
-        sprint_long(str, ((dbr_int_t*)  val_ptr)[index]);
+        sprint_long(str, ((dbr_int_t*) val_ptr)[index]);
         break;
     case DBR_LONG:
-        sprint_long(str, ((dbr_long_t*)  val_ptr)[index]);
+        sprint_long(str, ((dbr_long_t*) val_ptr)[index]);
         break;
     case DBR_ENUM:
     {
@@ -405,6 +405,8 @@ char *dbr2str (const void *value, unsigned type)
                                                                                 \
     tsPrevious = ((struct TYPE *)value)->stamp;                                 \
                                                                                 \
+                             /* Print count if array */                         \
+    if ( nElems > 1 ) printf("%lu ", nElems);                                   \
                              /* Print Values */                                 \
     for (i=0; i<nElems; ++i) {                                                  \
         printf ("%s ", val2str(value, TYPE_ENUM, i));                           \
@@ -420,7 +422,7 @@ char *dbr2str (const void *value, unsigned type)
     }
 
 
-void print_time_val_sts (pv* pv, int nElems)
+void print_time_val_sts (pv* pv, unsigned long nElems)
 {
     char timeText[TIMETEXTLEN];
     int i, printAbs;
@@ -439,7 +441,7 @@ void print_time_val_sts (pv* pv, int nElems)
     epicsTimeToStrftime(timeText, TIMETEXTLEN, timeFormatStr, &tsNow);
 
     printf("%-30s ", pv->name);
-    if (pv->status == ECA_NEWCONN)
+    if (!pv->onceConnected)
         printf("*** Not connected (PV not found)\n");
     else if (pv->status == ECA_DISCONN)
         printf("%s *** disconnected\n", timeText);

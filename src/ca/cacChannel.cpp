@@ -62,14 +62,14 @@ bool cacChannel::connected () const
 void cacChannel::hostName ( char *pBuf, unsigned bufLength ) const 
 {
     if ( bufLength ) {
-        localHostNameAtLoadTime.copy ( pBuf, bufLength );
+        pLocalHostNameAtLoadTime->copy ( pBuf, bufLength );
     }
 }
 
 // deprecated - please do not use
 const char * cacChannel::pHostName () const
 {
-    return localHostNameAtLoadTime.pointer ();
+    return pLocalHostNameAtLoadTime->pointer ();
 }
 
 

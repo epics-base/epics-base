@@ -16,7 +16,7 @@
 
 #include "localHostName.h"
 
-localHostName localHostNameAtLoadTime;
+epicsSingleton < localHostName > pLocalHostNameAtLoadTime;
 
 localHostName::localHostName ()
 {

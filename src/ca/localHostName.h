@@ -15,6 +15,17 @@
 
 #include <string.h>
 
+#ifdef epicsExportSharedSymbols
+#   define localHostNameh_restore_epicsExportSharedSymbols
+#   undef epicsExportSharedSymbols
+#endif
+
+#include "epicsSingleton.h"
+
+#ifdef localHostNameh_restore_epicsExportSharedSymbols
+#   define epicsExportSharedSymbols
+#endif
+
 class localHostName {
 public:
     localHostName ();
@@ -28,7 +39,7 @@ private:
     char cache [128];
 };
 
-extern localHostName localHostNameAtLoadTime;
+extern epicsSingleton < localHostName > pLocalHostNameAtLoadTime;
 
 inline unsigned localHostName::stringLength () const
 {

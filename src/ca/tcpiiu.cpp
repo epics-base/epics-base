@@ -827,7 +827,7 @@ void tcpiiu::hostNameSetRequest ( epicsGuard < cacMutex > & )
         return;
     }
 
-    const char *pName = localHostNameAtLoadTime.pointer ();
+    const char * pName = pLocalHostNameAtLoadTime->pointer ();
     unsigned size = strlen ( pName ) + 1u;
     unsigned postSize = CA_MESSAGE_ALIGN ( size );
     assert ( postSize < 0xffff );

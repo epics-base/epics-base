@@ -41,6 +41,7 @@
  * .10  08-06-92        jba     New algorithm for calculating analog alarms
  * .11  08-14-92        jba     Added simulation processing
  * .12  08-19-92        jba     Added code for invalid alarm output action
+ * .13  09-10-92        jba     modified fetch of val from dol to call recGblGetLinkValue
  */ 
 
 
@@ -182,27 +183,15 @@ static long process(plongout)
 		recGblRecordError(S_dev_missingSup,(void *)plongout,"write_longout");
 		return(S_dev_missingSup);
 	}
-        if (!plongout->pact) {
-		if((plongout->dol.type == DB_LINK) && (plongout->omsl == CLOSED_LOOP)){
-			long options=0;
-			long nRequest=1;
+        if (!plongout->pact && plongout->omsl == CLOSED_LOOP){
+		long options=0;
+		long nRequest=1;
 
-			plongout->pact = TRUE;
-			status = dbGetLink(&plongout->dol.value.db_link,(struct dbCommon *)plongout,
-				DBR_LONG,&plongout->val,&options,&nRequest);
-			plongout->pact = FALSE;
-			if(status!=0){
-				recGblSetSevr(plongout,LINK_ALARM,INVALID_ALARM);
-			} else plongout->udf=FALSE;
-		}
-		if((plongout->dol.type == CA_LINK) && (plongout->omsl == CLOSED_LOOP)){
-			plongout->pact = TRUE;
-			status = dbCaGetLink(&(plongout->dol));
-			plongout->pact = FALSE;
-			if(status!=0){
-				recGblSetSevr(plongout,LINK_ALARM,INVALID_ALARM);
-			} else plongout->udf=FALSE;
-		}
+		plongout->pact = TRUE;
+		status = recGblGetLinkValue(&(plongout->dol),(void *)plongout,
+			DBR_LONG,&(plongout->val),&options,&nRequest);
+		plongout->pact = FALSE;
+		if(RTN_SUCCESS(status)) plongout->udf=FALSE;
 	}
 
 	/* check for alarms */
@@ -226,7 +215,7 @@ static long process(plongout)
                     default :
                         status=-1;
                         recGblRecordError(S_db_badField,(void *)plongout,
-                                "ao:process Illegal IVOA field");
+                                "longout:process Illegal IVOA field");
                 }
         }
 
@@ -423,7 +412,7 @@ static long writeValue(plongout)
 
 	status=recGblGetLinkValue(&(plongout->siml),
 		(void *)plongout,DBR_ENUM,&(plongout->simm),&options,&nRequest);
-	if (status)
+	if (RTN_SUCCESS(status))
 		return(status);
 
 	if (plongout->simm == NO){

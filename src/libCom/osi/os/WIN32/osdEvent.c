@@ -135,12 +135,20 @@ epicsShareFunc epicsEventWaitStatus epicsShareAPI epicsEventWaitWithTimeout (
     DWORD status;
     DWORD tmo;
 
-    tmo = (DWORD) (timeOut * mSecPerSecOsdSem);
-    status = WaitForSingleObject (pSem->handle, tmo);
+    if ( timeOut >= 0xffffffff / mSecPerSecOsdSem ) {
+        tmo = 0xfffffffe;
+    }
+    else if ( timeOut < 0.0 ) {
+        tmo = 0u;
+    }
+    else {
+        tmo = ( DWORD ) ( timeOut * mSecPerSecOsdSem );
+    }
+    status = WaitForSingleObject ( pSem->handle, tmo );
     if ( status == WAIT_OBJECT_0 ) {
         return epicsEventWaitOK;
     }
-    else if (status == WAIT_TIMEOUT) {
+    else if ( status == WAIT_TIMEOUT ) {
         return epicsEventWaitTimeout;
     }
     else {

@@ -77,10 +77,7 @@ struct mbboRecord *pmbbo;
     long status;
  
     status = recGblInitFastOutLink(&(pmbbo->out), (void *) pmbbo, DBR_ULONG, "RVAL");
-
-    if (pmbbo->out.type == CA_LINK)
-       status = 2;
- 
+    status = 2;
     return status;
  
 } /* end init_record() */

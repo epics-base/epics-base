@@ -77,10 +77,7 @@ struct boRecord *pbo;
     long status;
  
     status = recGblInitFastOutLink(&(pbo->out), (void *) pbo, DBR_LONG, "RVAL");
-
-    if (pbo->out.type != CA_LINK)
-        status = 2;
- 
+    status = 2;
     return status;
  
 } /* end init_record() */

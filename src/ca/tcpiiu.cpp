@@ -78,7 +78,7 @@ extern "C" void cacSendThreadTCP ( void *pParam )
                     piiu->echoRequest ();
                 }
                 else {
-                    piiu->noopRequest ();
+                    piiu->versionMessage ( piiu->priority() );
                 }
             }
 
@@ -216,6 +216,8 @@ extern "C" void cacRecvThreadTCP ( void *pParam )
     epicsThreadPrivateSet ( caClientCallbackThreadId, piiu );
 
     piiu->connect ();
+
+    piiu->versionMessage ( piiu->priority() );
 
     {
         callbackAutoMutex autoMutex ( *piiu->pCAC() );
@@ -373,10 +375,10 @@ extern "C" void cacRecvThreadTCP ( void *pParam )
 //
 // tcpiiu::tcpiiu ()
 //
-tcpiiu::tcpiiu ( cac &cac, double connectionTimeout, 
+tcpiiu::tcpiiu ( cac & cac, double connectionTimeout, 
         epicsTimerQueue & timerQueue, const osiSockAddr & addrIn, 
         unsigned minorVersion, ipAddrToAsciiEngine & engineIn, 
-        cacChannel::priLev priorityIn ) :
+        const cacChannel::priLev & priorityIn ) :
     netiiu ( &cac ),
     caServerID ( addrIn.ia, priorityIn ),
     recvDog ( *this, connectionTimeout, timerQueue ),
@@ -989,20 +991,22 @@ void tcpiiu::enableFlowControlRequest ()
     this->sendQue.pushUInt32 ( 0u ); // available 
 }
 
-void tcpiiu::noopRequest ()
+void tcpiiu::versionMessage ( const cacChannel::priLev & priority )
 {
+    assert ( priority <= 0xffff );
+
     if ( this->sendQue.flushEarlyThreshold ( 16u ) ) {
         this->flushRequest ();
     }
 
     epicsAutoMutex locker (  this->pCAC()->mutexRef() );
 
-    this->sendQue.pushUInt16 ( CA_PROTO_NOOP ); // cmd
-    this->sendQue.pushUInt16 ( 0u ); // postsize
-    this->sendQue.pushUInt16 ( 0u ); // dataType
-    this->sendQue.pushUInt16 ( 0u ); // count
-    this->sendQue.pushUInt32 ( 0u ); // cid
-    this->sendQue.pushUInt32 ( 0u ); // available 
+    this->sendQue.pushUInt16 ( CA_PROTO_VERSION ); // cmd
+    this->sendQue.pushUInt16 ( 0u ); // postsize ( old possize field )
+    this->sendQue.pushUInt16 ( priority ); // old dataType field
+    this->sendQue.pushUInt16 ( CA_MINOR_PROTOCOL_REVISION ); // old count field
+    this->sendQue.pushUInt32 ( 0u ); // ( old cid field )
+    this->sendQue.pushUInt32 ( 0u ); // ( old available field )
 }
 
 void tcpiiu::echoRequest ()

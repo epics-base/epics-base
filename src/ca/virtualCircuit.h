@@ -216,7 +216,7 @@ public:
     tcpiiu ( cac &cac, double connectionTimeout, 
         epicsTimerQueue &timerQueue, const osiSockAddr &addrIn, 
         unsigned minorVersion, ipAddrToAsciiEngine & engineIn,
-        cacChannel::priLev priorityIn );
+        const cacChannel::priLev & priorityIn );
     ~tcpiiu ();
     void connect ();
     void destroy ();
@@ -286,7 +286,7 @@ private:
 
     // send protocol stubs
     void echoRequest ();
-    void noopRequest ();
+    void versionMessage ( const cacChannel::priLev & priority );
     void disableFlowControlRequest ();
     void enableFlowControlRequest ();
     void hostNameSetRequest ();

@@ -70,7 +70,7 @@ const cac::pProtoStubTCP cac::tcpJumpTableCAC [] =
 // TCP exception dispatch table
 const cac::pExcepProtoStubTCP cac::tcpExcepJumpTableCAC [] = 
 {
-    &cac::defaultExcep,     // CA_PROTO_NOOP
+    &cac::defaultExcep,     // CA_PROTO_VERSION
     &cac::eventAddExcep,    // CA_PROTO_EVENT_ADD
     &cac::defaultExcep,     // CA_PROTO_EVENT_CANCEL
     &cac::readExcep,        // CA_PROTO_READ

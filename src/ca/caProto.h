@@ -93,6 +93,9 @@
 #define MAX_TCP                 ( 1024 * 16u ) /* so waveforms fit */
 #define MAX_MSG_SIZE            ( MAX_TCP ) /* the larger of tcp and udp max */
 
+#define CA_PROTO_PRIORITY_MIN 0u
+#define CA_PROTO_PRIORITY_MAX 99u
+
 /*
  * architecture independent types
  *
@@ -105,7 +108,7 @@ typedef float           ca_float32_t;
 typedef ca_uint32_t     caResId;
 
         /* values for m_cmmd */
-#define CA_PROTO_NOOP           0u  /* do nothing, but verify TCP */
+#define CA_PROTO_VERSION        0u  /* set minor version and priority (used to be NOOP cmd) */
 #define CA_PROTO_EVENT_ADD      1u  /* add an event */
 #define CA_PROTO_EVENT_CANCEL   2u  /* cancel an event */
 #define CA_PROTO_READ           3u  /* read and return a channel value*/

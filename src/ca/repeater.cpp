@@ -457,7 +457,7 @@ LOCAL void register_new_client ( osiSockAddr &from )
      */
     caHdr noop;
     memset ( (char *) &noop, '\0', sizeof ( noop ) );
-    noop.m_cmmd = htons ( CA_PROTO_NOOP );
+    noop.m_cmmd = htons ( CA_PROTO_VERSION );
     fanOut ( from, &noop, sizeof ( noop ) );
 
     if ( newClient ) {

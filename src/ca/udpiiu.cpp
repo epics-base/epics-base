@@ -489,7 +489,7 @@ void udpiiu::shutdown ()
     this->shutdownCmd = true;
 
     caHdr msg;
-    msg.m_cmmd = htons ( CA_PROTO_NOOP );
+    msg.m_cmmd = htons ( CA_PROTO_VERSION );
     msg.m_available = htonl ( 0u );
     msg.m_dataType = htons ( 0u );
     msg.m_count = htons ( 0u );

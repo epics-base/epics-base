@@ -8,7 +8,7 @@ SRCS.c = \
 	../devAiDvx2502.c ../devAiSoft.c ../devAiSoftRaw.c \
 	../devAiSymb.c ../devAiTestAsyn.c ../devAiXy566Di.c \
 	../devAiXy566DiL.c ../devAiXy566Se.c ../devAoSoft.c \
-	../devApsEg.c \
+	../devApsEg.c ../devApsEr.c\
 	../devAoSoftRaw.c ../devAoSymb.c ../devAoTestAsyn.c \
 	../devAoVmiVme4100.c ../devBiMpv910.c ../devBiSoft.c \
 	../devBiSoftRaw.c ../devBiTestAsyn.c ../devBiXVme210.c \
@@ -44,7 +44,8 @@ OBJS = \
 	devAiDvx2502.o devAiSoft.o devAiSoftRaw.o devAiSymb.o \
 	devAiTestAsyn.o devAiXy566Di.o devAiXy566DiL.o devAiXy566Se.o \
 	devAoSoft.o devAoSoftRaw.o devAoSymb.o devAoTestAsyn.o \
-	devAoVmiVme4100.o devBiMpv910.o devApsEg.o devBiSoft.o devBiSoftRaw.o \
+	devAoVmiVme4100.o devBiMpv910.o devApsEg.o devApsEr.o \
+	devBiSoft.o devBiSoftRaw.o \
 	devBiTestAsyn.o devBiXVme210.o devBoMpv902.o devBoSoft.o \
 	devBoSoftRaw.o devBoTestAsyn.o devBoXVme220.o devCommonGpib.o \
 	devEventSoft.o devEventTestIoEvent.o devHistogramSoft.o \

@@ -26,26 +26,6 @@
  *              Advanced Photon Source
  *              Argonne National Laboratory
  *
- *
- * History
- * $Log$
- * Revision 1.5  1997/08/05 00:46:58  jhill
- * fixed warnings
- *
- * Revision 1.4  1997/06/13 09:15:53  jhill
- * connect proto changes
- *
- * Revision 1.3  1997/04/10 19:33:54  jhill
- * API changes
- *
- * Revision 1.2  1996/11/06 22:15:53  jhill
- * allow monitor init read to using rd async io
- *
- * Revision 1.1  1996/11/02 01:01:02  jhill
- * installed
- *
- *
- *
  */
 
 
@@ -87,31 +67,30 @@ epicsShareFunc caStatus casAsyncExIOI::postIOCompletion(const pvExistReturn &ret
 	return this->postIOCompletionI();
 }
 
-
 //
 // casAsyncExIOI::cbFuncAsyncIO()
 // (called when IO completion event reaches top of event queue)
 //
 epicsShareFunc caStatus casAsyncExIOI::cbFuncAsyncIO()
 {
-	caStatus 	status;
-
-        switch (this->msg.m_cmmd) {
-        case CA_PROTO_SEARCH:
-		//
-		// pass output DG address parameters
-		//
-		assert(this->pOutDGIntfIO);
-		status = this->client.asyncSearchResponse(*this->pOutDGIntfIO,
-				this->dgOutAddr, this->msg, this->retVal);
-                break;
- 
-        default:
-                this->reportInvalidAsynchIO(this->msg.m_cmmd);
-                status = S_cas_internal;
-                break;
-        }
-
-	return status;
+    caStatus 	status;
+    
+    switch (this->msg.m_cmmd) {
+    case CA_PROTO_SEARCH:
+        //
+        // pass output DG address parameters
+        //
+        assert(this->pOutDGIntfIO);
+        status = this->client.asyncSearchResponse(*this->pOutDGIntfIO,
+            this->dgOutAddr, this->msg, this->retVal);
+        break;
+        
+    default:
+        this->reportInvalidAsynchIO(this->msg.m_cmmd);
+        status = S_cas_internal;
+        break;
+    }
+    
+    return status;
 }
 

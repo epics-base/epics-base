@@ -34,6 +34,7 @@ public:
     ~autoPtrDestroy ();
     T & operator * () const;
     T * operator -> () const;
+    autoPtrDestroy<T> & operator = ( T * );
     T * get () const;
     T * release ();
 private:
@@ -48,7 +49,7 @@ template < class T >
 inline autoPtrDestroy<T>::~autoPtrDestroy ()
 {
     if ( this->p ) {
-        p->destroy ();
+        this->p->destroy ();
     }
 }
 
@@ -62,6 +63,16 @@ template < class T >
 inline T * autoPtrDestroy<T>::operator -> () const
 {
     return this->p;
+}
+
+template < class T >
+inline autoPtrDestroy<T> & autoPtrDestroy<T>::operator = ( T * pIn )
+{
+    if ( this->p ) {
+        this->p->destroy ();
+    }
+    this->p = pIn;
+    return *this;
 }
 
 template < class T >

@@ -35,6 +35,19 @@
 
 #define comQueSendCopyDispatchSize 39
 
+class epicsMutex;
+template < class T > class epicsGuard;
+
+class comQueSendMsgMinder {
+public:
+    comQueSendMsgMinder ( 
+        class comQueSend &, epicsGuard < cacMutex > & );
+    ~comQueSendMsgMinder ();
+    void commit ();
+private:
+    class comQueSend * pSendQue;
+};
+
 //
 // Notes.
 // o calling popNextComBufToSend() will clear any uncommitted bytes
@@ -44,8 +57,6 @@ public:
     comQueSend ( wireSendAdapter &, comBufMemoryManager & );
     ~comQueSend ();
     void clear ();
-    void beginMsg (); 
-    void commitMsg (); 
     unsigned occupiedBytes () const; 
     bool flushEarlyThreshold ( unsigned nBytesThisMsg ) const;
     bool flushBlockThreshold ( unsigned nBytesThisMsg ) const; 
@@ -53,7 +64,7 @@ public:
     void pushUInt32 ( const ca_uint32_t value );
     void pushFloat32 ( const ca_float32_t value );
     void pushString ( const char *pVal, unsigned nChar );
-    void insertRequestHeader (
+    void insertRequestHeader ( 
         ca_uint16_t request, ca_uint32_t payloadSize, 
         ca_uint16_t dataType, ca_uint32_t nElem, ca_uint32_t cid, 
         ca_uint32_t requestDependent, bool v49Ok );
@@ -69,7 +80,8 @@ private:
     wireSendAdapter & wire;
     unsigned nBytesPending;
 
-    typedef void ( comQueSend::*copyScalarFunc_t ) ( const void * pValue );
+    typedef void ( comQueSend::*copyScalarFunc_t ) ( 
+        const void * pValue );
     static const copyScalarFunc_t dbrCopyScalar [comQueSendCopyDispatchSize];
     void copy_dbr_string ( const void * pValue );
     void copy_dbr_short ( const void * pValue ); 
@@ -77,9 +89,10 @@ private:
     void copy_dbr_char ( const void * pValue ); 
     void copy_dbr_long ( const void * pValue ); 
     void copy_dbr_double ( const void * pValue ); 
+    void copy_dbr_invalid ( const void * pValue );
 
     typedef void ( comQueSend::*copyVectorFunc_t ) (  
-        const void *pValue, unsigned nElem );
+        const void * pValue, unsigned nElem );
     static const copyVectorFunc_t dbrCopyVector [comQueSendCopyDispatchSize];
     void copy_dbr_string ( const void *pValue, unsigned nElem );
     void copy_dbr_short ( const void *pValue, unsigned nElem ); 
@@ -87,10 +100,16 @@ private:
     void copy_dbr_char ( const void *pValue, unsigned nElem ); 
     void copy_dbr_long ( const void *pValue, unsigned nElem ); 
     void copy_dbr_double ( const void *pValue, unsigned nElem ); 
+    void copy_dbr_invalid ( const void * pValue, unsigned nElem );
 
     void pushComBuf ( comBuf & ); 
     comBuf * newComBuf (); 
-    void clearUncommitted (); 
+
+    void beginMsg (); 
+    void commitMsg (); 
+    void clearUncommitedMsg ();
+
+    friend class comQueSendMsgMinder;
 
     //
     // visual C++ versions 6 & 7 do not allow out of 
@@ -137,6 +156,33 @@ private:
 
 extern const char cacNillBytes[];
 
+inline comQueSendMsgMinder::comQueSendMsgMinder ( 
+    class comQueSend & sendQueIn, epicsGuard < cacMutex > & ) : 
+        pSendQue ( & sendQueIn )
+{
+    sendQueIn.beginMsg ();
+}
+
+inline comQueSendMsgMinder::~comQueSendMsgMinder ()
+{
+    if ( this->pSendQue ) {
+        this->pSendQue->clearUncommitedMsg ();
+    }
+}
+
+inline void comQueSendMsgMinder::commit ()
+{
+    if ( this->pSendQue ) {
+        this->pSendQue->commitMsg ();
+        this->pSendQue = 0;
+    }
+}
+
+inline void comQueSend::beginMsg () 
+{
+    this->pFirstUncommited = this->bufs.lastIter ();
+}
+
 inline void comQueSend::pushUInt16 ( const ca_uint16_t value ) 
 {
     this->push ( value );
@@ -178,14 +224,6 @@ inline bool comQueSend::flushBlockThreshold ( unsigned nBytesThisMsg ) const
 inline bool comQueSend::flushEarlyThreshold ( unsigned nBytesThisMsg ) const
 {
     return ( this->nBytesPending + nBytesThisMsg > 4 * comBuf::capacityBytes () );
-}
-
-inline void comQueSend::beginMsg () 
-{
-    if ( this->pFirstUncommited.valid() ) {
-        this->clearUncommitted ();
-    }
-    this->pFirstUncommited = this->bufs.lastIter ();
 }
 
 // wrapping this with a function avoids WRS T2.2 Cygnus GNU compiler bugs

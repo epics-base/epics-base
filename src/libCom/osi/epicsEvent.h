@@ -74,12 +74,12 @@ inline epicsEvent::epicsEvent (epicsEventInitialState initial) :
 
 inline epicsEvent::~epicsEvent ()
 {
-    epicsEventDestroy (this->id);
+    epicsEventDestroy ( this->id );
 }
 
 inline void epicsEvent::signal ()
 {
-    epicsEventSignal (this->id);
+    epicsEventSignal ( this->id );
 }
 
 inline void epicsEvent::wait ()

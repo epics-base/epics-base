@@ -57,8 +57,8 @@
 #include	<biRecord.h>
 
 /* Create the dset for devBiTestAsyn */
-long init_record();
-long read_bi();
+static long init_record();
+static long read_bi();
 struct {
 	long		number;
 	DEVSUPFUN	report;
@@ -137,7 +137,7 @@ static long read_bi(pbi)
 		if(wait_time<=0) return(0);
 		callbackSetPriority(pbi->prio,pcallback);
 		printf("%s Starting asynchronous processing\n",pbi->name);
-		wdStart(pcallback->wd_id,wait_time,callbackRequest,(int)pcallback);
+		wdStart(pcallback->wd_id,wait_time,(FUNCPTR)callbackRequest,(int)pcallback);
 		pbi->pact=TRUE;	
 		return(0);
 	}

@@ -50,7 +50,7 @@
 #include        <steppermotor.h>
 
 /* Create the dset for  */
-long sm_command();
+static long sm_command();
 
 struct {
 	long		number;

@@ -51,8 +51,8 @@
 
 
 /* Create the dset for devBiXVme210 */
-long init_record();
-long read_bi();
+static long init_record();
+static long read_bi();
 
 struct {
 	long		number;

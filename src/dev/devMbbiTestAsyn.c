@@ -57,8 +57,8 @@
 #include	<mbbiRecord.h>
 
 /* Create the dset for devMbbiTestAsyn */
-long init_record();
-long read_mbbi();
+static long init_record();
+static long read_mbbi();
 struct {
 	long		number;
 	DEVSUPFUN	report;
@@ -136,7 +136,7 @@ static long read_mbbi(pmbbi)
 		if(wait_time<=0) return(0);
 		callbackSetPriority(pmbbi->prio,pcallback);
 		printf("%s Starting asynchronous processing\n",pmbbi->name);
-		wdStart(pcallback->wd_id,wait_time,callbackRequest,(int)pcallback);
+		wdStart(pcallback->wd_id,wait_time,(FUNCPTR)callbackRequest,(int)pcallback);
 		pmbbi->pact=TRUE;
 		return(0);
 	}

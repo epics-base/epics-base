@@ -57,9 +57,9 @@
 #include	<module_types.h>
 #include	<waveformRecord.h>
 
-long init_record();
-long read_wf();
-long arm_wf();
+static long init_record();
+static long read_wf();
+static long arm_wf();
 
 
 struct {

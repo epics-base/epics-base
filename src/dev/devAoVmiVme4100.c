@@ -55,9 +55,9 @@
 #define LINEAR 1
 
 /* Create the dset for devAoAoVmiVme4100 */
-long init_record();
-long write_ao();
-long special_linconv();
+static long init_record();
+static long write_ao();
+static long special_linconv();
 
 struct {
 	long		number;

@@ -77,6 +77,7 @@ static long linconv_1771Il();
 static long init_1771Ixe();
 static long read_1771Ixe();
 static long linconv_1771Ixe();
+static int read_1771Ofe();
 typedef struct {
 	long		number;
 	DEVSUPFUN	report;
@@ -534,7 +535,6 @@ static long linconv_1771Ixe(struct aiRecord *pai, int after)
     return(0);
 }
 
-int read_1771Ofe();
 
 static long init_1771Ofe(struct aoRecord *pao)
 {

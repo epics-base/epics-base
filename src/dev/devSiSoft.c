@@ -53,8 +53,8 @@ long dbCaGetLink();
 
 
 /* Create the dset for devSiSoft */
-long init_record();
-long read_stringin();
+static long init_record();
+static long read_stringin();
 
 struct {
 	long		number;

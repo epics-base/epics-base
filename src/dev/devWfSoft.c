@@ -54,8 +54,8 @@ long dbCaAddInlink();
 long dbCaGetLink();
 
 /* Create the dset for devWfSoft */
-long init_record();
-long read_wf();
+static long init_record();
+static long read_wf();
 struct {
 	long		number;
 	DEVSUPFUN	report;

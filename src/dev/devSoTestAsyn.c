@@ -57,8 +57,8 @@
 #include	<stringoutRecord.h>
 
 /* Create the dset for devSoTestAsyn */
-long init_record();
-long write_stringout();
+static long init_record();
+static long write_stringout();
 struct {
 	long		number;
 	DEVSUPFUN	report;
@@ -134,7 +134,7 @@ static long write_stringout(pstringout)
 		if(wait_time<=0) return(0);
 		callbackSetPriority(pstringout->prio,pcallback);
 		printf("%s Starting asynchronous processing\n",pstringout->name);
-		wdStart(pcallback->wd_id,wait_time,callbackRequest,(int)pcallback);
+		wdStart(pcallback->wd_id,wait_time,(FUNCPTR)callbackRequest,(int)pcallback);
 		pstringout->pact=TRUE;
 		return(0);
 	}

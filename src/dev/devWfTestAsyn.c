@@ -57,8 +57,8 @@
 #include	<waveformRecord.h>
 
 /* Create the dset for devWfTestAsyn */
-long init_record();
-long read_wf();
+static long init_record();
+static long read_wf();
 struct {
 	long		number;
 	DEVSUPFUN	report;
@@ -134,7 +134,7 @@ static long read_wf(pwf)
 		if(wait_time<=0) return(0);
 		callbackSetPriority(pwf->prio,pcallback);
 		printf("%s Starting asynchronous processing\n",pwf->name);
-		wdStart(pcallback->wd_id,wait_time,callbackRequest,(int)pcallback);
+		wdStart(pcallback->wd_id,wait_time,(FUNCPTR)callbackRequest,(int)pcallback);
 		pwf->pact=TRUE;
 		return(0);
 	}

@@ -56,8 +56,8 @@
 #include	<histogramRecord.h>
 
 /* Create the dset for devHistogramTestAsyn */
-long init_record();
-long read_histogram();
+static long init_record();
+static long read_histogram();
 struct {
 	long		number;
 	DEVSUPFUN	report;
@@ -133,7 +133,7 @@ static long read_histogram(phistogram)
 		if(wait_time<=0) return(0);
 		callbackSetPriority(phistogram->prio,pcallback);
 		printf("%s Starting asynchronous processing\n",phistogram->name);
-		wdStart(pcallback->wd_id,wait_time,callbackRequest,(int)pcallback);
+		wdStart(pcallback->wd_id,wait_time,(FUNCPTR)callbackRequest,(int)pcallback);
 		phistogram->pact=TRUE;
 		return(0);
 	}

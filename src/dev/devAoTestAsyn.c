@@ -58,8 +58,8 @@
 #include	<aoRecord.h>
 
 /* Create the dset for devAoTestAsyn */
-long init_record();
-long write_ao();
+static long init_record();
+static long write_ao();
 struct {
 	long		number;
 	DEVSUPFUN	report;
@@ -136,7 +136,7 @@ static long write_ao(pao)
 		if(wait_time<=0) return(0);
 		callbackSetPriority(pao->prio,pcallback);
 		printf("%s Starting asynchronous processing\n",pao->name);
-		wdStart(pcallback->wd_id,wait_time,callbackRequest,(int)pcallback);
+		wdStart(pcallback->wd_id,wait_time,(FUNCPTR)callbackRequest,(int)pcallback);
 		pao->pact=TRUE;
 		return(0);
 	}

@@ -51,10 +51,10 @@
 /* added for Channel Access Links */
 long dbCaAddOutlink();
 long dbCaPutLink();
-long init_record();
+static long init_record();
 
 /* Create the dset for devBoSoftRaw */
-long write_bo();
+static long write_bo();
 
 struct {
 	long		number;

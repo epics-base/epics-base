@@ -54,10 +54,10 @@
 /* added for Channel Access Links */
 long dbCaAddOutlink();
 long dbCaPutLink();
-long init_record();
+static long init_record();
 
 /* Create the dset for devMbboSoft */
-long write_mbbo();
+static long write_mbbo();
 
 struct {
 	long		number;

@@ -49,10 +49,10 @@
 #include	<waveformRecord.h>
 #include 	<dbScan.h>
 
-long init_record();
-long read_wf();
-long arm_wf();
-long get_ioint_info();
+static long init_record();
+static long read_wf();
+static long arm_wf();
+static long get_ioint_info();
 
 
 struct {

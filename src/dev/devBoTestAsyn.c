@@ -59,8 +59,8 @@
 #include	<boRecord.h>
 
 /* Create the dset for devBoTestAsyn */
-long init_record();
-long write_bo();
+static long init_record();
+static long write_bo();
 struct {
 	long		number;
 	DEVSUPFUN	report;
@@ -136,7 +136,7 @@ static long write_bo(pbo)
 		if(wait_time<=0) return(0);
 		callbackSetPriority(pbo->prio,pcallback);
 		printf("%s Starting asynchronous processing\n",pbo->name);
-		wdStart(pcallback->wd_id,wait_time,callbackRequest,(int)pcallback);
+		wdStart(pcallback->wd_id,wait_time,(FUNCPTR)callbackRequest,(int)pcallback);
 		pbo->pact=TRUE;
 		return(0);
 	}

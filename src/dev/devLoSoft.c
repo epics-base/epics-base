@@ -50,10 +50,10 @@
 /* added for Channel Access Links */
 long dbCaAddOutlink();
 long dbCaPutLink();
-long init_record();
+static long init_record();
 
 /* Create the dset for devLoSoft */
-long write_longout();
+static long write_longout();
 
 struct {
 	long		number;

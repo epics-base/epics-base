@@ -53,7 +53,7 @@
 /* added for Channel Access Links */
 long dbCaAddOutlink();
 long dbCaPutLink();
-long init_record();
+static long init_record();
 
 /* Create the dset for devAoSoftRaw */
 static long write_ao();

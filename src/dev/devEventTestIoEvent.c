@@ -47,9 +47,9 @@
 #include	<devSup.h>
 #include	<eventRecord.h>
 /* Create the dset for devEventTestIoEvent */
-long init();
-long get_ioint_info();
-long read_event();
+static long init();
+static long get_ioint_info();
+static long read_event();
 struct {
 	long		number;
 	DEVSUPFUN	report;
@@ -98,6 +98,6 @@ static long read_event(pevent)
 	pevent->udf = FALSE;
 	if(wd_id==NULL) wd_id = wdCreate();
 	printf("%s Requesting Next ioEnevt\n",pevent->name);
-	wdStart(wd_id,wait_time,scanIoRequest,(int)ioscanpvt);
+	wdStart(wd_id,wait_time,(FUNCPTR)scanIoRequest,(int)ioscanpvt);
 	return(0);
 }

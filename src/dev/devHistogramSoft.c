@@ -51,8 +51,8 @@
 #include        <histogramRecord.h>
 
 /* Create the dset for devHistogramSoft */
-long init_record();
-long read_histogram();
+static long init_record();
+static long read_histogram();
 struct {
 	long		number;
 	DEVSUPFUN	report;

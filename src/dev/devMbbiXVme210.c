@@ -52,8 +52,8 @@
 
 
 /* Create the dset for devAiMbbiXVme210 */
-long init_record();
-long read_mbbi();
+static long init_record();
+static long read_mbbi();
 
 struct {
 	long		number;

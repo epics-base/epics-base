@@ -52,10 +52,10 @@
 /* added for Channel Access Links */
 long dbCaAddOutlink();
 long dbCaPutLink();
-long init_record();
+static long init_record();
 
 /* Create the dset for devPtSoft */
-long write_pt();
+static long write_pt();
 
 struct {
 	long		number;

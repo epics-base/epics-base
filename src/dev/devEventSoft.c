@@ -52,8 +52,8 @@ long dbCaAddInlink();
 long dbCaGetLink();
 
 /* Create the dset for devEventSoft */
-long init_record();
-long read_event();
+static long init_record();
+static long read_event();
 
 struct {
 	long		number;

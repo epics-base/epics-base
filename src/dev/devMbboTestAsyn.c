@@ -58,8 +58,8 @@
 #include	<mbboRecord.h>
 
 /* Create the dset for devMbboTestAsyn */
-long init_record();
-long write_mbbo();
+static long init_record();
+static long write_mbbo();
 struct {
 	long		number;
 	DEVSUPFUN	report;
@@ -136,7 +136,7 @@ static long write_mbbo(pmbbo)
 		if(wait_time<=0) return(0);
 		callbackSetPriority(pmbbo->prio,pcallback);
 		printf("%s Starting asynchronous processing\n",pmbbo->name);
-		wdStart(pcallback->wd_id,wait_time,callbackRequest,(int)pcallback);
+		wdStart(pcallback->wd_id,wait_time,(FUNCPTR)callbackRequest,(int)pcallback);
 		pmbbo->pact=TRUE;
 		return(0);
 	}

@@ -52,8 +52,8 @@ long dbCaAddInlink();
 long dbCaGetLink();
 
 /* Create the dset for devLiSoft */
-long init_record();
-long read_longin();
+static long init_record();
+static long read_longin();
 
 struct {
 	long		number;

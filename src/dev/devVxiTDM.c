@@ -93,11 +93,11 @@
 
 /* Create the dsets for devVxiTDM */
 
-long report();
-long init();
-long init_pd();
-long get_ioint_info();
-long write_pd();
+static long report();
+static long init();
+static long init_pd();
+static long get_ioint_info();
+static long write_pd();
 
 typedef struct {
 	long		number;
@@ -182,9 +182,9 @@ struct tdm_config {
 static double cons[] = { 
 	1e9,1e6,1e3,1,1e-3 };
 
-void tdmInitLA();
-void tdm_stat();
-void tdm_report();
+static void tdmInitLA();
+static void tdm_stat();
+static void tdm_report();
 
 
 
@@ -203,7 +203,7 @@ epvxiDeviceSearchPattern	dsp;
 
 	if( epvxiLookupLA(&dsp,tdm_report,(void *)&interest)<0 )
 		return ERROR;
-
+	return (OK);
 }
 
 static void tdm_report(unsigned la,void *interest)
@@ -285,8 +285,7 @@ struct tdm_config *tc;
 	case (VXI_IO):
 		break;
 
-	default :
-		recGblRecordError(S_dev_badBus,pd,
+		recGblRecordError(S_dev_badBus,(void *)pd,
 		    "devVxiTDM (init_record) Illegal OUT Bus Type");
 		return(S_dev_badBus);
 	}
@@ -299,7 +298,7 @@ struct tdm_config *tc;
 		signal=pvxiio->parm[0]-'0';
 	else
 	{
-		recGblRecordError(S_dev_badSignal,pd,
+		recGblRecordError(S_dev_badSignal,(void *)pd,
 			"devVxiTDM (init_record) Illegal SIGNAL field");
 		return(S_dev_badSignal);
 	}
@@ -313,14 +312,14 @@ struct tdm_config *tc;
 
 	if(la>MAXCARDS)
 	{
-		recGblRecordError(S_dev_badCard,pd,
+		recGblRecordError(S_dev_badCard,(void *)pd,
 		    "devVxiTDM (init_record) exceeded maximum supported cards");
 		return(S_dev_badCard);
 	}
 
 	if(signal>MAXSIG)
 	{
-		recGblRecordError(S_dev_badSignal,pd,
+		recGblRecordError(S_dev_badSignal,(void *)pd,
 			"devVxiTDM (init_record) Illegal SIGNAL field");
 		return(S_dev_badSignal);
 	}
@@ -336,7 +335,7 @@ struct tdm_config *tc;
 
 	if( tc->stat&(1<<signal) )
 	{
-		recGblRecordError(S_dev_badSignal,pd,
+		recGblRecordError(S_dev_badSignal,(void *)pd,
 		   "devVxiTDM (init_record) signal/la already in use");
 		return(S_dev_badSignal);
 	}
@@ -347,7 +346,7 @@ struct tdm_config *tc;
 	if(vxMemProbe(channel_reg[signal],READ,
 	   sizeof(unsigned short),&dummy)!=OK)
 	{
-		recGblRecordError(S_dev_badSignal,pd,
+		recGblRecordError(S_dev_badSignal,(void *)pd,
 		   "devVxiTDM (init_record) vxMemProbe failed for signal/la");
 		return(S_dev_badSignal);
 	}
@@ -401,7 +400,7 @@ struct tdm_config *tc;
 		signal=pvxiio->parm[0]-'0';
 	else
 	{
-		recGblRecordError(S_dev_badSignal,pr,
+		recGblRecordError(S_dev_badSignal,(void *)pr,
 			"devVxiTDM (init_record) Illegal SIGNAL field");
 		return(S_dev_badSignal);
 	}
@@ -467,7 +466,7 @@ struct tdm_config *tc;
 		if(pr->hts > 3 || pr->hts < 0)
 		{
 			recGblSetSevr(pr,WRITE_ALARM,INVALID_ALARM);
-			recGblRecordError(S_db_badField,pr,"invalid trigger value");
+			recGblRecordError(S_db_badField,(void *)pr,"invalid trigger value");
 			return(0);
 		}
 
@@ -475,11 +474,11 @@ struct tdm_config *tc;
 
 		/* write to register */
 		channel_reg[signal]=channel_value;
+
+		Debug("Ending channel value = %04.4X\n",channel_value);
 	}
 
 	FASTUNLOCK(&tc->lock);
-
-	Debug("Ending channel value = %04.4X\n",channel_value);
 
 	return(0);
 

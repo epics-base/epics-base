@@ -53,10 +53,10 @@
 #include	<module_types.h>
 #include	<aiRecord.h>
 
-long init_record();
-long get_ioint_info();
-long read_ai();
-long special_linconv();
+static long init_record();
+static long get_ioint_info();
+static long read_ai();
+static long special_linconv();
 
 struct {
 	long		number;

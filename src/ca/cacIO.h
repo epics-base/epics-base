@@ -127,6 +127,9 @@ public:
     virtual void initiateConnect () = 0;
     virtual void write ( unsigned type, unsigned long count, 
         const void *pValue ) = 0;
+// we may need to include an optimization for read copy here if we want to enable
+// reasonable performance of the old API. Adding it here means that the outstanding IO
+// count must be visible :-(.
     virtual ioStatus read ( unsigned type, unsigned long count, 
         cacReadNotify &, ioid * = 0 ) = 0;
     virtual ioStatus write ( unsigned type, unsigned long count, 

@@ -1,0 +1,169 @@
+<TITLE>GDD User's Guide</TITLE>
+<HR><P><img src="gdd.gif">
+<P><H1>General Data Descriptor Library User's Guide</H1>
+
+<HR><H2>General Overview</H2>
+The purpose of the General Data Descriptor Library (GDD library) is to
+fully describe, hold, and manage scalar and array data.  Using a GDD,
+you can describe a piece of data's type, dimensionality, and structure.
+In addition you can identify the data with an integer application type value
+which can be translated into a text string.  A user can store data into and
+retreived data from a GDD in any desired data type.  A GDD can contain
+a list of GDDs.  This allows users to create and describe hierarchical
+data structures dynamically.  GDD organized in this fashion are known
+as containers.
+<P>
+As mentioned above, a GDD can describe an n-dimension array.  The user
+can describe the bounds of the n-dimensional array.  To facilitate the
+use of large, and perhaps shared data arrays, a GDD allows a user to
+store a reference to an array of data.  In addition, a destructor function
+can be registed in the GDD to inform the owner of the data array when
+the GDD referencing the data goes away.  The purpose of the destructor
+function is to delete the array of data, since the GDD does not know
+what to do with referenced data.
+<P>
+To manage GDDs in a multi-tasking system or a system that
+uses many layers of software, GDDs implement reference counting.  With
+reference counting, only one copy of GDD can be shared by many subsystems.
+The GDD creator function can pass it to many other functions without
+worrying about deleting it, when the last function using the GDD requests
+that it be destroyed does it really go away.
+<P>
+As menitioned above, a GDD allows the user to describe the data in terms
+of the application.  This is done by the user by assigning an arbitrary
+integer identifier to a GDD.  The user places a meaning on the identifiers
+such as 1=high-alarm-limit, 2=low-alarm-limit.   This identifier is termed
+application type.  A second component of the GDD library known as the 
+Application Type Table is used to manage the application type identifiers.
+Application type values are registered in the table along with a text
+string and optionally a prototype GDD.  The prototype GDD can be a
+container GDD.  The table allows users to retreive GDDs of a specific
+application type.
+<P>
+A GDD describe and manages a piece of data using the following information:
+<P>
+<UL>
+	<LI>Application Type (user assigned integer value)
+	<LI>Primitive Type (storage type identifier - int/double/short/etc.)
+	<LI>Dimension (of array data)
+	<LI>Bounds (array data structure information)
+	<LI>Destructor (to delete referenced array data)
+	<LI>Time Stamp (last time updated)
+	<LI>Status (user assign data status field)
+	<LI>Reference Count
+	<LI>Data Field
+</UL>
+
+<P>
+The GDD library is a C++ class library and therefore requires using the
+C++ compiler.
+
+<HR><H2>Creating and Using a GDD</H2>
+The gdd class is the main class in the GDD library.  It controls almost
+all actions perfomed on the data.  The gdd class is further broken down
+into three subclasses for performing operations are specific types of GDDs:
+gddContainer, gddAtomic, and gddScalar.  The gddContainer class aids in the
+creation of container type GDDs.  It adds functions such as "insert GDD",
+"remove GDD", and "give me GDD x from the container" to the basic gdd class.
+The gddAtomic class helps create and manage array data GDDs.  The gddScalar
+class makes it easy to create scalar GDDs.
+<P>
+All GDDs must be created dynamically, <B>a GDD cannot be created on the
+stack</B> as a local variable.  The gdd class forbids the user from deleting
+the gdd.  In order for referencing counting to work correctly the <B>user must
+"unreference" the gdd instance instead of delete it</B>.  The gdd class does
+take over the memory management routines for itself and all it's subclass.
+This means that you are not using the malloc()/free() memory management when
+GDDs are created and destroyed.  It is important to remember that since
+reference counting is used, <B>a GDD passed into a function must be referenced
+before the function returns if the GDD is to be kept </B>for longer then the
+running of that function.  In other words, if you are creating a library
+function "add" that records process variable names in a linked list, and the
+process variable names are passed to you as GDDs, then you must reference
+the GDD since the linked list exists after the return of the "add" function.
+If you are creating a GDD, you must unreference it when you are finished
+with it, even it you have passed it into other library functions.
+Generalizing on this, <B>it is the responsibility of the GDD creator or
+GDD referencer to unreference the GDD instance</B> when they are finished
+with it.
+<P>
+<HR><H3>Primitive Types</H3>
+As mentioned in the overview, a piece of descriptive information that a
+GDD maintains is the and primitive type code.  This field
+describes the format of the data (storage type).
+The primitive type field of a GDD is an enumeration
+of all the general storage types supported by the compilers.  A user can
+determine dynamically what the storage format of the data in a GDD is using
+the primitive type code information.  The GDD library redefines the general
+storage class names for integers and floating point numbers and enumerates
+them in the "aitTypes.h" header file.  The redefined names describe the
+format and the bit length so that they can be used across architectures.
+The initial part of the header file name "aitTypes.h" is ait which
+stands for "Architecture Independant Types".  The standard data types
+supported by the GDD library are
+<PRE>
+	aitInt8           8 bit character
+	aitUint8          8 bit unsigned character
+	aitInt16          16 bit short
+	aitUint16         16 bit unsigned short
+	aitEnum16         16 enumerated value
+	aitInt32          32 bit integer
+	aitUint32         32 bit unsigned integer
+	aitFloat32        32 bit floating point number
+	aitFloat64        64 bit floating point number
+	aitPointer        Standard pointer
+	aitIndex          32 bit index value
+	aitStatus         32 bit unsigned integer for status value
+	aitFixedString    40 byte string of characters
+	aitString         Variable length string data type
+	aitTimeStamp      Two 32 bit integers describing time (seconds/nanoseconds)
+</PRE>
+These data types should be used whenever possible to prevent problems when
+compiling programs for different architectures.  Most of they data types
+are enumerated as descrived above for use as a primitive type code.  The
+enumerated names are just the above type names with the word "Enum"
+inserted after "ait".  It should be noted that aitTimeStamp is not a 
+standard primitive type.
+<PRE>
+typedef enum {
+    aitEnumInvalid=0,
+    aitEnumInt8,
+    aitEnumUint8,
+    aitEnumInt16,
+    aitEnumUint16,
+    aitEnumEnum16,
+    aitEnumInt32,
+    aitEnumUint32,
+    aitEnumFloat32,
+    aitEnumFloat64,
+    aitEnumFixedString,
+    aitEnumString,
+    aitEnumContainer
+} aitEnum;
+</PRE>
+The enumerated type code allows a user to dynamically convert from one
+type to another.  The AIT portion of the GDD library contains a large
+primitive type conversion matrix.  The conversion matrix is indexed by
+the source and destination enumeration type codes.  The matrix is a
+
+<P>
+Several important issues related to where the actual data is stored
+must be remembered when using GDDs:
+<OL>
+	<LI>If a gdd is a scalar, then the gdd hold the data it describes, the
+		dimension is zero, and the bounds are empty.
+	<LI>If a gdd is an array, then the gdd refers to the data it describes,
+		refers to bounds that describe it's structure, and optionally
+		refers to a user's data destructor.
+	<LI>If a gdd is a container, then the dimension is fixed at one and the
+		bounds describe how many elements are in the container.
+</OL>
+
+<HR><P><A HREF="gddref.html">GDD Reference Manual</A>
+<HR>Home page for <A HREF="http://www.aps.anl.gov/asd/controls/hideos/jimk.html">Jim Kowalkowski</A>.<BR>
+
+<HR>Argonne National Laboratory 
+<A HREF="http://www.aps.anl.gov/asd/controls/epics_copyright.html">Copyright</A>
+Information<BR>
+<ADDRESS>jbk@aps.anl.gov (Jim Kowalkowski)</ADDRESS> updated 9/13/96<BR>
+

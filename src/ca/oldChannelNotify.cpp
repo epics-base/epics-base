@@ -97,28 +97,6 @@ int oldChannelNotify::replaceAccessRightsEvent ( caArh *pfunc )
     return ECA_NORMAL;
 }
 
-int oldChannelNotify::changeConnCallBack ( caCh * pfunc )
-{
-    epicsGuard < callbackMutex > callbackGuard =
-            this->cacCtx.callbackGuardFactory ();
- 
-    if ( ! this->currentlyConnected ) {
-         if ( pfunc ) { 
-            if ( ! this->pConnCallBack ) {
-                this->cacCtx.decrementOutstandingIO ( this->ioSeqNo );
-            }
-        }
-        else {
-            if ( this->pConnCallBack ) {
-                this->cacCtx.incrementOutstandingIO ( this->ioSeqNo );
-            }
-        }
-    }
-    this->pConnCallBack = pfunc;
-
-    return ECA_NORMAL;
-}
-
 void oldChannelNotify::connectNotify ()
 {
     this->currentlyConnected = true;

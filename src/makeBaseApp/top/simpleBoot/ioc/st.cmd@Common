@@ -1,6 +1,13 @@
-# Simple startup script
+## Simple startup script
+
+## You may need to edit the name of this .dbd file:
 dbLoadDatabase("../../dbd/_APPNAME_.dbd",0,0)
 registerRecordDeviceDriver(pdbbase) 
-dbLoadRecords("../../db/_APPNAME_.db","user=_USER_Host")
+
+## Load record definitions as necessary like this:
+#dbLoadRecords("../../db/_APPNAME_.db","user=_USER_Host")
+
 iocInit()
+
+## To start a local sequence program:
 #seq snc_APPNAME_,"user=_USER_Host"

@@ -5,6 +5,9 @@
 //
 //
 // $Log$
+// Revision 1.13  1997/06/30 23:40:50  jhill
+// use %p for pointers
+//
 // Revision 1.12  1997/06/13 09:16:16  jhill
 // connect proto changes
 //
@@ -84,7 +87,7 @@ caStatus casStreamIO::init()
         if (status<0) {
 		ca_printf(
 			"CAS: %s TCP_NODELAY option set failed %s\n",
-			__FILE__, strerror(SOCKERRNO));
+			__FILE__, SOCKERRSTR);
 		return S_cas_internal;
         }
 
@@ -101,7 +104,7 @@ caStatus casStreamIO::init()
         if (status<0) {
 		ca_printf(
 			"CAS: %s SO_KEEPALIVE option set failed %s\n",
-			__FILE__, strerror(SOCKERRNO));
+			__FILE__, SOCKERRSTR);
 		return S_cas_internal;
         }
 
@@ -179,7 +182,7 @@ xSendStatus casStreamIO::osdSend(const char *pInBuf, bufSizeT nBytesReq,
 	else if (status<0) {
 		int anerrno = SOCKERRNO;
 
-		if (anerrno != EWOULDBLOCK) {
+		if (anerrno != SOCK_EWOULDBLOCK) {
 			this->sockState = casOffLine;
 		}
 		nBytesActual = 0u;
@@ -214,20 +217,20 @@ xRecvStatus casStreamIO::osdRecv(char *pInBuf, bufSizeT nBytes,
 		 * normal conn lost conditions
 		 */
 		switch(SOCKERRNO){
-		case EWOULDBLOCK:
+		case SOCK_EWOULDBLOCK:
 			nBytesActual = 0u;
 			return xRecvOK;
 
-		case ECONNABORTED:
-		case ECONNRESET:
-		case ETIMEDOUT:
+		case SOCK_ECONNABORTED:
+		case SOCK_ECONNRESET:
+		case SOCK_ETIMEDOUT:
 			break;
 
 		default:
 			ipAddrToA(&this->addr, buf, sizeof(buf));
 			ca_printf(
 		"CAS: client %s disconnected because \"%s\"\n",
-				buf, strerror(SOCKERRNO));
+				buf, SOCKERRSTR);
 			break;
 		}
 		this->sockState = casOffLine;
@@ -272,7 +275,7 @@ void casStreamIO::xSetNonBlocking()
 	}
 	else {
 		ca_printf("%s:CAS: TCP non blocking IO set fail because \"%s\"\n", 
-				__FILE__, strerror(SOCKERRNO));
+				__FILE__, SOCKERRSTR);
 		this->sockState = casOffLine;
 	}
 }
@@ -302,16 +305,16 @@ bufSizeT casStreamIO::incommingBytesPresent() const
 		 * normal conn lost conditions
 		 */
 		switch(SOCKERRNO){
-		case ECONNABORTED:
-		case ECONNRESET:
-		case ETIMEDOUT:
+		case SOCK_ECONNABORTED:
+		case SOCK_ECONNRESET:
+		case SOCK_ETIMEDOUT:
 			break;
 
 		default:
 			ipAddrToA(&this->addr, buf, sizeof(buf));
 			ca_printf(
 		"CAS: FIONREAD for %s failed because \"%s\"\n",
-				buf, strerror(SOCKERRNO));
+				buf, SOCKERRSTR);
 		}
 		return 0u;
 	}

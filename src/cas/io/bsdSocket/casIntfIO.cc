@@ -6,6 +6,9 @@
 //
 //
 // $Log$
+// Revision 1.3  1997/06/13 09:16:15  jhill
+// connect proto changes
+//
 // Revision 1.2  1997/04/10 19:40:33  jhill
 // API changes
 //
@@ -38,52 +41,50 @@ casIntfIO::casIntfIO() :
 caStatus casIntfIO::init(const caNetAddr &addrIn, casDGClient &dgClientIn,
 		int autoBeaconAddr, int addConfigBeaconAddr)
 {
-	int		yes = TRUE;
-	int		status;
-	caStatus	stat;
-	int		addrSize;
+	int yes = TRUE;
+	int status;
+	caStatus stat;
+	int addrSize;
 
-        /*
-         * Setup the server socket
-         */
-        this->sock = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
-        if (this->sock==INVALID_SOCKET) {
-                return S_cas_noFD;
-        }
+	/*
+	 * Setup the server socket
+	 */
+	this->sock = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if (this->sock==INVALID_SOCKET) {
+		return S_cas_noFD;
+	}
 
-        /*
-         * release the port in case we exit early
-         */
-        status = setsockopt (
-                        this->sock,
-                        SOL_SOCKET,
-                        SO_REUSEADDR,
-                        (char *) &yes,
-                        sizeof (yes));
-        if (status<0) {
-                ca_printf("CAS: server set SO_REUSEADDR failed?\n",
-			strerror(SOCKERRNO));
+	/*
+	 * release the port in case we exit early
+	 */
+	status = setsockopt (
+					this->sock,
+					SOL_SOCKET,
+					SO_REUSEADDR,
+					(char *) &yes,
+					sizeof (yes));
+	if (status<0) {
+		ca_printf("CAS: server set SO_REUSEADDR failed? %s\n",
+			SOCKERRSTR);
 		return S_cas_internal;
-        }
+	}
 
 	this->addr = addrIn.getSockIP();
-        status = bind(
-                        this->sock,
-                        (sockaddr *) &this->addr,
-                        sizeof(this->addr));
-        if (status<0) {
-                if (SOCKERRNO == EADDRINUSE) {
+	status = bind(this->sock,(sockaddr *) &this->addr,
+					sizeof(this->addr));
+	if (status<0) {
+		if (SOCKERRNO == SOCK_EADDRINUSE) {
 			//
 			// force assignement of a default port
 			// (so the getsockname() call below will
 			// work correctly)
 			//
-			
-        		this->addr.sin_port = ntohs (0);
+
+			this->addr.sin_port = ntohs (0);
 			status = bind(
-					this->sock,
-					(sockaddr *)&this->addr,
-					sizeof(this->addr));
+				this->sock,
+				(sockaddr *)&this->addr,
+				sizeof(this->addr));
 		}
 		if (status<0) {
 			errPrintf(S_cas_bindFail,
@@ -91,16 +92,17 @@ caStatus casIntfIO::init(const caNetAddr &addrIn, casDGClient &dgClientIn,
 				"- bind TCP IP addr=%s port=%u failed because %s",
 				inet_ntoa(this->addr.sin_addr),
 				ntohs(this->addr.sin_port),
-				strerror(SOCKERRNO));
+				SOCKERRSTR);
 			return S_cas_bindFail;
 		}
-        }
+	}
 
 	addrSize = sizeof(this->addr);
 	status = getsockname(this->sock, 
 			(struct sockaddr *)&this->addr, &addrSize);
 	if (status) {
-                ca_printf("CAS: getsockname() error %s\n", strerror(SOCKERRNO));
+		ca_printf("CAS: getsockname() error %s\n", 
+			SOCKERRSTR);
 		return S_cas_internal;
 	}
 
@@ -108,13 +110,13 @@ caStatus casIntfIO::init(const caNetAddr &addrIn, casDGClient &dgClientIn,
 	// be sure of this now so that we can fetch the IP 
 	// address and port number later
 	//
-        assert (this->addr.sin_family == AF_INET);
+    assert (this->addr.sin_family == AF_INET);
 
-        status = listen(this->sock, caServerConnectPendQueueSize);
-        if(status < 0) {
-                ca_printf("CAS: listen() error %s\n", strerror(SOCKERRNO));
-                return S_cas_internal;
-        }
+    status = listen(this->sock, caServerConnectPendQueueSize);
+    if(status < 0) {
+		ca_printf("CAS: listen() error %s\n", SOCKERRSTR);
+		return S_cas_internal;
+    }
 
 	//
 	// set up a DG socket bound to the specified interface
@@ -194,11 +196,11 @@ casStreamOS *casIntfIO::newStreamClient(caServerI &cas) const
         length = sizeof(newAddr);
         newSock = accept(this->sock, &newAddr, &length);
         if (newSock==INVALID_SOCKET) {
-                if (SOCKERRNO!=EWOULDBLOCK) {
+                if (SOCKERRNO!=SOCK_EWOULDBLOCK) {
                         ca_printf(
                                 "CAS: %s accept error %s\n",
                                 __FILE__,
-                                strerror(SOCKERRNO));
+                                SOCKERRSTR);
                 }
                 return NULL;
         }
@@ -230,7 +232,7 @@ void casIntfIO::setNonBlocking()
         if (status<0) {
                 ca_printf(
                 "%s:CAS: server non blocking IO set fail because \"%s\"\n",
-                                __FILE__, strerror(SOCKERRNO));
+                                __FILE__, SOCKERRSTR);
         }
 }
  

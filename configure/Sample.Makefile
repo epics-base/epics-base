@@ -178,6 +178,6 @@ SCRIPTS         = script
 # put all definitions before the following include line
 # put all rules after the following include line
 
-include $(TOP)/configure/RULES_BUILD
+include $(TOP)/configure/RULES
 
 #	EOF Makefile.Host

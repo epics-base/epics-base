@@ -142,12 +142,17 @@ pair. So a CA client program that connects to 30 different IOCs will use
 60 threads for the CA communication.
 
 Obviously it is advisable to increase that value from 64 to something
-larger - 1024 or 2048 should be enough for regular concole systems.
+larger - any number higher than twice the maximum number of IOCs in your
+system should be enough for regular concole systems. At some point you
+will hit the limited number of kernel threads, which has to be larger
+than the number uf user threads.
+
 You will find the parameter in SAM's Kernel Configuration / Configurable
 Parameters section, under the name max_thread_proc ("Max No. of Threads
 allowed in each process").
 
-This kernel configuration change requires a reboot of the machine.
+Note that this kernel configuration change requires a reboot of the
+machine.
 
 
 So much for this README - please feel free to contact me if you

@@ -72,7 +72,7 @@ char *sprintf(); /* keep lint happy */
 #ifdef SCO_UNIX
 void *memset();
 #else
-#if !defined(ultrix) && !defined(NeXT) && !defined(sgi)
+#if !defined(ultrix) && !defined(NeXT) && !defined(sgi) && !defined(hppa) && !defined(__osf__)
 char *memset();
 #endif
 #endif
@@ -663,7 +663,11 @@ void *allocate_array(), *reallocate_array();
 /* used to communicate between scanner and parser.  The type should really
  * be YYSTYPE, but we can't easily get our hands on it.
  */
+#ifdef __alpha		/* inconsistency with parse.y, line 57... on Alpha */
+extern long yylval;
+#else
 extern int yylval;
+#endif
 
 
 /* external functions that are cross-referenced among the flex source files */

@@ -47,8 +47,6 @@
 #include "freeList.h"
 
 #include "server.h"
-
-void cast_server ( void * pParm );
     
 #define TIMEOUT 60.0 /* sec */
 

@@ -76,7 +76,7 @@ epicsShareFunc int epicsShareAPI tsStampEqual (const TS_STAMP *pLeft, const TS_S
 epicsShareFunc int epicsShareAPI tsStampNotEqual (const TS_STAMP *pLeft, const TS_STAMP *pRight); /* returns boolean result */
 epicsShareFunc int epicsShareAPI tsStampLessThan (const TS_STAMP *pLeft, const TS_STAMP *pRight); /* returns boolean result (true if *pLeft < *pRight) */
 epicsShareFunc int epicsShareAPI tsStampLessThanEqual (const TS_STAMP *pLeft, const TS_STAMP *pRight); /* returns boolean result (true if *pLeft <= *pRight) */
-epicsShareFunc int vtsStampGreaterThan (const TS_STAMP *pLeft, const TS_STAMP *pRight); /* returns boolean result (true if *pLeft > *pRight) */
+epicsShareFunc int epicsShareAPI tsStampGreaterThan (const TS_STAMP *pLeft, const TS_STAMP *pRight); /* returns boolean result (true if *pLeft > *pRight) */
 epicsShareFunc int epicsShareAPI tsStampGreaterThanEqual (const TS_STAMP *pLeft, const TS_STAMP *pRight); /* returns boolean result (true if *pLeft >= *pRight) */
 
 /*

@@ -24,15 +24,6 @@ typedef void (*THREADFUNC)(void *parm);
 #define threadPriorityScanLow 60
 #define threadPriorityScanHigh 70
 
-/*
- *The following functions convert to/from osi (operating system independent)
- * and oss (operating system specific) priority values
- * NOTE THAT ALL OTHER CALLS USE osi priority values
-*/
-
-epicsShareFunc int epicsShareAPI threadGetOsiPriorityValue(int ossPriority);
-epicsShareFunc int epicsShareAPI threadGetOssPriorityValue(int osiPriority);
-
 /* stack sizes for each stackSizeClass are implementation and CPU dependent */
 typedef enum {
     threadStackSmall, threadStackMedium, threadStackBig
@@ -44,22 +35,16 @@ typedef void *threadId;
 epicsShareFunc threadId epicsShareAPI threadCreate(const char *name,
     unsigned int priority, unsigned int stackSize,
     THREADFUNC funptr,void *parm);
-epicsShareFunc void epicsShareAPI threadDestroy(threadId id);
-epicsShareFunc void epicsShareAPI threadSuspend(threadId id);
+epicsShareFunc void epicsShareAPI threadSuspend();
 epicsShareFunc void epicsShareAPI threadResume(threadId id);
-epicsShareFunc int epicsShareAPI threadGetPriority(threadId id);
-epicsShareFunc void epicsShareAPI threadSetPriority(threadId id,int priority);
-epicsShareFunc void epicsShareAPI threadSetDestroySafe(void);
-epicsShareFunc void epicsShareAPI threadSetDestroyUnsafe(void);
-epicsShareFunc const char * epicsShareAPI threadGetName(threadId id);
+epicsShareFunc unsigned int epicsShareAPI threadGetPriority(threadId id);
+epicsShareFunc void epicsShareAPI threadSetPriority(
+    threadId id,unsigned int priority);
 epicsShareFunc int epicsShareAPI threadIsEqual(threadId id1, threadId id2);
 epicsShareFunc int epicsShareAPI threadIsReady(threadId id);
 epicsShareFunc int epicsShareAPI threadIsSuspended(threadId id);
 epicsShareFunc void epicsShareAPI threadSleep(double seconds);
 epicsShareFunc threadId epicsShareAPI threadGetIdSelf(void);
-epicsShareFunc void epicsShareAPI threadLockContextSwitch(void);
-epicsShareFunc void epicsShareAPI threadUnlockContextSwitch(void);
-epicsShareFunc threadId epicsShareAPI threadNameToId(const char *name);
 
 #ifdef __cplusplus
 }

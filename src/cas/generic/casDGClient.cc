@@ -352,14 +352,13 @@ outBuf::flushCondition casDGClient::xSend (char *pBufIn,
 {
     outBuf::flushCondition stat;
     bufSizeT totalBytes;
-    char *pBuf = pBufIn;
     cadg *pHdr;
 
     assert (nBytesAvailableToSend>=nBytesNeedToBeSent);
 
     totalBytes = 0;
     while (1) {
-        pHdr = reinterpret_cast<cadg *>(&pBuf[totalBytes]);
+        pHdr = reinterpret_cast<cadg *>(&pBufIn[totalBytes]);
 
         assert (totalBytes<=bufSizeT_MAX-pHdr->cadg_nBytes);
         assert (totalBytes+pHdr->cadg_nBytes<=nBytesAvailableToSend);
@@ -399,18 +398,18 @@ inBuf::fillCondition casDGClient::xRecv (char *pBufIn, bufSizeT nBytesToRecv,
         fillParameter parm, bufSizeT &nByesRecv)
 {
     const char *pAfter = pBufIn + nBytesToRecv;
-    char *pBuf = pBufIn;
+    char *pCurBuf = pBufIn;
     bufSizeT nDGBytesRecv;
     inBuf::fillCondition stat;
     cadg *pHdr;
 
-    while (pAfter-pBuf >= static_cast<int>(MAX_UDP+sizeof(cadg))) {
-        pHdr = reinterpret_cast<cadg *>(pBuf);
+    while (pAfter-pCurBuf >= static_cast<int>(MAX_UDP+sizeof(cadg))) {
+        pHdr = reinterpret_cast<cadg *>(pCurBuf);
 	    stat = this->osdRecv (reinterpret_cast<char *>(pHdr+1), MAX_UDP, parm, 
             nDGBytesRecv, pHdr->cadg_addr);
 	    if (stat==casFillProgress) {
             pHdr->cadg_nBytes = nDGBytesRecv + sizeof(*pHdr);
-            pBuf += pHdr->cadg_nBytes;
+            pCurBuf += pHdr->cadg_nBytes;
 		    //
 		    // !! this time fetch may be slowing things down !!
 		    //
@@ -421,7 +420,7 @@ inBuf::fillCondition casDGClient::xRecv (char *pBufIn, bufSizeT nBytesToRecv,
         }
     }
 
-    nDGBytesRecv = pBuf - pBufIn;
+    nDGBytesRecv = pCurBuf - pBufIn;
     if (nDGBytesRecv) {
         nByesRecv = nDGBytesRecv;
         return casFillProgress;

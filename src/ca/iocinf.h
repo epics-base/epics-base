@@ -116,7 +116,7 @@
 #define VALID_MSG(PIIU) ((PIIU)->read_seq == (PIIU)->cur_read_seq)
 
 struct baseCIU {
-    const void          *puser;
+    void                *puser;
     caCh                *pConnFunc;
     caArh               *pAccessRightsFunc;
     struct baseIIU      *piiu;
@@ -518,7 +518,7 @@ struct cac {
     ELLLIST                 ca_taskVarList;
 
     cac ();
-    cac::~cac ();
+    ~cac ();
 };
 
 #define CASG_MAGIC      0xFAB4CAFE

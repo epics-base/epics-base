@@ -20,11 +20,7 @@ static ioccrfArg *runScriptArgs[1] = {&runScriptArg0};
 static ioccrfFuncDef runScriptFuncDef = {"<",1,runScriptArgs};
 static void runScriptCallFunc(ioccrfArg **args)
 {
-#ifdef __rtems__
-   runScriptRTEMS ((char *)args[0]->value);
-#else
     ioccrf ((char *)args[0]->value);
-#endif
 }
 
 /* chdir */

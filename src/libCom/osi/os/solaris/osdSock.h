@@ -39,7 +39,7 @@ int sethostname(char *name, int namelen);
 typedef int                     SOCKET;
 #define INVALID_SOCKET		(-1)
 #define SOCKERRNO               errno
-#define SOCKERRSTR		  (strerror(errno))
+#define SOCKERRSTR(ERRNO_IN)    (strerror(ERRNO_IN))
 #define socket_close(S)         close(S)
 #define socket_ioctl(A,B,C)     ioctl(A,B,C)
 typedef int osiSockIoctl_t;

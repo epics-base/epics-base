@@ -28,7 +28,7 @@ extern "C" {
 typedef int                     SOCKET;
 #define INVALID_SOCKET		(-1)
 #define SOCKERRNO               errno
-#define SOCKERRSTR (strerror(SOCKERRNO))
+#define SOCKERRSTR(ERRNO_IN)    (strerror(ERRNO_IN))
 #define socket_close(S)         close(S)
 /*
  * it is quite lame on WRS's part to assume that

@@ -13,14 +13,10 @@
 //
 class osiMutex {
 public:
-        //
-        // constructor that returns status
-        // (since g++ does not have exceptions)
-        //
-	int init() {return 0;}
-        void osiLock() const {}
-        void osiUnlock() const {}
-	void show (unsigned) const {}
+    class osiMutexNoMemory {};
+    void lock () const {}
+    void unlock () const {}
+    void show (unsigned) const {}
 private:
 };
 

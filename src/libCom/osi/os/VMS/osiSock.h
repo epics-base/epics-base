@@ -125,13 +125,8 @@ typedef int osiSockIoctl_t;
 #	define SOCKERRNO errno /* UCX and others? */
 #endif
 
-/*
- * !! this is no doubt incorrect !!
- * (error messages will be confusing until
- * this is fixed)
- */
-#define SOCKERRSTR (strerror(SOCKERRNO))
-
+#define SOCKERRSTR(ERRNO_IN) (strerror(ERRNO_IN))
+    
 #define MAXHOSTNAMELEN 75
 
 #define SOCK_EWOULDBLOCK EWOULDBLOCK

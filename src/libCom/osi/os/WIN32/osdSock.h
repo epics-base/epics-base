@@ -13,7 +13,7 @@ extern "C" {
 #endif
 
 #define SOCKERRNO WSAGetLastError()
-#define SOCKERRSTR getLastWSAErrorAsString()
+#define SOCKERRSTR(ERRNO_IN) convertSocketErrorToString(ERRNO_IN)
 
 #define socket_close(S)		closesocket(S)
 #define socket_ioctl(A,B,C)	ioctlsocket(A,B,C)

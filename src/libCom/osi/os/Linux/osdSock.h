@@ -43,7 +43,7 @@ extern "C" {
 #endif
  
 typedef int                     SOCKET;
-#define INVALID_SOCKET		(-1)
+#define INVALID_SOCKET          (-1)
 #define SOCKERRNO               errno
 #define socket_close(S)         close(S)
 #define socket_ioctl(A,B,C)     ioctl(A,B,C)
@@ -51,7 +51,7 @@ typedef int osiSockIoctl_t;
 
 #define FD_IN_FDSET(FD) ((FD)<FD_SETSIZE)
 
-#define SOCKERRSTR                (strerror(errno))
+#define SOCKERRSTR(ERRNO_IN)    (strerror(ERRNO_IN))
 
 #define SOCK_EWOULDBLOCK EWOULDBLOCK
 #define SOCK_ENOBUFS ENOBUFS

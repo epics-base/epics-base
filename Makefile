@@ -12,6 +12,9 @@
 #         install because the release.% syntax is illegal.
 #
 # $Log$
+# Revision 1.25  1996/01/25 21:29:42  mrk
+# base/rec=>base/db base/include now installed
+#
 # Revision 1.24  1995/08/17  20:14:59  jba
 # Added base/tools scripts functionality to base/Makefile, removed scripts
 # Moved base/tools/MakeRelease to base dir.
@@ -142,7 +145,7 @@ release.%:
 
 uninstall.%:
 	@echo "TOP: Uninstalling $* "
-	@rm -rf ./bin/$* ./lib/$* db include
+	@rm -rf ./bin/$* ./lib/$* db include man
 	@rm -rf  rec.bak rec
 
 clean.%:

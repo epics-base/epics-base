@@ -20,8 +20,8 @@ set LOGNAME=janet
 set PATH=%PATH%;C:\cyclic\cvs-1.9\bin
 
 REM  --------------- perl -----------------------
-REM set PERLLIB=C:\perl\pw32i310\lib
-set PATH=%path%;C:\perl\pw32i310\bin
+REM set PERLLIB=C:\perl\lib
+set PATH=%path%;C:\perl\bin
 
 REM ---------------- epics ----------------------
 set HOST_ARCH=cygwin32

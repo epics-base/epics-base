@@ -109,6 +109,9 @@ TESTPRODNAME = $(addsuffix $(EXE),$(basename $(TESTPROD)))
 
 SHRLIBNAME = $(SHRLIBNAME_$(SHARED_LIBRARIES))
 
+JAVA =
+JAR =
+
 #--------------------------------------------------
 # obj files
 

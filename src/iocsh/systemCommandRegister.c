@@ -17,8 +17,6 @@
 #include <stdlib.h>
 #include <errlog.h>
 #include <epicsExport.h>
-
-#define epicsExportSharedSymbols
 #include <iocsh.h>
 
 /* system */

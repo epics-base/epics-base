@@ -136,22 +136,24 @@ inline gddStatus gdd::noReferencing(void)
 }
 inline gddStatus gdd::reference(void) const
 {
-	int rc=0;
+    int rc=0;
 
-	if(isNoRef())
-	{
-		gddAutoPrint("gdd::reference()",gddErrorNotAllowed);
-		rc=gddErrorNotAllowed;
-	}
-	else			ref_cnt++; // X aCC 818
-
-	if ( ref_cnt >= 0xffffffff )
-	{
-		fprintf(stderr,"gdd reference count overflow!!\n");
-		gddAutoPrint("gdd::reference()",gddErrorOverflow);
-		rc=gddErrorOverflow;
-	}
-	return rc;
+    if(isNoRef())
+    {
+        gddAutoPrint("gdd::reference()",gddErrorNotAllowed);
+        rc=gddErrorNotAllowed;
+    }
+    else {
+        if ( this->ref_cnt >= 0xffffffff ) {
+            fprintf(stderr,"gdd reference count overflow!!\n");
+            gddAutoPrint("gdd::reference()",gddErrorOverflow);
+            rc=gddErrorOverflow;
+        }
+        else {
+            this->ref_cnt++; // X aCC 818
+        }
+    }
+    return rc;
 }
 
 inline gddStatus gdd::unreference(void) const

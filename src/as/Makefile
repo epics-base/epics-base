@@ -1,19 +1,18 @@
 TOP=../..
 include $(TOP)/configure/CONFIG
 
-SRCS += asLib.c
+LIBSRCS += asLib.c
 asLibrary_SRCS += asDbLib.c
 asLibrary_SRCS += asCa.c
 
-LIBRARY_Host += As
-LIBRARY_Ioc += asLibrary
+LIBRARY_HOST = As
+LIBRARY_IOC = asLibrary
 
 #	All systems link the libs As, Com, Db (and again Com ??),
 #	generic Unix needs also lib m:
 #
-SYS_PROD_LIBS_DEFAULT := m
-SYS_PROD_LIBS_WIN32   := -nil-
-PROD_LIBS         := As Com Db Com
+ascheck_LIBS         := As Db Com
+As_DIR=.
 
 PROD = ascheck
 

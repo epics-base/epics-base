@@ -392,14 +392,14 @@ static void monitor(pcalc)
         /* send out monitors connected to the value field */
         if (monitor_mask){
                 db_post_events(pcalc,&pcalc->val,monitor_mask);
-		/* check all input fields for changes*/
-		for(i=0, pnew=&pcalc->a, pprev=&pcalc->la; i<ARG_MAX; i++, pnew++, pprev++) {
-			if(*pnew != *pprev) {
-				db_post_events(pcalc,pnew,monitor_mask|DBE_VALUE);
-				*pprev = *pnew;
-			}
-		}
         }
+        /* check all input fields for changes*/
+        for(i=0, pnew=&pcalc->a, pprev=&pcalc->la; i<ARG_MAX; i++, pnew++, pprev++) {
+             if(*pnew != *pprev) {
+                  db_post_events(pcalc,pnew,monitor_mask|DBE_VALUE);
+                  *pprev = *pnew;
+		     }
+		}
         return;
 }
 

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.9  1998/04/16 21:17:38  jhill
+ * fixed spelling in comment
+ *
  * Revision 1.8  1998/04/14 00:49:26  jhill
  * cosmetic
  *
@@ -188,6 +191,16 @@ epicsShareFunc caStatus casAsyncIOI::cbFunc(class casEventSys &)
 //
 caStatus casAsyncIOI::postIOCompletionI()
 {
+	//
+	// detect the case where the server called destroy(), 
+	// the server tool postponed deletion of the object, 
+	// and then it called postIOCompletion() on this object 
+	// when it was currently not in use by the server.
+	//
+	if (this->serverDelete) {
+		return S_cas_redundantPost;
+	}
+
 	this->lock();
 
 	if (this->duplicate) {
@@ -198,6 +211,7 @@ caStatus casAsyncIOI::postIOCompletionI()
 		// object here
 		//
 		this->serverDelete = TRUE;
+		this->unlock();
 		(*this)->destroy();
 		return S_cas_redundantPost;
 	}

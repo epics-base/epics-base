@@ -85,6 +85,8 @@
 #define epicsExportSharedSymbols
 #include "errMdef.h"
 #include "envDefs.h"
+#include "epicsAssert.h"
+#include "bsdSocketResource.h"
 
 
 /*+/subr**********************************************************************
@@ -288,16 +290,17 @@ struct in_addr *pAddr	/* O pointer to struct to receive inet addr */
     char	text[128];
     char	*ptext;
     long	status;
+	struct sockaddr_in sin;
 
     ptext = envGetConfigParam(pParam, sizeof text, text);
     if (ptext) {
-	status = inet_addr (text);
-	if (status != -1) {
-	    pAddr->s_addr = status;
-	    return 0;
-	}
-        (void)fprintf(stderr,"Unable to find an IP address in %s=%s\n", 
-		pParam->name, text);
+		status = aToIPAddr (text, 0u, &sin);
+		if (status == 0) {
+			*pAddr = sin.sin_addr;
+			return 0;
+		}
+        (void)fprintf(stderr,"Unable to find an IP address or valid host name in %s=%s\n", 
+						pParam->name, text);
     }
     return -1;
 }

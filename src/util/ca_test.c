@@ -104,7 +104,7 @@ LOCAL int cagft(char *pname)
 	 */
 	status = ca_search(pname, &chan_id);
 	SEVCHK(status,NULL);
-	status = ca_pend_io(2.0);
+	status = ca_pend_io(5.0);
 	if(status != ECA_NORMAL){
         SEVCHK(ca_clear_channel(chan_id),NULL);
 		printf("Not Found %s\n", pname);
@@ -217,7 +217,7 @@ char		*pvalue
 	 */
 	status = ca_search(pname, &chan_id);
 	SEVCHK(status,NULL);
-	status = ca_pend_io(2.0);
+	status = ca_pend_io(5.0);
 	if(status != ECA_NORMAL){
         SEVCHK(ca_clear_channel(chan_id),NULL);
 		printf("Not Found %s\n", pname);

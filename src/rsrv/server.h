@@ -191,8 +191,6 @@ GLBLTYPE unsigned           rsrvSizeofLargeBufTCP;
 
 #define CAS_HASH_TABLE_SIZE 4096
 
-extern int casSufficentSpaceInPool;
-
 #define SEND_LOCK(CLIENT) epicsMutexMustLock((CLIENT)->lock)
 #define SEND_UNLOCK(CLIENT) epicsMutexUnlock((CLIENT)->lock)
 

@@ -36,7 +36,7 @@ threadPrivateId cacRecursionLock;
 
 static threadOnceId caClientContextIdOnce = OSITHREAD_ONCE_INIT;
 
-extern "C" void ca_client_exit_handler ()
+void ca_client_exit_handler ()
 {
     if ( caClientContextId ) {
         threadPrivateDelete ( caClientContextId );
@@ -84,7 +84,7 @@ int fetchClientContext (cac **ppcac)
 /*
  *  Default Exception Handler
  */
-extern "C" void ca_default_exception_handler (struct exception_handler_args args)
+void ca_default_exception_handler (struct exception_handler_args args)
 {
     if (args.chid && args.op != CA_OP_OTHER) {
         ca_signal_formated (
@@ -157,33 +157,29 @@ epicsShareFunc int epicsShareAPI ca_register_service ( cacServiceIO *pService )
     return ECA_NORMAL;
 }
 
-/*
- * CA_MODIFY_HOST_NAME()
- *
- * Modify or override the default 
- * client host name.
- *
- * This entry point was changed to a NOOP 
- */
+//
+// ca_modify_host_name ()
+//
+// defunct
+//
 int epicsShareAPI ca_modify_host_name (const char *)
 {
     return ECA_NORMAL;
 }
 
-/*
- * ca_modify_user_name()
- *
- * Modify or override the default 
- * client user name.
- *
- * This entry point was changed to a NOOP 
- */
+//
+// ca_modify_user_name()
+//
+// defunct
+//
 int epicsShareAPI ca_modify_user_name (const char *)
 {
     return ECA_NORMAL;
 }
 
-
+//
+// ca_context_destroy (void)
+//
 epicsShareFunc int epicsShareAPI ca_context_destroy (void)
 {
     cac   *pcac;
@@ -338,16 +334,7 @@ int epicsShareAPI ca_add_exception_event (caExceptionHandler *pfunc, void *arg)
         return caStatus;
     }
     
-    pcac->lock ();
-    if ( pfunc ) {
-        pcac->ca_exception_func = pfunc;
-        pcac->ca_exception_arg = arg;
-    }
-    else {
-        pcac->ca_exception_func = ca_default_exception_handler;
-        pcac->ca_exception_arg = NULL;
-    }
-    pcac->unlock ();
+    pcac->changeExceptionEvent ( pfunc, arg );
 
     return ECA_NORMAL;
 }
@@ -491,43 +478,6 @@ int epicsShareAPI ca_test_io ()
     }
     else{
         return ECA_IOINPROGRESS;
-    }
-}
-
-/*
- * genLocalExcepWFL ()
- * (generate local exception with file and line number)
- */
-void genLocalExcepWFL (cac *pcac, long stat, const char *ctx, const char *pFile, unsigned lineNo)
-{
-    struct exception_handler_args   args;
-
-    args.chid = NULL;
-    args.type = -1;
-    args.count = 0u;
-    args.addr = NULL;
-    args.stat = stat;
-    args.op = CA_OP_OTHER;
-    args.ctx = ctx;
-    args.pFile = pFile;
-    args.lineNo = lineNo;
-
-    /*
-     * dont lock if there is no CA context
-     */
-    if (pcac==NULL) {
-        args.usr = NULL;
-        ca_default_exception_handler (args);
-    }
-    /*
-     * NOOP if they disable exceptions
-     */
-    else if (pcac->ca_exception_func!=NULL) {
-        args.usr = pcac->ca_exception_arg;
-
-        pcac->lock ();
-        (*pcac->ca_exception_func) (args);
-        pcac->unlock ();
     }
 }
 

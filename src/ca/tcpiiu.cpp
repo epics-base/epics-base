@@ -68,7 +68,7 @@ tcpiiu * constructTCPIIU (cac *pcac, const struct sockaddr_in *pina,
         }
     }
 
-    piiu = new tcpiiu (pcac, *pina, minorVersion, *pBHE);
+    piiu = new tcpiiu ( pcac, *pina, minorVersion, *pBHE );
     if (!piiu) {
         return NULL;
     }
@@ -551,7 +551,7 @@ tcpiiu::~tcpiiu ()
 
     chanDisconnectCount = ellCount (&this->chidList);
     if ( chanDisconnectCount ) {
-        genLocalExcep (this->pcas, ECA_DISCONN, this->host_name_str);
+        genLocalExcep ( this->pcas, ECA_DISCONN, this->host_name_str );
     }
 
     tsDLIterBD <nciu> iter ( this->chidList.first () );
@@ -595,16 +595,13 @@ bool tcpiiu::compareIfTCP ( nciu &chan, const sockaddr_in &addr ) const
 {
     if ( this->dest.ia.sin_addr.s_addr != addr.sin_addr.s_addr ||
         this->dest.ia.sin_port != addr.sin_port ) {
-
         char rej[64];
+        char buf[256];
 
         ipAddrToA ( &addr, rej, sizeof (rej) );
-        this->pcas->lock ();
-        sprintf ( this->pcas->ca_sprintf_buf, 
-                "Channel: %s Accepted: %s Rejected: %s ",
+        sprintf ( buf, "Channel: %64s Accepted: %64s Rejected: %64s",
                 chan.pName (), this->host_name_str, rej );
-        genLocalExcep (this->pcas, ECA_DBLCHNL, this->pcas->ca_sprintf_buf);
-        this->pcas->unlock ();
+        genLocalExcep ( this->pcas, ECA_DBLCHNL, buf );
     }
     return true;
 }
@@ -1441,20 +1438,20 @@ int tcpiiu::pushDatagramMsg (const caHdr * /* pMsg */,
  * have sent the claim message (after which we
  * move it to the end of the list)
  */
-void tcpiiu::addToChanList (nciu *chan)
+void tcpiiu::addToChanList ( nciu &chan )
 {
     this->pcas->lock ();
-    chan->claimPending = TRUE;
-    this->chidList.push (*chan);
-    chan->piiu = this;
+    chan.claimPending = TRUE;
+    this->chidList.push ( chan );
+    chan.piiu = this;
     this->pcas->unlock ();
 }
 
-void tcpiiu::removeFromChanList (nciu *chan)
+void tcpiiu::removeFromChanList ( nciu &chan )
 {
     this->pcas->lock ();
-    this->chidList.remove (*chan);
-    chan->piiu = NULL;
+    this->chidList.remove ( chan );
+    chan.piiu = NULL;
     this->pcas->unlock ();
 
     if ( this->chidList.count () == 0 ) {
@@ -1462,16 +1459,11 @@ void tcpiiu::removeFromChanList (nciu *chan)
     }
 }
 
-void tcpiiu::disconnect (nciu *chan)
+void tcpiiu::disconnect ( nciu &chan )
 {
     this->pcas->lock ();
     this->removeFromChanList (chan);
-    /*
-     * try to reconnect
-     */
-    assert (this->pcas->pudpiiu);
-    this->pcas->pudpiiu->addToChanList ( chan );
-    this->pcas->pudpiiu->searchTmr.reset ( CA_RECAST_DELAY );
+    this->pcas->installDisconnectedChannel ( chan );
     this->pcas->unlock ();
 }
 

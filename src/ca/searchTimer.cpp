@@ -105,11 +105,11 @@ void searchTimer::setRetryInterval (unsigned retryNo)
 // at least one response. However, dont reset this delay if we
 // get a delayed response to an old search request.
 //
-void searchTimer::notifySearchResponse (nciu *pChan)
+void searchTimer::notifySearchResponse ( unsigned short retrySeqNo )
 {
     this->iiu.pcas->lock ();
 
-    if ( this->retrySeqNoAtListBegin <= pChan->retrySeqNo ) {
+    if ( this->retrySeqNoAtListBegin <= retrySeqNo ) {
         if ( this->searchResponses < ULONG_MAX ) {
             this->searchResponses++;
         }
@@ -117,7 +117,7 @@ void searchTimer::notifySearchResponse (nciu *pChan)
         
     this->iiu.pcas->unlock ();
 
-    if ( pChan->retrySeqNo == this->retrySeqNo ) {
+    if ( retrySeqNo == this->retrySeqNo ) {
         this->reschedule (0.0);
     }
 }

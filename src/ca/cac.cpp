@@ -43,6 +43,9 @@ cac::cac ( bool enablePreemptiveCallbackIn ) :
     sgTable ( 128 ),
     fdRegFunc ( 0 ),
     fdRegArg ( 0 ),
+    pudpiiu ( 0 ),
+    pSearchTmr ( 0 ),
+    pRepeaterSubscribeTmr ( 0 ),
     pndrecvcnt ( 0 ),
     enablePreemptiveCallback ( enablePreemptiveCallbackIn )
 {
@@ -80,7 +83,6 @@ cac::cac ( bool enablePreemptiveCallbackIn ) :
     ellInit (&this->fdInfoFreeList);
     ellInit (&this->fdInfoList);
     this->ca_printf_func = errlogVprintf;
-    this->pudpiiu = NULL;
     this->ca_exception_func = ca_default_exception_handler;
     this->ca_exception_arg = NULL;
     this->ca_number_iiu_in_fc = 0u;
@@ -217,6 +219,8 @@ cac::~cac ()
                     ( this->fdRegArg, this->pudpiiu->getSock (), FALSE );
             }
         }
+        delete this->pSearchTmr;
+        delete this->pRepeaterSubscribeTmr;
         delete this->pudpiiu;
     }
 
@@ -568,7 +572,9 @@ void cac::beaconNotify ( const inetAddrID &addr )
         delay /= MSEC_PER_SEC;
         delay += CA_RECAST_DELAY;
 
-        this->pudpiiu->searchTmr.reset ( delay );
+        if ( this->pSearchTmr ) {
+            this->pSearchTmr->reset ( delay );
+        }
     }
 
     /*
@@ -767,14 +773,14 @@ baseNMIU * cac::lookupIO (unsigned id)
     return pmiu;
 }
 
-void cac::installChannel (nciu &chan)
+void cac::registerChannel (nciu &chan)
 {
     this->defaultMutex.lock ();
     this->chanTable.add ( chan );
     this->defaultMutex.unlock ();
 }
 
-void cac::uninstallChannel (nciu &chan)
+void cac::unregisterChannel (nciu &chan)
 {
     this->defaultMutex.lock ();
     this->chanTable.remove ( chan );
@@ -844,19 +850,9 @@ bool cac::createChannelIO (const char *pName, cacChannel &chan)
         pIO = cacGlobalServiceList.createChannelIO ( pName, chan );
         if ( ! pIO ) {
             if ( ! this->pudpiiu ) {
-                this->defaultMutex.lock ();
-                this->pudpiiu = new udpiiu ( this );
-                if ( ! this->pudpiiu ) {
-                    this->defaultMutex.unlock ();
+                if ( ! this->setupUDP () ) {
                     return false;
                 }
-                if ( ! this->enablePreemptiveCallback ) {
-                    if ( this->fdRegFunc ) {
-                        ( *this->fdRegFunc )
-                            ( this->fdRegArg, this->pudpiiu->getSock (), TRUE );
-                    }
-                }
-                this->defaultMutex.unlock ();
             }
             nciu *pNetChan = new nciu ( this, chan, pName );
             if ( pNetChan ) {
@@ -876,6 +872,49 @@ bool cac::createChannelIO (const char *pName, cacChannel &chan)
     this->defaultMutex.lock ();
     this->localChanList.add ( *pIO );
     this->defaultMutex.unlock ();
+    return true;
+}
+
+bool cac::setupUDP ()
+{
+    this->defaultMutex.lock ();
+
+    if ( this->pudpiiu ) {
+        this->defaultMutex.unlock ();
+        return true;
+    }
+
+    this->pudpiiu = new udpiiu ( this );
+    if ( ! this->pudpiiu ) {
+        this->defaultMutex.unlock ();
+        return false;
+    }
+
+    this->pSearchTmr = new searchTimer ( *this->pudpiiu, *this->pTimerQueue );
+    if ( ! this->pSearchTmr ) {
+        delete this->pudpiiu;
+        this->pudpiiu = 0;
+        return false;
+    }
+
+    this->pRepeaterSubscribeTmr = new repeaterSubscribeTimer ( *this->pudpiiu, *this->pTimerQueue );
+    if ( ! this->pRepeaterSubscribeTmr ) {
+        delete this->pSearchTmr;
+        delete this->pudpiiu;
+        this->pudpiiu = 0;
+        this->defaultMutex.unlock ();
+        return false;
+    }
+
+    this->defaultMutex.unlock ();
+
+    if ( ! this->enablePreemptiveCallback ) {
+        if ( this->fdRegFunc ) {
+            ( *this->fdRegFunc )
+                ( this->fdRegArg, this->pudpiiu->getSock (), TRUE );
+        }
+    }
+
     return true;
 }
 
@@ -905,4 +944,75 @@ void cac::enableCallbackPreemption ()
 void cac::disableCallbackPreemption ()
 {
     this->pProcThread->disable ();
+}
+
+void cac::changeExceptionEvent ( caExceptionHandler *pfunc, void *arg )
+{
+    this->defaultMutex.lock ();
+    if ( pfunc ) {
+        this->ca_exception_func = pfunc;
+        this->ca_exception_arg = arg;
+    }
+    else {
+        this->ca_exception_func = ca_default_exception_handler;
+        this->ca_exception_arg = NULL;
+    }
+    this->defaultMutex.unlock ();
+}
+
+//
+// cac::genLocalExcepWFL ()
+// (generate local exception with file and line number)
+//
+void cac::genLocalExcepWFL (long stat, const char *ctx, const char *pFile, unsigned lineNo)
+{
+    struct exception_handler_args args;
+    caExceptionHandler *pExceptionFunc;
+
+    /*
+     * NOOP if they disable exceptions
+     */
+    if ( this->ca_exception_func ) {
+        args.chid = NULL;
+        args.type = -1;
+        args.count = 0u;
+        args.addr = NULL;
+        args.stat = stat;
+        args.op = CA_OP_OTHER;
+        args.ctx = ctx;
+        args.pFile = pFile;
+        args.lineNo = lineNo;
+
+        this->defaultMutex.lock ();
+        pExceptionFunc = this->ca_exception_func;
+        args.usr = this->ca_exception_arg;
+        this->defaultMutex.unlock ();
+
+        (*pExceptionFunc) (args);
+    }
+}
+
+void cac::installDisconnectedChannel ( nciu &chan )
+{
+
+    assert ( this->pudpiiu && this->pSearchTmr );
+
+    this->defaultMutex.lock ();
+    this->pudpiiu->addToChanList ( chan );
+    this->pSearchTmr->reset ( CA_RECAST_DELAY );
+    this->defaultMutex.unlock ();
+}
+
+void cac::notifySearchResponse ( unsigned short retrySeqNo )
+{
+    if ( this->pSearchTmr ) {
+        this->pSearchTmr->notifySearchResponse ( retrySeqNo );
+    }
+}
+
+void cac::repeaterSubscribeConfirmNotify ()
+{
+    if ( this->pRepeaterSubscribeTmr ) {
+        this->pRepeaterSubscribeTmr->confirmNotify ();
+    }
 }

@@ -351,9 +351,9 @@ public:
     virtual bool ca_v41_ok () const = 0;
     virtual int pushStreamMsg (const caHdr *pmsg, const void *pext, bool BlockingOk) = 0;
     virtual int pushDatagramMsg (const caHdr *pMsg, const void *pExt, ca_uint16_t extsize) = 0;
-    virtual void addToChanList (nciu *chan) = 0;
-    virtual void removeFromChanList (nciu *chan) = 0;
-    virtual void disconnect (nciu *chan) = 0;
+    virtual void addToChanList ( nciu &chan ) = 0;
+    virtual void removeFromChanList ( nciu &chan ) = 0;
+    virtual void disconnect ( nciu &chan ) = 0;
 
     tsDLList <nciu> chidList;
 };
@@ -364,7 +364,7 @@ class searchTimer : public osiTimer {
 
 public:
     searchTimer (udpiiu &iiu, osiTimerQueue &queue);
-    void notifySearchResponse (nciu *pChan);
+    void notifySearchResponse ( unsigned short retrySeqNo );
     void reset (double delayToNextTry);
 
 private:
@@ -416,9 +416,9 @@ public:
     void hostName ( char *pBuf, unsigned bufLength ) const;
     bool ca_v42_ok () const;
     bool ca_v41_ok () const;
-    void addToChanList (nciu *chan);
-    void removeFromChanList (nciu *chan);
-    void disconnect (nciu *chan);
+    void addToChanList ( nciu &chan );
+    void removeFromChanList ( nciu &chan );
+    void disconnect ( nciu &chan );
     int recvMsg ();
     int post_msg (const struct sockaddr_in *pnet_addr, 
               char *pInBuf, unsigned long blockSize);
@@ -431,8 +431,6 @@ public:
     osiTime                 recvTime;
     char                    xmitBuf[MAX_UDP];   
     char                    recvBuf[ETHERNET_MAX_UDP];
-    searchTimer             searchTmr;
-    repeaterSubscribeTimer  repeaterSubscribeTmr;
     semMutexId              xmitBufLock;
     ELLLIST                 dest;
     semBinaryId             recvThreadExitSignal;
@@ -511,10 +509,10 @@ public:
     bool ca_v41_ok () const;
     int pushStreamMsg ( const caHdr *pmsg, const void *pext, bool BlockingOk );
     int post_msg (char *pInBuf, unsigned long blockSize);
-    void addToChanList (nciu *chan);
-    void removeFromChanList (nciu *chan);
+    void addToChanList ( nciu &chan );
+    void removeFromChanList ( nciu &chan );
     void connect ();
-    void disconnect (nciu *chan);
+    void disconnect ( nciu &chan );
     bool fullyConstructed () const;
     void recvMsg ();
     void flush ();
@@ -735,8 +733,8 @@ public:
     void installIO (baseNMIU &io);
     void uninstallIO (baseNMIU &io);
     nciu * lookupChan (unsigned id);
-    void installChannel (nciu &chan);
-    void uninstallChannel (nciu &chan);
+    void registerChannel (nciu &chan);
+    void unregisterChannel (nciu &chan);
     CASG * lookupCASG (unsigned id);
     void installCASG (CASG &);
     void uninstallCASG (CASG &);
@@ -747,6 +745,11 @@ public:
     void unlock () const;
     void enableCallbackPreemption ();
     void disableCallbackPreemption ();
+    void changeExceptionEvent ( caExceptionHandler *pfunc, void *arg );
+    void genLocalExcepWFL (long stat, const char *ctx, const char *pFile, unsigned lineNo);
+    void installDisconnectedChannel ( nciu &chan );
+    void notifySearchResponse ( unsigned short retrySeqNo );
+    void repeaterSubscribeConfirmNotify ();
 
     osiTimerQueue           *pTimerQueue;
     ELLLIST                 activeCASGOP;
@@ -755,7 +758,6 @@ public:
     ELLLIST                 fdInfoList;
     osiTime                 programBeginTime;
     ca_real                 ca_connectTMO;
-    udpiiu                  *pudpiiu;
     caExceptionHandler      *ca_exception_func;
     void                    *ca_exception_arg;
     caPrintfFunc            *ca_printf_func;
@@ -771,7 +773,6 @@ public:
     unsigned                ca_nextSlowBucketId;
     unsigned                ca_number_iiu_in_fc;
     unsigned short          ca_server_port;
-    char                    ca_sprintf_buf[256];
     char                    ca_new_err_code_msg_buf[128u];
 
     ELLLIST                 ca_taskVarList;
@@ -792,10 +793,14 @@ private:
     processThread           *pProcThread;
     CAFDHANDLER             *fdRegFunc;
     void                    *fdRegArg;
+    udpiiu                  *pudpiiu;
+    searchTimer             *pSearchTmr;
+    repeaterSubscribeTimer  *pRepeaterSubscribeTmr;
     unsigned                pndrecvcnt;
     bool                    enablePreemptiveCallback;
 
     int pendPrivate (double timeout, int early);
+    bool setupUDP ();
 };
 
 extern const caHdr cacnullmsg;
@@ -808,17 +813,15 @@ int ca_printf (const char *pformat, ...);
 int ca_vPrintf (const char *pformat, va_list args);
 void manage_conn (cac *pcac);
 epicsShareFunc void epicsShareAPI ca_repeater (void);
-int cac_select_io (cac *pcac, double maxDelay, int flags);
 
 char *localHostName (void);
 
 bhe *lookupBeaconInetAddr(cac *pcac,
         const struct sockaddr_in *pnet_addr);
 
-void genLocalExcepWFL (cac *pcac, long stat, const char *ctx, 
-    const char *pFile, unsigned line);
-#define genLocalExcep(PCAC, STAT, PCTX) \
-genLocalExcepWFL (PCAC, STAT, PCTX, __FILE__, __LINE__)
+#define genLocalExcep( PCAC, STAT, PCTX ) \
+(PCAC)->genLocalExcepWFL ( STAT, PCTX, __FILE__, __LINE__ )
+
 double cac_fetch_poll_period (cac *pcac);
 tcpiiu * constructTCPIIU (cac *pcac, const struct sockaddr_in *pina, 
                                      unsigned minorVersion);

@@ -23,7 +23,7 @@ void repeaterSubscribeTimer::expire ()
 {
     static const unsigned nTriesToMsg = 50;
     this->attempts++;
-
+printf ("pinging repeater\n");
     if ( this->attempts > nTriesToMsg && ! this->once ) {
         ca_printf (
     "Unable to contact CA repeater after %u tries\n", nTriesToMsg);

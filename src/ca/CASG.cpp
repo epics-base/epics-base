@@ -115,16 +115,6 @@ int CASG::block ( double timeout )
         }
         this->mutex.unlock ();
 
-        /*
-         * Exit if the timeout has expired
-         * (dont wait forever for an itsy bitsy
-         * delay which will not be updated if
-         * select is called with no delay)
-         *
-         * current time is only updated by
-         * cac_select_io() if we specify
-         * at non-zero delay
-         */
         remaining = timeout - delay;
         if ( remaining <= CAC_SIGNIFICANT_SELECT_DELAY ) {
             /*

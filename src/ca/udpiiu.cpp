@@ -173,7 +173,7 @@ void udpiiu::repeaterRegistrationMessage ( unsigned attemptNumber )
 #   endif 
 
     status = sendto ( this->sock, (char *) &msg, len,  
-                0, (struct sockaddr *)&saddr, sizeof (saddr) );
+                0, (struct sockaddr *) &saddr, sizeof ( saddr ) );
     if ( status < 0 ) {
         int errnoCpy = SOCKERRNO;
         if ( errnoCpy != SOCK_EINTR && 
@@ -182,8 +182,7 @@ void udpiiu::repeaterRegistrationMessage ( unsigned attemptNumber )
              * the repeater isnt running
              */
             errnoCpy != SOCK_ECONNREFUSED ) {
-            ca_printf (
-                "CAC: error sending to repeater was \"%s\"\n", 
+            ca_printf ( "CAC: error sending to repeater was \"%s\"\n", 
                 SOCKERRSTR (errnoCpy) );
         }
     }
@@ -258,8 +257,6 @@ int repeater_installed (udpiiu *piiu)
 //
 udpiiu::udpiiu ( cac *pcac ) :
     netiiu ( pcac ),
-    searchTmr ( *this, *pcac->pTimerQueue ), 
-    repeaterSubscribeTmr ( *this, *pcac->pTimerQueue ),
     shutdownCmd ( false )
 {
     static const unsigned short PORT_ANY = 0u;
@@ -340,7 +337,7 @@ udpiiu::udpiiu ( cac *pcac ) :
     ellInit ( &this->dest );
     configureChannelAccessAddressList (&this->dest, this->sock, pcac->ca_server_port);
     if ( ellCount ( &this->dest ) == 0 ) {
-        genLocalExcep ( NULL, ECA_NOSEARCHADDR, NULL );
+        genLocalExcep ( this->pcas, ECA_NOSEARCHADDR, NULL );
     }
   
     {
@@ -396,8 +393,6 @@ udpiiu::udpiiu ( cac *pcac ) :
 udpiiu::~udpiiu ()
 {
     nciu *pChan, *pNext;
-
-    this->searchTmr.cancel ();
 
     // closes the udp socket
     this->shutdown ();
@@ -553,7 +548,7 @@ LOCAL void search_resp_action (udpiiu *piiu, caHdr *pMsg, const struct sockaddr_
         allocpiiu->hostNameSetMsg ();
     }
 
-    piiu->searchTmr.notifySearchResponse (chan);
+    piiu->pcas->notifySearchResponse ( chan->retrySeqNo );
 
     /*
      * Assume that we have access once connected briefly
@@ -570,7 +565,7 @@ LOCAL void search_resp_action (udpiiu *piiu, caHdr *pMsg, const struct sockaddr_
     /*
      * remove it from the broadcast niiu
      */
-    chan->piiu->removeFromChanList ( chan );
+    chan->piiu->removeFromChanList ( *chan );
 
     /*
      * chan->piiu must be correctly set prior to issuing the
@@ -582,7 +577,7 @@ LOCAL void search_resp_action (udpiiu *piiu, caHdr *pMsg, const struct sockaddr_
      *
      * claim pending flag is set here
      */
-    allocpiiu->addToChanList ( chan );
+    allocpiiu->addToChanList ( *chan );
 
     if ( CA_V42 ( CA_PROTOCOL_VERSION, minorVersion ) ) {
         chan->searchReplySetUp ( pMsg->m_cid, USHRT_MAX, 0 );
@@ -652,7 +647,7 @@ LOCAL void beacon_action ( udpiiu * piiu,
 LOCAL void repeater_ack_action (udpiiu * piiu, 
 	caHdr * /* pMsg */,  const struct sockaddr_in * /* pnet_addr */)
 {
-    piiu->repeaterSubscribeTmr.confirmNotify ();
+    piiu->pcas->repeaterSubscribeConfirmNotify ();
 }
 
 /*
@@ -814,7 +809,7 @@ bool udpiiu::compareIfTCP (nciu &, const sockaddr_in &) const
  * one chan on the B cast iiu list is pointed to by
  * ca_pEndOfBCastList 
  */
-void udpiiu::addToChanList (nciu *chan)
+void udpiiu::addToChanList ( nciu &chan )
 {
     this->pcas->lock ();
 
@@ -822,39 +817,40 @@ void udpiiu::addToChanList (nciu *chan)
      * add to the beginning of the list so that search requests for
      * this channel will be sent first (since the retry count is zero)
      */
-    if ( ellCount (&this->chidList) == 0 ) {
-        this->pcas->endOfBCastList = tsDLIterBD<nciu>(chan);
+    if ( ellCount ( &this->chidList ) == 0 ) {
+        this->pcas->endOfBCastList = tsDLIterBD <nciu> ( &chan );
     }
     /*
      * add to the front of the list so that
      * search requests for new channels will be sent first
      */
-    chan->retry = 0u;
-    this->chidList.push (*chan);
-    chan->piiu = this;
+    chan.retry = 0u;
+    this->chidList.push ( chan );
+    chan.piiu = this;
+
     this->pcas->unlock ();
 }
 
-void udpiiu::removeFromChanList (nciu *chan)
+void udpiiu::removeFromChanList ( nciu &chan )
 {
-    tsDLIterBD<nciu> iter (chan);
+    tsDLIterBD <nciu> iter ( &chan );
 
     this->pcas->lock ();
-    if ( chan->piiu->pcas->endOfBCastList == iter ) {
+    if ( chan.piiu->pcas->endOfBCastList == iter ) {
         if ( iter.itemBefore () != tsDLIterBD<nciu>::eol () ) {
-            chan->piiu->pcas->endOfBCastList = iter.itemBefore ();
+            chan.piiu->pcas->endOfBCastList = iter.itemBefore ();
         }
         else {
-            chan->piiu->pcas->endOfBCastList = 
-                tsDLIterBD<nciu> (chan->piiu->chidList.last());
+            chan.piiu->pcas->endOfBCastList = 
+                tsDLIterBD<nciu> ( chan.piiu->chidList.last () );
         }
     }
-    chan->piiu->chidList.remove (*chan);
-    chan->piiu = NULL;
+    chan.piiu->chidList.remove ( chan );
+    chan.piiu = NULL;
     this->pcas->unlock ();
 }
 
-void udpiiu::disconnect ( nciu * /* chan */ )
+void udpiiu::disconnect ( nciu & /* chan */ )
 {
     // NOOP
 }

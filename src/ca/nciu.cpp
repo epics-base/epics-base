@@ -40,8 +40,6 @@ nciu::nciu ( cac *pcac, cacChannel &chan, const char *pNameIn ) :
     }
     strcpy ( this->pNameStr, pNameIn );
 
-    pcac->lock ();
-
     this->typeCode = USHRT_MAX; /* invalid initial type    */
     this->count = 0;    /* invalid initial count     */
     this->sid = UINT_MAX; /* invalid initial server id     */
@@ -49,16 +47,13 @@ nciu::nciu ( cac *pcac, cacChannel &chan, const char *pNameIn ) :
     this->nameLength = strcnt;
     this->previousConn = 0;
     this->f_connected = false;
-
-    pcac->installChannel ( *this );
-    pcac->pudpiiu->addToChanList ( this );
-
-    /*
-     * reset broadcasted search counters
-     */
-    pcac->pudpiiu->searchTmr.reset ( CA_RECAST_DELAY );
-
     this->f_fullyConstructed = true;
+
+    pcac->lock ();
+
+    pcac->registerChannel ( *this );
+
+    pcac->installDisconnectedChannel ( *this );
 
     chan.attachIO ( *this );
 
@@ -105,11 +100,11 @@ nciu::~nciu ()
         iter = next;
     }
 
-    this->piiu->pcas->uninstallChannel (*this);
+    this->piiu->pcas->unregisterChannel ( *this );
 
-    this->piiu->removeFromChanList ( this );
+    this->piiu->removeFromChanList ( *this );
 
-    free ( reinterpret_cast <void *> (this->pNameStr) );
+    free ( reinterpret_cast <void *> ( this->pNameStr ) );
 
     piiuCopy->pcas->unlock (); // remove clears this->piiu
 }
@@ -670,7 +665,7 @@ void nciu::disconnect ()
 
     this->piiu->pcas->unlock ();
 
-    this->piiu->disconnect ( this );
+    this->piiu->disconnect ( *this );
 }
 
 /*
@@ -681,11 +676,7 @@ int nciu::searchMsg ()
     int         status;
     caHdr       msg;
 
-    if ( this->piiu != static_cast<netiiu *> (this->piiu->pcas->pudpiiu) ) {
-        return ECA_INTERNAL;
-    }
-
-    if (this->nameLength > 0xffff) {
+    if ( this->nameLength > 0xffff ) {
         return ECA_STRTOBIG;
     }
 

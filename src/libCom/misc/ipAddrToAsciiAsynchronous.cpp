@@ -23,6 +23,7 @@
  *	johill@lanl.gov
  */
 
+#include <string>
 #include <stdexcept>
 
 #define epicsExportSharedSymbols

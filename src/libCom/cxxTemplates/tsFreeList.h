@@ -17,17 +17,14 @@
 #endif
 
 template < class T >
-class tsFreeListItem {
+union tsFreeListItem {
 public:
-    union {
-        tsFreeListItem < T > *pNext;
-        char pad[ sizeof (T) ];
-    };
+    tsFreeListItem < T > *pNext;
+    char pad[ sizeof (T) ];
 };
 
 template < class T, unsigned N = 0x400 >
-class tsFreeListChunk {
-public:
+struct tsFreeListChunk {
     tsFreeListChunk < T, N > *pNext;
     tsFreeListItem < T > items [N];
 };
@@ -68,7 +65,7 @@ void * tsFreeList < T, N >::allocate (size_t size)
 {
     tsFreeListItem < T > *p;
 
-    if (size != sizeof (*p) ) {
+    if ( size != sizeof ( T ) ) {
         return ::operator new (size);
     }
 
@@ -105,7 +102,7 @@ void * tsFreeList < T, N >::allocate (size_t size)
 template < class T, unsigned N >
 void tsFreeList < T, N >::release (void *pCadaver, size_t size)
 {
-    if ( size != sizeof (tsFreeListItem<T>) ) {
+    if ( size != sizeof ( T ) ) {
         ::operator delete (pCadaver);
     }
     else {

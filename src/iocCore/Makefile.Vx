@@ -15,9 +15,6 @@ IOC_CORE_OBJS = \
 
 PROD = iocCore
 
-vpath vxWorks% $(VX_CONFIG_DIR)/$(T_A)
-INSTALLS = vxWorks vxWorks.sym
-
 include $(TOP)/config/RULES.Vx
 
 iocCore: $(IOC_CORE_OBJS)

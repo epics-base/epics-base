@@ -52,13 +52,11 @@ a_file_CPPFLAGS_WIN32   = -DVERSION='WIN32 port'
 #
 #	In here you supply just the filename without '../' etc.
 #	While building in an O.xxx subdir, the
-#	sources are extracted from either the
-#	             '..'
-#	dir or - if it exists - the dir
-#	             '../$(OS_CLASS)'
-#	is preferred.
+#	sources are extracted from the
+#   ../os/$(OS_CLASS) directory if it exists, or
+#   ../os/default directory if it exists, or
+#	.. directory
 #	---------------------------------------------------------
-
 
 #	includes to install from this Makefile
 #
@@ -101,10 +99,11 @@ libname_SRCS_DEFAULT    = posix.c
 libname_SRCS_WIN32      = win32_special.c
 libname_SRCS_Linux      = -nil-
 #
-LIBSRCS         = file_for_lib.c another_file.cpp
-LIBSRCS_DEFAULT = posix.c
-LIBSRCS_WIN32   = win32_special.c
-LIBSRCS_Linux   = -nil-
+#	SRCS that are used for all libraries
+LIB_SRCS         = file_for_lib.c another_file.cpp
+LIB_SRCS_DEFAULT = posix.c
+LIB_SRCS_WIN32   = win32_special.c
+LIB_SRCS_Linux   = -nil-
 
 #	Library to build:
 #	lib$(LIBRARY).a  or   ..dll/..exp/..lib
@@ -113,13 +112,9 @@ LIBRARY=libname
 #
 #	Host or Ioc platform specific library to build:
 #
-LIBRARY_IOC=libname
-LIBRARY_HOST=libname
+LIBRARY_IOC=libnameIoc
+LIBRARY_HOST=libnameHost
 
-# if SHARED_LIBRARIES is YES then shared and archive libraries will
-#	both be built 
-#SHARED_LIBRARIES = YES
-#
 #	Library version
 SHRLIB_VERSION = 
 #	On WIN32 results in /version:$(SHRLIB_VERSION) link option
@@ -132,10 +127,15 @@ SHRLIB_VERSION =
 #	if SRCS is undefined, it defaults to $(PROD).c 
 SRCS=a.c b.c c.c
 
+#	SRCS that are used for all PRODs
+#
+PROD_SRCS = ppp.c qqq.c
+
 #	SRCS that are only used for PROD a_file
 #
 a_file_SRCS = aa.c bb.c
 
+#
 #	EPICS libs needed to link PROD, TESTPROD and sharable library
 #
 #	note that DLL_LIBS (the libraries needed to link a shareable
@@ -143,32 +143,40 @@ a_file_SRCS = aa.c bb.c
 #	below minus the name of the sharable library (LIBRARY)
 #	
 #
-# for all systems:
+# ----------  libraries for a specific product pppp
+# for all systems
+pppp_LIBS         = Com Ca
+# for most systems:
+pppp_LIBS_DEFAULT = mathlib
+pppp_LIBS_WIN32   = -nil-
+
+# ---------- libraries for all products
+# for all systems
 PROD_LIBS         = Com Ca
 # for most systems:
 PROD_LIBS_DEFAULT = mathlib
 PROD_LIBS_WIN32   = -nil-
 
-#	system libs needed to link PROD, TESTPROD and sharable library
-#
-# for all systems:
-PROD_SYS_LIBS     = m
-# for most systems:
-PROD_SYS_LIBS_DEFAULT = foolib
-PROD_SYS_LIBS_WIN32   = -nil-
-
-#	other libs needed to link PROD, TESTPROD and sharable library
-#
-# for all systems:
+# ---------- Libraries for all products and all libraries:
+# for all systems
 USR_LIBS     = Xm Xt X11
 Xm_DIR = $(MOTIF_LIB)
 Xt_DIR = $(X11_LIB)
 X11_DIR = $(X11_LIB)
 
-# for most systems:
+# for most systems
 USR_LIBS_DEFAULT = foolib
 USR_LIBS_WIN32   = -nil-
 foolib_DIR = $(FOO_LIB)
+
+#	system libs needed to link PROD, TESTPROD and sharable library
+#
+# ---------- system libraries for all products
+# for all systems:
+PROD_SYS_LIBS     = m
+# for most systems:
+PROD_SYS_LIBS_DEFAULT = foolib
+PROD_SYS_LIBS_WIN32   = -nil-
 
 #	Product,
 #	may be   caRepeater.o -> caRepeater
@@ -178,6 +186,9 @@ PROD_DEFAULT = product_for_rest
 PROD_WIN32   = product_only_for_WIN32
 PROD_Linux   = product_only_for_Linux
 PROD_solaris = product_only_for_solaris
+
+PROD_HOST    = product_only_for_host_type_systems
+PROD_IOC     = product_only_for_ioc_type_systems
 
 #	Product version
 PROD_VERSION = 

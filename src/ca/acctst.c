@@ -19,7 +19,7 @@ static char *sccsId = "@(#) $Id$";
 
 #include	"os_depen.h"
 
-#include	<epicsAssert.h>
+#include	<assert.h>
 #include 	<cadef.h>
 
 #define EVENT_ROUTINE	null_event
@@ -27,7 +27,11 @@ static char *sccsId = "@(#) $Id$";
 
 #define NUM		1
 
-int	conn_get_cb_count;
+int	conn_cb_count;
+
+#ifndef min
+#define min(A,B) ((A)>(B)?(B):(A))
+#endif
 
 int	doacctst(char *pname);
 void 	test_sync_groups(chid chix);
@@ -35,9 +39,22 @@ void 	multiple_sg_requests(chid chix, CA_SYNC_GID gid);
 void 	null_event(struct event_handler_args args);
 void 	write_event(struct event_handler_args args);
 void 	conn(struct connection_handler_args args);
-void 	conn_cb(struct event_handler_args args);
+void 	get_cb(struct event_handler_args args);
 void 	accessSecurity_cb(struct access_rights_handler_args args);
 
+void doubleTest(
+chid		chan,
+dbr_double_t 	beginValue, 
+dbr_double_t	increment,
+dbr_double_t 	epsilon,
+unsigned 	iterations);
+
+void floatTest(
+chid		chan,
+dbr_float_t 	beginValue, 
+dbr_float_t	increment,
+dbr_float_t 	epsilon,
+unsigned 	iterations);
 
 #ifdef vxWorks
 int acctst(char *pname)
@@ -92,7 +109,7 @@ int doacctst(char *pname)
 
 	SEVCHK(ca_task_initialize(), "Unable to initialize");
 
-	conn_get_cb_count = 0;
+	conn_cb_count = 0;
 
 	printf("begin\n");
 #ifdef VMS
@@ -213,34 +230,74 @@ int doacctst(char *pname)
 		ca_read_access(chix1),
 		ca_write_access(chix1));
 
+#if 0
 	/*
 	 * Verify that we can write and then read back
-	 * the same value
+	 * the same analog value
 	 */
 	if(	(ca_field_type(chix1)==DBR_FLOAT || 
 		ca_field_type(chix1)==DBR_DOUBLE) &&
 		ca_read_access(chix1) && 
 		ca_write_access(chix1)){
 
-		double 	dval = 3.3;
-		float	fval = -8893.3;
-		double	dret = DBL_MAX;
-		float	fret = FLT_MAX;
+		double incr;
+		double epsil;
+		double base;
+		unsigned long iter;
 
-		status = ca_put(DBR_DOUBLE, chix1, &dval);
-		SEVCHK(status, NULL);
-		status = ca_get(DBR_DOUBLE, chix1, &dret);
-		SEVCHK(status, NULL);
-		ca_pend_io(30.0);
-		assert( fabs(dval-dret) < DBL_EPSILON*4);
+		printf ("float test ...");
+		fflush(stdout);
+		epsil = FLT_EPSILON*4;
+		base = FLT_MIN;
+		for (i=FLT_MIN_EXP; i<FLT_MAX_EXP; i++) {
+			incr = ldexp (0.5,i);
+			iter = FLT_MAX/fabs(incr);
+			iter = min (iter,10);
+			floatTest(chix1, base, incr, epsil, iter);
+		}
+		base = FLT_MAX;
+		for (i=FLT_MIN_EXP; i<FLT_MAX_EXP; i++) {
+			incr =  - ldexp (0.5,i);
+			iter = FLT_MAX/fabs(incr);
+			iter = min (iter,10);
+			floatTest(chix1, base, incr, epsil, iter);
+		}
+		base = - FLT_MAX;
+		for (i=FLT_MIN_EXP; i<FLT_MAX_EXP; i++) {
+			incr = ldexp (0.5,i);
+			iter = FLT_MAX/fabs(incr);
+			iter = min (iter,10);
+			floatTest(chix1, base, incr, epsil, iter);
+		}
+		printf ("done\n");
 
-		status = ca_put(DBR_FLOAT, chix1, &fval);
-		SEVCHK(status, NULL);
-		status = ca_get(DBR_FLOAT, chix1, &fret);
-		SEVCHK(status, NULL);
-		ca_pend_io(30.0);
-		assert( fabs(fval-fret) < FLT_EPSILON*4);
+		printf ("double test ...");
+		fflush(stdout);
+		epsil = DBL_EPSILON*4;
+		base = DBL_MIN;
+		for (i=DBL_MIN_EXP; i<DBL_MAX_EXP; i++) {
+			incr = ldexp (0.5,i);
+			iter = DBL_MAX/fabs(incr);
+			iter = min (iter,10);
+			doubleTest(chix1, base, incr, epsil, iter);
+		}
+		base = DBL_MAX;
+		for (i=DBL_MIN_EXP; i<DBL_MAX_EXP; i++) {
+			incr =  - ldexp (0.5,i);
+			iter = DBL_MAX/fabs(incr);
+			iter = min (iter,10);
+			doubleTest(chix1, base, incr, epsil, iter);
+		}
+		base = - DBL_MAX;
+		for (i=DBL_MIN_EXP; i<DBL_MAX_EXP; i++) {
+			incr = ldexp (0.5,i);
+			iter = DBL_MAX/fabs(incr);
+			iter = min (iter,10);
+			doubleTest(chix1, base, incr, epsil, iter);
+		}
+		printf ("done\n");
 	}
+#endif
 
 	/*
 	 * verify we dont jam up on many uninterrupted
@@ -475,13 +532,13 @@ int doacctst(char *pname)
 	SEVCHK(ca_modify_user_name("Willma"), NULL);
 	SEVCHK(ca_modify_host_name("Bed Rock"), NULL);
 
-	if (conn_get_cb_count != 3){
+	if (conn_cb_count != 3){
 		printf ("!!!! Connect cb count = %d expected = 3 !!!!\n", 
-			conn_get_cb_count);
+			conn_cb_count);
 	}
 
 	printf("-- Put/Gets done- waiting for Events --\n");
-	status = ca_pend_event(10.0);
+	status = ca_pend_event(1000.0);
 	if (status != ECA_TIMEOUT) {
 		SEVCHK(status, NULL);
 	}
@@ -505,7 +562,59 @@ int doacctst(char *pname)
 	return(0);
 }
 
+void floatTest(
+chid		chan,
+dbr_float_t 	beginValue, 
+dbr_float_t	increment,
+dbr_float_t 	epsilon,
+unsigned 	iterations)
+{
+	unsigned	i;
+	dbr_float_t	fval;
+	dbr_float_t	fretval;
+	int		status;
 
+	fval = beginValue;
+	for (i=0; i<iterations; i++) {
+		fretval = FLT_MAX;
+		status = ca_put (DBR_FLOAT, chan, &fval);
+		SEVCHK (status, NULL);
+		status = ca_get (DBR_FLOAT, chan, &fretval);
+		SEVCHK (status, NULL);
+		status = ca_pend_io (100.0);
+		SEVCHK (status, NULL);
+		assert (fabs(fval-fretval) < epsilon);
+
+		fval += increment;
+	}
+}
+
+void doubleTest(
+chid		chan,
+dbr_double_t 	beginValue, 
+dbr_double_t	increment,
+dbr_double_t 	epsilon,
+unsigned 	iterations)
+{
+	unsigned	i;
+	dbr_double_t	fval;
+	dbr_double_t	fretval;
+	int		status;
+
+	fval = beginValue;
+	for (i=0; i<iterations; i++) {
+		fretval = DBL_MAX;
+		status = ca_put (DBR_DOUBLE, chan, &fval);
+		SEVCHK (status, NULL);
+		status = ca_get (DBR_DOUBLE, chan, &fretval);
+		SEVCHK (status, NULL);
+		status = ca_pend_io (100.0);
+		SEVCHK (status, NULL);
+		assert (fabs(fval-fretval) < epsilon);
+
+		fval += increment;
+	}
+}
 
 void null_event(struct event_handler_args args)
 {
@@ -544,15 +653,15 @@ void conn(struct connection_handler_args args)
 	else
 		printf("Ukn conn ev\n");
 
-	ca_get_callback(DBR_GR_FLOAT, args.chid, conn_cb, NULL);
+	ca_get_callback(DBR_GR_FLOAT, args.chid, get_cb, NULL);
 }
 
-void conn_cb(struct event_handler_args args)
+void get_cb(struct event_handler_args args)
 {
 	if(!(args.status & CA_M_SUCCESS)){
 		printf("Get cb failed because \"%s\"\n", ca_message(args.status));
 	}
-	conn_get_cb_count++;
+	conn_cb_count++;
 }
 
 

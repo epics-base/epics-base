@@ -142,6 +142,7 @@ static char *sccsId = "$Id$\t$Date$";
 #include <epvxiLib.h>
 
 #define NICPU030
+#define LOCAL
 
 /*
  * EPICS driver entry point table

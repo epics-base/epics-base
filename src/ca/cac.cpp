@@ -251,13 +251,18 @@ void cac::processRecvBacklog ()
         if ( ! piiu->alive () ) {
             assert ( this->pudpiiu && this->pSearchTmr );
 
-            bhe *pBHE = piiu->getBHE ();
 
             if ( ! this->enablePreemptiveCallback ) {
                 if ( this->fdRegFunc ) {
                     ( *this->fdRegFunc ) 
                         ( (void *) this->fdRegArg, piiu->getSock (), FALSE );
                 }
+            }
+
+            bhe *pBHE = piiu->getBHE ();
+            if ( pBHE ) {
+                this->beaconTable.remove ( *pBHE );
+                pBHE->destroy ();
             }
 
             if ( piiu->channelCount () ) {
@@ -276,10 +281,6 @@ void cac::processRecvBacklog ()
             this->iiuList.remove ( *piiu );
             this->iiuListLimbo.add ( *piiu );
 
-            if ( pBHE ) {
-                this->beaconTable.remove ( *pBHE );
-                pBHE->destroy ();
-            }
 
             this->pSearchTmr->resetPeriod ( CA_RECAST_DELAY );
         }

@@ -15,11 +15,6 @@ int main (int argc, const char **argv)
 	aitBool		forever = aitTrue;
 	int		i;
 
-	pCAS = new exServer(32u,5u,500u);
-	if (!pCAS) {
-		return (-1);
-	}
-
 	for (i=1; i<argc; i++) {
 		if (sscanf(argv[i], "-d %u", &debugLevel)==1) {
 			continue;
@@ -31,6 +26,11 @@ int main (int argc, const char **argv)
 		printf ("usage: %s -d<debug level> -t<execution time>\n", 
 			argv[0]);
 		return (1);
+	}
+
+	pCAS = new exServer(32u,5u,500u);
+	if (!pCAS) {
+		return (-1);
 	}
 
 	pCAS->setDebugLevel(debugLevel);

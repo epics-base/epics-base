@@ -5,8 +5,6 @@
 #include <exServer.h>
 #include <gddApps.h>
 
-const double myPI = 3.14159265358979323846;
-
 osiTime exPV::currentTime;
 
 //
@@ -20,9 +18,9 @@ exPV::exPV (const casCtx &ctxIn, const pvInfo &setup) :
 	interest(aitFalse)
 {
 	//
-	// load initial value
+	// no dataless PV allowed
 	//
-	this->scanPV();
+	assert (this->info.getElementCount()>=1u);
 }
 
 //
@@ -41,55 +39,46 @@ exPV::~exPV()
 }
 
 //
-// exPV::scanPV();
+// exPV::update()
 //
-void exPV::scanPV()
+caStatus exPV::update(gdd &valueIn)
 {
-	caStatus	status;
-	double		radians;
-	gdd		*pDD;
-	float		newValue;
-	float		limit;
-	caServer	*pCAS = this->getCAS();
+        caServer *pCAS = this->getCAS();
+        //
+        // gettimeofday() is very slow under sunos4
+        //
+        osiTime cur (this->currentTime);
+        struct timespec t;
+	caStatus cas;
+ 
+        if (!pCAS) {
+                return S_casApp_noSupport;
+        }
+ 
+#       if DEBUG
+                printf("Setting %s too:\n", this->info.getName().string());
+                valueIn.dump();
+#       endif
 
-	if (!pCAS) {
-		return;
+	cas = this->updateValue (valueIn);
+	if (cas || !this->pValue) {
+		return cas;
 	}
 
+        cur.get (t.tv_sec, t.tv_nsec);
+        this->pValue->setTimeStamp(&t);
+	this->pValue->setStat (epicsAlarmNone);
+	this->pValue->setSevr (epicsSevNone);
+	
 	//
-	// update current time (so we are not required to do
-	// this every time that we write the PV which impacts
-	// throughput under sunos4 because gettimeofday() is
-	// slow)
+	// post a value change event
 	//
-	this->currentTime = osiTime::getCurrent();
-
-	pDD = new gddScalar (gddAppType_value, aitEnumFloat32);
-	if (!pDD) {
-		return;
-	}
-
-	radians = (rand () * 2.0 * myPI)/RAND_MAX;
-	if (this->pValue) {
-		this->pValue->getConvert(newValue);
-	}
-	else {
-		newValue = 0.0f;
-	}
-	newValue += (float) (sin (radians) / 10.0);
-	limit = (float) this->info.getHopr();
-	newValue = min (newValue, limit);
-	limit = (float) this->info.getLopr();
-	newValue = max (newValue, limit);
-	*pDD = newValue;
-	pDD->setStat (epicsAlarmNone);
-	pDD->setSevr (epicsSevNone);
-	status = this->update (*pDD);
-	if (status) {
-		errMessage (status, "scan update failed\n");
-	}
-
-	pDD->unreference();
+        if (this->interest==aitTrue) {
+                casEventMask select(pCAS->valueEventMask|pCAS->logEventMask);
+                this->postEvent (select, *this->pValue);
+        }
+ 
+        return S_casApp_success;
 }
 
 //
@@ -97,7 +86,7 @@ void exPV::scanPV()
 //
 void exScanTimer::expire ()
 {
-        pv.scanPV();
+        pv.scan();
 }
 
 //
@@ -123,77 +112,6 @@ const char *exScanTimer::name() const
 {
 	return "exScanTimer";
 }
-
-//
-// exPV::update ()
-//
-caStatus exPV::update(gdd &valueIn)
-{
-	gdd *pNewValue;
-	caServer *pCAS = this->getCAS();
-	//
-	// gettimeofday() is very slow under sunos4
-	//
-	osiTime cur (this->currentTime);
-	struct timespec t;
-	gddStatus gdds;
-
-
-	if (!pCAS) {
-		return S_casApp_noSupport; 
-	}
-
-#	if DEBUG 
-		printf("Setting %s too:\n", this->info.getName().string());
-		valueIn.dump();
-#	endif
-
-
-	if (valueIn.isScalar()) {
-		pNewValue = &valueIn;
-		pNewValue->reference();
-	}
-	else {
-		//
-		// this does not modify the current value 
-		// (because it may be referenced in the event queue)
-		//
-		pNewValue = new gddScalar (gddAppType_value, aitEnumFloat32);
-		if (!pNewValue) {
-			return S_casApp_noMemory;
-		}
-
-		gdds = gddApplicationTypeTable::
-			app_table.smartCopy(pNewValue, &valueIn);
-		if (gdds) {
-			pNewValue->unreference();
-			return S_cas_noConvert;
-		}
-
-		pNewValue->setStat (epicsAlarmNone);
-		pNewValue->setSevr (epicsSevNone);
-	}
-
-	cur.get (t.tv_sec, t.tv_nsec);
-	pNewValue->setTimeStamp(&t);
-
-	//
-	// release old value and replace it
-	// with the new one
-	//
-	if (this->pValue) {
-		this->pValue->unreference();
-	}
-	this->pValue = pNewValue;
-
-	if (this->interest==aitTrue) {
-		casEventMask select(pCAS->valueEventMask|pCAS->logEventMask);
-		this->postEvent (select, *this->pValue);
-	}
-
-	return S_casApp_success;
-}
-
 
 //
 // exPV::bestExternalType()
@@ -354,7 +272,7 @@ caStatus exPV::getLowLimit(gdd &value)
 //
 caStatus exPV::getUnits(gdd &units)
 {
-	static aitString str("@#$%");
+	static aitString str("furlongs");
 	units.put(str);
 	return S_cas_success;
 }
@@ -390,5 +308,21 @@ caStatus exPV::getValue(gdd &value)
 		status = S_casApp_undefined;
 	}
 	return status;
+}
+
+//
+// exPV::write()
+//
+caStatus exPV::write (const casCtx &, gdd &valueIn)
+{
+        return this->update (valueIn);
+}
+ 
+//
+// exPV::read()
+//
+caStatus exPV::read (const casCtx &, gdd &protoIn)
+{
+        return exServer::read(*this, protoIn);
 }
 

@@ -1,29 +1,27 @@
 //
-// Example EPICS CA server
+// 	Example EPICS CA server
 //
+//
+// 	caServer
+//	|
+//	exServer
+//
+//	casPV
+//	|
+//	exPV-------------
+//	|		|
+//	exScalarPV	exVectorPV
+//	|
+//	exAsyncPV
+//
+//
+
 
 //
 // ANSI C
 //
 #include <string.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <limits.h>
-
-//
-// SUN C++ does not have RAND_MAX yet 
-//
-#if !defined(RAND_MAX)
-//
-// Apparently SUN C++ is using the SYSV version of rand
-//
-#if 0
-#define RAND_MAX INT_MAX 
-#else
-#define RAND_MAX SHRT_MAX 
-#endif
-#endif
 
 //
 // EPICS
@@ -56,20 +54,20 @@ class pvInfo {
 public:
 	pvInfo (double scanRateIn, const char *pName, 
 			aitFloat32 hoprIn, aitFloat32 loprIn, 
-			excasIoType ioTypeIn) :
+			excasIoType ioTypeIn, unsigned countIn) :
 			scanRate(scanRateIn), name(pName), hopr(hoprIn), 
-			lopr(loprIn), ioType(ioTypeIn)
+			lopr(loprIn), ioType(ioTypeIn), elementCount(countIn)
 	{
 	}
 
 	//
-	// for use when MSVC++ will not build a defualt copy constructor 
+	// for use when MSVC++ will not build a default copy constructor 
 	// for this class
 	//
 	pvInfo (const pvInfo &copyIn) :
 			scanRate(copyIn.scanRate), name(copyIn.name), 
 			hopr(copyIn.hopr), lopr(copyIn.lopr), 
-			ioType(copyIn.ioType)
+			ioType(copyIn.ioType), elementCount(copyIn.elementCount)
 	{
 	}
 
@@ -78,12 +76,14 @@ public:
 	const double getHopr () const { return this->hopr; }
 	const double getLopr () const { return this->lopr; }
 	const excasIoType getIOType () const { return this->ioType; }
+	const unsigned getElementCount() const { return this->elementCount; }
 private:
 	const double		scanRate;
 	const aitString		name;
 	const double 		hopr;
 	const double		lopr;
 	const excasIoType	ioType;
+	const unsigned		elementCount;
 };
 
 class exPV;
@@ -113,8 +113,6 @@ public:
 	exPV (const casCtx &ctxIn, const pvInfo &setup);
 	virtual ~exPV();
 
-	void scanPV();
-
 	void show(unsigned level);
 
         //
@@ -143,7 +141,15 @@ public:
         //
         //casChannel *createChannel ();
 
+	//
+	// This gets called when the pv gets a new value
+	//
 	caStatus update (gdd &value);
+
+	//
+	// Gets called when we add noise to the current value
+	//
+	virtual void scan() = 0;
 
 	//
 	// Std PV Attribute fetch support
@@ -168,13 +174,47 @@ public:
 	{
 		return this->info.getScanRate();
 	}
+
+	caStatus read (const casCtx &, gdd &protoIn);
+
+	caStatus write (const casCtx &, gdd &protoIn);
+
 protected:
 	gdd			*pValue;
 	exScanTimer		*pScanTimer;
 	const pvInfo & 		info; 
 	aitBool			interest;
-private:
 	static osiTime		currentTime;
+
+	virtual caStatus updateValue (gdd &value) = 0;
+};
+
+//
+// exScalerPV
+//
+class exScalarPV : public exPV {
+public:
+	exScalarPV (const casCtx &ctxIn, const pvInfo &setup) :
+			exPV (ctxIn, setup) {}
+	void scan();
+private:
+	caStatus updateValue (gdd &value);
+};
+
+//
+// exVectorPV
+//
+class exVectorPV : public exPV {
+public:
+	exVectorPV (const casCtx &ctxIn, const pvInfo &setup) :
+			exPV (ctxIn, setup) {}
+	void scan();
+
+	unsigned maxDimension() const;
+	aitIndex maxBound (unsigned dimension) const;
+
+private:
+ 	caStatus updateValue (gdd &value);
 };
 
 //
@@ -200,36 +240,15 @@ private:
 };
 
 //
-// exSyncPV
-//
-class exSyncPV : public exPV {
-public:
-	exSyncPV (const casCtx &ctxIn, const pvInfo &setup);
-	~exSyncPV();
-
-        //
-        // read
-        //
-        caStatus read(const casCtx &ctxIn, gdd &value);
-
-        //
-        // write
-        //
-        caStatus write(const casCtx &ctxIn, gdd &value);
-private:
-};
-
-//
 // exAsyncPV
-// (asychronous PV)
 //
-class exAsyncPV : public exPV {
+class exAsyncPV : public exScalarPV {
 public:
 	//
 	// exAsyncPV()
 	//
-	exAsyncPV (const casCtx &ctxIn, const pvInfo &setup) : 
-		exPV (ctxIn, setup) {}
+	exAsyncPV (const casCtx &ctxIn, const pvInfo &setup) :
+		exScalarPV (ctxIn, setup) {}
 
         //
         // read

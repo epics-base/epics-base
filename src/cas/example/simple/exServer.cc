@@ -10,10 +10,12 @@
 #include <exServer.h>
 
 const pvInfo exServer::pvList[] = {
-	pvInfo (1.0e-1, "jane", 10.0f, 0.0f, excasIoSync),
-	pvInfo (2.0, "fred", 10.0f, -10.0f, excasIoSync),
-	pvInfo (1.0e-1, "janet", 10.0f, 0.0f, excasIoAsync),
-	pvInfo (2.0, "freddy", 10.0f, -10.0f, excasIoAsync)
+	pvInfo (1.0e-1, "jane", 10.0f, 0.0f, excasIoSync, 1u),
+	pvInfo (2.0, "fred", 10.0f, -10.0f, excasIoSync, 1u),
+	pvInfo (1.0e-1, "janet", 10.0f, 0.0f, excasIoAsync, 1u),
+	pvInfo (2.0, "freddy", 10.0f, -10.0f, excasIoAsync, 1u),
+	pvInfo (2.0, "alan", 10.0f, -10.0f, excasIoSync, 100u),
+	pvInfo (20.0, "albert", 10.0f, -10.0f, excasIoSync, 1000u)
 };
 
 //
@@ -96,20 +98,45 @@ const pvInfo *exServer::findPV(const char *pName)
 casPV *exServer::createPV (const casCtx &ctxIn, const char *pPVName)
 {
 	const pvInfo	*pInfo;
+	exPV		*pPV;
 
 	pInfo = exServer::findPV(pPVName);
 	if (!pInfo) {
 		return NULL;
 	}
 
-	switch (pInfo->getIOType()){
-	case excasIoSync:
-		return new exSyncPV (ctxIn, *pInfo);
-	case excasIoAsync:
-		return new exAsyncPV (ctxIn, *pInfo);
-	default:
-		return NULL;
+	//
+	// create an instance of the appropriate class
+	// depending on the io type and the number
+	// of elements
+	//
+	if (pInfo->getElementCount()==1u) {
+		switch (pInfo->getIOType()){
+		case excasIoSync:
+			pPV = new exScalarPV (ctxIn, *pInfo);
+			break;
+		case excasIoAsync:
+			pPV = new exAsyncPV (ctxIn, *pInfo);
+			break;
+		default:
+			pPV = NULL;
+			break;
+		}
 	}
+	else {
+		pPV = new exVectorPV (ctxIn, *pInfo);
+	}
+	
+	//
+	// load initial value (this is not done in
+	// the constructor because the base class's
+	// pure virtual function would be called)
+	//
+	if (pPV) {
+		pPV->scan();
+	}
+
+	return pPV;
 }
 
 //

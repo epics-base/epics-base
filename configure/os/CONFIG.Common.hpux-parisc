@@ -27,8 +27,7 @@ LOADABLE_SHRLIB_PREFIX =
 # Set runtime path for shared libraries
 empty:=                                      # trick from the make docs...
 space:= $(empty) $(empty)
-RUNTIME_LDFLAGS_YES = -Wl,+b$(subst $(space),:,$(sort $(SHRLIB_SEARCH_DIRS))),+s
-RUNTIME_LDFLAGS += $(RUNTIME_LDFLAGS_$(SHARED_LIBRARIES))
+RUNTIME_LDFLAGS = -Wl,+b$(subst $(space),:,$(sort $(SHRLIB_SEARCH_DIRS))),+s
 
 ifdef CROSS
    GNU_TARGET=parisc-hp-unix

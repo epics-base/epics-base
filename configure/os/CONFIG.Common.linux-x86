@@ -28,8 +28,7 @@ ARCH_DEP_CPPFLAGS += -D_X86_
 ARCH_DEP_CFLAGS += -mcpu=pentium
 
 # Set runtime path for shared libraries
-RUNTIME_LDFLAGS_YES = $(SHRLIB_SEARCH_DIRS:%=-Wl,-rpath,%)
-RUNTIME_LDFLAGS += $(RUNTIME_LDFLAGS_$(SHARED_LIBRARIES))
+RUNTIME_LDFLAGS = $(SHRLIB_SEARCH_DIRS:%=-Wl,-rpath,%)
 
 ifdef CROSS
    GNU_TARGET=i586-pc-linux-gnu

@@ -44,9 +44,11 @@
 #include "errMdef.h"
 #include "taskwd.h"
 
+typedef void (*MYFUNCPTR)();
+
 struct task_list {
 	ELLNODE		node;
-	VOIDFUNCPTR	callback;
+	MYFUNCPTR		callback;
 	void		*arg;
 	union {
 		threadId	tid;
@@ -87,7 +89,7 @@ void taskwdInit()
         (THREADFUNC)taskwdTask,0);
 }
 
-void taskwdInsert(threadId tid,VOIDFUNCPTR callback,void *arg)
+void taskwdInsert(threadId tid,TASKWDFUNCPRR callback,void *arg)
 {
     struct task_list *pt;
 
@@ -101,7 +103,7 @@ void taskwdInsert(threadId tid,VOIDFUNCPTR callback,void *arg)
     semMutexGive(lock);
 }
 
-void taskwdAnyInsert(void *userpvt,VOIDFUNCPTR callback,void *arg)
+void taskwdAnyInsert(void *userpvt,TASKWDANYFUNCPRR callback,void *arg)
 {
     struct task_list *pt;
 
@@ -175,11 +177,14 @@ static void taskwdTask(void)
 			errMessage(-1,message);
 			ptany = (struct task_list *)ellFirst(&anylist);
 			while(ptany) {
-			    if(ptany->callback) (ptany->callback)(ptany->arg,pt->id.tid);
+			    if(ptany->callback) {
+				TASKWDANYFUNCPRR pcallback = pt->callback;
+				(pcallback)(ptany->arg,pt->id.tid);
+			    }
 			    ptany = (struct task_list *)ellNext((ELLNODE *)ptany);
 			}
 			if(pt->callback) {
-				VOIDFUNCPTR	pcallback = pt->callback;
+				TASKWDFUNCPRR	pcallback = pt->callback;
 				void		*arg = pt->arg;
 
 				/*Must allow callback to call taskwdRemove*/
@@ -199,8 +204,7 @@ static void taskwdTask(void)
         threadSleep(TASKWD_DELAY);
     }
 }
-
-
+
 static struct task_list *allocList(void)
 {
     struct task_list *pt;

@@ -59,7 +59,7 @@ typedef void (*CALLBACKFUNC)();
 #define callbackSetPriority(PRIORITY,PCALLBACK)\
 ( (PCALLBACK)->priority = (PRIORITY) )
 #define callbackSetUser(USER,PCALLBACK)\
-( (PCALLBACK)->user = (VOID *)(USER) )
+( (PCALLBACK)->user = (void *)(USER) )
 #define callbackGetUser(USER,PCALLBACK)\
 ( (USER) = (void *)((CALLBACK *)(PCALLBACK))->user )
 

@@ -180,6 +180,7 @@ void scanAdd(struct dbCommon *precord)
 	    if(!pevent_scan_list ) {
 		pevent_scan_list = dbCalloc(1,sizeof(event_scan_list));
 		pevent_list[priority][evnt] = pevent_scan_list;
+                pevent_scan_list->scan_list.lock = semMutexCreate();
 		callbackSetCallback(eventCallback,&pevent_scan_list->callback);
 		callbackSetPriority(priority,&pevent_scan_list->callback);
 		callbackSetUser(pevent_scan_list,&pevent_scan_list->callback);
@@ -236,8 +237,8 @@ void scanAdd(struct dbCommon *precord)
 
 void scanDelete(struct dbCommon *precord)
 {
-	short		scan;
-	scan_list *psl;
+	short scan;
+	scan_list *psl = 0;
 
 	/* get the list on which this record belongs */
 	scan = precord->scan;
@@ -511,8 +512,7 @@ static void periodicTask(void *arg)
         if(end_time>=start_time) {
             diff = end_time - start_time;
         } else {
-            /*unsigned long overflow*/
-            diff = (UINT_MAX - start_time) + end_time;
+            diff = 1 + end_time + (ULONG_MAX - start_time);
         }
 	delay = psl->ticks - diff;
         delay = (delay<=0.0) ? .1 : delay/clockGetRate();

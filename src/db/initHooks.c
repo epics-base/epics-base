@@ -40,6 +40,8 @@
 #include <stddef.h>
 #include <stdio.h>
 
+#include <dbDefs.h>
+
 #include "ellLib.h"
 #include "initHooks.h"
 
@@ -69,11 +71,11 @@ int initHookRegister(initHookFunction func)
 	if (newHook == NULL)
 	{
 		printf("Cannot malloc a new initHookLink\n");
-		return ERROR;
+		return -1;
 	}
 	newHook->func = func;
 	ellAdd(&functionList,&newHook->node);
-	return OK;
+	return 0;
 }
 
 /*

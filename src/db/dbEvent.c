@@ -136,7 +136,7 @@ int db_event_list(char *name)
   	struct dbCommon		*precord;
 
   	status = dbNameToAddr(name, &addr);
-  	if(status==ERROR)
+  	if(status!=0)
     		return ERROR;
 
   	precord = addr.precord;
@@ -715,8 +715,8 @@ LOCAL int db_post_single_event_private(struct event_block *event)
 int db_start_events(
 struct event_user	*evUser,
 char			*taskname,	/* defaulted if NULL */
-int			(*init_func)(),
-int			init_func_arg,
+int			(*init_func)(threadId),
+threadId                init_func_arg,
 int			priority_offset
 )
 {
@@ -734,7 +734,7 @@ int			priority_offset
         threadUnlockContextSwitch();
         if(!firstTry) return ERROR;
         taskpri = threadGetPriority(threadGetIdSelf());
-  	taskpri += priority_offset;
+  	taskpri -= priority_offset;
   	evUser->pendexit = FALSE;
         evUser->init_func = init_func;
         evUser->init_func_arg = init_func_arg;

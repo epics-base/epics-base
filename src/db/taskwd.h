@@ -37,10 +37,12 @@
 
 #include "osiThread.h"
 
+typedef void (*TASKWDFUNCPRR)(void *parm);
+typedef void (*TASKWDANYFUNCPRR)(void *parm,threadId tid);
 #ifdef __STDC__
 void taskwdInit();
-void taskwdInsert(threadId tid, VOIDFUNCPTR callback,void *arg);
-void taskwdAnyInsert(void *userpvt, VOIDFUNCPTR callback,void *arg);
+void taskwdInsert(threadId tid, TASKWDFUNCPRR callback,void *arg);
+void taskwdAnyInsert(void *userpvt, TASKWDANYFUNCPRR callback,void *arg);
 void taskwdRemove(threadId tid);
 void taskwdAnyRemove(void *userpvt);
 #else

@@ -49,7 +49,6 @@
 #include        <stdlib.h>
 #include        <stdarg.h>
 #include        <string.h>
-#include        <types.h>
 
 #include        "dbDefs.h"
 #include        "errlog.h"

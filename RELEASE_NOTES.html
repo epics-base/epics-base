@@ -58,6 +58,18 @@ mask is set to the value 0xffffffff. Thus old databases will act like previously
 the nobt field was set to a non-zero value.
 <p><b><tt>calcoutRecord</tt></b>
 <p>No longer calls dbScanLock until interruptAccept is true.
+<p><b><tt>breakpoint tables</tt></b>
+<p>Entering negative values failed. This bug is fixed.
+<p><b><tt>dbl("&lt;record type>","&lt;output file>","&lt;field list>")</tt></b>
+<p>The vxWorks console command dbl now allows an additional argument, which
+is a list of field names.
+<p>For example
+<p>iocexample> dbl "ai",0,"DESC SCAN"
+<br>mrk:aiExample,"Analog input","Passive"
+<br>mrk:aiExample1,"Analog input No. 1","Passive"
+<br>mrk:aiExample2,"Analog input No. 2","Passive"
+<br>mrk:aiExample3,"Analog input No. 3","Passive"
+<br>&nbsp;
 <h4>
 June 15, 1998</h4>
 All major functionality that will be in R3.13 is now in place. It has been
@@ -1245,8 +1257,8 @@ Device Support Changes</li>
 devAiSoft, devBiSoft, devEventSoft, devLiSoft, devMbbiDirectSoft devMbbiSoft,devSiSoft
 - In init_record the udf field is set to false only if inp is a constant
 link and recGblInitConstantLink returns success. In read_xxx the udf field
-is
-set to false only if inp is not a constant link and dbGetLink returns success.</li>
+is set to false only if inp is not a constant link and dbGetLink returns
+success.</li>
 
 <li>
 devAiSoftRaw, devBiSoftRaw, devMbbiDirectSoftRaw, devMbbiSoftRaw - In init_record

@@ -1,7 +1,10 @@
 # $Id$ 
 
+# This Perl script creates a RULES_INCLUDE file containing -include statements
+# for RULES_BUILD files from external <top> definitions in the RELEASE file.
+
 eval 'exec perl -S $0 ${1+"$@"}'  # -*- Mode: perl -*-
-    if $running_under_some_shell; # makeConfigAppInclude.pl
+    if $running_under_some_shell; # makeRulesInclude.pl
 
 use Cwd;
 

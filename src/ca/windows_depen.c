@@ -32,6 +32,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.30  1997/08/04 23:37:20  jhill
+ * added beacon anomaly flag init/allow ip 255.255.255.255
+ *
  * Revision 1.28  1997/06/13 09:14:29  jhill
  * connect/search proto changes
  *
@@ -306,8 +309,9 @@ int local_addr (SOCKET s, struct sockaddr_in *plcladdr)
  * 	LOCK should be applied here for (pList)
  * 	(this is also called from the server)
  */
-void caDiscoverInterfaces(ELLLIST *pList, SOCKET socket, unsigned short port,
-	struct in_addr matchAddr)
+void epicsShareAPI caDiscoverInterfaces
+	(ELLLIST *pList, SOCKET socket, unsigned short port, 
+		struct in_addr matchAddr)
 {
 	struct in_addr bcast_addr;
 	caAddrNode	*pNode;
@@ -507,11 +511,16 @@ BOOL epicsShareAPI DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 		fprintf(stderr, "Process attached to ca.dll\n");
 #endif
 #endif
-		/* init. winsock */
+		/* 
+		 * init. winsock 
+		 * The winsock I & II docs dont completely agree on this
+		 */
 		if ((status = WSAStartup(MAKEWORD(2,0), &WsaData)) != 0) { 
-			WSACleanup();
-			fprintf(stderr,"Cant init winsock \n");
-			return FALSE;
+			if ((status = WSAStartup(MAKEWORD(1,0), &WsaData)) != 0) { 
+				fprintf(stderr,
+				"Unable to attach to winsock version 2.0 or lower\n");
+				return FALSE;
+			}
 		}
 					   /* setup multi-media timer */
 		if (timeGetDevCaps(&tc, sizeof(TIMECAPS)) != TIMERR_NOERROR) {

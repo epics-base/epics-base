@@ -332,11 +332,11 @@ LOCAL int req_server (void)
     status = bind ( IOC_sock, (struct sockaddr *) &serverAddr, sizeof ( serverAddr ) );
 	if ( status < 0 ) {
 		if ( SOCKERRNO == SOCK_EADDRINUSE ) {
-			//
-			// enable assignment of a default port
-			// (so the getsockname() call below will
-			// work correctly)
-			//
+			/*
+			 * enable assignment of a default port
+			 * (so the getsockname() call below will
+			 * work correctly)
+			 */
 			serverAddr.sin_port = ntohs (0);
 			status = bind ( IOC_sock, 
                 (struct sockaddr *) &serverAddr, sizeof ( serverAddr ) );

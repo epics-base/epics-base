@@ -418,9 +418,8 @@ struct selRecord *psel;
 			if(dbGetLink(&(psel->nvl.value.db_link),psel,DBR_USHORT,
 				&(psel->seln),&options,&nRequest)!=NULL) {
 				if (psel->nsev<VALID_ALARM) {
-					psel->stat = LINK_ALARM;
-					psel->sevr = VALID_ALARM;
-					return(0);
+					psel->nsta = LINK_ALARM;
+					psel->nsev = VALID_ALARM;
 				}
 				return(-1);
 			}

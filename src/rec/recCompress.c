@@ -161,8 +161,14 @@ static long process(paddr)
 		long		no_elements=pdbAddr->no_elements;
 		int			alg=pcompress->alg;
 
-		(void)dbGetLink(&pcompress->inp.value.db_link,pcompress,DBR_DOUBLE,pcompress->wptr,
-				&options,&no_elements);
+		if(dbGetLink(&pcompress->inp.value.db_link,pcompress,DBR_DOUBLE,pcompress->wptr,
+				&options,&no_elements)!=0){
+                                if(pcompress->nsev < VALID_ALARM) {
+                                        pcompress->nsev = VALID_ALARM;
+                                        pcompress->nsta = LINK_ALARM;
+                                }
+                        }
+
 		if(alg==AVERAGE) {
 			status = array_average(pcompress,pcompress->wptr,no_elements);
 		} else if(alg==CIRBUF) {

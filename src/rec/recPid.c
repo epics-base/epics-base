@@ -79,11 +79,11 @@ struct rset pidRSET={
 	cvt_dbaddr,
 	get_array_info,
 	put_array_info,
+	get_units,
+	get_precision,
 	get_enum_str,
 	get_enum_strs,
 	put_enum_str,
-	get_units,
-	get_precision,
 	get_graphic_double,
 	get_control_double,
 	get_alarm_double };
@@ -372,10 +372,10 @@ struct pidRecord     *ppid;
         if(dbGetLink(&(ppid->cvl.value.db_link),ppid,DBR_FLOAT,
 	&cval,&options,&nRequest)!=NULL) {
                 if (ppid->nsev<VALID_ALARM) {
-                        ppid->nsta = READ_ALARM;
+                        ppid->nsta = LINK_ALARM;
                         ppid->nsev = VALID_ALARM;
-                        return(0);
                 }
+                return(0);
         }
         /* fetch the setpoint */
         if(ppid->stpl.type == DB_LINK && ppid->smsl == CLOSED_LOOP){
@@ -384,17 +384,17 @@ struct pidRecord     *ppid;
         	if(dbGetLink(&(ppid->stpl.value.db_link),ppid,DBR_FLOAT,
 		&(ppid->val),&options,&nRequest)!=NULL) {
                 	if (ppid->nsev<VALID_ALARM) {
-                                ppid->stat = READ_ALARM;
-                                ppid->sevr = VALID_ALARM;
-                                return(0);
+                                ppid->nsta = LINK_ALARM;
+                                ppid->nsev = VALID_ALARM;
                         }
+                        return(0);
                 } else ppid->udf=FALSE;
         }
 	val = ppid->val;
 	if (ppid->udf == TRUE ) {
                 if (ppid->nsev<VALID_ALARM) {
-                         ppid->stat = UDF_ALARM;
-                         ppid->sevr = VALID_ALARM;
+                         ppid->nsta = UDF_ALARM;
+                         ppid->nsev = VALID_ALARM;
                 }
                 return(0);
 	}

@@ -132,6 +132,11 @@ void write_timer();
 static long init_record(ptimer)
     struct timerRecord	*ptimer;
 {
+    /* get the delay initial value if torg is a constant*/
+    if (ptimer->torg.type == CONSTANT ){
+            ptimer->trdl = ptimer->torg.value.value;
+    }
+
 
     /* read to maintain time pulses over a restart */
     read_timer(ptimer);
@@ -281,8 +286,14 @@ struct timerRecord	*ptimer;
 		nRequest=1;
 		status = dbGetLink(&(ptimer->torg.value.db_link),ptimer,DBR_FLOAT,
                 &(ptimer->trdl),&options,&nRequest);
-		if(status!=0) return;
-	}
+                if(status!=0){
+                       if(ptimer->nsev < VALID_ALARM) {
+                               ptimer->nsev = VALID_ALARM;
+                               ptimer->nsta = LINK_ALARM;
+                       }
+                       return;
+                }
+        }
 	if (ptimer->out.type != VME_IO) {
 		if(ptimer->nsev<VALID_ALARM) {
 			ptimer->nsta = WRITE_ALARM;

@@ -104,8 +104,13 @@ static long read_wf(pwf)
     case (DB_LINK) :
 	options=0;
 	nRequest=pwf->nelm;
-	(void)dbGetLink(&(pwf->inp.value.db_link),pwf,pwf->ftvl,
-		pwf->bptr,&options,&nRequest);
+	if(dbGetLink(&(pwf->inp.value.db_link),pwf,pwf->ftvl,
+		pwf->bptr,&options,&nRequest)!=0){
+                       if(pwf->nsev < VALID_ALARM) {
+                               pwf->nsev = VALID_ALARM;
+                               pwf->nsta = LINK_ALARM;
+                       }
+                }
 	pwf->nord = nRequest;
 	break;
     case (CA_LINK) :

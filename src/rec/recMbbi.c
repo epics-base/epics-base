@@ -310,6 +310,13 @@ static void alarm(pmbbi)
 	unsigned short *severities;
 	unsigned short	val=pmbbi->val;
 
+        /* check for udf alarm */
+        if(pmbbi->udf == TRUE ){
+                if (pmbbi->nsev<VALID_ALARM){
+                        pmbbi->nsta = UDF_ALARM;
+                        pmbbi->nsev = VALID_ALARM;
+                }
+        }
 
         /* check for  state alarm */
         /* unknown state */

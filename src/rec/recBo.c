@@ -308,6 +308,13 @@ static void alarm(pbo)
 {
 	unsigned short val = pbo->val;
 
+        /* check for udf alarm */
+        if(pbo->udf == TRUE ){
+                if (pbo->nsev<VALID_ALARM){
+                        pbo->nsta = UDF_ALARM;
+                        pbo->nsev = VALID_ALARM;
+                }
+        }
 
         /* check for  state alarm */
         if (val == 0){

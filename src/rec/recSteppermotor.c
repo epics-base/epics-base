@@ -145,6 +145,12 @@ static long init_record(psm)
     struct steppermotorRecord	*psm;
 {
 
+    /* get the initial value if dol is a constant*/
+    if (psm->dol.type == CONSTANT ){
+            psm->udf = FALSE;
+            psm->val = psm->dol.value.value;
+    }
+
     init_sm(psm);
     return(0);
 }
@@ -663,7 +669,7 @@ struct steppermotorRecord	*psm;
 
 		if(dbGetLink(&(psm->dol.value.db_link),psm,DBR_FLOAT,&(psm->val),&options,&nRequest)){
 			if (psm->nsev < VALID_ALARM) {
-				psm->nsta = READ_ALARM;
+				psm->nsta = LINK_ALARM;
 				psm->nsev = VALID_ALARM;
 			}
 			return;

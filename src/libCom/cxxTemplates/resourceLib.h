@@ -523,7 +523,9 @@ bool resTable<T,ID>::setTableSizePrivate ( unsigned logBaseTwoTableSize )
     }
 
     const unsigned newTableSize = 1 << logBaseTwoTableSize;
-    const unsigned oldTableSize = this->pTable ? 1 << this->logBaseTwoTableSize : 0;
+#   if ! defined (__GNUC__) || __GNUC__ > 2 || ( __GNUC__ == 2 && __GNUC_MINOR__ >= 92 )
+        const unsigned oldTableSize = this->pTable ? 1 << this->logBaseTwoTableSize : 0;
+#   endif
     const unsigned oldTableOccupiedSize = this->tableSize ();
 
     tsSLList<T> * pNewTable = ( tsSLList<T> * ) 

@@ -1,0 +1,22 @@
+# CONFIG.solaris-sparc-gnu.solaris-sparc-gnu
+#
+# $Id$
+# This file is maintained by the build community.
+#
+# Definitions for solaris-sparc gnu compiler host - solaris-sparc gnu compiler target builds
+# Sites may override these definitions in CONFIG_SITE.solaris-sparc-gnu.solaris-sparc-gnu
+#-------------------------------------------------------
+
+# Include definitions common to all Unix target archs
+include $(CONFIG)/os/CONFIG.Common.UnixCommon
+
+# Include common gnu compiler definitions
+include $(CONFIG)/CONFIG.gnuCommon
+
+GNU_DIR = /opt/gnu
+
+CC = $(GNU_BIN)/gcc
+CCC = $(GNU_BIN)/g++
+AR = ar -rc
+RANLIB=
+

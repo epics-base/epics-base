@@ -1,0 +1,34 @@
+# CONFIG.Common.linux-x86
+#
+# $Id$
+# This file is maintained by the build community.
+#
+# Definitions for linux-x86 target builds
+# Sites may override these definitions in CONFIG_SITE.Common.linux-x86
+#-------------------------------------------------------
+
+# Include definitions common to all Unix targets
+include $(CONFIG)/os/CONFIG.Common.UnixCommon
+
+OS_CLASS = Linux
+ARCH_CLASS = x86
+
+CODE_CPPFLAGS = -D_REENTRANT
+
+POSIX_CPPFLAGS_YES = -D_POSIX_C_SOURCE=199506L -D_POSIX_THREADS
+POSIX_CPPFLAGS_NO =
+POSIX_LDLIBS_YES = -lpthread
+POSIX_LDLIBS_NO =
+
+# -D_BSD_SOURCE for gethostname() in unistd.h as needed by cacChannelIO.cpp.
+ARCH_DEP_CPPFLAGS += -D_BSD_SOURCE
+ARCH_DEP_CPPFLAGS += -D_X86_ -Dlinux
+ARCH_DEP_LDFLAGS =
+ARCH_DEP_LDLIBS = -lreadline -lcurses -lrt
+
+ifdef CROSS
+   GNU_TARGET=i586-pc-linux-gnu
+   CMPLR_SUFFIX=
+   CMPLR_PREFIX=$(addsuffix -,$(GNU_TARGET))
+endif
+

@@ -1,0 +1,38 @@
+# CONFIG.Common.solaris-x86
+#
+# $Id$
+# This file is maintained by the build community.
+#
+# Definitions for solaris-x86 target archs
+# Sites may override these definitions in CONFIG_SITE.Common.solaris-x86
+#-------------------------------------------------------
+
+# Include definitions common to all Unix target archs
+include $(CONFIG)/os/CONFIG.Common.UnixCommon
+
+OS_CLASS = solaris
+ARCH_CLASS = x86
+
+CODE_CPPFLAGS = -D__EXTENSIONS__
+
+# This is the only combination of posix threads flags that works on solaris-sparc with solaris 6
+#POSIX_CPPFLAGS_YES = -D_REENTRANT -D_POSIX_C_SOURCE=199506L
+#POSIX_LDLIBS_YES += -lposix4 -lpthread -lthread
+
+# This set of flags is recommended by sun for posix threads and works with solaris 8
+POSIX_CPPFLAGS_YES = -D_POSIX_C_SOURCE=199506L
+POSIX_LDLIBS_YES += -lposix4 -lpthread
+
+POSIX_CPPFLAGS_NO =
+POSIX_LDLIBS_NO +=
+
+ARCH_DEP_CPPFLAGS = -DSOLARIS -D_X86_
+# socket and nsl needed by libca.a
+ARCH_DEP_LDLIBS += -lsocket -lnsl
+
+ifdef CROSS
+   GNU_TARGET=x86-sun-solaris2
+   CMPLR_SUFFIX=
+   CMPLR_PREFIX=$(addsuffix -,$(GNU_TARGET))
+endif
+

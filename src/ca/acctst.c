@@ -2217,8 +2217,6 @@ void monitorUpdateTest ( chid chan, unsigned interestLevel )
 void verifyReasonableBeaconPeriod ( chid chan )
 {
     double beaconPeriod;
-    unsigned attempts = 0u;
-    int status;
 
     assert ( ca_get_ioc_connection_count () > 0 );
 

@@ -1,5 +1,5 @@
 /* recGbl.c - Global record processing routines */
-/* share/src/db $Id$ */
+/* share/src/db @(#)recGbl.c	1.15     8/29/92 */
 
 /*
  *      Author:          Marty Kraimer
@@ -34,6 +34,7 @@
  * .04  07-16-92        jba     changes made to remove compile warning msgs
  * .05  07-21-92        jba     Added recGblGetAlarmDouble
  * .06  08-07-92        jba     Added recGblGetLinkValue, recGblPutLinkValue
+ * .07  08-07-92        jba     Added RTN_SUCCESS check for status
  */
 
 #include	<vxWorks.h>
@@ -302,16 +303,17 @@ long recGblGetLinkValue(
 
 	switch (plink->type){
 		case(CONSTANT):
+			*pnRequest=0;
 			break;
 		case(DB_LINK):
 			status=dbGetLink(&(plink->value.db_link),
 				precord,dbrType,pdest,poptions,pnRequest);
-			if(status)
+			if(!RTN_SUCCESS(status))
 				recGblSetSevr(precord,LINK_ALARM,INVALID_ALARM);
 			break;
 		case(CA_LINK):
 			status=dbCaGetLink(plink);
-			if(status)
+			if(!RTN_SUCCESS(status))
 				recGblSetSevr(precord,LINK_ALARM,INVALID_ALARM);
 			break;
 		default:
@@ -338,12 +340,12 @@ long recGblPutLinkValue(
 		case(DB_LINK):
 			status=dbPutLink(&(plink->value.db_link),
 				precord,dbrType,psource,*pnRequest);
-			if(status)
+			if(!RTN_SUCCESS(status))
 				recGblSetSevr(precord,LINK_ALARM,INVALID_ALARM);
 			break;
 		case(CA_LINK):
 			status = dbCaPutLink(plink, &options, pnRequest);
-			if(status)
+			if(!RTN_SUCCESS(status))
 				recGblSetSevr(precord,LINK_ALARM,INVALID_ALARM);
 			break;
 		default:

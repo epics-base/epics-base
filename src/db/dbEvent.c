@@ -558,10 +558,14 @@ register struct event_block		*pevent;
 
   	/* add to task local event que */
   	if(ev_que->evque[putix] == EVENTQEMPTY){
+		short sevr;
+
     		pevent->npend++;
     		ev_que->evque[putix] = pevent;
 		ev_que->valque[putix].stat = precord->stat;
-		ev_que->valque[putix].sevr = precord->sevr;
+		sevr = precord->sevr;
+		if (sevr >1) sevr--;		/* equivalent to adjust_severity() in db_access.c */
+		ev_que->valque[putix].sevr = sevr;
 		ev_que->valque[putix].time = precord->time;
 		/*
 		 * use bcopy to avoid a bus error on
@@ -603,6 +607,8 @@ register unsigned int		select;
   	register struct event_que	*ev_que;
  	register unsigned int		putix;
 
+	if (precord->mlis.count == 0) return;		/* no monitors set */
+
   	LOCKREC(precord);
   
   	for(	event = (struct event_block *) precord->mlis.node.next;
@@ -628,11 +634,14 @@ register unsigned int		select;
 
       			/* add to task local event que */
       			if(ev_que->evque[putix] == EVENTQEMPTY){
+				short sevr;
 
 				event->npend++;
         			ev_que->evque[putix] = event;
 				ev_que->valque[putix].stat = precord->stat;
-				ev_que->valque[putix].sevr = precord->sevr;
+				sevr = precord->sevr;
+				if (sevr >1) sevr--;		/* equivalent to adjust_severity() in db_access.c */
+				ev_que->valque[putix].sevr = sevr;
 				ev_que->valque[putix].time = precord->time;
 
 				/*

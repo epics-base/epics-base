@@ -20,6 +20,9 @@
 *	12/14/90	ges	add events at gsd_sync_read instead of gsd_sync_init
 *				return most recent chan data if chan failed to
 *				  produce data with the associated time stamp
+*	09/03/91	joh	fixed includes for V5 vxWorks
+*
+*
 * Compile:
 *   for Unix: 
 *	compile:
@@ -77,16 +80,31 @@
 ***************************************************
 */
 
-#define	VOID	void
-#define logMsg	printf
-#include	<stdio.h>
-#include	<db_access.h>
+#if defined(UNIX)
+#	define logMsg	printf
+#	include	<types.h>
+#	include	<stdio.h>
+#	include	<sys/time.h>
+#	include	<time.h>
+#elif defined(vxWorks)
+#	define abort(A) 	taskSuspend(taskIdSelf())
+#ifdef V5vxWorks
+#	include	<Vxtypes.h>
+#else
+#	include	<types.h>
+#endif
+#	if 0 /* needed ?? */
+#		include	<stdioLib.h>
+#		include	<sys/time.h>
+#		include	<time.h>
+#	endif
+#else
+	@@@@ dont compile in this case @@@@
+#endif
+
 #include	<cadef.h>
-#include	<time.h>
-#include	<sys/time.h>
-#include	<types.h>
-#include	<tsDefs.h>
 #include	<gsd_sync_defs.h>
+
 
 
 /*

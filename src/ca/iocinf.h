@@ -13,6 +13,9 @@
 /*	.02 01xx90 joh	fd_set in the UNIX version only			*/
 /*	.03 060691 joh	Rearanged buffer struct for SPARC port		*/
 /*	.04 072391 joh	new lock prevents event preemption on vxWorks	*/
+/*	.05 082791 joh	declaration of ca_request_event()		*/
+/*	.06 082791 joh	added send message in progress flag		*/
+/*	.07 091691 joh	moved channel_state enum to cadef.h for export	*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -40,24 +43,27 @@
 
 
 #ifndef INClstLibh  
-#include <lstLib.h> 
+#	include <lstLib.h> 
 #endif
 
 #ifndef _TYPES_
-#  include	<types.h>
+#  	include	<types.h>
 #endif
 
 #ifndef __IN_HEADER__
-#include	<in.h>
+#	include	<in.h>
 #endif
               
 #ifdef VMS
-# include	<ssdef>
+# 	include	<ssdef>
 #endif
 
 #ifndef INCos_depenh
 #	include	<os_depen.h>
 #endif
+
+#define	DONT_COMPILE	@@@@ dont compile in this case @@@@
+
 
 
 /* throw out requests prior to last ECA_TIMEOUT from ca_pend */
@@ -79,8 +85,6 @@
     }\
   UNLOCK;\
 }
-
-enum channel_state{cs_never_conn, cs_prev_conn, cs_conn, closed};
 
 #define SETPENDRECV	{pndrecvcnt++;}
 #define CLRPENDRECV	{if(--pndrecvcnt<1){IODONESUB; POST_IO_EV;}}
@@ -127,24 +131,26 @@ typedef unsigned long	ca_time;
 #define fd_register_func\
 			(ca_static->ca_fd_register_func)
 #define fd_register_arg	(ca_static->ca_fd_register_arg)
-#ifdef UNIX
-#define readch		(ca_static->ca_readch)
-#define writech		(ca_static->ca_writech)
-#define execch		(ca_static->ca_execch)
-#endif
 #define post_msg_active	(ca_static->ca_post_msg_active)
-#ifdef vxWorks
-#define io_done_flag	(ca_static->ca_io_done_flag)
-#define evuser		(ca_static->ca_evuser)
-#define client_lock	(ca_static->ca_client_lock)
-#define event_lock	(ca_static->ca_event_lock)
-#define local_chidlist	(ca_static->ca_local_chidlist)
-#define dbfree_ev_list	(ca_static->ca_dbfree_ev_list)
-#define lcl_buff_list	(ca_static->ca_lcl_buff_list)
-#endif
-#ifdef VMS
-#define io_done_flag	(ca_static->ca_io_done_flag)
-#define peek_ast_buf	(ca_static->ca_peek_ast_buf)
+#define send_msg_active	(ca_static->ca_send_msg_active)
+
+#if defined(UNIX)
+#	define readch		(ca_static->ca_readch)
+#	define writech		(ca_static->ca_writech)
+#	define execch		(ca_static->ca_execch)
+#elif defined(vxWorks)
+#	define io_done_sem	(ca_static->ca_io_done_sem)
+#	define evuser		(ca_static->ca_evuser)
+#	define client_lock	(ca_static->ca_client_lock)
+#	define event_lock	(ca_static->ca_event_lock)
+#	define local_chidlist	(ca_static->ca_local_chidlist)
+#	define dbfree_ev_list	(ca_static->ca_dbfree_ev_list)
+#	define lcl_buff_list	(ca_static->ca_lcl_buff_list)
+#elif defined(VMS)
+#	define io_done_flag	(ca_static->ca_io_done_flag)
+#	define peek_ast_buf	(ca_static->ca_peek_ast_buf)
+#else
+	DONT_COMPILE
 #endif
 
 
@@ -163,15 +169,16 @@ struct  ca_static{
   LIST			ca_free_event_list;
   LIST			ca_pend_read_list;
   short			ca_repeater_contacted;
-#ifdef UNIX
+  unsigned short	ca_send_msg_active;
+  short			ca_cast_available;
+  struct in_addr	ca_castaddr;
+#if defined(UNIX)
   fd_set                ca_readch;  
-#endif
-#ifdef VMS
+#wlif defined(VMS)
   int			ca_io_done_flag;
   char			ca_peek_ast_buf;
-#endif
-#ifdef vxWorks
-  int			ca_io_done_flag;
+#elif defined(vxWorks)
+  SEM_ID		ca_io_done_sem;
   void			*ca_evuser;
   FAST_LOCK		ca_client_lock; 
   FAST_LOCK		ca_event_lock; /* dont allow events to preempt */
@@ -179,6 +186,8 @@ struct  ca_static{
   LIST			ca_local_chidlist;
   LIST			ca_dbfree_ev_list;
   LIST			ca_lcl_buff_list;
+#else
+  DONT_COMPILE
 #endif
   struct ioc_in_use{
     unsigned		contiguous_msg_count;
@@ -197,12 +206,14 @@ struct  ca_static{
     ca_time		next_retry;
     ca_time		retry_delay;
 #define MAXCONNTRIES 3
-#ifdef VMS	/* for qio ASTs */
+#if defined(VMS)	/* for qio ASTs */
     struct sockaddr_in	recvfrom;
     struct iosb		iosb;
-#endif
-#ifdef vxWorks
+#elif defined(vxWorks)
     int			recv_tid;
+#elif defined(UNIX)
+#else
+    DONT_COMPILE
 #endif
   }			ca_iiu[MAXIIU];
 };
@@ -234,7 +245,8 @@ struct ca_static *ca_static;
  */
 void 		cac_send_msg();
 void 		build_msg();
-struct in_addr  broadcast_addr();
+int		broadcast_addr();
+int		local_addr();
 void		manage_conn();
 void 		noop_msg();
 void 		ca_busy_message();
@@ -246,4 +258,5 @@ void		close_ioc();
 void		recv_msg_select();
 void		mark_server_available();
 void		issue_claim_channel();
+void		ca_request_event();
 #endif

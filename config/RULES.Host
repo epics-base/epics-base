@@ -304,6 +304,11 @@ ifdef LIBRARY
 ifdef LIBOBJS
 LIBTARGETS += $(LIBNAME) $(INSTALL_LIBS)
 
+ifneq ($(words $(DLL_LIBS)), $(words $(DLL_DEPLIBS)))
+#  If invalid library names, don't make DLL file
+SHARED_LIBRARIES = NO
+endif
+
 #  check if shared libraries requested
 ifeq ($(strip $(SHARED_LIBRARIES)),YES)
 

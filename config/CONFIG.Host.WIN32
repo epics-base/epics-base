@@ -126,7 +126,7 @@ CCC_SFLAGS_NO= /MD$(VISC_SFLAGS_DEBUG) $(VISC_EPICS_DLL)
 #
 CCC_SLIBS_YES=
 CCC_SLIBS_NO=
- 
+
 LINK_OPT_FLAGS_YES = /WARN:3 /incremental:no /opt:ref\
 /release $(PROD_VERSION:%=/version:%)
 LINK_OPT_FLAGS_NO = /WARN:3 /debug 
@@ -229,10 +229,10 @@ OBJECT_LIB_EXT_NO = .lib # object library extension for dynamic build
 OBJECT_LIB_EXT = $(OBJECT_LIB_EXT_$(STATIC_BUILD))
 COND_PROD_DEPLIBS = $(foreach prod,$(PROD), $(foreach lib, $($(basename $(prod))_LIBS),\
  $(firstword $($(lib)_DIR) $(EPICS_BASE_LIB))/$(lib)$(OBJECT_LIB_EXT)))
-PRODNAME_DEPLIBS = $(foreach lib,$(PRODNAME_LIBS),$(firstword $($(lib)_DIR) $(EPICS_BASE_LIB))/$(lib)$(OBJECT_LIB_EXT))
-PROD_DEPLIBS = $(foreach lib,$(PROD_LIBS),$(firstword $($(lib)_DIR) $(EPICS_BASE_LIB))/$(lib)$(OBJECT_LIB_EXT))
+PRODNAME_DEPLIBS = $(foreach lib,$(PRODNAME_LIBS),$(firstword $(wildcard $($(lib)_DIR)/$(lib).lib $($(lib)_DIR)/$(lib)Obj.lib $(EPICS_BASE_LIB)/$(lib).lib $(EPICS_BASE_LIB)/$(lib)Obj.lib ) $(filter $(LIBRARY)$(OBJECT_LIB_EXT), $(lib)$(OBJECT_LIB_EXT)) ))
+PROD_DEPLIBS = $(foreach lib,$(PROD_LIBS),$(firstword $(wildcard $($(lib)_DIR)/$(lib).lib $($(lib)_DIR)/$(lib)Obj.lib $(EPICS_BASE_LIB)/$(lib).lib $(EPICS_BASE_LIB)/$(lib)Obj.lib ) $(filter $(LIBRARY)$(OBJECT_LIB_EXT), $(lib)$(OBJECT_LIB_EXT)) )) 
 
-USR_DEPLIBS = $(foreach lib,$(USR_LIBS),$(firstword $($(lib)_DIR) $(EPICS_BASE_LIB))/$(lib)$(OBJECT_LIB_EXT))
+USR_DEPLIBS = $(foreach lib,$(USR_LIBS),$(firstword $(wildcard $($(lib)_DIR)/$(lib).lib $($(lib)_DIR)/$(lib)Obj.lib $(EPICS_BASE_LIB)/$(lib).lib $(EPICS_BASE_LIB)/$(lib)Obj.lib ) $(filter $(LIBRARY)$(OBJECT_LIB_EXT), $(lib)$(OBJECT_LIB_EXT)) )) 
 
 # by default the libraries used when linking the DLL are just
 # PROD_LIBS ans SYS_PROD_LIBS minus the DLL name
@@ -241,7 +241,7 @@ DLL_LIBS = $(subst $(LIBRARY),, $(PROD_LIBS))
 #
 #	EPICS libs that we need to link the DLL with
 #	(it isnt necessary to rebuild the dll if these change)
-DLL_DEPLIBS = $(foreach lib,$(DLL_LIBS),$(firstword $($(lib)_DIR) $(EPICS_BASE_LIB))/$(lib).lib)
+DLL_DEPLIBS = $(foreach lib,$(DLL_LIBS),$(firstword $(wildcard $($(lib)_DIR)/$(lib).lib $($(lib)_DIR)/$(lib)Obj.lib $(EPICS_BASE_LIB)/$(lib).lib $(EPICS_BASE_LIB)/$(lib)Obj.lib) $(filter $(LIBRARY)$(OBJECT_LIB_EXT), $(lib)$(OBJECT_LIB_EXT)) ))
 
 USR_LDLIBS = $(PRODNAME_DEPLIBS) $(PROD_DEPLIBS) $(USR_DEPLIBS) $(SYS_PROD_LIBS:%=%.lib)
 

@@ -118,6 +118,7 @@ LOCAL void asCaTask(void)
     ASG		*pasg;
     ASGINP	*pasginp;
     CAPVT	*pcapvt;
+    int		status;
 
     taskwdInsert(taskIdSelf(),NULL,NULL);
     SEVCHK(ca_task_initialize(),"ca_task_initialize");
@@ -133,12 +134,20 @@ LOCAL void asCaTask(void)
 	    while(pasginp) {
 		pasg->inpBad |= (1<<pasginp->inpIndex);
 		pcapvt = pasginp->capvt = asCalloc(1,sizeof(CAPVT));
-		/*Note calls connectCallback immediately called for local Pvs*/
-		SEVCHK(ca_search_and_connect(pasginp->inp,&pcapvt->chid,
-		    connectCallback,pasginp),"ca_build_and_connect");
-		/*Note calls eventCallback immediately called for local Pvs*/
-		SEVCHK(ca_add_event(DBR_STS_DOUBLE,pcapvt->chid,
-		    eventCallback,pasginp,0),"ca_add_event");
+		/*Note calls connectCallback immediately for local Pvs*/
+		status = ca_search_and_connect(pasginp->inp,&pcapvt->chid,
+		    connectCallback,pasginp);
+		if(status!=ECA_NORMAL) {
+		    epicsPrintf("asCa ca_search_and_connect error %s\n",
+			ca_message(status));
+		}
+		/*Note calls eventCallback immediately  for local Pvs*/
+		status = ca_add_event(DBR_STS_DOUBLE,pcapvt->chid,
+		    eventCallback,pasginp,0);
+		if(status!=ECA_NORMAL) {
+		    epicsPrintf("asCa ca_add_event error %s\n",
+			ca_message(status));
+		}
 		pasginp = (ASGINP *)ellNext((ELLNODE *)pasginp);
 	    }
 	    pasg = (ASG *)ellNext((ELLNODE *)pasg);
@@ -156,7 +165,11 @@ LOCAL void asCaTask(void)
 	    pasginp = (ASGINP *)ellFirst(&pasg->inpList);
 	    while(pasginp) {
 		pcapvt = (CAPVT *)pasginp->capvt;
-		SEVCHK(ca_clear_channel(pcapvt->chid),"as ca_clear_channel");
+		status = ca_clear_channel(pcapvt->chid);
+		if(status!=ECA_NORMAL) {
+		    epicsPrintf("asCa ca_clear_channel error %s\n",
+			ca_message(status));
+		}
 		free(pasginp->capvt);
 		pasginp->capvt = 0;
 		pasginp = (ASGINP *)ellNext((ELLNODE *)pasginp);

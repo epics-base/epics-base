@@ -228,11 +228,11 @@ void casPVI::updateEnumStringTable ()
         }
     }
     else if (pTmp->dimension()==1) {
-        gddStatus status;
+        gddStatus gdd_status;
         aitIndex index, first, count;
         
-        status = pTmp->getBound (0, first, count);
-        assert (status == 0);
+        gdd_status = pTmp->getBound (0, first, count);
+        assert (gdd_status == 0);
 
         //
         // preallocate the correct amount

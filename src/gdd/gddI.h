@@ -142,17 +142,15 @@ inline gddStatus gdd::reference(void) const
     {
         fprintf(stderr,"reference of gdd marked \"no-referencing\" ignored!!\n");
         gddAutoPrint("gdd::reference()",gddErrorNotAllowed);
-        rc=gddErrorNotAllowed;
+        rc = gddErrorNotAllowed;
+    }
+    else if ( this->ref_cnt < 0xffffffff ) {
+        this->ref_cnt++; // X aCC 818
     }
     else {
-        if ( this->ref_cnt >= 0xffffffff ) {
-            fprintf(stderr,"gdd reference count overflow!!\n");
-            gddAutoPrint("gdd::reference()",gddErrorOverflow);
-            rc=gddErrorOverflow;
-        }
-        else {
-            this->ref_cnt++; // X aCC 818
-        }
+        fprintf(stderr,"gdd reference count overflow!!\n");
+        gddAutoPrint("gdd::reference()",gddErrorOverflow);
+        rc=gddErrorOverflow;
     }
     return rc;
 }
@@ -161,23 +159,27 @@ inline gddStatus gdd::unreference(void) const
 {
 	int rc=0;
 
-	if(ref_cnt==0u)
+    if ( ref_cnt > 1u ) {
+        ref_cnt--;
+    }
+	else if ( ref_cnt == 0u )
 	{
 		fprintf(stderr,"gdd reference count underflow!!\n");
 		gddAutoPrint("gdd::unreference()",gddErrorUnderflow);
 		rc=gddErrorUnderflow;
 	}
-	else if(--ref_cnt<=0u) // X aCC 818
-	{
-		if(isManaged())
-		{
+	else {
+		if ( isManaged() ) {
 			// managed dd always destroys the entire thing
-			ref_cnt=1;
 			if(destruct) destruct->destroy((void *)this);
 			destruct=NULL;
 		}
-		else if(!isFlat())
+        else if(!isFlat()) {
+            // hopefully catch ref/unref missmatches while
+            // gdd is on free list
+            ref_cnt = 0; 
 			delete this;
+        }
 	}
 	return rc;
 }

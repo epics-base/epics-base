@@ -23,14 +23,6 @@
 #define NULL            0
 #endif
 
-#ifndef FALSE
-#define FALSE           0
-#endif
-
-#ifndef TRUE
-#define TRUE            1
-#endif
-
 #ifndef NELEMENTS
 #define NELEMENTS(array)    (sizeof(array)/sizeof((array)[0]))
 #endif

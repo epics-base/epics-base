@@ -21,24 +21,18 @@
 //
 // smartGDDPointer::set()
 //
-void smartConstGDDPointer::set (const gdd *pNewValue) 
+void smartConstGDDPointer::set ( const gdd * pNewValue ) 
 {
-	int gddStatus;
-	//
-	// dont change the ref count (and
-	// potentially unref a gdd that we are 
-	// still using if the pointer isnt changing
-	//
-	if ( this->pConstValue == pNewValue ) {
-		return;
-	}
-	if ( this->pConstValue != NULL ) {
-		gddStatus = this->pConstValue->unreference();
-		assert ( ! gddStatus );
-	}
-	this->pConstValue = pNewValue;
-	if ( this->pConstValue != NULL ) {
-		gddStatus = this->pConstValue->reference();
-		assert ( ! gddStatus );
-	}
+    if ( pNewValue != this->pConstValue ) {
+	    int gddStatus;
+	    if ( pNewValue != NULL ) {
+		    gddStatus = pNewValue->reference();
+		    assert ( ! gddStatus );
+	    }
+	    if ( this->pConstValue != NULL ) {
+		    gddStatus = this->pConstValue->unreference();
+		    assert ( ! gddStatus );
+	    }
+	    this->pConstValue = pNewValue;
+    }
 }

@@ -25,6 +25,7 @@ include $(EPICS_BASE)/config/CONFIG.$(T_A)
 #  User specific definitions
 #
 -include $(HOME)/.EPICS_CONFIG
+-include $(HOME)/.EPICS_CONFIG.$(HOST_ARCH)
 
 #  All EPICS options other than BUILD_TYPE
 #   may be overridden here.

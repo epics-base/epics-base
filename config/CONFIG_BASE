@@ -30,7 +30,9 @@ DIRS = \
     drv\
     dev\
     devOpt\
-    iocCore
+    iocCore\
+    gdd\
+    cas
 
 
 EPICS_BASE = $(TOP)
@@ -39,6 +41,15 @@ EPICS_BASE = $(TOP)
 include $(TOP)/config/CONFIG
 
 EPICS_BASE = $(INSTALL_LOCATION)
+
+BUILD_ARCHS=$(HOST_ARCH)
+ifndef CROSS_COMPILER_HOST_ARCHS
+     BUILD_ARCHS+=$(CROSS_COMPILER_TARGET_ARCHS)
+else
+     ifeq ($(HOST_ARCH),$(findstring $(HOST_ARCH),$(CROSS_COMPILER_HOST_ARCHS)))
+          BUILD_ARCHS+=$(CROSS_COMPILER_TARGET_ARCHS)
+     endif
+endif
 
 #
 # this speeds up the build by turning off implicit rules search

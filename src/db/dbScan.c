@@ -385,7 +385,7 @@ periodicScanTask()
 
 			/* process this record */
 			dbScanLock(precord);
-			if(!(precord->pact))dbProcess(paddr);
+			dbProcess(paddr);
 			dbScanUnlock(precord);
 
 			/* get the pointer to the next record */
@@ -499,7 +499,7 @@ ioEventTask()
 
 			/* process this record */
 			dbScanLock(precord);
-			if(!(precord->pact))dbProcess(paddr);
+			dbProcess(paddr);
 			dbScanUnlock(precord);
 
 			pelement++;
@@ -561,7 +561,7 @@ eventTask()
 
 			/* process this record */
 			dbScanLock(precord);
-			if(!(precord->pact))dbProcess(paddr);
+			dbProcess(paddr);
 			dbScanUnlock(precord);
 			
 			pelement++;

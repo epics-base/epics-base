@@ -6,60 +6,234 @@
 #include "epicsThread.h"
 #include "epicsSignal.h"
 
-static SOCKET joltTestSock;
-static bool blockingSockWakeup = false;
+static SOCKET joltTestServerSock;
+static SOCKET joltTestServerCircuitSock;
+static SOCKET joltTestClientCircuitSock;
+static bool blockingClientWakeup = false;
+static bool blockingServerWakeup = false;
 
-void socketJoltTest ( void * )
+union address {
+    struct sockaddr_in ia; 
+    struct sockaddr sa;
+};
+
+class circuit {
+public:
+    circuit ( SOCKET );
+    void recvTest ();
+    void shutdown ();
+    void signal ();
+    void close ();
+    bool recvWakeupDetected () const;
+    bool sendWakeupDetected () const;
+    virtual const char * pName () = 0;
+protected:
+    SOCKET sock;
+    epicsThreadId id;
+    bool recvWakeup;
+    bool sendWakeup;
+};
+
+class serverCircuit : public circuit {
+public:
+    serverCircuit ( SOCKET );
+private:
+    const char * pName ();
+};
+
+class clientCircuit : public circuit {
+public:
+    clientCircuit ( const address & );
+private:
+    const char * pName ();
+};
+
+class server {
+public:
+    server ( const address & );
+    void daemon ();
+protected:
+    SOCKET sock;
+    epicsThreadId id;
+    bool exit;
+};
+
+circuit::circuit ( SOCKET sockIn ) :
+    sock ( sockIn ), 
+    id ( 0 ),
+    recvWakeup ( false ), 
+    sendWakeup ( false )
+{
+    assert ( this->sock != INVALID_SOCKET );
+}
+
+bool circuit::recvWakeupDetected () const
+{
+    return this->recvWakeup;
+}
+
+bool circuit::sendWakeupDetected () const
+{
+    return this->sendWakeup;
+}
+
+void circuit::shutdown ()
+{
+    int status = ::shutdown ( this->sock, SHUT_RDWR );
+    assert ( status == 0 );
+}
+
+void circuit::signal ()
+{
+    epicsSignalRaiseSigAlarm ( this->id );
+}
+
+void circuit::close ()
+{
+    epicsSocketDestroy ( this->sock );
+}
+
+void circuit::recvTest ()
 {
     epicsSignalInstallSigAlarmIgnore ();
     char buf [1];
-    recv ( joltTestSock, buf, (int) sizeof ( buf ), 0 );
-    blockingSockWakeup = true;
+    while ( true ) {
+        int status = recv ( this->sock, 
+            buf, (int) sizeof ( buf ), 0 );
+        if ( status == 0 ) {
+            printf ( "%s: %s was disconnected\n",
+                __FILE__, this->pName () );
+            this->recvWakeup = true;
+            break;
+        }
+        else if ( status > 0 ) {
+            printf ( "%s: client received %i characters\n", 
+                __FILE__, status );
+        }
+        else {
+            char sockErrBuf[64];
+            epicsSocketConvertErrnoToString ( 
+                sockErrBuf, sizeof ( sockErrBuf ) );
+            printf ( "%s: %s socket recv() error was \"%s\"\n",
+                __FILE__, this->pName (), sockErrBuf );
+            this->recvWakeup = true;
+            break;
+        }
+    }
+}
+
+void socketRecvTest ( void * pParm )
+{
+    circuit * pCir = reinterpret_cast < circuit * > ( pParm );
+    pCir->recvTest ();
+}
+
+clientCircuit::clientCircuit ( const address & addrIn ) :
+    circuit ( epicsSocketCreate ( AF_INET, SOCK_STREAM, IPPROTO_TCP ) )
+{
+    int status = ::connect ( 
+        this->sock, & addrIn.sa, sizeof ( addrIn ) );
+    assert ( status == 0 );
+
+    circuit * pCir = this;
+    this->id = epicsThreadCreate ( 
+        "client circuit", epicsThreadPriorityMedium, 
+        epicsThreadGetStackSize(epicsThreadStackMedium), 
+        socketRecvTest, pCir );
+    assert ( this->id );
+}
+
+
+const char * clientCircuit::pName ()
+{
+    return "client circuit";
+}
+
+void serverDaemon ( void * pParam ) {
+    server * pSrv = reinterpret_cast < server * > ( pParam );
+    pSrv->daemon ();
+}
+
+server::server ( const address & addrIn ) :
+    sock ( epicsSocketCreate ( AF_INET, SOCK_STREAM, IPPROTO_TCP ) ),
+    id ( 0 ), exit ( false )
+{
+    assert ( this->sock != INVALID_SOCKET );
+
+    // setup server side
+    int status = bind ( this->sock, 
+        & addrIn.sa, sizeof ( addrIn ) );
+    assert ( status == 0 );
+    status = listen ( this->sock, 10 );
+    assert ( status == 0 );
+
+    this->id = epicsThreadCreate ( 
+        "server daemon", epicsThreadPriorityMedium, 
+        epicsThreadGetStackSize(epicsThreadStackMedium), 
+        serverDaemon, this );
+    assert ( this->id );
+}
+
+void server::daemon () 
+{
+    while ( ! this->exit ) {
+        // accept client side
+        address addr;
+        int addressSize = sizeof ( addr );
+        SOCKET ns = accept ( this->sock, 
+            & addr.sa, & addressSize );
+        assert ( ns != INVALID_SOCKET );
+        new serverCircuit ( ns );
+    }
+}
+
+serverCircuit::serverCircuit ( SOCKET sockIn ) :
+    circuit ( sockIn )
+{
+    circuit * pCir = this;
+    epicsThreadId id = epicsThreadCreate ( 
+        "server circuit", epicsThreadPriorityMedium, 
+        epicsThreadGetStackSize(epicsThreadStackMedium), 
+        socketRecvTest, pCir );
+    assert ( id );
+}
+
+const char * serverCircuit::pName ()
+{
+    return "server circuit";
 }
 
 void blockingSockTest ()
 {
-    joltTestSock = epicsSocketCreate ( AF_INET, SOCK_DGRAM, IPPROTO_UDP );
-    assert ( joltTestSock != INVALID_SOCKET );
+    address addr;
+    memset ( (char *) & addr, 0, sizeof ( addr ) );
+    addr.ia.sin_family = AF_INET;
+    addr.ia.sin_addr.s_addr = epicsHTON32 ( INADDR_LOOPBACK ); 
+    //addr.ia.sin_addr.s_addr = epicsHTON32 ( 0x80A5A07F ); 
+    addr.ia.sin_port = epicsHTON16 ( 5064 ); // CA
 
-    epicsUInt16 port = 5071;
-    union {
-        struct sockaddr_in ia; 
-        struct sockaddr sa;
-    } bd;
-    memset ( (char *) &bd, 0, sizeof ( bd ) );
-    bd.ia.sin_family = AF_INET;
-    bd.ia.sin_addr.s_addr = epicsHTON32 ( INADDR_ANY ); 
-    bd.ia.sin_port = epicsHTON16 ( port );   
-    int status = bind ( joltTestSock, &bd.sa, sizeof ( bd ) );
-    assert ( status == 0 );
-
-    blockingSockWakeup = false;
-    epicsThreadId id = epicsThreadCreate ( 
-        "Socket Jolt Test", epicsThreadPriorityMedium, 
-        epicsThreadGetStackSize(epicsThreadStackMedium), 
-        socketJoltTest, 0 );
+    server srv ( addr );
+    clientCircuit client ( addr );
 
     epicsThreadSleep ( 1.0 );
-    assert ( ! blockingSockWakeup );
+    assert ( ! blockingClientWakeup );
 
-    status = shutdown ( joltTestSock, SHUT_RDWR );
-    assert ( status == 0 );
+    client.shutdown ();
     epicsThreadSleep ( 1.0 );
     char * pStr = "esscimqi_?????";
-    if ( blockingSockWakeup ) {
+    if ( client.recvWakeupDetected () ) {
         pStr = "esscimqi_socketBothShutdownRequired";
     }
     else {
-        epicsSignalRaiseSigAlarm ( id );
+        client.signal ();
         epicsThreadSleep ( 1.0 );
-        if ( blockingSockWakeup ) {
+        if ( client.recvWakeupDetected () ) {
             pStr = "esscimqi_socketSigAlarmRequired";
         }
         else {
-            epicsSocketDestroy ( joltTestSock );
+            client.close ();
             epicsThreadSleep ( 1.0 );
-            if ( blockingSockWakeup ) {
+            if ( client.recvWakeupDetected () ) {
                 pStr = "esscimqi_socketCloseRequired";
             }
             else {
@@ -67,6 +241,7 @@ void blockingSockTest ()
             }
         }
     }
+
     printf ( "The local OS behaves like \"%s\".\n", pStr );
     pStr = "esscimqi_?????";
     switch ( epicsSocketSystemCallInterruptMechanismQuery() ) {

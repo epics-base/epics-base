@@ -32,6 +32,7 @@
 #   undef epicsExportSharedSymbols
 #endif
 
+#include "virtualCircuit.h"
 #include "tsFreeList.h"
 #include "epicsMemory.h"
 #include "cxxCompilerDependencies.h"

@@ -140,7 +140,7 @@ public:
     void * operator new ( size_t size, 
         tsFreeList < class tcpiiu, 32, epicsMutexNOOP >  & );
     epicsPlacementDeleteOperator (( void *, 
-        tsFreeList < class tcpiiu, 32, epicsMutexNOOP > & ));
+	tsFreeList < class tcpiiu, 32, epicsMutexNOOP > & ))
 
 private:
     hostNameCache hostNameCacheInstance;

@@ -21,7 +21,8 @@ int sysClkRateGet(void);
 
 semBinaryId semBinaryCreate(semInitialState initialState)
 {
-  return((semBinaryId)semBCreate(SEM_Q_FIFO,(semEmpty ? SEM_EMPTY : SEM_FULL)));
+  return((semBinaryId)semBCreate(
+    SEM_Q_FIFO,((initialState==semEmpty) ? SEM_EMPTY : SEM_FULL)));
 }
 
 semBinaryId semBinaryMustCreate(semInitialState initialState)

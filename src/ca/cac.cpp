@@ -1733,17 +1733,17 @@ void cac::notifyDestroyFD ( SOCKET sock ) const
 void cac::uninstallIIU ( tcpiiu & iiu ) 
 {
     epicsAutoMutex autoMutex ( this->mutex );
-    if ( iiu.channelCount () ) {
+    if ( iiu.channelCount() ) {
         char hostNameTmp[64];
         iiu.hostName ( hostNameTmp, sizeof ( hostNameTmp ) );
         genLocalExcep ( *this, ECA_DISCONN, hostNameTmp );
     }
-    osiSockAddr addr = iiu.getNetworkAddress ();
+    osiSockAddr addr = iiu.getNetworkAddress();
     if ( addr.sa.sa_family == AF_INET ) {
         inetAddrID tmp ( addr.ia );
         bhe *pBHE = this->beaconTable.lookup ( tmp );
         if ( pBHE ) {
-            pBHE->unregisterIIU ( iiu);
+            pBHE->unregisterIIU ( iiu );
         }
     }
     assert ( this->pudpiiu );

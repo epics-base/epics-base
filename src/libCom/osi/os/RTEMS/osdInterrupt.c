@@ -1,5 +1,5 @@
 /*
- * RTEMS osiInterrupt.c
+ * RTEMS osdInterrupt.c
  *	$Id$
  *      Author: W. Eric Norum
  *              eric@cls.usask.ca
@@ -10,7 +10,7 @@
 #include <rtems.h>
 #include <rtems/error.h>
 #include "errlog.h"
-#include "osiInterrupt.h"
+#include "epicsInterrupt.h"
 #include "epicsThread.h"
 
 #define INTERRUPT_CONTEXT_MESSAGE_QUEUE_COUNT    100
@@ -18,7 +18,7 @@
 static rtems_id interruptContextMessageQueue;
 
 int
-interruptLock (void)
+epicsInterruptLock (void)
 {
     rtems_interrupt_level level;
 
@@ -27,7 +27,7 @@ interruptLock (void)
 }
 
 void
-interruptUnlock (int key)
+epicsInterruptUnlock (int key)
 {
     rtems_interrupt_level level = key;
 
@@ -35,7 +35,7 @@ interruptUnlock (int key)
 }
 
 int
-interruptIsInterruptContext (void)
+epicsInterruptIsInterruptContext (void)
 {
 	return rtems_interrupt_is_in_progress ();
 }
@@ -47,7 +47,7 @@ interruptIsInterruptContext (void)
  * interrupt context is no longer active.
  */
 void
-interruptContextMessage (const char *message)
+epicsInterruptContextMessage (const char *message)
 {
     rtems_message_queue_send (interruptContextMessageQueue, &message, sizeof message);
 }

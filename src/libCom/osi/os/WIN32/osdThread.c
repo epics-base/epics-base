@@ -86,69 +86,6 @@ epicsShareFunc void epicsShareAPI epicsThreadExitMain (void)
 }
 
 /*
- * epicsThreadInit ()
- */
-epicsShareFunc void epicsShareAPI epicsThreadInit (void)
-{
-    HANDLE win32ThreadGlobalMutexTmp;
-    DWORD status;
-    BOOL success;
-    int crtlStatus;
-
-    if (win32ThreadGlobalMutex) {
-        /* wait for init to complete */
-        status = WaitForSingleObject (win32ThreadGlobalMutex, INFINITE);
-        assert ( status == WAIT_OBJECT_0 );
-        success = ReleaseMutex (win32ThreadGlobalMutex);
-        assert (success);
-        return;
-    }
-    else {
-        win32ThreadGlobalMutexTmp = CreateMutex (NULL, TRUE, NULL);
-        if ( win32ThreadGlobalMutexTmp == 0 ) {
-            return;
-        }
-
-#if 1
-        /* not arch neutral, but at least supported by w95 and borland */
-        if ( InterlockedExchange ( (LPLONG) &win32ThreadGlobalMutex, (LONG) win32ThreadGlobalMutexTmp ) ) {
-#else
-        /* not supported on W95, but the alternative requires assuming that pointer and integer are the same */
-        if (InterlockedCompareExchange ( (PVOID *) &win32ThreadGlobalMutex, (PVOID) win32ThreadGlobalMutexTmp, (PVOID)0 ) != 0) {
-#endif
-            CloseHandle (win32ThreadGlobalMutexTmp);
-            /* wait for init to complete */
-            status = WaitForSingleObject (win32ThreadGlobalMutex, INFINITE);
-            assert ( status == WAIT_OBJECT_0 );
-            success = ReleaseMutex (win32ThreadGlobalMutex);
-            assert (success);
-            return;
-        }
-    }
-
-    if (tlsIndexWIN32==0xFFFFFFFF) {
-        tlsIndexWIN32 = TlsAlloc();
-        if (tlsIndexWIN32==0xFFFFFFFF) {
-            success = ReleaseMutex (win32ThreadGlobalMutex);
-            assert (success);
-            return;
-        }
-    }
-
-    crtlStatus = atexit (threadCleanupWIN32);
-    if (crtlStatus) {
-        success = ReleaseMutex (win32ThreadGlobalMutex);
-        assert (success);
-        return;
-    }
-
-    win32ThreadInitOK = TRUE;
-
-    success = ReleaseMutex (win32ThreadGlobalMutex);
-    assert (success);
-}
-
-/*
  * osdPriorityMagFromPriorityOSI ()
  */
 static unsigned osdPriorityMagFromPriorityOSI ( unsigned osiPriority ) 
@@ -300,6 +237,69 @@ static unsigned WINAPI epicsWin32ThreadEntry (LPVOID lpParameter)
     free ( pParm );
 
     return ( (unsigned) stat ); /* this indirectly closes the thread handle */
+}
+
+/*
+ * epicsThreadInit ()
+ */
+static void epicsThreadInit (void)
+{
+    HANDLE win32ThreadGlobalMutexTmp;
+    DWORD status;
+    BOOL success;
+    int crtlStatus;
+
+    if (win32ThreadGlobalMutex) {
+        /* wait for init to complete */
+        status = WaitForSingleObject (win32ThreadGlobalMutex, INFINITE);
+        assert ( status == WAIT_OBJECT_0 );
+        success = ReleaseMutex (win32ThreadGlobalMutex);
+        assert (success);
+        return;
+    }
+    else {
+        win32ThreadGlobalMutexTmp = CreateMutex (NULL, TRUE, NULL);
+        if ( win32ThreadGlobalMutexTmp == 0 ) {
+            return;
+        }
+
+#if 1
+        /* not arch neutral, but at least supported by w95 and borland */
+        if ( InterlockedExchange ( (LPLONG) &win32ThreadGlobalMutex, (LONG) win32ThreadGlobalMutexTmp ) ) {
+#else
+        /* not supported on W95, but the alternative requires assuming that pointer and integer are the same */
+        if (InterlockedCompareExchange ( (PVOID *) &win32ThreadGlobalMutex, (PVOID) win32ThreadGlobalMutexTmp, (PVOID)0 ) != 0) {
+#endif
+            CloseHandle (win32ThreadGlobalMutexTmp);
+            /* wait for init to complete */
+            status = WaitForSingleObject (win32ThreadGlobalMutex, INFINITE);
+            assert ( status == WAIT_OBJECT_0 );
+            success = ReleaseMutex (win32ThreadGlobalMutex);
+            assert (success);
+            return;
+        }
+    }
+
+    if (tlsIndexWIN32==0xFFFFFFFF) {
+        tlsIndexWIN32 = TlsAlloc();
+        if (tlsIndexWIN32==0xFFFFFFFF) {
+            success = ReleaseMutex (win32ThreadGlobalMutex);
+            assert (success);
+            return;
+        }
+    }
+
+    crtlStatus = atexit (threadCleanupWIN32);
+    if (crtlStatus) {
+        success = ReleaseMutex (win32ThreadGlobalMutex);
+        assert (success);
+        return;
+    }
+
+    win32ThreadInitOK = TRUE;
+
+    success = ReleaseMutex (win32ThreadGlobalMutex);
+    assert (success);
 }
 
 /*

@@ -1,4 +1,4 @@
-/* osi/osiInterrupt.c */
+/* osi/default/osdInterrupt.c */
 
 /* Author:  Marty Kraimer Date:    15JUL99 */
 
@@ -20,12 +20,12 @@ of this distribution.
 #include "epicsMutex.h"
 #include "cantProceed.h"
 #include "errlog.h"
-#include "osiInterrupt.h"
+#include "epicsInterrupt.h"
 
 static epicsMutexId globalLock=0;
 static int firstTime = 1;
 
-epicsShareFunc int epicsShareAPI interruptLock()
+epicsShareFunc int epicsShareAPI epicsInterruptLock()
 {
     if(firstTime) {
         globalLock = epicsMutexMustCreate();
@@ -35,15 +35,16 @@ epicsShareFunc int epicsShareAPI interruptLock()
     return(0);
 }
 
-epicsShareFunc void epicsShareAPI interruptUnlock(int key)
+epicsShareFunc void epicsShareAPI epicsInterruptUnlock(int key)
 {
-    if(firstTime) cantProceed("interruptUnlock called before interruptLock\n");
+    if(firstTime) cantProceed(
+        "epicsInterruptUnlock called before epicsInterruptLock\n");
     epicsMutexUnlock(globalLock);
 }
 
-epicsShareFunc int epicsShareAPI interruptIsInterruptContext() { return(0);}
+epicsShareFunc int epicsShareAPI epicsInterruptIsInterruptContext() { return(0);}
 
-epicsShareFunc void epicsShareAPI interruptContextMessage(const char *message)
+epicsShareFunc void epicsShareAPI epicsInterruptContextMessage(const char *message)
 {
     errlogPrintf("%s",message);
 }

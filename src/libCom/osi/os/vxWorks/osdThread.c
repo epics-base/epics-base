@@ -73,6 +73,20 @@ static int getOssPriorityValue(unsigned int osiPriority)
     }
 }
 
+static void epicsThreadInit(void)
+{
+    static int lock = 0;
+
+    while(!vxTas(&lock)) taskDelay(1);
+    if(epicsThreadOnceMutex==0) {
+        epicsThreadOnceMutex = semMCreate(
+                SEM_DELETE_SAFE|SEM_INVERSION_SAFE|SEM_Q_PRIORITY);
+        assert(epicsThreadOnceMutex);
+    }
+    lock = 0;
+    iocClockInit();
+}
+
 unsigned int epicsThreadGetStackSize (epicsThreadStackSizeClass stackSizeClass) 
 {
 
@@ -87,20 +101,6 @@ unsigned int epicsThreadGetStackSize (epicsThreadStackSizeClass stackSizeClass)
     }
 
     return stackSizeTable[stackSizeClass];
-}
-
-void epicsThreadInit(void)
-{
-    static int lock = 0;
-
-    while(!vxTas(&lock)) taskDelay(1);
-    if(epicsThreadOnceMutex==0) {
-        epicsThreadOnceMutex = semMCreate(
-                SEM_DELETE_SAFE|SEM_INVERSION_SAFE|SEM_Q_PRIORITY);
-        assert(epicsThreadOnceMutex);
-    }
-    lock = 0;
-    iocClockInit();
 }
 
 void epicsThreadOnceOsd(epicsThreadOnceId *id, void (*func)(void *), void *arg)

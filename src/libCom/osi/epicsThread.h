@@ -48,7 +48,6 @@ epicsShareFunc void epicsShareAPI epicsThreadOnceOsd(
 #define epicsThreadOnce(id,func,arg) \
 if(*(id)<=0) epicsThreadOnceOsd((id),(func),(arg))
 
-epicsShareFunc void epicsShareAPI epicsThreadInit(void);
 epicsShareFunc void epicsShareAPI epicsThreadExitMain(void);
 
 /* (epicsThreadId)0 is guaranteed to be an invalid thread id */

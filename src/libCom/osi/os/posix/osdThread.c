@@ -258,6 +258,15 @@ static void * start_routine(void *arg)
     free_threadInfo(pthreadInfo);
     return(0);
 }
+
+static void epicsThreadInit(void)
+{
+    static pthread_once_t once_control = PTHREAD_ONCE_INIT;
+    int status = pthread_once(&once_control,once);
+    epicsThreadInitCalled = 1;
+    checkStatusQuit(status,"pthread_once","epicsThreadInit");
+}
+
 
 #if CPU_FAMILY == MC680X0
 #define ARCH_STACK_FACTOR 1
@@ -290,14 +299,6 @@ unsigned int epicsThreadGetStackSize (epicsThreadStackSizeClass stackSizeClass)
 #endif /*_POSIX_THREAD_ATTR_STACKSIZE*/
 }
 
-void epicsThreadInit(void)
-{
-    static pthread_once_t once_control = PTHREAD_ONCE_INIT;
-    int status = pthread_once(&once_control,once);
-    epicsThreadInitCalled = 1;
-    checkStatusQuit(status,"pthread_once","epicsThreadInit");
-}
-
 /* epicsThreadOnce is a macro that calls epicsThreadOnceOsd */
 void epicsThreadOnceOsd(epicsThreadOnceId *id, void (*func)(void *), void *arg)
 {

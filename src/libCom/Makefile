@@ -117,7 +117,7 @@ SRC_DIRS += $(LIBCOM)/osi
 INC += osiFileName.h
 INC += osiSock.h
 INC += osdSock.h
-INC += osiInterrupt.h
+INC += epicsInterrupt.h
 INC += osdInterrupt.h
 
 

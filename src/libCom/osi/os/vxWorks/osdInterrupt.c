@@ -12,15 +12,15 @@ of this distribution.
 #include <intLib.h>
 #include <logLib.h>
 
-#include "osiInterrupt.h"
+#include "epicsInterrupt.h"
 
-int  interruptLock() {return(intLock());}
+int  epicsInterruptLock() {return(intLock());}
 
-void  interruptUnlock(int key) {intUnlock(key);}
+void  epicsInterruptUnlock(int key) {intUnlock(key);}
 
-int  interruptIsInterruptContext() {return(intContext());}
+int  epicsInterruptIsInterruptContext() {return(intContext());}
 
-void  interruptContextMessage(const char *message)
+void  epicsInterruptContextMessage(const char *message)
 {
     logMsg((char *)message,0,0,0,0,0,0);
 }

@@ -26,7 +26,6 @@
 #include "errlog.h"
 #include "epicsMutex.h"
 #include "epicsThread.h"
-#include "osiInterrupt.h"
 #include "cantProceed.h"
 
 /*
@@ -221,7 +220,7 @@ setThreadInfo (rtems_id tid, const char *name, EPICSTHREADFUNC funptr,void *parm
  * it must be called before epicsThreadCreate creates
  * any new threads.
  */
-void
+static void
 epicsThreadInit (void)
 {
     if (!initialized) {

@@ -27,7 +27,7 @@ of this distribution.
 #include "epicsThread.h"
 #include "epicsMutex.h"
 #include "epicsEvent.h"
-#include "osiInterrupt.h"
+#include "epicsInterrupt.h"
 #include "epicsAssert.h"
 #include "errMdef.h"
 #include "error.h"
@@ -90,8 +90,8 @@ epicsShareFunc int epicsShareAPIV errlogPrintf( const char *pFormat, ...)
     va_list	pvar;
     int		nchar;
 
-    if(interruptIsInterruptContext()) {
-	interruptContextMessage
+    if(epicsInterruptIsInterruptContext()) {
+	epicsInterruptContextMessage
             ("errlogPrintf called from interrupt level\n");
 	return 0;
     }
@@ -108,8 +108,8 @@ epicsShareFunc int epicsShareAPIV errlogVprintf(
     int nchar;
     char *pbuffer;
 
-    if(interruptIsInterruptContext()) {
-	interruptContextMessage
+    if(epicsInterruptIsInterruptContext()) {
+	epicsInterruptContextMessage
             ("errlogVprintf called from interrupt level\n");
 	return 0;
     }
@@ -125,8 +125,8 @@ epicsShareFunc int epicsShareAPI errlogMessage(const char *message)
 {
     char *pbuffer;
 
-    if(interruptIsInterruptContext()) {
-	interruptContextMessage
+    if(epicsInterruptIsInterruptContext()) {
+	epicsInterruptContextMessage
             ("errlogMessage called from interrupt level\n");
 	return 0;
     }
@@ -144,8 +144,8 @@ epicsShareFunc int epicsShareAPIV errlogSevPrintf(
     va_list	pvar;
     int		nchar;
 
-    if(interruptIsInterruptContext()) {
-	interruptContextMessage
+    if(epicsInterruptIsInterruptContext()) {
+	epicsInterruptContextMessage
             ("errlogSevPrintf called from interrupt level\n");
 	return 0;
     }
@@ -165,8 +165,8 @@ epicsShareFunc int epicsShareAPIV errlogSevVprintf(
     int		totalChar=0;
 
     if(pvtData.sevToLog>severity) return(0);
-    if(interruptIsInterruptContext()) {
-	interruptContextMessage
+    if(epicsInterruptIsInterruptContext()) {
+	epicsInterruptContextMessage
             ("errlogSevVprintf called from interrupt level\n");
 	return 0;
     }
@@ -255,8 +255,8 @@ epicsShareFunc void epicsShareAPIV errPrintf(long status, const char *pFileName,
     int		nchar;
     int		totalChar=0;
 
-    if(interruptIsInterruptContext()) {
-	interruptContextMessage("errPrintf called from interrupt level\n");
+    if(epicsInterruptIsInterruptContext()) {
+	epicsInterruptContextMessage("errPrintf called from interrupt level\n");
 	return;
     }
     errlogInit(0);

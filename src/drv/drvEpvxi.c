@@ -1818,7 +1818,11 @@ LOCAL int
 vxi_self_test(void)
 {
 	unsigned 		la;
+#ifdef V5_vxWorks
 	UINT16			wd;
+#else
+	unsigned short		wd;
+#endif
 	int			status;
 	struct vxi_csr		*pcsr;
 	VXIDI			**ppvxidi;
@@ -2449,10 +2453,14 @@ unsigned long	driverConfigSize,
 void		(*pio_report_func)()
 )
 {
-	VXICSR	*pcsr;
-	VXIDI	*pvxidi;
-	void	*pconfig;
-	UINT16	device_status;
+	VXICSR		*pcsr;
+	VXIDI		*pvxidi;
+	void		*pconfig;
+#ifdef V5_vxWorks
+	UINT16		device_status;
+#else
+	unsigned short	device_status;
+#endif
 	int	status;
 
 	if(la > NELEMENTS(epvxiLibDeviceList)){

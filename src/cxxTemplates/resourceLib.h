@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.18  1998/10/23 00:20:40  jhill
+ * attempted to clean up HP-UX warnings
+ *
  * Revision 1.17  1998/06/16 03:00:19  jhill
  * cleaned up fast string hash table
  *
@@ -682,16 +685,20 @@ stringId::~stringId()
 {
 	if (this->allocType==copyString) {
 		if (this->pStr!=NULL) {
-#ifdef _MSC_VER
 			//
-			// bugs in microsloth visual C++ appear to require 
-			// a const cast away here
+			// the microsoft and solaris compilers will 
+			// not allow a pointer to "const char"
+			// to be deleted 
+			//
+			// the HP-UX compiler gives us a warning on
+			// each cast away of const, but in this case
+			// it cant be avoided
+			//
+			// I hope that deleting a pointer to "char"
+			// is the same as deleting a pointer to 
+			// "const char" on all compilers
 			//
 			delete [] (char * const) this->pStr;
-#else
-			delete [] this->pStr;
-#endif
-			
 		}
 	}
 }

@@ -76,6 +76,8 @@
 
 #define         MAX_MSG_LENGTH  80
 
+int	GITime = 60;	/* shell-setable DMA timeout value */
+
 extern struct drvGpibSet drvGpib;       /* entry points to driver functions */
 int	gpibWork();
 
@@ -360,7 +362,7 @@ int     status;
   switch (pCmd->type) {
     case 'w':
     case 'W':         /* write the message to the GPIB listen adrs */
-      status =(*(drvGpib.writeIb))(pCmd->head.pibLink, pCmd->head.device, pCmd->cmd, strlen(pCmd->cmd));
+      status =(*(drvGpib.writeIb))(pCmd->head.pibLink, pCmd->head.device, pCmd->cmd, strlen(pCmd->cmd), GITime);
       if (status == ERROR)
 	strcpy(pCmd->resp, "GPIB TIMEOUT (while talking)");
       else
@@ -368,7 +370,7 @@ int     status;
       break;
     case 'r':
     case 'R':               /* write the command string */
-      status = (*(drvGpib.writeIb))(pCmd->head.pibLink, pCmd->head.device, pCmd->cmd, strlen(pCmd->cmd));
+      status = (*(drvGpib.writeIb))(pCmd->head.pibLink, pCmd->head.device, pCmd->cmd, strlen(pCmd->cmd), GITime);
       if (status == ERROR)
       {
         strcpy(pCmd->resp, "GPIB TIMEOUT (while talking)");
@@ -376,7 +378,7 @@ int     status;
       }
       /* read the instrument  */
       pCmd->resp[0] = 0;          /* clear response string */
-      status = (*(drvGpib.readIb))(pCmd->head.pibLink, pCmd->head.device, pCmd->resp, MAX_MSG_LENGTH);
+      status = (*(drvGpib.readIb))(pCmd->head.pibLink, pCmd->head.device, pCmd->resp, MAX_MSG_LENGTH, GITime);
 
       if (status == ERROR)
       {

@@ -1156,13 +1156,6 @@ void cac::disconnectAllIO ( nciu & chan, bool enableCallbacks )
             // no use after disconnected - so uninstall it
             this->ioTable.remove ( *pNetIO );
             chan.cacPrivateListOfIO::eventq.remove ( *pNetIO );
-            if ( enableCallbacks ) {
-                epicsAutoMutexRelease unlocker ( this->mutex );
-                char buf[128];
-                sprintf ( buf, "host = %100s", chan.pHostName() );
-                // callbacks are locked at a higher level
-                pNetIO->exception ( ECA_DISCONN, buf );
-            }
         }
         if ( enableCallbacks ) {
             epicsAutoMutexRelease unlocker ( this->mutex );

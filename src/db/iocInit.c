@@ -57,20 +57,26 @@
  * .27	03-18-94	mcn	added comments
  * .28	03-23-94	mrk	Added asInit
  * .29	04-04-94	mcn	added code for uninitialized conversions (link conversion field)
+ * .30	01-10-95	joh	Fixed no quoted strings in resource.def problem
+ * .31	02-10-95	joh	static => LOCAL 
  */
 
-#include	<vxWorks.h>
 #include	<stdlib.h>
 #include	<stdarg.h>
 #include	<stdio.h>
 #include	<string.h>
-#include	<ellLib.h>
+#include 	<errno.h>
+
+#include	<vxWorks.h>
 #include	<sysLib.h>
 #include	<symLib.h>
 #include	<sysSymTbl.h>	/* for sysSymTbl*/
 #include	<logLib.h>
 #include	<taskLib.h>
+#include	<envLib.h>
+#include	<errnoLib.h>
 
+#include	<ellLib.h>
 #include	<sdrHeader.h>
 #include	<fast_lock.h>
 #include	<choice.h>
@@ -97,7 +103,7 @@
 #define MODULE_TYPES_INIT 1
 #include        <module_types.h>
 
-static initialized=FALSE;
+LOCAL int initialized=FALSE;
 
 /* The following is for use by interrupt routines */
 int interruptAccept=FALSE;
@@ -108,15 +114,18 @@ struct dbBase *pdbBase=NULL;
 long dbCommonInit();
 
 /* define forward references*/
-static long initDrvSup(void);
-static long initRecSup(void);
-static long initDevSup(void);
-static long finishDevSup(void);
-static long initDatabase(void);
-static void createLockSets(void);
-static short makeSameSet(struct dbAddr *paddr,short set);
-static long initialProcess(void);
-static long getResources(char  *fname);
+LOCAL long initDrvSup(void);
+LOCAL long initRecSup(void);
+LOCAL long initDevSup(void);
+LOCAL long finishDevSup(void);
+LOCAL long initDatabase(void);
+LOCAL void createLockSets(void);
+LOCAL short makeSameSet(struct dbAddr *paddr,short set);
+LOCAL long initialProcess(void);
+LOCAL long getResources(char  *fname);
+LOCAL int getResourceToken(FILE *fp, char *pToken, unsigned maxToken);
+LOCAL int getResourceTokenInternal(FILE *fp, char *pToken, unsigned maxToken);
+
 
 /*
  *  Initialize EPICS on the IOC.
@@ -316,7 +325,7 @@ int iocInit(char * pResourceFilename)
  *      Call the initialization routine (init) for each
  *        driver type.
  */
-static long initDrvSup(void) /* Locate all driver support entry tables */
+LOCAL long initDrvSup(void) /* Locate all driver support entry tables */
 {
     char	*pname;
     char	name[40];
@@ -383,7 +392,7 @@ static long initDrvSup(void) /* Locate all driver support entry tables */
  *      Call the initialization routine (init) for each
  *        record type.
  */
-static long initRecSup(void)
+LOCAL long initRecSup(void)
 {
     char	name[40];
     int		i;
@@ -470,7 +479,7 @@ static long initRecSup(void)
  *      Call the initialization routine (init) for each
  *        device type (First Pass).
  */
-static long initDevSup(void)
+LOCAL long initDevSup(void)
 {
     char	*pname;
     char	name[40];
@@ -543,7 +552,7 @@ static long initDevSup(void)
  *    after the database records have been initialized and
  *    placed into lock sets.
  */
-static long finishDevSup(void) 
+LOCAL long finishDevSup(void) 
 {
     int		i,j;
     struct recDevSup	*precDevSup;
@@ -575,7 +584,7 @@ static long finishDevSup(void)
     return(0);
 }
 
-static long initDatabase(void)
+LOCAL long initDatabase(void)
 {
     char		name[PVNAME_SZ+FLDNAME_SZ+2];
     short		i,j;
@@ -837,7 +846,7 @@ static long initDatabase(void)
  *    lock set.  Records connected by forward links are
  *    definately considered part of the same lockset.
  */
-static void createLockSets(void)
+LOCAL void createLockSets(void)
 {
     int			i,link;
     struct recLoc	*precLoc;
@@ -930,7 +939,7 @@ static void createLockSets(void)
     dbScanLockInit(nset);
 }
 
-static short makeSameSet(struct dbAddr *paddr, short lset)
+LOCAL short makeSameSet(struct dbAddr *paddr, short lset)
 {
     struct dbCommon 	*precord = paddr->precord;
     short  		link;
@@ -1001,7 +1010,7 @@ static short makeSameSet(struct dbAddr *paddr, short lset)
  *  Process database records at initialization if
  *     their pini (process at init) field is set.
  */
-static long initialProcess(void)
+LOCAL long initialProcess(void)
 {
     short	i;
     struct recHeader	*precHeader;
@@ -1025,199 +1034,362 @@ static long initialProcess(void)
     return(0);
 }
 
-#define MAX 128
+#define MAX 256 
 #define SAME 0
-static char    *cvt_str[] = {
+
+enum resType {
+	resDBF_STRING,
+	resDBF_SHORT,
+	resDBF_LONG,
+	resDBF_FLOAT,
+	resDBF_DOUBLE,
+	resInvalid}; 
+LOCAL char    *cvt_str[] = {
     "DBF_STRING",
     "DBF_SHORT",
     "DBF_LONG",
     "DBF_FLOAT",
-    "DBF_DOUBLE"
+    "DBF_DOUBLE",
+    "Invalid",
 };
-#define CVT_COUNT (sizeof(cvt_str) / sizeof(char*))
-static long getResources(char  *fname)
+
+#define EPICS_ENV_PREFIX "EPICS_"
+
+long getResources(char  *fname)
 {
-    FILE            *fp;
-    int             len;
-    int             len2;
-    int             lineNum = 0;
-    int             i = 0;
-    int             found = 0;
-    int             cvType = 0;
-    int		    epicsFlag;
-    char            buff[MAX + 1];
-    char            name[40];
     char            s1[MAX];
     char            s2[MAX];
     char            s3[MAX];
-    char            message[100];
-    long            rtnval = 0;
+    char            name[40];
+    FILE            *fp;
+    enum resType    cvType = resInvalid;
+    int		    epicsFlag;
     SYM_TYPE	    type;
-    char           *pSymAddr;
+    char            *pSymAddr;
     short           n_short;
     long            n_long;
     float           n_float;
     double          n_double;
+    int		    status;
 
     if (!fname) return (0);
+
     if ((fp = fopen(fname, "r")) == 0) {
-	errMessage(-1L, "getResources: No such Resource file");
+	errPrintf(
+		-1L,
+		__FILE__, 
+		__LINE__,
+		"No such Resource file - %s",
+		fname);
 	return (-1);
     }
-    while ( fgets( buff, MAX, fp) != NULL) {
-	len = strlen(buff);
-	lineNum++;
-	if (len < 2)
-	    goto CLEAR;
-	if (len >= MAX) {
-	    sprintf(message,
-		    "getResources: Line too long - line=%d", lineNum);
-	    errMessage(-1L, message);
-	    continue;
-	}
-	for (i = 0; i < len; i++) {
-	    if (buff[i] == '!') {
-		goto CLEAR;
-	    }
-	}
-	/* extract the 3 fields as strings */
-	if ((sscanf(buff, "%s %s %s", s1, s2, s3)) != 3) {
-	    sprintf(message,
-		    "getResources: Not enough fields - line=%d", lineNum);
-	    errMessage(-1L, message);
-	    continue;
-	}
-	found = 0;
-	len2 = strlen(s2);
-	for (i = 0; i < CVT_COUNT; i++) {
 
+    while (TRUE) {
+	status = getResourceToken (fp, s1, sizeof(s1));
+	if (status<0) {
+		/*
+		 * EOF
+		 */
+		break; 
+	}
+	status = getResourceToken (fp, s2, sizeof(s2));
+	if (status<0) {
+		errPrintf (
+			-1L,
+			__FILE__,
+			__LINE__,
+	"Missing resource data type field for resource=%s in file=%s",
+			s1,
+			fname);
+		break; 
+	}
+	status = getResourceToken (fp, s3, sizeof(s3));
+	if (status<0) {
+		errPrintf (
+			-1L,
+			__FILE__,
+			__LINE__,
+	"Missing resource value field for resource=%s data type=%s file=%s",
+			s1,
+			s2,
+			fname);
+		break; /* EOF */
+	}
 
-	    if ((strncmp(s2, cvt_str[i], len2)) == SAME) {
-		found = 1;
-		cvType = i;
+	for (cvType = 0; cvType < resInvalid; cvType++) {
+	    if (strcmp(s2, cvt_str[cvType]) == SAME) {
 		break;
 	    }
 	}
-	if (!found) {
-	    sprintf(message,
-		    "getResources: Field 2 not defined - line=%d", lineNum);
-	    errMessage(-1L, message);
-	    continue;
-	}
+
+
 	strcpy(name, "_");
 	strcat(name, s1);
-	rtnval = symFindByName(sysSymTbl, name, &pSymAddr, &type);
-	if (rtnval != OK) {
-	    sprintf(message,
-		  "getResources: Symbol name not found - line=%d", lineNum);
-	    errMessage(-1L, message);
+	status = symFindByName(sysSymTbl, name, &pSymAddr, &type);
+	if (status!= OK) {
+	    errPrintf (
+		-1L,
+		__FILE__,
+		__LINE__,
+	"Matching Symbol name not found for resource=%s",
+		s1);
 	    continue;
 	}
-	if ( (strncmp(s1,"EPICS_",6)) == SAME)
-            epicsFlag = 1;
-        else
-            epicsFlag = 0;
+
+	status = strncmp (
+			s1,
+			EPICS_ENV_PREFIX,
+			strlen (EPICS_ENV_PREFIX));
+	if (status == SAME) {
+            	epicsFlag = 1;
+		if (cvType != resDBF_STRING) {
+			errPrintf (
+				-1L,
+				__FILE__,
+				__LINE__,
+"%s should be set with type DBF_STRING not type %s",
+				s1,
+				s2);
+			continue;
+		}
+	}
+	else {
+		epicsFlag = 0;
+	}
 
 	switch (cvType) {
-	case 0:	/* DBF_STRING */
-	    len = strlen(s3);
-	    len2 = 20;
-	    if (len >= len2) {
-		sprintf(message,
-			"getResources: Warning, string might exceed previous reserved space - line=%d",
-			lineNum);
-		errMessage(-1L, message);
-	    }
-            if ( epicsFlag )
-                strncpy(pSymAddr+sizeof(void *), s3, len + 1);
-            else
-                strncpy(pSymAddr, s3, len + 1);
-	    break;
-	case 1:	/* DBF_SHORT */
-	    if ((sscanf(s3, "%hd", &n_short)) != 1) {
-		sprintf(message,
-		      "getResources: conversion failed - line=%d", lineNum);
-		errMessage(-1L, message);
-	        continue;
-	    }
+	case resDBF_STRING:
             if ( epicsFlag ) {
-                sprintf(message,
-                       "getResources: %s is of type DBF_STRING - line =%d",
-			name,lineNum);
-                errMessage(-1L, message);
-            }
-            else
-                *(short *) pSymAddr = n_short;
+		char		*pEnv;
 
-	    break;
-	case 2:	/* DBF_LONG */
-	    if ((sscanf(s3, "%ld", &n_long)) != 1) {
-		sprintf(message,
-		      "getResources: conversion failed - line=%d", lineNum);
-		errMessage(-1L, message);
-	        continue;
+		/*
+		 * space for two strings, an '=' character,
+		 * and a null termination
+		 */
+		pEnv = malloc (strlen (s3) + strlen (s1) + 2);	
+		if (!pEnv) {
+			errPrintf(
+				-1L,
+				__FILE__,
+				__LINE__,
+"Failed to set environment parameter \"%s\" to \"%s\" because \"%s\"\n",
+				s1,
+				s3,
+				strerror (errnoGet()));
+			break;
+		}
+		strcpy (pEnv, s1);
+		strcat (pEnv, "=");
+		strcat (pEnv, s3);
+		status = putenv (pEnv);
+		if (status<0) {
+			errPrintf(
+				-1L,
+				__FILE__,
+				__LINE__,
+"Failed to set environment parameter \"%s\" to \"%s\" because \"%s\"\n",
+				s1,
+				s3,
+				strerror (errnoGet()));
+		}
+		/*
+		 * vxWorks copies into a private buffer
+		 * (this does not match UNIX behavior)
+		 */
+		free (pEnv);
 	    }
-            if ( epicsFlag ) {
-                sprintf(message,
-                       "getResources: %s is of type DBF_STRING - line =%d",
-			name,lineNum);
-                errMessage(-1L, message);
-            }
-            else
-                *(long *) pSymAddr = n_long;
-	    break;
-	case 3:	/* DBF_FLOAT */
-	    if ((sscanf(s3, "%e", &n_float)) != 1) {
-		sprintf(message,
-		      "getResources: conversion failed - line=%d", lineNum);
-		errMessage(-1L, message);
-	        continue;
+            else{
+                strcpy(pSymAddr, s3);
 	    }
-            if ( epicsFlag ) {
-                sprintf(message,
-                       "getResources: %s is of type DBF_STRING - line =%d",
-			name,lineNum);
-                errMessage(-1L, message);
-            }
-            else
-                *(float *) pSymAddr = n_float;
+	    break;
 
-	    break;
-	case 4:	/* DBF_DOUBLE */
-	    if ((sscanf(s3, "%le", &n_double)) != 1) {
-		sprintf(message,
-		      "getResources: conversion failed - line=%d", lineNum);
-		errMessage(-1L, message);
+	case resDBF_SHORT:	
+	    if (sscanf(s3, "%hd", &n_short) != 1) {
+	    	errPrintf (
+			-1L,
+			__FILE__,
+			__LINE__,
+		      "Resource=%s value=%s conversion to %s failed", 
+			s1,
+			s3,
+			cvt_str[cvType]);
 	        continue;
 	    }
-            if ( epicsFlag ) {
-                sprintf(message,
-                       "getResources: %s is of type DBF_STRING - line =%d",
-			name,lineNum);
-                errMessage(-1L, message);
-            }
-            else
-                *(double *) pSymAddr = n_double;
-
+            *(short *) pSymAddr = n_short;
 	    break;
+
+	case resDBF_LONG:
+	    if (sscanf(s3, "%ld", &n_long) != 1) {
+	    	errPrintf (
+			-1L,
+			__FILE__,
+			__LINE__,
+		      "Resource=%s value=%s conversion to %s failed", 
+			s1,
+			s3,
+			cvt_str[cvType]);
+	        continue;
+	    }
+            *(long *) pSymAddr = n_long;
+	    break;
+
+	case resDBF_FLOAT:
+	    if (sscanf(s3, "%e", &n_float) != 1) {
+	    	errPrintf (
+			-1L,
+			__FILE__,
+			__LINE__,
+		      "Resource=%s value=%s conversion to %s failed", 
+			s1,
+			s3,
+			cvt_str[cvType]);
+	        continue;
+	    }
+            *(float *) pSymAddr = n_float;
+	    break;
+
+	case resDBF_DOUBLE:
+	    if (sscanf(s3, "%le", &n_double) != 1) {
+	    	errPrintf (
+			-1L,
+			__FILE__,
+			__LINE__,
+		      "Resource=%s value=%s conversion to %s failed", 
+			s1,
+			s3,
+			cvt_str[cvType]);
+	        continue;
+	    }
+            *(double *) pSymAddr = n_double;
+	    break;
+
 	default:
-	    sprintf(message,
-		 "getResources: switch default reached - line=%d", lineNum);
-	    errMessage(-1L, message);
+		errPrintf (
+			-1L,
+			__FILE__,
+			__LINE__,
+	"Invalid data type field=%s for resource=%s", 
+			s2,
+			s1);
 	    continue;
-	    break;
 	}
-CLEAR:	memset(buff, '\0',  MAX);
-	memset(s1, '\0', MAX);
-	memset(s2, '\0', MAX);
-	memset(s3, '\0', MAX);
     }
     fclose(fp);
     return (0);
 }
+
+
 
-static gotSdrSum=FALSE;
-static struct sdrSum sdrSum;
+/*
+ * getResourceToken
+ */
+LOCAL int getResourceToken(FILE *fp, char *pToken, unsigned maxToken)
+{
+	int status;
+
+	/*
+	 * keep reading until we get a token
+	 * (and comments have been stripped)
+	 */
+	while (TRUE) {
+		status = getResourceTokenInternal (fp, pToken, maxToken);
+		if (status < 0) {
+			return status;
+		}
+
+		if (pToken[0] != '\0') {
+			return status;
+		}
+	}
+}
+
+
+/*
+ * getResourceTokenInternal
+ */
+LOCAL int getResourceTokenInternal(FILE *fp, char *pToken, unsigned maxToken)
+{
+        char    formatString[32];
+        char    quoteCharString[2];
+        int     status;
+
+        quoteCharString[0] = '\0';
+        status = fscanf (fp, " %1[\"`'!]", quoteCharString);
+	if (status<0) {
+		return status;
+	}
+
+	switch (quoteCharString[0]) {
+	/*
+	 * its a comment 
+	 * (consume everything up to the next new line) 
+	 */
+	case '!':
+	{
+		char tmp[MAX];
+
+                sprintf(formatString, "%%%d[^\n\r\v\f]", sizeof(tmp)-1);
+                status = fscanf (fp, "%[^\n\r\v\f]",tmp);
+		pToken[0] = '\0';
+		if (status<0) {
+			return status;
+		}
+		break;
+	}
+
+	/*
+	 * its a plain token
+	 */
+	case '\0':
+                sprintf(formatString, " %%%ds", maxToken-1);
+
+                status = fscanf (fp, formatString, pToken);
+                if (status!=1) {
+			if (status < 0){
+				pToken[0] = '\0';
+				return status;
+			}
+                }
+		break;
+
+	/*
+	 * it was a quoted string
+	 */
+	default:
+                sprintf(
+			formatString, 
+			"%%%d[^%c]", 
+			maxToken-1, 
+			quoteCharString[0]);
+                status = fscanf (fp, formatString, pToken);
+		if (status!=1) {
+			if (status < 0){
+				pToken[0] = '\0';
+				return status;
+			}
+		}
+                sprintf(formatString, "%%1[%c]", quoteCharString[0]);
+                status = fscanf (fp, formatString, quoteCharString);
+		if (status!=1) {
+			errPrintf (
+				-1L,
+				__FILE__,
+				__LINE__,
+	"Resource file syntax error: unterminated string \"%s\"",
+				pToken);
+			pToken[0] = '\0';
+			if (status < 0){
+				return status;
+			}
+		}
+		break;
+        }
+	return 0;
+}
+
+
+LOCAL int gotSdrSum=FALSE;
+LOCAL struct sdrSum sdrSum;
 int dbLoad(char * pfilename)
 {
     long	status;

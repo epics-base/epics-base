@@ -1,6 +1,9 @@
 
 /*
  * $Log$
+ * Revision 1.7  1995/02/02  17:15:55  jbk
+ * Removed the stinking message "Cannot contact master timing IOC ".
+ *
  * Revision 1.6  1995/02/01  15:29:54  winans
  * Added a type field to the configure command to disable the use of the event
  * system hardware if desired.
@@ -74,7 +77,12 @@ LICENSING INQUIRIES MAY BE DIRECTED TO THE INDUSTRIAL TECHNOLOGY
 DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 */
 
+#if 1
+#define NODEBUG
+#define MAKE_DEBUG 0
+#else
 #define MAKE_DEBUG TSdriverDebug
+#endif
 #define TS_DRIVER
 
 #include <vxWorks.h>
@@ -111,8 +119,12 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #include <drvTS.h>
 
 /* #define FL M_drvSup,__FILE__,__LINE__ */
+#if 0
 #define FL stderr
 #define errPrintf fprintf
+#else
+#define FL M_drvSup,__FILE__,__LINE__ 
+#endif
 
 /* functions used by this driver */
 static long TSgetUnixTime(struct timespec*);

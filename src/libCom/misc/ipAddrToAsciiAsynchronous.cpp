@@ -24,6 +24,7 @@
  */
 
 #include <string>
+#include <climits>
 #include <stdexcept>
 
 #define epicsExportSharedSymbols

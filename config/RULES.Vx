@@ -138,7 +138,7 @@ bpt%.dbd: ../bpt%.data
 
 %.dbd: ../%.dbd
 	$(RM) $@
-	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbExpandInclude \
+	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbExpand\
 		$(USER_DBDFLAGS) $< > $(<F)
 
 $(LIBNAME): $(LIBOBJS)

@@ -29,6 +29,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.25  1998/08/12 16:36:54  jhill
+ * allow the user name to change when they use su
+ *
  * Revision 1.24  1998/04/13 19:14:34  jhill
  * fixed task variable problem
  *
@@ -213,6 +216,7 @@ void ca_spawn_repeater()
 {
 	int     status;
 	char	*pImageName;
+	int		fd;
 
 	/*
 	 * create a duplicate process
@@ -227,8 +231,19 @@ void ca_spawn_repeater()
  	 * return to the caller
 	 * if its in the initiating process
 	 */
-	if (status){
+	if (status) {
 		return;
+	}
+
+	/*
+	 * close all open files except for STDIO so they will not
+	 * be inherited by the repeater task
+	 */
+	for (fd = 0; fd<=OPEN_MAX; fd++) {
+		if (fd==STDIN_FILENO) continue;
+		if (fd==STDOUT_FILENO) continue;
+		if (fd==STDERR_FILENO) continue;
+		close (fd);
 	}
 
 	/*

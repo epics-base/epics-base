@@ -23,7 +23,7 @@ OBJS_IOC += threadTest
 #fdmgrTest_SRCS += fdmgrTest.c
 #PROD += fdmgrTest
 
-osiTimeTestHost_SRCS += osiTimeTestMain.c osiTimeTest.cc
+osiTimeTestHost_SRCS += osiTimeTestMain.c osiTimeTest.cpp
 PROD += osiTimeTestHost
 OBJS_IOC += osiTimeTest
 

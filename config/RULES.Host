@@ -88,6 +88,14 @@ USR_CXXFLAGS+=$(USR_CXXFLAGS_DEFAULT)
 endif
 endif
 
+ifneq ($(strip $(USR_CPPFLAGS_$(ARCH_CLASS))),)
+USR_CPPFLAGS+=$(subst -nil-,,$(USR_CPPFLAGS_$(ARCH_CLASS)))
+else
+ifdef USR_CPPFLAGS_DEFAULT
+USR_CPPFLAGS+=$(USR_CPPFLAGS_DEFAULT)
+endif
+endif
+
 ifneq ($(strip $(USR_LDFLAGS_$(ARCH_CLASS))),)
 USR_LDFLAGS+=$(subst -nil-,,$(USR_LDFLAGS_$(ARCH_CLASS)))
 else
@@ -303,13 +311,13 @@ endif # EPICS_BASE
 ifdef LIBRARY
 ifdef LIBOBJS
 LIBTARGETS += $(LIBNAME) $(INSTALL_LIBS)
+CFLAGS +=  $($(ANSI)_SHRLIB_CFLAGS_YES)
+CXXFLAGS +=  $($(ANSI)_SHRLIB_CFLAGS_YES)
 
 #  check if shared libraries requested
 ifeq ($(strip $(SHARED_LIBRARIES)),YES)
 
 PROD_VERSION =$(SHRLIB_VERSION)
-CFLAGS += $(SHRLIB_CFLAGS)
-CXXFLAGS += $(SHRLIB_CFLAGS)
 ifeq ($(findstring cc,$(suffix $(LIBSRCS))),cc)
 SHRLIB_LINKER = $(CXX)
 else

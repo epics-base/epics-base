@@ -33,6 +33,9 @@
  * .01 joh 081591	Added epics env config
  * .02 joh 011995	Allow stdio also	
  * $Log$
+ * Revision 1.10  1996/01/25 21:20:56  mrk
+ * made iocLogDisable global
+ *
  * Revision 1.9  1995/12/20 16:56:47  jhill
  * dont print no connect msg if it is benign
  *
@@ -116,7 +119,7 @@ int iocLogInit(void)
 
 	status = rebootHookAdd((FUNCPTR)logClientShutdown);
 	if (status<0) {
-		epicsPrintf("Unable to add log server reboot hook\n");
+		printf("Unable to add log server reboot hook\n");
 	}
 
 	status = taskSpawn(	
@@ -127,7 +130,7 @@ int iocLogInit(void)
 			(FUNCPTR)logRestart,
 			0,0,0,0,0,0,0,0,0,0);
 	if (status<0) {
-		epicsPrintf("Unable to start log server connection watch dog\n");
+		printf("Unable to start log server connection watch dog\n");
 	}
 
 	return attachStatus;
@@ -149,9 +152,9 @@ LOCAL int iocLogAttach(void)
 
 	status = getConfig();
 	if(status<0){
-		epicsPrintf (
+		printf (
 		"iocLogClient: EPICS environment under specified\n");
-		epicsPrintf ("iocLogClient: failed to initialize\n");
+		printf ("iocLogClient: failed to initialize\n");
 		return ERROR;
 	}
 
@@ -160,7 +163,7 @@ LOCAL int iocLogAttach(void)
 		      SOCK_STREAM,	/* type         */
 		      0);		/* deflt proto  */
 	if (sock < 0){
-		epicsPrintf ("iocLogClient: no socket error %s\n", 
+		printf ("iocLogClient: no socket error %s\n", 
 			strerror(errno));
 		return ERROR;
 	}
@@ -198,7 +201,7 @@ LOCAL int iocLogAttach(void)
 			char name[INET_ADDR_LEN];
 
 			inet_ntoa_b(addr.sin_addr, name);
-			epicsPrintf(
+			printf(
 	"iocLogClient: unable to connect to %s port %d because \"%s\"\n", 
 				name,
 				addr.sin_port,
@@ -223,7 +226,7 @@ LOCAL int iocLogAttach(void)
                                 (char *) &optval,
                                 sizeof(optval));
         if(status<0){
-                epicsPrintf ("iocLogClient: %s\n", strerror(errno));
+                printf ("iocLogClient: %s\n", strerror(errno));
 		close(sock);
                 return ERROR;
         }
@@ -245,7 +248,7 @@ LOCAL int iocLogAttach(void)
 					(char *) &lingerval,
 					sizeof(lingerval));
 		if(status<0){
-			epicsPrintf ("iocLogClient: %s\n", strerror(errno));
+			printf ("iocLogClient: %s\n", strerror(errno));
 			close(sock);
 			return ERROR;
 		}
@@ -443,7 +446,7 @@ LOCAL int getConfig(void)
  */
 LOCAL void failureNotify(ENV_PARAM *pparam)
 {
-	epicsPrintf(
+	printf(
 	"IocLogClient: EPICS environment variable \"%s\" undefined\n",
 		pparam->name);
 }

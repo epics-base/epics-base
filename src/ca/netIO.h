@@ -24,7 +24,6 @@ class baseNMIU : public tsDLNode < baseNMIU >,
         public chronIntIdRes < baseNMIU > {
 public:
     baseNMIU ( nciu &chan );
-    virtual class netSubscription * isSubscription ();
     virtual void destroy ( class cacRecycle & ) = 0; // only called by cac
     virtual void completion () = 0;
     virtual void exception ( int status, 
@@ -34,6 +33,7 @@ public:
         arrayElementCount count ) = 0;
     virtual void completion ( unsigned type, 
         arrayElementCount count, const void *pData ) = 0;
+    virtual class netSubscription * isSubscription ();
     void show ( unsigned level ) const;
     ca_uint32_t getID () const;
     nciu & channel () const;

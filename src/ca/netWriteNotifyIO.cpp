@@ -66,5 +66,3 @@ void netWriteNotifyIO::completion ( unsigned /* type */,
 
 
 
-
-

@@ -40,9 +40,16 @@ OBJS2 = \
 
 LIBOBJS =
 
-PROD1 = $(OBDIR)/drvSup.o
+PROD1 = $(OBDIR)/drvSup
 
-PROD2 = $(OBDIR)/drvSupPEP.o
+PROD2 = $(OBDIR)/drvSupPEP
+
+install:$(EPICS_BASE_BIN)/$(T_A)/$(PROD1) $(EPICS_BASE_BIN)/$(T_A)/$(PROD2)
+$(EPICS_BASE_BIN)/$(T_A)/$(PROD1): $(PROD1)
+	$(INSTALL) $? $@
+
+$(EPICS_BASE_BIN)/$(T_A)/$(PROD2): $(PROD2)
+	$(INSTALL) $? $@
 
 build: $(PROD1) $(PROD2)
 

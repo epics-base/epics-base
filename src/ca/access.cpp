@@ -631,6 +631,14 @@ extern "C" int epicsShareAPI ca_pend_event (ca_real timeout)
         return status;
     }
 
+    if ( timeout == 0.0 ) {
+        // preserve past odd ball behavior of waiting forever when
+        // the delay is zero
+        while ( true ) {
+            pcac->pendEvent ( 60.0 );
+        }
+    }
+
     return pcac->pendEvent ( timeout );
 }
 

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.3  1996/06/26 21:19:04  jhill
+ * now matches gdd api revisions
+ *
  * Revision 1.2  1996/06/21 02:30:58  jhill
  * solaris port
  *
@@ -308,13 +311,16 @@ private:
 class casCtx {
 public:
 	casCtx() : 
-        	pMsg(NULL), pData(NULL), pCAS(NULL), pClient(NULL),
-		pChannel(NULL), pPV(NULL) {}
+        	pData(NULL), pCAS(NULL), pClient(NULL),
+		pChannel(NULL), pPV(NULL) 
+	{
+		memset(&this->msg, 0, sizeof(this->msg));
+	}
 
         //
         // get
         //
-        const caHdr *getMsg() const {return this->pMsg;};
+        const caHdr *getMsg() const {return (const caHdr *) &this->msg;};
         void *getData() const {return this->pData;};
         caServerI * getServer() const {return this->pCAS;}
         casCoreClient * getClient() const {return this->pClient;}
@@ -323,8 +329,22 @@ public:
 
         //
         // set
+	// (assumes incoming message is in network byte order)
         //
-        void setMsg(const caHdr *p) {this->pMsg = p;};
+        void setMsg(const char *pBuf) 
+	{
+		//
+		// copy as raw bytes in order to avoid
+		// alignment problems
+		//
+		memcpy (&this->msg, pBuf, sizeof(this->msg));
+                this->msg.m_cmmd = ntohs (this->msg.m_cmmd);
+                this->msg.m_postsize = ntohs (this->msg.m_postsize);
+                this->msg.m_type = ntohs (this->msg.m_type);
+                this->msg.m_count = ntohs (this->msg.m_count);
+                this->msg.m_cid = ntohl (this->msg.m_cid);
+                this->msg.m_available = ntohl (this->msg.m_available);
+	};
         void setData(void *p) {this->pData = p;};
         void setServer(caServerI *p) 
 	{
@@ -340,7 +360,7 @@ public:
 	{
 		printf ("casCtx at %x\n", (unsigned) this);
 		if (level >= 1u) {
-			printf ("\tpMsg = %x\n", (unsigned) pMsg);
+			printf ("\tpMsg = %x\n", (unsigned) &this->msg);
 			printf ("\tpData = %x\n", (unsigned) pData);
 			printf ("\tpCAS = %x\n", (unsigned) pCAS);
 			printf ("\tpClient = %x\n", (unsigned) pClient);
@@ -349,7 +369,7 @@ public:
 		}
 	}
 private:
-        const caHdr		*pMsg;	// ca message header
+        caHdr			msg;	// ca message header
 	void			*pData; // pointer to data following header
         caServerI               *pCAS;
         casCoreClient		*pClient;

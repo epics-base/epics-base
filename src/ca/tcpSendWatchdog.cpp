@@ -40,13 +40,11 @@ tcpSendWatchdog::~tcpSendWatchdog ()
 epicsTimerNotify::expireStatus tcpSendWatchdog::expire ( 
                  const epicsTime & /* currentTime */ )
 {
-    if ( ! this->cacRef.preemptiveCallbakIsEnabled() ) {
-        if ( this->iiu.bytesArePendingInOS() ) {
-            this->cacRef.printf ( 
-                "The CA client is disconnecting after a flush request timed out, "
-                "but receive data is pending, probably because the non-preemptive "
-                "mode application isnt calling ca_pend_event()\n" );
-        }
+    if ( this->iiu.bytesArePendingInOS() ) {
+        this->cacRef.printf ( 
+            "The CA client library is disconnecting after a flush request "
+            "timed out, but receive data is pending, probably because of an "
+            "application schedualing problem\n" );
     }
 #   ifdef DEBUG
         char hostName[128];

@@ -45,15 +45,13 @@ epicsTimerNotify::expireStatus
 tcpRecvWatchdog::expire ( const epicsTime & /* currentTime */ ) // X aCC 361
 {
     if ( this->responsePending ) {
-        if ( ! this->cacRef.preemptiveCallbakIsEnabled() ) {
-            if ( this->iiu.bytesArePendingInOS() ) {
-                this->cacRef.printf ( 
-        "The CA client library is disconnecting because a CA server isnt responding\n" );
-                this->cacRef.printf ( 
-        "when there are incoming messages pending probably because the application\n" );
-                this->cacRef.printf ( 
-        "isnt calling ca_pend_event().\n" );
-            }
+        if ( this->iiu.bytesArePendingInOS() ) {
+            this->cacRef.printf ( 
+    "The CA client library is disconnecting because a CA server isnt responding\n" );
+            this->cacRef.printf ( 
+    "when there are incoming messages pending probably because the application\n" );
+            this->cacRef.printf ( 
+    "isnt properly schedualed.\n" );
         }
         this->cancel ();
 #       ifdef DEBUG

@@ -12,8 +12,10 @@ ifndef CONFIG
 CONFIG = $(TOP)/configure
 endif
 
+-include $(CONFIG)/os/CONFIG_COMPAT
+
 -include $(CONFIG)/RELEASE
--include $(CONFIG)/RELEASE.$(HOST_ARCH)
+-include $(CONFIG)/RELEASE.$(EPICS_HOST_ARCH)
 
 include $(CONFIG)/CONFIG_COMMON
 
@@ -28,21 +30,22 @@ include $(CONFIG)/CONFIG_SITE
 
 #  Host architecture specific definitions
 #
-include $(CONFIG)/os/CONFIG.Host.$(HOST_ARCH)
+include $(CONFIG)/os/CONFIG.Host.$(EPICS_HOST_ARCH)
+
 
 ifdef T_A
 
 #  Architecture specific definitions
 #
-ifneq ($(HOST_ARCH),$(T_A))
+ifneq ($(EPICS_HOST_ARCH),$(T_A))
 include $(CONFIG)/CONFIG.CrossCommon
 endif
 
 include $(CONFIG)/os/CONFIG.Target.$(T_A)
 #
--include $(CONFIG)/os/CONFIG_SITE.Host.$(HOST_ARCH)
+-include $(CONFIG)/os/CONFIG_SITE.Host.$(EPICS_HOST_ARCH)
 -include $(CONFIG)/os/CONFIG_SITE.Target.$(T_A)
--include $(CONFIG)/os/CONFIG_SITE.$(HOST_ARCH).$(T_A)
+-include $(CONFIG)/os/CONFIG_SITE.$(EPICS_HOST_ARCH).$(T_A)
 
 endif
 
@@ -50,12 +53,15 @@ endif
 #
 -include $(HOME)/configure/CONFIG
 -include $(HOME)/os/configure/CONFIG.Host.$(HOST_ARCH)
+-include $(HOME)/os/configure/CONFIG.Host.$(EPICS_HOST_ARCH)
 ifdef T_A
 -include $(HOME)/configure/CONFIG.$(OS_CLASS)
 -include $(HOME)/configure/CONFIG.Target.$(T_A)
 -include $(HOME)/configure/CONFIG.$(HOST_ARCH).$(T_A)
+-include $(HOME)/configure/CONFIG.$(EPICS_HOST_ARCH).$(T_A)
 -include $(HOME)/configure/os/CONFIG.Target.$(T_A)
 -include $(HOME)/configure/os/CONFIG.$(HOST_ARCH).$(T_A)
+-include $(HOME)/configure/os/CONFIG.$(EPICS_HOST_ARCH).$(T_A)
 endif
 
 #  All options

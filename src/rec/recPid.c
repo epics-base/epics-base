@@ -371,8 +371,8 @@ struct pidRecord     *ppid;
 	}
         options=0;
         nRequest=1;
-        if(!dbGetLink(&(ppid->cvl.value.db_link),ppid,DBR_FLOAT,
-	&cval,&options,&nRequest)) {
+        if(dbGetLink(&(ppid->cvl.value.db_link),ppid,DBR_FLOAT,
+	&cval,&options,&nRequest)!=NULL) {
                 if (ppid->nsev<MAJOR_ALARM) {
                         ppid->nsta = READ_ALARM;
                         ppid->nsev = MAJOR_ALARM;
@@ -383,8 +383,8 @@ struct pidRecord     *ppid;
         if(ppid->stpl.type == DB_LINK && ppid->smsl == CLOSED_LOOP){
         	options=0;
         	nRequest=1;
-        	if(!dbGetLink(&(ppid->stpl.value.db_link),ppid,DBR_FLOAT,
-		&(ppid->val),&options,&nRequest)) {
+        	if(dbGetLink(&(ppid->stpl.value.db_link),ppid,DBR_FLOAT,
+		&(ppid->val),&options,&nRequest)!=NULL) {
                 	if (ppid->nsev<MAJOR_ALARM) {
                                 ppid->stat = READ_ALARM;
                                 ppid->sevr = MAJOR_ALARM;

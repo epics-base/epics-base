@@ -49,12 +49,11 @@ LIBSRCS += syncgrp.cpp
 LIBSRCS += CASG.cpp
 LIBSRCS += syncGroupNotify.cpp
 LIBSRCS += localHostName.cpp
-LIBSRCS += claimsPendingIIU.cpp
-LIBSRCS += claimMsgCache.cpp
 LIBSRCS += comQueRecv.cpp
 LIBSRCS += comQueSend.cpp
-LIBSRCS += cacPrivate.cpp
+LIBSRCS += cacPrivateListOfIO.cpp
 LIBSRCS += hostNameCache.cpp
+LIBSRCS += ioCounter.cpp
 
 LIBRARY=ca
 
@@ -80,7 +79,7 @@ PROD += caRepeater
 PROD_DEFAULT += catime acctst caConnTest
 catime_SRCS = catimeMain.c catime.c 
 acctst_SRCS = acctstMain.c acctst.c 
-caConnTest_SRCS = caConnTestMain.c caConnTest.c 
+caConnTest_SRCS = caConnTestMain.cpp caConnTest.cpp 
 
 PROD_vxWorks = catime acctst caConnTest
 

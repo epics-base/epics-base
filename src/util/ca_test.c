@@ -353,28 +353,6 @@ LOCAL void verify_value(chid chan_id, chtype type)
  *
  * switches over the range of CA data types and reports the value
  */
-
-LOCAL void tsStampToText(char * text, const TS_STAMP *pstamp)
-{
-    struct tm tmstruct;
-    unsigned long nsec;
-    char nsectext[14];
-    int status;
-    
-
-    status = tsStampToTM(&tmstruct,&nsec,pstamp);
-    if(status) {
-        sprintf(text,"illegal time stamp\n");
-        return;
-    }
-    sprintf(nsectext,".%09lu",nsec);
-    if((nsec%1000000)*1000000 == nsec) nsectext[4] = 0;
-    else if((nsec%1000)*1000 == nsec) nsectext[7] = 0;
-    else nsectext[10] = 0;
-    strftime(text,40,"%Y/%m/%d %H:%M:%S",&tmstruct);
-    strcat(text,nsectext);
-}
-    
 LOCAL void print_returned(chtype type, const void *pbuffer, unsigned count)
 {
     unsigned	i;
@@ -542,7 +520,8 @@ LOCAL void print_returned(chtype type, const void *pbuffer, unsigned count)
 		struct dbr_time_string *pvalue 
 		  = (struct dbr_time_string *) pbuffer;
 
-		tsStampToText(tsString, &pvalue->stamp);
+                tsStampToStrftime(tsString,sizeof(tsString),
+                    "%Y/%m/%d %H:%M:%S.%06f",&pvalue->stamp);
 		printf("%2d %2d",pvalue->status,pvalue->severity);
 		printf("\tTimeStamp: %s",tsString);
 		printf("\tValue: ");
@@ -555,7 +534,8 @@ LOCAL void print_returned(chtype type, const void *pbuffer, unsigned count)
 		  = (struct dbr_time_enum *)pbuffer;
 		dbr_enum_t *pshort = &pvalue->value;
 
-		tsStampToText(tsString,&pvalue->stamp);
+                tsStampToStrftime(tsString,sizeof(tsString),
+                    "%Y/%m/%d %H:%M:%S.%06f",&pvalue->stamp);
 		printf("%2d %2d",pvalue->status,pvalue->severity);
 		printf("\tTimeStamp: %s",tsString);
 		if(count==1) printf("\tValue: ");
@@ -571,7 +551,8 @@ LOCAL void print_returned(chtype type, const void *pbuffer, unsigned count)
 		  = (struct dbr_time_short *)pbuffer;
 		dbr_short_t *pshort = &pvalue->value;
 
-		tsStampToText(tsString, &pvalue->stamp);
+                tsStampToStrftime(tsString,sizeof(tsString),
+                    "%Y/%m/%d %H:%M:%S.%06f",&pvalue->stamp);
 		printf("%2d %2d",
 			pvalue->status,
 			pvalue->severity);
@@ -589,7 +570,8 @@ LOCAL void print_returned(chtype type, const void *pbuffer, unsigned count)
 		  = (struct dbr_time_float *)pbuffer;
 		dbr_float_t *pfloat = &pvalue->value;
 
-		tsStampToText(tsString, &pvalue->stamp);
+                tsStampToStrftime(tsString,sizeof(tsString),
+                    "%Y/%m/%d %H:%M:%S.%06f",&pvalue->stamp);
 		printf("%2d %2d",pvalue->status,pvalue->severity);
 		printf("\tTimeStamp: %s",tsString);
 		if(count==1) printf("\tValue: ");
@@ -605,7 +587,8 @@ LOCAL void print_returned(chtype type, const void *pbuffer, unsigned count)
 		  = (struct dbr_time_char *)pbuffer;
 		dbr_char_t *pchar = &pvalue->value;
 
-		tsStampToText(tsString, &pvalue->stamp);
+                tsStampToStrftime(tsString,sizeof(tsString),
+                    "%Y/%m/%d %H:%M:%S.%06f",&pvalue->stamp);
 		printf("%2d %2d",pvalue->status,pvalue->severity);
 		printf("\tTimeStamp: %s",tsString);
 		if(count==1) printf("\tValue: ");
@@ -621,7 +604,8 @@ LOCAL void print_returned(chtype type, const void *pbuffer, unsigned count)
 		  = (struct dbr_time_long *)pbuffer;
 		dbr_long_t *plong = &pvalue->value;
 
-		tsStampToText(tsString, &pvalue->stamp);
+                tsStampToStrftime(tsString,sizeof(tsString),
+                    "%Y/%m/%d %H:%M:%S.%06f",&pvalue->stamp);
 		printf("%2d %2d",pvalue->status,pvalue->severity);
 		printf("\tTimeStamp: %s",tsString);
 		if(count==1) printf("\tValue: ");
@@ -637,7 +621,8 @@ LOCAL void print_returned(chtype type, const void *pbuffer, unsigned count)
 		  = (struct dbr_time_double *)pbuffer;
 		dbr_double_t *pdouble = &pvalue->value;
 
-		tsStampToText(tsString, &pvalue->stamp);
+                tsStampToStrftime(tsString,sizeof(tsString),
+                    "%Y/%m/%d %H:%M:%S.%06f",&pvalue->stamp);
 		printf("%2d %2d",pvalue->status,pvalue->severity);
 		printf("\tTimeStamp: %s",tsString);
 		if(count==1) printf("\tValue: ");

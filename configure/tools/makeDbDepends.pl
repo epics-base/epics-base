@@ -5,7 +5,7 @@ eval 'exec perl -S $0 ${1+"$@"}'  # -*- Mode: perl -*-
 # Searches the .substitutions files (from the command line) for
 # "file xxx {" entries to create a DEPENDS file
 
-open(OUT, ">DEPENDS") or die "Cannot open DEPENDS: $!";
+open(OUT, ">DBDEPENDS") or die "Cannot open DBDEPENDS: $!";
 
 foreach $file (@ARGV) {
     open(IN, "<$file") or die "Cannot open $file: $!";

@@ -10,7 +10,9 @@
  * -----------------
  * .01  1994        mhb     Started with longout record to make the data fanout
  * .02  May 10, 96  jt	    Bug Fix
+ * .03  11SEP2000   mrk     LONG=>DOUBLE, add SELL,SELN,SELM
  */
+
 
 #include <stddef.h>
 #include <stdlib.h>
@@ -44,7 +46,7 @@ static long process();
 #define get_array_info NULL
 #define put_array_info NULL
 static long get_units();
-#define get_precision NULL
+static long get_precision();
 #define get_enum_str NULL
 #define get_enum_strs NULL
 #define put_enum_str NULL
@@ -80,32 +82,30 @@ static void push_values();
 #define OUT_ARG_MAX 8
 
 
-static long init_record(pdfanout,pass)
-    struct dfanoutRecord	*pdfanout;
-    int pass;
+static long init_record(struct dfanoutRecord *pdfanout, int pass)
 {
     if (pass==0) return(0);
 
+    recGblInitConstantLink(&pdfanout->sell,DBF_USHORT,&pdfanout->seln);
     /* get the initial value dol is a constant*/
-    if (pdfanout->dol.type == CONSTANT){
-	if(recGblInitConstantLink(&pdfanout->dol,DBF_DOUBLE,&pdfanout->val))
+    if(recGblInitConstantLink(&pdfanout->dol,DBF_DOUBLE,&pdfanout->val))
 	    pdfanout->udf=FALSE;
-    }
     return(0);
 }
 
-static long process(pdfanout)
-        struct dfanoutRecord     *pdfanout;
+static long process(struct dfanoutRecord *pdfanout)
 {
-    long		 status=0;
+    long status=0;
 
     if (!pdfanout->pact && pdfanout->omsl == CLOSED_LOOP){
 	status = dbGetLink(&(pdfanout->dol),DBR_DOUBLE,&(pdfanout->val),0,0);
-	if(pdfanout->dol.type!=CONSTANT && RTN_SUCCESS(status)) pdfanout->udf=FALSE;
+	if(pdfanout->dol.type!=CONSTANT && RTN_SUCCESS(status))
+            pdfanout->udf=FALSE;
     }
     pdfanout->pact = TRUE;
     recGblGetTimeStamp(pdfanout);
     /* Push out the data to all the forward links */
+    dbGetLink(&(pdfanout->sell),DBR_USHORT,&(pdfanout->seln),0,0);
     checkAlarms(pdfanout);
     push_values(pdfanout);
     monitor(pdfanout);
@@ -114,56 +114,73 @@ static long process(pdfanout)
     return(status);
 }
 
-static long get_units(paddr,units)
-    struct dbAddr *paddr;
-    char	  *units;
+static long get_units(struct dbAddr *paddr,char *units)
 {
-    struct dfanoutRecord	*pdfanout=(struct dfanoutRecord *)paddr->precord;
+    struct dfanoutRecord *pdfanout=(struct dfanoutRecord *)paddr->precord;
 
     strncpy(units,pdfanout->egu,DB_UNITS_SIZE);
     return(0);
 }
 
-static long get_graphic_double(paddr,pgd)
-    struct dbAddr *paddr;
-    struct dbr_grDouble	*pgd;
+static long get_precision(struct dbAddr *paddr,long *precision)
 {
-    struct dfanoutRecord	*pdfanout=(struct dfanoutRecord *)paddr->precord;
+    struct dfanoutRecord *pdfanout=(struct dfanoutRecord *)paddr->precord;
+    int   fieldIndex = dbGetFieldIndex(paddr);
 
-    if(paddr->pfield==(void *)&pdfanout->val
-    || paddr->pfield==(void *)&pdfanout->hihi
-    || paddr->pfield==(void *)&pdfanout->high
-    || paddr->pfield==(void *)&pdfanout->low
-    || paddr->pfield==(void *)&pdfanout->lolo){
+    if(fieldIndex == dfanoutRecordVAL
+    || fieldIndex == dfanoutRecordHIHI
+    || fieldIndex == dfanoutRecordHIGH
+    || fieldIndex == dfanoutRecordLOW
+    || fieldIndex == dfanoutRecordLOLO
+    || fieldIndex == dfanoutRecordHOPR
+    || fieldIndex == dfanoutRecordLOPR) {
+        *precision = pdfanout->prec;
+    } else {
+        recGblGetPrec(paddr,precision);
+    }
+    return(0);
+}
+
+static long get_graphic_double(struct dbAddr *paddr,struct dbr_grDouble	*pgd)
+{
+    struct dfanoutRecord *pdfanout=(struct dfanoutRecord *)paddr->precord;
+    int   fieldIndex = dbGetFieldIndex(paddr);
+
+    if(fieldIndex == dfanoutRecordVAL
+    || fieldIndex == dfanoutRecordHIHI
+    || fieldIndex == dfanoutRecordHIGH
+    || fieldIndex == dfanoutRecordLOW
+    || fieldIndex == dfanoutRecordLOLO
+    || fieldIndex == dfanoutRecordHOPR
+    || fieldIndex == dfanoutRecordLOPR) {
         pgd->upper_disp_limit = pdfanout->hopr;
         pgd->lower_disp_limit = pdfanout->lopr;
     } else recGblGetGraphicDouble(paddr,pgd);
     return(0);
 }
 
-static long get_control_double(paddr,pcd)
-    struct dbAddr *paddr;
-    struct dbr_ctrlDouble *pcd;
+static long get_control_double(struct dbAddr *paddr,struct dbr_ctrlDouble *pcd)
 {
-    struct dfanoutRecord	*pdfanout=(struct dfanoutRecord *)paddr->precord;
+    struct dfanoutRecord *pdfanout=(struct dfanoutRecord *)paddr->precord;
+    int   fieldIndex = dbGetFieldIndex(paddr);
 
-    if(paddr->pfield==(void *)&pdfanout->val
-    || paddr->pfield==(void *)&pdfanout->hihi
-    || paddr->pfield==(void *)&pdfanout->high
-    || paddr->pfield==(void *)&pdfanout->low
-    || paddr->pfield==(void *)&pdfanout->lolo){
+    if(fieldIndex == dfanoutRecordVAL
+    || fieldIndex == dfanoutRecordHIHI
+    || fieldIndex == dfanoutRecordHIGH
+    || fieldIndex == dfanoutRecordLOW
+    || fieldIndex == dfanoutRecordLOLO) {
         pcd->upper_ctrl_limit = pdfanout->hopr;
         pcd->lower_ctrl_limit = pdfanout->lopr;
     } else recGblGetControlDouble(paddr,pcd);
     return(0);
 }
-static long get_alarm_double(paddr,pad)
-    struct dbAddr *paddr;
-    struct dbr_alDouble	*pad;
+static long get_alarm_double(struct dbAddr *paddr,struct dbr_alDouble *pad)
 {
-    struct dfanoutRecord	*pdfanout=(struct dfanoutRecord *)paddr->precord;
+    struct dfanoutRecord *pdfanout=(struct dfanoutRecord *)paddr->precord;
+    int   fieldIndex = dbGetFieldIndex(paddr);
 
-    if(paddr->pfield==(void *)&pdfanout->val){
+    
+    if(fieldIndex == dfanoutRecordVAL) {
          pad->upper_alarm_limit = pdfanout->hihi;
          pad->upper_warning_limit = pdfanout->high;
          pad->lower_warning_limit = pdfanout->low;
@@ -172,8 +189,7 @@ static long get_alarm_double(paddr,pad)
     return(0);
 }
 
-static void checkAlarms(pdfanout)
-    struct dfanoutRecord	*pdfanout;
+static void checkAlarms(struct dfanoutRecord *pdfanout)
 {
 	double		val;
 	double		hyst, lalm, hihi, high, low, lolo;
@@ -217,8 +233,7 @@ static void checkAlarms(pdfanout)
 	return;
 }
 
-static void monitor(pdfanout)
-    struct dfanoutRecord	*pdfanout;
+static void monitor(struct dfanoutRecord *pdfanout)
 {
 	unsigned short	monitor_mask;
 
@@ -250,16 +265,45 @@ static void monitor(pdfanout)
 	}
 	return;
 }
-
-static void push_values(pdfanout)
-struct dfanoutRecord *pdfanout;
+
+static void push_values(struct dfanoutRecord *pdfanout)
 {
-        struct link     *plink; /* structure of the link field  */
-        int             i;
-        long            status;
+    struct link     *plink; /* structure of the link field  */
+    int             i;
+    long            status;
+    unsigned short  state;
 
+    switch (pdfanout->selm){
+    case (dfanoutSELM_All):
         for(i=0, plink=&(pdfanout->outa); i<OUT_ARG_MAX; i++, plink++) {
                 status=dbPutLink(plink,DBR_DOUBLE,&(pdfanout->val),1);
                 if(status) recGblSetSevr(pdfanout,LINK_ALARM,MAJOR_ALARM);
         }
+        break;
+    case (dfanoutSELM_Specified):
+        if(pdfanout->seln>OUT_ARG_MAX) {
+            recGblSetSevr(pdfanout,SOFT_ALARM,INVALID_ALARM);
+            break;
+        }
+        if(pdfanout->seln==0) break;
+        plink=&(pdfanout->outa);
+        plink += (pdfanout->seln -1);
+        status=dbPutLink(plink,DBR_DOUBLE,&(pdfanout->val),1);
+        if(status) recGblSetSevr(pdfanout,LINK_ALARM,MAJOR_ALARM);
+        break;
+    case (dfanoutSELM_Mask):
+        if(pdfanout->seln==0) break;
+        for(i=0, plink=&(pdfanout->outa), state=pdfanout->seln;
+        i<OUT_ARG_MAX;
+        i++, plink++, state>>=1) {
+            if(state&1) {
+                status=dbPutLink(plink,DBR_DOUBLE,&(pdfanout->val),1);
+                if(status) recGblSetSevr(pdfanout,LINK_ALARM,MAJOR_ALARM);
+            }
+        }
+        break;
+    default:
+        recGblSetSevr(pdfanout,SOFT_ALARM,INVALID_ALARM);
+    }
+
 }

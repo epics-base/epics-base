@@ -1,3 +1,8 @@
+menu(dfanoutSELM) {
+        choice(dfanoutSELM_All,"All")
+        choice(dfanoutSELM_Specified,"Specified")
+        choice(dfanoutSELM_Mask,"Mask")
+}
 recordtype(dfanout) {
 	include "dbCommon.dbd" 
 	field(VAL,DBF_DOUBLE) {
@@ -5,6 +10,22 @@ recordtype(dfanout) {
 		asl(ASL0)
 		pp(TRUE)
 	}
+        field(SELM,DBF_MENU) {
+                prompt("Select Mechanism")
+                promptgroup(GUI_LINKS)
+                interest(1)
+                menu(dfanoutSELM)
+        }
+        field(SELN,DBF_USHORT) {
+                prompt("Link Selection")
+                interest(1)
+                initial("1")
+        }
+        field(SELL,DBF_INLINK) {
+                prompt("Link Selection Loc")
+                promptgroup(GUI_LINKS)
+                interest(1)
+        }
 	field(OUTA,DBF_OUTLINK) {
 		prompt("Output Spec A")
 		promptgroup(GUI_OUTPUT)
@@ -62,6 +83,11 @@ recordtype(dfanout) {
 		interest(1)
 		size(16)
 	}
+        field(PREC,DBF_SHORT) {
+                prompt("Display Precision")
+                promptgroup(GUI_DISPLAY)
+                interest(1)
+        }
 	field(HOPR,DBF_DOUBLE) {
 		prompt("High Operating Range")
 		promptgroup(GUI_DISPLAY)
@@ -153,16 +179,5 @@ recordtype(dfanout) {
 		prompt("Last Val Monitored")
 		special(SPC_NOMOD)
 		interest(3)
-	}
-	field(IVOA,DBF_MENU) {
-		prompt("INVALID output action")
-		promptgroup(GUI_OUTPUT)
-		interest(2)
-		menu(menuIvoa)
-	}
-	field(IVOV,DBF_DOUBLE) {
-		prompt("INVALID output value")
-		promptgroup(GUI_OUTPUT)
-		interest(2)
 	}
 }

@@ -19,25 +19,25 @@ this matter is resolved.
 
 Here are some of the inheritance trees used by the server lib:
 
-		casCoreClient
-		|
-		|
-inBuf	outBuf	casClient			dgInBuf	dgOutBuf
-|	|	|_______________________	|	|
-|	|	|			|	|	|
-|_______casStrmClient			casDGClient_____|
-		|			|
-		|			|
-	casStreamIO			casDGIO
-		|			|
-		|			|
-	casStreamOS			casDGOS
+                casCoreClient
+                    |
+                    |
+inBuf   outBuf    casClient   dgInBuf dgOutBuf
+|       |   ________|_______    |       |
+|       |   |              |    |       |
+|___casStrmClient      casDGClient______|
+        |                  |
+        |                  |
+    casStreamIO         casDGIO
+        |                  |
+        |                  |
+    casStreamOS         casDGOS
 
 
-	casDGIntfIO			casIntfIO
-		|			|
-		|			|
-	casDGIntfOS			casIntfOS
+    casDGIntfIO        casIntfIO
+        |                  |
+        |                  |
+    casDGIntfOS        casIntfOS
 
 
 

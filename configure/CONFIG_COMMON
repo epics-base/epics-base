@@ -6,8 +6,44 @@
 #  This file is to be maintained by the community.
 #
 
-BUILD_TYPE = HOST
+#-------------------------------------------------------
+# Default valid build types and include directory suffixes
+#
+# Host means single-thread non-ioc
+# HostMT means multi-thread non-ioc
+# Ioc means multi-thread ioc
+# IocST means single-thread ioc
 
+VALID_BUILDS = Host Ioc HostMT IocST
+Host_SUFFIX=
+HostMT_SUFFIX=MT
+Ioc_SUFFIX=Ioc
+IocST_SUFFIX=IocST
+
+B_T_SUFFIX = $($(B_T)_SUFFIX)
+
+# vpath directories
+OS_SRC_DIRS += $(foreach dir,$(SRC_DIRS), \
+            $(dir)/os/$(OS_CLASS)$(B_T_SUFFIX) $(dir)/os/posix$(B_T_SUFFIX) \
+            $(dir)/os/$(OS_CLASS) $(dir)/os/posix \
+            $(dir)/generic$(B_T_SUFFIX) $(dir)/generic $(dir))
+
+OS_DIRS += ../os/$(OS_CLASS)$(B_T_SUFFIX) ../os/posix$(B_T_SUFFIX) \
+           ../os/$(OS_CLASS) ../os/posix \
+           ../generic$(B_T_SUFFIX) ../generic 
+
+# compile line include directories
+SRC_INCLUDES += $(addprefix -I,$(OS_SRC_DIRS) $(OS_DIRS))
+INSTALL_INCLUDES += \
+       -I$(INSTALL_INCLUDE)/os/$(OS_CLASS)$(B_T_SUFFIX) \
+       -I$(INSTALL_INCLUDE)/os/posix$(B_T_SUFFIX) \
+       -I$(INSTALL_INCLUDE)/os/$(OS_CLASS) \
+       -I$(INSTALL_INCLUDE)/os/posix \
+       -I$(INSTALL_INCLUDE)/generic$(B_T_SUFFIX) \
+       -I$(INSTALL_INCLUDE)/generic \
+       -I$(INSTALL_INCLUDE)
+
+#-------------------------------------------------------
 # Common Configuration Information 
 
 # CROSS1 will be defined only when CROSS_COMPILER_HOST_ARCHS is NOT defined
@@ -107,15 +143,15 @@ G++_SHRLIB_LDFLAGS_YES =  -shared
 
 #--------------------------------------------------
 # C compiler
-CC = $($(ANSI)_$(CMPLR)) $(GCC_CFLAGS_$(BUILD_TYPE))
+CC = $($(ANSI)_$(CMPLR)) $(GCC_CFLAGS_$(BUILD_CLASS))
 AR = $($(ANSI)_AR)
-CPP =  $($(ANSI)_CPP) $(GCC_CPPFLAGS_$(BUILD_TYPE))
+CPP =  $($(ANSI)_CPP) $(GCC_CPPFLAGS_$(BUILD_CLASS))
 RANLIB =  $($(ANSI)_RANLIB)
 LD = $($(ANSI)_LD)
 
 #--------------------------------------------------
 # C++ compiler
-CXX = $($(CPLUSPLUS)_$(CXXCMPLR)) $(GCC_CFLAGS_$(BUILD_TYPE))
+CXX = $($(CPLUSPLUS)_$(CXXCMPLR)) $(GCC_CFLAGS_$(BUILD_CLASS))
 CXX_LD = $($(CPLUSPLUS)_LD)
 
 #---------------------------------------------------------------
@@ -176,13 +212,13 @@ INSTALL_DBDFLAGS = -I $(INSTALL_LOCATION)/dbd
 
 #--------------------------------------------------
 # Warnings flags  (CONFIG.<arch> will override)
-WARN_CFLAGS = $($(ANSI)_WARN_$($(BUILD_TYPE)_WARN))
-WARN_CXXFLAGS = $($(CPLUSPLUS)_WARN_$($(BUILD_TYPE)_WARN))
+WARN_CFLAGS = $($(ANSI)_WARN_$($(BUILD_CLASS)_WARN))
+WARN_CXXFLAGS = $($(CPLUSPLUS)_WARN_$($(BUILD_CLASS)_WARN))
 
 #--------------------------------------------------
 # Optimization flags  (CONFIG.<arch> will override)
-OPT_CFLAGS = $($(ANSI)_OPT_$($(BUILD_TYPE)_OPT))
-OPT_CXXFLAGS = $($(CPLUSPLUS)_OPT_$($(BUILD_TYPE)_OPT))
+OPT_CFLAGS = $($(ANSI)_OPT_$($(BUILD_CLASS)_OPT))
+OPT_CXXFLAGS = $($(CPLUSPLUS)_OPT_$($(BUILD_CLASS)_OPT))
 OPT_LDFLAGS =
 
 #--------------------------------------------------
@@ -203,7 +239,7 @@ DEPENDS_RULE = -$(COMPILE.cc) $(DEPENDS_FLAG) $^ > DEPENDS
 #--------------------------------------------------
 # Include files
 
-INCLUDES = -I. -I.. $(USR_INCLUDES) $(INSTALL_INCLUDES) $(TARGET_INCLUDES) $(OP_SYS_INCLUDES)
+INCLUDES = -I. -I.. $(USR_INCLUDES) $(SRC_INCLUDES) $(INSTALL_INCLUDES) $(TARGET_INCLUDES) $(OP_SYS_INCLUDES)
 
 #--------------------------------------------------
 # Flags

@@ -43,7 +43,7 @@ endif
 #
 #CROSS_COMPILER_TARGET_ARCHS= vxWorks-68040
 CROSS_COMPILER_TARGET_ARCHS= mv167 ppc604
-
+CROSS_COMPILER_TARGET_ARCHS= vxWorks-68040
 
 #  If only a subset of the host architectures perform
 #  the build for the CROSS_COMPILER_TARGET_ARCHS 
@@ -95,18 +95,18 @@ SHARED_LIBRARIES=NO
 #        must be either YES or NO
 STATIC_BUILD=NO
 
-#  Unix Optimization
+#  Host build optimization
 #	must be either YES or NO
-HOST_OPT=YES
+Host_OPT=YES
 
-#  VxWorks Optimization
+#  IOC build optimization
 #	must be either YES or NO
-CROSS_OPT=YES
+IOC_OPT=YES
 
-#  Generate Verbose Compiler Warnings for Unix
+#  Generate Verbose Compiler Warnings for Host builds
 #	must be either YES or NO
-HOST_WARN=YES
+Host_WARN=YES
 
-#  Generate Verbose Compiler Warnings for crosscompiles
+#  Generate Verbose Compiler Warnings for IOC builds
 #	must be either YES or NO
-CROSS_WARN=YES
+IOC_WARN=YES

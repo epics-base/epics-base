@@ -1,0 +1,11 @@
+
+TOP=../../..
+
+include $(TOP)/configure/CONFIG
+
+osiTimeTest_LIBS += Com
+osiTimeTest_SRCS += osiTimeTest.cc
+PROD= osiTimeTest
+
+include $(TOP)/configure/RULES_BUILD
+

@@ -33,14 +33,6 @@ INSTALL_DBDNAME = $(DBDNAME:%= $(INSTALL_DBD)/%)
 
 MAN_DIRECTORY_TARGETS = $(foreach n, $(MANLIST),$(INSTALL_MAN)/man$(n))
 
-#       if we are not building base add base includes
-#
-ifneq ($(EPICS_BASE),$(TOP))
-ifneq ($(EPICS_BASE),$(INSTALL_LOCATION))
-EPICS_INCLUDES += -I$(EPICS_BASE_INCLUDE) -I$(EPICS_BASE_INCLUDE)/os/$(OS_CLASS)
-endif
-endif
-
 all:: install 
 
 rebuild:: clean install

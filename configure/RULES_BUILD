@@ -28,64 +28,25 @@
 #	vpath, of course, has the disadvantage that we need explicit rules
 #	for scripts or similar os-specific filed which have _no_ suffix...
 
-include $(CONFIG)/RULES_ARCHS
+
 ifdef T_A
-BUILD=YES
-ifneq ($(THREAD_TYPE),)
-ifneq ($(OS_THREAD_TYPE),)
-ifneq ($(THREAD_TYPE),$(findstring $(THREAD_TYPE),$(OS_THREAD_TYPE)))
-BUILD=NO
-endif
-endif
-endif
-ifeq ($(BUILD),YES)
+ifdef B_T
 
-ifneq ($(THREAD_TYPE),ST)
-OS_SRC_DIRS += $(foreach dir,$(SRC_DIRS), \
-            $(dir)/os/$(OS_CLASS)MT $(dir)/os/posixMT \
-            $(dir)/os/$(OS_CLASS) $(dir)/os/posix \
-            $(dir)/generic $(dir)) . ..
-INSTALL_INCLUDES += $(foreach dir,$(SRC_DIRS) $(INSTALL_INCLUDE), \
-       -I$(dir)/os/$(OS_CLASS)MT -I$(dir)/os/posixMT \
-       -I$(dir)/os/$(OS_CLASS) -I$(dir)/os/posix \
-       -I$(dir)/generic -I$(dir))
-
-INSTALL_INC += $(subst generic/,,$(foreach inc,$(INC), \
-    $(firstword $(foreach dir,$(SRC_DIRS) .., \
-    $(subst $(dir),$(INSTALL_INCLUDE),$(firstword $(wildcard \
-         $(dir)/os/$(OS_CLASS)MT/$(inc) \
-         $(dir)/os/posixMT/$(inc) \
-         $(dir)/os/$(OS_CLASS)/$(inc) \
-         $(dir)/os/posix/$(inc)\
-         $(dir)/generic/$(inc) \
-         $(dir)/$(inc) \
-         ../$(inc) \
-    )))) $(INSTALL_INCLUDE)/$(inc))))
-
+ifneq ($(strip $(SRC_DIRS)),)
+vpath %.c $(USER_VPATH) . .. $(OS_SRC_DIRS)
+vpath %.cc $(USER_VPATH) . .. $(OS_SRC_DIRS)
+vpath %.C $(USER_VPATH) . .. $(OS_SRC_DIRS)
+vpath %.rc $(USER_VPATH) . .. $(OS_SRC_DIRS)
+vpath %.h $(USER_VPATH) . .. $(OS_SRC_DIRS)
 else
-OS_SRC_DIRS += $(foreach dir,$(SRC_DIRS), \
-         $(dir)/os/$(OS_CLASS) $(dir)/os/posix $(dir)/generic $(dir)) . ..
-INSTALL_INCLUDES += $(foreach dir,$(SRC_DIRS) $(INSTALL_INCLUDE), \
-         -I$(dir)/os/$(OS_CLASS) -I$(dir)/os/posix -I$(dir)/generic -I$(dir))
-INSTALL_INC += $(subst generic/,,$(foreach inc,$(INC), \
-    $(firstword $(foreach dir,$(SRC_DIRS) .., \
-    $(subst $(dir),$(INSTALL_INCLUDE),$(firstword $(wildcard \
-         $(dir)/os/$(OS_CLASS)/$(inc) \
-         $(dir)/os/posix/$(inc)\
-         $(dir)/generic/$(inc) \
-         $(dir)/$(inc) \
-         ../$(inc) \
-    )))) $(INSTALL_INCLUDE)/$(inc))))
-
+vpath %.c $(USER_VPATH) . .. $(OS_DIRS)
+vpath %.cc $(USER_VPATH) . .. $(OS_DIRS)
+vpath %.C $(USER_VPATH) . .. $(OS_DIRS)
+vpath %.rc $(USER_VPATH) . .. $(OS_DIRS)
+vpath %.h $(USER_VPATH) . .. 
 endif
-
-vpath %.c $(USER_VPATH) $(OS_SRC_DIRS) ../os/$(OS_CLASS) ../os/generic .. 
-vpath %.cc $(USER_VPATH) $(OS_SRC_DIRS) ../os/$(OS_CLASS) ../os/generic ..
-vpath %.C $(USER_VPATH) $(OS_SRC_DIRS) ../os/$(OS_CLASS) ../os/generic ..
-vpath %.rc $(USER_VPATH) $(OS_SRC_DIRS) ../os/$(OS_CLASS) ../os/generic ..
 #	This prevents base/src/include/*.h from being installed. Why??
-#vpath %.h ../os/$(OS_CLASS) ../os/generic ..
-vpath %.h $(USER_VPATH)  $(OS_SRC_DIRS) .. .
+#vpath %.h ../os/$(OS_CLASS)
 
 #	check for add-on CFLAGS and CXXFLAGS
 #
@@ -193,16 +154,9 @@ endif
 ifneq ($(strip $(LIBRARY_$(OS_CLASS))),)
 LIBRARY+=$(subst -nil-,,$(LIBRARY_$(OS_CLASS)))
 else
-ifdef LIBRARY_DEFAULT
+ifneq (,$(LIBRARY_DEFAULT))
+#ifdef LIBRARY_DEFAULT
 LIBRARY+=$(LIBRARY_DEFAULT)
-endif
-endif
-
-ifneq ($(strip $(SHARED_LIBRARIES_$(OS_CLASS))),)
-SHARED_LIBRARIES+=$(subst -nil-,,$(SHARED_LIBRARIES_$(OS_CLASS)))
-else
-ifdef SHARED_LIBRARIES_DEFAULT
-SHARED_LIBRARIES_+=$(SHARED_LIBRARIES_DEFAULT)
 endif
 endif
 
@@ -244,6 +198,14 @@ PROD += $(PROD_DEFAULT)
 endif
 endif
 
+ifneq ($(strip $(PRODMT_$(OS_CLASS))),)
+PRODMT += $(subst -nil-,,$(PRODMT_$(OS_CLASS)))
+else
+ifdef PRODMT_DEFAULT
+PRODMT += $(PRODMT_DEFAULT)
+endif
+endif
+
 #
 #	concat specific scripts
 #
@@ -267,33 +229,31 @@ endif
 endif
 
 #---------------------------------------------------------------
+## LIBSRCS and LIBOBJS for LIBRARY
 
 LIBSRCS += $($(addsuffix _SRCS,$(LIBRARY)))
 
-###### The following stmt does not work #########
-ifneq ($($(addsuffix _SRCS_$(OS_CLASS),$(LIBRARY))),)
-XXX=aaa
+ifneq ($(foreach lib,$(LIBRARY),$($(lib)_SRCS_$(OS_CLASS))),)
 LIBSRCS += $(subst -nil-,,$($(addsuffix _SRCS_$(OS_CLASS),$(LIBRARY))))
 else
-XXX=bbb
-LIBSRCS+=$($(addsuffix _SRCS_DEFAULT,$(LIBRARY)))
+LIBSRCS += $($(addsuffix _SRCS_DEFAULT,$(LIBRARY)))
 endif
 
 #	adjust object names for library contents
 #
 ifdef LIBSRCS
-LIBOBJS+=$(addsuffix $(OBJ), $(basename $(LIBSRCS)))
+LIBOBJS += $(addsuffix $(OBJ), $(basename $(LIBSRCS)))
 endif
   
-#	adjust executables
-ifdef TESTPROD
-TESTPROD := $(addsuffix $(EXE), $(TESTPROD))
-endif
-
-#	adjust executables
-ifdef PROD
-PROD := $(addsuffix $(EXE), $(PROD))
-endif
+#---------------------------------------------------------------
+PROD := $(addsuffix $(EXE),$(PROD))
+TESTPROD := $(addsuffix $(EXE),$(TESTPROD))
+TARGETS := $(addsuffix $(EXE),$(TARGETS))
+  
+LIBTARGETS += $(LIBNAME) $(INSTALL_LIBS)
+ifeq ($(strip $(SHARED_LIBRARIES)),YES)
+LIBTARGETS += $(SHRLIBNAME) $(INSTALL_SHRLIBS) $(INSTALL_DLL_LINK_LIBS)
+endif # SHARED_LIBRARIES=YES
 
 #---------------------------------------------------------------
 #	----------------------------------------------------
@@ -312,6 +272,7 @@ INSTALL_SHRLIBS= $(SHRLIBNAME:%=$(INSTALL_SHRLIB)/%)
 INSTALL_DLL_LINK_LIBS=$(DLL_LINK_LIBNAME:%=$(INSTALL_LIB)/%)
 INSTALL_TCLLIBS=$(TCLLIBNAME:%=$(INSTALL_TCLLIB)/%)
 INSTALL_TCLINDEX=$(TCLINDEX:%=$(INSTALL_TCLLIB)/%)
+INSTALL_SCRIPTS = $(SCRIPTS:%= $(INSTALL_BIN)/%)
 
 INSTALL_INCREC = $(INCREC:%= $(INSTALL_INCLUDE)/%)
 MANLIST = 1 2 3 4 5 6 7 8 9
@@ -319,7 +280,6 @@ INSTALL_MANS = $(foreach n, \
         $(MANLIST), $(MAN$(n):%= $(INSTALL_MAN)/man$(n)/%))
 INSTALL_DOCS = $(DOCS:%= $(INSTALL_DOC)/%)
 INSTALL_HTMLS = $(HTMLS:%= $(INSTALL_HTML)/$(HTMLS_DIR)/%)
-INSTALL_SCRIPTS = $(SCRIPTS:%= $(INSTALL_BIN)/%)
 ifdef TEMPLATES_DIR
 INSTALL_TEMPLATES_SUBDIR = $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)
 else
@@ -336,8 +296,35 @@ INSTALL_DBS = $(DBDINSTALL:%= $(INSTALL_DBD)/%)\
 
 INSTALL_DBDNAME = $(DBDNAME:%= $(INSTALL_DBD)/%)
 
+INSTALL_INC += $(foreach inc,$(INC), \
+    $(addprefix $(INSTALL_INCLUDE)/, \
+    $(firstword  \
+    $(foreach dir,$(SRC_DIRS), \
+    $(subst $(dir)/, , \
+    $(wildcard \
+         $(dir)/os/$(OS_CLASS)$(B_T_SUFFIX)/$(inc) \
+         $(dir)/os/posix$(B_T_SUFFIX)/$(inc) \
+         $(dir)/os/$(OS_CLASS)/$(inc) \
+         $(dir)/os/posix/$(inc) \
+         $(dir)/generic$(B_T_SUFFIX)/$(inc) \
+         $(dir)/generic/$(inc) \
+         $(dir)/$(inc) \
+          ))) $(subst ../, ,$(wildcard ../$(inc) ../os/$(OS_CLASS)/$(inc))) $(inc))  )) 
+
+#INSTALL_INC += $(subst generic/,,$(foreach inc,$(INC), \
+#    $(firstword $(foreach dir,$(SRC_DIRS) .., \
+#    $(addprefix $(INSTALL_INCLUDE)/, \
+#    $(subst $(dir)/, ,$(firstword $(wildcard \
+#         $(dir)/os/$(OS_CLASS)$(B_T_SUFFIX)/$(inc) \
+#         $(dir)/os/posix$(B_T_SUFFIX)/$(inc) \
+#         $(dir)/os/$(OS_CLASS)/$(inc) \
+#         $(dir)/os/posix/$(inc) \
+#         $(dir)/generic$(B_T_SUFFIX)/$(inc) \
+#         $(dir)/generic/$(inc) \
+#         $(dir)/$(inc) \
+#         ../$(inc) ) $(inc) ))) ))))
+
 MAN_DIRECTORY_TARGETS = $(foreach n, $(MANLIST),$(INSTALL_MAN)/man$(n))
-#---------------------------------------------------------------
 #---------------------------------------------------------------
 # must use c++ linker if linking to shared libs with c++ code
 #ifeq ($(strip $(SHARED_LIBRARIES)),YES)
@@ -353,9 +340,19 @@ endif # CPLUSPLUS
 #	in this library (may be for e.g. base/src/libCompat
 #	on some archs), don't define (and build) any library!
 
+# LIBRARY
+
 ifdef LIBRARY
+CFLAGS +=  $($(ANSI)_SHRLIB_CFLAGS_YES)
+CXXFLAGS +=  $($(ANSI)_SHRLIB_CFLAGS_YES)
+SHRLIB_LINKER = $(CXX)
+LIB_SRCS=$(LIBRARY_SRCS) $($(basename $(LIBRARY))_SRCS)
+LIBRARY_OBJS+=$(addsuffix $(OBJ), $(basename $(LIB_SRCS)))
+endif # LIBRARY
+
+
+ifdef LIBNAME
 ifdef LIBOBJS
-LIBTARGETS += $(LIBNAME) $(INSTALL_LIBS)
 CFLAGS +=  $($(ANSI)_SHRLIB_CFLAGS_YES)
 CXXFLAGS +=  $($(ANSI)_SHRLIB_CFLAGS_YES)
 
@@ -368,48 +365,38 @@ SHRLIB_LINKER = $(CXX)
 else
 SHRLIB_LINKER = $(CC)
 endif
-LIBTARGETS += $(SHRLIBNAME) $(INSTALL_SHRLIBS) $(INSTALL_DLL_LINK_LIBS)
 
 endif # SHARED_LIBRARIES=YES
 
 endif # LIBOBJS
-endif # LIBRARY
+endif # LIBNAME
 
 #---------------------------------------------------------------
 #	Main targets
 
 all:	install
 
+install: buildInstall 
+
 buildInstall : build 
 
 build : inc 
 
-build: $(LIBTARGETS) $(PROD) $(TESTPROD) 
+rebuild: clean install
 
-buildInstall : $(TARGETS) \
-	$(INSTALL_SCRIPTS) $(INSTALL_PROD) \
-	$(INSTALL_TCLLIBS) $(INSTALL_TCLINDEX)
+inc: $(INSTALL_INC)
 
-build: $(MENUS) $(RECTYPES) $(BPTS)
+build: $(LIBTARGETS) $(PROD) $(TESTPROD) $(TARGETS) \
+	$(MENUS) $(RECTYPES) $(BPTS)
 
 ifdef DBDEXPAND
 build:	$(DBDNAME)
 endif
 
-inc: $(INSTALL_INC)
-
-# WIN95/NT source browser
-#ifdef BAF
-PROD_BAF = $(addsuffix $(BAF), $(basename $(PROD)))
-LIB_BAF = $(addsuffix $(BAF), $(basename $(LIBRARY)))
-browse: $(LIB_BAF) $(PROD_BAF)
-#endif
-
-rebuild: clean install
-
-install: inc buildInstall 
-
-buildInstall : $(INSTALL_MANS) \
+buildInstall : \
+	$(INSTALL_SCRIPTS) $(INSTALL_PROD) \
+	$(INSTALL_TCLLIBS) $(INSTALL_TCLINDEX) \
+	$(INSTALL_MANS) \
 	$(INSTALL_DOCS) \
 	$(INSTALL_HTMLS) \
 	$(INSTALL_TEMPLATE) \
@@ -424,14 +411,30 @@ endif
 clean::
 	@echo "Cleaning"
 	@$(RM) *.i *$(OBJ) *.a $(PROD) $(TESTPROD) $(LIBNAME) $(SHRLIBNAME) \
-	$(INC) *$(RES) $(TARGETS) \
-	$(DBDINSTALL) $(MENUS) $(RECTYPES) $(BPTS) $(DBDNAME) *.out
+	$(INC) *$(RES) $(TARGETS) $(DBDINSTALL) $(MENUS) $(RECTYPES) $(BPTS) \
+	$(DBDNAME) *.out
 ifdef BAF
 	@$(RM) $(PROD_BAF) $(LIB_BAF) *$(BOF)
 endif
 ifdef DBDEXPAND
 	@$(RM) $(DBDNAME)
 endif
+
+#---------------------------------------------------------------
+
+# WIN95/NT source browser
+#ifdef BAF
+PROD_BAF = $(addsuffix $(BAF), $(basename $(PROD)))
+LIB_BAF = $(addsuffix $(BAF), $(basename $(LIBRARY)))
+browse: $(LIB_BAF) $(PROD_BAF)
+#endif
+
+#---------------------------------------------------------------
+
+DIRECTORY_TARGETS += $(INSTALL_DBD) $(INSTALL_INCLUDE)
+
+$(DIRECTORY_TARGETS) :
+	$(MKDIR) -p $@
 
 #---------------------------------------------------------------
 #	Products
@@ -480,11 +483,11 @@ $(PRODNAME): $(PRODNAME_OBJS) $(PRODNAME_RESS)
 	@$(RM) $@
 	$(PRODNAME_LINKER) $(PRODNAME_OBJS) $(PRODNAME_RESS) $(LDLIBS)
 
-else  # ifdef PRODNAME_SRCS
+else  # PRODNAME_SRCS notdefined
 
 BROWSE_OBJECTS = $(addsuffix $(BOF), $(basename $(PRODNAME)))
 
-endif  # ifdef PRODNAME_SRCS
+endif  # PRODNAME_SRCS notdefined
 
 # WIN95/NT source browser
 ifdef BAF
@@ -494,7 +497,7 @@ $(addsuffix $(BAF), $(basename $(PRODNAME))): $(BROWSE_OBJECTS)
 	$(BAFCMD) $^
 endif
 
-else # PRODNAME not defined
+else # PRODNAME notdefined
 
 # We have to use the product's true dependancies and
 # call make again to determine if product should be rebuilt
@@ -504,7 +507,7 @@ PROD_OBJS=$(addsuffix $(OBJ), $(basename $(SRCS) $(COND_PROD_SRCS)))
 
 PROD_RESS=$(addsuffix $(RES), $(basename $(RCS)  $(COND_PROD_RCS)))
 
-PROD_MAKE_COMMAND=$(MAKE) -f ../Makefile $@\
+PROD_MAKE_COMMAND=$(MAKE) -f ../Makefile.$(B_T) T_A=$(T_A) B_T=$(B_T) $@\
 	PRODNAME=$(addsuffix $(EXE), $(basename $@))\
 	PRODNAME_SRCS="$(SRCS) $($(basename $@)_SRCS)"\
 	PRODNAME_SRCS_DEFAULT="$($(basename $@)_SRCS_DEFAULT)"\
@@ -515,6 +518,9 @@ PROD_MAKE_COMMAND=$(MAKE) -f ../Makefile $@\
 	PRODNAME_LIBS="$($(basename $@)_LIBS)"
 
 $(PROD): $(SRCS) $(COND_PROD_SRCS) $(PROD_RESS) $(PROD_DEPLIBS) $(COND_PROD_DEPLIBS)
+
+
+$(PROD):
 	@$(PROD_MAKE_COMMAND)
 
 ifdef BAF
@@ -523,9 +529,8 @@ $(PROD_BAF): $(PROD)
 endif
 
 endif
-endif  #ifdef PRODNAME
-
-endif  #ifdef PROD
+endif # PRODNAME notdefined
+endif # PROD defined
 
 #---------------------------------------------------------------
 #     Java classes and packages
@@ -599,7 +604,7 @@ endif  #ifdef JAVA
 #  The order of the following rules is
 #  VERY IMPORTANT !!!!
 
-depends: $(LIBSRCS) $(SRCS) $(COND_PROD_SRCS)
+depends: $(LIBSRCS) $(LIBSRCS) $(SRCS) $(COND_PROD_SRCS)
 	$(RM) DEPENDS
 	touch DEPENDS
 	$(DEPENDS_RULE)
@@ -614,7 +619,7 @@ depends: $(LIBSRCS) $(SRCS) $(COND_PROD_SRCS)
 	$(COMPILE.cc)  $<
 	$(LINK.cc) $(notdir $(basename $<))$(OBJ) $(LDLIBS)
 
-%$(EXE): %.C
+%$(EXE): %.3
 	@$(RM) $@
 	$(COMPILE.cc)  $<
 	$(LINK.cc) $(notdir ,$(basename $<))$(OBJ) $(LDLIBS)
@@ -713,8 +718,8 @@ endif
 	$(MV) $(<F).nr $(<F).1
 
 $(INSTALL_DBD)/%: %
-	@echo "Installing $@"
-	@$(INSTALL) -d -m 644 $< $(INSTALL_DBD)
+	echo "Installing $@"
+	$(INSTALL) -d -m 644 $< $(INSTALL_DBD)
  
 $(INSTALL_DBD)/%: ../%
 	@echo "Installing $@"
@@ -741,11 +746,11 @@ menu%.h: ../menu%.dbd
 bpt%.dbd: bpt%.data
 	$(RM) $@
 	$(EPICS_BASE)/bin/$(HOST_ARCH)/makeBpt$(HOSTEXE) $<
- 
+
 bpt%.dbd: ../bpt%.data
 	$(RM) $@
 	$(EPICS_BASE)/bin/$(HOST_ARCH)/makeBpt$(HOSTEXE) $<
- 
+
 ifdef DBDEXPAND
 $(DBDNAME): ../$(DBDEXPAND)
 	@echo Expanding dbd
@@ -762,18 +767,8 @@ $(LIB_BAF): $(addsuffix $(BOF), $(basename $(LIBSRCS)))
 endif
 
 ifneq (,$(wildcard ../baseLIBOBJS))
-$(LIBNAME_vxWorks): ../baseLIBOBJS
+$(LIBNAME): ../baseLIBOBJS
 endif
-
-$(LIBNAME_vxWorks): $(LIBOBJS)
-	$(RM) $@
-	$(ARCMD) $(LIBOBJS)
-ifneq ($(RANLIB)xx,xx)
-	$(RANLIB) $@;
-endif # RANLIB
-
-$(DLL_LINK_LIBNAME) $(SHRLIBNAME): $(LIBOBJS)
-	$(LINK.shrlib) $(LIBOBJS) $(DLL_LDLIBS)
 
 # rule for lib (archive of object files) creation
 $(LIBNAME): $(LIBOBJS)
@@ -782,6 +777,9 @@ $(LIBNAME): $(LIBOBJS)
 ifneq ($(RANLIB)xx,xx)
 	$(RANLIB) $@;
 endif # RANLIB
+
+$(DLL_LINK_LIBNAME) $(SHRLIBNAME): $(LIBOBJS)
+	$(LINK.shrlib) $(LIBOBJS) $(DLL_LDLIBS)
 
 binInstalls:  $(BIN_INSTALLS)
 	@echo "Installing $(^F)"
@@ -897,18 +895,8 @@ else
 $(DBDNAME): $(RECTYPES:%.h=../%.dbd)
 endif
 
-else
+endif # B_T defined
+endif # T_A defined
 
-all:
-buildInstall :
-build :
-inc:
-rebuild:
-install:
-clean::
-depends:
-
-endif #BUILD
-endif #T_A
 #	EOF RULES.Host
 

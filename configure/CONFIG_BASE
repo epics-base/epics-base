@@ -15,15 +15,20 @@ SNC = $(EPICS_BASE_HOST_BIN)/snc$(HOSTEXE)
 
 EPICS_BASE_INCLUDE      = $(EPICS_BASE)/include
 
+# build command line include directories
 ifneq ($(EPICS_BASE),$(TOP))
 ifneq ($(EPICS_BASE),$(INSTALL_LOCATION))
 INSTALL_INCLUDES += \
-       -I$(EPICS_BASE_INCLUDE)/os/$(OS_CLASS)MT\
-       -I$(EPICS_BASE_INCLUDE)/os/posixMT \
+       -I$(EPICS_BASE_INCLUDE)/os/$(OS_CLASS)$(B_T_SUFFIX) \
+       -I$(EPICS_BASE_INCLUDE)/os/posix$(B_T_SUFFIX) \
        -I$(EPICS_BASE_INCLUDE)/os/$(OS_CLASS) \
        -I$(EPICS_BASE_INCLUDE)/os/posix \
+       -I$(EPICS_BASE_INCLUDE)/generic$(B_T_SUFFIX) \
        -I$(EPICS_BASE_INCLUDE)/generic \
        -I$(EPICS_BASE_INCLUDE)
+
+INSTALL_DBDFLAGS += \
+       -I$(EPICS_BASE)/dbd
 endif
 endif
 

@@ -21,20 +21,15 @@ DIRS += bpt
 DIRS += ca
 DIRS += util
 DIRS += misc
-DIRS += sequencer
 DIRS += dbtools
 DIRS += rsrv
 DIRS += rec
 DIRS += as
 DIRS += dev
-#FOR NOW JUST BUILD vxWorks dependent stuff
+#Following are optional
 DIRS += vxWorks
-
-#
-# if CPLUSPLUS isnt empty then include C++ src codes
-#
-DIRS += $(patsubst %,gdd,$(strip $(CPLUSPLUS)))
-DIRS += $(patsubst %,cas,$(strip $(CPLUSPLUS)))
+#DIRS += gdd
+#DIRS += cas
 
 include $(TOP)/configure/RULES_DIRS
 

@@ -95,12 +95,10 @@ char * pResourceFilename;
     }
     coreRelease();
     epicsSetEnvParams();
-/*
     status = iocLogInit();
     if(status!=0){
         logMsg("iocInit Failed to Initialize Ioc Log Client \n");
     }
-*/
     status=sdrLoad(pfilename);
     if(status!=0) {
 	logMsg("iocInit aborting because sdrLoad failed\n");

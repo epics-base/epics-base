@@ -208,7 +208,7 @@ void osiTimer::arm (osiTimerQueue &queueIn, double initialDelay)
 	this->pQueue = &queueIn;
 
 #	ifdef DEBUG
-	this->queue.show (10u);
+	this->show (10u);
 #	endif
 	
 #	ifdef DEBUG 

@@ -3,13 +3,29 @@
 <html>
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-  <title>EPICS Release baseR3.13.7 </title>
+  <title>EPICS Release baseR3.13.9</title>
 </head>
 
 <body lang="en">
 <h1>EPICS Release 3.13.9</h1>
 
 <h2>Changes since 3.13.8</h2>
+
+<h3>Enhanced vxStats device support</h3>
+
+<p>Incorporated various changes to the vxStats device support by Andy Foster
+that have been in use at APS for over a year. This version adds the ability to
+see absolute memory use in addition to the percentage figures available before,
+and also gives information on the number of file desciptors in use. These new
+figures use the longin record type, thus a new device support entry is provided
+in base.dbd to enable it. See the comments in
+<tt>src/dev/vxStatsDev/devVXStats.c</tt> for more detail on the new facilities
+and an example database.</p>
+
+<h3>double scanPeriod(int scan)</h3>
+
+<p>A new routine is available from dbScan.h that returns the scan period in
+seconds for a particular scan enumeration value.</p>
 
 <h3>calcRecord and calcoutRecord</h3>
 

@@ -11,8 +11,6 @@
 /*
  *      Original Author: Jim Kowalkowski
  *      Date:  2/1/96
- *	Current Author: Marty Kraimer
- *	Date: 18NOV1997
  */
 
 #include <vxWorks.h>
@@ -25,6 +23,8 @@
 #include <wdLib.h>
 #include <tickLib.h>
 #include <sysLib.h>
+#include <memLib.h>          /* Memory Statistics */
+#include <private/iosLibP.h> /* fd usage          */
 
 #include <alarm.h>
 #include <dbDefs.h>
@@ -36,79 +36,146 @@
 #include <link.h>
 #include <aiRecord.h>
 #include <aoRecord.h>
-
+#include <longinRecord.h>
+
+static MEM_PART_STATS meminfo;
+
 /*
 	The following device definitions must exist
 
 	device(ai,INST_IO,devAiVXStats,"VX stats")
 	device(ao,INST_IO,devAoVXStats,"VX stats")
+	device(longin,INST_IO,devLiVXStats,"VX stats")
 
 	--------------------------------------------------------------------
 	sample db file to use all data available:
-	Notive that the valid values for the parm field of the link
+	Notice that the valid values for the parm field of the link
 	information are:
 
 	ai:
 		memory       	- % memory used
 		cpu             - % CPU usage by tasks
 		fd	 	- % of file descripters used
+		memoryTotal     - Total memory available in Mbytes
+		memoryUsed      - Memory used in Mbytes
+		memoryFree      - Memory free in Mbytes
+
+	longin:
+		fdTotal         - Total number of file descriptors in the system
+		fdUsed          - Number of used file descriptors
+		fdFree          - Number of free file descriptors
+
 	ao:
-		memoryScanPeriod   - Set memory scan period
-		cpuScanPeriod      - Set cpu scan period
-		fdScanPeriod       - Set fd scan period
+		memoryScanPeriod      - Set % memory scan period
+		cpuScanPeriod         - Set % cpu scan period
+		fdScanPeriod          - Set % fd scan period
+		memoryTotalScanPeriod - Set memory total scan period
+		memoryUsedScanPeriod  - Set memory used  scan period
+		memoryFreeScanPeriod  - Set memory free  scan period
+		fdTotalScanPeriod     - Set fd total scan period
+		fdUsedScanPeriod      - Set fd used scan period
+		fdFreeScanPeriod      - Set fd free scan period
 
 
-	# sample database using all the different types of statistics
-	record(ai,"$(IOC):memory")
-	{
-		field(DTYP,"VX stats")
-		field(SCAN,"I/O Intr")
-		field(INP,"@memory")
-		field(HOPR,"100.0")
-		field(HIHI,"90.0")
-		field(HIGH,"60.0")
-		field(HHSV, "MAJOR")
-		field(HSV, "MINOR")
+	# Sample database, containing 18 records, demonstrating the use of all the
+        # different types of statistics
+        # Note that HOPR, LOPR and PREC are set automatically within the device support
+
+	record(ai,"$(IOC):memoryUsedPercent") {
+	    field(SCAN,"I/O Intr")
+	    field(DTYP,"VX stats")
+	    field(INP,"@memory")
+	    field(HIHI,"90.0")
+	    field(HIGH,"60.0")
+	    field(HHSV,"MAJOR")
+	    field(HSV,"MINOR")
 	}
-	record(ai,"$(IOC):cpu")
-	{
-		field(DTYP,"VX stats")
-		field(SCAN,"I/O Intr")
-		field(INP,"@cpu")
-		field(HOPR,"100.0")
-		field(HIHI,"90.0")
-		field(HIGH,"60.0")
-		field(HHSV, "MAJOR")
-		field(HSV, "MINOR")
+	record(ai,"$(IOC):memoryTotal") {
+	    field(SCAN,"I/O Intr")
+	    field(DTYP,"VX stats")
+	    field(INP,"@memoryTotal")
 	}
-	record(ai,"$(IOC):fd")
-	{
-		field(DTYP,"VX stats")
-		field(SCAN,"I/O Intr")
-		field(INP,"@fd")
-		field(HOPR,"100.0")
-		field(HIHI,"90.0")
-		field(HIGH,"60.0")
-		field(HHSV, "MAJOR")
-		field(HSV, "MINOR")
+	record(ai,"$(IOC):memoryUsed") {
+	    field(SCAN,"I/O Intr")
+	    field(DTYP,"VX stats")
+	    field(INP,"@memoryUsed")
 	}
-	record(ao,"$(IOC):memoryScanPeriod")
-	{
-		field(DTYP,"VX stats")
-		field(OUT,"@memoryScanPeriod")
+	record(ai,"$(IOC):memoryFree") {
+	    field(SCAN,"I/O Intr")
+	    field(DTYP,"VX stats")
+	    field(INP,"@memoryFree")
 	}
-	record(ao,"$(IOC):fdScanPeriod")
-	{
-		field(DTYP,"VX stats")
-		field(OUT,"@fdScanPeriod")
+	record(ai,"$(IOC):fdUsedPercent") {
+	    field(SCAN,"I/O Intr")
+	    field(DTYP,"VX stats")
+	    field(INP,"@fd")
+	    field(HIHI,"90.0")
+	    field(HIGH,"60.0")
+	    field(HHSV,"MAJOR")
+	    field(HSV,"MINOR")
 	}
-	record(ao,"$(IOC):cpuScanPeriod")
-	{
-		field(DTYP,"VX stats")
-		field(OUT,"@cpuScanPeriod")
+	record(longin,"$(IOC):fdTotal") {
+	    field(SCAN,"I/O Intr")
+	    field(DTYP,"VX stats")
+	    field(INP,"@fdTotal")
+	}
+	record(longin,"$(IOC):fdUsed") {
+	    field(SCAN,"I/O Intr")
+	    field(DTYP,"VX stats")
+	    field(INP,"@fdUsed")
+	}
+	record(longin,"$(IOC):fdFree") {
+	    field(SCAN,"I/O Intr")
+	    field(DTYP,"VX stats")
+	    field(INP,"@fdFree")
+	}
+	record(ai,"$(IOC):cpuUsedPercent") {
+	    field(SCAN,"I/O Intr")
+	    field(DTYP,"VX stats")
+	    field(INP,"@cpu")
+	    field(HIHI,"90.0")
+	    field(HIGH,"60.0")
+	    field(HHSV,"MAJOR")
+	    field(HSV,"MINOR")
+	}
+	record(ao,"$(IOC):memoryScanPeriod") {
+	    field(DTYP,"VX stats")
+	    field(OUT,"@memoryScanPeriod")
+	}
+	record(ao,"$(IOC):memoryTotalScanPeriod") {
+	    field(DTYP,"VX stats")
+	    field(OUT,"@memoryTotalScanPeriod")
+	}
+	record(ao,"$(IOC):memoryUsedScanPeriod") {
+	    field(DTYP,"VX stats")
+	    field(OUT,"@memoryUsedScanPeriod")
+	}
+	record(ao,"$(IOC):memoryFreeScanPeriod") {
+	    field(DTYP,"VX stats")
+	    field(OUT,"@memoryFreeScanPeriod")
+	}
+	record(ao,"$(IOC):fdScanPeriod") {
+	    field(DTYP,"VX stats")
+	    field(OUT,"@fdScanPeriod")
+	}
+	record(ao,"$(IOC):fdTotalScanPeriod") {
+	    field(DTYP,"VX stats")
+	    field(OUT,"@fdTotalScanPeriod")
+	}
+	record(ao,"$(IOC):fdUsedScanPeriod") {
+	    field(DTYP,"VX stats")
+	    field(OUT,"@fdUsedScanPeriod")
+	}
+	record(ao,"$(IOC):fdFreeScanPeriod") {
+	    field(DTYP,"VX stats")
+	    field(OUT,"@fdFreeScanPeriod")
+	}
+	record(ao,"$(IOC):cpuScanPeriod") {
+	    field(DTYP,"VX stats")
+	    field(OUT,"@cpuScanPeriod")
 	}
 */
-
+
 typedef struct aiaodset
 {
 	long		number;
@@ -119,6 +186,17 @@ typedef struct aiaodset
 	DEVSUPFUN	read_write;
 	DEVSUPFUN	special_linconv;
 }aiaodset;
+
+typedef struct lilodset
+{
+	long		number;
+	DEVSUPFUN	report;
+	DEVSUPFUN	init;
+	DEVSUPFUN	init_record;
+	DEVSUPFUN	get_ioint_info;
+	DEVSUPFUN	read_write;
+	DEVSUPFUN	special_linconv;
+}lilodset;
 
 typedef struct devPvt
 {
@@ -132,20 +210,42 @@ static long ao_init_record(aoRecord* pr);
 static long ai_read(aiRecord*);
 static long ao_write(aoRecord*);
 
+static long longin_init(int pass);
+static long longin_ioint_info(int cmd,longinRecord *pr,IOSCANPVT *iopvt);
+static long longin_init_record(longinRecord*);
+static long longin_read(longinRecord*);
+
 aiaodset devAiVXStats={ 6,NULL,ai_init,ai_init_record,ai_ioint_info,ai_read,NULL };
 aiaodset devAoVXStats={ 6,NULL,NULL,ao_init_record,NULL,ao_write,NULL };
-
+lilodset devLiVXStats={ 6,NULL,longin_init,longin_init_record,longin_ioint_info,longin_read,NULL };
+
 #define MEMORY_TYPE	0
 #define CPU_TYPE	1
 #define FD_TYPE		2
-#define TOTAL_TYPES	3
+#define MEMORY_USED     3
+#define MEMORY_FREE     4
+#define MEMORY_TOTAL    5
 
-/* default rate in seconds (memory,cpu,fd) */
-static int default_scan_rate[] = { 10,50,10 };
+#define TOTAL_AI_TYPES  6
+#define LI_START        6
 
-static char *aiparmValue[TOTAL_TYPES] = {"memory","cpu","fd"};
+#define FD_USED         6
+#define FD_FREE         7
+#define FD_TOTAL        8
+#define TOTAL_TYPES	9
+
+/* default rate in seconds */
+/* (memory,cpu,fd,memoryUsed,memoryFree,memoryTotal,fdUsed,fdFree,fdTotal) */
+static int default_scan_rate[] = { 10,50,10,10,10,10,10,10,10 };
+
+static char *parmValue[TOTAL_TYPES] = {
+        "memory",     "cpu",        "fd",
+        "memoryUsed", "memoryFree", "memoryTotal",
+        "fdUsed",     "fdFree",     "fdTotal"};
 static char *aoparmValue[TOTAL_TYPES] = {
-	"memoryScanPeriod","cpuScanPeriod","fdScanPeriod"};
+	"memoryScanPeriod",     "cpuScanPeriod",        "fdScanPeriod",
+	"memoryUsedScanPeriod", "memoryFreeScanPeriod", "memoryTotalScanPeriod",
+	"fdUsedScanPeriod",     "fdFreeScanPeriod",     "fdTotalScanPeriod"};
 
 typedef struct scanInfo
 {
@@ -163,12 +263,14 @@ static double getFd(void);
 #define SECONDS_TO_BURN 5
 #define SECONDS_TO_WAIT 15
 
+#define TASK_PRIO_NOCONTENTION 5
+
 typedef struct cpuUsage {
     SEM_ID        lock;
     unsigned long ticksToDeclareStarvation;
     unsigned long ticksToBurn;
     unsigned long ticksToWait;
-    double        nBurnNoContention;
+    unsigned long nBurnNoContention;
     unsigned long ticksLastUpdate;
     double        usage;
 } cpuUsage;
@@ -179,13 +281,13 @@ static double cpuBurn();
 static void cpuUsageTask();
 static double getCpu(void);
 static void cpuUsageInit(void);
-
+
 static long ai_init(int pass)
 {
     int type;
 
     if(pass==1) {
-        for(type=0;type<TOTAL_TYPES;type++) {
+        for(type=0;type<TOTAL_AI_TYPES;type++) {
           if(type==CPU_TYPE) {
 	      wdStart(scan[type].wd,scan[type].rate_tick,
                   (FUNCPTR)wdCpu,0);
@@ -196,12 +298,33 @@ static long ai_init(int pass)
         }
 	return(0);
     }
-    for(type=0;type<TOTAL_TYPES;type++) {
+
+    for(type=0;type<TOTAL_AI_TYPES;type++) {
 	scanIoInit(&scan[type].ioscanpvt);
 	scan[type].wd=wdCreate();
 	scan[type].rate_tick=default_scan_rate[type]*sysClkRateGet();
     }
     cpuUsageInit();
+    return 0;
+}
+
+static long longin_init(int pass)
+{
+    int type;
+
+    if(pass==1) {
+        for(type=LI_START;type<TOTAL_TYPES;type++) {
+	      wdStart(scan[type].wd,scan[type].rate_tick,
+                  (FUNCPTR)wdCallback,type);
+        }
+	return(0);
+    }
+
+    for(type=LI_START;type<TOTAL_TYPES;type++) {
+	scanIoInit(&scan[type].ioscanpvt);
+	scan[type].wd=wdCreate();
+	scan[type].rate_tick=default_scan_rate[type]*sysClkRateGet();
+    }
     return 0;
 }
 
@@ -212,7 +335,15 @@ static long ai_ioint_info(int cmd,aiRecord* pr,IOSCANPVT* iopvt)
     *iopvt=scan[pvt->type].ioscanpvt;
     return 0;
 }
-
+
+static long longin_ioint_info(int cmd, longinRecord *pr, IOSCANPVT *iopvt)
+{
+    devPvt* pvt=(devPvt*)pr->dpvt;
+
+    *iopvt=scan[pvt->type].ioscanpvt;
+    return 0;
+}
+
 static long ai_init_record(aiRecord* pr)
 {
     int     type;
@@ -225,10 +356,17 @@ static long ai_init_record(aiRecord* pr)
 	return S_db_badField;
     }
     parm = pr->inp.value.instio.string;
-    for(type=0; type < TOTAL_TYPES; type++) {
-	if(strcmp(parm,aiparmValue[type])==0) {
+    for(type=0; type < TOTAL_AI_TYPES; type++) {
+	if(strcmp(parm,parmValue[type])==0) {
 		pvt=(devPvt*)malloc(sizeof(devPvt));
 		pvt->type=type;
+                if( type <= FD_TYPE )
+                  pr->hopr = 100.0;
+                else
+                {
+                  memPartInfoGet(memSysPartId,&(meminfo));
+                  pr->hopr = (meminfo.numBytesFree + meminfo.numBytesAlloc)/(double)(1024*1024);
+                }
 	}
     }
     if(pvt==NULL) {
@@ -239,9 +377,38 @@ static long ai_init_record(aiRecord* pr)
     /* Make sure record processing routine does not perform any conversion*/
     pr->linr=0;
     pr->dpvt=pvt;
-    pr->hopr = 100.0;
     pr->lopr = 0.0;
     pr->prec = 2;
+    return 0;
+}
+
+static long longin_init_record( longinRecord *pr )
+{
+    int     type;
+    devPvt* pvt = NULL;
+    char   *parm;
+
+    if(pr->inp.type!=INST_IO) {
+	recGblRecordError(S_db_badField,(void*)pr,
+		"devLonginStats (init_record) Illegal INP field");
+	return S_db_badField;
+    }
+    parm = pr->inp.value.instio.string;
+    for(type=LI_START; type < TOTAL_TYPES; type++) {
+	if(strcmp(parm,parmValue[type])==0) {
+		pvt=(devPvt*)malloc(sizeof(devPvt));
+		pvt->type=type;
+	}
+    }
+    if(pvt==NULL) {
+	recGblRecordError(S_db_badField,(void*)pr,
+		"devLonginStats (init_record) Illegal INP parm field");
+	return S_db_badField;
+    }
+    /* Make sure record processing routine does not perform any conversion*/
+    pr->dpvt = pvt;
+    pr->lopr = 0.0;
+    pr->hopr = maxFiles;
     return 0;
 }
 
@@ -285,6 +452,7 @@ static long ao_write(aoRecord* pr)
     return 0;
 }
 
+
 static long ai_read(aiRecord* pr)
 {
     double value = 0.0;
@@ -292,25 +460,93 @@ static long ai_read(aiRecord* pr)
 
     if(!pvt) return(0);
     switch(pvt->type) {
-        case MEMORY_TYPE: value = getMemory(); break;
-        case CPU_TYPE: value = getCpu(); break;
-        case FD_TYPE: value = getFd(); break;
-        default: recGblRecordError(S_db_badField,(void*)pr,"Illegal type");
+
+        case MEMORY_TYPE: 
+          value = getMemory();
+          break;
+
+        case CPU_TYPE:
+          value = getCpu();
+          break;
+
+        case FD_TYPE:
+          value = getFd();
+          break;
+
+        case MEMORY_USED:
+          memPartInfoGet(memSysPartId,&(meminfo));
+          value = meminfo.numBytesAlloc/(double)(1024*1024);
+          break;
+
+        case MEMORY_FREE:
+          memPartInfoGet(memSysPartId,&(meminfo));
+          value = meminfo.numBytesFree/(double)(1024*1024);
+          break;
+
+        case MEMORY_TOTAL:
+          memPartInfoGet(memSysPartId,&(meminfo));
+          value = (meminfo.numBytesFree + meminfo.numBytesAlloc)/(double)(1024*1024);
+          break;
+
+        default: 
+          recGblRecordError(S_db_badField,(void*)pr,"Illegal type");
+          break;
     }
     pr->val=value;
     pr->udf=0;
     return 2; /* don't convert */
 }
-
+
+static long longin_read( longinRecord *pr )
+{
+    devPvt *pvt;
+    int    i;
+    long   value;
+    long   tot;
+
+    pvt   = (devPvt*)pr->dpvt;
+    value = 0;
+
+    if(!pvt) return(0);
+
+    switch(pvt->type) {
+
+        case FD_USED:
+          for(tot=0,i=0;i<maxFiles;i++) 
+          {
+            if(fdTable[i].inuse)
+              tot++;
+          }
+          value = tot;
+          break;
+
+        case FD_FREE:
+          for(tot=0,i=0;i<maxFiles;i++) 
+          {
+            if( !(fdTable[i].inuse) )
+              tot++;
+          }
+          value = tot;
+          break;
+
+        case FD_TOTAL:
+          value = maxFiles;
+          break;
+
+        default:
+          recGblRecordError(S_db_badField,(void*)pr,"Illegal type");
+          break;
+    }
+    pr->val=value;
+    pr->udf=0;
+    return 2; /* don't convert */
+}
+
 static void wdCallback(int type)
 {
     scanIoRequest(scan[type].ioscanpvt);
     wdStart(scan[type].wd,scan[type].rate_tick, (FUNCPTR)wdCallback,type);
 }
-
-/*Memory statistics*/
-#include <memLib.h>
-static MEM_PART_STATS meminfo;
 
 static double getMemory(void)
 {
@@ -322,9 +558,6 @@ static double getMemory(void)
     return(100.0 * nalloc/(nalloc + nfree));
 }
 
-
-/* fd usage */
-#include <private/iosLibP.h>
 static double getFd()
 {
     int i,tot;
@@ -363,8 +596,8 @@ static void cpuUsageTask()
 
     while(TRUE) {
 	unsigned long tickStart,tickEnd=0;
-        int nBurnNow;
-        double nBurnNoContention = (double)usage.nBurnNoContention;
+        unsigned long nBurnNow;
+        unsigned long nBurnNoContention = usage.nBurnNoContention;
 	double newusage;
 
 	nBurnNow=0;
@@ -377,7 +610,8 @@ static void cpuUsageTask()
             if((tickEnd - tickStart) >= usage.ticksToBurn) break;
 	}
         if(tickEnd<tickStart) continue; /*allow for tick overflow*/
-        newusage = 100.0*((nBurnNoContention - nBurnNow)/nBurnNoContention);
+        if (nBurnNow > nBurnNoContention) nBurnNoContention = nBurnNow;
+        newusage = (100.0*(nBurnNoContention - nBurnNow))/nBurnNoContention;
         semTake(usage.lock,WAIT_FOREVER);
 	usage.usage = newusage;
         semGive(usage.lock);
@@ -399,27 +633,36 @@ static double getCpu()
 static void cpuUsageInit(void)
 {
     unsigned long tickStart,tickEnd=0,tickNow;
-    int           nBurnNoContention=0;
+    unsigned long nBurnNoContention=0;
+    int i, prio, tid=taskIdSelf();
 
     usage.lock =
         semMCreate(SEM_DELETE_SAFE|SEM_INVERSION_SAFE|SEM_Q_PRIORITY);
     usage.usage = 0.0;
     usage.ticksToDeclareStarvation = SECONDS_TO_STARVATION * sysClkRateGet();
     usage.ticksToWait = SECONDS_TO_WAIT*sysClkRateGet();
-    usage.ticksToBurn = SECONDS_TO_BURN*sysClkRateGet();
-    tickStart = tickGet();
-    /*wait for a tick*/
-    while(tickStart==(tickNow = tickGet())) {;}
-    tickStart = tickNow;
-    while(TRUE) {
-	cpuBurn();
-	nBurnNoContention++;
-        tickEnd = tickGet();
-        if(tickEnd<tickStart) break; /*same test as cpuUsageTask*/
-        if((tickEnd - tickStart) >= usage.ticksToBurn) break;
+    usage.ticksToBurn = 1*sysClkRateGet(); /* measure in 1 second spurts */
+    taskPriorityGet(tid, &prio);
+    taskPrioritySet(tid, TASK_PRIO_NOCONTENTION);
+    for (i=0; i<SECONDS_TO_BURN; i++) {
+        tickStart = tickGet();
+        /*wait for a tick*/
+        while (tickStart==(tickNow = tickGet())) {;}
+        tickStart = tickNow;
+        while (TRUE) {
+	    cpuBurn();
+	    nBurnNoContention++;
+            tickEnd = tickGet();
+            if (tickEnd<tickStart) break; /*same test as cpuUsageTask*/
+            if ((tickEnd - tickStart) >= usage.ticksToBurn) break;
+        }
+        if (tickEnd<tickStart)
+            epicsPrintf("cpuUsageInit: clock rollover during calibration\n");
+        taskDelay(1); /* allow OS tasks a chance to do some work */
     }
-    if(tickEnd<tickStart) printf("cpuUsageInit logic error\n");
-    usage.nBurnNoContention = (double)nBurnNoContention;
+    taskPrioritySet(tid, prio); /* original priority */
+    usage.nBurnNoContention = nBurnNoContention;
+    usage.ticksToBurn = SECONDS_TO_BURN*sysClkRateGet();
     usage.ticksLastUpdate = tickGet();
     taskSpawn("cpuUsageTask",255,VX_FP_TASK,3000,(FUNCPTR)cpuUsageTask,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0);

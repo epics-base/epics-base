@@ -14,6 +14,9 @@ of this distribution.
 /* Modification Log:
  * -----------------
  *  $Log$
+ *  Revision 1.17  2000/02/25 22:26:38  mrk
+ *  more changes for creating dlls
+ *
  *  Revision 1.16  2000/02/25 22:01:24  mrk
  *  changes for creating DLLs
  *
@@ -827,7 +830,7 @@ int epicsShareAPI dbBkpt(struct dbCommon *precord)
       */
       semMutexGive(bkpt_stack_sem);
       dbScanUnlock(precord);
-      threadSuspend();
+      threadSuspendSelf();
       dbScanLock(precord);
       semMutexMustTake(bkpt_stack_sem);
    }

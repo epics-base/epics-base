@@ -121,7 +121,7 @@ static void callbackTask(int *ppriority)
             if(nget==0) break;
 	    if(nget!=sizeof(pcallback)) {
 		errMessage(0,"ringGet failed in callbackTask");
-		threadSuspend();
+		threadSuspendSelf();
 	    }
 	    ringOverflow[priority] = FALSE;
 	    (*pcallback->callback)(pcallback);

@@ -281,7 +281,7 @@ LOCAL int req_server (void)
      */
     if ((IOC_sock = socket(AF_INET, SOCK_STREAM, 0)) == SOCKET_ERROR) {
         errlogPrintf ("CAS: Socket creation error\n");
-        threadSuspend ();
+        threadSuspendSelf ();
     }
 
     /* Zero the sock_addr structure */
@@ -293,14 +293,14 @@ LOCAL int req_server (void)
     if (bind(IOC_sock, (struct sockaddr *)&serverAddr, sizeof(serverAddr)) < 0) {
         errlogPrintf ("CAS: Bind error\n");
         socket_close (IOC_sock);
-        threadSuspend ();
+        threadSuspendSelf ();
     }
 
     /* listen and accept new connections */
     if (listen(IOC_sock, 10) < 0) {
         errlogPrintf ("CAS: Listen error\n");
         socket_close (IOC_sock);
-        threadSuspend ();
+        threadSuspendSelf ();
     }
 
     while (TRUE) {

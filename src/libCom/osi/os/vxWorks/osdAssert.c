@@ -45,7 +45,7 @@
  * epicsAssert ()
  *
  * This forces assert failures into the log file and then
- * calls threadSuspend() instead of exit() so that we can debug
+ * calls threadSuspendSelf() instead of exit() so that we can debug
  * the problem.
  */
 epicsShareFunc void epicsShareAPI epicsAssert (const char *pFile, const unsigned line, const char *pExp,
@@ -83,6 +83,6 @@ epicsShareFunc void epicsShareAPI epicsAssert (const char *pFile, const unsigned
 	}
 	epicsPrintf ("This problem occurred in \"%s\"\n", epicsReleaseVersion);
 
-    threadSuspend ();
+    threadSuspendSelf ();
 }
 

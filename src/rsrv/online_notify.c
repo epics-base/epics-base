@@ -86,14 +86,14 @@ int rsrv_online_notify_task()
      */
     if( (sock = socket (AF_INET, SOCK_DGRAM, 0)) == SOCKET_ERROR){
         errlogPrintf ("CAS: online socket creation error\n");
-        threadSuspend ();
+        threadSuspendSelf ();
     }
     
     status = setsockopt (sock, SOL_SOCKET, SO_BROADCAST, 
                 (char *)&true, sizeof(true));
     if (status<0) {
         errlogPrintf ("CAS: online socket set up error\n");
-        threadSuspend ();
+        threadSuspendSelf ();
     }
     
 #if 0

@@ -149,7 +149,7 @@ int cast_server(void)
 
     if ((IOC_cast_sock = socket (AF_INET, SOCK_DGRAM, 0)) < 0) {
         epicsPrintf ("CAS: cast socket creation error\n");
-        threadSuspend ();
+        threadSuspendSelf ();
     }
 
     /*
@@ -187,7 +187,7 @@ int cast_server(void)
     if( bind(IOC_cast_sock, (struct sockaddr *)&sin, sizeof (sin)) < 0){
         epicsPrintf ("CAS: cast bind error\n");
         socket_close (IOC_cast_sock);
-        threadSuspend ();
+        threadSuspendSelf ();
     }
     
     /* tell clients we are on line again */

@@ -195,7 +195,7 @@ void epicsShareAPI dbScanLock(dbCommon *precord)
     if(!(plockRecord= precord->lset)) {
 	epicsPrintf("dbScanLock plockRecord is NULL record %s\n",
 	    precord->name);
-	threadSuspend();
+	threadSuspendSelf();
     }
     while(TRUE) {
         while(changingLockSets) threadSleep(.05);

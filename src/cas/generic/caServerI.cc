@@ -114,8 +114,8 @@ void caServerI::show (unsigned level) const
 caServerI::caServerI (caServer &tool, unsigned nPV) :
     caServerOS (*this),
     casEventRegistry (* (osiMutex *) this),
-    dgClient (*this),
     chronIntIdResTable<casRes>(nPV*2u),
+    dgClient (*this),
     //
     // Set up periodic beacon interval
     // (exponential back off to a plateau

@@ -776,8 +776,9 @@ class casEventRegistry : private resTable <casEventMaskEntry, stringId> {
     friend class casEventMaskEntry;
 public:
     
-    casEventRegistry (osiMutex &mutexIn) : mutex(mutexIn), allocator(0), 
-        resTable<casEventMaskEntry, stringId> (casEventRegistryHashTableSize) {}
+    casEventRegistry (osiMutex &mutexIn) :  
+        resTable<casEventMaskEntry, stringId> (casEventRegistryHashTableSize), 
+        mutex(mutexIn), allocator(0) {}
     
     virtual ~casEventRegistry();
     

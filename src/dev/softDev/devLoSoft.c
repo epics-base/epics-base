@@ -31,7 +31,6 @@
  * .02	03-13-92	jba	ANSI C changes
  * .03  10-10-92        jba     replaced code with recGblGetLinkValue call
 */
-#include	<vxWorks.h>
 #include	<stdlib.h>
 #include	<stdio.h>
 #include	<string.h>
@@ -41,7 +40,6 @@
 #include	<dbAccess.h>
 #include        <recSup.h>
 #include	<devSup.h>
-#include	<module_types.h>
 #include	<longoutRecord.h>
 /* Create the dset for devLoSoft */
 static long init_record();

@@ -32,7 +32,6 @@
  * .03  10-10-92        jba     replaced code with recGblGetLinkValue call
  * .04  03-03-94	mrk	Move constant link value to val only if val is zero
 */
-#include	<vxWorks.h>
 #include	<stdlib.h>
 #include	<stdio.h>
 #include	<string.h>
@@ -41,7 +40,6 @@
 #include	<dbAccess.h>
 #include        <recSup.h>
 #include	<devSup.h>
-#include	<module_types.h>
 #include	<eventRecord.h>
 
 /* Create the dset for devEventSoft */

@@ -40,22 +40,22 @@
  */
 
 
-#include	<vxWorks.h>
-#include	<stdlib.h>
-#include	<stdio.h>
-#include	<wdLib.h>
-#include	<memLib.h>
-#include	<string.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
-#include	<alarm.h>
-#include	<callback.h>
-#include	<dbDefs.h>
-#include	<dbAccess.h>
-#include	<recSup.h>
-#include	<devSup.h>
-#include	<link.h>
-#include	<dbCommon.h>
-#include	<biRecord.h>
+#include "alarm.h"
+#include "osiWatchdog.h"
+#include "osiClock.h"
+#include "callback.h"
+#include "dbDefs.h"
+#include "dbAccess.h"
+#include "recSup.h"
+#include "devSup.h"
+#include "link.h"
+#include "dbCommon.h"
+#include "biRecord.h"
 
 /* Create the dset for devBiTestAsyn */
 static long init_record();
@@ -81,7 +81,7 @@ struct {
 struct callback {
 	CALLBACK        callback;
 	struct dbCommon *precord;
-	WDOG_ID wd_id;
+	watchdogId wd_id;
 };
 
 
@@ -109,7 +109,7 @@ static long init_record(pbi)
 	pbi->dpvt = (void *)pcallback;
 	callbackSetCallback(myCallback,&pcallback->callback);
 	pcallback->precord = (struct dbCommon *)pbi;
-	pcallback->wd_id = wdCreate();
+	pcallback->wd_id = watchdogCreate();
 	if(recGblInitConstantLink(&pbi->inp,DBF_ENUM,&pbi->val))
 	    pbi->udf = FALSE;
 	break;
@@ -134,11 +134,12 @@ static long read_bi(pbi)
 		printf("%s Completed\n",pbi->name);
 		return(2); /* don't convert */
 	} else {
-		wait_time = (int)(pbi->disv * vxTicksPerSecond);
+		wait_time = (int)(pbi->disv * clockGetRate());
 		if(wait_time<=0) return(0);
 		callbackSetPriority(pbi->prio,&pcallback->callback);
 		printf("%s Starting asynchronous processing\n",pbi->name);
-		wdStart(pcallback->wd_id,wait_time,(FUNCPTR)callbackRequest,(int)pcallback);
+		watchdogStart(pcallback->wd_id,wait_time,
+                    (WATCHDOGFUNC)callbackRequest,(void *)pcallback);
 		pbi->pact=TRUE;	
 		return(0);
 	}

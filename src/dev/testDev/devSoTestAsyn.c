@@ -39,23 +39,23 @@
  */
 
 
-#include	<vxWorks.h>
-#include	<stdlib.h>
-#include	<stdio.h>
-#include	<wdLib.h>
-#include	<memLib.h>
-#include	<string.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
-#include	<alarm.h>
-#include	<callback.h>
-#include	<cvtTable.h>
-#include	<dbDefs.h>
-#include	<dbAccess.h>
-#include	<recSup.h>
-#include	<devSup.h>
-#include	<link.h>
-#include	<dbCommon.h>
-#include	<stringoutRecord.h>
+#include "alarm.h"
+#include "osiWatchdog.h"
+#include "osiClock.h"
+#include "callback.h"
+#include "cvtTable.h"
+#include "dbDefs.h"
+#include "dbAccess.h"
+#include "recSup.h"
+#include "devSup.h"
+#include "link.h"
+#include "dbCommon.h"
+#include "stringoutRecord.h"
 
 /* Create the dset for devSoTestAsyn */
 static long init_record();
@@ -81,7 +81,7 @@ struct {
 struct callback {
         CALLBACK        callback;
         struct dbCommon *precord;
-        WDOG_ID wd_id;
+        watchdogId wd_id;
 };
 
 static void myCallback(pcallback)
@@ -108,7 +108,7 @@ static long init_record(pstringout)
 	pstringout->dpvt = (void *)pcallback;
 	callbackSetCallback(myCallback,&pcallback->callback);
         pcallback->precord = (struct dbCommon *)pstringout;
-	pcallback->wd_id = wdCreate();
+	pcallback->wd_id = watchdogCreate();
 	break;
     default :
 	recGblRecordError(S_db_badField,(void *)pstringout,
@@ -131,11 +131,12 @@ static long write_stringout(pstringout)
 		printf("%s Completed\n",pstringout->name);
 		return(0); /* don`t convert*/
 	} else {
-		wait_time = (int)(pstringout->disv * vxTicksPerSecond);
+		wait_time = (int)(pstringout->disv * clockGetRate());
 		if(wait_time<=0) return(0);
 		callbackSetPriority(pstringout->prio,&pcallback->callback);
 		printf("%s Starting asynchronous processing\n",pstringout->name);
-		wdStart(pcallback->wd_id,wait_time,(FUNCPTR)callbackRequest,(int)pcallback);
+		watchdogStart(pcallback->wd_id,wait_time,
+                    (WATCHDOGFUNC)callbackRequest,(void *)pcallback);
 		pstringout->pact=TRUE;
 		return(0);
 	}

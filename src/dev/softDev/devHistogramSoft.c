@@ -32,7 +32,6 @@
  * .03	03-13-92	jba	ANSI C changes
  * 	...
  */
-#include	<vxWorks.h>
 #include	<stdlib.h>
 #include	<stdio.h>
 #include	<string.h>

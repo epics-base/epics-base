@@ -32,17 +32,18 @@
  *      ...
  */
 
-#include	<vxWorks.h>
-#include	<stdlib.h>
-#include	<stdio.h>
-#include	<wdLib.h>
-#include	<string.h>
-#include	<dbDefs.h>
-#include	<dbAccess.h>
-#include	<dbScan.h>
-#include	<recSup.h>
-#include	<devSup.h>
-#include	<eventRecord.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+
+#include "dbDefs.h"
+#include "osiWatchdog.h"
+#include "dbAccess.h"
+#include "dbScan.h"
+#include "recSup.h"
+#include "devSup.h"
+#include "eventRecord.h"
 /* Create the dset for devEventTestIoEvent */
 static long init();
 static long get_ioint_info();
@@ -64,7 +65,7 @@ struct {
 };
 
 static IOSCANPVT ioscanpvt;
-WDOG_ID wd_id=NULL;
+watchdogId wd_id=NULL;
 
 static long init(after)
 int after;
@@ -90,11 +91,12 @@ static long read_event(pevent)
 {
 	int	wait_time;
 
-	wait_time = (int)(pevent->proc * vxTicksPerSecond);
+	wait_time = (int)pevent->proc;
 	if(wait_time<=0) return(0);
 	pevent->udf = FALSE;
-	if(wd_id==NULL) wd_id = wdCreate();
+	if(wd_id==NULL) wd_id = watchdogCreate();
 	printf("%s Requesting Next ioEnevt\n",pevent->name);
-	wdStart(wd_id,wait_time,(FUNCPTR)scanIoRequest,(int)ioscanpvt);
+        watchdogStart(wd_id,wait_time,
+            (WATCHDOGFUNC)scanIoRequest,(void *)ioscanpvt);
 	return(0);
 }

@@ -40,22 +40,22 @@
  */
 
 
-#include	<vxWorks.h>
-#include	<stdlib.h>
-#include	<stdio.h>
-#include	<wdLib.h>
-#include	<memLib.h>
-#include	<string.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
-#include	<alarm.h>
-#include	<callback.h>
-#include	<dbDefs.h>
-#include	<dbAccess.h>
-#include        <recSup.h>
-#include	<devSup.h>
-#include	<link.h>
-#include	<dbCommon.h>
-#include	<waveformRecord.h>
+#include "alarm.h"
+#include "osiWatchdog.h"
+#include "osiClock.h"
+#include "callback.h"
+#include "dbDefs.h"
+#include "dbAccess.h"
+#include "recSup.h"
+#include "devSup.h"
+#include "link.h"
+#include "dbCommon.h"
+#include "waveformRecord.h"
 
 /* Create the dset for devWfTestAsyn */
 static long init_record();
@@ -81,7 +81,7 @@ struct {
 struct callback {
         CALLBACK        callback;
         struct dbCommon *precord;
-        WDOG_ID wd_id;
+        watchdogId wd_id;
 };
 
 static void myCallback(pcallback)
@@ -107,7 +107,7 @@ static long init_record(pwf)
 	pwf->dpvt = (void *)pcallback;
 	callbackSetCallback(myCallback,&pcallback->callback);
         pcallback->precord = (struct dbCommon *)pwf;
-	pcallback->wd_id = wdCreate();
+	pcallback->wd_id = watchdogCreate();
 	pwf->nord = 0;
 	break;
     default :
@@ -131,11 +131,12 @@ static long read_wf(pwf)
 		printf("%s Completed\n",pwf->name);
 		return(0); /* don`t convert*/
 	} else {
-		wait_time = (int)(pwf->disv * vxTicksPerSecond);
+		wait_time = (int)(pwf->disv * clockGetRate());
 		if(wait_time<=0) return(0);
 		callbackSetPriority(pwf->prio,&pcallback->callback);
 		printf("%s Starting asynchronous processing\n",pwf->name);
-		wdStart(pcallback->wd_id,wait_time,(FUNCPTR)callbackRequest,(int)pcallback);
+		watchdogStart(pcallback->wd_id,wait_time,
+                    (WATCHDOGFUNC)callbackRequest,(void *)pcallback);
 		pwf->pact=TRUE;
 		return(0);
 	}

@@ -35,7 +35,6 @@
  */
 
 
-#include	<vxWorks.h>
 #include	<stdlib.h>
 #include	<stdio.h>
 #include	<string.h>
@@ -45,7 +44,6 @@
 #include	<dbAccess.h>
 #include        <recSup.h>
 #include	<devSup.h>
-#include	<module_types.h>
 #include	<boRecord.h>
 
 /* added for Channel Access Links */

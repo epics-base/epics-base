@@ -39,22 +39,22 @@
  */
 
 
-#include	<vxWorks.h>
-#include	<stdlib.h>
-#include	<stdio.h>
-#include	<wdLib.h>
-#include	<memLib.h>
-#include	<string.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
-#include	<alarm.h>
-#include	<callback.h>
-#include	<dbDefs.h>
-#include	<dbAccess.h>
-#include	<recSup.h>
-#include	<devSup.h>
-#include	<link.h>
-#include	<dbCommon.h>
-#include	<stringinRecord.h>
+#include "alarm.h"
+#include "osiWatchdog.h"
+#include "osiClock.h"
+#include "callback.h"
+#include "dbDefs.h"
+#include "dbAccess.h"
+#include "recSup.h"
+#include "devSup.h"
+#include "link.h"
+#include "dbCommon.h"
+#include "stringinRecord.h"
 
 /* Create the dset for devSiTestAsyn */
 static long init_record();
@@ -80,7 +80,7 @@ struct {
 struct callback {
         CALLBACK        callback;
         struct dbCommon *precord;
-        WDOG_ID wd_id;
+        watchdogId wd_id;
 };
 
 static void myCallback(pcallback)
@@ -107,7 +107,7 @@ static long init_record(pstringin)
 	pstringin->dpvt = (void *)pcallback;
 	callbackSetCallback(myCallback,&pcallback->callback);
         pcallback->precord = (struct dbCommon *)pstringin;
-	pcallback->wd_id = wdCreate();
+	pcallback->wd_id = watchdogCreate();
 	if(recGblInitConstantLink(&pstringin->inp,DBF_STRING,pstringin->val))
 	    pstringin->udf = FALSE;
 	break;
@@ -132,11 +132,12 @@ static long read_stringin(pstringin)
 		printf("%s Completed\n",pstringin->name);
 		return(0);
 	} else {
-		wait_time = (int)(pstringin->disv * vxTicksPerSecond);
+		wait_time = (int)(pstringin->disv * clockGetRate());
 		if(wait_time<=0) return(0);
 		callbackSetPriority(pstringin->prio,&pcallback->callback);
 		printf("%s Starting asynchronous processing\n",pstringin->name);
-		wdStart(pcallback->wd_id,wait_time,(FUNCPTR)callbackRequest,(int)pcallback);
+		watchdogStart(pcallback->wd_id,wait_time,
+                    (WATCHDOGFUNC)callbackRequest,(void *)pcallback);
 		pstringin->pact=TRUE;
 		return(0);
 	}

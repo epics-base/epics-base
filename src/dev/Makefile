@@ -1,9 +1,10 @@
 
 TOP=../..
 
-include $(TOP)/config/CONFIG_BASE
+include $(TOP)/configure/CONFIG
 
-DIRS = $(wildcard *Dev)
+DIRS += softDev
+DIRS += testDev
 
-include $(TOP)/config/RULES_DIRS
+include $(TOP)/configure/RULES_DIRS
 

@@ -38,23 +38,23 @@
  *      ...
  */
 
-#include	<vxWorks.h>
-#include	<stdlib.h>
-#include	<stdio.h>
-#include	<string.h>
-#include	<wdLib.h>
-#include	<memLib.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
-#include	<alarm.h>
-#include	<callback.h>
-#include	<cvtTable.h>
-#include	<dbDefs.h>
-#include	<dbAccess.h>
-#include	<recSup.h>
-#include	<devSup.h>
-#include	<link.h>
-#include	<dbCommon.h>
-#include	<aiRecord.h>
+#include "alarm.h"
+#include "osiWatchdog.h"
+#include "osiClock.h"
+#include "callback.h"
+#include "cvtTable.h"
+#include "dbDefs.h"
+#include "dbAccess.h"
+#include "recSup.h"
+#include "devSup.h"
+#include "link.h"
+#include "dbCommon.h"
+#include "aiRecord.h"
 
 /* Create the dset for devAiTestAsyn */
 static long init_record();
@@ -80,7 +80,7 @@ struct {
 struct callback {
 	CALLBACK	callback;
 	struct dbCommon *precord;
-	WDOG_ID wd_id;
+	watchdogId wd_id;
 };
 
 
@@ -107,7 +107,7 @@ static long init_record(pai)
 	pai->dpvt = (void *)pcallback;
 	callbackSetCallback(myCallback,&pcallback->callback);
 	pcallback->precord = (struct dbCommon *)pai;
-	pcallback->wd_id = wdCreate();
+	pcallback->wd_id = watchdogCreate();
 	if(recGblInitConstantLink(&pai->inp,DBF_DOUBLE,&pai->val))
 	    pai->udf = FALSE;
 	break;
@@ -132,11 +132,12 @@ static long read_ai(pai)
 		printf("Completed asynchronous processing: %s\n",pai->name);
 		return(2); /* don`t convert*/
 	} else {
-		wait_time = (int)(pai->disv * vxTicksPerSecond);
+		wait_time = (int)(pai->disv * clockGetRate());
 		if(wait_time<=0) return(2);
 		callbackSetPriority(pai->prio,&pcallback->callback);
 		printf("Starting asynchronous processing: %s\n",pai->name);
-		wdStart(pcallback->wd_id,wait_time,(FUNCPTR)callbackRequest,(int)pcallback);
+		watchdogStart(pcallback->wd_id,wait_time,
+                    (WATCHDOGFUNC)callbackRequest,(void *)pcallback);
 		pai->pact=TRUE;
     		return(0);
 	}

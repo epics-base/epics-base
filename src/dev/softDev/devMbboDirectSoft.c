@@ -31,7 +31,6 @@
  *    (log for devMbboSoft applies)
  *  1. 10-08-93   mcn      (created)     dev support for MbboDirect records
  */
-#include	<vxWorks.h>
 #include	<stdlib.h>
 #include	<stdio.h>
 #include	<string.h>
@@ -41,7 +40,6 @@
 #include	<dbAccess.h>
 #include        <recSup.h>
 #include	<devSup.h>
-#include	<module_types.h>
 #include	<mbboDirectRecord.h>
 /* Create the dset for devMbboSoft */
 static long init_record();

@@ -3,9 +3,6 @@
 #define dbAddrh
 
 #ifdef __cplusplus
-	//
-	// for brain dead C++ compilers
-	//
 	struct dbCommon;
 #endif
 

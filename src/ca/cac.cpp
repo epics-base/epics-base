@@ -680,6 +680,7 @@ void cac::startRecvProcessThread ()
 // this is the recv process thread entry point
 void cac::run ()
 {
+printf ("recv process thread id is %x\n", epicsThreadGetIdSelf());
     epicsAutoMutex autoMutex ( this->mutex );
     this->attachToClientCtx ();
     while ( ! this->recvProcessThreadExitRequest ) {
@@ -948,6 +949,7 @@ void cac::flushIfRequired ( nciu &chan )
         }
         if ( this->pudpiiu && blockPermit ) {
             if ( this->pudpiiu->isCurrentThread () ) {
+printf ("detected no-block cond and id is %x\n", epicsThreadGetIdSelf());
                 blockPermit = false;
             }
         }

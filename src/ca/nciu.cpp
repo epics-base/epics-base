@@ -228,7 +228,7 @@ int nciu::read ( unsigned type, unsigned long countIn, void *pValue )
         hdr.m_postsize = 0;
         hdr.m_cid = this->sid;
     }
-    this->piiu->pcas->lock ();
+    this->piiu->pcas->unlock ();
 
     status = this->piiu->pushStreamMsg ( &hdr, NULL, true );
     if ( status != ECA_NORMAL ) {
@@ -520,7 +520,7 @@ int nciu::subscribe (unsigned type, unsigned long countIn,
 {
     netSubscription *pNetMon;
 
-    this->piiu->pcas->lock ();;
+    this->piiu->pcas->lock ();
 
     pNetMon = new netSubscription (*this, type, countIn, 
         static_cast <unsigned short> (mask), notify);

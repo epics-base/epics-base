@@ -39,7 +39,7 @@
  * .08  06-02-92        jba     changed graphic/control limits for per,oper
  * .09  07-15-92        jba     changed VALID_ALARM to INVALID alarm
  * .10  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
- * .11  09-10-92        jba     replaced get of igv value with call to recGblGetLinkvalue
+ * .11  09-10-92        jba     replaced get of hgv value with call to recGblGetLinkvalue
  * .12  10-10-92        jba     replaced code with recGblGetLinkValue call
  */ 
 
@@ -134,9 +134,9 @@ static long init_record(ppt,pass)
          recGblRecordError(S_dev_noDSET,(void *)ppt,"pt: init_record");
          return(S_dev_noDSET);
     }
-    /* get the igv value if sgl is a constant*/
+    /* get the hgv value if sgl is a constant*/
     if (ppt->sgl.type == CONSTANT ){
-         ppt->igv = ppt->sgl.value.value;
+         ppt->hgv = ppt->sgl.value.value;
     }
 
     if (ppt->sgl.type == PV_LINK )
@@ -174,7 +174,7 @@ static long process(ppt)
          return(S_dev_missingSup);
     }
 
-    /* get soft igv value when sgl is a DB_LINK and gtyp from Software */
+    /* get soft hgv value when sgl is a DB_LINK and gtyp from Software */
     if (!ppt->pact && ppt->gtyp == SOFTWARE){
          options=0;
          nRequest=1;
@@ -184,7 +184,7 @@ static long process(ppt)
          ppt->pact = FALSE;
 
          if(status==0){
-              if(ppt->sgv != ppt->osgv){ /* igv changed */
+              if(ppt->sgv != ppt->osgv){ /* hgv changed */
                    if(ppt->sgv==0){
                         save=ppt->dcy;
                         ppt->dcy=0.0;

@@ -129,7 +129,7 @@ static long init_record(ppc,pass)
          recGblRecordError(S_dev_noDSET,(void *)ppc,"pc: init_record");
          return(S_dev_noDSET);
     }
-    /* get the igv value if sgl is a constant*/
+    /* get the hgv value if sgl is a constant*/
     if (ppc->sgl.type == CONSTANT && ppc->gtyp == SOFTWARE){
          ppc->sgv = ppc->sgl.value.value;
     }
@@ -168,7 +168,7 @@ static long process(ppc)
          return(S_dev_missingSup);
     }
 
-    /* get soft igv value when sgl is a DB_LINK and gtyp from Software */
+    /* get soft hgv value when sgl is a DB_LINK and gtyp from Software */
     if (!ppc->pact && ppc->gtyp == SOFTWARE){
          if (ppc->sgl.type == DB_LINK){
               options=0;
@@ -190,7 +190,7 @@ static long process(ppc)
               }
          }
          if(status==0){
-              if(ppc->sgv != ppc->osgv){ /* soft igv changed */
+              if(ppc->sgv != ppc->osgv){ /* soft hgv changed */
                    save=ppc->cmd;
                    if(ppc->sgv!=0){
                         ppc->cmd=CTR_START;

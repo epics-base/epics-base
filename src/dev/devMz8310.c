@@ -598,14 +598,14 @@ static long cmd_pc(pr)
 	    if(pr->cnte==FALLING_EDGE)
 		mode |= 0x1000; /*count on falling edge*/
 
-	    /* If necessary set igv control Active High Level Gate N */
-	    if(pr->gtyp==INTERNAL && pr->igv!=0)
+	    /* If necessary set hgv control Active High Level Gate N */
+	    if(pr->gtyp==INTERNAL && pr->hgv!=0)
 	    {
-		unsigned short igv = (unsigned short)pr->igv;
+		unsigned short hgv = (unsigned short)pr->hgv;
 
-		if(igv>5) recGblRecordError(S_db_badField,(void *)pr,
-			"devMz8310 : illegal igv value");
-		else mode |= igv<<13;
+		if(hgv>5) recGblRecordError(S_db_badField,(void *)pr,
+			"devMz8310 : illegal hgv value");
+		else mode |= hgv<<13;
 	    }
 
 	    /*set count source selection*/
@@ -842,7 +842,7 @@ static long write_pt(pr)
     pdata = PDATAREG(card,chip);
 
     /* Should we just set on or off */
-    if(pr->dcy<=0e0 || (pr->gtyp==SOFTWARE && pr->igv!=0)) {
+    if(pr->dcy<=0e0 || (pr->gtyp==SOFTWARE && pr->hgv!=0)) {
 	pr->udf = FALSE;
 	putCmd(pcmd,(DISARM | (1<<channel)));
 	putCmd(pcmd,(LDPCOUNTER | (channel+1)));
@@ -903,16 +903,16 @@ static long write_pt(pr)
     if(pr->cedg==FALLING_EDGE)
 	mode |= 0x1000; /*count on falling edge*/
 
-    /* If necessary set igv control MODE K: Active High Level Gate N */
-    if(pr->gtyp==INTERNAL && pr->igv!=0)
+    /* If necessary set hgv control MODE K: Active High Level Gate N */
+    if(pr->gtyp==INTERNAL && pr->hgv!=0)
     {
-	unsigned short igv = (unsigned short)pr->igv;
+	unsigned short hgv = (unsigned short)pr->hgv;
 
-	if(igv>5)
+	if(hgv>5)
 	   recGblRecordError(S_db_badField,(void *)pr,
-		"devMz8310 : illegal igv value");
+		"devMz8310 : illegal hgv value");
 	else
-	   mode |= igv<<13;
+	   mode |= hgv<<13;
     }
 
     /*set count source selection*/

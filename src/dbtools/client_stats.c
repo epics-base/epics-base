@@ -36,7 +36,6 @@ void PVS_ClientStats(BS* bs)
 {
 	int len;
 	char line[120];
-	char* ptr;
 	struct client 	*pclient;
 
 	/* report columns:

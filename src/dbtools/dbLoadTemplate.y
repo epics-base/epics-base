@@ -35,7 +35,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "dbVarSub.h"
+#include "macLib.h"
 #include "dbmf.h"
 #include "epicsVersion.h"
 
@@ -46,14 +46,23 @@ int dbLoadTemplate(char* sub_file);
 #ifdef SUB_TOOL
 static int sub_it();
 #else
-int dbLoadRecords(char* pfilename, char* pattern, char* container);
+int dbLoadRecords(char* pfilename, char* pattern);
 #endif
 
-static char sub_collect[VAR_MAX_VAR_STRING];
-static char** vars;
-static char* db_file_name = (char*)NULL;
+
+#ifdef vxWorks
+#define VAR_MAX_VAR_STRING 1500
+#define VAR_MAX_VARS 100
+#else
+#define VAR_MAX_VAR_STRING 50000
+#define VAR_MAX_VARS 700
+#endif
+
+static char *sub_collect = NULL;
+static MAC_HANDLE *macHandle = NULL;
+static char** vars = NULL;
+static char* db_file_name = NULL;
 static int var_count,sub_count;
-static void* handle=NULL;
 
 %}
 
@@ -89,7 +98,7 @@ templ: templ_head O_BRACE subst C_BRACE
 	{
 #ifndef SUB_TOOL
 		if(db_file_name)
-			dbLoadRecords(db_file_name,NULL,NULL);
+			dbLoadRecords(db_file_name,NULL);
 		else
 			fprintf(stderr,"Error: no db file name given\n");
 #else
@@ -101,8 +110,10 @@ templ: templ_head O_BRACE subst C_BRACE
 templ_head: DBFILE WORD
 	{
 		var_count=0;
-		if(db_file_name) free(db_file_name);
-		db_file_name=$2;
+		if(db_file_name) dbmfFree(db_file_name);
+		db_file_name = dbmfMalloc(strlen($2)+1);
+		strcpy(db_file_name,$2);
+		dbmfFree($2);
 	}
 	;
 
@@ -125,7 +136,11 @@ vars: vars var
 	;
 
 var: WORD
-	{ vars[var_count++]=$1; }
+	{
+	    vars[var_count++] = dbmfMalloc(strlen($1)+1);
+	    strcpy(vars[var_count],$1);
+	    dbmfFree($1);
+	}
 	;
 
 subs: subs sub
@@ -140,14 +155,14 @@ sub: WORD O_BRACE vals C_BRACE
 #endif
 #ifndef SUB_TOOL
 		if(db_file_name)
-			dbLoadRecords(db_file_name,sub_collect,$1);
+			dbLoadRecords(db_file_name,sub_collect);
 		else
 			fprintf(stderr,"Error: no db file name given\n");
 #else
 		sub_it();
 #endif
 
-		dbmfFree(handle,$1);
+		dbmfFree($1);
 		sub_collect[0]='\0';
 		sub_count=0;
 	}
@@ -159,7 +174,7 @@ sub: WORD O_BRACE vals C_BRACE
 #endif
 #ifndef SUB_TOOL
 		if(db_file_name)
-			dbLoadRecords(db_file_name,sub_collect,NULL);
+			dbLoadRecords(db_file_name,sub_collect);
 		else
 			fprintf(stderr,"Error: no db file name given\n");
 #else
@@ -183,9 +198,9 @@ val: QUOTE
 			strcat(sub_collect,"=\"");
 			strcat(sub_collect,$1);
 			strcat(sub_collect,"\",");
-			dbmfFree(handle,$1);
 			sub_count++;
 		}
+		dbmfFree($1);
 	}
 	| WORD
 	{
@@ -195,9 +210,9 @@ val: QUOTE
 			strcat(sub_collect,"=");
 			strcat(sub_collect,$1);
 			strcat(sub_collect,",");
-			dbmfFree(handle,$1);
 			sub_count++;
 		}
+		dbmfFree($1);
 	}
 	;
 
@@ -213,14 +228,14 @@ var_sub: WORD O_BRACE sub_pats C_BRACE
 #endif
 #ifndef SUB_TOOL
 		if(db_file_name)
-			dbLoadRecords(db_file_name,sub_collect,$1);
+			dbLoadRecords(db_file_name,sub_collect);
 		else
 			fprintf(stderr,"Error: no db file name given\n");
 #else
 		sub_it();
 #endif
 
-		dbmfFree(handle,$1);
+		dbmfFree($1);
 		sub_collect[0]='\0';
 		sub_count=0;
 	}
@@ -232,7 +247,7 @@ var_sub: WORD O_BRACE sub_pats C_BRACE
 #endif
 #ifndef SUB_TOOL
 		if(db_file_name)
-			dbLoadRecords(db_file_name,sub_collect,NULL);
+			dbLoadRecords(db_file_name,sub_collect);
 		else
 			fprintf(stderr,"Error: no db file name given\n");
 #else
@@ -254,7 +269,7 @@ sub_pat: WORD EQUALS WORD
 		strcat(sub_collect,"=");
 		strcat(sub_collect,$3);
 		strcat(sub_collect,",");
-		dbmfFree(handle,$1); dbmfFree(handle,$3);
+		dbmfFree($1); dbmfFree($3);
 		sub_count++;
 	}
 	| WORD EQUALS QUOTE
@@ -263,7 +278,7 @@ sub_pat: WORD EQUALS WORD
 		strcat(sub_collect,"=\"");
 		strcat(sub_collect,$3);
 		strcat(sub_collect,"\",");
-		dbmfFree(handle,$1); dbmfFree(handle,$3);
+		dbmfFree($1); dbmfFree($3);
 		sub_count++;
 	}
 	;
@@ -276,6 +291,7 @@ static int yyerror(char* str)
 {
 	fprintf(stderr,"Substitution file parse error\n");
 	fprintf(stderr,"line %d:%s\n",line_num,yytext);
+	return(0);
 }
 
 static int is_not_inited = 1;
@@ -283,7 +299,8 @@ static int is_not_inited = 1;
 int dbLoadTemplate(char* sub_file)
 {
 	FILE *fp;
-	long status;
+	int ind;
+
 	line_num=0;
 
 	if( !sub_file || !*sub_file)
@@ -299,6 +316,7 @@ int dbLoadTemplate(char* sub_file)
 	}
 
 	vars = (char**)malloc(VAR_MAX_VARS * sizeof(char*));
+	sub_collect = malloc(VAR_MAX_VAR_STRING);
 	sub_collect[0]='\0';
 	var_count=0;
 	sub_count=0;
@@ -307,7 +325,6 @@ int dbLoadTemplate(char* sub_file)
 	{
 		yyin=fp;
 		is_not_inited=0;
-		handle=dbmfInit(55,1,4);
 	}
 	else
 	{
@@ -315,9 +332,15 @@ int dbLoadTemplate(char* sub_file)
 	}
 
 	yyparse();
-
+	for(ind=0;ind<var_count;ind++) dbmfFree(vars[ind]);
 	free(vars);
+	free(sub_collect);
+	vars = NULL;
 	fclose(fp);
+	if(db_file_name){
+	    dbmfFree((void *)db_file_name);
+	    db_file_name = NULL;
+	}
 	return 0;
 }
 
@@ -348,6 +371,7 @@ static int sub_it()
 {
 	FILE* fp;
 	char var_buff[500];
+	char    **macPairs;
 
 #ifdef ERROR_STUFF
 	fprintf(stderr,"In sub_it()\n");
@@ -356,9 +380,20 @@ static int sub_it()
 	if( *sub_collect )
 	{
 #ifdef ERROR_STUFF
-	fprintf(stderr," dbInitSubst() calling\n");
+	fprintf(stderr," macCreateHandle() calling\n");
 #endif
-		dbInitSubst(sub_collect);
+		if(macCreateHandle(&macHandle,NULL)) {
+		    fprintf(stderr,"dbLoadTemplate macCreateHandle error\n");
+		    exit(1);
+		}
+		macParseDefns(macHandle,sub_collect,&macPairs);
+		if(macPairs == NULL) {
+		    macDeleteHandle(macHandle);
+		    macHandle = NULL;
+		} else {
+		    macInstallMacros(macHandle,macPairs);
+		    free((void *)macPairs);
+		}
 	}
 	else
 	{
@@ -375,17 +410,21 @@ static int sub_it()
 	/* do the work here */
 	while( fgets(var_buff,200,fp)!=(char*)NULL )
 	{
+		int n;
 #ifdef ERROR_STUFF
-		fprintf(stderr," calling dbDoSubst()\n");
+		fprintf(stderr," calling macExpandString()\n");
 #endif
-		dbDoSubst(var_buff,500,NULL);
-		fputs(var_buff,stdout);
+                n = macExpandString(macHandle,var_buff,sub_collect,
+		     VAR_MAX_VAR_STRING-1);
+		if(n<0) fprintf(stderr,"macExpandString failed\n"); 
+		fputs(sub_collect,stdout);
 	}
 
 #ifdef ERROR_STUFF
-	fprintf(stderr," calling dbFreeSubst()\n");
+	fprintf(stderr," calling macDeleteHandle()\n");
 #endif
-	dbFreeSubst();
+	macDeleteHandle(macHandle);
+	macHandle = NULL;
 	fclose(fp);
 	return 0;
 }
@@ -405,8 +444,9 @@ main(int argc, char** argv)
 		switch(c)
 		{
 		case 's':
-			if(name) free(name);
-			name = strdup(optarg);
+			if(name) dbmfFree(name);
+			name = dbmfMalloc(strlen(optarg));
+			strcpy(name,optarg);
 			break;
 		default: no_error=0; break;
 		}
@@ -422,9 +462,12 @@ main(int argc, char** argv)
 		exit(1);
 	}
 
-	if(!name) name = "Composite";
-
+	if(!name) {
+	    name = dbmfMalloc(strlen("Composite") + 1);
+	    strcpy(name,"Composite");
+	}
 	dbLoadTemplate(argv[1]);
+	dbmfFree((void *)name);
 }
 #endif
 #endif

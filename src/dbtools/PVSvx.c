@@ -76,7 +76,7 @@ static int PVSannouce(int want_annouce,char* name)
 {
 	int soc,mlen;
 	PVS_INFO_PACKET buf,in_buf;
-	BSDATA info,in_info;
+	BSDATA info;
 
 	if(want_annouce==0 && name)
 	{
@@ -116,7 +116,7 @@ static int PVSannouce(int want_annouce,char* name)
 static void PVSserver(int want_annouce,char* name)
 {
 	fd_set fds,rfds;
-	int tsoc,usoc,nsoc,len,s;
+	int tsoc,usoc,nsoc,len;
 	struct sockaddr stemp;
 	int stemp_len;
 	PVS_INFO_PACKET buf;
@@ -318,7 +318,7 @@ extern DBNODE* DbApplList;
 void handle_applist(BS* bs)
 {
 	DBNODE* n;
-	int size,len;
+	int len;
 
 	len=0;
 	for(n=DbApplList;n;n=n->next)

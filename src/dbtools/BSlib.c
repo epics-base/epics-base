@@ -149,7 +149,6 @@ int BSmakeServer(char** argv)
 
 BS* BSipOpen(char* address, int Port)
 {
-	struct hostent* pHostent;
 	unsigned long addr;
 	BSDATA info;
 	struct sockaddr_in* tsin;
@@ -166,6 +165,8 @@ BS* BSipOpen(char* address, int Port)
 	}
 	else
 	{
+		struct hostent* pHostent;
+
 		if((pHostent=gethostbyname(address))==NULL) return NULL;
 		memcpy((char*)&addr,pHostent->h_addr,sizeof(addr));
 	}
@@ -311,7 +312,6 @@ int BSsendData(BS* bdt,void* buffer,int size)
 {
 	int		len;
 	int		remaining;
-	int		rc;
 
 	if(bdt->state!=BSsData)
 	{
@@ -450,7 +450,6 @@ int BSreceiveHeader(BS* bdt,int* verb,int* size)
    ------------------------------------------------------------------------ */
 int BSreceiveData(BS* bdt,void* buffer,int size)
 {
-	int rc;
 
 	/* can only receive data when in the receive data state */
 	switch(bdt->state)
@@ -645,7 +644,6 @@ int BSsetPort(BSDATA* info, int dest_port)
 
 int BSsetAddress(BSDATA* info, char* ip_addr)
 {
-	struct hostent *pHostent;
 	struct sockaddr_in* sin = (struct sockaddr_in*)&(info->sin);
 	unsigned long addr;
 
@@ -659,6 +657,8 @@ int BSsetAddress(BSDATA* info, char* ip_addr)
 	}
 	else
 	{
+	        struct hostent *pHostent;
+
 		if((pHostent=gethostbyname(ip_addr))==NULL) return -1;
 		memcpy((char*)&addr,pHostent->h_addr,sizeof(addr));
 	}
@@ -917,7 +917,6 @@ int BSgetBroadcastSocket(int port, struct sockaddr_in* sin)
 {
 	int on=1;
 	int soc;
-	BS bs;
 
 	sin->sin_port=htons(port);
 	sin->sin_family=AF_INET;

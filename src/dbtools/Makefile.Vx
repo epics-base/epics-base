@@ -4,10 +4,10 @@ include $(TOP)/config/CONFIG_BASE
 YACCOPT = -l
 LEXOPT = -L
 
-SRCS.c = ../dbVarSub.c dbLoadTemplate_lex.c dbLoadTemplate.c \
+SRCS.c =  dbLoadTemplate_lex.c dbLoadTemplate.c \
 		dbLoadRecords_lex.c dbLoadRecords.c ../BSlib.c ../PVSvx.c ../vx_stats.c ../client_stats.c
 
-LIBOBJS = dbVarSub.o dbLoadTemplate.o dbLoadRecords.o BSlib.o PVSvx.o vx_stats.o client_stats.o
+LIBOBJS =  dbLoadTemplate.o dbLoadRecords.o BSlib.o PVSvx.o vx_stats.o client_stats.o
 
 LIBNAME = dbSubs
 
@@ -25,9 +25,9 @@ dbLoadTemplate.o: dbLoadTemplate_lex.c
 dbLoadRecords.o: dbLoadRecords_lex.c
 subtool: dbLoadTemplate_lex.c
 
-subtool: dbLoadTemplate.c dbLoadTemplate_lex.c dbVarSub.o 
+subtool: dbLoadTemplate.c dbLoadTemplate_lex.c 
 	$(RM) $@
-	$(LINK.c) $(CFLAGS) -DSUB_TOOL -o subtool dbLoadTemplate.c dbVarSub.o  -s
+	$(LINK.c) $(CFLAGS) -DSUB_TOOL -o subtool dbLoadTemplate.c   -s
 
 clean::
 	@$(RM) dbLoadTemplate_lex.c dbLoadTemplate.c dbLoadRecords_lex.c \

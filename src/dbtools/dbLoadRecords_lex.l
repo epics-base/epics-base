@@ -1,6 +1,23 @@
 
 pvname	[a-zA-Z0-9_~\-:\.\[\]<>;]
-value	[a-zA-Z0-9_\,\^~\./\*#\[\]%: ;!|\'\-&\(\)@\?\+<>=\$\{\}]
+
+BEL    \\a
+BS     \\b
+FF     \\f
+NL     \\n
+CR     \\r
+HT     \\t
+VT     \\v
+backSla  \\\\
+question \\\?
+single   \\\'
+double   \\\"
+octal  \\[0-7]+
+hexa   \\x[a-fA-F0-9]+
+escape {BEL}|{BS}|{FF}|{NL}|{CR}|{HT}|{VT}|{backSla}|{question}|{single}|{double}|{octal}|{question}|{hexa}
+spaces  [ \t]
+regular [a-zA-Z0-9_\,\^~\./\*#\[\]%:;!|\'\-&\(\)@\?\+<>=\$\{\}]
+value {regular}|{spaces}|{escape}
 
 %{
 %}
@@ -16,9 +33,17 @@ value	[a-zA-Z0-9_\,\^~\./\*#\[\]%: ;!|\'\-&\(\)@\?\+<>=\$\{\}]
 "nowhere"   {  return(NOWHERE); }
 "application"   {  return(APPL); }
 
-\"{value}*\"    { yylval.Str=(char *)dbmfMalloc(handle,strlen(yytext)+1); strcpy(yylval.Str,yytext+1); yylval.Str[strlen(yylval.Str)-1] = '\0'; return(VALUE); }
 
-{pvname}+		{ yylval.Str=(char *)dbmfMalloc(handle,strlen(yytext)+1); strcpy(yylval.Str,yytext); return(WORD);	}
+{pvname}+ { yylval.Str=(char *)dbmfMalloc(strlen(yytext)+1);
+	    strcpy(yylval.Str,yytext);
+	    return(WORD);
+	  }
+
+\"{value}+\" { yylval.Str=(char *)dbmfMalloc(strlen(yytext)+1);
+	       yytext[strlen(yytext)-1] = '\0';
+	       strcpy(yylval.Str,yytext+1);
+	       return(VALUE);
+	     }
 
 "{"	{ return(O_BRACE);	}
 "}"	{ return(C_BRACE);	}

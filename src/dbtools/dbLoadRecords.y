@@ -35,14 +35,16 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "dbVarSub.h"
+#include "macLib.h"
 #include "dbStaticLib.h"
 #include "dbmf.h"
 #include "epicsVersion.h"
 
-static char subst_buffer[VAR_MAX_SUB_SIZE];
+#define VAR_MAX_SUB_SIZE 300
+static char *subst_buffer= NULL;
 static int subst_used;
 static int line_num;
+static MAC_HANDLE *macHandle = NULL;
 
 struct db_app_node
 {
@@ -62,8 +64,15 @@ static void sub_pvname(char*,char*);
 static DBENTRY* pdbentry;
 extern struct dbBase *pdbbase;
 #endif
-static void* handle=NULL;
 
+static char* strduplicate(char* x)
+{
+	char* c;
+	c=(char*)malloc(strlen(x)+1);
+	strcpy(c,x);
+	return c;
+}
+ 
 %}
 
 %start database
@@ -92,9 +101,9 @@ database:	DATABASE d_head d_body
 	;
 
 d_head:	O_PAREN WORD C_PAREN
-	{ dbmfFree(handle,$2); }
+	{ dbmfFree($2); }
 	| O_PAREN WORD COMMA VALUE C_PAREN
-	{ dbmfFree(handle,$2); dbmfFree(handle,$4); }
+	{ dbmfFree($2); dbmfFree($4); }
 	;
 
 d_body:	O_BRACE nowhere_records db_components C_BRACE
@@ -123,12 +132,14 @@ applic: APPL O_PAREN VALUE C_PAREN
 
 		if(subst_used)
 		{
-			strcpy(subst_buffer,$<Str>3);
-			if(dbDoSubst(subst_buffer,sizeof(subst_buffer),NULL)!=0)
-				fprintf(stderr,"dbDoSubst failed\n");
+			int n;
+
+			n = macExpandString(macHandle,$<Str>3,subst_buffer,
+			    VAR_MAX_SUB_SIZE-1);
+			if(n<0) fprintf(stderr,"macExpandString failed\n");
 #ifdef vxWorks
-			an->name=strdup(subst_buffer);
-			dbmfFree(handle,$3);
+			an->name=strduplicate(subst_buffer);
+			dbmfFree($3);
 #else
 			printf("\napplication(\"%s\")\n",subst_buffer);
 #endif
@@ -136,7 +147,8 @@ applic: APPL O_PAREN VALUE C_PAREN
 		else
 		{
 #ifdef vxWorks
-			an->name=$<Str>3;
+			an->name=strduplicate($<Str>3);
+			dbmfFree($3);
 #else
 			printf("\napplication(\"%s\")\n",$<Str>3);
 #endif
@@ -163,12 +175,12 @@ record:	RECORD r_head r_body
 r_head:	O_PAREN WORD COMMA WORD C_PAREN
 	{
 		sub_pvname($2,$4);
-		dbmfFree(handle,$2); dbmfFree(handle,$4);
+		dbmfFree($2); dbmfFree($4);
 	}
 	| O_PAREN WORD COMMA VALUE C_PAREN
 	{
 		sub_pvname($2,$4);
-		dbmfFree(handle,$2); dbmfFree(handle,$4);
+		dbmfFree($2); dbmfFree($4);
 	}
 	;
 
@@ -188,9 +200,11 @@ field:	FIELD O_PAREN WORD COMMA VALUE C_PAREN
 #endif
 		if(subst_used)
 		{
-			strcpy(subst_buffer,$<Str>5);
-			if(dbDoSubst(subst_buffer,sizeof(subst_buffer),NULL)!=0)
-				fprintf(stderr,"dbDoSubst failed\n");
+			int n;
+
+			n = macExpandString(macHandle,$<Str>5,subst_buffer,
+			    VAR_MAX_SUB_SIZE-1);
+			if(n<0) fprintf(stderr,"macExpandString failed\n");
 #ifdef vxWorks
 			if( dbPutString(pdbentry, subst_buffer) )
 				fprintf(stderr,"Cannot set field %s to %s\n",
@@ -208,7 +222,7 @@ field:	FIELD O_PAREN WORD COMMA VALUE C_PAREN
 			printf("\n\t\tfield(%s, \"%s\")",$<Str>3,$<Str>5);
 #endif
 		}
-		dbmfFree(handle,$3); dbmfFree(handle,$5);
+		dbmfFree($3); dbmfFree($5);
 	}
 	;
 
@@ -218,44 +232,47 @@ field:	FIELD O_PAREN WORD COMMA VALUE C_PAREN
  
 static int yyerror(str)
 char  *str;
-{ fprintf(stderr,"db file parse, Error line %d : %s\n",line_num, yytext); }
-
-#ifdef vxWorks
-static char* strdup(char* x)
 {
-	char* c;
-	c=(char*)dbmfMalloc(handle,strlen(x)+1);
-	strcpy(c,x);
-	return c;
+    fprintf(stderr,"db file parse, Error line %d : %s\n",line_num, yytext);
+    return(0);
 }
-#endif
- 
+
 static int is_not_inited = 1;
  
 int dbLoadRecords(char* pfilename, char* pattern)
 {
 	FILE* fp;
-	long status;
-	DB_APP_NODE* an;
+	char    **macPairs;
 
 	line_num=0;
 
 #ifdef vxWorks
 	if(pdbbase==NULL)
 	{
-		fprintf(stderr,"dbLoadRecords: default.dctsdr file not loaded\n");
+		fprintf(stderr,"dbLoadRecords: dbLoadDatabase not called\n");
 		return -1;
 	}
 #endif
 
 	if( pattern && *pattern )
 	{
+		subst_buffer = malloc(VAR_MAX_SUB_SIZE);
 		subst_used = 1;
-		dbInitSubst(pattern);
+		if(macCreateHandle(&macHandle,NULL)) {
+		    fprintf(stderr,"dbLoadRecords macCreateHandle error\n");
+		    return -1;
+		}
+		macParseDefns(macHandle,pattern,&macPairs);
+		if(macPairs == NULL) {
+		    macDeleteHandle(macHandle);
+		    macHandle = NULL;
+		} else {
+		    macInstallMacros(macHandle,macPairs);
+		    free((void *)macPairs);
+		}
 	}
 	else
 		subst_used = 0;
-
 	if( !(fp=fopen(pfilename,"r")) )
 	{
 		fprintf(stderr,"dbLoadRecords: error opening file\n");
@@ -266,7 +283,6 @@ int dbLoadRecords(char* pfilename, char* pattern)
 	{
 		yyin=fp;
 		is_not_inited=0;
-		handle=dbmfInit(55,1,4);
 	}
 	else
 	{
@@ -283,7 +299,12 @@ int dbLoadRecords(char* pfilename, char* pattern)
 	dbFreeEntry(pdbentry);
 #endif
 
-	if(subst_used) dbFreeSubst();
+	if(subst_used) {
+	    macDeleteHandle(macHandle);
+	    macHandle = NULL;
+	    free((void *)subst_buffer);
+	    subst_buffer = NULL;
+	}
 
 	fclose(fp);
 
@@ -292,7 +313,7 @@ int dbLoadRecords(char* pfilename, char* pattern)
 		/* set up a default list to put on the master application list */
 		DbCurrentListHead=(DB_APP_NODE*)malloc(sizeof(DB_APP_NODE));
 		DbCurrentListTail=DbCurrentListHead;
-		DbCurrentListHead->name=strdup(pfilename);
+		DbCurrentListHead->name=strduplicate(pfilename);
 		DbCurrentListHead->next=(DB_APP_NODE*)NULL;
 	}
 
@@ -313,9 +334,11 @@ static void sub_pvname(char* type, char* name)
 
 		if(subst_used)
 		{
-			strcpy(subst_buffer,name);
-			if(dbDoSubst(subst_buffer,PVNAME_STRINGSZ,NULL)!=0)
-				fprintf(stderr,"dbDoSubst failed\n");
+			int n;
+
+			n = macExpandString(macHandle,name,subst_buffer,
+			    VAR_MAX_SUB_SIZE-1);
+			if(n<0) fprintf(stderr,"macExpandString failed\n");
 #ifdef vxWorks
 			if( dbCreateRecord(pdbentry,subst_buffer) )
 				fprintf(stderr,"Cannot create record %s\n",subst_buffer);

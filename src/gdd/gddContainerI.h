@@ -7,6 +7,9 @@
  *
  * $Id$
  * $Log$
+ * Revision 1.4  1999/05/11 00:14:47  jhill
+ * fixed missing arg
+ *
  * Revision 1.3  1999/05/10 23:42:25  jhill
  * fixed many const releated problems
  *
@@ -19,8 +22,22 @@
  *
  */
 
+inline gddContainer::gddContainer(int,int,int,int*) { }
+inline gddContainer::~gddContainer(void) { }
+
+inline gddStatus gddContainer::changeType(int,aitEnum) {
+	gddAutoPrint("gddContainer::changeType()",gddErrorNotAllowed);
+	return gddErrorNotAllowed; }
+inline gddStatus gddContainer::setBound(int,aitIndex,aitIndex) {
+	gddAutoPrint("setBound()",gddErrorNotAllowed);
+	return gddErrorNotAllowed; }
+inline gddStatus gddContainer::getBound(int,aitIndex&,aitIndex&) const {
+	gddAutoPrint("getBound()",gddErrorNotAllowed);
+	return gddErrorNotAllowed; }
+
 inline gdd* gddContainer::cData(void)
 	{ return (gdd*)dataPointer(); }
+
 inline const gdd* gddContainer::cData(void) const
 	{ return (const gdd*)dataPointer(); }
 

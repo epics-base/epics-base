@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.30  1999/08/10 16:51:05  jhill
+ * moved inlines in order to eliminate g++ warnings
+ *
  * Revision 1.29  1999/08/05 22:19:34  jhill
  * removed knowledge of class osiTime, and made ref/unref mf const
  *
@@ -604,5 +607,6 @@ private:
 #include "gddI.h"
 #include "gddArrayI.h"
 #include "gddScalarI.h"
+#include "gddContainerI.h"
 
 #endif

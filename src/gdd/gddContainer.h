@@ -7,6 +7,9 @@
  *
  * $Id$
  * $Log$
+ * Revision 1.4  1999/05/10 23:42:25  jhill
+ * fixed many const releated problems
+ *
  * Revision 1.3  1999/04/30 15:24:53  jhill
  * fixed improper container index bug
  *
@@ -49,19 +52,13 @@ public:
 	gdd* cData(void);
 
 protected:
-	gddContainer(int,int,int,int*) { }
-	~gddContainer(void) { }
+	gddContainer(int,int,int,int*);
+	~gddContainer(void);
 
 	void cInit(int num_things_within);
-	gddStatus changeType(int,aitEnum) {
-		gddAutoPrint("gddContainer::changeType()",gddErrorNotAllowed);
-		return gddErrorNotAllowed; }
-	gddStatus setBound(int,aitIndex,aitIndex) {
-		gddAutoPrint("setBound()",gddErrorNotAllowed);
-		return gddErrorNotAllowed; }
-	gddStatus getBound(int,aitIndex&,aitIndex&) const {
-		gddAutoPrint("getBound()",gddErrorNotAllowed);
-		return gddErrorNotAllowed; }
+	gddStatus changeType(int,aitEnum);
+	gddStatus setBound(int,aitIndex,aitIndex);
+	gddStatus getBound(int,aitIndex&,aitIndex&) const;
 	gddStatus setBound(aitIndex,aitIndex);
 
 private:
@@ -118,7 +115,5 @@ public:
 
 	gdd* operator[](int index);
 };
-
-#include "gddContainerI.h"
 
 #endif

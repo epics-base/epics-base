@@ -18,7 +18,27 @@
 #define epicsExportSharedSymbols
 #include <limits.h>
 #include "epicsMessageQueue.h"
-int sysClkRateGet(void);
+
+extern "C" int sysClkRateGet(void);
+
+epicsShareFunc epicsMessageQueueId epicsShareAPI epicsMessageQueueCreate(
+    unsigned int capacity,
+    unsigned int maximumMessageSize)
+{
+    epicsMessageQueueId id = (epicsMessageQueueId)callocMustSucceed(1, sizeof(*id), "epicsMessageQueueCreate");
+    if ((id->msgq = msgQCreate(capacity, maximumMessageSize, MSG_Q_FIFO)) == NULL) {
+        free(id);
+        return NULL;
+    }
+    id->nBytes = maximumMessageSize;
+    return id;
+}
+
+epicsShareFunc void epicsShareAPI epicsMessageQueueDestroy(epicsMessageQueueId id)
+{
+    msgQDelete(id->msgq);
+    free(id);
+}
 
 epicsShareFunc int epicsShareAPI epicsMessageQueueSendWithTimeout(
     epicsMessageQueueId id,
@@ -34,7 +54,7 @@ epicsShareFunc int epicsShareAPI epicsMessageQueueSendWithTimeout(
         ticks = (int)(timeout*sysClkRateGet());
         if(ticks<=0) ticks = 1;
     }
-    return msgQSend((MSG_Q_ID)id, (char *)message, messageSize, ticks, MSG_PRI_NORMAL);
+    return msgQSend(id->msgq, (char *)message, messageSize, ticks, MSG_PRI_NORMAL);
 }
 
 epicsShareFunc int epicsShareAPI epicsMessageQueueReceiveWithTimeout(
@@ -50,5 +70,5 @@ epicsShareFunc int epicsShareAPI epicsMessageQueueReceiveWithTimeout(
         ticks = (int)(timeout*sysClkRateGet());
         if(ticks<=0) ticks = 1;
     }
-    return msgQReceive((MSG_Q_ID)id, (char *)message, UINT_MAX, ticks);
+    return msgQReceive(id->msgq, (char *)message, id->nBytes, ticks);
 }

@@ -185,7 +185,7 @@ sub get_commandline_opts { #no args
 	exit 0;			# finished for -l command
     }
     
-    Cleanup(1) if @ARGV;
+    Cleanup(1) if !@ARGV;
 
     # ioc architecture
     if ($opt_i) {

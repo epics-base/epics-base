@@ -5,6 +5,9 @@
 // $Id$
 //
 // $Log$
+// Revision 1.10  1999/10/29 00:42:04  jhill
+// remove redundant includes
+//
 // Revision 1.9  1999/10/28 23:33:41  jhill
 // use fully qualified namespace names for C++ RTL classes
 //
@@ -65,6 +68,8 @@ int aitNoConvert(void* /*dest*/,const void* /*src*/,aitIndex /*count*/, const st
 #ifndef min
 #define min(A,B) ((A)<(B)?(A):(B))
 #endif
+
+const std::vector<std::string> aitEmptyEnumStringTable;
 
 /* put the fixed conversion functions here (ones not generated) */
 

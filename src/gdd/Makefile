@@ -41,6 +41,7 @@ gdd_SRCS := gdd.cc gddTest.cc gddAppTable.cc gddNewDel.cc \
 LIBRARY = gdd
 
 DLL_LIBS = Com
+PROD_LIBS = Com
 
 genApps_SRCS = genApps.cc $(AITGENSRCS)
 aitGen_SRCS = aitTypes.c aitGen.c

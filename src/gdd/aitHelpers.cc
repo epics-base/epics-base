@@ -5,6 +5,9 @@
 // $Id$
 //
 // $Log$
+// Revision 1.14  2001/06/11 17:08:07  jhill
+// dont pull in stdio.h in the header since it isnt referenced there
+//
 // Revision 1.13  2001/01/31 13:33:41  mrk
 // osiTime=>epicsTime
 //
@@ -48,6 +51,8 @@
 //
 
 #include <stdio.h>
+
+#include "epicsTime.h" // define struct timespec if nec
 
 #define epicsExportSharedSymbols
 #include "aitTypes.h"
@@ -191,17 +196,6 @@ int aitString::init(const char* p, aitStrType typeIn, unsigned strLengthIn, unsi
 	return rc;
 }
 
-//
-// allow this module to include code that can convert
-// to an EPICS time stamp, but dont force this library
-// to link with libCom
-//
-
-struct epicsTimeStamp {
-	aitUint32    secPastEpoch;   /* seconds since 0000 Jan 1, 1990 */
-	aitUint32    nsec;           /* nanoseconds within second */
-};
-
 aitTimeStamp::operator struct epicsTimeStamp () const
 {
 	epicsTimeStamp ts;
@@ -241,17 +235,6 @@ aitTimeStamp aitTimeStamp::operator = (const struct epicsTimeStamp &rhs)
 	this->tv_nsec = rhs.nsec;
 	return *this;
 }
-
-//
-// allow this module to include code that can convert
-// to and from a POSIX timespec, but allow this library
-// to compile on systems that dont support it
-//
-struct timespec
-{
-	unsigned long tv_sec;
-	unsigned long tv_nsec;
-};
 
 aitTimeStamp::operator struct timespec () const
 {

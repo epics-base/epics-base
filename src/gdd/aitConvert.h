@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.9  2000/09/27 19:45:55  jhill
+ * fixed ifdef around vis c++ pragma
+ *
  * Revision 1.8  1999/10/29 00:41:32  jhill
  * disable microslock warning
  *
@@ -90,18 +93,21 @@ epicsShareExtern aitFunc aitConvertFromNetTable[aitTotal][aitTotal];
 
 #if defined(__cplusplus)
 
-static const std::vector<std::string> emptyEnumStringTable;
+extern const std::vector<std::string> aitEmptyEnumStringTable;
 
 inline int aitConvert(aitEnum desttype, void* dest,
-                      aitEnum srctype, const void* src, aitIndex count, const std::vector< std::string > &enumStringTable = emptyEnumStringTable )
+ aitEnum srctype, const void* src, aitIndex count, 
+ const std::vector< std::string > &enumStringTable = aitEmptyEnumStringTable )
   { return (*aitConvertTable[desttype][srctype])(dest,src,count,enumStringTable); }
 
 inline int aitConvertToNet(aitEnum desttype, void* dest,
- aitEnum srctype, const void* src, aitIndex count, const std::vector< std::string > &enumStringTable = emptyEnumStringTable )
+ aitEnum srctype, const void* src, aitIndex count, 
+ const std::vector< std::string > &enumStringTable = aitEmptyEnumStringTable )
   { return (*aitConvertToNetTable[desttype][srctype])(dest,src,count,enumStringTable); }
 
 inline int aitConvertFromNet(aitEnum desttype, void* dest,
- aitEnum srctype, const void* src, aitIndex count, const std::vector< std::string > &enumStringTable = emptyEnumStringTable )
+ aitEnum srctype, const void* src, aitIndex count, 
+ const std::vector< std::string > &enumStringTable = aitEmptyEnumStringTable )
   { return (*aitConvertFromNetTable[desttype][srctype])(dest,src,count,enumStringTable); }
 
 #else

@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.23  2001/06/11 17:08:07  jhill
+ * dont pull in stdio.h in the header since it isnt referenced there
+ *
  * Revision 1.22  2001/01/31 13:33:41  mrk
  * osiTime=>epicsTime
  *
@@ -80,11 +83,11 @@
  *
  */
 
+#include <string.h>
+#include <limits.h>
 #ifndef assert // allows use of epicsAssert.h
 #include <assert.h> 
 #endif
-#include <string.h>
-#include <limits.h>
 
 #include "shareLib.h"
 

@@ -24,7 +24,6 @@ VX_GNU_LIB_YES = $(VX_GNU)/lib
 # pre Torando directory definitions
 VX_CONFIG_DIR_NO = $(VX_DIR)/config
 VX_INCLUDE_NO = $(VX_DIR)/h
-VX_GNU_NO = $(VX_DIR)/../vxgccV2.2.3.1
 VX_GNU_BIN_NO = $(VX_GNU)/$(HOST_ARCH).$(ARCH_CLASS)/bin
 VX_GNU_LIB_NO = $(VX_GNU)/$(HOST_ARCH).$(ARCH_CLASS)/lib
  

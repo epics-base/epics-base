@@ -65,7 +65,10 @@ VX_DIR_YES = /usr/local/vw/tornado101
 #VX_DIR_NO=c:/Tornado/target
 VX_DIR_NO=/usr/local/vw/vxV52p1/vw
  
-#  Gnu directory for TORNADO=NO g++ crosscompiler
+#  Directory for TORNADO=NO gnu gcc crosscompiler
+VX_GNU_NO = $(VX_DIR)/../vxgccV2.2.3.1
+
+#  Directory for TORNADO=NO gnu g++ crosscompiler
 #  used by applications for hideos builds only
 #GNU_DIR = $(LOCAL_GNU)
 GNU_DIR = /usr/local/hideos/gnu_install-2.7.2

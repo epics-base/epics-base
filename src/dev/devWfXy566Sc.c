@@ -91,7 +91,7 @@ static void myCallback(pcallback,no_read,pdata)
        		bcopy(pdata,pwf->bptr,no_read*2);
        		pwf->nord = no_read;            /* number of values read */
 	} else {
-		recGblRecSupError(S_db_badField,&pcallback->dbAddr,
+		recGblRecordError(S_db_badField,pwf,
 			"read_wf - illegal ftvl");
                 recGblSetSevr(pwf,READ_ALARM,VALID_ALARM);
 	}

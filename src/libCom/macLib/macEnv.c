@@ -27,19 +27,27 @@ macEnvExpand(char *str)
     int destCapacity = 200;
     char *dest = NULL; 
     int n;
-    char *ret;
 
     assert(macCreateHandle(&handle, pairs) == 0);
     do {
         destCapacity *= 2;
-        assert((dest = realloc(dest, destCapacity)) != 0);
+        /*
+         * Use free/malloc rather than realloc since there's no need to
+         * bother copying the contents if realloc needs to move the buffer
+         */
+        free(dest);
+        assert((dest = malloc(destCapacity)) != 0);
         n = macExpandString(handle, str, dest, destCapacity);
     } while (n >= (destCapacity - 1));
-    if (n < 0)
-        ret = NULL;
-    else
-        ret = epicsStrDup(dest);
-    free(dest);
+    if (n < 0) {
+        free(dest);
+        dest = NULL;
+    }
+    else {
+        int unused = destCapacity - ++n;
+        if (unused >= 20)
+            dest = realloc(dest, n);
+    }
     assert(macDeleteHandle(handle) == 0);
-    return ret;
+    return dest;
 }

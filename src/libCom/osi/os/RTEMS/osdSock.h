@@ -78,6 +78,6 @@ int  select(int  n,  fd_set  *readfds,  fd_set  *writefds, fd_set *exceptfds, st
 /*
  * Ensure that we get the right network code in default/osdNetIntf.c.
  */
-#define SOCKADDR_HAS_LEN 1
+#define ifreq_size(pifreq) (pifreq->ifr_addr.sa_len + sizeof(pifreq->ifr_name))
 
 #endif /*osdSockH*/

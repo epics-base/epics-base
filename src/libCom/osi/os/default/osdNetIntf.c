@@ -48,20 +48,18 @@
  * Made difficult by the fact that addresses larger than the structure
  * size may be returned from the kernel.
  */
-static struct ifreq *
-ifreqNext (struct ifreq *pifreq)
+static struct ifreq * ifreqNext ( struct ifreq *pifreq )
 {
-    unsigned int size;
+    size_t size;
 
-#if ( defined (BSD) && ( BSD >= 44 ) ) || defined ( SOCKADDR_HAS_LEN )
-    size = pifreq->ifr_addr.sa_len + sizeof(pifreq->ifr_name);
-    if (size < sizeof(*pifreq))
-	size = sizeof(*pifreq);
-#else
-    size = sizeof(*pifreq);
-#endif
-    return (struct ifreq *)(size + (char *)pifreq);
+    size = ifreq_size ( pifreq );
+    if ( size < sizeof ( *pifreq ) ) {
+	    size = sizeof ( *pifreq );
+    }
+
+    return ( struct ifreq * )( size + ( char * ) pifreq );
 }
+
 
 /*
  * osiSockDiscoverBroadcastAddresses ()

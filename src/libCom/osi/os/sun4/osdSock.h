@@ -132,5 +132,7 @@ typedef int osiSocklen_t;
 #define SOCK_ENOTSOCK ENOTSOCK
 #define SOCK_EBADF EBADF
 
+#define ifreq_size(pifreq) (sizeof(pifreq->ifr_name))
+
 #endif /*osdSockH*/
 

@@ -161,5 +161,7 @@ typedef int osiSocklen_t;
 #	define FD_IN_FDSET(FD) ((FD)<FD_SETSIZE&&(FD)>=0)
 #endif
 
+#define ifreq_size(pifreq) (sizeof(pifreq->ifr_name))
+
 #endif /*osdSockH*/
 

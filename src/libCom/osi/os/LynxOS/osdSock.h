@@ -71,5 +71,7 @@ typedef int osiSocklen_t;
 
 #define INADDR_LOOPBACK 0x7F000001
 
+#define ifreq_size(pifreq) (sizeof(pifreq->ifr_name))
+
 #endif /*osdSockH*/
 

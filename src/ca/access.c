@@ -99,6 +99,9 @@
 /************************************************************************/
 /*
  * $Log$
+ * Revision 1.89  1997/01/10 21:02:10  jhill
+ * host/user name set is now a NOOP
+ *
  * Revision 1.88  1996/11/22 19:05:48  jhill
  * added const to build and connect API
  *
@@ -200,7 +203,7 @@ static char *sccsId = "@(#) $Id$";
 #include 	"iocinf.h"
 #include	"net_convert.h"
 #include	<epicsPrint.h>
-#include	<stdarg.h> /* for VMS old CC include order madness */
+#include	<stdarg.h> 
 
 
 /****************************************************************/
@@ -2941,10 +2944,10 @@ int epicsShareAPI ca_test_io()
 
 
 /*
- * generateLocalExceptionWithFileAndLine ()
+ * genLocalExcepWFL ()
+ * (generate local exception with file and line number)
  */
-void generateLocalExceptionWithFileAndLine (long stat, char *ctx, 
-		char *pFile, unsigned lineNo)
+void genLocalExcepWFL (long stat, char *ctx, char *pFile, unsigned lineNo)
 {
         struct exception_handler_args args;
  

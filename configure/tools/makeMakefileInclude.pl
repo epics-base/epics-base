@@ -38,6 +38,13 @@ foreach $name ( @nameList ) {
 	print OUT "${name}_SRCS+=\$(${name}_SRCS_DEFAULT)\n";
 	print OUT "endif\n";
 	print OUT "endif\n";
+	print OUT "ifneq (\$(strip \$(${name}_OBJS_\$(OS_CLASS))),)\n";
+	print OUT "${name}_OBJS+=\$(subst -nil-,,\$(${name}_OBJS_\$(OS_CLASS)))\n";
+	print OUT "else\n";
+	print OUT "ifdef ${name}_OBJS_DEFAULT\n";
+	print OUT "${name}_OBJS+=\$(${name}_OBJS_DEFAULT)\n";
+	print OUT "endif\n";
+	print OUT "endif\n";
 	print OUT "ifneq (\$(strip \$(${name}_LIBS_\$(OS_CLASS))),)\n";
 	print OUT "${name}_LIBS+=\$(subst -nil-,,\$(${name}_LIBS_\$(OS_CLASS)))\n";
 	print OUT "else\n";

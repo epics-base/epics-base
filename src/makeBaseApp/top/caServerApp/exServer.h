@@ -93,6 +93,8 @@ private:
     const excasIoType ioType;
     const unsigned elementCount;
     exPV * pPV;
+    pvInfo & operator = ( const pvInfo & );
+    pvInfo ( const pvInfo & );
 };
 
 //
@@ -117,6 +119,8 @@ public:
 private:
     pvInfo & info;
     exServer & cas;
+    pvEntry & operator = ( const pvEntry & );
+    pvEntry ( const pvEntry & );
 };
 
 
@@ -221,6 +225,9 @@ private:
     gddAppFuncTableStatus getValue(gdd &value);
     gddAppFuncTableStatus getEnums(gdd &value);
 
+    exPV & operator = ( const exPV & );
+    exPV ( const exPV & );
+
     //
     // static
     //
@@ -240,6 +247,8 @@ public:
     void scan();
 private:
     caStatus updateValue ( const gdd & );
+    exScalarPV & operator = ( const exScalarPV & );
+    exScalarPV ( const exScalarPV & );
 };
 
 //
@@ -258,6 +267,8 @@ public:
 
 private:
     caStatus updateValue ( const gdd & );
+    exVectorPV & operator = ( const exVectorPV & );
+    exVectorPV ( const exVectorPV & )
 };
 
 //
@@ -290,6 +301,9 @@ private:
     pvAttachReturn pvAttach ( const casCtx &, 
         const char * pPVName );
 
+    exServer & operator = ( const exServer & );
+    exServer ( const exServer & )
+
     //
     // list of pre-created PVs
     //
@@ -318,6 +332,8 @@ public:
     void removeIO();
 private:
     unsigned simultAsychIOCount;
+    exAsyncPV & operator = ( const exAsyncPV & );
+    exAsyncPV ( const exAsyncPV & )
 };
 
 //
@@ -331,6 +347,8 @@ public:
     bool readAccess () const;
     bool writeAccess () const;
 private:
+    exChannel & operator = ( const exChannel & );
+    exChannel ( const exChannel & )
 };
 
 //
@@ -345,6 +363,8 @@ private:
     epicsTimer & timer;
     smartConstGDDPointer pValue;
     expireStatus expire ( const epicsTime & currentTime );
+    exAsyncWriteIO & operator = ( const exAsyncWriteIO & );
+    exAsyncWriteIO ( const exAsyncWriteIO & )
 };
 
 //
@@ -359,6 +379,8 @@ private:
     epicsTimer & timer;
     smartGDDPointer pProto;
     expireStatus expire ( const epicsTime & currentTime );
+    exAsyncReadIO & operator = ( const exAsyncReadIO & );
+    exAsyncReadIO ( const exAsyncReadIO & )
 };
 
 //
@@ -375,6 +397,8 @@ private:
     epicsTimer & timer;
     exServer & cas;
     expireStatus expire ( const epicsTime & currentTime );
+    exAsyncExistIO & operator = ( const exAsyncExistIO & );
+    exAsyncExistIO ( const exAsyncExistIO & )
 };
 
  
@@ -393,6 +417,8 @@ private:
     exServer & cas;
     bool scanOn;
     expireStatus expire ( const epicsTime & currentTime );
+    exAsyncCreateIO & operator = ( const exAsyncCreateIO & );
+    exAsyncCreateIO ( const exAsyncCreateIO & )
 };
 
 inline pvInfo::pvInfo ( double scanPeriodIn, const char *pNameIn, 

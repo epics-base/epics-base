@@ -22,7 +22,7 @@ extern int main (int argc, const char **argv)
     epicsTime     begin (epicsTime::getCurrent());
     exServer    *pCAS;
     unsigned    debugLevel = 0u;
-    double      executionTime;
+    double      executionTime = 0.0;
     char        pvPrefix[128] = "";
     unsigned    aliasCount = 1u;
     unsigned    scanOn = true;

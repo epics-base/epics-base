@@ -24,12 +24,12 @@ static int parseDirectoryFP (FILE *pf, const char *pFileName);
 // main()
 // (example single threaded ca server tool main loop)
 //
-extern int main (int argc, const char **argv)
+extern int main ( int argc, const char **argv )
 {
-    epicsTime       begin(epicsTime::getCurrent());
+    epicsTime       begin ( epicsTime::getCurrent() );
     directoryServer *pCAS;
     unsigned        debugLevel = 0u;
-    double          executionTime;
+    double          executionTime = 0.0;
     char            pvPrefix[128] = "";
     char            fileName[128] = "pvDirectory.txt";
     unsigned        aliasCount = 0u;

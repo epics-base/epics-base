@@ -4,75 +4,74 @@ include $(EPICS)/config/CONFIG_BASE
 
 USR_CFLAGS = -fshared-data -fvolatile -mnobitfield -traditional
 
-SRCS.c = \
-	../module_types.c\
-	../drvXy010.c\
-	../drvAb.c\
-	../drvBb902.c\
-	../drvBb910.c\
-	../drvCompuSm.c\
-	../drvDvx.c\
-	../drvMz8310.c\
-	../drvOms.c\
-	../drvStc.c\
-	../drvTime.c\
-	../drvVmi4100.c\
-	../drvXy210.c\
-	../drvXy220.c\
-	../drvXy240.c\
-	../drvXy566.c\
-	../drvAt5Vxi.c\
-	../drvHp1404a.c\
-	../drvEpvxi.c\
-	../drvEpvxiMsg.c\
-	../drvBitBus.c\
-	../drvGpib.c\
-	../drvMsg.c\
-	../drvBB232.c\
-	../drvHpe1368a.c\
-	../drvHpe1445a.c\
-	../drvKscV215.c\
-	../drvComet.c\
-	../drvJgvtr1.c\
-	../drvFp.c\
-	../drvFpm.c
+SRCS.c += ../module_types.c
+SRCS.c += ../drvAb.c
+SRCS.c += ../drvAt5Vxi.c
+SRCS.c += ../drvBB232.c
+SRCS.c += ../drvBb902.c
+SRCS.c += ../drvBb910.c
+SRCS.c += ../drvBitBus.c
+#	SRCS.c += ../drvCaenV265.c
+SRCS.c += ../drvComet.c
+SRCS.c += ../drvCompuSm.c
+SRCS.c += ../drvDvx.c
+SRCS.c += ../drvEpvxi.c
+SRCS.c += ../drvEpvxiMsg.c
+SRCS.c += ../drvFp.c
+SRCS.c += ../drvFpm.c
+SRCS.c += ../drvGpib.c
+SRCS.c += ../drvHp1404a.c
+SRCS.c += ../drvHpe1368a.c
+SRCS.c += ../drvHpe1445a.c
+SRCS.c += ../drvJgvtr1.c
+SRCS.c += ../drvKscV215.c
+SRCS.c += ../drvMsg.c
+SRCS.c += ../drvMz8310.c
+SRCS.c += ../drvOms.c
+SRCS.c += ../drvStc.c
+SRCS.c += ../drvTime.c
+#	SRCS.c += ../drvTranServ.c
+SRCS.c += ../drvVmi4100.c
+SRCS.c += ../drvXy010.c
+SRCS.c += ../drvXy210.c
+SRCS.c += ../drvXy220.c
+SRCS.c += ../drvXy240.c
+SRCS.c += ../drvXy566.c
 
-#	../drvTranServ.c\
+OBJS += module_types.o
+OBJS += drvAb.o
+OBJS += drvAt5Vxi.o
+OBJS += drvBB232.o
+OBJS += drvBb902.o
+OBJS += drvBb910.o
+OBJS += drvBitBus.o
+#	OBJS += drvCaenV265.o
+OBJS += drvComet.o
+OBJS += drvCompuSm.o
+OBJS += drvDvx.o
+OBJS += drvEpvxi.o
+OBJS += drvEpvxiMsg.o
+OBJS += drvFp.o
+OBJS += drvFpm.o
+OBJS += drvGpib.o
+OBJS += drvHp1404a.o
+OBJS += drvHpe1368a.o
+OBJS += drvHpe1445a.o
+OBJS += drvJgvtr1.o
+OBJS += drvKscV215.o
+OBJS += drvMsg.o
+OBJS += drvMz8310.o
+OBJS += drvOms.o
+OBJS += drvStc.o
+OBJS += drvTime.o
+#	OBJS += drvTranServ.o
+OBJS += drvVmi4100.o
+OBJS += drvXy010.o
+OBJS += drvXy210.o
+OBJS += drvXy220.o
+OBJS += drvXy240.o
+OBJS += drvXy566.o
 
-OBJS = \
-	module_types.o\
-	drvXy010.o\
-	drvAb.o\
-	drvBb902.o\
-	drvBb910.o\
-	drvCompuSm.o\
-	drvDvx.o\
-	drvMz8310.o\
-	drvOms.o\
-	drvStc.o\
-	drvTime.o\
-	drvVmi4100.o\
-	drvXy210.o\
-	drvXy220.o\
-	drvXy240.o\
-	drvXy566.o\
-	drvAt5Vxi.o\
-	drvHp1404a.o\
-	drvEpvxi.o\
-	drvEpvxiMsg.o\
-	drvBitBus.o\
-	drvGpib.o\
-	drvMsg.o\
-	drvBB232.o\
-	drvHpe1368a.o\
-	drvHpe1445a.o\
-	drvKscV215.o\
-	drvComet.o\
-	drvJgvtr1.o\
-	drvFp.o\
-	drvFpm.o
-
-#	drvTranServ.o\
 
 PROD = drvSup
 
@@ -83,5 +82,4 @@ $(PROD): $(OBJS)
 	$(LINK.c) $@ $(OBJS) $(LDLIBS)
 
 	
-#	../drvCaenV265.c\
-#	drvCaenV265.o\
+

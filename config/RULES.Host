@@ -461,7 +461,8 @@ JAR_OPTIONS = cvf
 ifdef MANIFEST
 JAR_OPTIONS = cvmf
 endif
-JAR_DEPFILES +=  $(wildcard $(JAR_INPUT) $(addsuffix /*,$(JAR_INPUT)))
+#JAR_DEPFILES +=  $(wildcard $(JAR_INPUT) $(addsuffix /*,$(JAR_INPUT)))
+JAR_DEPFILES +=  $(JAR_INPUT)
 
 $(DIRECTORY_TARGETS) :
 	$(MKDIR) $@
@@ -490,7 +491,7 @@ $(JAR):%.jar:  $(JAR_DEPFILES)
 
 $(INSTALL_JAVA)/%.jar: %.jar
 	@echo "Installing jar file $@"
-	$(INSTALL) -d -m 644 $< $(@D)
+	@$(INSTALL) -d -m 644 $< $(@D)
 
 $(PACKAGE)_%.h:$(INSTALL_JAVA)/$(PACKAGE)/%.class
 	$(JAVAHCMD) $(PACKAGE).$*

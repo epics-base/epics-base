@@ -75,7 +75,3 @@ JAVA_DIR=/System/Library/Frameworks/JavaVM.framework/Home
 JAVA_INC=/System/Library/Frameworks/JavaVM.framework/Headers
 JAVA_INCLUDES = -I$(JAVA_INC)
 
-#
-# Temporary definition to get things to at least compile
-#
-USR_CFLAGS+=-DFLDNAME_SZ=4

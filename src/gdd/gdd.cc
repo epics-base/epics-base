@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.14  1996/12/06 22:27:44  jhill
+// fixed wrong start bug in getDD()
+//
 // Revision 1.13  1996/11/02 01:24:46  jhill
 // strcpy => styrcpy (shuts up purify)
 //
@@ -1246,6 +1249,7 @@ gddStatus gdd::put(const aitFixedString* const d)
 gddStatus gdd::put(const gdd* dd)
 {
 	gddStatus rc=0;
+	int i;
 
 	// bail out quickly is either dd is a container
 	if(isContainer() || dd->isContainer())
@@ -1258,7 +1262,11 @@ gddStatus gdd::put(const gdd* dd)
 	{
 		// can't change application type here
 		int app = applicationType();
+		const gddBounds* ddb = dd->getBounds();
+
 		init(app,dd->primitiveType(),dd->dimension());
+		for(i=0;i<dd->dimension();i++)
+			bounds[i].set(ddb[i].first(),ddb[i].size());
 	}
 
 	if(isScalar() && dd->isScalar())
@@ -1388,6 +1396,8 @@ gddStatus gdd::put(const gdd* dd)
 gddStatus gdd::copyData(const gdd* dd)
 {
 	gddStatus rc=0;
+	size_t sz;
+	aitUint8* arr;
 
 	if(isFlat() || isManaged() || isContainer())
 	{
@@ -1396,27 +1406,36 @@ gddStatus gdd::copyData(const gdd* dd)
 	}
 	else
 	{
-		if((rc=clear())==0)
+		if(isScalar())
 		{
 			int i;
 			init(dd->applicationType(),dd->primitiveType(),dd->dimension());
 			const gddBounds* bnds = dd->getBounds();
 			for(i=0;i<dd->dimension();i++) bounds[i]=bnds[i];
-
-			size_t sz = dd->getDataSizeBytes();
-			aitUint8* arr;
-			if((arr=new aitUint8[sz]))
-			{
-				destruct=new gddDestructor;
-				memcpy(arr,dd->dataPointer(),sz);
-				setData(arr);
-			}
-			else
-			{
-				gddAutoPrint("gdd::copyData(const gdd*)",gddErrorNewFailed);
-				rc=gddErrorNewFailed;
-			}
 		}
+
+		if(!aitValid(primitiveType()))
+			setPrimType(dd->primitiveType());
+
+		destroyData();
+		sz=describedDataSizeBytes();
+
+		if((arr=new aitUint8[sz]))
+		{
+			destruct=new gddDestructor;
+			setData(arr);
+			if(primitiveType()==dd->primitiveType())
+				memcpy(arr,dd->dataPointer(),sz);
+			else
+				aitConvert(primitiveType(),arr,dd->primitiveType(),
+					dd->dataPointer(),describedDataSizeElements());
+		}
+		else
+		{
+			gddAutoPrint("gdd::copyData(const gdd*)",gddErrorNewFailed);
+			rc=gddErrorNewFailed;
+		}
+
 	}
 	return rc;
 }

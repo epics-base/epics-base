@@ -35,7 +35,7 @@ timerQueueActiveMgr queueMgr;
 
 epicsTimerQueueActive::~epicsTimerQueueActive () {}
 
-epicsTimerQueueActive &epicsTimerQueueActive::allocate ( bool okToShare, int threadPriority )
+epicsTimerQueueActive &epicsTimerQueueActive::allocate ( bool okToShare, unsigned threadPriority )
 {
     return queueMgr.allocate ( okToShare, threadPriority );
 }

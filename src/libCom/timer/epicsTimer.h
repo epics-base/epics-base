@@ -73,7 +73,7 @@ protected:
 class epicsTimerQueueActive : public epicsTimerQueue {
 public:
     static epicsShareFunc epicsTimerQueueActive & allocate (
-        bool okToShare, int threadPriority = epicsThreadPriorityMin + 10 );
+        bool okToShare, unsigned threadPriority = epicsThreadPriorityMin + 10 );
     virtual void release () = 0; 
 protected:
     virtual ~epicsTimerQueueActive () = 0;

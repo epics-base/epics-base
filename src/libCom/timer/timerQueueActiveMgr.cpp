@@ -39,7 +39,7 @@ timerQueueActiveMgr::~timerQueueActiveMgr ()
 }
     
 epicsTimerQueueActiveForC & timerQueueActiveMgr::allocate (
-        bool okToShare, int threadPriority )
+        bool okToShare, unsigned threadPriority )
 {
     epicsAutoMutex locker ( this->mutex );
     if ( okToShare ) {

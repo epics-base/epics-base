@@ -118,7 +118,7 @@ public:
     epicsTimer & createTimer ();
     void show ( unsigned int level ) const;
     bool sharingOK () const;
-    int threadPriority () const;
+    unsigned threadPriority () const;
     epicsTimerForC & createTimerForC ( epicsTimerCallback, void *pPrivateIn );
     void destroyTimerForC ( epicsTimerForC & );
 private:
@@ -152,7 +152,7 @@ class timerQueueActiveMgr {
 public:
     ~timerQueueActiveMgr ();
     epicsTimerQueueActiveForC & allocate ( bool okToShare, 
-        int threadPriority = epicsThreadPriorityMin + 10 );
+        unsigned threadPriority = epicsThreadPriorityMin + 10 );
     void release ( epicsTimerQueueActiveForC & );
 private:
     epicsMutex mutex;
@@ -197,7 +197,7 @@ inline bool timerQueueActive::sharingOK () const
     return this->okToShare;
 }
 
-inline int timerQueueActive::threadPriority () const
+inline unsigned timerQueueActive::threadPriority () const
 {
     return thread.getPriority ();
 }

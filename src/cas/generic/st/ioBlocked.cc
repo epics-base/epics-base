@@ -9,7 +9,7 @@
 
 #include <stdio.h>
 
-#include "casdef.h"
+#include "server.h"
 
 //
 // ioBlocked::ioBlocked ()

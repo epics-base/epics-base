@@ -433,7 +433,7 @@ bufSizeT casDGIntfIO::optimumOutBufferSize ()
     // must update client before the message size can be
     // increased here
     //
-    return MAX_UDP;
+    return MAX_UDP_SEND;
 #else
     int n;
     int size;
@@ -449,11 +449,11 @@ bufSizeT casDGIntfIO::optimumOutBufferSize ()
         (char *)&size,
         &n);
     if(status < 0 || n != sizeof(size)){
-        size = MAX_UDP;
+        size = MAX_UDP_SEND;
     }
     
     if (size<=0) {
-        size = MAX_UDP;
+        size = MAX_UDP_SEND;
     }
     return (bufSizeT) size;
 #endif

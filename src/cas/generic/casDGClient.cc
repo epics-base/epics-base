@@ -46,7 +46,7 @@
 // casDGClient::casDGClient()
 //
 casDGClient::casDGClient (caServerI &serverIn) :
-	casClient (serverIn, MAX_UDP+sizeof(cadg))
+	casClient (serverIn, MAX_UDP_RECV+sizeof(cadg))
 {
 }
 
@@ -413,9 +413,9 @@ inBuf::fillCondition casDGClient::xRecv (char *pBufIn, bufSizeT nBytesToRecv,
     inBuf::fillCondition stat;
     cadg *pHdr;
 
-    while (pAfter-pCurBuf >= static_cast<int>(MAX_UDP+sizeof(cadg))) {
+    while (pAfter-pCurBuf >= static_cast<int>(MAX_UDP_RECV+sizeof(cadg))) {
         pHdr = reinterpret_cast<cadg *>(pCurBuf);
-	    stat = this->osdRecv (reinterpret_cast<char *>(pHdr+1), MAX_UDP, parm, 
+	    stat = this->osdRecv (reinterpret_cast<char *>(pHdr+1), MAX_UDP_RECV, parm, 
             nDGBytesRecv, pHdr->cadg_addr);
 	    if (stat==casFillProgress) {
             pHdr->cadg_nBytes = nDGBytesRecv + sizeof(*pHdr);
@@ -458,7 +458,7 @@ caStatus casDGClient::asyncSearchResponse (const caNetAddr &outAddr,
     //
     void *pRaw;
     const outBufCtx outctx = this->outBuf::pushCtx 
-                    (sizeof(cadg), MAX_UDP, pRaw);
+                    (sizeof(cadg), MAX_UDP_SEND, pRaw);
     if (outctx.pushResult()!=outBufCtx::pushCtxSuccess) {
         return S_cas_sendBlocked;
     }
@@ -500,7 +500,7 @@ caStatus casDGClient::processDG ()
         // and grab the send lock
         //
         void *pRaw;
-        const outBufCtx outctx = this->outBuf::pushCtx (sizeof(cadg), MAX_UDP, pRaw);
+        const outBufCtx outctx = this->outBuf::pushCtx (sizeof(cadg), MAX_UDP_SEND, pRaw);
         if ( outctx.pushResult() != outBufCtx::pushCtxSuccess ) {
             status = S_cas_sendBlocked;
             break;

@@ -462,6 +462,7 @@ long dbtpf(char	*pname,char *pvalue)
     TAB_BUFFER     *pMsgBuff = &msg_Buff;
     char          *pmsg = pMsgBuff->message;
     int           tab_size;
+    int		validNumber;
 
     tab_size = 10;
 
@@ -482,7 +483,8 @@ long dbtpf(char	*pname,char *pvalue)
 	printBuffer(status,addr.dbr_field_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
     }
     /* DBR_CHAR */
-    if(sscanf(pvalue,"%hd",&svalue)==1) {
+    validNumber=(strspn(pvalue,"0123456789+-eE. ")==strlen(pvalue))?TRUE:FALSE;
+    if(validNumber && sscanf(pvalue,"%hd",&svalue)==1) {
 	cvalue = (char)svalue;
 	status=dbPutField(&addr,DBR_CHAR,&cvalue,1L);
 	if(status!=0) errMessage(status,"DBR_UCHAR failed");
@@ -496,7 +498,7 @@ long dbtpf(char	*pname,char *pvalue)
 	}
     } else printf("sscanf failed for DBR_CHAR\n");
     /* DBR_UCHAR */
-    if(sscanf(pvalue,"%hu",&usvalue)==1) {
+    if(validNumber && sscanf(pvalue,"%hu",&usvalue)==1) {
 	ucvalue = (unsigned char)usvalue;
 	status=dbPutField(&addr,DBR_UCHAR,&ucvalue,1L);
 	if(status!=0) errMessage(status,"DBR_UCHAR failed");
@@ -510,7 +512,7 @@ long dbtpf(char	*pname,char *pvalue)
 	}
     } else printf("sscanf failed for DBR_UCHAR\n");
     /* DBR_SHORT */
-    if(sscanf(pvalue,"%hd",&svalue)==1) {
+    if(validNumber && sscanf(pvalue,"%hd",&svalue)==1) {
 	status=dbPutField(&addr,DBR_SHORT,&svalue,1L);
 	if(status!=0) errMessage(status,"DBR_SHORT failed");
 	else {
@@ -523,7 +525,7 @@ long dbtpf(char	*pname,char *pvalue)
 	}
     } else printf("sscanf failed for DBR_SHORT\n");
     /* DBR_USHORT */
-    if(sscanf(pvalue,"%hu",&usvalue)==1) {
+    if(validNumber && sscanf(pvalue,"%hu",&usvalue)==1) {
 	status=dbPutField(&addr,DBR_USHORT,&usvalue,1L);
 	if(status!=0) errMessage(status,"DBR_USHORT failed");
 	else {
@@ -536,7 +538,7 @@ long dbtpf(char	*pname,char *pvalue)
 	}
     } else printf("sscanf failed for DBR_USHORT\n");
     /* DBR_LONG */
-    if(sscanf(pvalue,"%ld",&lvalue)==1) {
+    if(validNumber && sscanf(pvalue,"%ld",&lvalue)==1) {
 	status=dbPutField(&addr,DBR_LONG,&lvalue,1L);
 	if(status!=0) errMessage(status,"DBR_LONG failed");
 	else {
@@ -549,7 +551,7 @@ long dbtpf(char	*pname,char *pvalue)
 	}
     } else printf("sscanf failed for DBR_LONG\n");
     /* DBR_ULONG */
-    if(sscanf(pvalue,"%lu",&ulvalue)==1) {
+    if(validNumber && sscanf(pvalue,"%lu",&ulvalue)==1) {
 	status=dbPutField(&addr,DBR_ULONG,&ulvalue,1L);
 	if(status!=0) errMessage(status,"DBR_ULONG failed");
 	else {
@@ -562,7 +564,7 @@ long dbtpf(char	*pname,char *pvalue)
 	}
     } else printf("sscanf failed for DBR_ULONG\n");
     /* DBR_FLOAT */
-    if(sscanf(pvalue,"%e",&fvalue)==1) {
+    if(validNumber && sscanf(pvalue,"%e",&fvalue)==1) {
 	status=dbPutField(&addr,DBR_FLOAT,&fvalue,1L);
 	if(status!=0) errMessage(status,"DBR_FLOAT failed");
 	else {
@@ -575,7 +577,7 @@ long dbtpf(char	*pname,char *pvalue)
 	}
     } else printf("sscanf failed for DBR_FLOAT\n");
     /* DBR_DOUBLE */
-    if(sscanf(pvalue,"%le",&dvalue)==1) {
+    if(validNumber && sscanf(pvalue,"%le",&dvalue)==1) {
 	status=dbPutField(&addr,DBR_DOUBLE,&dvalue,1L);
 	if(status!=0) errMessage(status,"DBR_DOUBLE failed");
 	else {
@@ -588,7 +590,7 @@ long dbtpf(char	*pname,char *pvalue)
 	}
     } else printf("sscanf failed for DBR_DOUBLE\n");
     /* DBR_ENUM */
-    if(sscanf(pvalue,"%hu",&svalue)==1) {
+    if(validNumber && sscanf(pvalue,"%hu",&svalue)==1) {
 	status=dbPutField(&addr,DBR_ENUM,&svalue,1L);
 	if(status!=0) errMessage(status,"DBR_ENUM failed");
 	else {

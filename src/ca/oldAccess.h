@@ -83,11 +83,11 @@ public:
 protected:
     ~oldChannelNotify (); // must allocate from pool
 private:
-    cacChannel & io;
     oldCAC & cacCtx;
     caCh * pConnCallBack;
     void * pPrivate;
     caArh * pAccessRightsFunc;
+    cacChannel & io;
     void connectNotify ();
     void disconnectNotify ();
     void accessRightsNotify ( const caAccessRights & );
@@ -198,6 +198,15 @@ private:
 	oldSubscription & operator = ( const oldSubscription & );
 };
 
+class oldCACMutex {
+public:
+    void lock ();
+    void unlock ();
+    void show ( unsigned level ) const;
+private:
+    epicsMutex mutex;
+};
+
 struct oldCAC : public cacNotify
 {
 public:
@@ -235,7 +244,7 @@ public:
                      int lineno, const char *pFormat, va_list args );
     bool preemptiveCallbakIsEnabled () const;
 private:
-    mutable epicsMutex mutex; 
+    mutable oldCACMutex mutex; 
     cac & clientCtx;
     caExceptionHandler *ca_exception_func;
     void *ca_exception_arg;
@@ -524,6 +533,21 @@ inline void oldCAC::selfTest ()
 inline bool oldCAC::preemptiveCallbakIsEnabled () const
 {
     return this->clientCtx.preemptiveCallbakIsEnabled ();
+}
+
+inline void oldCACMutex::lock ()
+{
+    this->mutex.lock ();
+}
+
+inline void oldCACMutex::unlock ()
+{
+    this->mutex.unlock ();
+}
+
+inline void oldCACMutex::show ( unsigned level ) const
+{
+    this->mutex.show ( level );
 }
 
 #endif // ifndef oldAccessh

@@ -127,7 +127,7 @@ semBinaryTakeNoWait(semBinaryId id)
 }
 
 void
-semBinaryShow(semBinaryId id)
+semBinaryShow(semBinaryId id,int level)
 {
 }
 
@@ -197,7 +197,7 @@ semTakeStatus semMutexTakeNoWait(semMutexId id)
 	return semBinaryTakeNoWait (id);
 }
 
-epicsShareFunc void semMutexShow(semMutexId id)
+epicsShareFunc void semMutexShow(semMutexId id,int level)
 {
-	semBinaryShow (id);
+	semBinaryShow (id,level);
 }

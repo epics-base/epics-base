@@ -27,6 +27,7 @@
  * -----------------
  * .01	12-04-90	rac	initial version
  * .02	07-20-91	rac	installed in SCCS; finalized "how to access"
+ * .03	08-09-91	rac	fix a problem with pprMark when clipping
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -611,10 +612,11 @@ MY_DATA	*pMyData;
     double	xlo=0., ylo=0., xhi=.95, yhi=.95;
     double	charHt, charHtX;
     PPR_AREA	*pArea;
-    PPR_AREA	*pAreaClip;
+    PPR_AREA	*pAreaClip, *pAreaClip2;
     int		i;
     int		thick=5, thin=0;
     int		keyNum=0;
+    int		markNum;
     double	y=6000.;
     double	x;
     char	answer[80];
@@ -662,7 +664,7 @@ MY_DATA	*pMyData;
 /*-----------------------------------------------------------------------------
 * test clipping
 *----------------------------------------------------------------------------*/
-    pAreaClip = pprAreaOpenDflt(pWin, .6, .1, .9, .35, 0., 0., 1., 1.);
+    pAreaClip = pprAreaOpenDflt(pWin, .65, .06, .9, .26, 0., 0., 1., 1.);
     PprAssert(pAreaClip != NULL);
     pprPerim(pAreaClip);
     pprAreaSetAttr(pAreaClip, PPR_ATTR_CLIP, 0, NULL);
@@ -682,6 +684,21 @@ MY_DATA	*pMyData;
 	pprLineSegD(pAreaClip, .5,-1., x,2.);
 	pprLineSegD(pAreaClip, .5,2., x,.5);
 	pprLineSegD(pAreaClip, .5,2., x,-1.);
+    }
+
+    pAreaClip2 = pprAreaOpenDflt(pWin, .65, .3, .9, .5, 0., 0., 1., 1.);
+    PprAssert(pAreaClip2 != NULL);
+    pprPerim(pAreaClip2);
+    pprAreaSetAttr(pAreaClip2, PPR_ATTR_CLIP, 0, NULL);
+    printf("25 marks with squares should appear; no others!\n");
+    for (y=-.25; y<=2.; y+=.25) {
+	for (x=-.25; x<=2.; x+=.25) {
+	    if (y < -.01 || y > 2.01 || x < -.01 || x > 2.01)
+		markNum = 3;
+	    else
+		markNum = 1;
+	    pprMarkD(pAreaClip2, x, y, markNum);
+	}
     }
 
 
@@ -2839,8 +2856,6 @@ int	markNum;	/* I mark number--0 to PPR_NMARKS-1, inclusive */
     pMark = pglPprMarkS[markNum];	/* use small marks */
     xp0 = pArea->xPixLeft + (x - pArea->xLeft) * pArea->xScale;
     yp0 = pArea->yPixBot + (y - pArea->yBot) * pArea->yScale;
-    if (pArea->pWin->winType == PPR_WIN_SCREEN)
-	yp0 = pArea->pWin->height - yp0;
     if (pArea->attr.clip) {
 	if (xp0 < PprMin(pArea->xPixLeft, pArea->xPixRight) ||
 	    xp0 > PprMax(pArea->xPixLeft, pArea->xPixRight) ||
@@ -2849,6 +2864,8 @@ int	markNum;	/* I mark number--0 to PPR_NMARKS-1, inclusive */
 	    return;
 	}
     }
+    if (pArea->pWin->winType == PPR_WIN_SCREEN)
+	yp0 = pArea->pWin->height - yp0;
     while (1) {
 	xp1 = xp0 + *pMark++;
 	if (pArea->pWin->winType == PPR_WIN_SCREEN)	yp1 = yp0 - *pMark++;

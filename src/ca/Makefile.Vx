@@ -1,0 +1,21 @@
+EPICS = ../../..
+include $(EPICS)/config/CONFIG_vx
+
+USR_CFLAGS = -DACCESS_SECURITY -D_NO_PROTO
+
+SRCS = \
+	iocinf.c access.c test_event.c service.c flow_control.c \
+	repeater.c conn.c syncgrp.c if_depen.c bsd_depen.c \
+	vxWorks_depen.c
+
+OBJS = 
+
+LIBOBJS = \
+	$(OBDIR)/iocinf.o $(OBDIR)/access.o $(OBDIR)/test_event.o \
+	$(OBDIR)/service.o $(OBDIR)/flow_control.o \
+	$(OBDIR)/repeater.o $(OBDIR)/conn.o $(OBDIR)/syncgrp.o \
+	$(OBDIR)/if_depen.o $(OBDIR)/bsd_depen.o $(OBDIR)/vxWorks_depen.o
+
+LIBNAME = caLib
+
+include $(EPICS)/config/RULES.Vx

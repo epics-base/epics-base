@@ -251,7 +251,7 @@ threadPrivateId threadPrivateCreate()
     threadInit();
     assert(semTake(threadPrivateMutex,WAIT_FOREVER)==OK);
     id = (threadPrivateId)++nthreadPrivate;
-    semGive(threadOnceMutex);
+    semGive(threadPrivateMutex);
     return(id);
 }
 
@@ -285,7 +285,7 @@ void threadPrivateSet (threadPrivateId id, void *pvt)
         }
     }
     papTSD[indpthreadPrivate] = pvt;
-    semGive(threadOnceMutex);
+    semGive(threadPrivateMutex);
 }
 
 void *threadPrivateGet(threadPrivateId id)
@@ -295,6 +295,6 @@ void *threadPrivateGet(threadPrivateId id)
     assert(papTSD);
     assert((int)id <= (int)papTSD[0]);
     data = papTSD[(int)id];
-    semGive(threadOnceMutex);
+    semGive(threadPrivateMutex);
     return(data);
 }

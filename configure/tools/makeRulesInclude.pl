@@ -9,6 +9,7 @@ $hostarch = $ARGV[0];
 $arch = $ARGV[1];
 $outfile = $ARGV[2];
 $top = $ARGV[3];
+$applications{TOP} = $top;
 
 unlink("${outfile}");
 open(OUT,">${outfile}") or die "$! opening ${outfile}";
@@ -34,20 +35,22 @@ foreach $file (@files) {
             # the following looks for
             # prefix = post
             ($prefix,$post) = /(.*)\s*=\s*(.*)/;
-            next if ( $prefix eq "EPICS_BASE" ); # skip epics base
-            next if ( $prefix eq "TEMPLATE_TOP" ); # skip epics base
+			$app_post = $post;
         } else {
             $base = $applications{$macro};
             if ($base eq "") {
                 #print "error: $macro was not previously defined\n";
             } else {
+				$app_post = "\$($macro)" . $post;
                 $post = $base . $post;
             }
         }
+        next if ( $prefix eq "EPICS_BASE" );
+        next if ( $prefix eq "TEMPLATE_TOP" );
         $applications{$prefix} = $post;
         if ( -d "$post") { #check that directory exists
             if ( -d "$post/configure") { #check that directory exists
-                print OUT "-include $post/configure/RULES_BUILD\n";
+                print OUT "-include $app_post/configure/RULES_BUILD\n";
             }
         }
     }

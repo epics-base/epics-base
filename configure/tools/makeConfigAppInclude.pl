@@ -9,6 +9,7 @@ $hostarch = $ARGV[0];
 $arch = $ARGV[1];
 $outfile = $ARGV[2];
 $top = $ARGV[3];
+$applications{TOP} = $top;
 
 unlink("${outfile}");
 open(OUT,">${outfile}") or die "$! opening ${outfile}";
@@ -34,11 +35,13 @@ foreach $file (@files) {
             # the following looks for
             # prefix = post
             ($prefix,$post) = /(.*)\s*=\s*(.*)/;
+            $app_post = $post;
         } else {
             $base = $applications{$macro};
             if ($base eq "") {
                 #print "error: $macro was not previously defined\n";
             } else {
+                $app_post = "\$($macro)" . $post;
                 $post = $base . $post;
             }
         }
@@ -46,16 +49,16 @@ foreach $file (@files) {
         if ( -d "$post") { #check that directory exists
             print OUT "\n";
             if ( -d "$post/bin/$arch") { #check that directory exists
-                print OUT "${prefix}_BIN = $post/bin/${arch}\n";
+                print OUT "${prefix}_BIN = $app_post/bin/${arch}\n";
             }
             if ( -d "$post/lib/$arch") { #check that directory exists
-                print OUT "${prefix}_LIB = $post/lib/${arch}\n";
+                print OUT "${prefix}_LIB = $app_post/lib/${arch}\n";
             }
             if ( -d "$post/include") { #check that directory exists
-                print OUT "INSTALL_INCLUDES += -I$post/include\n";
+                print OUT "INSTALL_INCLUDES += -I$app_post/include\n";
             }
             if ( -d "$post/dbd") { #check that directory exists
-                print OUT "INSTALL_DBDFLAGS += -I $post/dbd\n";
+                print OUT "INSTALL_DBDFLAGS += -I $app_post/dbd\n";
             }
         }
     }

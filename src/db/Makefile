@@ -31,7 +31,6 @@ DBDINC += menuArrType
 DBDINC += menuCompress
 DBDINC += menuFtype
 DBDINC += menuIvoa
-DBDINC += menuLinr
 DBDINC += menuOmsl
 DBDINC += menuPriority
 DBDINC += menuScan

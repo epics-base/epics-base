@@ -1,4 +1,0 @@
-menu(menuLinr) {
-	choice(menuLinrNO_CONVERSION,"NO CONVERSION")
-	choice(menuLinrLINEAR,"LINEAR")
-}

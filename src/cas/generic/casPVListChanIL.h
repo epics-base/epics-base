@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.2  1996/12/06 22:36:20  jhill
+ * use destroyInProgress flag now functional nativeCount()
+ *
  * Revision 1.1.1.1  1996/06/20 00:28:16  jhill
  * ca server installation
  *

@@ -14,6 +14,7 @@
 #include "oldAccess.h"
 
 tsFreeList < struct oldSubscription, 1024 > oldSubscription::freeList;
+epicsMutex oldSubscription::freeListMutex;
 
 oldSubscription::~oldSubscription ()
 {

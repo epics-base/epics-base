@@ -19,6 +19,7 @@
 #include "oldAccess.h"
 
 tsFreeList < class oldChannelNotify, 1024 > oldChannelNotify::freeList;
+epicsMutex oldChannelNotify::freeListMutex;
 
 extern "C" void cacNoopConnHandler ( struct connection_handler_args )
 {
@@ -115,10 +116,12 @@ class oldChannelNotify * oldChannelNotify::pOldChannelNotify ()
 
 void * oldChannelNotify::operator new ( size_t size )
 {
+    epicsAutoMutex locker ( oldChannelNotify::freeListMutex );
     return oldChannelNotify::freeList.allocate ( size );
 }
 
 void oldChannelNotify::operator delete ( void *pCadaver, size_t size )
 {
+    epicsAutoMutex locker ( oldChannelNotify::freeListMutex );
     oldChannelNotify::freeList.release ( pCadaver, size );
 }

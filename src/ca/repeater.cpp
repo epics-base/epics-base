@@ -57,12 +57,6 @@
 #include    "iocinf.h"
 #include    "taskwd.h"
 
-#ifdef DEBUG
-#   define debugPrintf(argsInParen) printf argsInParen
-#else
-#   define debugPrintf(argsInParen)
-#endif
-
 /*
  * one socket per client so we will get the ECONNREFUSED
  * error code (and then delete the client)
@@ -86,6 +80,7 @@ private:
     SOCKET sock;
     unsigned port () const;
     static tsFreeList < class repeaterClient, 0x20 > freeList;
+    static epicsMutex freeListMutex;
 };
 
 /* 
@@ -94,6 +89,7 @@ private:
  */
 static tsDLList < repeaterClient > client_list;
 tsFreeList < repeaterClient, 0x20 > repeaterClient::freeList;
+epicsMutex repeaterClient::freeListMutex;
 
 static char buf [MAX_UDP_RECV]; 
 
@@ -246,11 +242,13 @@ repeaterClient::~repeaterClient ()
 
 inline void * repeaterClient::operator new ( size_t size )
 { 
+    epicsAutoMutex locker ( repeaterClient::freeListMutex );
     return repeaterClient::freeList.allocate ( size );
 }
 
 inline void repeaterClient::operator delete ( void *pCadaver, size_t size )
 { 
+    epicsAutoMutex locker ( repeaterClient::freeListMutex );
     repeaterClient::freeList.release ( pCadaver, size );
 }
 

@@ -19,6 +19,7 @@
 #include "oldAccess.h"
 
 tsFreeList < class putCallback, 1024 > putCallback::freeList;
+epicsMutex putCallback::freeListMutex;
 
 putCallback::~putCallback ()
 {

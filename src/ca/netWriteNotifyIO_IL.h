@@ -15,16 +15,15 @@
  *	505 665 1831
  */
 
-//
-// netWriteNotifyIO inline member functions
-//
 inline void * netWriteNotifyIO::operator new ( size_t size )
 { 
+    epicsAutoMutex locker ( netWriteNotifyIO::freeListMutex );
     return netWriteNotifyIO::freeList.allocate ( size );
 }
 
 inline void netWriteNotifyIO::operator delete ( void *pCadaver, size_t size )
 { 
+    epicsAutoMutex locker ( netWriteNotifyIO::freeListMutex );
     netWriteNotifyIO::freeList.release ( pCadaver, size );
 }
 

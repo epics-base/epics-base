@@ -20,11 +20,13 @@
 
 inline void * netReadNotifyIO::operator new ( size_t size )
 { 
+    epicsAutoMutex locker ( netReadNotifyIO::freeListMutex );
     return netReadNotifyIO::freeList.allocate ( size );
 }
 
 inline void netReadNotifyIO::operator delete ( void *pCadaver, size_t size )
 { 
+    epicsAutoMutex locker ( netReadNotifyIO::freeListMutex );
     netReadNotifyIO::freeList.release ( pCadaver, size );
 }
 

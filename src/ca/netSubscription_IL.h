@@ -20,27 +20,21 @@
 
 inline void * netSubscription::operator new ( size_t size )
 { 
+    epicsAutoMutex locker ( netSubscription::freeListMutex );
     return netSubscription::freeList.allocate ( size );
 }
 
 inline void netSubscription::operator delete ( void *pCadaver, size_t size )
 { 
+    epicsAutoMutex locker ( netSubscription::freeListMutex );
     netSubscription::freeList.release ( pCadaver, size );
 }
 
 inline unsigned long netSubscription::getCount () const
 {
-    if ( this->chan.connected () ) {
-        unsigned long nativeCount = chan.nativeElementCount ();
-        if ( this->count == 0u ) {
-            return nativeCount;
-        }
-        else if ( this->count > nativeCount ) {
-            return nativeCount;
-        }
-        else {
-            return this->count;
-        }
+    unsigned long nativeCount = chan.nativeElementCount ();
+    if ( this->count == 0u || this->count > nativeCount ) {
+        return nativeCount;
     }
     else {
         return this->count;

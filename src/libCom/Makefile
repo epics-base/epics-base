@@ -125,12 +125,12 @@ SRCS += fdManager.cpp
 SRC_DIRS += $(LIBCOM)/freeList
 INC += freeList.h
 SRCS += freeListLib.c
-HTMLS += $(LIBCOM)/freeList/freeList.3.html
+HTMLS += $(LIBCOM)/freeList/freeList.html
 
 SRC_DIRS += $(LIBCOM)/gpHash
 INC += gpHash.h
 SRCS += gpHashLib.c
-HTMLS += $(LIBCOM)/gpHash/gpHash.3.html
+HTMLS += $(LIBCOM)/gpHash/gpHash.html
 
 SRC_DIRS += $(LIBCOM)/macLib
 INC += macLib.h

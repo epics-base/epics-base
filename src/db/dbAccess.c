@@ -145,7 +145,9 @@ long jba_debug=0;
 
 long dbPut();
 /* Added for Channel Access Links */
+long dbCaAddInlink();
 long dbCaGetLink();
+long dbCommonInit();
 
 #define MAX_LOCK 10
 
@@ -162,6 +164,23 @@ static struct {
 	int		nset;		/* Number of sets */
 	struct scanLock *pscanLock;	/*addr of array of struct scanLock */
 } dbScanPvt;
+
+long dbCommonInit(struct dbCommon *precord, int pass)
+{
+
+long status;
+
+    if (pass == 0)
+	status = 0L;
+    else
+	if (precord->sdis.type == PV_LINK)
+	    status = dbCaAddInlink(&(precord->sdis), (void *) precord, "DISA");
+	else
+	    status = 0L;
+
+    return status;
+
+} /* end dbCommonInit() */
 
 void dbScanLock(struct dbCommon *precord)
 {
@@ -314,7 +333,7 @@ all_done:
 }
 
 /* forward reference for pvdGetFld */
-struct fldDes *pvdGetFld();
+/* struct fldDes *pvdGetFld(); */
 
 long dbNameToAddr(pname,paddr)
 	char          *pname;

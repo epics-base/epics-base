@@ -189,6 +189,7 @@ static void my_event_handler();
 static struct input_pvar *pop_input_pvar();
 static struct output_pvar *pop_output_pvar();
 static long process_asynch_events();
+static void process_asynch_events_task();
 static void push_input_pvar();
 static void push_output_pvar();
 static long queue_add_event_from_input_pvar();
@@ -875,6 +876,10 @@ BOOL done;
 
 	status = task_initialize_channel_access();
 
+	taskSpawn(DB_CA_PROC_ASYNCH_EV_TASK_NAME, DB_CA_PROC_ASYNCH_EV_TASK_PRI,
+	    DB_CA_PROC_ASYNCH_EV_TASK_OPT, DB_CA_PROC_ASYNCH_EV_TASK_STACK, 
+	    (FUNCPTR) process_asynch_events_task, taskIdSelf());
+
 	/* queueing ca_build_and_connect()'s */
 
 	for (po = Pvar_outputlist_hdr; 
@@ -974,9 +979,6 @@ BOOL done;
 
 		FASTUNLOCK(&Buffer);
 
-		/* kludge suggested by Jeff Hill so that we can have reliable */
-		/* connection management for  vxWorks hosted CA clients       */
-		process_asynch_events((float) 0.1);
 	    } /* endif */
 	} /* endwhile */
     } /* endif */
@@ -1866,6 +1868,41 @@ long rc;
     return rc;
 
 } /* end process_asynch_events() */
+
+/****************************************************************
+*
+* static void process_asynch_events_task(parent_task_id)
+* int parent_task_id;
+*
+* Description:
+*     issues a single call to process_asynch_events(0.0).  this is a trick
+*     suggested by Jeff Hill so that connections that are lost may be
+*     re-connected when the other IOC is re-booted.  without this trick,
+*     a lost connection to another IOC will remain lost, even if the other
+*     IOC successfully re-boots.
+*
+* Input:
+*     int parent_task_id   vxWorks taskid of dbCaProcessOutlinks
+*
+* Output: None.
+*
+* Returns:
+*
+* Notes:
+*
+****************************************************************/
+
+static void process_asynch_events_task(parent_task_id)
+int parent_task_id;
+{
+
+    ca_import(parent_task_id);
+
+    /* kludge suggested by Jeff Hill so that we can have reliable */
+    /* connection management for  vxWorks hosted CA clients       */
+    process_asynch_events((float) 0.0);
+
+} /* end process_asynch_events_task() */
 
 /****************************************************************
 *

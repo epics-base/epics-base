@@ -88,6 +88,9 @@ int interruptAccept=FALSE;
 extern short wakeup_init; /*old IO_EVENT_SCAN*/
 struct dbBase *pdbBase=NULL;
 
+/* added for Channel Access Links */
+long dbCommonInit();
+
 /* define forward references*/
 extern long dbRead();
 long initDrvSup();
@@ -366,6 +369,7 @@ static long initDatabase()
 		/* Init DSET NOTE that result may be NULL*/
 		precord->dset=(struct dset *)GET_PDSET(pdevSup,precord->dtyp);
 		/* call record support init_record routine - First pass */
+		rtnval = dbCommonInit(precord,0);
 		if(!(recSup->papRset[i]->init_record)) continue;
 		rtnval = (*(recSup->papRset[i]->init_record))(precord,0);
 		if(status==0) status = rtnval;
@@ -438,6 +442,7 @@ static long initDatabase()
 	        /* If NAME is null then skip this record*/
 		if(!(precord->name[0])) continue;
 
+		rtnval = dbCommonInit(precord,1);
 		/* call record support init_record routine - Second pass */
 		if(!(recSup->papRset[i]->init_record)) continue;
 		rtnval = (*(recSup->papRset[i]->init_record))(precord,1);

@@ -52,7 +52,7 @@
 #include "dbScan.h"
 #include "dbLock.h"
 #include "callback.h"
-#include "dbAccess.h"
+#include "dbAccessDefs.h"
 #include "recGbl.h"
 #include "dbNotify.h"
 

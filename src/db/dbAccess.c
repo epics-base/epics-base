@@ -75,7 +75,7 @@ of this distribution.
 #include "dbCa.h"
 #include "dbBkpt.h"
 #include "dbNotify.h"
-#include "dbAccess.h"
+#include "dbAccessDefs.h"
 #include "recGbl.h"
 
 extern long lset_stack_not_empty;

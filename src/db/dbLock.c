@@ -80,7 +80,7 @@ since this will delay all other threads.
 #include "errMdef.h"
 #define epicsExportSharedSymbols
 #include "dbAddr.h"
-#include "dbAccess.h"
+#include "dbAccessDefs.h"
 #include "dbLock.h"
 
 #define STATIC static

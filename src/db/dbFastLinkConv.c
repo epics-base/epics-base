@@ -49,7 +49,7 @@
 #include "special.h"
 #define epicsExportSharedSymbols
 #include "dbAddr.h"
-#include "dbAccess.h"
+#include "dbAccessDefs.h"
 #include "recGbl.h"
 #include "dbConvertFast.h"
  

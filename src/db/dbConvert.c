@@ -29,7 +29,7 @@ of this distribution.
 #include "recSup.h"
 #define epicsExportSharedSymbols
 #include "dbAddr.h"
-#include "dbAccess.h"
+#include "dbAccessDefs.h"
 #include "recGbl.h"
 #include "dbConvert.h"
 

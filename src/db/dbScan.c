@@ -68,7 +68,7 @@
 #define epicsExportSharedSymbols
 #include "dbAddr.h"
 #include "callback.h"
-#include "dbAccess.h"
+#include "dbAccessDefs.h"
 #include "dbLock.h"
 #include "recGbl.h"
 #include "dbScan.h"

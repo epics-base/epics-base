@@ -63,7 +63,7 @@
 #define epicsExportSharedSymbols
 #include "dbAddr.h"
 #include "dbNotify.h"
-#include "dbAccess.h"
+#include "dbAccessDefs.h"
 
 #ifndef NULL
 #define NULL 0

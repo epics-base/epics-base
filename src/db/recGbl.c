@@ -61,7 +61,7 @@
 #include "dbCommon.h"
 #include "caeventmask.h"
 #define epicsExportSharedSymbols
-#include "dbAccess.h"
+#include "dbAccessDefs.h"
 #include "dbNotify.h"
 #include "dbCa.h"
 #include "dbEvent.h"

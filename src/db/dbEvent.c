@@ -42,7 +42,7 @@ of this distribution.
 #define epicsExportSharedSymbols
 #include "dbAddr.h"
 #include "dbLock.h"
-#include "dbAccess.h"
+#include "dbAccessDefs.h"
 #include "dbEvent.h"
 
 #define EVENTSPERQUE    32

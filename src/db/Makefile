@@ -5,6 +5,7 @@ include $(TOP)/configure/CONFIG
 #
 INC += callback.h
 INC += dbAccess.h
+INC += dbCa.h
 INC += dbAddr.h
 INC += dbBkpt.h
 INC += dbConvert.h

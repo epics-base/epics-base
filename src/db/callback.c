@@ -35,7 +35,7 @@ of this distribution.
 #include "dbCommon.h"
 #define epicsExportSharedSymbols
 #include "dbAddr.h"
-#include "dbAccess.h"
+#include "dbAccessDefs.h"
 #include "dbLock.h"
 #include "callback.h"
 

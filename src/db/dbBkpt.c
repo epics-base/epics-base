@@ -14,6 +14,9 @@ of this distribution.
 /* Modification Log:
  * -----------------
  *  $Log$
+ *  Revision 1.21  2000/02/28 20:34:04  mrk
+ *  changes for building win32 dlls
+ *
  *  Revision 1.20  2000/02/28 20:12:11  mrk
  *  move dbAccess.h
  *
@@ -112,7 +115,7 @@ of this distribution.
 #include "special.h"
 #define epicsExportSharedSymbols
 #include "dbAddr.h"
-#include "dbAccess.h"
+#include "dbAccessDefs.h"
 #include "dbScan.h"
 #include "dbLock.h"
 #include "recGbl.h"

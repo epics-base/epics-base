@@ -1,0 +1,198 @@
+# $Id$
+
+INC +=$(RECTYPES) $(MENUS)
+INSTALL_PROD=$(PROD:%=$(INSTALL_BIN)/%)
+INSTALL_LIBS=$(LIBNAME:%=$(INSTALL_BIN)/%)
+INSTALL_INC=$(INC:%=$(INSTALL_INCLUDE)/%)
+INSTALL_MANS+=$(MAN1:%=$(INSTALL_MAN)/man1/%)
+INSTALL_MANS+=$(MAN2:%=$(INSTALL_MAN)/man2/%)
+INSTALL_MANS+=$(MAN3:%=$(INSTALL_MAN)/man3/%)
+INSTALL_MANS+=$(MAN4:%=$(INSTALL_MAN)/man4/%)
+INSTALL_MANS+=$(MAN5:%=$(INSTALL_MAN)/man5/%)
+INSTALL_MANS+=$(MAN6:%=$(INSTALL_MAN)/man6/%)
+INSTALL_MANS+=$(MAN7:%=$(INSTALL_MAN)/man7/%)
+INSTALL_MANS+=$(MAN8:%=$(INSTALL_MAN)/man8/%)
+INSTALL_MANS+=$(MAN9:%=$(INSTALL_MAN)/man9/%)
+INSTALL_DOCS=$(DOCS:%=$(INSTALL_DOC)/%)
+INSTALL_SCRIPTS=$(SCRIPTS:%=$(INSTALL_BIN)/%)
+
+INSTALL_BPTS=$(BPTS:%=$(INSTALL_DBD)/%)
+INSTALL_DBS=$(DBDINSTALL:%=$(INSTALL_DBD)/%)\
+              $(RECTYPES:%.h=$(INSTALL_DBD)/%.dbd)\
+              $(MENUS:%.h=$(INSTALL_DBD)/%.dbd)
+
+INSTALL_DBDEXPAND=$(DBDEXPAND:%=$(INSTALL_DBD)/%)
+all: install
+
+pre_build: 
+
+build: pre_build $(MENUS) $(RECTYPES) $(BPTS)\
+         $(LIBNAME) $(TARGETS) $(PROD) $(DBDEXPAND)
+
+install: build $(INSTALL_INC)\
+         $(INSTALL_LIBS) $(TARGETS) $(INSTALL_PROD) $(INSTALL_MANS)\
+         $(INSTALL_DOCS) $(INSTALL_SCRIPTS) $(INSTALL_DBS)\
+         $(INSTALL_MENUS) $(INSTALL_RECTYPES) $(INSTALL_BPTS)\
+         $(INSTALL_DBDEXPAND)
+
+depends: $(SRCS.c) $(SRCS.cc)
+	rm -f .DEPENDS
+	touch .DEPENDS
+ifdef SRCS
+	echo you have a SRCS in your Makefile
+	exit 2
+endif
+ifdef SRCS.c
+	$(DEPENDS_RULE.c)
+endif
+ifdef SRCS.cc
+	$(DEPENDS_RULE.cc)
+endif
+
+clean::
+	@echo "Cleaning"
+	@$(RM) *.i *.o *.a $(TARGETS) $(PROD) $(LIBNAME) $(INC) \
+	$(DBDINSTALL) $(MENUS) $(RECTYPES) $(BPTS) $(DBDEXPAND)
+
+
+#  The order of the following dependencies is
+#  VERY IMPORTANT !!!!
+
+%: %.o
+	$(RM) $@
+	$(LINK.c) $@ $<
+
+#$(PROD): $(OBJS)
+#	$(RM) $@
+#	$(LINK.c) $@ $(OBJS)
+
+%.o: %.c
+	$(RM) $@
+	$(COMPILE.c) $<
+
+%.o: ../%.c
+	$(RM) $@
+	$(COMPILE.c) $<
+
+%.o: %.cc
+	$(RM) $@
+	$(COMPILE.cc) $<
+
+%.o: ../%.cc
+	$(RM) $@
+	$(COMPILE.cc) $<
+
+%.c: ../%.y
+	$(RM) y.tab.c y.tab.h
+	$(YACC) $(YACCOPT) $<
+	@if [ -f y.tab.c ]; \
+		then \
+			echo "/bin/mv y.tab.c $*.c"; \
+			/bin/mv y.tab.c $*.c; \
+	fi
+	@if [ -f y.tab.h ]; \
+		then \
+			echo "/bin/mv y.tab.h $*.h"; \
+			/bin/mv y.tab.h $*.h; \
+	fi
+
+%.c: ../%.l
+	$(RM) lex.yy.c
+	$(LEX) $(LEXOPT) $<
+	$(RM) $@
+	/bin/mv lex.yy.c $@
+
+#state notation language rule
+%.c: ../%.st
+	@echo "preprocessing $*.st"
+	@$(RM) $*.i
+	$(CPP) $(CPPFLAGS) $< $*.i
+	@echo "converting $*.i"
+	@$(RM) $@
+	$(SNC) $(TARGET_SNCFLAGS) $(SNCFLAGS) $*.i
+
+$(INSTALL_DBD)/%: %
+	@echo "Installing $@"
+	@test -d $(INSTALL_DBD) || mkdir $(INSTALL_DBD)
+	@$(INSTALL) -m 644 $< $(INSTALL_DBD)
+
+$(INSTALL_DBD)/%: ../%
+	@echo "Installing $@"
+	@test -d $(INSTALL_DBD) || mkdir $(INSTALL_DBD)
+	@$(INSTALL) -m 644 $< $(INSTALL_DBD)
+
+%Record.h: ../%Record.dbd
+	$(RM) $@
+	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToRecordtypeH \
+		$(USER_DBDFLAGS)  $<
+
+menu%.h: ../menu%.dbd
+	$(RM) $@
+	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToMenuH $<
+
+bpt%.dbd: ../bpt%.data
+	$(RM) $@
+	$(EPICS_BASE)/bin/$(HOST_ARCH)/makeBpt $<
+
+%.dbd: ../%.dbd
+	$(RM) $@
+	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbExpandInclude \
+		$(USER_DBDFLAGS) $< > $(<F)
+
+$(LIBNAME): $(LIBOBJS)
+	@echo Building library $@
+	@$(RM) $@
+	$(LINK.c) $@ $(LIBOBJS)
+
+$(INSTALL_BIN)/%: %
+	@echo "Installing $@"
+	@test -d $(INSTALL_LOCATION_BIN) || mkdir $(INSTALL_LOCATION_BIN)
+	@test -d $(INSTALL_BIN) || mkdir $(INSTALL_BIN)
+	@$(INSTALL) -m 555 $< $(INSTALL_BIN)
+
+$(INSTALL_BIN)/%: ../%
+	@echo "Installing $@"
+	@test -d $(INSTALL_LOCATION_BIN) || mkdir $(INSTALL_LOCATION_BIN)
+	@test -d $(INSTALL_BIN) || mkdir $(INSTALL_BIN)
+	@$(INSTALL) -m 555 $< $(INSTALL_BIN)
+
+$(INSTALL_BIN)/%: $(EPICS_BASE_BIN)/%
+	@echo "Installing $@"
+	@echo "======================================= $@"
+	@test -d $(INSTALL_LOCATION_BIN) || mkdir $(INSTALL_LOCATION_BIN)
+	@test -d $(INSTALL_BIN) || mkdir $(INSTALL_BIN)
+	@$(INSTALL) -m 555 $< $(INSTALL_BIN)
+
+$(INSTALL_MAN)/man9/% \
+$(INSTALL_MAN)/man8/% \
+$(INSTALL_MAN)/man7/% \
+$(INSTALL_MAN)/man6/% \
+$(INSTALL_MAN)/man5/% \
+$(INSTALL_MAN)/man4/% \
+$(INSTALL_MAN)/man3/% \
+$(INSTALL_MAN)/man2/% \
+$(INSTALL_MAN)/man1/%: ../%
+	@echo "Installing $@"
+	@test -d $(INSTALL_MAN) || mkdir $(INSTALL_MAN)
+	@test -d $(@D) || mkdir $(@D)
+	@$(INSTALL) -m 644 $< $(@D)
+
+$(INSTALL_INCLUDE)/%: %
+	@echo "Installing $@"
+	@test -d $(INSTALL_INCLUDE) || mkdir $(INSTALL_INCLUDE)
+	@$(INSTALL) -m 644 $< $(INSTALL_INCLUDE)
+
+$(INSTALL_INCLUDE)/%: ../%
+	@echo "Installing $@"
+	@test -d $(INSTALL_INCLUDE) || mkdir $(INSTALL_INCLUDE)
+	@$(INSTALL) -m 644 $< $(INSTALL_INCLUDE)
+
+$(INSTALL_DOC)/%: ../%
+	@echo "Installing $@"
+	@test -d $(INSTALL_DOC) || mkdir $(INSTALL_DOC)
+	@$(INSTALL) -m 644 $< $(INSTALL_DOC)
+
+.PRECIOUS: %.o %.c
+
+include .DEPENDS
+

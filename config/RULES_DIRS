@@ -1,0 +1,70 @@
+#
+#  $Id$
+#
+# Top level rules For Subdirectory Recursions
+#
+
+all:: install
+
+dirs::
+	@for DIR in ${DIRS}; do	 \
+		echo "$@: $$DIR"; 	\
+ 		if [ -d $$DIR ]; then TMP=`pwd`; cd $$DIR; ${MAKE} $@; cd $${TMP}; fi; \
+	done
+
+depends::
+	@for DIR in ${DIRS}; do	 \
+		echo "$@: $$DIR"; 	\
+ 		if [ -d $$DIR ]; then TMP=`pwd`; cd $$DIR; ${MAKE} $@; cd $${TMP}; fi; \
+	done
+
+build::
+	@for DIR in ${DIRS}; do	 \
+		echo "$@: $$DIR"; 	\
+ 		if [ -d $$DIR ]; then TMP=`pwd`; cd $$DIR; ${MAKE} $@; cd $${TMP}; fi; \
+	done
+
+install::
+	@for DIR in ${DIRS}; do	 \
+		echo "$@: $$DIR"; 	\
+ 		if [ -d $$DIR ]; then TMP=`pwd`; cd $$DIR; ${MAKE} $@; cd $${TMP}; fi; \
+	done
+
+clean::
+	@for DIR in ${DIRS}; do	 \
+		echo "$@: $$DIR"; 	\
+		if [ -d $$DIR ]; then TMP=`pwd`; cd $$DIR; ${MAKE} $@; cd $${TMP}; fi; \
+	done
+
+
+
+dirs.%::
+	@for DIR in ${DIRS}; do	 \
+		echo "$@: $$DIR"; 	\
+ 		if [ -d $$DIR ]; then TMP=`pwd`; cd $$DIR; ${MAKE} $@; cd $${TMP}; fi; \
+	done
+
+depends.%::
+	@for DIR in ${DIRS}; do	 \
+		echo "$@: $$DIR"; 	\
+ 		if [ -d $$DIR ]; then TMP=`pwd`; cd $$DIR; ${MAKE} $@; cd $${TMP}; fi; \
+	done
+
+build.%::
+	@for DIR in ${DIRS}; do	 \
+		echo "$@: $$DIR"; 	\
+ 		if [ -d $$DIR ]; then TMP=`pwd`; cd $$DIR; ${MAKE} $@; cd $${TMP}; fi; \
+	done
+
+install.%::
+	@for DIR in ${DIRS}; do	 \
+		echo "$@: $$DIR"; 	\
+ 		if [ -d $$DIR ]; then TMP=`pwd`; cd $$DIR; ${MAKE} $@; cd $${TMP}; fi; \
+	done
+
+clean.%::
+	@for DIR in ${DIRS}; do	 \
+		echo "$@: $$DIR"; 	\
+ 		if [ -d $$DIR ]; then TMP=`pwd`; cd $$DIR; ${MAKE} $@; cd $${TMP}; fi; \
+	done
+

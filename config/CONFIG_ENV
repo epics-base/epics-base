@@ -1,0 +1,48 @@
+#	$Id$
+#	Author:	Andrew Johnson
+#	Date:	20 April 1995
+#
+#	Experimental Physics and Industrial Control System (EPICS)
+#
+#	CONFIG_ENV - EPICS Environment Parameter configuration file
+#
+# This file is interpreted by the Bourne Shell, so spaces are 
+# not allowed around the '=' signs or in unquoted values.
+# Makefile variables are not defined here.
+#
+#
+
+
+#  Default environment settings
+
+# Channel Access:
+# EPICS_CA_ADDR_LIST augment beacon/search dest ip addr list
+#	from white space separated ip addresses in this
+#	environment variable. "Quote" if more than one addr.
+# EPICS_CA_AUTO_ADDR_LIST YES = augment beacon/search dest ip
+#	addr list from interfaces found; NO = only use
+#	EPICS_CA_ADDR_LIST to create this list.
+# EPICS_CA_CONN_TMO sec before sending echo request from client.
+# EPICS_CA_BEACON_PERIOD quiescent sec between server beacons.
+# EPICS_CA_REPEATER_PORT CA repeater port number.
+# EPICS_CA_SERVER_PORT CA server port number.
+
+EPICS_CA_ADDR_LIST=""
+EPICS_CA_AUTO_ADDR_LIST=YES
+EPICS_CA_CONN_TMO=30.0
+EPICS_CA_BEACON_PERIOD=15.0
+EPICS_CA_REPEATER_PORT=5065
+EPICS_CA_SERVER_PORT=5064
+
+
+# Log Server:
+# EPICS_IOC_LOG_PORT Log server port number.
+
+EPICS_IOC_LOG_PORT=7004
+
+
+# Other services:
+
+EPICS_CMD_PROTO_PORT=
+EPICS_AR_PORT=7002
+

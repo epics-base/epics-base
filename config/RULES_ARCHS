@@ -1,0 +1,75 @@
+#
+# $Id$
+#
+#  EPICS RULES_ARCH
+#        by Matthew Needes and Mike Bordua and Janet Anderson
+#
+
+all:: install
+
+dirs::
+	@(for ARCH in ${BUILD_ARCHS}; do	\
+		${MAKE} dir "T_A=${ARCH}"; \
+	done)
+
+depends::
+	@(for ARCH in ${BUILD_ARCHS}; do	\
+		${MAKE} arch "T_A=$${ARCH}" ACTION=$@; \
+	done)
+
+build::
+	@(for ARCH in ${BUILD_ARCHS}; do	\
+		${MAKE} arch "T_A=$${ARCH}" ACTION=$@; \
+		done)
+
+install::
+	@(for ARCH in ${BUILD_ARCHS}; do	\
+		${MAKE} arch "T_A=$${ARCH}" ACTION=$@; \
+	done)
+
+clean::
+	@(for ARCH in ${BUILD_ARCHS}; do	\
+		${MAKE} arch "T_A=$${ARCH}" ACTION=$@; \
+	done)
+
+
+dirs.%::
+	@${MAKE} dir T_A=$*
+
+depends.%::
+	@${MAKE} arch T_A=$* ACTION=depends
+
+build.%::
+	@${MAKE} arch T_A=$* ACTION=build
+
+install.%::
+	@${MAKE} arch T_A=$* ACTION=install
+
+clean.%::
+	@${MAKE} arch T_A=$* ACTION=clean
+
+${BUILD_ARCHS}::
+	@${MAKE} arch T_A=$@ ACTION=install
+
+
+arch: dir
+	@if [ -f Makefile.${BUILD_TYPE} ] ; then \
+		echo "${T_A}: ${ACTION}"; \
+		cd O.${T_A}; ${MAKE} ${ACTION} ; \
+	fi
+
+dir:
+	@if [ -f Makefile.${BUILD_TYPE} ] ; then \
+		test -f ./.cvsignore || \
+			echo "O.*" > ./.cvsignore; \
+		test -d O.${T_A} || \
+			( echo "Creating O.${T_A}"; mkdir O.${T_A};); \
+		test -f O.${T_A}/Makefile || \
+			( echo "T_A=${T_A}" > O.${T_A}/Makefile; \
+			echo "include ../Makefile.${BUILD_TYPE}" \
+				 >> O.${T_A}/Makefile;); \
+		test -f O.${T_A}/.DEPENDS || \
+			touch O.${T_A}/.DEPENDS; \
+	fi
+
+

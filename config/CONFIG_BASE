@@ -1,0 +1,58 @@
+#
+#  $Id$
+#
+
+# the order of following lists are important
+
+DIRS_Vx= \
+	src/libCom\
+	src/libvxWorks\
+	src/bpt\
+	src/util\
+	src/sequencer\
+	src/misc\
+	src/db\
+	src/ca\
+	src/rsrv\
+	src/dbStatic\
+	src/dbtools\
+	src/rec\
+	src/as\
+	src/drv/ansi\
+	src/drv/old\
+	src/drv/combine\
+	src/dev\
+	src/devOpt\
+	src/iocCore
+	
+DIRS_Unix= \
+	src/tools \
+	src/include \
+	src/cxxTemplates \
+	src/db \
+	src/toolsComm/antelope \
+	src/toolsComm/flex \
+	src/libCom \
+	src/cvtDctsdr \
+	src/dbStatic \
+	src/bpt \
+	src/ca \
+	src/gdd \
+	src/cas/generic \
+	src/cas/build/singleThread \
+	src/cas/example \
+	src/as \
+	src/util \
+	src/sequencer \
+	src/dbtools \
+	config
+
+DIRS = $(DIRS_$(BUILD_TYPE))
+
+EPICS_BASE = $(TOP)
+
+# EPICS include config file
+include $(TOP)/config/CONFIG
+
+EPICS_BASE = $(INSTALL_LOCATION)
+

@@ -1,0 +1,78 @@
+#
+#  $Id$
+#
+#  CONFIG_COMMON - Another EPICS BASE config file
+#	by Matthew Needes and Mike Bordua
+#
+#  This file is to be maintained by the EPICS community.
+#
+
+# Common Configuration Information 
+
+BUILD_ARCHS=$(HOST_ARCH)
+ifndef CROSS_COMPILER_HOST_ARCHS
+     BUILD_ARCHS+=$(CROSS_COMPILER_TARGET_ARCHS)
+else
+     ifeq ($(HOST_ARCH),$(findstring $(HOST_ARCH),$(CROSS_COMPILER_HOST_ARCHS)))
+          BUILD_ARCHS+=$(CROSS_COMPILER_TARGET_ARCHS)
+     endif
+endif
+
+INSTALL_LOCATION = $(TOP)
+ 
+INSTALL_LOCATION_LIB        = $(INSTALL_LOCATION)/lib
+INSTALL_LOCATION_BIN        = $(INSTALL_LOCATION)/bin
+
+INSTALL_INCLUDE             = $(INSTALL_LOCATION)/include
+INSTALL_DOC                 = $(INSTALL_LOCATION)/doc
+INSTALL_MAN                 = $(INSTALL_LOCATION)/man
+INSTALL_TEMPLATES           = $(INSTALL_LOCATION)/templates
+INSTALL_DBD                 = $(INSTALL_LOCATION)/dbd
+INSTALL_CONFIG              = $(INSTALL_LOCATION)/config
+
+EPICS_BASE_INCLUDE      = $(EPICS_BASE)/include
+EPICS_BASE_DBD          = $(EPICS_BASE)/dbd
+
+EPICS_EXTENSIONS_INCLUDE      = $(EPICS_EXTENSIONS)/include
+EPICS_EXTENSIONS_TEMPLATES    = $(EPICS_EXTENSIONS)/templates
+
+
+# private versions of lex/yacc from EPICS
+EYACC = $(EPICS_BASE)/bin/$(HOST_ARCH)/antelope
+ELEX = $(EPICS_BASE)/bin/$(HOST_ARCH)/e_flex -S$(EPICS_BASE_INCLUDE)/flex.skel.static
+
+# install from EPICS
+INSTALL = $(EPICS_BASE)/bin/$(HOST_ARCH)/installEpics
+
+# dbtools from EPICS
+
+# state notation language compiler (installed from base/src/sequencer)
+SNC = $(EPICS_BASE)/bin/$(HOST_ARCH)/snc
+
+# vxWorks definitions
+VX_CONFIG_DIR = $(VX_DIR)/config
+VX_INCLUDE = $(VX_DIR)/h
+VX_GNU_BIN = $(VX_GNU)/$(HOST_ARCH).$(ARCH_CLASS)/bin
+VX_GNU_LIB = $(VX_GNU)/$(HOST_ARCH).$(ARCH_CLASS)/lib
+
+ifdef T_A
+
+INSTALL_LIB                 = $(INSTALL_LOCATION_LIB)/$(T_A)
+INSTALL_TCLLIB              = $(INSTALL_LOCATION_LIB)/$(T_A)
+INSTALL_BIN                 = $(INSTALL_LOCATION_BIN)/$(T_A)
+
+EPICS_BASE_LIB          = $(EPICS_BASE)/lib/$(T_A)
+EPICS_BASE_BIN          = $(EPICS_BASE)/bin/$(T_A)
+
+EPICS_EXTENSIONS_LIB          = $(EPICS_EXTENSIONS)/lib/$(T_A)
+EPICS_EXTENSIONS_BIN          = $(EPICS_EXTENSIONS)/bin/$(T_A)
+
+VX_IMAGE = $(VX_CONFIG_DIR)/$(T_A)/vxWorks
+VX_IMAGE_SYM = $(VX_CONFIG_DIR)/$(T_A)/vxWorks.sym
+
+# location of installed vxWorks image
+EPICS_VX_IMAGE = $(EPICS_BASE_BIN)/vxWorks
+EPICS_VX_IMAGE_SYM = $(EPICS_BASE_BIN)/vxWorks.sym
+
+endif
+

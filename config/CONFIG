@@ -1,0 +1,50 @@
+#
+#  $Id$
+#
+#  The developer may edit this file.
+
+#  Site-specific build options
+#
+include $(EPICS_BASE)/config/CONFIG_SITE
+ 
+#  EPICS base definitions
+#
+include $(EPICS_BASE)/config/CONFIG_COMMON
+ 
+ifdef T_A
+ 
+#  Architecture specific definitions
+#   BUILD_TYPE and ARCH_CLASS are defined
+#   in this file.
+#
+include $(EPICS_BASE)/config/CONFIG_ARCH.$(T_A)
+ 
+ 
+#  Site-specific "class" definitions
+#
+include $(EPICS_BASE)/config/CONFIG_SITE.$(BUILD_TYPE).$(ARCH_CLASS)
+ 
+#  Definitions common to a "class" of architectures
+#
+include $(EPICS_BASE)/config/CONFIG.$(BUILD_TYPE).$(ARCH_CLASS)
+ 
+endif
+ 
+#  All EPICS options other than BUILD_TYPE, and ARCH_CLASS
+#   may be overridden here.
+#
+# EXAMPLES
+# --------
+#  Build client objects statically ?  must be either YES or NO
+#STATIC_BUILD=NO
+#  Unix Optimization,   must be either YES or NO
+#UNIX_OPT=YES
+#  VxWorks Optimization,  must be either YES or NO
+#VX_OPT=YES
+#  Generate Verbose Compiler Warnings for Unix,  must be either YES or NO
+#UNIX_WARN=YES
+#  Generate Verbose Compiler Warnings for VxWorks,  must be either YES or NO
+#VX_WARN=YES
+#etc.
+#
+

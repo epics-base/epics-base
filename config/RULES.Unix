@@ -1,0 +1,200 @@
+# $Id$
+
+INSTALL_PROD=$(PROD:%=$(INSTALL_BIN)/%)
+INSTALL_LIBS=$(LIBNAME:%=$(INSTALL_LIB)/%)
+INSTALL_INC=$(INC:%=$(INSTALL_INCLUDE)/%)
+INSTALL_MANS+=$(MAN1:%=$(INSTALL_MAN)/man1/%)
+INSTALL_MANS+=$(MAN2:%=$(INSTALL_MAN)/man2/%)
+INSTALL_MANS+=$(MAN3:%=$(INSTALL_MAN)/man3/%)
+INSTALL_MANS+=$(MAN4:%=$(INSTALL_MAN)/man4/%)
+INSTALL_MANS+=$(MAN5:%=$(INSTALL_MAN)/man5/%)
+INSTALL_MANS+=$(MAN6:%=$(INSTALL_MAN)/man6/%)
+INSTALL_MANS+=$(MAN7:%=$(INSTALL_MAN)/man7/%)
+INSTALL_MANS+=$(MAN8:%=$(INSTALL_MAN)/man8/%)
+INSTALL_MANS+=$(MAN9:%=$(INSTALL_MAN)/man9/%)
+INSTALL_DOCS=$(DOCS:%=$(INSTALL_DOC)/%)
+INSTALL_SCRIPTS=$(SCRIPTS:%=$(INSTALL_BIN)/%)
+INSTALL_TEMPLATE=$(TEMPLATES:%=$(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)/%)
+INSTALL_TCLLIBS=$(TCLLIBNAME:%=$(INSTALL_TCLLIB)/%)
+INSTALL_TCLINDEX=$(TCLINDEX:%=$(INSTALL_TCLLIB)/%)
+INSTALL_CONFIGS=$(CONFIGS:%=$(INSTALL_CONFIG)/%)
+
+all: install
+
+pre_build:
+
+build: pre_build $(LIBNAME) $(TARGETS) $(PROD)
+
+install: build $(INSTALL_INC) $(INSTALL_LIBS) $(TARGETS) $(INSTALL_PROD) \
+	$(INSTALL_MANS) $(INSTALL_DOCS) $(INSTALL_SCRIPTS) $(INSTALL_TEMPLATE) \
+	$(INSTALL_TCLLIBS) $(INSTALL_TCLINDEX) $(INSTALL_CONFIGS)
+
+depends: $(SRCS.c) $(SRCS.cc)
+	rm -f .DEPENDS
+	touch .DEPENDS
+ifdef SRCS
+	echo you have a SRCS in your Makefile
+	exit 2
+endif
+ifdef SRCS.c
+	$(DEPENDS_RULE.c)
+endif
+ifdef SRCS.cc
+	$(DEPENDS_RULE.cc)
+endif
+
+clean::
+	@echo "Cleaning"
+	@$(RM) *.i *.o *.a $(TARGETS) $(PROD) $(LIBNAME) $(INC)
+
+
+$(TARGETS) $(PROD): $(DEPLIBS)
+
+#  The order of the following dependencies is
+#  VERY IMPORTANT !!!!
+
+%: %.o
+	$(RM) $@
+	$(LINK.c) -o $@ $< $(LDLIBS)
+
+#$(PROD): $(OBJS) $(DEPLIBS)
+#	$(RM) $@
+#	$(LINK.c) -o $@ ${OBJS} $(LDLIBS)
+
+%.o: %.c
+	$(RM) $@
+	$(COMPILE.c) $<
+
+%.o: ../%.c
+	$(RM) $@
+	$(COMPILE.c) $<
+
+%.o: %.cc
+	$(RM) $@
+	$(COMPILE.cc) $<
+
+%.o: ../%.cc
+	$(RM) $@
+	$(COMPILE.cc) $<
+
+%.c: ../%.y
+	$(RM) y.tab.c y.tab.h
+	$(YACC) $(YACCOPT) $<
+	@if [ -f y.tab.c ]; \
+		then \
+			echo "/bin/mv y.tab.c $*.c"; \
+			/bin/mv y.tab.c $*.c; \
+	fi
+	@if [ -f y.tab.h ]; \
+		then \
+			echo "/bin/mv y.tab.h $*.h"; \
+			/bin/mv y.tab.h $*.h; \
+	fi
+
+%.c: ../%.l
+	$(RM) lex.yy.c
+	$(LEX) $(LEXOPT) $<
+	$(RM) $@
+	/bin/mv lex.yy.c $@
+
+#state notation language rule
+%.c: ../%.st
+	@echo "preprocessing $*.st"
+	@$(RM) $*.i
+	$(CPP) $(CPPFLAGS) $< $*.i
+	@echo "converting $*.i"
+	@$(RM) $@
+	$(SNC) $(TARGET_SNCFLAGS) $(SNCFLAGS) $*.i
+
+$(LIBNAME): $(LIBOBJS)
+	@echo Building library $@
+	$(RM) $@
+	$(AR) $(ARFLAGS) $@ $(LIBOBJS)
+	@if [ ! -z "$(RANLIB)" ] ; then\
+		echo $(RANLIB) $@; \
+		$(RANLIB) $@; \
+	fi
+
+$(INSTALL_BIN)/%: %
+	@echo "Installing $@"
+	@test -d $(INSTALL_LOCATION_BIN) || mkdir $(INSTALL_LOCATION_BIN)
+	@test -d $(INSTALL_BIN) || mkdir $(INSTALL_BIN)
+	@$(INSTALL_PRODUCT) -m 555 $< $(INSTALL_BIN)
+
+$(INSTALL_BIN)/%: ../%
+	@echo "Installing $@"
+	@test -d $(INSTALL_LOCATION_BIN) || mkdir $(INSTALL_LOCATION_BIN)
+	@test -d $(INSTALL_BIN) || mkdir $(INSTALL_BIN)
+	@$(INSTALL_PRODUCT) -m 555 $< $(INSTALL_BIN)
+
+$(INSTALL_LIB)/%.a: %.a
+	@echo "Installing library $@"
+	@test -d $(INSTALL_LOCATION_LIB) || mkdir $(INSTALL_LOCATION_LIB)
+	@test -d $(INSTALL_LIB) || mkdir $(INSTALL_LIB)
+	@$(INSTALL) -m 644 $< $(INSTALL_LIB)
+	@if [ ! -z "$(RANLIB)" ] ; then\
+		$(RANLIB) $(RANLIBFLAGS) $@; \
+	fi
+
+$(INSTALL_CONFIG)/%: ../%
+	@echo "Installing $@"
+	@test -d $(INSTALL_CONFIG) || mkdir $(INSTALL_CONFIG)
+	@$(INSTALL) -m 644 $< $(INSTALL_CONFIG)
+
+$(INSTALL_TCLLIB)/%: ../%
+	@echo "Installing Tcl library $@"
+	@test -d $(INSTALL_LOCATION_LIB) || mkdir $(INSTALL_LOCATION_LIB)
+	@test -d $(INSTALL_LIB) || mkdir $(INSTALL_LIB)
+	@$(INSTALL) -m 644 $< $(INSTALL_LIB)
+
+$(INSTALL_TCLLIB)/$(TCLINDEX): $(INSTALL_TCLLIBS)
+	@echo "Updating $@"
+	@echo eval auto_mkindex $(INSTALL_LIB) "$(TCLLIBNAME)" | tclsh
+
+$(INSTALL_MAN)/man9/% \
+$(INSTALL_MAN)/man8/% \
+$(INSTALL_MAN)/man7/% \
+$(INSTALL_MAN)/man6/% \
+$(INSTALL_MAN)/man5/% \
+$(INSTALL_MAN)/man4/% \
+$(INSTALL_MAN)/man3/% \
+$(INSTALL_MAN)/man2/% \
+$(INSTALL_MAN)/man1/%: ../%
+	@echo "Installing $@"
+	@test -d $(INSTALL_MAN) || mkdir $(INSTALL_MAN)
+	@test -d $(@D) || mkdir $(@D)
+	@$(INSTALL) -m 644 $< $(@D)
+
+$(INSTALL_INCLUDE)/%: %
+	@echo "Installing $@"
+	@test -d $(INSTALL_INCLUDE) || mkdir $(INSTALL_INCLUDE)
+	@$(INSTALL) -m 644 $< $(INSTALL_INCLUDE)
+
+$(INSTALL_INCLUDE)/%: ../%
+	@echo "Installing $@"
+	@test -d $(INSTALL_INCLUDE) || mkdir $(INSTALL_INCLUDE)
+	@$(INSTALL) -m 644 $< $(INSTALL_INCLUDE)
+
+$(INSTALL_DOC)/%: ../%
+	@echo "Installing $@"
+	@test -d $(INSTALL_DOC) || mkdir $(INSTALL_DOC)
+	@$(INSTALL) -m 644 $< $(INSTALL_DOC)
+
+$(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)/%: ../%
+	@echo "Installing $@"
+	@test -d $(INSTALL_TEMPLATES) || mkdir $(INSTALL_TEMPLATES)
+	@test -d $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR) || \
+		mkdir $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)
+	@$(INSTALL) -m 644 $< $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)
+
+$(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)/%: %
+	@echo "Installing $@"
+	@test -d $(INSTALL_TEMPLATES) || mkdir $(INSTALL_TEMPLATES)
+	@test -d $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR) || \
+		mkdir $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)
+	@$(INSTALL) -m 644 $< $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)
+
+.PRECIOUS: %.o %.c
+
+include .DEPENDS
+

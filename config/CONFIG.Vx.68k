@@ -1,0 +1,71 @@
+
+# $Id$
+#
+# This file is maintained by the EPICS community.
+
+# OLDINSTALL def used only for releases prior to R3.12.2.2
+# Unix Compiler and other Utilities
+ifeq ($(HOST_ARCH),hp700)
+OLDINSTALL = bsdinstall
+else
+ifeq ($(HOST_ARCH),solaris)
+# use ucb install on solaris until a base/tools/installEpics is created
+OLDINSTALL = /usr/ucb/install
+else
+OLDINSTALL = install
+endif
+endif
+
+AR = $(VX_GNU_BIN)/ar68k
+RANLIB = $(VX_GNU_BIN)/ranlib68k
+YACC = $(EYACC)
+LEX = $(ELEX)
+CC = $(VX_GNU_BIN)/cc68k -B$(VX_GNU_LIB)/gcc-lib/ -nostdinc
+CPP = $(VX_GNU_BIN)/cpp68k -nostdinc
+#CPP = $(CC) -E
+GCC = $(CC)
+LD = $(VX_GNU_BIN)/ld68k -r
+EPICS_LDLIBS =
+
+# special c library requirements
+SPECIAL_LANG =
+
+# Compiler flags, don't mess with this
+#    Optimization flags
+VX_OPT_YES = -O
+VX_OPT_NO =
+VX_OPT_FLAGS = $(VX_OPT_$(VX_OPT))
+ 
+#    Include files
+VX_INCLUDES = -I. -I.. -I$(EPICS_BASE_INCLUDE) -I$(VX_INCLUDE)
+
+#    Warnings
+#At some time we should turn on pedantic
+#VX_WARN_YES = -Wall -pedantic
+VX_WARN_YES = -W
+VX_WARN_NO =
+VX_WARN_FLAGS = $(VX_WARN_$(VX_WARN))
+ 
+#    Operating system flags
+VX_OP_SYS_FLAGS = -DvxWorks -DV5_vxWorks
+ 
+#    Arch dependent flags are set in CONFIG_ARCH.*
+VX_CFLAGS = $(VX_OPT_FLAGS) $(VX_WARN_FLAGS) $(USR_INCLUDES) \
+        $(VX_INCLUDES) $(VX_OP_SYS_FLAGS)
+ 
+VX_LDFLAGS = -o
+ 
+TARGET_CFLAGS = $($(basename $@)_CFLAGS)
+TARGET_LDFLAGS = $($(basename $@)_LDFLAGS)
+
+CFLAGS = $(TARGET_CFLAGS) $(USR_CFLAGS) $(ARCH_DEP_CFLAGS) $(VX_CFLAGS)
+LDFLAGS = $(TARGET_LDFLAGS) $(USR_LDFLAGS) $(ARCH_DEP_LDFLAGS) $(VX_LDFLAGS)
+ 
+# Build compile line here
+COMPILE.c = $(CC) $(CFLAGS) $(CPPFLAGS) -c
+LINK.c = $(LD) $(LDFLAGS)
+
+CPPSNCFLAGS = $(USR_INCLUDES) $(VX_INCLUDES)
+
+DEPENDS_RULE.c = -$(COMPILE.c) -M $(SRCS.c) >> .DEPENDS
+DEPENDS_RULE.cc = @echo no DEPENDS_RULE.cc defined in CONFIG.Vx.68k

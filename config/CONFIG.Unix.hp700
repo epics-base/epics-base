@@ -1,0 +1,104 @@
+# CONFIG.Unix.hp700
+#
+#  This file is maintained by the EPICS community.
+
+# Compiler and utility invocation (supply path to compiler here)
+#   (with warning flags built in)
+#  Paths to compilers
+GCC = gcc
+ACC = cc -Aa
+HPACC = cc -Aa
+HPCC = cc -Ac
+TRADCC = cc
+# OLDINSTALL def used only in releases prior to R3.12.2.2
+OLDINSTALL = bsdinstall
+AR = ar
+RANLIB = ranlib
+YACC = $(EYACC)
+LEX = $(ELEX)
+G++ = g++
+CCC = CC
+
+ACC_ANSI_INVOKE_W_NO = $(ACC) -w
+ACC_ANSI_INVOKE_W_YES = $(ACC)
+ACC_TRAD_INVOKE_W_NO = $(TRADCC) -w
+ACC_TRAD_INVOKE_W_YES = $(TRADCC)
+ACC_STRICT_INVOKE_W_NO = $(ACC) -w
+ACC_STRICT_INVOKE_W_YES = $(ACC)
+HPACC_ANSI_INVOKE_W_NO = $(HPACC) -w 
+HPACC_ANSI_INVOKE_W_YES = $(HPACC)
+HPCC_TRAD_INVOKE_W_NO = $(HPCC) -w
+HPCC_TRAD_INVOKE_W_YES = $(HPCC)
+HPACC_STRICT_INVOKE_W_NO = $(HPACC) -w
+HPACC_STRICT_INVOKE_W_YES = $(HPACC)
+
+GCC_ANSI_INVOKE_W_NO = $(GCC) -ansi -w
+GCC_ANSI_INVOKE_W_YES = $(GCC) -ansi
+GCC_STRICT_INVOKE_W_YES = $(GCC) -ansi -Wall -pedantic
+GCC_TRAD_INVOKE_W_NO = $(GCC) -traditional -w
+GCC_TRAD_INVOKE_W_YES = $(GCC) -traditional
+ 
+C_OLD = $($(STANDARD)_TRAD_INVOKE_W_$(UNIX_WARN))
+C_ANSI = $($(ANSI)_ANSI_INVOKE_W_$(UNIX_WARN))
+C_STRICT = $($(ANSI)_STRICT_INVOKE_W_YES)
+CC = $(C_$(CMPLR))
+
+# Static Build options
+ACC_SFLAGS_YES= -Wl,-a,archive
+ACC_SFLAGS_NO=
+CC_SFLAGS_YES= -Wl,-a,archive
+CC_SFLAGS_NO=
+GCC_SFLAGS_YES= -static
+GCC_SFLAGS_NO=
+
+SF_OLD = $($(STANDARD)_SFLAGS_$(STATIC_BUILD))
+SF_ANSI = $($(ANSI)_SFLAGS_$(STATIC_BUILD))
+SF_STRICT = $(SF_ANSI)
+UNIX_SFLAGS = $(SF_$(CMPLR))
+ 
+# Optimization
+OPTIM_YES = -O
+OPTIM_NO =
+UNIX_OPT_FLAGS = $(OPTIM_$(UNIX_OPT))
+
+# Include files
+UNIX_INCLUDES = -I. -I.. -I$(EPICS_BASE_INCLUDE)
+ 
+# Operating system flags
+OP_SYS_FLAGS = -DUNIX
+ 
+SPECIAL_LDFLAGS = 
+UNIX_LDFLAGS = -L$(EPICS_BASE_LIB)
+UNIX_LDLIBS = -lm
+ 
+ARCH_DEP_CFLAGS = -D_HPUX_SOURCE -DHP_UX
+ARCH_DEP_CCFLAGS = $(ARCH_DEP_CFLAGS)
+
+UNIX_CFLAGS = $(UNIX_SFLAGS) $(USR_INCLUDES) $(UNIX_INCLUDES) $(OP_SYS_FLAGS)
+UNIX_CCFLAGS = $(UNIX_CFLAGS)
+ 
+# Target specific flags
+TARGET_CFLAGS = $($(basename $@)_CFLAGS)
+TARGET_CCFLAGS = $($(basename $@)_CCFLAGS)
+TARGET_LDFLAGS = $($(basename $@)_LDFLAGS)
+TARGET_LDLIBS = $($(basename $@)_LDLIBS)
+TARGET_SNCFLAGS = $($(basename $@)_SNCFLAGS)
+
+CFLAGS = $(UNIX_OPT_FLAGS) $(TARGET_CFLAGS) $(USR_CFLAGS) $(ARCH_DEP_CFLAGS) $(UNIX_CFLAGS)
+CCFLAGS = $(UNIX_OPT_FLAGS) $(TARGET_CCFLAGS) $(USR_CCFLAGS) $(ARCH_DEP_CCFLAGS) $(UNIX_CCFLAGS)
+CXXFLAGS = $(CCFLAGS)
+CXX =$($(CPLUSPLUS))
+
+ARFLAGS = rv
+
+LDFLAGS = $(SPECIAL_LDFLAGS) $(TARGET_LDFLAGS) $(USR_LDFLAGS) $(ARCH_DEP_LDFLAGS) $(UNIX_LDFLAGS)
+LDLIBS = $(TARGET_LDLIBS) $(USR_LDLIBS) $(ARCH_DEP_LDLIBS) $(UNIX_LDLIBS)
+ 
+# Override defaults
+COMPILE.c = $(CC) $(CFLAGS) $(CPPFLAGS) -c
+COMPILE.cc = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -c
+LINK.c = $(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
+LINK.cc = $(CXX) $(CCFLAGS) $(CPPFLAGS) $(LDFLAGS)
+DEPEND_RULE.c = @echo echo no DEPENDS_RULE.c defined in CONFIG.Unix.hp700
+DEPEND_RULE.cc = @echo echo no DEPENDS_RULE.cc defined in CONFIG.Unix.hp700
+

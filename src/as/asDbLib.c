@@ -72,7 +72,7 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #include <subRecord.h>
 #include <task_params.h>
 
-extern struct dbBase *pdbBase;
+extern struct dbBase *pdbbase;
 static FILE *stream;
 
 #define BUF_SIZE 100
@@ -106,7 +106,7 @@ static long asDbAddRecords(void)
     long	status;
     dbCommon	*precord;
 
-    dbInitEntry(pdbBase,pdbentry);
+    dbInitEntry(pdbbase,pdbentry);
     status = dbFirstRecdes(pdbentry);
     while(!status) {
 	status = dbFirstRecord(pdbentry);

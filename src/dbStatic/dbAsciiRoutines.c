@@ -296,18 +296,18 @@ static void dbAsciiIncludeNew(char *filename)
     }
     strcat(currentPath,filename);
     fp = fopen(currentPath,"r");
-    if(!fp) {
+    if(!fp) { /*Try preceeding path with ./rec */
 	newCurrentPath = dbCalloc(
-	    (strlen("./base/rec/") + strlen(currentPath) + 1),sizeof(char));
-	strcpy(newCurrentPath,"./base/rec/");
+	    (strlen("./rec/") + strlen(currentPath) + 1),sizeof(char));
+	strcpy(newCurrentPath,"./rec/");
 	strcat(newCurrentPath,currentPath);
 	fp = fopen(newCurrentPath,"r");
 	free((void *)newCurrentPath);
     }
-    if(!fp) {
+    if(!fp) { /*Try preceeding path with ./base/rec */
 	newCurrentPath = dbCalloc(
-	    (strlen("./rec/") + strlen(currentPath) + 1),sizeof(char));
-	strcpy(newCurrentPath,"./rec/");
+	    (strlen("./base/rec/") + strlen(currentPath) + 1),sizeof(char));
+	strcpy(newCurrentPath,"./base/rec/");
 	strcat(newCurrentPath,currentPath);
 	fp = fopen(newCurrentPath,"r");
 	free((void *)newCurrentPath);

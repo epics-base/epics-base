@@ -15,7 +15,7 @@
 #include <symLib.h>
 #include <dbStaticLib.h>
 
-extern struct dbBase *pdbBase;
+extern struct dbBase *pdbbase;
 
 #else
 #include <sys/time.h>
@@ -193,7 +193,7 @@ static void handle_reclist(BS* bs)
 	unsigned long names_len;
 	int s;
 
-	dbInitEntry(pdbBase,&db);
+	dbInitEntry(pdbbase,&db);
 	names_len=0;
 
 	for(rc=dbFirstRecdes(&db);rc==0;rc=dbNextRecdes(&db))

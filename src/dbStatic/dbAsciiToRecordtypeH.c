@@ -45,6 +45,7 @@ int main(int argc,char **argv)
 	fprintf(stderr,"usage: dbAsciiToMenuH file.ascii\n");
 	exit(-1);
     }
+    /*remove path so that outFile is created where program is executed*/
     plastSlash = strrchr(argv[1],'/');
     plastSlash = (plastSlash ? plastSlash+1 : argv[1]);
     outFilename = dbCalloc(1,strlen(plastSlash)+1);

@@ -84,7 +84,7 @@ static unsigned short hash( char *pname, int length)
     return((ind1<<dbPvdHashTableShift) ^ ind0);
 }
 
-int dbPvdTableSize(DBBASE *pdbBase,int size)
+int dbPvdTableSize(DBBASE *pdbbase,int size)
 {
     int		i;
 
@@ -100,7 +100,7 @@ int dbPvdTableSize(DBBASE *pdbBase,int size)
 }
 
 
-void    dbPvdInitPvt(dbBase *pdbBase)
+void    dbPvdInitPvt(dbBase *pdbbase)
 {
     ELLLIST	**ppvd;
     int		i;
@@ -115,14 +115,14 @@ void    dbPvdInitPvt(dbBase *pdbBase)
 	}
     }
     ppvd = dbCalloc(dbPvdHashTableSize, sizeof(ELLLIST *));
-    pdbBase->ppvd = (void *) ppvd;
+    pdbbase->ppvd = (void *) ppvd;
     return;
 }
 
-PVDENTRY *dbPvdFind(dbBase *pdbBase,char *name,int lenName)
+PVDENTRY *dbPvdFind(dbBase *pdbbase,char *name,int lenName)
 {
     unsigned short	hashInd;
-    ELLLIST		**ppvd = (ELLLIST **) pdbBase->ppvd;
+    ELLLIST		**ppvd = (ELLLIST **) pdbbase->ppvd;
     ELLLIST		*pvdlist;
     PVDENTRY		*ppvdNode;
     
@@ -137,10 +137,10 @@ PVDENTRY *dbPvdFind(dbBase *pdbBase,char *name,int lenName)
     return (NULL);
 }
 
-PVDENTRY *dbPvdAdd(dbBase *pdbBase,dbRecDes *precdes,dbRecordNode *precnode)
+PVDENTRY *dbPvdAdd(dbBase *pdbbase,dbRecDes *precdes,dbRecordNode *precnode)
 {
     unsigned short	hashInd;
-    ELLLIST		**ppvd = (ELLLIST **) pdbBase->ppvd;
+    ELLLIST		**ppvd = (ELLLIST **) pdbbase->ppvd;
     ELLLIST		*ppvdlist;
     PVDENTRY		*ppvdNode;
     int			lenName;
@@ -165,11 +165,11 @@ PVDENTRY *dbPvdAdd(dbBase *pdbBase,dbRecDes *precdes,dbRecordNode *precnode)
     return (ppvdNode);
 }
 
-void dbPvdDelete(dbBase *pdbBase,dbRecordNode *precnode)
+void dbPvdDelete(dbBase *pdbbase,dbRecordNode *precnode)
 {
     char	*name=precnode->recordname;
     unsigned short  hashInd;
-    ELLLIST	**ppvd = (ELLLIST **) pdbBase->ppvd;
+    ELLLIST	**ppvd = (ELLLIST **) pdbbase->ppvd;
     ELLLIST	*ppvdlist;
     PVDENTRY	*ppvdNode;
     int		lenName;
@@ -191,10 +191,10 @@ void dbPvdDelete(dbBase *pdbBase,dbRecordNode *precnode)
     return;
 }
 
-void dbPvdFreeMem(dbBase *pdbBase)
+void dbPvdFreeMem(dbBase *pdbbase)
 {
     unsigned short  hashInd;
-    ELLLIST	**ppvd = (ELLLIST **) pdbBase->ppvd;
+    ELLLIST	**ppvd = (ELLLIST **) pdbbase->ppvd;
     ELLLIST	*ppvdlist;
     PVDENTRY	*ppvdNode;
     PVDENTRY	*next;
@@ -215,10 +215,10 @@ void dbPvdFreeMem(dbBase *pdbBase)
     free((void *)ppvd);
 }
 
-void dbPvdDump(dbBase *pdbBase,int verbose)
+void dbPvdDump(dbBase *pdbbase,int verbose)
 {
     unsigned short	hashInd;
-    ELLLIST		**ppvd = (ELLLIST **) pdbBase->ppvd;
+    ELLLIST		**ppvd = (ELLLIST **) pdbbase->ppvd;
     ELLLIST		*ppvdlist;
     PVDENTRY		*ppvdNode;
     int			number;

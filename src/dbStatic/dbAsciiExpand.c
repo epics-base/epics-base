@@ -31,26 +31,21 @@ DBBASE *pdbbase = NULL;
 int main(int argc,char **argv)
 {
     long	status;
-    FILE	*fp;
+    int		i;
 
-    if(argc!=3) {
-	printf("usage: dbAsciiExpand infile outfile\n");
+    if(argc<2) {
+	printf("usage: dbAsciiExpand file1.ascii fi;e2.ascii ...\n");
 	exit(0);
     }
-    status = dbAsciiRead(&pdbbase,argv[1]);
-    fp = fopen(argv[2],"w");
-    if(!fp) {
-	errMessage(0,argv[2]);
-	return(-1);
+    for(i=1; i<argc; i++) {
+	status = dbAsciiRead(&pdbbase,argv[i]);
+	if(!status) continue;
+	epicsPrintf("For input file %s",argv[i]);
+	errMessage(status,"from dbAsciiInitialize");
     }
-    dbWriteMenu(pdbbase,fp,0);
-    dbWriteRecDes(pdbbase,fp,0);
-    dbWriteDevice(pdbbase,fp);
-    dbWriteDriver(pdbbase,fp);
-    status = fclose(fp);
-    if(!fp) {
-	errMessage(0,argv[2]);
-	return(-1);
-    }
+    dbWriteMenu(pdbbase,0);
+    dbWriteRecDes(pdbbase,0);
+    dbWriteDevice(pdbbase);
+    dbWriteDriver(pdbbase);
     return(0);
 }

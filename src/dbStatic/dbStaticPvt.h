@@ -54,11 +54,11 @@ typedef struct{
 	dbRecDes	*precdes;
 	dbRecordNode	*precnode;
 }PVDENTRY;
-int dbPvdTableSize(DBBASE *pdbBase,int size);
-void	dbPvdInitPvt(DBBASE *pdbBase);
-PVDENTRY *dbPvdFind(DBBASE *pdbBase,char *name,int lenname);
-PVDENTRY *dbPvdAdd(DBBASE *pdbBase,dbRecDes *precdes,dbRecordNode *precnode);
-void dbPvdDelete(DBBASE *pdbBase,dbRecordNode *precnode);
-void dbPvdFreeMem(DBBASE *pdbBase);
-void dbPvdDump(DBBASE *pdbBase,int verbose);
+int dbPvdTableSize(DBBASE *pdbbase,int size);
+void	dbPvdInitPvt(DBBASE *pdbbase);
+PVDENTRY *dbPvdFind(DBBASE *pdbbase,char *name,int lenname);
+PVDENTRY *dbPvdAdd(DBBASE *pdbbase,dbRecDes *precdes,dbRecordNode *precnode);
+void dbPvdDelete(DBBASE *pdbbase,dbRecordNode *precnode);
+void dbPvdFreeMem(DBBASE *pdbbase);
+void dbPvdDump(DBBASE *pdbbase,int verbose);
 #endif /*INCdbStaticPvth*/

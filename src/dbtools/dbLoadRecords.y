@@ -65,7 +65,7 @@ static void sub_pvname(char*,char*);
 
 #ifdef vxWorks
 static DBENTRY* pdbentry;
-extern struct dbBase *pdbBase;
+extern struct dbBase *pdbbase;
 #endif
 
 %}
@@ -243,7 +243,7 @@ int dbLoadRecords(char* pfilename, char* pattern)
 	DB_APP_NODE* an;
 
 #ifdef vxWorks
-	if(pdbBase==NULL)
+	if(pdbbase==NULL)
 	{
 		fprintf(stderr,"dbLoadRecords: default.dctsdr file not loaded\n");
 		return -1;
@@ -275,7 +275,7 @@ int dbLoadRecords(char* pfilename, char* pattern)
 	}
 
 #ifdef vxWorks
-	pdbentry=dbAllocEntry(pdbBase);
+	pdbentry=dbAllocEntry(pdbbase);
 #endif
 
 	yyparse();

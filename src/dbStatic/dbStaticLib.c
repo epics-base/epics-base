@@ -469,14 +469,14 @@ long dbWriteRecords(DBBASE *pdbbase,FILE *fp,char *precdesname,int level)
     return(0);
 }
 
-void dbWriteMenu(DBBASE *pdbbase,FILE *fp,char *menuName)
+void dbWriteMenu(DBBASE *pdbbase,char *menuName)
 {
     dbMenu	*pdbMenu;
     int		gotMatch;
     int		i;
 
     if(!pdbbase) {
-	printf("pdbBase not specified\n");
+	printf("pdbbase not specified\n");
 	return;
     }
     pdbMenu = (dbMenu *)ellFirst(&pdbbase->menuList);
@@ -487,19 +487,19 @@ void dbWriteMenu(DBBASE *pdbbase,FILE *fp,char *menuName)
 	    gotMatch=TRUE;
 	}
 	if(gotMatch) {
-	    fprintf(fp,"menu(%s) {\n",pdbMenu->name);
+	    fprintf(stdout,"menu(%s) {\n",pdbMenu->name);
 	    for(i=0; i<pdbMenu->nChoice; i++) {
-		fprintf(fp,"\tchoice(%s,\"%s\")\n",pdbMenu->papChoiceName[i],
+		fprintf(stdout,"\tchoice(%s,\"%s\")\n",pdbMenu->papChoiceName[i],
 		    pdbMenu->papChoiceValue[i]);
 	    }
-	    fprintf(fp,"}\n");
+	    fprintf(stdout,"}\n");
 	    if(menuName) break;
 	}
 	pdbMenu = (dbMenu *)ellNext(&pdbMenu->node);
     }
 }
 
-void dbWriteRecDes(DBBASE *pdbbase,FILE *fp,char *recdesName)
+void dbWriteRecDes(DBBASE *pdbbase,char *recdesName)
 {
     dbRecDes	*pdbRecDes;
     dbFldDes	*pdbFldDes;
@@ -507,7 +507,7 @@ void dbWriteRecDes(DBBASE *pdbbase,FILE *fp,char *recdesName)
     int		i;
 
     if(!pdbbase) {
-	printf("pdbBase not specified\n");
+	printf("pdbbase not specified\n");
 	return;
     }
     for(pdbRecDes = (dbRecDes *)ellFirst(&pdbbase->recDesList);
@@ -518,27 +518,27 @@ void dbWriteRecDes(DBBASE *pdbbase,FILE *fp,char *recdesName)
 	    gotMatch=TRUE;
 	}
 	if(!gotMatch) continue;
-	fprintf(fp,"recordtype(%s) {\n",pdbRecDes->name);
+	fprintf(stdout,"recordtype(%s) {\n",pdbRecDes->name);
 	for(i=0; i<pdbRecDes->no_fields; i++) {
 	    int	j;
 
 	    pdbFldDes = pdbRecDes->papFldDes[i];
-	    fprintf(fp,"\tfield(%s,",pdbFldDes->name);
+	    fprintf(stdout,"\tfield(%s,",pdbFldDes->name);
 	    for(j=0; j<DBF_NTYPES; j++) {
 		if(pamapdbfType[j].value == pdbFldDes->field_type) break;
 	    }
 	    if(j>=DBF_NTYPES)
 		printf("\t     field_type: %d\n", pdbFldDes->field_type);
 	    else
-		fprintf(fp,"%s) {\n",pamapdbfType[j].strvalue);
+		fprintf(stdout,"%s) {\n",pamapdbfType[j].strvalue);
 	    if(pdbFldDes->prompt)
-		fprintf(fp,"\t\tprompt(\"%s\")\n",pdbFldDes->prompt);
+		fprintf(stdout,"\t\tprompt(\"%s\")\n",pdbFldDes->prompt);
 	    if(pdbFldDes->initial)
-		fprintf(fp,"\t\tinitial(\"%s\")\n",pdbFldDes->initial);
+		fprintf(stdout,"\t\tinitial(\"%s\")\n",pdbFldDes->initial);
 	    if(pdbFldDes->promptgroup) {
 		for(j=0; j<GUI_NTYPES; j++) {
 		    if(pamapguiGroup[j].value == pdbFldDes->promptgroup) {
-			fprintf(fp,"\t\tpromptgroup(%s)\n",
+			fprintf(stdout,"\t\tpromptgroup(%s)\n",
 				pamapguiGroup[j].strvalue);
 			break;
 		    }
@@ -547,44 +547,44 @@ void dbWriteRecDes(DBBASE *pdbbase,FILE *fp,char *recdesName)
 	    if(pdbFldDes->special) {
 		for(j=0; j<SPC_NTYPES; j++) {
 		    if(pamapspcType[j].value == pdbFldDes->special) {
-			fprintf(fp,"\t\tspecial(%s)\n",
+			fprintf(stdout,"\t\tspecial(%s)\n",
 				pamapspcType[j].strvalue);
 			break;
 		    }
 		}
 	    }
 	    if(pdbFldDes->extra)
-		fprintf(fp,"\t\textra(\"%s\")\n",pdbFldDes->extra);
+		fprintf(stdout,"\t\textra(\"%s\")\n",pdbFldDes->extra);
 	    if(pdbFldDes->field_type==DBF_MENU) {
 		if(pdbFldDes->ftPvt)
-		    fprintf(fp,"\t\tmenu(%s)\n",
+		    fprintf(stdout,"\t\tmenu(%s)\n",
 			((dbMenu *)pdbFldDes->ftPvt)->name);
 		else
 		    printf("\t\t  menu: NOT FOUND\n");
 	    }
 	    if(pdbFldDes->field_type==DBF_STRING) {
-		fprintf(fp,"\t\tsize(%d)\n",
+		fprintf(stdout,"\t\tsize(%d)\n",
 		    pdbFldDes->size);
 	    }
-	    if(pdbFldDes->process_passive) fprintf(fp,"\t\tpp(TRUE)\n");
-	    if(pdbFldDes->base) fprintf(fp,"\t\tbase(HEX)\n");
+	    if(pdbFldDes->process_passive) fprintf(stdout,"\t\tpp(TRUE)\n");
+	    if(pdbFldDes->base) fprintf(stdout,"\t\tbase(HEX)\n");
 	    if(pdbFldDes->interest)
-		fprintf(fp,"\t\tinterest(%d)\n",pdbFldDes->interest);
-	    if(!pdbFldDes->as_level) fprintf(fp,"\t\tasl(ASL0)\n");
-	    fprintf(fp,"\t}\n");
+		fprintf(stdout,"\t\tinterest(%d)\n",pdbFldDes->interest);
+	    if(!pdbFldDes->as_level) fprintf(stdout,"\t\tasl(ASL0)\n");
+	    fprintf(stdout,"\t}\n");
 	}
-	fprintf(fp,"}\n");
+	fprintf(stdout,"}\n");
 	if(recdesName) break;
     }
 }
 
-void dbWriteDevice(DBBASE *pdbbase,FILE *fp)
+void dbWriteDevice(DBBASE *pdbbase)
 {
     dbRecDes	*pdbRecDes;
     devSup	*pdevSup;
 
     if(!pdbbase) {
-	printf("pdbBase not specified\n");
+	printf("pdbbase not specified\n");
 	return;
     }
     for(pdbRecDes = (dbRecDes *)ellFirst(&pdbbase->recDesList);
@@ -597,10 +597,10 @@ void dbWriteDevice(DBBASE *pdbbase,FILE *fp)
 		if(pamaplinkType[j].value==pdevSup->link_type) break;
 	    }
 	    if(j>=LINK_NTYPES) {
-		fprintf(fp,"link_type not valid\n");
+		fprintf(stdout,"link_type not valid\n");
 		continue;
 	    }
-	    fprintf(fp,"device(%s,%s,%s,\"%s\")\n",
+	    fprintf(stdout,"device(%s,%s,%s,\"%s\")\n",
 		pdbRecDes->name,
 		pamaplinkType[j].strvalue,
 		pdevSup->name,pdevSup->choice);
@@ -608,17 +608,17 @@ void dbWriteDevice(DBBASE *pdbbase,FILE *fp)
     }
 }
 
-void dbWriteDriver(DBBASE *pdbbase,FILE *fp)
+void dbWriteDriver(DBBASE *pdbbase)
 {
     drvSup	*pdrvSup;
 
     if(!pdbbase) {
-	printf("pdbBase not specified\n");
+	printf("pdbbase not specified\n");
 	return;
     }
     for(pdrvSup = (drvSup *)ellFirst(&pdbbase->drvList);
     pdrvSup; pdrvSup = (drvSup *)ellNext(&pdrvSup->node)) {
-	fprintf(fp,"driver(%s)\n",pdrvSup->name);
+	fprintf(stdout,"driver(%s)\n",pdrvSup->name);
     }
 }
 
@@ -1703,20 +1703,20 @@ char *dbGetRange(DBENTRY *pdbentry)
     return (message);
 }
 
-brkTable *dbFindBrkTable(dbBase *pdbBase,char *name)
+brkTable *dbFindBrkTable(dbBase *pdbbase,char *name)
 {
     GPHENTRY *pgph;
 
-    pgph = gphFind(pdbBase->pgpHash,name,(void *)&pdbBase->bptList);
+    pgph = gphFind(pdbbase->pgpHash,name,(void *)&pdbbase->bptList);
     if(!pgph) return(NULL);
     return((brkTable *)pgph->userPvt);
 }
 
-dbMenu *dbFindMenu(dbBase *pdbBase,char *name)
+dbMenu *dbFindMenu(dbBase *pdbbase,char *name)
 {
     GPHENTRY *pgph;
 
-    pgph = gphFind(pdbBase->pgpHash,name,(void *)&pdbBase->menuList);
+    pgph = gphFind(pdbbase->pgpHash,name,(void *)&pdbbase->menuList);
     if(!pgph) return(NULL);
     return((dbMenu *)pgph->userPvt);
 }
@@ -2484,7 +2484,7 @@ void dbDumpMenu(DBBASE *pdbbase,char *menuName)
     int		i;
 
     if(!pdbbase) {
-	printf("pdbBase not specified\n");
+	printf("pdbbase not specified\n");
 	return;
     }
     pdbMenu = (dbMenu *)ellFirst(&pdbbase->menuList);
@@ -2515,7 +2515,7 @@ void dbDumpRecDes(DBBASE *pdbbase,char *recdesName)
     int		i;
 
     if(!pdbbase) {
-	printf("pdbBase not specified\n");
+	printf("pdbbase not specified\n");
 	return;
     }
     for(pdbRecDes = (dbRecDes *)ellFirst(&pdbbase->recDesList);
@@ -2556,7 +2556,7 @@ void dbDumpFldDes(DBBASE *pdbbase,char *recdesName,char *fname)
     int		i;
 
     if(!pdbbase) {
-	printf("pdbBase not specified\n");
+	printf("pdbbase not specified\n");
 	return;
     }
     for(pdbRecDes = (dbRecDes *)ellFirst(&pdbbase->recDesList);
@@ -2634,7 +2634,7 @@ void dbDumpDevice(DBBASE *pdbbase,char *recdesName)
     int		gotMatch;
 
     if(!pdbbase) {
-	printf("pdbBase not specified\n");
+	printf("pdbbase not specified\n");
 	return;
     }
     for(pdbRecDes = (dbRecDes *)ellFirst(&pdbbase->recDesList);
@@ -2662,7 +2662,7 @@ void dbDumpDriver(DBBASE *pdbbase)
     drvSup	*pdrvSup;
 
     if(!pdbbase) {
-	printf("pdbBase not specified\n");
+	printf("pdbbase not specified\n");
 	return;
     }
     for(pdrvSup = (drvSup *)ellFirst(&pdbbase->drvList);
@@ -2674,7 +2674,7 @@ void dbDumpDriver(DBBASE *pdbbase)
 void dbDumpRecords(dbBase *pdbbase,char *precdesname,int levl)
 {
     if(!pdbbase) {
-	printf("pdbBase not specified\n");
+	printf("pdbbase not specified\n");
 	return;
     }
     dbWriteRecords(pdbbase,stdout,precdesname,levl);

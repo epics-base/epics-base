@@ -1,10 +1,7 @@
-
-This directory contains several server tool examples (which
-use the ca server library). 
-
-simple - complete CA server example (includes asynchronous 
-	io and arrays)
+This directory contains a server tool example (which uses the
+ca server library):
 
 directoryService - fully functional pv name resolution server
 
-
+The simple example that was provided here has been become the
+makeBaseApp template "caServerApp"

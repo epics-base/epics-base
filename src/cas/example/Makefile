@@ -12,7 +12,7 @@ TOP=../../..
 
 include $(TOP)/configure/CONFIG
 
-DIRS = simple directoryService
+DIRS = directoryService
 
 include $(TOP)/configure/RULES_DIRS
 

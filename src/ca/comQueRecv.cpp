@@ -9,8 +9,8 @@
  *  Copyright, 1986, The Regents of the University of California.
  *
  *
- *	Author Jeffrey O. Hill
- *	johill@lanl.gov
+ *  Author Jeffrey O. Hill
+ *  johill@lanl.gov
  */
 
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
@@ -120,7 +120,6 @@ epicsUInt8 comQueRecv::popUInt8 ()
 // optimization here complicates this function somewhat
 epicsUInt16 comQueRecv::popUInt16 ()
 {
-    epicsUInt16 tmp;
     comBuf *pComBuf = this->bufs.first ();
     if ( pComBuf ) {
         // try first for all in one buffer efficent version
@@ -130,15 +129,18 @@ epicsUInt16 comQueRecv::popUInt16 ()
                 this->bufs.remove ( *pComBuf );
                 pComBuf->destroy ();
             }
-            tmp = ret.val;
-            this->nBytesPending -= sizeof(tmp);
+            this->nBytesPending -= sizeof(ret.val);
         }
         else {
-            // split between buffers runs slower
-            tmp  = this->popUInt8() << 8u; // X aCC 818
-            tmp |= this->popUInt8() << 0u; // X aCC 818
+            // 1) split between buffers expected to run slower
+            // 2) using canonical unsigned tmp avoids ANSI C conversions to int
+            // 3) cast required because sizeof(unsigned) >= sizeof(epicsUInt32)
+            unsigned tmp = this->popUInt8();
+            ret.val = static_cast <epicsUInt16> ( tmp << 8u ); // X aCC 818
+            tmp = this->popUInt8();
+            ret.val |= static_cast <epicsUInt16> ( tmp << 0u ); // X aCC 818
         }
-        return tmp;
+        return ret.val;
     }
     throw insufficentBytesAvailable ();
     return 0;                   // make compiler happy
@@ -147,7 +149,6 @@ epicsUInt16 comQueRecv::popUInt16 ()
 // optimization here complicates this function somewhat
 epicsUInt32 comQueRecv::popUInt32 ()
 {
-    epicsUInt32 tmp;
     comBuf *pComBuf = this->bufs.first ();
     if ( pComBuf ) {
         // try first for all in one buffer efficent version 
@@ -157,17 +158,22 @@ epicsUInt32 comQueRecv::popUInt32 ()
                 this->bufs.remove ( *pComBuf );
                 pComBuf->destroy ();
             }
-            tmp = ret.val;
-            this->nBytesPending -= sizeof(tmp);
+            this->nBytesPending -= sizeof ( ret.val );
         }
         else {
-            // split between buffers runs slower
-            tmp  = this->popUInt8() << 24u;
-            tmp |= this->popUInt8() << 16u;
-            tmp |= this->popUInt8() << 8u;
-            tmp |= this->popUInt8() << 0u;
+            // 1) split between buffers expected to run slower
+            // 2) using canonical unsigned tmp avoids ANSI C conversions to int
+            // 3) cast required because sizeof(unsigned) >= sizeof(epicsUInt32)
+            unsigned tmp = this->popUInt8();
+            ret.val  = static_cast <epicsUInt32> ( tmp << 24u );
+            tmp = this->popUInt8();
+            ret.val |= static_cast <epicsUInt32> ( tmp << 16u );
+            tmp = this->popUInt8();
+            ret.val |= static_cast <epicsUInt32> ( tmp << 8u );
+            tmp = this->popUInt8();
+            ret.val |= static_cast <epicsUInt32> ( tmp << 0u );
         }
-        return tmp;
+        return ret.val;
     }
     throw insufficentBytesAvailable ();
     return 0;                   // make compiler happy

@@ -363,13 +363,13 @@ inline comBuf::statusPopUInt32 comBuf::popUInt32 ()
     statusPopUInt32 tmp;
     if ( this->occupiedBytes () >= 4u ) {
         unsigned tmpByte = this->buf[ this->nextReadIndex++ ];
-        tmp.val =  tmpByte << 24u;
+        tmp.val =  static_cast < epicsUInt32 > ( tmpByte << 24u );
         tmpByte =  this->buf[ this->nextReadIndex++ ];
-        tmp.val |= tmpByte << 16u;
+        tmp.val |= static_cast < epicsUInt32 > ( tmpByte << 16u );
         tmpByte = this->buf[ this->nextReadIndex++ ];
-        tmp.val |= tmpByte << 8u;
+        tmp.val |= static_cast < epicsUInt32 > ( tmpByte << 8u );
         tmpByte = this->buf[ this->nextReadIndex++ ];
-        tmp.val |= tmpByte;
+        tmp.val |= static_cast < epicsUInt32 > ( tmpByte );
         tmp.success = true;
     }
     else {

@@ -62,6 +62,7 @@
  * .26  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
  * .27  08-14-92        jba     Added simulation processing
  * .28  08-19-92        jba     Added code for invalid alarm output action
+ * .29  11-01-93        jba     Added get_precision routine
  */
 
 #include	<vxWorks.h>
@@ -94,7 +95,7 @@ static long get_value();
 #define get_array_info NULL
 #define put_array_info NULL
 #define get_units NULL
-#define get_precision NULL
+static long get_precision();
 static long get_enum_str();
 static long get_enum_strs();
 static long put_enum_str();
@@ -322,6 +323,18 @@ static long get_value(pbo,pvdes)
     return(0);
 }
 
+static long get_precision(paddr,precision)
+    struct dbAddr *paddr;
+    long	  *precision;
+{
+    struct boRecord	*pbo=(struct boRecord *)paddr->precord;
+
+    *precision = pbo->prec;
+    if(paddr->pfield == (void *)&pbo->val) return(0);
+    recGblGetPrec(paddr,precision);
+    return(0);
+}
+
 static long get_enum_str(paddr,pstring)
     struct dbAddr *paddr;
     char	  *pstring;
@@ -363,6 +376,7 @@ static long put_enum_str(paddr,pstring)
     else return(S_db_badChoice);
     return(0);
 }
+
 
 static void alarm(pbo)
     struct boRecord	*pbo;

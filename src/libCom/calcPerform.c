@@ -102,6 +102,8 @@
 
 #ifdef vxWorks
 #include <vxWorks.h>
+#include        <private/mathP.h>  /* For isNan*/
+#define isnan isNan
 #endif
 
 #include	<stdlib.h>
@@ -514,7 +516,7 @@ printf ("*FINISHED*\n");
 		*presult = *pstacktop;
 	else
 		return(-1);
-	return(0);
+	return((isnan(*presult) ? -1 : 0));
 }
 
 

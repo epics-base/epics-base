@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.2  1996/08/05 21:51:11  jhill
+ * fixed delete this confusion
+ *
  * Revision 1.1  1996/06/26 22:14:15  jhill
  * added new src files
  *
@@ -51,7 +54,7 @@ enum osiTimerState {ositPending, ositExpired, ositLimbo};
 //
 // osiTimer
 //
-class osiTimer : public tsDLNode<osiTimer> {
+class epicsShareClass osiTimer : public tsDLNode<osiTimer> {
 	friend class osiTimerQueue;
 public:
 	osiTimer (const osiTime &delay)
@@ -81,7 +84,7 @@ public:
 	// timer should be rearmed with delay
 	// "delay()" when it expires
 	//
-	virtual osiBool again();
+	virtual osiBool again() const;
 
 	//
 	// returns the delay prior to expire
@@ -90,17 +93,14 @@ public:
 	//
 	// osiTimer::delay() returns 1 sec
 	//
-	virtual const osiTime delay();
+	virtual const osiTime delay() const;
 
-	virtual void show (unsigned level);
+	virtual void show (unsigned level) const;
 
 	//
-	// for diagnosics
+	// for diagnostics
 	//
-	virtual const char *name()
-	{
-		return "unknown class deriving from osiTimer";
-	}
+	virtual const char *name() const;
 private:
 	osiTime		exp;
 	osiTimerState 	state;
@@ -120,9 +120,9 @@ friend class osiTimer;
 public:
 	osiTimerQueue() : inProcess(osiFalse), pExpireTmr(0) {};
 	~osiTimerQueue();
-	osiTime delayToFirstExpire ();
+	osiTime delayToFirstExpire () const;
 	void process ();
-	void show (unsigned level);
+	void show (unsigned level) const;
 private:
 	tsDLList<osiTimer>	pending;	
 	tsDLList<osiTimer>	expired;	

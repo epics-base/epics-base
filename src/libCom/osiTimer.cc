@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.5  1996/09/16 21:19:25  jhill
+ * removed unused variable
+ *
  * Revision 1.4  1996/08/05 21:51:11  jhill
  * fixed delete this confusion
  *
@@ -58,6 +61,7 @@
 #include <assert.h>
 #include <stdio.h>
 
+#define epicsExportSharedSymbols
 #include <osiTimer.h>
 
 osiTimerQueue staticTimerQueue;
@@ -67,8 +71,10 @@ osiTimerQueue staticTimerQueue;
 //
 void osiTimer::arm (const osiTime * const pInitialDelay)
 {
-	tsDLIter<osiTimer> iter (staticTimerQueue.pending);
 	osiTimer *pTmr;
+#	ifdef DEBUG
+		unsigned preemptCount=0u;
+#	endif
 
 	//
 	// calculate absolute expiration time
@@ -82,42 +88,59 @@ void osiTimer::arm (const osiTime * const pInitialDelay)
 		this->exp = osiTime::getCurrent() + this->delay();
 	}
 
-#ifdef DEBUG
-	double theDelay;
-	osiTime copy;
-	if (pInitialDelay) {
-		theDelay = *pInitialDelay;
-	}
-	else {
-		theDelay = this->delay();
-	}
-	printf ("Arm of \"%s\" with delay %lf at %x\n", 
-		this->name(), theDelay, (unsigned)this);
-#endif
 
 	//
 	// insert into the pending queue
 	//
 	// Finds proper time sorted location using
 	// a linear search.
+	//
 	// **** this should use a binary tree ????
 	//
-        while ( (pTmr = iter()) ) {
-                if (pTmr->exp >= this->exp) {
+	tsDLIter<osiTimer> iter (staticTimerQueue.pending);
+        while ( (pTmr = iter.prev()) ) {
+                if (pTmr->exp <= this->exp) {
                         break;
                 }
+#		ifdef DEBUG
+			preemptCount++;
+#		endif
         }
 	if (pTmr) {
-        	staticTimerQueue.pending.insertBefore (*this, *pTmr);
+		//
+		// add after the item found that expires earlier
+		//
+        	staticTimerQueue.pending.insertAfter (*this, *pTmr);
 	}
 	else {
-        	staticTimerQueue.pending.add (*this);
+		//
+		// add to the beginning of the list
+		//
+        	staticTimerQueue.pending.push (*this);
 	}
 	this->state = ositPending;
 	
 #	ifdef DEBUG
 		staticTimerQueue.show(10u);
 #	endif
+
+#	ifdef DEBUG 
+		double theDelay;
+		if (pInitialDelay) {
+			theDelay = *pInitialDelay;
+		}
+		else {
+			theDelay = this->delay();
+		}
+		//
+		// name virtual function isnt always useful here because this is
+		// often called inside the constructor (unless we are
+		// rearming the same timer)
+		//
+		printf ("Arm of \"%s\" with delay %f at %lx preempting %u\n", 
+			this->name(), theDelay, (unsigned long)this, preemptCount);
+#	endif
+
 }
 
 //
@@ -151,7 +174,7 @@ osiTimer::~osiTimer()
 //
 // osiTimer::again()
 //
-osiBool osiTimer::again()
+osiBool osiTimer::again() const
 {
 	//
 	// default is to run the timer only once 
@@ -170,7 +193,7 @@ void osiTimer::destroy()
 //
 // osiTimer::delay()
 //
-const osiTime osiTimer::delay()
+const osiTime osiTimer::delay() const
 {
 	//
 	// default to 1 sec
@@ -178,7 +201,7 @@ const osiTime osiTimer::delay()
 	return osiTime (1.0);
 }
 
-void osiTimer::show (unsigned level)
+void osiTimer::show (unsigned level) const
 {
 	osiTime	cur(osiTime::getCurrent());
 	double delay;
@@ -201,14 +224,14 @@ void osiTimer::show (unsigned level)
 //
 // osiTimerQueue::delayToFirstExpire()
 //
-osiTime osiTimerQueue::delayToFirstExpire()
+osiTime osiTimerQueue::delayToFirstExpire() const
 {
 	osiTimer *pTmr;
 	osiTime cur(osiTime::getCurrent());
 	tsDLIter<osiTimer> iter(this->pending);
 	osiTime delay;
 
-	pTmr = iter();
+	pTmr = iter.next();
 	if (pTmr) {
 		if (pTmr->exp>=cur) {
 			delay = pTmr->exp - cur;
@@ -224,7 +247,7 @@ osiTime osiTimerQueue::delayToFirstExpire()
 		delay = osiTime(30u * secPerMin, 0u);
 	}
 #ifdef DEBUG
-	printf("delay to first item on the queue %lf\n", (double) delay);
+	printf("delay to first item on the queue %f\n", (double) delay);
 #endif
 	return delay;
 }
@@ -234,7 +257,7 @@ osiTime osiTimerQueue::delayToFirstExpire()
 //
 void osiTimerQueue::process()
 {
-	tsDLIter<osiTimer> pendIter (this->pending);
+	tsDLFwdIter<osiTimer> pendIter (this->pending);
 	osiTime cur(osiTime::getCurrent());
 	osiTimer *pTmr;
 
@@ -244,7 +267,7 @@ void osiTimerQueue::process()
 	}
 	this->inProcess = osiTrue;
 
-	while ( (pTmr = pendIter()) ) {	
+	while ( (pTmr = pendIter.next()) ) {	
 		if (pTmr->exp >= cur) {
 			break;
 		}
@@ -258,13 +281,14 @@ void osiTimerQueue::process()
 	// above list while in an "expire()" call back
 	//
 	while ( (pTmr = this->expired.get()) ) {
-#ifdef DEBUG
-		double diff = cur-pTmr->exp;
-		printf ("expired %x for \"%s\" with error %lf\n", 
-			pTmr, pTmr->name(), diff);
-#endif
 
 		pTmr->state = ositLimbo;
+
+#ifdef DEBUG
+		double diff = cur-pTmr->exp;
+		printf ("expired %lx for \"%s\" with error %f\n", 
+			(unsigned long)pTmr, pTmr->name(), diff);
+#endif
 
                 //
                 // Tag current tmr so that we
@@ -292,16 +316,16 @@ void osiTimerQueue::process()
 }
 
 //
-// osiTimerQueue::show()
+// osiTimerQueue::show() const
 //
-void osiTimerQueue::show(unsigned level)
+void osiTimerQueue::show(unsigned level) const
 {
-	tsDLIter<osiTimer> iter (this->pending);
 	osiTimer *pTmr;
 
 	printf("osiTimerQueue with %d items pending and %d items expired\n",
 		this->pending.count(), this->expired.count());
-	while ( (pTmr = iter()) ) {	
+	tsDLIter<osiTimer> iter (this->pending);
+	while ( (pTmr = iter.next()) ) {	
 		pTmr->show(level);
 	}
 }
@@ -330,4 +354,12 @@ osiTimerQueue::~osiTimerQueue()
 	}
 }
 
+//
+// osiTimer::name()
+// virtual base default 
+//
+const char *osiTimer::name() const
+{
+	return "osiTimer";
+}
 

@@ -5471,6 +5471,10 @@ long dbPut(
 	long		*pfield_name;
 	long		special=paddr->special;
 	short		field_type=paddr->field_type;
+	unsigned short	acks=0;
+	unsigned short	ackt=0;
+	unsigned short	oldacks=0;
+	unsigned short	oldackt=0;
 
 	/* Check for valid request */
 	if( INVALID_DB_REQ(dbrType) || (field_type>DBF_DEVCHOICE)
@@ -5490,6 +5494,10 @@ long dbPut(
 	    if(special<100) { /*global processing*/
 		if(special==SPC_NOMOD) return(S_db_noMod);
 		if(special==SPC_SCAN) scanDelete(precord);
+		if(special==SPC_ALARMACK) {
+		    oldacks=precord->acks;
+		    oldackt=precord->ackt;
+		}
 	    }
 	    else {
 		if( prset && (pspecial = (prset->special))) {
@@ -5524,6 +5532,22 @@ long dbPut(
 	if(special) {
 	    if(special<100) { /*global processing*/
 		if(special==SPC_SCAN) scanAdd(precord);
+		if(special==SPC_ALARMACK) {
+		    acks=precord->acks;
+		    ackt=precord->ackt;
+		    if(acks!=oldacks) {
+			if(oldacks>0 && oldacks<acks) {
+			    precord->acks = 0;
+			    db_post_events(precord,&precord->acks,DBE_VALUE);
+			}
+		    }
+		    if(ackt!=oldackt) {
+			if(!ackt && acks>precord->sevr) {
+			    precord->acks = precord->sevr;
+			    db_post_events(precord,&precord->acks,DBE_VALUE);
+			}
+		    }
+		}
 	    }
 	    else {
 		status=(*pspecial)(paddr,1);

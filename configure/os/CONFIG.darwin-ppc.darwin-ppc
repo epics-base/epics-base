@@ -15,6 +15,16 @@ CC = $(GNU_BIN)/cc
 CCC = $(GNU_BIN)/c++
 
 #
+# Darwin shared libraries
+#
+SHRLIB_LDFLAGS = -dynamiclib -flat_namespace -undefined suppress \
+       -install_name $(firstword $(SHRLIB_SEARCH_DIRS))/$@ \
+       -compatibility_version $(EPICS_VERSION).$(EPICS_REVISION) \
+       -current_version $(EPICS_VERSION).$(EPICS_REVISION).$(EPICS_MODIFICATION)
+SHRLIB_SUFFIX = $(addprefix .,$(EPICS_VERSION).$(EPICS_REVISION).$(EPICS_MODIFICATION)).dylib
+SHRLIB_VERSION = $(EPICS_VERSION).$(EPICS_REVISION).$(EPICS_MODIFICATION)
+
+#
 # Position-independent code is the default on Darwin.
 #
 CODE_CFLAGS = 

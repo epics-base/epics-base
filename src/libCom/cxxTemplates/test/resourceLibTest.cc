@@ -13,18 +13,21 @@
 #include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>
 
 #define epicsExportSharedSymbols
 #define instantiateRecourceLib
 #include "resourceLib.h"
-
-void empty();
 
 #if defined(__GNUC__) && ( __GNUC__<2 || (__GNUC__==2 && __GNUC__<8) )
 typedef intId<unsigned,8,16> testIntId;
 #else
 typedef intId<unsigned,8> testIntId;
 #endif
+
+static void empty()
+{
+}
 
 class albert : public testIntId, public tsSLNode<albert> {
 public:
@@ -87,7 +90,7 @@ int main()
 	unsigned i;
 	clock_t start, finish;
 	double duration;
-	const unsigned LOOPS = 50000;
+	const unsigned LOOPS = 500000;
 	resTable < fred, testIntId > intTbl;	
 	resTable < jane, stringId> strTbl;	
 	fred fred0("fred0",0);
@@ -232,25 +235,25 @@ int main()
 
 	start = clock();
 	for(i=0; i<LOOPS; i++){
-		empty();
-		empty();
-		empty();
-		empty();
-		empty();
-		empty();
-		empty();
-		empty();
-		empty();
-		empty();
+        strlen ( "0" );
+        strlen ( "1" );
+        strlen ( "2" );
+        strlen ( "3" );
+        strlen ( "4" );
+        strlen ( "5" );
+        strlen ( "6" );
+        strlen ( "7" );
+        strlen ( "8" );
+        strlen ( "9" );
 	}
 	finish = clock();
 	duration = finish-start;
 	duration /= CLOCKS_PER_SEC;
-	printf("It took %15.10f total sec for empty subroutines\n", duration);
+	printf("It took %15.10f total sec for minimal subroutines\n", duration);
 	duration /= LOOPS;
 	duration /= 10;
 	duration *= 1e6;
-	printf("It took %15.10f u sec to call an empty subroutine\n", duration);
+	printf("It took %15.10f u sec to call a minimal subroutine\n", duration);
     
 	//
 	// hash distribution test
@@ -299,7 +302,5 @@ int main()
 	return 0;
 }
 
-void empty()
-{
-}
+
 

@@ -18,18 +18,16 @@ include $(TOP)/configure/CONFIG
 #
 #	This is used on all systems:
 USR_CFLAGS         = -DVAR=value -Ddefine_for_all_systems
-#	This is added to the above, but only for OS_CLASS=BSD:
-USR_CFLAGS_BSD     = -DVERSION='Berkeley enhanced'
 #	..only for WIN32:
 USR_CFLAGS_WIN32   = -DVERSION='WIN32 port'
 #
 #	-nil- is special:
-#	if USR_CFLAGS_SYSV was undefined or empty, .._DEFAULT would have
+#	if USR_CFLAGS_WIN32 was undefined or empty, .._DEFAULT would have
 #	been used.
 #	To indicate
-#		"yes, there is a special USR_CFLAGS for SYSV, but it's empty"
+#		"yes, there is a special USR_CFLAGS for WIN32, but it's empty"
 #	you have to set it to -nil-:
-USR_CFLAGS_SYSV    = -nil-
+USR_CFLAGS_WIN32    = -nil-
 #	.. for all other arch classes:
 USR_CFLAGS_DEFAULT = -DVERSION='generic Unix'
 
@@ -58,7 +56,7 @@ a_file_CFLAGS_WIN32   = -DVERSION='WIN32 port'
 #
 INC_DEFAULT = for_all_but_WIN32_or_hp700.h
 INC_WIN32   = only_for_WIN32.h
-INC_hp700   = -nil-		# hp700 uses no special include
+INC_hpux   = -nil-		# hpux uses no special include
 INC         = file.h
 
 # --------------------------------------------------------------------
@@ -85,17 +83,17 @@ INC         = file.h
 SRCS            = file_for_lib.c another_file.cpp
 SRCS_DEFAULT    = posix.c
 SRCS_WIN32      = win32_special.c
-SRCS_BSD        = -nil-
+SRCS_Linux      = -nil-
 #
-<libname>_SRCS            = file_for_lib.c another_file.cpp
-<libname>_SRCS_DEFAULT    = posix.c
-<libname>_SRCS_WIN32      = win32_special.c
-<libname>_SRCS_BSD        = -nil-
+libname_SRCS            = file_for_lib.c another_file.cpp
+libname_SRCS_DEFAULT    = posix.c
+libname_SRCS_WIN32      = win32_special.c
+libname_SRCS_Linux      = -nil-
 #
 LIBSRCS         = file_for_lib.c another_file.cpp
 LIBSRCS_DEFAULT = posix.c
 LIBSRCS_WIN32   = win32_special.c
-LIBSRCS_BSD     = -nil-
+LIBSRCS_Linux   = -nil-
 
 #	Library to build:
 #	lib$(LIBRARY).a  or   ..dll/..exp/..lib
@@ -167,8 +165,8 @@ foolib_DIR = $(FOO_LIB)
 PROD         = prod
 PROD_DEFAULT = product_for_rest
 PROD_WIN32   = product_only_for_WIN32
-PROD_BSD     = product_only_for_BSD
-PROD_SYSV    = product_only_for_SYSV
+PROD_Linux   = product_only_for_Linux
+PROD_solaris = product_only_for_solaris
 
 #	Product version
 PROD_VERSION = 
@@ -182,7 +180,7 @@ PROD_VERSION =
 #
 SCRIPTS_DEFAULT = script_for_rest
 SCRIPTS_WIN32   = script_only_for_WIN32
-SCRIPTS_BSD     = script_only_for_BSD
+SCRIPTS_Linux   = script_only_for_Linux
 SCRIPTS         = script
 
 #	if you want to build products locally without installing:

@@ -1,10 +1,13 @@
+# CONFIG_SITE.linux-x86.Common
 #
 # $Id$
+# This file is maintained by the build community.
 #
-# Site Specific Configuration Information
-# Only the local epics system manager should modify this file
+# Site override definitions for linux-x86 host builds
+#-------------------------------------------------------
  
 # JBA test override values
+#CROSS_COMPILER_TARGET_ARCHS = vxWorks-68040 solaris-sparc
 #CROSS_COMPILER_TARGET_ARCHS = vxWorks-68040
 
 # NOTE: If YES then LD_LIBRARY_PATH must include the full
@@ -13,3 +16,4 @@
 # Alternatively the full pathname can be added to /etc/ld.so.conf
 # and ldconfig run to inform the system of the shared libraries.
 SHARED_LIBRARIES=YES
+

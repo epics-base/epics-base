@@ -15,7 +15,9 @@ DBDFLAGS = $(USR_DBDFLAGS) -I . -I .. $(INSTALL_DBDFLAGS)
 
 #####################################################  Targets
 
+# Following line added for backward compatibilty
 DBD += $(DBDNAME)
+
 DBD += $(addsuffix .dbd,$(patsubst %.h,%,$(patsubst %.db,%,$(DBDINC))))
 INC += $(addsuffix .h,$(patsubst %.h,%,$(patsubst %.db,%,$(DBDINC))))
 

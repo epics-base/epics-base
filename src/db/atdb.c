@@ -62,7 +62,11 @@ char **argv;
     }
     fpdctsdr = fopen(argv[1],"r");
     if(!fpdctsdr) {
-	errMessage(0,"Error opening file");
+	errMessage(0,"Error opening input file");
+	exit(-1);
+    }
+    if(fopen(argv[2],"r") {
+	errMessage(-1,"Output File already exists");
 	exit(-1);
     }
     pdbbase=dbAllocBase();
@@ -76,7 +80,7 @@ char **argv;
     yyparse();
     fp=fopen(argv[2],"w");
     if(fp==NULL) {
-    	errMessage(0,"Error opening file");
+    	errMessage(0,"Error opening output file");
     	exit(-1);
     }
     status = dbWrite(pdbbase,fpdctsdr,fp);

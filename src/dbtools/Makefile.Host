@@ -19,14 +19,15 @@ MAN1    := dbLoadTemplate.1 subtool.1
 MAN3    := dbLoadRecords.3 dbLoadTemplate.3
 MAN5    := templatefile.5 dbfile.5
 
+#	---------------------------------------
 #	the BSlib is not ported to WIN32,
 #	this results in less buildable products
-#
+#	---------------------------------------
 ifdef WIN32
 
 #	uses getopt, optind, optarg from lib Com:
 PROD_LIBS := Db Com
-PROD      := dbLoadTemplate
+PROD      := subtool dbLoadTemplate
 
 else
 
@@ -38,8 +39,6 @@ LIBRARY := BSlib
 #	products to build,
 #	all use BSlib, dbLoadTemplate needs lib Db:
 #	(it doesn't hurt if all link Db...)
-#
-#	but
 #
 PROD_LIBS := BSlib Db Com
 PROD      := subtool dbLoadTemplate rdbls rdbapplist PVSserver

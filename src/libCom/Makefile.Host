@@ -64,9 +64,13 @@ LIBSRCS += macCore.c
 LIBSRCS += macUtil.c
 LIBSRCS += sigPipeIgnore.c
 LIBSRCS += dbmf.c
+LIBSRCS += ipAddrToA.c
 
 #
 # if CPLUSPLUS isnt empty then include C++ src codes
+#	Note: After including/excluding files here,
+#	e.g. the C++ stuff,
+#	please check Com.def!
 #
 LIBSRCS += $(patsubst %,fdManager.cc,$(strip $(CPLUSPLUS)))
 LIBSRCS += $(patsubst %,osiTimer.cc,$(strip $(CPLUSPLUS)))
@@ -75,7 +79,8 @@ LIBSRCS += $(patsubst %,osdTime.cc,$(strip $(CPLUSPLUS)))
 
 #	WIN32 has no getopt, we add it to the Com lib,
 #	special initialisation is done in winmain.c
-LIBSRCS_WIN32 := getopt.c dllmain.cc
+#LIBSRCS_WIN32 := getopt.c dllmain.cc
+LIBSRCS_WIN32 := getopt.c
 
 #       Library to build:
 #       lib$(LIBRARY).a  or   ..dll/..exp/..lib
@@ -92,9 +97,7 @@ PROD_LIBS=Com
 #	tsTest does not use the default tsTest.c:
 #TESTPROD_SRCS=tsSubr.c
 #TESTPROD=tsTest 
-
 #TESTPROD=envtest
-#TESTPROD = errMtst.c
 PROD := impExpand
 
 MAN3 = gpHash.3 freeList.3
@@ -118,29 +121,14 @@ ERR_S_FILES += $(TOP)/src/gdd/gddAppFuncTable.h
 
 include $(TOP)/config/RULES.Host
 
-#	The WIN32 scripts are simpler versions that should
-#	work on all systems.
-#	In order to keep the old ones, however, I moved
-#	the new ones to WIN32.  -kuk-
-#	Improvements:
-#	1) use only the simpler scripts (well,..)
-#	2) use C code instead (yes!)
-#
-ifdef WIN32
-TOOLDIR=../os/WIN32
-else
-TOOLDIR=..
-endif
-
 #	The real dependecies seem to confuse GNUmake:
 #	envData.c is rebuild every time...
 #envData.c: ../envDefs.h $(TOP)/config/CONFIG_ENV $(TOP)/config/CONFIG_SITE_ENV
 envData.c: ../envDefs.h
-	$(TOOLDIR)/bldEnvData $(TOP)/config
+	$(PERL) ../bldEnvData.pl $(TOP)/config
 
 errSymTbl.c: $(ERR_S_FILES)
-	@$(RM) -f errSymTbl.c
-	$(TOOLDIR)/makeStatTbl  $(ERR_S_FILES) >errSymTbl.c
+	$(PERL) ../makeStatTbl.pl  $(ERR_S_FILES)
 
 clean::
 	@$(RM) errSymTbl.c envData.c

@@ -30,9 +30,8 @@ include $(TOP)/config/RULES.Host
 #
 snc.c: snc_lex.c
 
-sncVersion.c: ../Version
-	$(RM) sncVersion.c
-	../makeVersion ../Version > sncVersion.c
+sncVersion.c: ../Version ../makeVersion.pl
+	$(PERL) ../makeVersion.pl ../Version sncVersion
 
 clean::
 	@$(RM) y.output sncVersion.c snc_lex.c snc.c snc.h

@@ -8,7 +8,7 @@ INC += epicsVersion.h
 INC += gsd_sync_defs.h
 INC += module_types.h
 INC += shareLib.h
-INC += createSoftLinks.sh 
+#INC += createSoftLinks.sh 
 INC += bsdProto.h
 INC += task_params.h
 INC += osiMutexNOOP.h
@@ -17,15 +17,10 @@ OSINC += osiSock.h
 
 include $(TOP)/config/RULES.Host
 
-include $(TOP)/config/CONFIG_BASE_VERSION
-
+#	This seems to be handled wrong by gnumake:
+#	epicsVersion.h is rebuild in any case,
+#	no matter what date ...CONFIG_BASE_VERSION has
 epicsVersion.h: $(TOP)/config/CONFIG_BASE_VERSION
-	@$(RM) $@
-	@echo "#define EPICS_VERSION           $(EPICS_VERSION)" > $@
-	@echo "#define EPICS_REVISION          $(EPICS_REVISION)" >> $@
-	@echo "#define EPICS_MODIFICATION      $(EPICS_MODIFICATION)" >> $@
-	@echo "#define EPICS_UPDATE_NAME       $(EPICS_UPDATE_NAME)" >> $@
-	@echo "#define EPICS_UPDATE_LEVEL      $(EPICS_UPDATE_LEVEL)" >> $@
-	@echo "#define EPICS_VERSION_STRING    \"$(EPICS_VERSION_STRING)\" " >> $@
-	@echo "#define epicsReleaseVersion \"@(#)$(EPICS_VERSION_STRING) $(CVS_DATE)\" " >> $@
+	perl ../makeEpicsVersion.pl $(TOP)/config/CONFIG_BASE_VERSION
+
 

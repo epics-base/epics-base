@@ -30,5 +30,5 @@ built_release:
 
 uninstall::
 	@DIR1=`pwd`;cd $(INSTALL_LOCATION);DIR2=`pwd`;cd $$DIR1;\
-	if [ "$$DIR1" != "$$DIR2" ]; then rm -fr $(INSTALL_LOCATION)/config; fi
+	if [ "$$DIR1" != "$$DIR2" ]; then $(RMDIR) $(INSTALL_LOCATION)/config; fi
 

@@ -83,23 +83,15 @@ include $(TOP)/config/RULES.Vx
 clean::
 	@$(RM) errSymTbl.c envData.c
 
-#	In principle the simplified scripts in ../WIN32
-#	should work on all archs, but I decided to
-#	keep the "originals" for now.  -kuk-
-ifeq ($(HOST_ARCH),WIN32)
-TOOLDIR=../os/WIN32
-else
-TOOLDIR=..
-endif
-
-envData.c: ../envDefs.h $(TOP)/config/CONFIG_ENV \
-        $(TOP)/config/CONFIG_SITE_ENV
-	$(TOOLDIR)/bldEnvData $(TOP)/config
+# The (otherwise correct) $(TOP)... dependencies are handled wrong by GNUmake,
+# it rebuilds envData.c in any case:
+#envData.c: ../envDefs.h $(TOP)/config/CONFIG_ENV $(TOP)/config/CONFIG_SITE_ENV
+envData.c: ../envDefs.h
+	$(PERL) ../bldEnvData.pl $(TOP)/config
 
 errSymTbl.o: errSymTbl.c
 	$(COMPILE.c) -o $@ $<
 
 errSymTbl.c: $(ERR_S_FILES)
-	$(RM) errSymTbl.c ;\
-	$(TOOLDIR)/makeStatTbl  $(ERR_S_FILES) >errSymTbl.c
+	$(PERL) ../makeStatTbl.pl  $(ERR_S_FILES)
 

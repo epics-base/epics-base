@@ -22,6 +22,5 @@ $(PROD): $(OBJS)
 	$(RM) $@
 	$(LINK.c) $@ $(OBJS) $(LDLIBS)
 
-seqVersion.c: ../Version
-	$(RM) seqVersion.c
-	../makeSeqVersion ../Version > seqVersion.c
+seqVersion.c: ../Version ../makeVersion.pl
+	$(PERL) ../makeVersion.pl ../Version seqVersion

@@ -32,6 +32,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.25  1997/04/10 19:26:20  jhill
+ * asynch connect, faster connect, ...
+ *
  * Revision 1.24  1997/01/09 22:14:26  jhill
  * installed changes on hostBuild branch
  *
@@ -49,27 +52,6 @@
  *
  * Revision 1.20  1995/12/19  19:36:20  jhill
  * function prototype changes
- *
- * Revision 1.19  1995/11/29  19:15:42  jhill
- * added $Log$
- * added Revision 1.24  1997/01/09 22:14:26  jhill
- * added installed changes on hostBuild branch
- * added
- * added Revision 1.23.2.1  1996/11/25 16:29:18  jhill
- * added stuct=>struct and added debug msg
- * added
- * added Revision 1.23  1996/11/02 00:51:12  jhill
- * added many pc port, const in API, and other changes
- * added
- * added Revision 1.22  1996/09/16 16:40:13  jhill
- * added make EPICS version be the console title
- * added
- * added Revision 1.21  1996/08/05 19:20:29  jhill
- * added removed incorrect ver number
- * added
- * Revision 1.20  1995/12/19  19:36:20  jhill
- * function prototype changes
- * to the header
  *
  */
 
@@ -496,7 +478,7 @@ BOOL epicsShareAPI DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 						
 #if _DEBUG			  /* for gui applications, setup console for error messages */
 		if (AllocConsole())	{
-			SetConsoleTitle(EPICS_VERSION_STRING);
+			SetConsoleTitle(BASE_VERSION_STRING);
     		freopen( "CONOUT$", "a", stderr );
 		}
 #ifndef NO_PROCESS_MSG
@@ -556,6 +538,5 @@ return TRUE;
 
 
 }
-
 
 

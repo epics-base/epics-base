@@ -60,7 +60,7 @@ foreach $i (0 .. $#ARGV-2) {
     push @dirs, $ARGV[$i];
 }
 #some generic declarations
-my( $file, $line, $object, $source );
+my( $file, $line);
 
 my %scanned;                   # list of directories/files already scanned
 my $object = $ARGV[$#ARGV-1];  # object file

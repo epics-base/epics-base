@@ -74,11 +74,20 @@ typedef int SOCKET;
 #include <socket.h>
 #include <addrList.h>
 
+/*
+ * !! align and buf must be next to each other !!
+ *
+ * The dbr_double_t pad guarantees buf will have
+ * proper alignment because dbr_double_t is currently 
+ * the largest atomic data type passed in the CA protocol 
+ * (I really should malloc the buffer)
+ */
 struct message_buffer{
+  const dbr_double_t		pad;
+  char 				buf[MAX_MSG_SIZE];
   unsigned long 		stk;
   unsigned long			maxstk;
   long				cnt;			
-  char 				buf[MAX_MSG_SIZE];
 };
 
 struct client{
@@ -89,9 +98,9 @@ struct client{
   FAST_LOCK			eventqLock;
   ELLLIST			addrq;
   ELLLIST			putNotifyQue;
+  struct sockaddr_in		addr;
   struct message_buffer		send;
   struct message_buffer		recv;
-  struct sockaddr_in		addr;
   unsigned long			ticks_at_last_send;
   unsigned long			ticks_at_last_recv;
   void				*evuser;
@@ -165,6 +174,7 @@ char				get;		/* T: get F: monitor */
 GLBLTYPE int			CASDEBUG;
 GLBLTYPE int 		 	IOC_sock;
 GLBLTYPE int			IOC_cast_sock;
+GLBLTYPE int			ca_server_port;
 GLBLTYPE ELLLIST		clientQ;	/* locked by clientQlock */
 GLBLTYPE ELLLIST		rsrv_free_clientQ; /* locked by clientQlock */
 GLBLTYPE ELLLIST		rsrv_free_addrq;

@@ -6,7 +6,8 @@ include $(TOP)/config/RULES_DIRS
 
 uninstall$(DIVIDER)%::
 	@$(RMDIR) $(INSTALL_LOCATION_BIN)/$* $(INSTALL_LOCATION_LIB)/$* \
-		$(INSTALL_LOCATION)/dbd $(INSTALL_MAN) $(INSTALL_INCLUDE)
+		$(INSTALL_LOCATION)/dbd $(INSTALL_MAN) $(INSTALL_INCLUDE) \
+		$(INSTALL_DOC) $(INSTALL_DBD)
 	@$(RMDIR)  rec.bak rec
 
 uninstall:: $(addprefix uninstall$(DIVIDER),$(BUILD_ARCHS))

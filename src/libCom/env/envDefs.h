@@ -80,6 +80,7 @@ epicsShareExtern READONLY ENV_PARAM EPICS_CA_BEACON_PERIOD;
 epicsShareExtern READONLY ENV_PARAM EPICS_CA_AUTO_ADDR_LIST;
 epicsShareExtern READONLY ENV_PARAM EPICS_CA_REPEATER_PORT;
 epicsShareExtern READONLY ENV_PARAM EPICS_CA_SERVER_PORT;
+epicsShareExtern READONLY ENV_PARAM EPICS_CA_MAX_ARRAY_BYTES;
 epicsShareExtern READONLY ENV_PARAM EPICS_CAS_INTF_ADDR_LIST;
 epicsShareExtern READONLY ENV_PARAM EPICS_CAS_BEACON_ADDR_LIST; 
 epicsShareExtern READONLY ENV_PARAM EPICS_CAS_SERVER_PORT;
@@ -92,12 +93,9 @@ epicsShareExtern READONLY ENV_PARAM EPICS_IOC_LOG_FILE_NAME;
 epicsShareExtern READONLY ENV_PARAM EPICS_IOC_LOG_FILE_COMMAND;
 epicsShareExtern READONLY ENV_PARAM EPICS_CMD_PROTO_PORT;
 epicsShareExtern READONLY ENV_PARAM EPICS_AR_PORT;
-#define EPICS_ENV_VARIABLE_COUNT 18
+#define EPICS_ENV_VARIABLE_COUNT 19
 
 /*
- * N elements added here to satisfy microsoft development tools
- * (includes room for nill termination)
- *
  * bldEnvData looks for "epicsShareExtern ENV_PARAM" so
  * this always needs to be divided into two lines
  */

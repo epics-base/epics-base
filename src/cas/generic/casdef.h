@@ -30,6 +30,9 @@
  * 	Modification Log:
  * 	-----------------
  * 	$Log$
+ * 	Revision 1.2  1996/06/20 18:09:43  jhill
+ * 	changed where casInternal comes from
+ *
  * 	Revision 1.1.1.1  1996/06/20 00:28:16  jhill
  * 	ca server installation
  *
@@ -79,15 +82,11 @@
 #include <alarm.h>		// EPICS alarm severity/condition 
 #include <errMdef.h>		// EPICS error codes 
 #include <gdd.h> 		// EPICS data descriptors 
-#if 0
-#include <gddApps.h> 		// EPICS data descriptors appl data types 
-#include <gddAppTable.h> 	// EPICS application type table 
-#endif
 
 typedef aitUint32 caStatus;
 
-#include <casEventMask.h>
-#include <../src/cas/generic/casInternal.h>
+#include <casEventMask.h>	// EPICS event select class 
+#include <casInternal.h>	// CA server private 
 
 /*
  * ===========================================================

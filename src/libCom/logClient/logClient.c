@@ -552,7 +552,6 @@ LOCAL void logRestart ( void *pPrivate )
  */
 LOCAL void logClientGlobalInit ()
 {
-    static const unsigned logRestartStackSize = 0x2000;
 
     logClientGlobalMutex = epicsMutexCreate ();
     if (!logClientGlobalMutex) {
@@ -570,8 +569,10 @@ LOCAL void logClientGlobalInit ()
         return;
     }
     
-    logClientThreadId = epicsThreadCreate ("logRestart", epicsThreadPriorityLow, 
-                            logRestartStackSize, logRestart, 0);
+    logClientThreadId = epicsThreadCreate ("logRestart",
+        epicsThreadPriorityLow, 
+        epicsThreadGetStackSize(epicsThreadStackSmall),
+        logRestart, 0);
     if (logClientThreadId==NULL) {
         epicsMutexDestroy (logClientGlobalMutex);
         logClientGlobalMutex = NULL;

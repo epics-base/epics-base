@@ -154,7 +154,7 @@ unsigned int		mask;
 	register unsigned int work;
 
 	/* verify card exists */
-	if (card < 0 || !pbo_xy220s[card])
+	if (!pbo_xy220s[card])
 		return (-1);
 
 	/* use structure to handle high and low short swap */
@@ -185,7 +185,7 @@ register unsigned int 		*pval;
     register unsigned int work;
 
 	/* verify card exists */
-	if (card < 0 || !pbo_xy220s[card])
+	if (!pbo_xy220s[card])
 		return (-1);
 	/* readback */
 	*pval = (pbo_xy220s[card]->high_value << 16) + pbo_xy220s[card]->low_value;  

@@ -153,7 +153,7 @@ register unsigned int	*prval;
 	register unsigned int	work;
 
                 /* verify card exists */
-                if (card < 0 || !pbi_xy210s[card]){
+                if (!pbi_xy210s[card]){
                         return (-1);
                 }
 

@@ -46,6 +46,7 @@
  * .10	08-05-92	joh	added EPICS driver dispatch table	
  * .11	08-05-92	joh	moved parameters from ao_driver.h to here
  * .12	08-11-92	joh	num of cards now dyn configurable	
+ * .13	08-24-93	mrk	removed use of variable base_addr
  */
 
 static char *sccsID = "$Id$\t$Date$";
@@ -95,13 +96,10 @@ int vmi4100_addr;
 long vmi4100_init()
 {
 	register unsigned short **pcards_present;
-	register unsigned short *base_addr;  
 	short			shval;
         int                     status;
 	register union aoVMI	*pcard;
 	register short		i;
-
-	base_addr = (unsigned short *)ao_addrs[VMI4100];  
 
 	pao_vmi4100 = (unsigned short  **)
 		calloc(MAX_AO_VMI_CARDS, sizeof(*pao_vmi4100));
@@ -111,7 +109,7 @@ long vmi4100_init()
 
 	pcards_present = pao_vmi4100;
 
-        if ((status = sysBusToLocalAdrs(VME_AM_SUP_SHORT_IO,base_addr, &vmi4100_addr)) != OK){ 
+        if ((status = sysBusToLocalAdrs(VME_AM_SUP_SHORT_IO,ao_addrs[VMI4100], &vmi4100_addr)) != OK){ 
            printf("Addressing error in vmi4100 driver\n");
            return ERROR;
         }

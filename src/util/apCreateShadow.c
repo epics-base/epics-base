@@ -1,11 +1,13 @@
 /*
  *	apCreateShadow.c
- *
+ *	todo - if symbolic link is relative 
+ *		- it should be the same as the one in the source area
  */
 
 #include <stdio.h>
 #include <string.h>
 #include <fcntl.h>
+#include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/param.h>
@@ -103,12 +105,14 @@ createLink()
      the symbolic link).  Either name may be  an  arbitrary  path
      name; the files need not be on the same file system.
  */
+if ( access(dpath,R_OK|F_OK)) {
     if ((symlink(spath, dpath)) != 0) {
 	printf("\n####################################################\n");
 	printf("createLink:  symlink failure: errno=%d\nspath=%s\n\tdpath=%s\n"
 	       ,errno, spath, dpath);
 	printf("####################################################\n");
     }
+}
 }
 /****************************************************************************
 DIRWALK applies a function to each file in a directory
@@ -142,7 +146,7 @@ dirwalk(dir, fcn)
 static void
 Usage()
 {
-    printf("\nUsage:\t%s <top>\n", progName);
+    printf("\nUsage:\t%s <root of application system area>\n", progName);
 }
 
 /****************************************************************************
@@ -332,12 +336,13 @@ procDirEntries(name)
 	strcpy(dpath, dest_base);
 	strcat(dpath, "/");
 	strcat(dpath, name);
+if ( access(dpath,R_OK|F_OK)) {
 	if ((mkdir(dpath, 0755)) != 0) {
 	    printf("####################################################\n");
-	    printf("procDirEntries: Can't mkdir %s\n", dpath);
+	    printf("procDirEntries: Can't mkdir %s - errno=%d\n", dpath,errno);
 	    printf("####################################################\n");
-	    exit(1);
 	}
+}
 	dirwalk(name, procDirEntries);
     }
     return;

@@ -1,7 +1,11 @@
+
 /*
 
+TODO
+change to execute permissions on apRemoveScript
+
 TODO - if the apRemoveScript is empty - skip the postamble
-	add directions for redoing apCreateShadow
+
 
  * APSTATUSSYNC.C
  *
@@ -61,6 +65,7 @@ main(argc, argv)
     else
 	verbose = FALSE;
 
+fprintf(stdout, "\n\napStatusSync: Status Started  ==>> ==>> ==>> ==>> ==>>\n");
     if ((initScriptFile()) != 0)
 	return (-1);
     if ((processTopDir()) != 0)
@@ -318,7 +323,7 @@ dirwalk(dir, fcn)
     strcat(name, "/");
     strcat(name, dir);
     if ((stat(name, &sb) != 0)) {
-	sprintf(buffer, "\t#/bin/rm -fr  ./%s\t#private directory\n", dir);
+	sprintf(buffer, "#/bin/rm -fr  ./%s\t#private directory\n", dir);
 	if ((appendToScriptFile(buffer)) < 0)
 	    return (-1);
     }
@@ -391,7 +396,7 @@ initScriptFile()
     }
     if ((stat(pScriptFileName, &sb) == 0)) {
 	fprintf(stderr,
-	  "\napStatusSync: - file: '%s' already exists\n", pScriptFileName);
+	  "\napStatusSync: - The previous output file '%s' still exists\n", pScriptFileName);
 	fprintf(stderr,
 		"Please remove the file and try again\n");
 	fprintf(stderr,
@@ -414,6 +419,8 @@ closeScriptFile()
 	fprintf(stderr, "apStatusSync: closeScriptFile() - %s not open\n", pScriptFileName);
 	return (-1);
     }
+chmod("apRemoveScript",0755);
+close (apRemoveScriptFp);
 return(0);
 }
 /****************************************************************************
@@ -452,11 +459,16 @@ wrt_buf(fp, pstring, pfile)
 }
 postAmble()
 {
-fprintf(stdout,"\napStatusSync completed\n");
-fprintf(stdout,"Please review the 'apRemoveScript' remove script.\n");
-fprintf(stdout,"Enable the appropriate unix commands by\n");
-fprintf(stdout,"removing the leading '#' character from the line\n");
-fprintf(stdout,"Then invoke the following unix command:\n");
+fprintf(stdout,"\n\napStatusSync: ============>> ==>> ==>> ==>> Status Completed \n");
+fprintf(stdout,"When you are satisfied with the above status - continue\n");
+fprintf(stdout," else - correct the situation and run apStatusSync again\n");
+fprintf(stdout,"\ncontinue below\n");
+fprintf(stdout,"\nNow please review the contents of the remove script file 'apRemoveScript'.\n");
+fprintf(stdout,"Enable each appropriate unix command by removing the leading '#'\n");
+fprintf(stdout,"character from the line\n");
+fprintf(stdout,"Then invoke the following unix commands:\n");
 fprintf(stdout,"\n");
-fprintf(stdout,"%%\tsh apRemoveScript\n");
+fprintf(stdout,"%%\tapRemoveScript\n");
+fprintf(stdout,"\tfollowed by\n");
+fprintf(stdout,"%%\tapCreateShadow\n");
 }

@@ -14,7 +14,8 @@ SRCS.c = \
 	../recEr.c ../recPal.c ../recSub.c ../recErevent.c \
 	../recPermissive.c ../recSwitch.c ../recEvent.c ../recPid.c \
 	../recTimer.c ../recFanout.c ../recPulseCounter.c ../recWaveform.c \
-	../recSubArray.c ../recWait.c ../caMonitor.c ../recScan.c
+	../recSubArray.c ../recWait.c ../caMonitor.c ../recScan.c \
+	../recAai.c ../recAao.c ../recDfanout.c ../recMbbiDirect.c ../recMbboDirect.c
 
 OBJS = \
 	recAi.o recGsub.o recPulseDelay.o recAo.o recHistogram.o \
@@ -24,7 +25,9 @@ OBJS = \
 	recStringin.o recEgevent.o recMbboDirect.o recStringout.o \
 	recEr.o recPal.o recSub.o recErevent.o recPermissive.o recSwitch.o \
 	recEvent.o recPid.o recTimer.o recFanout.o recPulseCounter.o \
-	recWaveform.o recSubArray.o recWait.o caMonitor.o recScan.o
+	recWaveform.o recSubArray.o recWait.o caMonitor.o recScan.o \
+	recAai.o recAao.o recDfanout.o recMbbiDirect.o recMbboDirect.o
+	
 
 PROD = recSup
 

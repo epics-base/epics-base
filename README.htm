@@ -13,18 +13,18 @@ xmlns="http://www.w3.org/TR/REC-html40">
  <o:DocumentProperties>
   <o:Author>...</o:Author>
   <o:LastAuthor>Jba</o:LastAuthor>
-  <o:Revision>11</o:Revision>
-  <o:TotalTime>1147</o:TotalTime>
+  <o:Revision>13</o:Revision>
+  <o:TotalTime>1155</o:TotalTime>
   <o:LastPrinted>2000-08-28T14:51:00Z</o:LastPrinted>
   <o:Created>2000-10-11T02:12:00Z</o:Created>
-  <o:LastSaved>2000-10-12T16:02:00Z</o:LastSaved>
+  <o:LastSaved>2000-10-25T18:57:00Z</o:LastSaved>
   <o:Pages>7</o:Pages>
-  <o:Words>2271</o:Words>
-  <o:Characters>12947</o:Characters>
+  <o:Words>2304</o:Words>
+  <o:Characters>13138</o:Characters>
   <o:Company>.....</o:Company>
-  <o:Lines>107</o:Lines>
-  <o:Paragraphs>25</o:Paragraphs>
-  <o:CharactersWithSpaces>15899</o:CharactersWithSpaces>
+  <o:Lines>109</o:Lines>
+  <o:Paragraphs>26</o:Paragraphs>
+  <o:CharactersWithSpaces>16134</o:CharactersWithSpaces>
   <o:Version>9.2720</o:Version>
  </o:DocumentProperties>
 </xml><![endif]--><!--[if gte mso 9]><xml>
@@ -359,9 +359,9 @@ yes">  </span>URL <a href="http://www.aps.anl.gov/Epics">http://www.aps.anl.gov/
 style='font-size:12.0pt;mso-bidi-font-size:10.0pt'><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></span></p>
 
 <p class=MsoNormal style='margin-left:.5in;mso-outline-level:5'><span
-style='font-size:12.0pt;mso-bidi-font-size:10.0pt'>This README.html is in the base
-distribution file and will be available on the IOC software R3.14 EPICS WWW page
-which can be accessed from the APS EPICS home page. <o:p></o:p></span></p>
+style='font-size:12.0pt;mso-bidi-font-size:10.0pt'>This README.html is in the
+base distribution file and will be available on the IOC software R3.14 EPICS
+WWW page which can be accessed from the APS EPICS home page. <o:p></o:p></span></p>
 
 <p class=MsoNormal><b><span style='font-size:14.0pt;mso-bidi-font-size:10.0pt'><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></span></b></p>
 
@@ -410,8 +410,8 @@ mso-bidi-font-size:10.0pt'>Distribution directory structure<o:p></o:p></span></b
 <p class=MsoPlainText style='margin-left:.5in;tab-stops:decimal .75in'><span
 style='font-size:12.0pt;mso-bidi-font-size:10.0pt;font-family:"Times New Roman";
 mso-fareast-font-family:"MS Mincho"'><span style='mso-tab-count:1'> </span>base<span
-style='mso-tab-count:4'>                                         </span>Root
-directory of the base distribution<o:p></o:p></span></p>
+style='mso-tab-count:4'>                                         </span>Root directory
+of the base distribution<o:p></o:p></span></p>
 
 <p class=MsoPlainText style='margin-left:2.5in;text-indent:-2.0in'><span
 style='font-size:12.0pt;mso-bidi-font-size:10.0pt;font-family:"Times New Roman";
@@ -493,8 +493,7 @@ base/src/libCom/osi/os<span style='mso-tab-count:1'>           </span>Operating
 system dependant code in subdirectories<br>
 base/src/libCom/test<span style='mso-tab-count:2'>               </span>Test
 tools (timer, semBinary, semMutex,fdmgr, …)<br>
-base/src/libCom/timer<span style='mso-tab-count:1'> </span><span
-style='mso-tab-count:1'>            </span>Timer<br>
+base/src/libCom/timer<span style='mso-tab-count:2'>            </span>Timer<br>
 base/src/libCom/taskwd<span style='mso-tab-count:1'>         </span>Task
 watchdog<br>
 base/src/libCom/cxxTemplatesC++ templates<br>
@@ -608,12 +607,12 @@ mso-bidi-font-size:10.0pt'>Set environment variable<o:p></o:p></span></b></p>
 
 <p class=MsoPlainText style='margin-left:1.0in'><span style='font-size:12.0pt;
 mso-bidi-font-size:10.0pt;font-family:"Times New Roman";mso-fareast-font-family:
-"MS Mincho"'>Before you can build or use EPICS R3.14, the environment variable EPICS_HOST_ARCH
-must be defined. A perl script EpicsHostArch.pl in the base/startup directory
-has been provided to help set EPICS_HOST_ARCH. You should have EPICS_HOST_ARCH
-set to </span><span style='font-size:12.0pt;mso-bidi-font-size:10.0pt;
-font-family:"Times New Roman"'>your host operating system followed by a dash
-and then your host architecture, e.g. solaris-sparc.<o:p></o:p></span></p>
+"MS Mincho"'>Before you can build or use EPICS R3.14, the environment variable
+EPICS_HOST_ARCH must be defined. A perl script EpicsHostArch.pl in the
+base/startup directory has been provided to help set EPICS_HOST_ARCH. You
+should have EPICS_HOST_ARCH set to </span><span style='font-size:12.0pt;
+mso-bidi-font-size:10.0pt;font-family:"Times New Roman"'>your host operating
+system followed by a dash and then your host architecture, e.g. solaris-sparc.<o:p></o:p></span></p>
 
 <p class=MsoNormal style='text-indent:.5in'><b><span style='font-size:14.0pt;
 mso-bidi-font-size:10.0pt'>Check path requirements<o:p></o:p></span></b></p>
@@ -621,10 +620,10 @@ mso-bidi-font-size:10.0pt'>Check path requirements<o:p></o:p></span></b></p>
 <p class=MsoPlainText style='margin-left:1.0in'><span style='font-size:12.0pt;
 mso-bidi-font-size:10.0pt;font-family:"Times New Roman";mso-fareast-font-family:
 "MS Mincho"'>As already mentioned, you must have the perl executable and you
-may need C and C++ compilers in your search path. For building base you also
-must have echo in your search path. For Unix host builds you also need touch,
-cpp, cp, rm, mv, and mkdir in your search path and /bin/chmod must exist. On
-some Unix systems you may also need ar and ranlib in you path.</span><b><span
+may need C and C++ compilers in your search path. For building base you also must
+have echo in your search path. For Unix host builds you also need touch, cpp,
+cp, rm, mv, and mkdir in your search path and /bin/chmod must exist. On some
+Unix systems you may also need ar and ranlib in you path.</span><b><span
 style='font-size:12.0pt;mso-bidi-font-size:10.0pt;font-family:"Times New Roman"'><o:p></o:p></span></b></p>
 
 <p class=MsoNormal style='text-indent:.5in'><b><span style='font-size:14.0pt;
@@ -696,7 +695,18 @@ style='mso-tab-count:1'>   </span>- Target cross build settings <o:p></o:p></spa
 <p class=MsoPlainText style='margin-left:1.2in'><span style='font-size:12.0pt;
 mso-bidi-font-size:10.0pt;font-family:"Times New Roman";mso-fareast-font-family:
 "MS Mincho"'>configure/os/CONFIG.&lt;host&gt;.&lt;target&gt;<span
-style='mso-tab-count:1'>      </span>- Host-target build settings </span></p>
+style='mso-tab-count:1'>      </span>- Host-target build settings <o:p></o:p></span></p>
+
+<p class=MsoPlainText style='margin-left:1.0in'><b><span style='font-size:12.0pt;
+mso-bidi-font-size:10.0pt;font-family:"Times New Roman"'>R3.13 compatibility
+configuration<o:p></o:p></span></b></p>
+
+<p class=MsoPlainText style='margin-left:1.0in'><span style='font-size:12.0pt;
+mso-bidi-font-size:10.0pt;font-family:"Times New Roman";mso-fareast-font-family:
+"MS Mincho"'>To configure EPICS base for building with R3.13 extensions and ioc
+applications , you will want to modify the default definitions in the
+base/config/CONFIG_SITE*<span style="mso-spacerun: yes">  </span>files to agree
+with the definitions in your configure/base files. </span></p>
 
 <p class=MsoNormal style='text-indent:.5in'><b><span style='font-size:14.0pt;
 mso-bidi-font-size:10.0pt'>Build EPICS base<o:p></o:p></span></b></p>
@@ -741,17 +751,17 @@ files generated by the build will be created in separate system subdirectories
 and installed into the appropriate separate host/target install directories.
 EPICS executables and perl scripts are installed into the
 $(INSTALL_LOCATION)/bin/&lt;arch&gt; directories. Libraries are installed into
-$(INSTALL_LOCATION)/lib/&lt;arch&gt;. The default definition for
-$(INSTALL_LOCATION) is $(TOP) which is the rootdirectory in the directory
-structure, base. Temporary objects are stored in O.&lt;arch&gt; source
-subdirectories, This allows objects for multiple cross target architectures to
-be maintained at the same time.</span><span style='font-size:12.0pt;mso-bidi-font-size:
-10.0pt'> </span><span style='font-size:12.0pt;mso-bidi-font-size:10.0pt;
-font-family:"Times New Roman"'>To build EPICS base for a specific host/target
-combination you must have the proper host/target c++ cross compiler and target
-header files and the base/configure/os directory must have the appropriate
-configure files.</span><span style='font-size:12.0pt;mso-bidi-font-size:10.0pt;
-font-family:"Times New Roman";mso-fareast-font-family:"MS Mincho"'><o:p></o:p></span></p>
+$(INSTALL_LOCATION)/lib/&lt;arch&gt;. The default definition for $(INSTALL_LOCATION)
+is $(TOP) which is the rootdirectory in the directory structure, base.
+Temporary objects are stored in O.&lt;arch&gt; source subdirectories, This
+allows objects for multiple cross target architectures to be maintained at the
+same time.</span><span style='font-size:12.0pt;mso-bidi-font-size:10.0pt'> </span><span
+style='font-size:12.0pt;mso-bidi-font-size:10.0pt;font-family:"Times New Roman"'>To
+build EPICS base for a specific host/target combination you must have the
+proper host/target c++ cross compiler and target header files and the
+base/configure/os directory must have the appropriate configure files.</span><span
+style='font-size:12.0pt;mso-bidi-font-size:10.0pt;font-family:"Times New Roman";
+mso-fareast-font-family:"MS Mincho"'><o:p></o:p></span></p>
 
 <p class=MsoPlainText><span style='font-size:12.0pt;mso-bidi-font-size:10.0pt;
 font-family:"Times New Roman";mso-fareast-font-family:"MS Mincho"'><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></span></p>
@@ -976,8 +986,8 @@ style='font-size:12.0pt;mso-bidi-font-size:10.0pt'>&lt;mytop&gt;/bin/&lt;hostarc
 style='font-size:12.0pt;mso-bidi-font-size:10.0pt'><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></span></p>
 
 <p class=MsoNormal style='margin-left:1.0in'><span style='font-size:12.0pt;
-mso-bidi-font-size:10.0pt'>where &lt;mytop&gt; is the full path name to your
-application top directory.<o:p></o:p></span></p>
+mso-bidi-font-size:10.0pt'>where &lt;mytop&gt; is the full path name to your application
+top directory.<o:p></o:p></span></p>
 
 <p class=MsoNormal><span style='font-size:12.0pt;mso-bidi-font-size:10.0pt'><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></span></p>
 
@@ -1014,7 +1024,8 @@ style='font-size:12.0pt;mso-bidi-font-size:10.0pt'><![if !supportEmptyParas]>&nb
 
 <p class=MsoNormal style='margin-left:1.0in;text-indent:.5in'><span
 style='font-size:12.0pt;mso-bidi-font-size:10.0pt'>boot device<span
-style='mso-tab-count:2'>                 </span>: xxx<o:p></o:p></span></p>
+style='mso-tab-count:1'>     </span><span style='mso-tab-count:1'>            </span>:
+xxx<o:p></o:p></span></p>
 
 <p class=MsoNormal><span style='font-size:12.0pt;mso-bidi-font-size:10.0pt'><span
 style="mso-spacerun: yes">    </span><span style='mso-tab-count:3'>                                </span>processor
@@ -1073,9 +1084,9 @@ style='mso-tab-count:2'>                      </span>:<o:p></o:p></span></p>
 <p class=MsoNormal><span style='font-size:12.0pt;mso-bidi-font-size:10.0pt'><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></span></p>
 
 <p class=MsoNormal style='margin-left:1.0in'><span style='font-size:12.0pt;
-mso-bidi-font-size:10.0pt'>The actual values for each field are site and IOC
-dependent. Two fields that you can change at will are the vxWorks boot image and
-the location of the startup script. <o:p></o:p></span></p>
+mso-bidi-font-size:10.0pt'>The actual values for each field are site and IOC dependent.
+Two fields that you can change at will are the vxWorks boot image and the
+location of the startup script. <o:p></o:p></span></p>
 
 <p class=MsoNormal><span style='font-size:12.0pt;mso-bidi-font-size:10.0pt'><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></span></p>
 

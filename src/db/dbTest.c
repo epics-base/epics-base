@@ -46,7 +46,7 @@
 /* Global Database Test Routines - All can be invoked via vxWorks shell*/
 long dba(char*pname);		/*dbAddr info */
 long dbel(char*pname);		/*CA event list */
-long dbl(char	*precordTypename,char *filename);  /*list records*/
+long dbl(char	*precordTypename,char *filename,char *fields);  /*list records*/
 long dbnr(int verbose);		/*list number of records of each type*/
 long dbgrep(char *pmask);	/*list records with mask*/
 long dbgf(char	*pname);	/*get field value*/
@@ -153,13 +153,39 @@ long dbel(char*pname)
     return(0);
 }
 
-long dbl(char	*precordTypename,char *filename)
+long dbl(char	*precordTypename,char *filename,char *fields)
 {
     DBENTRY	dbentry;
     DBENTRY	*pdbentry=&dbentry;
     long	status;
     FILE	*stream = NULL;
+    int		nfields = 0;
+    int		ifield;
+    char	*fieldnames = 0;
+    char 	**papfields = 0;
 
+    if(fields) {
+	char *pnext;
+
+	fieldnames = calloc(strlen(fields) + 1,sizeof(char));
+	strcpy(fieldnames,fields);
+	nfields=1;
+	pnext=fieldnames;
+	while(*pnext && (pnext = strchr(pnext,' '))) {
+	    nfields++;
+	    while(*pnext == ' ') pnext++;
+	}
+	papfields = dbCalloc(nfields,sizeof(char *));
+	pnext = fieldnames;
+	for(ifield=0; ifield<nfields; ifield++) {
+	    papfields[ifield] = pnext;
+	    if(ifield<nfields-1) {
+		pnext = strchr(pnext,' ');
+		*pnext++ = 0;
+		while(*pnext == ' ') pnext++;
+	    }
+	}
+    }
     if(filename && strlen(filename)) {
         int fd;
 
@@ -186,12 +212,27 @@ long dbl(char	*precordTypename,char *filename)
     while(!status) {
 	status = dbFirstRecord(pdbentry);
 	while(!status) {
-	    if(stream) fprintf(stream,"%s\n",dbGetRecordName(pdbentry));
-	    else printf("%s\n",dbGetRecordName(pdbentry));
+	    if(stream) fprintf(stream,"%s",dbGetRecordName(pdbentry));
+	    else printf("%s",dbGetRecordName(pdbentry));
+	    for(ifield=0; ifield<nfields; ifield++) {
+		char *pvalue;
+		status = dbFindField(pdbentry,papfields[ifield]);
+		if(status) continue;
+		pvalue = dbGetString(pdbentry);
+		if(pvalue) {
+		    if(stream) fprintf(stream,",\"%s\"",pvalue);
+		    else printf(",\"%s\"",pvalue);
+		}
+	    }
+	    if(stream) fprintf(stream,"\n"); else printf("\n");
 	    status = dbNextRecord(pdbentry);
 	}
 	if(precordTypename) break;
 	status = dbNextRecordType(pdbentry);
+    }
+    if(nfields>0) {
+	free((void *)papfields);
+	free((void *)fieldnames);
     }
     dbFinishEntry(pdbentry);
     if(stream) fclose(stream);

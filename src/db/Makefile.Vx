@@ -2,6 +2,7 @@ TOP = ../../..
 include $(TOP)/config/CONFIG_BASE
 
 USER_DBDFLAGS += -I ..
+USR_CFLAGS += -ansi
 
 SRCS.c = \
 	../dbLock.c\

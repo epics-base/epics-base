@@ -393,6 +393,18 @@ long dbCaGetSevr(struct link *plink,short *severity)
     return(0);
 }
 
+long dbCaGetTimeStamp(struct link *plink,TS_STAMP *pstamp)
+{
+    caLink	*pca;
+
+    if(!plink) return(-1);
+    if(plink->type != CA_LINK) return(-1);
+    pca = (caLink *)plink->value.pv_link.pvt;
+    if(!pca->chid || ca_state(pca->chid)!=cs_conn) return(-1);
+    memcpy(pstamp,&pca->timeStamp,sizeof(TS_STAMP));
+    return(0);
+}
+
 int dbCaIsLinkConnected(struct link *plink)
 {
     caLink	*pca;
@@ -427,6 +439,7 @@ static void eventCallback(struct event_handler_args arg)
 	long		size;
 	STATUS		semStatus;
 	dbCommon	*precord = 0;
+	struct dbr_time_double *pdbr_time_double;
 
 	if(!pca) {
 		epicsPrintf("eventCallback why was arg.usr NULL\n");
@@ -456,17 +469,17 @@ static void eventCallback(struct event_handler_args arg)
 		goto done;
 	}
 	size = arg.count * dbr_value_size[arg.type];
-	if((arg.type==DBR_STS_STRING) && (ca_field_type(pca->chid)==DBR_ENUM)) {
+	if((arg.type==DBR_TIME_STRING) && (ca_field_type(pca->chid)==DBR_ENUM)) {
 	    memcpy(pca->pgetString,dbr_value_ptr(arg.dbr,arg.type),size);
 	    pca->gotInString = TRUE;
 	} else switch (arg.type){
-	case DBR_STS_STRING: 
-	case DBR_STS_SHORT: 
-	case DBR_STS_FLOAT:
-	case DBR_STS_ENUM:
-	case DBR_STS_CHAR:
-	case DBR_STS_LONG:
-	case DBR_STS_DOUBLE:
+	case DBR_TIME_STRING: 
+	case DBR_TIME_SHORT: 
+	case DBR_TIME_FLOAT:
+	case DBR_TIME_ENUM:
+	case DBR_TIME_CHAR:
+	case DBR_TIME_LONG:
+	case DBR_TIME_DOUBLE:
 	    memcpy(pca->pgetNative,dbr_value_ptr(arg.dbr,arg.type),size);
 	    pca->gotInNative = TRUE;
 	    break;
@@ -474,7 +487,9 @@ static void eventCallback(struct event_handler_args arg)
 	    errMessage(-1,"dbCa: eventCallback Logic Error\n");
 	    break;
 	}
-	pca->sevr=(unsigned short)((struct dbr_sts_double *)arg.dbr)->severity;
+	pdbr_time_double = (struct dbr_time_double *)arg.dbr;
+	pca->sevr = (unsigned short)pdbr_time_double->severity;
+	memcpy(&pca->timeStamp,&pdbr_time_double->stamp,sizeof(TS_STAMP));
 	if(precord) {
 	    struct pv_link *ppv_link = &(plink->value.pv_link);
 
@@ -679,7 +694,7 @@ void dbCaTask()
 		    element_size = dbr_value_size[ca_field_type(pca->chid)];
 		    pca->pgetNative = dbCalloc(pca->nelements,element_size);
 		    status = ca_add_array_event(
-			ca_field_type(pca->chid)+DBR_STS_STRING,
+			ca_field_type(pca->chid)+DBR_TIME_STRING,
 			ca_element_count(pca->chid),
 			pca->chid, eventCallback,pca,0.0,0.0,0.0,
 			0);
@@ -689,7 +704,7 @@ void dbCaTask()
 		}
 		if(link_action&CA_MONITOR_STRING) {
 		    pca->pgetString = dbCalloc(MAX_STRING_SIZE,sizeof(char));
-		    status = ca_add_array_event(DBR_STS_STRING,1,
+		    status = ca_add_array_event(DBR_TIME_STRING,1,
 				pca->chid, eventCallback,pca,0.0,0.0,0.0,
 				0);
 		    if(status!=ECA_NORMAL)

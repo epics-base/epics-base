@@ -102,14 +102,17 @@ int main(argc, argv)
     char	*pext;
     FILE	*outFile;
     FILE	*inFile;
+    char	*plastSlash;
     
 
     if(argc!=2) {
 	fprintf(stderr,"usage: makeBpt file.data\n");
 	exit(-1);
     }
-    outFilename = calloc(1,strlen(argv[1])+2);
-    strcpy(outFilename,argv[1]);
+    plastSlash = strrchr(argv[1],'/');
+    plastSlash = (plastSlash ? plastSlash+1 : argv[1]);
+    outFilename = calloc(1,strlen(plastSlash)+2);
+    strcpy(outFilename,plastSlash);
     pext = strstr(outFilename,".data");
     if(!pext) {
 	fprintf(stderr,"Input file MUST have .data  extension\n");

@@ -102,7 +102,7 @@ epicsShareFunc void epicsShareAPI epicsSignalInstallSigPipeIgnore (void)
 epicsShareFunc void epicsShareAPI epicsSignalInstallSigAlarmIgnore ( void ) 
 {
     localInstallSigHandler ( SIGALRM, 
-        ignoreSigUrg, & pReplacedSigAlarmFunc );
+        ignoreSigAlarm, & pReplacedSigAlarmFunc );
 }
 
 /*

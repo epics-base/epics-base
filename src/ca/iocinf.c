@@ -48,6 +48,9 @@
 /*			kernels that support multicast			*/
 /*
  * $Log$
+ * Revision 1.83  1998/10/07 14:32:51  jba
+ * Modified log message.
+ *
  * Revision 1.82  1998/09/24 21:22:53  jhill
  *  subtle changes related to efficency when checking connection timers
  *
@@ -353,6 +356,13 @@ int				net_proto
 		}
 #endif
 
+		/*
+		 * some concern that vxWorks will run out of mBuf's
+		 * if this change is made
+		 *
+		 * joh 11-10-98
+		 */
+#if 0
 		{
 			int i;
 
@@ -386,6 +396,7 @@ int				net_proto
 				return ECA_SOCK;
 			}
 		}
+#endif
 
 		cacRingBufferInit(&piiu->recv, sizeof(piiu->recv.buf));
 		cacRingBufferInit(&piiu->send, sizeof(piiu->send.buf));
@@ -455,6 +466,13 @@ int				net_proto
 		}
 
 		/*
+		 * some concern that vxWorks will run out of mBuf's
+		 * if this change is made
+		 *
+		 * joh 11-10-98
+		 */
+#if 0
+		/*
 		 * bump up the UDP recv buffer
 		 */
 		{
@@ -478,6 +496,8 @@ int				net_proto
 					SOCKERRSTR);
 			}
 		}
+#endif
+
 #if 0
 		memset((char *)&saddr,0,sizeof(saddr));
 		saddr.sin_family = AF_INET;

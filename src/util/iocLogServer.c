@@ -468,7 +468,7 @@ getConfig()
 	int	status;
 	char	*pstring;
 
-	status = envGetIntegerConfigParam(
+	status = envGetLongConfigParam(
 			&EPICS_IOC_LOG_PORT, 
 			&ioc_log_port);
 	if(status<0){
@@ -486,7 +486,7 @@ getConfig()
 	}
 #endif
 
-	status = envGetIntegerConfigParam(
+	status = envGetLongConfigParam(
 			&EPICS_IOC_LOG_FILE_LIMIT, 
 			&ioc_log_file_limit);
 	if(status<0){

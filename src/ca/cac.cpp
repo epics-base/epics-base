@@ -1055,9 +1055,9 @@ void cac::recycleSubscription ( netSubscription &io )
 }
 
 cacChannel::ioid
-cac::subscriptionRequest ( nciu &chan, unsigned type, // X aCC 361
+cac::subscriptionRequest ( nciu & chan, unsigned type, // X aCC 361
                            arrayElementCount nElem, unsigned mask,
-                           cacStateNotify &notifyIn )
+                           cacStateNotify & notifyIn )
 {
     epicsGuard < cacMutex > guard ( this->mutex );
     autoPtrRecycle  < netSubscription > pIO ( this->ioTable,
@@ -1070,9 +1070,9 @@ cac::subscriptionRequest ( nciu &chan, unsigned type, // X aCC 361
         this->flushIfRequired ( guard, *chan.getPIIU() );
         chan.getPIIU()->subscriptionRequest ( guard, chan, *pIO );
     }
-    cacChannel::ioid id = pIO->getId ();
+    cacChannel::ioid idOut = pIO->getId ();
     pIO.release ();
-    return id;
+    return idOut;
 }
 
 bool cac::versionAction ( epicsGuard < callbackMutex > &, tcpiiu &, 

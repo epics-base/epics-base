@@ -36,7 +36,7 @@ OBJS += templInst.o
 
 PROD += excas
 
-BUILDDIR = $(CAS)/build/singleThread/O.sun4/
+BUILDDIR = $(CAS)/build/singleThread/O.$(HOST_ARCH)/
 
 GLOMBOBJ += $(BUILDDIR)caServer.o
 GLOMBOBJ += $(BUILDDIR)caServerI.o
@@ -48,24 +48,37 @@ GLOMBOBJ += $(BUILDDIR)casPV.o
 GLOMBOBJ += $(BUILDDIR)casPVI.o
 GLOMBOBJ += $(BUILDDIR)casChannel.o
 GLOMBOBJ += $(BUILDDIR)casChannelI.o
+GLOMBOBJ += $(BUILDDIR)casPVListChan.o
 GLOMBOBJ += $(BUILDDIR)casClientMon.o
 GLOMBOBJ += $(BUILDDIR)casChanDelEv.o
 GLOMBOBJ += $(BUILDDIR)casMsgIO.o
 GLOMBOBJ += $(BUILDDIR)casAsyncIO.o
 GLOMBOBJ += $(BUILDDIR)casAsyncIOI.o
+GLOMBOBJ += $(BUILDDIR)casAsyncXXIO.o
+GLOMBOBJ += $(BUILDDIR)casAsyncRdIOI.o
+GLOMBOBJ += $(BUILDDIR)casAsyncWtIOI.o
+GLOMBOBJ += $(BUILDDIR)casAsyncExIOI.o
 GLOMBOBJ += $(BUILDDIR)casEventSys.o
 GLOMBOBJ += $(BUILDDIR)casMonitor.o
 GLOMBOBJ += $(BUILDDIR)casMonEvent.o
-GLOMBOBJ += $(BUILDDIR)outBuf.o
 GLOMBOBJ += $(BUILDDIR)inBuf.o
+GLOMBOBJ += $(BUILDDIR)outBuf.o
+GLOMBOBJ += $(BUILDDIR)dgInBuf.o
+GLOMBOBJ += $(BUILDDIR)dgOutBuf.o
+GLOMBOBJ += $(BUILDDIR)casCtx.o
 GLOMBOBJ += $(BUILDDIR)casEventMask.o
 GLOMBOBJ += $(BUILDDIR)ioBlocked.o
+GLOMBOBJ += $(BUILDDIR)templInst.o
 
 GLOMBOBJ += $(BUILDDIR)caServerOS.o
+GLOMBOBJ += $(BUILDDIR)casIntfOS.o
+GLOMBOBJ += $(BUILDDIR)casDGIntfOS.o
 GLOMBOBJ += $(BUILDDIR)casDGOS.o
 GLOMBOBJ += $(BUILDDIR)casStreamOS.o
  
 GLOMBOBJ += $(BUILDDIR)caServerIO.o
+GLOMBOBJ += $(BUILDDIR)casIntfIO.o
+GLOMBOBJ += $(BUILDDIR)casDGIntfIO.o
 GLOMBOBJ += $(BUILDDIR)casDGIO.o
 GLOMBOBJ += $(BUILDDIR)casStreamIO.o
 GLOMBOBJ += $(BUILDDIR)sigPipeIgnore.o
@@ -77,6 +90,9 @@ excas: $(OBJS) $(DEPLIBS)
 
 #
 # fast link (without waiting for library build)
+# -- this no longer works with sun pro c++ because
+# they do not support explicit template instantiation
+# (they use a template db instead) --
 #
 fexcas:  $(OBJS) $(GLOMBOBJ) $(DEPLIBSWOCAS)
 	$(LINK.cc) -o $@ $(OBJS) $(GLOMBOBJ) $(DEPLIBSWOCAS) 

@@ -248,8 +248,13 @@ void bhe::unregisterIIU ( tcpiiu & iiu )
 
 void bhe::operator delete ( void * )
 {
-    throw std::logic_error 
-        ( "compiler is confused about placement delete?" );
+    // Visual C++ .net appears to require operator delete if
+    // placement operator delete is defined? I smell a ms rat
+    // because if I declare placement new and delete, but
+    // comment out the placement delete definition there are
+    // no undefined symbols.
+    errlogPrintf ( "%s:%d this compiler is confused about placement delete - memory was probably leaked",
+        __FILE__, __LINE__ );
 }
 
 void * bheFreeStore::allocate ( size_t size )

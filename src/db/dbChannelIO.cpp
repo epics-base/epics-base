@@ -123,8 +123,11 @@ void dbChannelIO::show ( unsigned level ) const
 
 void dbChannelIO::operator delete ( void *pCadaver )
 {
-    throw std::logic_error 
-        ( "compiler is confused about placement delete" );
+    // Visual C++ .net appears to require operator delete if
+    // placement operator delete is defined? I smell a ms rat
+    // because if I declare placement new and delete, but
+    // comment out the placement delete definition there are
+    // no undefined symbols.
 }
 
 

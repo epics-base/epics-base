@@ -55,6 +55,11 @@ private:
     epicsTimerNotify * pNotify; // callback
     void privateStart ( epicsTimerNotify & notify, const epicsTime & );
     timer & operator = ( const timer & );
+    // Visual C++ .net appears to require operator delete if
+    // placement operator delete is defined? I smell a ms rat
+    // because if I declare placement new and delete, but
+    // comment out the placement delete definition there are
+    // no undefined symbols.
     void * operator new ( size_t size ); 
     void operator delete ( void * ); 
     friend class timerQueue;
@@ -75,6 +80,11 @@ private:
     void * pPrivate;
     expireStatus expire ( const epicsTime & currentTime );
     epicsTimerForC & operator = ( const epicsTimerForC & );
+    // Visual C++ .net appears to require operator delete if
+    // placement operator delete is defined? I smell a ms rat
+    // because if I declare placement new and delete, but
+    // comment out the placement delete definition there are
+    // no undefined symbols.
     void * operator new ( size_t size ); 
     void operator delete ( void * ); 
     friend class timerQueue;
@@ -119,14 +129,13 @@ class timerQueueActive : public epicsTimerQueueActive,
     public timerQueueActiveMgrPrivate {
 public:
     timerQueueActive ( bool okToShare, unsigned priority );
-    virtual ~timerQueueActive () = 0;
     epicsTimer & createTimer ();
     epicsTimerForC & createTimerForC ( epicsTimerCallback pCallback, void *pArg );
     void show ( unsigned int level ) const;
     bool sharingOK () const;
     unsigned threadPriority () const;
-    void * operator new ( size_t );
-    void operator delete ( void * );
+protected:
+    virtual ~timerQueueActive () = 0;
 private:
     timerQueue queue;
     epicsEvent rescheduleEvent;
@@ -178,7 +187,7 @@ public:
     epicsTimerQueuePassiveForC ( epicsTimerQueueRescheduleCallback pCallback, void *pPrivate );
     void destroy ();
 protected:
-    virtual ~epicsTimerQueuePassiveForC ();
+    ~epicsTimerQueuePassiveForC ();
 private:
     epicsTimerQueueRescheduleCallback pCallback;
     void *pPrivate;

@@ -50,7 +50,6 @@ public:
 
 class epicsTimer {              // X aCC 655
 public:
-    virtual ~epicsTimer () = 0;
     virtual void destroy () = 0;
     virtual void start ( epicsTimerNotify &, const epicsTime & ) = 0;
     virtual void start ( epicsTimerNotify &, double delaySeconds ) = 0;
@@ -63,11 +62,8 @@ public:
     virtual expireInfo getExpireInfo () const = 0;
     double getExpireDelay ();
     virtual void show ( unsigned int level ) const = 0;
-private:
-    void * operator new ( size_t );
-    void * operator new [] ( size_t );
-    void operator delete ( void * );
-    void operator delete [] ( void * );
+protected:
+    virtual ~epicsTimer () = 0; // protected => delete() must not be called
 };
 
 class epicsTimerQueue {         // X aCC 655
@@ -86,11 +82,6 @@ public:
     virtual void release () = 0; 
 protected:
     virtual ~epicsTimerQueueActive () = 0;
-private:
-    void * operator new ( size_t );
-    void * operator new [] ( size_t );
-    void operator delete ( void * );
-    void operator delete [] ( void * );
 };
 
 class epicsTimerQueueNotify {   // X aCC 655

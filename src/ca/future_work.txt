@@ -1,0 +1,25 @@
+
+
+
+Argonne Ideas
+------------
+Support new database access
+Use UDP rather than TCP
+Security
+Large arrays
+Bulk data transfer (Frame grabber images, APS BPM raw data,etc)
+Simplified client interface
+Wild card ca_search?
+client server keys?
+Provide support for process passive and for maximize severity
+should ioc perform ca_search at boot time to make sure there is not conflict.?
+Multi-priority - proper degradation
+Redundancy - using alternate ethernet card
+Seperate network interfaces (use 1 net for Data Acq./1 for ctrl)
+Wide Area Network Support
+Reduce Protocol Interface
+Byte order problem
+Reflective Memory( Does this belong here or under other IOC needs)
+
+
+

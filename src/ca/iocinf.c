@@ -1701,45 +1701,12 @@ void epicsShareAPI caAddConfiguredAddr(ELLLIST *pList, const ENV_PARAM *pEnv,
 	const char *pStr;
 	const char *pToken;
 	caAddr addr;
-	caAddr localAddr;
 	char buf[32u]; /* large enough to hold an IP address */
 	int status;
 
 	pStr = envGetConfigParamPtr(pEnv);
 	if(!pStr){
 		return;
-	}
-
-	/*
-	 * obtain a local non-loopback address
-	 *
-	 * It has proven to be difficult to determine which
-	 * of the local addresses is the correct server address
-	 * to be embedded in beacons from a multi-inteface host
-	 * when the user supplies the beacon destination
-	 * due to routing complexities (a local ip address is 
-	 * supplied in the beacon message so that
-	 * we can allow beacon repeaters). I have tried using 
-	 * connect() and getsockname() to obtain this information 
-	 * without success. For now we are using the local
-	 * host address of the first non-loopback interface found
-	 * for this.
-	 */
-	status = local_addr(socket, &localAddr.in);
-	if (status) {
-		/*
-		 * some hosts do not provide local interface query 
-		 * capabilities. In this situation we default to
-		 * zero and the clients will obtain the beacon's
-		 * address from the UDP header. In this situation
-		 * beacon repeaters will be required to detect 
-		 * the address INADDR_ANY in the beacon message
-		 * and replace it with the correct address of the
-		 * server.
-		 */
-		localAddr.in.sin_family = AF_INET;
-		localAddr.in.sin_addr.s_addr = htonl(INADDR_ANY);
-		localAddr.in.sin_port = htons(0);
 	}
 
 	while( (pToken = getToken(&pStr, buf, sizeof(buf))) ){
@@ -1752,7 +1719,6 @@ void epicsShareAPI caAddConfiguredAddr(ELLLIST *pList, const ENV_PARAM *pEnv,
 		pNode = (caAddrNode *) calloc (1, sizeof(*pNode));
 		if (pNode) {
 			pNode->destAddr = addr;
-			pNode->srcAddr = localAddr;
 			ellAdd (pList, &pNode->node);
 		}
 	}

@@ -30,12 +30,12 @@ static void  forcePort (ELLLIST *pList, unsigned short port)
 {
     osiSockAddrNode *pNode;
 
-    pNode  = reinterpret_cast <osiSockAddrNode *> (ellFirst ( pList ));
+    pNode  = reinterpret_cast < osiSockAddrNode * > ( ellFirst ( pList ) );
     while ( pNode ) {
         if ( pNode->addr.sa.sa_family == AF_INET ) {
             pNode->addr.ia.sin_port = htons (port);
         }
-        pNode = reinterpret_cast <osiSockAddrNode *> (ellNext ( &pNode->node ));
+        pNode = reinterpret_cast < osiSockAddrNode * > ( ellNext ( &pNode->node ) );
     }
 }
 
@@ -113,7 +113,7 @@ casDGIntfIO::casDGIntfIO ( caServerI & serverIn, clientBufMemoryManager & memMgr
             socket_close (this->sock);
             throw S_cas_noInterface;
         }
-        pAddr = reinterpret_cast <osiSockAddrNode *> (ellFirst (&BCastAddrList));
+        pAddr = reinterpret_cast < osiSockAddrNode * > ( ellFirst ( &BCastAddrList ) );
         serverBCastAddr.ia = pAddr->addr.ia; 
         serverBCastAddr.ia.sin_port = htons (this->dgPort);
 

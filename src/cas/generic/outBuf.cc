@@ -126,7 +126,7 @@ caStatus outBuf::copyInHeader ( ca_uint16_t response, ca_uint32_t payloadSize,
     else {
         pHdr->m_postsize = epicsHTON16 ( 0xffff );
         pHdr->m_count = epicsHTON16 ( 0 );
-        ca_uint32_t * pLW = reinterpret_cast <ca_uint32_t *> ( pHdr + 1 );
+        ca_uint32_t * pLW = reinterpret_cast < ca_uint32_t * > ( pHdr + 1 );
         pLW[0] = epicsHTON32 ( alignedPayloadSize );
         pLW[1] = epicsHTON32 ( nElem );
         pPayload = reinterpret_cast < char * > ( pLW + 2 );

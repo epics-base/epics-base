@@ -69,9 +69,9 @@ casIntfIO::casIntfIO (const caNetAddr &addrIn) :
 	    }
 #   endif
 
-	status = bind(this->sock,
+	status = bind ( this->sock,
                       reinterpret_cast <sockaddr *> (&this->addr),
-                      sizeof(this->addr));
+                      sizeof(this->addr) );
 	if (status<0) {
 		if (SOCKERRNO == SOCK_EADDRINUSE) {
 			//
@@ -80,9 +80,10 @@ casIntfIO::casIntfIO (const caNetAddr &addrIn) :
 			// work correctly)
 			//
 			this->addr.sin_port = ntohs (0);
-			status = bind(this->sock,
-                                      reinterpret_cast <sockaddr *> (&this->addr),
-                                      sizeof(this->addr));
+			status = bind(
+                    this->sock,
+                    reinterpret_cast <sockaddr *> (&this->addr),
+                    sizeof(this->addr) );
 		}
 		if (status<0) {
 			char buf[64];
@@ -103,9 +104,10 @@ casIntfIO::casIntfIO (const caNetAddr &addrIn) :
     }
 
 	addrSize = ( osiSocklen_t ) sizeof (this->addr);
-	status = getsockname (this->sock, 
-                              reinterpret_cast <sockaddr *> (&this->addr)
-                              , &addrSize);
+	status = getsockname ( 
+                this->sock, 
+                reinterpret_cast <sockaddr *> ( &this->addr ), 
+                &addrSize );
 	if (status) {
 		errlogPrintf("CAS: getsockname() error %s\n", 
 			SOCKERRSTR(SOCKERRNO));

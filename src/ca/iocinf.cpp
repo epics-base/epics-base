@@ -124,7 +124,7 @@ extern "C" void epicsShareAPI removeDuplicateAddresses
 
     while ( (pRawNode  = ellGet ( pSrcList ) ) ) {
 		assert ( offsetof (osiSockAddrNode, node) == 0 );
-		osiSockAddrNode *pNode = reinterpret_cast<osiSockAddrNode *> ( pRawNode );
+		osiSockAddrNode *pNode = reinterpret_cast <osiSockAddrNode *> ( pRawNode );
         osiSockAddrNode *pTmpNode;
 
         if ( pNode->addr.sa.sa_family == AF_INET ) {

@@ -68,14 +68,8 @@ CROSS_COMPILER_TARGET_ARCHS=
 TORNADO=YES
 #TORNADO=NO
  
-#  Tornado release >= 2.2?
-#        must be either YES or NO
-#     YES removes the switch -nostdinc from the compile line
-#T22=YES
-
 #  VxWorks directory for TORNADO=YES
 #VX_DIR_YES=c:\\Tornado
-#VX_DIR_YES = /usr/local/vw/tornado22-$(CMPLR_SUFFIX)
 VX_DIR_YES = /usr/local/vw/tornado202p1
 
 

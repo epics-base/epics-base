@@ -99,6 +99,9 @@
 /************************************************************************/
 /*
  * $Log$
+ * Revision 1.104  1998/06/16 00:24:26  jhill
+ * avoid purify warning
+ *
  * Revision 1.103  1998/04/23 01:04:05  jhill
  * fixed overzelous chan check in ca_clear_channel() - when the PV is local under vxWorks
  *
@@ -869,7 +872,7 @@ void ca_process_exit()
 	 */
 	piiu = (struct ioc_in_use *)
 		ca_static->ca_iiuList.node.next;
-	while(piiu){
+	while (piiu) {
 		if(ca_static->ca_fd_register_func){
 			(*ca_static->ca_fd_register_func)(
 				(void *)ca_static->ca_fd_register_arg,
@@ -878,7 +881,7 @@ void ca_process_exit()
 		}
 		if (socket_close(piiu->sock_chan) < 0){
 			genLocalExcep ( ECA_INTERNAL, 
-				"Corrupt iiu list- at close");
+				"Problems closing a socket during ca shutdown?");
 		}
 		piiu = (struct ioc_in_use *) piiu->node.next;
 	}
@@ -1021,7 +1024,7 @@ int epicsShareAPI ca_search_and_connect
 
 	/* Put some reasonable limit on user supplied string size */
 	strcnt = strlen(name_str) + 1;
-	if (strcnt > MAX_STRING_SIZE)
+	if (strcnt > MAX_UDP-sizeof(caHdr))
 		return ECA_STRTOBIG;
 	if (strcnt == 1)
 		return ECA_EMPTYSTR;
@@ -2751,11 +2754,8 @@ void clearChannelResources(unsigned id)
 	status = bucketRemoveItemUnsignedId (
 			ca_static->ca_pSlowBucket, &chix->cid);
 	assert (status == S_bucket_success);
-	removeFromChanList(chix);
+	removeFromChanList (chix);
 	free (chix);
-	if (piiu!=piiuCast && ellCount(&piiu->chidlist.count)==0){
-		TAG_CONN_DOWN(piiu);
-	}
 	
 	UNLOCK;
 }
@@ -3725,4 +3725,32 @@ unsigned short epicsShareAPI ca_get_element_count (chid chan)
 	else {
 		return 0;
 	}
+}
+
+/*
+ * ca_get_ioc_connection_count()
+ *
+ * returns the number of IOC's that CA is connected to
+ * (for testing purposes only)
+ */
+unsigned epicsShareAPI ca_get_ioc_connection_count () 
+{
+	unsigned count;
+
+	INITCHK;
+
+	LOCK;
+
+	count = ellCount (&ca_static->ca_iiuList);
+
+	/*
+	 * if there is a UDP IIU then subtract it out
+	 */
+	if (ca_static->ca_piiuCast!=NULL) {
+		count--;
+	}
+
+	UNLOCK;
+
+	return count;
 }

@@ -242,7 +242,7 @@ static long init(after)
     int dummy;
 
     if(after)return(0);
-    if(sysBusToLocalAdrs(VME_AM_USR_SHORT_IO, 0, &shortaddr)) {
+    if(sysBusToLocalAdrs(VME_AM_SUP_SHORT_IO, 0, &shortaddr)) {
 	logMsg("devMz8310: sysBusToLocalAdrs failed\n");
 	exit(1);
     }

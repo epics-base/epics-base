@@ -1666,8 +1666,10 @@ char *dbGetString(DBENTRY *pdbentry)
 	    case PV_LINK:
 	    case CA_LINK:
 	    case DB_LINK:
-	        sprintf(message,"%s",
-		    plink->value.pv_link.pvname);
+		if(plink->value.pv_link.pvname)
+		    strcpy(message,plink->value.pv_link.pvname);
+		else
+		    strcpy(message,"");
 		break;
 	    default :
 	        return(NULL);

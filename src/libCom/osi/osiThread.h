@@ -45,15 +45,17 @@ epicsShareFunc void epicsShareAPI threadOnceOsd(
 #define threadOnce(id,func,arg) \
 if(*(id)<=0) threadOnceOsd((id),(func),(arg))
 
+epicsShareFunc void epicsShareAPI threadInit(void);
+epicsShareFunc void epicsShareAPI threadExitMain(void);
+
 /* (threadId)0 is guaranteed to be an invalid thread id */
 typedef void *threadId;
-epicsShareFunc void epicsShareAPI threadInit(void);
+
 epicsShareFunc threadId epicsShareAPI threadCreate(const char *name,
     unsigned int priority, unsigned int stackSize,
     THREADFUNC funptr,void *parm);
 epicsShareFunc void epicsShareAPI threadSuspendSelf(void);
 epicsShareFunc void epicsShareAPI threadResume(threadId id);
-epicsShareFunc void epicsShareAPI threadExitMain(void);
 epicsShareFunc unsigned int epicsShareAPI threadGetPriority(threadId id);
 epicsShareFunc void epicsShareAPI threadSetPriority(
     threadId id,unsigned int priority);

@@ -70,8 +70,11 @@
  * (I am assuming Borlund and other MS Vis C++ competitors
  * support these MS VisC++ defacto standard keywords???? If not
  * then we should just switch on defined(_MSC_VER) here)
+ *
+ * Also check for "EPICS_DLL" defined so that we will not use these
+ * keywords if it is a no DLL build of base under WIN32.
  */
-#if defined(_WIN32) && !defined(__CYGWIN32__)
+#if defined(_WIN32) && !defined(__CYGWIN32__) && defined(EPICS_DLL)
 
 #	if defined(epicsExportSharedSymbols)
 #		define epicsShareExtern extern __declspec(dllexport)

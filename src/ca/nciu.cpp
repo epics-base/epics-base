@@ -139,7 +139,7 @@ void nciu::initiateConnect (
 
 void nciu::connect ( unsigned nativeType, 
 	unsigned nativeCount, unsigned sidIn, 
-    epicsGuard < epicsMutex > & cbGuard, 
+    epicsGuard < epicsMutex > & /* cbGuard */, 
     epicsGuard < epicsMutex > & guard )
 {
     guard.assertIdenticalMutex ( this->cacCtx.mutexRef () );
@@ -184,15 +184,13 @@ void nciu::connect ( unsigned nativeType,
 }
 
 void nciu::unresponsiveCircuitNotify ( 
-    epicsGuard < epicsMutex > & cbGuard, 
+    epicsGuard < epicsMutex > & /* cbGuard */, 
     epicsGuard < epicsMutex > & guard )
 {
     guard.assertIdenticalMutex ( this->cacCtx.mutexRef () );
-    if ( this->channelNode::isConnected ( guard ) ) { 
-        this->notify().disconnectNotify ( guard );
-        caAccessRights noRights;
-        this->notify().accessRightsNotify ( guard, noRights );
-    }
+    this->notify().disconnectNotify ( guard );
+    caAccessRights noRights;
+    this->notify().accessRightsNotify ( guard, noRights );
 }
 
 void nciu::setServerAddressUnknown ( udpiiu & newiiu, 
@@ -209,7 +207,7 @@ void nciu::setServerAddressUnknown ( udpiiu & newiiu,
 }
 
 void nciu::accessRightsStateChange ( 
-    const caAccessRights & arIn, epicsGuard < epicsMutex > & cbGuard, 
+    const caAccessRights & arIn, epicsGuard < epicsMutex > & /* cbGuard */, 
     epicsGuard < epicsMutex > & guard )
 {
     guard.assertIdenticalMutex ( this->cacCtx.mutexRef () );
@@ -450,12 +448,14 @@ arrayElementCount nciu::nativeElementCount (
 caAccessRights nciu::accessRights (
     epicsGuard < epicsMutex > & guard ) const
 {
+    guard.assertIdenticalMutex ( this->cacCtx.mutexRef () );
     return this->accessRightState;
 }
 
 unsigned nciu::searchAttempts (
     epicsGuard < epicsMutex > & guard ) const
 {
+    guard.assertIdenticalMutex ( this->cacCtx.mutexRef () );
     return this->retry;
 }
 
@@ -517,6 +517,7 @@ void nciu::show (
 void nciu::beaconAnomalyNotify (
     epicsGuard < epicsMutex > & guard ) 
 {
+    guard.assertIdenticalMutex ( this->cacCtx.mutexRef () );
     if ( this->retry > beaconAnomalyRetrySetpoint ) {
         this->retry = beaconAnomalyRetrySetpoint;
     }

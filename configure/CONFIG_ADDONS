@@ -223,6 +223,17 @@ endif
 endif
 
 #
+#	concat specific products
+#
+ifneq ($(strip $(TESTPROD_$(OS_CLASS))),)
+TESTPROD += $(subst -nil-,,$(TESTPROD_$(OS_CLASS)))
+else
+ifdef TESTPROD_DEFAULT
+TESTPROD += $(TESTPROD_DEFAULT)
+endif
+endif
+
+#
 #	concat specific scripts
 #
 ifneq ($(strip $(SCRIPTS_$(OS_CLASS))),)

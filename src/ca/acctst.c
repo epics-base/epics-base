@@ -2410,20 +2410,31 @@ void verifyChannelPriorities ( const char *pName, unsigned interestLevel )
 void verifyImmediateTearDown ( const char * pName, unsigned interestLevel )
 {
     unsigned i;
-    double value;
-    int status;
-    chid chan;
 
     showProgressBegin ( "verifyImmediateTearDown", interestLevel );
 
     for ( i = 0u; i < 1000; i++ ) {
+        chid chan;
+        int status;
+        double value = i;
         ca_task_initialize ();
         status = ca_create_channel ( pName, 0, 0, 0, & chan );
         SEVCHK ( status, "immediate tear down channel create failed" );
         status = ca_pend_io ( timeoutToPendIO );
         SEVCHK ( status, "immediate tear down channel connect failed" );
         assert ( status == ECA_NORMAL );
-        value = i;
+        /* 
+         * verify that puts pending when we call ca_task_exit() 
+         * get flushed out
+         */
+        if ( i > 0 ) {
+            double currentValue = 0.0;
+            status = ca_get ( DBR_DOUBLE, chan, & currentValue );
+            SEVCHK ( status, "immediate tear down channel get failed" );
+            status = ca_pend_io ( timeoutToPendIO );
+            SEVCHK ( status, "immediate tear down channel get failed" );
+            assert ( currentValue == i - 1 );
+        }
         status = ca_put ( DBR_DOUBLE, chan, & value );
         SEVCHK ( status, "immediate tear down channel put failed" );
         ca_task_exit ();
@@ -2432,23 +2443,6 @@ void verifyImmediateTearDown ( const char * pName, unsigned interestLevel )
             showProgress ( interestLevel );
         }
     }
-
-    /* 
-     * verify that puts pending when we call ca_task_exit() 
-     * get flushed out
-     */
-    ca_task_initialize ();
-    status = ca_create_channel ( pName, 0, 0, 0, & chan );
-    SEVCHK ( status, "immediate tear down channel create failed" );
-    status = ca_pend_io ( timeoutToPendIO );
-    SEVCHK ( status, "immediate tear down channel connect failed" );
-    assert ( status == ECA_NORMAL );
-    status = ca_get ( DBR_DOUBLE, chan, & value );
-    SEVCHK ( status, "immediate tear down channel get failed" );
-    status = ca_pend_io ( timeoutToPendIO );
-    SEVCHK ( status, "immediate tear down channel get failed" );
-    assert ( value == i - 1u );
-    ca_task_exit ();
 
     showProgressEnd ( interestLevel );
 }

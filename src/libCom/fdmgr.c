@@ -71,6 +71,9 @@
  *			we eliminate delete ambiguity (chance of the same
  *			being reused).
  * $Log$
+ * Revision 1.20  1995/12/19  19:41:24  jhill
+ * optimized alarm entry sort
+ *
  *
  *	NOTES:
  *
@@ -152,7 +155,7 @@ typedef struct{
 	int		fd;
 	enum fdi_type	fdi;		/* the type of fd interest */
 	fd_set		*pfds;
-	void		(*pfunc)();
+	void		(*pfunc)(void *);
 	void		*param;
 	int		delete_pending;
 }fdentry;
@@ -559,6 +562,10 @@ void		*param
 {
 	fdentry		*pfdentry;
 	fd_set		*pfds;
+
+	if (fd>=FD_SETSIZE || fd<0) {
+		return ERROR;
+	}
 
 	switch(fdi){
 	case fdi_read:

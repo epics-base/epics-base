@@ -210,26 +210,29 @@ SHRLIBNAME = $(LIBRARY).dll
 #
 # Under WIN32 we have the unique situation where the DLL link creates the
 # DLL link library xxx.lib and we need to be very careful to avoid replacing
-# the xxx.lib created by the dll link with an xxx.lib created by $(AR)
+# the xxx.lib created by the dll link with an xxx.lib created by $(AR).
+# Therefore, the object library is named xxxObj.lib
 #
 # SHARED_LIBRARIES is YES if we are building a DLL and NO if we aren't
 #
 DLL_LINK_LIBNAME_YES = $(LIBRARY).lib
 DLL_LINK_LIBNAME = $(DLL_LINK_LIBNAME_$(SHARED_LIBRARIES))
-OBJECT_LIBNAME_NO = $(LIBRARY).lib
-LIBNAME = $(OBJECT_LIBNAME_$(SHARED_LIBRARIES))
+LIBNAME = $(LIBRARY)Obj.lib
 
 #	dll install location
 INSTALL_SHRLIB = $(INSTALL_BIN)
 
 #--------------------------------------------------
 # Dependancy definitions
+OBJECT_LIB_EXT_YES = Obj.lib # object library extension for static build
+OBJECT_LIB_EXT_NO = .lib # object library extension for dynamic build
+OBJECT_LIB_EXT = $(OBJECT_LIB_EXT_$(STATIC_BUILD))
 COND_PROD_DEPLIBS = $(foreach prod,$(PROD), $(foreach lib, $($(basename $(prod))_LIBS),\
- $(firstword $($(lib)_DIR) $(EPICS_BASE_LIB))/$(lib).lib))
-PRODNAME_DEPLIBS = $(foreach lib,$(PRODNAME_LIBS),$(firstword $($(lib)_DIR) $(EPICS_BASE_LIB))/$(lib).lib)
-PROD_DEPLIBS = $(foreach lib,$(PROD_LIBS),$(firstword $($(lib)_DIR) $(EPICS_BASE_LIB))/$(lib).lib)
+ $(firstword $($(lib)_DIR) $(EPICS_BASE_LIB))/$(lib)$(OBJECT_LIB_EXT)))
+PRODNAME_DEPLIBS = $(foreach lib,$(PRODNAME_LIBS),$(firstword $($(lib)_DIR) $(EPICS_BASE_LIB))/$(lib)$(OBJECT_LIB_EXT))
+PROD_DEPLIBS = $(foreach lib,$(PROD_LIBS),$(firstword $($(lib)_DIR) $(EPICS_BASE_LIB))/$(lib)$(OBJECT_LIB_EXT))
 
-USR_DEPLIBS = $(foreach lib,$(USR_LIBS),$(firstword $($(lib)_DIR) $(EPICS_BASE_LIB))/$(lib).lib)
+USR_DEPLIBS = $(foreach lib,$(USR_LIBS),$(firstword $($(lib)_DIR) $(EPICS_BASE_LIB))/$(lib)$(OBJECT_LIB_EXT))
 
 # by default the libraries used when linking the DLL are just
 # PROD_LIBS ans SYS_PROD_LIBS minus the DLL name

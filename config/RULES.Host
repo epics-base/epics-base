@@ -665,7 +665,7 @@ $(INSTALL_LIB)/%.lib: %.lib
 
 $(INSTALL_SHRLIB)/lib%: lib%
 	@echo "Installing library $@"
-	@$(INSTALL) -m 555 $< $(INSTALL_SHRLIB)
+	@$(INSTALL) -d -m 555 $< $(INSTALL_SHRLIB)
 ifdef SHRLIB_VERSION
 	@$(RM) $(@:%.$(SHRLIB_VERSION)=%)
 	ln -s $< $(@:%.$(SHRLIB_VERSION)=%) 

@@ -29,6 +29,7 @@
  * .02	08-05-91	mrk	Make more compatible with db_test.c
  * .03	09-24-91	joh	changed declaration of `outstanding'
  *				to a long
+ * .04	01-14-91	joh	documentation
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -37,6 +38,7 @@
 #ifdef vxWorks
 #include <vxWorks.h>
 #endif
+
 #ifndef ERROR
 #define ERROR -1
 #endif
@@ -46,17 +48,28 @@
 
 #include        <cadef.h>
 #include        <string.h>
+
 void 		printit();
 void 		verify();
 
 static long	outstanding;
 
+
+/*
+ *
+ *	main
+ *
+ *	parse command line arguments
+ */
 #ifndef vxWorks
 main(argc,argv)
 int     argc;
 char    **argv;
 {
 
+	/*
+	 * print error and return if arguments are invalid
+	 */
 	if(argc < 2  || argc > 3){
 		printf("usage: ca_test channel_name <\"put value\">\n");
 		printf("the following arguments were received\n");
@@ -68,6 +81,9 @@ char    **argv;
 	}
 
 
+	/*
+	 * check for supplied value
+	 */
 	if(argc == 2){
 		return ca_test(argv[1], NULL);
 	}
@@ -85,7 +101,15 @@ char    **argv;
 
 }
 #endif
+
 
+/*
+ *  	ca_test
+ *
+ *	find channel, write a value if supplied, and 
+ *	read back the current value
+ *
+ */
 int ca_test(pname, pvalue )
 char	*pname;
 char	*pvalue;
@@ -101,6 +125,13 @@ char	*pvalue;
 
 
 
+/*
+ * 	cagft()
+ *
+ *	ca get field test
+ *
+ *	test ca get over the range of CA data types
+ */
 int cagft(pname)
 char	*pname;
 {	
@@ -147,6 +178,10 @@ char	*pname;
 		outstanding++;
 	}
 
+	/*
+	 * wait for the operation to complete
+	 * before returning 
+	 */
 	while(ntries){
 		ca_pend_event(1.0);
 
@@ -182,6 +217,10 @@ struct  event_handler_args	args;
 
 
 /*
+ *	capft
+ *
+ *	test ca_put() over a range of data types
+ *	
  */
 int capft(pname,pvalue)
 char		*pname;
@@ -217,6 +256,9 @@ char		*pvalue;
 	printf("native type:\t%d\n", ca_field_type(chan_id));
 	printf("native count:\t%d\n", ca_element_count(chan_id));
 
+	/*
+	 *  string value ca_put
+	 */
 	status = ca_put(
 			DBR_STRING, 
 			chan_id, 
@@ -227,6 +269,9 @@ char		*pvalue;
 	if(ca_field_type(chan_id)==0)goto skip_rest;
 
 	if(sscanf(pvalue,"%hd",&shortvalue)==1) {
+		/*
+		 * short integer ca_put
+		 */
 		status = ca_put(
 				DBR_SHORT, 
 				chan_id, 
@@ -248,6 +293,9 @@ char		*pvalue;
 		verify(chan_id, DBR_CHAR);
 	}
 	if(sscanf(pvalue,"%ld",&longvalue)==1) {
+		/*
+		 * long integer ca_put
+		 */
 		status = ca_put(
 				DBR_LONG, 
 				chan_id, 
@@ -256,6 +304,9 @@ char		*pvalue;
 		verify(chan_id, DBR_LONG);
 	}
 	if(sscanf(pvalue,"%f",&floatvalue)==1) {
+		/*
+		 * single precision float ca_put
+		 */
 		status = ca_put(
 				DBR_FLOAT, 
 				chan_id, 
@@ -264,6 +315,9 @@ char		*pvalue;
 		verify(chan_id, DBR_FLOAT);
 	}
 	if(sscanf(pvalue,"%lf",&doublevalue)==1) {
+		/*
+		 * double precision float ca_put
+		 */
 		status = ca_put(
 				DBR_DOUBLE, 
 				chan_id, 
@@ -274,6 +328,10 @@ char		*pvalue;
 
 skip_rest:
 
+	/*
+	 * wait for the operation to complete
+	 * (outstabnding decrements to zero)
+	 */
 	while(ntries){
 		ca_pend_event(1.0);
 
@@ -292,7 +350,7 @@ skip_rest:
 /*
  * VERIFY
  *
- * print out the values in a database access interface structure
+ * initiate print out the values in a database access interface structure
  */
 static void verify(chan_id, type)
 chid		chan_id;
@@ -300,6 +358,10 @@ int		type;
 {
 	int status;
 
+	/*
+	 * issue a get which calls back `printit'
+	 * upon completion
+	 */
 	status = ca_array_get_callback(
 			type, 
 			ca_element_count(chan_id),
@@ -315,6 +377,8 @@ int		type;
  * PRINT_RETURNED
  *
  * print out the values in a database access interface structure
+ *
+ * switches over the range of CA data types and reports the value
  */
 static print_returned(type,pbuffer,count)
   short	type;

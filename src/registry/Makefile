@@ -19,7 +19,7 @@ INC += registerRecordDeviceDriver.h
 #	2) where to find the sources: ., ./os/<ARCH_CLASS>, ./os/generic, ...
 #
 
-SCRIPTS += registerRecordDeviceDriver.pl
+SCRIPTS_HOST += registerRecordDeviceDriver.pl
 
 LIBSRCS += registry.c
 LIBSRCS += registryRecordType.c

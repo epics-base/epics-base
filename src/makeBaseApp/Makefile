@@ -52,7 +52,7 @@ TEMPLATES += top/simpleBoot/ioc/st.cmd@Common
 TEMPLATES += top/simpleBoot/ioc/st.cmd@vxWorks
 TEMPLATES += top/simpleBoot/ioc/st.cmd@RTEMS
 
-SCRIPTS += makeBaseApp.pl
+SCRIPTS_HOST += makeBaseApp.pl
 
 include $(TOP)/configure/RULES
 

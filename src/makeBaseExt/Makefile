@@ -24,6 +24,6 @@ TEMPLATES += top/exampleExt/RELEASE_NOTES.HTM
 
 TEMPLATES += top/simpleExt/Makefile
 
-SCRIPTS += makeBaseExt.pl
+SCRIPTS_HOST += makeBaseExt.pl
 
 include $(TOP)/configure/RULES

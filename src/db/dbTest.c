@@ -143,9 +143,9 @@ long dbel(char*pname)
     while(peb) {
 	pdbFldDes = ((DBADDR *)peb->paddr)->pfldDes;
 	printf("%4.4s",pdbFldDes->name);
-	if(peb->select&&DBE_VALUE) printf(" VALUE");
-	if(peb->select&&DBE_LOG) printf(" LOG");
-	if(peb->select&&DBE_ALARM) printf(" ALARM");
+	if(peb->select&DBE_VALUE) printf(" VALUE");
+	if(peb->select&DBE_LOG) printf(" LOG");
+	if(peb->select&DBE_ALARM) printf(" ALARM");
 	printf("\n");
 	peb = (struct event_block *)ellNext((struct event_block *)peb);
     }

@@ -77,8 +77,8 @@ static char *os_depenhSccsId = "$Id$";
 #if defined(vxWorks)
 #  	define POST_IO_EV semGive(io_done_sem)
 #	define VXTASKIDNONE 0
-#  	define LOCK {semTake(client_lock, WAIT_FOREVER); lock_tid=(int)taskIdCurrent;}
-#  	define UNLOCK {lock_tid=VXTASKIDNONE; semGive(client_lock);}
+#  	define LOCK {assert(semTake(client_lock, WAIT_FOREVER)==OK); lock_count++; lock_tid=(int)taskIdCurrent;}
+#  	define UNLOCK {if(--lock_count==0u) lock_tid=VXTASKIDNONE; assert(semGive(client_lock)==OK);}
 #	define EVENTLOCKTEST (lock_tid==(int)taskIdCurrent)
 #	define VXTHISTASKID taskIdSelf()
 #	define abort() taskSuspend(VXTHISTASKID)

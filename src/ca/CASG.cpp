@@ -48,7 +48,7 @@ CASG::~CASG ()
     if ( this->verify () ) {
         this->mutex.lock ();
         tsDLIterBD <syncGroupNotify> notify ( this->ioList.first () );
-        while ( notify != notify.eol () ) {
+        while ( notify.valid () ) {
             notify->destroy ();
             notify = this->ioList.first ();
         }
@@ -161,7 +161,7 @@ void CASG::show ( unsigned level) const
     if ( level ) {
         this->mutex.lock ();
         tsDLIterBD <syncGroupNotify> notify ( this->ioList.first () );
-        while ( notify != notify.eol () ) {
+        while ( notify.valid () ) {
             notify->show (level);
         }
         this->mutex.unlock ();

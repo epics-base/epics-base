@@ -243,7 +243,6 @@ static long readValue(pevent)
                         pevent->val=pevent->sval;
                         pevent->udf=FALSE;
                 }
-                status=2; /* dont convert */
         } else {
                 status=-1;
                 recGblSetSevr(pevent,SOFT_ALARM,INVALID_ALARM);

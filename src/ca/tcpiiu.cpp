@@ -258,7 +258,7 @@ extern "C" void cacRecvThreadTCP ( void *pParam )
         // appear to impact performance.
         //
         unsigned nBytesIn;
-        if ( piiu->pCAC()->preemptiveCallbackEnable() ) {
+        if ( piiu->pCAC()->preemptiveCallbakIsEnabled() ) {
             nBytesIn = pComBuf->fillFromWire ( *piiu );
             if ( nBytesIn == 0u ) {
                 break;
@@ -286,7 +286,7 @@ extern "C" void cacRecvThreadTCP ( void *pParam )
         // this lock get a chance to run
         callbackAutoMutex autoMutex ( *piiu->pCAC() );
 
-        if ( ! piiu->pCAC()->preemptiveCallbackEnable() ) {
+        if ( ! piiu->pCAC()->preemptiveCallbakIsEnabled() ) {
             nBytesIn = pComBuf->fillFromWire ( *piiu );
             if ( nBytesIn == 0u ) {
                 // outer loop checks to see if state is connected

@@ -103,7 +103,7 @@ private:
     void exception ( int status, const char *pContext, unsigned type, arrayElementCount count );
 };
 
-class oldCAC;
+struct oldCAC;
 
 struct CASG : public chronIntIdRes < CASG >, private casgRecycle {
 public:

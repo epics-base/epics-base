@@ -196,7 +196,7 @@ void udpiiu::recvMsg ()
     osiSockAddr src;
     int status;
 
-    if ( this->pCAC()->preemptiveCallbackEnable() ) {
+    if ( this->pCAC()->preemptiveCallbakIsEnabled() ) {
         osiSocklen_t src_size = sizeof ( src );
         status = recvfrom ( this->sock, this->recvBuf, sizeof ( this->recvBuf ), 0,
                             &src.sa, &src_size );
@@ -214,7 +214,7 @@ void udpiiu::recvMsg ()
     {
         callbackAutoMutex autoMutex ( *this->pCAC() );
 
-        if ( ! this->pCAC()->preemptiveCallbackEnable() ) {
+        if ( ! this->pCAC()->preemptiveCallbakIsEnabled() ) {
             osiSocklen_t src_size = sizeof ( src );
             status = recvfrom ( this->sock, this->recvBuf, sizeof ( this->recvBuf ), 0,
                             &src.sa, &src_size );

@@ -10,13 +10,15 @@
  *  Author: Jeff Hill
  */
 
+#include <stdexcept>
+
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
 #include "iocinf.h"
 #include "nciu.h"
 #include "cac.h"
 
-netReadNotifyIO::netReadNotifyIO ( nciu &chan, cacReadNotify &notify ) :
+netReadNotifyIO::netReadNotifyIO ( nciu & chan, cacReadNotify & notify ) :
     baseNMIU ( chan ), notify ( notify )
 {
 }
@@ -61,6 +63,25 @@ void netReadNotifyIO::completion ( unsigned type,
 {
     this->notify.completion ( type, count, pData );
 }
+
+// NOTE: The constructor for netReadNotifyIO::netReadNotifyIO() currently does
+// not throw an exception, but we should eventually have placement delete
+// defined for class netReadNotifyIO when compilers support this so that 
+// there is no possibility of a leak if there was an exception in
+// a future version of netReadNotifyIO::netReadNotifyIO()
+#if defined ( NETIO_PLACEMENT_DELETE )
+    void netReadNotifyIO::operator delete ( void *pCadaver, 
+        tsFreeList < class netReadNotifyIO, 1024, epicsMutexNOOP > & freeList ) {
+        freeList.release ( pCadaver, sizeof ( netReadNotifyIO ) );
+    }
+#endif
+
+#   if defined (_MSC_VER) && _MSC_VER == 1300
+    void netReadNotifyIO::operator delete ( void * ) // avoid visual c++ 7 bug
+    {
+        throw std::logic_error ( "_MSC_VER == 1300 bogus stub called?" );
+    }
+#   endif
 
 
 

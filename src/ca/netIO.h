@@ -20,6 +20,19 @@
 
 #include "nciu.h"
 
+// does the local compiler support placement delete
+#if defined (_MSC_VER)
+#   if _MSC_VER >= 1200
+#       define NETIO_PLACEMENT_DELETE
+#   endif
+#elif defined (__GNUC__) && 0
+#   if __GNUC__>2 || ( __GNUC__==2 && __GNUC_MINOR_>=96 )
+#	    define NETIO_PLACEMENT_DELETE
+#   endif
+#else
+#   define NETIO_PLACEMENT_DELETE
+#endif
+
 class baseNMIU : public tsDLNode < baseNMIU >, 
         public chronIntIdRes < baseNMIU > {
 public:
@@ -38,7 +51,7 @@ public:
     ca_uint32_t getID () const;
     nciu & channel () const;
 protected:
-    virtual ~baseNMIU () = 0;
+    virtual ~baseNMIU ();
 //
 // perhaps we should not store the channel here and instead fetch it out of the 
 // notify 
@@ -68,8 +81,6 @@ public:
     void exception ( int status, 
         const char *pContext, unsigned type, 
         arrayElementCount count );
-protected:
-    ~netSubscription ();
 private:
     const arrayElementCount count;
     cacStateNotify &notify;
@@ -80,12 +91,19 @@ private:
     class netSubscription * isSubscription ();
     void * operator new ( size_t, 
         tsFreeList < class netSubscription, 1024, epicsMutexNOOP > & );
-#   if ! defined ( NO_PLACEMENT_DELETE )
-    void operator delete ( void *, size_t, 
+#   if defined ( NETIO_PLACEMENT_DELETE )
+    void operator delete ( void *, 
         tsFreeList < class netSubscription, 1024, epicsMutexNOOP > & );
 #   endif
     netSubscription ( const netSubscription & );
     netSubscription & operator = ( const netSubscription & );
+    ~netSubscription ();
+#   if defined (_MSC_VER) && _MSC_VER == 1300 
+        void operator delete ( void * ); // avoid visual c++ 7 bug
+#   endif
+#   if __GNUC__==2 && __GNUC_MINOR_<96 
+        void operator delete ( void *, size_t ); // avoid gnu g++ bug
+#   endif
 };
 
 class netReadNotifyIO : public baseNMIU {
@@ -101,19 +119,24 @@ public:
         arrayElementCount count, const void *pData );
     void exception ( int status, const char *pContext, 
         unsigned type, arrayElementCount count );
-protected:
-    ~netReadNotifyIO ();
 private:
-    cacReadNotify &notify;
-    netReadNotifyIO ( nciu &chan, cacReadNotify &notify );
+    cacReadNotify & notify;
+    netReadNotifyIO ( nciu & chan, cacReadNotify & notify );
     void * operator new ( size_t, 
         tsFreeList < class netReadNotifyIO, 1024, epicsMutexNOOP > & );
-#   if ! defined ( NO_PLACEMENT_DELETE )
-    void operator delete ( void *, size_t, 
+#   if defined ( NETIO_PLACEMENT_DELETE )
+    void operator delete ( void *, 
         tsFreeList < class netReadNotifyIO, 1024, epicsMutexNOOP > & );
 #   endif
+    ~netReadNotifyIO ();
     netReadNotifyIO ( const netReadNotifyIO & );
     netReadNotifyIO & operator = ( const netReadNotifyIO & );
+#   if defined (_MSC_VER) && _MSC_VER == 1300
+        void operator delete ( void * ); // avoid visual c++ 7 bug
+#   endif
+#   if __GNUC__==2 && __GNUC_MINOR_<96 
+        void operator delete ( void *, size_t ); // avoid gnu g++ bug
+#   endif
 };
 
 class netWriteNotifyIO : public baseNMIU {
@@ -129,19 +152,24 @@ public:
         arrayElementCount count, const void *pData );
     void exception ( int status, const char *pContext, 
         unsigned type, arrayElementCount count );
-protected:
-    ~netWriteNotifyIO ();
 private:
     cacWriteNotify &notify;
     netWriteNotifyIO ( nciu &chan, cacWriteNotify &notify );
     void * operator new ( size_t, 
         tsFreeList < class netWriteNotifyIO, 1024, epicsMutexNOOP > & );
-#   if ! defined ( NO_PLACEMENT_DELETE )
-    void operator delete ( void *, size_t, 
+#   if defined ( NETIO_PLACEMENT_DELETE )
+    void operator delete ( void *,
         tsFreeList < class netWriteNotifyIO, 1024, epicsMutexNOOP > & );
 #   endif
     netWriteNotifyIO ( const netWriteNotifyIO & );
     netWriteNotifyIO & operator = ( const netWriteNotifyIO & );
+    ~netWriteNotifyIO ();
+#   if defined (_MSC_VER) && _MSC_VER == 1300
+        void operator delete ( void * ); // avoid visual c++ 7 bug
+#   endif
+#   if __GNUC__==2 && __GNUC_MINOR_<96 
+        void operator delete ( void *, size_t ); // avoid gnu g++ bug
+#   endif
 };
 
 inline ca_uint32_t baseNMIU::getID () const
@@ -159,19 +187,6 @@ inline void * netSubscription::operator new ( size_t size,
 {
     return freeList.allocate ( size );
 }
-
-// NOTE: The constructor for netSubscription::netSubscription() currently does
-// not throw an exception, but we should eventually have placement delete
-// defined for class netSubscription when compilers support this so that 
-// there is no possibility of a leak if there was an exception in
-// a future version of netSubscription::netSubscription()
-#if ! defined ( NO_PLACEMENT_DELETE )
-inline void netSubscription::operator delete ( void *pCadaver, size_t size, 
-    tsFreeList < class netSubscription, 1024, epicsMutexNOOP > &freeList )
-{
-    freeList.release ( pCadaver, size );
-}
-#endif
 
 inline netSubscription * netSubscription::factory ( 
     tsFreeList < class netSubscription, 1024, epicsMutexNOOP > &freeList, 
@@ -216,18 +231,6 @@ inline void * netReadNotifyIO::operator new ( size_t size,
     return freeList.allocate ( size );
 }
 
-// NOTE: The constructor for netReadNotifyIO::netReadNotifyIO() currently does
-// not throw an exception, but we should eventually have placement delete
-// defined for class netReadNotifyIO when compilers support this so that 
-// there is no possibility of a leak if there was an exception in
-// a future version of netReadNotifyIO::netReadNotifyIO()
-#if ! defined ( NO_PLACEMENT_DELETE )
-inline void netReadNotifyIO::operator delete ( void *pCadaver, size_t size, 
-    tsFreeList < class netReadNotifyIO, 1024, epicsMutexNOOP > &freeList ) {
-    freeList.release ( pCadaver, size );
-}
-#endif
-
 inline netWriteNotifyIO * netWriteNotifyIO::factory ( 
     tsFreeList < class netWriteNotifyIO, 1024, epicsMutexNOOP > &freeList, 
     nciu &chan, cacWriteNotify &notify )
@@ -240,18 +243,5 @@ inline void * netWriteNotifyIO::operator new ( size_t size,
 { 
     return freeList.allocate ( size );
 }
-
-// NOTE: The constructor for netWriteNotifyIO::netWriteNotifyIO() currently does
-// not throw an exception, but we should eventually have placement delete
-// defined for class netWriteNotifyIO when compilers support this so that 
-// there is no possibility of a leak if there was an exception in
-// a future version of netWriteNotifyIO::netWriteNotifyIO()
-#if ! defined ( NO_PLACEMENT_DELETE )
-inline void netWriteNotifyIO::operator delete ( void *pCadaver, size_t size, 
-    tsFreeList < class netWriteNotifyIO, 1024, epicsMutexNOOP > &freeList )
-{
-    freeList.release ( pCadaver, size );
-}
-#endif
 
 #endif // ifdef netIOh

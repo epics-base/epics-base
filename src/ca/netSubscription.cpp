@@ -10,6 +10,8 @@
  *  Author: Jeff Hill
  */
 
+#include <stdexcept>
+
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
 #define epicsExportSharedSymbols
@@ -79,6 +81,27 @@ void netSubscription::completion ( unsigned typeIn,
 {
     this->notify.current ( typeIn, countIn, pDataIn );
 }
+
+// NOTE: The constructor for netSubscription::netSubscription() currently does
+// not throw an exception, but we should eventually have placement delete
+// defined for class netSubscription when compilers support this so that 
+// there is no possibility of a leak if there was an exception in
+// a future version of netSubscription::netSubscription()
+#if defined ( NETIO_PLACEMENT_DELETE )
+    void netSubscription::operator delete ( void *pCadaver, 
+        tsFreeList < class netSubscription, 1024, epicsMutexNOOP > &freeList )
+    {
+        freeList.release ( pCadaver, sizeof ( netSubscription ) );
+    }
+#endif
+
+#   if defined (_MSC_VER) && _MSC_VER == 1300
+    void netSubscription::operator delete ( void * ) // avoid visual c++ 7 bug
+    {
+        throw std::logic_error ( "_MSC_VER == 1300 bogus stub called?" );
+    }
+#   endif
+
 
 
 

@@ -52,15 +52,15 @@ semBinaryId semBinaryCreate(int initialState)
              strerror(status));
          cantProceed("semBinaryCreate");
     }
+#if defined _POSIX_THREAD_PRIO_PROTECT
     status = pthread_mutexattr_setprotocol(
         &pbinary->attr,PTHREAD_PROCESS_PRIVATE);
-/* For now dont report failure
     if(status) {
          errlogPrintf("semBinaryCreate pthread_mutexattr_setprotocal "
              "failed: error %s\n",
              strerror(status));
     }
-*/
+#endif
     status = pthread_mutex_init(&pbinary->mutex,&pbinary->attr);
     if(status) {
          errlogPrintf("pthread_mutex_init failed: error %s\n",
@@ -156,7 +156,7 @@ semMutexId semMutexCreate(void) {
              strerror(status));
          cantProceed("semMutexCreate");
     }
-#ifdef PTHREAD_PRIO_INHERIT
+#ifdef _POSIX_THREAD_PRIO_INHERIT
     status = pthread_mutexattr_setprotocol(&pmutex->attr,PTHREAD_PRIO_INHERIT);
     if(status) {
          errlogPrintf("pthread_mutexattr_setprotocal failed: error %s\n",

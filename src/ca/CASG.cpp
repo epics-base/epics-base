@@ -111,10 +111,7 @@ int CASG::block ( double timeout )
             break;
         }
 
-        status = this->client.blockForEventAndEnableCallbacks ( this->sem, remaining );
-        if ( status != ECA_NORMAL ) {
-            break;
-        }
+        this->client.blockForEventAndEnableCallbacks ( this->sem, remaining );
 
         /*
          * force a time update 

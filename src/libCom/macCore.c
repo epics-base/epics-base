@@ -38,6 +38,7 @@
 #include <string.h>
 
 #include "macLib.h"
+#include "dbmf.h"
 
 /*
  * Static function prototypes (these static functions provide an low-level
@@ -91,7 +92,7 @@ macCreateHandle(
     *pHandle = NULL;
 
     /* allocate macro substitution context */
-    handle = ( MAC_HANDLE * ) malloc( sizeof( MAC_HANDLE ) );
+    handle = ( MAC_HANDLE * ) dbmfMalloc( sizeof( MAC_HANDLE ) );
     if ( handle == NULL ) {
 	macErrMessage0( -1, "macCreateHandle: failed to allocate context" );
 	return -1;
@@ -108,7 +109,7 @@ macCreateHandle(
     /* if supplied, load macro definitions */
     for ( ; pairs && pairs[0]; pairs += 2 ) {
 	if ( macPutValue( handle, pairs[0], pairs[1] ) < 0 ) {
-	    free( handle );
+	    dbmfFree( handle );
 	    return -1;
 	}
     }
@@ -320,7 +321,7 @@ macDeleteHandle(
 
     /* clear magic field and free context structure */
     handle->magic = 0;
-    free( handle );
+    dbmfFree( handle );
 
     return 0;
 }
@@ -480,12 +481,12 @@ static MAC_ENTRY *previous( MAC_ENTRY *entry )
 static MAC_ENTRY *create( MAC_HANDLE *handle, char *name, long special )
 {
     ELLLIST   *list  = &handle->list;
-    MAC_ENTRY *entry = ( MAC_ENTRY * ) malloc( sizeof( MAC_ENTRY ) );
+    MAC_ENTRY *entry = ( MAC_ENTRY * ) dbmfMalloc( sizeof( MAC_ENTRY ) );
 
     if ( entry != NULL ) {
 	entry->name   = Strdup( name );
 	if ( entry->name == NULL ) {
-	    free( entry );
+	    dbmfFree( entry );
 	    entry = NULL;
 	}
 	else {
@@ -528,7 +529,7 @@ static MAC_ENTRY *lookup( MAC_HANDLE *handle, char *name, long special )
 static char *rawval( MAC_HANDLE *handle, MAC_ENTRY *entry, char *value )
 {
     if ( entry->rawval != NULL )
-	free( entry->rawval );
+	dbmfFree( entry->rawval );
     entry->rawval = Strdup( value );
 
     handle->dirty = TRUE;
@@ -546,12 +547,12 @@ static void delete( MAC_HANDLE *handle, MAC_ENTRY *entry )
 
     ellDelete( list, ( ELLNODE * ) entry );
 
-    free( entry->name );
+    dbmfFree( entry->name );
     if ( entry->rawval != NULL )
-	free( entry->rawval );
+	dbmfFree( entry->rawval );
     if ( entry->value != NULL )
 	free( entry->value );
-    free( entry );
+    dbmfFree( entry );
 
     handle->dirty = TRUE;
 }
@@ -734,7 +735,7 @@ static void trans( MAC_HANDLE *handle, MAC_ENTRY *entry, long level,
  */
 char *Strdup( char *string )
 {
-    char *copy = malloc( strlen( string ) + 1 );
+    char *copy = dbmfMalloc( strlen( string ) + 1 );
 
     if ( copy != NULL )
 	strcpy( copy, string );
@@ -743,6 +744,9 @@ char *Strdup( char *string )
 }
 
 /* $Log$
+ * Revision 1.3  1996/11/02 02:05:24  jhill
+ * %d => %ld
+ *
  * Revision 1.2  1996/09/16 21:07:10  jhill
  * fixed warnings
  *

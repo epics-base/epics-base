@@ -25,6 +25,8 @@ actionArchTargets = $(foreach action, $(ACTIONS) install,\
 
 all install :: inc buildInstall 
 
+rebuild:: clean all
+
 $(DIRS) $(dirActionTargets) $(dirArchTargets)$(dirActionArchTargets) ::
 	$(MAKE) -C $(dirPart) $(actionArchPart)
 
@@ -36,7 +38,7 @@ $(ACTIONS) $(actionArchTargets) :%: \
 	$(foreach dir, $(DIRS), $(dir)$(DIVIDER)%)
  
 
-.PHONY : $(DIRS) all install
+.PHONY : $(DIRS) all install rebuild
 .PHONY : $(ARCHS) $(ACTIONS)
 .PHONY : $(dirActionTargets) $(dirArchTargets)
 .PHONY : $(dirActionArchTargets)

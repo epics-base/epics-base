@@ -7,10 +7,6 @@ include $(CONFIG)/RULES_ARCHS
 else  #T_A
 
 include $(CONFIG)/RULES_BUILD
-ifneq ($(CONFIG),$(TOP)/configure)
--include $(TOP)/configure/RULES_BUILD
-endif
--include $(TOP)/configure/O.$(T_A)/RULES_INCLUDE
 
 endif # T_A defined
 

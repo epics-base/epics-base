@@ -12,7 +12,7 @@
 //
 // smartGDDPointer::set()
 //
-void smartGDDPointer::set (gdd *pNewValue) 
+void smartConstGDDPointer::set (const gdd *pNewValue) 
 {
 	int gddStatus;
 	//
@@ -20,16 +20,16 @@ void smartGDDPointer::set (gdd *pNewValue)
 	// potentially unref a gdd that we are 
 	// still using if the pointer isnt changing
 	//
-	if (this->pValue==pNewValue) {
+	if ( this->pConstValue == pNewValue ) {
 		return;
 	}
-	if (this->pValue!=NULL) {
-		gddStatus = this->pValue->unreference();
-		assert (!gddStatus);
+	if ( this->pConstValue != NULL ) {
+		gddStatus = this->pConstValue->unreference();
+		assert ( ! gddStatus );
 	}
-	this->pValue = pNewValue;
-	if (this->pValue!=NULL) {
-		gddStatus = this->pValue->reference();
-		assert (!gddStatus);
+	this->pConstValue = pNewValue;
+	if ( this->pConstValue != NULL ) {
+		gddStatus = this->pConstValue->reference();
+		assert ( ! gddStatus );
 	}
 }

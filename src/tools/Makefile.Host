@@ -39,8 +39,8 @@ else
 
 $(INSTALL_BIN)/installEpics: testmkdir installEpics 
 	@echo "Installing $@"
-	@testmkdir $(INSTALL_LOCATION_BIN)
-	@testmkdir $(INSTALL_BIN)
+	@./testmkdir $(INSTALL_LOCATION_BIN)
+	@./testmkdir $(INSTALL_BIN)
 	@./installEpics -m 555 testmkdir $(INSTALL_BIN)
 	@./installEpics -m 555 installEpics $(INSTALL_BIN)
 

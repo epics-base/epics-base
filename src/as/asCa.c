@@ -30,6 +30,7 @@
 #include "caerr.h"
 #include "caeventmask.h"
 #include "alarm.h"
+#include "epicsStdio.h"
 
 #include "epicsExport.h"
 #include "asLib.h"
@@ -260,7 +261,7 @@ void epicsShareAPI asCaStop(void)
     epicsMutexUnlock(asCaTaskLock);
 }
 
-int epicsShareAPI ascar(int level) {return ascarFP(stdout,level);}
+int epicsShareAPI ascar(int level) { return ascarFP(stdout,level);}
 
 int epicsShareAPI ascarFP(FILE *fp,int level)
 {

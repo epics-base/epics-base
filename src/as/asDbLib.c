@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "epicsStdio.h"
 #include "dbDefs.h"
 #include "cantProceed.h"
 #include "epicsThread.h"
@@ -66,7 +67,7 @@ static long asDbAddRecords(void)
     return(0);
 }
 
-int epicsShareAPI asSetFilename(char *acf)
+int epicsShareAPI asSetFilename(const char *acf)
 {
     if(pacf) free ((void *)pacf);
     if(acf) {
@@ -82,7 +83,7 @@ int epicsShareAPI asSetFilename(char *acf)
     return(0);
 }
 
-int epicsShareAPI asSetSubstitutions(char *substitutions)
+int epicsShareAPI asSetSubstitutions(const char *substitutions)
 {
     if(psubstitutions) free ((void *)psubstitutions);
     if(substitutions) {
@@ -222,7 +223,7 @@ static void astacCallback(ASCLIENTPVT clientPvt,asClientStatus status)
 	(asCheckPut(clientPvt) ? "Yes" : "No"));
 }
 
-int epicsShareAPI astac(char *pname,char *user,char *location)
+int epicsShareAPI astac(const char *pname,const char *user,const char *location)
 {
     DBADDR	*paddr;
     long	status;
@@ -278,51 +279,50 @@ int epicsShareAPI asdbdumpFP(FILE *fp)
     return(0);
 }
 
-int epicsShareAPI aspuag(char *uagname)
+int epicsShareAPI aspuag(const char *uagname)
 {
-
     asDumpUagFP(stdout,uagname);
     return(0);
 }
 
-int epicsShareAPI aspuagFP(FILE *fp,char *uagname)
+int epicsShareAPI aspuagFP(FILE *fp,const char *uagname)
 {
 
     asDumpUagFP(fp,uagname);
     return(0);
 }
 
-int epicsShareAPI asphag(char *hagname)
+int epicsShareAPI asphag(const char *hagname)
 {
     asDumpHagFP(stdout,hagname);
     return(0);
 }
 
-int epicsShareAPI asphagFP(FILE *fp,char *hagname)
+int epicsShareAPI asphagFP(FILE *fp,const char *hagname)
 {
     asDumpHagFP(fp,hagname);
     return(0);
 }
 
-int epicsShareAPI asprules(char *asgname)
+int epicsShareAPI asprules(const char *asgname)
 {
     asDumpRulesFP(stdout,asgname);
     return(0);
 }
 
-int epicsShareAPI asprulesFP(FILE *fp,char *asgname)
+int epicsShareAPI asprulesFP(FILE *fp,const char *asgname)
 {
     asDumpRulesFP(fp,asgname);
     return(0);
 }
 
-int epicsShareAPI aspmem(char *asgname,int clients)
+int epicsShareAPI aspmem(const char *asgname,int clients)
 {
     asDumpMemFP(stdout,asgname,myMemberCallback,clients);
     return(0);
 }
 
-int epicsShareAPI aspmemFP(FILE *fp,char *asgname,int clients)
+int epicsShareAPI aspmemFP(FILE *fp,const char *asgname,int clients)
 {
     asDumpMemFP(fp,asgname,myMemberCallback,clients);
     return(0);

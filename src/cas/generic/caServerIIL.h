@@ -128,33 +128,33 @@ inline casEventMask caServerI::alarmEventMask() const
 }
 
 //
-// caServerI::subscriptionEventsProcessedCounter (void) const
+// caServerI::subscriptionEventsProcessedCounter () const
 //
-inline unsigned caServerI::subscriptionEventsProcessed (void) const
+inline unsigned caServerI::subscriptionEventsProcessed () const
 {
     return this->nEventsProcessed;
 }
 
 //
-// caServerI::incrEventsProcessedCounter (void)
+// caServerI::incrEventsProcessedCounter ()
 //
-inline void caServerI::incrEventsProcessedCounter (void)
+inline void caServerI::incrEventsProcessedCounter ()
 {
     this->nEventsProcessed++;
 }
 
 //
-// caServerI::subscriptionEventsPosted (void) const
+// caServerI::subscriptionEventsPosted () const
 //
-inline unsigned caServerI::subscriptionEventsPosted (void) const
+inline unsigned caServerI::subscriptionEventsPosted () const
 {
     return this->nEventsPosted;
 }
 
 //
-// caServerI::incEventsPostedCounter (void)
+// caServerI::incEventsPostedCounter ()
 //
-inline void caServerI::incrEventsPostedCounter (void)
+inline void caServerI::incrEventsPostedCounter ()
 {
     this->nEventsPosted++;
 }

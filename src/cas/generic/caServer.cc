@@ -182,9 +182,9 @@ class epicsTimer & caServer::createTimer ()
 //
 // caServer::subscriptionEventsProcessed
 //
-epicsShareFunc unsigned caServer::subscriptionEventsProcessed (void) const // X aCC 361
+epicsShareFunc unsigned caServer::subscriptionEventsProcessed () const // X aCC 361
 {
-    if (pCAS) {
+    if ( pCAS ) {
         return this->pCAS->subscriptionEventsProcessed();
     }
     else {
@@ -195,9 +195,9 @@ epicsShareFunc unsigned caServer::subscriptionEventsProcessed (void) const // X 
 //
 // caServer::subscriptionEventsPosted
 //
-epicsShareFunc unsigned caServer::subscriptionEventsPosted (void) const // X aCC 361
+epicsShareFunc unsigned caServer::subscriptionEventsPosted () const // X aCC 361
 {
-    if (pCAS) {
+    if ( pCAS ) {
         return this->pCAS->subscriptionEventsPosted ();
     }
     else {

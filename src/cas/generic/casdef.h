@@ -264,8 +264,10 @@ public:
     // subscriptionEventsProcessed() 
     //      - number of events removed by server library from the event queue
     //
-    epicsShareFunc unsigned subscriptionEventsPosted (void) const;
-    epicsShareFunc unsigned subscriptionEventsProcessed (void) const;
+    epicsShareFunc unsigned subscriptionEventsPosted () const;
+    epicsShareFunc unsigned subscriptionEventsProcessed () const;
+
+    epicsShareFunc void generateBeaconAnomaly () const;
 
     epicsShareFunc class epicsTimer & createTimer ();
 

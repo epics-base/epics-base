@@ -30,7 +30,7 @@ include $(CONFIG.CC)
 #-------------------------------------------------------
 # RTEMS cross-development tools
 CC = $(RTEMS_BASE)/bin/$(CC_FOR_TARGET) $(GCCSPECS) -fasm
-CCC = $(CC)
+CCC = $(RTEMS_BASE)/bin/$(CXX)
 CPP = $(RTEMS_BASE)/bin/$(CC_FOR_TARGET) -x c -E
 AR = $(RTEMS_BASE)/bin/$(AR_FOR_TARGET)
 LD = $(RTEMS_BASE)/bin/$(LD_FOR_TARGET) -r

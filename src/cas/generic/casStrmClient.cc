@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.27  1998/12/19 00:04:52  jhill
+ * renamed createPV() to pvAttach()
+ *
  * Revision 1.26  1998/10/28 23:51:01  jhill
  * server nolonger throws exception when a poorly formed get/put call back
  * request arrives. Instead a get/put call back response is sent which includes
@@ -318,7 +321,7 @@ caStatus casStrmClient::readAction ()
 
 	status = this->read(pDesc); 
 	if (status==S_casApp_success) {
-		status = this->readResponse(pChan, *mp, pDesc, S_cas_success);
+		status = this->readResponse(pChan, *mp, *pDesc, S_cas_success);
 	}
 	else if (status == S_casApp_asyncCompletion) {
 		status = S_cas_success;
@@ -339,7 +342,7 @@ caStatus casStrmClient::readAction ()
 // casStrmClient::readResponse()
 //
 caStatus casStrmClient::readResponse (casChannelI *pChan, const caHdr &msg, 
-					gdd *pDesc, const caStatus status)
+					const gdd &desc, const caStatus status)
 {
 	caHdr 		*reply;
 	unsigned	size;
@@ -349,14 +352,6 @@ caStatus casStrmClient::readResponse (casChannelI *pChan, const caHdr &msg,
 
 	if (status!=S_casApp_success) {
 		return this->sendErrWithEpicsStatus(&msg, status, ECA_GETFAIL);
-	}
-
-	//
-	// must have a descriptor if status is S_casApp_success 
-	//
-	else if (!pDesc) {
-		return this->sendErrWithEpicsStatus(&msg, 
-				S_cas_badParameter, ECA_GETFAIL);
 	}
 
 	size = dbr_size_n (msg.m_type, msg.m_count);
@@ -379,9 +374,9 @@ caStatus casStrmClient::readResponse (casChannelI *pChan, const caHdr &msg,
 	// convert gdd to db_access type
 	// (places the data in network format)
 	//
-	mapDBRStatus = gddMapDbr[msg.m_type].conv_dbr((reply+1), msg.m_count, pDesc);
+	mapDBRStatus = gddMapDbr[msg.m_type].conv_dbr((reply+1), msg.m_count, desc);
 	if (mapDBRStatus<0) {
-		pDesc->dump();
+		desc.dump();
 		errPrintf (S_cas_badBounds, __FILE__, __LINE__, "- get notify with PV=%s type=%u count=%u",
 				pChan->getPVI()->getName(), msg.m_type, msg.m_count);
 		return this->sendErrWithEpicsStatus(&msg, S_cas_badBounds, ECA_GETFAIL);
@@ -458,7 +453,7 @@ caStatus casStrmClient::readNotifyAction ()
 // casStrmClient::readNotifyResponse()
 //
 caStatus casStrmClient::readNotifyResponse (casChannelI *pChan, 
-		const caHdr &msg, gdd *pDesc, const caStatus completionStatus)
+		const caHdr &msg, const gdd *pDesc, const caStatus completionStatus)
 {
 	caStatus ecaStatus;
 
@@ -477,7 +472,7 @@ caStatus casStrmClient::readNotifyResponse (casChannelI *pChan,
 // casStrmClient::readNotifyResponseECA_XXX ()
 //
 caStatus casStrmClient::readNotifyResponseECA_XXX (casChannelI *pChan, 
-		const caHdr &msg, gdd *pDesc, const caStatus ecaStatus)
+		const caHdr &msg, const gdd *pDesc, const caStatus ecaStatus)
 {
 	caHdr 		*reply;
 	unsigned	size;
@@ -497,6 +492,12 @@ caStatus casStrmClient::readNotifyResponseECA_XXX (casChannelI *pChan,
 		}
 		return status;
 	}
+	//
+	// must have a descriptor if status is S_casApp_success 
+	//
+	else if (!pDesc) {
+		return this->sendErr(&msg, ECA_INTERNAL, "nill GDD pointer ?");
+	}
 
 	//
 	// setup response message
@@ -514,7 +515,7 @@ caStatus casStrmClient::readNotifyResponseECA_XXX (casChannelI *pChan,
 			// convert gdd to db_access type
 			// (places the data in network format)
 			//
-			mapDBRStatus = gddMapDbr[msg.m_type].conv_dbr((reply+1), msg.m_count, pDesc);
+			mapDBRStatus = gddMapDbr[msg.m_type].conv_dbr((reply+1), msg.m_count, *pDesc);
 			if (mapDBRStatus<0) {
 				pDesc->dump();
 				errPrintf (S_cas_badBounds, __FILE__, __LINE__, "- get notify with PV=%s type=%u count=%u",
@@ -572,12 +573,11 @@ caStatus casStrmClient::readNotifyResponseECA_XXX (casChannelI *pChan,
 	return S_cas_success;
 }
 
-
 //
 // casStrmClient::monitorResponse()
 //
 caStatus casStrmClient::monitorResponse(casChannelI &chan, const caHdr &msg, 
-		gdd *pDesc, const caStatus completionStatus)
+		const gdd *pDesc, const caStatus completionStatus)
 {
 	caStatus completionStatusCopy = completionStatus;
 	smartGDDPointer pDBRDD;
@@ -619,8 +619,8 @@ caStatus casStrmClient::monitorResponse(casChannelI &chan, const caHdr &msg,
 	// cid field abused to store the status here
 	//
 	if (completionStatusCopy == S_cas_success) {
-		if (pDesc) {
 
+		if (pDesc) {
 			completionStatusCopy = createDBRDD(msg.m_type, 
 							msg.m_count, pDBRDD);
 			if (completionStatusCopy==S_cas_success) {
@@ -651,7 +651,7 @@ caStatus casStrmClient::monitorResponse(casChannelI &chan, const caHdr &msg,
 		// there appears to be no success/fail
 		// status from this routine
 		//
-		gddMapDbr[msg.m_type].conv_dbr ((pReply+1), msg.m_count, pDBRDD);
+		gddMapDbr[msg.m_type].conv_dbr ((pReply+1), msg.m_count, *pDBRDD);
 
 #ifdef CONVERSION_REQUIRED
 		/* use type as index into conversion jumptable */
@@ -1712,8 +1712,16 @@ caStatus casStrmClient::writeScalarData()
 	caStatus status;
 	aitEnum	type;
 
+	/*
+	 * DBR type has already been checked, but it is possible
+	 * that "gddDbrToAit" will not track with changes in
+	 * the DBR_XXXX type system
+	 */
+	if (pHdr->m_type>=NELEMENTS(gddDbrToAit)) {
+		return S_cas_badType;
+	}
 	type = gddDbrToAit[pHdr->m_type].type;
-	if (type == aitEnumInvalid) {
+	if (type==aitEnumInvalid) {
 		return S_cas_badType;
 	}
 
@@ -1773,8 +1781,16 @@ caStatus casStrmClient::writeArrayData()
 	char *pData;
 	size_t size;
 
+	/*
+	 * DBR type has already been checked, but it is possible
+	 * that "gddDbrToAit" will not track with changes in
+	 * the DBR_XXXX type system
+	 */
+	if (pHdr->m_type>=NELEMENTS(gddDbrToAit)) {
+		return S_cas_badType;
+	}
 	type = gddDbrToAit[pHdr->m_type].type;
-	if (type == aitEnumInvalid) {
+	if (type==aitEnumInvalid) {
 		return S_cas_badType;
 	}
 
@@ -1905,6 +1921,17 @@ caStatus createDBRDD (unsigned dbrType, aitIndex dbrCount, smartGDDPointer &pDes
 	aitUint16 appType;
 	gdd *pVal;
 	
+	/*
+	 * DBR type has already been checked, but it is possible
+	 * that "gddDbrToAit" will not track with changes in
+	 * the DBR_XXXX type system
+	 */
+	if (dbrType>=NELEMENTS(gddDbrToAit)) {
+		return S_cas_badType;
+	}
+	if (gddDbrToAit[dbrType].type==aitEnumInvalid) {
+		return S_cas_badType;
+	}
 	appType = gddDbrToAit[dbrType].app;
 	
 	//
@@ -1929,6 +1956,19 @@ caStatus createDBRDD (unsigned dbrType, aitIndex dbrCount, smartGDDPointer &pDes
 		//
 		gddContainer *pCont = (gddContainer *) pGdd;
 		
+		//
+		// unable to change the bounds on the managed GDD that is
+		// returned for DBR types
+		//
+		if (dbrCount>1 ) {
+				pDescRet = (gdd *) new gddContainer (pCont);
+				//
+				// smart pointer class maintains the ref count from here down
+				//
+				gddStatus = pDescRet->unreference();
+				assert (!gddStatus);
+		}
+
 		//
 		// All DBR types have a value member 
 		//
@@ -1955,7 +1995,7 @@ caStatus createDBRDD (unsigned dbrType, aitIndex dbrCount, smartGDDPointer &pDes
 		}
 		
 		//
-		// scaler and managed (and need to set the bounds)
+		// scalar and managed (and need to set the bounds)
 		//	=> out of luck (cant modify bounds)
 		//
 		if (pDescRet->isManaged()) {

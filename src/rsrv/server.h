@@ -113,15 +113,14 @@ struct client{
   unsigned long			ticks_at_last_send;
   unsigned long			ticks_at_last_recv;
   void				*evuser;
+  char				*pUserName;
+  char				*pHostName;
   SEM_ID			blockSem; /* used whenever the client blocks */
   int				sock;
   int				proto;
   int				tid;
   unsigned			minor_version_number;
-  char				eventsoff;
   char				disconnect;	/* disconnect detected */
-  char				*pUserName;
-  char				*pHostName;
 };
 
 
@@ -167,7 +166,6 @@ unsigned			size;		/* for speed */
 unsigned			mask;
 char				modified;	/* mod & ev flw ctrl enbl */
 char				send_lock;	/* lock send buffer */
-char				get;		/* T: get F: monitor */
 };
 
 

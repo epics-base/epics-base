@@ -481,7 +481,6 @@ struct client *create_udp_client(unsigned sock)
       	client->recv.stk = 0ul;
       	client->recv.cnt = 0ul;
       	client->evuser = NULL;
-      	client->eventsoff = FALSE;
 	client->disconnect = FALSE;	/* for TCP only */
 	client->ticks_at_last_send = tickGet();
 	client->ticks_at_last_recv = tickGet();

@@ -489,6 +489,11 @@ int catime ( char *channelName, unsigned channelCount, enum appendNumberFlag app
     unsigned    nBytes;
     ti          *pItemList;
 
+    if ( channelCount == 0 ) {
+        printf ( "channel count was zero\n" );
+        return 0;
+    }
+
     pItemList = calloc ( channelCount, sizeof (ti) );
     if ( ! pItemList ) {
         return -1;

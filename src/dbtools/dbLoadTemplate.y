@@ -89,6 +89,17 @@ templs: templs templ
 	;
 
 templ: templ_head O_BRACE subst C_BRACE
+	| templ_head
+	{
+#ifndef SUB_TOOL
+		if(db_file_name)
+			dbLoadRecords(db_file_name,NULL,NULL);
+		else
+			fprintf(stderr,"Error: no db file name given\n");
+#else
+		sub_it();
+#endif
+	}
 	;
 
 templ_head: DBFILE WORD
@@ -118,9 +129,7 @@ vars: vars var
 	;
 
 var: WORD
-	{
-		vars[var_count++]=$1;
-	}
+	{ vars[var_count++]=$1; }
 	;
 
 subs: subs sub

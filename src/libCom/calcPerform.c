@@ -62,6 +62,7 @@
  * .26	02-28-92	jba	added CEIL and FLOOR
  * .27  03-06-92        jba     added MAX and MIN binary functions
  * .28  03-10-92        jba     added multiple conditional expressions ?
+ * .29  04-01-92        jba     allowed floating pt constants in expression
 >
  */
 
@@ -119,6 +120,7 @@ char   *post;
 	int 		inexttop;	/* ineteger next to top value 	*/
 	short 		cond_flag;	/* conditional else flag	*/
 	short 		got_if;
+	short 		status;
 
 	/* initialize flag  */
 	cond_flag = NOT_SET;
@@ -129,6 +131,7 @@ char   *post;
 
 	/* polish calculator loop */
 	while (*post != END_STACK){
+
 		switch (*post){
 		case FETCH_A:
 			++pstacktop;
@@ -439,6 +442,15 @@ char   *post;
 			*pstacktop = ~itop;
 			break;
 
+		case CONSTANT:
+			++pstacktop;
+			++post;
+			if (  sscanf(post,"%lg",pstacktop) != 1 ) {
+				printf("%s bad constant in expression\n",*post);
+				break;
+			}
+			while ( *post != '\0' ) ++post;
+			break;
 		default:
 			printf("%d bad expression element\n",*post);
 			break;

@@ -368,7 +368,8 @@ static long get_enum_strs(paddr,pes)
 {
     struct boRecord	*pbo=(struct boRecord *)paddr->precord;
 
-    pes->no_str = 0;
+    /*SETTING no_str=0 breaks channel access clients*/
+    pes->no_str = 2;
     memset(pes->strs,'\0',sizeof(pes->strs));
     strncpy(pes->strs[0],pbo->znam,sizeof(pbo->znam));
     if(*pbo->znam!=0) pes->no_str=1;

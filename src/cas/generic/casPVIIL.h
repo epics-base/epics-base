@@ -129,7 +129,7 @@ inline caStatus  casPVI::bestDBRType (unsigned &dbrType)
 //
 // casPVI::postEvent()
 //
-inline void casPVI::postEvent (const casEventMask &select, const smartConstGDDPointer &pEvent)
+inline void casPVI::postEvent (const casEventMask &select, const gdd &event)
 {
 	if (this->nMonAttached==0u) {
 		return;
@@ -138,7 +138,7 @@ inline void casPVI::postEvent (const casEventMask &select, const smartConstGDDPo
 	this->lock();
 	tsDLIterBD<casPVListChan> iter = this->chanList.firstIter ();
     while ( iter.valid () ) {
-		iter->postEvent ( select, pEvent );
+		iter->postEvent ( select, event );
 		++iter;
 	}
 	this->unlock();

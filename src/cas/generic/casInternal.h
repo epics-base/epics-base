@@ -326,7 +326,7 @@ public:
 	void installAsyncIO (casAsyncIOI &);
 	void removeAsyncIO (casAsyncIOI &);
 
-	void postEvent (const casEventMask &select, const smartConstGDDPointer &pEvent);
+	void postEvent (const casEventMask &select, const gdd &event);
 
 	epicsShareFunc virtual casResType resourceType () const;
 
@@ -437,7 +437,7 @@ public:
     //
     void deleteSignal ();
     
-    void postEvent (const casEventMask &select, const smartConstGDDPointer &pEvent);
+    void postEvent (const casEventMask &select, const gdd &event);
     
     caServer *getExtServer () const;
     

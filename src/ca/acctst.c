@@ -78,6 +78,33 @@ void performGrEnumTest (chid chan);
 
 void performCtrlDoubleTest (chid chan);
 
+void atLeastOneUpdateTester ( struct event_handler_args args )
+{
+    unsigned *pCtr = (unsigned *) args.usr;
+    (*pCtr)++;
+}
+
+void monitorSubscriptionFirstUpdateTest ( chid chan )
+{
+    int status;
+    unsigned eventCount = 0u;
+    unsigned waitCount = 0u;
+    evid id;
+
+    /*
+     * verify that the first event arrives
+     */
+    status = ca_add_event ( DBR_FLOAT, 
+                chan, atLeastOneUpdateTester, &eventCount, &id );
+    SEVCHK (status, 0);
+    while ( eventCount < 1 && waitCount++ < 100 ) {
+        ca_pend_event ( 0.01 );
+    }
+    assert ( eventCount > 0 );
+    status = ca_clear_event ( id );
+    SEVCHK (status, 0);
+}
+
 int acctst (char *pname)
 {
     chid            chix1;
@@ -100,15 +127,6 @@ int acctst (char *pname)
     printf ( "begin\n" );
 
     printf ( "CA Client V%s\n", ca_version () );
-
-    /*
-     * CA pend event delay accuracy test
-     * (CA asssumes that search requests can be sent
-     * at least every 25 mS on all supported os)
-     */
-    pend_event_delay_test ( 1.0 );
-    pend_event_delay_test ( 0.1 );
-    pend_event_delay_test ( 0.25 ); 
 
     /*
      * verify that we dont print a disconnect message when 
@@ -329,6 +347,8 @@ int acctst (char *pname)
         ca_pend_event(0.1);
     }
     printf("done\n");
+
+    monitorSubscriptionFirstUpdateTest ( chix4 );
 
     performGrEnumTest (chix1);
 
@@ -871,6 +891,15 @@ int acctst (char *pname)
             accuracy);
     }
 
+    /*
+     * CA pend event delay accuracy test
+     * (CA asssumes that search requests can be sent
+     * at least every 25 mS on all supported os)
+     */
+    pend_event_delay_test ( 1.0 );
+    pend_event_delay_test ( 0.1 );
+    pend_event_delay_test ( 0.25 ); 
+
     {
         TS_STAMP    end_time;
         TS_STAMP    start_time;
@@ -1027,20 +1056,25 @@ void null_event (struct event_handler_args args)
  */
 void write_event (struct event_handler_args args)
 {
-    int     status;
+    static unsigned iterations = 100;
+    int status;
     dbr_float_t *pFloat = (dbr_float_t *) args.dbr;
-    dbr_float_t     a;
+    dbr_float_t a;
 
-    if (!args.dbr) {
+    if ( ! args.dbr ) {
         return;
     }
 
-    a = *pFloat;
-    a += 10.1F;
+    if ( iterations > 0 ) {
+        iterations--;
 
-    status = ca_array_put ( DBR_FLOAT, 1, args.chid, &a);
-    SEVCHK ( status, NULL );
-    SEVCHK ( ca_flush_io (), NULL );
+        a = *pFloat;
+        a += 10.1F;
+
+        status = ca_array_put ( DBR_FLOAT, 1, args.chid, &a);
+        SEVCHK ( status, NULL );
+        SEVCHK ( ca_flush_io (), NULL );
+    }
 }
 
 void conn (struct connection_handler_args args)
@@ -1166,7 +1200,7 @@ void multiple_sg_requests(chid chix, CA_SYNC_GID gid)
 /*
  * accessSecurity_cb()
  */
-void    accessSecurity_cb(struct access_rights_handler_args args)
+void accessSecurity_cb(struct access_rights_handler_args args)
 {
 #   ifdef DEBUG
         printf( "%s on %s has %s/%s access\n",
@@ -1196,12 +1230,14 @@ void performGrEnumTest (chid chan)
     assert (status == ECA_NORMAL);
 
     assert ( ge.no_str >= 0 && ge.no_str < NELEMENTS(ge.strs) );
-    printf ("Enum state str = {");
-    count = (unsigned) ge.no_str;
-    for (i=0; i<count; i++) {
-        printf ("\"%s\" ", ge.strs[i]);
+    if ( ge.no_str > 0 ) {
+        printf ("Enum state str = {");
+        count = (unsigned) ge.no_str;
+        for (i=0; i<count; i++) {
+            printf ("\"%s\" ", ge.strs[i]);
+        }
+        printf ("}\n");
     }
-    printf ("}\n");
 }
 
 /*

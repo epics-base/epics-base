@@ -12,7 +12,7 @@
 #  This file is maintained by the EPICS community.
 #  Sites may override these definitions in CONFIG_SITE.Host.hp700
 
-ARCH_CLASS = hp700
+ARCH_CLASS = hpux
 
 # Include definitions common to all Unix archs
 include $(EPICS_BASE)/config/CONFIG.Host.UnixCommon

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.5  1997/08/05 00:46:58  jhill
+ * fixed warnings
+ *
  * Revision 1.4  1997/06/13 09:15:53  jhill
  * connect proto changes
  *
@@ -78,7 +81,7 @@ casAsyncExIOI::~casAsyncExIOI()
 //
 // casAsyncExIOI::postIOCompletion()
 //
-epicsShareFunc caStatus casAsyncExIOI::postIOCompletion(const pvExistReturn retValIn)
+epicsShareFunc caStatus casAsyncExIOI::postIOCompletion(const pvExistReturn &retValIn)
 {
 	this->retVal = retValIn; 
 	return this->postIOCompletionI();

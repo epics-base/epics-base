@@ -868,7 +868,7 @@ public:
 	// (this function does not delete the casAsyncIO object). 
 	// Only the first call to this function has any effect.
 	//
-	epicsShareFunc caStatus postIOCompletion(const pvExistReturn retValIn)
+	epicsShareFunc caStatus postIOCompletion(const pvExistReturn &retValIn)
 	{
 		return this->casAsyncExIOI::postIOCompletion (retValIn);
 	}

@@ -16,6 +16,12 @@
 <h2>Changes since 3.14.4</h2>
 </center>
 
+<h4>New build targets.</h4>
+<p>New files have been created in configure/os to allow CROSS_COMPILER_TARGET_ARCHS
+to include solaris-sparc-gnu and solaris-sparc-debug when EPICS_HOST_ARCH is solaris-sparc.
+Also CROSS_COMPILER_TARGET_ARCHS can now include linux-x86-debug when EPICS_HOST_ARCH
+is linux-x86.</p> 
+
 <h4>New epicsString.h function</h4>
 <p>A new function epicsStrnCaseCmp has been added. It is like strncmp except
 that it ignores case.</p>

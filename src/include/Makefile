@@ -1,7 +1,25 @@
 
 TOP=../..
 
-include $(TOP)/config/CONFIG_BASE
+include $(TOP)/configure/CONFIG
 
-include $(TOP)/config/RULES_ARCHS
+INC += dbDefs.h
+INC += epicsTypes.h
+INC += epicsVersion.h
+INC += gsd_sync_defs.h
+INC += shareLib.h
+#INC += createSoftLinks.sh 
+INC += osiMutexNOOP.h
+INC += unixFileName.h
+
+OSINC += osiFileName.h
+OSINC += osiSock.h
+
+include $(TOP)/configure/RULES_BUILD
+
+#	This seems to be handled wrong by gnumake:
+#	epicsVersion.h is rebuild in any case,
+#	no matter what date ...CONFIG_BASE_VERSION has
+epicsVersion.h: $(TOP)/configure/CONFIG_BASE_VERSION
+	$(PERL) ../makeEpicsVersion.pl $(TOP)/configure/CONFIG_BASE_VERSION
 

@@ -104,11 +104,6 @@
 #define NTO1HIGH	2
 #define NTO1AVE		3
 
-#ifdef vxWorks
-#define vxTicksPerSecond (sysClkRateGet())	/*clock ticks per second*/
-#include <sysLib.h>
-#endif
-
 #include "errMdef.h"
 #include "epicsTypes.h"
 

@@ -35,6 +35,7 @@
  * .04  02-05-92	jba	Changed function arguments from paddr to precord 
  * .05  02-28-92        jba     ANSI C changes
  * .06  04-17-92        rcz     removed dbPvd for mrk
+ * .07  05-19-92        mrk	Mods for changes to internal database structures
  */
 
 /* Global Database Test Routines - All can be invoked via vxWorks shell
@@ -83,6 +84,7 @@
 #include	<fast_lock.h>
 #include	<dbDefs.h>
 #include	<dbAccess.h>
+#include	<dbBase.h>
 #include	<dbRecType.h>
 #include	<dbRecords.h>
 #include	<dbCommon.h>
@@ -92,6 +94,9 @@
 #include	<choice.h>
 #include	<special.h>
 #include	<dbRecDes.h>
+#include	<dbManipulate.h>
+
+extern struct dbBase *pdbBase;
 
 #define MAXLINE 80
 struct msgBuff {		/* line output structure */
@@ -137,20 +142,28 @@ long dba(pname)	/* get and print dbAddr info */
 long dbl(ptypeName)	/* list process variables for specified record type*/
 	char	*ptypeName;
 {
-    int			rectype,beg,end,recnum;
+    int			rectype,beg,end;
     struct recLoc	*precLoc;
     struct dbCommon	*precord;
     char		*pstr;
     char		name[PVNAME_SZ+1];
+    struct recType	*precType;
+    struct recHeader	*precHeader;
+    RECNODE		*precNode;
 
-    if(dbRecType==NULL || dbRecords==NULL) return(1);
+    if(!pdbBase) {
+	printf("No database\n");
+	return(0);
+    }
+    if(!(precType=pdbBase->precType)) return(0);
+    if(!(precHeader = pdbBase->precHeader)) return(0);
     if(ptypeName==NULL) {
 	beg=0;
-	end=dbRecords->number - 1;
+	end=precHeader->number - 1;
     }
     else {
-	for(rectype=0; rectype<dbRecType->number; rectype++) {
-	    if(!(pstr=GET_PRECTYPE(rectype))) continue;
+	for(rectype=0; rectype<precHeader->number; rectype++) {
+	    if(!(pstr=GET_PRECNAME(precType,rectype))) continue;
 	    if(strcmp(pstr,ptypeName)==0){
 		beg=rectype;
 		end=rectype;
@@ -162,9 +175,10 @@ long dbl(ptypeName)	/* list process variables for specified record type*/
     }
 got_it:
     for(rectype=beg; rectype<=end; rectype++) {
-	if(!(precLoc=GET_PRECLOC(rectype))) continue;
-	for(recnum=0; precord=(struct dbCommon *)(GET_PRECORD(precLoc,recnum));
-	recnum++) {
+	if(!(precLoc=GET_PRECLOC(precHeader,rectype))) continue;
+	for(precNode=(RECNODE *)lstFirst(precLoc->preclist);
+	    precNode; precNode = (RECNODE *)lstNext(&precNode->next)) {
+		precord = precNode->precord;
 		if(precord->name[0] == 0) continue; /*deleted record*/
 		strncpy(name,precord->name,PVNAME_SZ);
 		name[PVNAME_SZ]=0;
@@ -190,7 +204,10 @@ long dbgf(pname)	/* get field value*/
     tab_size = 10;
 
     status=dbNameToAddr(pname,&addr);
-    if(status) return(1);
+    if(status) {
+	printf("dbNameToAddr failed\n");
+	return(1);
+    }
     no_elements=MIN(addr.no_elements,((sizeof(buffer))/addr.field_size));
     options=0;
     if(addr.dbr_field_type==DBR_ENUM) {
@@ -280,8 +297,10 @@ long dbpr(pname, interest_level)	/* print record */
     tab_size = 20;
 
     status = dbNameToAddr(pname, &addr);
-
-    if (status) return (1);
+    if(status) {
+	printf("dbNameToAddr failed\n");
+	return(1);
+    }
     if (dbpr_report(pname, &addr, interest_level, pMsgBuff, tab_size))
 	return (1);
     pmsg[0] = '\0';
@@ -321,7 +340,7 @@ long dbtgf(pname)	/* test all options for dbGetField */
 	char	*pname;
 {
     /* declare buffer long just to ensure correct alignment */
-    long              buffer[300];
+    long              buffer[400];
     long              *pbuffer=&buffer[0];
     struct dbAddr     addr;
     long	      status;
@@ -335,7 +354,10 @@ long dbtgf(pname)	/* test all options for dbGetField */
     tab_size = 10;
 
     status=dbNameToAddr(pname,&addr);
-    if(status)return(1);
+    if(status) {
+	printf("dbNameToAddr failed\n");
+	return(1);
+    }
     /* try all options first */
     req_options=0xffffffff;
     ret_options=req_options;
@@ -416,7 +438,10 @@ long dbtpf(pname,pvalue)/* test all options for dbPutField */
     tab_size = 10;
 
     status=dbNameToAddr(pname,&addr);
-    if(status) return(1);
+    if(status) {
+	printf("dbNameToAddr failed\n");
+	return(1);
+    }
     /* DBR_STRING */
     status=dbPutField(&addr,DBR_STRING,pvalue,1L);
     if(status!=0) errPrint(status);
@@ -556,18 +581,24 @@ long dbior(pdrvName,type)
     char	*pdrvName;
     int		type;
 {
-    int		 i,j;
-    char	 *pname;
-    struct drvet *pdrvet;
+    int		 	i,j;
+    char		*pname;
+    struct drvSup	*pdrvSup;
+    struct recDevSup	*precDevSup;
+    struct drvet	*pdrvet;
 
-    if(!drvSup) {
+    if(!pdbBase) {
+	printf("No database\n");
+	return(0);
+    }
+    if(!(pdrvSup= pdbBase->pdrvSup)) {
 	printf("No drivers\n");
 	return(0);
     }
-    for (i=0; i<drvSup->number; i++) {
-	if((pname=drvSup->drvetName[i])==NULL) continue;
+    for (i=0; i<pdrvSup->number; i++) {
+	if((pname=pdrvSup->papDrvName[i])==NULL) continue;
 	if(pdrvName!=NULL && (strcmp(pdrvName,pname)!=0)) continue;
-	if((pdrvet=drvSup->papDrvet[i])==NULL) {
+	if((pdrvet=pdrvSup->papDrvet[i])==NULL) {
 		printf("No driver entry table is present for %s\n",pname);
 		continue;
 	}
@@ -579,19 +610,19 @@ long dbior(pdrvName,type)
 	}
     }
     /* now check devSup reports */
-    if(!devSup) {
+    if(!(precDevSup=pdbBase->precDevSup)) {
 	printf("No device support\n");
 	return(0);
     }
-    for (i=0; i<devSup->number; i++) {
+    for (i=0; i<precDevSup->number; i++) {
 	struct devSup	*pdevSup;
 
-	if(!(pdevSup=GET_DEVSUP(i))) continue;
+	if(!(pdevSup=GET_PDEVSUP(precDevSup,i))) continue;
 	for(j=0; j<pdevSup->number; j++) {
 	    struct dset	*pdset;
 
 	    if(!(pdset=GET_PDSET(pdevSup,j))) continue;
-	    if((pname=pdevSup->dsetName[j])==NULL) continue;
+	    if((pname=pdevSup->papDsetName[j])==NULL) continue;
 	    if(pdrvName!=NULL && (strcmp(pdrvName,pname)!=0)) continue;
 	    if(pdset->report!=NULL) {
 		printf("Device Support: %s\n",pname);
@@ -602,39 +633,30 @@ long dbior(pdrvName,type)
     return(0);
 }
 
-long dblls(ptypeName)	/* list lock set for specified record type*/
-	char	*ptypeName;
+long dblls(lockset)	/* list lock set for specified record type*/
+	int	lockset;
 {
     int			rectype,beg,end,recnum;
     struct recLoc	*precLoc;
     struct dbCommon	*precord;
     char		*pstr;
     char		name[PVNAME_SZ+1];
+    struct recType      *precType;
+    struct recHeader    *precHeader;
+    RECNODE             *precNode;
 
-    if(dbRecType==NULL || dbRecords==NULL) return(1);
-    if(ptypeName==NULL) {
-	beg=0;
-	end=dbRecords->number - 1;
-    }
-    else {
-	for(rectype=0; rectype<dbRecType->number; rectype++) {
-	    if(!(pstr=GET_PRECTYPE(rectype))) continue;
-	    if(strcmp(pstr,ptypeName)==0){
-		beg=rectype;
-		end=rectype;
-		goto got_it;
-	    }
-	}
-	printf("Illegal Record Type\n");
-	return(1);
-    }
-got_it:
+    if(!(precType=pdbBase->precType)) return(0);
+    if(!(precHeader = pdbBase->precHeader)) return(0);
+    beg=0;
+    end=precHeader->number - 1;
     printf(" lset  lcnt  disv  disa  pact\n");
     for(rectype=beg; rectype<=end; rectype++) {
-	if(!(precLoc=GET_PRECLOC(rectype))) continue;
-	for(recnum=0; precord=(struct dbCommon *)(GET_PRECORD(precLoc,recnum));
-	recnum++) {
+        if(!(precLoc=GET_PRECLOC(precHeader,rectype))) continue;
+        for(precNode=(RECNODE *)lstFirst(precLoc->preclist);
+            precNode; precNode = (RECNODE *)lstNext(&precNode->next)) {
+                precord = precNode->precord;
 		if(precord->name[0] == 0) continue; /*deleted record*/
+		if(lockset>0 && lockset!=precord->lset) continue;
 		strncpy(name,precord->name,PVNAME_SZ);
 		name[PVNAME_SZ]=0;
 		printf("%5.5d %5.5d %5.5d %5.5d %5.5d %s\n",
@@ -673,7 +695,7 @@ static void printDbAddr(status,paddr)
     printf(" Field Address: 0x%x",paddr->pfield);
     printf(" Field Description: 0x%x\n",paddr->pfldDes);
     printf("   No Elements: %ld\n",paddr->no_elements);
-    if (!(pstr=GET_PRECTYPE(paddr->record_type))) 
+    if (!(pstr=GET_PRECNAME(pdbBase->precType,paddr->record_type))) 
     	printf("   Record Type: %d\n",paddr->record_type);
     else
 	printf("   Record Type: %s\n",pstr);
@@ -1063,8 +1085,10 @@ static int dbpr_report(pname, paddr, interest_level, pMsgBuff, tab_size)
 	strcat(pPvName, pfield_name);
 
 	status = dbNameToAddr(pPvName, &Laddr);
-	if (status)
-	    return (1);
+	if(status) {
+	    printf("dbNameToAddr failed\n");
+	    return(1);
+	}
 	if (pfldDes->interest > interest_level )
 	    continue;
 	pLaddr = &Laddr;
@@ -1419,7 +1443,7 @@ static void dbprReportCvtChoice(pMsgBuff,pfield_name,choice_value,tab_size)
     char *pchoice;
     char *pmsg = pMsgBuff->message;
 
-    if(!(pchoice=GET_CHOICE(choiceCvt,choice_value))) {
+    if(!(pchoice=GET_CHOICE(pdbBase->pchoiceCvt,choice_value))) {
 	sprintf(pmsg,"%4s Illegal Choice",pfield_name);
 	dbpr_msgOut(pMsgBuff,tab_size);
     }
@@ -1452,7 +1476,7 @@ static int dbprReportGblChoice(pMsgBuff,precord,pfield_name,choice_value, tab_si
 	dbpr_msgOut(pMsgBuff,tab_size);
 	return(0);
     }
-    if( !(pchoiceSet=GET_PCHOICE_SET(choiceGbl,dbAddr.choice_set))
+    if( !(pchoiceSet=GET_PCHOICE_SET(pdbBase->pchoiceGbl,dbAddr.choice_set))
     ||  !(pchoice=GET_CHOICE(pchoiceSet,choice_value))) {
 	sprintf(pmsg,"%4s Cant find Choice",pfield_name);
 	dbpr_msgOut(pMsgBuff,tab_size);
@@ -1487,7 +1511,7 @@ static void dbprReportRecChoice(pMsgBuff,precord,pfield_name,choice_value,tab_si
 	dbpr_msgOut(pMsgBuff,tab_size);
 	return;
     }
-    if( !(parrChoiceSet=GET_PARR_CHOICE_SET(choiceRec,dbAddr.record_type)) 
+    if( !(parrChoiceSet=GET_PARR_CHOICE_SET(pdbBase->pchoiceRec,dbAddr.record_type)) 
     ||  !(pchoiceSet=GET_PCHOICE_SET(parrChoiceSet,dbAddr.choice_set))
     ||  !(pchoice=GET_CHOICE(pchoiceSet,choice_value))) {
 	sprintf(pmsg,"%4s: Cant find Choice",pfield_name);
@@ -1519,7 +1543,7 @@ static void dbprReportDevChoice(pMsgBuff,paddr,pfield_name, tab_size)
 	dbpr_msgOut(pMsgBuff,tab_size);
         return;
     }
-    if((!(pdevChoiceSet=GET_PDEV_CHOICE_SET(choiceDev,paddr->record_type)))
+    if((!(pdevChoiceSet=GET_PDEV_CHOICE_SET(pdbBase->pchoiceDev,paddr->record_type)))
     || (!(pdevChoice=GET_DEV_CHOICE(pdevChoiceSet,choice_ind))) ) {
 	sprintf(pmsg, "%4s: NULL",
             pfield_name);
@@ -1540,33 +1564,30 @@ static struct fldDes * dbprGetFldRec(type, fldNum)
     short           fldNum;	/* field number		 */
 {
     struct fldDes  *pfield;
+    struct recDes  *precDes;
     struct recTypDes *precTypDes;
-    /* verify that pvd and recDes are available	 */
-    if (!dbRecDes)
-	return (NULL);
-    /* verify that type is valid			 */
-    if ((type < 0) || (type >= dbRecDes->number))
-	return (NULL);
+
+    if (!(precDes=pdbBase->precDes)) return (NULL);
+    if ((type < 0) || (type >= precDes->number)) return (NULL);
     /* get and check pointer to this record's field definitions */
-    precTypDes = dbRecDes->papRecTypDes[type];
+    precTypDes = precDes->papRecTypDes[type];
     if (!precTypDes)
 	return (NULL);
     pfield = precTypDes->papFldDes[fldNum];
     return (pfield);
 }
-
+
+
 static struct recTypDes * dbprGetRecTypDes(type)
     short           type;	/* record type		 */
 {
+    struct recDes  *precDes;
     struct recTypDes *precTypDes;
-    /* verify that pvd and recDes are available	 */
-    if (!dbRecDes)
-	return (NULL);
-    /* verify that type is valid			 */
-    if ((type < 0) || (type >= dbRecDes->number))
-	return (NULL);
+
+    if (!(precDes=pdbBase->precDes)) return (NULL);
+    if ((type < 0) || (type >= precDes->number)) return (NULL);
     /* get and check pointer to this record's field definitions */
-    precTypDes = dbRecDes->papRecTypDes[type];
+    precTypDes = precDes->papRecTypDes[type];
     if (!precTypDes)
 	return (NULL);
     return (precTypDes);

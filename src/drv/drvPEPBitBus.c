@@ -1,5 +1,5 @@
 /* drvPEPBitBus.c */
-/* @(#)drvPEPBitBus.c	1.3 8/4/93 */
+/* base/src/drv $Id$ */
 
 /*
  *	Original Author: Ned Arnold

@@ -1,4 +1,4 @@
-/* share/src/drv $Id$ */
+/* base/src/drv $Id$ */
 /* drvXy566.c -  Driver Support Routines for xy566 
  *
  * 	Author:      Bob Dalesio
@@ -91,7 +91,7 @@
 #include 	<taskwd.h>
 
 
-static char SccsId[] = "$Id$\t$Date$ ";
+static char SccsId[] = "@(#)drvXy566.c	1.14\t8/4/93 ";
 
 /*
  * Code Portions

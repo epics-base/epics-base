@@ -1,5 +1,5 @@
 /* drvCompuSm.c */
-/* share/src/drv $Id$ */
+/* base/src/drv $Id$ */
 /*
  * subroutines and tasks that are used to interface to the Compumotor 1830
  * stepper motor drivers

@@ -1,5 +1,5 @@
 /* comet_driver.c */
-/* share/src/drv @(#)drvComet.c	1.11     9/16/92 */
+/* base/src/drv $Id$ */
 /*
  *	Author:		Leo R. Dalesio
  * 	Date:		5-92

@@ -1,5 +1,5 @@
 /* steppermotor.h */
-/* share/src/drv $Id$ */
+/* base/src/drv $Id$ */
 /*
  * header file to support database library interface to motor drivers
  *

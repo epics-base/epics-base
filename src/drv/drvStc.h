@@ -1,5 +1,5 @@
 /* drvStc.h */
-/* share/src/drv/$Id$ */
+/* base/src/drv $Id$ */
 /*
  * The following are specific driver routines for the AMD STC
  *

@@ -1,5 +1,5 @@
 /* drvKscV215.c*/
-/* share/src/drv @(#) $Id$ */
+/* base/src/drv $Id$ */
 /*
  *      KscV215_driver.c
  *

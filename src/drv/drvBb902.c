@@ -1,5 +1,4 @@
-/* drvBb902.c */
-/* share/src/drv $Id$ */
+/* base/src/drv $Id$ */
 /*
  * subroutines that are used to interface to the binary output cards
  *

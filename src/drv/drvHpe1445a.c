@@ -1,6 +1,5 @@
+/* base/src/drv $Id$ */
 /*
- *      /share/src/drv $Id$
- *
  *      driver for hpe1445a arbitrary function generator VXI modules
  *
  *      Author:     Jeff Hill
@@ -36,7 +35,7 @@
  *
  */
 
-static char	*sccsId = "$Id$\t$Date$";
+static char	*sccsId = "@(#)drvHpe1445a.c	1.5\t8/27/93";
 
 #include <vxWorks.h>
 #include <stdioLib.h>

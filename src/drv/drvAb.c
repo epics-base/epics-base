@@ -1,5 +1,5 @@
 /* drvAb.c -  Driver Support Routines for Allen Bradley */
-/* share/src/drv $Id$ */
+/* base/src/drv $Id$ */
 /*
  * routines that are used, below the ai, ao, bi and bo drivers to interface
  * to the Allen-Bradley Remote Serial IO
@@ -186,6 +186,7 @@
  * .62  09-04-93	mrk	for bo and ao change value even if down
  * .63  09-15-93	mrk	make report shorter.
  * .64  09-16-93	mrk	ab_reset: all links; only reset scanner.
+ * .65  05-05-94	kornke	IL Differential Fix
  */
 
 /*
@@ -711,6 +712,7 @@ short			link;
 	    *pmsg = IL_RANGE;		/* -10 to +10 volts */
 	    *(pmsg+1) = IL_DATA_FORMAT;	/* signed magnitude */
 	    *(pmsg+2) = 0x0ff;
+            for (i = 4; i <= 18; i+=2) *(pmsg+i) = 0x4095;
 	    length = 19;
             break;
         case (AB1771IFE):

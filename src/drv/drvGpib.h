@@ -1,5 +1,5 @@
 /* drvGpib.h */
-/* share/src/drv/drvGpib.h $Id$ */
+/* base/src/drv $Id$ */
 
 /*
  *	Origional Author:  Unknown, probably National Instruments

@@ -1,10 +1,11 @@
+/* base/src/drv $Id$ */
 /*
  * drvHp1404a.h 
  *
  *      HP E1404A VXI bus slot zero translator
  *      device dependent routines header file
  *
- *      share/src/drv/$Id$
+ *      share/src/drv/@(#)drvHp1404a.h	1.1 8/27/93
  *
  *      Author Jeffrey O. Hill
  *      Date            030692

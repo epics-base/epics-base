@@ -1,5 +1,5 @@
 /* drvAb.h */
-/*share/src/drv $Id$ */
+/* base/src/drv $Id$ */
 /* header file for the Allen-Bradley Remote Serial IO
  *
  * Author:	Bob Dalesio

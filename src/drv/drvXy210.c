@@ -1,5 +1,5 @@
 /* xy210_driver.c */
-/* share/src/drv $Id$ */
+/* base/src/drv $Id$ */
 /*
  * subroutines that are used to interface to the binary input cards
  *
@@ -81,7 +81,7 @@ static long init()
 }
 
 
-static char SccsId[] = "$Id$\t$Date$";
+static char SccsId[] = "@(#)drvXy210.c	1.5\t9/20/93";
 
 #define MAX_XY_BI_CARDS	(bi_num_cards[XY210]) 
 

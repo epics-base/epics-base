@@ -1,9 +1,10 @@
+/* base/src/drv $Id$ */
 /*
  *
  * 	HP E1404A VXI bus slot zero translator
  * 	device dependent routines
  *
- *	share/src/drv/$Id$
+ *	share/src/drv/@(#)drvHp1404a.c	1.7 8/27/93
  *
  * 	Author Jeffrey O. Hill
  * 	Date		030692
@@ -40,7 +41,7 @@
  *
  */
 
-static char	*sccsId = "$Id$\t$Date$";
+static char	*sccsId = "@(#)drvHp1404a.c	1.7\t8/27/93";
 
 #include <vxWorks.h>
 #include <iv.h>

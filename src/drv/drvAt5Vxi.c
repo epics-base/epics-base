@@ -1,4 +1,4 @@
-/* 	share/src/drv @(#) $Id$ */
+/* base/src/drv $Id$ */
 
 /*
  *
@@ -118,7 +118,7 @@
 #include <drvAt5Vxi.h>
 #include <drvStc.h>
 
-static char SccsId[] = "$Id$\t$Date$";
+static char SccsId[] = "@(#)drvAt5Vxi.c	1.19\t8/27/93";
 
 typedef long	at5VxiStatus;
 

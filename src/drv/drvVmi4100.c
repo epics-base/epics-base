@@ -1,4 +1,4 @@
-/* share/src/drv $Id$ */
+/* base/src/drv $Id$ */
 /*
  * subroutines that are used to interface to the vme analog output cards
  *
@@ -49,7 +49,7 @@
  * .13	08-24-93	mrk	removed use of variable base_addr
  */
 
-static char *sccsID = "$Id$\t$Date$";
+static char *sccsID = "@(#)drvVmi4100.c	1.5\t8/27/93";
 
 #include <vxWorks.h>
 #include <vme.h>

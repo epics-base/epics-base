@@ -1,5 +1,5 @@
 /* drvFp.c */
-/* share/src/drv $Id$
+/* base/src/drv $Id$ 
  * 	routines which are used to test and interface with the 
  *	FP10S fast protect module
  *

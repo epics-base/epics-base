@@ -1,7 +1,7 @@
 /* 
  * initialize the  Xycom SRM010 bus controller card 
  */
-/* share/src/drv $Id$ */
+/* base/src/drv $Id$ */
 /*      Author: Betty Ann Gunther
  *      Date:   06-30-29
  * 	Initialize xy010 bus controller
@@ -37,7 +37,7 @@
  *      ...
  */
 
-static char	*sccsID = "$Id$\t$Date$";
+static char	*sccsID = "@(#)drvXy010.c	1.3\t6/3/93";
 
 #include 	<vxWorks.h>
 #include 	<vme.h>

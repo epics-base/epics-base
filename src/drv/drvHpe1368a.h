@@ -1,5 +1,5 @@
 /* drvHpe1368a.h*/
-/* share/src/drv @(#) $Id$ */
+/* base/src/drv $Id$ */
 
 /*
  *      hpe1368a_driver.h

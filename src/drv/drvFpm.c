@@ -1,5 +1,5 @@
 /* drvFpm.c */
-/* share/src/drv $Id$ */
+/* base/src/drv $Id$ */
 
 /*
  * control routines for use with the FP10M fast protect master modules
@@ -81,7 +81,7 @@
  *
  */
 
-static char *sccsId = "$Id$\t$Date$";
+static char *sccsId = "@(#)drvFpm.c	1.12\t8/4/93";
 
 #include "vxWorks.h"
 #include "vme.h"

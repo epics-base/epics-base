@@ -1,5 +1,5 @@
 /* oms_sm_driver.h */
-/* share/src/drv @(#)oms_sm_driver.h	1.1     10/17/90 */
+/* base/src/drv $Id$ */
 /*
  * headers that are used to interface to the 
  * Oregon Micro Systems six axis stepper motor drivers
@@ -32,9 +32,10 @@
  * -----------------
  * .01	04-12-90	lrd	only allow one connection to each motor
  * .02	11-13-90	lrd	add status bit definitions for encoder commands
+ * .03	05-05-94	kornke	supports 8 OMS channels now
  */
 #define	MAX_OMS_CARDS		8
-#define	MAX_OMS_CHANNELS	6
+#define	MAX_OMS_CHANNELS	8
 
 
 /* motor information */

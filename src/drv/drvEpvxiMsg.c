@@ -1,6 +1,5 @@
 /*
- *     	share/src/drv/$Id$
- *
+ * base/src/drv $Id$
  *      driver for VXI message based devices 
  *
  *      Author:      Jeff Hill
@@ -46,7 +45,7 @@
  *
  */
 
-static char	*sccsId = "$Id$\t$Date$";
+static char	*sccsId = "@(#)drvEpvxiMsg.c	1.15\t8/27/93";
 
 #include <vxWorks.h>
 #include <iv.h>

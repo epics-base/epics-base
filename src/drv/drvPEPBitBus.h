@@ -1,5 +1,5 @@
 /* drvBitBusInterface.h */
-/* @(#)drvPEPBitBus.h	1.2 8/4/93 */
+/* base/src/drv $Id$ */
 /*
  *      Author: John Winans
  *      Current: Claude Saunders

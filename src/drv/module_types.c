@@ -1,5 +1,5 @@
 /* module_types.c */
-/* share/epicsH $Id$ */
+/* base/src/drv $Id$ */
 /*
  * 	Author:      Marty Kraimer
  * 	Date:        08-23-93

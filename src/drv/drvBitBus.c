@@ -1,5 +1,5 @@
 #define DO_RESET_AND_OFFLINE
-/* share/src/drv $Id$ */
+/* base/src/drv $Id$ */
 /*
  *	Original Author: Ned Arnold
  *      Author: John Winans

@@ -1,5 +1,5 @@
 /* share/src/drv/drvDvx.c
- * share/src/drv $Id$
+ * base/src/drv $Id$
  *
  * subroutines which are used to interface with the analogic 2502
  * A/D scanner cards
@@ -117,7 +117,6 @@
  */ 
 
 static char *SccsId = "$Id$";
-
 
 #include	<vxWorks.h>
 #include	<stdioLib.h>

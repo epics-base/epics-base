@@ -1,5 +1,5 @@
 /* drvHpe1368a.c*/
-/* share/src/drv @(#) $Id$ */
+/* base/src/drv $Id$ */
 
 /*
  *      hpe1368a_driver.c
@@ -39,7 +39,7 @@
  *
  */
 
-static char *sccsId = "$Id$\t$Date$";
+static char *sccsId = "@(#)drvHpe1368a.c	1.14\t9/9/93";
 
 #include <vxWorks.h>
 #include <iv.h>

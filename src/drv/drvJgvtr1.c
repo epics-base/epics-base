@@ -1,5 +1,5 @@
 /* drvJgvtr1.c */
-/* share/src/drv $Id$ */
+/* base/src/drv $Id$ */
 /*
  *	Author:      Jeff Hill
  * 	Date:        5-89
@@ -55,7 +55,7 @@
  *	080493	mgb	Removed V5/V4 and EPICS_V2 conditionals
  */
 
-static char *sccsID = "$Id$\t$Date$";
+static char *sccsID = "@(#)drvJgvtr1.c	1.17\t9/9/93";
 
 /*
  * 	Code Portions

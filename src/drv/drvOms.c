@@ -1,5 +1,5 @@
 /* drvOms.c */
-/* share/src/drv  $Id$ */
+/* base/src/drv $Id$ */
 /*
  * subroutines and tasks that are used to interface to the 
  * Oregon Micro Systems six axis stepper motor drivers
@@ -60,6 +60,8 @@
  * .19  08-02-93	mrk	Added call to taskwdInsert
  * .20  08-05-93	jbk	took out 200000 pulse limit
  * .21  02-28-94	mrk	Replaced itob by cvtLongToString
+ * .22  05-05-94	kornke	Now supports VMEX-8 and VMEX-44E
+ *				(8 axis s'motors and 4 encoded s'motors)
  */
 
 /* data requests are made from the oms_task at
@@ -238,10 +240,36 @@ oms_resp_task()
 	    poms_motor_array = &oms_motor_array[card][*pchannel];
 
 	    /* motor selection */
-	    if (resp[1] == 'A'){
-		    if ((*pchannel = (resp[2] - 'X')) < 0){
-			*pchannel = (resp[2] - 'T') + 3;
-		    }
+            if (resp[1] == 'A')
+                {
+                    switch (resp[2])
+                        {
+                        case 'X':
+                                *pchannel = 0;
+                                break;
+                        case 'Y':
+                                *pchannel = 1;
+                                break;
+                        case 'Z':
+                                *pchannel = 2;
+                                break;
+                        case 'T':
+                                *pchannel = 3;
+                                break;
+                        case 'U':
+                                *pchannel = 4;
+                                break;
+                        case 'V':
+                                *pchannel = 5;
+                                break;
+                        case 'R':
+                                *pchannel = 6;
+                                break;
+                        case 'S':
+                                *pchannel = 7;
+                                break;
+                        }
+
 		    *pstate = 0;
 	    /* position readback */
 	    }else if (resp[1] == 'R'){
@@ -337,7 +365,7 @@ oms_task()
 			motor_active = TRUE;
 
 			/* request status data */
-			if ((channel <= 1) && (encoder_present[card]))
+			if ((channel <= 3) && (encoder_present[card]))
 				strcpy(oms_msg,"A?\nRE\nRP\nRA\n");
 			else
 				strcpy(oms_msg,"A?\nRP\nRA\n");

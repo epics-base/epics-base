@@ -1,5 +1,5 @@
 /* drvMz8310.c */
-/* share/src/drv$Id$*/
+/* base/src/drv $Id$ */
 /*
  * Routines specific to the MZ8310. Low level routines for the AMD STC in
  * stc_driver.c

@@ -1,5 +1,5 @@
 /* bb910_driver.c */
-/* share/src/drv $Id$ */
+/* base/src/drv $Id$ */
 /*
  * subroutines that are used to interface to the binary input cards
  *
@@ -81,7 +81,7 @@ static long init()
     return(0);
 }
 
-static char SccsId[] = "$Id$\t$Date$";
+static char SccsId[] = "@(#)drvBb910.c	1.6\t6/3/93";
 
 #define MAX_BB_BI_CARDS	(bi_num_cards[BB910]) 
 

@@ -1,5 +1,5 @@
 /* drvTime.c */ 
-/* share/src/drv $Id$ */
+/* base/src/drv $Id$ */
 /* Glue between timing_drivers and the GTA database
  *	Author: Jeff Hill 
  *	Date:	Feb 89 
@@ -36,7 +36,7 @@
  *  joh 08-05-92  removed report & init routines
  */
 
-static char *sccsID = "$Id$\t$Date$";
+static char *sccsID = "@(#)drvTime.c	1.10\t9/9/93";
 
 /* drvTime.c -  Driver Support Routines for Time */
 #include	<vxWorks.h>

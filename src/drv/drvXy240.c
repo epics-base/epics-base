@@ -1,5 +1,5 @@
 /* xy240_driver.c */
-/* share/src/drv $Id$ */
+/* base/src/drv $Id$ */
 /*
  *	routines used to test and interface with Xycom240
  *	digital i/o module

@@ -1,6 +1,5 @@
 /* drvGpib.c */
-/* share/src/drv/drvGpib.c $Id$ */
-
+/* base/src/drv $Id$ */
 /*      Author: John Winans
  *      Date:   09-10-91
  *      GPIB driver for the NI-1014 and NI-1014D VME cards.

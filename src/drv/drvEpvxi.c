@@ -1,11 +1,8 @@
 /*
  *	drvEpvxi.c
  *
- *	share/src/drv/$Id$
- * 	Routines for the VXI device support and resource management.
- *
- *
- *
+ *	base/src/drv $Id$
+ *  	Routines for the VXI device support and resource management.
  *
  * 	Author:      Jeff Hill
  * 	Date:        11-89
@@ -141,7 +138,11 @@
  *
  */
 
+<<<<<<< drvEpvxi.c
+static char *sccsId = "@(#)drvEpvxi.c	1.27\t9/9/93";
+=======
 static char *sccsId = "$Id$\t$Date$";
+>>>>>>> 1.28
 
 #include <vxWorks.h>
 #include <vme.h>

@@ -1,5 +1,5 @@
 /* drvJgvtr1.h */
-/* share/src/drv $Id$ */
+/* base/src/drv $Id$ */
 /*
  *      Author:      Jeff Hill
  *      Date:        5-89

@@ -1,5 +1,5 @@
 /* xy220_driver.c */
-/* share/src/drv $Id$ */
+/* base/src/drv $Id$ */
 /*
  * subroutines that are used to interface to the binary output cards
  *
@@ -39,7 +39,7 @@
  * .04	08-25-92	mrk	made masks a macro
  */
 
-static char SccsId[] = "$Id$\t$Date$";
+static char SccsId[] = "@(#)drvXy220.c	1.6\t9/20/93";
 
 /*
  * Code Portions:

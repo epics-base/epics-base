@@ -1,5 +1,5 @@
 /* drvBitBusInterface.h */
-/* share/src/drv $Id$ */
+/* base/src/drv $Id$ */
 /*
  *      Author: John Winans
  *      Date:   09-10-91

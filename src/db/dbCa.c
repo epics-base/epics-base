@@ -41,11 +41,13 @@ of this distribution.
 #include "epicsPrint.h"
 #include "dbCommon.h"
 #include "cadef.h"
+#include "db_access.h"
 #include "caerr.h"
 /*following because we cant include dbStaticLib.h*/
 epicsShareFunc void * epicsShareAPI dbCalloc(size_t nobj,size_t size);
 #define epicsExportSharedSymbols
-#include "db_access.h"
+#include "db_access_routines.h"
+#include "db_convert.h"
 #include "dbScan.h"
 #include "dbCa.h"
 #include "dbCaPvt.h"

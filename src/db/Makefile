@@ -16,11 +16,14 @@ INC += dbLock.h
 INC += dbNotify.h
 INC += dbScan.h
 INC += dbTest.h
-INC += db_access.h
 INC += db_test.h
 INC += db_field_log.h
 INC += initHooks.h
 INC += recGbl.h
+# The following go away what old database access goes away
+INC += db_access.h
+INC += db_access_routines.h
+INC += db_convert.h
 
 MENUS += menuAlarmSevr.h
 MENUS += menuAlarmStat.h

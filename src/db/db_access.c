@@ -61,9 +61,9 @@
 #include "recSup.h"
 #include "alarm.h"
 #define epicsExportSharedSymbols
-#include "dbAddr.h"
 #include "dbNotify.h"
 #include "dbAccessDefs.h"
+#include "db_access_routines.h"
 
 #ifndef NULL
 #define NULL 0

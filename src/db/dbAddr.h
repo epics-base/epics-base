@@ -22,14 +22,4 @@ typedef struct dbAddr{
                                 /*DBR_STRING,...,DBR_ENUM,DBR_NOACCESS*/
 }DBADDR;
 
-/*
- * old db access API
- * (included here because these routines use dbAccess.h and their
- * prototypes must also be included in db_access.h)
- */
-epicsShareFunc int epicsShareAPI db_name_to_addr(const char *pname, DBADDR *paddr);
-epicsShareFunc int epicsShareAPI db_put_field(DBADDR *paddr, int src_type,
-                        const void *psrc, int no_elements);
-epicsShareFunc int epicsShareAPI db_get_field(DBADDR *paddr, int dest_type,
-                        void *pdest, int no_elements, void *pfl);
 #endif /* dbAddrh */

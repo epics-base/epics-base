@@ -1,0 +1,72 @@
+/* db_convert.h */
+
+/*****************************************************************
+                          COPYRIGHT NOTIFICATION
+*****************************************************************
+
+(C)  COPYRIGHT 1991 Regents of the University of California,
+and the University of Chicago Board of Governors.
+
+This software was developed under a United States Government license
+described on the COPYRIGHT_Combined file included as part
+of this distribution.
+**********************************************************************/
+
+
+#ifndef INCLdb_converth
+#define INCLdb_converth
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include "dbAddr.h"
+
+epicsShareExtern struct dbBase *pdbbase;
+epicsShareExtern volatile int interruptAccept;
+
+/*Definitions that allow old database access to use new conversion routines*/
+#define newDBF_DEVICE 11
+#define newDBR_ENUM    9
+epicsShareExtern long (*dbGetConvertRoutine[newDBF_DEVICE+1][newDBR_ENUM+1])
+    (struct dbAddr *paddr, void *pbuffer,long nRequest,
+        long no_elements, long offset);
+epicsShareExtern long (*dbPutConvertRoutine[newDBR_ENUM+1][newDBF_DEVICE+1])
+    (struct dbAddr *paddr, void *pbuffer,long nRequest,
+        long no_elements, long offset);
+epicsShareExtern long (*dbFastGetConvertRoutine[newDBF_DEVICE+1][newDBR_ENUM+1])();
+epicsShareExtern long (*dbFastPutConvertRoutine[newDBR_ENUM+1][newDBF_DEVICE+1])();
+
+/*Conversion between old and new DBR types*/
+epicsShareExtern unsigned short dbDBRoldToDBFnew[DBR_DOUBLE+1];
+epicsShareExtern unsigned short dbDBRnewToDBRold[newDBR_ENUM+1];
+#ifdef DB_CONVERT_GBLSOURCE
+epicsShareDef unsigned short dbDBRoldToDBFnew[DBR_DOUBLE+1] = {
+	0, /*DBR_STRING to DBF_STRING*/
+	3, /*DBR_INT to DBF_SHORT*/
+	7, /*DBR_FLOAT to DBF_FLOAT*/
+	9, /*DBR_ENUM to DBF_ENUM*/
+	1, /*DBR_CHAR to DBF_CHAR*/
+	5, /*DBR_LONG to DBF_LONG*/
+	8  /*DBR_DOUBLE to DBF_DOUBLE*/
+};
+epicsShareDef unsigned short dbDBRnewToDBRold[newDBR_ENUM+1] = {
+	0, /*DBR_STRING to DBR_STRING*/
+	4, /*DBR_CHAR to DBR_CHAR*/
+	4, /*DBR_UCHAR to DBR_CHAR*/
+	1, /*DBR_SHORT to DBR_SHORT*/
+	5, /*DBR_USHORT to DBR_LONG*/
+	5, /*DBR_LONG to DBR_LONG*/
+	6, /*DBR_ULONG to DBR_DOUBLE*/
+	2, /*DBR_FLOAT to DBR_FLOAT*/
+	6, /*DBR_DOUBLE to DBR_DOUBLE*/
+	3, /*DBR_ENUM to DBR_ENUM*/
+};
+#endif /*DB_CONVERT_GBLSOURCE*/
+
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* INCLdb_converth */

@@ -37,14 +37,20 @@ of this distribution.
 #undef INVALID_DB_REQ
 /*end of conflicting definitions*/
 #include "cadef.h"
+#include "db_access.h"
 #include "dbDefs.h"
 #include "epicsPrint.h"
 #include "dbCommon.h"
 #include "shareLib.h"
 #define epicsExportSharedSymbols
-/*define DB_TEXT_GLBLSOURCE because db_access.d does not include db_access.h*/
+
+/*define DB_TEXT_GLBLSOURCE temporily; ca will do this later */
 #define DB_TEXT_GLBLSOURCE
-#include "db_access.h"
+
+/*define DB_CONVERT_GBLSOURCE because db_access.c does not include db_access.h*/
+#define DB_CONVERT_GBLSOURCE
+#include "db_access_routines.h"
+#include "db_convert.h"
 #include "dbCaPvt.h"
 #include "dbCa.h"
 

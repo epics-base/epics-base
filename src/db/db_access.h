@@ -1,34 +1,24 @@
 /* base/include/db_access.h */
-/* $Id$ 
+/* $Id$ */
+
+/*      Author:          Bob Dalesio
+ *      Date:            4-4-88
 */
 
-/*
- *      Author:          Bob Dalesio
- *      Date:            4-4-88
- *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- *
- *	Modification Log:
+/*****************************************************************
+                          COPYRIGHT NOTIFICATION
+*****************************************************************
+
+(C)  COPYRIGHT 1991 Regents of the University of California,
+and the University of Chicago Board of Governors.
+
+This software was developed under a United States Government license
+described on the COPYRIGHT_Combined file included as part
+of this distribution.
+**********************************************************************/
+
+
+/*	Modification Log:
  *	-----------------
  * .01	05-02-88	lrd	add control enumeration field, structure & size
  * .02	05-12-88	lrd	add array structures
@@ -89,9 +79,6 @@
 #ifndef INCLdb_accessh
 #define INCLdb_accessh
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #include <stddef.h>
 
@@ -99,10 +86,6 @@ extern "C" {
 #include "epicsTypes.h"
 #include "tsStamp.h"
 #include "ellLib.h"
-#include "dbAddr.h"
-
-epicsShareExtern struct dbBase *pdbbase;
-epicsShareExtern volatile int interruptAccept;
 
 
 #define MAX_UNITS_SIZE		8	
@@ -212,45 +195,6 @@ epicsShareDef READONLY int epicsTypeToDBR_XXXX [lastEpicsType+1] = {
 };
 #endif
 
-/*Definitions that allow old database access to use new conversion routines*/
-#define newDBF_DEVICE 11
-#define newDBR_ENUM    9
-epicsShareExtern long (*dbGetConvertRoutine[newDBF_DEVICE+1][newDBR_ENUM+1])
-    (struct dbAddr *paddr, void *pbuffer,long nRequest,
-        long no_elements, long offset);
-epicsShareExtern long (*dbPutConvertRoutine[newDBR_ENUM+1][newDBF_DEVICE+1])
-    (struct dbAddr *paddr, void *pbuffer,long nRequest,
-        long no_elements, long offset);
-epicsShareExtern long (*dbFastGetConvertRoutine[newDBF_DEVICE+1][newDBR_ENUM+1])();
-epicsShareExtern long (*dbFastPutConvertRoutine[newDBR_ENUM+1][newDBF_DEVICE+1])();
-
-/*Conversion between old and new DBR types*/
-epicsShareExtern unsigned short dbDBRoldToDBFnew[DBR_DOUBLE+1];
-epicsShareExtern unsigned short dbDBRnewToDBRold[newDBR_ENUM+1];
-#ifdef DB_TEXT_GLBLSOURCE
-epicsShareDef unsigned short dbDBRoldToDBFnew[DBR_DOUBLE+1] = {
-	0, /*DBR_STRING to DBF_STRING*/
-	3, /*DBR_INT to DBF_SHORT*/
-	7, /*DBR_FLOAT to DBF_FLOAT*/
-	9, /*DBR_ENUM to DBF_ENUM*/
-	1, /*DBR_CHAR to DBF_CHAR*/
-	5, /*DBR_LONG to DBF_LONG*/
-	8  /*DBR_DOUBLE to DBF_DOUBLE*/
-};
-epicsShareDef unsigned short dbDBRnewToDBRold[newDBR_ENUM+1] = {
-	0, /*DBR_STRING to DBR_STRING*/
-	4, /*DBR_CHAR to DBR_CHAR*/
-	4, /*DBR_UCHAR to DBR_CHAR*/
-	1, /*DBR_SHORT to DBR_SHORT*/
-	5, /*DBR_USHORT to DBR_LONG*/
-	5, /*DBR_LONG to DBR_LONG*/
-	6, /*DBR_ULONG to DBR_DOUBLE*/
-	2, /*DBR_FLOAT to DBR_FLOAT*/
-	6, /*DBR_DOUBLE to DBR_DOUBLE*/
-	3, /*DBR_ENUM to DBR_ENUM*/
-};
-#endif /*DB_TEXT_GLBLSOURCE*/
-
 /*
  * The DBR_XXXX types are indicies into this array
  */
@@ -305,10 +249,6 @@ epicsShareDef READONLY epicsType DBR_XXXXToEpicsType [LAST_BUFFER_TYPE+1] = {
 epicsShareExtern READONLY epicsType DBR_XXXXToEpicsType [LAST_BUFFER_TYPE+1];
 #endif
 
-/* extra processing flags */
-#define	EP_SCAN	0x01
-#define	EP_INIT	0x02
-#define	EP_CALC	0x03
 
 /* values returned for each field type
  * 	DBR_STRING	returns a NULL terminated string
@@ -1151,10 +1091,6 @@ union db_access_val{
     };
     epicsShareDef READONLY char * dbr_text_invalid = "DBR_invalid";
     epicsShareDef READONLY short   dbr_text_dim = (sizeof dbr_text)/(sizeof (char *)) + 1;
-#endif
-
-#ifdef __cplusplus
-}
 #endif
 
 #endif /* INCLdb_accessh */

@@ -75,6 +75,7 @@ public:
 
     private:
         TYPE & instance;
+	    reference & operator = ( const reference & );
     };
 
     // lock overhead every time these are called
@@ -83,6 +84,8 @@ public:
 
 private:
     TYPE * pSingleton;
+	epicsSingleton ( const epicsSingleton & );
+	epicsSingleton & operator = ( const epicsSingleton & );
 };
 
 template < class TYPE >

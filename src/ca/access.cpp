@@ -1414,7 +1414,7 @@ epicsShareDef const unsigned short dbr_value_size[LAST_BUFFER_TYPE+1] = {
 	sizeof(dbr_string_t),	/* string max size		*/
 };
 
-// extern "C"
+//extern "C" 
 epicsShareDef const enum dbr_value_class dbr_value_class[LAST_BUFFER_TYPE+1] = {
 	dbr_class_string,	/* string max size		*/
 	dbr_class_int,		/* short			*/

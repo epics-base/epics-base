@@ -7,6 +7,9 @@ static char *sccsId = "@(#) $Id$";
 
 /*
  * $Log$
+ * Revision 1.58  1999/02/12 00:26:31  jhill
+ * added dbr_long_t readback test
+ *
  * Revision 1.57  1999/01/28 21:12:16  jhill
  * improved VAX floating point
  *
@@ -161,6 +164,8 @@ unsigned 	iterations);
 
 void performGrEnumTest (chid chan);
 
+void performCtrlDoubleTest (chid chan);
+
 #ifdef vxWorks
 #include <vxWorks.h>
 #include <taskLib.h>
@@ -204,7 +209,6 @@ int doacctst(char *pname)
 	chid            chix2;
 	chid            chix3;
 	chid            chix4;
-	struct dbr_gr_float *ptr = NULL;
 	struct dbr_gr_float *pgrfloat = NULL;
 	dbr_float_t	*pfloat = NULL;
 	dbr_double_t	*pdouble = NULL;
@@ -212,7 +216,6 @@ int doacctst(char *pname)
 	long            i, j;
 	evid            monix;
 	char            pstring[NUM][MAX_STRING_SIZE];
-	unsigned	size;
 	unsigned	monCount=0u;
 
 	SEVCHK(ca_task_initialize(), "Unable to initialize");
@@ -230,10 +233,7 @@ int doacctst(char *pname)
 	 */
 	pend_event_delay_test(1.0);
 	pend_event_delay_test(0.1);
-	pend_event_delay_test(0.25);
-
-	size = dbr_size_n(DBR_GR_FLOAT, NUM);
-	ptr = (struct dbr_gr_float *) malloc(size);  
+	pend_event_delay_test(0.25); 
 
 	/*
 	 * verify that we dont print a disconnect message when 
@@ -457,6 +457,8 @@ int doacctst(char *pname)
 		ca_write_access(chix1));
 
 	performGrEnumTest (chix1);
+
+	performCtrlDoubleTest (chix1);
 
 	/*
 	 * ca_pend_io() must block
@@ -1087,9 +1089,6 @@ int doacctst(char *pname)
 		printf("in ca_task_exit() for %f sec\n", delay);
 	}
 
-	if (ptr){
-		free (ptr);
-	}
 	if (pfloat) {
 		free(pfloat);
 	}
@@ -1127,6 +1126,9 @@ void pend_event_delay_test(dbr_double_t request)
 	assert (fabs(accuracy) < 10.0);
 }
 
+/*
+ * floatTest ()
+ */
 void floatTest(
 chid		chan,
 dbr_float_t 	beginValue, 
@@ -1158,6 +1160,9 @@ unsigned 	iterations)
 	}
 }
 
+/*
+ * doubleTest ()
+ */
 void doubleTest(
 chid		chan,
 dbr_double_t 	beginValue, 
@@ -1189,6 +1194,9 @@ unsigned 	iterations)
 	}
 }
 
+/*
+ * null_event ()
+ */
 void null_event(struct event_handler_args args)
 {
 	unsigned	*pInc = (unsigned *) args.usr;
@@ -1220,7 +1228,9 @@ void null_event(struct event_handler_args args)
 #endif
 }
 
-
+/*
+ * write_event ()
+ */
 void write_event(struct event_handler_args args)
 {
 	int		status;
@@ -1368,6 +1378,9 @@ void 	accessSecurity_cb(struct access_rights_handler_args args)
 #	endif
 }
 
+/*
+ * performGrEnumTest
+ */
 void performGrEnumTest (chid chan)
 {
 	struct dbr_gr_enum ge;
@@ -1381,7 +1394,7 @@ void performGrEnumTest (chid chan)
 	status = ca_pend_io (2.0);
 	assert (status == ECA_NORMAL);
 
-	if (count>0) {
+	if (ge.no_str>0) {
 		count = (unsigned) ge.no_str;
 		printf ("Enum state str = ");
 		for (i=0; i<count; i++) {
@@ -1391,3 +1404,68 @@ void performGrEnumTest (chid chan)
 	}
 }
 
+/*
+ * performCtrlDoubleTest
+ */
+void performCtrlDoubleTest (chid chan)
+{
+	struct dbr_ctrl_double *pCtrlDbl;
+	dbr_double_t *pDbl;
+	unsigned nElem = ca_get_element_count(chan);
+	double slice = 3.14159 / nElem;
+	size_t size;
+	int status;
+	unsigned i;
+
+	if (!ca_write_access(chan)) {
+		return;
+	}
+
+	if (dbr_value_class[ca_field_type(chan)]!=dbr_class_float) {
+		return;
+	}
+
+	size = sizeof (*pDbl)*ca_get_element_count(chan);
+	pDbl = malloc (size);
+	assert (pDbl!=NULL);
+
+	/*
+	 * initialize the array
+	 */
+	for (i=0; i<nElem; i++) {
+		pDbl[i] = sin (i*slice);
+	}
+
+	/*
+	 * write the array to the PV
+	 */
+ 	status = ca_array_put (DBR_DOUBLE,
+					ca_get_element_count(chan),
+ 					chan, pDbl);
+	SEVCHK (status, "performCtrlDoubleTest, ca_array_put");
+
+	size = dbr_size_n(DBR_CTRL_DOUBLE, ca_get_element_count(chan));
+	pCtrlDbl = (struct dbr_ctrl_double *) malloc (size); 
+	assert (pCtrlDbl!=NULL);
+
+	/*
+	 * read the array from the PV
+	 */
+ 	status = ca_array_get (DBR_CTRL_DOUBLE,
+					ca_get_element_count(chan),
+ 					chan, pCtrlDbl);
+	SEVCHK (status, "performCtrlDoubleTest, ca_array_get");
+	status = ca_pend_io (20.0);
+	assert (status==ECA_NORMAL);
+
+	/*
+	 * verify the result
+	 */
+	for (i=0; i<nElem; i++) {
+		double diff = pDbl[i] - sin (i*slice);
+		assert (fabs(diff) < DBL_EPSILON*4);
+	}
+
+	free (pCtrlDbl);
+	free (pDbl);
+}

@@ -180,7 +180,7 @@ void epicsShareAPI scanAdd(struct dbCommon *precord)
 	    if(!pevent_scan_list ) {
 		pevent_scan_list = dbCalloc(1,sizeof(event_scan_list));
 		pevent_list[priority][evnt] = pevent_scan_list;
-                pevent_scan_list->scan_list.lock = semMutexMustCreate();
+                pevent_scan_list->scan_list.lock = epicsMutexMustCreate();
 		callbackSetCallback(eventCallback,&pevent_scan_list->callback);
 		callbackSetPriority(priority,&pevent_scan_list->callback);
 		callbackSetUser(pevent_scan_list,&pevent_scan_list->callback);
@@ -419,7 +419,7 @@ void epicsShareAPI scanIoInit(IOSCANPVT *ppioscanpvt)
 	callbackSetPriority(priority,&piosl->callback);
 	callbackSetUser(piosl,&piosl->callback);
 	ellInit(&piosl->scan_list.list);
-        piosl->scan_list.lock = semMutexMustCreate();
+        piosl->scan_list.lock = epicsMutexMustCreate();
 	piosl->next=iosl_head[priority];
 	iosl_head[priority]=piosl;
     }
@@ -530,7 +530,7 @@ static void initPeriodic()
 	for(i=0; i<nPeriodic; i++) {
 		psl = dbCalloc(1,sizeof(scan_list));
 		papPeriodic[i] = psl;
-                psl->lock = semMutexMustCreate();
+                psl->lock = epicsMutexMustCreate();
 		ellInit(&psl->list);
 		sscanf(pmenu->papChoiceValue[i+SCAN_1ST_PERIODIC],"%f",&temp);
 		psl->rate = temp;

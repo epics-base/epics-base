@@ -267,7 +267,7 @@ LOCAL void initDatabase(void)
 	    if(!(precord->name[0])) continue;
 	    precord->rset = prset;
 	    precord->rdes = pdbRecordType;
-            precord->mlok = semMutexMustCreate();
+            precord->mlok = epicsMutexMustCreate();
 	    ellInit(&(precord->mlis));
 
            /* Reset the process active field */

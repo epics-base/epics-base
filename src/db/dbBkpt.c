@@ -14,6 +14,9 @@ of this distribution.
 /* Modification Log:
  * -----------------
  *  $Log$
+ *  Revision 1.24  2001/01/11 16:11:21  mrk
+ *  replace osiSem with epicsMutex and/or epicsEvent
+ *
  *  Revision 1.23  2000/04/28 18:29:48  mrk
  *  add dbior; add support for c++
  *
@@ -684,7 +687,7 @@ static void dbBkptCont(dbCommon *precord)
   if (ellCount(&lset_stack) == 0) {
       /* Unset flag, delete stack semaphore */
        lset_stack_not_empty = 0;
-       semMutexDestroy(bkpt_stack_sem);
+       epicsMutexDestroy(bkpt_stack_sem);
   }
 
   if (lset_stack_not_empty)

@@ -402,6 +402,8 @@ int	ignoreCase;	/* I 0,1 to honor,ignore upper/lower case differences */
 			if (*text == '\0' || *(p-1) == '*')
 			    return 1;
 			text = ++starText;
+			if (starP == NULL)
+			    return 0;
 			p = starP;
 		    }
 		}

@@ -10,6 +10,10 @@
  *  Author: Jeff Hill
  */
 
+
+#include <limits.h>
+#include <float.h>
+
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
 #define epicsExportSharedSymbols
@@ -27,6 +31,33 @@ void * bhe::operator new ( size_t size )
 void bhe::operator delete ( void *pCadaver, size_t size )
 { 
     bhe::pFreeList->release ( pCadaver, size );
+}
+
+/*
+ * set average to -1.0 so that when the next beacon
+ * occurs we can distinguish between:
+ * o new server
+ * o existing server's beacon we are seeing
+ *  for the first time shortly after program
+ *  start up
+ *
+ * if creating this in response to a search reply
+ * and not in response to a beacon then 
+ * we set the beacon time stamp to
+ * zero (so we can correctly compute the period
+ * between the 1st and 2nd beacons)
+ */
+bhe::bhe ( const epicsTime & initialTimeStamp, const inetAddrID & addr ) :
+    inetAddrID ( addr ), timeStamp ( initialTimeStamp ), averagePeriod ( - DBL_MAX ),
+    lastBeaconNumber ( UINT_MAX )
+{
+#   ifdef DEBUG
+    {
+        char name[64];
+        addr.name ( name, sizeof ( name ) );
+        ::printf ( "created beacon entry for %s\n", name );
+    }
+#   endif
 }
 
 bhe::~bhe ()

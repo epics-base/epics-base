@@ -14,10 +14,6 @@
 #ifndef bheh
 #define bheh
 
-
-#include <limits.h>
-#include <float.h>
-
 #ifdef epicsExportSharedSymbols
 #   define bhehEpicsExportSharedSymbols
 #   undef epicsExportSharedSymbols
@@ -25,7 +21,6 @@
 
 #include "shareLib.h"
 
-#include "tsSLList.h"
 #include "tsDLList.h"
 #include "tsFreeList.h"
 #include "epicsSingleton.h"
@@ -35,9 +30,9 @@
 #   define epicsExportSharedSymbols
 #endif
 
-#include "shareLib.h"
-
 #include "inetAddrID.h"
+
+#include "shareLib.h"
 
 class tcpiiu;
 
@@ -66,33 +61,6 @@ private:
 	bhe ( const bhe & );
 	bhe & operator = ( const bhe & );
 };
-
-/*
- * set average to -1.0 so that when the next beacon
- * occurs we can distinguish between:
- * o new server
- * o existing server's beacon we are seeing
- *  for the first time shortly after program
- *  start up
- *
- * if creating this in response to a search reply
- * and not in response to a beacon then 
- * we set the beacon time stamp to
- * zero (so we can correctly compute the period
- * between the 1st and 2nd beacons)
- */
-inline bhe::bhe ( const epicsTime & initialTimeStamp, const inetAddrID & addr ) :
-    inetAddrID ( addr ), timeStamp ( initialTimeStamp ), averagePeriod ( - DBL_MAX ),
-    lastBeaconNumber ( UINT_MAX )
-{
-#   ifdef DEBUG
-    {
-        char name[64];
-        addr.name ( name, sizeof ( name ) );
-        ::printf ( "created beacon entry for %s\n", name );
-    }
-#   endif
-}
 
 #endif // ifdef bheh
 

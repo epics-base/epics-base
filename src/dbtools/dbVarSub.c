@@ -194,9 +194,8 @@ long dbInitSubst(char* parm_pattern)
 			case '\\': pp++; break; /* skip the next character */
 			case '=': subst_total++; break;
 			case '\"':
-				for(++pp;*pp && *pp!='\"';pp++);
-				if(*pp=='\\') pp++;
-				pp++;
+				for(++pp;*pp && *pp!='\"';pp++)
+					if(*pp=='\\') pp++;
 				break;
 			default: break;
 			}

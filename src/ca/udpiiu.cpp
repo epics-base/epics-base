@@ -178,7 +178,15 @@ udpiiu::~udpiiu ()
         pChan->disconnect ( limboIIU );
     }
 
-    ellFree ( & this->dest );
+    // avoid use of ellFree because problems on windows occur if the
+    // free is in a different DLL than the malloc
+    ELLNODE * nnode = this->dest.node.next;
+    while ( nnode )
+    {
+        ELLNODE * pnode = nnode;
+        nnode = nnode->next;
+        free ( pnode );
+    }
     
     socket_close ( this->sock );
 }

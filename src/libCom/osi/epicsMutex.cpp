@@ -127,7 +127,7 @@ void epicsShareAPI epicsMutexShowAll(int onlyLocked,unsigned  int level)
     epicsMutexUnlock(epicsMutexGlobalLock);
 }
 
-epicsMutex :: epicsMutex () epics_throws (( epicsMutex::mutexCreateFailed )) :
+epicsMutex :: epicsMutex () epicsThrows (( epicsMutex::mutexCreateFailed )) :
     id ( epicsMutexCreate () )
 {
     if ( this->id == 0 ) {
@@ -136,13 +136,13 @@ epicsMutex :: epicsMutex () epics_throws (( epicsMutex::mutexCreateFailed )) :
 }
 
 epicsMutex ::~epicsMutex () 
-    epics_throws (())
+    epicsThrows (())
 {
     epicsMutexDestroy ( this->id );
 }
 
 void epicsMutex::lock ()
-    epics_throws (( epicsMutex::invalidMutex ))
+    epicsThrows (( epicsMutex::invalidMutex ))
 {
     epicsMutexLockStatus status = epicsMutexLock ( this->id );
     if ( status != epicsMutexLockOK ) {
@@ -151,7 +151,7 @@ void epicsMutex::lock ()
 }
 
 bool epicsMutex::lock ( double timeOut ) // X aCC 361
-    epics_throws (( epicsMutex::invalidMutex ))
+    epicsThrows (( epicsMutex::invalidMutex ))
 {
     epicsMutexLockStatus status = epicsMutexLockWithTimeout ( this->id, timeOut );
     if ( status == epicsMutexLockOK ) {
@@ -167,7 +167,7 @@ bool epicsMutex::lock ( double timeOut ) // X aCC 361
 }
 
 bool epicsMutex::tryLock () // X aCC 361
-    epics_throws (( epicsMutex::invalidMutex ))
+    epicsThrows (( epicsMutex::invalidMutex ))
 {
     epicsMutexLockStatus status = epicsMutexTryLock ( this->id );
     if ( status == epicsMutexLockOK ) {
@@ -183,13 +183,13 @@ bool epicsMutex::tryLock () // X aCC 361
 }
 
 void epicsMutex::unlock ()
-    epics_throws (())
+    epicsThrows (())
 {
     epicsMutexUnlock ( this->id );
 }
 
 void epicsMutex :: show ( unsigned level ) const 
-    epics_throws (())
+    epicsThrows (())
 {
     epicsMutexShow ( this->id, level );
 }

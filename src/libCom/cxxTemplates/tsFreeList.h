@@ -86,21 +86,21 @@ template < class T, unsigned N = 0x400,
 class tsFreeList {
 public:
     tsFreeList () 
-        epics_throws (());
+        epicsThrows (());
     ~tsFreeList () 
-        epics_throws (());
+        epicsThrows (());
     void * allocate ( size_t size ) 
-        epics_throws (( std::bad_alloc ));
+        epicsThrows (( std::bad_alloc ));
     void release ( void * p )
-        epics_throws (());
+        epicsThrows (());
     void release ( void * p, size_t size )
-        epics_throws (());
+        epicsThrows (());
 private:
     MUTEX mutex;
     tsFreeListItem < T > * pFreeList;
     tsFreeListChunk < T, N > * pChunkList;
     void * allocateFromNewChunk () 
-        epics_throws (( std::bad_alloc ));
+        epicsThrows (( std::bad_alloc ));
 };
 
 template < class T >
@@ -118,10 +118,10 @@ struct tsFreeListChunk {
 
 template < class T, unsigned N, class MUTEX >
 inline tsFreeList < T, N, MUTEX > :: tsFreeList () 
-    epics_throws (()) : pFreeList ( 0 ), pChunkList ( 0 ) {}
+    epicsThrows (()) : pFreeList ( 0 ), pChunkList ( 0 ) {}
 
 template < class T, unsigned N, class MUTEX >
-tsFreeList < T, N, MUTEX > :: ~tsFreeList () epics_throws (())
+tsFreeList < T, N, MUTEX > :: ~tsFreeList () epicsThrows (())
 {
     while ( tsFreeListChunk < T, N > *pChunk = this->pChunkList ) {
         this->pChunkList = this->pChunkList->pNext;
@@ -131,7 +131,7 @@ tsFreeList < T, N, MUTEX > :: ~tsFreeList () epics_throws (())
 
 template < class T, unsigned N, class MUTEX >
 void * tsFreeList < T, N, MUTEX >::allocate ( size_t size ) 
-    epics_throws (( std::bad_alloc ))
+    epicsThrows (( std::bad_alloc ))
 {
     if ( size != sizeof ( T ) || N == 0u || tsFreeListDebugBypass ) {
         void * p = ::operator new ( size );
@@ -151,7 +151,7 @@ void * tsFreeList < T, N, MUTEX >::allocate ( size_t size )
 
 template < class T, unsigned N, class MUTEX >
 void * tsFreeList < T, N, MUTEX >::allocateFromNewChunk () 
-    epics_throws (( std::bad_alloc ))
+    epicsThrows (( std::bad_alloc ))
 {
     tsFreeListChunk < T, N > * pChunk = 
         new tsFreeListChunk < T, N >;
@@ -171,7 +171,7 @@ void * tsFreeList < T, N, MUTEX >::allocateFromNewChunk ()
 
 template < class T, unsigned N, class MUTEX >
 void tsFreeList < T, N, MUTEX >::release ( void * pCadaver, size_t size ) 
-    epics_throws (())
+    epicsThrows (())
 {
     if ( size != sizeof ( T ) ) {
         tsFreeListMemSetDelete ( pCadaver, size );
@@ -184,7 +184,7 @@ void tsFreeList < T, N, MUTEX >::release ( void * pCadaver, size_t size )
 
 template < class T, unsigned N, class MUTEX >
 void tsFreeList < T, N, MUTEX >::release ( void * pCadaver )
-    epics_throws (())
+    epicsThrows (())
 {
     if ( N == 0u || tsFreeListDebugBypass ) {
         tsFreeListMemSetDelete ( pCadaver, sizeof ( T ) );

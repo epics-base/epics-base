@@ -42,33 +42,33 @@ public:
     // inline func def required by visual c++ 7
     class reference {
     public:
-        reference ( TYPE & tIn ) epics_throws (()) :
+        reference ( TYPE & tIn ) epicsThrows (()) :
             instance ( tIn ) 
         {
         }
 
-        ~reference () epics_throws (()) 
+        ~reference () epicsThrows (()) 
         {
         }
 
-        TYPE * operator -> () epics_throws (()) 
+        TYPE * operator -> () epicsThrows (()) 
         { 
             return & this->instance; 
         }
 
-        const TYPE * operator -> () const epics_throws (())
+        const TYPE * operator -> () const epicsThrows (())
         {
             typename epicsSingleton<TYPE>::reference & ref = 
                 const_cast < typename epicsSingleton<TYPE>::reference & > ( *this );
             return ref.operator -> ();
         }
 
-        TYPE & operator * () epics_throws (())
+        TYPE & operator * () epicsThrows (())
         {
             return * this->operator -> ();
         }
 
-        const TYPE & operator * () const epics_throws (())
+        const TYPE & operator * () const epicsThrows (())
         {
             return * this->operator -> ();
         }

@@ -41,11 +41,9 @@ public:
     expireInfo getExpireInfo () const;
     void show ( unsigned int level ) const;
     void * operator new ( size_t size, tsFreeList < timer, 0x20 > & );
-#ifdef CXX_PLACEMENT_DELETE
-    void operator delete ( void *, tsFreeList < timer, 0x20 > & );
-#endif
+    epicsPlacementDeleteOperator (( void *, tsFreeList < timer, 0x20 > & ))
 protected:
-    timer ( class timerQueue & ) epics_throws (());
+    timer ( class timerQueue & ) epicsThrows (());
     ~timer (); 
     timerQueue & queue;
 private:
@@ -69,12 +67,10 @@ struct epicsTimerForC : public epicsTimerNotify, public timer {
 public:
     void destroy ();
 protected:
-    epicsTimerForC ( timerQueue &, epicsTimerCallback, void *pPrivateIn ) epics_throws (());
+    epicsTimerForC ( timerQueue &, epicsTimerCallback, void *pPrivateIn ) epicsThrows (());
     ~epicsTimerForC (); 
     void * operator new ( size_t size, tsFreeList < epicsTimerForC, 0x20 > & );
-#ifdef CXX_PLACEMENT_DELETE
-    void operator delete ( void *, tsFreeList < epicsTimerForC, 0x20 > & );
-#endif
+    epicsPlacementDeleteOperator (( void *, tsFreeList < epicsTimerForC, 0x20 > & ))
 private:
     epicsTimerCallback pCallBack;
     void * pPrivate;
@@ -199,7 +195,7 @@ struct epicsTimerQueueActiveForC : public timerQueueActive,
     public tsDLNode < epicsTimerQueueActiveForC > {
 public:
     epicsTimerQueueActiveForC ( bool okToShare, unsigned priority );
-    void release () epics_throws (());
+    void release () epicsThrows (());
     void * operator new ( size_t );
     void operator delete ( void * );
 protected:

@@ -28,19 +28,19 @@ public:
     class mutexCreateFailed {}; // exception
     class invalidMutex {}; // exception
     epicsMutex ()
-        epics_throws (( mutexCreateFailed ));
+        epicsThrows (( mutexCreateFailed ));
     ~epicsMutex ()
-        epics_throws (());
+        epicsThrows (());
     void show ( unsigned level ) const 
-        epics_throws (());
+        epicsThrows (());
     void lock () /* blocks until success */
-        epics_throws (( invalidMutex )); 
+        epicsThrows (( invalidMutex )); 
     void unlock () 
-        epics_throws (());
+        epicsThrows (());
     bool lock ( double timeOut ) /* true if successful */
-        epics_throws (( invalidMutex )); 
+        epicsThrows (( invalidMutex )); 
     bool tryLock () /* true if successful */
-        epics_throws (( invalidMutex ));
+        epicsThrows (( invalidMutex ));
 private:
     epicsMutexId id;
     epicsMutex ( const epicsMutex & );

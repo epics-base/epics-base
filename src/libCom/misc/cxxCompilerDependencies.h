@@ -52,11 +52,18 @@
 #   define CXX_THROW_SPECIFICATION
 #endif
 
-// usage: void func () epics_throws (( std::bad_alloc, std::logic_error ))
+// usage: void func () epicsThrows (( std::bad_alloc, std::logic_error ))
 #if defined ( CXX_THROW_SPECIFICATION )
-#   define epics_throws(X) throw X
+#   define epicsThrows(X) throw X
 #else
-#   define epics_throws(X)
+#   define epicsThrows(X)
+#endif
+
+// usage: epicsPlacementDeleteOperator (( void *, myMemoryManager & ))
+#if defined ( CXX_PLACEMENT_DELETE )
+#   define epicsPlacementDeleteOperator(X) void operator delete X epicsThrows ();
+#else
+#   define epicsPlacementDeleteOperator(X)
 #endif
 
 #endif // ifndef cxxCompilerDependencies_h

@@ -39,7 +39,7 @@ epicsTimerNotify::~epicsTimerNotify  () {}
 
 void epicsTimerNotify::show ( unsigned /* level */ ) const {}
 
-epicsTimerForC::epicsTimerForC ( timerQueue &queue, epicsTimerCallback pCBIn, void *pPrivateIn ) epics_throws (()) :
+epicsTimerForC::epicsTimerForC ( timerQueue &queue, epicsTimerCallback pCBIn, void *pPrivateIn ) epicsThrows (()) :
     timer ( queue ), pCallBack ( pCBIn ), pPrivate ( pPrivateIn )
 {
 }
@@ -52,11 +52,7 @@ void epicsTimerForC::destroy ()
 {
     timerQueue & queueTmp ( this->queue );
     this->~epicsTimerForC ();
-#   ifdef CXX_PLACEMENT_DELETE
-        epicsTimerForC::operator delete ( this, queueTmp.timerForCFreeList );
-#   else
-        queueTmp.timerForCFreeList.release ( this );
-#   endif
+    queueTmp.timerForCFreeList.release ( this );
 }
 
 epicsTimerNotify::expireStatus epicsTimerForC::expire ( const epicsTime & )
@@ -74,7 +70,7 @@ epicsTimerQueueActiveForC::~epicsTimerQueueActiveForC ()
 {
 }
 
-void epicsTimerQueueActiveForC::release () epics_throws (())
+void epicsTimerQueueActiveForC::release () epicsThrows (())
 {
     epicsSingleton < timerQueueActiveMgr >::reference pMgr = 
         timerQueueMgrEPICS;

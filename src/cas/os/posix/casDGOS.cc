@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.1.1.1  1996/06/20 00:28:06  jhill
+ * ca server installation
+ *
  *
  */
 
@@ -166,54 +169,9 @@ casProcCond casDGOS::processInput ()
 //
 void casDGReadReg::callBack()
 {
-        caStatus 		status;
-	casFlushCondition	flushCond;
-	casFillCondition	fillCond;
-
 	assert (os.pRdReg);
 
-        //
-        // force all replies to be sent to the client
-        // that made the request
-        //
-	os.clear();
-
-	//
-	// read in new input
-	//
-	fillCond = os.fill();
-	if (fillCond == casFillDisconnect) {
-		casVerify(0);
-		return;
-	}
-	//
-	// verify that we have a message to process
-	//
-	if (os.inBuf::bytesPresent()>0u) {
-		//
-		// process the message
-		//
-		status = os.processMsg();
-		if (status) {
-			errMessage (status, 
-		"unexpected error processing stateless protocol");
-			//
-			// clear the input buffer so this will 
-			// not effect future input
-			//
-			os.clear();
-		}
-		else {
-			//
-			// force all replies to go to the sender
-			//
-			flushCond = os.flush();
-			if (flushCond!=casFlushCompleted) {
-				os.clear();
-				casVerify(0);
-			}
-		}
-	}
+	os.process();
 }
 
 //

@@ -94,10 +94,9 @@ void epicsMutexUnlock(epicsMutexId pmutex)
 
 epicsMutexLockStatus epicsMutexLock(epicsMutexId pmutex)
 {
-    pthread_t tid = pthread_self();
     int status;
 
-    if(!pmutex || !tid) return(epicsMutexLockError);
+    if(!pmutex) return(epicsMutexLockError);
     status = pthread_mutex_lock(&pmutex->lock);
     checkStatusQuit(status,"pthread_mutex_lock","epicsMutexLock");
     return(epicsMutexLockOK);
@@ -105,10 +104,10 @@ epicsMutexLockStatus epicsMutexLock(epicsMutexId pmutex)
 
 epicsMutexLockStatus epicsMutexTryLock(epicsMutexId pmutex)
 {
-    pthread_t tid = pthread_self();
     epicsMutexLockStatus status;
     int pthreadStatus;
 
+    if(!pmutex) return(epicsMutexLockError);
     pthreadStatus = pthread_mutex_trylock(&pmutex->lock);
     if(pthreadStatus!=0) {
         if(pthreadStatus==EBUSY) return(epicsMutexLockTimeout);

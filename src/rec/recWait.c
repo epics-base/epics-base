@@ -30,27 +30,38 @@
  * 1.01  05-31-94        nda    initial try            
  * 1.02  07-11-94    mrk/nda    added "process on input change" feature
  * 1.03  08-16-94    mrk/nda    continuing "process on input change" feature
- * 1.04  08-16-94        nda    record does not get notified when a SCAN related field changes,
- *                              so for now we have to always add monitors. Search for MON_ALWAYS
- *                              Modifications for this are flagged with MON_ALWAYS
- * 1.05  08-18-94        nda    Starting with R3.11.6, dbGetField locks the record before fetching
- *                              the data. This can cause deadlocks within a database. Change all
+ * 1.04  08-16-94        nda    record does not get notified when a SCAN 
+ *                              related field changes,so for now we have to
+ *                              always add Monitors
+ * 1.05  08-18-94        nda    Starting with R3.11.6, dbGetField locks the
+ *                              record before fetching the data. This can
+ *                              cause deadlocks within a database. Change all
  *                              dbGetField() to dbGet()
- * 1.06  08-19-94        nda    added Output data option of VAL or DOL                         
- * 1.07  09-14-94        nda    corrected bug that caused SCAN_DISABLE to lock up the record forever
+ * 1.06  08-19-94        nda    added Output data option of VAL or DOL
+ * 1.07  09-14-94        nda    corrected bug that caused SCAN_DISABLE to 
+ *                              lock up the record forever
  * 1.08  02-01-95        nda    added VERS and ODLY (output execution delay)
- * 1.09  02-15-95        nda    addedd INxP to determine which inputs should cause the record
- *                              to process when in I/O INTR mode.
- * 2.00  02-20-95        nda    added queuing to SCAN_IO_EVENT mode so no transitions of data 
- *                              would be missed. Can put back to cached mode by setting
- *                              recWaitCacheMode (effects all wait records !)
+ * 1.09  02-15-95        nda    added INxP to specify which inputs should
+ *                              cause the record to process when in I/O INTR
+ * 2.00  02-20-95        nda    added queuing to SCAN_IO_EVENT mode so no 
+ *                              transitions of data would be missed.
  * 2.01  08-07-95        nda    Multiple records with DOLN's didn't work, 
  *                              added calloc for dola structure.
+ * 3.00  08-28-95        nda    Significant rewrite to add Channel Access 
+ *                              for dynamic links using recDynLink.c . All
+ *                              inputs are now "monitored" via Channel Access.
+ *                              Removed some "callbacks" because recDynLink
+ *                              lib uses it's own task context.
+ *                              INxV field is used to keep track of PV 
+ *                              connection status: 0-PV_OK, 
+ *                              1-NotConnected,  2-NO_PV
+ * 3.01  10-03-95        nda    Also post monitors on .la, .lb, .lc etc
+ *                              when new values are written
  *
  *
  */
 
-#define VERSION 2.01
+#define VERSION 3.01
 
 
 
@@ -82,7 +93,7 @@
 
 #include	<choiceWait.h>
 #include	<waitRecord.h>
-#include	<recWaitCa.h>
+#include	<recDynLink.h>
 
 
 /* Create RSET - Record Support Entry Table*/
@@ -146,9 +157,17 @@ struct {
 
 
 /* DEFINES */
-#define   ARG_MAX   12
-#define   PVN_SIZE  40  /* must match the string length defined in waitRecord.ascii */
+#define   ARG_MAX   12  /* Number of input arguments of the record */
+#define   IN_PVS     1  /* Number of other input dynamic links(DOLN) */
+#define   OUT_PVS    1  /* Number of "non-input" dynamic links(OUTN) */
+#define   DOL_INDEX  ARG_MAX 
+#define   OUT_INDEX  (ARG_MAX + IN_PVS)
+#define   NUM_LINKS  (ARG_MAX + IN_PVS + OUT_PVS)
+#define   PVN_SIZE  40  /*must match the length defined in waitRecord.ascii*/
 #define   Q_SIZE    50
+#define   PV_OK     REC_WAIT_DYNL_OK     /* from choiceWait.h */
+#define   PV_NC     REC_WAIT_DYNL_NC     /* from choiceWait.h */
+#define   NO_PV     REC_WAIT_DYNL_NO_PV  /* from choiceWait.h */
 
 /**********************************************
   Declare constants and structures 
@@ -156,24 +175,29 @@ struct {
 
 /* callback structures and record private data */
 struct cbStruct {
-        CALLBACK           doOutCb;   /* callback structure for executing the output link */
-        CALLBACK           ioProcCb;  /* callback structure for io_event scanning  */
-        struct waitRecord *pwait;     /* pointer to wait record which needs work done */
-        WDOG_ID            wd_id;     /* Watchdog used for delays */
-        RECWAITCA          inpMonitor[ARG_MAX];  /* required structures for each input variable */
-        RING_ID            monitorQ;	    /* queue to store ca callback data */
-        unsigned short     inpMonFlag[ARG_MAX];
-        IOSCANPVT          ioscanpvt; /* used for IO_EVENT scanning */
-        int                outputWait;      /* flag to indicate waiting to do output */
-        int                procPending;     /* flag to indicate record processing is pending */
-        unsigned long      tickStart;     /* used for timing  */
+    CALLBACK           doOutCb;   /* cback struct for doing the OUT link*/
+    CALLBACK           ioProcCb;  /* cback struct for io_event scanning */
+    struct waitRecord *pwait;     /* pointer to wait record */
+    WDOG_ID            wd_id;     /* Watchdog used for delays */
+    recDynLink         caLinkStruct[NUM_LINKS]; /* req'd for recDynLink*/
+    RING_ID            monitorQ;  /* queue to store ca callback data */
+    IOSCANPVT          ioscanpvt; /* used for IO_EVENT scanning */
+    int                outputWait;/* waiting to do output */
+    int                procPending;/*record processing is pending */
+    unsigned long      tickStart; /* used for timing  */
 };
 
 
+typedef struct recDynLinkPvt {
+        struct waitRecord *pwait;     /* pointer to wait record */
+        unsigned short     linkIndex; /* specifies which dynamic link */
+}recDynLinkPvt;
+
+
 static long get_ioint_info(cmd,pwait,ppvt)
-        int                     cmd;
-        struct waitRecord       *pwait;
-        IOSCANPVT               *ppvt;
+    int                     cmd;
+    struct waitRecord       *pwait;
+    IOSCANPVT               *ppvt;
 {
     *ppvt = (((struct cbStruct *)pwait->cbst)->ioscanpvt);
     return(0);
@@ -182,8 +206,8 @@ static long get_ioint_info(cmd,pwait,ppvt)
 
 /* This is the data that will be put on the work queue ring buffer */
 struct qStruct {
-        char               inputIndex;
-        double             monData;
+    char               inputIndex;
+    double             monData;
 };
 
 
@@ -191,13 +215,15 @@ int    recWaitDebug=0;
 int    recWaitCacheMode=0;
 static unsigned long tickStart;
 static void schedOutput(struct waitRecord *pwait);
-static void reqOutput(struct waitRecord *pwait);
 static void execOutput(struct cbStruct *pcbst);
 static int fetch_values(struct waitRecord *pwait);
 static void monitor(struct waitRecord *pwait);
 static long initSiml();
-static void inputChanged(struct recWaitCa *pcamonitor, char inputIndex, double monData);
 static void ioIntProcess(CALLBACK *pioProcCb);
+
+static void pvSearchCallback(recDynLink *precDynLink);
+static void pvMonitorCallback(recDynLink *precDynLink);
+static void inputChanged(recDynLink *precDynLink);
 
 
 static long init_record(pwait,pass)
@@ -209,39 +235,26 @@ static long init_record(pwait,pass)
     int i;
 
     char            *ppvn[PVN_SIZE];
-    struct dbAddr   **ppdbAddr;   /* ptr to a ptr to dbAddr */
-    long            *paddrValid;
+    unsigned short  *pPvStat;
     unsigned short  *piointInc;	  /* include for IO_INT ? */
+
+    recDynLinkPvt   *puserPvt;
 
     char rpbuf[184];
     short error_number;
 
     if (pass==0) {
       pwait->vers = VERSION;
-      pwait->inaa = calloc(1,sizeof(struct dbAddr));
-      pwait->inba = calloc(1,sizeof(struct dbAddr));
-      pwait->inca = calloc(1,sizeof(struct dbAddr));
-      pwait->inda = calloc(1,sizeof(struct dbAddr));
-      pwait->inea = calloc(1,sizeof(struct dbAddr));
-      pwait->infa = calloc(1,sizeof(struct dbAddr));
-      pwait->inga = calloc(1,sizeof(struct dbAddr));
-      pwait->inha = calloc(1,sizeof(struct dbAddr));
-      pwait->inia = calloc(1,sizeof(struct dbAddr));
-      pwait->inja = calloc(1,sizeof(struct dbAddr));
-      pwait->inka = calloc(1,sizeof(struct dbAddr));
-      pwait->inla = calloc(1,sizeof(struct dbAddr));
-      pwait->outa = calloc(1,sizeof(struct dbAddr));
-      pwait->dola = calloc(1,sizeof(struct dbAddr));
  
       pwait->cbst = calloc(1,sizeof(struct cbStruct));
 
-      /* init as much as we can  */
-      *ppvn = &pwait->inan[0];
-      for(i=0;i<ARG_MAX; i++, *ppvn += PVN_SIZE) {
-        ((struct cbStruct *)pwait->cbst)->inpMonitor[i].channame = (char *)*ppvn;
-        ((struct cbStruct *)pwait->cbst)->inpMonitor[i].inputIndex = i;
-        ((struct cbStruct *)pwait->cbst)->inpMonitor[i].callback = inputChanged;
-        ((struct cbStruct *)pwait->cbst)->inpMonitor[i].userPvt = pwait;
+      /* init the private area of the caLinkStruct's   */
+      for(i=0;i<NUM_LINKS; i++) {
+        ((struct cbStruct *)pwait->cbst)->caLinkStruct[i].puserPvt
+                 = calloc(1,sizeof(struct recDynLinkPvt));
+        puserPvt = ((struct cbStruct *)pwait->cbst)->caLinkStruct[i].puserPvt;
+        puserPvt->pwait = pwait;
+        puserPvt->linkIndex = i;
       }
 
     /* do scanIoInit here because init_dev doesn't know which record */
@@ -250,22 +263,9 @@ static long init_record(pwait,pass)
     return(0);
     }
 
-    /* Do initial lookup of PV Names to dbAddr's */
-
     /* This is pass == 1, so pwait->cbst is valid */
 
     pcbst = (struct cbStruct *)pwait->cbst;
-
-    *ppvn = &pwait->inan[0];
-    ppdbAddr = (struct dbAddr **)&pwait->inaa;
-    paddrValid = &pwait->inav;
-
-    for(i=0;i<ARG_MAX; i++, *ppvn += PVN_SIZE, ppdbAddr++, paddrValid++) {
-        *paddrValid = dbNameToAddr(*ppvn, *ppdbAddr);  
-    } 
-
-    pwait->outv = dbNameToAddr(pwait->outn, (struct dbAddr *)pwait->outa);
-    pwait->dolv = dbNameToAddr(pwait->doln, (struct dbAddr *)pwait->dola);
 
     pwait->clcv=postfix(pwait->calc,rpbuf,&error_number);
     if(pwait->clcv){
@@ -284,28 +284,9 @@ static long init_record(pwait,pass)
     callbackSetUser(pwait, &pcbst->ioProcCb);
     pcbst->pwait = pwait;
     pcbst->wd_id = wdCreate();
-    if((pcbst->monitorQ = rngCreate(sizeof(struct qStruct) * Q_SIZE)) == NULL) {
+    if((pcbst->monitorQ=rngCreate(sizeof(struct qStruct)*Q_SIZE)) == NULL) {
         errMessage(0,"recWait can't create ring buffer");
         exit(1);
-    }
-
-    /* Set up monitors on input channels if scan type is IO Event */
-
-/* MON_ALWAYS  if(pwait->scan == SCAN_IO_EVENT)  {  */
-    if(1) {
-        paddrValid = &pwait->inav;
-        piointInc  = &pwait->inap;
-
-        for(i=0;i<ARG_MAX; i++, paddrValid++, piointInc++) {
-            /* store current value in private array */
-            pcbst->inpMonFlag[i] = *piointInc;
-            /* if valid PV AND input include flag is true ... */
-            if(!(*paddrValid) && (*piointInc)) {
-                if(recWaitDebug) printf("adding monitor on input %d\n", i);
-                status = recWaitCaAdd(&(((struct cbStruct *)pwait->cbst)->inpMonitor[i]));
-                if(status) errMessage(status,"recWaitCaAdd error");
-            }
-        }
     }
 
     if (status=initSiml(pwait)) return(status);
@@ -314,6 +295,31 @@ static long init_record(pwait,pass)
     pcbst->outputWait = 0;
     pcbst->procPending = 0;
 
+    pwait->init = TRUE;
+
+    /* Do initial lookup of PV Names using recDynLink lib */
+
+    *ppvn = &pwait->inan[0];
+    pPvStat = &pwait->inav;
+
+    /* check all dynLinks for non-NULL  */
+    for(i=0;i<NUM_LINKS; i++, pPvStat++, *ppvn += PVN_SIZE) {
+        if(*ppvn[0] != NULL) {
+            *pPvStat = PV_NC;
+            if(i<OUT_INDEX) {
+                recDynLinkAddInput(&pcbst->caLinkStruct[i], *ppvn, 
+                 DBR_DOUBLE, rdlSCALAR, pvSearchCallback, inputChanged);
+            }
+            else {
+                recDynLinkAddOutput(&pcbst->caLinkStruct[i], *ppvn,
+                DBR_DOUBLE, rdlSCALAR, pvSearchCallback);
+            }
+            if(recWaitDebug > 5) printf("Search during init\n");
+        }
+        else {
+            *pPvStat = NO_PV;
+        }
+    } 
     pwait->init = TRUE;
     return(0);
 }
@@ -341,11 +347,14 @@ static long process(pwait)
                         recGblSetSevr(pwait,CALC_ALARM,INVALID_ALARM);
                 } else pwait->udf = FALSE;
             }
+            else {
+                recGblSetSevr(pwait,READ_ALARM,INVALID_ALARM);
+            }
         }
         else {      /* SIMULATION MODE */
             nRequest = 1;
-            status  = recGblGetLinkValue(&(pwait->siol),
-                     (void *)pwait,DBR_DOUBLE,&(pwait->sval),&options,&nRequest);
+            status = recGblGetLinkValue(&(pwait->siol),
+               (void *)pwait,DBR_DOUBLE,&(pwait->sval),&options,&nRequest);
             if (status==0){
                 pwait->val=pwait->sval;
                 pwait->udf=FALSE;
@@ -413,141 +422,59 @@ static long special(paddr,after)
     struct cbStruct     *pcbst = (struct cbStruct *)pwait->cbst;
     int           	special_type = paddr->special;
     char                *ppvn[PVN_SIZE];
-    struct dbAddr       **ppdbAddr;   /* ptr to a ptr to dbAddr */
-    long                *paddrValid;
+    unsigned short      *pPvStat;
     unsigned short      *piointInc;   /* include for IO_INT ? */
-    int  i;
+    unsigned short       oldStat;
+    int  index;
     long status;
-    long odbv  =0;    
     short error_number;
     char rpbuf[184];
 
     if(recWaitDebug) printf("entering special %d \n",after);
 
     if(!after) {  /* this is called before ca changes the field */
-        /* MON_ALWAYS This case doesn't currently happen */
-        if((special_type == SPC_SCAN) && (pwait->scan == SCAN_IO_EVENT)) {
-            /* Leaving IO_EVENT, delete monitors */
-            paddrValid = &pwait->inav;
-            for(i=0;i<ARG_MAX; i++, paddrValid++) {
-                if(!(*paddrValid)) {
-                    if(recWaitDebug) printf("deleting monitor\n");
-                    status = recWaitCaDelete(&pcbst->inpMonitor[i]);
-                    if(status) errMessage(status,"recWaitCaDelete error");
-                }
-            }
-            return(0);
-        }	
         
-        /* check if changing any Input PV names while monitored */
-        if((paddr->pfield >= (void *)pwait->inan) &&
-           (paddr->pfield <= (void *)pwait->inln)) {
-            /* About to change a PV, delete that particular monitor */
-            i = special_type - REC_WAIT_A; /* index of input */
-            paddrValid = &pwait->inav + i; /* pointer arithmetic */
-            piointInc  = &pwait->inap + i; /* pointer arithmetic */
-            /* If PV name is valid and the INxP flag is true, ... */
-            if(!(*paddrValid) && (*piointInc)) {
-                if(recWaitDebug) printf("deleting monitor on input %d\n",i);
-                status = recWaitCaDelete(&pcbst->inpMonitor[i]);
-                if(status) errMessage(status,"recWaitCaDelete error");
+        /* check if changing any dynamic link names  */
+        /* This is where one would do a recDynLinkClear, but it is
+           not required prior to a new search */
+     return(0);
+     }
+
+    /* this is executed after ca changed the field */
+    if((special_type >= REC_WAIT_A) && 
+       (special_type < (REC_WAIT_A + NUM_LINKS))) {
+        index = special_type - REC_WAIT_A; /* index of input */
+        pPvStat = &pwait->inav + index; /* pointer arithmetic */
+        oldStat = *pPvStat;
+        *ppvn = &pwait->inan[0] + (index*PVN_SIZE); 
+        if(*ppvn[0] != NULL) {
+            if(recWaitDebug > 5) printf("Search during special \n");
+            *pPvStat = PV_NC;
+            /* need to post_event before recDynLinkAddXxx because
+               SearchCallback could happen immediatley */
+            if(*pPvStat != oldStat) {
+                db_post_events(pwait,pPvStat,DBE_VALUE);
             }
+            if(index<OUT_INDEX) {
+                recDynLinkAddInput(&pcbst->caLinkStruct[index], *ppvn, 
+                DBR_DOUBLE, rdlSCALAR, pvSearchCallback, inputChanged);
+            }
+            else {
+                recDynLinkAddOutput(&pcbst->caLinkStruct[index], *ppvn,
+                DBR_DOUBLE, rdlSCALAR, pvSearchCallback);
+            }
+        }
+        else if(*pPvStat != NO_PV) {
+            /* PV is now NULL but didn't used to be */
+            *pPvStat = NO_PV;              /* PV just cleared */
+            if(*pPvStat != oldStat) {
+                db_post_events(pwait,pPvStat,DBE_VALUE);
+            }
+            recDynLinkClear(&pcbst->caLinkStruct[index]);
         }
         return(0);
     }
-
-    /* this is executed after ca changed the field */
-    switch(special_type) {
-      case(SPC_SCAN):   /* Changed SCAN mechanism, set monitors on input links */
-          /* MON_ALWAYS This case currently doesn't happen */
-          if(pwait->scan == SCAN_IO_EVENT) { 
-              paddrValid = &pwait->inav;
-              for(i=0;i<ARG_MAX; i++, paddrValid++) {
-                  if(!(*paddrValid)) {
-                     if(recWaitDebug) printf("adding monitor on input %d\n", i);
-                     status = recWaitCaAdd(&pcbst->inpMonitor[i]);
-                     if(status) errMessage(status,"recWaitCaAdd error");
-                  }
-              }
-          }
-          return(0);
-          break;
-
-      case(REC_WAIT_A):        /* check if changing any input PV's or flags */
-      case(REC_WAIT_B):
-      case(REC_WAIT_C):
-      case(REC_WAIT_D):
-      case(REC_WAIT_E):
-      case(REC_WAIT_F):
-      case(REC_WAIT_G):
-      case(REC_WAIT_H):
-      case(REC_WAIT_I):
-      case(REC_WAIT_J):
-      case(REC_WAIT_K):
-      case(REC_WAIT_L):
-        
-          i = special_type - REC_WAIT_A; /* index of input */
-          paddrValid = &pwait->inav + i; /* pointer arithmetic */
-          ppdbAddr = (struct dbAddr **)&pwait->inaa + i; /* pointer arithmetic */
-          *ppvn = &pwait->inan[0] + (i*PVN_SIZE); 
-          piointInc  = &pwait->inap + i;    /* pointer arithmetic */
-      
-          /* If the PV Name changing, do dbNameToAddr  */
-          if(paddr->pfield==*ppvn) {
-              odbv = *paddrValid;
-              *paddrValid = dbNameToAddr(*ppvn, *ppdbAddr);
-              if (odbv != *paddrValid) {
-                  db_post_events(pwait,paddrValid,DBE_VALUE);
-              }
-              /* MON_ALWAYS: Should only do if  SCAN_IO_EVENT), but can't now */
-              /* If the INxP flag is set, add a monitor */
-              if(!(*paddrValid) && (*piointInc)) {
-                  if(recWaitDebug) printf("adding monitor on input %d\n", i);
-                  status = recWaitCaAdd(&pcbst->inpMonitor[i]);
-                  if(status) errMessage(status,"recWaitCaAdd error");
-              }
-          }
-          /* Must be the I/O INTR flag that changed. Compare to previous value */
-          else {
-              if(!(*paddrValid) && (*piointInc) && !(pcbst->inpMonFlag[i])) {
-                  if(recWaitDebug) printf("adding monitor on input %d\n", i);
-                  status = recWaitCaAdd(&pcbst->inpMonitor[i]);
-                  if(status) errMessage(status,"recWaitCaAdd error");
-              }
-              else if(!(*paddrValid) && !(*piointInc) && (pcbst->inpMonFlag[i])) {
-                  if(recWaitDebug) printf("deleting monitor on input %d\n", i);
-                  status = recWaitCaDelete(&pcbst->inpMonitor[i]);
-                  if(status) errMessage(status,"recWaitCaDelete error");
-              }
-              pcbst->inpMonFlag[i] = *piointInc; /* keep track of current val */
-          }
-          return(0);
-          break;
-
-      case(SPC_MOD):        /* check if changing any other SPC_MOD fields */
-        if(paddr->pfield==pwait->outn) {  /* this is the output link */ 
-            odbv = pwait->outv;
-            pwait->outv = dbNameToAddr(pwait->outn,(struct dbAddr *)pwait->outa);
-            if (odbv != pwait->outv) {
-               db_post_events(pwait,&pwait->outv,DBE_VALUE);
-            }
-        } 
-        else if(paddr->pfield==pwait->doln) {  /* this is the DOL link */ 
-            odbv = pwait->dolv;
-            pwait->dolv = dbNameToAddr(pwait->doln,(struct dbAddr *)pwait->dola);
-            if (odbv != pwait->dolv) {
-               db_post_events(pwait,&pwait->dolv,DBE_VALUE);
-            }
-        }
-        else if(paddr->pfield==(void *)&pwait->prio) {
-            callbackSetPriority(pwait->prio, &((struct cbStruct *)pwait->cbst)->doOutCb);
-            callbackSetPriority(pwait->prio, &((struct cbStruct *)pwait->cbst)->ioProcCb);
-        }
-
-        return(0);
-        break;
-
-      case(SPC_CALC):
+    else if(special_type == SPC_CALC) {
         pwait->clcv=postfix(pwait->calc,rpbuf,&error_number);
         if(pwait->clcv){
                 recGblRecordError(S_db_badField,(void *)pwait,
@@ -560,8 +487,13 @@ static long special(paddr,after)
         db_post_events(pwait,pwait->calc,DBE_VALUE);
         db_post_events(pwait,&pwait->clcv,DBE_VALUE);
         return(0);
-        break;
-    default:
+    }
+    else if(paddr->pfield==(void *)&pwait->prio) {
+        callbackSetPriority(pwait->prio, &pcbst->doOutCb);
+        callbackSetPriority(pwait->prio, &pcbst->ioProcCb);
+        return(0);
+    }
+    else {
 	recGblDbaddrError(S_db_badChoice,paddr,"wait: special");
 	return(S_db_badChoice);
         return(0);
@@ -649,12 +581,14 @@ static void monitor(pwait)
                 db_post_events(pwait,&pwait->val,monitor_mask);
         }
         /* check all input fields for changes */
-        for(i=0, pnew=&pwait->a, pprev=&pwait->la; i<ARG_MAX; i++, pnew++, pprev++) {
-             if(*pnew != *pprev) {
-                  db_post_events(pwait,pnew,monitor_mask|DBE_VALUE);
-                  *pprev = *pnew;
-                     }
-                }
+        for(i=0, pnew=&pwait->a, pprev=&pwait->la; i<ARG_MAX;
+            i++, pnew++, pprev++) {
+            if(*pnew != *pprev) {
+                 db_post_events(pwait,pnew,monitor_mask|DBE_VALUE);
+                 *pprev = *pnew;
+                 db_post_events(pwait,pprev,monitor_mask|DBE_VALUE);
+            }
+        }
         return;
 }
 
@@ -703,37 +637,47 @@ struct waitRecord   *pwait;
 static int fetch_values(pwait)
 struct waitRecord *pwait;
 {
-        struct dbAddr   **ppdba; /* a ptr to a ptr to dbAddr  */
+        struct cbStruct *pcbst = (struct cbStruct *)pwait->cbst;
         double          *pvalue;
-        long            *pvalid;
+        unsigned short  *pPvStat;
         unsigned short  *piointInc;   /* include for IO_INT ? */
         long            status=0,options=0,nRequest=1;
         int             i;
 
         piointInc  = &pwait->inap;
-        for(i=0, ppdba= (struct dbAddr **)&pwait->inaa, pvalue=&pwait->a, pvalid = &pwait->inav;
-            i<ARG_MAX; i++, ppdba++, pvalue++, pvalid++, piointInc++) {
+        for(i=0,  pvalue=&pwait->a, pPvStat = &pwait->inav;
+            i<ARG_MAX; i++, pvalue++, pPvStat++, piointInc++) {
 
-            /* only fetch a value if the dbAddr is valid, otherwise, leave it alone */
-            /* if in SCAN_IO_EVENT, only fetch inputs if INxP !=  1 (not monitored) */
-            if(!(*pvalid) && !((pwait->scan == SCAN_IO_EVENT) && (*piointInc))) {
-                status = dbGet(*ppdba, DBR_DOUBLE,
-                               pvalue, &options, &nRequest, NULL);
+            /* if any input should be connected, but is not, return */
+            if(*pPvStat == PV_NC) {
+                 status = ERROR;
             }
 
+            /* only fetch a value if the connection is valid */
+            /* if not in SCAN_IO_EVENT, fetch all valid inputs */
+            /* if in SCAN_IO_EVENT, only fetch inputs if INxP ==  0 */
+            /* The data from those with INxP=1 comes from the ring buffer */
+            else if((*pPvStat == PV_OK)&&
+                    ((pwait->scan != SCAN_IO_EVENT) || 
+                     ((pwait->scan == SCAN_IO_EVENT) && !*piointInc))) {
+               if(recWaitDebug > 5) printf("Fetching input %d \n",i);
+               status = recDynLinkGet(&pcbst->caLinkStruct[i], pvalue,
+                                      &nRequest, 0, 0, 0);
+            }
             if (!RTN_SUCCESS(status)) return(status);
         }
         return(0);
 }
 
-/******************************************************************************
+/***************************************************************************
  *
- * The following functions schedule and/or request the execution of the output
- * PV and output event based on the Output Execution Delay (ODLY).
- * If .odly > 0, a watchdog is scheduled; if 0, reqOutput() is called immediately.
+ * The following functions schedule and/or request the execution of the
+ * output PV and output event based on the Output Execution Delay (ODLY).
+ * If .odly > 0, a watchdog is scheduled; if 0, execOutput() is called 
+ * immediately.
  * NOTE: THE RECORD REMAINS "ACTIVE" WHILE WAITING ON THE WATCHDOG
  *
- ******************************************************************************/
+ **************************************************************************/
 static void schedOutput(pwait)
     struct waitRecord   *pwait;
 {
@@ -746,26 +690,19 @@ int                   wdDelay;
       /* Use the watch-dog as a delay mechanism */
       pcbst->outputWait = 1;
       wdDelay = pwait->odly * sysClkRateGet();
-      wdStart(pcbst->wd_id, wdDelay, (FUNCPTR)reqOutput, (int)(pwait));
+      wdStart(pcbst->wd_id, wdDelay, (FUNCPTR)execOutput, (int)(pwait->cbst));
     } else {
-      reqOutput(pwait);
+      execOutput(pwait->cbst);
     }
 }
 
-static void reqOutput(pwait)
-    struct waitRecord   *pwait;
-{
-
-    callbackRequest(pwait->cbst);
-
-}
-/******************************************************************************
+/***************************************************************************
  *
- * This is the code that is executed by the callback task to do the record    
- * outputs. It is done with a separate task so one need not worry about
+ * This code calls recDynLinkPut to execute the output link. Since requests   
+ * recDynLinkPut are done via another task, one need not worry about
  * lock sets.
  *
- ******************************************************************************/
+ ***************************************************************************/
 void execOutput(pcbst)
    struct cbStruct *pcbst;
 {
@@ -779,15 +716,15 @@ double oldDold;
         if(pcbst->pwait->dopt) {
             if(!pcbst->pwait->dolv) {
                 oldDold = pcbst->pwait->dold;
-                status = dbGet(pcbst->pwait->dola,DBR_DOUBLE,
-                               &(pcbst->pwait->dold), &options, &nRequest, NULL);
+                status = recDynLinkGet(&pcbst->caLinkStruct[DOL_INDEX],
+                               &(pcbst->pwait->dold), &nRequest, 0, 0, 0);
                 if(pcbst->pwait->dold != oldDold)
-                    db_post_events(pcbst->pwait,&pcbst->pwait->dold,DBE_VALUE);
+                  db_post_events(pcbst->pwait,&pcbst->pwait->dold,DBE_VALUE);
             }
-            status = dbPutField(pcbst->pwait->outa,DBR_DOUBLE,
+            status = recDynLinkPut(&pcbst->caLinkStruct[OUT_INDEX],
                                 &(pcbst->pwait->dold), 1);
         } else {
-            status = dbPutField(pcbst->pwait->outa,DBR_DOUBLE,
+            status = recDynLinkPut(&pcbst->caLinkStruct[OUT_INDEX],
                                 &(pcbst->pwait->val), 1);
         }
     }
@@ -811,42 +748,38 @@ double oldDold;
 
 
 
-/* This routine is called by the recWaitCaTask whenver a monitored input
-   changes. The input index and new data is put on a work queue, and a callback
-   request is issued to the routine ioIntProcess
-*/
-static void inputChanged(struct recWaitCa *pcamonitor, char inputIndex, double monData)
+/* This routine is called by the recDynLink task whenver a monitored input
+ * changes. If the particular input is flagged to cause record processing, 
+ * The input index and new data are put on a work queue, and a callback
+ * request is issued to the routine ioIntProcess
+ */
+
+static void inputChanged(recDynLink *precDynLink)
 {
+  struct waitRecord *pwait = ((recDynLinkPvt *)precDynLink->puserPvt)->pwait;
+  struct cbStruct   *pcbst = (struct cbStruct   *)pwait->cbst;
+  double             monData;
+  unsigned long      nRequest;
+  long               status;
+  char               index;
+  unsigned short    *piointInc;
 
-    struct waitRecord *pwait = (struct waitRecord *)pcamonitor->userPvt;
-    struct cbStruct   *pcbst = (struct cbStruct   *)pwait->cbst;
-
-/* the next line is here because the monitors are always active ... MON_ALWAYS */
     if(pwait->scan != SCAN_IO_EVENT) return; 
 
-    if(recWaitCacheMode) {
-      /* if record hasn't been processed or is DISABLED, don't set procPending yet */
-      if((pwait->stat == DISABLE_ALARM) || pwait->udf) { 
-          if(recWaitDebug>=5) printf("queuing monitor (cached)\n");
-          callbackRequest(&pcbst->ioProcCb);
-      } else if(pcbst->procPending) {
-/*        if(recWaitDebug) printf("discarding monitor\n"); */
-          printf("discarding monitor\n");
-          return;
-      } else {
-          pcbst->procPending = 1;
-          if(recWaitDebug>=5) printf("queuing monitor (cached)\n");
-          callbackRequest(&pcbst->ioProcCb);
-      } 
-    }
-    else {  /* put input index and monitored data on processing queue */
-        if(recWaitDebug>=5) printf("queuing monitor on %d = %lf\n", inputIndex, monData);
-        if(rngBufPut(pcbst->monitorQ, (void *)&inputIndex, sizeof(char))
-            != sizeof(char)) errMessage(0,"recWait rngBufPut error");
-        if(rngBufPut(pcbst->monitorQ, (void *)&monData, sizeof(double))
-            != sizeof(double)) errMessage(0,"recWait rngBufPut error");
-        callbackRequest(&pcbst->ioProcCb);
-    }
+    index = (char)((recDynLinkPvt *)precDynLink->puserPvt)->linkIndex;
+
+    piointInc = &pwait->inap + index;    /* pointer arithmetic */
+    if(*piointInc == 0) return;     /* input cause processing ???*/
+
+    /* put input index and monitored data on processing queue */
+    recDynLinkGet(precDynLink, &monData, &nRequest, 0, 0, 0); 
+    if(recWaitDebug>5)
+        printf("queuing monitor on %d = %lf\n",index,monData);
+    if(rngBufPut(pcbst->monitorQ, (void *)&index, sizeof(char))
+        != sizeof(char)) errMessage(0,"recWait rngBufPut error");
+    if(rngBufPut(pcbst->monitorQ, (void *)&monData, sizeof(double))
+        != sizeof(double)) errMessage(0,"recWait rngBufPut error");
+    callbackRequest(&pcbst->ioProcCb);
 }
 
 
@@ -876,13 +809,15 @@ static void ioIntProcess(CALLBACK *pioProcCb)
       if(rngBufGet(pcbst->monitorQ, (void *)&monData, sizeof(double))
           != sizeof(double)) errMessage(0, "recWait: rngBufGet error");
 
-      if(recWaitDebug>=5) printf("processing on %d = %lf  (%lf)\n", inputIndex, monData,pwait->val);
+      if(recWaitDebug>=5)
+          printf("processing on %d = %lf  (%lf)\n",
+                  inputIndex, monData,pwait->val);
 
-      pInput += inputIndex;   /* pointer arithmetic to choose appropriate input */ 
+      pInput += inputIndex;   /* pointer arithmetic for appropriate input */ 
       dbScanLock((struct dbCommon *)pwait);
-      *pInput = monData;                       /* put data in input data field */
+      *pInput = monData;      /* put data in input data field */
       
-      /* Process the record, unless it's busy waiting to do the output link */
+      /* Process the record, unless busy waiting to do the output link */
       if(pcbst->outputWait) {
           pcbst->procPending = 1;
           if(recWaitDebug) printf("record busy, setting procPending\n");
@@ -901,3 +836,32 @@ static void ioIntProcess(CALLBACK *pioProcCb)
 
 }
     
+
+LOCAL void pvSearchCallback(recDynLink *precDynLink)
+{
+
+    recDynLinkPvt     *puserPvt = (recDynLinkPvt *)precDynLink->puserPvt;
+    struct waitRecord *pwait    = puserPvt->pwait;
+    unsigned short     index    = puserPvt->linkIndex;
+    unsigned short    *pPvStat;
+    unsigned short     oldValid;
+
+    pPvStat = &pwait->inav + index;    /* pointer arithmetic */
+    puserPvt = (recDynLinkPvt *)precDynLink->puserPvt;
+
+    oldValid = *pPvStat;
+    if(recDynLinkConnectionStatus(precDynLink)) {
+        *pPvStat = PV_NC;
+        if(recWaitDebug) printf("Search Callback: No Connection\n");
+    }
+    else {
+        *pPvStat = PV_OK;
+        if(recWaitDebug) printf("Search Callback: Success\n");
+    }
+    if(*pPvStat != oldValid) {
+        db_post_events(pwait, pPvStat, DBE_VALUE);
+    }
+        
+}
+
+

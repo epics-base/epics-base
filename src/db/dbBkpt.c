@@ -14,6 +14,9 @@ of this distribution.
 /* Modification Log:
  * -----------------
  *  $Log$
+ *  Revision 1.19  2000/02/28 19:40:55  mrk
+ *  changes for creating win dlls
+ *
  *  Revision 1.18  2000/02/26 23:45:22  norume
  *  Reflect routine name change from threadSuspend() to threadSuspendSelf().
  *
@@ -98,8 +101,6 @@ of this distribution.
 #include "dbBase.h"
 #include "dbFldTypes.h"
 #include "link.h"
-#include "dbAddr.h"
-#include "dbAccess.h"
 #include "dbCommon.h"
 #include "dbFldTypes.h"
 #include "db_field_log.h"
@@ -107,6 +108,8 @@ of this distribution.
 #include "recSup.h"
 #include "special.h"
 #define epicsExportSharedSymbols
+#include "dbAccess.h"
+#include "dbAddr.h"
 #include "dbScan.h"
 #include "dbLock.h"
 #include "recGbl.h"

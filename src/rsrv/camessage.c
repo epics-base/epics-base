@@ -312,14 +312,14 @@ unsigned	lineno
 }
 
 /*
- * bad_msg_action()
+ * bad_tcp_cmd_action()
  */
-LOCAL int bad_msg_action(
-caHdr           *mp,
-struct client   *client,
-const char      *pCtx
+LOCAL int bad_tcp_cmd_action(
+caHdr 	*mp,
+struct client  	*client
 )
 {
+    const char *pCtx = "invalid (damaged?) request code from TCP";
     log_header (pCtx, client, mp, 0);
 
     /* 
@@ -334,17 +334,6 @@ const char      *pCtx
 }
 
 /*
- * bad_tcp_cmd_action()
- */
-LOCAL int bad_tcp_cmd_action(
-caHdr 	*mp,
-struct client  	*client
-)
-{
-    return bad_msg_action (mp, client, "bad (damaged?) TCP request id");
-}
-
-/*
  * bad_udp_cmd_action()
  */
 LOCAL int bad_udp_cmd_action(
@@ -352,7 +341,8 @@ caHdr 	*mp,
 struct client  	*client
 )
 {
-    return bad_msg_action (mp, client, "bad (damaged?) UDP request id");
+    log_header ("invalid (damaged?) request code from UDP", client, mp, 0);
+    return ERROR;
 }
 
 /*

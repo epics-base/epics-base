@@ -75,8 +75,8 @@ public:
 
 	resTableIndex hash (unsigned nBitsId) const;
 
-    static const unsigned minIndexBitWidth;
-    static const unsigned maxIndexBitWidth;
+    static const unsigned minIndexBitWidth ();
+    static const unsigned maxIndexBitWidth ();
 
 	virtual void show (unsigned level) const;
 private:

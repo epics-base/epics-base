@@ -56,7 +56,6 @@
 #include "shareLib.h"
 
 typedef size_t resTableIndex;
-static const unsigned indexWidth = sizeof(resTableIndex)*CHAR_BIT;
 
 template <class T, class ID> class resTableIter;
 
@@ -87,19 +86,19 @@ template <class T, class ID> class resTableIter;
 //          bool operator == (const ID &);
 //
 //          // ID to hash index convert (see examples below)
-//          index hash (unsigned nBitsHashIndex) const; 
+//          resTableIndex hash (unsigned nBitsHashIndex) const; 
 //
-// 5)   Classes of type ID must provide the following public compile time
-//      determined static member constants. They determine the minimum and maximum 
-//      number of elements in the hash table. Knowing these parameters at 
-//      compile time improves performance. If minIndexBitWidth == maxIndexBitWidth
-//      then the hash table size is determined at compile time
+// 5)   Classes of type ID must provide the following member functions
+//      (which will usually be static const inline for improved performance).
+//      They determine the minimum and maximum number of elements in the hash 
+//      table. If minIndexBitWidth() == maxIndexBitWidth() then the hash table
+//      size is determined at compile time
 //
-//          static const unsigned maxIndexBitWidth = nnnn;
-//          static const unsigned minIndexBitWidth = nnnn;
+//          inline static const unsigned maxIndexBitWidth ();
+//          inline static const unsigned minIndexBitWidth ();
 //
-//          max number of hash table elements = 1 << maxIndexBitWidth
-//          min number of hash table elements = 1 << minIndexBitWidth;
+//          max number of hash table elements = 1 << maxIndexBitWidth();
+//          min number of hash table elements = 1 << minIndexBitWidth();
 //
 // 6)   Storage for identifier of type ID must persist until the item of type 
 //      T is deleted from the resTable
@@ -193,7 +192,7 @@ public:
 private:
     tsSLIter<T>             iter;
     unsigned                index;
-	const resTable<T,ID>    table;
+	const resTable<T,ID>    &table;
 };
 
 //
@@ -228,11 +227,9 @@ public:
 	bool operator == (const intId &idIn) const;
 	resTableIndex hash (unsigned nBitsIndex) const;
 	const T getId() const;
-
-    static resTableIndex hashEngine (const T &id); // can be used by other classes
-
-    static const unsigned maxIndexBitWidth;
-    static const unsigned minIndexBitWidth;
+    static resTableIndex hashEngine (const T &id);
+    static const unsigned maxIndexBitWidth ();
+    static const unsigned minIndexBitWidth ();
 
 protected:
 	T id;
@@ -283,24 +280,15 @@ public:
     // exceptions
     //
     class epicsShareClass dynamicMemoryAllocationFailed {};
-
     enum allocationType {copyString, refString};
-
 	stringId (const char * idIn, allocationType typeIn=copyString);
-
     ~ stringId();
-
 	resTableIndex hash (unsigned nBitsIndex) const;
- 
 	bool operator == (const stringId &idIn) const;
-
 	const char * resourceName() const; // return the pointer to the string
-
 	void show (unsigned level) const;
-
-    static const unsigned maxIndexBitWidth;
-
-    static const unsigned minIndexBitWidth;
+    static const unsigned maxIndexBitWidth ();
+    static const unsigned minIndexBitWidth ();
 
 private:
 	const char * pStr;
@@ -324,14 +312,14 @@ resTable<T,ID>::resTable (unsigned nHashTableEntries) :
 	//
 	// count the number of bits in the hash index
 	//
-	for (nbits=0; nbits<indexWidth; nbits++) {
+	for (nbits=0; nbits < sizeof (resTableIndex) * CHAR_BIT; nbits++) {
 		mask = (1<<nbits) - 1;
 		if ( ((nHashTableEntries-1) & ~mask) == 0){
 			break;
 		}
 	}
 
-    if ( nbits > ID::maxIndexBitWidth ) {
+    if ( nbits > ID::maxIndexBitWidth () ) {
 #       ifdef noExceptionsFromCXX
             assert (0);
 #       else            
@@ -343,8 +331,8 @@ resTable<T,ID>::resTable (unsigned nHashTableEntries) :
     // it improves performance to round up to a 
     // minimum table size
     //
-    if (nbits<ID::minIndexBitWidth) {
-        nbits = ID::minIndexBitWidth;
+    if ( nbits < ID::minIndexBitWidth () ) {
+        nbits = ID::minIndexBitWidth ();
         mask = (1<<nbits) - 1;
 	}
 
@@ -626,7 +614,6 @@ inline T * resTableIter<T,ID>::next ()
     if ( this->index >= (1u<<this->table.hashIdNBits) ) {
         return 0;
     }
-    ;
     this->iter = tsSLIter<T> (this->table.pTable[this->index++]);
     return this->iter.next ();
 }
@@ -729,23 +716,28 @@ inline const T intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::getId () const
 }
 
 //
-// const unsigned intId::minIndexBitWidth
+// const unsigned intId::minIndexBitWidth ()
 //
 template <class T, unsigned MIN_INDEX_WIDTH, unsigned MAX_ID_WIDTH>
-const unsigned intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::minIndexBitWidth = MIN_INDEX_WIDTH;
+inline const unsigned intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::minIndexBitWidth ()
+{
+    return MIN_INDEX_WIDTH;
+}
 
 
 //
-//  const unsigned intId::maxIndexBitWidth
+//  const unsigned intId::maxIndexBitWidth ()
 //
 template <class T, unsigned MIN_INDEX_WIDTH, unsigned MAX_ID_WIDTH>
-const unsigned intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::maxIndexBitWidth = indexWidth;
+inline const unsigned intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::maxIndexBitWidth ()
+{
+    return sizeof (resTableIndex) * CHAR_BIT;
+}
 
 //
 // intId::hashEngine()
 //
 // converts any integer into a hash table index
-//
 //
 template <class T, unsigned MIN_INDEX_WIDTH, unsigned MAX_ID_WIDTH>
 inline resTableIndex intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::hashEngine (const T &id)
@@ -839,20 +831,26 @@ stringId::stringId (const char * idIn, allocationType typeIn) :
 }
 
 //
-// const unsigned stringId::minIndexBitWidth
+// const unsigned stringId::minIndexBitWidth ()
 //
 // this limit is based on limitations in the hash
 // function below
 //
-const unsigned stringId::minIndexBitWidth = 8;
+inline const unsigned stringId::minIndexBitWidth ()
+{
+    return 8;
+}
 
 //
-// const unsigned stringId::maxIndexBitWidth
+// const unsigned stringId::maxIndexBitWidth ()
 //
 // see comments related to this limit in the hash
 // function below
 //
-const unsigned stringId::maxIndexBitWidth = 16;
+inline const unsigned stringId::maxIndexBitWidth ()
+{
+    return 16;
+}
 
 //
 // stringId::show ()

@@ -78,8 +78,14 @@ epicsShareDef fdManager fileDescriptorManager;
 // in type "fdRegType". The actual size of the table
 // is used because it improves performance.
 //
-const unsigned fdRegId::minIndexBitWidth = hashTableIndexBits;
-const unsigned fdRegId::maxIndexBitWidth = sizeof(SOCKET)*CHAR_BIT;
+inline const unsigned fdRegId::minIndexBitWidth () 
+{
+    return hashTableIndexBits;
+}
+inline const unsigned fdRegId::maxIndexBitWidth () 
+{
+    return sizeof(SOCKET)*CHAR_BIT;
+}
 
 //
 // fdManager::fdManager()

@@ -9,4 +9,5 @@ DIRS =	src/libCom \
 	src/dct \
 	src/util \
 	src/sequencer \
-	src/dbtools
+	src/dbtools \
+	rec

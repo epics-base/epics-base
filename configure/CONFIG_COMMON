@@ -7,13 +7,14 @@
 #
 
 #-------------------------------------------------------
-# Default valid build types and include directory suffixes
+# Common build type definitions
 #
 # Host means single-thread non-ioc
 # HostMT means multi-thread non-ioc
 # Ioc means multi-thread ioc
 # IocST means single-thread ioc
 
+# Default valid build types and include directory suffixes
 VALID_BUILDS = Host Ioc HostMT IocST
 Host_SUFFIX=
 HostMT_SUFFIX=MT
@@ -26,14 +27,13 @@ B_T_SUFFIX = $($(B_T)_SUFFIX)
 OS_SRC_DIRS += $(foreach dir,$(SRC_DIRS), \
             $(dir)/os/$(OS_CLASS)$(B_T_SUFFIX) $(dir)/os/posix$(B_T_SUFFIX) \
             $(dir)/os/$(OS_CLASS) $(dir)/os/posix \
-            $(dir)/generic$(B_T_SUFFIX) $(dir)/generic $(dir))
-
-OS_DIRS += ../os/$(OS_CLASS)$(B_T_SUFFIX) ../os/posix$(B_T_SUFFIX) \
-           ../os/$(OS_CLASS) ../os/posix \
-           ../generic$(B_T_SUFFIX) ../generic 
+            $(dir)/generic$(B_T_SUFFIX) $(dir)/generic $(dir)) \
+            ../os/$(OS_CLASS)$(B_T_SUFFIX) ../os/posix$(B_T_SUFFIX) \
+            ../os/$(OS_CLASS) ../os/posix \
+            ../generic$(B_T_SUFFIX) ../generic 
 
 # compile line include directories
-SRC_INCLUDES += $(addprefix -I,$(OS_SRC_DIRS) $(OS_DIRS))
+SRC_INCLUDES += $(addprefix -I,$(OS_SRC_DIRS))
 INSTALL_INCLUDES += \
        -I$(INSTALL_INCLUDE)/os/$(OS_CLASS)$(B_T_SUFFIX) \
        -I$(INSTALL_INCLUDE)/os/posix$(B_T_SUFFIX) \
@@ -212,13 +212,13 @@ INSTALL_DBDFLAGS = -I $(INSTALL_LOCATION)/dbd
 
 #--------------------------------------------------
 # Warnings flags  (CONFIG.<arch> will override)
-WARN_CFLAGS = $($(ANSI)_WARN_$($(BUILD_CLASS)_WARN))
-WARN_CXXFLAGS = $($(CPLUSPLUS)_WARN_$($(BUILD_CLASS)_WARN))
+WARN_CFLAGS = $($(ANSI)_WARN_$($(B_T)_WARN))
+WARN_CXXFLAGS = $($(CPLUSPLUS)_WARN_$($(B_T)_WARN))
 
 #--------------------------------------------------
 # Optimization flags  (CONFIG.<arch> will override)
-OPT_CFLAGS = $($(ANSI)_OPT_$($(BUILD_CLASS)_OPT))
-OPT_CXXFLAGS = $($(CPLUSPLUS)_OPT_$($(BUILD_CLASS)_OPT))
+OPT_CFLAGS = $($(ANSI)_OPT_$($(B_T)_OPT))
+OPT_CXXFLAGS = $($(CPLUSPLUS)_OPT_$($(B_T)_OPT))
 OPT_LDFLAGS =
 
 #--------------------------------------------------

@@ -19,6 +19,7 @@ of this distribution.
 #include "iocsh.h"
 #include "registryRecordType.h"
 #include "dbAccessRegister.h"
+#include "asSubRecordFunctions.h"
 #include "iocsh.h"
 
 /* dbLoadDatabase */
@@ -70,4 +71,5 @@ void epicsShareAPI dbAccessRegister(void)
     iocshRegister(&dbLoadRecordsFuncDef,dbLoadRecordsCallFunc);
     iocshRegister(&dbLoadTemplateFuncDef,dbLoadTemplateCallFunc);
     iocshRegister(&iocInitFuncDef,iocInitCallFunc);
+    asSubRecordFunctionsRegister();
 }

@@ -68,6 +68,7 @@
  * .26  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
  * .27  07-21-92        jba     changed alarm limits for non val related fields
  * .28  08-06-92        jba     New algorithm for calculating analog alarms
+ * .29  09-10-92        jba     modified fetch_values to call recGblGetLinkValue
  */
 
 #include	<vxWorks.h>
@@ -420,32 +421,15 @@ struct calcRecord *pcalc;
 {
 	struct link	*plink;	/* structure of the link field  */
 	double		*pvalue;
-	long		options,nRequest;
+	long		status,options=0,nRequest=1;
 	int		i;
-	long	status;
 
 	for(i=0, plink=&pcalc->inpa, pvalue=&pcalc->a; i<ARG_MAX; i++, plink++, pvalue++) {
-                if (plink->type == CA_LINK)
-                {
-                    if (dbCaGetLink(plink))
-		    {
-			recGblSetSevr(pcalc,LINK_ALARM,INVALID_ALARM);
-			return(-1);
-		    } /* endif */
-                }
-                else
-                {
-                    if(plink->type==DB_LINK)
-                    {
-                        options=0;
-                        nRequest=1;
-			status = dbGetLink(&plink->value.db_link,(struct dbCommon *)pcalc,DBR_DOUBLE, pvalue,&options,&nRequest);
-                        if(status!=0) {
-                                recGblSetSevr(pcalc,LINK_ALARM,INVALID_ALARM);
-                                return(-1);
-                        }
-                    } /* endif */
-                } /* endif */
+
+                status = recGblGetLinkValue(plink,(void *)pcalc,
+                          DBR_DOUBLE,pvalue,&options,&nRequest); 
+
+		if (!RTN_SUCCESS(status)) return(status);
 	}
 	return(0);
 }

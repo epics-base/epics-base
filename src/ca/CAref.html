@@ -97,7 +97,8 @@ style="color: #FF5F00">(under development)</span></a></h3>
       <li><a href="#Unicast">Unicast Addresses in the EPICS_CA_ADDR_LIST Does
         not Reliably Contact Servers Sharing the Same UDP Port on the Same
         Host</a></li>
-      <li><a href="#Problems">Client Does not See Server's Beacons</a></li>
+      <li><a href="#Client1">Client Does not See Server's Beacons</a></li>
+      <li><a href="#Server1">A server's IP address was changed</a></li>
     </ul>
   </li>
   <li><a href="#Problems">ENOBUFS Messages</a></li>
@@ -1156,6 +1157,53 @@ single specific host's ip address).</p>
 
 <p>See <a href="#Dynamic">Dynamic Changes in the CA Client Library Search
 Interval.</a></p>
+
+<h4><a name="Server1">A Server's IP Address Was Changed</a></h4>
+
+<p>Starting with EPICS R3.14.4 the Channel Access Client Library was modified
+so that when communication over a circuit times out, then the disconnect
+callback handler for each channel attached to that circuit is called, but the
+circuit is not disconnected until TCP/IP's internal keep alive timer expires.
+The disconnected channels remain attached to the beleagured circuit and no
+attempt is made to search for, or to reestablish, a new circuit. If, at some
+time in the future, the circuit becomes responsive again, then the reconnect
+handlers are called for each channel that is attached to the circuit, and any
+monitor subscriptions that updated while the channel was disconnected are
+refreshed. This behavior is more robust during periods of
+CPU/network/resource/mbuf congestion.</p>
+
+<p>In the past the beleagured circuit was immeduiatly closed when
+communication over it timed out, any attached channels were immediately
+searched for, and after successful search resoponses arrived then attempts
+were made to build a new circuit. This behavior could result in undesirable
+load fluctuations during periods of CPU/network/resource/mbuf congestion.
+There could be undesirable CPU consumption resulting from periodic circuit
+setup and teardown overhead.</p>
+
+<p>A well known negative side effect is that R3.14.5 CA clients will wait the
+full (typically long) duration of TCP/IP's internal keep alive timer prior to
+reconnecting under the following two scenarios:</p>
+<ol>
+  <li>A vxWorks IOC is stopped and then reboots with a different IP
+  address</li>
+  <li>All of the following occur:
+    <ul>
+      <li>An IOC's operating system crashes (or is abruptly turned off) or a
+        vxWorks system is stopped by any means</li>
+      <li>This operating system does not immediately reboot using the same IP
+        address</li>
+      <li>A duplicate of the IOC is started with a different IP address</li>
+    </ul>
+  </li>
+</ol>
+
+<p>It is unlikely that any rational organization will advocate changing the
+IP address of a server while the system is operational. Nevertheless, this
+<em>is</em> undoubtedly a negative side effect because there are substanitive
+opportunities for users to become confused during control system development,
+but it is felt that the improvements in operational system robustness justify
+the confusion resulting in the small number of situations where the above
+scenarios occurr.</p>
 
 <h3><a name="Problems">ENOBUFS Messages</a></h3>
 

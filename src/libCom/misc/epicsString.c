@@ -109,3 +109,32 @@ epicsShareFunc char * epicsShareAPI epicsStrDup(const char *s)
 {
     return strcpy(mallocMustSucceed(strlen(s)+1,"epicsStrDup"),s);
 }
+
+epicsShareFunc int epicsShareAPI epicsStrPrintEscaped(
+    FILE *fp, const char *s, int n)
+{
+   int nout=0;
+   while (n--) {
+       char c = *s++;
+       switch (c) {
+       case '\a':  nout += fprintf(fp, "\\a");  break;
+       case '\b':  nout += fprintf(fp, "\\b");  break;
+       case '\f':  nout += fprintf(fp, "\\f");  break;
+       case '\n':  nout += fprintf(fp, "\\n");  break;
+       case '\r':  nout += fprintf(fp, "\\r");  break;
+       case '\t':  nout += fprintf(fp, "\\t");  break;
+       case '\v':  nout += fprintf(fp, "\\v");  break;
+       case '\\':  nout += fprintf(fp, "\\\\"); break;
+       case '\?':  nout += fprintf(fp, "\\?");  break;
+       case '\'':  nout += fprintf(fp, "\\'");  break;
+       case '\"':  nout += fprintf(fp, "\\\"");  break;
+       default:
+           if (isprint(c))
+               nout += fprintf(fp, "%c", c);/* putchar(c) doesn't work on vxWorks */
+           else
+               nout += fprintf(fp, "\\%03o", (unsigned char)c);
+           break;
+       }
+   }
+   return nout;
+}

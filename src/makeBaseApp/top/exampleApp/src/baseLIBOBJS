@@ -141,14 +141,6 @@ LIBOBJS += $(EPICS_BASE_BIN)/devWfTestAsyn.o
 #LIBOBJS += $(EPICS_BASE_BIN)/devABBINARY.o
 #LIBOBJS += $(EPICS_BASE_BIN)/devABStatus.o
 
-#LIBOBJS += $(EPICS_BASE_BIN)/devAiCan.o
-#LIBOBJS += $(EPICS_BASE_BIN)/devAoCan.o
-#LIBOBJS += $(EPICS_BASE_BIN)/devBiCan.o
-#LIBOBJS += $(EPICS_BASE_BIN)/devBoCan.o
-#LIBOBJS += $(EPICS_BASE_BIN)/devMbbiCan.o
-#LIBOBJS += $(EPICS_BASE_BIN)/devMbboCan.o
-#LIBOBJS += $(EPICS_BASE_BIN)/devMbbiDirectCan.o
-#LIBOBJS += $(EPICS_BASE_BIN)/devMbboDirectCan.o
 #LIBOBJS += $(EPICS_BASE_BIN)/devVmic2534.o
 
 LIBOBJS += $(EPICS_BASE_BIN)/symb
@@ -169,11 +161,6 @@ LIBOBJS += $(EPICS_BASE_BIN)/drvHp1404a.o
 #LIBOBJS += $(EPICS_BASE_BIN)/drvTime.o
 #LIBOBJS += $(EPICS_BASE_BIN)/drvCaenV265.o
 
-#LIBOBJS += $(EPICS_BASE_BIN)/drvVipc310.o
-#LIBOBJS += $(EPICS_BASE_BIN)/drvVipc610.o
-#LIBOBJS += $(EPICS_BASE_BIN)/drvIpMv162.o
-#LIBOBJS += $(EPICS_BASE_BIN)/drvIpac.o
-#LIBOBJS += $(EPICS_BASE_BIN)/drvTip810.o
 #
 # Driver support  NON ANSI
 #

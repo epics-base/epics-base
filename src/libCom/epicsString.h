@@ -1,5 +1,5 @@
 /*epicsString.h*/
-/*Authors: Noboru Yamamoto and Marty Kraimer*/
+/*Authors: Jun-ichi Odagiri and Marty Kraimer*/
 /*****************************************************************
                           COPYRIGHT NOTIFICATION
 *****************************************************************

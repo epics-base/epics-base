@@ -14,6 +14,9 @@
 #include "nciu_IL.h"
 #include "claimMsgCache_IL.h"
 
+netiiu::~netiiu ()
+{
+}
 
 void netiiu::show ( unsigned /* level */ ) const
 {

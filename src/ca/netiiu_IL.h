@@ -23,10 +23,6 @@ inline netiiu::netiiu ( cac &cacIn ) :
 {
 }
 
-inline netiiu::~netiiu ()
-{
-}
-
 inline cac & netiiu::clientCtx () const
 {
     return this->cacRef;

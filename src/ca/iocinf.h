@@ -545,7 +545,7 @@ protected:
     void lock () const;
     void unlock () const;
 private:
-    tsDLList <nciu> chidList;
+    tsDLList < nciu > chidList;
     class cac &cacRef;
     osiMutex mutex;
 

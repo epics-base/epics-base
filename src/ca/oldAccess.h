@@ -89,6 +89,7 @@ private:
     void * pPrivate;
     caArh * pAccessRightsFunc;
     unsigned ioSeqNo;
+    bool currentlyConnected;
     bool prevConnected;
     void connectNotify ();
     void disconnectNotify ();
@@ -354,7 +355,7 @@ inline bool oldChannelNotify::ca_v42_ok () const
 
 inline bool oldChannelNotify::connected () const
 {
-    return this->io.connected ();
+    return this->currentlyConnected;
 }
 
 inline bool oldChannelNotify::previouslyConnected () const

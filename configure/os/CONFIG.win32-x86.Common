@@ -13,7 +13,7 @@ RM = $(PERL) $(CONFIG)/tools/rm.pl -f
 MKDIR = $(PERL) $(CONFIG)/tools/mkdir.pl
 RMDIR = $(PERL) $(CONFIG)/tools/rm.pl -rf
 ECHO = echo
-TOUCH = type NUL >>
+TOUCH = echo NUL >>
 
 WIND_HOST_TYPE = x86-win32
 

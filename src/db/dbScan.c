@@ -30,11 +30,12 @@
  *
  * Modification Log:
  * -----------------
- * .18  07-18-91	mrk	major revision
- * .19  02-05-92	jba	Changed function arguments from paddr to precord 
- * .20	05-19-92	mrk	Changes for internal database structure changes
- * .21  08-11-92	jba	ANSI C changes
- * .22  08-26-92	jba	init piosl NULL in scanAdd,scanDelete & added test 
+ * .01  07-18-91	mrk	major revision of old scan tasks
+ * .02  02-05-92	jba	Changed function arguments from paddr to precord 
+ * .03	05-19-92	mrk	Changes for internal database structure changes
+ * .04  08-11-92	jba	ANSI C changes
+ * .05  08-26-92	jba	init piosl NULL in scanAdd,scanDelete & added test 
+ * .06  08-27-92	mrk	removed support for old I/O event scanning
  */
 
 #include	<vxWorks.h>
@@ -124,7 +125,6 @@ long scanInit()
 
 	initPeriodic();
 	initEvent();
-	scan_init(); /*old IO_EVENT_SCAN*/
 	buildScanLists();
 	for (i=0;i<nPeriodic; i++) spawnPeriodic(i);
 	spawnEvent();
@@ -182,25 +182,31 @@ void scanAdd(struct dbCommon *precord)
 	    }
 	    addToList(precord,psl);
 	} else if(scan==SCAN_IO_EVENT) {
-	    short		cmd=0;
 	    struct io_scan_list *piosl=NULL;
 	    int			priority,dummy1,dummy2;
-	    DEVSUPFUN get_ioint_info=precord->dset->get_ioint_info;
+	    DEVSUPFUN get_ioint_info;
 
-	    if(get_ioint_info==NULL) return;
-	    if(get_ioint_info(&cmd,precord,&piosl,&dummy1,&dummy2)) return;/*return if error*/
-	    if(cmd==-1) {
-		add_to_scan_list(precord); /*old IO_EVENT_SCAN*/
-	    } else {
-		if(piosl==NULL) return;
-		priority = precord->prio;
-		if(priority<0 || priority>=NUM_CALLBACK_PRIORITIES) {
-		    recGblRecordError(-1,(void *)precord,"scanAdd: illegal prio field");
-		    return;
-		}
-		piosl += priority; /* get piosl for correct priority*/
-		addToList(precord,&piosl->scan_list);
+	    if(precord->dset==NULL){
+		recGblRecordError(-1,(void *)precord,"scanAdd: I/O Intr not valid (no DSET) ");
+		return;
 	    }
+	    get_ioint_info=precord->dset->get_ioint_info;
+	    if(get_ioint_info==NULL) {
+		recGblRecordError(-1,(void *)precord,"scanAdd: I/O Intr not valid (no get_ioint_info)");
+		return;
+	    }
+	    if(get_ioint_info(0,precord,&piosl)) return;/*return if error*/
+	    if(piosl==NULL) {
+		recGblRecordError(-1,(void *)precord,"scanAdd: I/O Intr not valid");
+		return;
+	    }
+	    priority = precord->prio;
+	    if(priority<0 || priority>=NUM_CALLBACK_PRIORITIES) {
+		recGblRecordError(-1,(void *)precord,"scanAdd: illegal prio field");
+		return;
+	    }
+	    piosl += priority; /* get piosl for correct priority*/
+	    addToList(precord,&piosl->scan_list);
 	} else if(scan>=SCAN_1ST_PERIODIC) {
 	    int	ind;
 
@@ -235,25 +241,30 @@ void scanDelete(struct dbCommon *precord)
 	    else
 		deleteFromList(precord,psl);
 	} else if(scan==SCAN_IO_EVENT) {
-	    short		cmd=1;
 	    struct io_scan_list *piosl=NULL;
 	    int			priority,dummy1,dummy2;
-	    DEVSUPFUN get_ioint_info=precord->dset->get_ioint_info;
+	    DEVSUPFUN get_ioint_info;
 
-	    if(get_ioint_info==NULL) return;
-	    if(get_ioint_info(&cmd,precord,&piosl,&dummy1,&dummy2)) return;/*return if error*/
-	    if(cmd==-1) {
-		delete_from_scan_list(precord); /*old IO_EVENT_SCAN*/
-	    } else {
-		if(piosl==NULL) return;
-		priority = precord->prio;
-		if(priority<0 || priority>=NUM_CALLBACK_PRIORITIES) {
+	    if(precord->dset==NULL) {
+		recGblRecordError(-1,(void *)precord,"scanDelete: I/O Intr not valid (no DSET)");
+		return;
+	    }
+	    get_ioint_info=precord->dset->get_ioint_info;
+	    if(get_ioint_info==NULL) {
+		recGblRecordError(-1,(void *)precord,"scanDelete: I/O Intr not valid (no get_ioint_info)");
+	    }
+	    if(get_ioint_info(1,precord,&piosl)) return;/*return if error*/
+	    if(piosl==NULL) {
+		recGblRecordError(-1,(void *)precord,"scanDelete: I/O Intr not valid");
+		return;
+	    }
+	    priority = precord->prio;
+	    if(priority<0 || priority>=NUM_CALLBACK_PRIORITIES) {
 		    recGblRecordError(-1,(void *)precord,"scanDelete: get_ioint_info returned illegal priority");
 		    return;
-		}
-		piosl += priority; /*get piosl for correct priority*/
-		deleteFromList(precord,&piosl->scan_list);
 	    }
+	    piosl += priority; /*get piosl for correct priority*/
+	    deleteFromList(precord,&piosl->scan_list);
 	} else if(scan>=SCAN_1ST_PERIODIC) {
 	    int	ind;
 

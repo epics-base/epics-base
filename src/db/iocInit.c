@@ -47,6 +47,7 @@
  * .17	06-16-92	jba	Added prset test to call of init_record second time loop
  * .18	07-31-92	rcz	moved database loading to function dbLoad
  * .19	08-14-92	jba	included dblinks with maximize severity in lockset
+ * .20	08-27-92	mrk	removed wakeup_init (For old I/O Event scanning)
  *
  */
 
@@ -91,7 +92,6 @@ static initialized=FALSE;
 
 /* The following is for use by interrupt routines */
 int interruptAccept=FALSE;
-extern short wakeup_init; /*old IO_EVENT_SCAN*/
 
 struct dbBase *pdbBase=NULL;
 
@@ -167,7 +167,6 @@ char * pResourceFilename;
     /* wait 1/2 second to make sure all tasks are started*/
     (void)taskDelay(sysClkRateGet()/2);
     interruptAccept=TRUE;
-    wakeup_init=TRUE; /*old IO_EVENT_SCAN*/
     if(initialProcess()!=0) logMsg("iocInit: initialProcess Failed\n");
     rsrv_init();
     logMsg("iocInit: All initialization complete\n");

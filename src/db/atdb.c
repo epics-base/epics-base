@@ -65,7 +65,7 @@ char **argv;
 	errMessage(0,"Error opening input file");
 	exit(-1);
     }
-    if(fopen(argv[2],"r") {
+    if(fopen(argv[2],"r")) {
 	errMessage(-1,"Output File already exists");
 	exit(-1);
     }

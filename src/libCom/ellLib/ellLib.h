@@ -88,6 +88,7 @@ epicsShareFunc void epicsShareAPI ellInsert (ELLLIST *plist, ELLNODE *pPrev, ELL
 epicsShareFunc ELLNODE * epicsShareAPI ellNth (ELLLIST *pList, int nodeNum);
 epicsShareFunc ELLNODE * epicsShareAPI ellNStep (ELLNODE *pNode, int nStep);
 epicsShareFunc int  epicsShareAPI ellFind (ELLLIST *pList, ELLNODE *pNode);
+/* use of ellFree on windows causes problems because the malloc and free are not in the same DLL */
 epicsShareFunc void epicsShareAPI ellFree (ELLLIST *pList);
 epicsShareFunc void epicsShareAPI ellVerify (ELLLIST *pList);
 

@@ -30,6 +30,9 @@
  * 	Modification Log:
  * 	-----------------
  * 	$Log$
+ * 	Revision 1.5  1996/08/13 22:54:42  jhill
+ * 	doc
+ *
  * 	Revision 1.4  1996/07/01 19:56:15  jhill
  * 	one last update prior to first release
  *
@@ -252,6 +255,8 @@ public:
 	}
 };
 
+class caServerI;
+
 //
 // caServer - Channel Access Server API Class
 //
@@ -270,10 +275,6 @@ public:
         caServer (unsigned pvMaxNameLength, unsigned pvCountEstimate=0x3ff,
                                 unsigned maxSimultaneousIO=1u);
 	virtual ~caServer();
-
-	//
-	// Need VF that returns pointer to derived type ?
-	//
 
 	//caStatus enableClients ();
 	//caStatus disableClients ();
@@ -542,5 +543,5 @@ public:
 	casPV *getPV();
 };
 
-#endif /* ifdef includecasdefh (this must be the last line in this file) */
+#endif // ifdef includecasdefh (this must be the last line in this file) 
 

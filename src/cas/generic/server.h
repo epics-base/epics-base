@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.9  1996/08/13 22:56:14  jhill
+ * added init for mutex class
+ *
  * Revision 1.8  1996/08/05 23:22:58  jhill
  * gddScaler => gddScalar
  *
@@ -75,21 +78,13 @@ HDRVERSIONID(serverh, "%W% %G%")
 //
 // ANSI C
 //
-#include <stddef.h>
-#include <string.h>
 #include <stdio.h>
-#include <stdarg.h>
-#include <stdlib.h>
-#include <ctype.h>
-#include <math.h>
-#include <limits.h>
 
 //
 // EPICS
 //
 #define	 epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 #include <epicsAssert.h>
-#include <db_access.h>
 
 //
 // CA
@@ -100,19 +95,12 @@ HDRVERSIONID(serverh, "%W% %G%")
 #include <osiTime.h>
 
 //
-// gdd
-//
-#if 0
-#include <dbMapper.h>
-#include <gddApps.h>
-#endif
-
-//
 // CAS
 //
 void casVerifyFunc(const char *pFile, unsigned line, const char *pExp);
-void serverToolDebugFunc(const char *pFile, unsigned line);
-#define serverToolDebug() {serverToolDebugFunc(__FILE__, __LINE__); } 
+void serverToolDebugFunc(const char *pFile, unsigned line, const char *pComment);
+#define serverToolDebug(COMMENT) \
+{serverToolDebugFunc(__FILE__, __LINE__, COMMENT); } 
 #define casVerify(EXP) {if ((EXP)==0) casVerifyFunc(__FILE__, __LINE__, #EXP); } 
 caStatus createDBRDD(unsigned dbrType, aitIndex dbrCount, gdd *&pDescRet);
 caStatus copyBetweenDD(gdd &dest, gdd &src);
@@ -893,10 +881,8 @@ private:
 
 class casClientMon;
 
-//
-// caServerI
-//
-class caServerI : public caServerOS, public caServerIO, 
+class caServerI : 
+	public caServerOS, public caServerIO, 
 	public osiMutex, public ioBlockedList,
 	private uintResTable<casRes>,
 	public casEventRegistry {
@@ -983,7 +969,7 @@ public:
 		return &this->adapter; 
 	}
 
-	uintResTable<casRes> &getResTable() {return *this;}
+	//uintResTable<casRes> &getResTable() {return *this;}
 
 	void installItem(casRes &res)
 	{

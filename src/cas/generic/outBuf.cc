@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.2  1996/08/13 22:53:59  jhill
+ * fixed little endian problem
+ *
  * Revision 1.1.1.1  1996/06/20 00:28:15  jhill
  * ca server installation
  *
@@ -172,6 +175,7 @@ void outBuf::commitMsg ()
 	 */
 	mp->m_cmmd = htons (mp->m_cmmd);
 	mp->m_postsize = htons (mp->m_postsize);
+	mp->m_type = htons (mp->m_type);
 	mp->m_count = htons (mp->m_count);
 	mp->m_cid = htonl (mp->m_cid);
 	mp->m_available = htonl (mp->m_available);

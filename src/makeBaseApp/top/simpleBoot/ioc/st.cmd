@@ -9,10 +9,12 @@
 cd appbin
 ld < iocCore
 ld < seq
-#ld < <some>Lib
+#ld < _APPNAME_Lib
 
 cd startup
-#dbLoadDatabase("../../dbd/<some>App.dbd")
-#dbLoadRecords("../../<some>App/Db/dbExample.db")
+#dbLoadDatabase("../../dbd/_APPNAME_.dbd")
+#dbLoadRecords("../../db/_APPNAME_.db")
+#dbLoadTemplate("../../db/_APPNAME_.substitutions")
+
 iocInit
 #seq &<some snc program>

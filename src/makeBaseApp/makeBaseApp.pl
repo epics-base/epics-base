@@ -17,9 +17,14 @@ $eTOP     = $ENV{EPICS_MBA_TEMPLATE_TOP};
 &get_commandline_opts;		# Read and check options
 
 #
-# Declare two default callback routines for file copy
+# Declare two default callback routines for file copy plus two
+# hook routines to add conversions
 # These may be overriden within $top/$apptypename/Replace.pl
-#
+
+# First: the hooks
+sub ReplaceFilenameHook { return $_[0]; }
+sub ReplaceLineHook { return $_[0]; }
+
 # ReplaceFilename
 # called with the source (template) file or directory name, returns
 # the "real" name (which gets the target after $top is removed)
@@ -43,7 +48,8 @@ sub ReplaceFilename { # (filename)
     $file =~ s|_APPNAME_|$appname|;
     $file =~ s|_APPTYPE_|$apptype|;
 				# We don't want the Replace overrides
-    $file =~ s|.*/$app/Replace.pl$||;
+    $file =~ s|.*/$appdir/Replace.pl$||;
+    $file = &ReplaceFilenameHook($file); # Call the user-defineable hook
     return $file;
 }
 
@@ -61,6 +67,7 @@ sub ReplaceLine { # (line)
     if ($ioc) {
 	$line =~ s/_IOC_/$ioc/;
     }
+    $line = &ReplaceLineHook($line); # Call the user-defineable hook
     return $line;
 }
 
@@ -109,12 +116,11 @@ foreach $app ( @ARGV ) {
 
 exit 0;				# END OF SCRIPT
 
-
 #
 # Get commandline options and check for validity
 #
 sub get_commandline_opts { #no args
-    ($len = @ARGV) and getopts('ldit:T:b:a:') or Cleanup(1);
+    ($len = @ARGV) and getopts("ldit:T:b:a:") or Cleanup(1);
 
 # Debug option
     $Debug = 1 if $opt_d;
@@ -180,6 +186,8 @@ sub get_commandline_opts { #no args
 	$apptype = $eAPPTYPE;
     } elsif (-r "$top/defaultApp") {# third choice is (a link) in the $top dir
 	$apptype = "default";
+    } elsif (-r "$top/exampleApp") {# fourth choice is (a link) in the $top dir
+	$apptype = "example";
     }
     $apptype =~ s/App$//;
     $apptype =~ s/Boot$//;
@@ -214,9 +222,14 @@ sub get_commandline_opts { #no args
 #
 sub ListAppTypes { # no args
     print "Valid application types are:\n";
-    foreach $name (<$top/*App $top/*Boot>) {
+    foreach $name (<$top/*App>) {
 	$name =~ s|$top/||;
-	printf "$name\n";
+	printf "\t$name\n";
+    }
+    print "Valid iocBoot types are:\n";
+    foreach $name (<$top/*Boot>) {
+	$name =~ s|$top/||;
+	printf "\t$name\n";
     }
 }
 
@@ -241,7 +254,7 @@ sub CopyFile { # (source)
 }
 	
 #
-# Find callback for file or structure copy
+# Find() callback for file or structure copy
 #
 sub FCopyTree {
     chdir $cwd;			# Sigh
@@ -268,13 +281,14 @@ sub Cleanup { # (return-code [ messsage-line1, line 2, ... ])
 
     print <<EOF;
 Usage:
-$0 [options] app ...
+$0 -l [options]
+$0 -t type [options] app ...
              create application directories
-$0 -i [options] ioc ...
+$0 -i -t type [options] ioc ...
              create ioc boot directories
 where
- app  Application name (the created directory will have \"App\" appended to name))
- ioc  IOC name (The created directory will have \"ioc\" prepended to name)
+ app  Application name (the created directory will have \"App\" appended to name)
+ ioc  IOC name (the created directory will have \"ioc\" prepended to name)
 
  -t type  Set the application type (-l for a list of valid types)
           If not specified, type is taken from environment
@@ -293,8 +307,8 @@ where
  -d       Verbose output (useful for debugging)
 
 Environment:
-EPICS_MBA_DEF_APP_TYPE  The application type you want to use as default
-EPICS_MBA_TEMPLATE_TOP  The template top directory
+EPICS_MBA_DEF_APP_TYPE  Application type you want to use as default
+EPICS_MBA_TEMPLATE_TOP  Template top directory
 
 Example: Create exampleApp 
 

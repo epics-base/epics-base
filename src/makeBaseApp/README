@@ -18,23 +18,8 @@ cd "<full path name to ioc directory>"
 ...
 
 dbLoadDatabase("../../dbd/<xxx>App.dbd")
-dbLoadRecords("../../xxxApp/Db/xxx.db")
+dbLoadRecords("../../db/xxx.db")
 ...
-
-For systems that do support soft links the following is possible
-
-The boot parameters can be:
-
-file name     :/home/phoebus/MRK/examplePerl/iocBoot/iocexample/vxWorks
-startup script:st.cmd
-
-The st.cmd file can be of the form:
-
-cd "<full path name to ioc directory>"
-...
- 
-dbLoadDatabase("dbd/<xxx>App.dbd")
-dbLoadRecords("xxxApp/Db/xxx.db")
 
 
 In addition if the APS board support mods are in effect the cd command

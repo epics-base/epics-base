@@ -14,11 +14,16 @@ TEMPLATES += top/config/RULES.iocBoot
 TEMPLATES += top/config/RULES_ARCHS
 TEMPLATES += top/config/RULES_DIRS
 TEMPLATES += top/config/RULES_TOP
+TEMPLATES += top/config/makeDbDepends.pl
 TEMPLATES += top/config/makeIocCdCommands.pl
+TEMPLATES += top/config/replaceVAR.pl
 
 TEMPLATES += top/exampleApp/Makefile
 TEMPLATES += top/exampleApp/Db/Makefile
-TEMPLATES += top/exampleApp/Db/dbExample.db
+TEMPLATES += top/exampleApp/Db/Makefile.Host
+TEMPLATES += top/exampleApp/Db/dbExample1.db
+TEMPLATES += top/exampleApp/Db/dbExample2.substitutions
+TEMPLATES += top/exampleApp/Db/dbExample2.template
 TEMPLATES += top/exampleApp/src/Makefile
 TEMPLATES += top/exampleApp/src/Makefile.Host
 TEMPLATES += top/exampleApp/src/Makefile.Vx
@@ -33,6 +38,7 @@ TEMPLATES += top/exampleApp/src/baseLIBOBJS
 
 TEMPLATES += top/simpleApp/Makefile
 TEMPLATES += top/simpleApp/Db/Makefile
+TEMPLATES += top/simpleApp/Db/Makefile.Host
 TEMPLATES += top/simpleApp/src/Makefile
 TEMPLATES += top/simpleApp/src/Makefile.Host
 TEMPLATES += top/simpleApp/src/Makefile.Vx

@@ -1,85 +1,169 @@
 #RULES.Db
-SUBTOOL = $(EPICS_BASE_HOST_BIN)/subtool
-PREFIX=$(shell echo $* | sed -e 's-[0-9]--g' | sed -e 's-\.db--g')
-ARCHS += $(BUILD_ARCHS) host cross
-ACTIONS += clean inc depends buildInstall build
-actionArchTargets = $(foreach action, $(ACTIONS) install,\
-                    $(foreach arch, $(ARCHS), \
-                    $(action)$(DIVIDER)$(arch)))
- 
-all install :: inc buildInstall
+MAKEBPT		= $(EPICS_BASE_HOST_BIN)/makeBpt
+DBLOADTEMPLATE	= $(EPICS_BASE_HOST_BIN)/dbLoadTemplate
+DBEXPAND	= $(EPICS_BASE_HOST_BIN)/dbExpand
+DBST		= dbst
+MAKEDBDEPENDS	= perl $(TOP)/config/makeDbDepends.pl
+REPLACEVAR	= perl $(TOP)/config/replaceVAR.pl
 
-buildInstall: .DEPENDS $(DBFROMSCH) $(DBFROMTEMPLATE) $(INDDBFROMTEMPLATE) $(PROD)
+INSTALL_BPTS = $(BPTS:%= $(INSTALL_DBD)/%)
+INSTALL_DBS = $(DBDINSTALL:%= $(INSTALL_DBD)/%)
+INSTALL_DBDNAME = $(DBDNAME:%= $(INSTALL_DBD)/%)
+INSTALL_DATA=$(INSTALLDB:%=$(INSTALL_DB)/%)
 
-inc build depends:
+DIRECTORY_TARGETS = $(INSTALL_DB) $(INSTALL_DBD)
 
-#### The following section is added to
-#### allow optimized databases to be built
-#### from capfast schematics
-#optimization macro
-ifeq '$(DB_OPT)' 'YES'
-define DB_OPTIMIZE
-@echo "Optimizing database $@"
-$(RM) $@.tmp
-$(DBST) $(INSTALL_DBD)/$(DBDNAME) $@ -d > $@.tmp
-$(RM) $@
-$(MV) $@.tmp $@
-endef
+all::	install
+
+inc::	$(DIRECTORY_TARGETS) $(INSTALL_DBS)
+
+rebuild:: clean install
+
+install:: inc buildInstall 
+
+buildInstall:: build $(INSTALL_BPTS) $(INSTALL_DATA)
+
+clean::
+	@echo "Cleaning"
+	@$(RM) $(DB) $(DBDNAME) *.template *.substitutions *.db.raw *.edf esiread.cnf
+
+$(DIRECTORY_TARGETS):
+	$(MKDIR) $@
+
+
+##################################################### "Foreign" templates
+
+TEMPLATE_LINKS = $(filter-out $(notdir $(USES_TEMPLATE)), $(USES_TEMPLATE))
+TEMPLATE_FILES = $(filter     $(notdir $(USES_TEMPLATE)), $(USES_TEMPLATE))
+DB_FROM_SOURCE = $(filter $(notdir $(wildcard ../*.db)), $(DB))
+DB_NOT_FROM_SOURCE = $(filter-out $(DB_FROM_SOURCE), $(filter %.db, $(DB)))
+
+ifneq '$(TEMPLATE_LINKS)' ''
+build:: $(notdir $(TEMPLATE_LINKS))
+endif
+build:: $(INSTALL_DBD) $(INSTALL_DBDNAME) $(TEMPLATE_FILES) $(DB)
+
+$(notdir $(TEMPLATE_LINKS)): %.template:
+ifndef WIN32
+	@$(RM) $(notdir $(TEMPLATE_LINKS))
+	ln -s $(TEMPLATE_LINKS) .
 else
-define DB_OPTIMIZE
-endef
+	@$(RM) $(notdir $(TEMPLATE_LINKS))
+	$(CP) $(TEMPLATE_LINKS) .
 endif
 
+##################################################### Inflated or plain databases
 
-
-#Creates database in current directory from capfast schematics 
-$(DBFROMSCH):%.db: %.db.opt
+$(INSTALL_DB)/%.db: %.db
 	@echo "Installing database $@"
-	@$(MV) $< $(<:%.opt=%)
+	@$(INSTALL) -m 644 $< $(@D)
 
-%.db.opt: %.edf
-	$(E2DB) $(E2DB_SYSFLAGS) $(E2DB_FLAGS) -n $@ $<
-	$(DB_OPTIMIZE)
-	-@(echo '1,$$g/VAR(/s/VAR(/$$(/g';echo 'w';echo 'q') | ed $@
+# Must have DBDNAME defined to use dbst optimization
+ifndef DBDNAME
+DB_OPT = NO
+endif
 
-%.edf: ./%.sch $(DEPSCHS)
+# dbst based database optimization
+ifeq '$(DB_OPT)' 'YES'
+.PRECIOUS: %.db.raw
+%.db: %.db.raw $(INSTALL_DBD)/$(DBDNAME)
+	@echo "Optimizing database $@"
+	$(DBST) $(INSTALL_DBD)/$(DBDNAME) $< -d > $@
+$(DB_NOT_FROM_SOURCE): %.db: %.t.db.raw $(INSTALL_DBD)/$(DBDNAME)
+	@echo "Optimizing database $@"
+	$(DBST) $(INSTALL_DBD)/$(DBDNAME) $< -d > $@
+else
+# NO optimization => move it!
+%.db: %.db.raw
+	@$(MV) $< $@
+$(DB_NOT_FROM_SOURCE): %.db: %.t.db.raw
+	@$(MV) $< $@
+endif
+
+%.t.db.raw: %.substitutions
+	@echo "Inflating database from $<"
+	@$(RM) $@
+	@$(DBLOADTEMPLATE) $< > $@
+
+##################################################### CapFast filter
+
+%.edf: ../%.sch $(DEPSCHS)
 	@if [ ! -f cad.rc -a -r ../cad.rc ] ; then ln -s ../cad.rc ; fi
 	$(SCH2EDIF) $(SCH2EDIF_SYSFLAGS) $(SCH2EDIF_FLAGS) $<
 
-######end section added for captast schematics
+##################################################### Substitution files
 
-$(DBFROMTEMPLATE):%.db: %.template %.substitutions
-	$(RM) $@
-	$(SUBTOOL) $*.template $*.substitutions > $@
+$(INSTALL_DB)/%.substitutions: %.substitutions
+	@echo "Installing $@"
+	@$(INSTALL) -m 644 $(@F) $(@D)
 
+%.substitutions: %.subst
+	@$(MV) $< $@
 
-$(INDDBFROMTEMPLATE):%.db: %.substitutions
-	$(RM) $@
-ifndef WIN32
-	$(SUBTOOL) $(PREFIX).template $*.substitutions > $@
+%.subst: ../%.substitutions
+	@$(CP) $< $@
+
+ifdef CREATESUBSTITUTIONS
+%.substitutions:
+	@$(CREATESUBSTITUTIONS) $*
 endif
 
-.DEPENDS: Makefile
+# Better make it PRECIOUS (to get around make bug)
+.PRECIOUS: %.substitutions
+
+##################################################### Template databases
+
+# Installed template files (dbLoadTemplate() on IOC side)
+$(INSTALL_DB)/%.template: %.template
+	@echo "Installing $@"
+	@$(INSTALL) -m 644 $(@F) $(@D)
+
+%.template: %.templ
+	@$(MV) $< $@
+
+%.templ: ../%.template
+	@$(CP) $< $@
+
+%.template: %.edf
+	$(E2DB) $(E2DB_SYSFLAGS) $(E2DB_FLAGS) -n $@.VAR $<
+	@$(REPLACEVAR) < $@.VAR > $@
+	@$(RM) $@.VAR
+
+##################################################### Flat databases
+
+$(addsuffix .raw,$(DB_FROM_SOURCE)): %.db.raw: ../%.db
+	$(CP) $< $@
+
+%.db.raw: %.edf
+	$(E2DB) $(E2DB_SYSFLAGS) $(E2DB_FLAGS) -n $@.VAR $<
+	@$(REPLACEVAR) < $@.VAR > $@
+	@$(RM) $@.VAR
+
+##################################################### DBD stuff
+
+$(INSTALL_DBD)/%: %
+	@echo "Installing $@"
+	@$(INSTALL) -m 644 $< $(@D)
+
+$(INSTALL_DBD)/%: ../%
+	@echo "Installing $@"
+	@$(INSTALL) -m 644 $< $(@D)
+
+bpt%.dbd: ../bpt%.data
+	$(RM) $@
+	$(MAKEBPT) $<
+
+ifdef DBDEXPAND
+$(DBDNAME): ../$(DBDEXPAND)
+	@echo "Expanding dbd"
 	@$(RM) $@
-ifndef WIN32
-	@for NAME in $(INDDBFROMTEMPLATE) garbage_marty ; do \
-	    if [ $$NAME != garbage_marty ] ; then \
-		PREFIX="`echo $$NAME | sed -e 's-[0-9]--g' | sed -e 's-\.db--g'`";\
-		echo "$$NAME: $$PREFIX.template" >> $@;\
-	    fi ; \
-        done 
+	$(DBEXPAND) $(USER_DBDFLAGS) $< > $@
 endif
 
-clean::
-	@$(RM) dbd  $(DBFROMTEMPLATE) $(DBFROMSCH) $(INDDBFROMTEMPLATE) .DEPENDS $(PROD)
+##################################################### Dependencies
 
-$(actionArchTargets) :%: 
-	$(MAKE) $(word 1, $(subst $(DIVIDER), ,$@))
- 
-$(ARCHS):%: install
- 
-.PHONY :: $(ARCHS) $(ACTIONS)
-.PHONY :: $(actionArchTargets)
+.DEPENDS: $(filter $(patsubst %.db, %.substitutions, $(DB)), $(wildcard *.substitutions))
+	@echo "Making template database dependencies"
+	@$(MAKEDBDEPENDS) $<
 
 -include .DEPENDS
-

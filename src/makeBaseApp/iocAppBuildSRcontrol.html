@@ -1,7 +1,7 @@
 <HTML>
 <HEAD>
    <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-   <META NAME="GENERATOR" CONTENT="Mozilla/4.05 [en] (X11; U; SunOS 5.5.1 sun4u) [Netscape]">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; I; HP-UX B.10.20 9000/778) [Netscape]">
    <TITLE>EPICS: IOC Applications: Building and Source Release Control</TITLE>
 </HEAD>
 <BODY>
@@ -17,18 +17,18 @@ Source Release Control</H1></CENTER>
 <H2>
 Marty Kraimer and Janet Anderson&nbsp;<BR>
 Argonne National Laboratory, Advanced Photon Source&nbsp;<BR>
-June 1, 1998&nbsp;<BR>
+June 12, 1998&nbsp;<BR>
 EPICS Release 3.13.0.beta12</H2></CENTER>
 
 <CENTER>
 <H2>
 Acknowledgements</H2></CENTER>
-Between release 3.13.0.beta11 and 3.13.0.beta12 makeBase App was changed
+Between release 3.13.0.beta11 and 3.13.0.beta12 makeBaseApp was changed
 from one very long perl script to a four page perl script plus template
-files. It supports templates in addition to those supplied with epics base.
-In addition other improvements were made including support for capfast.
-The following people contributed to this effort: Ralph Lange (BESSY),&nbsp;
-Rozelle Wright (LANL, and Thomas Birke (BESSY).
+files. It supports templates in addition to those supplied with EPICS base.
+Other improvements were made including support for capfast. The following
+people contributed to this effort: Ralph Lange (BESSY),&nbsp; Rozelle Wright
+(LANL) and Thomas Birke (BESSY).
 <CENTER>
 <H2>
 Quick Start</H2></CENTER>
@@ -58,17 +58,17 @@ Index</H2></CENTER>
 <A HREF="#makeBaseApp">makeBaseApp</A></LI>
 
 <LI>
-<A HREF="#Templates Supplied with base">Application templates supplied
+<A HREF="#Templates Supplied with base">Application Templates Supplied
 with base</A></LI>
 
 <LI>
-<A HREF="#ST.CMD">ST.CMD</A></LI>
+<A HREF="#ST.CMD">st.cmd</A></LI>
 
 <LI>
 <A HREF="#SwitchNewRelease">Switching to a new Release</A></LI>
 
 <LI>
-<A HREF="#MAKE">MAKE</A></LI>
+<A HREF="#MAKE">Make</A></LI>
 
 <LI>
 <A HREF="#makeFiles">Description of Makefiles</A></LI>
@@ -122,7 +122,7 @@ operations directory structure.</LI>
 <LI>
 The IOC software is divided into &lt;<TT>top</TT>> areas. Each &lt;<TT>top</TT>>
 is maintained separately. Different &lt;<TT>top</TT>> areas can be on different
-releases of external software such as epics base releases.</LI>
+releases of external software such as EPICS base releases.</LI>
 
 <LI>
 Support such as special record/device/driver support can be shared across
@@ -146,8 +146,8 @@ Each application developer makes changes in a private copy of one or more
 applications.</LI>
 
 <LI>
-Template are provided for creating new application directories. EPICS base
-provides two sets of templates: simple and example. Additional templates
+Templates are provided for creating new application directories. EPICS
+base provides two sets of templates: simple and example. Additional templates
 can be created.</LI>
 </UL>
 
@@ -167,8 +167,8 @@ Has at least a superficial knowledge of the make utility</LI>
 
 <H3>
 System Prerequisites</H3>
-Before you can generate EPICS IOC applications your HOSTand/or EPICS System
-Manager must have done the following:
+Before you can generate EPICS IOC applications your host and/or EPICS system
+manager must have done the following:
 <UL>
 <LI>
 Installed vxWorks and a board support package. Consult the vxWorks documentation
@@ -205,7 +205,7 @@ cd &lt;top>
 &lt;base>/bin/&lt;arch>/makeBaseApp.pl -i -t example example</PRE>
 where:
 
-<P><TT>&lt;top></TT> - Is any directory name you chose
+<P><TT>&lt;top> </TT>- Any directory name you chose.
 <BR><TT>&lt;base></TT> - Full path name to EPICS base.
 <BR><TT>&lt;arch></TT> - Your host architecture.
 
@@ -229,7 +229,7 @@ In directory &lt;top> execute the command:
 Inspect Files</H3>
 Again look at all the files that appear under <TT>&lt;top></TT>.
 <H3>
-boot Parameters</H3>
+Boot Parameters</H3>
 The next step is to set the IOC boot parameters via the console serial
 port on your IOC. Life is much easier if you find out how to connect the
 serial port to a window on your workstation. See your EPICS system manager
@@ -254,7 +254,7 @@ The actual values for each field are site and IOC dependent. Consult your
 EPICS system manager for help. Two fields that you can change at will are
 the vxWorks boot image and the location of the startup script.
 <H3>
-boot</H3>
+Boot</H3>
 You are now ready to boot your IOC. If your boot parameters are defined
 properly, just press the reset button on your IOC. You will find it VERY
 convenient to have the console port of the IOC attached to a scrolling
@@ -262,8 +262,8 @@ window on your workstation.
 <H3>
 Test</H3>
 See the description of the example given in section&nbsp; <A HREF="#Templates Supplied with base">Templates
-Supplied with base</A> . Also try some of the vxWorks shell commands described
-in chapter "IOC Test facilities" of the Application Developer's Guide.
+Supplied with base</A>. Also try some of the vxWorks shell commands described
+in chapter "IOC Test Facilities" of the Application Developer's Guide.
 <CENTER>
 <H2>
 <A NAME="Introduction"></A>Introduction</H2></CENTER>
@@ -279,7 +279,7 @@ With release 3.13 the method of configuring record/device/driver support
 changed.</LI>
 
 <LI>
-Both epics base and extensions have switched from sccs to <TT>cvs</TT>.</LI>
+Both EPICS base and extensions have switched from sccs to <TT>cvs</TT>.</LI>
 
 <LI>
 <TT>base/config</TT>, i.e. definitions and rules for GNU make, has evolved
@@ -332,13 +332,13 @@ IOC responsibilities.</LI>
 
 <UL>
 <LI>
-A particular application may be spread over multiple iocs. For example
+A particular application may be spread over multiple IOCs. For example
 the control for storage ring applications is normally spread over many
-iocs just because of the size of the storage ring.</LI>
+IOCs just because of the size of the storage ring.</LI>
 
 <LI>
-A particular ioc may contain parts of multiple applications. For example
-vacuum and power supplies normally share iocs.</LI>
+A particular IOC may contain parts of multiple applications. For example
+vacuum and power supplies normally share IOCs.</LI>
 </UL>
 
 <LI>
@@ -362,14 +362,14 @@ following steps:
 <LI>
 Define I/O requirements.</LI>
 
-<BR>This involves meeting with the user, in this case the Engineers who
+<BR>This involves meeting with the user, in this case the engineers who
 are responsible for the application in order to decide the types and number
 of I/O modules needed.
 <LI>
 Assemble control hardware and software.</LI>
 
 <BR>This includes IOCs, I/O modules, software device/driver support, etc.
-If EPICS software support is not already available it has to be written
+If EPICS software support is not already available, it has to be written
 and tested.
 <LI>
 Build databases, sequence programs, etc.</LI>
@@ -411,12 +411,12 @@ of EPICS base.
 <P>Within a &lt;<TT>top</TT>> area, multiple xxxApp subdirectories and
 a single iocBoot directory appear. The xxxApp areas are created by application
 developers as needed. The iocBoot directory contains a subdirectory for
-each ioc that belongs to that &lt;<TT>top</TT>> area. No IOC belongs to
+each IOC that belongs to that &lt;<TT>top</TT>> area. No IOC belongs to
 more than one &lt;<TT>top</TT>> area. All software components needed by
 IOCs are built in the xxxApp directories. Each IOC is booted from <TT>bin/&lt;target_arch>
 </TT>and uses a startup file from it's subdirectory under iocBoot. The
 only important source file in a boot directory is the <TT>st.cmd</TT> file
-which is executed after vxWorks is started on an ioc. The <TT>st.cmd </TT>file
+which is executed after vxWorks is started on an IOC. The <TT>st.cmd </TT>file
 loads various files built in the xxxApp directories.
 
 <P>Application developers decide what constitutes a &lt;<TT>top</TT>>.
@@ -442,24 +442,24 @@ and substitution files used to generate database files. If templates are
 used then whenever a template or substitution file is modified the command
 <TT>gnumake</TT> will recreate the database file(s).
 
-<P>After changes are made in any xxxApp directory the affected IOCs can
+<P>After changes are made in any xxxApp directory, the affected IOCs can
 be rebooted from the appropriate iocBoot subdirectory. If new components
-are added it may be necessary to modify st.cmd files.
+are added, it may be necessary to modify st.cmd files.
 <H3>
 share</H3>
 As mentioned above the one major defect with the old appSR system is that
 there was no easy way to share code across &lt;<TT>top</TT>> areas. To
 solve this problem a new &lt;<TT>top</TT>> area called <TT>share</TT> is
 present. It is structured somewhat differently than other &lt;<TT>top</TT>>
-areas but development in it is done just like in any other &lt;<TT>top</TT>>.
+areas, but development in it is done just like in any other &lt;<TT>top</TT>>.
 Releases of <TT>share</TT> are created. A release contains built and installed
 object modules. Other &lt;<TT>top</TT>> areas take things from releases
 of <TT>share</TT> rather then from <TT>share</TT> itself.
 
 <P>At aps the releases of <TT>share</TT>, which are dependent on releases
-of epics base, are named:
+of EPICS base, are named:
 <PRE>&nbsp;&nbsp;&nbsp; baseXXXshareYYY</PRE>
-where XXX is the epics base release and YYY is a release of <TT>share</TT>
+where XXX is the EPICS base release and YYY is a release of <TT>share</TT>
 for that base release. At aps the <TT>share</TT> releases are stored at
 locations:
 <PRE>&nbsp;&nbsp;&nbsp; /usr/local/iocapps/iocsys/baseXXXshareYYY</PRE>
@@ -480,8 +480,8 @@ The following tools are used:
 <TT>cvs</TT></LI>
 
 <LI>
-gnumake - GNU make plus EPICS supplied configuration definitions, make
-rules, and script files.</LI>
+<TT>gnumake</TT> - GNU make plus EPICS supplied configuration definitions,
+make rules, and script files.</LI>
 </UL>
 
 <H3>
@@ -562,12 +562,13 @@ Structure</H3>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;installed include files>
 **&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; bin/
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;host_arch>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt; installed Host executables >
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;installed Host executables>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;ioc_arch>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;installed ioc products>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;installed IOC products>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ...
 **&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; lib/
-**&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; man/</PRE>
+**&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; man/
+**&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; db/</PRE>
 Files marked with an "*" are user created and/or edited. Each such file
 is discussed in this section.
 
@@ -608,22 +609,22 @@ scripts, etc. are created and built.</DD>
 <DD>
 Directory containing record instance files. An arbitrary number of Db directories
 can exist under each xxxApp. The name must have the suffix <TT>db </TT>or
-Db. Each Db directory can contain record instance, template, and substitution
-files.</DD>
+<TT>Db</TT>. Each Db directory can contain record instance, template, and
+substitution files or the equivalent CapFast schematics.</DD>
 </DL>
 
 <DT>
 <TT>iocBoot</TT></DT>
 
 <DD>
-Directory containing a subdirectory for each ioc.</DD>
+Directory containing a subdirectory for each IOC.</DD>
 
 <DL>
 <DT>
 <TT>iocxxx</TT></DT>
 
 <DD>
-Directory from which ioc <TT>iocxxx </TT>is booted. Each must have <TT>ioc</TT>
+Directory from which IOC <TT>iocxxx </TT>is booted. Each must have <TT>ioc</TT>
 prepended to the name because <TT>iocBoot/Makefile</TT> looks for it.</DD>
 </DL>
 
@@ -662,11 +663,18 @@ in which libraries are installed.</DD>
 <DD>
 Man pages Directory. This directory contains a subdirectory for each section
 of the Unix style man pages. This is where man pages are installed.</DD>
+
+<DT>
+<TT>db</TT></DT>
+
+<DD>
+Installed Databases Directory. The directory into which record instance,
+template and substitutions files are installed.</DD>
 </DL>
 
 <H3>
 Makefiles</H3>
-The makefiles are described below in section <A HREF="#makeFiles">Description
+The makefiles are described in section <A HREF="#makeFiles">Description
 of Makefiles</A> below.
 <H3>
 &lt;top>/config/*</H3>
@@ -676,27 +684,27 @@ These files contain definitions included in the various makefiles.
 <TT>CONFIG</TT></DT>
 
 <DD>
-This is the file in which you add to or modify make variables in epics
+This is the file in which you add to or modify make variables in EPICS
 base. A useful definition to override is:</DD>
 
 <PRE>&nbsp;&nbsp;&nbsp; CROSS_COMPILER_TARGET_ARCHS =</PRE>
 This specifies the vxWorks architecture to build. If your site builds base
-for multiple target architectures but your iocs only use a single architecture,
+for multiple target architectures but your IOCs only use a single architecture,
 overriding this variables saves build time.
 <DT>
 <TT>CONFIG_APP</TT></DT>
 
 <DD>
-This file contains definitions for external products such as epics base
+This file contains definitions for external products such as EPICS base
 and share. You should edit this file if you are using external products
-besides <TT>epics_base</TT>,and&nbsp; <TT>share</TT>.&nbsp; Follow the
+besides <TT>epics_base </TT>and&nbsp; <TT>share</TT>.&nbsp; Follow the
 models already in the file.</DD>
 
 <DT>
 <TT>RELEASE</TT></DT>
 
 <DD>
-This file specifies the location of external products such as epics base.
+This file specifies the location of external products such as EPICS base.
 The procedures for going to a new release of an external product are described
 later in this chapter. One step in the procedures is to edit this file.
 The config files created by makeBaseApp provide support for the following
@@ -711,7 +719,7 @@ This variable must be defined.</DD>
 <TT>SHARE</TT></DT>
 
 <DD>
-This variable which is optional, specifies the location of a release of
+This variable, which is optional, specifies the location of a release of
 a <TT>&lt;top></TT> area containing code that can be shared by other applications.</DD>
 
 <DT>
@@ -720,14 +728,14 @@ a <TT>&lt;top></TT> area containing code that can be shared by other application
 <DD>
 This variable specifies the location of the template top area for makeBaseApp.</DD>
 </DL>
-<B>IMPORTANT:</B>Each of the above variables must be specified with a full
-path name.
+<B>IMPORTANT: </B>Each of the above variables must be specified with a
+full path name.
 <DT>
 <TT>RULES.Db</TT></DT>
 
 <DD>
-This file contains rules for building database files from templates and
-rules for capfast files.</DD>
+This file contains rules for building and installing database files. Databases
+generated from templates and/or CapFast schematics are supported.</DD>
 
 <DT>
 <TT>RULES.Host</TT></DT>
@@ -750,7 +758,7 @@ the place to add the rules.</DD>
 
 <DD>
 This is a file containing rules for the Makefiles in the directories from
-which iocs are booted.</DD>
+which IOCs are booted.</DD>
 
 <DT>
 <TT>RULES.iocBoot</TT></DT>
@@ -778,7 +786,7 @@ to modify this file.</DD>
 
 <DD>
 This file includes RULES_TOP from base. If MASTER_IOCAPPS is defined it
-also runs a utility that creates soft links to the master ioc. This feature
+also runs a utility that creates soft links to the master IOC. This feature
 only works if the host operating system supports soft links.</DD>
 
 <DT>
@@ -786,17 +794,28 @@ only works if the host operating system supports soft links.</DD>
 
 <DD>
 This is a perl script that generates a <TT>cdCommands</TT> file for use
-by iocs.</DD>
+by IOCs.</DD>
+
+<DT>
+<TT>makeDbDepends.pl</TT></DT>
+
+<DD>
+This is a perl script that generates make dependencies from substitutions
+files.</DD>
+
+<DT>
+<TT>replaceVAR.pl</TT></DT>
+
+<DD>
+This is a perl script that changes <TT>VAR(xxx)</TT> style macros in CapFast
+generated databases into the <TT>$(xxx)</TT> notation used in EPICS databases.</DD>
 </DL>
 
 <H3>
 base.dbd and &lt;app>Include.dbd</H3>
-NOTE: A version of bases.dbd can be obtained from
-<BR><TT></TT>&nbsp;
+NOTE: A version of <TT>base.dbd</TT> can be obtained from
 <BLOCKQUOTE><TT>&lt;epics_base>/templates/makeBaseApp/top/exampleApp/src.</TT></BLOCKQUOTE>
-<TT></TT>
-
-<P>These files are used to configure database definitions for the following:
+These files are used to configure database definitions for the following:
 <UL>
 <LI>
 menus</LI>
@@ -843,15 +862,9 @@ from the desired support.
 is the place where you define locally built support.
 <H3>
 baseLIBOBJS</H3>
-
-<H3>
-</H3>
 NOTE: A version of baseLIBOBJS can be obtained from
-<BR><TT></TT>&nbsp;
 <BLOCKQUOTE><TT>&lt;epics_base>/templates/makeBaseApp/top/exampleApp/src.</TT></BLOCKQUOTE>
-<TT></TT>&nbsp;
-
-<P>This file defines all the object modules for record, device, and driver
+This file defines all the object modules for record, device, and driver
 support supplied by EPICS. Since the file is intimately related to base.dbd,
 if <TT>base.dbd</TT> (is, is not) used in a particular <TT>xxxApp/src</TT>
 directory, then <TT>baseLIBOBJS</TT> should (be, not be) used in that directory.
@@ -871,8 +884,8 @@ directory, then <TT>baseLIBOBJS</TT> should (be, not be) used in that directory.
 &nbsp;&nbsp;&nbsp; #
 &nbsp;&nbsp;&nbsp; #LIBOBJS += $(EPICS_BASE_BIN)/drvAb.o
 &nbsp;&nbsp;&nbsp; ...</PRE>
-Thus it has a definition for all record, device, and drivers supplied in
-EPICS base. Some record types and ALL hardware device and driver support
+Thus it has a definition for all record, device and driver support supplied
+in EPICS base. Some record types and ALL hardware device and driver support
 are proceeded by the comment symbol "#". You are expected to edit this
 file and select the desired support routines, by removing the '#' from
 the front of the appropriate lines. <TT>Makefile.Vx</TT> contains rules
@@ -907,21 +920,23 @@ level application.</LI>
 &lt;top>/iocBoot/iocxxx - A subdirectory and associated files.</LI>
 </UL>
 makeBaseApp creates directories and then copies template files with replacements
-into the newly created directories. Epics base supports two sets of template
+into the newly created directories. EPICS base supports two sets of template
 files: simple and example. These are meant for simple applications. Each
-site, however, can provide it's own set of template files which provide
+site, however, can provide its own set of template files which may provide
 additional functionality. This section will describe the functionality
 of makeBaseApp itself and the next section will describe details about
 the simple and example templates.
 
 <P>makeBaseApp&nbsp; has the following usage:
-<PRE>&lt;base>/bin/&lt;arch>/makeBaseApp.pl [options] app ...
+<PRE>&lt;base>/bin/&lt;arch>/makeBaseApp.pl -l</PRE>
+
+<PRE>&lt;base>/bin/&lt;arch>/makeBaseApp.pl -t type [options] app ...
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; create application directories
-&lt;base>/bin/&lt;arch>/makeBaseApp.pl -i [options] ioc ...
+&lt;base>/bin/&lt;arch>/makeBaseApp.pl -i -t type [options] ioc ...
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; create ioc boot directories
 where
-&nbsp;app&nbsp; Application name (the created directory will have "App" appended to name))
-&nbsp;ioc&nbsp; IOC name (The created directory will have "ioc" prepended to name)
+&nbsp;app&nbsp; Application name (the created directory will have "App" appended to name)
+&nbsp;ioc&nbsp; IOC name (the created directory will have "ioc" prepended to name)
 &nbsp;
 &nbsp;-t type&nbsp; Set the application type (-l for a list of valid types)
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If not specified, type is taken from environment
@@ -940,12 +955,10 @@ where
 &nbsp;-d&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Verbose output (useful for debugging)
 &nbsp;
 Environment Variables:
-
-EPICS_MBA_DEF_APP_TYPE&nbsp; The application type you want to use as default
-EPICS_MBA_TEMPLATE_TOP&nbsp; The template top directory</PRE>
+EPICS_MBA_DEF_APP_TYPE&nbsp; Application type you want to use as default
+EPICS_MBA_TEMPLATE_TOP&nbsp; Template top directory</PRE>
 &nbsp;
-
-<P>To create a new &lt;top> issue the commands:
+<BR>To create a new &lt;top> issue the commands:
 <PRE>&nbsp;&nbsp;&nbsp; mkdir &lt;top>&nbsp;&nbsp;&nbsp; # If &lt;top> does not exist
 &nbsp;&nbsp;&nbsp; cd &lt;top>
 &nbsp;&nbsp;&nbsp; &lt;base>/bin/&lt;arch>/makeBaseApp -t &lt;apptype> &lt;app> ...
@@ -961,13 +974,13 @@ makeBaseApp does the following:
 If the <TT>-b</TT> option is specified it is used.</LI>
 
 <LI>
-If <TT>&lt;top>/config/RELEASE</TT> exists and defines&nbsp; <TT>EPICS_BASE</TT>
+If <TT>&lt;top>/config/RELEASE</TT> exists and defines <TT>EPICS_BASE</TT>
 it is used.</LI>
 
 <LI>
 It is obtained from the invocation of makeBaseApp. For this to work makeBaseApp
-must be executed via a full path name to the makeBaseApp in the epics base
-release you are using.</LI>
+must be executed via a full path name (including the revision number) to
+the makeBaseApp in the EPICS base release you are using.</LI>
 </UL>
 
 <LI>
@@ -989,34 +1002,34 @@ It is set equal to <TT>&lt;epics_base>/templates/makeBaseApp/top</TT></LI>
 </UL>
 
 <LI>
-If -l is specified the list of application types is listed and makeBaseApp
-terminates.</LI>
+If <TT>-l</TT> is specified the list of application types is listed and
+makeBaseApp terminates.</LI>
 
 <LI>
-If -i is specified and -a is not&nbsp; then the user is prompted for the
-ioc architecture.</LI>
+If <TT>-i</TT> is specified and <TT>-a</TT> is not then the user is prompted
+for the IOC architecture.</LI>
 
 <LI>
 The application type is determined.</LI>
 
 <UL>
 <LI>
-If <TT>-t </TT>is specified it is used</LI>
+If <TT>-t </TT>is specified it is used.</LI>
 
 <LI>
 If&nbsp; <TT>EPICS_MBA_DEF_APP_TYPE </TT>is defined it is used.</LI>
 
 <LI>
-The application type is set equal to <TT>default.</TT></LI>
+The application type is set equal to <TT>default</TT>.</LI>
 </UL>
 
 <LI>
 If <TT>-i </TT>is specified <TT>Boot</TT> is appended to the application
-type otherwise <TT>App</TT> is appended.</LI>
+type, otherwise <TT>App</TT> is appended.</LI>
 
 <LI>
-If the application type is not in <TT>TEMPLATE_TOP</TT>&nbsp; makeBaseApp
-issues an error and terminates.</LI>
+If the application type is not in <TT>TEMPLATE_TOP,</TT> makeBaseApp issues
+an error and terminates.</LI>
 
 <LI>
 Two perl subroutines are defined</LI>
@@ -1043,7 +1056,7 @@ taken from the templates.</LI>
 _<TT>USER</TT>_</LI>
 
 <LI>
-_<TT>EPICS</TT>_BASE_</LI>
+<TT>_EPICS_BASE_</TT></LI>
 
 <LI>
 _<TT>ARCH</TT>_</LI>
@@ -1055,7 +1068,7 @@ _<TT>APPNAME</TT>_</LI>
 _<TT>APPTYPE</TT>_</LI>
 
 <LI>
-_<TT>TEMPLATE</TT>_TOP_</LI>
+<TT>_TEMPLATE_TOP_</TT></LI>
 
 <LI>
 _<TT>IOC</TT>_</LI>
@@ -1063,42 +1076,60 @@ _<TT>IOC</TT>_</LI>
 </UL>
 
 <LI>
-If the application type directory has a file named Replace.pl it can replace
-the two perl subroutines.</LI>
+If the application type directory has a file named <TT>Replace.pl,</TT>
+it can:</LI>
+
+<UL>
+<LI>
+replace the two perl subroutines</LI>
+
+<LI>
+add a subroutine <TT>ReplaceFilenameHook($file)</TT> which is called at
+the end of <TT>ReplaceFilename</TT>.</LI>
+
+<LI>
+add a subroutine <TT>ReplaceLineHook($line)</TT> which is called at the
+end of <TT>ReplaceLine</TT>.</LI>
+
+<LI>
+contain code which is run after the command line options are interpreted.</LI>
+</UL>
 
 <LI>
 If <TT>Makefile</TT> does not exist, it is created.</LI>
 
 <LI>
-If directory <TT>config</TT> does not exist, then it and all the config
-files are created.</LI>
+If directory <TT>config</TT> does not exist, it is created and populated
+with all the config files.</LI>
 
 <LI>
-If -i is specified</LI>
+If <TT>-i</TT> is specified</LI>
 
 <UL>
 <LI>
-If directory iocBoot does not exist, it is created and the files from the
-template Boot directory are copied into it.</LI>
+If directory <TT>iocBoot</TT> does not exist, it is created and the files
+from the template boot directory are copied into it.</LI>
 
 <LI>
-For each &lt;ioc> specified on the command line&nbsp; a directory iocBoot/ioc&lt;ioc>
-is created and populated with the&nbsp; files from the template.</LI>
+For each <TT>&lt;ioc></TT> specified on the command line a directory <TT>iocBoot/ioc&lt;ioc></TT>
+is created and populated with the files from the template (with <TT>ReplaceLine()</TT>
+tag replacement).</LI>
 </UL>
 
 <LI>
-If -i is NOT specified</LI>
+If <TT>-i</TT> is NOT specified</LI>
 
 <UL>
 <LI>
-For each &lt;app> specified on the command line a directory &lt;app>App
-is created and populated with the directory tree from the template.</LI>
+For each <TT>&lt;app></TT> specified on the command line a directory <TT>&lt;app>App</TT>
+is created and populated with the directory tree from the template (with
+<TT>ReplaceLine()</TT> tag replacement).</LI>
 
 <UL>
 <UL>
 <UL>
 <H2>
-<A NAME="Templates Supplied with base"></A>Application templates supplied
+<A NAME="Templates Supplied with base"></A>Application Templates Supplied
 with base</H2>
 </UL>
 </UL>
@@ -1142,7 +1173,9 @@ contains the following files.
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; baseLIBOBJS
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Db/
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Makefile
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; dbExample.db</PRE>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; dbExample1.db
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; dbExample2.template
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; dbExample2.substitutions</PRE>
 
 <PRE>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; iocBoot
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Makefile
@@ -1162,14 +1195,14 @@ a Unix shell by issuing the command:</DD>
 
 <PRE>&nbsp;&nbsp;&nbsp; caExample "pvname"</PRE>
 It issues a Channel Access get request for the specified process variable
-and prints the value. If you have booted an ioc from the example then try
+and prints the value. If you have booted an IOC from the example then try
 the following:
 <UL>
 <LI>
-On the ioc console type the command:</LI>
+On the IOC console type the command:</LI>
 
 <PRE>&nbsp;&nbsp;&nbsp; dbl</PRE>
-This produces a list of all the records the ioc contains.
+This produces a list of all the records the IOC contains.
 <LI>
 On the host system change to the directory: &lt;top>/bin/&lt;host_arch>/</LI>
 
@@ -1180,7 +1213,7 @@ Execute the command:</LI>
 where pvname is one of the record names shown by dbl</UL>
 
 <DT>
-<B>dbExample.db</B></DT>
+<B>dbExample1.db</B></DT>
 
 <DD>
 This is an example of record instances. Each name is proceeded by <TT>&lt;userid></TT>,
@@ -1214,6 +1247,17 @@ the dbpf IOC command.</DD>
 </DL>
 
 <DT>
+<B>dbExample2.template / dbExample2.substitutions</B></DT>
+
+<DD>
+This is another example of record instances. The database is generated
+from a template database, which is instantiated using the entries in the
+substitutions file. Each name is proceeded by <TT>&lt;userid></TT>, which
+is the userid of the person who executed makeBaseApp. Each line in the
+substitutions file creates a two record database, whose records are desribed
+above (aiExample and calcExample).</DD>
+
+<DT>
 <B>sncExample.st</B></DT>
 
 <DD>
@@ -1229,7 +1273,7 @@ A skeleton record support module. The record support module is the one
 described in the Application Developer's Guide.</DD>
 
 <DT>
-<B>devXxxSoft.c></B></DT>
+<B>devXxxSoft.c</B></DT>
 
 <DD>
 A device support module for xxxRecord. The device support module provides
@@ -1238,7 +1282,7 @@ synchronous support for the record support.</DD>
 
 <CENTER>
 <H2>
-<A NAME="ST.CMD"></A>ST.CMD</H2></CENTER>
+<A NAME="ST.CMD"></A>st.cmd</H2></CENTER>
 NOTE: The commands dbLoadDatabase, dbExpand, and dbLoadRecords are described
 in Chapter 4, "Database Definition" of the Application Developer's Guide.
 
@@ -1259,7 +1303,8 @@ is:
 
 &nbsp;&nbsp;&nbsp; cd startup
 &nbsp;&nbsp;&nbsp; dbLoadDatabase("../../dbd/xxxApp.dbd")
-&nbsp;&nbsp;&nbsp; dbLoadRecords("../../xxxApp/xxxDb/xxx.db","user=USER")
+&nbsp;&nbsp;&nbsp; dbLoadRecords("../../db/xxx.db","user=USER")
+&nbsp;&nbsp;&nbsp; dbLoadTemplate("../../db/xxx.substitutions")
 
 &nbsp;&nbsp;&nbsp; iocInit
 
@@ -1267,7 +1312,7 @@ is:
 &nbsp;&nbsp;&nbsp; #seq &amp;sncxxx</PRE>
 </UL>
 The <TT>cdCommands </TT>file defines vxWorks variables so that <TT>cd </TT>commands
-may be used later in the startup file.Definitions are provided for
+may be used later in the startup file. Definitions are provided for
 <UL>
 <LI>
 <TT>appbin</TT> - A full path name to <TT>&lt;top>/bin/&lt;target_arch></TT></LI>
@@ -1294,9 +1339,14 @@ generated in a sub-application src directory, this statement will have
 to be changed to coincide with the DBDNAME value.
 
 <P>The command:
-<PRE>&nbsp;&nbsp;&nbsp; dbLoadRecords("xxxApp/xxxDb/xxx.db","user=USER")</PRE>
+<PRE>&nbsp;&nbsp;&nbsp; dbLoadRecords("../../db/xxx.db","user=USER")</PRE>
 is an example command for loading record instances. One of these commands
 is supplied for each record instance file.
+
+<P>The command:
+<PRE>&nbsp;&nbsp;&nbsp; dbLoadTemplate("../../db/xxx.substitutions")</PRE>
+is an example command for loading record templates. One of these commands
+is supplied for each substitutions file.
 
 <P>The <TT>iocInit</TT> command initializes the EPICS system.
 
@@ -1304,7 +1354,7 @@ is supplied for each record instance file.
 programs.
 <CENTER>
 <H2>
-<A NAME="SwitchNewRelease"></A>SWITCHING TO A NEW RELEASE</H2></CENTER>
+<A NAME="SwitchNewRelease"></A>Switching to a new Release</H2></CENTER>
 The file <TT>&lt;top>/config/RELEASE</TT> contains definitions for components
 obtained form outside <TT>&lt;top></TT>. If you want to link to a new release
 of anything defined in the file do the following:
@@ -1314,13 +1364,15 @@ vi &lt;top>/config/RELEASE
 cd &lt;top>
 gnumake</PRE>
 Note that all definitions in <TT>&lt;top>/config/RELEASE</TT> must be complete
-path definitions, i.e. relative path names are not permitted.
+path definitions, i.e. relative path names are not permitted. If your site
+keeps releases of base and/or share, the path definitions should contain
+the release number (e.g. <TT>EPICS_BASE=/usr/local/epics/baseR3.13.0.beta12</TT>).
 <CENTER>
 <H2>
-<A NAME="MAKE"></A>MAKE</H2></CENTER>
+<A NAME="MAKE"></A>Make</H2></CENTER>
 
 <H3>
-Where Executed</H3>
+Where make can be Executed</H3>
 Make can be executed in any subdirectory where a Makefile appears, which
 is almost every subdirectory.
 <DL>
@@ -1371,8 +1423,8 @@ Running the command:</DD>
 <PRE>&nbsp;&nbsp;&nbsp; gnumake</PRE>
 
 <DD>
-in a <TT>src</TT> directory builds all out of date Host and IOC components
-described by the files <TT>Makefile.Host</TT> and <TT>Makefile.Vx</TT>.
+in a <TT>src</TT> directory builds and installs all out of date Host and
+IOC components described by the files <TT>Makefile.Host</TT> and <TT>Makefile.Vx</TT>.
 The builds are performed in subdirectories <TT>O.&lt;arch></TT>.</DD>
 
 
@@ -1389,8 +1441,8 @@ This removes the host and target architecture directories created by make.
 <TT>xxxApp/xxxDb</TT></DT>
 
 <DD>
-Executing gnumake in this directory creates the link for dbd and also generates
-database instance files from templates.</DD>
+Executing gnumake in this directory generates and installs database instance
+files, template and substitution files plain sources or CapFast schematics.</DD>
 
 <DT>
 <TT>iocBoot</TT></DT>
@@ -1470,10 +1522,11 @@ In addition it allows the top level make options uninstall and tar described
 in the previous section. There is seldom need to modify this file.
 <H3>
 &lt;top>/xxxApp/Makefile</H3>
-This makefile just executes make in <TT>src</TT> and each <TT>*Db </TT>subdirectory.
+This makefile just executes make in each&nbsp; <TT>*src*</TT>,<TT> *Src*</TT>,<TT>
+*db*</TT> and <TT>*Db* </TT>subdirectory.
 <H3>
 <B>&lt;top>/xxxApp/src/Makefile.Host</B></H3>
-The following ioc related components can be built:
+The following IOC related components can be built:
 <DL>
 <DT>
 Breakpoint Tables</DT>
@@ -1481,7 +1534,7 @@ Breakpoint Tables</DT>
 <DD>
 For each breakpoint table add the following definition</DD>
 
-<PRE>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; BPTS += &lt;table name>.dbd</PRE>
+<PRE>&nbsp;&nbsp;&nbsp; BPTS += &lt;table name>.dbd</PRE>
 
 <DT>
 Record Support</DT>
@@ -1498,20 +1551,18 @@ makefile:</DD>
 and the record support files:</DD>
 
 <DL>
-<DL>
-<PRE>&lt;Record>Record.dbd</PRE>
-</DL>
+<PRE>&nbsp;&nbsp;&nbsp; &lt;Record>Record.dbd</PRE>
 </DL>
 
 <DD>
 must exist.</DD>
 
 <DD>
-If a <TT>menuXXX.dbd</TT> file is present, then add the following definition.</DD>
+If a <TT>menuXXX.dbd</TT> file is present, then add the following definition:</DD>
 
-<DL>&nbsp;&nbsp;&nbsp; MENUS += menu&lt;name>.h</DL>
-
-<DL>&nbsp;</DL>
+<DL>
+<PRE>&nbsp;&nbsp;&nbsp; MENUS += menu&lt;name>.h</PRE>
+</DL>
 
 <DT>
 Expanded Database Definition File</DT>
@@ -1540,7 +1591,7 @@ path and macro substitution are supported.</LI>
 <BR><TT>DBDINSTALL</TT> - Installs the file into <TT>&lt;top>/dbd</TT>.
 <BR>&nbsp;</DL>
 </DL>
-&nbsp;<TT>Makefile.Host </TT>has many facilities for building host components..
+<TT>Makefile.Host </TT>has many facilities for building host components..
 Replace &lt;arch_class> in the following by the specific architecture class.</DL>
 
 <PRE>USR_CFLAGS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; C compiler flags for all systems
@@ -1657,7 +1708,7 @@ E2DB_FLAGS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbs
 SCH2EDIF_FLAGS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sch2edif options
 RANLIBFLAGS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ranlib options
 
-&lt;target>_CFLAGS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; target specific C compiler flags (e.g. xxxRecord_CFLAGS )
+&lt;target>_CFLAGS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; target specific C compiler flags (e.g. xxxRecord_CFLAGS)
 &lt;target>_CXXFLAGS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; target specific C++ compiler flags
 &lt;target>_CPPFLAGS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; target specific cpp flags
 &lt;target>_LDFLAGS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; target specific ld flags
@@ -1695,18 +1746,15 @@ Record Support</DT>
 For each new record type, the following definitions must be added to the
 makefile</DD>
 
-<PRE>
-&nbsp;&nbsp;&nbsp; <TT>LIBOBJS += &lt;rectype>Record.o</TT></PRE>
-
-<DD>
-</DD>
+<DL>
+<PRE><TT>&nbsp;&nbsp;&nbsp; LIBOBJS += &lt;rectype>Record.o</TT></PRE>
+</DL>
 
 <DD>
 and the record support files:</DD>
 
 <DL>
-<PRE>
-&lt;Record>Record.c</PRE>
+<PRE>&nbsp;&nbsp;&nbsp; &lt;Record>Record.c</PRE>
 </DL>
 
 <DD>
@@ -1725,14 +1773,17 @@ For each such module, add a definition:</DD>
 <DD>
 Each file will be placed in the library specified by LIBNAME.</DD>
 
-<BR>It is also possible to generate object files not placed in LIBNAME
-via the definitions:
+<DD>
+It is also possible to generate object files not placed in LIBNAME via
+the definitions:</DD>
+
+<DL>
 <PRE>&nbsp;&nbsp;&nbsp; PROD += &lt;name>.o
 &nbsp;&nbsp;&nbsp; or
 &nbsp;&nbsp;&nbsp; TARGETS += &lt;name>.o</PRE>
-
-<DL>Both will cause the specified file to be generated, PROD will also
-install the generated file into &lt;top>/bin/&lt;target_arch>.</DL>
+Both will cause the specified file to be generated, PROD will also install
+the generated file into &lt;top>/bin/&lt;target_arch>.
+<BR>&nbsp;</DL>
 
 <DT>
 LIBNAME</DT>
@@ -1749,9 +1800,6 @@ with the name specified by LIBNAME. If <TT>Makefile.Vx</TT> appears in
 
 <DD>
 The first is for c libraries and the second for c++ libraries.</DD>
-
-<DD>
-</DD>
 
 <DT>
 State Notation Programs</DT>
@@ -1788,11 +1836,11 @@ In order to have vxWorks, vxWorks.sym, iocCore, and seq in the bin directory,
 the following must appear:</DD>
 
 <DL>
-<PRE>INSTALLS += vxWorks vxWorks.sym iocCore seq</PRE>
+<PRE>&nbsp;&nbsp;&nbsp; INSTALLS += vxWorks vxWorks.sym iocCore seq</PRE>
 </DL>
 
 <DD>
-NOTE: <TT>INSTALLS </TT>only needs to appear in one application.</DD>
+<B>NOTE:</B> <TT>INSTALLS </TT>only needs to appear in one application.</DD>
 </DL>
 
 <DL>Other definitions
@@ -1811,8 +1859,6 @@ YACCOPT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; yacc options
 LEXOPT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; lex options
 CPPFLAGS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cpp options
 SNCFLAGS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; snc options
-E2DB_FLAGS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; e2db options
-SCH2EDIF_FLAGS&nbsp; sch2edif options
 
 &lt;target>_CFLAGS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; target specific C compiler flags
 &lt;target>_CXXFLAGS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; target specific C++ compiler flags
@@ -1828,39 +1874,143 @@ INSTALL_DIR&nbsp;&nbsp;&nbsp;&nbsp; Installation directory (defaults to $(TOP))<
 </DL>
 
 <H3>
-<B><TT>&lt;top>/xxxApp/xxxDb/Makefile</TT></B></H3>
-This makefile performs the following functions:
+<B>&lt;top>/xxxApp/xxxDb/Makefile.Host</B></H3>
+This makefile creates and installs databases and related files.
+<H4>
+Databases</H4>
+Supported are:
 <UL>
 <LI>
-creates xxx.db given xxx.template and xxx.substitutions</LI>
+Plain databases</LI>
 
-<BR>Thus given a template and a substitutions file, it creates a db file.
-For each such file the following rule must be added by the user:
-<PRE>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; DBFROMTEMPLATE += xxx.db</PRE>
+<UL>
+<LI>
+from dct/gdct/editor generated source files (<TT>*.db</TT>)</LI>
 
 <LI>
-creates xxxi.db given xxx.template and xxxi.substitutions</LI>
-
-<BR>Thus given a template and a a set of related substitutions files, it
-creates a db file. For each such file the following rule must be added
-by the user:
-<PRE>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; INDDBFROMTEMPLATE += xxxi.db</PRE>
-
-<PRE>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; NOTE: i is a positive integer</PRE>
-Note that the name of the substitutions file must be the same as the template
-except that "i" is appended to the file name.
-<LI>
-Provides support for capfast</LI>
+from CapFast schematics (<TT>*.sch</TT>)</LI>
 </UL>
 
+<LI>
+Template generated databases</LI>
+
+<UL>
+<LI>
+template database from dct/gdct/editor generated source file (<TT>*.template</TT>)</LI>
+
+<LI>
+template database from CapFast schematic (<TT>*.sch</TT>)</LI>
+
+<LI>
+substitutions file from editor generated source (<TT>*.substitutions</TT>)</LI>
+
+<LI>
+substitutions file generated by a script (e.g. querying a relational database)</LI>
+</UL>
+
+<LI>
+Database optimization using the <TT>dbst</TT> tool (i.e. removing all fields
+with default values)</LI>
+</UL>
+For template generated databases either the fully inflated database or
+the template and substitutions files may be installed (so the IOC may load
+the database using <TT>dbLoadRecords()</TT> or <TT>dbLoadTemplate()</TT>).
+
+<P>For all these types of databases, the names of the files to install
+have to be specified. Make will figure out how to generate these files:
+<UL>
+<PRE>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; DB += xxx.db</PRE>
+</UL>
+will generate xxx.db depending on which source files exist. If xxx.db is
+template generated, the inflated database will be installed.
+<UL>
+<PRE>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; DB += xxx.template xxx.substitutions</PRE>
+</UL>
+will generate and install these files, i.e. the database will be inflated
+when it is loaded by the IOC using <TT>dbLoadTemplate()</TT>.
+<BR>All template files that are used, but not installed (i.e. those not
+specified in <TT>DB</TT>), must be specified:
+<UL>
+<PRE>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; USES_TEMPLATE += yyy.template
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; USES_TEMPLATE += $(SHARE)/installDb/zzz.template</PRE>
+</UL>
+If specified with a path (full or relative), the templates will be soft
+linked (UNIX) resp. copied (WIN) into the <TT>O.&lt;arch></TT> directory.
+After the first make run, template dependencies will be generated automatically.
+
+<P>If there is no *.substitutions source for a needed substitutions file,
+but a variable defining a script name (like <TT>CREATESUBSTITUTIONS=CreateSubst.pl</TT>),
+this script will be called with the prefix of the substitution file name
+to be generated.
+
+<P>Other definitions:
+<PRE>E2DB_FLAGS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; e2db options
+SCH2EDIF_FLAGS&nbsp; sch2edif options</PRE>
+
+<H4>
+Related Files</H4>
+
+<DT>
+Expanded Database Definition File</DT>
+
+<UL>
+<DT>
+Files containing database definition files are expanded by utility dbExpand
+and installed into &lt;top>/dbd. The following variables are available.</DT>
+</UL>
+
+<UL>
+<UL>
+<PRE>DBDEXPAND += xxxInclude.dbd
+DBDNAME = xxxApp.dbd
+USER_DBDFLAGS += -I &lt;include path>
+USER_DBDFLAGS += -S &lt;macro substitutions>
+
+DBDINSTALL += xxx.dbd</PRE>
+</UL>
+</UL>
+
+<DL>
+<DD>
+where:</DD>
+
+<DL>
+<DL>
+<LI>
+<TT>DBDEXPAND</TT> - A file containing database definitions.</LI>
+
+<LI>
+<TT>DBDNAME</TT> - The name of the file containing expanded definitions
+to be created and installed into <TT>&lt;top>/dbd</TT>.</LI>
+
+<LI>
+<TT>USER_DBDFLAGS</TT> - Flags for dbExpand. Currently only an include
+path and macro substitution are supported.</LI>
+
+<LI>
+<TT>DBDINSTALL</TT> - Installs the file into <TT>&lt;top>/dbd</TT>.</LI>
+</DL>
+</DL>
+</DL>
+
+<DT>
+Breakpoint Tables</DT>
+
+<DD>
+For each breakpoint table add the following definition</DD>
+
+<PRE>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; BPTS += &lt;table name>.dbd</PRE>
+
 <H3>
-<B><TT>&lt;top>/iocBoot/Makefile</TT></B></H3>
+<B>&lt;top>/iocBoot/Makefile</B></H3>
 This executes make in each subdirectory.
 <H3>
-<B><TT>&lt;top>iocBoot/iocxxx/Makefile</TT></B></H3>
+<B>&lt;top>/iocBoot/iocxxx/Makefile</B></H3>
 This makefile has a rule to generate cdCommands. Make sure that the definition:
+<UL>
 <PRE>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ARCH = &lt;arch></PRE>
-refers to the correct architecture for your ioc processor.
+</UL>
+refers to the correct architecture for your IOC processor.
 
 <P>Since cdCommands is generated the user generated and/or modified files
 are independent of location even though cdCommands contains full path names.
@@ -1906,13 +2056,13 @@ areas can be checked out or else just a subset of a <TT>&lt;top> </TT>area.</DD>
 
 
 <P>The first step is to checkout ascf. The easiest way is to create the
-application area with a high level directory called iocsys. The following
-commands are issued:
+application area with a high level directory called <TT>iocsys</TT>. The
+following commands are issued:
 <PRE>&nbsp;&nbsp;&nbsp; cd &lt;anywhere>
 &nbsp;&nbsp;&nbsp; cvs checkout iocsys/ascf</PRE>
 <TT>iocsys</TT> will appear as a subdirectory of <TT>&lt;anywhere></TT>.
-If <TT>&lt;anywhere></TT> is null then iocsys appears in the user's home
-directory.
+If <TT>&lt;anywhere></TT> is null then <TT>iocsys</TT> appears in the user's
+home directory.
 <DT>
 <B>Checkout Entire <TT>&lt;top></TT> Area</B></DT>
 

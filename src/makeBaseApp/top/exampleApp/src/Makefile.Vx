@@ -14,7 +14,7 @@ LIBOBJS += sncExample.o
 include ../baseLIBOBJS
 
 LIBNAME = exampleLib
-INSTALLS += vxWorks vxWorks.sym iocCore seq
+INSTALLS += iocCore seq
 
 #Note that the command line that builds the
 #library $(LIBNAME) may be HUGE (>3kB)

@@ -85,7 +85,7 @@ void directoryServer::installAliasName(const pvInfo &info, const char *pAliasNam
 // directoryServer::pvExistTest()
 //
 pvExistReturn directoryServer::pvExistTest
-	(const casCtx&, const char *pPVName)
+	( const casCtx &, const char * pPVName )
 {
 	//
 	// lifetime of id is shorter than lifetime of pName

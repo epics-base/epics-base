@@ -1,0 +1,14 @@
+# $Id$
+#
+# This file is maintained by the EPICS community.
+
+# Vx GNU cross compiler suffix
+CMPLR_SUFFIX = ppc
+ 
+# For Vx directories of form:
+#   $(VX_DIR)/$(HOST_ARCH).$(ARCH_CLASS)/bin
+ARCH_CLASS = ppc
+
+# Architecture specific build flags (TRUE=1 via LBL; needed in camessage.c)
+ARCH_DEP_CFLAGS = -fno-for-scope -DCPU_FAMILY=PPC -DCPU=PPC604 -D_GNU_TOOL -DTRUE=1
+

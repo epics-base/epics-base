@@ -730,24 +730,30 @@ epicsShareFunc void epicsShareAPI epicsThreadOnceOsd (
 {
     BOOL success;
     DWORD stat;
+    int doit;
 
     if ( ! win32ThreadInitOK ) {
         epicsThreadInit ();
-        if ( ! win32ThreadInitOK ) {
-            return;
-        }
+        assert ( win32ThreadInitOK );
     }
 
     stat = WaitForSingleObject ( win32ThreadGlobalMutex, INFINITE );
     assert ( stat == WAIT_OBJECT_0 );
 
     if ( ! *id ) {
-        ( *func ) ( arg );
         *id = 1;
+        doit = 1;
+    }
+    else {
+        doit = 0;
     }
 
     success = ReleaseMutex ( win32ThreadGlobalMutex );
     assert ( success );
+
+    if ( doit ) {
+        ( *func ) ( arg );
+    }
 }
 
 /*

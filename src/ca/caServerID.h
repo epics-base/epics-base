@@ -25,9 +25,10 @@ public:
     static unsigned maxIndexBitWidth ();
     static unsigned minIndexBitWidth ();
     osiSockAddr address () const;
+    unsigned priority () const;
 private:
     struct sockaddr_in addr;
-    ca_uint8_t priority;
+    ca_uint8_t pri;
 };
 
 // start with a very small server table to speed
@@ -38,7 +39,7 @@ static const unsigned caServerMaxIndexBitWidth = 32u;
 
 inline caServerID::caServerID ( 
     const struct sockaddr_in & addrIn, unsigned priorityIn ) :
-    addr ( addrIn ), priority ( priorityIn )
+    addr ( addrIn ), pri ( priorityIn )
 {
     assert ( priorityIn <= 0xff );
 }
@@ -47,7 +48,7 @@ inline bool caServerID::operator == ( const caServerID & rhs ) const
 {
     if ( this->addr.sin_addr.s_addr == rhs.addr.sin_addr.s_addr ) {
         if ( this->addr.sin_port == rhs.addr.sin_port ) {
-            if ( this->priority == rhs.priority ) {
+            if ( this->pri == rhs.pri ) {
                 return true;
             }
         }
@@ -61,7 +62,7 @@ inline resTableIndex caServerID::hash () const
     index = this->addr.sin_addr.s_addr;
     index ^= this->addr.sin_port;
     index ^= this->addr.sin_port >> 8u;
-    index ^= this->priority;
+    index ^= this->pri;
     return integerHash( caServerMinIndexBitWidth, 
         caServerMaxIndexBitWidth, index );
 }
@@ -81,6 +82,11 @@ inline osiSockAddr caServerID::address () const
     osiSockAddr tmp;
     tmp.ia = this->addr;
     return tmp;
+}
+
+inline unsigned caServerID::priority () const
+{
+    return this->pri;
 }
 
 #endif // ifdef caServerID

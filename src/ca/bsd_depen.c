@@ -78,12 +78,31 @@ int cac_select_io(struct timeval *ptimeout, int flags)
 			continue;
 		}
 
-		if (piiu->sock_chan>=FD_SETSIZE) {
+#ifdef WIN32
+		/* Under WIN32, FD_SETSIZE is the number of sockets,
+		 * not the max. file descriptor value that you may select() !
+		 *
+		 * Of course it's not allowed to look into fd_count,
+		 * but what shall we do?  -kuk-
+		 */
+
+		if (pfdi->readMask.fd_count >= FD_SETSIZE)
+		{
 			ca_printf(
-			"%s.%d: file number > FD_SETSIZE=%d ignored\n",
-				__FILE__, __LINE__, FD_SETSIZE);
+			"%s.%d: no room for fd %d in fd_set (FD_SETSIZE=%d)\n",
+			   __FILE__, __LINE__, piiu->sock_chan, FD_SETSIZE);
 			continue;
 		}
+
+#else
+		if (piiu->sock_chan>=FD_SETSIZE)
+		{
+			ca_printf(
+			"%s.%d: file number %d > FD_SETSIZE=%d ignored\n",
+			    __FILE__, __LINE__, piiu->sock_chan, FD_SETSIZE);
+			continue;
+		}
+#endif
 
                 /*
                  * Dont bother receiving if we have insufficient

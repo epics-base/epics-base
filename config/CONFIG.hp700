@@ -6,6 +6,8 @@
 #   Currently either Vx or Unix
 BUILD_TYPE = Unix
 
+ARCH_CLASS = hp700
+
 # Compiler and utility invocation (supply path to compiler here)
 #   (with warning flags built in)
 #  Paths to compilers
@@ -16,16 +18,23 @@ HPCC = cc -Ac
 TRADCC = cc
 AR = ar 
 ARCMD = $(AR) $(ARFLAGS)
+
 RANLIB = ranlib
 YACC = $(EYACC)
 LEX = $(ELEX)
 G++ = g++
 CCC = CC
+
+CP=cp
 MV = mv
+RM=rm -f
 RMDIR = rm -rf
 MKDIR = mkdir
 CHMOD = "/bin/chmod"
 WHAT = what
+
+EXE=
+OBJ=.o
 
 ACC_ANSI_INVOKE_W_NO = $(ACC) -w
 ACC_ANSI_INVOKE_W_YES = $(ACC)

@@ -20,3 +20,9 @@ OSITHREAD_USE_DEFAULT_STACK = NO
 
 HOSTEXE=.exe
 
+# Does not work if using cygwin make
+# because HOME is always defined
+ifndef HOME
+HOME = $(HOMEDRIVE)$(HOMEPATH)
+endif
+

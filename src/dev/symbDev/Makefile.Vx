@@ -1,8 +1,6 @@
 TOP = ../../../..
 include $(TOP)/config/CONFIG_BASE
 
-DBDINSTALL = symb.dbd
-
 SRCS.c += ../devAiSymb.c
 SRCS.c += ../devAoSymb.c
 SRCS.c += ../devBiSymb.c

@@ -1,0 +1,7 @@
+TOP = ../../../..
+include $(TOP)/config/CONFIG_BASE
+
+DBDINSTALL = symb.dbd
+
+include $(TOP)/config/RULES.Host
+

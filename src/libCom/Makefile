@@ -224,9 +224,7 @@ SRC_DIRS += $(LIBCOM)/tsDefs
 INC += tsDefs.h
 SRCS += tsDefs.c
 
-#       For WIN32 we supply getopt as part of libCom:
-INC_WIN32 := getopt.h
-SRCS_WIN32 := getopt.c
+# For WIN32
 SRCS_WIN32 += dllmain.cpp
 SRCS_WIN32 += forceBadAllocException.cpp
 

@@ -35,6 +35,7 @@
  * .04	01-21-91	jrw	moved the task parameters into task_params.h
  * .05	02-12-92	jrw	removed IRQ based transmission.
  * .06	04-08-92	jrw	moved the device configs into module_types.h
+ * .07	09-28-92	jrw	upped the reset delay time to 1/2 second
  *
  * NOTES:
  * This driver currently needs work on error message generation.
@@ -275,7 +276,7 @@ int	link;
   xvmeRegs->fifo_stat = XVME_RESET;	/* assert the reset pulse */
   taskDelay(2);
   xvmeRegs->fifo_stat = 0;		/* clear the reset pulse */
-  taskDelay(10);			/* give the 8044 time to self check */
+  taskDelay(30);			/* give the 8044 time to self check */
 
   j = 100;				/* give up after this */
   while ((xvmeRegs->fifo_stat & XVME_RCMD) && --j)
@@ -427,7 +428,7 @@ static int
 checkLink(link)
 int	link;
 {
-  if (link<0 || link>BB_NUM_LINKS)
+  if ((link<0) || (link>BB_NUM_LINKS))
     return(ERROR);		/* link number out of range */
 
   if (pXvmeLink[link] == NULL)
@@ -576,7 +577,11 @@ int	link;
         if (rxDpvtHead == NULL)
         {
 	  if (bbDebug)
-            printf("xvmeRxTask(%d): msg from node %d unsolicited!\n", link, rxHead[2]);
+	  {
+            printf("xvmeRxTask(%d): msg from node %d unsolicited!\nHeader:", link, rxHead[2]);
+	    rxDpvtHead->rxMsg.length = 7;	/* we just have the header now */
+	    drvBitBusDumpMsg(&(rxDpvtHead->rxMsg));
+	  }
 	  FASTUNLOCK(&(pXvmeLink[link]->pbbLink->busyList.sem));
           rxState = BBRX_IGN;	/* nothing waiting... toss it */
         }
@@ -1124,6 +1129,10 @@ int     prio;
     errMessage(S_BB_rfu1, message);
     return(ERROR);
   }
+  if (bbDebug>5)
+    printf("qbbreq(0x%08.8X, %d): transaction queued\n", pdpvt, prio);
+  if (bbDebug>6)
+    drvBitBusDumpMsg(&(pdpvt->txMsg));
 
   FASTLOCK(&(pXvmeLink[pdpvt->link]->pbbLink->queue[prio].sem));
 
@@ -1133,9 +1142,6 @@ int     prio;
   FASTUNLOCK(&(pXvmeLink[pdpvt->link]->pbbLink->queue[prio].sem));
 
   semGive(pXvmeLink[pdpvt->link]->pbbLink->linkEventSem);
-
-  if (bbDebug>5)
-    printf("qbbreq(0x%08.8X, %d): transaction queued\n", pdpvt, prio);
 
   return(OK);
 }

@@ -99,6 +99,9 @@
 /************************************************************************/
 /*
  * $Log$
+ * Revision 1.107.2.7  2001/09/18 12:17:48  mrk
+ * increased stack size for cac_recv_task from 4096 to 8192
+ *
  * Revision 1.107.2.6  2000/11/30 22:07:50  jhill
  * changes from Ken Evans
  *
@@ -2402,53 +2405,46 @@ db_field_log	*pfl
 		count = monix->count;
 	}
 
-  	if(monix->type == paddr->dbr_field_type){
-    		pval = paddr->pfield;
-    		status = OK;
-  	}
-  	else{
-		size = dbr_size_n(monix->type,count);
+	size = dbr_size_n(monix->type,count);
 
-    		if( size <= sizeof(valbuf) ){
-      			pval = (void *) &valbuf;
-		}
-		else{
-
-			/*
-			 * find a preallocated block which fits
-			 * (stored with largest block first)
-			 */
-			LOCK;
-			pbuf = (struct tmp_buff *)
-					lcl_buff_list.node.next;
-			if(pbuf && pbuf->size >= size){
-				ellDelete(
-					&lcl_buff_list,
-					&pbuf->node);
-			}else
-				pbuf = NULL;
-			UNLOCK;
-
-			/* 
-			 * test again so malloc is not inside LOCKED
-			 * section
-			 */
-			if(!pbuf){
-				pbuf = (struct tmp_buff *)
-					malloc(sizeof(*pbuf)+size);
-				if(!pbuf){
-					ca_printf("%s: No Mem, Event Discarded\n",
-						__FILE__);
-					return;
-				}
-				pbuf->size = size;
-			}
-			pval = (void *) (pbuf+1);
-		}
+	if( size <= sizeof(valbuf) ){
+		pval = (void *) &valbuf;
 	}
+	else{
 
+		/*
+		 * find a preallocated block which fits
+		 * (stored with largest block first)
+		 */
+		LOCK;
+		pbuf = (struct tmp_buff *)
+				lcl_buff_list.node.next;
+		if(pbuf && pbuf->size >= size){
+			ellDelete(
+				&lcl_buff_list,
+				&pbuf->node);
+		}else
+			pbuf = NULL;
+		UNLOCK;
 
-   	status = db_get_field(	paddr,
+		/* 
+		 * test again so malloc is not inside LOCKED
+		 * section
+		 */
+		if(!pbuf){
+			pbuf = (struct tmp_buff *)
+				malloc(sizeof(*pbuf)+size);
+			if(!pbuf){
+				ca_printf("%s: No Mem, Event Discarded\n",
+					__FILE__);
+				return;
+			}
+			pbuf->size = size;
+		}
+		pval = (void *) (pbuf+1);
+	}
+	
+	status = db_get_field(	paddr,
 				monix->type,
 				pval,
 				count,

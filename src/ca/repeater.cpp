@@ -536,13 +536,13 @@ void epicsShareAPI ca_repeater ()
                  * strip register client message
                  */
                 pMsg++;
-                size -= sizeof (*pMsg);
-                if (size==0) {
+                size -= sizeof ( *pMsg );
+                if ( size==0 ) {
                     continue;
                 }
             }
         }
-        else if (size == 0) {
+        else if ( size == 0 ) {
             register_new_client ( from );
             continue;
         }

@@ -192,8 +192,8 @@ void udpiiu::repeaterRegistrationMessage ( unsigned attemptNumber )
      * starting with EPICS 3.12)
      *
      * SOLARIS will not accept a zero length message
-     * and we are just porting there for 3.12 so
-     * we will use the new protocol for 3.12
+     * and we are just porting there for 3.12 so we will use the 
+     * new protocol for 3.12
      *
      * recent versions of UCX will not accept a zero 
      * length message and we will assume that folks

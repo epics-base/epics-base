@@ -1,4 +1,4 @@
-/*	$Id$
+/*	@(#)arAccessLib.c	1.6 11/12/92
  *	Author:	Roger A. Cole
  *	Date:	03-09-90
  *
@@ -32,6 +32,7 @@
  *  .04 04-04-92 rac	add arCFChanWrite_args; handle flags for begin
  *			and end of snapshot
  *  .05 09-14-92 rac	remove use of special malloc and free routines
+ *  .06 09-30-92 rac	ignore time running backward
  *
  * make options
  *	-DNDEBUG	don't compile assert() checking
@@ -1565,9 +1566,9 @@ struct event_handler_args *pArg;/* I pointer to monitor structure */
 *	boundary.
 *---------------------------------------------------------------------------*/
 
-    if (TsCmpStampsLT(&((struct dbr_time_string *)pCaBuf)->stamp,
+    if (TsCmpStampsLE(&((struct dbr_time_string *)pCaBuf)->stamp,
 						    &pArChanDesc->timeStamp)) {
-        goto error;	/* ignore time running backward */
+        goto ignore;	/* ignore time running backward */
     }
     if (ArCDDatInfo(pArChanDesc).stamp.secPastEpoch == 0) {
 /*----------------------------------------------------------------------------
@@ -1830,9 +1831,16 @@ struct event_handler_args *pArg;/* I pointer to monitor structure */
     return OK;
 error:
     return ERROR;
+ignore:
+    return OK;
 #undef CW_NSEC
 #undef CW_SPE
 }
+
+/*+/subr**********************************************************************
+* NAME	arCFChanWrite_args
+*
+*-*/
 long
 arCFChanWrite_args(pArChanDesc, stamp, dbfType, count, pData, alStat, alSevr)
 register
@@ -1880,8 +1888,8 @@ int	alSevr;		/* I alarm severity for data */
 *	boundary.
 *---------------------------------------------------------------------------*/
 
-    if (TsCmpStampsLT(&stamp, &pArChanDesc->timeStamp))
-        goto error;	/* ignore time running backward */
+    if (TsCmpStampsLE(&stamp, &pArChanDesc->timeStamp))
+        goto ignore;	/* ignore time running backward */
     if (ArCDDatInfo(pArChanDesc).stamp.secPastEpoch == 0) {
 /*----------------------------------------------------------------------------
 * case 1
@@ -2126,7 +2134,10 @@ int	alSevr;		/* I alarm severity for data */
     return OK;
 error:
     return ERROR;
-    
+ignore:
+    return OK;
+#undef CW_NSEC
+#undef CW_SPE
 }
 
 /*+/subr**********************************************************************

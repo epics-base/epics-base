@@ -141,8 +141,7 @@ static void monitor(pstate)
     }
 
     if(strncmp(pstate->oval,pstate->val,sizeof(pstate->val))) {
-       	if(pstate->mlis.count != 0)
-             db_post_events(pstate,&(pstate->val[0]),monitor_mask|DBE_VALUE);
+        db_post_events(pstate,&(pstate->val[0]),monitor_mask|DBE_VALUE);
 	strncpy(pstate->oval,pstate->val,sizeof(pstate->val));
     }
     return;

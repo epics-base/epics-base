@@ -69,7 +69,7 @@ set CVS_RSH=/bin/ssh.exe
 
 REM    --------------- JAVA ------------------------------
 REM    Needed for java extensions
-set PATH=%PATH%;C:\j2sdk1.4.0\bin
+set PATH=%PATH%;C:\j2sdk1.4.1_01\bin
 set CLASSPATH=G:\epics\extensions\javalib
 
 REM    --------------- Exceed ----------------------------

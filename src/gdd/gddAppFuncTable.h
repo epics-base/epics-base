@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.3  1996/09/04 20:58:18  jhill
+ * changes for MS VISC++
+ *
  * Revision 1.2  1996/08/13 23:13:35  jhill
  * win NT changes
  *
@@ -43,6 +46,9 @@
  *
  *
  */
+
+#ifndef gddAppFuncTableH
+#define gddAppFuncTableH
 
 //
 // ANSI C
@@ -66,11 +72,17 @@ typedef aitUint32 gddAppFuncTableStatus;
 #define NELEMENTS(array)    (sizeof(array)/sizeof((array)[0]))
 #endif
 
+//
+// template class gddAppFuncTable<PV>
+//
 template <class PV> 
 class gddAppFuncTable {
 
 public:
-	gddAppFuncTable() : pMFuncRead(NULL), appTableNElem(0u) {}
+	gddAppFuncTable() : pMFuncRead(NULL), appTableNElem(0u) 
+	{
+	}
+
 	~gddAppFuncTable() 
 	{
 		if (this->pMFuncRead) {
@@ -85,44 +97,27 @@ public:
 
 	//
 	// installReadFunc()
-	//
+        //
+        // The 2nd parameter has type "gddAppReadFunc" which is
+        // a ptr to member function. The member function should
+        // be declared as follows:
+        //
+        // gddAppFuncTableStatus PV::memberFunction(gdd &value);
+        //
 	gddAppFuncTableStatus installReadFunc(const unsigned type, 
-			gddAppReadFunc pMFuncIn)
-	{
-		//
-		// Attempt to expand the table if the app type will not fit 
-		//
-		if (type>=this->appTableNElem) {
-			this->newTbl(type);
-			if (type>=this->appTableNElem) {
-				return S_gddAppFuncTable_noMemory;
-			}
-		}
-		this->pMFuncRead[type]=pMFuncIn;
-		return S_gddAppFuncTable_Success;
-	}
+			gddAppReadFunc pMFuncIn);
 
 	//
 	// installReadFunc()
-	//
+        //
+        // The 2nd parameter has type "gddAppReadFunc" which is
+        // a ptr to member function. The member function should
+        // be declared as follows:
+        //
+        // gddAppFuncTableStatus PV::memberFunction(gdd &value);
+        //
 	gddAppFuncTableStatus installReadFunc(const char * const pName, 
-			gddAppReadFunc pMFuncIn)
-	{
-		aitUint32 type;
-		gddStatus rc;
-
-		rc = gddApplicationTypeTable::
-			app_table.registerApplicationType (pName, type);
-		if (rc!=0 && rc!=gddErrorAlreadyDefined) {
-			printf(
-	"at gdd lib limit => read of PV attribute \"%s\" will fail\n", pName);		
-			return S_gddAppFuncTable_gddLimit;
-		}
-#		ifdef DEBUG
-			printf("installing PV attribute %s = %d\n", pName, type);		
-#		endif
-		return this->installReadFunc(type, pMFuncIn);
-	}
+			gddAppReadFunc pMFuncIn);
 
 	//
 	//
@@ -142,119 +137,5 @@ private:
 	void newTbl(unsigned neMaxType);
 };
 
-
-//
-// gddAppFuncTable<PV>::newTbl() 
-// 
-// The total number of application tags to manage should be
-// hidden from the application 
-//
-template <class PV> 
-inline void gddAppFuncTable<PV>::newTbl(unsigned newApplTypeMax) 
-{
-	gddAppReadFunc *pMNewFuncTbl;
-	unsigned maxApp;
-	unsigned i;
-
-	if (this->appTableNElem>newApplTypeMax) {
-		return;
-	}
-	maxApp = newApplTypeMax+(1u<<6u);
-#ifdef _MSC_VER
-//
-//      Right now all MS Visual C++ compilers allocate the
-//      wrong amount of memory (i.e. too little)
-//      for member function pointers,
-//      only explicit calculation via sizeof() works.
-//      For future versions this may become "if _MSC_VER < ???"...
-//
-        pMNewFuncTbl = (gddAppReadFunc *)
-                new char[sizeof(gddAppReadFunc) * maxApp];
-#else
-        pMNewFuncTbl = new gddAppReadFunc[maxApp];
-#endif
-	if (pMNewFuncTbl) {
-		for (i=0u; i<maxApp; i++) {
-			if (i<this->appTableNElem) {
-				pMNewFuncTbl[i] = this->pMFuncRead[i];
-			}
-			else {
-				//
-				// some versions of NULL include (void *) cast
-				// (so I am using vanilla zero here) 
-				//
-				pMNewFuncTbl[i] = 0; 
-			}
-		}
-		if (this->pMFuncRead) {
-			delete [] this->pMFuncRead;
-		}
-		this->pMFuncRead = pMNewFuncTbl;
-		this->appTableNElem = maxApp;
-	}
-}
-
-
-//
-// gddAppFuncTable<PV>::read()
-//
-// (g++ generates "multiply defined symbols" message unless I set this 
-// to be inline)
-//
-template <class PV> 
-inline gddAppFuncTableStatus gddAppFuncTable<PV>::read(PV &pv, gdd &value)
-{
-	gddAppFuncTableStatus status;
-
-	//
-	// if this gdd is a container then step through it
-	// and fetch all of the values inside
-	//
-	if (value.isContainer()) {
-		gddContainer *pCont = (gddContainer *) &value;
-		gddCursor curs = pCont->getCursor();
-		gdd *pItem;
-
-		status = S_gddAppFuncTable_Success;
-		for (pItem=curs.first(); pItem; pItem=curs.next())
-		{
-			status = this->read(pv, *pItem);
-			if (status) {
-				break;
-			}
-		}
-		return status;
-	}
-	return callReadFunc(pv, value);
-}
-
-//
-// gddAppFuncTable<PV>::callReadFunc()
-//
-template <class PV> 
-inline gddAppFuncTableStatus gddAppFuncTable<PV>::callReadFunc (PV &pv, gdd &value)
-{
-	unsigned type = value.applicationType();
-	gddAppReadFunc pFunc;
-
-	//
-	// otherwise call the function associated
-	// with this application type
-	//
-	type = value.applicationType();
-	if (type>=this->appTableNElem) {
-		errPrintf (S_gddAppFuncTable_badType, __FILE__,
-			__LINE__, "- large appl type code = %u\n", 
-			type);
-		return S_gddAppFuncTable_badType;
-	}
-	pFunc = this->pMFuncRead[type];
-	if (pFunc==NULL) {
-		errPrintf (S_gddAppFuncTable_badType, __FILE__,
-			__LINE__, "- ukn appl type code = %u\n", 
-			type);
-		return S_gddAppFuncTable_badType;
-	}
-	return (pv.*pFunc)(value);
-}
+#endif // gddAppFuncTableH
 

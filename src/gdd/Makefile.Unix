@@ -5,6 +5,9 @@
 # $Id$
 #
 # $Log$
+# Revision 1.12  1996/10/14 16:33:36  jba
+# Clean rule now uses rm macro. Removed . in VPATH def.
+#
 # Revision 1.11  1996/07/24 22:47:29  jhill
 # removed OPTIM_YES=-g which caused link fail
 #
@@ -66,7 +69,10 @@ INC += aitConvert.h
 INC += aitHelpers.h
 INC += dbMapper.h
 INC += gddAppTable.h
-INC += gddAppFuncTable.h
+# template class and inline member func
+INC += gddAppFuncTable.h 
+# template member func (not "inline")
+INC += gddAppFuncTable.cc 
 INC += gddApps.h
 
 DEPENDS_RULE.cc = -$(COMPILE.cc) -xM $(SRCS.cc) >> .DEPENDS

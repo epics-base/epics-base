@@ -15,7 +15,7 @@ TOP=../..
 
 include $(TOP)/configure/CONFIG
 
-ifeq ($(strip $(COMPAT_313)),YES)
+ifeq ($(findstring ,YES,$(COMPAT_313) $(COMPAT_TOOLS_313)),YES)
 SCRIPTS_HOST += $(subst ../,,$(wildcard ../*.pl)) 
 SCRIPTS_HOST += installEpics
 endif

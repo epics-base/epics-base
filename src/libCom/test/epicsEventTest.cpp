@@ -30,7 +30,7 @@ typedef struct info {
     epicsRingPointerId ring;
 }info;
 
-static void consumer(void *arg);
+extern "C" {
 
 static void consumer(void *arg)
 {
@@ -68,8 +68,6 @@ static void consumer(void *arg)
     }
 }
 
-static void producer(void *arg);
-
 static void producer(void *arg)
 {
     info *pinfo = (info *)arg;
@@ -109,6 +107,8 @@ static void producer(void *arg)
         epicsEventSignal(pinfo->event);
     }
 }
+
+} // extern "C"
 
 extern "C" void epicsEventTest(int nthreads,int verbose)
 {

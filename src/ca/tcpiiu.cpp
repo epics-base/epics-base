@@ -1482,7 +1482,7 @@ void tcpSendThread::interruptSocketSend ()
     }
 }
 
-void tcpiiu::operator delete ( void * pCadaver )
+void tcpiiu::operator delete ( void * /* pCadaver */ )
 {
     // Visual C++ .net appears to require operator delete if
     // placement operator delete is defined? I smell a ms rat

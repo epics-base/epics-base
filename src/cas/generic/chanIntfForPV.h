@@ -41,7 +41,7 @@ class casPVI;
 class casEventMask;
 class gdd;
 
-class casChannelDestroyFromPV {
+class casChannelDestroyFromPV { // X aCC 655
 public:
     virtual void postDestroyEvent () = 0;
 };

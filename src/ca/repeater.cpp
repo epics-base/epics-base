@@ -114,7 +114,6 @@ static bool makeSocket ( unsigned short port, bool reuseAddr, SOCKET * pSock )
 		struct sockaddr_in ia;
 		struct sockaddr sa;
 	} bd;
-    int flag;
 
     SOCKET sock = epicsSocketCreate ( AF_INET, SOCK_DGRAM, 0 );     
     if ( sock == INVALID_SOCKET ) {

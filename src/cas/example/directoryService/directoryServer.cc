@@ -96,7 +96,7 @@ pvExistReturn directoryServer::pvExistTest
 // directoryServer::pvExistTest()
 //
 pvExistReturn directoryServer::pvExistTest
-	( const casCtx & ctx, const char * pPVName )
+	( const casCtx & /* ctx */, const char * pPVName )
 {
 	//
 	// lifetime of id is shorter than lifetime of pName

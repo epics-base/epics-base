@@ -21,6 +21,7 @@
 #include "tsFreeList.h"
 #include "epicsMutex.h"
 #include "epicsEvent.h"
+#include "epicsSingleton.h"
 #include "db_access.h"
 
 #define epicsExportSharedSymbols
@@ -29,7 +30,7 @@
 #include "dbChannelIOIL.h"
 #include "dbPutNotifyBlocker.h"
 
-tsFreeList < dbChannelIO > dbChannelIO::freeList;
+epicsSingleton < tsFreeList < dbChannelIO > > dbChannelIO::pFreeList;
 unsigned dbChannelIO::nextIdForIO;
 
 dbChannelIO::dbChannelIO ( cacChannelNotify &notify, 

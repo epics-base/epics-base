@@ -32,12 +32,12 @@ inline void dbChannelIO::destroy ()
 
 inline void * dbChannelIO::operator new ( size_t size )
 {
-    return dbChannelIO::freeList.allocate ( size );
+    return dbChannelIO::pFreeList->allocate ( size );
 }
 
 inline void dbChannelIO::operator delete ( void *pCadaver, size_t size )
 {
-    dbChannelIO::freeList.release ( pCadaver, size );
+    dbChannelIO::pFreeList->release ( pCadaver, size );
 }
 
 inline const char *dbChannelIO::pName () const 

@@ -23,6 +23,7 @@
 #include "epicsEvent.h"
 #include "epicsTime.h"
 #include "tsFreeList.h"
+#include "epicsSingleton.h"
 #include "errMdef.h"
 
 #include "cacIO.h"
@@ -34,7 +35,7 @@
 #include "dbChannelIOIL.h"
 #include "dbPutNotifyBlocker.h"
 
-tsFreeList < dbPutNotifyBlocker, 1024, 0 > dbPutNotifyBlocker::freeList;
+epicsSingleton < tsFreeList < dbPutNotifyBlocker, 1024 > > dbPutNotifyBlocker::pFreeList;
 
 dbPutNotifyBlocker::dbPutNotifyBlocker ( dbChannelIO &chanIn ) :
     pNotify ( 0 )

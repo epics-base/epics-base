@@ -66,7 +66,7 @@ private:
     unsigned long count;
     unsigned id;
     dbSubscriptionIO * isSubscription ();
-    static epicsSingleton < tsFreeList < dbSubscriptionIO > > freeList;
+    static epicsSingleton < tsFreeList < dbSubscriptionIO > > pFreeList;
     friend void dbSubscriptionEventCallback ( void *pPrivate, struct dbAddr *paddr,
 	    int eventsRemaining, struct db_field_log *pfl );
 	dbSubscriptionIO ( const dbSubscriptionIO & );
@@ -117,7 +117,7 @@ private:
     void ioShow ( const ioid &, unsigned level ) const;
     short nativeType () const;
     unsigned long nativeElementCount () const;
-    static epicsSingleton < tsFreeList < dbChannelIO > > freeList;
+    static epicsSingleton < tsFreeList < dbChannelIO > > pFreeList;
     static unsigned nextIdForIO;
 	dbChannelIO ( const dbChannelIO & );
 	dbChannelIO & operator = ( const dbChannelIO & );

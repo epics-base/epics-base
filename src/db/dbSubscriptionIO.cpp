@@ -20,6 +20,7 @@
 #include "epicsMutex.h"
 #include "epicsEvent.h"
 #include "tsFreeList.h"
+#include "epicsSingleton.h"
 
 #include "cacIO.h"
 #include "db_access.h" // need to eliminate this
@@ -30,7 +31,7 @@
 #include "dbChannelIOIL.h"
 #include "db_access_routines.h"
 
-tsFreeList < dbSubscriptionIO > dbSubscriptionIO::freeList;
+epicsSingleton < tsFreeList < dbSubscriptionIO > > dbSubscriptionIO::pFreeList;
 
 dbSubscriptionIO::dbSubscriptionIO ( dbServiceIO &serviceIO, dbChannelIO &chanIO, 
     dbAddr &addr, cacStateNotify &notifyIn, 
@@ -79,12 +80,12 @@ void dbSubscriptionIO::channelDeleteException ()
 
 void * dbSubscriptionIO::operator new ( size_t size )
 {
-    return dbSubscriptionIO::freeList.allocate ( size );
+    return dbSubscriptionIO::pFreeList->allocate ( size );
 }
 
 void dbSubscriptionIO::operator delete ( void *pCadaver, size_t size )
 {
-    dbSubscriptionIO::freeList.release ( pCadaver, size );
+    dbSubscriptionIO::pFreeList->release ( pCadaver, size );
 }
 
 extern "C" void dbSubscriptionEventCallback ( void *pPrivate, struct dbAddr * /* paddr */,

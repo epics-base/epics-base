@@ -36,7 +36,7 @@ private:
     epicsEvent block;
     cacWriteNotify * pNotify;
     dbSubscriptionIO * isSubscription ();
-    static epicsSingleton < tsFreeList < dbPutNotifyBlocker > > freeList;
+    static epicsSingleton < tsFreeList < dbPutNotifyBlocker > > pFreeList;
     friend void putNotifyCompletion ( putNotify *ppn );
 	dbPutNotifyBlocker ( const dbPutNotifyBlocker & );
 	dbPutNotifyBlocker & operator = ( const dbPutNotifyBlocker & );
@@ -44,12 +44,12 @@ private:
 
 inline void * dbPutNotifyBlocker::operator new ( size_t size )
 {
-    return dbPutNotifyBlocker::freeList.allocate ( size );
+    return dbPutNotifyBlocker::pFreeList->allocate ( size );
 }
 
 inline void dbPutNotifyBlocker::operator delete ( void *pCadaver, size_t size )
 {
-    dbPutNotifyBlocker::freeList.release ( pCadaver, size );
+    dbPutNotifyBlocker::pFreeList->release ( pCadaver, size );
 }
 
 #endif // ifndef dbPutNotifyBlockerh

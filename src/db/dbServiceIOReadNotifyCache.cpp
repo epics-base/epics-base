@@ -1,6 +1,12 @@
 
+/*
+ * $Id$
+ * Auther Jeff Hill
+ */
+
 #include "epicsMutex.h"
 #include "tsFreeList.h"
+#include "epicsSingleton.h"
 
 #include "cacIO.h"
 #include "cadef.h" // this can be eliminated when the callbacks use the new interface

@@ -78,7 +78,7 @@ template <class T, class ID> class resTableIter;
 // located with a hash key of type ID.
 //
 // NOTES: 
-// 1)   class T _must_ derive from class ID and also from class tsSLNode<T>
+// 1)   class T must derive from class ID and also from class tsSLNode<T>
 //
 // 2)   If the "resTable::show (unsigned level)" member function is called then 
 //      class T must also implement a "show (unsigned level)" member function which
@@ -93,19 +93,7 @@ template <class T, class ID> class resTableIter;
 //          // ID to hash index convert (see examples below)
 //          resTableIndex hash (unsigned nBitsHashIndex) const; 
 //
-// 4)   Classes of type ID must provide the following member functions
-//      (which will usually be static const inline for improved performance).
-//      They determine the minimum and maximum number of elements in the hash 
-//      table. If minIndexBitWidth() == maxIndexBitWidth() then the hash table
-//      size is determined at compile time
-//
-//          inline static const unsigned maxIndexBitWidth ();
-//          inline static const unsigned minIndexBitWidth ();
-//
-//          max number of hash table elements = 1 << maxIndexBitWidth();
-//          min number of hash table elements = 1 << minIndexBitWidth();
-//
-// 5)   Storage for identifier of type ID must persist until the item of type 
+// 4)   Storage for identifier of type ID must persist until the item of type 
 //      T is deleted from the resTable
 //
 template <class T, class ID>
@@ -123,24 +111,23 @@ public:
     void traverse ( void (T::*pCB)() );
     void traverseConst ( void (T::*pCB)() const ) const;
     unsigned numEntriesInstalled () const;
-    //
-    // exceptions thrown
-    //
-    class epicsShareClass dynamicMemoryAllocationFailed {};
-    class epicsShareClass sizeExceedsMaxIndexWidth {};
+    void setTableSize ( const unsigned newTableSize );
 private:
     tsSLList < T > * pTable;
     unsigned nextSplitIndex;
     unsigned hashIxMask;
     unsigned hashIxSplitMask;
+    unsigned nBitsHashIxSplitMask;
+    unsigned logBaseTwoTableSize;
     unsigned nInUse;
     resTableIndex hash ( const ID & idIn ) const;
     T * find ( tsSLList<T> & list, const ID & idIn ) const;
-    T * findDelete ( tsSLList<T> & list, const ID & idIn );
     void splitBucket ();
     unsigned tableSize () const;
+    bool setTableSizePrivate ( unsigned logBaseTwoTableSize );
     resTable ( const resTable & );
     resTable & operator = ( const resTable & );
+    static unsigned resTableBitMask ( const unsigned nBits );
     friend class resTableIter<T,ID>;
 };
 
@@ -156,9 +143,9 @@ public:
     T * next ();
     T * operator () ();
 private:
-    tsSLIter<T>             iter;
-    unsigned                index;
-    const resTable<T,ID>    &table;
+    tsSLIter<T> iter;
+    unsigned index;
+    const resTable<T,ID> &table;
 };
 
 //
@@ -194,8 +181,6 @@ public:
     bool operator == (const intId &idIn) const;
     resTableIndex hash () const;
     const T getId() const;
-    static const unsigned maxIndexBitWidth ();
-    static const unsigned minIndexBitWidth ();
 protected:
     T id;
 };
@@ -219,9 +204,11 @@ class chronIntIdResTable : public resTable<ITEM, chronIntId> {
 public:
     chronIntIdResTable ();
     virtual ~chronIntIdResTable ();
-    void add (ITEM &item);
+    void add ( ITEM & item );
 private:
     unsigned allocId;
+	chronIntIdResTable ( const chronIntIdResTable & );
+	chronIntIdResTable & operator = ( const chronIntIdResTable & );
 };
 
 //
@@ -236,6 +223,7 @@ public:
     chronIntIdRes ();
 private:
     void setId (unsigned newId);
+	chronIntIdRes (const chronIntIdRes & );
 };
 
 //
@@ -252,12 +240,6 @@ public:
     bool operator == (const stringId &idIn) const;
     const char * resourceName() const; // return the pointer to the string
     void show (unsigned level) const;
-    static const unsigned maxIndexBitWidth ();
-    static const unsigned minIndexBitWidth ();
-    //
-    // exceptions
-    //
-    class epicsShareClass dynamicMemoryAllocationFailed {};
 private:
     stringId & operator = ( const stringId & );
     stringId ( const stringId &);
@@ -274,21 +256,15 @@ private:
 // resTable::resTable ()
 //
 template <class T, class ID>
-resTable<T,ID>::resTable () :
-    nextSplitIndex ( 0 ), 
-    hashIxMask ( ( 1 << ID::minIndexBitWidth() ) - 1 ),
-    hashIxSplitMask ( ( 1 << ( ID::minIndexBitWidth() + 1 ) ) - 1 ),
-    nInUse ( 0 )
+inline resTable<T,ID>::resTable () :
+	pTable ( 0 ), nextSplitIndex ( 0 ), hashIxMask ( 0 ), 
+        hashIxSplitMask ( 0 ), nBitsHashIxSplitMask ( 0 ),
+        logBaseTwoTableSize ( 0 ), nInUse ( 0 ) {}
+
+template <class T, class ID>
+inline unsigned resTable<T,ID>::resTableBitMask ( const unsigned nBits )
 {
-    unsigned newTableSize = this->hashIxSplitMask + 1;
-    this->pTable = ( tsSLList<T> * ) 
-        operator new ( newTableSize * sizeof ( tsSLList<T> ) );
-    if ( ! this->pTable ) {
-        throwWithLocation ( dynamicMemoryAllocationFailed () );
-    }
-    for ( unsigned i = 0u; i < newTableSize; i++ ) {
-        new ( &this->pTable[i] ) tsSLList<T>;
-    }
+    return ( 1 << nBits ) - 1;
 }
 
 //
@@ -297,22 +273,48 @@ resTable<T,ID>::resTable () :
 // remove a res from the resTable
 //
 template <class T, class ID>
-inline T * resTable<T,ID>::remove ( const ID &idIn )
+T * resTable<T,ID>::remove ( const ID &idIn )
 {
-    tsSLList<T> &list = this->pTable[ this->hash(idIn) ];
-    return this->findDelete ( list, idIn );
+    if ( this->pTable ) {
+        // search list for idIn and remove the first match
+        tsSLList<T> & list = this->pTable [ this->hash(idIn) ];
+        tsSLIter <T> pItem = list.firstIter ();
+        T *pPrev = 0;
+        while ( pItem.valid () ) {
+            const ID & id = *pItem;
+            if ( id == idIn ) {
+                if ( pPrev ) {
+                    list.remove ( *pPrev );
+                }
+                else {
+                    list.get ();
+                }
+                this->nInUse--;
+                break;
+            }
+            pPrev = pItem.pointer ();
+            pItem++;
+        }
+        return pItem.pointer ();
+    }
+    else {
+        return 0;
+    }
 }
 
 //
 // resTable::lookup ()
 //
-// find an res in the resTable
-//
 template <class T, class ID>
 inline T * resTable<T,ID>::lookup ( const ID &idIn ) const
 {
-    tsSLList<T> &list = this->pTable[this->hash(idIn)];
-    return this->find (list, idIn);
+    if ( this->pTable ) {
+        tsSLList<T> & list = this->pTable [ this->hash ( idIn ) ];
+        return this->find ( list, idIn );
+    }
+    else {
+        return 0;
+    }
 }
 
 //
@@ -334,15 +336,15 @@ inline resTableIndex resTable<T,ID>::hash ( const ID & idIn ) const
 //
 template <class T, class ID>
 void resTable<T,ID>::show ( unsigned level ) const
-{
-    unsigned N = this->tableSize ();
+{    
+    const unsigned N = this->tableSize ();
 
     printf ( "%u bucket hash table with %u items of type %s installed\n", 
         N, this->nInUse, typeid(T).name() );
 
-    {
+    if ( N ) {
         tsSLList<T> * pList = this->pTable;
-        while ( pList < &this->pTable[N] ) {
+        while ( pList < & this->pTable[N] ) {
             tsSLIter<T> pItem = pList->firstIter ();
             while ( pItem.valid () ) {
                 tsSLIter<T> pNext = pItem;
@@ -355,12 +357,11 @@ void resTable<T,ID>::show ( unsigned level ) const
     }
 
     if ( level >=1u ) {
-        tsSLList <T> *pList = this->pTable;
         double X = 0.0;
         double XX = 0.0;
         unsigned maxEntries = 0u;
         for ( unsigned i = 0u; i < N; i++ ) {
-            tsSLIter<T> pItem = pList[i].firstIter ();
+            tsSLIter<T> pItem = this->pTable[i].firstIter ();
             unsigned count = 0;
             while ( pItem.valid () ) {
                 if ( level >= 3u ) {
@@ -389,14 +390,34 @@ void resTable<T,ID>::show ( unsigned level ) const
     }
 }
 
+// self test
 template <class T, class ID>
 void resTable<T,ID>::verify () const
 {
-    unsigned N = this->tableSize ();
+    const unsigned N = this->tableSize ();
+
+    if ( this->pTable ) {
+        assert ( this->nextSplitIndex <= this->hashIxMask + 1 );
+        assert ( this->hashIxMask );
+        assert ( this->hashIxMask == this->hashIxSplitMask >> 1 );
+        assert ( this->hashIxSplitMask );
+        assert ( this->nBitsHashIxSplitMask );
+        assert ( resTableBitMask ( this->nBitsHashIxSplitMask ) 
+                        == this->hashIxSplitMask );
+        assert ( this->logBaseTwoTableSize );
+        assert ( this->nBitsHashIxSplitMask <= this->logBaseTwoTableSize );
+    }
+    else {
+        assert ( this->nextSplitIndex == 0 );
+        assert ( this->hashIxMask == 0 );
+        assert ( this->hashIxSplitMask == 0 );
+        assert ( this->nBitsHashIxSplitMask == 0 );
+        assert ( this->logBaseTwoTableSize == 0 );
+    }
+
     unsigned total = 0u;
-    tsSLList <T> *pList = this->pTable;
     for ( unsigned i = 0u; i < N; i++ ) {
-        tsSLIter<T> pItem = pList[i].firstIter ();
+        tsSLIter<T> pItem = this->pTable[i].firstIter ();
         unsigned count = 0;
         while ( pItem.valid () ) {
             resTableIndex index = this->hash ( *pItem );
@@ -416,17 +437,15 @@ void resTable<T,ID>::verify () const
 template <class T, class ID>
 void resTable<T,ID>::traverse ( void (T::*pCB)() ) 
 {
-    tsSLList<T> * pList = this->pTable;
-    unsigned N = this->tableSize ();
-    while ( pList < &this->pTable[N] ) {
-        tsSLIter<T> pItem = pList->firstIter ();
+    const unsigned N = this->tableSize ();
+    for ( unsigned i = 0u; i < N; i++ ) {
+        tsSLIter<T> pItem = this->pTable[i].firstIter ();
         while ( pItem.valid () ) {
             tsSLIter<T> pNext = pItem;
             pNext++;
             ( pItem.pointer ()->*pCB ) ();
             pItem = pNext;
         }
-        pList++;
     }
 }
 
@@ -436,19 +455,16 @@ void resTable<T,ID>::traverse ( void (T::*pCB)() )
 template <class T, class ID>
 void resTable<T,ID>::traverseConst ( void (T::*pCB)() const ) const
 {
-    const tsSLList<T> *pList;
-
-    pList = this->pTable;
-    unsigned N = this->tableSize ();
-    while ( pList < &this->pTable[N] ) {
-        tsSLIterConst<T> pItem = pList->firstIter ();
+    const unsigned N = this->tableSize ();
+    for ( unsigned i = 0u; i < N; i++ ) {
+        const tsSLList < T > & table = this->pTable[i];
+        tsSLIterConst<T> pItem = table.firstIter ();
         while ( pItem.valid () ) {
             tsSLIterConst<T> pNext = pItem;
             pNext++;
             ( pItem.pointer ()->*pCB ) ();
             pItem = pNext;
         }
-        pList++;
     }
 }
 
@@ -459,9 +475,95 @@ inline unsigned resTable<T,ID>::numEntriesInstalled () const
 }
 
 template <class T, class ID>
-unsigned resTable<T,ID>::tableSize () const
+inline unsigned resTable<T,ID>::tableSize () const
 {
-    return ( this->hashIxMask + 1 ) + this->nextSplitIndex;
+    if ( this->pTable ) {
+        return ( this->hashIxMask + 1 ) + this->nextSplitIndex;
+    }
+    else {
+        return 0;
+    }
+}
+
+// it will be more efficent to call this once prior to installing
+// the first entry
+template <class T, class ID>
+void resTable<T,ID>::setTableSize ( const unsigned newTableSize )
+{
+    if ( newTableSize == 0u ) {
+        return;
+    }
+
+	//
+	// count the number of bits in newTableSize and round up 
+    // to the next power of two
+	//
+    unsigned newMask = newTableSize - 1;
+	unsigned nbits;
+	for ( nbits = 0; nbits < sizeof (newTableSize) * CHAR_BIT; nbits++ ) {
+		unsigned nBitsMask = resTableBitMask ( nbits ); 
+		if ( ( newMask & ~nBitsMask ) == 0){
+			break;
+		}
+	}
+    setTableSizePrivate ( nbits );
+}
+
+template <class T, class ID>
+bool resTable<T,ID>::setTableSizePrivate ( unsigned logBaseTwoTableSize )
+{
+    // dont shrink
+    if ( this->logBaseTwoTableSize >= logBaseTwoTableSize ) {
+        return true;
+    }
+
+    // dont allow ridiculously small tables
+    if ( logBaseTwoTableSize < 4 ) {
+        logBaseTwoTableSize = 4;
+    }
+
+    const unsigned newTableSize = 1 << logBaseTwoTableSize;
+    const unsigned oldTableSize = this->pTable ? 1 << this->logBaseTwoTableSize : 0;
+    const unsigned oldTableOccupiedSize = this->tableSize ();
+
+    tsSLList<T> * pNewTable = ( tsSLList<T> * ) 
+        operator new ( newTableSize * sizeof ( tsSLList<T> ), std::nothrow );
+    if ( ! pNewTable ) {
+        if ( ! this->pTable ) {
+		    throw std::bad_alloc();
+        }
+        return false;
+    }
+
+    // run the constructors using placement new
+	unsigned i;
+    for ( i = 0u; i < oldTableOccupiedSize; i++ ) {
+        new ( &pNewTable[i] ) tsSLList<T> ( this->pTable[i] );
+    }
+    for ( i = oldTableOccupiedSize; i < newTableSize; i++ ) {
+        new ( &pNewTable[i] ) tsSLList<T>;
+    }
+    // Run the destructors explicitly. Currently this destructor is a noop.
+    // The Tornado II compiler and RedHat 6.2 will not compile ~tsSLList<T>() but 
+    // since its a NOOP we can find an ugly workaround
+#   if ! defined (__GNUC__) || __GNUC__ > 2 || ( __GNUC__ == 2 && __GNUC_MINOR__ >= 92 )
+        for ( i = 0; i < oldTableSize; i++ ) {
+            this->pTable[i].~tsSLList<T>();
+        }
+#   endif
+
+    if ( ! this->pTable ) {
+        this->hashIxSplitMask = resTableBitMask ( logBaseTwoTableSize );
+        this->nBitsHashIxSplitMask = logBaseTwoTableSize;
+        this->hashIxMask = this->hashIxSplitMask >> 1;
+        this->nextSplitIndex = 0;
+    }
+
+    operator delete ( this->pTable );
+    this->pTable = pNewTable;
+    this->logBaseTwoTableSize = logBaseTwoTableSize;
+
+    return true;
 }
 
 template <class T, class ID>
@@ -471,34 +573,13 @@ void resTable<T,ID>::splitBucket ()
     // (this results in only a memcpy overhead, but 
     // no hashing or entry redistribution)
     if ( this->nextSplitIndex > this->hashIxMask ) {
-        unsigned oldTableSize = this->hashIxSplitMask + 1;
-        unsigned newTableSize = oldTableSize * 2;
-        tsSLList<T> *pNewTable = ( tsSLList<T> * ) 
-            operator new ( newTableSize * sizeof ( tsSLList<T> ), std::nothrow );
-        if ( ! pNewTable ) {
+        bool success = this->setTableSizePrivate ( this->nBitsHashIxSplitMask + 1 );
+        if ( ! success ) {
             return;
         }
-        unsigned oldTableOccupiedSize = ( this->hashIxMask + 1 ) + this->nextSplitIndex;
-        // run the constructors using placement new
-        unsigned i;
-        for ( i = 0u; i < oldTableOccupiedSize; i++ ) {
-            new ( &pNewTable[i] ) tsSLList<T> ( this->pTable[i] );
-        }
-        for ( i = oldTableOccupiedSize; i < newTableSize; i++ ) {
-            new ( &pNewTable[i] ) tsSLList<T>;
-        }
-        // Run the destructors explicitly. Currently this destructor is a noop.
-        // The Tornado II compiler and RedHat 6.2 will not compile ~tsSLList<T>() but 
-        // since its a NOOP we can find an ugly workaround :-(
-#       if ! defined (__GNUC__) || __GNUC__ > 2 || ( __GNUC__ == 2 && __GNUC_MINOR__ >= 92 )
-            for ( i = 0; i < oldTableSize; i++ ) {
-                this->pTable[i].~tsSLList<T>();
-            }
-#       endif
-        operator delete ( this->pTable );
-        this->pTable = pNewTable;
-        this->hashIxMask = this->hashIxSplitMask;
-        this->hashIxSplitMask = newTableSize - 1;
+        this->nBitsHashIxSplitMask += 1;
+        this->hashIxSplitMask = resTableBitMask ( this->nBitsHashIxSplitMask );
+        this->hashIxMask = this->hashIxSplitMask >> 1;
         this->nextSplitIndex = 0;
     }
 
@@ -507,9 +588,8 @@ void resTable<T,ID>::splitBucket ()
     this->nextSplitIndex++;
     T *pItem = tmp.get();
     while ( pItem ) {
-        resTableIndex index = this->hash(*pItem);
-        tsSLList<T> &list = this->pTable[index];
-        list.add ( *pItem );
+        resTableIndex index = this->hash ( *pItem );
+        this->pTable[index].add ( *pItem );
         pItem = tmp.get();
     }
 }
@@ -517,13 +597,18 @@ void resTable<T,ID>::splitBucket ()
 //
 // add a res to the resTable
 //
-// (bad status on failure)
-//
 template <class T, class ID>
 int resTable<T,ID>::add ( T &res )
 {
-    if ( this->nInUse > this->tableSize() ) {
+    if ( ! this->pTable ) {
+        this->setTableSizePrivate ( 10 );
+    }
+    else if ( this->nInUse >= this->tableSize() ) {
         this->splitBucket ();
+        tsSLList<T> &list = this->pTable[this->hash(res)];
+        if ( this->find ( list, res ) != 0 ) {
+            return -1;
+        }
     }
     tsSLList<T> &list = this->pTable[this->hash(res)];
     if ( this->find ( list, res ) != 0 ) {
@@ -551,40 +636,6 @@ T *resTable<T,ID>::find ( tsSLList<T> &list, const ID &idIn ) const
         if ( id == idIn ) {
             break;
         }
-        pItem++;
-    }
-    return pItem.pointer ();
-}
-
-//
-// findDelete
-// searches from where the iterator points to the
-// end of the list for idIn
-//
-// iterator points to the item found upon return
-// (or NULL if nothing matching was found)
-//
-// removes the item if it finds it
-//
-template <class T, class ID>
-T *resTable<T,ID>::findDelete ( tsSLList<T> &list, const ID &idIn )
-{
-    tsSLIter <T> pItem = list.firstIter ();
-    T *pPrev = 0;
-
-    while ( pItem.valid () ) {
-        const ID &id = *pItem;
-        if ( id == idIn ) {
-            if ( pPrev ) {
-                list.remove ( *pPrev );
-            }
-            else {
-                list.get ();
-            }
-            this->nInUse--;
-            break;
-        }
-        pPrev = pItem.pointer ();
         pItem++;
     }
     return pItem.pointer ();
@@ -627,7 +678,9 @@ inline resTable<T,ID> & resTable<T,ID>::operator = ( const resTable & )
 //
 template <class T, class ID>
 inline resTableIter<T,ID>::resTableIter (const resTable<T,ID> &tableIn) : 
-    iter ( tableIn.pTable[0].firstIter () ), index (1), table ( tableIn ) {} 
+    iter ( tableIn.pTable ? tableIn.pTable[0].firstIter () : 
+            tsSLList<T>::invalidIter() ), 
+    index (1), table ( tableIn ) {} 
 
 //
 // resTableIter<T,ID>::next ()
@@ -675,6 +728,17 @@ inline chronIntId::chronIntId ( const unsigned &idIn ) :
 template <class ITEM>
 inline chronIntIdResTable<ITEM>::chronIntIdResTable () : 
     resTable<ITEM, chronIntId> (), allocId(1u) {}
+
+template <class ITEM>
+inline chronIntIdResTable<ITEM>::chronIntIdResTable ( const chronIntIdResTable<ITEM> & ) :
+	resTable<ITEM, chronIntId> (), allocId(1u) {}
+
+template <class ITEM>
+inline chronIntIdResTable<ITEM> & chronIntIdResTable<ITEM>::
+	operator = ( const chronIntIdResTable<ITEM> & ) 
+{
+	return *this;
+}
 
 //
 // chronIntIdResTable<ITEM>::~chronIntIdResTable()
@@ -753,25 +817,6 @@ inline const T intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::getId () const // X aCC 
 }
 
 //
-// const unsigned intId::minIndexBitWidth ()
-//
-template <class T, unsigned MIN_INDEX_WIDTH, unsigned MAX_ID_WIDTH>
-inline const unsigned intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::minIndexBitWidth () // X aCC 361
-{
-    return MIN_INDEX_WIDTH;
-}
-
-
-//
-//  const unsigned intId::maxIndexBitWidth ()
-//
-template <class T, unsigned MIN_INDEX_WIDTH, unsigned MAX_ID_WIDTH>
-inline const unsigned intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::maxIndexBitWidth () // X aCC 361
-{
-    return sizeof (resTableIndex) * CHAR_BIT;
-}
-
-//
 // integerHash()
 //
 // converts any integer into a hash table index
@@ -845,22 +890,6 @@ inline const char * stringId::resourceName () const
 static const unsigned stringIdMinIndexWidth = CHAR_BIT;
 static const unsigned stringIdMaxIndexWidth = sizeof ( unsigned );
 
-//
-// const unsigned stringId::minIndexBitWidth ()
-//
-inline const unsigned stringId::minIndexBitWidth ()
-{
-    return stringIdMinIndexWidth;
-}
-
-//
-// const unsigned stringId::maxIndexBitWidth ()
-//
-inline const unsigned stringId::maxIndexBitWidth ()
-{
-    return stringIdMaxIndexWidth;
-}
-
 #ifdef instantiateRecourceLib
 
 //
@@ -877,7 +906,7 @@ stringId::stringId (const char * idIn, allocationType typeIn) :
             memcpy ((void *)this->pStr, idIn, nChars);
         }
         else {
-            throwWithLocation ( dynamicMemoryAllocationFailed () );
+			throw std::bad_alloc();
         }
     }
     else {

@@ -1,4 +1,4 @@
-/* bb902_driver.c */
+/* drvBb902.c */
 /* share/src/drv $Id$ */
 /*
  * subroutines that are used to interface to the binary output cards
@@ -34,6 +34,7 @@
  *                              to read out raw values on card if level
  *                              > 0.
  * .03	08-10-92	joh	made number of cards runtime configurable 
+ * .04	08-25-92	mrk	made masks a macro
  *				 
  */
 
@@ -49,7 +50,37 @@ static char SccsId[] = "$Id$ ";
 #include <vxWorks.h>
 #include <vme.h>
 #include <module_types.h>
+#include <drvSup.h>
+
+static long report();
+static long init();
 
+struct {
+        long    number;
+        DRVSUPFUN       report;
+        DRVSUPFUN       init;
+} drvBb902={
+        2,
+        report,
+        init};
+
+static long report(level)
+    int level;
+{
+    register int i;
+
+    bb902_io_report(level);
+    return(0);
+}
+
+static long init()
+{
+    int status;
+
+    bb902_driver_init();
+    return(0);
+}
+
 #define MAX_BB_BO_CARDS (bo_num_cards[BB902])
 
 /* Burr-Brown 902 binary output memory structure */
@@ -153,13 +184,13 @@ register unsigned int	*pval;
 	*pval = (pbo_bb902s[card]->high_value << 16)	/* high */
 	+ pbo_bb902s[card]->low_value;		/* low */
 }
-
+
+#define masks(K) ((1<<K))
 void bb902_io_report(level)
  short int level;
 {
    register short i,j,k,l,m,num_chans;
    int jval,kval,lval,mval;
-   extern masks[];
 
    for (i = 0; i < MAX_BB_BO_CARDS; i++){
 	if (pbo_bb902s[i]){
@@ -169,25 +200,25 @@ void bb902_io_report(level)
                for(j=0,k=1,l=2,m=3;j < num_chans,k < num_chans, l < num_chans,m < num_chans;
                    j+=IOR_MAX_COLS,k+= IOR_MAX_COLS,l+= IOR_MAX_COLS,m += IOR_MAX_COLS){
         	if(j < num_chans){
-                        bb902_read(i,masks[j],&jval);
+                        bb902_read(i,masks(j),&jval);
                  	if (jval != 0) 
                   		 jval = 1;
                          printf("Chan %d = %x\t ",j,jval);
                 }  
          	if(k < num_chans){
-                        bb902_read(i,masks[k],&kval);
+                        bb902_read(i,masks(k),&kval);
                         if (kval != 0) 
                         	kval = 1;
                         	printf("Chan %d = %x\t ",k,kval);
                 }
                 if(l < num_chans){
-                        bb902_read(i,masks[l],&lval);
+                        bb902_read(i,masks(l),&lval);
                 	if (lval != 0) 
                         	lval = 1;
                 	printf("Chan %d = %x \t",l,lval);
                  }
                   if(m < num_chans){
-                        bb902_read(i,masks[m],&mval);
+                        bb902_read(i,masks(m),&mval);
                  	if (mval != 0) 
                         	mval = 1;
                  	printf("Chan %d = %x \n",m,mval);

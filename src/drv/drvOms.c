@@ -102,7 +102,7 @@ static long report(level)
 static long init()
 {
     int status;
-
+    oms_driver_init();
     return(0);
 }
 

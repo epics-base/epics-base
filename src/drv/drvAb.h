@@ -1,5 +1,5 @@
-/* ab_driver.h */
-/*share/src/drv @(#)ab_driver.h	1.2     6/7/91 */
+/* drvAb.h */
+/*share/src/drv $Id$ */
 /* header file for the Allen-Bradley Remote Serial IO
  *
  * Author:	Bob Dalesio
@@ -34,6 +34,7 @@
  *				added bit to config table for attempting 
  *				initialization
  * .03	01-30-90	lrd	add plc/adapter distinction
+ * .04  03-03-92        mrk     added defs for Type E,T,R,S Tcs
  *
  */
 /* NOTES:							
@@ -280,6 +281,14 @@ struct	ab1771ife_read {
 #define K_DGC   3
 #define J_DGF   4
 #define J_DGC   5
+#define E_DGF   6
+#define E_DGC   7
+#define T_DGF   8
+#define T_DGC   9
+#define R_DGF   10
+#define R_DGC   11
+#define S_DGF   12
+#define S_DGC   13
 
 
 /* xxxxxxxCxxxxxxxx - Conversion into degrees F or C */

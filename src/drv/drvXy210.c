@@ -36,6 +36,8 @@
  *                              xy210_io_report the ability to read raw
  *                              values from card if level > 1  
  * .05	08-10-92	joh	merged include file
+ * .06	08-25-92	mrk	made masks a macro
+ * .07	08-25-92	mrk	replaced bi_driver by xy210_driver
  */
 
 /*
@@ -49,6 +51,34 @@
 #include <vxWorks.h>
 #include <vme.h>
 #include <module_types.h>
+#include <drvSup.h>
+
+static long report();
+static long init();
+
+struct {
+        long    number;
+        DRVSUPFUN       report;
+        DRVSUPFUN       init;
+} drvXy210={
+        2,
+        report,
+        init};
+
+static long report(level)
+    int level;
+{
+    xy210_io_report(level);
+    return(0);
+}
+
+static long init()
+{
+
+    xy210_driver_init();
+    return(0);
+}
+
 
 static char SccsId[] = "$Id$\t$Date$";
 
@@ -137,14 +167,13 @@ register unsigned int	*prval;
                        
 	return (0);
 }
- 
-
+
+#define masks(K) ((1<<K))
 void xy210_io_report(level)
   short int level;
  { 
    register short i,j,k,l,m,num_chans;
    unsigned int jval,kval,lval,mval;
-   extern long masks[];
    struct bi_xy210        *pbi_xy210;
    int bimode;
    int status;
@@ -160,7 +189,7 @@ void xy210_io_report(level)
                for(j=0,k=1,l=2,m=3;j < num_chans,k < num_chans, l < num_chans,m < num_chans;
                    j+=IOR_MAX_COLS,k+= IOR_MAX_COLS,l+= IOR_MAX_COLS,m += IOR_MAX_COLS){
         	if(j < num_chans){
-                        status = bi_driver(i,masks[j],XY210,&jval);
+                        status = xy210_driver(i,masks(j),XY210,&jval);
                  	if (jval != 0) 
                   		 jval = 1; 
 			if(status >= 0)
@@ -169,7 +198,7 @@ void xy210_io_report(level)
 				printf("Driver error for channel %d \n",j);  
 		}              
          	if(k < num_chans){
-                        status =  bi_driver(i,masks[k],XY210,&kval);
+                        status =  xy210_driver(i,masks(k),XY210,&kval);
                         if (kval != 0) 
                         	kval = 1; 
 			if(status >= 0)
@@ -178,7 +207,7 @@ void xy210_io_report(level)
 				printf("Driver error for channel %d \n",k);  
                 }
                 if(l < num_chans){
-                        status = bi_driver(i,masks[l],XY210,&lval);
+                        status = xy210_driver(i,masks(l),XY210,&lval);
                 	if (lval != 0) 
                         	lval = 1; 
 			if(status >= 0)
@@ -187,7 +216,7 @@ void xy210_io_report(level)
 				printf("Driver error for channel %d \n",l);  
                  }
                 if(m < num_chans){
-                        status = bi_driver(i,masks[m],XY210,&mval);
+                        status = xy210_driver(i,masks(m),XY210,&mval);
                  	if (mval != 0) 
                         	mval = 1; 
 			if(status >= 0)

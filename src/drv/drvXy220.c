@@ -36,6 +36,7 @@
  * .02	02-03-92	bg	Gave xy220_io_report the ability to 
  *				read raw values from card if level > 1.
  * .03	08-10-92	joh	merged potions of bo_driver.h
+ * .04	08-25-92	mrk	made masks a macro
  */
 
 static char SccsId[] = "$Id$\t$Date$";
@@ -50,6 +51,33 @@ static char SccsId[] = "$Id$\t$Date$";
 #include <vxWorks.h>
 #include <vme.h>
 #include "module_types.h"
+#include <drvSup.h>
+
+static long report();
+static long init();
+
+struct {
+        long    number;
+        DRVSUPFUN       report;
+        DRVSUPFUN       init;
+} drvXy220={
+        2,
+        report,
+        init};
+static long report(level)
+    int level;
+{
+    xy220_io_report(level);
+    return(0);
+}
+
+static long init()
+{
+
+    xy220_driver_init();
+    return(0);
+}
+
 
 #define XY_LED          0x3     /* set the Xycom status LEDs to OK */
 #define XY_SOFTRESET    0x10    /* reset the IO card */
@@ -166,7 +194,8 @@ register unsigned int 		*pval;
         return(0);
 
 }
-
+
+#define masks(K) ((1<<K))
 /*
  *   XY220_IO_REPORT 
  *
@@ -178,7 +207,6 @@ void xy220_io_report(level)
 {
    register short i,j,k,l,m,num_chans;
    int jval,kval,lval,mval;
-   extern masks[];
 
    for (i = 0; i < MAX_XY220_BO_CARDS; i++){
 	if (pbo_xy220s[i]){
@@ -188,25 +216,25 @@ void xy220_io_report(level)
                for(j=0,k=1,l=2,m=3;j < num_chans,k < num_chans, l < num_chans,m < num_chans;
                    j+=IOR_MAX_COLS,k+= IOR_MAX_COLS,l+= IOR_MAX_COLS,m +=IOR_MAX_COLS){
         	if(j < num_chans){
-                        xy220_read(i,masks[j],&jval);
+                        xy220_read(i,masks(j),&jval);
                  	if (jval != 0) 
                   		 jval = 1;
                          printf("Chan %d = %x\t ",j,jval);
                 }  
          	if(k < num_chans){
-                        xy220_read(i,masks[k],&kval);
+                        xy220_read(i,masks(k),&kval);
                         if (kval != 0) 
                         	kval = 1;
                         	printf("Chan %d = %x\t ",k,kval);
                 }
                 if(l < num_chans){
-                        xy220_read(i,masks[l],&lval);
+                        xy220_read(i,masks(l),&lval);
                 	if (lval != 0) 
                         	lval = 1;
                 	printf("Chan %d = %x \t",l,lval);
                  }
                  if(m < num_chans){
-                        xy220_read(i,masks[m],&mval);
+                        xy220_read(i,masks(m),&mval);
                  	if (mval != 0) 
                         	mval = 1;
                  	printf("Chan %d = %x \n",m,mval);

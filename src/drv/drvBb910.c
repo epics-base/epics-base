@@ -37,7 +37,7 @@
  * 				bb910_io_report() and gave it the ability
  *                              to read raw values from card if level > 0 
  * .06	08-10-92	joh	made the number of cards runtime
- *				configurable
+ * .07	08-25-92	mrk	made masks a macro
  */
 
 /*
@@ -51,7 +51,36 @@
 #include <vxWorks.h>
 #include <vme.h>
 #include <module_types.h>
+#include <drvSup.h>
+
+static long report();
+static long init();
 
+struct {
+        long    number;
+        DRVSUPFUN       report;
+        DRVSUPFUN       init;
+} drvBb910={
+        2,
+        report,
+        init};
+
+static long report(level)
+    int level;
+{
+    register int i;
+
+    bb910_io_report(level);
+    return(0);
+}
+static long init()
+{
+    int status;
+
+    bb910_driver_init();
+    return(0);
+}
+
 static char SccsId[] = "$Id$\t$Date$";
 
 #define MAX_BB_BI_CARDS	(bi_num_cards[BB910]) 
@@ -137,14 +166,13 @@ bb910_driver(card,mask,prval)
 
 	return (0);             
    }
-
-
+
+#define masks(K) ((1<<K))
 void bb910_io_report(level)
   short int level;
  { 
    register short i,j,k,l,m,num_chans;
    unsigned int jval,kval,lval,mval;
-   extern masks[];
 
    for (i = 0; i < bi_num_cards[BB910]; i++){
 	if (pbi_bb910s[i]){
@@ -154,25 +182,25 @@ void bb910_io_report(level)
                for(j=0,k=1,l=2,m=3;j < num_chans,k < num_chans, l < num_chans,m < num_chans;
                    j+=IOR_MAX_COLS,k+= IOR_MAX_COLS,l+= IOR_MAX_COLS,m += IOR_MAX_COLS){
         	if(j < num_chans){
-                        bb910_driver(i,masks[j],BB910,&jval);
+                        bb910_driver(i,masks(j),BB910,&jval);
                  	if (jval != 0) 
                   		 jval = 1;
                          printf("Chan %d = %x\t ",j,jval);
                 }  
          	if(k < num_chans){
-                        bb910_driver(i,masks[k],BB910,&kval);
+                        bb910_driver(i,masks(k),BB910,&kval);
                         if (kval != 0) 
                         	kval = 1;
                         printf("Chan %d = %x\t ",k,kval);
                 }
                 if(l < num_chans){
-                        bb910_driver(i,masks[l],BB910,&lval);
+                        bb910_driver(i,masks(l),BB910,&lval);
                 	if (lval != 0) 
                         	lval = 1;
                 	printf("Chan %d = %x \t",l,lval);
                  }
                   if(m < num_chans){
-                        bb910_driver(i,masks[m],BB910,&mval);
+                        bb910_driver(i,masks(m),BB910,&mval);
                  	if (mval != 0) 
                         	mval = 1;
                  	printf("Chan %d = %x \n",m,mval);

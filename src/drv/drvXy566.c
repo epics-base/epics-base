@@ -1,4 +1,3 @@
-
 /* drvXy566.c */
 
 /* share/src/drv $Id$ */
@@ -76,6 +75,7 @@
  *				raw value if there is a demand.
  * .18  08-10-92	joh	cleaned up the merge of the xy566 wf and ai
  *				drivers
+ * .19  08-25-92	mrk	replaced call to ai_driver by ai_xy566_driver
  */
 
 #include	<vxWorks.h>
@@ -98,7 +98,7 @@ static char SccsId[] = "$Id$\t$Date$ ";
 
 /* If any of the following does not exist replace it with #define <> NULL */
 
-long xy566_io_report();
+long report();
 long init();
 
 struct {
@@ -107,13 +107,20 @@ struct {
 	DRVSUPFUN	init;
 } drvXy566={
 	2,
-	xy566_io_report,
+	report,
 	init};
 
 
+static long report()
+{
+    ai_xy566_io_report();
+    xy566_io_report();
+}
+
 static long init()
 {
-
+    ai_566_init();
+    xy566_init();
     return(0);
 }
 
@@ -747,26 +754,26 @@ VOID  xy566_rval_report(card,type)
         for(j=0,k=1,l=2,m=3;j < num_chans,k < num_chans, l < num_chans,m < num_chans;
             j+=IOR_MAX_COLS,k+=IOR_MAX_COLS,l+= IOR_MAX_COLS,m +=IOR_MAX_COLS){
         	if(j < num_chans){
-                     if( ai_driver(card,j,type,&jrval) == 0){       
+                     if( ai_xy566_driver(card,j,type,&jrval) == 0){       
                 	printf("Chan %d = %x \t",j,jrval);
                      }else 
                         printf("READ_ALARM\n");  
                 }
                   
          	if(k < num_chans){
-                     if(ai_driver(card,k,type,&krval) == 0){       
+                     if(ai_xy566_driver(card,k,type,&krval) == 0){       
                 	printf("Chan %d = %x \t",k,krval);
                      } else 
                         printf("READ_ALARM\n");  
                 }
                 if(l < num_chans){
-                     if( ai_driver(card,l,type,&lrval) == 0){       
+                     if( ai_xy566_driver(card,l,type,&lrval) == 0){       
                 	printf("Chan %d = %x \t",l,lrval);
                      } else 
                         printf("READ_ALARM\n");  
                   }
                    if(m < num_chans){
-                     if( ai_driver(card,m,type,&mrval) == 0){      
+                     if( ai_xy566_driver(card,m,type,&mrval) == 0){      
                  	printf("Chan %d = %x \n",m,mrval);
                      }
                      else 

@@ -1,4 +1,3 @@
-
 /* drvAb.c */
 /* share/src/drv $Id$ */
 
@@ -178,6 +177,9 @@
  * .50	06-29-92	joh	moved ab reset here
  * .51	07-10-92	lrd	mode interrupt on change of state to scan once on initialization
  * .52	08-11-92	joh	io report format cleanup
+ * .53	08-25-92	mrk	made masks a macro
+ * .54	08-25-92	mrk	added support for Type E,T,R,S Tcs
+ * .55  08-25-92	mrk	support epics I/O event scan
  */
 
 /*
@@ -319,14 +321,12 @@ struct {
 	init};
 
 
-
 static long report(level)
 int level;
 {
    ab_io_report(level);
 }
 
-
 /* forward reference for ioc_reboot */
 int ioc_reboot();
 
@@ -337,7 +337,7 @@ static long init()
     ab_driver_init();
     return(0);
 }
-
+
 
 short	   ab_disable=0;
 
@@ -462,6 +462,10 @@ short	ab_op_stat[AB_MAX_LINKS];
 		   before we actually receive it for a given card.  Keeps
 		   us from asking for data faster than card can supply it */
 unsigned short	ab_btq_cnt[AB_MAX_LINKS][AB_MAX_ADAPTERS][AB_MAX_CARDS];
+#ifndef EPICS_V2
+#include <dbScan.h>
+static IOSCANPVT ioscanpvt[AB_MAX_LINKS][AB_MAX_ADAPTERS][AB_MAX_CARDS];
+#endif
 
 /*
  * flags a communication error on a link status
@@ -634,6 +638,30 @@ short			link;
 	    case (J_DGC):
 		*pmsg = IXE_J | IXE_DEGC | IXE_SIGNED | IXE_HALFSEC;
 		break;
+            case (E_DGF):
+                *pmsg = IXE_E | IXE_DEGF | IXE_SIGNED | IXE_HALFSEC;
+                break;
+            case (E_DGC):
+                *pmsg = IXE_E | IXE_DEGC | IXE_SIGNED | IXE_HALFSEC;
+                break;
+            case (T_DGF):
+                *pmsg = IXE_T | IXE_DEGF | IXE_SIGNED | IXE_HALFSEC;
+                break;
+            case (T_DGC):
+                *pmsg = IXE_T | IXE_DEGC | IXE_SIGNED | IXE_HALFSEC;
+                break;
+            case (R_DGF):
+                *pmsg = IXE_R | IXE_DEGF | IXE_SIGNED | IXE_HALFSEC;
+                break;
+            case (R_DGC):
+                *pmsg = IXE_R | IXE_DEGC | IXE_SIGNED | IXE_HALFSEC;
+                break;
+            case (S_DGF):
+                *pmsg = IXE_S | IXE_DEGF | IXE_SIGNED | IXE_HALFSEC;
+                break;
+            case (S_DGC):
+                *pmsg = IXE_S | IXE_DEGC | IXE_SIGNED | IXE_HALFSEC;
+                break;
 	    default:
 		*pmsg = IXE_MILLI | IXE_DEGC | IXE_SIGNED | IXE_HALFSEC;
 		break;
@@ -1130,7 +1158,11 @@ ab_bi_cos_simulator()
 					if ((*ps_input != *ps_oldval) || first_scan){
 						adapter = card_inx / AB_MAX_CARDS;
 						card = card_inx - (adapter * AB_MAX_CARDS);
+#ifdef EPICS_V2
 						io_event_scanner_wakeup(IO_BI,ABBI_16_BIT,card,link,adapter);
+#else
+						scanIoRequest(ioscanpvt[link][adapter][card]);
+#endif
 						*ps_oldval = *ps_input;
 					}
 				}else{
@@ -1142,7 +1174,11 @@ ab_bi_cos_simulator()
 					if ((p6008->iit[inpinx] != ab_old_binary_ins[inpinx]) || first_scan){
 						adapter = card_inx / AB_MAX_CARDS;
 						card = card_inx - (adapter * AB_MAX_CARDS);
+#ifdef EPICS_V2
 						io_event_scanner_wakeup(IO_BI,ABBI_08_BIT,card,link,adapter);
+#else
+						scanIoRequest(ioscanpvt[link][adapter][card]);
+#endif
 						ab_old_binary_ins[inpinx] = p6008->iit[inpinx];
 					}
 				}
@@ -1159,6 +1195,18 @@ ab_bi_cos_simulator()
 		taskDelay(SECOND/15);
 	}
 }
+
+#ifndef EPICS_V2
+int ab_bi_getioscanpvt(link,adapter,card,scanpvt)
+unsigned short link;
+unsigned short adapter;
+unsigned short card;
+IOSCANPVT *scanpvt;
+{
+	*scanpvt = ioscanpvt[link][adapter][card];	
+	return(0);
+}
+#endif
 
 /*
  * ALLEN-BRADLEY DRIVER INITIALIZATION CODE
@@ -1222,6 +1270,14 @@ ab_driver_init()
 		}else{
 			p6008s[link] = 0;
 		}
+#ifndef EPICS_V2
+		if(p6008s[link]) {
+			int adapter,card;
+			for(adapter=0; adapter<AB_MAX_ADAPTERS; adapter++)
+		   	for(card=0; card<AB_MAX_CARDS; card++)
+				scanIoInit(&ioscanpvt[link][adapter][card]);
+		}
+#endif
 	}
 
 	if (got_one){ 
@@ -1240,6 +1296,7 @@ ab_driver_init()
 		if (abCOSId) td(abCOSId);
 		abCOSId = taskSpawn(ABCOS_NAME,ABCOS_PRI,ABCOS_OPT,ABCOS_STACK,ab_bi_cos_simulator);
 	}
+        return(0);
 }
 
 /*
@@ -1914,10 +1971,9 @@ unsigned short	link;
 	}
 	return(0);
 }
-
+
 #define  MAX_8BIT 8
-#define  IOR_MAX_COLS 4
-
+#define masks(K) ((1<<K))
 ab_io_report(level)
     short int level;
   {
@@ -1925,7 +1981,6 @@ ab_io_report(level)
 	short	i,j,k,l,m,card,adapter,plc_card,x,type;
         unsigned short jrval,krval,lrval,mrval;
         unsigned long val,jval,kval,lval,mval;
-        extern masks[];
         
 	/* report all of the Allen-Bradley Serial Links present */
 	for (i = 0; i < AB_MAX_LINKS; i++){
@@ -2052,6 +2107,7 @@ ab_io_report(level)
 	}
 
  }
+
 /*  ab_bi_report. 
 *   Reports  the raw value of all Allen Bradley Binary In cards. 
 *
@@ -2063,7 +2119,6 @@ ab_bi_report(link,adapter,card,plc_card)
 	short	i,j,k,l,m,x,num_chans;
         unsigned short type;
         unsigned long jval,kval,lval,mval;
-        extern masks[];
 
         printf("\n");
 
@@ -2077,32 +2132,32 @@ ab_bi_report(link,adapter,card,plc_card)
         for(j=0,k=1,l=2,m=3;j < num_chans,k < num_chans, l < num_chans,m < num_chans;
             j+=IOR_MAX_COLS,k+= IOR_MAX_COLS,l+= IOR_MAX_COLS,m += IOR_MAX_COLS){
         	if(j < num_chans){
-                	ab_bidriver(type,link,adapter,card,plc_card,masks[j],&jval);
+                	ab_bidriver(type,link,adapter,card,plc_card,masks(j),&jval);
                  	if (jval != 0) 
                   		 jval = 1;
                          printf("Chan %d = %x\t ",j,jval);
                 }  
          	if(k < num_chans){
-         		ab_bidriver(type,link,adapter,card,plc_card,masks[k],&kval);
+         		ab_bidriver(type,link,adapter,card,plc_card,masks(k),&kval);
                         if (kval != 0) 
                         	kval = 1;
                         	printf("Chan %d = %x\t ",k,kval);
                 }
                 if(l < num_chans){
-                	ab_bidriver(type,link,adapter,card,plc_card,masks[l],&lval);
+                	ab_bidriver(type,link,adapter,card,plc_card,masks(l),&lval);
                 	if (lval != 0) 
                         	lval = 1;
                 	printf("Chan %d = %x \t",l,lval);
                  }
                   if(m < num_chans){
-                 	ab_bidriver(type,link,adapter,card,plc_card,masks[m],&mval);
+                 	ab_bidriver(type,link,adapter,card,plc_card,masks(m),&mval);
                  	if (mval != 0) 
                         	mval = 1;
                  	printf("Chan %d = %x \n",m,mval);
                    }
              }
   }
-
+
 /*  ab_bo_report. 
 *   Reports  the raw value of all Allen Bradley Binary Out cards. 
 *
@@ -2114,7 +2169,6 @@ ab_bo_report(link,adapter,card)
 	short	i,j,k,l,m,x,num_chans;
         unsigned short type;
         unsigned long jval,kval,lval,mval;
-        extern masks[];
 
         printf("\n");
 
@@ -2128,32 +2182,32 @@ ab_bo_report(link,adapter,card)
         for(j=0,k=1,l=2,m=3;j < num_chans,k < num_chans, l < num_chans,m < num_chans;
             j+=IOR_MAX_COLS,k+= IOR_MAX_COLS,l+= IOR_MAX_COLS,m += IOR_MAX_COLS){
         	if(j < num_chans){
-			ab_boread(type,link,adapter,card,&jval,masks[j]);
+			ab_boread(type,link,adapter,card,&jval,masks(j));
                  	if (jval != 0) 
                   		 jval = 1;
                          printf("Chan %d = %x\t ",j,jval);
                 }  
          	if(k < num_chans){
-			ab_boread(type,link,adapter,card,&kval,masks[k]);
+			ab_boread(type,link,adapter,card,&kval,masks(k));
                         if (kval != 0) 
                         	kval = 1;
                         	printf("Chan %d = %x\t ",k,kval);
                 }
                 if(l < num_chans){
-			ab_boread(type,link,adapter,card,&lval,masks[l]);
+			ab_boread(type,link,adapter,card,&lval,masks(l));
                 	if (lval != 0) 
                         	lval = 1;
                 	printf("Chan %d = %x \t",l,lval);
                  }
                   if(m < num_chans){
-			ab_boread(type,link,adapter,card,&mval,masks[m]);
+			ab_boread(type,link,adapter,card,&mval,masks(m));
                  	if (mval != 0) 
                         	mval = 1;
                  	printf("Chan %d = %x \n",m,mval);
                    }
              }
   }
-
+
 /*  ab_ai_report. 
 *   Reports  the raw value of all Allen Bradley Analog In cards. 
 *
@@ -2191,7 +2245,7 @@ ab_ai_report(type,link,adapter,card,plc_card)
                    }
              }
   }
-
+
 /*  ab_ao_report. 
 *   Reports  the raw value of all Allen Bradley Analog In cards. 
 *
@@ -2229,8 +2283,7 @@ ab_ao_report(type,link,adapter,card,plc_card)
                    }
              }
   }
-
-
+
 /*
  * abScanTask
  *
@@ -2243,8 +2296,8 @@ ab_ao_report(type,link,adapter,card,plc_card)
  */
 
 abScanTask(){
-    register unsigned short	adapter,link;
-register short pass;
+register unsigned short	adapter,link;
+register short pass=0;
 register int tmp_op_stat;
 struct ab_region	*p6008;
 int status;
@@ -2289,7 +2342,7 @@ int status;
 	taskDelay(SECOND/10);
     }
 }
-
+
 /* ioc_reboot - routine to call when IOC is rebooted with a control-x */
 
 int ioc_reboot(boot_type)
@@ -2315,9 +2368,6 @@ int	boot_type;
 		}
 	}
 }
-
-
-
 
 /*
  *
@@ -2329,7 +2379,7 @@ int	boot_type;
 void
 ab_reset_task()
 {
-	struct ab_region	*pab_region;
+	struct ab_region	*pab_region=0;
 
 	/* keep track of the status and frequency */
 	if (reset_cnt < 100){
@@ -2361,9 +2411,6 @@ ab_reset_task()
 	/* enable the scanner */
 	ab_disable = 0;
 }
-
-
-
 
 /*
  *

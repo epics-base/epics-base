@@ -41,7 +41,6 @@
 #include	<types.h>
 #include	<stdioLib.h>
 #include	<string.h>
-#include	<memLib.h>
 
 #include	<alarm.h>
 #include	<dbDefs.h>
@@ -85,7 +84,7 @@ static void myCallback(pwf,no_read,pdata)
         dbScanLock((struct dbCommon *)pwf);
 	pwf->busy = FALSE;
 	if(ftvl==DBF_SHORT || ftvl==DBF_USHORT) {
-       		memcpy(pdata,pwf->bptr,no_read*2);
+       		memcpy(pwf->bptr,pdata,no_read*2);
        		pwf->nord = no_read;            /* number of values read */
 	} else {
 		recGblRecordError(S_db_badField,pwf,

@@ -38,6 +38,8 @@
  *			for the EPOCH year
  *  .10	05-04-94 pg	HPUX cpp changes. (elif to else and if)
  *  .11	01-09-95 joh	fixed ts min west out of range test	
+ *  .12	02-24-95 joh	fixed TScurrentTimeStamp() => tsLocalTime ()
+ *			return status mapping prob introduced by .09 above	
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -593,9 +595,18 @@ long
 tsLocalTime(pStamp)
 TS_STAMP *pStamp;	/* O pointer to time stamp buffer */
 {
-    long	retStat=S_ts_OK;/* return status to caller */
+    	long	retStat=S_ts_OK;/* return status to caller */
 
 #ifdef vxWorks
+<<<<<<< tsSubr.c
+	retStat = TScurrentTimeStamp((struct timespec*)pStamp);
+	if (retStat == 0) {
+		return S_ts_OK;
+	}
+	else {
+		return S_ts_sysTimeError;
+	}
+=======
 #  if 0	/* 'test' code, for ioc core without time of day service */
     assert(pStamp != NULL);
     pStamp->nsec = 987000000;
@@ -604,20 +615,21 @@ TS_STAMP *pStamp;	/* O pointer to time stamp buffer */
 	if(!TScurrentTimeStamp((struct timespec*)pStamp)) return(S_ts_OK);
 	return(S_ts_sysTimeError);
 #  endif
+>>>>>>> 1.16
 #else
-    struct timeval curtime;
+    	struct timeval curtime;
 
-    assert(pStamp != NULL);
-    if (gettimeofday(&curtime, (struct timezone *)NULL) == -1)
-	retStat = S_ts_sysTimeError;
-    else {
-	pStamp->nsec = ( curtime.tv_usec/1000 ) * 1000000;
-	pStamp->secPastEpoch = curtime.tv_sec - TS_EPOCH_SEC_PAST_1970;
-    }
+    	assert(pStamp != NULL);
+    	if (gettimeofday(&curtime, (struct timezone *)NULL) == -1)
+		retStat = S_ts_sysTimeError;
+    	else {
+		pStamp->nsec = ( curtime.tv_usec/1000 ) * 1000000;
+		pStamp->secPastEpoch = curtime.tv_sec - TS_EPOCH_SEC_PAST_1970;
+    	}
 #endif
 
-    pStamp->nsec = pStamp->nsec - (pStamp->nsec % TS_TRUNC);
-    return retStat;
+    	pStamp->nsec = pStamp->nsec - (pStamp->nsec % TS_TRUNC);
+    	return retStat;
 }
 
 /*+/subr**********************************************************************

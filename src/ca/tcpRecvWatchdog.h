@@ -37,7 +37,8 @@ public:
         double periodIn, epicsTimerQueue & );
     virtual ~tcpRecvWatchdog ();
     void rescheduleRecvTimer ();
-    void sendBacklogProgressNotify ();
+    void sendBacklogProgressNotify (
+        const epicsTime & currentTime );
     void messageArrivalNotify (
         const epicsTime & currentTime );
     void beaconArrivalNotify ( 

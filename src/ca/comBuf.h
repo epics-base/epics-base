@@ -48,8 +48,9 @@ public:
 
 class wireSendAdapter { // X aCC 655
 public:
-    virtual unsigned sendBytes ( const void *pBuf, 
-        unsigned nBytesInBuf ) = 0;
+    virtual unsigned sendBytes ( const void * pBuf, 
+        unsigned nBytesInBuf, 
+        const class epicsTime & currentTime ) = 0;
 };
 
 class wireRecvAdapter { // X aCC 655
@@ -93,7 +94,7 @@ public:
     unsigned copyOutBytes ( void *pBuf, unsigned nBytes );
     bool copyOutAllBytes ( void *pBuf, unsigned nBytes );
     unsigned removeBytes ( unsigned nBytes );
-    bool flushToWire ( wireSendAdapter & );
+    bool flushToWire ( wireSendAdapter &, const epicsTime & currentTime );
     unsigned fillFromWire ( wireRecvAdapter & );
     struct popStatus {
         bool success;

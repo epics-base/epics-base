@@ -177,7 +177,8 @@ private:
 
     bool processIncoming ( 
         const epicsTime & currentTime, epicsGuard < callbackMutex > & );
-    unsigned sendBytes ( const void *pBuf, unsigned nBytesInBuf );
+    unsigned sendBytes ( const void *pBuf, 
+        unsigned nBytesInBuf, const epicsTime & currentTime );
     unsigned recvBytes ( void *pBuf, unsigned nBytesInBuf );
     void connect ();
     const char * pHostName () const;

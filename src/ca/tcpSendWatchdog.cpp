@@ -58,9 +58,9 @@ epicsTimerNotify::expireStatus tcpSendWatchdog::expire (
     return noRestart;
 }
 
-void tcpSendWatchdog::start ()
+void tcpSendWatchdog::start ( const epicsTime & currentTime )
 {
-    this->timer.start ( *this, this->period );
+    this->timer.start ( *this, currentTime + this->period );
 }
 
 void tcpSendWatchdog::cancel ()

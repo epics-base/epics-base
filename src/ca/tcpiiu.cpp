@@ -144,18 +144,17 @@ void tcpSendThread::run ()
 }
 
 unsigned tcpiiu::sendBytes ( const void *pBuf, 
-                            unsigned nBytesInBuf )
+    unsigned nBytesInBuf, const epicsTime & currentTime )
 {
-    int status;
     unsigned nBytes = 0u;
 
     assert ( nBytesInBuf <= INT_MAX );
 
-    this->sendDog.start ();
+    this->sendDog.start ( currentTime );
 
     while ( this->state == iiucs_connected ||
             this->state == iiucs_clean_shutdown ) {
-        status = ::send ( this->sock, 
+        int status = ::send ( this->sock, 
             static_cast < const char * > (pBuf), (int) nBytesInBuf, 0 );
         if ( status > 0 ) {
             nBytes = static_cast <unsigned> ( status );
@@ -543,7 +542,7 @@ void tcpiiu::connect ()
     /* 
      * attempt to connect to a CA server
      */
-    this->sendDog.start ();
+    this->sendDog.start ( epicsTime::getCurrent() );
 
     while ( this->state == iiucs_connecting ) {
         osiSockAddr tmp = this->address ();
@@ -1151,9 +1150,9 @@ bool tcpiiu::flush ()
 
     bool success = true;
     unsigned bytesToBeSent = 0u;
+    epicsTime current = epicsTime::getCurrent ();
     while ( true ) {
         comBuf * pBuf;
-
         {
             epicsGuard < cacMutex > autoMutex ( this->cacRef.mutexRef() );
             // set it here with this odd order because we must have 
@@ -1168,7 +1167,7 @@ bool tcpiiu::flush ()
             bytesToBeSent = pBuf->occupiedBytes ();
         }
 
-        success = pBuf->flushToWire ( *this );
+        success = pBuf->flushToWire ( *this, current );
         pBuf->~comBuf ();
         this->comBufMemMgr.release ( pBuf );
 
@@ -1181,6 +1180,8 @@ bool tcpiiu::flush ()
             break;
         }
 
+        current = epicsTime::getCurrent ();
+
         //
         // we avoid calling this with the lock applied because
         // it restarts the recv wd timer, this might block
@@ -1189,7 +1190,7 @@ bool tcpiiu::flush ()
         //
         if ( this->unacknowledgedSendBytes > 
             this->socketLibrarySendBufferSize ) {
-            this->recvDog.sendBacklogProgressNotify ();
+            this->recvDog.sendBacklogProgressNotify ( current );
         }
     }
     if ( this->blockingForFlush ) {

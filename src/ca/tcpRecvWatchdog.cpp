@@ -116,14 +116,14 @@ void tcpRecvWatchdog::messageArrivalNotify ( const epicsTime & currentTime )
 // The send watchdog will be responsible for detecting 
 // dead connections in this case.
 //
-void tcpRecvWatchdog::sendBacklogProgressNotify ()
+void tcpRecvWatchdog::sendBacklogProgressNotify ( const epicsTime & currentTime )
 {
     // We dont set "beaconAnomaly" to be false here because, after we see a
     // beacon anomaly (which could be transiently detecting a reboot) we will 
     // not trust the beacon as an indicator of a healthy server until we 
     // receive at least one message from the server.
     this->responsePending = false;
-    this->timer.start ( *this, this->period );
+    this->timer.start ( *this, currentTime + this->period );
     debugPrintf ( ("saw heavy send backlog - reseting TCP recv watchdog\n") );
 }
 

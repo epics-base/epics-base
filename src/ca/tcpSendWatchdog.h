@@ -33,7 +33,7 @@ class tcpSendWatchdog : private epicsTimerNotify {
 public:
     tcpSendWatchdog ( cac &, tcpiiu &, double periodIn, epicsTimerQueue & queueIn );
     virtual ~tcpSendWatchdog ();
-    void start ();
+    void start ( const epicsTime & );
     void cancel ();
 private:
     const double period;

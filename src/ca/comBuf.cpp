@@ -29,13 +29,13 @@
 #include "comBuf.h"
 #include "errlog.h"
 
-bool comBuf::flushToWire ( wireSendAdapter & wire )
+bool comBuf::flushToWire ( wireSendAdapter & wire, const epicsTime & currentTime )
 {
     unsigned index = this->nextReadIndex;
     unsigned finalIndex = this->commitIndex;
     while ( index < finalIndex ) {
         unsigned nBytes = wire.sendBytes ( 
-            &this->buf[index], finalIndex - index );
+            &this->buf[index], finalIndex - index, currentTime );
         if ( nBytes == 0u ) {
             this->nextReadIndex = index;
             return false;

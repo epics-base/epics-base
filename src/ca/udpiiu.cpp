@@ -38,6 +38,9 @@ LOCAL int cac_udp_recv_msg (udpiiu *piiu)
         if ( errnoCpy == SOCK_ENOTSOCK ) {
             return -1;
         }
+        if ( errnoCpy == SOCK_EBADF ) {
+            return -1;
+        }
         if ( errnoCpy == SOCK_EINTR ) {
             if ( piiu->shutdownCmd ) {
                 return -1;
@@ -247,6 +250,9 @@ extern "C" void cacSendThreadUDP (void *pParam)
                         break;
                     }
                     else if ( localErrno == SOCK_ENOTSOCK ) {
+                        break;
+                    }
+                    else if ( localErrno == SOCK_EBADF ) {
                         break;
                     }
                     else if ( localErrno == SOCK_EINTR ) {

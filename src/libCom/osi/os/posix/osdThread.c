@@ -94,6 +94,7 @@ if(status) { \
 static void myAtExit(void)
 {
     epicsThreadOSD *pthreadInfo;
+    epicsThreadOSD *pthreadSelf;
     static int ntimes=0;
     int status;
 
@@ -104,9 +105,10 @@ static void myAtExit(void)
     }
     status = pthread_mutex_lock(&listLock);
     checkStatusQuit(status,"pthread_mutex_lock","myAtExit");
+    pthreadSelf = (epicsThreadOSD *)pthread_getspecific(getpthreadInfo);
     pthreadInfo=(epicsThreadOSD *)ellFirst(&pthreadList);
     while(pthreadInfo) {
-        if(pthreadInfo->createFunc){/* dont cancel main thread*/
+        if(pthreadInfo != pthreadSelf){	/* dont cancel this thread! */
             pthread_cancel(pthreadInfo->tid);
         }
         pthreadInfo=(epicsThreadOSD *)ellNext(&pthreadInfo->node);

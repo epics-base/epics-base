@@ -48,6 +48,7 @@ typedef struct iocClockPvt {
     char        *pserverAddr;
 }iocClockPvt;
 static iocClockPvt *piocClockPvt = 0;
+static int nConsecutiveBad = 0;
 
 extern char* sysBootLine;
 
@@ -66,12 +67,16 @@ static void syncNTP(void)
         status = sntpcTimeGet(piocClockPvt->pserverAddr,
             piocClockPvt->tickRate,&Currtime);
         if(status) {
+            ++nConsecutiveBad;
+            /*wait 1 minute before reporting failure*/
+            if(nConsecutiveBad<(60/iocClockSyncRate)) continue;
             if(!prevStatusBad)
                 errlogPrintf("iocClockSyncWithNTPserver: sntpcTimeGet %s\n",
                     strerror(errno));
             prevStatusBad = 1;
             continue;
         }
+        nConsecutiveBad=0;
         if(prevStatusBad) {
             errlogPrintf("iocClockSyncWithNTPserver: sntpcTimeGet OK\n");
             prevStatusBad = 0;

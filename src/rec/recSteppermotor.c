@@ -62,6 +62,7 @@
  *                              apply deadband to overshoot checking
 
  * .21  10-15-90	mrk	extensible record and device support
+ * .22  10-24-91	jba	bug fix to alarms
  */
 
 #include	<vxWorks.h>
@@ -722,8 +723,8 @@ struct steppermotorRecord	*psm;
 			/* move motor */
 			if (sm_driver(psm->dtyp,card,channel,SM_MOVE,psm->rval-psm->rrbv,0) < 0){
 				if (psm->nsev < VALID_ALARM) {
-					psm->stat = WRITE_ALARM;
-					psm->sevr = VALID_ALARM;
+					psm->nsta = WRITE_ALARM;
+					psm->nsev = VALID_ALARM;
 				}
 				return;
 			}
@@ -777,7 +778,7 @@ struct steppermotorRecord	*psm;
 
 		if(dbGetLink(&(psm->dol.value.db_link),psm,DBR_FLOAT,&(psm->val),&options,&nRequest)) {
 			if (psm->nsev < VALID_ALARM) {
-				psm->nsta = READ_ALARM;
+				psm->nsta = LINK_ALARM;
 				psm->nsev = VALID_ALARM;
 			}
 			return;

@@ -60,7 +60,6 @@ print << "END" ;
 #include "registryDeviceSupport.h"
 #include "registryDriverSupport.h"
 #include "iocsh.h"
-#include "epicsExport.h"
 #include "shareLib.h"
 END
 

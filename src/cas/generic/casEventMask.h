@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.6  1997/08/05 00:47:08  jhill
+ * fixed warnings
+ *
  * Revision 1.5  1997/04/10 19:34:08  jhill
  * API changes
  *
@@ -71,9 +74,9 @@ public:
 		this->mask = 0u;
 	}
 
-        casEventMask (casEventRegistry &reg, const char *pName);
+	casEventMask (casEventRegistry &reg, const char *pName);
 
-        casEventMask () 
+	casEventMask () 
 	{
 		this->clear();
 	}
@@ -89,11 +92,11 @@ public:
 		return this->mask==0u;
 	}
 
-        inline void operator|= (const casEventMask &rhs);
-        inline void operator&= (const casEventMask &rhs);
- 
+	inline void operator|= (const casEventMask &rhs);
+	inline void operator&= (const casEventMask &rhs);
+
 private:
-        unsigned mask;
+	unsigned mask;
 };
 
 inline casEventMask operator| (const casEventMask &lhs, const casEventMask &rhs)

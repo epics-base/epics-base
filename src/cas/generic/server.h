@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.26  1998/09/24 20:41:49  jhill
+ * supply resource id to logBadIdWithFileAndLineno()
+ *
  * Revision 1.25  1998/07/08 15:38:08  jhill
  * fixed lost monitors during flow control problem
  *
@@ -244,9 +247,9 @@ private:
 class casClientMon : public casMonitor {
 public:
 	casClientMon(casChannelI &, caResId clientId,
-	const unsigned long count, const unsigned type,
-	const casEventMask &maskIn, osiMutex &mutexIn);
-	~casClientMon();
+		const unsigned long count, const unsigned type,
+		const casEventMask &maskIn, osiMutex &mutexIn);
+	virtual ~casClientMon();
 
 	caStatus callBack(gdd &value);
 
@@ -393,9 +396,9 @@ enum casFlushRequest{
 
 class outBuf {
 public:
-        outBuf (osiMutex &, unsigned bufSizeIn);
+	outBuf (osiMutex &, unsigned bufSizeIn);
 	caStatus init(); //constructor does not return status
-        virtual ~outBuf()=0;
+	virtual ~outBuf()=0;
 
 	inline bufSizeT bytesPresent() const;
 
@@ -473,10 +476,10 @@ private:
 class casCoreClient : public osiMutex, public ioBlocked, 
 	public casEventSys {
 
-//
-// allows casAsyncIOI constructor to check for asynch IO duplicates
-//
-friend casAsyncIOI::casAsyncIOI(casCoreClient &clientIn, casAsyncIO &ioExternalIn);
+	//
+	// allows casAsyncIOI constructor to check for asynch IO duplicates
+	//
+	friend casAsyncIOI::casAsyncIOI(casCoreClient &clientIn, casAsyncIO &ioExternalIn);
 
 public:
 	casCoreClient(caServerI &serverInternal); 
@@ -647,7 +650,7 @@ class casStrmClient : public inBuf, public outBuf, public casClient,
 public:
 	casStrmClient (caServerI &cas);
 	caStatus init(); //constructor does not return status
-	~casStrmClient();
+	virtual ~casStrmClient();
 
 	void show (unsigned level) const;
 
@@ -854,10 +857,7 @@ public:
 
 	int init();
 
-	~casEventRegistry()
-	{
-	    this->destroyAllEntries();
-	}
+	virtual ~casEventRegistry();
 
 	casEventMask registerEvent (const char *pName);
 

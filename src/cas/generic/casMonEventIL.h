@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.4  1998/06/16 02:27:53  jhill
+ * use smart gdd ptr
+ *
  * Revision 1.3  1997/04/10 19:34:11  jhill
  * API changes
  *
@@ -61,14 +64,14 @@ inline casMonEvent::casMonEvent (casMonitor &monitor, gdd &newValue) :
 //
 // casMonEvent::casMonEvent()
 //
-inline casMonEvent::casMonEvent (casMonEvent &initValue) :
+inline casMonEvent::casMonEvent (const casMonEvent &initValue) :
         pValue(initValue.pValue),
         id(initValue.id) {}
 
 //
 // casMonEvent::operator =  ()
 //
-inline void casMonEvent::operator = (class casMonEvent &monEventIn)
+inline void casMonEvent::operator = (const class casMonEvent &monEventIn)
 {
 	this->pValue = monEventIn.pValue;
 	this->id = monEventIn.id;

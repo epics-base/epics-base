@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.11  1998/05/29 20:13:42  jhill
+ * made assert() call portable to 64 bit arch
+ *
  * Revision 1.10  1998/02/18 22:44:44  jhill
  * fixed warning
  *
@@ -391,3 +394,12 @@ void caServerI::sendBeacon()
 	this->advanceBeaconPeriod();
 }
 
+//
+// casEventRegistry::~casEventRegistry()
+//
+// (must not be inline because it is virtual)
+//
+casEventRegistry::~casEventRegistry()
+{
+	this->destroyAllEntries();
+}

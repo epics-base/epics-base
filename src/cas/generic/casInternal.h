@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.16  1998/07/08 15:38:05  jhill
+ * fixed lost monitors during flow control problem
+ *
  * Revision 1.15  1998/06/16 02:26:09  jhill
  * allow PVs to exist without a server
  *
@@ -143,7 +146,7 @@ private:
 class ioBlockedList : private tsDLList<ioBlocked> {
 public:
 	ioBlockedList ();
-	~ioBlockedList ();
+	virtual ~ioBlockedList ();
 	void signal ();
 	void removeItemFromIOBLockedList(ioBlocked &item);
 	void addItemToIOBLockedList(ioBlocked &item);
@@ -162,7 +165,7 @@ public:
 	//
 	inline casMonEvent ();
 	inline casMonEvent (casMonitor &monitor, gdd &newValue);
-	inline casMonEvent (casMonEvent &initValue);
+	inline casMonEvent (const casMonEvent &initValue);
 
 	//
 	// ~casMonEvent ()
@@ -177,7 +180,7 @@ public:
 	//
 	inline gdd *getValue() const;
 
-	inline void operator = (class casMonEvent &monEventIn);
+	inline void operator = (const class casMonEvent &monEventIn);
 	
 	inline void clear();
 

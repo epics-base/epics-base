@@ -988,72 +988,76 @@ int	link;
 	    }
 	    txCCount++;
           }
+
 	  if (pXvmeLink[link]->abortFlag == 0)
 	  {
-          /* We just finished sending a message */
-          pXvmeLink[link]->bbRegs->cmnd = BB_SEND_CMD; /* forward it now */
 
-	  /* Don't add to busy list if was a RAC_RESET_SLAVE */
-	  if (pnode->txMsg.cmd != RAC_RESET_SLAVE)
-	  {
-	    /* Lock the busy list */
-	    FASTLOCK(&(plink->busyList.sem));
+	    /* All data bytes have been sent, put on busy list and release */
 
-            /* set the retire time */
-            pnode->retire = tickGet();
-	    pnode->retire += 5*60; /*pnode->ageLimit;*/
+	    /* Don't add to busy list if was a RAC_RESET_SLAVE */
+	    if (pnode->txMsg.cmd != RAC_RESET_SLAVE)
+	    {
+	      /* Lock the busy list */
+	      FASTLOCK(&(plink->busyList.sem));
   
-	    if (plink->busyList.head == NULL)
-	      dogStart = 1;
-            else
-	      dogStart = 0;
-
-            /* Add pnode to the busy list */
-            listAddTail(&(plink->busyList), pnode);
-
-            /* Count the outstanding messages */
-            (plink->deviceStatus[pnode->txMsg.node])++;
+              /* set the retire time */
+              pnode->retire = tickGet();
+	      pnode->retire += 5*60; /*pnode->ageLimit;*/
+    
+	      if (plink->busyList.head == NULL)
+	        dogStart = 1;
+              else
+	        dogStart = 0;
   
-	    FASTUNLOCK(&(plink->busyList.sem));
+              /* Add pnode to the busy list */
+              listAddTail(&(plink->busyList), pnode);
+  
+              /* Count the outstanding messages */
+              (plink->deviceStatus[pnode->txMsg.node])++;
+    
+	      FASTUNLOCK(&(plink->busyList.sem));
+  
+              /* If just added something to an empty busy list, start the dog */
+              if (dogStart)
+              {
+                now = tickGet();
+                wdStart(pXvmeLink[link]->watchDogId, plink->busyList.head->retire - now, xvmeTmoHandler, link);
+              }
+	    }
+	    else
+	    { /* Finish the transaction here if was a RAC_RESET_SLAVE */
+  
+              /* if (bbDebug) */
+                printf("xvmeTxTask(%d): RAC_RESET_SLAVE sent, resetting node %d\n", link, pnode->txMsg.node);
+  
+	      pnode->status = BB_OK;
+  
+    	      if (pnode->finishProc != NULL)
+    	      {
+      	        if (bbDebug>4)
+	          printf("xvmeTxTask(%d): invoking callbackRequest\n", link);
+	      
+      	        callbackRequest(pnode); /* schedule completion processing */
+    	      }
+  
+    	      /* If there is a semaphore for synchronous I/O, unlock it */
+    	      if (pnode->psyncSem != NULL)
+      	        semGive(*(pnode->psyncSem));
+  
+              /* Wait for last NODE_OFFLINE to finish (if still pending) */
+              semTake(resetNodeSem, WAIT_FOREVER);
+  
+	      /* have to reset the master so it won't wait on a response */
+	      resetNodeData = pnode->txMsg.node; /* mark the node number */
+	      FASTLOCK(&(plink->queue[BB_Q_HIGH].sem));
+	      listAddHead(&(plink->queue[BB_Q_HIGH]), &resetNode);
+	      FASTUNLOCK(&(plink->queue[BB_Q_HIGH].sem));
+/* -- BUG -- I don't really need this */
+	      /* taskDelay(15); */ 	/* wait while bug is resetting */
+	    }
 
-            /* If I just added something to an empty busy list, start the dog */
-            if (dogStart)
-            {
-              now = tickGet();
-              wdStart(pXvmeLink[link]->watchDogId, plink->busyList.head->retire - now, xvmeTmoHandler, link);
-            }
-	  }
-	  else
-	  { /* Finish the transaction here if was a RAC_RESET_SLAVE */
-
-            /* if (bbDebug) */
-              printf("xvmeTxTask(%d): RAC_RESET_SLAVE sent, resetting node %d\n", link, pnode->txMsg.node);
-
-	    pnode->status = BB_OK;
-
-    	    if (pnode->finishProc != NULL)
-    	    {
-      	      if (bbDebug>4)
-	        printf("xvmeTxTask(%d): invoking the callbackRequest\n", link);
-	    
-      	      callbackRequest(pnode); /* schedule completion processing */
-    	    }
-
-    	    /* If there is a semaphore for synchronous I/O, unlock it */
-    	    if (pnode->psyncSem != NULL)
-      	      semGive(*(pnode->psyncSem));
-
-            /* Have to wait for last NODE_OFFLINE to finish if still pending */
-            semTake(resetNodeSem, WAIT_FOREVER);
-
-	    /* have to reset the master so it won't wait on a response */
-	    resetNodeData = pnode->txMsg.node;	/* mark the node number */
-	    FASTLOCK(&(plink->queue[BB_Q_HIGH].sem));
-	    listAddHead(&(plink->queue[BB_Q_HIGH]), &resetNode);
-	    FASTUNLOCK(&(plink->queue[BB_Q_HIGH].sem));
-
-	    taskDelay(15); 	/* wait while bug is resetting */
-	  }
+	    /* Tell the 8044 to fire out the message now */
+            pXvmeLink[link]->bbRegs->cmnd = BB_SEND_CMD; /* forward it now */
 	  }
 	  else
 	  { /* Aborted transmission operation, re-queue the message */

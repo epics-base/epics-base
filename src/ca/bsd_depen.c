@@ -32,6 +32,8 @@
  */
 
 #include "iocinf.h"
+#include "osiSleep.h"
+#include "bsdSocketResource.h"
 
 
 /*
@@ -126,9 +128,16 @@ int cac_select_io (struct timeval *ptimeout, int flags)
  	 * win32 requires this (others will
 	 * run faster with this installed)
 	 */
-	if (	!ioPending &&
-		ptimeout->tv_sec==0 &&
-		ptimeout->tv_usec==0 ) {
+	if (!ioPending) {
+		/*
+		 * recover from subtle differences between
+		 * windows sockets and UNIX sockets implementation
+		 * of select()
+		 */
+		if (ptimeout->tv_sec!=0 ||
+			ptimeout->tv_usec!=0 ) {
+			osiSleep (ptimeout->tv_sec, ptimeout->tv_usec);
+		}
 		status = 0;
 	}
 	else {

@@ -1921,10 +1921,10 @@ time.</p>
 
 <p>If ECA_TIMEOUT is returned then get requests may be reissued followed by a
 subsequent call to ca_pend_io().&nbsp;Specifically,&nbsp;the function will
-block&nbsp;only for outstanding outstanding <a href="#ca_get">ca_get</a>
-requests issued, and also any channels created specifying a nill connection
-handler function pointer, after the last call to ca_pend_io() or ca client
-context creation whichever is later. Note that <a
+block&nbsp;only for outstanding <a href="#ca_get">ca_get</a> requests issued,
+and also any channels created specifying a nill connection handler function
+pointer, after the last call to ca_pend_io() or ca client context creation
+whichever is later. Note that <a
 href="#ca_create_channel">ca_create_channel</a> requests generally should not
 be reissued for the same process variable unless <a
 href="#ca_clear_channel">ca_clear_channel</a> is called first.</p>
@@ -2007,6 +2007,9 @@ expires and all unfinished channel access labor has been processed, and
 unlike <code><a href="#ca_pend_io">ca_pend_io</a></code> it does <em>not
 </em>indicate anything about the status of pending IO requests when it
 returns ECA_NORMAL.</p>
+
+<p>See also <a href="#Thread">Thread Safety and Preemptive Callback to User
+Code</a>.</p>
 
 <h4>Arguments</h4>
 <dl>

@@ -37,27 +37,26 @@
 #include "epicsAssert.h"
 #include "ellLib.h"
 
+typedef struct win32ThreadGlobal {
+    CRITICAL_SECTION mutex;
+    ELLLIST threadList;
+    DWORD tlsIndexThreadLibraryEPICS;
+} win32ThreadGlobal;
+
 typedef struct win32ThreadParam {
     ELLNODE node;
     HANDLE handle;
     EPICSTHREADFUNC funptr;
-    void *parm;
-    char *pName;
+    void * parm;
+    char * pName;
     DWORD id;
     unsigned epicsPriority;
     char isSuspended;
 } win32ThreadParam;
 
-static ELLLIST threadList;
-
-static DWORD tlsIndexThreadLibraryEPICS = 0xFFFFFFFF;
-
 typedef struct epicsThreadPrivateOSD {
     DWORD key;
 } epicsThreadPrivateOSD;
-
-static HANDLE win32ThreadGlobalMutex = 0;
-static int win32ThreadInitOK = 0;
 
 #define osdOrdinaryPriorityStateCount 5u
 static const int osdOrdinaryPriorityList [osdOrdinaryPriorityStateCount] = 
@@ -88,27 +87,94 @@ static const int osdRealtimePriorityList [osdRealtimePriorityStateCount] =
     6  // allowed on >= W2k, but no #define supplied
 };
 
+/*
+ * fetchWin32ThreadGlobal ()
+ * Search for "Synchronization and Multiprocessor Issues" in ms doc
+ * to understand why this is necessary and why this works on smp systems.
+ */
+static win32ThreadGlobal * fetchWin32ThreadGlobal ( void )
+{
+    void threadCleanupWIN32 ( void );
+    static win32ThreadGlobal * pWin32ThreadGlobal = 0;
+    static LONG initStarted = 0;
+    static LONG initCompleted = 0;
+    int crtlStatus;
+    LONG started;
+    LONG done;
+
+    done = InterlockedCompareExchange ( & initCompleted, 0, 0 );
+    if ( done ) {
+        return pWin32ThreadGlobal;
+    }
+
+    started = InterlockedCompareExchange ( & initStarted, 0, 1 );
+    if ( started ) {
+        unsigned tries = 0u;
+        while ( ! InterlockedCompareExchange ( & initCompleted, 0, 0 ) ) {
+            /*
+             * I am not fond of busy loops, but since this will
+             * collide very infrequently and this is the lowest 
+             * level init then perhaps this is ok
+             */
+            Sleep ( 1 );
+            if ( tries++ > 1000 ) {
+                return 0;
+            }
+        }
+        return pWin32ThreadGlobal;
+    }
+
+    pWin32ThreadGlobal = ( win32ThreadGlobal * ) 
+        calloc ( 1, sizeof ( * pWin32ThreadGlobal ) );
+    if ( ! pWin32ThreadGlobal ) {
+        InterlockedExchange ( & initStarted, 0 );
+        return 0;
+    }
+
+    InitializeCriticalSection ( & pWin32ThreadGlobal->mutex );
+    ellInit ( & pWin32ThreadGlobal->threadList );
+    pWin32ThreadGlobal->tlsIndexThreadLibraryEPICS = TlsAlloc();
+    if ( pWin32ThreadGlobal->tlsIndexThreadLibraryEPICS == 0xFFFFFFFF ) {
+        DeleteCriticalSection ( & pWin32ThreadGlobal->mutex );
+        free ( pWin32ThreadGlobal );
+        pWin32ThreadGlobal = 0;
+        return 0;
+    }
+
+    crtlStatus = atexit ( threadCleanupWIN32 );
+    if ( crtlStatus ) {
+        TlsFree ( pWin32ThreadGlobal->tlsIndexThreadLibraryEPICS );
+        DeleteCriticalSection ( & pWin32ThreadGlobal->mutex );
+        free ( pWin32ThreadGlobal );
+        pWin32ThreadGlobal = 0;
+        return 0;
+    }
+
+    InterlockedExchange ( & initCompleted, 1 );
+
+    return pWin32ThreadGlobal;
+}
+
 static void epicsParmCleanupWIN32 ( win32ThreadParam * pParm )
 {
-    BOOL success;
-    DWORD stat;
+    win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
+    if ( ! pGbl )  {
+        fprintf ( stderr, "epicsParmCleanupWIN32: unable to find ctx\n" );
+        return;
+    }
 
     if ( pParm ) {
         //fprintf ( stderr, "thread %s is exiting\n", pParm->pName );
-        stat = WaitForSingleObject ( win32ThreadGlobalMutex, INFINITE );
-        assert ( stat == WAIT_OBJECT_0 );
-    
-        ellDelete ( & threadList, & pParm->node );
-
-        success = ReleaseMutex ( win32ThreadGlobalMutex );
-        assert ( success );
+        EnterCriticalSection ( & pGbl->mutex );
+        ellDelete ( & pGbl->threadList, & pParm->node );
+        LeaveCriticalSection ( & pGbl->mutex );
 
         // close the handle if its an implicit thread id
         if ( ! pParm->funptr ) {
             CloseHandle ( pParm->handle );
         }
         free ( pParm );
-        TlsSetValue ( tlsIndexThreadLibraryEPICS, 0 );
+        TlsSetValue ( pGbl->tlsIndexThreadLibraryEPICS, 0 );
     }
 }
 
@@ -117,25 +183,21 @@ static void epicsParmCleanupWIN32 ( win32ThreadParam * pParm )
  */
 static void threadCleanupWIN32 ( void )
 {
+    win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
     win32ThreadParam * pParm;
 
-    WaitForSingleObject ( win32ThreadGlobalMutex, INFINITE );
+    if ( ! pGbl )  {
+        fprintf ( stderr, "threadCleanupWIN32: unable to find ctx\n" );
+        return;
+    }
 
-    while ( pParm = ( win32ThreadParam * ) ellFirst ( & threadList ) ) {
+    while ( pParm = ( win32ThreadParam * ) ellFirst ( & pGbl->threadList ) ) {
         epicsParmCleanupWIN32 ( pParm );
     }
 
-    if ( tlsIndexThreadLibraryEPICS != 0xFFFFFFFF ) {
-        TlsFree ( tlsIndexThreadLibraryEPICS );
-        tlsIndexThreadLibraryEPICS = 0xFFFFFFFF;
-    }
+    TlsFree ( pGbl->tlsIndexThreadLibraryEPICS );
 
-    ReleaseMutex ( win32ThreadGlobalMutex );
-
-    if ( win32ThreadGlobalMutex ) {
-        CloseHandle ( win32ThreadGlobalMutex );
-        win32ThreadGlobalMutex = NULL;
-    }
+    DeleteCriticalSection ( & pGbl->mutex );
 }
 
 /*
@@ -326,8 +388,16 @@ epicsShareFunc unsigned int epicsShareAPI epicsThreadGetStackSize ( epicsThreadS
 
 void epicsThreadCleanupWIN32 ()
 {
-    win32ThreadParam * pParm = (win32ThreadParam *) 
-        TlsGetValue ( tlsIndexThreadLibraryEPICS );
+    win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
+    win32ThreadParam * pParm;
+
+    if ( ! pGbl )  {
+        fprintf ( stderr, "epicsThreadCleanupWIN32: unable to find ctx\n" );
+        return;
+    }
+
+    pParm = ( win32ThreadParam * ) 
+        TlsGetValue ( pGbl->tlsIndexThreadLibraryEPICS );
     epicsParmCleanupWIN32 ( pParm );
 }
 
@@ -366,12 +436,18 @@ void SetThreadName( DWORD dwThreadID, LPCSTR szThreadName )
  */
 static unsigned WINAPI epicsWin32ThreadEntry ( LPVOID lpParameter )
 {
-    win32ThreadParam *pParm = (win32ThreadParam *) lpParameter;
+    win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
+    win32ThreadParam * pParm = ( win32ThreadParam * ) lpParameter;
     BOOL success;
+
+    if ( ! pGbl )  {
+        fprintf ( stderr, "epicsWin32ThreadEntry: unable to find ctx\n" );
+        return 0;
+    }
 
     SetThreadName ( pParm->id, pParm->pName );
 
-    success = TlsSetValue ( tlsIndexThreadLibraryEPICS, pParm );
+    success = TlsSetValue ( pGbl->tlsIndexThreadLibraryEPICS, pParm );
     if ( success ) {
         /* printf ( "starting thread %d\n", pParm->id ); */
         ( *pParm->funptr ) ( pParm->parm );
@@ -384,79 +460,6 @@ static unsigned WINAPI epicsWin32ThreadEntry ( LPVOID lpParameter )
     epicsParmCleanupWIN32 ( pParm );
 
     return ( ( unsigned ) success ); /* this indirectly closes the thread handle */
-}
-
-/*
- * epicsThreadInit ()
- */
-static void epicsThreadInit ( void )
-{
-    HANDLE win32ThreadGlobalMutexTmp;
-    DWORD status;
-    BOOL success;
-    int crtlStatus;
-
-    if ( win32ThreadGlobalMutex ) {
-        /* wait for init to complete */
-        status = WaitForSingleObject ( win32ThreadGlobalMutex, INFINITE );
-        assert ( status == WAIT_OBJECT_0 );
-        success = ReleaseMutex ( win32ThreadGlobalMutex );
-        assert ( success );
-        return;
-    }
-    else {
-        win32ThreadGlobalMutexTmp = CreateMutex ( NULL, TRUE, NULL );
-        if ( win32ThreadGlobalMutexTmp == 0 ) {
-            return;
-        }
-
-        /* 
-         * InterlockedCompareExchangePointer is not supported on W95 but is
-         * supported by all other versions of windows and by Borland 551.
-         * Since it will be convienent to build on NT and then run on W95
-         * then we use the new function only if its a build for 64 bit
-         * windows. On 32 bit windows the conversion from pointer to type
-         * LONG should always work correctly.
-         */
-#   if _WIN64
-        if ( InterlockedCompareExchangePointer ( & win32ThreadGlobalMutex, 
-            win32ThreadGlobalMutexTmp, 0 ) != 0) {
-#   else
-        if ( InterlockedCompareExchange ( (LPLONG) & win32ThreadGlobalMutex, 
-            (LONG) win32ThreadGlobalMutexTmp, 0 ) != 0 ) {
-#   endif
-            CloseHandle (win32ThreadGlobalMutexTmp);
-            /* wait for init to complete */
-            status = WaitForSingleObject ( win32ThreadGlobalMutex, INFINITE );
-            assert ( status == WAIT_OBJECT_0 );
-            success = ReleaseMutex ( win32ThreadGlobalMutex );
-            assert ( success );
-            return;
-        }
-    }
-
-    if ( tlsIndexThreadLibraryEPICS == 0xFFFFFFFF ) {
-        tlsIndexThreadLibraryEPICS = TlsAlloc();
-        if ( tlsIndexThreadLibraryEPICS == 0xFFFFFFFF ) {
-            success = ReleaseMutex (win32ThreadGlobalMutex);
-            assert (success);
-            return;
-        }
-    }
-
-    crtlStatus = atexit ( threadCleanupWIN32 );
-    if (crtlStatus) {
-        success = ReleaseMutex ( win32ThreadGlobalMutex );
-        assert ( success );
-        return;
-    }
-
-    ellInit ( & threadList );
-
-    win32ThreadInitOK = TRUE;
-
-    success = ReleaseMutex ( win32ThreadGlobalMutex );
-    assert ( success );
 }
 
 static win32ThreadParam * epicsThreadParmCreate ( const char *pName )
@@ -479,19 +482,18 @@ static win32ThreadParam * epicsThreadParmCreate ( const char *pName )
 
 static win32ThreadParam * epicsThreadImplicitCreate ( void )
 {
-    win32ThreadParam *pParm;
-    char name[64];
+    win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
     DWORD id = GetCurrentThreadId ();
+    win32ThreadParam * pParm;
+    char name[64];
     HANDLE handle;
-    DWORD stat;
     BOOL success;
 
-    if ( ! win32ThreadInitOK ) {
-        epicsThreadInit ();
-        if ( ! win32ThreadInitOK ) {
-            return NULL;
-        }
+    if ( ! pGbl )  {
+        fprintf ( stderr, "epicsThreadImplicitCreate: unable to find ctx\n" );
+        return 0;
     }
+
     success = DuplicateHandle ( GetCurrentProcess (), GetCurrentThread (),
             GetCurrentProcess (), & handle, 0, FALSE, DUPLICATE_SAME_ACCESS );
     if ( ! success ) {
@@ -507,19 +509,15 @@ static win32ThreadParam * epicsThreadImplicitCreate ( void )
         win32ThreadPriority = GetThreadPriority ( pParm->handle );
         assert ( win32ThreadPriority != THREAD_PRIORITY_ERROR_RETURN );
         pParm->epicsPriority = epicsThreadGetOsiPriorityValue ( win32ThreadPriority );
-        success = TlsSetValue ( tlsIndexThreadLibraryEPICS, pParm );
+        success = TlsSetValue ( pGbl->tlsIndexThreadLibraryEPICS, pParm );
         if ( ! success ) {
             epicsParmCleanupWIN32 ( pParm );
             pParm = 0;
         }
         else {
-            stat = WaitForSingleObject ( win32ThreadGlobalMutex, INFINITE );
-            assert ( stat == WAIT_OBJECT_0 );
-
-            ellAdd ( & threadList, & pParm->node );
-
-            success = ReleaseMutex ( win32ThreadGlobalMutex );
-            assert ( success );
+            EnterCriticalSection ( & pGbl->mutex );
+            ellAdd ( & pGbl->threadList, & pParm->node );
+            LeaveCriticalSection ( & pGbl->mutex );
         }
     }
     return pParm;
@@ -531,18 +529,15 @@ static win32ThreadParam * epicsThreadImplicitCreate ( void )
 epicsShareFunc epicsThreadId epicsShareAPI epicsThreadCreate (const char *pName,
     unsigned int priority, unsigned int stackSize, EPICSTHREADFUNC pFunc,void *pParm)
 {
-    win32ThreadParam *pParmWIN32;
+    win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
+    win32ThreadParam * pParmWIN32;
     int osdPriority;
     DWORD wstat;
     BOOL bstat;
 
-    if ( ! win32ThreadInitOK ) {
-        epicsThreadInit ();
-        if ( ! win32ThreadInitOK ) {
-            return NULL;
-        }
+    if ( ! pGbl )  {
+        return NULL;
     }
-
     pParmWIN32 = epicsThreadParmCreate ( pName );
     if ( pParmWIN32 == 0 ) {
         return ( epicsThreadId ) pParmWIN32;
@@ -551,7 +546,8 @@ epicsShareFunc epicsThreadId epicsShareAPI epicsThreadCreate (const char *pName,
     pParmWIN32->parm = pParm;
     pParmWIN32->epicsPriority = priority;
 
-    pParmWIN32->handle = (HANDLE) _beginthreadex ( 0, stackSize, epicsWin32ThreadEntry, 
+    pParmWIN32->handle = (HANDLE) _beginthreadex ( 0, 
+        stackSize, epicsWin32ThreadEntry, 
         pParmWIN32, CREATE_SUSPENDED, &pParmWIN32->id );
     if ( pParmWIN32->handle == 0 ) {
         free ( pParmWIN32 );
@@ -573,13 +569,9 @@ epicsShareFunc epicsThreadId epicsShareAPI epicsThreadCreate (const char *pName,
         return NULL;
     }
 
-    wstat = WaitForSingleObject ( win32ThreadGlobalMutex, INFINITE );
-    assert ( wstat == WAIT_OBJECT_0 );
-
-    ellAdd ( & threadList, & pParmWIN32->node );
-
-    bstat = ReleaseMutex ( win32ThreadGlobalMutex );
-    assert ( bstat );
+    EnterCriticalSection ( & pGbl->mutex );
+    ellAdd ( & pGbl->threadList, & pParmWIN32->node );
+    LeaveCriticalSection ( & pGbl->mutex );
 
     return ( epicsThreadId ) pParmWIN32;
 }
@@ -589,10 +581,14 @@ epicsShareFunc epicsThreadId epicsShareAPI epicsThreadCreate (const char *pName,
  */
 epicsShareFunc void epicsShareAPI epicsThreadSuspendSelf ()
 {
-    win32ThreadParam *pParm = (win32ThreadParam *) TlsGetValue (tlsIndexThreadLibraryEPICS);
-    BOOL success;
+    win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
+    win32ThreadParam * pParm;
     DWORD stat;
 
+    assert ( pGbl );
+
+    pParm = ( win32ThreadParam * ) 
+        TlsGetValue ( pGbl->tlsIndexThreadLibraryEPICS );
     if ( ! pParm ) {
         pParm = epicsThreadImplicitCreate ();
         if ( ! pParm ) {
@@ -602,16 +598,14 @@ epicsShareFunc void epicsShareAPI epicsThreadSuspendSelf ()
         }
     }
 
-    stat = WaitForSingleObject (win32ThreadGlobalMutex, INFINITE);
-    assert ( stat == WAIT_OBJECT_0 );
+    EnterCriticalSection ( & pGbl->mutex );
 
     stat =  SuspendThread ( pParm->handle );
     pParm->isSuspended = 1;
 
-    success = ReleaseMutex (win32ThreadGlobalMutex);
-    assert (success);
+    LeaveCriticalSection ( & pGbl->mutex );
 
-    assert (stat!=0xFFFFFFFF);
+    assert ( stat != 0xFFFFFFFF );
 }
 
 /*
@@ -619,20 +613,20 @@ epicsShareFunc void epicsShareAPI epicsThreadSuspendSelf ()
  */
 epicsShareFunc void epicsShareAPI epicsThreadResume ( epicsThreadId id )
 {
-    win32ThreadParam *pParm = (win32ThreadParam *) id;
-    BOOL success;
+    win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
+    win32ThreadParam * pParm = ( win32ThreadParam * ) id;
     DWORD stat;
 
-    stat = WaitForSingleObject (win32ThreadGlobalMutex, INFINITE);
-    assert ( stat == WAIT_OBJECT_0 );
+    assert ( pGbl );
+
+    EnterCriticalSection ( & pGbl->mutex );
 
     stat =  ResumeThread ( pParm->handle );
     pParm->isSuspended = 0;
 
-    success = ReleaseMutex (win32ThreadGlobalMutex);
-    assert (success);
+    LeaveCriticalSection ( & pGbl->mutex );
 
-    assert (stat!=0xFFFFFFFF);
+    assert ( stat != 0xFFFFFFFF );
 }
 
 /*
@@ -640,7 +634,7 @@ epicsShareFunc void epicsShareAPI epicsThreadResume ( epicsThreadId id )
  */
 epicsShareFunc unsigned epicsShareAPI epicsThreadGetPriority (epicsThreadId id) 
 { 
-    win32ThreadParam *pParm = (win32ThreadParam *) id;
+    win32ThreadParam * pParm = ( win32ThreadParam * ) id;
     return pParm->epicsPriority;
 }
 
@@ -649,8 +643,13 @@ epicsShareFunc unsigned epicsShareAPI epicsThreadGetPriority (epicsThreadId id)
  */
 epicsShareFunc unsigned epicsShareAPI epicsThreadGetPrioritySelf () 
 { 
-    win32ThreadParam *pParm = (win32ThreadParam *) 
-        TlsGetValue ( tlsIndexThreadLibraryEPICS );
+    win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
+    win32ThreadParam * pParm;
+
+    assert ( pGbl );
+
+    pParm = ( win32ThreadParam * ) 
+        TlsGetValue ( pGbl->tlsIndexThreadLibraryEPICS );
     if ( ! pParm ) {
         pParm = epicsThreadImplicitCreate ();
     }
@@ -670,7 +669,7 @@ epicsShareFunc unsigned epicsShareAPI epicsThreadGetPrioritySelf ()
  */
 epicsShareFunc void epicsShareAPI epicsThreadSetPriority ( epicsThreadId id, unsigned priority ) 
 {
-    win32ThreadParam *pParm = (win32ThreadParam *) id;
+    win32ThreadParam * pParm = ( win32ThreadParam * ) id;
     BOOL stat = SetThreadPriority ( pParm->handle, epicsThreadGetOsdPriorityValue (priority) );
     assert (stat);
 }
@@ -680,8 +679,8 @@ epicsShareFunc void epicsShareAPI epicsThreadSetPriority ( epicsThreadId id, uns
  */
 epicsShareFunc int epicsShareAPI epicsThreadIsEqual ( epicsThreadId id1, epicsThreadId id2 ) 
 {
-    win32ThreadParam *pParm1 = (win32ThreadParam *) id1;
-    win32ThreadParam *pParm2 = (win32ThreadParam *) id2;
+    win32ThreadParam * pParm1 = ( win32ThreadParam * ) id1;
+    win32ThreadParam * pParm2 = ( win32ThreadParam * ) id2;
     return ( id1 == id2 && pParm1->id == pParm2->id );
 }
 
@@ -690,11 +689,11 @@ epicsShareFunc int epicsShareAPI epicsThreadIsEqual ( epicsThreadId id1, epicsTh
  */
 epicsShareFunc int epicsShareAPI epicsThreadIsSuspended ( epicsThreadId id ) 
 {
-    win32ThreadParam *pParm = (win32ThreadParam *) id;
+    win32ThreadParam *pParm = ( win32ThreadParam * ) id;
     DWORD exitCode;
     BOOL stat;
     
-    stat = GetExitCodeThread ( pParm->handle, &exitCode );
+    stat = GetExitCodeThread ( pParm->handle, & exitCode );
     if ( stat ) {
         if ( exitCode != STILL_ACTIVE ) {
             return 1;
@@ -757,7 +756,13 @@ double epicsShareAPI epicsThreadSleepQuantum ()
  */
 epicsShareFunc epicsThreadId epicsShareAPI epicsThreadGetIdSelf (void) 
 {
-    win32ThreadParam *pParm = (win32ThreadParam *) TlsGetValue (tlsIndexThreadLibraryEPICS);
+    win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
+    win32ThreadParam * pParm;
+
+    assert ( pGbl );
+
+    pParm = ( win32ThreadParam * ) TlsGetValue ( 
+        pGbl->tlsIndexThreadLibraryEPICS );
     if ( ! pParm ) {
         pParm = epicsThreadImplicitCreate ();
         assert ( pParm ); /* very dangerous to allow non-unique thread id into use */
@@ -765,16 +770,18 @@ epicsShareFunc epicsThreadId epicsShareAPI epicsThreadGetIdSelf (void)
     return ( epicsThreadId ) pParm;
 }
 
-epicsShareFunc epicsThreadId epicsShareAPI epicsThreadGetId ( const char *pName )
+epicsShareFunc epicsThreadId epicsShareAPI epicsThreadGetId ( const char * pName )
 {
+    win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
     win32ThreadParam * pParm;
-    DWORD stat;
-    BOOL success;
 
-    stat = WaitForSingleObject ( win32ThreadGlobalMutex, INFINITE );
-    assert ( stat == WAIT_OBJECT_0 );
-    
-    for ( pParm = ( win32ThreadParam * ) ellFirst ( & threadList ); 
+    if ( ! pGbl ) {
+        return 0;
+    }
+
+    EnterCriticalSection ( & pGbl->mutex );
+
+    for ( pParm = ( win32ThreadParam * ) ellFirst ( & pGbl->threadList ); 
             pParm; pParm = ( win32ThreadParam * ) ellNext ( & pParm->node ) ) {
         if ( pParm->pName ) {
             if ( strcmp ( pParm->pName, pName ) == 0 ) {
@@ -783,8 +790,7 @@ epicsShareFunc epicsThreadId epicsShareAPI epicsThreadGetId ( const char *pName 
         }
     }
 
-    success = ReleaseMutex ( win32ThreadGlobalMutex );
-    assert ( success );
+    LeaveCriticalSection ( & pGbl->mutex );
 
     // !!!! warning - the thread parm could vanish at any time !!!!
 
@@ -797,7 +803,15 @@ epicsShareFunc epicsThreadId epicsShareAPI epicsThreadGetId ( const char *pName 
  */
 epicsShareFunc const char * epicsShareAPI epicsThreadGetNameSelf (void)
 {
-    win32ThreadParam *pParm = (win32ThreadParam *) TlsGetValue (tlsIndexThreadLibraryEPICS);
+    win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
+    win32ThreadParam * pParm;
+
+    if ( ! pGbl ) {
+        return "thread library not initialized";
+    }
+
+    pParm = ( win32ThreadParam * ) 
+        TlsGetValue ( pGbl->tlsIndexThreadLibraryEPICS );
     if ( ! pParm ) {
         pParm = epicsThreadImplicitCreate ();
     }
@@ -813,13 +827,14 @@ epicsShareFunc const char * epicsShareAPI epicsThreadGetNameSelf (void)
 /*
  * epicsThreadGetName ()
  */
-epicsShareFunc void epicsShareAPI epicsThreadGetName ( epicsThreadId id, char *pName, size_t size )
+epicsShareFunc void epicsShareAPI epicsThreadGetName ( 
+    epicsThreadId id, char * pName, size_t size )
 {
-    win32ThreadParam *pParm = (win32ThreadParam *) id;
+    win32ThreadParam * pParm = ( win32ThreadParam * ) id;
 
     if ( size ) {
         size_t sizeMinusOne = size-1;
-        strncpy (pName, pParm->pName, sizeMinusOne);
+        strncpy ( pName, pParm->pName, sizeMinusOne );
         pName [sizeMinusOne] = '\0';
     }
 }
@@ -861,7 +876,7 @@ static const char * epics_GetThreadPriorityAsString ( HANDLE thr )
  */
 static void epicsThreadShowPrivate ( epicsThreadId id, unsigned level )
 {
-    win32ThreadParam *pParm = (win32ThreadParam *) id;
+    win32ThreadParam * pParm = ( win32ThreadParam * ) id;
 
     if ( pParm ) {
         printf ( "%-15s %-8p %-8x %-9u %-9s %-7s", pParm->pName, 
@@ -889,21 +904,22 @@ static void epicsThreadShowPrivate ( epicsThreadId id, unsigned level )
  */
 epicsShareFunc void epicsShareAPI epicsThreadShowAll ( unsigned level )
 {
+    win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
     win32ThreadParam * pParm;
-    DWORD stat;
-    BOOL success;
 
-    stat = WaitForSingleObject ( win32ThreadGlobalMutex, INFINITE );
-    assert ( stat == WAIT_OBJECT_0 );
+    if ( ! pGbl ) {
+        return;
+    }
+
+    EnterCriticalSection ( & pGbl->mutex );
     
     epicsThreadShowPrivate ( 0, level );
-    for ( pParm = ( win32ThreadParam * ) ellFirst ( & threadList ); 
+    for ( pParm = ( win32ThreadParam * ) ellFirst ( & pGbl->threadList ); 
             pParm; pParm = ( win32ThreadParam * ) ellNext ( & pParm->node ) ) {
         epicsThreadShowPrivate ( ( epicsThreadId ) pParm, level );
     }
 
-    success = ReleaseMutex ( win32ThreadGlobalMutex );
-    assert ( success );
+    LeaveCriticalSection ( & pGbl->mutex );
 }
 
 /*
@@ -921,24 +937,18 @@ epicsShareFunc void epicsShareAPI epicsThreadShow ( epicsThreadId id, unsigned l
 epicsShareFunc void epicsShareAPI epicsThreadOnceOsd (
     epicsThreadOnceId *id, void (*func)(void *), void *arg )
 {
-    BOOL success;
-    DWORD stat;
-    
-    if ( ! win32ThreadInitOK ) {
-        epicsThreadInit ();
-        assert ( win32ThreadInitOK );
-    }
+    win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
 
-    stat = WaitForSingleObject ( win32ThreadGlobalMutex, INFINITE );
-    assert ( stat == WAIT_OBJECT_0 );
+    assert ( pGbl );
+    
+    EnterCriticalSection ( & pGbl->mutex );
 
     if ( ! *id ) {
         ( *func ) ( arg );
         *id = 1;
     }
 
-    success = ReleaseMutex ( win32ThreadGlobalMutex );
-    assert ( success );
+    LeaveCriticalSection ( & pGbl->mutex );
 }
 
 /*

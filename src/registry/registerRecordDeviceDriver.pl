@@ -29,7 +29,6 @@ close(INP) or die "$! closing file";
 print << "END" ;
 /*#registerRecordDeviceDriver.cpp */
 /* THIS IS A GENERATED FILE. DO NOT EDIT */
-//extern "C" {
 #include <stddef.h>
 #include <string.h>
 #include <stdlib.h>
@@ -52,7 +51,7 @@ END
 #definitions for recordtype
 if($numberRecordType>0) {
     for ($i=0; $i<$numberRecordType; $i++) {
-        print "extern struct rset $recordType[$i]RSET;\n";
+        print "extern \"C\" struct rset $recordType[$i]RSET;\n";
         print "extern \"C\" int $recordType[$i]RecordSizeOffset(dbRecordType *pdbRecordType);\n";
     #NOTE the following caused a compiler error on vxWorks
     #    print "extern computeSizeOffset $recordType[$i]RecordSizeOffset;\n";
@@ -121,7 +120,7 @@ if($numberDriverSupport>0) {
 #Now actual registration code.
 
 print << "END" ;
-int registerRecordDeviceDriver(DBBASE *pdbbase)
+int registerRecordDeviceDriver(DBBASE *pbase)
 {
     int i;
 
@@ -130,7 +129,7 @@ if($numberRecordType>0) {
     print << "END" ;
     for(i=0; i< $numberRecordType;  i++ ) {
         recordTypeLocation *precordTypeLocation;
-        int (*sizeOffset)(dbRecordType *pdbRecordType);
+        computeSizeOffset sizeOffset;
         DBENTRY dbEntry;
 
         if(registryRecordTypeFind(recordTypeNames[i])) continue;
@@ -139,7 +138,7 @@ if($numberRecordType>0) {
                 recordTypeNames[i]);
             continue;
         }
-        dbInitEntry(pdbbase,&dbEntry);
+        dbInitEntry(pbase,&dbEntry);
         precordTypeLocation = registryRecordTypeFind(recordTypeNames[i]);
         sizeOffset = precordTypeLocation->sizeOffset;
         if(dbFindRecordType(&dbEntry,recordTypeNames[i])) {
@@ -179,8 +178,6 @@ print << "END" ;
     return(0);
 }
 
-// } /* extern "C" */
-
 /* registerRecordDeviceDriver */
 static const ioccrfArg registerRecordDeviceDriverArg0 =
                                             {"pdbbase",ioccrfArgPdbbase};
@@ -188,10 +185,12 @@ static const ioccrfArg *registerRecordDeviceDriverArgs[1] =
                                             {&registerRecordDeviceDriverArg0};
 static const ioccrfFuncDef registerRecordDeviceDriverFuncDef =
                 {"registerRecordDeviceDriver",1,registerRecordDeviceDriverArgs};
-static void registerRecordDeviceDriverCallFunc(const ioccrfArgBuf *args)
+extern "C" {
+static void registerRecordDeviceDriverCallFunc(const ioccrfArgBuf *)
 {
     registerRecordDeviceDriver(pdbbase);
 }
+} //extern "C"
 
 /*
  * Register commands on application startup

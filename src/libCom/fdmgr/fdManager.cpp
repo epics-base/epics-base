@@ -185,7 +185,7 @@ epicsShareFunc void fdManager::process (double delay)
             //
             if ( errnoCpy != SOCK_EINTR ) {
                 char sockErrBuf[64];
-                convertSocketErrorToString ( 
+                epicsSocketConvertErrnoToString ( 
                     sockErrBuf, sizeof ( sockErrBuf ) );
                 fprintf ( stderr, 
                 "fdManager: select failed because \"%s\"\n",

@@ -277,7 +277,7 @@ LOCAL void logClientMakeSock (logClient *pClient)
     pClient->sock = socket ( AF_INET, SOCK_STREAM, 0 );
     if ( pClient->sock == INVALID_SOCKET ) {
         char sockErrBuf[64];
-        convertSocketErrorToString ( 
+        epicsSocketConvertErrnoToString ( 
             sockErrBuf, sizeof ( sockErrBuf ) );
         fprintf ( stderr, "log client: no socket error %s\n", 
             sockErrBuf );
@@ -289,7 +289,7 @@ LOCAL void logClientMakeSock (logClient *pClient)
     status = socket_ioctl (pClient->sock, FIONBIO, &optval);
     if (status<0) {
         char sockErrBuf[64];
-        convertSocketErrorToString ( 
+        epicsSocketConvertErrnoToString ( 
             sockErrBuf, sizeof ( sockErrBuf ) );
         fprintf (stderr, "%s:%d ioctl FBIO client er %s\n", 
             __FILE__, __LINE__, sockErrBuf);
@@ -356,7 +356,7 @@ LOCAL void logClientConnect (logClient *pClient)
 
                 if (pClient->connectReset==0) {
                     char sockErrBuf[64];
-                    convertSocketErrorToString ( 
+                    epicsSocketConvertErrnoToString ( 
                         sockErrBuf, sizeof ( sockErrBuf ) );
                     fprintf (stderr,
                         "log client: Unable to connect to \"%s\" because %d=\"%s\"\n", 
@@ -376,7 +376,7 @@ LOCAL void logClientConnect (logClient *pClient)
     status = socket_ioctl (pClient->sock, FIONBIO, &optval);
     if (status<0) {
         char sockErrBuf[64];
-        convertSocketErrorToString ( 
+        epicsSocketConvertErrnoToString ( 
             sockErrBuf, sizeof ( sockErrBuf ) );
         fprintf (stderr, "%s:%d ioctl FIONBIO log client error was \"%s\"\n", 
             __FILE__, __LINE__, sockErrBuf);
@@ -392,7 +392,7 @@ LOCAL void logClientConnect (logClient *pClient)
     status = setsockopt (pClient->sock, SOL_SOCKET, SO_KEEPALIVE, (char *)&optval, sizeof(optval));
     if (status<0) {
         char sockErrBuf[64];
-        convertSocketErrorToString ( 
+        epicsSocketConvertErrnoToString ( 
             sockErrBuf, sizeof ( sockErrBuf ) );
         fprintf (stderr, "log client: unable to enable keepalive option because \"%s\"\n", sockErrBuf);
     }
@@ -411,7 +411,7 @@ LOCAL void logClientConnect (logClient *pClient)
         status = setsockopt (pClient->sock, SOL_SOCKET, SO_LINGER, (char *) &lingerval, sizeof(lingerval));
         if (status<0) {
             char sockErrBuf[64];
-            convertSocketErrorToString ( 
+            epicsSocketConvertErrnoToString ( 
                 sockErrBuf, sizeof ( sockErrBuf ) );
             fprintf (stderr, "log client: unable to set linger options because \"%s\"\n", sockErrBuf);
         }

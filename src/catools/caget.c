@@ -379,14 +379,14 @@ int main (int argc, char *argv[])
             if (sscanf(optarg, "%d", &digits) != 1)
                 fprintf(stderr, 
                         "Invalid precision argument '%s' "
-                        "for option '-%c' - ignored.\n", optarg, optopt);
+                        "for option '-%c' - ignored.\n", optarg, opt);
             else
             {
                 if (digits>=0 && digits<=VALID_DOUBLE_DIGITS)
-                    sprintf(dblFormatStr, "%%-.%d%c", digits, optopt);
+                    sprintf(dblFormatStr, "%%-.%d%c", digits, opt);
                 else
                     fprintf(stderr, "Precision %d for option '-%c' "
-                            "out of range - ignored.\n", digits, optopt);
+                            "out of range - ignored.\n", digits, opt);
             }
             break;
         case '0':               /* Select integer format */

@@ -545,7 +545,7 @@ showInternalTaskInfo (rtems_id tid)
 static void
 threadShowHeader (void)
 {
-    printf ("      NAME       ID    PRI   STATE    WAIT   \n");
+    printf ("      NAME        ID    PRI   STATE    WAIT   \n");
     printf ("+-------------+--------+---+--------+--------+\n");
 }
 

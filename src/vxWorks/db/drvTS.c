@@ -1,6 +1,9 @@
 
 /*
  * $Log$
+ * Revision 1.19  1997/03/05 13:20:44  jbk
+ * Fixed a bug in TSreport - printing of IP addresses was incorrect
+ *
  * Revision 1.18  1997/01/20 15:31:00  jbk
  * Print IP address on report
  *
@@ -1097,12 +1100,15 @@ static long TSgetMasterTime(struct timespec* tsp)
 static long TSsetClockFromUnix()
 {
 	struct timespec tp;
+	unsigned long ulongtemp;
 
 	Debug0(3,"in TSsetClockFromUnix()\n");
 
 	if(TSgetUnixTime(&tp)!=0) return -1;
 
-	tp.tv_sec-=TS_1900_TO_VXWORKS_EPOCH;
+        ulongtemp = (unsigned long)tp.tv_sec;
+	ulongtemp -= TS_1900_TO_VXWORKS_EPOCH;
+	tp.tv_sec = (long)ulongtemp;
 
 	if(MAKE_DEBUG>=9)
 		TSprintf("set time: %9.9lu.%9.9lu\n", tp.tv_sec,tp.tv_nsec);
@@ -1477,11 +1483,14 @@ static long TSasyncClient()
 				else
 				{
 					int i;
+					unsigned long ulongtemp;
 					/* get the current time */
 					cts=TSdata.event_table[TSdata.sync_event];
 					/* adjust the ntp time */
-					ts.tv_sec = ntohl(buf_ntp.transmit_ts.tv_sec) -
-									TS_1900_TO_EPICS_EPOCH;
+					ts.tv_sec = ntohl(buf_ntp.transmit_ts.tv_sec);
+					ulongtemp = (unsigned long)ts.tv_sec;
+					ulongtemp -= TS_1900_TO_EPICS_EPOCH;
+					ts.tv_sec = (long)ulongtemp;
 					nsecs=ntohl(buf_ntp.transmit_ts.tv_nsec);
 					for(i=0,ts.tv_nsec=0;i<32;i++)
 						if(bit_pat[i]&nsecs) ts.tv_nsec+=ns_val[i];

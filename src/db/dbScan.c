@@ -56,7 +56,8 @@
  *				intr_event_poster to io_scanner_wakeup
  * .16  09-14-90	mrk	changed for new record/device support
  * .17  10-24-90	mrk	replaced momentary task by general purpose callback task
- * .18  09-30-91	mrk	added intLock to callbackRequest
+ * .18  08-30-91	joh	updated for V5 vxWorks
+ * .19  09-30-91	mrk	added intLock to callbackRequest
  */
 
 /*
@@ -449,7 +450,11 @@ ioEventTask()
     /* forever */
     FOREVER {
         /* wait for somebody to wake us up */
-        semTake(&ioEventSem);
+#       ifdef V5_vxWorks
+		semTake(&ioEventSem, WAIT_FOREVER);
+#       else
+        	semTake(&ioEventSem);
+#	endif
 
        /* process requests in the command ring buffer */
         while (rngNBytes(ioEventQ)>=INTR_EVENT_SZ){
@@ -540,7 +545,11 @@ eventTask()
     /* forever */
     FOREVER {
         /* wait for somebody to wake us up */
-        semTake(&eventSem);
+#       ifdef V5_vxWorks
+		semTake(&eventSem, WAIT_FOREVER);
+#	else
+        	semTake(&eventSem);
+#	endif
 
        /* process requests in the command ring buffer */
         while (rngNBytes(eventQ)>=sizeof(short)){
@@ -646,7 +655,11 @@ callbackTask(){
 
     FOREVER {
 	/* wait for somebody to wake us up */
-        semTake (&callbackSem);
+#       ifdef V5_vxWorks
+		semTake (&callbackSem, WAIT_FOREVER);
+#	else
+        	semTake (&callbackSem);
+#	endif
 
 	/* process requests in the command ring buffer */
 	while(rngNBytes(callbackQ)>=sizeof(pcallback)) {
@@ -1621,7 +1634,7 @@ print_list()
 	short			list;
 	char input[5];
 
-	fd = fioStdIn();
+	fd = STD_IN;
 
 	/* print each scan list */
 	printf("\n");
@@ -1671,7 +1684,7 @@ print_io_event_lists()
 	char input[5];
 	struct scan_element	*pelement;
 
-	fd = fioStdIn();
+	fd = STD_IN;
 
 	/* print each scan list */
 	printf("\n");
@@ -1720,7 +1733,7 @@ print_event_lists()
 	char input[5];
 	struct scan_element	*pelement;
 
-	fd = fioStdIn();
+	fd = STD_IN;
 
 	/* print each scan list */
 	printf("\n");

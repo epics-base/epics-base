@@ -1,5 +1,8 @@
 /* $Id$
  * $Log$
+ * Revision 1.5  1994/10/05  18:28:17  jba
+ * Renamed version.h to epicsVersion.h
+ *
  * Revision 1.4  1994/08/18  04:34:42  bordua
  * Added some spaces to make output look good.
  *
@@ -15,7 +18,7 @@
 
 #include    <epicsVersion.h>
 
-    char *epicsRelease= "@(#)EPICS IOC CORE $Date$";
+    char *epicsRelease= "@(#)EPICS IOC CORE";
     char *epicsRelease1 = epicsReleaseVersion;
 coreRelease()
 {

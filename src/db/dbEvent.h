@@ -86,6 +86,7 @@ struct event_que{
         unsigned short  putix;
         unsigned short  getix;
         unsigned short  quota;          /* the number of assigned entries*/
+	    unsigned short	nDuplicates;	/* N events duplicated on this q */ 
 };
 
 struct event_user{
@@ -104,7 +105,6 @@ struct event_user{
 
         int                     taskid;         /* event handler task id */
         unsigned 		queovr;		/* event que overflow count */
-	unsigned		nDuplicates;	/* events duplicated on q */ 
         char                    pendlck;        /* Only one task can pend */
         unsigned char           pendexit;       /* exit pend task */
 	unsigned char		extra_labor;	/* if set call extra labor func */

@@ -225,7 +225,6 @@ struct event_user *db_init_events(void)
 		return NULL;
 	}
 	evUser->flowCtrlMode = FALSE;
-	evUser->nDuplicates = 0u;
 
   	return evUser;
 }
@@ -319,6 +318,7 @@ struct event_block	*pevent /* ptr to event blk (not required) */
       			if(!tmp_que) 
         			return ERROR;
       			tmp_que->evUser = evUser;
+      			tmp_que->nDuplicates = 0u;
 			FASTLOCKINIT(&(tmp_que->writelock));
       			ev_que->nextque = tmp_que;
       			ev_que = tmp_que;
@@ -661,7 +661,7 @@ LOCAL int db_post_single_event_private(struct event_block *event)
 		pLog = &ev_que->valque[ev_que->putix];
 		ev_que->evque[ev_que->putix] = event;
 		if (event->npend>0u) {
-			ev_que->evUser->nDuplicates++;
+			ev_que->nDuplicates++;
 		}
 		event->npend++;
 		/* 
@@ -820,39 +820,31 @@ int			init_func_arg
 			(*evUser->extralabor_sub)(evUser->extralabor_arg);
 		}
 
+		for(	ev_que= &evUser->firstque; 
+			ev_que; 
+			ev_que = ev_que->nextque){
+
+			event_read(ev_que);
+		}
+
 		/*
-		 * if in flow control mode drain duplicates and then
-		 * suspend processing events until flow control
-		 * mode is over
+		 * The following do not introduce event latency since they
+		 * are not between notification and posting events.
 		 */
-		if (evUser->flowCtrlMode!=TRUE || evUser->nDuplicates>0u) {
-
-			for(	ev_que= &evUser->firstque; 
-				ev_que; 
-				ev_que = ev_que->nextque){
-
-				event_read(ev_que);
-			}
-
-			/*
-			 * The following do not introduce event latency since they
-			 * are not between notification and posting events.
-			 */
-			if(evUser->queovr){
-				if(evUser->overflow_sub)
-					(*evUser->overflow_sub)(
-						evUser->overflow_arg, 
-						evUser->queovr);
-				else
-					logMsg("Events lost, discard count was %d\n",
-						evUser->queovr,
-						NULL,
-						NULL,
-						NULL,
-						NULL,
-						NULL);
-				evUser->queovr = 0;
-			}
+		if(evUser->queovr){
+			if(evUser->overflow_sub)
+				(*evUser->overflow_sub)(
+					evUser->overflow_arg, 
+					evUser->queovr);
+			else
+				logMsg("Events lost, discard count was %d\n",
+					evUser->queovr,
+					NULL,
+					NULL,
+					NULL,
+					NULL,
+					NULL);
+			evUser->queovr = 0;
 		}
 
   	}while(!evUser->pendexit);
@@ -931,12 +923,24 @@ LOCAL int event_read (struct event_que *ev_que)
 			int eventsRemaining, db_field_log *pfl);
 	int status;
 
+
+    
 	/*
 	 * evUser ring buffer must be locked for the multiple
 	 * threads writing/reading it
 	 */
       	LOCKEVQUE(ev_que)
-
+      	
+	/*
+	 * if in flow control mode drain duplicates and then
+	 * suspend processing events until flow control
+	 * mode is over
+	 */
+    if (ev_que->evUser->flowCtrlMode && ev_que->nDuplicates==0u) {
+	    UNLOCKEVQUE(ev_que);
+        return OK;
+    }
+    
 	/*
 	 * Fetch fast register copy
 	 */
@@ -974,8 +978,8 @@ LOCAL int event_read (struct event_que *ev_que)
 		}
 		else {
 			assert (event->npend>1u);
-			assert (ev_que->evUser->nDuplicates>=1u);
-			ev_que->evUser->nDuplicates--;
+			assert (ev_que->nDuplicates>=1u);
+			ev_que->nDuplicates--;
 		}
  
 		/*

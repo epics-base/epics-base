@@ -24,6 +24,7 @@
  */
 
 #include <unistd.h>
+#include <ieeefp.h>
 
 /*
  * Some systems fail to provide prototypes of these functions.

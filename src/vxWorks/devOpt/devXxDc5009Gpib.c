@@ -36,6 +36,14 @@
  * .01  05-30-91        jrw     Initial Release
  */
 
+/******************************************************************************
+ *
+ * The following define statements are used to declare the names to be used
+ * for the dset tables.   
+ *
+ * NOTE: The dsets are referenced by the entries in the command table.
+ *
+ ******************************************************************************/
 #define	DSET_AI		devAiDc5009Gpib
 #define	DSET_AO		devAoDc5009Gpib
 #define	DSET_LI		devLiDc5009Gpib
@@ -137,24 +145,34 @@ gDset DSET_LO   = {5, {NULL, NULL, devGpibLib_initLo, NULL,
 	devGpibLib_writeLo, (DRVSUPFUN)&devSupParms, 
 	(DRVSUPFUN)devGpibLib_loGpibWork, NULL}};
 
-int Dc5009Debug = 0;		/* debugging flags */
-extern int ibSrqDebug;
+/******************************************************************************
+ *
+ * Debugging flags that can be accessed from the shell.
+ *
+ ******************************************************************************/
+int Dc5009Debug = 0;
+extern int ibSrqDebug;		/* declared in the GPIB driver */
 
-/*
+/******************************************************************************
+ *
  * Use the TIME_WINDOW defn to indicate how long commands should be ignored
  * for a given device after it times out.  The ignored commands will be
  * returned as errors to device support.
  *
  * Use the DMA_TIME to define how long you wish to wait for an I/O operation
  * to complete once started.
- */
+ *
+ * These are to be declared in 60ths of a second.
+ *
+ ******************************************************************************/
 #define TIME_WINDOW	600		/* 10 seconds on a getTick call */
 #define	DMA_TIME	60		/* 1 second on a watchdog time */
 
-/*
+/******************************************************************************
+ *
  * Strings used by the init routines to fill in the znam, onam, ...
  * fields in BI, BO, MBBI, and MBBO record types.
- */
+ ******************************************************************************/
 
 static  char            *offOnList[] = { "Off", "On" };
 static  struct  devGpibNames   offOn = { 2, offOnList, NULL, 1 };
@@ -185,8 +203,7 @@ static  struct  devGpibNames   fallingRising = { 2, fallingRisingList, NULL, 1 }
 
 static  char    *clearList[] = { "CLEAR", "CLEAR" };
 static  struct  devGpibNames   clear = { 2, clearList, NULL, 1 };
-
-
+
 /******************************************************************************
  *
  * String arrays for EFAST operations.  Note that the last entry must be 
@@ -259,6 +276,9 @@ static struct gpibCmd gpibCmds[] =
  * If the parm is specified on a non-passive record, it will NOT be processed
  * when an unsolicited SRQ is detected.
  *
+ * In the future, the magic SRQ parm records will be processed as "I/O event
+ * scanned"... not passive.
+ *
  ******************************************************************************/
 struct  devGpibParmBlock devSupParms = {
   &Dc5009Debug,         /* debugging flag pointer */
@@ -271,10 +291,39 @@ struct  devGpibParmBlock devSupParms = {
   "devXxDc5009Gpib",	/* device support module type name */
   DMA_TIME,		/* # of clock ticks to wait for DMA completions */
 
-  srqHandler,           /* pointer to SRQ handler function (NULL if none) */
+  srqHandler,           /* SRQ handler function (NULL if none) */
 
-  NULL			/* pointer to secondary conversion routine */
+  NULL			/* secondary conversion routine (NULL if none) */
 };
+
+/******************************************************************************
+ *
+ * Initialization for device support
+ * This is called one time before any records are initialized with a parm
+ * value of 0.  And then again AFTER all record-level init is complete
+ * with a param value of 1.
+ *
+ ******************************************************************************/
+static long 
+init_dev_sup(parm)
+int	parm;
+{
+  return(devGpibLib_initDevSup(parm,&DSET_AI));
+}
+
+/******************************************************************************
+ *
+ * Print a report of operating statistics for all devices supported by this
+ * module.
+ *
+ * This function will no longer be required after epics 3.3 is released
+ *
+ ******************************************************************************/
+static long
+report()
+{
+  return(devGpibLib_report(&DSET_AI));
+}
 
 /******************************************************************************
  *
@@ -357,33 +406,4 @@ int		srqStatus;	/* The poll response from the device */
     }
   }
   return(status);
-}
-
-/******************************************************************************
- *
- * Initialization for device support
- * This is called one time before any records are initialized with a parm
- * value of 0.  And then again AFTER all record-level init is complete
- * with a param value of 1.
- *
- ******************************************************************************/
-static long 
-init_dev_sup(parm)
-int	parm;
-{
-  return(devGpibLib_initDevSup(parm,&DSET_AI));
-}
-
-/******************************************************************************
- *
- * Print a report of operating statistics for all devices supported by this
- * module.
- *
- * This function will no longer be required after epics 3.3 is released
- *
- ******************************************************************************/
-static long
-report()
-{
-  return(devGpibLib_report(&DSET_AI));
 }

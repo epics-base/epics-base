@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.3  1997/08/05 00:47:02  jhill
+ * fixed warnings
+ *
  * Revision 1.2  1997/04/10 19:33:58  jhill
  * API changes
  *
@@ -45,9 +48,10 @@
 // are included first here so that they are included
 // once only before epicsExportSharedSymbols is defined)
 //
-#include "alarm.h"		// EPICS alarm severity/condition 
-#include "errMdef.h"	// EPICS error codes 
-#include "gdd.h" 		// EPICS data descriptors 
+#include "alarm.h" // EPICS alarm severity/condition 
+#include "errMdef.h" // EPICS error codes 
+#include "gdd.h" // EPICS data descriptors 
+#include "resourceLib.h" // EPICS hashing templates
 
 #define epicsExportSharedSymbols
 #include "casdef.h"

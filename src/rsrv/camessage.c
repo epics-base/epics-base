@@ -1318,6 +1318,7 @@ LOCAL void write_notify_call_back(PUTNOTIFY *ppn)
 	 * one client on another client).
 	 */
 	FASTLOCK(&pclient->putNotifyLock);
+    pciu->pPutNotify->onExtraLaborQueue = TRUE;
 	ellAdd(&pclient->putNotifyQue, &pciu->pPutNotify->node);
 	FASTUNLOCK(&pclient->putNotifyLock);
 
@@ -1354,6 +1355,7 @@ void write_notify_reply(void *pArg)
 		 */
 		FASTLOCK(&pClient->putNotifyLock);
 		ppnb = (RSRVPUTNOTIFY *)ellGet(&pClient->putNotifyQue);
+        ppnb->onExtraLaborQueue = FALSE;
 		FASTUNLOCK(&pClient->putNotifyLock);
 		/*
 		 * break to loop exit
@@ -1533,6 +1535,7 @@ struct client  *client
 	}
 
 	pciu->pPutNotify->busy = TRUE;
+    pciu->pPutNotify->onExtraLaborQueue = FALSE;
 	pciu->pPutNotify->msg = *mp;
 	pciu->pPutNotify->dbPutNotify.nRequest = mp->m_count;
 #ifdef CONVERSION_REQUIRED
@@ -1715,9 +1718,14 @@ struct client  *client
      * if a put notify is outstanding then cancel it
      */
      if(pciu->pPutNotify){
-         if(pciu->pPutNotify->busy){
-             dbNotifyCancel(&pciu->pPutNotify->dbPutNotify);
-         }
+        if( pciu->pPutNotify->busy ){
+            dbNotifyCancel(&pciu->pPutNotify->dbPutNotify);
+        }
+	    FASTLOCK(&client->putNotifyLock);
+        if ( pciu->pPutNotify->onExtraLaborQueue ) {
+	        ellDelete ( &client->putNotifyQue, &pciu->pPutNotify->node );
+        }
+	    FASTUNLOCK(&client->putNotifyLock);
      }
      
      while (TRUE){

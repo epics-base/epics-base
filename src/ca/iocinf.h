@@ -33,6 +33,9 @@
 
 /*
  * $Log$
+ * Revision 1.74.4.3  2000/11/30 22:07:51  jhill
+ * changes from Ken Evans
+ *
  * Revision 1.74.4.2  1999/09/02 21:12:18  jhill
  * use (void) and not () in func proto when its not a C++ file
  *
@@ -375,7 +378,8 @@ typedef struct caclient_put_notify{
 	void			(*caUserCallback)(struct event_handler_args);
 	void			*caUserArg;
 	struct CA_STATIC	*pcas;
-	int			busy;
+	char			busy;
+    char            onExtraLaborQueue;
 }CACLIENTPUTNOTIFY;
 #endif /*vxWorks*/
 

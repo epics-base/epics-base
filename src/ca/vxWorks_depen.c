@@ -29,6 +29,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.39.4.5  2002/03/13 22:07:58  jhill
+ * improved put notify cleanup when client terminates
+ *
  * Revision 1.39.4.4  2002/03/08 00:16:27  jhill
  * check for floating point in correct place
  *
@@ -912,6 +915,7 @@ LOCAL void ca_extra_event_labor (void *pArg)
 		 */
 		semTake (ca_static->ca_putNotifyLock, WAIT_FOREVER);
 		ppnb = (CACLIENTPUTNOTIFY *) ellGet (&ca_static->ca_putNotifyQue);
+        ppnb->onExtraLaborQueue = FALSE;
 		semGive (ca_static->ca_putNotifyLock);
 		
 		/*

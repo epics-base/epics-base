@@ -150,7 +150,8 @@ typedef struct rsrv_put_notify{
 	PUTNOTIFY	dbPutNotify;
 	caHdr		msg;
 	unsigned long	valueSize; /* size of block pointed to by dbPutNotify */
-	int		busy; /* put notify in progress */
+	char		busy; /* put notify in progress */
+    char        onExtraLaborQueue;
 }RSRVPUTNOTIFY;
 
 

@@ -99,6 +99,11 @@
 /************************************************************************/
 /*
  * $Log$
+ * Revision 1.107.2.8  2002/03/08 00:25:08  jhill
+ * fixed bug where the db_put_field in the local event callback stub was supplied
+ * with a destination that was the database field. In situations where the dbAccess
+ * db_access field types were different the database was damaged.
+ *
  * Revision 1.107.2.7  2001/09/18 12:17:48  mrk
  * increased stack size for cac_recv_task from 4096 to 8192
  *
@@ -1693,6 +1698,7 @@ const void			*usrarg
 			ppn->dbPutNotify.pbuffer = (ppn+1);
 		}
 		ppn->busy = TRUE;
+        ppn->onExtraLaborQueue = FALSE;
 		ppn->caUserCallback = pfunc;
 		ppn->caUserArg = (void *) usrarg;
 		ppn->dbPutNotify.nRequest = count;
@@ -1792,6 +1798,7 @@ LOCAL void ca_put_notify_action(PUTNOTIFY *ppn)
          * one client on another client).
          */
         semTake(pcas->ca_putNotifyLock, WAIT_FOREVER);
+        pcapn->onExtraLaborQueue = TRUE;
         ellAdd(&pcas->ca_putNotifyQue, &pcapn->node);
         semGive(pcas->ca_putNotifyLock);
 
@@ -2690,6 +2697,16 @@ int epicsShareAPI ca_clear_channel (chid pChan)
 			if(ppn->busy){
 				dbNotifyCancel(&ppn->dbPutNotify);
 			}
+
+            semTake (ca_static->ca_putNotifyLock, WAIT_FOREVER);
+            if ( ppn->onExtraLaborQueue ) {
+                ellDelete( &ca_static->ca_putNotifyQue, &ppn->node );
+            }
+		    semGive (ca_static->ca_putNotifyLock);
+
+            status = db_flush_extra_labor_event (ca_static->ca_evuser );
+            assert ( status == OK );
+
 			free(ppn);
 		}
 

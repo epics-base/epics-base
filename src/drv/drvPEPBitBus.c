@@ -1086,7 +1086,27 @@ int	link;
 	  if (pXvmeLink[link]->abortFlag == 0) {
 
 	    /* don't add to busy list if was a RAC_RESET_SLAVE */
-	    if ((pnode->txMsg.cmd != RAC_RESET_SLAVE) && (pnode->txMsg.tasks != 0))
+	    if ((pnode->txMsg.cmd == RAC_RESET_SLAVE) && (pnode->txMsg.tasks == 0))
+	    {
+	      printf("xvmeTxTask(%d): RAC_RESET_SLAVE sent\n", link);
+	      
+	      pnode->status = BB_OK;
+	      
+	      if (pnode->finishProc != NULL) {
+		if (bbDebug>4)
+		  printf("xvmeTxTask(%d): invoking the callbackRequest\n", 
+			 link);
+		callbackRequest(pnode); /* schedule completion processing */
+	      }
+    	      else
+	      {
+	        /* If there is a semaphore for synchronous I/O, unlock it */
+	        if (pnode->psyncSem != NULL)
+		  semGive(*(pnode->psyncSem));
+	      }
+	      taskDelay(15);
+	    }
+	    else
 	    {
 	      /* Lock the busy list */
 	      semTake(plink->busyList.sem, WAIT_FOREVER);
@@ -1118,26 +1138,6 @@ int	link;
 			plink->busyList.head->retire - now, 
 			xvmeTmoHandler, link);
 	      }
-	    }
-	    else { 
-	      /* finish the transaction here if was a RAC_RESET_SLAVE */
-	      printf("xvmeTxTask(%d): RAC_RESET_SLAVE sent\n", link);
-	      
-	      pnode->status = BB_OK;
-	      
-	      if (pnode->finishProc != NULL) {
-		if (bbDebug>4)
-		  printf("xvmeTxTask(%d): invoking the callbackRequest\n", 
-			 link);
-		callbackRequest(pnode); /* schedule completion processing */
-	      }
-    	      else
-	      {
-	        /* If there is a semaphore for synchronous I/O, unlock it */
-	        if (pnode->psyncSem != NULL)
-		  semGive(*(pnode->psyncSem));
-	      }
-	      taskDelay(15);
 	    }
 	  } else {  /* if abortFlag != 0 */
 	    /* Aborted transmission operation, re-queue the message */

@@ -219,7 +219,8 @@ void casPVI::updateEnumStringTable ()
     //
     pTmp = new gddScalar (stringTableType);
     if (pTmp==NULL) {
-        errMessage (S_cas_noMemory, "unable to read application type \"enums\" string conversion table for enumerated PV");
+        errMessage (S_cas_noMemory, 
+"unable to read application type \"enums\" string conversion table for enumerated PV");
         return;
     }
 
@@ -235,18 +236,22 @@ void casPVI::updateEnumStringTable ()
     status = this->read (ctx, *pTmp);
 	if (status == S_casApp_asyncCompletion || status == S_casApp_postponeAsyncIO) {
         pTmp->unreference ();
-		errMessage (status, " sorry, no support in server library for asynchronous completion of \"enums\" string conversion table for enumerated PV");
-		errMessage (status, " please fetch \"enums\" string conversion table into cache during asychronous PV attach IO completion");
+		errMessage (status, 
+" sorry, no support in server library for asynchronous completion of \"enums\" string conversion table for enumerated PV");
+		errMessage (status, 
+" please fetch \"enums\" string conversion table into cache during asychronous PV attach IO completion");
         return;
 	}
     else if (status) {
         pTmp->unreference ();
-        errMessage (status, "unable to read application type \"enums\" string conversion table for enumerated PV");
+        errMessage (status, 
+"unable to read application type \"enums\" string conversion table for enumerated PV");
         return;
 	}
 
     if (pTmp->isContainer()) {
-        errMessage (S_cas_badType, "application type \"enums\" string conversion table for enumerated PV was a container (expected vector of strings)");
+        errMessage (S_cas_badType, 
+"application type \"enums\" string conversion table for enumerated PV was a container (expected vector of strings)");
         pTmp->unreference ();
         return;
     }
@@ -265,7 +270,8 @@ void casPVI::updateEnumStringTable ()
             }
         }
         else {
-            errMessage (S_cas_badType, "application type \"enums\" string conversion table for enumerated PV isnt a string type?");
+            errMessage (S_cas_badType, 
+"application type \"enums\" string conversion table for enumerated PV isnt a string type?");
         }
     }
     else if (pTmp->dimension()==1) {
@@ -297,11 +303,13 @@ void casPVI::updateEnumStringTable ()
             }
         }
         else {
-            errMessage (S_cas_badType, "application type \"enums\" string conversion table for enumerated PV isnt a string type?");
+            errMessage (S_cas_badType, 
+"application type \"enums\" string conversion table for enumerated PV isnt a string type?");
         }
     }
     else {
-        errMessage (S_cas_badType, "application type \"enums\" string conversion table for enumerated PV was multi-dimensional (expected vector of strings)");
+        errMessage (S_cas_badType, 
+"application type \"enums\" string conversion table for enumerated PV was multi-dimensional (expected vector of strings)");
     }
 
     pTmp->unreference ();

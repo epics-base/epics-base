@@ -37,6 +37,12 @@
 #include "server.h"
 #include "casCtxIL.h" // casCtx in line func
 
+template class tsSLNode < casPVI >;
+template class tsSLNode < casRes >;
+template class resTable < casRes, chronIntId >;
+template class resTable < casEventMaskEntry, stringId >;
+template class chronIntIdResTable < casRes >;
+
 //
 // the maximum beacon period if EPICS_CA_BEACON_PERIOD isnt available
 //

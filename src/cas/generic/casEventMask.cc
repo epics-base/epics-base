@@ -34,6 +34,9 @@
 
 #include "server.h"
 
+template class tsSLNode < casEventMaskEntry >;
+template class resTable < casEventMaskEntry, stringId >;
+
 #ifdef TEST
 main ()
 {

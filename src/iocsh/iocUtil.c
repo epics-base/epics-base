@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <logClient.h>
 
 #include "osiUnistd.h"
 #include "osiThread.h"
@@ -126,6 +127,13 @@ static void putenvCallFunc(ioccrfArg **args)
         printf ("putenv(%s) failed.\n", cp);
 }
 
+/* iocLogInit */
+static ioccrfFuncDef iocLogInitFuncDef = {"iocLogInit",0,0};
+static void iocLogInitCallFunc(ioccrfArg **args)
+{
+    iocLogInit ();
+}
+
 void epicsShareAPI iocUtilRegister(void)
 {
     ioccrfRegister(&runScriptFuncDef,runScriptCallFunc);
@@ -134,4 +142,5 @@ void epicsShareAPI iocUtilRegister(void)
     ioccrfRegister(&showFuncDef,showCallFunc);
     ioccrfRegister(&threadInitFuncDef,threadInitCallFunc);
     ioccrfRegister(&putenvFuncDef,putenvCallFunc);
+    ioccrfRegister(&iocLogInitFuncDef,iocLogInitCallFunc);
 }

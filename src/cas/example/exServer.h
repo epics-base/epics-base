@@ -62,6 +62,17 @@ public:
 	{
 	}
 
+	//
+	// for use when MSVC++ will not build a defualt copy constructor 
+	// for this class
+	//
+	pvInfo (const pvInfo &copyIn) :
+			scanRate(copyIn.scanRate), name(copyIn.name), 
+			hopr(copyIn.hopr), lopr(copyIn.lopr), 
+			ioType(copyIn.ioType)
+	{
+	}
+
 	const double getScanRate () const { return this->scanRate; }
 	const aitString &getName () const { return this->name; }
 	const double getHopr () const { return this->hopr; }
@@ -149,6 +160,7 @@ public:
 	gddAppFuncTableStatus getLowLimit(gdd &value);
 	gddAppFuncTableStatus getUnits(gdd &value);
 	gddAppFuncTableStatus getValue(gdd &value);
+	gddAppFuncTableStatus getEnums(gdd &value);
 	
 	//
 	//

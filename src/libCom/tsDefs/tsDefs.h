@@ -17,8 +17,6 @@
 extern "C" {
 #endif
 
-#define epicsExportSharedSymbols
-
 /*----------------------------------------------------------------------------
 * TS_TEXT_xxx text type codes for converting between text and time stamp
 *

@@ -43,7 +43,7 @@ epicsShareFunc void epicsShareAPI
 "\n\n\nA call to \"assert (%s)\" failed in %s line %d.\n", pExp, pFile, line);
 
 	errlogPrintf (
-"EPICS release %s.\n", epicsReleaseVersion );
+"EPICS Release %s.\n", epicsReleaseVersion );
 
     status = epicsTimeGetCurrent ( & current );
 

@@ -19,6 +19,7 @@
 #	solaris
 #	sgi
 #	Linux
+#	WIN32
 #
 #  HOST_ARCH now an environment variable
 #  HOST_ARCH=$(shell /usr/local/epics/startup/HostArch)
@@ -35,6 +36,7 @@ endif
 #       mv147
 #       hkv2f
 #	niCpu030
+#	pc486
 #
 CROSS_COMPILER_TARGET_ARCHS=mv167 mv162
 

@@ -161,6 +161,13 @@ cac::cac ( cacNotify & notifyIn ) :
     try {
 	    long status;
 
+        /*
+         * Certain os, such as HPUX, do not unblock a socket system call 
+         * when another thread asynchronously calls both shutdown() and 
+         * close(). To solve this problem we need to employ OS specific
+         * mechanisms.
+         */
+        epicsSignalInstallSigUrgIgnore ();
         epicsSignalInstallSigPipeIgnore ();
 
         {
@@ -1507,6 +1514,8 @@ void cac::initiateAbortShutdown ( tcpiiu & iiu )
     epicsGuard < callbackMutex > cbGuard ( this->cbMutex );
     epicsGuard < cacMutex > guard ( this->mutex );
 
+    iiu.initiateAbortShutdown ( cbGuard, guard );
+
     // Disconnect all channels immediately from the timer thread
     // because on certain OS such as HPUX it's difficult to 
     // unblock a blocking send() call, and we need immediate 
@@ -1517,8 +1526,6 @@ void cac::initiateAbortShutdown ( tcpiiu & iiu )
         genLocalExcep ( cbGuard, *this, ECA_DISCONN, hostNameTmp );
     }
     iiu.removeAllChannels ( cbGuard, guard, *this );
-
-    iiu.initiateAbortShutdown ( cbGuard, guard );
 }
 
 void cac::uninstallIIU ( epicsGuard < callbackMutex > & cbGuard, tcpiiu & iiu )

@@ -45,7 +45,7 @@ of this distribution.
 #define MAX_ALIGNMENT 8
 
 /*Declare storage for errVerbose */
-int errVerbose=0;
+epicsShareDef int errVerbose=0;
 
 LOCAL void errlogTask(void);
 
@@ -452,7 +452,7 @@ LOCAL void msgbufFreeSend()
     pnextSend = (msgNode *)ellFirst(&pvtData.msgQueue);
     if(!pnextSend) {
 	printf("errlog: msgbufFreeSend logic error\n");
-	threadSuspend(threadGetIdSelf());
+	threadSuspend();
     }
     ellDelete(&pvtData.msgQueue,&pnextSend->node);
     semMutexGive(pvtData.msgQueueLock);
@@ -465,7 +465,7 @@ LOCAL void *pvtCalloc(size_t count,size_t size)
     pmem = calloc(count,size);
     if(!pmem) {
 	printf("calloc failed in errlog\n");
-	threadSuspend(threadGetIdSelf());
+	threadSuspend();
     }
     return(pmem);
 }

@@ -101,7 +101,7 @@ epicsShareFunc void epicsShareAPI errlogInit();
 epicsShareFunc void epicsShareAPI errPrintf();
 #endif /* ifdef epicsPrintUseProtoANSI */
 
-extern int errVerbose;
+epicsShareExtern int errVerbose;
 
 #ifdef __cplusplus
 }

@@ -33,6 +33,7 @@ INC += sigPipeIgnore.h
 INC += dbmf.h
 INC += ipAddrToA.h
 INC += epicsString.h
+INC += truncateFile.h
 
 #	For WIN32 we supply getopt as part of libCom:
 INC_WIN32 := getopt.h
@@ -68,6 +69,7 @@ LIBSRCS += sigPipeIgnore.c
 LIBSRCS += dbmf.c
 LIBSRCS += ipAddrToA.c
 LIBSRCS += epicsString.c
+LIBSRCS += truncateFile.c
 
 #
 # if CPLUSPLUS isnt empty then include C++ src codes

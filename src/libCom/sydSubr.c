@@ -99,6 +99,7 @@
 *-***************************************************************************/
 #include <genDefs.h>
 #define SYD_PRIVATE
+#define SYD_PRIVATE_DATA
 #include <sydDefs.h>
 #include <alarm.h>
 #ifndef INC_tsDefs_h

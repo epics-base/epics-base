@@ -1,0 +1,8 @@
+#
+# $Id$
+#
+
+# JBA test override values
+#CMPLR_SUFFIX=
+#GNU_TARGET=m68k-wrs-vxworks
+#GNU_TARGET_PREFIX=$(addsuffix -,$(GNU_TARGET))

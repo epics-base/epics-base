@@ -1,5 +1,5 @@
-/* recFanout.c */ /* share/src/rec $Id$ */
-
+/* recFanout.c */
+/* share/src/rec $Id$ */
 /* recFanout.c - Record Support Routines for Fanout records */
 /*
  *      Original Author: Bob Dalesio
@@ -44,6 +44,8 @@
  * .13  02-28-92	jba	ANSI C changes
  * .14  07-15-92        jba     changed VALID_ALARM to INVALID alarm
  * .15  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
+ * .16  09-10-92        jba     replaced fetch link selection with call to recGblGetLinkValue
+
  */
 
 #include        <vxWorks.h>
@@ -141,20 +143,8 @@ static long process(pfanout)
     pfanout->pact = TRUE;
 
     /* fetch link selection  */
-    if(pfanout->sell.type == DB_LINK){
-         status=dbGetLink(&(pfanout->sell.value.db_link),(struct dbCommon *)pfanout,DBR_USHORT,
-         &(pfanout->seln),&options,&nRequest);
-         if(status!=0) {
-		recGblSetSevr(pfanout,LINK_ALARM,INVALID_ALARM);
-         }
-    }
-    if (pfanout->sell.type == CA_LINK)
-    {
-	status = dbCaGetLink(&(pfanout->sell));
-         if(status!=0) {
-		recGblSetSevr(pfanout,LINK_ALARM,INVALID_ALARM);
-         }
-    }
+    recGblGetLinkValue(&(pfanout->sell),(void *)pfanout,DBR_USHORT,
+                         &(pfanout->seln),&options,&nRequest);
 
     switch (pfanout->selm){
     case (SELECT_ALL):

@@ -121,23 +121,50 @@ INC += $(INC_DEFAULT)
 endif
 endif
 
-#	concat specific library contents (if defined) to LIBCONTENS
+#	concat specific library contents (if defined)
 #
 ifneq ($(strip $(LIBSRCS_$(ARCH_CLASS))),)
 LIBSRCS += $(subst -nil-,,$(LIBSRCS_$(ARCH_CLASS)))
 else
-
 ifdef LIBSRCS_DEFAULT
 LIBSRCS+=$(LIBSRCS_DEFAULT)
 endif
+endif
 
+LIBSRCS += $($(addsuffix _SRCS,$(LIBRARY)))
+
+ifneq ($($(addsuffix _SRCS_$(ARCH_CLASS),$(LIBRARY))),)
+LIBSRCS += $(subst -nil-,,$($(addsuffix _SRCS_$(ARCH_CLASS),$(LIBRARY))))
+else
+ifdef $(LIBRARY))_SRCS_DEFAULT
+LIBSRCS+=$($(addsuffix _SRCS_DEFAULT,$(LIBRARY)))
+endif
 endif
 
 #	adjust object names for library contents
 #
 ifdef LIBSRCS
-LIBOBJS+=$(addsuffix $(OBJ), $(basename $(LIBSRCS)))
+LIB_OBJS+=$(addsuffix $(OBJ), $(basename $(LIBSRCS)))
 endif
+  
+IOC_LIBSRCS += $($(addsuffix _SRCS,$(IOC_LIBRARY)))
+
+ifneq ($($(addsuffix _SRCS_$(ARCH_CLASS),$(IOC_LIBRARY))),)
+IOC_LIBSRCS += $(subst -nil-,,$($(addsuffix _SRCS_$(ARCH_CLASS),$(IOC_LIBRARY))))
+else
+ifdef $(IOC_LIBRARY))_SRCS_DEFAULT
+IOC_LIBSRCS+=$($(addsuffix _SRCS_DEFAULT,$(IOC_LIBRARY)))
+endif
+endif
+
+#	adjust object names for library contents
+#
+ifdef IOC_LIBSRCS
+IOC_LIB_OBJS+=$(addsuffix $(OBJ), $(basename $(IOC_LIBSRCS)))
+endif
+  
+# compatibility
+IOC_LIB_OBJS+=$(LIBOBJS)
 
 #
 #	concat specific library contents (if defined) to PROD_LIBS
@@ -231,15 +258,6 @@ PROD := $(addsuffix $(EXE), $(PROD))
 endif
 
 #---------------------------------------------------------------
-#	if we are not building base add base includes and ld dirs
-#	(convenience for extensions and applications)
-ifneq ($(EPICS_BASE),$(TOP))
-ifneq ($(EPICS_BASE),$(INSTALL_LOCATION))
-EPICS_INCLUDES += -I$(EPICS_BASE_INCLUDE) -I$(EPICS_BASE_INCLUDE)/os/$(OS_CLASS)
-endif
-endif
-
-#---------------------------------------------------------------
 #	----------------------------------------------------
 #	create names (lists) for installed things
 #	----------------------------------------------------
@@ -273,8 +291,9 @@ else
 INSTALL_TEMPLATES_SUBDIR = $(INSTALL_TEMPLATES)
 endif
 INSTALL_TEMPLATE = $(addprefix $(INSTALL_TEMPLATES_SUBDIR)/, \
-                   $(subst $(CONFIG),top/config,$(TEMPLATES)))
-#INSTALL_TEMPLATE = $($(subst $(CONFIG),top/config,$(TEMPLATES)):%= $(INSTALL_TEMPLATES_SUBDIR)/%)
+                   $(subst $(CONFIG),top/configure,$(TEMPLATES)))
+#INSTALL_TEMPLATE = $($(subst $(CONFIG),top/configure,$(TEMPLATES)):%= $(INSTALL_TEMPLATES_SUBDIR)/%)
+INSTALL_CONFIGS = $(CONFIGS:%= $(INSTALL_CONFIG)/%)
  
 INSTALL_BPTS = $(BPTS:%= $(INSTALL_DBD)/%)
 INSTALL_DBS = $(DBDINSTALL:%= $(INSTALL_DBD)/%)\
@@ -289,11 +308,38 @@ INSTALL_IOC_SCRIPTS= $(IOC_SCRIPTS_$(OS_CLASS):%=$(INSTALL_BIN)/%)
 
 MAN_DIRECTORY_TARGETS = $(foreach n, $(MANLIST),$(INSTALL_MAN)/man$(n))
 #---------------------------------------------------------------
+ifneq ($(strip $(BIN_INSTALLS_$(OS_CLASS))),)
+BIN_INSTALLS+=$(subst -nil-,,$(BIN_INSTALLS_$(OS_CLASS)))
+else
+ifdef BIN_INSTALLS_DEFAULT
+BIN_INSTALLS+=$(BIN_INSTALLS_DEFAULT)
+endif
+endif
+
+#---------------------------------------------------------------
+ifneq ($(strip $(IOC_BIN_INSTALLS_$(OS_CLASS))),)
+IOC_BIN_INSTALLS+=$(subst -nil-,,$(IOC_BIN_INSTALLS_$(OS_CLASS)))
+else
+ifdef IOC_BIN_INSTALLS_DEFAULT
+IOC_BIN_INSTALLS+=$(IOC_BIN_INSTALLS_DEFAULT)
+endif
+endif
+
+#---------------------------------------------------------------
 ifneq ($(strip $(IOC_PROD_$(OS_CLASS))),)
 IOC_PROD+=$(subst -nil-,,$(IOC_PROD_$(OS_CLASS)))
 else
 ifdef IOC_PROD_DEFAULT
 IOC_PROD+=$(IOC_PROD_DEFAULT)
+endif
+endif
+
+#---------------------------------------------------------------
+ifneq ($(strip $(LIBRARY_$(OS_CLASS))),)
+LIBRARY+=$(subst -nil-,,$(LIBRARY_$(OS_CLASS)))
+else
+ifdef LIBRARY_DEFAULT
+LIBRARY+=$(LIBRARY_DEFAULT)
 endif
 endif
 
@@ -321,14 +367,7 @@ endif
 ifneq ($(strip $(CPLUSPLUS)),)
 LINK.c = $(LINK.cc)
 endif # CPLUSPLUS
-#endif # LIBTYPE
-
-#---------------------------------------------------------------
-# Version number for base shared libraries (and win32 products)
-ifeq ($(EPICS_BASE),$(TOP))
-SHRLIB_VERSION = $(EPICS_VERSION).$(EPICS_REVISION)
-PROD_VERSION = $(EPICS_VERSION).$(EPICS_REVISION)
-endif # EPICS_BASE
+#endif # SHARED_LIBRARIES
 
 #---------------------------------------------------------------
 #	Libraries
@@ -340,13 +379,16 @@ ifdef IOC_LIBRARY
 IOC_LIBTARGETS += $(IOC_LIBNAME) $(INSTALL_IOC_LIBNAME)
 CFLAGS +=  $($(ANSI)_SHRLIB_CFLAGS_YES)
 CXXFLAGS +=  $($(ANSI)_SHRLIB_CFLAGS_YES)
+
+ifneq ($(strip $(CPLUSPLUS)),)
 SHRLIB_LINKER = $(CXX)
-IOC_LIB_SRCS=$(IOC_LIBRARY_SRCS) $($(basename $(IOC_LIBRARY))_SRCS)
-IOC_LIBRARY_OBJS+=$(addsuffix $(OBJ), $(basename $(IOC_LIB_SRCS)))
+else
+SHRLIB_LINKER = $(CC)
+endif
 endif
 
 ifdef LIBRARY
-ifdef LIBOBJS
+ifdef LIB_OBJS
 LIBTARGETS += $(LIBNAME) $(INSTALL_LIBS)
 CFLAGS +=  $($(ANSI)_SHRLIB_CFLAGS_YES)
 CXXFLAGS +=  $($(ANSI)_SHRLIB_CFLAGS_YES)
@@ -364,7 +406,7 @@ LIBTARGETS += $(SHRLIBNAME) $(INSTALL_SHRLIBS) $(INSTALL_DLL_LINK_LIBS)
 
 endif # SHARED_LIBRARIES=YES
 
-endif # LIBOBJS
+endif # LIB_OBJS
 endif # LIBRARY
 
 #---------------------------------------------------------------
@@ -413,8 +455,14 @@ buildInstall :: $(INSTALL_MANS) \
 	$(INSTALL_DOCS) \
 	$(INSTALL_HTMLS) \
 	$(INSTALL_TEMPLATE) \
+	$(INSTALL_CONFIGS) \
 	$(INSTALL_DBS) $(INSTALL_BPTS) \
 	$(INSTALL_DBDNAME) $(INSTALL_INCREC)
+
+ifdef IOC_BIN_INSTALLS
+buildInstall :: iocBinInstalls
+endif
+
 
 ifdef BIN_INSTALLS
 buildInstall :: binInstalls
@@ -422,7 +470,7 @@ endif
 
 clean::
 	@echo "Cleaning"
-	@$(RM) *.i *$(OBJ) *.a $(PROD) $(TESTPROD) $(LIBNAME) $(SHRLIBNAME) \
+	@$(RM) *.i *$(OBJ) *.a $(PROD) $(TESTPROD) $(LIBNAME) $(IOC_LIBNAME) $(SHRLIBNAME) \
 	$(INC) *$(RES) $(TARGETS) \
 	$(DBDINSTALL) $(MENUS) $(RECTYPES) $(BPTS) $(DBDNAME) *.out
 
@@ -526,7 +574,7 @@ endif
 JAR_DEPFILES +=  $(wildcard $(JAR_INPUT) $(addsuffix /*,$(JAR_INPUT)))
 
 $(DIRECTORY_TARGETS) :
-	$(MKDIR) $@
+#	$(MKDIR) -p $@
 
 build:: $(TESTCLASSES) $(JAR)
 
@@ -720,9 +768,9 @@ ifneq (,$(wildcard ../baseLIBOBJS))
 $(IOC_LIBNAME): ../baseLIBOBJS
 endif
 
-$(IOC_LIBNAME): $(IOC_LIBRARY_OBJS)
+$(IOC_LIBNAME): $(IOC_LIB_OBJS)
 	$(RM) $@
-	$(ARCMD) $(IOC_LIBRARY_OBJS)
+	$(ARCMD) $(IOC_LIB_OBJS)
 ifneq ($(RANLIB)xx,xx)
 	$(RANLIB) $@;
 endif # RANLIB
@@ -731,15 +779,20 @@ $(DLL_LINK_LIBNAME) $(SHRLIBNAME): $(LIBOBJS)
 	$(LINK.shrlib) $(LIBOBJS) $(DLL_LDLIBS)
 
 # rule for lib (archive of object files) creation
-$(LIBNAME): $(LIBOBJS)
+$(LIBNAME): $(LIB_OBJS)
 	$(RM) $@
-	$(ARCMD) $(LIBOBJS)
+	$(ARCMD) $(LIB_OBJS)
 ifneq ($(RANLIB)xx,xx)
 	$(RANLIB) $@;
 endif # RANLIB
 
 binInstalls:  $(BIN_INSTALLS)
-	$(INSTALL) -d -m 555 $^ $(INSTALL_BIN)
+	@echo "Installing $(^F)"
+	@$(INSTALL) -d -m 555 $^ $(INSTALL_BIN)
+
+iocBinInstalls:  $(IOC_BIN_INSTALLS)
+	@echo "Installing $(^F)"
+	@$(INSTALL) -d -m 555 $^ $(INSTALL_BIN)
 
 $(INSTALL_BIN)/%: ../os/$(ARCH_CLASS)/%
 	@echo "Installing os-specific script $@"
@@ -779,7 +832,15 @@ $(INSTALL_TCLLIB)/%: %
 $(INSTALL_TCLLIB)/%: ../%
 	@echo "Installing Tcl library $@"
 	@$(INSTALL) -d -m 555 $< $(INSTALL_TCLLIB)
- 
+
+$(INSTALL_CONFIG)/%: %
+	@echo "Installing config file $@"
+	@$(INSTALL) -d -m 644 $< $(@D)
+
+$(INSTALL_CONFIG)/%: ../%
+	@echo "Installing config file $@"
+	@$(INSTALL) -d -m 644 $< $(@D)
+
 $(addsuffix /%,$(MAN_DIRECTORY_TARGETS)) : % 
 	@echo "Installing man file $@"
 	@$(INSTALL) -d -m 644 $< $(@D)
@@ -824,7 +885,8 @@ $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)/%: %
 
 -include DEPENDS
 
-.PHONY:: all inc depends build install clean rebuild buildInstall binInstalls
+.PHONY:: all inc depends build install clean rebuild buildInstall binInstalls \
+	iocBinInstalls
 
 
 $(DBDNAME): ../base.dbd $(RECTYPES:%.h=../%.dbd)

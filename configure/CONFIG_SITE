@@ -52,30 +52,6 @@ CROSS_COMPILER_TARGET_ARCHS= mv167
 #CROSS_COMPILER_HOST_ARCHS=sun4
 #CROSS_COMPILER_HOST_ARCHS=solaris
 
-#  Vx release Tornado?
-#        must be either YES or NO
-TORNADO=YES
-#TORNADO=NO
- 
-#  VxWorks directory for TORNADO=YES
-#VX_DIR_YES=c:\\Tornado
-VX_DIR_YES = /usr/local/vw/tornado101
-
-#  VxWorks directory for TORNADO=NO
-#VX_DIR_NO=$(VW)
-#VX_DIR_NO=/usr/local/vw/vxV51.mm
-#VX_DIR_NO=/usr/local/vw/vxV52/vw
-#VX_DIR_NO=c:/Tornado/target
-VX_DIR_NO=/usr/local/vw/vxV52p1/vw
- 
-#  Directory for TORNADO=NO gnu gcc crosscompiler
-VX_GNU_NO = $(VX_DIR_NO)/../vxgccV2.2.3.1
-
-#  Directory for TORNADO=NO gnu g++ crosscompiler
-#  used by applications for hideos builds only
-#TORNADO_GNU_DIR = $(LOCAL_GNU)
-TORNADO_GNU_DIR = /usr/local/hideos/gnu_install-2.7.2
-
 #  Client ANSI C Compiler (for Host builds)
 #   GCC     (gcc -ansi) GNU
 #   ACC     (acc)       OS VENDOR

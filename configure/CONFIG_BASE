@@ -1,0 +1,60 @@
+ifndef EPICS_BASE
+EPICS_BASE = $(INSTALL_LOCATION)
+endif
+
+EPICS_BASE_HOST_BIN = $(EPICS_BASE)/bin/$(HOST_ARCH)
+
+# private versions of lex/yacc from EPICS
+EYACC = $(EPICS_BASE_HOST_BIN)/antelope$(EXE)
+ELEX = $(EPICS_BASE_HOST_BIN)/e_flex$(EXE) -S$(EPICS_BASE_INCLUDE)/flex.skel.static
+YACC  = $(EYACC)
+LEX   = $(ELEX)
+
+# state notation language compiler (installed from base/src/sequencer)
+SNC = $(EPICS_BASE_HOST_BIN)/snc$(EXE)
+
+EPICS_BASE_INCLUDE      = $(EPICS_BASE)/include
+
+EPICS_BASE_INCLUDES += -I$(EPICS_BASE_INCLUDE)/os/$(OS_CLASS) -I$(EPICS_BASE_INCLUDE)
+
+ifneq ($(EPICS_BASE),$(TOP))
+ifneq ($(EPICS_BASE),$(INSTALL_LOCATION))
+INSTALL_INCLUDES += $(EPICS_BASE_INCLUDES)
+endif
+endif
+
+#---------------------------------------------------------------
+# Version number for base shared libraries (and win32 products)
+ifeq ($(EPICS_BASE),$(TOP))
+SHRLIB_VERSION = $(EPICS_VERSION).$(EPICS_REVISION)
+PROD_VERSION = $(EPICS_VERSION).$(EPICS_REVISION)
+endif # EPICS_BASE
+
+
+ifdef T_A
+EPICS_BASE_LIB          = $(EPICS_BASE)/lib/$(T_A)
+EPICS_BASE_BIN          = $(EPICS_BASE)/bin/$(T_A)
+endif
+
+Db_DIR = $(EPICS_BASE_LIB)
+Com_DIR = $(EPICS_BASE_LIB)
+Osi_DIR = $(EPICS_BASE_LIB)
+
+# adl2dl 
+ADL2DL = $(EPICS_EXTENSIONS)/bin/$(HOST_ARCH)/adl2dl
+
+# sch2edif compiler and flags
+SCH2EDIF = sch2edif
+SCH2EDIF_PATH =
+SCH2EDIF_SYSFLAGS = -n -ap -p.+..+$(SCH2EDIF_PATH)+$(EPICS_EXTENSIONS)/templates/capfast/sym+
+SCH2EDIF_FLAGS =
+ 
+# e2db and flags
+#    - again there is an assumption where edb.def is installed.
+E2DB = $(EPICS_EXTENSIONS)/bin/$(HOST_ARCH)/e2db
+E2DB_SYSFLAGS = -ate -d $(EPICS_EXTENSIONS)/templates/capfast/edb.def
+E2DB_FLAGS =
+
+#dbst 
+DBST = $(EPICS_EXTENSIONS)/bin/$(HOST_ARCH)/dbst
+

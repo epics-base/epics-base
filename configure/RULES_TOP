@@ -5,22 +5,22 @@
 include $(CONFIG)/RULES_DIRS
 
 uninstall$(DIVIDER)%::
-	$(RMDIR) $(INSTALL_LOCATION_BIN)/$* $(INSTALL_LOCATION_LIB)/$* 
+	@$(RMDIR) $(INSTALL_LOCATION_BIN)/$* $(INSTALL_LOCATION_LIB)/$* 
 
 cleandirs:
 ifeq ($(wildcard $(INSTALL_LOCATION_BIN)/*),)
-	$(RMDIR) $(INSTALL_LOCATION_BIN)
+	@$(RMDIR) $(INSTALL_LOCATION_BIN)
 endif
 ifeq ($(wildcard $(INSTALL_LOCATION_LIB)/*),)
-	$(RMDIR) $(INSTALL_LOCATION_LIB)
+	@$(RMDIR) $(INSTALL_LOCATION_LIB)
 endif
 
 
 uninstall:: $(addprefix uninstall$(DIVIDER),$(BUILD_ARCHS))
-	$(RMDIR)  rec.bak rec
-	$(RMDIR) $(INSTALL_DBD) $(INSTALL_MAN) $(INSTALL_INCLUDE) $(INSTALL_DOC)\
+	@$(RMDIR)  rec.bak rec
+	@$(RMDIR) $(INSTALL_DBD) $(INSTALL_MAN) $(INSTALL_INCLUDE) $(INSTALL_DOC)\
 		$(INSTALL_HTML) $(INSTALL_JAVA) $(INSTALL_TEMPLATES)
-	$(MAKE) -f Makefile  cleandirs
+	@$(MAKE) -f Makefile  cleandirs
 
 tar:
 	@DIRNAME=$(notdir $(shell pwd)); \

@@ -43,7 +43,7 @@ crossDirs = $(addprefix O.,$(crossArchs))
 $(crossActionArchTargets) : $(crossDirs)
 	$(MAKE) -C O.$(archPart) -f ../Makefile TOP=../$(TOP) T_A=$(archPart) $(actionPart)
 $(crossArchs) : % : O.%
-	$(MAKE) -C O.$@ -f ../Makefile TOP=../$(TOP) T_A=$@ BUILD_TYPE=Vx
+	$(MAKE) -C O.$@ -f ../Makefile TOP=../$(TOP) T_A=$@
 else
 $(crossActionArchTargets) :
 $(crossArchs) : 

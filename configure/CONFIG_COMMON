@@ -22,6 +22,8 @@ BUILD_ARCHS = $(HOST_ARCH) $(CROSS1) $(CROSS2)
 
 ####################################################################
 ####################################################################
+
+INSTALL_LOCATION            = $(TOP)
  
 INSTALL_LOCATION_LIB        = $(INSTALL_LOCATION)/lib
 INSTALL_LOCATION_BIN        = $(INSTALL_LOCATION)/bin
@@ -32,6 +34,7 @@ INSTALL_HTML                = $(INSTALL_LOCATION)/html
 INSTALL_MAN                 = $(INSTALL_LOCATION)/man
 INSTALL_TEMPLATES           = $(INSTALL_LOCATION)/templates
 INSTALL_DBD                 = $(INSTALL_LOCATION)/dbd
+INSTALL_CONFIG              = $(INSTALL_LOCATION)/configure
 INSTALL_JAVA                = $(INSTALL_LOCATION)/javalib
 
 DIVIDER = .

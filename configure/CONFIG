@@ -9,17 +9,20 @@
 #
 
 ####################################################
+ifndef CONFIG
 CONFIG = $(TOP)/configure
-INSTALL_LOCATION=$(TOP)
-include $(CONFIG)/CONFIG_EPICS_BASE
-include $(CONFIG)/CONFIG_BASE_VERSION
-####################################################
--include $(TOP)/config/RELEASE
--include $(TOP)/config/RELEASE.$(HOST_ARCH)
+endif
+-include $(CONFIG)/RELEASE
+-include $(CONFIG)/RELEASE.$(HOST_ARCH)
 ####################################################
 
 include $(CONFIG)/CONFIG_COMMON
  
+#  EPICS-specific build options
+#
+include $(CONFIG)/CONFIG_BASE
+include $(CONFIG)/CONFIG_BASE_VERSION
+
 #  Site-specific build options
 #
 include $(CONFIG)/CONFIG_SITE

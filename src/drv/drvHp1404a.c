@@ -96,7 +96,7 @@ static void 	hpE1404ShutDownLA(
 /*
  * these should be in a header file
  */
-static int 	hpE1404SignalConnect(
+int 	hpE1404SignalConnect(
 	unsigned 	la,
 	void		(*pSignalCallback)()
 );

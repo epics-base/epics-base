@@ -120,8 +120,8 @@ HDRVERSIONID(iocinfh, "$Id$")
 # define NBBY 8 /* number of bits per byte */
 #endif
 
-#define MSEC_PER_SEC 	1000
-#define USEC_PER_SEC 	1000000
+#define MSEC_PER_SEC 	1000L
+#define USEC_PER_SEC 	1000000L
 
 /*
  * catch when they use really large strings
@@ -171,7 +171,7 @@ typedef struct timeval ca_time;
 
 #define LD_CA_TIME(FLOAT_TIME,PCATIME) \
 ((PCATIME)->tv_sec = (long) (FLOAT_TIME), \
-(PCATIME)->tv_usec = (long) ((FLOAT_TIME)-(PCATIME)->tv_sec)*USEC_PER_SEC)
+(PCATIME)->tv_usec = (long) ( ((FLOAT_TIME)-(PCATIME)->tv_sec)*USEC_PER_SEC ))
 
 /*
  * dont adjust
@@ -190,8 +190,8 @@ extern const ca_time CA_CURRENT_TIME;
  */
 #define MAXCONNTRIES 		30	/* N conn retries on unchanged net */
 
-#define SELECT_POLL 		(0.1) 	/* units sec - polls into recast */
-#define CA_RECAST_DELAY 	(0.1) /* initial delay to next recast (sec) */
+#define SELECT_POLL 		(0.05) 	/* units sec - polls into recast */
+#define CA_RECAST_DELAY 	(0.1)   /* initial delay to next recast (sec) */
 #define CA_RECAST_PORT_MASK	0xff	/* random retry interval off port */
 #define CA_RECAST_PERIOD 	(5.0)	/* ul on retry period long term (sec) */
 
@@ -214,7 +214,7 @@ extern const ca_time CA_CURRENT_TIME;
 #define CA_RETRY_PERIOD		5	/* int sec to next keepalive */
 
 #define N_REPEATER_TRIES_PRIOR_TO_MSG	50
-#define REPEATER_TRY_PERIOD		(0.1) 
+#define REPEATER_TRY_PERIOD		(1.0) 
 
 #ifdef vxWorks
 typedef struct caclient_put_notify{
@@ -318,7 +318,7 @@ struct ca_buffer{
 
 #define TAG_CONN_DOWN(PIIU) \
 ( \
-/*ca_printf("Tagging connection down at %d in %s\n", __LINE__, __FILE__),*/ \
+/* ca_printf("Tagging connection down at %d in %s\n", __LINE__, __FILE__), */\
 (PIIU)->conn_up = FALSE \
 )
 
@@ -397,6 +397,7 @@ struct  ca_static{
 	ELLLIST		putCvrtBuf;
 	ELLLIST		fdInfoFreeList;
 	ELLLIST		fdInfoList;
+	ca_time		currentTime;
 	ca_time		ca_conn_next_retry;
 	ca_time		ca_conn_retry_delay;
 	ca_time		ca_last_repeater_try;

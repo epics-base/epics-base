@@ -32,6 +32,7 @@ of this distribution.
 #include "error.h"
 #include "ellLib.h"
 #include "errlog.h"
+#include "logClient.h"
 
 
 #ifndef LOCAL
@@ -268,10 +269,11 @@ epicsShareFunc void epicsShareAPIV errPrintf(long status, const char *pFileName,
 
 	rtnval = errSymFind(status,name);
 	if(rtnval) {
-	    unsigned short	modnum,errnum;
+	    unsigned modnum, errnum;
 
-	    modnum = status >> 16; errnum = status & 0xffff;
-	    nchar = sprintf(pnext, "status (%hu,%hu) not in symbol table ",
+	    modnum = (unsigned) ((status >> 16) & 0xffff); 
+        errnum = (unsigned) (status & 0xffff);
+	    nchar = sprintf(pnext, "status (%u,%u) not in symbol table ",
 		 modnum, errnum);
 	} else {
 	    nchar = sprintf(pnext,"%s ",name);
@@ -311,7 +313,6 @@ epicsShareFunc int epicsShareAPI errlogInit(int bufsize)
     threadCreate("errlog",threadPriorityLow,
         threadGetStackSize(threadStackSmall),
         (THREADFUNC)errlogTask,0);
-    /*For now make sure iocLogInit is called*/
     iocLogInit();
 
     return(0);

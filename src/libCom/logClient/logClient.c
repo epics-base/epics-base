@@ -184,6 +184,7 @@ void logClientReset (logClient *pClient)
 /*
  * logClientDestroy
  */
+#   ifndef vxWorks
 LOCAL void logClientDestroy (logClient *pClient)
 {
     /*
@@ -197,6 +198,7 @@ LOCAL void logClientDestroy (logClient *pClient)
 
     free (pClient);
 }
+#endif
 
 /*
  * logClientShutdown()
@@ -547,7 +549,6 @@ epicsShareFunc logClientId epicsShareAPI logClientInit ()
     static const unsigned maxConnectTries = 40u;
     static const unsigned microSecDelay = 50000u;
     static const unsigned secDelay = 0u;
-    static const double uSecPerSec = 1000000.0;
     unsigned connectTries = 0;
     logClient *pClient;
     logClientId id;

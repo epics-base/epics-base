@@ -41,7 +41,7 @@ LOCAL	VOID copy_sprog(SPROG *, SPROG *);
 LOCAL	VOID init_sprog(SPROG *);
 LOCAL	VOID init_sscb(SPROG *);
 LOCAL	VOID seq_logInit(SPROG *);
-LOCAL	VOID seq_log(SPROG *);
+VOID seq_log(SPROG *);
 
 #else
 /* Archaic (i.e. Sun) functional prototypes */
@@ -50,7 +50,7 @@ LOCAL	VOID copy_sprog();
 LOCAL	VOID init_sprog();
 LOCAL	VOID init_sscb();
 LOCAL	VOID seq_logInit();
-LOCAL	VOID seq_log();
+VOID seq_log();
 #endif
 
 #define	SCRATCH_SIZE	(MAX_MACROS*(MAX_STRING_SIZE+1)*12)

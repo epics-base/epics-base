@@ -11,6 +11,10 @@
 #ifndef epicsGuardh
 #define epicsGuardh
 
+#ifndef assert // allow use of epicsAssert.h
+#   include <assert.h>
+#endif
+
 /*
  *  $Id$
  *
@@ -27,6 +31,7 @@ class epicsGuard {
 public:
     epicsGuard ( const epicsGuard & ); 
     epicsGuard ( T & );
+    void assertIdenticalMutex ( const T & ) const;
     ~epicsGuard ();
 private:
     T & targetMutex;
@@ -74,6 +79,13 @@ template < class T >
 inline epicsGuard < T > :: ~epicsGuard ()
 {
     this->targetMutex.unlock ();
+}
+
+template < class T >
+inline void epicsGuard < T > :: assertIdenticalMutex ( 
+    const T & mutexToVerify ) const
+{
+    assert ( & this->targetMutex == & mutexToVerify );
 }
 
 template < class T >

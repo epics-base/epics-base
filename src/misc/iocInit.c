@@ -294,8 +294,13 @@ LOCAL void initDatabase(void)
 			dbCaAddLink(plink);
 			if(pdbFldDes->field_type==DBF_FWDLINK) {
 			    pperiod = strrchr(plink->value.pv_link.pvname,'.');
-			    if(pperiod && strstr(pperiod,"PROC"))
+			    if(pperiod && strstr(pperiod,"PROC")) {
 				plink->value.pv_link.pvlMask |= pvlOptFWD;
+                            } else {
+                                errlogPrintf("%s.FLNK is a Channel Access Link "
+                                    " but does not access field PROC\n",
+                                     precord->name);
+                            }
 			}
 		    }
 		}

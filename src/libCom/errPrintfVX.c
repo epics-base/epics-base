@@ -27,6 +27,7 @@
  * Modification Log: errPrintfVX.c
  * -----------------
  * .01  02-16-95        mrk     Extracted from errSymLib.c
+ * $Log$
  ***************************************************************************
  */
 
@@ -58,8 +59,6 @@
 
 static int mprintf (const char *pFormat, ...);
 static int vmprintf (const char *pFormat, va_list pvar);
-
-extern FILE *iocLogFile;
 
 LOCAL SEM_ID clientWaitForTask;
 LOCAL SEM_ID clientWaitForCompletion;
@@ -263,8 +262,7 @@ LOCAL int vmprintf (const char *pFormat, va_list pvar)
 
 	s0 = vfprintf(stdout,pFormat,pvar);
 	fflush(stdout);
-	s1 = vfprintf(iocLogFile,pFormat,pvar);
-	fflush(iocLogFile);
+	s1 = iocLogVPrintf(pFormat,pvar);
 	va_end(pvar);
 	if (s1<0) {
 		return s1;

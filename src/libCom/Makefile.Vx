@@ -59,7 +59,7 @@ ERR_S_FILES += $(TOP)/src/drv/old/drvGpibErr.h
 ERR_S_FILES += ../tsDefs.h
 ERR_S_FILES += ../errMdef.h
 ERR_S_FILES += $(TOP)/src/cas/generic/casdef.h
-ERR_S_FILES += $(TOP)/src/cas/generic/gddAppFuncTable.h
+ERR_S_FILES += $(TOP)/src/gdd/gddAppFuncTable.h
 
 include $(TOP)/config/RULES.Vx
 

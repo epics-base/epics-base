@@ -10,6 +10,14 @@
 /* epicsMutex.c */
 /*	Author: Marty Kraimer and Jeff Hill	Date: 03APR01	*/
 
+/*
+ * NOTES:
+ * 1) LOG_LAST_OWNER feature is normally commented out because 
+ * it slows down the system at run time, anfd because its not 
+ * currently safe to convert a thread id to a thread name because
+ * the thread may have exited making the thread id invalid.
+ */
+
 #include <new>
 
 #include <stddef.h>
@@ -33,7 +41,9 @@ STATIC ELLLIST freeList;
 struct epicsMutexParm {
     ELLNODE node;
     epicsMutexOSD * id;
-    epicsThreadId lastOwner;
+#   ifdef LOG_LAST_OWNER
+        epicsThreadId lastOwner;
+#   endif
     const char *pFileName;
     int lineno;
 };
@@ -66,7 +76,9 @@ epicsMutexId epicsShareAPI epicsMutexOsiCreate(
         pmutexNode = static_cast < epicsMutexParm * > ( calloc(1,sizeof(epicsMutexParm)) );
     }
     pmutexNode->id = id;
-    pmutexNode->lastOwner = 0;
+#   ifdef LOG_LAST_OWNER
+        pmutexNode->lastOwner = 0;
+#   endif
     pmutexNode->pFileName = pFileName;
     pmutexNode->lineno = lineno;
     ellAdd(&mutexList,&pmutexNode->node);
@@ -103,9 +115,11 @@ epicsMutexLockStatus epicsShareAPI epicsMutexLock(
 {
     epicsMutexLockStatus status = 
         epicsMutexOsdLock(pmutexNode->id);
-    if ( status == epicsMutexLockOK ) {
-        pmutexNode->lastOwner = epicsThreadGetIdSelf();
-    }
+#   ifdef LOG_LAST_OWNER
+        if ( status == epicsMutexLockOK ) {
+            pmutexNode->lastOwner = epicsThreadGetIdSelf();
+        }
+#   endif
     return status;
 }
 
@@ -114,26 +128,35 @@ epicsMutexLockStatus epicsShareAPI epicsMutexTryLock(
 {
     epicsMutexLockStatus status = 
         epicsMutexOsdTryLock(pmutexNode->id);
-    if ( status == epicsMutexLockOK ) {
-        pmutexNode->lastOwner = epicsThreadGetIdSelf();
-    }
+#   ifdef LOG_LAST_OWNER
+        if ( status == epicsMutexLockOK ) {
+            pmutexNode->lastOwner = epicsThreadGetIdSelf();
+        }
+#   endif
     return status;
 }
 
 void epicsShareAPI epicsMutexShow(
     epicsMutexId pmutexNode, unsigned  int level)
 {
-    char threadName [255];
-    if ( pmutexNode->lastOwner ) {
-        epicsThreadGetName ( pmutexNode->lastOwner,
-            threadName, sizeof ( threadName ) );
-    }
-    else {
-        strcpy ( threadName, "<not used>" );
-    }
-    printf("epicsMutexId %p last owner \"%s\" source %s line %d\n",
-        (void *)pmutexNode, threadName,
-        pmutexNode->pFileName, pmutexNode->lineno);
+#   ifdef LOG_LAST_OWNER
+        char threadName [255];
+        if ( pmutexNode->lastOwner ) {
+#           error currently not safe to fetch name for stale thread 
+            epicsThreadGetName ( pmutexNode->lastOwner,
+                threadName, sizeof ( threadName ) );
+        }
+        else {
+            strcpy ( threadName, "<not used>" );
+        }
+        printf("epicsMutexId %p last owner \"%s\" source %s line %d\n",
+            (void *)pmutexNode, threadName,
+            pmutexNode->pFileName, pmutexNode->lineno);
+#   else
+        printf("epicsMutexId %p source %s line %d\n",
+            (void *)pmutexNode, pmutexNode->pFileName, 
+            pmutexNode->lineno);
+#   endif
     if ( level > 0 ) {
         epicsMutexOsdShow(pmutexNode->id,level-1);
     }

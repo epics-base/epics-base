@@ -28,6 +28,7 @@
  *  Modification Log:
  *  -----------------
  *  .01	10-27-91	winans	converted to conform to *NEW* gpib driver
+ *  .02	02-04-92	jba   	Changed process paramater from precord->pdba to precord
  *
  * BUGS:
  *  GPIBSOFT type commands should NOT be processed by the link task.  They
@@ -1340,7 +1341,7 @@ struct  hvpsDpvt       *pDpvt;
   if(HvpsDebug)
     logMsg("processCallback: calling process\n");
 
-  (*(struct rset *)(pDpvt->precord->rset)).process(pDpvt->precord->pdba);
+  (*(struct rset *)(pDpvt->precord->rset)).process(pDpvt->precord);
 
   if(HvpsDebug)
     logMsg("processCallback: unlocking %08.8X\n", pDpvt->precord);

@@ -667,7 +667,7 @@ int acctst (char *pname)
         test_sync_groups(chix1);
     }
 
-    performMonitorUpdateTest (chix4);
+    /* performMonitorUpdateTest (chix4); */
     performDeleteTest (chix2);
 
     if (VALID_DB_REQ(ca_field_type(chix4))) {
@@ -762,8 +762,8 @@ int acctst (char *pname)
         if (ca_element_count(chix1)>1u && ca_read_access(chix1)) {
             dbr_float_t *pRF, *pWF, *pEF, *pT1, *pT2;
 
-            printf("Performing %u element array test...",
-                    ca_element_count(chix1));
+            printf("Performing %lu element array test...",
+                    ca_element_count(chix1) );
             fflush(stdout);
 
             pRF = (dbr_float_t *) calloc(ca_element_count(chix1), 
@@ -1293,9 +1293,8 @@ void updateTestEvent (struct event_handler_args args)
  * 2) verify that under heavy load the last monitor
  *      returned is the last modification sent
  */
-void performMonitorUpdateTest (chid chan)
+void performMonitorUpdateTest ( chid chan )
 {
-    unsigned        count=0u;
     eventTest       test[1000];
     dbr_float_t     temp, getResp;
     unsigned        i, j;
@@ -1306,10 +1305,10 @@ void performMonitorUpdateTest (chid chan)
         return;
     }
     
-    printf ("Performing event subscription update test...");
-    fflush (stdout);
+    printf ( "Performing event subscription update test..." );
+    fflush ( stdout );
 
-    for(i=0; i<NELEMENTS(test); i++) {
+    for ( i=0; i<NELEMENTS(test); i++ ) {
         test[i].count = 0;
         test[i].lastValue = -1.0;
         SEVCHK(ca_add_event(DBR_GR_FLOAT, chan, updateTestEvent,

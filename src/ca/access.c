@@ -772,7 +772,7 @@ void ca_process_exit(struct ca_static *ca_temp)
 			chix = (chid) ellFirst(&piiu->chidlist);
 			while (chix) {
 				chixNext = (chid) ellNext (&chix->node);
-				clearChannelResources (chix->cid);
+				clearChannelResources (ca_temp, chix->cid);
 				chix = chixNext;
 			}
 
@@ -2454,7 +2454,7 @@ int APIENTRY ca_clear_channel (chid chix)
 	 */
 	if(old_chan_state != cs_conn){
 		UNLOCK;
-		clearChannelResources (chix->cid);
+		clearChannelResources (ca_static, chix->cid);
 		return ECA_NORMAL;
 	}
 
@@ -2487,7 +2487,7 @@ int APIENTRY ca_clear_channel (chid chix)
 /*
  * clearChannelResources()
  */
-void clearChannelResources(unsigned id)
+void clearChannelResources(struct ca_static *pCAC, unsigned id)
 {
 	struct ioc_in_use       *piiu;
 	chid			chix;
@@ -2497,7 +2497,7 @@ void clearChannelResources(unsigned id)
 
 	LOCK;
 
-	chix = bucketLookupItemUnsignedId(pSlowBucket, &id);
+	chix = bucketLookupItemUnsignedId(pCAC->ca_pSlowBucket, &id);
 	assert ( chix!=NULL );
 
 	piiu = chix->piiu;
@@ -2506,13 +2506,13 @@ void clearChannelResources(unsigned id)
 	 * remove any orphaned get callbacks for this
 	 * channel
 	 */
-	for (monix = (evid) ellFirst (&pend_read_list.node);
+	for (monix = (evid) ellFirst (&pCAC->ca_pend_read_list.node);
 	     monix;
 	     monix = next) {
 		next = (evid) ellNext (&monix->node);
 		if (monix->chan == chix) {
 			ellDelete (
-				&pend_read_list,
+				&pCAC->ca_pend_read_list,
 				&monix->node);
 			caIOBlockFree (monix);
 		}
@@ -2525,7 +2525,8 @@ void clearChannelResources(unsigned id)
 		caIOBlockFree(monix);
 	}
 	ellDelete(&piiu->chidlist, &chix->node);
-	status = bucketRemoveItemUnsignedId(pSlowBucket, &chix->cid);
+	status = bucketRemoveItemUnsignedId(
+			pCAC->ca_pSlowBucket, &chix->cid);
 	assert (status == BUCKET_SUCCESS);
 	free(chix);
 	if (!piiu->chidlist.count){

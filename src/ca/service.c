@@ -526,7 +526,7 @@ struct in_addr  	*pnet_addr
 		break;
 
 	case IOC_CLEAR_CHANNEL:
-		clearChannelResources (piiu->curMsg.m_available);
+		clearChannelResources (ca_static, piiu->curMsg.m_available);
 		break;
 
 	case IOC_ERROR:

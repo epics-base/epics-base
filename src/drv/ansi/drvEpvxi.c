@@ -1354,7 +1354,7 @@ LOCAL void vxi_record_topology(void)
 	unsigned	slot;
 	EPVXISTAT	status;
 
-	for(	la=first_la, pplac = epvxiLibDeviceList; 
+	for(	la=first_la, pplac = &epvxiLibDeviceList[first_la]; 
 		la<=last_la; 
 		la++, pplac++){
 

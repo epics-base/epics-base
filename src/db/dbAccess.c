@@ -216,7 +216,7 @@ long dbProcess(paddr)
 	int		set_trace=FALSE;
     
 	/* check for trace processing*/
-	if(tpro&&!trace) {
+	if(tpro) {
 		if(vxTas(&trace)) {
 			trace = TRUE;
 			trace_lset = lset;

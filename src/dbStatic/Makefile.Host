@@ -23,6 +23,10 @@ Db_RCS_WIN32 = Db.rc
 #       Products to build:
 #
 PROD := dbReadTest dbExpand dbToMenuH dbToRecordtypeH
+dbReadTest_SRCS=dbReadTest.c
+dbExpand_SRCS=dbExpand.c
+dbToMenuH_SRCS=dbToMenuH.c
+dbToRecordtypeH_SRCS=dbToRecordtypeH.c
 
 #       libs needed by PROD:
 #

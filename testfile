@@ -1,0 +1,13 @@
+This is a test file
+This is second line
+include "testfile1"
+a=${a}
+b=$(b)
+substitute "a=aaa,b=bbb"
+a=${a}
+b=$(b)
+substitute "a=\"aa\""
+${a}
+$(a)
+This is last line
+%report

@@ -1,0 +1,16 @@
+EPICS = ../../../..
+include Target.include
+include $(EPICS)/config/CONFIG_EXTENSIONS
+
+DEPLIBS =  $(EPICS_BASE_LIB)/libCom.a $(EPICS_EXTENSIONS_LIB)/libpprsyd.a
+USR_LDLIBS = -lpprsyd -lCom
+USR_INCLUDES = -I$(EPICS_EXTENSIONS_INCLUDE)
+USR_CFLAGS = -L$(EPICS_EXTENSIONS_LIB)
+
+#CMPLR = OLD
+
+SRCS.c= ../msi.c
+PROD = msi
+
+include $(EPICS)/config/RULES.Unix
+

@@ -142,11 +142,11 @@ long dbCaGetLink(struct link *plink,short dbrType, char *pdest,
 	return(-1);
     }
     if(!pca->chid || ca_state(pca->chid) != cs_conn) {
-	pca->sevr = INVALID_ALARM;
+	pca->sevr = INVALID_ALARM; status = -1;
 	goto done;
     }
     if(!ca_read_access(pca->chid)) {
-	pca->sevr = INVALID_ALARM;
+	pca->sevr = INVALID_ALARM; status = -1;
 	goto done;
     }
     if((pca->dbrType == DBR_ENUM) && (dbDBRnewToDBRold[dbrType] == DBR_STRING)){
@@ -156,7 +156,7 @@ long dbCaGetLink(struct link *plink,short dbrType, char *pdest,
 	    link_action |= CA_MONITOR_STRING;
 	}
 	if(!pca->gotInString) {
-	    pca->sevr = INVALID_ALARM;
+	    pca->sevr = INVALID_ALARM; status = -1;
 	    goto done;
 	}
 	if(nelements) *nelements = 1;
@@ -169,7 +169,7 @@ long dbCaGetLink(struct link *plink,short dbrType, char *pdest,
 	link_action |= CA_MONITOR_NATIVE;
     }
     if(!pca->gotInNative){
-	pca->sevr = INVALID_ALARM;
+	pca->sevr = INVALID_ALARM; status = -1;
 	goto done;
     }
     if(!nelements || *nelements == 1){

@@ -2,17 +2,11 @@ TOP = ../../..
 include $(TOP)/config/CONFIG_BASE
 
 PROD = installEpics
-SCRIPTS = InstallVersion getrel 
+SCRIPTS = getrel 
 
 include $(TOP)/config/RULES.Unix
 
 $(INSTALL_BIN)/installEpics: installEpics
-	@echo "Installing $@"
-	@test -d $(INSTALL_LOCATION_BIN) || mkdir $(INSTALL_LOCATION_BIN)
-	@test -d $(INSTALL_BIN) || mkdir $(INSTALL_BIN)
-	@./installEpics -m 555 $< $(INSTALL_BIN)
-
-$(INSTALL_BIN)/InstallVersion: ../InstallVersion
 	@echo "Installing $@"
 	@test -d $(INSTALL_LOCATION_BIN) || mkdir $(INSTALL_LOCATION_BIN)
 	@test -d $(INSTALL_BIN) || mkdir $(INSTALL_BIN)

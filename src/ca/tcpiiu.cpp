@@ -227,9 +227,9 @@ extern "C" void cacRecvThreadTCP ( void *pParam )
             priorityOfSend = piiu->pCAC ()->getInitializingThreadsPriority ();
         }
         else {
-            epicsThreadBooleanStatus tbs  = epicsThreadLowestPriorityLevelAbove ( 
+            epicsThreadBooleanStatus tbsInside  = epicsThreadLowestPriorityLevelAbove ( 
                 priorityOfSend, &priorityOfSend );
-            if ( tbs != epicsThreadBooleanStatusSuccess ) {
+            if ( tbsInside != epicsThreadBooleanStatusSuccess ) {
                 priorityOfSend = piiu->pCAC ()->getInitializingThreadsPriority ();
             }
         }
@@ -267,7 +267,7 @@ extern "C" void cacRecvThreadTCP ( void *pParam )
         }
         else {
             char oneByte;
-            int status = ::recv ( piiu->sock, & oneByte, 
+            ::recv ( piiu->sock, & oneByte, 
                 sizeof ( oneByte ), MSG_PEEK );
             nBytesIn = 0u;
         }
@@ -1280,7 +1280,7 @@ void tcpiiu::blockUntilSendBacklogIsReasonable (
     while ( this->sendQue.flushBlockThreshold(0u) && this->state == iiu_connected ) {
         epicsAutoMutexRelease autoRelease ( primaryMutex );
         if ( pCallbackMutex ) {
-            epicsAutoMutexRelease autoRelease ( *pCallbackMutex );
+            epicsAutoMutexRelease autoReleaseCallback ( *pCallbackMutex );
             this->flushBlockEvent.wait ();
         }
         else {

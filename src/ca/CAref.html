@@ -1167,13 +1167,13 @@ not disconnected until TCP/IP's internal, typically long duration, keep alive
 timer expires. The disconnected channels remain attached to the beleaguered
 circuit and no attempt is made to search for, or to reestablish, a new
 circuit. If, at some time in the future, the circuit becomes responsive
-again, then the attached channels enter a connected astate again and
-reconnect call back handlers are called. Any monitor subscriptions that
-received an update message while the channel was disconnected are also
-refreshed. If at any time the library receives an indication from the
-operating system that a beleaguered circuit has shutdown or was disconnected
-then the library will immediately reattempt to find servers for each channel
-and connect circuit to them.</p>
+again, then the attached channels enter a connected state again and reconnect
+call back handlers are called. Any monitor subscriptions that received an
+update message while the channel was disconnected are also refreshed. If at
+any time the library receives an indication from the operating system that a
+beleaguered circuit has shutdown or was disconnected then the library will
+immediately reattempt to find servers for each channel and connect circuits
+to them.</p>
 
 <p>A well known negative side effect of the above behavior is that CA clients
 will wait the full (typically long) duration of TCP/IP's internal keep alive
@@ -1195,14 +1195,14 @@ opportunities for users to become confused during control system
 isolated confusion during the system integration and checkout activities
 where the above scenarios are most likely to occur.</p>
 
-<p>Contrast the above behavior with the behavior of releases prior to R3.14.5
-where the beleaguered circuit was immediately closed when communication over
-it timed out. Any attached channels were immediately searched for, and after
-successful search responses arrived then attempts were made to build a new
-circuit. This behavior could result in undesirable load fluctuations during
-periods of CPU / network / IP kernel buffer congestion. There could be
-undesirable resource consumption resulting from periodic circuit setup and
-teardown overhead (thrashing).</p>
+<p>Contrast the above behavior with the CA client library behavior of
+releases prior to R3.14.5 where the beleaguered circuit was immediately
+closed when communication over it timed out. Any attached channels were
+immediately searched for, and after successful search responses arrived then
+attempts were made to build a new circuit. This behavior could result in
+undesirable undesirable resource consumption resulting from periodic circuit
+setup and teardown overhead (thrashing) during periods of CPU / network / IP
+kernel buffer congestion. </p>
 
 <h3><a name="Problems">ENOBUFS Messages</a></h3>
 

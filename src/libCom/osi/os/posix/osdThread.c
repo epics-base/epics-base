@@ -583,15 +583,14 @@ const char *epicsThreadGetNameSelf()
     return(pthreadInfo->name);
 }
 
-int epicsThreadIsOkToBlock(epicsThreadId pthreadInfo) {
-    assert(epicsThreadOnceCalled);
-    assert(pthreadInfo);
+int epicsThreadIsOkToBlock(void)
+{
+    epicsThreadId pthreadInfo = epicsThreadGetIdSelf();
     return pthreadInfo->isOkToBlock;
 }
 
-void epicsThreadSetOkToBlock(epicsThreadId pthreadInfo,int isOkToBlock) {
-    assert(epicsThreadOnceCalled);
-    assert(pthreadInfo);
+void epicsThreadSetOkToBlock(int isOkToBlock) {
+    epicsThreadId pthreadInfo = epicsThreadGetIdSelf();
     pthreadInfo->isOkToBlock = isOkToBlock;
 }
 

@@ -240,13 +240,13 @@ const char *epicsThread::getNameSelf ()
     return epicsThreadGetNameSelf ();
 }
 
-bool epicsThread::isOkToBlock () const
+bool epicsThread::isOkToBlock () 
 {
-    return static_cast<int>(epicsThreadIsOkToBlock(this->id));
+    return static_cast<int>(epicsThreadIsOkToBlock());
 }
 
 void epicsThread::setOkToBlock(bool isOkToBlock)
 {
-    epicsThreadSetOkToBlock(this->id,static_cast<int>(isOkToBlock));
+    epicsThreadSetOkToBlock(static_cast<int>(isOkToBlock));
 }
 

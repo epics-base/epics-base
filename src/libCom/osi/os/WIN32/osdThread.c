@@ -848,8 +848,9 @@ epicsShareFunc void epicsShareAPI epicsThreadGetName (
 /*
  * epicsThreadIsOkToBlock () 
  */
-epicsShareFunc int epicsShareAPI epicsThreadIsOkToBlock ( epicsThreadId id ) 
+epicsShareFunc int epicsShareAPI epicsThreadIsOkToBlock (void);
 {
+    epicsThreadId id = epicsThreadGetIdSelf();
     win32ThreadParam *pParm = ( win32ThreadParam * ) id;
 
     return pParm->isOkToBlock;
@@ -858,9 +859,9 @@ epicsShareFunc int epicsShareAPI epicsThreadIsOkToBlock ( epicsThreadId id )
 /*
  * epicsThreadSetOkToBlock () 
  */
-epicsShareFunc int epicsShareAPI epicsThreadSetOkToBlock (
-      epicsThreadId id, int isOkToBlock) 
+epicsShareFunc int epicsShareAPI epicsThreadSetOkToBlock ( int isOkToBlock) 
 {
+    epicsThreadId id = epicsThreadGetIdSelf();
     win32ThreadParam *pParm = ( win32ThreadParam * ) id;
 
     pParm->isOkToBlock = isOkToBlock;

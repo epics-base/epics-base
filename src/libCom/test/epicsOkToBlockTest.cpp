@@ -30,14 +30,13 @@ extern "C" {
 static void thread(void *arg)
 {
     info *pinfo = (info *)arg;
-    epicsThreadId idSelf = epicsThreadGetIdSelf();
     int isOkToBlock;
 
     printf("thread %s isOkToBlock %d\n",
         epicsThreadGetNameSelf(),pinfo->isOkToBlock);
-    epicsThreadSetOkToBlock(idSelf,pinfo->isOkToBlock);
+    epicsThreadSetOkToBlock(pinfo->isOkToBlock);
     epicsThreadSleep(1.0);
-    isOkToBlock = epicsThreadIsOkToBlock(idSelf);
+    isOkToBlock = epicsThreadIsOkToBlock();
     printf("thread %s epicsThreadIsOkToBlock %d\n",
         epicsThreadGetNameSelf(),isOkToBlock);
     epicsThreadSleep(.1);

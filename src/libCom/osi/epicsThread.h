@@ -97,9 +97,8 @@ epicsShareFunc const char * epicsShareAPI epicsThreadGetNameSelf(void);
 epicsShareFunc void epicsShareAPI epicsThreadGetName(
     epicsThreadId id, char *name, size_t size);
 
-epicsShareFunc int epicsShareAPI epicsThreadIsOkToBlock(epicsThreadId id);
-epicsShareFunc void epicsShareAPI epicsThreadSetOkToBlock(
-     epicsThreadId id,int isOkToBlock);
+epicsShareFunc int epicsShareAPI epicsThreadIsOkToBlock(void);
+epicsShareFunc void epicsShareAPI epicsThreadSetOkToBlock(int isOkToBlock);
 
 epicsShareFunc void epicsShareAPI epicsThreadShowAll(unsigned int level);
 epicsShareFunc void epicsShareAPI epicsThreadShow(
@@ -155,8 +154,8 @@ public:
     static void sleep (double seconds);
     /* static epicsThread & getSelf (); */
     static const char * getNameSelf ();
-    bool isOkToBlock () const;
-    void setOkToBlock(bool isOkToBlock) ;
+    static bool isOkToBlock () ;
+    static void setOkToBlock(bool isOkToBlock) ;
     class mustBeCalledByManagedThread {}; /* exception */
 private:
     epicsThreadRunable & runable;

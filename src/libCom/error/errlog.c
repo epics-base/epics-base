@@ -128,7 +128,7 @@ epicsShareFunc int errlogVprintf(
 {
     int nchar;
     char *pbuffer;
-    int isOkToBlock = epicsThreadIsOkToBlock(epicsThreadGetIdSelf());
+    int isOkToBlock = epicsThreadIsOkToBlock();
 
     if(epicsInterruptIsInterruptContext()) {
 	epicsInterruptContextMessage
@@ -211,7 +211,7 @@ epicsShareFunc int errlogSevVprintf(
     char *pnext;
     int	 nchar;
     int	 totalChar=0;
-    int  isOkToBlock = epicsThreadIsOkToBlock(epicsThreadGetIdSelf());
+    int  isOkToBlock = epicsThreadIsOkToBlock();
     char *pmessage;
 
     if(pvtData.sevToLog>severity) return(0);
@@ -308,7 +308,7 @@ epicsShareFunc void errPrintf(long status, const char *pFileName,
     char    *pnext;
     int     nchar;
     int     totalChar=0;
-    int     isOkToBlock = epicsThreadIsOkToBlock(epicsThreadGetIdSelf());
+    int     isOkToBlock = epicsThreadIsOkToBlock();
     char    *pmessage;
 
     if(epicsInterruptIsInterruptContext()) {

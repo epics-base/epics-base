@@ -276,14 +276,14 @@ void epicsThreadGetName (epicsThreadId id, char *name, size_t size)
     name[size-1] = '\0';
 }
 
-int epicsThreadIsOkToBlock(epicsThreadId id)
+int epicsThreadIsOkToBlock(void)
 {
-    return isOkToBlock;
+    return taskVarGet(taskIdSelf(),&isOkToBlock);
 }
 
-void epicsThreadSetOkToBlock(epicsThreadId id,int yesNo)
+void epicsThreadSetOkToBlock(int yesNo)
 {
-    isOkToBlock = yesNo;
+    taskVarSet(taskIdSelf(),&isOkToBlock,yesNo);
 }
 
 void epicsThreadShowAll(unsigned int level)

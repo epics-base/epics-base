@@ -454,9 +454,9 @@ epicsThreadId epicsThreadGetId (const char *name)
     return (epicsThreadId)tid;
 }
 
-int epicsThreadIsOkToBlock (epicsThreadId id)
+int epicsThreadIsOkToBlock (void)
 {
-    rtems_id tid = (rtems_id)id;
+    rtems_id tid = (rtems_id)epicsThreadGetIdSelf();
     rtems_status_code sc;
     rtems_unsigned32 note;
     struct taskVar *v;
@@ -475,9 +475,9 @@ int epicsThreadIsOkToBlock (epicsThreadId id)
     return okToBlock;
 }
 
-void epicsThreadSetOkToBlock (epicsThreadId id,int isOkToBlock)
+void epicsThreadSetOkToBlock (int isOkToBlock)
 {
-    rtems_id tid = (rtems_id)id;
+    rtems_id tid = (rtems_id)epicsThreadGetIdSelf();
     rtems_status_code sc;
     rtems_unsigned32 note;
     struct taskVar *v;

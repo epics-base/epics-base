@@ -106,10 +106,8 @@ static void dbiorCallFunc(const iocshArgBuf *args)
 { dbior(args[0].sval,args[1].ival);}
 
 /* dbhcr */
-static const iocshArg dbhcrArg0 = { "filename",iocshArgString};
-static const iocshArg * const dbhcrArgs[1] = {&dbhcrArg0};
-static const iocshFuncDef dbhcrFuncDef = {"dbhcr",1,dbhcrArgs};
-static void dbhcrCallFunc(const iocshArgBuf *args) { dbhcr(args[0].sval);}
+static const iocshFuncDef dbhcrFuncDef = {"dbhcr",0,0};
+static void dbhcrCallFunc(const iocshArgBuf *args) { dbhcr();}
 
 /* gft */
 static const iocshArg gftArg0 = { "record name",iocshArgString};

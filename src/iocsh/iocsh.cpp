@@ -418,8 +418,8 @@ iocsh (const char *pathname)
      * Read commands till EOF or exit
      */
     argc = 0;
-    wasOkToBlock = epicsThreadIsOkToBlock(epicsThreadGetIdSelf());
-    epicsThreadSetOkToBlock(epicsThreadGetIdSelf(), 1);
+    wasOkToBlock = epicsThreadIsOkToBlock();
+    epicsThreadSetOkToBlock(1);
     for (;;) {
 
         /*
@@ -730,7 +730,7 @@ iocsh (const char *pathname)
     free (argBuf);
     errlogFlush();
     epicsReadlineEnd(readlineContext);
-    epicsThreadSetOkToBlock(epicsThreadGetIdSelf(), wasOkToBlock);
+    epicsThreadSetOkToBlock( wasOkToBlock);
     return 0;
 }
 

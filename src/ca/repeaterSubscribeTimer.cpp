@@ -22,7 +22,6 @@ repeaterSubscribeTimer::repeaterSubscribeTimer ( udpiiu &iiuIn, osiTimerQueue &q
 void repeaterSubscribeTimer::expire ()
 {
     static const unsigned nTriesToMsg = 50;
-    this->attempts++;
     if ( this->attempts > nTriesToMsg && ! this->once ) {
         ca_printf (
     "Unable to contact CA repeater after %u tries\n", nTriesToMsg);
@@ -32,6 +31,7 @@ void repeaterSubscribeTimer::expire ()
     }
 
     this->iiu.repeaterRegistrationMessage ( this->attempts );
+    this->attempts++;
 }
 
 void repeaterSubscribeTimer::destroy ()

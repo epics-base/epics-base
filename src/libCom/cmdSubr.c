@@ -27,6 +27,9 @@
  * -----------------
  * .00	10-24-90	rac	initial version
  * .01	06-18-91	rac	installed in SCCS
+ * .02	12-05-91	rac	abandon use of lightweight process library;
+ *				cmdRead ignores blank lines and comment
+ *				lines; added cmdInitContext
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -38,12 +41,12 @@
 * TITLE	cmdSubr - routines for implementing keyboard command processing
 *
 * DESCRIPTION
-*	intended for use with either UNIX lwp library or with VxWorks
 *
-*   void cmdCloseContext(   ppCxCmd					)
-*   long cmdBgCheck(        pCxCmd					)
-*   void cmdRead(           ppCxCmd, pStopFlag				)
-*   void cmdSource(         ppCxCmd					)
+*  long  cmdBgCheck(        pCxCmd					)
+*  void  cmdCloseContext(   ppCxCmd					)
+*  void  cmdInitContext(    ppCxCmd, prompt				)
+*  char *cmdRead(           ppCxCmd					)
+*  void  cmdSource(         ppCxCmd					)
 *
 * BUGS
 * o	if changes in the command context (e.g., re-directing output) are
@@ -51,11 +54,6 @@
 *	when closing out the level and moving to the previous level.
 *
 *-***************************************************************************/
-#include <genDefs.h>
-#include <genTasks.h>
-#include <cmdDefs.h>
-#include <cadef.h>
-
 #ifdef vxWorks
 /*----------------------------------------------------------------------------
 *    includes and defines for VxWorks compile
@@ -72,6 +70,9 @@
 #   include <sys/types.h>	/* for 'select' operations */
 #   include <sys/time.h>	/* for 'select' operations */
 #endif
+
+#include <genDefs.h>
+#include <cmdDefs.h>
 
 /*+/subr**********************************************************************
 * NAME	cmdBgCheck - validate a ``bg'' command
@@ -112,16 +113,22 @@ CX_CMD	*pCxCmd;	/* IO pointer to command context */
 * NAME	cmdRead - read the next input line
 *
 * DESCRIPTION
-*	Prints a prompt, waits for input to be available, and then reads
-*	the input line into the buffer in the command context.
+*	If a prompt hasn't previously been printed, prints a prompt (except
+*	if input is from a file).  Then a check is made to see if input is
+*	available.  If not, NULL is returned.  If input is available, it is
+*	read into the buffer in the command context.
 *
 *	If input is from a source'd file, no prompt is printed, and the
 *	input line is printed.  At EOF on the file, the "source level"
 *	in the command context is closed, changing to the previous
 *	source level; the line buffer will contain a zero length line.
 *
+*	Under VxWorks, this routine always waits until input is available,
+*	rather than doing a check and early NULL return if none is ready.
+*
 * RETURNS
-*	void
+*	char * pointer to input, or
+*	NULL if no input was obtained
 *
 * BUGS
 * o	under VxWorks, with stdout redirected to a socket, a prompt which
@@ -131,71 +138,62 @@ CX_CMD	*pCxCmd;	/* IO pointer to command context */
 *	cmdSource()
 *
 *-*/
-void
-cmdRead(ppCxCmd, pStopFlag)
-CX_CMD	**ppCxCmd;	/* IO ptr to pointer to command context */
-int	*pStopFlag;	/* I pointer to flag; 1 says to "stop" */
+char *
+cmdRead(ppCxCmd)
+CX_CMD	**ppCxCmd;	/* I pointer to pointer to command context */
 {
 #ifndef vxWorks
     fd_set      fdSet;          /* set of fd's to watch with select */
     int         fdSetWidth;     /* width of select bit mask */
     struct timeval fdSetTimeout;/* timeout interval for select */
 #endif
-    CX_CMD	*pCxCmd;	/* pointer to present command context */
+    CX_CMD	*pCxCmd=*ppCxCmd;/* pointer to command context */
+    int		i;
 
-    pCxCmd = *ppCxCmd;
 /*-----------------------------------------------------------------------------
-* handle keyboard input as a special case.  Only for keyboard input is a
-* prompt printed.  Only for keyboard input is there protection against blocking
+*    for keyboard and socket input, check to see if input is available
 *----------------------------------------------------------------------------*/
     if (pCxCmd->inputName == NULL) {
-	if (pCxCmd->prompt != NULL) {
+	if (pCxCmd->prompt != NULL && pCxCmd->promptFlag) {
 	    (void)printf("%s", pCxCmd->prompt);
 	    (void)fflush(stdout);
+	    pCxCmd->promptFlag = 0;
 	}
 
 #ifndef vxWorks
-/*----------------------------------------------------------------------------
-*	under SunOS, with lightweight processes, just doing a simple
-*	gets() call would block the pod.  Instead, under SunOS, do a
-*	select() to check for input available.
-*---------------------------------------------------------------------------*/
 	fdSetWidth = getdtablesize();
-	while (1) {
-	    if (*pStopFlag != 0)
-		break;
-	    fdSetTimeout.tv_sec = 0;
-	    fdSetTimeout.tv_usec = 0;
-	    FD_ZERO(&fdSet);
-	    FD_SET(fileno(stdin), &fdSet);
+	fdSetTimeout.tv_sec = 0;
+	fdSetTimeout.tv_usec = 0;
+	FD_ZERO(&fdSet);
+	FD_SET(fileno(stdin), &fdSet);
 
-	    if (select(fdSetWidth, &fdSet, NULL, NULL, &fdSetTimeout) != 0)
-		break;			/* input's ready !!! */
-	    taskSleep(SELF, 1, 0);
-	}
+	if (select(fdSetWidth, &fdSet, NULL, NULL, &fdSetTimeout) == 0)
+	    return NULL;
 #endif
+	pCxCmd->promptFlag = 1;
     }
 
-    if (*pStopFlag != 0)
-	pCxCmd->line[0] = '\0';
-    else {
-	if (fgets(pCxCmd->line, 80, pCxCmd->input) == NULL) {
-	    if (pCxCmd->inputName != NULL) {
-		(void)printf("EOF on source'd file: %s\n", pCxCmd->inputName);
-	    }
-	    else {
-		(void)printf("^D\n");
-		pCxCmd->inputEOF = 1;
-	    }
-	    clearerr(pCxCmd->input);
-	    cmdCloseContext(ppCxCmd);
-	    pCxCmd = *ppCxCmd;
+    if (fgets(pCxCmd->line, 80, pCxCmd->input) == NULL) {
+	if (pCxCmd->inputName != NULL) {
+	    (void)printf("EOF on source'd file: %s\n", pCxCmd->inputName);
 	}
-	else if (pCxCmd->inputName != NULL)
-	    (void)printf("%s", pCxCmd->line);
+	else {
+	    (void)printf("^D\n");
+	    pCxCmd->inputEOF = 1;
+	}
+	clearerr(pCxCmd->input);
+	cmdCloseContext(ppCxCmd);
+	pCxCmd = *ppCxCmd;
     }
+    else if (pCxCmd->inputName != NULL)
+	(void)printf("%s", pCxCmd->line);
 
     pCxCmd->pLine = pCxCmd->line;
+    if ((i=nextANField(&pCxCmd->pLine, &pCxCmd->pCommand, &pCxCmd->delim)) < 1)
+	return NULL;
+    if (i == 1 && pCxCmd->delim == '#')
+	return NULL;
+    return pCxCmd->pLine;
 }
 
 /*+/subr**********************************************************************
@@ -214,9 +212,6 @@ int	*pStopFlag;	/* I pointer to flag; 1 says to "stop" */
 *
 * RETURNS
 *	void
-*
-* BUGS
-* o	text
 *
 *-*/
 void
@@ -237,6 +232,34 @@ CX_CMD	**ppCxCmd;	/* IO ptr to pointer to command context */
 	*ppCxCmd = pCxCmd;
 	(*ppCxCmd)->line[0] = '\0';
     }
+}
+
+/*+/subr**********************************************************************
+* NAME	cmdInitContext - closes a command context
+*
+* DESCRIPTION
+*	Initializes a command context.
+*
+* RETURNS
+*	void
+*
+*-*/
+void
+cmdInitContext(pCxCmd, prompt)
+CX_CMD	*pCxCmd;	/* I pointer to command context */
+char	*prompt;	/* I pointer to static prompt string */
+{
+    assert(pCxCmd != NULL);
+
+    pCxCmd->promptFlag = 1;
+    pCxCmd->input = stdin;
+    pCxCmd->inputEOF = 0;
+    pCxCmd->inputName = NULL;
+    pCxCmd->dataOut = stdout;
+    pCxCmd->dataOutRedir = 0;
+    pCxCmd->prompt = prompt;
+    pCxCmd->pPrev = NULL;
+    pCxCmd->pCxCmdRoot = pCxCmd;
 }
 
 /*+/subr**********************************************************************

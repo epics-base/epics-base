@@ -114,7 +114,7 @@ Host system storage requirements
 Documentation
 
      EPICS documentation is available on the WWW via the EPICS home
-     page at APS:  URL http://www.aps.anl.gov/Epics
+     page at APS:  URL http://www.aps.anl.gov/epics
 
      This README.1st is in the base distribution file and will be available
      on the IOC software R3.14 EPICS WWW page which can be accessed
@@ -133,8 +133,9 @@ WWW pages
 
      Mailing Lists
 
-         There are five EPICS mailing lists provided by APS. See The
-         EPICS home page for subscription instructions.
+         There is an EPICS mailing list called tech-talk which is hosted at
+         APS, with a list repeater at BESSY. See The EPICS home page for
+         subscription instructions.
 
 Directory Structure
 

@@ -96,7 +96,6 @@ typedef struct lockSet {
 	ELLNODE		node;
 	ELLLIST		recordList;
 	semMutexId	lock;
-	TS_STAMP	start_time;
 	threadId	thread_id;
 	dbCommon	*precord;
 	unsigned long	id;
@@ -171,7 +170,6 @@ void epicsShareAPI dbLockSetRecordLock(dbCommon *precord)
     /*Wait for up to 1 minute*/
     status = semMutexTakeTimeout(plockRecord->plockSet->lock,60.0);
     if(status==semTakeOK) {
-        tsStampGetCurrent(&plockSet->start_time);
 	plockSet->thread_id = threadGetIdSelf();
 	plockSet->precord = (void *)precord;
 	/*give it back in case it will not be changed*/
@@ -182,7 +180,7 @@ void epicsShareAPI dbLockSetRecordLock(dbCommon *precord)
     errlogPrintf("dbLockSetRecordLock timeout caller 0x%x owner 0x%x",
 	threadGetIdSelf(),plockSet->thread_id);
     errlogPrintf(" record %s\n",precord->name);
-    return;
+    cantProceed("dbLockSetRecordLock");
 }
 
 void epicsShareAPI dbScanLock(dbCommon *precord)
@@ -203,7 +201,6 @@ void epicsShareAPI dbScanLock(dbCommon *precord)
 	if(status==semTakeOK) break;
     }
     plockSet = plockRecord->plockSet;
-    tsStampGetCurrent(&plockSet->start_time);
     plockSet->thread_id = threadGetIdSelf();
     plockSet->precord = (void *)precord;
     return;
@@ -418,7 +415,6 @@ long epicsShareAPI dblsr(char *recordname,int level)
 	plockSet = (lockSet *)ellFirst(&lockList);
     }
     for( ; plockSet; plockSet = (lockSet *)ellNext(&plockSet->node)) {
-	double lockSeconds;
 
 	printf("Lock Set %lu %d members",
 	    plockSet->id,ellCount(&plockSet->recordList));
@@ -427,10 +423,7 @@ long epicsShareAPI dblsr(char *recordname,int level)
 	    printf(" Not Locked\n");
 	} else {
             TS_STAMP currentTime;
-            lockSeconds = tsStampDiffInSeconds(
-                &currentTime,&plockSet->start_time);
-	    printf(" Locked %f seconds", lockSeconds);
-	    printf(" thread %p",plockSet->thread_id);
+	    printf(" Locked by thread %p",plockSet->thread_id);
 	    if(! plockSet->precord || !plockSet->precord->name)
 		printf(" NULL record or record name\n");
 	    else

@@ -17,3 +17,14 @@ OSINC += osiSock.h
 
 include $(TOP)/config/RULES.Unix
 
+-include $(TOP)/config/CONFIG_BASE_VERSION
+
+epicsVersion.h: $(TOP)/config/CONFIG_BASE_VERSION
+	@$(RM) $@
+	@echo "#define BASE_VERSION           $(BASE_VERSION)" > $@
+	@echo "#define BASE_REVISION          $(BASE_REVISION)" >> $@
+	@echo "#define BASE_MODIFICATION      $(BASE_MODIFICATION)" >> $@
+	@echo "#define BASE_UPDATE_NAME       $(BASE_UPDATE_NAME)" >> $@
+	@echo "#define BASE_UPDATE_LEVEL      $(BASE_UPDATE_LEVEL)" >> $@
+	@echo "#define BASE_VERSION_STRING    \"EPICS Version $(BASE_VERSION_STRING)\" " >> $@
+	@echo "#define epicsReleaseVersion \"@(#)Version R$(BASE_VERSION_STRING) $(CVS_DATE)\" " >> $@

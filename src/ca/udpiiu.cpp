@@ -460,10 +460,9 @@ udpiiu::udpiiu (cac *pcac) :
         threadId tid;
         threadBoolStatus tbs;
 
-        tbs  = threadLowestPriorityLevelAbove (priorityOfSelf, &priorityOfRecv);
+        tbs  = threadLowestPriorityLevelAbove ( priorityOfSelf, &priorityOfRecv );
         if ( tbs != tbsSuccess ) {
             priorityOfRecv = priorityOfSelf;
-            ca_printf ("CAC warning: unable to get a higher priority for a UDP recv thread\n");
         }
 
         tid = threadCreate ("CAC-UDP-recv", priorityOfRecv,
@@ -526,10 +525,9 @@ udpiiu::udpiiu (cac *pcac) :
             threadId tid;
             threadBoolStatus tbs;
 
-            tbs  = threadLowestPriorityLevelAbove (priorityOfSelf, &priorityOfRepeater);
+            tbs  = threadLowestPriorityLevelAbove ( priorityOfSelf, &priorityOfRepeater );
             if ( tbs != tbsSuccess ) {
                 priorityOfRepeater = priorityOfSelf;
-                ca_printf ("CAC warning: unable to get a higher priority for repeater thread\n");
             }
 
             tid = threadCreate ( "CAC-repeater", priorityOfRepeater,

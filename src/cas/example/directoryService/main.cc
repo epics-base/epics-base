@@ -69,9 +69,15 @@ extern int main ( int argc, const char **argv )
         return (-1);
     }
 
-    pCAS = new directoryServer(pvPrefix, aliasCount);
-    if (!pCAS) {
-        return (-1);
+    try {
+        pCAS = new directoryServer(pvPrefix, aliasCount);
+        if (!pCAS) {
+            return (-1);
+        }
+    }
+    catch ( ... ) {
+        errlogPrintf ( "Unable to create a directory service\n" );
+        exit ( -1 );
     }
 
     pCAS->setDebugLevel(debugLevel);

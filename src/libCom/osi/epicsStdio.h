@@ -12,7 +12,6 @@
 #define epicsStdioh
 
 #include <stdio.h>
-#include <stdarg.h>
 
 #ifdef  __cplusplus
 extern "C" {
@@ -24,6 +23,7 @@ epicsShareFunc int epicsShareAPI epicsSnprintf(
     char *str, size_t size, const char *format, ...);
 epicsShareFunc int epicsShareAPI epicsVsnprintf(
     char *str, size_t size, const char *format, va_list ap);
+epicsShareFunc FILE * epicsShareAPI epicsTempFile ( void );
 
 #ifdef  __cplusplus
 }

@@ -14,16 +14,10 @@ of this distribution.
 #include <stdio.h>
 
 #include "osiThread.h"
-#include "dbAccess.h"
-#include "errlog.h"
-#include "dbTest.h"
-#include "registryRecordType.h"
 #include "ioccrf.h"
-#include "registerRecordDeviceDriverRegister.h"
 
 int main(int argc,char *argv[])
 {
-    registerRecordDeviceDriverRegister();
     if(argc>=2) {    
         ioccrf(argv[1]);
         threadSleep(.2);

@@ -21,7 +21,6 @@ of this distribution.
 #include "dbAccess.h"
 #define epicsExportSharedSymbols
 #include "ioccrf.h"
-#include "ioccrfRegisterCommon.h"
 #include "epicsReadline.h"
 
 class IoccrfFunc {
@@ -482,8 +481,10 @@ static void localRegister (void)
 /*
  * Register commands on application startup
  */
+#include "ioccrfRegisterCommon.h"
+#include "registerRecordDeviceDriverRegister.h"
 class IoccrfRegister {
   public:
-    IoccrfRegister() { localRegister(); ioccrfRegisterCommon(); }
+    IoccrfRegister() { localRegister(); ioccrfRegisterCommon(); registerRecordDeviceDriverRegister(); }
 };
 static IoccrfRegister ioccrfRegisterObj;

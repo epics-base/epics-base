@@ -57,6 +57,11 @@
  *			datagram socket (and watching for ECONNREFUSED)
  *
  * $Log$
+ * Revision 1.48  1999/09/02 21:44:50  jhill
+ * improved the way that socket error numbers are converted to strings,
+ * changed () to (void) in func proto, and fixed missing parameter to
+ * checkConnWatchdogs() bug resulting from this
+ *
  * Revision 1.47  1998/09/29 20:50:37  jhill
  * more robust in situations wherelocal IP cant be determined
  *
@@ -209,7 +214,7 @@ void epicsShareAPI ca_repeater()
 		 * use the loop back address to communicate with the CA repeater
 		 * if this os does not have interface query capabilities
 		 *
-		 * this will only work with 3.13 beta 12 CA repeaters or later
+		 * this will only work with 3.13 beta 12 CA clients or later
 		 */
 		local.sin_family = AF_INET;
 		local.sin_addr.s_addr = htonl (INADDR_LOOPBACK);

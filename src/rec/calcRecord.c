@@ -72,23 +72,24 @@
  * .30  05-24-94        jba     Added recGblRecordError messages for postfix status
  */
 
-#include	<vxWorks.h>
-#include	<types.h>
-#include	<stdioLib.h>
-#include	<lstLib.h>
-#include	<string.h>
+#include <vxWorks.h>
+#include <types.h>
+#include <stdioLib.h>
+#include <lstLib.h>
+#include <string.h>
 
 #include "dbDefs.h"
 #include "epicsPrint.h"
-#include	<alarm.h>
-#include	<dbAccess.h>
-#include	<dbEvent.h>
-#include	<dbFldTypes.h>
-#include	<errMdef.h>
-#include	<recSup.h>
-#include	<special.h>
+#include "postfix.h"
+#include "alarm.h"
+#include "dbAccess.h"
+#include "dbEvent.h"
+#include "dbFldTypes.h"
+#include "errMdef.h"
+#include "recSup.h"
+#include "special.h"
 #define GEN_SIZE_OFFSET
-#include	<calcRecord.h>
+#include "calcRecord.h"
 #undef  GEN_SIZE_OFFSET
 
 /* Create RSET - Record Support Entry Table*/

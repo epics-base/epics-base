@@ -73,11 +73,11 @@ void dbSubscriptionIO::operator delete ( void *pCadaver, size_t size )
     dbSubscriptionIO::freeList.release ( pCadaver, size );
 }
 
-extern "C" void dbSubscriptionEventCallback ( void *pPrivate, struct dbAddr *paddr,
-	int eventsRemaining, struct db_field_log *pfl )
+extern "C" void dbSubscriptionEventCallback ( void *pPrivate, struct dbAddr * /* paddr */,
+	int /* eventsRemaining */, struct db_field_log *pfl )
 {
-    dbSubscriptionIO *pIO = static_cast <dbSubscriptionIO *> ( pPrivate );
-    pIO->chan.subscriptionUpdate ( pIO->type, pIO->count, pfl, *pIO);
+    dbSubscriptionIO *pIO = static_cast < dbSubscriptionIO * > ( pPrivate );
+    pIO->chan.subscriptionUpdate ( pIO->type, pIO->count, pfl, *pIO );
 }
 
 int dbSubscriptionIO::begin ( unsigned mask )

@@ -10,7 +10,8 @@ ifeq ($(strip $(TORNADO)),NO)
 SRCS.c += ../ldpp.c
 endif
 
-LIBOBJS = veclist.o iocLogClient.o
+LIBOBJS = veclist.o iocLogClient.o \
+	  symFindByNameEPICS.o symFindByNameAndTypeEPICS.o
 
 #
 # Tornado supplies this
@@ -18,9 +19,6 @@ LIBOBJS = veclist.o iocLogClient.o
 ifeq ($(strip $(TORNADO)),NO)
 LIBOBJS += ldpp.o
 endif
-
-LIBOBJS_mips = symFindByNameMips.o
-
 
 LIBNAME = vxComLib
 

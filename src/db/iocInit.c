@@ -28,6 +28,8 @@
  * Modification Log:
  * -----------------
  * .01  07-20-91	rac	print release data; set env params
+ * .02	08-06-91	mrk	parm string length test changed to warning
+ *				with continue
  */
 
 #include	<vxWorks.h>
@@ -565,10 +567,9 @@ static long getResources(fname) /* Resource Definition File interpreter */
 	    len2 = strlen((char *)pSymAddr);
 	    if (len > len2) {
 		sprintf(message,
-			"getResources: Not enough reserved space for string - line=%d",
+			"getResources: Warning, string might exceed previous reserved space - line=%d",
 			lineNum);
 		errMessage(-1L, message);
-	        return (-1);
 	    }
 	    strncpy(pSymAddr, s3, len + 1);
 	    break;

@@ -88,6 +88,14 @@ USR_CXXFLAGS+=$(USR_CXXFLAGS_DEFAULT)
 endif
 endif
 
+ifneq (x$(USR_LDFLAGS_$(ARCH_CLASS)),x)
+USR_LDFLAGS+=$(subst -nil-,,$(USR_LDFLAGS_$(ARCH_CLASS)))
+else
+ifdef USR_LDFLAGS_DEFAULT
+USR_LDFLAGS+=$(USR_LDFLAGS_DEFAULT)
+endif
+endif
+
 #	check for special includes:
 #
 ifneq (x$(INC_$(ARCH_CLASS)),x)
@@ -348,7 +356,7 @@ depends:: $(LIBSRCS) $(SRCS)
 
 clean::
 	@echo "Cleaning"
-	@$(RM) *.i *$(OBJ) *.a $(PROD) $(TESTPROD) $(LIBNAME) $(INC) *$(RES)
+	@$(RM) *.i *$(OBJ) *.a $(PROD) $(TESTPROD) $(LIBNAME) $(INC) *$(RES) $(TARGETS)
 
 $(DIRECTORY_TARGETS) :
 	$(MKDIR) $@

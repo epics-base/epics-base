@@ -51,6 +51,8 @@ typedef int osiSockIoctl_t;
 
 #define FD_IN_FDSET(FD) ((FD)<FD_SETSIZE)
 
+#define SOCKERRSTR                (strerror(errno))
+
 #define SOCK_EWOULDBLOCK EWOULDBLOCK
 #define SOCK_ENOBUFS ENOBUFS
 #define SOCK_ECONNRESET ECONNRESET

@@ -2,8 +2,10 @@ static char *sccsId = "@(#)ca_printf.c	1.2\t7/27/92";
 
 #if defined(UNIX) || defined(VMS)
 #	include <stdio.h>
-#elif defined(vxWorks)
+#else
+#  if defined(vxWorks)
 # 	include <vxWorks.h>
+#  endif
 #endif
 #include <varargs.h>
 
@@ -35,7 +37,8 @@ va_dcl
 				pformat,
 				args);
 	}
-#	elif defined(vxWorks)
+#	else
+#	   if defined(vxWorks)
 	{
 		int	logMsgArgs[6];
 		int	i;
@@ -55,8 +58,9 @@ va_dcl
 				logMsgArgs[6]);
 			
 	}
-#	else
+#	   else
 		#### dont compile in this case ####
+#	   endif
 #	endif
 
 	va_end(args);

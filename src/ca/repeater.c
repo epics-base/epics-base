@@ -67,22 +67,26 @@ static char *sccsId = "$Id$\t$Date$";
 #	include		<sys/types.h>
 #	include		<sys/socket.h>
 #	include		<netinet/in.h>
-#elif defined(UNIX)
+#else
+#  if defined(UNIX)
 #	include		<errno.h>
 #	include		<sys/types.h>
 #	include		<sys/socket.h>
 #	include		<netinet/in.h>
-#elif defined(vxWorks)
+#  else
+#    if defined(vxWorks)
 #	include		<vxWorks.h>
 #	include		<errno.h>
 #	include		<types.h>
 #	include		<socket.h>
 #	include		<in.h>
-#else
+#    else
 	@@@@ dont compile @@@@
+#    endif
+#  endif
 #endif
 
-#include		<dllLib.h>
+#include		<dllEpicsLib.h>
 #include		<iocmsg.h>
 #include		<os_depen.h>
 

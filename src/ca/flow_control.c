@@ -43,7 +43,8 @@ static char	*sccsId = "$Id$\t$Date$";
 #	ifndef V5_vxWorks
 #		include	<types.h>
 #	endif
-#elif defined(VMS)
+#else
+#  if defined(VMS)
 #	include		<sys/types.h>
 #	include		<sys/socket.h>
 #	if defined(UCX)			/* GeG 09-DEC-1992 */
@@ -52,12 +53,15 @@ static char	*sccsId = "$Id$\t$Date$";
 #	else
 #		include	<sys/ioctl.h>
 #	endif
-#elif defined(UNIX)
+#  else
+#    if defined(UNIX)
 #	include		<sys/types.h>
 #	include		<sys/socket.h>
 #	include		<sys/ioctl.h>
-#else
+#    else
 	@@@@ dont compile @@@@
+#    endif
+#  endif
 #endif
 
 #include		<os_depen.h>

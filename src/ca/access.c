@@ -122,13 +122,17 @@ static char *sccsId = "$Id$\t$Date$";
 #	include		psldef.h
 #	include		prcdef.h
 #	include 	descrip.h
-#elif defined(UNIX)
-#elif defined(vxWorks)
+#else
+#  if defined(UNIX)
+#  else
+#    if defined(vxWorks)
 #	include		<vxWorks.h>
 # 	include		<taskLib.h>
 # 	include		<task_params.h>
-#else
+#    else
 	@@@@ dont compile @@@@
+#    endif
+#  endif
 #endif
 
 /*
@@ -353,7 +357,8 @@ ca_task_initialize
 			if (status != SS$_NORMAL)
 				lib$signal(status);
 		}
-#elif defined(vxWorks)
+#else
+#  if defined(vxWorks)
 		{
 			char            name[15];
 			int             status;
@@ -364,11 +369,11 @@ ca_task_initialize
 
 			FASTLOCKINIT(&client_lock);
 			FASTLOCKINIT(&event_lock);
-#ifdef V5_vxWorks
+#    ifdef V5_vxWorks
 			io_done_sem = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
-#else
+#    else
 			io_done_sem = semCreate();
-#endif
+#    endif
 			if(!io_done_sem){
 				abort();
 			}
@@ -391,9 +396,12 @@ ca_task_initialize
 			if (status != OK)
 				abort();
 		}
-#elif defined(UNIX)
-#else
+#  else
+#    if defined(UNIX)
+#    else
 		@@@@ dont compile in this case @@@@
+#    endif
+#  endif
 #endif
 
 	}
@@ -1041,7 +1049,7 @@ int ca_build_and_connect
 		/* Save this channels name for retry if required */
 		strncpy(chix + 1, name_str, strcnt);
 
-		dllAdd(&iiu[BROADCAST_IIU].chidlist, chix);
+		dllAdd(&iiu[BROADCAST_IIU].chidlist, (DLLNODE *)chix);
 		/*
 		 * set the conn tries back to zero so this channel's location
 		 * can be found
@@ -1220,7 +1228,7 @@ ca_array_get
  * 
  * 
  */
-ca_array_get_callback
+int ca_array_get_callback
 #ifdef __STDC__
 (
  chtype type,
@@ -1276,7 +1284,7 @@ ca_array_get_callback
 		monix->type = type;
 		monix->count = count;
 
-		dllAdd(&pend_read_list, monix);
+		dllAdd(&pend_read_list, (DLLNODE *)monix);
 
 		issue_get_callback(monix);
 
@@ -1356,7 +1364,7 @@ issue_get_callback(monix)
  *
  *
  */
-ca_array_put
+int ca_array_put
 #ifdef __STDC__
 (
 chtype				type,
@@ -1619,7 +1627,7 @@ void		*astarg;
       return ECA_ALLOCMEM;
     pioe->io_done_arg = astarg;
     pioe->io_done_sub = ast;
-    dllAdd(&ioeventlist,pioe);
+    dllAdd(&ioeventlist,(DLLNODE *)pioe);
     UNLOCK;
   }
 
@@ -1634,7 +1642,7 @@ void		*astarg;
  *
  *
  */
-ca_add_masked_array_event
+int ca_add_masked_array_event
 #ifdef __STDC__
 (
 chtype 		type,
@@ -1763,7 +1771,7 @@ unsigned			mask;
 
   /* It can be added to the list any place if it is remote */
   /* Place in the channel list */
-  dllAdd(&chix->eventq, monix);
+  dllAdd(&chix->eventq, (DLLNODE *)monix);
 
   ca_request_event(monix);
 
@@ -2083,7 +2091,7 @@ ca_clear_event
 		piiu->outstanding_ack_count++;
 	}
 	else{
-		dllDelete(&monix->chan->eventq, monix);
+		dllDelete(&monix->chan->eventq, (DLLNODE *)monix);
 	}
 	UNLOCK;
 
@@ -2172,7 +2180,7 @@ ca_clear_channel
 		 */
 		if(old_chan_state != cs_conn){
 			dllConcat(&free_event_list, &chix->eventq);
-			dllDelete(&piiu->chidlist, chix);
+			dllDelete(&piiu->chidlist, (DLLNODE *)chix);
 			if (chix->iocix != BROADCAST_IIU && 
 					!piiu->chidlist.count){
 				close_ioc(piiu);
@@ -2247,9 +2255,9 @@ ca_clear_channel
 /*	ca_flush_io() is called by this routine.			*/
 /************************************************************************/
 #ifdef __STDC__
-ca_pend(ca_real timeout, int early)
+int ca_pend(ca_real timeout, int early)
 #else
-ca_pend(timeout, early)
+int ca_pend(timeout, early)
 ca_real			timeout;
 int			early;
 #endif
@@ -2313,7 +2321,7 @@ int			early;
   	beg_time = time(NULL);
 
   	while(TRUE){
-#		if defined(UNIX)
+#if defined(UNIX)
     		{
       			struct timeval	itimeout;
 
@@ -2323,16 +2331,18 @@ int			early;
       			recv_msg_select(&itimeout);
       			UNLOCK;
     		}
-#		elif defined(vxWorks)
-#ifdef	V5_vxWorks
-			semTake(io_done_sem, LOCALTICKS);
 #else
+#  if defined(vxWorks)
+#    ifdef	V5_vxWorks
+			semTake(io_done_sem, LOCALTICKS);
+#    else
 			{
 				int dummy;
 				vrtxPend(&io_done_sem->count, LOCALTICKS, &dummy);
 			}
-#endif
-#		elif defined(VMS)
+#    endif
+#  else
+#    if defined(VMS)
     		{
       			int 		status; 
       			unsigned int 	systim[2]={-LOCALTICKS,~0};
@@ -2349,9 +2359,11 @@ int			early;
       			if(status != SS$_NORMAL)
         			lib$signal(status);
     		}   
-#		else
+#    else
 			@@@@ dont compile in this case @@@@ 
-#		endif
+#    endif
+#  endif
+#endif
 
    		LOCK;
       		manage_conn(TRUE);

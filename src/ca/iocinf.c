@@ -69,6 +69,7 @@ static char *sccsId = "$Id$\t$Date$";
 /*	Allocate storage for global variables in this module		*/
 #define			CA_GLBLSOURCE
 
+
 #if defined(VMS)
 #	include		<iodef.h>
 #	include		<stsdef.h>
@@ -79,21 +80,23 @@ static char *sccsId = "$Id$\t$Date$";
 #	include		<sys/socket.h>
 #	include		<netinet/in.h>
 #	include		<netinet/tcp.h>
-#if defined(UCX)				/* GeG 09-DEC-1992 */
+#  if defined(UCX)				/* GeG 09-DEC-1992 */
 #	include		<sys/ucx$inetdef.h>
 #	include		<ucx.h>
-#else
+#  else
 #	include		<vms/inetiodef.h>
 #	include		<sys/ioctl.h>
-#endif
-#elif defined(UNIX)
+#  endif
+#else
+#  if defined(UNIX)
 #	include		<sys/types.h>
 #	include		<sys/errno.h>
 #	include		<sys/socket.h>
 #	include		<netinet/in.h>
 #	include		<netinet/tcp.h>
 #	include		<sys/ioctl.h>
-#elif defined(vxWorks)
+#  else
+#    if defined(vxWorks)
 #	include		<vxWorks.h>
 #	ifdef V5_vxWorks
 #		include		<systime.h>
@@ -107,7 +110,10 @@ static char *sccsId = "$Id$\t$Date$";
 #	include		<tcp.h>
 #	include		<ioctl.h>
 #	include		<task_params.h>
+#    endif
+#  endif
 #endif
+
 
 #include		<cadef.h>
 #include		<net_convert.h>
@@ -131,15 +137,15 @@ void   	vms_recv_msg_ast();
 /*
  * used to be that some TCP/IPs did not include this
  */
+#ifndef NBBY
+# define NBBY 8	/* number of bits per byte */
+#endif
+
 #ifdef JUNKYARD
 typedef long	fd_mask;
 typedef	struct fd_set {
 	fd_mask	fds_bits[64];
 } fd_set;
-
-#ifndef NBBY
-# define NBBY 8	/* number of bits per byte */
-#endif
 
 #ifndef NFDBITS
 #define NFDBITS (sizeof(int) * NBBY) /* bits per mask */
@@ -520,7 +526,7 @@ struct ioc_in_use		*piiu;
 
 
   	/*	Set up recv thread for VMS	*/
-#	if defined(VMS)
+#if defined(VMS)
   	{
 		/*
 		 * request to be informed of future IO
@@ -543,7 +549,8 @@ struct ioc_in_use		*piiu;
       			exit();
     		}
   	}
-# 	elif defined(vxWorks)
+#else
+#  if defined(vxWorks)
   	{  
       		static void	recv_task();
       		int 	pri;
@@ -573,7 +580,8 @@ struct ioc_in_use		*piiu;
       		piiu->recv_tid = status;
 
   	}
-#	endif
+#  endif
+#endif
 
   	return ECA_NORMAL;
 }
@@ -668,12 +676,14 @@ void cac_send_msg()
 		 * frees up push pull deadlock only
 		 * if recv not already in progress
 		 */
-#		if defined(UNIX)
+#if defined(UNIX)
 			if(post_msg_active==0){
 				recv_msg_select(&notimeout);
 			}
-#		elif defined(vxWorks)
-#		endif
+#else
+#  if defined(vxWorks)
+#  endif
+#endif
 
 		done = TRUE;
   		for(piiu=iiu; piiu<&iiu[nxtiiu]; piiu++){
@@ -865,7 +875,7 @@ void
 recv_msg_select(ptimeout)
 struct timeval 	*ptimeout;
 {
-  	long				status;
+  	int				status;
   	register struct ioc_in_use 	*piiu;
   	struct timeval 			*ptmptimeout;
 

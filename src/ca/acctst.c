@@ -20,9 +20,11 @@ static char *sccsId = "$Id$\t$Date$";
 /* System includes		 */
 #if defined(UNIX)
 #	include		<stdio.h>
-#elif defined(vxWorks)
+#else
+#   if defined(vxWorks)
 #	include		<vxWorks.h>
 #	include		<taskLib.h>
+#   endif
 #endif
 
 #include 		<cadef.h>

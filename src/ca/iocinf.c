@@ -1790,8 +1790,7 @@ void cac_mux_io(struct timeval  *ptimeout)
 				}
 				else {
 					if (caSendMsgPending()) {
-						timeout.tv_sec = 100;
-						timeout.tv_usec = 0;
+						LD_CA_TIME (SELECT_POLL, &timeout);
 					}
 					else {
 						ca_static->ca_flush_pending 
@@ -1804,10 +1803,10 @@ void cac_mux_io(struct timeval  *ptimeout)
 				break;
 			}
 		}
+		else {
+			LD_CA_TIME (0.0, &timeout);
+		}
 		ca_process_input_queue();
-		timeout.tv_sec = 0;
-		timeout.tv_usec = 0;
-
         }
 }
 

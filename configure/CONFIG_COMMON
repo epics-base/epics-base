@@ -60,6 +60,7 @@ INSTALL_JAVA                = $(INSTALL_LOCATION)/javalib
 ifdef T_A
 
 INSTALL_LIB                 = $(INSTALL_LOCATION_LIB)/$(T_A)
+INSTALL_SHRLIB              = $(INSTALL_LOCATION_LIB)/$(T_A)
 INSTALL_TCLLIB              = $(INSTALL_LOCATION_LIB)/$(T_A)
 INSTALL_BIN                 = $(INSTALL_LOCATION_BIN)/$(T_A)
 

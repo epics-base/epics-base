@@ -61,7 +61,7 @@ LIBRARY_HOST += $(LIBRARY)
 OBJS += $(OBJS_HOST)
 else 
 # PROD and TESTPROD not built for ioc only builds
-PROD = 
+PROD = $(PROD_$(OS_CLASS))
 TESTPROD = 
 LIBRARY_HOST =
 LIBRARY_IOC += $(LIBRARY)

@@ -575,7 +575,7 @@ long dbior(pdrvName)
 	}
 	else {
 	    printf("Driver: %s\n",pname);
-	    (*pdrvet->report)();
+	    (*pdrvet->report)(stdout);
 	}
 	if(pdrvName!=NULL) break;
 	}

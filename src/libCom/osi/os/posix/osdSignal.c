@@ -16,6 +16,7 @@
 #define epicsExportSharedSymbols
 #include "epicsThread.h"
 #include "epicsSignal.h"
+#include "errlog.h"
 
 typedef void ( *pSigFunc ) ( int );
 

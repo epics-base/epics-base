@@ -241,16 +241,16 @@ void cas_commit_msg ( struct client *pClient, ca_uint32_t size )
  */
 ca_uint16_t rsrvGetUInt16 ( struct message_buffer *recv )
 {
-    ca_uint16_t tmp;
+    ca_uint8_t *pBuf = ( ca_uint8_t * ) recv->buf;
+    ca_uint16_t result;
     /*
      * this assumes that we have already checked to see 
      * if sufficent bytes are available
      */
     assert ( recv->cnt - recv->stk >= 2u );
-    tmp = recv->buf[recv->stk++];
-    tmp <<= 8u;
-    tmp |= recv->buf[recv->stk++];
-    return tmp;
+    result  = pBuf[recv->stk++] << 8u;
+    result |= pBuf[recv->stk++] << 0u;
+    return result;
 }
 
 /*
@@ -259,15 +259,16 @@ ca_uint16_t rsrvGetUInt16 ( struct message_buffer *recv )
  */
 ca_uint32_t rsrvGetUInt32 ( struct message_buffer *recv )
 {
-    ca_uint32_t tmp;
+    ca_uint8_t *pBuf = ( ca_uint8_t * ) recv->buf;
+    ca_uint32_t result;
     /*
      * this assumes that we have already checked to see 
      * if sufficent bytes are available
      */
     assert ( recv->cnt - recv->stk >= 4u );
-    tmp = recv->buf[recv->stk++] <<= 24u;
-    tmp |= recv->buf[recv->stk++] << 16u;
-    tmp |= recv->buf[recv->stk++] << 8u;
-    tmp |= recv->buf[recv->stk++];
-    return tmp;
+    result  = pBuf[recv->stk++] << 24u;
+    result |= pBuf[recv->stk++] << 16u;
+    result |= pBuf[recv->stk++] << 8u;
+    result |= pBuf[recv->stk++] << 0u;
+    return result;
 }

@@ -381,37 +381,37 @@ inline epicsInt8 comQueRecv::popInt8 ()
 
 inline epicsUInt16 comQueRecv::popUInt16 ()
 {
-    epicsUInt16 tmp = this->popUInt8 ();
-    tmp <<= 8u;
-    tmp |= this->popUInt8 ();
+    epicsUInt16 tmp;
+    tmp  = this->popUInt8() << 8u;
+    tmp |= this->popUInt8() << 0u;
     return tmp;
 }
 
 inline epicsInt16 comQueRecv::popInt16 ()
 {
-    epicsInt16 tmp = this->popInt8 ();
-    tmp <<= 8u;
-    tmp |= this->popInt8 ();
+    epicsInt16 tmp;
+    tmp  = this->popInt8() << 8u;
+    tmp |= this->popInt8() << 0u;
     return tmp;
 }
 
 inline epicsUInt32 comQueRecv::popUInt32 ()
 {
-    epicsUInt32 tmp = this->popUInt8 ();
-    tmp <<= 24u;
-    tmp |= this->popUInt8 () << 16u;
-    tmp |= this->popUInt8 () << 8u;
-    tmp |= this->popUInt8 ();
+    epicsUInt32 tmp;
+    tmp  = this->popUInt8() << 24u;
+    tmp |= this->popUInt8() << 16u;
+    tmp |= this->popUInt8() << 8u;
+    tmp |= this->popUInt8() << 0u;
     return tmp;
 }
 
 inline epicsInt32 comQueRecv::popInt32 ()
 {
-    epicsInt32 tmp = this->popInt8 ();
-    tmp <<= 24u;
-    tmp |= this->popInt8 () << 16u;
-    tmp |= this->popInt8 () << 8u;
-    tmp |= this->popInt8 ();
+    epicsInt32 tmp ;
+    tmp |= this->popInt8() << 24u;
+    tmp |= this->popInt8() << 16u;
+    tmp |= this->popInt8() << 8u;
+    tmp |= this->popInt8() << 0u;
     return tmp;
 }
 

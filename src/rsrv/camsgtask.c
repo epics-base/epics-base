@@ -94,17 +94,15 @@ void camsgtask ( struct client *client )
              */
             if (client->recv.cnt > client->recv.stk) {
                 unsigned bytes_left;
-                char *pbuf;
 
                 bytes_left = client->recv.cnt - client->recv.stk;
-
-                pbuf = client->recv.buf;
 
                 /*
                  * overlapping regions handled
                  * properly by memmove 
                  */
-                memmove (pbuf, pbuf + client->recv.stk, bytes_left);
+                memmove (client->recv.buf, 
+                    &client->recv.buf[client->recv.stk], bytes_left);
                 client->recv.cnt = bytes_left;
             }
             else {

@@ -29,6 +29,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.24  1998/04/13 19:14:34  jhill
+ * fixed task variable problem
+ *
  * Revision 1.23  1997/08/04 23:37:14  jhill
  * added beacon anomaly flag init/allow ip 255.255.255.255
  *
@@ -75,7 +78,7 @@ void cac_gettimeval(struct timeval  *pt)
 	/*
 	 * Not POSIX but available on most of the systems that we use
 	 */
-        status = gettimeofday(pt, NULL);
+	status = gettimeofday(pt, NULL);
 	assert(status == 0);
 }
 
@@ -175,22 +178,19 @@ int epicsShareAPI ca_task_exit (void)
 char *localUserName()
 {
 	int	length;
-	char	*pName;
-	char	*pTmp;
+	char *pName;
+	char *pTmp;
+	struct passwd *p;
 
-	pName = getlogin();
-	if(!pName){
-		struct passwd *p;
-		p = getpwuid(getuid());
-		if (p) {
-			pName = p->pw_name;
-			if (!pName) {
-				pName = "";
-			}
-		}
-		else {
+	p = getpwuid(getuid());
+	if (p) {
+		pName = p->pw_name;
+		if (!pName) {
 			pName = "";
 		}
+	}
+	else {
+		pName = "";
 	}
 
 	length = strlen(pName)+1;

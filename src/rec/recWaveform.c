@@ -98,7 +98,7 @@ struct rset waveformRSET={
 	get_enum_strs };
 struct wfdset { /* waveform dset */
         long            number;
-        DEVSUPFUN       report;
+        DEVSUPFUN       dev_report;
         DEVSUPFUN       init;
         DEVSUPFUN       init_record; /*returns: (-1,0)=>(failure,success)*/
         DEVSUPFUN       get_ioint_info;

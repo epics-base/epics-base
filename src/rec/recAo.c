@@ -103,7 +103,7 @@ struct rset aoRSET={
 
 struct aodset { /* analog input dset */
 	long		number;
-	DEVSUPFUN	report;
+	DEVSUPFUN	dev_report;
 	DEVSUPFUN	init;
 	DEVSUPFUN	init_record; /*returns: (-1,0)=>(failure,success)*/
 	DEVSUPFUN	get_ioint_info;

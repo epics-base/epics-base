@@ -16,3 +16,4 @@ WIND_HOST_TYPE = x86-win32
 # 	Use std path variables from ms
 HOME = $(HOMEDRIVE)$(HOMEPATH)
 
+PERL = C:\\Perl\\bin\\perl

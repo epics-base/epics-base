@@ -26,17 +26,16 @@ MKDIR = mkdir
 #
 # original before use of sun C++
 #
-#ARFLAGS = r
-#AR = ar
 
 #
 # required by sun's C++ compiler
 #
-ARFLAGS = 
-_ARCHIVE_BUILDER = ar r 
-G++_ARCHIVE_BUILDER = $(_ARCHIVE_BUILDER) 
-CCC_ARCHIVE_BUILDER = $(CCC) -xar -o 
-AR = $($(CPLUSPLUS)_ARCHIVE_BUILDER)
+ARFLAGS = r
+AR = ar
+_AR = $(AR) $(ARFLAGS)
+G++_AR = $(_AR) 
+CCC_AR = $(CCC) -xar -o 
+ARCMD = $($(CPLUSPLUS)_AR)
 
 ACC_ANSI_INVOKE_W_NO = $(ACC) -Xa -w
 ACC_ANSI_INVOKE_W_YES = $(ACC) -Xa

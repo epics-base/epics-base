@@ -14,7 +14,15 @@ GCC = gcc
 ACC = $(SPARCWORKS)/bin/cc
 # SUNCC doesn't exist under Solaris
 
+#
+# required by sun's C++ compiler
+#
 AR = ar
+_AR = $(AR) $(ARFLAGS)
+G++_AR = $(_AR)
+CCC_AR = $(CCC) -xar -o
+ARCMD = $($(CPLUSPLUS)_AR)
+
 RANLIB =
 YACC = $(EYACC)
 LEX = $(ELEX)

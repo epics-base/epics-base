@@ -153,7 +153,7 @@ $(TARGETS) $(PROD): $(DEPLIBS)
 $(LIBNAME): $(LIBOBJS)
 	@echo Building library $@
 	$(RM) $@
-	$(AR) $(ARFLAGS) $@ $(LIBOBJS)
+	$(ARCMD) $@ $(LIBOBJS)
 	@if [ ! -z "$(RANLIB)" ] ; then\
 		echo $(RANLIB) $@; \
 		$(RANLIB) $@; \

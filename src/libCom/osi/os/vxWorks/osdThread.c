@@ -327,6 +327,7 @@ void epicsThreadPrivateSet (epicsThreadPrivateId id, void *pvt)
             "epicsThreadPrivateSet");
         papTSD[0] = (void *)(indpepicsThreadPrivate);
         for(i=1; i<= nepicsThreadPrivateOld; i++) papTSD[i] = papTSDold[i];
+        free (papTSDold);
     }
     papTSD[indpepicsThreadPrivate] = pvt;
 }

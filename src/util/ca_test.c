@@ -465,7 +465,7 @@ LOCAL void print_returned(chtype type, const void *pbuffer, unsigned count)
 		dbr_long_t *pvalue = (dbr_long_t *)pbuffer;
 		for (i = 0; i < count; i++,pvalue++){
 			if(count!=1 && (i%10 == 0)) printf("\n");
-			printf("%ld ",*pvalue);
+			printf("%d ",*pvalue);
 		}
 		break;
 	}
@@ -550,7 +550,7 @@ LOCAL void print_returned(chtype type, const void *pbuffer, unsigned count)
 		if(count==1) printf("\tValue: ");
 		for (i = 0; i < count; i++,plong++){
 			if(count!=1 && (i%10 == 0)) printf("\n");
-			printf("%ld ",*plong);
+			printf("%d ",*plong);
 		}
 		break;
 	}
@@ -657,7 +657,7 @@ LOCAL void print_returned(chtype type, const void *pbuffer, unsigned count)
 		if(count==1) printf("\tValue: ");
 		for (i = 0; i < count; i++,plong++){
 			if(count!=1 && (i%10 == 0)) printf("\n");
-			printf("%ld ",*plong);
+			printf("%d ",*plong);
 		}
 		break;
 	}
@@ -761,7 +761,7 @@ LOCAL void print_returned(chtype type, const void *pbuffer, unsigned count)
 		if(count==1) printf("\tValue: ");
 		for (i = 0; i < count; i++,plong++){
 			if(count!=1 && (i%10 == 0)) printf("\n");
-			printf("%ld ",*plong);
+			printf("%d ",*plong);
 		}
 		break;
 	}
@@ -864,7 +864,7 @@ LOCAL void print_returned(chtype type, const void *pbuffer, unsigned count)
 		if(count==1) printf("\tValue: ");
 		for (i = 0; i < count; i++,plong++){
 			if(count!=1 && (i%10 == 0)) printf("\n");
-			printf("%ld ",*plong);
+			printf("%d ",*plong);
 		}
 		break;
 	}

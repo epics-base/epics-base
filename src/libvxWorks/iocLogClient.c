@@ -33,6 +33,9 @@
  * .01 joh 081591	Added epics env config
  * .02 joh 011995	Allow stdio also	
  * $Log$
+ * Revision 1.14  1997/04/10 20:03:53  jhill
+ * use include  not include <>
+ *
  * Revision 1.13  1996/06/19 18:01:09  jhill
  * log entries in header were different
  *
@@ -74,7 +77,7 @@ LOCAL struct in_addr 	ioc_log_addr;
 
 int 			iocLogInit(void);
 LOCAL int 		getConfig(void);
-LOCAL void 		failureNotify(ENV_PARAM *pparam);
+LOCAL void 		failureNotify(const ENV_PARAM *pparam);
 LOCAL void 		logClientShutdown(void);
 LOCAL void 		logRestart(void);
 LOCAL int 		iocLogAttach(void);
@@ -446,7 +449,7 @@ LOCAL int getConfig(void)
 /*
  *	failureNotify()
  */
-LOCAL void failureNotify(ENV_PARAM *pparam)
+LOCAL void failureNotify(const ENV_PARAM *pparam)
 {
 	printf(
 	"IocLogClient: EPICS environment variable \"%s\" undefined\n",

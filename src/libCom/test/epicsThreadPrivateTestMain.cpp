@@ -10,3 +10,4 @@ int main ()
     epicsThreadPrivateTest ();
     return 0;
 }
+

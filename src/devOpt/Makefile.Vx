@@ -9,11 +9,16 @@ SRCS.c = \
 	../devGpibInteract.c ../devXxSr620Gpib.c ../devK486Gpib.c \
 	../devXxK196Gpib.c ../devXxDc5009Gpib.c ../devXxK263Gpib.c
 
-PROD = \
+OBJS = \
         devAnalytekGpib.o devXxDg535Gpib.o devBBInteract.o \
 	devGpibInteract.o  devXxSr620Gpib.o devK486Gpib.o \
 	devXxK196Gpib.o devXxDc5009Gpib.o devXxK263Gpib.o
 
+PROD = devLibOpt  $(OBJS)
 
 include $(EPICS)/config/RULES.Vx
+
+devLibOpt: $(OBJS)
+	$(RM) $@
+	$(LINK.c) $@ $(OBJS) $(LDLIBS)
 

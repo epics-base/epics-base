@@ -1077,6 +1077,7 @@ long epicsShareAPI dbPutField(
 		*pdbAddr = dbaddr; /*structure copy*/;
 		plink->value.pv_link.precord = precord;
 		plink->value.pv_link.pvt = pdbAddr;
+		dbLockSetRecordLock(pdbAddr->precord);
 		dbLockSetMerge(precord,pdbAddr->precord);
 	    } else {/*It is a CA link*/
 	 	char	*pperiod;

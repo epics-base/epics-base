@@ -57,6 +57,7 @@ INSTALL_DOC                 = $(INSTALL_LOCATION)/doc
 INSTALL_HTML                = $(INSTALL_LOCATION)/html
 INSTALL_TEMPLATES           = $(INSTALL_LOCATION)/templates
 INSTALL_DBD                 = $(INSTALL_LOCATION)/dbd
+INSTALL_DB                  = $(INSTALL_LOCATION)/db
 INSTALL_CONFIG              = $(INSTALL_LOCATION)/configure
 INSTALL_JAVA                = $(INSTALL_LOCATION)/javalib
 

@@ -1,7 +1,7 @@
 TOP = ../../..
 include $(TOP)/config/CONFIG_BASE
 
-PROD = installEpics
+SCRIPTS += installEpics
 SCRIPTS += getrel 
 SCRIPTS += makeBaseApp
 

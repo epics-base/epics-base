@@ -13,8 +13,16 @@ of this distribution.
 #ifndef INCepicsReleaseh
 #define INCepicsReleaseh
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "shareLib.h"
 epicsShareFunc int epicsShareAPI coreRelease(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /*INCepicsReleaseh*/
 

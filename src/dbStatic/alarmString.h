@@ -40,6 +40,10 @@
 #ifndef INCalarmStringh
 #define INCalarmStringh 1
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 const char * alarmSeverityString[]={
 	"NO_ALARM",
 	"MINOR",
@@ -72,5 +76,9 @@ const char * alarmStatusString[]={
 	"SIMM",
 	"READ_ACCESS",
 	"WRITE_ACCESS"};
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

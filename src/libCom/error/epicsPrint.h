@@ -1,6 +1,6 @@
 /*epicsPrint.h */
 
-/*This is now obsolete. Remlaced by errlog.h */
+/*This is now obsolete. Replaced by errlog.h */
 #ifndef INCepicsPrintH
 #define INCepicsPrintH
 

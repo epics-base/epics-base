@@ -43,6 +43,10 @@
 #ifndef INClinkh
 #define INClinkh 1
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* link types */
 #define CONSTANT	0
 #define PV_LINK		1
@@ -196,4 +200,8 @@ struct link{
 };
 
 typedef struct link DBLINK;
+
+#ifdef __cplusplus
+}
+#endif
 #endif /*INClinkh*/

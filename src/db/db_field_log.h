@@ -31,6 +31,10 @@
 #ifndef INCLdb_field_logh
 #define INCLdb_field_logh
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * Simple native types (anything which is not a string or an array for
  * now) logged by db_post_events() for reliable interprocess communication.
@@ -63,5 +67,9 @@ typedef struct db_field_log {
 	epicsTimeStamp		time;	/* time stamp		*/
 	union native_value	field;	/* field value		*/
 }db_field_log;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /*INCLdb_field_logh*/

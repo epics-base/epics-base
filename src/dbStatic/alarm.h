@@ -34,6 +34,9 @@
  * .02  08-11-92        jba     added new status DISABLE_ALARM, SIMM_ALARM
  * .03  05-11-94        jba     added new status READ_ACCESS_ALARM, WRITE_ACCESS_ALARM
  * $Log$
+ * Revision 1.4  1999/09/13 18:28:07  mrk
+ * changes for 3.14
+ *
  * Revision 1.3  1998/03/12 20:43:35  jhill
  * fixed string defs
  *
@@ -48,6 +51,10 @@
 
 #include "shareLib.h"
 #include "epicsTypes.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* defines for the choice fields */
 /* ALARM SEVERITIES - NOTE: must match defs in choiceGbl.ascii GBL_ALARM_SEV */
@@ -168,6 +175,10 @@ epicsShareExtern READONLY char *epicsAlarmConditionStrings [lastEpicsAlarmCond+1
 #endif /*epicsAlarmGLOBAL*/
 
 #endif /* NO_ALARMH_ENUM */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* INCalarmh */
 

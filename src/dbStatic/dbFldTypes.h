@@ -31,6 +31,10 @@
 #ifndef INCdbFldTypesh
 #define INCdbFldTypesh 1
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* field types */
 typedef enum {
 	DBF_STRING,
@@ -96,5 +100,9 @@ mapdbfType pamapdbfType[DBF_NTYPES] = {
 #define DBR_NOACCESS    DBF_NOACCESS
 #define VALID_DB_REQ(x) ((x >= 0) && (x <= DBR_ENUM))
 #define INVALID_DB_REQ(x)       ((x < 0) || (x > DBR_ENUM))
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /*INCdbFldTypesh*/

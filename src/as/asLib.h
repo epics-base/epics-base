@@ -21,6 +21,10 @@ of this distribution.
 
 #include "shareLib.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct asgMember *ASMEMBERPVT;
 typedef struct asgClient *ASCLIENTPVT;
 typedef int (*ASINPUTFUNCPTR)(char *buf,int max_size);
@@ -202,5 +206,9 @@ typedef struct asgClient {
 epicsShareFunc long epicsShareAPI asComputeAsg(ASG *pasg);
 /*following is "friend" function*/
 epicsShareFunc void * epicsShareAPI asCalloc(size_t nobj,size_t size);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /*INCasLibh*/

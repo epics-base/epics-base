@@ -38,6 +38,9 @@
 #define NELEMENTS(array)		/* number of elements in an array */ \
 		(sizeof (array) / sizeof ((array) [0]))
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef struct		/* ERRSYMBOL - entry in symbol table */
     {
@@ -62,5 +65,9 @@ struct errDes {			/* An array of error sets for modules */
 };
 extern struct errDes *dbErrDes;
 /*************************************************************/
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /*INCerrorh*/

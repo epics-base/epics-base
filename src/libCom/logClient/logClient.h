@@ -30,6 +30,10 @@
 
 #include "shareLib.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef void *logClientId;
 epicsShareFunc logClientId epicsShareAPI logClientInit (void);
 epicsShareFunc void epicsShareAPI logClientSendMessage (logClientId id, const char *message);
@@ -41,3 +45,8 @@ epicsShareFunc void epicsShareAPI logClientShow (logClientId id, unsigned level)
 epicsShareExtern int iocLogDisable;
 epicsShareFunc int epicsShareAPI iocLogInit (void);
 epicsShareFunc void epicsShareAPI iocLogShow (unsigned level);
+
+#ifdef __cplusplus
+}
+#endif
+

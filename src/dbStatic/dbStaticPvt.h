@@ -32,6 +32,10 @@
 #ifndef INCdbStaticPvth
 #define INCdbStaticPvth 1
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*Following are not intended for client code */
 dbDeviceMenu *dbGetDeviceMenu(DBENTRY *pdbentry);
 void dbFreeLinkContents(struct link *plink);
@@ -68,4 +72,8 @@ PVDENTRY *dbPvdFind(DBBASE *pdbbase,const char *name,int lenname);
 PVDENTRY *dbPvdAdd(DBBASE *pdbbase,dbRecordType *precordType,dbRecordNode *precnode);
 void dbPvdDelete(DBBASE *pdbbase,dbRecordNode *precnode);
 void dbPvdFreeMem(DBBASE *pdbbase);
+
+#ifdef __cplusplus
+}
+#endif
 #endif /*INCdbStaticPvth*/

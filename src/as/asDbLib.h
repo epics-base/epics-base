@@ -29,6 +29,10 @@ typedef struct {
     long	status;
 } ASDBCALLBACK;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 epicsShareFunc int epicsShareAPI asSetFilename(char *acf);
 epicsShareFunc int epicsShareAPI asSetSubstitutions(char *substitutions);
 epicsShareFunc int epicsShareAPI asInit(void);
@@ -42,5 +46,9 @@ epicsShareFunc int epicsShareAPI asprules(char *asgname);
 epicsShareFunc int epicsShareAPI aspmem(char *asgname,int clients);
 epicsShareFunc int epicsShareAPI astac(
     char *recordname,char *user,char *location);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /*INCdbAsLibh*/

@@ -33,6 +33,10 @@
 
 #include "shareLib.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*************************************************************************/
 
 #define recGblSetSevr(PREC,NSTA,NSEV) \
@@ -63,4 +67,9 @@ epicsShareFunc int  epicsShareAPI recGblInitConstantLink(
 epicsShareFunc unsigned short epicsShareAPI recGblResetAlarms(void *precord);
 epicsShareFunc void epicsShareAPI recGblFwdLink(void *precord);
 epicsShareFunc void epicsShareAPI recGblGetTimeStamp(void *precord);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /*INCrecGblh*/

@@ -9,6 +9,10 @@
 
 #include "shareLib.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 epicsShareFunc int epicsShareAPI dbmfInit(size_t size, int chunkItems);
 epicsShareFunc void * epicsShareAPI dbmfMalloc(size_t bytes);
 epicsShareFunc void epicsShareAPI dbmfFree(void* bytes);
@@ -23,5 +27,9 @@ epicsShareFunc int epicsShareAPI dbmfShow(int level);
  *    shortly thereafter be freed. 
  * 4) dbmfFreeChunks can only free chunks that contain only free items
 */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

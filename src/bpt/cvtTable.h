@@ -37,11 +37,19 @@
 
 #include "shareLib.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Global Routines*/
 epicsShareFunc long epicsShareAPI cvtEngToRawBpt(
     double *pval,short linr,short init,void **ppbrk,short *plbrk);
 
 epicsShareFunc long epicsShareAPI cvtRawToEngBpt(
     double *pval,short linr,short init,void **ppbrk, short *plbrk);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

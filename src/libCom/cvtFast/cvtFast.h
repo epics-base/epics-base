@@ -43,14 +43,13 @@
 #ifndef INCcvtFasth
 #define INCcvtFasth
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <string.h>
 
 #include "shareLib.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*
  * each of these functions return the number of characters "transmitted"
@@ -93,7 +92,6 @@ epicsShareFunc unsigned long epicsShareAPI cvtUlongToBits(
 	unsigned long dest,
 	unsigned      bitFieldOffset,
 	unsigned      bitFieldLength);
-
 
 #ifdef __cplusplus
 }

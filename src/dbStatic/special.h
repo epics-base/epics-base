@@ -37,6 +37,10 @@
 #ifndef INCspecialh
 #define INCspecialh 1
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*NOTE  Do NOT add aditional definitions with out modifying dbLexRoutines.c */
 /* types 1-99 are global. Record specific must start with 100 */
 #define SPC_NOMOD	1	/*Field must not be modified			*/
@@ -76,5 +80,9 @@ mapspcType pamapspcType[SPC_NTYPES] = {
 	{"SPC_CALC",SPC_CALC}
 };
 #endif /*SPECIAL_GBLSOURCE*/
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /*INCspecialh*/

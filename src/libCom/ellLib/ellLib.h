@@ -34,11 +34,11 @@
 #ifndef INCellLibh
 #define INCellLibh
 
+#include "shareLib.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "shareLib.h"
 
 #define DLLLIB_USE_MACROS
 

@@ -38,6 +38,9 @@
 #define INCpostfixh
 
 #include "shareLib.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 epicsShareFunc long epicsShareAPI 
 	postfix (const char *pinfix, char *ppostfix, short *perror);
@@ -45,5 +48,8 @@ epicsShareFunc long epicsShareAPI
 epicsShareFunc long epicsShareAPI 
 	calcPerform(double *parg, double *presult, char  *post);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* INCpostfixh */

@@ -15,6 +15,10 @@ of this distribution.
 
 #include "shareLib.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 epicsShareFunc void epicsShareAPI dbCaLinkInit(void);
 epicsShareFunc void epicsShareAPI dbCaAddLink(struct link *plink);
 epicsShareFunc void epicsShareAPI dbCaRemoveLink(struct link *plink);
@@ -46,5 +50,9 @@ epicsShareFunc long epicsShareAPI dbCaGetPrecision(
     const struct link *plink,short *precision);
 epicsShareFunc long epicsShareAPI dbCaGetUnits(
     const struct link *plink,char *units,int unitsSize);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /*INCdbCah*/

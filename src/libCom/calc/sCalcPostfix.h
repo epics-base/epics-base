@@ -37,6 +37,10 @@
 #define		BAD_EXPRESSION	0
 #define		END_STACK	127
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 epicsShareFunc long epicsShareAPI sCalcPostfix (const char *pinfix, 
         char **pp_postfix, short *perror);
 
@@ -44,6 +48,10 @@ epicsShareFunc long epicsShareAPI
 	sCalcPerform (double *parg, int numArgs, 
     char **psarg, int numSArgs, double *presult, 
     char *psresult, int lenSresult, char *post);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* INCsCalcPostfixH */
 

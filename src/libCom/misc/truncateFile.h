@@ -12,6 +12,15 @@
  * or if it was successfully truncated. Returns
  * TF_ERROR if the file could not be truncated.
  */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum TF_RETURN {TF_OK=0, TF_ERROR=1};
 epicsShareFunc enum TF_RETURN epicsShareAPI truncateFile (const char *pFileName, unsigned size);
+
+#ifdef __cplusplus
+}
+#endif
 

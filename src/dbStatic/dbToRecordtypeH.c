@@ -233,6 +233,9 @@ int main(int argc,char **argv)
     }
     if(!isdbCommonRecord) {
 	fprintf(outFile,"#ifdef GEN_SIZE_OFFSET\n");
+	fprintf(outFile,"#ifdef __cplusplus\n");
+	fprintf(outFile,"extern \"C\" {\n");
+	fprintf(outFile,"#endif\n");
 	pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
 	while(pdbRecordType) {
 	    fprintf(outFile,"int %sRecordSizeOffset(dbRecordType *pdbRecordType)\n{\n",
@@ -258,6 +261,9 @@ int main(int argc,char **argv)
 	    fprintf(outFile,"}\n");
 	    pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node);
 	}
+	fprintf(outFile,"#ifdef __cplusplus\n");
+	fprintf(outFile,"}\n");
+	fprintf(outFile,"#endif\n");
 	fprintf(outFile,"#endif /*GEN_SIZE_OFFSET*/\n");
     }
     fclose(outFile);

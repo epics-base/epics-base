@@ -26,6 +26,10 @@ of this distribution.
 
 #include "shareLib.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * WINDOWS also has a "CALLBACK" type def
  */
@@ -67,5 +71,9 @@ epicsShareFunc void epicsShareAPI callbackRequestDelayed(
 epicsShareFunc void epicsShareAPI callbackRequestProcessCallbackDelayed(
     CALLBACK *pCallback, int Priority, void *pRec,double seconds);
 epicsShareFunc int epicsShareAPI callbackSetQueueSize(int size);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /*INCcallbackh*/

@@ -5,6 +5,9 @@
  * William Lupton, W. M. Keck Observatory
  */
 
+#ifndef INCmacLibH
+#define INCmacLibH
+
 /*
  * EPICS include files needed by this file
  */
@@ -12,6 +15,10 @@
 #include "epicsPrint.h"
 #include "errMdef.h"
 #include "shareLib.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*
  * Standard FALSE and TRUE macros
@@ -203,6 +210,10 @@ epicsShareAPI macInstallMacros(
 
 /**************************************************************************
  * $Log$
+ * Revision 1.7  1999/05/13 16:06:22  anj
+ * Cleaned up warnings - the RCS Log: keyword was on the comment line
+ * that starts with a '/' which RCS replicates for these notes...
+ *
  * Revision 1.6  1998/02/27 01:34:13  jhill
  * cleaned up the DLL symbol export
  *
@@ -227,3 +238,9 @@ epicsShareAPI macInstallMacros(
  * first released version
  *
  */
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /*INCmacLibH*/

@@ -15,6 +15,10 @@ of this distribution.
 
 #include "shareLib.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Note that these must match the first three definitions in choiceGbl.ascii*/
 #define SCAN_PASSIVE		0
 #define SCAN_EVENT		1
@@ -40,5 +44,9 @@ epicsShareFunc int epicsShareAPI scanpel(int event_number);
 epicsShareFunc int epicsShareAPI scanpiol(void);
 epicsShareFunc void epicsShareAPI scanIoInit(IOSCANPVT *);
 epicsShareFunc void epicsShareAPI scanIoRequest(IOSCANPVT);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

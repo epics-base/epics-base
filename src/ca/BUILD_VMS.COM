@@ -73,6 +73,7 @@ BUCKETLIB, -
 ENVSUBR, -
 TSSUBR, -
 NEXTFIELDSUBR, -
+ASSERTUNIX, -
 CATIME, - 
 ACCTST 
 $ endif
@@ -96,6 +97,7 @@ BUCKETLIB, -
 TSSUBR, -
 ENVSUBR, -
 NEXTFIELDSUBR, -
+ASSERTUNIX, -
 ELLLIB
 $! Link the test programs
 $ call link acctst

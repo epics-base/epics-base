@@ -104,7 +104,8 @@ struct option
 epicsShareFunc extern int epicsShareAPI 
 	getopt (int argc, char *const *argv, const char *shortopts);
 #else /* not __GNU_LIBRARY__ */
-epicsShareFunc extern int epicsShareAPI getopt ();
+epicsShareFunc extern int epicsShareAPI 
+    getopt (int argc, char *const *argv, const char *shortopts);
 #endif /* not __GNU_LIBRARY__ */
 epicsShareFunc extern int epicsShareAPI 
 	getopt_long (int argc, char *const *argv, const char *shortopts,

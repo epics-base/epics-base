@@ -31,6 +31,9 @@
 /*									*/
 /*
  * $Log$
+ * Revision 1.42  1998/10/07 14:30:41  jba
+ * Modified log message.
+ *
  * Revision 1.41  1998/09/24 21:22:51  jhill
  * detect reconnect faster when IOC reboots quickly
  *
@@ -109,7 +112,6 @@ void checkConnWatchdogs()
 						&piiu->timeAtSendBlock); 
 				if (delay>ca_static->ca_connectTMO) {
 					TAG_CONN_DOWN (piiu);
-					continue;
 				}
 			}
 

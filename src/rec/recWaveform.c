@@ -389,7 +389,7 @@ static long readValue(pwf)
         if (pwf->simm == YES){
         	nRequest=pwf->nelm;
                 status=recGblGetLinkValue(&(pwf->siol),
-                                (void *)pwf,pwf->ftvl,&(pwf->bptr),&nRequest);
+                                (void *)pwf,pwf->ftvl,pwf->bptr,&nRequest);
         	pwf->nord = nRequest;
                 if (status==0){
                          pwf->udf=FALSE;

@@ -385,7 +385,7 @@ struct devLibVirtualOS {
 #define S_dev_badArgument (M_devLib| 33) /*bad function argument*/
 
 /*
- * NOTE: this routine has been deprecated. It exits
+ * NOTE: this routine has been deprecated. It exists
  * for backwards compatibility purposes only.
  *
  * Please use one of devConnectInterruptVME, devConnectInterruptPCI,
@@ -399,7 +399,7 @@ long    devConnectInterrupt(
 			void  *parameter);
 
 /*
- * NOTE: this routine has been deprecated. It exits
+ * NOTE: this routine has been deprecated. It exists
  * for backwards compatibility purposes only.
  *
  * Please use one of devDisconnectInterruptVME, devDisconnectInterruptPCI,
@@ -412,7 +412,7 @@ long    devDisconnectInterrupt(
 			void			(*pFunction)());
 
 /*
- * NOTE: this routine has been deprecated. It exits
+ * NOTE: this routine has been deprecated. It exists
  * for backwards compatibility purposes only.
  *
  * Please use one of devEnableInterruptLevelVME, devEnableInterruptLevelPCI,
@@ -422,7 +422,7 @@ long    devDisconnectInterrupt(
 long devEnableInterruptLevel(epicsInterruptType intType, unsigned level);
 
 /*
- * NOTE: this routine has been deprecated. It exits
+ * NOTE: this routine has been deprecated. It exists
  * for backwards compatibility purposes only.
  *
  * Please use one of devDisableInterruptLevelVME, devDisableInterruptLevelISA,
@@ -432,7 +432,7 @@ long devEnableInterruptLevel(epicsInterruptType intType, unsigned level);
 long devDisableInterruptLevel (epicsInterruptType intType, unsigned level);
 
 /*
- * NOTE: this routine has been deprecated. It exits
+ * NOTE: this routine has been deprecated. It exists
  * for backwards compatibility purposes only.
  *
  * Please use devNoResponseProbe(). locationProbe() will be removed 

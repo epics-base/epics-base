@@ -20,7 +20,7 @@ JAVA_INCLUDES += -I$(JAVA_INC) -I$(JAVA_INC)/$(OS_CLASS) -I$(COMMON_DIR)
 
 JAVACCMD = $(subst \,/,$(JAVA_BIN)/javac$(EXE) $(CLASSPATH) $(SOURCEPATH) $(JAVACFLAGS))
 JAVAHCMD = $(subst \,/,$(JAVA_BIN)/javah$(EXE) -d $(COMMON_DIR) -force $(CLASSPATH) $(JAVAHFLAGS))
-JARCMD   = $(subst \,/,$(JAVA_BIN)/jar$(EXE) $(JAR_OPTIONS) $(COMMON_JAR) $(JARINPUT))
+JARCMD   = $(subst \,/,$(JAVA_BIN)/jar$(EXE) $(JAR_OPTIONS) $(COMMON_JAR) $(JARINPUT) $(JARPACKAGES))
 
 #-------------------------------------------------------
 vpath %.java .. 
@@ -60,9 +60,11 @@ DEPTESTJAVA += $(subst .class,.java,$(TESTCLASSES))
 
 COMMON_JAR += $(addprefix $(COMMON_DIR)/,$(JAR))
 INSTALL_JAR =$(addprefix $(INSTALL_JAVA)/,$(JAR))
-JARMANIFEST += $(firstword $(trim $(MANIFEST) $(JAR_MANIFEST)))
+JARMANIFEST += $(firstword $(MANIFEST) $(JAR_MANIFEST))
 JARINPUT += $(subst .java,.class,$(JAR_INPUT))
-JARDEPFILES +=  $(JARINPUT) $(JARMANIFEST)
+JARDEPFILES += $(addprefix $(INSTALL_JAVA)/,$(subst .java,.class,$(JAVA))) $(JARINPUT)
+JARPACKAGES += $(foreach pkg,$(JAR_PACKAGES),-C $(INSTALL_JAVA) $(subst .,/,$(pkg)))
+
 ifneq ($(JARMANIFEST),)
 JAR_OPTIONS = cvmf $(JARMANIFEST)
 else

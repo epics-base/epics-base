@@ -36,13 +36,14 @@
  *	.05 joh	103191	moved lock from msg buf to client structure
  *	.06 joh	050692	added declaration for cac_send_heartbeat()
  *	.07 joh 022492	added get flag to the event ext block
+ *	.08 joh 090893	added sid field to channel in use block 
  *
  */
 
 #ifndef INCLserverh
 #define INCLserverh
 
-static char *serverhSccsId = "$Id$\t$Date$";
+static char *serverhSccsId = "$Id$";
 
 #include <vxLib.h>
 #include <ellLib.h>
@@ -52,6 +53,7 @@ static char *serverhSccsId = "$Id$\t$Date$";
 #include <db_access.h>
 #include <dbEvent.h>
 #include <iocmsg.h>
+#include <bucketLib.h>
 
 struct message_buffer{
   unsigned 			stk;
@@ -61,11 +63,11 @@ struct message_buffer{
 };
 
 struct client{
-  ELLNODE				node;
+  ELLNODE			node;
   int				sock;
   int				proto;
   FAST_LOCK			lock;
-  ELLLIST				addrq;
+  ELLLIST			addrq;
   struct message_buffer		send;
   struct message_buffer		recv;
   struct sockaddr_in		addr;
@@ -83,10 +85,12 @@ struct client{
  */
 struct channel_in_use{
   ELLNODE			node;
-  struct db_addr	addr;
   ELLLIST			eventq;
-  void			*chid;	/* the chid from the client saved here */
-  unsigned long		ticks_at_creation;	/* for UDP timeout */
+  struct db_addr		addr;
+  struct client			*client;
+  unsigned long			cid;	/* client id */
+  unsigned long			sid;	/* server id */
+  unsigned long			ticks_at_creation;	/* for UDP timeout */
 };
 
 
@@ -98,10 +102,10 @@ struct event_ext{
 ELLNODE				node;
 struct extmsg			msg;
 struct extmsg			*mp;		/* for speed (IOC_READ) */		
-struct client			*client;
+struct channel_in_use		*pciu;
+unsigned			size;		/* for speed */
 char				modified;	/* mod & ev flw ctrl enbl */
 char				send_lock;	/* lock send buffer */
-unsigned			size;		/* for speed */
 char				get;		/* T: get F: monitor */
 };
 
@@ -126,6 +130,7 @@ GLBLTYPE ELLLIST			rsrv_free_eventq;
 GLBLTYPE FAST_LOCK		rsrv_free_addrq_lck;
 GLBLTYPE FAST_LOCK		rsrv_free_eventq_lck;
 GLBLTYPE struct client		*prsrv_cast_client;
+GLBLTYPE BUCKET            	*pCaBucket;
 
 #define LOCK_CLIENT(CLIENT)\
 FASTLOCK(&(CLIENT)->lock);

@@ -43,7 +43,7 @@
  *	.11 joh 073093	added args to taskSpawn for v5.1 vxWorks	
  */
 
-static char *sccsId = "@(#)caservertask.c	1.13\t7/28/92";
+static char *sccsId = "$Id$";
 
 #include <vxWorks.h>
 #include <ellLib.h>
@@ -239,11 +239,11 @@ int free_client(struct client *client)
  */
 LOCAL int terminate_one_client(struct client *client)
 {
-	FAST int        	servertid;
-	FAST int        	tmpsock;
-	FAST int        	status;
-	FAST struct event_ext 	*pevext;
-	FAST struct channel_in_use *pciu;
+	int        	servertid;
+	int        	tmpsock;
+	int        	status;
+	struct event_ext 	*pevext;
+	struct channel_in_use *pciu;
 
 	if (client->proto != IPPROTO_TCP) {
 		logMsg("CAS: non TCP client delete ignored\n",
@@ -292,6 +292,19 @@ LOCAL int terminate_one_client(struct client *client)
 			FASTLOCK(&rsrv_free_eventq_lck);
 			ellAdd((ELLLIST *)&rsrv_free_eventq, (ELLNODE *)pevext);
 			FASTUNLOCK(&rsrv_free_eventq_lck);
+		}
+		FASTLOCK(&rsrv_free_addrq_lck);
+		status = bucketRemoveItem(pCaBucket, pciu->sid, pciu);
+		FASTUNLOCK(&rsrv_free_addrq_lck);
+		if(status != BUCKET_SUCCESS){
+			logMsg(
+				"%s: Bad id=%d at close",
+				(int)__FILE__,
+				pciu->sid,
+				NULL,
+				NULL,
+				NULL,
+				NULL);
 		}
 	}
 
@@ -366,6 +379,13 @@ int client_stat(void)
 		ellCount(&rsrv_free_clientQ),
 		ellCount(&rsrv_free_addrq),
 		ellCount(&rsrv_free_eventq));
+
+	if(pCaBucket){
+		printf(	"The server's resource id conversion table:\n");
+		FASTLOCK(&rsrv_free_addrq_lck);
+		bucketShow(pCaBucket);
+		FASTUNLOCK(&rsrv_free_addrq_lck);
+	}
 
 	return ellCount(&clientQ);
 }

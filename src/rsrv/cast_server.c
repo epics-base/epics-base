@@ -56,7 +56,7 @@
  * 	pend which could lock up the cast server.
  */
 
-static char	*sccsId = "$Id$\t$Date$";
+static char	*sccsId = "@(#)cast_server.c	1.17\t8/5/93";
 
 #include <vxWorks.h>
 #include <ellLib.h>
@@ -318,6 +318,7 @@ clean_addrq(struct client *pclient)
 	unsigned long   	maxdelay = 0;
 	unsigned		ndelete=0;
   	unsigned long		timeout = TIMEOUT*sysClkRateGet();
+	int			s;
 
 	current = tickGet();
 
@@ -337,6 +338,17 @@ clean_addrq(struct client *pclient)
 		if (delay > timeout) {
 			ellDelete((ELLLIST *)&pclient->addrq, (ELLNODE *)pciu);
         		FASTLOCK(&rsrv_free_addrq_lck);
+			s = bucketRemoveItem(pCaBucket, pciu->sid, pciu);
+			if(s != BUCKET_SUCCESS){
+				logMsg(
+					"%s Bad id at close",
+					(int)__FILE__,
+					NULL,
+					NULL,
+					NULL,
+					NULL,
+					NULL);
+			}
 			ellAdd((ELLLIST *)&rsrv_free_addrq, (ELLNODE *)pciu);
        			FASTUNLOCK(&rsrv_free_addrq_lck);
 			ndelete++;

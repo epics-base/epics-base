@@ -602,7 +602,16 @@ caNetAddr casDGClient::fetchLastRecvAddr () const
 //
 // casDGClient::hostName()
 //
-void casDGClient::hostName (char *pBufIn, unsigned bufSizeIn) const
+void casDGClient::hostName ( char *pBufIn, unsigned bufSizeIn ) const
 {
-    this->lastRecvAddr.stringConvert (pBufIn, bufSizeIn);
+    this->lastRecvAddr.stringConvert ( pBufIn, bufSizeIn );
 }
+
+void casDGClient::userName ( char * pBuf, unsigned bufSizeIn ) const
+{
+    if ( bufSizeIn ) {
+        strncpy ( pBuf, "?", bufSizeIn );
+        pBuf[bufSizeIn - 1] = '\0';
+    }
+}
+

@@ -575,11 +575,7 @@ caStatus casClient::logBadIdWithFileAndLineno ( const caHdrLargeArray * mp,
 void casClient::dumpMsg ( const caHdrLargeArray *mp, 
                          const void *dp, const char *pFormat, ... )
 {
-    casChannelI *pciu;
-    char        pName[64u];
-    char        pPVName[64u];
-    va_list     theArgs;
-        
+    va_list theArgs;
     if ( pFormat ) {
         va_start ( theArgs, pFormat );
         errlogPrintf ( "CAS: " );
@@ -587,10 +583,12 @@ void casClient::dumpMsg ( const caHdrLargeArray *mp,
         va_end ( theArgs );
     }
 
+    char pName[64u];
     this->hostName (pName, sizeof (pName));
 
-    pciu = this->resIdToChannel(mp->m_cid);
+    casChannelI * pciu = this->resIdToChannel(mp->m_cid);
 
+    char pPVName[64u];
     if (pciu) {
         strncpy(pPVName, pciu->getPVI().getName(), sizeof(pPVName));
         if (&pciu->getClient()!=this) {
@@ -601,10 +599,16 @@ void casClient::dumpMsg ( const caHdrLargeArray *mp,
     else {
         sprintf(pPVName,"%u", mp->m_cid);
     }
-    errlogPrintf(  
+
+    char pUserName[32];
+    this->userName ( pUserName, sizeof ( pUserName) );
+    char pHostName[32];
+    this->hostName ( pHostName, sizeof ( pHostName) );
+
+    errlogPrintf (  
 "CAS: %s on %s at %s: cmd=%d cid=%s typ=%d cnt=%d psz=%d avail=%x\n",
-        this->userName(),
-        this->hostName(),
+        pUserName,
+        pHostName,
         pName,
         mp->m_cmmd,
         pPVName,
@@ -616,16 +620,4 @@ void casClient::dumpMsg ( const caHdrLargeArray *mp,
     if ( mp->m_cmmd == CA_PROTO_WRITE && mp->m_dataType == DBR_STRING && dp ) {
         errlogPrintf("CAS: The string written: %s \n", (char *)dp);
     }
-}
-
-//
-// 
-//
-const char *casClient::hostName() const 
-{
-        return "?";
-}
-const char *casClient::userName() const 
-{
-        return "?";
 }

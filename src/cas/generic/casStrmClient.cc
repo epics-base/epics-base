@@ -1852,17 +1852,13 @@ caStatus casStrmClient::read (smartGDDPointer &pDescRet)
 //
 // casStrmClient::userName() 
 //
-const char *casStrmClient::userName() const
+void casStrmClient::userName ( char * pBuf, unsigned bufSize ) const
 {
-	return this->pUserName?this->pUserName:"?";
-}
-
-//
-// casStrmClient::hostName() 
-//
-const char *casStrmClient::hostName() const
-{
-	return this->pHostName?this->pHostName:"?";
+    if ( bufSize ) {
+        const char *pName = this->pUserName ? this->pUserName : "?";
+        strncpy ( pBuf, pName, bufSize );
+        pBuf [bufSize-1] = '\0';
+    }
 }
 
 //

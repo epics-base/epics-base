@@ -570,11 +570,7 @@ private:
 	virtual caStatus hostNameAction ();
 	virtual caStatus echoAction ();
 
-	//
-	// obtain the user name and host from the derived class
-	//
-	virtual const char *hostName() const;
-	virtual const char *userName() const;
+	virtual void userName ( char * pBuf, unsigned bufSize ) const = 0;
 
 	//
 	// static members
@@ -624,19 +620,15 @@ public:
 	caStatus monitorResponse ( casChannelI & chan, const caHdrLargeArray & msg, 
 		const smartConstGDDPointer & pDesc, const caStatus status );
 
-	caStatus noReadAccessEvent(casClientMon *);
+	caStatus noReadAccessEvent( casClientMon * );
 
-	//
-	// obtain the user name and host 
-	//
-	const char *hostName () const;
-	const char *userName () const;
 
-	caStatus disconnectChan (caResId id);
+	caStatus disconnectChan ( caResId id );
 
-	unsigned getDebugLevel() const;
+	unsigned getDebugLevel () const;
 
-    virtual void hostName (char *pBuf, unsigned bufSize) const = 0;
+    virtual void hostName ( char * pBuf, unsigned bufSize ) const = 0;
+	void userName ( char * pBuf, unsigned bufSize ) const;
 
 protected:
 
@@ -739,19 +731,19 @@ public:
 	//
 	void sendBeacon ( ca_uint32_t beaconNumber );
 
-    virtual void sendBeaconIO (char &msg, bufSizeT length, 
-        aitUint16 &portField, aitUint32 &addrField) = 0;
+    virtual void sendBeaconIO ( char &msg, bufSizeT length, 
+        aitUint16 &portField, aitUint32 &addrField ) = 0;
 
-	void destroy();
+	void destroy ();
 
-	unsigned getDebugLevel() const;
+	unsigned getDebugLevel () const;
 
-    void hostName (char *pBuf, unsigned bufSize) const;
+    void hostName ( char * pBuf, unsigned bufSize ) const;
+	void userName ( char * pBuf, unsigned bufSize ) const;
 
 	caNetAddr fetchLastRecvAddr () const;
 
     virtual caNetAddr serverAddress () const = 0;
-
 
 protected:
 

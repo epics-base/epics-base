@@ -10,6 +10,9 @@
  *  Author: Jeff Hill
  */
 
+#ifndef tsFreeList_h
+#define tsFreeList_h
+
 //
 // To allow your class to be allocated off of a free list
 // using the new operator:
@@ -175,3 +178,5 @@ inline void tsFreeList < T, N, DEBUG_LEVEL >::release ( void *pCadaver, size_t s
         this->unlock ();
     }
 }
+
+#endif // tsFreeList_h

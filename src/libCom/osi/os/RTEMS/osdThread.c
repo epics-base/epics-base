@@ -193,6 +193,7 @@ setThreadInfo (rtems_id tid, const char *name, EPICSTHREADFUNC funptr,void *parm
 {
     struct taskVar *v;
     rtems_unsigned32 note;
+    rtems_status_code sc;
 
     v = mallocMustSucceed (sizeof *v, "epicsThreadCreate_vars");
     v->name = mallocMustSucceed (strlen (name) + 1, "epicsThreadCreate_name");
@@ -211,8 +212,11 @@ setThreadInfo (rtems_id tid, const char *name, EPICSTHREADFUNC funptr,void *parm
         v->forw->back = v;
     taskVarHead = v;
     taskVarUnlock ();
-    if (funptr)
-        rtems_task_start (tid, threadWrapper, (rtems_task_argument)v);
+    if (funptr) {
+        sc = rtems_task_start (tid, threadWrapper, (rtems_task_argument)v);
+        if (sc !=  RTEMS_SUCCESSFUL)
+            errlogPrintf ("setThreadInfo:  Can't start  %s: %s\n",name, rtems_status_text (sc));
+    }
 }
 
 /*

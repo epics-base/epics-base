@@ -1,3 +1,0 @@
-registrar(beamTrajectoryRegistrar)
-registrar(autoControlRegistrar)
-registrar(stabilizerRegistrar)

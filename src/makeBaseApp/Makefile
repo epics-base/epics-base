@@ -79,36 +79,6 @@ TEMPLATES += top/iocBoot/ioc/st.cmd@Common
 TEMPLATES += top/iocBoot/ioc/st.cmd@vxWorks
 TEMPLATES += top/iocBoot/ioc/st.cmd@RTEMS
 
-TEMPLATES += top/vlinacApp/Makefile
-TEMPLATES += top/vlinacApp/src/Makefile
-TEMPLATES += top/vlinacApp/src/autoControl.st
-TEMPLATES += top/vlinacApp/src/beamTrajectory.st
-TEMPLATES += top/vlinacApp/src/stabilizer.st
-TEMPLATES += top/vlinacApp/src/vlinacBase.dbd
-TEMPLATES += top/vlinacApp/src/vlinacSeq.dbd
-TEMPLATES += top/vlinacApp/src/vlinacMain.cpp
-TEMPLATES += top/vlinacApp/Db/Makefile
-TEMPLATES += top/vlinacApp/Db/xxMedmDemo.db
-TEMPLATES += top/vlinacApp/Db/xxVirtualLinac.db
-TEMPLATES += top/vlinacApp/misc/README
-TEMPLATES += top/vlinacApp/misc/Virtual_Linac.adl
-TEMPLATES += top/vlinacApp/misc/Virtual_Linac_Info.pdf
-TEMPLATES += top/vlinacApp/misc/alarmDemo.adl
-TEMPLATES += top/vlinacApp/misc/flame.gif
-TEMPLATES += top/vlinacApp/misc/linacStripChart.adl
-TEMPLATES += top/vlinacApp/misc/medmDemo.adl
-
-TEMPLATES += top/vlinacBoot/Makefile
-TEMPLATES += top/vlinacBoot/ioc/Makefile@Common
-TEMPLATES += top/vlinacBoot/ioc/Makefile@vxWorks
-TEMPLATES += top/vlinacBoot/ioc/README@Common
-TEMPLATES += top/vlinacBoot/ioc/README@RTEMS
-TEMPLATES += top/vlinacBoot/ioc/README@vxWorks
-TEMPLATES += top/vlinacBoot/ioc/st.cmd@Common
-TEMPLATES += top/vlinacBoot/ioc/st.cmd@RTEMS
-TEMPLATES += top/vlinacBoot/ioc/st.cmd@vxWorks
-TEMPLATES += top/vlinacBoot/nfsCommands@vxWorks
-
 SCRIPTS_HOST += makeBaseApp.pl
 
 include $(TOP)/configure/RULES

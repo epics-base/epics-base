@@ -21,21 +21,10 @@ else
 USR_CFLAGS = -fshared-data -fvolatile
 endif
 
-#The following have been unbundled. DONT USE THESE
-#INC += drvBB232.h
-INC += drvBitBus.h
+# These two Bitbus files are needed to build the GPIB support.  However the
+# bitbus driver source has now been unbundled and removed from Base.
 INC += drvBitBusErr.h
-#INC += drvMsg.h
-#drvBitBus and include files APPEARS HERE AND IN UNBUNDLED - BIG PROBLEM
 INC += drvBitBusInterface.h
-#SRCS.c += ../drvBB232.c
-SRCS.c += ../drvBitBus.c
-#SRCS.c += ../drvMsg.c
-#SRCS.c += ../drvTranServ.c
-
-#The following have not been used
-#INC += drvRs232.h
-#INC += drvTy232.h
 
 INC += drvGpib.h
 INC += drvGpibErr.h
@@ -44,7 +33,6 @@ INC += drvHiDEOSGpib.h
 INC += drvJgvtr1.h
 INC += drvOms.h
 INC += steppermotor.h
-
 
 SRCS.c += ../module_types.c
 SRCS.c += ../drvBb902.c
@@ -58,7 +46,6 @@ SRCS.c += ../drvGpib.c
 SRCS.c += ../drvJgvtr1.c
 SRCS.c += ../drvOms.c
 SRCS.c += ../drvVmi4100.c
-SRCS.c += ../drvXy010.c
 SRCS.c += ../drvXy210.c
 SRCS.c += ../drvXy220.c
 SRCS.c += ../drvXy240.c

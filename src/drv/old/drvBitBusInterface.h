@@ -7,8 +7,9 @@
 * and higher are distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
+
 /* drvBitBusInterface.h */
-/* share/src/drv %W% %G% */
+
 /*      Author: John Winans
  *      Date:   09-10-91
  */
@@ -85,56 +86,6 @@ struct dpvtBitBusHead {
 #define BB_NONODE	2	/* transmit message to non-existant node */
 #define BB_TIMEOUT	3	/* response took too long from node */
 
-#if 0 /* JRW moved to drvBitbus.h */
-/******************************************************************************
- *
- * The BUSY/IDLE notion is used to count the number of outstanding
- * messages for a specific node.  The idea is that up to BUSY messages
- * can be sent to a node before waiting before deciding not to send any more.
- * According to the BitBus specs, this value is 7.  However, it also
- * states that responses can come back out of order.  If this is even true
- * for messages sent to the SAME TASK ON THE SAME NODE, the received messages
- * CAN NOT be routed back to their initiators properly.  Because the node#
- * and task# is all we have to identify what a response message is for,
- * I am limiting the per-node maximum to 1.
- *
- ******************************************************************************/
-
-#define BB_BUSY 1       /* deviceStatus value if device is currently busy */
-#define BB_IDLE 0       /* deviceStatus value if device is currently idle */
-
-struct        bbList {
-  struct dpvtBitBusHead	*head;	/* head of the linked list */
-  struct dpvtBitBusHead	*tail;	/* tail of the linked list */
-  int		elements;	/* holds number of elements on the list */
-  SEM_ID	sem;    /* semaphore for the queue list */
-};
-
-/******************************************************************************
- *
- * The bbLink structure holds all the required link-specific queueing
- * information.
- *
- ******************************************************************************/
-struct  bbLink {
-  int           linkType;       /* the type of link (defined in link.h) */
-  int           linkId;         /* the link number of this structure */
-
-  int		nukeEm;		/* manual link restart flag */
-
-  SEM_ID	linkEventSem;   /* given when this link requires service */
-
-  struct bbList queue[BB_NUM_PRIO]; /* prioritized request queues */
-
-  /*
-   * In order to modify either the busyList entries or the deviceStatus
-   * table, the busyList.sem MUST be held first.
-   */
-  struct bbList	busyList;       	/* messages waiting on a response */
-  unsigned char deviceStatus[BB_APERLINK];/* mark a device as idle or busy */
-};
-#endif
-
 #define	BB_STANDARD_TX_ROUTE	0x40	/* Route value for TX message */
 
 #define	BB_RAC_TASK		0x00	/* RAC task ID */
@@ -160,7 +111,7 @@ struct bbIdWord {
   unsigned int	taskMods;	/* One of BB_MOD_* */
   unsigned int	revCode;	/* Revision code number of the BUG's code */
 };
-
+
 /******************************************************************************
  *
  * List of GPIB command definitions (defined by the GPIB-BUG interface spec)
@@ -169,7 +120,7 @@ struct bbIdWord {
 #define	BB_232_CMD		0x60	/* or'd with the port number */
 #define DD_232_PORT		0x1F	/* port number is lowest 5 bits */
 #define BB_232_BREAK		0x40	/* or'd with the port number */
- 
+ 
 /******************************************************************************
  *
  * List of GPIB command definitions (defined by the GPIB-BUG interface spec)
@@ -206,7 +157,7 @@ struct bbIdWord {
 #define	BB_IBSTAT_EOI	0x20
 #define	BB_IBSTAT_SRQ	0x10
 #define	BB_IBSTAT_TMO	0x01
-
+
 /******************************************************************************
  *
  * Partial List of RAC Command Definitions (defined in BitBus Specification)
@@ -251,5 +202,9 @@ struct bbIdWord {
 #define BB_RAC_PROTECTED        0x95
 #define BB_UNKNOWN_RAC_CMND     0x96
 
-#endif
 
+/* A couple of routine definitions */
+int BBConfig(unsigned long, unsigned long, unsigned long, unsigned long, unsigned long);
+int BBSnoop(int link,int node,int seconds);
+
+#endif

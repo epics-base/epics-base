@@ -7,7 +7,9 @@
 * and higher are distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* share/src/drv/drvBitBusErr.h  $Id$ */
+
+/* $Id$ */
+
 /*      Author: John Winans
  *      Date:   12-5-91
  */

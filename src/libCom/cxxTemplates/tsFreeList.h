@@ -32,7 +32,7 @@ public:
     tsFreeListItem < T > items [N];
 };
 
-template < class T, unsigned N >
+template < class T, unsigned N = 0x400 >
 class tsFreeList : private osiMutex {
 public:
     tsFreeList ();

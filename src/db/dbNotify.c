@@ -55,6 +55,9 @@
 #include "dbAccessDefs.h"
 #include "recGbl.h"
 #include "dbNotify.h"
+#include "freeList.h"
+
+static void *putNotifyFreeList;
 
 /*NODE structure attached to ppnn field of each record in list*/
 typedef struct pnWaitNode {
@@ -392,3 +395,68 @@ long dbtpn(char	*pname,char *pvalue)
     }
     return(0);
 }
+
+#if 0
+/*
+ * dbCreatePutNotify()
+ */
+epicsShareFunc long epicsShareAPI dbPutNotifyInitiate (
+    struct dbAddr *pAddr, unsigned type, unsigned long count, const void *pValue,
+    void (*callback)(void *), void *usrPvt, dbPutNotifyID *pID)
+{
+    PUTNOTIFY *ppn;
+    long dbStatus;
+
+    if (!putNotifyFreeList) {
+        freeListInitPvt (&putNotifyFreeList, sizeof (PUTNOTIFY), 100);
+        if (!putNotifyFreeList) {
+            return S_db_noMemory;
+        }
+    }
+
+    if ( type > SHRT_MAX) {
+        return S_db_badDbrtype;
+    }
+    
+    if ( count > LONG_MAX ) {
+        return S_db_errArg;
+    }
+
+    ppn = freeListCalloc (putNotifyFreeList);
+    if (!ppn) {
+        return S_db_noMemory;
+    }
+
+    ppn->paddr = pAddr;
+    ppn->pbuffer = pValue;
+    ppn->dbrType = (short) type; /* see range check above */
+    ppn->nRequest = (long) count; /* see range check above */
+    ppn->userCallback = callback;
+    ppn->usrPvt = usrPvt;
+    
+    dbStatus = dbPutNotify (ppn);
+    if (dbStatus==S_db_Pending) {
+        *pID = (dbPutNotifyID) ppn;
+    }
+    else if (dbStatus==S_db_Blocked || status==0) {
+        free (ppn);
+        *pID = 0;
+    }
+
+    return dbStatus;
+}
+
+
+epicsShareFunc void epicsShareAPI dbPutNotifyDestroy (dbPutNotifyID idIn)
+{
+    if (idIn==0) {
+        return;
+    }
+    else {
+        PUTNOTIFY *ppn = (PUTNOTIFY *) idIn;
+        dbNotifyCancel (ppn);
+        freeListFree (putNotifyFreeList, ppn)
+    }
+}
+
+#endif

@@ -51,7 +51,7 @@ typedef struct putNotify{
         void            *waitForCallback;
 }PUTNOTIFY;
 
-int dbPutNotifyMapType (PUTNOTIFY *ppn, short oldtype);
+epicsShareFunc int epicsShareAPI dbPutNotifyMapType (PUTNOTIFY *ppn, short oldtype);
 
 /*dbNotifyAdd called by dbScanPassive and dbScanLink*/
 epicsShareFunc void epicsShareAPI dbNotifyAdd(
@@ -61,5 +61,13 @@ epicsShareFunc void epicsShareAPI dbNotifyCancel(PUTNOTIFY *pputnotify);
 epicsShareFunc void epicsShareAPI dbNotifyCompletion(struct dbCommon *precord);
 
 epicsShareFunc long epicsShareAPI dbPutNotify(PUTNOTIFY *pputnotify);
+
+typedef void * dbPutNotifyID;
+
+epicsShareFunc long epicsShareAPI dbPutNotifyInitiate (
+    struct dbAddr *pAddr, unsigned type, unsigned long count, const void *pValue,
+    void (*callback)(void *), void *usrPvt, dbPutNotifyID *pID);
+
+epicsShareFunc void epicsShareAPI dbPutNotifyDestroy (dbPutNotifyID idIn);
 
 #endif /*INCdbNotifyh*/

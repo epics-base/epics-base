@@ -46,8 +46,12 @@
 
 #ifdef EPICS_FREELIST_DEBUG
 #   define tsFreeListDebugBypass 1
+#   define tsFreeListMemSetNew(P,SIZE) memset ( (P), 0xaa, (SIZE) )
+#   define tsFreeListMemSetDelete(P,SIZE)  memset ( (P), 0xdd, (SIZE) )
 #else
 #   define tsFreeListDebugBypass 0
+#   define tsFreeListMemSetNew(P,SIZE)
+#   define tsFreeListMemSetDelete(P,SIZE)
 #endif
 
 #include <new>
@@ -80,7 +84,7 @@ private:
     MUTEX mutex;
     tsFreeListItem < T > * pFreeList;
     tsFreeListChunk < T, N > * pChunkList;
-    tsFreeListItem < T > * allocateFromNewChunk ();
+    void * allocateFromNewChunk ();
 };
 
 template < class T >
@@ -103,9 +107,7 @@ inline tsFreeList < T, N, MUTEX > :: tsFreeList () :
 template < class T, unsigned N, class MUTEX >
 tsFreeList < T, N, MUTEX > :: ~tsFreeList ()
 {
-    tsFreeListChunk < T, N > * pChunk;
-
-    while ( ( pChunk = this->pChunkList ) ) {
+    while ( tsFreeListChunk < T, N > *pChunk = this->pChunkList ) {
         this->pChunkList = this->pChunkList->pNext;
         delete pChunk;
     }
@@ -116,9 +118,7 @@ void * tsFreeList < T, N, MUTEX >::allocate ( size_t size )
 {
     if ( size != sizeof ( T ) || N == 0u || tsFreeListDebugBypass ) {
         void * p = ::operator new ( size );
-        if ( tsFreeListDebugBypass ) {
-            memset ( p, 0xaa, size );
-        }
+        tsFreeListMemSetNew ( p, size );
         return p;
     }
 
@@ -127,17 +127,13 @@ void * tsFreeList < T, N, MUTEX >::allocate ( size_t size )
     tsFreeListItem < T > * p = this->pFreeList;
     if ( p ) {
         this->pFreeList = p->pNext;
+        return static_cast < void * > ( p );
     }
-    else {
-        p = this->allocateFromNewChunk ();
-    }
-
-    return static_cast < void * > ( p );
+    return this->allocateFromNewChunk ();
 }
 
 template < class T, unsigned N, class MUTEX >
-tsFreeListItem < T > * 
-    tsFreeList < T, N, MUTEX >::allocateFromNewChunk ()
+void * tsFreeList < T, N, MUTEX >::allocateFromNewChunk ()
 {
     tsFreeListChunk < T, N > * pChunk = 
         new tsFreeListChunk < T, N >;
@@ -152,17 +148,14 @@ tsFreeListItem < T > *
     pChunk->pNext = this->pChunkList;
     this->pChunkList = pChunk;
 
-    return &pChunk->items[0];
+    return static_cast <void *> ( &pChunk->items[0] );
 }
 
 template < class T, unsigned N, class MUTEX >
-void tsFreeList < T, N, MUTEX >::release 
-                                    ( void * pCadaver, size_t size )
+void tsFreeList < T, N, MUTEX >::release ( void * pCadaver, size_t size )
 {
     if ( size != sizeof ( T ) || N == 0u || tsFreeListDebugBypass ) {
-        if ( tsFreeListDebugBypass ) {
-            memset ( pCadaver, 0xdd, size );
-        }
+        tsFreeListMemSetDelete ( p, size );
         ::operator delete ( pCadaver );
     }
     else if ( pCadaver ) {

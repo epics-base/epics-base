@@ -15,9 +15,6 @@
 #include "nciu_IL.h"
 #include "baseNMIU_IL.h"
 
-tsFreeList < class netSubscription, 1024 > netSubscription::freeList;
-epicsMutex netSubscription::freeListMutex;
-
 netSubscription::netSubscription ( nciu &chan, unsigned typeIn, unsigned long countIn, 
         unsigned maskIn, cacNotify &notifyIn ) :
     baseNMIU ( notifyIn, chan ), 
@@ -27,6 +24,17 @@ netSubscription::netSubscription ( nciu &chan, unsigned typeIn, unsigned long co
 
 netSubscription::~netSubscription () 
 {
+}
+
+void netSubscription::cancel () 
+{
+    this->chan.getClient().destroySubscription ( *this );
+}
+
+void netSubscription::destroy ( cacRecycle &recycle )
+{
+    this->~netSubscription ();
+    recycle.recycleSubscription ( *this );
 }
 
 class netSubscription * netSubscription::isSubscription ()

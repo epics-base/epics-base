@@ -69,6 +69,8 @@
 #include "caProto.h"
 #include "net_convert.h"
 
+#define NO_PLACEMENT_DELETE
+
 #ifdef DEBUG
 #   define debugPrintf(argsInParen) printf argsInParen
 #else
@@ -250,6 +252,7 @@ public:
     ca_uint32_t getSID () const;
     ca_uint32_t getCID () const;
     netiiu * getPIIU ();
+    cac & getClient ();
     void searchReplySetUp ( netiiu &iiu, unsigned sidIn, 
         unsigned typeIn, unsigned long countIn );
     void show ( unsigned level ) const;
@@ -259,7 +262,6 @@ public:
     const char * pHostName () const; // deprecated - please do not use
     unsigned long nativeElementCount () const;
     bool connected () const;
-    void uninstallIO ( baseNMIU &io );
 protected:
     ~nciu (); // force pool allocation
 private:
@@ -302,65 +304,85 @@ private:
 };
 
 class baseNMIU : public cacNotifyIO, public tsDLNode < baseNMIU >, 
-    public chronIntIdRes < baseNMIU > {
+        public chronIntIdRes < baseNMIU > {
 public:
     baseNMIU ( cacNotify &notifyIn, nciu &chan );
-    virtual ~baseNMIU () = 0;
     virtual class netSubscription * isSubscription ();
+    virtual void destroy ( class cacRecycle & ) = 0; // only called by cac
     void show ( unsigned level ) const;
     ca_uint32_t getID () const;
     nciu & channel () const;
     cacChannelIO & channelIO () const;
-    void cancel ();
 protected:
+    virtual ~baseNMIU () = 0;
     nciu &chan;
 };
 
 class netSubscription : public baseNMIU  {
 public:
-    netSubscription ( nciu &chan, unsigned type, unsigned long count, 
+    static netSubscription * factory ( 
+        tsFreeList < class netSubscription, 1024 > &, 
+        nciu &chan, unsigned type, unsigned long count, 
         unsigned mask, cacNotify &notify );
     void show ( unsigned level ) const;
     unsigned long getCount () const;
     unsigned getType () const;
     unsigned getMask () const;
-    void * operator new ( size_t size );
-    void operator delete ( void *pCadaver, size_t size );
+    void destroy ( cacRecycle & );
 protected:
-    ~netSubscription ();
 private:
     const unsigned long count;
     const unsigned type;
     const unsigned mask;
+    netSubscription ( nciu &chan, unsigned type, unsigned long count, 
+        unsigned mask, cacNotify &notify );
+    ~netSubscription ();
+    void cancel ();
     class netSubscription * isSubscription ();
-    static tsFreeList < class netSubscription, 1024 > freeList;
-    static epicsMutex freeListMutex;
+    void * operator new ( size_t, 
+        tsFreeList < class netSubscription, 1024 > & );
+#   if ! defined ( NO_PLACEMENT_DELETE )
+    void operator delete ( void *, size_t, 
+        tsFreeList < class netSubscription, 1024 > & );
+#   endif
 };
 
 class netReadNotifyIO : public baseNMIU {
 public:
-    netReadNotifyIO ( nciu &chan, cacNotify &notify );
+    static netReadNotifyIO * factory ( 
+        tsFreeList < class netReadNotifyIO, 1024 > &, 
+        nciu &chan, cacNotify &notify );
     void show ( unsigned level ) const;
-    void * operator new ( size_t size );
-    void operator delete ( void *pCadaver, size_t size );
-protected:
-    ~netReadNotifyIO ();
+    void destroy ( cacRecycle & );
 private:
-    static tsFreeList < class netReadNotifyIO, 1024 > freeList;
-    static epicsMutex freeListMutex;
+    netReadNotifyIO ( nciu &chan, cacNotify &notify );
+    ~netReadNotifyIO ();
+    void cancel ();
+    void * operator new ( size_t, 
+        tsFreeList < class netReadNotifyIO, 1024 > & );
+#   if ! defined ( NO_PLACEMENT_DELETE )
+    void operator delete ( void *, size_t, 
+        tsFreeList < class netReadNotifyIO, 1024 > & );
+#   endif
 };
 
 class netWriteNotifyIO : public baseNMIU {
 public:
-    netWriteNotifyIO ( nciu &chan, cacNotify &notify );
+    static netWriteNotifyIO * factory ( 
+        tsFreeList < class netWriteNotifyIO, 1024 > &, 
+        nciu &chan, cacNotify &notify );
     void show ( unsigned level ) const;
-    void * operator new ( size_t size );
-    void operator delete ( void *pCadaver, size_t size );
-protected:
-    ~netWriteNotifyIO ();
+    void destroy ( cacRecycle & );
 private:
-    static tsFreeList < class netWriteNotifyIO, 1024 > freeList;
-    static epicsMutex freeListMutex;
+    netWriteNotifyIO ( nciu &chan, cacNotify &notify );
+    ~netWriteNotifyIO ();
+    void cancel ();
+    void * operator new ( size_t, 
+        tsFreeList < class netWriteNotifyIO, 1024 > & );
+#   if ! defined ( NO_PLACEMENT_DELETE )
+    void operator delete ( void *, size_t, 
+        tsFreeList < class netWriteNotifyIO, 1024 > & );
+#   endif
 };
 
 /*
@@ -891,24 +913,24 @@ private:
     epicsEvent ioDone;
 };
 
+// used to control access to cac's recycle routines which
+// should only be indirectly invoked by CAC whenits lock
+// is applied
+class cacRecycle {
+public:
+    virtual void recycleReadNotifyIO ( netReadNotifyIO &io ) = 0;
+    virtual void recycleWriteNotifyIO ( netWriteNotifyIO &io ) = 0;
+    virtual void recycleSubscription ( netSubscription &io ) = 0;
+};
+
 //
-// mutex strategy
-// 1) mutex hierarchy 
-//
-//      (if multiple lock are applied simultaneously then they 
-//      must be applied in this order)
+//      If multiple lock are applied simultaneously then they 
+//      must be applied in this order to avoid deadlocks
 //
 //      cac::iiuListMutex
 //      cac::defaultMutex:
-//      netiiu::mutex
-//      nciu::mutex
-//      baseNMIU::mutex
 //
-// 2) channels can not be moved between netiiu derived classes
-// w/o taking the defaultMutex in this class first
-//
-//
-class cac : public caClient
+class cac : public caClient, private cacRecycle
 {
 public:
     cac ( bool enablePreemptiveCallback = false );
@@ -933,7 +955,6 @@ public:
     void flushRequest ();
     int pendIO ( const double &timeout );
     int pendEvent ( const double &timeout );
-    void uninstallIO ( baseNMIU &io );
     bool ioCompletionNotify ( unsigned id, unsigned type, 
         unsigned long count, const void *pData );
     bool ioExceptionNotify ( unsigned id, 
@@ -950,7 +971,9 @@ public:
     void connectAllIO ( nciu &chan );
     void disconnectAllIO ( nciu &chan );
     void destroyAllIO ( nciu &chan );
-    void installSubscription ( netSubscription &subscr );
+    void destroyReadNotifyIO ( netReadNotifyIO &io );
+    void destroyWriteNotifyIO ( netWriteNotifyIO &io );
+    void destroySubscription ( netSubscription &io );
 
     // exception routines
     void exceptionNotify ( int status, const char *pContext,
@@ -979,6 +1002,8 @@ public:
     int writeRequest ( nciu &, unsigned type, unsigned nElem, const void *pValue );
     int writeNotifyRequest ( nciu &, cacNotify &, unsigned type, unsigned nElem, const void *pValue );
     int readNotifyRequest ( nciu &, cacNotify &, unsigned type, unsigned nElem );
+    cacNotifyIO * subscriptionRequest ( nciu &chan, unsigned type, unsigned long nElem, 
+                unsigned mask, cacNotify &notify );
 
     // sync group routines
     CASG * lookupCASG ( unsigned id );
@@ -1021,6 +1046,15 @@ private:
         < CASG >            sgTable;
     resTable 
         < bhe, inetAddrID > beaconTable;
+    tsFreeList 
+        < class netReadNotifyIO, 1024 > 
+                            freeListReadNotifyIO;
+    tsFreeList 
+        < class netWriteNotifyIO, 1024 > 
+                            freeListWriteNotifyIO;
+    tsFreeList 
+        < class netSubscription, 1024 > 
+                            freeListSubscription;
     epicsTime               programBeginTime;
     double                  connTMO;
     // defaultMutex can be applied if iiuListMutex is already applied
@@ -1042,6 +1076,9 @@ private:
     bool                    enablePreemptiveCallback;
     bool setupUDP ();
     void flushIfRequired ( nciu & ); // lock must be applied
+    void recycleReadNotifyIO ( netReadNotifyIO &io );
+    void recycleWriteNotifyIO ( netWriteNotifyIO &io );
+    void recycleSubscription ( netSubscription &io );
 };
 
 /*

@@ -328,7 +328,7 @@ int nciu::subscribe ( unsigned type, unsigned long nElem,
                          unsigned mask, cacNotify &notify,
                          cacNotifyIO *&pNotifyIO )
 {
-    if ( INVALID_DB_REQ (type) ) {
+    if ( INVALID_DB_REQ(type) ) {
         return ECA_BADTYPE;
     }
 
@@ -336,11 +336,10 @@ int nciu::subscribe ( unsigned type, unsigned long nElem,
         return ECA_BADMASK;
     }
 
-    netSubscription *pSubcr = new netSubscription ( *this, 
-        type, nElem, mask, notify );
-    if ( pSubcr ) {
-        this->cacCtx.installSubscription ( *pSubcr );
-        pNotifyIO = pSubcr;
+    cacNotifyIO * pIO = this->cacCtx.subscriptionRequest ( 
+            *this, type, nElem, mask, notify );
+    if ( pIO ) {
+        pNotifyIO = pIO;
         return ECA_NORMAL;;
     }
     else {

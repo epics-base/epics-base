@@ -23,12 +23,6 @@ baseNMIU::~baseNMIU ()
 {
 }
 
-void baseNMIU::cancel ()
-{
-    this->chan.uninstallIO ( *this );
-    delete this;
-}
-
 class netSubscription * baseNMIU::isSubscription ()
 {
     return 0;

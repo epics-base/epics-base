@@ -15,15 +15,12 @@
 #include "nciu_IL.h"
 #include "baseNMIU_IL.h"
 
-tsFreeList < class netWriteNotifyIO, 1024 > netWriteNotifyIO::freeList;
-epicsMutex netWriteNotifyIO::freeListMutex;
-
 netWriteNotifyIO::netWriteNotifyIO ( nciu &chan, cacNotify &notifyIn ) :
     baseNMIU ( notifyIn, chan )
 {
 }
 
-netWriteNotifyIO::~netWriteNotifyIO () 
+netWriteNotifyIO::~netWriteNotifyIO ()
 {
 }
 
@@ -35,3 +32,16 @@ void netWriteNotifyIO::show ( unsigned level ) const
         this->baseNMIU::show ( level - 1u );
     }
 }
+
+void netWriteNotifyIO::cancel ()
+{
+    this->chan.getClient().destroyWriteNotifyIO ( *this );
+}
+
+void netWriteNotifyIO::destroy ( cacRecycle & recycle )
+{
+    this->~netWriteNotifyIO ();
+    recycle.recycleWriteNotifyIO ( *this );
+}
+
+

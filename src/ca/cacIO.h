@@ -45,10 +45,8 @@ public:
     cacNotify & notify () const;
     virtual void cancel () = 0;
     virtual void show ( unsigned level ) const = 0;
-
     // the following commits us to deleting the IO when the channel is deleted :-(
     virtual cacChannelIO & channelIO () const = 0; 
-
 protected:
     virtual ~cacNotifyIO () = 0;
 private:
@@ -63,7 +61,6 @@ public:
     virtual void disconnectNotify ( cacChannelIO & );
     virtual void accessRightsNotify ( cacChannelIO &, const caar & );
     virtual void exceptionNotify ( cacChannelIO &, int status, const char *pContext );
-
     // not for public consumption
     virtual bool includeFirstConnectInCountOfOutstandingIO () const;
     virtual class oldChannelNotify * pOldChannelNotify ();

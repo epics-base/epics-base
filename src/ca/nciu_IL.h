@@ -100,9 +100,9 @@ inline netiiu * nciu::getPIIU ()
     return this->piiu;
 }
 
-inline void nciu::uninstallIO ( baseNMIU &io )
+inline cac & nciu::getClient ()
 {
-    this->cacCtx.uninstallIO ( io );
+    return this->cacCtx;
 }
 
 inline void nciu::connectTimeoutNotify ()

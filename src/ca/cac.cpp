@@ -22,9 +22,10 @@
 #include "comQueSend_IL.h"
 #include "recvProcessThread_IL.h"
 #include "netiiu_IL.h"
+#include "baseNMIU_IL.h"
 #include "netWriteNotifyIO_IL.h"
 #include "netReadNotifyIO_IL.h"
-#include "baseNMIU_IL.h"
+#include "netSubscription_IL.h"
 
 //
 // cac::cac ()
@@ -943,19 +944,20 @@ int cac::writeRequest ( nciu &chan, unsigned type, unsigned nElem, const void *p
     return chan.getPIIU()->writeRequest ( chan, type, nElem, pValue );
 }
 
-int cac::writeNotifyRequest ( nciu &chan, cacNotify &notify, unsigned type, unsigned nElem, const void *pValue )
+int cac::writeNotifyRequest ( nciu &chan, cacNotify &notify, 
+                             unsigned type, unsigned nElem, const void *pValue )
 {
     epicsAutoMutex autoMutex ( this->defaultMutex );
-    this->flushIfRequired ( chan );
-    netWriteNotifyIO *pIO = new netWriteNotifyIO ( chan, notify );
+    netWriteNotifyIO *pIO = netWriteNotifyIO::factory ( 
+                this->freeListWriteNotifyIO, chan, notify );
     if ( pIO ) {
         this->ioTable.add ( *pIO );
         chan.cacPrivateListOfIO::eventq.add ( *pIO );
-        int status = chan.getPIIU()->writeNotifyRequest ( chan, *pIO, type, nElem, pValue );
+        this->flushIfRequired ( chan );
+        int status = chan.getPIIU()->writeNotifyRequest ( 
+                            chan, *pIO, type, nElem, pValue );
         if ( status != ECA_NORMAL ) {
-            this->ioTable.remove ( *pIO );
-            chan.cacPrivateListOfIO::eventq.remove ( *pIO );
-            delete static_cast < baseNMIU * > ( pIO );
+            this->destroyWriteNotifyIO ( *pIO );
         }
         return status;
     }
@@ -967,16 +969,16 @@ int cac::writeNotifyRequest ( nciu &chan, cacNotify &notify, unsigned type, unsi
 int cac::readNotifyRequest ( nciu &chan, cacNotify &notify, unsigned type, unsigned nElem )
 {
     epicsAutoMutex autoMutex ( this->defaultMutex );
-    this->flushIfRequired ( chan );
-    netReadNotifyIO *pIO = new netReadNotifyIO ( chan, notify );
+
+    netReadNotifyIO *pIO = netReadNotifyIO::factory (
+                                    this->freeListReadNotifyIO, chan, notify );
     if ( pIO ) {
+        this->flushIfRequired ( chan );
         this->ioTable.add ( *pIO );
         chan.cacPrivateListOfIO::eventq.add ( *pIO );
         int status = chan.getPIIU()->readNotifyRequest ( chan, *pIO, type, nElem );
         if ( status != ECA_NORMAL ) {
-            this->ioTable.remove ( *pIO );
-            chan.cacPrivateListOfIO::eventq.remove ( *pIO );
-            delete static_cast < baseNMIU * > ( pIO );
+            this->destroyReadNotifyIO ( *pIO );
         }
         return status;
     }
@@ -991,7 +993,7 @@ bool cac::ioCompletionNotify ( unsigned id, unsigned type,
     epicsAutoMutex autoMutex ( this->defaultMutex );
     baseNMIU * pmiu = this->ioTable.lookup ( id );
     if ( pmiu ) {
-        pmiu->notify ().completionNotify ( pmiu->channel (), type, count, pData );
+        pmiu->notify().completionNotify ( pmiu->channel(), type, count, pData );
         return true;
     }
     else {
@@ -1004,7 +1006,7 @@ bool cac::ioExceptionNotify ( unsigned id, int status, const char *pContext )
     epicsAutoMutex autoMutex ( this->defaultMutex );
     baseNMIU * pmiu = this->ioTable.lookup ( id );
     if ( pmiu ) {
-        pmiu->notify ().exceptionNotify ( pmiu->channel (), status, pContext );
+        pmiu->notify().exceptionNotify ( pmiu->channel(), status, pContext );
         return true;
     }
     else {
@@ -1018,7 +1020,7 @@ bool cac::ioExceptionNotify ( unsigned id, int status,
     epicsAutoMutex autoMutex ( this->defaultMutex );
     baseNMIU * pmiu = this->ioTable.lookup ( id );
     if ( pmiu ) {
-        pmiu->notify ().exceptionNotify ( pmiu->channel (), 
+        pmiu->notify().exceptionNotify ( pmiu->channel(), 
             status, pContext, type, count );
         return true;
     }
@@ -1029,19 +1031,12 @@ bool cac::ioExceptionNotify ( unsigned id, int status,
 
 bool cac::ioCompletionNotifyAndDestroy ( unsigned id )
 {
-    baseNMIU * pmiu;
-
-    {
-        epicsAutoMutex autoMutex ( this->defaultMutex );
-        pmiu = this->ioTable.remove ( id );
-        if ( pmiu ) {
-            pmiu->channel ().cacPrivateListOfIO::eventq.remove ( *pmiu );
-        }
-    }
-
+    epicsAutoMutex autoMutex ( this->defaultMutex );
+    baseNMIU * pmiu = this->ioTable.remove ( id );
     if ( pmiu ) {
-        pmiu->notify ().completionNotify ( pmiu->channel () );
-        delete pmiu; 
+        pmiu->channel().cacPrivateListOfIO::eventq.remove ( *pmiu );
+        pmiu->notify().completionNotify ( pmiu->channel() );
+        pmiu->destroy ( *this );
         return true;
     }
     else {
@@ -1050,21 +1045,14 @@ bool cac::ioCompletionNotifyAndDestroy ( unsigned id )
 }
 
 bool cac::ioCompletionNotifyAndDestroy ( unsigned id, 
-                        unsigned type, unsigned long count, const void *pData )
+    unsigned type, unsigned long count, const void *pData )
 {
-    baseNMIU * pmiu;
-
-    {
-        epicsAutoMutex autoMutex ( this->defaultMutex );
-        pmiu = this->ioTable.remove ( id );
-        if ( pmiu ) {
-            pmiu->channel ().cacPrivateListOfIO::eventq.remove ( *pmiu );
-        }
-    }
-
+    epicsAutoMutex autoMutex ( this->defaultMutex );
+    baseNMIU * pmiu = this->ioTable.remove ( id );
     if ( pmiu ) {
-        pmiu->notify ().completionNotify ( pmiu->channel (), type, count, pData );
-        delete pmiu;
+        pmiu->channel().cacPrivateListOfIO::eventq.remove ( *pmiu );
+        pmiu->notify().completionNotify ( pmiu->channel(), type, count, pData );
+        pmiu->destroy ( *this );
         return true;
     }
     else {
@@ -1074,19 +1062,12 @@ bool cac::ioCompletionNotifyAndDestroy ( unsigned id,
 
 bool cac::ioExceptionNotifyAndDestroy ( unsigned id, int status, const char *pContext )
 {
-    baseNMIU * pmiu;
-
-    {
-        epicsAutoMutex autoMutex ( this->defaultMutex );
-        pmiu = this->ioTable.remove ( id );
-        if ( pmiu ) {
-            pmiu->channel ().cacPrivateListOfIO::eventq.remove ( *pmiu );
-        }
-    }
-
+    epicsAutoMutex autoMutex ( this->defaultMutex );
+    baseNMIU * pmiu = this->ioTable.remove ( id );
     if ( pmiu ) {
-        pmiu->notify ().exceptionNotify ( pmiu->channel (), status, pContext );
-        delete pmiu;
+        pmiu->channel().cacPrivateListOfIO::eventq.remove ( *pmiu );
+        pmiu->notify().exceptionNotify ( pmiu->channel (), status, pContext );
+        pmiu->destroy ( *this );
         return true;
     }
     else {
@@ -1097,20 +1078,13 @@ bool cac::ioExceptionNotifyAndDestroy ( unsigned id, int status, const char *pCo
 bool cac::ioExceptionNotifyAndDestroy ( unsigned id, int status, 
                         const char *pContext, unsigned type, unsigned long count )
 {
-    baseNMIU * pmiu;
-
-    {
-        epicsAutoMutex autoMutex ( this->defaultMutex );
-        pmiu = this->ioTable.remove ( id );
-        if ( pmiu ) {
-            pmiu->channel ().cacPrivateListOfIO::eventq.remove ( *pmiu );
-        }
-    }
-
+    epicsAutoMutex autoMutex ( this->defaultMutex );
+    baseNMIU * pmiu = this->ioTable.remove ( id );
     if ( pmiu ) {
-        pmiu->notify ().exceptionNotify ( pmiu->channel (), status, 
+        pmiu->channel().cacPrivateListOfIO::eventq.remove ( *pmiu );
+        pmiu->notify().exceptionNotify ( pmiu->channel(), status, 
             pContext, type, count );
-        delete pmiu; 
+        pmiu->destroy ( *this );
         return true;
     }
     else {
@@ -1136,7 +1110,7 @@ void cac::connectAllIO ( nciu &chan )
             this->ioTable.remove ( *pNetIO );
             chan.cacPrivateListOfIO::eventq.remove ( *pNetIO );
             pNetIO->notify().exceptionNotify ( pNetIO->channel(), ECA_DISCONN, chan.pHostName() );
-            delete pNetIO.pointer ();
+            pNetIO.pointer()->destroy ( *this );
         }
         pNetIO = next;
     }
@@ -1152,62 +1126,89 @@ void cac::disconnectAllIO ( nciu &chan )
     while ( pNetIO.valid () ) {
         tsDLIterBD < baseNMIU > next = pNetIO;
         next++;
-        class netSubscription *pSubscr = pNetIO->isSubscription ();
-        this->ioTable.remove ( *pNetIO );
-        if ( pSubscr ) {
-            chan.getPIIU()->subscriptionCancelRequest ( *pSubscr );
-        }
-        else {
+        if ( ! pNetIO->isSubscription () ) {
             // no use after disconnected - so uninstall it
+            this->ioTable.remove ( *pNetIO );
             chan.cacPrivateListOfIO::eventq.remove ( *pNetIO );
-            pNetIO->notify ().exceptionNotify ( pNetIO->channel (), ECA_DISCONN, chan.pHostName () );
-            delete pNetIO.pointer ();
+            pNetIO->notify().exceptionNotify ( pNetIO->channel(), ECA_DISCONN, chan.pHostName() );
+            pNetIO.pointer()->destroy ( *this );
         }
         pNetIO = next;
     }
 }
 
-//
-// care is taken to not hold the lock while deleting the
-// IO so that subscription delete request (sent by the
-// IO's destructor) do not deadlock
-//
 void cac::destroyAllIO ( nciu &chan )
 {
-    tsDLList < baseNMIU > eventQ;
-    {
-        epicsAutoMutex autoMutex ( this->defaultMutex );
-        while ( baseNMIU *pIO = chan.cacPrivateListOfIO::eventq.get () ) {
-            this->ioTable.remove ( *pIO );
-            eventQ.add ( *pIO );
+    epicsAutoMutex autoMutex ( this->defaultMutex );
+    while ( baseNMIU *pIO = chan.cacPrivateListOfIO::eventq.get() ) {
+        this->ioTable.remove ( *pIO );
+        this->flushIfRequired ( chan );
+        class netSubscription *pSubscr = pIO->isSubscription ();
+        if ( pSubscr ) {
+            pIO->channel().getPIIU()->subscriptionCancelRequest ( *pSubscr );
         }
-    }
-    while ( baseNMIU *pIO = eventQ.get () ) {
-        delete pIO;
+        pIO->destroy ( *this );
     }
 }
 
-void cac::uninstallIO ( baseNMIU &io )
+void cac::destroyReadNotifyIO ( netReadNotifyIO &io )
 {
     epicsAutoMutex autoMutex ( this->defaultMutex );
     baseNMIU *pIO = this->ioTable.remove ( io );
-    assert ( &io == pIO );
+    assert ( static_cast < baseNMIU * > ( &io ) == pIO );
     io.channel().cacPrivateListOfIO::eventq.remove ( io );
-    netSubscription * pSubscr = io.isSubscription ();
-    if ( pSubscr ) {
-        this->flushIfRequired ( io.channel() );
-        io.channel().getPIIU()->subscriptionCancelRequest ( *pSubscr );
-    }
+    io.destroy ( *this );
 }
 
-void cac::installSubscription ( netSubscription &subscr )
+void cac::destroyWriteNotifyIO ( netWriteNotifyIO &io )
 {
     epicsAutoMutex autoMutex ( this->defaultMutex );
-    subscr.channel().cacPrivateListOfIO::eventq.add ( subscr );
-    this->ioTable.add ( subscr );
-    if ( subscr.channel().connected() ) {
-        this->flushIfRequired ( subscr.channel() );
-        subscr.channel().getPIIU()->subscriptionRequest ( subscr );
+    baseNMIU *pIO = this->ioTable.remove ( io );
+    assert ( static_cast < baseNMIU * > ( &io ) == pIO );
+    io.channel().cacPrivateListOfIO::eventq.remove ( io );
+    io.destroy ( *this );
+}
+
+void cac::destroySubscription ( netSubscription &io )
+{
+    epicsAutoMutex autoMutex ( this->defaultMutex );
+    baseNMIU *pIO = this->ioTable.remove ( io );
+    assert ( static_cast < baseNMIU * > ( &io ) == pIO );
+    io.channel().cacPrivateListOfIO::eventq.remove ( io );
+    this->flushIfRequired ( io.channel() );
+    io.channel().getPIIU()->subscriptionCancelRequest ( io );
+    io.destroy ( *this );
+}
+
+void cac::recycleReadNotifyIO ( netReadNotifyIO &io )
+{
+    this->freeListReadNotifyIO.release ( &io, sizeof ( io ) );
+}
+
+void cac::recycleWriteNotifyIO ( netWriteNotifyIO &io )
+{
+    this->freeListWriteNotifyIO.release ( &io, sizeof ( io ) );
+}
+
+void cac::recycleSubscription ( netSubscription &io )
+{
+    this->freeListSubscription.release ( &io, sizeof ( io ) );
+}
+
+cacNotifyIO * cac::subscriptionRequest ( nciu &chan, unsigned type, 
+    unsigned long nElem, unsigned mask, cacNotify &notify )
+{
+    epicsAutoMutex autoMutex ( this->defaultMutex );
+    netSubscription *pSubcr = netSubscription::factory ( 
+        this->freeListSubscription, chan, type, nElem, mask, notify );
+    if ( pSubcr ) {
+        pSubcr->channel().cacPrivateListOfIO::eventq.add ( *pSubcr );
+        this->ioTable.add ( *pSubcr );
+        if ( pSubcr->channel().connected() ) {
+            this->flushIfRequired ( pSubcr->channel() );
+            pSubcr->channel().getPIIU()->subscriptionRequest ( *pSubcr );
+        }
     }
+    return pSubcr;
 }
 

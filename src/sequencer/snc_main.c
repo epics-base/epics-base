@@ -86,8 +86,12 @@ char	*argv[];
 	src_file = in_file;
 
 	/* Use line buffered output */
+	setvbuf(stdout,NULL,_IOLBF,0);
+	setvbuf(stderr,NULL,_IOLBF,0);
+/* setlinebuf() isn't ANSI-C or XPG2/3/4
 	setlinebuf(stdout);
 	setlinebuf(stderr);
+*/
 	
 	printf("/* %s: %s */\n\n", sncVersion, in_file);
 

@@ -7,33 +7,38 @@ LIBCOM = $(TOP)/src/libCom
 # From osi
 SRC_DIRS = $(LIBCOM)/osi
 
-
 INC += osiInterrupt.h
+INC += osdInterrupt.h
 INC += osiRing.h
+INC += osdRing.h
 INC += osiSem.h
 INC += osdSem.h
-
-INC += bsdSocketResource.h
+INC += osiSockResource.h
+INC += osdSockResource.h
 INC += epicsAssert.h
 INC += osiFindGlobalSymbol.h
+INC += osdFindGlobalSymbol.h
 INC += osiPoolStatus.h
+INC += osdPoolStatus.h
 INC += osiThread.h
+INC += osdThread.h
 INC += osiTime.h
-INC += sigPipeIgnore.h
+INC += osdTime.h
+INC += osiSigPipeIgnore.h
+INC += osdSigPipeIgnore.h
 INC += tsStamp.h
 
-SRCS += bsdSockResource.c
-SRCS += bsdSockResCom.c
-SRCS += assert.c
-SRCS += osiFindGlobalSymbol.c
-SRCS += osiInterrupt.c
-SRCS += osiPoolStatus.c
-SRCS += osiRing.c
-SRCS += osiSem.c
-SRCS += osiThread.c
+SRCS += osdSockResource.c
+SRCS += osdAssert.c
+SRCS += osdFindGlobalSymbol.c
+SRCS += osdInterrupt.c
+SRCS += osdPoolStatus.c
+SRCS += osdRing.c
+SRCS += osdSem.c
+SRCS += osdThread.c
 SRCS += osdTime.cpp
 SRCS += osiTime.cpp
-SRCS += sigPipeIgnore.c
+SRCS += osdSigPipeIgnore.c
 #tsStamp code is part of osiTime and osdTime
 
 SRC_DIRS += $(LIBCOM)/bucketLib

@@ -97,7 +97,7 @@
  * modules that are beyond the MXI bus otherwise.  If you can't do this
  * you'll need to disable the bus timeout timer function of the system
  * controller in your startup script, for example:
- *     MVME16x/17x:	*0xfff4004c = 0x000095e7
+ *     MVME16x/17x:	*0xfff4004c |= 0x00030000
  *     MVME2700:	*0xfd050404 = 0x00000602
  *
  */

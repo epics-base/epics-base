@@ -99,6 +99,9 @@
 /************************************************************************/
 /*
  * $Log$
+ * Revision 1.107.2.4  2000/06/28 15:48:43  mrk
+ * remove blank from task name
+ *
  * Revision 1.107.2.3  2000/06/28 15:41:15  jhill
  * changed "m_type" to "m_dataType" in order to avoid collision
  * with MACRO supplied by WRS's Tornado II product
@@ -406,6 +409,7 @@ const void		*pext
 	 *	ring buffer size.
 	 */
 	if (msgsize>piiu->send.max_msg) {
+        UNLOCK;
 		return ECA_TOLARGE;
 	}
 
@@ -1934,11 +1938,11 @@ const void	*pvalue
 		while (TRUE) {
 			switch (type) {
 			case	DBR_LONG:
-				*(long *)pdest = htonl (*(dbr_long_t *)pvalue);
+				*(dbr_long_t *)pdest = htonl (*(dbr_long_t *)pvalue);
 				break;
 
 			case	DBR_CHAR:
-				*(char *)pdest = *(dbr_char_t *)pvalue;
+				*(dbr_char_t *)pdest = *(dbr_char_t *)pvalue;
 				break;
 
 			case	DBR_ENUM:
@@ -1948,7 +1952,7 @@ const void	*pvalue
 #			if DBR_INT != DBR_SHORT
 			case	DBR_INT:
 #			endif /*DBR_INT != DBR_SHORT*/
-				*(short *)pdest = htons (*(dbr_short_t *)pvalue);
+				*(dbr_short_t *)pdest = htons (*(dbr_short_t *)pvalue);
 				break;
 
 			case	DBR_FLOAT:

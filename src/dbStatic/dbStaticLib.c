@@ -315,7 +315,7 @@ static long putParmString(char **pparm,char *pstring)
 
     if(*pparm && (*pparm != pNullString)){
 	free((void *)(*pparm));
-	*pparm = NULL;
+	*pparm = pNullString;
     }
     if(!pstring) return(0);
     if(!(pstring = strchr(pstring,'@'))) return(0);
@@ -1660,9 +1660,9 @@ long epicsShareAPI dbCopyRecord(DBENTRY *pdbentry,char *newRecordName,int overWr
 	    return(S_dbLib_recExists);
 	}
 	status = dbDeleteRecord(&dbentry);
+	if(status) return(status);
     }
     dbFinishEntry(&dbentry);
-    if(status) return(status);
     if((status = dbFindRecordType(&dbentry,precordType->name))) return(status);
     if((status = dbCreateRecord(&dbentry,newRecordName))) return(status);
     if((status = dbFirstField(pdbentry,TRUE))) return(status);
@@ -2241,7 +2241,8 @@ long epicsShareAPI dbPutString(DBENTRY *pdbentry,char *pstring)
 		    if(!(end = strchr(pstr,'#'))) return (S_dbLib_badField);
 		    pstr = end + 1;
 		    memset((char *)&plink->value.vxiio,0,sizeof(struct  vxiio));
-		    if(!(end = strchr(pstr,'C')))  {
+		    plink->value.vxiio.parm = pNullString;
+		    if(!((end = strchr(pstr,'C'))&&(end < strchr(pstr,'@')) )) {
 			plink->value.vxiio.flag = VXISTATIC;
 		        if(!(end = strchr(pstr,'V'))) return (S_dbLib_badField);
 		        pstr = end + 1;
@@ -2655,6 +2656,7 @@ int epicsShareAPI dbAllocForm(DBENTRY *psave)
     /*Dont know how to handle string size. Just use messagesize*/
     nbytes = sizeof(struct form) + 2*nlines*(sizeof(char *) + messagesize);
     pform = dbCalloc(1,nbytes);
+    pform->nlines = nlines;
     pform->linkType = linkType;
     psave->formpvt = pform;
     pform->plink = plink ;
@@ -2907,10 +2909,10 @@ long epicsShareAPI dbPutForm(DBENTRY *pdbentry,char **value)
 	    **verify = 0;  /*Initialize verify to NULL*/
 	    if((*value==NULL) || (strcmp(*value,"")==0)) ppOpt = 0;
 	    else if(strstr(*value,"NPP")) ppOpt = 0;
+	    else if(strstr(*value,"CPP")) ppOpt = pvlOptCPP;
 	    else if(strstr(*value,"PP")) ppOpt = pvlOptPP;
 	    else if(strstr(*value,"CA")) ppOpt = pvlOptCA;
 	    else if(strstr(*value,"CP")) ppOpt = pvlOptCP;
-	    else if(strstr(*value,"CPP")) ppOpt = pvlOptCPP;
 	    else strcpy(*verify,"Illegal. Chose a value");
 	    value++; verify++;
 	    **verify = 0;  /*Initialize verify to NULL*/
@@ -3233,7 +3235,10 @@ char  ** epicsShareAPI dbVerifyForm(DBENTRY *pdbentry,char **value)
     if(plink->type==PV_LINK) free((void *)templink.value.pv_link.pvname);
     pform->plink = plink;
     nlines = pform->nlines;
-    for(i=0; i<nlines; i++) if(pform->verify[i]) return(pform->verify);
+    for(i=0; i<nlines; i++) {
+	/* If any verify string is not null then return verify */
+	if(*pform->verify[i]) return(pform->verify);
+    }
     return(NULL);
 }
 

@@ -15,6 +15,8 @@ dbtoolsIoc_DLL_LIBS  = dbIoc Com
 
 HTMLS += dbLoadTemplate.html
 
+dbtoolsIoc_RCS_WIN32 = dbtoolsIoc.rc
+
 include $(TOP)/configure/RULES
  
 #

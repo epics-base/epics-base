@@ -190,10 +190,10 @@ epicsShareExtern CACVRTFUNC *cac_dbr_cvrt[LAST_BUFFER_TYPE+1];
 		((dbr_long_t *)(NET))[1] = cvrt_tmp;			\
 		}
 #else
-	void dbr_htond(dbr_double_t *pHost, dbr_double_t *pNet);
-	void dbr_ntohd(dbr_double_t *pNet, dbr_double_t *pHost);
-	void dbr_htonf(dbr_float_t *pHost, dbr_float_t *pNet);
-	void dbr_ntohf(dbr_float_t *pNet, dbr_float_t *pHost);
+	epicsShareFunc void dbr_htond(dbr_double_t *pHost, dbr_double_t *pNet);
+	epicsShareFunc void dbr_ntohd(dbr_double_t *pNet, dbr_double_t *pHost);
+	epicsShareFunc void dbr_htonf(dbr_float_t *pHost, dbr_float_t *pNet);
+	epicsShareFunc void dbr_ntohf(dbr_float_t *pNet, dbr_float_t *pHost);
 #endif
 
 #ifdef __cplusplus

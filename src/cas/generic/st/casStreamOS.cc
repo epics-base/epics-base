@@ -50,9 +50,9 @@ inline casStreamReadReg::casStreamReadReg (casStreamOS &osIn) :
 #	if defined(DEBUG) 
         printf ("Read on %d\n", this->os.getFD());
         printf ("Recv backlog %u\n", 
-	        this->os.inBuf::bytesPresent());
+	        this->os.in.bytesPresent());
         printf ("Send backlog %u\n", 
-	        this->os.outBuf::bytesPresent());
+	        this->os.out.bytesPresent());
 #	endif		
 }
 
@@ -65,9 +65,9 @@ inline casStreamReadReg::~casStreamReadReg ()
 #	if defined(DEBUG) 
 		printf ("Read off %d\n", this->os.getFD());
 		printf ("Recv backlog %u\n", 
-			this->os.inBuf::bytesPresent());
+			this->os.in.bytesPresent());
 		printf ("Send backlog %u\n", 
-			this->os.outBuf::bytesPresent());
+			this->os.out.bytesPresent());
 #	endif
 }
 
@@ -96,9 +96,9 @@ inline casStreamWriteReg::casStreamWriteReg (casStreamOS &osIn) :
 #	if defined(DEBUG) 
 		printf ("Write on %d\n", this->os.getFD());
 		printf ("Recv backlog %u\n", 
-			this->os.inBuf::bytesPresent());
+			this->os.in.bytesPresent());
 		printf ("Send backlog %u\n", 
-			this->os.outBuf::bytesPresent());
+			this->os.out.bytesPresent());
 #	endif
 }
 
@@ -111,9 +111,9 @@ inline casStreamWriteReg::~casStreamWriteReg ()
 #	if defined(DEBUG) 
 		printf ("Write off %d\n", this->os.getFD());
 		printf ("Recv backlog %u\n", 
-			this->os.inBuf::bytesPresent());
+			this->os.in.bytesPresent());
 		printf ("Send backlog %u\n", 
-			this->os.outBuf::bytesPresent());
+			this->os.out.bytesPresent());
 #	endif
 }
 
@@ -526,8 +526,8 @@ void casStreamOS::sendCB()
 #	if defined(DEBUG)
 		printf ("write attempted on %d result was %d\n", 
 				this->getFD(), flushCond);
-		printf ("Recv backlog %u\n", this->inBuf::bytesPresent());
-		printf ("Send backlog %u\n", this->outBuf::bytesPresent());
+		printf ("Recv backlog %u\n", this->in.bytesPresent());
+		printf ("Send backlog %u\n", this->out.bytesPresent());
 #	endif
 
 	//
@@ -572,8 +572,8 @@ casProcCond casStreamOS::processInput() // X aCC 361
 #	ifdef DEBUG
 		printf(
 			"Resp bytes to send=%d, Req bytes pending %d\n", 
-			this->outBuf::bytesPresent(),
-			this->inBuf::bytesPresent());
+			this->out.bytesPresent(),
+			this->in.bytesPresent());
 #	endif
 
 	status = this->processMsg();

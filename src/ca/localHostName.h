@@ -13,7 +13,7 @@
 #ifndef localHostNameh
 #define localHostNameh
 
-#include <string>
+#include <string.h>
 
 class localHostName {
 public:

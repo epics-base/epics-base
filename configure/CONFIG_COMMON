@@ -240,8 +240,8 @@ STATIC_LDFLAGS = $(STATIC_LDFLAGS_$(STATIC_BUILD))
 STATIC_LDLIBS = $(STATIC_LDLIBS_$(STATIC_BUILD))
 
 #--------------------------------------------------
-# cflags for library src file 
-LIBRARY_SRCS=$(basename $(foreach lib,$(LIBRARY),$($(lib)_OBJS) $(LIBRARY_OBJS)))
+# cflags for shared library src files (from SHRLIB_CFLAGS)
+LIBRARY_SRCS=$(basename $(foreach lib,$(LIBRARY) $(LOADABLE_LIBRARY),$($(lib)_OBJS) $(LIBRARY_OBJS)))
 LIBRARY_SRC_CFLAGS=$($(patsubst $*,SHRLIB,$(findstring $*,$(LIBRARY_SRCS)))_CFLAGS)
 
 #--------------------------------------------------

@@ -200,8 +200,8 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 				UNLOCKEVENTS;
 			}
 			LOCK;
-			dllDelete(&pend_read_list, monix);
-			dllAdd(&free_event_list, monix);
+			ellDelete(&pend_read_list, monix);
+			ellAdd(&free_event_list, monix);
 			UNLOCK;
 
 			piiu->outstanding_ack_count--;
@@ -225,8 +225,8 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 			 */
 			if (!t_postsize) {
 				LOCK;
-				dllDelete(&monix->chan->eventq, monix);
-				dllAdd(&free_event_list, monix);
+				ellDelete(&monix->chan->eventq, monix);
+				ellAdd(&free_event_list, monix);
 				UNLOCK;
 
 				piiu->outstanding_ack_count--;
@@ -438,8 +438,8 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 			struct ioc_in_use *piiu = &iiu[chix->iocix];
 
 			LOCK;
-			dllDelete(&piiu->chidlist, chix);
-			dllAdd(&iiu[BROADCAST_IIU].chidlist, chix);
+			ellDelete(&piiu->chidlist, chix);
+			ellAdd(&iiu[BROADCAST_IIU].chidlist, chix);
 			chix->iocix = BROADCAST_IIU;
 			if (!piiu->chidlist.count)
 				close_ioc(piiu);
@@ -471,11 +471,11 @@ post_msg(hdrptr, pbufcnt, pnet_addr, piiu)
 			     monix;
 			     monix = (evid) monix->node.next)
 				if (monix->chan == chix) {
-					dllDelete(&pend_read_list, monix);
-					dllAdd(&free_event_list, monix);
+					ellDelete(&pend_read_list, monix);
+					ellAdd(&free_event_list, monix);
 				}
-			dllConcat(&free_event_list, &chix->eventq);
-			dllDelete(&piiu->chidlist, chix);
+			ellConcat(&free_event_list, &chix->eventq);
+			ellDelete(&piiu->chidlist, chix);
 			free(chix);
 			piiu->outstanding_ack_count--;
 			if (!piiu->chidlist.count)
@@ -625,9 +625,9 @@ struct in_addr			*pnet_addr;
 	  	if(chan->iocix != BROADCAST_IIU)
 	   		ca_signal(ECA_NEWADDR, (char *)(chan+1));
 		chpiiu = &iiu[chan->iocix];
-          	dllDelete(&chpiiu->chidlist, chan);
+          	ellDelete(&chpiiu->chidlist, chan);
           	chan->iocix = newiocix;
-          	dllAdd(&iiu[newiocix].chidlist, chan);
+          	ellAdd(&iiu[newiocix].chidlist, chan);
         }
 
 	/*
@@ -708,7 +708,7 @@ int 	lock;
  		LOCK;
 	}
 
-    	while(pioe = (struct pending_io_event *) dllGet(&ioeventlist)){
+    	while(pioe = (struct pending_io_event *) ellGet(&ioeventlist)){
       		(*pioe->io_done_sub)(pioe->io_done_arg);
       		free(pioe);
 	}
@@ -740,9 +740,9 @@ client_channel_exists(chan)
 
         for (piiu = iiu; piiu < pnext_iiu; piiu++) {
                 /*
-                 * dllFind returns the node number or ERROR
+                 * ellFind returns the node number or ERROR
                  */
-                status = dllFind(&piiu->chidlist, chan);
+                status = ellFind(&piiu->chidlist, chan);
                 if (status != ERROR) {
                         return TRUE;
                 }

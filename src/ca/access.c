@@ -763,7 +763,7 @@ ca_process_exit()
 #		ifdef vxWorks
 			chix = (chid) & ca_temp->ca_local_chidlist.node;
 			while (chix = (chid) chix->node.next){
-				while (monix = (evid) dllGet(&chix->eventq)) {
+				while (monix = (evid) ellGet(&chix->eventq)) {
 					status = db_cancel_event(monix + 1);
 					if (status == ERROR)
 						abort();
@@ -785,7 +785,7 @@ ca_process_exit()
 						"could not close event facility by id");
 			}
 
-			dllFree(&ca_temp->ca_lcl_buff_list);
+			ellFree(&ca_temp->ca_lcl_buff_list);
 #		endif
 
 		/*
@@ -809,8 +809,8 @@ ca_process_exit()
 		 * remove remote chid blocks and event blocks
 		 */
 		for (i = 0; i < ca_temp->ca_nxtiiu; i++) {
-			while (chix = (chid) dllGet(&ca_temp->ca_iiu[i].chidlist)) {
-				while (monix = (evid) dllGet(&chix->eventq)) {
+			while (chix = (chid) ellGet(&ca_temp->ca_iiu[i].chidlist)) {
+				while (monix = (evid) ellGet(&chix->eventq)) {
 					free((char *)monix);
 				}
 				free((char *)chix);
@@ -821,15 +821,15 @@ ca_process_exit()
 		 * remove local chid blocks, paddr blocks, waiting ev blocks
 		 */
 #		ifdef vxWorks
-			while (chix = (chid) dllGet(&ca_temp->ca_local_chidlist))
+			while (chix = (chid) ellGet(&ca_temp->ca_local_chidlist))
 				free((char *)chix);
-			dllFree(&ca_temp->ca_dbfree_ev_list);
+			ellFree(&ca_temp->ca_dbfree_ev_list);
 #		endif
 
 		/* remove remote waiting ev blocks */
-		dllFree(&ca_temp->ca_free_event_list);
+		ellFree(&ca_temp->ca_free_event_list);
 		/* remove any pending read blocks */
-		dllFree(&ca_temp->ca_pend_read_list);
+		ellFree(&ca_temp->ca_pend_read_list);
 
 		/*
 		 * force this macro to use ca_temp
@@ -972,7 +972,7 @@ int ca_build_and_connect
 					chix->paddr)->no_elements;
 			chix->iocix = LOCAL_IIU;
 			chix->state = cs_conn;
-			dllInit(&chix->eventq);
+			ellInit(&chix->eventq);
 			strncpy(chix + 1, name_str, strcnt);
 
 			/* check for just a search */
@@ -990,7 +990,7 @@ int ca_build_and_connect
 				}
 			}
 			LOCK;
-			dllAdd(&local_chidlist, chix);
+			ellAdd(&local_chidlist, chix);
 			UNLOCK;
 
 			if (chix->connection_func) {
@@ -1039,12 +1039,12 @@ int ca_build_and_connect
 		chix->build_value = (void *) pvalue;
 		chix->name_length = strcnt;
 		chix->state = cs_never_conn;
-		dllInit(&chix->eventq);
+		ellInit(&chix->eventq);
 
 		/* Save this channels name for retry if required */
 		strncpy(chix + 1, name_str, strcnt);
 
-		dllAdd(&iiu[BROADCAST_IIU].chidlist, chix);
+		ellAdd(&iiu[BROADCAST_IIU].chidlist, chix);
 		/*
 		 * set the conn tries back to zero so this channel's location
 		 * can be found
@@ -1268,7 +1268,7 @@ ca_array_get_callback
 #endif
 
 	LOCK;
-	if (!(monix = (evid) dllGet(&free_event_list)))
+	if (!(monix = (evid) ellGet(&free_event_list)))
 		monix = (evid) malloc(sizeof *monix);
 
 	if (monix) {
@@ -1279,7 +1279,7 @@ ca_array_get_callback
 		monix->type = type;
 		monix->count = count;
 
-		dllAdd(&pend_read_list, monix);
+		ellAdd(&pend_read_list, monix);
 
 		issue_get_callback(monix);
 
@@ -1622,7 +1622,7 @@ void		*astarg;
       return ECA_ALLOCMEM;
     pioe->io_done_arg = astarg;
     pioe->io_done_sub = ast;
-    dllAdd(&ioeventlist,pioe);
+    ellAdd(&ioeventlist,pioe);
     UNLOCK;
   }
 
@@ -1692,15 +1692,15 @@ long				mask;
         dbevsize = db_sizeof_event_block();
 
 
-      if(!(monix = (evid)dllGet(&dbfree_ev_list)))
+      if(!(monix = (evid)ellGet(&dbfree_ev_list)))
         monix = (evid)malloc(sizeof(*monix)+dbevsize);
     }
     else
-      if(!(monix = (evid)dllGet(&free_event_list)))
+      if(!(monix = (evid)ellGet(&free_event_list)))
         monix = (evid)malloc(sizeof *monix);
   }
 # else
-  if(!(monix = (evid)dllGet(&free_event_list)))
+  if(!(monix = (evid)ellGet(&free_event_list)))
     monix = (evid) malloc(sizeof *monix);
 # endif
 
@@ -1745,7 +1745,7 @@ long				mask;
 	is no chance that it will be deleted 
 	at exit before it is completely created
       */
-      dllAdd(&chix->eventq, monix);
+      ellAdd(&chix->eventq, monix);
 
       /* 
 	force event to be called at least once
@@ -1766,7 +1766,7 @@ long				mask;
 
   /* It can be added to the list any place if it is remote */
   /* Place in the channel list */
-  dllAdd(&chix->eventq, monix);
+  ellAdd(&chix->eventq, monix);
 
   ca_request_event(monix);
 
@@ -1862,7 +1862,7 @@ void			*pfl;
   	void			*pval;
   	register unsigned	size;
 	struct tmp_buff{
-		NODE		node;
+		ELLNODE		node;
 		unsigned	size;
 	};
 	struct tmp_buff		*pbuf = NULL;
@@ -1901,7 +1901,7 @@ void			*pfl;
 			pbuf = (struct tmp_buff *)
 					lcl_buff_list.node.next;
 			if(pbuf->size >= size){
-				dllDelete(
+				ellDelete(
 					&lcl_buff_list,
 					pbuf);
 			}else
@@ -1981,7 +1981,7 @@ void			*pfl;
 		if(ptbuf)
 			ptbuf = (struct tmp_buff *) ptbuf->node.previous;
 
-		dllInsert(	
+		ellInsert(	
 			&lcl_buff_list,
 			ptbuf,
 			pbuf);
@@ -2033,16 +2033,16 @@ evid   monix;
 		 * dont allow two threads to delete the same moniitor at once
 		 */
 		LOCK;
-		status = dllFind(&chix->eventq, monix);
+		status = ellFind(&chix->eventq, monix);
 		if (status != ERROR) {
-			dllDelete(&chix->eventq, monix);
+			ellDelete(&chix->eventq, monix);
 			status = db_cancel_event(monix + 1);
 		}
 		UNLOCK;
 		if (status == ERROR)
 			return ECA_BADMONID;
 
-		dllAdd(&dbfree_ev_list, monix);
+		ellAdd(&dbfree_ev_list, monix);
 
 		return ECA_NORMAL;
 	}
@@ -2086,7 +2086,7 @@ evid   monix;
 		piiu->outstanding_ack_count++;
 	}
 	else{
-		dllDelete(&monix->chan->eventq, monix);
+		ellDelete(&monix->chan->eventq, monix);
 	}
 	UNLOCK;
 
@@ -2150,17 +2150,17 @@ chid   chix;
 			/*
 			 * clear out the events for this channel
 			 */
-			while (monix = (evid) dllGet(&chix->eventq)) {
+			while (monix = (evid) ellGet(&chix->eventq)) {
 				status = db_cancel_event(monix + 1);
 				if (status == ERROR)
 					abort();
-				dllAdd(&dbfree_ev_list, monix);
+				ellAdd(&dbfree_ev_list, monix);
 			}
 
 			/*
 			 * clear out this channel
 			 */
-			dllDelete(&local_chidlist, chix);
+			ellDelete(&local_chidlist, chix);
 			free((char *) chix);
 
 			break;	/* to unlock exit */
@@ -2174,8 +2174,8 @@ chid   chix;
 		 * check for conn state while locked to avoid a race
 		 */
 		if(old_chan_state != cs_conn){
-			dllConcat(&free_event_list, &chix->eventq);
-			dllDelete(&piiu->chidlist, chix);
+			ellConcat(&free_event_list, &chix->eventq);
+			ellDelete(&piiu->chidlist, chix);
 			if (chix->iocix != BROADCAST_IIU && 
 					!piiu->chidlist.count){
 				close_ioc(piiu);

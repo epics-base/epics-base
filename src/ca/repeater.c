@@ -82,7 +82,7 @@ static char *sccsId = "$Id$\t$Date$";
 	@@@@ dont compile @@@@
 #endif
 
-#include		<dllLib.h>
+#include		<ellLib.h>
 #include		<iocmsg.h>
 #include		<os_depen.h>
 
@@ -91,12 +91,12 @@ static char *sccsId = "$Id$\t$Date$";
  *	per machine so we dont care about reentrancy
  */
 struct one_client{
-	NODE			node;
+	ELLNODE			node;
   	struct sockaddr_in	from;
 };
 
 static
-LIST	client_list;
+ELLLIST	client_list;
 
 static
 char	buf[MAX_UDP]; 
@@ -172,7 +172,7 @@ ca_repeater()
   	struct one_client		*pclient;
   	struct one_client		*pnxtclient;
 
-	dllInit(&client_list);
+	ellInit(&client_list);
 
      	/* 	allocate a socket			*/
       	sock = socket(	AF_INET,	/* domain	*/
@@ -274,7 +274,7 @@ ca_repeater()
 					malloc(sizeof *pclient);
 				if(pclient){
 					pclient->from = from;
-					dllAdd(&client_list, pclient);
+					ellAdd(&client_list, pclient);
 #ifdef DEBUG
 					ca_printf("Added %x %d\n", from.sin_port, size);
 #endif
@@ -356,7 +356,7 @@ struct one_client		*pclient;
 	socket_close(sock);
 
 	if(!present){
-		dllDelete(&client_list, pclient);
+		ellDelete(&client_list, pclient);
 		free(pclient);
 #ifdef DEBUG
 		ca_printf("Deleted\n");

@@ -1,0 +1,16 @@
+This directory (misc) contains additional files to compliment
+the virtual linac demo application. 
+
+For full functionality the sequencer module must be built and loaded.
+
+Virtual_Linac_Info.pdf : Description of the Virtual Linac
+*.adl                  : medm display files
+*.gif                  : images used in medm files
+
+To start the ioc, refer to the README file in the iocBoot 
+directory.
+
+To start medm, use the following command:
+medm -local -x -macro user=_USER_ Virtual_Linac.adl
+
+

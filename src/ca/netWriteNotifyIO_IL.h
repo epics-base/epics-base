@@ -28,22 +28,3 @@ inline void netWriteNotifyIO::operator delete ( void *pCadaver, size_t size )
     netWriteNotifyIO::freeList.release ( pCadaver, size );
 }
 
-//
-// we need to be careful about exporting a raw IO
-// pointer because the IO object may be deleted 
-// at any time when the channel disconnects or the
-// IO completes
-//
-//inline bool netWriteNotifyIO::factory ( nciu &chan, cacNotify &notify, ca_uint32_t &id )
-//{
-//    netWriteNotifyIO *pIO = new netWriteNotifyIO ( chan, notify );
-//    if ( pIO ) {
-//       id = pIO->getId ();
-//        return true;
-//    }
-//    else {
-//        return false;
-//    }
-//}
-
-

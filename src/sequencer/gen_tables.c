@@ -13,6 +13,7 @@
 01mar94,ajk	Implemented new interface to sequencer (see seqCom.h).
 01mar94,ajk	Implemented assignment of array elements to db channels.
 17may94,ajk	removed old event flag (-e) option.
+20jul95,ajk	Added unsigned types.
 ***************************************************************************/
 /*#define	DEBUG	1*/
 
@@ -75,7 +76,7 @@ gen_db_blocks()
 #ifdef	DEBUG
 		fprintf(stderr, "gen_db_blocks: index=%d, num_elem=%d\n",
 			cp->index, cp->num_elem);
-#endif	/* DEBUG */
+#endif	DEBUG
 
 		if (cp->num_elem == 0)
 		{	/* Variable assigned to single pv */
@@ -185,6 +186,10 @@ int		type;
 	  case V_SHORT:	return "short";
 	  case V_INT:	return "int";
 	  case V_LONG:	return "long";
+	  case V_UCHAR:	return "unsigned char";
+	  case V_USHORT:return "unsigned short";
+	  case V_UINT:	return "unsigned int";
+	  case V_ULONG:	return "unsigned long";
 	  case V_FLOAT:	return "float";
 	  case V_DOUBLE: return "double";
 	  case V_STRING: return "string";
@@ -415,7 +420,7 @@ int		numEventWords;
 	for (n = 0; n < numEventWords; n++)
 		fprintf(stderr, " 0x%x", pEventWords[n]);
 	fprintf(stderr, "\n");
-#endif	/* DEBUG */
+#endif	DEBUG
 }
 
 /* Evaluate the event mask for a given transition (when() statement). 

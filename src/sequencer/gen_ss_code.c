@@ -81,7 +81,7 @@ Expr		*sp;
 
 	printf("\n/* Delay function for state \"%s\" in state set \"%s\" */\n",
 	 sp->value, ssp->value);
-	printf("static D_%s_%s(ssId, pVar)\n", ssp->value, sp->value);
+	printf("static void D_%s_%s(ssId, pVar)\n", ssp->value, sp->value);
 	printf("SS_ID\tssId;\n");
 	printf("struct UserVar\t*pVar;\n{\n");
 
@@ -108,7 +108,7 @@ Expr		*sp;
 
 #ifdef	DEBUG
 	fprintf("stderr, "eval_delay: type=%s\n", stype[ep->type]);
-#endif	/* DEBUG */
+#endif	DEBUG
 
 	/* Generate 1-st part of function w/ 1-st 2 parameters */
 	delay_id = (int)ep->right; /* delay id was previously assigned */
@@ -140,7 +140,8 @@ Expr		*ssp; /* Parent state set */
 	/* Action function declaration */
 	printf("\n/* Action function for state \"%s\" in state set \"%s\" */\n",
 	 sp->value, ssp->value);
-	printf("static A_%s_%s(ssId, pVar, transNum)\n", ssp->value, sp->value);
+	printf("static void A_%s_%s(ssId, pVar, transNum)\n",
+	 ssp->value, sp->value);
 	printf("SS_ID\tssId;\n");
 	printf("struct UserVar\t*pVar;\n");
 	printf("short\ttransNum;\n{\n");
@@ -186,7 +187,7 @@ Expr		*ssp;
 
 	printf("\n/* Event function for state \"%s\" in state set \"%s\" */\n",
 	 sp->value, ssp->value);
-	printf("static E_%s_%s(ssId, pVar, pTransNum, pNextState)\n",
+	printf("static long E_%s_%s(ssId, pVar, pTransNum, pNextState)\n",
 	 ssp->value, sp->value);
 	printf("SS_ID\tssId;\n");
 	printf("struct UserVar\t*pVar;\n");
@@ -322,7 +323,7 @@ int		level;		/* indentation level */
 	case E_VAR:
 #ifdef	DEBUG
 		fprintf(stderr, "E_VAR: %s\n", ep->value);
-#endif	/* DEBUG */
+#endif	DEBUG
 		if(reent_opt)
 		{	/* Make variables point to allocated structure */
 			Var		*vp;
@@ -349,7 +350,7 @@ int		level;		/* indentation level */
 	case E_FUNC:
 #ifdef	DEBUG
 		fprintf(stderr, "E_FUNC: %s\n", ep->value);
-#endif	/* DEBUG */
+#endif	DEBUG
 		if (special_func(stmt_type, ep, sp))
 			break;
 		printf("%s(", ep->value);
@@ -469,7 +470,7 @@ Expr		*sp;		/* current State struct */
 
 #ifdef	DEBUG
 	fprintf(stderr, "special_func: func_code=%d\n", func_code);
-#endif	/* DEBUG */
+#endif	DEBUG
 	switch (func_code)
 	{
 	    case F_DELAY:
@@ -620,7 +621,7 @@ char		*fname;		/* function name */
 	{
 #ifdef	DEBUG
 	fprintf(stderr, "gen_pv_func: var=%s\n", ep1->value);
-#endif	/* DEBUG */
+#endif	DEBUG
 		cp = vp->chan;
 		index = cp->index;
 	}
@@ -664,7 +665,7 @@ gen_exit_handler()
 	Expr		*ep;
 
 	printf("/* Exit handler */\n");
-	printf("static exit_handler(ssId, pVar)\n");
+	printf("static void exit_handler(ssId, pVar)\n");
 	printf("int\tssId;\n");
 	printf("struct UserVar\t*pVar;\n{\n");
 	for (ep = exit_code_list; ep != 0; ep = ep->next)

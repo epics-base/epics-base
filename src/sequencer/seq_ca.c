@@ -43,24 +43,25 @@
  * 28mar94,ajk	Restructured event& callback handlers to call proc_db_events().
  * 29mar94,ajk	Removed getPtrToValue().  Offset is now in db_channel structure.
  * 08apr94,ajk	Added support for time stamp.
+ * 17jan96,ajk	Removed ca_import_cancel(), which is now in channel access lib.
+ * 17jan96,ajk	Many routines changed to use ANSI-style function headers.
  */
 
 #define		ANSI
 #include	"seq.h"
 
-LOCAL VOID proc_db_events(union db_access_val *, CHAN *, int);
+LOCAL VOID proc_db_events(union db_access_val *, CHAN *, long);
 
 /*#define		DEBUG*/
 
 #ifdef		DEBUG
 #undef		LOCAL
 #define		LOCAL
-#endif		/* DEBUG */
+#endif		DEBUG
 /*
  * seq_connect() - Connect to all database channels through channel access.
  */
-seq_connect(pSP)
-SPROG		*pSP;
+long seq_connect(SPROG *pSP)
 {
 	CHAN		*pDB;
 	int		status, i;
@@ -79,7 +80,7 @@ SPROG		*pSP;
 #ifdef	DEBUG
 		logMsg("seq_connect: connect %s to %s\n",
 		 pDB->pVarName, pDB->dbName);
-#endif	/* DEBUG */
+#endif	DEBUG
 		/* Connect to it */
 		status = ca_build_and_connect(
 			pDB->dbName,		/* DB channel name */
@@ -118,8 +119,7 @@ SPROG		*pSP;
  * args points to CA event handler argument structure.  args.usr contains
  * a pointer to the channel structure (CHAN *).
  */
-VOID seq_event_handler(args)
-struct	event_handler_args args;
+VOID seq_event_handler(struct event_handler_args args)
 {
 	/* Process event handling in each state set */
 	proc_db_events((union db_access_val *)args.dbr, (CHAN *)args.usr, MON_COMPLETE);
@@ -132,8 +132,7 @@ struct	event_handler_args args;
  * Called when a "get" completes.
  * args.usr points to the db structure (CHAN *) for tis channel.
  */
-VOID seq_callback_handler(args)
-struct event_handler_args	args;
+VOID seq_callback_handler(struct event_handler_args args)
 {
 
 	/* Process event handling in each state set */
@@ -143,10 +142,7 @@ struct event_handler_args	args;
 }
 
 /* Common code for event and callback handling */
-LOCAL VOID proc_db_events(pAccess, pDB, complete_type)
-union db_access_val	*pAccess;
-CHAN			*pDB;
-int			complete_type;
+LOCAL VOID proc_db_events(union db_access_val *pAccess, CHAN *pDB, long complete_type)
 {
 	SPROG			*pSP;
 	void			*pVal;
@@ -154,7 +150,7 @@ int			complete_type;
 
 #ifdef	DEBUG
 	logMsg("proc_db_events: var=%s, pv=%s\n", pDB->VarName, pDB->dbName);
-#endif	/* DEBUG */
+#endif	DEBUG
 
 	/* Copy value returned into user variable */
 	pVal = (void *)pAccess + pDB->dbOffset; /* ptr to data in CA structure */
@@ -170,6 +166,12 @@ int			complete_type;
 	/* Get ptr to the state program that owns this db entry */
 	pSP = pDB->sprog;
 
+	/* Indicate completed pvGet() */
+	if (complete_type == GET_COMPLETE)
+	{
+		pDB->getComplete = TRUE;
+	}
+
 	/* Wake up each state set that uses this channel in an event */
 	seqWakeup(pSP, pDB->eventNum);
 
@@ -177,28 +179,24 @@ int			complete_type;
 	if (pDB-> efId > 0)
 		seq_efSet((SS_ID)pSP->pSS, pDB->efId);
 
-	/* Special processing for completed pvGet() */
-	if (complete_type == GET_COMPLETE)
-	{
-		pDB->getComplete = TRUE;
-
-		/* If syncronous pvGet then notify pending state set */
-		if (pDB->getSemId != NULL)
-			semGive(pDB->getSemId);
-	}
+	/* Special processing for completed synchronous (-a) pvGet() */
+	if ( (complete_type == GET_COMPLETE) && ((pSP->options & OPT_ASYNC) == 0) )
+		semGive(pDB->getSemId);
 
 	return;
 }
 
 /*	Disconnect all database channels */
-seq_disconnect(pSP)
-SPROG		*pSP;
+/*#define	DEBUG_DISCONNECT*/
+
+long seq_disconnect(SPROG *pSP)
 {
 	CHAN		*pDB;
 	STATUS		status;
+	extern int	ca_static;
 	int		i;
 	extern int	seqAuxTaskId;
-	SPROG		*pMySP; /* NULL if this task is not a sequencer task */
+	SPROG		*pMySP; /* will be NULL if this task is not a sequencer task */
 
 	/* Did we already disconnect? */
 	if (pSP->connCount < 0)
@@ -208,7 +206,8 @@ SPROG		*pSP;
 	pMySP = seqFindProg(taskIdSelf() );
 	if (pMySP == NULL)
 	{
-		ca_import(seqAuxTaskId); /* not a sequencer task */
+		status = ca_import(seqAuxTaskId); /* not a sequencer task */
+		SEVCHK (status, "seq_disconnect: ca_import");
 	}
 
 	pDB = pSP->pChan;
@@ -216,20 +215,14 @@ SPROG		*pSP;
 	{
 		if (!pDB->assigned)
 			continue;
-#ifdef	DEBUG
+#ifdef	DEBUG_DISCONNECT
 		logMsg("seq_disconnect: disconnect %s from %s\n",
 		 pDB->pVarName, pDB->dbName);
 		taskDelay(30);
-#endif	/* DEBUG */
+#endif	/*DEBUG_DISCONNECT*/
 		/* Disconnect this channel */
 		status = ca_clear_channel(pDB->chid);
-
-		if (status != ECA_NORMAL)
-		{
-			/* SEVCHK(status, "ca_clear_chan"); */
-			/* ca_task_exit(); */
-			/* return -1; */
-		}
+		SEVCHK (status, "seq_disconnect: ca_clear_channel");
 
 		/* Clear monitor & connect indicators */
 		pDB->monitored = FALSE;
@@ -243,8 +236,11 @@ SPROG		*pSP;
 	/* Cancel CA context if it was imported above */
 	if (pMySP == NULL)
 	{
-logMsg("seq_disconnect: cancel import CA context\n");
-		ca_import_cancel(taskIdSelf());
+#ifdef	DEBUG_DISCONNECT
+		logMsg("seq_disconnect: ca_import_cancel\n");
+#endif	/*DEBUG_DISCONNECT*/
+		/*ca_import_cancel(taskIdSelf());*/
+		status = taskVarDelete(taskIdSelf(), &ca_static);
 	}
 
 	return 0;
@@ -254,8 +250,7 @@ logMsg("seq_disconnect: cancel import CA context\n");
  * seq_conn_handler() - Sequencer connection handler.
  * Called each time a connection is established or broken.
  */
-VOID seq_conn_handler(args)
-struct connection_handler_args	args;
+VOID seq_conn_handler(struct connection_handler_args args)
 {
 	CHAN		*pDB;
 	SPROG		*pSP;
@@ -274,7 +269,7 @@ struct connection_handler_args	args;
 		pDB->monitored = FALSE;
 #ifdef	DEBUG
 		logMsg("%s disconnected from %s\n", pDB->VarName, pDB->dbName);
-#endif	/* DEBUG */
+#endif	DEBUG
 	}
 	else	/* PV connected */
 	{
@@ -284,7 +279,7 @@ struct connection_handler_args	args;
 			pDB->monitored = TRUE;
 #ifdef	DEBUG
 		logMsg("%s connected to %s\n", pDB->VarName, pDB->dbName);
-#endif	/* DEBUG */
+#endif	DEBUG
 		pDB->dbCount = ca_element_count(args.chid);
 		if (pDB->dbCount > pDB->count)
 			pDB->dbCount = pDB->count;
@@ -300,9 +295,7 @@ struct connection_handler_args	args;
  * seqWakeup() -- wake up each state set that is waiting on this event
  * based on the current event mask.   EventNum = 0 means wake all state sets.
  */
-VOID seqWakeup(pSP, eventNum)
-SPROG		*pSP;
-int		eventNum;
+VOID seqWakeup(SPROG *pSP, long eventNum)
 {
 	int		nss;
 	SSCB		*pSS;
@@ -318,76 +311,4 @@ int		eventNum;
 
 	}
 	return;
-}
-#include "memLib.h"
-#include "taskVarLib.h"
-#include "taskLib.h"
-/*******************************************************************************
-* P A  T C H E D  5.02b -- allows call from taskDeleteHook routine -- ajk
-* taskVarDelete - remove a task variable from a task
-*
-* This routine removes the specified task variable from the calling
-* task's context.  The private value of that variable is lost.
-*
-* RETURNS
-* OK, or
-* ERROR if the calling task does not own the specified task variable.
-*
-* SEE ALSO: taskVarAdd(2), taskVarGet(2), taskVarSet(2)
-*/
-
-LOCAL STATUS LtaskVarDelete (tid, pVar)
-    int tid;	/* task id whose task variable is to be retrieved */
-    int *pVar;	/* pointer to task variable to be removed from task */
-
-    {
-    FAST TASK_VAR **ppTaskVar;		/* ptr to ptr to next node */
-    FAST TASK_VAR *pTaskVar;
-    WIND_TCB *pTcb = (WIND_TCB *)tid;	/* P A T C H -- ajk 19feb93*/
-
-    if (pTcb == NULL)			/* check that task is valid */
-	return (ERROR);
-
-    /* find descriptor for specified task variable */
-
-    for (ppTaskVar = &pTcb->pTaskVar;
-	 *ppTaskVar != NULL;
-	 ppTaskVar = &((*ppTaskVar)->next))
-	{
-	pTaskVar = *ppTaskVar;
-
-	if (pTaskVar->address == pVar)
-	    {
-	    /* if active task, replace background value */
-
-	    if (taskIdCurrent == pTcb)
-		*pVar = pTaskVar->value;
-
-	    *ppTaskVar = pTaskVar->next;/* delete variable from list */
-
-	    free ((char *)pTaskVar);	/* free storage of deleted cell */
-
-	    return (OK);
-	    }
-	}
-
-    /* specified address is not a task variable for specified task */
-
-    errnoSet (S_taskLib_TASK_VAR_NOT_FOUND);
-    return (ERROR);
-    }
-/* Temporary routine to cancel ca_import() -- THIS SHOULD GO INTO CHANNEL ACCESS! */
-ca_import_cancel(tid)
-int		tid;
-{
-	extern int	ca_static;
-	int		status;
-
-	status = LtaskVarDelete(tid, &ca_static);
-	if (status != OK)
-	{
-		logMsg("Seq: taskVarDelete failed for tid = 0x%x\n", tid);
-	}
-
-	return status;
 }

@@ -26,6 +26,7 @@
 24nov93,ajk	Changed implementation of event bits to support unlimited channels
 20may94,ajk	Changed sprog_delete() to spawn a separate cleanup task.
 19oct95,ajk/rmw Fixed bug which kept events from being cleared in old eventflag mode
+20jul95,ajk	Add user-specified task priority to taskSpwan().
 ***************************************************************************/
 /*#define		DEBUG*/
 #define		ANSI
@@ -44,10 +45,10 @@ LOCAL	long seq_getTimeout(SSCB *);
 
 /*
  * sequencer() - Sequencer main task entry point.
- *  */
-sequencer(pSP, stack_size, pTaskName)
+ */
+long sequencer(pSP, stack_size, pTaskName)
 SPROG		*pSP;	/* ptr to original (global) state program table */
-int		stack_size;	/* stack size */
+long		stack_size;	/* stack size */
 char		*pTaskName;	/* Parent task name */
 {
 	SSCB		*pSS;
@@ -83,7 +84,7 @@ char		*pTaskName;	/* Parent task name */
 		/* Spawn the task */
 		task_id = taskSpawn(
 		  task_name,				/* task name */
-		  SPAWN_PRIORITY+pSS->taskPriority,	/* priority */
+		  pSP->taskPriority,	/* priority */
 		  SPAWN_OPTIONS,			/* task options */
 		  stack_size,				/* stack size */
 		  (FUNCPTR)ss_entry,			/* entry point */
@@ -115,7 +116,7 @@ SSCB	*pSS;
 	ss_task_init(pSP, pSS);
 	
 	/* If "+c" option, wait for all channels to connect */
-	if (pSP->options & OPT_CONN)
+	if ((pSP->options & OPT_CONN) != 0)
 		seq_waitConnect(pSP, pSS);
 
 	/* Initilaize state set to enter the first state */
@@ -323,6 +324,7 @@ int		tid; /* task being deleted */
 	SPROG		*pSP;
 	extern		int seq_cleanup();
 	SEM_ID		cleanupSem;
+	int		status;
 	
 	pSP = seqFindProg(tid);
 	if (pSP == NULL)
@@ -332,50 +334,59 @@ int		tid; /* task being deleted */
 	cleanupSem = semBCreate (SEM_Q_FIFO, SEM_EMPTY);
 
 	/* Spawn the cleanup task */
-	taskSpawn("seqCleanup", SPAWN_PRIORITY-1, VX_FP_TASK, 2000, seq_cleanup,
+	taskSpawn("tSeqCleanup", SPAWN_PRIORITY-1, VX_FP_TASK, 8000, seq_cleanup,
 	 tid, (int)pSP, (int)cleanupSem, 0,0,0,0,0,0,0);
 
 	/* Wait for cleanup task completion */
-	semTake(cleanupSem, WAIT_FOREVER);
+	for (;;)
+	{
+		status = semTake(cleanupSem, 600);
+		if (status == OK)
+			break;
+		logMsg("sprog_delete waiting for seq_cleanup\n");
+	}
 	semDelete(cleanupSem);
 
 	return 0;
 }
 
 /* Cleanup task */
+/*#define	DEBUG_CLEANUP*/
+
 seq_cleanup(tid, pSP, cleanupSem)
-int		tid;
+int		tid; /* tid of 1-st SS to be deleted */
 SPROG		*pSP;
 SEM_ID		cleanupSem; /* indicate cleanup is finished */
 {
-	int		nss, tid_ss;
+	int		nss;
 	SSCB		*pSS;
+	extern int	ca_static; /* CA static variable */
 
-	logMsg("Delete %s: pSP=%d=0x%x, tid=%d\n",
-	 pSP->pProgName, pSP, pSP, tid);
+#ifdef	DEBUG_CLEANUP
+	logMsg("Delete %s: pSP=%d=0x%x, tid=%d\n", pSP->pProgName, pSP, pSP, tid);
+#endif	/*DEBUG_CLEANUP*/
 
 	/* Wait for log semaphore (in case a task is doing a write) */
 	semTake(pSP->logSemId, 600);
 
 	/* Remove tasks' watchdog & suspend all state set tasks except self */
-#ifdef	DEBUG
+#ifdef	DEBUG_CLEANUP
 	logMsg("   Suspending state set tasks:\n");
-#endif	/* DEBUG */
+#endif	/*DEBUG_CLEANUP*/
 	pSS = pSP->pSS;
 	for (nss = 0; nss < pSP->numSS; nss++, pSS++)
 	{
-		tid_ss = pSS->taskId;
-
+		if (pSS->taskId == 0)
+			continue;
+#ifdef	DEBUG_CLEANUP
+		logMsg("      tid=%d\n", pSS->taskId);
+#endif	/*DEBUG_CLEANUP*/
 		/* Remove the task from EPICS watchdog */
-		taskwdRemove(tid_ss);
+		taskwdRemove(pSS->taskId);
 
-		if (tid_ss != taskIdSelf() )
-		{
-#ifdef	DEBUG
-			logMsg("    suspend task: tid=%d\n", tid_ss);
-#endif	/* DEBUG */
-			taskSuspend(tid_ss);
-		}
+		/* Suspend the task */
+		if (pSS->taskId != tid)
+			taskSuspend(pSS->taskId);
 	}
 
 	/* Give back log semaphore */
@@ -384,27 +395,37 @@ SEM_ID		cleanupSem; /* indicate cleanup is finished */
 	/* Call user exit routine (only if task has run) */
 	if (pSP->pSS->taskId != 0)
 	{
-#ifdef	DEBUG
+#ifdef	DEBUG_CLEANUP
 		logMsg("   Call exit function\n");
-#endif	/* DEBUG */
+#endif	/*DEBUG_CLEANUP*/
 		pSP->exitFunc( (SS_ID)pSP->pSS, pSP->pVar);
 	}
 
 	/* Disconnect all channels */
+#ifdef	DEBUG_CLEANUP
+	logMsg("   Disconnect all channels\n");
+#endif	/*DEBUG_CLEANUP*/
+
 	seq_disconnect(pSP);
 
 	/* Cancel the CA context for each state set task */
 	for (nss = 0, pSS = pSP->pSS; nss < pSP->numSS; nss++, pSS++)
 	{
-		ca_import_cancel(pSS->taskId);
+		if (pSS->taskId == 0)
+			continue;
+#ifdef	DEBUG_CLEANUP
+		logMsg("   ca_import_cancel(0x%x)\n", pSS->taskId);
+#endif	/*DEBUG_CLEANUP*/
+		/*ca_import_cancel(pSS->taskId);*/
+		taskVarDelete(pSS->taskId, &ca_static);
 	}
 
 	/* Close the log file */
-	if (pSP->logFd > 0 && pSP->logFd != ioGlobalStdGet(1))
+	if ( (pSP->logFd > 0) && (pSP->logFd != ioGlobalStdGet(1)) )
 	{
-#ifdef	DEBUG
+#ifdef	DEBUG_CLEANUP
 		logMsg("Closing log fd=%d\n", pSP->logFd);
-#endif	/* DEBUG */
+#endif	/*DEBUG_CLEANUP*/
 		close(pSP->logFd);
 		pSP->logFd = ioGlobalStdGet(1);
 	}
@@ -416,13 +437,12 @@ SEM_ID		cleanupSem; /* indicate cleanup is finished */
 	pSS = pSP->pSS;
 	for (nss = 0; nss < pSP->numSS; nss++, pSS++)
 	{
-		tid_ss = pSS->taskId;
-		if ( (tid != tid_ss) && (tid_ss != 0) )
+		if ( (pSS->taskId != tid) && (pSS->taskId != 0) )
 		{
-#ifdef	DEBUG
-			logMsg("   delete ss task: tid=%d\n", tid_ss);
-#endif	/* DEBUG */
-			taskDelete(tid_ss);
+#ifdef	DEBUG_CLEANUP
+			logMsg("   delete ss task: tid=%d\n", pSS->taskId);
+#endif	/*DEBUG_CLEANUP*/
+			taskDelete(pSS->taskId);
 		}
 
 		if (pSS->syncSemId != 0)

@@ -74,6 +74,9 @@ int	tid;
 	 ((pSP->options & OPT_ASYNC) != 0), ((pSP->options & OPT_DEBUG) != 0),
 	 ((pSP->options & OPT_NEWEF) != 0), ((pSP->options & OPT_REENT) != 0),
 	 ((pSP->options & OPT_CONN) != 0) );
+	if ((pSP->options & OPT_REENT) != 0)
+		printf("  user variables: address=%d=0x%x, length=%d=0x%x bytes\n",
+		 pSP->pVar, pSP->pVar, pSP->varSize, pSP->varSize);
 	printf("  log file fd=%d\n", pSP->logFd);
 	status = ioctl(pSP->logFd, FIOGETNAME, (int)file_name);
 	if (status != ERROR)
@@ -111,7 +114,7 @@ int	tid;
 				printf(" - expired");
 			printf("\n");
 		}
-#endif	/* DEBUG */
+#endif	DEBUG
 		printf("\n");
 	}
 

@@ -144,7 +144,7 @@ reconcile_variables()
 	{
 #ifdef	DEBUG
 		fprintf(stderr, "reconcile_variables: ss=%s\n", ssp->value);
-#endif	/* DEBUG */
+#endif	DEBUG
 		traverseExprTree(ssp, E_VAR, 0, connect_variable, 0);
 	}
 
@@ -260,6 +260,18 @@ gen_var_decl()
 			break;
 		  case V_SHORT:
 			vstr = "short";
+			break;
+		  case V_UCHAR:
+			vstr = "unsigned char";
+			break;
+		  case V_UINT:
+			vstr = "unsigned int";
+			break;
+		  case V_ULONG:
+			vstr = "unsigned long";
+			break;
+		  case V_USHORT:
+			vstr = "unsigned short";
 			break;
 		  case V_FLOAT:
 			vstr = "float";
@@ -432,7 +444,7 @@ assign_delay_ids()
 
 #ifdef	DEBUG
 	fprintf(stderr, "assign_delay_ids:\n");
-#endif	/* DEBUG */
+#endif	DEBUG
 	for (ssp = ss_list; ssp != 0; ssp = ssp->next)
 	{
 		for (sp = ssp->left; sp != 0; sp = sp->next)

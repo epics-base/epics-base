@@ -20,6 +20,7 @@
 31may94,ajk	Changed handling of escaped C code.
 17feb95,ajk	Removed includes "parse.h" & "snc.h", because this module
 		now gets included in snc.y.
+20jul95,ajk   Added unsigned types.
 ***************************************************************************/
 /* Lexical analyzer for State Notation Compiler (snc).
  *
@@ -142,6 +143,7 @@ HEX	0x([0-9a-fA-F])+
 <SNL>"when"	RETURN(WHEN);
 <SNL>"monitor"	RETURN(MONITOR);
 <SNL>"assign"	RETURN(ASSIGN);
+<SNL>"unsigned"	RETURN(UNSIGNED);
 <SNL>"char"	RETURN(CHAR);
 <SNL>"short"	RETURN(SHORT);
 <SNL>"int"	RETURN(INT);

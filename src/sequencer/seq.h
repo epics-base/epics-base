@@ -1,4 +1,4 @@
-/*	/share/epicsH  %W%     %G%
+/* base/include $Id$
  *
  *	DESCRIPTION: Definitions for the run-time sequencer.
  *
@@ -57,12 +57,10 @@
 #include	"cadef.h"
 #include	"db_access.h"
 #include	"alarm.h"
-#ifdef vxWorks
 #include	"vxWorks.h"
 #include	"ioLib.h"
 #include	"semLib.h"
 #include	"taskLib.h"
-#endif /* vxWorks */
 #endif
 
 /* Structure to hold information about database channels */
@@ -73,14 +71,14 @@ struct	db_channel
 	char		*pVar;		/* ptr to variable */
 	char		*pVarName;	/* variable name string */
 	char		*pVarType;	/* variable type string (e.g. ("int") */
-	int		count;		/* number of elements in array */
-	int		efId;		/* event flag id if synced */
-	int		eventNum;	/* event number */
+	long		count;		/* number of elements in array */
+	long		efId;		/* event flag id if synced */
+	long		eventNum;	/* event number */
 	BOOL		monFlag;	/* TRUE if channel is to be monitored */
 
 	/* These are filled in at run time */
 	char		*dbName;	/* channel name after macro expansion */
-	int		index;		/* index in array of db channels */
+	long		index;		/* index in array of db channels */
 	chid		chid;		/* ptr to channel id (from ca_search()) */
 	BOOL		assigned;	/* TRUE only if channel is assigned */
 	BOOL		connected;	/* TRUE only if channel is connected */
@@ -88,7 +86,7 @@ struct	db_channel
 	short		dbOffset;	/* Offset to value in db access structure */
 	short		status;		/* last db access status code */
 	TS_STAMP	timeStamp;	/* time stamp */
-	int		dbCount;	/* actual count for db access */
+	long		dbCount;	/* actual count for db access */
 	short		severity;	/* last db access severity code */
 	short		size;		/* size (in bytes) of single variable element */
 	short		getType;	/* db get type (e.g. DBR_STS_INT) */
@@ -104,9 +102,9 @@ typedef	struct db_channel CHAN;
 struct	state_info_block
 {
 	char		*pStateName;	/* state name */
-	FUNCPTR		actionFunc;	/* ptr to action routine for this state */
-	FUNCPTR		eventFunc;	/* ptr to event routine for this state */
-	FUNCPTR		delayFunc;	/* ptr to delay setup routine for this state */
+	ACTION_FUNC	actionFunc;	/* ptr to action routine for this state */
+	EVENT_FUNC	eventFunc;	/* ptr to event routine for this state */
+	DELAY_FUNC	delayFunc;	/* ptr to delay setup routine for this state */
 	bitMask		*pEventMask;	/* event mask for this state */
 };
 typedef	struct	state_info_block STATE;
@@ -116,11 +114,11 @@ typedef	struct	state_info_block STATE;
 struct	state_set_control_block
 {
 	char		*pSSName;	/* state set name (for debugging) */
-	int		taskId;		/* task id */
-	int		taskPriority;	/* task priority */
+	long		taskId;		/* task id */
+	long		taskPriority;	/* task priority */
 	SEM_ID		syncSemId;	/* semaphore for event sync */
 	SEM_ID		getSemId;	/* semaphore for synchronous pvGet() */
-	int		numStates;	/* number of states */
+	long		numStates;	/* number of states */
 	STATE		*pStates;	/* ptr to array of state blocks */
 	short		currentState;	/* current state index */
 	short		nextState;	/* next state index */
@@ -128,7 +126,7 @@ struct	state_set_control_block
 	short		errorState;	/* error state index (-1 if none defined) */
 	short		transNum;	/* highest priority trans. # that triggered */
 	bitMask		*pMask;		/* current event mask */
-	int		numDelays;	/* number of delays activated */
+	long		numDelays;	/* number of delays activated */
 	ULONG		delay[MAX_NDELAY]; /* queued delay value in tics */
 	BOOL		delayExpired[MAX_NDELAY]; /* TRUE if delay expired */
 	ULONG		timeEntered;	/* time that a state was entered */
@@ -148,26 +146,26 @@ typedef	struct	macro {
 struct	state_program
 {
 	char		*pProgName;	/* program name (for debugging) */
-	int		taskId;		/* task id (main task) */
+	long		taskId;		/* task id (main task) */
 	BOOL		task_is_deleted;/* TRUE if main task has been deleted */
-	int		taskPriority;	/* task priority */
+	long		taskPriority;	/* task priority */
 	SEM_ID		caSemId;	/* semiphore for locking CA events */
 	CHAN		*pChan;		/* table of channels */
-	int		numChans;	/* number of db channels, incl. unassigned */
-	int		assignCount;	/* number of db channels assigned */
-	int		connCount;	/* number of channels connected */
+	long		numChans;	/* number of db channels, incl. unassigned */
+	long		assignCount;	/* number of db channels assigned */
+	long		connCount;	/* number of channels connected */
 	SSCB		*pSS;		/* array of state set control blocks */
-	int		numSS;		/* number of state sets */
+	long		numSS;		/* number of state sets */
 	char		*pVar;		/* ptr to user variable area */
-	int		varSize;	/* # bytes in user variable area */
+	long		varSize;	/* # bytes in user variable area */
 	MACRO		*pMacros;	/* ptr to macro table */
 	char		*pParams;	/* program paramters */
 	bitMask		*pEvents;	/* event bits for event flags & db */
-	int		numEvents;	/* number of events */
-	int		options;	/* options (bit-encoded) */
-	FUNCPTR		exitFunc;	/* exit function */
+	long		numEvents;	/* number of events */
+	long		options;	/* options (bit-encoded) */
+	EXIT_FUNC	exitFunc;	/* exit function */
 	SEM_ID		logSemId;	/* logfile locking semaphore */
-	int		logFd;		/* logfile file descr. */
+	long		logFd;		/* logfile file descr. */
 };
 typedef	struct	state_program SPROG;
 
@@ -179,20 +177,20 @@ typedef	struct	state_program SPROG;
 #define SPAWN_PRIORITY		100
 
 /* Function declarations for internal sequencer funtions */
-int	seqConnect(SPROG *);
+long	seqConnect(SPROG *);
 VOID	seqEventHandler(struct event_handler_args);
 VOID	seqConnHandler(struct connection_handler_args);
 VOID	seqCallbackHandler(struct event_handler_args);
-VOID	seqWakeup(SPROG *, int);
-int	seq(struct seqProgram *, char *, int);
+VOID	seqWakeup(SPROG *, long);
+long	seq(struct seqProgram *, char *, long);
 VOID	seqFree(SPROG *);
-int	sequencer(SPROG *, int, char *);
+long	sequencer(SPROG *, long, char *);
 VOID	ssEntry(SPROG *, SSCB *);
-int	sprogDelete(int);
-int	seqMacParse(char *, SPROG *);
+long	sprogDelete(long);
+long	seqMacParse(char *, SPROG *);
 char	*seqMacValGet(MACRO *, char *);
-VOID	seqMacEval(char *, char *, int, MACRO *);
+VOID	seqMacEval(char *, char *, long, MACRO *);
 STATUS	seq_log();
-SPROG	*seqFindProg(int);
+SPROG	*seqFindProg(long);
 
-#endif	/* INCLseqh */
+#endif	/*INCLseqh*/

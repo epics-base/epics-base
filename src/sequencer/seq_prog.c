@@ -40,7 +40,7 @@ typedef struct prog_node
  * seqFindProg() - find a program in the state program list from task id.
  */
 SPROG *seqFindProg(taskId)
-int		taskId;
+long		taskId;
 {
 	PROG_NODE	*pNode;
 	SPROG		*pSP;

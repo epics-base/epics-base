@@ -12,6 +12,7 @@
 02may93,ajk	Removed "parameter" definition for functions, and added "%prec"
 		qualifications to some "expr" definitions.
 31may94,ajk	Changed method for handling global C code.
+20jul95,ajk	Added "unsigned" types (see UNSIGNED token).
 ***************************************************************************/
 /*	SNC - State Notation Compiler.
  *	The general structure of a state program is:
@@ -40,7 +41,7 @@
 #ifndef	TRUE
 #define	TRUE	1
 #define	FALSE	0
-#endif	/* TRUE */
+#endif	TRUE
 
 extern	int line_num; /* input file line no. */
 %}
@@ -62,7 +63,8 @@ extern	int line_num; /* input file line no. */
 %token	BAD_CHAR L_BRACKET R_BRACKET
 %token	COLON SEMI_COLON EQUAL
 %token	L_PAREN R_PAREN PERIOD POINTER COMMA OR AND
-%token	MONITOR ASSIGN TO WHEN CHAR SHORT INT LONG FLOAT DOUBLE STRING_DECL
+%token	MONITOR ASSIGN TO WHEN
+%token	UNSIGNED CHAR SHORT INT LONG FLOAT DOUBLE STRING_DECL
 %token	EVFLAG SYNC
 %token	ASTERISK AMPERSAND
 %token	AUTO_INCR AUTO_DECR
@@ -177,6 +179,10 @@ type		/* types for variables defined in SNL */
 |	SHORT		{ $$ = V_SHORT; }
 |	INT		{ $$ = V_INT; }
 |	LONG		{ $$ = V_LONG; }
+|	UNSIGNED CHAR	{ $$ = V_UCHAR; }
+|	UNSIGNED SHORT	{ $$ = V_USHORT; }
+|	UNSIGNED INT	{ $$ = V_UINT; }
+|	UNSIGNED LONG	{ $$ = V_ULONG; }
 |	FLOAT		{ $$ = V_FLOAT; }
 |	DOUBLE		{ $$ = V_DOUBLE; }
 |	STRING_DECL	{ $$ = V_STRING; }

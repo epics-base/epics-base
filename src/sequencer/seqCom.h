@@ -1,4 +1,4 @@
-/*	* base/include seqCom.h,v 1.3 1995/10/10 01:25:08 wright Exp
+/*	* base/include $Id$
  *
  *	DESCRIPTION: Common definitions for state programs and run-time sequencer.
  *
@@ -21,13 +21,14 @@
  *              Los Alamos National Laboratory
  * Modification Log:
  * -----------------
- * 
+ * 09aug95,ajk	added PVOIDFUNC type, added <stdio.h>, and fixed #endif.
  */
 #ifndef	INCLseqComh
 #define	INCLseqComh
 
 #define	MAGIC	940501		/* current magic number for SPROG */
 
+#include	<stdio.h>       /* standard i/o defs */
 #include	"tsDefs.h"	/* time stamp defs */
 
 /* Bit encoding for run-time options */
@@ -50,9 +51,12 @@ typedef long            bitMask;
 #ifndef	TRUE
 #define	TRUE		1
 #define	FALSE		0
-#endif	/* TRUE */
+#endif	/*TRUE*/
 
-typedef	int	(*PFUNC)();	/* ptr to a function */
+typedef	void	(*ACTION_FUNC)();
+typedef	long	(*EVENT_FUNC)();
+typedef	void	(*DELAY_FUNC)();
+typedef	void	(*EXIT_FUNC)();	
 typedef	long	SS_ID;		/* state set id */
 
 #ifdef	OFFSET
@@ -60,7 +64,7 @@ typedef	long	SS_ID;		/* state set id */
 #endif
 /* The OFFSET macro calculates the byte offset of a structure member
  * from the start of a structure */
-#define OFFSET(structure, member) ((int) &(((structure *) 0) -> member))
+#define OFFSET(structure, member) ((long) &(((structure *) 0) -> member))
 
 /* Structure to hold information about database channels */
 struct	seqChan
@@ -70,19 +74,19 @@ struct	seqChan
 					 * or structure offset (+r option) */
 	char		*pVarName;	/* variable name, including subscripts */
 	char		*pVarType;	/* variable type, e.g. "int" */
-	int		count;		/* element count for arrays */
-	int		eventNum;	/* event number for this channel */
-	int		efId;		/* event flag id if synced */
-	int		monFlag;	/* TRUE if channel is to be monitored */
+	long		count;		/* element count for arrays */
+	long		eventNum;	/* event number for this channel */
+	long		efId;		/* event flag id if synced */
+	long		monFlag;	/* TRUE if channel is to be monitored */
 };
 
 /* Structure to hold information about a state */
 struct	seqState
 {
 	char		*pStateName;	/* state name */
-	PFUNC		actionFunc;	/* action routine for this state */
-	PFUNC		eventFunc;	/* event routine for this state */
-	PFUNC		delayFunc;	/* delay setup routine for this state */
+	ACTION_FUNC	actionFunc;	/* action routine for this state */
+	EVENT_FUNC	eventFunc;	/* event routine for this state */
+	DELAY_FUNC	delayFunc;	/* delay setup routine for this state */
 	bitMask		*pEventMask;	/* event mask for this state */
 };
 
@@ -91,24 +95,24 @@ struct	seqSS
 {
 	char		*pSSName;	/* state set name */
 	struct seqState	*pStates;	/* array of state blocks */
-	int		numStates;	/* number of states in this state set */
-	int		errorState;	/* error state index (-1 if none defined) */
+	long		numStates;	/* number of states in this state set */
+	long		errorState;	/* error state index (-1 if none defined) */
 };
 
 /* All information about a state program */
 struct	seqProgram
 {
-	int		magic;		/* magic number */
+	long		magic;		/* magic number */
 	char		*pProgName;	/* program name (for debugging) */
 	struct seqChan	*pChan;		/* table of channels */
-	int		numChans;	/* number of db channels */
+	long		numChans;	/* number of db channels */
 	struct seqSS	*pSS;		/* array of state set info structs */
-	int		numSS;		/* number of state sets */
-	int		varSize;	/* # bytes in user variable area */
+	long		numSS;		/* number of state sets */
+	long		varSize;	/* # bytes in user variable area */
 	char		*pParams;	/* program paramters */
-	int		numEvents;	/* number of event flags */
-	int		options;	/* options (bit-encoded) */
-	PFUNC		exitFunc;	/* exit function */
+	long		numEvents;	/* number of event flags */
+	long		options;	/* options (bit-encoded) */
+	EXIT_FUNC	exitFunc;	/* exit function */
 };
 
 
@@ -121,30 +125,30 @@ struct	seqProgram
  */
 /*#define	ANSI*/
 #ifdef	ANSI
-void	seq_efSet(SS_ID, int);		/* set an event flag */
-int	seq_efTest(SS_ID, int);		/* test an event flag */
-int	seq_efClear(SS_ID, int);	/* clear an event flag */
-int	seq_efTestAndClear(SS_ID, int);	/* test & clear an event flag */
-int	seq_pvGet(SS_ID, int);		/* get pv value */
-int	seq_pvPut(SS_ID, int);		/* put pv value */
-TS_STAMP seq_pvTimeStamp(SS_ID, int);	/* get time stamp value */
-int	seq_pvAssign(SS_ID, int, char *);/* assign/connect to a pv */
-int	seq_pvMonitor(SS_ID, int);	/* enable monitoring on pv */
-int	seq_pvStopMonitor(SS_ID, int);	/* disable monitoring on pv */
-int	seq_pvStatus(SS_ID, int);	/* returns pv alarm status code */
-int	seq_pvSeverity(SS_ID, int);	/* returns pv alarm severity */
-int	seq_pvAssigned(SS_ID, int);	/* returns TRUE if assigned */
-int	seq_pvConnected(SS_ID, int);	/* TRUE if connected */
-int	seq_pvGetComplete(SS_ID, int);	/* TRUE if last get completed */
-int	seq_pvChannelCount(SS_ID);	/* returns number of channels */
-int	seq_pvConnectCount(SS_ID);	/* returns number of channels connected */
-int	seq_pvAssignCount(SS_ID);	/* returns number of channels assigned */
-int	seq_pvCount(SS_ID, int);		/* returns number of elements in array */
+void	seq_efSet(SS_ID, long);		/* set an event flag */
+long	seq_efTest(SS_ID, long);	/* test an event flag */
+long	seq_efClear(SS_ID, long);	/* clear an event flag */
+long	seq_efTestAndClear(SS_ID, long);/* test & clear an event flag */
+long	seq_pvGet(SS_ID, long);		/* get pv value */
+long	seq_pvPut(SS_ID, long);		/* put pv value */
+TS_STAMP seq_pvTimeStamp(SS_ID, long);	/* get time stamp value */
+long	seq_pvAssign(SS_ID, long, char *);/* assign/connect to a pv */
+long	seq_pvMonitor(SS_ID, long);	/* enable monitoring on pv */
+long	seq_pvStopMonitor(SS_ID, long);	/* disable monitoring on pv */
+long	seq_pvStatus(SS_ID, long);	/* returns pv alarm status code */
+long	seq_pvSeverity(SS_ID, long);	/* returns pv alarm severity */
+long	seq_pvAssigned(SS_ID, long);	/* returns TRUE if assigned */
+long	seq_pvConnected(SS_ID, long);	/* TRUE if connected */
+long	seq_pvGetComplete(SS_ID, long);	/* TRUE if last get completed */
+long	seq_pvChannelCount(SS_ID);	/* returns number of channels */
+long	seq_pvConnectCount(SS_ID);	/* returns number of channels connected */
+long	seq_pvAssignCount(SS_ID);	/* returns number of channels assigned */
+long	seq_pvCount(SS_ID, long);	/* returns number of elements in array */
 void	seq_pvFlush();			/* flush put/get requests */
-int	seq_pvIndex(SS_ID, int);	/* returns index of pv */
-int	seq_seqLog();			/* Logging: variable number of parameters */
-void	seq_delayInit(SS_ID, int, float);/* initialize a delay entry */
-int	seq_delay(SS_ID, int);		/* test a delay entry */
+long	seq_pvIndex(SS_ID, long);	/* returns index of pv */
+long	seq_seqLog();			/* Logging: variable number of parameters */
+void	seq_delayInit(SS_ID, long, float);/* initialize a delay entry */
+long	seq_delay(SS_ID, long);		/* test a delay entry */
 char   *seq_macValueGet(SS_ID, char *);	/* Given macro name, return ptr to value */
-#endif	/* ANSI */
-#endif	/* INCLseqComh */
+#endif	/*ANSI*/
+#endif	/*INCLseqComh*/

@@ -33,7 +33,7 @@ LOCAL MACRO *seqMacTblGet(MACRO *, char *);
 VOID seqMacEval(pInStr, pOutStr, maxChar, pMac)
 char	*pInStr;
 char	*pOutStr;
-int	maxChar;
+long	maxChar;
 MACRO	*pMac;
 {
 	char		name[50], *pValue, *pTmp;
@@ -119,7 +119,7 @@ char		*pName;
 
 #ifdef	DEBUG
 	logMsg("seqMacValGet: name=%s", pName);
-#endif	/* DEBUG */
+#endif	DEBUG
 	for (i = 0 ; i < MAX_MACROS; i++, pMac++)
 	{
 		if (pMac->pName != NULL)
@@ -128,14 +128,14 @@ char		*pName;
 			{
 #ifdef	DEBUG
 				logMsg(", value=%s\n", pMac->pValue);
-#endif	/* DEBUG */
+#endif	DEBUG
 				return pMac->pValue;
 			}
 		}
 	}
 #ifdef	DEBUG
 	logMsg(", no value\n");
-#endif	/* DEBUG */
+#endif	DEBUG
 	return NULL;
 }
 /*
@@ -144,7 +144,7 @@ char		*pName;
  * Assumes the table may already contain entries (values may be changed).
  * String for name and value are allocated dynamically from pool.
  */
-int seqMacParse(pMacStr, pSP)
+long seqMacParse(pMacStr, pSP)
 char		*pMacStr;	/* macro definition string */
 SPROG		*pSP;
 {

@@ -14,7 +14,7 @@
 
 void epicsThreadRunable::stop() {};
 
-static void epicsThreadCallEntryPoint ( void *pPvt )
+void epicsThreadCallEntryPoint ( void *pPvt )
 {
     epicsThread *pThread = static_cast <epicsThread *> ( pPvt );
     pThread->begin.wait ();

@@ -181,10 +181,11 @@ static void wdCallback(long ind)
 
 static void ProcessCallback(CALLBACK *pCallback)
 {
-    dbCommon    *pRec = NULL;
-    struct rset *prset = (struct rset *)pRec->rset;
+    dbCommon    *pRec;
+    struct rset *prset;
 
     callbackGetUser(pRec, pCallback);
+    prset = (struct rset *)pRec->rset;
     dbScanLock(pRec);
     (*prset->process)(pRec);
     dbScanUnlock(pRec);

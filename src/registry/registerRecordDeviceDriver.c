@@ -9,12 +9,13 @@
 #include "devSup.h"
 #include "drvSup.h"
 #include "cantProceed.h"
+#define epicsExportSharedSymbols
 #include "registry.h"
 #include "registryRecordType.h"
 #include "registryDeviceSupport.h"
 #include "registryDriverSupport.h"
 
-int registerRecordDeviceDriver(struct dbBase *pdbbase)
+int epicsShareAPI registerRecordDeviceDriver(struct dbBase *pdbbase)
 {
     dbRecordType *pdbRecordType;
     recordTypeLocation *precordTypeLocation;

@@ -13,7 +13,7 @@ of this distribution.
 extern "C" {
 #endif
 
-epicsShareFunc int epicsShareAPI iocInit()
+epicsShareFunc int epicsShareAPI iocInit();
 
 #ifdef __cplusplus
 }

@@ -80,11 +80,14 @@ of this distribution.
 #include "recSup.h"
 #include "envDefs.h"
 #include "rsrv.h"
-#include "epicsRelease.h"
 epicsShareFunc int epicsShareAPI asInit (void);
 #include "dbStaticLib.h"
 #include "db_access_routines.h"
 #include "initHooks.h"
+
+#define epicsExportSharedSymbols
+#include "epicsRelease.h"
+#include "iocInit.h"
 
 LOCAL int initialized=FALSE;
 

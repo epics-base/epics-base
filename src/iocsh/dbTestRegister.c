@@ -12,13 +12,13 @@ of this distribution.
 #include <stdio.h>
 #include <ctype.h>
 
-#include "ioccrf.h"
 #include "dbTest.h"
 #include "db_test.h"
 #include "dbLock.h"
 #include "dbScan.h"
 #define epicsExportSharedSymbols
 #include "dbTestRegister.h"
+#include "ioccrf.h"
 
 /* dba */
 static ioccrfArg dbaArg0 = { "record name",ioccrfArgString,0};

@@ -7,7 +7,7 @@ PROD_LIBS  = ca Com
 #
 # Added winmm user32 for the non-dll build
 #
-SYS_PROD_LIBS_WIN32 := ws2_32 advapi32 user32
+iocLogServer_SYS_LIBS_WIN32 := ws2_32
 PROD_DEFAULT = ca_test iocLogServer startCArepeater 
 PROD_WIN32   = ca_test iocLogServer
 

@@ -51,6 +51,7 @@
 
 #define GLBLSOURCE
 #include "server.h"
+#include "rsrv.h"
 
 #define DELETE_TASK(NAME)\
 if(threadNameToId(NAME)!=0)threadDestroy(threadNameToId(NAME));
@@ -471,7 +472,7 @@ LOCAL void log_one_client (struct client *client, unsigned level)
 /*
  *  casr()
  */
-void casr epicsShareAPI (unsigned level)
+void epicsShareAPI casr(unsigned level)
 {
     size_t bytes_reserved;
     struct client   *client;

@@ -33,6 +33,14 @@ LIBSRCS += ioccrfRegister
 LIBSRCS += asTestRegister
 
 LIBRARY_IOC = iocsh
-iocsh_DLL_LIBS  = miscIoc dbIoc registryIoc Com
+
+iocsh_OBJS += $(EPICS_BASE_BIN)/registerRecordDeviceDriver.o
+
+iocsh_DLL_LIBS  = miscIoc rsrvIoc dbtoolsIoc asIoc dbIoc registryIoc dbStaticIoc Com
+registryIoc_DIR=$(EPICS_BASE_LIB)
+dbtoolsIoc_DIR=$(EPICS_BASE_LIB)
+miscIoc_DIR=$(EPICS_BASE_LIB)
+rsrvIoc_DIR=$(EPICS_BASE_LIB)
 
 include $(TOP)/configure/RULES
+

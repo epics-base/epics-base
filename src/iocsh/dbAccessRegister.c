@@ -12,12 +12,12 @@ of this distribution.
 #include <stdio.h>
 #include <ctype.h>
 
-#include "ioccrf.h"
 #include "dbAccess.h"
 #include "dbLoadTemplate.h"
 #include "registryRecordType.h"
 #define epicsExportSharedSymbols
 #include "dbAccessRegister.h"
+#include "ioccrf.h"
 
 /* dbLoadDatabase */
 static ioccrfArg dbLoadDatabaseArg0 = { "file name",ioccrfArgString,0};

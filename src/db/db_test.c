@@ -44,6 +44,7 @@
 #define epicsExportSharedSymbols
 #include        "db_access_routines.h"
 #include        "dbNotify.h"
+#include        "db_test.h"
 
 /* function declarations */
 static void print_returned();

@@ -14,4 +14,3 @@ ARCH_DEP_CPPFLAGS = -DCPU=PPC603 -DTRUE=1
 ARCH_DEP_CFLAGS = -mcpu=603 --no-builtin -mstrict-align
 
 # ARCH_DEP_CFLAGS+= -fsigned-char     #May need for calcPerform.c
-# ARCH_DEP_CFLAGS+= -mlongcall        #May need if over 32MB

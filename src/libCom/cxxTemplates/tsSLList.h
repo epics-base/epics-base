@@ -58,15 +58,10 @@ friend class tsSLList<T>;
 friend class tsSLIter<T>;
 friend class tsSLIterRm<T>;
 public:
-
     tsSLNode ();
-
     void operator = (const tsSLNode<T> &) const;
-
 private:
-
     void removeNextItem (); // removes the item after this node
-
     T   *pNext;
 };
 
@@ -79,15 +74,10 @@ template <class T>
 class tsSLList : public tsSLNode<T> {
 public:
     tsSLList (); // creates an empty list
-
     void insert (T &item, tsSLNode<T> &itemBefore); // insert after item before
-
     void add (T &item); // add to the beginning of the list
-
     T * get (); // remove from the beginning of the list
-
     T * pop (); // same as get
-
     void push (T &item); // same as add
 private:
     tsSLList (const tsSLList &); // intentionally _not_ implemented
@@ -100,14 +90,10 @@ template <class T>
 class tsSLIter {
 public:
     tsSLIter (const tsSLList<T> &listIn);
-
     T * next (); // move iterator forward
-
     T * operator () (); // same as next ()
-
 private:
     T *pCurrent;
-    const tsSLList<T> *pList; // ptr allows cpy op
 };
 
 //
@@ -124,17 +110,12 @@ public:
     class noCurrentItemInIterator {};
 
     tsSLIterRm (tsSLList<T> &listIn);
-
     T * next (); // move iterator forward
-
     T * operator () (); // same as next ()
-
     void remove (); // remove current node
-
 private:
     T *pPrevious;
     T *pCurrent;
-    tsSLList<T> *pList; // ptr allows cpy op
 };
 
 //////////////////////////////////////////
@@ -249,34 +230,20 @@ inline void tsSLList<T>::push(T &item)
 //
 // tsSLIter<T>::tsSLIter
 //
-template <class T>
-inline tsSLIter<T>::tsSLIter (const tsSLList<T> &listIn) :
-  pCurrent (0), pList (&listIn) {}
+template < class T >
+inline tsSLIter < T > :: tsSLIter ( const tsSLList < T > &listIn ) :
+  pCurrent ( &listIn ) {}
 
 //
 // tsSLIter<T>::next () 
 //
 // move iterator forward
 //
-// NULL test here is inefficient, but it appears that some architectures
-// (intel) dont like to cast a NULL pointer from a tsSLNode<T> to a T even if
-// tsSLNode<T> is always a base class of a T.
-//
-template <class T>
-inline T * tsSLIter<T>::next () 
+template < class T >
+inline T * tsSLIter < T > :: next () 
 {
-    if (this->pCurrent!=0) {
-        tsSLNode<T> *pCurNode = this->pCurrent;
-        this->pCurrent = pCurNode->pNext;
-    }
-    else {
-        const tsSLNode<T> &first = *this->pList;
-        //
-        // assume that we are starting (or restarting) at the 
-        // beginning of the list
-        //
-        this->pCurrent = first.pNext;
-    }
+    tsSLNode < T > *pCurNode = this->pCurrent;
+    this->pCurrent = pCurNode->pNext;
     return this->pCurrent;
 }
 
@@ -313,8 +280,8 @@ inline T * tsSLIter<T>::operator () ()
 // tsSLIterRm<T>::tsSLIterRm ()
 //
 template <class T>
-inline tsSLIterRm<T>::tsSLIterRm (tsSLList<T> &listIn) :
-  pPrevious (0), pCurrent (0), pList (&listIn) {}
+inline tsSLIterRm<T>::tsSLIterRm ( tsSLList<T> &listIn ) :
+  pPrevious ( 0 ), pCurrent ( &listIn ) {}
 
 
 //
@@ -329,20 +296,9 @@ inline tsSLIterRm<T>::tsSLIterRm (tsSLList<T> &listIn) :
 template <class T>
 inline T * tsSLIterRm<T>::next () 
 {
-    if (this->pCurrent!=0) {
-        tsSLNode<T> *pCurNode = this->pCurrent;
-        this->pPrevious = this->pCurrent;
-        this->pCurrent = pCurNode->pNext;
-    }
-    else {
-        const tsSLNode<T> &first = *this->pList;
-        //
-        // assume that we are starting (or restarting) at the 
-        // beginning of the list
-        //
-        this->pCurrent = first.pNext;
-        this->pPrevious = 0;
-    }
+    tsSLNode<T> *pCurNode = this->pCurrent;
+    this->pPrevious = this->pCurrent;
+    this->pCurrent = pCurNode->pNext;
     return this->pCurrent;
 }
 
@@ -372,26 +328,12 @@ inline T * tsSLIterRm<T>::operator () ()
 template <class T>
 void tsSLIterRm<T>::remove ()
 {
-    if (this->pCurrent==0) {
+    if ( this->pCurrent == 0 || this->pPrevious == 0 ) {
         throwWithLocation ( noCurrentItemInIterator () );
     }
 
-    tsSLNode<T> *pPrevNode;
+    tsSLNode<T> *pPrevNode = this->pPrevious;
     tsSLNode<T> *pCurNode = this->pCurrent;
-
-    if (this->pPrevious==0) {
-        pPrevNode = this->pList;
-        //
-        // fail if it is an attempt to 
-        // delete twice without moving the iterator
-        //
-        if (pPrevNode->pNext != this->pCurrent) {   
-            throwWithLocation ( noCurrentItemInIterator ());
-        }
-    }
-    else {
-        pPrevNode = this->pPrevious;
-    }
 
     pPrevNode->pNext = pCurNode->pNext;
     this->pCurrent = this->pPrevious;

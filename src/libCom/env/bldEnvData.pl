@@ -23,10 +23,13 @@ use Cwd 'abs_path';
 $usage="Usage:\tbldEnvData <config-Directory>";
 die $usage unless $#ARGV==0;
 
-$config_dir = abs_path($ARGV[0]);
-$env_defs   = abs_path("../env/envDefs.h");
-$config_env = "${config_dir}/CONFIG_ENV";
-$site_env   = "${config_dir}/CONFIG_SITE_ENV";
+$config_dir      = abs_path($ARGV[0]);
+$config_env      = "${config_dir}/CONFIG_ENV";
+$config_site_env = "${config_dir}/CONFIG_SITE_ENV";
+
+$env_dir    = abs_path("../env");
+$env_defs   = "${env_dir}/envDefs.h";
+
 $out_name   = "envData.c";
 
 #	$tool = basename of this script
@@ -34,12 +37,12 @@ $tool=$0;
 $tool=~ s'.*/'';
 
 
-#	Start by extracting the ENV_PARAM declarations from $SRC
+#	Start by extracting the ENV_PARAM declarations from $env_defs
 #	i.e. gather the names of params we are interested in:
 #
-open SRC, "<$env_defs" or die "Cannot open $SRC";
+open SRC, "<$env_defs" or die "Cannot open $env_defs";
 while (<SRC>) {
-	if (m/epicsShareExtern\s+READONLY\s+ENV_PARAM\s+([A-Za-z_]+)\s*;/) {
+	if (m/epicsShareExtern\s+READONLY\s+ENV_PARAM\s+([A-Za-z_]\w*)\s*;/) {
 		$need_var{$1} = 1;
 	}
 }
@@ -54,7 +57,7 @@ sub GetVars {
 		# Discard comments, carriage returns and trailing whitespace
 		next if m/^ \s* \#/x;
 		chomp;
-		if (m/^ \s* ([A-Za-z_] \w*) \s* = \s* (.*) \s* $/x) {
+		if (m/^ \s* ([A-Za-z_]\w*) \s* = \s* (.*) \s* $/x) {
 			my ($var, $val) = ($1, $2);
 			next unless $need_var{$var};
 			$val =~ s/^"(.*)"$/$1/x;
@@ -65,7 +68,7 @@ sub GetVars {
 }
 
 GetVars ($config_env);
-GetVars ($site_env);
+GetVars ($config_site_env);
 
 #	Generate header file
 #
@@ -81,7 +84,7 @@ print OUT "/* $out_name\n",
 	  " * by $tool from files:\n",
 	  " *\t$env_defs\n",
 	  " *\t$config_env\n",
-	  " *\t$site_env\n",
+	  " *\t$config_site_env\n",
 	  " */\n",
 	  "\n",
 	  "#define epicsExportSharedSymbols\n",

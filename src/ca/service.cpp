@@ -292,12 +292,12 @@ LOCAL void read_resp_action (tcpiiu *piiu, const struct sockaddr_in *pnet_addr)
 #               else
                 if (piiu->niiu.curMsg.m_dataType == DBR_STRING &&
                      piiu->niiu.curMsg.m_count == 1u) {
-                     strcpy ((char *)pIOBlock->usr_arg,
+                     strcpy ((char *)pIOBlock->miu.usr_arg,
                          piiu->niiu.pCurData);
                 }
                 else {
                      memcpy(
-                         (char *)pIOBlock->usr_arg,
+                         (char *)pIOBlock->miu.usr_arg,
                          piiu->niiu.pCurData,
                          dbr_size_n (
                                piiu->niiu.curMsg.m_dataType, 

@@ -11,6 +11,3 @@ include $(CONFIG)/os/CONFIG.linux-x86-debug.linux-x86-debug
 
 BUILD_CLASS = HOST
 
-CMPLR_SUFFIX=
-CMPLR_PREFIX=
-

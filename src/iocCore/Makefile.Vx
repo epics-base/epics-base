@@ -1,4 +1,5 @@
-EPICS = ..
+EPICS = ../../../..
+include Target.include
 include $(EPICS)/config/CONFIG
 
 LINK.c=$(LD) $(LDFLAGS)
@@ -20,10 +21,10 @@ install: installVX iocCore
 installVX: $(EPICS_VX_IMAGE) $(EPICS_VX_IMAGE_SYM)
 
 $(EPICS_VX_IMAGE): $(VX_IMAGE)
-	install -m 444 $? $@
+	install -m 444 $(VX_IMAGE) $@
 
 $(EPICS_VX_IMAGE_SYM): $(VX_IMAGE_SYM)
-	install -m 444 $? $@
+	install -m 444 $(VX_IMAGE_SYM) $@
 
 rm_iocCore:
 	$(RM) $(IOC_CORE)
@@ -33,3 +34,4 @@ iocCore: $(IOC_CORE)
 $(IOC_CORE):
 	$(LINK.c) $@ $(IOC_CORE_OBJS)
 	@what $@
+

@@ -29,6 +29,10 @@
  *
  * History
  * $Log$
+ * Revision 1.19  1998/10/23 19:23:46  jhill
+ * fixed problem associated with deleting "const char *"
+ * on the solaris compiler
+ *
  * Revision 1.18  1998/10/23 00:20:40  jhill
  * attempted to clean up HP-UX warnings
  *
@@ -698,7 +702,8 @@ stringId::~stringId()
 			// is the same as deleting a pointer to 
 			// "const char" on all compilers
 			//
-			delete [] (char * const) this->pStr;
+			//delete [] (char * const) this->pStr;
+			delete [] this->pStr;
 		}
 	}
 }

@@ -16,7 +16,6 @@ of this distribution.
 #define epicsExportSharedSymbols
 #include "dbDefs.h"
 #include "cantProceed.h"
-#include "osiInterrupt.h"
 #include "osiRing.h"
 
 typedef struct ringPvt {

@@ -33,15 +33,20 @@
  * .18  07-18-91	mrk	major revision
  * .19  02-05-92	jba	Changed function arguments from paddr to precord 
  * .20	05-19-92	mrk	Changes for internal database structure changes
+ * .21  08-11-92	jba	ANSI C changes
+ * .22  08-26-92	jba	init piosl NULL in scanAdd,scanDelete & added test 
  */
 
 #include	<vxWorks.h>
 #include	<stdlib.h>
+#include	<stdioLib.h>
 #include	<types.h>
 #include	<semLib.h>
 #include 	<rngLib.h>
 #include 	<lstLib.h>
 #include 	<string.h>
+#include 	<vxLib.h>
+#include 	<tickLib.h>
 
 #include	<dbDefs.h>
 #include	<dbAccess.h>
@@ -153,21 +158,18 @@ void post_event(int event)
 void scanAdd(struct dbCommon *precord)
 {
 	short		scan;
-	short		phase;
-	short		event;
-	long		status;
 	struct scan_list *psl;
 
 	/* get the list on which this record belongs */
 	scan = precord->scan;
 	if(scan==SCAN_PASSIVE) return;
 	if(scan<0 || scan>= nPeriodic+SCAN_1ST_PERIODIC) {
-	    recGblRecordError(-1,precord,"scanAdd detected illegal SCAN value");
+	    recGblRecordError(-1,(void *)precord,"scanAdd detected illegal SCAN value");
 	}else if(scan==SCAN_EVENT) {
 	    unsigned char evnt;
 
 	    if(precord->evnt<0 || precord->evnt>=MAX_EVENTS) {
-		recGblRecordError(S_db_badField,precord,"scanAdd detected illegal EVNT value");
+		recGblRecordError(S_db_badField,(void *)precord,"scanAdd detected illegal EVNT value");
 		return;
 	    }
 	    evnt = (signed)precord->evnt;
@@ -181,7 +183,7 @@ void scanAdd(struct dbCommon *precord)
 	    addToList(precord,psl);
 	} else if(scan==SCAN_IO_EVENT) {
 	    short		cmd=0;
-	    struct io_scan_list *piosl;
+	    struct io_scan_list *piosl=NULL;
 	    int			priority,dummy1,dummy2;
 	    DEVSUPFUN get_ioint_info=precord->dset->get_ioint_info;
 
@@ -193,7 +195,7 @@ void scanAdd(struct dbCommon *precord)
 		if(piosl==NULL) return;
 		priority = precord->prio;
 		if(priority<0 || priority>=NUM_CALLBACK_PRIORITIES) {
-		    recGblRecordError(-1,precord,"scanAdd: illegal prio field");
+		    recGblRecordError(-1,(void *)precord,"scanAdd: illegal prio field");
 		    return;
 		}
 		piosl += priority; /* get piosl for correct priority*/
@@ -212,32 +214,29 @@ void scanAdd(struct dbCommon *precord)
 void scanDelete(struct dbCommon *precord)
 {
 	short		scan;
-	short		phase;
-	short		event;
-	long		status;
 	struct scan_list *psl;
 
 	/* get the list on which this record belongs */
 	scan = precord->scan;
 	if(scan==SCAN_PASSIVE) return;
 	if(scan<0 || scan>= nPeriodic+SCAN_1ST_PERIODIC) {
-	   recGblRecordError(-1,precord,"scanDelete detected illegal SCAN value");
+	   recGblRecordError(-1,(void *)precord,"scanDelete detected illegal SCAN value");
 	}else if(scan==SCAN_EVENT) {
 	    unsigned char evnt;
 
 	    if(precord->evnt<0 || precord->evnt>=MAX_EVENTS) {
-		recGblRecordError(S_db_badField,precord,"scanDelete detected illegal EVNT value");
+		recGblRecordError(S_db_badField,(void *)precord,"scanDelete detected illegal EVNT value");
 		return;
 	    }
 	    evnt = (signed)precord->evnt;
 	    psl = papEvent[evnt];
 	    if(psl==NULL) 
-		 recGblRecordError(-1,precord,"scanDelete for bad evnt");
+		 recGblRecordError(-1,(void *)precord,"scanDelete for bad evnt");
 	    else
 		deleteFromList(precord,psl);
 	} else if(scan==SCAN_IO_EVENT) {
 	    short		cmd=1;
-	    struct io_scan_list *piosl;
+	    struct io_scan_list *piosl=NULL;
 	    int			priority,dummy1,dummy2;
 	    DEVSUPFUN get_ioint_info=precord->dset->get_ioint_info;
 
@@ -246,9 +245,10 @@ void scanDelete(struct dbCommon *precord)
 	    if(cmd==-1) {
 		delete_from_scan_list(precord); /*old IO_EVENT_SCAN*/
 	    } else {
+		if(piosl==NULL) return;
 		priority = precord->prio;
 		if(priority<0 || priority>=NUM_CALLBACK_PRIORITIES) {
-		    recGblRecordError(-1,precord,"scanDelete: get_ioint_info returned illegal priority");
+		    recGblRecordError(-1,(void *)precord,"scanDelete: get_ioint_info returned illegal priority");
 		    return;
 		}
 		piosl += priority; /*get piosl for correct priority*/
@@ -353,7 +353,6 @@ static void periodicTask(struct scan_list *psl)
 
     unsigned long	start_time,end_time;
     long		delay;
-    struct scan_element *pse,*prev,*next;
 
     start_time = tickGet();
     while(TRUE) {
@@ -416,7 +415,7 @@ got_record:
 		exit(1);
 	}
 	nPeriodic = scanChoices.no_str - SCAN_1ST_PERIODIC;
-	papPeriodic = calloc(nPeriodic,sizeof(struct scan_list *));
+	papPeriodic = calloc(nPeriodic,sizeof(struct scan_list));
 	if(papPeriodic==NULL) {
 		errMessage(-1,"initPeriodic calloc failure");
 		exit(1);
@@ -465,7 +464,6 @@ static void wdPeriodic(long ind)
 static void eventTask()
 {
     unsigned char	event;
-    struct scan_element *pse,*prev,*next;
     struct scan_list *psl;
 
     while(TRUE) {
@@ -642,7 +640,7 @@ static void addToList(struct dbCommon *precord,struct scan_list *psl)
 	if(pse==NULL) {
 		pse = calloc(1,sizeof(struct scan_element));
 		if(pse==NULL) {
-		    recGblRecordError(-1,precord,"addToList calloc error");
+		    recGblRecordError(-1,(void *)precord,"addToList calloc error");
 		    exit(1);
 		}
 		precord->spvt = (void *)pse;

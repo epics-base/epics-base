@@ -33,6 +33,9 @@
  * 	.02 121693 joh	added bucketFree() 
  * 	.03 052395 joh	use std EPICS status 
  *	$Log$
+ *	Revision 1.7  1998/02/27 01:34:08  jhill
+ *	cleaned up the DLL symbol export
+ *	
  *	Revision 1.6  1998/02/20 21:45:10  evans
  *	Made a large number of changes to epicsShareThings in libCom routines
  *	to get imports and exports straight on WIN32.  Not everything is fixed
@@ -107,6 +110,11 @@ epicsShareFunc int epicsShareAPI bucketRemoveItemStringId (BUCKET *prb, READONLY
 epicsShareFunc void * epicsShareAPI bucketLookupItemUnsignedId (BUCKET *prb, READONLY unsigned *pId);
 epicsShareFunc void * epicsShareAPI bucketLookupItemPointerId (BUCKET *prb, void * READONLY *pId);
 epicsShareFunc void * epicsShareAPI bucketLookupItemStringId (BUCKET *prb, READONLY char *pId);
+
+epicsShareFunc void * epicsShareAPI bucketLookupAndRemoveItemUnsignedId (BUCKET *prb, READONLY unsigned *pId);
+epicsShareFunc void * epicsShareAPI bucketLookupAndRemoveItemPointerId (BUCKET *prb, void * READONLY *pId);
+epicsShareFunc void * epicsShareAPI bucketLookupAndRemoveItemStringId (BUCKET *prb, READONLY char *pId);
+
 
 /*
  * Status returned by bucketLib functions

@@ -94,7 +94,6 @@ LOCAL bucketSET BSET[] = {
 
 LOCAL int bucketAddItem(BUCKET *prb, bucketSET *pBSET, 
 			const void *pId, const void *pApp);
-LOCAL int bucketRemoveItem (BUCKET *prb, bucketSET *pBSET, const void *pId);
 LOCAL void *bucketLookupItem(BUCKET *pb, bucketSET *pBSET, const void *pId);
 
 
@@ -464,30 +463,15 @@ LOCAL int bucketAddItem(BUCKET *prb, bucketSET *pBSET, const void *pId, const vo
 	return S_bucket_success;
 }
 
-
 /*
- * bucketRemoveItem()
+ * bucketLookupAndRemoveItem ()
  */
-epicsShareFunc int epicsShareAPI 
-	bucketRemoveItemUnsignedId (BUCKET *prb, const unsigned *pId)
-{
-	return bucketRemoveItem(prb, &BSET[bidtUnsigned], pId);
-}
-epicsShareFunc int epicsShareAPI 
-	bucketRemoveItemPointerId (BUCKET *prb, void * const *pId)
-{
-	return bucketRemoveItem(prb, &BSET[bidtPointer], pId);
-}
-epicsShareFunc int epicsShareAPI 
-	bucketRemoveItemStringId (BUCKET *prb, const char *pId)
-{
-	return bucketRemoveItem(prb, &BSET[bidtString], pId);
-}
-LOCAL int bucketRemoveItem (BUCKET *prb, bucketSET *pBSET, const void *pId)
+LOCAL void *bucketLookupAndRemoveItem (BUCKET *prb, bucketSET *pBSET, const void *pId)
 {
 	BUCKETID	hashid;
 	ITEM		**ppi;
 	ITEM		*pi;
+    void        *pApp;
 
 	/*
 	 * create the hash index
@@ -498,20 +482,53 @@ LOCAL int bucketRemoveItem (BUCKET *prb, bucketSET *pBSET, const void *pId)
 	ppi = &prb->pTable[hashid];
 	ppi = (*pBSET->pCompare) (ppi, pId);
 	if(!ppi){
-		return S_bucket_uknId;
+		return NULL;
 	}
 	prb->nInUse--;
 	pi = *ppi;
 	*ppi = pi->pItem;
+
+    pApp = (void *) pi->pApp;
 
 	/*
 	 * stuff it on the free list
 	 */
 	freeListFree(prb->freeListPVT, pi);
 
-	return S_bucket_success;
+	return pApp;
+}
+epicsShareFunc void * epicsShareAPI bucketLookupAndRemoveItemUnsignedId (BUCKET *prb, READONLY unsigned *pId)
+{
+    return bucketLookupAndRemoveItem(prb, &BSET[bidtUnsigned], pId);
+}
+epicsShareFunc void * epicsShareAPI bucketLookupAndRemoveItemPointerId (BUCKET *prb, void * READONLY *pId)
+{
+	return bucketLookupAndRemoveItem(prb, &BSET[bidtPointer], pId);
+}
+epicsShareFunc void * epicsShareAPI bucketLookupAndRemoveItemStringId (BUCKET *prb, READONLY char *pId)
+{
+	return bucketLookupAndRemoveItem(prb, &BSET[bidtString], pId);
 }
 
+
+/*
+ * bucketRemoveItem()
+ */
+epicsShareFunc int epicsShareAPI 
+	bucketRemoveItemUnsignedId (BUCKET *prb, const unsigned *pId)
+{
+    return bucketLookupAndRemoveItem(prb, &BSET[bidtUnsigned], pId)?S_bucket_success:S_bucket_uknId;
+}
+epicsShareFunc int epicsShareAPI 
+	bucketRemoveItemPointerId (BUCKET *prb, void * const *pId)
+{
+	return bucketLookupAndRemoveItem(prb, &BSET[bidtPointer], pId)?S_bucket_success:S_bucket_uknId;
+}
+epicsShareFunc int epicsShareAPI 
+	bucketRemoveItemStringId (BUCKET *prb, const char *pId)
+{
+	return bucketLookupAndRemoveItem(prb, &BSET[bidtString], pId)?S_bucket_success:S_bucket_uknId;
+}
 
 
 /*

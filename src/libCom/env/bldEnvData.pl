@@ -75,6 +75,8 @@ sub GetVars
 			{
 				$value{$var} = $1;
 			}
+			# remove trailing whitespace and carriage return
+			$value{$var} =~ s/\s+$//;
 		}
 	}
 	close IN;

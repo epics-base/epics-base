@@ -12,6 +12,10 @@ dd Month 2004</h1>
 
 <h2 align="center">Changes since 3.14.5</h2>
 
+<h4>epicsExport</h4>
+<p>epicsExportAddress(typ,obj) now generates an extern named pvar_typ_obj and
+epicsExportRegistrar(func) an extern named pvar_func_obj. Previously both just named the variable pobj.</p>
+
 <h4>Access Security</h4>
 
 <p>The access security configuration rules now accept quoted strings where

@@ -637,6 +637,10 @@ $(DBDNAME): ../$(DBDEXPAND)
 	@echo Expanding dbd
 	@$(RM) $@
 	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbExpand$(EXE) $(DBDFLAGS) $< > $@
+
+ifneq (,$(wildcard ../base.dbd))
+$(DBDNAME): ../base.dbd
+endif
 endif
 
 $(DLL_LINK_LIBNAME) $(SHRLIBNAME): $(LIBOBJS)

@@ -7,6 +7,29 @@
 </head>
 
 <body lang="en">
+<h1>EPICS Release 3.13.9</h1>
+
+<h2>Changes since 3.13.8</h2>
+
+<h3>Assert fail in CA libraries when system runs low on mbufs</h3>
+
+<h4>Scope</h4>
+
+<p>The bug exists in probably in all previous versions of EPICS.</p>
+
+<h4>Symptoms</h4>
+
+<p>An IOC, low on network buffers, prints a message about an assert failure.
+The assert failure can cause the CA server or the CA client library to be
+compromised depending on where in the code it occurs.</p>
+
+<h4>Fix</h4>
+
+<p>All calls to getpeername() and getsockname() were checked and fixed as
+necessary to make certain that an assert() failure does not occur if failure
+status is returned, and that a proper response is made to this off-normal
+situation.</p>
+
 <h1>EPICS Release 3.13.8</h1>
 
 <h2>Changes since 3.13.7</h2>
@@ -24,9 +47,9 @@ at elevated priority resulting from vxWorks priority inheritance scheduling.
 All attached CA clients will permanently disconnect from the IOC, and record
 processing may be disrupted if the threads priority is elevated. Elevated
 priority was observed in the one situation where the bug has been reproduced
-and identified so far. </p>
+and identified so far.</p>
 
-<h4>Circumstances Related to Relative Rates of Occurrence </h4>
+<h4>Circumstances Related to Relative Rates of Occurrence</h4>
 
 <p>This bug will occur only in circumstances where the CA client deletes a
 monitor subscription and the client's CA event queue in iocCore is 100% full.
@@ -36,7 +59,7 @@ subscriptions for a particular client are sending subscription update events
 at a rate that is faster than the client is reading them. Therefore,
 specialized clients that have a small number of regularly updated
 subscriptions and that do not regularly call ca_poll() or ca_pend_event() are
-more likely to reproduce the problem. </p>
+more likely to reproduce the problem.</p>
 
 <h3>Config Changes</h3>
 <ul>
@@ -424,23 +447,23 @@ put is successful. Previosuly it was always called.</p>
 <h2>Changes since 3.13.3</h2>
 <b>Channel Access</b><b></b>
 
-<p>Symptom: CA clients on all versions of EPICS with unresolved  channels
-broadcast search messages too frequently if an EPICS R3.13.3 server is
-present. This bug does not occur if an R3.13.3 server is not present.</p>
+<p>Symptom: CA clients on all versions of EPICS with unresolved&nbsp;
+channels broadcast search messages too frequently if an EPICS R3.13.3 server
+is present. This bug does not occur if an R3.13.3 server is not present.</p>
 
-<p>Changed: CA server now sends beacon messages which uniquely  identify the
-server address. The CA repeater was also upgraded to detect, and fix, any
+<p>Changed: CA server now sends beacon messages which uniquely&nbsp; identify
+the server address. The CA repeater was also upgraded to detect, and fix, any
 problems of this nature.</p>
 
-<p>Symptom: Undefined symbols show up when EPICS R3.13.3 was loaded  into a
-PC IOC running Tornado II.</p>
+<p>Symptom: Undefined symbols show up when EPICS R3.13.3 was loaded&nbsp;
+into a PC IOC running Tornado II.</p>
 
 <p>Changed: Conditionally compiled out references to architecture
 inappropriate system calls. <br>
- </p>
+&nbsp;</p>
 
 <p><b>dfanoutRecord</b> <br>
- </p>
+&nbsp;</p>
 <ul>
   <li>VAL and all related fields are now DBF_DOUBLE instead of DBF_LONG</li>
   <li>SELM, SELN, and SELL are now available. They have same semantics as for
@@ -480,7 +503,7 @@ unitialized values were returned. This caused exceptions to occut on
 powerPCs. The values are now initialized to 0.</p>
 
 <p><b>drvTS.c</b> <br>
- </p>
+&nbsp;</p>
 <ul>
   <li>Fixed TSgetMasterTime() bug - round-trip adjustment was garbage</li>
   <li>Replaced TSprintf() with printf() where logging inappropriate</li>
@@ -488,21 +511,22 @@ powerPCs. The values are now initialized to 0.</p>
 
 <h2>Changes since 3.13.2</h2>
 <b>Build Changes</b> <br>
- 
+&nbsp; 
 <ul>
   <li>Base no longer requires the INC step. Formerly this was the first step
-    of build. It installed header files.  By default this step is no longer
-    executed. If your applications need this step then in
+    of build. It installed header files.&nbsp; By default this step is no
+    longer executed. If your applications need this step then in
     base/config/CONFIG_SITE (for all applications) or
-    &lt;apptop&gt;/config/CONFIG (for individual applications)/CONFIG_SITE 
-    provide the following definition</li>
+    &lt;apptop&gt;/config/CONFIG (for individual
+    applications)/CONFIG_SITE&nbsp; provide the following definition</li>
 
   <p><br>
   MAKE_INC_TARGET_FIRST=YES</p>
 
   <p><b>NOTE: If your applications relies on header files being installed as
-  the first step of building, you should reorganize the order of building. 
-  The 3.14 releases of base will no longer support the INC step.</b></p>
+  the first step of building, you should reorganize the order of
+  building.&nbsp; The 3.14 releases of base will no longer support the INC
+  step.</b></p>
 </ul>
 <ul>
   <li>Support has been added for the Borland C++ compiler on windows
@@ -523,7 +547,8 @@ supplied with Tornado II and optionally in Tornado I.</p>
 
 <p>The network interface query code used by Channel Access to auto-configure
 its address list was modified to be compatible with changed API's present in
-the SENS IP  kernel supplied with Tornado II and optionally inTornado I.</p>
+the SENS IP&nbsp; kernel supplied with Tornado II and optionally inTornado
+I.</p>
 
 <p><b>DBR_PUT_ACKT and DBR_PUT_ACKS</b></p>
 
@@ -586,12 +611,12 @@ with NSEV instead of SEVR of the source record.</p>
 
 <p>The stack size for cpuUsageTask was increased. The precious stack size was
 too small for mv172s, which do not have a separate interrupt stack like the
-mv167.  The same problem may exist on other processors such as the
+mv167.&nbsp; The same problem may exist on other processors such as the
 powerPC.</p>
 
 <p><b>dbel.c</b></p>
 
-<p>It was incorrectly reporting VALUE,  ALARM and LOG for all events.</p>
+<p>It was incorrectly reporting VALUE,&nbsp; ALARM and LOG for all events.</p>
 
 <p><b>longoutRecord</b></p>
 
@@ -603,31 +628,31 @@ powerPC.</p>
 to double.</p>
 
 <p><b>aoRecord.c</b> <br>
- </p>
+&nbsp;</p>
 <ul>
   <li>The convert routine no longer sets udf false. Fetch_value does set udf
     false when it successfully fetched a value. Thus udf is now only set
     false when a new value is obtained.</li>
-  <li>RVAL/ROFF conversion: possible range overflow is fixed. convert( ) 
-    uses double arithmetics until the final assignment to RVAL.</li>
+  <li>RVAL/ROFF conversion: possible range overflow is fixed. convert(
+    )&nbsp; uses double arithmetics until the final assignment to RVAL.</li>
 </ul>
 
 <p><br>
 <b>dfanoutRecord.c</b></p>
 
 <p>A dbPutLink is attempted for all links even if a put for a previous link
-fails. If a dbPutLink fails  recGblSetSevr(pdfanout,LINK_ALARM,MAJOR_ALARM)
-is called.</p>
+fails. If a dbPutLink fails&nbsp;
+recGblSetSevr(pdfanout,LINK_ALARM,MAJOR_ALARM) is called.</p>
 
 <p><b>dbStaticLib</b></p>
 
-<p>When dbPutString  writes to the VAL field then udf is set false.</p>
+<p>When dbPutString&nbsp; writes to the VAL field then udf is set false.</p>
 
 <p><b>cvtFast</b></p>
 
 <p>cvtLongToHexString now puts 0x in frount of the number and
 cvtLongToOctalString writes a leading 0. <br>
- </p>
+&nbsp;</p>
 
 <h2>Changes since 3.13.1</h2>
 <b>tsSubr</b>
@@ -677,7 +702,7 @@ swapped on the PC</p>
 <p>11)  don't send an exception to client when bad request received over
 UDP.</p>
 <br>
- 
+&nbsp; 
 
 <p><b>config</b></p>
 <ul>
@@ -701,7 +726,7 @@ not cause a crash. Note that the lock is only used when the scan mechanism of
 records are dynamically changed.</p>
 
 <p><b>dbCommon.dbd</b> <br>
- </p>
+&nbsp;</p>
 <ul>
   <li>several extra definitions were changed from void * to correct struct
     types.</li>
@@ -723,7 +748,7 @@ records are dynamically changed.</p>
 is removed.</p>
 
 <p><b>drvTS.c</b> <br>
- </p>
+&nbsp;</p>
 <ul>
   <li>Removed potential infinite recursion from tsForceSoftSync().</li>
   <li>Fixed bug where time sync UDP client was getting in a state where it
@@ -734,11 +759,11 @@ is removed.</p>
 <p><br>
 <b>drvSup.h</b></p>
 
-<p>removed definition for  reboot.</p>
+<p>removed definition for&nbsp; reboot.</p>
 
 <p><b>dbNotify</b></p>
 
-<p>If  dbPutNotify called dbProcess and dbProcess returned an error the
+<p>If&nbsp; dbPutNotify called dbProcess and dbProcess returned an error the
 notify completion callback was called twice. This bug is fixed.</p>
 
 <p><b>drvBB232</b></p>
@@ -759,7 +784,7 @@ definitions are removed.</p>
     dynamically modified.</li>
   <li>hyst, lalm, hihi, high, low, lolo all changed from float to double</li>
 </ul>
-<b>calcRecord  calcoutRecord selRecord subRecord</b>
+<b>calcRecord&nbsp; calcoutRecord selRecord subRecord</b>
 
 <p>hyst and lalm changed from float to double</p>
 
@@ -781,7 +806,7 @@ were posted, no monitors on the single bit fields.</p>
 <p>ErGetTicks now locks while updating ticks</p>
 
 <p><b>devCommonGpib</b> <br>
- </p>
+&nbsp;</p>
 <ul>
   <li>sscanf response now checked to be equal to 1 rather than just not
   zero.</li>
@@ -813,8 +838,8 @@ includes the following</p>
   <li>drvRs232.h</li>
 </ul>
 NOTE: drvBitBus.h, drvBitBus.c, drvBitBusInterface.h, and drvBitBusErr.h
-appear in both base and unbundled because drvGib uses it.  Must be fixed when
-gpib is unbundled.
+appear in both base and unbundled because drvGib uses it.&nbsp; Must be fixed
+when gpib is unbundled. 
 
 <p><b>drvBBMsg.c drvBBMsg.c drvRs232.c drvTy232.h</b></p>
 
@@ -851,11 +876,11 @@ for vxWorks 5.3:</p>
 </ul>
 <b>mkdir.pl and rm.pl</b>
 
-<p> getopt() changed to  getopt "";</p>
+<p>&nbsp;getopt() changed to&nbsp; getopt "";</p>
 
 <p><b>rc2.logServer</b></p>
 
-<p>Moved  export statements to the right place.</p>
+<p>Moved&nbsp; export statements to the right place.</p>
 
 <p><b>access security</b></p>
 
@@ -865,7 +890,7 @@ for vxWorks 5.3:</p>
 <ul>
   <li>makeBaseApp.pl</li>
   <br>
-   copy any non-Apps under $top; allow links for apptype directories
+  &nbsp;copy any non-Apps under $top; allow links for apptype directories 
   <ul>
     <li>dbExample2.template</li>
   </ul>
@@ -880,10 +905,10 @@ for vxWorks 5.3:</p>
 <b>calcoutRecord</b>
 
 <p>Under certain conditions (an input link referencing a PV on another ioc
-and an unusually long ioc initialization), the calcout record would cause an 
-error during iocInit by attempting to dbScanLock a record prematurely. This
-anomaly has been resolved with this version. No changes to the functionality
-of the calcout record were made.</p>
+and an unusually long ioc initialization), the calcout record would cause
+an&nbsp; error during iocInit by attempting to dbScanLock a record
+prematurely. This anomaly has been resolved with this version. No changes to
+the functionality of the calcout record were made.</p>
 
 <p><b>dbLoadTemplate</b></p>
 
@@ -918,20 +943,21 @@ seconds for an indeterminate period of time.</p>
 
 <p><b><tt>task_params.h</tt></b></p>
 
-<p>Task priorities were changed so that no epics task  has higher priority
-than netTask. Definitions for IOEVENTSCAN and TIMESTAMP were removed.</p>
+<p>Task priorities were changed so that no epics task&nbsp; has higher
+priority than netTask. Definitions for IOEVENTSCAN and TIMESTAMP were
+removed.</p>
 
 <p><b><tt>histogram record</tt></b></p>
 
 <p>Added new field PREC for display of double and float fields ULIM, LLIM,
 SDEL, SVAL, SGNL, and WDTH. Added unsigned long fields HOPR and LOPR for
-display of VAL array counts.  Changed SDEL field from SPC_NOMOD to SPC_RESET
-to allow start and stop of the watch dog timer.</p>
+display of VAL array counts.&nbsp; Changed SDEL field from SPC_NOMOD to
+SPC_RESET to allow start and stop of the watch dog timer.</p>
 
 <p><b><tt>Sequencer</tt></b></p>
 
 <p>The lex definitions have been changed so that definitions like</p>
-<pre>#define ERRVALUE  9.90E+09</pre>
+<pre>#define ERRVALUE&nbsp; 9.90E+09</pre>
 
 <p><br>
 are accepted.</p>
@@ -944,10 +970,10 @@ seemed worthwhile supporting the syntax for the non-recursive case.</p>
 
 <p><b><tt>devMbbiDirectSoftRaw, devMbbiSoftRaw, devMbboDirectSoftRaw,
 devMbboSoftRaw</tt></b> <br>
- </p>
+&nbsp;</p>
 
-<p><tt>SHFT </tt>was made a prompt field and also modifiable.  The VAL field
-of mbboDirectRecord is now modifiable.</p>
+<p><tt>SHFT </tt>was made a prompt field and also modifiable.&nbsp; The VAL
+field of mbboDirectRecord is now modifiable.</p>
 
 <p>If the fields NOBT and SHFT are given values then this device support will
 honor the MASK and SHFT fields just like hardware device support. To keep
@@ -976,7 +1002,7 @@ mrk:aiExample,"Analog input","Passive" <br>
 mrk:aiExample1,"Analog input No. 1","Passive" <br>
 mrk:aiExample2,"Analog input No. 2","Passive" <br>
 mrk:aiExample3,"Analog input No. 3","Passive" <br>
- </p>
+&nbsp;</p>
 
 <h4>June 15, 1998</h4>
 All major functionality that will be in R3.13 is now in place. It has been
@@ -985,9 +1011,9 @@ called a beta release but will become 3.13.1 as soon as it has been used on a
 few production systems (bug fixes will be made if necessary)
 
 <p>The Application Developer's Guide is a major revision of the 3.12 edition.
-The latest version is for beta12 base release.  It is available in pdf (adobe
-acrobat reader) and in postscript. The pdf format is nice for online viewing
-and postscript for generating a hard copy.</p>
+The latest version is for beta12 base release.&nbsp; It is available in pdf
+(adobe acrobat reader) and in postscript. The pdf format is nice for online
+viewing and postscript for generating a hard copy.</p>
 
 <p>LANL has a revision of the Record Reference Manual available. See the LANL
 EPICS documentation.</p>
@@ -1015,7 +1041,7 @@ gnumake clean uninstall</pre>
 </blockquote>
 
 <h4>Changes to &lt;top&gt;/config:</h4>
- 
+&nbsp; 
 <dl>
   <dt><tt>CONFIG_APP</tt></dt>
     <dd>Remove the following lines:</dd>
@@ -1030,7 +1056,7 @@ endif #ifndef T_A</pre>
   <dt><tt>RELEASE</tt></dt>
     <dd>If desired add a definition for <tt>TEMPLATE_TOP</tt></dd>
   <dt><tt>RULES_TOP RULES.Db RULES.ioc RULES.iocBoot</tt></dt>
-    <dd>These no longer exists in base.  Replace your version with the
+    <dd>These no longer exists in base.&nbsp; Replace your version with the
       version from:</dd>
 </dl>
 
@@ -1039,9 +1065,9 @@ endif #ifndef T_A</pre>
 </blockquote>
 <dl>
   <dt><tt>RULES_TOP</tt></dt>
-    <dd>Remove the rules for creating soft  links.</dd>
+    <dd>Remove the rules for creating soft&nbsp; links.</dd>
   <dt><tt>makeDbDepends.pl, makeIocCdCommands.pl, replaceVAR.pl</tt></dt>
-    <dd>Copy the versions from 
+    <dd>Copy the versions from&nbsp;
       <tt>&lt;base&gt;/templates/makeBaseApp/top/config</tt></dd>
   <dt><tt>makeSoftLinks</tt></dt>
     <dd>Remove this file</dd>
@@ -1076,7 +1102,7 @@ done:</p>
 </ul>
 
 <h3>aoRecord</h3>
-This did not work properly if DOL  is a channel access link that fails.
+This did not work properly if DOL&nbsp; is a channel access link that fails. 
 
 <h3>Semaphores</h3>
 Most locking semaphores have been changed from semBCreate to semMCreate with
@@ -1086,12 +1112,12 @@ SEM_DELETE_SAFE|SEM_INVERSION_SAFE|SEM_Q_PRIORITY
 <p>A performance test showed that executing</p>
 
 <blockquote>
-  <pre>    semTake(sem,WAIT_FOREVER);
-    semGive(bsem);</pre>
+  <pre>&nbsp;&nbsp;&nbsp; semTake(sem,WAIT_FOREVER);
+&nbsp;&nbsp;&nbsp; semGive(bsem);</pre>
 </blockquote>
-in a 25MHZ mv167 took  (4.4 ,7.8) microseonds when (semBCreate,semMCreate)
-was used. The extra options as well as allowing a task to lock recursively
-are worth the difference in performance.
+in a 25MHZ mv167 took&nbsp; (4.4 ,7.8) microseonds when
+(semBCreate,semMCreate) was used. The extra options as well as allowing a
+task to lock recursively are worth the difference in performance. 
 
 <h3>Task Priorities</h3>
 The priority of the channel access client for database links was changed from
@@ -1126,7 +1152,7 @@ after iocInit. This is now fixed. Two major changes were made.
 </ol>
 Access Security now supports macro substitutions. A new vxWorks shell command
 is: <br>
- 
+&nbsp; 
 <ul>
   asSetSubstitutions("var1=sub1,var2=sub2,...")</ul>
 See the Application developer's Guide for details about access security.
@@ -1135,8 +1161,8 @@ See the Application developer's Guide for details about access security.
 tsTextToStamp and tsTimeTextToStamp no longer modify the pointer or the
 string referenced by pText.
 
-<p>The nextField routines used by tsSubr were moved inside tsSubr.c  and made
-static routines.</p>
+<p>The nextField routines used by tsSubr were moved inside tsSubr.c&nbsp; and
+made static routines.</p>
 
 <h3>drvTS</h3>
 Checked for Y2K complience. It turns out it was even ok when NTP time
@@ -1147,7 +1173,7 @@ formatting was changed so that interesting code does not run off right side
 of page. Hopefully EPICS base is now fine for Y2K. In fact it should be fine
 (as far as time is converned) until the Unix epoch overflows a 32 unsigned
 integer in the year 2106. <br>
- 
+&nbsp; 
 
 <h3>nextFieldSubr.c</h3>
 Removed from base.
@@ -1160,19 +1186,19 @@ present. If this statemant is commented out then vxWorks 5.2 is assumed.
 <h3>makeBaseApp</h3>
 Only the perl version is now supported. Due to encouragement from Rozelle
 Wright (LANL) and the developers at BESSY, makeBaseApp now uses template
-files instead of being one huge ugly perl script.  Ralph Lange (BESSY) made
-major changes to makeBaseApp. It supports two sets of templates provided with
-base (simple and example) as well as templates stored elsewhere. Thus each
-site can add new sets of template files.
+files instead of being one huge ugly perl script.&nbsp; Ralph Lange (BESSY)
+made major changes to makeBaseApp. It supports two sets of templates provided
+with base (simple and example) as well as templates stored elsewhere. Thus
+each site can add new sets of template files. 
 
 <p>See the new WWW documentation on Application Source Release for details</p>
 
 <h3>dbStaticLib</h3>
 The include path now supports the unix convention that an empty directory
 name means the current directory. Thus the following are OK
-<pre>-I nnn::mmm    # Current directory is between nnn and mmm
--I :nnn        # Current directory is first
--I nnn:        # Current directory is last</pre>
+<pre>-I nnn::mmm&nbsp;&nbsp;&nbsp; # Current directory is between nnn and mmm
+-I :nnn&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; # Current directory is first
+-I nnn:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; # Current directory is last</pre>
 The lex grammer was changed so that quoted strings can contain any ascii
 character except a quote. A quote itself can be given as the escape sequence
 \". This same change was made to dbLoadRecords and dbLoadTemplates.
@@ -1201,10 +1227,10 @@ details.</p>
   <li>Soft raw device support is uncommented.</li>
   <li>Device support for the Allen Bradley SLC is changed.It is now:</li>
 </ul>
-<pre>#device(ai,AB_IO,devAiAbSlcDcm,"AB-SLC500DCM") 
-#device(ai,AB_IO,devAiAbSlcDcmSigned,"AB-SLC500DCM-Signed") 
-#device(ao,AB_IO,devAoAbSlcDcm,"AB-SLC500DCM") 
-#device(longin,AB_IO,devLiAbSlcDcm,"AB-SLC500DCM") 
+<pre>#device(ai,AB_IO,devAiAbSlcDcm,"AB-SLC500DCM")&nbsp;
+#device(ai,AB_IO,devAiAbSlcDcmSigned,"AB-SLC500DCM-Signed")&nbsp;
+#device(ao,AB_IO,devAoAbSlcDcm,"AB-SLC500DCM")&nbsp;
+#device(longin,AB_IO,devLiAbSlcDcm,"AB-SLC500DCM")&nbsp;
 #device(longout,AB_IO,devLoAbSlcDcm,"AB-SLC500DCM")</pre>
 
 <h3>initHooks</h3>
@@ -1216,13 +1242,13 @@ the new the startup file must contain the statement:
 <pre>ld &lt; bin/initHooks.o</pre>
 If you have your own version of initHooks.c it should be changed to support
 the new features. At a minumum the statement <br>
- 
+&nbsp; 
 <ul>
 </ul>
 <pre>void initHooks( int state)</pre>
 must be changed to <br>
- 
-<pre>    void initHooks( initHookState state)</pre>
+&nbsp; 
+<pre>&nbsp;&nbsp;&nbsp; void initHooks( initHookState state)</pre>
 
 <h3>menuAlarmStat.dbd</h3>
 The no alarm string changed from "" to "NO_ALARM"
@@ -1234,10 +1260,11 @@ method is still valid.
 <p>The following, which is designed by Benjamin Franksen at BESSY, is now the
 recommended method:</p>
 
-<p>A new field EOFF exists.  The new linear conversion algorithm is now</p>
+<p>A new field EOFF exists.&nbsp; The new linear conversion algorithm is
+now</p>
 <ul>
 </ul>
-<pre> VAL = AVAL * ESLO + EOFF</pre>
+<pre>&nbsp;VAL = AVAL * ESLO + EOFF</pre>
 AVAL is the raw value adjusted by ASLO and AOFF.
 
 <p>Thus device support should now compute ESLO and EOFF instead of ESLO and
@@ -1260,9 +1287,9 @@ NOTES:
   </li>
 </ul>
 <pre>VAL = AVAL * ESLO + EGUL</pre>
-The original  bi-polar adc device support modules added a "bias" to the raw
-value so that the raw value is &gt;= 0. When they were written neither RVAL
-or EOFF existed.
+The original&nbsp; bi-polar adc device support modules added a "bias" to the
+raw value so that the raw value is &gt;= 0. When they were written neither
+RVAL or EOFF existed. 
 
 <h3>RISC architectures</h3>
 Some changes were made to build on RISC architectures. A new include and
@@ -1274,13 +1301,13 @@ This is a replacement for the old code that implemented errMessage,
 errPrintf, and epicsPrintf. It provides for multiple system wide error
 loggers. The existing iocLog has been modified to use the new code. The new
 code supports the old calls and adds some new calls. See Application
-Developer's guide  for details. <br>
- 
+Developer's guide&nbsp; for details. <br>
+&nbsp; 
 
 <h3>devABSLCDCM</h3>
 Changed Scl to Slc wherever this occured. Added support for signed 16 bit
 analog values. Stephanie Allison (SLAC) made these changes. <br>
- 
+&nbsp; 
 
 <h3>devMpc</h3>
 Removed from base.
@@ -1289,8 +1316,8 @@ Removed from base.
 Major rewrite of this routine. It computes the cpu usage via a low priority
 taks rather than using spy. It reports file descriptor usage rather than tcp
 connections (this is what is actually measures). The format of the INP ,and
-OUT fields has changed since the previous version.  The new device
-definitions are:
+OUT fields has changed since the previous version.&nbsp; The new device
+definitions are: 
 <ul>
 </ul>
 <pre>device(ai,INST_IO,devAiVXStats,"VX stats")
@@ -1393,8 +1420,8 @@ changes are minor. Following is a brief list:
 <b>NOTE:</b>The initHooks described in the appDevGuide is not in beta11. In
 beta11 initHooks is the same as previous releases. The new version will be in
 the next release. <br>
-  <br>
- 
+&nbsp; <br>
+&nbsp; 
 
 <h4>Compiler warning messages:</h4>
 All of base except drv/old is now being built with
@@ -1790,17 +1817,17 @@ provides guidlines that can be used for large applications.</p>
 </ul>
 <pre>#define GEN_SIZE_OFFSET
 
-#undef  GEN_SIZE_OFFSET</pre>
+#undef&nbsp; GEN_SIZE_OFFSET</pre>
 <ul>
   <li>Any statements that initialize a field from constant links must be
     changed. Such statements always contain the characters "value.value". For
     example:</li>
 </ul>
-<pre>    pai-&gt;simm = pai-&gt;siml.value.value;
+<pre>&nbsp;&nbsp;&nbsp; pai-&gt;simm = pai-&gt;siml.value.value;
 
 is changed to
 
-   recGblInitConstantLink(&amp;pai-&gt;siml,DBF_USHORT,&amp;pai-&gt;simm);</pre>
+&nbsp;&nbsp; recGblInitConstantLink(&amp;pai-&gt;siml,DBF_USHORT,&amp;pai-&gt;simm);</pre>
 NOTE: This change also has to be made to any device support that manipulates
 constant links. Normally this is only soft device support.
 
@@ -1814,24 +1841,24 @@ for constant links. These have been changed.</p>
     definitions in the generated header files.</li>
   <li>dbStaticLib - Some routines have a new name:</li>
 </ul>
-<pre>OLD ROUTINE             REPLACEMENT
- 
-dbFindRecdes            dbFindRecordType
-dbFirstRecdes           dbFirstRecordType
-dbNextRecdes            dbNextRecordType
-dbGetRecdesName         dbGetRecordTypeName
-dbGetNRecdes            dbGetNRecordTypes
-dbFirstFielddes         dbFirstField
-dbNextFielddes          dbNextField
-dbGetChoices            dbGetMenuChoices</pre>
+<pre>OLD ROUTINE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; REPLACEMENT
+&nbsp;
+dbFindRecdes&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; dbFindRecordType
+dbFirstRecdes&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; dbFirstRecordType
+dbNextRecdes&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; dbNextRecordType
+dbGetRecdesName&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; dbGetRecordTypeName
+dbGetNRecdes&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; dbGetNRecordTypes
+dbFirstFielddes&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; dbFirstField
+dbNextFielddes&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; dbNextField
+dbGetChoices&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; dbGetMenuChoices</pre>
 For now the old version will be supported. After one release they will go
 away.
 <ul>
   <li>New vxWorks CONFIG rules are available to generate menu and record type
     include files from ascii files. The rules are:</li>
 </ul>
-<pre>    MENUS    += menuXXX.h
-    RECTYPES += xxxRecord.h</pre>
+<pre>&nbsp;&nbsp;&nbsp; MENUS&nbsp;&nbsp;&nbsp; += menuXXX.h
+&nbsp;&nbsp;&nbsp; RECTYPES += xxxRecord.h</pre>
 <ul>
   <li>Changes to recGbl and database access link routines.</li>
 </ul>
@@ -1853,11 +1880,11 @@ away.
   dbGetLink dbPutLink</p>
 </ul>
 <pre>long dbGetLink(struct db_link *,short dbrType,
-        void *pbuffer,long *options,long *nRequest);</pre>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void *pbuffer,long *options,long *nRequest);</pre>
 The last two arguments can be 0. options=0 means no options. nRequest=0 means
 scalar, i.e. retrieve one value.
 <pre>long dbPutLink(struct db_link *,short dbrType,
-        void *pbuffer,long nRequest);</pre>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void *pbuffer,long nRequest);</pre>
 <ul>
   <li>dbCaAddInLink</li>
 </ul>
@@ -1883,14 +1910,14 @@ All record instances must be capable of being loaded into an ioc via
 dbLoadDatabase, dbLoadRecords, or dbLoadTemplate. This is the same format
 that dbLoadRecords and dbLoadTemplate used in 3.12 releases. Note that if any
 files contain the statements:
-<pre>        database(x) { nowhere() {
-        }
-        }
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; database(x) { nowhere() {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
 
 or
 
-        database(x) {
-        }</pre>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; database(x) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }</pre>
 These statements must be removed. They were in pre 3.12 releases.
 
 <h4>CONSTANT Links with value "0"</h4>
@@ -1898,10 +1925,10 @@ Release 3.13 is now capably of distingushing between a null link (a link that
 is not given any value at all) and a constant link with the value 0. This
 cause problems for some old record instance files. For example if a record
 instance is defined as:
-<pre>        record(fanout,name) {
-                field(SELN,"1")
-                field(SELL,"0")
-        }</pre>
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; record(fanout,name) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; field(SELN,"1")
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; field(SELL,"0")
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }</pre>
 Such definitions can be fixed by either completly removing the link
 definition or changing the value from "0" to "".
 
@@ -1947,7 +1974,7 @@ problem:</p>
   </ul>
 </ul>
 A good way to find these problems is to use grep. For example:
-<pre>        grep SELL */*.db</pre>
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; grep SELL */*.db</pre>
 This assumes that you are in directory that contains subdirectorys containing
 .db files.
 

@@ -7,7 +7,7 @@ ifdef LIBOBJS_DEFAULT
 LIBOBJS+=$(LIBOBJS_DEFAULT)
 endif
 endif
- 
+
 INCREC +=$(RECTYPES) $(MENUS)
 INSTALL_PROD = $(PROD:%= $(INSTALL_BIN)/%)
 INSTALL_LIBS = $(LIBNAME:%= $(INSTALL_BIN)/%)
@@ -33,11 +33,13 @@ INSTALL_DBDNAME = $(DBDNAME:%= $(INSTALL_DBD)/%)
 
 MAN_DIRECTORY_TARGETS = $(foreach n, $(MANLIST),$(INSTALL_MAN)/man$(n))
 
-#       if we are not building base add base includes
-#
+#-----------------------------------------------------------------
+#	if we are not building base add base includes and dbd dirs
+#	(convenience for extensions and applications)
 ifneq ($(EPICS_BASE),$(TOP))
 ifneq ($(EPICS_BASE),$(INSTALL_LOCATION))
 EPICS_INCLUDES += -I$(EPICS_BASE_INCLUDE) -I$(EPICS_BASE_INCLUDE)/os/$(OS_CLASS)
+EPICS_DBDFLAGS += -I $(EPICS_BASE)/dbd
 endif
 endif
 
@@ -48,10 +50,13 @@ rebuild:: clean install
 pre_build:: 
 
 build:: pre_build $(MENUS) $(RECTYPES) $(BPTS)\
-         $(LIBNAME) $(LIBNAME_CXX) $(TARGETS) $(PROD) $(DBDNAME)
+         $(LIBNAME) $(LIBNAME_CXX) $(TARGETS) $(PROD)
+ifdef DBDEXPAND
+build::	$(DBDNAME)
+endif
 
 inc:: $(INSTALL_INC) $(INSTALL_OSINC)
- 
+
 install:: inc buildInstall 
 
 buildInstall :: build $(INSTALL_INCREC)\
@@ -186,12 +191,12 @@ $(INSTALL_DBD)/%: ../%
 %Record.h: %Record.dbd
 	$(RM) $@
 	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToRecordtypeH$(EXE) \
-		$(USER_DBDFLAGS)  $<
+		$(DBDFLAGS)  $<
 
 %Record.h: ../%Record.dbd
 	$(RM) $@
 	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToRecordtypeH$(EXE) \
-		$(USER_DBDFLAGS)  $<
+		$(DBDFLAGS)  $<
 
 menu%.h: menu%.dbd
 	$(RM) $@
@@ -209,10 +214,12 @@ bpt%.dbd: ../bpt%.data
 	$(RM) $@
 	$(EPICS_BASE)/bin/$(HOST_ARCH)/makeBpt$(EXE) $<
 
+ifdef DBDEXPAND
 $(DBDNAME): ../$(DBDEXPAND)
-	@echo expanding dbd
+	@echo Expanding dbd
 	@$(RM) $@
-	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbExpand$(EXE) $(USER_DBDFLAGS) $< > $@
+	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbExpand$(EXE) $(DBDFLAGS) $< > $@
+endif
 
 $(LIBNAME): $(LIBOBJS)
 	@echo Building library $@
@@ -283,7 +290,13 @@ $(INSTALL_HTML)/$(HTMLS_DIR)/%: ../%
 ifneq (,$(wildcard ../baseLIBOBJS))
 $(LIBNAME): ../baseLIBOBJS
 endif
+
+ifneq (,$(wildcard ../base.dbd))
+$(DBDNAME): ../base.dbd $(RECTYPES:%.h=../%.dbd)
+else
+$(DBDNAME): $(RECTYPES:%.h=../%.dbd)
+endif
+
 #=====> ????  the following line causes a rebuild every time
 #=====> $(LIBNAME): ../Makefile.Vx
-$(DBDNAME): ../base.dbd $(RECTYPES:%.h=../%.dbd)
 

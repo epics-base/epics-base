@@ -1,4 +1,7 @@
-#RULES.Db
+# $Id$
+#
+#	Rules for making things related to databases
+#
 MAKEBPT		= $(EPICS_BASE_HOST_BIN)/makeBpt$(EXE)
 DBLOADTEMPLATE	= $(EPICS_BASE_HOST_BIN)/dbLoadTemplate$(EXE)
 DBEXPAND	= $(EPICS_BASE_HOST_BIN)/dbExpand$(EXE)
@@ -11,20 +14,38 @@ else
 TOUCH		= type NUL >>
 endif
 
+#-----------------------------------------------------------------
+#	if we are not building base add base dbd dirs
+
+ifneq ($(EPICS_BASE),$(TOP))
+ifneq ($(EPICS_BASE),$(INSTALL_LOCATION))
+EPICS_DBDFLAGS += -I $(EPICS_BASE)/dbd
+endif
+endif
+
+#---------------------------------------------------------------
+#	----------------------------------------------------
+#	create names (lists) for installed things
+#	----------------------------------------------------
+
 INSTALL_BPTS = $(BPTS:%= $(INSTALL_DBD)/%)
-INSTALL_DBS = $(DBDINSTALL:%= $(INSTALL_DBD)/%)
+INSTALL_DBDS = $(DBDINSTALL:%= $(INSTALL_DBD)/%)
 INSTALL_DBDNAME = $(DBDNAME:%= $(INSTALL_DBD)/%)
-INSTALL_DATA=$(INSTALLDB:%=$(INSTALL_DB)/%)
+INSTALL_DATA = $(INSTALLDB:%=$(INSTALL_DB)/%)
+INSTALL_TEMPLATES = $(filter %.template,$(INSTALL_DATA))
+
+#---------------------------------------------------------------
+#	Main targets
 
 all::	install
 
-inc::	$(INSTALL_DBS)
+inc::	$(INSTALL_DBDS) $(INSTALL_BPTS) $(INSTALL_TEMPLATES)
 
 rebuild:: clean install
 
 install:: inc buildInstall 
 
-buildInstall:: build $(INSTALL_BPTS) $(INSTALL_DATA)
+buildInstall:: build $(INSTALL_DATA)
 
 clean::
 	@echo "Cleaning"
@@ -47,6 +68,8 @@ $(notdir $(TEMPLATE_LINKS)): %.template:
 ifndef WIN32
 	@$(RM) $(notdir $(TEMPLATE_LINKS))
 	ln -s $(TEMPLATE_LINKS) .
+# Workaround for dbLoadTemplate bug: terminate here if link target doesn't exist
+	@cat $(TEMPLATE_LINKS) > /dev/null
 else
 	@$(RM) $(notdir $(TEMPLATE_LINKS))
 	$(CP) $(TEMPLATE_LINKS) .
@@ -93,7 +116,7 @@ endif
 
 ##################################################### CapFast filter
 
-%.edf: ../%.sch $(DEPSCHS)
+%.edf:: ../%.sch $(DEPSCHS)
 	@if [ ! -f cad.rc -a -r ../cad.rc ] ; then ln -s ../cad.rc ; fi
 	$(SCH2EDIF) $(SCH2EDIF_SYSFLAGS) $(SCH2EDIF_FLAGS) $<
 
@@ -103,11 +126,11 @@ $(INSTALL_DB)/%.substitutions: %.substitutions
 	@echo "Installing $@"
 	@$(INSTALL) -d -m 644 $(@F) $(@D)
 
-%.substitutions: ../%.substitutions
+%.substitutions:: ../%.substitutions
 	@$(CP) $< $@
 
 ifdef CREATESUBSTITUTIONS
-%.substitutions:
+%.substitutions:: $(word $(words $(CREATESUBSTITUTIONS)),$(CREATESUBSTITUTIONS))
 	@$(CREATESUBSTITUTIONS) $*
 endif
 
@@ -121,7 +144,7 @@ $(INSTALL_DB)/%.template: %.template
 	@echo "Installing $@"
 	@$(INSTALL) -d -m 644 $(@F) $(@D)
 
-%.template: ../%.template
+%.template:: ../%.template
 	@$(CP) $< $@
 
 %.template: %.edf
@@ -131,7 +154,7 @@ $(INSTALL_DB)/%.template: %.template
 
 ##################################################### Flat databases
 
-%.db.raw: ../%.db
+%.db.raw:: ../%.db
 	$(CP) $< $@
 
 %.db.raw: %.edf
@@ -145,25 +168,28 @@ $(INSTALL_DBD)/%: %
 	@echo "Installing $@"
 	@$(INSTALL) -d -m 644 $< $(@D)
 
-$(INSTALL_DBD)/%: ../%
+$(INSTALL_DBD)/%:: ../%
 	@echo "Installing $@"
 	@$(INSTALL) -d -m 644 $< $(@D)
 
-bpt%.dbd: ../bpt%.data
+bpt%.dbd: bpt%.data
+	$(RM) $@
+	$(MAKEBPT) $<
+
+bpt%.dbd:: ../bpt%.data
 	$(RM) $@
 	$(MAKEBPT) $<
 
 ifdef DBDEXPAND
-$(DBDNAME): ../$(DBDEXPAND)
+$(DBDNAME):: ../$(DBDEXPAND)
 	@echo "Expanding dbd"
 	@$(RM) $@
-	$(DBEXPAND) $(USER_DBDFLAGS) $< > $@
+	$(DBEXPAND) $(DBDFLAGS) $< > $@
 endif
 
 ##################################################### Dependencies
 
 DEPENDS: $(filter $(patsubst %.db, %.substitutions, $(DB)), $(wildcard *.substitutions))
-	@echo "Making template database dependencies"
 	@$(MAKEDBDEPENDS) $^
 
 -include DEPENDS

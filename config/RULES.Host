@@ -223,12 +223,13 @@ ifdef PROD
 PROD := $(addsuffix $(EXE), $(PROD))
 endif
 
-#---------------------------------------------------------------
-#	if we are not building base add base includes and ld dirs
+#-----------------------------------------------------------------
+#	if we are not building base add base includes and dbd dirs
 #	(convenience for extensions and applications)
 ifneq ($(EPICS_BASE),$(TOP))
 ifneq ($(EPICS_BASE),$(INSTALL_LOCATION))
 EPICS_INCLUDES += -I$(EPICS_BASE_INCLUDE) -I$(EPICS_BASE_INCLUDE)/os/$(OS_CLASS)
+EPICS_DBDFLAGS += -I $(EPICS_BASE)/dbd
 endif
 endif
 
@@ -236,10 +237,6 @@ endif
 #	----------------------------------------------------
 #	create names (lists) for installed things
 #	----------------------------------------------------
-
-#	each list starts with the destination directory name(s)
-#	to make sure it's there
-
 
 INCREC +=$(RECTYPES) $(MENUS)
 
@@ -288,7 +285,7 @@ endif
 
 #---------------------------------------------------------------
 # always use c++ linker
-LINK.c = $(LINK.cc)
+#LINK.c = $(LINK.cc)
 
 #---------------------------------------------------------------
 # Version number for base shared libraries (and win32 products)
@@ -612,12 +609,12 @@ $(INSTALL_DBD)/%: ../%
 %Record.h: %Record.dbd
 	$(RM) $@
 	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToRecordtypeH$(EXE) \
-	        $(USER_DBDFLAGS)  $<
+	        $(DBDFLAGS)  $<
  
 %Record.h: ../%Record.dbd
 	$(RM) $@
 	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbToRecordtypeH$(EXE) \
-	        $(USER_DBDFLAGS)  $<
+	        $(DBDFLAGS)  $<
  
 menu%.h: menu%.dbd
 	$(RM) $@
@@ -639,7 +636,7 @@ ifdef DBDEXPAND
 $(DBDNAME): ../$(DBDEXPAND)
 	@echo Expanding dbd
 	@$(RM) $@
-	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbExpand$(EXE) $(USER_DBDFLAGS) $< > $@
+	$(EPICS_BASE)/bin/$(HOST_ARCH)/dbExpand$(EXE) $(DBDFLAGS) $< > $@
 endif
 
 $(DLL_LINK_LIBNAME) $(SHRLIBNAME): $(LIBOBJS)

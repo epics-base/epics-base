@@ -217,10 +217,10 @@ inline dbContextPrivateListOfIO::~dbContextPrivateListOfIO ()
 
 inline void dbContext::callReadNotify ( 
     epicsGuard < epicsMutex > & guard, struct dbAddr &addr, 
-    unsigned type, unsigned long count, cacReadNotify & notify )
+    unsigned type, unsigned long count, cacReadNotify & notifyIn )
 {
     guard.assertIdenticalMutex ( this-> mutex );
-    this->readNotifyCache.callReadNotify ( guard, addr, type, count, notify );
+    this->readNotifyCache.callReadNotify ( guard, addr, type, count, notifyIn );
 }
 
 #endif // dbCACh

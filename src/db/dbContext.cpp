@@ -138,13 +138,13 @@ void dbContext::destroyChannel (
 void dbContext::callStateNotify ( struct dbAddr & addr, 
         unsigned type, unsigned long count, 
         const struct db_field_log * pfl, 
-        cacStateNotify & notify )
+        cacStateNotify & notifyIn )
 {
     unsigned long size = dbr_size_n ( type, count );
 
     if ( type > INT_MAX ) {
         epicsGuard < epicsMutex > guard ( this->mutex );
-        notify.exception ( guard, ECA_BADTYPE, 
+        notifyIn.exception ( guard, ECA_BADTYPE, 
             "type code out of range (high side)", 
             type, count );
         return;
@@ -152,7 +152,7 @@ void dbContext::callStateNotify ( struct dbAddr & addr,
 
     if ( count > INT_MAX ) {
         epicsGuard < epicsMutex > guard ( this->mutex );
-        notify.exception ( guard, ECA_BADCOUNT, 
+        notifyIn.exception ( guard, ECA_BADCOUNT, 
             "element count out of range (high side)",
             type, count);
         return;
@@ -171,12 +171,12 @@ void dbContext::callStateNotify ( struct dbAddr & addr,
                     this->pStateNotifyCache, static_cast <int> ( count ), pvfl );
     if ( status ) {
         epicsGuard < epicsMutex > guard ( this->mutex );
-        notify.exception ( guard, ECA_GETFAIL, 
+        notifyIn.exception ( guard, ECA_GETFAIL, 
             "db_get_field() completed unsuccessfuly", type, count );
     }
     else { 
         epicsGuard < epicsMutex > guard ( this->mutex );
-        notify.current ( guard, type, count, this->pStateNotifyCache );
+        notifyIn.current ( guard, type, count, this->pStateNotifyCache );
     }
 }
 
@@ -190,7 +190,7 @@ void dbContext::subscribe (
     epicsGuard < epicsMutex > & guard,
     struct dbAddr & addr, dbChannelIO & chan,
     unsigned type, unsigned long count, unsigned mask, 
-    cacStateNotify & notify, cacChannel::ioid * pId )
+    cacStateNotify & notifyIn, cacChannel::ioid * pId )
 {
     guard.assertIdenticalMutex ( this->mutex );
 
@@ -240,7 +240,7 @@ void dbContext::subscribe (
     dbSubscriptionIO & subscr =
         * new ( this->dbSubscriptionIOFreeList ) 
         dbSubscriptionIO ( guard, this->mutex, *this, chan, 
-            addr, notify, type, count, mask, this->ctx );
+            addr, notifyIn, type, count, mask, this->ctx );
     chan.dbContextPrivateListOfIO::eventq.add ( subscr );
     this->ioTable.add ( subscr );
 
@@ -253,7 +253,7 @@ void dbContext::initiatePutNotify (
     epicsGuard < epicsMutex > & guard,
     dbChannelIO & chan, struct dbAddr & addr, 
     unsigned type, unsigned long count, const void * pValue, 
-    cacWriteNotify & notify, cacChannel::ioid * pId )
+    cacWriteNotify & notifyIn, cacChannel::ioid * pId )
 {
     guard.assertIdenticalMutex ( this->mutex );
     if ( ! chan.dbContextPrivateListOfIO::pBlocker ) {
@@ -263,7 +263,7 @@ void dbContext::initiatePutNotify (
         this->ioTable.add ( *chan.dbContextPrivateListOfIO::pBlocker );
     }
     chan.dbContextPrivateListOfIO::pBlocker->initiatePutNotify ( 
-        guard, notify, addr, type, count, pValue );
+        guard, notifyIn, addr, type, count, pValue );
     if ( pId ) {
         *pId = chan.dbContextPrivateListOfIO::pBlocker->getId ();
     }
@@ -390,7 +390,7 @@ unsigned dbContext::circuitCount (
 {
     guard.assertIdenticalMutex ( this->mutex );
     if ( this->pNetContext.get() ) {
-        this->pNetContext.get()->circuitCount ( guard );
+        return this->pNetContext.get()->circuitCount ( guard );
     }
     else {
         return 0u;
@@ -413,7 +413,7 @@ unsigned dbContext::beaconAnomaliesSinceProgramStart (
 {
     guard.assertIdenticalMutex ( this->mutex );
     if ( this->pNetContext.get() ) {
-        this->pNetContext.get()->beaconAnomaliesSinceProgramStart ( guard );
+        return this->pNetContext.get()->beaconAnomaliesSinceProgramStart ( guard );
     }
     else {
         return 0u;

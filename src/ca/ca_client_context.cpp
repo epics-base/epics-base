@@ -539,7 +539,7 @@ int ca_client_context::pendEvent ( const double & timeout )
 
     // process at least once if preemptive callback is disabled
     if ( this->pCallbackGuard.get() ) {
-        epicsGuardRelease < epicsMutex > unguard ( *this->pCallbackGuard );
+        epicsGuardRelease < epicsMutex > cbUnguard ( *this->pCallbackGuard );
         epicsGuard < epicsMutex > guard ( this->mutex );
 
         //
@@ -722,9 +722,9 @@ epicsMutex & ca_client_context::mutexRef () const
 }
 
 cacContext & ca_client_context::createNetworkContext ( 
-    epicsMutex & mutex, epicsMutex & cbMutex )
+    epicsMutex & mutexIn, epicsMutex & cbMutexIn )
 {
-    return * new cac ( mutex, cbMutex, *this );
+    return * new cac ( mutexIn, cbMutexIn, *this );
 }
 
 void epicsShareAPI caInstallDefaultService ( cacService & service )

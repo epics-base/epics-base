@@ -78,6 +78,7 @@ void cas_send_bs_msg ( struct client *pclient, int lock_needed )
             }
         }
         else {
+            int causeWasSocketHangup = 0;
             int anerrno = SOCKERRNO;
             char buf[64];
 
@@ -98,11 +99,14 @@ void cas_send_bs_msg ( struct client *pclient, int lock_needed )
 
             ipAddrToDottedIP ( &pclient->addr, buf, sizeof(buf) );
 
-            if (    (anerrno!=SOCK_ECONNABORTED&&
-                    anerrno!=SOCK_ECONNRESET&&
-                    anerrno!=SOCK_EPIPE&&
-                    anerrno!=SOCK_ETIMEDOUT)||
-                    CASDEBUG>2){
+            if (    
+                anerrno == SOCK_ECONNABORTED ||
+                anerrno == SOCK_ECONNRESET ||
+                anerrno == SOCK_EPIPE ||
+                anerrno == SOCK_ETIMEDOUT ) {
+                causeWasSocketHangup = 1;
+            }
+            else {
                 char sockErrBuf[64];
                 epicsSocketConvertErrnoToString ( 
                     sockErrBuf, sizeof ( sockErrBuf ) );
@@ -116,7 +120,7 @@ void cas_send_bs_msg ( struct client *pclient, int lock_needed )
             /*
              * wakeup the receive thread
              */
-            {
+            if ( ! causeWasSocketHangup ) {
                 enum epicsSocketSystemCallInterruptMechanismQueryInfo info  =
                     epicsSocketSystemCallInterruptMechanismQuery ();
                 switch ( info ) {

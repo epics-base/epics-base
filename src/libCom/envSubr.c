@@ -81,7 +81,6 @@
 #endif
 
 #include <envDefs.h>
-#include "envData.h"
 #include <errMdef.h>
 
 

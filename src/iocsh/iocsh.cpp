@@ -127,42 +127,48 @@ void epicsShareAPI iocshRegisterVariable (const iocshVarDef *piocshVarDef)
 {
     struct iocshVariable *l, *p, *n;
     int i;
-    /* var */
+    int found;
     static const iocshArg varArg0 = { "[variable",iocshArgString};
     static const iocshArg varArg1 = { "[value]]",iocshArgString};
     static const iocshArg *varArgs[2] = {&varArg0, &varArg1};
     static const iocshFuncDef varFuncDef = {"var",2,varArgs};
 
     iocshTableLock ();
-    if (iocshVariableHead == NULL)
-        iocshRegister(&varFuncDef,varCallFunc);
-    while((piocshVarDef!=NULL) && (piocshVarDef->name!=NULL) && (*piocshVarDef->name!='\0')) {
+    while ((piocshVarDef != NULL)
+        && (piocshVarDef->name != NULL)
+        && (*piocshVarDef->name != '\0')) {
+        if (iocshVariableHead == NULL)
+            iocshRegister(&varFuncDef,varCallFunc);
+        found = 0;
         for (l = NULL, p = iocshVariableHead ; p != NULL ; l = p, p = p->next) {
             i = strcmp (piocshVarDef->name, p->pVarDef->name);
             if (i == 0) {
+                errlogPrintf("Warning -- iocshRegisterVariable redefining %s.\n", piocshVarDef->name);
                 p->pVarDef = piocshVarDef;
-                iocshTableUnlock ();
-                return;
+                found = 1;
+                break;
             }
             if (i < 0)
                 break;
         }
-        n = (struct iocshVariable *)callocMustSucceed (1, sizeof *n, "iocshRegisterVariable");
-        if (!registryAdd(iocshVarID, piocshVarDef->name, (void *)n)) {
-            free (n);
-            iocshTableUnlock ();
-            errlogPrintf ("iocshRegisterVariable failed to add %s\n", piocshVarDef->name);
-            return;
+        if (!found) {
+            n = (struct iocshVariable *)callocMustSucceed(1, sizeof *n, "iocshRegisterVariable");
+            if (!registryAdd(iocshVarID, piocshVarDef->name, (void *)n)) {
+                free(n);
+                iocshTableUnlock();
+                errlogPrintf("iocshRegisterVariable failed to add %s.\n", piocshVarDef->name);
+                return;
+            }
+            if (l == NULL) {
+                n->next = iocshVariableHead;
+                iocshVariableHead = n;
+            }
+            else {
+                n->next = l->next;
+                l->next = n;
+            }
+            n->pVarDef = piocshVarDef;
         }
-        if (l == NULL) {
-            n->next = iocshVariableHead;
-            iocshVariableHead = n;
-        }
-        else {
-            n->next = l->next;
-            l->next = n;
-        }
-        n->pVarDef = piocshVarDef;
         piocshVarDef++;
     }
     iocshTableUnlock ();

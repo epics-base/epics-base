@@ -891,11 +891,10 @@ static void localRegister (void)
 } /* extern "C" */
 
 /*
- * Register commands on application startup
+ * Register local commands on application startup
  */
-#include "iocshRegisterCommon.h"
 class IocshRegister {
   public:
-    IocshRegister() { localRegister(); iocshRegisterCommon(); }
+    IocshRegister() { localRegister(); }
 };
 static IocshRegister iocshRegisterObj;

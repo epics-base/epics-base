@@ -185,9 +185,13 @@ static void registerRecordDeviceDriverCallFunc(const iocshArgBuf *)
 /*
  * Register commands on application startup
  */
+#include "iocshRegisterCommon.h"
 class IoccrfReg {
   public:
-    IoccrfReg() { iocshRegister(&registerRecordDeviceDriverFuncDef,registerRecordDeviceDriverCallFunc);}
+    IoccrfReg() {
+        iocshRegisterCommon();
+        iocshRegister(&registerRecordDeviceDriverFuncDef,registerRecordDeviceDriverCallFunc);
+    }
 };
 #if !defined(__GNUC__) || !(__GNUC__<2 || (__GNUC__==2 && __GNUC_MINOR__<=95))
 namespace { IoccrfReg iocshReg; }

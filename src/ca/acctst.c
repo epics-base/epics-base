@@ -1533,8 +1533,10 @@ void performMonitorUpdateTest ( chid chan )
             unsigned tmpFlowCtrlCount = 0u;
             ca_pend_event ( 0.1 );
             for ( j = 0; j < NELEMENTS ( test ); j++ ) {
-                // we shouldnt see old monitors because 
-                // we resubscribed
+		/*
+                 * we shouldnt see old monitors because 
+                 * we resubscribed
+		 */
                 assert ( test[j].count <= i + 2 );
                 if ( test[j].lastValue == temp ) {
                     if ( test[j].count < i + 1 ) {

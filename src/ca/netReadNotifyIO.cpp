@@ -13,40 +13,47 @@
 #include "iocinf.h"
 #include "netReadNotifyIO_IL.h"
 #include "nciu_IL.h"
+#include "baseNMIU_IL.h"
 
 tsFreeList < class netReadNotifyIO, 1024 > netReadNotifyIO::freeList;
 
 netReadNotifyIO::netReadNotifyIO ( nciu &chan, cacNotify &notifyIn ) :
     cacNotifyIO ( notifyIn ), baseNMIU ( chan ) {}
 
-// private NOOP forces pool allocation
-netReadNotifyIO::~netReadNotifyIO () {}
-
-void netReadNotifyIO::uninstall ()
+netReadNotifyIO::~netReadNotifyIO () 
 {
-    this->chan.getPIIU ()->uninstallIO ( *this );
+}
+
+void netReadNotifyIO::destroy ()
+{
+    delete this;
 }
 
 void netReadNotifyIO::completionNotify ()
 {
-    this->cacNotifyIO::exceptionNotify ( ECA_INTERNAL, "no data returned ?" );
+    this->notify ().exceptionNotify ( this->channelIO (), ECA_INTERNAL, "no data returned ?" );
 }
 
 void netReadNotifyIO::completionNotify ( unsigned type, 
                     unsigned long count, const void *pData )
 {
-    this->cacNotifyIO::completionNotify ( type, count, pData );
+    this->notify ().completionNotify ( this->channelIO (), type, count, pData );
 }
 
 void netReadNotifyIO::exceptionNotify ( int status, const char *pContext )
 {
-    this->cacNotifyIO::exceptionNotify ( status, pContext );
+    this->notify ().exceptionNotify ( this->channelIO (), status, pContext );
 }
 
 void netReadNotifyIO::exceptionNotify ( int status, const char *pContext, 
                                        unsigned type, unsigned long count )
 {
-    this->cacNotifyIO::exceptionNotify ( status, pContext, type ,count );
+    this->notify ().exceptionNotify ( this->channelIO (), status, pContext, type ,count );
+}
+
+cacChannelIO & netReadNotifyIO::channelIO () const
+{
+    return this->channel ();
 }
 
 void netReadNotifyIO::show ( unsigned level ) const

@@ -28,7 +28,7 @@
 #include <limits.h>
 #include <stdarg.h>
 
-#if defined (epicsExportSharedSymbols)
+#if defined ( epicsExportSharedSymbols )
 #   error suspect that libCom was not imported
 #endif
 
@@ -48,7 +48,6 @@
 #include "epicsThread.h"
 #include "osiTimer.h"
 #include "epicsMutex.h"
-#include "epicsEvent.h"
 #include "resourceLib.h"
 #include "localHostName.h"
 #include "ipAddrToAsciiAsynchronous.h"
@@ -108,9 +107,6 @@
 
 static const unsigned comBufSize = 0x4000;
 
-class gnuWarningEliminate {
-};
-
 class wireSendAdapter {
 public:
     virtual unsigned sendBytes ( const void *pBuf, 
@@ -150,16 +146,14 @@ public:
     void operator delete ( void *pCadaver, size_t size );
     bool flushToWire ( wireSendAdapter & );
     unsigned fillFromWire ( wireRecvAdapter & );
-private:
-    static tsFreeList < class comBuf, 0x20 > freeList;
-
+protected:
     ~comBuf ();
+private:
     unsigned nextWriteIndex;
     unsigned nextReadIndex;
     unsigned char buf [ comBufSize ]; // optimal for 100 Mb Ethernet LAN MTU
-
     unsigned clipNElem ( unsigned elemSize, unsigned nElem );
-    friend class gnuWarningEliminate;
+    static tsFreeList < class comBuf, 0x20 > freeList;
 };
 
 struct msgDescriptor {
@@ -262,14 +256,15 @@ class nciu : public cacChannelIO, public tsDLNode < nciu >,
     public chronIntIdRes < nciu >, public tcpiiuPrivateListOfIO {
 public:
     nciu ( class cac &, netiiu &, 
-        cacChannel &, const char *pNameIn );
+        cacChannelNotify &, const char *pNameIn );
+    bool fullyConstructed () const;
     void destroy ();
-    void cacDestroy ();
     void connect ( unsigned nativeType, 
         unsigned long nativeCount, unsigned sid );
     void connect ();
     void disconnect ( netiiu &newiiu );
     int createChannelRequest ();
+    void initiateConnect ();
     int read ( unsigned type, 
         unsigned long count, void *pValue );
     int read ( unsigned type, 
@@ -278,8 +273,9 @@ public:
         unsigned long count, const void *pValue );
     int write ( unsigned type, 
         unsigned long count, const void *pValue, cacNotify & );
-    int subscribe ( unsigned type, 
-        unsigned long count, unsigned mask, cacNotify &notify );
+    int subscribe ( unsigned type, unsigned long nElem, 
+                         unsigned mask, cacNotify &notify,
+                         cacNotifyIO *&pNotifyIO );
     void hostName ( char *pBuf, unsigned bufLength ) const;
     bool ca_v42_ok () const;
     short nativeType () const;
@@ -291,13 +287,8 @@ public:
     unsigned searchAttempts () const;
     double beaconPeriod () const;
     bool connected () const;
-    unsigned readSequence () const;
-    void incrementOutstandingIO ();
-    void decrementOutstandingIO ();
-    void decrementOutstandingIO ( unsigned seqNumber );
     bool searchMsg ( unsigned short retrySeqNumber, 
         unsigned &retryNoForThisChannel );
-    bool fullyConstructed () const;
     bool isAttachedToVirtaulCircuit ( const osiSockAddr & );
     bool identifierEquivelence ( unsigned idToMatch );
     void * operator new ( size_t size );
@@ -308,12 +299,17 @@ public:
     ca_uint32_t getSID () const;
     ca_uint32_t getCID () const;
     netiiu * getPIIU ();
+    cac & getCAC ();
     void searchReplySetUp ( netiiu &iiu, unsigned sidIn, 
         unsigned typeIn, unsigned long countIn );
     void show ( unsigned level ) const;
     bool verifyIIU ( netiiu & );
     bool verifyConnected ( netiiu & );
-
+    void decrementOutstandingIO ( unsigned seqNumber );
+    void incrementOutstandingIO ( unsigned seqNumber );
+    void connectTimeoutNotify ();
+protected:
+    ~nciu (); // force pool allocation
 private:
     cac &cacCtx;
     caar ar; // access rights
@@ -329,16 +325,13 @@ private:
     unsigned f_fullyConstructed:1;
     unsigned f_previousConn:1; // T if connected in the past
     unsigned f_claimSent:1;
-
-    static tsFreeList < class nciu, 1024 > freeList;
-
-    ~nciu (); // force pool allocation
+    unsigned f_firstConnectDecrementsOutstandingIO:1;
+    unsigned f_connectTimeOutSeen:1;
     void lock () const;
     void unlock () const;
-    void lockOutstandingIO () const;
-    void unlockOutstandingIO () const;
     const char * pHostName () const; // deprecated - please do not use
-    friend class gnuWarningEliminate;
+    void notifyStateChangeFirstConnectInCountOfOutstandingIO ();
+    static tsFreeList < class nciu, 1024 > freeList;
 };
 
 class baseNMIU : public tsDLNode < baseNMIU >, 
@@ -347,12 +340,15 @@ public:
     baseNMIU ( nciu &chan );
     virtual ~baseNMIU () = 0;
     virtual void completionNotify () = 0;
-    virtual void completionNotify ( unsigned type, unsigned long count, const void *pData ) = 0;
-    virtual void exceptionNotify ( int status, const char *pContext ) = 0;
-    virtual void exceptionNotify ( int status, const char *pContext, unsigned type, unsigned long count ) = 0;
+    virtual void completionNotify ( unsigned type, 
+        unsigned long count, const void *pData ) = 0;
+    virtual void exceptionNotify ( int status, 
+        const char *pContext ) = 0;
+    virtual void exceptionNotify ( int status, 
+        const char *pContext, unsigned type, 
+        unsigned long count ) = 0;
     virtual class netSubscription * isSubscription ();
     virtual void show ( unsigned level ) const;
-    virtual void uninstall () = 0;
     ca_uint32_t getID () const;
     nciu & channel () const;
     void destroy ();
@@ -360,30 +356,36 @@ protected:
     nciu &chan;
 };
 
-class netSubscription : private cacNotifyIO, public baseNMIU  {
+class netSubscription : public cacNotifyIO, public baseNMIU  {
 public:
     netSubscription ( nciu &chan, unsigned type, unsigned long count, 
         unsigned mask, cacNotify &notify );
+    void destroy ();
     void show ( unsigned level ) const;
-    void * operator new ( size_t size );
-    void operator delete ( void *pCadaver, size_t size );
     unsigned long getCount () const;
     unsigned getType () const;
     unsigned getMask () const;
+    void * operator new ( size_t size );
+    void operator delete ( void *pCadaver, size_t size );
+
+protected:
+    ~netSubscription ();
+
 private:
     unsigned long count;
     unsigned type;
     unsigned mask;
 
-    void uninstall ();
     void completionNotify ();
-    void completionNotify ( unsigned type, unsigned long count, const void *pData );
-    void exceptionNotify ( int status, const char *pContext );
-    void exceptionNotify ( int status, const char *pContext, unsigned type, unsigned long count );
+    void completionNotify ( unsigned type, 
+        unsigned long count, const void *pData );
+    void exceptionNotify ( int status,
+        const char *pContext );
+    void exceptionNotify ( int status, 
+        const char *pContext, unsigned type, unsigned long count );
+    cacChannelIO & channelIO () const;
     class netSubscription * isSubscription ();
-    ~netSubscription ();
     static tsFreeList < class netSubscription, 1024 > freeList;
-    friend class gnuWarningEliminate;
 };
 
 class netReadCopyIO : public baseNMIU {
@@ -393,53 +395,61 @@ public:
     void show ( unsigned level ) const;
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
+protected:
+    ~netReadCopyIO (); // must be allocated from pool
 private:
     unsigned type;
     unsigned long count;
     void *pValue;
     unsigned seqNumber;
-    void completionNotify ();
-    void completionNotify ( unsigned type, unsigned long count, const void *pData );
+    void completionNotify (  );
+    void completionNotify ( unsigned type,
+        unsigned long count, const void *pData );
     void exceptionNotify ( int status, const char *pContext );
-    void exceptionNotify ( int status, const char *pContext, unsigned type, unsigned long count );
-    void uninstall ();
-    ~netReadCopyIO (); // must be allocated from pool
+    void exceptionNotify ( int status,
+        const char *pContext, unsigned type, unsigned long count );
+    cacChannelIO & channelIO () const;
     static tsFreeList < class netReadCopyIO, 1024 > freeList;
-    friend class gnuWarningEliminate;
 };
 
 class netReadNotifyIO : public cacNotifyIO, public baseNMIU {
 public:
     netReadNotifyIO ( nciu &chan, cacNotify &notify );
+    void destroy ();
     void show ( unsigned level ) const;
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
-private:
-    void uninstall ();
-    void completionNotify ();
-    void completionNotify ( unsigned type, unsigned long count, const void *pData );
-    void exceptionNotify ( int status, const char *pContext );
-    void exceptionNotify ( int status, const char *pContext, unsigned type, unsigned long count );
+protected:
     ~netReadNotifyIO ();
+private:
+    void completionNotify ();
+    void completionNotify ( unsigned type,
+        unsigned long count, const void *pData );
+    void exceptionNotify ( int status, const char *pContext );
+    void exceptionNotify ( int status,
+        const char *pContext, unsigned type, unsigned long count );
+    cacChannelIO & channelIO () const;
     static tsFreeList < class netReadNotifyIO, 1024 > freeList;
-    friend class gnuWarningEliminate;
 };
 
 class netWriteNotifyIO : public cacNotifyIO, public baseNMIU {
 public:
     netWriteNotifyIO ( nciu &chan, cacNotify &notify );
+    void destroy ();
     void show ( unsigned level ) const;
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
-private:
-    void uninstall ();
-    void completionNotify ();
-    void completionNotify ( unsigned type, unsigned long count, const void *pData );
-    void exceptionNotify ( int status, const char *pContext );
-    void exceptionNotify ( int status, const char *pContext, unsigned type, unsigned long count );
+protected:
     ~netWriteNotifyIO ();
+private:
+    void completionNotify ();
+    void completionNotify ( unsigned type,
+        unsigned long count, const void *pData );
+    void exceptionNotify ( int status, const char *pContext );
+    void exceptionNotify ( int status,
+        const char *pContext, unsigned type, unsigned long count );
+    cacChannelIO & channelIO () const;
     static tsFreeList < class netWriteNotifyIO, 1024 > freeList;
-    friend class gnuWarningEliminate;
 };
 
 /*
@@ -497,7 +507,6 @@ public:
     void show ( unsigned level ) const;
     unsigned channelCount () const;
     void disconnectAllChan ( netiiu & newiiu );
-    void destroyAllIO ( nciu &chan );
     void connectTimeoutNotify ();
     bool searchMsg ( unsigned short retrySeqNumber, unsigned &retryNoForThisChannel );
     void resetChannelRetryCounts ();
@@ -518,9 +527,10 @@ public:
     virtual void connectAllIO ( nciu &chan );
     virtual void disconnectAllIO ( nciu &chan );
     virtual int clearChannelRequest ( nciu & );
-    virtual void uninstallIO ( baseNMIU & );
+    virtual bool uninstallIO ( baseNMIU & );
     virtual void subscriptionCancelRequest ( netSubscription &subscr, bool userThread  );
     virtual double beaconPeriod () const;
+    virtual bool destroyAllIO ( nciu &chan );
 
 protected:
     cac * pCAC () const;
@@ -605,7 +615,7 @@ public:
               char *pInBuf, unsigned long blockSize );
     void repeaterRegistrationMessage ( unsigned attemptNumber );
     void flush ();
-    SOCKET getSock () const;
+    unsigned getPort () const;
     void show ( unsigned level ) const;
     bool isCurrentThread () const;
 
@@ -622,6 +632,7 @@ private:
     SOCKET sock;
     unsigned short repeaterPort;
     unsigned short serverPort;
+    unsigned short localPort;
     bool shutdownCmd;
     bool sockCloseCompleted;
 
@@ -711,12 +722,11 @@ public:
     void hostName ( char *pBuf, unsigned bufLength ) const;
     void * operator new ( size_t size );
     void operator delete ( void *pCadaver, size_t size );
+protected:
+    ~hostNameCache ();
 private:
     bool ioComplete;
     char hostNameBuf [128];
-    ~hostNameCache ();
-    friend class gnuWarningEliminate;
-
     static tsFreeList < class hostNameCache, 16 > freeList;
 };
 
@@ -743,7 +753,6 @@ public:
     void flush ();
     virtual void show ( unsigned level ) const;
     //osiSockAddr address () const;
-    SOCKET getSock () const;
     bool setEchoRequestPending ();
 
     void processIncoming ();
@@ -794,6 +803,7 @@ private:
     unsigned sendBytes ( const void *pBuf, unsigned nBytesInBuf );
     unsigned recvBytes ( void *pBuf, unsigned nBytesInBuf );
     bool flushToWire ( bool userThread );
+    bool threadContextSensitiveFlushToWire ( bool userThread );
 
     friend void cacSendThreadTCP ( void *pParam );
     friend void cacRecvThreadTCP ( void *pParam );
@@ -842,7 +852,8 @@ private:
        int status, const char *pContext, unsigned type, unsigned long count );
     void connectAllIO ( nciu &chan );
     void disconnectAllIO ( nciu &chan );
-    void uninstallIO ( baseNMIU & );
+    bool uninstallIO ( baseNMIU & );
+    bool destroyAllIO ( nciu &chan );
 
     int subscriptionRequest ( netSubscription &subscr, bool userThread );
     void subscriptionCancelRequest ( netSubscription &subscr, bool userThread );
@@ -850,25 +861,6 @@ private:
     typedef void ( tcpiiu::*pProtoStubTCP ) ();
     static const pProtoStubTCP tcpJumpTableCAC [];
 };
-
-#if 0
-class claimMsgCache {
-public:
-    claimMsgCache ( bool v44 );
-    ~claimMsgCache ();
-    int deliverMsg ( netiiu &iiu );
-    void connectChannel ( cac & );
-private:
-    char *pStr;
-    unsigned clientId;
-    unsigned serverId;
-    unsigned currentStrLen;
-    unsigned bufLen;
-    bool v44;
-
-    friend bool nciu::setClaimMsgCache ( class claimMsgCache & );
-};
-#endif
 
 class inetAddrID {
 public:
@@ -892,15 +884,13 @@ public:
     epicsShareFunc void show ( unsigned level) const;
     epicsShareFunc void * operator new ( size_t size );
     epicsShareFunc void operator delete ( void *pCadaver, size_t size );
-
+protected:
+    epicsShareFunc ~bhe (); // force allocation from freeList
 private:
     tcpiiu *piiu;
     epicsTime timeStamp;
     double averagePeriod;
-
     static tsFreeList < class bhe, 1024 > freeList;
-    epicsShareFunc ~bhe (); // force allocation from freeList
-    friend class gnuWarningEliminate;
 };
 
 class caErrorCode { 
@@ -959,28 +949,26 @@ static const unsigned CASG_MAGIC = 0xFAB4CAFE;
 class syncGroupNotify : public cacNotify, public tsDLNode < syncGroupNotify > {
 public:
     syncGroupNotify  ( struct CASG &sgIn, void *pValue );
-    void destroy ();
-    void show (unsigned level) const;
+    void release ();
+    void show ( unsigned level ) const;
 
-    void * operator new (size_t size);
-    void operator delete (void *pCadaver, size_t size);
-
-private:
-    void completionNotify ();
-    void completionNotify ( unsigned type, unsigned long count, const void *pData );
-    void exceptionNotify ( int status, const char *pContext );
-    void exceptionNotify ( int status, const char *pContext, unsigned type, unsigned long count );
-    void lock () const;
-    void unlock () const;
+    void * operator new ( size_t size );
+    void operator delete ( void *pCadaver, size_t size );
+protected:
     virtual ~syncGroupNotify (); // allocate only from pool
-
+private:
     struct CASG &sg;
     unsigned magic;
     void *pValue;
     unsigned long seqNo;
-
+    void completionNotify ( cacChannelIO & );
+    void completionNotify ( cacChannelIO &,
+        unsigned type, unsigned long count, const void *pData );
+    void exceptionNotify ( cacChannelIO &,
+        int status, const char *pContext );
+    void exceptionNotify ( cacChannelIO &,
+        int status, const char *pContext, unsigned type, unsigned long count );
     static tsFreeList < class syncGroupNotify, 1024 > freeList;
-    friend class gnuWarningEliminate;
 };
 
 /*
@@ -1022,8 +1010,7 @@ public:
     void decrementOutstandingIO ();
     void decrementOutstandingIO ( unsigned seqNumber );
     void incrementOutstandingIO ();
-    void lockOutstandingIO () const;
-    void unlockOutstandingIO () const;
+    void incrementOutstandingIO ( unsigned seqNumber );
     unsigned readSequenceOfOutstandingIO () const;
     unsigned currentOutstandingIOCount () const;
     void cleanUpOutstandingIO ();
@@ -1065,9 +1052,6 @@ public:
 
     // beacon management
     void beaconNotify ( const inetAddrID &addr );
-    bhe *lookupBeaconInetAddr ( const inetAddrID &ina );
-    bhe *createBeaconHashEntry ( const inetAddrID &ina, 
-            const epicsTime &initialTimeStamp );
     void repeaterSubscribeConfirmNotify ();
 
     // IIU routines
@@ -1090,15 +1074,14 @@ public:
     void connectChannel ( unsigned id );
     void connectChannel ( bool v44Ok, unsigned id,  
           unsigned nativeType, unsigned long nativeCount, unsigned sid );
-    void channelDestroy ( unsigned id );
     void disconnectChannel ( unsigned id );
-    bool createChannelIO ( const char *name_str, cacChannel &chan );
+    cacChannelIO * createChannelIO ( const char *name_str, cacChannelNotify &chan );
+    void installNetworkChannel ( nciu &, netiiu *&piiu );
     void lookupChannelAndTransferToTCP ( unsigned cid, unsigned sid, 
              unsigned typeCode, unsigned long count, unsigned minorVersionNumber,
              const osiSockAddr & );
-    void accessRightsNotify ( unsigned id, caar );
-    void uninstallLocalChannel ( cacLocalChannelIO & );
-    void destroyNCIU ( nciu & );
+    void accessRightsNotify ( unsigned id, const caar & );
+    void uninstallChannel ( nciu & );
 
     // sync group routines
     CASG * lookupCASG ( unsigned id );
@@ -1109,9 +1092,8 @@ public:
     void registerForFileDescriptorCallBack ( CAFDHANDLER *pFunc, void *pArg );
     void enableCallbackPreemption ();
     void disableCallbackPreemption ();
-    void notifySearchResponse ( unsigned short retrySeqNo );
     bool flushPermit () const;
-    const char * userNamePointer ();
+    const char * userNamePointer () const;
 
     // diagnostics
     unsigned connectionCount () const;
@@ -1121,13 +1103,13 @@ public:
     void replaceErrLogHandler ( caPrintfFunc *ca_printf_func );
     void ipAddrToAsciiAsynchronousRequestInstall ( ipAddrToAsciiAsynchronous & request );
 
+    void getFDRegCallback ( CAFDHANDLER *&fdRegFunc, void *&fdRegArg ) const;
+
 private:
     ipAddrToAsciiEngine     ipToAEngine;
     cacServiceList          services;
     tsDLList <tcpiiu>       iiuList;
     tsDLList <tcpiiu>       iiuListLimbo;
-    tsDLList 
-        <cacLocalChannelIO> localChanList;
     chronIntIdResTable
         < nciu >            chanTable;
     chronIntIdResTable
@@ -1153,10 +1135,6 @@ private:
     repeaterSubscribeTimer  *pRepeaterSubscribeTmr;
     unsigned                initializingThreadsPriority;
     bool                    enablePreemptiveCallback;
-
-    // IIU routines
-    tcpiiu * constructTCPIIU ( const osiSockAddr &, unsigned minorVersion );
-    double connectionTimeout () const;
 
     int pendPrivate ( double timeout, int early );
     bool setupUDP ();

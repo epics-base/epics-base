@@ -13,6 +13,7 @@
 #include "iocinf.h"
 #include "netReadCopyIO_IL.h"
 #include "nciu_IL.h"
+#include "baseNMIU_IL.h"
 
 tsFreeList < class netReadCopyIO, 1024 > netReadCopyIO::freeList;
 
@@ -21,17 +22,11 @@ netReadCopyIO::netReadCopyIO ( nciu &chanIn, unsigned typeIn, unsigned long coun
     baseNMIU ( chanIn ), type ( typeIn ), count ( countIn ), 
     pValue ( pValueIn ), seqNumber ( seqNumberIn )
 {
-    chanIn.incrementOutstandingIO ();
+    this->chan.incrementOutstandingIO ( seqNumberIn );
 }
 
 netReadCopyIO::~netReadCopyIO () 
 {
-
-}
-
-void netReadCopyIO::uninstall ()
-{
-    this->chan.getPIIU ()->uninstallIO ( *this );
 }
 
 void netReadCopyIO::completionNotify ()
@@ -59,14 +54,22 @@ void netReadCopyIO::completionNotify ( unsigned typeIn,
 
 void netReadCopyIO::exceptionNotify ( int status, const char *pContext )
 {
-    ca_signal (status, pContext);
+    ca_signal_formated ( status, __FILE__, __LINE__, 
+        "%s chan=%s\n", pContext, this->channelIO ().pName () );
+
 }
 
 void netReadCopyIO::exceptionNotify ( int status, 
     const char *pContextIn, unsigned typeIn, unsigned long countIn )
 {
-    ca_signal_formated (status, __FILE__, __LINE__, 
-        "%s type=%d count=%ld\n", pContextIn, typeIn, countIn);
+    ca_signal_formated ( status, __FILE__, __LINE__, 
+        "%s chan=%s type=%d count=%ld\n", pContextIn, 
+        this->channelIO ().pName (), typeIn, countIn);
+}
+
+cacChannelIO & netReadCopyIO::channelIO () const
+{
+    return this->channel ();
 }
 
 void netReadCopyIO::show ( unsigned level ) const

@@ -24,7 +24,6 @@ netiiu::netiiu ( cac *pClientCtxIn ) : pClientCtx ( pClientCtxIn )
 
 netiiu::~netiiu ()
 {
-    assert ( this->channelList.count () == 0u );
 }
 
 void netiiu::show ( unsigned level ) const
@@ -99,23 +98,26 @@ void netiiu::disconnectAllChan ( netiiu & newiiu )
 //
 // netiiu::destroyAllIO ()
 //
-// care is taken not to not hold the lock while sending event
-// subscription delete ( when the IO is deleted )
+// care is taken to not hold the lock while deleting the
+// IO so that subscription delete request (sent by the
+// IO's destructor) do not deadlock
 //
-void netiiu::destroyAllIO ( nciu &chan )
+bool netiiu::destroyAllIO ( nciu &chan )
 {
-    baseNMIU *pIO;
-    while ( true ) {
-        {
-            epicsAutoMutex autoMutex ( this->mutex );
-            pIO = chan.tcpiiuPrivateListOfIO::eventq.first ();
-            if ( ! pIO ) {
-                break;
-            }
-            pIO->uninstall ();
+    tsDLList < baseNMIU > eventQ;
+    {
+        epicsAutoMutex autoMutex ( this->mutex );
+        if ( chan.verifyIIU ( *this ) ) {
+            eventQ.add ( chan.tcpiiuPrivateListOfIO::eventq );
         }
+        else {
+            return false;
+        }
+    }
+    while ( baseNMIU *pIO = eventQ.get () ) {
         pIO->destroy ();
     }
+    return true;
 }
 
 void netiiu::connectTimeoutNotify ()
@@ -260,13 +262,17 @@ void netiiu::connectAllIO ( nciu & )
 {
 }
 
-void netiiu::uninstallIO ( baseNMIU &io )
+bool netiiu::uninstallIO ( baseNMIU &io )
 {
     epicsAutoMutex autoMutex ( this->mutex );
+    if ( ! io.channel ().verifyIIU ( *this ) ) {
+        return false;
+    }
     io.channel ().tcpiiuPrivateListOfIO::eventq.remove ( io );
+    return true;
 }
 
 double netiiu::beaconPeriod () const
 {
-    return - DBL_MAX;
+    return ( - DBL_MAX );
 }

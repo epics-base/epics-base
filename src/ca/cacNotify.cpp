@@ -12,40 +12,32 @@
 
 #include "iocinf.h"
 
-cacNotify::cacNotify () : pIO (0)
-{
-}
-
 cacNotify::~cacNotify ()
 {
-    cacNotifyIO *pTmpIO = this->pIO;
-    if ( pTmpIO ) {
-        this->pIO = 0;
-        // the code fits together better in iother places
-        // if the delete and the uninstall are speparate steps
-        pTmpIO->uninstall ();
-        delete pTmpIO;
-    }
 }
 
-void cacNotify::completionNotify ()
+void cacNotify::completionNotify ( cacChannelIO &chan )
 {
-    ca_printf ("CAC: IO completion with no handler installed?\n");
+    ca_printf ( "CAC: IO completion for channel %s with no handler installed?\n",
+        chan.pName () );
 }
 
-void cacNotify::completionNotify ( unsigned type, unsigned long count, const void *pData )
+void cacNotify::completionNotify ( cacChannelIO &chan, 
+             unsigned type, unsigned long count, const void *pData )
 {
-    ca_printf ("CAC: IO completion with no handler installed? type=%u count=%u data pointer=%p\n",
-                type, count, pData);
+    ca_printf ( "CAC: IO completion with no handler installed? channel=%s type=%u count=%u data pointer=%p\n",
+        chan.pName (), type, count, pData );
 }
 
-void cacNotify::exceptionNotify ( int status, const char *pContext )
+void cacNotify::exceptionNotify ( cacChannelIO &chan, int status, const char *pContext )
 {
-    ca_signal (status, pContext);
+    ca_signal_formated ( status, __FILE__, __LINE__, "%s channel=%s\n", 
+        pContext, chan.pName () );
 }
 
-void cacNotify::exceptionNotify ( int status, const char *pContext, unsigned type, unsigned long count )
+void cacNotify::exceptionNotify ( cacChannelIO &chan, int status, 
+                                 const char *pContext, unsigned type, unsigned long count )
 {
-    ca_signal_formated (status, __FILE__, __LINE__, "%s type=%d count=%ld\n", 
-        pContext, type, count);
+    ca_signal_formated ( status, __FILE__, __LINE__, "%s channel=%s type=%d count=%ld\n", 
+        chan.pName (), pContext, type, count );
 }

@@ -12,17 +12,8 @@
 
 #include "iocinf.h"
 
-cacNotifyIO::cacNotifyIO ( cacNotify &notifyIn ) : notify ( notifyIn )
-{
-    assert ( ! this->notify.pIO );
-    this->notify.pIO = this;
-}
-
 cacNotifyIO::~cacNotifyIO ()
 {
-    if ( this->notify.pIO == this ) {
-        this->notify.pIO = 0;
-        this->notify.destroy ();
-    }
+    this->callback.release ();
 }
 

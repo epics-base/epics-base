@@ -20,6 +20,8 @@
 // nciu inline member functions
 //
 
+#include "ioCounter_IL.h"
+
 inline void * nciu::operator new ( size_t size )
 { 
     return nciu::freeList.allocate ( size );
@@ -58,7 +60,7 @@ inline void nciu::resetRetryCount ()
 inline void nciu::accessRightsStateChange ( const caar &arIn )
 {
     this->ar = arIn;
-    this->accessRightsNotify ( this->ar );
+    this->notify ().accessRightsNotify ( *this, this->ar );
 }
 
 inline ca_uint32_t nciu::getSID () const
@@ -125,5 +127,21 @@ inline bool nciu::isAttachedToVirtaulCircuit ( const osiSockAddr &addrIn )
 inline netiiu * nciu::getPIIU ()
 {
     return this->piiu;
+}
+
+inline cac & nciu::getCAC ()
+{
+    return this->cacCtx;
+}
+
+
+inline void nciu::incrementOutstandingIO ( unsigned seqNumber )
+{
+    this->cacCtx.incrementOutstandingIO ( seqNumber );
+}
+
+inline void nciu::decrementOutstandingIO ( unsigned seqNumber )
+{
+    this->cacCtx.decrementOutstandingIO ( seqNumber );
 }
 

@@ -47,10 +47,10 @@
 extern "C" {
 #endif
 
-typedef struct oldChannel       *chid;
+typedef struct cacChannelIO     *chid;
 typedef chid                    chanId; /* for when the structures field name is "chid" */
 typedef long                    chtype;
-typedef struct oldSubscription  *evid;
+typedef struct cacNotifyIO      *evid;
 typedef double                  ca_real;
 
 /* Format for the arguments to user connection handlers         */
@@ -870,26 +870,6 @@ ca_sg_array_put (gid, type, 1u, chan, pValue)
 epicsShareFunc int epicsShareAPI ca_sg_stat (CA_SYNC_GID gid);
 
 /*
- * ca_modify_user_name()
- *
- * Modify or override the default
- * client user name.
- *
- * pUserName    R   new user name string copied from this location  
- */
-epicsShareFunc int epicsShareAPI ca_modify_user_name ( const char *pUserName );
-
-/*
- * CA_MODIFY_HOST_NAME()
- *
- * Modify or override the default
- * client host name.
- *
- * pHostName    R   new host name string copied from this location  
- */
-epicsShareFunc int epicsShareAPI ca_modify_host_name ( const char *pHostName );
-
-/*
  * ca_v42_ok()
  *
  * Put call back is available if the CA server is on version is 4.2 
@@ -950,6 +930,11 @@ epicsShareFunc int epicsShareAPI ca_client_status (unsigned level);
 epicsShareFunc int epicsShareAPI ca_import (epicsThreadId tid);
 epicsShareFunc int epicsShareAPI ca_import_cancel (epicsThreadId tid);
 
+/*
+ * defunct
+ */
+epicsShareFunc int epicsShareAPI ca_modify_user_name ( const char *pUserName );
+epicsShareFunc int epicsShareAPI ca_modify_host_name ( const char *pHostName );
 
 #else /* CAC_ANSI_FUNC_PROTO */
 epicsShareFunc short epicsShareAPI ca_get_field_type ();

@@ -15,31 +15,17 @@
 
 tsFreeList < struct oldSubscription, 1024 > oldSubscription::freeList;
 
-oldSubscription::oldSubscription  ( oldChannel &chanIn, caEventCallBackFunc *pFuncIn, void *pPrivateIn ) :
-    chan (chanIn), pFunc (pFuncIn), pPrivate (pPrivateIn)
-{
-}
-
 oldSubscription::~oldSubscription ()
 {
 }
 
-oldChannel &oldSubscription::channel ()
-{
-    return this->chan;
-}
-
-void oldSubscription::completionNotify ()
-{
-    cacNotify::completionNotify ();
-}
-
-void oldSubscription::completionNotify (unsigned type, unsigned long count, const void *pData)
+void oldSubscription::completionNotify ( cacChannelIO &io, 
+    unsigned type, unsigned long count, const void *pData)
 {
     struct event_handler_args args;
 
     args.usr = this->pPrivate;
-    args.chid = &this->chan;
+    args.chid = & io;
     args.type = type;
     args.count = count;
     args.status = ECA_NORMAL;
@@ -47,37 +33,38 @@ void oldSubscription::completionNotify (unsigned type, unsigned long count, cons
     ( *this->pFunc ) (args);
 }
 
-void oldSubscription::exceptionNotify ( int status, const char * /* pContext */ )
+void oldSubscription::exceptionNotify ( cacChannelIO &io,
+    int status, const char * /* pContext */ )
 {
     struct event_handler_args args;
 
     args.usr = this->pPrivate;
-    args.chid = &this->chan;
-    args.type = 0;
+    args.chid = & io;
+    args.type = TYPENOTCONN;
     args.count = 0;
     args.status = status;
     args.dbr = 0;
     ( *this->pFunc ) (args);    
 }
     
-void oldSubscription::exceptionNotify ( int status, const char *pContext, 
-                                       unsigned type, unsigned long count )
+void oldSubscription::exceptionNotify ( cacChannelIO &io,
+    int status, const char *pContext, 
+    unsigned type, unsigned long count )
 {
-    cacNotify::exceptionNotify ( status, pContext, type, count );
+    struct event_handler_args args;
+
+    args.usr = this->pPrivate;
+    args.chid = & io;
+    args.type = type;
+    args.count = count;
+    args.status = status;
+    args.dbr = 0;
+    ( *this->pFunc ) (args);
 }
 
-void oldSubscription::destroy ()
+void oldSubscription::release ()
 {
     delete this;
 }
 
-void * oldSubscription::operator new ( size_t size )
-{
-    return oldSubscription::freeList.allocate ( size );
-}
-
-void oldSubscription::operator delete ( void *pCadaver, size_t size )
-{
-    oldSubscription::freeList.release ( pCadaver, size );
-}
 

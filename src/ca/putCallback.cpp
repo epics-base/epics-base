@@ -20,64 +20,68 @@
 
 tsFreeList < class putCallback, 1024 > putCallback::freeList;
 
-putCallback::putCallback (oldChannel &chanIn, caEventCallBackFunc *pFuncIn, void *pPrivateIn ) :
-    chan (chanIn), pFunc (pFuncIn), pPrivate (pPrivateIn)
-{
-}
-
 putCallback::~putCallback ()
 {
 }
 
-void putCallback::destroy ()
+void putCallback::release ()
 {
     delete this;
 }
 
-void putCallback::completionNotify ()
+void putCallback::completionNotify ( cacChannelIO &io )
 {
     struct event_handler_args args;
 
     args.usr = this->pPrivate;
-    args.chid = &this->chan;
-    args.type = 0;
-    args.count =  0;
+    args.chid = & io;
+    args.type = TYPENOTCONN;
+    args.count = 0;
     args.status = ECA_NORMAL;
     args.dbr = 0;
     (*this->pFunc) (args);
 }
 
-void putCallback::completionNotify ( unsigned type, 
-        unsigned long count, const void *pData )
-{
-    cacNotify::completionNotify ( type, count, pData );
-}
-
-void putCallback::exceptionNotify (int status, const char * /* pContext */ )
+void putCallback::completionNotify ( cacChannelIO &io, unsigned type, 
+    unsigned long count, const void *pData )
 {
     struct event_handler_args args;
 
     args.usr = this->pPrivate;
-    args.chid = &this->chan;
-    args.type = 0;
+    args.chid = & io;
+    args.type = type;
+    args.count = count;
+    args.status = ECA_NORMAL;
+    args.dbr = 0;
+    (*this->pFunc) (args);
+}
+
+void putCallback::exceptionNotify ( cacChannelIO &io, 
+    int status, const char * /* pContext */ )
+{
+    struct event_handler_args args;
+
+    args.usr = this->pPrivate;
+    args.chid = & io;
+    args.type = TYPENOTCONN;
     args.count = 0;
     args.status = status;
     args.dbr = 0;
     (*this->pFunc) (args);
 }
 
-void putCallback::exceptionNotify ( int status, 
+void putCallback::exceptionNotify ( cacChannelIO &io, int status, 
     const char *pContext, unsigned type, unsigned long count )
 {
-    cacNotify::exceptionNotify ( status, pContext, type, count );
+    struct event_handler_args args;
+
+    args.usr = this->pPrivate;
+    args.chid = & io;
+    args.type = type;
+    args.count = count;
+    args.status = status;
+    args.dbr = 0;
+    (*this->pFunc) (args);
 }
 
-void * putCallback::operator new ( size_t size )
-{
-    return putCallback::freeList.allocate ( size );
-}
 
-void putCallback::operator delete ( void *pCadaver, size_t size )
-{
-    putCallback::freeList.release ( pCadaver, size );
-}

@@ -15,47 +15,8 @@
 
 #include "iocinf.h"
 
-cacChannelIO::cacChannelIO ( cacChannel &chanIn ) :
-    chan ( chanIn ) 
-{
-}
-
 cacChannelIO::~cacChannelIO ()
 {
-    this->chan.pChannelIO = 0;
-}
-
-cacLocalChannelIO::cacLocalChannelIO ( cac &cacCtxIn, cacChannel &chan ) :
-  cacChannelIO ( chan ), cacCtx ( cacCtxIn ) {};
-
-cacLocalChannelIO::~cacLocalChannelIO ()
-{
-    this->cacCtx.uninstallLocalChannel ( *this );
-}
-
-void cacChannelIO::connectNotify ()
-{
-    this->chan.connectNotify ();
-}
-
-void cacChannelIO::disconnectNotify ()
-{
-    this->chan.disconnectNotify ();
-}
-
-void cacChannelIO::connectTimeoutNotify ()
-{
-    this->chan.connectTimeoutNotify ();
-}
-
-void cacChannelIO::accessRightsNotify ( caar ar )
-{
-    this->chan.accessRightsNotify ( ar );
-}
-
-void cacChannelIO::ioReleaseNotify ()
-{
-    this->chan.ioReleaseNotify ();
 }
 
 channel_state cacChannelIO::state () const 
@@ -69,6 +30,10 @@ caar cacChannelIO::accessRights () const
     // error checking codes
     static caar ar = { true, true };
     return ar;
+}
+
+void cacChannelIO::notifyStateChangeFirstConnectInCountOfOutstandingIO ()
+{
 }
 
 unsigned cacChannelIO::searchAttempts () const 
@@ -91,15 +56,10 @@ bool cacChannelIO::connected () const
     return true;
 }
 
-unsigned cacChannelIO::readSequence () const 
-{
-    return 0u;
-}
-
 void cacChannelIO::hostName ( char *pBuf, unsigned bufLength ) const 
 {
     if ( bufLength ) {
-        localHostNameAtLoadTime.copy (pBuf, bufLength );
+        localHostNameAtLoadTime.copy ( pBuf, bufLength );
     }
 }
 
@@ -107,22 +67,6 @@ void cacChannelIO::hostName ( char *pBuf, unsigned bufLength ) const
 const char * cacChannelIO::pHostName () const
 {
     return localHostNameAtLoadTime.pointer ();
-}
-
-void cacChannelIO::incrementOutstandingIO ()
-{
-}
-
-void cacChannelIO::decrementOutstandingIO ()
-{
-}
-
-void cacChannelIO::lockOutstandingIO () const
-{
-}
-
-void cacChannelIO::unlockOutstandingIO () const
-{
 }
 
 

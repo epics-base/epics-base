@@ -14,8 +14,8 @@ INC += db_access.h
 INC += addrList.h
 INC += cacIO.h
 
-LIBSRCS += cacChannel.cpp
 LIBSRCS += cacChannelIO.cpp
+LIBSRCS += cacChannelNotify.cpp
 LIBSRCS += cacNotify.cpp
 LIBSRCS += cacNotifyIO.cpp
 LIBSRCS += cacServiceList.cpp
@@ -40,7 +40,7 @@ LIBSRCS += cac.cpp
 LIBSRCS += tcpSendWatchdog.cpp
 LIBSRCS += tcpRecvWatchdog.cpp
 LIBSRCS += bhe.cpp
-LIBSRCS += oldChannel.cpp
+LIBSRCS += oldChannelNotify.cpp
 LIBSRCS += oldSubscription.cpp
 LIBSRCS += getCallback.cpp
 LIBSRCS += putCallback.cpp
@@ -79,6 +79,7 @@ caRepeater_SRCS = caRepeater.cpp
 PROD += caRepeater
 
 PROD_DEFAULT += catime acctst caConnTest casw caEventRate
+OBJS_IOC += catime acctst caConnTest casw caEventRate
 catime_SRCS = catimeMain.c catime.c 
 acctst_SRCS = acctstMain.c acctst.c 
 caEventRate_SRCS = caEventRateMain.cpp caEventRate.cpp

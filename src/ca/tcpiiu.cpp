@@ -508,6 +508,14 @@ bool tcpiiu::initiateConnect ( const osiSockAddr &addrIn, unsigned minorVersion,
         socket_close ( this->sock );
         return false;
     }
+
+    CAFDHANDLER *fdRegFunc;
+    void *fdRegArg;
+    this->pCAC ()->getFDRegCallback ( fdRegFunc, fdRegArg );
+    if ( fdRegFunc ) {
+        ( *fdRegFunc ) ( fdRegArg, this->sock, TRUE );
+    }    
+
     return true;
 }
 
@@ -594,7 +602,6 @@ void tcpiiu::cleanShutdown ()
         else {
             this->state = iiu_disconnected;
         }
-
     }
     else if ( this->state == iiu_connecting ) {
         int status = socket_close ( this->sock );
@@ -661,6 +668,13 @@ void tcpiiu::disconnect ()
         this->pCAC ()->printf ( "CA connection disconnect with %u IO items still installed?\n",
             this->ioTable.numEntriesInstalled () );
     }
+
+    CAFDHANDLER *fdRegFunc;
+    void *fdRegArg;
+    this->pCAC ()->getFDRegCallback ( fdRegFunc, fdRegArg );
+    if ( fdRegFunc ) {
+        ( *fdRegFunc ) ( fdRegArg, this->sock, FALSE );
+    }    
 
     this->cleanShutdown ();
 
@@ -1157,7 +1171,7 @@ void tcpiiu::readRespAction ()
 
 void tcpiiu::clearChannelRespAction ()
 {
-    this->pCAC ()->channelDestroy ( this->curMsg.m_available );
+    // currently a noop
 }
 
 void tcpiiu::exceptionRespAction ()
@@ -1421,7 +1435,7 @@ int tcpiiu::writeRequest ( nciu &chan, unsigned type, unsigned nElem, const void
     }
 
     if ( this->sendQue.flushThreshold ( postcnt + 16u ) ) {
-        this->flushToWire ( true );
+        this->threadContextSensitiveFlushToWire ( true );
     }
 
     epicsAutoMutex autoMutex ( this->mutex );
@@ -1484,7 +1498,7 @@ int tcpiiu::writeNotifyRequest ( nciu &chan, cacNotify &notify, unsigned type,
     }
 
     if ( this->sendQue.flushThreshold ( postcnt + 16u ) ) {
-        this->flushToWire ( true );
+        this->threadContextSensitiveFlushToWire ( true );
     }
 
     epicsAutoMutex autoMutex ( this->mutex );
@@ -1532,7 +1546,7 @@ int tcpiiu::readCopyRequest ( nciu &chan, unsigned type, unsigned nElem, void *p
     }
 
     if ( this->sendQue.flushThreshold ( 16u ) ) {
-        this->flushToWire ( true );
+        this->threadContextSensitiveFlushToWire ( true );
     }
 
     epicsAutoMutex autoMutex ( this->mutex );
@@ -1543,8 +1557,9 @@ int tcpiiu::readCopyRequest ( nciu &chan, unsigned type, unsigned nElem, void *p
             status = ECA_DISCONNCHID;
         }
         else {
-            netReadCopyIO *pIO = new netReadCopyIO ( chan, type, nElem, pValue, 
-                        this->pCAC ()->readSequenceOfOutstandingIO () );
+            unsigned seqNo = this->pCAC ()->readSequenceOfOutstandingIO ();
+            netReadCopyIO *pIO = new netReadCopyIO ( chan, type, 
+                nElem, pValue, seqNo );
             if ( ! pIO ) {
                 status = ECA_ALLOCMEM;
             }
@@ -1575,7 +1590,7 @@ int tcpiiu::readNotifyRequest ( nciu &chan, cacNotify &notify,
     }
 
     if ( this->sendQue.flushThreshold ( 16u ) ) {
-        this->flushToWire ( true );
+        this->threadContextSensitiveFlushToWire ( true );
     }
 
     epicsAutoMutex autoMutex ( this->mutex );
@@ -1668,7 +1683,7 @@ int tcpiiu::clearChannelRequest ( nciu &chan )
     int status;
 
     if ( this->sendQue.flushThreshold ( 16u ) ) {
-        this->flushToWire ( true );
+        this->threadContextSensitiveFlushToWire ( true );
     }
 
     epicsAutoMutex autoMutex ( this->mutex );
@@ -1707,7 +1722,7 @@ int tcpiiu::subscriptionRequest ( netSubscription &subscr, bool userThread )
 
     if ( this->sendQue.flushThreshold ( 32u ) ) {
         if ( userThread ) {
-            this->flushToWire ( true );
+            this->threadContextSensitiveFlushToWire ( true );
         }
         else {
             this->flush ();
@@ -1748,7 +1763,7 @@ void tcpiiu::subscriptionCancelRequest ( netSubscription &subscr, bool userThrea
 {
     if ( this->sendQue.flushThreshold ( 16u ) ) {
         if ( userThread ) {
-            this->flushToWire ( true );
+            this->threadContextSensitiveFlushToWire ( true );
         }
         else {
             this->flush ();
@@ -1775,10 +1790,8 @@ void tcpiiu::lastChannelDetachNotify ()
     this->cleanShutdown ();
 }
 
-bool tcpiiu::flushToWire ( bool userThread )
+bool tcpiiu::threadContextSensitiveFlushToWire ( bool userThread )
 {
-    bool success = true;
-
     // the recv thread is not permitted to flush as this
     // can result in a push / pull deadlock on the TCP pipe,
     // but in that case we still schedual the flush through 
@@ -1787,6 +1800,12 @@ bool tcpiiu::flushToWire ( bool userThread )
         this->flush ();
         return true;
     }
+    return this->flushToWire ( userThread );
+}
+
+bool tcpiiu::flushToWire ( bool userThread )
+{
+    bool success = true;
 
     // enable callback processing prior to taking the flush lock
     if ( userThread ) {
@@ -1984,13 +2003,43 @@ void tcpiiu::disconnectAllIO ( nciu &chan )
     }
 }
 
-void tcpiiu::uninstallIO ( baseNMIU &io )
+//
+// care is taken to not hold the lock while deleting the
+// IO so that subscription delete request (sent by the
+// IO's destructor) do not deadlock
+//
+bool tcpiiu::destroyAllIO ( nciu &chan )
+{
+    tsDLList < baseNMIU > eventQ;
+    {
+        epicsAutoMutex autoMutex ( this->mutex );
+        if ( chan.verifyIIU ( *this ) ) {
+            while ( baseNMIU *pIO = eventQ.get () ) {
+                this->ioTable.remove ( *pIO );
+                eventQ.add ( *pIO );
+            }
+        }
+        else {
+            return false;
+        }
+    }
+    while ( baseNMIU *pIO = eventQ.get () ) {
+        pIO->destroy ();
+    }
+    return true;
+}
+
+bool tcpiiu::uninstallIO ( baseNMIU &io )
 {
     epicsAutoMutex autoMutex ( this->mutex );
-    if ( io.channel ().verifyConnected ( *this ) ) {
+    if ( io.channel ().verifyIIU ( *this ) ) {
         this->ioTable.remove ( io );
     }
+    else {
+        return false;
+    }
     io.channel ().tcpiiuPrivateListOfIO::eventq.remove ( io );
+    return true;
 }
 
 double tcpiiu::beaconPeriod () const

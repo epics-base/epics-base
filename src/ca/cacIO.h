@@ -15,147 +15,105 @@
  *	505 665 1831
  */
 
+//
+// Notes
+// 1) these routines should be changed to throw exceptions and not return
+// ECA_XXXX style status in the future.
+//
+
 #include "tsDLList.h"
 #include "epicsMutex.h"
 
 #include "shareLib.h"
 
-class cacNotifyIO;
-class cac;
+struct cacChannelIO;
+struct cacNotifyIO;
 
-class epicsShareClass cacNotify {
+class cacNotify {
 public:
-    cacNotify  ();
-    virtual ~cacNotify () = 0;
-    virtual void destroy () = 0;
-    virtual void completionNotify ();
-    virtual void completionNotify ( unsigned type, unsigned long count, const void *pData );
-    virtual void exceptionNotify ( int status, const char *pContext );
-    virtual void exceptionNotify ( int status, const char *pContext, unsigned type, unsigned long count );
-private:
-    cacNotifyIO *pIO;
-    friend class cacNotifyIO;
-};
-
-class epicsShareClass cacNotifyIO {
-public:
-    cacNotifyIO ( cacNotify & );
-    virtual ~cacNotifyIO () = 0;
-    virtual void uninstall () = 0;
-    void completionNotify ();
-    void completionNotify ( unsigned type, unsigned long count, const void *pData );
-    void exceptionNotify ( int status, const char *pContext );
-    void exceptionNotify ( int status, const char *pContext, unsigned type, unsigned long count );
-private:
-    cacNotify &notify;
-    friend class cacNotify;
-};
-
-class epicsShareClass cacChannel {
-public:
-    cacChannel ();
-    virtual ~cacChannel () = 0;
-    virtual void destroy () = 0;
-
-    void attachIO ( class cacChannelIO &io );
-    int read ( unsigned type, unsigned long count, void *pValue );
-    int read ( unsigned type, unsigned long count, cacNotify & );
-    int write ( unsigned type, unsigned long count, const void *pvalue );
-    int write ( unsigned type, unsigned long count, const void *pvalue, cacNotify &notify );
-    int subscribe ( unsigned type, unsigned long count, unsigned mask, cacNotify &notify );
-    void hostName ( char *pBuf, unsigned bufLength ) const;
-    short nativeType () const;
-    unsigned long nativeElementCount () const;
-    channel_state state () const;
-    bool readAccess () const;
-    bool writeAccess () const;
-    const char *pName () const;
-    unsigned searchAttempts () const;
-    double beaconPeriod () const;
-    bool ca_v42_ok () const;
-    bool connected () const;
-    caar accessRights () const;
-    unsigned readSequence () const;
-    void incrementOutstandingIO ();
-    void decrementOutstandingIO ();
-    void decrementOutstandingIO ( unsigned seqNumber );
-
-    const char * pHostName () const; // deprecated - please do not use
-
+    epicsShareFunc virtual void release () = 0;
+    epicsShareFunc virtual void completionNotify ( cacChannelIO & );
+    epicsShareFunc virtual void completionNotify ( cacChannelIO &, unsigned type, 
+        unsigned long count, const void *pData );
+    epicsShareFunc virtual void exceptionNotify ( cacChannelIO &, 
+        int status, const char *pContext );
+    epicsShareFunc virtual void exceptionNotify ( cacChannelIO &, 
+        int status, const char *pContext, unsigned type, unsigned long count );
 protected:
-    class cacChannelIO *pChannelIO;
-
-    void lockOutstandingIO () const;
-    void unlockOutstandingIO () const;
-
-private:
-    virtual void ioAttachNotify ();
-    virtual void ioReleaseNotify ();
-    virtual void connectNotify ();
-    virtual void disconnectNotify ();
-    virtual void accessRightsNotify ( caar );
-    virtual void exceptionNotify ( int status, const char *pContext );
-    virtual void connectTimeoutNotify ();
-
-    friend class cacChannelIO;
+    epicsShareFunc virtual ~cacNotify () = 0;
 };
 
-class epicsShareClass cacChannelIO {
+struct cacNotifyIO {
 public:
-    cacChannelIO ( cacChannel &chan );
-    virtual ~cacChannelIO () = 0;
-    virtual void destroy () = 0;
-
-    void connectNotify ();
-    void disconnectNotify ();
-    void connectTimeoutNotify ();
-    void accessRightsNotify ( caar );
-    void ioReleaseNotify ();
-
-    virtual const char *pName () const = 0;
-
-    virtual void lockOutstandingIO () const = 0;
-    virtual void unlockOutstandingIO () const = 0;
-
-    virtual void show ( unsigned level ) const = 0;
-
+    epicsShareFunc cacNotifyIO ( cacNotify & );
+    epicsShareFunc cacNotify & notify () const;
+    epicsShareFunc virtual void destroy () = 0; // also uninstalls
+    epicsShareFunc virtual cacChannelIO & channelIO () const = 0;
+protected:
+    epicsShareFunc virtual ~cacNotifyIO () = 0;
 private:
-    virtual int read ( unsigned type, unsigned long count, void *pValue) = 0;
-    virtual int read ( unsigned type, unsigned long count, cacNotify &notify ) = 0;
-    virtual int write ( unsigned type, unsigned long count, const void *pValue ) = 0;
-    virtual int write ( unsigned type, unsigned long count, const void *pValue, cacNotify &notify ) = 0;
-    virtual int subscribe ( unsigned type, unsigned long count, unsigned mask, cacNotify &notify ) = 0;
-    virtual short nativeType () const = 0;
-    virtual unsigned long nativeElementCount () const = 0;
-    virtual void hostName (char *pBuf, unsigned bufLength) const; // defaults to local host name
-    virtual channel_state state () const; // defaults to always connected
-    virtual caar accessRights () const; // defaults to unrestricted access
-    virtual unsigned searchAttempts () const; // defaults to zero
-    virtual double beaconPeriod () const; // defaults to negative DBL_MAX
-    virtual bool ca_v42_ok () const; // defaults to true
-    virtual bool connected () const; // defaults to true
-    virtual unsigned readSequence () const; // defaults to always zero
-    virtual void incrementOutstandingIO ();
-    virtual void decrementOutstandingIO ();
-    virtual const char * pHostName () const; // deprecated - please do not use
-
-    cacChannel &chan;
-
-    friend class cacChannel;
+    cacNotify &callback;
 };
 
-class cacLocalChannelIO : 
-    public cacChannelIO, public tsDLNode < cacLocalChannelIO > {
+class cacChannelNotify {
 public:
-    epicsShareFunc cacLocalChannelIO ( cac&, cacChannel &chan );
-    epicsShareFunc virtual ~cacLocalChannelIO ();
-private:
-    cac &cacCtx;
+    epicsShareFunc virtual void release () = 0;
+    epicsShareFunc virtual void connectNotify ( cacChannelIO & );
+    epicsShareFunc virtual void disconnectNotify ( cacChannelIO & );
+    epicsShareFunc virtual void accessRightsNotify ( cacChannelIO &, const caar & );
+    epicsShareFunc virtual void exceptionNotify ( cacChannelIO &, int status, const char *pContext );
+
+    // not for public consumption
+    epicsShareFunc virtual bool includeFirstConnectInCountOfOutstandingIO () const;
+    epicsShareFunc virtual class oldChannelNotify * pOldChannelNotify ();
+protected:
+    epicsShareFunc virtual ~cacChannelNotify () = 0;
 };
+
+struct cacChannelIO {
+public:
+    epicsShareFunc cacChannelIO ( cacChannelNotify &chan );
+    epicsShareFunc cacChannelNotify & notify () const;
+
+    epicsShareFunc virtual void destroy () = 0;
+    epicsShareFunc virtual const char *pName () const = 0;
+    epicsShareFunc virtual void show ( unsigned level ) const = 0;
+    epicsShareFunc virtual void initiateConnect () = 0;
+    epicsShareFunc virtual int read ( unsigned type, 
+        unsigned long count, void *pValue) = 0;
+    epicsShareFunc virtual int read ( unsigned type, 
+        unsigned long count, cacNotify &notify ) = 0;
+    epicsShareFunc virtual int write ( unsigned type, 
+        unsigned long count, const void *pValue ) = 0;
+    epicsShareFunc virtual int write ( unsigned type, 
+        unsigned long count, const void *pValue, 
+        cacNotify &notify ) = 0;
+    epicsShareFunc virtual int subscribe ( unsigned type, 
+        unsigned long count, unsigned mask, 
+        cacNotify &notify, cacNotifyIO *& ) = 0;
+    epicsShareFunc virtual short nativeType () const = 0;
+    epicsShareFunc virtual unsigned long nativeElementCount () const = 0;
+    epicsShareFunc virtual channel_state state () const; // defaults to always connected
+    epicsShareFunc virtual caar accessRights () const; // defaults to unrestricted access
+    epicsShareFunc virtual unsigned searchAttempts () const; // defaults to zero
+    epicsShareFunc virtual double beaconPeriod () const; // defaults to negative DBL_MAX
+    epicsShareFunc virtual bool ca_v42_ok () const; // defaults to true
+    epicsShareFunc virtual bool connected () const; // defaults to true
+    epicsShareFunc virtual void hostName (char *pBuf, unsigned bufLength) const; // defaults to local host name
+    epicsShareFunc virtual const char * pHostName () const; // deprecated - please do not use
+    epicsShareFunc virtual void notifyStateChangeFirstConnectInCountOfOutstandingIO ();
+protected:
+    epicsShareFunc virtual ~cacChannelIO () = 0;
+private:
+    cacChannelNotify &chan;
+};
+
+class cac;
 
 struct cacServiceIO : public tsDLNode < cacServiceIO > {
 public:
-    epicsShareFunc virtual cacLocalChannelIO *createChannelIO ( const char *pName, cac &, cacChannel & ) = 0;
+    epicsShareFunc virtual cacChannelIO *createChannelIO ( 
+        const char *pName, cac &, cacChannelNotify & ) = 0;
     epicsShareFunc virtual void show ( unsigned level ) const = 0;
 private:
 };
@@ -164,7 +122,8 @@ class cacServiceList : private epicsMutex {
 public:
     epicsShareFunc cacServiceList ();
     epicsShareFunc void registerService ( cacServiceIO &service );
-    epicsShareFunc cacLocalChannelIO * createChannelIO ( const char *pName, cac &, cacChannel & );
+    epicsShareFunc cacChannelIO * createChannelIO ( 
+        const char *pName, cac &, cacChannelNotify & );
     epicsShareFunc void show ( unsigned level ) const;
 private:
     tsDLList < cacServiceIO > services;
@@ -174,23 +133,21 @@ epicsShareExtern cacServiceList cacGlobalServiceList;
 
 epicsShareFunc int epicsShareAPI ca_register_service ( struct cacServiceIO *pService );
 
-inline void cacNotifyIO::completionNotify ()
+inline cacNotifyIO::cacNotifyIO ( cacNotify &notifyIn ) : callback ( notifyIn )
 {
-    this->notify.completionNotify ();
 }
 
-inline void cacNotifyIO::completionNotify ( unsigned type, unsigned long count, const void *pData )
+inline cacNotify & cacNotifyIO::notify () const
 {
-    this->notify.completionNotify ( type, count, pData );
+    return this->callback;
 }
 
-inline void cacNotifyIO::exceptionNotify ( int status, const char *pContext )
+inline cacChannelIO::cacChannelIO ( cacChannelNotify &chanIn ) : chan ( chanIn ) 
 {
-    this->notify.exceptionNotify ( status, pContext );
 }
 
-inline void cacNotifyIO::exceptionNotify ( int status, const char *pContext, unsigned type, unsigned long count )
+inline cacChannelNotify & cacChannelIO::notify () const
 {
-    this->notify.exceptionNotify ( status, pContext, type, count );
+    return this->chan;
 }
 

@@ -13,6 +13,7 @@
 #include "iocinf.h"
 #include "netSubscription_IL.h"
 #include "nciu_IL.h"
+#include "baseNMIU_IL.h"
 
 tsFreeList < class netSubscription, 1024 > netSubscription::freeList;
 
@@ -25,14 +26,21 @@ netSubscription::netSubscription ( nciu &chan, unsigned typeIn, unsigned long co
 
 netSubscription::~netSubscription () 
 {
-    // o netiiu lock must _not_ be applied when calling this
-    // o uninstall from channel and IIU occur in uninstall method
+    // netiiu lock must _not_ be applied when calling this
     this->chan.getPIIU ()->subscriptionCancelRequest ( *this, true );
 }
 
-void netSubscription::uninstall ()
+void netSubscription::destroy ()
 {
-    this->chan.getPIIU ()->uninstallIO ( *this );
+    unsigned i = 0u;
+    while ( ! this->chan.getPIIU ()->uninstallIO ( *this ) ) {
+        if ( i++ > 1000u ) {
+            this->chan.getCAC ().printf ( 
+                "CAC: unable to destroy IO\n" );
+            break;
+        }
+    }
+    delete this;
 }
 
 class netSubscription * netSubscription::isSubscription ()
@@ -42,25 +50,30 @@ class netSubscription * netSubscription::isSubscription ()
 
 void netSubscription::completionNotify ()
 {
-    this->cacNotifyIO::completionNotify ();
+    this->notify ().completionNotify ( this->channel () );
 }
 
 void netSubscription::completionNotify ( unsigned typeIn, 
 	unsigned long countIn, const void *pDataIn )
 {
-    this->cacNotifyIO::completionNotify ( typeIn, countIn, pDataIn );
+    this->notify ().completionNotify ( this->channel (), typeIn, countIn, pDataIn );
 }
 
 void netSubscription::exceptionNotify ( int status, const char *pContext )
 {
-    this->cacNotifyIO::exceptionNotify ( status, pContext );
+    this->notify ().exceptionNotify ( this->channel (), status, pContext );
 }
 
 void netSubscription::exceptionNotify ( int statusIn, 
     const char *pContextIn, unsigned typeIn, unsigned long countIn )
 {
-    this->cacNotifyIO::exceptionNotify ( statusIn, 
+    this->notify ().exceptionNotify ( this->channel (), statusIn, 
           pContextIn, typeIn, countIn );
+}
+
+cacChannelIO & netSubscription::channelIO () const
+{
+    return this->channel ();
 }
 
 void netSubscription::show ( unsigned level ) const

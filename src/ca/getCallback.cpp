@@ -20,61 +20,52 @@
 
 tsFreeList < class getCallback, 1024 > getCallback::freeList;
 
-getCallback::getCallback (oldChannel &chanIn, caEventCallBackFunc *pFuncIn, void *pPrivateIn) :
-    chan (chanIn), pFunc (pFuncIn), pPrivate (pPrivateIn)
-{
-}
-
 getCallback::~getCallback ()
 {
 }
 
-void getCallback::destroy ()
+void getCallback::release ()
 {
     delete this;
 }
 
-void getCallback::completionNotify ()
-{
-    cacNotify::completionNotify ();
-}
-
-void getCallback::completionNotify ( unsigned type, unsigned long count, const void *pData )
+void getCallback::completionNotify ( cacChannelIO &io, 
+    unsigned type, unsigned long count, const void *pData )
 {
     struct event_handler_args   args;
     args.usr = this->pPrivate;
-    args.chid = &this->chan;
+    args.chid = & io;
     args.type = type;
     args.count = count;
     args.status = ECA_NORMAL;
     args.dbr = pData;
-    (*this->pFunc) (args);
+    ( *this->pFunc ) ( args );
 }
 
-void getCallback::exceptionNotify (int status, const char * /* pContext */)
+void getCallback::exceptionNotify ( cacChannelIO &io, int status, 
+    const char * /* pContext */)
 {
     struct event_handler_args   args;
     args.usr = this->pPrivate;
-    args.chid = &this->chan;
-    args.type = 0;
+    args.chid = & io;
+    args.type = TYPENOTCONN;
     args.count = 0;
     args.status = status;
     args.dbr = 0;
-    (*this->pFunc) (args);
+    ( *this->pFunc ) ( args );
 }
 
-void getCallback::exceptionNotify ( int status, const char *pContext, 
+void getCallback::exceptionNotify ( cacChannelIO &io, 
+    int status, const char *pContext, 
     unsigned type, unsigned long count )
 {
-    cacNotify::exceptionNotify ( status, pContext, type, count);
+    struct event_handler_args   args;
+    args.usr = this->pPrivate;
+    args.chid = & io;
+    args.type = type;
+    args.count = count;
+    args.status = status;
+    args.dbr = 0;
+    ( *this->pFunc ) ( args );
 }
 
-void * getCallback::operator new ( size_t size )
-{
-    return getCallback::freeList.allocate ( size );
-}
-
-void getCallback::operator delete ( void *pCadaver, size_t size )
-{
-    getCallback::freeList.release ( pCadaver, size );
-}

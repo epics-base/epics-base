@@ -13,44 +13,51 @@
 #include "iocinf.h"
 #include "netWriteNotifyIO_IL.h"
 #include "nciu_IL.h"
+#include "baseNMIU_IL.h"
 
 tsFreeList < class netWriteNotifyIO, 1024 > netWriteNotifyIO::freeList;
 
-netWriteNotifyIO::netWriteNotifyIO (nciu &chan, cacNotify &notifyIn) :
-    cacNotifyIO (notifyIn), baseNMIU (chan)
+netWriteNotifyIO::netWriteNotifyIO ( nciu &chan, cacNotify &notifyIn ) :
+    cacNotifyIO ( notifyIn ), baseNMIU ( chan )
 {
 }
 
 netWriteNotifyIO::~netWriteNotifyIO () 
 {
-    // private NOOP forces pool allocation
 }
 
-void netWriteNotifyIO::uninstall ()
+void netWriteNotifyIO::destroy ()
 {
-    this->chan.getPIIU ()->uninstallIO ( *this );
+    delete this;
 }
 
 void netWriteNotifyIO::completionNotify ()
 {
-    this->cacNotifyIO::completionNotify ();
+    this->notify ().completionNotify ( this->channelIO () );
 }
 
 void netWriteNotifyIO::completionNotify ( 
     unsigned /* type */, unsigned long /* count */, 
     const void * /* pData */ )
 {
-    this->cacNotifyIO::completionNotify ();
+    this->notify ().completionNotify ( this->channelIO () );
 }
 
-void netWriteNotifyIO::exceptionNotify ( int status, const char *pContext )
+void netWriteNotifyIO::exceptionNotify ( int status, 
+                                        const char *pContext )
 {
-    this->cacNotifyIO::exceptionNotify (status, pContext);
+    this->notify ().exceptionNotify ( this->channelIO (), status, pContext );
 }
 
-void netWriteNotifyIO::exceptionNotify ( int status, const char *pContext, unsigned type, unsigned long count )
+void netWriteNotifyIO::exceptionNotify ( int status, 
+              const char *pContext, unsigned type, unsigned long count )
 {
-    this->cacNotifyIO::exceptionNotify (status, pContext, type, count);
+    this->notify ().exceptionNotify ( this->channelIO (), status, pContext, type, count );
+}
+
+cacChannelIO & netWriteNotifyIO::channelIO () const
+{
+    return this->channel ();
 }
 
 void netWriteNotifyIO::show ( unsigned level ) const

@@ -30,12 +30,13 @@ void cacServiceList::registerService ( cacServiceIO &service )
     this->unlock ();
 }
 
-cacLocalChannelIO * cacServiceList::createChannelIO (const char *pName, cac &cacCtx, cacChannel &chan)
+cacChannelIO * cacServiceList::createChannelIO ( const char *pName, 
+    cac &cacCtx, cacChannelNotify &chan )
 {
-    cacLocalChannelIO *pChanIO = 0;
+    cacChannelIO *pChanIO = 0;
 
     this->lock ();
-    tsDLIterBD <cacServiceIO> iter ( this->services.first () );
+    tsDLIterBD < cacServiceIO > iter ( this->services.first () );
     while ( iter.valid () ) {
         pChanIO = iter->createChannelIO ( pName, cacCtx, chan );
         if ( pChanIO ) {

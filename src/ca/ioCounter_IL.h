@@ -16,6 +16,9 @@
  *	505 665 1831
  */
 
+#ifndef ioCounter_ILh
+#define ioCounter_ILh
+
 inline ioCounter::ioCounter () : pndrecvcnt ( 0u ), readSeq ( 0u )
 {
 }
@@ -26,16 +29,23 @@ inline void ioCounter::incrementOutstandingIO ()
     if ( this->pndrecvcnt < UINT_MAX ) {
         this->pndrecvcnt++;
     }
+    else {
+        throwWithLocation ( caErrorCode (ECA_INTERNAL) );
+    }
     this->mutex.unlock ();
 }
 
-inline void ioCounter::lockOutstandingIO () const
+inline void ioCounter::incrementOutstandingIO ( unsigned readSeqIn )
 {
     this->mutex.lock ();
-}
-
-inline void ioCounter::unlockOutstandingIO () const
-{
+    if ( readSeqIn == this->readSeq ) {
+        if ( this->pndrecvcnt < UINT_MAX ) {
+            this->pndrecvcnt++;
+        }
+        else {
+            throwWithLocation ( caErrorCode (ECA_INTERNAL) );
+        }
+    }
     this->mutex.unlock ();
 }
 
@@ -64,4 +74,4 @@ inline void ioCounter::cleanUpOutstandingIO ()
     this->mutex.unlock ();
 }
 
-
+#endif // ioCounter_ILh

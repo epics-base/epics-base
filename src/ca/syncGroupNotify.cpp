@@ -41,7 +41,7 @@ syncGroupNotify::syncGroupNotify ( CASG &sgIn, void *pValueIn ) :
     this->sg.mutex.unlock ();
 }
 
-void syncGroupNotify::destroy ()
+void syncGroupNotify::release ()
 {
     delete this;
 }
@@ -53,8 +53,10 @@ syncGroupNotify::~syncGroupNotify ()
     this->sg.mutex.unlock ();
 }
 
-void syncGroupNotify::completionNotify ()
+void syncGroupNotify::completionNotify ( cacChannelIO & )
 {
+    bool done;
+
     if ( this->magic != CASG_MAGIC ) {
         ca_printf ("cac: sync group io_complete(): bad sync grp op magic number?\n");
         return;
@@ -64,20 +66,27 @@ void syncGroupNotify::completionNotify ()
     if ( this->seqNo == this->sg.seqNo ) {
         assert ( this->sg.opPendCount > 0u );
         this->sg.opPendCount--;
+        done = this->sg.opPendCount == 0;
+    }
+    else {
+        done = true;
     }
     this->sg.mutex.unlock ();
 
-    if ( this->sg.opPendCount == 0 ) {
+    if ( done ) {
         this->sg.sem.signal ();
     }
 }
 
-void syncGroupNotify::completionNotify ( unsigned type, unsigned long count, const void *pData )
+void syncGroupNotify::completionNotify ( cacChannelIO &, 
+    unsigned type, unsigned long count, const void *pData )
 {
     if ( this->magic != CASG_MAGIC ) {
         ca_printf ("cac: sync group io_complete(): bad sync grp op magic number?\n");
         return;
     }
+
+    bool complete;
 
     this->sg.mutex.lock ();
     if ( this->seqNo == this->sg.seqNo ) {
@@ -86,14 +95,18 @@ void syncGroupNotify::completionNotify ( unsigned type, unsigned long count, con
          */
         if ( this->pValue ) {
             size_t size = dbr_size_n ( type, count );
-            memcpy (this->pValue, pData, size);
+            memcpy ( this->pValue, pData, size );
         }
         assert ( this->sg.opPendCount > 0u );
         this->sg.opPendCount--;
+        complete = this->sg.opPendCount == 0;
+    }
+    else {
+        complete = true;
     }
     this->sg.mutex.unlock ();
 
-    if ( this->sg.opPendCount == 0 ) {
+    if ( complete ) {
         this->sg.sem.signal ();
     }
 }
@@ -104,27 +117,20 @@ void syncGroupNotify::show ( unsigned /* level */ ) const
          this->pValue, this->magic, this->seqNo, &this->sg);
 }
 
-void syncGroupNotify::exceptionNotify ( int status, const char *pContext )
+void syncGroupNotify::exceptionNotify ( cacChannelIO &io,
+    int status, const char *pContext )
 {
     ca_signal_formated ( status, __FILE__, __LINE__, 
-            "CA Sync Group request failed because \"%s\"\n", pContext);
+            "CA Sync Group request to channel %s failed because \"%s\"\n", 
+            io.pName (), pContext);
 }
 
-void syncGroupNotify::exceptionNotify ( int status, const char *pContext, unsigned type, unsigned long count )
+void syncGroupNotify::exceptionNotify ( cacChannelIO &io,
+    int status, const char *pContext, unsigned type, unsigned long count )
 {
     ca_signal_formated ( status, __FILE__, __LINE__, 
-            "CA Sync Group request failed with type=%d count=%ld because \"%s\"\n", 
-            type, count, pContext);
-}
-
-void syncGroupNotify::lock () const
-{
-    this->sg.mutex.lock ();
-}
-
-void syncGroupNotify::unlock () const
-{
-    this->sg.mutex.unlock ();
+            "CA Sync Group request failed with channel=%s type=%d count=%ld because \"%s\"\n", 
+            io.pName (), type, count, pContext);
 }
 
 void * syncGroupNotify::operator new (size_t size)

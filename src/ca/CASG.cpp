@@ -49,7 +49,7 @@ CASG::~CASG ()
         this->mutex.lock ();
         tsDLIterBD <syncGroupNotify> notify ( this->ioList.first () );
         while ( notify.valid () ) {
-            notify->destroy ();
+            notify->release ();
             notify = this->ioList.first ();
         }
         this->mutex.unlock ();
@@ -85,12 +85,12 @@ int CASG::block ( double timeout )
     /*
      * dont allow recursion
      */
-    void *p = epicsThreadPrivateGet (cacRecursionLock);
+    void *p = epicsThreadPrivateGet ( cacRecursionLock );
     if ( p ) {
         return ECA_EVDISALLOW;
     }
 
-    epicsThreadPrivateSet (cacRecursionLock, &cacRecursionLock);
+    epicsThreadPrivateSet ( cacRecursionLock, &cacRecursionLock );
 
     cur_time = epicsTime::getCurrent ();
 
@@ -189,7 +189,11 @@ int CASG::put (chid pChan, unsigned type, unsigned long count, const void *pValu
     if ( ! pNotify ) {
         return ECA_ALLOCMEM;
     }
-    return pChan->write ( type, count, pValue, *pNotify );
+    int status = pChan->write ( type, count, pValue, *pNotify );
+    if ( status != ECA_NORMAL ) {
+        pNotify->release ();
+    }
+    return status;
 }
 
 int CASG::get (chid pChan, unsigned type, unsigned long count, void *pValue)
@@ -198,6 +202,10 @@ int CASG::get (chid pChan, unsigned type, unsigned long count, void *pValue)
     if ( ! pNotify ) {
         return ECA_ALLOCMEM;
     }
-    return pChan->read ( type, count, *pNotify );
+    int status = pChan->read ( type, count, *pNotify );
+    if ( status != ECA_NORMAL ) {
+        pNotify->release ();
+    }
+    return status;
 }
 

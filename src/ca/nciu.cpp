@@ -10,13 +10,13 @@
  *  Author: Jeff Hill
  *
  * Notes:
- * 1) This class has a pointer to the IIU. Since it is possible
- * for the channel to exist when no IIU exists (because the user
- * created the channel), and because an IIU can disconnect and be 
- * destroyed at any time, then it is necessary to hold a mutex while
- * the IIU pointer is in use. This mutex can not be the IIU's mutex
- * because the IIU's lock must not be held while waiting for a
- * message to be sent (otherwise a push pull deadlock can occur).
+ * 1) This class has a pointer to the IIU. This pointer always points at 
+ * a valid IIU. If the client is deleted then the channel points at a
+ * static file scope IIU. IIU's that disconnect go into an inactive state
+ * and are stored on a list for later reuse. When the channel calls a
+ * member function of the IIU, the IIU verifies that the channel's IIU
+ * pointer is still pointing at itself only after it has acquired the IIU 
+ * lock.
  */
 
 #include "iocinf.h"
@@ -33,7 +33,7 @@ tsFreeList < class nciu, 1024 > nciu::freeList;
 
 static const caar defaultAccessRights = { false, false };
 
-nciu::nciu ( cac &cacIn, netiiu &iiuIn, cacChannel &chanIn, 
+nciu::nciu ( cac &cacIn, netiiu &iiuIn, cacChannelNotify &chanIn, 
             const char *pNameIn ) :
     cacChannelIO ( chanIn ), 
     cacCtx ( cacIn ),
@@ -48,7 +48,9 @@ nciu::nciu ( cac &cacIn, netiiu &iiuIn, cacChannel &chanIn,
     f_connected ( false ),
     f_fullyConstructed ( true ),
     f_previousConn ( false ),
-    f_claimSent ( false )
+    f_claimSent ( false ),
+    f_firstConnectDecrementsOutstandingIO ( false ),
+    f_connectTimeOutSeen ( false )
 {
     // second constraint is imposed by size field in protocol header
     if ( this->nameLength > MAX_UDP_SEND - sizeof ( caHdr ) || this->nameLength > 0xffff ) {
@@ -67,13 +69,16 @@ void nciu::destroy ()
 {
     // this occurs here so that it happens when
     // a lock is not applied
-    this->piiu->destroyAllIO ( *this );
+    unsigned i = 0u;
+    while ( ! this->piiu->destroyAllIO ( *this ) ) {
+        if ( i++ > 1000u ) {
+            this->cacCtx.printf ( 
+                "CAC: unable to destroy IO when channel destroyed?\n" );
+            break;
+        }
+    }
     this->piiu->clearChannelRequest ( *this );
-    this->cacCtx.destroyNCIU ( *this );
-}
-
-void nciu::cacDestroy ()
-{
+    this->cacCtx.uninstallChannel ( *this );
     delete this;
 }
 
@@ -83,9 +88,11 @@ nciu::~nciu ()
         return;
     }
 
-    // this must go in the derived class's destructor because
-    // this calls virtual functions in the cacChannelIO base
-    this->ioReleaseNotify ();
+    if ( ! this->f_connectTimeOutSeen && ! this->f_previousConn ) {
+        if ( this->f_firstConnectDecrementsOutstandingIO ) {
+            this->cacCtx.decrementOutstandingIO ();
+        }
+    }
 
     delete [] this->pNameStr;
 }
@@ -217,6 +224,12 @@ int nciu::write ( unsigned type, unsigned long countIn, const void *pValue, cacN
     return this->piiu->writeNotifyRequest ( *this, notify, type, countIn, pValue );
 }
 
+void nciu::initiateConnect ()
+{   
+    this->notifyStateChangeFirstConnectInCountOfOutstandingIO ();
+    this->cacCtx.installNetworkChannel ( *this, this->piiu );
+}
+
 void nciu::connect ( unsigned nativeType, 
 	unsigned long nativeCount, unsigned sidIn )
 {
@@ -235,6 +248,13 @@ void nciu::connect ( unsigned nativeType,
     }
 
     this->lock ();
+
+    if ( ! this->f_connectTimeOutSeen && ! this->f_previousConn ) {
+        if ( this->f_firstConnectDecrementsOutstandingIO ) {
+            this->cacCtx.decrementOutstandingIO ();
+        }
+    }
+
     bool v41Ok;
     if ( this->piiu ) {
         v41Ok = this->piiu->ca_v41_ok ();
@@ -263,7 +283,7 @@ void nciu::connect ( unsigned nativeType,
     // resubscribe for monitors from this channel 
     this->piiu->connectAllIO ( *this );
 
-    this->connectNotify ();
+    this->notify ().connectNotify ( *this );
 
     /*
      * if less than v4.1 then the server will never
@@ -272,7 +292,16 @@ void nciu::connect ( unsigned nativeType,
      * their call back here
      */
     if ( ! v41Ok ) {
-        this->accessRightsNotify ( this->ar );
+        this->notify ().accessRightsNotify ( *this, this->ar );
+    }
+}
+
+void nciu::connectTimeoutNotify ()
+{
+    if ( ! this->f_connectTimeOutSeen ) {
+        this->lock ();
+        this->f_connectTimeOutSeen = true;
+        this->unlock ();
     }
 }
 
@@ -309,8 +338,8 @@ void nciu::disconnect ( netiiu &newiiu )
         /*
          * look for events that have an event cancel in progress
          */
-        this->disconnectNotify ();
-        this->accessRightsNotify ( this->ar );
+        this->notify ().disconnectNotify ( *this );
+        this->notify ().accessRightsNotify ( *this, this->ar );
     }
 
     this->resetRetryCount ();
@@ -350,36 +379,6 @@ bool nciu::searchMsg ( unsigned short retrySeqNumber, unsigned &retryNoForThisCh
     }
 
     return status;
-}
-
-void nciu::incrementOutstandingIO ()
-{
-    this->cacCtx.incrementOutstandingIO ();
-}
-
-void nciu::decrementOutstandingIO ()
-{
-    this->cacCtx.decrementOutstandingIO ();
-}
-
-void nciu::decrementOutstandingIO ( unsigned seqNumber )
-{
-    this->cacCtx.decrementOutstandingIO ( seqNumber );
-}
-
-void nciu::lockOutstandingIO () const
-{
-    this->cacCtx.lockOutstandingIO ();
-}
-
-void nciu::unlockOutstandingIO () const
-{
-    this->cacCtx.unlockOutstandingIO ();
-}
-
-unsigned nciu::readSequence () const
-{
-    return this->cacCtx.readSequenceOfOutstandingIO ();
 }
 
 void nciu::hostName ( char *pBuf, unsigned bufLength ) const
@@ -499,7 +498,8 @@ int nciu::createChannelRequest ()
 }
 
 int nciu::subscribe ( unsigned type, unsigned long nElem, 
-                         unsigned mask, cacNotify &notify )
+                         unsigned mask, cacNotify &notify,
+                         cacNotifyIO *&pNotifyIO )
 {
     netSubscription *pSubcr = new netSubscription ( *this, 
         type, nElem, mask, notify );
@@ -508,11 +508,35 @@ int nciu::subscribe ( unsigned type, unsigned long nElem,
         if ( status != ECA_NORMAL ) {
             pSubcr->destroy ();
         }
+        else {
+            pNotifyIO = pSubcr;
+        }
         return status;
     }
     else {
         return ECA_ALLOCMEM;
     }
+}
+
+void nciu::notifyStateChangeFirstConnectInCountOfOutstandingIO ()
+{
+    this->lock ();
+    // test is performed via a callback so that locking is correct
+    if ( ! this->f_connectTimeOutSeen && ! this->f_previousConn ) {
+        if ( this->notify ().includeFirstConnectInCountOfOutstandingIO () ) { 
+            if ( ! this->f_firstConnectDecrementsOutstandingIO ) {
+                this->cacCtx.incrementOutstandingIO ();
+                this->f_firstConnectDecrementsOutstandingIO = true;
+            }
+        }
+        else {
+            if ( this->f_firstConnectDecrementsOutstandingIO ) {
+                this->cacCtx.decrementOutstandingIO ();
+                this->f_firstConnectDecrementsOutstandingIO = false;
+            }
+        }
+    }
+    this->unlock ();
 }
 
 void nciu::show ( unsigned level ) const

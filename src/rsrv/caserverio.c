@@ -211,7 +211,7 @@ int cas_copy_in_header (
     msgSize = alignedPayloadSize + sizeof ( caHdr );
     if ( alignedPayloadSize >= 0xffff || nElem >= 0xffff ) {
         if ( ! CA_V49 ( pclient->minor_version_number ) ) {
-            return ECA_OLDCLIENT;
+            return ECA_16KARRAYCLIENT;
         }
         msgSize += 2 * sizeof ( ca_uint32_t );
     }

@@ -1044,7 +1044,7 @@ bool udpiiu::searchMsg ( epicsGuard < udpMutex > & /* guard */,
     return success;
 }
 
-void installChannel ( const epicsTime & currentTime, 
+void udpiiu::installChannel ( const epicsTime & currentTime, 
                      nciu & chan, unsigned minRetryNo )
 {
     bool firstChannel = false;

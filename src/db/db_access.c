@@ -2,7 +2,7 @@
 /* base/src/db	$Id$ */
 /* db_access.c - Interface between old database access and new */
 /*
- *      Author:          Bob Dalesio
+ *      Author:          Marty Kraimer
  *      Date:            6-1-90
  *
  *      Experimental Physics and Industrial Control System (EPICS)
@@ -113,6 +113,9 @@
 #define oldDBR_CTRL_CHAR        32
 #define oldDBR_CTRL_LONG        33
 #define oldDBR_CTRL_DOUBLE      34
+#define oldDBR_PUT_ACKT		oldDBR_CTRL_DOUBLE + 1
+#define oldDBR_PUT_ACKS		oldDBR_PUT_ACKT + 1
+#define oldDBR_STSACK_STRING	oldDBR_PUT_ACKS + 1
 
 
 /* function declarations */
@@ -133,6 +136,15 @@
 struct dbr_sts_string{
 	short	status;	 		/* status of value */
 	short	severity;		/* severity of alarm */
+	char	value[MAX_STRING_SIZE];	/* current value */
+};
+
+/* structure for a  string status field */
+struct dbr_stsack_string{
+	unsigned short	status;	 	/* status of value */
+	unsigned short	severity;	/* severity of alarm */
+	unsigned short	ackt;		/* ack transient? */
+	unsigned short	acks;		/* ack severity */
 	char	value[MAX_STRING_SIZE];	/* current value */
 };
 
@@ -1361,7 +1373,29 @@ void		*pfl;
 		for(i=nRequest; i<no_elements; i++) pvalue[i] = 0;
 	}
 	break;
+    case(oldDBR_STSACK_STRING):
+	{
+		struct dbr_stsack_string *pold = (struct dbr_stsack_string *)pbuffer;
+		struct {
+			DBRstatus
+		} new;
+		DBSTRING *pvalue = (DBSTRING *)(pold->value);
 
+		options=DBR_STATUS;
+		nRequest=0;
+		status = dbGetField(paddr,DBR_STRING,&new,&options,&nRequest,
+			pfl);
+		pold->status = new.status;
+		pold->severity = new.severity;
+		pold->ackt = new.ackt;
+		pold->acks = new.acks;
+		options=0;
+		nRequest=no_elements;
+		status = dbGetField(paddr,DBR_STRING,&(pold->value[0]),
+			&options,&nRequest,pfl);
+		for(i=nRequest; i<no_elements; i++) pvalue[i][0] = 0;
+	}
+	break;
 
     default:
 	return(-1);
@@ -1521,6 +1555,12 @@ char			*psrc;		/* where to get it from */
 	status = dbPutField(paddr,DBR_DOUBLE,
 	    &(((struct dbr_ctrl_double *)psrc)->value),(long)no_elements);
 	break;
+    case(oldDBR_PUT_ACKT):
+	status = dbPutField(paddr,DBR_PUT_ACKT,psrc,(long)no_elements);
+	break;
+    case(oldDBR_PUT_ACKS):
+	status = dbPutField(paddr,DBR_PUT_ACKS,psrc,(long)no_elements);
+	break;
 
     default:
 	return(-1);
@@ -1555,6 +1595,10 @@ short oldtype;
 	break;
     case(oldDBR_DOUBLE):
 	 ppn->dbrType = DBR_DOUBLE;
+	break;
+    case(oldDBR_PUT_ACKT):
+    case(oldDBR_PUT_ACKS):
+	 ppn->dbrType = DBR_USHORT;
 	break;
     default:
 	return(-1);

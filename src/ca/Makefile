@@ -63,6 +63,7 @@ LIBSRCS += msgForMultiplyDefinedPV.cpp
 LIBSRCS += limboiiu.cpp
 LIBSRCS += callbackMutex.cpp
 LIBSRCS += tcpKillTimer.cpp
+LIBSRCS += templateInstances.cpp
 
 LIBRARY=ca
 
@@ -86,11 +87,9 @@ SYS_PROD_LIBS_WIN32 = ws2_32 advapi32 user32
 ca_DIR = .
 Com_DIR = $(INSTALL_LIB)
 
-caRepeater_SRCS = caRepeater.cpp
-PROD_HOST += caRepeater
-
-PROD_HOST += catime acctst caConnTest casw caEventRate
+PROD_HOST += caRepeater catime acctst caConnTest casw caEventRate
 OBJS_IOC += catime acctst caConnTest casw caEventRate
+caRepeater_SRCS = caRepeater.cpp
 catime_SRCS = catimeMain.c catime.c 
 acctst_SRCS = acctstMain.c acctst.c 
 caEventRate_SRCS = caEventRateMain.cpp caEventRate.cpp

@@ -169,6 +169,7 @@
  * .46	05-22-92	lrd	added the task that monitors the binary inputs and simulates a change
  *				of state interrupt - wakes up the io event scanner
  * .47	06-10-92	 bg	combined drvAb.c and ab_driver.c                                 
+ * .48	06-26-92	 bg	added level to the ab_io_report in the drvSup structure          
  */
 
 /*
@@ -313,7 +314,7 @@ struct {
 static long report(fp)
     FILE	*fp;
 {
-   ab_io_report();
+   ab_io_report(level);
 }
 
 

@@ -28,7 +28,12 @@ struct taskVars {
     char                *name;
     THREADFUNC          funptr;
     void                *parm;
+    int                 threadVariableCapacity;
+    void                **threadVariables;
 };
+static void *taskVars = NULL;    /* RTEMS task-private variable */
+static int threadVariableCount = 0;
+#define RTEMS_NOTEPAD_TASKVAR    11
 
 /* Just map osi 0 to 99 into RTEMS 199 to 100 */
 /* For RTEMS lower number means higher priority */
@@ -85,6 +90,7 @@ threadCreate (const char *name,
     struct taskVars *v;
     rtems_id tid;
     rtems_status_code sc;
+    rtems_unsigned32 note;
     char c[4];
 
     if (stackSize < RTEMS_MINIMUM_STACK_SIZE) {
@@ -107,6 +113,10 @@ threadCreate (const char *name,
     strcpy (v->name, name);
     v->funptr = funptr;
     v->parm = parm;
+    v->threadVariableCapacity = 0;
+    v->threadVariables = NULL;
+    note = (rtems_unsigned32)v;
+    rtems_task_set_note (RTEMS_SELF, RTEMS_NOTEPAD_TASKVAR, note);
     rtems_task_start (tid, threadWrapper, (rtems_task_argument)v);
     return (threadId)tid;
 }
@@ -214,20 +224,50 @@ threadGetIdSelf (void)
     return (threadId)tid;
 }
 
-void *rtemsTaskVariable;
+/*
+ * Thread private storage implementation based on the vxWorks
+ * implementation by Andrew Johnson APS/ASD.
+ */
 threadVarId threadPrivateCreate ()
 {
-	return NULL;
+    return (void *)++threadVariableCount;
 }
+
 void threadPrivateDelete (threadVarId id)
 {
+    /* empty */
 }
-void threadPrivateSet (threadVarId id, void *ptr)
+
+void threadPrivateSet (threadVarId id, void *pvt)
 {
-	rtems_task_variable_add (RTEMS_SELF, &rtemsTaskVariable, NULL);
-	rtemsTaskVariable = ptr;
+    int varIndex = (int)id;
+    rtems_unsigned32 note;
+    struct taskVars *v;
+
+    /*
+     * See if task variable has been set up
+     * Task variables cost context switch time, so we don't add the
+     * task variable until it's needed
+     */
+    rtems_task_get_note (RTEMS_SELF, RTEMS_NOTEPAD_TASKVAR, &note);
+    if (note) {
+        rtems_task_variable_add (RTEMS_SELF, &taskVars, NULL);
+        taskVars = (void *)note;
+        note = 0;
+        rtems_task_set_note (RTEMS_SELF, RTEMS_NOTEPAD_TASKVAR, note);
+    }
+    v = taskVars;
+    if (varIndex >= v->threadVariableCapacity) {
+        v->threadVariables = realloc (v->threadVariables, (varIndex + 1) * sizeof (void *));
+        if (v->threadVariables == NULL)
+	    cantProceed("threadPrivateSet realloc failed\n");
+	v->threadVariableCapacity = varIndex + 1;
+    }
+    v->threadVariables[varIndex] = pvt;
 }
+
 void * threadPrivateGet (threadVarId id)
 {
-	return rtemsTaskVariable;
+    assert (taskVars);
+    return ((struct taskVars *)taskVars)->threadVariables[(int)id];
 }

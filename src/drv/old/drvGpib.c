@@ -59,6 +59,9 @@
  *
  *
  * $Log$
+ * Revision 1.9  1998/06/04 19:21:20  wlupton
+ * changed to use symFindByNameEPICS
+ *
  * Revision 1.8  1998/01/20 21:51:53  mrk
  * add includes for error messages
  *
@@ -111,6 +114,7 @@
 #include <vxWorks.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <sysLib.h>
 #include <intLib.h>
 #include <rebootLib.h>
@@ -145,7 +149,7 @@
 #define STATIC  static 
 
 long	reportGpib(void);
-/*STATIC*/ long	initGpib(void);
+STATIC long	initGpib(void);
 STATIC int	niIrq();
 STATIC int	niIrqError(int link);
 STATIC int	niTmoHandler();
@@ -400,8 +404,7 @@ STATIC void rebootFunc(void)
  *
  ******************************************************************************/
 /* BUG -- this should be static */
-/*STATIC*/ long
-initGpib(void)
+STATIC long initGpib(void)
 {
   int	i;
   int	probeValue;
@@ -454,7 +457,7 @@ initGpib(void)
       if (ibDebug)
 	logMsg("GPIB card found at address %p\n", pibregs);
 
-      if ((pNiLink[i] = (struct niLink *)malloc(sizeof(struct niLink))) == NULL)
+      if ((pNiLink[i] = (struct niLink *)calloc(1,sizeof(struct niLink))) == NULL)
       { /* This better never happen! */
 	logMsg("initGpib(): Can't malloc memory for NI-link data structures!\n");
         return(ERROR);
@@ -1462,8 +1465,7 @@ struct ibLink *plink;
  * Init and start an ibLinkTask
  *
  ******************************************************************************/
-STATIC int
-ibLinkStart(struct ibLink *plink)
+STATIC int ibLinkStart(struct ibLink *plink)
 {
 	int		j;
 	int   	taskId;
@@ -2193,6 +2195,7 @@ int	time;
   int                   bytesRead;
   char			msg[150];
 
+  memset(&bbdpvt,0,sizeof(bbdpvt));
   sprintf(msg, "bbGpibRead(%p, %d, %p, %d, %d): entered", pibLink, device, buffer, length, time);
   GpibDebug(pibLink, device, msg, 1);
 
@@ -2261,6 +2264,7 @@ int	time;
   int			bytesSent;
   char			msg[150];
 
+  memset(&bbdpvt,0,sizeof(bbdpvt));
   sprintf(msg, "bbGpibWrite(%p, %d, %p, %d, %d): entered", pibLink, device, buffer, length, time);
   GpibDebug(pibLink, device, msg, 1);
 
@@ -2354,6 +2358,7 @@ int     length;
   int			bytesSent;
   char			msg[150];
 
+  memset(&bbdpvt,0,sizeof(bbdpvt));
   sprintf(msg, "bbGpibCmd(%p, %p, %d): entered", pibLink, buffer, length);
   GpibDebug(pibLink, 0, msg, 1);
 
@@ -2459,7 +2464,7 @@ int	bug;
 
   /* This link is not started yet, initialize all the required stuff */
 
-  if ((bbIbLink = (struct bbIbLink *) malloc(sizeof(struct bbIbLink))) == NULL)
+  if ((bbIbLink = (struct bbIbLink *) calloc(1,sizeof(struct bbIbLink))) == NULL)
   {
     logMsg("bbGenLink(%d, %d): can't malloc memory for link structure\n", link, bug);
     return(ERROR);
@@ -2494,6 +2499,7 @@ bbGpibIoctl(int link, int bug, int cmd, int v, caddr_t p)
   struct dpvtBitBusHead bbDpvt;
   unsigned char		buf[BB_MAX_DAT_LEN];
 
+  memset(&bbDpvt,0,sizeof(bbDpvt));
   if (ibDebug || bbibDebug)
     logMsg("bbGpibIoctl(%d, %d, %d, %8.8X, %8.8X): called\n", link, bug, cmd, v, p);
 
@@ -2820,7 +2826,7 @@ HiDEOSGpibLinkConfig(int link, int BoardId, char *TaskName)
 
 		return(OK);
 	}
-	if ((pHiDEOSIbLink = (HideosIbLinkStruct *) malloc(sizeof(HideosIbLinkStruct))) == NULL)
+	if ((pHiDEOSIbLink = (HideosIbLinkStruct *) calloc(1,sizeof(HideosIbLinkStruct))) == NULL)
 	{
 		logMsg("HiDEOSGpibLinkConfig(%d): can't malloc memory for link structure\n", link);
 		return(ERROR);

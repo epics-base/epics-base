@@ -87,12 +87,11 @@ threadId threadCreate(const char *name,
     return((threadId)tid);
 }
 
-void threadSuspend(threadId id)
+void threadSuspend()
 {
-    int tid = (int)id;
     STATUS status;
 
-    status = taskSuspend(tid);
+    status = taskSuspend(taskIdSelf());
     if(status) errlogPrintf("threadSuspend failed\n");
 }
 

@@ -51,6 +51,7 @@
  * ???	11	????91	anl turned off paddr sanity checking
  * joh	12	082091	db_event_get_field() comented out
  * joh	13	091191	updated for v5 vxWorks
+ * jba	14	112691	Added 'return NULL;' to end of db_event_list
  */
 
 #include	<vxWorks.h>
@@ -245,6 +246,7 @@ char				*name;
 			pevent->npend);
      	}
   	UNLOCKREC(precord);
+        return NULL;
 }
 
 

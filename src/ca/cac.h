@@ -97,7 +97,7 @@ public:
 class cac : private cacRecycle, private cacDisconnectChannelPrivate
 {
 public:
-    cac ( cacNotify &, bool enablePreemptiveCallback = false );
+    cac ( cacNotify &, bool enablePreemptiveCallbackIn );
     virtual ~cac ();
 
     // beacon management
@@ -105,17 +105,10 @@ public:
         unsigned beaconNumber, unsigned protocolRevision );
     void repeaterSubscribeConfirmNotify ();
 
-    // outstanding IO count management routines
-    void incrementOutstandingIO ();
-    void decrementOutstandingIO ();
-    void decrementOutstandingIO ( unsigned sequenceNo );
-    unsigned sequenceNumberOfOutstandingIO () const;
-    bool ioComplete () const;
-
     // IO management
     void flushRequest ();
-    int pendIO ( const double &timeout );
-    int pendEvent ( const double &timeout );
+    void waitUntilNoRecvThreadsPending ();
+    epicsGuard < callbackMutex > callbackGuardFactory ();
     bool executeResponse ( epicsGuard < callbackMutex > &, tcpiiu &, 
         caHdrLargeArray &, char *pMsgBody );
     void ioCancel ( nciu &chan, const cacChannel::ioid &id );
@@ -153,9 +146,6 @@ public:
     void exception ( epicsGuard < callbackMutex > &, int status, const char * pContext,
         const char * pFileName, unsigned lineNo );
 
-    // callback preemption control
-    int blockForEventAndEnableCallbacks ( epicsEvent &event, double timeout );
-
     // diagnostics
     unsigned connectionCount () const;
     void show ( unsigned level ) const;
@@ -182,18 +172,29 @@ public:
     void selfTest () const;
     void notifyNewFD ( epicsGuard < callbackMutex > &, SOCKET ) const;
     void notifyDestroyFD ( epicsGuard < callbackMutex > &, SOCKET ) const;
-    void uninstallIIU ( tcpiiu &iiu ); 
     bool preemptiveCallbakIsEnabled () const;
     double beaconPeriod ( const nciu & chan ) const;
     static unsigned lowestPriorityLevelAbove ( unsigned priority );
     static unsigned highestPriorityLevelBelow ( unsigned priority );
-    void tcpCircuitShutdown ( tcpiiu &, bool discardMessages );
+    void initiateAbortShutdown ( tcpiiu & );
 
 private:
     ipAddrToAsciiEngine         ipToAEngine;
     cacServiceList              services;
     chronIntIdResTable
         < nciu >                chanTable;
+    //
+    // !!!! There is at this point no good reason
+    // !!!! to maintain one IO table for all types of
+    // !!!! IO. It would probably be better to maintain
+    // !!!! an independent table for each IO type. The
+    // !!!! new adaptive sized hash table will not 
+    // !!!! waste memory. Making this change will 
+    // !!!! avoid virtual function overhead when 
+    // !!!! accessing the different types of IO. This
+    // !!!! approach would also probably be safer in 
+    // !!!! terms of detecting damaged protocol.
+    //
     chronIntIdResTable 
         < baseNMIU >            ioTable;
     chronIntIdResTable
@@ -218,23 +219,19 @@ private:
     // the primary mutex if both locks are needed
     callbackMutex               cbMutex;
     mutable cacMutex            mutex; 
-    epicsEvent                  ioDone;
     epicsEvent                  iiuUninstall;
     epicsTimerQueueActive       & timerQueue;
     char                        * pUserName;
     class udpiiu                * pudpiiu;
     void                        * tcpSmallRecvBufFreeList;
     void                        * tcpLargeRecvBufFreeList;
-    epicsGuard <callbackMutex>  * pCallbackGuard;
     cacNotify                   & notify;
     epicsThreadId               initializingThreadsId;
     unsigned                    initializingThreadsPriority;
     unsigned                    maxRecvBytesTCP;
-    unsigned                    pndRecvCnt;
-    unsigned                    readSeq;
+    bool                        preemptiveCallbackEnabled;
 
     void privateUninstallIIU ( epicsGuard < callbackMutex > &, tcpiiu &iiu ); 
-    void flushRequestPrivate ();
     void run ();
     void connectAllIO ( epicsGuard < cacMutex > &, nciu &chan );
     void disconnectAllIO ( epicsGuard < cacMutex > & locker, nciu & chan, bool enableCallbacks );
@@ -329,11 +326,6 @@ inline unsigned cac::getInitializingThreadsPriority () const
     return this->initializingThreadsPriority;
 }
 
-inline unsigned cac::sequenceNumberOfOutstandingIO () const
-{
-    return this->readSeq;
-}
-
 inline cacMutex & cac::mutexRef ()
 {
     return this->mutex;
@@ -384,14 +376,20 @@ inline void cac::releaseLargeBufferTCP ( char *pBuf )
     freeListFree ( this->tcpLargeRecvBufFreeList, pBuf );
 }
 
-inline bool cac::ioComplete () const
-{
-    return ( this->pndRecvCnt == 0u );
-}
-
 inline bool cac::preemptiveCallbakIsEnabled () const
 {
-    return ! this->pCallbackGuard;
+    return this->preemptiveCallbackEnabled;
+}
+
+inline void cac::waitUntilNoRecvThreadsPending ()
+{
+    this->cbMutex.waitUntilNoRecvThreadsPending ();
+}
+
+inline epicsGuard < callbackMutex > cac::callbackGuardFactory ()
+{
+    // facilitate the return value optimization
+    return ( epicsGuard < callbackMutex > ( this->cbMutex ) );
 }
 
 inline void cacMutex::lock ()

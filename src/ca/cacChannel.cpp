@@ -39,10 +39,6 @@ caAccessRights cacChannel::accessRights () const
     return ar;
 }
 
-void cacChannel::notifyStateChangeFirstConnectInCountOfOutstandingIO ()
-{
-}
-
 unsigned cacChannel::searchAttempts () const 
 {
     return 0u;
@@ -59,11 +55,6 @@ bool cacChannel::ca_v42_ok () const
 }
 
 bool cacChannel::connected () const 
-{
-    return true;
-}
-
-bool cacChannel::previouslyConnected () const 
 {
     return true;
 }

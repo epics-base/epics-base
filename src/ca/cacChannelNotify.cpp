@@ -24,7 +24,3 @@ cacChannelNotify::~cacChannelNotify ()
 {
 }
 
-bool cacChannelNotify::includeFirstConnectInCountOfOutstandingIO () const
-{
-    return false;
-}

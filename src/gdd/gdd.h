@@ -8,6 +8,10 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.6  1996/08/06 19:14:12  jbk
+ * Fixes to the string class.
+ * Changes units field to a aitString instead of aitInt8.
+ *
  * Revision 1.5  1996/07/26 02:23:17  jbk
  * Fixed the spelling error with Scalar.
  *
@@ -743,9 +747,11 @@ inline void gdd::getRef(aitUint16*& d)	{ d=(aitUint16*)voidData(); }
 inline void gdd::getRef(aitInt16*& d)	{ d=(aitInt16*)voidData(); }
 inline void gdd::getRef(aitUint8*& d)	{ d=(aitUint8*)voidData(); }
 inline void gdd::getRef(aitInt8*& d)	{ d=(aitInt8*)voidData(); }
-inline void gdd::getRef(aitString*& d)	{ d=(aitString*)voidData(); }
 inline void gdd::getRef(void*& d)		{ d=voidData(); }
 inline void gdd::getRef(aitFixedString*& d)	{ d=(aitFixedString*)voidData(); }
+
+inline void gdd::getRef(aitString*& d)
+ { if(isScalar()) d=(aitString*)dataAddress(); else d=(aitString*)voidData(); }
 
 inline void gdd::putRef(void* v,aitEnum code, gddDestructor* d)
 	{ adjust(d, v, code); }

@@ -35,6 +35,7 @@
  * .03  02-05-92	jba	Changed function arguments from paddr to precord 
  * .04	03-13-92	jba	ANSI C changes
  * .05  04-10-92        jba     pact now used to test for asyn processing, not return value
+ * .06  04-05-94        mrk	ANSI changes to callback routines
  *      ...
  */
 
@@ -107,7 +108,7 @@ static long init_record(pao)
     case (CONSTANT) :
 	pcallback = (struct callback *)(calloc(1,sizeof(struct callback)));
 	pao->dpvt = (void *)pcallback;
-	callbackSetCallback(myCallback,pcallback);
+	callbackSetCallback(myCallback,&pcallback->callback);
 	pcallback->precord = (struct dbCommon *)pao;
 	pcallback->wd_id = wdCreate();
 	break;
@@ -134,7 +135,7 @@ static long write_ao(pao)
 	} else {
 		wait_time = (int)(pao->disv * vxTicksPerSecond);
 		if(wait_time<=0) return(0);
-		callbackSetPriority(pao->prio,pcallback);
+		callbackSetPriority(pao->prio,&pcallback->callback);
 		printf("Starting asynchronous processing: %s\n",pao->name);
 		wdStart(pcallback->wd_id,wait_time,(FUNCPTR)callbackRequest,(int)pcallback);
 		pao->pact=TRUE;

@@ -34,6 +34,7 @@
  * .03  02-05-92	jba	Changed function arguments from paddr to precord 
  * .04	03-13-92	jba	ANSI C changes
  * .05  04-10-92        jba     pact now used to test for asyn processing, not return value
+ * .06  04-05-94        mrk	ANSI changes to callback routines
  *      ...
  */
 
@@ -103,7 +104,7 @@ static long init_record(phistogram)
     case (CONSTANT) :
 	pcallback = (struct callback *)(calloc(1,sizeof(struct callback)));
 	phistogram->dpvt = (void *)pcallback;
-	callbackSetCallback(myCallback,pcallback);
+	callbackSetCallback(myCallback,&pcallback->callback);
         pcallback->precord = (struct dbCommon *)phistogram;
 	pcallback->wd_id = wdCreate();
 	phistogram->sgnl = phistogram->svl.value.value;
@@ -131,7 +132,7 @@ static long read_histogram(phistogram)
 	} else {
 		wait_time = (int)(phistogram->disv * vxTicksPerSecond);
 		if(wait_time<=0) return(0);
-		callbackSetPriority(phistogram->prio,pcallback);
+		callbackSetPriority(phistogram->prio,&pcallback->callback);
 		printf("%s Starting asynchronous processing\n",phistogram->name);
 		wdStart(pcallback->wd_id,wait_time,(FUNCPTR)callbackRequest,(int)pcallback);
 		phistogram->pact=TRUE;

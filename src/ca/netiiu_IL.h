@@ -23,4 +23,9 @@ inline cac * netiiu::pCAC () const
     return this->pClientCtx;
 }
 
+inline unsigned netiiu::channelCount () const
+{
+    return this->channelList.count ();
+}
+
 #endif // netiiu_ILh

@@ -1397,7 +1397,7 @@ void exceptionTest ( chid chan )
         ca_pend_io ( 1e-5 );
         ca_pend_event ( 0.1 );
         while ( acctstExceptionCount < 1u ) {
-            printf ( "." );
+            printf ( "G" );
             fflush ( stdout );
             ca_pend_event ( 0.5 );
         }
@@ -1416,7 +1416,7 @@ void exceptionTest ( chid chan )
         SEVCHK  ( status, "array read request failed" );
         ca_pend_event ( 0.1 );
         while ( ! arrayEventExceptionNotifyComplete ) {
-            printf ( "." );
+            printf ( "GCB" );
             fflush ( stdout );
             ca_pend_event ( 0.5 );
         }
@@ -1435,7 +1435,7 @@ void exceptionTest ( chid chan )
 
         ca_pend_event ( 0.1 );
         while ( ! arrayEventExceptionNotifyComplete ) {
-            printf ( "." );
+            printf ( "S" );
             fflush ( stdout );
             ca_pend_event ( 0.5 );
         }
@@ -1465,7 +1465,7 @@ void exceptionTest ( chid chan )
 
         ca_pend_event ( 0.1 );
         while ( acctstExceptionCount < 1u ) {
-            printf ( "." );
+            printf ( "P" );
             fflush ( stdout );
             ca_pend_event ( 0.5 );
         }
@@ -1494,7 +1494,7 @@ void exceptionTest ( chid chan )
 
         ca_pend_event ( 0.1 );
         while ( ! arrayEventExceptionNotifyComplete ) {
-            printf ( "." );
+            printf ( "PCB" );
             fflush ( stdout );
             ca_pend_event ( 0.5 );
         }

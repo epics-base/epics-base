@@ -78,7 +78,7 @@ const char * ca_message_text []
 "Invalid string",
 "Virtual circuit disconnect",
 
-"Identical process variable name on multiple servers",
+"Identical process variable names on multiple servers",
 "Request inappropriate within subscription (monitor) update callback",
 "Database value get for that channel failed during channel search",
 "Unable to initialize without the vxWorks VX_FP_TASK task option set",

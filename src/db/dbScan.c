@@ -69,7 +69,7 @@
 #include	<fast_lock.h>
 #include	<dbStaticLib.h>
 
-extern struct dbBase *pdbBase;
+extern struct dbBase *pdbbase;
 
 /* SCAN ONCE */
 #define ONCE_QUEUE_SIZE 256
@@ -465,7 +465,7 @@ static void initPeriodic()
 	float			temp;
 	int			i;
 
-	pmenu = dbFindMenu(pdbBase,"menuScan");
+	pmenu = dbFindMenu(pdbbase,"menuScan");
 	if(!pmenu) {
 	    epicsPrintf("initPeriodic: menuScan not present\n");
 	    return;
@@ -660,7 +660,7 @@ static void buildScanLists(void)
 	dbCommon		*precord;
 
 	/*Look for first record*/
-	for(pdbRecDes = (dbRecDes *)ellFirst(&pdbBase->recDesList); pdbRecDes;
+	for(pdbRecDes = (dbRecDes *)ellFirst(&pdbbase->recDesList); pdbRecDes;
 	pdbRecDes = (dbRecDes *)ellNext(&pdbRecDes->node)) {
 	    for (pdbRecordNode=(dbRecordNode *)ellFirst(&pdbRecDes->recList);
 	    pdbRecordNode;

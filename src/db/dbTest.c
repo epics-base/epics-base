@@ -43,56 +43,22 @@
  * .12  08-14-95	mrk	Moved dbtpn to dbNotify
  */
 
-/* Global Database Test Routines - All can be invoked via vxWorks shell
- *
- * dba(pname)			Print dbAddr info
- *	char	*pname		Pvname
- *
- * dbel(pname)			Print Channel Access Event List
- *	char	*pname		Pvname
- *
- * dbl(ptypeName)		list record names.
- *	char	*ptypeName;	Record type. If null all record types
- *
- * dbgrep(pmask)                list record names that match the mask
- *      char	*pmask;
- *
- * dbgf(pname)			get field
- *	char	*pname;
- *
- * dbpf(pname,pvalue)		put field
- *	char	*pname;
- *	char	*pvalue
- *
- * dbpr(pname)			print record
- *	char	*pname;
- *
- * dbtr(pname)			test record and print
- *	char	*pname;
- *
- * dbtgf(pname)			test get field
- *	char	*pname;
- *
- * dbtpf(pname,pvalue)		test put field
- *	char	*pname;
- *	char	*pvalue
- *
- * dbior(pname,type)		io_report
- *	char	*pname		Driver name. If null all drivers
- *	int	type		<0,1> => <short, full> report
- *
- * dbhcr(null)			hardware configuration report
- *
- * dblls(ptypeName)		list lock sets
- *	char	*ptypeName;	Record type. If null all record types
- *
- * int dbllsdblinks(int lset)
- *
- * dbt(record_name)		time 100 executions of "record_name"
- *                              (includes what records are processed
- *                                   as a result of that record)
- *
- */
+/* Global Database Test Routines - All can be invoked via vxWorks shell*/
+long dba(char*pname);		/*dbAddr info */
+long dbel(char*pname);		/*CA event list */
+long dbl(char	*precdesname);  /*list records*/
+long dbnr(int verbose);		/*list number of records of each type*/
+long dbgrep(char *pmask);	/*list records with mask*/
+long dbgf(char	*pname);	/*get field value*/
+long dbpf(char	*pname,char *pvalue); /*put field value*/
+long dbpr(char *pname,int interest_level); /*print record*/
+long dbtr(char *pname);		/*test record*/
+long dbtgf(char *pname);	/*test get field*/
+long dbtpf(char	*pname,char *pvalue); /*test put field*/
+long dbior(char	*pdrvName,int type); /*I/O report */
+int dbhcr(void);		/*Hardware Configuration Report*/
+long dblls(int	lockset);	/*list lock sets*/
+int dbllsdblinks(int lset);	/*List dblinks for each record in lock set*/
 
 #include	<vxWorks.h>
 #include	<stdlib.h>
@@ -116,7 +82,7 @@
 #include	<ellLib.h>
 #include 	<callback.h>
 
-extern struct dbBase *pdbBase;
+extern struct dbBase *pdbbase;
 
 #define MAXLINE 80
 struct msgBuff {		/* line output structure */
@@ -199,7 +165,7 @@ long dbl(char	*precdesname)
     DBENTRY	*pdbentry=&dbentry;
     long	status;
 
-    dbInitEntry(pdbBase,pdbentry);
+    dbInitEntry(pdbbase,pdbentry);
     if(!precdesname)
 	status = dbFirstRecdes(pdbentry);
     else
@@ -212,6 +178,26 @@ long dbl(char	*precdesname)
 	    status = dbNextRecord(pdbentry);
 	}
 	if(precdesname) break;
+	status = dbNextRecdes(pdbentry);
+    }
+    dbFinishEntry(pdbentry);
+    return(0);
+}
+
+long dbnr(int verbose)
+{
+    DBENTRY	dbentry;
+    DBENTRY	*pdbentry=&dbentry;
+    long	status;
+    int		nrecords;
+
+    dbInitEntry(pdbbase,pdbentry);
+    status = dbFirstRecdes(pdbentry);
+    if(status) printf("No record description\n");
+    while(!status) {
+	nrecords = dbGetNRecords(pdbentry);
+	if(verbose || nrecords)
+	    printf("%.4d %s\n",nrecords,dbGetRecdesName(pdbentry));
 	status = dbNextRecdes(pdbentry);
     }
     dbFinishEntry(pdbentry);
@@ -272,7 +258,7 @@ long dbgrep(char *pmask)
     long	status;
     char	*pname;
 
-    dbInitEntry(pdbBase,pdbentry);
+    dbInitEntry(pdbbase,pdbentry);
     status = dbFirstRecdes(pdbentry);
     while(!status) {
 	status = dbFirstRecord(pdbentry);
@@ -659,7 +645,7 @@ long dbior(char	*pdrvName,int type)
     devSup		*pdevSup;
     struct dset		*pdset;
 
-    for(pdrvSup = (drvSup *)ellFirst(&pdbBase->drvList); pdrvSup;
+    for(pdrvSup = (drvSup *)ellFirst(&pdbbase->drvList); pdrvSup;
     pdrvSup = (drvSup *)ellNext(&pdrvSup->node)) {
 	pname = pdrvSup->name;
 	if(pdrvName!=NULL && (strcmp(pdrvName,pname)!=0)) continue;
@@ -676,7 +662,7 @@ long dbior(char	*pdrvName,int type)
 	}
     }
     /* now check devSup reports */
-    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbBase->recDesList); pdbRecDes;
+    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbbase->recDesList); pdbRecDes;
     pdbRecDes = (dbRecDes *)ellNext(&pdbRecDes->node)) {
 	for(pdevSup = (devSup *)ellFirst(&pdbRecDes->devList); pdevSup;
 	pdevSup = (devSup *)ellNext(&pdevSup->node)) {
@@ -695,11 +681,11 @@ long dbior(char	*pdrvName,int type)
 int dbhcr(void)
 {
 
-    if(!pdbBase) {
+    if(!pdbbase) {
 	printf("No database\n");
 	return(0);
     }
-    dbReportDeviceConfig(pdbBase,stdout);
+    dbReportDeviceConfig(pdbbase,stdout);
     fflush(stdout);
     return(0);
 }
@@ -711,7 +697,7 @@ long dblls(int	lockset)
     long		status;
     struct dbCommon	*precord;
 
-    dbInitEntry(pdbBase,pdbentry);
+    dbInitEntry(pdbbase,pdbentry);
     status = dbFirstRecdes(pdbentry);
     printf(" lset  lcnt  disv  disa  pact\n");
     while(!status) {
@@ -1497,7 +1483,7 @@ int dbllsdblinks(int lset)
     dbCommon		*precord;
     DBLINK		*plink;
     
-    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbBase->recDesList); pdbRecDes;
+    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbbase->recDesList); pdbRecDes;
     pdbRecDes = (dbRecDes *)ellNext(&pdbRecDes->node)) {
 	for (pdbRecordNode=(dbRecordNode *)ellFirst(&pdbRecDes->recList);
 	pdbRecordNode;

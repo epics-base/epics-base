@@ -55,7 +55,7 @@
 #include        <recGbl.h>
 #include        <special.h>
  
-extern struct dbBase *pdbBase;
+extern struct dbBase *pdbbase;
 
 /*
  *  In the following functions:

@@ -83,7 +83,7 @@
 #include	<special.h>
 #include	<asLib.h>
 
-extern struct dbBase *pdbBase;
+extern struct dbBase *pdbbase;
 extern long lset_stack_not_empty;
 
 static short mapDBFToDBR[DBF_NTYPES] = {
@@ -433,7 +433,7 @@ long dbNameToAddr(char *pname,DBADDR *paddr)
 	struct rset	*prset;
 	dbFldDes	*pflddes;
 
-	dbInitEntry(pdbBase,&dbEntry);
+	dbInitEntry(pdbbase,&dbEntry);
 	if(status = dbFindRecord(&dbEntry,pname)) return(status);
 	paddr->precord = dbEntry.precnode->precord;
 	if(!dbEntry.pfield) {

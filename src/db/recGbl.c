@@ -59,7 +59,6 @@
 #include	<dbCommon.h>
 #include	<drvTS.h>
 
-extern struct dbBase *pdbBase;
 
 /* local routines */
 static void getMaxRangeValues();

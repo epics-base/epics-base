@@ -107,7 +107,7 @@ LOCAL int initialized=FALSE;
 /* The following is for use by interrupt routines */
 volatile int interruptAccept=FALSE;
 
-struct dbBase *pdbBase=NULL;
+struct dbBase *pdbbase=NULL;
 
 /* define forward references*/
 LOCAL long initDrvSup(void);
@@ -141,7 +141,7 @@ int iocInit(char * pResourceFilename)
 	return(-1);
     }
 
-    if (!pdbBase) {
+    if (!pdbbase) {
 	logMsg("iocInit aborting because No database loaded by dbAsciiRead\n",
 	    0,0,0,0,0,0);
 	return(-1);
@@ -270,7 +270,7 @@ LOCAL long initDrvSup(void) /* Locate all driver support entry tables */
     *    a driver entry table doesn't exist, report that
     *    fact.
     */
-    for(pdrvSup = (drvSup *)ellFirst(&pdbBase->drvList); pdrvSup;
+    for(pdrvSup = (drvSup *)ellFirst(&pdbbase->drvList); pdrvSup;
     pdrvSup = (drvSup *)ellNext(&pdrvSup->node)) {
 	strcpy(name,"_");
 	strcat(name,pdrvSup->name);
@@ -311,7 +311,7 @@ LOCAL long initRecSup(void)
     dbRecDes	*pdbRecDes;
     struct rset *prset;
     
-    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbBase->recDesList); pdbRecDes;
+    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbbase->recDesList); pdbRecDes;
     pdbRecDes = (dbRecDes *)ellNext(&pdbRecDes->node)) {
 	strcpy(name,"_");
 	strcat(name,pdbRecDes->name);
@@ -353,7 +353,7 @@ LOCAL long initDevSup(void)
     devSup	*pdevSup;
     struct dset *pdset;
     
-    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbBase->recDesList); pdbRecDes;
+    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbbase->recDesList); pdbRecDes;
     pdbRecDes = (dbRecDes *)ellNext(&pdbRecDes->node)) {
 	for(pdevSup = (devSup *)ellFirst(&pdbRecDes->devList); pdevSup;
 	pdevSup = (devSup *)ellNext(&pdevSup->node)) {
@@ -387,7 +387,7 @@ LOCAL long finishDevSup(void)
     devSup	*pdevSup;
     struct dset *pdset;
 
-    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbBase->recDesList); pdbRecDes;
+    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbbase->recDesList); pdbRecDes;
     pdbRecDes = (dbRecDes *)ellNext(&pdbRecDes->node)) {
 	for(pdevSup = (devSup *)ellFirst(&pdbRecDes->devList); pdevSup;
 	pdevSup = (devSup *)ellNext(&pdevSup->node)) {
@@ -414,7 +414,7 @@ LOCAL long initDatabase(void)
     DBLINK		*plink;
     int			j;
    
-    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbBase->recDesList); pdbRecDes;
+    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbbase->recDesList); pdbRecDes;
     pdbRecDes = (dbRecDes *)ellNext(&pdbRecDes->node)) {
 	prset = pdbRecDes->prset;
 	for (pdbRecordNode=(dbRecordNode *)ellFirst(&pdbRecDes->recList);
@@ -446,7 +446,7 @@ LOCAL long initDatabase(void)
    /*
     *  Second pass to resolve links
     */
-    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbBase->recDesList); pdbRecDes;
+    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbbase->recDesList); pdbRecDes;
     pdbRecDes = (dbRecDes *)ellNext(&pdbRecDes->node)) {
 	prset = pdbRecDes->prset;
 	for (pdbRecordNode=(dbRecordNode *)ellFirst(&pdbRecDes->recList);
@@ -505,7 +505,7 @@ LOCAL long initDatabase(void)
     }
 
     /* Call record support init_record routine - Second pass */
-    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbBase->recDesList); pdbRecDes;
+    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbbase->recDesList); pdbRecDes;
     pdbRecDes = (dbRecDes *)ellNext(&pdbRecDes->node)) {
 	prset = pdbRecDes->prset;
 	for (pdbRecordNode=(dbRecordNode *)ellFirst(&pdbRecDes->recList);
@@ -537,7 +537,7 @@ LOCAL void createLockSets(void)
     int			anyChange;
     
     nset = 0;
-    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbBase->recDesList); pdbRecDes;
+    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbbase->recDesList); pdbRecDes;
     pdbRecDes = (dbRecDes *)ellNext(&pdbRecDes->node)) {
 	for (pdbRecordNode=(dbRecordNode *)ellFirst(&pdbRecDes->recList);
 	pdbRecordNode;
@@ -619,7 +619,7 @@ LOCAL void createLockSetsExtraPass(int *anyChange)
     DBLINK		*plink;
     int			again;
     
-    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbBase->recDesList); pdbRecDes;
+    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbbase->recDesList); pdbRecDes;
     pdbRecDes = (dbRecDes *)ellNext(&pdbRecDes->node)) {
 	for (pdbRecordNode=(dbRecordNode *)ellFirst(&pdbRecDes->recList);
 	pdbRecordNode;
@@ -727,7 +727,7 @@ LOCAL long initialProcess(void)
     dbRecordNode 	*pdbRecordNode;
     dbCommon		*precord;
     
-    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbBase->recDesList); pdbRecDes;
+    for(pdbRecDes = (dbRecDes *)ellFirst(&pdbbase->recDesList); pdbRecDes;
     pdbRecDes = (dbRecDes *)ellNext(&pdbRecDes->node)) {
 	for (pdbRecordNode=(dbRecordNode *)ellFirst(&pdbRecDes->recList);
 	pdbRecordNode;
@@ -1096,9 +1096,9 @@ LOCAL int getResourceTokenInternal(FILE *fp, char *pToken, unsigned maxToken)
 
 int dbLoadAscii(char *filename)
 {
-    if(pdbBase) {
+    if(pdbbase) {
 	epicsPrintf("Ascii file was already loaded\n");
 	return(-1);
     }
-    return(dbAsciiRead(&pdbBase,filename));
+    return(dbAsciiRead(&pdbbase,filename));
 }

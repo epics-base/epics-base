@@ -110,6 +110,7 @@ SRCS.c += ../devAB1771OFE.c
 SRCS.c += ../devABBINARY.c
 SRCS.c += ../devABStatus.c
 SRCS.c += ../devMpc.c
+SRCS.c += ../devVmic2534.c
 
 #	SRCS.c += ../devAiCan.c
 #	SRCS.c += ../devAoCan.c
@@ -121,7 +122,7 @@ SRCS.c += ../devMpc.c
 #	SRCS.c += ../devMbboDirectCan.c
 
 LIBOBJS = $(SRCS.c:../%.c=%.o)
-
+PROD = $(LIBOBJS)
 LIBNAME = devSup
 
 include $(EPICS)/config/RULES.Vx

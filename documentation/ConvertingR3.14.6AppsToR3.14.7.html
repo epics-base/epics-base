@@ -22,22 +22,24 @@ builds with release R3.14.7.</p>
 <blockquote>
 To make the run-time code reentrant, thus allowing more than one
 instance of the state program to run on an IOC add the line  
-"<name>_SNCFLAGS += +r" to the Makefile, replacing <name> with the
+<pre>&lt;name&gt;_SNCFLAGS += +r"</pre> to the Makefile, replacing &lt;name&gt; with the
 state notation language code file name.
 </blockquote>
 
 <h3>epicsExit</h3>
-<p>Code that calls exit or atexit should change these calls to epicsExit
+<blockquote>
+Code that calls exit or atexit should change these calls to epicsExit
 and epicsAtExit. epicsAtexit was created because of problems on
 vxWorks and windows with the implementation of atexit,
-i.e. neither of these systems implements exit and atexit according to the POSIX standard.</p>
-
+i.e. neither of these systems implements exit and atexit according to the POSIX standard.
+</blockquote>
 <blockquote>
    Add the following lines 
+  <blockquote>
+<pre>
 #include "epicsExit.h"
-
 epicsExit(0);
-
+</pre>
 </blockquote>
-
+</blockquote>
 

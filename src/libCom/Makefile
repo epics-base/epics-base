@@ -240,6 +240,8 @@ SRCS_WIN32 += forceBadAllocException.cpp
 # For vxWorks a clock
 INC_vxWorks += iocClock.h
 SRCS_vxWorks += iocClock.c
+#For vxWorks special reboot hook
+SRCS_vxWorks += atReboot.cpp
 #For old vxWorks applications
 INC_vxWorks += camacLib.h
 INC_vxWorks += drvTS.h

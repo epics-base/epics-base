@@ -860,7 +860,8 @@ struct aiRecord	*pai;
             devGpibLib_setPvSevr(pai,MAJOR_ALARM,VALID_ALARM);
 	    return(0);
         }
-	return(1);
+	pai->pact = TRUE;
+	return(0);
     }
 }
 
@@ -897,7 +898,8 @@ struct aoRecord	*pao;
 	    devGpibLib_setPvSevr(pao,WRITE_ALARM,VALID_ALARM);
 	    return(0);
         }
-	return(1);
+	pao->pact = TRUE;
+	return(0);
     }
 }
 
@@ -933,7 +935,8 @@ struct longinRecord *pli;
             devGpibLib_setPvSevr(pli,MAJOR_ALARM,VALID_ALARM);
             return(0);
         }
-        return(1);
+	pli->pact = TRUE;
+        return(0);
     }
 }
 
@@ -970,7 +973,8 @@ struct longoutRecord *plo;
             devGpibLib_setPvSevr(plo,WRITE_ALARM,VALID_ALARM);
             return(0);
         }
-        return(1);
+	plo->pact = TRUE;
+        return(0);
     }
 }
 
@@ -1007,7 +1011,8 @@ struct biRecord	*pbi;
 	    devGpibLib_setPvSevr(pbi,READ_ALARM,VALID_ALARM);
 	    return(0);
         }
-	return(1);
+	pbi->pact = TRUE;
+	return(0);
     }
 }
 
@@ -1047,7 +1052,8 @@ struct boRecord	*pbo;
 	    devGpibLib_setPvSevr(pbo,WRITE_ALARM,VALID_ALARM);
 	    return(0);
 	}
-	return(1);
+	pbo->pact = TRUE;
+	return(0);
     }
 }
 
@@ -1084,7 +1090,8 @@ struct mbbiRecord	*pmbbi;
 	    devGpibLib_setPvSevr(pmbbi,READ_ALARM,VALID_ALARM);
 	    return(0);
 	}
-	return(1);
+	pmbbi->pact = TRUE;
+	return(0);
     }
 }
 
@@ -1121,7 +1128,8 @@ struct mbboRecord	*pmbbo;
 	    devGpibLib_setPvSevr(pmbbo,WRITE_ALARM,VALID_ALARM);
 	    return(0);
 	}
-	return(1);
+	pmbbo->pact = TRUE;
+	return(0);
     }
 }
 
@@ -1157,7 +1165,8 @@ struct stringinRecord	*psi;
 	    devGpibLib_setPvSevr(psi,MAJOR_ALARM,VALID_ALARM);
 	    return(0);
 	}
-	return(1);
+	psi->pact = TRUE;
+	return(0);
     }
 }
 
@@ -1194,7 +1203,8 @@ struct stringoutRecord	*pso;
 	    devGpibLib_setPvSevr(pso,WRITE_ALARM,VALID_ALARM);
 	    return(0);
 	}
-	return(1);
+	pso->pact = TRUE;
+	return(0);
     }
 }
 

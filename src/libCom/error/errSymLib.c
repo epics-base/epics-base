@@ -82,16 +82,7 @@
 #include <symLib.h>
 #include <errnoLib.h>
 
-
 extern SYMTAB_ID  statSymTbl;
-
-#else
-
-#ifndef _NTSDK
-/* MS Visual C has defines for these in stdlib.h  -kuk- */
-extern int     sys_nerr;
-extern char    *sys_errlist[];
-#endif
 
 #endif
 
@@ -238,6 +229,16 @@ char *name;
 /****************************************************************
  * UNIXSYMFIND
  ***************************************************************/
+/* 
+ * Use of sys_nerr and sys_errlist in this routine 
+ * present portability problems
+ *
+ * ANSI strerror() provides this functionality 
+ * so this is hopefully no longer needed
+ * joh 10-02-96
+ *
+ */
+#if 0 
 #ifndef vxWorks
 #ifdef __STDC__
 int UnixSymFind(long status, char *pname, long *pvalue)
@@ -257,6 +258,8 @@ int UnixSymFind(status, pname, pvalue)
     return(0);
 }
 #endif
+#endif
+
 
 /****************************************************************
  * MODSYMFIND
@@ -324,7 +327,15 @@ int errSymFind(status, name)
 #ifdef vxWorks
 	symFindByValue((SYMTAB_ID)statSymTbl, status, name,(int*) &value, (SYM_TYPE*)&type);
 #else
-	UnixSymFind(status, name, &value);
+	{
+		const char *pStr = strerror(status);
+		if (pStr) {
+			strcpy(name,strerror(status));
+		}
+		else {
+			sprintf(name,"err = %ld", status);
+		}
+	}
 #endif
     else
 	ModSymFind(status, name, &value);

@@ -2530,7 +2530,7 @@ void verifyImmediateTearDown ( const char * pName,
         status = ca_clear_channel ( chan );
         SEVCHK ( status, "immediate tear down channel clear failed" );
         ca_task_exit ();
-        epicsThreadSleep ( 1e-15 );
+        /* epicsThreadSleep ( 1e-15 ); */
         if ( i % 100 == 0 ) {
             showProgress ( interestLevel );
         }

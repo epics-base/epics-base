@@ -852,10 +852,9 @@ long epicsShareAPI dbPutLinkValue(struct link *plink,
 		if(status) return(status);
 		if((paddr->pfield==(void *)&pdest->proc)
 		|| (ppv_link->pvlMask&pvlOptPP && pdest->scan==0)) {
-			/*Note:If ppn then dbNotifyCancel will reprocess*/
 			/*if dbPutField caused asyn record to process   */
 			/* ask for reprocessing*/
-			if(!psource->ppn && pdest->putf) pdest->rpro = TRUE;
+			if(pdest->putf) pdest->rpro = TRUE;
 			/* otherwise ask for the record to be processed*/
 			else status=dbScanLink(psource,pdest);
 		}

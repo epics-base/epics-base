@@ -108,7 +108,8 @@ static void putenvCallFunc(const ioccrfArgBuf *args)
      * Yes, this will cause memory leaks if the same variable is
      * placed in the environment more than once.
      */
-    if (arg0) return;
+    if (!arg0)
+        return;
     cp = calloc(strlen(arg0)+1,sizeof(char));
     strcpy(cp,arg0);
     if ((cp == NULL) || putenv (cp)) {

@@ -53,6 +53,7 @@
 #include 	<tickLib.h>
 #include 	<sysLib.h>
 #include 	<intLib.h>
+#include 	<math.h>
 
 #include	"dbDefs.h"
 #include	"epicsPrint.h"
@@ -311,7 +312,7 @@ void scanDelete(struct dbCommon *precord)
 	return;
 }
 
-int scanppl()	/*print periodic list*/
+int scanppl(double rate)	/*print periodic list*/
 {
     scan_list	*psl;
     char	message[80];
@@ -323,19 +324,22 @@ int scanppl()	/*print periodic list*/
 	if(psl==NULL) continue;
 	period = psl->ticks;
 	period /= vxTicksPerSecond;
+	if(rate>0.0 && (fabs(rate - period) >.05)) continue;
 	sprintf(message,"Scan Period= %f seconds ",period);
 	printList(psl,message);
     }
     return(0);
 }
 
-int scanpel()  /*print event list */
+int scanpel(int event_number)  /*print event list */
 {
     char		message[80];
     int			priority,evnt;
     event_scan_list	*pevent_scan_list;
 
     for(evnt=0; evnt<MAX_EVENTS; evnt++) {
+	if(event_number && evnt<event_number) continue;
+	if(event_number && evnt>event_number) break;
 	for(priority=0; priority<NUM_CALLBACK_PRIORITIES; priority++) {
 	    pevent_scan_list = pevent_list[priority][evnt];
 	    if(!pevent_scan_list) continue;

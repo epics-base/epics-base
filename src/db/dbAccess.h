@@ -226,6 +226,7 @@ int dbIsValueField(struct dbFldDes *pdbFldDes);
 int dbGetFieldIndex(struct dbAddr *paddr);
 long dbGetNelements(struct link *plink,long *nelements);
 int dbIsLinkConnected(struct link *plink);
+int dbGetLinkDBFtype(struct link *plink);
 long dbScanLink(struct dbCommon *pfrom, struct dbCommon *pto);
 long dbScanPassive(struct dbCommon *pfrom,struct dbCommon *pto);
 void dbScanFwdLink(struct link *plink);
@@ -266,6 +267,7 @@ long dbCaGetPrecision(struct link *plink,short *precision);
 long dbCaGetSevr(struct link *plink,short *severity);
 long dbCaGetUnits(struct link *plink,char *units,int unitsSize);
 int dbCaIsLinkConnected(struct link *plink);
+int dbCaGetLinkDBFtype(struct link *plink);
 
 #else
 struct rset *dbGetRset();

@@ -124,9 +124,24 @@ static void waitAdd(struct dbCommon *precord,PUTNOTIFY *ppn)
 
 long dbPutNotify(PUTNOTIFY *ppn)
 {
-    long		status;
-    struct dbCommon	*precord = ppn->paddr->precord;
+    long	status;
+    DBADDR	*paddr = ppn->paddr;
+    dbCommon	*precord = (dbCommon *)paddr->precord;
+    short	dbfType = paddr->field_type;
 
+    if(dbfType>=DBF_INLINK && dbfType<=DBF_FWDLINK) {
+	/*Initialize everything in PUTNOTIFY except restart list and node*/
+	callbackSetCallback(notifyCallback,&ppn->callback);
+	callbackSetUser(ppn,&ppn->callback);
+	callbackSetPriority(priorityLow,&ppn->callback);
+	ppn->status = 0;
+	ppn->restart = FALSE;
+	ppn->callbackState = callbackNotActive;
+	status=dbPutField(paddr,ppn->dbrType,ppn->pbuffer,ppn->nRequest);
+	ppn->status = status;
+	issueCallback(ppn);
+	return(S_db_Pending);
+    }
     dbScanLock(precord);
     ellInit(&ppn->restartList);
     memset(&ppn->restartNode,'\0',sizeof(PNRESTARTNODE));

@@ -453,6 +453,21 @@ int dbIsLinkConnected(struct link *plink)
     }
     return(FALSE);
 }
+
+int dbGetLinkDBFtype(struct link *plink)
+{
+    switch(plink->type) {
+	case DB_LINK: 
+	{
+	    DBADDR *paddr = (DBADDR *)plink->value.pv_link.pvt;
+
+	    return((int)paddr->field_type);
+	}
+	case CA_LINK: return(dbCaGetLinkDBFtype(plink));
+	default: break;
+    }
+    return(-1);
+}
 
 /*
  *  Process a record if its scan field is passive.

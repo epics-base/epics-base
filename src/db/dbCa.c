@@ -405,6 +405,20 @@ int dbCaIsLinkConnected(struct link *plink)
     if(ca_state(pca->chid)==cs_conn) return(TRUE);
     return(FALSE);
 }
+int dbCaGetLinkDBFtype(struct link *plink)
+{
+    caLink	*pca;
+
+    if(!plink) return(-1);
+    if(plink->type != CA_LINK) return(-1);
+    pca = (caLink *)plink->value.pv_link.pvt;
+    if(!pca) return(-1);
+    if(!pca->chid) return(-1);
+    if(ca_state(pca->chid)==cs_conn)
+	return(dbDBRoldToDBFnew[ca_field_type(pca->chid)]);
+    return(-1);
+}
+
 
 static void eventCallback(struct event_handler_args arg)
 {

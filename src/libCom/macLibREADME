@@ -67,6 +67,7 @@ utility routines, described later, use core routines to provide a more
 convenient interface for some purposes.
 
 a) long macCreateHandle( MAC_HANDLE **handle, char *pairs[] );
+   void macSuppressWarning(MAC_HANDLE *handle,int falseTrue);
 
    Creates a new macro substitution context and returns an opaque handle
    to that context. An application can, if it desires, have several
@@ -80,6 +81,11 @@ a) long macCreateHandle( MAC_HANDLE **handle, char *pairs[] );
    opaque handle is of type "MAC_HANDLE *", which is a pointer to the
    context structure. The memory for this context is allocated by this
    routine.
+
+   macSuppressWarning can be called to suppress the marning message
+   when macExpandString cant expand a macro. A non zero value will
+   suppress the messages.
+
 
 b) long macGetXxxx( MAC_HANDLE *handle, <Xxxx-specific> );
    long macPutXxxx( MAC_HANDLE *handle, <Xxxx-specific> );

@@ -79,6 +79,7 @@ typedef struct {
     long	level;		/* scoping level */
     long	debug;		/* debugging level */
     ELLLIST	list;		/* macro name / value list */
+    int		suppressWarning;/*suppress warning messages*/
 } MAC_HANDLE;
 
 /*
@@ -110,6 +111,13 @@ epicsShareAPI macCreateHandle(
 				/* argument implies no macros */
 );
 
+epicsShareFunc void
+epicsShareAPI macSuppressWarning(
+    MAC_HANDLE	*handle,	/* opaque handle */
+
+    int		falseTrue	/*0 means ussue, 1 means suppress*/
+);
+
 epicsShareFunc long		/* #chars copied, <0 if any macros are */
 				/* undefined */
 epicsShareAPI macExpandString(
@@ -122,6 +130,7 @@ epicsShareAPI macExpandString(
     long	maxlen		/* maximum number of characters to copy */
 				/* to destination string */
 );
+
 
 epicsShareFunc long		/* length of value */
 epicsShareAPI macPutValue(
@@ -193,6 +202,9 @@ epicsShareAPI macInstallMacros(
 );
 
 /* $Log$
+ * Revision 1.3  1997/05/01 19:57:34  jhill
+ * updated dll keywords
+ *
  * Revision 1.2  1996/09/16 21:07:10  jhill
  * fixed warnings
  *

@@ -105,6 +105,7 @@ epicsShareAPI macCreateHandle(
     handle->dirty = FALSE;
     handle->level = 0;
     handle->debug = 0;
+    handle->suppressWarning = 0;
     ellInit( &handle->list );
 
     /* if supplied, load macro definitions */
@@ -119,6 +120,13 @@ epicsShareAPI macCreateHandle(
     *pHandle = handle;
 
     return 0;
+}
+void epicsShareAPI macSuppressWarning(
+    MAC_HANDLE  *handle,        /* opaque handle */
+    int         falseTrue       /*0 means issue, 1 means suppress*/
+)
+{
+    handle->suppressWarning = falseTrue;
 }
 
 /*
@@ -686,9 +694,11 @@ static void trans( MAC_HANDLE *handle, MAC_ENTRY *entry, long level,
 	    /* look up resultant name; if not there, set error flag and
 	       copy reference */
 	    if ( ( entry2 = lookup( handle, name2, FALSE ) ) == NULL ) {
-		entry->error = TRUE;
-		macErrMessage2( -1, "%s: %s referenced but undefined",
+		if(!handle->suppressWarning)  {
+		    entry->error = TRUE;
+		    macErrMessage2( -1, "%s: %s referenced but undefined",
 				entry->name, name2 );
+		}
 		sprintf( v, "$(%s)", name2 ); v += strlen( v );
 	    }
 
@@ -745,6 +755,9 @@ char *Strdup( char *string )
 }
 
 /* $Log$
+ * Revision 1.5  1997/05/01 19:57:32  jhill
+ * updated dll keywords
+ *
  * Revision 1.4  1997/04/30 19:10:04  mrk
  * Fix long memory free list problem
  *

@@ -34,7 +34,7 @@ ACC_SFLAGS_YES= -Bstatic
 ACC_SFLAGS_NO=
 ACC_SLIBS_YES= -lw -lintl -Bdynamic -ldl -Bstatic -lXext -lX
 ACC_SLIBS_NO=
-ACC_SHRLIB_CFLAGS_YES =  -Kpic -D_REENTRANT 
+ACC_SHRLIB_CFLAGS_YES =  -KPIC -D_REENTRANT 
 ACC_SHRLIB_LDFLAGS_YES =  -G -h $@
 
 # Configure OS vendor C++ compiler

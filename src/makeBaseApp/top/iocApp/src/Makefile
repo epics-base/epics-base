@@ -12,6 +12,9 @@ PROD_IOC = _APPNAME_
 # <name>.dbd will be created from <name>Include.dbd
 DBD += _APPNAME_.dbd
 
+# _APPNAME_.dbd will be made up from these files:
+_APPNAME__DBD += base.dbd
+_APPNAME__DBD += xxxSupport.dbd
 
 # <name>_registerRecordDeviceDriver.cpp will be created from <name>.dbd
 _APPNAME__SRCS += _APPNAME__registerRecordDeviceDriver.cpp

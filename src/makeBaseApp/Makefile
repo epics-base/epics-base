@@ -23,7 +23,6 @@ TEMPLATES += top/iocApp/Makefile
 TEMPLATES += top/iocApp/Db/Makefile
 TEMPLATES += top/iocApp/src/Makefile
 TEMPLATES += top/iocApp/src/_APPNAME_Main.cpp
-TEMPLATES += top/iocApp/src/_APPNAME_Include.dbd
 TEMPLATES += top/iocApp/src/sncExample.stt
 
 TEMPLATES += top/exampleApp/Makefile

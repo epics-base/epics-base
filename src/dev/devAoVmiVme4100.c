@@ -32,6 +32,7 @@
  * -----------------
  * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
  * .02	03-13-92	jba	ANSI C changes
+ * .03	05-11-92	mrk	Remove read at init (device does not support)
  *      ...
  */
 
@@ -75,7 +76,6 @@ struct {
 	write_ao,
 	special_linconv};
 
-void read_ao();
 
 
 static long init_record(pao)
@@ -97,9 +97,9 @@ static long init_record(pao)
     /* set linear conversion slope*/
     pao->eslo = (pao->eguf -pao->egul)/4095.0;
 
-    /* call driver so that it configures card */
-    read_ao(pao);
-    return(0);
+    /* It is not possible to read current value of card */
+    /* Tell recSup not to convert			*/
+    return(2);
 }
 
 static long write_ao(pao)
@@ -135,15 +135,4 @@ static long special_linconv(pao,after)
     return(0);
 }
 
-static void read_ao(pao)
-struct aoRecord      *pao;
-{
-	unsigned short          value;
-	struct vmeio    		*pvmeio = &pao->out.value.vmeio;
-
-	/* get the value from the ao driver */
-	vmi4100_read(pvmeio->card,pvmeio->signal,&value);
-	pao->rbv = pao->rval = value;
-	return;
-}
 

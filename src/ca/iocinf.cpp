@@ -198,8 +198,8 @@ epicsShareFunc void epicsShareAPI configureChannelAccessAddressList
      * from the interfaces found.
      */
     yes = TRUE;
-    pstr = envGetConfigParam (&EPICS_CA_AUTO_ADDR_LIST,       
-            sizeof(yesno), yesno);
+    pstr = envGetConfigParam ( &EPICS_CA_AUTO_ADDR_LIST,       
+            sizeof (yesno), yesno );
     if (pstr) {
         if ( strstr ( pstr, "no" ) || strstr ( pstr, "NO" ) ) {
             yes = FALSE;
@@ -214,6 +214,22 @@ epicsShareFunc void epicsShareAPI configureChannelAccessAddressList
         osiSockAddr addr;
         addr.ia.sin_family = AF_UNSPEC;
         osiSockDiscoverBroadcastAddresses ( &tmpList, sock, &addr );
+        if ( ellCount ( &tmpList ) == 0 ) {
+            osiSockAddrNode *pNewNode;
+            pNewNode = (osiSockAddrNode *) calloc ( 1, sizeof (*pNewNode) );
+            if ( pNewNode ) {
+                /* 
+                 * if no interfaces found then look for local channels 
+                 * with the loop back interface
+                 */
+                pNewNode->addr.ia.sin_family = AF_INET;
+                pNewNode->addr.ia.sin_addr.s_addr = htonl ( INADDR_LOOPBACK );
+                ellAdd ( &tmpList, &pNewNode->node );
+            }
+            else {
+                errlogPrintf ( "configureChannelAccessAddressList(): no memory available for configuration\n" );
+            }
+        }
     }
 
     addAddrToChannelAccessAddressList ( &tmpList, &EPICS_CA_ADDR_LIST, port );

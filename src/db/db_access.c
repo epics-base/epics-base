@@ -55,12 +55,15 @@
 
 #include        "dbDefs.h"
 #include        "errlog.h"
+#include        "dbStaticLib.h"
 #include        "dbAccess.h"
 #include        "dbCommon.h"
 #include        "errMdef.h"
 #include        "recSup.h"
 
 #include	"alarm.h"
+
+extern struct dbBase *pdbbase;
 
 #ifndef NULL
 #define NULL 0
@@ -120,6 +123,7 @@
 #define oldDBR_PUT_ACKT		oldDBR_CTRL_DOUBLE + 1
 #define oldDBR_PUT_ACKS		oldDBR_PUT_ACKT + 1
 #define oldDBR_STSACK_STRING	oldDBR_PUT_ACKS + 1
+#define oldDBR_CLASS_NAME	oldDBR_STSACK_STRING + 1
 
 /*Following is defined in db_access.h*/
 extern unsigned short dbDBRnewToDBRold[DBR_ENUM+1];
@@ -1407,7 +1411,29 @@ void		*pfl
 		for(i=nRequest; i<no_elements; i++) pvalue[i][0] = 0;
 	}
 	break;
+    case(oldDBR_CLASS_NAME):
+	{
+	    DBENTRY dbEntry;
+	    char    *name = 0;
+	    char    *pto = (char *)pbuffer;
 
+	    if(!pdbbase) {
+		status = S_db_notFound;
+		break;
+	    }
+	    dbInitEntry(pdbbase,&dbEntry);
+	    status = dbFindRecord(&dbEntry,paddr->precord->name);
+	    if(!status) name = dbGetRecordTypeName(&dbEntry);
+	    dbFinishEntry(&dbEntry);
+	    if(status) break;
+	    if(!name) {
+		status = S_dbLib_recordTypeNotFound;
+		break;
+	    }
+	    pto[MAX_STRING_SIZE-1] = 0;
+	    strncpy(pto,name,MAX_STRING_SIZE-1);
+	}
+	break;
     default:
 	return(-1);
     }

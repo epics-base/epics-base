@@ -181,7 +181,8 @@ typedef epicsUInt16	dbr_put_acks_t;
 #define DBR_PUT_ACKT	DBR_CTRL_DOUBLE + 1
 #define DBR_PUT_ACKS    DBR_PUT_ACKT + 1
 #define DBR_STSACK_STRING DBR_PUT_ACKS + 1
-#define	LAST_BUFFER_TYPE	DBR_STSACK_STRING
+#define DBR_CLASS_NAME DBR_STSACK_STRING + 1
+#define	LAST_BUFFER_TYPE	DBR_CLASS_NAME
 #define	VALID_DB_REQ(x)	((x >= 0) && (x <= LAST_BUFFER_TYPE))
 #define	INVALID_DB_REQ(x)	((x < 0) || (x > LAST_BUFFER_TYPE))
 
@@ -305,6 +306,7 @@ epicsShareDef READONLY epicsType DBR_XXXXToEpicsType [LAST_BUFFER_TYPE+1] = {
 
 			epicsUInt16T,
 			epicsUInt16T,
+			epicsOldStringT,
 			epicsOldStringT
 };
 #else
@@ -751,6 +753,7 @@ epicsShareDef READONLY unsigned short dbr_size[LAST_BUFFER_TYPE+1] = {
 	sizeof(dbr_put_ackt_t),		/* put ackt			*/
 	sizeof(dbr_put_acks_t),		/* put acks			*/
 	sizeof(struct dbr_stsack_string),/* string field with status/ack*/
+	sizeof(dbr_string_t),		/* string max size		*/
 };
 #endif
 
@@ -796,6 +799,7 @@ epicsShareDef READONLY unsigned short dbr_value_size[LAST_BUFFER_TYPE+1] = {
 	sizeof(dbr_double_t),	/* double			*/
 	sizeof(dbr_ushort_t), 	/* put_ackt			*/
 	sizeof(dbr_ushort_t), 	/* put_acks			*/
+	sizeof(dbr_string_t),	/* string max size		*/
 	sizeof(dbr_string_t),	/* string max size		*/
 };
 #endif
@@ -853,6 +857,7 @@ epicsShareDef READONLY enum dbr_value_class dbr_value_class[LAST_BUFFER_TYPE+1] 
 	dbr_class_int,
 	dbr_class_int,
 	dbr_class_string,
+	dbr_class_string,	/* string max size		*/
 };
 #endif
 
@@ -917,6 +922,7 @@ epicsShareDef READONLY unsigned short dbr_value_offset[LAST_BUFFER_TYPE+1] = {
 	0,					/* put ackt			*/
 	0,					/* put acks			*/
 	BYTE_OS(struct dbr_stsack_string,value[0]),/* string field	with status	*/
+	0,					/* string			*/
 };
 #endif
 
@@ -961,6 +967,7 @@ union db_access_val{
 	dbr_put_ackt_t		putackt;	/* item number		      */
 	dbr_put_acks_t		putacks;	/* item number		      */
 	struct dbr_sts_string	sastrval;	/* string field	with status   */
+	dbr_string_t		classname;	/* string max size	      */
 };
 
 /*----------------------------------------------------------------------------
@@ -1148,9 +1155,10 @@ union db_access_val{
 	"DBR_PUT_ACKT",
 	"DBR_PUT_ACKS",
 	"DBR_STSACK_STRING",
+	"DBR_CLASS_NAME",
     };
     epicsShareDef READONLY char * dbr_text_invalid = "DBR_invalid";
-    epicsShareDef READONLY short   dbr_text_dim = (sizeof dbr_text)/(sizeof (char *));
+    epicsShareDef READONLY short   dbr_text_dim = (sizeof dbr_text)/(sizeof (char *)) + 1;
 #endif
 
 #ifdef __cplusplus

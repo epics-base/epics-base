@@ -51,51 +51,10 @@
 #include <callback.h>
 #include <ellLib.h>
 #include <caeventmask.h>
+#include "dbAddr.h"
+
 
-typedef struct dbAddr{
-	struct dbCommon *precord;/* address of record			*/
-	void	*pfield;	/* address of field		 	*/
-	void	*pfldDes;	/* address of struct fldDes		*/
-	void	*asPvt;		/* Access Security Private 		*/
-	long	no_elements;	/* number of elements (arrays)		*/
-	short	field_type;	/* type of database field		*/
-	short	field_size;	/* size (bytes) of the field being accessed */
-	short	special;	/* special processing			*/
-	short	dbr_field_type;	/* field type as seen by database request*/
-				/*DBR_STRING,...,DBR_ENUM,DBR_NOACCESS*/
-}DBADDR;
-
-/*If the following structures changes then db_access.h must also be changed*/
-typedef struct pnRestartNode {
-	ELLNODE		node;
-	struct putNotify *ppn;
-	struct putNotify *ppnrestartList; /*ppn with restartList*/
-}PNRESTARTNODE;
 	
-
-typedef struct putNotify{
-	/*The following members MUST be set by user*/
-#ifdef __STDC__
-	void		(*userCallback)(struct putNotify *); /*callback provided by user*/
-#else
-	void		(*userCallback)(); /*callback provided by user*/
-#endif
-	struct dbAddr	*paddr;		/*dbAddr set by dbNameToAddr*/
-	void		*pbuffer;	/*address of data*/
-	long		nRequest;	/*number of elements to be written*/
-	short		dbrType;	/*database request type*/
-	void		*usrPvt;	/*for private use of user*/
-	/*The following is status of request. Set by dbPutNotify*/
-	long		status;
-	/*The following are private to database access*/
-	CALLBACK	callback;
-	ELLLIST		waitList;	/*list of records for which to wait*/
-	ELLLIST		restartList;	/*list of PUTNOTIFYs to restart*/
-	PNRESTARTNODE	restartNode;
-	short		restart;
-	short		callbackState;
-	void		*waitForCallback;
-}PUTNOTIFY;
 
 /*  The database field and request types are defined in dbFldTypes.h*/
 /* Data Base Request Options	*/
@@ -313,6 +272,21 @@ long dbCaGetSevr(struct link *plink,short *severity);
 long dbCaGetUnits(struct link *plink,char *units,int unitsSize);
 int dbCaIsLinkConnected(struct link *plink);
 
+short db_name_to_addr_mess(char *pname, struct dbAddr *paddr);
+short db_get_field_mess(
+struct dbAddr   *paddr,
+short           buffer_type,
+char            *pbuffer,
+unsigned short  no_elements,
+void            *pfl
+);
+short db_put_field_mess(
+struct dbAddr   *paddr,         /* where to put it */
+short           src_type, 
+short           no_elements,
+char            *psrc           /* where to get it from */
+);
+
 #else
 struct rset *dbGetRset();
 int dbIsValueField();
@@ -338,6 +312,9 @@ void dbCaAddLink();
 void dbCaRemoveLink();
 long dbCaGetLink();
 long dbCaPutLink();
+short db_name_to_addr_mess();
+short db_get_field_mess();
+short db_put_field_mess();
 #endif /*__STDC__*/
 
 #endif /*INCdbAccessh*/

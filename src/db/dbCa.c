@@ -176,7 +176,7 @@ long dbCaGetLink(struct link *plink,short dbrType, char *pdest,
        	(*(pconvert))(pca->pgetNative, pdest, 0);
     }else{
 	unsigned long ntoget = *nelements;
-	struct db_addr	dbAddr;
+	struct dbAddr	dbAddr;
 
 	if(ntoget > pca->nelements)  ntoget = pca->nelements;
 	*nelements = ntoget;
@@ -242,7 +242,7 @@ long dbCaPutLink(struct link *plink,short dbrType,
 		[dbrType][dbDBRoldToDBFnew[pca->dbrType]];
 	    status = (*(pconvert))(psource,pca->pputNative, 0);
 	}else{
-	    struct db_addr	dbAddr;
+	    struct dbAddr	dbAddr;
 	    pconvert = dbPutConvertRoutine
 		[dbrType][dbDBRoldToDBFnew[pca->dbrType]];
 	    memset((void *)&dbAddr,0,sizeof(dbAddr));

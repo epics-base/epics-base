@@ -45,13 +45,11 @@ static void print_returned();
 
 
 #define		MAX_ELEMS	10
-int gft(pname,index)
-char		*pname;
-short	index;
+int gft(char *pname)
 {
 	char		tgf_buffer[MAX_ELEMS*MAX_STRING_SIZE+sizeof(struct dbr_ctrl_double)];
-	struct  db_addr	addr;
-	struct  db_addr	*paddr = &addr;
+	struct  dbAddr	addr;
+	struct  dbAddr	*paddr = &addr;
 	short		number_elements;
 	int	i;
 	int status;
@@ -61,22 +59,22 @@ short	index;
 		return(1);
 	}
 	/* convert name to database address */
-	status=db_name_to_addr(pname,&addr,index);
+	status=db_name_to_addr(pname,&addr);
 	if(status) {
 		printf("db_name_to_addr failed\n");
 		return(1);
 	}
 	printf("   Record Name: %s\n",pname);
 	printf("Record Address: 0x%p\n",addr.precord);
-	printf("    Field Type: %d\n",addr.field_type);
+	printf("    Field Type: %d\n",addr.dbr_field_type);
 	printf(" Field Address: 0x%p\n",addr.pfield);
 	printf("    Field Size: %d\n",addr.field_size);
-	printf("   No Elements: %d\n",addr.no_elements);
+	printf("   No Elements: %ld\n",addr.no_elements);
 	number_elements =
 		((addr.no_elements > MAX_ELEMS)?MAX_ELEMS:addr.no_elements);
 
 	for(i=0; i<=LAST_BUFFER_TYPE; i++) {
-		if(addr.field_type==0) {
+		if(addr.dbr_field_type==0) {
 			if( (i!=DBR_STRING)
 			 && (i!=DBR_STS_STRING)
 			 && (i!=DBR_TIME_STRING)
@@ -95,13 +93,10 @@ short	index;
  * TPF
  * Test put field
  */
-int pft(pname,pvalue,index)
-char		*pname;
-char		*pvalue;
-short	index;
+int pft(char *pname,char *pvalue)
 {
-	struct db_addr		addr;
-	struct db_addr		*paddr = &addr;
+	struct dbAddr		addr;
+	struct dbAddr		*paddr = &addr;
 	char			buffer[500];
 	short			shortvalue;
 	long			longvalue;
@@ -120,21 +115,21 @@ short	index;
 	/* convert name to database address */
 
 	/* convert name to database address */
-	status=db_name_to_addr(pname,&addr,index);
+	status=db_name_to_addr(pname,&addr);
 	if(status) {
 		printf("db_name_to_addr failed\n");
 		return(1);
 	}
 	printf("   Record Name: %s\n",pname);
 	printf("Record Address: 0x%p\n",addr.precord);
-	printf("    Field Type: %d\n",addr.field_type);
+	printf("    Field Type: %d\n",addr.dbr_field_type);
 	printf(" Field Address: 0x%p\n",addr.pfield);
 	printf("    Field Size: %d\n",addr.field_size);
-	printf("   No Elements: %d\n",addr.no_elements);
+	printf("   No Elements: %ld\n",addr.no_elements);
 	if (db_put_field(paddr,DBR_STRING,pvalue,1) < 0) printf("\n\t failed ");
 	if (db_get_field(paddr,DBR_STRING,buffer,1,NULL) < 0) printf("\n\tfailed");
 	else print_returned(DBR_STRING,buffer,1);
-	if(addr.field_type<=DBF_STRING || addr.field_type==DBF_ENUM)
+	if(addr.dbr_field_type<=DBF_STRING || addr.dbr_field_type==DBF_ENUM)
 	  return(0);
 	if(sscanf(pvalue,"%hd",&shortvalue)==1) {
 	  if (db_put_field(paddr,DBR_SHORT,&shortvalue,1) < 0) 
@@ -240,7 +235,7 @@ static void print_returned(type,pbuffer,count)
 		long *pvalue = (long *)pbuffer;
 		for (i = 0; i < count; i++,pvalue++){
 			if(count!=1 && (i%10 == 0)) printf("\n");
-			printf("0x%x ",*pvalue);
+			printf("0x%lx ", (unsigned long)*pvalue);
 		}
 		break;
 	}
@@ -315,7 +310,7 @@ static void print_returned(type,pbuffer,count)
 		if(count==1) printf("\tValue: ");
 		for (i = 0; i < count; i++,plong++){
 			if(count!=1 && (i%10 == 0)) printf("\n");
-			printf("0x%lx ",*plong);
+			printf("0x%x ",(unsigned)*plong);
 		}
 		break;
 	}
@@ -641,7 +636,7 @@ static void print_returned(type,pbuffer,count)
 
 static void tpnCallback(PUTNOTIFY *ppn)
 {
-    struct db_addr	*pdbaddr = (struct db_addr *)ppn->paddr;
+    struct dbAddr	*pdbaddr = (struct dbAddr *)ppn->paddr;
     long	status = ppn->status;
 
     if(status==0)
@@ -655,14 +650,14 @@ static void tpnCallback(PUTNOTIFY *ppn)
 long tpn(char	*pname,char *pvalue)
 {
     long		status;
-    struct db_addr	*pdbaddr=NULL;
+    struct dbAddr	*pdbaddr=NULL;
     PUTNOTIFY		*ppn=NULL;
     char		*psavevalue;
     int			len;
 
     len = strlen(pvalue);
     /*allocate space for value immediately following DBADDR*/
-    pdbaddr = calloc(1,sizeof(struct db_addr) + len+1);
+    pdbaddr = calloc(1,sizeof(struct dbAddr) + len+1);
     if(!pdbaddr) {
 	printf("calloc failed\n");
 	return(-1);

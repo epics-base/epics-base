@@ -35,6 +35,7 @@
  * .05  02-28-92 jba    ANSI C changes
  * .06  07-21-92 jba    ANSI C changes
  * .07  02-02-94 mrk	added dbPutNotifyMapType
+ * .08	10-10-96 joh	eliminated the dbAddr/db_addr mess
  */
 
 
@@ -122,11 +123,6 @@ extern unsigned short dbDBRnewToDBRold[DBR_ENUM+1];
 
 
 /* function declarations */
-
-/* 
- * database access address structure  
- */
-#include <db_addr.h>
 
 #ifndef MAX_STRING_SIZE
 #define MAX_STRING_SIZE	40
@@ -504,8 +500,7 @@ struct dbr_ctrl_double{
  *
  * process database records
  */
-void db_process(pdb_addr)
-register struct db_addr *pdb_addr;
+void db_process(struct dbAddr *pdb_addr)
 {
         long    status;
 
@@ -575,14 +570,12 @@ void fill(pbuffer,size,fillchar)
 /*
  * DB_NAME_TO_ADDR
  */
-short db_name_to_addr(pname,paddr)
-  char           *pname;
-  struct dbAddr *paddr;
+int db_name_to_addr(char *pname, struct dbAddr *paddr)
 {
         long    status;
 	short   ftype;
 
-        status=dbNameToAddr(pname,paddr);
+        status=dbNameToAddr(pname, paddr);
         if(!status) {
 	    ftype = paddr->dbr_field_type;
 	    if(INVALID_DB_REQ(ftype)) {
@@ -598,12 +591,13 @@ short db_name_to_addr(pname,paddr)
 
 typedef char DBSTRING[MAX_STRING_SIZE];
 
-short db_get_field(paddr,buffer_type,pbuffer,no_elements,pfl)
-struct dbAddr	*paddr;
-short		buffer_type;
-char		*pbuffer;
-unsigned short	no_elements;
-void		*pfl;
+int db_get_field(
+struct dbAddr	*paddr,
+int		buffer_type,
+void		*pbuffer,
+int		no_elements,
+void		*pfl
+)
 {
     long status;
     long options;
@@ -1420,10 +1414,12 @@ void		*pfl;
 
 /* DB_PUT_FIELD put a field and convert it to the desired type */
 
-short db_put_field(paddr,src_type,psrc,no_elements)
-struct dbAddr	*paddr;		/* where to put it */
-short		src_type,no_elements;
-char			*psrc;		/* where to get it from */
+int db_put_field(
+struct dbAddr	*paddr,		/* where to put it */
+int		src_type, 
+void		*psrc,		/* where to get it from */
+int		no_elements
+)
 {
     long status;
 

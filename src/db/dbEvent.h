@@ -44,10 +44,10 @@
 
 struct event_block{
         ELLNODE                 node;
-        struct db_addr          *paddr;
+        struct dbAddr		*paddr;
 	void 			(*user_sub)(
 					void *user_arg,
-					struct db_addr *paddr,
+					struct dbAddr *paddr,
 					int eventsRemaining,
 					db_field_log *pfl);
         void                    *user_arg;
@@ -59,7 +59,7 @@ struct event_block{
 
 typedef void			EVENTFUNC(
 					void *user_arg, 
-					struct db_addr *paddr,
+					struct dbAddr *paddr,
 					int eventsRemaining,
 					db_field_log *pfl);
 
@@ -118,7 +118,7 @@ unsigned		db_sizeof_event_block(void);
 
 int db_add_event(
 struct event_user       *evuser,
-struct db_addr          *paddr,
+struct dbAddr           *paddr,
 EVENTFUNC		*user_sub,
 void                    *user_arg,
 unsigned int            select,

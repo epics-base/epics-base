@@ -131,16 +131,16 @@ FASTUNLOCK(&(RECPTR)->mlok);
  */
 int db_event_list(char *name)
 {
-  	struct db_addr		addr;
+  	struct dbAddr		addr;
   	int			status;
   	struct event_block	*pevent;
   	struct dbCommon		*precord;
 
-  	status = db_name_to_addr(name, &addr);
+  	status = dbNameToAddr(name, &addr);
   	if(status==ERROR)
     		return ERROR;
 
-  	precord = (struct dbCommon *) addr.precord;
+  	precord = addr.precord;
   	pevent = (struct event_block *) precord->mlis.node.next;
 
   	if(pevent)
@@ -255,16 +255,16 @@ unsigned db_sizeof_event_block(void)
  */
 int db_add_event(
 struct event_user	*evuser,
-struct db_addr		*paddr,
+struct dbAddr		*paddr,
 void			(*user_sub)(),
 void			*user_arg,
 unsigned int		select,
 struct event_block	*pevent /* ptr to event blk (not required) */
 )
 {
-  	 struct dbCommon	*precord;
-  	 struct event_que	*ev_que;
-  	 struct event_que	*tmp_que;
+  	struct dbCommon		*precord;
+  	struct event_que	*ev_que;
+  	struct event_que	*tmp_que;
 
 /* (MDA) in LANL stuff, this used to taskSuspend if invalid address
     in new code, the mechanism to help do this checking has been removed
@@ -272,7 +272,7 @@ struct event_block	*pevent /* ptr to event blk (not required) */
 
   	PADDRCHK(paddr);
  */
-  	precord = (struct dbCommon *) paddr->precord;
+  	precord = paddr->precord;
 
 	/*
 	 * Don't add events which will not be triggered
@@ -322,7 +322,7 @@ struct event_block	*pevent /* ptr to event blk (not required) */
 	 * there upon wakeup)
 	 */
   	if(	paddr->no_elements == 1 && 
-		dbr_size[paddr->field_type] <= sizeof(union native_value))
+		paddr->field_size <= sizeof(union native_value))
   		pevent->valque = TRUE;
  	else
   		pevent->valque = FALSE;
@@ -475,7 +475,7 @@ int	db_cancel_event(struct event_block	*pevent)
  */
 LOCAL void wake_cancel(
 void 			*user_arg,
-struct db_addr 		*paddr,
+struct dbAddr 		*paddr,
 int			eventsRemaing,
 db_field_log 		*pfl)
 {
@@ -591,13 +591,13 @@ int db_post_single_event(struct event_block	*pevent)
 			ev_que->valque[putix].sevr = sevr;
 			ev_que->valque[putix].time = precord->time;
 			/*
-		 	* use memcpy to avoid a bus error on
-		 	* union copy of char in the db at an odd 
-		 	* address
-		 	*/
+		 	 * use memcpy to avoid a bus error on
+		 	 * union copy of char in the db at an odd 
+		 	 * address
+		 	 */
 			memcpy(	(char *)&ev_que->valque[putix].field,
 				pevent->paddr->pfield,
-				dbr_size[pevent->paddr->field_type]);
+				pevent->paddr->field_size);
 		}
     		/* notify the event handler */
     		semGive(ev_que->evuser->ppendsem);
@@ -677,7 +677,7 @@ unsigned int	select
 				 	*/
 					memcpy(	(char *)&ev_que->valque[putix].field,
 						(char *)event->paddr->pfield,
-						dbr_size[event->paddr->field_type]);
+						event->paddr->field_size);
 
 				}
         			/* notify the event handler */

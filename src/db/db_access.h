@@ -76,6 +76,7 @@
  * .26	05-17-95	joh	conversion between epics core types
  *				and dbr types
  * .27	05-26-95	joh	added const	
+ * .28  10-10-96	joh	eliminated the dbAddr/db_addr mess
  *
  * NOTES:
  * .01	06-04-91	joh	the value must always be the last item 
@@ -98,45 +99,7 @@ extern "C" {
 #include <tsDefs.h>
 #include <callback.h>
 #include <ellLib.h>
-
-/* 
- *database access address structure 
- */
-#ifndef INC_db_addrh
-#include	<db_addr.h>
-#endif
-
-/*definitions for db_put_notify */
-/*the following structure is identical*/
-/*except for struct dbAddr -> struct db_addr*/
-struct putNotify;
-typedef struct pnRestartNode {
-	ELLNODE		node;
-	struct putNotify *ppn;
-	struct putNotify *ppnrestartList; /*ppn with restartList*/
-}PNRESTARTNODE;
-
-typedef struct putNotify{
-	/*The following members MUST be set by user*/
-	void		(*userCallback)(); /*callback provided by user*/
-	struct db_addr	*paddr;		/*dbAddr set by dbNameToAddr*/
-	void		*pbuffer;	/*address of data*/
-	long		nRequest;	/*number of elements to be written*/
-	short		dbrType;	/*database request type*/
-	void		*usrPvt;	/*for private use of user*/
-	/*The following is status of request. Set by dbPutNotify*/
-	long		status;
-	/*The following are private to database access*/
-	CALLBACK	callback;
-	ELLLIST		waitList;       /*list of records for which to wait*/
-	ELLLIST		restartList;   /*list of PUTNOTIFYs to restart*/
-	PNRESTARTNODE	restartNode;	/*node of on restartLlist*/
-	short		restart;
-	short		callbackState;
-	void		*waitForCallback;
-}PUTNOTIFY;
-/* dbPutNotify can be called after calling dbPutNotifyMapType(ppn,oldtype)*/
-int dbPutNotifyMapType();
+#include "dbAddr.h"
 
 #define MAX_UNITS_SIZE		8	
 #define MAX_ENUM_STRING_SIZE	26
@@ -251,11 +214,11 @@ epicsShareExtern READONLY int epicsTypeToDBR_XXXX [lastEpicsType+1];
 void *dbCalloc(size_t nobj,size_t size);
 void *dbMalloc(size_t size);
 extern long (*dbGetConvertRoutine[newDBF_DEVICE+1][newDBR_ENUM+1])
-    (struct db_addr *paddr, void *pbuffer,long nRequest,
-	long no_elements, long offset);
+    (struct dbAddr *paddr, void *pbuffer,long nRequest,
+        long no_elements, long offset);
 extern long (*dbPutConvertRoutine[newDBR_ENUM+1][newDBF_DEVICE+1])
-    (struct db_addr *paddr, void *pbuffer,long nRequest,
-	long no_elements, long offset);
+    (struct dbAddr *paddr, void *pbuffer,long nRequest,
+        long no_elements, long offset);
 extern long (*dbFastGetConvertRoutine[newDBF_DEVICE+1][newDBR_ENUM+1])();
 extern long (*dbFastPutConvertRoutine[newDBR_ENUM+1][newDBF_DEVICE+1])();
 #else
@@ -263,6 +226,8 @@ extern long (*dbGetConvertRoutine[newDBF_DEVICE+1][newDBR_ENUM+1]) ();
 extern long (*dbPutConvertRoutine[newDBR_ENUM+1][newDBF_DEVICE+1]) ();
 extern long (*dbFastGetConvertRoutine[newDBF_DEVICE+1][newDBR_ENUM+1])();
 extern long (*dbFastPutConvertRoutine[newDBR_ENUM+1][newDBF_DEVICE+1])();
+void *dbCalloc();
+void *dbMalloc();
 #endif /*__STDC__*/
 
 /*Conversion between old and new DBR types*/
@@ -1182,10 +1147,6 @@ union db_access_val{
     READONLY char * dbr_text_invalid = "DBR_invalid";
     READONLY short   dbr_text_dim = (sizeof dbr_text)/(sizeof (char *));
 #endif
-
-short db_name_to_addr();
-short db_put_field();
-short db_get_field();
 
 #ifdef __cplusplus
 }

@@ -5,6 +5,9 @@
 # $Id$
 #
 # $Log$
+# Revision 1.1  1996/06/25 19:11:24  jbk
+# new in EPICS base
+#
 #
 # *Revision 1.2  1996/06/25 18:58:55  jbk
 # *more fixes for the aitString management functions and mapping menus
@@ -16,7 +19,7 @@
 EPICS=../../..
 # EPICS=/usr/local/epics/R3.12.2
 
-include $(EPICS)/config/CONFIG_EXTENSIONS
+include $(EPICS)/config/CONFIG_BASE
 
 include $(EPICS)/config/RULES_ARCHS
 

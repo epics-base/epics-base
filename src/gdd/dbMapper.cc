@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.1  1996/06/25 19:11:34  jbk
+// new in EPICS base
+//
 //
 
 // *Revision 1.5  1996/06/25 18:59:00  jbk
@@ -206,7 +209,7 @@ static int mapGddToEnum(void* v, gdd* dd) {
 
 	if(dd->dimension()) {
 		dd->getRef(e);
-		sv=*e;
+		*sv=*e;
 	} else
 		*sv=*dd;
 	return sz;

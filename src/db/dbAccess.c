@@ -42,6 +42,7 @@
  * .11  05-18-92	mrk	Changes for database internal structures
  * .12  07-16-92	jba	Added disable alarm severity, ansi c changes
  * .13  08-05-92	jba	Removed all references to dbr_field_type
+ * .14  09-18-92	jba	replaced get of disa code with recGblGetLinkValue call
  */
 
 /* This is a major revision of the original implementation of database access.*/
@@ -168,8 +169,7 @@ void dbScanUnlock(struct dbCommon *precord)
 	return;
 }
 
-void dbScanLockInit(nset)
-	int nset;
+void dbScanLockInit(int nset)
 {
 	struct scanLock	*pscanLock;
 	int i;
@@ -206,6 +206,8 @@ long dbProcess(struct dbCommon *precord)
 	static char 	trace=0;
 	static int	trace_lset=0;
 	int		set_trace=FALSE;
+	long		options=0;
+	long		nRequest=1;
     
 	/* check for trace processing*/
 	if(tpro) {
@@ -241,17 +243,9 @@ long dbProcess(struct dbCommon *precord)
 	} else precord->lcnt=0;
 
 	/* get the scan disable link if defined*/
-	if(precord->sdis.type == DB_LINK) {
-		long	options=0;
-		long	nRequest=1;
+	status = recGblGetLinkValue(&(precord->sdis),(void *)precord,
+			DBF_SHORT,&(precord->disa),&options,&nRequest);
 
-		status = dbGetLink(&precord->sdis.value.db_link,precord,
-			DBF_SHORT,(caddr_t)(&(precord->disa)),&options,&nRequest);
-		if(!RTN_SUCCESS(status)) recGblRecordError(status,(void *)precord,"dbProcess");
-	} else if(precord->sdis.type == CA_LINK) {
-		status = dbCaGetLink(&(precord->sdis));
-		if(!RTN_SUCCESS(status)) recGblRecordError(status,(void *)precord,"dbProcess");
-	} /* endif */
 	/* if disabled check disable alarm severity and return success */
 	if(precord->disa == precord->disv) {
 		struct valueDes valueDes;
@@ -300,9 +294,7 @@ all_done:
 
 }
 
-long dbNameToAddr(pname,paddr)
-	char          *pname;
-	struct dbAddr *paddr;
+long dbNameToAddr(char *pname,struct dbAddr *paddr)
 {
 	DBENTRY		dbEntry;
 	long		status=0;

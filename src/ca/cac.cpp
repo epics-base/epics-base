@@ -44,7 +44,7 @@
 #include "bhe.h"
 #include "net_convert.h"
 #include "autoPtrFreeList.h"
-#include "noopIIU.h"
+#include "noopiiu.h"
 
 static const char *pVersionCAC = 
     "@(#) " EPICS_VERSION_STRING 

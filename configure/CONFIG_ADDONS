@@ -281,14 +281,3 @@ RCS += $(RCS_DEFAULT)
 endif
 endif
 
-#
-#	concat specific sequencer flags
-#
-ifneq ($(strip $(SNCFLAGS_$(OS_CLASS))),)
-SNCFLAGS += $(subst -nil-,,$(SNCFLAGS_$(OS_CLASS)))
-else
-ifdef SNCFLAGS_DEFAULT
-SNCFLAGS += $(SNCFLAGS_DEFAULT)
-endif
-endif
-

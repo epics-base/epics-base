@@ -245,13 +245,13 @@ void comQueSend::copy_dbr_double ( bufferReservoir &reservoir, const void *pValu
 }
 
 const comQueSend::copyFunc_t comQueSend::dbrCopyVector [] = {
-    comQueSend::copy_dbr_string,
-    comQueSend::copy_dbr_short,
-    comQueSend::copy_dbr_float,
-    comQueSend::copy_dbr_short, // DBR_ENUM
-    comQueSend::copy_dbr_char,
-    comQueSend::copy_dbr_long,
-    comQueSend::copy_dbr_double,
+    &comQueSend::copy_dbr_string,
+    &comQueSend::copy_dbr_short,
+    &comQueSend::copy_dbr_float,
+    &comQueSend::copy_dbr_short, // DBR_ENUM
+    &comQueSend::copy_dbr_char,
+    &comQueSend::copy_dbr_long,
+    &comQueSend::copy_dbr_double,
     0, // DBR_STS_SHORT
     0, // DBR_STS_FLOAT
     0, // DBR_STS_ENUM
@@ -280,8 +280,8 @@ const comQueSend::copyFunc_t comQueSend::dbrCopyVector [] = {
     0, // DBR_CTRL_CHAR
     0, // DBR_CTRL_LONG
     0, // DBR_CTRL_DOUBLE
-    comQueSend::copy_dbr_short, // DBR_PUT_ACKT
-    comQueSend::copy_dbr_short, // DBR_PUT_ACKS
+    &comQueSend::copy_dbr_short, // DBR_PUT_ACKT
+    &comQueSend::copy_dbr_short, // DBR_PUT_ACKS
     0, // DBR_STSACK_STRING
     0  // DBR_CLASS_NAME
 };
@@ -368,9 +368,13 @@ int comQueSend::writeRequest ( unsigned serverId, unsigned type, unsigned nElem,
     unsigned size, postcnt;
     bool stringOptim;
 
+    if ( type < 0 || type >= NELEMENTS ( this->dbrCopyVector ) ) {
+        return ECA_BADTYPE;
+    }
     if ( ! this->dbrCopyVector [type] ) {
         return ECA_BADTYPE;
     }
+
     if ( nElem > 0xffff) {
         return ECA_BADCOUNT;
     }
@@ -418,6 +422,9 @@ int comQueSend::writeNotifyRequest ( unsigned ioId, unsigned serverId, unsigned 
     bufferReservoir reservoir;
     ca_uint32_t size, postcnt;
 
+    if ( type < 0 || type >= NELEMENTS ( this->dbrCopyVector ) ) {
+        return ECA_BADTYPE;
+    }
     if ( ! this->dbrCopyVector [type] ) {
         return ECA_BADTYPE;
     }

@@ -11,6 +11,8 @@
 #
 
 
+ifeq ($(BUILD_CLASS),HOST)
+
 #-------------------------------------------------------
 # java jdk1.1.5 definitions
 
@@ -147,3 +149,4 @@ $(INSTALL_JAVA)/%.jar: %.jar
 
 .PRECIOUS: $(COMMON_JAVAINC)
 
+endif

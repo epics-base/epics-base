@@ -17,5 +17,5 @@
  */
 epicsShareFunc int epicsShareAPI osiSufficentSpaceInPool ( size_t contiguousBlockSize )
 {
-    return (malloc_free_space() > 100000 + contiguousBlockSize);
+    return (malloc_free_space() > 50000 + contiguousBlockSize);
 }

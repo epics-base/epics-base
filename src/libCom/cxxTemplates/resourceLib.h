@@ -67,22 +67,15 @@ template <class T, class ID> class resTableIter;
 // This class stores resource entries of type T which can be efficiently 
 // located with a hash key of type ID.
 //
-//
 // NOTES: 
 // 1)   class T _must_ derive from class ID and also from class tsSLNode<T>
 //
-// 2)   Classes of type T installed into this resTable must implement a
-//      "void destroy ()" method which is called by ~resTable() for each
-//      resource entry in the resTable. The destroy() method should at a minimum
-//      remove the resource from the resTable, and might also choose to (at your 
-//      own discretion) "delete" the item itself.
-//
-// 3)   If the "resTable::show (unsigned level)" member function is called then 
+// 2)   If the "resTable::show (unsigned level)" member function is called then 
 //      class T must also implement a "show (unsigned level)" member function which
 //      dumps increasing diagnostics information with increasing "level" to
 //      standard out.
 //
-// 4)   Classes of type ID must implement the following member functions:
+// 3)   Classes of type ID must implement the following member functions:
 //
 //          // equivalence test
 //          bool operator == (const ID &);
@@ -90,7 +83,7 @@ template <class T, class ID> class resTableIter;
 //          // ID to hash index convert (see examples below)
 //          resTableIndex hash (unsigned nBitsHashIndex) const; 
 //
-// 5)   Classes of type ID must provide the following member functions
+// 4)   Classes of type ID must provide the following member functions
 //      (which will usually be static const inline for improved performance).
 //      They determine the minimum and maximum number of elements in the hash 
 //      table. If minIndexBitWidth() == maxIndexBitWidth() then the hash table
@@ -102,7 +95,7 @@ template <class T, class ID> class resTableIter;
 //          max number of hash table elements = 1 << maxIndexBitWidth();
 //          min number of hash table elements = 1 << minIndexBitWidth();
 //
-// 6)   Storage for identifier of type ID must persist until the item of type 
+// 5)   Storage for identifier of type ID must persist until the item of type 
 //      T is deleted from the resTable
 //
 template <class T, class ID>
@@ -114,14 +107,11 @@ public:
     // exceptions thrown
     //
     class epicsShareClass dynamicMemoryAllocationFailed {};
-    class epicsShareClass entryDidntRespondToDestroyVirtualFunction {};
     class epicsShareClass sizeExceedsMaxIndexWidth {};
 
     resTable (unsigned nHashTableEntries);
 
     virtual ~resTable();
-
-    void destroyAllEntries(); // destroy all entries
 
     //
     // Call (pT->show) (level) for each entry
@@ -164,7 +154,7 @@ public:
     // a pointer to a member function of T with 
     // no parameters that returns void
     //
-    void traverse (pSetMFArg(pCB)) const;
+    void traverse ( pSetMFArg(pCB) ) const;
 
 private:
     tsSLList<T>     *pTable;
@@ -379,45 +369,6 @@ inline resTableIndex resTable<T,ID>::hash (const ID & idIn) const
 }
 
 //
-// resTable<T,ID>::destroyAllEntries()
-//
-template <class T, class ID>
-void resTable<T,ID>::destroyAllEntries()
-{
-    tsSLList<T> *pList = this->pTable;
-
-    while (pList<&this->pTable[this->hashIdMask+1]) {
-        {
-            tsSLIter<T> iter ( pList->first () );
-            while ( iter.valid () ) {
-                tsSLIter <T> iterTmp = iter.itemAfter ();
-                iter->destroy();
-                iter = iterTmp;
-            }
-        }
-
-        //
-        // Check to see if a defective class is
-        // installed that does not remove itself
-        // from the resTable when it is destroyed.
-        //
-        {
-            T *pItem;
-            while ( ( pItem = pList->get () ) ) {
-                fprintf ( stderr, 
-"Warning: Defective class still in resTable<T,ID> after it was destroyed\n" );
-                //
-                // remove defective class
-                //
-               this->nInUse--;
-            }
-        }
-
-        pList++;
-    }
-}
-
-//
 // resTable<T,ID>::show
 //
 template <class T, class ID>
@@ -576,10 +527,6 @@ template <class T, class ID>
 resTable<T,ID>::~resTable() 
 {
     if (this->pTable) {
-        this->destroyAllEntries();
-        if (this->nInUse != 0u) {
-            throwWithLocation ( entryDidntRespondToDestroyVirtualFunction () );
-        }
         delete [] this->pTable;
     }
 }

@@ -9,9 +9,9 @@
 <body lang="en">
 
 <center>
-<h1>EPICS Base Release 3.14.4</h1>
+<h1>EPICS Base Release 3.14.5</h1>
 
-<h1>????4 September 2003</h1>
+<h1>DD MMMMM 2003</h1>
 
 <h2>Changes since 3.14.4</h2>
 </center>
@@ -46,12 +46,33 @@ the above bug the delay was more like 64 mS. </p>
 
 <p>This bug appears only in earlier versions of EPICS R3.14</p>
 
+<h4>dbCa</h4>
+<p>Better error messages are now generated.</p>
+<p>dbCaPutLinkCallback is a new function. It provides the ability to implement record/driver
+support that does not complete until a channel access put callback has completed. See the Application Developer's Guide for details.</p>
+<h4>devXxSoftCallback</h4>
+<p>Soft device that uses dbCaPutLinkCallback has been written for
+ao, bo, longout, mbbo, mbboDirect, and stringout records. To use these
+your xxxInclude.dbd must have:</p>
+<pre>    include "devSoftCallback.dbd"</pre>
+<h4>calcoutRecord</h4>
+<p>The CALC and OCAL fields now have a size of 40 so that they are the
+same as the calcRecord.</p>
+<h4>mbbiRecord</h4>
+<p>The fields ZRST,...,FFST are now special(SPC_MOD).</p>
+<h4>mbboRecord</h4>
+<p>The fields ZRST,...,FFST are now special(SPC_MOD).
+init_record now checks to see if state strings or values are defined
+during pass 0. Previously if another record had a DBR_STRING link to
+an mbboRecord it thought the field was a USHORT instead of an ENUM.</p>
+
 <center>
 <h2>Changes since 3.14.3</h2>
 </center>
 
-<h4>Format string checking</h4</h4></h4>
-
+<h4>sCalcPostfix</h4>
+<p>This has been removed from base.</p>
+<h4>Format string checking</h4</h4>
 <p>'printf-style' functions like errlogPrintf have their arguments verified
 against their format string when compiled with gcc.</p>
 

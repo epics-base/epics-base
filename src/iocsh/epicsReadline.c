@@ -9,40 +9,46 @@
  */
 
 #include <stdio.h>
-#include "epicsReadline.h"
 
 #ifdef IOCSH_USE_READLINE
 
-#include <readline/readline.h>
-#include <readline/history.h>
-
-char *epics_readline (const char *prompt)
-{
-    return readline (prompt);
-}
+#   include <readline/readline.h>
+#   include <readline/history.h>
 
 #else
 
 /*
  * Fake versions of some readline/history routines
  */
-#define stifle_history(n) do { } while(0)
-#define add_history(l) do { } while(0)
-#define rl_bind_key(c,f) do { } while(0)
+#   define stifle_history(n) do { } while(0)
+#   define add_history(l) do { } while(0)
+#   define rl_bind_key(c,f) do { } while(0)
 
 #endif
 
-void epics_stifle_history (int n)
+#define epicsExportSharedSymbols
+#include "epicsReadline.h"
+
+#ifdef IOCSH_USE_READLINE
+
+    char * epicsShareAPI epics_readline (const char *prompt)
+    {
+        return readline (prompt);
+    }
+
+#endif
+
+void epicsShareAPI epics_stifle_history (int n)
 {
     stifle_history (n);
 }
 
-void epics_add_history (const char *line)
+void epicsShareAPI epics_add_history (const char *line)
 {
     add_history (line);
 }
 
-void epics_bind_keys (void)
+void epicsShareAPI epics_bind_keys (void)
 {
     rl_bind_key ('\t', rl_insert);
 }

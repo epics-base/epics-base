@@ -8,7 +8,7 @@ extern "C" {
 #pragma warning (disable:4237)
 #include <time.h>
 #include <errno.h>
-#include <winsock.h>
+#include <windows.h>
  
 void ipAddrToA (const struct sockaddr_in *pInetAddr, 
 			char *pBuf, const unsigned bufSize);

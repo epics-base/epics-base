@@ -76,9 +76,9 @@ static long get_value();
 #define put_array_info NULL
 #define get_units NULL
 static long get_precision();
-long get_enum_str();
-long get_enum_strs();
-long put_enum_str();
+static long get_enum_str();
+static long get_enum_strs();
+static long put_enum_str();
 static long get_graphic_double();
 static long get_control_double();
 #define get_alarm_double NULL
@@ -337,13 +337,13 @@ static long get_enum_strs(struct dbAddr *paddr,struct dbr_enumStrs *p)
 	}
 	else
 	{
-		strcpy(p[0],"none available");
+		strcpy(p->strs[0],"none available");
 		p->no_str=1;
 	}
     }
     else
     {
-	strcpy(p[0],"No string");
+	strcpy(p->strs[0],"No string");
 	p->no_str=1;
     }
 

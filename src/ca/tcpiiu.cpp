@@ -747,8 +747,6 @@ bool tcpiiu::processIncoming (
         //
         // fetch a complete message header
         //
-        unsigned nBytes = this->recvQue.occupiedBytes ();
-
         if ( ! this->msgHeaderAvailable ) {
             if ( ! this->oldMsgHeaderAvailable ) {
                 this->oldMsgHeaderAvailable = 

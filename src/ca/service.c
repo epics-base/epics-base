@@ -78,9 +78,7 @@ static char *sccsId = "$Id$\t$Date$";
 #	include		<stdio.h>
 #elif defined(vxWorks)
 #	include		<vxWorks.h>
-#	ifdef V5_vxWorks
-#		include	<vxTypes.h>
-#	else
+#	ifndef V5_vxWorks
 #		include	<types.h>
 #	endif
 #else
@@ -89,14 +87,14 @@ static char *sccsId = "$Id$\t$Date$";
 
 #include	<os_depen.h>
 #include 	<cadef.h>
-#include 	<net_convert.h>
 #include	<db_access.h>
 #include	<iocmsg.h>
 #include 	<iocinf.h>
+#include 	<net_convert.h>
 
-void 		reconnect_channel();
+static void 	reconnect_channel();
 void		ca_request_event();
-int		client_channel_exists();
+static int	client_channel_exists();
 
 #define BUFSTAT 	ca_printf("CAC: expected %d left %d\n",msgcnt,*pbufcnt);
 

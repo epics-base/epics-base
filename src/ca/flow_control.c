@@ -40,9 +40,7 @@ static char	*sccsId = "$Id$\t$Date$";
 #	include		<ioLib.h>
 #	include		<socket.h>
 #	include		<ioctl.h>
-#	ifdef V5_vxWorks
-#		include	<vxTypes.h>
-#	else
+#	ifndef V5_vxWorks
 #		include	<types.h>
 #	endif
 #elif defined(VMS)

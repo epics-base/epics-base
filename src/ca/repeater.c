@@ -101,9 +101,9 @@ LIST	client_list;
 static
 char	buf[MAX_UDP]; 
 
-int 	clean_client();
-int	ca_repeater();
-int	local_addr();
+static int 	clean_client();
+static int	ca_repeater();
+int		local_addr();
 
 #define NTRIES 100
 

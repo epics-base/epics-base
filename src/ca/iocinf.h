@@ -65,7 +65,7 @@ static char	*iocinfhSccsId = "$Id$\t$Date$";
 #	include	<netinet/in.h>
 #elif defined(vxWorks)
 #	ifdef V5_vxWorks
-#  		include	<vxTypes.h>
+#  		include	<vxWorks.h>
 #	else
 #  		include	<types.h>
 #	endif

@@ -117,11 +117,11 @@ static char *sccsId = "$Id$\t$Date$";
 static struct timeval notimeout = {0,0};
 
 void 	close_ioc();
-void	recv_msg();
-void	tcp_recv_msg();
-void	udp_recv_msg();
-void	notify_ca_repeater();
-int	cac_send_msg_piiu();
+static void	recv_msg();
+static void	tcp_recv_msg();
+static void	udp_recv_msg();
+static void	notify_ca_repeater();
+static int	cac_send_msg_piiu();
 #ifdef VMS
 void   	vms_recv_msg_ast();
 #endif
@@ -544,7 +544,7 @@ struct ioc_in_use		*piiu;
   	}
 # 	elif defined(vxWorks)
   	{  
-      		void	recv_task();
+      		static void	recv_task();
       		int 	pri;
       		char	name[15];
 

@@ -136,11 +136,11 @@ static char *sccsId = "$Id$\t$Date$";
  */
 #define DB_TEXT_GLBLSOURCE
 #include 		<cadef.h>
-#include		<net_convert.h>
 
 #include		<db_access.h>
 #include		<iocmsg.h>
 #include 		<iocinf.h>
+#include		<net_convert.h>
 
 
 /****************************************************************/
@@ -212,17 +212,17 @@ static struct extmsg	nullmsg;
 void 		ca_default_exception_handler();
 void		*db_init_events();
 void		ca_default_exception_handler();
-void 		spawn_repeater();
-int		check_for_fp();
-void    	issue_get_callback();
-void    	ca_event_handler();
-void 		ca_pend_io_cleanup();
-int		ca_add_task_variable();
+static void 	spawn_repeater();
+static int	check_for_fp();
+static void    	issue_get_callback();
+static void    	ca_event_handler();
+static void	ca_pend_io_cleanup();
+static int	ca_add_task_variable();
 int		ca_import();
 struct extmsg 	*cac_alloc_msg();
 #ifdef vxWorks
 void 		ca_task_exit_tid();
-void    	ca_task_exit_tcb();
+static void    	ca_task_exit_tcb();
 #else
 void 		ca_process_exit();
 #endif

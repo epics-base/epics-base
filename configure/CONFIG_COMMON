@@ -34,6 +34,18 @@ CHECK_RELEASE_NO =
 BUILD_CLASS = HOST
 
 #-------------------------------------------------------
+# Build defaults, CONFIG_SITE, CONFIG, or os/CONFIG* will override
+CMPLR=STRICT
+CXXCMPLR=STRICT
+STATIC_BUILD=NO
+SHARED_LIBRARIES=NO
+HDEPENDS=YES
+HOST_OPT=YES
+CROSS_OPT=YES
+HOST_WARN=YES
+CROSS_WARN=YES
+
+#-------------------------------------------------------
 # Prefix and suffix
 DEP=.depends
 DIVIDER = .

@@ -194,7 +194,7 @@ depends: $(LIBSRCS) $(SRCS) $(PROD_SRCS)
 	@ $(RM) ctct.o ctdt.c
 	$(NM) $< | $(MUNCH) > ctdt.c
 	$(COMPILE.c) -traditional ctdt.c
-	$(LINK.) $@ $< ctdt.o
+	$(LINK.c) $< ctdt.o
 	@ $(RM) ctdt.c ctdt.o
 
 $(PRODNAME):%$(EXE): $(PROD_OBJS) $(PROD_RESS) $(PROD_DEPLIBS)

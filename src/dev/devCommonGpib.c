@@ -3,6 +3,9 @@
 
 /*
  * $Log$
+ * Revision 1.27  1996/02/16 22:04:58  jba
+ * Changed field reference from val to oval in devGpibLib_aoGpibWork
+ *
  * Revision 1.26  1995/11/27  22:13:22  winans
  * Added raw reading capability to the waveform record support.
  *
@@ -121,6 +124,7 @@
  * This external structure contains the entry points to the GPIB drver.
  */
 
+#if 0 /* WHAT IS THIS DUMB THING DOING HERE? */
 extern struct {
   long          number;
   DRVSUPFUN     report;		/* call this to get stats about the link */
@@ -129,9 +133,13 @@ extern struct {
   int           (*registerSrqCallback)();
   int           (*writeIb)();
   int           (*readIb)();
+  int           (*readIbEos)();
   int           (*writeIbCmd)();
   int           (*ioctl)();
 } drvGpib;
+#else
+extern struct drvGpibSet drvGpib;
+#endif
 
 extern int	ibSrqDebug;
 

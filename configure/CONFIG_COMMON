@@ -109,10 +109,7 @@ G++ = $(GNU_BIN)/$(CMPLR_PREFIX)cc$(CMPLR_SUFFIX)
 
 G++_CMPLR_CPPFLAGS_NORMAL = -ansi -pedantic
 G++_CMPLR_CPPFLAGS_STRICT = -ansi -pedantic -Wtraditional
-G++_WARN_YES = -Wall \
-      -Wmissing-prototypes -Woverloaded-virtual \
-      -Wwrite-strings -Wconversion -Wstrict-prototypes\
-      -Wpointer-arith -Winline
+G++_WARN_YES = -Wall
 G++_WARN_NO = -w
 G++_OPT_YES = -O3 -g
 G++_OPT_NO = -g

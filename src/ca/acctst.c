@@ -2124,8 +2124,7 @@ void monitorAddConnectionCallbackTest ( const char *pName, unsigned interestLeve
     status = ca_get_callback ( DBR_DOUBLE, chan, nUpdatesTester, &getCallbackCount );
     SEVCHK ( status, "monitorAddConnectionCallback get callback" );
     while ( getCallbackCount == 0 ) {
-        status = ca_pend_event ( 0.1 );
-        SEVCHK ( status, "monitorAddConnectionCallbackTest pend event" );
+        ca_pend_event ( 0.1 );
     }
     assert ( eventCount == 1u );
     assert ( getCallbackCount == 1u );

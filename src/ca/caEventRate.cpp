@@ -31,63 +31,69 @@ extern "C" void eventCallBack ( struct event_handler_args args )
  */
 void caEventRate ( const char *pName, unsigned count )
 {
-    unsigned i;
     static const double initialSamplePeriod = 1.0;
     static const double maxSamplePeriod = 60.0 * 5.0;
-
-    printf ( "Connecting to CA Channel \"%s\" %u times.", 
-                pName, count );
-    fflush ( stdout );
+    unsigned eventCount = 0u;
 
     chid * pChidTable = new chid [ count ];
     assert ( pChidTable );
-    epicsTime begin = epicsTime::getCurrent ();
-    for ( i = 0u; i < count; i++ ) {
-        int status = ca_search ( pName,  & pChidTable[i] );
-        SEVCHK ( status, NULL );
-    }
 
-    int status = ca_pend_io ( 10000.0 );
-    if ( status != ECA_NORMAL ) {
-        fprintf ( stderr, " not found.\n" );
-        return;
-    }
-    epicsTime end = epicsTime::getCurrent ();
-
-    printf ( " done(%f sec).\n", end - begin );
-
-    printf ( "Subscribing %u times.", count );
-    fflush ( stdout );
-
-    unsigned eventCount = 0u;
-    begin = epicsTime::getCurrent ();
-    for ( i = 0u; i < count; i++ ) {
-        status = ca_add_event ( DBR_FLOAT, 
-            pChidTable[i], eventCallBack, &eventCount, NULL);
-        SEVCHK ( status, __FILE__ );
-    }
-
-    status = ca_flush_io ();
-    SEVCHK ( status, __FILE__ );
-
-    end = epicsTime::getCurrent ();
-
-    printf ( " done(%f sec).\n", end - begin );
-        
-    printf ( "Waiting for initial value events." );
-    fflush ( stdout );
-
-    // let the first one go by 
-    begin = epicsTime::getCurrent ();
-    while ( eventCount < count ) {
-        status = ca_pend_event ( 0.01 );
-        if ( status != ECA_TIMEOUT ) {
+    {
+        printf ( "Connecting to CA Channel \"%s\" %u times.", 
+                    pName, count );
+        fflush ( stdout );
+    
+        epicsTime begin = epicsTime::getCurrent ();
+        for ( unsigned i = 0u; i < count; i++ ) {
+            int status = ca_search ( pName,  & pChidTable[i] );
             SEVCHK ( status, NULL );
         }
+    
+        int status = ca_pend_io ( 10000.0 );
+        if ( status != ECA_NORMAL ) {
+            fprintf ( stderr, " not found.\n" );
+            return;
+        }
+        epicsTime end = epicsTime::getCurrent ();
+    
+        printf ( " done(%f sec).\n", end - begin );
     }
-    end = epicsTime::getCurrent ();
 
-    printf ( " done(%f sec).\n", end - begin );
+    {
+        printf ( "Subscribing %u times.", count );
+        fflush ( stdout );
+        
+        epicsTime begin = epicsTime::getCurrent ();
+        for ( unsigned i = 0u; i < count; i++ ) {
+            int addEventStatus = ca_add_event ( DBR_FLOAT, 
+                pChidTable[i], eventCallBack, &eventCount, NULL);
+            SEVCHK ( addEventStatus, __FILE__ );
+        }
+    
+        int status = ca_flush_io ();
+        SEVCHK ( status, __FILE__ );
+    
+        epicsTime end = epicsTime::getCurrent ();
+    
+        printf ( " done(%f sec).\n", end - begin );
+    }
+        
+    {
+        printf ( "Waiting for initial value events." );
+        fflush ( stdout );
+    
+        // let the first one go by 
+        epicsTime begin = epicsTime::getCurrent ();
+        while ( eventCount < count ) {
+            int status = ca_pend_event ( 0.01 );
+            if ( status != ECA_TIMEOUT ) {
+                SEVCHK ( status, NULL );
+            }
+        }
+        epicsTime end = epicsTime::getCurrent ();
+    
+        printf ( " done(%f sec).\n", end - begin );
+    }
 
     double samplePeriod = initialSamplePeriod;
     double X = 0.0;
@@ -96,11 +102,11 @@ void caEventRate ( const char *pName, unsigned count )
     while ( true ) {
         unsigned nEvents, lastEventCount, curEventCount;
 
-        epicsTime begin = epicsTime::getCurrent ();
+        epicsTime beginPend = epicsTime::getCurrent ();
         lastEventCount = eventCount;
-        status = ca_pend_event ( samplePeriod );
+        int status = ca_pend_event ( samplePeriod );
         curEventCount = eventCount;
-        epicsTime end = epicsTime::getCurrent ();
+        epicsTime endPend = epicsTime::getCurrent ();
         if ( status != ECA_TIMEOUT ) {
             SEVCHK ( status, NULL );
         }
@@ -114,7 +120,7 @@ void caEventRate ( const char *pName, unsigned count )
 
         N++;
 
-        double period = end - begin;
+        double period = endPend - beginPend;
         double Hz = nEvents / period;
 
         X += Hz;

@@ -962,12 +962,10 @@ void cac::flushIfRequired ( nciu &chan )
         // send thread. The same applies to the UDP thread for
         // locking hierarchy reasons.
         bool blockPermit = true;
-        if ( this->pRecvProcThread ) {
-            if ( this->recvProcessThreadIsCurrentThread () ) {
-                blockPermit = false;
-            }
+        if ( this->recvProcessThreadIsCurrentThread () ) {
+            blockPermit = false;
         }
-        if ( this->pudpiiu ) {
+        if ( this->pudpiiu && blockPermit ) {
             if ( this->pudpiiu->isCurrentThread () ) {
                 blockPermit = false;
             }

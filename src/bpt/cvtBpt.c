@@ -33,7 +33,9 @@
  * 01	04OCT95	mrk	Taken from old bldCvtTable
  */
 #include     <vxWorks.h>
+#include     <stdlib.h>
 #include     <stdio.h>
+#include     <ctype.h>
 
 #include     <ellLib.h>
 #include     <dbBase.h>

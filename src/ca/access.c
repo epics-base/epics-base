@@ -99,6 +99,9 @@
 /************************************************************************/
 /*
  * $Log$
+ * Revision 1.103  1998/04/23 01:04:05  jhill
+ * fixed overzelous chan check in ca_clear_channel() - when the PV is local under vxWorks
+ *
  * Revision 1.102  1998/04/13 19:14:33  jhill
  * fixed task variable problem
  *
@@ -1328,6 +1331,10 @@ const void *arg
 	if (count > chix->privCount)
 		return ECA_BADCOUNT;
 
+	if (pfunc==NULL) {
+		return ECA_BADFUNCPTR;
+	}
+
 	if(!chix->ar.read_access){
 		return ECA_NORDACCESS;
 	}
@@ -1552,6 +1559,10 @@ const void			*usrarg
 
 	if(!chix->ar.write_access){
 		return ECA_NOWTACCESS;
+	}
+
+	if (pfunc==NULL) {
+		return ECA_BADFUNCPTR;
 	}
 
 	/*
@@ -1873,8 +1884,13 @@ const void	*pvalue
 		/*
 		 * No compound types here because these types are read only
 		 * and therefore only appropriate for gets or monitors
+		 *
+		 * I changed from a for to a while loop here to avoid bounds
+		 * checker pointer out of range error, and unused pointer
+		 * update when it is a single element.
 		 */
-		for (i=0; i< count; i++) {
+		i=0;
+		while (TRUE) {
 			switch (type) {
 			case	DBR_LONG:
 				*(long *)pdest = htonl (*(dbr_long_t *)pvalue);
@@ -1913,6 +1929,11 @@ const void	*pvalue
 				UNLOCK;
 				return ECA_BADTYPE;
 			}
+
+			if (++i>=count) {
+				break;
+			}
+
 			pdest = ((char *)pdest) + size_of_one;
 			pvalue = ((char *)pvalue) + size_of_one;
 		}
@@ -2125,6 +2146,10 @@ long		mask
 	 */
 	if(dbr_size_n(type,count)>MAX_MSG_SIZE-sizeof(caHdr)){
 		return ECA_TOLARGE;
+	}
+
+	if (ast==NULL) {
+		return ECA_BADFUNCPTR;
 	}
 
   	if(!mask)
@@ -2766,7 +2791,7 @@ int epicsShareAPI ca_pend (ca_real timeout, int early)
 	 */
 	ca_static->ca_flush_pending = TRUE;
 
-    	if(pndrecvcnt==0u && early){
+    if(pndrecvcnt==0u && early){
 		/*
 		 * force the flush
 		 */
@@ -2789,16 +2814,15 @@ int epicsShareAPI ca_pend (ca_real timeout, int early)
   	while(TRUE){
 		ca_real 	remaining;
 
-    		if (pndrecvcnt==0 && early) {
+    	if (pndrecvcnt==0 && early) {
 			/*
 			 * force the flush
 			 */
 			CLR_CA_TIME (&tmo);
 			cac_mux_io(&tmo);
-        		return ECA_NORMAL;
+        	return ECA_NORMAL;
 		}
-
-    		if(timeout == 0.0){
+    	if(timeout == 0.0){
 			remaining = cac_fetch_poll_period();
 		}
 		else{
@@ -2838,6 +2862,12 @@ int epicsShareAPI ca_pend (ca_real timeout, int early)
 			 * force the flush
 			 */
 			CLR_CA_TIME (&tmo);
+			/*
+			 * unfortunately this causes additional messages
+			 * to be read and so it is possible in rare circumstances
+			 * for ECA_TIMEOUT to be returned when the IO completed
+			 * during the pend io timeout clean up phase.
+			 */
 			cac_block_for_io_completion (&tmo);
 			return ECA_TIMEOUT;
 		}
@@ -3378,7 +3408,7 @@ int issue_claim_channel (chid pchan)
   	/* 
 	 * dont broadcast
 	 */
-    	if (piiu == piiuCast) {
+    if (piiu == piiuCast) {
 		ca_printf("CAC: UDP claim attempted?\n");
 		UNLOCK;
 		return ECA_INTERNAL;

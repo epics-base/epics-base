@@ -1,5 +1,5 @@
 /* cvtFast.c */
-/* share/src/libCom $Id$ */
+/* share/src/libCom $Id$*/
 /* Very efficient routines to convert numbers to strings
  *      Author: Bob Dalesio wrote cvtFloatToString (called FF_TO_STR)
  *			Code is same for cvtDoubleToString
@@ -43,13 +43,17 @@
  *				calls to gcvt, etc.
  * .03	joh	03-30-93	added bit field extract/ insert routines
  * .04	mrk	01-28-94	replaced gcvt by e conversion
+ * .05	mrk	05-06-95	changed ExpString routines to just use sprintf
+ *				It had a bug and performance was not that much
+ *				better (2-5 times) then sprintf.
+ *				Also they are not used on vxWorks
  */
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <limits.h>		/* XPG2/XPG3/POSIX.1/FIPS151-1/ANSI-C */
 #include <cvtFast.h>
-
+
 /*
  * This routine converts numbers less than 10,000,000. It defers to f_to_str for
  * numbers requiring more than 8 places of precision. There are only eight decimal
@@ -57,19 +61,11 @@
 static long	frac_multiplier[] =
 	{1,10,100,1000,10000,100000,1000000,10000000,100000000};
 
-#ifdef __STDC__
 int cvtFloatToString(
 	float flt_value,
 	char  *pstr_value,
 	unsigned short precision)
 {
-#else
-int cvtFloatToString(flt_value,pstr_value,precision)
-	float flt_value;
-	char  *pstr_value;
-	unsigned short precision;
-{
-#endif /*__STDC__*/
         unsigned short	got_one,i;
 	long		whole,iplace,number,fraction,fplace;
 	float		ftemp;
@@ -138,21 +134,12 @@ int cvtFloatToString(flt_value,pstr_value,precision)
 
         return((int)(pstr_value - startAddr));
 }
-
-
-#ifdef __STDC__
+
 int cvtDoubleToString(
 	double flt_value,
 	char  *pstr_value,
 	unsigned short precision)
 {
-#else
-int cvtDoubleToString(flt_value,pstr_value,precision)
-	double flt_value;
-	char  *pstr_value;
-	unsigned short precision;
-{
-#endif /*__STDC__*/
         unsigned short	got_one,i;
 	long		whole,iplace,number,fraction,fplace;
 	double		ftemp;
@@ -221,130 +208,21 @@ int cvtDoubleToString(flt_value,pstr_value,precision)
 
         return((int)(pstr_value - startAddr));
 }
-
-
-
+
 /*
  * cvtFloatToExpString
  *
  * converts floating point numbers to E-format NULL terminated strings
  */
-
-static float round_up[] = {.5, .05, .005,.0005,.00005,.000005,.0000005,
-	.00000005,.000000005,.0000000005,.00000000005,.000000000005,
-	.0000000000005,.00000000000005,.000000000000005,.0000000000000005};
-
-#ifdef __STDC__
 int cvtFloatToExpString(
   float			f_value,
   char			*pstr_value,
   unsigned short	f_precision)
 {
-#else
-int cvtFloatToExpString(f_value,pstr_value,f_precision)
-  float			f_value;
-  char			*pstr_value;
-  unsigned short	f_precision ;
-{
-#endif /*__STDC__*/
-	register float	place,divisor;
-	register short	e,i;
-	short		number;
-	register float	flt_value = f_value;
-	register unsigned short	precision = f_precision;
-	char			*startAddr;
-
-	/* fix e_resolution to 1 */
-#define e_resolution 1
-#define MAX_OKAY_E_VALUE 1000000000000000.0
-
-	/* check upper bound, use sprintf if this routine can't handle it */
-	if (f_value >= MAX_OKAY_E_VALUE || f_value <= -MAX_OKAY_E_VALUE){
-return((int)sprintf(pstr_value,"% 1.*e",f_precision,f_value));
-	}
-
-	startAddr = pstr_value;
-
-	if (flt_value < 0){
-		*pstr_value = '-';
-		pstr_value++;
-		flt_value = -flt_value;
-	}else if (flt_value == 0.0){
-		*pstr_value = '0';
-		pstr_value++;
-		/* fraction */
-		*pstr_value = '.';
-		pstr_value++;
-		for (place = .1; precision > 0; place /= 10.0, precision--){
-			*pstr_value = '0';
-			pstr_value++;
-		}
-		*pstr_value = 'e';
-		pstr_value++;
-		*pstr_value = '+';
-		pstr_value++;
-		*pstr_value = '0';
-		pstr_value++;
-		*pstr_value = '0';
-		pstr_value++;
-		*pstr_value = '\0';
-		return(pstr_value - startAddr);
-
-	}
-
-
-	/* determine which 3rd power of 10 to use */
-	for (i=0,divisor=1; i<e_resolution; divisor*=10,i++);
-	for (e = 12, place = 1000000000000.0;
-	    flt_value < place;
-	    e -= e_resolution, place /= divisor);
-	if (e < -99){
-		return((int)sprintf(pstr_value,"% 1.*e",f_precision,f_value));
-	}
-
-	/* whole numbers */
-	flt_value = flt_value/place + round_up[precision];
-	for (place = 100.0; place >= 1.0; place /= 10.0){
-		if (flt_value >= place){
-			number = flt_value / place;
-			flt_value = flt_value - (number * place);
-			*pstr_value = number + '0';
-			pstr_value++;
-		}
-	}
-
-	/* fraction */
-	*pstr_value = '.';
-	pstr_value++;
-	for (place = .1; precision > 0; place /= 10.0, precision--){
-		number =  flt_value / place ; 
-		flt_value = flt_value - (number * place);
-		*pstr_value = number + '0';
-		pstr_value++;
-	}
-
-	/* exponent portion */
-	*pstr_value = 'e';
-	pstr_value++;
-	if (e < 0){
-		*pstr_value = '-';
-		e = -e;
-	}else{
-		*pstr_value = '+';
-	}
-	pstr_value++;
-	number = e / 10;
-	*pstr_value = number + '0';
-	pstr_value++;
-	e -= number * 10;
-	*pstr_value = e + '0';
-	pstr_value++;
-	*pstr_value = 0;
-
-	return(pstr_value - startAddr);
+    /*sunos uses char*sprint as function prototype*/
+    sprintf(pstr_value,"%.*e",(int)f_precision,(double)f_value);
+    return((int)strlen(pstr_value));
 }
-
-
 
 /*
  * cvtFloatToCompactString
@@ -353,19 +231,11 @@ return((int)sprintf(pstr_value,"% 1.*e",f_precision,f_value));
  * resulting in the most "compact" expression of the value
  * ("f" notation if 10-4 < |value| < 10+4, otherwise "e" notation)
  */
-#ifdef __STDC__
 int cvtFloatToCompactString(
   float			f_value,
   char			*pstr_value,
   unsigned short	f_precision )
 {
-#else
-int cvtFloatToCompactString(f_value,pstr_value,f_precision)
-  float			f_value;
-  char			*pstr_value;
-  unsigned short	f_precision ;
-{
-#endif /*__STDC__*/
   if ((f_value < 1.e4 && f_value > 1.e-4) ||
 		(f_value > -1.e4 && f_value < -1.e-4) || f_value == 0.0) {
     return(cvtFloatToString(f_value,pstr_value,f_precision));
@@ -383,116 +253,14 @@ int cvtFloatToCompactString(f_value,pstr_value,f_precision)
  *	terminated strings
  */
 
-#ifdef __STDC__
 int cvtDoubleToExpString(
   double		f_value,
   char			*pstr_value,
   unsigned short	f_precision )
 {
-#else
-int cvtDoubleToExpString(f_value,pstr_value,f_precision)
-  double		f_value;
-  char			*pstr_value;
-  unsigned short	f_precision ;
-{
-#endif /*__STDC__*/
-	register float	place,divisor;
-	register short	e,i;
-	short		number;
-	register double	flt_value = f_value;
-	register unsigned short	precision = f_precision;
-	char			*startAddr;
-
-	/* fix e_resolution to 1 */
-#define e_resolution 1
-#define MAX_OKAY_E_VALUE 1000000000000000.0
-
-	/* check upper bound, use sprintf if this routine can't handle it */
-	if (f_value >= MAX_OKAY_E_VALUE || f_value <= -MAX_OKAY_E_VALUE){
-		return((int)sprintf(pstr_value,"% 1.*e",f_precision,f_value));
-	}
-
-	startAddr = pstr_value;
-
-	if (flt_value < 0){
-		*pstr_value = '-';
-		pstr_value++;
-		flt_value = -flt_value;
-	}else if (flt_value == 0.0){
-		*pstr_value = '0';
-		pstr_value++;
-		/* fraction */
-		*pstr_value = '.';
-		pstr_value++;
-		for (place = .1; precision > 0; place /= 10.0, precision--){
-			*pstr_value = '0';
-			pstr_value++;
-		}
-		*pstr_value = 'e';
-		pstr_value++;
-		*pstr_value = '+';
-		pstr_value++;
-		*pstr_value = '0';
-		pstr_value++;
-		*pstr_value = '0';
-		pstr_value++;
-		*pstr_value = '\0';
-		return(pstr_value - startAddr);
-
-	}
-
-
-	/* determine which 3rd power of 10 to use */
-	for (i=0,divisor=1; i<e_resolution; divisor*=10,i++);
-	for (e = 12, place = 1000000000000.0;
-	    flt_value < place;
-	    e -= e_resolution, place /= divisor);
-	if (e < -99){
-		return((int)sprintf(pstr_value,"% 1.*e",f_precision,f_value));
-	}
-
-	/* whole numbers */
-	flt_value = flt_value/place + round_up[precision];
-	for (place = 100.0; place >= 1.0; place /= 10.0){
-		if (flt_value >= place){
-			number = flt_value / place;
-			flt_value = flt_value - (number * place);
-			*pstr_value = number + '0';
-			pstr_value++;
-		}
-	}
-
-	/* fraction */
-	*pstr_value = '.';
-	pstr_value++;
-	for (place = .1; precision > 0; place /= 10.0, precision--){
-		number =  flt_value / place ; 
-		flt_value = flt_value - (number * place);
-		*pstr_value = number + '0';
-		pstr_value++;
-	}
-
-	/* exponent portion */
-	*pstr_value = 'e';
-	pstr_value++;
-	if (e < 0){
-		*pstr_value = '-';
-		e = -e;
-	}else{
-		*pstr_value = '+';
-	}
-	pstr_value++;
-	number = e / 10;
-	*pstr_value = number + '0';
-	pstr_value++;
-	e -= number * 10;
-	*pstr_value = e + '0';
-	pstr_value++;
-	*pstr_value = 0;
-
-	return(pstr_value - startAddr);
+    sprintf(pstr_value,"%.*e",(int)f_precision,f_value);
+    return((int)strlen(pstr_value));
 }
-
 
 
 /*
@@ -503,19 +271,11 @@ int cvtDoubleToExpString(f_value,pstr_value,f_precision)
  *	of the value ("f" notation if 10-4 < |value| < 10+4, otherwise
  *	"e" notation)
  */
-#ifdef __STDC__
 int cvtDoubleToCompactString(
   double		f_value,
   char			*pstr_value,
   unsigned short	f_precision )
 {
-#else
-int cvtDoubleToCompactString(f_value,pstr_value,f_precision)
-  double		f_value;
-  char			*pstr_value;
-  unsigned short	f_precision ;
-{
-#endif /*__STDC__*/
   if ((f_value < 1.e4 && f_value > 1.e-4) ||
 		(f_value > -1.e4 && f_value < -1.e-4) || f_value == 0.0) {
     return(cvtDoubleToString(f_value,pstr_value,f_precision));
@@ -523,26 +283,15 @@ int cvtDoubleToCompactString(f_value,pstr_value,f_precision)
     return(cvtDoubleToExpString(f_value,pstr_value,f_precision));
   }
 }
-
-
-
-
-
+
 /* Convert various integer types to ascii */
 
 static char digit_to_ascii[10]={'0','1','2','3','4','5','6','7','8','9'};
 
-#ifdef __STDC__
 int cvtCharToString(
 	char source,
 	char *pdest)
 {
-#else
-int cvtCharToString(source,pdest)
-	char source;
-	char *pdest;
-{
-#endif /*__STDC__*/
     unsigned char val,temp;
     char	  digit[3];
     int		  i,j;
@@ -575,17 +324,10 @@ int cvtCharToString(source,pdest)
 }
 
 
-#ifdef __STDC__
 int cvtUcharToString(
     unsigned char source,
     char	  *pdest)
 {
-#else
-int cvtUcharToString(source,pdest)
-    unsigned char source;
-    char	  *pdest;
-{
-#endif /*__STDC__*/
     unsigned char val,temp;
     char	  digit[3];
     int		  i,j;
@@ -610,17 +352,10 @@ int cvtUcharToString(source,pdest)
 }
 
 
-#ifdef __STDC__
 int cvtShortToString(
     short source,
     char  *pdest)
 {
-#else
-int cvtShortToString(source,pdest)
-    short source;
-    char  *pdest;
-{
-#endif /*__STDC__*/
     short val,temp;
     char  digit[6];
     int	  i,j;
@@ -653,17 +388,10 @@ int cvtShortToString(source,pdest)
 }
 
 
-#ifdef __STDC__
 int cvtUshortToString(
     unsigned short source,
     char	  *pdest)
 {
-#else
-int cvtUshortToString(source,pdest)
-    unsigned short source;
-    char	  *pdest;
-{
-#endif /*__STDC__*/
     unsigned short val,temp;
     char	  digit[5];
     int		  i,j;
@@ -688,17 +416,10 @@ int cvtUshortToString(source,pdest)
 }
 
 
-#ifdef __STDC__
 int cvtLongToString(
     long source,
     char  *pdest)
 {
-#else
-int cvtLongToString(source,pdest)
-    long source;
-    char  *pdest;
-{
-#endif /*__STDC__*/
     long  val,temp;
     char  digit[11];
     int	  i,j;
@@ -731,17 +452,10 @@ int cvtLongToString(source,pdest)
 }
 
 
-#ifdef __STDC__
 int cvtUlongToString(
     unsigned long source,
     char	  *pdest)
 {
-#else
-int cvtUlongToString(source,pdest)
-    unsigned long source;
-    char	  *pdest;
-{
-#endif /*__STDC__*/
     unsigned long val,temp;
     char	  digit[10];
     int		  i,j;
@@ -772,17 +486,10 @@ static char hex_digit_to_ascii[16]={'0','1','2','3','4','5','6','7','8','9',
 		'a','b','c','d','e','f'};
 
 
-#ifdef __STDC__
 int cvtLongToHexString(
     long source,
     char  *pdest)
 {
-#else
-int cvtLongToHexString(source,pdest)
-    long source;
-    char  *pdest;
-{
-#endif /*__STDC__*/
     long  val,temp;
     char  digit[10];
     int	  i,j;
@@ -815,17 +522,10 @@ int cvtLongToHexString(source,pdest)
 }
 
 
-#ifdef __STDC__
 int cvtLongToOctalString(
     long source,
     char  *pdest)
 {
-#else
-int cvtLongToOctalString(source,pdest)
-    long source;
-    char  *pdest;
-{
-#endif /*__STDC__*/
     long  val,temp;
     char  digit[16];
     int	  i,j;
@@ -867,19 +567,11 @@ int cvtLongToOctalString(source,pdest)
  *
  * extract a bit field from the source unsigend long
  */
-#ifdef __STDC__
 unsigned long cvtBitsToUlong(
 unsigned long   src,
 unsigned        bitFieldOffset,
 unsigned        bitFieldLength)
 {
-#else
-unsigned long cvtBitsToUlong(src,bitFieldOffset,bitFieldLength)
-unsigned long   src;
-unsigned        bitFieldOffset;
-unsigned        bitFieldLength;
-{
-#endif /*__STDC__*/
         unsigned long   mask;
 
         src = src >> bitFieldOffset;
@@ -900,21 +592,12 @@ unsigned        bitFieldLength;
  * insert a bit field from the source unsigend long
  * into the destination unsigned long
  */
-#ifdef __STDC__
 unsigned long cvtUlongToBits(
 unsigned long   src,
 unsigned long   dest,
 unsigned        bitFieldOffset,
 unsigned        bitFieldLength)
 {
-#else
-unsigned long cvtUlongToBits(src,dest,bitFieldOffset,bitFieldLength)
-unsigned long   src;
-unsigned long   dest;
-unsigned        bitFieldOffset;
-unsigned        bitFieldLength;
-{
-#endif /*__STDC__*/
         unsigned long   mask;
 
         mask = (1<<bitFieldLength)-1;
@@ -925,104 +608,3 @@ unsigned        bitFieldLength;
         return dest;
 }
 
-/* needed if not standard C */
-#ifndef __STDC__
-/*
- * 
- * strtoul 
- * 
- * obtained from libiberty directory
- * 
- * needed because the standard libc.a doesn't have it
- *
- */
-
-/*
- * strtol : convert a string to long.
- *
- * Andy Wilson, 2-Oct-89.
- */
-
-#include <errno.h>
-#include <ctype.h>
-#include <stdio.h>
-#include "ansidecl.h"
-
-#ifndef ULONG_MAX
-#define	ULONG_MAX	((unsigned long)(~0L))		/* 0xFFFFFFFF */
-#endif
-
-extern int errno;
-
-unsigned long
-strtoul(s, ptr, base)
-     CONST char *s; char **ptr; int base;
-{
-  unsigned long total = 0, tmp = 0;
-  unsigned digit;
-  CONST char *start=s;
-  int did_conversion=0;
-  int negate = 0;
-
-  if (s==NULL)
-    {
-      errno = ERANGE;
-      if (!ptr)
-	*ptr = (char *)start;
-      return 0L;
-    }
-
-  while (isspace(*s))
-    s++;
-  if (*s == '+')
-    s++;
-  else if (*s == '-')
-    s++, negate = 1;
-  if (base==0 || base==16) /*  the 'base==16' is for handling 0x */
-    {
-      /*
-       * try to infer base from the string
-       */
-      if (*s != '0')
-        tmp = 10;	/* doesn't start with 0 - assume decimal */
-      else if (s[1] == 'X' || s[1] == 'x')
-	tmp = 16, s += 2; /* starts with 0x or 0X - hence hex */
-      else
-	tmp = 8;	/* starts with 0 - hence octal */
-      if (base==0)
-	base = (int)tmp;
-    }
-
-  while ( digit = *s )
-    {
-      if (digit >= '0' && digit < ('0'+base))
-	digit -= '0';
-      else
-	if (base > 10)
-	  {
-	    if (digit >= 'a' && digit < ('a'+(base-10)))
-	      digit = digit - 'a' + 10;
-	    else if (digit >= 'A' && digit < ('A'+(base-10)))
-	      digit = digit - 'A' + 10;
-	    else
-	      break;
-	  }
-	else
-	  break;
-      did_conversion = 1;
-      tmp = (total * base) + digit;
-      if (tmp < total)	/* check overflow */
-	{
-	  errno = ERANGE;
-	  if (ptr != NULL)
-	    *ptr = (char *)s;
-	  return (ULONG_MAX);
-	}
-      total = tmp;
-      s++;
-    }
-  if (ptr != NULL)
-    *ptr = (char *) ((did_conversion) ? (char *)s : (char *)start);
-  return negate ? -total : total;
-}
-#endif	/*  __STDC__ */

@@ -79,12 +79,12 @@ int main(int argc,char **argv)
 /*
     dbDumpRecordType(pdbbase,"ai");
     dbDumpRecordType(pdbbase,NULL);
-    dbPvdDump(pdbbase);
+    dbPvdDump(pdbbase,1);
     gphDump(pdbbase->pgpHash);
     dbDumpMenu(pdbbase,NULL);
     dbDumpRecord(pdbbase,NULL,0);
     dbReportDeviceConfig(pdbbase,stdout);
-    dbFreeBase(pdbbase);
 */
+    dbFreeBase(pdbbase);
     return(0);
 }

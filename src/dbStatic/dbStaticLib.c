@@ -12,6 +12,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <errno.h>
 #include <limits.h>
 #include <string.h>
 #include <math.h>
@@ -31,6 +32,7 @@
 #include "dbmf.h"
 #include "postfix.h"
 #include "osiFileName.h"
+#include "epicsStdio.h"
 
 #define epicsExportSharedSymbols
 #include "link.h"
@@ -40,9 +42,9 @@
 #include "guigroup.h"
 #include "dbStaticLib.h"
 #include "dbStaticPvt.h"
-
 
 int dbStaticDebug = 0;
+static char *pNullString = "";
 #define messagesize	100
 #define RPCL_LEN 184
 #define MAX_FIELD_NAME_LENGTH 20
@@ -193,6 +195,9 @@ sizeof(promptRF_IO)/sizeof(char *),
 sizeof(promptVXI_IO)/sizeof(char *)};
 
 /*forward references for private routines*/
+static FILE *openOutstream(const char *filename);
+static void finishOutstream(FILE *stream);
+static long setLinkType(DBENTRY *pdbentry);
 static long putParmString(char **pparm,const char *pstring);
 static long mapLINKTtoFORMT(DBLINK *plink,dbFldDes *pflddes,int *ind);
 static void entryErrMessage(DBENTRY *pdbentry,long status,char *mess);
@@ -202,16 +207,28 @@ static long putPvLink(DBENTRY *pdbentry,short pvlMask,const char *pvname);
 static long epicsShareAPI dbAddOnePath (DBBASE *pdbbase, const char *path, unsigned length);
 
 /* internal routines*/
-static int fcloseNotSTD(FILE *stream)
+static FILE *openOutstream(const char *filename)
 {
-    if(stream!=stdin && stream!=stdout && stream!=stderr) {
-	return(fclose(stream));
+    FILE *stream;
+    errno = 0;
+    stream = fopen(filename,"w");
+    if(!stream) {
+        fprintf(stderr,"error opening %s %s\n",filename,strerror(errno));
+        return 0;
     }
-    return(0);
+    return stream;
 }
 
-static char *pNullString = "";
-long setLinkType(DBENTRY *pdbentry)
+static void finishOutstream(FILE *stream)
+{
+    if(stream==stdout) {
+        fflush(stdout);
+    } else {
+        if(fclose(stream)) fprintf(stderr,"fclose error %s\n",strerror(errno));
+    }
+}
+
+static long setLinkType(DBENTRY *pdbentry)
 {
     DBENTRY	dbEntry;
     dbFldDes	*pflddes;
@@ -862,15 +879,14 @@ static long epicsShareAPI dbAddOnePath (DBBASE *pdbbase, const char *path, unsig
 long epicsShareAPI dbWriteRecord(DBBASE *ppdbbase,const char *filename,
 	const char *precordTypename,int level)
 {
-    FILE	*outFile;
+    FILE *stream;
+    long status;
 
-    outFile = fopen(filename,"w");
-    if(!outFile) {
-	errPrintf(0,__FILE__,__LINE__,"Error opening %s\n",filename);
-	return(-1);
-    }
-    dbWriteRecordFP(ppdbbase,outFile,precordTypename,level);
-    return(fcloseNotSTD(outFile));
+    stream = openOutstream(filename);
+    if(!stream) return -1;
+    status = dbWriteRecordFP(ppdbbase,stream,precordTypename,level);
+    finishOutstream(stream);
+    return status;
 }
 
 long epicsShareAPI dbWriteRecordFP(
@@ -944,18 +960,13 @@ long epicsShareAPI dbWriteRecordFP(
 long epicsShareAPI dbWriteMenu(
     DBBASE *ppdbbase,const char *filename,const char *menuName)
 {
-    FILE	*outFile;
+    FILE *stream;
+    long status;
 
-    outFile = fopen(filename,"w");
-    if(!outFile) {
-	errPrintf(0,__FILE__,__LINE__,"Error opening %s\n",filename);
-	return(-1);
-    }
-    dbWriteMenuFP(ppdbbase,outFile,menuName);
-    if(fcloseNotSTD(outFile)) {
-	errPrintf(0,__FILE__,__LINE__,"Error closing %s\n",filename);
-    }
-    return(0);
+    stream = openOutstream(filename);
+    status = dbWriteMenuFP(ppdbbase,stream,menuName);
+    finishOutstream(stream);
+    return status;
 }
 
 long epicsShareAPI dbWriteMenuFP(DBBASE *pdbbase,FILE *fp,const char *menuName)
@@ -992,18 +1003,13 @@ long epicsShareAPI dbWriteMenuFP(DBBASE *pdbbase,FILE *fp,const char *menuName)
 long epicsShareAPI dbWriteRecordType(
     DBBASE *pdbbase,const char *filename,const char *recordTypeName)
 {
-    FILE	*outFile;
+    FILE *stream;
+    long status;
 
-    outFile = fopen(filename,"w");
-    if(!outFile) {
-	errPrintf(0,__FILE__,__LINE__,"Error opening %s\n",filename);
-	return(-1);
-    }
-    dbWriteRecordTypeFP(pdbbase,outFile,recordTypeName);
-    if(fcloseNotSTD(outFile)) {
-	errPrintf(0,__FILE__,__LINE__,"Error closing %s\n",filename);
-    }
-    return(0);
+    stream = openOutstream(filename);
+    status = dbWriteRecordTypeFP(pdbbase,stream,recordTypeName);
+    finishOutstream(stream);
+    return status;
 }
 
 long epicsShareAPI dbWriteRecordTypeFP(
@@ -1093,18 +1099,13 @@ long epicsShareAPI dbWriteRecordTypeFP(
 
 long epicsShareAPI dbWriteDevice(DBBASE *pdbbase,const char *filename)
 {
-    FILE	*outFile;
+    FILE *stream;
+    long status;
 
-    outFile = fopen(filename,"w");
-    if(!outFile) {
-	errPrintf(0,__FILE__,__LINE__,"Error opening %s\n",filename);
-	return(-1);
-    }
-    dbWriteDeviceFP(pdbbase,outFile);
-    if(fcloseNotSTD(outFile)) {
-	errPrintf(0,__FILE__,__LINE__,"Error closing %s\n",filename);
-    }
-    return(0);
+    stream = openOutstream(filename);
+    status = dbWriteDeviceFP(pdbbase,stream);
+    finishOutstream(stream);
+    return status;
 }
 
 long epicsShareAPI dbWriteDeviceFP(DBBASE *pdbbase,FILE *fp)
@@ -1140,18 +1141,13 @@ long epicsShareAPI dbWriteDeviceFP(DBBASE *pdbbase,FILE *fp)
 
 long epicsShareAPI dbWriteDriver(DBBASE *pdbbase,const char *filename)
 {
-    FILE	*outFile;
+    FILE *stream;
+    long status;
 
-    outFile = fopen(filename,"w");
-    if(!outFile) {
-	errPrintf(0,__FILE__,__LINE__,"Error opening %s\n",filename);
-	return(-1);
-    }
-    dbWriteDriverFP(pdbbase,outFile);
-    if(fcloseNotSTD(outFile)) {
-	errPrintf(0,__FILE__,__LINE__,"Error closing %s\n",filename);
-    }
-    return(0);
+    stream = openOutstream(filename);
+    status = dbWriteDriverFP(pdbbase,stream);
+    finishOutstream(stream);
+    return status;
 }
 
 long epicsShareAPI dbWriteDriverFP(DBBASE *pdbbase,FILE *fp)
@@ -1216,18 +1212,13 @@ long epicsShareAPI dbWriteVariableFP(DBBASE *pdbbase,FILE *fp)
 
 long epicsShareAPI dbWriteBreaktable(DBBASE *pdbbase,const char *filename)
 {
-    FILE	*outFile;
+    FILE *stream;
+    long status;
 
-    outFile = fopen(filename,"w");
-    if(!outFile) {
-	errPrintf(0,__FILE__,__LINE__,"Error opening %s\n",filename);
-	return(-1);
-    }
-    dbWriteBreaktableFP(pdbbase,outFile);
-    if(fcloseNotSTD(outFile)) {
-	errPrintf(0,__FILE__,__LINE__,"Error closing %s\n",filename);
-    }
-    return(0);
+    stream = openOutstream(filename);
+    status = dbWriteBreaktableFP(pdbbase,stream);
+    finishOutstream(stream);
+    return status;
 }
 
 long epicsShareAPI dbWriteBreaktableFP(DBBASE *pdbbase,FILE *fp)
@@ -3601,18 +3592,21 @@ void  epicsShareAPI dbDumpPath(DBBASE *pdbbase)
     ELLLIST	*ppathList;
     dbPathNode	*pdbPathNode;
 
-    if(!pdbbase) return;
+    if(!pdbbase) {
+	fprintf(stderr,"pdbbase not specified\n");
+	return;
+    }
     ppathList = (ELLLIST *)pdbbase->pathPvt;
     if(!ppathList || !(pdbPathNode = (dbPathNode *)ellFirst(ppathList))) {
-	printf("no path defined\n");
+	fprintf(stdout,"no path defined\n");
 	return;
     }
     while(pdbPathNode) {
-	printf("%s",pdbPathNode->directory);
+	fprintf(stdout,"%s",pdbPathNode->directory);
 	pdbPathNode = (dbPathNode *)ellNext(&pdbPathNode->node);
-	if(pdbPathNode) printf("%s", OSI_PATH_LIST_SEPARATOR);
+	if(pdbPathNode) fprintf(stdout,"%s", OSI_PATH_LIST_SEPARATOR);
     }
-    printf("\n");
+    fprintf(stdout,"\n");
     return;
 }
 
@@ -3620,30 +3614,30 @@ void  epicsShareAPI dbDumpRecord(
     dbBase *pdbbase,const char *precordTypename,int level)
 {
     if(!pdbbase) {
-	printf("pdbbase not specified\n");
+	fprintf(stderr,"pdbbase not specified\n");
 	return;
     }
     dbWriteRecordFP(pdbbase,stdout,precordTypename,level);
 }
 
-void  epicsShareAPI dbDumpMenu(DBBASE *pdbbase,const char *menuName)
+void  epicsShareAPI dbDumpMenu(dbBase *pdbbase,const char *menuName)
 {
     if(!pdbbase) {
-	printf("pdbbase not specified\n");
+	fprintf(stderr,"pdbbase not specified\n");
 	return;
     }
     dbWriteMenuFP(pdbbase,stdout,menuName);
 }
 
-void  epicsShareAPI dbDumpRecordType(DBBASE *pdbbase,const char *recordTypeName)
+void epicsShareAPI dbDumpRecordType(DBBASE *pdbbase,const char *recordTypeName)
 {
-    dbRecordType	*pdbRecordType;
+    dbRecordType *pdbRecordType;
     dbFldDes	*pdbFldDes;
     int		gotMatch;
     int		i;
 
     if(!pdbbase) {
-	printf("pdbbase not specified\n");
+	fprintf(stderr,"pdbbase not specified\n");
 	return;
     }
     for(pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
@@ -3655,23 +3649,23 @@ void  epicsShareAPI dbDumpRecordType(DBBASE *pdbbase,const char *recordTypeName)
 	    gotMatch=TRUE;
 	}
 	if(!gotMatch) continue;
-	printf("name(%s) no_fields(%hd) no_prompt(%hd) no_links(%hd)\n",
+	fprintf(stdout,"name(%s) no_fields(%hd) no_prompt(%hd) no_links(%hd)\n",
 	    pdbRecordType->name,pdbRecordType->no_fields,
 	    pdbRecordType->no_prompt,pdbRecordType->no_links);
-	printf("index name\tsortind sortname\n");
+	fprintf(stdout,"index name\tsortind sortname\n");
 	for(i=0; i<pdbRecordType->no_fields; i++) {
 	    pdbFldDes = pdbRecordType->papFldDes[i];
-	    printf("%5d %s\t%7d %s\n",
+	    fprintf(stdout,"%5d %s\t%7d %s\n",
 		i,pdbFldDes->name,
 		pdbRecordType->sortFldInd[i],pdbRecordType->papsortFldName[i]);
 	}
-	printf("link_ind ");
+	fprintf(stdout,"link_ind ");
 	for(i=0; i<pdbRecordType->no_links; i++)
-	    printf(" %hd",pdbRecordType->link_ind[i]);
-	printf("\n");
-	printf("indvalFlddes %d name %s\n",pdbRecordType->indvalFlddes,
+	    fprintf(stdout," %hd",pdbRecordType->link_ind[i]);
+	fprintf(stdout,"\n");
+	fprintf(stdout,"indvalFlddes %d name %s\n",pdbRecordType->indvalFlddes,
 	    pdbRecordType->pvalFldDes->name);
-	printf("struct rset * %p rec_size %d\n",
+	fprintf(stdout,"struct rset * %p rec_size %d\n",
 	    (void *)pdbRecordType->prset,pdbRecordType->rec_size);
 	if(recordTypeName) break;
     }
@@ -3680,14 +3674,14 @@ void  epicsShareAPI dbDumpRecordType(DBBASE *pdbbase,const char *recordTypeName)
 void  epicsShareAPI dbDumpField(
     DBBASE *pdbbase,const char *recordTypeName,const char *fname)
 {
-    dbRecordType	*pdbRecordType;
+    dbRecordType *pdbRecordType;
     dbFldDes	*pdbFldDes;
     int		gotMatch;
     int		i;
     dbRecordAttribute *pAttribute;
 
     if(!pdbbase) {
-	printf("pdbbase not specified\n");
+	fprintf(stderr,"pdbbase not specified\n");
 	return;
     }
     for(pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
@@ -3699,69 +3693,69 @@ void  epicsShareAPI dbDumpField(
 	    gotMatch=TRUE;
 	}
 	if(!gotMatch) continue;
-	printf("recordtype(%s) \n",pdbRecordType->name);
+	fprintf(stdout,"recordtype(%s) \n",pdbRecordType->name);
 	for(i=0; i<pdbRecordType->no_fields; i++) {
 	    int	j;
 
 	    pdbFldDes = pdbRecordType->papFldDes[i];
 	    if(fname && strcmp(fname,pdbFldDes->name)!=0) continue;
-	    printf("    %s\n", pdbFldDes->name);
-            printf("\t         prompt: %s\n",
+	    fprintf(stdout,"    %s\n", pdbFldDes->name);
+            fprintf(stdout,"\t         prompt: %s\n",
                 (pdbFldDes->prompt ? pdbFldDes->prompt : ""));
-            printf("\t          extra: %s\n",
+            fprintf(stdout,"\t          extra: %s\n",
                 (pdbFldDes->extra ? pdbFldDes->extra: ""));
-	    printf("\t      indRecordType: %hd\n",pdbFldDes->indRecordType);
-	    printf("\t        special: %hd ",pdbFldDes->special);
+	    fprintf(stdout,"\t      indRecordType: %hd\n",pdbFldDes->indRecordType);
+	    fprintf(stdout,"\t        special: %hd ",pdbFldDes->special);
 	    if(pdbFldDes->special) {
 		for(j=0; j<SPC_NTYPES; j++) {
 		    if(pamapspcType[j].value == pdbFldDes->special) {
-			printf("%s",pamapspcType[j].strvalue);
+			fprintf(stdout,"%s",pamapspcType[j].strvalue);
 			break;
 		    }
 		}
 	    }
-	    printf("\n");
+	    fprintf(stdout,"\n");
 	    for(j=0; j<DBF_NTYPES; j++) {
 		if(pamapdbfType[j].value == pdbFldDes->field_type) break;
 	    }
 	    if(j>=DBF_NTYPES)
-		printf("\t     field_type: %d\n", pdbFldDes->field_type);
+		fprintf(stdout,"\t     field_type: %d\n", pdbFldDes->field_type);
 	    else
-		printf("\t     field_type: %s\n", pamapdbfType[j].strvalue);
-	    printf("\tprocess_passive: %hd\n",pdbFldDes->process_passive);
-	    printf("\t           base: %hd\n",pdbFldDes->base);
+		fprintf(stdout,"\t     field_type: %s\n", pamapdbfType[j].strvalue);
+	    fprintf(stdout,"\tprocess_passive: %hd\n",pdbFldDes->process_passive);
+	    fprintf(stdout,"\t           base: %hd\n",pdbFldDes->base);
 	    if(!pdbFldDes->promptgroup) {
-		printf("\t    promptgroup: %d\n",pdbFldDes->promptgroup);
+		fprintf(stdout,"\t    promptgroup: %d\n",pdbFldDes->promptgroup);
 	    } else {
 		for(j=0; j<GUI_NTYPES; j++) {
 		    if(pamapguiGroup[j].value == pdbFldDes->promptgroup) {
-			printf("\t    promptgroup: %s\n",
+			fprintf(stdout,"\t    promptgroup: %s\n",
 				pamapguiGroup[j].strvalue);
 			break;
 		    }
 		}
 	    }
-	    printf("\t       interest: %hd\n", pdbFldDes->interest);
-	    printf("\t       as_level: %hd\n",pdbFldDes->as_level);
-            printf("\t        initial: %s\n",
+	    fprintf(stdout,"\t       interest: %hd\n", pdbFldDes->interest);
+	    fprintf(stdout,"\t       as_level: %hd\n",pdbFldDes->as_level);
+            fprintf(stdout,"\t        initial: %s\n",
                 (pdbFldDes->initial ? pdbFldDes->initial : ""));
 	    if(pdbFldDes->field_type==DBF_MENU) {
 		if(pdbFldDes->ftPvt)
-		    printf("\t\t  menu: %s\n",
+		    fprintf(stdout,"\t\t  menu: %s\n",
 			((dbMenu *)pdbFldDes->ftPvt)->name);
 		else
-		    printf("\t\t  menu: NOT FOUND\n");
+		    fprintf(stdout,"\t\t  menu: NOT FOUND\n");
 	    }
 	    if(pdbFldDes->field_type==DBF_DEVICE) {
-		printf("\t          ftPvt: %p\n",pdbFldDes->ftPvt);
+		fprintf(stdout,"\t          ftPvt: %p\n",pdbFldDes->ftPvt);
 	    }
-	    printf("\t           size: %hd\n",pdbFldDes->size);
-	    printf("\t         offset: %hd\n",pdbFldDes->offset);
+	    fprintf(stdout,"\t           size: %hd\n",pdbFldDes->size);
+	    fprintf(stdout,"\t         offset: %hd\n",pdbFldDes->offset);
 	}
 	pAttribute =
 	    (dbRecordAttribute *)ellFirst(&pdbRecordType->attributeList);
 	while(pAttribute) {
-	    printf("Attribute: name %s value %s\n",
+	    fprintf(stdout,"Attribute: name %s value %s\n",
 		pAttribute->name,pAttribute->value);
 	    pAttribute = (dbRecordAttribute *)ellNext(&pAttribute->node);
 	}
@@ -3771,12 +3765,15 @@ void  epicsShareAPI dbDumpField(
 
 void  epicsShareAPI dbDumpDevice(DBBASE *pdbbase,const char *recordTypeName)
 {
-    dbRecordType	*pdbRecordType;
+    dbRecordType *pdbRecordType;
     devSup	*pdevSup;
     int		gotMatch;
 
+    if(recordTypeName) {
+        if(recordTypeName[0]==0 || recordTypeName[0] == '*') recordTypeName = 0;
+    }
     if(!pdbbase) {
-	printf("pdbbase not specified\n");
+	fprintf(stderr,"pdbbase not specified\n");
 	return;
     }
     for(pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
@@ -3788,13 +3785,13 @@ void  epicsShareAPI dbDumpDevice(DBBASE *pdbbase,const char *recordTypeName)
 	    gotMatch=TRUE;
 	}
 	if(!gotMatch) continue;
-	printf("recordtype(%s) \n",pdbRecordType->name);
+	fprintf(stdout,"recordtype(%s) \n",pdbRecordType->name);
 	for(pdevSup = (devSup *)ellFirst(&pdbRecordType->devList);
 	pdevSup; pdevSup = (devSup *)ellNext(&pdevSup->node)) {
-	    printf("\t     name: %s\n",pdevSup->name);
-	    printf("\t   choice: %s\n",pdevSup->choice);
-	    printf("\tlink_type: %d\n",pdevSup->link_type);
-	    printf("\t    pdset: %p\n",(void *)pdevSup->pdset);
+	    fprintf(stdout,"\t     name: %s\n",pdevSup->name);
+	    fprintf(stdout,"\t   choice: %s\n",pdevSup->choice);
+	    fprintf(stdout,"\tlink_type: %d\n",pdevSup->link_type);
+	    fprintf(stdout,"\t    pdset: %p\n",(void *)pdevSup->pdset);
 	}
 	if(recordTypeName) break;
     }
@@ -3803,7 +3800,7 @@ void  epicsShareAPI dbDumpDevice(DBBASE *pdbbase,const char *recordTypeName)
 void  epicsShareAPI dbDumpDriver(DBBASE *pdbbase)
 {
     if(!pdbbase) {
-	printf("pdbbase not specified\n");
+	fprintf(stderr,"pdbbase not specified\n");
 	return;
     }
     dbWriteDriverFP(pdbbase,stdout);
@@ -3812,7 +3809,7 @@ void  epicsShareAPI dbDumpDriver(DBBASE *pdbbase)
 void  epicsShareAPI dbDumpRegistrar(DBBASE *pdbbase)
 {
     if(!pdbbase) {
-	printf("pdbbase not specified\n");
+	fprintf(stderr,"pdbbase not specified\n");
 	return;
     }
     dbWriteRegistrarFP(pdbbase,stdout);
@@ -3821,7 +3818,7 @@ void  epicsShareAPI dbDumpRegistrar(DBBASE *pdbbase)
 void  epicsShareAPI dbDumpFunction(DBBASE *pdbbase)
 {
     if(!pdbbase) {
-	printf("pdbbase not specified\n");
+	fprintf(stderr,"pdbbase not specified\n");
 	return;
     }
     dbWriteFunctionFP(pdbbase,stdout);
@@ -3830,7 +3827,7 @@ void  epicsShareAPI dbDumpFunction(DBBASE *pdbbase)
 void  epicsShareAPI dbDumpVariable(DBBASE *pdbbase)
 {
     if(!pdbbase) {
-	printf("pdbbase not specified\n");
+	fprintf(stderr,"pdbbase not specified\n");
 	return;
     }
     dbWriteVariableFP(pdbbase,stdout);
@@ -3838,9 +3835,9 @@ void  epicsShareAPI dbDumpVariable(DBBASE *pdbbase)
 
 void  epicsShareAPI dbDumpBreaktable(DBBASE *pdbbase,const char *name)
 {
-    brkTable	*pbrkTable;
-    brkInt	*pbrkInt;
-    int		ind;
+    brkTable *pbrkTable;
+    brkInt   *pbrkInt;
+    int	     ind;
 
     if(!pdbbase) {
 	fprintf(stderr,"pdbbase not specified\n");
@@ -3849,12 +3846,12 @@ void  epicsShareAPI dbDumpBreaktable(DBBASE *pdbbase,const char *name)
     for(pbrkTable = (brkTable *)ellFirst(&pdbbase->bptList);
     pbrkTable; pbrkTable = (brkTable *)ellNext(&pbrkTable->node)) {
 	if(name && strcmp(name,pbrkTable->name)!=0) continue;
-	printf("breaktable(%s) {\n",pbrkTable->name);
+	fprintf(stdout,"breaktable(%s) {\n",pbrkTable->name);
 	for(ind=0; ind<pbrkTable->number; ind++) {
 	    pbrkInt = pbrkTable->papBrkInt[ind];
-	    printf("\t%f %e %f\n",pbrkInt->raw,pbrkInt->slope,pbrkInt->eng);
+	    fprintf(stdout,"\t%f %e %f\n",pbrkInt->raw,pbrkInt->slope,pbrkInt->eng);
 	}
-	printf("}\n");
+	fprintf(stdout,"}\n");
     }
     return;
 }
@@ -3872,9 +3869,12 @@ void  epicsShareAPI dbReportDeviceConfig(dbBase *pdbbase,FILE *report)
     char	cvtValue[40];
     int		ilink,nlinks;
     struct link	*plink;
-    FILE        *fp;
+    FILE        *stream = (report==0) ? stdout : report;
 
-    fp = (report==0) ? stdout : report;
+    if(!pdbbase) {
+	fprintf(stderr,"pdbbase not specified\n");
+	return;
+    }
     dbInitEntry(pdbbase,pdbentry);
     status = dbFirstRecordType(pdbentry);
     while(!status) {
@@ -3909,7 +3909,7 @@ void  epicsShareAPI dbReportDeviceConfig(dbBase *pdbbase,FILE *report)
 			strcat(cvtValue,")");
 		    }
 		}
-		fprintf(fp,"%-8s %-20s %-20s %-20s %-s\n",
+		fprintf(stream,"%-8s %-20s %-20s %-20s %-s\n",
 			busName,linkValue,dtypValue,
 			dbGetRecordName(pdbentry),cvtValue);
 		break;
@@ -3919,5 +3919,6 @@ void  epicsShareAPI dbReportDeviceConfig(dbBase *pdbbase,FILE *report)
 	status = dbNextRecordType(pdbentry);
     }
     dbFinishEntry(pdbentry);
+    finishOutstream(stream);
     return;
 }

@@ -903,7 +903,7 @@ static void dbRecordHead(char *recordType,char *name, int visible)
     allocTemp(pdbentry);
     status = dbFindRecordType(pdbentry,recordType);
     if(status) {
-	errMessage(status,"");
+	errMessage(status,"dbFindRecordType");
 	yyerrorAbort(NULL);
 	return;
     }
@@ -933,13 +933,13 @@ static void dbRecordField(char *name,char *value)
     pdbentry = ptempListNode->item;
     status = dbFindField(pdbentry,name);
     if(status) {
-	errMessage(status,"");
+	errMessage(status,"dbFindField");
 	yyerror(NULL);
 	return;
     }
     status = dbPutString(pdbentry,value);
     if(status) {
-	errMessage(status,"");
+	errMessage(status,"dbPutString");
 	yyerror(NULL);
 	return;
     }
@@ -956,7 +956,7 @@ static void dbRecordInfo(char *name, char *value)
     pdbentry = ptempListNode->item;
     status = dbPutInfo(pdbentry,name,value);
     if(status) {
-	errMessage(status,"");
+	errMessage(status,"dbPutInfo");
 	yyerror(NULL);
 	return;
     }

@@ -12,10 +12,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <fcntl.h>
 
 #include "dbDefs.h"
 #include "ellLib.h"
 #include "dbBase.h"
+#include "epicsStdio.h"
 #define epicsExportSharedSymbols
 #include "dbStaticLib.h"
 #include "dbStaticPvt.h"
@@ -218,27 +220,32 @@ void dbPvdFreeMem(dbBase *pdbbase)
 
 void epicsShareAPI dbPvdDump(dbBase *pdbbase,int verbose)
 {
-    unsigned short	hashInd;
-    ELLLIST		**ppvd = (ELLLIST **) pdbbase->ppvd;
-    ELLLIST		*ppvdlist;
-    PVDENTRY		*ppvdNode;
-    int			number;
+    unsigned short hashInd;
+    ELLLIST	   **ppvd;
+    ELLLIST	   *ppvdlist;
+    PVDENTRY	   *ppvdNode;
+    int		   number;
     
+    if(!pdbbase) {
+        fprintf(stderr,"pdbbase not specified\n");
+        return;
+    }
+    ppvd = (ELLLIST **)pdbbase->ppvd;
     if (ppvd == NULL) return;
-    printf("Process Variable Directory\n");
-    printf("dbPvdHashTableSize %d dbPvdHashTableShift %d\n",
+    fprintf(stdout,"Process Variable Directory\n");
+    fprintf(stdout,"dbPvdHashTableSize %d dbPvdHashTableShift %d\n",
 	dbPvdHashTableSize,dbPvdHashTableShift);
     for (hashInd=0; hashInd<(unsigned short)dbPvdHashTableSize; hashInd++) {
 	if(ppvd[hashInd] == NULL) continue;
 	ppvdlist=ppvd[hashInd];
 	ppvdNode = (PVDENTRY *) ellFirst(ppvdlist);
-	printf("\n%3.3hd=%3.3d ",hashInd,ellCount(ppvdlist));
+	fprintf(stdout,"\n%3.3hd=%3.3d ",hashInd,ellCount(ppvdlist));
 	number=0;
 	while(ppvdNode && verbose) {
-	    printf(" %s",(char *)ppvdNode->precnode->recordname);
-	    if(number++ ==2) {number=0;printf("\n        ");}
+	    fprintf(stdout," %s",(char *)ppvdNode->precnode->recordname);
+	    if(number++ ==2) {number=0;fprintf(stdout,"\n        ");}
 	    ppvdNode = (PVDENTRY *) ellNext((ELLNODE*)ppvdNode);
 	}
     }
-    printf("\nEnd of Process Variable Directory\n");
+    fprintf(stdout,"\nEnd of Process Variable Directory\n");
 }

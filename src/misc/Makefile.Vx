@@ -1,0 +1,16 @@
+EPICS = ../../..
+include $(EPICS)/config/CONFIG_vx
+
+#USR_CFLAGS = -DACCESS_SECURITY -D_NO_PROTO
+
+SRCS = \
+	epicsEnvParams.c epicsRelease.c
+
+OBJS = \
+
+LIBOBJS = \
+	$(OBDIR)/epicsEnvParams.o $(OBDIR)/epicsRelease.o
+
+LIBNAME = miscLib
+
+include $(EPICS)/config/RULES.Vx

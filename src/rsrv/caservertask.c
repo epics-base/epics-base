@@ -41,6 +41,7 @@
  *	.09 joh 022092	print free list statistics in client_stat()
  *	.10 joh 022592	print more statistics in client_stat()
  *	.11 joh 073093	added args to taskSpawn for v5.1 vxWorks	
+ *	.12 joh 020494	identifies the client in client_stat
  */
 
 static char *sccsId = "$Id$";
@@ -68,6 +69,7 @@ static char *sccsId = "$Id$";
 
 LOCAL int terminate_one_client(struct client *client);
 LOCAL void log_one_client(struct client *client);
+LOCAL unsigned long delay_in_ticks(unsigned long prev);
 
 
 /*
@@ -146,14 +148,16 @@ int req_server(void)
 
 	while (TRUE) {
 		if ((i = accept(IOC_sock, NULL, 0)) == ERROR) {
-			logMsg("CAS: Accept error\n",
+			logMsg("CAS: Client accept error\n",
 				NULL,
 				NULL,
 				NULL,
 				NULL,
 				NULL,
 				NULL);
-			taskSuspend(0);
+			printErrno(errnoGet());
+			taskDelay(15*sysClkRateGet());
+			continue;
 		} else {
 			status = taskSpawn(CA_CLIENT_NAME,
 					   CA_CLIENT_PRI,
@@ -186,7 +190,8 @@ int req_server(void)
 					NULL,
 					NULL);
 				printErrno(errnoGet());
-				close(i);
+				taskDelay(15*sysClkRateGet());
+				continue;
 			}
 		}
 	}
@@ -200,35 +205,21 @@ int req_server(void)
  */
 int free_client(struct client *client)
 {
-	if (client) {
-		/* remove it from the list of clients */
-		/* list delete returns no status */
-		LOCK_CLIENTQ;
-		ellDelete((ELLLIST *)&clientQ, (ELLNODE *)client);
-		UNLOCK_CLIENTQ;
-		terminate_one_client(client);
-		LOCK_CLIENTQ;
-		ellAdd((ELLLIST *)&rsrv_free_clientQ, (ELLNODE *)client);
-		UNLOCK_CLIENTQ;
-	} else {
-		LOCK_CLIENTQ;
-		while (client = (struct client *) ellGet(&clientQ))
-			terminate_one_client(client);
-
-		FASTLOCK(&rsrv_free_addrq_lck);
-		ellFree(&rsrv_free_addrq);
-		ellInit(&rsrv_free_addrq);
-		FASTUNLOCK(&rsrv_free_addrq_lck);
-
-		FASTLOCK(&rsrv_free_eventq_lck);
-		ellFree(&rsrv_free_eventq);
-		ellInit(&rsrv_free_eventq);
-		FASTUNLOCK(&rsrv_free_eventq_lck);
-
-		ellFree(&rsrv_free_clientQ);
-
-		UNLOCK_CLIENTQ;
+	if (!client) {
+		return ERROR;
 	}
+
+	/* remove it from the list of clients */
+	/* list delete returns no status */
+	LOCK_CLIENTQ;
+	ellDelete(&clientQ, &client->node);
+	UNLOCK_CLIENTQ;
+
+	terminate_one_client(client);
+
+	LOCK_CLIENTQ;
+	ellAdd(&rsrv_free_clientQ, &client->node);
+	UNLOCK_CLIENTQ;
 
 	return OK;
 }
@@ -272,9 +263,9 @@ LOCAL int terminate_one_client(struct client *client)
 	 * Server task deleted first since close() is not reentrant
 	 */
 	servertid = client->tid;
+	taskwdRemove(servertid);
 	if (servertid != taskIdSelf()){
 		if (taskIdVerify(servertid) == OK){
-			taskwdRemove(servertid);
 			if (taskDelete(servertid) == ERROR) {
 				printErrno(errnoGet());
 			}
@@ -283,14 +274,24 @@ LOCAL int terminate_one_client(struct client *client)
 
 	pciu = (struct channel_in_use *) & client->addrq;
 	while (pciu = (struct channel_in_use *) pciu->node.next){
-		while (pevext = (struct event_ext *) ellGet((ELLLIST *)&pciu->eventq)) {
+		/*
+		 * put notify in progress needs to be deleted
+		 */
+		if(pciu->pPutNotify){
+			if(pciu->pPutNotify->busy){
+                		dbNotifyCancel(&pciu->pPutNotify->dbPutNotify);
+			}
+			free(pciu->pPutNotify);
+		}
+
+		while (pevext = (struct event_ext *) ellGet(&pciu->eventq)) {
 
 			status = db_cancel_event(
 					(struct event_block *)(pevext + 1));
 			if (status == ERROR)
 				taskSuspend(0);
 			FASTLOCK(&rsrv_free_eventq_lck);
-			ellAdd((ELLLIST *)&rsrv_free_eventq, (ELLNODE *)pevext);
+			ellAdd(&rsrv_free_eventq, &pevext->node);
 			FASTUNLOCK(&rsrv_free_eventq_lck);
 		}
 		FASTLOCK(&rsrv_free_addrq_lck);
@@ -301,6 +302,16 @@ LOCAL int terminate_one_client(struct client *client)
 				"%s: Bad id=%d at close",
 				(int)__FILE__,
 				pciu->sid,
+				NULL,
+				NULL,
+				NULL,
+				NULL);
+		}
+		status = asRemoveClient(&pciu->asClientPVT);
+		if(status){
+			logMsg( "%s Bad client PVD during client shutdown",
+				(int)__FILE__,
+				NULL,
 				NULL,
 				NULL,
 				NULL,
@@ -339,6 +350,27 @@ LOCAL int terminate_one_client(struct client *client)
 			NULL);
 	}
 
+	status = semDelete(client->blockSem);
+	if(status != OK){
+		logMsg("CAS: couldnt free block sem\n",
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL);
+	}
+
+	if(client->pUserName){
+		free(client->pUserName);
+	}
+
+	if(client->pLocationName){
+		free(client->pLocationName);
+	}
+
+	client->minor_version_number = CA_UKN_MINOR_VERSION;
+
 	return OK;
 }
 
@@ -352,14 +384,17 @@ int client_stat(void)
 	int		bytes_reserved;
 	struct client 	*client;
 
+	printf( "Channel Access Server Status V%d.%d\n",
+		CA_PROTOCOL_VERSION,
+		CA_MINOR_VERSION);
 
 	LOCK_CLIENTQ;
-	client = (struct client *) ellNext((ELLNODE *)&clientQ);
+	client = (struct client *) ellNext(&clientQ);
 	while (client) {
 
 		log_one_client(client);
 
-		client = (struct client *) ellNext((ELLNODE *)client);
+		client = (struct client *) ellNext(&client->node);
 	}
 	UNLOCK_CLIENTQ;
 
@@ -375,7 +410,7 @@ int client_stat(void)
 				ellCount(&rsrv_free_eventq);
 	printf(	"There are currently %d bytes on the server's free list\n",
 		bytes_reserved);
-	printf(	"{%d client(s), %d channel(s), and %d event(s) (monitors)}\n",
+	printf(	"%d client(s), %d channel(s), and %d event(s) (monitors)\n",
 		ellCount(&rsrv_free_clientQ),
 		ellCount(&rsrv_free_addrq),
 		ellCount(&rsrv_free_eventq));
@@ -401,8 +436,8 @@ LOCAL void log_one_client(struct client *client)
 	struct channel_in_use	*pciu;
 	struct sockaddr_in 	*psaddr;
 	char			*pproto;
-	unsigned long 		current;
-	unsigned long 		delay;
+	float			send_delay;
+	float			recv_delay;
 	unsigned long		bytes_reserved;
 	char			*state[] = {"up", "down"};
 
@@ -416,19 +451,24 @@ LOCAL void log_one_client(struct client *client)
 		pproto = "UKN";
 	}
 
-	current = tickGet();
-	if (current >= client->ticks_at_last_io) {
-		delay = current - client->ticks_at_last_io;
-	} 
-	else {
-		delay = current + (~0L - client->ticks_at_last_io);
-	}
+	send_delay = delay_in_ticks(client->ticks_at_last_send);
+	recv_delay = delay_in_ticks(client->ticks_at_last_recv);
 
-	printf(	"Socket=%d, Protocol=%s, tid=%x, secs since last interaction %d\n", 
-		client->sock, 
+	printf(	"Client Name=%s, Client Location=%s, ver=%d.%u, server tid=%x\n", 
+		client->pUserName,
+		client->pLocationName,
+		CA_PROTOCOL_VERSION,
+		client->minor_version_number,
+		client->tid);
+	printf( "\tProtocol=%s, Socket fd=%d\n", 
 		pproto, 
-		client->tid,
-		delay/sysClkRateGet());
+		client->sock); 
+	printf( "\tSecs since last send %6.2f, Secs since last receive %6.2f\n", 
+		send_delay/sysClkRateGet(),
+		recv_delay/sysClkRateGet());
+	printf( "\tUnprocessed request bytes=%d, Undelivered response bytes=%d\n", 
+		client->send.stk,
+		client->recv.cnt - client->recv.stk);	
 
 	bytes_reserved = 0;
 	bytes_reserved += sizeof(struct client);
@@ -437,11 +477,13 @@ LOCAL void log_one_client(struct client *client)
 		bytes_reserved += sizeof(struct channel_in_use);
 		bytes_reserved += 
 			(sizeof(struct event_ext)+db_sizeof_event_block())*
-				ellCount((ELLLIST *)&pciu->eventq);
-		pciu = (struct channel_in_use *) ellNext((ELLNODE *)pciu);
+				ellCount(&pciu->eventq);
+		if(pciu->pPutNotify){
+			bytes_reserved += sizeof(*pciu->pPutNotify);
+			bytes_reserved += pciu->pPutNotify->valueSize;
+		}
+		pciu = (struct channel_in_use *) ellNext(&pciu->node);
 	}
-
-
 
 	psaddr = &client->addr;
 	printf("\tRemote address %u.%u.%u.%u Remote port %d state=%s\n",
@@ -459,8 +501,31 @@ LOCAL void log_one_client(struct client *client)
 		printf(	"\t%s(%d) ", 
 			pciu->addr.precord,
 			pciu->eventq.count);
-		pciu = (struct channel_in_use *) ellNext((ELLNODE *)pciu);
+		pciu = (struct channel_in_use *) ellNext(&pciu->node);
 	}
 
 	printf("\n");
+
 }
+
+
+/*
+ * delay_in_ticks()
+ */
+unsigned long delay_in_ticks(unsigned long prev)
+{
+	unsigned long delay;
+	unsigned long current;
+
+	current = tickGet();
+	if (current >= prev) {
+		delay = current - prev;
+	} 
+	else {
+		delay = current + (ULONG_MAX - prev);
+	}
+
+	return delay;
+}	
+
+

@@ -45,6 +45,7 @@
  *	.11 joh 062492	dont allow flow control to turn off gets
  *	.12 joh 090893	converted pointer to server id	
  *	.13 joh 091493	made events on action a subroutine for debugging
+ *	.14 joh 020194	New command added for CAV4.1 - client name
  */
 
 static char *sccsId = "$Id$";
@@ -56,6 +57,8 @@ static char *sccsId = "$Id$";
 #include <logLib.h>
 #include <tickLib.h>
 #include <stdioLib.h>
+#include <sysLib.h>
+#include <string.h>
 
 #include <ellLib.h>
 #include <db_access.h>
@@ -65,7 +68,6 @@ static char *sccsId = "$Id$";
 
 static struct extmsg nill_msg;
 
-	
 #define	RECORD_NAME(PADDR) (((struct db_addr *)(PADDR))->precord)
 
 LOCAL void clear_channel_reply(
@@ -78,12 +80,7 @@ struct extmsg *mp,
 struct client  *client
 );
 
-LOCAL void read_reply(
-struct event_ext *pevext,
-struct db_addr *paddr,
-int             hold,	/* more on the way if true */
-void		*pfl
-);
+LOCAL EVENTFUNC	read_reply;
 
 LOCAL void read_sync_reply(
 struct extmsg *mp,
@@ -130,6 +127,34 @@ LOCAL void events_on_action(
 struct client  *client
 );
 
+LOCAL void write_notify_call_back(PUTNOTIFY *ppn);
+
+LOCAL void write_notify_action(
+struct extmsg *mp,
+struct client  *client
+);
+
+LOCAL void putNotifyErrorReply(
+struct client *client, 
+struct extmsg *mp, 
+int statusCA
+);
+
+LOCAL void claim_ciu_action(
+struct extmsg *mp,
+struct client  *client
+);
+
+LOCAL void client_name_action(
+struct extmsg 	*mp,
+struct client  	*client
+);
+
+LOCAL void client_location_action(
+struct extmsg 	*mp,
+struct client  	*client
+);
+
 LOCAL unsigned long	bucketID;
 
 
@@ -144,6 +169,7 @@ struct message_buffer *recv
 )
 {
 	int            		nmsg = 0;
+	int			v41;
 	unsigned		msgsize;
 	unsigned		bytes_left;
 	int             	status;
@@ -189,6 +215,14 @@ struct message_buffer *recv
 		case IOC_NOOP:	/* verify TCP */
 			break;
 
+		case IOC_CLIENT_NAME:
+			client_name_action(mp, client);
+			break;
+
+		case IOC_CLIENT_LOCATION:
+			client_location_action(mp, client);
+			break;
+		
 		case IOC_EVENT_ADD:
 			event_add_action(mp, client);
 			break;
@@ -216,12 +250,7 @@ struct message_buffer *recv
 			evext.pciu = pciu;
 			evext.send_lock = TRUE;
 			evext.get = TRUE;
-			if (mp->m_count == 1)
-				evext.size = dbr_size[mp->m_type];
-			else
-				evext.size = (mp->m_count - 1) * 
-					dbr_value_size[mp->m_type] +
-					dbr_size[mp->m_type];
+			evext.size = dbr_size_n(mp->m_type, mp->m_count);
 
 			/*
 			 * Arguments to this routine organized in
@@ -239,18 +268,39 @@ struct message_buffer *recv
 		case IOC_BUILD:
 			build_reply(mp, client);
 			break;
+
+		case IOC_WRITE_NOTIFY:
+			write_notify_action(mp, client);
+			break;
+
 		case IOC_WRITE:
 			pciu = MPTOPCIU(mp);
 			if(!pciu){
 				logBadId(client, mp);
 				break;
 			}
+			if(!asCheckPut(pciu->asClientPVT)){
+				v41 = CA_V41(
+					CA_PROTOCOL_VERSION,
+					client->minor_version_number);
+				if(v41){
+					status = ECA_NOWTACCESS;
+				}
+				else{
+					status = ECA_GETFAIL;
+				}
+				send_err(
+					mp, 
+					status, 
+					client, 
+					RECORD_NAME(pciu));
+				break;
+			}
 			status = db_put_field(
 					      &pciu->addr,
 					      mp->m_type,
 					      mp + 1,
-					      mp->m_count
-				);
+					      mp->m_count);
 			if (status < 0) {
 				LOCK_CLIENT(client);
 				send_err(
@@ -273,58 +323,9 @@ struct message_buffer *recv
 		case IOC_READ_SYNC:
 			read_sync_reply(mp, client);
 			break;
+
 		case IOC_CLAIM_CIU:
-
-			/*
-			 * clients which dont claim their 
-			 * channel in use block prior to
-			 * timeout must reconnect
-			 */
-			pciu = MPTOPCIU(mp);
-			if(!pciu){
-				logMsg("CAS: client timeout disconnect id=%d\n",
-					mp->m_cid,
-					NULL,
-					NULL,
-					NULL,
-					NULL,
-					NULL);
-       				free_client(client);
-				exit(0);
-			}
-
-			/*
-			 * remove channel in use block from
-			 * the UDP client where it could time
-			 * out and place it on the client
-			 * who is claiming it
-			 */
-			if(pciu->client==prsrv_cast_client){
-				LOCK_CLIENT(prsrv_cast_client);
-				ellDelete(
-					&prsrv_cast_client->addrq, 
-					&pciu->node);
-				UNLOCK_CLIENT(prsrv_cast_client);
-				pciu->client = client;
-				LOCK_CLIENT(client);
-				ellAdd(&client->addrq, &pciu->node);
-				UNLOCK_CLIENT(client);
-			}
-			/* 
-			 * Any other client attachment is a severe error
-			 */
-			else if(pciu->client!=client){
-				logMsg("CAS: bad channel claim disconnect %d %x %x\n",
-					mp->m_cid,
-					(int)pciu,
-					(int)pciu->client,
-					NULL,
-					NULL,
-					NULL);
-       				free_client(client);
-				exit(0);
-			}
-
+			claim_ciu_action(mp, client);
 			break;
 
 		default:
@@ -336,7 +337,6 @@ struct message_buffer *recv
 				NULL,
 				NULL);
 			log_header(mp, nmsg);
-#if 0	
 			/* 
 			 *	most clients dont recover
 			 *	from this
@@ -344,7 +344,6 @@ struct message_buffer *recv
 			LOCK_CLIENT(client);
 			send_err(mp, ECA_INTERNAL, client, "Invalid Msg");
 			UNLOCK_CLIENT(client);
-#endif
 			/*
 			 * returning ERROR here disconnects
 			 * the client with the bad message
@@ -363,8 +362,471 @@ struct message_buffer *recv
 		bytes_left = recv->cnt - recv->stk;
 	}
 
-
 	return OK;
+}
+
+
+/*
+ * client_location_action()
+ */
+LOCAL void client_location_action(
+struct extmsg 	*mp,
+struct client  	*client
+)
+{
+	struct channel_in_use 	*pciu;
+	unsigned		size;
+	char 			*pName;
+	char 			*pMalloc;
+	int			status;
+
+	LOCK_CLIENT(client);
+
+	pName = (char *)(mp+1);
+	size = strlen(pName)+1;
+	/*
+	 * user name will not change if there isnt enough memory
+	 */
+	pMalloc = malloc(size);
+	if(!pMalloc){
+		send_err(
+			mp,
+			ECA_ALLOCMEM,
+			client,
+			"");
+		return;
+	}
+	if(client->pLocationName){
+		free(client->pLocationName);
+	}
+	client->pLocationName = pMalloc;
+	strncpy(
+		client->pLocationName, 
+		pName, 
+		size-1);
+	client->pLocationName[size-1]='\0';
+
+	pciu = (struct channel_in_use *) client->addrq.node.next;
+	while(pciu){
+		status = asChangeClient(
+				pciu->asClientPVT,
+				asDbGetAsl(&pciu->addr),
+				client->pUserName,
+				client->pLocationName);	
+		if(status){
+			UNLOCK_CLIENT(prsrv_cast_client);
+       			free_client(client);
+			exit(0);
+		}
+		pciu = (struct channel_in_use *) pciu->node.next;
+	}
+
+	UNLOCK_CLIENT(client);
+}
+
+
+/*
+ * client_name_action()
+ */
+LOCAL void client_name_action(
+struct extmsg 	*mp,
+struct client  	*client
+)
+{
+	struct channel_in_use 	*pciu;
+	unsigned		size;
+	char 			*pName;
+	char 			*pMalloc;
+	int			status;
+
+	LOCK_CLIENT(client);
+
+	pName = (char *)(mp+1);
+	size = strlen(pName)+1;
+	/*
+	 * user name will not change if there isnt enough memory
+	 */
+	pMalloc = malloc(size);
+	if(!pMalloc){
+		send_err(
+			mp,
+			ECA_ALLOCMEM,
+			client,
+			"");
+		return;
+	}
+	if(client->pUserName){
+		free(client->pUserName);
+	}
+	client->pUserName = pMalloc;
+	strncpy(
+		client->pUserName, 
+		pName, 
+		size-1);
+	client->pUserName[size-1]='\0';
+
+	pciu = (struct channel_in_use *) client->addrq.node.next;
+	while(pciu){
+		status = asChangeClient(
+				pciu->asClientPVT,
+				asDbGetAsl(&pciu->addr),
+				client->pUserName,
+				client->pLocationName);	
+		if(status){
+			UNLOCK_CLIENT(prsrv_cast_client);
+       			free_client(client);
+			exit(0);
+		}
+		pciu = (struct channel_in_use *) pciu->node.next;
+	}
+
+	UNLOCK_CLIENT(client);
+}
+
+
+/*
+ * claim_ciu_action()
+ */
+LOCAL void claim_ciu_action(
+struct extmsg *mp,
+struct client  *client
+)
+{
+	int			status;
+	struct channel_in_use 	*pciu;
+
+
+	LOCK_CLIENT(prsrv_cast_client);
+
+	/*
+	 * clients which dont claim their 
+	 * channel in use block prior to
+	 * timeout must reconnect
+	 */
+	pciu = MPTOPCIU(mp);
+	if(!pciu){
+		logMsg("CAS: client timeout disconnect id=%d\n",
+			mp->m_cid,
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL);
+		UNLOCK_CLIENT(prsrv_cast_client);
+       		free_client(client);
+		exit(0);
+	}
+
+
+	/* 
+	 * Any other client attachment is a severe error
+	 */
+	if(pciu->client!=prsrv_cast_client){
+		logMsg("CAS: bad channel claim disconnect %d %x %x\n",
+			mp->m_cid,
+			(int)pciu,
+			(int)pciu->client,
+			NULL,
+			NULL,
+			NULL);
+		UNLOCK_CLIENT(prsrv_cast_client);
+       		free_client(client);
+		exit(0);
+	}
+
+	/*
+	 * set up access security for this channel
+	 */
+	status = asChangeClient(
+			pciu->asClientPVT,
+			asDbGetAsl(&pciu->addr),
+			client->pUserName,
+			client->pLocationName);	
+	if(status){
+		UNLOCK_CLIENT(prsrv_cast_client);
+       		free_client(client);
+		exit(0);
+	}
+
+	/*
+	 * remove channel in use block from
+	 * the UDP client where it could time
+	 * out and place it on the client
+	 * who is claiming it
+	 */
+	ellDelete(
+		&prsrv_cast_client->addrq, 
+		&pciu->node);
+	UNLOCK_CLIENT(prsrv_cast_client);
+	pciu->client = client;
+	LOCK_CLIENT(client);
+	ellAdd(&client->addrq, &pciu->node);
+	UNLOCK_CLIENT(client);
+
+	/*
+	 * The available field is used (abused)
+	 * here to communicate the miner version number
+	 * starting with CA 4.1. The field was set to zero
+	 * prior to 4.1
+	 */
+	pciu->client->minor_version_number = mp->m_available;
+
+}
+
+
+/*
+ * write_notify_call_back()
+ */
+LOCAL void write_notify_call_back(PUTNOTIFY *ppn)
+{
+	struct client		*pclient;
+	struct channel_in_use 	*pciu;
+
+	/*
+	 * we choose to suspend the task if there
+	 * is an internal failure
+	 */
+	pciu = (struct channel_in_use *) ppn->usrPvt;
+	if(!pciu){
+		taskSuspend(0);
+	}
+	if(!pciu->pPutNotify){
+		taskSuspend(0);
+	}
+
+	pclient = pciu->client;
+
+	/*
+	 * independent lock used here in order to
+	 * avoid any possibility of blocking
+	 * the database (or indirectly blocking
+	 * one client on another client).
+	 */
+	FASTLOCK(&pclient->putNotifyLock);
+	ellAdd(&pclient->putNotifyQue, &pciu->pPutNotify->node);
+	FASTUNLOCK(&pclient->putNotifyLock);
+
+	/*
+	 * offload the labor for this to the
+	 * event task so that we never block
+	 * the db or another client.
+	 */
+	db_post_extra_labor(pclient->evuser);
+}
+
+
+/* 
+ * write_notify_reply()
+ */
+void write_notify_reply(void *pArg)
+{
+	RSRVPUTNOTIFY		*ppnb;
+	struct client 		*pClient;
+	struct extmsg		*preply;
+	int			status;
+
+	pClient = pArg;
+
+	LOCK_CLIENT(pClient);
+	while(TRUE){
+		/*
+		 * independent lock used here in order to
+		 * avoid any possibility of blocking
+		 * the database (or indirectly blocking
+		 * one client on another client).
+		 */
+		FASTLOCK(&pClient->putNotifyLock);
+		ppnb = (RSRVPUTNOTIFY *)ellGet(&pClient->putNotifyQue);
+		FASTUNLOCK(&pClient->putNotifyLock);
+
+		/*
+		 * break to loop exit
+		 */
+		if(!ppnb){
+			break;
+		}
+
+		/*
+		 * aquire sufficient output buffer
+		 */
+		preply = ALLOC_MSG(pClient, 0);
+		if (!preply) {
+			/*
+			 * inability to aquire buffer space
+			 * Indicates corruption  
+			 */
+			logMsg("CA server corrupted - put call back(s) discarded\n",
+				NULL,
+				NULL,
+				NULL,
+				NULL,
+				NULL,
+				NULL);
+			break;
+		}
+		*preply = ppnb->msg;
+		/*
+		 *
+		 * Map from DB status to CA status
+		 *
+		 * the channel id field is being abused to carry 
+		 * status here
+		 */
+		if(ppnb->dbPutNotify.status){
+			if(ppnb->dbPutNotify.status == S_db_Blocked){
+				preply->m_cid = ECA_PUTCBINPROG;
+			}
+			else{
+				preply->m_cid = ECA_PUTFAIL;
+			}
+		}
+		else{
+			preply->m_cid = ECA_NORMAL;
+		}
+
+		/* commit the message */
+		END_MSG(pClient);
+		ppnb->busy = FALSE;
+	}
+	UNLOCK_CLIENT(pClient);
+
+	/*
+	 * wakeup the TCP thread if it is waiting for a cb to complete
+	 */
+	status = semGive(pClient->blockSem);
+	if(status != OK){
+		logMsg("CA block sem corrupted\n",
+				NULL,
+				NULL,
+				NULL,
+				NULL,
+				NULL,
+				NULL);
+	}
+}
+
+
+/*
+ * write_notify_action()
+ */
+LOCAL void write_notify_action(
+struct extmsg *mp,
+struct client  *client
+)
+{
+	unsigned long		size;
+	int			status;
+	struct channel_in_use 	*pciu;
+
+	pciu = MPTOPCIU(mp);
+	if(!pciu){
+		logBadId(client, mp);
+		return;
+	}
+
+	if(!asCheckPut(pciu->asClientPVT)){
+		putNotifyErrorReply(client, mp, ECA_NOWTACCESS);
+		return;
+	}
+
+	size = dbr_size_n(mp->m_type, mp->m_count);
+
+	if(pciu->pPutNotify){
+		/*
+		 * serialize concurrent put notifies 
+		 */
+		while(pciu->pPutNotify->busy){
+			status = semTake(
+					client->blockSem, 
+					sysClkRateGet()*60);
+			if(status != OK){
+				putNotifyErrorReply(
+					client, 
+					mp, 
+					ECA_PUTCBINPROG);
+				return;
+			}
+		}
+
+		/*
+		 * if not busy then free the current
+		 * block if it is to small
+		 */
+		if(pciu->pPutNotify->valueSize<size){
+			free(pciu->pPutNotify);
+			pciu->pPutNotify = NULL;
+		}
+	}
+
+	/*
+	 * send error and go to next request
+	 * if there isnt enough memory left
+	 */
+	if(!pciu->pPutNotify){
+		pciu->pPutNotify = 
+			(RSRVPUTNOTIFY *) calloc(1, sizeof(*pciu->pPutNotify)+size);
+		if(!pciu->pPutNotify){
+			putNotifyErrorReply(client, mp, ECA_ALLOCMEM);
+			return;
+		}
+		pciu->pPutNotify->valueSize = size;
+		pciu->pPutNotify->dbPutNotify.pbuffer = (pciu->pPutNotify+1);
+		pciu->pPutNotify->dbPutNotify.usrPvt = pciu;
+		pciu->pPutNotify->dbPutNotify.paddr = &pciu->addr;
+		pciu->pPutNotify->dbPutNotify.userCallback = write_notify_call_back;
+	}
+
+	pciu->pPutNotify->busy = TRUE;
+	pciu->pPutNotify->msg = *mp;
+	pciu->pPutNotify->dbPutNotify.nRequest = mp->m_count;
+	memcpy(pciu->pPutNotify->dbPutNotify.pbuffer, (char *)(mp+1), size);
+	status = dbPutNotifyMapType(&pciu->pPutNotify->dbPutNotify, mp->m_type);
+	if(status){
+		putNotifyErrorReply(client, mp, ECA_PUTFAIL);
+		pciu->pPutNotify->busy = FALSE;
+		return;
+	}
+
+	status = dbPutNotify(&pciu->pPutNotify->dbPutNotify);
+	if(status){
+		/*
+		 * let the call back take care of failure
+		 * even if it is immediate
+		 */
+		pciu->pPutNotify->dbPutNotify.status = status;
+		(*pciu->pPutNotify->dbPutNotify.userCallback)(&pciu->pPutNotify->dbPutNotify);
+	}
+}
+
+
+/*
+ * putNotifyErrorReply
+ */
+LOCAL void putNotifyErrorReply(struct client *client, struct extmsg *mp, int statusCA)
+{
+	struct extmsg		*preply;
+
+	LOCK_CLIENT(client);
+	preply = ALLOC_MSG(client, 0);
+	if(!preply){
+		logMsg("Fatal Error:%s, %d\n",
+			(int)__FILE__,
+			__LINE__,
+			NULL,
+			NULL,
+			NULL,
+			NULL);
+		taskSuspend(0);
+	}
+
+	*preply = *mp;
+	/*
+ 	 * the cid field abused to contain status
+ 	 * during put cb replies
+ 	 */
+	preply->m_cid = statusCA;
+	END_MSG(client);
+	UNLOCK_CLIENT(client);
 }
 
 
@@ -427,6 +889,7 @@ struct client  *client
 	struct channel_in_use *pciu;
 	struct event_ext *pevext;
 	int		status;
+	int		size;
 
 	pciu = MPTOPCIU(mp);
 	if(!pciu){
@@ -434,15 +897,13 @@ struct client  *client
 		return;
 	}
 
+	size = db_sizeof_event_block() + sizeof(*pevext);
 	FASTLOCK(&rsrv_free_eventq_lck);
 	pevext = (struct event_ext *) 
 		ellGet(&rsrv_free_eventq);
 	FASTUNLOCK(&rsrv_free_eventq_lck);
 	if (!pevext) {
-		int size = db_sizeof_event_block() 
-				+ sizeof(*pevext);
-		pevext =
-			(struct event_ext *) malloc(size);
+		pevext = (struct event_ext *) malloc(size);
 		if (!pevext) {
 			LOCK_CLIENT(client);
 			send_err(
@@ -454,20 +915,20 @@ struct client  *client
 			return;
 		}
 	}
+	memset(pevext,0,size);
 	pevext->msg = *mp;
 	pevext->mp = &pevext->msg;	/* for speed- see
 					 * IOC_READ */
 	pevext->pciu = pciu;
 	pevext->send_lock = TRUE;
-	pevext->size = (mp->m_count - 1) 
-		* dbr_value_size[mp->m_type] +
-		dbr_size[mp->m_type];
+	pevext->size = dbr_size_n(mp->m_type, mp->m_count);
 	pevext->get = FALSE;
 
-	status = db_add_event(client->evuser,
-			      &pciu->addr,
-			      read_reply,
-			      pevext,
+	status = db_add_event(
+			client->evuser,
+		      	&pciu->addr,
+		      	read_reply,
+		      	pevext,
 	   (unsigned) ((struct monops *) mp)->m_info.m_mask,
   	   (struct event_block *)(pevext+1));
 	if (status == ERROR) {
@@ -479,7 +940,7 @@ struct client  *client
 			RECORD_NAME(pciu));
 		UNLOCK_CLIENT(client);
 		FASTLOCK(&rsrv_free_eventq_lck);
-		ellAdd((ELLLIST *)&rsrv_free_eventq, (ELLNODE *)pevext);
+		ellAdd(&rsrv_free_eventq, &pevext->node);
 		FASTUNLOCK(&rsrv_free_eventq_lck);
 		return;
 	}
@@ -491,8 +952,7 @@ struct client  *client
 	 * to be printed since it will not be found on
 	 * the list.
 	 */
-	ellAdd(	(ELLLIST *)&pciu->eventq, 
-		(ELLNODE *)pevext);
+	ellAdd(	&pciu->eventq, &pevext->node);
 
 	/*
 	 * always send it once at event add
@@ -554,6 +1014,16 @@ struct client  *client
 		return;
 	}
 
+	/*
+	 * if a put notify is outstanding then cancel it
+	 */
+	if(pciu->pPutNotify){
+		if(pciu->pPutNotify->busy){
+			dbNotifyCancel(pciu->pPutNotify);
+		}
+		free(pciu->pPutNotify);
+	}
+
         while (pevext = (struct event_ext *) ellGet(&pciu->eventq)) {
 
 		status = db_cancel_event((struct event_block *)(pevext+1));
@@ -561,10 +1031,18 @@ struct client  *client
 			taskSuspend(0);
 		}
 		FASTLOCK(&rsrv_free_eventq_lck);
-		ellAdd((ELLLIST *)&rsrv_free_eventq, (ELLNODE *)pevext);
+		ellAdd(&rsrv_free_eventq, &pevext->node);
 		FASTUNLOCK(&rsrv_free_eventq_lck);
         }
 
+
+	/*
+	 * remove from access control list
+	 */
+	status = asRemoveClient(&pciu->asClientPVT);
+	if(status){
+		taskSuspend(0);
+	}
 
 	/*
 	 * send delete confirmed message
@@ -578,7 +1056,7 @@ struct client  *client
 	*reply = *mp;
 
 	END_MSG(client);
-	ellDelete((ELLLIST *)&client->addrq, (ELLNODE *)pciu);
+	ellDelete(&client->addrq, &pciu->node);
 	UNLOCK_CLIENT(client);
 
 	FASTLOCK(&rsrv_free_addrq_lck);
@@ -586,7 +1064,7 @@ struct client  *client
 	if(status != BUCKET_SUCCESS){
 		logBadId(client, mp);
 	}
-	ellAdd((ELLLIST *)&rsrv_free_addrq, (ELLNODE *)pciu);
+	ellAdd(&rsrv_free_addrq, &pciu->node);
 	FASTUNLOCK(&rsrv_free_addrq_lck);
 
 	return;
@@ -633,7 +1111,7 @@ struct client  *client
 			status = db_cancel_event((struct event_block *)(pevext+1));
 			if (status == ERROR)
 				taskSuspend(0);
-			ellDelete((ELLLIST *)peventq, (ELLNODE *)pevext);
+			ellDelete(peventq, &pevext->node);
 
 			/*
 			 * send delete confirmed message
@@ -651,7 +1129,7 @@ struct client  *client
 			UNLOCK_CLIENT(client);
 
 			FASTLOCK(&rsrv_free_eventq_lck);
-			ellAdd((ELLLIST *)&rsrv_free_eventq, (ELLNODE *)pevext);
+			ellAdd(&rsrv_free_eventq, &pevext->node);
 			FASTUNLOCK(&rsrv_free_eventq_lck);
 
 			return;
@@ -675,19 +1153,20 @@ struct client  *client
  *
  */
 LOCAL void read_reply(
-struct event_ext *pevext,
-struct db_addr *paddr,
-int             hold,	/* more on the way if true */
-void		*pfl
+void			*pArg,
+struct db_addr 		*paddr,
+int 			eventsRemaining,
+db_field_log		*pfl
 )
 {
+	struct event_ext *pevext = pArg;
 	struct extmsg *mp = pevext->mp;
 	struct client *client = pevext->pciu->client;
         struct channel_in_use *pciu = pevext->pciu;
 	struct extmsg *reply;
 	int        status;
 	int        strcnt;
-
+	int		v41;
 
 	/*
 	 * If flow control is on set modified and send for later
@@ -705,6 +1184,55 @@ void		*pfl
 		send_err(mp, ECA_TOLARGE, client, RECORD_NAME(paddr));
 		if (pevext->send_lock)
 			UNLOCK_CLIENT(client);
+		if (!eventsRemaining)
+			cas_send_msg(client,FALSE);
+		return;
+	}
+
+	/*
+	 * verify read access
+	 */
+	v41 = CA_V41(CA_PROTOCOL_VERSION,client->minor_version_number);
+	if(!asCheckGet(pciu->asClientPVT)){
+		if(v41){
+			status = ECA_NORDACCESS;
+		}
+		else{
+			status = ECA_GETFAIL;
+		}
+
+		/*
+		 * I cant wait to redesign this protocol from scratch!
+		 */
+		if(!v41||reply->m_cmmd==IOC_READ||reply->m_cmmd==IOC_READ_BUILD){
+			/*
+			 * old client & plain get & search/get
+			 * continue to return an exception
+			 * on failure
+			 */
+			send_err(mp, status, client, RECORD_NAME(paddr));
+		}
+		else{
+			/*
+			 * New clients recv the status of the
+			 * operation directly to the
+			 * event/put/get callback.
+			 *
+			 * Fetched value is zerod in case they
+			 * use it even when the status indicates 
+			 * failure.
+			 *
+			 * The m_cid field in the protocol
+			 * header is abused to carry the status
+			 */
+			bzero((char *)(reply+1), pevext->size);
+			reply->m_cid = status;
+			END_MSG(client);
+		}
+		if (pevext->send_lock)
+			UNLOCK_CLIENT(client);
+		if (!eventsRemaining)
+			cas_send_msg(client,FALSE);
 		return;
 	}
 	*reply = *mp;
@@ -717,10 +1245,54 @@ void		*pfl
 			      mp->m_count,
 			      pfl);
 	if (status < 0) {
-		send_err(mp, ECA_GETFAIL, client, RECORD_NAME(paddr));
-		log_header(mp, 0);
+		/*
+		 * I cant wait to redesign this protocol from scratch!
+		 */
+		if(!v41||reply->m_cmmd==IOC_READ||reply->m_cmmd==IOC_READ_BUILD){
+			/*
+			 * old client & plain get & search/get
+			 * continue to return an exception
+			 * on failure
+			 */
+			send_err(mp, ECA_GETFAIL, client, RECORD_NAME(paddr));
+			log_header(mp, 0);
+		}
+		else{
+			/*
+			 * New clients recv the status of the
+			 * operation directly to the
+			 * event/put/get callback.
+			 *
+			 * Fetched value is zerod in case they
+			 * use it even when the status indicates 
+			 * failure.
+			 *
+			 * The m_cid field in the protocol
+			 * header is abused to carry the status
+			 */
+			bzero((char *)(reply+1), pevext->size);
+			reply->m_cid = ECA_GETFAIL;
+			END_MSG(client);
+		}
 	}
 	else{
+		/*
+		 * New clients recv the status of the
+		 * operation directly to the
+		 * event/put/get callback.
+		 *
+		 * The m_cid field in the protocol
+		 * header is abused to carry the status
+		 *
+		 * get &search/get calls still use the
+		 * m_cid field to identify the channel.
+		 */
+		if(	v41&&
+			!(reply->m_cmmd==IOC_READ)&&
+			!(reply->m_cmmd==IOC_READ_BUILD) ){
+			reply->m_cid = ECA_NORMAL;
+		}
+		
 		/*
 		 * force string message size to be the true size rounded to even
 		 * boundary
@@ -730,15 +1302,16 @@ void		*pfl
 			strcnt = strlen((char *)(reply + 1)) + 1;
 			reply->m_postsize = strcnt;
 		}
+
 		END_MSG(client);
-	
-		/*
-		 * Ensures timely response for events, but does que 
-		 * them up like db requests when the OPI does not keep up.
-		 */
-		if (!hold)
-			cas_send_msg(client,FALSE);
 	}
+
+	/*
+	 * Ensures timely response for events, but does que 
+	 * them up like db requests when the OPI does not keep up.
+	 */
+	if (!eventsRemaining)
+		cas_send_msg(client,FALSE);
 
 	if (pevext->send_lock)
 		UNLOCK_CLIENT(client);
@@ -789,6 +1362,7 @@ struct client  *client
 	ELLLIST			*addrq = &client->addrq;
 	struct extmsg 		*search_reply;
 	struct extmsg 		*get_reply;
+	unsigned short		*pMinorVersion;
 	int        		status;
 	struct db_addr  	tmp_addr;
 	struct channel_in_use 	*pchannel;
@@ -813,12 +1387,13 @@ struct client  *client
 		return;
 	}
 
+
 	/* get block off free list if possible */
 	FASTLOCK(&rsrv_free_addrq_lck);
 	pchannel = (struct channel_in_use *) ellGet(&rsrv_free_addrq);
 	FASTUNLOCK(&rsrv_free_addrq_lck);
 	if (!pchannel) {
-		pchannel = (struct channel_in_use *) calloc(1, sizeof(*pchannel));
+		pchannel = (struct channel_in_use *) malloc(sizeof(*pchannel));
 		if (!pchannel) {
 			LOCK_CLIENT(client);
 			send_err(mp, ECA_ALLOCMEM, client, RECORD_NAME(&tmp_addr));
@@ -826,10 +1401,33 @@ struct client  *client
 			return;
 		}
 	}
+	memset((char *)pchannel, 0, sizeof(*pchannel));
+	ellInit(&pchannel->eventq);
 	pchannel->ticks_at_creation = tickGet();
 	pchannel->addr = tmp_addr;
 	pchannel->client = client;
 	pchannel->cid = mp->m_cid;
+
+	/*
+	 * set up access security for this channel
+	 *
+	 * done here rather than at channel claim so
+	 * that search reply will fail if there 
+	 * isnt enough memory.
+	 */
+	status = asAddClient(
+			&pchannel->asClientPVT,
+			asDbGetMemberPvt(&pchannel->addr),
+			asDbGetAsl(&pchannel->addr),
+			"",
+			"");	
+	if(status){
+		LOCK_CLIENT(client);
+		send_err(mp, ECA_ALLOCMEM, client, "No room for security table");
+		UNLOCK_CLIENT(client);
+		free(pchannel);
+		return;
+	}
 
 	/*
 	 * allocate a server id and enter the channel pointer
@@ -844,6 +1442,7 @@ struct client  *client
 		LOCK_CLIENT(client);
 		send_err(mp, ECA_ALLOCMEM, client, "No room for hash table");
 		UNLOCK_CLIENT(client);
+		asRemoveClient(&pchannel->asClientPVT);
 		free(pchannel);
 		return;
 	}
@@ -854,8 +1453,6 @@ struct client  *client
 	 */
 	LOCK_CLIENT(client);
 
-	/* store the addr block in a Q so it can be deallocated */
-	ellAdd((ELLLIST *)addrq, (ELLNODE *)pchannel);
 
 	if (mp->m_cmmd == IOC_BUILD) {
 		FAST short      type = (mp + 1)->m_type;
@@ -868,15 +1465,18 @@ struct client  *client
 		 * in below.
 		 */
 		size = 	sizeof(*mp) + 		/* search reply hdr size 	*/
+			sizeof(*pMinorVersion) +/* version id after search hdr	*/
 			sizeof(*mp) +		/* build get reply hdr size 	*/
-			(count - 1) * 		/* size of n-1 array elements 	*/
-				dbr_value_size[type] 	
-			+ dbr_size[type];	/* size of the structure fetched */
+			+ dbr_size_n(type, count);/* size of the structure fetched */
 
 		get_reply = (struct extmsg *) ALLOC_MSG(client, size);
 		if (!get_reply) {
 			/* tell them that their request is to large */
 			send_err(mp, ECA_TOLARGE, client, RECORD_NAME(&tmp_addr));
+			UNLOCK_CLIENT(client);
+			asRemoveClient(&pchannel->asClientPVT);
+			free(pchannel);
+			return;
 		} else {
 			struct event_ext evext;
 
@@ -884,7 +1484,7 @@ struct client  *client
 			evext.pciu = pchannel;
 			evext.mp->m_cid = sid;
 			evext.send_lock = FALSE;
-			evext.size = size;
+			evext.size = dbr_size_n(type, count);
 			evext.get = TRUE;
 
 			/*
@@ -903,19 +1503,32 @@ struct client  *client
 			get_reply->m_cmmd = IOC_READ_BUILD;
 		}
 	}
-	search_reply = (struct extmsg *) ALLOC_MSG(client, 0);
+	search_reply = (struct extmsg *) 
+		ALLOC_MSG(client, sizeof(*pMinorVersion));
 	if (!search_reply)
 		taskSuspend(0);
 
 	*search_reply = *mp;
-	search_reply->m_postsize = 0;
+	search_reply->m_postsize = sizeof(*pMinorVersion);
 
 	/* this field for rmt machines where paddr invalid */
 	search_reply->m_type = tmp_addr.field_type;
 	search_reply->m_count = tmp_addr.no_elements;
 	search_reply->m_cid = sid;
 
+	/*
+	 * Starting with CA V4.1 the minor version number
+	 * is appended to the end of each search reply.
+	 * This value is ignored by earlier clients. 
+	 */
+	pMinorVersion = (unsigned short *)(search_reply+1);
+	*pMinorVersion = htons(CA_MINOR_VERSION);
+
 	END_MSG(client);
+
+	/* store the addr block on the cast queue until it is claimed */
+	ellAdd(addrq, &pchannel->node);
+
 	UNLOCK_CLIENT(client);
 
 	return;
@@ -1033,6 +1646,7 @@ struct client *client,
 struct extmsg *mp
 )
 {
+	log_header(mp,0);
 	send_err(mp, ECA_INTERNAL, client, "ID lookup failed");
 }
 
@@ -1051,13 +1665,22 @@ int		mnum
 
 	pciu = MPTOPCIU(mp);
 
-	logMsg(	"CAS: N=%d cmd=%d type=%d pstsize=%d paddr=%x avail=%x\n",
-	  	mnum, 
+	logMsg(	"CAS: cmd=%d cid=%x typ=%d cnt=%d psz=%d avail=%x\n",
 	  	mp->m_cmmd,
+		mp->m_cid,
 	  	mp->m_type,
+	  	mp->m_count,
 	  	mp->m_postsize,
-	  	(int)(pciu?&pciu->addr:NULL),
 	  	(int)mp->m_available);
+
+	logMsg(	"CAS: \tN=%d paddr=%x\n",
+	  	mnum, 
+	  	(int)(pciu?&pciu->addr:NULL),
+		NULL,
+		NULL,
+		NULL,
+		NULL);
+
   	if(mp->m_cmmd==IOC_WRITE && mp->m_type==DBF_STRING)
     		logMsg("CAS: The string written: %s \n",
 			(int)(mp+1),

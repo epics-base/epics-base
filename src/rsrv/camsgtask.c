@@ -205,23 +205,6 @@ FAST int 		sock;
       		return ERROR;
 	}
 
-	i = sizeof(client->addr);
-	status = getpeername(
-			sock,
- 			(struct sockaddr *)&client->addr, 
-			&i); 
-    	if(status == ERROR){
-      		logMsg("CAS: peer address fetch failed\n",
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL);
-		free_client(client);
-      		return ERROR;
-    	}
-				
   	if(CASDEBUG>0){
     		logMsg(	"CAS: Recieved connection request\n",
 			NULL,
@@ -240,12 +223,27 @@ FAST int 		sock;
   	}
 
 	LOCK_CLIENTQ;
-	ellAdd((ELLLIST *)&clientQ, (ELLNODE *)client);
+	ellAdd(&clientQ, &client->node);
 	UNLOCK_CLIENTQ;
 
 	client->evuser = (struct event_user *) db_init_events();
 	if (!client->evuser) {
 		logMsg("CAS: unable to init the event facility\n",
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL);
+		free_client(client);
+		return ERROR;
+	}
+	status = db_add_extra_labor_event(
+			client->evuser,
+			write_notify_reply,
+			client);
+	if(status == ERROR){
+		logMsg("CAS: unable to setup the event facility\n",
 			NULL,
 			NULL,
 			NULL,
@@ -320,7 +318,7 @@ FAST int 		sock;
 			break;
 		}
 
-		client->ticks_at_last_io = tickGet();
+		client->ticks_at_last_recv = tickGet();
 		client->recv.cnt += nchars;
 
 		status = camessage(client, &client->recv);
@@ -340,10 +338,10 @@ FAST int 		sock;
 
 				/*
 				 * overlapping regions handled
-				 * by bcopy
+				 * by memmove 
 				 */
-				bcopy(	pbuf + client->recv.stk,
-					pbuf,
+				memmove(pbuf,
+					pbuf + client->recv.stk,
 					bytes_left);
 				client->recv.cnt = bytes_left;
 			}

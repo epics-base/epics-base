@@ -216,7 +216,7 @@ int cast_server(void)
 
 		prsrv_cast_client->recv.cnt = status;
 		prsrv_cast_client->recv.stk = 0;
-		prsrv_cast_client->ticks_at_last_io = tickGet();
+		prsrv_cast_client->ticks_at_last_recv = tickGet();
 
 		/*
 		 * If we are talking to a new client flush the old one 
@@ -337,7 +337,20 @@ clean_addrq(struct client *pclient)
 		}
 
 		if (delay > timeout) {
-			ellDelete((ELLLIST *)&pclient->addrq, (ELLNODE *)pciu);
+			int status;
+
+			ellDelete(&pclient->addrq, &pciu->node);
+			status = asRemoveClient(&pciu->asClientPVT);
+			if(status){
+				logMsg(
+					"%s Bad client PVD at close",
+					(int)__FILE__,
+					NULL,
+					NULL,
+					NULL,
+					NULL,
+					NULL);
+			}
         		FASTLOCK(&rsrv_free_addrq_lck);
 			s = bucketRemoveItem(pCaBucket, pciu->sid, pciu);
 			if(s != BUCKET_SUCCESS){
@@ -350,7 +363,7 @@ clean_addrq(struct client *pclient)
 					NULL,
 					NULL);
 			}
-			ellAdd((ELLLIST *)&rsrv_free_addrq, (ELLNODE *)pciu);
+			ellAdd(&rsrv_free_addrq, &pciu->node);
        			FASTUNLOCK(&rsrv_free_addrq_lck);
 			ndelete++;
 			maxdelay = max(delay, maxdelay);
@@ -413,10 +426,40 @@ struct client *create_udp_client(unsigned sock)
 	 * The following inits to zero done instead of a bfill since the send
 	 * and recv buffers are large and don't need initialization.
 	 * 
-	 * bfill(client, sizeof(*client), NULL);
+	 * memset(client, 0, sizeof(*client));
 	 */
    
+	client->blockSem = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
+	if(!client->blockSem){
+		free(client);
+		return NULL;
+	}
+
+	/*
+	 * user name initially unknown
+	 */
+	client->pUserName = malloc(1); 
+	if(!client->pUserName){
+		semDelete(client->blockSem);
+		free(client);
+		return NULL;
+	}
+	client->pUserName[0] = '\0';
+
+	/*
+	 * location name initially unknown
+	 */
+	client->pLocationName = malloc(1); 
+	if(!client->pLocationName){
+		semDelete(client->blockSem);
+		free(client->pUserName);
+		free(client);
+		return NULL;
+	}
+	client->pLocationName[0] = '\0';
+
       	ellInit(&client->addrq);
+      	ellInit(&client->putNotifyQue);
   	bfill((char *)&client->addr, sizeof(client->addr), 0);
       	client->tid = taskIdSelf();
       	client->send.stk = 0;
@@ -426,13 +469,16 @@ struct client *create_udp_client(unsigned sock)
       	client->evuser = NULL;
       	client->eventsoff = FALSE;
 	client->disconnect = FALSE;	/* for TCP only */
-	client->ticks_at_last_io = tickGet();
+	client->ticks_at_last_send = tickGet();
+	client->ticks_at_last_recv = tickGet();
       	client->proto = IPPROTO_UDP;
       	client->sock = sock;
+      	client->minor_version_number = CA_UKN_MINOR_VERSION;
 
       	client->send.maxstk = MAX_UDP-sizeof(client->recv.cnt);
 
       	FASTLOCKINIT(&client->lock);
+      	FASTLOCKINIT(&client->putNotifyLock);
 
       	client->recv.maxstk = MAX_UDP;
 
@@ -452,6 +498,8 @@ struct client 	*client,
 unsigned	sock
 )
 {
+	int	status;
+	int	addrSize;
 
   	if(CASDEBUG>2){
     		logMsg("CAS: converting udp client to tcp\n",
@@ -468,6 +516,22 @@ unsigned	sock
   	client->recv.maxstk 	= MAX_TCP;
   	client->sock 		= sock;
       	client->tid = 		taskIdSelf();
+
+	addrSize = sizeof(client->addr);
+        status = getpeername(
+                        sock,
+                        (struct sockaddr *)&client->addr,
+                        &addrSize);
+        if(status == ERROR){
+                logMsg("CAS: peer address fetch failed\n",
+                        NULL,
+                        NULL,
+                        NULL,
+                        NULL,
+                        NULL,
+                        NULL);
+                return ERROR;
+        }
 
   	return OK;
 }

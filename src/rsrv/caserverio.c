@@ -69,7 +69,7 @@ int		lock_needed;
 
   	if(CASDEBUG>2){
 		logMsg(	"CAS: Sending a message of %d bytes\n",
-			pclient->send.cnt,
+			pclient->send.stk,
 			NULL,
 			NULL,
 			NULL,
@@ -95,16 +95,15 @@ int		lock_needed;
 	}
 
 	if(pclient->send.stk){
-  		pclient->send.cnt = pclient->send.stk;
 
   		status = sendto(	
 			pclient->sock,
 			pclient->send.buf,
-			pclient->send.cnt,
+			pclient->send.stk,
 			NULL,
 			(struct sockaddr *)&pclient->addr,
 			sizeof(pclient->addr));
-		if(status != pclient->send.cnt){
+		if(status != pclient->send.stk){
 			if(status < 0){
 				int	anerrno;
 
@@ -133,7 +132,7 @@ int		lock_needed;
 			else{
 				logMsg(
 		"CAS: blk sock partial send: req %d sent %d \n",
-					pclient->send.cnt,
+					pclient->send.stk,
 					status,
 					NULL,
 					NULL,
@@ -144,7 +143,7 @@ int		lock_needed;
 
   		pclient->send.stk = 0;
 
-		pclient->ticks_at_last_io = tickGet();
+		pclient->ticks_at_last_send = tickGet();
 	}
 
 

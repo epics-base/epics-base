@@ -46,7 +46,7 @@ static char *sccsId = "@(#)rsrv_init.c	1.7\t7/28/92";
 #include <server.h>
 
 #define DELETE_TASK(TID)\
-if(errnoOfTaskGet(TID)!=ERROR)td(TID);
+if(errnoOfTaskGet(TID)!=ERROR)taskDelete(TID);
 
 
 /*
@@ -61,16 +61,17 @@ int rsrv_init()
 	FASTLOCKINIT(&rsrv_free_eventq_lck);
 	FASTLOCKINIT(&clientQlock);
 
-	/*
-	 * the following is based on the assumtion that external variables
-	 * are not reloaded when debugging. NOTE: NULL below specifies all
-	 * clients
-	 */
-	free_client(NULL);
+	ellInit(&clientQ);
+	ellInit(&rsrv_free_clientQ);
+	ellInit(&rsrv_free_addrq);
+	ellInit(&rsrv_free_eventq);
+	prsrv_cast_client = NULL;
+	pCaBucket = NULL;
 
 	DELETE_TASK(taskNameToId(CAST_SRVR_NAME));
 	DELETE_TASK(taskNameToId(REQ_SRVR_NAME));
 	DELETE_TASK(taskNameToId(CA_ONLINE_NAME));
+
 	taskSpawn(REQ_SRVR_NAME,
 		  REQ_SRVR_PRI,
 		  REQ_SRVR_OPT,

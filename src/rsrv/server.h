@@ -55,28 +55,54 @@ static char *serverhSccsId = "$Id$";
 #include <iocmsg.h>
 #include <bucketLib.h>
 
+#include <asLib.h>
+#include <asDbLib.h>
+
+#if 1
+#include <memDebugLib.h>
+#endif
+
 struct message_buffer{
-  unsigned 			stk;
-  unsigned 			maxstk;
-  int				cnt;			
+  unsigned long 		stk;
+  unsigned long			maxstk;
+  long				cnt;			
   char 				buf[MAX_MSG_SIZE];
 };
 
 struct client{
   ELLNODE			node;
-  int				sock;
-  int				proto;
   FAST_LOCK			lock;
+  FAST_LOCK			putNotifyLock;
   ELLLIST			addrq;
+  ELLLIST			putNotifyQue;
   struct message_buffer		send;
   struct message_buffer		recv;
   struct sockaddr_in		addr;
+  unsigned long			ticks_at_last_send;
+  unsigned long			ticks_at_last_recv;
   void				*evuser;
+  SEM_ID			blockSem; /* used whenever the client blocks */
+  int				sock;
+  int				proto;
   int				tid;
+  unsigned			minor_version_number;
   char				eventsoff;
   char				disconnect;	/* disconnect detected */
-  unsigned long			ticks_at_last_io; 
+  char				*pUserName;
+  char				*pLocationName;
 };
+
+
+/*
+ * for tracking db put notifies
+ */
+typedef struct rsrv_put_notify{
+	ELLNODE		node;
+	PUTNOTIFY	dbPutNotify;
+	struct extmsg	msg;
+	unsigned long	valueSize; /* size of block pointed to by dbPutNotify */
+	int		busy; /* put notify in progress */
+}RSRVPUTNOTIFY;
 
 
 /*
@@ -86,11 +112,13 @@ struct client{
 struct channel_in_use{
   ELLNODE			node;
   ELLLIST			eventq;
-  struct db_addr		addr;
   struct client			*client;
+  RSRVPUTNOTIFY			*pPutNotify; /* potential active put notify */
   unsigned long			cid;	/* client id */
   unsigned long			sid;	/* server id */
   unsigned long			ticks_at_creation;	/* for UDP timeout */
+  struct db_addr		addr;
+  ASCLIENTPVT			asClientPVT;
 };
 
 
@@ -119,14 +147,14 @@ char				get;		/* T: get F: monitor */
 # define GLBLTYPE_INIT(A)
 #endif
 
+GLBLTYPE int			CASDEBUG;
 GLBLTYPE int 		 	IOC_sock;
 GLBLTYPE int			IOC_cast_sock;
-GLBLTYPE ELLLIST			clientQ;	/* locked by clientQlock */
-GLBLTYPE ELLLIST			rsrv_free_clientQ; /* locked by clientQlock */
+GLBLTYPE ELLLIST		clientQ;	/* locked by clientQlock */
+GLBLTYPE ELLLIST		rsrv_free_clientQ; /* locked by clientQlock */
+GLBLTYPE ELLLIST		rsrv_free_addrq;
+GLBLTYPE ELLLIST		rsrv_free_eventq;
 GLBLTYPE FAST_LOCK		clientQlock;
-GLBLTYPE int			CASDEBUG;
-GLBLTYPE ELLLIST			rsrv_free_addrq;
-GLBLTYPE ELLLIST			rsrv_free_eventq;
 GLBLTYPE FAST_LOCK		rsrv_free_addrq_lck;
 GLBLTYPE FAST_LOCK		rsrv_free_eventq_lck;
 GLBLTYPE struct client		*prsrv_cast_client;
@@ -180,5 +208,15 @@ void cas_send_heartbeat(
 struct client   *pc
 );
 
+void write_notify_reply(void *pArg);
 
-#endif INCLserverh
+/*
+ * !!KLUDGE!!
+ *
+ * this was extracted from dbAccess.h because we are unable
+ * to include both dbAccess.h and db_access.h at the
+ * same time.
+ */
+#define S_db_Blocked (M_dbAccess|39) /*Request is Blocked*/
+
+#endif /*INCLserverh*/

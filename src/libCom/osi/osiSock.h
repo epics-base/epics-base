@@ -39,6 +39,10 @@
 extern "C" {
 #endif
 
+struct sockaddr;
+struct sockaddr_in;
+struct in_addr;
+
 /*
  * convert IP address to ASCII in this order
  * 1) look for matching host name

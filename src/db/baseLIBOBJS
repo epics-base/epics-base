@@ -1,3 +1,4 @@
+LOBOBJS += seq
 #LIBOBJS += $(EPICS_BASE_BIN)/aaiRecord.o
 #LIBOBJS += $(EPICS_BASE_BIN)/aaoRecord.o
 LIBOBJS += $(EPICS_BASE_BIN)/aiRecord.o

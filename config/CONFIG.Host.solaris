@@ -58,6 +58,8 @@ CCC_SHRLIB_LDFLAGS_YES =  -G -h $@
  
 
 ARCH_DEP_CFLAGS = -DSOLARIS=$(subst 5.,,$(shell uname -r)) 
+# Ignore LD_LIBRARY_PATH and LD_LIBRARY_PATH_64 
+ARCH_DEP_LDFLAGS = -i
 # socket and nsl needed by libca.a
 ARCH_DEP_LDLIBS = -lsocket -lnsl
 

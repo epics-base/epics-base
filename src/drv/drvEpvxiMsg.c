@@ -35,7 +35,8 @@
  *	.03 joh 060292	Added debug mode
  *	.04 joh	072992	added signal register for the HP1404
  * 	.05 joh 082592	added arg to epvxiRead() and epvxiWrite()
- * 	.06 mgb 080493	Removed V5/V4 and EPICS_V2 conditionals
+ * 	.06 joh 072393	better test for nonexistent device during
+ *			msg open
  *
  *	Improvements
  *	------------
@@ -48,10 +49,16 @@
 static char	*sccsId = "$Id$\t$Date$";
 
 #include <vxWorks.h>
-#include <semLib.h>
-#include <drvEpvxi.h>
-#include <fast_lock.h>
 #include <iv.h>
+#include <semLib.h>
+#include <stdioLib.h>
+#include <stdlib.h>
+#include <logLib.h>
+#include <intLib.h>
+#include <sysLib.h>
+#include <vxLib.h>
+#include <fast_lock.h>
+#include <drvEpvxi.h>
 
 enum msgDeviceSyncType {
 	syncInt, 
@@ -90,25 +97,26 @@ char	vxiMsgSignalInit;
 
 #define abort(A)	taskSuspend(0)
 
-#define epvxiPMsgConfig(LA)	((VXIMDI *)(epvxiLibDeviceList[LA]->pMsgConfig))
+#define epvxiPMsgConfig(LA)\
+((VXIMDI *)(epvxiLibDeviceList[LA]?epvxiLibDeviceList[LA]->pMsgConfig:0))
 
 /*
  * local functions
  */
-void 	static set_la(
-	int	la,
-	int	*pla
+LOCAL void 	set_la(
+	unsigned	la,
+	unsigned	*pla
 );
 
-static void 	vxiMsgInt(
+LOCAL void 	vxiMsgInt(
 	unsigned 	la
 );
 
-static void 	signalHandler(
+LOCAL void 	signalHandler(
 	unsigned short	signal
 );
 
-static int 	epvxiReadSlowHandshake(
+LOCAL EPVXISTAT 	epvxiReadSlowHandshake(
 	unsigned        la,
 	char            *pbuf,
 	unsigned long	count,
@@ -116,7 +124,7 @@ static int 	epvxiReadSlowHandshake(
 	unsigned long	option
 );
 
-static int 	epvxiReadFastHandshake(
+LOCAL EPVXISTAT 	epvxiReadFastHandshake(
 	unsigned	la,
 	char		*pbuf,
 	unsigned long	count,
@@ -124,39 +132,39 @@ static int 	epvxiReadFastHandshake(
 	unsigned long	option
 );
 
-static int 	vxiMsgClose(
+LOCAL EPVXISTAT 	vxiMsgClose(
 	unsigned        la
 );
 
-static int 	vxiMsgOpen(
+LOCAL EPVXISTAT 	vxiMsgOpen(
 	unsigned	la
 );
 
-static void	vxiMsgSignalSetup(
+LOCAL void	vxiMsgSignalSetup(
 	void
 );
 
-static void	vxiCPU030MsgSignalSetup(
+LOCAL void	vxiCPU030MsgSignalSetup(
 	void
 );
 
-static void	vxiHP1404MsgSignalSetup(
+LOCAL void	vxiHP1404MsgSignalSetup(
 	void
 );
 
-static int 	vxiAttemptAsyncModeControl(
+LOCAL EPVXISTAT 	vxiAttemptAsyncModeControl(
 	unsigned	la,
 	unsigned long	cmd
 );
 
-static int 	vxiMsgSync(
+LOCAL EPVXISTAT 	vxiMsgSync(
 	unsigned	la,
 	unsigned	resp_mask,
 	unsigned	resp_state,
 	int		override_err
 );
 
-static int 	fetch_protocol_error(
+LOCAL EPVXISTAT 	fetch_protocol_error(
 	unsigned	la
 );
 
@@ -164,15 +172,15 @@ static int 	fetch_protocol_error(
 /*
  * should be in a header
  */
-static int	vxi_msg_test(
+EPVXISTAT	vxi_msg_test(
 	unsigned	la
 );
 
-static int	vxi_msg_print_id(
+EPVXISTAT	vxi_msg_print_id(
 	unsigned	la
 );
 
-static int 	vxi_msg_test_protocol_error(
+EPVXISTAT 	vxi_msg_test_protocol_error(
 	unsigned	la
 );
 
@@ -182,13 +190,13 @@ static int 	vxi_msg_test_protocol_error(
  * vxi_msg_test()
  *
  */
-vxi_msg_test(
+EPVXISTAT vxi_msg_test(
 	unsigned	la
 )
 {
 	char		buf[512];
 	unsigned long	count;
-	int		status;
+	EPVXISTAT	status;
 
 	status = epvxiWrite(la, "*IDN?", 5, &count, epvxiWriteOptNone);
 	if(status != VXI_SUCCESS){
@@ -223,14 +231,14 @@ vxi_msg_test(
  * vxi_msg_print_id
  *
  */
-int	vxi_msg_print_id(
+EPVXISTAT	vxi_msg_print_id(
 	unsigned	la
 )
 {
         char    	buf[32];
         unsigned long	count;
 	char		*pcmd = "*IDN?";
-	int		status;
+	EPVXISTAT	status;
 
         status = epvxiWrite(la, pcmd, strlen(pcmd), &count, epvxiWriteOptNone);
 	if(status != VXI_SUCCESS){
@@ -253,17 +261,16 @@ int	vxi_msg_print_id(
  *  vxi_msg_test_protocol_error
  *
  */
-int 	vxi_msg_test_protocol_error(
+EPVXISTAT 	vxi_msg_test_protocol_error(
 	unsigned	la
 )
 {
-	unsigned long	resp;
 	int		i;
-	int		status;
+	EPVXISTAT	status;
 
 	for(i=0;i<1000;i++){
 		status = epvxiCmd(la, MBC_READ_PROTOCOL);
-		if(status<0){
+		if(status){
 			return status;
 		}
 	}
@@ -277,18 +284,17 @@ int 	vxi_msg_test_protocol_error(
  * deliver a command to a msg based device
  *
  */
-int
-epvxiCmd(
+EPVXISTAT epvxiCmd(
 unsigned	la,
 unsigned long	cmd
 )
 {
         struct vxi_csr		*pcsr;
 	VXIMDI			*pvximdi;
-	int			status;
+	EPVXISTAT		status;
 
 #	ifdef DEBUG
-		logMsg("cmd to be sent %4x (la=%d)\n", cmd, la);
+		printf("cmd to be sent %4x (la=%d)\n", cmd, la);
 #	endif
 
 	while(!(pvximdi = epvxiPMsgConfig(la))){
@@ -322,18 +328,18 @@ unsigned long	cmd
        	 	 * RULE C.3.2
         	 */
 	        if(pcsr->dir.r.dd.msg.response&VXIREADREADYMASK){
-       		         status = VXI_UNREAD_DATA;
+       		         status = S_epvxi_unreadData;
        	 	}
 	}
 
 	FASTUNLOCK(&pvximdi->lck);
 
-	if(status == VXI_PROTOCOL_ERROR){
+	if(status == S_epvxi_protocolError){
 		return fetch_protocol_error(la);
 	}
 
 	if(pvximdi->trace){
-		printf( "VXI Trace: (la=%3d) Cmd   -> %x\n",
+		printf( "VXI Trace: (la=0X%X) Cmd   -> %x\n",
 			la,
 			cmd);
 	}
@@ -349,15 +355,14 @@ unsigned long	cmd
  * query the response to a command
  *
  */
-int
-epvxiQuery(
+EPVXISTAT epvxiQuery(
 unsigned	la,
 unsigned long	*presp
 )
 {
         struct vxi_csr		*pcsr;
 	VXIMDI			*pvximdi;
-	int			status;
+	EPVXISTAT		status;
 
 	while(!(pvximdi = epvxiPMsgConfig(la))){
 		status = vxiMsgOpen(la);
@@ -375,22 +380,22 @@ unsigned long	*presp
 			VXIREADREADYMASK, 
 			VXIREADREADYMASK,
 			FALSE);
-	if(status<=0){
+	if(status==VXI_SUCCESS){
 		*presp = pcsr->dir.r.dd.msg.dlow;
 	}
 
 	FASTUNLOCK(&pvximdi->lck);
 
 #	ifdef DEBUG
-		logMsg("resp returned %4x (la=%d)\n", *presp, la);
+		printf("resp returned %4x (la=%d)\n", *presp, la);
 #	endif
 
-	if(status == VXI_PROTOCOL_ERROR){
+	if(status == S_epvxi_protocolError){
 		return fetch_protocol_error(la);
 	}
 
 	if(pvximdi->trace){
-		printf( "VXI Trace: (la=%3d) Query -> %x\n",
+		printf( "VXI Trace: (la=0X%X) Query -> %x\n",
 			la,
 			*presp);
 	}
@@ -402,17 +407,16 @@ unsigned long	*presp
 /*
  * epvxiCmdQuery()
  */
-int
-epvxiCmdQuery(
+EPVXISTAT epvxiCmdQuery(
 unsigned	la,
 unsigned long	cmd,
 unsigned long 	*presp 
 )
 {
-	int	status;
+	EPVXISTAT	status;
 
 	status = epvxiCmd(la, cmd);
-	if(status<0){
+	if(status){
 		return status;
 	}
 	status = epvxiQuery(la, presp);
@@ -427,8 +431,7 @@ unsigned long 	*presp
  * 	or call a routine to do a slow handshake
  * 	if that is all that is supported. 
  */
-int
-epvxiRead(
+EPVXISTAT epvxiRead(
 unsigned	la,
 char		*pbuf,
 unsigned long	count,
@@ -437,7 +440,7 @@ unsigned long	option
 )
 {
 	VXIMDI			*pvximdi;
-	int			status;
+	EPVXISTAT		status;
 
 	while(!(pvximdi = epvxiPMsgConfig(la))){
 		status = vxiMsgOpen(la);
@@ -471,9 +474,9 @@ unsigned long	option
 #	endif
 
 	if(pvximdi->trace){
-		printf( "VXI Trace: (la=%3d) Read -> %*s\n",
+		printf( "VXI Trace: (la=0X%X) Read -> %*s\n",
 			la,
-			count,
+			(int)count,
 			pbuf);
 	}
 
@@ -495,8 +498,7 @@ unsigned long	option
  *	if a card with fast handshake s found to exist
  *
  */
-LOCAL 
-int 	epvxiReadFastHandshake(
+LOCAL EPVXISTAT 	epvxiReadFastHandshake(
 	unsigned	la,
 	char		*pbuf,
 	unsigned long	count,
@@ -509,7 +511,7 @@ int 	epvxiReadFastHandshake(
 	short			resp;
 	int			fhm;
 	short			cmd;
-	int			status;
+	EPVXISTAT		status;
 	int			i;
 
 	while(!(pvximdi = epvxiPMsgConfig(la))){
@@ -538,7 +540,7 @@ int 	epvxiReadFastHandshake(
 						VXIFHSMMASK, 
 						0,
 						FALSE);
-				if(status<0){
+				if(status){
 					*pread_count = i;
 					goto exit;
 				}
@@ -567,7 +569,7 @@ int 	epvxiReadFastHandshake(
 						VXIFHSMMASK, 
 						0,
 						FALSE);
-				if(status<0){
+				if(status){
 					*pread_count = i;
 					goto exit;
 				}
@@ -596,7 +598,7 @@ int 	epvxiReadFastHandshake(
 exit:
 	FASTUNLOCK(&pvximdi->lck);
 
-	if(status == VXI_PROTOCOL_ERROR){
+	if(status == S_epvxi_protocolError){
 		return fetch_protocol_error(la);
 	}
 
@@ -611,7 +613,7 @@ exit:
  * epvxiReadSlowHandshake()
  */
 LOCAL 
-int 	epvxiReadSlowHandshake(
+EPVXISTAT 	epvxiReadSlowHandshake(
 	unsigned        la,
 	char            *pbuf,
 	unsigned long	count,
@@ -622,7 +624,7 @@ int 	epvxiReadSlowHandshake(
 	VXIMDI			*pvximdi;
         struct vxi_csr		*pcsr;
         short                   resp;
-        int                     status;
+        EPVXISTAT		status;
         int			function_status;
 	int			i;
 
@@ -639,7 +641,7 @@ int 	epvxiReadSlowHandshake(
 	 * always leave room to write a NULL termination
 	 */
 	if(count<1){
-		return VXI_BUFFER_FULL;
+		return S_epvxi_bufferFull;
 	}
 
 	FASTLOCK(&pvximdi->lck);
@@ -647,7 +649,7 @@ int 	epvxiReadSlowHandshake(
 	/*
 	 * always leave room to write a NULL termination
 	 */
-	function_status = VXI_BUFFER_FULL;
+	function_status = S_epvxi_bufferFull;
         for(i=0; i<(count-1); i++){
 
                 /*
@@ -661,9 +663,9 @@ int 	epvxiReadSlowHandshake(
 				VXIWRITEREADYMASK|VXIDORMASK|VXIREADREADYMASK, 
 				VXIWRITEREADYMASK|VXIDORMASK,
 				FALSE);
-		if(status<0){
+		if(status){
 	        	if(pcsr->dir.r.dd.msg.response&VXIREADREADYMASK){
-				function_status = VXI_UNREAD_DATA;
+				function_status = S_epvxi_unreadData;
 			}
 			else{
 				function_status = status;
@@ -681,7 +683,7 @@ int 	epvxiReadSlowHandshake(
 				VXIREADREADYMASK, 
 				VXIREADREADYMASK,
 				FALSE);
-		if(status<0){
+		if(status){
 			function_status = status;
 			break;
 		}
@@ -709,7 +711,7 @@ int 	epvxiReadSlowHandshake(
 	 */
 	*pbuf = NULL;
 
-	if(function_status == VXI_PROTOCOL_ERROR){
+	if(function_status == S_epvxi_protocolError){
 		return fetch_protocol_error(la);
 	}
 
@@ -721,8 +723,7 @@ int 	epvxiReadSlowHandshake(
  * epvxiWrite()
  * (set the end bit on the last byte sent)
  */
-int
-epvxiWrite(
+EPVXISTAT epvxiWrite(
 unsigned        la,
 char            *pbuf,
 unsigned long	count,
@@ -735,7 +736,7 @@ unsigned long	option
 	int			i;
 	short			cmd;
 	short 			extra;
-	int			status;
+	EPVXISTAT		status;
 	char			*pstr;
 
 	while(!(pvximdi = epvxiPMsgConfig(la))){
@@ -765,7 +766,7 @@ unsigned long	option
 				VXIWRITEREADYMASK|VXIDIRMASK, 
 				VXIWRITEREADYMASK|VXIDIRMASK,
 				FALSE);
-		if(status<0){
+		if(status){
 			*pwrite_count = i;
 			goto exit;
 		}
@@ -783,14 +784,14 @@ unsigned long	option
 exit:
 	FASTUNLOCK(&pvximdi->lck);
 
-	if(status == VXI_PROTOCOL_ERROR){
+	if(status == S_epvxi_protocolError){
 		return fetch_protocol_error(la);
 	}
 
 	if(pvximdi->trace){
-		printf( "VXI Trace: (la=%3d) Write -> %*s\n",
+		printf( "VXI Trace: (la=0X%X) Write -> %*s\n",
 			la,
-			count,
+			(int)count,
 			pbuf);
 	}
 
@@ -806,14 +807,13 @@ exit:
  * (timeout is in milli sec)
  *
  */
-int
-epvxiSetTimeout(
+EPVXISTAT epvxiSetTimeout(
 unsigned 	la,
 unsigned long	timeout
 )
 {
 	VXIMDI		*pvximdi;
-	int		status;
+	EPVXISTAT	status;
 
 	while(!(pvximdi = epvxiPMsgConfig(la))){
 		status = vxiMsgOpen(la);
@@ -826,7 +826,7 @@ unsigned long	timeout
  	 * order of operations significant here
 	 */
 	if(timeout > MAXIMUMTMO){
-		return VXI_TIMEOUT_TO_LARGE;
+		return S_epvxi_timeoutToLarge;
 	}
 
 	pvximdi->timeout = (timeout * sysClkRateGet())/1000;	
@@ -842,13 +842,12 @@ unsigned long	timeout
  * turn trace mode on or off
  *
  */
-int
-epvxiSetTraceEnable(la, enable)
+EPVXISTAT epvxiSetTraceEnable(la, enable)
 unsigned	la;
 int		enable;
 {
 	VXIMDI		*pvximdi;
-	int		status;
+	EPVXISTAT	status;
 
 	while(!(pvximdi = epvxiPMsgConfig(la))){
 		status = vxiMsgOpen(la);
@@ -870,22 +869,23 @@ int		enable;
  *
  */
 LOCAL 
-int vxiMsgClose(
+EPVXISTAT vxiMsgClose(
 unsigned        la
 )
 {
-	int		status;
+	EPVXISTAT	status;
 	VXIMDI		*pvximdi;
 
 	pvximdi = epvxiPMsgConfig(la);
 	if(!pvximdi){
-		return VXI_NOT_OPEN;
+		return S_epvxi_notOpen;
 	}
 
 	status = semDelete(pvximdi->syncSem);
-	if(status<0){
-		logMsg(	"%s: vxiMsgClose(): bad sem id\n",
-			__FILE__);
+	if(status){
+		errMessage(
+			S_epvxi_internal,
+			"vxiMsgClose(): bad sem id");
 	}
 	FASTLOCKFREE(&pvximdi->lck);
 	return VXI_SUCCESS;
@@ -899,11 +899,11 @@ unsigned        la
  *
  */
 LOCAL 
-int 	vxiMsgOpen(
+EPVXISTAT 	vxiMsgOpen(
 	unsigned	la
 )
 {
-	int 		status;
+	EPVXISTAT 	status;
 	VXIDI		*pvxidi;
 	VXIMDI		*pvximdi;
 	unsigned long	resp;
@@ -918,32 +918,41 @@ int 	vxiMsgOpen(
 	 *	 return quickly if we have been here before
 	 */
 	pvxidi = epvxiLibDeviceList[la];
-	if(pvxidi->pMsgConfig){
-		return VXI_SUCCESS;
+	if(pvxidi){
+		if(pvxidi->pMsgConfig){
+			return VXI_SUCCESS;
+		}
 	}
 
+	/*
+	 * standard verification of unknown LA
+	 */
 	status = epvxiDeviceVerify(la);
-	if(status<0){
+	if(status){
 		return status;
 	}
 
 	pcsr = VXIBASE(la);
 	if(VXICLASS(pcsr) != VXI_MESSAGE_DEVICE){
-		return VXI_NOT_MSG_DEVICE;
+		return S_epvxi_notMsgDevice;
 	}
 
 	pvximdi = (VXIMDI *) calloc(1, sizeof(*pvximdi));
 	if(!pvximdi){
-		return VXI_NO_MEMORY;
+		return S_epvxi_noMemory;
 	}
 
 	pvxidi->pMsgConfig = (void *) pvximdi;
 
 	vxiMsgSignalSetup();
 
+#	ifdef V5_vxWorks
 		pvximdi->syncSem = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
+#	else
+		pvximdi->syncSem = semCreate();
+#	endif
 	if(!pvximdi->syncSem){
-		return VXI_NO_MEMORY;
+		return S_epvxi_noMemory;
 	}
 
 	/*
@@ -970,7 +979,7 @@ int 	vxiMsgOpen(
 			la,
 			(unsigned long) MBC_READ_PROTOCOL,
 			&read_proto_resp);
-	if(status<0){
+	if(status){
 		/*
 		 * All devices are required by the VXI standard 
 		 * to accept this command while in the
@@ -978,8 +987,9 @@ int 	vxiMsgOpen(
 		 * state. Some dont.
 		 *
 		 */
-		logMsg(	"%s: Device rejected MBC_READ_PROTOCOL (la=%d)\n",
-			__FILE__,
+		errMessage(
+			status,
+			"Device rejected MBC_READ_PROTOCOL (la=0X%X)",
 			la);
 		return VXI_SUCCESS;
 	}
@@ -990,7 +1000,7 @@ return VXI_SUCCESS;
 		return VXI_SUCCESS;
 	}
 
-logMsg("mb device has response gen\n");
+printf("mb device has response gen\n");
 
 	/*
 	 * try to setup interrupt synchronization first
@@ -1002,7 +1012,7 @@ logMsg("mb device has response gen\n");
 			MBC_AMC_RESP_INT_ENABLE;
 		status = vxiAttemptAsyncModeControl(la, cmd);
 		if(status>=0){
-			logMsg(	"%s: mb device has int sync!\n",
+			printf(	"%s: mb device has int sync!\n",
 				__FILE__);
 			intSync = TRUE;
 		}
@@ -1019,15 +1029,16 @@ logMsg("mb device has response gen\n");
 			MBC_AMC_EVENT_SIGNAL_ENABLE;
 		status = vxiAttemptAsyncModeControl(la, cmd);
 		if(status>=0){
-			logMsg(	"%s: mb device has signal sync!\n",
+			printf(	"%s: mb device has signal sync!\n",
 				__FILE__);
 			signalSync = TRUE;
 		}
 	}
 
 	if(!intSync && !signalSync){
-		logMsg(	"%s: mb responder failed to configure\n",
-			__FILE__);
+		errMessage(
+			S_epvxi_msgDeviceFailure,
+			"mb responder failed to configure");
 		return VXI_SUCCESS;
 	}
 
@@ -1036,22 +1047,24 @@ logMsg("mb device has response gen\n");
 			la,
 			cmd,
 			&resp);
-	if(status<0){
-		logMsg(	"%s: Control response rejected by responder\n",
-			__FILE__);
+	if(status){
+		errMessage(
+			status,
+			"Control response rejected by responder");
 		vxiMsgClose(la);
 		return status;
 	}
 	if(	MBR_STATUS(resp) != MBR_STATUS_SUCCESS ||
 		(resp^cmd)&MBR_CR_CONFIRM_MASK){
-		logMsg(	"%s: Control Response Failed %x\n", 
-			__FILE__,
+		errMessage(
+			S_epvxi_msgDeviceFailure,
+			"Control Response Failed %x", 
 			resp);
 		return VXI_SUCCESS;
 	}
-logMsg("sent ctrl resp (la=%d) (cmd=%x)\n", la, cmd);
+printf("sent ctrl resp (la=%d) (cmd=%x)\n", la, cmd);
 
-logMsg("synchronized msg based device is ready!\n");
+printf("synchronized msg based device is ready!\n");
 
 	if(intSync){
 		pvximdi->syncType = syncInt;
@@ -1075,7 +1088,6 @@ void	vxiMsgSignalSetup(
 	void
 )
 {
-	int 		status;
 	static char	vxiMsgSignalInit;
 
 	if(vxiMsgSignalInit){
@@ -1091,8 +1103,9 @@ void	vxiMsgSignalSetup(
 	}
 
 	if(msgCommanderLA<0){
-		logMsg(	"%s: Unable to locate determine the commander's LA\n",
-			__FILE__);
+		errMessage(
+			S_epvxi_msgDeviceFailure,
+			"Unable to locate the MB commander's LA");
 	}
 }
 
@@ -1103,13 +1116,12 @@ void	vxiMsgSignalSetup(
  *
  *
  */
-LOCAL 
-void	vxiCPU030MsgSignalSetup(
+LOCAL void	vxiCPU030MsgSignalSetup(
 	void
 )
 {
-	int	niMsgLA;
-	int	status;
+	int		niMsgLA;
+	EPVXISTAT	status;
 
 	if(	!pnivxi_func[(unsigned)e_EnableSignalInt] || 
 		!pnivxi_func[(unsigned)e_SetSignalHandler] ||
@@ -1125,7 +1137,7 @@ void	vxiCPU030MsgSignalSetup(
 	status = (*pnivxi_func[(unsigned)e_RouteSignal])(
 				ANY_DEVICE, 
 				~0);	/* enable every thing */
-	if(status<0){
+	if(status){
 		return;
 	}
 
@@ -1133,7 +1145,7 @@ void	vxiCPU030MsgSignalSetup(
 	status = (*pnivxi_func[(unsigned)e_SetSignalHandler])(
 				UKN_DEVICE, 
 				signalHandler);
-	if(status<0){
+	if(status){
 		return;
 	}
 
@@ -1162,13 +1174,13 @@ void	vxiHP1404MsgSignalSetup(
 	epvxiDeviceSearchPattern	dsp;
 	int				hpMsgLA = -1;
 	int				hpRegLA = -1;
-	int				status;
+	EPVXISTAT			status;
 
 	dsp.flags = VXI_DSP_make | VXI_DSP_model;
 	dsp.make = VXI_MAKE_HP;
 	dsp.model = VXI_HP_MODEL_E1404_MSG;
 	status = epvxiLookupLA(&dsp, set_la, (void *)&hpMsgLA);
-	if(status<0){
+	if(status){
 		return;
 	}
 	if(hpMsgLA<0){
@@ -1178,7 +1190,7 @@ void	vxiHP1404MsgSignalSetup(
 	dsp.make = VXI_MAKE_HP;
 	dsp.slot = epvxiLibDeviceList[hpMsgLA]->slot;
 	status = epvxiLookupLA(&dsp, set_la, (void *)&hpRegLA);
-	if(status<0){
+	if(status){
 		return;
 	}
 
@@ -1199,10 +1211,9 @@ void	vxiHP1404MsgSignalSetup(
  *
  *
  */
-LOCAL 
-void 	set_la(
-	int	la,
-	int	*pla
+LOCAL void 	set_la(
+unsigned	la,
+unsigned	*pla
 )
 {
 	*pla = la;
@@ -1215,18 +1226,17 @@ void 	set_la(
  *
  *
  */
-LOCAL 
-int 	vxiAttemptAsyncModeControl(
+LOCAL EPVXISTAT 	vxiAttemptAsyncModeControl(
 	unsigned	la,
 	unsigned long	cmd
 )
 {
-	int 		status;
+	EPVXISTAT 	status;
 	unsigned long	resp;
 	unsigned long   tmpcmd;
 
 	if(msgCommanderLA<0 && cmd&MBC_AMC_RESP_SIGNAL_ENABLE){
-		return ERROR;
+		return S_epvxi_badConfig;
 	}
 
 	/*
@@ -1237,35 +1247,39 @@ int 	vxiAttemptAsyncModeControl(
 		status = epvxiCmd(
 				la,
 				tmpcmd);
-		if(status<0){
-			logMsg(	"%s: IDENTIFY_COMMANDER rejected (la=%d)\n",
-				__FILE__,
+		if(status){
+			errMessage(
+				status,
+				"IDENTIFY_COMMANDER rejected (la=0X%X)",
 				la);
-			return ERROR;
+			return status;
 		}
-logMsg("sent id cmdr (la=%d) (cmd=%x)\n", la, tmpcmd);
+printf("sent id cmdr (la=0X%X) (cmd=%x)\n", la, tmpcmd);
 	}
 
 	status = epvxiCmdQuery(
 			la,
 			cmd,
 			&resp);
-	if(status<0){
-		logMsg(	"%s: Async mode control rejected (la=%d)\n",
-			__FILE__,
+	if(status){
+		errMessage(
+			status,
+			"Async mode control rejected (la=0X%X)",
 			la);
-		return ERROR;
+		return status;
 	}
 	if(	MBR_STATUS(resp) != MBR_STATUS_SUCCESS ||
 		(resp^cmd)&MBR_AMC_CONFIRM_MASK){
-		logMsg(	"%s: async mode ctrl failure (la=%d,cmd=%x,resp=%x)\n",
-			__FILE__,
+		status = S_epvxi_msgDeviceFailure;
+		errMessage(
+			status,
+			"async mode ctrl failure (la=0X%X,cmd=%x,resp=%x)",
 			la,
 			cmd,
 			resp);
-		return ERROR;
+		return status;
 	}
-logMsg("sent asynch mode control (la=%d) (cmd=%x)\n",la,cmd);
+printf("sent asynch mode control (la=%d) (cmd=%x)\n",la,cmd);
 
 
 	if(cmd & MBC_AMC_RESP_INT_ENABLE){
@@ -1273,10 +1287,10 @@ logMsg("sent asynch mode control (la=%d) (cmd=%x)\n",la,cmd);
 			INUM_TO_IVEC(la),	
 			vxiMsgInt,
 			la);	
-logMsg("connected to interrupt (la=%d)\n", la);
+printf("connected to interrupt (la=%d)\n", la);
 	}
 
-	return OK;
+	return VXI_SUCCESS;
 }
 
 
@@ -1286,8 +1300,7 @@ logMsg("connected to interrupt (la=%d)\n", la);
  *
  *
  */
-LOCAL 
-int 	vxiMsgSync(
+LOCAL EPVXISTAT 	vxiMsgSync(
 	unsigned	la,
 	unsigned	resp_mask,
 	unsigned	resp_state,
@@ -1296,7 +1309,7 @@ int 	vxiMsgSync(
 {
 	VXIMDI		*pvximdi;
 	struct vxi_csr	*pcsr;
-	int		status;
+	EPVXISTAT	status;
 	long		timeout;
 	unsigned short	resp;
   	int		pollcnt = 100;
@@ -1312,7 +1325,7 @@ int 	vxiMsgSync(
 	pcsr = VXIBASE(la);
 
 #	ifdef DEBUG
-		logMsg(	"Syncing to resp mask %4x, request %4x (la=%d)\n",
+		printf(	"Syncing to resp mask %4x, request %4x (la=%d)\n",
 			resp_mask,
 			resp_state,
 			la);
@@ -1329,7 +1342,7 @@ int 	vxiMsgSync(
 		if(!(resp & VXIERRNOTMASK)){
 			if(!override_err && !pvximdi->err){
 				pvximdi->err = TRUE;
-				return VXI_PROTOCOL_ERROR;
+				return S_epvxi_protocolError;
 			}
 		}
 
@@ -1348,7 +1361,7 @@ int 	vxiMsgSync(
 			status = semTake(
 					pvximdi->syncSem, 
 					VXIMSGSYNCDELAY);
-			if(status < 0){
+			if(status){
 				timeout -= VXIMSGSYNCDELAY;
 			}
 		}
@@ -1358,16 +1371,18 @@ int 	vxiMsgSync(
 	/*
 	 * sync timed out if we got here
 	 */
-	logMsg(	"%s: msg dev timed out after %d sec\n", 
-		__FILE__,
+	status = S_epvxi_deviceTMO;
+	errMessage(
+		status,
+		"msg dev timed out after %d sec", 
 		(pvximdi->timeout-timeout) / sysClkRateGet());
-	logMsg(	"%s: resp mask %4x, request %4x, actual %4x\n",
-		__FILE__,
+	errMessage(
+		status,
+		"resp mask %4x, request %4x, actual %4x",
 		resp_mask,
 		resp_state,
 		resp);
-
-	return VXI_MSG_DEVICE_TMO;
+	return status;
 }
 
 
@@ -1376,8 +1391,7 @@ int 	vxiMsgSync(
  * fetch_protocol_error
  *
  */
-LOCAL 
-int 	fetch_protocol_error(
+LOCAL EPVXISTAT 	fetch_protocol_error(
 	unsigned	la
 )
 {
@@ -1385,26 +1399,20 @@ int 	fetch_protocol_error(
 	unsigned long	error;
 	struct vxi_csr	*pcsr;
 	unsigned short	resp;
-	int		status;
+	EPVXISTAT	status;
 
 	pvximdi = epvxiPMsgConfig(la);
 	if(!pvximdi){
-		return VXI_ERR_FETCH_FAIL;
+		return S_epvxi_errFetchFailed;
 	}
 
 	status = epvxiCmdQuery(	
 			la,
 			(unsigned long)MBC_READ_PROTOCOL_ERROR,
 			&error);
-	if(status>=0){
-		logMsg("%s: serial protocol error (code = %x)\n", 
-			__FILE__,
-			error);
-	}
-	else{
-		logMsg(	"%s: serial protocol error fetch failed\n",
-			__FILE__);
-		return VXI_ERR_FETCH_FAIL;
+	if(status){
+		errMessage(status, "serial protocol error fetch");
+		return S_epvxi_errFetchFailed;
 	}
 
 	pcsr = VXIBASE(la);
@@ -1414,29 +1422,39 @@ int 	fetch_protocol_error(
 		pvximdi->err = FALSE;
 	}
 	else{
-		logMsg(	"%s: Device failed to clear its ERR bit (la=%d)\n",
-			__FILE__,
+		errMessage(
+			S_epvxi_msgDeviceFailure,
+			"Device failed to clear its ERR bit (la=0X%X)",
 			la);
 	}
 
 	switch(error){
 	case MBE_MULTIPLE_QUERIES:
-		return VXI_MULTIPLE_QUERIES;
+		status = S_epvxi_multipleQueries;
+		break;
 	case MBE_UNSUPPORTED_CMD:
-		return VXI_UNSUPPORTED_CMD;
+		status = S_epvxi_unsupportedCmd;
+		break;
 	case MBE_DIR_VIOLATION:
-		return VXI_DIR_VIOLATION;
+		status = S_epvxi_dirViolation;
+		break;
 	case MBE_DOR_VIOLATION:
-		return VXI_DOR_VIOLATION;
+		status = S_epvxi_dorViolation;
+		break;
 	case MBE_RR_VIOLATION:
-		return VXI_RR_VIOLATION;
+		status = S_epvxi_rrViolation;
+		break;
 	case MBE_WR_VIOLATION:
-		return VXI_WR_VIOLATION;
+		status = S_epvxi_wrViolation;
+		break;
 	case MBE_NO_ERROR:
 	default:
+		status = S_epvxi_errFetchFailed;
 		break;
 	}
-	return VXI_ERR_FETCH_FAIL;
+
+	errMessage(status, "serial protocol error");
+	return status;
 }
 
 
@@ -1452,7 +1470,7 @@ void 	vxiMsgInt(
 )
 {
 	VXIMDI		*pvximdi;
-	int		status;
+	EPVXISTAT	status;
 	
 	/*
 	 * verify that this device is open for business
@@ -1466,14 +1484,18 @@ void 	vxiMsgInt(
 		 *
 		 */
 		status = semGive(pvximdi->syncSem);
-		if(status<0){
-			logMsg("%s: vxiMsgInt(): bad sem id\n",
-			__FILE__); 
+		if(status){
+			errMessage(S_epvxi_internal,"bad sem id");
 		}
 	}
 	else{
 		logMsg(	"%s: vxiMsgInt(): msg int to ukn or closed dev\n",
-			__FILE__);
+			__FILE__,
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL);
 	}
 }
 
@@ -1489,12 +1511,16 @@ void signalHandler(
 {
 	unsigned 	signal_la;
 
-	signal_la = signal & NVXIADDR;
+	signal_la = signal & VXIADDRMASK;
 
 	if(MBE_EVENT_TEST(signal)){
 		logMsg(	"%s: VXI event was ignored %x\n", 
 			__FILE__,
-			signal);
+			signal,
+			NULL,
+			NULL,
+			NULL,
+			NULL);
 	}
 	else{
 		vxiMsgInt(signal_la);

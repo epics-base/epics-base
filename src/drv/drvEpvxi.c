@@ -49,7 +49,7 @@
  *	.11 joh 07-07-92	added routine to return A24 or A32 base
  *	.12 joh 07-13-92	merged in model hash support written by
  *				Richard Baker (summer intern)
- *	.13 joh 07-21-92	Now stores extender info in a heirarchical
+ *	.13 joh 07-21-92	Now stores extender info in a hierarchical
  *				linked list
  *	.14 joh 07-29-92	vxi record topology needed check for
  *				device present
@@ -68,8 +68,10 @@
  *				A work around was installed.
  *	.22 joh 05-24-93	Fixed over-zealous parameter checks in
  *				TTL trigger route
- *      .23 joh 06-03-93        Fixed incorect MXI BP TTL trigger enable
- *      .24 mgb 08-04-93        Removed V5/V4 and EPICS_V2 conditionals
+ *      .23 joh 06-03-93        Fixed incorrect MXI BP TTL trigger enable
+ *      .24 joh 07-12-93       	Record the task id when opening a device 
+ *	.25 joh 07-21-93	Improved DC device allocation in MXI
+ *				environment
  *
  * To do
  * -----
@@ -81,14 +83,11 @@
  * -------------------
  *	1. does not handle multiple dc in one slot
  *	2. does not handle blocked address devices
- *	3. Assigning the hierachy from within a DC res man
+ *	3. Assigning the cmdr/serv hierarchy from within a DC res man
  *	   needs to be revisited
  *
  *
  * NOTES 
- * .01	this software was tested with Rev D of the NI MXI bus extenders
- *	-the INTX stuff does not work properly on this rev
- *	-hopefully Rev E will solve the problem
  *
  *
  */
@@ -98,9 +97,7 @@
  *
  * local
  *	vxi_find_slot0		Find the slot 0 module if present
- *	vxi_find_offset		find a free space for n devices
  *	vxi_find_slot		given a VXI modules addr find its slot
- *	vxi_self_test		resrc manager self test functions
  *	vxi_init_ignore_list	init list of interrupt handlers to ignore
  *	vxi_vec_inuse		check to see if vector is in use
  *	vxi_configure_hierarchies	setup commander servant hierarchies
@@ -113,9 +110,10 @@
  *	clr_all_reg_modid	clr all modid on a reg based slot0 dev
  *	vxi_find_sc_devices	find all SC devices and open them
  *	vxi_find_dc_devices	find all DC devices and open them
+ *	vxi_count_dc_devices	determine the number of DC devices in
+ *				this extender
  *	vxi_init_ignore_list	find addresses of default int handlers
  *	vxi_vec_inuse		test for int vector in use
- *	vxi_find_offset		find LA for a DC device to assume
  *	mxi_map			mat the addresses on a MXI bus extender
  *	vxi_find_mxi_devices	search for and open mxi bus repeaters
  *	map_mxi_inward		map from a VXI crate towards the RM
@@ -139,8 +137,8 @@
  * 	epvxiOpen			register a drivers use of a device
  *	epvxiClose		disconnect from a device	
  *	epvxiPConfig		fetch a driver config block given a LA
- *	epvxiRouteTriggerECL	route ECL trig to/from front pannel
- *	epvxiRouteTriggerTTL	route TTL trig to/from front pannel
+ *	epvxiRouteTriggerECL	route ECL trig to/from front panel
+ *	epvxiRouteTriggerTTL	route TTL trig to/from front panel
  *
  */
 
@@ -149,8 +147,16 @@ static char *sccsId = "$Id$\t$Date$";
 #include <vxWorks.h>
 #include <vme.h>
 #include <iv.h>
+#include <vxLib.h>
 #include <sysSymTbl.h>
 #include <memLib.h>
+#include <taskLib.h>
+#include <stdarg.h>
+#include <sysLib.h>
+#include <logLib.h>
+#include <intLib.h>
+#include <tickLib.h>
+#include <stdioLib.h>
 
 #define SRCepvxiLib	/* allocate externals here */
 #include <drvEpvxi.h>
@@ -198,45 +204,37 @@ struct {
 #define DEFAULT_VXI_A32_SIZE	0x10000000
 
 /*
- * bits for the device type and a pointer
- * to its configuration registers if
- * available (The national Instruments
- * cpu030 does not conform with vxi
- * standard by not making these registers
- * available to programs running on it).
+ * laPassLast and laPassFirst must be last/first respectively
+ * and have no purpose outside of being delimiters
  */
-struct slot_zero_device{
-	char		present:1;
-	char		reg:1;
-	char		msg:1;
-	char		nicpu030:1;
-	struct vxi_csr	*pcsr;
-	void		(*set_modid)();
-	void		(*clear_modid)();
-	short		mxi_la;
-	short		la;
-};
+enum laPass {
+	laPassSC, 
+	laPassAnchoredDC, 
+	laPassFloatingDC,
+	laPassSetWindows};
 
-LOCAL struct slot_zero_device	vxislot0[10];
 
-LOCAL struct extender_device	root_extender;
+LOCAL char	niCpu030Initialized;
+LOCAL VXIE	root_extender;
+LOCAL LIST	crateList;
 
 LOCAL char 		*ignore_list[] = {"_excStub","_excIntStub"};
 LOCAL void 		*ignore_addr_list[NELEMENTS(ignore_list)];
 LOCAL unsigned char	last_la;
+LOCAL unsigned char	first_la;
 
-#define SETMODID(SLOT, CRATE) \
-(*vxislot0[CRATE].set_modid)(CRATE, SLOT)
+#define SETMODID(PVXISZ, SLOT) \
+(*(PVXISZ)->set_modid)((PVXISZ), SLOT)
 
-#define CLRMODID(CRATE) \
-(*vxislot0[CRATE].clear_modid)(CRATE);
+#define CLRMODID(PVXISZ) \
+(*(PVXISZ)->clear_modid)(PVXISZ);
 
 LOCAL
-SYMTAB		*epvxiSymbolTable;
+SYMTAB	*epvxiSymbolTable;
 LOCAL
-char		epvxiSymbolTableDeviceIdString[] = "%03x:%03x";
+char	epvxiSymbolTableDeviceIdString[] = "%03x:%03x";
 LOCAL
-char		epvxiSymbolTableMakeIdString[] = "%03x";
+char	epvxiSymbolTableMakeIdString[] = "%03x";
 
 /*
  * for the VXI symbol table
@@ -258,126 +256,136 @@ char		epvxiSymbolTableMakeIdString[] = "%03x";
 #define TRIG_LINE_FPOUT            (41)
 
 /* forward references */
-static int 	vxi_find_slot0(
+LOCAL EPVXISTAT 	vxi_find_slot0(
 	VXIE 		*pvxie
 );
-static int	vxi_find_offset(
-	unsigned	base_la,	
+LOCAL EPVXISTAT 	vxi_alloc_la(
+	VXIE		*pvxie,
 	unsigned	count,
 	unsigned	*poffset
 );
-static int 	vxi_find_slot(
+LOCAL EPVXISTAT 	vxi_find_slot(
 	struct vxi_csr	*pcsr,
 	unsigned  	*pslot,
-	unsigned	*pcrate
+	VXISZ		**ppvxisz
 );
-static int 	vxi_self_test(
+LOCAL EPVXISTAT 	vxi_self_test(
 	void
 );
-static int 	vxi_init_ignore_list(
+LOCAL EPVXISTAT 	vxi_init_ignore_list(
 	void
 );
-static int 	vxi_vec_inuse(
+LOCAL EPVXISTAT 	vxi_vec_inuse(
 	unsigned 	la
 );
-static int 	mxi_map(
+LOCAL EPVXISTAT 	mxi_map(
 	VXIE		*pvxie,
-	unsigned	base_la
+	enum laPass	pass
 );
-static int 	map_mxi_inward(
+LOCAL EPVXISTAT 	map_mxi_inward(
 	VXIE		*pvxie,
-	unsigned	base_la
+	enum laPass	pass
 );
-static int 	open_vxi_device(
+LOCAL EPVXISTAT 	open_vxi_device(
 	VXIE		*pvxie,
 	unsigned	la
 );
-static int	vxi_begin_normal_operation(
-	void
-);
-static void	vxi_allocate_int_lines(
-	void
-);
-static int 	epvxiSymbolTableInit(
-	void
-);
-static void	nicpu030_init(
-	VXIE		*pvxie
-);
-static void	vxi_find_sc_devices(
-	VXIE		*pvxie
-);
-static void	vxi_find_dc_devices(
+LOCAL EPVXISTAT 	verify_valid_window(
 	VXIE		*pvxie,
-	unsigned	base_la 
+	unsigned	la
 );
-static void	set_reg_modid(
-	unsigned	crate,
+LOCAL void vxi_begin_normal_operation(
+	void
+);
+LOCAL void	vxi_allocate_int_lines(
+	void
+);
+LOCAL EPVXISTAT 	epvxiSymbolTableInit(
+	void
+);
+LOCAL EPVXISTAT	nicpu030_init(
+	VXIE		*pvxie
+);
+LOCAL void	vxi_find_sc_devices(
+	VXIE		*pvxie
+);
+LOCAL void	vxi_find_dc_devices(
+	VXIE		*pvxie
+);
+LOCAL EPVXISTAT 	vxi_count_dc_devices(
+	VXIE		*pvxie,
+	unsigned	*pCount
+);
+LOCAL void	set_reg_modid(
+	VXISZ		*pvxisz,
 	unsigned	slot
 );
-static void	clr_all_reg_modid(
-	unsigned	crate
+LOCAL void	clr_all_reg_modid(
+	VXISZ		*pvxisz
 );
-static void	nivxi_cpu030_set_modid(
-	unsigned        crate,
+LOCAL void	nivxi_cpu030_set_modid(
+	VXISZ		*pvxisz,
 	unsigned        slot
 );
-static void	nivxi_cpu030_clr_all_modid(
-	unsigned        crate
+LOCAL void	nivxi_cpu030_clr_all_modid(
+	VXISZ		*pvxisz
 );
-static void	open_slot0_device(
+LOCAL void	open_slot0_device(
 	VXIE		*pvxie,
 	unsigned	la 
 );
-static void	vxi_configure_hierarchies(
+LOCAL void	vxi_configure_hierarchies(
 	unsigned	commander_la,
 	unsigned	servant_area
 );
-static void	vxi_find_mxi_devices(
+LOCAL void	vxi_find_mxi_devices(
 	VXIE		*pvxie,
-	unsigned	base_la
+	enum laPass	pass	
 );
-static void	vxi_unmap_mxi_devices(
+LOCAL void	vxi_unmap_mxi_devices(
 	void
 );
-static void	vxi_address_config(
+LOCAL void	vxi_address_config(
 	void
 );
-static void 	vxi_record_topology(
+LOCAL void 	vxi_record_topology(
 	void
 );
-static void	epvxiExtenderPrint(
+LOCAL void	epvxiExtenderPrint(
 	VXIE *pvxie
 );
-static void	epvxiSelfTestDelay(
+LOCAL void	epvxiSelfTestDelay(
 	void
 );
-static void	epvxiRegisterCommonMakeNames(
+LOCAL void	epvxiRegisterCommonMakeNames(
 	void
 );
-static VXIE	*open_mxi_device(
+LOCAL VXIE	*open_mxi_device(
 	unsigned	la,
 	VXIE		*pvxie,
 	enum ext_type	type
 );
-static int 	epvxiSetDeviceOffline(
-	int 		la
+LOCAL EPVXISTAT 	epvxiSetDeviceOffline(
+	unsigned 	la
 );
-static void 	vxi_allocate_address_block(
+LOCAL void 	vxi_allocate_address_block(
 	VXIE		*pvxie
 );
-static int 	symbol_value_fetch(
+LOCAL EPVXISTAT 	symbol_value_fetch(
 	char 		*pname,
 	void 		*pdest,
 	unsigned 	dest_size
 );
-static int 	report_one_device(
-	int		la,
+LOCAL EPVXISTAT 	report_one_device(
+	unsigned	la,
 	int		level 
 );
-static void 	mxi_io_report(
+LOCAL void 	mxi_io_report(
 	struct vxi_csr	*pmxi,
 	int 		level 
+);
+LOCAL 	EPVXISTAT	vxi_la_occupied(
+	unsigned 	la
 );
 	
 
@@ -389,17 +397,9 @@ static void 	mxi_io_report(
  *
  *
  */
-vxi_init(void)
+EPVXISTAT vxi_init(void)
 {
-	int status;
-
-	status = epvxiResman(); 
-	if(status>=0){
-		return OK;
-	}
-	else{
-		return ERROR;
-	}
+	return epvxiResman();
 }
 
 
@@ -410,24 +410,13 @@ vxi_init(void)
  *
  *
  */
-long
-epvxiResman(void)
+EPVXISTAT epvxiResman(void)
 {
-        unsigned                crate;
-        int             	status;
-	unsigned 		EPICS_VXI_LA_COUNT;
+        EPVXISTAT	status;
+	unsigned 	EPICS_VXI_LA_COUNT;
+	unsigned 	EPICS_VXI_LA_BASE;
+	enum laPass	pass; 
 
-        /* 
- 	 * find out where the VXI LA space is on this processor
-	 */
-	status = sysBusToLocalAdrs(
-                                VME_AM_SUP_SHORT_IO,
-                                VXIBASEADDR,
-                                &epvxi_local_base);
-	if(status != OK){
-                logMsg("%s: Unable to map VXI LA base- VXI ignored\n");
-                return ERROR;
-        }
 
 	/*
 	 * lookup the symbol for the number of devices
@@ -436,6 +425,22 @@ epvxiResman(void)
 	{
 		UINT8	type;
 		unsigned char 	*pEPICS_VXI_LA_COUNT = 0;
+		unsigned char 	*pEPICS_VXI_LA_BASE = 0;
+
+		status = symFindByName(
+				sysSymTbl,
+				"_EPICS_VXI_LA_BASE",	
+				&pEPICS_VXI_LA_BASE,
+				&type);
+		if(status == OK){
+			EPICS_VXI_LA_BASE = 
+				min(	*pEPICS_VXI_LA_BASE,
+					VXIDYNAMICADDR-1);
+
+		}
+		else{
+			EPICS_VXI_LA_BASE = 0;
+		}
 
 		status = symFindByName(
 				sysSymTbl,
@@ -443,34 +448,88 @@ epvxiResman(void)
 				&pEPICS_VXI_LA_COUNT,
 				&type);
 		if(status == OK){
-			EPICS_VXI_LA_COUNT = *pEPICS_VXI_LA_COUNT;
+			EPICS_VXI_LA_COUNT = 
+				min(	*pEPICS_VXI_LA_COUNT,
+					VXIDYNAMICADDR-EPICS_VXI_LA_BASE);
+
 		}
 		else{
-			EPICS_VXI_LA_COUNT = 0xff;
+			EPICS_VXI_LA_COUNT = 
+				VXIDYNAMICADDR-EPICS_VXI_LA_BASE;
 		}
 	}
 
 	/*
- 	 * clip the EPICS logical address range
+	 * If VXI devices are assigned an empty address block
+	 * then ignore VXI 
 	 */
-	last_la = min(VXIDYNAMICADDR-1, EPICS_VXI_LA_COUNT-1);
-	last_la = min(last_la, NELEMENTS(epvxiLibDeviceList)-1);
+	if(EPICS_VXI_LA_COUNT == 0){
+		return VXI_SUCCESS;
+	}
 
+	/* 
+	 * find out where the VXI LA space is on this processor
+ 	 * and register the VXI allocation
+	 */
+	status = sysBusToLocalAdrs(
+				VME_AM_SUP_SHORT_IO,
+				VXIBASEADDR,
+				&epvxi_local_base);
+	if(status != OK){
+		return S_epvxi_badConfig;
+	}
+#if 0
 	/*
-	 * setup the root extender -
- 	 * in this case just the local CPU which can
-	 * see the entire VXI address space because
-	 * it is a VME bus master
- 	 *
-	 * some constraints are fetched from module_types.h
-	 */ 
-	root_extender.la = VXI_RESMAN_LA;
-	root_extender.type = ext_local_cpu;
-	root_extender.la_low = last_la;
-	root_extender.la_high = 0;
+	 * 
+	 * not the same as epvxi_local_base
+	 */
+	status = devRegisterAddress(
+			"VXI resman",
+			atVMEA16,
+			VXI_LA_TO_PA(EPICS_VXI_LA_BASE, VXIBASEADDR),
+			VXIDEVSIZE*EPICS_VXI_LA_COUNT,
+			&#####);
+	if(status){
+		return status;
+	}
+	/*
+	 * Register space to communicate with VXI DC devices
+	 */
+	status = devRegisterAddress(
+			"VXI resman",
+			atVMEA16,
+			VXI_LA_TO_PA(VXIDYNAMICADDR, VXIBASEADDR),
+			VXIDEVSIZE,
+			NULL);
+	if(status){
+		return status;
+	}
+#endif
 
-	/*
-	 *
+        /*
+         * clip the logical address range
+         */
+        last_la = min(  VXIDYNAMICADDR-1,
+                        EPICS_VXI_LA_BASE+EPICS_VXI_LA_COUNT-1);
+        last_la = min(  last_la,
+                        NELEMENTS(epvxiLibDeviceList)-1);
+        first_la = min(EPICS_VXI_LA_BASE,VXIDYNAMICADDR-1);
+
+        /*
+         * setup the root extender -
+         * in this case just the local CPU which can
+         * see the entire VXI address space because
+         * it is a VME bus master
+         *
+         * some constraints are fetched from module_types.h
+         */
+        root_extender.la = VXI_RESMAN_LA;
+        root_extender.type = ext_local_cpu;
+        root_extender.la_low = last_la;
+        root_extender.la_high = first_la;
+
+        /*
+         *
 	 * register some common manufacturer names
 	 * for consistency
 	 *
@@ -489,11 +548,19 @@ epvxiResman(void)
 	 * VME access
 	 */
 #	ifdef NICPU030
-		nicpu030_init(&root_extender);
+		status = nicpu030_init(&root_extender);
+		if(status){
+			return status;
+		}
 #	endif
 
-        if(vxi_init_ignore_list()==ERROR)
-                return ERROR;
+	/*
+	 * find default interrupt handlers
+	 */
+	status = vxi_init_ignore_list();
+        if(status){
+                return status;
+	}
 
 	/*
 	 * close any MXI devices which have open windows but
@@ -505,13 +572,25 @@ epvxiResman(void)
 	 */
 	vxi_unmap_mxi_devices();
 
+	/*
+	 * locate SC and DC devices
+	 * setup extender LA windows
+	 */
+	for(	pass = laPassSC; 
+		pass <= laPassSetWindows;
+		pass++){
+
+	        status = mxi_map(&root_extender, pass);
+		if(status){
+			return status;
+		}
+	}
 
 	/*
-	 * locate SC, DC, and MXI devices
+	 * nothing out there so just quit
 	 */
-        mxi_map(&root_extender, VXI_RESMAN_LA);
 	if(!root_extender.la_mapped){
-		return OK;
+		return VXI_SUCCESS;
 	}
 
 	/*
@@ -525,7 +604,10 @@ epvxiResman(void)
 	 */
 	hpE1404Init();
 	
-        vxi_self_test();
+        status = vxi_self_test();
+	if(status){
+		return status;
+	}
 
 	vxi_address_config();
 
@@ -536,32 +618,6 @@ epvxiResman(void)
 	vxi_allocate_int_lines();
 
 	vxi_begin_normal_operation();
-/*
- *
-vxi_allocate_address_block * Triggers used to be hard routed here there
- */	
-#ifdef MAP_TRIGGERS
-        /*
-	 * install a default trigger routing
-         */
-#	define DEFAULT_TRIG_ENABLE_MAP	1 
-#	define DEFAULT_TRIG_IO_MAP	0
-        for(crate=0; crate<NELEMENTS(vxislot0); crate++){
-
-		if(!vxislot0[crate].present){
-			continue;
-		}
-
-		status = epvxiRouteTriggerECL(
-				VXI_PA_TO_LA(vxislot0[crate].pcsr), 
-				DEFAULT_TRIG_ENABLE_MAP, 
-				DEFAULT_TRIG_IO_MAP);
-		if(status<0){
-			logMsg("vxi resman: trig setup failed (la=%d)\n",
-				VXI_PA_TO_LA(vxislot0[crate].pcsr));
-		}
-	}
-#endif
 
 	/*
 	 * let the world know that the RM is done
@@ -569,7 +625,7 @@ vxi_allocate_address_block * Triggers used to be hard routed here there
 	 */
 	epvxiResourceMangerOK = TRUE;
 
-        return OK;
+        return VXI_SUCCESS;
 }
 
 
@@ -577,8 +633,7 @@ vxi_allocate_address_block * Triggers used to be hard routed here there
  * wait the obligatory 5 sec prior to first
  * A16 VXI access 
  */
-LOCAL void
-epvxiSelfTestDelay(void)
+LOCAL void epvxiSelfTestDelay(void)
 {
 	/*
  	 * waits 6 sec to be sure
@@ -590,8 +645,9 @@ epvxiSelfTestDelay(void)
 	current = tickGet();
 
 	if(current < delay){
-		logMsg("VXI Res Man: Waiting for self tests to complete\n"); 
+		printf("VXI Res Man: Waiting for self tests to complete ...");
 		taskDelay(delay - current);
+		printf("\n");
 	} 
 }
 
@@ -604,42 +660,53 @@ epvxiSelfTestDelay(void)
  *
  *
  */
-LOCAL int
-mxi_map(
+LOCAL EPVXISTAT mxi_map(
 VXIE		*pvxie,
-unsigned	base_la
+enum laPass	pass
 )
 {
-	int		status;
+	switch(pass)
+	{
+	case laPassSC:
+		/*
+ 		 * find the SC devices
+		 */
+		vxi_find_sc_devices(pvxie);
+		break;
 
-#if 0
-	/*
-	 *
-	 * find the slot zero device
-	 *
+	/* 
+	 * allocate DC devices
 	 */
-	status = vxi_find_slot0(pvxie);
-	if(status<0){
-		return OK;
+	case laPassFloatingDC:
+		/*
+		 * already got a chance on 
+		 * laPassAnchoredDC if
+		 * something is mapped
+		 */
+		if(pvxie->la_mapped){
+			break;
+		}
+		vxi_find_dc_devices(pvxie);
+		break;
+
+
+	/* 
+	 * allocate DC devices
+	 */
+	case laPassAnchoredDC:
+		/*
+		 * wait until laPassFloatingDC if
+		 * nothing is mapped
+		 */
+		if(!pvxie->la_mapped){
+			break;
+		}
+		vxi_find_dc_devices(pvxie);
+		break;
+
+	default:
+		break;
 	}
-#endif
-
-	/*
-	 *
- 	 * find the SC devices
-	 *
-	 */
-	vxi_find_sc_devices(pvxie);
-
-
-	/*
- 	 *
-	 * find the DC devices
-	 *
-	 */
-	vxi_find_dc_devices(
-		pvxie,
-		pvxie->la_mapped ? pvxie->la_low : base_la);
 
 	/*
 	 *
@@ -648,9 +715,9 @@ unsigned	base_la
 	 */
 	vxi_find_mxi_devices(
 		pvxie, 
-		pvxie->la_mapped ? pvxie->la_high+1 : base_la);
+		pass);
 
-	return OK;
+	return VXI_SUCCESS;
 }
 
 
@@ -665,15 +732,14 @@ unsigned	base_la
  * This makes the MXI/VXI configure correctly after
  * a control x (soft) reboot.
  */
-LOCAL void
-vxi_unmap_mxi_devices(void)
+LOCAL void vxi_unmap_mxi_devices(void)
 {
 	struct vxi_csr	*pmxi;
-	int		status;
-	short		id;
+	EPVXISTAT	status;
+	int16_t		id;
 	unsigned	addr;
 
-        for(addr=0; addr<=last_la; addr++){
+        for(addr=first_la; addr<=last_la; addr++){
                 /*
                  * only configure devices not seen before
                  */
@@ -696,7 +762,7 @@ vxi_unmap_mxi_devices(void)
 		}
 
 		/*
-		 * force all of these bac to the hard reset state
+		 * force all of these back to the hard reset state
 		 */
 		pmxi->dir.w.dd.mxi.la_window = 0; 
 		pmxi->dir.w.dd.mxi.a16_window_low = 0; 
@@ -715,10 +781,9 @@ vxi_unmap_mxi_devices(void)
  * vxi_find_mxi_devices()
  *
  */
-LOCAL void
-vxi_find_mxi_devices(
+LOCAL void vxi_find_mxi_devices(
 VXIE		*pvxie,
-unsigned	base_la
+enum laPass	pass
 )
 {
 	struct vxi_csr	*pmxi;
@@ -726,7 +791,7 @@ unsigned	base_la
 	VXIDI		*pvxidi;
 	VXIE		*pnewvxie;
 
-        for(	addr=0; addr<=last_la; addr++){
+        for(	addr=first_la; addr<=last_la; addr++){
 
 		pvxidi = epvxiLibDeviceList[addr];
 
@@ -756,12 +821,12 @@ unsigned	base_la
 		}
 	
 		/*
-		 * open the address window outward for all device
+		 * open the LA window outward over the entire LA range  
 		 */
 		pmxi->dir.w.dd.mxi.control = 
 			MXI_UPPER_LOWER_BOUNDS;
 		pmxi->dir.w.dd.mxi.la_window = 
-			VXIADDRMASK | VXIADDRMASK<<NVXIADDRBITS;
+			VXIADDRMASK | (VXIADDRMASK<<NVXIADDRBITS);
 
 		/*
 		 * close any MXI devices which have open windows but
@@ -777,21 +842,36 @@ unsigned	base_la
 		 * for each MXI found that we have not seen before
 		 * open the la window inward for all devices
 		 */
-		map_mxi_inward(pnewvxie, base_la);
+		map_mxi_inward(pnewvxie, pass);
+
+		/*
+		 * Make sure parent window overlaps the child
+		 */
+		if(pnewvxie->la_mapped){
+			pvxie->la_mapped = TRUE;
+			pvxie->la_low = min(pvxie->la_low, pnewvxie->la_low);
+			pvxie->la_high = max(pvxie->la_high, pnewvxie->la_high);
+		}
+
+		/*
+		 * disable the window until the last pass
+		 */
+		if(pass != laPassSetWindows){
+			pmxi->dir.w.dd.mxi.la_window =
+				0 | (0<<NVXIADDRBITS);
+			continue;
+		}
 
 		if(pnewvxie->la_mapped){
 #			ifdef DEBUG
-				logMsg(	"VXI resman: VXI to MXI(%x) %x-%x\n", 
+				printf(	"VXI resman: VXI to MXI(%x) %x-%x\n", 
 					addr,
 					pnewvxie->la_low,
 					pnewvxie->la_high);
 #			endif
 			pmxi->dir.w.dd.mxi.la_window = 
-				pnewvxie->la_low<<NVXIADDRBITS 
-					| pnewvxie->la_high+1;
-			pvxie->la_mapped = TRUE;
-			pvxie->la_low = min(pvxie->la_low, pnewvxie->la_low);
-			pvxie->la_high = max(pvxie->la_high, pnewvxie->la_high);
+				(pnewvxie->la_low<<NVXIADDRBITS)
+					| (pnewvxie->la_high+1);
 
 			/*
 			 * if INTX is installed gate the interrupts off of
@@ -803,10 +883,10 @@ unsigned	base_la
 			}
 		}
 		else{
-			logMsg(	"VXI resman: VXI to MXI LA=0x%X is empty\n",
+			printf(	"VXI resman: VXI to MXI LA=0x%X is empty\n",
 				addr); 
 			pmxi->dir.w.dd.mxi.la_window =
-				0 | 0<<NVXIADDRBITS;
+				0 | (0<<NVXIADDRBITS);
 		}
 	}
 }
@@ -818,13 +898,13 @@ unsigned	base_la
  *
  *
  */
-LOCAL
-VXIE	*open_mxi_device(
+LOCAL VXIE	*open_mxi_device(
 unsigned	la,
 VXIE		*pvxie,
 enum ext_type	type
 )
 {
+	VXIDI		*pvxidi;
 	VXIE		*pnewvxie;
 	struct vxi_csr	*pmxi;
 
@@ -833,21 +913,34 @@ enum ext_type	type
 		return NULL;
 	}
 
-	pnewvxie = (VXIE *) calloc(1, sizeof(*pnewvxie));
-	if(!pnewvxie){
-		logMsg("%s: out of memory- MXI ignored\n",__FILE__);
+	pvxidi = epvxiLibDeviceList[la];
+	if(!pvxidi){
 		return NULL;
+	}				
+
+	/*
+	 * is it already open?
+	 */
+	if(pvxidi->pvxieSelf){
+		return pvxidi->pvxieSelf;
 	}
 
-	epvxiLibDeviceList[la]->mxi_dev = TRUE;
+	pnewvxie = (VXIE *) calloc(1, sizeof(*pnewvxie));
+	if(!pnewvxie){
+		errMessage(S_epvxi_noMemory, "MXI device ignored\n");
+		return NULL;
+	}
 
 	pnewvxie->type = type;
 	pnewvxie->la = la;
 	pnewvxie->la_low = last_la;
-	pnewvxie->la_high = 0;
+	pnewvxie->la_high = first_la;
+	pnewvxie->pParent = pvxie;
+
+	pvxidi->pvxieSelf = pnewvxie;
 
 	/*
-	 * make sure parent window includes the MXI
+	 * make sure PARENT window includes the MXI
 	 * bus extender 
 	 */
 	pvxie->la_mapped = TRUE;
@@ -858,7 +951,7 @@ enum ext_type	type
 	epvxiRegisterModelName(
 			VXIMAKE(pmxi),
 			VXIMODEL(pmxi),
-			"VXI-MXI");
+			"MXI bus extender");
 		
 	return pnewvxie;
 }
@@ -871,34 +964,57 @@ enum ext_type	type
  * open the la window inward for all devices
  *
  */
-LOCAL int
-map_mxi_inward(
+LOCAL EPVXISTAT map_mxi_inward(
 VXIE		*pvxie,
-unsigned	base_la
+enum laPass	pass
 )
 {
+	VXIDI		*pvxidi;
 	struct vxi_csr	*pmxi_new;
 	unsigned	addr;
-	int		status;
+	EPVXISTAT	status;
 	VXIE		*pnewvxie;
 
-       	for(addr=0; addr<=last_la; addr++){
+       	for(addr=first_la; addr<=last_la; addr++){
 
-		/*
-		 * skip all devices seen before
-		 */
-               	if(epvxiLibDeviceList[addr]){
-			continue;
+		pvxidi = epvxiLibDeviceList[addr];
+               	if(pvxidi){
+			/*
+			 * dont bother with
+			 * devices that are 
+			 * not extenders
+			 * here
+			 */
+			if(!pvxidi->pvxieSelf){
+				continue;
+			}
+			/*
+			 * if it is an extender dont
+			 * configure it unless
+			 * it is a child of the 
+			 * current parent
+			 */
+			if(pvxidi->pvxie != pvxie){
+				continue;
+			}
 		}
-
-		status = open_vxi_device(pvxie, addr);
-		if(status < 0){
-			continue;
+		else{
+			/*
+			 * if it has not been seen before we know
+			 * its an MXI device
+			 */
+			status = open_vxi_device(pvxie, addr);
+			if(status){
+				continue;
+			}
 		}
 
 		pmxi_new = VXIBASE(addr);
 
-		pnewvxie = open_mxi_device(addr, pvxie, ext_export_vxi_onto_mxi);
+		pnewvxie = open_mxi_device(
+				addr, 
+				pvxie, 
+				ext_export_vxi_onto_mxi);
 		if(!pnewvxie){
 			continue;
 		}
@@ -909,56 +1025,83 @@ unsigned	base_la
 		pmxi_new->dir.w.dd.mxi.control = 
 			MXI_UPPER_LOWER_BOUNDS;
 		pmxi_new->dir.w.dd.mxi.la_window =
-			1 | 1<<NVXIADDRBITS;
+			1 | (1<<NVXIADDRBITS);
 
-		mxi_map(pnewvxie, base_la);	
+		mxi_map(pnewvxie, pass);	
 		
 		/*
-		 * if INTX is installed gate the interrupts onto
-		 * INTX
+		 * make sure that the parents LA range
+		 * covers this child
 		 */
-		if(MXIINTX(pmxi_new)){
-			pmxi_new->dir.w.dd.mxi.INTX_interrupt = 
-				INTX_INT_OUT_ENABLE;
+		if(pnewvxie->la_mapped){
+			pvxie->la_mapped = TRUE;
+			pvxie->la_low = min(pvxie->la_low, pnewvxie->la_low);
+			pvxie->la_high = max(pvxie->la_high, pnewvxie->la_high);
+		}
+
+		/*
+		 * temporarily close the windows so that we can discover
+		 * iproperly located SC devices
+		 */
+		if(pass != laPassSetWindows){
+			pmxi_new->dir.w.dd.mxi.la_window =
+				0 | (0<<NVXIADDRBITS);
+			continue;
 		}
 
 		/*
 		 * restrict the address window inward to only 
-		 * cover devices seen
+		 * cover devices seen during pass laPassSetWindows
 		 */
 		if(pnewvxie->la_mapped){
 #			ifdef DEBUG
-				logMsg(	"VXI resman: MXI to VXI LA=%x %x-%x\n", 
+				printf(	"VXI resman: MXI to VXI LA=%x %x-%x\n", 
 					addr,
 					pnewvxie->la_low,
 					pnewvxie->la_high);
 #			endif
 			pmxi_new->dir.w.dd.mxi.la_window = 
 				pnewvxie->la_low | 
-					(pnewvxie->la_high+1)<<NVXIADDRBITS;
-
-			pnewvxie->la_mapped = TRUE;
-			pvxie->la_low = min(pvxie->la_low, pnewvxie->la_low);
-			pvxie->la_high = max(pvxie->la_high, pnewvxie->la_high);
-		}
-		else{
-			logMsg(	"VXI resman: MXI to VXI LA=0x%X is empty\n",
-				addr); 
-			pmxi_new->dir.w.dd.mxi.la_window =
-				0 | 0<<NVXIADDRBITS;
+				((pnewvxie->la_high+1)<<NVXIADDRBITS);
 
 			/*
-			 * slot zero device will vanish in this case
+			 * if INTX is installed route the interrupts onto
+			 * INTX
 			 */
-               		if(epvxiLibDeviceList[addr]->slot0_dev){
-				int crate;
-
-				crate = epvxiLibDeviceList[addr]->crate;
-
-				vxislot0[crate].present = FALSE;
+			if(MXIINTX(pmxi_new)){
+				pmxi_new->dir.w.dd.mxi.INTX_interrupt = 
+					INTX_INT_OUT_ENABLE;
 			}
 		}
+		else{
+
+			printf(	"VXI resman: MXI to VXI LA=0x%X is empty\n",
+				addr); 
+			pmxi_new->dir.w.dd.mxi.la_window =
+				0 | (0<<NVXIADDRBITS);
+
+#			ifdef REMOVE_UNUSED_SLOT_ZERO_DEVICES
+				/*
+				 * slot zero device(s) will not 
+				 * be needed in this case 
+				 *
+				 * Take it (them) out of the list in 
+				 * case it (they) become(s) 
+				 * inaccessable later.
+				 */
+				pvxisz = (VXISZ *) crateList.node.next;
+				while(pvxisz){
+					next = (VXISZ *) pvxisz->node.next;
+					if(pvxisz->la == pnewvxie->la || 
+						pvxisz->pvxie == pnewvxie){
+						lstDelete(&crateList, &pvxisz->node);
+					}
+					pvxisz = next;
+				}
+#			endif REMOVE_UNUSED_SLOT_ZERO_DEVICES
+		}
 	}
+	return VXI_SUCCESS;
 }
 
 
@@ -968,22 +1111,21 @@ unsigned	base_la
  *
  *
  */
-LOCAL int 
-open_vxi_device(
+LOCAL EPVXISTAT open_vxi_device(
 VXIE		*pvxie,
 unsigned	la
 )
 {
 	struct vxi_csr		*pdevice;
 	VXIDI			*plac;
-	short			id;
-	int			status;
+	int16_t			id;
+	EPVXISTAT		status;
 
 	/*
 	 * just return if this device is known about
 	 */
 	if(epvxiLibDeviceList[la]){
-		return OK;
+		return VXI_SUCCESS;
 	}
 
 	pdevice = VXIBASE(la);
@@ -993,13 +1135,35 @@ unsigned	la
 				sizeof(id),
 				&id);
   	if(status<0){
-		return ERROR;
+		return S_epvxi_internal;
+	}
+
+	status = verify_valid_window(pvxie, la);
+	if(status){
+		errMessage(
+			status, 
+			"VXI resman: no access to SC device\n");
+		errMessage(
+			status, 
+			"VXI resman: without MXI LA window overlap.\n");
+		errMessage(	
+			status, 
+			"VXI resman: SC device LA=0X%X\n", 
+			la);
+		errMessage(
+			status, 
+			"VXI resman: extender LA=0X%X\n", 
+			pvxie->la);
+		errMessage(
+			status, 
+			"VXI resman: SC device ignored\n");
+		return status;	
 	}
 
 	plac = (VXIDI *) calloc(1, sizeof(**epvxiLibDeviceList));
 	if(!plac){
-		logMsg("resman: calloc failed ... continuing\n");
-		return ERROR;
+		errMessage(S_epvxi_noMemory,"... continuing");
+		return S_epvxi_noMemory;
 	}
 
 	plac->make = VXIMAKE(pdevice);
@@ -1013,7 +1177,9 @@ unsigned	la
 	pvxie->la_mapped = TRUE;
 
 	if(vxi_vec_inuse(la)){
-		logMsg(	"SC VXI device at allocated int vec=0x%X\n", 
+		errMessage(
+			S_epvxi_badConfig,
+			"SC VXI device at allocated int vec=0x%X",
 			la);
 		epvxiSetDeviceOffline(la);
 	}
@@ -1024,7 +1190,61 @@ unsigned	la
 		}
 	}
 
-	return OK;
+	return VXI_SUCCESS;
+}
+
+
+/*
+ *
+ * verify_valid_window() 
+ *
+ * determine if this la is within one
+ * of the other extenders at the same level
+ *
+ */
+LOCAL EPVXISTAT verify_valid_window(
+VXIE		*pvxie,
+unsigned	la
+)
+{
+	VXIE	*pChild;
+
+	/*
+	 * If its the root extender we dont care
+	 */
+	if(!pvxie->pParent){
+		return VXI_SUCCESS;
+	}
+
+	for(	pChild = (VXIE *) pvxie->pParent->extenders.node.next;
+		pChild; 
+		pChild = (VXIE *) pChild->node.next){
+
+		/*
+		 * of course its ok to be in the
+		 * current extender
+		 */
+		if(pChild == pvxie){
+			continue;
+		}
+
+		/*
+		 * its not ok to overlap other extenders
+		 * window
+		 */
+		if(pChild->la_mapped){
+			if(la >= pChild->la_low && 
+				la <= pChild->la_high){
+
+				return S_epvxi_badConfig; 
+			}
+		}
+	}
+
+	/*
+	 * traverse the hierarchy
+	 */
+	return verify_valid_window(pvxie->pParent, la);
 }
 
 
@@ -1034,18 +1254,16 @@ unsigned	la
  *	VXI_FIND_SC_DEVICES
  *
  */
-LOCAL void
-vxi_find_sc_devices(
+LOCAL void vxi_find_sc_devices(
 VXIE		*pvxie
 )
 {
-	register unsigned 	addr;
-	register		status;
+	unsigned 	addr;
 
 	/*
 	 * Locate the slots of all SC devices
 	 */
-	for(addr=0; addr<=last_la; addr++){
+	for(addr=first_la; addr<=last_la; addr++){
 	
 		/*
 		 * dont configure devices seen before
@@ -1070,17 +1288,16 @@ VXIE		*pvxie
  * cant be found initially ).
  *
  */
-LOCAL void
-vxi_record_topology(void)
+LOCAL void vxi_record_topology(void)
 {
-	unsigned	la;
-	unsigned	slot;
-	unsigned	crate;
 	VXIDI		**pplac;
 	struct vxi_csr	*pdevice;
-	int		status;
+	VXISZ		*pvxisz;
+	unsigned	la;
+	unsigned	slot;
+	EPVXISTAT	status;
 
-	for(	la=0, pplac = epvxiLibDeviceList; 
+	for(	la=first_la, pplac = epvxiLibDeviceList; 
 		la<=last_la; 
 		la++, pplac++){
 
@@ -1089,16 +1306,16 @@ vxi_record_topology(void)
 		}
 
 		pdevice = VXIBASE(la);
-		status = vxi_find_slot(pdevice, &slot, &crate);
-		if(status==OK){
+		status = vxi_find_slot(pdevice, &slot, &pvxisz);
+		if(status==VXI_SUCCESS){
 			(*pplac)->slot = slot;
-			(*pplac)->crate = crate;
-			(*pplac)->slot_zero_la = vxislot0[crate].la;
-			(*pplac)->extender_la = vxislot0[crate].mxi_la;
+			(*pplac)->slot_zero_la = pvxisz->la;
+			(*pplac)->extender_la = pvxisz->pvxie->la;
 
 			if(VXISLOT0MODEL(pdevice)){
 				if((*pplac)->slot!=0){
-					logMsg(	
+					errMessage(	
+						S_epvxi_badConfig,
 			"VXI slot 0 found in slot %d? LA=0x%X\n", 
 						(*pplac)->slot,
 						la);
@@ -1107,7 +1324,6 @@ vxi_record_topology(void)
 		}
 		else{
 			(*pplac)->slot = UKN_SLOT;
-			(*pplac)->crate = UKN_CRATE;
 			(*pplac)->slot_zero_la = UKN_LA;
 			(*pplac)->extender_la = UKN_LA;
 		}
@@ -1121,28 +1337,37 @@ vxi_record_topology(void)
  *	VXI_FIND_DC_DEVICES
  *
  */
-LOCAL void
-vxi_find_dc_devices(
-VXIE		*pvxie,
-unsigned	base_la 
+LOCAL void vxi_find_dc_devices(
+VXIE		*pvxie
 )
 {
-	short			id;
-	register		status;
-	unsigned		offset;
-	struct vxi_csr		*pcsr;
-	int			crate;
-	int			slot;
+	int		prealloc;
+	int16_t		id;
+	EPVXISTAT	status;
+	unsigned	offset;
+	struct vxi_csr	*pcsr;
+	VXISZ		*pvxisz;
+	unsigned 	nDC;
+	int		slot;
 
 	/*
 	 * dont move DC devices if SC device at address 0xff
 	 */
-	for(crate=0; crate<NELEMENTS(vxislot0); crate++){
-		if(!vxislot0[crate].present){
-			continue;
-		}
+	if(epvxiLibDeviceList[VXIDYNAMICADDR]){
+		errMessage(
+			S_epvxi_badConfig,
+			"VXI SC device recorded at dynamic address 0x%X\n",
+			VXIDYNAMICADDR);
+		errMessage(
+			S_epvxi_badConfig,
+			"VXI DC devices ignored\n");
+		return;
+	}
 
-		CLRMODID(crate);
+	pvxisz = (VXISZ *) crateList.node.next; 
+	while(pvxisz){
+		CLRMODID(pvxisz);
+		pvxisz = (VXISZ *) pvxisz->node.next;
 	}
 
 	pcsr = VXIBASE(VXIDYNAMICADDR);
@@ -1151,52 +1376,117 @@ unsigned	base_la
 				sizeof(id),
 				&id);
   	if(status == OK){
-		logMsg(	"VXI SC device at dynamic address 0x%X\n",
+		errMessage(
+			S_epvxi_badConfig,
+			"VXI SC device at dynamic address 0x%X\n",
 			VXIDYNAMICADDR);
-		logMsg("VXI DC devices ignored\n");
+		errMessage(
+			S_epvxi_badConfig,
+			"VXI DC devices ignored\n");
 		return;
 	}
 
 	/*
-	 * find all dynamic modules
+	 * if unanchored force them to all be in one
+	 * contiguous block
 	 */
-	for(crate=0; crate<NELEMENTS(vxislot0); crate++){
-
-		if(!vxislot0[crate].present){
-			continue;
+	prealloc = FALSE;
+	if(!pvxie->la_mapped){
+		status = vxi_count_dc_devices(pvxie, &nDC);
+		if(status){
+			return;
 		}
+		if(nDC < 1){
+			return;
+		}
+		status = vxi_alloc_la(
+				pvxie,
+				nDC,
+				&offset);
+		if(status){
+			errMessage(
+				status,
+		"VXI resman: unanchored DC VXI device block doesnt fit\n");
+			errMessage(
+				status,
+		"VXI resman: %d DC VXI devices in extender LA=0X%X ignored\n",
+				nDC,
+				pvxie->la);
+			return;
+		}
+		prealloc = TRUE;
+	}
 
-		CLRMODID(crate);
+	/*
+	 * find all DC devices 
+	 */
+	pvxisz = (VXISZ *) crateList.node.next; 
+	while(pvxisz){
+		/*
+		 * We wish to selectively configure DC devices 
+		 * accessed through the current extender.
+		 *
+		 * If the slot zero card is the extender then
+		 * the LAs of the extender and the slot zero will
+		 * match. Otherwise the slotzero card was found
+		 * by opening up the window in the extender
+		 * and the slot zeros extender will be the
+		 * current extender.
+		 */
+		if(pvxisz->pvxie == pvxie || pvxisz->la == pvxie->la){
+			for(slot=0;slot<NVXISLOTS;slot++){
+				SETMODID(pvxisz, slot);
 
-		for(slot=0;slot<NVXISLOTS;slot++){
-			SETMODID(slot,crate);
-			/*
-			 * put some reasonable limit on the number 
-			 * of addr which can occupy one slot
-			 */
-			status = vxMemProbe(	pcsr,
+				status = vxMemProbe(	
+						pcsr,
 						READ,
 						sizeof(id),
 						&id);
-			if(status<0){
-				continue;
-			}
+				if(status<0){
+					continue;
+				}
 
-			status = vxi_find_offset(base_la, 1, &offset);
-			if(status<0){
-				logMsg("VXI resman: DC VXI device dosnt fit\n");
-				logMsg("VXI resman: DC VXI device ignored\n");
-				continue;
+				if(!prealloc){
+					status = vxi_alloc_la(
+							pvxie,
+							1,
+							&offset);
+					if(status){
+						errMessage(
+							status,
+		"VXI: DC VXI device doesnt fit\n");
+						errMessage(
+							status,
+		"VXI: DC VXI device in extender LA=0X%X ignored\n",
+							pvxie->la);
+						continue;
+					}
+				}
+				pcsr->dir.w.addr = offset;
+				status = open_vxi_device(
+						pvxie, 
+						offset);
+				if(status){
+					errMessage(
+						status,
+			"VXI resman: DC dev assign to LA=0X%X failed\n",
+						offset);
+					errMessage(
+						status,
+			"VXI resman: Slot Zero LA=0X%X\n",
+						pvxisz->la);
+					errMessage(
+						status,
+			"VXI resman: DC VXI device ignored\n");
+					continue;
+				}
+				if(prealloc){
+					offset++;
+				}
 			}
-			pcsr->dir.w.addr = offset;
-			status = open_vxi_device(pvxie, offset);
-			if(status<0){
-				logMsg("VXI resman: DC dev failed to DC\n");
-				logMsg("VXI resman: DC VXI device ignored\n");
-				continue;
-			}
+			CLRMODID(pvxisz);
 		}
-		CLRMODID(crate);
+		pvxisz = (VXISZ *) pvxisz->node.next;
 	}
 }
 
@@ -1204,58 +1494,89 @@ unsigned	base_la
 /*
  *
  *
- *	VXI_FIND_SLOT0
- *	Find the slot 0 module if present
- *	(assume that it is a static address)
+ *	VXI_COUNT_DC_DEVICES
  *
  */
-#if 0
-LOCAL int
-vxi_find_slot0(VXIE *pvxie)
+LOCAL EPVXISTAT vxi_count_dc_devices(
+VXIE		*pvxie,
+unsigned	*pCount
+)
 {
-	register int		status;
-	register unsigned 	addr;
-	struct vxi_csr		*pcsr;
-	short			id;
-	
-	for(addr=0; addr<=last_la; addr++){
+	int16_t		id;
+	EPVXISTAT	status;
+	struct vxi_csr	*pcsr;
+	VXISZ		*pvxisz;
+	int		slot;
+	unsigned	nDC;
 
+	/*
+	 * dont count DC devices if SC device at address 0xff
+	 */
+	if(epvxiLibDeviceList[VXIDYNAMICADDR]){
+		status = S_epvxi_badConfig;
+		errMessage(status, "SC device at DC address");
+		return status;
+	}
+
+	pvxisz = (VXISZ *) crateList.node.next; 
+	while(pvxisz){
+		CLRMODID(pvxisz);
+		pvxisz = (VXISZ *) pvxisz->node.next;
+	}
+
+	pcsr = VXIBASE(VXIDYNAMICADDR);
+	status = vxMemProbe(	pcsr,
+				READ,
+				sizeof(id),
+				&id);
+  	if(status == OK){
+		status = S_epvxi_badConfig;
+		errMessage(status, "SC device at DC address");
+		return status;
+	}
+
+	/*
+	 * find all dynamic modules
+	 */
+	nDC=0;
+	pvxisz = (VXISZ *) crateList.node.next; 
+	while(pvxisz){
 		/*
-		 * only add slot zero devices we have not
-		 * seen before
+		 * We wish to selectively configure DC devices 
+		 * accessed through the current extender.
+		 *
+		 * If the slot zero card is the extender then
+		 * the LAs of the extender and the slot zero will
+		 * match. Otherwise the slotzero card was found
+		 * by opening up the window in the extender
+		 * and the slot zeros extender will be the
+		 * current extender.
 		 */
-                if(epvxiLibDeviceList[addr]){
-			continue;
-		}
-	
-		pcsr = VXIBASE(addr);
+		if(pvxisz->pvxie == pvxie || 
+			pvxisz->la == pvxie->la){
 
-	  	status = vxMemProbe(	pcsr,
-					READ,
-					sizeof(id),
-					&id);
-  		if(status<0){
-			continue;
+			for(slot=0; slot<NVXISLOTS; slot++){
+				SETMODID(pvxisz, slot);
+
+				status = vxMemProbe(	
+						pcsr,
+						READ,
+						sizeof(id),
+						&id);
+				if(status>=0){
+					nDC++;
+				}
+			}
+			CLRMODID(pvxisz);
 		}
 
-		/*
-		 *	Is it a slot 0 card ?
-		 */
-		if(!VXISLOT0MODEL(pcsr)){
-			continue;
-		}
-	
-		open_slot0_device(pvxie, addr);
-
+		pvxisz = (VXISZ *) pvxisz->node.next;
 	}
-	if(vxislot0[0].present){
-		return OK;
-	}
-	else{
-		return ERROR;
-	}
+	*pCount = nDC;
+	return VXI_SUCCESS;
 }
-#endif
+
+
 
 
 /*
@@ -1264,15 +1585,14 @@ vxi_find_slot0(VXIE *pvxie)
  *
  *
  */
-LOCAL void
-open_slot0_device(
+LOCAL void open_slot0_device(
 VXIE		*pvxie,
 unsigned	la 
 )
 {
-	unsigned		index;
 	struct vxi_csr		*pcsr;
-	int			status;
+	EPVXISTAT		status;
+	VXISZ			*pvxisz;
 
 	pcsr = VXIBASE(la);
 
@@ -1281,52 +1601,48 @@ unsigned	la
 	 */
 	if(VXICLASS(pcsr) != VXI_REGISTER_DEVICE){
 		if(!VXIMXI(pcsr)){
-			logMsg("Only register based slot 0 devices\n");
-			logMsg("currently supported LA=0x%X\n", la);
+			errMessage(
+				S_epvxi_badConfig,
+"Only register based slot 0 devices currently supported LA=0x%X",
+				la);
 			return;
 		}
 	}
 	
-	for(index=0; index < NELEMENTS(vxislot0); index++){
-		if(vxislot0[index].pcsr == pcsr){
+	pvxisz = (VXISZ *) crateList.node.next;
+	while(pvxisz){
+		if(pvxisz->pcsr == pcsr){
 			return;
 		}
-		if(!vxislot0[index].present){
-			break;
-		}
-	}
-	if(index>=NELEMENTS(vxislot0)){
-		logMsg(	
-			"VXI Slot0s After %d'th ignored LA=0x%X\n",
-			NELEMENTS(vxislot0),
-			la);
-		return;
+		pvxisz = (VXISZ *) pvxisz->node.next;
 	}
 
-	vxislot0[index].present = TRUE;
-	vxislot0[index].reg = TRUE;
-	vxislot0[index].pcsr = pcsr;
-	vxislot0[index].set_modid = set_reg_modid;
-	vxislot0[index].clear_modid = clr_all_reg_modid;
-	vxislot0[index].mxi_la = pvxie->la;
-	vxislot0[index].la = la;
+	pvxisz = (VXISZ *) calloc(1, sizeof(*pvxisz));
+	if(!pvxisz){
+		errMessage(
+			S_epvxi_noMemory,
+			"continuing...");
+		return;
+	}
+	pvxisz->reg = TRUE;
+	pvxisz->pcsr = pcsr;
+	pvxisz->set_modid = set_reg_modid;
+	pvxisz->clear_modid = clr_all_reg_modid;
+	pvxisz->pvxie = pvxie;
+	pvxisz->la = la;
+
+	lstAdd(&crateList, &pvxisz->node);
 
 	if(!epvxiLibDeviceList[la]){
 		status = open_vxi_device(pvxie, la);
-		if(status!=OK){
-			logMsg("VXI resman: ignored slot 0 in use LA=0x%X\n");
-			vxislot0[index].present = FALSE;
+		if(status){
+			errMessage(
+				status,
+				"attempted slot zero device open la=0X%X",
+				la);
 			return;
 		}
 	}
-
-
-#	ifdef DEBUG
-		logMsg(	"VXI resman: slot zero found at LA=%d crate=%d\n", 
-			la, 
-			epvxiLibDeviceList[la]->crate);
-#	endif
-
 }
 
 
@@ -1342,18 +1658,23 @@ unsigned	la
  *
  */
 #ifdef NICPU030
-LOCAL void
-nicpu030_init(
+LOCAL EPVXISTAT nicpu030_init(
 VXIE	*pvxie
 )
 {
 	int		i;
-	int		status = ERROR;
-	short		model;
+	EPVXISTAT	status = S_epvxi_internal;
+	int16_t		model;
 	UINT8		type;
+	UINT8		la;
 	
-	if(vxislot0[0].present){
-		return;
+	/*
+	 * If we are running this code on the NI 030
+	 * we are the resource manager and the NI 030 will
+	 * be the first slot zero card found.
+	 */
+	if(niCpu030Initialized){
+		return VXI_SUCCESS;
 	}
 
 	for(i=0; i<NELEMENTS(nivxi_func_names); i++){
@@ -1368,23 +1689,29 @@ VXIE	*pvxie
 				(char **) &pnivxi_func[i],
 				&type);
 		if(status != OK){
-			return;
+			return VXI_SUCCESS;
 		}
 	}
 
 	status = (*pnivxi_func[(unsigned)e_vxiInit])();
         if(status<0){
-                logMsg("VXI resman: NI cpu030 init failed\n");
-                return;
+		status = S_epvxi_internal;
+		errMessage(
+			status, 
+			"VXI resman: NI cpu030 init failed\n");
+                return status;
         }
 
-#ifdef INIT_NIVXI_LIBRARY
-	status = (*pnivxi_func[(unsigned)e_InitVXIlibrary])();
-        if(status<0){
-                logMsg("VXI resman: NIVXI library init failed\n");
-                return;
-        }
-#endif	INIT_NIVXI_LIBRARY
+#	ifdef INIT_NI_VXI_LIBRARY
+		status = (*pnivxi_func[(unsigned)e_InitVXIlibrary])();
+        	if(status<0){
+			status = S_epvxi_internal;
+			errMessage(
+				status, 
+               			"NIVXI library init failed\n");
+	                return status;
+       	 	}
+#	endif
 
 #	define VXI_MODEL_REGISTER 2
 	status = (*pnivxi_func[(unsigned)e_VXIinLR])(
@@ -1392,22 +1719,36 @@ VXIE	*pvxie
 			sizeof(model),
 			&model);
 	if(status<0){
-                logMsg("vxi resman: CPU030 model type read failed\n");
-                return;
+		status = S_epvxi_internal;
+		errMessage(
+			status, 
+                	"vxi resman: CPU030 model type read failed\n");
+                return status;
         }
 
+	la = (*pnivxi_func[(unsigned)e_GetMyLA])();
+
+	niCpu030Initialized = TRUE;
+
 	if(VXISLOT0MODELTEST(VXIMODELMASK(model))){
-		vxislot0[0].present = TRUE;
-		vxislot0[0].nicpu030 = TRUE;
-		vxislot0[0].set_modid = nivxi_cpu030_set_modid;
-		vxislot0[0].clear_modid = nivxi_cpu030_clr_all_modid;
-		vxislot0[0].la = (*pnivxi_func[(unsigned)e_GetMyLA])();
-		vxislot0[0].mxi_la = pvxie->la;
-	
-#		ifdef DEBUG
-			logMsg(	"VXI resman: NI CPU030 slot zero found\n"); 
-#		endif
+		VXISZ	*pvxisz;
+
+		pvxisz = (VXISZ *) calloc(1, sizeof(*pvxisz));
+		if(!pvxisz){
+			status = S_epvxi_noMemory;
+			errMessage(status, NULL);
+			return status;
+		}
+
+		pvxisz->nicpu030 = TRUE;
+		pvxisz->set_modid = nivxi_cpu030_set_modid;
+		pvxisz->clear_modid = nivxi_cpu030_clr_all_modid;
+		pvxisz->la = la;
+		pvxisz->pvxie = pvxie;
+
+		lstAdd(&crateList, &pvxisz->node);
 	}
+	return VXI_SUCCESS;
 }
 #endif
 
@@ -1415,38 +1756,101 @@ VXIE	*pvxie
 
 /*
  *
- *	VXI_FIND_OFFSET
- *	find a free space for n devices
+ *	vxi_alloc_la()	
  * 
  */
-LOCAL int
-vxi_find_offset(
-unsigned	base_la,	
+LOCAL EPVXISTAT vxi_alloc_la(
+VXIE		*pvxie,
 unsigned	count,
 unsigned	*poffset
 )
 {
-	unsigned		peak = 0;
-	unsigned 		addr;
-	struct vxi_csr_r	*pcsr;
-	register int		status;
-	short			id;
+	EPVXISTAT	status;
+	unsigned	hla;
+	VXIDI		*pvxidi;
+	unsigned	peak = 0;
+	unsigned 	la;
 	
+	if(count<1){
+		status = S_epvxi_internal;
+		errMessage(status,NULL);
+		return status;
+	}
 
-	for(addr=base_la; addr<=last_la; addr++){
+	/*
+	 * look inside the range thats mapped first
+	 */
+	if(pvxie->la_mapped){
+		for(la=pvxie->la_low; la<=last_la; la++){
 
-		pcsr = (struct vxi_csr_r *) VXIBASE(addr);
-	  	status = vxMemProbe(	pcsr,
-					READ,
-					sizeof(id),
-					&id);
-  		if(status == OK){
+			pvxidi = epvxiLibDeviceList[la];
+
+			/*
+			 * skip all devices seen before
+			 */
+			if(pvxidi){
+				/*
+				 * LA window cant cross extender boundaries
+				 * so just quit
+				 */
+				if(pvxidi->pvxie != pvxie){
+					break;
+				}
+				peak= 0;
+				continue;
+			}
+
+			if(vxi_la_occupied(la)){
+				peak= 0;
+				continue;
+			}
+
+			peak++;
+
+			if(peak >= count){
+				*poffset = ((int)la)-(count-1);
+				return VXI_SUCCESS;
+			}
+		}
+
+		hla = pvxie->la_low;
+	}
+	else{
+		hla = last_la;
+	}
+
+	/*
+	 * unachored DC device allocations go from high 
+	 * to low so that we avoid mc680xx reserved
+	 * interrupt vectors
+	 *
+	 * stop before unsigned la=0 is decremented
+	 * (shouldnt allocate the resource manager's LA anyways)
+	 */
+	peak=0;
+	for(la=hla; la>=max(VXI_RESMAN_LA+1,first_la); la--){
+
+		pvxidi = epvxiLibDeviceList[la];
+
+		/*
+		 * skip all devices seen before
+		 */
+		if(pvxidi){
+			/*
+			 * LA window cant cross extender boundaries
+			 * (if something is mapped already) so just quit
+			 */
+			if(pvxie->la_mapped){
+				if(pvxidi->pvxie != pvxie){
+					break;
+				}
+			}
+
 			peak= 0;
 			continue;
 		}
 
-		/* dont allow vxi int vec to overlap VME vectors in use */
-		if(vxi_vec_inuse(addr)){
+		if(vxi_la_occupied(la)){
 			peak= 0;
 			continue;
 		}
@@ -1454,12 +1858,71 @@ unsigned	*poffset
 		peak++;
 
 		if(peak >= count){
-			*poffset = ((int)addr)-(count-1);
-			return OK;
+			*poffset = la;
+			return VXI_SUCCESS;
 		}
 	}
+
+	return S_epvxi_internal;
+}
+
+
+/*
+ *
+ * vxi_la_occupied()
+ *
+ */
+LOCAL EPVXISTAT vxi_la_occupied(unsigned la)
+{
+	struct vxi_csr 	*pcsr;
+	int16_t		*pi16;
+	int16_t		i16;
+	EPVXISTAT	s;
+
+	/*
+ 	 * dont allocate the resource manager's LA
+	 */
+	if(la == VXI_RESMAN_LA){
+		return TRUE;
+	}
+
+	/*
+	 * Check to see if this LA belongs to
+	 * the NI 030 CPU (that does not show 
+	 * in A16 when it is a VME BM)
+	 */
+	if(niCpu030Initialized){
+		if(la == (*pnivxi_func[(unsigned)e_GetMyLA])()){
+			return TRUE;
+		}
+	}
+
+	/*
+	 * Probe the entire LA space
+	 */
+	pcsr = VXIBASE(la);
+	for(	pi16 = (int16_t *) &pcsr->dir.r.make;
+		pi16 <= (int16_t *) &pcsr->dir.r.dd.reg.ddx2e;
+		pi16++){
+
+	  	s = vxMemProbe(	pi16,
+				READ,
+				sizeof(i16),
+				&i16);
+	  	if(s == OK){
+			return TRUE;
+		}
+	}
+
+	/* 
+	 * dont allow vxi int vec to overlap 
+	 * VME vectors in use 
+	 */
+	if(vxi_vec_inuse(la)){
+		return TRUE;
+	}
 		
-	return ERROR;
+	return FALSE;
 }
 
 
@@ -1470,37 +1933,47 @@ unsigned	*poffset
  *	given a VXI module's addr find its slot
  *
  */
-int
-vxi_find_slot(
+LOCAL EPVXISTAT vxi_find_slot(
 struct vxi_csr		*pcsr,
 unsigned  		*pslot,
-unsigned		*pcrate
+VXISZ			**ppvxisz
 )
 {
-	register unsigned char	slot;
-	register unsigned char	crate;
-	register		status;
+	VXISZ		*pvxisz;
+	EPVXISTAT	status;
+	unsigned char	slot;
 
-	status = ERROR;
+	status = S_epvxi_internal;
 
-	for(crate=0; crate<NELEMENTS(vxislot0); crate++){
+	pvxisz = (VXISZ *) crateList.node.next;
+	while(pvxisz){
+
+		/*
+		 * if it is a slot zero card
+		 * then dont bother searching
+		 */
+		if(pvxisz->pcsr == pcsr){
+			*pslot = 0;
+			*ppvxisz = pvxisz;
+			status = VXI_SUCCESS;
+			break;
+		}
  
-		if(!vxislot0[crate].present)
-			continue;
-
 		for(slot=0;slot<NVXISLOTS;slot++){
-			SETMODID(slot, crate);
+			SETMODID(pvxisz, slot);
   			if(VXIMODIDSTATUS(pcsr->dir.r.status)){
 				*pslot = slot;
-				*pcrate = crate;
-				status = OK;
+				*ppvxisz = pvxisz;
+				status = VXI_SUCCESS;
 				break;
 			}
 		}
-		CLRMODID(crate);
+		CLRMODID(pvxisz);
 
-		if(status == OK)
+		if(status == VXI_SUCCESS)
 			break;
+
+		pvxisz = (VXISZ *) pvxisz->node.next;
 	}
 
 	return status;
@@ -1516,18 +1989,17 @@ unsigned		*pcrate
  *	not tested with at5vxi modules
  */
 #ifdef JUNKYARD
-LOCAL int
-vxi_reset_dc(void)
+LOCAL EPVXISTAT vxi_reset_dc(void)
 {
 	register unsigned 	addr;
 	unsigned 		slot;
 	unsigned 		crate;
-	short			id;
-	register		status;
+	int16_t			id;
+	EPVXISTAT		status;
 	struct vxi_csr_w	*pcr;
 	struct vxi_csr_r	*psr;
 
-	for(addr=0; addr<=last_la; addr++){
+	for(addr=first_la; addr<=last_la; addr++){
 
 		psr = (struct vxi_csr_r *) VXIBASE(addr);
 		pcr = (struct vxi_csr_w *) psr;
@@ -1540,8 +2012,8 @@ vxi_reset_dc(void)
 			continue;
 
 		status = vxi_find_slot(psr, &slot, &crate);
-		if(status == ERROR){
-			return ERROR;
+		if(status){
+			return status;
 		}
 
 		SETMODID(slot, crate);
@@ -1550,7 +2022,7 @@ vxi_reset_dc(void)
 		pcr->addr = VXIDYNAMICADDR;
 	}
 
-	return OK;
+	return VXI_SUCCESS;
 }
 #endif
 
@@ -1562,23 +2034,22 @@ vxi_reset_dc(void)
  *
  */
 #ifdef JUNKYARD
-LOCAL int
-vxi_dc_test(
+LOCAL EPVXISTAT vxi_dc_test(
 unsigned 	current_addr
 )
 {
 	register unsigned 	addr;
 	unsigned 		slot;
 	unsigned 		crate;
-	short			id;
-	register		status;
+	int16_t			id;
+	EPVXISTAT		status;
 	struct vxi_csr_w	*pcr;
 	struct vxi_csr_r	*psr;
 
 	static unsigned		open_addr;
 	unsigned		dynamic;
 
-	for(addr=0; addr<=last_la; addr++){
+	for(addr=first_la; addr<=last_la; addr++){
 
 	  	status = vxMemProbe(	VXIBASE(addr),
 					READ,
@@ -1594,8 +2065,9 @@ unsigned 	current_addr
 	pcr = (struct vxi_csr_w *) psr;
 
 	status = vxi_find_slot(psr, &slot, &crate);
-	if(status == ERROR){
-		abort();
+	if(status){
+		errMessage(status,NULL);
+		return status;
 	}
 
 	SETMODID(slot, crate);
@@ -1621,7 +2093,7 @@ unsigned 	current_addr
 				sizeof(id),
 				&id);
 	if(status == ERROR)
-		abort();
+		return S_epvxi_internal;
 
 
 	return dynamic;
@@ -1634,13 +2106,12 @@ unsigned 	current_addr
  *      VXI_CONFIGURE_HIERARCHIES
  *
  */
-LOCAL void 
-vxi_configure_hierarchies(
+LOCAL void vxi_configure_hierarchies(
 unsigned	commander_la,
 unsigned	servant_area
 )
 {
-        int			status;
+        EPVXISTAT		status;
         struct vxi_csr		*pcsr;
 	unsigned long		response;
 	VXIDI			**ppvxidi;
@@ -1652,7 +2123,9 @@ unsigned	servant_area
 	last_sla = servant_area+commander_la;
 
 	if(last_sla >= NELEMENTS(epvxiLibDeviceList)){
-		logMsg(	"VXI resman: Clipping servant area (LA=0x%X)\n",
+		errMessage(	
+			S_epvxi_internal,
+			"VXI resman: Clipping servant area (LA=0x%X)",
 			commander_la);
 		last_sla = NELEMENTS(epvxiLibDeviceList)-1;
 	}
@@ -1687,12 +2160,15 @@ unsigned	servant_area
 					commander_la,
 					(unsigned long)MBC_GRANT_DEVICE | sla,
 					&response);
-			if(status<0){
-				logMsg(	"VXI resman: gd failed (LA=0x%X)\n",
+			if(status){
+				errMessage(
+					status,
+					"VXI resman: GD failed (LA=0x%X)",
 					sla);
 			}
 			else{
-				logMsg(	"VXI resman: gd resp %x\n",
+				printf(
+					"VXI resman: gd resp %x\n",
 					response);
 			}
 		}
@@ -1701,14 +2177,16 @@ unsigned	servant_area
 					sla,
 					(unsigned long)MBC_READ_SERVANT_AREA,
 					&response);
-			if(status<0){
-				logMsg(	"VXI resman: rsa failed (LA=0x%X)\n",
+			if(status){
+				errMessage(
+					status,
+					"VXI resman: RSA failed (LA=0x%X)\n",
 					sla);
 			}
 			else{
 				area = response & MBR_READ_SERVANT_AREA_MASK;
 
-				logMsg(	"The servant area was %d (LA=0x%X)\n",
+				printf(	"The servant area was %d (LA=0x%X)\n",
 					area,
 					sla);
 
@@ -1726,10 +2204,9 @@ unsigned	servant_area
  *      VXI_BEGIN_NORMAL_OPERATION
  *
  */
-LOCAL int
-vxi_begin_normal_operation(void)
+LOCAL void vxi_begin_normal_operation(void)
 {
-        int			status;
+        EPVXISTAT		status;
 	unsigned		la;
 	VXIDI			**ppvxidi;
 	VXIDI			*pvxidi;
@@ -1773,8 +2250,9 @@ vxi_begin_normal_operation(void)
 			cmd |= MBC_TOP_LEVEL_CMDR;
 		}
 		status = epvxiCmdQuery(la, cmd, &resp); 
-		if(status<0){
-			logMsg(	
+		if(status){
+			errMessage(
+				status,
 	"VXI resman: beg nml op cmd failed LA=0x%X (reason=%d)\n",
 				la,
 				status);
@@ -1782,7 +2260,8 @@ vxi_begin_normal_operation(void)
 		else if(
 			MBR_STATUS(resp)!=MBR_STATUS_SUCCESS ||
 			MBR_BNO_STATE(resp)!=MBR_BNO_STATE_NO){
-			logMsg(	
+			errMessage(
+				S_epvxi_msgDeviceFailure,
 	"VXI resman: beg nml op cmd failed LA=0x%X (status=%x) (state=%x)\n",
 				la,
 				MBR_STATUS(resp),
@@ -1804,18 +2283,21 @@ vxi_begin_normal_operation(void)
 		if(cmdr){
 			unsigned long	sa=0;
 
-			logMsg("Found a msg based cmdr\n");
+			printf("Found a msg based cmdr\n");
 
                 	status = epvxiCmdQuery(
                        		        la,
                                		(unsigned long)MBC_READ_SERVANT_AREA,
 					&sa);
-                	if(status<0){
-                        	logMsg("vxi resman: rsa failed\n");
+                	if(status){
+				errMessage(
+					status,
+                        		"vxi resman: rsa failed\n");
 			}
 			else{
 				sa = sa & MBR_READ_SERVANT_AREA_MASK;
-				logMsg(	"The servant area was %d\n",
+				printf(
+					"The servant area was %d\n",
 					sa);
 				la += sa;
 			}
@@ -1832,12 +2314,10 @@ vxi_begin_normal_operation(void)
  *	print message about failed devices
  *
  */
-LOCAL int
-vxi_self_test(void)
+LOCAL EPVXISTAT vxi_self_test(void)
 {
 	unsigned 		la;
-	UINT16			wd;
-	int			status;
+	uint16_t		wd;
 	struct vxi_csr		*pcsr;
 	VXIDI			**ppvxidi;
 
@@ -1858,12 +2338,14 @@ vxi_self_test(void)
 			(*ppvxidi)->st_passed = TRUE;	
 		}
 		else{
-			logMsg( "VXI resman: device self test failed\n");
+			errMessage(
+				S_epvxi_selfTestFailed,
+				"VXI resman: device self test failed");
 			epvxiSetDeviceOffline(la);
 		}
 	}
 
-	return OK;
+	return VXI_SUCCESS;
 }
 
 
@@ -1873,23 +2355,23 @@ vxi_self_test(void)
  * epvxiSetDeviceOffline()
  *
  */
-LOCAL int
-epvxiSetDeviceOffline(
-	int 	la
+LOCAL EPVXISTAT epvxiSetDeviceOffline(
+unsigned 	la
 )
 {
 	struct vxi_csr		*pcsr;
 
 	pcsr = VXIBASE(la);
 
-	logMsg(	
+	errMessage(	
+		S_epvxi_badConfig,
 		"WARNING: VXI device placed off line %c(LA=0x%X)\n",
 		BELL,
 		la);
 
 	pcsr->dir.w.control = VXISAFECONTROL;
 
-	return OK;
+	return VXI_SUCCESS;
 }
 
 
@@ -1898,10 +2380,9 @@ epvxiSetDeviceOffline(
  *	VXI_ADDRESS_CONFIG
  *
  */
-LOCAL void 
-vxi_address_config(void)
+LOCAL void vxi_address_config(void)
 {
-	int			status;
+	EPVXISTAT			status;
 
 	/*
 	 * fetch the EPICS address ranges from the global
@@ -1911,28 +2392,28 @@ vxi_address_config(void)
 			"_EPICS_VXI_A24_BASE", 
 			&root_extender.A24_base, 
 			sizeof(root_extender.A24_base));
-	if(status<0){
+	if(status){
 		root_extender.A24_base = DEFAULT_VXI_A24_BASE;
 	}
 	status = symbol_value_fetch(
 			"_EPICS_VXI_A24_SIZE", 
 			&root_extender.A24_size, 
 			sizeof(root_extender.A24_size));
-	if(status<0){
+	if(status){
 		root_extender.A24_size = DEFAULT_VXI_A24_SIZE;
 	}
 	status = symbol_value_fetch(
 			"_EPICS_VXI_A32_BASE", 
 			&root_extender.A32_base, 
 			sizeof(root_extender.A32_base));
-	if(status<0){
+	if(status){
 		root_extender.A32_base = DEFAULT_VXI_A32_BASE;
 	}
 	status = symbol_value_fetch(
 			"_EPICS_VXI_A32_SIZE", 
 			&root_extender.A32_size, 
 			sizeof(root_extender.A32_size));
-	if(status<0){
+	if(status){
 		root_extender.A32_size = DEFAULT_VXI_A32_SIZE;
 	}
 	
@@ -1948,8 +2429,9 @@ vxi_address_config(void)
 	}
 	else{
 		root_extender.A24_ok = FALSE;
-                logMsg(	"%s: A24 VXI Base Addr problems\n",
-			__FILE__);
+                errMessage(	
+			S_epvxi_badConfig,
+			"A24 VXI Base Addr problems");
         }
 	status = sysBusToLocalAdrs(
                                 VME_AM_EXT_SUP_DATA,
@@ -1960,8 +2442,9 @@ vxi_address_config(void)
 	}
 	else{
 		root_extender.A32_ok = FALSE;
-                logMsg(	"%s: A32 VXI Base Addr problems\n",
-			__FILE__);
+                errMessage(	
+			S_epvxi_badConfig,
+			"A32 VXI Base Addr problems");
         }
 
 	vxi_allocate_address_block(&root_extender);
@@ -1973,13 +2456,11 @@ vxi_address_config(void)
  *	VXI_ALLOCATE_ADDRESS_BLOCK	
  *
  */
-LOCAL void 
-vxi_allocate_address_block(
+LOCAL void vxi_allocate_address_block(
 VXIE	*pvxie
 )
 {
 	unsigned 		la;
-	short			wd;
 	struct vxi_csr		*pcsr;
 	VXIDI			**ppvxidi;
 	VXIE			*psubvxie;
@@ -2051,10 +2532,6 @@ VXIE	*pvxie
 		 * dont configure devices lower in the hierarchy
 		 */
 		if((*ppvxidi)->A24_mapped || (*ppvxidi)->A32_mapped){
-#			ifdef DEBUG
-				logMsg(	"%s: ignored sub device\n",
-					__FILE__);
-#			endif
 			continue;
 		}
 
@@ -2064,9 +2541,6 @@ VXIE	*pvxie
 
 		switch(VXIADDRSPACE(pcsr)){
 		case VXI_ADDR_EXT_A24:
-#			ifdef DEBUG		
-				logMsg("Allocating A24 (LA=%d)\n", la);
-#			endif
 			if(!pvxie->A24_ok){
 				break;
 			}
@@ -2076,9 +2550,12 @@ VXIE	*pvxie
 			 */
 			size = VXIA24MEMSIZE(m);
 			if(size>A24_size){
-				logMsg("VXI A24 device does not fit %d %d\n",
+				errMessage(
+					S_epvxi_badConfig,
+	"VXI A24 device does not fit Request=%d Avail=%d LA=0X%X",
 					size,
-					A24_size);
+					A24_size,
+					la);
 				epvxiSetDeviceOffline(la);
 				break;
 			}
@@ -2094,9 +2571,6 @@ VXIE	*pvxie
 			break;
 
 		case VXI_ADDR_EXT_A32:
-#			ifdef DEBUG		
-				logMsg("Allocating A32 (la=%d)\n", la);
-#			endif
 			if(!pvxie->A32_ok){
 				break;
 			}
@@ -2106,9 +2580,12 @@ VXIE	*pvxie
 			 */
 			size = VXIA32MEMSIZE(m);
 			if(size>A32_size){
-				logMsg(	"VXI A32 device does not fit %d %d\n",
+				errMessage(
+					S_epvxi_badConfig,
+	"VXI A32 device does not fit Request=%d Avail=%d LA=0X%X",
 					size,
-					A32_size);
+					A32_size,
+					la);
 				epvxiSetDeviceOffline(la);
 				break;
 			}
@@ -2143,18 +2620,9 @@ VXIE	*pvxie
 		pvxie->A32_size = MXIA32ALIGN(pvxie->A32_size);
 	}
 
-#	ifdef DEBUG
-		logMsg(	"A24 base=%x size=%x\n",
-			pvxie->A24_base,
-			pvxie->A24_size);
-#	endif
-
 	switch(pvxie->type){
 	case ext_export_vxi_onto_mxi:
 		if(pvxie->A24_mapped){
-#			ifdef DEBUG		
-				logMsg("Mapping A24 VXI onto MXI\n");
-#			endif
 			/*
 			 * window enables only after the low 
 			 * byte is written
@@ -2167,9 +2635,6 @@ VXIE	*pvxie
 					>> MXIA24MASKSIZE;	
 		}
 		if(pvxie->A32_mapped){
-#			ifdef DEBUG		
-				logMsg("Mapping A32 VXI onto MXI\n");
-#			endif
 			/*
 			 * window enables only after the low 
 			 * byte is written
@@ -2185,9 +2650,6 @@ VXIE	*pvxie
 
 	case ext_import_mxi_into_vxi:
 		if(pvxie->A24_mapped){
-#			ifdef DEBUG		
-				logMsg("Mapping A24 MXI onto VXI\n");
-#			endif
 			/*
 			 * window enables only after the low 
 			 * byte is written
@@ -2200,9 +2662,6 @@ VXIE	*pvxie
 					>> MXIA24MASKSIZE;
 		}
 		if(pvxie->A32_mapped){
-#			ifdef DEBUG		
-				logMsg("Mapping A32 MXI onto VXI\n");
-#			endif
 			/*
 			 * window enables only after the low 
 			 * byte is written
@@ -2228,16 +2687,15 @@ VXIE	*pvxie
  * symbol_value_fetch
  *
  */
-LOCAL int
-symbol_value_fetch(
+LOCAL EPVXISTAT symbol_value_fetch(
 char 		*pname,
 void 		*pdest,
 unsigned 	dest_size
 )
 {
-	int	status;
-	UINT8	type;
-	char	*pvalue;
+	EPVXISTAT	status;
+	UINT8		type;
+	char		*pvalue;
 
 	status = symFindByName(
 				sysSymTbl,
@@ -2246,10 +2704,10 @@ unsigned 	dest_size
 				&type);
 	if(status == OK){
 		bcopy(pvalue, pdest, dest_size);
-		return OK;
+		return VXI_SUCCESS;
 	}
 	else{
-		return ERROR;
+		return S_epvxi_internal;
 	}
 }
 
@@ -2260,12 +2718,11 @@ unsigned 	dest_size
  *	init list of interrupt handlers to ignore
  *
  */
-LOCAL int
-vxi_init_ignore_list(void)
+LOCAL EPVXISTAT vxi_init_ignore_list(void)
 {
-  	int 	i;
-	UINT8	type;
-	int	status;
+  	int 		i;
+	UINT8		type;
+	EPVXISTAT	status;
 
   	for(i=0; i<NELEMENTS(ignore_list); i++){
 		status =
@@ -2273,11 +2730,16 @@ vxi_init_ignore_list(void)
 					ignore_list[i],
 					(char **) &ignore_addr_list[i],
 					&type);
-		if(status == ERROR)
-			return ERROR;
+		if(status != OK){
+			status = S_epvxi_internal;
+			errMessage(
+				status,
+				"Default int handler not found");
+			return status;
+		}
 	}
 
-	return OK;
+	return VXI_SUCCESS;
 }
 
 
@@ -2287,8 +2749,7 @@ vxi_init_ignore_list(void)
  *	check to see if vector is in use
  *
  */
-LOCAL int
-vxi_vec_inuse(
+LOCAL EPVXISTAT vxi_vec_inuse( 
 unsigned	addr
 )
 {
@@ -2309,17 +2770,18 @@ unsigned	addr
  *      SET_REG_MODID
  *
  */
-LOCAL void
-set_reg_modid(
-unsigned	crate,
+LOCAL void set_reg_modid(
+VXISZ		*pvxisz,
 unsigned	slot
 )
 {
-	if(!(vxislot0[crate].present&&vxislot0[crate].reg)){
-		logMsg("%s: bad crate for set_reg_modid\n",__FILE__);
+	if(!(pvxisz->reg)){
+		errMessage(
+			S_epvxi_internal,
+			"bad crate for set_reg_modid");
 		return;
 	}
-	VXI_SET_REG_MODID(vxislot0[crate].pcsr, slot);
+	VXI_SET_REG_MODID(pvxisz->pcsr, slot);
 }
 
 /*
@@ -2327,16 +2789,17 @@ unsigned	slot
  *      CLR_ALL_REG_MODID
  *
  */
-LOCAL void
-clr_all_reg_modid(
-unsigned	crate
+LOCAL void clr_all_reg_modid(
+VXISZ		*pvxisz
 )
 {
-	if(!(vxislot0[crate].present&&vxislot0[crate].reg)){
-		logMsg("%s: bad crate for clr_all_reg_modid\n",__FILE__);
+	if(!(pvxisz->reg)){
+		errMessage(
+			S_epvxi_internal,
+			"bad crate for clr_all_reg_modid");
 		return;
 	}
-	VXI_CLR_ALL_REG_MODID(vxislot0[crate].pcsr);
+	VXI_CLR_ALL_REG_MODID(pvxisz->pcsr);
 }
 
 
@@ -2347,17 +2810,20 @@ unsigned	crate
  *
  */
 #ifdef NICPU030
-LOCAL void
-nivxi_cpu030_set_modid(
-unsigned        crate,
+LOCAL void nivxi_cpu030_set_modid(
+VXISZ		*pvxisz,
 unsigned        slot
 )
 {
-	int status;
+	EPVXISTAT status;
 
-	status = (*pnivxi_func[(unsigned)e_SetMODID])(TRUE,1<<slot);
-	if(status<0){
-		logMsg("CPU030 set modid failed\n");
+	if(niCpu030Initialized){
+		status = (*pnivxi_func[(unsigned)e_SetMODID])(TRUE,1<<slot);
+		if(status<0){
+			errMessage(
+				S_epvxi_internal,
+				"CPU030 set modid failed");
+		}
 	}
 }
 #endif
@@ -2368,16 +2834,19 @@ unsigned        slot
  *
  */
 #ifdef NICPU030
-LOCAL void
-nivxi_cpu030_clr_all_modid(
-unsigned        crate
+LOCAL void nivxi_cpu030_clr_all_modid(
+VXISZ		*pvxisz
 )
 {
-	int status;
+	EPVXISTAT status;
 
-	status = (*pnivxi_func[(unsigned)e_SetMODID])(FALSE,0);
-	if(status<0){
-		logMsg("CPU030 clr all modid failed\n");
+	if(niCpu030Initialized){
+		status = (*pnivxi_func[(unsigned)e_SetMODID])(FALSE,0);
+		if(status<0){
+			errMessage(
+				S_epvxi_internal,
+				"CPU030 clr all modid failed");
+		}
 	}
 }
 #endif
@@ -2388,8 +2857,7 @@ unsigned        crate
  * epvxiDeviceList()
  *
  */
-int
-epvxiDeviceList(void)
+EPVXISTAT epvxiDeviceList(void)
 {
 	int 	i;
 	VXIDI	**ppmxidi;
@@ -2401,25 +2869,30 @@ epvxiDeviceList(void)
 		pmxidi = *ppmxidi;
 		if(pmxidi){
 			printf(	
-		"Logical Address 0x%02X Slot %2d Crate %2d Class 0x%02X\n", 
+		"Logical Address 0x%02X Slot %2d SZ LA 0x%02X Class 0x%02X\n", 
 				i,
 				pmxidi->slot,
-				pmxidi->crate,
+				pmxidi->pvxisz->la,
 				pmxidi->class);
 			printf("\t");
-			if(pmxidi->mxi_dev){
-				printf("mxi, ");
+			if(pmxidi->pvxieSelf){
+				printf("extender, ");
 			}
 			if(pmxidi->msg_dev_online){
 				printf("msg online, ");
 			}
 			printf("driver ID %d, ", pmxidi->driverID);
+			if(taskIdVerify(pmxidi->taskID)>=0){
+				printf(	"opened by task %s, ", 
+					taskName(pmxidi->taskID));
+			}
 			printf("cmdr la=0x%X, ", pmxidi->commander_la);
 			printf("extdr la=0x%X, ", pmxidi->extender_la);
 			printf("slot-zero la=0x%X, ", pmxidi->slot_zero_la);
-			printf("make 0x%X, ", pmxidi->make);
+			printf("make 0X%X, ", (unsigned) pmxidi->make);
 			printf("model 0x%X, ", pmxidi->model);
-			printf("pio_report_func %x, ", pmxidi->pio_report_func);
+			printf(	"pio_report_func %x, ", 
+				(unsigned) pmxidi->pio_report_func);
 			printf("\n");
 		}
 		i++;
@@ -2432,12 +2905,44 @@ epvxiDeviceList(void)
 
 /*
  *
+ * epvxiCrateList()
+ *
+ */
+EPVXISTAT epvxiCrateList(void)
+{
+	VXISZ	*pvxisz;
+
+	printf("VXI crate list\n");
+	pvxisz = (VXISZ *) crateList.node.next;
+	while(pvxisz){
+
+		printf("LA=0X%X", pvxisz->la);
+		printf(	", extender LA=0X%X", 
+			pvxisz->pvxie->la);
+		if(pvxisz->reg){
+			printf(", register device");
+		}
+		if(pvxisz->msg){
+			printf(", message device");
+		}
+		if(pvxisz->nicpu030){
+			printf(", NI030");
+		}
+		printf("\n");
+		pvxisz = (VXISZ *) pvxisz->node.next;
+	}
+
+	return VXI_SUCCESS;
+}
+
+
+/*
+ *
  * epvxiUniqueDriverID()
  *
  * return a non zero unique id for a VXI driver
  */
-int
-epvxiUniqueDriverID(void)
+long epvxiUniqueDriverID(void)
 {
 	if(epvxiNextDriverID<UNINITIALIZED_DRIVER_ID){
 		return epvxiNextDriverID++;
@@ -2459,8 +2964,7 @@ epvxiUniqueDriverID(void)
  * 5) 	Install an optional io report function
  *
  */
-int
-epvxiOpen(
+EPVXISTAT epvxiOpen(
 unsigned	la,
 int		vxiDriverID,
 unsigned long	driverConfigSize,
@@ -2469,31 +2973,31 @@ void		(*pio_report_func)()
 {
 	VXIDI		*pvxidi;
 	void		*pconfig;
-	int		status;
+	EPVXISTAT	status;
 
 
 	if(vxiDriverID == UNINITIALIZED_DRIVER_ID){
-		return VXI_NOT_OWNER;
+		return S_epvxi_notOwner;
 	}
 
 	status = epvxiDeviceVerify(la);
-	if(status<0){
+	if(status){
 		return status;
 	}
 
 	pvxidi = epvxiLibDeviceList[la];
 	
 	if(pvxidi->driverID == vxiDriverID){
-		return VXI_DEVICE_OPEN;
+		return S_epvxi_deviceOpen;
 	}
 	else if(pvxidi->driverID != NO_DRIVER_ATTACHED_ID){
-		return VXI_NOT_OWNER;
+		return S_epvxi_notOwner;
 	}
 
 	if(driverConfigSize){
 		pconfig = (void *)calloc(1,driverConfigSize);
 		if(!pconfig){
-			return VXI_NO_MEMORY;
+			return S_epvxi_noMemory;
         	}
 		pvxidi->pDriverConfig = pconfig;
 	}
@@ -2503,6 +3007,7 @@ void		(*pio_report_func)()
 
 	pvxidi->pio_report_func = pio_report_func;
 
+	pvxidi->taskID = taskIdSelf();
 	pvxidi->driverID = vxiDriverID;
 
 	return VXI_SUCCESS;
@@ -2515,20 +3020,20 @@ void		(*pio_report_func)()
  *
  *
  */
-int epvxiDeviceVerify(unsigned la)
+EPVXISTAT epvxiDeviceVerify(unsigned la)
 {
-	int		status;
+	EPVXISTAT	status;
 	VXICSR		*pcsr;
 	VXIDI		*pvxidi;
-	UINT16		device_status;
+	uint16_t	device_status;
 
 	if(la > NELEMENTS(epvxiLibDeviceList)){
-		return VXI_BAD_LA;
+		return S_epvxi_badLA;
 	}
 
 	pvxidi = epvxiLibDeviceList[la];
 	if(!pvxidi){
-		return VXI_UKN_DEVICE;
+		return S_epvxi_uknDevice;
 	}
 
 	/*
@@ -2543,10 +3048,10 @@ int epvxiDeviceVerify(unsigned la)
 				sizeof(pcsr->dir.r.status),
 				&device_status);
 	if(status != OK){
-		return VXI_UKN_DEVICE;
+		return S_epvxi_uknDevice;
 	}
 	if(!VXIPASSEDSTATUS(device_status)){
-		return VXI_SELF_TEST_FAILED;
+		return S_epvxi_selfTestFailed;
 	}	
 
 	return VXI_SUCCESS;
@@ -2560,8 +3065,7 @@ int epvxiDeviceVerify(unsigned la)
  * 1)	Unregister a driver's ownership of a device
  * 2) 	Free driver's configuration block if one is allocated
  */
-int
-epvxiClose(
+EPVXISTAT epvxiClose(
 unsigned        la,
 int		vxiDriverID
 )
@@ -2569,7 +3073,7 @@ int		vxiDriverID
         VXIDI   *pvxidi;
 
 	if(la > NELEMENTS(epvxiLibDeviceList)){
-		return VXI_BAD_LA;
+		return S_epvxi_badLA;
 	}
 
         pvxidi = epvxiLibDeviceList[la];
@@ -2583,10 +3087,10 @@ int		vxiDriverID
 			}
                         return VXI_SUCCESS;
                 }
-                return VXI_NOT_OWNER;
+                return S_epvxi_notOwner;
         }
 
-	return VXI_NOT_OPEN;	
+	return S_epvxi_notOwner;	
 }
 
 
@@ -2595,8 +3099,7 @@ int		vxiDriverID
  * epvxiLookupLA()
  *
  */
-int
-epvxiLookupLA(
+EPVXISTAT epvxiLookupLA(
 epvxiDeviceSearchPattern	*pdsp,
 void				(*pfunc)(),
 void				*parg 
@@ -2605,7 +3108,7 @@ void				*parg
 	VXIDI			*plac;
 	unsigned		i;
 
-	for(i=0; i<=last_la; i++){
+	for(i=first_la; i<=last_la; i++){
 		long	flags;
 
 		flags = pdsp->flags;
@@ -2643,8 +3146,7 @@ void				*parg
                 }
 
                 if(flags & VXI_DSP_slot_zero_la){
-                        if(VXI_PA_TO_LA(vxislot0[plac->crate].pcsr) 
-						!= pdsp->slot_zero_la){
+                        if(plac->slot_zero_la != pdsp->slot_zero_la){
                                 continue;
                         }
                 }
@@ -2672,8 +3174,7 @@ void				*parg
 /*
  * epvxiRouteTriggerECL()
  */
-int
-epvxiRouteTriggerECL(
+EPVXISTAT epvxiRouteTriggerECL(
 unsigned        la,             /* slot zero device logical address     */
 unsigned	enable_map,	/* bits 0-5  correspond to trig 0-5	*/
 				/* a 1 enables a trigger		*/
@@ -2686,19 +3187,20 @@ unsigned	io_map		/* bits 0-5  correspond to trig 0-5	*/
 	VXIDI			*plac;
         struct vxi_csr          *pcsr;
 	char			mask;
-	int			status;
+	EPVXISTAT		status;
 	int			i;
 
 	mask = (1<<VXI_N_ECL_TRIGGERS)-1;
 	if((io_map|enable_map) & ~mask){
-		return VXI_BAD_TRIGGER;
+		return S_epvxi_badTrigger;
 	}
 
 	/*
 	 * CPU030 trigger routing
 	 */
-	if(pnivxi_func[(unsigned)e_MapTrigToTrig] && 
-			pnivxi_func[(unsigned)e_GetMyLA]){
+	if(	niCpu030Initialized &&
+		pnivxi_func[(unsigned)e_MapTrigToTrig] && 
+		pnivxi_func[(unsigned)e_GetMyLA]){
 		if(la == (*pnivxi_func[(unsigned)e_GetMyLA])()){
 			
 			for(	i=0;
@@ -2731,11 +3233,12 @@ unsigned	io_map		/* bits 0-5  correspond to trig 0-5	*/
 						dest,
 						0);
 				if(status < 0){
-					logMsg(	"%s: NI030 ECL trig map fail %d %d\n", 
-						__FILE__,
-						la,
-						status);
-					return VXI_BAD_TRIG_IO;
+					status = S_epvxi_badTrigIO;
+					errMessage(
+						status,
+				"NI CPU030 ECL trig map fail LA=0X%X", 
+						la);
+					return status;
 				}	
 
 			}
@@ -2746,11 +3249,11 @@ unsigned	io_map		/* bits 0-5  correspond to trig 0-5	*/
 	plac = epvxiLibDeviceList[la];
 	if(plac){
 		if(!plac->st_passed){
-			return VXI_SELF_TEST_FAILED;
+			return S_epvxi_selfTestFailed;
 		}
 	}
 	else{
-		return VXI_NO_DEVICE;
+		return S_epvxi_noDevice;
 	}
 
         pcsr = VXIBASE(la);
@@ -2797,11 +3300,12 @@ unsigned	io_map		/* bits 0-5  correspond to trig 0-5	*/
 		}
 	}
 
-	logMsg("%s: failed to map ECL trigger for (la=0x%X)\n", 
-		la,
-		__FILE__);
-
-        return VXI_UKN_DEVICE;
+	status = S_epvxi_uknDevice;
+	errMessage(
+		status,
+		"failed to map ECL trigger for (la=0x%X)", 
+		la);
+        return status;
 }
 
 
@@ -2809,8 +3313,7 @@ unsigned	io_map		/* bits 0-5  correspond to trig 0-5	*/
  * epvxiRouteTriggerTTL()
  *
  */
-int
-epvxiRouteTriggerTTL(
+EPVXISTAT epvxiRouteTriggerTTL(
 unsigned        la,             /* slot zero device logical address     */
 unsigned	enable_map,	/* bits 0-5  correspond to trig 0-5	*/
 				/* a 1 enables a trigger		*/
@@ -2823,19 +3326,20 @@ unsigned	io_map		/* bits 0-5  correspond to trig 0-5	*/
 	VXIDI			*plac;
         struct vxi_csr          *pcsr;
 	unsigned		mask;
-	int			status;
+	EPVXISTAT		status;
 	int			i;
 
 	mask = (1<<VXI_N_TTL_TRIGGERS)-1;
 	if((io_map|enable_map) & ~mask){
-		return VXI_BAD_TRIGGER;
+		return S_epvxi_badTrigger;
 	}
 
 	/*
 	 * NI CPU030 trigger routing 
 	 */
-	if(pnivxi_func[(unsigned)e_MapTrigToTrig] && 
-			pnivxi_func[(unsigned)e_GetMyLA]){
+	if(	niCpu030Initialized &&
+		pnivxi_func[(unsigned)e_MapTrigToTrig] && 
+		pnivxi_func[(unsigned)e_GetMyLA]){
 		if(la == (*pnivxi_func[(unsigned)e_GetMyLA])()){
 			
 			for(	i=0;
@@ -2868,11 +3372,12 @@ unsigned	io_map		/* bits 0-5  correspond to trig 0-5	*/
 						dest,
 						0);
 				if(status < 0){
-					logMsg(	"%s: NI030 TTL trig map fail %d %d\n", 
-						__FILE__,
-						la,
-						status);
-					return VXI_BAD_TRIG_IO;
+					status = S_epvxi_badTrigIO;
+					errMessage(	
+						status,
+				"NI030 TTL trig map fail LA=0X%X", 
+						la);
+					return status;
 				}	
 
 			}
@@ -2883,18 +3388,18 @@ unsigned	io_map		/* bits 0-5  correspond to trig 0-5	*/
 	plac = epvxiLibDeviceList[la];
 	if(plac){
 		if(!plac->st_passed){
-			return VXI_SELF_TEST_FAILED;
+			return S_epvxi_selfTestFailed;
 		}
 	}
 	else{
-		return VXI_NO_DEVICE;
+		return S_epvxi_noDevice;
 	}
 
 
         pcsr = VXIBASE(la);
 
 	if(VXIMXI(pcsr)){
-		short	tmp;
+		int16_t	tmp;
 
 		tmp = ~io_map & enable_map;
 		tmp = (enable_map<<8) | tmp;
@@ -2916,19 +3421,19 @@ unsigned	io_map		/* bits 0-5  correspond to trig 0-5	*/
 		}
 	}
 
-	logMsg("%s: Failed to map TTL trigger for (LA=%x%X)\n", 
-		__FILE__,
+	status = S_epvxi_uknDevice;
+	errMessage(
+		status,
+		"Failed to map TTL trigger for (LA=%x%X)", 
 		la);
-
-        return VXI_UKN_DEVICE;
+        return status;
 }
 
 
 /*
  * 	vxi_io_report()
  */
-int
-vxi_io_report(
+EPVXISTAT vxi_io_report(
 unsigned	level
 )
 {
@@ -2943,14 +3448,13 @@ unsigned	level
  *      call io report routines for all registered devices
  *
  */
-long
-epvxiIOReport(
+EPVXISTAT epvxiIOReport(
 unsigned 	level 
 )
 {
-        register int            i;
-        register unsigned	la;
-        register                status;
+	unsigned	la;
+        unsigned	resmanLA;
+        EPVXISTAT	status;
 
         /* Get local address from VME address. */
 	/* in case the resource manager has not been called */
@@ -2960,9 +3464,11 @@ unsigned 	level
                                 VXIBASEADDR,
                                 &epvxi_local_base);
 		if(status != OK){
-			printf(	"%s: A16 base map failed\n",
-				__FILE__);
-			return ERROR;
+			status = S_epvxi_badConfig;
+			errMessage(
+				status,
+				"A16 base map failed");
+			return status;
 		}
 	}
 
@@ -2972,23 +3478,24 @@ unsigned 	level
 	 */
 	nicpu030_init(&root_extender);
 
-	if(pnivxi_func[(unsigned)e_GetMyLA]){
-		la = (*pnivxi_func[(unsigned)e_GetMyLA])();
+	if(niCpu030Initialized){
+		if(pnivxi_func[(unsigned)e_GetMyLA]){
+			resmanLA = (*pnivxi_func[(unsigned)e_GetMyLA])();
+			printf("VXI LA 0x%02X ", resmanLA);		
+		}
 	}
 	else{
-		la = UKN_LA;
-	}
-	if(vxislot0[0].nicpu030){
-		printf(
-"VXI LA 0x%02X National Instruments CPU030 crate 0\n",
-			la);
+		printf("VXI LA      ");		
 	}
 
-        for(la=0; la<=last_la; la++){
+	printf("%s resident resource manager\n",
+		sysModel());
+
+        for(la=first_la; la<=last_la; la++){
 		report_one_device(la, level);
         }
 
-        return OK;
+        return VXI_SUCCESS;
 }
 
 
@@ -2997,21 +3504,19 @@ unsigned 	level
  *	report_one_device()
  *
  */
-LOCAL int
-report_one_device(
-int	la,
-int	level 
+LOCAL EPVXISTAT report_one_device(
+unsigned	la,
+int		level 
 )
 {
-	int			i;
-	int			status;
+	VXIDI			*plac;
+	VXISZ			*pvxisz;
+        int			slot;
+	EPVXISTAT		status;
 	int			make;
 	int			model;
         struct vxi_csr          *pcsr;
-        short                   id;
-	VXIDI			*plac;
-        unsigned                slot;
-        unsigned                crate;
+        int16_t                 id;
 
 	pcsr = VXIBASE(la);
 	status = vxMemProbe(    pcsr,
@@ -3019,13 +3524,13 @@ int	level
 				sizeof(id),
 				&id);
 	if(status != OK){
-		return ERROR;
+		return S_epvxi_internal;
 	}
 
-	status = vxi_find_slot(pcsr, &slot, &crate);
-	if(status == ERROR){
+	status = vxi_find_slot(pcsr, &slot, &pvxisz);
+	if(status){
+		pvxisz = NULL;
 		slot = UKN_SLOT;
-		crate = UKN_CRATE;
 	}
 
 
@@ -3037,9 +3542,9 @@ int	level
 	/*
 	 * crate and slot
 	 */
-	printf(	"crate %2d slot %2d ",
-		(int) crate,
-		(int) slot);
+	printf(	"slot zero LA=0X%02X slot %2d ",
+		pvxisz?pvxisz->la:UKN_LA,
+		slot);
 
 
 	/*
@@ -3078,7 +3583,7 @@ int	level
 				model_name, 
 				sizeof(model_name)-1, 
 				&nread);
-		if(status<0){
+		if(status){
 			printf(	"model 0x%03X ", model);
 		}
 		else{
@@ -3091,7 +3596,7 @@ int	level
 
 	if(!VXIPASSEDSTATUS(pcsr->dir.r.status)){
 		printf("\t---- Self Test Failed ----\n");
-		return OK;
+		return VXI_SUCCESS;
 	}
 
 	/*
@@ -3105,7 +3610,7 @@ int	level
 	}
 
 	if(level == 0){
-		return OK;
+		return VXI_SUCCESS;
 	}
 
 	/*
@@ -3138,16 +3643,20 @@ int	level
 			if(status>=0){
 				printf(	"%s=0x%X", 
 					pname, 
-					pbase);
+					(unsigned)pbase);
 			}
 			else{
 				printf(	"failure mapping %s=%x", 
 					pname, 	
-					VMEaddr);
+					(unsigned)VMEaddr);
 			}
 		}
 	}
 	printf("\n");
+
+	if(VXISLOT0MODEL(pcsr)){
+		printf("\tSlot Zero Device\n");
+	}
 
 	printf( "\t%s device",
 		vxi_device_class_names[VXICLASS(pcsr)]);
@@ -3192,7 +3701,7 @@ int	level
 				la, 
 				(unsigned long)MBC_READ_PROTOCOL, 
 				&resp);
-		if(status>=0){
+		if(status==VXI_SUCCESS){
 			printf("\tprotocols(");
 			if(MBR_REV_12(resp)){
 				printf("Rev 1.2 device, ");
@@ -3219,7 +3728,7 @@ int	level
 				printf("prog interrupter, ");
 			}
 			if(MBR_RP_EG(resp)){
-				printf("evnt gen, ");
+				printf("event gen, ");
 			}
 			if(MBR_RP_RG(resp)){
 				printf("resp gen, ");
@@ -3234,7 +3743,7 @@ int	level
 	}
 	printf("\n");
 
-	return OK;
+	return VXI_SUCCESS;
 }
 
 
@@ -3244,28 +3753,56 @@ int	level
  *
  *
  */
-LOCAL
-void mxi_io_report(
+LOCAL void mxi_io_report(
 struct vxi_csr	*pmxi,
 int 		level 
 )
 {
 	unsigned 	la;
 	unsigned 	ha;
-	void		*base;
-	void		*size;
 	unsigned	a;
 	unsigned	b;
+	char		*msg;
 
-        printf(", MXI sub class");
+        printf(", MXI sub class\n\t");
 
 	if(pmxi->dir.w.dd.mxi.control & MXI_UPPER_LOWER_BOUNDS){
 		la = VXIADDRMASK & 
 			pmxi->dir.w.dd.mxi.la_window;
 		ha = VXIADDRMASK & 
 			(pmxi->dir.w.dd.mxi.la_window>>NVXIADDRBITS);
+		if(la<ha){
+			msg = "local VXI LA's seen by MXI";
+			/*
+			 * ha > 0 since la < ha
+			 */
+			ha--;
+		}		
+		else if(la>ha){
+			msg = "MXI LA's seen by this crate";
+			/*
+			 * la > 0 since la > ha
+			 */
+			la--;
+		}
+		else if(la == 0){
+			msg = "LA window disabled";
+			la = 0;
+			ha = 0;
+		}
+		else if(la >= 0x80){
+			msg = "MXI LA's seen by this crate";
+			la = 0;
+			ha = 0xff;
+		}
+		else{
+			msg = "local VXI LA's seen by MXI";
+			la = 0;
+			ha = 0xff;
+		}
 
-		printf(", LA window 0x%X-0x%X", 
+		printf(", %s 0x%X-0x%X\n\t", 
+			msg,
 			la,
 			ha);
 
@@ -3302,10 +3839,9 @@ int 		level
  *
  *
  */
-LOCAL
-void vxi_allocate_int_lines(void)
+LOCAL void vxi_allocate_int_lines(void)
 {
-        int			status;
+        EPVXISTAT		status;
         struct vxi_csr		*pcsr;
 	VXIDI			**ppvxidi;
 	VXIDI			*pvxidi;
@@ -3337,8 +3873,10 @@ void vxi_allocate_int_lines(void)
 				la,
 				(unsigned long)MBC_READ_PROTOCOL,
 				&resp);
-		if(status<0){
-			logMsg( "Device rejected READ_PROTOCOL (LA=0x%X)\n",
+		if(status){
+			errMessage(
+				status,
+				"Device rejected READ_PROTOCOL (LA=0x%X)\n",
 				la);
 			continue;
 		}
@@ -3346,36 +3884,42 @@ void vxi_allocate_int_lines(void)
 			continue;
 		}
 
-		logMsg("Programming interrupter (LA=0x%X)\n", la);
+		printf("Programming interrupter (LA=0x%X)\n", la);
 
 		cmd = MBC_READ_INTERRUPTERS;
 		status = epvxiCmdQuery(
 				la,
 				cmd,
 				&resp);
-		if(status<0){
-			logMsg( "Device rejected READ_INTERRUPTERS (LA=0x%X)\n",
+		if(status){
+			errMessage( 
+				status,
+			"Device rejected READ_INTERRUPTERS (LA=0x%X)",
 				la);
 			continue;
 		}
 		line_count = resp&MBR_READ_INTERRUPTERS_MASK;
 		while(line_count--){
 			cmd = 	MBC_ASSIGN_INTERRUPTER_LINE |
-				(line_count+1)<<4 |
+				((line_count+1)<<4) |
 				VXIMSGINTLEVEL;
 			sysIntEnable(VXIMSGINTLEVEL);
 			status = epvxiCmdQuery(
 					la,
 					cmd,
 					&resp);
-			if(status<0){
-				logMsg( "Device rejected ASSIGN_INT(LA=0x%X)\n",
-				la);
+			if(status){
+				errMessage(
+					status,
+					"Device rejected ASSIGN_INT(LA=0x%X)",
+					la);
 				continue;
 			}
 			if(MBR_STATUS(resp) != MBR_STATUS_SUCCESS){
-				logMsg( "ASSIGN_INT failed (LA=0x%X)\n",
-				la);
+				errMessage( 
+					S_epvxi_msgDeviceFailure,
+					"ASSIGN_INT failed (LA=0x%X)",
+					la);
 				continue;
 			}
 		}
@@ -3391,18 +3935,18 @@ void vxi_allocate_int_lines(void)
  * (written by Richard Baker LANL summer intern)
  *
  */
-LOCAL int
-epvxiSymbolTableInit(void)
+LOCAL EPVXISTAT epvxiSymbolTableInit(void)
 {
 
-   		epvxiSymbolTable = symTblCreate(
-					EPVXI_MAX_SYMBOLS_LOG2,
-					FALSE,
-					memSysPartId);
-		if(!epvxiSymbolTable){
-			return ERROR;
-		}
-	return OK;
+   	epvxiSymbolTable = symTblCreate(
+				EPVXI_MAX_SYMBOLS_LOG2,
+				FALSE,
+				memSysPartId);
+	if(!epvxiSymbolTable){
+		return S_epvxi_noMemory;
+	}
+
+	return VXI_SUCCESS;
 }
 
 
@@ -3413,28 +3957,27 @@ epvxiSymbolTableInit(void)
  *
  *
  */
-int
-epvxiRegisterModelName(
+EPVXISTAT epvxiRegisterModelName(
 unsigned int make, 
 unsigned int model, 
 char *pmodel_name
 )
 { 
- 	char 	name[EPVXI_MAX_SYMBOL_LENGTH];
- 	char 	*pcopy;
-	int	status;
+ 	char 		name[EPVXI_MAX_SYMBOL_LENGTH];
+ 	char 		*pcopy;
+	EPVXISTAT	status;
 
  	if(!epvxiSymbolTable){   /* initialize table at 1st call */
 		status = epvxiSymbolTableInit();
-		if(status<0){
-			return VXI_NO_MEMORY;
+		if(status){
+			return status;
 		}
  	}
 
  	sprintf(name, epvxiSymbolTableDeviceIdString, make,model);
  	pcopy = (char *) malloc(strlen(pmodel_name)+1);
  	if(pcopy == NULL){
-   		return VXI_NO_MEMORY;
+   		return S_epvxi_noMemory;
 	}
 
  	strcpy(pcopy, pmodel_name);
@@ -3444,6 +3987,8 @@ char *pmodel_name
 		char 	*pold_model_name;
 		UINT8	type;
 
+		free(pcopy);
+
 		status = symFindByNameAndType(
 				epvxiSymbolTable, 
 				name, 
@@ -3452,10 +3997,10 @@ char *pmodel_name
 				EPVXI_MODEL_NAME_SYMBOL,
 				~0);
 		if(status<0){
-			return VXI_NO_MEMORY;
+			return S_epvxi_noMemory;
 		}
 		else if(strcmp(pmodel_name, pold_model_name)){
-			return VXI_NAME_MISMATCH;
+			return S_epvxi_nameMismatch;
 		}
 	}
 
@@ -3469,27 +4014,26 @@ char *pmodel_name
  *
  *
  */
-int
-epvxiRegisterMakeName(
+EPVXISTAT epvxiRegisterMakeName(
 unsigned int make, 
 char *pmake_name
 )
 { 
- 	char 	name[EPVXI_MAX_SYMBOL_LENGTH];
- 	char 	*pcopy;
-	int	status;
+ 	char 		name[EPVXI_MAX_SYMBOL_LENGTH];
+ 	char 		*pcopy;
+	EPVXISTAT	status;
 
  	if(!epvxiSymbolTable){   /* initialize table at 1st call */
 		status = epvxiSymbolTableInit();
-		if(status<0){
-			return VXI_NO_MEMORY;
+		if(status){
+			return status;
 		}
  	}
 
  	sprintf(name, epvxiSymbolTableMakeIdString, make);
  	pcopy = (char *) malloc(strlen(pmake_name)+1);
  	if(pcopy == NULL){
-   		return VXI_NO_MEMORY;
+   		return S_epvxi_noMemory;
 	}
 
  	strcpy(pcopy, pmake_name);
@@ -3499,6 +4043,8 @@ char *pmake_name
 		char 	*pold_make_name;
 		UINT8	type;
 
+		free(pcopy);
+
 		status = symFindByNameAndType(
 				epvxiSymbolTable, 
 				name, 
@@ -3507,10 +4053,10 @@ char *pmake_name
 				EPVXI_MAKE_NAME_SYMBOL,
 				~0);
 		if(status<0){
-			return VXI_NO_MEMORY;
+			return S_epvxi_noMemory;
 		}
 		else if(strcmp(pmake_name, pold_make_name)){
-			return VXI_NAME_MISMATCH;
+			return S_epvxi_nameMismatch;
 		}
 	}
 
@@ -3524,22 +4070,21 @@ char *pmake_name
  * (written by Richard Baker LANL summer intern)
  *
  */
-int
-epuxiLookupMakeName(
-	unsigned int 	make, 		/* VXI manuf. */
-	char 		*pbuffer,	/* model name return */
-	unsigned int 	bufsize,	/* size of supplied buf */ 
-	unsigned int 	*preadcount)	/* n bytes written */
+EPVXISTAT epuxiLookupMakeName(
+unsigned int 	make, 		/* VXI manuf. */
+char 		*pbuffer,	/* model name return */
+unsigned int 	bufsize,	/* size of supplied buf */ 
+unsigned int 	*preadcount)	/* n bytes written */
 {
- 	char 	name[EPVXI_MAX_SYMBOL_LENGTH];
-	char 	*pmake_name;
-	UINT8 	type;
-	int	status;
+ 	char 		name[EPVXI_MAX_SYMBOL_LENGTH];
+	char 		*pmake_name;
+	UINT8 		type;
+	EPVXISTAT	status;
 
  	if(!epvxiSymbolTable){   /* initialize table at 1st call */
 		status = epvxiSymbolTableInit();
-		if(status<0){
-			return VXI_NO_MEMORY;
+		if(status){
+			return status;
 		}
  	}
 
@@ -3552,10 +4097,10 @@ epuxiLookupMakeName(
 			EPVXI_MAKE_NAME_SYMBOL,
 			~0);
 	if(status<0){
-		return VXI_NO_MATCH;
+		return S_epvxi_noMatch;
 	}
 	if(type != EPVXI_MAKE_NAME_SYMBOL){
-		(void) abort(0);
+		abort(0);
 	}
 	*preadcount = min(strlen(pmake_name)+1, bufsize);
 	strncpy(pbuffer, pmake_name, bufsize);
@@ -3570,23 +4115,22 @@ epuxiLookupMakeName(
  * (written by Richard Baker LANL summer intern)
  *
  */
-int
-epuxiLookupModelName(
-	unsigned int 	make, 		/* VXI manuf. */
-	unsigned int 	model, 		/* VXI model code */
-	char 		*pbuffer,	/* model name return */
-	unsigned int 	bufsize,	/* size of supplied buf */ 
-	unsigned int 	*preadcount)	/* n bytes written */
+EPVXISTAT epuxiLookupModelName(
+unsigned int 	make, 		/* VXI manuf. */
+unsigned int 	model, 		/* VXI model code */
+char 		*pbuffer,	/* model name return */
+unsigned int 	bufsize,	/* size of supplied buf */ 
+unsigned int 	*preadcount)	/* n bytes written */
 {
- 	char 	name[EPVXI_MAX_SYMBOL_LENGTH];
-	char 	*pmodel_name;
-	UINT8 	type;
-	int	status;
+ 	char 		name[EPVXI_MAX_SYMBOL_LENGTH];
+	char 		*pmodel_name;
+	UINT8 		type;
+	EPVXISTAT	status;
 
  	if(!epvxiSymbolTable){   /* initialize table at 1st call */
 		status = epvxiSymbolTableInit();
-		if(status<0){
-			return VXI_NO_MEMORY;
+		if(status){
+			return status;
 		}
  	}
 
@@ -3599,7 +4143,7 @@ epuxiLookupModelName(
 			EPVXI_MODEL_NAME_SYMBOL,
 			~0);
 	if(status<0){
-		return VXI_NO_MATCH;
+		return S_epvxi_noMatch;
 	}
 	if(type != EPVXI_MODEL_NAME_SYMBOL){
 		abort(0);
@@ -3617,8 +4161,7 @@ epuxiLookupModelName(
  *
  * list any bus extenders
  */
-int
-epvxiExtenderList(void)
+EPVXISTAT epvxiExtenderList(void)
 {
 	epvxiExtenderPrint(&root_extender);
 
@@ -3633,8 +4176,7 @@ epvxiExtenderList(void)
  *
  *
  */
-LOCAL void
-epvxiExtenderPrint(VXIE *pvxie)
+LOCAL void epvxiExtenderPrint(VXIE *pvxie)
 {
 	VXIE	*psubvxie;
 
@@ -3667,25 +4209,26 @@ epvxiExtenderPrint(VXIE *pvxie)
 	}
 }
 
+
 /*
  *
  * register some common manufacturer names
  * for consistency
  *
  */
-LOCAL
-void epvxiRegisterCommonMakeNames(void)
+LOCAL void epvxiRegisterCommonMakeNames(void)
 {
-	int 	i;
-	int	status;
+	int 		i;
+	EPVXISTAT	status;
 
 	for(i=0; i<NELEMENTS(vxi_vi); i++){
 		status = epvxiRegisterMakeName(
 			vxi_vi[i].make,
 			vxi_vi[i].pvendor_name);
-		if(status<0){
-			logMsg(	"%s: Failed to reg make name %s\n", 
-				__FILE__,
+		if(status){
+			errMessage(
+				S_epvxi_internal,
+				"Failed to regster make name %s", 
 				vxi_vi[i].pvendor_name);
 		}
 	}

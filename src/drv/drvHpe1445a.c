@@ -143,7 +143,13 @@ hpe1445aTest(unsigned la)
 			return ERROR;
 		}
 		if(!(options&VX_STDIO)){
-			logMsg("%s: task needs SDIO option set\n",__FILE__);
+			logMsg(	"%s: task needs SDIO option set\n",
+				__FILE__,
+				NULL,
+				NULL,
+				NULL,
+				NULL,
+				NULL);
 			return ERROR;
 		}
 	}
@@ -409,7 +415,7 @@ int		lineno
 			sizeof(pbuf), 
 			&read_count,
 			0);
-		if(s!=VXI_BUFFER_FULL && s!=VXI_SUCCESS){
+		if(s!=S_epvxi_bufferFull && s!=VXI_SUCCESS){
 			logMsg(	"%s line=%d LA=0X%X: error fetch problem %d\n",
 				__FILE__,
 				lineno,
@@ -908,7 +914,6 @@ unsigned long		npoints
 {
 	unsigned long		read_count;
 	char			pbuf[64];
-        struct vxi_csr		*pcsr;
 	int			s;
 
 	s = hpe1445aWrite(la, "source:list:segment:free?"); 

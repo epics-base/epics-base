@@ -9,22 +9,51 @@
 <body lang="en">
 <h1>EPICS Release 3.13.8</h1>
 
-<h3>Changes since 3.13.7</h3>
+<h2>Changes since 3.13.7</h2>
 
-<p><strong>dbEvent bug</strong></p>
-<p>The bug reported for the previous release has been fixed.</p>
-<p><strong>config changes</strong></p>
+<h3><strong>dbEvent Bug Fix Changes</strong></h3>
+
+<h4>Scope</h4>
+
+<p>The bug exists in EPICS 3.13.5, 3.13.6, 3.13.7</p>
+
+<h4>Symptoms</h4>
+
+<p>An IOC core CA server thread is found to be using excessive CPU possibly
+at elevated priority resulting from vxWorks priority inheritance scheduling.
+All attached CA clients will permanently disconnect from the IOC, and record
+processing may be disrupted if the threads priority is elevated. Elevated
+priority was observed in the one situation where the bug has been reproduced
+and identified so far. </p>
+
+<h4>Circumstances Related to Relative Rates of Occurrence </h4>
+
+<p>This bug will occur only in circumstances where the CA client deletes a
+monitor subscription and the client's CA event queue in iocCore is 100% full.
+Since there is always space for each monitor subscription to place at least
+one update on the queue then the queue can only be full if *all*
+subscriptions for a particular client are sending subscription update events
+at a rate that is faster than the client is reading them. Therefore,
+specialized clients that have a small number of regularly updated
+subscriptions and that do not regularly call ca_poll() or ca_pend_event() are
+more likely to reproduce the problem. </p>
+
+<h3>Config Changes</h3>
 <ul>
-   <li>The default for vxWorks targets is now null,
-       i.e. CROSS_COMPILER_TARGET_ARCHS in CONFIG_SITE must be modified.</li>
-   <li>Added support for vxWorks targets: ppc603_long, ppc604_long, and sbs_pc6.</li>
-   <li>Added support for HOST_ARCH solarisGnu (solaris host using GNU compilers)</li>
-   <li>Added rule to create javadoc html files if makefile contains JAVADOC=YES.</li>
-   <li>Removed -lXext -lX libraries from link edit lines on solaris builds.</li>
-   <li>Simplified CONFIG.Host.solaris-x86 and RULES.Host config files.</li>
+  <li>The default for vxWorks targets is now null, i.e.
+    CROSS_COMPILER_TARGET_ARCHS in CONFIG_SITE must be modified.</li>
+  <li>Added support for vxWorks targets: ppc603_long, ppc604_long, and
+    sbs_pc6.</li>
+  <li>Added support for HOST_ARCH solarisGnu (solaris host using GNU
+    compilers)</li>
+  <li>Added rule to create javadoc html files if makefile contains
+    JAVADOC=YES.</li>
+  <li>Removed -lXext -lX libraries from link edit lines on solaris
+  builds.</li>
+  <li>Simplified CONFIG.Host.solaris-x86 and RULES.Host config files.</li>
 </ul>
 
-<h3>Changes since 3.13.6</h3>
+<h2>Changes since 3.13.6</h2>
 
 <p><strong>IOC resident CA server</strong></p>
 <ul>
@@ -33,24 +62,27 @@
     messages, and may also crash.</p>
     <p><em>Scope</em>: The bug is present only in the IOC resident CA server.
     It was introduced in R3.13.6, and will be more likely to occur when there
-    is a particularly heavy Channel Access put callback load. </p>
+    is a particularly heavy Channel Access put callback load.</p>
   </li>
 </ul>
 
 <p><strong>dbCommon.dbd</strong></p>
 
-<p>UDF how has a promptgroup. This allows database configuration tools to mset UDF false.</p>
+<p>UDF how has a promptgroup. This allows database configuration tools to
+mset UDF false.</p>
 
 <p><strong>mbboRecord</strong></p>
 
-<p>Field VAL now has a cvt_dbaddr method.
-If any state strings are defined the field type and dbr_field_type are declared ENUM. If no state strings are defined then the type is USHORT. Previously the types were always ENUM.</p>
+<p>Field VAL now has a cvt_dbaddr method. If any state strings are defined
+the field type and dbr_field_type are declared ENUM. If no state strings are
+defined then the type is USHORT. Previously the types were always ENUM.</p>
 
 <p><strong>camacDev</strong></p>
-<p>
-ai and ao now support special_linconv. NOTE: NOT TESTED.</p>
+
+<p>ai and ao now support special_linconv. NOTE: NOT TESTED.</p>
 
 <p><strong>drvGpib.c</strong></p>
+
 <p>Add some cacheFlush statements</p>
 
 <p><strong>aiRecord and aoRecord: Setting eoff=egul</strong></p>
@@ -58,14 +90,13 @@ ai and ao now support special_linconv. NOTE: NOT TESTED.</p>
 <p>Instead of init_record executing code like</p>
 <pre>    if ((pai-&gt;linr == menuConvertLINEAR) &amp;&amp; pdset-&gt;special_linconv) {
         pai-&gt;eoff = pai-&gt;egul;
-    }
-</pre>
+    }</pre>
 
 <p>It now executes:</p>
 <pre>    if ((pai-&gt;eslo==1.0) &amp;&amp; (pai-&gt;eoff==0.0)) {
         pai-&gt;eoff = pai-&gt;egul;
-    }
-</pre>
+    }</pre>
+
 <p>aoRecord has a similar change</p>
 
 <p>This was done so that old device support which does not implement
@@ -74,8 +105,9 @@ special_linconv still works.</p>
 <p><strong>CA puts to disabled record</strong></p>
 
 <p>If a CA client issues a put to a disabled record then, when the record is
-enabled, database puts to the record will not make the record process until
-a CA put is again issued. This is fixed</p>
+enabled, database puts to the record will not make the record process until a
+CA put is again issued. This is fixed</p>
+
 <p><strong>dbb - database breakpoints</strong></p>
 
 <p>The database breakpoint facility was not working. This has probably been
@@ -125,10 +157,11 @@ occur when recGblGetTimeStamp is called.</p>
 
 <p><strong>CA server (rsrv)</strong></p>
 
-<p>Fixed race condition occuring when a put notify is canceled by a ca_clear_channel at the same instant that it completes. This problem was introduced in
-R3.13.5.</p>
+<p>Fixed race condition occuring when a put notify is canceled by a
+ca_clear_channel at the same instant that it completes. This problem was
+introduced in R3.13.5.</p>
 
-<h3>Changes since 3.13.5</h3>
+<h2>Changes since 3.13.5</h2>
 
 <p><strong>dbNotify</strong></p>
 
@@ -237,7 +270,7 @@ code.</p>
   </li>
 </ul>
 
-<h3>Changes since 3.13.4</h3>
+<h2>Changes since 3.13.4</h2>
 
 <p><b>convertRelease and checkRelease</b></p>
 
@@ -386,9 +419,9 @@ put is successful. Previosuly it was always called.</p>
 
 <p><b>devVXStats</b></p>
 
-<p>Improved algorithm for cpuUsage.</p>
+<p>Improved algorithm for cpuUsage</p>
 
-<h3>Changes since 3.13.3</h3>
+<h2>Changes since 3.13.3</h2>
 <b>Channel Access</b><b></b>
 
 <p>Symptom: CA clients on all versions of EPICS with unresolved  channels
@@ -453,7 +486,7 @@ powerPCs. The values are now initialized to 0.</p>
   <li>Replaced TSprintf() with printf() where logging inappropriate</li>
 </ul>
 
-<h3>Changes since 3.13.2</h3>
+<h2>Changes since 3.13.2</h2>
 <b>Build Changes</b> <br>
  
 <ul>
@@ -596,7 +629,7 @@ is called.</p>
 cvtLongToOctalString writes a leading 0. <br>
  </p>
 
-<h3>Changes since 3.13.1</h3>
+<h2>Changes since 3.13.1</h2>
 <b>tsSubr</b>
 
 <p>There was a bug when converting ascii string format to time stamp. The bug
@@ -858,9 +891,9 @@ of the calcout record were made.</p>
 
 <p><b>devAaoCamac.c</b></p>
 
-<p>This had an error that prevented it from compiling.</p>
+<p>This had an error that prevented it from compiling</p>
 
-<h3>Changes between beta12 and 3.13.1</h3>
+<h2>Changes between beta12 and 3.13.1</h2>
 <b><tt>iocLogClient</tt></b>
 
 <p>If either of the environment variables EPICS_IOC_LOG_PORT or
@@ -964,7 +997,7 @@ href="http://www.aps.anl.gov/asd/controls/epics/EpicsDocumentation/AppDevManuals
 IOC Applications: Building and Source/Release Control</a>" provides guidlines
 for developing applications with 3.13.</p>
 
-<h3>Changes between beta11 and beta12</h3>
+<h2>Changes between beta11 and beta12</h2>
 
 <h3>IOC Applications: Building</h3>
 The following explains changes that need to be made to existing applications

@@ -36,6 +36,7 @@
  *				defer the pprWinIsMono call until after
  *				the window is mapped
  * .06	12-03-91	rac	add some intelligence to auto ranging
+ * .07	01-23-92	rac	don't take log10 of zero value
  *
  * make options
  *	-DXWINDOWS	makes a version for X11
@@ -187,8 +188,8 @@ SYD_PL_SLAVE *pSlave;	/* I pointer to plot slave structure */
 	small = extent;
 	big = origin;
     }
-    sLogChr = sLog = log10(small);
-    bLogChr = bLog = log10(big);
+    sLogChr = sLog = small != 0. ? log10(small) : 999999.;
+    bLogChr = bLog = big != 0. ? log10(big) : 999999.;
     if (sLogChr == bLogChr && oSign == eSign) {	/* same decade */
 	dLog = log10(big - small);
 	dLogChrD = (int)dLog;
@@ -205,10 +206,12 @@ SYD_PL_SLAVE *pSlave;	/* I pointer to plot slave structure */
 	}
     }
     else {
-	dLog = bLog;
-	dLogChrD = (int)dLog;
-	dLog -= dLogChrD;
-	big = big - fmod(big, exp10(dLogChrD)) + exp10(dLogChrD);
+	if (big != 0.) {
+	    dLog = bLog;
+	    dLogChrD = (int)dLog;
+	    dLog -= dLogChrD;
+	    big = big - fmod(big, exp10(dLogChrD)) + exp10(dLogChrD);
+	}
 	extent = big;
 	if (oSign == eSign)
 	    origin = 0.;

@@ -1594,8 +1594,7 @@ LOCAL abStatus registerCard(
 	    printf("abDrv(registerCard) bad card %hu\n",card);
 	return(abNoCard);
     }
-    plink = pab_links[link];
-    if(!plink || !plink->initialized) {
+    if(!pab_links || !(plink = pab_links[link]) || !plink->initialized) {
 	if(ab_debug>0)
 	    printf("abDrv(registerCard) link %hu not initialized\n",link);
 	return(abNoCard);

@@ -79,9 +79,10 @@ epicsShareExtern ENV_PARAM EPICS_IOC_LOG_PORT;
 epicsShareExtern ENV_PARAM EPICS_IOC_LOG_INET;
 epicsShareExtern ENV_PARAM EPICS_IOC_LOG_FILE_LIMIT;
 epicsShareExtern ENV_PARAM EPICS_IOC_LOG_FILE_NAME;
+epicsShareExtern ENV_PARAM EPICS_IOC_LOG_FILE_COMMAND;
 epicsShareExtern ENV_PARAM EPICS_CMD_PROTO_PORT;
 epicsShareExtern ENV_PARAM EPICS_AR_PORT;
-#define EPICS_ENV_VARIABLE_COUNT 14
+#define EPICS_ENV_VARIABLE_COUNT 15
 
 /*
  * N elements added here to satisfy microsoft development tools

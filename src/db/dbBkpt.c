@@ -14,6 +14,9 @@ of this distribution.
 /* Modification Log:
  * -----------------
  *  $Log$
+ *  Revision 1.27  2001/01/31 13:33:35  mrk
+ *  osiTime=>epicsTime
+ *
  *  Revision 1.26  2001/01/18 19:07:49  mrk
  *  changes for osiThread=>epicsThread
  *
@@ -678,8 +681,21 @@ static void dbBkptCont(dbCommon *precord)
  /* remove node from lockset stack */
   ellDelete(&lset_stack, (ELLNODE *)pnode);
 
- /* free entrypoint queue */
-  ellFree(&pnode->ep_queue);
+  {
+    /*
+     * free entrypoint queue
+     *
+     * avoid use of ellFree because problems on windows occur if the
+     * free is in a different DLL than the malloc
+     */
+    ELLNODE * nnode = pnode->ep_queue.node.next;
+    while ( nnode )
+    {
+        ELLNODE * pnode = nnode;
+        nnode = nnode->next;
+        free ( pnode );
+    }
+  }
 
  /* remove execution semaphore */
   epicsEventDestroy(pnode->ex_sem);

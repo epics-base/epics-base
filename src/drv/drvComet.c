@@ -371,7 +371,7 @@ short int level;
 		if(!pconfig->pcomet_csr)
 			continue;
 
-		printf( "WF: COMET: card=%d\n", card);
+		printf( "WF: COMET:\tcard=%d\n", card);
                 if (level >= 2){
                         printf("enter the number of elements to dump:");
                         status = scanf("%d",&nelements);

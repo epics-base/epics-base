@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.23  1997/08/05 00:51:11  jhill
+// fixed problems in aitString and the conversion matrix
+//
 // Revision 1.22  1997/06/25 06:17:34  jhill
 // fixed warnings
 //
@@ -138,7 +141,14 @@ gdd::gdd(int app, aitEnum prim, int dimen, aitUint32* val)
 void gdd::init(int app, aitEnum prim, int dimen)
 {
 	setApplType(app);
-	setPrimType(prim);
+	//
+	// joh - we intentionally dont call setPrimType()
+	// here because the assumption is that init() is only
+	// called from the constructor, and we dont want
+	// to destroy a non-existent string if the uninitialized
+	// prim type is a string
+	//
+	this->prim_type = prim;
 	dim=(aitUint8)dimen;
 	destruct=NULL;
 	ref_cnt=1;
@@ -162,6 +172,11 @@ void gdd::init(int app, aitEnum prim, int dimen)
 		aitString* str=(aitString*)dataAddress();
 		str->init();
 	}
+	else if (primitiveType()==aitEnumFixedString)
+	{
+		this->data.FString = new aitFixedString;
+		memset (this->data.FString, '\0', sizeof(aitFixedString));
+	}
 }
 
 gdd::gdd(gdd* dd)
@@ -177,31 +192,7 @@ gdd::~gdd(void)
 
 	// fprintf(stderr,"A gdd is really being deleted %8.8x!!\n",this);
 
-	// this function need to be corrected for use of aitEnumString!
-
-	if(isScalar())
-	{
-		if(primitiveType()==aitEnumFixedString)
-		{
-			// aitString type could have destructors
-			if(destruct)
-				destruct->destroy(dataPointer());
-			else
-				if(data.FString) delete [] data.FString;
-		}
-		else if(primitiveType()==aitEnumString)
-		{
-			// aitString type could have destructors
-			if(destruct)
-				destruct->destroy(dataAddress());
-			else
-			{
-				aitString* s = (aitString*)dataAddress();
-				s->clear();
-			}
-		}
-	}
-	else if(isContainer())
+	if(isContainer())
 	{
 		if(destruct)
 			destruct->destroy(dataPointer());
@@ -221,8 +212,11 @@ gdd::~gdd(void)
 		if(destruct) destruct->destroy(dataPointer());
 		if(bounds) freeBounds();
 	}
-	setPrimType(aitEnumInvalid);
-	setApplType(0);
+	//
+	// this destroys any scalar string data that may be present
+	//
+	this->setPrimType (aitEnumInvalid);
+	this->setApplType (0);
 }
 
 void gdd::freeBounds(void)
@@ -419,6 +413,10 @@ gddStatus gdd::copyStuff(gdd* dd,int ctype)
 	}
 	else
 	{
+		//
+		// OK to use init here because the clear() above set the
+		// scalar prim type to invalid and frees the old scalar strings
+		//
 		init(dd->applicationType(),dd->primitiveType(),dd->dimension());
 
 		if(dd->isScalar())
@@ -1047,6 +1045,10 @@ gddStatus gdd::reset(aitEnum prim, int dimen, aitIndex* cnt)
 
 	if((rc=clear())==0)
 	{
+		//
+		// ok to use init here because the clear above frees
+		// all allocated resources
+		//
 		init(app,prim,dimen);
 		for(i=0;i<dimen;i++)
 			setBound(i,0,cnt[i]);
@@ -1061,10 +1063,6 @@ void gdd::get(aitString& d)
 		aitString* s=(aitString*)dataAddress();
 		d=*s;
 	}
-	else if(dim==1 && primitiveType()==aitEnumInt8) 
-	{
-		d.copy((char *)dataPointer());
-	}
 	else
 		get(aitEnumString,&d);
 }
@@ -1075,34 +1073,18 @@ void gdd::get(aitFixedString& d)
 			sizeof(d));
 		d.fixed_string[sizeof(d)-1u] = '\0';
 	}
-	else if(primitiveType()==aitEnumInt8 && dim==1) {
-		strncpy(d.fixed_string,(char*)dataPointer(), 
-			sizeof(d));
-		d.fixed_string[sizeof(d)-1u] = '\0';
-	}
 	else
 		get(aitEnumFixedString,&d);
 }
 
 void gdd::getConvert(aitString& d)
 {
-	if(primitiveType()==aitEnumInt8 && dim==1)
-	{
-		d.copy((char*)dataPointer());
-	}
-	else
-		get(aitEnumString,&d);
+	get(aitEnumString,&d);
 }
 
 void gdd::getConvert(aitFixedString& d)
 {
-	if(primitiveType()==aitEnumInt8 && dim==1){
-		strncpy(d.fixed_string,(char*)dataPointer(),
-			sizeof(d));
-		d.fixed_string[sizeof(d)-1u] = '\0';
-	}
-	else
-		get(aitEnumFixedString,d.fixed_string);
+	get(aitEnumFixedString,d.fixed_string);
 }
 
 gddStatus gdd::put(const aitString& d)
@@ -1110,9 +1092,13 @@ gddStatus gdd::put(const aitString& d)
 	gddStatus rc=0;
 	if(isScalar())
 	{
+		//
+		// destroy existing fixed string if it exists
+		// and construct new aitString object
+		//
+		setPrimType(aitEnumString);
 		aitString* s=(aitString*)dataAddress();
 		*s=d;
-		setPrimType(aitEnumString);
 	}
 	else
 	{
@@ -1123,53 +1109,33 @@ gddStatus gdd::put(const aitString& d)
 	return rc;
 }
 
-// this is dangerous, should the fixed string be copied here?
 gddStatus gdd::put(const aitFixedString& d)
 {
 	gddStatus rc=0;
 
-	if(primitiveType()==aitEnumFixedString)
+	if(isScalar())
 	{
-		if(data.FString==NULL)
-			data.FString=new aitFixedString;
+		this->setPrimType(aitEnumFixedString);
+
+		if (data.FString!=NULL)
+			memcpy (data.FString->fixed_string, d.fixed_string, sizeof(d.fixed_string));
 	}
 	else
 	{
-		// this is so bad, like the other put() functions, need fixen
-		setPrimType(aitEnumFixedString);
-		data.FString=new aitFixedString;
+		gddAutoPrint("gdd::put(aitString&)",gddErrorNotAllowed);
+		rc=gddErrorNotAllowed;
 	}
-
-	memcpy(data.FString->fixed_string,d.fixed_string,sizeof(d.fixed_string));
 	return rc;
 }
 
 void gdd::putConvert(const aitString& d)
 {
-	if(primitiveType()==aitEnumInt8 && dim==1)
-	{
-		aitUint32 len = getDataSizeElements();
-		char* cp = (char*)dataPointer();
-		if(d.length()<len) len=d.length();
-		strncpy(cp,d.string(),len);
-		cp[len]='\0';
-	}
-	else
-		set(aitEnumString,&d);
+	set(aitEnumString,&d);
 }
 
 void gdd::putConvert(const aitFixedString& d)
 {
-	if(primitiveType()==aitEnumInt8 && dim==1)
-	{
-		aitUint32 len = getDataSizeElements();
-		char* cp = (char*)dataPointer();
-		if(sizeof(d.fixed_string)<len) len=sizeof(d.fixed_string);
-		strncpy(cp,d.fixed_string,len);
-		cp[len]='\0';
-	}
-	else
-		set(aitEnumFixedString,(void*)d.fixed_string);
+	set(aitEnumFixedString,(void*)d.fixed_string);
 }
 
 // copy each of the strings into this DDs storage area
@@ -1219,77 +1185,36 @@ gddStatus gdd::put(const gdd* dd)
 		gddAutoPrint("gdd::put(const gdd*)",gddErrorNotSupported);
 		return gddErrorNotSupported;
 	}
-	
-	//
-	// After careful consideration I (joh) commented this section out.
-	// It should not be necesary to initialize the primative type.
-	// Forcing the bounds and dimension to be the same as the source dd
-	// ignores the user's requested bounds.
-	//	
-	// this primitive must be valid for this is work - set to dd if invalid
-	//if(!aitValid(primitiveType()))
-	//{
-		// note that flags, etc. are not set here - just data related stuff
-		//destroyData();
-
-		//setPrimType(dd->primitiveType());
-		//setDimension(dd->dimension(),dd->getBounds());
-	//}
 
 	if(isScalar() && dd->isScalar())
 	{
 		// this is the simple case - just make this scaler look like the other
-		set(dd->primitiveType(),dd->dataVoid());
+		this->set(dd->primitiveType(),dd->dataVoid());
 	}
 	else if(isScalar()) // dd must be atomic if this is true
 	{
-		if((primitiveType()==aitEnumString ||
-			primitiveType()==aitEnumFixedString) &&
-			dd->primitiveType()==aitEnumInt8)
-		{
-			// special case for aitInt8--->aitString (hate this)
-			aitInt8* i1=(aitInt8*)dd->dataPointer();
-			put(i1);
-		}
-		else
-			set(dd->primitiveType(),dd->dataPointer());
+		this->set(dd->primitiveType(),dd->dataPointer());
 	}
 	else if(dd->isScalar()) // this must be atomic if true
 	{
-		if(primitiveType()==aitEnumInt8 && dd->primitiveType()==aitEnumString)
-		{
-			// special case for aitString--->aitInt8
-			aitString* s1=(aitString*)dd->dataAddress();
-			put(*s1);
-		}
-		else if(primitiveType()==aitEnumInt8 &&
-				dd->primitiveType()==aitEnumFixedString)
-		{
-			// special case for aitFixedString--->aitInt8
-			aitFixedString* s2=data.FString;
-			if(s2) put(*s2);
-		}
+		if(getDataSizeElements()>0)
+			aitConvert(primitiveType(),dataPointer(),
+				dd->primitiveType(),dd->dataVoid(),1);
 		else
 		{
-			if(getDataSizeElements()>0)
-				aitConvert(primitiveType(),dataPointer(),
-					dd->primitiveType(),dd->dataVoid(),1);
+			// this may expose an inconsistancy in the library.
+			// you can register a gdd with bounds and no data
+			// which marks it flat
+
+			if(isFlat() || isManaged())
+			{
+				gddAutoPrint("gdd::put(const gdd*)",gddErrorNotAllowed);
+				rc=gddErrorNotAllowed;
+			}
 			else
 			{
-				// this may expose an inconsistancy in the library.
-				// you can register a gdd with bounds and no data
-				// which marks it flat
-
-				if(isFlat() || isManaged())
-				{
-					gddAutoPrint("gdd::put(const gdd*)",gddErrorNotAllowed);
-					rc=gddErrorNotAllowed;
-				}
-				else
-				{
-					destroyData();
-					set(dd->primitiveType(),dd->dataVoid());
-				}
+				destroyData();
+				set(dd->primitiveType(),dd->dataVoid());
 			}
 		}
 	}
@@ -1298,7 +1223,7 @@ gddStatus gdd::put(const gdd* dd)
 		// carefully place values from dd into this
 		if(dataPointer()==NULL)
 		{
-			if(isFlat() || isManaged() || isContainer())
+			if(isFlat() || isManaged())
 			{
 				gddAutoPrint("gdd::put(const gdd*)",gddErrorNotAllowed);
 				rc=gddErrorNotAllowed;
@@ -1549,3 +1474,78 @@ size_t gdd::in(void* buf, aitDataFormat f)
 
 }
 
+//
+// rewrote this to properly construct/destruct
+// scalar string types when the prim type changes
+// joh 05-22-98
+//
+//
+void gdd::setPrimType (aitEnum t)		
+{
+	//
+	// NOOP if there is no change
+	//
+	if (this->prim_type == t) {
+		return;
+	}
+
+	//
+	// run constructors/destructors for string data
+	// if it is scalar
+	//
+	if (isScalar())
+	{
+		//
+		// run destructors for existing string data
+		//
+		if(primitiveType()==aitEnumFixedString)
+		{
+			// aitString type could have destructors
+			if(destruct)
+				destruct->destroy(dataPointer());
+			else
+				if (data.FString) delete [] data.FString;
+		}
+		else if(primitiveType()==aitEnumString)
+		{
+			// aitString type could have destructors
+			if(destruct)
+				destruct->destroy(dataAddress());
+			else
+			{
+				aitString* s = (aitString*)dataAddress();
+				s->clear();
+			}
+		}
+
+		//
+		// run constructers for new string data types
+		//
+		if (t==aitEnumString) {
+			aitString* str=(aitString*)dataAddress();
+			str->init();
+		}
+		else if (t==aitEnumFixedString) {
+			this->data.FString = new aitFixedString;
+			memset (this->data.FString, '\0', sizeof(aitFixedString));
+		}
+	}
+
+	//
+	// I (joh) assume that Jim intended that
+	// calling of the destructors for arrays of string 
+	// data when the primitive type changes is handled 
+	// by the application. Not sure - nothing was done
+	// by Jim to take care of this as far as I can tell.
+	//
+	else if(isAtomic())
+	{
+	}
+
+	//
+	// I (joh) assume that nothing needs to be done when
+	// the primative type of a container changes
+	//
+
+	this->prim_type = t;
+}

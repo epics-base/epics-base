@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.2  1997/08/05 00:51:15  jhill
+ * fixed problems in aitString and the conversion matrix
+ *
  * Revision 1.1  1997/03/21 01:56:08  jbk
  * *** empty log message ***
  *
@@ -30,7 +33,6 @@ inline void gdd::setNext(gdd* n) { nextgdd=n; }
 inline unsigned gdd::dimension(void) const	{ return dim; }
 inline aitType& gdd::getData(void) 			{ return data; }
 inline aitType* gdd::dataUnion(void)		{ return &data; }
-inline void gdd::setPrimType(aitEnum t)		{ prim_type=(aitUint8)t; }
 inline void gdd::setApplType(int t)			{ appl_type=(aitUint16)t; }
 inline gddStatus gdd::copyInfo(gdd* dd)		{ return copyStuff(dd,0); }
 inline gddStatus gdd::copy(gdd* dd)			{ return copyStuff(dd,1); }
@@ -173,13 +175,12 @@ inline void gdd::destroyData(void)
 		destruct=NULL;
 		setData(NULL);
 	}
-	else
+	else if (isScalar())
 	{
-		if(primitiveType()==aitEnumString && isScalar())
-		{
-			aitString* str = (aitString*)dataAddress();
-			str->clear();
-		}
+		//
+		// this destroys the string types
+		//
+		this->setPrimType (aitEnumInvalid);
 	}
 }
 
@@ -225,14 +226,7 @@ inline void gdd::set(aitEnum t,const void* v,aitDataFormat)
 #endif
 {
 	if (primitiveType()==aitEnumInvalid) {
-		this->prim_type = t;
-		if(t==aitEnumFixedString)
-		{
-			if(dataPointer()==NULL) 
-			{
-				data.FString = new aitFixedString;
-			}
-		}
+		this->setPrimType (t);
 	}
 
 #if aitLocalNetworkDataFormatSame == AIT_FALSE
@@ -364,49 +358,49 @@ inline gddStatus gdd::put(const aitInt8* const d)
 // ----------------put(scalar) functions----------------
 inline gddStatus gdd::put(aitFloat64 d) {
 	gddStatus rc=0;
-	if(isScalar()) { data.Float64=d; setPrimType(aitEnumFloat64); }
+	if(isScalar()) { setPrimType(aitEnumFloat64); data.Float64=d; }
 	else { rc=gddErrorNotAllowed; gddAutoPrint("gdd:put()",rc); }
 	return rc;
 }
 inline gddStatus gdd::put(aitFloat32 d) {
 	gddStatus rc=0;
-	if(isScalar()) { data.Float32=d;setPrimType(aitEnumFloat32); }
+	if(isScalar()) { setPrimType(aitEnumFloat32); data.Float32=d;}
 	else { rc=gddErrorNotAllowed; gddAutoPrint("gdd:put()",rc); }
 	return rc;
 }
 inline gddStatus gdd::put(aitUint32 d) {
 	gddStatus rc=0;
-	if(isScalar()) { data.Uint32=d; setPrimType(aitEnumUint32); }
+	if(isScalar()) { setPrimType(aitEnumUint32); data.Uint32=d; }
 	else { rc=gddErrorNotAllowed; gddAutoPrint("gdd:put()",rc); }
 	return rc;
 }
 inline gddStatus gdd::put(aitInt32 d) {
 	gddStatus rc=0;
-	if(isScalar()) { data.Int32=d; setPrimType(aitEnumInt32); }
+	if(isScalar()) { setPrimType(aitEnumInt32); data.Int32=d; }
 	else { rc=gddErrorNotAllowed; gddAutoPrint("gdd:put()",rc); }
 	return rc;
 }
 inline gddStatus gdd::put(aitUint16 d) {
 	gddStatus rc=0;
-	if(isScalar()) { data.Uint16=d; setPrimType(aitEnumUint16); }
+	if(isScalar()) { setPrimType(aitEnumUint16); data.Uint16=d; }
 	else { rc=gddErrorNotAllowed; gddAutoPrint("gdd:put()",rc); }
 	return rc;
 }
 inline gddStatus gdd::put(aitInt16 d) {
 	gddStatus rc=0;
-	if(isScalar()) { data.Int16=d; setPrimType(aitEnumInt16); }
+	if(isScalar()) { setPrimType(aitEnumInt16); data.Int16=d; }
 	else { rc=gddErrorNotAllowed; gddAutoPrint("gdd:put()",rc); }
 	return rc;
 }
 inline gddStatus gdd::put(aitUint8 d) {
 	gddStatus rc=0;
-	if(isScalar()) { data.Uint8=d; setPrimType(aitEnumUint8); }
+	if(isScalar()) { setPrimType(aitEnumUint8); data.Uint8=d; }
 	else { rc=gddErrorNotAllowed; gddAutoPrint("gdd:put()",rc); }
 	return rc;
 }
 inline gddStatus gdd::put(aitInt8 d) {
 	gddStatus rc=0;
-	if(isScalar()) { data.Int8=d; setPrimType(aitEnumInt8); }
+	if(isScalar()) { setPrimType(aitEnumInt8); data.Int8=d; }
 	else { rc=gddErrorNotAllowed; gddAutoPrint("gdd:put()",rc); }
 	return rc;
 }
@@ -560,21 +554,21 @@ inline gdd& gdd::operator=(aitFixedString* v){ putRef(v); return *this;}
 
 // ----------------- gdd x = primitive data type functions----------------
 inline gdd& gdd::operator=(aitFloat64 d)
-	{ data.Float64=d; setPrimType(aitEnumFloat64); return *this; }
+	{ setPrimType(aitEnumFloat64); data.Float64=d; return *this; }
 inline gdd& gdd::operator=(aitFloat32 d)
-	{ data.Float32=d;setPrimType(aitEnumFloat32); return *this; }
+	{ setPrimType(aitEnumFloat32); data.Float32=d;return *this; }
 inline gdd& gdd::operator=(aitUint32 d)
-	{ data.Uint32=d; setPrimType(aitEnumUint32); return *this; }
+	{ setPrimType(aitEnumUint32); data.Uint32=d; return *this; }
 inline gdd& gdd::operator=(aitInt32 d)	
-	{ data.Int32=d; setPrimType(aitEnumInt32); return *this; }
+	{ setPrimType(aitEnumInt32); data.Int32=d; return *this; }
 inline gdd& gdd::operator=(aitUint16 d)
-	{ data.Uint16=d; setPrimType(aitEnumUint16); return *this; }
+	{ setPrimType(aitEnumUint16); data.Uint16=d; return *this; }
 inline gdd& gdd::operator=(aitInt16 d)
-	{ data.Int16=d; setPrimType(aitEnumInt16); return *this; }
+	{ setPrimType(aitEnumInt16); data.Int16=d; return *this; }
 inline gdd& gdd::operator=(aitUint8 d)
-	{ data.Uint8=d; setPrimType(aitEnumUint8); return *this; }
+	{ setPrimType(aitEnumUint8); data.Uint8=d; return *this; }
 inline gdd& gdd::operator=(aitInt8 d)
-	{ data.Int8=d; setPrimType(aitEnumInt8); return *this; }
+	{ setPrimType(aitEnumInt8); data.Int8=d; return *this; }
 inline gdd& gdd::operator=(const aitString& d)
 	{ put(d); return *this; }
 

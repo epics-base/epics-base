@@ -73,7 +73,7 @@ cac::cac ( bool enablePreemptiveCallbackIn ) :
         }
     }
 
-    this->pTimerQueue = new osiTimerQueue ( abovePriority );
+    this->pTimerQueue = new osiTimerQueue ( osiTimerQueue::mtsCreateManagerThread, abovePriority );
     if ( ! this->pTimerQueue ) {
         throwWithLocation ( caErrorCode (ECA_ALLOCMEM) );
     }
@@ -118,15 +118,6 @@ cac::cac ( bool enablePreemptiveCallbackIn ) :
             throwWithLocation ( caErrorCode (ECA_ALLOCMEM) );
         }
         strncpy (this->ca_pUserName, tmp, len);
-    }
-
-    /* record the host name */
-    this->ca_pHostName = localHostName();
-    if ( ! this->ca_pHostName ) {
-        semBinaryDestroy (this->ca_io_done_sem);
-        semBinaryDestroy (this->ca_blockSem);
-        free (this->ca_pUserName);
-        throwWithLocation ( caErrorCode (ECA_ALLOCMEM) );
     }
 
     this->programBeginTime = osiTime::getCurrent ();
@@ -176,7 +167,7 @@ cac::~cac ()
     //
     this->defaultMutex.lock ();
     tsDLIterBD <cacLocalChannelIO> iter ( this->localChanList.first () );
-    while ( iter != tsDLIterBD <cacLocalChannelIO> ::eol () ) {
+    while ( iter.valid () ) {
         tsDLIterBD <cacLocalChannelIO> pnext = iter.itemAfter ();
         iter->destroy ();
         iter = pnext;
@@ -194,13 +185,13 @@ cac::~cac ()
     //
     this->iiuListMutex.lock ();
     tsDLIterBD <tcpiiu> piiu ( this->iiuListIdle.first () );
-    while ( piiu != piiu.eol () ) {
+    while ( piiu.valid () ) {
         tsDLIterBD <tcpiiu> pnext = piiu.itemAfter ();
         piiu->suicide ();
         piiu = pnext;
     }
     piiu = this->iiuListRecvPending.first ();
-    while ( piiu != piiu.eol () ) {
+    while ( piiu.valid () ) {
         tsDLIterBD <tcpiiu> pnext = piiu.itemAfter ();
         piiu->suicide ();
         piiu = pnext;
@@ -239,13 +230,6 @@ cac::~cac ()
      */
     if ( this->ca_pUserName ) {
         free ( this->ca_pUserName );
-    }
-
-    /*
-     * free host name string
-     */
-    if ( this->ca_pHostName ) {
-        free ( this->ca_pHostName );
     }
 
     this->beaconTable.destroyAllEntries ();
@@ -323,12 +307,12 @@ void cac::flush ()
      */
     this->iiuListMutex.lock ();
     tsDLIterBD<tcpiiu> piiu ( this->iiuListIdle.first () );
-    while ( piiu != tsDLIterBD<tcpiiu>::eol () ) {
+    while ( piiu.valid () ) {
         piiu->flush ();
         piiu++;
     }
     piiu = this->iiuListRecvPending.first ();
-    while ( piiu != tsDLIterBD<tcpiiu>::eol () ) {
+    while ( piiu.valid () ) {
         piiu->flush ();
         piiu++;
     }
@@ -384,13 +368,13 @@ void cac::show (unsigned level) const
     this->iiuListMutex.lock ();
 
     tsDLIterConstBD <tcpiiu> piiu ( this->iiuListIdle.first () );
-    while ( piiu != piiu.eol () ) {
+    while ( piiu.valid () ) {
         piiu->show (level);
         piiu++;
 	}
 
     piiu = this->iiuListRecvPending.first ();
-    while ( piiu != piiu.eol () ) {
+    while ( piiu.valid () ) {
         piiu->show (level);
         piiu++;
 	}
@@ -582,7 +566,7 @@ void cac::beaconNotify ( const inetAddrID &addr )
      * to zero
      */
     tsDLIterBD <nciu> iter ( this->pudpiiu->chidList.first () );
-    while ( iter != tsDLIterBD<nciu>::eol () ) {
+    while ( iter.valid () ) {
         iter->retry = 0u;
         iter++;
     }
@@ -1015,4 +999,16 @@ void cac::repeaterSubscribeConfirmNotify ()
     if ( this->pRepeaterSubscribeTmr ) {
         this->pRepeaterSubscribeTmr->confirmNotify ();
     }
+}
+
+void cac::replaceErrLogHandler ( caPrintfFunc *ca_printf_func )
+{
+    this->defaultMutex.lock ();
+    if ( ca_printf_func ) {
+        this->ca_printf_func = ca_printf_func;
+    }
+    else {
+        this->ca_printf_func = epicsVprintf;
+    }
+    this->defaultMutex.unlock ();
 }

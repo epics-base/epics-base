@@ -275,3 +275,13 @@ LINK.cpp += , $@ ,,$(LINKLIBS)  $(subst /,\\,$(LDLIBS))
 # override of CONFIG_SITE default
 SHARED_LIBRARIES = YES
 
+# gnu compiler used to create depends files 
+HDEPENDS_FLAGS_CMPLR = -MM
+HDEPENDS.c_CMPLR = gcc
+HDEPENDS.cpp_CMPLR = g++
+
+# override of CONFIG_COMMON
+HDEPENDS_INCLUDES_MKMF = $(filter-out $(BORLAND_INC),$(subst -I,,$(INCLUDES)))
+# override of CONFIG_SITE
+HOST_HDEPENDS_CMD=MKMF
+

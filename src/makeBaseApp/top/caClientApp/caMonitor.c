@@ -107,7 +107,7 @@ int main(int argc,char **argv)
 	"ca_add_exception_event");
     for(i=0; i<npv; i++) {
 	SEVCHK(ca_create_channel(pname[i],connectionCallback,
-		&pmynode[i],20,&pmynode[i]->mychid),
+		pmynode[i],20,&pmynode[i]->mychid),
 		"ca_create_channel");
 	SEVCHK(ca_replace_access_rights_event(pmynode[i]->mychid,
 		accessRightsCallback),

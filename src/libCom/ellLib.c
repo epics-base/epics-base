@@ -1,4 +1,4 @@
-/* share/src/libCom $Id$
+/* $Id$
  *
  *      Author: John Winans (ANL)
  *      Date:   07-02-92

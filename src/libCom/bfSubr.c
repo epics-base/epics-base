@@ -1,4 +1,4 @@
-/*	@(#)bfSubr.c	1.3 11/12/92
+/*	$Id$
  *	Author:	Roger A. Cole
  *	Date:	03-05-90
  *

@@ -1,5 +1,4 @@
-/* share/src/libCom $Id$ 
- * memDebugLib.c
+/* $Id$ 
  *      Author:          Jeff Hill 
  *      Date:            03-29-93
  *

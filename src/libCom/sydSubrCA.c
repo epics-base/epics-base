@@ -1,4 +1,4 @@
-/*	@(#)sydSubrCA.c	1.8 8/24/92
+/*	$Id$
  *	Author:	Roger A. Cole
  *	Date:	06-12-91
  *

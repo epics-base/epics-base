@@ -1,7 +1,6 @@
-/* share/src/libCom/postfix.c  $Id$ */
- 
-/* Subroutines used to convert an infix expression to a postfix expression */
-/*
+/* $Id$
+ * Subroutines used to convert an infix expression to a postfix expression
+ *
  *      Author:          Bob Dalesio
  *      Date:            12-12-86
  *

@@ -29,6 +29,7 @@
  * .01	06-18-91	rac	installed in SCCS
  * .02	01-29-92	rac	added wildMatch function
  * .03	08-11-93	mrk	removed ifdef V5_vxWorks
+ * .04	07-06-94	mrk	added ifndef VMS for genShellCommand
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -245,6 +246,7 @@ void	*ptr;
 *
 *-*/
 #ifndef vxWorks
+#ifndef VMS /* MLR added this */
 void
 genShellCommand(cmdBuf, resultBuf, resultDim)
 char	*cmdBuf;	/* I line to send to shell */
@@ -262,6 +264,7 @@ int	resultDim;	/* I size of result buffer */
     resultBuf[i] = '\0';
     pclose(shellPipe);
 }
+#endif
 #endif
 
 /*+/subr**********************************************************************

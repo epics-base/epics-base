@@ -1,5 +1,4 @@
-/* share/src/libCom freeListLib.c*/
-/* share/src/libCom $Id$ */
+/* $Id$ */
 /* Author:  Marty Kraimer Date:    04-19-94 */
 /*****************************************************************
                           COPYRIGHT NOTIFICATION

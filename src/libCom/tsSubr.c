@@ -1,4 +1,4 @@
-/*	@(#)tsSubr.c	1.12 5/23/94
+/*	$Id$
  *	Author:	Roger A. Cole
  *	Date:	08-09-90
  *
@@ -1157,7 +1157,7 @@ char	**pText;	/* IO ptr to ptr to string containing time and date */
     if (**pText == '-') {			/* no date--delta time */
 	
     }
-    else if (index(*pText, '/') != NULL) {	/* mm/dd/yy[yy] */
+    else if (strchr(*pText, '/') != 0) {	/* mm/dd/yy[yy] */
 	count = nextIntFieldAsInt(pText, &t.monthNum, &delim);
 	if (count <= 1 || delim != '/' || t.monthNum <=0 || t.monthNum > 12)
 	    retStat = S_ts_inputTextError;
@@ -1176,7 +1176,7 @@ char	**pText;	/* IO ptr to ptr to string containing time and date */
 		retStat = S_ts_inputTextError;
 	}
     }
-    else if (index(*pText, ',') != NULL) {	/* mon[th] dd, yyyy */
+    else if (strchr(*pText, ',') != 0) {	/* mon[th] dd, yyyy */
 	count = nextAlph1UCField(pText, &pField, &delim);
 	if (count < 4 || delim != ' ')
 	    retStat = S_ts_inputTextError;
@@ -1201,7 +1201,7 @@ char	**pText;	/* IO ptr to ptr to string containing time and date */
 		retStat = S_ts_inputTextError;
 	}
     }
-    else if (index(*pText, '-') != NULL) {	/* dd-mon-yy[yy] */
+    else if (strchr(*pText, '-') != 0) {	/* dd-mon-yy[yy] */
 	count = nextIntFieldAsInt(pText, &t.dayMonth, &delim);
 	if (count <= 1 || delim != '-' || t.dayMonth <= 0)
 	    retStat = S_ts_inputTextError;

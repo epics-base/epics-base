@@ -1,6 +1,6 @@
 /*
  *
- *	@(#)fdmgr.c	1.9	5/17/94
+ *	$Id$
  *
  *	A file descriptor manager for use with the UNIX system call select
  *
@@ -62,7 +62,7 @@
  *			if we are in fdmgr_pend_event()	
  *	.15 joh	011993	Created fdmgr header file	
  *	.16 joh	011993	Converted to ANSI C
- *	.17 pg  050494	HPUX cpp changes (elif converted to else & if)
+ *	.17 pg  050494  HPUX cpp changes (elif converted to else & if)
  *
  *	NOTES:
  *
@@ -90,7 +90,7 @@
  *
  */
 
-static char	*pSccsId = "@(#)fdmgr.c	1.9\t05/05/94";
+static char	*pSccsId = "$Id$";
 
 #include <fdmgr.h>
 #ifdef vxWorks
@@ -147,7 +147,7 @@ typedef struct{
 #	define printf	logMsg
 #	define fdmgr_gettimeval		fdmgr_vxWorks_gettimeval
 #       define memset(D,V,N)    bfill(D,N,V)
-#else 
+#else
 #if defined(UNIX)
 #	define LOCK(PFDCTX)
 #	define UNLOCK(PFDCTX)
@@ -167,7 +167,27 @@ typedef struct{
 #	define LOCK_FD_HANDLER(PFDCTX)
 #	define UNLOCK_FD_HANDLER(PFDCTX)
 #else
+#if defined(VMS)
+#	define LOCK(PFDCTX)
+#	define UNLOCK(PFDCTX)
+#	define LOCK_FDMGR_PEND_EVENT(PFDCTX) \
+	{ \
+		if((PFDCTX)->fdmgr_pend_event_in_use){ \
+			printf("Double invocation of fdmgr_pend_event()\n"); \
+			abort(); \
+		} \
+		(PFDCTX)->fdmgr_pend_event_in_use++; \
+	}
+#	define UNLOCK_FDMGR_PEND_EVENT(PFDCTX) \
+		{(PFDCTX)->fdmgr_pend_event_in_use--;}
+#	define fdmgr_gettimeval		fdmgr_VMS_gettimeval
+#	define LOCK_EXPIRED(PFDCTX)
+#	define UNLOCK_EXPIRED(PFDCTX)
+#	define LOCK_FD_HANDLER(PFDCTX)
+#	define UNLOCK_FD_HANDLER(PFDCTX)
+#else
 @@@@ dont compile in this case @@@@
+#endif
 #endif
 #endif
 
@@ -212,6 +232,20 @@ static void fdmgr_finish_off_fdentry();
 
 #if defined(vxWorks)
 #	define abort(A)	taskSuspend(taskIdSelf())
+#endif
+
+/*
+ * This routine is to be only called from fdmgr_pend_event()
+ * If other uses are needed then locking issues must be
+ * reinvestigated
+ */
+#ifdef __STDC__
+	static void process_alarm_queue(
+		fdctx           *pfdctx,
+		struct timeval  *poffset
+	);
+#else
+	static void process_alarm_queue();
 #endif
 
 
@@ -667,20 +701,6 @@ struct timeval 			*ptimeout;
 	struct timeval		t;
 	alarm			*palarm;
 
-	/*
- 	 * This routine is declared here since is only 
-	 * intended for use by this routine. If other
-	 * uses are needed then the locking issues must be
-	 * reinvestigated
-	 */
-#	ifdef __STDC__
-		static void process_alarm_queue(
-			fdctx           *pfdctx,
-			struct timeval  *poffset
-		);
-#	else
-		static void process_alarm_queue();
-#	endif
 
 	LOCK_FDMGR_PEND_EVENT(pfdctx);
 
@@ -1004,7 +1024,7 @@ fdctx 	*pfdctx;
 
 /*
  *
- * fdmgr_gettimeval
+ * fdmgr_UNIX_gettimeval
  *
  *
  */
@@ -1016,6 +1036,31 @@ struct timeval	*pt
 )
 #else
 static int fdmgr_UNIX_gettimeval(pfdctx,pt)
+fdctx 		*pfdctx;
+struct timeval	*pt;
+#endif
+{
+	struct timezone		tz;
+
+	return gettimeofday(pt, &tz);
+}
+#endif
+
+
+/*
+ *
+ * fdmgr_VMS_gettimeval
+ *
+ *
+ */
+#ifdef VMS 
+#ifdef __STDC__
+static int fdmgr_VMS_gettimeval(
+fdctx 		*pfdctx,
+struct timeval	*pt 
+)
+#else
+static int fdmgr_VMS_gettimeval(pfdctx,pt)
 fdctx 		*pfdctx;
 struct timeval	*pt;
 #endif

@@ -1,4 +1,4 @@
-/* share/src/libCom $Id$
+/* $Id$
  * errSymLib.c
  *      Author:          Marty Kraimer
  *      Date:            6-1-90

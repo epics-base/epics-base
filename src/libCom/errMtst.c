@@ -1,5 +1,5 @@
-/* share/src/libCom $Id$ 
- * errMtst.c
+/* $Id$ 
+ *
  *      Author:          Bob Zieman
  *      Date:            09-01-93
  *

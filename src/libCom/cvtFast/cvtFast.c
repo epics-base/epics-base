@@ -1,5 +1,4 @@
-/* cvtFast.c */
-/* share/src/libCom $Id$*/
+/* $Id$*/
 /* Very efficient routines to convert numbers to strings
  *      Author: Bob Dalesio wrote cvtFloatToString (called FF_TO_STR)
  *			Code is same for cvtDoubleToString

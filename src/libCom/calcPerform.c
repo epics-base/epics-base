@@ -1,4 +1,4 @@
-/* share/src/libCom/calcPerform  $Id$ */
+/* $Id$ */
 /*
  *	Author: Julie Sander and Bob Dalesio
  *	Date:	07-27-87

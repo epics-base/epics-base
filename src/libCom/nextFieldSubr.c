@@ -1,4 +1,4 @@
-/*	@(#)nextFieldSubr.c	1.3 3/9/92
+/*	$Id$
  *	Author:	Roger A. Cole
  *	Date:	10-10-90
  *

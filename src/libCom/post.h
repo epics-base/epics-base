@@ -1,6 +1,4 @@
-/* share/src/libCom/post.h  $Id$ */
-
-/*
+/* $Id$
  *      Author:          Bob Dalesio
  *      Date:            9-21-88
  *

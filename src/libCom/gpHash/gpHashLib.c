@@ -1,5 +1,4 @@
-/* share/src/libCom gphLib.c*/
-/* share/src/libCom $Id$ */
+/* $Id$ */
 /* Author:  Marty Kraimer Date:    04-07-94 */
 /*****************************************************************
                           COPYRIGHT NOTIFICATION

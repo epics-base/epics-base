@@ -1,5 +1,4 @@
-/* cvtBpt.c */
-/* share/libCom/cvtBpt  $Id$ */
+/* $Id$ */
   
 /* cvtBpt.c - Convert using breakpoint table
 /*

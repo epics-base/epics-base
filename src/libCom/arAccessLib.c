@@ -1,4 +1,4 @@
-/*	@(#)arAccessLib.c	1.6 11/12/92
+/*	$Id$
  *	Author:	Roger A. Cole
  *	Date:	03-09-90
  *
@@ -431,7 +431,7 @@ char	*chanName;	/* I channel name */
     assert(pArCfDesc != NULL);
     l = strlen(chanName);
 
-    if (index(chanName, '.') == NULL) {
+    if (strchr(chanName, '.') == 0) {
 	if (l <= 0 || l >= AR_NAME_DIM-5) {
 	    (void)fprintf(stderr, "arCFChanFind: chanName illegal length\n");
 	    return ERROR;
@@ -516,7 +516,7 @@ int	mode;		/* I mode for open--O_RDONLY or O_RDWR; if mode is
 *    'name'
 *---------------------------------------------------------------------------*/
     l = strlen(chanName);
-    if (index(chanName, '.') == NULL) {
+    if (strchr(chanName, '.') == 0) {
 	if (l <= 0 || l >= AR_NAME_DIM-5) {
 	    (void)fprintf(stderr, "arCFChanOpen: chanName illegal length\n");
 	    retStat = ERROR;

@@ -58,6 +58,9 @@
  *      ...
  *
  * $Log$
+ * Revision 1.10  1995/11/29 14:35:12  mrk
+ * Changes for replacing default.dctsdr by all ascii files
+ *
  * Revision 1.9  1995/01/18  16:38:03  winans
  * added the '0x' in front of the hex input and outputs in the report function.
  *
@@ -325,6 +328,19 @@ DSET_SYSMON devMbbiSysmon={
 	NULL,
 	SysmonReadMbbi
 };
+
+
+static void setPvSevr(pPv, status, severity)
+struct dbCommon   *pPv;
+unsigned short    severity;
+short             status;
+{
+    if (severity > pPv->nsev )
+    {
+        pPv->nsta = status;
+        pPv->nsev = severity;
+    }
+}
 
 /*****************************************************************************
  *
@@ -637,7 +653,7 @@ STATIC long SysmonReadAi(struct aiRecord *pRecord)
 	case 0x80: pRecord->val = 50; break;
 	case 0x00: pRecord->val = 55; break;
 	default:
-		devGpibLib_setPvSevr(pRecord,MAJOR_ALARM,INVALID_ALARM);
+		setPvSevr(pRecord,MAJOR_ALARM,INVALID_ALARM);
 		return(0);
 	}
 	pRecord->udf = FALSE;

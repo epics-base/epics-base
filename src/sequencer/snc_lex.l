@@ -22,6 +22,7 @@
 		now gets included in snc.y.
 20jul95,ajk	Added unsigned types.
 11jul96,ajk	Added character constants
+01oct98,wfl	Replaced FPNUM with version from Sun lex manual ("E" support)
 ***************************************************************************/
 /* Lexical analyzer for State Notation Compiler (snc).
  *
@@ -58,8 +59,14 @@ int		one_line_c_code;	/* TRUE for %%; FALSE for %{...}% */
 /* Start conditions (SNL, C code, comment, string, pre-processor, pre-proc. string) */
 %Start	SNL C_CODE COMMENT STR PP PP_STR
 
-NAME	[a-zA-Z][a-zA-Z0-9_]*
+/* FPNUM was:
 FPNUM	(([0-9]+)(\.[0-9]*)?)|(\.[0-9]+)
+   replaced 01-Oct-98 */
+
+NAME	[a-zA-Z][a-zA-Z0-9_]*
+DIG	[0-9]
+EXP	[DEde][-+]?{DIG}+
+FPNUM	{DIG}+({EXP})?|{DIG}+\.{DIG}*({EXP})?|{DIG}*\.{DIG}+({EXP})?
 OCTAL	0[0-7]+
 HEX	0x([0-9a-fA-F])+
 CCONST	\'.\'

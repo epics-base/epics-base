@@ -15,6 +15,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 
 #include "dbDefs.h"
 #include "epicsThread.h"
@@ -1121,12 +1122,16 @@ static HAG *asHagAdd(char *hagName)
 
 static long asHagAddHost(HAG *phag,char *host)
 {
-    HAGNAME	*phagname;
+    HAGNAME *phagname;
+    int     ind;
 
     if(!phag) return(0);
     phagname = asCalloc(1,sizeof(HAGNAME)+strlen(host)+1);
     phagname->host = (char *)(phagname+1);
     strcpy(phagname->host,host);
+    for(ind=0; ind<strlen(phagname->host); ind++) {
+        phagname->host[ind] = tolower(phagname->host[ind]);
+    }
     ellAdd(&phag->list,(ELLNODE *)phagname);
     return(0);
 }

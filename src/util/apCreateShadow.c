@@ -12,6 +12,7 @@
 #include <sys/types.h>
 #include <sys/param.h>
 #include <dirent.h>
+#include <unistd.h>
 #include <errno.h>
 
 #define SAME 0
@@ -189,6 +190,9 @@ init_setup(argc, argv)
     if (argc != 2) {
 	printf("####################################################\n");
 	Usage();
+	if ((access(".applShadowOrgin",R_OK|F_OK) == 0)) {
+	    system("/usr/5bin/echo \"previous invocation:\n\\tapCreateShadow \\c\";cat .applShadowOrgin");
+	}
 	printf("####################################################\n");
 	exit(1);
     }
@@ -301,11 +305,12 @@ startFromHere()
 		    dir, dp->d_name);
 	else {
 	    sprintf(name, "%s/%s", dir, dp->d_name);
+	    printf("."); fflush(stdout);
 	    procDirEntries(name);
 	}
     }
+    printf("\n");
     closedir(dfd);
-
 }
 /****************************************************************************
 PROCDIRENTRIES

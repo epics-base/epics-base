@@ -200,27 +200,21 @@ epicsTime::epicsTime (const epicsTime &t) :
 epicsTime epicsTime::getCurrent ()
 {
     epicsTimeStamp current;
-    int status;
-
-    status = epicsTimeGetCurrent (&current);
+    int status = epicsTimeGetCurrent (&current);
     if (status) {
         throwWithLocation ( unableToFetchCurrentTime () );
     }
-
-    return epicsTime (current);
+    return epicsTime ( current );
 }
 
 epicsTime epicsTime::getEvent (const epicsTimeEvent &event)
 {
     epicsTimeStamp current;
-    int status;
-
-    status = epicsTimeGetEvent (&current, event.eventNumber);
+    int status = epicsTimeGetEvent (&current, event.eventNumber);
     if (status) {
         throwWithLocation ( unableToFetchCurrentTime () );
     }
-
-    return epicsTime (current);
+    return epicsTime ( current );
 }
 
 void epicsTime::synchronize () {} // depricated

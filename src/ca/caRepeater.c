@@ -21,9 +21,10 @@
 
 #include <iocinf.h>
 
-main()
+int main()
 {
 	ca_repeater ();
 	assert (0);
 	return (0);
 }
+

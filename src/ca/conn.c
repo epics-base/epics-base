@@ -30,6 +30,9 @@
 /*			(dont send all chans in a block)		*/
 /*									*/
 /* $Log$
+ * Revision 1.36  1996/09/16 16:35:22  jhill
+ * local exceptions => exception handler
+ *
  * Revision 1.35  1996/06/19 17:59:04  jhill
  * many 3.13 beta changes
  *
@@ -239,7 +242,7 @@ void manage_conn(int silent)
 LOCAL void retrySearchRequest (int silent)
 {
 	ELLLIST		channelsSent;
-	chid		chix;
+	ciu		chix;
 	unsigned	min_retry_num;
 	unsigned	retry_cnt = 0;
   	unsigned 	retry_cnt_no_handler = 0;
@@ -253,7 +256,7 @@ LOCAL void retrySearchRequest (int silent)
 
 	LOCK;
 	min_retry_num = MAXCONNTRIES;
-	while (chix = (chid) ellGet (&piiuCast->chidlist)) {
+	while ( (chix = (ciu) ellGet (&piiuCast->chidlist)) ) {
 
 		ellAdd (&channelsSent, &chix->node);
 
@@ -359,7 +362,7 @@ LOCAL void logRetryInterval(char *pFN, unsigned lineno)
  */
 void mark_server_available(const struct in_addr *pnet_addr)
 {
-	chid		chan;
+	ciu		chan;
 	ca_real		currentPeriod;
 	bhe		*pBHE;
 	unsigned	port;	
@@ -495,10 +498,10 @@ void mark_server_available(const struct in_addr *pnet_addr)
 	 * set retry count of all disconnected channels
 	 * to zero
 	 */
-	chan = (chid) ellFirst(&piiuCast->chidlist);
+	chan = (ciu) ellFirst(&piiuCast->chidlist);
 	while (chan) {
 		chan->retry = 0;
-		chan = (chid) ellNext (&chan->node);
+		chan = (ciu) ellNext (&chan->node);
 	}
 
 	UNLOCK;

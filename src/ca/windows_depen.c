@@ -32,6 +32,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.22  1996/09/16 16:40:13  jhill
+ * make EPICS version be the console title
+ *
  * Revision 1.21  1996/08/05 19:20:29  jhill
  * removed incorrect ver number
  *
@@ -40,6 +43,9 @@
  *
  * Revision 1.19  1995/11/29  19:15:42  jhill
  * added $Log$
+ * added Revision 1.22  1996/09/16 16:40:13  jhill
+ * added make EPICS version be the console title
+ * added
  * added Revision 1.21  1996/08/05 19:20:29  jhill
  * added removed incorrect ver number
  * added
@@ -55,6 +61,7 @@
 #include <windows.h>
 #include <process.h>
 #include <mmsystem.h>
+
 #include <epicsVersion.h>
 
 #include "iocinf.h"
@@ -263,7 +270,7 @@ int local_addr (SOCKET s, struct sockaddr_in *plcladdr)
 
 	plcladdr->sin_family = AF_INET;
 	plcladdr->sin_port = 0;
-	plcladdr->sin_addr.s_addr = ntohl (loopBackAddress);
+	plcladdr->sin_addr.s_addr = htonl (loopBackAddress);
 	return OK;
 }
 
@@ -271,24 +278,27 @@ int local_addr (SOCKET s, struct sockaddr_in *plcladdr)
 /*
  *  	caDiscoverInterfaces()
  *
- *	This routine is provided with the address of an ELLLIST a socket
- * 	and a destination port number. When the routine returns there
- *	will be one additional inet address (a caAddrNode) in the list 
- *	for each inet interface found that is up and isnt a loop back 
- *	interface. If the interface supports broadcast then I add its
- *	broadcast address to the list. If the interface is a point to 
- *	point link then I add the destination address of the point to
- *	point link to the list. In either case I set the port number
- *	in the address node to the port supplied in the argument
- *	list.
+ *      This routine is provided with the address of an ELLLIST, a socket
+ *      a destination port number, and a match address. When the
+ *      routine returns there will be one additional inet address
+ *      (a caAddrNode) in the list for each inet interface found that
+ *      is up and isnt a loop back interface (match addr is INADDR_ANY)
+ *      or it matches the specified interface (match addr isnt INADDR_ANY).
+ *      If the interface supports broadcast then I add its broadcast
+ *      address to the list. If the interface is a point to
+ *      point link then I add the destination address of the point to
+ *      point link to the list. In either case I set the port number
+ *      in the address node to the port supplied in the argument
+ *      list.
  *
  * 	LOCK should be applied here for (pList)
  * 	(this is also called from the server)
  */
-void caDiscoverInterfaces(ELLLIST *pList, SOCKET socket, int port)
+void caDiscoverInterfaces(ELLLIST *pList, SOCKET socket, int port,
+	stuct in_addr matchAddr)
 {
 	struct in_addr bcast_addr;
-	caAddrNode		*pNode;
+	caAddrNode	*pNode;
 
 	pNode = (caAddrNode *) calloc(1,sizeof(*pNode));
 	if(!pNode){
@@ -323,7 +333,7 @@ broadcast_addr( struct in_addr *pcastaddr )
    gethostname(lhostname,sizeof(lhostname));
    phostent = gethostbyname(lhostname);
    if (!phostent) {
-   		return MYERRNO;
+   		return SOCKERRNO;
    }
 
    if (status = get_subnet_mask(netmask))

@@ -196,7 +196,9 @@ void timeIt(
 	assert (status == S_ts_OK);
 #endif
 	TsDiffAsDouble(&delay,&end_time,&start_time);
-	printf ("Elapsed Per Item = %f\n", delay/(iterations*inlineIter));
+	printf ("Elapsed Per Item = %12.8f sec (%10.1f Items per sec)\n", 
+		delay/(iterations*inlineIter),
+		(iterations*inlineIter)/delay);
 }
 
 

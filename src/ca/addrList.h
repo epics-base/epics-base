@@ -3,8 +3,7 @@
 extern "C" {
 #endif
 
-
-#include <envDefs.h>
+#include <envDefs.h>  
 
 void caSetupAddrList(
         ELLLIST *pList,
@@ -15,7 +14,8 @@ void caPrintAddrList(ELLLIST *pList);
 void caDiscoverInterfaces(
         ELLLIST *pList,
         SOCKET socket,
-        int port);
+        int port,
+	struct in_addr matchAddr);
 
 void caAddConfiguredAddr(
         ELLLIST *pList,

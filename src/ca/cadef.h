@@ -121,8 +121,18 @@ HDRVERSIONID(cadefh, "@(#) $Id$")
  */
 #define ca_field_type(CHID)     	((CHID)->type)
 #define ca_element_count(CHID)   	((CHID)->count)
-#define ca_name(CHID)           	((char *)((CHID)+1))
-#define ca_puser(CHID)           	((CHID)->puser)
+#define ca_name(CHID)           	((READONLY char *)((CHID)+1))
+/*
+ * the odd cast here removes const (and allows past practice
+ * of using ca_puser(CHID) as an lvalue.
+ */
+#define ca_puser(CHID)           	(*(void **)&((CHID)->puser))
+/*
+ * here is the preferred way to load the puser ptr associated with 
+ * channel (the cast removes const)
+ */
+#define ca_set_puser(CHID,PUSER) \
+(((struct channel_in_use *)CHID)->puser=(PUSER))
 #define ca_host_name(CHID)           	ca_host_name_function(CHID)
 #define ca_read_access(CHID)		((CHID)->ar.read_access)
 #define ca_write_access(CHID)		((CHID)->ar.write_access)
@@ -147,7 +157,8 @@ typedef struct ca_access_rights{
 /* Format for the arguments to user connection handlers 		*/
 struct channel_in_use;
 struct	connection_handler_args{
-	struct channel_in_use	*chid;	/* Channel id	 		*/
+	READONLY struct channel_in_use	
+				*chid;	/* Channel id	 		*/
 	long			op;	/* External codes for CA op	*/
 };
 
@@ -159,7 +170,8 @@ typedef void caCh();
 
 /* Format for the arguments to user access rights handlers 		*/
 struct	access_rights_handler_args{
-	struct channel_in_use 	*chid;	/* Channel id	 		*/
+	READONLY struct channel_in_use 	
+				*chid;	/* Channel id	 		*/
 	caar			ar;	/* New access rights state	*/
 };
 
@@ -176,9 +188,9 @@ struct channel_in_use{
 	unsigned short		count;	/* array element count 		*/
 	union{
 	  unsigned 		sid;	/* server id			*/
-	  struct db_addr	*paddr;	/* database address		*/
+	  struct dbAddr		*paddr;	/* database address		*/
 	}			id;
-	void			*puser;	/* user available area		*/
+	READONLY void		*puser;	/* user available area		*/
 	enum channel_state	state;	/* connected/ disconnected etc	*/
 	caar			ar;	/* access rights		*/
 
@@ -200,10 +212,10 @@ struct channel_in_use{
 	 */
 };
 
-typedef	struct channel_in_use	*chid;
-typedef long			chtype;
-typedef	struct pending_event	*evid;
-typedef double			ca_real;
+typedef	READONLY struct channel_in_use	*chid;
+typedef long				chtype;
+typedef	READONLY struct pending_event	*evid;
+typedef double				ca_real;
 
 /*	The conversion routine to call for each type	*/
 #define VALID_TYPE(TYPE)  (((unsigned short)TYPE)<=LAST_BUFFER_TYPE)
@@ -211,34 +223,35 @@ typedef double			ca_real;
 
 /* argument passed to event handlers and callback handlers		*/
 struct	event_handler_args{
-	void			*usr;	/* User argument supplied when event added 	*/
-	struct channel_in_use 	*chid;	/* Channel id					*/
-	long			type;	/* the type of the value returned		*/ 
-	long			count;	/* the element count of the item returned	*/
-	void 			*dbr;	/* Pointer to the value returned		*/
-	int			status;	/* CA Status of the op from server - CA V4.1	*/
+	void		*usr;	/* User argument supplied when event added 	*/
+	READONLY struct channel_in_use
+			*chid;	/* Channel id					*/
+	long		type;	/* the type of the value returned		*/ 
+	long		count;	/* the element count of the item returned	*/
+	READONLY void	*dbr;	/* Pointer to the value returned		*/
+	int		status;	/* CA Status of the op from server - CA V4.1	*/
 };
 
 struct pending_event{
-  	ELLNODE			node;	/* list ptrs */
+  	ELLNODE		node;	/* list ptrs */
 #ifdef CAC_FUNC_PROTO
-  	void			(*usr_func)(struct  event_handler_args args);
+  	void		(*usr_func)(struct  event_handler_args args);
 #else /*CAC_FUNC_PROTO*/
-  	void			(*usr_func)();
+  	void		(*usr_func)();
 #endif /*CAC_FUNC_PROTO*/
-  	void			*usr_arg;
-  	struct channel_in_use 	*chan;
-  	chtype			type;	/* requested type for local CA	*/
-  	unsigned long		count;	/* requested count for local CA */
+  	READONLY void	*usr_arg;
+  	chid		chan;
+  	chtype		type;	/* requested type for local CA	*/
+  	unsigned long	count;	/* requested count for local CA */
   	/* 
 	 * the following provide for reissuing a 
 	 * disconnected monitor 
 	 */
-  	ca_real			p_delta;
-  	ca_real			n_delta;
-  	ca_real			timeout;
-	unsigned		id;
-  	unsigned short		mask;
+  	ca_real		p_delta;
+  	ca_real		n_delta;
+  	ca_real		timeout;
+	unsigned	id;
+  	unsigned short	mask;
 };
 
 void epicsShareAPI ca_test_event
@@ -250,16 +263,17 @@ void epicsShareAPI ca_test_event
 
 /* Format for the arguments to user exception handlers 			*/
 struct	exception_handler_args{
-	void			*usr;	/* User argument supplied when event added 	*/
-	struct channel_in_use	*chid;	/* Channel id			 		*/
-	long 			type;	/* Requested type for the operation		*/
-	long 			count;	/* Requested count for the operation		*/
-	void 			*addr;	/* User's address to write results of CA_OP_GET	*/
-	long			stat;	/* Channel access std status code 		*/
-	long			op;	/* External codes for channel access operations	*/
-	char			*ctx;	/* A character string containing context info	*/
-	char			*pFile; /* source file name (may be NULL) */
-	unsigned		lineNo; /* source file line number */
+	void		*usr;	/* User argument supplied when event added 	*/
+	READONLY struct channel_in_use
+			*chid;	/* Channel id			 		*/
+	long 		type;	/* Requested type for the operation		*/
+	long 		count;	/* Requested count for the operation		*/
+	void 		*addr;	/* User's address to write results of CA_OP_GET	*/
+	long		stat;	/* Channel access std status code 		*/
+	long		op;	/* External codes for channel access operations	*/
+	const char	*ctx;	/* A character string containing context info	*/
+	const char	*pFile; /* source file name (may be NULL) */
+	unsigned	lineNo; /* source file line number */
 };
 
 
@@ -303,29 +317,9 @@ int epicsShareAPI ca_task_exit
 #endif /*CAC_FUNC_PROTO*/
 	);
 
-
-/************************************************************************/
-/*	Return a channel identification for the supplied channel name	*/
-/*	(and attempt to create a virtual circuit)			*/
-/************************************************************************/
-
-/*
- * preferred search mechanism
- */
-#define ca_search(NAME,CHIDPTR)\
-ca_search_and_connect(NAME, CHIDPTR, 0, 0)
-/*	ca_search
-	(
-		Name	IO	Value					
-		----	--	-----					
-char *,	 	NAME	R	NULL term ASCII channel name string	
-chid *	 	CHIDPTR	RW	channel index written here		
-	);
-*/
-
 /************************************************************************
- * anachronistic entry points						*
- * **** Fetching a value while searching nolonger supported****		*
+ * anachronistic entry points                                           *
+ * **** Fetching a value while searching nolonger supported****         *
  ************************************************************************/
 #define ca_build_channel(NAME,XXXXX,CHIDPTR,YYYYY)\
 ca_build_and_connect(NAME, XXXXX, 1, CHIDPTR, YYYYY, 0, 0)
@@ -334,54 +328,76 @@ ca_build_and_connect(NAME, XXXXX, 1, CHIDPTR, YYYYY, 0, 0)
 ca_build_and_connect(NAME, XXXXX, ZZZZZZ, CHIDPTR, YYYYY, 0, 0)
 
 
+/************************************************************************/
+/*	Return a channel identification for the supplied channel name	*/
+/*	(and attempt to create a virtual circuit)			*/
+/************************************************************************/
+
 /*
- * preferred search mechanism
+ * preferred search request API 
+ */
+#define ca_search(NAME,CHIDPTR)\
+ca_search_and_connect(NAME, CHIDPTR, 0, 0)
+/*	ca_search
+	(
+		Name	IO	Value					
+		----	--	-----					
+const char *,	NAME	R	NULL term ASCII channel name string	
+chid *	 	CHIDPTR	RW	channel index written here		
+	);
+*/
+
+
+/*
+ * preferred search request API 
  */
 int epicsShareAPI ca_search_and_connect
 	(
 #ifdef CAC_FUNC_PROTO
 	/*	Name	IO	Value					*/
 	/*	----	--	-----					*/
-char *,/* 	NAME	R	NULL term ASCII channel name string	*/
-chid *,/* 	CHIDPTR	RW	channel index written here		*/
+const char *,
+	/* 	NAME	R	NULL term ASCII channel name string	*/
+chid *,	/* 	CHIDPTR	RW	channel index written here		*/
 void (*)(struct connection_handler_args),
 	/*	PFUNC	R	the address of user's connection handler*/
-void * 	/*	PUSER	R	placed in the channel's puser field 	*/
+const void * 
+	/*	PUSER	R	placed in the channel's puser field 	*/
 #endif /*CAC_FUNC_PROTO*/
 );
 
 /************************************************************************
- * anachronistic entry point						*
- * **** Fetching a value while searching nolonger supported****		*
+ * anachronistic entry point                                            *
+ * **** Fetching a value while searching nolonger supported****         *
  ************************************************************************/
 int epicsShareAPI ca_build_and_connect
-	(
-#ifdef CAC_FUNC_PROTO 
-	/*	Name	IO	Value					*/
-	/*	----	--	-----					*/
-char *,	/* 	NAME	R	NULL term ASCII channel name string	*/
-chtype,	/*	GET_TYPE R 	external channel type to get		*/
-unsigned/*			(no get if invalid type)		*/	
-long,	/*	GET_COUNT R	array count to get			*/
-chid *,	/* 	CHIDPTR	RW	channel index written here		*/
-void *,	/*	PVALUE	W	A pointer to a user supplied buffer	*/	
+        (
+#ifdef CAC_FUNC_PROTO
+        /*      Name    IO      Value                                   */
+        /*      ----    --      -----                                   */
+char *, /*      NAME    R       NULL term ASCII channel name string     */
+chtype, /*      GET_TYPE R      external channel type to get            */
+unsigned/*                      (no get if invalid type)                */
+long,   /*      GET_COUNT R     array count to get                      */
+chid *, /*      CHIDPTR RW      channel index written here              */
+void *, /*      PVALUE  W       A pointer to a user supplied buffer     */
 void (*)(struct connection_handler_args),
-	/*	PFUNC	R	the address of user's connection handler*/
-void *	/*	PUSER	R	placed in the channel's puser field 	*/	
+        /*      PFUNC   R       the address of user's connection handler*/
+void *  /*      PUSER   R       placed in the channel's puser field     */
 #endif /*CAC_FUNC_PROTO*/
-	);
+        );
 
 int epicsShareAPI ca_change_connection_event
 (
 #ifdef CAC_FUNC_PROTO
-chid	chix,
+chid	chan,
 void	(*pfunc)(struct connection_handler_args)
 #endif /*CAC_FUNC_PROTO*/
 );
 
 int epicsShareAPI ca_replace_access_rights_event(
 #ifdef CAC_FUNC_PROTO
-chid	chix,
+chid	chan,
 void 	(*pfunc)(struct access_rights_handler_args)
 #endif /*CAC_FUNC_PROTO*/
 );
@@ -395,7 +411,7 @@ int epicsShareAPI ca_add_exception_event
 (
 #ifdef CAC_FUNC_PROTO
 void            (*pfunc)(struct exception_handler_args),
-void            *arg
+const void	*arg
 #endif /*CAC_FUNC_PROTO*/
 );
 
@@ -419,7 +435,7 @@ chid	/*	CHAN,	R	channel identifier			*/
 C Type		Name	IO	Value					
 ------		-----	--	-----					
 chid	 	CHID	R	channel id	 			
-char *	 	PVALUE	R	pointer to a binary value string
+const char *	PVALUE	R	pointer to a binary value string
 */
 
 #define	ca_rput(CHID,PVALUE)\
@@ -428,7 +444,8 @@ ca_array_put(DBR_FLOAT, 1, CHID, (PVALUE))
 C Type		Name	IO	Value					
 ------		-----	--	-----					
 chid	 	CHID	R	channel id	 			
-dbr_float_t *	PVALUE	R	pointer to a real value
+const dbr_float_t *	
+		PVALUE	R	pointer to a real value
 */
 
 #define ca_put(CHTYPE, CHID, PVALUE) ca_array_put(CHTYPE, 1, CHID, PVALUE)
@@ -437,7 +454,7 @@ dbr_float_t *	PVALUE	R	pointer to a real value
 		----	--	-----					
 chtype,		TYPE	R	channel type				
 chid,	 	CHID	R	channel index	 			
-void *		PVALUE	R	pointer to new channel value of type specified	
+const void *	PVALUE	R	pointer to new channel value of type specified	
 				i.e. status = ca_put(DBF_INT,chid,&value)	
 */
 
@@ -450,7 +467,8 @@ chtype,	/*	TYPE	R	channel type				*/
 unsigned long,	
 	/*	COUNT	R	array element count			*/
 chid,	/* 	CHID	R	channel index	 			*/
-void *	/*	PVALUE	R	pointer to new channel value of type	*/ 
+const void *	
+	/*	PVALUE	R	pointer to new channel value of type	*/ 
 	/*			specified.				*/
 #endif /*CAC_FUNC_PROTO*/
 	);
@@ -472,10 +490,12 @@ chtype, /*      TYPE    R       channel type                            */
 unsigned long,
         /*      COUNT   R       array element count                     */
 chid,   /*      CHID    R       channel index                           */
-void *, /*      PVALUE  R       pointer to new channel value of type    */
+const void *, 
+	/*      PVALUE  R       pointer to new channel value of type    */
 void (*)(struct event_handler_args),
         /*      USRFUNC R       the address of a user supplied function */
-void *  /*      USRARG  R       An argument copied to the above function*/
+const void *  
+	/*      USRARG  R       An argument copied to the above function*/
 #endif /*CAC_FUNC_PROTO*/
         );
 
@@ -492,7 +512,7 @@ void *  /*      USRARG  R       An argument copied to the above function*/
 C Type		Name	IO	Value					
 ------		-----	--	-----					
 chid	 	CHID	R	channel id	 			
-char *	 	PVALUE	W	string value pointer 
+char * 		PVALUE	W	string value pointer 
 */
 
 #define	ca_rget(CHID,PVALUE)  	ca_array_get(DBR_FLOAT, 1, CHID, PVALUE)
@@ -536,8 +556,9 @@ ca_array_get_callback(DBR_STRING, 1, CHID, PFUNC, ARG)
 C Type		Name	IO	Value					
 ------		-----	--	-----					
 chid	 	CHID	R	channel id	 
-void (*)(),	PFUNC	R	the address of a user supplied function	
-void *,		ARG	R	An argument copied to the above function	
+void (*)(struct event_handler_args),	
+		PFUNC	R	the address of a user supplied function	
+const void *,	ARG	R	An argument copied to the above function	
 */
 
 #define	ca_rget_callback(CHID,PFUNC,ARG)\
@@ -547,8 +568,9 @@ ca_array_get_callback(DBR_FLOAT, 1, CHID, PFUNC, ARG)
 C Type		Name	IO	Value					
 ------		-----	--	-----					
 chid	 	CHID	R	channel id	 			
-void (*)(),	PFUNC	R	the address of a user supplied function	
-void *,		ARG	R	An argument copied to the above function	
+void (*)(struct event_handler_args),	
+		PFUNC	R	the address of a user supplied function	
+const void *,	ARG	R	An argument copied to the above function	
 */
 
 #define	ca_get_callback(CHTYPE, CHID,PFUNC,ARG)\
@@ -558,8 +580,9 @@ C Type		Name	IO	Value
 ------		-----	--	-----					
 chtype,		TYPE	R	channel type				
 chid,	 	CHID	R	channel index	 			
-void (*)(),	PFUNC	R	the address of a user supplied function	
-void *,		ARG	R	An argument copied to the above function
+void (*)(struct event_handler_args),
+		PFUNC	R	the address of a user supplied function	
+const void *,	ARG	R	An argument copied to the above function
 */
 
 int epicsShareAPI ca_array_get_callback
@@ -573,7 +596,8 @@ unsigned long,
 chid,	/* 	CHID	R	channel index	 			*/
 void (*)(struct event_handler_args),	
 	/*	USRFUNC	R	the address of a user supplied function	*/
-void *	/*	USRARG	R	An argument copied to the above function	*/
+const void *	
+	/*	USRARG	R	An argument copied to the above function	*/
 #endif /*CAC_FUNC_PROTO*/
 	);
 
@@ -597,9 +621,9 @@ ca_add_array_event(TYPE,1,CHID,ENTRY,ARG,0.0,0.0,0.0,EVID)
 /*		Name	IO	Value					
 		----	--	-----					
 chid,	 	CHID	R	channel index	 			
-void
-(*)(),		USRFUNC	R	the address of a user supplied function	
-void *,		USRARG	R	An argument copied to the above function	
+void (*)(struct event_handler_args),	
+		USRFUNC	R	the address of a user supplied function	
+const void *,	USRARG	R	An argument copied to the above function	
 evid *  	EVIDPTR	W	An id to refer to this event by	
 */
 
@@ -611,9 +635,9 @@ evid *  	EVIDPTR	W	An id to refer to this event by
 /*		Name	IO	Value					
 		----	--	-----					
 chid,	 	CHID	R	channel index	 			
-void
-(*)(),		USRFUNC	R	the address of a user supplied function	
-void *,		USRARG	R	An argument copied to the above function	
+void (*)(struct event_handler_args),
+		USRFUNC	R	the address of a user supplied function	
+const void *,	USRARG	R	An argument copied to the above function	
 ca_real,	DELTA	R	Generate events after +-delta excursions	
 evid *  	EVIDPTR	W	An id to refer to this event by	
 */
@@ -638,7 +662,8 @@ unsigned long,
 chid,	/* 	CHID	R	channel index	 			*/
 void (*)(struct event_handler_args),	
 	/*	USRFUNC	R	the address of a user supplied function	*/
-void *,	/*	USRARG	R	An argument copied to the above function*/
+const void *,	
+	/*	USRARG	R	An argument copied to the above function*/
 ca_real,/*	P_DELTA	R	Generate events after +delta excursions	*/
 ca_real,/*	N_DELTA	R	Generate events after -delta excursions	*/
 ca_real,/*	TIMEOUT	R	Generate events after timeout sec	*/
@@ -754,7 +779,8 @@ void epicsShareAPI ca_signal
 	/*	Name	IO	Value						*/
 	/*	----	--	-----						*/
 long,	/*	CODE	R	status returned from channel access function	*/
-char *	/*	MSG	R	null term string printed on error		*/
+const char *	
+	/*	MSG	R	null term string printed on error		*/
 #endif /*CAC_FUNC_PROTO*/
 	);
 
@@ -764,8 +790,10 @@ void epicsShareAPI ca_signal_with_file_and_lineno
         /*      Name    IO      Value                                           */
         /*      ----    --      -----                                           */
 long,	/*	CODE	R	status returned from channel access function    */
-char *,	/*	MSG	R       null term string printed on error               */
-char *,	/*	FILE	R	pointer to null terminated file name string	*/
+const char *,	
+	/*	MSG	R       null term string printed on error               */
+const char *,	
+	/*	FILE	R	pointer to null terminated file name string	*/
 int	/*	LINENO	R	line number					*/
 #endif /*CAC_FUNC_PROTO*/
 	);
@@ -785,7 +813,7 @@ int	/*	LINENO	R	line number					*/
 			__LINE__); \
 }
 
-char * epicsShareAPI ca_host_name_function
+const char * epicsShareAPI ca_host_name_function
 	(
 #ifdef CAC_FUNC_PROTO
 	/*	Name	IO	Value					*/
@@ -814,7 +842,7 @@ typedef void CAFDHANDLER();
 int epicsShareAPI ca_add_fd_registration(
 #ifdef CAC_FUNC_PROTO
 CAFDHANDLER 	*pHandler,
-void    	*pArg
+const void    	*pArg
 #endif /*CAC_FUNC_PROTO*/
 );
 
@@ -851,12 +879,7 @@ int ca_import_cancel();
  * IO operations are initiated then the programmer is free to
  * block for IO completion within any one of the groups as needed.
  */
-typedef unsigned WRITEABLE_CA_SYNC_GID;
-#ifdef CAC_FUNC_PROTO
-typedef const unsigned CA_SYNC_GID;
-#else
 typedef unsigned CA_SYNC_GID;
-#endif
 
 /*
  * create a sync group
@@ -936,7 +959,8 @@ chtype, /*      TYPE    R       channel type                            */
 unsigned long,
         /*      COUNT   R       array element count                     */
 chid,   /*      CHID    R       channel index                           */
-void *  /*      PVALUE  R       pointer to new channel value of type    */
+const void *  
+	/*      PVALUE  R       pointer to new channel value of type    */
         /*                      specified.                              */
 #endif /*CAC_FUNC_PROTO*/
 	);
@@ -957,7 +981,7 @@ int epicsShareAPI ca_sg_stat();
  * client user name.
  */
 #ifdef CAC_FUNC_PROTO
-int epicsShareAPI ca_modify_user_name(char *pUserName);
+int epicsShareAPI ca_modify_user_name(const char *pUserName);
 #else /*CAC_FUNC_PROTO*/
 int epicsShareAPI ca_modify_user_name();
 #endif /*CAC_FUNC_PROTO*/
@@ -969,7 +993,7 @@ int epicsShareAPI ca_modify_user_name();
  * client host name.
  */
 #ifdef CAC_FUNC_PROTO
-int epicsShareAPI ca_modify_host_name(char *pHostName);
+int epicsShareAPI ca_modify_host_name(const char *pHostName);
 #else /*CAC_FUNC_PROTO*/
 int epicsShareAPI ca_modify_host_name();
 #endif /*CAC_FUNC_PROTO*/

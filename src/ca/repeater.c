@@ -63,6 +63,9 @@
  *			datagram socket (and watching for ECONNREFUSED)
  *
  * $Log$
+ * Revision 1.37  1996/09/04 20:02:32  jhill
+ * fixed gcc warning
+ *
  * Revision 1.36  1996/07/12 00:40:48  jhill
  * fixed client disconnect problem under solaris
  *
@@ -137,12 +140,12 @@ void ca_repeater()
 		/*
 		 * test for server was already started
 		 */
-		if (MYERRNO==EADDRINUSE) {
+		if (SOCKERRNO==EADDRINUSE) {
 			exit(0);
 		}
 		ca_printf("%s: Unable to create repeater socket because \"%s\"\n",
 			__FILE__,
-			strerror(MYERRNO));
+			strerror(SOCKERRNO));
 		exit(0);
 	}
 
@@ -174,12 +177,12 @@ void ca_repeater()
 				 * Avoid spurious ECONNREFUSED bug
 				 * in linux
 				 */
-				if (MYERRNO==ECONNREFUSED) {
+				if (SOCKERRNO==ECONNREFUSED) {
 					continue;
 				}
 #			endif
 			ca_printf("CA Repeater: recv err %s\n",
-				strerror(MYERRNO));
+				strerror(SOCKERRNO));
 			continue;
 		}
 
@@ -246,10 +249,10 @@ LOCAL void fanOut(struct sockaddr_in *pFrom, const char *pMsg, unsigned msgSize)
 #endif
 		}
 		if(status < 0){
-			if (MYERRNO == ECONNREFUSED) {
+			if (SOCKERRNO == ECONNREFUSED) {
 #ifdef DEBUG
 				ca_printf("Deleted client %d\n",
-					pclient->from.sin_port);
+					ntohs( pclient->from.sin_port));
 #endif
 				ellDelete(&theClients, 
 					&pclient->node);
@@ -259,7 +262,7 @@ LOCAL void fanOut(struct sockaddr_in *pFrom, const char *pMsg, unsigned msgSize)
 			else {
 				ca_printf(
 "CA Repeater: fan out err was \"%s\"\n",
-					strerror(MYERRNO));
+					strerror(SOCKERRNO));
 			}
 		}
 	}
@@ -282,10 +285,10 @@ LOCAL void verifyClients()
 		ellAdd(&theClients, &pclient->node);
 
 		sock = makeSocket(ntohs(pclient->from.sin_port), FALSE);
-		if (sock>=0) {
+		if (sock!=INVALID_SOCKET) {
 #ifdef DEBUG
 			ca_printf("Deleted client %d\n",
-					pclient->from.sin_port);
+					ntohs(pclient->from.sin_port));
 #endif
 			ellDelete(&theClients, &pclient->node);
 			socket_close(sock);
@@ -293,9 +296,9 @@ LOCAL void verifyClients()
 			free(pclient);
 		}
 		else {
-			if (MYERRNO!=EADDRINUSE) {
+			if (SOCKERRNO!=EADDRINUSE) {
 				ca_printf(
-	"CA Repeater: bind test err was \"%s\"\n", strerror(MYERRNO));
+	"CA Repeater: bind test err was \"%s\"\n", strerror(SOCKERRNO));
 			}
 		}
 	}
@@ -324,6 +327,16 @@ LOCAL SOCKET makeSocket(unsigned short port, int reuseAddr)
 	 * no need to bind if unconstrained
 	 */
 	if (port != PORT_ANY) {
+
+		memset((char *)&bd, 0, sizeof(bd));
+		bd.sin_family = AF_INET;
+		bd.sin_addr.s_addr = INADDR_ANY;	
+		bd.sin_port = htons(port);	
+		status = bind(sock, (struct sockaddr *)&bd, (int)sizeof(bd));
+		if (status<0) {
+			socket_close(sock);
+			return INVALID_SOCKET;
+		}
 		if (reuseAddr) {
 			status = setsockopt(	sock,	
 						SOL_SOCKET,
@@ -333,18 +346,8 @@ LOCAL SOCKET makeSocket(unsigned short port, int reuseAddr)
 			if (status<0) {
 				ca_printf(
 			"%s: set socket option failed because \"%s\"\n", 
-						__FILE__, strerror(MYERRNO));
+						__FILE__, strerror(SOCKERRNO));
 			}
-		}
-
-		memset((char *)&bd, 0, sizeof(bd));
-		bd.sin_family = AF_INET;
-		bd.sin_addr.s_addr = INADDR_ANY;	
-		bd.sin_port = htons(port);	
-		status = bind(sock, (struct sockaddr *)&bd, (int)sizeof(bd));
-		if(status<0){
-			socket_close(sock);
-			return INVALID_SOCKET;
 		}
 	}
 
@@ -398,7 +401,7 @@ struct sockaddr_in 	*pFrom)
 			free(pclient);
 			ca_printf("%s: no client sock because \"%s\"\n",
 					__FILE__,
-					strerror(MYERRNO));
+					strerror(SOCKERRNO));
 			return;
 		}
 
@@ -421,7 +424,7 @@ struct sockaddr_in 	*pFrom)
 #ifdef DEBUG
 		ca_printf (
 			"Added %d\n", 
-			pFrom->sin_port);
+			ntohs(pFrom->sin_port));
 #endif
 	}
 
@@ -436,7 +439,7 @@ struct sockaddr_in 	*pFrom)
 	if (status >= 0) {
 		assert(status == sizeof(confirm));
 	}
-	else if (MYERRNO == ECONNREFUSED){
+	else if (SOCKERRNO == ECONNREFUSED){
 #ifdef DEBUG
 		ca_printf("Deleted repeater client=%d sending ack\n",
 				pFrom->sin_port);
@@ -447,7 +450,7 @@ struct sockaddr_in 	*pFrom)
 	}
 	else {
 		ca_printf("CA Repeater: confirm err was \"%s\"\n",
-				strerror(MYERRNO));
+				strerror(SOCKERRNO));
 	}
 
 	/*

@@ -29,6 +29,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.26  1996/09/16 16:39:20  jhill
+ * local except => except handler
+ *
  * Revision 1.25  1996/08/13 23:16:23  jhill
  * removed os specific code
  *
@@ -421,8 +424,8 @@ void cac_os_depen_exit (struct ca_static *pcas)
 LOCAL int cac_os_depen_exit_tid (struct ca_static *pcas, int tid)
 {
 	int		status;
-	chid		chix;
-	evid		monix;
+	ciu		chix;
+	miu		monix;
 	TVIU    	*ptviu;
 	CALLBACK	*pcb;
 
@@ -449,7 +452,7 @@ LOCAL int cac_os_depen_exit_tid (struct ca_static *pcas, int tid)
 			status = taskSuspend (pcas->recv_tid);
 			if (status<0) {
 				ca_printf ("taskSuspend() error = %s\n",
-					strerror (MYERRNO) );
+					strerror (errno) );
 			}
 		}
 	}
@@ -459,9 +462,9 @@ LOCAL int cac_os_depen_exit_tid (struct ca_static *pcas, int tid)
 	 * (and put call backs)
 	 *
 	 */
-	chix = (chid) & pcas->ca_local_chidlist.node;
-	while (chix = (chid) chix->node.next) {
-		while (monix = (evid) ellGet(&chix->eventq)) {
+	chix = (ciu) & pcas->ca_local_chidlist.node;
+	while ( (chix = (ciu) chix->node.next) ) {
+		while ( (monix = (miu) ellGet(&chix->eventq)) ) {
 			/*
 			 * temp release lock so that the event task
 			 * 	can finish 
@@ -498,7 +501,7 @@ LOCAL int cac_os_depen_exit_tid (struct ca_static *pcas, int tid)
 	 *
 	 * db_close_events() does not require a CA context.
 	 */
-	while (ptviu = (TVIU *)ellGet(&pcas->ca_taskVarList)) {
+	while ( (ptviu = (TVIU *)ellGet(&pcas->ca_taskVarList)) ) {
 #		ifdef DEBUG
                 	ca_printf("CAC: removing task var %x\n", ptviu->tid);
 #		endif

@@ -36,6 +36,11 @@ static char	*sccsId = "@(#) $Id$";
 #include	"net_convert.h"
 
 /*
+ * NOOP if this isnt required
+ */
+#ifdef CONVERSION_REQUIRED
+
+/*
  * if hton is true then it is a host to network conversion
  * otherwise vise-versa
  *
@@ -156,6 +161,9 @@ unsigned long	num			/* number of values		*/
 	char		*pSrc = s;
 	char		*pDest = d;
 
+	/* convert "in place" -> nothing to do */
+	if (s == d)
+		return;
 	if(num == 1){
 		strcpy(pDest, pSrc);
 	}
@@ -212,6 +220,9 @@ unsigned long	num			/* number of values		*/
 	dbr_char_t	*pSrc = s;
 	dbr_char_t	*pDest = d;
 
+	/* convert "in place" -> nothing to do */
+	if (s == d)
+		return;
       	for(i=0; i<num; i++){
       	  	*pDest++ = *pSrc++;
 	}
@@ -377,6 +388,11 @@ unsigned long	num			/* number of values		*/
     	/* convert ieee to vax format or vax to ieee */
     	pDest->status 		= dbr_ntohs(pSrc->status);
     	pDest->severity		= dbr_ntohs(pSrc->severity);
+
+	/* convert "in place" -> nothing else to do */
+	if (s == d)
+		return;
+
     	if (num == 1)	/* if single value */
 		strcpy(pDest->value, pSrc->value);
     	else
@@ -570,6 +586,10 @@ unsigned long	num			/* number of values		*/
 
     	pDest->status 		= dbr_ntohs(pSrc->status);
     	pDest->severity		= dbr_ntohs(pSrc->severity);
+
+	if (s == d)	/* source == dest -> no more conversions */
+		return;
+
 	memcpy(pDest->units,pSrc->units,sizeof(pSrc->units));
 
     	pDest->upper_disp_limit 	= pSrc->upper_disp_limit;
@@ -1686,4 +1706,5 @@ void dbr_htonf (dbr_float_t *IEEEhost, dbr_float_t *IEEEnet)
 #endif /* IEEE float and little endian */
 
 
+#endif /* CONVERSION_REQUIRED */
 

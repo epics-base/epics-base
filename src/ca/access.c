@@ -99,6 +99,9 @@
 /************************************************************************/
 /*
  * $Log$
+ * Revision 1.86  1996/09/16 16:41:47  jhill
+ * local except => except handler & ca vers str routine
+ *
  * Revision 1.85  1996/09/04 20:02:00  jhill
  * test for non-nill piiu under vxWorks
  *
@@ -253,8 +256,8 @@ unsigned 	cmmd
 );
 #ifdef vxWorks
 LOCAL void ca_event_handler(
-evid 		monix,
-struct db_addr	*paddr,
+miu		monix,
+struct dbAddr	*paddr,
 int		hold,
 void		*pfl
 );
@@ -264,19 +267,19 @@ LOCAL void 	ca_pend_io_cleanup();
 LOCAL void 	create_udp_fd();
 static int issue_ca_array_put
 (
-unsigned			cmd,
-unsigned			id,
-chtype				type,
-unsigned long			count,
-chid				chix,
-void				*pvalue
+unsigned	cmd,
+unsigned	id,
+chtype		type,
+unsigned long	count,
+chid		chix,
+const void	*pvalue
 );
 LOCAL void ca_default_exception_handler(struct exception_handler_args args);
 
 LOCAL int cac_push_msg(
 struct ioc_in_use 	*piiu,
-caHdr		*pmsg,
-void			*pext
+caHdr			*pmsg,
+const void		*pext
 );
 
 LOCAL void cac_add_msg (IIU *piiu);
@@ -286,7 +289,9 @@ LOCAL void *malloc_put_convert(unsigned long size);
 LOCAL void free_put_convert(void *pBuf);
 #endif
 
-LOCAL evid caIOBlockCreate(void);
+LOCAL miu caIOBlockCreate(void);
+
+LOCAL int check_a_dbr_string(const char *pStr, const unsigned count);
 
 
 /*
@@ -299,8 +304,8 @@ LOCAL evid caIOBlockCreate(void);
  */ 
 LOCAL int cac_push_msg(
 struct ioc_in_use 	*piiu,
-caHdr		*pmsg,
-void			*pext
+caHdr			*pmsg,
+const void		*pext
 )
 {
 	caHdr	msg;
@@ -682,7 +687,7 @@ LOCAL void create_udp_fd()
  * Modify or override the default 
  * client host name.
  */
-int epicsShareAPI ca_modify_host_name(char *pHostName)
+int epicsShareAPI ca_modify_host_name(const char *pHostName)
 {
 	char		*pTmp;
 	unsigned	size;
@@ -737,7 +742,7 @@ int epicsShareAPI ca_modify_host_name(char *pHostName)
  * Modify or override the default 
  * client user name.
  */
-int epicsShareAPI ca_modify_user_name(char *pClientName)
+int epicsShareAPI ca_modify_user_name(const char *pClientName)
 {
 	char		*pTmp;
 	unsigned	size;
@@ -834,7 +839,7 @@ void ca_process_exit()
 	while(piiu){
 		if(ca_static->ca_fd_register_func){
 			(*ca_static->ca_fd_register_func)(
-				ca_static->ca_fd_register_arg,
+				(void *)ca_static->ca_fd_register_arg,
 				piiu->sock_chan,
 				FALSE);
 		}
@@ -932,14 +937,12 @@ void ca_process_exit()
 	UNLOCK;
 }
 
-
-
 
 /*
  *
- *	CA_BUILD_AND_CONNECT
+ *      CA_BUILD_AND_CONNECT
  *
- * 	backwards compatible entry point to ca_search_and_connect()
+ *      backwards compatible entry point to ca_search_and_connect()
  */
 int epicsShareAPI ca_build_and_connect
 (
@@ -952,32 +955,30 @@ int epicsShareAPI ca_build_and_connect
  void *puser
 )
 {
-	if(get_type != TYPENOTCONN && pvalue!=0 && get_count!=0){
-		return ECA_ANACHRONISM;
-	}
-
-	return ca_search_and_connect(name_str,chixptr,conn_func,puser);
+        if(get_type != TYPENOTCONN && pvalue!=0 && get_count!=0){
+                return ECA_ANACHRONISM;
+        }
+ 
+        return ca_search_and_connect(name_str,chixptr,conn_func,puser);
 }
+ 
 
 
 /*
- *
  *	ca_search_and_connect()	
- *
- *
  */
 int epicsShareAPI ca_search_and_connect
 (
- char *name_str,
- chid *chixptr,
- void (*conn_func) (struct connection_handler_args),
- void *puser
+	const char *name_str,
+ 	chid *chixptr,
+ 	void (*conn_func) (struct connection_handler_args),
+ 	const void *puser
 )
 {
-	long            status;
-	chid            chix;
-	int             strcnt;
-	int 		sec;
+	long    status;
+	ciu	chix;
+	int     strcnt;
+	int 	sec;
 
 	/*
 	 * make sure that chix is NULL on fail
@@ -998,7 +999,7 @@ int epicsShareAPI ca_search_and_connect
 	 */
 #ifdef vxWorks
 	{
-		struct db_addr  tmp_paddr;
+		struct dbAddr  tmp_paddr;
 
 		/* Find out quickly if channel is on this node  */
 		status = db_name_to_addr(name_str, &tmp_paddr);
@@ -1012,17 +1013,17 @@ int epicsShareAPI ca_search_and_connect
 			 * block
 			 */
 			size = CA_MESSAGE_ALIGN(sizeof(*chix) + strcnt) +
-				 sizeof(struct db_addr);
-			*chixptr = chix = (chid) calloc(1,size);
+				 sizeof(struct dbAddr);
+			*chixptr = chix = (ciu) calloc(1,size);
 			if (!chix){
 				return ECA_ALLOCMEM;
 			}
-			chix->id.paddr = (struct db_addr *) 
+			chix->id.paddr = (struct dbAddr *) 
 			(CA_MESSAGE_ALIGN(sizeof(*chix)+strcnt) + (char *)chix);
 			*chix->id.paddr = tmp_paddr;
 			chix->puser = puser;
 			chix->pConnFunc = conn_func;
-			chix->type = chix->id.paddr->field_type;
+			chix->type = chix->id.paddr->dbr_field_type;
 			chix->count = chix->id.paddr->no_elements;
 			chix->piiu = NULL; /* none */
 			chix->state = cs_conn;
@@ -1066,7 +1067,7 @@ int epicsShareAPI ca_search_and_connect
 
 	/* allocate CHIU (channel in use) block */
 	/* also allocate enough for the channel name */
-	*chixptr = chix = (chid) calloc(1, sizeof(*chix) + strcnt);
+	*chixptr = chix = (ciu) calloc(1, sizeof(*chix) + strcnt);
 	if (!chix){
 		return ECA_ALLOCMEM;
 	}
@@ -1139,14 +1140,14 @@ int epicsShareAPI ca_search_and_connect
  * 
  */
 int search_msg(
-chid            chix,
-int             reply_type
+ciu	chix,
+int	reply_type
 )
 {
 	int			status;
 	int    			size;
 	int    			cmd;
-	caHdr		*mptr;
+	caHdr			*mptr;
 	struct ioc_in_use	*piiu;
 
 	piiu = chix->piiu;
@@ -1206,8 +1207,8 @@ chid 		chix,
 void 		*pvalue
 )
 {
-	int		status;
-	evid		monix;
+	int	status;
+	miu	monix;
 
 	CHIXCHK(chix);
 
@@ -1291,11 +1292,11 @@ chtype type,
 unsigned long count,
 chid chix,
 void (*pfunc) (struct event_handler_args),
-void *arg
+const void *arg
 )
 {
 	int	status;
-	evid	monix;
+	miu	monix;
 
 	CHIXCHK(chix);
 
@@ -1364,19 +1365,19 @@ void *arg
 /*
  * caIOBlockCreate()
  */
-LOCAL evid caIOBlockCreate(void)
+LOCAL miu caIOBlockCreate(void)
 {
 	int	status;
-	evid	pIOBlock;
+	miu	pIOBlock;
 
 	LOCK;
 
-	pIOBlock = (evid) ellGet (&free_event_list);
+	pIOBlock = (miu) ellGet (&free_event_list);
 	if (pIOBlock) {
 		memset ((char *)pIOBlock, 0, sizeof(*pIOBlock));
 	}
 	else {
-		pIOBlock = (evid) calloc(1, sizeof(*pIOBlock));
+		pIOBlock = (miu) calloc(1, sizeof(*pIOBlock));
 	}
 
 	if (pIOBlock) {
@@ -1403,7 +1404,7 @@ LOCAL evid caIOBlockCreate(void)
 /*
  * caIOBlockFree()
  */
-void caIOBlockFree(evid pIOBlock)
+void caIOBlockFree(miu pIOBlock)
 {
 	int	status;
 
@@ -1427,21 +1428,21 @@ chid 	chan,
 int 	cbRequired, 
 int 	status)
 {
-	evid				monix;
-	evid				next;
+	miu				monix;
+	miu				next;
 	struct event_handler_args	args;
 
-	for (monix = (evid) ellFirst (pList);
+	for (monix = (miu) ellFirst (pList);
 	     monix;
 	     monix = next) {
 
-		next = (evid) ellNext (&monix->node);
+		next = (miu) ellNext (&monix->node);
 
 		if (chan == NULL || monix->chan == chan) {
 
 			ellDelete (pList, &monix->node);
 
-			args.usr = 	monix->usr_arg;
+			args.usr = 	(void *) monix->usr_arg;
 			args.chid = 	monix->chan;
 			args.type = 	monix->type;
 			args.count = 	monix->count;
@@ -1516,14 +1517,14 @@ int epicsShareAPI ca_array_put_callback
 chtype				type,
 unsigned long			count,
 chid				chix,
-void				*pvalue,
+const void			*pvalue,
 void				(*pfunc)(struct event_handler_args),
-void				*usrarg
+const void			*usrarg
 )
 {
 	IIU	*piiu;
 	int	status;
-	evid 	monix;
+	miu 	monix;
 
 	/*
 	 * valid channel id test
@@ -1555,15 +1556,25 @@ void				*usrarg
 		}
 	}
 
+	if (type==DBR_STRING) {
+		int status;
+		status = check_a_dbr_string(pvalue, count);
+		if (status != ECA_NORMAL) {
+			return status;
+		}
+	}
+
 #ifdef vxWorks
 	if (!piiu) {
+		/* cast removes const */
+		ciu			pChan = (ciu) chix; 
 		CACLIENTPUTNOTIFY	*ppn;
 		unsigned		size;
 
 		size = dbr_size_n(type,count);
 		LOCK;
 
-		ppn = chix->ppn;
+		ppn = pChan->ppn;
 		if(ppn){
 			/*
 			 * wait while it is busy
@@ -1585,7 +1596,7 @@ void				*usrarg
 			 */
 			if(ppn->valueSize<size){
 				free(ppn);
-				ppn = chix->ppn = NULL;
+				ppn = pChan->ppn = NULL;
 			}
 		}
 
@@ -1596,17 +1607,17 @@ void				*usrarg
 				UNLOCK;
 				return ECA_ALLOCMEM;
 			}
-			chix->ppn = ppn;
+			pChan->ppn = ppn;
 			ppn->pcas = ca_static;
 			ppn->dbPutNotify.userCallback = 
 				ca_put_notify_action;
-			ppn->dbPutNotify.usrPvt = chix;
+			ppn->dbPutNotify.usrPvt = pChan;
 			ppn->dbPutNotify.paddr = chix->id.paddr;
 			ppn->dbPutNotify.pbuffer = (ppn+1);
 		}
 		ppn->busy = TRUE;
 		ppn->caUserCallback = pfunc;
-		ppn->caUserArg = usrarg;
+		ppn->caUserArg = (void *) usrarg;
 		ppn->dbPutNotify.nRequest = count;
 		memcpy(ppn->dbPutNotify.pbuffer, (char *)pvalue, size);
 		status = dbPutNotifyMapType(&ppn->dbPutNotify, type);
@@ -1634,7 +1645,7 @@ void				*usrarg
 	 * reclaiming the resource
 	 */
 	LOCK;
-	monix = (evid) caIOBlockCreate();
+	monix = caIOBlockCreate();
 	if (!monix) {
 		UNLOCK;
 		return ECA_ALLOCMEM;
@@ -1725,10 +1736,10 @@ LOCAL void ca_put_notify_action(PUTNOTIFY *ppn)
  *
  */
 int epicsShareAPI ca_array_put (
-chtype				type,
-unsigned long			count,
-chid				chix,
-void				*pvalue
+	chtype			type,
+	unsigned long		count,
+	chid			chix,
+	const void		*pvalue
 )
 {
 	/*
@@ -1753,6 +1764,14 @@ void				*pvalue
   	if(count > chix->count || count == 0)
     		return ECA_BADCOUNT;
 
+	if (type==DBR_STRING) {
+		int status;
+		status = check_a_dbr_string(pvalue, count);
+		if (status != ECA_NORMAL) {
+			return status;
+		}
+	}
+
 #ifdef vxWorks
 	/*
 	 * If channel is on this client's host then
@@ -1775,18 +1794,41 @@ void				*pvalue
 	return issue_ca_array_put(CA_PROTO_WRITE, ~0U, type, count, chix, pvalue);
 }
 
+/*
+ * check_a_dbr_string()
+ */
+LOCAL int check_a_dbr_string(const char *pStr, const unsigned count)
+{
+	unsigned i;
+
+	for (i=0; i< count; i++) {
+		unsigned int strsize;
+
+		strsize = strlen(pStr) + 1;
+
+		if (strsize>MAX_STRING_SIZE) {
+			return ECA_STRTOBIG;
+		}
+
+		pStr += MAX_STRING_SIZE;
+	}
+
+	return ECA_NORMAL;
+}
+
+
 
 /*
  * issue_ca_array_put()
  */
 LOCAL int issue_ca_array_put
 (
-unsigned			cmd,
-unsigned			id,
-chtype				type,
-unsigned long			count,
-chid				chix,
-void				*pvalue
+unsigned	cmd,
+unsigned	id,
+chtype		type,
+unsigned long	count,
+chid		chix,
+const void	*pvalue
 )
 { 
 	int			status;
@@ -1804,28 +1846,10 @@ void				*pvalue
 	size_of_one = dbr_size[type];
 	postcnt = dbr_size_n(type,count);
 
-	/*
-	 *
- 	 * Each of their strings is checked for prpoper size
-	 * so there is no chance that they could crash the 
-	 * CA server.
-	 */
-	if(type == DBR_STRING){
+	if(type == DBR_STRING && count == 1){
 		char *pstr = (char *)pvalue;
 
-		if(count == 1)
-			postcnt = strlen(pstr)+1;
-
-    		for(i=0; i< count; i++){
-			unsigned int strsize;
-
-          		strsize = strlen(pstr) + 1;
-
-          		if(strsize>size_of_one)
-            			return ECA_STRTOBIG;
-
-			pstr += size_of_one;
-		}
+		postcnt = strlen(pstr)+1;
 	}
 
 #	ifdef CONVERSION_REQUIRED 
@@ -1971,23 +1995,24 @@ chid		chix,
 void 		(*pfunc)(struct connection_handler_args)
 )
 {
+	ciu	pChan = (ciu) chix; /* remove const */
 
   	INITCHK;
-  	LOOSECHIXCHK(chix);
+  	LOOSECHIXCHK(pChan);
 
-	if(chix->pConnFunc == pfunc)
+	if(pChan->pConnFunc == pfunc)
   		return ECA_NORMAL;
 
   	LOCK;
-  	if(chix->type == TYPENOTCONN){
-		if(!chix->pConnFunc && chix->state==cs_never_conn){
-    			CLRPENDRECV(FALSE);
+  	if(pChan->type == TYPENOTCONN){
+		if(!pChan->pConnFunc && pChan->state==cs_never_conn){
+    			CLRPENDRECV;
 		}
 		if(!pfunc){
     			SETPENDRECV;
 		}
 	}
-  	chix->pConnFunc = pfunc;
+  	pChan->pConnFunc = pfunc;
   	UNLOCK;
 
   	return ECA_NORMAL;
@@ -2001,20 +2026,21 @@ int epicsShareAPI ca_replace_access_rights_event(
 chid 	chan, 
 void    (*pfunc)(struct access_rights_handler_args))
 {
+	ciu pChan = (ciu) chan; /* remove const */
 	struct access_rights_handler_args 	args;
 
   	INITCHK;
-  	LOOSECHIXCHK(chan);
+  	LOOSECHIXCHK(pChan);
 
-    	chan->pAccessRightsFunc = pfunc;
+    	pChan->pAccessRightsFunc = pfunc;
 
 	/*
 	 * make certain that it runs at least once
 	 */
-	if(chan->state == cs_conn && chan->pAccessRightsFunc){
+	if(pChan->state == cs_conn && pChan->pAccessRightsFunc){
 		args.chid = chan;
 		args.ar = chan->ar;
-		(*chan->pAccessRightsFunc)(args);
+		(*pChan->pAccessRightsFunc)(args);
 	}
 
   	return ECA_NORMAL;
@@ -2027,24 +2053,24 @@ void    (*pfunc)(struct access_rights_handler_args))
  */
 int epicsShareAPI ca_add_exception_event
 (
-void 		(*pfunc)(struct exception_handler_args),
-void 		*arg
+	void 		(*pfunc)(struct exception_handler_args),
+	const void 	*arg
 )
 {
 
-  INITCHK;
-  LOCK;
-  if(pfunc){
-    ca_static->ca_exception_func = pfunc;
-    ca_static->ca_exception_arg = arg;
-  }
-  else{
-    ca_static->ca_exception_func = ca_default_exception_handler;
-    ca_static->ca_exception_arg = NULL;
-  }
-  UNLOCK;
+  	INITCHK;
+  	LOCK;
+  	if (pfunc) {
+    		ca_static->ca_exception_func = pfunc;
+    		ca_static->ca_exception_arg = arg;
+  	}
+  	else {
+    		ca_static->ca_exception_func = ca_default_exception_handler;
+    		ca_static->ca_exception_arg = NULL;
+  	}
+  	UNLOCK;
 
-  return ECA_NORMAL;
+  	return ECA_NORMAL;
 }
 
 
@@ -2099,7 +2125,7 @@ chtype 		type,
 unsigned long	count,
 chid 		chix,
 void 		(*ast)(struct event_handler_args),
-void 		*astarg,
+const void 	*astarg,
 ca_real		p_delta,
 ca_real		n_delta,
 ca_real		timeout,
@@ -2107,11 +2133,12 @@ evid 		*monixptr,
 long		mask
 )
 {
-  	evid		monix;
-  	int		status;
+	ciu 	pChan = (ciu) chix; /* remove const */
+  	miu	monix;
+  	int	status;
 
   	INITCHK;
-  	LOOSECHIXCHK(chix);
+  	LOOSECHIXCHK(pChan);
 
   	if(INVALID_DB_REQ(type))
     		return ECA_BADTYPE;
@@ -2140,7 +2167,7 @@ long		mask
 	 */
   	LOCK;
 
-  	if (!chix->piiu) {
+  	if (!pChan->piiu) {
 # 		ifdef vxWorks
   		int		size;
     		static int	dbevsize;
@@ -2149,8 +2176,8 @@ long		mask
         		dbevsize = db_sizeof_event_block();
 		}
       		size = sizeof(*monix)+dbevsize;
-      		if(!(monix = (evid)ellGet(&dbfree_ev_list))){
-        		monix = (evid)malloc(size);
+      		if(!(monix = (miu)ellGet(&dbfree_ev_list))){
+        		monix = (miu)malloc(size);
       		}
 # 		else
 		return ECA_INTERNAL;
@@ -2181,10 +2208,10 @@ long		mask
   	monix->mask	= (unsigned short) mask;
 
 # 	ifdef vxWorks
-	if(!chix->piiu){
+	if(!pChan->piiu){
 		status = db_add_event(	
 				evuser,
-				chix->id.paddr,
+				pChan->id.paddr,
 				ca_event_handler,
 				monix,
 				mask,
@@ -2200,7 +2227,7 @@ long		mask
 		 * is no chance that it will be deleted 
 		 * at exit before it is completely created
 		 */
-		ellAdd(&chix->eventq, &monix->node);
+		ellAdd(&pChan->eventq, &monix->node);
 
 		/* 
 		 * force event to be called at least once
@@ -2219,16 +2246,16 @@ long		mask
 
   	/* It can be added to the list any place if it is remote */
   	/* Place in the channel list */
-  	ellAdd(&chix->eventq, &monix->node);
+  	ellAdd(&pChan->eventq, &monix->node);
 
   	UNLOCK;
 
-	if(chix->state == cs_conn){
+	if(pChan->state == cs_conn){
   		status = ca_request_event(monix);
 		if (status != ECA_NORMAL) {
 			LOCK;
-			if (ca_state(chix)==cs_conn) {
-				ellDelete (&chix->eventq, &monix->node);
+			if (ca_state(pChan)==cs_conn) {
+				ellDelete (&pChan->eventq, &monix->node);
 				caIOBlockFree(monix);
 			}
 			UNLOCK
@@ -2310,8 +2337,8 @@ int ca_request_event(evid monix)
  */
 #ifdef vxWorks
 LOCAL void ca_event_handler(
-evid 		monix,
-struct db_addr	*paddr,
+miu		monix,
+struct dbAddr	*paddr,
 int		hold,
 void		*pfl
 )
@@ -2339,7 +2366,7 @@ void		*pfl
 		count = monix->count;
 	}
 
-  	if(type == paddr->field_type){
+  	if(type == paddr->dbr_field_type){
     		pval = paddr->pfield;
     		status = OK;
   	}
@@ -2398,7 +2425,7 @@ void		*pfl
 	if (monix->usr_func) {
 		struct event_handler_args args;
 		
-		args.usr = monix->usr_arg;
+		args.usr = (void *) monix->usr_arg;
 		args.chid = monix->chan;
 		args.type = type;
 		args.count = count;
@@ -2464,10 +2491,11 @@ void		*pfl
  */
 int epicsShareAPI ca_clear_event (evid monix)
 {
-	int		status;
-	chid   		chix = monix->chan;
+	ciu   	chix = (ciu) monix->chan; /* cast removes const */
+	miu	pMon = (miu) monix; /* cast removes const */
+	int	status;
 	caHdr 	hdr;
-	evid		lkup;
+	evid	lkup;
 
 	/*
 	 * is it a valid channel ?
@@ -2481,15 +2509,15 @@ int epicsShareAPI ca_clear_event (evid monix)
 		LOCK;
 		lkup = (evid) bucketLookupItemUnsignedId(
 					pFastBucket,
-					&monix->id);
+					&pMon->id);
 		UNLOCK;
-		if (lkup != monix) {
+		if (lkup != pMon) {
 			return ECA_BADMONID;
 		}
 	}
 
 	/* disable any further events from this event block */
-	monix->usr_func = NULL;
+	pMon->usr_func = NULL;
 
 #ifdef vxWorks
 	if (!chix->piiu) {
@@ -2499,9 +2527,9 @@ int epicsShareAPI ca_clear_event (evid monix)
 		 * dont allow two threads to delete the same moniitor at once
 		 */
 		LOCK;
-		ellDelete(&chix->eventq, &monix->node);
-		status = db_cancel_event(monix + 1);
-		ellAdd(&dbfree_ev_list, &monix->node);
+		ellDelete(&chix->eventq, &pMon->node);
+		status = db_cancel_event(pMon + 1);
+		ellAdd(&dbfree_ev_list, &pMon->node);
 		UNLOCK;
 
 		return ECA_NORMAL;
@@ -2521,7 +2549,7 @@ int epicsShareAPI ca_clear_event (evid monix)
 
 		/* msg header	 */
 		hdr.m_cmmd = htons(CA_PROTO_EVENT_CANCEL);
-		hdr.m_available = monix->id;
+		hdr.m_available = pMon->id;
 		hdr.m_type = htons(chix->type);
 		hdr.m_count = htons(chix->count);
 		hdr.m_cid = chix->id.sid;
@@ -2536,8 +2564,8 @@ int epicsShareAPI ca_clear_event (evid monix)
 	}
 	else{
 		LOCK;
-		ellDelete(&monix->chan->eventq, &monix->node);
-		caIOBlockFree(monix);
+		ellDelete(&chix->eventq, &pMon->node);
+		caIOBlockFree(pMon);
 		UNLOCK;
 		status = ECA_NORMAL;
 	}
@@ -2563,50 +2591,51 @@ int epicsShareAPI ca_clear_event (evid monix)
  */
 int epicsShareAPI ca_clear_channel (chid chix)
 {
-	int				status;
-	evid   				monix;
-	struct ioc_in_use 		*piiu = chix->piiu;
+	ciu 			pChan = (ciu) chix; /* remove const */
+	miu			monix;
+	int			status;
+	struct ioc_in_use 	*piiu = chix->piiu;
 	caHdr 			hdr;
-	enum channel_state		old_chan_state;
+	enum channel_state	old_chan_state;
 
-	LOOSECHIXCHK(chix);
+	LOOSECHIXCHK(pChan);
 
 	/* disable their further use of deallocated channel */
-	chix->type = TYPENOTINUSE;
-	old_chan_state = chix->state;
-	chix->state = cs_closed;
-	chix->pAccessRightsFunc = NULL;
-	chix->pConnFunc = NULL;
+	pChan->type = TYPENOTINUSE;
+	old_chan_state = pChan->state;
+	pChan->state = cs_closed;
+	pChan->pAccessRightsFunc = NULL;
+	pChan->pConnFunc = NULL;
 
 	/* the while is only so I can break to the lock exit */
 	LOCK;
 	/* disable any further events from this channel */
-	for (monix = (evid) chix->eventq.node.next;
+	for (monix = (miu) pChan->eventq.node.next;
 	     monix;
-	     monix = (evid) monix->node.next)
+	     monix = (miu) monix->node.next)
 		monix->usr_func = NULL;
 	/* disable any further get callbacks from this channel */
-	for (monix = (evid) pend_read_list.node.next;
+	for (monix = (miu) pend_read_list.node.next;
 	     monix;
-	     monix = (evid) monix->node.next)
+	     monix = (miu) monix->node.next)
 		if (monix->chan == chix)
 			monix->usr_func = NULL;
 	/* disable any further put callbacks from this channel */
-	for (monix = (evid) pend_write_list.node.next;
+	for (monix = (miu) pend_write_list.node.next;
 	     monix;
-	     monix = (evid) monix->node.next)
+	     monix = (miu) monix->node.next)
 		if (monix->chan == chix)
 			monix->usr_func = NULL;
 
 #ifdef vxWorks
-	if (!chix->piiu) {
+	if (!pChan->piiu) {
 		CACLIENTPUTNOTIFY	*ppn;
 		int             	status;
 
 		/*
 		 * clear out the events for this channel
 		 */
-		while (monix = (evid) ellGet(&chix->eventq)) {
+		while ( (monix = (miu) ellGet(&pChan->eventq)) ) {
 			status = db_cancel_event(monix + 1);
 			assert (status == OK);
 			ellAdd(&dbfree_ev_list, &monix->node);
@@ -2615,8 +2644,8 @@ int epicsShareAPI ca_clear_channel (chid chix)
 		/*
 		 * cancel any outstanding put notifies
 		 */
-		if(chix->ppn){
-			ppn = chix->ppn;
+		if(pChan->ppn){
+			ppn = pChan->ppn;
 			if(ppn->busy){
 				dbNotifyCancel(&ppn->dbPutNotify);
 			}
@@ -2626,8 +2655,8 @@ int epicsShareAPI ca_clear_channel (chid chix)
 		/*
 		 * clear out this channel
 		 */
-		ellDelete(&local_chidlist, &chix->node);
-		free((char *) chix);
+		ellDelete(&local_chidlist, &pChan->node);
+		free((char *) pChan);
 
 		UNLOCK;
 		return ECA_NORMAL;
@@ -2635,14 +2664,23 @@ int epicsShareAPI ca_clear_channel (chid chix)
 #endif
 
 	/*
+	 * if this channel does not have a connection handler
+	 * and it has not connected for the first time then clear the
+	 * outstanding IO count
+	 */
+	if (old_chan_state == cs_never_conn && !chix->pConnFunc) {
+		CLRPENDRECV;
+	}
+
+	/*
 	 * dont send the message if not conn 
 	 * (just delete from the queue and return)
 	 * 
 	 * check for conn state while locked to avoid a race
 	 */
-	if(old_chan_state != cs_conn){
+	if (old_chan_state != cs_conn) {
 		UNLOCK;
-		clearChannelResources (chix->cid);
+		clearChannelResources (pChan->cid);
 		return ECA_NORMAL;
 	}
 
@@ -2653,8 +2691,8 @@ int epicsShareAPI ca_clear_channel (chid chix)
 
 	/* msg header	 */
 	hdr.m_cmmd = htons(CA_PROTO_CLEAR_CHANNEL);
-	hdr.m_available = chix->cid;
-	hdr.m_cid = chix->id.sid;
+	hdr.m_available = pChan->cid;
+	hdr.m_cid = pChan->id.sid;
 	hdr.m_type = htons(0);
 	hdr.m_count = htons(0);
 	hdr.m_postsize = 0;
@@ -2678,7 +2716,7 @@ int epicsShareAPI ca_clear_channel (chid chix)
 void clearChannelResources(unsigned id)
 {
 	struct ioc_in_use       *piiu;
-	chid			chix;
+	ciu			chix;
 	int			status;
 
 	LOCK;
@@ -2982,7 +3020,7 @@ void generateLocalExceptionWithFileAndLine (long stat, char *ctx,
                 return;
         }
  
-        args.usr = ca_static->ca_exception_arg;
+        args.usr = (void *) ca_static->ca_exception_arg;
         args.chid = NULL;
         args.type = -1;
         args.count = 0u;
@@ -3002,7 +3040,7 @@ void generateLocalExceptionWithFileAndLine (long stat, char *ctx,
 /*
  *	CA_SIGNAL()
  */
-void epicsShareAPI ca_signal(long ca_status,char *message)
+void epicsShareAPI ca_signal(long ca_status, const char *message)
 {
 	ca_signal_with_file_and_lineno(ca_status, message, NULL, 0);
 }
@@ -3038,11 +3076,11 @@ READONLY char * epicsShareAPI ca_message (long ca_status)
  */
 void epicsShareAPI ca_signal_with_file_and_lineno(
 long		ca_status, 
-char		*message, 
-char		*pfilenm, 
+const char	*message, 
+const char	*pfilenm, 
 int		lineno)
 {
-  static  char  *severity[] = 
+  static const char  *severity[] = 
 		{
 		"Warning",
 		"Success",
@@ -3308,9 +3346,9 @@ void issue_identify_client(struct ioc_in_use *piiu)
  */
 void issue_claim_channel(struct ioc_in_use *piiu, chid pchan)
 {
-	caHdr  	hdr;
+	caHdr  		hdr;
 	unsigned	size;
-	char		*pName;
+	const char	*pName;
 
 	if(!piiu){
 		return;
@@ -3360,7 +3398,7 @@ void issue_claim_channel(struct ioc_in_use *piiu, chid pchan)
  */
 LOCAL void ca_default_exception_handler(struct exception_handler_args args)
 {
-	char *pCtx;
+	const char *pCtx;
 
 	/*
 	 * LOCK around use of sprintf buffer
@@ -3393,7 +3431,7 @@ LOCAL void ca_default_exception_handler(struct exception_handler_args args)
  *	(for a manager of the select system call under UNIX)
  *
  */
-int epicsShareAPI ca_add_fd_registration(CAFDHANDLER *func, void *arg)
+int epicsShareAPI ca_add_fd_registration(CAFDHANDLER *func, const void *arg)
 {
 	fd_register_func = func;
 	fd_register_arg = arg;
@@ -3424,7 +3462,7 @@ int ca_defunct()
  *	currently implemented as a function 
  *	(may be implemented as a MACRO in the future)
  */
-char * epicsShareAPI ca_host_name_function(chid chix)
+READONLY char * epicsShareAPI ca_host_name_function(chid chix)
 {
 	IIU	*piiu;
 
@@ -3489,7 +3527,7 @@ int ca_channel_status(int tid)
 	piiu = (struct ioc_in_use *) pcas->ca_iiuList.node.next;
 	while(piiu){
 		chix = (chid) &piiu->chidlist.node;
-		while (chix = (chid) chix->node.next){
+		while ( (chix = (chid) chix->node.next) ){
 			printf(	"%s native type=%d ", 
 				ca_name(chix),
 				ca_field_type(chix));

@@ -29,6 +29,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.20  1996/07/10 23:30:12  jhill
+ * fixed GNU warnings
+ *
  * Revision 1.19  1996/06/19 17:59:29  jhill
  * many 3.13 beta changes
  *
@@ -176,7 +179,7 @@ int epicsShareAPI ca_sg_create(CA_SYNC_GID *pgid)
 
 	UNLOCK;
 
-	*(WRITEABLE_CA_SYNC_GID *)pgid = pcasg->id;
+	*pgid = pcasg->id;
 	return ECA_NORMAL;
 }
 
@@ -405,7 +408,7 @@ CA_SYNC_GID 	gid,
 chtype		type,
 unsigned long 	count, 
 chid 		chix, 
-void 		*pvalue)
+const void 	*pvalue)
 {
 	int	status;
 	CASGOP	*pcasgop;

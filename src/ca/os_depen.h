@@ -42,45 +42,19 @@ static char *os_depenhSccsId = "$Id$";
  * each socket library
  */
 #ifdef UNIX
-#	include <unistd.h>
 #	include <errno.h>
 #	include <time.h>
-#	include <sys/types.h>
-#	include <sys/time.h>
-#	include <sys/ioctl.h>
-#	include <sys/param.h>
-#	include <sys/socket.h>
-#	include <netinet/in.h>
-#	include <netinet/tcp.h>
-#	include <net/if.h>
-#	include <arpa/inet.h>
-#	include <netdb.h>
-	/*
-	 * normally these are included by ioctl.h
-	 */
-#	ifdef SOLARIS 
-#		include <sys/filio.h>
-#		include <sys/sockio.h>
-#	endif
 #	define CA_OS_CONFIGURED
 #endif
 
 #ifdef vxWorks
 #	include <vxWorks.h>
 #	include <errno.h>
-#	include <sys/types.h>
-#	include <sys/ioctl.h>
-#	include <sys/socket.h>
-#	include <netinet/in.h>
-#	include <netinet/tcp.h>
-#	include <net/if.h>
 
-#	include <systime.h>
 #	include <ioLib.h>
 #	include <tickLib.h>
 #	include <taskHookLib.h>
 #	include <selectLib.h>
-#	include <sockLib.h>
 #       include <errnoLib.h>
 #       include <sysLib.h>
 #       include <taskVarLib.h>
@@ -90,28 +64,16 @@ static char *os_depenhSccsId = "$Id$";
 #       include <dbgLib.h>
 #	include <inetLib.h>
 #	include <taskLib.h>
+#	include <vxLib.h>
 
 #	include <task_params.h>
 #	include <taskwd.h>
-#	include <fast_lock.h>
 
-/*
- * logistical problems prevent including this file
- */
-#if 0
-#define caClient
-#include                <dbEvent.h>
-#endif
 #	define CA_OS_CONFIGURED
 #endif
 
 #ifdef VMS
-#	include <sys/types.h>
-#	include <sys/socket.h>
-#	include <netinet/in.h>
-#	include <netinet/tcp.h>
 #if !defined(UCX) 
-#	include <sys/time.h>
 #	include <tcp/errno.h>
 #else
 #       include <errno>
@@ -137,8 +99,6 @@ static char *os_depenhSccsId = "$Id$";
 #ifdef WIN32
 #	include <errno.h>
 #	include <time.h>
-#	include <windows.h>
-#	include <winsock.h>
 #	define CA_OS_CONFIGURED
 #endif /*WIN32*/
 
@@ -146,87 +106,8 @@ static char *os_depenhSccsId = "$Id$";
 #error Please define one of vxWorks, UNIX, VMS, or WIN32 
 #endif
 
-/*
- * Here are the definitions for architecture dependent byte ordering 
- * and floating point format
- */
-#if defined(VAX) 
-#	define CA_FLOAT_MIT
-#	define CA_LITTLE_ENDIAN
-#elif defined(_X86_)
-#	define CA_FLOAT_IEEE
-#	define CA_LITTLE_ENDIAN
-#elif (defined(__ALPHA) && defined(VMS) || defined(__alpha)) && defined(VMS)
-#	define CA_FLOAT_MIT
-#	define CA_LITTLE_ENDIAN
-#elif (defined(__ALPHA) && defined(UNIX) || defined(__alpha)) && defined(UNIX)
-#	define CA_FLOAT_IEEE
-#	define CA_LITTLE_ENDIAN
-#else
-#	define CA_FLOAT_IEEE
-#	define CA_BIG_ENDIAN
-#endif
-
-/*
- * some architecture sanity checks
- */
-#if defined(CA_BIG_ENDIAN) && defined(CA_LITTLE_ENDIAN)
-#error defined(CA_BIG_ENDIAN) && defined(CA_LITTLE_ENDIAN)
-#endif
-#if !defined(CA_BIG_ENDIAN) && !defined(CA_LITTLE_ENDIAN)
-#error !defined(CA_BIG_ENDIAN) && !defined(CA_LITTLE_ENDIAN)
-#endif
-#if defined(CA_FLOAT_IEEE) && defined(CA_FLOAT_MIT)
-#error defined(CA_FLOAT_IEEE) && defined(CA_FLOAT_MIT)
-#endif
-#if !defined(CA_FLOAT_IEEE) && !defined(CA_FLOAT_MIT)
-#error !defined(CA_FLOAT_IEEE) && !defined(CA_FLOAT_MIT) 
-#endif
-
-/*
- * CONVERSION_REQUIRED is set if either the byte order
- * or the floating point does not match
- */
-#if !defined(CA_FLOAT_IEEE) || !defined(CA_BIG_ENDIAN)
-#define CONVERSION_REQUIRED
-#endif
-
-#ifndef NULL
-#define NULL            0
-#endif  
-
-#ifndef FALSE
-#define FALSE           0
-#endif  
-
-#ifndef TRUE
-#define TRUE            1
-#endif  
-
-#ifndef OK
-#define OK            0
-#endif  
-
-#ifndef ERROR
-#define ERROR            (-1)
-#endif  
-
-#ifndef NELEMENTS
-#define NELEMENTS(array)    (sizeof(array)/sizeof((array)[0]))
-#endif
-
-#ifndef LOCAL 
-#define LOCAL static
-#endif
-
-/*
- * BSD prototypes missing from SUNOS4, MULTINET and 
- * perhaps other environments
- */
-#include <epicsTypes.h>
-#include <bsdProto.h>
-
 #if defined(vxWorks)
+#  	define POST_IO_EV semGive(io_done_sem)
 #	define VXTASKIDNONE	0
 #  	define LOCK 		semTake(client_lock, WAIT_FOREVER);
 #  	define UNLOCK  	semGive(client_lock);
@@ -238,79 +119,34 @@ static char *os_depenhSccsId = "$Id$";
 (((int)taskIdCurrent)==event_tid || ca_static->recv_tid == (int)taskIdCurrent)
 #	define VXTHISTASKID 	taskIdSelf()
 #	define abort() 		taskSuspend(VXTHISTASKID)
-#   	define socket_close(S) close(S)
-	/* vxWorks still has a brain dead func proto for ioctl */
-#   	define socket_ioctl(A,B,C) ioctl(A,B,(int)C) 
-# 	define MYERRNO	(errnoGet()&0xffff)
-#  	define POST_IO_EV semGive(io_done_sem)
-	typedef int SOCKET;
-#	define INVALID_SOCKET (-1)
 #endif
 
 #if defined(UNIX)
+#  	define POST_IO_EV 
 #  	define LOCK
 #  	define UNLOCK  
 #  	define LOCKEVENTS
 #  	define UNLOCKEVENTS
 #	define EVENTLOCKTEST	(post_msg_active)
-#   	define socket_close(S) close(S)
-#   	define socket_ioctl(A,B,C) ioctl(A,B,C) 
-# 	define MYERRNO	errno
-#  	define POST_IO_EV 
-	typedef int SOCKET;
-#	define INVALID_SOCKET (-1)
 #endif
 
 #if defined(VMS)
-#  if defined(WINTCP)	/* Wallangong */
-	/* (the VAXC runtime lib has its own close */
-# 		define socket_close(S) netclose(S)
-# 		define socket_ioctl(A,B,C) ioctl(A,B,C) 
-#  endif
-#  if defined(UCX)				/* GeG 09-DEC-1992 */
-# 		define socket_close(S) close(S)
-# 		define socket_ioctl(A,B,C) ioctl(A,B,C) 
-#  endif
-#	ifdef WINTCP
-  		extern int	uerrno;	
-# 		define MYERRNO	uerrno
-#	else
-#           ifdef UCX
-#               define MYERRNO errno
-#           else
-# 		define MYERRNO	socket_errno
-#           endif
-#	endif
 #  	define POST_IO_EV 
 #	define LOCK
 #	define UNLOCK
 #  	define LOCKEVENTS
 #  	define UNLOCKEVENTS
 #	define EVENTLOCKTEST	(post_msg_active)
-	typedef int SOCKET;
-#	define INVALID_SOCKET (-1)
 #endif
 
 #ifdef WIN32 
+#	define POST_IO_EV
 #  	define LOCK
 #  	define UNLOCK  
 #  	define LOCKEVENTS
 #  	define UNLOCKEVENTS
-#	define EVENTLOCKTEST		(post_msg_active)
-#	define MAXHOSTNAMELEN 		75
-#	define IPPORT_USERRESERVED	5000U
-#	define EWOULDBLOCK		WSAEWOULDBLOCK
-#	define ENOBUFS			WSAENOBUFS
-#	define ECONNRESET		WSAECONNRESET
-#	define ETIMEDOUT		WSAETIMEDOUT
-#	define EADDRINUSE		WSAEADDRINUSE
-#	define ECONNREFUSED		WSAECONNREFUSED
-#	define socket_close(S) 		closesocket(S)
-#	define socket_ioctl(A,B,C)	ioctlsocket(A,B,C)
-#	define MYERRNO			WSAGetLastError()
-#	define POST_IO_EV
+#	define EVENTLOCKTEST	(post_msg_active)
 #endif /*WIN32*/
 
-
-#endif
+#endif /* INCos_depenh */
 

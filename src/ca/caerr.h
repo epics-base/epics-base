@@ -154,7 +154,7 @@ HDRVERSIONID(caerrh, "@(#) $Id$")
 
 
 #ifndef CA_ERROR_GLBLSOURCE
-epicsShareExtern READONLY char	*ca_message_text[];
+epicsShareExtern READONLY char	*epicsShareAPI ca_message_text[];
 #else
 READONLY char	*ca_message_text[]
 =

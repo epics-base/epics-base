@@ -29,6 +29,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.19  1996/07/09 22:41:02  jhill
+ * pass nill 2nd arg to gettimeofday()
+ *
  * Revision 1.18  1996/06/20 21:19:29  jhill
  * fixed posix signal problem with "cc -Xc"
  *
@@ -46,7 +49,6 @@
 
 #include <unistd.h>
 #include <pwd.h>
-#include <sys/param.h>
 
 #include "iocinf.h"
 
@@ -141,7 +143,7 @@ int cac_os_depen_init(struct ca_static *pcas)
 				ca_printf(
 				"%s: Error from signal replace was \"%s\"\n",
 				__FILE__,
-				strerror(MYERRNO));
+				strerror(errno));
 			}
 		}
 	}
@@ -149,7 +151,7 @@ int cac_os_depen_init(struct ca_static *pcas)
 		ca_printf(
 		"%s: Error from signal query was \"%s\"\n",
 		__FILE__,
-		strerror(MYERRNO));
+		strerror(errno));
 	}
 
 	status = ca_os_independent_init ();
@@ -238,7 +240,7 @@ void ca_spawn_repeater()
 	if(status<0){	
 		ca_printf("!!WARNING!!\n");
 		ca_printf("The executable \"%s\" couldnt be located\n", pImageName);
-		ca_printf("because of errno = \"%s\"\n", strerror(MYERRNO));
+		ca_printf("because of errno = \"%s\"\n", strerror(errno));
 		ca_printf("You may need to modify your PATH environment variable.\n");
 		ca_printf("Creating CA repeater with fork() system call.\n");
 		ca_printf("Repeater will inherit parents process name and resources.\n");

@@ -150,17 +150,17 @@ int cac_select_io(struct timeval *ptimeout, int flags)
 	}
 
         if (status<0) {
-                if (MYERRNO == EINTR) {
+                if (SOCKERRNO == EINTR) {
                 }
-                else if (MYERRNO == EWOULDBLOCK) {
+                else if (SOCKERRNO == EWOULDBLOCK) {
                         ca_printf("CAC: blocked at select ?\n");
                 }                  
-		else if (MYERRNO == ESRCH) {
+		else if (SOCKERRNO == ESRCH) {
 		}
                 else {
                         ca_printf (
                                 "CAC: unexpected select fail: %s\n",
-                                strerror(MYERRNO));
+                                strerror(SOCKERRNO));
                 }
         }
 

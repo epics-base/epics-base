@@ -47,6 +47,11 @@
 /*			address in use so that test works on UNIX	*/
 /*			kernels that support multicast			*/
 /* $Log$
+ * Revision 1.65  1996/09/16 16:37:02  jhill
+ * o dont print disconnect message when the last channel on a connection is
+ * 	deleted and the conn goes away
+ * o local exceptions => exception handler
+ *
  * Revision 1.64  1996/08/13 23:15:36  jhill
  * fixed warning
  *
@@ -347,7 +352,7 @@ int			net_proto
 				&pNode->destAddr.sa,
 				sizeof(pNode->destAddr.sa));
       		if(status < 0){
-			ca_printf("CAC: no conn err=\"%s\"\n", strerror(MYERRNO));
+			ca_printf("CAC: no conn err=\"%s\"\n", strerror(SOCKERRNO));
         		status = socket_close(sock);
 			if(status<0){
 				SEVCHK(ECA_INTERNAL,NULL);
@@ -405,7 +410,7 @@ int			net_proto
       		if(status<0){
 			free(piiu);
         		ca_printf("CAC: sso (err=\"%s\")\n",
-				strerror(MYERRNO));
+				strerror(SOCKERRNO));
         		status = socket_close(sock);
 			if(status < 0){
 				SEVCHK(ECA_INTERNAL,NULL);
@@ -427,7 +432,7 @@ int			net_proto
 				(struct sockaddr *) &saddr, 
 				sizeof(saddr));
       		if(status<0){
-        		ca_printf("CAC: bind (err=%s)\n",strerror(MYERRNO));
+        		ca_printf("CAC: bind (err=%s)\n",strerror(SOCKERRNO));
 			genLocalExcep (ECA_INTERNAL,"bind failed");
       		}
 #endif
@@ -473,12 +478,12 @@ int			net_proto
 	if(status<0){
 		ca_printf(
 			"Error setting non-blocking io: %s\n",
-			strerror(MYERRNO));
+			strerror(SOCKERRNO));
 	}
 
   	if(fd_register_func){
 		LOCKEVENTS;
-		(*fd_register_func)(fd_register_arg, sock, TRUE);
+		(*fd_register_func)((void *)fd_register_arg, sock, TRUE);
 		UNLOCKEVENTS;
 	}
 
@@ -531,10 +536,13 @@ void caSetupBCastAddrList (ELLLIST *pList, SOCKET sock, unsigned port)
 	 * (lock outside because this is used by the server also)
 	 */
 	if (yes) {
+		struct in_addr addr;
+		addr.s_addr = INADDR_ANY;
 		caDiscoverInterfaces(
 			pList,
 			sock,
-			port);
+			port,
+			addr);
 	}
 
 	caAddConfiguredAddr(
@@ -629,18 +637,18 @@ void notify_ca_repeater()
        			(struct sockaddr *)&saddr, 
 			sizeof(saddr));
       		if(status < 0){
-			if(	MYERRNO != EINTR && 
-				MYERRNO != ENOBUFS && 
-				MYERRNO != EWOULDBLOCK &&
+			if(	SOCKERRNO != EINTR && 
+				SOCKERRNO != ENOBUFS && 
+				SOCKERRNO != EWOULDBLOCK &&
 				/*
 				 * This is returned from Linux when
 				 * the repeater isnt running
 				 */
-				MYERRNO != ECONNREFUSED 
+				SOCKERRNO != ECONNREFUSED 
 				){
 				ca_printf(
 				"CAC: error sending to repeater is \"%s\"\n", 
-				strerror(MYERRNO));
+				strerror(SOCKERRNO));
 			}
 		}
 		else{
@@ -702,7 +710,7 @@ LOCAL void cac_udp_send_msg_piiu(struct ioc_in_use *piiu)
 		else {
 			int	localErrno;
 
-			localErrno = MYERRNO;
+			localErrno = SOCKERRNO;
 
 			if(	localErrno != EWOULDBLOCK && 
 				localErrno != ENOBUFS && 
@@ -789,7 +797,7 @@ LOCAL void cac_tcp_send_msg_piiu(struct ioc_in_use *piiu)
 		return;
 	}
 
-	localError = MYERRNO;
+	localError = SOCKERRNO;
 
 	if(	localError == EWOULDBLOCK ||
 		localError == ENOBUFS ||
@@ -941,16 +949,16 @@ LOCAL void tcp_recv_msg(struct ioc_in_use *piiu)
 		}
 		else if(status <0){
 			/* try again on status of -1 and no luck this time */
-			if(MYERRNO == EWOULDBLOCK || MYERRNO == EINTR){
+			if(SOCKERRNO == EWOULDBLOCK || SOCKERRNO == EINTR){
 				break;
 			}
 
-			if(	MYERRNO != EPIPE && 
-				MYERRNO != ECONNRESET &&
-				MYERRNO != ETIMEDOUT){
+			if(	SOCKERRNO != EPIPE && 
+				SOCKERRNO != ECONNRESET &&
+				SOCKERRNO != ETIMEDOUT){
 				ca_printf(	
 					"CAC: unexpected recv error (err=%s)\n",
-					strerror(MYERRNO));
+					strerror(SOCKERRNO));
 			}
 			TAG_CONN_DOWN(piiu);
 			break;
@@ -1063,7 +1071,7 @@ LOCAL void udp_recv_msg(struct ioc_in_use *piiu)
 		 * op would block which is ok to ignore till ready
 		 * later
 		 */
-      		if(MYERRNO == EWOULDBLOCK || MYERRNO == EINTR){
+      		if(SOCKERRNO == EWOULDBLOCK || SOCKERRNO == EINTR){
 			UNLOCK;
        			return;
 		}
@@ -1072,12 +1080,12 @@ LOCAL void udp_recv_msg(struct ioc_in_use *piiu)
 			 * Avoid spurious ECONNREFUSED bug
 			 * in linux
 			 */
-			if (MYERRNO==ECONNREFUSED) {
+			if (SOCKERRNO==ECONNREFUSED) {
 				UNLOCK;
        				return;
 			}
 #               endif
-		ca_printf("Unexpected UDP failure %s\n", strerror(MYERRNO));
+		ca_printf("Unexpected UDP failure %s\n", strerror(SOCKERRNO));
     	}
 	else if(status > 0){
 		unsigned long		bytesActual;
@@ -1164,10 +1172,10 @@ LOCAL void ca_process_udp(struct ioc_in_use *piiu)
 					pmsglog->nbytes);
 				if(status != OK || piiu->curMsgBytes){
 					ca_printf(
-						"%s: bad UDP msg from port=%d addr=%x\n",
-						__FILE__,
-						pmsglog->addr.sin_port,
-						pmsglog->addr.sin_addr.s_addr);
+					"%s: bad UDP msg from port=%d addr=%s\n",
+					__FILE__,
+					ntohs(pmsglog->addr.sin_port),
+					inet_ntoa(pmsglog->addr.sin_addr));
 					/*
 					 * resync the ring buffer
 					 * (discard existing messages)
@@ -1207,7 +1215,7 @@ LOCAL void ca_process_udp(struct ioc_in_use *piiu)
 LOCAL void close_ioc (IIU *piiu)
 {
 	caAddrNode	*pNode;
-  	chid		chix;
+  	ciu		chix;
 	int		status;
 	unsigned	chanDisconnectCount;
 
@@ -1231,7 +1239,7 @@ LOCAL void close_ioc (IIU *piiu)
 		chanDisconnectCount = 0u;
 	}
 	else {
-		chid	pNext;
+		ciu	pNext;
 
 		chanDisconnectCount = ellCount(&piiu->chidlist);
 
@@ -1248,15 +1256,15 @@ LOCAL void close_ioc (IIU *piiu)
 		 * handler tries to use a channel before
 		 * I mark it disconnected.
 		 */
-		chix = (chid) ellFirst(&piiu->chidlist);
+		chix = (ciu) ellFirst(&piiu->chidlist);
 		while (chix) {
 			chix->state = cs_prev_conn;
-			chix = (chid) ellNext(&chix->node);
+			chix = (ciu) ellNext(&chix->node);
 		}
 
-		chix = (chid) ellFirst(&piiu->chidlist);
+		chix = (ciu) ellFirst(&piiu->chidlist);
 		while (chix) {
-			pNext = (chid) ellNext(&chix->node);
+			pNext = (ciu) ellNext(&chix->node);
 			cacDisconnectChannel(chix, cs_conn);
 			chix = pNext;
 		}
@@ -1264,7 +1272,7 @@ LOCAL void close_ioc (IIU *piiu)
 
   	if (fd_register_func) {
 		LOCKEVENTS;
-		(*fd_register_func) (fd_register_arg, piiu->sock_chan, FALSE);
+		(*fd_register_func) ((void *)fd_register_arg, piiu->sock_chan, FALSE);
 		UNLOCKEVENTS;
 	}
 
@@ -1298,7 +1306,7 @@ LOCAL void close_ioc (IIU *piiu)
  * cacDisconnectChannel()
  * (LOCK must be applied when calling this routine)
  */
-void cacDisconnectChannel(chid chix, enum channel_state state)
+void cacDisconnectChannel(ciu chix, enum channel_state state)
 {
 	struct ioc_in_use *piiu;
 
@@ -1412,7 +1420,7 @@ int repeater_installed()
 			(struct sockaddr *) &bd, 
 			sizeof bd);
      	if(status<0){
-		if(MYERRNO == EADDRINUSE){
+		if(SOCKERRNO == EADDRINUSE){
 			installed = TRUE;
 		}
 	}
@@ -1484,12 +1492,12 @@ unsigned long		nBytes)
  */
 unsigned long cacRingBufferWrite(
 struct ca_buffer	*pRing,
-void			*pBuf,
+const void		*pBuf,
 unsigned long		nBytes)
 {
 	unsigned long	potentialBytes;
 	unsigned long	actualBytes;
-	char		*pCharBuf;
+	const char	*pCharBuf;
 
 	actualBytes = 0;
 	pCharBuf = pBuf;
@@ -1787,7 +1795,7 @@ unsigned short caFetchPortConfig(ENV_PARAM *pEnv, unsigned short defaultPort)
 	}
 
 	/*
-	 * ok to clip to int here because we checked the range
+	 * ok to clip to unsigned short here because we checked the range
 	 */
 	port = (unsigned short) epicsParam;
 

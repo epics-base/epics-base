@@ -32,6 +32,9 @@
 /************************************************************************/
 
 /* $Log$
+ * Revision 1.57  1996/09/16 16:38:05  jhill
+ * local except => except handler
+ *
  * Revision 1.56  1996/08/13 23:16:19  jhill
  * removed os specific code
  *
@@ -121,28 +124,65 @@ HDRVERSIONID(iocinfh, "$Id$")
 #include <stdarg.h>
 #include <time.h>
 
-#include <shareLib.h>
+#include "shareLib.h"
 
 /*
  * OS dependent includes
  */
+#include "osiSock.h"
 #include "os_depen.h"
 
 /*
  * EPICS includes
  */
-#include <epicsAssert.h>
-#include <cadef.h>
-#include <bucketLib.h>
-#include <ellLib.h> 
-#include <envDefs.h> 
-#include <epicsPrint.h> 
+#include "epicsAssert.h"
+#include "cadef.h"
+#include "bucketLib.h"
+#include "ellLib.h"
+#include "envDefs.h" 
+#include "epicsPrint.h" 
 
 /*
  * CA private includes 
  */
 #include "addrList.h"
 #include "caProto.h"
+#include "net_convert.h"
+
+#ifndef NULL
+#define NULL            0
+#endif
+ 
+#ifndef FALSE
+#define FALSE           0
+#endif
+ 
+#ifndef TRUE
+#define TRUE            1
+#endif
+ 
+#ifndef OK
+#define OK            0
+#endif
+ 
+#ifndef ERROR
+#define ERROR            (-1)
+#endif
+ 
+#ifndef NELEMENTS
+#define NELEMENTS(array)    (sizeof(array)/sizeof((array)[0]))
+#endif
+ 
+#ifndef LOCAL
+#define LOCAL static
+#endif
+
+/*
+ * writable channel_in_use and pending_event pointers
+ * for internal use
+ */
+typedef struct channel_in_use *ciu;
+typedef struct pending_event *miu;
 
 #ifndef min
 #define min(A,B) ((A)>(B)?(B):(A))
@@ -173,7 +213,7 @@ if(!ca_static){ \
 #define	VALID_MSG(PIIU) (piiu->read_seq == piiu->cur_read_seq)
 
 #define SETPENDRECV		{pndrecvcnt++;}
-#define CLRPENDRECV(LOCK)	{if(--pndrecvcnt<1){POST_IO_EV;}}
+#define CLRPENDRECV		{if(--pndrecvcnt<1){POST_IO_EV;}}
 
 struct udpmsglog{
 	long                    nbytes;
@@ -295,7 +335,7 @@ typedef struct caclient_put_notify{
 #define nextFastBucketId (ca_static->ca_nextFastBucketId)
 
 #if defined(vxWorks)
-#	define io_done_sem      (ca_static->ca_io_done_sem)
+#       define io_done_sem      (ca_static->ca_io_done_sem)
 #	define evuser		(ca_static->ca_evuser)
 #	define client_lock	(ca_static->ca_client_lock)
 #	define event_lock	(ca_static->ca_event_lock)
@@ -438,16 +478,11 @@ struct  ca_static{
 	IIU		*ca_piiuCast;
 	void		(*ca_exception_func)
 				(struct exception_handler_args);
-	void		*ca_exception_arg;
-#if 0
-	void		(*ca_connection_func)
-				(struct connection_handler_args);
-	void		*ca_connection_arg;
-#endif
+	const void	*ca_exception_arg;
 	int		(*ca_printf_func)(const char *pformat, va_list args);
 	void		(*ca_fd_register_func)
 				(void *, SOCKET, int);
-	void		*ca_fd_register_arg;
+	const void	*ca_fd_register_arg;
 	char		*ca_pUserName;
 	char		*ca_pHostName;
 	BUCKET		*ca_pSlowBucket;
@@ -490,11 +525,11 @@ struct  ca_static{
  * one per outstanding op
  */
 typedef struct{
-        ELLNODE                 node;
-        WRITEABLE_CA_SYNC_GID   id;
-        void                    *pValue;
-        unsigned long           magic;
-        unsigned long           seqNo;
+        ELLNODE		node;
+        CA_SYNC_GID	id;
+        void		*pValue;
+        unsigned long	magic;
+        unsigned long	seqNo;
 }CASGOP;
 
 
@@ -503,7 +538,7 @@ typedef struct{
  */
 typedef struct{
         ELLNODE                 node;
-        WRITEABLE_CA_SYNC_GID   id;
+        CA_SYNC_GID		id;
         unsigned long           magic;
         unsigned long           opPendCount;
         unsigned long           seqNo;
@@ -532,7 +567,7 @@ struct ca_static *ca_static;
 void 	cac_send_msg(void);
 void 	cac_mux_io(struct timeval *ptimeout);
 int	repeater_installed(void);
-int	search_msg(chid chix, int reply_type);
+int	search_msg(ciu chix, int reply_type);
 int	ca_request_event(evid monix);
 void 	ca_busy_message(struct ioc_in_use *piiu);
 void	ca_ready_message(struct ioc_in_use *piiu);
@@ -570,7 +605,7 @@ int alloc_ioc(
 );
 unsigned long cacRingBufferWrite(
 	struct ca_buffer        *pRing,
-	void                    *pBuf,
+	const void		*pBuf,
 	unsigned long           nBytes);
 
 unsigned long cacRingBufferRead(
@@ -625,16 +660,15 @@ int cac_os_depen_init(struct ca_static *pcas);
 void cac_os_depen_exit (struct ca_static *pcas);
 void ca_process_exit();
 void ca_spawn_repeater(void);
-typedef void CACVRTFUNC(void *pSrc, void *pDest, int hton, unsigned long count);
 void cac_gettimeval(struct timeval  *pt);
 /* returns A - B in floating secs */
 ca_real cac_time_diff(ca_time *pTVA, ca_time *pTVB);
 /* returns A + B in integer secs & integer usec */
 ca_time cac_time_sum(ca_time *pTVA, ca_time *pTVB);
-void caIOBlockFree(evid pIOBlock);
+void caIOBlockFree(miu pIOBlock);
 void clearChannelResources(unsigned id);
 void caSetDefaultPrintfHandler (void);
-void cacDisconnectChannel(chid chix, enum channel_state state);
+void cacDisconnectChannel(ciu chix, enum channel_state state);
 int caSendMsgPending(void);
 void generateLocalExceptionWithFileAndLine(long stat, char *ctx, 
 	char *pFile, unsigned line);

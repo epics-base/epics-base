@@ -40,6 +40,8 @@ static char	*sccsId = "@(#) $Id$";
 
 #include "iocinf.h"
 
+#include <net/if.h>
+
 /*
  * Dont use ca_static based lock macros here because this is
  * also called by the server. All locks required are applied at
@@ -79,7 +81,7 @@ int local_addr(int s, struct sockaddr_in *plcladdr)
 	if (status < 0 || ifconf.ifc_len == 0) {
 		ca_printf(
 			"CAC: ioctl failed because \"%s\"\n", 
-			strerror(MYERRNO));
+			strerror(SOCKERRNO));
 		ifconf.ifc_len = 0;
 	}
 
@@ -169,12 +171,14 @@ int local_addr (int s, struct sockaddr_in *plcladdr)
 /*
  *  	caDiscoverInterfaces()
  *
- *	This routine is provided with the address of an ELLLIST a socket
- * 	and a destination port number. When the routine returns there
- *	will be one additional inet address (a caAddrNode) in the list 
- *	for each inet interface found that is up and isnt a loop back 
- *	interface. If the interface supports broadcast then I add its
- *	broadcast address to the list. If the interface is a point to 
+ *	This routine is provided with the address of an ELLLIST, a socket
+ * 	a destination port number, and a match address. When the 
+ * 	routine returns there will be one additional inet address 
+ *	(a caAddrNode) in the list for each inet interface found that 
+ *	is up and isnt a loop back interface (match addr is INADDR_ANY)
+ *	or it matches the specified interface (match addr isnt INADDR_ANY). 
+ *	If the interface supports broadcast then I add its broadcast 
+ *	address to the list. If the interface is a point to 
  *	point link then I add the destination address of the point to
  *	point link to the list. In either case I set the port number
  *	in the address node to the port supplied in the argument
@@ -183,7 +187,8 @@ int local_addr (int s, struct sockaddr_in *plcladdr)
  * 	LOCK should be applied here for (pList)
  * 	(this is also called from the server)
  */
-void caDiscoverInterfaces(ELLLIST *pList, int socket, int port)
+void caDiscoverInterfaces(ELLLIST *pList, int socket, int port,
+	struct in_addr matchAddr)
 {
 	struct sockaddr_in 	localAddr;
 	struct sockaddr_in 	*pInetAddr;
@@ -243,6 +248,7 @@ void caDiscoverInterfaces(ELLLIST *pList, int socket, int port)
 		if (status){
 			continue;
 		}
+
 		/*
 		 * If its not an internet inteface 
 		 * then dont use it.
@@ -250,8 +256,22 @@ void caDiscoverInterfaces(ELLLIST *pList, int socket, int port)
 		if (pifreq->ifr_addr.sa_family != AF_INET) {
 			continue;
 		}
+
+		/*
+		 * save the interface's IP address
+		 */
 		pInetAddr = (struct sockaddr_in *)&pifreq->ifr_addr;
 		localAddr = *pInetAddr;
+
+		/*
+		 * if it isnt a wildcarded interface then look for
+		 * an exact match
+		 */
+		if (matchAddr.s_addr != INADDR_ANY) {
+			if (pInetAddr->sin_addr.s_addr != matchAddr.s_addr) {
+				continue;
+			}
+		}
 
 		/*
 		 * If this is an interface that supports
@@ -285,9 +305,6 @@ void caDiscoverInterfaces(ELLLIST *pList, int socket, int port)
 			continue;
 		}
 
-
-
-
 		pNode = (caAddrNode *) calloc(1,sizeof(*pNode));
 		if(!pNode){
 			continue;
@@ -305,5 +322,4 @@ void caDiscoverInterfaces(ELLLIST *pList, int socket, int port)
 
 	free(pIfreqList);
 }
-
 

@@ -57,6 +57,9 @@
  *			datagram socket (and watching for ECONNREFUSED)
  *
  * $Log$
+ * Revision 1.45  1998/06/16 00:58:12  jhill
+ * attach to winsock when its a static build
+ *
  * Revision 1.44  1998/05/29 00:03:20  jhill
  * allow CA to run systems w/o local interface query capabilities (ie cygwin32)
  *
@@ -184,7 +187,7 @@ void epicsShareAPI ca_repeater()
 			bsdSockRelease();
 			exit(0);
 		}
-		ca_printf("%s: Unable to create repeater socket because %d=\"%s\"\n",
+		ca_printf("%s: Unable to create repeater socket because %d=\"%s\" - fatal\n",
 			__FILE__,
 			msr.errNumber,
 			msr.pErrStr);
@@ -197,7 +200,7 @@ void epicsShareAPI ca_repeater()
 	status = local_addr(sock, &local);
 	if(status != OK){
 		ca_printf(
-	"CA Repeater: failed during initialization - no local IP address\n");
+	"CA Repeater: no local IP address during initialization - fatal\n");
 		bsdSockRelease();
 		exit (0);
 	}

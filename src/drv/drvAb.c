@@ -1304,13 +1304,14 @@ abDoneTask(){
  *
  * simulate a change of state interrupt from the Allen-Bradley
  */
-unsigned char		ab_old_binary_ins[AB_MAX_LINKS*AB_MAX_ADAPTERS*AB_MAX_CARDS];
+unsigned short	ab_old_binary_ins[AB_MAX_LINKS][AB_MAX_ADAPTERS][AB_MAX_CARDS];
 ab_bi_cos_simulator()
 {
         register struct ab_region       *p6008;
         register unsigned short 	link;
 	register unsigned short		*pcard;
-	unsigned short			*ps_input,*ps_oldval;
+	unsigned short			new;
+	unsigned short			*pold;
 	short				adapter,card,inpinx;
 	short				first_scan,first_scan_complete;
 	short				adapter_status_change;
@@ -1323,8 +1324,6 @@ ab_bi_cos_simulator()
 	first_scan_complete = FALSE;
 	first_scan = TRUE;
 	for(;;){
-		/* check each link */
-		link = 0;
 		for (link = 0; link < AB_MAX_LINKS; link++){
 		    if ((p6008 = p6008s[link]) == 0) continue;
 		    for (adapter = 0; adapter < AB_MAX_ADAPTERS; adapter++){
@@ -1335,28 +1334,24 @@ ab_bi_cos_simulator()
 			for (card = 0; card < AB_MAX_CARDS; card++){
 				pcard = &ab_config[link][adapter][card];
 				inpinx =  (adapter * AB_CARD_ADAPTER) + card;
+				pold = &ab_old_binary_ins[link][adapter][card];
 				if ((*pcard & AB_INTERFACE_TYPE) != AB_BI_INTERFACE) continue;
-					
 				if ((*pcard & AB_CARD_TYPE) == ABBI_16_BIT){
 					/* sixteen bit byte ordering in dual ported memory 	*/
 					/* byte 0011 2233 4455 6677 8899 AABB			*/
 					/* card 0000 2222 4444 6666 8888 AAAA			*/
 					if (inpinx & 0x1)	continue;
-					ps_input = (unsigned short *)&(p6008->iit[inpinx]);
-					ps_oldval = (unsigned short *)&(ab_old_binary_ins[inpinx]);
-					if ((*ps_input != *ps_oldval) || first_scan || adapter_status_change){
-						scanIoRequest(ioscanpvt[link][adapter][card]);
-						*ps_oldval = *ps_input;
-					}
+					new = *(unsigned short *)&(p6008->iit[inpinx]);
 				}else{
 					/* eight bit byte ordering in dual ported memory */
 					/* 1100 3322 5544 7766 9988 BBAA 		 */
 					if (inpinx & 0x1)	inpinx--;	/* shuffle those bytes */
 					else inpinx++;
-					if ((p6008->iit[inpinx] != ab_old_binary_ins[inpinx]) || first_scan || adapter_status_change){
-						scanIoRequest(ioscanpvt[link][adapter][card]);
-						ab_old_binary_ins[inpinx] = p6008->iit[inpinx];
-					}
+					new = (unsigned short)(p6008->iit[inpinx]);
+				}
+				if((new!=*pold) || first_scan || adapter_status_change){
+					scanIoRequest(ioscanpvt[link][adapter][card]);
+					*pold = new;
 				}
 			}
 		}

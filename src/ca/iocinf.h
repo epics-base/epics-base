@@ -33,6 +33,10 @@
 
 /*
  * $Log$
+ * Revision 1.78  1999/10/14 23:22:13  jhill
+ * dont detect a flow control situation when select is telling us there is
+ * something to read when there isnt anything there
+ *
  * Revision 1.77  1999/09/14 23:38:18  jhill
  * added ca_vprintf() function
  *
@@ -287,7 +291,7 @@ if(!ca_static){ \
 }
 
 /* throw out requests prior to last ECA_TIMEOUT from ca_pend */
-#define	VALID_MSG(PIIU) (piiu->read_seq == piiu->cur_read_seq)
+#define	VALID_MSG(PIIU) (PIIU->read_seq == PIIU->cur_read_seq)
 
 #define SETPENDRECV {pndrecvcnt++;}
 #define CLRPENDRECV {if(--pndrecvcnt<1u){POST_IO_EV;}}

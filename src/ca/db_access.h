@@ -645,9 +645,8 @@ struct dbr_ctrl_double{
 ((unsigned)((COUNT)==1?dbr_size[TYPE]:dbr_size[TYPE]+((COUNT)-1)*dbr_value_size[TYPE]))
 /* size for each type */
 
-#ifndef DB_TEXT_GLBLSOURCE
 epicsShareExtern READONLY unsigned short dbr_size[LAST_BUFFER_TYPE+1];
-#else
+#ifdef DB_TEXT_GLBLSOURCE
 epicsShareDef READONLY unsigned short dbr_size[LAST_BUFFER_TYPE+1] = {
 	sizeof(dbr_string_t),		/* string max size		*/
 	sizeof(dbr_short_t),		/* short			*/
@@ -692,9 +691,8 @@ epicsShareDef READONLY unsigned short dbr_size[LAST_BUFFER_TYPE+1] = {
 #endif
 
 /* size for each type's value */
-#ifndef DB_TEXT_GLBLSOURCE
 epicsShareExtern READONLY unsigned short dbr_value_size[LAST_BUFFER_TYPE+1];
-#else
+#ifdef DB_TEXT_GLBLSOURCE
 epicsShareDef READONLY unsigned short dbr_value_size[LAST_BUFFER_TYPE+1] = {
 	sizeof(dbr_string_t),	/* string max size		*/
 	sizeof(dbr_short_t),	/* short			*/
@@ -814,9 +812,8 @@ epicsShareDef READONLY enum dbr_value_class dbr_value_class[LAST_BUFFER_TYPE+1] 
 #define dbr_value_ptr_from_structure(PDBR, STRUCTURE)\
 ((void *)(((char *)PDBR)+BYTE_OS(STRUCTURE, value)))
 
-#ifndef DB_TEXT_GLBLSOURCE
 epicsShareExtern READONLY unsigned short dbr_value_offset[LAST_BUFFER_TYPE+1];
-#else
+#ifdef DB_TEXT_GLBLSOURCE
 epicsShareDef READONLY unsigned short dbr_value_offset[LAST_BUFFER_TYPE+1] = {
 	0,					/* string			*/
 	0,					/* short			*/

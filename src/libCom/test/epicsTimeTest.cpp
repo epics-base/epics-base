@@ -10,10 +10,12 @@ extern "C" {
 int epicsTimeTest (void);
 }
 
+epicsTime useSomeCPU;
+
 int epicsTimeTest (void)
 {
     unsigned i, errors, sum_errors=0, sum_errloops=0;
-    epicsTime begin = epicsTime::getCurrent();
+    const epicsTime begin = epicsTime::getCurrent();
     const unsigned wasteTime = 100000u;
     const int nTimes = 100;
     epicsTimeStamp stamp;
@@ -26,10 +28,10 @@ int epicsTimeTest (void)
 
     for (int iTimes=0; iTimes < nTimes; ++iTimes) {
         for (i=0; i<wasteTime; i++) {
-            epicsTime tmp = epicsTime::getCurrent();
+            useSomeCPU = epicsTime::getCurrent();
         }
 
-        epicsTime end = epicsTime::getCurrent();
+        const epicsTime end = epicsTime::getCurrent();
 
         const double diff = end - begin;
 
@@ -106,15 +108,16 @@ int epicsTimeTest (void)
             errors += 1;
         }
 
-        begin += diff;
-        if (!(begin==end)) {
+        epicsTime end2 = begin;
+	end2 += diff;
+        if (!(end2==end)) {
             printf ("#%3d: Failed (begin+=diff)==end by %12.9f\n",
                     iTimes, fabs(begin-end));
             errors += 1;
         }
 
-        begin -= diff;
-        if (!(begin+diff==end)) {
+        end2 -= diff;
+        if (!(end2+diff==end)) {
             printf ("#%3d: Failed begin+diff==end by %12.9f\n",
                     iTimes, fabs(begin+diff-end));
             errors += 1;
@@ -124,8 +127,8 @@ int epicsTimeTest (void)
         // test struct tm conversions
         //
         ansiDate = begin;
-        begin = ansiDate;
-        if (!(begin+diff==end)) {
+	epicsTime beginANSI = ansiDate;
+        if (!(beginANSI+diff==end)) {
             printf ("#%3d: Failed begin+diff==end "
                     "after tm conversions by %12.9f\n",
                     iTimes, fabs(begin+diff-end));
@@ -136,8 +139,8 @@ int epicsTimeTest (void)
         // test struct timespec conversion
         //
         ts = begin;
-        begin = ts;
-        if (!(begin+diff==end)) {
+        epicsTime beginTS = ts;
+        if (!(beginTS+diff==end)) {
             printf ("#%3d: Failed begin+diff==end "
                     "after timespec conversions by %12.9f\n",
                     iTimes, fabs(begin+diff-end));

@@ -32,6 +32,9 @@
  *
  * History
  * $Log$
+ * Revision 1.10  1998/10/23 19:47:12  jhill
+ * fixed inline is too big warning
+ *
  * Revision 1.9  1998/06/16 02:04:07  jhill
  * fixed spelling
  *
@@ -112,7 +115,7 @@ private:
 class fdReg : public tsDLNode<fdReg>, public fdRegId, public tsSLNode<fdReg> {
         friend class fdManager;
 public:
-	epicsShareFunc inline fdReg (const SOCKET fdIn, const fdRegType typ, 
+	epicsShareFunc fdReg (const SOCKET fdIn, const fdRegType typ, 
 			const unsigned onceOnly=0);
 	epicsShareFunc virtual ~fdReg ();
 

@@ -56,7 +56,7 @@ const udpiiu::pProtoStubUDP udpiiu::udpJumpTableCAC [] =
 //
 // udpiiu::udpiiu ()
 //
-udpiiu::udpiiu ( epicsTimerQueueActive &timerQueue, callbackMutex & cbMutex, cac & cac ) :
+udpiiu::udpiiu ( epicsTimerQueueActive & timerQueue, callbackMutex & cbMutex, cac & cac ) :
     recvThread ( *this, cbMutex,
         "CAC-UDP", 
         epicsThreadGetStackSize ( epicsThreadStackMedium ),
@@ -157,16 +157,8 @@ udpiiu::udpiiu ( epicsTimerQueueActive &timerQueue, callbackMutex & cbMutex, cac
      * load user and auto configured
      * broadcast address list
      */
-    ellInit ( &this->dest );    // X aCC 392
+    ellInit ( & this->dest );    // X aCC 392
     configureChannelAccessAddressList ( &this->dest, this->sock, this->serverPort );
-    if ( ellCount ( &this->dest ) == 0 ) { // X aCC 392
-        // no need to lock callbacks here because
-        // 1) this is called while in a CA client function
-        // 2) no auxiliary threads are running at this point
-        // (taking the callback lock here would break the
-        // lock hierarchy and risk deadlocks)
-        genLocalExcep ( this->cacRef, ECA_NOSEARCHADDR, NULL );
-    }
   
     caStartRepeaterIfNotInstalled ( this->repeaterPort );
 
@@ -300,6 +292,10 @@ void udpRecvThread::run ()
     {
         epicsGuard < callbackMutex > cbGuard ( this->cbMutex );
         this->iiu.cacRef.notifyNewFD ( cbGuard, this->iiu.sock );
+        if ( ellCount ( & this->iiu.dest ) == 0 ) { // X aCC 392
+            genLocalExcep ( cbGuard, this->iiu.cacRef, ECA_NOSEARCHADDR, NULL );
+        }
+
     }
 
     do {

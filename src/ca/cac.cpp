@@ -1752,7 +1752,7 @@ void cac::privateUninstallIIU ( epicsGuard < callbackMutex > & cbGuard, tcpiiu &
     if ( iiu.channelCount() ) {
         char hostNameTmp[64];
         iiu.hostName ( hostNameTmp, sizeof ( hostNameTmp ) );
-        genLocalExcep ( *this, ECA_DISCONN, hostNameTmp );
+        genLocalExcep ( cbGuard, *this, ECA_DISCONN, hostNameTmp );
     }
     osiSockAddr addr = iiu.getNetworkAddress();
     if ( addr.sa.sa_family == AF_INET ) {

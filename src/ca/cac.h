@@ -151,8 +151,8 @@ public:
     void uninstallCASG ( CASG & );
 
     // exception generation
-    void exception ( int status, const char *pContext,
-        const char *pFileName, unsigned lineNo );
+    void exception ( epicsGuard < callbackMutex > &, int status, const char * pContext,
+        const char * pFileName, unsigned lineNo );
 
     // callback preemption control
     int blockForEventAndEnableCallbacks ( epicsEvent &event, double timeout );
@@ -340,8 +340,8 @@ inline cacMutex & cac::mutexRef ()
     return this->mutex;
 }
 
-inline void cac::exception ( int status, const char *pContext,
-    const char *pFileName, unsigned lineNo )
+inline void cac::exception ( epicsGuard < callbackMutex > &, int status, 
+    const char *pContext, const char *pFileName, unsigned lineNo )
 {
     this->notify.exception ( status, pContext, pFileName, lineNo );
 }

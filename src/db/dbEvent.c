@@ -444,12 +444,15 @@ int	db_cancel_event(struct event_block	*pevent)
      * would be possible.
      */
     for (   getix = pevent->ev_que->getix; 
-            pevent->ev_que->evque[getix] != EVENTQEMPTY; 
-            getix = RNGINC ( getix ) ) {
+            pevent->ev_que->evque[getix] != EVENTQEMPTY; ) {
         if ( pevent->ev_que->evque[getix] == pevent ) {
             assert ( pevent->ev_que->nCanceled < USHRT_MAX );
             pevent->ev_que->nCanceled++;
             event_remove ( pevent->ev_que, getix, &canceledEvent );
+        }
+        getix = RNGINC ( getix );
+        if ( getix == pevent->ev_que->getix ) {
+            break;
         }
     }
     assert ( pevent->npend == 0u );

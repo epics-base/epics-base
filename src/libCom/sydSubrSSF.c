@@ -25,11 +25,12 @@
  *
  * Modification Log:
  * -----------------
- * .00	12-04-90	rac	initial version
- * .01	06-18-91	rac	installed in SCCS
- * .02  06-19-91	rac	replace <fields.h> with <alarm.h>
- * .03	08-14-91	rac	jjj
- * .04	02-27-92	rac	do ts rounding here instead of sydSubr.c
+ *  .00 12-04-90 rac	initial version
+ *  .01 06-18-91 rac	installed in SCCS
+ *  .02 06-19-91 rac	replace <fields.h> with <alarm.h>
+ *  .03 08-14-91 rac	jjj
+ *  .04 02-27-92 rac	do ts rounding here instead of sydSubr.c
+ *  .05 08-18-92 rac	add SYD_FC_STOP function code
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -433,6 +434,8 @@ void	*pArg;		/* I pointer to arg, as required by funcCode */
 		    ;	/* keep skipping until end of line */
 	    }
 	}
+    }
+    else if (funcCode ==				SYD_FC_STOP) {
     }
     else if (funcCode ==				SYD_FC_POSITION) {
 	TS_STAMP *pStamp;

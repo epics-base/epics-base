@@ -25,14 +25,20 @@
  *
  * Modification Log:
  * -----------------
- * .00	06-12-91	rac	initial version
- * .01	06-18-91	rac	installed in SCCS
- * .02  06-19-91	rac	replace <fields.h> with <alarm.h>
- * .03	08-15-91	rac	use new call for sydOpen
- * .04	09-23-91	rac	allow async completion of ca_search
- * .05	02-13-92	rac	use ADEL for monitoring; perform time-stamp
+ *  .00 06-12-91 rac	initial version
+ *  .01 06-18-91 rac	installed in SCCS
+ *  .02 06-19-91 rac	replace <fields.h> with <alarm.h>
+ *  .03 08-15-91 rac	use new call for sydOpen
+ *  .04 09-23-91 rac	allow async completion of ca_search
+ *  .05 02-13-92 rac	use ADEL for monitoring; perform time-stamp
  *				rounding if requested
- * .06	03-08-92	rac	use deadband from pSspec for monitoring
+ *  .06 03-08-92 rac	use deadband from pSspec for monitoring
+ *  .07 03-27-92 rac	fix bug in reconnect--discon wasn't getting reset;
+ *			properly handle wrap-around in input buffer; call
+ *			user's CA monitor handler if desired; do a flush
+ *			after ca_search; handle disconCount and needGrCount
+ *			in sampleSetSpec; move copyGr and copyVal into
+ *			sydSubr.c
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -68,7 +74,7 @@ long sydFuncCA_finishConn();
 
 #define sydCA_searchNOW	/* force immediate completion of connection */
 #undef sydCA_searchNOW	/* asynchronous completion of connection */
-void sydCAFuncGetGR(), sydCAFuncInitGR();
+void sydCAFuncInitGR();
 
 long
 sydOpenCA(ppSspec, pHandle)
@@ -106,7 +112,8 @@ void	*pHandle;	/* I NULL; someday might implement a callback
 *
 * sydCAFunc(pSspec, NULL, SYD_FC_INIT, pCallback)
 * sydCAFunc(pSspec, pSChan, SYD_FC_OPEN, NULL)  chanName already in pSChan
-* sydCAFunc(pSspec, pSChan, SYD_FC_READ, NULL)
+* sydCAFunc(pSspec, pSChan, SYD_FC_READ, NULL)  start monitoring
+* sydCAFunc(pSspec, pSChan, SYD_FC_STOP, NULL)  stop monitoring
 * sydCAFunc(pSspec, pSChan, SYD_FC_POSITION, &stamp)  no operation performed
 * sydCAFunc(pSspec, pSChan, SYD_FC_CLOSE, NULL)
 * sydCAFunc(pSspec, NULL, SYD_FC_FILEINFO, outStream)
@@ -157,9 +164,11 @@ void	*pArg;		/* I pointer to arg, as required by funcCode */
 *    to do the required connection processing.
 *----------------------------------------------------------------------------*/
 	pSChan->dbrType = TYPENOTCONN;
+	pSspec->disconCount++;
 	pSChan->elCount = 0;
 	pSChan->evid = NULL;
 	pSChan->gotGr = 0;
+	pSspec->needGrCount++;
 	pSChan->restart = 1;
 	sydCAFuncInitGR(pSChan);
 #ifdef sydCA_searchNOW
@@ -167,6 +176,7 @@ void	*pArg;		/* I pointer to arg, as required by funcCode */
 #else
 	stat = ca_build_and_connect(pSChan->name, TYPENOTCONN, 0, &pCh,
 			NULL, sydCAFuncConnHandler, pSChan);
+        stat = ca_flush_io();
 #endif
 	if (stat != ECA_NORMAL) {
 	    retStat = S_syd_ERROR;
@@ -186,6 +196,7 @@ void	*pArg;		/* I pointer to arg, as required by funcCode */
 	retStat = sydFuncCA_finishConn(pSChan, pCh);
 	if (retStat != S_syd_OK)
 	    return retStat;
+	pSChan->pSspec->disconCount--;
 	stat = ca_change_connection_event(pCh, sydCAFuncConnHandler);
 	if (stat != ECA_NORMAL) {
 	    retStat = S_syd_ERROR;
@@ -199,14 +210,44 @@ void	*pArg;		/* I pointer to arg, as required by funcCode */
 #endif
     }
     else if (funcCode ==				SYD_FC_READ) {
-	;
+	if ((pCh = (chid)pSChan->pHandle) == NULL)
+	    return;
+	if (pSChan->evid == NULL) {
+	    if (pSChan->pSspec->monFn == NULL) {
+		stat = ca_add_masked_array_event(pSChan->dbrType,
+		    pSChan->elCount, pCh, sydCAFuncMonHandler, NULL,
+		    0., 0., 0., &pSChan->evid, pSChan->pSspec->deadband);
+	    }
+	    else {
+		stat = ca_add_masked_array_event(pSChan->dbrType,
+		    pSChan->elCount, pCh,
+		    pSChan->pSspec->monFn, pSChan->pArg,
+		    0., 0., 0., &pSChan->evid, pSChan->pSspec->deadband);
+	    }
+	    if (stat != ECA_NORMAL) {
+		retStat = S_syd_ERROR;
+		(void)printf(
+"sydCAFunc: error on ca_add_masked_array_event for %s :\n%s\n",
+		    pSChan->name, ca_message(stat));
+		ca_clear_channel(pCh);
+		return retStat;
+	    }
+	}
+    }
+    else if (funcCode ==				SYD_FC_STOP) {
+	if ((pCh = (chid)pSChan->pHandle) == NULL)
+	    return;
+	if (pSChan->evid == NULL) {
+	    ca_clear_event(pSChan->evid);
+	    pSChan->evid = NULL;
+	}
     }
     else if (funcCode ==				SYD_FC_POSITION) {
 	;
     }
     else if (funcCode ==				SYD_FC_CLOSE) {
-	if (pSChan->pHandle != NULL) {
-	    stat = ca_clear_channel((chid)pSChan->pHandle);
+	if ((pCh = (chid)pSChan->pHandle) != NULL) {
+	    stat = ca_clear_channel(pCh);
 	    if (stat != ECA_NORMAL)
 		retStat = S_syd_ERROR;
 	}
@@ -221,9 +262,18 @@ void	*pArg;		/* I pointer to arg, as required by funcCode */
     return retStat;
 }
 
-/*/subhead sydFuncCA_finishConn------------------------------------------------
+/*+/internal******************************************************************
+* NAME	sydFuncCA_finishConn
 *
-*----------------------------------------------------------------------------*/
+* DESCRIPTION
+*	Handles connect and disconnect for a channel.
+*
+*	The first connect results in adding a monitor for the channel using
+*	the `syd' monitor handler, unless the user has his own monitor
+*	handler.  In the latter case, no monitor is added until the user
+*	calls sydInputGet the first time.
+*
+*-*/
 static long
 sydFuncCA_finishConn(pSChan, pCh)
 SYD_CHAN *pSChan;	/* pointer to syncSet channel descriptor */
@@ -247,9 +297,11 @@ chid	pCh;		/* channel pointer */
 	return retStat;
     }
     if (pSChan->evid == NULL) {
-	stat = ca_add_masked_array_event(pSChan->dbrType, pSChan->elCount, pCh,
-		sydCAFuncMonHandler, NULL, 0., 0., 0., &pSChan->evid,
-		pSChan->pSspec->deadband);
+	if (pSChan->pSspec->monFn == NULL) {
+	    stat = ca_add_masked_array_event(pSChan->dbrType,
+		pSChan->elCount, pCh, sydCAFuncMonHandler, NULL,
+		0., 0., 0., &pSChan->evid, pSChan->pSspec->deadband);
+	}
 	if (stat != ECA_NORMAL) {
 	    retStat = S_syd_ERROR;
 	    (void)printf(
@@ -300,9 +352,12 @@ struct connection_handler_args arg;
 "sydCAFuncConnHandler: error finishing connection for %s\n", ca_name(pCh));
 	    }
 	pSChan->restart = 1;
+	pSChan->discon = 0;
+	pSChan->pSspec->disconCount--;
     }
     else {
 	pSChan->discon = 1;
+	pSChan->pSspec->disconCount++;
     }
 }
 
@@ -357,6 +412,7 @@ struct event_handler_args arg;
     int		i, i1, j;
     long	inStatus;
     union db_access_val *pBuf;
+    int		nbytes;
 
     pCh = arg.chid;
     pBuf = arg.dbr;
@@ -365,7 +421,8 @@ struct event_handler_args arg;
 
     if (dbr_type_is_GR(arg.type)) {
 	pSChan->gotGr = 1;
-	sydCAFuncGetGR(pSChan, (union db_access_val *)arg.dbr);
+	pSspec->needGrCount--;
+	sydCopyGr(&pSChan->grBuf, pBuf, arg.type);
 	stat = sydChanOpenGR(pSChan);
 	return;
     }
@@ -375,21 +432,19 @@ struct event_handler_args arg;
     if (pSspec->roundNsec > 0)
 	sydTsRound(&pBuf->tfltval.stamp, pSspec->roundNsec);
 
-    if (pSChan->lastInBuf == pSChan->firstInBuf &&
-		pBuf->tfltval.stamp.secPastEpoch != 0) {
-	if (pSspec->refTs.secPastEpoch == 0 ||
-	    TsCmpStampsLE(&pBuf->tfltval.stamp, &pSspec->refTs)) {
-	    pSChan->lastInBuf = pSChan->firstInBuf = -1;
+/*-----------------------------------------------------------------------------
+*	If the reference time stamp for the sync set hasn't been set yet,
+*	or if it has, but the time stamp in this monitor is earlier, set it.
+*----------------------------------------------------------------------------*/
+    if (pSspec->refTs.secPastEpoch == 0 || pSspec->sampleCount == 0) {
+	if (pBuf->tfltval.stamp.secPastEpoch != 0 &&
+			TsCmpStampsLE(&pBuf->tfltval.stamp, &pSspec->refTs)) {
 	    pSspec->refTs = pBuf->tfltval.stamp;
 	}
     }
+
     i = NEXT_INBUF(pSChan, pSChan->lastInBuf);
     i1 = NEXT_INBUF(pSChan, i);
-#if 0
-    if (i == pSChan->firstInBuf)
-        return;                         /* don't overwrite old data */
-    else if (pSChan->restart) {
-#endif
     if (pSChan->restart) {
 	pSChan->inStatus[i] = SYD_B_RESTART;
 	pSChan->restart = 0;
@@ -397,185 +452,75 @@ struct event_handler_args arg;
     else
 	pSChan->inStatus[i] = SYD_B_FULL;
 
-    if (pSChan->dbrType == DBR_TIME_FLOAT) {
-	pSChan->pInBuf[i]->tfltval = pBuf->tfltval;
-	if (pSChan->elCount > 1) {
-	    float	*pDest = &pSChan->pInBuf[i]->tfltval.value + 1;
-	    float	*pSrc = &pBuf->tfltval.value + 1;
-	    for (j=1; j<pSChan->elCount; j++)
-		*pDest++ = *pSrc++;
-	}
-    }
-    else if (pSChan->dbrType == DBR_TIME_SHORT) {
-	pSChan->pInBuf[i]->tshrtval = pBuf->tshrtval;
-	if (pSChan->elCount > 1) {
-	    short	*pDest = &pSChan->pInBuf[i]->tshrtval.value + 1;
-	    short	*pSrc = &pBuf->tshrtval.value + 1;
-	    for (j=1; j<pSChan->elCount; j++)
-		*pDest++ = *pSrc++;
-	}
-    }
-    else if (pSChan->dbrType == DBR_TIME_DOUBLE) {
-	pSChan->pInBuf[i]->tdblval = pBuf->tdblval;
-	if (pSChan->elCount > 1) {
-	    double	*pDest = &pSChan->pInBuf[i]->tdblval.value + 1;
-	    double	*pSrc = &pBuf->tdblval.value + 1;
-	    for (j=1; j<pSChan->elCount; j++)
-		*pDest++ = *pSrc++;
-	}
-    }
-    else if (pSChan->dbrType == DBR_TIME_LONG) {
-	pSChan->pInBuf[i]->tlngval = pBuf->tlngval;
-	if (pSChan->elCount > 1) {
-	    long	*pDest = &pSChan->pInBuf[i]->tlngval.value + 1;
-	    long	*pSrc = &pBuf->tlngval.value + 1;
-	    for (j=1; j<pSChan->elCount; j++)
-		*pDest++ = *pSrc++;
-	}
-    }
-    else if (pSChan->dbrType == DBR_TIME_STRING) {
-	pSChan->pInBuf[i]->tstrval = pBuf->tstrval;
-	if (pSChan->elCount > 1) {
-	    char *pDest = pSChan->pInBuf[i]->tstrval.value + db_strval_dim;
-	    char	*pSrc = pBuf->tstrval.value + db_strval_dim;
-	    for (j=1; j<pSChan->elCount; j++) {
-		strcpy(pDest, pSrc);
-		pDest += db_strval_dim;
-		pSrc += db_strval_dim;
-	    }
-	}
-    }
-    else if (pSChan->dbrType == DBR_TIME_ENUM) {
-	pSChan->pInBuf[i]->tenmval = pBuf->tenmval;
-	if (pSChan->elCount > 1) {
-	    short	*pDest = &pSChan->pInBuf[i]->tenmval.value + 1;
-	    short	*pSrc = &pBuf->tenmval.value + 1;
-	    for (j=1; j<pSChan->elCount; j++)
-		*pDest++ = *pSrc++;
-	}
-    }
-    else if (pSChan->dbrType == DBR_TIME_CHAR) {
-	pSChan->pInBuf[i]->tchrval = pBuf->tchrval;
-	if (pSChan->elCount > 1) {
-	    unsigned char	*pDest = &pSChan->pInBuf[i]->tchrval.value + 1;
-	    unsigned char	*pSrc = &pBuf->tchrval.value + 1;
-	    for (j=1; j<pSChan->elCount; j++)
-		*pDest++ = *pSrc++;
-	}
-    }
-    pSChan->lastInBuf = i;
-    if (pSChan->firstInBuf < 0)
-	pSChan->firstInBuf = i;
-#if 0
-	need to check if about to overflow buffers, and signal handler if so
-#endif
+    nbytes = dbr_size_n(arg.type, pSChan->elCount);
+    bcopy((char *)pBuf, (char *)pSChan->pInBuf[i], nbytes);
 
+    pSChan->lastInBuf = i;
+    if (pSChan->firstInBuf == i) {
+	pSChan->firstInBuf = i1;
+	pSChan->inStatus[i1] = SYD_B_RESTART;
+    }
+    else if (pSChan->firstInBuf < 0)
+	pSChan->firstInBuf = i;
 }
 
-/*/subhead sydCAFuncGetGR-----------------------------------------------------
+/*+/internal******************************************************************
+* NAME	sydCAFuncInitGR
 *
-*----------------------------------------------------------------------------*/
-static void
-sydCAFuncGetGR(pSChan, pGrBuf)
-SYD_CHAN *pSChan;	/* pointer to syncSet channel descriptor */
-union db_access_val *pGrBuf;/* pointer to buffer with graphics info */
-{
-    if (pSChan->dbrGrType == DBR_GR_FLOAT)
-	pSChan->grBuf.gfltval = pGrBuf->gfltval;
-    else if (pSChan->dbrGrType == DBR_GR_SHORT)
-	pSChan->grBuf.gshrtval = pGrBuf->gshrtval;
-    else if (pSChan->dbrGrType == DBR_GR_DOUBLE)
-	pSChan->grBuf.gdblval = pGrBuf->gdblval;
-    else if (pSChan->dbrGrType == DBR_GR_LONG)
-	pSChan->grBuf.glngval = pGrBuf->glngval;
-    else if (pSChan->dbrGrType == DBR_GR_STRING)
-	pSChan->grBuf.gstrval = pGrBuf->gstrval;
-    else if (pSChan->dbrGrType == DBR_GR_ENUM)
-	pSChan->grBuf.genmval = pGrBuf->genmval;
-    else if (pSChan->dbrGrType == DBR_GR_CHAR)
-	pSChan->grBuf.gchrval = pGrBuf->gchrval;
-    else
-	assertAlways(0);
-}
-
-/*/subhead sydCAFuncInitGR-----------------------------------------------------
-*
-*----------------------------------------------------------------------------*/
+*-*/
 static void
 sydCAFuncInitGR(pSChan)
 SYD_CHAN *pSChan;	/* pointer to syncSet channel descriptor */
 {
     if (pSChan->dbrType == DBR_TIME_FLOAT) {
 #define FLT_DEST pSChan->grBuf.gfltval
-	FLT_DEST.status = NO_ALARM;
-	FLT_DEST.severity = NO_ALARM;
+	FLT_DEST.status = FLT_DEST.severity = NO_ALARM;
 	FLT_DEST.precision = 3;
 	(void)strcpy(FLT_DEST.units, " ");
-	FLT_DEST.upper_disp_limit = 0.;
-	FLT_DEST.lower_disp_limit = 0.;
-	FLT_DEST.upper_alarm_limit = 0.;
-	FLT_DEST.lower_alarm_limit = 0.;
-	FLT_DEST.upper_warning_limit = 0.;
-	FLT_DEST.lower_warning_limit = 0.;
+	FLT_DEST.upper_disp_limit = FLT_DEST.lower_disp_limit = 0.;
+	FLT_DEST.upper_alarm_limit = FLT_DEST.lower_alarm_limit = 0.;
+	FLT_DEST.upper_warning_limit = FLT_DEST.lower_warning_limit = 0.;
     }
     else if (pSChan->dbrType == DBR_TIME_SHORT) {
 #define SHRT_DEST pSChan->grBuf.gshrtval
-	SHRT_DEST.status = NO_ALARM;
-	SHRT_DEST.severity = NO_ALARM;
+	SHRT_DEST.status = SHRT_DEST.severity = NO_ALARM;
 	(void)strcpy(SHRT_DEST.units, " ");
-	SHRT_DEST.upper_disp_limit = 0;
-	SHRT_DEST.lower_disp_limit = 0;
-	SHRT_DEST.upper_alarm_limit = 0;
-	SHRT_DEST.lower_alarm_limit = 0;
-	SHRT_DEST.upper_warning_limit = 0;
-	SHRT_DEST.lower_warning_limit = 0;
+	SHRT_DEST.upper_disp_limit = SHRT_DEST.lower_disp_limit = 0;
+	SHRT_DEST.upper_alarm_limit = SHRT_DEST.lower_alarm_limit = 0;
+	SHRT_DEST.upper_warning_limit = SHRT_DEST.lower_warning_limit = 0;
     }
     else if (pSChan->dbrType == DBR_TIME_DOUBLE) {
 #define DBL_DEST pSChan->grBuf.gdblval
-	DBL_DEST.status = NO_ALARM;
-	DBL_DEST.severity = NO_ALARM;
+	DBL_DEST.status = DBL_DEST.severity = NO_ALARM;
 	DBL_DEST.precision = 3;
 	(void)strcpy(DBL_DEST.units, " ");
-	DBL_DEST.upper_disp_limit = 0.;
-	DBL_DEST.lower_disp_limit = 0.;
-	DBL_DEST.upper_alarm_limit = 0.;
-	DBL_DEST.lower_alarm_limit = 0.;
-	DBL_DEST.upper_warning_limit = 0.;
-	DBL_DEST.lower_warning_limit = 0.;
+	DBL_DEST.upper_disp_limit = DBL_DEST.lower_disp_limit = 0.;
+	DBL_DEST.upper_alarm_limit = DBL_DEST.lower_alarm_limit = 0.;
+	DBL_DEST.upper_warning_limit = DBL_DEST.lower_warning_limit = 0.;
     }
     else if (pSChan->dbrType == DBR_TIME_LONG) {
 #define LNG_DEST pSChan->grBuf.glngval
-	LNG_DEST.status = NO_ALARM;
-	LNG_DEST.severity = NO_ALARM;
+	LNG_DEST.status = LNG_DEST.severity = NO_ALARM;
 	(void)strcpy(LNG_DEST.units, " ");
-	LNG_DEST.upper_disp_limit = 0;
-	LNG_DEST.lower_disp_limit = 0;
-	LNG_DEST.upper_alarm_limit = 0;
-	LNG_DEST.lower_alarm_limit = 0;
-	LNG_DEST.upper_warning_limit = 0;
-	LNG_DEST.lower_warning_limit = 0;
+	LNG_DEST.upper_disp_limit = LNG_DEST.lower_disp_limit = 0;
+	LNG_DEST.upper_alarm_limit = LNG_DEST.lower_alarm_limit = 0;
+	LNG_DEST.upper_warning_limit = LNG_DEST.lower_warning_limit = 0;
     }
     else if (pSChan->dbrType == DBR_TIME_STRING) {
 #define STR_DEST pSChan->grBuf.gstrval
-	STR_DEST.status = NO_ALARM;
-	STR_DEST.severity = NO_ALARM;
+	STR_DEST.status = STR_DEST.severity = NO_ALARM;
     }
     else if (pSChan->dbrType == DBR_TIME_ENUM) {
 #define ENM_DEST pSChan->grBuf.genmval
-	ENM_DEST.status = NO_ALARM;
-	ENM_DEST.severity = NO_ALARM;
+	ENM_DEST.status = ENM_DEST.severity = NO_ALARM;
 	ENM_DEST.no_str = 0;
     }
     else if (pSChan->dbrType == DBR_TIME_CHAR) {
 #define CHR_DEST pSChan->grBuf.gchrval
-	CHR_DEST.status = NO_ALARM;
-	CHR_DEST.severity = NO_ALARM;
+	CHR_DEST.status = CHR_DEST.severity = NO_ALARM;
 	(void)strcpy(CHR_DEST.units, " ");
-	CHR_DEST.upper_disp_limit = 0;
-	CHR_DEST.lower_disp_limit = 0;
-	CHR_DEST.upper_alarm_limit = 0;
-	CHR_DEST.lower_alarm_limit = 0;
-	CHR_DEST.upper_warning_limit = 0;
-	CHR_DEST.lower_warning_limit = 0;
+	CHR_DEST.upper_disp_limit = CHR_DEST.lower_disp_limit = 0;
+	CHR_DEST.upper_alarm_limit = CHR_DEST.lower_alarm_limit = 0;
+	CHR_DEST.upper_warning_limit = CHR_DEST.lower_warning_limit = 0;
     }
 }

@@ -192,7 +192,7 @@ void	*pArg;		/* I pointer to arg, as required by funcCode */
 		if (inStatus == SYD_B_EMPTY)
 		    pSChan->inStatus[i] = SYD_B_FULL;
 		else
-		    pSChan->inStatus[i] = SYD_B_RESTART;
+		    pSChan->inStatus[i] = inStatus;
 		if (pSspec->roundNsec > 0) {
 		    sydTsRound(&pSChan->pInBuf[i]->tfltval.stamp,
 							pSspec->roundNsec);
@@ -200,12 +200,22 @@ void	*pArg;		/* I pointer to arg, as required by funcCode */
 	    }
 	    else if ((pChanDesc->flags & AR_CDESC_EOF) != 0)
 		pSChan->inStatus[i] = SYD_B_EOF;
+	    else if ((pChanDesc->flags & AR_CDESC_SNAP_BEGIN) != 0) {
+		if ((pChanDesc->flags & AR_CDESC_SNAP_END) != 0)
+		    inStatus = SYD_B_SNAP_SINGLE;
+		else
+		    inStatus = SYD_B_SNAP_BEGIN;
+	    }
+	    else if ((pChanDesc->flags & AR_CDESC_SNAP_END) != 0)
+		inStatus = SYD_B_SNAP_END;
 	    else if ((pChanDesc->flags & AR_CDESC_BEGIN) != 0)
 		inStatus = SYD_B_RESTART;
 	}
 	pSChan->lastInBuf = i;
 	if (pSChan->firstInBuf < 0)
 	    pSChan->firstInBuf = i;
+    }
+    else if (funcCode ==				SYD_FC_STOP) {
     }
     else if (funcCode ==				SYD_FC_READ_SYNC) {
 	/* synchronize file buf in memory with data on disk */

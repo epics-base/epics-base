@@ -131,7 +131,7 @@ int main()
 	pserver->sock = socket(AF_INET, SOCK_STREAM, 0);
 	if (pserver->sock==INVALID_SOCKET) {
         char sockErrBuf[64];
-        convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+        epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
 		fprintf(stderr, "iocLogServer: sock create err: %s\n", sockErrBuf);
 		return IOCLS_ERROR;
 	}
@@ -152,7 +152,7 @@ int main()
 							    sizeof(optval));
 	    if(status<0){
             char sockErrBuf[64];
-            convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+            epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
 		    fprintf(stderr, "iocLogServer: setsockopt err %s\n", sockErrBuf);
 		    return IOCLS_ERROR;
 	    }
@@ -169,7 +169,7 @@ int main()
 			sizeof (serverAddr) );
 	if (status<0) {
         char sockErrBuf[64];
-        convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+        epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
 		fprintf(stderr, "iocLogServer: bind err: %s\n", sockErrBuf );
 		fprintf (stderr,
 			"iocLogServer: a server is already installed on port %u?\n", 
@@ -181,7 +181,7 @@ int main()
 	status = listen(pserver->sock, 10);
 	if (status<0) {
         char sockErrBuf[64];
-        convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+        epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
 		fprintf(stderr, "iocLogServer: listen err %s\n", sockErrBuf);
 		return IOCLS_ERROR;
 	}
@@ -197,7 +197,7 @@ int main()
 					&optval);
 	if(status<0){
         char sockErrBuf[64];
-        convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+        epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
 		fprintf(stderr, "iocLogServer: ioctl FIONBIO err %s\n", sockErrBuf);
 		return IOCLS_ERROR;
 	}
@@ -474,7 +474,7 @@ static void acceptNewClient ( void *pParam )
 					&optval);
 	if(status<0){
         char sockErrBuf[64];
-        convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+        epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
 		fprintf(stderr, "%s:%d ioctl FBIO client er %s\n", 
 			__FILE__, __LINE__, sockErrBuf);
 		socket_close(pclient->insock);
@@ -522,7 +522,7 @@ static void acceptNewClient ( void *pParam )
 	status = shutdown(pclient->insock, SOCKET_SHUTDOWN_WRITE_SIDE);
 	if(status<0){
         char sockErrBuf[64];
-        convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+        epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
 		fprintf (stderr, "%s:%d shutdown err %s\n", __FILE__, __LINE__,
 				sockErrBuf);
         socket_close(pclient->insock);
@@ -579,7 +579,7 @@ static void readFromClient(void *pParam)
 				errnoCpy != SOCK_ETIMEDOUT
 				) {
                 char sockErrBuf[64];
-                convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+                epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
 				fprintf(stderr, 
 		"%s:%d socket=%d size=%d read error=%s\n",
 					__FILE__, __LINE__, pclient->insock, 

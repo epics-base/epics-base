@@ -103,7 +103,7 @@ int main ( int argc, char ** argv )
     sock = socket ( AF_INET, SOCK_DGRAM, IPPROTO_UDP );
     if ( sock == INVALID_SOCKET ) {
         char sockErrBuf[64];
-        convertSocketErrorToString ( 
+        epicsSocketConvertErrnoToString ( 
             sockErrBuf, sizeof ( sockErrBuf ) );
         errlogPrintf ("casw: unable to create datagram socket because = \"%s\"\n",
             sockErrBuf );
@@ -117,7 +117,7 @@ int main ( int argc, char ** argv )
     status = bind ( sock, &addr.sa, sizeof (addr) );
     if ( status < 0 ) {
         char sockErrBuf[64];
-        convertSocketErrorToString ( 
+        epicsSocketConvertErrnoToString ( 
             sockErrBuf, sizeof ( sockErrBuf ) );
         socket_close ( sock );
         errlogPrintf ( "casw: unable to bind to an unconstrained address because = \"%s\"\n",
@@ -129,7 +129,7 @@ int main ( int argc, char ** argv )
     status = socket_ioctl ( sock, FIONBIO, &yes ); // X aCC 392
     if ( status < 0 ) {
         char sockErrBuf[64];
-        convertSocketErrorToString ( 
+        epicsSocketConvertErrnoToString ( 
             sockErrBuf, sizeof ( sockErrBuf ) );
         socket_close ( sock );
         errlogPrintf ( "casw: unable to set socket to nonblocking state because \"%s\"\n",
@@ -163,7 +163,7 @@ int main ( int argc, char ** argv )
     status = socket_ioctl ( sock, FIONBIO, &no ); // X aCC 392
     if ( status < 0 ) {
         char sockErrBuf[64];
-        convertSocketErrorToString ( 
+        epicsSocketConvertErrnoToString ( 
             sockErrBuf, sizeof ( sockErrBuf ) );
         socket_close ( sock );
         errlogPrintf ( "casw: unable to set socket to blocking state because \"%s\"\n",
@@ -179,7 +179,7 @@ int main ( int argc, char ** argv )
                             &addr.sa, &addrSize );
         if ( status <= 0 ) {
             char sockErrBuf[64];
-            convertSocketErrorToString ( 
+            epicsSocketConvertErrnoToString ( 
                 sockErrBuf, sizeof ( sockErrBuf ) );
             socket_close ( sock );
             errlogPrintf ("casw: error from recv was = \"%s\"\n",

@@ -160,7 +160,7 @@ bool repeaterClient::connect ()
 
     if ( ! makeSocket ( PORT_ANY, false, & this->sock ) ) {
         char sockErrBuf[64];
-        convertSocketErrorToString ( 
+        epicsSocketConvertErrnoToString ( 
             sockErrBuf, sizeof ( sockErrBuf ) );
         fprintf ( stderr, "%s: no client sock because \"%s\"\n",
                 __FILE__, sockErrBuf );
@@ -170,7 +170,7 @@ bool repeaterClient::connect ()
     status = ::connect ( this->sock, &this->from.sa, sizeof ( this->from.sa ) );
     if ( status < 0 ) {
         char sockErrBuf[64];
-        convertSocketErrorToString ( 
+        epicsSocketConvertErrnoToString ( 
             sockErrBuf, sizeof ( sockErrBuf ) );
         fprintf ( stderr, "%s: unable to connect client sock because \"%s\"\n",
             __FILE__, sockErrBuf );
@@ -199,7 +199,7 @@ bool repeaterClient::sendConfirm () // X aCC 361
     }
     else {
         char sockErrBuf[64];
-        convertSocketErrorToString ( 
+        epicsSocketConvertErrnoToString ( 
             sockErrBuf, sizeof ( sockErrBuf ) );
         debugPrintf ( ( "CA Repeater: confirm req err was \"%s\"\n", sockErrBuf) );
         return false;
@@ -223,7 +223,7 @@ bool repeaterClient::sendMessage ( const void *pBuf, unsigned bufSize ) // X aCC
         }
         else {
             char sockErrBuf[64];
-            convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+            epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
             debugPrintf ( ( "CA Repeater: UDP send err was \"%s\"\n", sockErrBuf) );
         }
         return false;
@@ -309,7 +309,7 @@ bool repeaterClient::verify ()  // X aCC 361
          */
         if ( SOCKERRNO != SOCK_EADDRINUSE ) {
             char sockErrBuf[64];
-            convertSocketErrorToString ( 
+            epicsSocketConvertErrnoToString ( 
                 sockErrBuf, sizeof ( sockErrBuf ) );
             fprintf ( stderr, "CA Repeater: bind test err was \"%s\"\n", 
                 sockErrBuf );
@@ -391,7 +391,7 @@ static void register_new_client ( osiSockAddr & from,
             SOCKET sock;
             if ( ! makeSocket ( PORT_ANY, true, & sock ) ) {
                 char sockErrBuf[64];
-                convertSocketErrorToString ( 
+                epicsSocketConvertErrnoToString ( 
                     sockErrBuf, sizeof ( sockErrBuf ) );
                 fprintf ( stderr, "%s: Unable to create repeater bind test socket because \"%s\"\n",
                     __FILE__, sockErrBuf );
@@ -517,7 +517,7 @@ void ca_repeater ()
             exit (0);
         }
         char sockErrBuf[64];
-        convertSocketErrorToString ( 
+        epicsSocketConvertErrnoToString ( 
             sockErrBuf, sizeof ( sockErrBuf ) );
         fprintf ( stderr, "%s: Unable to create repeater socket because \"%s\" - fatal\n",
             __FILE__, sockErrBuf );
@@ -543,7 +543,7 @@ void ca_repeater ()
                 continue;
             }
             char sockErrBuf[64];
-            convertSocketErrorToString ( 
+            epicsSocketConvertErrnoToString ( 
                 sockErrBuf, sizeof ( sockErrBuf ) );
             fprintf ( stderr, "CA Repeater: unexpected UDP recv err: %s\n",
                 sockErrBuf );

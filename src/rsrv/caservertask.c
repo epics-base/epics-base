@@ -108,7 +108,7 @@ LOCAL void req_server (void *pParm)
                     (char *) &flag, sizeof (flag) );
         if ( status < 0 ) {
             char sockErrBuf[64];
-            convertSocketErrorToString ( 
+            epicsSocketConvertErrnoToString ( 
                 sockErrBuf, sizeof ( sockErrBuf ) );
             errlogPrintf (
         "%s: set socket option SO_REUSEADDR failed because \"%s\"\n", 
@@ -138,7 +138,7 @@ LOCAL void req_server (void *pParm)
 		}
 		if ( status < 0 ) {
             char sockErrBuf[64];
-            convertSocketErrorToString ( 
+            epicsSocketConvertErrnoToString ( 
                 sockErrBuf, sizeof ( sockErrBuf ) );
             errlogPrintf ( "CAS: Socket bind error was \"%s\"\n",
                 sockErrBuf );
@@ -155,7 +155,7 @@ LOCAL void req_server (void *pParm)
 			(struct sockaddr *)&serverAddr, &addrSize);
 	if ( status ) {
         char sockErrBuf[64];
-        convertSocketErrorToString ( 
+        epicsSocketConvertErrnoToString ( 
             sockErrBuf, sizeof ( sockErrBuf ) );
 		errlogPrintf ( "CAS: getsockname() error %s\n", 
 			sockErrBuf );
@@ -198,7 +198,7 @@ LOCAL void req_server (void *pParm)
 
         if ( ( clientSock = accept ( IOC_sock, &sockAddr, &addLen ) ) == INVALID_SOCKET ) {
             char sockErrBuf[64];
-            convertSocketErrorToString ( 
+            epicsSocketConvertErrnoToString ( 
                 sockErrBuf, sizeof ( sockErrBuf ) );
             errlogPrintf("CAS: Client accept error was \"%s\"\n",
                 sockErrBuf );

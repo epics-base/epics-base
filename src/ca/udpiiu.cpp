@@ -106,7 +106,7 @@ udpiiu::udpiiu ( epicsTimerQueueActive & timerQueue, callbackMutex & cbMutex, ca
     this->sock = socket ( AF_INET, SOCK_DGRAM, IPPROTO_UDP );
     if ( this->sock == INVALID_SOCKET ) {
         char sockErrBuf[64];
-        convertSocketErrorToString ( 
+        epicsSocketConvertErrnoToString ( 
             sockErrBuf, sizeof ( sockErrBuf ) );
         this->printf ("CAC: unable to create datagram socket because = \"%s\"\n",
             sockErrBuf );
@@ -117,7 +117,7 @@ udpiiu::udpiiu ( epicsTimerQueueActive & timerQueue, callbackMutex & cbMutex, ca
                 (char *) &boolValue, sizeof ( boolValue ) );
     if ( status < 0 ) {
         char sockErrBuf[64];
-        convertSocketErrorToString ( 
+        epicsSocketConvertErrnoToString ( 
             sockErrBuf, sizeof ( sockErrBuf ) );
         this->printf ("CAC: IP broadcasting enable failed because = \"%s\"\n",
             sockErrBuf );
@@ -136,7 +136,7 @@ udpiiu::udpiiu ( epicsTimerQueueActive & timerQueue, callbackMutex & cbMutex, ca
                 (char *)&size, sizeof (size) );
         if (status<0) {
             char sockErrBuf[64];
-            convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+            epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
             this->printf ( "CAC: unable to set socket option SO_RCVBUF because \"%s\"\n",
                 sockErrBuf );
         }
@@ -152,7 +152,7 @@ udpiiu::udpiiu ( epicsTimerQueueActive & timerQueue, callbackMutex & cbMutex, ca
     status = bind (this->sock, &addr.sa, sizeof (addr) );
     if ( status < 0 ) {
         char sockErrBuf[64];
-        convertSocketErrorToString ( 
+        epicsSocketConvertErrnoToString ( 
             sockErrBuf, sizeof ( sockErrBuf ) );
         socket_close (this->sock);
         this->printf ( "CAC: unable to bind to an unconstrained address because = \"%s\"\n",
@@ -166,7 +166,7 @@ udpiiu::udpiiu ( epicsTimerQueueActive & timerQueue, callbackMutex & cbMutex, ca
         status = getsockname ( this->sock, &tmpAddr.sa, &saddr_length );
         if ( status < 0 ) {
             char sockErrBuf[64];
-            convertSocketErrorToString ( 
+            epicsSocketConvertErrnoToString ( 
                 sockErrBuf, sizeof ( sockErrBuf ) );
             socket_close ( this->sock );
             this->printf ( "CAC: getsockname () error was \"%s\"\n", sockErrBuf );
@@ -290,7 +290,7 @@ void udpiiu::recvMsg ( callbackMutex & cbMutex )
             return;
         }
         char sockErrBuf[64];
-        convertSocketErrorToString ( 
+        epicsSocketConvertErrnoToString ( 
             sockErrBuf, sizeof ( sockErrBuf ) );
         this->printf ( "CAC: UDP recv error was \"%s\"\n", 
             sockErrBuf );
@@ -435,7 +435,7 @@ void epicsShareAPI caRepeaterRegistrationMessage (
                 errnoCpy != SOCK_ECONNREFUSED && 
                 errnoCpy != SOCK_ECONNRESET ) {
             char sockErrBuf[64];
-            convertSocketErrorToString ( 
+            epicsSocketConvertErrnoToString ( 
                 sockErrBuf, sizeof ( sockErrBuf ) );
             fprintf ( stderr, "error sending registration message to CA repeater daemon was \"%s\"\n", 
                 sockErrBuf );
@@ -916,7 +916,7 @@ void udpiiu::datagramFlush ( const epicsTime & currentTime )
                     char buf[64];
                     sockAddrToDottedIP ( &pNode->addr.sa, buf, sizeof ( buf ) );
                     char sockErrBuf[64];
-                    convertSocketErrorToString ( 
+                    epicsSocketConvertErrnoToString ( 
                         sockErrBuf, sizeof ( sockErrBuf ) );
                     this->printf (
                         "CAC: error = \"%s\" sending UDP msg to %s\n",

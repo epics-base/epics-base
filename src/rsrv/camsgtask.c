@@ -131,7 +131,7 @@ void camsgtask ( void *pParm )
         status = socket_ioctl (client->sock, FIONREAD, &nchars);
         if (status < 0) {
             char sockErrBuf[64];
-            convertSocketErrorToString ( 
+            epicsSocketConvertErrnoToString ( 
                 sockErrBuf, sizeof ( sockErrBuf ) );
             errlogPrintf("CAS: io ctl err - %s\n",
                 sockErrBuf);

@@ -128,7 +128,7 @@ casDGIntfIO::casDGIntfIO ( caServerI & serverIn, clientBufMemoryManager & memMgr
         char buf[64];
         ipAddrToA ( &serverAddr.ia, buf, sizeof ( buf ) );
         char sockErrBuf[64];
-        convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+        epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
         errPrintf ( S_cas_bindFail, __FILE__, __LINE__, 
             "- bind UDP IP addr=%s failed because %s", buf, sockErrBuf );
         socket_close (this->sock);
@@ -218,7 +218,7 @@ casDGIntfIO::casDGIntfIO ( caServerI & serverIn, clientBufMemoryManager & memMgr
             char buf[64];
             ipAddrToA ( & serverBCastAddr.ia, buf, sizeof ( buf ) );
             char sockErrBuf[64];
-            convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+            epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
             errPrintf ( S_cas_bindFail, __FILE__, __LINE__,
                 "- bind UDP IP addr=%s failed because %s", 
                 buf, sockErrBuf );
@@ -288,7 +288,7 @@ void casDGIntfIO::xSetNonBlocking()
     status = socket_ioctl(this->sock, FIONBIO, &yes); // X aCC 392
     if (status<0) {
         char sockErrBuf[64];
-        convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+        epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
         errlogPrintf ( "%s:CAS: UDP non blocking IO set fail because \"%s\"\n",
             __FILE__, sockErrBuf );
     }
@@ -317,7 +317,7 @@ casDGIntfIO::osdRecv ( char * pBufIn, bufSizeT size, // X aCC 361
         if ( status < 0 ) {
             if ( SOCKERRNO != SOCK_EWOULDBLOCK ) {
                 char sockErrBuf[64];
-                convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+                epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
                 errlogPrintf ( "CAS: UDP recv error was %s", sockErrBuf );
             }
         }
@@ -362,7 +362,7 @@ casDGIntfIO::osdSend ( const char * pBufIn, bufSizeT size, // X aCC 361
             char buf[64];
             sockAddrToA ( & dest, buf, sizeof ( buf ) );
             char sockErrBuf[64];
-            convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+            epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
             errlogPrintf (
                 "CAS: UDP socket send to \"%s\" failed because \"%s\"\n",
                 buf, sockErrBuf );
@@ -379,7 +379,7 @@ bufSizeT casDGIntfIO::incomingBytesPresent () const // X aCC 361
 	status = socket_ioctl ( this->sock, FIONREAD, & nchars ); // X aCC 392
 	if ( status < 0 ) {
         char sockErrBuf[64];
-        convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+        epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
 		errlogPrintf ( "CAS: FIONREAD failed because \"%s\"\n",
 			sockErrBuf );
 		return 0u;
@@ -409,7 +409,7 @@ void casDGIntfIO::sendBeaconIO ( char & msg, unsigned length,
         if (status<0) {
             ipAddrToDottedIP ( & pAddr->addr.ia, buf, sizeof ( buf ) );
             char sockErrBuf[64];
-            convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+            epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
             errlogPrintf ( "%s: CA beacon routing (connect to \"%s\") error was \"%s\"\n",
                 __FILE__, buf, sockErrBuf );
         }
@@ -419,7 +419,7 @@ void casDGIntfIO::sendBeaconIO ( char & msg, unsigned length,
             status = getsockname ( this->beaconSock, &sockAddr.sa, &size );
             if ( status < 0 ) {
                 char sockErrBuf[64];
-                convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+                epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
                 errlogPrintf ( "%s: CA beacon routing (getsockname) error was \"%s\"\n",
                     __FILE__, sockErrBuf );
             }
@@ -430,7 +430,7 @@ void casDGIntfIO::sendBeaconIO ( char & msg, unsigned length,
                 if ( status < 0 ) {
                     ipAddrToA ( &pAddr->addr.ia, buf, sizeof(buf) );
                     char sockErrBuf[64];
-                    convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+                    epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
                     errlogPrintf ( "%s: CA beacon (send to \"%s\") error was \"%s\"\n",
                         __FILE__, buf, sockErrBuf );
                 }

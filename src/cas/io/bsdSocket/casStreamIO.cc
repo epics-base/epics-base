@@ -32,7 +32,7 @@ casStreamIO::casStreamIO ( caServerI & cas, clientBufMemoryManager & bufMgr,
 							( char * ) & yes, sizeof ( yes ) );
 	if ( status < 0 ) {
         char sockErrBuf[64];
-        convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+        epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
 		errlogPrintf (
 			"CAS: %s TCP_NODELAY option set failed %s\n",
 			__FILE__, sockErrBuf );
@@ -47,7 +47,7 @@ casStreamIO::casStreamIO ( caServerI & cas, clientBufMemoryManager & bufMgr,
 					(char *) & yes, sizeof ( yes ) );
 	if (status<0) {
         char sockErrBuf[64];
-        convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+        epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
 		errlogPrintf (
 			"CAS: %s SO_KEEPALIVE option set failed %s\n",
 			__FILE__, sockErrBuf );
@@ -130,7 +130,7 @@ outBufClient::flushCondition casStreamIO::osdSend ( const char *pInBuf, bufSizeT
  			    char buf[64];
                 ipAddrToA (&this->addr, buf, sizeof(buf));
                 char sockErrBuf[64];
-                convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+                epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
 			    errlogPrintf (
 	"CAS: TCP socket send to \"%s\" failed because \"%s\"\n",
 				    buf, sockErrBuf );
@@ -171,7 +171,7 @@ casStreamIO::osdRecv ( char * pInBuf, bufSizeT nBytes, // X aCC 361
                 myerrno != SOCK_ETIMEDOUT ) {
                 ipAddrToA (&this->addr, buf, sizeof(buf));
                 char sockErrBuf[64];
-                convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+                epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
                 errlogPrintf(
 		    "CAS: client %s disconnected because \"%s\"\n",
                     buf, sockErrBuf );
@@ -193,7 +193,7 @@ void casStreamIO::forceDisconnect ()
         int status = ::shutdown ( this->sock, SHUT_RDWR );
         if ( status ) {
             char sockErrBuf[64];
-            convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+            epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
             errlogPrintf ("CAC TCP socket shutdown error was %s\n", 
                 sockErrBuf );
         }
@@ -229,7 +229,7 @@ void casStreamIO::xSetNonBlocking()
 	}
 	else {
         char sockErrBuf[64];
-        convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+        epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
 		errlogPrintf ( "%s:CAS: TCP non blocking IO set fail because \"%s\"\n", 
 				__FILE__, sockErrBuf );
 	    throw S_cas_internal;
@@ -260,7 +260,7 @@ bufSizeT casStreamIO::incomingBytesPresent () const // X aCC 361
             char buf[64];
             ipAddrToA ( &this->addr, buf, sizeof(buf) );
             char sockErrBuf[64];
-            convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+            epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
             errlogPrintf ("CAS: FIONREAD for %s failed because \"%s\"\n",
                 buf, sockErrBuf );
         }

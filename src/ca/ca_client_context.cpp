@@ -49,7 +49,7 @@ ca_client_context::ca_client_context ( bool enablePreemptiveCallback ) :
     this->sock = socket ( AF_INET, SOCK_DGRAM, IPPROTO_UDP );
     if ( this->sock == INVALID_SOCKET ) {
         char sockErrBuf[64];
-        convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+        epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
         this->printf (
             "ca_client_context: unable to create "
             "datagram socket because = \"%s\"\n",
@@ -63,7 +63,7 @@ ca_client_context::ca_client_context ( bool enablePreemptiveCallback ) :
                                     FIONBIO, & yes);
         if ( status < 0 ) {
             char sockErrBuf[64];
-            convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+            epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
             socket_close ( this->sock );
             this->printf (
                 "%s: non blocking IO set fail because \"%s\"\n",
@@ -83,7 +83,7 @@ ca_client_context::ca_client_context ( bool enablePreemptiveCallback ) :
         int status = bind (this->sock, &addr.sa, sizeof (addr) );
         if ( status < 0 ) {
             char sockErrBuf[64];
-            convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+            epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
             socket_close (this->sock);
             this->printf (
                 "CAC: unable to bind to an unconstrained "
@@ -99,7 +99,7 @@ ca_client_context::ca_client_context ( bool enablePreemptiveCallback ) :
         int status = getsockname ( this->sock, & tmpAddr.sa, & saddr_length );
         if ( status < 0 ) {
             char sockErrBuf[64];
-            convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+            epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
             socket_close ( this->sock );
             this->printf ( "CAC: getsockname () error was \"%s\"\n", sockErrBuf );
             throwWithLocation ( noSocket () );

@@ -182,7 +182,7 @@ void cast_server(void *pParm)
                     (char *) &flag, sizeof (flag) );
         if ( status < 0 ) {
             char sockErrBuf[64];
-            convertSocketErrorToString ( 
+            epicsSocketConvertErrnoToString ( 
                 sockErrBuf, sizeof ( sockErrBuf ) );
             errlogPrintf (
         "%s: set socket option SO_REUSEADDR failed because \"%s\"\n", 
@@ -199,7 +199,7 @@ void cast_server(void *pParm)
     /* get server's Internet address */
     if( bind(IOC_cast_sock, (struct sockaddr *)&sin, sizeof (sin)) < 0){
         char sockErrBuf[64];
-        convertSocketErrorToString ( 
+        epicsSocketConvertErrnoToString ( 
             sockErrBuf, sizeof ( sockErrBuf ) );
         epicsPrintf ("CAS: UDP server port bind error was \"%s\"\n", sockErrBuf );
         socket_close (IOC_cast_sock);
@@ -211,7 +211,7 @@ void cast_server(void *pParm)
                 (char *)&flag, sizeof (flag) );
     if ( status < 0 ) {
         char sockErrBuf[64];
-        convertSocketErrorToString ( 
+        epicsSocketConvertErrnoToString ( 
             sockErrBuf, sizeof ( sockErrBuf ) );
         errlogPrintf (
     "%s: set socket option SO_REUSEADDR failed because \"%s\"\n", 
@@ -260,7 +260,7 @@ void cast_server(void *pParm)
             &recv_addr_size);
         if (status<0) {
             char sockErrBuf[64];
-            convertSocketErrorToString ( 
+            epicsSocketConvertErrnoToString ( 
                 sockErrBuf, sizeof ( sockErrBuf ) );
             epicsPrintf ("CAS: UDP recv error (errno=%s)\n",
                     sockErrBuf);

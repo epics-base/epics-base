@@ -210,7 +210,7 @@ void rsrv_online_notify_task(void *pParm)
             status = connect (sock, &pNode->addr.sa, sizeof(pNode->addr.sa));
             if (status<0) {
                 char sockErrBuf[64];
-                convertSocketErrorToString ( 
+                epicsSocketConvertErrnoToString ( 
                     sockErrBuf, sizeof ( sockErrBuf ) );
                 ipAddrToDottedIP (&pNode->addr.ia, buf, sizeof(buf));
                 errlogPrintf ( "%s: CA beacon routing (connect to \"%s\") error was \"%s\"\n",
@@ -223,7 +223,7 @@ void rsrv_online_notify_task(void *pParm)
                 status = getsockname (sock, (struct sockaddr *) &if_addr, &size);
                 if (status<0) {
                     char sockErrBuf[64];
-                    convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+                    epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
                     errlogPrintf ( "%s: CA beacon routing (getsockname) error was \"%s\"\n",
                         __FILE__, sockErrBuf);
                 }
@@ -235,7 +235,7 @@ void rsrv_online_notify_task(void *pParm)
                     if (status < 0) {
                         char sockErrBuf[64];
                         ipAddrToDottedIP (&pNode->addr.ia, buf, sizeof(buf));
-                        convertSocketErrorToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+                        epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
                         errlogPrintf ( "%s: CA beacon (send to \"%s\") error was \"%s\"\n",
                             __FILE__, buf, sockErrBuf);
                     }

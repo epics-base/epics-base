@@ -89,7 +89,7 @@ void cas_send_bs_msg ( struct client *pclient, int lock_needed )
                     anerrno!=SOCK_ETIMEDOUT)||
                     CASDEBUG>2){
                 char sockErrBuf[64];
-                convertSocketErrorToString ( 
+                epicsSocketConvertErrnoToString ( 
                     sockErrBuf, sizeof ( sockErrBuf ) );
                 errlogPrintf (
     "CAS: TCP send to \"%s\" failed because \"%s\"\n",
@@ -160,7 +160,7 @@ void cas_send_dg_msg ( struct client * pclient )
     else {
         char sockErrBuf[64];
         char buf[128];
-        convertSocketErrorToString ( 
+        epicsSocketConvertErrnoToString ( 
             sockErrBuf, sizeof ( sockErrBuf ) );
         ipAddrToDottedIP ( &pclient->addr, buf, sizeof(buf) );
         errlogPrintf(

@@ -140,11 +140,14 @@ public:
     //
     typedef void (T::*pSetMFArg_t)();
 #   define pSetMFArg(ARG) pSetMFArg_t ARG
+    typedef void (T::*pSetMFArgConst_t)() const;
+#   define pSetMFArgConst(ARG) pSetMFArgConst_t ARG
 #else
     //
     // required by gnu g++ 2.7.2
     //
 #   define pSetMFArg(ARG) void (T:: * ARG)()
+#   define pSetMFArgConst(ARG) void (T:: * ARG)() const
 #endif
 
     //
@@ -154,7 +157,8 @@ public:
     // a pointer to a member function of T with 
     // no parameters that returns void
     //
-    void traverse ( pSetMFArg(pCB) ) const;
+    void traverse ( pSetMFArg(pCB) );
+    void constTraverse ( pSetMFArgConst(pCB) ) const;
 
 private:
     tsSLList<T>     *pTable;
@@ -423,6 +427,26 @@ void resTable<T,ID>::show (unsigned level) const
 //
 template <class T, class ID>
 void resTable<T,ID>::traverse (pSetMFArg(pCB)) const
+{
+    tsSLList<T> *pList;
+
+    pList = this->pTable;
+    while ( pList < &this->pTable[this->hashIdMask+1] ) {
+        tsSLIter<T> pItem ( pList->first () );
+        while ( pItem.valid () ) {
+            T * p = & ( *pItem );
+            (p->*pCB) ();
+            pItem = pItem.itemAfter ();
+        }
+        pList++;
+    }
+}
+
+//
+// resTable<T,ID>::constTraverse
+//
+template <class T, class ID>
+void resTable<T,ID>::consTraverse (pSetMFArgConst(pCB)) const
 {
     tsSLList<T> *pList;
 

@@ -234,7 +234,15 @@ typedef double				ca_real;
 #define VALID_TYPE(TYPE)  (((unsigned short)TYPE)<=LAST_BUFFER_TYPE)
 
 
-/* argument passed to event handlers and callback handlers		*/
+/* 
+ * Arguments passed to event handlers and get/put call back handlers.	
+ *
+ * The status field below is the CA ECA_XXX status of the requested
+ * operation which is saved from when the operation was attempted in the
+ * server and copied back to the clients call back routine.
+ * If the status is not ECA_NORMAL then the dbr pointer will be NULL
+ * and the requested operation can not be assumed to be successful.
+ */
 typedef struct	event_handler_args{
 	void		*usr;	/* User argument supplied when event added 	*/
 	struct channel_in_use
@@ -242,7 +250,7 @@ typedef struct	event_handler_args{
 	long		type;	/* the type of the value returned		*/ 
 	long		count;	/* the element count of the item returned	*/
 	READONLY void	*dbr;	/* Pointer to the value returned		*/
-	int		status;	/* CA Status of the op from server - CA V4.1	*/
+	int		status;	/* ECA_XXX Status of the requested op from server	*/
 }evargs;
 
 struct pending_event{

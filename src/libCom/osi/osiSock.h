@@ -174,6 +174,7 @@ epicsShareFunc osiSockAddr epicsShareAPI osiLocalAddr (SOCKET socket);
  * mechanisms.
  */
 epicsShareFunc void epicsShareAPI epicsSocketEnableInterruptedSystemCall ();
+struct epicsThreadOSD;
 epicsShareFunc void epicsShareAPI epicsSocketInterruptSystemCall ( struct epicsThreadOSD * );
 
 #ifdef __cplusplus

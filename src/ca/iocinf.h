@@ -230,39 +230,21 @@ public:
 private:
 };
 
-/*
- * nciu::claimMsg ()
- */
-class claimMsgCache {
-public:
-    claimMsgCache ( bool v44 );
-    ~claimMsgCache ();
-    bool set ( class nciu & chan );
-    int deliverMsg ( class tcpiiu &iiu );
-    bool channelMatches ( class nciu &chan );
-private:
-    char *pStr;
-    unsigned clientId;
-    unsigned serverId;
-    unsigned currentStrLen;
-    unsigned bufLen;
-    bool v44;
-};
-
 class netiiu;
 
 class nciuPrivate {
 private:
     osiMutex mutex;
     osiEvent ptrLockReleaseWakeup;
+
     friend class nciu;
 };
 
 class cac;
 
-class cacPrivate {
+class cacPrivateListOfIO {
 public:
-    cacPrivate ( cac & );
+    cacPrivateListOfIO ( cac & );
     void destroyAllIO ();
     void subscribeAllIO ();
     void disconnectAllIO ( const char *pHostName );
@@ -274,12 +256,12 @@ private:
 };
 
 class nciu : public cacChannelIO, public tsDLNode < nciu >,
-    public chronIntIdRes < nciu >, public cacPrivate {
+    public chronIntIdRes < nciu >, public cacPrivateListOfIO {
 public:
     nciu ( class cac &cac, cacChannel &chan, const char *pNameIn );
     void destroy ();
-    void connect ( class tcpiiu &iiu, unsigned nativeType, unsigned long nativeCount, unsigned sid );
-    void connect ( tcpiiu &iiu );
+    void connect ( unsigned nativeType, unsigned long nativeCount, unsigned sid );
+    void connect ();
     void disconnect ();
     void searchReplySetUp ( unsigned sid, unsigned typeCode, unsigned long count );
     int read ( unsigned type, unsigned long count, void *pValue );
@@ -296,6 +278,7 @@ public:
     const char *pName () const;
     unsigned searchAttempts () const;
     bool connected () const;
+    bool claimSent () const;
     unsigned readSequence () const;
     void incrementOutstandingIO ();
     void decrementOutstandingIO ();
@@ -319,7 +302,7 @@ public:
     void detachChanFromIIU ();
     void ioInstall ( class baseNMIU & );
     void ioDestroy ( unsigned id );
-
+    bool setClaimMsgCache ( class claimMsgCache & );
     void show ( unsigned level ) const;
 
 private:
@@ -336,7 +319,8 @@ private:
     unsigned short typeCode;
     unsigned f_connected:1;
     unsigned f_fullyConstructed:1;
-    unsigned previousConn:1; // T if connected in the past
+    unsigned f_previousConn:1; // T if connected in the past
+    unsigned f_claimSent:1;
 
     static tsFreeList < class nciu, 1024 > freeList;
 
@@ -348,8 +332,6 @@ private:
     void lockOutstandingIO () const;
     void unlockOutstandingIO () const;
     const char * pHostName () const; // deprecated - please do not use
-
-    friend class claimMsgCache;
 };
 
 class baseNMIU : public tsDLNode < baseNMIU >, public chronIntIdRes < baseNMIU > {
@@ -513,7 +495,7 @@ public:
     void disconnectAllChan ();
     void detachAllChan ();
     void connectTimeoutNotify ();
-    void sendPendingClaims ( tcpiiu &iiu, bool v42Ok, claimMsgCache &cache );
+    void sendPendingClaims ( bool v42Ok, class claimMsgCache &cache );
     bool searchMsg ( unsigned short retrySeqNumber, unsigned &retryNoForThisChannel );
     void resetChannelRetryCounts ();
     virtual void hostName (char *pBuf, unsigned bufLength) const = 0;
@@ -691,21 +673,6 @@ private:
     const double period;
 };
 
-class tcpiiu;
-
-class claimsPendingIIU : public netiiu {
-public:
-    claimsPendingIIU ( tcpiiu &tcpIIU );
-    virtual ~claimsPendingIIU ();
-
-    bool connectionInProgress ( const char *pChannelName, const osiSockAddr & ) const;
-
-private:
-    tcpiiu &tcpIIU;
-    void hostName (char *pBuf, unsigned bufLength) const;
-    const char * pHostName () const; // deprecated - please do not use
-};
-
 class hostNameCache : public ipAddrToAsciiAsynchronous {
 public:
     hostNameCache ( const osiSockAddr &addr, ipAddrToAsciiEngine &engine );
@@ -721,7 +688,7 @@ extern "C" void cacRecvThreadTCP ( void *pParam );
 
 class tcpiiu : 
         public tcpRecvWatchdog, public tcpSendWatchdog,
-        public netiiu, public tsDLNode <tcpiiu>,
+        public netiiu, public tsDLNode < tcpiiu >,
         private comQueSend, private comQueRecv {
 public:
     tcpiiu ( cac &cac, const osiSockAddr &addrIn, 
@@ -742,9 +709,6 @@ public:
     SOCKET getSock () const;
     void echoRequest ();
 
-    void echoRequestMsg ();
-    void enableFlowControlMsg ();
-    void disableFlowControlMsg ();
     void hostNameSetMsg ();
     void userNameSetMsg ();
     void processIncomingAndDestroySelfIfDisconnected ();
@@ -773,7 +737,6 @@ private:
     void *pCurData;
     unsigned minorProtocolVersionNumber;
     iiu_conn_state state;
-    claimsPendingIIU *pClaimsPendingIIU;
     semBinaryId sendThreadFlushSignal;
     semBinaryId recvThreadRingBufferSpaceAvailableSignal;
     semBinaryId sendThreadExitSignal;
@@ -787,6 +750,7 @@ private:
     bool recvMessagePending;
     bool flushPending;
     bool msgHeaderAvailable;
+    bool claimsPending;
 
     bool ca_v42_ok () const;
     void postMsg ();
@@ -817,6 +781,23 @@ private:
     typedef void ( tcpiiu::*pProtoStubTCP ) ();
     static const pProtoStubTCP tcpJumpTableCAC [];
     static tsFreeList < class tcpiiu, 16 > freeList;
+};
+
+class claimMsgCache {
+public:
+    claimMsgCache ( bool v44 );
+    ~claimMsgCache ();
+    int deliverMsg ( netiiu &iiu );
+    void connectChannel ( cac & );
+private:
+    char *pStr;
+    unsigned clientId;
+    unsigned serverId;
+    unsigned currentStrLen;
+    unsigned bufLen;
+    bool v44;
+
+    friend bool nciu::setClaimMsgCache ( class claimMsgCache & );
 };
 
 class inetAddrID {
@@ -918,8 +899,8 @@ private:
     void completionNotify ( unsigned type, unsigned long count, const void *pData );
     void exceptionNotify ( int status, const char *pContext );
     void exceptionNotify ( int status, const char *pContext, unsigned type, unsigned long count );
-    void lock ();
-    void unlock ();
+    void lock () const;
+    void unlock () const;
     ~syncGroupNotify (); // allocate only from pool
 
     struct CASG &sg;
@@ -963,7 +944,35 @@ private:
     friend class syncGroupNotify;
 };
 
-class cac : public caClient, public nciuPrivate {
+class cacPrivateListOfIOPrivate {
+private:
+    osiMutex mutex;
+    friend class cacPrivateListOfIO;
+};
+
+class ioCounter {
+public:
+    ioCounter ();
+    void decrementOutstandingIO ();
+    void decrementOutstandingIO ( unsigned seqNumber );
+    void incrementOutstandingIO ();
+    void lockOutstandingIO () const;
+    void unlockOutstandingIO () const;
+    unsigned readSequenceOfOutstandingIO () const;
+    unsigned currentOutstandingIOCount () const;
+    void cleanUpOutstandingIO ();
+    void showOutstandingIO ( unsigned level ) const;
+    void waitForCompletionOfIO ( double delaySec );
+private:
+    unsigned    pndrecvcnt;
+    unsigned    readSeq;
+    osiMutex    mutex;
+    osiEvent    ioDone;
+};
+
+class cac : public caClient, public nciuPrivate,
+    public ioCounter, public cacPrivateListOfIOPrivate
+{
 public:
     cac ( bool enablePreemptiveCallback = false );
     virtual ~cac ();
@@ -975,17 +984,8 @@ public:
     bhe *lookupBeaconInetAddr ( const inetAddrID &ina );
     bhe *createBeaconHashEntry ( const inetAddrID &ina, 
             const osiTime &initialTimeStamp );
-    void repeaterSubscribeConfirmNotify ();
-
-    // outstanding IO count maintenance
     void removeBeaconInetAddr ( const inetAddrID &ina );
-    void decrementOutstandingIO ();
-    void incrementOutstandingIO ();
-    void decrementOutstandingIO ( unsigned seqNumber );
-    void lockOutstandingIO () const;
-    void unlockOutstandingIO () const;
-    unsigned readSequence () const;
-    void cleanUpPendIO ();
+    void repeaterSubscribeConfirmNotify ();
 
     // IIU routines
     void installIIU ( tcpiiu &iiu );
@@ -1024,7 +1024,8 @@ public:
         int status, const char *pContext, unsigned type, unsigned long count );
 
     // channel routines
-    void connectChannel ( unsigned id, class tcpiiu &iiu, 
+    void connectChannel ( unsigned id );
+    void connectChannel ( bool v44Ok, unsigned id,  
           unsigned nativeType, unsigned long nativeCount, unsigned sid );
     void channelDestroy ( unsigned id );
     void disconnectChannel ( unsigned id );
@@ -1073,7 +1074,6 @@ private:
         < bhe, inetAddrID > beaconTable;
     osiTime                 programBeginTime;
     double                  connTMO;
-    osiEvent                ioDone;
     osiMutex                defaultMutex;
     osiMutex                iiuListMutex;
     osiTimerQueue           *pTimerQueue;
@@ -1087,14 +1087,10 @@ private:
     udpiiu                  *pudpiiu;
     searchTimer             *pSearchTmr;
     repeaterSubscribeTimer  *pRepeaterSubscribeTmr;
-    unsigned                pndrecvcnt;
-    unsigned                readSeq;
     bool                    enablePreemptiveCallback;
 
     int pendPrivate ( double timeout, int early );
     bool setupUDP ();
-
-    friend class cacPrivate;
 };
 
 extern const caHdr cacnullmsg;

@@ -100,6 +100,12 @@ endif # SHARED_LIBRARIES=YES
 endif # LIBTARGETS
 
 #---------------------------------------------------------------
+ifneq ($(CONFIG),$(TOP)/configure)
+-include $(TOP)/configure/RULES_BUILD
+endif
+-include $(TOP)/configure/O.$(T_A)/RULES_INCLUDE
+#---------------------------------------------------------------
+
 #	Main targets
 
 inc : $(COMMON_INC) $(INSTALL_INC)
@@ -165,14 +171,14 @@ $(DIRECTORY_TARGETS) :
 #  The order of the following rules is
 #  VERY IMPORTANT !!!!
 
-depends: inc $(SRC_FILES)
+depends: inc $(DEPENDS_SRC_FILES)
 	@$(RM) DEPENDS
 	@touch DEPENDS
-ifneq (,$(strip $(SRC_FILES)))
+ifneq (,$(strip $(DEPENDS_SRC_FILES)))
 	$(DEPENDS_CMD.cpp)
 endif
 
-$(TESTPRODNAME) $(PRODNAME):%$(EXE): $(PROD_OBJS) $(PROD_RESS) $(PROD_DEPLIBS)
+$(TESTPRODNAME) $(PRODNAME):%$(EXE): $(PRODUCT_OBJS) $(PROD_RESS) $(PROD_DEPLIBS)
 	@$(RM) $@
 	$(LINK.cpp)
 
@@ -282,9 +288,9 @@ $(SHRLIBNAME):$(LIB_PREFIX)%$(SHRLIB_SUFFIX): $(LIBRARY_OBJS) $(LIBRARY_RESS)
 	@$(RM) $@
 	$(PERL) $(TOOLS)/munch.pl <  $< > $@
 
-$(MUNCHNAME):%.munch : %_ctdt$(OBJ)
+$(MUNCHNAME):%.munch : %_ctdt$(OBJ) %.o
 	@$(RM) $@
-	$(LD) -o $@ $(LDFLAGS) $*.o $<
+	$(LDCMD)
 
 
 # Ext, app and module rules
@@ -378,11 +384,11 @@ $(INSTALL_HTML)/$(HTMLS_DIR)/%: ../%
 	@echo "Installing html $@"
 	@$(INSTALL) -d -m 644 $< $(@D)
 
-$(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)/%: ../%
+$(INSTALL_TEMPLATES_SUBDIR)/%: ../%
 	@echo "Installing $@"
 	@$(INSTALL) -d -m 644 $< $(@D)
 
-$(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)/%: %
+$(INSTALL_TEMPLATES_SUBDIR)/%: %
 	@echo "Installing $@"
 	@$(INSTALL) -d -m 644 $< $(@D)
 

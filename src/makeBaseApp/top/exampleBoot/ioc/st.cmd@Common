@@ -1,9 +1,17 @@
-dbLoadDatabase("../../dbd/example.dbd",0,0)
-registerRecordDeviceDriver(pdbbase) 
+#!../../bin/_ARCH_/_IOC_
+## The names of the binary above and .dbd file below will be incorrect
+## unless you used the same names for the ioc and the app directory.
+dbLoadDatabase("../../dbd/_IOC_.dbd",0,0)
+
+registerRecordDeviceDriver(pdbbase)
+
 dbLoadRecords("../../db/dbExample1.db","user=_USER_Host")
 dbLoadRecords("../../db/dbExample2.db","user=_USER_Host,no=1,scan=1 second")
 dbLoadRecords("../../db/dbExample2.db","user=_USER_Host,no=2,scan=2 second")
 dbLoadRecords("../../db/dbExample2.db","user=_USER_Host,no=3,scan=5 second")
 dbLoadRecords("../../db/dbSubExample.db","user=_USER_Host")
+
 iocInit()
+
+## Start sequence programs here, if there are any
 #seq sncExample,"user=_USER_Host"

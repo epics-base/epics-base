@@ -2054,13 +2054,17 @@ long epicsShareAPI dbPutString(DBENTRY *pdbentry,const char *pstring)
 	    	    short	ppOpt = 0;
 		    short	msOpt = 0;
 	    	    char	*end;
-		    double	tempval;
+	    	    char	*enddouble;
+		    double	tempdouble;
+	    	    char	*endlong;
+                    long        templong;
 
 		    /* Check first to see if string is a constant*/
-		    /*It is a double if strtod eats entire string*/
+		    /*It is a string if strtod or strtol eats entire string*/
 		    /*leading and trailing blanks have already been stripped*/
-		    tempval = strtod(pstr,&end);
-		    if(*end == 0) {
+		    tempdouble = strtod(pstr,&enddouble);
+		    templong = strtol(pstr,&endlong,0);
+		    if((*enddouble == 0) || (*endlong == 0)) {
 			if(plink->type==PV_LINK) dbCvtLinkToConstant(pdbentry);
 			if((!plink->value.constantStr) ||
 			((int)strlen(plink->value.constantStr)<(int)strlen(pstr)

@@ -206,6 +206,12 @@ violation on Linux shortly after calling ca_task_exit()or
 ca_context_destroy(). A fix will show up in R3.14.3. Regression tests were
 updated to detect this type of problem.</p>
 
+<h4>Red Hat 7.3 Linux Process Rundown Bug</h4>
+
+<p>There appears to be a bug in the Red Hat 7.3 process rundown where posix
+thread support is defective when file scope destructors are being run. The
+symptom was a hang during process exit. A workaround was installed.</p>
+
 <center>
 <h2>Changes since 3.14.1</h2>
 </center>

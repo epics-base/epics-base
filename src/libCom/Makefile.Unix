@@ -1,23 +1,22 @@
 EPICS = ../../..
 include $(EPICS)/config/CONFIG
 
-T_ARCH = sun4
-
-USR_LDFLAGS = -lm
 USR_CFLAGS = -DACCESS_SECURITY -D_NO_PROTO
 
 CC = acc -Xs
+CC = acc -Xt
 
 SRCS = \
 	arAccessLib.c arCSCheck.c arChanIO.c bfSubr.c bucketLib.c \
 	calcPerform.c cmdSubr.c cvtFast.c cvtNumbers.c ellLib.c \
-	envSubr.c errMtst.c errSymLib.c errSymTbl.c ezsSockSubr.c fdmgr.c \
+	envSubr.c errMtst.c errSymLib.c ezsSockSubr.c fdmgr.c \
 	freeListLib.c genSubr.c genTaskSubr.c gpHashLib.c helpSubr.c \
 	memDebugLib.c nextFieldSubr.c postfix.c sydSubr.c sydSubrCA.c \
-	sydSubrCF.c sydSubrSSF.c tsSubr.c
+	sydSubrCF.c sydSubrSSF.c tsSubr.c $(OBDIR)/errSymTbl.c
 
+OBJS =
 
-OBJS = \
+LIBOBJS = \
 	$(OBDIR)/arAccessLib.o $(OBDIR)/arCSCheck.o $(OBDIR)/arChanIO.o \
 	$(OBDIR)/bfSubr.o $(OBDIR)/bucketLib.o \
         $(OBDIR)/calcPerform.o $(OBDIR)/cmdSubr.o $(OBDIR)/cvtFast.o \
@@ -30,15 +29,15 @@ OBJS = \
 	$(OBDIR)/postfix.o $(OBDIR)/sydSubr.o $(OBDIR)/sydSubrCA.o \
         $(OBDIR)/sydSubrCF.o $(OBDIR)/sydSubrSSF.o $(OBDIR)/tsSubr.o
 
-LIB = libCom.a
-LIBNAME = $(OBDIR)/libCom.a
+LIBNAME = libCom.a
 
-PROD =
+depends: bld_errSym
 
-all :: bld_errSym $(LIBNAME) $(PROD)
+bld_errSym: $(OBDIR)/errSymTbl.c $(OBDIR)/errInc.o
 
-bld_errSym:
-	$(EPICS_BASE)/tools/blderrSymTbl
+$(OBDIR)/errSymTbl.c $(OBDIR)/errInc.o:
+	@/bin/rm -f errInc.o
+	@$(EPICS_BASE)/tools/blderrSymTbl
+	@/bin/mv errSymTbl.c errInc.o $(OBDIR)
 
-include $(EPICS)/config/RULES
-
+include $(EPICS)/config/RULES.Unix

@@ -2,12 +2,9 @@ EPICS = ../../../..
 
 include $(EPICS)/config/CONFIG
 
-T_ARCH = sun4
-
 LDLIBS = -lm -s
 USR_CFLAGS = -D_NO_PROTO
 
-#CC = acc -Xs
 CC = cc
 
 SRCS = \
@@ -15,14 +12,14 @@ SRCS = \
 	mkpar.c output.c reader.c skeleton.c symtab.c \
 	verbose.c warshall.c
 
+LIBOBJS =
+
 OBJS = \
 	$(OBDIR)/closure.o $(OBDIR)/error.o $(OBDIR)/lalr.o \
 	$(OBDIR)/lr0.o $(OBDIR)/main.o $(OBDIR)/mkpar.o \
         $(OBDIR)/output.o $(OBDIR)/reader.o $(OBDIR)/skeleton.o \
 	$(OBDIR)/symtab.o $(OBDIR)/verbose.o $(OBDIR)/warshall.o
 
-TARGET = $(OBDIR)/antelope
+PROD = $(OBDIR)/antelope
 
-all :: $(TARGET)
-
-include $(EPICS)/config/RULES
+include $(EPICS)/config/RULES.Unix

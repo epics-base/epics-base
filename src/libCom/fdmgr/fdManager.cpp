@@ -56,7 +56,7 @@ epicsShareFunc fdManager::fdManager () : pTimerQueue ( 0 )
         FD_ZERO ( &this->fdSets[i] ); // X aCC 392
     }
     this->maxFD = 0;
-    this->processInProg = 0u;
+    this->processInProg = false;
     this->pCBReg = 0;
 }
 
@@ -84,12 +84,6 @@ epicsShareFunc fdManager::~fdManager()
 //
 epicsShareFunc void fdManager::process (double delay)
 {
-    double minDelay;
-    fdReg *pReg;
-    struct timeval tv;
-    int status;
-    int ioPending = 0;
-
     this->lazyInitTimerQueue ();
 
     //
@@ -98,7 +92,7 @@ epicsShareFunc void fdManager::process (double delay)
     if (this->processInProg) {
         return;
     }
-    this->processInProg = 1;
+    this->processInProg = true;
 
     //
     // One shot at expired timers prior to going into
@@ -107,110 +101,105 @@ epicsShareFunc void fdManager::process (double delay)
     // more than once here so that fd activity get serviced
     // in a reasonable length of time.
     //
-    minDelay = this->pTimerQueue->process(epicsTime::getCurrent());
+    double minDelay = this->pTimerQueue->process(epicsTime::getCurrent());
 
     if ( minDelay >= delay ) {
         minDelay = delay;
     }
 
+    bool ioPending = false;
     tsDLIter < fdReg > iter = this->regList.firstIter ();
     while ( iter.valid () ) {
         FD_SET(iter->getFD(), &this->fdSets[iter->getType()]); 
-        ioPending = 1;
+        ioPending = true;
         ++iter;
     }
 
-    tv.tv_sec = static_cast<long> ( minDelay );
-    tv.tv_usec = static_cast<long> ( (minDelay-tv.tv_sec) * uSecPerSec );
+    if ( ioPending ) {
+        struct timeval tv;
+        tv.tv_sec = static_cast<long> ( minDelay );
+        tv.tv_usec = static_cast<long> ( (minDelay-tv.tv_sec) * uSecPerSec );
 
-    /*
-     * win32 requires this (others will
-     * run faster with this installed)
-     */
-    if (!ioPending) {
+        int status = select (this->maxFD, &this->fdSets[fdrRead], 
+            &this->fdSets[fdrWrite], &this->fdSets[fdrException], &tv);
+
+        this->pTimerQueue->process(epicsTime::getCurrent());
+
+        if ( status > 0 ) {
+
+            //
+            // Look for activity
+            //
+            iter=this->regList.firstIter ();
+            while ( iter.valid () ) {
+                tsDLIter<fdReg> tmp = iter;
+                tmp++;
+                if (FD_ISSET(iter->getFD(), &this->fdSets[iter->getType()])) {
+                    FD_CLR(iter->getFD(), &this->fdSets[iter->getType()]);
+                    this->regList.remove(*iter);
+                    this->activeList.add(*iter);
+                    iter->state = fdReg::active;
+                }
+                iter=tmp;
+            }
+
+            //
+            // I am careful to prevent problems if they access the
+            // above list while in a "callBack()" routine
+            //
+            fdReg * pReg;
+            while ( (pReg = this->activeList.get()) ) {
+                pReg->state = fdReg::limbo;
+
+                //
+                // Tag current fdReg so that we
+                // can detect if it was deleted 
+                // during the call back
+                //
+                this->pCBReg = pReg;
+                pReg->callBack();
+                if (this->pCBReg != NULL) {
+                    //
+                    // check only after we see that it is non-null so
+                    // that we dont trigger bounds-checker dangling pointer 
+                    // error
+                    //
+                    assert (this->pCBReg==pReg);
+                    this->pCBReg = 0;
+                    if (pReg->onceOnly) {
+                        pReg->destroy();
+                    }
+                    else {
+                        this->regList.add(*pReg);
+                        pReg->state = fdReg::pending;
+                    }
+                }
+            }
+        }
+        else if ( status < 0 ) {
+            int errnoCpy = SOCKERRNO;
+
+            //
+            // print a message if its an unexpected error
+            //
+            if (errnoCpy != SOCK_EINTR) {
+                fprintf(stderr, 
+                "fdManager: select failed because \"%s\"\n",
+                    SOCKERRSTR(errnoCpy));
+            }
+        }
+    }
+    else {
         /*
          * recover from subtle differences between
          * windows sockets and UNIX sockets implementation
          * of select()
          */
-        if (minDelay>0.0) epicsThreadSleep(minDelay);
-        status = 0;
+        epicsThreadSleep(minDelay);
+        this->pTimerQueue->process(epicsTime::getCurrent());
     }
-    else {
-        status = select (this->maxFD, &this->fdSets[fdrRead], 
-            &this->fdSets[fdrWrite], &this->fdSets[fdrException], &tv);
-    }
-
-    this->pTimerQueue->process(epicsTime::getCurrent());
-    if (status==0) {
-        this->processInProg = 0;
-        return;
-    }
-    else if (status<0) {
-        int errnoCpy = SOCKERRNO;
-
-        //
-        // print a message if its an unexpected error
-        //
-        if (errnoCpy != SOCK_EINTR) {
-            fprintf(stderr, 
-            "fdManager: select failed because \"%s\"\n",
-                SOCKERRSTR(errnoCpy));
-        }
-
-        this->processInProg = 0;
-
-        return; 
-    }
-
-    //
-    // Look for activity
-    //
-    iter=this->regList.firstIter ();
-    while ( iter.valid () ) {
-        tsDLIter<fdReg> tmp = iter;
-        tmp++;
-        if (FD_ISSET(iter->getFD(), &this->fdSets[iter->getType()])) {
-            FD_CLR(iter->getFD(), &this->fdSets[iter->getType()]);
-            this->regList.remove(*iter);
-            this->activeList.add(*iter);
-            iter->state = fdReg::active;
-        }
-        iter=tmp;
-    }
-
-    //
-    // I am careful to prevent problems if they access the
-    // above list while in a "callBack()" routine
-    //
-    while ( (pReg = this->activeList.get()) ) {
-        pReg->state = fdReg::limbo;
-
-        //
-        // Tag current fdReg so that we
-        // can detect if it was deleted 
-        // during the call back
-        //
-        this->pCBReg = pReg;
-        pReg->callBack();
-        if (this->pCBReg != NULL) {
-            //
-            // check only after we see that it is non-null so
-            // that we dont trigger bounds-checker dangling pointer 
-            // error
-            //
-            assert (this->pCBReg==pReg);
-            this->pCBReg = 0;
-            if (pReg->onceOnly) {
-                pReg->destroy();
-            }
-            else {
-                this->regList.add(*pReg);
-                pReg->state = fdReg::pending;
-            }
-        }
-    }
-    this->processInProg = 0;
+    this->processInProg = false;
+    return;
 }
 
 //
@@ -261,12 +250,16 @@ void fdRegId::show ( unsigned level ) const
 //
 epicsShareFunc void fdManager::installReg (fdReg &reg)
 {
-    this->maxFD = tsMax(this->maxFD, reg.getFD()+1);
-    this->regList.add (reg);
+    this->maxFD = tsMax ( this->maxFD, reg.getFD()+1 );
+    // Most applications will find that its important to push here to 
+    // the front of the list so that transient writes get executed
+    // first allowing incoming read protocol to find that outgoing
+    // buffer space is newly available.
+    this->regList.push ( reg );
     reg.state = fdReg::pending;
 
-    int status = this->fdTbl.add (reg);
-    if (status!=0) {
+    int status = this->fdTbl.add ( reg );
+    if ( status != 0 ) {
         throwWithLocation ( fdInterestSubscriptionAlreadyExits () );
     }
 }

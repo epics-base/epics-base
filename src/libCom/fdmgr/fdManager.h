@@ -93,7 +93,7 @@ private:
     fd_set fdSets[fdrNEnums];
     epicsTimerQueuePassive *pTimerQueue;
     SOCKET maxFD;
-    unsigned processInProg;
+    bool processInProg;
     //
     // Set to fdreg when in call back
     // and nill otherwise

@@ -76,28 +76,28 @@
 #include	<envLib.h>
 #include	<errnoLib.h>
 
-#include	<dbDefs.h>
-#include	<ellLib.h>
-#include	<fast_lock.h>
-#include	<dbDefs.h>
-#include	<dbBase.h>
-#include	<dbAccess.h>
-#include	<dbScan.h>
-#include	<taskwd.h>
-#include	<callback.h>
-#include	<dbCommon.h>
-#include	<dbLock.h>
-#include	<dbFldTypes.h>
-#include	<devSup.h>
-#include	<drvSup.h>
-#include	<errMdef.h>
-#include	<recSup.h>
-#include	<envDefs.h>
-#include	<dbStaticLib.h>
-#include	<initHooks.h>
-#include	<drvTS.h>
-#include	<asLib.h>
-#include	<epicsPrint.h>
+#include	"dbDefs.h"
+#include	"epicsPrint.h"
+#include	"ellLib.h"
+#include	"fast_lock.h"
+#include	"dbDefs.h"
+#include	"dbBase.h"
+#include	"dbAccess.h"
+#include	"dbScan.h"
+#include	"taskwd.h"
+#include	"callback.h"
+#include	"dbCommon.h"
+#include	"dbLock.h"
+#include	"dbFldTypes.h"
+#include	"devSup.h"
+#include	"drvSup.h"
+#include	"errMdef.h"
+#include	"recSup.h"
+#include	"envDefs.h"
+#include	"dbStaticLib.h"
+#include	"initHooks.h"
+#include	"drvTS.h"
+#include	"asLib.h"
 
 /*This module will declare and initilize module_type variables*/
 #define MODULE_TYPES_INIT 1
@@ -135,34 +135,32 @@ int iocInit(char * pResourceFilename)
     SYM_TYPE type;
 
     if (initialized) {
-	logMsg("iocInit can only be called once\n",
-	    0,0,0,0,0,0);
+	epicsPrintf("iocInit can only be called once\n");
 	return(-1);
     }
 
+    epicsPrintf("Starting iocInit");
     if (!pdbbase) {
-	logMsg("iocInit aborting because No database\n",
-	    0,0,0,0,0,0);
+	epicsPrintf("iocInit aborting because No database\n");
 	return(-1);
     }
 
-    errInit(); /*Initialize errPrintf task*/
 
    /* Setup initialization hooks, if  initHooks routine has been defined.  */
     strcpy(name, "_");
     strcat(name, "initHooks");
     rtnval = symFindByName(sysSymTbl, name, (void *) &pinitHooks, &type);
-    if (pinitHooks) (*pinitHooks)(INITHOOKatBeginning);
+    if (pinitHooks) (*pinitHooks)(initHookAtBeginning);
 
     coreRelease();
     status = getResources(pResourceFilename); 
-    if (pinitHooks) (*pinitHooks)(INITHOOKafterGetResources);
+    if (pinitHooks) (*pinitHooks)(initHookAfterGetResources);
 
     status = iocLogInit();
     if (status!=0) {
-        logMsg("iocInit Failed to Initialize Ioc Log Client \n",0,0,0,0,0,0);
+        epicsPrintf("iocInit Failed to Initialize Ioc Log Client \n");
     }
-    if (pinitHooks) (*pinitHooks)(INITHOOKafterLogInit);
+    if (pinitHooks) (*pinitHooks)(initHookAfterLogInit);
 
 
    /* After this point, further calls to iocInit() are disallowed.  */
@@ -179,70 +177,67 @@ int iocInit(char * pResourceFilename)
 
    /* Wait 1/10 second for above initializations to complete*/
     (void)taskDelay(sysClkRateGet()/10);
-    if (pinitHooks) (*pinitHooks)(INITHOOKafterCallbackInit);
+    if (pinitHooks) (*pinitHooks)(initHookAfterCallbackInit);
 
    /* Initialize Channel Access Link mechanism.  */
     dbCaLinkInit();
-    if (pinitHooks) (*pinitHooks)(INITHOOKafterCaLinkInit);
+    if (pinitHooks) (*pinitHooks)(initHookAfterCaLinkInit);
 
     if (initDrvSup() != 0)
-         logMsg("iocInit: Drivers Failed during Initialization\n",0,0,0,0,0,0);
-    if (pinitHooks) (*pinitHooks)(INITHOOKafterInitDrvSup);
+         epicsPrintf("iocInit: Drivers Failed during Initialization\n");
+    if (pinitHooks) (*pinitHooks)(initHookAfterInitDrvSup);
 
     if (initRecSup() != 0)
-         logMsg("iocInit: Record Support Failed during Initialization\n",
-	    0,0,0,0,0,0);
-    if (pinitHooks) (*pinitHooks)(INITHOOKafterInitRecSup);
+         epicsPrintf("iocInit: Record Support Failed during Initialization\n");
+    if (pinitHooks) (*pinitHooks)(initHookAfterInitRecSup);
 
     if (initDevSup() != 0)
-         logMsg("iocInit: Device Support Failed during Initialization\n",
-	    0,0,0,0,0,0);
-    if (pinitHooks) (*pinitHooks)(INITHOOKafterInitDevSup);
+         epicsPrintf("iocInit: Device Support Failed during Initialization\n");
+    if (pinitHooks) (*pinitHooks)(initHookAfterInitDevSup);
 
     TSinit(); /* new time stamp driver (jbk) */
-    if (pinitHooks) (*pinitHooks)(INITHOOKafterTS_init);
+    if (pinitHooks) (*pinitHooks)(initHookAfterTS_init);
 
    /* initialize database records */
     if (initDatabase() != 0)
-         logMsg("iocInit: Database Failed during Initialization\n",0,0,0,0,0,0);
+         epicsPrintf("iocInit: Database Failed during Initialization\n");
 
     dbLockInitRecords(pdbbase);
-    if (pinitHooks) (*pinitHooks)(INITHOOKafterInitDatabase);
+    if (pinitHooks) (*pinitHooks)(initHookAfterInitDatabase);
 
     if (finishDevSup() != 0)
-         logMsg("iocInit: Device Support Failed during Finalization\n",
-	    0,0,0,0,0,0);
-    if (pinitHooks) (*pinitHooks)(INITHOOKafterFinishDevSup);
+         epicsPrintf("iocInit: Device Support Failed during Finalization\n");
+    if (pinitHooks) (*pinitHooks)(initHookAfterFinishDevSup);
 
     scanInit();
     if(asInit()) {
-	logMsg("iocInit: asInit Failed during initialization\n",0,0,0,0,0,0);
+	epicsPrintf("iocInit: asInit Failed during initialization\n");
 	return(-1);
     }
     (void)taskDelay(sysClkRateGet()/2);
 
-    if (pinitHooks) (*pinitHooks)(INITHOOKafterScanInit);
+    if (pinitHooks) (*pinitHooks)(initHookAfterScanInit);
 
    /* Enable scan tasks and some driver support functions.  */
     interruptAccept=TRUE;
 
-    if (pinitHooks) (*pinitHooks)(INITHOOKafterInterruptAccept);
+    if (pinitHooks) (*pinitHooks)(initHookAfterInterruptAccept);
 
    /*
     *  Process all records that have their "process at initialization"
     *      field set (pini).
     */
     if (initialProcess() != 0)
-          logMsg("iocInit: initialProcess Failed\n",0,0,0,0,0,0);
+          epicsPrintf("iocInit: initialProcess Failed\n");
 
-    if (pinitHooks) (*pinitHooks)(INITHOOKafterInitialProcess);
+    if (pinitHooks) (*pinitHooks)(initHookAfterInitialProcess);
 
    /*  Start up CA server */
     rsrv_init();
 
-    logMsg("iocInit: All initialization complete\n",0,0,0,0,0,0);
+    epicsPrintf("iocInit: All initialization complete\n");
 
-    if (pinitHooks) (*pinitHooks)(INITHOOKatEnd);
+    if (pinitHooks) (*pinitHooks)(initHookAtEnd);
 
     return(0);
 }
@@ -831,7 +826,7 @@ LOCAL int getResourceTokenInternal(FILE *fp, char *pToken, unsigned maxToken)
 	{
 		char tmp[MAX];
 
-                sprintf(formatString, "%%%d[^\n\r\v\f]", sizeof(tmp)-1);
+                sprintf(formatString, "%%%d[^\n\r\v\f]", (int)(sizeof(tmp)-1));
                 status = fscanf (fp, "%[^\n\r\v\f]",tmp);
 		pToken[0] = '\0';
 		if (status<0) {

@@ -26,8 +26,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "epicsStdio.h"
-
 /*
  * WIN32 specific
  */
@@ -167,34 +165,4 @@ epicsShareFunc int epicsShareAPI hostToIPAddr
 	return -1;
 }
 
-/*
- * convertSocketErrorToString()
- */
-epicsShareFunc void epicsShareAPI convertSocketErrorToString ( 
-        char * pBuf, unsigned bufSize )
-{
-    int theSockError = SOCKERRNO;
-	DWORD success;
-
-    if ( ! bufSize ) {
-        return;
-    }
-
-	/*
-	 * this does not work on systems prior to W2K
-	 */
-	success = FormatMessage ( 
-		FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_MAX_WIDTH_MASK,
-		NULL, theSockError,
-		MAKELANGID ( LANG_NEUTRAL, SUBLANG_DEFAULT ), /* Default language */
-		pBuf, bufSize, NULL );
-	if ( ! success ) {
-        int status = epicsVsnprintf (
-            pBuf, bufSize, "WINSOCK Error %d", theSockError );
-        if ( status <= 0 ) {
-            strncpy ( pBuf, "WINSOCK Error", bufSize );
-            pBuf [bufSize - 0] = '\0';
-        }
-	}
-}
 

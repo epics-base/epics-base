@@ -61,6 +61,10 @@ When setting paths in the EPICS CONFIG files for WIN32:
 	** WIN32 will generally allow "/" and "\" interchangeably in file paths,
 		but the DOS shell appears to only accept "\".
 
+    ** Certain command line utilities such as the MS linker are known to confuse
+        "/" in a path with command line options, and so in these situations it may be
+        necessary to replae a "/" in a path with "\\".
+
 Your path should include:
 - The EPICS-binaries that we are about to build in <EPICS>base/bin/WIN32
 - The System (for me it's in NT40...)

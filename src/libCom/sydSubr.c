@@ -32,6 +32,8 @@
  *				enhance for use by ordinary users
  * .04	09-11-91	rac	for CA, report "noData" if ts==0; add more
  *				documentation
+ * .05	09-22-91	rac	add sydInputFetch; add trigger routines;
+ *				handle asynchronous ca_search
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -60,24 +62,25 @@
 *	o   archiver `by channel' file
 *	o   Channel Access
 *
-*	sydPlot.c provides routines which support plotting a synchronous
+*	sydPlot.c contains routines which support plotting a synchronous
 *	sample set.
 *
 * QUICK REFERENCE
 *
-* #include <genDefs.h>		some general use definitions
-* #include <db_access.h>	definitions for database related items
-* #include <sydDefs.h>		structures for synchronous data routines
+* #include <genDefs.h>		/* some general use definitions */
+* #include <db_access.h>	/* definitions for database related items */
+* #include <sydDefs.h>		/* structures for synchronous data routines */
 *
-* SYD_SPEC *pSspec;	pointer to synchronous set spec
-* SYD_CHAN *pSChan;	pointer to synchronous channel descriptor
+* SYD_SPEC *pSspec;	/* pointer to synchronous set spec */
+* SYD_CHAN *pSChan;	/* pointer to synchronous channel descriptor */
 *
 *     long  sydChanClose(        pSspec,  pSChan			)
 * SYD_CHAN *sydChanFind(         pSspec,  chanName			)
-*     long  sydChanOpen(         pSspec, >ppSChan, chanName,  sync, pArg )
+*     long  sydChanOpen(         pSspec, >ppSChan, chanName,  sync, pArg, trig)
 *				         sync = SYD_SY_{NONF,FILLED}
 *     long  sydClose(            pSspec					)
 *     long  sydFileInfo(         pSspec,  out                           )
+*     long  sydInputFetch(       pSspec					)
 *     long  sydInputGet(         pSspec, >pMoreFlag			)
 *     void  sydInputReset(       pSspec					)
 *     void  sydInputResetKeepNewest(pSspec				)
@@ -97,6 +100,9 @@
 *     long  sydSampleSetFree(    pSspec					)
 *     long  sydSampleSetGet(     pSspec					)
 *     long  sydSampleSetPrint(   pSspec,  out,  fmtFlag			)
+*
+*     long  sydTriggerAddFromText(pSspec,  text				)
+*     long  sydTriggerClose(     pSspec					)
 *
 * BUGS
 * o	error detection and handling isn't "leakproof"
@@ -186,7 +192,73 @@
 * #include <db_access.h>
 * #include <sydDefs.h>
 *
-jjj	put the sample program here
+* main()
+* {
+*    SYD_SPEC	*pSspec;	/* pointer to sync set spec */
+*    SYD_CHAN	*pSchanBase;	/* pointer to sync chan desc for POWER:BASE */
+*    SYD_CHAN	*pSchanLag;	/* pointer to sync chan desc for POWER:LAG30 */
+*    long	stat;		/* status return */
+*    int		i;
+*    int		moreFlag;	/* 1 if more samples waiting */
+*    float	sumBase, sumLag;/* sums for the two channels */
+*    char	timeText[28];	/* text for time stamp */
+*    int		chanStat;	/* input status for channel */
+*
+* /*---------------------------------------------------------------------------
+* *	open the synchronous sample set specification and add the channels
+* *	to it
+* *--------------------------------------------------------------------------*/
+*    stat = sydOpenCA(&pSspec, NULL);
+*    if (stat != S_syd_OK) {
+*	printf("couldn't open sync set spec\n");
+*	exit(1);
+*    }
+*    stat = sydChanOpen(pSspec, &pSchanBase, "rai_2000", SYD_SY_FILLED,NULL,0);
+*    if (stat != S_syd_OK) {
+*	printf("couldn't open POWER:BASE\n");
+*	exit(1);
+*    }
+*    stat = sydChanOpen(pSspec, &pSchanLag, "rao_2000", SYD_SY_FILLED,NULL,0);
+*    if (stat != S_syd_OK) {
+*	printf("couldn't open POWER:LAG30\n");
+*	exit(1);
+*    }
+* /*---------------------------------------------------------------------------
+* *	now get 100 synchronous samples and accumulate a running sum for
+* *	each channel.  Since this example program is using Channel Access,
+* *	it loops on sydInputGet until a status of S_syd_noDataNow is
+* *	received; when retrieving from an archive file, such a loop wouldn't
+* *	be used.
+* *--------------------------------------------------------------------------*/
+*    sumBase = sumLag = 0.;
+*    i = 0;
+*    while (i < 100) {
+*	ca_pend_event(.1);		/* allow Channel Access to get values */
+*	stat = sydInputGet(pSspec, &moreFlag);	/* see if any were obtained */
+*	while (stat == S_syd_OK || stat == S_syd_partial) {
+*	    i++;
+*	    tsStampToText(&SydInputTs(pSspec), TS_TEXT_MMDDYY, timeText);
+*	    printf("sample at %s more:%d--", timeText, moreFlag);
+*	    chanStat = SydInputStatus(pSchanBase);
+*	    if (chanStat != SYD_B_EOF && chanStat != SYD_B_MISSING) {
+*		sumBase += SydInputValAsFloat(pSchanBase);
+*		printf("%s= %f ", SydChanName(pSchanBase),
+*					SydInputValAsFloat(pSchanBase));
+*		SydInputMarkAsSampled(pSchanBase);
+*	    }
+*	    chanStat = SydInputStatus(pSchanLag);
+*	    if (chanStat != SYD_B_EOF && chanStat != SYD_B_MISSING) {
+*		sumLag += SydInputValAsFloat(pSchanLag);
+*		printf("%s= %f ", SydChanName(pSchanLag),
+*					SydInputValAsFloat(pSchanLag));
+*		SydInputMarkAsSampled(pSchanLag);
+*	    }
+*	    printf("\n");
+*	    stat = sydInputGet(pSspec, &moreFlag);
+*	}
+*    }
+*    printf("sumBase= %f   sumLag= %f\n", sumBase, sumLag);
+* }
 *-***************************************************************************/
 #endif	/* allow comments within the module heading */
 
@@ -221,7 +293,7 @@ long sydSampleSetAlloc();
 long sydSampleSetFree();
 
 
-#if 0
+#if SYD_TEST
 main()
 {
     SYD_SPEC	*pSspec;	/* pointer to sync set spec */
@@ -243,12 +315,12 @@ main()
 	printf("couldn't open sync set spec\n");
 	exit(1);
     }
-    stat = sydChanOpen(pSspec, &pSchanBase, "rai_2000", SYD_SY_FILLED, NULL);
+    stat = sydChanOpen(pSspec, &pSchanBase, "rai_2000", SYD_SY_FILLED,NULL,0);
     if (stat != S_syd_OK) {
 	printf("couldn't open POWER:BASE\n");
 	exit(1);
     }
-    stat = sydChanOpen(pSspec, &pSchanLag, "rao_2000", SYD_SY_FILLED, NULL);
+    stat = sydChanOpen(pSspec, &pSchanLag, "rao_2000", SYD_SY_FILLED,NULL,0);
     if (stat != S_syd_OK) {
 	printf("couldn't open POWER:LAG30\n");
 	exit(1);
@@ -268,9 +340,6 @@ main()
 	while (stat == S_syd_OK || stat == S_syd_partial) {
 	    i++;
 	    tsStampToText(&SydInputTs(pSspec), TS_TEXT_MMDDYY, timeText);
-#if 0
-	    tsStampToText(&pSspec->sampleTs, TS_TEXT_MMDDYY, timeText);
-#endif
 	    printf("sample at %s more:%d--", timeText, moreFlag);
 	    chanStat = SydInputStatus(pSchanBase);
 	    if (chanStat != SYD_B_EOF && chanStat != SYD_B_MISSING) {
@@ -455,6 +524,8 @@ SYD_CHAN *pSChan;	/* I pointer to synchronous channel descriptor */
 
     pSspec->chanCount--;
     DoubleListRemove(pSChan, pSspec->pChanHead, pSspec->pChanTail);
+    if (pSChan->trigChan)
+	sydTriggerClose(pSspec);
     GenFree((char *)pSChan);
 
     return S_syd_OK;
@@ -531,15 +602,14 @@ char	*chanName;	/* I channel name to find in synchronous set spec */
 * RETURNS
 *	S_syd_OK, or
 *	S_syd_noMem		no memory for adding channel to set
+*	S_syd_chanNotConn	channel not connected to Channel Access (this
+*				isn't treated as an error condition--the
+*				channel is open and added to sync set spec)
 *	S_syd_chanNotFound	channel not found
 *	S_syd_ERROR		if channel already exists in sync set spec
 *
 * BUGS
 * o	always places channel at end of list
-* o	for retrievals from Channel Access, S_syd_chanNotFound results if
-*	the ca_search doesn't succeed in a timely fashion.  Some applications
-*	would prefer to allow proceeding prior to the completion of the
-*	search.
 * o	data are always acquired using the native type of the channel,
 *	rather than caller-specified type
 *
@@ -566,17 +636,23 @@ char	*chanName;	/* I channel name to find in synchronous set spec */
 *	without comment.
 * 2.	DBF_ENUM channels are flagged as SYD_ST_STEP; all other channels
 *	are flagged as SYD_ST_SMOOTH.
+* 3.	For retrievals form Channel Access, the usual return status will
+*	be S_syd_chanNotConn.  To force the connection attempt to completion,
+*	the caller can call ca_pend_event following the call to this routine.
+*	If SydChanDbfType(pSChan) is TYPENOTCONN following the ca_pend_event,
+*	then the caller can assume the channel isn't presently connectable.
 *
 * EXAMPLE
 *
 *-*/
 long
-sydChanOpen(pSspec, ppSChan, chanName, sync, pArg)
+sydChanOpen(pSspec, ppSChan, chanName, sync, pArg, trig)
 SYD_SPEC *pSspec;	/* I pointer to synchronous set spec */
 SYD_CHAN **ppSChan;	/* O pointer to sync channel pointer; or NULL */
 char	*chanName;	/* I channel name (.VAL assumed if field omitted) */
 enum sydChanSync sync;	/* I sync/non-sync; SYD_SY_NONF or SYD_SY_FILLED */
 void	*pArg;		/* I pointer to struct needed to init, or NULL */
+int	trig;		/* I 0,1 if this is data,trigger channel */
 {
     long	retStat=S_syd_OK;/* return status to caller */
     long	stat;           /* status return from calls */
@@ -591,8 +667,21 @@ void	*pArg;		/* I pointer to struct needed to init, or NULL */
     if (ppSChan != NULL)
 	*ppSChan = NULL;
 
-    if (sydChanFind(pSspec, chanName) != NULL)
-	return S_syd_ERROR;
+    if ((pSChan = sydChanFind(pSspec, chanName)) != NULL) {
+	if (trig == 0) {
+	    if (pSChan->dataChan == 1)
+		return S_syd_ERROR;
+	}
+	else {
+	    if (pSChan->trigChan == 0) {
+		pSChan->trigChan = 1;
+		if (ppSChan != NULL)
+		    *ppSChan = pSChan;
+	    }
+	    else
+		return S_syd_ERROR;
+	}
+    }
 
 /*-----------------------------------------------------------------------------
 *    allocate and initialize an empty synchronous channel structure
@@ -613,6 +702,8 @@ void	*pArg;		/* I pointer to struct needed to init, or NULL */
 	pSChan->minDataVal = 0.;
 	pSChan->maxDataVal = 0.;
 	strcpy(pSChan->name, chanName);
+	strcpy(pSChan->label, chanName);
+	strcat(pSChan->label, " not conn");
 	pSChan->sync = sync;
 	pSChan->pData = NULL;
 	pSChan->pDataAlStat = NULL;
@@ -620,18 +711,55 @@ void	*pArg;		/* I pointer to struct needed to init, or NULL */
 	pSChan->pDataCodeL = NULL;
 	pSChan->pDataCodeR = NULL;
 	pSChan->pFlags = NULL;
+	pSChan->conn = 0;
+	pSChan->discon = 1;
+	pSChan->dataChan = trig?0:1;
+	pSChan->trigChan = trig;
     }
     else
 	return S_syd_noMem;
 /*-----------------------------------------------------------------------------
 *    "open" the "source" for the data for the channel.  This will provide
-*    information about how large the buffers need to be.
+*    information about how large the buffers need to be.  If retrieval is
+*    from Channel Access, the buffer allocation, etc., will be deferred if
+*    the connection isn't complete.
 *----------------------------------------------------------------------------*/
     stat = (pSspec->pFunc)(pSspec, pSChan, SYD_FC_OPEN, pArg);
-    if (stat != S_syd_OK) {
+    if (stat == S_syd_OK) {
+	stat = sydChanOpen1(pSspec, pSChan);
+	if (stat == S_syd_OK)
+	    stat = sydChanOpenGR(pSChan);
+    }
+    else if (stat == S_syd_chanNotConn && pSspec->type == SYD_TY_CA) {
+	if (ppSChan != NULL)
+	    *ppSChan = pSChan;
+    }
+
+    if (stat != S_syd_OK && stat != S_syd_chanNotConn) {
 	(void)sydChanClose(pSspec, pSChan);
 	return stat;
     }
+
+    if (ppSChan != NULL)
+	*ppSChan = pSChan;
+
+    return stat;
+}
+
+long
+sydChanOpen1(pSspec, pSChan)
+SYD_SPEC *pSspec;	/* I pointer to synchronous set spec */
+SYD_CHAN *pSChan;	/* I sync channel pointer */
+{
+    int		i;
+    long	retStat=S_syd_OK;
+
+    assert(pSspec != NULL);
+    assert(pSChan != NULL);
+
+    pSChan->conn = 1;
+    pSChan->discon = 0;
+
 /*-----------------------------------------------------------------------------
 *    allocate the required number of input buffers
 *    set either SMOOTH or STEP for the channel
@@ -644,8 +772,13 @@ void	*pArg;		/* I pointer to struct needed to init, or NULL */
 	    retStat = S_syd_noMem;
 	}
     }
-    if (retStat != S_syd_OK)
-	return retStat;
+    return retStat;
+}
+
+long
+sydChanOpenGR(pSChan)
+SYD_CHAN *pSChan;	/* I sync channel pointer */
+{
     if (pSChan->dbrType != DBR_TIME_ENUM)
 	pSChan->step = SYD_ST_SMOOTH;
     else
@@ -687,9 +820,6 @@ void	*pArg;		/* I pointer to struct needed to init, or NULL */
 	if (pSChan->precision > 10 || pSChan->precision < 0)
 	    pSChan->precision = 3;
     }
-
-    if (ppSChan != NULL)
-	*ppSChan = pSChan;
 
     return S_syd_OK;
 }
@@ -1385,32 +1515,35 @@ SYD_SPEC *pSspec;
     pSspec->pPartial[sub] = pSspec->partial;
     pSChan = pSspec->pChanHead;
     while (pSChan != NULL) {
-	pSChan->pFlags[sub] = flags0;
-	pSChan->pDataCodeL[sub] = '#';
-	pSChan->pDataCodeR[sub] = ' ';
-	type = pSChan->dbrType;
-	if ((i = pSChan->sampInBuf) < 0) {
-	    pSChan->pFlags[sub].missing = 1;
-	    pSChan->pDataCodeL[sub] = 'M';
-	}
-	else if (pSChan->inStatus[i] == SYD_B_EOF) {
-	    pSChan->pFlags[sub].missing = 1;
-	    pSChan->pFlags[sub].eof = 1;
-	    pSChan->pDataCodeL[sub] = 'M';
-	    pSChan->pDataCodeR[sub] = 'E';
-	}
-	else if (pSChan->inStatus[i] == SYD_B_MISSING) {
-	    pSChan->pFlags[sub].missing = 1;
-	    pSChan->pDataCodeL[sub] = 'M';
-	    pSChan->pDataCodeR[sub] = 'N';
-	}
-	else {
+	if (pSChan->pData == NULL || pSChan->dataChan == 0)
+		;	/* no action if no malloc's or if not data channel */
+	else if (pSChan->dataChan) {
+	    pSChan->pFlags[sub] = flags0;
+	    pSChan->pDataCodeL[sub] = '#';
+	    pSChan->pDataCodeR[sub] = ' ';
+	    type = pSChan->dbrType;
+	    if ((i = pSChan->sampInBuf) < 0) {
+		pSChan->pFlags[sub].missing = 1;
+		pSChan->pDataCodeL[sub] = 'M';
+	    }
+	    else if (pSChan->inStatus[i] == SYD_B_EOF) {
+		pSChan->pFlags[sub].missing = 1;
+		pSChan->pFlags[sub].eof = 1;
+		pSChan->pDataCodeL[sub] = 'M';
+		pSChan->pDataCodeR[sub] = 'E';
+	    }
+	    else if (pSChan->inStatus[i] == SYD_B_MISSING) {
+		pSChan->pFlags[sub].missing = 1;
+		pSChan->pDataCodeL[sub] = 'M';
+		pSChan->pDataCodeR[sub] = 'N';
+	    }
+	    else {
 /*-----------------------------------------------------------------------------
 *	store the channel's alarm status and severity
 *----------------------------------------------------------------------------*/
-	    pSChan->pDataAlStat[sub] = alStat =
+		pSChan->pDataAlStat[sub] = alStat =
 					pSChan->pInBuf[i]->tstrval.status;
-	    pSChan->pDataAlSev[sub] = alSev =
+		pSChan->pDataAlSev[sub] = alSev =
 					pSChan->pInBuf[i]->tstrval.severity;
 /*-----------------------------------------------------------------------------
 *	check out the channel's status, storing it into the status array.
@@ -1418,150 +1551,151 @@ SYD_SPEC *pSspec;
 *	that the value won't be used in computing the maximum and minimum
 *	for the channel.
 *----------------------------------------------------------------------------*/
-	    useVal = 1;
-	    if (pSChan->reused) {
-		pSChan->pFlags[sub].filled = 1;
-		pSChan->pDataCodeL[sub] = 'F';
-	    }
-	    else if (pSChan->inStatus[i] != SYD_B_RESTART) {
-		pSChan->pFlags[sub].ok = 1;
-		pSChan->pDataCodeL[sub] = 'O';
-	    }
-	    else {
-		pSChan->pFlags[sub].restart = 1;
-		pSChan->pDataCodeL[sub] = 'R';
-	    }
-	    if (alStat == NO_ALARM)
-		;	/* no action */
-	    else if (alStat == READ_ALARM)
-		pSChan->pDataCodeR[sub] = 'R';
-	    else if (alStat == HIHI_ALARM)
-		pSChan->pDataCodeR[sub] = 'H';
-	    else if (alStat == HIGH_ALARM)
-		pSChan->pDataCodeR[sub] = 'h';
-	    else if (alStat == LOLO_ALARM)
-		pSChan->pDataCodeR[sub] = 'L';
-	    else if (alStat == LOW_ALARM)
-		pSChan->pDataCodeR[sub] = 'l';
-	    else if (alSev == MAJOR_ALARM)
-		pSChan->pDataCodeR[sub] = 'M';
-	    else if (alSev == MINOR_ALARM)
-		pSChan->pDataCodeR[sub] = 'm';
+		useVal = 1;
+		if (pSChan->reused) {
+		    pSChan->pFlags[sub].filled = 1;
+		    pSChan->pDataCodeL[sub] = 'F';
+		}
+		else if (pSChan->inStatus[i] != SYD_B_RESTART) {
+		    pSChan->pFlags[sub].ok = 1;
+		    pSChan->pDataCodeL[sub] = 'O';
+		}
+		else {
+		    pSChan->pFlags[sub].restart = 1;
+		    pSChan->pDataCodeL[sub] = 'R';
+		}
+		if (alStat == NO_ALARM)
+		    ;	/* no action */
+		else if (alStat == READ_ALARM)
+		    pSChan->pDataCodeR[sub] = 'R';
+		else if (alStat == HIHI_ALARM)
+		    pSChan->pDataCodeR[sub] = 'H';
+		else if (alStat == HIGH_ALARM)
+		    pSChan->pDataCodeR[sub] = 'h';
+		else if (alStat == LOLO_ALARM)
+		    pSChan->pDataCodeR[sub] = 'L';
+		else if (alStat == LOW_ALARM)
+		    pSChan->pDataCodeR[sub] = 'l';
+		else if (alSev == MAJOR_ALARM)
+		    pSChan->pDataCodeR[sub] = 'M';
+		else if (alSev == MINOR_ALARM)
+		    pSChan->pDataCodeR[sub] = 'm';
 /*-----------------------------------------------------------------------------
 *	now go ahead and store the sample into the set.  Also adjust the
 *	maximum and minimum, as needed.
 *----------------------------------------------------------------------------*/
-	    if (!useVal)
-		;	/* no action */
-	    else if (type == DBR_TIME_FLOAT) {
-		float	*pSrc, *pDest;
-		pSrc = &pSChan->pInBuf[i]->tfltval.value;
-		pDest = ((float *)pSChan->pData) + sub * pSChan->elCount;
-		if (pSspec->sampleCount == 0)
-		    pSChan->maxDataVal = pSChan->minDataVal = (double)*pSrc;
-		for (el=0; el<pSChan->elCount; el++) {
-		    if ((double)*pSrc > pSChan->maxDataVal)
+		if (!useVal)
+		    ;	/* no action */
+		else if (type == DBR_TIME_FLOAT) {
+		    float	*pSrc, *pDest;
+		    pSrc = &pSChan->pInBuf[i]->tfltval.value;
+		    pDest = ((float *)pSChan->pData) + sub * pSChan->elCount;
+		    if (pSspec->sampleCount == 0)
+			pSChan->maxDataVal = pSChan->minDataVal = (double)*pSrc;
+		    for (el=0; el<pSChan->elCount; el++) {
+			if ((double)*pSrc > pSChan->maxDataVal)
+			    pSChan->maxDataVal = (double)*pSrc;
+			if ((double)*pSrc < pSChan->minDataVal)
+			    pSChan->minDataVal = (double)*pSrc;
+			*pDest++ = *pSrc++;
+		    }
+		}
+		else if (type == DBR_TIME_SHORT) {
+		    short	*pSrc, *pDest;
+		    pSrc = &pSChan->pInBuf[i]->tshrtval.value;
+		    pDest = ((short *)pSChan->pData) + sub * pSChan->elCount;
+		    if (pSspec->sampleCount == 0) {
 			pSChan->maxDataVal = (double)*pSrc;
-		    if ((double)*pSrc < pSChan->minDataVal)
 			pSChan->minDataVal = (double)*pSrc;
-		    *pDest++ = *pSrc++;
+		    }
+		    for (el=0; el<pSChan->elCount; el++) {
+			if ((double)*pSrc > pSChan->maxDataVal)
+			    pSChan->maxDataVal = (double)*pSrc;
+			if ((double)*pSrc < pSChan->minDataVal)
+			    pSChan->minDataVal = (double)*pSrc;
+			*pDest++ = *pSrc++;
+		    }
 		}
-	    }
-	    else if (type == DBR_TIME_SHORT) {
-		short	*pSrc, *pDest;
-		pSrc = &pSChan->pInBuf[i]->tshrtval.value;
-		pDest = ((short *)pSChan->pData) + sub * pSChan->elCount;
-		if (pSspec->sampleCount == 0) {
-		    pSChan->maxDataVal = (double)*pSrc;
-		    pSChan->minDataVal = (double)*pSrc;
+		else if (type == DBR_TIME_DOUBLE) {
+		    double	*pSrc, *pDest;
+		    pSrc = &pSChan->pInBuf[i]->tdblval.value;
+		    pDest = ((double *)pSChan->pData) + sub * pSChan->elCount;
+		    if (pSspec->sampleCount == 0)
+			pSChan->maxDataVal = pSChan->minDataVal = *pSrc;
+		    for (el=0; el<pSChan->elCount; el++) {
+			if (*pSrc > pSChan->maxDataVal)
+			    pSChan->maxDataVal = *pSrc;
+			if (*pSrc < pSChan->minDataVal)
+			    pSChan->minDataVal = *pSrc;
+			*pDest++ = *pSrc++;
+		    }
 		}
-		for (el=0; el<pSChan->elCount; el++) {
-		    if ((double)*pSrc > pSChan->maxDataVal)
-			pSChan->maxDataVal = (double)*pSrc;
-		    if ((double)*pSrc < pSChan->minDataVal)
-			pSChan->minDataVal = (double)*pSrc;
-		    *pDest++ = *pSrc++;
+		else if (type == DBR_TIME_LONG) {
+		    long	*pSrc, *pDest;
+		    pSrc = &pSChan->pInBuf[i]->tlngval.value;
+		    pDest = ((long *)pSChan->pData) + sub * pSChan->elCount;
+		    if (pSspec->sampleCount == 0)
+			pSChan->maxDataVal = pSChan->minDataVal = (double)*pSrc;
+		    for (el=0; el<pSChan->elCount; el++) {
+			if ((double)*pSrc > pSChan->maxDataVal)
+			    pSChan->maxDataVal = (double)*pSrc;
+			if ((double)*pSrc < pSChan->minDataVal)
+			    pSChan->minDataVal = (double)*pSrc;
+			*pDest++ = *pSrc++;
+		    }
 		}
-	    }
-	    else if (type == DBR_TIME_DOUBLE) {
-		double	*pSrc, *pDest;
-		pSrc = &pSChan->pInBuf[i]->tdblval.value;
-		pDest = ((double *)pSChan->pData) + sub * pSChan->elCount;
-		if (pSspec->sampleCount == 0)
-		    pSChan->maxDataVal = pSChan->minDataVal = *pSrc;
-		for (el=0; el<pSChan->elCount; el++) {
-		    if (*pSrc > pSChan->maxDataVal)
-			pSChan->maxDataVal = *pSrc;
-		    if (*pSrc < pSChan->minDataVal)
-			pSChan->minDataVal = *pSrc;
-		    *pDest++ = *pSrc++;
-		}
-	    }
-	    else if (type == DBR_TIME_LONG) {
-		long	*pSrc, *pDest;
-		pSrc = &pSChan->pInBuf[i]->tlngval.value;
-		pDest = ((long *)pSChan->pData) + sub * pSChan->elCount;
-		if (pSspec->sampleCount == 0)
-		    pSChan->maxDataVal = pSChan->minDataVal = (double)*pSrc;
-		for (el=0; el<pSChan->elCount; el++) {
-		    if ((double)*pSrc > pSChan->maxDataVal)
-			pSChan->maxDataVal = (double)*pSrc;
-		    if ((double)*pSrc < pSChan->minDataVal)
-			pSChan->minDataVal = (double)*pSrc;
-		    *pDest++ = *pSrc++;
-		}
-	    }
-	    else if (type == DBR_TIME_STRING) {
-		char	*pSrc, *pDest;
-		pSrc = pSChan->pInBuf[i]->tstrval.value;
-		pDest = ((char *)pSChan->pData) +
+		else if (type == DBR_TIME_STRING) {
+		    char	*pSrc, *pDest;
+		    pSrc = pSChan->pInBuf[i]->tstrval.value;
+		    pDest = ((char *)pSChan->pData) +
 					sub * db_strval_dim * pSChan->elCount;
-		if (pSspec->sampleCount == 0)
-		    pSChan->maxDataVal = pSChan->minDataVal = (double)*pSrc;
-		for (el=0; el<pSChan->elCount; el++) {
-		    if ((double)*pSrc > pSChan->maxDataVal)
-			pSChan->maxDataVal = (double)*pSrc;
-		    if ((double)*pSrc < pSChan->minDataVal)
-			pSChan->minDataVal = (double)*pSrc;
-		    strcpy(pDest, pSrc);
-		    pDest += db_strval_dim;
-		    pSrc += db_strval_dim;
+		    if (pSspec->sampleCount == 0)
+			pSChan->maxDataVal = pSChan->minDataVal = (double)*pSrc;
+		    for (el=0; el<pSChan->elCount; el++) {
+			if ((double)*pSrc > pSChan->maxDataVal)
+			    pSChan->maxDataVal = (double)*pSrc;
+			if ((double)*pSrc < pSChan->minDataVal)
+			    pSChan->minDataVal = (double)*pSrc;
+			strcpy(pDest, pSrc);
+			pDest += db_strval_dim;
+			pSrc += db_strval_dim;
+		    }
 		}
-	    }
-	    else if (type == DBR_TIME_CHAR) {
-		unsigned char	*pSrc, *pDest;
-		pSrc = &pSChan->pInBuf[i]->tchrval.value;
-		pDest = ((unsigned char *)pSChan->pData) +
+		else if (type == DBR_TIME_CHAR) {
+		    unsigned char	*pSrc, *pDest;
+		    pSrc = &pSChan->pInBuf[i]->tchrval.value;
+		    pDest = ((unsigned char *)pSChan->pData) +
 						sub * pSChan->elCount;
-		if (pSspec->sampleCount == 0)
-		    pSChan->maxDataVal = pSChan->minDataVal = (double)*pSrc;
-		for (el=0; el<pSChan->elCount; el++) {
-		    if ((double)*pSrc > pSChan->maxDataVal)
-			pSChan->maxDataVal = (double)*pSrc;
-		    if ((double)*pSrc < pSChan->minDataVal)
-			pSChan->minDataVal = (double)*pSrc;
-		    *pDest++ = *pSrc++;
+		    if (pSspec->sampleCount == 0)
+			pSChan->maxDataVal = pSChan->minDataVal = (double)*pSrc;
+		    for (el=0; el<pSChan->elCount; el++) {
+			if ((double)*pSrc > pSChan->maxDataVal)
+			    pSChan->maxDataVal = (double)*pSrc;
+			if ((double)*pSrc < pSChan->minDataVal)
+			    pSChan->minDataVal = (double)*pSrc;
+			*pDest++ = *pSrc++;
+		    }
 		}
-	    }
-	    else if (type == DBR_TIME_ENUM) {
-		short	*pSrc, *pDest;
-		pSrc = &pSChan->pInBuf[i]->tenmval.value;
-		pDest = ((short *)pSChan->pData) + sub * pSChan->elCount;
-		if (pSspec->sampleCount == 0)
-		    pSChan->maxDataVal = pSChan->minDataVal = (double)*pSrc;
-		for (el=0; el<pSChan->elCount; el++) {
-		    if ((double)*pSrc > pSChan->maxDataVal)
-			pSChan->maxDataVal = (double)*pSrc;
-		    if ((double)*pSrc < pSChan->minDataVal)
-			pSChan->minDataVal = (double)*pSrc;
-		    *pDest++ = *pSrc++;
+		else if (type == DBR_TIME_ENUM) {
+		    short	*pSrc, *pDest;
+		    pSrc = &pSChan->pInBuf[i]->tenmval.value;
+		    pDest = ((short *)pSChan->pData) + sub * pSChan->elCount;
+		    if (pSspec->sampleCount == 0)
+			pSChan->maxDataVal = pSChan->minDataVal = (double)*pSrc;
+		    for (el=0; el<pSChan->elCount; el++) {
+			if ((double)*pSrc > pSChan->maxDataVal)
+			    pSChan->maxDataVal = (double)*pSrc;
+			if ((double)*pSrc < pSChan->minDataVal)
+			    pSChan->minDataVal = (double)*pSrc;
+			*pDest++ = *pSrc++;
+		    }
 		}
+		else
+		    assertAlways(0);
 	    }
-	    else
-		assertAlways(0);
+	    if (i >= 0 && pSChan->inStatus[i] != SYD_B_MISSING)
+		pSChan->inStatus[i] = SYD_B_SAMPLED;
 	}
-	if (i >= 0 && pSChan->inStatus[i] != SYD_B_MISSING)
-	    pSChan->inStatus[i] = SYD_B_SAMPLED;
 	pSChan = pSChan->pNext;
     }
 
@@ -1744,9 +1878,11 @@ int	samp;		/* I sample number in synchronous set */
 		    &pSspec->refTs, TS_TEXT_MMDDYY, stampText));
 	pSChan = pSspec->pChanHead;
 	while (pSChan != NULL) {
-	    if (option == 2)
-		(void)fprintf(out, "\tstat");
-	    (void)fprintf(out, "\t%s", pSChan->name);
+	    if (pSChan->dataChan) {
+		if (option == 2)
+		    (void)fprintf(out, "\tstat");
+		(void)fprintf(out, "\t%s", pSChan->name);
+	    }
 	    pSChan = pSChan->pNext;
 	}
 	(void)fprintf(out, "\n");
@@ -1773,9 +1909,10 @@ int	samp;		/* I sample number in synchronous set */
 * DESCRIPTION
 *
 * RETURNS
+*	S_syd_OK
 *
 * BUGS
-* o	should use precision from graphic info for printing floats
+* o	
 *
 * SEE ALSO
 *
@@ -1828,10 +1965,13 @@ int	samp;		/* I sample number in synchronous set */
 		    &pSspec->pTimeStamp[samp], TS_TEXT_MMDDYY, stampText));
     pSChan = pSspec->pChanHead;
     while (pSChan != NULL) {
-	sydSamplePrint1(pSChan, out, ' ', 0, 1, 0, samp);
+	if (pSChan->dataChan)
+	    sydSamplePrint1(pSChan, out, ' ', 0, 1, 0, samp);
 	pSChan = pSChan->pNext;
     }
     (void)fprintf(out, "\n");
+
+    return S_syd_OK;
 }
 
 /*+/internal******************************************************************
@@ -1866,10 +2006,18 @@ int	sampNum;	/* I sample number in coincidence set */
 
     type = pSChan->dbrType;
 
-    if (preFlag) (void)fprintf(out, "%c%c%c", sep,
+    if (preFlag) {
+	if (pSChan->pData == NULL)
+	    (void)fprintf(out, "%c%c%c", sep,'M','D');
+	else {
+	    (void)fprintf(out, "%c%c%c", sep,
 		pSChan->pDataCodeL[sampNum], pSChan->pDataCodeR[sampNum]);
+	}
+    }
     (void)fputc(sep, out);
-    if (pSChan->pFlags[sampNum].eof)
+    if (pSChan->pData == NULL)
+	(void)fprintf(out, "%11s", "no_data");
+    else if (pSChan->pFlags[sampNum].eof)
 	(void)fprintf(out, "%11s", "EOF");
     else if (pSChan->pFlags[sampNum].missing)
 	(void)fprintf(out, "%11s", "no_data");
@@ -1899,8 +2047,14 @@ int	sampNum;	/* I sample number in coincidence set */
 	}
     }
 
-    if (postFlag) (void)fprintf(out, "%c%c%c", sep,
+    if (postFlag) {
+	if (pSChan->pData == NULL)
+	    (void)fprintf(out, "%c%c%c", sep,'M','D');
+	else {
+	    (void)fprintf(out, "%c%c%c", sep,
 		pSChan->pDataCodeL[sampNum], pSChan->pDataCodeR[sampNum]);
+	}
+    }
 }
 
 static
@@ -1991,9 +2145,13 @@ int	reqCount;	/* I number of samples in the set */
 	if (pSspec->pPartial == NULL)
 	    goto sampleMallocErr;
 	pSspec->dataDim = reqCount;
+    }
 
-	pSChan = pSspec->pChanHead;
-	while (pSChan != NULL) {
+    pSChan = pSspec->pChanHead;
+    while (pSChan != NULL) {
+	if (pSChan->conn == 0)
+	    ;			/* no action if never been connected */
+	else if (pSChan->pData == NULL) {
 	    pSChan->pData = (void *)GenMalloc(reqCount *
 			dbr_value_size[pSChan->dbrType] * pSChan->elCount);
 	    if (pSChan->pData == NULL)
@@ -2019,9 +2177,8 @@ int	reqCount;	/* I number of samples in the set */
 						sizeof(*pSChan->pFlags));
 	    if (pSChan->pFlags == NULL)
 		goto sampleMallocErr;
-
-	    pSChan = pSChan->pNext;
 	}
+	pSChan = pSChan->pNext;
     }
     pSspec->reqCount = reqCount;
     pSspec->firstData = -1;
@@ -2100,6 +2257,8 @@ SYD_SPEC *pSspec;
 {
     SYD_CHAN	*pSChan;
 
+    assert(pSspec != NULL);
+
     if (pSspec->pDeltaSec != NULL) {
 	GenFree((char *)pSspec->pDeltaSec);
 	pSspec->pDeltaSec = NULL;
@@ -2125,22 +2284,51 @@ SYD_SPEC *pSspec;
     return S_syd_OK;
 }
 
-/*/subr------------------------------------------------------------------------
-* NAME sydSampleSetGet - get the samples for a sample set
+
+/*+/subr**********************************************************************
+* NAME	sydSampleSetGet - get the samples for a sample set
+*
+* DESCRIPTION
+*
+* RETURNS
+*	S_syd_OK, or
+*	S_syd_EOF	if end of file is encountered, or
+*	S_syd_chanNotConn if none of the channels is connected
 *
 * BUGS
 * o	doesn't handle array channels
-*----------------------------------------------------------------------------*/
+*
+* SEE ALSO
+*
+* EXAMPLE
+*
+*-*/
 long
 sydSampleSetGet(pSspec)
 SYD_SPEC *pSspec;
 {
-    long	stat;
+    long	stat=S_syd_OK;
+    SYD_CHAN	*pSChan;
+    int		n=0;
+
+    assert(pSspec != NULL);
+
+    pSChan = pSspec->pChanHead;
+    while (pSChan != NULL) {
+	if (pSChan->discon == 0)
+	    n++;
+	pSChan = pSChan->pNext;
+    }
 
     pSspec->firstData = -1;
     pSspec->lastData = -1;
     pSspec->sampleCount = 0;
-    stat = S_syd_OK;
+
+    if (n <= 0) {
+	(void)printf("sydSampleSetGet: none of the channels is connected\n");
+	return S_syd_chanNotConn;
+    }
+
     while (stat != S_syd_EOF && pSspec->sampleCount < pSspec->reqCount) {
 	if ((stat = sydInputGet(pSspec, NULL)) != S_syd_EOF)
 	    sydInputStoreInSet(pSspec);
@@ -2154,6 +2342,7 @@ SYD_SPEC *pSspec;
 * DESCRIPTION
 *
 * RETURNS
+*	S_syd_OK
 *
 * BUGS
 * o	text
@@ -2165,13 +2354,15 @@ SYD_SPEC *pSspec;
 *-*/
 long 
 sydSampleSetPrint(pSspec, out, formatFlag)
-FILE	*out;		/* IO stream pointer for output */
 SYD_SPEC *pSspec;	/* I pointer to synchronous set spec */
+FILE	*out;		/* IO stream pointer for output */
 int	formatFlag;	/* I ==1 causes page formatting for printing */
 {
     int		samp;		/* sample number in synchronous set */
     int		lineCount=0;
     int		headerFlag;
+
+    assert(pSspec != NULL);
 
     samp = pSspec->firstData;
     while (samp >= 0) {
@@ -2187,4 +2378,153 @@ int	formatFlag;	/* I ==1 causes page formatting for printing */
 	    samp = 0;
     }
     return S_syd_OK;
+}
+
+/*+/subr**********************************************************************
+* NAME	sydTriggerClose - add a sample trigger condition from a text string
+*
+* DESCRIPTION
+*	Scans a text string which specifies a sample trigger condition and
+*	builds a trigger structure for the synchronous set spec
+*
+*	demand
+*	event  chanName condition [duration]
+*
+* RETURNS
+*	S_syd_OK, or
+*	S_syd_ERROR if an error is detected
+*
+* BUGS
+* o	text
+*
+* SEE ALSO
+*
+* NOTES
+* 1.	The trigger structure must be closed by calling sydTriggerClose.
+*
+* EXAMPLE
+*
+*-*/
+long
+sydTriggerClose(pSspec)
+SYD_SPEC *pSspec;	/* I pointer to synchronous set spec */
+{
+    assert(pSspec != NULL);
+
+    if (pSspec->pTrigger == NULL)
+	return S_syd_OK;
+    GenFree((char *)pSspec->pTrigger);
+    pSspec->pTrigger = NULL;
+    return S_syd_OK;
+}
+
+/*+/subr**********************************************************************
+* NAME	sydTriggerAddFromText - add a sample trigger from a text string
+*
+* DESCRIPTION
+*	Scans a text string which specifies a sample trigger condition and
+*	builds a trigger structure for the synchronous set spec
+*
+*	always
+*	delay hh:mm:ss
+*	demand
+*	event  chanName condition [duration]
+*	never
+*	periodic hh:mm:ss [duration]
+*	while  chanName condition [duration]
+*
+*	This routine adds a synchronous channel structure to the synchronous
+*	set spec, flagging the sync channel struct as a `trigger channel'.
+*	If the sync set spec already has a sync channel struct for the
+*	channel, then that sync channel struct will be flagged as both
+*	a `data channel' and also a `trigger channel'.  Programs using
+*	trigger channels which aren't also data channels must distinguish
+*	between the two in their handling of samples.
+*
+* RETURNS
+*	S_syd_OK, or
+*	S_syd_noMem if malloc failed
+*	S_syd_ERROR if an error is detected
+*
+* BUGS
+* o	text
+*
+* SEE ALSO
+*
+* NOTES
+* 1.	The trigger structure must be closed by calling sydTriggerClose.
+*	(This happens automatically when sydClose is called.)
+*
+* EXAMPLE
+*
+*-*/
+long
+sydTriggerAddFromText(pSspec, text)
+SYD_SPEC *pSspec;	/* I pointer to synchronous set spec */
+char	*text;		/* I pointer to string with trigger specification */
+{
+    char	*myText=NULL;
+    char	*pText, *pFld, delim, *pMsg;
+    SYD_TRIG	*pTrig=NULL;
+    int		allowDuration=0;
+
+    assert(pSspec != NULL);
+    assert(text != NULL);
+
+    if (pSspec->pTrigger != NULL) {
+	(void)printf("sydTriggerScan: sync set spec already has trigger\n");
+	return S_syd_ERROR;
+    }
+    if ((myText = (char *)malloc(strlen(text))) == NULL) {
+	(void)printf("sydTriggerScan: couldn't malloc for text temp\n");
+	return S_syd_noMem;
+    }
+    pText = myText;
+    if ((pTrig = (SYD_TRIG *)GenMalloc(sizeof(SYD_TRIG))) == NULL) {
+	(void)printf("sydTriggerScan: couldn't malloc for trig struct\n");
+	free(myText);
+	return S_syd_noMem;
+    }
+
+    if (nextAlphField(&pText, &pFld, &delim) <= 1) {
+	pMsg = "no trigger keyword found";
+	goto trigScanErr;
+    }
+    if (strcmp(pFld,      "always") == 0)	pTrig->type = SYD_TR_ALWAYS;
+    else if (strcmp(pFld, "delay") == 0) 	pTrig->type = SYD_TR_DELAY;
+    else if (strcmp(pFld, "demand") == 0)	pTrig->type = SYD_TR_DEMAND;
+    else if (strcmp(pFld, "event") == 0) 	pTrig->type = SYD_TR_EVENT;
+    else if (strcmp(pFld, "never") == 0)	pTrig->type = SYD_TR_NEVER;
+    else if (strcmp(pFld, "periodic") == 0) 	pTrig->type = SYD_TR_PERIODIC;
+    else if (strcmp(pFld, "while") == 0) 	pTrig->type = SYD_TR_WHILE;
+    else {
+	pMsg = "illegal trigger type";
+	goto trigScanErr;
+    }
+    if (pTrig->type == SYD_TR_EVENT || pTrig->type == SYD_TR_WHILE) {
+/*-----------------------------------------------------------------------------
+*    event chanName condition [duration]
+*    while chanName condition [duration]
+*----------------------------------------------------------------------------*/
+	allowDuration=1;
+	
+    }
+    else if (pTrig->type == SYD_TR_DELAY || pTrig->type == SYD_TR_PERIODIC) {
+/*-----------------------------------------------------------------------------
+*    delay hh:mm:ss
+*    periodic hh:mm:ss [duration]
+*----------------------------------------------------------------------------*/
+	if (pTrig->type == SYD_TR_PERIODIC)
+	    allowDuration=1;
+    }
+
+    free(myText);
+    pSspec->pTrigger = pTrig;
+    return S_syd_OK;
+
+trigScanErr:
+    (void)printf("sydTriggerScan: %s\n%s\n", pMsg, myText);
+    sydTriggerClose(pTrig);
+    free(myText);
+    return S_syd_ERROR;
 }

@@ -75,7 +75,7 @@ void cas_send_msg ( struct client *pclient, int lock_needed )
             unsigned transferSize = (unsigned) status;
             if ( transferSize >= pclient->send.stk ) {
                 pclient->send.stk = 0;
-                epicsTimeGetCurrent (&pclient->time_at_last_send);
+                epicsTimeGetCurrent ( &pclient->time_at_last_send );
                 break;
             }
             else {

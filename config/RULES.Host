@@ -363,7 +363,7 @@ buildInstall :: build $(TARGETS) \
 clean::
 	@echo "Cleaning"
 	@$(RM) *.i *$(OBJ) *.a $(PROD) $(TESTPROD) $(LIBNAME) $(SHRLIBNAME) $(INC) \
-	*$(RES) $(TARGETS) $(DBDINSTALL) $(MENUS) $(RECTYPES) $(BPTS)
+	*$(RES) $(TARGETS) *.dbd $(MENUS) $(RECTYPES) $(BPTS)
 ifdef DBDEXPAND
 	@$(RM) $(DBDNAME)
 endif

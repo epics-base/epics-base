@@ -64,6 +64,7 @@ private:
     void privateCancel ();
     double privateDelayToFirstExpire () const;
     static tsFreeList < class timer, 0x20 > freeList;
+    static epicsMutex freeListMutex;
     friend class timerQueue;
 };
 
@@ -129,6 +130,7 @@ protected:
     virtual ~epicsTimerQueueForC ();
 private:
     static tsFreeList < epicsTimerQueueForC > freeList;
+    static epicsMutex freeListMutex;
 };
 
 class timerQueueActiveMgr {
@@ -160,15 +162,18 @@ protected:
 private:
     timerQueue queue;
     static tsFreeList < class timerQueuePassive, 0x8 > freeList;
+    static epicsMutex freeListMutex;
 };
 
 inline void * timer::operator new ( size_t size )
 {
+    epicsAutoMutex locker ( timer::freeListMutex );
     return timer::freeList.allocate ( size );
 }
 
 inline void timer::operator delete ( void *pCadaver, size_t size )
 {
+    epicsAutoMutex locker ( timer::freeListMutex );
     timer::freeList.release ( pCadaver, size );
 }
 
@@ -203,11 +208,13 @@ inline timerQueue & timerQueueActive::getTimerQueue ()
 
 inline void * timerQueuePassive::operator new ( size_t size )
 {
+    epicsAutoMutex locker ( timerQueuePassive::freeListMutex );
     return timerQueuePassive::freeList.allocate ( size );
 }
 
 inline void timerQueuePassive::operator delete ( void *pCadaver, size_t size )
 {
+    epicsAutoMutex locker ( timerQueuePassive::freeListMutex );
     timerQueuePassive::freeList.release ( pCadaver, size );
 }
 
@@ -218,11 +225,13 @@ inline timerQueue & timerQueuePassive::getTimerQueue ()
 
 inline void * epicsTimerQueueForC::operator new ( size_t size )
 { 
+    epicsAutoMutex locker ( epicsTimerQueueForC::freeListMutex );
     return epicsTimerQueueForC::freeList.allocate ( size );
 }
 
 inline void epicsTimerQueueForC::operator delete ( void *pCadaver, size_t size )
 { 
+    epicsAutoMutex locker ( epicsTimerQueueForC::freeListMutex );
     epicsTimerQueueForC::freeList.release ( pCadaver, size );
 }
 

@@ -189,7 +189,7 @@ public:
     epicsShareFunc void process ();
     epicsShareFunc void show (unsigned level) const;
 private:
-    epicsMutex mutex;
+    mutable epicsMutex mutex;
     epicsEvent rescheduleEvent;
     epicsEvent exitEvent;
     tsDLList <osiTimer> timerLists [osiTimer::numberOfTimerLists];

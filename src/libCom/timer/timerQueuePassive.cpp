@@ -32,6 +32,7 @@
 #include "timerPrivate.h"
 
 tsFreeList < class timerQueuePassive, 0x8 > timerQueuePassive::freeList;
+epicsMutex timerQueuePassive::freeListMutex;
 
 epicsTimerQueuePassive::~epicsTimerQueuePassive () {}
 

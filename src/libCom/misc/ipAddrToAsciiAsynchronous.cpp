@@ -36,14 +36,15 @@ ipAddrToAsciiEngine::~ipAddrToAsciiEngine ()
     this->threadExit.wait ();
 
     // force IO completion for any items that remain
-    ipAddrToAsciiEngine::mutex.lock ();
-    while ( ( pItem = this->labor.first () ) ) {
-        pItem->pEngine = 0u;
-        sockAddrToA ( &pItem->addr.sa, this->nameTmp, 
-            sizeof ( this->nameTmp ) );
-        pItem->ioCompletionNotify ( this->nameTmp );
+    {
+        epicsAutoMutex locker ( ipAddrToAsciiEngine::mutex );
+        while ( ( pItem = this->labor.first () ) ) {
+            pItem->pEngine = 0u;
+            sockAddrToA ( &pItem->addr.sa, this->nameTmp, 
+                sizeof ( this->nameTmp ) );
+            pItem->ioCompletionNotify ( this->nameTmp );
+        }
     }
-    ipAddrToAsciiEngine::mutex.unlock ();
     delete &thread;
 }
 
@@ -54,37 +55,37 @@ void ipAddrToAsciiEngine::run ()
 
     while ( ! this->exitFlag ) {
         while ( true ) {
-            ipAddrToAsciiEngine::mutex.lock ();
-            ipAddrToAsciiAsynchronous * pItem = this->labor.first ();
-            if ( pItem ) {
-                addr = pItem->addr;
-                tmpId = pItem->id;
+            {
+                epicsAutoMutex locker ( ipAddrToAsciiEngine::mutex );
+                ipAddrToAsciiAsynchronous * pItem = this->labor.first ();
+                if ( pItem ) {
+                    addr = pItem->addr;
+                    tmpId = pItem->id;
+                }
+                else {
+                    break;
+                }
             }
-            else {
-                this->mutex.unlock ();
-                break;
-            }
-            ipAddrToAsciiEngine::mutex.unlock ();
 
             // knowing DNS, this could take a very long time
             sockAddrToA ( &addr.sa, this->nameTmp, sizeof ( this->nameTmp ) );
 
-            ipAddrToAsciiEngine::mutex.lock ();
-            pItem = this->labor.get ();
-            if ( pItem ) {
-                if ( tmpId == pItem->id ) {
-                    pItem->ioCompletionNotify ( this->nameTmp );
-                    pItem->pEngine = 0u;
+            {
+                epicsAutoMutex locker ( ipAddrToAsciiEngine::mutex );
+                ipAddrToAsciiAsynchronous * pItem = this->labor.get ();
+                if ( pItem ) {
+                    if ( tmpId == pItem->id ) {
+                        pItem->ioCompletionNotify ( this->nameTmp );
+                        pItem->pEngine = 0u;
+                    }
+                    else {
+                        this->labor.push ( *pItem );
+                    }
                 }
                 else {
-                    this->labor.push ( *pItem );
+                    break;
                 }
             }
-            else {
-                ipAddrToAsciiEngine::mutex.unlock ();
-                break;
-            }
-            ipAddrToAsciiEngine::mutex.unlock ();
         }
         this->event.wait ();
     }
@@ -93,7 +94,7 @@ void ipAddrToAsciiEngine::run ()
 
 void ipAddrToAsciiEngine::show ( unsigned level ) const
 {
-    this->mutex.lock ();
+    epicsAutoMutex locker ( ipAddrToAsciiEngine::mutex );
     printf ( "ipAddrToAsciiEngine at %p with %u requests pendingh\n", 
         static_cast <const void *> (this), this->labor.count () );
     if ( level > 0u ) {
@@ -113,7 +114,6 @@ void ipAddrToAsciiEngine::show ( unsigned level ) const
         printf ( "exit event:\n" );
         this->threadExit.show ( level - 2u );
     }
-    this->mutex.unlock ();
 }
 
 ipAddrToAsciiAsynchronous::ipAddrToAsciiAsynchronous 
@@ -124,29 +124,29 @@ ipAddrToAsciiAsynchronous::ipAddrToAsciiAsynchronous
 
 ipAddrToAsciiAsynchronous::~ipAddrToAsciiAsynchronous ()
 {
-    ipAddrToAsciiEngine::mutex.lock ();
+    epicsAutoMutex locker ( ipAddrToAsciiEngine::mutex );
     if ( this->pEngine )  {
         this->pEngine->labor.remove ( *this );
     }
-    ipAddrToAsciiEngine::mutex.unlock ();
 }
 
 epicsShareFunc bool ipAddrToAsciiAsynchronous::ioInitiate ( ipAddrToAsciiEngine &engine )
 {
     bool success;
 
-    ipAddrToAsciiEngine::mutex.lock ();
-    // put some reasonable limit on queue expansion
-    if ( engine.labor.count () < 16u ) {
-        this->id = engine.nextId++;
-        this->pEngine = &engine;
-        engine.labor.add ( *this );
-        success = true;
+    {
+        epicsAutoMutex locker ( ipAddrToAsciiEngine::mutex );
+        // put some reasonable limit on queue expansion
+        if ( engine.labor.count () < 16u ) {
+            this->id = engine.nextId++;
+            this->pEngine = &engine;
+            engine.labor.add ( *this );
+            success = true;
+        }
+        else {
+            success = false;
+        }
     }
-    else {
-        success = false;
-    }
-    ipAddrToAsciiEngine::mutex.unlock ();
 
     if ( success ) {
         engine.event.signal ();
@@ -159,12 +159,11 @@ void ipAddrToAsciiAsynchronous::show ( unsigned level ) const
 {
     char ipAddr [64];
 
-    ipAddrToAsciiEngine::mutex.lock ();
+    epicsAutoMutex locker ( ipAddrToAsciiEngine::mutex );
     sockAddrToA ( &this->addr.sa, ipAddr, sizeof ( ipAddr ) );
     printf ( "ipAddrToAsciiAsynchronous for address %s\n", ipAddr );
     if ( level > 0u ) {
         printf ( "\tidentifier %u, engine %p\n", this->id, 
             static_cast <void *> (this->pEngine) );
     }
-    ipAddrToAsciiEngine::mutex.unlock ();
 }

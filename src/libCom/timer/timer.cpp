@@ -33,6 +33,7 @@
 #include "timerPrivate.h"
 
 tsFreeList < class timer, 0x20 > timer::freeList;
+epicsMutex timer::freeListMutex;
 
 epicsTimer::~epicsTimer () {}
 

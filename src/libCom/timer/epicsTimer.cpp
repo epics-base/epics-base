@@ -45,6 +45,7 @@ private:
     void * pPrivate;
     expireStatus expire ();
     static tsFreeList < epicsTimerForC > freeList;
+    static epicsMutex freeListMutex;
 };
 
 struct epicsTimerQueuePassiveForC : public epicsTimerQueueNotify, public timerQueuePassive {
@@ -60,11 +61,13 @@ private:
     void *pPrivate;
     void reschedule ();
     static tsFreeList < epicsTimerQueuePassiveForC > freeList;
+    static epicsMutex freeListMutex;
 };
 
 void epicsTimerNotify::show ( unsigned /* level */ ) const {}
 
 tsFreeList < epicsTimerForC > epicsTimerForC::freeList;
+epicsMutex epicsTimerForC::freeListMutex;
 
 epicsTimerForC::epicsTimerForC ( timerQueue &queue, epicsTimerCallback pCBIn, void *pPrivateIn ) :
     timer ( *this, queue ), pCallBack ( pCBIn ), pPrivate ( pPrivateIn )
@@ -82,11 +85,13 @@ inline void epicsTimerForC::destroy ()
 
 inline void * epicsTimerForC::operator new ( size_t size )
 { 
+    epicsAutoMutex locker ( epicsTimerForC::freeListMutex );
     return epicsTimerForC::freeList.allocate ( size );
 }
 
 inline void epicsTimerForC::operator delete ( void *pCadaver, size_t size )
 { 
+    epicsAutoMutex locker ( epicsTimerForC::freeListMutex );
     epicsTimerForC::freeList.release ( pCadaver, size );
 }
 
@@ -97,6 +102,7 @@ epicsTimerNotify::expireStatus epicsTimerForC::expire ()
 }
 
 tsFreeList < epicsTimerQueueForC > epicsTimerQueueForC::freeList;
+epicsMutex epicsTimerQueueForC::freeListMutex;
 
 epicsTimerQueueForC::epicsTimerQueueForC ( bool okToShare, unsigned priority ) :
     timerQueueActive ( okToShare, priority )
@@ -113,14 +119,17 @@ void epicsTimerQueueForC::release ()
 }
 
 tsFreeList < epicsTimerQueuePassiveForC > epicsTimerQueuePassiveForC::freeList;
+epicsMutex epicsTimerQueuePassiveForC::freeListMutex;
 
 inline void * epicsTimerQueuePassiveForC::operator new ( size_t size )
 { 
+    epicsAutoMutex locker ( epicsTimerQueuePassiveForC::freeListMutex );
     return epicsTimerQueuePassiveForC::freeList.allocate ( size );
 }
 
 inline void epicsTimerQueuePassiveForC::operator delete ( void *pCadaver, size_t size )
 { 
+    epicsAutoMutex locker ( epicsTimerQueuePassiveForC::freeListMutex );
     epicsTimerQueuePassiveForC::freeList.release ( pCadaver, size );
 }
 

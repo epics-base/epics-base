@@ -158,7 +158,7 @@
 #	define epicsShareDef
 
 #	define epicsShareFunc
-#	if defined(__STDC__)
+#	if defined(__STDC__) || defined(__STDCPP__)
 #		define READONLY const
 #	else
 #		define READONLY

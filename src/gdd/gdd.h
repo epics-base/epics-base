@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.3  1996/07/23 17:13:33  jbk
+ * various fixes - dbmapper incorrectly worked with enum types
+ *
  * Revision 1.2  1996/06/26 00:19:40  jhill
  * added CHAR_BIT to max bound calc for the "ref_cnt" member of class gdd
  *
@@ -504,27 +507,27 @@ public:
 	// gdd& operator=(aitFixedString d); // not present
 
 	// Same as getRef() methods
-	gdd::operator aitFloat64*(void) const;
-	gdd::operator aitFloat32*(void) const;
-	gdd::operator aitUint32*(void) const;
-	gdd::operator aitInt32*(void) const;
-	gdd::operator aitUint16*(void) const;
-	gdd::operator aitInt16*(void) const;
-	gdd::operator aitUint8*(void) const;
-	gdd::operator aitInt8*(void) const;
-	gdd::operator aitString*(void) const;
-	gdd::operator aitFixedString*(void) const;
+	operator aitFloat64*(void) const;
+	operator aitFloat32*(void) const;
+	operator aitUint32*(void) const;
+	operator aitInt32*(void) const;
+	operator aitUint16*(void) const;
+	operator aitInt16*(void) const;
+	operator aitUint8*(void) const;
+	operator aitInt8*(void) const;
+	operator aitString*(void) const;
+	operator aitFixedString*(void) const;
 
 	// Same as get() methods
-	gdd::operator aitFloat64(void);
-	gdd::operator aitFloat32(void);
-	gdd::operator aitUint32(void);
-	gdd::operator aitInt32(void);
-	gdd::operator aitUint16(void);
-	gdd::operator aitInt16(void);
-	gdd::operator aitUint8(void);
-	gdd::operator aitInt8(void);
-	gdd::operator aitString(void);
+	operator aitFloat64(void);
+	operator aitFloat32(void);
+	operator aitUint32(void);
+	operator aitInt32(void);
+	operator aitUint16(void);
+	operator aitInt16(void);
+	operator aitUint8(void);
+	operator aitInt8(void);
+	operator aitString(void);
 	// gdd::operator aitFixedString(void); // not present
 
 	gddStatus genCopy(aitEnum t, const void* d);

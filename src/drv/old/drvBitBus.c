@@ -65,6 +65,11 @@
  * This driver currently needs work on error message generation.
  *
  * $Log$
+ * Revision 1.2  1995/09/26 14:50:31  winans
+ * Added code to send last byte of a RAC_RESET in pepTxTask().  It was left
+ * out in a previous mod that modes the last byte transmission into a locked
+ * region in order to prevent a TxTask/RxTask race condition.
+ *
  * Revision 1.1  1995/03/30  19:34:56  jba
  * Seperated drv files into ansi and old dirs. Added combine dir.
  *
@@ -544,7 +549,7 @@ STATIC int xvmeReset(int link)
   char	trash;
   int	j;
   int	lockKey;
-  int	probeValue;
+  unsigned char	probeValue;
 
 
   if (bbDebug)
@@ -975,7 +980,7 @@ xvmeRxTask(int link)
       }
       else if (rxDpvtHead == &UselessMsg)
       {
-	rxDpvtHead->status = BB_OK;
+	rxDpvtHead->status = BB_OK;		/* XXX -- ??? */
 	rxDpvtHead->rxCmd = pBBLink[link]->l.XycomLink.bbRegs->cmnd;
 
 	if (bbDebug)
@@ -989,7 +994,7 @@ xvmeRxTask(int link)
       }
       else
       {
-        rxDpvtHead->status = BB_OK;
+        rxDpvtHead->status = BB_OK;	/* XXX -- ??? */
         rxDpvtHead->rxCmd = pBBLink[link]->l.XycomLink.bbRegs->cmnd;
 
         if (bbDebug>24)
@@ -1094,7 +1099,7 @@ xvmeWdTask(int link)
   unsigned char         resetNodeData;  /* 1-byte data field for RAC_OFFLINE */
 
   /* init the SEM used when sending the reset message */
-  syncSem = semBCreate(SEM_EMPTY, SEM_Q_PRIORITY);
+  syncSem = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
 
   /*
    * Hand-craft a RAC_OFFLINE  message to use when a message times out.

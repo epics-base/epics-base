@@ -944,7 +944,7 @@ epicsShareFunc int epicsShareAPI ca_modify_user_name ( const char *pUserName );
 epicsShareFunc int epicsShareAPI ca_modify_host_name ( const char *pHostName );
 
 #else /* CAC_ANSI_FUNC_PROTO */
-epicsShareFunc short epicsShareAPI ca_get_field_type ();
+epicsShareFunc short epicsShareAPI ca_field_type ();
 epicsShareFunc unsigned long epicsShareAPI ca_element_count ();
 epicsShareFunc char * epicsShareAPI ca_name ();
 epicsShareFunc enum channel_state epicsShareAPI ca_state ();

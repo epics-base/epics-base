@@ -580,6 +580,18 @@ STATIC void getAttribEventCallback(struct event_handler_args arg)
         epicsMutexUnlock(pca->lock);
         return;
     }
+    if(arg.status != ECA_NORMAL) {
+        dbCommon *precord = (dbCommon *)plink->value.pv_link.precord;
+        if(precord) {
+            errlogPrintf("dbCa: getAttribEventCallback record %s error %s\n",
+                precord->name,ca_message(arg.status));
+         } else {
+            errlogPrintf("dbCa: getAttribEventCallback error %s\n",
+                ca_message(arg.status));
+        }
+        epicsMutexUnlock(pca->lock);
+        return;
+    }
     assert(arg.dbr);
     pdbr = (struct dbr_ctrl_double *)arg.dbr;
     pca->gotAttributes = TRUE;

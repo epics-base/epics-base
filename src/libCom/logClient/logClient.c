@@ -155,7 +155,7 @@ void logClientReset (logClient *pClient)
         pClient->sock = INVALID_SOCKET;
         pClient->file = NULL;
     }
-    else if (pClient->sock!=ERROR) {
+    else if (pClient->sock!=INVALID_SOCKET) {
 #       ifdef vxWorks
             logFdDelete(pClient->sock);
 #       endif
@@ -701,7 +701,7 @@ LOCAL void logClientRollLocalPort (void)
          */
         @@@
         status = iocLogAttach();
-        if (status==OK) {
+        if (!status) {
             /*
              * only print a message after the first connect
              */

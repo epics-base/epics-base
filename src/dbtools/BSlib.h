@@ -28,8 +28,9 @@
 #define BS_Error	1
 #define BS_Close	2
 #define BS_Ping		3
+#define BS_Done		4
 
-#define	BS_LAST_VERB	3
+#define	BS_LAST_VERB	4
 #define	BS_RETRY_COUNT	3
 
 /* protocol states */

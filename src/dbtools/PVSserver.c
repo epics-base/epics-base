@@ -18,8 +18,54 @@ typedef struct PVSnode PVSNODE;
 
 static PVSNODE* ioc_list = (PVSNODE*)NULL;
 
-static int read_pvs(BSDATA* info);
+static int read_pvs(BSDATA* info,int serv,char* sname);
 
+#ifndef PVS_SERVER_PROG
+#ifdef RDBLS
+int main(int argc,char** argv)
+{
+	BSDATA info;
+	int rc;
+
+	if(argc<2)
+	{
+		fprintf(stderr,"usage: %s IOC-ip-address\n",argv[0]);
+		return -1;
+	}
+
+	BSsetAddress(&info,argv[1]);
+	rc=read_pvs(&info,PVS_RecList,(char*)NULL);
+	if(rc<0) fprintf(stderr,"read of data failed horribly\n");
+	return 0;
+}
+#else
+int main(int argc,char** argv)
+{
+	BSDATA info;
+	int serv;
+	int rc;
+
+	if(argc<4)
+	{
+		fprintf(stderr,"usage: %s IOC-name server-number [server-name]\n",
+			argv[0]);
+		return -1;
+	}
+
+	serv=atoi(argv[2]);
+	BSsetAddress(&info,argv[1]);
+
+	if(serv>PVS_LAST_VERB)
+		rc=read_pvs(&info,serv,argv[3]);
+	else
+		rc=read_pvs(&info,serv,(char*)NULL);
+
+	if(rc<0) fprintf(stderr,"read of data failed horribly\n");
+
+	return 0;
+}
+#endif
+#else
 int main(int argc,char** argv)
 {
 	int soc,mlen;
@@ -115,7 +161,7 @@ int main(int argc,char** argv)
 					close(soc);
 					BSserverClearSignals();
 					sleep(1);
-					return read_pvs(&info);
+					return read_pvs(&info,PVS_RecList,NULL);
 				default: /* parent */
 					break;
 				}
@@ -126,11 +172,12 @@ int main(int argc,char** argv)
 	close(soc);
 	return 0;
 }
+#endif
 
-static int read_pvs(BSDATA* info)
+static int read_pvs(BSDATA* info,int serv,char* sname)
 {
 	BS* bs;
-	int verb,size,done,len,i,port;
+	int verb,size,done,len,i,port,rsize;
 	char* buffer;
 	char ip_from[40];
 	FILE* fd;
@@ -146,68 +193,89 @@ static int read_pvs(BSDATA* info)
 		unlink(ip_from);
 	}
 
-	buffer=(char*)malloc(PVS_TRANSFER_SIZE+2);
 	done=0;
 	BSsetPort(info,PVS_TCP_PORT);
 
 	if((bs=BSipOpenData(info))==NULL)
 	{
 		fprintf(stderr,"Open of socket to IOC failed\n");
+		return -1;
 	}
+
+	if(serv>PVS_LAST_VERB)
+		rsize=strlen(sname)+1;
 	else
+		rsize=0;
+
+	if(BSsendHeader(bs,serv,rsize)<0)
 	{
-		if((fd=fopen(ip_from,"w"))==(FILE*)NULL)
+		fprintf(stderr,"Command send failed\n");
+		return -1;
+	}
+
+	if(rsize>0)
+	{
+		if(BSsendData(bs,sname,rsize)<0)
 		{
-			fprintf(stderr,"Open of name file failed\n");
+			fprintf(stderr,"send of command name failed\n");
+			return -1;
+		}
+	}
+
+#ifdef PVS_SERVER_PROG
+	if((fd=fopen(ip_from,"w"))==(FILE*)NULL)
+	{
+		fprintf(stderr,"Open of name file failed\n");
+		return -1;
+	}
+#else
+	fd=stdout;
+#endif
+
+	buffer=(char*)malloc(PVS_TRANSFER_SIZE+2);
+
+	while(done==0)
+	{
+		if(BSreceiveHeader(bs,&verb,&size)<0)
+		{
+			fprintf(stderr,"Receive header failed\n");
+			done=-1;
 		}
 		else
 		{
-			while(done==0)
+			switch(verb)
 			{
-				/* read messages until close received */
-				if(BSreceiveHeader(bs,&verb,&size)<0)
+			case PVS_Data: /* read a block of names */
+				if((len=BSreceiveData(bs,buffer,size))<0)
 				{
-					fprintf(stderr,"Receive header failed\n");
-					done=-1;
+					fprintf(stderr,"Receive data failed\n");
 				}
 				else
 				{
-					switch(verb)
+					for(i=0;i<len;i++)
 					{
-					case PVS_Data: /* read a block of names */
-						if((len=BSreceiveData(bs,buffer,size))<0)
-						{
-							fprintf(stderr,"Receive data failed\n");
-						}
-						else
-						{
-							for(i=0;i<len;i++)
-							{
-								if(buffer[i]==' ') buffer[i]='\n';
-							}
-							buffer[len]='\n';
-							buffer[len+1]='\0';
-
-							fputs(buffer,fd);
-						}
-						break;
-					case BS_Close: /* transfers complete */
-						if(BSsendHeader(bs,BS_Ok,0)<0)
-						{
-							fprintf(stderr,"ACK Header send failed\n");
-						}
-						done=-1;
-						break;
-					default:
-						if(size>0) done=-1;
-						break;
+						if(buffer[i]==' ') buffer[i]='\n';
 					}
+					buffer[len]='\n';
+					buffer[len+1]='\0';
+
+					fputs(buffer,fd);
 				}
+				break;
+			case BS_Done: /* transfers complete */
+				BSclose(bs);
+				done=-1;
+				break;
+			default:
+				if(size>0) done=-1;
+				break;
 			}
-			fclose(fd);
 		}
-		BSfreeBS(bs);
 	}
+
+#ifdef PVS_SERVER_PROG
+	fclose(fd);
+#endif
 	free(buffer);
 	return 0;
 }

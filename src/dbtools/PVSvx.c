@@ -1,4 +1,6 @@
 
+/* This file not really set up to run under Unix yet, just under vxWorks. */
+
 #include "PVS.h"
 
 #include <string.h>
@@ -8,6 +10,9 @@
 #include <vxWorks.h>
 #include <iv.h>
 #include <taskLib.h>
+#include <sysSymTbl.h>
+#include <sysLib.h>
+#include <symLib.h>
 #include <dbStaticLib.h>
 
 extern struct dbBase *pdbBase;
@@ -20,6 +25,14 @@ extern struct dbBase *pdbBase;
 
 static void PVSserver(int want_annouce,char* name);
 static int PVSannouce(int want_annouce,char* name);
+static void handle_requests(BS* bs);
+static void handle_reclist(BS* bs);
+static void handle_applist(BS* bs);
+static void handle_recdump(BS* bs);
+void PVS_test_server(BS* bs);
+
+static char* names = (char*)NULL;
+static char* buffer = (char*)NULL;
 
 #ifdef vxWorks
 int PVSstart(int want_annouce, char* name)
@@ -51,12 +64,8 @@ int main(int argc,char** argv)
 	}
 #endif
 
-#ifdef vxWorks
    	taskSpawn("PVS",150,VX_FP_TASK|VX_STDIO,5000,
 	  (FUNCPTR)PVSserver,want_annouce,(int)name,0,0,0,0,0,0,0,0);
-#else
-	PVSserver(want_annouce,name);
-#endif
 
 	return 0;
 }
@@ -64,7 +73,7 @@ int main(int argc,char** argv)
 static int PVSannouce(int want_annouce,char* name)
 {
 	int soc,mlen;
-	unsigned short buf,in_buf;
+	PVS_INFO_PACKET buf,in_buf;
 	BSDATA info,in_info;
 
 	if(want_annouce==0 && name)
@@ -81,7 +90,7 @@ static int PVSannouce(int want_annouce,char* name)
 			return -1;
 		}
 
-		buf=htons(PVS_Alive);
+		PVS_SET_CMD(&buf,PVS_Alive);
 		mlen=BStransUDP(soc,&info,&buf,sizeof(buf),&in_buf,sizeof(in_buf));
 
 		/* check for errors */
@@ -106,20 +115,14 @@ static void PVSserver(int want_annouce,char* name)
 {
 	fd_set fds,rfds;
 	int tsoc,usoc,nsoc,len,s;
-	unsigned short buf;
-	unsigned long names_len,nl;
 	struct sockaddr stemp;
 	int stemp_len;
-	char* names;
-	char* n;
+	PVS_INFO_PACKET buf;
 	BSDATA info;
 	BS* bs;
-	long rc;
-#ifdef vxWorks
-	DBENTRY db;
-#endif
 
 	bs=(BS*)NULL;
+	buffer=(char*)malloc(100); /* just make the buffer */
 	names=(char*)malloc(PVS_TRANSFER_SIZE);
 
 	if((tsoc=BSopenListenerTCP(PVS_TCP_PORT))<0)
@@ -152,7 +155,6 @@ static void PVSserver(int want_annouce,char* name)
 		{
 			if(FD_ISSET(tsoc,&rfds))
 			{
-				/* only requests for PVs will come in here for now */
 				/* handle the request here - single threaded server */
 
 				stemp_len=sizeof(stemp);
@@ -161,56 +163,8 @@ static void PVSserver(int want_annouce,char* name)
 				else
 				{
 					bs=BSmakeBS(nsoc);
-#ifdef vxWorks
-					dbInitEntry(pdbBase,&db);
-					names_len=0;
-					for(rc=dbFirstRecdes(&db);rc==0;rc=dbNextRecdes(&db))
-					{
-						for(rc=dbFirstRecord(&db);rc==0;rc=dbNextRecord(&db))
-						{
-							/* collect the names util we excede the max */
-							n=dbGetRecordName(&db);
-							s=strlen(n);
-							if((names_len+s)>PVS_TRANSFER_SIZE)
-							{
-								names[names_len++]='\0';
-								if(BSsendHeader(bs,PVS_Data,names_len)<0)
-									printf("PVSserver: data cmd failed\n");
-								else
-								{
-									if(BSsendData(bs,names,names_len)<0)
-										printf("PVSserver: data send failed\n");
-								}
-								names_len=0;
-							}
-							memcpy(&names[names_len],n,s);
-							names_len+=s;
-							names[names_len++]=' ';
-						}
-					}
-					if(names_len>0)
-					{
-						names[names_len++]='\0';
-						if(BSsendHeader(bs,PVS_Data,names_len)<0)
-							printf("PVSserver: data cmd failed\n");
-						else
-						{
-							if(BSsendData(bs,names,names_len)<0)
-								printf("PVSserver: data send failed\n");
-						}
-					}
-#else
-					strcpy(names,"jim Kowalkowski");
-					names_len=strlen("jim kowalkowski")+1;
-					if(BSsendHeader(bs,PVS_Data,names_len)<0)
-						printf("BSsendHeader failed\n");
-					else
-					{
-						if(BSsendData(bs,names,names_len)<0)
-							printf("BSsendData failed\n");
-					}
-#endif
-					BSclose(bs);
+					handle_requests(bs);
+					BSfreeBS(bs);
 				}
 			}
 			if(FD_ISSET(usoc,&rfds))
@@ -229,4 +183,140 @@ static void PVSserver(int want_annouce,char* name)
 	}
 }
 
+static void handle_reclist(BS* bs)
+{
+	DBENTRY db;
+	long rc;
+	char* n;
+	unsigned long names_len;
+	int s;
+
+	dbInitEntry(pdbBase,&db);
+	names_len=0;
+
+	for(rc=dbFirstRecdes(&db);rc==0;rc=dbNextRecdes(&db))
+	{
+		for(rc=dbFirstRecord(&db);rc==0;rc=dbNextRecord(&db))
+		{
+			/* collect the names util we excede the max */
+			n=dbGetRecordName(&db);
+			s=strlen(n);
+			if((names_len+s)>PVS_TRANSFER_SIZE)
+			{
+				names[names_len++]='\0';
+				if(BSsendHeader(bs,PVS_Data,names_len)<0)
+					printf("PVSserver: data cmd failed\n");
+				else
+				{
+					if(BSsendData(bs,names,names_len)<0)
+						printf("PVSserver: data send failed\n");
+				}
+				names_len=0;
+			}
+			memcpy(&names[names_len],n,s);
+			names_len+=s;
+			names[names_len++]=' ';
+		}
+	}
+	if(names_len>0)
+	{
+		names[names_len++]='\0';
+		if(BSsendHeader(bs,PVS_Data,names_len)<0)
+			printf("PVSserver: data cmd failed\n");
+		else
+		{
+			if(BSsendData(bs,names,names_len)<0)
+				printf("PVSserver: data send failed\n");
+		}
+	}
+	BSsendHeader(bs,BS_Done,0);
+}
+
+static void handle_requests(BS* bs)
+{
+	int verb,size,notdone,len;
+	void (*func)(BS*);
+	SYM_TYPE stype;
+
+	notdone=1;
+	while(notdone)
+	{
+		/* at this point I should be getting a command */
+		if(BSreceiveHeader(bs,&verb,&size)<0)
+		{
+			printf("PVSserver: receive header failed\n");
+			notdone=0;
+		}
+		else
+		{
+			switch(verb)
+			{
+			case PVS_RecList: handle_reclist(bs); break;
+			case PVS_AppList: handle_applist(bs); break;
+			case PVS_RecDump: handle_recdump(bs); break;
+			case BS_Close:
+				BSsendHeader(bs,BS_Ok,0);
+				notdone=0;
+				break;
+			case PVS_Data: break;
+			case PVS_Alive: break;
+			case BS_Ok: break;
+			case BS_Error: break;
+			case BS_Ping: break;
+			case BS_Done: break;
+			default:
+				/* custom service */
+				if(size>0)
+				{
+					/* this should be the name of the service */
+					/* look up the symbol name in buffer and call as
+						subroutine, passing it the BS */
+
+					len=BSreceiveData(bs,&buffer[1],size);
+					switch(len)
+					{
+					case 0: /* timeout */ notdone=0; break;
+					case -1: /* error */ notdone=0; break;
+					default:
+						buffer[0]='_';
+
+						if(strncmp(buffer,"_PVS",4)==0)
+						{
+							if(symFindByName(sysSymTbl,buffer,
+					  		(char**)&func,&stype)==ERROR)
+								func=(void (*)(BS*))NULL;
+
+							if(func)
+								func(bs);
+							else
+								BSsendHeader(bs,BS_Done,0);
+						}
+						else
+							BSsendHeader(bs,BS_Done,0);
+					}
+				}
+				else
+					printf("PVSserver: unknown command received\n");
+			}
+		}
+	}
+}
+
+void PVS_test_server(BS* bs)
+{
+	printf("PVS_test_server invoked\n");
+	BSsendHeader(bs,BS_Done,0);
+}
+
+void handle_applist(BS* bs)
+{
+	printf("AppList server invoked\n");
+	BSsendHeader(bs,BS_Done,0);
+}
+
+void handle_recdump(BS* bs)
+{
+	printf("RecDump server invoked\n");
+	BSsendHeader(bs,BS_Done,0);
+}
 

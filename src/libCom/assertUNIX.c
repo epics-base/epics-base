@@ -27,6 +27,9 @@
  * Modification Log: 
  * -----------------
  * $Log$
+ * Revision 1.5  1996/06/19 17:14:11  jhill
+ * print out the EPICS release when there is an assert failure
+ *
  * Revision 1.4  1995/12/19  19:40:04  jhill
  * added author name
  *
@@ -66,13 +69,11 @@ void epicsAssert (const char *pFile, const unsigned line, const char *pMsg,
 	if (pAuthorName) {
 
 		epicsPrintf (
-"Please contact \"%s\"\n", pAuthorName);
+"Please send the text of this message to \"%s\"\n", pAuthorName);
 
 		epicsPrintf (
-"(the author of this software) or else send the text of this message to\n");
+"(the author of this software) or to \"tech-talk@aps.anl.gov\"\n");
 
-		epicsPrintf (
-"\"tech-talk@aps.anl.gov\"\n");
 
 	}
 	else {

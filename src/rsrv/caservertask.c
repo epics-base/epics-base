@@ -472,10 +472,10 @@ LOCAL void log_one_client (struct client *client, unsigned level)
 /*
  *  casr()
  */
-void epicsShareAPI casr(unsigned level)
+void epicsShareAPI casr (unsigned level)
 {
     size_t bytes_reserved;
-    struct client   *client;
+    struct client *client;
 
     printf ("Channel Access Server V%d.%d\n",
         CA_PROTOCOL_VERSION, CA_MINOR_VERSION);

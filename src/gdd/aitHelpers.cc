@@ -5,6 +5,9 @@
 // $Id$
 //
 // $Log$
+// Revision 1.10  1999/05/03 16:20:51  jhill
+// allow aitTimeStamp to convert to TS_STAMP (without binding to libCom)
+//
 // Revision 1.9  1998/05/05 21:08:26  jhill
 // fixed warning
 //
@@ -37,18 +40,6 @@
 
 #define epicsExportSharedSymbols
 #include "aitTypes.h"
-
-//
-// force this module to include code that can convert
-// to an EPICS time stamp, but dont force this library
-// to link with libCom
-//
-#define INC_tsDefs_h
-typedef struct {
-	aitUint32    secPastEpoch;   /* seconds since 0000 Jan 1, 1990 */
-	aitUint32    nsec;           /* nanoseconds within second */
-} TS_STAMP;
-
 #include "aitHelpers.h"
 
 //
@@ -188,3 +179,144 @@ int aitString::init(const char* p, aitStrType typeIn, unsigned strLengthIn, unsi
 	}
 	return rc;
 }
+
+//
+// allow this module to include code that can convert
+// to an EPICS time stamp, but dont force this library
+// to link with libCom
+//
+struct TS_STAMP {
+	aitUint32    secPastEpoch;   /* seconds since 0000 Jan 1, 1990 */
+	aitUint32    nsec;           /* nanoseconds within second */
+};
+
+aitTimeStamp::operator struct TS_STAMP () const
+{
+	TS_STAMP ts;
+
+	if (this->tv_sec>aitTimeStamp::epicsEpochSecPast1970) {
+		ts.secPastEpoch = this->tv_sec - aitTimeStamp::epicsEpochSecPast1970;
+		ts.nsec = this->tv_nsec;
+	}
+	else {
+		ts.secPastEpoch = 0;
+		ts.nsec = 0;
+	}
+	return ts;
+}
+
+void aitTimeStamp::get (struct TS_STAMP &ts) const
+{
+	if (this->tv_sec>aitTimeStamp::epicsEpochSecPast1970) {
+		ts.secPastEpoch = this->tv_sec - aitTimeStamp::epicsEpochSecPast1970;
+		ts.nsec = this->tv_nsec;
+	}
+	else {
+		ts.secPastEpoch = 0;
+		ts.nsec = 0;
+	}
+}
+
+aitTimeStamp::aitTimeStamp (const struct TS_STAMP &ts) 
+{
+	this->tv_sec = ts.secPastEpoch + aitTimeStamp::epicsEpochSecPast1970;
+	this->tv_nsec = ts.nsec;
+}
+
+aitTimeStamp aitTimeStamp::operator = (const struct TS_STAMP &rhs)
+{
+	this->tv_sec = rhs.secPastEpoch + aitTimeStamp::epicsEpochSecPast1970;
+	this->tv_nsec = rhs.nsec;
+	return *this;
+}
+
+//
+// allow this module to include code that can convert
+// to an EPICS time stamp, but dont force this library
+// to link with libCom
+//
+class osiTime {
+public:
+	unsigned long sec; /* seconds since 0000 Jan 1, 1990 */
+	unsigned long nSec; /* nanoseconds within second */
+};
+
+aitTimeStamp::operator osiTime () const
+{
+	osiTime ts;
+
+	if (this->tv_sec>aitTimeStamp::epicsEpochSecPast1970) {
+		ts.sec = this->tv_sec - aitTimeStamp::epicsEpochSecPast1970;
+		ts.nSec = this->tv_nsec;
+	}
+	else {
+		ts.sec = 0;
+		ts.nSec = 0;
+	}
+	return ts;
+}
+
+void aitTimeStamp::get (osiTime &ts) const
+{
+	if (this->tv_sec>aitTimeStamp::epicsEpochSecPast1970) {
+		ts.sec = this->tv_sec - aitTimeStamp::epicsEpochSecPast1970;
+		ts.nSec = this->tv_nsec;
+	}
+	else {
+		ts.sec = 0;
+		ts.nSec = 0;
+	}
+}
+
+aitTimeStamp::aitTimeStamp (const osiTime &ts)
+{
+	this->tv_sec = ts.sec + aitTimeStamp::epicsEpochSecPast1970;
+	this->tv_nsec = ts.nSec;
+}
+
+aitTimeStamp aitTimeStamp::operator = (const osiTime &rhs)
+{
+	this->tv_sec = rhs.sec + aitTimeStamp::epicsEpochSecPast1970;
+	this->tv_nsec = rhs.nSec;
+	return *this;
+}
+
+//
+// allow this module to include code that can convert
+// to and from a POSIX timespec, but allow this library
+// to compile on systems that dont support it
+//
+struct timespec
+{
+	unsigned long tv_sec;
+	unsigned long tv_nsec;
+};
+
+aitTimeStamp::operator struct timespec () const
+{
+	struct timespec ts;
+	ts.tv_sec = (unsigned long) this->tv_sec; 
+	ts.tv_nsec = (unsigned long) this->tv_nsec; 
+	return ts;
+}
+
+void aitTimeStamp::get (struct timespec &ts) const
+{
+	ts.tv_sec = (unsigned long) this->tv_sec; 
+	ts.tv_nsec = (unsigned long) this->tv_nsec; 
+}
+
+aitTimeStamp::aitTimeStamp (const struct timespec &ts)
+{
+	this->tv_sec = (aitUint32) ts.tv_sec;
+	this->tv_nsec = (aitUint32) ts.tv_nsec;
+}
+
+aitTimeStamp aitTimeStamp::operator = (const struct timespec &rhs)
+{
+	this->tv_sec = (aitUint32) rhs.tv_sec;
+	this->tv_nsec = (aitUint32) rhs.tv_nsec;
+	return *this;
+}
+
+

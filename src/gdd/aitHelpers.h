@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.18  1999/05/03 16:20:51  jhill
+ * allow aitTimeStamp to convert to TS_STAMP (without binding to libCom)
+ *
  * Revision 1.17  1999/04/30 00:09:47  jhill
  * proper borrow
  *
@@ -89,10 +92,16 @@ inline char* strDup(const char* x)
 	return y;
 }
 
+struct timespec;
+struct TS_STAMP;
+class osiTime;
+class gdd;
+
 class epicsShareClass aitTimeStamp {
 	friend inline aitTimeStamp operator+ (const aitTimeStamp &lhs, const aitTimeStamp &rhs);
 	friend inline aitTimeStamp operator- (const aitTimeStamp &lhs, const aitTimeStamp &rhs);
 	friend inline int operator>= (const aitTimeStamp &lhs, const aitTimeStamp &rhs);
+	friend class gdd;
 public:
 	aitTimeStamp () : tv_sec(0u), tv_nsec(0u) {}
 	aitTimeStamp (const aitTimeStamp &t) : tv_sec(t.tv_sec), tv_nsec(t.tv_nsec) {}
@@ -136,40 +145,34 @@ public:
 	}
 
 	//
+	// convert to and from POSIX timespec format
+	//
+	operator struct timespec () const;
+	void get (struct timespec &) const;
+	aitTimeStamp (const struct timespec &ts);
+	aitTimeStamp operator = (const struct timespec &rhs);
+
+	//
 	// convert to and from EPICS TS_STAMP format
 	//
-	// include tsDefs.h prior to including osiTime.h
-	// if you need these capabilities
+	operator struct TS_STAMP () const;
+	void get (struct TS_STAMP &) const;
+	aitTimeStamp (const struct TS_STAMP &ts);
+	aitTimeStamp operator = (const struct TS_STAMP &rhs);
+
 	//
-#ifdef INC_tsDefs_h
-	operator TS_STAMP () const
-	{
-		TS_STAMP ts;
-		assert (this->tv_sec>=aitTimeStamp::epicsEpochSecPast1970);
-		ts.secPastEpoch = this->tv_sec - aitTimeStamp::epicsEpochSecPast1970;
-		ts.nsec = this->tv_nsec;
-		return ts;
-	}
-
-	aitTimeStamp (const TS_STAMP &ts) 
-	{
-		this->tv_sec = ts.secPastEpoch + aitTimeStamp::epicsEpochSecPast1970;
-		this->tv_nsec = ts.nsec;
-	}
-
-	operator = (const TS_STAMP &rhs)
-	{
-		this->tv_sec = rhs.secPastEpoch + aitTimeStamp::epicsEpochSecPast1970;
-		this->tv_nsec = rhs.nsec;
-	}
-#endif
+	// convert to and from EPICS osiTime format
+	//
+	operator osiTime () const;
+	void get (osiTime &) const;
+	aitTimeStamp (const osiTime &ts);
+	aitTimeStamp operator = (const osiTime &rhs);
 
 	static aitTimeStamp getCurrent();
-// private:
+private:
 	unsigned long tv_sec;
 	unsigned long tv_nsec;
 
-private:
 	static const unsigned epicsEpochSecPast1970; 
 };
 

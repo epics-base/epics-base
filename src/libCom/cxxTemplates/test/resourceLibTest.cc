@@ -6,6 +6,7 @@
 #include <stdlib.h>
 
 #define epicsExportSharedSymbols
+#define instantiateRecourceLib
 #include "resourceLib.h"
 
 #ifdef SUNOS4

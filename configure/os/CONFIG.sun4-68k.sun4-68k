@@ -15,7 +15,7 @@ ARCH_CLASS = 68k
 
 CC = cc
 CCC = CC
-CPP = $(CCC) -E
+CPP = $(CC) -E
 RANLIB = ranlib -t
 AR = $(CCC) -xar -o
 LD = ld -r

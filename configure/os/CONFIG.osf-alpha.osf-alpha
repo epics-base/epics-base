@@ -9,7 +9,7 @@
 
 CC = cc
 CCC = cxx 
-CPP = $(CCC) -E
+CPP = $(CC) -E
 RANLIB =
 AR = ar
 LD = -r

@@ -263,8 +263,6 @@ const struct in_addr  	*pnet_addr
 				&piiu->curMsg.m_available);
 		UNLOCK;
 		if(!monix){
-			ca_signal(ECA_INTERNAL, 
-				"bad client write io id from server");
 			break;
 		}
 
@@ -313,8 +311,6 @@ const struct in_addr  	*pnet_addr
 				&piiu->curMsg.m_available);
 		UNLOCK;
 		if(!monix){
-			ca_signal(ECA_INTERNAL, 
-				"bad client read notify io id from server");
 			break;
 		}
 
@@ -384,8 +380,6 @@ const struct in_addr  	*pnet_addr
 				&piiu->curMsg.m_available);
 		UNLOCK;
 		if(!monix){
-			ca_signal(ECA_INTERNAL, 
-				"bad client event id from server");
 			break;
 		}
 
@@ -465,8 +459,6 @@ const struct in_addr  	*pnet_addr
 					&piiu->curMsg.m_available);
 		UNLOCK;
 		if(!pIOBlock){
-			ca_signal(ECA_INTERNAL, 
-				"bad client read io id from server");
 			break;
 		}
 
@@ -640,9 +632,6 @@ const struct in_addr  	*pnet_addr
 			if (pList) {
 				ellDelete(pList, &monix->node);
 			}
-			else {
-				printf ("CAC - Protocol err - no list for IO blk\n");
-			}
 			caIOBlockFree(monix);
 		}
 
@@ -710,6 +699,29 @@ const struct in_addr  	*pnet_addr
         		chan->id.sid = piiu->curMsg.m_available;
 		}
 		reconnect_channel(piiu, chan);
+		break;
+	}
+	case IOC_CLAIM_CIU_FAILED:
+	{
+		chid	chan;
+
+		LOCK;
+		chan = bucketLookupItemUnsignedId(
+				pSlowBucket, &piiu->curMsg.m_cid);
+		UNLOCK;
+		if(!chan){
+			/*
+			 * end up here if they delete the channel
+			 * prior to this response 
+			 */
+			break;
+		}
+
+		/*
+		 * need to move the channel back to the cast IIU
+		 * (so we will be able to reconnect)
+		 */
+		cacDisconnectChannel(chan, FALSE);
 		break;
 	}
 	default:
@@ -828,7 +840,7 @@ const struct in_addr	*pnet_addr
 	case ECA_DISCONN:
 		/*
 		 * This indicates that the connection is tagged
-		 * is tagged for shutdown and we are waiting for 
+		 * for shutdown and we are waiting for 
 		 * it to go away. Search replies are ignored
 		 * in the interim.
 		 */
@@ -979,9 +991,6 @@ chid		chan
           	/* decrement the outstanding IO count */
           	CLRPENDRECV(TRUE);
 	}
-
-
-	UNLOCK;
 }
 
 

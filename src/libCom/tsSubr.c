@@ -128,9 +128,8 @@
 #endif
 #endif
 
-#ifndef INC_genDefs_h
-#   include <genDefs.h>		/* provides assert() */
-#endif
+#   include <assert.h>
+
 #include <envDefs.h>
 #define TS_PRIVATE_DATA
 #include <tsDefs.h>
@@ -874,7 +873,7 @@ tsInitMinWest()
     if (envGetLongConfigParam(&EPICS_TS_MIN_WEST, &tsMinWest) != 0)
 	error = 1;
     else
-	if (tsMinWest > 1380 || tsMinWest < -1380)
+	if (tsMinWest >  720 || tsMinWest < -720 )
 	    error = 1;
     if (error) {
 	    (void)printf(
@@ -899,7 +898,9 @@ struct tsDetail *pT;	/* pointer to time structure for conversion */
 	tsInitMinWest();
 
     assert(pStamp != NULL);
-    assert(pStamp->secPastEpoch >= tsMinWest * 60);
+	assert( (tsMinWest >= -720 && tsMinWest <=  720 ));
+	assert( (tsMinWest >= 0 && (pStamp->secPastEpoch >= (unsigned long)(tsMinWest * 60))) ||
+            (tsMinWest < 0) );
     assert(pT != NULL);
 
 /*----------------------------------------------------------------------------

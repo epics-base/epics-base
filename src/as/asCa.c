@@ -30,7 +30,7 @@
 #include "caerr.h"
 #include "caeventmask.h"
 #include "alarm.h"
-#include "epicsStdio.h"
+#include "epicsStdioRedirect.h"
 
 #include "epicsExport.h"
 #include "asLib.h"

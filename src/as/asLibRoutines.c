@@ -16,6 +16,7 @@
 #include <string.h>
 #include <ctype.h>
 
+#include "epicsStdioRedirect.h"
 #include "dbDefs.h"
 #include "epicsThread.h"
 #include "ellLib.h"
@@ -281,7 +282,7 @@ long epicsShareAPI asRemoveMember(ASMEMBERPVT *asMemberPvt)
     } else {
 	errMessage(-1,"Logic error in asRemoveMember");
 	UNLOCK;
-	exit(-1);
+	return(-1);
     }
     free((void *)pasgmember);
     *asMemberPvt = NULL;
@@ -303,7 +304,7 @@ long epicsShareAPI asChangeGroup(ASMEMBERPVT *asMemberPvt,const char *newAsgName
     } else {
 	errMessage(-1,"Logic error in asChangeGroup");
 	UNLOCK;
-	exit(-1);
+	return(-1);
     }
     status = asAddMemberPvt(asMemberPvt,newAsgName);
     UNLOCK;
@@ -868,7 +869,7 @@ static long asAddMemberPvt(ASMEMBERPVT *pasMemberPvt,const char *asgName)
 	pgroup = (ASG *)ellNext((ELLNODE *)pgroup);
     }
     errMessage(-1,"Logic Error in asAddMember");
-    exit(1);
+    return(-1);
 got_it:
     pasgmember->pasg = pgroup;
     ellAdd(&pgroup->memberList,(ELLNODE *)pasgmember);

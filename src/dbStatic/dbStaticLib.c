@@ -32,7 +32,7 @@
 #include "dbmf.h"
 #include "postfix.h"
 #include "osiFileName.h"
-#include "epicsStdio.h"
+#include "epicsStdioRedirect.h"
 
 #define epicsExportSharedSymbols
 #include "link.h"
@@ -1729,7 +1729,7 @@ long epicsShareAPI dbCopyRecord(DBENTRY *pdbentry,const char *newRecordName,int 
 	if(!status) status = dbNextField(&dbentry,TRUE);
 	if(!status && (pdbentry->pflddes!=dbentry.pflddes)) {
 	    epicsPrintf("dbCopyRecord: Logic Error\n");
-	    exit(1);
+	    return(-1);
 	}
     }
     /*Copy the info strings too*/

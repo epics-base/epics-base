@@ -22,6 +22,7 @@
 
 #include "ellLib.h"
 #include "freeList.h"
+#include "epicsStdioRedirect.h"
 #include "cantProceed.h"
 #include "epicsMutex.h"
 #include "ellLib.h"

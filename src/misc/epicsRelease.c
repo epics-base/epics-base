@@ -13,6 +13,7 @@
 #include    <stdlib.h>
 #include    <stdio.h>
 #include    "epicsVersion.h"
+#include    "epicsStdioRedirect.h"
 
 #define epicsExportSharedSymbols
 #include    "epicsRelease.h"

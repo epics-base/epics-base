@@ -29,7 +29,7 @@ int main(int argc,char **argv)
     char	**pstr;
     char	*psep;
     int		*len;
-    long	status;
+    long	status = 0;
     static char *subSep = ",";
 
     /*Look for options*/
@@ -49,9 +49,10 @@ int main(int argc,char **argv)
     }
     if(argc!=1) {
 	printf("usage: ascheck -Smacsub < file\n");
-	exit(0);
+        status = -1;
+    } else {
+        status = asInitFP(stdin,sub);
+        if(status) errMessage(status,"from asInitFP");
     }
-    status = asInitFP(stdin,sub);
-    if(status) errMessage(status,"from asInitFP");
-    return(0);
+    return(status);
 }

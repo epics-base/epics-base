@@ -15,7 +15,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "epicsStdio.h"
+#include "epicsStdioRedirect.h"
 #include "dbDefs.h"
 #include "cantProceed.h"
 #include "epicsThread.h"

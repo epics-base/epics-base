@@ -22,6 +22,7 @@
 #include <errno.h>
 
 #include "dbStaticLib.h"
+#include "epicsStdioRedirect.h"
 #include "link.h"
 /*definitions needed because of old vs new database access*/
 #undef DBR_SHORT

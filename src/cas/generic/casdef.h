@@ -200,7 +200,7 @@ public:
 	//
 	// The above assignment operator is not included 
 	// because it does not match the strict definition of an 
-	// assignement operator unless "const casPV &"
+	// assignment operator unless "const casPV &"
 	// is passed in, and we cant use a const PV
 	// pointer here because the server library _will_ make
 	// controlled modification of the PV in the future.

@@ -6,6 +6,10 @@
 //
 //
 // $Log$
+// Revision 1.8  1999/09/02 21:50:27  jhill
+// o changed UDP to non-blocking IO
+// o cleaned up (consolodated) UDP interface class structure
+//
 // Revision 1.7  1998/06/18 00:11:09  jhill
 // use ipAddrToA
 //
@@ -82,7 +86,7 @@ casIntfIO::casIntfIO (const caNetAddr &addrIn) :
 	if (status<0) {
 		if (SOCKERRNO == SOCK_EADDRINUSE) {
 			//
-			// force assignement of a default port
+			// force assignment of a default port
 			// (so the getsockname() call below will
 			// work correctly)
 			//

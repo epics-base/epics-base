@@ -94,7 +94,7 @@ void casAsyncPVAttachIO::destroy ()
 }
 
 //
-// depricated
+// deprecated
 //
 casAsyncPVCreateIO::casAsyncPVCreateIO(const casCtx &ctx) : 
 		casAsyncPVAttachIO (ctx) 
@@ -102,7 +102,7 @@ casAsyncPVCreateIO::casAsyncPVCreateIO(const casCtx &ctx) :
 }
 
 //
-// depricated
+// deprecated
 //
 epicsShareFunc casAsyncPVCreateIO::~casAsyncPVCreateIO()
 {

@@ -36,6 +36,7 @@
 #include <dbDefs.h>
 #include <dbStaticLib.h>
 #include <asLib.h>
+#include <asDbLib.h>
 #include <dbCommon.h>
 
 extern struct dbBase *pdbBase;
@@ -51,7 +52,6 @@ static int my_yyinput(char *buf, int max_size)
     
     if(!my_buffer_ptr || *my_buffer_ptr==0) {
 	if(fgets(my_buffer,BUF_SIZE,stream)==NULL) return(0);
-printf("INPUT: %s",my_buffer);
 	my_buffer_ptr = my_buffer;
     }
     l = strlen(my_buffer_ptr);
@@ -116,10 +116,28 @@ void static myMemberCallback(ASMEMBERPVT memPvt)
     if(precord) printf(" Record:%s",precord->name);
 }
 
-int asdbdump()
+int asdbdump(void)
 {
     asDump(myMemberCallback,NULL);
     return(0);
+}
+
+int asDbGetAsl(void *paddress)
+{
+    struct dbAddr	*paddr = paddress;
+    struct fldDes	*pflddes;
+
+    pflddes = paddr->pfldDes;
+    return((int)pflddes->as_level);
+}
+
+ASMEMBERPVT  asDbGetMemberPvt(void *paddress)
+{
+    struct dbAddr	*paddr = paddress;
+    struct dbCommon	*precord;
+
+    precord = paddr->precord;
+    return((ASMEMBERPVT)precord->asp);
 }
 
 int astac(char *pname,char *user,char *location)

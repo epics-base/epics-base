@@ -41,9 +41,11 @@ static epicsThreadOnceId commandTableOnceId = EPICS_THREAD_ONCE_INIT;
 /*
  * Set up command table mutex
  */
+extern "C" {
 static void commandTableOnce (void *)
 {
     commandTableMutex = epicsMutexMustCreate ();
+}
 }
 
 /*

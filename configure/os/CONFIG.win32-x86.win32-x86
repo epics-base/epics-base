@@ -32,10 +32,12 @@ WINLINK = link
 
 RCCMD = rc -l 0x409 -I. -I.. $(INSTALL_INCLUDES) -fo $@ $<
 
-ARCMD = lib /nologo /verbose /out:$@ 
+ARCMD = lib /nologo /verbose /out:$@ $(LIBRARY_LD_OBJS)
 ###	$(addsuffix .lib,$($*_SYS_DLL_LIBS) $(SYS_DLL_LIBS))
 
 BAFCMD = bscmake /nologo /o $@
+
+DEPENDS_RULE =  @echo depends target not supported
 
 #
 # Configure OS vendor C compiler
@@ -217,6 +219,8 @@ HOST_OPT_FLAGS += $(subst $@, /_WINDLL, $(findstring $@,$(LIBOBJS_HOST)))
 #	x.exp: what you need to build the dll (in no variable)
 #
 LINK.shrlib = $(WINLINK) /nologo $(WIN32_DLLFLAGS) /implib:$*.lib /out:$*.dll $(DLL_DEF_FLAG)
+LINK.shrlib += $(LIBRARY_LD_OBJS) $(LIBRARY_LD_RESS) $(SHRLIB_LDLIBS)
+
 
 #	adjust names of libraries to build
 #
@@ -269,7 +273,8 @@ SHRLIB_LDLIBS = $(DLL_DEPLIBS) $($*_SYS_DLL_LIBS:%=%.lib) \
 
 #--------------------------------------------------
 # Linker definition
-LINK.cpp = $(WINLINK) -nologo $(LDFLAGS) -out:$@
+LINK.cpp = $(WINLINK) -nologo $(LDFLAGS) -out:$@ $(PROD_LD_OBJS) $(PROD_LD_RESS) $(LDLIBS)
+
 
 #--------------------------------------------------
 

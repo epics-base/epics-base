@@ -23,6 +23,23 @@
 
 const char *msg1 = "1234567890This is a very long message.";
 
+/*
+ * In Numerical Recipes in C: The Art of Scientific Computing (William  H.
+ * Press, Brian P. Flannery, Saul A. Teukolsky, William T. Vetterling; New
+ * York: Cambridge University Press, 1992 (2nd ed., p. 277)), the  follow-
+ * ing comments are made:
+ * "If  you want to generate a random integer between 1 and 10, you
+ * should always do it by using high-order bits, as in
+ *      j=1+(int) (10.0*rand()/(RAND_MAX+1.0));
+ * and never by anything resembling
+ *      j=1+(rand() % 10);
+ */
+static int
+randBelow(int n)
+{
+    return (int)((double)n*rand()/(RAND_MAX+1.0));
+}
+
 static void
 receiver(void *arg)
 {
@@ -43,7 +60,7 @@ receiver(void *arg)
             if (expectmsg[sender-1] != msgNum)
                 printf("%s received %d '%.*s' -- expected %d\n", epicsThreadGetNameSelf(), len, len, cbuf, expectmsg[sender-1]);
             expectmsg[sender-1] = msgNum + 1;
-            epicsThreadSleep(0.001 * (rand() % 20));
+            epicsThreadSleep(0.001 * (randBelow(20)));
         }
         else {
             printf("%s received %d '%.*s'\n", epicsThreadGetNameSelf(), len, len, cbuf);
@@ -65,9 +82,9 @@ sender(void *arg)
 
     for (;;) {
         len = sprintf(cbuf, "%s -- %d.", epicsThreadGetNameSelf(), ++i);
-        while (q->send((void *)cbuf, len) == false)
-            epicsThreadSleep(0.005 * (rand() % 5));
-        epicsThreadSleep(0.005 * (rand() % 20));
+        while (q->trySend((void *)cbuf, len) < 0)
+            epicsThreadSleep(0.005 * (randBelow(5)));
+        epicsThreadSleep(0.005 * (randBelow(20)));
     }
 }
 
@@ -89,7 +106,7 @@ epicsMessageQueueTest()
     i = 0;
     used = 0;
     assert(q1->pending() == 0);
-    while (q1->send((void *)msg1, i ) == true) {
+    while (q1->trySend((void *)msg1, i ) == 0) {
         i++;
         assert(q1->pending() == i);
         printf("Should have %d used -- ", ++used);
@@ -108,14 +125,14 @@ epicsMessageQueueTest()
     assert(q1->pending() == 2);
     if ((len != want) || (strncmp(msg1, cbuf, len) != 0))
         printf("wanted:%d '%.*s'   got:%d '%.*s'\n", want, want, msg1, len, len, cbuf);
-    q1->send((void *)msg1, i++);
+    q1->trySend((void *)msg1, i++);
 
     want++;
     len = q1->receive(cbuf);
     assert(q1->pending() == 2);
     if ((len != want) || (strncmp(msg1, cbuf, len) != 0))
         printf("wanted:%d '%.*s'   got:%d '%.*s'\n", want, want, msg1, len, len, cbuf);
-    q1->send((void *)msg1, i++);
+    q1->trySend((void *)msg1, i++);
     assert(q1->pending() == 3);
 
     i = 3;
@@ -125,7 +142,62 @@ epicsMessageQueueTest()
         if ((len != want) || (strncmp(msg1, cbuf, len) != 0))
             printf("wanted:%d '%.*s'   got:%d '%.*s'\n", want, want, msg1, len, len, cbuf);
     }
-    printf("len:%d i:%d pending:%d\n", len, i, q1->pending());
+    assert(q1->pending() == 0);
+
+    /*
+     * Sender timeout
+     */
+    i = 0;
+    used = 0;
+    assert(q1->pending() == 0);
+    while (q1->send((void *)msg1, i, 1.0 ) == 0) {
+        i++;
+        assert(q1->pending() == i);
+        printf("Should have %d used -- ", ++used);
+        q1->show();
+    }
+    assert(q1->pending() == 4);
+
+    want = 0;
+    len = q1->receive(cbuf);
+    assert(q1->pending() == 3);
+    if ((len != want) || (strncmp(msg1, cbuf, len) != 0))
+        printf("wanted:%d '%.*s'   got:%d '%.*s'\n", want, want, msg1, len, len, cbuf);
+
+    want++;
+    len = q1->receive(cbuf);
+    assert(q1->pending() == 2);
+    if ((len != want) || (strncmp(msg1, cbuf, len) != 0))
+        printf("wanted:%d '%.*s'   got:%d '%.*s'\n", want, want, msg1, len, len, cbuf);
+    q1->send((void *)msg1, i++, 1.0);
+
+    want++;
+    len = q1->receive(cbuf);
+    assert(q1->pending() == 2);
+    if ((len != want) || (strncmp(msg1, cbuf, len) != 0))
+        printf("wanted:%d '%.*s'   got:%d '%.*s'\n", want, want, msg1, len, len, cbuf);
+    q1->send((void *)msg1, i++, 1.0);
+    assert(q1->pending() == 3);
+
+    i = 3;
+    while ((len = q1->receive(cbuf, 1.0)) >= 0) {
+        assert(q1->pending() == --i);
+        want++;
+        if ((len != want) || (strncmp(msg1, cbuf, len) != 0))
+            printf("wanted:%d '%.*s'   got:%d '%.*s'\n", want, want, msg1, len, len, cbuf);
+    }
+    assert(q1->pending() == 0);
+
+    /*
+     * Receiver with timeout
+     */
+    for (i = 0 ; i < 4 ; i++)
+        assert (q1->send((void *)msg1, i, 1.0) == 0);
+    assert(q1->pending() == 4);
+    for (i = 0 ; i < 4 ; i++)
+        assert (q1->receive((void *)cbuf, 1.0) == (int)i);
+    assert(q1->pending() == 0);
+    assert (q1->receive((void *)cbuf, 1.0) < 0);
     assert(q1->pending() == 0);
 
     /*
@@ -142,7 +214,7 @@ epicsMessageQueueTest()
         case 3: printf ("Should send/receive 10 messages (sender pauses after sending).\n"); break;
         }
         for (i = 0 ; i < 10 ; i++) {
-            if (q1->send((void *)msg1, i) == false)
+            if (q1->trySend((void *)msg1, i) < 0)
                 break;
             if (pass >= 3)
                 epicsThreadSleep(0.5);
@@ -154,7 +226,7 @@ epicsMessageQueueTest()
     /*
      * Single receiver, multiple sender tests
      */
-    printf("This test takes another 5 minutes to finish.\n");
+    printf("This test takes 5 minutes to run.\n");
     printf("Test has succeeded if nothing appears between here....\n");
     epicsThreadCreate("Sender 1", epicsThreadPriorityLow, epicsThreadStackMedium, sender, q1);
     epicsThreadCreate("Sender 2", epicsThreadPriorityMedium, epicsThreadStackMedium, sender, q1);
@@ -167,6 +239,6 @@ epicsMessageQueueTest()
      * Force out summaries
      */
     printf("......and here.\n");
-    q1->send((void *)msg1, 0);
+    q1->trySend((void *)msg1, 0);
     epicsThreadSleep(1.0);
 }

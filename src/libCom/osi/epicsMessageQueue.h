@@ -22,23 +22,27 @@
 #define epicsMessageQueueh
 
 #include "epicsAssert.h"
-#include "epicsEvent.h"
-#include "epicsMutex.h"
 #include "shareLib.h"
 
+typedef struct epicsMessageQueueOSD *epicsMessageQueueId;
+
 #ifdef __cplusplus
+
+#include "locationException.h"
 
 class epicsShareClass epicsMessageQueue {
 public:
     epicsMessageQueue ( unsigned int capacity,
                         unsigned int maximumMessageSize );
     ~epicsMessageQueue ();
-    bool send ( void *message, unsigned int messageSize );
-    bool send ( void *message, unsigned int messageSize, double timeout );
+    int trySend ( void *message, unsigned int messageSize );
+    int send ( void *message, unsigned int messageSize);
+    int send ( void *message, unsigned int messageSize, double timeout );
+    int tryReceive ( void *message );
     int receive ( void *message );
     int receive ( void *message, double timeout );
-    void show ( unsigned int level = 0 ) const;
-    unsigned int pending () const;
+    void show ( unsigned int level = 0 );
+    unsigned int pending ();
 
 private: // Prevent compiler-generated member functions
     // default constructor, copy constructor, assignment operator
@@ -46,32 +50,21 @@ private: // Prevent compiler-generated member functions
     epicsMessageQueue(const epicsMessageQueue &);
     epicsMessageQueue& operator=(const epicsMessageQueue &);
 
-private:
-    int receive ( void *message, bool withTimeout, double timeout );
-
-    volatile char  *inPtr;
-    volatile char  *outPtr;
-    volatile bool   full;
-    unsigned int    capacity;
-    unsigned int    maxMessageSize;
-    unsigned int    slotSize;
-    unsigned long  *buf;
-    char           *firstMessageSlot;
-    char           *lastMessageSlot;
-    epicsEvent      queueEvent;
-    epicsMutex      queueMutex;
+    epicsMessageQueueId id;
 };
 
 extern "C" {
 #endif /*__cplusplus */
-
-typedef void *epicsMessageQueueId;
 
 epicsShareFunc epicsMessageQueueId epicsShareAPI epicsMessageQueueCreate(
     unsigned int capacity,
     unsigned int maximumMessageSize);
 epicsShareFunc void epicsShareAPI epicsMessageQueueDestroy(
     epicsMessageQueueId id);
+epicsShareFunc int epicsShareAPI epicsMessageQueueTrySend(
+    epicsMessageQueueId id,
+    void *message,
+    unsigned int messageSize);
 epicsShareFunc int epicsShareAPI epicsMessageQueueSend(
     epicsMessageQueueId id,
     void *message,
@@ -81,23 +74,26 @@ epicsShareFunc int epicsShareAPI epicsMessageQueueSendWithTimeout(
     void *message,
     unsigned int messageSize,
     double timeout);
+epicsShareFunc int epicsShareAPI epicsMessageQueueTryReceive(
+    epicsMessageQueueId id,
+    void *message);
 epicsShareFunc int epicsShareAPI epicsMessageQueueReceive(
     epicsMessageQueueId id,
-    void *message,
-    unsigned int *messageSize);
+    void *message);
 epicsShareFunc int epicsShareAPI epicsMessageQueueReceiveWithTimeout(
     epicsMessageQueueId id,
     void *message,
-    unsigned int *messageSize,
     double timeout);
 epicsShareFunc int epicsShareAPI epicsMessageQueuePending(
     epicsMessageQueueId id);
 epicsShareFunc void epicsShareAPI epicsMessageQueueShow(
     epicsMessageQueueId id,
-    unsigned int level);
+    int level);
 
 #ifdef __cplusplus
 }
 #endif /*__cplusplus */
+
+#include "osdMessageQueue.h"
 
 #endif /* epicsMessageQueueh */

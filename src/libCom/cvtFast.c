@@ -100,7 +100,7 @@ int cvtFloatToString(
 
 	/* whole numbers */
         got_one = 0;
-        for (iplace = 1000000; iplace >= 1; iplace /= 10){
+        for (iplace = 10000000; iplace >= 1; iplace /= 10){
                 if (whole >= iplace){
                         got_one = 1;
                         number = whole / iplace;
@@ -178,7 +178,7 @@ int cvtDoubleToString(
 
 	/* whole numbers */
         got_one = 0;
-        for (iplace = 1000000; iplace >= 1; iplace /= 10){
+        for (iplace = 10000000; iplace >= 1; iplace /= 10){
                 if (whole >= iplace){
                         got_one = 1;
                         number = whole / iplace;

@@ -49,6 +49,7 @@ MUNCHNAME = $(PRODNAME:%$(EXE)=%$(MUNCH_SUFFIX))
 CTDT_SRCS = $(PRODNAME:%$(EXE)=%_ctdt.c)
 CTDT_OBJS = $(PRODNAME:%$(EXE)=%_ctdt$(OBJ))
 NMS = $(PRODNAME:%$(EXE)=%.nm)
+MUNCH_DEPENDS = %_ctdt$(OBJ)
 
 #-------------------------------------------------------
 # R3.13 compatability object library definitions

@@ -6,6 +6,22 @@
 #
 # All RTEMS targets use the same Makefile fragment
 #
-RTEMS_TARGET_CPU=powerpc
+RTEMS_TARGET_CPU = powerpc
 ARCH_DEP_CFLAGS += -DHAVE_PPCBUG
+
+MUNCH_SUFFIX = .boot
+MUNCHNAME = $(PRODNAME:%$(EXE)=%$(MUNCH_SUFFIX))
+define MUNCH_CMD
+	$(RTEMS_BASE)/bin/$(OBJCOPY_FOR_TARGET) -O binary -R .comment -S $< rtems
+	gzip -f9 rtems
+	$(RTEMS_BASE)/bin/$(LD_FOR_TARGET) -o $@ \
+		 $(PROJECT_RELEASE)/lib/bootloader.o \
+		--just-symbols=$< \
+		-b binary rtems.gz \
+		-T $(PROJECT_RELEASE)/lib/ppcboot.lds \
+		-Map $<.map
+	rm -f rtems.gz
+endef
+
 include $(CONFIG)/os/CONFIG.Common.RTEMS
+OP_SYS_LDLIBS += -lrtemsNfs

@@ -287,13 +287,13 @@ $(LOADABLE_SHRLIBNAME):$(LOADABLE_SHRLIB_PREFIX)%$(LOADABLE_SHRLIB_SUFFIX): $(LI
 	@$(RM) $@
 	$(PERL) $(TOOLS)/munch.pl <  $< > $@
 
-$(MUNCHNAME):%.munch : %_ctdt$(OBJ) %$(EXE)
+$(MUNCHNAME):%$(MUNCH_SUFFIX) : $(MUNCH_DEPENDS) %$(EXE)
 	@$(RM) $@
-	$(LDCMD)
+	$(MUNCH_CMD)
 
 $(OBJLIB_MUNCHNAME):%.munch : %_ctdt$(OBJ) %$(OBJ)
 	@$(RM) $@
-	$(LDCMD)
+	$(MUNCH_CMD)
 
 # Ext, app and module rules
 RULES_INCLUDE CONFIG_APP_INCLUDE: $(wildcard $(TOP)/configure/RELEASE*)

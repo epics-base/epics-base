@@ -284,8 +284,8 @@ ARFLAGS =
 ARCMD = $(AR) $(ARFLAGS) $(USR_ARFLAGS) $@  $(LIBRARY_LD_OBJS)
 
 #--------------------------------------------------
-# ld default
-LDCMD = $(LD) -o $@ $^
+# 'Munch' link-edit
+MUNCH_CMD = $(LD) -o $@ $^
 
 #--------------------------------------------------
 # Build compile line here

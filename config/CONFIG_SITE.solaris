@@ -20,7 +20,7 @@ CXXCMPLR=NORMAL
 
 # Unbundled C compiler stuff
 SPARCWORKS = /opt/SUNWspro
-#SPECIAL_LANG = $(SPARCWORKS)/SC3.0/lib
-#SPECIAL_LANG = .
+#SPECIAL_LANG = $(SPARCWORKS)/lib
+SPECIAL_LANG = .
 
 

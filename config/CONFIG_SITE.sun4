@@ -25,5 +25,7 @@ CXXCMPLR=NORMAL
 #CPLUSPLUS=G++
 
 # Special C library requirements
-SPECIAL_LANG = /usr/lang/SC3.0.1
+#SPECIAL_LANG = /usr/lang/SC3.0.1
+#SPECIAL_LANG = /usr/lang/lib
+SPECIAL_LANG = .
 

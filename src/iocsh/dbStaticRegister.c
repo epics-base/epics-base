@@ -41,7 +41,7 @@ static void dbDumpPathCallFunc(const ioccrfArgBuf *args)
 /* dbDumpRecord */
 static const ioccrfArg dbDumpRecordArg0 = { "pdbbase",ioccrfArgPdbbase};
 static const ioccrfArg dbDumpRecordArg1 = { "recordTypeName",ioccrfArgString};
-static const ioccrfArg dbDumpRecordArg2 = { "interest_level",ioccrfArgInt};
+static const ioccrfArg dbDumpRecordArg2 = { "interest level",ioccrfArgInt};
 static const ioccrfArg * const dbDumpRecordArgs[3] =
     {&dbDumpRecordArg0,&dbDumpRecordArg1,&dbDumpRecordArg2};
 static const ioccrfFuncDef dbDumpRecordFuncDef = {"dbDumpRecord",3,dbDumpRecordArgs};

@@ -48,43 +48,31 @@ static void pwdCallFunc (const ioccrfArgBuf *args)
 }
 
 /* show (thread information) */
-static const ioccrfArg showArg0 = { "task",ioccrfArgString};
-static const ioccrfArg showArg1 = { "task",ioccrfArgString};
-static const ioccrfArg showArg2 = { "task",ioccrfArgString};
-static const ioccrfArg showArg3 = { "task",ioccrfArgString};
-static const ioccrfArg showArg4 = { "task",ioccrfArgString};
-static const ioccrfArg showArg5 = { "task",ioccrfArgString};
-static const ioccrfArg showArg6 = { "task",ioccrfArgString};
-static const ioccrfArg showArg7 = { "task",ioccrfArgString};
-static const ioccrfArg showArg8 = { "task",ioccrfArgString};
-static const ioccrfArg showArg9 = { "task",ioccrfArgString};
-static const ioccrfArg * const showArgs[10] = {
-    &showArg0,&showArg1,&showArg2,&showArg3,&showArg4,
-    &showArg5,&showArg6,&showArg7,&showArg8,&showArg9,
-};
-static const ioccrfFuncDef showFuncDef = {"show",10,showArgs};
+static const ioccrfArg showArg0 = { "[-level] [task ...]", ioccrfArgArgv};
+static const ioccrfArg * const showArgs[1] = { &showArg0 };
+static const ioccrfFuncDef showFuncDef = {"show",1,showArgs};
 static void showCallFunc(const ioccrfArgBuf *args)
 {
-    int i = 0;
+    int i = 1;
     int first = 1;
     int level = 0;
-    char *cp;
+    const char *cp;
     epicsThreadId tid;
     unsigned long ltmp;
+    int argc = args[0].ival;
+    const char * const *argv = args[1].vval;
     char *endp;
 
-    if (((cp = args[i].sval) != NULL)
-     && (*cp == '-')) {
+    if ((i < argc) && (*(cp = argv[i]) == '-')) {
         level = atoi (cp + 1);
         i++;
     }
-    if ((cp = args[i].sval) == NULL) {
+    if (i >= argc) {
         epicsThreadShowAll (level);
         return;
     }
-    for ( ; i < 10 ; i++) {
-        if ((cp = args[i].sval) == NULL)
-            return;
+    for ( ; i < argc ; i++) {
+        cp = argv[i];
         ltmp = strtoul (cp, &endp, 16);
         if (*endp) {
             tid = epicsThreadGetId (cp);

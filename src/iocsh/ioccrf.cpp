@@ -402,13 +402,12 @@ ioccrf (const char *pathname)
                             fputs (pioccrfFuncDef->name, stdout);
                             for (int a = 0 ; a < pioccrfFuncDef->nargs ; a++) {
                                 const char *cp = pioccrfFuncDef->arg[a]->name;
-                                putchar (' ');
-                                while (*cp != '\0') {
-                                    if (isspace (*cp))
-                                        putchar ('_');
-                                    else
-                                        putchar (*cp);
-                                    cp++;
+                                if ((pioccrfFuncDef->arg[a]->type == ioccrfArgArgv)
+                                 || (strchr (cp, ' ') == NULL)) {
+                                    printf (" %s", cp);
+                                }
+                                else {
+                                    printf (" '%s'", cp);
                                 }
                             }
                             putchar ('\n');
@@ -432,13 +431,11 @@ ioccrf (const char *pathname)
              * Process arguments and call function
              */
             for (int arg = 0 ; ; arg++) {
-                char *p = (arg < argc) ? argv[arg+1] : NULL;
-
                 if (arg == pioccrfFuncDef->nargs) {
                     (*found->func)(argBuf);
                     break;
                 }
-                if (arg >= argBufCapacity) {
+                if ((arg+1) >= argBufCapacity) {
                     void *np;
 
                     argBufCapacity += 20;
@@ -450,7 +447,15 @@ ioccrf (const char *pathname)
                     }
                     argBuf = (ioccrfArgBuf *)np;
                 }
-                if (!cvtArg (filename, lineno, p, &argBuf[arg], pioccrfFuncDef->arg[arg]))
+                if (pioccrfFuncDef->arg[arg]->type == ioccrfArgArgv) {
+                    argBuf[arg].ival = argc-arg;
+                    argBuf[arg+1].vval = argv+arg;
+                    (*found->func)(argBuf);
+                    break;
+                }
+                if (!cvtArg (filename, lineno,
+                                        ((arg < argc) ? argv[arg+1] : NULL),
+                                        &argBuf[arg], pioccrfFuncDef->arg[arg]))
                     break;
             }
         }

@@ -21,7 +21,8 @@ typedef enum {
     ioccrfArgInt,
     ioccrfArgDouble,
     ioccrfArgString,
-    ioccrfArgPdbbase
+    ioccrfArgPdbbase,
+    ioccrfArgArgv
 }ioccrfArgType;
 
 typedef union ioccrfArgBuf {

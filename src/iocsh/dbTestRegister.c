@@ -67,7 +67,7 @@ static void dbpfCallFunc(const ioccrfArgBuf *args)
 
 /* dbpr */
 static const ioccrfArg dbprArg0 = { "record name",ioccrfArgString};
-static const ioccrfArg dbprArg1 = { "interest_level",ioccrfArgInt};
+static const ioccrfArg dbprArg1 = { "interest level",ioccrfArgInt};
 static const ioccrfArg * const dbprArgs[2] = {&dbprArg0,&dbprArg1};
 static const ioccrfFuncDef dbprFuncDef = {"dbpr",2,dbprArgs};
 static void dbprCallFunc(const ioccrfArgBuf *args)
@@ -95,7 +95,7 @@ static void dbtpfCallFunc(const ioccrfArgBuf *args)
 
 /* dbior */
 static const ioccrfArg dbiorArg0 = { "record name",ioccrfArgString};
-static const ioccrfArg dbiorArg1 = { "interest_level",ioccrfArgInt};
+static const ioccrfArg dbiorArg1 = { "interest level",ioccrfArgInt};
 static const ioccrfArg * const dbiorArgs[2] = {&dbiorArg0,&dbiorArg1};
 static const ioccrfFuncDef dbiorFuncDef = {"dbior",2,dbiorArgs};
 static void dbiorCallFunc(const ioccrfArgBuf *args)
@@ -139,7 +139,7 @@ static void tpnCallFunc(const ioccrfArgBuf *args)
 
 /* dblsr */
 static const ioccrfArg dblsrArg0 = { "record name",ioccrfArgString};
-static const ioccrfArg dblsrArg1 = { "interest_level",ioccrfArgInt};
+static const ioccrfArg dblsrArg1 = { "interest level",ioccrfArgInt};
 static const ioccrfArg * const dblsrArgs[2] = {&dblsrArg0,&dblsrArg1};
 static const ioccrfFuncDef dblsrFuncDef = {"dblsr",2,dblsrArgs};
 static void dblsrCallFunc(const ioccrfArgBuf *args)
@@ -153,7 +153,7 @@ static void scanpplCallFunc(const ioccrfArgBuf *args)
 { scanppl(args[0].dval);}
 
 /* scanpel */
-static const ioccrfArg scanpelArg0 = { "event_number",ioccrfArgInt};
+static const ioccrfArg scanpelArg0 = { "event number",ioccrfArgInt};
 static const ioccrfArg * const scanpelArgs[1] = {&scanpelArg0};
 static const ioccrfFuncDef scanpelFuncDef = {"scanpel",1,scanpelArgs};
 static void scanpelCallFunc(const ioccrfArgBuf *args)

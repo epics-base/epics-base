@@ -53,7 +53,7 @@ static void dbstatCallFunc(const ioccrfArgBuf *args) { dbstat();}
 
 /* dbp */
 static const ioccrfArg dbpArg0 = { "record name",ioccrfArgString};
-static const ioccrfArg dbpArg1 = { "interest_level",ioccrfArgInt};
+static const ioccrfArg dbpArg1 = { "interest level",ioccrfArgInt};
 static const ioccrfArg * const dbpArgs[2] = {&dbpArg0,&dbpArg1};
 static const ioccrfFuncDef dbpFuncDef = {"dbp",2,dbpArgs};
 static void dbpCallFunc(const ioccrfArgBuf *args)

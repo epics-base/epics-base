@@ -539,6 +539,8 @@ caStatus casStrmClient::readNotifyAction ( epicsGuard < casClientMutex > & guard
 		return this->readNotifyFailureResponse ( guard, * mp, status );
 	}
 
+    this->ctx.setChannel ( pChan );
+
 	//
 	// verify read access
 	// 
@@ -1229,7 +1231,8 @@ caStatus casStrmClient::claimChannelAction (
 		status = S_cas_success;	
 	}
 	else if ( pvar.getStatus() == S_casApp_asyncCompletion ) {
-		status = this->createChanResponse ( guard, *mp, S_cas_badParameter );
+		status = this->createChanResponse ( guard, 
+                    this->ctx, S_cas_badParameter );
 		errMessage ( S_cas_badParameter, 
 		"- expected asynch IO creation from caServer::pvAttach()" );
 	}
@@ -1238,7 +1241,7 @@ caStatus casStrmClient::claimChannelAction (
 		this->ctx.getServer()->addItemToIOBLockedList ( *this );
 	}
 	else {
-		status = this->createChanResponse ( guard, *mp, pvar );
+		status = this->createChanResponse ( guard, this->ctx, pvar );
 	}
 	return status;
 }
@@ -1248,9 +1251,10 @@ caStatus casStrmClient::claimChannelAction (
 //
 caStatus casStrmClient::createChanResponse ( 
     epicsGuard < casClientMutex > & guard,
-    const caHdrLargeArray & hdr, 
-    const pvAttachReturn & pvar )
+    casCtx & ctxIn, const pvAttachReturn & pvar )
 {
+	const caHdrLargeArray & hdr = *ctxIn.getMsg();
+
 	if ( pvar.getStatus() != S_cas_success ) {
 		return this->channelCreateFailedResp ( guard, 
             hdr, pvar.getStatus() );
@@ -1296,11 +1300,11 @@ caStatus casStrmClient::createChanResponse (
 
 	//
 	// create server tool XXX derived from casChannel
-    // (use temp context because this can be called asynchronously)
 	//
 	casChannel * pChan = pvar.getPV()->pPVI->createChannel ( 
-        this->ctx, this->pUserName, this->pHostName );
+        ctxIn, this->pUserName, this->pHostName );
 	if ( ! pChan ) {
+		pvar.getPV()->pPVI->deleteSignal();
 		return this->channelCreateFailedResp ( 
             guard, hdr, S_cas_noMemory );
 	}
@@ -1331,16 +1335,28 @@ caStatus casStrmClient::createChanResponse (
     }
 
     //
+    // Install the channel now so that the server will
+    // clean up properly if the client disconnects
+    // while an asynchronous IO fetching the enum
+    // string table is outstanding
+    //
+    this->chanTable.add ( *pChan->pChanI );
+    this->chanList.add ( *pChan->pChanI );
+    pChan->pChanI->installIntoPV ();
+
+    assert ( hdr.m_cid == pChan->pChanI->getCID() );
+
+    //
     // check to see if the enum table is empty and therefore
     // an update is needed every time that a PV attaches 
     // to the server in case the client disconnected before 
     // an asynchronous IO to get the table completed
     //
     if ( nativeTypeDBR == DBR_ENUM ) {
-        this->ctx.setPV ( pvar.getPV()->pPVI );
-        this->ctx.setChannel ( pChan->pChanI );
+        ctxIn.setChannel ( pChan->pChanI );
+        ctxIn.setPV ( pvar.getPV()->pPVI );
         this->userStartedAsyncIO = false;
-        status = pvar.getPV()->pPVI->updateEnumStringTable ( this->ctx );
+        status = pvar.getPV()->pPVI->updateEnumStringTable ( ctxIn );
 	    if ( this->userStartedAsyncIO ) {
 		    if ( status != S_casApp_asyncCompletion ) {
 			    fprintf ( stderr, 
@@ -1349,31 +1365,40 @@ caStatus casStrmClient::createChanResponse (
 		    }
 			status = S_cas_success;
 	    }
-        else if ( status == S_casApp_success ) {
-            status = enumPostponedCreateChanResponse ( 
-                    guard, * pChan->pChanI, hdr, nativeTypeDBR );
+        else if ( status == S_cas_success ) {
+            status = privateCreateChanResponse ( 
+                guard, * pChan->pChanI, hdr, nativeTypeDBR );
         }
-	    else if ( status == S_casApp_asyncCompletion )  {
-		    status = S_cas_badParameter;
-		    errMessage ( status, 
-		        "- asynch IO creation status returned, but async IO not started?");
-	    }
-        else if ( status == S_casApp_postponeAsyncIO ) {
-		    errlogPrintf ( "The server library does not currently support postponment of " );
-            errlogPrintf ( "string table cache update of casChannel::read()." );
-		    errlogPrintf ( "To postpone this request please postpone the PC attach IO request." );
-		    errlogPrintf ( "String table cache update did not occur." );
-            status = enumPostponedCreateChanResponse ( 
+        else {
+            if ( status == S_casApp_asyncCompletion )  {
+		        errMessage ( status, 
+		            "- enum string tbl cache read returned asynch IO creation, but async IO not started?");
+	        }
+            else if ( status == S_casApp_postponeAsyncIO ) {
+                errMessage ( status, "- enum string tbl cache read ASYNC IO postponed ?");
+		        errlogPrintf ( "The server library does not currently support postponment of\n" );
+                errlogPrintf ( "string table cache update of casChannel::read().\n" );
+		        errlogPrintf ( "To postpone this request please postpone the PC attach IO request.\n" );
+		        errlogPrintf ( "String table cache update did not occur.\n" );
+            }
+            else {
+		        errMessage ( status, "- enum string tbl cache read failed ?");
+            }
+            status = privateCreateChanResponse ( 
                 guard, * pChan->pChanI, hdr, nativeTypeDBR );
         }
     }
     else {
-        status = enumPostponedCreateChanResponse ( 
+        status = privateCreateChanResponse ( 
             guard, * pChan->pChanI, hdr, nativeTypeDBR );
     }
   
     if ( status != S_cas_success ) {
-        delete ctx.getChannel();
+        this->chanTable.remove ( *pChan->pChanI );
+        this->chanList.remove ( *pChan->pChanI );
+        pChan->pChanI->uninstallFromPV ( this->eventSys );
+		pChan->getPV()->pPVI->deleteSignal ();
+        delete pChan->pChanI;
     }
 
     return status;
@@ -1385,8 +1410,29 @@ caStatus casStrmClient::createChanResponse (
 // LOCK must be applied
 //
 caStatus casStrmClient::enumPostponedCreateChanResponse ( 
+    epicsGuard < casClientMutex > & guard, casChannelI & chan, 
+    const caHdrLargeArray & hdr )
+{
+    caStatus status = this->privateCreateChanResponse ( 
+        guard, chan, hdr, DBR_ENUM );
+    if ( status != S_cas_success ) {
+        if ( status != S_cas_sendBlocked ) {
+            this->chanTable.remove ( chan );
+            this->chanList.remove ( chan );
+            chan.uninstallFromPV ( this->eventSys );
+            delete & chan;
+        }
+    }
+    return status;
+}
+
+//
+// privateCreateChanResponse
+//
+caStatus casStrmClient::privateCreateChanResponse ( 
     epicsGuard < casClientMutex > & guard,
-    casChannelI & chan, const caHdrLargeArray & hdr, unsigned nativeTypeDBR )
+    casChannelI & chan, const caHdrLargeArray & hdr,
+    unsigned nativeTypeDBR )
 {
 	//
 	// We are allocating enough space for both the claim
@@ -1413,17 +1459,14 @@ caStatus casStrmClient::enumPostponedCreateChanResponse (
         this->out.popCtx ( outctx );
 		errMessage ( status, "incomplete channel create?" );
 		status = this->channelCreateFailedResp ( guard, hdr, status );
-        if ( status == S_cas_success ) {
+        if ( status != S_cas_sendBlocked ) {
+            this->chanTable.remove ( chan );
+            this->chanList.remove ( chan );
+            chan.uninstallFromPV ( this->eventSys );
 		    delete & chan;
         }
         return status;
 	}
-
-    // must install into server table before using server id
-    // member of channel
-    this->chanTable.add ( chan );
-    this->chanList.add ( chan );
-    chan.installIntoPV ();
 
 	//
 	// We are allocated enough space for both the claim
@@ -1437,16 +1480,16 @@ caStatus casStrmClient::enumPostponedCreateChanResponse (
 	assert ( nativeTypeDBR <= 0xffff );
 	aitIndex nativeCount = chan.getPVI().nativeCount();
 	assert ( nativeCount <= 0xffffffff );
+    assert ( hdr.m_cid == chan.getCID() );
     status = this->out.copyInHeader ( CA_PROTO_CREATE_CHAN, 0,
         static_cast <ca_uint16_t> ( nativeTypeDBR ), 
         static_cast <ca_uint32_t> ( nativeCount ), // X aCC 392
-        hdr.m_cid, chan.getSID(), 0 );
+        chan.getCID(), chan.getSID(), 0 );
     if ( status != S_cas_success ) {
-
         this->out.popCtx ( outctx );
 		errMessage ( status, "incomplete channel create?" );
 		status = this->channelCreateFailedResp ( guard, hdr, status );
-        if ( status == S_cas_success ) {
+        if ( status != S_cas_sendBlocked ) {
             this->chanTable.remove ( chan );
             this->chanList.remove ( chan );
             chan.uninstallFromPV ( this->eventSys );

@@ -109,7 +109,7 @@ private:
 	// asynchronous completion
 	//
 	caStatus createChanResponse ( epicsGuard < casClientMutex > &,
-            const caHdrLargeArray &, const pvAttachReturn & );
+            casCtx &, const pvAttachReturn & );
 	caStatus readResponse ( epicsGuard < casClientMutex > &,
             casChannelI * pChan, const caHdrLargeArray & msg,
 			const gdd & desc, const caStatus status );
@@ -124,6 +124,8 @@ private:
         casChannelI & chan, const caHdrLargeArray & msg, 
 		const gdd & desc, const caStatus status );
     caStatus enumPostponedCreateChanResponse ( epicsGuard < casClientMutex > &,
+        casChannelI & chan, const caHdrLargeArray & hdr );
+    caStatus privateCreateChanResponse ( epicsGuard < casClientMutex > &,
         casChannelI & chan, const caHdrLargeArray & hdr, unsigned dbrType );
 	caStatus channelCreateFailedResp ( epicsGuard < casClientMutex > &,
         const caHdrLargeArray &, const caStatus createStatus );

@@ -23,8 +23,7 @@ casAsyncReadIOI::casAsyncReadIOI (
     casAsyncReadIO & intf, const casCtx & ctx ) :
 	casAsyncIOI ( ctx ), msg ( *ctx.getMsg() ), 
     asyncReadIO ( intf ), chan ( *ctx.getChannel () ), 
-    pDD ( NULL ), completionStatus ( S_cas_internal ),
-    createChannelWasSuccessful ( false )
+    pDD ( NULL ), completionStatus ( S_cas_internal )
 {
     this->chan.installIO ( *this );
 }
@@ -32,10 +31,6 @@ casAsyncReadIOI::casAsyncReadIOI (
 casAsyncReadIOI::~casAsyncReadIOI ()
 {
     this->asyncReadIO.serverInitiatedDestroy ();
-    if ( this->msg.m_cmmd == CA_PROTO_CREATE_CHAN && 
-        ! this->createChannelWasSuccessful ) {
-        delete & this->chan;
-    }
 }
 
 caStatus casAsyncReadIOI::postIOCompletion ( 
@@ -54,7 +49,11 @@ bool casAsyncReadIOI::oneShotReadOP () const
 caStatus casAsyncReadIOI::cbFuncAsyncIO (
     epicsGuard < casClientMutex > & guard )
 {
-	caStatus 	status;
+	caStatus status;
+
+    // uninstall the io early on to prevent a channel delete from
+    // destroying this object twice
+    this->chan.uninstallIO ( *this );
 
 	switch ( this->msg.m_cmmd ) {
 	case CA_PROTO_READ:
@@ -76,19 +75,11 @@ caStatus casAsyncReadIOI::cbFuncAsyncIO (
 		break;
 
 	case CA_PROTO_CREATE_CHAN:
-        unsigned nativeTypeDBR;
-        status = this->chan.getPVI().bestDBRType ( nativeTypeDBR );
-        if ( status ) {
-	        errMessage ( status, "best external dbr type fetch failed" );
-	        status = client.channelCreateFailedResp ( 
-                guard, this->msg, status );
-            if ( status != S_cas_sendBlocked ) {
-                delete & this->chan;
-            }
-        }
-        else {
-            // we end up here if the channel claim protocol response is delayed
-            // by an asynchronous enum string table fetch response
+        // we end up here if the channel claim protocol response is delayed
+        // by an asynchronous enum string table fetch response
+        status = client.enumPostponedCreateChanResponse ( 
+                    guard, this->chan, this->msg );
+        if ( status == S_cas_success ) {
             if ( this->completionStatus == S_cas_success && this->pDD.valid() ) {
                 this->chan.getPVI().updateEnumStringTableAsyncCompletion ( *this->pDD );
             }
@@ -97,10 +88,6 @@ caStatus casAsyncReadIOI::cbFuncAsyncIO (
                     "unable to read application type \"enums\" string"
                     " conversion table for enumerated PV" );
             }
-            status = client.enumPostponedCreateChanResponse ( 
-                guard, this->chan, this->msg, nativeTypeDBR );
-            this->createChannelWasSuccessful = 
-                        ( status == S_cas_success );
         }
         break;
 
@@ -111,8 +98,8 @@ caStatus casAsyncReadIOI::cbFuncAsyncIO (
 		break;
 	}
 
-    if ( status != S_cas_sendBlocked ) {
-        this->chan.uninstallIO ( *this );
+    if ( status == S_cas_sendBlocked ) {
+        this->chan.installIO ( *this );
     }
 
 	return status;

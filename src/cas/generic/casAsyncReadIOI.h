@@ -37,7 +37,6 @@ private:
 	class casChannelI & chan; 
 	smartConstGDDPointer pDD;
 	caStatus completionStatus;
-    bool createChannelWasSuccessful;
     epicsShareFunc bool oneShotReadOP () const;
 	epicsShareFunc caStatus cbFuncAsyncIO ( 
         epicsGuard < casClientMutex > & );

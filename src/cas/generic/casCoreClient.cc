@@ -72,7 +72,7 @@ caStatus casCoreClient::asyncSearchResponse (
 }
 caStatus casCoreClient::createChanResponse (         
     epicsGuard < casClientMutex > &,
-    const caHdrLargeArray &, const pvAttachReturn & )
+    casCtx &, const pvAttachReturn & )
 {
 	return S_casApp_noSupport;
 }
@@ -113,7 +113,7 @@ caStatus casCoreClient::accessRightsResponse (
 }
 caStatus casCoreClient::enumPostponedCreateChanResponse ( 
     epicsGuard < casClientMutex > &, casChannelI &, 
-    const caHdrLargeArray &, unsigned )
+    const caHdrLargeArray & )
 {
 	return S_casApp_noSupport;
 }

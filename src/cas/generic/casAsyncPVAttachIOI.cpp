@@ -38,9 +38,17 @@ caStatus casAsyncPVAttachIOI::cbFuncAsyncIO (
 {
 	caStatus 	status;
 
+    // uninstall here in case the channel is deleted 
+    // further down the call stack
+    this->client.uninstallAsynchIO ( *this );
+
 	if ( this->msg.m_cmmd == CA_PROTO_CREATE_CHAN ) {
+        casCtx tmpCtx;
+        tmpCtx.setMsg ( this->msg, 0 );
+        tmpCtx.setServer ( & this->client.getCAS() );
+        tmpCtx.setClient ( & this->client );
 		status = this->client.createChanResponse ( guard,
-                        this->msg, this->retVal );
+                        tmpCtx, this->retVal );
     }
     else {
         errPrintf ( S_cas_invalidAsynchIO, __FILE__, __LINE__,
@@ -48,8 +56,8 @@ caStatus casAsyncPVAttachIOI::cbFuncAsyncIO (
 		status = S_cas_invalidAsynchIO;
 	}
 
-    if ( status != S_cas_sendBlocked ) {
-        this->client.uninstallAsynchIO ( *this );
+    if ( status == S_cas_sendBlocked ) {
+        this->client.installAsynchIO ( *this );
     }
 
 	return status;

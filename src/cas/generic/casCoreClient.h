@@ -57,7 +57,7 @@ public:
         ca_uint16_t protocolRevision, ca_uint32_t sequenceNumber );
 	virtual caStatus createChanResponse (
         epicsGuard < casClientMutex > &,
-		const caHdrLargeArray &, const pvAttachReturn &);
+	    casCtx &, const pvAttachReturn &);
 	virtual caStatus readResponse (
         epicsGuard < casClientMutex > &,
 		casChannelI *, const caHdrLargeArray &, 
@@ -80,8 +80,7 @@ public:
         epicsGuard < casClientMutex > &, casChannelI * );
     virtual caStatus enumPostponedCreateChanResponse ( 
         epicsGuard < casClientMutex > &,
-        casChannelI &, const caHdrLargeArray &, 
-        unsigned dbrType );
+        casChannelI &, const caHdrLargeArray & );
 	virtual caStatus channelCreateFailedResp ( 
         epicsGuard < casClientMutex > &,
         const caHdrLargeArray &, const caStatus createStatus );

@@ -10,7 +10,8 @@
  *  Copyright, 1986, The Regents of the University of California.
  *                                  
  *           
- *	Author Jeffrey O. Hill
+ *	Author:
+ *  Jeffrey O. Hill
  *	johill@lanl.gov
  *	505 665 1831
  */
@@ -51,12 +52,21 @@ extern "C" void putNotifyCompletion ( putNotify *ppn )
     pNotify->destroy ();
 }
 
-dbPutNotifyIO::dbPutNotifyIO ( cacNotify &notifyIn ) :
-    cacNotifyIO (notifyIn), ioComplete (false) 
+dbPutNotifyIO::dbPutNotifyIO ( cacNotify &notifyIn, dbPutNotifyBlocker &blockerIn ) :
+    cacNotifyIO ( notifyIn ), blocker ( blockerIn ), ioComplete ( false )
 {
-    memset (&this->pn, '\0', sizeof (this->pn));
+    memset ( &this->pn, '\0', sizeof ( this->pn ) );
     this->pn.userCallback = putNotifyCompletion;
     this->pn.usrPvt = this;
+    // wait for current put notify to complete
+    this->blocker.chan.lock ();
+    while ( this->blocker.pPN ) {
+        this->blocker.chan.unlock ();
+        this->blocker.block.wait ( 1.0 );
+        this->blocker.chan.lock ();
+    }
+    this->blocker.pPN = this;
+    this->blocker.chan.unlock ();
 }
 
 dbPutNotifyIO::~dbPutNotifyIO ()
@@ -64,6 +74,8 @@ dbPutNotifyIO::~dbPutNotifyIO ()
     if ( ! this->ioComplete ) {
         dbNotifyCancel ( &this->pn );
     }
+    this->blocker.pPN = 0;
+    this->blocker.block.signal ();
 }
 
 int dbPutNotifyIO::initiate ( struct dbAddr &addr, unsigned type, 

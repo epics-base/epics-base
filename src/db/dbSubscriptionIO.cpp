@@ -34,10 +34,16 @@ dbSubscriptionIO::dbSubscriptionIO ( dbChannelIO &chanIO,
     cacNotifyIO ( notifyIn ), chan ( chanIO ), es ( 0 ), 
         type ( typeIn ), count ( countIn )
 {
+    this->chan.lock ();
+    this->chan.eventq.add ( *this );
+    this->chan.unlock ();
 }
 
 dbSubscriptionIO::~dbSubscriptionIO ()
 {
+    this->chan.lock ();
+    this->chan.eventq.remove ( *this );
+    this->chan.unlock ();
     if ( this->es ) {
         db_cancel_event ( this->es );
     }

@@ -33,14 +33,31 @@ extern "C" unsigned short dbDBRnewToDBRold[DBR_ENUM+1];
 tsFreeList < dbChannelIO > dbChannelIO::freeList;
 
 dbChannelIO::dbChannelIO ( cacChannel &chan, const dbAddr &addrIn, dbServiceIO &serviceIO ) :
-    cacChannelIO ( chan ), serviceIO ( serviceIO ), pGetCallbackCache ( 0 ), 
-    getCallbackCacheSize ( 0ul ), addr ( addrIn )
+    cacLocalChannelIO ( chan ), serviceIO ( serviceIO ), pGetCallbackCache ( 0 ), 
+    getCallbackCacheSize ( 0ul ), pBlocker (0), addr ( addrIn )
 {
+    chan.attachIO ( *this );
     this->connectNotify ();
 }
 
 dbChannelIO::~dbChannelIO ()
 {
+    /*
+     * remove any subscriptions attached to this channel
+     */
+    this->lock ();
+    tsDLIterBD <dbSubscriptionIO> iter = this->eventq.first ();
+    while ( iter != iter.eol () ) {
+        tsDLIterBD <dbSubscriptionIO> next = iter.itemAfter ();
+        iter->destroy ();
+        iter = next;
+    }
+    this->unlock ();
+
+    if ( this->pBlocker ) {
+        this->pBlocker->destroy ();
+    }
+
     if ( this->pGetCallbackCache ) {
         delete [] this->pGetCallbackCache;
     }
@@ -139,13 +156,26 @@ int dbChannelIO::write ( unsigned type, unsigned long count,
                         const void *pValue, cacNotify &notify ) 
 {
     dbPutNotifyIO *pIO;
+
     if ( count > LONG_MAX ) {
         return ECA_BADCOUNT;
     }
-    pIO = new dbPutNotifyIO ( notify );
+
+    this->lock ();
+    if ( ! this->pBlocker ) {
+        this->pBlocker = new dbPutNotifyBlocker ( *this );
+        if ( ! this->pBlocker ) {
+            this->unlock ();
+            return ECA_ALLOCMEM;
+        }
+    }
+    this->unlock ();
+
+    pIO = new dbPutNotifyIO ( notify, *this->pBlocker );
     if ( ! pIO ) {
         return ECA_ALLOCMEM;
     }
+
     int status = pIO->initiate ( this->addr, type, count, pValue );
     if ( status != ECA_NORMAL ) {
         pIO->destroy ();
@@ -160,6 +190,7 @@ int dbChannelIO::subscribe ( unsigned type, unsigned long count,
     if ( ! pIO ) {
         return ECA_ALLOCMEM;
     }
+
     int status = pIO->begin ( this->addr, mask );
     if ( status != ECA_NORMAL ) {
         pIO->destroy ();

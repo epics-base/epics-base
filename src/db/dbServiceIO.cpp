@@ -60,7 +60,7 @@ dbServiceIO::~dbServiceIO ()
     }
 }
 
-cacChannelIO *dbServiceIO::createChannelIO ( cacChannel &chan, const char *pName )
+cacLocalChannelIO *dbServiceIO::createChannelIO ( cacChannel &chan, const char *pName )
 {
     struct dbAddr addr;
 

@@ -332,7 +332,7 @@ void epicsThreadCleanupWIN32 ()
 }
 
 /*
- * this voodo copied directly from example in visual c++ 7 documentation
+ * this was copied directly from example in visual c++ 7 documentation
  *
  * Usage: SetThreadName (-1, "MainThread");
  */

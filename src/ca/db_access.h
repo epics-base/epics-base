@@ -46,19 +46,20 @@ extern "C" {
  *
  * (so far this is sufficient for all archs we have ported to)
  */
-typedef epicsOldString	dbr_string_t;
-typedef epicsUInt8	dbr_char_t;
-typedef epicsInt16	dbr_short_t;
+typedef epicsOldString dbr_string_t;
+typedef epicsUInt8 dbr_char_t;
+typedef epicsInt16 dbr_short_t;
 typedef epicsUInt16	dbr_ushort_t;
-typedef epicsInt16	dbr_int_t;
-typedef epicsUInt16	dbr_enum_t;
-typedef epicsInt32	dbr_long_t;
-typedef epicsUInt32	dbr_ulong_t;
-typedef epicsFloat32	dbr_float_t;
-typedef epicsFloat64	dbr_double_t;
+typedef epicsInt16 dbr_int_t;
+typedef epicsUInt16 dbr_enum_t;
+typedef epicsInt32 dbr_long_t;
+typedef epicsUInt32 dbr_ulong_t;
+typedef epicsFloat32 dbr_float_t;
+typedef epicsFloat64 dbr_double_t;
 typedef epicsUInt16	dbr_put_ackt_t;
 typedef epicsUInt16	dbr_put_acks_t;
-typedef epicsOldString	dbr_class_name_t;
+typedef epicsOldString dbr_stsack_string_t;
+typedef epicsOldString dbr_class_name_t;
 
 #ifndef db_accessHFORdb_accessC
 /* database field types */
@@ -183,7 +184,7 @@ epicsShareExtern READONLY epicsType DBR_XXXXToEpicsType [LAST_BUFFER_TYPE+1];
 /* VALUES WITH STATUS STRUCTURES */
 
 /* structure for a  string status field */
-struct dbr_sts_string{
+struct dbr_sts_string {
 	dbr_short_t	status;	 		/* status of value */
 	dbr_short_t	severity;		/* severity of alarm */
 	dbr_string_t	value;			/* current value */

@@ -1569,7 +1569,9 @@ static unsigned arrayEventExceptionNotifyComplete = 0;
 void arrayEventExceptionNotify ( struct event_handler_args args )
 {
     if ( args.status == ECA_NORMAL ) {
-        printf ( "arrayEventExceptionNotify: expected exception but didnt receive one against \"%s\" \n", 
+        printf (
+            "arrayEventExceptionNotify: expected "
+            "exception but didnt receive one against \"%s\" \n", 
             ca_name ( args.chid ) );
     }
     else {

@@ -12,8 +12,8 @@
 
 #include "osiProcess.h"
 #include "osiSigPipeIgnore.h"
-#include "iocinf.h"
 
+#include "iocinf.h"
 #include "cac_IL.h"
 #include "inetAddrID_IL.h"
 #include "bhe_IL.h"
@@ -137,19 +137,6 @@ cac::~cac ()
     this->enableCallbackPreemption ();
 
     //
-    // destroy local IO channels
-    //
-    {
-        epicsAutoMutex autoMutex ( this->defaultMutex );
-        tsDLIterBD < cacLocalChannelIO > lclChan ( this->localChanList.first () );
-        while ( lclChan.valid () ) {
-            tsDLIterBD < cacLocalChannelIO > pnext = lclChan.itemAfter ();
-            lclChan->destroy ();
-            lclChan = pnext;
-        }
-    }
-
-    //
     // make certain that process thread isnt deleting 
     // tcpiiu objects at the same that this thread is
     //
@@ -174,7 +161,7 @@ cac::~cac ()
             tsDLIterBD <tcpiiu> pnext = piiu.itemAfter ();
             {
                 epicsAutoMutex autoMutexTmp ( this->defaultMutex );
-                piiu->disconnectAllChan ( *this->pudpiiu );
+                piiu->disconnectAllChan ( limboIIU );
             }
             piiu->disconnect ();
             piiu->suicide ();
@@ -202,12 +189,7 @@ cac::~cac ()
     }
 
     if ( this->pudpiiu ) {
-        if ( ! this->enablePreemptiveCallback ) {
-            if ( this->fdRegFunc ) {
-                ( *this->fdRegFunc ) 
-                    ( this->fdRegArg, this->pudpiiu->getSock (), FALSE );
-            }
-        }
+
         //
         // make certain that the UDP thread isnt starting 
         // up  new clients. this adds an additional 
@@ -226,9 +208,8 @@ cac::~cac ()
     if ( this->pUserName ) {
         delete [] this->pUserName;
     }
-    this->sgTable.traverse ( &CASG::destroy );
+
     this->beaconTable.traverse ( &bhe::destroy );
-    this->chanTable.traverse ( &nciu::destroy );
 
     osiSockRelease ();
 
@@ -246,17 +227,12 @@ void cac::processRecvBacklog ()
         if ( ! piiu->alive () ) {
             assert ( this->pudpiiu && this->pSearchTmr );
 
-
-            if ( ! this->enablePreemptiveCallback ) {
-                if ( this->fdRegFunc ) {
-                    ( *this->fdRegFunc ) 
-                        ( (void *) this->fdRegArg, piiu->getSock (), FALSE );
-                }
-            }
-
             bhe *pBHE = piiu->getBHE ();
             if ( pBHE ) {
-                this->beaconTable.remove ( *pBHE );
+                {
+                    epicsAutoMutex autoMutexTmp ( this->defaultMutex );
+                    this->beaconTable.remove ( *pBHE );
+                }
                 pBHE->destroy ();
             }
 
@@ -275,7 +251,6 @@ void cac::processRecvBacklog ()
 
             this->iiuList.remove ( *piiu );
             this->iiuListLimbo.add ( *piiu );
-
 
             this->pSearchTmr->resetPeriod ( CA_RECAST_DELAY );
         }
@@ -305,29 +280,23 @@ void cac::flush ()
 
 unsigned cac::connectionCount () const
 {
+    epicsAutoMutex autoMutex ( this->iiuListMutex );
     return this->iiuList.count ();
 }
 
 void cac::show ( unsigned level ) const
 {
+    epicsAutoMutex autoMutex1 ( this->iiuListMutex );
+    epicsAutoMutex autoMutex2 ( this->defaultMutex );
+
     ::printf ( "Channel Access Client Context at %p for user %s\n", 
         this, this->pUserName );
     if ( level > 0u ) {
-        {
-            epicsAutoMutex autoMutex ( this->iiuListMutex );
-
-            tsDLIterConstBD < tcpiiu > piiu ( this->iiuList.first () );
-            while ( piiu.valid () ) {
-                piiu->show ( level - 1u );
-                piiu++;
-	        }
-
-            tsDLIterConstBD < cacLocalChannelIO > pChan ( this->localChanList.first () );
-            while ( pChan.valid () ) {
-                pChan->show ( level - 1u );
-                pChan++;
-	        }
-        }
+        tsDLIterConstBD < tcpiiu > piiu ( this->iiuList.first () );
+        while ( piiu.valid () ) {
+            piiu->show ( level - 1u );
+            piiu++;
+	    }
 
         ::printf ( "\tconnection time out watchdog period %f\n", this->connTMO );
         ::printf ( "\tpreemptive calback is %s\n",
@@ -394,47 +363,13 @@ void cac::signalRecvActivity ()
 }
 
 /*
- * cac::lookupBeaconInetAddr()
- */
-bhe * cac::lookupBeaconInetAddr (const inetAddrID &ina)
-{
-    epicsAutoMutex autoMutex ( this->defaultMutex );
-    bhe *pBHE;
-    pBHE = this->beaconTable.lookup (ina);
-    return pBHE;
-}
-
-/*
- * cac::createBeaconHashEntry ()
- */
-bhe *cac::createBeaconHashEntry (const inetAddrID &ina, const epicsTime &initialTimeStamp)
-{
-    epicsAutoMutex autoMutex ( this->defaultMutex );
-    bhe *pBHE;
-
-    pBHE = this->beaconTable.lookup ( ina );
-    if ( !pBHE ) {
-        pBHE = new bhe ( initialTimeStamp, ina );
-        if ( pBHE ) {
-            if ( this->beaconTable.add ( *pBHE ) < 0 ) {
-                pBHE->destroy ();
-                pBHE = 0;
-            }
-        }
-    }
-
-    return pBHE;
-}
-
-/*
  *  cac::beaconNotify
  */
 void cac::beaconNotify ( const inetAddrID &addr )
 {
     epicsAutoMutex autoMutex ( this->defaultMutex );
-    bhe *pBHE;
     unsigned port;  
-    int netChange;
+    bhe *pBHE;
 
     if ( ! this->pudpiiu ) {
         return;
@@ -443,9 +378,14 @@ void cac::beaconNotify ( const inetAddrID &addr )
     /*
      * look for it in the hash table
      */
-    pBHE = this->lookupBeaconInetAddr ( addr );
+    pBHE = this->beaconTable.lookup ( addr );
     if ( pBHE ) {
-        netChange = pBHE->updatePeriod ( this->programBeginTime );
+        /*
+         * return if the beacon period has not changed significantly
+         */
+        if ( ! pBHE->updatePeriod ( this->programBeginTime ) ) {
+            return;
+        }
     }
     else {
         /*
@@ -455,11 +395,12 @@ void cac::beaconNotify ( const inetAddrID &addr )
          * time that we have seen a server's beacon
          * shortly after the program started up)
          */
-        netChange = FALSE;
-        this->createBeaconHashEntry ( addr, epicsTime::getCurrent () );
-    }
-
-    if ( ! netChange ) {
+        pBHE = new bhe ( epicsTime::getCurrent (), addr );
+        if ( pBHE ) {
+            if ( this->beaconTable.add ( *pBHE ) < 0 ) {
+                pBHE->destroy ();
+            }
+        }
         return;
     }
 
@@ -471,23 +412,11 @@ void cac::beaconNotify ( const inetAddrID &addr )
      * flooding the network with broadcasts (and swamping
      * out requests for valid channels).
      *
-     * I fetch the local port number and use the low order bits
-     * as a pseudo random delay to prevent every one 
-     * from replying at once.
+     * I fetch the local UDP port number and use the low 
+     * order bits as a pseudo random delay to prevent every 
+     * one from replying at once.
      */
-    {
-        struct sockaddr_in saddr;
-        osiSocklen_t saddr_length = sizeof ( saddr );
-        int status;
-
-        status = getsockname ( this->pudpiiu->getSock (), (struct sockaddr *) &saddr, &saddr_length );
-        if ( status < 0 ) {
-            this->printf ( "CAC: getsockname () error was \"%s\"\n", SOCKERRSTR (SOCKERRNO) );
-            return;
-        }
-        port = ntohs ( saddr.sin_port );
-    }
-
+    port = this->pudpiiu->getPort ();
     {
         ca_real     delay;
 
@@ -509,7 +438,6 @@ void cac::beaconNotify ( const inetAddrID &addr )
         printf ("new server available: %s\n", buf);
     }
 #   endif
-
 }
 
 int cac::pend ( double timeout, int early )
@@ -521,7 +449,7 @@ int cac::pend ( double timeout, int early )
      * dont allow recursion
      */
     p = epicsThreadPrivateGet ( cacRecursionLock );
-    if (p) {
+    if ( p ) {
         return ECA_EVDISALLOW;
     }
 
@@ -543,9 +471,9 @@ int cac::pend ( double timeout, int early )
  */
 int cac::pendPrivate (double timeout, int early)
 {
-    epicsTime     cur_time;
-    epicsTime     beg_time;
-    double      delay;
+    epicsTime cur_time;
+    epicsTime beg_time;
+    double delay;
 
     this->flush ();
 
@@ -616,7 +544,7 @@ bool cac::ioComplete () const
     }
 }
 
-void cac::accessRightsNotify ( unsigned id, caar ar )
+void cac::accessRightsNotify ( unsigned id, const caar &ar )
 {
     epicsAutoMutex autoMutex ( this->defaultMutex );
     nciu * pChan = this->chanTable.lookup ( id );
@@ -652,16 +580,6 @@ void cac::connectChannel ( unsigned id )
     }
 }
 
-void cac::channelDestroy ( unsigned id )
-{
-    epicsAutoMutex autoMutex ( this->defaultMutex );
-    nciu * pChan = this->chanTable.lookup ( id );
-    // channel should already have been deleted
-    if ( pChan ) {
-        epicsPrintf ( "cac: received invalid channel delete verification?\n" );
-    }
-}
-
 void cac::disconnectChannel ( unsigned id )
 {
     epicsAutoMutex autoMutex ( this->defaultMutex );
@@ -673,19 +591,19 @@ void cac::disconnectChannel ( unsigned id )
     }
 }
 
-void cac::installCASG (CASG &sg)
+void cac::installCASG ( CASG &sg )
 {
     epicsAutoMutex autoMutex ( this->defaultMutex );
     this->sgTable.add ( sg );
 }
 
-void cac::uninstallCASG (CASG &sg)
+void cac::uninstallCASG ( CASG &sg )
 {
     epicsAutoMutex autoMutex ( this->defaultMutex );
     this->sgTable.remove ( sg );
 }
 
-CASG * cac::lookupCASG (unsigned id)
+CASG * cac::lookupCASG ( unsigned id )
 {
     epicsAutoMutex autoMutex ( this->defaultMutex );
     CASG * psg = this->sgTable.lookup ( id );
@@ -697,15 +615,15 @@ CASG * cac::lookupCASG (unsigned id)
     return psg;
 }
 
-void cac::exceptionNotify (int status, const char *pContext,
-    const char *pFileName, unsigned lineNo)
+void cac::exceptionNotify ( int status, const char *pContext,
+    const char *pFileName, unsigned lineNo )
 {
     ca_signal_with_file_and_lineno ( status, pContext, pFileName, lineNo );
 }
 
-void cac::exceptionNotify (int status, const char *pContext,
+void cac::exceptionNotify ( int status, const char *pContext,
     unsigned type, unsigned long count, 
-    const char *pFileName, unsigned lineNo)
+    const char *pFileName, unsigned lineNo )
 {
     ca_signal_formated ( status, pFileName, lineNo, "%s type=%d count=%ld\n", 
         pContext, type, count );
@@ -716,9 +634,9 @@ void cac::registerService ( cacServiceIO &service )
     this->services.registerService ( service );
 }
 
-bool cac::createChannelIO (const char *pName, cacChannel &chan)
+cacChannelIO * cac::createChannelIO ( const char *pName, cacChannelNotify &chan )
 {
-    cacLocalChannelIO *pIO;
+    cacChannelIO *pIO;
 
     pIO = this->services.createChannelIO ( pName, *this, chan );
     if ( ! pIO ) {
@@ -726,77 +644,62 @@ bool cac::createChannelIO (const char *pName, cacChannel &chan)
         if ( ! pIO ) {
             if ( ! this->pudpiiu || ! this->pSearchTmr ) {
                 if ( ! this->setupUDP () ) {
-                    return false;
+                    return 0;
                 }
             }
-            nciu *pNetChan = new nciu ( *this, *this->pudpiiu, chan, pName );
+            nciu *pNetChan = new nciu ( *this, limboIIU, chan, pName );
             if ( pNetChan ) {
                 if ( ! pNetChan->fullyConstructed () ) {
                     pNetChan->destroy ();
-                    return false;
+                    return 0;
                 }
                 else {
-                    epicsAutoMutex autoMutex ( this->defaultMutex );
-                    chan.attachIO ( *pNetChan );
-                    this->chanTable.add ( *pNetChan );
-                    this->pudpiiu->attachChannel ( *pNetChan );
-                    this->pSearchTmr->resetPeriod ( CA_RECAST_DELAY );
-                    return true;
+                    return pNetChan;
                 }
             }
             else {
-                return false;
+                return 0;
             }
         }
     }
-    {
-        epicsAutoMutex autoMutex ( this->defaultMutex );
-        this->localChanList.add ( *pIO );
-    }
-    return true;
+    return pIO;
 }
 
-void cac::uninstallLocalChannel ( cacLocalChannelIO &localIO )
+void cac::installNetworkChannel ( nciu &chan, netiiu *&piiu )
 {
     epicsAutoMutex autoMutex ( this->defaultMutex );
-    this->localChanList.remove ( localIO );
+    this->chanTable.add ( chan );
+    this->pudpiiu->attachChannel ( chan );
+    piiu = this->pudpiiu;
+    this->pSearchTmr->resetPeriod ( CA_RECAST_DELAY );
 }
 
 bool cac::setupUDP ()
 {
-    {
-        epicsAutoMutex autoMutex ( this->defaultMutex );
+    epicsAutoMutex autoMutex ( this->defaultMutex );
 
-        if ( this->pudpiiu ) {
-            return true;
-        }
-
-        this->pudpiiu = new udpiiu ( *this );
-        if ( ! this->pudpiiu ) {
-            return false;
-        }
-
-        this->pSearchTmr = new searchTimer ( *this->pudpiiu, *this->pTimerQueue );
-        if ( ! this->pSearchTmr ) {
-            delete this->pudpiiu;
-            this->pudpiiu = 0;
-            return false;
-        }
-
-        this->pRepeaterSubscribeTmr = new repeaterSubscribeTimer ( *this->pudpiiu, *this->pTimerQueue );
-        if ( ! this->pRepeaterSubscribeTmr ) {
-            delete this->pSearchTmr;
-            delete this->pudpiiu;
-            this->pudpiiu = 0;
-            return false;
-        }
+    if ( this->pudpiiu ) {
+        return true;
     }
 
-    if ( ! this->enablePreemptiveCallback ) {
-        if ( this->fdRegFunc ) {
-            ( *this->fdRegFunc )
-                ( this->fdRegArg, this->pudpiiu->getSock (), TRUE );
-        }
+    this->pudpiiu = new udpiiu ( *this );
+    if ( ! this->pudpiiu ) {
+        return false;
+    }
+
+    this->pSearchTmr = new searchTimer ( *this->pudpiiu, *this->pTimerQueue );
+    if ( ! this->pSearchTmr ) {
+        delete this->pudpiiu;
+        this->pudpiiu = 0;
+        return false;
+    }
+
+    this->pRepeaterSubscribeTmr = new repeaterSubscribeTimer ( *this->pudpiiu, *this->pTimerQueue );
+    if ( ! this->pRepeaterSubscribeTmr ) {
+        delete this->pSearchTmr;
+        delete this->pudpiiu;
+        this->pudpiiu = 0;
+        return false;
     }
 
     return true;
@@ -869,13 +772,6 @@ void cac::genLocalExcepWFL (long stat, const char *ctx, const char *pFile, unsig
     }
 }
 
-void cac::notifySearchResponse ( unsigned short retrySeqNo )
-{
-    if ( this->pSearchTmr ) {
-        this->pSearchTmr->notifySearchResponse ( retrySeqNo );
-    }
-}
-
 void cac::repeaterSubscribeConfirmNotify ()
 {
     if ( this->pRepeaterSubscribeTmr ) {
@@ -894,92 +790,20 @@ void cac::replaceErrLogHandler ( caPrintfFunc *ca_printf_func )
     }
 }
 
-/*
- * constructTCPIIU ()
- */
-tcpiiu * cac::constructTCPIIU ( const osiSockAddr &addr, unsigned minorVersion )
-{
-    bhe *pBHE;
-    tcpiiu *piiu;
-
-    if ( addr.sa.sa_family != AF_INET ) {
-        return 0u;
-    }
-
-    /*
-     * look for an existing virtual circuit
-     */
-    {
-        epicsAutoMutex autoMutex ( this->defaultMutex );
-        pBHE = this->lookupBeaconInetAddr ( addr.ia );
-        if ( pBHE ) {
-            piiu = pBHE->getIIU ();
-            if ( piiu ) {
-                if ( piiu->alive () ) {
-                    return piiu;
-                }
-                else {
-                    return NULL;
-                }
-            }
-        }
-        else {
-            pBHE = this->createBeaconHashEntry ( addr.ia, epicsTime () );
-            if ( ! pBHE ) {
-                return NULL;
-            }
-        }
-    }
-
-    {
-        epicsAutoMutex autoMutex ( this->iiuListMutex );
-        piiu = iiuListLimbo.get ();
-    }
-
-    if ( ! piiu ) {
-        piiu = new tcpiiu ( *this, this->connTMO, *this->pTimerQueue );
-        if ( ! piiu ) {
-            return NULL;
-        }
-    }
-
-    if ( piiu->fullyConstructed () ) {
-        {
-            epicsAutoMutex autoMutex ( this->iiuListMutex );
-            this->iiuList.add ( *piiu  );
-        }
-        if ( ! piiu->initiateConnect ( addr, minorVersion, *pBHE, this->ipToAEngine ) ) {
-            epicsAutoMutex autoMutex ( this->iiuListMutex );
-            this->iiuList.remove ( *piiu  );
-            this->iiuListLimbo.add ( *piiu );
-            return NULL;
-        }
-
-        {
-            epicsAutoMutex autoMutex ( this->defaultMutex );
-            if ( ! this->enablePreemptiveCallback && this->fdRegFunc ) {
-                ( * this->fdRegFunc ) 
-                    ( (void *) this->fdRegArg, piiu->getSock (), TRUE );
-            }
-        }
-
-        return piiu;
-    }
-    else {
-        delete piiu;
-        return NULL;
-    }
-}
-
 void cac::lookupChannelAndTransferToTCP ( unsigned cid, unsigned sid, 
              unsigned typeCode, unsigned long count, 
              unsigned minorVersionNumber, const osiSockAddr &addr )
 {
     unsigned  retrySeqNumber;
-    tcpiiu *allocpiiu;
+
+    if ( addr.sa.sa_family != AF_INET ) {
+        return;
+    }
 
     {
-        epicsAutoMutex autoMutex ( this->defaultMutex );
+        // lock order is significant here
+        epicsAutoMutex autoMutex1 ( this->iiuListMutex );
+        epicsAutoMutex autoMutex2 ( this->defaultMutex );
         nciu *chan;
 
         /*
@@ -999,30 +823,78 @@ void cac::lookupChannelAndTransferToTCP ( unsigned cid, unsigned sid,
             return;
         }
 
-        allocpiiu = this->constructTCPIIU ( addr, minorVersionNumber );
-        if ( ! allocpiiu ) {
-            return;
+        /*
+         * look for an existing virtual circuit
+         */
+        tcpiiu *piiu;
+        bhe *pBHE = this->beaconTable.lookup ( addr.ia );
+        if ( pBHE ) {
+            piiu = pBHE->getIIU ();
+            if ( piiu ) {
+                if ( ! piiu->alive () ) {
+                    return;
+                }
+            }
+        }
+        else {
+            pBHE = new bhe ( epicsTime (), addr.ia );
+            if ( pBHE ) {
+                if ( this->beaconTable.add ( *pBHE ) < 0 ) {
+                    pBHE->destroy ();
+                    return;
+                }
+            }
+            else {
+                return;
+            }
+            piiu = 0;
+        }
+
+        if ( ! piiu ) {
+            piiu = iiuListLimbo.get ();
+            if ( ! piiu ) {
+                piiu = new tcpiiu ( *this, this->connTMO, *this->pTimerQueue );
+                if ( ! piiu ) {
+                    return;
+                }
+            }
+            if ( piiu->fullyConstructed () ) {
+                this->iiuList.add ( *piiu  );
+                if ( ! piiu->initiateConnect ( addr, minorVersionNumber, 
+                            *pBHE, this->ipToAEngine ) ) {
+                    this->iiuList.remove ( *piiu  );
+                    this->iiuListLimbo.add ( *piiu );
+                    return;
+                }
+            }
+            else {
+                delete piiu;
+                return;
+            }
         }
 
         this->pudpiiu->detachChannel ( *chan );
-        chan->searchReplySetUp ( *allocpiiu, sid, typeCode, count );
-        allocpiiu->attachChannel ( *chan );
+        chan->searchReplySetUp ( *piiu, sid, typeCode, count );
+        piiu->attachChannel ( *chan );
 
         chan->createChannelRequest ();
 
         // wake up send thread which ultimately sends the claim message
-        allocpiiu->flush ();
+        piiu->flush ();
 
-        if ( ! allocpiiu->ca_v42_ok () ) {
+        if ( ! piiu->ca_v42_ok () ) {
             chan->connect ();
         }
     }
 
-    this->notifySearchResponse ( retrySeqNumber );
+    if ( this->pSearchTmr ) {
+        this->pSearchTmr->notifySearchResponse ( retrySeqNumber );
+    }
+
     return;
 }
 
-void cac::destroyNCIU ( nciu & chan )
+void cac::uninstallChannel ( nciu & chan )
 {
     {
         epicsAutoMutex autoMutex ( this->defaultMutex );
@@ -1030,7 +902,34 @@ void cac::destroyNCIU ( nciu & chan )
         assert ( pChan = &chan );
         chan.getPIIU ()->detachChannel ( chan );
     }
-    chan.cacDestroy ();
 }
+
+void cac::getFDRegCallback ( CAFDHANDLER *&fdRegFuncOut, void *&fdRegArgOut ) const
+{
+    epicsAutoMutex autoMutex ( this->defaultMutex );
+    if ( this->enablePreemptiveCallback ) {
+        fdRegFuncOut = 0;
+        fdRegArgOut = 0;
+    }
+    else {
+        fdRegFuncOut = this->fdRegFunc;
+        fdRegArgOut = this->fdRegArg;
+    }
+}
+
+int cac::printf ( const char *pformat, ... )
+{
+    va_list theArgs;
+    int status;
+
+    va_start ( theArgs, pformat );
+    
+    status = this->vPrintf ( pformat, theArgs );
+    
+    va_end ( theArgs );
+    
+    return status;
+}
+
 
 

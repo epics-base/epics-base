@@ -32,6 +32,9 @@
  *
  * History
  * $Log$
+ * Revision 1.1  1996/06/21 01:08:54  jhill
+ * add fdMgr.h fdMgr.cc
+ *
  *
  */
 
@@ -105,6 +108,11 @@ private:
 	fd_set		exception;
         int             maxFD;
 	unsigned	processInProg;
+	//
+	// Set to fdreg when in call back
+	// and nill ortherwise
+	//
+	fdReg		*pCBReg; 
 
 	void installReg (fdReg &reg);
         void removeReg (fdReg &reg);
@@ -165,20 +173,28 @@ inline void fdMgr::installReg (fdReg &reg)
 //
 inline void fdMgr::removeReg(fdReg &reg)
 {
+        //
+        // signal fdMgr that the fdReg was deleted
+        // during the call back
+        //
+        if (this->pCBReg == &reg) {
+                this->pCBReg = 0;
+        }
         FD_CLR(reg.fd, &reg.fdSet);
 	switch (reg.state) {
 	case fdrActive:
         	this->activeList.remove(reg);
+		reg.state = fdrLimbo;
 		break;
 	case fdrPending:
         	this->regList.remove(reg);
+		reg.state = fdrLimbo;
 		break;
 	case fdrLimbo:
 		break;
 	default:
 		assert(0);
 	}
-	reg.state = fdrLimbo;
 }
 
 //

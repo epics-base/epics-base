@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.1  1996/06/26 22:14:15  jhill
+ * added new src files
+ *
  * Revision 1.1.1.1  1996/06/20 22:15:55  jhill
  * installed  ca server templates
  *
@@ -115,7 +118,7 @@ private:
 class osiTimerQueue {
 friend class osiTimer;
 public:
-	osiTimerQueue() : inProcess(osiFalse) {};
+	osiTimerQueue() : inProcess(osiFalse), pExpireTmr(0) {};
 	~osiTimerQueue();
 	osiTime delayToFirstExpire ();
 	void process ();
@@ -124,6 +127,7 @@ private:
 	tsDLList<osiTimer>	pending;	
 	tsDLList<osiTimer>	expired;	
 	osiBool			inProcess;
+	osiTimer		*pExpireTmr;
 
 	void install (osiTimer &tmr, osiTime delay);
 };

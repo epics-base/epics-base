@@ -5,6 +5,9 @@
 // File descriptor management C++ class library
 //
 // $Log$
+// Revision 1.3  1996/07/24 23:01:03  jhill
+// use iter.remove()
+//
 // Revision 1.2  1996/07/09 23:02:05  jhill
 // mark fd entry in limbo during delete
 //
@@ -56,6 +59,7 @@ fdMgr::fdMgr()
 	FD_ZERO (&this->exception);
 	this->maxFD = 0;
 	this->processInProg = 0;
+	this->pCBReg = 0;
 }
 
 //
@@ -81,7 +85,6 @@ fdMgr::~fdMgr()
 void fdMgr::process (const osiTime &delay)
 {
 	tsDLIter<fdReg> regIter(this->regList);
-	tsDLIter<fdReg> actIter(this->activeList);
 	osiTime minDelay;
 	osiTime zeroDelay;
 	fdReg *pReg;
@@ -154,32 +157,31 @@ void fdMgr::process (const osiTime &delay)
 	// I am careful to prevent problems if they access the
 	// above list while in a "callBack()" routine
 	//
-	while ( (pReg = actIter()) ) {
+	while ( (pReg = this->activeList.get()) ) {
+		pReg->state = fdrLimbo;
 
+		//
+		// Tag current reg so that we
+		// can detect if it was deleted 
+		// during the call back
+		//
+		this->pCBReg = pReg;
 		pReg->callBack();
-
-		//
-		// Verify that the current item wasnt deleted
-		// in their "callBack()"
-		//
-                // this should be relatively quick even 
-                // though it is a linear search because
-                // if present the item will be the first
-                // item on the list
-                //
-		// they cant add to the active list without being 
-		// in this routine and I prevent recursive calls
-		// to this routine
-		//
-		if (this->activeList.find(*pReg)>=0) {
+		if (this->pCBReg == pReg) {
+			this->pCBReg = 0;
 			if (pReg->onceOnly) {
 				pReg->destroy();
 			}
 			else {
-				actIter.remove();
 				this->regList.add(*pReg);
 				pReg->state = fdrPending;
 			}
+		}
+		else {
+			//
+			// no recursive calls  to process allowed
+			//
+			assert(this->pCBReg == 0);
 		}
 	}
 	this->processInProg = 0;

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.3  1996/07/24 23:01:53  jhill
+ * use iter.remove()
+ *
  * Revision 1.2  1996/07/09 23:00:06  jhill
  * force timer into limbo state during delete
  *
@@ -119,6 +122,14 @@ void osiTimer::arm (const osiTime * const pInitialDelay)
 //
 osiTimer::~osiTimer()
 {
+	//
+	// signal the timer queue if this
+	// was deleted during its expire call
+	// back
+	//
+	if (this == staticTimerQueue.pExpireTmr) {
+		staticTimerQueue.pExpireTmr = 0;
+	}
 	switch (this->state) {
 	case ositPending:
 		staticTimerQueue.pending.remove(*this);
@@ -244,36 +255,35 @@ void osiTimerQueue::process()
 	// I am careful to prevent problems if they access the
 	// above list while in an "expire()" call back
 	//
-	while ( (pTmr = expirIter()) ) {
+	while ( (pTmr = this->expired.get()) ) {
 #ifdef DEBUG
 		double diff = cur-pTmr->exp;
 		printf ("expired %x for \"%s\" with error %lf\n", 
 			pTmr, pTmr->name(), diff);
 #endif
-		pTmr->expire();
 
-		//
-		// verify that the current timer 
-		// wasnt deleted in "expire()"
-		//
-		// this should be relatively quick even 
-		// though it is a linear search because
-		// if present the item will be the first
-		// item on the list
-		//
-                // they cant add to the expired list without being
-                // in this routine and I prevent recursive calls
-                // to this routine
+		pTmr->state = ositLimbo;
+
                 //
-		if (this->expired.find(*pTmr)>=0) {
-			expirIter.remove();
-			pTmr->state = ositLimbo;
+                // Tag current tmr so that we
+                // can detect if it was deleted
+                // during the expire call back
+                //
+		this->pExpireTmr = pTmr;
+		pTmr->expire();
+		if (this->pExpireTmr == pTmr) {
 			if (pTmr->again()) {
 				pTmr->arm();
 			}
 			else {
 				pTmr->destroy();
 			}
+		}
+		else {
+                        //
+                        // no recursive calls  to process allowed
+                        //
+                        assert(this->pExpireTmr == 0);
 		}
 	}
 	this->inProcess = osiFalse;

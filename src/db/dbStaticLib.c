@@ -1135,6 +1135,19 @@ DBENTRY *pdbentry;
     if(!pflddes) return(NULL);
     return(&pflddes->prompt[0]);
 }
+
+#ifdef __STDC__
+int dbGetPromptGroup(DBENTRY *pdbentry)
+#else
+int dbGetPromptGroup(pdbentry)
+DBENTRY *pdbentry;
+#endif /*__STDC__*/
+{
+    struct fldDes  	*pflddes = pdbentry->pflddes;
+
+    if(!pflddes) return(NULL);
+    return(pflddes->promptflag);
+}
 
 #ifdef __STDC__
 char *dbGetString(DBENTRY *pdbentry)

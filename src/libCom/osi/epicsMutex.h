@@ -41,6 +41,19 @@ private:
     epicsMutex & rMutex;
 };
 
+// Automatically releases and reapplies the mutex.
+// This is for use in situations where C++ exceptions are possible.
+class epicsAutoMutexRelease {
+public:
+    epicsAutoMutexRelease ( epicsMutex & );
+    ~epicsAutoMutexRelease ();
+private:
+    epicsAutoMutexRelease ( const epicsAutoMutex & );
+    epicsAutoMutexRelease & operator = ( const epicsAutoMutex & );
+    epicsMutex & rMutex;
+};
+
+
 #endif /*__cplusplus*/
 
 #ifdef __cplusplus
@@ -145,6 +158,17 @@ inline epicsAutoMutex :: epicsAutoMutex ( epicsMutex & mutexIn ) :
 inline epicsAutoMutex :: ~epicsAutoMutex ()
 {
     this->rMutex.unlock ();
+}
+
+inline epicsAutoMutexRelease :: epicsAutoMutexRelease ( epicsMutex & mutexIn ) :
+    rMutex ( mutexIn )
+{
+    this->rMutex.unlock ();
+}
+
+inline epicsAutoMutexRelease :: ~epicsAutoMutexRelease ()
+{
+    this->rMutex.lock ();
 }
 
 #endif /*__cplusplus*/

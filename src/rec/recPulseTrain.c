@@ -39,6 +39,8 @@
  * .08  06-02-92        jba     changed graphic/control limits for per,oper
  * .09  07-15-92        jba     changed VALID_ALARM to INVALID alarm
  * .10  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
+ * .11  09-10-92        jba     replaced get of igv value with call to recGblGetLinkvalue
+ * .12  10-10-92        jba     replaced code with recGblGetLinkValue call
  */ 
 
 #include     <vxWorks.h>
@@ -105,7 +107,7 @@ struct ptdset { /* pulseTrain input dset */
      DEVSUPFUN     write_pt;/*(-1,0)=>(failure,success)*/
 };
 
-/* def for gsrc field */
+/* def for gtyp field */
 #define SOFTWARE 1
 
 /* defs for counter commands */
@@ -132,9 +134,9 @@ static long init_record(ppt,pass)
          recGblRecordError(S_dev_noDSET,(void *)ppt,"pt: init_record");
          return(S_dev_noDSET);
     }
-    /* get the gate value if sgl is a constant*/
+    /* get the igv value if sgl is a constant*/
     if (ppt->sgl.type == CONSTANT ){
-         ppt->gate = ppt->sgl.value.value;
+         ppt->igv = ppt->sgl.value.value;
     }
 
     if (ppt->sgl.type == PV_LINK )
@@ -172,30 +174,17 @@ static long process(ppt)
          return(S_dev_missingSup);
     }
 
-    /* get soft gate value when sgl is a DB_LINK and gsrc from Software */
-    if (!ppt->pact && ppt->gsrc == SOFTWARE){
-         if (ppt->sgl.type == DB_LINK){
-              options=0;
-              nRequest=1;
-              ppt->pact = TRUE;
-              status=dbGetLink(&ppt->sgl.value.db_link,(struct dbCommon *)ppt,DBR_SHORT,
-                   &ppt->sgv,&options,&nRequest);
-              ppt->pact = FALSE;
-              if(status!=0) {
-                  recGblSetSevr(ppt,LINK_ALARM,INVALID_ALARM);
-              }
-         }
-         if (ppt->sgl.type == CA_LINK){
-              ppt->pact = TRUE;
-              status=dbCaGetLink(&(ppt->sgl));
-              ppt->pact = FALSE;
-              if(status!=0) {
-                  recGblSetSevr(ppt,LINK_ALARM,INVALID_ALARM);
-              }
-         }
-         if(status=0){
-              /* gate changed */
-              if(ppt->sgv != ppt->osgv){
+    /* get soft igv value when sgl is a DB_LINK and gtyp from Software */
+    if (!ppt->pact && ppt->gtyp == SOFTWARE){
+         options=0;
+         nRequest=1;
+         ppt->pact = TRUE;
+         status=recGblGetLinkValue(&(ppt->sgl),(void *)ppt,DBR_SHORT,
+              &(ppt->sgv),&options,&nRequest);
+         ppt->pact = FALSE;
+
+         if(status==0){
+              if(ppt->sgv != ppt->osgv){ /* igv changed */
                    if(ppt->sgv==0){
                         save=ppt->dcy;
                         ppt->dcy=0.0;
@@ -210,7 +199,7 @@ static long process(ppt)
          }
      }
 
-     if (status==0 && (ppt->gsrc!=SOFTWARE || ppt->sgv!=0))
+     if (status==0 && (ppt->gtyp!=SOFTWARE || ppt->sgv!=0))
 	status=(*pdset->write_pt)(ppt);
 
      /* check if device support set pact */

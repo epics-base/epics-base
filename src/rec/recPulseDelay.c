@@ -59,7 +59,7 @@
 #define initialize NULL
 static long init_record();
 static long process();
-#define special NULL
+static long special();
 static long get_value();
 #define cvt_dbaddr NULL
 #define get_array_info NULL
@@ -124,6 +124,31 @@ static long init_record(ppd,pass)
          recGblRecordError(S_dev_missingSup,(void *)ppd,"pd: write_pd");
          return(S_dev_missingSup);
     }
+
+    /* get the soft trigger value if stl is a constant*/
+    if(ppd->stl.type==CONSTANT)
+    {
+        ppd->stv=ppd->stl.value.value;
+    }
+ 
+    if(ppd->stl.type==PV_LINK)
+    {
+        status = dbCaAddInlink(&(ppd->stl), (void *) ppd, "STV");
+        if(status) return(status);
+    }
+
+    /* get the soft gate value if glnk is a constant*/
+    if(ppd->glnk.type==CONSTANT)
+    {
+        ppd->gate=ppd->glnk.value.value;
+    }
+ 
+    if(ppd->glnk.type==PV_LINK)
+    {
+        status = dbCaAddInlink(&(ppd->glnk), (void *) ppd, "GLNK");
+        if(status) return(status);
+    }
+
     /* call device support init_record */
     if( pdset->init_record ) {
          if((status=(*pdset->init_record)(ppd))) return(status);
@@ -137,6 +162,7 @@ static long process(ppd)
     struct pddset     *pdset = (struct pddset *)(ppd->dset);
     long           status=0;
     unsigned char    pact=ppd->pact;
+    long nRequest,options;
 
     /* must have  write_pd functions defined */
     if( (pdset==NULL) || (pdset->write_pd==NULL) ) {
@@ -145,8 +171,66 @@ static long process(ppd)
          return(S_dev_missingSup);
     }
 
+    if(!ppd->pact)
+    {
+    	/* get soft trigger value when stl is DB_LINK */
+        switch(ppd->stl.type)
+        {
+        case DB_LINK:
+            options=0;
+            nRequest=1;
+            ppd->pact = TRUE;
+            status=dbGetLink(&ppd->stl.value.db_link,
+                             (struct dbCommon *)ppd,DBR_SHORT,
+                             &ppd->stv,&options,&nRequest);
+            ppd->pact = FALSE;
+ 
+            if(status!=0) recGblSetSevr(ppd,LINK_ALARM,INVALID_ALARM);
+ 
+            break;
+
+        case CA_LINK:
+            ppd->pact = TRUE;
+            status=dbCaGetLink(&(ppd->stl));
+            ppd->pact = FALSE;
+ 
+            if(status!=0) recGblSetSevr(ppd,LINK_ALARM,INVALID_ALARM);
+ 
+            break;
+        }
+
+    	/* get soft gate value when glnk is DB_LINK */
+        switch(ppd->glnk.type)
+        {
+        case DB_LINK:
+            options=0;
+            nRequest=1;
+            ppd->pact = TRUE;
+            status=dbGetLink(&ppd->glnk.value.db_link,
+                             (struct dbCommon *)ppd,DBR_SHORT,
+                             &ppd->gate,&options,&nRequest);
+            ppd->pact = FALSE;
+ 
+            if(status!=0) recGblSetSevr(ppd,LINK_ALARM,INVALID_ALARM);
+ 
+            break;
+
+        case CA_LINK:
+            ppd->pact = TRUE;
+            status=dbCaGetLink(&(ppd->glnk));
+            ppd->pact = FALSE;
+ 
+            if(status!=0) recGblSetSevr(ppd,LINK_ALARM,INVALID_ALARM);
+ 
+            break;
+        }
+    }
+
      if (status==0) status=(*pdset->write_pd)(ppd); /* write the new value */
 
+     /* reset field causing processing parameter */
+     ppd->pfld=0;
+ 
      /* check if device support set pact */
      if ( !pact && ppd->pact ) return(0);
      ppd->pact = TRUE;
@@ -183,6 +267,40 @@ static long get_precision(paddr,precision)
     if(paddr->pfield == (void *)&ppd->val) return(0);
     recGblGetPrec(paddr,precision);
     return(0);
+}
+
+/*---------------------------------------------------------------------
+        This routine is used to set the pfld element to true if
+        the field causing the processing is dly, hts, or stv.
+-----------------------------------------------------------------------*/
+
+#define DLY_FIELD	0x0001
+#define WIDE_FIELD	0x0002
+#define STV_FIELD	0x0004
+#define GATE_FIELD	0x0008
+#define HTS_FIELD	0x0010
+ 
+static long special(paddr,after)
+        struct dbAddr *paddr;
+        int after;
+{
+        struct pulseDelayRecord *pd=(struct pulseDelayRecord *)paddr->precord;
+ 
+        /* pre-processing mode */
+        if(!after) return(0);
+ 
+        if(paddr->pfield==&(pd->dly))
+	    pd->pfld|=DLY_FIELD;
+        else if(paddr->pfield==&(pd->wide))
+	    pd->pfld|=WIDE_FIELD;
+        else if(paddr->pfield==&(pd->stv))
+	    pd->pfld|=STV_FIELD;
+        else if(paddr->pfield==&(pd->hts))
+	    pd->pfld|=HTS_FIELD;
+        else if(paddr->pfield==&(pd->gate))
+	    pd->pfld|=GATE_FIELD;
+ 
+        return(0);
 }
 
 static long get_graphic_double(paddr,pgd)

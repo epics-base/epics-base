@@ -102,7 +102,7 @@ struct pcdset { /* pulseCounter input dset */
      DEVSUPFUN     cmd_pc;/*(-1,0)=>(failure,success*/
 };
 
-/* def for gsrc field */
+/* def for gtyp field */
 #define SOFTWARE 1
 
 /* defs for counter commands */
@@ -129,12 +129,12 @@ static long init_record(ppc,pass)
          recGblRecordError(S_dev_noDSET,(void *)ppc,"pc: init_record");
          return(S_dev_noDSET);
     }
-    /* get the gate value if sgl is a constant*/
-    if (ppc->sgl.type == CONSTANT && ppc->gsrc == SOFTWARE){
+    /* get the igv value if sgl is a constant*/
+    if (ppc->sgl.type == CONSTANT && ppc->gtyp == SOFTWARE){
          ppc->sgv = ppc->sgl.value.value;
     }
 
-    if (ppc->sgl.type == PV_LINK && ppc->gsrc == SOFTWARE)
+    if (ppc->sgl.type == PV_LINK && ppc->gtyp == SOFTWARE)
     {
         status = dbCaAddInlink(&(ppc->sgl), (void *) ppc, "SGV");
         if(status) return(status);
@@ -168,8 +168,8 @@ static long process(ppc)
          return(S_dev_missingSup);
     }
 
-    /* get soft gate value when sgl is a DB_LINK and gsrc from Software */
-    if (!ppc->pact && ppc->gsrc == SOFTWARE){
+    /* get soft igv value when sgl is a DB_LINK and gtyp from Software */
+    if (!ppc->pact && ppc->gtyp == SOFTWARE){
          if (ppc->sgl.type == DB_LINK){
               options=0;
               nRequest=1;
@@ -190,7 +190,7 @@ static long process(ppc)
               }
          }
          if(status==0){
-              if(ppc->sgv != ppc->osgv){ /* soft gate changed */
+              if(ppc->sgv != ppc->osgv){ /* soft igv changed */
                    save=ppc->cmd;
                    if(ppc->sgv!=0){
                         ppc->cmd=CTR_START;

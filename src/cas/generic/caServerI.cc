@@ -27,48 +27,6 @@
  *              Argonne National Laboratory
  *
  *
- * History
- * $Log$
- * Revision 1.13  1998/10/27 18:28:19  jhill
- * fixed warnings
- *
- * Revision 1.12  1998/10/23 00:28:19  jhill
- * fixed HP-UX warnings
- *
- * Revision 1.11  1998/05/29 20:13:42  jhill
- * made assert() call portable to 64 bit arch
- *
- * Revision 1.10  1998/02/18 22:44:44  jhill
- * fixed warning
- *
- * Revision 1.9  1997/08/05 00:46:57  jhill
- * fixed warnings
- *
- * Revision 1.8  1997/06/13 09:15:51  jhill
- * connect proto changes
- *
- * Revision 1.7  1997/04/10 19:33:53  jhill
- * API changes
- *
- * Revision 1.6  1996/11/02 00:53:54  jhill
- * many improvements
- *
- * Revision 1.5  1996/09/16 18:23:56  jhill
- * vxWorks port changes
- *
- * Revision 1.4  1996/09/04 20:12:04  jhill
- * added arg to serverToolDebugFunc()
- *
- * Revision 1.3  1996/08/13 22:56:12  jhill
- * added init for mutex class
- *
- * Revision 1.2  1996/08/05 19:25:17  jhill
- * removed unused code
- *
- * Revision 1.1.1.1  1996/06/20 00:28:15  jhill
- * ca server installation
- *
- *
  */
 
 #define CAS_VERSION_GLOBAL
@@ -80,112 +38,101 @@
 //
 // the maximum beacon period if EPICS_CA_BEACON_PERIOD isnt available
 //
-static const osiTime CAServerMaxBeaconPeriod (15.0 /* sec */);
+static const double CAServerMaxBeaconPeriod = 15.0; // seconds
 
 //
 // the initial beacon period
 //
-static const osiTime CAServerMinBeaconPeriod (1.0e-3 /* sec */);
+static const double CAServerMinBeaconPeriod = 1.0e-3; // seconds
 
-
 //
 // caServerI::show()
 //
 void caServerI::show (unsigned level) const
 {
-        int			bytes_reserved;
-
-        printf( "Channel Access Server Status V%d.%d\n",
-                CA_PROTOCOL_VERSION, CA_MINOR_VERSION);
-
-	this->osiMutex::show(level);
-
+    int			bytes_reserved;
+    
+    printf( "Channel Access Server Status V%d.%d\n",
+        CA_PROTOCOL_VERSION, CA_MINOR_VERSION);
+    
+    this->osiMutex::show(level);
+    
+    this->osiLock();
+    tsDLIterBD<casStrmClient> iterCl(this->clientList.first());
+    while ( iterCl!=tsDLIterBD<casStrmClient>::eol() ) {
+        iterCl->show(level);
+        ++iterCl;
+    }
+    this->dgClient.show(level);
+    
+    tsDLIterBD<casIntfOS> iterIF(this->intfList.first());
+    while ( iterIF!=tsDLIterBD<casIntfOS>::eol() ) {
+        iterIF->show(level);
+        ++iterIF;
+    }
+    
+    this->osiUnlock();
+    
+    bytes_reserved = 0u;
+#if 0
+    bytes_reserved += sizeof(casClient) *
+        ellCount(&this->freeClientQ);
+    bytes_reserved += sizeof(casChannel) *
+        ellCount(&this->freeChanQ);
+    bytes_reserved += sizeof(casEventBlock) *
+        ellCount(&this->freeEventQ);
+    bytes_reserved += sizeof(casAsyncIIO) *
+        ellCount(&this->freePendingIO);
+#endif
+    if (level>=1) {
+        printf(
+            "There are currently %d bytes on the server's free list\n",
+            bytes_reserved);
+#if 0
+        printf(
+            "%d client(s), %d channel(s), %d event(s) (monitors), and %d IO blocks\n",
+            ellCount(&this->freeClientQ),
+            ellCount(&this->freeChanQ),
+            ellCount(&this->freeEventQ),
+            ellCount(&this->freePendingIO));
+#endif
+        printf( 
+            "The server's integer resource id conversion table:\n");
         this->osiLock();
-	const tsDLIterBD<casStrmClient> eolSC;
-	tsDLIterBD<casStrmClient> iterCl(this->clientList.first());
-        while ( iterCl!=eolSC ) {
-                iterCl->show(level);
-		++iterCl;
-        }
-        this->dgClient.show(level);
-
-	const tsDLIterBD<casIntfOS> eolIOS;
-	tsDLIterBD<casIntfOS> iterIF(this->intfList.first());
-        while ( iterIF!=eolIOS ) {
-		iterIF->show(level);
-		++iterIF;
-	}
-
+        this->chronIntIdResTable<casRes>::show(level);
         this->osiUnlock();
-
-        bytes_reserved = 0u;
-#if 0
-        bytes_reserved += sizeof(casClient) *
-                                ellCount(&this->freeClientQ);
-        bytes_reserved += sizeof(casChannel) *
-                                ellCount(&this->freeChanQ);
-        bytes_reserved += sizeof(casEventBlock) *
-                                ellCount(&this->freeEventQ);
-        bytes_reserved += sizeof(casAsyncIIO) *
-                                ellCount(&this->freePendingIO);
-#endif
-        if (level>=1) {
-                printf(
-"There are currently %d bytes on the server's free list\n",
-                        bytes_reserved);
-#if 0
-                printf(
-"%d client(s), %d channel(s), %d event(s) (monitors), and %d IO blocks\n",
-                        ellCount(&this->freeClientQ),
-                        ellCount(&this->freeChanQ),
-                        ellCount(&this->freeEventQ),
-                        ellCount(&this->freePendingIO));
-#endif
-                printf( 
-	"The server's integer resource id conversion table:\n");
-                this->osiLock();
-                this->uintResTable<casRes>::show(level);
-                this->osiUnlock();
-        }
-
-        // @@@@@@ caPrintAddrList(&destAddr);
-
-        return;
+    }
+    
+    // @@@@@@ caPrintAddrList(&destAddr);
+    
+    return;
 }
 
-
 //
 // caServerI::caServerI()
 //
 caServerI::caServerI (caServer &tool, unsigned nPV) :
-caServerOS (*this),
-casEventRegistry (* (osiMutex *) this),
-dgClient (*this),
-//
-// Set up periodic beacon interval
-// (exponential back off to a plateau
-// from this intial period)
-//
-beaconPeriod (CAServerMinBeaconPeriod),
-adapter (tool),
-debugLevel (0u),
-pvCountEstimate (nPV<100u?100u:nPV), 
-haveBeenInitialized (FALSE)
+    caServerOS (*this),
+    casEventRegistry (* (osiMutex *) this),
+    dgClient (*this),
+    chronIntIdResTable<casRes>(nPV*2u),
+    //
+    // Set up periodic beacon interval
+    // (exponential back off to a plateau
+    // from this intial period)
+    //
+    beaconPeriod (CAServerMinBeaconPeriod),
+    adapter (tool),
+    debugLevel (0u),
+    haveBeenInitialized (FALSE)
 {
 	caStatus status;
-	int resLibStatus;
 	double maxPeriod;
 
 	assert (&adapter != NULL);
 	
 	if (this->osiMutex::init ()) {
 		errMessage (S_cas_noMemory, "CA server mutex init");
-		return;
-	}
-	
-	status = casEventRegistry::initRegistry ();
-	if (status) {
-		errMessage (status, "CA server event registry init");
 		return;
 	}
 	
@@ -212,16 +159,6 @@ haveBeenInitialized (FALSE)
 		return;
 	}
 	
-	//
-	// hash table size may need adjustment here?
-	//
-	resLibStatus = this->uintResTable<casRes>::init
-		(this->pvCountEstimate*2u);
-	if (resLibStatus) {
-		errMessage (S_cas_noMemory, "integer resource id table init failed");
-		return;
-	}
-
 	status = envGetDoubleConfigParam (&EPICS_CA_BEACON_PERIOD, &maxPeriod);
 	if (status || maxPeriod<=0.0) {
 		this->maxBeaconInterval = CAServerMaxBeaconPeriod;
@@ -229,7 +166,7 @@ haveBeenInitialized (FALSE)
 			"EPICS \"%s\" float fetch failed\n", EPICS_CA_BEACON_PERIOD.name);
 		ca_printf (
 			"Setting \"%s\" = %f\n", EPICS_CA_BEACON_PERIOD.name, 
-					(double) this->maxBeaconInterval);
+			this->maxBeaconInterval);
 	}
 	else {
 		this->maxBeaconInterval = maxPeriod;
@@ -239,8 +176,6 @@ haveBeenInitialized (FALSE)
 	return;
 }
 
-
-
 /*
  * caServerI::~caServerI()
  */
@@ -253,10 +188,8 @@ caServerI::~caServerI()
 	// delete all clients
 	//
 	tsDLIterBD<casStrmClient> iter(this->clientList.first());
-	tsDLIterBD<casStrmClient> eol;
-	tsDLIterBD<casStrmClient> tmp;
-	while ( iter!=eol ) {
-		tmp = iter;
+    while ( iter!=tsDLIterBD<casStrmClient>::eol() ) {
+		tsDLIterBD<casStrmClient> tmp = iter;
 		++tmp;
 		//
 		// destructor takes client out of list
@@ -274,7 +207,6 @@ caServerI::~caServerI()
 	this->osiUnlock();
 }
 
-
 //
 // caServerI::installClient()
 //
@@ -285,7 +217,6 @@ void caServerI::installClient(casStrmClient *pClient)
 	this->osiUnlock();
 }
 
-
 //
 // caServerI::removeClient()
 //
@@ -296,7 +227,6 @@ void caServerI::removeClient(casStrmClient *pClient)
 	this->osiUnlock();
 }
 
-
 //
 // caServerI::connectCB()
 //
@@ -318,7 +248,6 @@ void caServerI::connectCB(casIntfOS &intf)
         }
 }
 
-
 //
 // caServerI::advanceBeaconPeriod()
 //

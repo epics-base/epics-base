@@ -213,6 +213,8 @@ TARGET_CFLAGS += $($(basename $@)_CFLAGS_$(OS_CLASS)) $($(basename $@)_CFLAGS)
 TARGET_CXXFLAGS += $($(basename $@)_CXXFLAGS_$(OS_CLASS)) $($(basename $@)_CXXFLAGS)
 TARGET_CPPFLAGS += $($(basename $@)_CPPFLAGS_$(OS_CLASS)) $($(basename $@)_CPPFLAGS)
 
+TARGET_LDFLAGS = $($(basename $@)_LDFLAGS)
+
 # Level of ansi conformance flags
 CONFORM_CPPFLAGS = $(CONFORM_CPPFLAGS_$(CMPLR))
 CONFORM_CFLAGS = $(CONFORM_CFLAGS_$(CMPLR))

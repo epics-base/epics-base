@@ -990,7 +990,7 @@ bool udpiiu::wakeupMsg ()
     epicsGuard < udpMutex > guard ( this->mutex );
 
     // send a wakeup msg so the UDP recv thread will exit
-    int status = sendto ( this->sock, reinterpret_cast < const char * > ( &msg ),  
+    int status = sendto ( this->sock, reinterpret_cast < char * > ( &msg ),  
             sizeof (msg), 0, &addr.sa, sizeof ( addr.sa ) );
     if ( status == sizeof (msg) ) {
         return true;

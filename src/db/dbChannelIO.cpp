@@ -29,6 +29,8 @@
 #include "dbChannelIOIL.h"
 #include "dbNotifyBlockerIL.h"
 
+template class tsFreeList < dbChannelIO >;
+
 tsFreeList < dbChannelIO > dbChannelIO::freeList;
 epicsMutex dbChannelIO::freeListMutex;
 unsigned dbChannelIO::nextIdForIO;

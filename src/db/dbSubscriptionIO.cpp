@@ -30,6 +30,7 @@
 #include "dbChannelIOIL.h"
 #include "db_access_routines.h"
 
+template class tsFreeList < dbSubscriptionIO >;
 tsFreeList < dbSubscriptionIO > dbSubscriptionIO::freeList;
 epicsMutex dbSubscriptionIO::freeListMutex;
 

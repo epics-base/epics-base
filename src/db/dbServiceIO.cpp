@@ -33,6 +33,10 @@
 #include "dbChannelIOIL.h"
 #include "dbNotifyBlockerIL.h"
 
+template class chronIntIdResTable < dbBaseIO >;
+template class tsSLNode < dbBaseIO >;
+template class resTable < dbBaseIO, chronIntId >;
+
 class dbServiceIOLoadTimeInit {
 public:
     dbServiceIOLoadTimeInit ();
@@ -95,7 +99,8 @@ void dbServiceIO::callReadNotify ( struct dbAddr &addr,
         return;
     }
 
-    if ( count > INT_MAX || count > addr.no_elements ) {
+    if ( count > static_cast<unsigned>(INT_MAX) || 
+		count > static_cast<unsigned>(addr.no_elements) ) {
         notify.exception ( ECA_BADCOUNT, 
             "element count out of range (high side)",
             type, count);

@@ -10,10 +10,10 @@
  *  Copyright, 1986, The Regents of the University of California.
  *                                  
  *           
- *	Author: 
+ *  Author: 
  *  Jeffrey O. Hill
- *	johill@lanl.gov
- *	505 665 1831
+ *  johill@lanl.gov
+ *  505 665 1831
  */
 
 #include <limits.h>
@@ -37,7 +37,9 @@
 #define S_db_Blocked 	(M_dbAccess|39)
 #define S_db_Pending 	(M_dbAccess|37)
 
-tsFreeList < dbPutNotifyBlocker > dbPutNotifyBlocker::freeList;
+template class tsFreeList < dbPutNotifyBlocker, 1024, 0 >;
+
+tsFreeList < dbPutNotifyBlocker, 1024, 0 > dbPutNotifyBlocker::freeList;
 epicsMutex dbPutNotifyBlocker::freeListMutex;
 
 dbPutNotifyBlocker::dbPutNotifyBlocker ( dbChannelIO &chanIn ) :

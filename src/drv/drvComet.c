@@ -28,6 +28,9 @@
  * 	Modification Log:
  * 	-----------------
  * 	.01 joh 071092	added argument to calloc()
+ * 	.01 joh 071092	stripped the hkv2f specific portion off the comet
+ *			std addr base specification and left it at base
+ *			addr zero which is most likely wrong. 
  */
 
 /*
@@ -106,7 +109,7 @@ struct comet_cr{
 
 /* values that will end up in module_types.h */
 #define		COMET_SHORT_BASE_ADDR	0x0a000
-#define		COMET_STD_BASE_ADDR	0xf1000000
+#define		COMET_STD_BASE_ADDR	0x000000
 #define		FLAG_EOC		0x10
 
 /* comet configuration data */

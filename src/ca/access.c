@@ -67,6 +67,8 @@
 /*	041492	joh	fixed bug introduced by 022692 when the chan	*/
 /*			state enum was used after it was set to		*/
 /*			cs_closed					*/
+/*	042892	joh	no longer checks the status from free() as	*/
+/*			this varies from OS to OS			*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -186,22 +188,23 @@ static struct extmsg	nullmsg;
 /*
  * local functions
  */
-void 	ca_default_exception_handler();
-void	*db_init_events();
-void	ca_default_exception_handler();
-int	ca_import();
-void 	spawn_repeater();
+void 		ca_default_exception_handler();
+void		*db_init_events();
+void		ca_default_exception_handler();
+void 		spawn_repeater();
+void		check_for_fp();
+void    	issue_get_callback();
+void    	ca_event_handler();
+void 		ca_pend_io_cleanup();
+int		ca_add_task_variable();
+int		ca_import();
+struct extmsg 	*cac_alloc_msg();
 #ifdef vxWorks
-void 	ca_task_exit_tid();
-void    ca_task_exit_tcb();
+void 		ca_task_exit_tid();
+void    	ca_task_exit_tcb();
 #else
-void 	ca_process_exit();
+void 		ca_process_exit();
 #endif
-void	check_for_fp();
-int	ca_add_task_variable();
-void    issue_get_callback();
-void    ca_event_handler();
-void 	ca_pend_io_cleanup();
 
 
 /*
@@ -328,7 +331,8 @@ ca_task_initialize
  *
  * 	Spawn the repeater task as needed
  */
-static void spawn_repeater()
+static void 
+spawn_repeater()
 {
 
 #ifdef UNIX
@@ -675,15 +679,13 @@ ca_process_exit()
 		 */
 #		ifdef vxWorks
 			chix = (chid) & ca_temp->ca_local_chidlist;
-			while (chix = (chid) chix->node.next)
+			while (chix = (chid) chix->node.next){
 				while (monix = (evid) lstGet(&chix->eventq)) {
 					status = db_cancel_event(monix + 1);
 					if (status == ERROR)
 						abort();
-					if (free(monix) < 0)
-						ca_signal(
-							ECA_INTERNAL, 
-							"Corrupt conn evid list");
+					free(monix);
+				}
 			}
 #		endif
 
@@ -716,10 +718,8 @@ ca_process_exit()
 					ca_signal(
 						ECA_INTERNAL, 
 						"Corrupt iiu list- at close");
-			if (free((char *)ca_temp->ca_iiu[i].send) < 0)
-				ca_signal(ECA_INTERNAL, "Corrupt iiu list- send free");
-			if (free((char *)ca_temp->ca_iiu[i].recv) < 0)
-				ca_signal(ECA_INTERNAL, "Corrupt iiu list- recv free");
+			free((char *)ca_temp->ca_iiu[i].send);
+			free((char *)ca_temp->ca_iiu[i].recv);
 		}
 
 		/*
@@ -728,15 +728,9 @@ ca_process_exit()
 		for (i = 0; i < ca_temp->ca_nxtiiu; i++) {
 			while (chix = (chid) lstGet(&ca_temp->ca_iiu[i].chidlist)) {
 				while (monix = (evid) lstGet(&chix->eventq)) {
-					if (free((char *)monix) < 0)
-						ca_signal(
-							ECA_INTERNAL, 
-							"Corrupt conn evid list");
+					free((char *)monix);
 				}
-				if (free((char *)chix) < 0)
-					ca_signal(
-						ECA_INTERNAL, 
-						"Corrupt connected chid list");
+				free((char *)chix);
 			}
 		}
 
@@ -745,10 +739,7 @@ ca_process_exit()
 		 */
 #		ifdef vxWorks
 			while (chix = (chid) lstGet(&ca_temp->ca_local_chidlist))
-				if (free((char *)chix) < 0)
-					ca_signal(
-						ECA_INTERNAL, 
-						"Corrupt connected chid list");
+				free((char *)chix);
 			lstFree(&ca_temp->ca_dbfree_ev_list);
 #		endif
 
@@ -775,8 +766,7 @@ ca_process_exit()
 				semDelete(ca_temp->ca_io_done_sem);
 #			endif
 #		endif
-		if (free((char *)ca_temp) < 0)
-			ca_signal(ECA_INTERNAL, "couldnt free memory");
+		free((char *)ca_temp);
 
 		/*
 		 * Only remove task variable if user is calling this from
@@ -906,7 +896,8 @@ ca_build_and_connect
 						get_count, 
 						NULL);
 				if (status != OK) {
-					*chixptr = (chid) free((char *)chix);
+					*chixptr = (chid)  NULL;
+					free((char *)chix);
 					return ECA_GETFAIL;
 				}
 			}
@@ -941,7 +932,8 @@ ca_build_and_connect
 				   &chix->iocix
 			);
 		if (~status & CA_M_SUCCESS) {
-			*chixptr = (chid) free((char *) chix);
+			*chixptr = (chid) NULL;
+			free((char *) chix);
 			goto exit;
 		}
 		chix->puser = puser;
@@ -2012,8 +2004,7 @@ ca_clear_channel
 			 * clear out this channel
 			 */
 			lstDelete(&local_chidlist, chix);
-			if (free((char *) chix) < 0)
-				abort();
+			free((char *) chix);
 
 			break;	/* to unlock exit */
 		}
@@ -2028,12 +2019,11 @@ ca_clear_channel
 		if(old_chan_state != cs_conn){
 			lstConcat(&free_event_list, &chix->eventq);
 			lstDelete(&piiu->chidlist, chix);
-			if (free((char *) chix) < 0)
-				abort();
 			if (chix->iocix != BROADCAST_IIU && 
 					!piiu->chidlist.count){
 				close_ioc(piiu);
 			}
+			free((char *) chix);
 			break;	/* to unlock exit */
 		}
 
@@ -2100,13 +2090,6 @@ int			early;
 #endif
 {
   	time_t 		beg_time;
-
-#if 0
-  	static int		sysfreq;
-
-  	if(!sysfreq)
-    		sysfreq = SYSFREQ;
-#endif
 
   	INITCHK;
 

@@ -38,6 +38,7 @@
  * .06	03-13-92	jba	ANSI C changes
  * .07  04-10-92        jba     pact now used to test for asyn processing, not return value
  * .08  04-18-92        jba     removed process from init_record parms
+ * .09	09-01-93	joh	expects EPICS standard status
  *      ...
  */
 
@@ -56,6 +57,8 @@
 #include	<link.h>
 #include	<module_types.h>
 #include	<waveformRecord.h>
+
+#include	<drvJgvtr1.h>
 
 static long init_record();
 static long read_wf();
@@ -147,10 +150,13 @@ static long read_wf(pwf)
 static long arm_wf(pwf)
 struct waveformRecord   *pwf;
 {
+	long	status;
 	struct vmeio *pvmeio = (struct vmeio *)&(pwf->inp.value);
 
 	pwf->busy = TRUE;
-	if(jgvtr1_driver(pvmeio->card,myCallback,pwf)<0){
+	status = jgvtr1_driver(pvmeio->card,myCallback,pwf);
+	if(status!=0){
+		errMessage(status, NULL);
                 recGblSetSevr(pwf,READ_ALARM,INVALID_ALARM);
 		pwf->busy = FALSE;
 		return(0);

@@ -31,7 +31,8 @@
  * Modification Log:
  * -----------------
  * .01  08-21-92	mrk	Replaces individual At5Vxi modules
- * .02 	05-27-92	joh	changed linear conversion
+ * .02 	05-27-93	joh	changed linear conversion
+ * .03 	09-01-93	joh	expects EPICS status from driver	
  */
 
 #include	<vxWorks.h>
@@ -54,6 +55,9 @@
 #include	<boRecord.h>
 #include	<mbbiRecord.h>
 #include	<mbboRecord.h>
+#include	<timerRecord.h>
+
+#include 	<drvAt5Vxi.h>
 
 /* The following must match the definition in choiceGbl.ascii */
 #define LINEAR 1
@@ -67,9 +71,11 @@ static long init_mbbo();
 static long ai_ioinfo();
 static long bi_ioinfo();
 static long mbbi_ioinfo();
+static long read_timer();
 static long read_ai();
 static long write_ao();
 static long read_bi();
+static long write_timer();
 static long write_bo();
 static long read_mbbi();
 static long write_mbbo();
@@ -86,13 +92,83 @@ typedef struct {
 	DEVSUPFUN	read_write;
 	DEVSUPFUN	special_linconv;} AT5VXIDSET;
 
-
-AT5VXIDSET devAiAt5Vxi=  {6,NULL,NULL,init_ai,  ai_ioinfo,  read_ai, ai_lincvt};
-AT5VXIDSET devAoAt5Vxi=  {6,NULL,NULL,init_ao,       NULL,  write_ao,ao_lincvt};
-AT5VXIDSET devBiAt5Vxi=  {6,NULL,NULL,init_bi,  bi_ioinfo,  read_bi,   NULL};
-AT5VXIDSET devBoAt5Vxi=  {6,NULL,NULL,init_bo,       NULL,  write_bo,  NULL};
-AT5VXIDSET devMbbiAt5Vxi={6,NULL,NULL,init_mbbi,mbbi_ioinfo,read_mbbi, NULL};
-AT5VXIDSET devMbboAt5Vxi={6,NULL,NULL,init_mbbo,       NULL,write_mbbo,NULL};
+AT5VXIDSET devAiAt5Vxi=   {6, NULL, NULL, init_ai, ai_ioinfo, read_ai, ai_lincvt};
+AT5VXIDSET devAoAt5Vxi=   {6, NULL, NULL, init_ao, NULL, write_ao, ao_lincvt};
+AT5VXIDSET devBiAt5Vxi=   {6, NULL, NULL, init_bi, bi_ioinfo, read_bi, NULL};
+AT5VXIDSET devBoAt5Vxi=   {6, NULL, NULL, init_bo, NULL, write_bo, NULL};
+AT5VXIDSET devMbbiAt5Vxi= {6, NULL, NULL, init_mbbi, mbbi_ioinfo, read_mbbi, NULL};
+AT5VXIDSET devMbboAt5Vxi= {6, NULL, NULL, init_mbbo, NULL, write_mbbo, NULL};
+ 
+ /* DSET structure for timer records */
+ typedef struct {
+	 long            number;
+         DEVSUPFUN       report;
+	 DEVSUPFUN       init;
+	 DEVSUPFUN       init_record;
+	 DEVSUPFUN       get_ioint_info;
+	 DEVSUPFUN       read;
+	 DEVSUPFUN       write;} AT5VXIDSET_TM;
+ 
+AT5VXIDSET_TM devTmAt5Vxi={6, NULL, NULL, NULL, NULL, read_timer, write_timer};
+
+/*
+ * These constants are indexed by the time units field in the timer record.
+ * Values are converted to seconds.
+ */
+static double constants[] = {1e3,1e6,1e9,1e12};
+ 
+static long read_timer(struct timerRecord *ptimer)
+{
+   struct vmeio    *pvmeio;
+   int             source;
+   int             ptst;
+   double          time_pulse[2];  /* delay and width */
+   double          constant;
+ 
+   /* only supports a one channel VME timer module !!!! */
+   pvmeio = (struct vmeio *)(&ptimer->out.value);
+ 
+   /* put the value to the ao driver */
+   if (at5vxi_one_shot_read(
+           &ptst,                          /* pre-trigger state */
+           &(time_pulse[0]),               /* offset of pulse */
+           &(time_pulse[1]),               /* width of pulse */
+           (int)pvmeio->card,              /* card number */
+           (int)pvmeio->signal,            /* signal number */
+           &source) != 0) {                /* trigger source */
+       return 1;
+   }
+ 
+   /* convert according to time units */
+   constant = constants[ptimer->timu];
+ 
+   /* timing pulse 1 is currently active                              */
+   /* put its parameters into the database so that it will not change */
+   /* when the timer record is written                                */
+   ptimer->rdt1 = time_pulse[0] * constant;        /* delay to trigger */
+   ptimer->rpw1 = time_pulse[1] * constant;        /* pulse width */
+ 
+   return 0;
+}
+ 
+static long write_timer(struct timerRecord *ptimer)
+{
+   struct vmeio    *pvmeio;
+ 
+   pvmeio = (struct vmeio *)(&ptimer->out.value);
+ 
+   /* put the value to the ao driver */
+   return at5vxi_one_shot(
+         (int)ptimer->ptst,                    /* pre-trigger state */
+         ptimer->t1dl,                         /* pulse offset */
+         ptimer->t1wd,                         /* pulse width */
+         (int)pvmeio->card,                    /* card number */
+         (int)pvmeio->signal,                  /* signal number */
+         (int)ptimer->tsrc,                    /* trigger source */
+         ((ptimer->tevt == 0)?0:post_event),   /* addr of event post routine */
+         (int)ptimer->tevt);                   /* event to post on trigger */
+}
+ 
 
 static long init_ai( struct aiRecord	*pai)
 {
@@ -128,27 +204,24 @@ static long ai_ioinfo(
     struct aiRecord     *pai,
     IOSCANPVT		*ppvt)
 {
-    at5vxi_getioscanpvt(pai->inp.value.vmeio.card,ppvt);
-    return(0);
+    return at5vxi_getioscanpvt(pai->inp.value.vmeio.card,ppvt);
 }
 
 static long read_ai(struct aiRecord	*pai)
 {
 	struct vmeio *pvmeio;
-	int	     status;
+	long		status;
 	unsigned short value;
 
 	
 	pvmeio = (struct vmeio *)&(pai->inp.value);
 	status = at5vxi_ai_driver(pvmeio->card,pvmeio->signal,&value);
-	if(status==0 || status==-2) pai->rval = value;
-        if(status==-1) {
-		status = 2; /*don't convert*/
-                recGblSetSevr(pai,READ_ALARM,INVALID_ALARM);
-        }else if(status==-2) {
-                status=0;
-                recGblSetSevr(pai,HW_LIMIT_ALARM,INVALID_ALARM);
-        }
+	if(status==0){
+		pai->rval = value;
+	}
+	else{
+		recGblSetSevr(pai,READ_ALARM,INVALID_ALARM);
+	}
 	return(status);
 }
 
@@ -161,7 +234,7 @@ static long ai_lincvt(struct aiRecord	*pai, int after)
     return(0);
 }
 
-static void read_ao(); /* forward reference*/
+static long read_ao(); /* forward reference*/
 
 static long init_ao(struct aoRecord	*pao)
 {
@@ -180,26 +253,24 @@ static long init_ao(struct aoRecord	*pao)
     pao->eslo = (pao->eguf -pao->egul)/0xffff;
 
     /* call driver so that it configures card */
-    read_ao(pao);
-    return(0);
+    return read_ao(pao);
 }
 
 static long write_ao(struct aoRecord	*pao)
 {
 	struct vmeio 	*pvmeio;
-	int	    	status;
+	long		status;
 	unsigned short  value,rbvalue;
 
 	
 	pvmeio = (struct vmeio *)&(pao->out.value);
 	value = pao->rval;
 	status = at5vxi_ao_driver(pvmeio->card,pvmeio->signal,&value,&rbvalue);
-	if(status==0 || status==-2) pao->rbv = rbvalue;
-	if(status==-1) {
+	if(status == 0){
+		pao->rbv = rbvalue;
+	}
+	else{
                 recGblSetSevr(pao,WRITE_ALARM,INVALID_ALARM);
-	}else if(status==-2) {
-		status=0;
-                recGblSetSevr(pao,HW_LIMIT_ALARM,INVALID_ALARM);
 	}
 	return(status);
 }
@@ -213,16 +284,19 @@ static long ao_lincvt( struct aoRecord	*pao, int after)
     return(0);
 }
 
-static void read_ao(pao)
+static long read_ao(pao)
 struct aoRecord      *pao;
 {
+	long			status;
 	unsigned short          value;
-	struct vmeio    		*pvmeio = &pao->out.value.vmeio;
+	struct vmeio    	*pvmeio = &pao->out.value.vmeio;
 
 	/* get the value from the ao driver */
-	at5vxi_ao_read(pvmeio->card,pvmeio->signal,&value);
-	pao->rbv = pao->rval = value;
-	return;
+	status = at5vxi_ao_read(pvmeio->card,pvmeio->signal,&value);
+	if(status == 0){
+		pao->rbv = pao->rval = value;
+	}
+	return status;
 }
 
 static long init_bi( struct biRecord	*pbi)
@@ -250,32 +324,30 @@ static long bi_ioinfo(
     struct biRecord     *pbi,
     IOSCANPVT		*ppvt)
 {
-    at5vxi_getioscanpvt(pbi->inp.value.vmeio.card,ppvt);
-    return(0);
+    return at5vxi_getioscanpvt(pbi->inp.value.vmeio.card,ppvt);
 }
 
 static long read_bi(struct biRecord	*pbi)
 {
-	struct vmeio *pvmeio;
-	int	    status;
-	long	    value;
+	struct vmeio 	*pvmeio;
+	long		status;
+	long	    	value;
 
 	
 	pvmeio = (struct vmeio *)&(pbi->inp.value);
 	status = at5vxi_bi_driver(pvmeio->card,pbi->mask,&value);
 	if(status==0) {
 		pbi->rval = value;
-		return(0);
 	} else {
                 recGblSetSevr(pbi,READ_ALARM,INVALID_ALARM);
-		return(2);
 	}
+	return status;
 }
 
 static long init_bo(struct boRecord	*pbo)
 {
     unsigned int value;
-    int status=0;
+    long	status=0;
     struct vmeio *pvmeio;
 
     /* bo.out must be an VME_IO */
@@ -285,8 +357,9 @@ static long init_bo(struct boRecord	*pbo)
 	pbo->mask = 1;
 	pbo->mask <<= pvmeio->signal;
         status = at5vxi_bi_driver(pvmeio->card,pbo->mask,&value);
-        if(status == 0) pbo->rbv = pbo->rval = value;
-        else status = 2;
+        if(status == 0){
+		pbo->rbv = pbo->rval = value;
+	}
 	break;
     default :
 	status = S_db_badField;
@@ -299,7 +372,7 @@ static long init_bo(struct boRecord	*pbo)
 static long write_bo(struct boRecord	*pbo)
 {
 	struct vmeio *pvmeio;
-	int	    status;
+	long		status;
 
 	
 	pvmeio = (struct vmeio *)&(pbo->out.value);
@@ -332,14 +405,13 @@ static long mbbi_ioinfo(
     struct mbbiRecord     *pmbbi,
     IOSCANPVT		*ppvt)
 {
-    at5vxi_getioscanpvt(pmbbi->inp.value.vmeio.card,ppvt);
-    return(0);
+    return at5vxi_getioscanpvt(pmbbi->inp.value.vmeio.card,ppvt);
 }
 
 static long read_mbbi(struct mbbiRecord	*pmbbi)
 {
 	struct vmeio	*pvmeio;
-	int		status;
+	long		status;
 	unsigned long	value;
 
 	
@@ -357,7 +429,7 @@ static long init_mbbo(struct mbboRecord	*pmbbo)
 {
     unsigned long value;
     struct vmeio *pvmeio;
-    int		status = 0;
+    long	status = 0;
 
     /* mbbo.out must be an VME_IO */
     switch (pmbbo->out.type) {
@@ -367,7 +439,6 @@ static long init_mbbo(struct mbboRecord	*pmbbo)
 	pmbbo->mask <<= pmbbo->shft;
 	status = at5vxi_bi_driver(pvmeio->card,pmbbo->mask,&value);
 	if(status==0) pmbbo->rbv = pmbbo->rval = value;
-	else status = 2;
 	break;
     default :
 	status = S_db_badField;
@@ -380,7 +451,7 @@ static long init_mbbo(struct mbboRecord	*pmbbo)
 static long write_mbbo(struct mbboRecord	*pmbbo)
 {
 	struct vmeio *pvmeio;
-	int	    status;
+	long		status;
 	unsigned long value;
 
 	

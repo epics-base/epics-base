@@ -33,6 +33,7 @@
  * .02	06-03-93	joh	fixed read_mbbi routine calls the 
  *				"at5vxi_bi_driver" rather than the 
  *				"hpe1368a_bi_driver" 
+ * .03 09-01-93		joh	expect EPICS status from driver
  */
 
 #include	<vxWorks.h>
@@ -53,6 +54,8 @@
 #include	<boRecord.h>
 #include	<mbbiRecord.h>
 #include	<mbboRecord.h>
+
+#include	<drvHpe1368a.h>
 
 
 static long init_bi();
@@ -107,14 +110,13 @@ static long bi_ioinfo(
     struct biRecord     *pbi,
     IOSCANPVT		*ppvt)
 {
-    hpe1368a_getioscanpvt(pbi->inp.value.vmeio.card,ppvt);
-    return(0);
+    return hpe1368a_getioscanpvt(pbi->inp.value.vmeio.card,ppvt);
 }
 
 static long read_bi(struct biRecord	*pbi)
 {
 	struct vmeio *pvmeio;
-	int	    status;
+	long		status;
 	long	    value;
 
 	
@@ -122,17 +124,16 @@ static long read_bi(struct biRecord	*pbi)
 	status = hpe1368a_bi_driver(pvmeio->card,pbi->mask,&value);
 	if(status==0) {
 		pbi->rval = value;
-		return(0);
 	} else {
                 recGblSetSevr(pbi,READ_ALARM,INVALID_ALARM);
-		return(2);
 	}
+	return(status);
 }
 
 static long init_bo(struct boRecord	*pbo)
 {
     unsigned int value;
-    int status=0;
+    long	status=0;
     struct vmeio *pvmeio;
 
     /* bo.out must be an VME_IO */
@@ -142,8 +143,9 @@ static long init_bo(struct boRecord	*pbo)
 	pbo->mask = 1;
 	pbo->mask <<= pvmeio->signal;
         status = hpe1368a_bi_driver(pvmeio->card,pbo->mask,&value);
-        if(status == 0) pbo->rbv = pbo->rval = value;
-        else status = 2;
+        if(status == 0){
+		pbo->rbv = pbo->rval = value;
+	}
 	break;
     default :
 	status = S_db_badField;
@@ -156,7 +158,7 @@ static long init_bo(struct boRecord	*pbo)
 static long write_bo(struct boRecord	*pbo)
 {
 	struct vmeio *pvmeio;
-	int	    status;
+	long		status;
 
 	
 	pvmeio = (struct vmeio *)&(pbo->out.value);
@@ -189,14 +191,13 @@ static long mbbi_ioinfo(
     struct mbbiRecord     *pmbbi,
     IOSCANPVT		*ppvt)
 {
-    hpe1368a_getioscanpvt(pmbbi->inp.value.vmeio.card,ppvt);
-    return(0);
+    return hpe1368a_getioscanpvt(pmbbi->inp.value.vmeio.card,ppvt);
 }
 
 static long read_mbbi(struct mbbiRecord	*pmbbi)
 {
 	struct vmeio	*pvmeio;
-	int		status;
+	long		status;
 	unsigned long	value;
 
 	
@@ -214,7 +215,7 @@ static long init_mbbo(struct mbboRecord	*pmbbo)
 {
     unsigned long value;
     struct vmeio *pvmeio;
-    int		status = 0;
+    long	status = 0;
 
     /* mbbo.out must be an VME_IO */
     switch (pmbbo->out.type) {
@@ -223,8 +224,9 @@ static long init_mbbo(struct mbboRecord	*pmbbo)
 	pmbbo->shft = pvmeio->signal;
 	pmbbo->mask <<= pmbbo->shft;
 	status = hpe1368a_bi_driver(pvmeio->card,pmbbo->mask,&value);
-	if(status==0) pmbbo->rbv = pmbbo->rval = value;
-	else status = 2;
+	if(status==0){
+		pmbbo->rbv = pmbbo->rval = value;
+	}
 	break;
     default :
 	status = S_db_badField;
@@ -237,7 +239,7 @@ static long init_mbbo(struct mbboRecord	*pmbbo)
 static long write_mbbo(struct mbboRecord	*pmbbo)
 {
 	struct vmeio *pvmeio;
-	int	    status;
+	long		status;
 	unsigned long value;
 
 	

@@ -30,6 +30,7 @@
  * Modification Log:
  * -----------------
  * .01  08-02-92	mrk	Original version
+ * .02	09-01-93	joh	expects EPICS status from driver
  */
 
 #include	<vxWorks.h>
@@ -47,6 +48,9 @@
 #include	<link.h>
 #include	<module_types.h>
 #include	<aiRecord.h>
+
+#include	<drvKscV215.h>
+
 
 static long init_ai();
 static long ai_ioinfo();
@@ -100,27 +104,23 @@ static long ai_ioinfo(
     struct aiRecord     *pai,
     IOSCANPVT		*ppvt)
 {
-    KscV215_getioscanpvt(pai->inp.value.vmeio.card,ppvt);
-    return(0);
+    return KscV215_getioscanpvt(pai->inp.value.vmeio.card,ppvt);
 }
 
 static long read_ai(struct aiRecord	*pai)
 {
-	struct vmeio *pvmeio;
-	int	     status;
-	unsigned short value;
+	struct vmeio 	*pvmeio;
+	long		status;
+	unsigned short 	value;
 
-	
 	pvmeio = (struct vmeio *)&(pai->inp.value);
 	status = KscV215_ai_driver(pvmeio->card,pvmeio->signal,&value);
-	if(status==0 || status==-2) pai->rval = value & 0xfff;
-        if(status==-1) {
-		status = 2; /*don't convert*/
+	if(status == 0){
+		pai->rval = value & 0xfff;
+	}
+	else{
                 recGblSetSevr(pai,READ_ALARM,INVALID_ALARM);
-        }else if(status==-2) {
-                status=0;
-                recGblSetSevr(pai,HW_LIMIT_ALARM,INVALID_ALARM);
-        }
+	}
 	return(status);
 }
 

@@ -14,6 +14,6 @@ ARCH_CLASS = mips
 ARCH_DEP_CFLAGS = -EB -mcpu=r4000 -mips3 -mgp32 -mfp32 -non_shared -G 0 -DCPU=R4000
 
 # Arch specific flags
-GCC += -fsigned-char -DsymFindByName=symFindByNameMips
+GCC += -fsigned-char
 LD += -EB -X
 

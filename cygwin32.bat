@@ -1,79 +1,52 @@
 @ECHO OFF
-REM ---------------- cygwin32 ------------------
+
+REM ---------------- cygnus B19 -----------------
 REM         A \tmp directory is needed
-REM         \bin needed in path before windows dirs
-REM         . needed in path by bash
+REM         \bin with sh.exe is needed by some tools
+REM         . needed in path by sh
 
-set PATH=c:\bin;c:\usr\local\h-i386-cygwin32\bin;.
+SET MAKE_MODE=unix
+SET CYGFS=C:/Cygnus/B19
+SET GCC_EXEC_PREFIX=C:\CYGNUS\B19\H-I386~1\lib\gcc-lib\
+SET PATH=C:\CYGNUS\B19\H-I386~1\bin;.;c:\bin
 
-REM -------------- windows ------------------
-
+REM ---------------- windows --------------------
 set PATH=%PATH%;C:\WINDOWS;C:\WINDOWS\COMMAND
 
-REM ---------------CVS-------------------
-REM  Cvs settings (not needed for base build)
+REM ---------------- CVS-------------------------
 REM         rcs needs a c:\temp directory
-REM set CVSROOT=/cvsroot
-REM set LOGNAME=janet
-REM set PATH=%PATH%;C:\cyclic\cvs-1.9\bin;
+set CVSROOT=/cvsroot
+set LOGNAME=janet
+set PATH=%PATH%;C:\cyclic\cvs-1.9\bin
 
+REM  --------------- perl -----------------------
+REM set PERLLIB=C:\perl\pw32i310\lib
+set PATH=%path%;C:\perl\pw32i310\bin
 
-REM -----------------extra path dirs -----------------
-REM  Extra path settings (not needed for base build)
-REM
-REM   For 'which' and other unix tools not included in cygwin32
-REM         set PATH=%PATH%;C:\unix\VIRTUNIX\32-BIT;C:\VIRTUNIX\16-BIT
-REM         set PATH=%PATH%;C:\unix\UTEXAS\BIN
-REM         set PATH=%PATH%;c:\util
-
-REM ----------------- epics -----------------
-
+REM ---------------- epics ----------------------
 set HOST_ARCH=cygwin32
+set PATH=%PATH%;F:\epics\base\bin\cygwin32
 
-REM ----------------------------------
-REM Following 3 defs may be needed if cygwin32  not in \usr\local
-REM 
-REM  set C_INCLUDE_PATH=
-REM  set CPLUS_INCLUDE_PATH=
-REM  set LIBRARY_PATH=
-REM ----------------------------------
+REM ---------------- Channel Access -------------
+REM set EPICS_CA_ADDR_LIST=164.54.9.255
 
+REM   set EPICS_CA_AUTO_CA_ADDR_LIST=YES
+REM   set EPICS_CA_CONN_TMO=30.0
+REM   set EPICS_CA_BEACON_PERIOD=15.0
+REM   set EPICS_CA_REPEATER_PORT=5065
+REM   set EPICS_CA_SERVER_PORT=5064
+REM   set EPICS_TS_MIN_WEST=420
 
-REM ----------------- cygwin32: gcc -----------------
-REM  Trailing slash is important
+REM ---------------- tk/tcl ---------------------
+SET TCL_LIBRARY=%CYGFS%\share\tcl8.0\
+SET GDBTK_LIBRARY=%CYGFS%/share/gdbtcl
 
-set GCC_EXEC_PREFIX=C:\usr\local\H-i386-cygwin32\lib\gcc-lib\
+REM ---------------- JAVA -----------------------
+REM   set CLASSPATH=.;c:\jdk1.1.6\lib\classes.zip;
+set PATH=%PATH%;C:\jdk1.1.6\bin
 
-REM ----------------- cygwin32: bash  -----------------
-REM  bash settings (not needed for base build)
-REM
-REM        TERMCAP, HOME, and TERM needed for bash (.bashrc)
-REM        set TERMCAP=/usr/local/h-i386-cygwin32/etc/termcap
-REM        set TERM=ansi
-REM        set HOME=/
-
-REM ------------ Channel Access ---------------
-REM  Channel access settings (not needed for base build)
-REM
-REM set EPICS_CA_ADDR_LIST=""
-REM set EPICS_CA_AUTO_CA_ADDR_LIST=YES
-REM set EPICS_CA_CONN_TMO=30.0
-REM set EPICS_CA_BEACON_PERIOD=15.0
-REM set EPICS_CA_REPEATER_PORT=5065
-REM set EPICS_CA_SERVER_PORT=5064
-REM set EPICS_TS_MIN_WEST=420
-
-REM    --------------- perl ------------------------
-
-set PATH=%path%;C:\perl\pw32i304\bin
-set PERLLIB=C:\perl\pw32i304\lib
-
-REM    --------------- tcl ------------------------
-REM  tcl/tk settings ( not needed for base build)
-REM
-REM set PATH=%PATH%;C:\usr\local\tcl\bin
-REM  Forward slashes in following 2 lines are important
-REM set TCL_LIBRARY=C:/usr/local/tcl/lib/tcl7.6
-REM set GDBTK_LIBRARY=C:/usr/local/share/gdbtcl
-
+REM ---------------- extra optional dirs --------
+REM   set PATH=%PATH%;C:\unix\VIRTUNIX\32-BIT;C:\VIRTUNIX\16-BIT
+REM   set PATH=%PATH%;C:\unix\UTEXAS\BIN
+REM   set PATH=%PATH%;c:\util
 

@@ -32,6 +32,7 @@
  * -----------------
  * .01  11-11-91        jba     Moved set of alarm stat and sevr to macros
  * .02  02-05-92	jba	Changed function arguments from paddr to precord 
+ * .03  02-28-92        jba     Changed callback handling, ANSI C changes
  *      ...
  */
 
@@ -39,6 +40,8 @@
 #include	<vxWorks.h>
 #include	<types.h>
 #include	<stdioLib.h>
+#include	<string.h>
+#include	<memLib.h>
 
 #include	<alarm.h>
 #include	<dbDefs.h>
@@ -68,34 +71,28 @@ struct {
 	init_record,
 	NULL,
 	read_wf};
-/* control block for callback */
-struct callback{
-	struct dbAddr dbAddr;
-        void (*process)();
-};
 
 
-static void myCallback(pcallback,no_read,pdata)
-    struct callback *pcallback;
+static void myCallback(pwf,no_read,pdata)
+    struct waveformRecord   *pwf;
     int             no_read;
     unsigned char   *pdata;
 {
-        struct waveformRecord   *pwf=
-		(struct waveformRecord *)(pcallback->dbAddr.precord);
+	struct rset     *prset=(struct rset *)(pwf->rset);
 	short ftvl = pwf->ftvl;
 
 	if(!pwf->busy) return;
         dbScanLock((struct dbCommon *)pwf);
 	pwf->busy = FALSE;
 	if(ftvl==DBF_SHORT || ftvl==DBF_USHORT) {
-       		bcopy(pdata,pwf->bptr,no_read*2);
+       		memcpy(pdata,pwf->bptr,no_read*2);
        		pwf->nord = no_read;            /* number of values read */
 	} else {
 		recGblRecordError(S_db_badField,pwf,
 			"read_wf - illegal ftvl");
                 recGblSetSevr(pwf,READ_ALARM,VALID_ALARM);
 	}
-	(pcallback->process)(pwf);
+	(*prset->process)(pwf);
         dbScanUnlock((struct dbCommon *)pwf);
 }
 
@@ -104,18 +101,10 @@ static long init_record(pwf,process)
     void (*process)();
 {
     char message[100];
-    struct callback *pcallback;
 
     /* wf.inp must be an VME_IO */
     switch (pwf->inp.type) {
     case (VME_IO) :
-        pcallback = (struct callback *)(calloc(1,sizeof(struct callback)));
-        pwf->dpvt = (caddr_t)pcallback;
-        if(dbNameToAddr(pwf->name,&(pcallback->dbAddr))) {
-                logMsg("dbNameToAddr failed in init_record for devWfXy566Sc\n");
-                exit(1);
-        }
-        pcallback->process = process;
 	break;
     default :
 	strcpy(message,pwf->name);
@@ -129,10 +118,6 @@ static long init_record(pwf,process)
 static long read_wf(pwf)
     struct waveformRecord	*pwf;
 {
-	char message[100];
-	struct callback *pcallback=(struct callback *)(pwf->dpvt);
-	unsigned short value;
-	struct vmeio *pvmeio;
 	long status;
 
 	
@@ -155,7 +140,7 @@ struct waveformRecord   *pwf;
 	struct vmeio *pvmeio = (struct vmeio *)&(pwf->inp.value);
 
 	pwf->busy = TRUE;
-	if(wf_driver(XY566WF,pvmeio->card,myCallback,pwf->dpvt)<0) {
+	if(wf_driver(XY566WF,pvmeio->card,myCallback,pwf)<0) {
                 recGblSetSevr(pwf,READ_ALARM,VALID_ALARM);
 		pwf->busy = FALSE;
 		return(0);

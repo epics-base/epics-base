@@ -34,6 +34,7 @@
  * .02  12-02-91        jba     Added cmd control to io-interrupt processing
  * .03  12-12-91        jba     Set cmd to zero in io-interrupt processing
  * .04  02-05-92	jba	Changed function arguments from paddr to precord 
+ * .05  02-28-92	jba	Changed callback handling, ANSI C changes
  *      ...
  */
 
@@ -71,20 +72,14 @@ struct {
 	init_record,
 	get_ioint_info,
 	read_wf};
-/* control block for callback */
-struct callback{
-	struct dbAddr dbAddr;
-        void (*process)();
-};
 
 
-static void myCallback(pcallback,no_read,pdata)
-    struct callback *pcallback;
+static void myCallback(pwf,no_read,pdata)
+    struct waveformRecord   *pwf;
     int		    no_read;
     unsigned short   *pdata;
 {
-        struct waveformRecord   *pwf=
-		(struct waveformRecord *)(pcallback->dbAddr.precord);
+	struct rset     *prset=(struct rset *)(pwf->rset);
 	short ftvl = pwf->ftvl;
 	long   i;
 
@@ -111,7 +106,7 @@ static void myCallback(pcallback,no_read,pdata)
 			"read_wf - illegal ftvl");
                 recGblSetSevr(pwf,READ_ALARM,VALID_ALARM);
 	}
-	(pcallback->process)(pwf);
+	(*prset->process)(pwf);
         dbScanUnlock((struct dbCommon *)pwf);
 }
 
@@ -136,18 +131,10 @@ static long init_record(pwf,process)
     void (*process)();
 {
     char message[100];
-    struct callback *pcallback;
 
     /* wf.inp must be an VME_IO */
     switch (pwf->inp.type) {
     case (VME_IO) :
-        pcallback = (struct callback *)(calloc(1,sizeof(struct callback)));
-        pwf->dpvt = (caddr_t)pcallback;
-        if(dbNameToAddr(pwf->name,&(pcallback->dbAddr))) {
-                logMsg("dbNameToAddr failed in init_record for devWfJoergerVtr1\n");
-                exit(1);
-        }
-        pcallback->process = process;
 	break;
     default :
 	strcpy(message,pwf->name);
@@ -161,10 +148,6 @@ static long init_record(pwf,process)
 static long read_wf(pwf)
     struct waveformRecord	*pwf;
 {
-	char message[100];
-	struct callback *pcallback=(struct callback *)(pwf->dpvt);
-	unsigned short value;
-	struct vmeio *pvmeio;
 	long status;
 
 	
@@ -186,7 +169,7 @@ struct waveformRecord   *pwf;
 	struct vmeio *pvmeio = (struct vmeio *)&(pwf->inp.value);
 
 	pwf->busy = TRUE;
-	if(wf_driver(JGVTR1,pvmeio->card,myCallback,pwf->dpvt)<0){
+	if(wf_driver(JGVTR1,pvmeio->card,myCallback,pwf)<0){
                 recGblSetSevr(pwf,READ_ALARM,VALID_ALARM);
 		pwf->busy = FALSE;
 		return(0);

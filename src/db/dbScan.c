@@ -440,8 +440,13 @@ void scanIoRequest(IOSCANPVT pioscanpvt)
 void scanOnce(void *precord)
 {
     static int newOverflow=TRUE;
+    int lockKey;
+    int nput;
 
-    if(rngBufPut(onceQ,(void *)&precord,sizeof(precord))!=sizeof(precord)) {
+    lockKey = intLock();
+    nput = rngBufPut(onceQ,(void *)&precord,sizeof(precord));
+    intUnlock(lockKey);
+    if(nput!=sizeof(precord)) {
 	if(newOverflow)errMessage(0,"rngBufPut overflow in scanOnce");
 	newOverflow = FALSE;
     }else {

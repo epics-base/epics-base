@@ -30,12 +30,13 @@
 # Time service:
 # EPICS_TIMEZONE needed for vxWorks
 # EPICS_TIMEZONE=<name>::<minutesWest>:<start daylight>:<end daylight>
+#NOTE: start and end are mmddhh that bis mounth,day,hour
 # eg EPICS_TIMEZONE=CUS::360:033102:102802
 #  DST for 2003  US: Apr  6 - Oct 26
 #                EU: Mar 30 - Oct 26
 # EPICS_TS_NTP_INET ntp or Unix time server ip addr.
 
-EPICS_TIMEZONE=CUS::360:040603:102603
+EPICS_TIMEZONE=CUS::360:040602:102602
 EPICS_TS_NTP_INET=
 
 

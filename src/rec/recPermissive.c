@@ -118,11 +118,9 @@ static void monitor(ppermissive)
     struct permissiveRecord             *ppermissive;
 {
     unsigned short  monitor_mask;
-    unsigned short  stat,sevr,nsta,nsev;
     unsigned short  val,oval,wflg,oflg;
 
-    /* get previous stat and sevr  and new stat and sevr*/
-    recGblResetSevr(ppermissive,stat,sevr,nsta,nsev);
+    monitor_mask = recGblResetAlarms(ppermissive);
     /* get val,oval,wflg,oflg*/
     val=ppermissive->val;
     oval=ppermissive->oval;
@@ -131,18 +129,6 @@ static void monitor(ppermissive)
     /*set  oval and oflg*/
     ppermissive->oval = val;
     ppermissive->oflg = wflg;
-
-    monitor_mask = 0;
-
-    /* alarm condition changed this scan */
-    if (stat!=nsta || sevr!=nsev) {
-            /* post events for alarm condition change*/
-            monitor_mask = DBE_ALARM;
-            /* post stat and nsev fields */
-            db_post_events(ppermissive,&ppermissive->stat,DBE_VALUE);
-            db_post_events(ppermissive,&ppermissive->sevr,DBE_VALUE);
-    }
-
     if(oval != val) {
 	db_post_events(ppermissive,&ppermissive->val,monitor_mask|DBE_VALUE);
     }

@@ -441,21 +441,8 @@ static void monitor(pai)
 {
 	unsigned short	monitor_mask;
 	double		delta;
-	unsigned short	stat,sevr,nsta,nsev;
 
-	/* get previous stat and sevr  and new stat and sevr*/
-        recGblResetSevr(pai,stat,sevr,nsta,nsev);
-
-	monitor_mask = 0;
-
-	/* alarm condition changed this scan */
-	if (stat!=nsta || sevr!=nsev) {
-		/* post events for alarm condition change*/
-		monitor_mask = DBE_ALARM;
-		/* post stat and nsev fields */
-		db_post_events(pai,&pai->stat,DBE_VALUE);
-		db_post_events(pai,&pai->sevr,DBE_VALUE);
-	}
+        monitor_mask = recGblResetAlarms(pai);
 	/* check for value change */
 	delta = pai->mlst - pai->val;
 	if(delta<0.0) delta = -delta;

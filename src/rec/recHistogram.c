@@ -317,31 +317,8 @@ static void monitor(phistogram)
      struct histogramRecord             *phistogram;
 {
      unsigned short  monitor_mask;
-     unsigned short  stat,sevr,nsta,nsev;
  
-     /* get previous stat and sevr  and new stat and sevr*/
-     stat=phistogram->stat;
-     sevr=phistogram->sevr;
-     nsta=phistogram->nsta;
-     nsev=phistogram->nsev;
-     /*set current stat and sevr*/
-     phistogram->stat = nsta;
-     phistogram->sevr = nsev;
-     phistogram->nsta = 0;
-     phistogram->nsev = 0;
- 
-     /* Flags which events to fire on the value field */
-     monitor_mask = 0;
- 
-     /* alarm condition changed this scan */
-     if (stat!=nsta || sevr!=nsev) {
-          /* post events for alarm condition change*/
-          monitor_mask = DBE_ALARM;
-          /* post stat and nsev fields */
-          db_post_events(phistogram,&phistogram->stat,DBE_VALUE);
-          db_post_events(phistogram,&phistogram->sevr,DBE_VALUE);
-     }
-
+     monitor_mask = recGblResetAlarms(phistogram);
      /* post events for count change */
      if(phistogram->mcnt>phistogram->mdel){
           /* post events for count change */

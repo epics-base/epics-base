@@ -385,23 +385,8 @@ static void monitor(ppd)
     struct pulseDelayRecord             *ppd;
 {
     unsigned short  monitor_mask;
-    unsigned short  stat,sevr,nsta,nsev;
 
-    /* get previous stat and sevr  and new stat and sevr*/
-    recGblResetSevr(ppd,stat,sevr,nsta,nsev);
-
-    /* Flags which events to fire on the value field */
-    monitor_mask = 0;
-
-    /* alarm condition changed this scan */
-    if (stat!=nsta || sevr!=nsev) {
-         /* post events for alarm condition change*/
-         monitor_mask = DBE_ALARM;
-         /* post stat and nsev fields */
-         db_post_events(ppd,&ppd->stat,DBE_VALUE);
-         db_post_events(ppd,&ppd->sevr,DBE_VALUE);
-    }
-
+    monitor_mask = recGblResetAlarms(ppd);
     monitor_mask |= (DBE_VALUE | DBE_LOG);
 
 	/* temp change, keep old val value in pfld so ascii files do not

@@ -121,23 +121,9 @@ static void monitor(pstate)
     struct stateRecord             *pstate;
 {
     unsigned short  monitor_mask;
-    unsigned short  stat,sevr,nsta,nsev;
 
     /* get previous stat and sevr  and new stat and sevr*/
-    recGblResetSevr(pstate,stat,sevr,nsta,nsev);
-
-    /* Flags which events to fire on the value field */
-    monitor_mask = 0;
-
-    /* alarm condition changed this scan */
-    if (stat!=nsta || sevr!=nsev) {
-            /* post events for alarm condition change*/
-            monitor_mask = DBE_ALARM;
-            /* post stat and nsev fields */
-            db_post_events(pstate,&pstate->stat,DBE_VALUE);
-            db_post_events(pstate,&pstate->sevr,DBE_VALUE);
-    }
-
+    monitor_mask = recGblResetAlarms(pstate);
     if(strncmp(pstate->oval,pstate->val,sizeof(pstate->val))) {
         db_post_events(pstate,&(pstate->val[0]),monitor_mask|DBE_VALUE);
 	strncpy(pstate->oval,pstate->val,sizeof(pstate->val));

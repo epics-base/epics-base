@@ -343,22 +343,8 @@ static void monitor(pwf)
     struct waveformRecord	*pwf;
 {
 	unsigned short	monitor_mask;
-        unsigned short  stat,sevr,nsta,nsev;
 
-        /* get previous stat and sevr  and new stat and sevr*/
-        recGblResetSevr(pwf,stat,sevr,nsta,nsev);
-
-        /* Flags which events to fire on the value field */
-        monitor_mask = 0;
-
-        /* alarm condition changed this scan */
-        if (stat!=nsta || sevr!=nsev) {
-                /* post events for alarm condition change*/
-                monitor_mask = DBE_ALARM;
-                /* post stat and nsev fields */
-                db_post_events(pwf,&pwf->stat,DBE_VALUE);
-                db_post_events(pwf,&pwf->sevr,DBE_VALUE);
-        }
+        monitor_mask = recGblResetAlarms(pwf);
 	monitor_mask |= (DBE_LOG|DBE_VALUE);
         if(monitor_mask) db_post_events(pwf,pwf->bptr,monitor_mask);
 	return;

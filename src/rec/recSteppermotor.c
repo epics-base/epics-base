@@ -395,22 +395,9 @@ static void monitor(psm)
 {
 	unsigned short	monitor_mask;
         float           delta;
-        unsigned short  stat,sevr,nsta,nsev;
 
         /* get previous stat and sevr  and new stat and sevr*/
-	recGblResetSevr(psm,stat,sevr,nsta,nsev);
-
-        /* Flags which events to fire on the value field */
-        monitor_mask = 0;
-
-        /* alarm condition changed this scan */
-        if (stat!=nsta || sevr!=nsev) {
-                /* post events for alarm condition change*/
-                monitor_mask = DBE_ALARM;
-                /* post stat and nsev fields */
-                db_post_events(psm,&psm->stat,DBE_VALUE);
-                db_post_events(psm,&psm->sevr,DBE_VALUE);
-        }
+	monitor_mask = recGblResetAlarms(psm);
         /* check for value change */
         delta = psm->mlst - psm->val;
         if(delta<0.0) delta = -delta;
@@ -536,7 +523,7 @@ struct steppermotorRecord	*psm;
 
 	/* alarm conditions for limit switches */
         /* get previous stat and sevr  and new stat and sevr*/
-        recGblResetSevr(psm,stat,sevr,nsta,nsev);
+        recGblResetAlarms(psm);
 	post_events = FALSE;
 	if (psm->mccw && psm->mcw){                    /* limits disconnected */
 		recGblSetSevr(psm,WRITE_ALARM,INVALID_ALARM);

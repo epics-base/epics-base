@@ -139,6 +139,7 @@ static long process(pfanout)
     long           status=0;
     long           options=0;
     long           nRequest=1;
+    unsigned short monitor_mask;
 
     pfanout->pact = TRUE;
 
@@ -195,11 +196,7 @@ static long process(pfanout)
     tsLocalTime(&pfanout->time);
     /* check monitors*/
     /* get previous stat and sevr  and new stat and sevr*/
-    recGblResetSevr(pfanout,stat,sevr,nsta,nsev);
-    if((stat!=nsta || sevr!=nsev)){
-        db_post_events(pfanout,&pfanout->stat,DBE_VALUE);
-        db_post_events(pfanout,&pfanout->sevr,DBE_VALUE);
-    }
+    monitor_mask = recGblResetAlarms(pfanout);
     /* process the forward scan link record */
     recGblFwdLink(pfanout);
 

@@ -348,24 +348,11 @@ static void monitor(psel)
 {
 	unsigned short	monitor_mask;
 	double		delta;
-        unsigned short  stat,sevr,nsta,nsev;
 	double           *pnew;
 	double           *pprev;
 	int             i;
 
-        /* get peevious stat and sevr  and new stat and sevr*/
-        recGblResetSevr(psel,stat,sevr,nsta,nsev);
-
-        monitor_mask = 0;
-
-        /* alarm condition changed this scan */
-        if (stat!=nsta || sevr!=nsev) {
-                /* post events for alarm condition change*/
-                monitor_mask = DBE_ALARM;
-                /* post stat and nsev fields */
-                db_post_events(psel,&psel->stat,DBE_VALUE);
-                db_post_events(psel,&psel->sevr,DBE_VALUE);
-        }
+        monitor_mask = recGblResetAlarms(psel);
         /* check for value change */
         delta = psel->mlst - psel->val;
         if(delta<0.0) delta = -delta;

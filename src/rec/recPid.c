@@ -293,21 +293,8 @@ static void monitor(ppid)
 {
 	unsigned short	monitor_mask;
 	float		delta;
-        unsigned short  stat,sevr,nsta,nsev;
 
-        /* get previous stat and sevr  and new stat and sevr*/
-        recGblResetSevr(ppid,stat,sevr,nsta,nsev);
-
-        monitor_mask = 0;
-
-        /* alarm condition changed this scan */
-        if (stat!=nsta || sevr!=nsev) {
-                /* post events for alarm condition change*/
-                monitor_mask = DBE_ALARM;
-                /* post stat and nsev fields */
-                db_post_events(ppid,&ppid->stat,DBE_VALUE);
-                db_post_events(ppid,&ppid->sevr,DBE_VALUE);
-        }
+        monitor_mask = recGblResetAlarms(ppid);
         /* check for value change */
         delta = ppid->mlst - ppid->val;
         if(delta<0.0) delta = -delta;

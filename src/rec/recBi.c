@@ -297,21 +297,8 @@ static void monitor(pbi)
     struct biRecord	*pbi;
 {
 	unsigned short	monitor_mask;
-        unsigned short  stat,sevr,nsta,nsev;
 
-        /* get previous stat and sevr  and new stat and sevr*/
-        recGblResetSevr(pbi,stat,sevr,nsta,nsev);
-
-	monitor_mask = 0;
-
-	/* alarm condition changed this scan */
-	if (stat!=nsta || sevr!=nsev){
-		/* post events for alarm condition change*/
-		monitor_mask = DBE_ALARM;
-		/* post stat and sevr fields */
-		db_post_events(pbi,&pbi->stat,DBE_VALUE);
-		db_post_events(pbi,&pbi->sevr,DBE_VALUE);
-	}
+        monitor_mask = recGblResetAlarms(pbi);
         /* check for value change */
         if (pbi->mlst != pbi->val){
                 /* post events for value change and archive change */

@@ -279,23 +279,8 @@ static void monitor(ppt)
     struct pulseTrainRecord             *ppt;
 {
     unsigned short  monitor_mask;
-    unsigned short  stat,sevr,nsta,nsev;
 
-    /* get previous stat and sevr  and new stat and sevr*/
-    recGblResetSevr(ppt,stat,sevr,nsta,nsev);
-
-    /* Flags which events to fire on the value field */
-    monitor_mask = 0;
-
-    /* alarm condition changed this scan */
-    if (stat!=nsta || sevr!=nsev) {
-         /* post events for alarm condition change*/
-         monitor_mask = DBE_ALARM;
-         /* post stat and nsev fields */
-         db_post_events(ppt,&ppt->stat,DBE_VALUE);
-         db_post_events(ppt,&ppt->sevr,DBE_VALUE);
-    }
-
+    monitor_mask = recGblResetAlarms(ppt);
     monitor_mask |= (DBE_VALUE | DBE_LOG);
     db_post_events(ppt,&ppt->val,monitor_mask);
     if(ppt->oper != ppt->per){

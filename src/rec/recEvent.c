@@ -194,23 +194,9 @@ static void monitor(pevent)
     struct eventRecord             *pevent;
 {
     unsigned short  monitor_mask;
-    unsigned short  stat,sevr,nsta,nsev;
 
     /* get previous stat and sevr  and new stat and sevr*/
-    recGblResetSevr(pevent,stat,sevr,nsta,nsev);
-
-    /* Flags which events to fire on the value field */
-    monitor_mask = 0;
-
-    /* alarm condition changed this scan */
-    if (stat!=nsta || sevr!=nsev) {
-            /* post events for alarm condition change*/
-            monitor_mask = DBE_ALARM;
-            /* post stat and nsev fields */
-            db_post_events(pevent,&pevent->stat,DBE_VALUE);
-            db_post_events(pevent,&pevent->sevr,DBE_VALUE);
-    }
-
+    monitor_mask = recGblResetAlarms(pevent);
     db_post_events(pevent,&pevent->val,monitor_mask|DBE_VALUE);
     return;
 }

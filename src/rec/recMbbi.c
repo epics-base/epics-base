@@ -383,20 +383,8 @@ static void monitor(pmbbi)
     struct mbbiRecord	*pmbbi;
 {
 	unsigned short	monitor_mask;
-        unsigned short  stat,sevr,nsta,nsev;
 
-        /* get previous stat and sevr  and new stat and sevr*/
-        recGblResetSevr(pmbbi,stat,sevr,nsta,nsev);
-
-	monitor_mask = 0;
-        /* alarm condition changed this scan */
-        if (stat!=nsta || sevr!=nsev){
-                /* post events for alarm condition change*/
-                monitor_mask = DBE_ALARM;
-                /* post stat and sevr fields */
-                db_post_events(pmbbi,&pmbbi->stat,DBE_VALUE);
-                db_post_events(pmbbi,&pmbbi->sevr,DBE_VALUE);
-        }
+        monitor_mask = recGblResetAlarms(pmbbi);
         /* check for value change */
         if (pmbbi->mlst != pmbbi->val){
                 /* post events for value change and archive change */

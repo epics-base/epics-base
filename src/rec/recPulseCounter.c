@@ -311,24 +311,8 @@ static long get_control_double(struct dbAddr *paddr, struct dbr_ctrlDouble *pcd)
 static void monitor(struct pulseCounterRecord             *ppc)
 {
     unsigned short  monitor_mask;
-    unsigned short  stat,sevr,nsta,nsev;
 
-    /* get previous stat and sevr  and new stat and sevr*/
-    recGblResetSevr(ppc,stat,sevr,nsta,nsev);
-
-    /* Flags which events to fire on the value field */
-    monitor_mask = 0;
-
-    /* alarm condition changed this scan */
-    if (stat!=nsta || sevr!=nsev)
-    {
-         /* post events for alarm condition change*/
-         monitor_mask = DBE_ALARM;
-         /* post stat and nsev fields */
-         db_post_events(ppc,&ppc->stat,DBE_VALUE);
-         db_post_events(ppc,&ppc->sevr,DBE_VALUE);
-    }
-
+    monitor_mask = recGblResetAlarms(ppc);
     monitor_mask |= (DBE_VALUE | DBE_LOG);
     db_post_events(ppc,&ppc->val,monitor_mask);
 

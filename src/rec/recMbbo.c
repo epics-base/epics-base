@@ -428,21 +428,8 @@ static void monitor(pmbbo)
     struct mbboRecord	*pmbbo;
 {
 	unsigned short	monitor_mask;
-        unsigned short  stat,sevr,nsta,nsev;
 
-        /* get previous stat and sevr  and new stat and sevr*/
-        recGblResetSevr(pmbbo,stat,sevr,nsta,nsev);
-
-	monitor_mask = 0;
-
-        /* alarm condition changed this scan */
-        if (stat!=nsta || sevr!=nsev){
-                /* post events for alarm condition change*/
-                monitor_mask = DBE_ALARM;
-                /* post stat and sevr fields */
-                db_post_events(pmbbo,&pmbbo->stat,DBE_VALUE);
-                db_post_events(pmbbo,&pmbbo->sevr,DBE_VALUE);
-        }
+        monitor_mask = recGblResetAlarms(pmbbo);
         /* check for value change */
         if (pmbbo->mlst != pmbbo->val){
                 /* post events for value change and archive change */

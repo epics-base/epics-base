@@ -210,23 +210,8 @@ static void monitor(pstringin)
     struct stringinRecord             *pstringin;
 {
     unsigned short  monitor_mask;
-    unsigned short  stat,sevr,nsta,nsev;
 
-    /* get previous stat and sevr  and new stat and sevr*/
-    recGblResetSevr(pstringin,stat,sevr,nsta,nsev);
-
-    /* Flags which events to fire on the value field */
-    monitor_mask = 0;
-
-    /* alarm condition changed this scan */
-    if (stat!=nsta || sevr!=nsev) {
-            /* post events for alarm condition change*/
-            monitor_mask = DBE_ALARM;
-            /* post stat and nsev fields */
-            db_post_events(pstringin,&pstringin->stat,DBE_VALUE);
-            db_post_events(pstringin,&pstringin->sevr,DBE_VALUE);
-    }
-
+    monitor_mask = recGblResetAlarms(pstringin);
     if(strncmp(pstringin->oval,pstringin->val,sizeof(pstringin->val))) {
         db_post_events(pstringin,&(pstringin->val[0]),monitor_mask|DBE_VALUE);
 	strncpy(pstringin->oval,pstringin->val,sizeof(pstringin->val));

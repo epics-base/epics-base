@@ -352,24 +352,9 @@ static void monitor(plongout)
     struct longoutRecord	*plongout;
 {
 	unsigned short	monitor_mask;
-
 	long		delta;
-        unsigned short  stat,sevr,nsta,nsev;
 
-        /* get previous stat and sevr  and new stat and sevr*/
-        recGblResetSevr(plongout,stat,sevr,nsta,nsev);
-
-        /* Flags which events to fire on the value field */
-	monitor_mask = 0;
-
-	/* alarm condition changed this scan */
-        if (stat!=nsta || sevr!=nsev) {
-                /* post events for alarm condition change*/
-                monitor_mask = DBE_ALARM;
-                /* post stat and nsev fields */
-                db_post_events(plongout,&plongout->stat,DBE_VALUE);
-                db_post_events(plongout,&plongout->sevr,DBE_VALUE);
-        }
+        monitor_mask = recGblResetAlarms(plongout);
         /* check for value change */
         delta = plongout->mlst - plongout->val;
         if(delta<0) delta = -delta;

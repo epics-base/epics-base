@@ -338,12 +338,7 @@ struct seqRecord *pseq;
     printf("asyncFinish(%s) completing processing\n", pseq->name);
   pseq->udf = FALSE;
  
-  recGblResetSevr(pseq, stat, sevr, nsta, nsev);
-  if((stat!=nsta || sevr!=nsev))
-  {
-    db_post_events(pseq, &pseq->stat, DBE_VALUE);
-    db_post_events(pseq, &pseq->sevr, DBE_VALUE);
-  }
+  recGblResetAlarms(pseq);
 
   /* process the forward scan link record */
   recGblFwdLink(pseq);

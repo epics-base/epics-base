@@ -324,21 +324,8 @@ static void monitor(pcompress)
     struct compressRecord	*pcompress;
 {
 	unsigned short	monitor_mask;
-        unsigned short  stat,sevr,nsta,nsev;
 
-        /* get previous stat and sevr  and new stat and sevr*/
-        recGblResetSevr(pcompress,stat,sevr,nsta,nsev);
-
-        monitor_mask = 0;
-
-        /* alarm condition changed this scan */
-        if (stat!=nsta || sevr!=nsev) {
-                /* post events for alarm condition change*/
-                monitor_mask = DBE_ALARM;
-                /* post stat and nsev fields */
-                db_post_events(pcompress,&pcompress->stat,DBE_VALUE);
-                db_post_events(pcompress,&pcompress->sevr,DBE_VALUE);
-        }
+        monitor_mask = recGblResetAlarms(pcompress);
 	monitor_mask |= (DBE_LOG|DBE_VALUE);
 	if(monitor_mask) db_post_events(pcompress,pcompress->bptr,monitor_mask);
 	return;

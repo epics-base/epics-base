@@ -392,21 +392,8 @@ static void monitor(pbo)
     struct boRecord	*pbo;
 {
 	unsigned short	monitor_mask;
-        unsigned short  stat,sevr,nsta,nsev;
 
-        /* get previous stat and sevr  and new stat and sevr*/
-        recGblResetSevr(pbo,stat,sevr,nsta,nsev);
-
-        monitor_mask = 0;
-
-        /* alarm condition changed this scan */
-        if (stat!=nsta || sevr!=nsev){
-                /* post events for alarm condition change*/
-                monitor_mask = DBE_ALARM;
-                /* post stat and sevr fields */
-                db_post_events(pbo,&pbo->stat,DBE_VALUE);
-                db_post_events(pbo,&pbo->sevr,DBE_VALUE);
-        }
+        monitor_mask = recGblResetAlarms(pbo);
         /* check for value change */
         if (pbo->mlst != pbo->val){
                 /* post events for value change and archive change */

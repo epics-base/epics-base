@@ -249,23 +249,8 @@ static void monitor(pstringout)
     struct stringoutRecord             *pstringout;
 {
     unsigned short  monitor_mask;
-    unsigned short  stat,sevr,nsta,nsev;
 
-    /* get previous stat and sevr  and new stat and sevr*/
-    recGblResetSevr(pstringout,stat,sevr,nsta,nsev);
-
-    /* Flags which events to fire on the value field */
-    monitor_mask = 0;
-
-    /* alarm condition changed this scan */
-    if (stat!=nsta || sevr!=nsev) {
-            /* post events for alarm condition change*/
-            monitor_mask = DBE_ALARM;
-            /* post stat and nsev fields */
-            db_post_events(pstringout,&pstringout->stat,DBE_VALUE);
-            db_post_events(pstringout,&pstringout->sevr,DBE_VALUE);
-    }
-
+    monitor_mask = recGblResetAlarms(pstringout);
     if(strncmp(pstringout->oval,pstringout->val,sizeof(pstringout->val))) {
         db_post_events(pstringout,&(pstringout->val[0]),monitor_mask|DBE_VALUE);
 	strncpy(pstringout->oval,pstringout->val,sizeof(pstringout->val));

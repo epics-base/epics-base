@@ -24,6 +24,7 @@
 #include "epicsMutex.h"
 #include "epicsGuard.h"
 #include "epicsThread.h"
+#include "epicsAssert.h"
 #include "compilerDependencies.h"
 
 // This class exists for the purpose of avoiding file scope
@@ -102,6 +103,20 @@ inline epicsSingleton<TYPE>::~epicsSingleton ()
     // their destructors. Since this class's purpose is to avoid these
     // sorts of problems then clean up is left to other classes.
 }
+
+// SUN PRO generates warnings unless it sees an implementation
+#ifdef _SUNPRO_C
+    template < class TYPE >
+    inline epicsSingleton<TYPE>::epicsSingleton ( const epicsSingleton & )
+    {
+        assert ( 0 );
+    }
+    template < class TYPE >
+    inline epicsSingleton & epicsSingleton<TYPE>::operator = ( const epicsSingleton & )
+    {
+        assert ( 0 );
+    }
+#endif
 
 epicsShareFunc epicsMutex & epicsSingletonPrivateMutex ();
 

@@ -29,7 +29,7 @@ OBJ = .o
 LIB_PREFIX = lib
 LIB_SUFFIX = .a
 SHRLIB_SUFFIX = .so$(addprefix .,$(SHRLIB_VERSION))
-LOADABLE_SHRLIB_SUFFIX = .so
+LOADABLE_SHRLIB_SUFFIX = .so$(addprefix .,$(LOADABLE_SHRLIB_VERSION))
 LOADABLE_SHRLIB_PREFIX = lib
 
 #-------------------------------------------------------

@@ -330,7 +330,7 @@ $(INSTALL_LIB)/%.lib: %.lib
 $(INSTALL_SHRLIB)/lib%: lib%
 	@echo "Installing shared library $@"
 	@$(INSTALL_LIBRARY) -d -m 555 $< $(INSTALL_SHRLIB)
-ifdef SHRLIB_VERSION
+ifneq (,$(strip $(SHRLIB_VERSION)))
 	@$(RM) $(subst .$(SHRLIB_VERSION),,$@)
 	ln -s $< $(subst .$(SHRLIB_VERSION),,$@)
 endif # SHRLIB_VERSION
@@ -348,6 +348,10 @@ endif
 $(INSTALL_LOADABLE_SHRLIBS): $(INSTALL_SHRLIB)/%: %
 	@echo "Installing loadable shared library $@"
 	@$(INSTALL_LIBRARY) -d -m 555 $< $(INSTALL_SHRLIB)
+ifneq (,$(strip $(LOADABLE_SHRLIB_VERSION)))
+	@$(RM) $(subst .$(LOADABLE_SHRLIB_VERSION),,$@)
+	ln -s $< $(subst .$(LOADABLE_SHRLIB_VERSION),,$@)
+endif # LOADABLE_SHRLIB_VERSION
 
 $(INSTALL_CONFIG)/%: %
 	@echo "Installing config file $@"

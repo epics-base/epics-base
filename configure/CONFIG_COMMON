@@ -64,7 +64,7 @@ INSTALL_LIBRARY = $(INSTALL)
 #-------------------------------------------------------
 # vpath directories
 OS_SRC_DIRS += $(foreach dir, $(SRC_DIRS) .., \
-            $(dir)/os//posix $(dir)/os/$(OS_CLASS) $(dir) )
+            $(dir)/os/posix $(dir)/os/$(OS_CLASS) $(dir) )
 
 #-------------------------------------------------------
 # compile line include directories

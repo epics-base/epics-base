@@ -9,8 +9,7 @@
 #define locationException_h
 
 #include <limits.h>
-#include <typeinfo>
-#include <iostream>
+#include <stdio.h>
 
 #include "cantProceed.h"
 
@@ -47,9 +46,8 @@ template <class T>
 inline void throwExceptionWithLocation (T &parm, const char *pFileName, unsigned lineNo)
 {
 #   ifdef noExceptionsFromCXX
-        cerr << "C++ exception in file=" << pFileName
-            << " at line=" << lineNo
-            << " - cant continue";
+        fprintf (stderr, "C++ exception in file=%s" at line=%u, and no compiler support - cant proceed.\n",
+            pFileName, lineNo);
         cantProceed ("No compiler support for C++ exception");
 #   else
         throw sourceFileLocation<T> (parm, pFileName, lineNo);

@@ -810,11 +810,8 @@ void tcpiiu::unresponsiveCircuitNotify (
         if ( this->connectedList.count() ) {
             char hostNameTmp[128];
             this->hostName ( guard, hostNameTmp, sizeof ( hostNameTmp ) );
-            {
-                epicsGuardRelease < epicsMutex > guardRelease ( guard );
-                genLocalExcep ( cbGuard, guard, this->cacRef, 
-                    ECA_UNRESPTMO, hostNameTmp );
-            }
+            genLocalExcep ( cbGuard, guard, this->cacRef, 
+                ECA_UNRESPTMO, hostNameTmp );
             while ( nciu * pChan = this->connectedList.get () ) {
                 // The cac lock is released herein so there is concern that
                 // the list could be changed while we are traversing it.

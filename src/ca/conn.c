@@ -47,11 +47,11 @@ static char 	*sccsId = "@(#) $Id$";
 
 #ifdef DEBUG
 #define LOGRETRYINTERVAL logRetryInterval(__FILE__, __LINE__);
+LOCAL void logRetryInterval(char *pFN, unsigned lineno);
 #else
 #define LOGRETRYINTERVAL 
 #endif
 
-LOCAL void logRetryInterval(char *pFN, unsigned lineno);
 LOCAL void retrySearchRequest(int silent);
 
 
@@ -275,8 +275,10 @@ LOCAL void retrySearchRequest (int silent)
 	if (chix==NULL) {
 		/*
 		 * increment the retry sequence number
+		 * (only if we get no responses during a sequence)
 		 */
-		if (ca_static->ca_search_retry<MAXCONNTRIES) {
+		if (ca_static->ca_search_retry<MAXCONNTRIES 
+			&& ca_static->ca_search_responses==0) {
 			ca_static->ca_search_retry++;
 		}
 
@@ -285,6 +287,7 @@ LOCAL void retrySearchRequest (int silent)
 		 */
 		if (ca_static->ca_search_retry<min_retry_num) {
 			ca_static->ca_search_retry = min_retry_num;
+			ca_static->ca_search_responses = 0;
 		}
 	}
 

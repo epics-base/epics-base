@@ -787,7 +787,7 @@ printf(") \n");
 					for (got_if=1; got_if>0 && *(post+1) != END_STACK; ++post) {
 						switch(post[1]) {
 						case LITERAL:	post+=8; break;
-						case SLITERAL:	while (*(++post)); break;
+						case SLITERAL:  post++; while (post[1]) post++; break;
 						case COND_IF:	got_if++; break;
 						case COND_ELSE: got_if--; break;
 						case FETCH: case SFETCH: post++; break;
@@ -804,7 +804,7 @@ printf(") \n");
 				for (got_if=1; got_if>0 && *(post+1) != END_STACK; ++post) {
 					switch(post[1]) {
 					case LITERAL:	post+=8; break;
-					case SLITERAL:	while (*(++post)); break;
+					case SLITERAL:  post++; while (post[1]) post++; break;
 					case COND_IF:	got_if++; break;
 					case COND_ELSE:	got_if--; break;
 					case FETCH: case SFETCH: post++; break;

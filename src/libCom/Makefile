@@ -224,6 +224,11 @@ SRC_DIRS += $(LIBCOM)/tsDefs
 INC += tsDefs.h
 SRCS += tsDefs.c
 
+SRC_DIRS += $(LIBCOM)/math
+SRCS += epicsFFT.cpp
+INC += epicsDSP.h
+INC += epicsTemplateFFT.h
+
 # For WIN32
 SRCS_WIN32 += dllmain.cpp
 SRCS_WIN32 += forceBadAllocException.cpp

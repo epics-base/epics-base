@@ -99,6 +99,9 @@
 /************************************************************************/
 /*
  * $Log$
+ * Revision 1.98  1997/08/04 22:54:28  jhill
+ * mutex clean up
+ *
  * Revision 1.96  1997/06/13 16:57:38  jhill
  * fixed warning
  *
@@ -2380,7 +2383,7 @@ db_field_log	*pfl
 			LOCK;
 			pbuf = (struct tmp_buff *)
 					lcl_buff_list.node.next;
-			if(pbuf->size >= size){
+			if(pbuf && pbuf->size >= size){
 				ellDelete(
 					&lcl_buff_list,
 					&pbuf->node);

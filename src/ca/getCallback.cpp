@@ -53,11 +53,13 @@ void getCallback::completion (
     args.status = ECA_NORMAL;
     args.dbr = pData;
     caEventCallBackFunc * pFuncTmp = this->pFunc;
+    // fetch client context and destroy prior to releasing
+    // the lock and calling cb in case they destroy channel there
+    this->chan.getClientCtx().destroyGetCallback ( guard, *this );
     {
         epicsGuardRelease < epicsMutex > unguard ( guard );
         ( *pFuncTmp ) ( args );
     }
-    this->chan.getClientCtx().destroyGetCallback ( guard, *this );
 }
 
 void getCallback::exception (

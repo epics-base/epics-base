@@ -32,6 +32,9 @@
  * 	cjm 20-Nov-95 Add code for gettimeofday
  *
  * $Log$
+ * Revision 1.19  1995/12/19  19:35:24  jhill
+ * -cjm 20-Nov-95 Add code for gettimeofday
+ *
  * Revision 1.18  1995/10/12  01:35:30  jhill
  * Moved cac_mux_io() to iocinf.c
  *
@@ -64,10 +67,9 @@
  */
 void cac_gettimeval(struct timeval  *pt)
 {
-        struct timezone tz;
 	int		status;
 
-        status = gettimeofday(pt, &tz);
+        status = gettimeofday(pt, (struct timezone *) NULL);
 	assert(status==0);
 }
 

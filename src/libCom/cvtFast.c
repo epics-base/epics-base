@@ -368,7 +368,7 @@ int cvtFloatToCompactString(f_value,pstr_value,f_precision)
 {
 #endif /*__STDC__*/
   if ((f_value < 1.e4 && f_value > 1.e-4) ||
-		(f_value > -1.e4 && f_value < -1.e-4)) {
+		(f_value > -1.e4 && f_value < -1.e-4) || f_value == 0.0) {
     return(cvtFloatToString(f_value,pstr_value,f_precision));
   } else {
     return(cvtFloatToExpString(f_value,pstr_value,f_precision));

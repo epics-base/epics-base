@@ -69,16 +69,18 @@ private:
 
 class tcpSendThread : public epicsThreadRunable {
 public:
-    tcpSendThread ( class tcpiiu & iiuIn,
-        const char * pName, unsigned int stackSize, unsigned int priority );
+    tcpSendThread ( class tcpiiu & iiuIn, callbackMutex &,
+        const char * pName, unsigned int stackSize, 
+        unsigned int priority );
     virtual ~tcpSendThread ();
     void start ();
     void exitWait ();
     void exitWaitRelease ();
    void interruptSocketSend ();
 private:
-    class tcpiiu & iiu;
     epicsThread thread;
+    class tcpiiu & iiu;
+    callbackMutex & cbMutex;
     void run ();
 };
 
@@ -93,6 +95,7 @@ public:
         const cacChannel::priLev & priorityIn );
     ~tcpiiu ();
     void start ( epicsGuard < callbackMutex > & );
+    void initiateCleanShutdown ( epicsGuard < cacMutex > & );
     void initiateAbortShutdown ( epicsGuard < callbackMutex > &, 
                                     epicsGuard <cacMutex > & ); 
     void disconnectNotify ( epicsGuard <cacMutex > & );
@@ -127,7 +130,6 @@ public:
     void installChannel ( epicsGuard < cacMutex > &, nciu & chan, 
         unsigned sidIn, ca_uint16_t typeIn, arrayElementCount countIn );
     void uninstallChan ( epicsGuard < cacMutex > &, nciu & chan );
-    void initiateCleanShutdown ( epicsGuard < cacMutex > & );
 
     bool bytesArePendingInOS () const;
 
@@ -168,6 +170,7 @@ private:
     bool msgHeaderAvailable;
     bool earlyFlush;
     bool recvProcessPostponedFlush;
+    bool discardingPendingData;
 
     bool processIncoming ( epicsGuard < callbackMutex > & );
     unsigned sendBytes ( const void *pBuf, unsigned nBytesInBuf ) epicsThrows (());
@@ -175,6 +178,8 @@ private:
     void connect ();
     const char * pHostName () const;
     void blockUntilBytesArePendingInOS ();
+    void shutdown ( epicsGuard < callbackMutex > &, 
+                                    epicsGuard <cacMutex > & ); 
 
     // send protocol stubs
     void echoRequest ( epicsGuard < cacMutex > & );

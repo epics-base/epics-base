@@ -102,7 +102,7 @@ epicsShareFunc void epicsShareAPI epicsSignalRaiseSigUrg
     pthread_t id = epicsThreadGetPosixThreadId ( threadId );
     int status = pthread_kill ( id, SIGURG );
     if ( status ) {
-        errlogPrintf ( "Failed to send SIGURG signal to thread. Status = \"%s\"\n", 
+        errlogPrintf ( "Failed to send SIGURG to thread. Status = \"%s\"\n", 
             strerror ( status ) );
     }
 }

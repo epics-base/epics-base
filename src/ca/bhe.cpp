@@ -45,7 +45,7 @@
  * between the 1st and 2nd beacons)
  */
 bhe::bhe ( const epicsTime & initialTimeStamp, 
-          unsigned initialBeaconNumber, const inetAddrID & addr ) :
+          unsigned initialBeaconNumber, const inetAddrID & addr ) throw () :
     inetAddrID ( addr ), timeStamp ( initialTimeStamp ), averagePeriod ( - DBL_MAX ),
     lastBeaconNumber ( initialBeaconNumber )
 {

@@ -170,8 +170,8 @@ private:
     bool recvProcessPostponedFlush;
 
     bool processIncoming ( epicsGuard < callbackMutex > & );
-    unsigned sendBytes ( const void *pBuf, unsigned nBytesInBuf );
-    unsigned recvBytes ( void *pBuf, unsigned nBytesInBuf );
+    unsigned sendBytes ( const void *pBuf, unsigned nBytesInBuf ) throw ();
+    unsigned recvBytes ( void *pBuf, unsigned nBytesInBuf ) throw ();
     void connect ();
     const char * pHostName () const;
 

@@ -54,46 +54,46 @@ casChannelI::casChannelI (const casCtx &ctx) :
 //
 casChannelI::~casChannelI()
 {	
-	this->lock();
-	
-	//
-	// cancel any pending asynchronous IO 
-	//
-	tsDLIterBD<casAsyncIOI> iterAIO(this->ioInProgList.first());
-	while ( iterAIO!=tsDLIterBD<casAsyncIOI>::eol() ) {
-		//
-		// destructor removes from this list
-		//
-		tsDLIterBD<casAsyncIOI> tmpAIO = iterAIO;
-		++tmpAIO;
-		iterAIO->serverDestroy();
-		iterAIO = tmpAIO;
-	}
-	
-	//
-	// cancel the monitors 
-	//
-	tsDLIterBD<casMonitor> iterMon (this->monitorList.first());
-	while ( iterMon!=tsDLIterBD<casMonitor>::eol() ) {
-		casMonitor *pMonitor;
-		//
-		// destructor removes from this list
-		//
+    this->lock();
+    
+    //
+    // cancel any pending asynchronous IO 
+    //
+    tsDLIterBD<casAsyncIOI> iterAIO(this->ioInProgList.first());
+    while ( iterAIO!=tsDLIterBD<casAsyncIOI>::eol() ) {
+        //
+        // destructor removes from this list
+        //
+        tsDLIterBD<casAsyncIOI> tmpAIO = iterAIO;
+        ++tmpAIO;
+        iterAIO->serverDestroy();
+        iterAIO = tmpAIO;
+    }
+    
+    //
+    // cancel the monitors 
+    //
+    tsDLIterBD<casMonitor> iterMon (this->monitorList.first());
+    while ( iterMon!=tsDLIterBD<casMonitor>::eol() ) {
+        casMonitor *pMonitor;
+        //
+        // destructor removes from this list
+        //
         tsDLIterBD<casMonitor> tmpMon = iterMon;
-		pMonitor = tmpMon;
-		++tmpMon;
-		delete pMonitor;
-		iterMon = tmpMon;
-	}
-	
-	this->client.removeChannel(*this);
-	
-	//
-	// force PV delete if this is the last channel attached
-	//
-	this->pv.deleteSignal();
-	
-	this->unlock();
+        pMonitor = tmpMon;
+        ++tmpMon;
+        delete pMonitor;
+        iterMon = tmpMon;
+    }
+    
+    this->client.removeChannel(*this);
+    
+    //
+    // force PV delete if this is the last channel attached
+    //
+    this->pv.deleteSignal();
+    
+    this->unlock();
 }
 
 //

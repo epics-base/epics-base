@@ -42,7 +42,10 @@ ipAddrToAsciiEngine::~ipAddrToAsciiEngine ()
 {
     ipAddrToAsciiAsynchronous * pItem;
 
-    this->exitFlag = true;
+    {
+        epicsGuard < epicsMutex > locker ( ipAddrToAsciiEngine::mutex );
+        this->exitFlag = true;
+    }
     this->laborEvent.signal ();
     this->threadExit.wait ();
 
@@ -69,13 +72,12 @@ ipAddrToAsciiEngine::~ipAddrToAsciiEngine ()
 
 void ipAddrToAsciiEngine::run ()
 {
-    osiSockAddr addr;
-
-    while ( ! this->exitFlag ) {
-        while ( true ) {
-            {
-                epicsGuard < epicsMutex > locker ( ipAddrToAsciiEngine::mutex );
+    {
+        epicsGuard < epicsMutex > guard ( ipAddrToAsciiEngine::mutex );
+        while ( ! this->exitFlag ) {
+            while ( true ) {
                 ipAddrToAsciiAsynchronous * pItem = this->labor.get ();
+                osiSockAddr addr;
                 if ( pItem ) {
                     addr = pItem->addr;
                     this->pCurrent = pItem;
@@ -83,13 +85,19 @@ void ipAddrToAsciiEngine::run ()
                 else {
                     break;
                 }
-            }
+     
+                if ( this->exitFlag )
+                {
+                    sockAddrToDottedIP ( & addr.sa, this->nameTmp, 
+                        sizeof ( this->nameTmp ) );
+                }
+                else {
+                    epicsGuardRelease < epicsMutex > unguard ( guard );
+                    // depending on DNS configuration, this could take a very long time
+                    // so we release the lock
+                    sockAddrToA ( &addr.sa, this->nameTmp, sizeof ( this->nameTmp ) );
+                }
 
-            // depending on DNS configuration, this could take a very long time
-            sockAddrToA ( &addr.sa, this->nameTmp, sizeof ( this->nameTmp ) );
-
-            {
-                epicsGuard < epicsMutex > locker ( ipAddrToAsciiEngine::mutex );
                 if ( this->pCurrent ) {
                     this->pCurrent->pEngine = 0;
                     this->callbackInProgress = true;
@@ -97,21 +105,24 @@ void ipAddrToAsciiEngine::run ()
                 else {
                     continue;
                 }
-            }
 
-            // dont call callback with lock applied
-            this->pCurrent->ioCompletionNotify ( this->nameTmp );
+                {
+                    epicsGuardRelease < epicsMutex > unguard ( guard );
+                    // dont call callback with lock applied
+                    this->pCurrent->ioCompletionNotify ( this->nameTmp );
+                }
 
-            {
-                epicsGuard < epicsMutex > locker ( ipAddrToAsciiEngine::mutex );
                 this->pCurrent = 0;
                 this->callbackInProgress = false;
+                if ( this->cancelPending  ) {
+                    this->destructorBlockEvent.signal ();
+                }
             }
-            if ( this->cancelPending  ) {
-                this->destructorBlockEvent.signal ();
+            {
+                epicsGuardRelease < epicsMutex > unguard ( guard );
+                this->laborEvent.wait ();
             }
         }
-        this->laborEvent.wait ();
     }
     this->threadExit.signal ();
 }

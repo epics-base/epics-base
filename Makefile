@@ -93,11 +93,12 @@ uninstall.%:
 	@rm -rf $(INSTALL_LOCATION_BIN)/$* $(INSTALL_LOCATION_LIB)/$* \
 		$(INSTALL_LOCATION)/dbd $(INSTALL_MAN) $(INSTALL_INCLUDE) 
 	@rm -rf  rec.bak rec
+	@DIR1=`pwd`;cd $(INSTALL_LOCATION);DIR2=`pwd`;cd $$DIR1;\
+	if [ "$$DIR1" != "$$DIR2" ]; then rm -fr $(INSTALL_LOCATION)/config; fi
 
 clean.%:
 	@echo "TOP: Cleaning $* "
 	@find src -type d -name "O.$*" -prune -exec rm -rf {} \;
 	@find config -type d -name "O.$*" -prune -exec rm -rf {} \;
-
 
 

@@ -3,6 +3,9 @@
 
 /*
  * $Log$
+ * Revision 1.26  1995/11/27  22:13:22  winans
+ * Added raw reading capability to the waveform record support.
+ *
  * Revision 1.25  1995/07/31  19:44:08  winans
  * Changed the parameter table and associated support routines to support
  * buffer length specifications of size long instead of short.
@@ -1432,7 +1435,7 @@ struct gpibDpvt *pdpvt;
     else	/* generate msg using predefined format and current val */
     {
         if (pCmd->type == GPIBWRITE)    /* only if needs formatting */
-            sprintf(pdpvt->msg, pCmd->format, pao->val);
+            sprintf(pdpvt->msg, pCmd->format, pao->oval);
     }
 
     /* go access board with this message, unless convert was unsuccessful */

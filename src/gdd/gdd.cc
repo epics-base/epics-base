@@ -67,14 +67,14 @@ void gddContainerCleaner::run(void* v)
 //
 // special gddDestructor guarantees same form of new and delete
 //
-class gddAitInt8Destructor: public gddDestructor {
+class gddAitUint8Destructor: public gddDestructor {
 	virtual void run (void *);
 };
 
 //
 // special gddDestructor guarantees same form of new and delete
 //
-class gddAitUint8Destructor: public gddDestructor {
+class gddAitStringDestructor: public gddDestructor {
 	virtual void run (void *);
 };
 
@@ -245,6 +245,9 @@ void gdd::setDimension(int d, const gddBounds* bnds)
 				    s->clear();
 			    }
 		    }
+            // changing from scalar to vector so set the 
+            // vector pointer to nill
+            memset ( & this->data, '\0', sizeof ( this->data ) );
         }
         else {
 		    this->freeBounds();
@@ -309,8 +312,6 @@ gddStatus gdd::replaceDestructor(gddDestructor* dest)
 
 gddStatus gdd::genCopy(aitEnum t, const void* d, aitDataFormat f)
 {
-	size_t sz;
-	aitInt8* buf;
 	gddStatus rc=0;
 
 	if(isScalar())
@@ -319,25 +320,47 @@ gddStatus gdd::genCopy(aitEnum t, const void* d, aitDataFormat f)
 	{
 		if(!dataPointer())
 		{
-			sz=describedDataSizeBytes();
-			if((buf=new aitInt8[sz])==NULL)
-			{
-				gddAutoPrint("gdd::genCopy()",gddErrorNewFailed);
-				rc=gddErrorNewFailed;
-			}
-			else
-			{
-				destruct=new gddAitInt8Destructor;
-				if (destruct==NULL) {
-					gddAutoPrint("gdd::genCopy()",gddErrorNewFailed);
-					rc=gddErrorNewFailed;
-					free (buf);
-				}
-				else {
-					setData(buf);
-					destruct->reference();
-				}
-			}
+            if ( primitiveType()==aitEnumString ) {
+                size_t nElem = describedDataSizeElements ();
+                aitString * pStrVec = new aitString [ nElem ];
+                if ( ! pStrVec ) {
+				    gddAutoPrint("gdd::genCopy()",gddErrorNewFailed);
+				    rc = gddErrorNewFailed;
+                }
+                else {
+                    destruct = new gddAitStringDestructor;
+                    if ( destruct ) {
+                        destruct->reference();
+                        setData ( pStrVec );
+                    }
+                    else {
+                        delete [] pStrVec;
+                        gddAutoPrint("gdd::genCopy()",gddErrorNewFailed);
+                        rc = gddErrorNewFailed;
+                    }
+                }
+            }
+            else {
+			    size_t sz=describedDataSizeBytes();
+	            aitUint8 * buf = new aitUint8[sz];
+			    if ( buf == NULL ) {
+				    gddAutoPrint("gdd::genCopy()",gddErrorNewFailed);
+				    rc=gddErrorNewFailed;
+			    }
+			    else
+			    {
+				    destruct=new gddAitUint8Destructor;
+				    if (destruct==NULL) {
+					    gddAutoPrint("gdd::genCopy()",gddErrorNewFailed);
+					    rc=gddErrorNewFailed;
+					    delete [] buf;
+				    }
+				    else {
+					    setData(buf);
+					    destruct->reference();
+				    }
+			    }
+            }
 		}
 		if(rc==0)
 		{
@@ -465,28 +488,53 @@ gddStatus gdd::copyStuff(const gdd* dd,int ctype)
 		switch(ctype)
 		{
 		case 1: // copy()
-			aitUint8* array;
-			size_t a_size;
-			a_size=dd->getDataSizeBytes();
-			if( (array=new aitUint8[a_size]) )
-			{
-				destruct=new gddAitUint8Destructor;
-				if (destruct!=NULL) {
-					destruct->reference();
-					memcpy(array,dd->dataPointer(),a_size);
-					setData(array);
-				}
-				else {
-					free (array);
-					gddAutoPrint("gdd::copyStuff()",gddErrorNewFailed);
-					rc=gddErrorNewFailed;
-				}
-			}
-			else
-			{
-				gddAutoPrint("gdd::copyStuff()",gddErrorNewFailed);
-				rc=gddErrorNewFailed;
-			}
+            if ( primitiveType()==aitEnumString ) {
+                size_t nElem = dd->describedDataSizeElements ();
+                aitString * pStrVec = new aitString [ nElem ];
+                if ( ! pStrVec ) {
+				    gddAutoPrint("gdd::copyStuff()",gddErrorNewFailed);
+				    rc=gddErrorNewFailed;
+                }
+                else {
+                    destruct = new gddAitStringDestructor;
+                    if ( destruct ) {
+                        const aitString * pSrc = 
+                            static_cast <const aitString *> ( dd->dataPointer() );
+                        for ( unsigned j=0; j < nElem; j++ ) {
+                            pStrVec[i] = pSrc[i];
+                        }
+                        destruct->reference();
+                        setData ( pStrVec );
+                    }
+                    else {
+                        delete [] pStrVec;
+					    gddAutoPrint("gdd::copyStuff()",gddErrorNewFailed);
+					    rc=gddErrorNewFailed;
+                    }
+                }
+            }
+            else {
+			    size_t a_size = dd->getDataSizeBytes();
+			    aitUint8* array = new aitUint8[a_size];
+			    if ( array ) {
+				    destruct=new gddAitUint8Destructor;
+				    if (destruct!=NULL) {
+					    destruct->reference();
+					    memcpy(array,dd->dataPointer(),a_size);
+					    setData(array);
+				    }
+				    else {
+					    delete [] array;
+					    gddAutoPrint("gdd::copyStuff()",gddErrorNewFailed);
+					    rc=gddErrorNewFailed;
+				    }
+			    }
+			    else
+			    {
+				    gddAutoPrint("gdd::copyStuff()",gddErrorNewFailed);
+				    rc=gddErrorNewFailed;
+			    }
+            }
 			break;
 		case 2: // Dup()
 			data=dd->getData(); // copy the data reference
@@ -1318,22 +1366,40 @@ gddStatus gdd::put ( const gdd * dd )
             if (primitiveType()==aitEnumInvalid) {
                 setPrimType (dd->primitiveType());
             }
-            size_t sz = srcCopySize * aitSize[primitiveType()];
-            
-            // allocate a data buffer for the user
-            aitUint8 * arr = new aitUint8[sz];
-            if( ! arr ) {
-                return gddErrorNewFailed;
-            }
-            destruct=new gddAitUint8Destructor;
-            if (destruct!=NULL) {
-                destruct->reference();
-                setData(arr);
+            if ( primitiveType()==aitEnumString ) {
+                aitString * pStrVec = new aitString [ srcCopySize ];
+                if( ! pStrVec ) {
+                    return gddErrorNewFailed;
+                }
+                destruct = new gddAitStringDestructor;
+                if ( destruct ) {
+                    destruct->reference();
+                    setData ( pStrVec );
+                }
+                else {
+                    delete [] pStrVec;
+                    gddAutoPrint("gdd::copyData(const gdd*)",gddErrorNewFailed);
+                    return gddErrorNewFailed;
+                }
             }
             else {
-                free (arr);
-                gddAutoPrint("gdd::copyData(const gdd*)",gddErrorNewFailed);
-                return gddErrorNewFailed;
+                size_t sz = srcCopySize * aitSize[primitiveType()];
+                
+                // allocate a data buffer for the user
+                aitUint8 * arr = new aitUint8[sz];
+                if( ! arr ) {
+                    return gddErrorNewFailed;
+                }
+                destruct=new gddAitUint8Destructor;
+                if (destruct!=NULL) {
+                    destruct->reference();
+                    setData(arr);
+                }
+                else {
+                    delete [] arr;
+                    gddAutoPrint("gdd::copyData(const gdd*)",gddErrorNewFailed);
+                    return gddErrorNewFailed;
+                }
             }
 
             // the rule is that if storage is not preallocated then its ok
@@ -1612,6 +1678,15 @@ void gdd::setPrimType (aitEnum t)
 	}
 
 	//
+	// I (joh) assume that something needs to be done when
+	// the primative type of a container changes. For now I
+    // assuming that the gdd should be cleared. 
+	//
+    if(isContainer()) {
+        this->clear();
+    }
+
+	//
 	// run constructors/destructors for string data
 	// if it is scalar
 	//
@@ -1675,15 +1750,6 @@ void gdd::setPrimType (aitEnum t)
         }
 		memset (&this->data, '\0', sizeof(this->data));
 	}
-    else if(isContainer()) {
-        this->clear();
-    }
-
-	//
-	// I (joh) assume that something needs to be done when
-	// the primative type of a container changes, but I
-	// have not looked into this so far. 
-	//
 
 	this->prim_type = t;
 }
@@ -1736,17 +1802,6 @@ const gdd* gdd::indexDD (aitIndex index) const
 }
 
 //
-// gddAitInt8Destructor::run()
-//
-// special gddDestructor guarantees same form of new and delete
-//
-void gddAitInt8Destructor::run (void *pUntyped)
-{
-	aitInt8 *pi8 = (aitInt8 *) pUntyped;
-	delete [] pi8;
-}
-
-//
 // gddAitUint8Destructor::run()
 //
 // special gddDestructor guarantees same form of new and delete
@@ -1756,3 +1811,15 @@ void gddAitUint8Destructor::run (void *pUntyped)
 	aitUint8 *pui8 = (aitUint8 *) pUntyped;
 	delete [] pui8;
 }
+
+//
+// gddAitStringDestructor::run()
+//
+// special gddDestructor guarantees same form of new and delete
+//
+void gddAitStringDestructor::run (void *pUntyped)
+{
+	aitString *pStr = (aitString *) pUntyped;
+	delete [] pStr;
+}
+

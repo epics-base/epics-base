@@ -244,8 +244,8 @@ static long get_alarm_double(paddr,pad)
 static void alarm(plongin)
     struct longinRecord	*plongin;
 {
-	double		val;
-	float		hyst, lalm, hihi, high, low, lolo;
+	long		val;
+	long		hyst, lalm, hihi, high, low, lolo;
 	unsigned short	hhsv, llsv, hsv, lsv;
 
 	if(plongin->udf == TRUE ){

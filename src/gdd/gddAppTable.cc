@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.3  1996/08/27 13:05:08  jbk
+// final repairs to string functions, put() functions, and error code printing
+//
 // Revision 1.2  1996/06/26 21:00:08  jbk
 // Fixed up code in aitHelpers, removed unused variables in others
 // Fixed potential problem in gddAppTable.cc with the map functions
@@ -372,7 +375,7 @@ gddStatus gddApplicationTypeTable::mapAppToIndex(
 		else
 			rc=gddErrorOutOfBounds;
 	}
-	gddAutoPrint("gddAppTable::mapAppToIndex()",rc);
+	// gddAutoPrint("gddAppTable::mapAppToIndex()",rc);
 	return rc;
 }
 

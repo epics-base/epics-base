@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.13  1996/09/04 22:47:09  jhill
+ * allow vxWorks 5.1 and gnu win 32
+ *
  * Revision 1.12  1996/08/27 13:05:06  jbk
  * final repairs to string functions, put() functions, and error code printing
  *
@@ -734,7 +737,7 @@ inline gddStatus gdd::unreference(void)
 		{
 			// managed dd always destroys the entire thing
 			ref_cnt=1;
-			if(destruct) destruct->run(this);
+			if(destruct) destruct->destroy(this);
 			destruct=NULL;
 		}
 		else if(!isFlat())
@@ -749,9 +752,12 @@ inline void gdd::destroyData(void)
 	{
 		// up to destructor to free the bounds
 		if(isContainer())
-			destruct->run(this);
+			destruct->destroy(this);
 		else
-			destruct->run(dataPointer());
+			destruct->destroy(dataPointer());
+
+		destruct=NULL;
+		setData(NULL);
 	}
 	else
 	{

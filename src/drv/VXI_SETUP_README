@@ -1,5 +1,6 @@
+
 The CPU030 may need to have the nivxi path set correctly:
-	From the vxWorks shell type vxitedit
+	From the vxWorks shell type "vxitedit"
 	take option 2
 	take option 3
 	type list
@@ -8,6 +9,7 @@ The CPU030 may need to have the nivxi path set correctly:
 		(the path should end in nivxi 
 		and should traverse the niCpu030
 		directories shipped with the 030
+		ie somethin of the form "???/config/niCPU030/nivxi"
 	type save
 	type exit
 	.

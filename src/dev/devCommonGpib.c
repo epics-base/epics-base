@@ -2296,8 +2296,8 @@ struct  gpibDpvt       *pDpvt;
  ******************************************************************************/
 long 
 devGpibLib_setPvSevr(pPv, status, severity)
-struct dbCommon     *pPv;
-short             severity;
+struct dbCommon   *pPv;
+unsigned short    severity;
 short             status;
 {
     if (severity > pPv->nsev )

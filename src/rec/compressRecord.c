@@ -300,6 +300,7 @@ static long init_record(pcompress,pass)
 	if (pcompress->alg == compressALG_Average){
                 pcompress->sptr = (double *)calloc(pcompress->nsam,sizeof(double));
 	}
+        reset(pcompress);
     }
     return(0);
 }
@@ -318,10 +319,12 @@ static long process(pcompress)
 	recGblSetSevr(pcompress,LINK_ALARM,INVALID_ALARM);
     } else {
 	if(!pcompress->wptr || nelements!=pcompress->inpn) {
-	    free(pcompress->wptr);
+            if(pcompress->wptr) {
+                free(pcompress->wptr);
+                reset(pcompress);
+            }
 	    pcompress->wptr = (double *)dbCalloc(nelements,sizeof(double));
 	    pcompress->inpn = nelements;
-	    reset(pcompress);
 	}
 	status = dbGetLink(&pcompress->inp,DBF_DOUBLE,pcompress->wptr,0,&nelements);
 	if(status || nelements<=0) {

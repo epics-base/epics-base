@@ -36,6 +36,7 @@
  * .04  02-05-92	jba	Changed function arguments from paddr to precord 
  * .05  02-28-92	jba	Changed callback handling, ANSI C changes
  * .06	03-13-92	jba	ANSI C changes
+ * .07  04-10-92        jba     pact now used to test for asyn processing, not return value
  *      ...
  */
 
@@ -150,19 +151,15 @@ static long init_record(pwf,process)
 static long read_wf(pwf)
     struct waveformRecord	*pwf;
 {
-	long status;
 
-	
-	if(pwf->busy) return(1);
-	status = 0;
 	/* determine if wave form is to be rearmed*/
 	/* If not active then request rearm */
-	if(!pwf->pact) status = arm_wf(pwf);
+	if(!pwf->pact) arm_wf(pwf);
 	/* if already active then call is from myCallback. check rarm*/
 	else if(pwf->rarm) {
 		(void)arm_wf(pwf);
 	}
-	return(status);
+	return(0);
 }
 
 static long arm_wf(pwf)
@@ -171,10 +168,11 @@ struct waveformRecord   *pwf;
 	struct vmeio *pvmeio = (struct vmeio *)&(pwf->inp.value);
 
 	pwf->busy = TRUE;
-	if(wf_driver(JGVTR1,pvmeio->card,myCallback,pwf)<0){
+	if(jgvtr1_driver(pvmeio->card,myCallback,pwf)<0){
                 recGblSetSevr(pwf,READ_ALARM,VALID_ALARM);
 		pwf->busy = FALSE;
 		return(0);
 	}
-	return(1);
+	pwf->pact=TRUE;
+	return(0);
 }

@@ -47,6 +47,7 @@ public:
 
 struct CASG;
 class inetAddrID;
+class caServerID;
 struct caHdrLargeArray;
 
 extern epicsThreadPrivateId caClientCallbackThreadId;
@@ -58,8 +59,8 @@ public:
     virtual ~cac ();
 
     // beacon management
-    void beaconNotify ( const inetAddrID &addr, 
-        const epicsTime &currentTime );
+    void beaconNotify ( const inetAddrID & addr, 
+        const epicsTime & currentTime );
     void repeaterSubscribeConfirmNotify ();
 
     // outstanding IO count management routines
@@ -81,10 +82,12 @@ public:
     // channel routines
     void installNetworkChannel ( nciu &, netiiu *&piiu );
     bool lookupChannelAndTransferToTCP ( unsigned cid, unsigned sid, 
-             ca_uint16_t typeCode, arrayElementCount count, unsigned minorVersionNumber,
-             const osiSockAddr &, const epicsTime & currentTime );
+             ca_uint16_t typeCode, arrayElementCount count, 
+             unsigned minorVersionNumber, const osiSockAddr &, 
+             const epicsTime & currentTime );
     void uninstallChannel ( nciu & );
-    cacChannel & createChannel ( const char *name_str, cacChannelNotify &chan );
+    cacChannel & createChannel ( const char *name_str, 
+        cacChannelNotify &chan, cacChannel::priLev pri );
     void registerService ( cacService &service );
 
     // IO request stubs
@@ -137,52 +140,54 @@ public:
     void notifyDestroyFD ( SOCKET ) const;
     void uninstallIIU ( tcpiiu &iiu ); 
     bool preemptiveCallbackEnable () const;
+    double beaconPeriod ( const nciu & chan ) const;
 
 private:
-    ipAddrToAsciiEngine     ipToAEngine;
-    cacServiceList          services;
-    tsDLList < tcpiiu >     iiuList;
+    ipAddrToAsciiEngine         ipToAEngine;
+    cacServiceList              services;
     chronIntIdResTable
-        < nciu >            chanTable;
+        < nciu >                chanTable;
     chronIntIdResTable 
-        < baseNMIU >        ioTable;
+        < baseNMIU >            ioTable;
     chronIntIdResTable
-        < CASG >            sgTable;
+        < CASG >                sgTable;
     resTable 
-        < bhe, inetAddrID > beaconTable;
+        < bhe, inetAddrID >     beaconTable;
+    resTable 
+        < tcpiiu, caServerID >  serverTable;
     tsFreeList 
         < class netReadNotifyIO, 1024 > 
-                            freeListReadNotifyIO;
+                                freeListReadNotifyIO;
     tsFreeList 
         < class netWriteNotifyIO, 1024 > 
-                            freeListWriteNotifyIO;
+                                freeListWriteNotifyIO;
     tsFreeList 
         < class netSubscription, 1024 > 
-                            freeListSubscription;
-    epicsTime               programBeginTime;
-    double                  connTMO;
-    mutable epicsMutex      mutex; 
-    epicsMutex              callbackMutex; 
-    epicsMutex              serializePendIO; 
-    epicsMutex              serializePendEvent; 
-    epicsEvent              ioDone;
-    epicsEvent              noRecvThreadsPending;
-    epicsEvent              iiuUninstal;
-    epicsTimerQueueActive   *pTimerQueue;
-    char                    *pUserName;
-    class udpiiu            *pudpiiu;
-    class searchTimer       *pSearchTmr;
+                                freeListSubscription;
+    epicsTime                   programBeginTime;
+    double                      connTMO;
+    mutable epicsMutex          mutex; 
+    epicsMutex                  callbackMutex; 
+    epicsMutex                  serializePendIO; 
+    epicsMutex                  serializePendEvent; 
+    epicsEvent                  ioDone;
+    epicsEvent                  noRecvThreadsPending;
+    epicsEvent                  iiuUninstal;
+    epicsTimerQueueActive       *pTimerQueue;
+    char                        *pUserName;
+    class udpiiu                *pudpiiu;
+    class searchTimer           *pSearchTmr;
     class repeaterSubscribeTimer  
-                            *pRepeaterSubscribeTmr;
-    void                    *tcpSmallRecvBufFreeList;
-    void                    *tcpLargeRecvBufFreeList;
-    cacNotify               & notify;
-    unsigned                initializingThreadsPriority;
-    unsigned                maxRecvBytesTCP;
-    unsigned                pndRecvCnt;
-    unsigned                readSeq;
-    unsigned                recvThreadsPendingCount;
-    bool                    enablePreemptiveCallback;
+                                *pRepeaterSubscribeTmr;
+    void                        *tcpSmallRecvBufFreeList;
+    void                        *tcpLargeRecvBufFreeList;
+    cacNotify                   & notify;
+    unsigned                    initializingThreadsPriority;
+    unsigned                    maxRecvBytesTCP;
+    unsigned                    pndRecvCnt;
+    unsigned                    readSeq;
+    unsigned                    recvThreadsPendingCount;
+    bool                        enablePreemptiveCallback;
 
     void flushRequestPrivate ();
     void run ();

@@ -124,6 +124,14 @@ public:
 //
 class epicsShareClass cacChannel {
 public:
+    typedef unsigned priLev;
+    static const priLev priorityMax;
+    static const priLev priorityMin;
+    static const priLev priorityDefault;
+    static const priLev priorityLinksDB;
+    static const priLev priorityArchive;
+    static const priLev priorityOPI;
+
     typedef unsigned ioid;
     enum ioStatus { iosSynch, iosAsynch };
 
@@ -159,6 +167,7 @@ public:
     // exceptions
     class badString {};
     class badType {};
+    class badPriority {};
     class outOfBounds {};
     class badEventSelection {};
     class noWriteAccess {};
@@ -188,7 +197,8 @@ public:
 struct cacService : public tsDLNode < cacService > {
 public:
     virtual cacChannel * createChannel ( 
-        const char *pName, cacChannelNotify & ) = 0;
+        const char *pName, cacChannelNotify &, 
+        cacChannel::priLev = cacChannel::priorityDefault ) = 0;
     virtual void show ( unsigned level ) const = 0;
 };
 
@@ -196,7 +206,8 @@ class cacServiceList {
 public:
     epicsShareFunc void registerService ( cacService &service );
     epicsShareFunc cacChannel * createChannel ( 
-        const char *pName, cacChannelNotify & );
+        const char *pName, cacChannelNotify &, 
+        cacChannel::priLev = cacChannel::priorityDefault );
     epicsShareFunc void show ( unsigned level ) const;
 private:
     tsDLList < cacService > services;
@@ -207,7 +218,7 @@ epicsShareExtern cacServiceList cacGlobalServiceList;
 
 epicsShareFunc int epicsShareAPI ca_register_service ( struct cacService *pService );
 
-inline cacChannel::cacChannel ( cacChannelNotify &notify ) :
+inline cacChannel::cacChannel ( cacChannelNotify & notify ) :
     callback ( notify )
 {
 }

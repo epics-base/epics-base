@@ -22,6 +22,13 @@
 #include "cacIO.h"
 #undef epicsExportSharedSymbols
 
+const cacChannel::priLev cacChannel::priorityMax = 100u;
+const cacChannel::priLev cacChannel::priorityMin = 0u;
+const cacChannel::priLev cacChannel::priorityDefault = priorityMin;
+const cacChannel::priLev cacChannel::priorityLinksDB = priorityMax;
+const cacChannel::priLev cacChannel::priorityArchive = ( priorityMax - priorityMin ) / 2;
+const cacChannel::priLev cacChannel::priorityOPI = priorityMin;
+
 cacChannel::~cacChannel ()
 {
 }

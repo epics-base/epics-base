@@ -30,14 +30,14 @@ void cacServiceList::registerService ( cacService &service )
 }
 
 cacChannel * cacServiceList::createChannel ( 
-    const char *pName, cacChannelNotify &chan )
+    const char * pName, cacChannelNotify & chan, cacChannel::priLev pri )
 {
     cacChannel *pChanIO = 0;
 
     epicsAutoMutex locker ( this->mutex );
     tsDLIterBD < cacService > iter = this->services.firstIter ();
     while ( iter.valid () ) {
-        pChanIO = iter->createChannel ( pName, chan );
+        pChanIO = iter->createChannel ( pName, chan, pri );
         if ( pChanIO ) {
             break;
         }

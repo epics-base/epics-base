@@ -3,5 +3,5 @@ TOP=../../..
 
 include $(TOP)/configure/CONFIG
 
-include $(TOP)/configure/RULES_BUILD
+include $(TOP)/configure/RULES_ARCHS
 

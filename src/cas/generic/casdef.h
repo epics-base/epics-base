@@ -1,138 +1,33 @@
-/*
- *	$Id$
- *
- *      Author: Jeffrey O. Hill
- *              johill@lanl.gov
- *              (505) 665 1831
- *      Date:   1-95
- *
- *      Experimental Physics and Industrial Control System (EPICS)
- *
- *      Copyright 1991, the Regents of the University of California,
- *      and the University of Chicago Board of Governors.
- *
- *      This software was produced under  U.S. Government contracts:
- *      (W-7405-ENG-36) at the Los Alamos National Laboratory,
- *      and (W-31-109-ENG-38) at Argonne National Laboratory.
- *
- *      Initial development by:
- *              The Controls and Automation Group (AT-8)
- *              Ground Test Accelerator
- *              Accelerator Technology Division
- *              Los Alamos National Laboratory
- *
- *      Co-developed with
- *              The Controls and Computing Group
- *              Accelerator Systems Division
- *              Advanced Photon Source
- *              Argonne National Laboratory
- *
- * 	Modification Log:
- * 	-----------------
- * 	$Log$
- * 	Revision 1.23  1999/04/30 15:39:41  jhill
- * 	doc
- * 	
- * 	Revision 1.22  1998/12/19 00:04:52  jhill
- * 	renamed createPV() to pvAttach()
- *
- * 	Revision 1.21  1998/12/07 23:21:53  jhill
- * 	doc
- *
- * 	Revision 1.20  1998/09/24 20:40:56  jhill
- * 	new error message
- *
- * 	Revision 1.19  1998/06/18 00:09:39  jhill
- * 	installed bwd compat casPV constructor
- *
- * 	Revision 1.18  1998/06/16 02:34:14  jhill
- * 	allow PVs to exist without a server
- *
- * 	Revision 1.17  1998/05/05 16:30:38  jhill
- * 	fixed doc
- *
- * 	Revision 1.16  1998/03/18 23:59:28  jhill
- * 	use _MSC_VER to turn of vis C++ specific warning
- *
- * 	Revision 1.15  1998/02/05 23:00:20  jhill
- * 	removed assignement operator
- *
- * 	Revision 1.14  1997/08/05 00:47:14  jhill
- * 	fixed warnings
- *
- * 	Revision 1.13  1997/06/13 09:16:01  jhill
- * 	connect proto changes
- *
- * 	Revision 1.12  1997/04/10 19:34:19  jhill
- * 	API changes
- *
- * 	Revision 1.11  1997/01/09 22:24:46  jhill
- * 	eliminate MSVC++ warning resulting from passing *this to a base
- *
- * 	Revision 1.10  1996/12/06 22:36:26  jhill
- * 	use destroyInProgress flag now functional nativeCount()
- *
- * 	Revision 1.9.2.1  1996/11/25 16:30:55  jhill
- * 	WIN32 pragma warning (disable:4355) added
- *
- * 	Revision 1.9  1996/11/22 19:52:24  jhill
- * 	doc
- *
- * 	Revision 1.8  1996/11/22 19:22:53  jhill
- * 	doc
- *
- * 	Revision 1.7  1996/11/02 00:54:26  jhill
- * 	many improvements
- *
- * 	Revision 1.6  1996/09/04 20:27:00  jhill
- * 	doccasdef.h
- *
- * 	Revision 1.5  1996/08/13 22:54:42  jhill
- * 	doc
- *
- * 	Revision 1.4  1996/07/01 19:56:15  jhill
- * 	one last update prior to first release
- *
- * 	Revision 1.3  1996/06/26 23:08:55  jhill
- * 	took path out of casInternal.h include
- *
- * 	Revision 1.2  1996/06/20 18:09:43  jhill
- * 	changed where casInternal comes from
- *
- * 	Revision 1.1.1.1  1996/06/20 00:28:16  jhill
- * 	ca server installation
- *
- *
- * TODO:
- * .03  document new event types for limits change etc
- * .04  certain things like native type cant be changed during
- *	pv id's life time or we will be required to have locking
- *	(doc this)
- * .08	Need a mechanism by which an error detail string can be returned
- *	to the server from a server app (in addition to the normal
- *	error constant)
- * .12 	Should the server have an interface so that all PV names
- *	can be obtained (even ones created after init)? This
- *	would be used to implement update of directory services and 
- * 	wild cards? Problems here with knowing PV name structure and 
- *	maximum permutations of name components.
- * .16 	go through this file and make sure that we are consistent about
- *	the use of const - use a pointer only in spots where NULL is
- *	allowed?
- * NOTES:
- * .01  When this code is used in a multi threaded situation we
- * 	must be certain that the derived class's virtual function 
- * 	are not called between derived class destruction and base
- * 	class destruction (or prevent problems if they are).
- *	Possible solutions
- *	1) in the derived classes destructor set a variable which
- * 	inhibits use of the derived classes virtual function.
- *	Each virtual function must check this inhibit bit and return 
- *	an error if it is set
- *	2) call a method on the base which prevents further use
- * 	of it by the server from the derived class destructor.
- *	3) some form of locking (similar to (1) above)
- */
+//
+//	$Id$
+//
+//      Author: Jeffrey O. Hill
+//              johill@lanl.gov
+//              (505) 665 1831
+//      Date:   1-95
+//
+//      Experimental Physics and Industrial Control System (EPICS)
+//
+//      Copyright 1991, the Regents of the University of California,
+//      and the University of Chicago Board of Governors.
+//
+//      This software was produced under  U.S. Government contracts:
+//      (W-7405-ENG-36) at the Los Alamos National Laboratory,
+//      and (W-31-109-ENG-38) at Argonne National Laboratory.
+//
+//      Initial development by:
+//              The Controls and Automation Group (AT-8)
+//              Ground Test Accelerator
+//              Accelerator Technology Division
+//              Los Alamos National Laboratory
+//
+//      Co-developed with
+//              The Controls and Computing Group
+//              Accelerator Systems Division
+//              Advanced Photon Source
+//              Argonne National Laboratory
+//
+//
 
 #ifndef includecasdefh
 #define includecasdefh
@@ -140,10 +35,10 @@
 //
 // EPICS
 //
-#include "alarm.h"	// EPICS alarm severity/condition 
-#include "errMdef.h"	// EPICS error codes 
-#include "gdd.h" 		// EPICS data descriptors 
-#include "shareLib.h"	// EPICS compiler specific sharable lib keywords
+#include "alarm.h"      // EPICS alarm severity/condition 
+#include "errMdef.h"    // EPICS error codes 
+#include "gdd.h"        // EPICS data descriptors 
+#include "shareLib.h"   // EPICS compiler specific sharable lib keywords
 
 //
 // This eliminates a warning resulting from passing *this
@@ -509,192 +404,194 @@ public:
 //
 class casPV : private casPVI {
 public:
-	epicsShareFunc casPV ();
-
-	epicsShareFunc virtual ~casPV () = 0;
-
-	//
-	// This is called for each PV in the server if
-	// caServer::show() is called and the level is high 
-	// enough
-	//
-	epicsShareFunc virtual void show (unsigned level) const;
-
-	//
-	// called by the server libary each time that it wishes to
-	// subscribe for PV change notification from the server 
-	// tool via postEvent() below
-	//
-	epicsShareFunc virtual caStatus interestRegister ();
-
-	//
-	// called by the server library each time that it wishes to
-	// remove its subscription for PV value change events
-	// from the server tool via postEvent() below
-	//
-	epicsShareFunc virtual void interestDelete ();
-
-	//
-	// called by the server library immediately before initiating
-	// a transaction (PV state must not be modified during a
-	// transaction)
-	//
-	// NOTE: there may be many read/write operations performed within
-	// a single transaction if a large array is being transferred
-	//
-	epicsShareFunc virtual caStatus beginTransaction ();
-
-	//
-	// called by the server library immediately after completing
-	// a tranaction (PV state modification may resume after the
-	// transaction completes)
-	//
-	epicsShareFunc virtual void endTransaction ();
-
-	//
-	// read
-	//
-	// The request is allowed to complete asynchronously
-	// (see Asynchronous IO Classes below).
-	//
-	// RULE: if this completes asynchronously and the server tool references
-	// its data into the prototype descriptor passed in the args to read() 
-	// then this data must _not_ be modified while the reference count 
-	// on the prototype is greater than zero.
-	//
-	// Return S_casApp_postponeAsyncIO if too many simultaneous
-	// asynchronous IO operations are pending aginst the PV. 
-	// The server library will retry the request whenever an
-	// asynchronous IO operation (read or write) completes
-	// against the PV.
-	//
-	epicsShareFunc virtual caStatus read (const casCtx &ctx, gdd &prototype);
-
-	//
-	// write 
-	//
-	// The request is allowed to complete asynchronously
-	// (see Asynchronous IO Classes below).
-	//
-	// Return S_casApp_postponeAsyncIO if too many simultaneous
-	// asynchronous IO operations are pending aginst the PV. 
-	// The server library will retry the request whenever an
-	// asynchronous IO operation (read or write) completes
-	// against the PV.
-	//
-	epicsShareFunc virtual caStatus write (const casCtx &ctx, gdd &value);
-
-	//
-	// chCreate() is called each time that a PV is attached to
-	// by a client. The server tool may choose not to
-	// implement this routine (in which case the channel
-	// will be created by the server). If the server tool
-	// implements this function then it must create a casChannel object
-	// (or a derived class) each time that this routine is called
-	//
-	epicsShareFunc virtual casChannel *createChannel (const casCtx &ctx,
-		const char * const pUserName, const char * const pHostName);
-
-	//
-	// destroy() is called 
-	// 1) each time that a PV transitions from
-	// a situation where clients are attached to a situation
-	// where no clients are attached.
-	// 2) once for all PVs that exist when the server is deleted
-	//
-	// the default (base) "destroy()" executes "delete this"
-	//
-	epicsShareFunc virtual void destroy ();
-
-	//
-	// tbe best type for clients to use when accessing the
-	// value of the PV
-	//
-	epicsShareFunc virtual aitEnum bestExternalType () const;
-
-	//
-	// Returns the maximum bounding box for all present and
-	// future data stored within the PV. 
-	//
-	// The virtual function "dimension()" returns the maximum
-	// number of dimensions in the hypercube (0=scalar, 
-	// 1=array, 2=plane, 3=cube ...}.
-	//
-	// The virtual function "maxBound(dimension)" returns the 
-	// maximum number of elements in a particular dimension 
-	// of the hypercube as follows:
-	//
-	// scalar - maxDimension() returns 0
-	//
-	// array - maxDimension() returns 1
-	//        maxBounds(0) supplies number of elements in array
-	//	
-	// plane - maxDimension() returns 2
-	//        maxBounds(0) supplies number of elements in X dimension
-	//        maxBounds(1) supplies number of elements in Y dimension
-	//
-	// cube - maxDimension() returns 3 
-	//        maxBounds(0) supplies number of elements in X dimension
-	//        maxBounds(1) supplies number of elements in Y dimension
-	//        maxBounds(2) supplies number of elements in Z dimension
-	//
-	// .
-	// .
-	// .
-	//
-	// The default (base) "dimension()" returns zero (scalar).
-	// The default (base) "maxBound()" returns one (scalar bounds)
-	//       for all dimensions.
-	//
-	// Clients will see that the PV's data is scalar if
-	// these routines are not supplied in the derived class.
-	//
-	// If the "dimension" argument to maxBounds() is set to
-	// zero then the bound on the first dimension is being
-	// fetched. If the "dimension" argument to maxBound() is
-	// set to one then the bound on the second dimension
-	// are being fetched...
-	//
-	epicsShareFunc virtual unsigned maxDimension() const; // return zero if scalar
-	epicsShareFunc virtual aitIndex maxBound (unsigned dimension) const;
-
-	//
-	// Server tool calls this function to post a PV event.
-	//
-	epicsShareFunc void postEvent (const casEventMask &select, gdd &event);
-
-	//
-	// peek at the pv name
-	//
-	// NOTE if there are several aliases for the same PV
-	// this routine should return the canonical (base)
-	// name for the PV
-	//
-	epicsShareFunc virtual const char *getName() const = 0;
-
-	//
-	// Find the server associated with this PV
-	// ****WARNING****
-	// this returns NULL if the PV isnt currently installed 
-	// into a server (this situation will exist if
-	// the pv isnt deleted in a derived classes replacement
-	// for virtual casPV::destroy() or if the PV is created
-	// before the server
-	// ***************
-	//
-	epicsShareFunc caServer *getCAS() const;
-
-	//
-	// only used when caStrmClient converts between
-	// casPV * and casPVI *
-	//
-	friend class casStrmClient;
-
-	//
-	// This constructor is preserved for backwards compatibility only.
-	// Please do _not_ use this constructor.
-	//
-	epicsShareFunc casPV (caServer &);
+    epicsShareFunc casPV ();
+    
+    epicsShareFunc virtual ~casPV () = 0;
+    
+    //
+    // This is called for each PV in the server if
+    // caServer::show() is called and the level is high 
+    // enough
+    //
+    epicsShareFunc virtual void show (unsigned level) const;
+    
+    //
+    // called by the server libary each time that it wishes to
+    // subscribe for PV change notification from the server 
+    // tool via postEvent() below
+    //
+    epicsShareFunc virtual caStatus interestRegister ();
+    
+    //
+    // called by the server library each time that it wishes to
+    // remove its subscription for PV value change events
+    // from the server tool via postEvent() below
+    //
+    epicsShareFunc virtual void interestDelete ();
+    
+    //
+    // called by the server library immediately before initiating
+    // a transaction (PV state must not be modified during a
+    // transaction)
+    //
+    // NOTE: there may be many read/write operations performed within
+    // a single transaction if a large array is being transferred
+    //
+    epicsShareFunc virtual caStatus beginTransaction ();
+    
+    //
+    // called by the server library immediately after completing
+    // a tranaction (PV state modification may resume after the
+    // transaction completes)
+    //
+    epicsShareFunc virtual void endTransaction ();
+    
+    //
+    // read
+    //
+    // The request is allowed to complete asynchronously
+    // (see Asynchronous IO Classes below).
+    //
+    // RULE: if this completes asynchronously and the server tool references
+    // its data into the prototype descriptor passed in the args to read() 
+    // then this data must _not_ be modified while the reference count 
+    // on the prototype is greater than zero.
+    //
+    // Return S_casApp_postponeAsyncIO if too many simultaneous
+    // asynchronous IO operations are pending aginst the PV. 
+    // The server library will retry the request whenever an
+    // asynchronous IO operation (read or write) completes
+    // against the PV.
+    //
+    epicsShareFunc virtual caStatus read (const casCtx &ctx, gdd &prototype);
+    
+    //
+    // write 
+    //
+    // The request is allowed to complete asynchronously
+    // (see Asynchronous IO Classes below).
+    //
+    // Return S_casApp_postponeAsyncIO if too many simultaneous
+    // asynchronous IO operations are pending aginst the PV. 
+    // The server library will retry the request whenever an
+    // asynchronous IO operation (read or write) completes
+    // against the PV.
+    //
+    epicsShareFunc virtual caStatus write (const casCtx &ctx, gdd &value);
+    
+    //
+    // chCreate() is called each time that a PV is attached to
+    // by a client. The server tool may choose not to
+    // implement this routine (in which case the channel
+    // will be created by the server). If the server tool
+    // implements this function then it must create a casChannel object
+    // (or a derived class) each time that this routine is called
+    //
+    epicsShareFunc virtual casChannel *createChannel (const casCtx &ctx,
+        const char * const pUserName, const char * const pHostName);
+    
+    //
+    // destroy() is called 
+    // 1) each time that a PV transitions from
+    // a situation where clients are attached to a situation
+    // where no clients are attached.
+    // 2) once for all PVs that exist when the server is deleted
+    //
+    // the default (base) "destroy()" executes "delete this"
+    //
+    epicsShareFunc virtual void destroy ();
+    
+    //
+    // tbe best type for clients to use when accessing the
+    // value of the PV
+    //
+    epicsShareFunc virtual aitEnum bestExternalType () const;
+    
+    //
+    // Returns the maximum bounding box for all present and
+    // future data stored within the PV. 
+    //
+    // The virtual function "dimension()" returns the maximum
+    // number of dimensions in the hypercube (0=scalar, 
+    // 1=array, 2=plane, 3=cube ...}.
+    //
+    // The virtual function "maxBound(dimension)" returns the 
+    // maximum number of elements in a particular dimension 
+    // of the hypercube as follows:
+    //
+    // scalar - maxDimension() returns 0
+    //
+    // array -  maxDimension() returns 1
+    //          maxBounds(0) supplies number of elements in array
+    //	
+    // plane -  maxDimension() returns 2
+    //          maxBounds(0) supplies number of elements in X dimension
+    //          maxBounds(1) supplies number of elements in Y dimension
+    //
+    // cube -   maxDimension() returns 3 
+    //          maxBounds(0) supplies number of elements in X dimension
+    //          maxBounds(1) supplies number of elements in Y dimension
+    //          maxBounds(2) supplies number of elements in Z dimension
+    // .
+    // .
+    // .
+    //
+    // The default (base) "dimension()" returns zero (scalar).
+    // The default (base) "maxBound()" returns one (scalar bounds)
+    //       for all dimensions.
+    //
+    // Clients will see that the PV's data is scalar if
+    // these routines are not supplied in the derived class.
+    //
+    // If the "dimension" argument to maxBounds() is set to
+    // zero then the bound on the first dimension is being
+    // fetched. If the "dimension" argument to maxBound() is
+    // set to one then the bound on the second dimension
+    // are being fetched...
+    //
+    epicsShareFunc virtual unsigned maxDimension() const; // return zero if scalar
+    epicsShareFunc virtual aitIndex maxBound (unsigned dimension) const;
+    
+    //
+    // Server tool calls this function to post a PV event.
+    //
+    epicsShareFunc void postEvent (const casEventMask &select, gdd &event);
+    
+    //
+    // peek at the pv name
+    //
+    // NOTE if there are several aliases for the same PV
+    // this routine should return the canonical (base)
+    // name for the PV
+    //
+    // pointer returned must remain valid for the life time
+    // o fthe process variable
+    //
+    epicsShareFunc virtual const char *getName() const = 0;
+    
+    //
+    // Find the server associated with this PV
+    // ****WARNING****
+    // this returns NULL if the PV isnt currently installed 
+    // into a server (this situation will exist if
+    // the pv isnt deleted in a derived classes replacement
+    // for virtual casPV::destroy() or if the PV is created
+    // before the server
+    // ***************
+    //
+    epicsShareFunc caServer *getCAS() const;
+    
+    //
+    // only used when caStrmClient converts between
+    // casPV * and casPVI *
+    //
+    friend class casStrmClient;
+    
+    //
+    // This constructor is preserved for backwards compatibility only.
+    // Please do _not_ use this constructor.
+    //
+    epicsShareFunc casPV (caServer &);
 };
 
 //
@@ -1039,6 +936,37 @@ public:
 		casAsyncPVAttachIO (ctx) {}
 	epicsShareFunc virtual ~casAsyncPVCreateIO(); 
 };
+
+// TODO:
+// .03  document new event types for limits change etc
+// .04  certain things like native type cant be changed during
+//	pv id's life time or we will be required to have locking
+//	(doc this)
+// .08	Need a mechanism by which an error detail string can be returned
+//	to the server from a server app (in addition to the normal
+//	error constant)
+// .12 	Should the server have an interface so that all PV names
+//	can be obtained (even ones created after init)? This
+//	would be used to implement update of directory services and 
+// 	wild cards? Problems here with knowing PV name structure and 
+//	maximum permutations of name components.
+// .16 	go through this file and make sure that we are consistent about
+//	the use of const - use a pointer only in spots where NULL is
+//	allowed?
+// NOTES:
+// .01  When this code is used in a multi threaded situation we
+// 	must be certain that the derived class's virtual function 
+// 	are not called between derived class destruction and base
+// 	class destruction (or prevent problems if they are).
+//	Possible solutions
+//	1) in the derived classes destructor set a variable which
+// 	inhibits use of the derived classes virtual function.
+//	Each virtual function must check this inhibit bit and return 
+//	an error if it is set
+//	2) call a method on the base which prevents further use
+// 	of it by the server from the derived class destructor.
+//	3) some form of locking (similar to (1) above)
+//
 
 #endif // ifdef includecasdefh (this must be the last line in this file) 
 

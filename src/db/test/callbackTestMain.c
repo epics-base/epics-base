@@ -13,8 +13,6 @@ of this distribution.
 #include <string.h>
 #include <stdio.h>
 
-void *pdbbase=NULL;
-
 void callbackTest(void);
 
 int main(int argc,char *argv[])

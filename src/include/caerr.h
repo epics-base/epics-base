@@ -113,7 +113,7 @@ HDRVERSIONID(caerrh, "@(#) $Id$")
 #define ECA_TIMEOUT	DEFMSG(CA_K_WARNING,	10)
 #define ECA_NOSUPPORT	DEFMSG(CA_K_WARNING,	11)
 #define ECA_STRTOBIG	DEFMSG(CA_K_WARNING,	12)
-#define ECA_BADCHID	DEFMSG(CA_K_ERROR,	13)
+#define ECA_DISCONNCHID	DEFMSG(CA_K_ERROR,	13)
 #define ECA_BADTYPE	DEFMSG(CA_K_ERROR,	14)
 #define ECA_CHIDNOTFND	DEFMSG(CA_K_INFO,	15)
 #define ECA_CHIDRETRY	DEFMSG(CA_K_INFO,	16)
@@ -151,6 +151,7 @@ HDRVERSIONID(caerrh, "@(#) $Id$")
 #define ECA_ANACHRONISM	 DEFMSG(CA_K_ERROR,	48)
 #define ECA_NOSEARCHADDR DEFMSG(CA_K_WARNING,	49)
 #define ECA_NOCONVERT	 DEFMSG(CA_K_WARNING,	50)
+#define ECA_BADCHID		 DEFMSG(CA_K_ERROR,	51)
 
 
 #ifndef CA_ERROR_GLBLSOURCE
@@ -209,7 +210,8 @@ READONLY char	*ca_message_text[]
 "Write access denied",
 "Sorry, that anachronistic feature of CA is no longer supported",
 "The search request/beacon address list was empty after initialization",
-"Data conversion between client's type and the server's type failed"
+"Data conversion between client's type and the server's type failed",
+"Invalid channel identifier"
 };
 #endif
 

@@ -40,6 +40,13 @@ tcpSendWatchdog::~tcpSendWatchdog ()
 epicsTimerNotify::expireStatus tcpSendWatchdog::expire ( 
                  const epicsTime & /* currentTime */ )
 {
+    if ( ! this->cacRef.preemptiveCallbakIsEnabled() ) {
+        if ( this->iiu.bytesArePendingInOS() ) {
+            this->cacRef.printf ( 
+                "Warning: non-preemptive CA application has send data pending but it has not called ca_pend_event()\n" );
+            return expireStatus ( restart, this->period );
+        }
+    }
 #   ifdef DEBUG
         char hostName[128];
         this->iiu.hostName ( hostName, sizeof ( hostName ) );

@@ -191,3 +191,4 @@ inline void cacNotifyIO::exceptionNotify ( int status, const char *pContext, uns
 {
     this->notify.exceptionNotify ( status, pContext, type, count );
 }
+

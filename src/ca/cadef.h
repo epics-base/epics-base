@@ -297,7 +297,7 @@ typedef void caExceptionHandler (struct exception_handler_args);
 epicsShareFunc int epicsShareAPI ca_add_exception_event
 (
      caExceptionHandler *pfunc,
-     const void         *pArg
+     void               *pArg
 );
 
 /*

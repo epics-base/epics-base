@@ -62,6 +62,8 @@ STATIC epicsEventId workListEvent; /*wakeup event for dbCaTask*/
 STATIC int removesOutstanding = 0;
 STATIC int removesOutstandingWarning = 10000;
 
+struct ca_client_context * dbCaClientContext;
+
 void dbCaTask(void); /*The Channel Access Task*/
 extern void dbServiceIOInit();
 
@@ -702,6 +704,7 @@ void dbCaTask()
     taskwdInsert(epicsThreadGetIdSelf(),NULL,NULL);
     SEVCHK(ca_context_create(ca_enable_preemptive_callback),
         "dbCaTask calling ca_context_create");
+    dbCaClientContext = ca_current_context ();
     SEVCHK(ca_add_exception_event(exceptionCallback,NULL),
         "ca_add_exception_event");
     /*Dont do anything until iocInit initializes database*/

@@ -51,6 +51,8 @@ epicsShareFunc long epicsShareAPI dbCaGetPrecision(
 epicsShareFunc long epicsShareAPI dbCaGetUnits(
     const struct link *plink,char *units,int unitsSize);
 
+extern struct ca_client_context * dbCaClientContext;
+
 #ifdef __cplusplus
 }
 #endif

@@ -40,6 +40,7 @@
 
 /*global declarations*/
 epicsShareDef char *makeDbdDepends=0;
+epicsShareDef int dbRecordsOnceOnly=0;
 
 /*private routines */
 static void yyerrorAbort(char *str);
@@ -914,6 +915,9 @@ static void dbRecordHead(char *recordType,char *name, int visible)
 	    yyerror("already defined for different record type");
 	    duplicate = TRUE;
 	    return;
+	} else if (dbRecordsOnceOnly) {
+	    yyerror("already defined and dbRecordsOnceOnly set");
+	    duplicate = TRUE;
 	}
     } else if(status) {
 	errMessage(status,"new record instance error");

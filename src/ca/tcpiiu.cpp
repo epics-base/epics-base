@@ -1679,25 +1679,25 @@ int tcpiiu::createChannelRequest ( nciu &chan )
 
 int tcpiiu::clearChannelRequest ( nciu &chan )
 {
+    int status;
+
     if ( this->sendQue.flushThreshold ( 16u ) ) {
         this->flushToWire ( true );
     }
 
     epicsAutoMutex autoMutex ( this->mutex );
 
-    int status = this->sendQue.reserveSpace ( 16u );
-    if ( status == ECA_NORMAL ) {
-        if ( ! chan.verifyConnected ( *this ) ) {
-            status = ECA_DISCONNCHID;
-        }
-        else {
-            baseNMIU *pNMIU;
-            while ( ( pNMIU = chan.tcpiiuPrivateListOfIO::eventq.get () ) ) {
-                baseNMIU *pFound = this->ioTable.remove ( *pNMIU );
-                assert ( pFound == pNMIU );
-                pNMIU->subscriptionCancelMsg ();
-                delete pNMIU;
-            }
+    baseNMIU *pNMIU;
+    while ( ( pNMIU = chan.tcpiiuPrivateListOfIO::eventq.first () ) ) {
+        delete pNMIU;
+    }
+
+    if ( ! chan.verifyConnected ( *this ) ) {
+        status = ECA_DISCONNCHID;
+    }
+    else {
+        status = this->sendQue.reserveSpace ( 16u );
+        if ( status == ECA_NORMAL ) {
             this->sendQue.pushUInt16 ( CA_PROTO_CLEAR_CHANNEL ); // cmd
             this->sendQue.pushUInt16 ( 0u ); // postsize
             this->sendQue.pushUInt16 ( 0u ); // dataType
@@ -1741,9 +1741,6 @@ int tcpiiu::subscriptionRequest ( netSubscription &subscr, bool userThread )
             status = ECA_NORMAL;
         }
         else {
-            this->ioTable.add ( subscr );
-            subscr.channel ().tcpiiuPrivateListOfIO::eventq.add ( subscr );
-
             // header
             this->sendQue.pushUInt16 ( CA_PROTO_EVENT_ADD ); // cmd
             this->sendQue.pushUInt16 ( 16u ); // postsize
@@ -1962,10 +1959,12 @@ void tcpiiu::subscribeAllIO ( nciu &chan )
         tsDLIterBD < baseNMIU > iter = 
             chan.tcpiiuPrivateListOfIO::eventq.first ();
         while ( iter.valid () ) {
+            this->ioTable.add ( *iter );
             iter->subscriptionMsg ();
             iter++;
         }
     }
+    this->flush ();
 }
 
 // cancel IO operations and monitor subscriptions
@@ -1988,13 +1987,20 @@ void tcpiiu::disconnectAllIO ( nciu &chan )
     }
 }
 
+int tcpiiu::installSubscription ( netSubscription &subscr )
+{
+    {
+        epicsAutoMutex autoMutex ( this->mutex );
+        subscr.channel ().tcpiiuPrivateListOfIO::eventq.add ( subscr );
+        this->ioTable.add ( subscr );
+    }
+    return this->subscriptionRequest ( subscr, true );
+}
+
 void tcpiiu::unistallSubscription ( nciu &chan, netSubscription &subscr )
 {
     epicsAutoMutex autoMutex ( this->mutex );
-    if ( chan.verifyConnected ( *this ) ) {
-        baseNMIU *p = this->ioTable.remove ( subscr );
-        if ( p ) {
-            chan.tcpiiuPrivateListOfIO::eventq.remove ( subscr );
-        }
-    }
+    chan.tcpiiuPrivateListOfIO::eventq.remove ( subscr );
+    baseNMIU *pIO = this->ioTable.remove ( subscr );
+    assert ( pIO == &subscr );
 }

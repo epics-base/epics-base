@@ -353,22 +353,12 @@ bool nciu::searchMsg ( unsigned short retrySeqNumber, unsigned &retryNoForThisCh
 
 int nciu::subscriptionMsg ( netSubscription &subscr, bool userThread  )
 {
-    int status;
-    if ( this->f_connected ) {
-        status = this->piiu->subscriptionRequest ( subscr, userThread );
-    }
-    else {
-        status = ECA_NORMAL;
-    }
-
-    return status;
+    return this->piiu->subscriptionRequest ( subscr, userThread );
 }
 
 void nciu::unistallSubscription ( netSubscription &subscr )
 {
-    if ( this->f_connected ) {
-        this->piiu->unistallSubscription ( *this, subscr );
-    }
+    this->piiu->unistallSubscription ( *this, subscr );
 }
 
 void nciu::incrementOutstandingIO ()
@@ -518,7 +508,7 @@ int nciu::subscribe ( unsigned type, unsigned long nElem,
     netSubscription *pSubcr = new netSubscription ( *this, 
         type, nElem, mask, notify );
     if ( pSubcr ) {
-        int status = this->piiu->subscriptionRequest ( *pSubcr, true );
+        int status = this->piiu->installSubscription ( *pSubcr );
         if ( status != ECA_NORMAL ) {
             pSubcr->destroy ();
         }

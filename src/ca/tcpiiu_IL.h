@@ -47,11 +47,20 @@ inline SOCKET tcpiiu::getSock () const
 
 inline void tcpiiu::flush ()
 {
+    bool signalNeeded;
     {
         epicsAutoMutex autoMutex ( this->mutex );
-        this->flushPending = true;
+        if ( this->sendQue.occupiedBytes () ) {
+            this->flushPending = true;
+            signalNeeded = true;
+        }
+        else {
+            signalNeeded = false;
+        }
     }
-    epicsEventSignal ( this->sendThreadFlushSignal );
+    if ( signalNeeded ) {
+        epicsEventSignal ( this->sendThreadFlushSignal );
+    }
 }
 
 inline bool tcpiiu::ca_v44_ok () const

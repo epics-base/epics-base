@@ -251,6 +251,7 @@ class baseNMIU;
 class tcpiiuPrivateListOfIO {
 private:
     friend tcpiiu;
+    friend netiiu; // used to install subscriptions when not connected
     tsDLList < class baseNMIU > eventq;
 };
 
@@ -513,6 +514,7 @@ public:
     virtual int readNotifyRequest ( nciu &, cacNotify &, unsigned type, unsigned nElem );
     virtual int subscriptionRequest ( netSubscription &subscr, bool userThread );
     virtual int subscriptionCancelRequest ( netSubscription &subscr  );
+    virtual int installSubscription ( netSubscription &subscr );
     virtual void unistallSubscription ( nciu &chan, netSubscription &subscr );
     virtual void subscribeAllIO ( nciu &chan );
     virtual int createChannelRequest ( nciu & );
@@ -753,6 +755,7 @@ public:
     int clearChannelRequest ( nciu & );
     int subscriptionRequest ( netSubscription &subscr, bool userThread );
     int subscriptionCancelRequest ( netSubscription &subscr  );
+    int installSubscription ( netSubscription &subscr );
     void unistallSubscription ( nciu &chan, netSubscription &subscr );
 
     void hostName ( char *pBuf, unsigned bufLength ) const;

@@ -190,7 +190,7 @@ int netiiu::clearChannelRequest ( nciu & )
     return ECA_DISCONNCHID;
 }
 
-int netiiu::subscriptionRequest ( netSubscription &, bool )
+int netiiu::subscriptionRequest ( netSubscription &subscr, bool )
 {
     return ECA_NORMAL;
 }
@@ -200,8 +200,17 @@ int netiiu::subscriptionCancelRequest ( netSubscription & )
     return ECA_DISCONNCHID;
 }
 
-void netiiu::unistallSubscription ( nciu &, netSubscription & )
+int netiiu::installSubscription ( netSubscription &subscr )
 {
+    epicsAutoMutex autoMutex ( this->mutex );
+    subscr.channel ().tcpiiuPrivateListOfIO::eventq.add ( subscr );
+    return ECA_NORMAL;
+}
+
+void netiiu::unistallSubscription ( nciu &, netSubscription &subscr )
+{
+    epicsAutoMutex autoMutex ( this->mutex );
+    subscr.channel ().tcpiiuPrivateListOfIO::eventq.remove ( subscr );
 }
 
 void netiiu::hostName ( char *pBuf, unsigned bufLength ) const

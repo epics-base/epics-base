@@ -32,6 +32,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.43  1998/09/24 23:52:57  jhill
+ * eliminated DLL run-down call to ca_task_exit()
+ *
  * Revision 1.42  1998/09/24 21:22:56  jhill
  * conn.c
  *
@@ -82,6 +85,9 @@
  *
  * Revision 1.19  1995/11/29  19:15:42  jhill
  * added $Log$
+ * added Revision 1.43  1998/09/24 23:52:57  jhill
+ * added eliminated DLL run-down call to ca_task_exit()
+ * added
  * added Revision 1.42  1998/09/24 21:22:56  jhill
  * added conn.c
  * added
@@ -488,18 +494,17 @@ void caSetDefaultPrintfHandler ()
 int local_addr (SOCKET socket, struct sockaddr_in *plcladdr)
 {
 	int             	status;
-	struct sockaddr		*pLclSAddr = 
-				(struct sockaddr *) plcladdr;
-	LPINTERFACE_INFO    pIfinfo;
-	LPINTERFACE_INFO    pIfinfoList;
+	INTERFACE_INFO		*pIfinfo;
+	INTERFACE_INFO      *pIfinfoList;
+	struct sockaddr_in 	*pInetAddr;
 	unsigned			nelem;
 	DWORD				numifs;
 	DWORD				cbBytesReturned;
-	static struct sockaddr addr;
+	static struct sockaddr_in addr;
 	static char     	init = FALSE;
 
 	if (init) {
-		*pLclSAddr = addr;
+		*plcladdr = addr;
 		return 0;
 	}
 
@@ -516,7 +521,7 @@ int local_addr (SOCKET socket, struct sockaddr_in *plcladdr)
 	}
 
 	nelem = 10;
-	pIfinfoList = (LPINTERFACE_INFO)calloc(nelem, sizeof(INTERFACE_INFO));
+	pIfinfoList = (INTERFACE_INFO *) calloc(nelem, sizeof(INTERFACE_INFO));
 	if(!pIfinfoList){
 		return -1;
 	}
@@ -549,23 +554,28 @@ int local_addr (SOCKET socket, struct sockaddr_in *plcladdr)
 			continue;
 		}
 
+		pInetAddr = (struct sockaddr_in *) &pIfinfo->iiAddress;
+
 		/*
 		 * If its not an internet inteface 
 		 * then dont use it. But for MS Winsock2
 		 * assume 0 means internet.
 		 */
-		if (pIfinfo->iiAddress.sa_family != AF_INET) {
-			if (pIfinfo->iiAddress.sa_family == 0)
-				pIfinfo->iiAddress.sa_family = AF_INET;
-			else
+		if (pInetAddr->sin_family != AF_INET) {
+			if (pInetAddr->sin_family == 0) {
+				pInetAddr->sin_family = AF_INET;
+			}
+			else {
 				continue;
+			}
 		}
 
 		/*
 		 * save the interface's IP address
 		 */
-		addr = pIfinfo->iiAddress;
-		*pLclSAddr = addr;
+		addr = *pInetAddr;
+
+		*plcladdr = addr;
 		init = TRUE;
 		free (pIfinfoList);
 		return 0;
@@ -604,8 +614,8 @@ void epicsShareAPI caDiscoverInterfaces(ELLLIST *pList, SOCKET socket,
 	struct sockaddr_in 	*pInetNetMask;
 	caAddrNode			*pNode;
 	int             	status;
-	LPINTERFACE_INFO    pIfinfo;
-	LPINTERFACE_INFO    pIfinfoList;
+	INTERFACE_INFO      *pIfinfo;
+	INTERFACE_INFO      *pIfinfoList;
 	unsigned			nelem;
 	int					numifs;
 	DWORD				cbBytesReturned;
@@ -623,7 +633,7 @@ void epicsShareAPI caDiscoverInterfaces(ELLLIST *pList, SOCKET socket,
 	}
 
 	nelem = 10;
-	pIfinfoList = (LPINTERFACE_INFO)calloc(nelem, sizeof(INTERFACE_INFO));
+	pIfinfoList = (INTERFACE_INFO *) calloc(nelem, sizeof(INTERFACE_INFO));
 	if(!pIfinfoList){
 		return;
 	}
@@ -656,23 +666,26 @@ void epicsShareAPI caDiscoverInterfaces(ELLLIST *pList, SOCKET socket,
 			continue;
 		}
 
+		pInetAddr = (struct sockaddr_in *) &pIfinfo->iiAddress;
+		pInetNetMask = (struct sockaddr_in *) &pIfinfo->iiNetmask;
+
 		/*
 		 * If its not an internet inteface 
 		 * then dont use it. But for MS Winsock2
 		 * assume 0 means internet.
 		 */
-		if (pIfinfo->iiAddress.sa_family != AF_INET) {
-			if (pIfinfo->iiAddress.sa_family == 0)
-				pIfinfo->iiAddress.sa_family = AF_INET;
-			else
+		if (pInetAddr->sin_family != AF_INET) {
+			if (pInetAddr->sin_family == 0) {
+				pInetAddr->sin_family = AF_INET;
+			}
+			else {
 				continue;
+			}
 		}
 
 		/*
 		 * save the interface's IP address
 		 */
-		pInetAddr = (struct sockaddr_in *)&pIfinfo->iiAddress;
-		pInetNetMask = (struct sockaddr_in *)&pIfinfo->iiNetmask;
 		localAddr = *pInetAddr;
 
 		/*

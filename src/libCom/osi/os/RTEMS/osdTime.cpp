@@ -86,4 +86,27 @@ void clockInit(void)
 	rtems_clock_get (RTEMS_CLOCK_GET_TICKS_PER_SECOND, &rtemsTicksPerSecond);
 	rtemsTicksPerSecond_double = rtemsTicksPerSecond;
 }
+
+int epicsTime_gmtime ( const time_t *pAnsiTime, struct tm *pTM )
+{
+    struct tm * pRet = gmtime_r ( pAnsiTime, pTM );
+    if ( pRet ) {
+        return epicsTimeOK;
+    }
+    else {
+        return epicsTimeERROR;
+    }
+}
+
+int epicsTime_localtime ( const time_t *clock, struct tm *result )
+{
+    struct tm * pRet = localtime_r ( clock, result );
+    if ( pRet ) {
+        return epicsTimeOK;
+    }
+    else {
+        return epicsTimeERROR;
+    }
+}
+
 }

@@ -6,15 +6,15 @@ PROD_LIBS += Com
 
 semBinaryTestHost_SRCS += semBinaryTestMain.c semBinaryTest.c
 PROD += semBinaryTestHost
-OBJS_IOC += semBinaryTest.o
+OBJS_IOC += semBinaryTest$(OBJ)
 
 semMutexTestHost_SRCS += semMutexTestMain.c semMutexTest.c
 PROD += semMutexTestHost
-OBJS_IOC += semMutexTest.o
+OBJS_IOC += semMutexTest$(OBJ)
 
 threadTestHost_SRCS += threadTestMain.c threadTest.c
 PROD += threadTestHost
-OBJS_IOC += threadTest.o
+OBJS_IOC += threadTest$(OBJ)
 
 #fdmgrTest_SRCS += fdmgrTest.c
 #PROD += fdmgrTest

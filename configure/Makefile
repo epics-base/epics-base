@@ -23,4 +23,6 @@ CONFIGS += $(subst ../,,$(wildcard ../RULES*))
 
 CONFIGS += $(subst ../,,$(wildcard ../tools/*.pl))
 
+TARGETS = $(CONFIG_TARGETS)
+
 include $(TOP)/configure/RULES

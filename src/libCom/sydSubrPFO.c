@@ -4,7 +4,7 @@
  *
  *	Experimental Physics and Industrial Control System (EPICS)
  *
- *	Copyright 1991, the Regents of the University of California,
+ *	Copyright 1991-92, the Regents of the University of California,
  *	and the University of Chicago Board of Governors.
  *
  *	This software was produced under  U.S. Government contracts:
@@ -28,6 +28,7 @@
  * .00	12-04-90	rac	initial version
  * .01	06-18-91	rac	installed in SCCS
  * .02  06-19-91	rac	replace <fields.h> with <alarm.h>
+ * .03	02-27-92	rac	do ts rounding here instead of sydSubr.c
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -150,6 +151,10 @@ void	*pArg;		/* I pointer to arg, as required by funcCode */
 	    pSChan->lastInBuf = bufNum;
 	    if (pSChan->firstInBuf < 0)
 		pSChan->firstInBuf = bufNum;
+	    if (pSspec->roundNsec > 0) {
+		sydTsRound(&pSChan->pInBuf[bufNum]->tfltval.stamp,
+							pSspec->roundNsec);
+	    }
 	}
     }
     else if (funcCode ==				SYD_FC_POSITION) {

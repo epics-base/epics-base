@@ -32,6 +32,7 @@
  * .04	09-23-91	rac	allow async completion of ca_search
  * .05	02-13-92	rac	use ADEL for monitoring; perform time-stamp
  *				rounding if requested
+ * .06	03-08-92	rac	use deadband from pSspec for monitoring
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -247,7 +248,8 @@ chid	pCh;		/* channel pointer */
     }
     if (pSChan->evid == NULL) {
 	stat = ca_add_masked_array_event(pSChan->dbrType, pSChan->elCount, pCh,
-		sydCAFuncMonHandler, NULL, 0., 0., 0., &pSChan->evid, DBE_LOG);
+		sydCAFuncMonHandler, NULL, 0., 0., 0., &pSChan->evid,
+		pSChan->pSspec->deadband);
 	if (stat != ECA_NORMAL) {
 	    retStat = S_syd_ERROR;
 	    (void)printf(

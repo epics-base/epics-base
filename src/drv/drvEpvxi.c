@@ -139,7 +139,6 @@
 #include <epvxiLib.h>
 
 #define NICPU030
-#define LOCAL
 
 /*
  * EPICS driver entry point table

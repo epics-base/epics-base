@@ -36,7 +36,6 @@
 #include <memLib.h>
 #include <wdLib.h>
 #include <rngLib.h>
-#include <lstLib.h>
 #include <vme.h>
 #include <sysLib.h>
 #include <iv.h>
@@ -47,6 +46,7 @@
 #include <dbDefs.h>
 #include <link.h>
 #include <fast_lock.h>
+#include <ellLib.h>
 
 #include <drvMvme162.h>
 
@@ -62,7 +62,7 @@ struct IB162Link {
 };
 
 static struct IB162Link *pIB162[MVME162_NUM_LINKS*4];
-static int linkTask(struct IB162Link *plink);
+static int linkTask(struct ibLink *plink);
 int	mv167Debug = 0;
 
 /******************************************************************************
@@ -272,8 +272,7 @@ drv162IB_QueueReq(struct dpvtGpibHead *pGpibHead, int prio)
  * can operate all forms of GPIB busses.
  *
  ******************************************************************************/
-static int 
-linkTask(struct ibLink *plink)
+static int linkTask(struct ibLink *plink)
 {
   struct dpvtGpibHead	*pnode;
   int			working;

@@ -42,25 +42,24 @@ BOOL WINAPI DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 	switch (dwReason) 
 	{
 	case DLL_PROCESS_ATTACH:
-		if ( ! osiSockAttach() ) 
-			return FALSE;
+		//if ( ! osiSockAttach() ) 
+		//	return FALSE;
 #		if defined ( _DEBUG ) && 0
 			fprintf(stderr, "Process attached to Com.dll version %s\n", EPICS_VERSION_STRING);
 #		endif
 		break;
 
 	case DLL_PROCESS_DETACH:
-		osiSockRelease();
-        epicsThreadCleanupWIN32 ();
+		//osiSockRelease();
+        //epicsThreadCleanupWIN32 ();
 #		if defined ( _DEBUG ) && 0
 			fprintf(stderr, "Process detached from Com.dll version %s\n", EPICS_VERSION_STRING);
 #		endif
 		break;
 
 	case DLL_THREAD_DETACH:
-        epicsThreadCleanupWIN32 ();
+        //epicsThreadCleanupWIN32 ();
         break;
-
 	}
 
 	return TRUE;

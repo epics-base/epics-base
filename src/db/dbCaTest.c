@@ -1,4 +1,4 @@
-/* dbcar.c */
+/* dbCaTest.c */
 /*****************************************************************
                           COPYRIGHT NOTIFICATION
 *****************************************************************
@@ -41,7 +41,6 @@ of this distribution.
 #include "dbDefs.h"
 #include "epicsPrint.h"
 #include "dbCommon.h"
-#define epicsExportSharedSymbols
 
 /*define DB_CONVERT_GBLSOURCE because db_access.c does not include db_access.h*/
 #define DB_CONVERT_GBLSOURCE
@@ -49,8 +48,10 @@ of this distribution.
 #include "db_convert.h"
 #include "dbCaPvt.h"
 #include "dbCa.h"
+#define epicsExportSharedSymbols
+#include "dbCaTest.h"
 
-long dbcar(char	*precordname,int level)
+long epicsShareAPI dbcar(char	*precordname,int level)
 {
     DBENTRY		dbentry;
     DBENTRY		*pdbentry=&dbentry;

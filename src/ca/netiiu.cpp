@@ -62,12 +62,10 @@ void netiiu::attachChannel ( nciu &chan )
 // calling this
 void netiiu::detachChannel ( nciu &chan )
 {
-    {
-        epicsAutoMutex autoMutex ( this->mutex );
-        this->channelList.remove ( chan );
-        if ( this->channelList.count () == 0u ) {
-            this->lastChannelDetachNotify ();
-        }
+    epicsAutoMutex autoMutex ( this->mutex );
+    this->channelList.remove ( chan );
+    if ( this->channelList.count () == 0u ) {
+        this->lastChannelDetachNotify ();
     }
 }
 

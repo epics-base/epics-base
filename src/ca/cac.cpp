@@ -893,12 +893,10 @@ void cac::lookupChannelAndTransferToTCP ( unsigned cid, unsigned sid,
 
 void cac::uninstallChannel ( nciu & chan )
 {
-    {
-        epicsAutoMutex autoMutex ( this->defaultMutex );
-        nciu *pChan = this->chanTable.remove ( chan );
-        assert ( pChan = &chan );
-        chan.getPIIU ()->detachChannel ( chan );
-    }
+    epicsAutoMutex autoMutex ( this->defaultMutex );
+    nciu *pChan = this->chanTable.remove ( chan );
+    assert ( pChan = &chan );
+    chan.getPIIU ()->detachChannel ( chan );
 }
 
 void cac::getFDRegCallback ( CAFDHANDLER *&fdRegFuncOut, void *&fdRegArgOut ) const

@@ -10,27 +10,29 @@
  *  Author: Jeff Hill
  */
 
+#include <stdio.h>
+#include <typeinfo>
 #include "osiMutex.h"
 
-#if defined(_MSC_VER) && _MSC_VER <= 1200
-#   pragma warning( disable : 4291 )  
+#if defined ( _MSC_VER ) && _MSC_VER <= 1200
+#   pragma warning ( disable : 4291 )  
 #endif
 
 
-template < class T >
+template < class T, unsigned DEBUG_LEVEL >
 union tsFreeListItem {
 public:
-    tsFreeListItem < T > *pNext;
+    tsFreeListItem < T, DEBUG_LEVEL > *pNext;
     char pad[ sizeof (T) ];
 };
 
-template < class T, unsigned N = 0x400 >
+template < class T, unsigned N = 0x400, unsigned DEBUG_LEVEL = 0u >
 struct tsFreeListChunk {
-    tsFreeListChunk < T, N > *pNext;
-    tsFreeListItem < T > items [N];
+    tsFreeListChunk < T, N, DEBUG_LEVEL > *pNext;
+    tsFreeListItem < T, DEBUG_LEVEL > items [N];
 };
 
-template < class T, unsigned N = 0x400 >
+template < class T, unsigned N = 0x400, unsigned DEBUG_LEVEL = 0u >
 class tsFreeList : private osiMutex {
 public:
     tsFreeList ();
@@ -38,33 +40,40 @@ public:
     void * allocate ( size_t size );
     void release ( void *p, size_t size );
 private:
-    tsFreeListItem < T > *pFreeList;
-    tsFreeListChunk < T, N > *pChunkList;
+    tsFreeListItem < T, DEBUG_LEVEL > *pFreeList;
+    tsFreeListChunk < T, N, DEBUG_LEVEL > *pChunkList;
 };
 
-template < class T, unsigned N >
-inline tsFreeList < T, N >::tsFreeList () : 
+template < class T, unsigned N, unsigned DEBUG_LEVEL >
+inline tsFreeList < T, N, DEBUG_LEVEL >::tsFreeList () : 
     pFreeList (0), pChunkList (0) {}
 
-template < class T, unsigned N >
-tsFreeList < T, N >::~tsFreeList ()
+template < class T, unsigned N, unsigned DEBUG_LEVEL >
+tsFreeList < T, N, DEBUG_LEVEL >::~tsFreeList ()
 {
-    tsFreeListChunk < T, N > *pChunk;
+    tsFreeListChunk < T, N, DEBUG_LEVEL > *pChunk;
+    unsigned nChunks = 0u;
 
     this->lock ();
 
     while ( ( pChunk = this->pChunkList ) ) {
         this->pChunkList = this->pChunkList->pNext;
         delete pChunk;
+        nChunks++;
     }
 
     this->unlock();
+
+    if ( DEBUG_LEVEL > 0u ) {
+        fprintf ( stderr, "free list destructor for class %s returned %u objects to pool\n", 
+            typeid ( T ).name (), N * nChunks );
+    }
 }
 
-template < class T, unsigned N >
-void * tsFreeList < T, N >::allocate (size_t size)
+template < class T, unsigned N, unsigned DEBUG_LEVEL >
+void * tsFreeList < T, N, DEBUG_LEVEL >::allocate (size_t size)
 {
-    tsFreeListItem < T > *p;
+    tsFreeListItem < T, DEBUG_LEVEL > *p;
 
     if ( size != sizeof ( T ) ) {
         return ::operator new (size);
@@ -80,7 +89,7 @@ void * tsFreeList < T, N >::allocate (size_t size)
     else {
         unsigned i;
 
-        tsFreeListChunk<T,N> *pChunk = new ( tsFreeListChunk < T, N > );
+        tsFreeListChunk < T, N, DEBUG_LEVEL > *pChunk = new ( tsFreeListChunk < T, N, DEBUG_LEVEL > );
         if ( ! pChunk) {
             return 0;
         }
@@ -97,20 +106,20 @@ void * tsFreeList < T, N >::allocate (size_t size)
 
     this->unlock ();
 
-    return static_cast <void *> (p);
+    return static_cast < void * > ( p );
 }
 
-template < class T, unsigned N >
-void tsFreeList < T, N >::release (void *pCadaver, size_t size)
+template < class T, unsigned N, unsigned DEBUG_LEVEL >
+void tsFreeList < T, N, DEBUG_LEVEL >::release (void *pCadaver, size_t size)
 {
     if ( size != sizeof ( T ) ) {
-        ::operator delete (pCadaver);
+        ::operator delete ( pCadaver );
     }
     else {
         if ( pCadaver ) {
             this->lock ();
-            tsFreeListItem<T> *p = 
-                static_cast < tsFreeListItem < T > *> (pCadaver);
+            tsFreeListItem < T, DEBUG_LEVEL > *p = 
+                static_cast < tsFreeListItem < T, DEBUG_LEVEL > *> ( pCadaver );
             p->pNext = this->pFreeList;
             this->pFreeList = p;
             this->unlock ();

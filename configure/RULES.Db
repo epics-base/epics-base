@@ -28,6 +28,7 @@ COMMON_DBDS += $(filter $(COMMON_DIR)/%, $(foreach file, $(DBD), \
 SOURCE_DBD = $(wildcard $(file) $(SOURCE_DBD_bbb) )
 SOURCE_DBD_bbb = $(foreach dir, $(GENERIC_SRC_DIRS), $(SOURCE_DBD_aaa)  )
 SOURCE_DBD_aaa = $(addsuffix /$(file), $(dir) )
+DBDDEPENDS_FILES += $(subst .dbd,$(DEP),$(COMMON_DBDS))
 
 INSTALL_DBS += $(addprefix $(INSTALL_DB)/,$(notdir $(DB)))
 
@@ -36,6 +37,7 @@ COMMON_DBS += $(filter $(COMMON_DIR)/%, $(foreach file, $(DB), \
 SOURCE_DB = $(wildcard $(file) $(SOURCE_DB_bbb) )
 SOURCE_DB_bbb = $(foreach dir, $(GENERIC_SRC_DIRS), $(SOURCE_DB_aaa)  )
 SOURCE_DB_aaa = $(addsuffix /$(file), $(dir) )
+DBDEPENDS_FILES += $(subst .db,$(DEP),$(COMMON_DBS))
 
 COMMONS = $(COMMON_DIR)/*.dbd $(COMMON_DIR)/*.db $(COMMON_DIR)/*.h $(COMMON_DIR)/*.substitutions $(COMMON_DIR)/*.template
 
@@ -73,7 +75,7 @@ build : $(COMMON_DBDS) $(COMMON_DBS) \
 	$(INSTALL_DBDS) $(INSTALL_DBS)
 
 clean:: 
-	@$(RM) $(COMMONS)
+	@$(RM) $(COMMONS) $(DBDDEPENDS_FILES) $(DBDEPENDS_FILES)
 	@$(RM) *_registerRecordDeviceDriver.cpp
 
 ##################################################### "Foreign" templates
@@ -156,6 +158,10 @@ $(COMMON_DIR)/menu%.h: menu%.dbd
  
 ##################################################### DBD files
 
+ifneq (,$(strip $(DBDDEPENDS_FILES)))
+-include $(DBDDEPENDS_FILES)
+endif
+
 $(COMMON_DIR)/bpt%.dbd: ../bpt%.data 
 	$(RM) $@
 	$(MAKEBPT) $< $@
@@ -165,11 +171,13 @@ $(COMMON_DIR)/bpt%.dbd: bpt%.data
 	$(MAKEBPT) $< $@
 
 $(COMMON_DIR)/%.dbd: ../%Include.dbd 
+	@$(MAKEDBDDEPENDS) $(DBDFLAGS) $(COMMON_DIR)/$*.dbd $< > $(COMMON_DIR)/$*$(DEP)
 	@echo "Expanding dbd"
 	$(RM) $@
 	$(DBEXPAND) $(DBDFLAGS) $< > $@
 
 $(COMMON_DIR)/%.dbd: %Include.dbd 
+	@$(MAKEDBDDEPENDS) $(DBDFLAGS) $(COMMON_DIR)/$*.dbd $< > $(COMMON_DIR)/$*$(DEP)
 	@echo "Expanding dbd"
 	$(RM) $@
 	$(DBEXPAND) $(DBDFLAGS) $< > $@
@@ -186,6 +194,10 @@ $(INSTALL_DBD)/%: ../%
 
 ##################################################### DB files
 
+ifneq (,$(strip $(DBDEPENDS_FILES)))
+-include $(DBDEPENDS_FILES)
+endif
+
 $(COMMON_DIR)/%.db$(RAW): ../%.db 
 	$(CP) $< $@
 
@@ -201,6 +213,7 @@ $(COMMON_DIR)/%.db$(RAW): ../%.edf
 
 $(COMMON_DIR)/%.db$(RAW): %.substitutions %.template
 	@echo "Inflating database from $<"
+	@$(MAKEDBDEPENDS) $@ $< $(COMMON_DIR)/$*$(DEP)
 	@$(RM) $@
 	$(MSI) -S $^  > $@
 
@@ -237,28 +250,6 @@ $(INSTALL_DB)/%: $(COMMON_DIR)/%
 %_registerRecordDeviceDriver.cpp: ../%.dbd 
 	$(RM) $@
 	$(REGISTERRECORDDEVICEDRIVER) $< > $@
-
-##################################################### DB dependancies
-
-ifneq (,$(COMMON_DBS))
-DBDEPENDS: $(COMMON_DBS:$(COMMON_DIR)/%.db=%.substitutions) $(COMMON_DBS:$(COMMON_DIR)/%.db=%.template)
-	@echo 'Creating DB dependancy file $@'
-	@echo "Making template database dependencies"
-	@$(MAKEDBDEPENDS) $^
-
--include DBDEPENDS
-endif
-
-##################################################### DBD dependancies
-
-ifneq (,$(wildcard $(patsubst %.dbd,../%Include.dbd,$(notdir $(COMMON_DBDS)))))
-DBDDEPENDS_%: ../%Include.dbd
-	@echo 'Creating DBD dependancy file $@'
-	@$(RM) $@
-	$(MAKEDBDDEPENDS) $(DBDFLAGS) $(COMMON_DIR)/$*.dbd $< > $@
-	
--include $(patsubst ../%Include.dbd,DBDDEPENDS_%,$(wildcard $(patsubst %.dbd,../%Include.dbd,$(notdir $(COMMON_DBDS)))))
-endif
 
 ##################################################### END OF FILE
 

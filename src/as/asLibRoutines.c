@@ -335,6 +335,7 @@ long epicsShareAPI asAddClient(ASCLIENTPVT *pasClientPvt,ASMEMBERPVT asMemberPvt
 {
     ASGMEMBER	*pasgmember = asMemberPvt;
     ASGCLIENT	*pasgclient;
+    int		ind;
 
     long	status;
     if(!asActive) return(S_asLib_asNotActive);
@@ -346,6 +347,9 @@ long epicsShareAPI asAddClient(ASCLIENTPVT *pasClientPvt,ASMEMBERPVT asMemberPvt
     pasgclient->level = asl;
     pasgclient->user = user;
     pasgclient->host = host;
+    for(ind=0; ind<strlen(pasgclient->host); ind++) {
+        pasgclient->host[ind] = (char)tolower((int)pasgclient->host[ind]);
+    }
     LOCK;
     ellAdd(&pasgmember->clientList,(ELLNODE *)pasgclient);
     status = asComputePvt(pasgclient);
@@ -1130,7 +1134,7 @@ static long asHagAddHost(HAG *phag,char *host)
     phagname->host = (char *)(phagname+1);
     strcpy(phagname->host,host);
     for(ind=0; ind<strlen(phagname->host); ind++) {
-        phagname->host[ind] = tolower(phagname->host[ind]);
+        phagname->host[ind] = (char)tolower((int)phagname->host[ind]);
     }
     ellAdd(&phag->list,(ELLNODE *)phagname);
     return(0);

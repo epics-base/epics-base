@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.12  1997/06/25 05:48:39  jhill
+ * moved resourceLib.cc into resourceLib.h
+ *
  * Revision 1.11  1997/06/13 18:26:13  jhill
  * allow epicsAssert.h
  *
@@ -298,6 +301,11 @@ class uintRes : public uintId, public tsSLNode<ITEM> {
 friend class uintResTable<ITEM>;
 public:
 	uintRes(unsigned idIn=UINT_MAX) : uintId(idIn) {}
+private:
+	//
+	// workaround for bug in DEC compiler
+	//
+	void setId(unsigned newId) {this->id = newId;}
 };
 
 //
@@ -312,7 +320,7 @@ inline void uintResTable<ITEM>::installItem(ITEM &item)
 {
 	int resTblStatus;
 	do {
-		item.uintRes<ITEM>::id = allocId++;
+		item.uintRes<ITEM>::setId(allocId++);
 		resTblStatus = this->add(item);
 	}
 	while (resTblStatus);

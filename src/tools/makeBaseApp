@@ -177,6 +177,7 @@ do
 	if [ -n "${EXAMPLES}" ]; then
 	sed -e "s/APPNAME/${APPNAME}/" >> src/Makefile.Vx <<-\END
 		RECTYPES += xxxRecord.h
+		USR_INCLUDES += -I$(EPICS_BASE)/include
 		USER_DBDFLAGS += -I .. -I $(EPICS_BASE)/dbd
 		DBDEXPAND = APPNAMEInclude.dbd
 		DBDNAME = APPNAME.dbd
@@ -192,6 +193,7 @@ do
 	else
 	sed -e "s/APPNAME/${APPNAME}/" >> src/Makefile.Vx <<-\END
 		#RECTYPES += xxxRecord.h
+		USR_INCLUDES += -I$(EPICS_BASE)/include
 		USER_DBDFLAGS += -I .. -I $(EPICS_BASE)/dbd
 		#DBDEXPAND = APPNAMEInclude.dbd
 		#DBDNAME = APPNAME.dbd
@@ -209,6 +211,8 @@ do
 		#  ADD RULES AFTER THIS LINE
 		
 		$(LIBNAME): ../baseLIBOBJS
+		$(DBDNAME): ../base.dbd ../APPNAMEInclude.dbd
+		$(DBDNAME): $(RECTYPES:%.h=%.dbd)
 
 	END
 	cat > src/Makefile.Unix <<-\END

@@ -3,7 +3,7 @@ TOP=../../..
 include $(TOP)/configure/CONFIG
 
 TOP_BIN = $(TOP)/bin/$(T_A)
-MUNCH_LIBRARY = iocCore
+LIBRARY_vxWorks = iocCore
 
 iocCore_OBJS += $(TOP_BIN)/ComLibrary.o
 iocCore_OBJS += $(TOP_BIN)/caLibrary.o

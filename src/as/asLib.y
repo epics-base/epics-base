@@ -42,7 +42,7 @@ asconfig_item:	tokenUAG uag_head uag_body
 uag_head:	'(' tokenNAME ')'
 	{
 		yyUag = asUagAdd($2);
-		if(!yyUag) yyerror($2);
+		if(!yyUag) yyerror("");
 		free((void *)$2);
 	}
 	;
@@ -63,7 +63,6 @@ uag_user_list_name:	tokenNAME
 
 		status = asUagAddUser(yyUag,$1);
 		if(status) {
-			errMessage(status,"Error while adding UAG");
 			yyerror($1);
 		}
 		free((void *)$1);
@@ -73,7 +72,7 @@ uag_user_list_name:	tokenNAME
 hag_head:	'(' tokenNAME ')'
 	{
 		yyHag = asHagAdd($2);
-		if(!yyHag) yyerror($2);
+		if(!yyHag) yyerror("");
 		free((void *)$2);
 	}
 	;
@@ -91,8 +90,7 @@ hag_user_list_name:	tokenNAME
 
 		status = asHagAddHost(yyHag,$1);
 		if(status) {
-			errMessage(status,"Error while adding HAG");
-			yyerror($1);
+			yyerror("");
 		}
 		free((void *)$1);
 	}
@@ -101,7 +99,7 @@ hag_user_list_name:	tokenNAME
 asg_head:	'(' tokenNAME ')'
 	{
 		yyAsg = asAsgAdd($2);
-		if(!yyAsg) yyerror($2);
+		if(!yyAsg) yyerror("");
 		free((void *)$2);
 	}
 	;
@@ -122,8 +120,7 @@ inp_config:	tokenINP '(' inp_body ')'
 
 		status = asAsgAddInp(yyAsg,$<Str>3,$<Int>1);
 		if(status) {
-			errMessage(status,"Error while adding INP");
-			yyerror($1);
+			yyerror("");
 		}
 		free((void *)$<Str>3);
 	}
@@ -170,8 +167,7 @@ rule_list_item: tokenUAG '(' rule_uag_list ')'
 
 		status = asAsgRuleCalc(yyAsgRule,$3);
 		if(status){
-		    errMessage(status,$3);
-		    yyerror("CALC failure");
+		    yyerror("access security CALC failure");
 		}
 		free((void *)$3);
 	}
@@ -187,8 +183,7 @@ rule_uag_list_name:	tokenNAME
 
 		status = asAsgRuleUagAdd(yyAsgRule,$1);
 		if(status) {
-		    errMessage(status,"Error while adding UAG");
-		    yyerror($1);
+		    yyerror("");
 		}
 		free((void *)$1);
 	}
@@ -204,8 +199,7 @@ rule_hag_list_name:	tokenNAME
 
 		status = asAsgRuleHagAdd(yyAsgRule,$1);
 		if(status) {
-		    errMessage(status,"Error while adding HAG");
-		    yyerror($1);
+		    yyerror("");
 		}
 		free((void *)$1);
 	}
@@ -217,7 +211,8 @@ rule_hag_list_name:	tokenNAME
 static int yyerror(str)
 char  *str;
 {
-    fprintf(stderr,"Error line %d : %s %s\n",line_num,str,yytext);
+    epicsPrintf("Access Security Error(%s) line %d token %s\n",
+	str,line_num,yytext);
     yyFailed = TRUE;
     return(0);
 }

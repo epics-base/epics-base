@@ -5,53 +5,19 @@
                           COPYRIGHT NOTIFICATION
 *****************************************************************
 
-THE FOLLOWING IS A NOTICE OF COPYRIGHT, AVAILABILITY OF THE CODE,
-AND DISCLAIMER WHICH MUST BE INCLUDED IN THE PROLOGUE OF THE CODE
-AND IN ALL SOURCE LISTINGS OF THE CODE.
- 
 (C)  COPYRIGHT 1993 UNIVERSITY OF CHICAGO
- 
-Argonne National Laboratory (ANL), with facilities in the States of 
-Illinois and Idaho, is owned by the United States Government, and
-operated by the University of Chicago under provision of a contract
-with the Department of Energy.
 
-Portions of this material resulted from work developed under a U.S.
-Government contract and are subject to the following license:  For
-a period of five years from March 30, 1993, the Government is
-granted for itself and others acting on its behalf a paid-up,
-nonexclusive, irrevocable worldwide license in this computer
-software to reproduce, prepare derivative works, and perform
-publicly and display publicly.  With the approval of DOE, this
-period may be renewed for two additional five year periods. 
-Following the expiration of this period or periods, the Government
-is granted for itself and others acting on its behalf, a paid-up,
-nonexclusive, irrevocable worldwide license in this computer
-software to reproduce, prepare derivative works, distribute copies
-to the public, perform publicly and display publicly, and to permit
-others to do so.
-
-*****************************************************************
-                                DISCLAIMER
-*****************************************************************
-
-NEITHER THE UNITED STATES GOVERNMENT NOR ANY AGENCY THEREOF, NOR
-THE UNIVERSITY OF CHICAGO, NOR ANY OF THEIR EMPLOYEES OR OFFICERS,
-MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LEGAL
-LIABILITY OR RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS, OR
-USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT, OR PROCESS
-DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE PRIVATELY
-OWNED RIGHTS.  
-
-*****************************************************************
-LICENSING INQUIRIES MAY BE DIRECTED TO THE INDUSTRIAL TECHNOLOGY
-DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
+This software was developed under a United States Government license
+described on the COPYRIGHT_UniversityOfChicago file included as part
+of this distribution.
+**********************************************************************/
+/*
  *
  * Modification Log:
  * -----------------
  * .01  03-22-94	mrk	Initial Implementation
  */
-
+
 /*This module is separate from asDbLib because CA uses old database access*/
 #include <vxWorks.h>
 #include <taskLib.h>
@@ -59,6 +25,7 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <semLib.h>
 
 #include "dbDefs.h"
 #include "errlog.h"
@@ -70,87 +37,80 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #include "task_params.h"
 #include "alarm.h"
 
+int asCaDebug = 0;
+extern ASBASE volatile *pasbase;
+LOCAL int firstTime = TRUE;
 LOCAL int taskid=0;
 LOCAL int caInitializing=FALSE;
-extern ASBASE *pasbase;
+LOCAL SEM_ID asCaTaskLock;		/*lock access to task */
+LOCAL SEM_ID asCaTaskWait;		/*Wait for task to respond*/
+LOCAL SEM_ID asCaTaskAddChannels;	/*Tell asCaTask to add channels*/
+LOCAL SEM_ID asCaTaskClearChannels;	/*Tell asCaTask to clear channels*/
 
 typedef struct {
     struct dbr_sts_double rtndata;
     chid		chid;
-    evid		evid;
 } CAPVT;
 
-LOCAL void accessRightsCallback(struct access_rights_handler_args arha)
+/*connectCallback only handles disconnects*/
+LOCAL void connectCallback(struct connection_handler_args arg)
 {
-    chid		chid = arha.chid;
-    ASGINP		*pasginp;
-    ASG			*pasg;
-    CAPVT		*pcapvt;
-    int			Ilocked=FALSE;
+    chid		chid = arg.chid;
+    ASGINP		*pasginp = (ASGINP *)ca_puser(chid);
+    ASG			*pasg = pasginp->pasg;
 
-    if(!caInitializing) {
-	FASTLOCK(&asLock);
-	Ilocked = TRUE;
-    }
-    pasginp = (ASGINP *)ca_puser(chid);
-    pasg = (ASG *)pasginp->pasg;
-    pcapvt = pasginp->capvt;
-    if(!ca_read_access(chid)) {
-	pasg->inpBad |= (1<<pasginp->inpIndex);
-	if(!caInitializing) asComputeAsg(pasg);
-    } /*eventCallback will set inpBad false*/
-    if(Ilocked) FASTUNLOCK(&asLock);
-}
-
-LOCAL void connectCallback(struct connection_handler_args cha)
-{
-    chid		chid = cha.chid;
-    ASGINP		*pasginp;
-    ASG			*pasg;
-    CAPVT		*pcapvt;
-    int			Ilocked=FALSE;
-
-    if(!caInitializing) {
-	FASTLOCK(&asLock);
-	Ilocked = TRUE;
-    }
-    pasginp = (ASGINP *)ca_puser(chid);
-    pasg = (ASG *)pasginp->pasg;
-    pcapvt = pasginp->capvt;
     if(ca_state(chid)!=cs_conn) {
-	pasg->inpBad |= (1<<pasginp->inpIndex);
-	if(!caInitializing) asComputeAsg(pasg);
-    } /*eventCallback will set inpBad false*/
-    if(Ilocked) FASTUNLOCK(&asLock);
-}
-
-LOCAL void eventCallback(struct event_handler_args eha)
-{
-    ASGINP		*pasginp;
-    CAPVT		*pcapvt;
-    ASG			*pasg;
-    READONLY struct dbr_sts_double *pdata = eha.dbr;
-    int			Ilocked=FALSE;
-
-    if(!caInitializing) {
-	FASTLOCK(&asLock);
-	Ilocked = TRUE;
-    }
-    pasginp = (ASGINP *)eha.usr;
-    pcapvt = (CAPVT *)pasginp->capvt;
-    if(ca_read_access(pcapvt->chid)) {
-	pasg = (ASG *)pasginp->pasg;
-	pcapvt->rtndata = *pdata; /*structure copy*/
-	if(pdata->severity==INVALID_ALARM) {
+	if(!(pasg->inpBad & (1<<pasginp->inpIndex))) {
+	    /*was good so lets make it bad*/
 	    pasg->inpBad |= (1<<pasginp->inpIndex);
-	} else {
-	    pasg->inpBad &= ~((1<<pasginp->inpIndex));
-            pasg->pavalue[pasginp->inpIndex] = pdata->value;
+	    if(!caInitializing) asComputeAsg(pasg);
+	    if(asCaDebug) printf("as connectCallback disconnect %s\n",
+		ca_name(chid));
 	}
-	pasg->inpChanged |= (1<<pasginp->inpIndex);
-	if(!caInitializing) asComputeAsg(pasg);
     }
-    if(Ilocked) FASTUNLOCK(&asLock);
+}
+
+LOCAL void eventCallback(struct event_handler_args arg)
+{
+    ASGINP		*pasginp = (ASGINP *)arg.usr;
+    ASG			*pasg = pasginp->pasg;
+    CAPVT		*pcapvt = (CAPVT *)pasginp->capvt;
+    chid		chid = pcapvt->chid;
+    int			caStatus = arg.status;
+    READONLY struct dbr_sts_double *pdata = arg.dbr;
+
+    if(ca_state(chid)!=cs_conn || !ca_read_access(chid)) {
+	if(!(pasg->inpBad & (1<<pasginp->inpIndex))) {
+	    /*was good so lets make it bad*/
+	    pasg->inpBad |= (1<<pasginp->inpIndex);
+	    if(!caInitializing) asComputeAsg(pasg);
+	    if(asCaDebug) {
+		printf("as eventCallback %s inpBad ca_state %d"
+		       " ca_read_access %d\n",
+		    ca_name(chid),ca_state(chid),ca_read_access(chid));
+	    }
+	}
+    } else {
+	if(caStatus!=ECA_NORMAL) {
+	    epicsPrintf("asCa: eventCallback error %s\n",ca_message(caStatus));
+	} else {
+	    pcapvt->rtndata = *pdata; /*structure copy*/
+	    if(pdata->severity==INVALID_ALARM) {
+	        pasg->inpBad |= (1<<pasginp->inpIndex);
+		if(asCaDebug)
+		    printf("as eventCallback %s inpBad because INVALID_ALARM\n",
+		    ca_name(chid));
+	    } else {
+	        pasg->inpBad &= ~((1<<pasginp->inpIndex));
+                pasg->pavalue[pasginp->inpIndex] = pdata->value;
+		if(asCaDebug)
+		    printf("as eventCallback %s inpGood data %f\n",
+			ca_name(chid),pdata->value);
+	    }
+	    pasg->inpChanged |= (1<<pasginp->inpIndex);
+	    if(!caInitializing) asComputeAsg(pasg);
+	}
+    }
 }
 
 LOCAL void asCaTask(void)
@@ -161,66 +121,90 @@ LOCAL void asCaTask(void)
 
     taskwdInsert(taskIdSelf(),NULL,NULL);
     SEVCHK(ca_task_initialize(),"ca_task_initialize");
-    caInitializing = TRUE;
-    FASTLOCK(&asLock);
-    pasg = (ASG *)ellFirst(&pasbase->asgList);
-    while(pasg) {
-	pasginp = (ASGINP *)ellFirst(&pasg->inpList);
-	while(pasginp) {
-	    pasg->inpBad |= (1<<pasginp->inpIndex);
-	    pcapvt = pasginp->capvt = asCalloc(1,sizeof(CAPVT));
-	    /*Note calls connectCallback immediately called for local Pvs*/
-	    SEVCHK(ca_search_and_connect(pasginp->inp,&pcapvt->chid,
-		connectCallback,pasginp),"ca_build_and_connect");
-	    /*Note calls accessRightsCallback immediately called for local Pvs*/
-	    SEVCHK(ca_replace_access_rights_event(pcapvt->chid,accessRightsCallback),
-		"ca_replace_access_rights_event");
-	    /*Note calls eventCallback immediately called for local Pvs*/
-	    SEVCHK(ca_add_event(DBR_STS_DOUBLE,pcapvt->chid,
-		eventCallback,pasginp,&pcapvt->evid),
-		"ca_add_event");
-	    pasginp = (ASGINP *)ellNext((ELLNODE *)pasginp);
+    while(TRUE) { 
+        if(semTake(asCaTaskAddChannels,WAIT_FOREVER)!=OK) {
+	    epicsPrintf("asCa semTake error for asCaTaskClearChannels\n");
+	    taskSuspend(0);
 	}
-	pasg = (ASG *)ellNext((ELLNODE *)pasg);
+	caInitializing = TRUE;
+	pasg = (ASG *)ellFirst(&pasbase->asgList);
+	while(pasg) {
+	    pasginp = (ASGINP *)ellFirst(&pasg->inpList);
+	    while(pasginp) {
+		pasg->inpBad |= (1<<pasginp->inpIndex);
+		pcapvt = pasginp->capvt = asCalloc(1,sizeof(CAPVT));
+		/*Note calls connectCallback immediately called for local Pvs*/
+		SEVCHK(ca_search_and_connect(pasginp->inp,&pcapvt->chid,
+		    connectCallback,pasginp),"ca_build_and_connect");
+		/*Note calls eventCallback immediately called for local Pvs*/
+		SEVCHK(ca_add_event(DBR_STS_DOUBLE,pcapvt->chid,
+		    eventCallback,pasginp,0),"ca_add_event");
+		pasginp = (ASGINP *)ellNext((ELLNODE *)pasginp);
+	    }
+	    pasg = (ASG *)ellNext((ELLNODE *)pasg);
+	}
+	asComputeAllAsg();
+	caInitializing = FALSE;
+	if(asCaDebug) printf("asCaTask initialized\n");
+	semGive(asCaTaskWait);
+	while(TRUE) {
+	    if(semTake(asCaTaskClearChannels,NO_WAIT)==OK) break;
+	    ca_pend_event(2.0);
+	}
+	pasg = (ASG *)ellFirst(&pasbase->asgList);
+	while(pasg) {
+	    pasginp = (ASGINP *)ellFirst(&pasg->inpList);
+	    while(pasginp) {
+		pcapvt = (CAPVT *)pasginp->capvt;
+		SEVCHK(ca_clear_channel(pcapvt->chid),"as ca_clear_channel");
+		free(pasginp->capvt);
+		pasginp->capvt = 0;
+		pasginp = (ASGINP *)ellNext((ELLNODE *)pasginp);
+	    }
+	    pasg = (ASG *)ellNext((ELLNODE *)pasg);
+	}
+	if(asCaDebug) printf("asCaTask has cleared all channels\n");
+	semGive(asCaTaskWait);
     }
-    asComputeAllAsg();
-    caInitializing = FALSE;
-    FASTUNLOCK(&asLock);
-    SEVCHK(ca_pend_event(0.0),"ca_pend_event");
-    exit(-1);
 }
-    
+    
 void asCaStart(void)
 {
-    taskid = taskSpawn("asCaTask",CA_CLIENT_PRI-1,VX_FP_TASK,CA_CLIENT_STACK,
-	(FUNCPTR)asCaTask,0,0,0,0,0,0,0,0,0,0);
-    if(taskid==ERROR) {
-	errMessage(0,"asCaStart: taskSpawn Failure\n");
-    } else {
-	taskDelay(1);
+    if(asCaDebug) printf("asCaStart called\n");
+    if(firstTime) {
+	firstTime = FALSE;
+        if((asCaTaskLock=semBCreate(SEM_Q_FIFO,SEM_FULL))==NULL)
+	    epicsPrintf("asCa semBCreate failure\n");
+        if((asCaTaskWait=semBCreate(SEM_Q_FIFO,SEM_EMPTY))==NULL)
+	    epicsPrintf("asCa semBCreate failure\n");
+        if((asCaTaskAddChannels=semBCreate(SEM_Q_FIFO,SEM_EMPTY))==NULL)
+	    epicsPrintf("asCa semBCreate failure\n");
+        if((asCaTaskClearChannels=semBCreate(SEM_Q_FIFO,SEM_EMPTY))==NULL)
+	    epicsPrintf("asCa semBCreate failure\n");
+	taskid = taskSpawn("asCaTask",CA_CLIENT_PRI-1,VX_FP_TASK,
+	    CA_CLIENT_STACK, (FUNCPTR)asCaTask,0,0,0,0,0,0,0,0,0,0);
+	if(taskid==ERROR) {
+	    errMessage(0,"asCaStart: taskSpawn Failure\n");
+	}
     }
+    if(semTake(asCaTaskLock,WAIT_FOREVER)!=OK)
+	epicsPrintf("asCa semTake error\n");
+    semGive(asCaTaskAddChannels);
+    if(semTake(asCaTaskWait,WAIT_FOREVER)!=OK)
+	epicsPrintf("asCa semTake error\n");
+    if(asCaDebug) printf("asCaStart done\n");
+    semGive(asCaTaskLock);
 }
-
+
 void asCaStop(void)
 {
-    ASG		*pasg;
-    ASGINP	*pasginp;
-    STATUS	status;
-
     if(taskid==0 || taskid==ERROR) return;
-    taskwdRemove(taskid);
-    status = taskDelete(taskid);
-    if(status!=OK) errMessage(0,"asCaStop: taskDelete Failure\n");
-    while(taskIdVerify(taskid)==OK) {
-	taskDelay(5);
-    }
-    pasg = (ASG *)ellFirst(&pasbase->asgList);
-    while(pasg) {
-	pasginp = (ASGINP *)ellFirst(&pasg->inpList);
-	while(pasginp) {
-	    free(pasginp->capvt);
-	    pasginp = (ASGINP *)ellNext((ELLNODE *)pasginp);
-	}
-	pasg = (ASG *)ellNext((ELLNODE *)pasg);
-    }
+    if(asCaDebug) printf("asCaStop called\n");
+    if(semTake(asCaTaskLock,WAIT_FOREVER)!=OK)
+	epicsPrintf("asCa semTake error\n");
+    semGive(asCaTaskClearChannels);
+    if(semTake(asCaTaskWait,WAIT_FOREVER)!=OK)
+	epicsPrintf("asCa semTake error\n");
+    if(asCaDebug) printf("asCaStop done\n");
+    semGive(asCaTaskLock);
 }

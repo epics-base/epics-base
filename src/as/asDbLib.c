@@ -5,53 +5,19 @@
                           COPYRIGHT NOTIFICATION
 *****************************************************************
 
-THE FOLLOWING IS A NOTICE OF COPYRIGHT, AVAILABILITY OF THE CODE,
-AND DISCLAIMER WHICH MUST BE INCLUDED IN THE PROLOGUE OF THE CODE
-AND IN ALL SOURCE LISTINGS OF THE CODE.
- 
 (C)  COPYRIGHT 1993 UNIVERSITY OF CHICAGO
- 
-Argonne National Laboratory (ANL), with facilities in the States of 
-Illinois and Idaho, is owned by the United States Government, and
-operated by the University of Chicago under provision of a contract
-with the Department of Energy.
 
-Portions of this material resulted from work developed under a U.S.
-Government contract and are subject to the following license:  For
-a period of five years from March 30, 1993, the Government is
-granted for itself and others acting on its behalf a paid-up,
-nonexclusive, irrevocable worldwide license in this computer
-software to reproduce, prepare derivative works, and perform
-publicly and display publicly.  With the approval of DOE, this
-period may be renewed for two additional five year periods. 
-Following the expiration of this period or periods, the Government
-is granted for itself and others acting on its behalf, a paid-up,
-nonexclusive, irrevocable worldwide license in this computer
-software to reproduce, prepare derivative works, distribute copies
-to the public, perform publicly and display publicly, and to permit
-others to do so.
+This software was developed under a United States Government license
+described on the COPYRIGHT_UniversityOfChicago file included as part
+of this distribution.
+**********************************************************************/
 
-*****************************************************************
-                                DISCLAIMER
-*****************************************************************
-
-NEITHER THE UNITED STATES GOVERNMENT NOR ANY AGENCY THEREOF, NOR
-THE UNIVERSITY OF CHICAGO, NOR ANY OF THEIR EMPLOYEES OR OFFICERS,
-MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LEGAL
-LIABILITY OR RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS, OR
-USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT, OR PROCESS
-DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE PRIVATELY
-OWNED RIGHTS.  
-
-*****************************************************************
-LICENSING INQUIRIES MAY BE DIRECTED TO THE INDUSTRIAL TECHNOLOGY
-DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
- *
+/*
  * Modification Log:
  * -----------------
  * .01  02-11-94	mrk	Initial Implementation
  */
-
+
 #include <vxWorks.h>
 #include <taskLib.h>
 #include <stdlib.h>
@@ -75,31 +41,11 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #include "task_params.h"
 
 extern struct dbBase *pdbbase;
-static FILE *stream;
 
-#define BUF_SIZE 100
-FAST_LOCK	asLock;
-static char	*my_buffer;
-static char	*my_buffer_ptr=NULL;
 static char	*pacf=NULL;
-static int	asLockInit=TRUE;
+static char	*psubstitutions=NULL;
 static int	initTaskId=0;
-
-
-static int my_yyinput(char *buf, int max_size)
-{
-    int	l,n;
-    
-    if(*my_buffer_ptr==0) {
-	if(fgets(my_buffer,BUF_SIZE,stream)==NULL) return(0);
-	my_buffer_ptr = my_buffer;
-    }
-    l = strlen(my_buffer_ptr);
-    n = (l<=max_size ? l : max_size);
-    memcpy(buf,my_buffer_ptr,n);
-    my_buffer_ptr += n;
-    return(n);
-}
+static int	firstTime = TRUE;
 
 static long asDbAddRecords(void)
 {
@@ -129,11 +75,6 @@ static long asDbAddRecords(void)
 
 int asSetFilename(char *acf)
 {
-    if(asLockInit) {
-	FASTLOCKINIT(&asLock);
-	asLockInit = FALSE;
-    }
-    FASTLOCK(&asLock);
     if(pacf) free ((void *)pacf);
     if(acf) {
 	pacf = calloc(1,strlen(acf)+1);
@@ -145,41 +86,46 @@ int asSetFilename(char *acf)
     } else {
 	pacf = NULL;
     }
-    FASTUNLOCK(&asLock);
+    return(0);
+}
+
+int asSetSubstitutions(char *substitutions)
+{
+    if(psubstitutions) free ((void *)psubstitutions);
+    if(substitutions) {
+	psubstitutions = calloc(1,strlen(substitutions)+1);
+	if(!psubstitutions) {
+	    errMessage(0,"asSetSubstitutions calloc failure");
+	} else {
+	    strcpy(psubstitutions,substitutions);
+	}
+    } else {
+	psubstitutions = NULL;
+    }
     return(0);
 }
 
 static long asInitCommon(void)
 {
     long	status;
-    char	buffer[BUF_SIZE];
+    int		asWasActive = asActive;
 
-    if(asLockInit) {
-	FASTLOCKINIT(&asLock);
-	asLockInit = FALSE;
+    if(firstTime) {
+	firstTime = FALSE;
+	if(!pacf) return(0); /*access security will NEVER be turned on*/
+    } else {
+	if(!asActive) return(S_asLib_asNotActive);
+	if(pacf) {
+	    asCaStop();
+	} else { /*Just leave everything as is */
+	    return(S_asLib_badConfig);
+	}
     }
-    FASTLOCK(&asLock);
-    if(asActive)asCaStop();
-    if(!pacf) {
-	asActive = FALSE;
-	return(0);
-    }
-    buffer[0] = 0;
-    my_buffer = buffer;
-    my_buffer_ptr = my_buffer;
-    stream = fopen(pacf,"r");
-    if(!stream) {
-	errMessage(0,"asInit failure");
-	FASTUNLOCK(&asLock);
-	return(-1);
-    }
-    status = asInitialize(my_yyinput);
-    if(fclose(stream)==EOF) errMessage(0,"asInit fclose failure");
+    status = asInitFile(pacf,psubstitutions);
     if(asActive) {
-	asDbAddRecords();
+	if(!asWasActive) asDbAddRecords();
 	asCaStart();
     }
-    FASTUNLOCK(&asLock);
     return(status);
 }
 
@@ -300,7 +246,7 @@ ASMEMBERPVT  asDbGetMemberPvt(void *paddress)
     precord = paddr->precord;
     return((ASMEMBERPVT)precord->asp);
 }
-
+
 static void astacCallback(ASCLIENTPVT clientPvt,asClientStatus status)
 {
     char *recordname;
@@ -350,41 +296,31 @@ static void myMemberCallback(ASMEMBERPVT memPvt)
 
 int asdbdump(void)
 {
-    FASTLOCK(&asLock);
     asDump(myMemberCallback,NULL,1);
-    FASTUNLOCK(&asLock);
     return(0);
 }
 
 int aspuag(char *uagname)
 {
 
-    FASTLOCK(&asLock);
     asDumpUag(uagname);
-    FASTUNLOCK(&asLock);
     return(0);
 }
 
 int asphag(char *hagname)
 {
-    FASTLOCK(&asLock);
     asDumpHag(hagname);
-    FASTUNLOCK(&asLock);
     return(0);
 }
 
 int asprules(char *asgname)
 {
-    FASTLOCK(&asLock);
     asDumpRules(asgname);
-    FASTUNLOCK(&asLock);
     return(0);
 }
 
 int aspmem(char *asgname,int clients)
 {
-    FASTLOCK(&asLock);
     asDumpMem(asgname,myMemberCallback,clients);
-    FASTUNLOCK(&asLock);
     return(0);
 }

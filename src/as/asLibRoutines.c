@@ -5,48 +5,14 @@
                           COPYRIGHT NOTIFICATION
 *****************************************************************
 
-THE FOLLOWING IS A NOTICE OF COPYRIGHT, AVAILABILITY OF THE CODE,
-AND DISCLAIMER WHICH MUST BE INCLUDED IN THE PROLOGUE OF THE CODE
-AND IN ALL SOURCE LISTINGS OF THE CODE.
- 
 (C)  COPYRIGHT 1993 UNIVERSITY OF CHICAGO
- 
-Argonne National Laboratory (ANL), with facilities in the States of 
-Illinois and Idaho, is owned by the United States Government, and
-operated by the University of Chicago under provision of a contract
-with the Department of Energy.
 
-Portions of this material resulted from work developed under a U.S.
-Government contract and are subject to the following license:  For
-a period of five years from March 30, 1993, the Government is
-granted for itself and others acting on its behalf a paid-up,
-nonexclusive, irrevocable worldwide license in this computer
-software to reproduce, prepare derivative works, and perform
-publicly and display publicly.  With the approval of DOE, this
-period may be renewed for two additional five year periods. 
-Following the expiration of this period or periods, the Government
-is granted for itself and others acting on its behalf, a paid-up,
-nonexclusive, irrevocable worldwide license in this computer
-software to reproduce, prepare derivative works, distribute copies
-to the public, perform publicly and display publicly, and to permit
-others to do so.
+This software was developed under a United States Government license
+described on the COPYRIGHT_UniversityOfChicago file included as part
+of this distribution.
+**********************************************************************/
 
-*****************************************************************
-                                DISCLAIMER
-*****************************************************************
-
-NEITHER THE UNITED STATES GOVERNMENT NOR ANY AGENCY THEREOF, NOR
-THE UNIVERSITY OF CHICAGO, NOR ANY OF THEIR EMPLOYEES OR OFFICERS,
-MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LEGAL
-LIABILITY OR RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS, OR
-USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT, OR PROCESS
-DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE PRIVATELY
-OWNED RIGHTS.  
-
-*****************************************************************
-LICENSING INQUIRIES MAY BE DIRECTED TO THE INDUSTRIAL TECHNOLOGY
-DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
- *
+/*
  * Modification Log:
  * -----------------
  * .01  10-15-93	mrk	Initial Implementation
@@ -66,20 +32,36 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #include "asLib.h"
 #include "gpHash.h"
 #include "freeList.h"
+#include "macLib.h"
 #include "postfix.h"
 
-/*Declare storage for Global Variables */
-ASBASE		*pasbase=NULL;
+#ifdef vxWorks
+#include <fast_lock.h>
+#else
+/*This only works in a single threaded environment */
+#define FAST_LOCK int
+#define FASTLOCKINIT(PFAST_LOCK)
+#define FASTLOCK(PFAST_LOCK)
+#define FASTUNLOCK(PFAST_LOCK)
+#endif
+static FAST_LOCK asLock;
+static int	asLockInit=TRUE;
 int	asActive = FALSE;
-
-/*storage for freelist */
 static void *freeListPvt = NULL;
+
+/*following must be global because asCa nneeds it*/
+ASBASE	volatile *pasbase=NULL;
+static ASBASE *pasbasenew=NULL;
 
 #define RPCL_LEN 184
 #define DEFAULT "DEFAULT"
 
 
 /*private routines */
+static long asAddMemberPvt(ASMEMBERPVT *pasMemberPvt,char *asgName);
+static long asComputeAllAsgPvt(void);
+static long asComputeAsgPvt(ASG *pasg);
+static long asComputePvt(ASCLIENTPVT asClientPvt);
 static void asFreeAll(ASBASE *pasbase);
 static UAG *asUagAdd(char *uagName);
 static long asUagAddUser(UAG *puag,char *user);
@@ -92,43 +74,59 @@ static long asAsgRuleUagAdd(ASGRULE *pasgrule,char *name);
 static long asAsgRuleHagAdd(ASGRULE *pasgrule,char *name);
 static long asAsgRuleCalc(ASGRULE *pasgrule,char *calc);
 
+/*
+  asInitialize can be called while access security is already active.
+  This is accomplished by doing the following:
+
+  The version pointed to by pasbase is kept as is but locked against changes
+  A new version is created and pointed to by pasbasenew
+  If anything goes wrong. The original version is kept. This results is some
+  wasted space but at least things still work.
+  If the new access security configuration is successfully read then:
+     the old memberList is moved from old to new.
+     the old structures are freed.
+*/
 long asInitialize(ASINPUTFUNCPTR inputfunction)
 {
     ASG		*pasg;
     long	status;
-    ASBASE	*pasbaseold;
+    ASBASE 	*pasbaseold;
     GPHENTRY	*pgphentry;
     UAG		*puag;
     UAGNAME	*puagname;
     HAG		*phag;
     HAGNAME	*phagname;
 
-    pasbaseold = pasbase;
-    pasbase = asCalloc(1,sizeof(ASBASE));
+    if(asLockInit) {
+	FASTLOCKINIT(&asLock);
+	asLockInit = FALSE;
+    }
+    FASTLOCK(&asLock);
+    pasbasenew = asCalloc(1,sizeof(ASBASE));
     if(!freeListPvt) freeListInitPvt(&freeListPvt,sizeof(ASGCLIENT),20);
-    ellInit(&pasbase->uagList);
-    ellInit(&pasbase->hagList);
-    ellInit(&pasbase->asgList);
+    ellInit(&pasbasenew->uagList);
+    ellInit(&pasbasenew->hagList);
+    ellInit(&pasbasenew->asgList);
     asAsgAdd(DEFAULT);
     status = myParse(inputfunction);
     if(status) {
 	status = S_asLib_badConfig;
 	/*Not safe to call asFreeAll */
-	pasbase = pasbaseold;
+	FASTUNLOCK(&asLock);
 	return(status);
     }
-    pasg = (ASG *)ellFirst(&pasbase->asgList);
+    pasg = (ASG *)ellFirst(&pasbasenew->asgList);
     while(pasg) {
 	pasg->pavalue = asCalloc(ASMAXINP,sizeof(double));
 	pasg = (ASG *)ellNext((ELLNODE *)pasg);
     }
-    gphInitPvt(&pasbase->phash,256);
+    gphInitPvt(&((ASBASE *)pasbasenew)->phash,256);
     /*Hash each uagname and each hagname*/
-    puag = (UAG *)ellFirst(&pasbase->uagList);
+    puag = (UAG *)ellFirst(&pasbasenew->uagList);
     while(puag) {
 	puagname = (UAGNAME *)ellFirst(&puag->list);
 	while(puagname) {
-	    pgphentry = gphAdd(pasbase->phash,puagname->user,puag);
+	    pgphentry = gphAdd(pasbasenew->phash,puagname->user,puag);
 	    if(!pgphentry) {
 		epicsPrintf("UAG %s duplicate user = %s\n",
 		    puag->name, puagname->user);
@@ -137,11 +135,11 @@ long asInitialize(ASINPUTFUNCPTR inputfunction)
 	}
 	puag = (UAG *)ellNext((ELLNODE *)puag);
     }
-    phag = (HAG *)ellFirst(&pasbase->hagList);
+    phag = (HAG *)ellFirst(&pasbasenew->hagList);
     while(phag) {
 	phagname = (HAGNAME *)ellFirst(&phag->list);
 	while(phagname) {
-	    pgphentry = gphAdd(pasbase->phash,phagname->host,phag);
+	    pgphentry = gphAdd(pasbasenew->phash,phagname->host,phag);
 	    if(!pgphentry) {
 		epicsPrintf("HAG %s duplicate host = %s\n",
 		    phag->name,phagname->host);
@@ -150,7 +148,8 @@ long asInitialize(ASINPUTFUNCPTR inputfunction)
 	}
 	phag = (HAG *)ellNext((ELLNODE *)phag);
     }
-    asActive = TRUE;
+    pasbaseold = (ASBASE *)pasbase;
+    pasbase = (ASBASE volatile *)pasbasenew;
     if(pasbaseold) {
 	ASG		*poldasg;
 	ASGMEMBER	*poldmem;
@@ -162,55 +161,118 @@ long asInitialize(ASINPUTFUNCPTR inputfunction)
 	    while(poldmem) {
 		pnextoldmem = (ASGMEMBER *)ellNext((ELLNODE *)poldmem);
 		ellDelete(&poldasg->memberList,(ELLNODE *)poldmem);
-		status = asAddMember(&poldmem,poldmem->asgName);
+		status = asAddMemberPvt(&poldmem,poldmem->asgName);
 		poldmem = pnextoldmem;
 	    }
 	    poldasg = (ASG *)ellNext((ELLNODE *)poldasg);
 	}
 	asFreeAll(pasbaseold);
     }
+    asActive = TRUE;
+    FASTUNLOCK(&asLock);
     return(0);
+}
+
+long asInitFile(const char *filename,const char *substitutions)
+{
+    FILE *fp;
+    long status;
+
+    fp = fopen(filename,"r");
+    if(!fp) {
+	errMessage(0,"asInitFile failure on fopen");
+	return(S_asLib_badConfig);
+    }
+    status = asInitFP(fp,substitutions);
+    if(fclose(fp)==EOF) {
+	errMessage(0,"asInitFile fclose failure");
+	if(!status) status = S_asLib_badConfig;
+    }
+    return(status);
+}
+
+#define BUF_SIZE 200
+static char *my_buffer;
+static char *my_buffer_ptr;
+static FILE *stream;
+static char *mac_input_buffer=NULL;
+static MAC_HANDLE *macHandle = NULL;
+
+static int myInputFunction(char *buf, int max_size)
+{
+    int	l,n;
+    char *fgetsRtn;
+    
+    if(*my_buffer_ptr==0) {
+	if(macHandle) {
+	    fgetsRtn = fgets(mac_input_buffer,BUF_SIZE,stream);
+	    if(fgetsRtn) {
+		n = macExpandString(macHandle,mac_input_buffer,
+		    my_buffer,BUF_SIZE-1);
+		if(n<0) {
+		    epicsPrintf("access security: macExpandString failed\n"
+			"input line: %s\n",mac_input_buffer);
+		    return(0);
+		}
+	    }
+	} else {
+	    fgetsRtn = fgets(my_buffer,BUF_SIZE,stream);
+	}
+	if(fgetsRtn==NULL) return(0);
+	my_buffer_ptr = my_buffer;
+    }
+    l = strlen(my_buffer_ptr);
+    n = (l<=max_size ? l : max_size);
+    memcpy(buf,my_buffer_ptr,n);
+    my_buffer_ptr += n;
+    return(n);
+}
+
+long asInitFP(FILE *fp,const char *substitutions)
+{
+    char	buffer[BUF_SIZE];
+    char	mac_buffer[BUF_SIZE];
+    long	status;
+    char	**macPairs;
+
+    buffer[0] = 0;
+    my_buffer = buffer;
+    my_buffer_ptr = my_buffer;
+    stream = fp;
+    if(substitutions) {
+	if((status = macCreateHandle(&macHandle,NULL))) {
+	    errMessage(status,"asInitFP: macCreateHandle error");
+	    return(status);
+	}
+	macParseDefns(macHandle,(char *)substitutions,&macPairs);
+	if(macPairs ==NULL) {
+	    macDeleteHandle(macHandle);
+	    macHandle = NULL;
+	} else {
+	    macInstallMacros(macHandle,macPairs);
+	    free((void *)macPairs);
+	    mac_input_buffer = mac_buffer;
+	}
+    }
+    status = asInitialize(myInputFunction);	
+    if(macHandle) {
+	macDeleteHandle(macHandle);
+	macHandle = NULL;
+    }
+    return(status);
 }
 
 long asAddMember(ASMEMBERPVT *pasMemberPvt,char *asgName)
 {
-    ASGMEMBER	*pasgmember;
-    ASG		*pgroup;
-    ASGCLIENT	*pasgclient;
+    long	status;
 
     if(!asActive) return(S_asLib_asNotActive);
-    if(*pasMemberPvt) {
-	pasgmember = *pasMemberPvt;
-    } else {
-	pasgmember = asCalloc(1,sizeof(ASGMEMBER));
-	ellInit(&pasgmember->clientList);
-	*pasMemberPvt = pasgmember;
-    }
-    pasgmember->asgName = asgName;
-    pgroup = (ASG *)ellFirst(&pasbase->asgList);
-    while(pgroup) {
-	if(strcmp(pgroup->name,pasgmember->asgName)==0) goto got_it;
-	pgroup = (ASG *)ellNext((ELLNODE *)pgroup);
-    }
-    /* Put it in DEFAULT*/
-    pgroup = (ASG *)ellFirst(&pasbase->asgList);
-    while(pgroup) {
-	if(strcmp(pgroup->name,DEFAULT)==0) goto got_it;
-	pgroup = (ASG *)ellNext((ELLNODE *)pgroup);
-    }
-    errMessage(-1,"Logic Error in asAddMember");
-    exit(1);
-got_it:
-    pasgmember->pasg = pgroup;
-    ellAdd(&pgroup->memberList,(ELLNODE *)pasgmember);
-    pasgclient = (ASGCLIENT *)ellFirst(&pasgmember->clientList);
-    while(pasgclient) {
-	asCompute((ASCLIENTPVT)pasgclient);
-	pasgclient = (ASGCLIENT *)ellNext((ELLNODE *)pasgclient);
-    }
-    return(0);
+    FASTLOCK(&asLock);
+    status = asAddMemberPvt(pasMemberPvt,asgName);
+    FASTUNLOCK(&asLock);
+    return(status);
 }
-
+
 long asRemoveMember(ASMEMBERPVT *asMemberPvt)
 {
     ASGMEMBER	*pasgmember;
@@ -218,15 +280,18 @@ long asRemoveMember(ASMEMBERPVT *asMemberPvt)
     if(!asActive) return(S_asLib_asNotActive);
     pasgmember = *asMemberPvt;
     if(!pasgmember) return(S_asLib_badMember);
+    FASTLOCK(&asLock);
     if(ellCount(&pasgmember->clientList)>0) return(S_asLib_clientsExist);
     if(pasgmember->pasg) {
 	ellDelete(&pasgmember->pasg->memberList,(ELLNODE *)pasgmember);
     } else {
 	errMessage(-1,"Logic error in asRemoveMember");
+	FASTUNLOCK(&asLock);
 	exit(-1);
     }
     free((void *)pasgmember);
     *asMemberPvt = NULL;
+    FASTUNLOCK(&asLock);
     return(0);
 }
 
@@ -288,7 +353,7 @@ long asAddClient(ASCLIENTPVT *pasClientPvt,ASMEMBERPVT asMemberPvt,
     pasgclient->host = host;
     FASTLOCK(&asLock);
     ellAdd(&pasgmember->clientList,(ELLNODE *)pasgclient);
-    status = asCompute(pasgclient);
+    status = asComputePvt(pasgclient);
     FASTUNLOCK(&asLock);
     return(status);
 }
@@ -300,15 +365,15 @@ long asChangeClient(ASCLIENTPVT asClientPvt,int asl,char *user,char *host)
 
     if(!asActive) return(S_asLib_asNotActive);
     if(!pasgclient) return(S_asLib_badClient);
+    FASTLOCK(&asLock);
     pasgclient->level = asl;
     pasgclient->user = user;
     pasgclient->host = host;
-    FASTLOCK(&asLock);
-    status = asCompute(pasgclient);
+    status = asComputePvt(pasgclient);
     FASTUNLOCK(&asLock);
     return(status);
 }
-
+
 long asRemoveClient(ASCLIENTPVT *asClientPvt)
 {
     ASGCLIENT	*pasgclient = *asClientPvt;
@@ -329,7 +394,7 @@ long asRemoveClient(ASCLIENTPVT *asClientPvt)
     *asClientPvt = NULL;
     return(0);
 }
-
+
 long asRegisterClientCallback(ASCLIENTPVT asClientPvt,
 	ASCLIENTCALLBACK pcallback)
 {
@@ -343,7 +408,7 @@ long asRegisterClientCallback(ASCLIENTPVT asClientPvt,
     FASTUNLOCK(&asLock);
     return(0);
 }
-
+
 void *asGetClientPvt(ASCLIENTPVT asClientPvt)
 {
     ASGCLIENT	*pasgclient = asClientPvt;
@@ -358,125 +423,46 @@ void asPutClientPvt(ASCLIENTPVT asClientPvt,void *userPvt)
     ASGCLIENT	*pasgclient = asClientPvt;
     if(!asActive) return;
     if(!pasgclient) return;
+    FASTLOCK(&asLock);
     pasgclient->userPvt = userPvt;
+    FASTUNLOCK(&asLock);
 }
 
 long asComputeAllAsg(void)
 {
-    ASG         *pasg;
+    long status;
 
     if(!asActive) return(S_asLib_asNotActive);
-    pasg = (ASG *)ellFirst(&pasbase->asgList);
-    while(pasg) {
-	asComputeAsg(pasg);
-	pasg = (ASG *)ellNext((ELLNODE *)pasg);
-    }
-    return(0);
+    FASTLOCK(&asLock);
+    status = asComputeAllAsgPvt();
+    FASTUNLOCK(&asLock);
+    return(status);
 }
 
 long asComputeAsg(ASG *pasg)
 {
-    ASGRULE	*pasgrule;
-    ASGMEMBER	*pasgmember;
-    ASGCLIENT	*pasgclient;
+    long status;
 
     if(!asActive) return(S_asLib_asNotActive);
-    pasgrule = (ASGRULE *)ellFirst(&pasg->ruleList);
-    while(pasgrule) {
-	double	result;
-	long	status;
-
-	if(pasgrule->calc && (pasg->inpChanged & pasgrule->inpUsed)) {
-	    status = calcPerform(pasg->pavalue,&result,pasgrule->rpcl);
-	    if(status) {
-		pasgrule->result = 0;
-		errMessage(status,"asComputeAsg");
-	    } else {
-		pasgrule->result = ((result>.99) && (result<1.01)) ? 1 : 0;
-	    }
-	}
-	pasgrule = (ASGRULE *)ellNext((ELLNODE *)pasgrule);
-    }
-    pasg->inpChanged = FALSE;
-    pasgmember = (ASGMEMBER *)ellFirst(&pasg->memberList);
-    while(pasgmember) {
-	pasgclient = (ASGCLIENT *)ellFirst(&pasgmember->clientList);
-	while(pasgclient) {
-	    asCompute((ASCLIENTPVT)pasgclient);
-	    pasgclient = (ASGCLIENT *)ellNext((ELLNODE *)pasgclient);
-	}
-	pasgmember = (ASGMEMBER *)ellNext((ELLNODE *)pasgmember);
-    }
-    return(0);
+    FASTLOCK(&asLock);
+    status = asComputeAsgPvt(pasg);
+    FASTUNLOCK(&asLock);
+    return(status);
 }
-
+
 long asCompute(ASCLIENTPVT asClientPvt)
 {
-    asAccessRights	access=asNOACCESS;
-    ASGCLIENT		*pasgclient = asClientPvt;
-    ASGMEMBER		*pasgMember;
-    ASG			*pasg;
-    ASGRULE		*pasgrule;
-    asAccessRights	oldaccess;
-    GPHENTRY		*pgphentry;
+    long status;
 
     if(!asActive) return(S_asLib_asNotActive);
-    if(!pasgclient) return(S_asLib_badClient);
-    pasgMember = pasgclient->pasgMember;
-    if(!pasgMember) return(S_asLib_badMember);
-    pasg = pasgMember->pasg;
-    if(!pasg) return(S_asLib_badAsg);
-    oldaccess=pasgclient->access;
-    pasgrule = (ASGRULE *)ellFirst(&pasg->ruleList);
-    while(pasgrule) {
-	if(access == asWRITE) break;
-	if(access>=pasgrule->access) goto next_rule;
-	if(pasgclient->level > pasgrule->level) goto next_rule;
-	/*if uagList is empty then no need to check uag*/
-	if(ellCount(&pasgrule->uagList)>0){
-	    ASGUAG	*pasguag;
-	    UAG		*puag;
-
-	    pasguag = (ASGUAG *)ellFirst(&pasgrule->uagList);
-	    while(pasguag) {
-		if((puag = pasguag->puag)) {
-		    pgphentry = gphFind(pasbase->phash,pasgclient->user,puag);
-		    if(pgphentry) goto check_hag;
-		}
-		pasguag = (ASGUAG *)ellNext((ELLNODE *)pasguag);
-	    }
-	    goto next_rule;
-	}
-check_hag:
-	/*if hagList is empty then no need to check hag*/
-	if(ellCount(&pasgrule->hagList)>0) {
-	    ASGHAG	*pasghag;
-	    HAG		*phag;
-
-	    pasghag = (ASGHAG *)ellFirst(&pasgrule->hagList);
-	    while(pasghag) {
-		if((phag = pasghag->phag)) {
-		    pgphentry=gphFind(pasbase->phash,pasgclient->host,phag);
-		    if(pgphentry) goto check_calc;
-		}
-		pasghag = (ASGHAG *)ellNext((ELLNODE *)pasghag);
-	    }
-	    goto next_rule;
-	}
-check_calc:
-	if(!pasgrule->calc
-	|| (!(pasg->inpBad & pasgrule->inpUsed) && (pasgrule->result==1)))
-	    access = pasgrule->access;
-next_rule:
-	pasgrule = (ASGRULE *)ellNext((ELLNODE *)pasgrule);
-    }
-    pasgclient->access = access;
-    if(pasgclient->pcallback && oldaccess!=access) {
-	(*pasgclient->pcallback)(pasgclient,asClientCOAR);
-    }
-    return(0);
+    FASTLOCK(&asLock);
+    status = asComputePvt(asClientPvt);
+    FASTUNLOCK(&asLock);
+    return(status);
 }
 
+/*The dump routines do not lock. Thus they may get inconsistant data.*/
+/*HOWEVER if they did lock and a user interrupts one of then then BAD BAD*/
 static char *asAccessName[] = {"NONE","READ","WRITE"};
 static char *asLevelName[] = {"ASL0","ASL1"};
 int asDump(
@@ -805,6 +791,7 @@ int asDumpHash(void)
 }
 
 /*Start of private routines*/
+/* asCalloc is "friend" function */
 void * asCalloc(size_t nobj,size_t size)
 {
     void *p;
@@ -817,6 +804,160 @@ void * asCalloc(size_t nobj,size_t size)
     abort();
 #endif
     return(NULL);
+}
+
+static long asAddMemberPvt(ASMEMBERPVT *pasMemberPvt,char *asgName)
+{
+    ASGMEMBER	*pasgmember;
+    ASG		*pgroup;
+    ASGCLIENT	*pasgclient;
+
+    if(*pasMemberPvt) {
+	pasgmember = *pasMemberPvt;
+    } else {
+	pasgmember = asCalloc(1,sizeof(ASGMEMBER));
+	ellInit(&pasgmember->clientList);
+	*pasMemberPvt = pasgmember;
+    }
+    pasgmember->asgName = asgName;
+    pgroup = (ASG *)ellFirst(&pasbase->asgList);
+    while(pgroup) {
+	if(strcmp(pgroup->name,pasgmember->asgName)==0) goto got_it;
+	pgroup = (ASG *)ellNext((ELLNODE *)pgroup);
+    }
+    /* Put it in DEFAULT*/
+    pgroup = (ASG *)ellFirst(&pasbase->asgList);
+    while(pgroup) {
+	if(strcmp(pgroup->name,DEFAULT)==0) goto got_it;
+	pgroup = (ASG *)ellNext((ELLNODE *)pgroup);
+    }
+    errMessage(-1,"Logic Error in asAddMember");
+    exit(1);
+got_it:
+    pasgmember->pasg = pgroup;
+    ellAdd(&pgroup->memberList,(ELLNODE *)pasgmember);
+    pasgclient = (ASGCLIENT *)ellFirst(&pasgmember->clientList);
+    while(pasgclient) {
+	asComputePvt((ASCLIENTPVT)pasgclient);
+	pasgclient = (ASGCLIENT *)ellNext((ELLNODE *)pasgclient);
+    }
+    return(0);
+}
+
+static long asComputeAllAsgPvt(void)
+{
+    ASG         *pasg;
+
+    if(!asActive) return(S_asLib_asNotActive);
+    pasg = (ASG *)ellFirst(&pasbase->asgList);
+    while(pasg) {
+	asComputeAsgPvt(pasg);
+	pasg = (ASG *)ellNext((ELLNODE *)pasg);
+    }
+    return(0);
+}
+
+static long asComputeAsgPvt(ASG *pasg)
+{
+    ASGRULE	*pasgrule;
+    ASGMEMBER	*pasgmember;
+    ASGCLIENT	*pasgclient;
+
+    if(!asActive) return(S_asLib_asNotActive);
+    pasgrule = (ASGRULE *)ellFirst(&pasg->ruleList);
+    while(pasgrule) {
+	double	result;
+	long	status;
+
+	if(pasgrule->calc && (pasg->inpChanged & pasgrule->inpUsed)) {
+	    status = calcPerform(pasg->pavalue,&result,pasgrule->rpcl);
+	    if(status) {
+		pasgrule->result = 0;
+		errMessage(status,"asComputeAsg");
+	    } else {
+		pasgrule->result = ((result>.99) && (result<1.01)) ? 1 : 0;
+	    }
+	}
+	pasgrule = (ASGRULE *)ellNext((ELLNODE *)pasgrule);
+    }
+    pasg->inpChanged = FALSE;
+    pasgmember = (ASGMEMBER *)ellFirst(&pasg->memberList);
+    while(pasgmember) {
+	pasgclient = (ASGCLIENT *)ellFirst(&pasgmember->clientList);
+	while(pasgclient) {
+	    asComputePvt((ASCLIENTPVT)pasgclient);
+	    pasgclient = (ASGCLIENT *)ellNext((ELLNODE *)pasgclient);
+	}
+	pasgmember = (ASGMEMBER *)ellNext((ELLNODE *)pasgmember);
+    }
+    return(0);
+}
+
+static long asComputePvt(ASCLIENTPVT asClientPvt)
+{
+    asAccessRights	access=asNOACCESS;
+    ASGCLIENT		*pasgclient = asClientPvt;
+    ASGMEMBER		*pasgMember;
+    ASG			*pasg;
+    ASGRULE		*pasgrule;
+    asAccessRights	oldaccess;
+    GPHENTRY		*pgphentry;
+
+    if(!asActive) return(S_asLib_asNotActive);
+    if(!pasgclient) return(S_asLib_badClient);
+    pasgMember = pasgclient->pasgMember;
+    if(!pasgMember) return(S_asLib_badMember);
+    pasg = pasgMember->pasg;
+    if(!pasg) return(S_asLib_badAsg);
+    oldaccess=pasgclient->access;
+    pasgrule = (ASGRULE *)ellFirst(&pasg->ruleList);
+    while(pasgrule) {
+	if(access == asWRITE) break;
+	if(access>=pasgrule->access) goto next_rule;
+	if(pasgclient->level > pasgrule->level) goto next_rule;
+	/*if uagList is empty then no need to check uag*/
+	if(ellCount(&pasgrule->uagList)>0){
+	    ASGUAG	*pasguag;
+	    UAG		*puag;
+
+	    pasguag = (ASGUAG *)ellFirst(&pasgrule->uagList);
+	    while(pasguag) {
+		if((puag = pasguag->puag)) {
+		    pgphentry = gphFind(pasbase->phash,pasgclient->user,puag);
+		    if(pgphentry) goto check_hag;
+		}
+		pasguag = (ASGUAG *)ellNext((ELLNODE *)pasguag);
+	    }
+	    goto next_rule;
+	}
+check_hag:
+	/*if hagList is empty then no need to check hag*/
+	if(ellCount(&pasgrule->hagList)>0) {
+	    ASGHAG	*pasghag;
+	    HAG		*phag;
+
+	    pasghag = (ASGHAG *)ellFirst(&pasgrule->hagList);
+	    while(pasghag) {
+		if((phag = pasghag->phag)) {
+		    pgphentry=gphFind(pasbase->phash,pasgclient->host,phag);
+		    if(pgphentry) goto check_calc;
+		}
+		pasghag = (ASGHAG *)ellNext((ELLNODE *)pasghag);
+	    }
+	    goto next_rule;
+	}
+check_calc:
+	if(!pasgrule->calc
+	|| (!(pasg->inpBad & pasgrule->inpUsed) && (pasgrule->result==1)))
+	    access = pasgrule->access;
+next_rule:
+	pasgrule = (ASGRULE *)ellNext((ELLNODE *)pasgrule);
+    }
+    pasgclient->access = access;
+    if(pasgclient->pcallback && oldaccess!=access) {
+	(*pasgclient->pcallback)(pasgclient,asClientCOAR);
+    }
+    return(0);
 }
 
 static void asFreeAll(ASBASE *pasbase)
@@ -902,13 +1043,14 @@ static void asFreeAll(ASBASE *pasbase)
     free((void *)pasbase);
 }
 
+/*Beginning of routines called by lex code*/
 static UAG *asUagAdd(char *uagName)
 {
     UAG		*pprev;
     UAG		*pnext;
     UAG		*puag;
     int		cmpvalue;
-    ASBASE	*pbase = (ASBASE *)pasbase;
+    ASBASE	*pasbase = (ASBASE *)pasbasenew;
 
     /*Insert in alphabetic order*/
     pnext = (UAG *)ellFirst(&pasbase->uagList);
@@ -926,10 +1068,10 @@ static UAG *asUagAdd(char *uagName)
     puag->name = (char *)(puag+1);
     strcpy(puag->name,uagName);
     if(pnext==NULL) { /*Add to end of list*/
-	ellAdd(&pbase->uagList,(ELLNODE *)puag);
+	ellAdd(&pasbase->uagList,(ELLNODE *)puag);
     } else {
 	pprev = (UAG *)ellPrevious((ELLNODE *)pnext);
-        ellInsert(&pbase->uagList,(ELLNODE *)pprev,(ELLNODE *)puag);
+        ellInsert(&pasbase->uagList,(ELLNODE *)pprev,(ELLNODE *)puag);
     }
     return(puag);
 }
@@ -939,7 +1081,7 @@ static long asUagAddUser(UAG *puag,char *user)
     UAGNAME	*puagname;
 
     if(!puag) return(0);
-    puagname = asCalloc(1,sizeof(UAG)+strlen(user)+1);
+    puagname = asCalloc(1,sizeof(UAGNAME)+strlen(user)+1);
     puagname->user = (char *)(puagname+1);
     strcpy(puagname->user,user);
     ellAdd(&puag->list,(ELLNODE *)puagname);
@@ -952,7 +1094,7 @@ static HAG *asHagAdd(char *hagName)
     HAG		*pnext;
     HAG		*phag;
     int		cmpvalue;
-    ASBASE	*pbase = (ASBASE *)pasbase;
+    ASBASE	*pasbase = (ASBASE *)pasbasenew;
 
     /*Insert in alphabetic order*/
     pnext = (HAG *)ellFirst(&pasbase->hagList);
@@ -970,10 +1112,10 @@ static HAG *asHagAdd(char *hagName)
     phag->name = (char *)(phag+1);
     strcpy(phag->name,hagName);
     if(pnext==NULL) { /*Add to end of list*/
-	ellAdd(&pbase->hagList,(ELLNODE *)phag);
+	ellAdd(&pasbase->hagList,(ELLNODE *)phag);
     } else {
 	pprev = (HAG *)ellPrevious((ELLNODE *)pnext);
-	ellInsert(&pbase->hagList,(ELLNODE *)pprev,(ELLNODE *)phag);
+	ellInsert(&pasbase->hagList,(ELLNODE *)pprev,(ELLNODE *)phag);
     }
     return(phag);
 }
@@ -983,7 +1125,7 @@ static long asHagAddHost(HAG *phag,char *host)
     HAGNAME	*phagname;
 
     if(!phag) return(0);
-    phagname = asCalloc(1,sizeof(HAG)+strlen(host)+1);
+    phagname = asCalloc(1,sizeof(HAGNAME)+strlen(host)+1);
     phagname->host = (char *)(phagname+1);
     strcpy(phagname->host,host);
     ellAdd(&phag->list,(ELLNODE *)phagname);
@@ -996,7 +1138,7 @@ static ASG *asAsgAdd(char *asgName)
     ASG		*pnext;
     ASG		*pasg;
     int		cmpvalue;
-    ASBASE	*pbase = (ASBASE *)pasbase;
+    ASBASE	*pasbase = (ASBASE *)pasbasenew;
 
     /*Insert in alphabetic order*/
     pnext = (ASG *)ellFirst(&pasbase->asgList);
@@ -1021,10 +1163,10 @@ static ASG *asAsgAdd(char *asgName)
     pasg->name = (char *)(pasg+1);
     strcpy(pasg->name,asgName);
     if(pnext==NULL) { /*Add to end of list*/
-	ellAdd(&pbase->asgList,(ELLNODE *)pasg);
+	ellAdd(&pasbase->asgList,(ELLNODE *)pasg);
     } else {
 	pprev = (ASG *)ellPrevious((ELLNODE *)pnext);
-	ellInsert(&pbase->asgList,(ELLNODE *)pprev,(ELLNODE *)pasg);
+	ellInsert(&pasbase->asgList,(ELLNODE *)pprev,(ELLNODE *)pasg);
     }
     return(pasg);
 }
@@ -1056,11 +1198,13 @@ static ASGRULE *asAsgAddRule(ASG *pasg,asAccessRights access,int level)
     ellAdd(&pasg->ruleList,(ELLNODE *)pasgrule);
     return(pasgrule);
 }
-
+
 static long asAsgRuleUagAdd(ASGRULE *pasgrule,char *name)
 {
     ASGUAG	*pasguag;
     UAG		*puag;
+    ASBASE	*pasbase = (ASBASE *)pasbasenew;
+    long	status;
 
     if(!pasgrule) return(0);
     puag = (UAG *)ellFirst(&pasbase->uagList);
@@ -1068,17 +1212,23 @@ static long asAsgRuleUagAdd(ASGRULE *pasgrule,char *name)
 	if(strcmp(puag->name,name)==0) break;
 	puag = (UAG *)ellNext((ELLNODE *)puag);
     }
-    if(!puag) return(S_asLib_noUag);
+    if(!puag){
+	status = S_asLib_noUag;
+	errMessage(status,": access security Error while adding UAG to RULE");
+	return(S_asLib_noUag);
+    }
     pasguag = asCalloc(1,sizeof(ASGUAG));
     pasguag->puag = puag;
     ellAdd(&pasgrule->uagList,(ELLNODE *)pasguag);
     return(0);
 }
-
+
 static long asAsgRuleHagAdd(ASGRULE *pasgrule,char *name)
 {
     ASGHAG	*pasghag;
     HAG		*phag;
+    ASBASE	*pasbase = (ASBASE *)pasbasenew;
+    long	status;
 
     if(!pasgrule) return(0);
     phag = (HAG *)ellFirst(&pasbase->hagList);
@@ -1086,7 +1236,11 @@ static long asAsgRuleHagAdd(ASGRULE *pasgrule,char *name)
 	if(strcmp(phag->name,name)==0) break;
 	phag = (HAG *)ellNext((ELLNODE *)phag);
     }
-    if(!phag) return(S_asLib_noHag);
+    if(!phag){
+	status = S_asLib_noHag;
+	errMessage(status,": access security Error while adding HAG to RULE");
+        return(S_asLib_noHag);
+    }
     pasghag = asCalloc(1,sizeof(ASGHAG));
     pasghag->phag = phag;
     ellAdd(&pasgrule->hagList,(ELLNODE *)pasghag);
@@ -1109,6 +1263,7 @@ static long asAsgRuleCalc(ASGRULE *pasgrule,char *calc)
 	pasgrule->calc = NULL;
 	pasgrule->rpcl = NULL;
 	status = S_asLib_badCalc;
+	errMessage(status,":Access Security Failure");
     } else {
 	int i;
 

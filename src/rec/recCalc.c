@@ -142,7 +142,7 @@ static long init_record(pcalc)
     }
     status=postfix(pcalc->calc,rpbuf,&error_number);
     if(status) return(status);
-    memcpy(rpbuf,pcalc->rpcl,sizeof(pcalc->rpcl));
+    memcpy(pcalc->rpcl,rpbuf,sizeof(pcalc->rpcl));
     return(0);
 }
 
@@ -182,7 +182,7 @@ static long special(paddr,after)
     case(SPC_CALC):
 	status=postfix(pcalc->calc,rpbuf,&error_number);
 	if(status) return(status);
-	memcpy(rpbuf,pcalc->rpcl,sizeof(pcalc->rpcl));
+	memcpy(pcalc->rpcl,rpbuf,sizeof(pcalc->rpcl));
 	db_post_events(pcalc,pcalc->calc,DBE_VALUE);
 	return(0);
     default:

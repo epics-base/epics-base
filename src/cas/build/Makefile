@@ -42,22 +42,18 @@ LIBSRCS += casMonitor.cc
 LIBSRCS += casMonEvent.cc
 LIBSRCS += inBuf.cc
 LIBSRCS += outBuf.cc
-#LIBSRCS += dgInBuf.cc 
 LIBSRCS += casCtx.cc 
 LIBSRCS += casEventMask.cc
 LIBSRCS += ioBlocked.cc
-#LIBSRCS += casMsgIO.cc
 
 LIBSRCS += caServerOS.cc
 LIBSRCS += casIntfOS.cc
 LIBSRCS += casDGIntfOS.cc
-LIBSRCS += casDGOS.cc
 LIBSRCS += casStreamOS.cc
 
 LIBSRCS += caServerIO.cc
 LIBSRCS += casIntfIO.cc
 LIBSRCS += casDGIntfIO.cc
-#LIBSRCS += casDGIO.cc
 LIBSRCS += casStreamIO.cc
 
 LIBRARY = cas

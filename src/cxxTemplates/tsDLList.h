@@ -31,6 +31,9 @@
  *
  * History
  * $Log$
+ * Revision 1.14  1998/10/23 00:20:41  jhill
+ * attempted to clean up HP-UX warnings
+ *
  * Revision 1.13  1998/06/16 03:01:44  jhill
  * cosmetic
  *
@@ -206,9 +209,6 @@ public:
 	T *first(void) const { return this->pFirst; }
 	T *last(void) const { return this->pLast; }
 
-protected:
-	T		*getFirst(void) const { return pFirst; }
-	T		*getLast(void) const { return pLast; }
 private:
 	T		*pFirst;
 	T		*pLast;

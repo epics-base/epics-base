@@ -32,7 +32,7 @@
 // NOTES: 
 // 1) the routines in this file provide backward compatibility with the original
 // "C" based file descriptor manager API
-// 2) This library is not thread safe
+// 2) This library is _not_ thread safe
 //
 
 #define epicsExportSharedSymbols
@@ -62,37 +62,6 @@ private:
 	epicsShareFunc virtual void callBack ();
 };
 
-epicsShareFunc fdRegForOldFdmgr::fdRegForOldFdmgr (const SOCKET fdIn, const fdRegType typeIn, 
-	const bool onceOnlyIn, fdManager &managerIn, pCallBackFDMgr pFuncIn, void *pParamIn) :
-    fdReg (fdIn, typeIn, onceOnlyIn, managerIn),
-    pFunc (pFuncIn),
-    pParam (pParamIn)
-{
-    if (pFuncIn==NULL) {
-#       ifdef noExceptionsFromCXX
-            assert (0);
-#       else            
-            throw noFunctionSpecified ();
-#       endif
-    }
-}
-
-epicsShareFunc fdRegForOldFdmgr::~fdRegForOldFdmgr ()
-{
-    if (this->pFunc==NULL) {
-#       ifdef noExceptionsFromCXX
-            assert (0);
-#       else            
-            throw doubleDelete ();
-#       endif
-    }
-}
-
-epicsShareFunc void fdRegForOldFdmgr::callBack ()
-{
-    (*this->pFunc) (this->pParam);
-}
-
 class oldFdmgr : public fdManager {
     friend class osiTimerForOldFdmgr;
     friend epicsShareFunc int epicsShareAPI fdmgr_clear_timeout (fdctx *pfdctx, fdmgrAlarmId id);
@@ -104,9 +73,8 @@ private:
     chronIntIdResTable <osiTimerForOldFdmgr> resTbl;
 };
 
-
 //
-// osiTimer
+// osiTimerForOldFdmgr
 //
 class osiTimerForOldFdmgr : public osiTimer, public chronIntIdRes<osiTimerForOldFdmgr> {
 public:
@@ -138,6 +106,38 @@ private:
     void *pParam;
     unsigned id;
 };
+
+
+epicsShareFunc fdRegForOldFdmgr::fdRegForOldFdmgr (const SOCKET fdIn, const fdRegType typeIn, 
+	const bool onceOnlyIn, fdManager &managerIn, pCallBackFDMgr pFuncIn, void *pParamIn) :
+    fdReg (fdIn, typeIn, onceOnlyIn, managerIn),
+    pFunc (pFuncIn),
+    pParam (pParamIn)
+{
+    if (pFuncIn==NULL) {
+#       ifdef noExceptionsFromCXX
+            assert (0);
+#       else            
+            throw noFunctionSpecified ();
+#       endif
+    }
+}
+
+epicsShareFunc fdRegForOldFdmgr::~fdRegForOldFdmgr ()
+{
+    if (this->pFunc==NULL) {
+#       ifdef noExceptionsFromCXX
+            assert (0);
+#       else            
+            throw doubleDelete ();
+#       endif
+    }
+}
+
+epicsShareFunc void fdRegForOldFdmgr::callBack ()
+{
+    (*this->pFunc) (this->pParam);
+}
 
 osiTimerForOldFdmgr::osiTimerForOldFdmgr (oldFdmgr &fdmgrIn, 
     double delayIn, pCallBackFDMgr pFuncIn, void *pParamIn) :

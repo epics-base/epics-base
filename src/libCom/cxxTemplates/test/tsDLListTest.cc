@@ -61,7 +61,9 @@ int main ()
     pJane = new jane("JA");
     janeList.add(*pJane);   
     pJane = new jane("JB");
+    assert ( janeList.find ( *pJane ) == -1 );
     janeList.add(*pJane);   
+    assert ( janeList.find ( *pJane ) == 1 );
 
     while ( (pJane = janeFwdIter()) ) {
         pJane->show();

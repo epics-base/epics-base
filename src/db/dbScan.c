@@ -460,7 +460,7 @@ static void periodicTask(struct scan_list *psl)
 	delay = psl->ticks - (end_time - start_time);
 	if(delay<=0) delay=1;
 	taskDelay(delay);
-	start_time = end_time + delay;
+	start_time = tickGet();
     }
 }
 

@@ -95,6 +95,5 @@ void flow_control(struct ioc_in_use *piiu)
 	}
 
 	UNLOCK;
-
 	return;
 }

@@ -101,7 +101,7 @@ extern "C" void putNotifyCompletion ( putNotify *ppn )
     else {
         errlogPrintf ( "put notify completion with nill pNotify?\n" );
     }
-    // no need to lock here because only one put notify at a time is lalowed to run
+    // no need to lock here because only one put notify at a time is allowed to run
     memset ( &pBlocker->pn, '\0', sizeof ( pBlocker->pn ) );
     pBlocker->pNotify = 0;
     pBlocker->block.signal ();

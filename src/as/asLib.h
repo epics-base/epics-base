@@ -43,7 +43,6 @@ long asCheckPut(ASCLIENTPVT asClientPvt);
 		((asClientPvt)->access>=asWRITE ? TRUE : FALSE)\
 	: TRUE)
 
-epicsShareFunc int epicsShareAPI asInit(void);
 epicsShareFunc long epicsShareAPI asInitialize(ASINPUTFUNCPTR inputfunction);
 epicsShareFunc long epicsShareAPI asInitFile(const char *filename,const char *substitutions);
 epicsShareFunc long epicsShareAPI asInitFP(FILE *fp,const char *substitutions);

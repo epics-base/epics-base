@@ -31,9 +31,10 @@ typedef struct {
 
 epicsShareFunc int epicsShareAPI asSetFilename(char *acf);
 epicsShareFunc int epicsShareAPI asSetSubstitutions(char *substitutions);
+epicsShareFunc int epicsShareAPI asInit(void);
 epicsShareFunc int epicsShareAPI asInitAsyn(ASDBCALLBACK *pcallback);
 epicsShareFunc int epicsShareAPI asDbGetAsl( void *paddr);
-epicsShareFunc ASMEMBERPVT  epicsShareAPI asDbGetMemberPvt( void *paddr);
+epicsShareFunc void *  epicsShareAPI asDbGetMemberPvt( void *paddr);
 epicsShareFunc int epicsShareAPI asdbdump( void);
 epicsShareFunc int epicsShareAPI aspuag(char *uagname);
 epicsShareFunc int epicsShareAPI asphag(char *hagname);

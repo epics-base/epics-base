@@ -212,13 +212,13 @@ int epicsShareAPI asDbGetAsl(void *paddress)
     return((int)pflddes->as_level);
 }
 
-ASMEMBERPVT  epicsShareAPI asDbGetMemberPvt(void *paddress)
+void * epicsShareAPI asDbGetMemberPvt(void *paddress)
 {
     DBADDR	*paddr = paddress;
     dbCommon	*precord;
 
     precord = paddr->precord;
-    return((ASMEMBERPVT)precord->asp);
+    return((void *)precord->asp);
 }
 
 static void astacCallback(ASCLIENTPVT clientPvt,asClientStatus status)

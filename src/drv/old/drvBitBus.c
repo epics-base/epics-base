@@ -277,6 +277,11 @@ int __BBConfig(unsigned long Link,
     logMsg("Error: BBConfig() Attempt to reconfigure link %d!\n", Link);
     return(-1);
   }
+  if (IrqVector%4 != 0)
+  {
+    epicsPrintf("Error: BBConfig() IrqVector must be multiple of 4!\n", Link);
+    return(-1);
+  }
 
   if ((pBBLink[Link] = (BitbusLinkStruct *) malloc(sizeof(BitbusLinkStruct))) == NULL)
   {

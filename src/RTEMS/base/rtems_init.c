@@ -145,21 +145,13 @@ static void stackCheckCallFunc(const iocshArgBuf *args)
     Stack_check_Dump_usage ();
 }
 
+/*
+ * Register RTEMS-specific commands
+ */
 static void iocshRegisterRTEMS (void)
 {
-    /*
-     * By using a weak reference this code will work with full IOC applications
-     * (where iocshRegister is present) and also with test applications
-     * (where iocshRegister is not present).
-     */
-    extern void iocshRegister(const iocshFuncDef *piocshFuncDef,
-                              iocshCallFunc func) __attribute__((weak)) ;
-    void (*rtemsEpicsIocshRegisterFunc)(const iocshFuncDef *piocshFuncDef,
-                                        iocshCallFunc func) = iocshRegister;
-    if (!rtemsEpicsIocshRegisterFunc)
-        return;
-    (*rtemsEpicsIocshRegisterFunc)(&netStatFuncDef, netStatCallFunc);
-    (*rtemsEpicsIocshRegisterFunc)(&stackCheckFuncDef, stackCheckCallFunc);
+    iocshRegister(&netStatFuncDef, netStatCallFunc);
+    iocshRegister(&stackCheckFuncDef, stackCheckCallFunc);
 }
 
 /*

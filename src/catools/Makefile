@@ -25,10 +25,12 @@ catools_LIBS += ca Com
 #Remove LIBNAME from the library names to be installed (make it a local library)
 INSTALL_LIBS= $(addprefix $(INSTALL_LIB)/,$(filterout $(TESTLIBNAME),$(LIBNAME)))
 
-PROD_HOST += caget
+PROD_HOST += caget camonitor
 
 caget_SRCS += caget.c
-caget_LIBS += catools ca Com
+camonitor_SRCS += camonitor.c
+
+PROD_LIBS += catools ca Com
 
 catools_DIR=.
 

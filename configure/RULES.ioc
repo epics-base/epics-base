@@ -1,5 +1,5 @@
 #RULES.ioc
-include $(EPICS_BASE)/configure/RULES_DIRS
+include $(CONFIG)/RULES_DIRS
 
 build: buildInstall
 install: buildInstall

@@ -94,8 +94,8 @@ int main()
 	clock_t start, finish;
 	double duration;
 	const unsigned LOOPS = 50000;
-	resTable<fred, testIntId > intTbl (8);	
-	resTable<jane, stringId> strTbl (8);	
+	resTable < fred, testIntId > intTbl;	
+	resTable < jane, stringId> strTbl;	
 	fred fred0("fred0",0);
 	fred fred1("fred1",0x1000a432);
 	fred fred2("fred2",0x0000a432);
@@ -122,18 +122,30 @@ int main()
 	testIntId intId9 (7);
 
 	stringId strId1("rrrrrrrrrrrrrrrrrrrrrrrrrr1");
+    strTbl.verify ();
 	stringId strId2("rrrrrrrrrrrrrrrrrrrrrrrrrr2");
+    strTbl.verify ();
 
 	assert (intTbl.add(fred0)==0);
+    intTbl.verify ();
 	assert (intTbl.add(fred1)==0);
+    intTbl.verify ();
 	assert (intTbl.add(fred2)==0);
+    intTbl.verify ();
 	assert (intTbl.add(fred3)==0);
+    intTbl.verify ();
 	assert (intTbl.add(fred4)==0);
+    intTbl.verify ();
 	assert (intTbl.add(fred5)==0);
+    intTbl.verify ();
 	assert (intTbl.add(fred6)==0);
+    intTbl.verify ();
 	assert (intTbl.add(fred7)==0);
+    intTbl.verify ();
 	assert (intTbl.add(fred8)==0);
+    intTbl.verify ();
 	assert (intTbl.add(fred9)==0);
+    intTbl.verify ();
 
 	start = clock();
 	for (i=0; i<LOOPS; i++) {
@@ -172,6 +184,10 @@ int main()
 
 	intTbl.remove(intId1);
 	intTbl.remove(intId2);
+	pFred = intTbl.lookup(intId1);	
+	assert(pFred==0);
+	pFred = intTbl.lookup(intId2);	
+	assert(pFred==0);
     
 	assert (strTbl.add(jane1)==0);
 	assert (strTbl.add(jane2)==0);
@@ -240,14 +256,16 @@ int main()
 	//
 	// hash distribution test
 	//
-    static const unsigned tableSize = 0x1000;
-	resTable< albert, testIntId > alTbl (tableSize);	
+    static const unsigned elementCount = 0x8000;
+    albert *pAlbert[elementCount];
+	resTable< albert, testIntId > alTbl;	
 
-	for (i=0; i<tableSize*8; i++) {
-		albert *pa = new albert (alTbl, i);
-		assert (pa);
+	for (i=0; i<elementCount; i++) {
+		pAlbert[i] = new albert (alTbl, i);
+		assert ( pAlbert[i] );
 	}
-	alTbl.show(1u);
+	alTbl.verify ();
+	alTbl.show (1u);
 
     resTableIter< albert, testIntId > alTblIter (alTbl);
     albert *pa;
@@ -255,7 +273,28 @@ int main()
     while ( (pa = alTblIter.next()) ) {
         i++;
     }
-    assert (i==tableSize*8);
+    assert (i==elementCount);
+	alTbl.verify ();
+
+	for ( i = 0; i < elementCount; i++ ) {
+		assert ( pAlbert[i] == alTbl.lookup( pAlbert[i]->getId() ) );
+	}
+	alTbl.verify ();
+
+    for ( i = 0; i < elementCount; i += 2 ) {
+        assert ( pAlbert[i] == alTbl.remove ( pAlbert[i]->getId() ) );
+	}
+	alTbl.verify ();
+
+    for ( i = 0; i < elementCount; i += 2 ) {
+        assert ( 0 == alTbl.lookup ( pAlbert[i]->getId() ) );
+	}
+	alTbl.verify ();
+
+    for ( i = 1; i < elementCount; i += 2 ) {
+        assert ( pAlbert[i] == alTbl.lookup ( pAlbert[i]->getId() ) );
+ 	}
+	alTbl.verify ();
 
 	return 0;
 }

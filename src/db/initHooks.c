@@ -1,8 +1,8 @@
-/* initHooks.c	ioc initialization hooks */ 
-/* share/src/db @(#)initHooks.c	1.5     7/11/94 */
+/* share/src/db/initHooks.c*/
 /*
- *      Author:		Marty Kraimer
+ *      Authors:        Benjamin Franksen (BESY) and Marty Kraimer
  *      Date:		06-01-91
+ *      major Revision: 07JuL97
  *
  *      Experimental Physics and Industrial Control System (EPICS)
  *
@@ -31,60 +31,64 @@
  * .02  09-10-92	rcz	changed return from void to long
  * .03  09-10-92	rcz	changed completely
  * .04  09-10-92	rcz	bug - moved call to setMasterTimeToSelf later
+ * .04  07-15-97        mrk     Benjamin Franksen allow multiple functions
  *
  */
 
 
 #include	<vxWorks.h>
+#include	<stdlib.h>
+#include	<stddef.h>
+#include	<stdio.h>
+#include	<ellLib.h>
 #include	<initHooks.h>
 
+typedef struct initHookLink {
+	ELLNODE		 node;
+	initHookFunction func;
+} initHookLink;
+
+static functionListInited = FALSE;
+static ELLLIST functionList;
+
+static void initFunctionList(void)
+{
+    ellInit(&functionList);
+    functionListInited = TRUE;
+}
 
 /*
- * INITHOOKS
- *
- * called by iocInit at various points during initialization
- *
+ * To be called before iocInit reaches state desired.
  */
-
-
-/* If this function (initHooks) is loaded, iocInit calls this function
- * at certain defined points during IOC initialization */
-void initHooks(callNumber)
-int	callNumber;
+int initHookRegister(initHookFunction func)
 {
-	switch (callNumber) {
-	case INITHOOKatBeginning :
-	    break;
-	case INITHOOKafterGetResources :
-	    break;
-	case INITHOOKafterLogInit :
-	    break;
-	case INITHOOKafterCallbackInit :
-	    break;
-	case INITHOOKafterCaLinkInit :
-	    break;
-	case INITHOOKafterInitDrvSup :
-	    break;
-	case INITHOOKafterInitRecSup :
-	    break;
-	case INITHOOKafterInitDevSup :
-	    break;
-	case INITHOOKafterTS_init :
-	    break;
-	case INITHOOKafterInitDatabase :
-	    break;
-	case INITHOOKafterFinishDevSup :
-	    break;
-	case INITHOOKafterScanInit :
-	    break;
-	case INITHOOKafterInterruptAccept :
-	    break;
-	case INITHOOKafterInitialProcess :
-	    break;
-	case INITHOOKatEnd :
-	    break;
-	default:
-	    break;
+	initHookLink *newHook;
+
+	if(!functionListInited) initFunctionList();
+	newHook = (initHookLink *)malloc(sizeof(initHookLink));
+	if (newHook == NULL)
+	{
+		printf("Cannot malloc a new initHookLink\n");
+		return ERROR;
 	}
-	return;
+	newHook->func = func;
+	ellAdd(&functionList,&newHook->node);
+	return OK;
+}
+
+/*
+ * Called by iocInit at various points during initialization.
+ * Do not call this function from any other function than iocInit.
+ */
+void initHooks(initHookState state)
+{
+	initHookLink *hook;
+
+	if(!functionListInited) initFunctionList();
+	hook = (initHookLink *)ellFirst(&functionList);
+	while(hook != NULL)
+	{
+		hook->func(state);
+		hook = (initHookLink *)ellNext(&hook->node);
+	}
 }

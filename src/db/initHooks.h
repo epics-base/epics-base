@@ -1,7 +1,8 @@
-/* share/src/db $Id$ */
+/* share/src/db/initHooks.h*/
 /*
- *      Author:		Marty Kraimer
+ *      Authors:	Benjamin Franksen (BESY) and Marty Kraimer
  *      Date:		06-01-91
+ *      major Revision: 07JuL97
  *
  *      Experimental Physics and Industrial Control System (EPICS)
  *
@@ -28,6 +29,7 @@
  * -----------------
  * .01  09-05-92	rcz	initial version
  * .02  09-10-92	rcz	changed completely
+ * .03  07-15-97	mrk	Benjamin Franksen allow multiple functions
  *
  */
 
@@ -35,20 +37,59 @@
 #ifndef INCinitHooksh
 #define INCinitHooksh 1
 
-#define INITHOOKatBeginning		0
-#define INITHOOKafterGetResources	1
-#define INITHOOKafterLogInit		2
-#define INITHOOKafterCallbackInit	3
-#define INITHOOKafterCaLinkInit		4
-#define INITHOOKafterInitDrvSup		5
-#define INITHOOKafterInitRecSup		6
-#define INITHOOKafterInitDevSup		7
-#define INITHOOKafterTS_init		8
-#define INITHOOKafterInitDatabase	9
-#define INITHOOKafterFinishDevSup	10
-#define INITHOOKafterScanInit		11
-#define INITHOOKafterInterruptAccept	12
-#define INITHOOKafterInitialProcess	13
-#define INITHOOKatEnd			14
+typedef enum {
+    initHookAtBeginning,
+    initHookAfterGetResources,
+    initHookAfterLogInit,
+    initHookAfterCallbackInit,
+    initHookAfterCaLinkInit,
+    initHookAfterInitDrvSup,
+    initHookAfterInitRecSup,
+    initHookAfterInitDevSup,
+    initHookAfterTS_init,
+    initHookAfterInitDatabase,
+    initHookAfterFinishDevSup,
+    initHookAfterScanInit,
+    initHookAfterInterruptAccept,
+    initHookAfterInitialProcess,
+    initHookAtEnd
+}initHookState;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#ifdef __STDC__
+typedef void (*initHookFunction)(initHookState state);
+int initHookRegister(initHookFunction func);
+void initHooks(initHookState state);
+#else /*__STDC__*/
+typedef void (*initHookFunction)();
+int initHookRegister();
+void initHooks();
+#endif /*__STDC__*/
+
+#ifdef __cplusplus
+}
+#endif
+
+/*FOLLOWING IS OBSOLETE*/
+/*The following are for compatibility with old initHooks.c functions*/
+#define INITHOOKatBeginning		initHookAtBeginning
+#define INITHOOKafterGetResources	initHookAfterGetResources
+#define INITHOOKafterLogInit		initHookAfterLogInit
+#define INITHOOKafterCallbackInit	initHookAfterCallbackInit
+#define INITHOOKafterCaLinkInit		initHookAfterCaLinkInit
+#define INITHOOKafterInitDrvSup		initHookAfterInitDrvSup
+#define INITHOOKafterInitRecSup		initHookAfterInitRecSup
+#define INITHOOKafterInitDevSup		initHookAfterInitDevSup
+#define INITHOOKafterTS_init		initHookAfterTS_init
+#define INITHOOKafterInitDatabase	initHookAfterInitDatabase
+#define INITHOOKafterFinishDevSup	initHookAfterFinishDevSup
+#define INITHOOKafterScanInit		initHookAfterScanInit
+#define INITHOOKafterInterruptAccept	initHookAfterInterruptAccept
+#define INITHOOKafterInitialProcess	initHookAfterInitialProcess
+#define INITHOOKatEnd			initHookAtEnd
+/*END OF OBSOLETE DEFINITIONS*/
 
 #endif /*INCinitHooksh*/

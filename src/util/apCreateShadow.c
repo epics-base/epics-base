@@ -93,7 +93,7 @@ main(argc, argv)
 /****************************************************************************
 PROCLINK
 ****************************************************************************/
-void
+static void
 procLink(name)
     char           *name;
 {
@@ -127,7 +127,7 @@ printf("procLink: compare ./appLoc and %s\n",name);
 /****************************************************************************
 CREATELINK
 ****************************************************************************/
-void
+static void
 createLink()
 {
 /*
@@ -146,7 +146,7 @@ createLink()
 /****************************************************************************
 DIRWALK applies a function to each file in a directory
 ****************************************************************************/
-void
+static void
 dirwalk(dir, fcn)
     char           *dir;
     void            (*fcn) ();
@@ -172,7 +172,7 @@ dirwalk(dir, fcn)
     }
     closedir(dfd);
 }
-void
+static void
 Usage()
 {
     printf("\nUsage:\t%s <appSystemTop>\n", progName);
@@ -184,7 +184,7 @@ Usage()
 PROCESSFILE
 	create a soft link and return
 ****************************************************************************/
-void
+static void
 processFile(name)
     char           *name;	/* regular file */
 {
@@ -199,7 +199,7 @@ processFile(name)
 }
 
 
-void
+static void
 init_setup(argc, argv)
     int             argc;
     char          **argv;
@@ -326,7 +326,7 @@ fprintf(stderr, "%s: FATAL ERROR - Illegal invocation\n", progName);
 }
 
 /*********************************************/
-void
+static void
 startFromHere()
 {
     char           *dir = ".";
@@ -356,7 +356,7 @@ startFromHere()
 PROCDIRENTRIES
     process directory entries
 ****************************************************************************/
-void
+static void
 procDirEntries(name)
     char           *name;	/* entry name */
 {

@@ -16,6 +16,43 @@
 <h2>Changes since beta2</h2>
 </center>
 
+<p><strong>function - New Database Definition Keyword</strong></p>
+
+<p>dbStaticLib and related programs now accept a new keyword in DBD files:</p>
+<pre>function(name)</pre>
+
+<p>Where '<span style="font-family: courier">name</span>' is the name of a
+function with "C" linkage that is included in the IOC binary. This function
+will be automatically registered with the registry at the same time as the
+record/device/driver tables, and is intended to make using subroutine records
+much easier on non-vxWorks systems.. Prior R3.14 releases required there to
+be a static registration routine for such subroutines.</p>
+
+<p>dbStaticLib has two additional routines to support this, dbDumpFunction()
+and dbWriteFunctionFP(). dbDumpFunction has been added to the iocsh command
+table.</p>
+
+<p><strong>iocsh</strong></p>
+
+<p>When executing commands from a script file, iocsh now echoes each command
+to the terminal before execution. This makes it much easier to see where
+errors are being reported.</p>
+
+<p><strong>Solaris build requirement</strong></p>
+
+<p><span style="font-family: courier">uname</span> must be defined for builds
+on solaris hosts because it is used to determine the solaris version.</p>
+
+<p><strong>RULES.Db</strong></p>
+
+<p>A <span style="font-family: courier">*[</span><span
+style="font-family: courier">nn</span><span
+style="font-family: courier">].</span><span
+style="font-family: courier">db</span> file will be created from an <span
+style="font-family: courier">*.template</span> and a <span
+style="font-family: courier">*[nn].substitutions</span> file ,where <span
+style="font-family: courier">nn</span> has a value between 0 and 99.</p>
+
 <p><strong>Support for 64 bit long</strong></p>
 
 <p>Many changes were made to support architectures on which a long is a 64
@@ -41,8 +78,7 @@ bit integer. The basic change was to change:</p>
 
 <p>The various parts of hardware link definitions now accept HEX values,
 e.g.</p>
-<pre>field(INP,"L0 A1 C0 S0xa @")
-</pre>
+<pre>field(INP,"L0 A1 C0 S0xa @")</pre>
 
 <p>NOTES:</p>
 <ul>
@@ -62,18 +98,21 @@ compatible between 3.13 and 3.14.</p>
     more efficient posix implementation.</li>
   <li>If PTHREAD_MUTEX_RECURSIVE is provided then the implementation uses
     only pthread_mutex. This is much faster (2 to 3 times as fast) as the
-    previous implementation. </li>
+    previous implementation.</li>
 </ul>
 
 <p><strong>Mac OS X</strong></p>
-<p>Now supported as development platform and as IOC.
+
+<p>Now supported as development platform and as IOC.</p>
 
 <p><strong>RTEMS</strong></p>
+
 <p>Additional RTEMS-pc386 network drivers are available</p>
 
 <p><strong>iocsh</strong></p>
-<p>Configurable iocsh command-line editing support (none, readline, libtecla)</p>
 
+<p>Configurable iocsh command-line editing support (none, readline,
+libtecla)</p>
 
 <center>
 <h2>Changes since beta1</h2>

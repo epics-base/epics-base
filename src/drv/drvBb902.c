@@ -1,5 +1,5 @@
 /* drvBb902.c */
-/* share/src/drv @(#)drvBb902.c	1.6     9/14/92 */
+/* share/src/drv $Id$ */
 /*
  * subroutines that are used to interface to the binary output cards
  *
@@ -35,6 +35,7 @@
  *                              > 0.
  * .03	08-10-92	joh	made number of cards runtime configurable 
  * .04	08-25-92	mrk	made masks a macro
+ * .05	09-14-93	mrk	Let report just display one hex value
  *				 
  */
 
@@ -67,7 +68,7 @@ struct {
 static long report(level)
     int level;
 {
-    register int i;
+    int i;
 
     bb902_io_report(level);
     return(0);
@@ -86,8 +87,8 @@ static long init()
 /* Burr-Brown 902 binary output memory structure */
 struct bo_bb902{
         short   csr;                    /* control status register */
-        short   low_value;              /* low order 16 bits value */
-        short   high_value;             /* high order 16 bits value */
+        unsigned short   low_value;              /* low order 16 bits value */
+        unsigned short   high_value;             /* high order 16 bits value */
         char    end_pad[0x100-6];       /* pad until next card */
 };
 
@@ -105,7 +106,7 @@ struct bo_bb902	**pbo_bb902s;	/* Burr-Brown 902s */
 int bb902_driver_init(){
 	int bomode;
         int status;
-	register short	i;
+	short	i;
 	struct bo_bb902	*pbo_bb902;
 
 	pbo_bb902s = (struct bo_bb902 **)calloc(MAX_BB_BO_CARDS,
@@ -142,11 +143,11 @@ int bb902_driver_init(){
  */
 
 int bb902_driver(card,val,mask)
-register unsigned short	card;
-register unsigned int	val;
-register unsigned int	mask;
+unsigned short	card;
+unsigned long	val;
+unsigned long	mask;
 {
-	register unsigned int work;
+	unsigned int work;
 
 	/* verify card exists */
 	if (!pbo_bb902s[card])
@@ -155,13 +156,12 @@ register unsigned int	mask;
 	/* get current output */
 	work = (pbo_bb902s[card]->high_value << 16) /* high */
 		+ pbo_bb902s[card]->low_value;	    /* low */
-
 	/* alter specified bits */
 	work = (work & ~mask) | (val & mask);
 
 	/* write new output */
-	pbo_bb902s[card]->low_value = (unsigned short)work;
 	pbo_bb902s[card]->high_value = (unsigned short)(work >> 16);
+		pbo_bb902s[card]->low_value = (unsigned short)work;
 	return (0);
 }
 
@@ -171,62 +171,33 @@ register unsigned int	mask;
  * read the binary output
  */
 int bb902_read(card,mask,pval)
-register unsigned short	card;
-unsigned int		mask;
-register unsigned int	*pval;
+unsigned short	card;
+unsigned int	mask;
+unsigned int	*pval;
 {
-    register unsigned int work;
+    unsigned int work;
 
 	/* verify card exists */
-	if (!pbo_bb902s[card])
-		return (-1);
+	if (!pbo_bb902s[card]) return (-1);
 	/* readback */
 	*pval = (pbo_bb902s[card]->high_value << 16)	/* high */
 	+ pbo_bb902s[card]->low_value;		/* low */
+	*pval &= mask;
 	return(0);
 }
 
-#define masks(K) ((1<<K))
 void bb902_io_report(level)
  short int level;
 {
-   register short i,j,k,l,m,num_chans;
-   int jval,kval,lval,mval;
+   unsigned int value;
+   int		 card;
 
-   for (i = 0; i < MAX_BB_BO_CARDS; i++){
-	if (pbo_bb902s[i]){
-           printf("BO: BB902:      card %d\n",i);
-           if (level > 1){
-               num_chans = bo_num_channels[BB902];
-               for(j=0,k=1,l=2,m=3;j < num_chans,k < num_chans, l < num_chans,m < num_chans;
-                   j+=IOR_MAX_COLS,k+= IOR_MAX_COLS,l+= IOR_MAX_COLS,m += IOR_MAX_COLS){
-        	if(j < num_chans){
-                        bb902_read(i,masks(j),&jval);
-                 	if (jval != 0) 
-                  		 jval = 1;
-                         printf("Chan %d = %x\t ",j,jval);
-                }  
-         	if(k < num_chans){
-                        bb902_read(i,masks(k),&kval);
-                        if (kval != 0) 
-                        	kval = 1;
-                        	printf("Chan %d = %x\t ",k,kval);
-                }
-                if(l < num_chans){
-                        bb902_read(i,masks(l),&lval);
-                	if (lval != 0) 
-                        	lval = 1;
-                	printf("Chan %d = %x \t",l,lval);
-                 }
-                  if(m < num_chans){
-                        bb902_read(i,masks(m),&mval);
-                 	if (mval != 0) 
-                        	mval = 1;
-                 	printf("Chan %d = %x \n",m,mval);
-                 }
-             }
-           }
+   for (card = 0; card < MAX_BB_BO_CARDS; card++){
+	if (pbo_bb902s[card]){
+	   value = (pbo_bb902s[card]->high_value << 16) 
+		+ pbo_bb902s[card]->low_value;
+           printf("BO: BB902:      card %d value=0x%08.8x\n",card,value);
         }
    }  
             
- }
+}

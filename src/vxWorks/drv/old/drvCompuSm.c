@@ -53,6 +53,7 @@
  * .15	08-02-93	mrk	Added call to taskwdInsert
  * .16	10-29-93	jba	Fixed max number of cards to use module_types.c
  *                      Fixed error in calculating card addresses
+ * .17  04-09-96	ric	Added SM_FIND_LIMIT, SM_FIND_HOME
  */
 #include <vxWorks.h>
 #include <vme.h>
@@ -669,6 +670,13 @@ register int	arg2;
 		compu_send_msg(pcompu_motors[card],compu_msg,11);
 
 		break;
+
+	case (SM_FIND_HOME):		/* Move to a home switch */
+		break;			/* Not supported by this device */
+
+	case (SM_FIND_LIMIT):		/* Move to a limit switch */
+		arg1 = arg1 >= 0 ? 0x000fffff : -0x000fffff;
+		/* break purposely left out to continue with SM_MOVE */
 
 	case (SM_MOVE):
 		if (compu_motor_array[card].mode == VELOCITY_MODE)

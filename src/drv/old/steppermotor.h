@@ -62,3 +62,5 @@ long	accel;
 #define	SM_ENCODER_RATIO	6
 #define	SM_MOTOR_RESOLUTION	7
 #define	SM_READ			8
+#define SM_FIND_LIMIT		9
+#define SM_FIND_HOME		10

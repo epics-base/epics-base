@@ -62,6 +62,7 @@
  * .21  02-28-94	mrk	Replaced itob by cvtLongToString
  * .22  05-05-94	kornke	Now supports VMEX-8 and VMEX-44E
  *				(8 axis s'motors and 4 encoded s'motors)
+ * .23  04-09-96	ric	Added SM_FIND_LIMIT, SM_FIND_HOME
  */
 
 /* data requests are made from the oms_task at
@@ -509,6 +510,13 @@ int		arg2;
 		oms_send_msg(oms_motor_present[card],oms_move_msg);
 
 		break;
+
+	case (SM_FIND_HOME):	/* Move to a home switch */
+		break;		/* Not supported by this device */
+
+	case (SM_FIND_LIMIT):	/* Move to a limit switch */
+		arg1 = arg1 >= 0 ? 0x000fffff : -0x000fffff;
+		/* break purposely left out to continue with SM_MOVE */
 
 	case (SM_MOVE):
 		/* move the motor */

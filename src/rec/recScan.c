@@ -45,9 +45,11 @@
  *                        seems more intuitive.
  * .08  12-06-94  nda     added support for .FFO .When set to 1, frzFlag values
  *                        are saved in recPvtStruct. Restored when FFO set to 0.
+ * .09  02-02-95  nda     fixed order of posting monitors to be what people
+ *                        expect (i.e. .cpt, .pxdv, .dxcv)
  */
 
-#define VERSION 1.08
+#define VERSION 1.09
 
 
 
@@ -360,8 +362,10 @@ static long process(pscan)
 	}
 
         pscan->pxsc = pscan->exsc;
-	pscan->pact = FALSE;
         recGblResetAlarms(pscan);
+        recGblGetTimeStamp(pscan);
+
+	pscan->pact = FALSE;
 	return(status);
 }
 
@@ -793,6 +797,22 @@ static void checkMonitors(pscan)
     if(((now - pscan->tolp) > MIN_MON) || 
        ((pscan->pxsc == 1) && (pscan->exsc == 0))) {
         pscan->tolp = now;
+        if(fabs(pscan->d1lv - pscan->d1cv) > 0) {
+            db_post_events(pscan,&pscan->d1cv, DBE_VALUE);
+            pscan->d1lv = pscan->d1cv;
+        }
+        if(fabs(pscan->d2lv - pscan->d2cv) > 0) {
+            db_post_events(pscan,&pscan->d2cv, DBE_VALUE);
+            pscan->d2lv = pscan->d2cv;
+        }
+        if(fabs(pscan->d3lv - pscan->d3cv) > 0) {
+            db_post_events(pscan,&pscan->d3cv, DBE_VALUE);
+            pscan->d3lv = pscan->d3cv;
+        }
+        if(fabs(pscan->d4lv - pscan->d4cv) > 0) {
+            db_post_events(pscan,&pscan->d4cv, DBE_VALUE);
+            pscan->d4lv = pscan->d4cv;
+        }
         if(pscan->pcpt != pscan->cpt) {
             db_post_events(pscan,&pscan->cpt, DBE_VALUE);
             pscan->pcpt = pscan->cpt;
@@ -828,22 +848,6 @@ static void checkMonitors(pscan)
         if(fabs(pscan->r4lv - pscan->r4cv) > 0) {
             db_post_events(pscan,&pscan->r4cv, DBE_VALUE);
             pscan->r4lv = pscan->r4cv;
-        }
-        if(fabs(pscan->d1lv - pscan->d1cv) > 0) {
-            db_post_events(pscan,&pscan->d1cv, DBE_VALUE);
-            pscan->d1lv = pscan->d1cv;
-        }
-        if(fabs(pscan->d2lv - pscan->d2cv) > 0) {
-            db_post_events(pscan,&pscan->d2cv, DBE_VALUE);
-            pscan->d2lv = pscan->d2cv;
-        }
-        if(fabs(pscan->d3lv - pscan->d3cv) > 0) {
-            db_post_events(pscan,&pscan->d3cv, DBE_VALUE);
-            pscan->d3lv = pscan->d3cv;
-        }
-        if(fabs(pscan->d4lv - pscan->d4cv) > 0) {
-            db_post_events(pscan,&pscan->d4cv, DBE_VALUE);
-            pscan->d4lv = pscan->d4cv;
         }
     }
 
@@ -933,7 +937,6 @@ struct scanRecord *pscan;
 {
   struct recPvtStruct *precPvt = (struct recPvtStruct *)pscan->rpvt;
   long  status;
-  long  nRequest = 1;
   long  options = 0;
 
   pscan->cpt = 0;
@@ -1008,6 +1011,7 @@ struct scanRecord *pscan;
             }
         }
         if(!pscan->r2nv) {
+            nRequest = 1;
             status = dbGet(pscan->r2db, DBR_FLOAT, &(pscan->r2cv),
                            &options, &nRequest, NULL);
             if((pscan->r2dl > 0) &&
@@ -1019,6 +1023,7 @@ struct scanRecord *pscan;
             }
         }
         if(!pscan->r3nv) {
+            nRequest = 1;
             status = dbGet(pscan->r3db, DBR_FLOAT, &(pscan->r3cv),
                            &options, &nRequest, NULL);
             if((pscan->r3dl > 0) &&
@@ -1030,6 +1035,7 @@ struct scanRecord *pscan;
             }
         }
         if(!pscan->r4nv) {
+            nRequest = 1;
             status = dbGet(pscan->r4db, DBR_FLOAT, &(pscan->r4cv),
                            &options, &nRequest, NULL);
             if((pscan->r4dl > 0) &&
@@ -1060,18 +1066,22 @@ struct scanRecord *pscan;
         status = 0;
         if(!pscan->d1nv) {
             /* dbAddr is valid */
+            nRequest = 1;
             status |= dbGet(pscan->d1db, DBR_FLOAT, &(pscan->d1cv),
                             &options, &nRequest, NULL);
         } else pscan->d1cv = 0;
         if(!pscan->d2nv) {
+            nRequest = 1;
             status |= dbGet(pscan->d2db, DBR_FLOAT,
                             &(pscan->d2cv), &options, &nRequest, NULL);
         } else pscan->d2cv = 0;
         if(!pscan->d3nv) {
+            nRequest = 1;
             status |= dbGet(pscan->d3db, DBR_FLOAT, &(pscan->d3cv),
                             &options, &nRequest, NULL);
         } else pscan->d3cv = 0;
         if(!pscan->d4nv) {
+            nRequest = 1;
             status |= dbGet(pscan->d4db, DBR_FLOAT, &(pscan->d4cv),
                             &options, &nRequest, NULL);
         } else pscan->d4cv = 0;
@@ -1239,7 +1249,6 @@ void doPuts(precPvt)
    struct recPvtStruct *precPvt;
 {
 static long status;
-static long nRequest = 1;
 
   if(scanRecDebug > 4) {
       printf("DoPuts; phase = %d\n", (int)precPvt->phase); 
@@ -1859,14 +1868,17 @@ static void checkScanLimits(pscan)
                      &options, &nRequest, NULL);
   }
   if(!pscan->p2nv) {
+      nRequest = 1;
       status = dbGet(pscan->p2db, DBR_FLOAT, precPvt->pP2Limits,
                      &options, &nRequest, NULL);
   }
   if(!pscan->p3nv) {
+      nRequest = 1;
       status = dbGet(pscan->p3db, DBR_FLOAT, precPvt->pP3Limits,
                      &options, &nRequest, NULL);
   }
   if(!pscan->p4nv) {
+      nRequest = 1;
       status = dbGet(pscan->p4db, DBR_FLOAT, precPvt->pP4Limits,
                      &options, &nRequest, NULL);
   }

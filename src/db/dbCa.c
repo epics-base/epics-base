@@ -697,6 +697,8 @@ void dbCaTask()
             if(link_action&CA_DELETE) --removesOutstanding;
             epicsMutexUnlock(caListSem); /*Give it back immediately*/
             if(link_action&CA_DELETE) {/*This must be first*/
+                /* Take lock in case this runs before dbCaRemoveLink completes*/
+                epicsMutexMustLock(pca->lock);
                 if(pca->chid) ca_clear_channel(pca->chid);    
                 free(pca->pgetNative);
                 free(pca->pputNative);
@@ -704,6 +706,7 @@ void dbCaTask()
                 free(pca->pputString);
                 free(pca->pcaAttributes);
                 free(pca->pvname);
+                epicsMutexUnlock(pca->lock);
                 epicsMutexDestroy(pca->lock);
                 free(pca);
                 continue; /*No other link_action makes sense*/

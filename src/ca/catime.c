@@ -430,18 +430,19 @@ LOCAL void printSearchStat ( const ti  *pi, unsigned iterations )
  */
 void timeIt ( tf *pfunc, ti *pItems, unsigned iterations, unsigned nBytes )
 {
-    epicsTimeStamp    end_time;
-    epicsTimeStamp    start_time;
-    double      delay;
-    unsigned    inlineIter;
+    epicsTimeStamp      end_time;
+    epicsTimeStamp      start_time;
+    double              delay;
+    unsigned            inlineIter;
 
     epicsTimeGetCurrent (&start_time);
     (*pfunc) (pItems, iterations, &inlineIter);
     epicsTimeGetCurrent (&end_time);
     delay = epicsTimeDiffInSeconds (&end_time, &start_time);
     if (delay>0.0) {
-        printf ("Elapsed Per Item = %12.8f sec, %10.1f Items per sec", 
-            delay/(iterations*inlineIter), (iterations*inlineIter)/delay);
+        double freq = ( iterations * inlineIter ) / delay;
+        printf ( "Elapsed Per Item = %12.8f sec, %10.1f Items per sec", 
+            1.0 / freq, freq );
         if ( pItems != NULL ) {
             printf(", %3.1f Mbps\n", 
                 (inlineIter*nBytes*CHAR_BIT)/(delay*1e6));
@@ -459,24 +460,21 @@ void timeIt ( tf *pfunc, ti *pItems, unsigned iterations, unsigned nBytes )
 /*
  * test ()
  */
-LOCAL void test (
-    ti      *pItems,
-    unsigned    iterations
-)
+LOCAL void test ( ti *pItems, unsigned iterations )
 {
     unsigned nBytes;
 
-    printf ("\tasync put test\n");
-    nBytes = (sizeof(caHdr) + OCT_ROUND(dbr_size[pItems[0].type])) * iterations;
-    timeIt (test_put, pItems, iterations, nBytes);
+    printf ( "\tasync put test\n");
+    nBytes = sizeof ( caHdr ) + OCT_ROUND( dbr_size[pItems[0].type] );
+    timeIt ( test_put, pItems, iterations, nBytes * iterations );
 
-    printf ("\tasync get test\n");
-    nBytes = (2 * sizeof(caHdr) + OCT_ROUND(dbr_size[pItems[0].type])) * (iterations/2);
-    timeIt (test_get, pItems, iterations/2, nBytes);
+    printf ( "\tasync get test\n");
+    nBytes = 2 * sizeof ( caHdr ) + OCT_ROUND ( dbr_size[pItems[0].type] );
+    timeIt ( test_get, pItems, iterations/2, nBytes * ( iterations / 2 ) );
 
     printf ("\tsynch get test\n");
-    nBytes = (2 * sizeof(caHdr) + OCT_ROUND(dbr_size[pItems[0].type])) * (iterations/100);
-    timeIt (test_wait, pItems, iterations/100, nBytes);
+    nBytes = 2 * sizeof ( caHdr ) + OCT_ROUND ( dbr_size[pItems[0].type] );
+    timeIt ( test_wait, pItems, iterations/100, nBytes * ( iterations / 100 ) );
 }
 
 /*
@@ -526,8 +524,8 @@ int catime ( char *channelName, unsigned channelCount, enum appendNumberFlag app
         nBytes += 2 * ( OCT_ROUND ( strlen ( pItemList[i].name ) ) + 2 * sizeof (caHdr) );
     }
 
-    printf ("search test\n");
-    timeIt (test_search, pItemList, channelCount, nBytes);
+    printf ( "search test\n" );
+    timeIt ( test_search, pItemList, channelCount, nBytes );
     printSearchStat ( pItemList, channelCount );
 
     printf (

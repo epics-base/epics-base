@@ -14,6 +14,9 @@
 //
 //
 // $Log$
+// Revision 1.26  2002/07/13 01:12:28  jhill
+// fixed binding to specified interface (broken by R3.14 beta changes)
+//
 // Revision 1.25  2002/07/12 21:33:37  jba
 // Updated license comments.
 //
@@ -198,6 +201,11 @@ outBufClient::flushCondition casStreamIO::osdSend ( const char *pInBuf, bufSizeT
 {
     int	status;
     
+    if ( nBytesReq == 0 ) {
+        nBytesActual = 0;
+        return outBufClient::flushNone;
+    }
+    
     status = send (this->sock, (char *) pInBuf, nBytesReq, 0);
     if (status == 0) {
         return outBufClient::flushDisconnect;
@@ -233,7 +241,7 @@ casStreamIO::osdRecv ( char * pInBuf, bufSizeT nBytes, // X aCC 361
                       bufSizeT & nBytesActual )
 {
     int nchars;
-
+    
     nchars = recv (this->sock, pInBuf, nBytes, 0);
     if (nchars==0) {
         return casFillDisconnect;

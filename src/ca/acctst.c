@@ -302,14 +302,8 @@ void verifyBlockingConnect ( appChan *pChans, unsigned chanCount, unsigned repet
                 assert ( VALID_DB_REQ ( ca_field_type ( pChans[j].channel ) ) == TRUE );
             }
             else {
-                /*
-                 * its possible for the channel to connect while this test is going on
-                 */
-                unsigned ctr;
-                for ( ctr = 0u; ctr < 100u; ctr ++ ) {
-                    assert ( INVALID_DB_REQ ( ca_field_type ( pChans[j].channel ) ) == TRUE );
-                    assert ( ca_test_io () == ECA_IOINPROGRESS );
-                }
+                assert ( INVALID_DB_REQ ( ca_field_type ( pChans[j].channel ) ) == TRUE );
+                assert ( ca_test_io () == ECA_IOINPROGRESS );
             }
             
             status = ca_replace_access_rights_event (
@@ -1267,6 +1261,24 @@ void caTaskExistTest ()
     printf ( "in ca_task_exit() for %f sec\n", delay );
 }
 
+verifyDataTypeMacros ()
+{
+    assert ( dbf_type_to_DBR( DBR_SHORT ) == DBR_SHORT );
+    assert ( dbf_type_to_DBR_STS( DBR_SHORT ) == DBR_STS_SHORT );
+    assert ( dbf_type_to_DBR_TIME( DBR_SHORT ) == DBR_TIME_SHORT );
+    assert ( dbf_type_to_DBR_GR( DBR_SHORT ) == DBR_GR_SHORT );
+    assert ( dbf_type_to_DBR_CTRL( DBR_SHORT ) == DBR_CTRL_SHORT );
+    assert ( strcmp ( dbr_type_to_text( DBR_SHORT ), "DBR_SHORT" )  == 0 );
+    assert ( dbr_type_is_SHORT ( DBR_SHORT ) );
+    assert ( dbr_type_is_valid ( DBR_SHORT ) );
+    assert ( dbf_type_is_valid ( DBR_SHORT ) );
+    {
+        int dataType;
+        dbf_text_to_type ( "DBR_SHORT", dataType ); 
+        assert ( dataType == DBR_SHORT );
+    }
+}
+
 int acctst ( char *pName, unsigned channelCount, unsigned repetitionCount )
 {
     chid chan;
@@ -1275,6 +1287,8 @@ int acctst ( char *pName, unsigned channelCount, unsigned repetitionCount )
     appChan *pChans;
 
     printf ( "CA Client V%s, channel name \"%s\"\n", ca_version (), pName );
+
+    verifyDataTypeMacros ();
 
     pChans = calloc ( channelCount, sizeof ( *pChans ) );
     assert ( pChans );

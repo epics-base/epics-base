@@ -59,6 +59,9 @@ typedef struct{
 	void		*formpvt;
 } DBENTRY;
 
+/*dbDumpFldDes is obsolete. It is only provided for compatibility*/
+#define dbDumpFldDes dbDumpField
+
 /* Static database access routines*/
 epicsShareFunc DBBASE * epicsShareAPI dbAllocBase(void);
 epicsShareFunc void epicsShareAPI dbFreeBase(DBBASE *pdbbase);

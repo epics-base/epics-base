@@ -62,7 +62,9 @@ inline autoPtrFreeList<T>::~autoPtrFreeList ()
 {
     if ( this->p ) {
         this->p->~T();
-#       if defined ( CXX_PLACEMENT_DELETE ) && 0
+        // its probably a good idea to require that the class has placement delete
+        // by calling it during cleanup if the compiler supports it
+#       if defined ( CXX_PLACEMENT_DELETE )
             T::operator delete ( this->p, this->freeList );
 #       else
             this->freeList.release ( this->p );

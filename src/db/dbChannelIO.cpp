@@ -135,7 +135,7 @@ void * dbChannelIO::operator new ( size_t size,
     return freeList.allocate ( size );
 }
 
-#   ifdef CXX_PLACEMENT_DELETE
+#ifdef CXX_PLACEMENT_DELETE
 void dbChannelIO::operator delete ( void *pCadaver, 
     tsFreeList < dbChannelIO > & freeList )
 {

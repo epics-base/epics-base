@@ -65,11 +65,7 @@ extern "C" int epicsShareAPI ca_sg_delete ( const CA_SYNC_GID gid )
     }
 
     pcasg->~CASG ();
-#   if defined ( CXX_PLACEMENT_DELETE ) && 0
-    CASG::operator delete ( pcasg, pcac->casgFreeList );
-#   else
     pcac->casgFreeList.release ( pcasg );
-#   endif
 
     return ECA_NORMAL;
 }

@@ -50,10 +50,8 @@ public:
     void show ( unsigned level ) const;
     void * operator new ( size_t size, 
         tsFreeList < dbPutNotifyBlocker > & );
-#   ifdef CXX_PLACEMENT_DELETE
-    void operator delete ( void *, 
-        tsFreeList < dbPutNotifyBlocker > & );
-#   endif
+    epicsPlacementDeleteOperator (( void *, 
+        tsFreeList < dbPutNotifyBlocker > & ))
 private:
     putNotify pn;
     //

@@ -29,7 +29,7 @@
 #include "comBuf.h"
 #include "errlog.h"
 
-bool comBuf::flushToWire ( wireSendAdapter & wire ) epics_throws (())
+bool comBuf::flushToWire ( wireSendAdapter & wire ) epicsThrows (())
 {
     unsigned occupied = this->occupiedBytes ();
     while ( occupied ) {
@@ -44,7 +44,7 @@ bool comBuf::flushToWire ( wireSendAdapter & wire ) epics_throws (())
     return true;
 }
 
-unsigned comBuf::push ( const epicsInt16 * pValue, unsigned nElem ) epics_throws (())
+unsigned comBuf::push ( const epicsInt16 * pValue, unsigned nElem ) epicsThrows (())
 {
     nElem = this->unoccupiedElem ( sizeof (*pValue), nElem );
     for ( unsigned i = 0u; i < nElem; i++ ) {
@@ -56,7 +56,7 @@ unsigned comBuf::push ( const epicsInt16 * pValue, unsigned nElem ) epics_throws
     return nElem;
 }
 
-unsigned comBuf::push ( const epicsUInt16 * pValue, unsigned nElem ) epics_throws (())
+unsigned comBuf::push ( const epicsUInt16 * pValue, unsigned nElem ) epicsThrows (())
 {
     nElem = this->unoccupiedElem ( sizeof (*pValue), nElem );
     for ( unsigned i = 0u; i < nElem; i++ ) {
@@ -68,23 +68,7 @@ unsigned comBuf::push ( const epicsUInt16 * pValue, unsigned nElem ) epics_throw
     return nElem;
 }
 
-unsigned comBuf::push ( const epicsInt32 * pValue, unsigned nElem ) epics_throws (())
-{
-    nElem = this->unoccupiedElem ( sizeof (*pValue), nElem );
-    for ( unsigned i = 0u; i < nElem; i++ ) {
-        this->buf[this->nextWriteIndex++] = 
-            static_cast < epicsUInt8 > ( pValue[i] >> 24u );
-        this->buf[this->nextWriteIndex++] = 
-            static_cast < epicsUInt8 > ( pValue[i] >> 16u );
-        this->buf[this->nextWriteIndex++] = 
-            static_cast < epicsUInt8 > ( pValue[i] >> 8u );
-        this->buf[this->nextWriteIndex++] = 
-            static_cast < epicsUInt8 > ( pValue[i] >> 0u );
-    }
-    return nElem;
-}
-
-unsigned comBuf::push ( const epicsUInt32 * pValue, unsigned nElem ) epics_throws (())
+unsigned comBuf::push ( const epicsInt32 * pValue, unsigned nElem ) epicsThrows (())
 {
     nElem = this->unoccupiedElem ( sizeof (*pValue), nElem );
     for ( unsigned i = 0u; i < nElem; i++ ) {
@@ -100,7 +84,23 @@ unsigned comBuf::push ( const epicsUInt32 * pValue, unsigned nElem ) epics_throw
     return nElem;
 }
 
-unsigned comBuf::push ( const epicsFloat32 * pValue, unsigned nElem ) epics_throws (())
+unsigned comBuf::push ( const epicsUInt32 * pValue, unsigned nElem ) epicsThrows (())
+{
+    nElem = this->unoccupiedElem ( sizeof (*pValue), nElem );
+    for ( unsigned i = 0u; i < nElem; i++ ) {
+        this->buf[this->nextWriteIndex++] = 
+            static_cast < epicsUInt8 > ( pValue[i] >> 24u );
+        this->buf[this->nextWriteIndex++] = 
+            static_cast < epicsUInt8 > ( pValue[i] >> 16u );
+        this->buf[this->nextWriteIndex++] = 
+            static_cast < epicsUInt8 > ( pValue[i] >> 8u );
+        this->buf[this->nextWriteIndex++] = 
+            static_cast < epicsUInt8 > ( pValue[i] >> 0u );
+    }
+    return nElem;
+}
+
+unsigned comBuf::push ( const epicsFloat32 * pValue, unsigned nElem ) epicsThrows (())
 {
     nElem = this->unoccupiedElem ( sizeof (*pValue), nElem );
     for ( unsigned i = 0u; i < nElem; i++ ) {
@@ -111,7 +111,7 @@ unsigned comBuf::push ( const epicsFloat32 * pValue, unsigned nElem ) epics_thro
     return nElem;
 }
 
-unsigned comBuf::push ( const epicsFloat64 * pValue, unsigned nElem ) epics_throws (())
+unsigned comBuf::push ( const epicsFloat64 * pValue, unsigned nElem ) epicsThrows (())
 {
     nElem = this->unoccupiedElem ( sizeof (*pValue), nElem );
     for ( unsigned i = 0u; i < nElem; i++ ) {
@@ -125,12 +125,12 @@ unsigned comBuf::push ( const epicsFloat64 * pValue, unsigned nElem ) epics_thro
 // throwing the exception from a function that isnt inline 
 // shrinks the GNU compiled object code
 void comBuf::throwInsufficentBytesException () 
-    epics_throws (( comBuf::insufficentBytesAvailable ))
+    epicsThrows (( comBuf::insufficentBytesAvailable ))
 {
     throw comBuf::insufficentBytesAvailable ();
 }
 
-void comBuf::operator delete ( void * ) epics_throws (())
+void comBuf::operator delete ( void * ) epicsThrows (())
 {
     // Visual C++ .net appears to require operator delete if
     // placement operator delete is defined? I smell a ms rat

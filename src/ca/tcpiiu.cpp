@@ -139,7 +139,7 @@ void tcpSendThread::run ()
 }
 
 unsigned tcpiiu::sendBytes ( const void *pBuf, 
-                            unsigned nBytesInBuf ) epics_throws (())
+                            unsigned nBytesInBuf ) epicsThrows (())
 {
     int status;
     unsigned nBytes = 0u;
@@ -202,7 +202,7 @@ unsigned tcpiiu::sendBytes ( const void *pBuf,
     return nBytes;
 }
 
-unsigned tcpiiu::recvBytes ( void * pBuf, unsigned nBytesInBuf ) epics_throws (())
+unsigned tcpiiu::recvBytes ( void * pBuf, unsigned nBytesInBuf ) epicsThrows (())
 {
     if ( this->state != iiucs_connected && 
             this->state != iiucs_clean_shutdown ) {
@@ -382,8 +382,8 @@ void tcpRecvThread::run ()
                 pComBuf = 0;
 
                 // execute receive labor
-                bool noProtocolViolation = this->iiu.processIncoming ( guard );
-                if ( ! noProtocolViolation ) {
+                bool protocolOK = this->iiu.processIncoming ( guard );
+                if ( ! protocolOK ) {
                     this->iiu.cacRef.initiateAbortShutdown ( this->iiu );
                     break;
                 }
@@ -408,11 +408,7 @@ void tcpRecvThread::run ()
 
         if ( pComBuf ) {
             pComBuf->~comBuf ();
-#           if defined ( CXX_PLACEMENT_DELETE ) && 0
-                comBuf::operator delete ( pComBuf, this->iiu.comBufMemMgr );
-#           else
-                this->iiu.comBufMemMgr.release ( pComBuf );
-#           endif
+            this->iiu.comBufMemMgr.release ( pComBuf );
         }
     }
     catch ( ... ) {
@@ -1206,21 +1202,13 @@ bool tcpiiu::flush ()
 
         success = pBuf->flushToWire ( *this );
         pBuf->~comBuf ();
-#       if defined ( CXX_PLACEMENT_DELETE ) && 0
-            comBuf::operator delete ( pBuf, this->comBufMemMgr );
-#       else
-            this->comBufMemMgr.release ( pBuf );
-#       endif
+        this->comBufMemMgr.release ( pBuf );
 
         if ( ! success ) {
             epicsGuard < cacMutex > autoMutex ( this->cacRef.mutexRef() );
             while ( ( pBuf = this->sendQue.popNextComBufToSend () ) ) {
                 pBuf->~comBuf ();
-#               if defined ( CXX_PLACEMENT_DELETE ) && 0
-                    comBuf::operator delete ( pBuf, this->comBufMemMgr );
-#               else
-                    this->comBufMemMgr.release ( pBuf );
-#               endif
+                this->comBufMemMgr.release ( pBuf );
             }
             break;
         }

@@ -87,10 +87,8 @@ public:
     ca_client_context & getClientCtx ();
     void * operator new ( size_t size, 
         tsFreeList < struct oldChannelNotify, 1024 > & );
-#   ifdef  CXX_PLACEMENT_DELETE
-    void operator delete ( void * , 
-        tsFreeList < struct oldChannelNotify, 1024 > & );
-#   endif
+    epicsPlacementDeleteOperator (( void * , 
+        tsFreeList < struct oldChannelNotify, 1024 > & ))
 private:
     ca_client_context & cacCtx;
     cacChannel & io;
@@ -124,10 +122,8 @@ public:
     void cancel ();
     void * operator new ( size_t size, 
         tsFreeList < class getCopy, 1024 > & );
-#   ifdef  CXX_PLACEMENT_DELETE
-    void operator delete ( void *, 
-        tsFreeList < class getCopy, 1024 > & );
-#   endif
+    epicsPlacementDeleteOperator (( void *, 
+        tsFreeList < class getCopy, 1024 > & ))
 private:
     arrayElementCount count;
     ca_client_context &cacCtx;
@@ -153,10 +149,8 @@ public:
     void destroy ();
     void * operator new ( size_t size, 
         tsFreeList < class getCallback, 1024 > & );
-#   ifdef  CXX_PLACEMENT_DELETE
-    void operator delete ( void *, 
-        tsFreeList < class getCallback, 1024 > & );
-#   endif
+    epicsPlacementDeleteOperator (( void *, 
+        tsFreeList < class getCallback, 1024 > & ))
 private:
     oldChannelNotify & chan;
     caEventCallBackFunc * pFunc;
@@ -178,10 +172,8 @@ public:
     ~putCallback ();
     void * operator new ( size_t size, 
         tsFreeList < class putCallback, 1024 > & );
-#   ifdef  CXX_PLACEMENT_DELETE
-    void operator delete ( void *, 
-        tsFreeList < class putCallback, 1024 > & );
-#   endif
+    epicsPlacementDeleteOperator (( void *, 
+        tsFreeList < class putCallback, 1024 > & ))
 private:
     oldChannelNotify & chan;
     caEventCallBackFunc * pFunc;
@@ -204,10 +196,8 @@ public:
     oldChannelNotify & channel () const;
     void * operator new ( size_t size, 
         tsFreeList < struct oldSubscription, 1024 > & );
-#   ifdef  CXX_PLACEMENT_DELETE
-    void operator delete ( void *, 
-        tsFreeList < struct oldSubscription, 1024 > & );
-#   endif
+    epicsPlacementDeleteOperator (( void *, 
+        tsFreeList < struct oldSubscription, 1024 > & ))
     void ioCancel ();
 private:
     oldChannelNotify & chan;

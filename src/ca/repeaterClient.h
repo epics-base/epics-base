@@ -59,10 +59,8 @@ public:
     bool identicalPort ( const osiSockAddr &from );
     void * operator new ( size_t size, 
         tsFreeList < repeaterClient, 0x20 > & );
-#ifdef CXX_PLACEMENT_DELETE
-    void operator delete ( void *, 
-        tsFreeList < repeaterClient, 0x20 > & );
-#endif
+    epicsPlacementDeleteOperator (( void *, 
+        tsFreeList < repeaterClient, 0x20 > & ))
 private:
     osiSockAddr from;
     SOCKET sock;

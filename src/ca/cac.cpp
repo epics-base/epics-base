@@ -277,11 +277,7 @@ cac::~cac ()
     this->beaconTable.removeAll ( tmpBeaconList ); 
     while ( bhe * pBHE = tmpBeaconList.get() ) {
         pBHE->~bhe ();
-#       if defined ( CXX_PLACEMENT_DELETE ) && 0
-            bhe::operator delete ( pBHE, this->bheFreeList );
-#       else
-            this->bheFreeList.release ( pBHE );
-#       endif
+        this->bheFreeList.release ( pBHE );
     }
 
     osiSockRelease ();
@@ -416,11 +412,7 @@ void cac::beaconNotify ( const inetAddrID & addr, const epicsTime & currentTime,
         if ( pBHE ) {
             if ( this->beaconTable.add ( *pBHE ) < 0 ) {
                 pBHE->~bhe ();
-#               if defined ( CXX_PLACEMENT_DELETE ) && 0
-                    bhe::operator delete ( pBHE, this->bheFreeList );
-#               else
-                    this->bheFreeList.release ( pBHE );
-#               endif
+                this->bheFreeList.release ( pBHE );
             }
         }
         return;
@@ -714,11 +706,7 @@ void cac::destroyChannel ( nciu & chan )
 
     // run channel's destructor and return it to the free list
     chan.~nciu ();
-#   if defined ( CXX_PLACEMENT_DELETE ) && 0
-        nciu::operator delete ( & chan, this->channelFreeList );
-#   else
-        this->channelFreeList.release ( & chan );
-#   endif
+    this->channelFreeList.release ( & chan );
 }
 
 int cac::printf ( const char *pformat, ... ) const
@@ -1586,12 +1574,12 @@ void cac::initiateConnect ( nciu & chan )
     this->pudpiiu->installChannel ( chan );
 }
 
-void *cacComBufMemoryManager::allocate ( size_t size ) epics_throws (( std::bad_alloc ))
+void *cacComBufMemoryManager::allocate ( size_t size ) epicsThrows (( std::bad_alloc ))
 {
     return this->freeList.allocate ( size );
 }
 
-void cacComBufMemoryManager::release ( void * pCadaver ) epics_throws (())
+void cacComBufMemoryManager::release ( void * pCadaver ) epicsThrows (())
 {
     return this->freeList.release ( pCadaver );
 }

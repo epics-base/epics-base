@@ -43,11 +43,8 @@ class msgForMultiplyDefinedPV : public ipAddrToAsciiAsynchronous {
 public:
     msgForMultiplyDefinedPV ( callbackForMultiplyDefinedPV &, 
         const char * pChannelName, const char * pAcc, const osiSockAddr & rej );
-    //msgForMultiplyDefinedPV ( const osiSockAddr &addr, ipAddrToAsciiEngine &engine );
     void * operator new ( size_t size, tsFreeList < class msgForMultiplyDefinedPV, 16 > & );
-#   ifdef CXX_PLACEMENT_DELETE
-    void operator delete ( void *, tsFreeList < class msgForMultiplyDefinedPV, 16 > & );
-#   endif
+    epicsPlacementDeleteOperator (( void *, tsFreeList < class msgForMultiplyDefinedPV, 16 > & ))
 private:
     char acc[64];
     char channel[64];

@@ -54,9 +54,7 @@ public:
     void show ( unsigned level ) const;
     const char *pName () const;
     void * operator new ( size_t size, tsFreeList < dbChannelIO > & );
-#   ifdef CXX_PLACEMENT_DELETE
-    void operator delete ( void *, tsFreeList < dbChannelIO > & );
-#   endif
+    epicsPlacementDeleteOperator (( void *, tsFreeList < dbChannelIO > & ))
 private:
     dbServiceIO & serviceIO;
     dbAddr addr;

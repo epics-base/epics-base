@@ -188,13 +188,13 @@ void * dbPutNotifyBlocker::operator new ( size_t size,
     return freeList.allocate ( size );
 }
 
-#   ifdef CXX_PLACEMENT_DELETE
+#ifdef CXX_PLACEMENT_DELETE
 void dbPutNotifyBlocker::operator delete ( void *pCadaver, 
     tsFreeList < dbPutNotifyBlocker > & freeList )
 {
     freeList.release ( pCadaver );
 }
-#   endif
+#endif
 
 void dbPutNotifyBlocker::operator delete ( void * )
 {

@@ -49,51 +49,31 @@ ca_client_context::~ca_client_context ()
 void ca_client_context::destroyChannel ( oldChannelNotify & chan )
 {
     chan.~oldChannelNotify ();
-#   if defined ( CXX_PLACEMENT_DELETE ) && 0
-        oldChannelNotify::operator delete ( & chan, this->oldChannelNotifyFreeList );
-#   else
-        this->oldChannelNotifyFreeList.release ( & chan );
-#   endif
+    this->oldChannelNotifyFreeList.release ( & chan );
 }
 
 void ca_client_context::destroyGetCopy ( getCopy & gc )
 {
     gc.~getCopy ();
-#   if defined ( CXX_PLACEMENT_DELETE ) && 0
-        getCopy::operator delete ( & gc, this->getCopyFreeList );
-#   else
-        this->getCopyFreeList.release ( & gc );
-#   endif
+    this->getCopyFreeList.release ( & gc );
 }
 
 void ca_client_context::destroyGetCallback ( getCallback & gcb )
 {
     gcb.~getCallback ();
-#   if defined ( CXX_PLACEMENT_DELETE ) && 0
-        getCallback::operator delete ( & gcb, this->getCallbackFreeList );
-#   else
-        this->getCallbackFreeList.release ( & gcb );
-#   endif
+    this->getCallbackFreeList.release ( & gcb );
 }
 
 void ca_client_context::destroyPutCallback ( putCallback & pcb )
 {
     pcb.~putCallback ();
-#   if defined ( CXX_PLACEMENT_DELETE ) && 0
-        putCallback::operator delete ( & pcb, this->putCallbackFreeList );
-#   else
-        this->putCallbackFreeList.release ( & pcb );
-#   endif
+    this->putCallbackFreeList.release ( & pcb );
 }
 
 void ca_client_context::destroySubscription ( oldSubscription & os )
 {
     os.~oldSubscription ();
-#   if defined ( CXX_PLACEMENT_DELETE ) && 0
-        oldSubscription::operator delete ( & os, this->subscriptionFreeList );
-#   else
-        this->subscriptionFreeList.release ( & os );
-#   endif
+    this->subscriptionFreeList.release ( & os );
 }
 
 void ca_client_context::changeExceptionEvent ( caExceptionHandler *pfunc, void *arg )

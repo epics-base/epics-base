@@ -90,10 +90,8 @@ private:
     void operator delete ( void * );
     void * operator new ( size_t, 
         tsFreeList < class syncGroupReadNotify, 128, epicsMutexNOOP > & );
-#   if defined ( CXX_PLACEMENT_DELETE )
-    void operator delete ( void *, 
-        tsFreeList < class syncGroupReadNotify, 128, epicsMutexNOOP > & );
-#   endif
+    epicsPlacementDeleteOperator (( void *, 
+        tsFreeList < class syncGroupReadNotify, 128, epicsMutexNOOP > & ))
     void completion (
         unsigned type, arrayElementCount count, const void *pData );
     void exception (
@@ -120,10 +118,8 @@ private:
     void operator delete ( void * );
     void * operator new ( size_t, 
         tsFreeList < class syncGroupWriteNotify, 128, epicsMutexNOOP > & );
-#   if defined ( CXX_PLACEMENT_DELETE )
-    void operator delete ( void *, 
-        tsFreeList < class syncGroupWriteNotify, 128, epicsMutexNOOP > & );
-#   endif
+    epicsPlacementDeleteOperator (( void *, 
+        tsFreeList < class syncGroupWriteNotify, 128, epicsMutexNOOP > & ))
     void completion ();
     void exception ( int status, const char *pContext, 
 		unsigned type, arrayElementCount count );
@@ -163,9 +159,7 @@ public:
         const char *pFileName, unsigned lineNo, oldChannelNotify &chan, 
         unsigned type, arrayElementCount count, unsigned op );
     void * operator new ( size_t size, tsFreeList < struct CASG, 128 > & );
-#   if defined ( CXX_PLACEMENT_DELETE )
-    void operator delete ( void *, tsFreeList < struct CASG, 128 > & );
-#   endif
+    epicsPlacementDeleteOperator (( void *, tsFreeList < struct CASG, 128 > & ))
 private:
     tsDLList < syncGroupNotify > ioPendingList;
     tsDLList < syncGroupNotify > ioCompletedList;

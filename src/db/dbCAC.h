@@ -83,9 +83,7 @@ public:
     void channelDeleteException ();
     void show ( unsigned level ) const;
     void * operator new ( size_t size, tsFreeList < dbSubscriptionIO > & );
-#   ifdef CXX_PLACEMENT_DELETE
-    void operator delete ( void *, tsFreeList < dbSubscriptionIO > & );
-#   endif
+    epicsPlacementDeleteOperator (( void *, tsFreeList < dbSubscriptionIO > & ))
 private:
     cacStateNotify & notify;
     dbChannelIO & chan;

@@ -46,10 +46,8 @@ public:
     resTableIndex hash () const;
     void * operator new ( size_t size, 
         tsFreeList < class ipIgnoreEntry, 128 > & );
-#   ifdef CXX_PLACEMENT_DELETE
-    void operator delete ( void *, 
-        tsFreeList < class ipIgnoreEntry, 128 > & );
-#   endif
+    epicsPlacementDeleteOperator (( void *, 
+        tsFreeList < class ipIgnoreEntry, 128 > & ))
 private:
     unsigned ipAddr;
 	ipIgnoreEntry ( const ipIgnoreEntry & );

@@ -86,10 +86,8 @@ private:
     void operator delete ( void * );
     void * operator new ( size_t, 
         tsFreeList < class netSubscription, 1024, epicsMutexNOOP > & );
-#   if defined ( CXX_PLACEMENT_DELETE )
-    void operator delete ( void *, 
-        tsFreeList < class netSubscription, 1024, epicsMutexNOOP > & );
-#   endif
+    epicsPlacementDeleteOperator (( void *, 
+        tsFreeList < class netSubscription, 1024, epicsMutexNOOP > & ))
     void destroy ( class cacRecycle & );
     void completion ();
     void exception ( int status, 
@@ -119,10 +117,8 @@ private:
     void operator delete ( void * );
     void * operator new ( size_t, 
         tsFreeList < class netReadNotifyIO, 1024, epicsMutexNOOP > & );
-#   if defined ( CXX_PLACEMENT_DELETE )
-    void operator delete ( void *, 
-        tsFreeList < class netReadNotifyIO, 1024, epicsMutexNOOP > & );
-#   endif
+    epicsPlacementDeleteOperator (( void *, 
+        tsFreeList < class netReadNotifyIO, 1024, epicsMutexNOOP > & ))
     void destroy ( class cacRecycle & );
     void completion ();
     void exception ( int status, const char *pContext );
@@ -151,10 +147,8 @@ private:
     void operator delete ( void * );
     void * operator new ( size_t, 
         tsFreeList < class netWriteNotifyIO, 1024, epicsMutexNOOP > & );
-#   if defined ( CXX_PLACEMENT_DELETE )
-    void operator delete ( void *,
-        tsFreeList < class netWriteNotifyIO, 1024, epicsMutexNOOP > & );
-#   endif
+    epicsPlacementDeleteOperator (( void *,
+        tsFreeList < class netWriteNotifyIO, 1024, epicsMutexNOOP > & ))
     class netSubscription * isSubscription ();
     void destroy ( class cacRecycle & );
     void completion ();

@@ -98,9 +98,7 @@ public:
         int status, const char *pContext, unsigned type, arrayElementCount count );
     cacChannel::priLev getPriority () const;
     void * operator new ( size_t size, tsFreeList < class nciu, 1024 > & );
-#   ifdef CXX_PLACEMENT_DELETE
-    void operator delete ( void *, tsFreeList < class nciu, 1024 > & );
-#   endif
+    epicsPlacementDeleteOperator (( void *, tsFreeList < class nciu, 1024 > & ))
 private:
     caAccessRights accessRightState;
     cac & cacCtx;

@@ -100,8 +100,8 @@ private:
 class cacComBufMemoryManager : public comBufMemoryManager
 {
 public:
-    void * allocate ( size_t ) epics_throws (( std::bad_alloc ));
-    void release ( void * ) epics_throws (());
+    void * allocate ( size_t ) epicsThrows (( std::bad_alloc ));
+    void release ( void * ) epicsThrows (());
 private:
     tsFreeList < class comBuf, 0x20 > freeList;
 };

@@ -34,6 +34,8 @@ clean::
 	@$(RM) $(DB) $(DBDNAME) *.template *.substitutions *.db.raw \
 	*.db-stamp *.edf esiread.cnf
 
+depends::
+
 ##################################################### "Foreign" templates
 
 TEMPLATE_LINKS	= $(filter-out $(notdir $(USES_TEMPLATE)), $(USES_TEMPLATE))

@@ -37,6 +37,8 @@ SRCS.c = \
 	../drvFp.c\
 	../drvFpm.c
 
+#	../drvTranServ.c\
+
 OBJS = \
 	module_types.o\
 	drvXy010.o\
@@ -69,6 +71,8 @@ OBJS = \
 	drvJgvtr1.o\
 	drvFp.o\
 	drvFpm.o
+
+#	drvTranServ.o\
 
 PROD = drvSup
 

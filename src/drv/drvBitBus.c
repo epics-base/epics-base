@@ -873,12 +873,14 @@ int	link;
   int			prio;
   int			working;
   int			dogStart;
+  int			stuck;
 
   int			txTCount;
   int			txCCount;
   unsigned char		*txMsg;
   register	int	x;
   unsigned	long	now;
+  SEM_ID		resetNodeSem;
   struct dpvtBitBusHead	resetNode;
   unsigned char		resetNodeData;	/* 1-byte data field for RAC_OFFLINE */
 
@@ -889,10 +891,12 @@ int	link;
   /* NOTE that having only one copy is OK provided that this message is    */
   /*      sent immediately following the RAC_RESET_SLAVE message.          */
 
+  resetNodeSem = semBCreate(SEM_Q_PRIORITY, SEM_FULL);
+
   resetNode.finishProc = NULL;
-  resetNode.psyncSem = NULL;
+  resetNode.psyncSem = &resetNodeSem;
   resetNode.link = link;
-  resetNode.rxMaxLen = 7;	/* chop it off */
+  resetNode.rxMaxLen = 7;	/* Chop it off, we don't care */
   resetNode.ageLimit = 10;
 
   resetNode.txMsg.length = 8;
@@ -962,36 +966,43 @@ int	link;
           txCCount = 0;
           txMsg = &(pnode->txMsg.length);
  
-          while ((txCCount < txTCount) && (pXvmeLink[link]->abortFlag == 0))
+          while ((txCCount <= txTCount) && (pXvmeLink[link]->abortFlag == 0))
           {
-/* BUG -- need some sort of time out in here! */
-            while (((pXvmeLink[link]->bbRegs->fifo_stat & XVME_TFNF) != XVME_TFNF) && (pXvmeLink[link]->abortFlag == 0))
+	    stuck = 1000;
+            while (((pXvmeLink[link]->bbRegs->fifo_stat & XVME_TFNF) != XVME_TFNF) && (pXvmeLink[link]->abortFlag == 0) && --stuck)
               for(x=0;x<100;x++);			/* wait for TX ready */
   
-            pXvmeLink[link]->bbRegs->data = *txMsg;	/* send next byte */
-            if (bbDebug>30)
-              printf("xvmeTxTask(%d): outputting %02.2X\n", link, *txMsg);
-
+	    if (!stuck)
+	      txStuck(link);	/* will end up setting abortFlag */
+            else if (txCCount < txTCount) /* on last time, just wait, no data */
+	    {
+              pXvmeLink[link]->bbRegs->data = *txMsg;	/* send next byte */
+              if (bbDebug>30)
+                printf("xvmeTxTask(%d): outputting %02.2X\n", link, *txMsg);
+  
+	      /* On 5th byte, we are dun w/header, set start w/data buffer */
+	      if (txCCount != 4)
+	        txMsg++;
+              else
+	        txMsg = pnode->txMsg.data;	
+	    }
 	    txCCount++;
-	    if (txCCount != 5)
-	      txMsg++;
-            else
-	      txMsg = pnode->txMsg.data;
           }
-          while (((pXvmeLink[link]->bbRegs->fifo_stat & XVME_TFNF) != XVME_TFNF) && (pXvmeLink[link]->abortFlag == 0))
-            for(x=0;x<100;x++);			/* wait for TX ready */
-
 	  if (pXvmeLink[link]->abortFlag == 0)
 	  {
-          /* we just finished sending a message */
+          /* We just finished sending a message */
           pXvmeLink[link]->bbRegs->cmnd = BB_SEND_CMD; /* forward it now */
 
-	  /* don't add to busy list if was a RAC_RESET_SLAVE */
+	  /* Don't add to busy list if was a RAC_RESET_SLAVE */
 	  if (pnode->txMsg.cmd != RAC_RESET_SLAVE)
 	  {
 	    /* Lock the busy list */
 	    FASTLOCK(&(plink->busyList.sem));
 
+            /* set the retire time */
+            pnode->retire = tickGet();
+	    pnode->retire += 5*60; /*pnode->ageLimit;*/
+  
 	    if (plink->busyList.head == NULL)
 	      dogStart = 1;
             else
@@ -1005,10 +1016,6 @@ int	link;
   
 	    FASTUNLOCK(&(plink->busyList.sem));
 
-            /* set the retire time */
-            pnode->retire = tickGet();
-	    pnode->retire += 5*60; /*pnode->ageLimit;*/
-  
             /* If I just added something to an empty busy list, start the dog */
             if (dogStart)
             {
@@ -1017,7 +1024,7 @@ int	link;
             }
 	  }
 	  else
-	  { /* finish the transaction here if was a RAC_RESET_SLAVE */
+	  { /* Finish the transaction here if was a RAC_RESET_SLAVE */
 
             /* if (bbDebug) */
               printf("xvmeTxTask(%d): RAC_RESET_SLAVE sent, resetting node %d\n", link, pnode->txMsg.node);
@@ -1036,13 +1043,15 @@ int	link;
     	    if (pnode->psyncSem != NULL)
       	      semGive(*(pnode->psyncSem));
 
+            /* Have to wait for last NODE_OFFLINE to finish if still pending */
+            semTake(resetNodeSem, WAIT_FOREVER);
+
 	    /* have to reset the master so it won't wait on a response */
 	    resetNodeData = pnode->txMsg.node;	/* mark the node number */
 	    FASTLOCK(&(plink->queue[BB_Q_HIGH].sem));
 	    listAddHead(&(plink->queue[BB_Q_HIGH]), &resetNode);
 	    FASTUNLOCK(&(plink->queue[BB_Q_HIGH].sem));
 
-/* BUG -- should I really wait here? */
 	    taskDelay(15); 	/* wait while bug is resetting */
 	  }
 	  }
@@ -1052,7 +1061,8 @@ int	link;
 	    listAddHead(&(plink->queue[BB_Q_HIGH]), pnode);
 	    FASTUNLOCK(&(plink->queue[BB_Q_HIGH].sem));
 	  }
-	  break;			/* stop checking the fifo queues */
+/* BUG -- I don't really need this */
+	/* break;*/			/* stop checking the fifo queues */
         }
         else
         { /* we have no xacts that can be processed at this time */
@@ -1062,6 +1072,26 @@ int	link;
       }
     }
   }
+}
+
+/******************************************************************************
+ *
+ * This gets called by the transmit task if it gets stuck waiting to send a 
+ * byte to the transmit fifo.
+ *
+ ******************************************************************************/
+static int
+txStuck(link)
+int	link;
+{
+  /* if (bbDebug) */
+    printf("xvmeTxTask(%d): transmitter stuck, resetting link\n", link);
+
+  bbReset(link);
+  while (pXvmeLink[link]->abortFlag == 0)
+    taskDelay(1);
+
+  return(OK);
 }
 
 /******************************************************************************

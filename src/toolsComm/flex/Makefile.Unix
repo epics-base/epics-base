@@ -5,7 +5,7 @@ include $(EPICS)/config/CONFIG_BASE
 CMPLR = OLD
 YACCOPT = -d
 SKELETON_FILE=include/flex.skel.static
-ifeq ($(ARCH),hp700)
+ifeq ($(T_A),hp700)
 USR_CFLAGS = -DDEFAULT_SKELETON_FILE=\"$(SKELETON_FILE)\" -DSCO_UNIX
 else
 USR_CFLAGS = -DDEFAULT_SKELETON_FILE=\"$(SKELETON_FILE)\"

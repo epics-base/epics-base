@@ -208,7 +208,7 @@ static long process(pmbboDirect)
     if ( !pact && pmbboDirect->pact ) return(0);
     pmbboDirect->pact = TRUE;
 
-    tsLocalTime(&pmbboDirect->time);
+    recGblGetTimeStamp(pmbboDirect);
     /* check event list */
     monitor(pmbboDirect);
     /* process the forward scan link record */

@@ -109,8 +109,6 @@ static int sizeofTypes[] = {0,1,1,2,2,4,4,4,8,2};
 static void monitor();
 static long readValue();
 
-/*Following from timing system          */
-extern unsigned int     gts_trigger_counter;
 
 
 static long init_record(paai,pass)
@@ -187,22 +185,16 @@ static long process(paai)
                 recGblRecordError(S_dev_missingSup,(void *)paai,"read_aai");
                 return(S_dev_missingSup);
         }
-        /* event throttling */
-        if (paai->scan == SCAN_IO_EVENT){
-                if ((paai->evnt != 0)  && (gts_trigger_counter != 0)){
-                        if ((gts_trigger_counter % paai->evnt) != 0){
-	                        status=readValue(paai);
-                                return(0);
-                        }
-                }
-        }
 
 	if ( pact ) return(0);
 
 	status=readValue(paai); /* read the new value */
+	/* check if device support set pact */
+	if ( !pact && paai->pact ) return(0);
+	paai->pact = TRUE;
 
 	paai->udf=FALSE;
-	tsLocalTime(&paai->time);
+	recGblGetTimeStamp(paai);
 
 	monitor(paai);
         /* process the forward scan link record */
@@ -328,8 +320,8 @@ static long readValue(paai)
 
 
         if (paai->pact == TRUE){
-		/* no asyn allowed, pact true means do not process */
-                return(0);
+		status=(*pdset->read_aai)(paai);
+                return(status);
         }
 
         status=recGblGetLinkValue(&(paai->siml),

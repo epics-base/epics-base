@@ -109,8 +109,6 @@ static int sizeofTypes[] = {0,1,1,2,2,4,4,4,8,2};
 static void monitor();
 static long writeValue();
 
-/*Following from timing system          */
-extern unsigned int     gts_trigger_counter;
 
 
 static long init_record(paao,pass)
@@ -187,22 +185,13 @@ static long process(paao)
                 recGblRecordError(S_dev_missingSup,(void *)paao,"write_aao");
                 return(S_dev_missingSup);
         }
-        /* event throttling */
-        if (paao->scan == SCAN_IO_EVENT){
-                if ((paao->evnt != 0)  && (gts_trigger_counter != 0)){
-                        if ((gts_trigger_counter % paao->evnt) != 0){
-	                        status=writeValue(paao);
-                                return(0);
-                        }
-                }
-        }
 
 	if ( pact ) return(0);
 
 	status=writeValue(paao); /* write the data */
 
 	paao->udf=FALSE;
-	tsLocalTime(&paao->time);
+	recGblGetTimeStamp(paao);
 
 	monitor(paao);
         /* process the forward scan link record */

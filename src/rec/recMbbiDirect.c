@@ -212,7 +212,7 @@ static long process(pmbbiDirect)
 	if ( !pact && pmbbiDirect->pact ) return(0);
 	pmbbiDirect->pact = TRUE;
 
-	tsLocalTime(&pmbbiDirect->time);
+	recGblGetTimeStamp(pmbbiDirect);
 
 	if(status==0) { /* convert the value */
 		unsigned long rval = pmbbiDirect->rval;

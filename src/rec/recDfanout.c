@@ -213,7 +213,7 @@ static long process(pdfanout)
 	if ( !pact && pdfanout->pact ) return(0);
 	pdfanout->pact = TRUE;
 
-	tsLocalTime(&pdfanout->time);
+	recGblGetTimeStamp(pdfanout);
 
 	/* check for alarms */
 	alarm(pdfanout);

@@ -175,7 +175,7 @@ static long process(psa)
         psa->pact = TRUE;
 
         psa->udf=FALSE;
-        tsLocalTime(&psa->time);
+        recGblGetTimeStamp(psa);
 	monitor(psa);
 
         /* process the forward scan link record */

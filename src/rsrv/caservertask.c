@@ -339,9 +339,9 @@ LOCAL int req_server (void)
 }
 
 /*
- * rsrv_init()
+ * rsrv_init ()
  */
-int rsrv_init()
+int rsrv_init ()
 {
     clientQlock = semMutexMustCreate();
 

@@ -5,6 +5,8 @@ include $(TOP)/configure/CONFIG
 
 USR_INCLUDES = -I../../ca
 
+INC += rsrv.h
+
 LIBSRCS += caserverio.c
 LIBSRCS += caservertask.c
 LIBSRCS += camsgtask.c

@@ -30,6 +30,10 @@
 #ifndef INCLserverh
 #define INCLserverh
 
+#ifdef epicsExportSharedSymbols
+#   error suspect that libCom is being exported from rsrv?
+#endif /* ifdef epicsExportSharedSymbols */
+
 #include "osiThread.h"
 #include "bucketLib.h"
 #include "asLib.h"
@@ -38,8 +42,8 @@
 #include "caProto.h"
 #include "ellLib.h"
 
-#define RSRV_OK 0
-#define RSRV_ERROR (-1)
+#define epicsExportSharedSymbols
+#include "rsrv.h"
 
 #define LOCAL static
 

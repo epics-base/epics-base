@@ -9,14 +9,52 @@
 <body lang="en">
 <h1>EPICS Release 3.13.5</h1>
 
-<h4>June 2001</h4>
+<h4>Sept 2001</h4>
 
 <h3>
 Changes since 3.13.4</h3>
 <p>
+<b>convertRelease and checkRelease</b>
+<p>
+New applications created with makeBaseApp.pl now have the functionality of
+the makeConfigAppInclude.pl and makeIocCdCommands.pl scripts combined into
+a single convertRelease.pl script.
+<p>
+The new script also provides consistency checking of the entries in the
+config/RELEASE file, so that gnumake will stop with an error report if a
+definition in any other &lt;supporttop&gt/config/RELEASE file is different to
+the same definition in this application.  This checking can be disabled by
+editing config/Makefile.Host.
+<p>
+Applications created using earlier versions of EPICS will continue to work
+as before and will not benefit from the consistency check functionality.
+<p>
+<b>devAiSoftRaw and devAoSoftRaw</b>
+<p>
+ai and ao records using DTYP="Raw Soft Channel" can have their EOFF
+and ESLO fields set manually at design or run-time, and these values will
+be used when LINR=LINEAR.  The same applies to any device support that
+doesn't provide a special_linconv() routine; if special_linconv() is
+provided however, the original behaviour occurs (EOFF is set to EGUL and
+ESLO is calculated by that routine).  The ESLO and EOFF fields now have CA
+monitors posted if their value is changed by the special_linconv()
+routine.
+<p>
+<b>cac_recv_task</b>
+<p>
+Increased stack size from 4096 to 819l.
+<p>
+<b>drvTS</b>
+<p>
+Now uses osiSock for to handle implementation diffences
+<p>
 <b>Constant Links</b>
 <p>
 Hex and octal constants are now accepted for constant links.
+recGblInitConstantLink uses %i instead of %u for unsigned types.
+This is so that hex constants are accepted. %u does not accept hex.
+dbPutString makes a link constant if either strtod or strtol eats entire string.
+Previously only strtod was used.
 <p>
 <b>Breakpoint tables</b>
 <p>
@@ -338,48 +376,62 @@ involved the year 00 appeared in the ascii string</p>
 
 <p><b>Channel Access</b></p>
 
-<p>The CA comments are from Jeff Hill.</p>
+<p>
+1) A severe problem where the CA client did not exit a loop sending UDP to a list of addresses
+if an error condition was returned from the system call which sends a UDP frame was fixed.
+This problem was discovered during load testing, and will be more likely to occur under heavy
+network loading conditions.
+</p>
 
-<p>1) I fixed a severe problem where the CA client did not exit a loop sending
-UDP to a list of addresses if an error condition was returned from the system
-call which sends a UDP frame. This problem was discovered by me during heavy
-load testing, and if <br>
-it occurs in an operational system it will probably be occurring under heavy
-network loading conditions.</p>
+<p>
+2) A problem where the client library could fail and use a deallocated data structure if a
+connection dropped while it was waiting to send a message to a client was fixed.
+</p>
 
-<p>2) I fixed a problem where the client library could fail and use a
-deallocated data structure if a connection dropped while it was waiting to
-send a message to a client.</p>
+<p>
+3) The CA client now maintains a congestion avoidance threshold on UDP search
+transmissions similar to the congestion avoidance algorithm employed by modern version of
+TCP. There are also some small changes related to how the search counters are maintained
+without allowing them to overflow. This patch was made in R3.13.1 because I originally
+identified it as the fix for (1) above, but it turned out to not be the root cause.
+</p>
 
-<p>3) The CA client now maintains a congestion avoidance threshold on UDP
-search transmissions similar to the congestion avoidance algorithm employed by
-modern version of TCP. There are also some small changes related to how the
-search counters are maintained without allowing them to overflow. This patch
-was made in R3.13.1 because I originally identified it as the fix for (1)
-above, but it turned out to not be the root cause.</p>
+<p>
+4) A bug fix was made for a problem where the CA repeater was inheriting on HP-UX, and
+possibly other UNIX systems that are not Solaris, certain open file descriptors when
+fork()/exec() are used to start the CA repeater.
+</p>
 
-<p>4) A bug fix was made for Ralph Lange's problem where the CA repeater was
-inheriting on HP-UX, and possibly other UNIX systems that are not Solaris,
-certain open file descriptors when fork()/exec() are used to start the CA
-repeater.</p>
+<p>
+5) Changes that allow CA to work on Microsoft Visual C++ 6.0 (which includes a new win
+sock DLL and some changes in esoteric parts of the socket API).
+</p>
 
-<p>5) Changes that allow CA to work on Microsoft Visual C++ 6.0 (which
-includes a new win sock DLL and some changes in esoteric parts of the socket
-API).</p>
+<p>
+6)  always inform client of "no write access"  for a SPC_NOMOD fields.
+</p>
 
-<p>6)  always inform client of "no write access"  for a SPC_NOMOD fields.</p>
+<p>
+7) calls to ca_printf removed from rsrv.
+</p>
 
-<p>7) calls to ca_printf removed from rsrv.</p>
+<p>
+8) prevent UDP daemon from running damaged messages with TCP protocol and
+visa-versa
+</p>
 
-<p>8) prevent UDP daemon from running damaged messages with TCP protocol and
-visa-versa</p>
+<p>
+9) use ipAddrToA() so that address print out does not come out byte swapped on the PC
+</p>
 
-<p>9) use ipAddrToA() so that address print out does not come out byte swapped
-on the PC</p>
+<p>
+10) improved debug messages and added diagnostics
+</p>
 
-<p>10) improved debug messages and added diagnostics</p>
+<p>
+11)  don't send an exception to client when bad request received over UDP. 
+</p>
 
-<p>11)  dont send an exception to client when bad request received over udp.
 <br>
  </p>
 

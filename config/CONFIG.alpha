@@ -1,4 +1,4 @@
-# CONFIG.Unix.alpha
+# CONFIG.alpha
 #
 #  This file is maintained by the EPICS community.
 
@@ -24,7 +24,7 @@ RANLIB = ranlib
 YACC = $(EYACC)
 LEX = $(ELEX)
 G++ = g++
-CCC = cc
+CCC = cxx
 
 CP=cp
 MV = mv
@@ -136,7 +136,7 @@ COMPILE.c = $(CC) $(CFLAGS) $(CPPFLAGS) -c
 COMPILE.cc = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -c
 # Unlike the 'Unix' makesystem, output flags -o .. are now part of LINK.c[c]
 LINK.c = $(CC) -o $@ $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
-LINK.cc = $(CXX) -o $@ $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS)
+LINK.cc = $(CCC) -o $@ $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS)
 
 DEPEND_RULE.c = @echo no DEPENDS_RULE.c defined in CONFIG.alpha
 DEPEND_RULE.cc = @echo no DEPENDS_RULE.cc defined in CONFIG.alpha

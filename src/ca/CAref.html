@@ -104,7 +104,8 @@ height="31" width="88"></a></p>
   <li><a href="#L3249">process CA client library background
   activities</a></li>
   <li><a href="#L3251">flush outstanding requests to the server</a></li>
-  <li><a href="#L3253">replace the default exception handler</a></li>
+  <li><a href="#ca_add_exception_event">replace the default exception
+    handler</a></li>
 </ul>
 
 <h3><a href="#Function Call Reference">Function Call Interface Index</a></h3>
@@ -127,8 +128,8 @@ height="31" width="88"></a></p>
   <li><a href="#L6929">ca_message</a></li>
   <li><a href="#L6931">ca_name</a></li>
   <li><a href="#L6933">ca_read_access</a></li>
-  <li><a href="#L6935">ca_replace_access_rights_event</a></li>
-  <li><a href="#ca_replace">ca_replace_printf_handler</a></li>
+  <li><a href="#ca_replace">ca_replace_access_rights_event</a></li>
+  <li><a href="#ca_replace_printf_handler">ca_replace_printf_handler</a></li>
   <li><a href="#L3249">ca_pend_event</a></li>
   <li><a href="#ca_pend_io">ca_pend_io</a></li>
   <li><a href="#L3249">ca_poll</a></li>
@@ -477,7 +478,7 @@ EPICS_CA_BEACON_PERIOD.</p>
 Interval</a></h3>
 
 <p>The CA client library will continuously attempt to connect any CA channels
-that an application has created until it is successful. The CA client library
+that an application has created until it is successful. The library
 periodically queries the server destination address list described above with
 name resolution requests for any unresolved channels. Since this address list
 frequently contains broadcast addresses, and because nonexistent process
@@ -494,11 +495,11 @@ operating system - whichever is greater. The number of UDP frames per
 interval is also dynamically adjusted based on the past success rate.</p>
 
 <p>If name resolution requests are not responded to, then the client library
-doubles the delay between name resolution attempts with each attempt
-eventually limited by a maxuimum plateau interval, and it also reduces the
-number of requests per interval. After some long interval, if the client
-library does not receive any responses it stops sending name resolution
-attempts altogether until it sees a beacon anomaly.</p>
+doubles the delay between name resolution attempts and reduces the number of
+requests per interval. The delay between attempts is initially limited by a
+maxuimum however, after some long interval, if the client library does not
+receive any responses it stops sending name resolution attempts altogether
+until it sees a beacon anomaly.</p>
 
 <p>The CA client library continually estimates the beacon period of all
 server beacons received. If a particular server's beacon period becomes
@@ -972,31 +973,35 @@ int main ( int argc, char ** argv )
 <h3 id="User">User Supplied Callback Functions</h3>
 
 <p>Certain CA client initiated requests asynchronously execute an application
-supplied call back in the client when a response arrives. The functions
-ca_put_callback, ca_get_callback, and ca_add_event all request notification
-of asynchronous completion via this mechanism. The structure
-"event_handler_args" is passed to the application supplied callback. In this
-structure the field "dbr" is a void pointer to any data that might be
-returned. The field "status" will be set to one of the CA error codes in
-caerr.h and will indicate the status of the operation performed in the IOC.
-If the status field isn't set to ECA_NORMAL or data isn't normally returned
-from the operation (i.e. put call back) then you should expect that the field
-"dbr" will be set to NULL. The fields "usr", "chid", and "type" are set to
-the values specified when the request was made by the application.</p>
-<pre><code>struct event_handler_args { 
-    void *usr; /* user argument supplied when event added */ 
-    chid chid; /* channel id */ 
-    long type; /* dbr type of the value returned */ 
-    long count; /* element count of the item(s) returned */ 
-    const void *dbr; /* pointer to the value returned */ 
-    int status; /* ECA_XXX status of the op from server */ 
-};
+supplied call back in the client process when a response arrives. The
+functions ca_put_callback, ca_get_callback, and ca_add_event all request
+notification of asynchronous completion via this mechanism. The
+<code>event_handler_args </code>structure is passed <em>by value</em> to the
+application supplied callback. In this structure the <code>dbr</code> field
+is a void pointer to any data that might be returned. The
+<code>s</code><code>tatus </code>field will be set to one of the CA error
+codes in caerr.h and will indicate the status of the operation performed in
+the IOC. If the status field isn't set to ECA_NORMAL or data isn't normally
+returned from the operation (i.e. put call back) then you should expect that
+the <code>dbr </code>field  will be set to a nill pointer (zero). The fields
+<code>usr</code>, <code>chid</code>, and <code>type</code> are set to the
+values specified when the request was made by the application.</p>
+<pre><code>typedef struct event_handler_args {
+    void            *usr;   /* user argument supplied with request */
+    chanId          chid;   /* channel id */
+    long            type;   /* the type of the item returned */ 
+    long            count;  /* the element count of the item returned */
+    const void      *dbr;   /* a pointer to the item returned */
+    int             status; /* ECA_XXX status of the requested op from the server */
+} evargs;
 
 void myCallback ( struct event_handler_args args )
 {
-    if ( type == DBR_TIME_DOUBLE ) {
-        const struct dbr_time_double * pTD = 
-            ( const struct dbr_time_double * ) args.dbr;
+    if ( args.status != ECA_NOEMAL ) {
+    }
+    if ( args.type == DBR_TIME_DOUBLE ) {
+         const struct dbr_time_double * pTD =
+              ( const struct dbr_time_double * ) args.dbr;
     }
 }</code></pre>
 
@@ -1141,6 +1146,11 @@ int ca_context_create ( enum ca_preemptive_callback_select SELECT );</code></pre
 <p>This function should be called once prior to making any of the other
 channel access calls.</p>
 
+<p>If <code>ca_disable_preemptive_callback</code> is specified then
+additional threads are <em>not </em>allowed to join the CA context using
+ca_context_attach() because allowing other threads to join implies that CA
+callbacks will be called preemptively from more than one thread.</p>
+
 <h4>Arguments</h4>
 <dl>
   <dt><code>SELECT</code></dt>
@@ -1239,11 +1249,6 @@ are made by the application can't be guaranteed, and application programs may
 need to be prepared for a connected channel to enter a disconnected state at
 any time.</p>
 
-<p>If <code>ca_disable_preemptive_callback</code> is specified then
-additional threads are <em>not </em>allowed to join the CA context using
-ca_context_attach() because allowing other threads to join implies that CA
-callbacks will be called preemptively from more than one thread.</p>
-
 <h4>Example</h4>
 
 <p>See caExample.c in the example application created by makeBaseApp.pl.</p>
@@ -1263,7 +1268,19 @@ callbacks will be called preemptively from more than one thread.</p>
     <dd>Optional address of the user's call back function to be run when the
       connection state changes. Casual users of channel access may decide to
       set this field to nil or 0 if they do not need to have a call back
-      function run in response to each connection state change event.</dd>
+      function run in response to each connection state change event.
+      <p>The following structure is passed <em>by value </em>to the user's
+      connection connection callback function. The <code>op</code> field will
+      be set by the CA client library to <code>CA_OP_CONN_UP</code> when the
+      channel connects, and to <code>CA_OP_CONN_DOWN </code>when the channel
+      disconnects. See <code><a href="#ca_puser">ca_puser</a></code> if the
+      <code>PUSER </code>argument is required in your callback
+      handler<code>.</code></p>
+      <pre><code>struct  ca_connection_handler_args { 
+    chanId  chid;  /* channel id */   
+    long    op;    /* one of CA_OP_CONN_UP or CA_OP_CONN_DOWN */ 
+};</code></pre>
+    </dd>
 </dl>
 <dl>
   <dt><code>PUSER</code></dt>
@@ -1399,8 +1416,8 @@ This allows several requests to be efficiently combined into one message.</p>
 </dl>
 <dl>
   <dt><code>PFUNC</code></dt>
-    <dd>address of user supplied function to be run when the requested
-      operation completes</dd>
+    <dd>address of <a href="#User">user supplied callback function</a> to be
+      run when the requested operation completes</dd>
 </dl>
 <dl>
   <dt><code>USERARG</code></dt>
@@ -1494,8 +1511,8 @@ in one message.</p>
 </dl>
 <dl>
   <dt><code>USERFUNC</code></dt>
-    <dd>Address of user supplied function to be run when the requested
-      operation completes.</dd>
+    <dd>Address of <a href="#User">user supplied callback function</a> to be
+      run when the requested operation completes.</dd>
 </dl>
 <dl>
   <dt><code>USERARG</code></dt>
@@ -1603,8 +1620,8 @@ least one update indicating the current state of the channel.</p>
 </dl>
 <dl>
   <dt><code>USRERFUNC</code></dt>
-    <dd>Address of user supplied callback function to be invoked with each
-      subscription update</dd>
+    <dd>The address of <a href="#User">user supplied callback function</a> to
+      be invoked with each subscription update.</dd>
 </dl>
 <dl>
   <dt><code>USERARG</code></dt>
@@ -1874,7 +1891,8 @@ int ca_add_exception_event ( pCallback  USERFUNC, void *USERARG );</pre>
 
 <h4>Description</h4>
 
-<p>Replace the currently installed exception handler call back.</p>
+<p>Replace the currently installed CA context global exception handler call
+back.</p>
 
 <p>When an error occurs in the server asynchronous to the clients thread then
 information about this type of error is passed from the server to the client
@@ -1892,9 +1910,25 @@ field should not be used.</p>
 <h4>Arguments</h4>
 <dl>
   <dt><code>USERFUNC</code></dt>
-    <dd>Addressof usercall back functionto beexecuted when exceptions occur.
-      Passing a nil value causes the default exception handler to be
-      reinstalled.</dd>
+    <dd>Address of user callback function to be executed when an exceptions
+      occur. Passing a nil value causes the default exception handler to be
+      reinstalled. The following structure is passed by value to the user's
+      callback function. Currently, the <code>op </code>field can be one of
+      <code>CA_OP_GET, CA_OP_PUT, CA_OP_CREATE_CHANNEL, CA_OP_ADD_EVENT,
+      CA_OP_CLEAR_EVENT, or CA_OP_OTHER.</code>
+      <pre><code>struct exception_handler_args {
+    void            *usr;   /* user argument supplied when installed */
+    chanId          chid;   /* channel id (may be nill) */
+    long            type;   /* type requested */
+    long            count;  /* count requested */
+    void            *addr;  /* user's address to write results of CA_OP_GET */
+    long            stat;   /* channel access ECA_XXXX status code */
+    long            op;     /* CA_OP_GET, CA_OP_PUT, ..., CA_OP_OTHER */
+    const char      *ctx;   /* a character string containing context info */
+    sonst char      *pFile; /* source file name (may be NULL) */
+    unsigned        lineNo; /* source file line number (may be zero) */
+};</code></pre>
+    </dd>
 </dl>
 <dl>
   <dt><code>USERARG</code></dt>
@@ -1927,7 +1961,8 @@ ca_add_exception_event ( ca_exception_handler , 0 );</code></pre>
 
 <p>ECA_NORMAL - Normal successful completion</p>
 
-<h3><code><a name="ca_replace">ca_replace_printf_handler ()</a></code></h3>
+<h3><code><a name="ca_replace_printf_handler">ca_replace_printf_handler
+()</a></code></h3>
 <pre><code>#include &lt;cadef.h&gt;
 typedef int caPrintfFunc ( const char *pFromat, va_list args );
 int ca_replace_printf_handler ( caPrintfFunc *PFUNC );</code></pre>
@@ -1958,17 +1993,18 @@ SEVCHK ( status, "failed to install my printf handler" );</code></pre>
 
 <p>ECA_NORMAL - Normal successful completion</p>
 
-<h3><code><a name="L6935">ca_replace_access_rights_event()</a></code></h3>
+<h3><code><a
+name="ca_replace">ca_replace_access_rights_event()</a></code></h3>
 <pre><code>#include &lt;cadef.h&gt;
 typedef void ( *pCallBack )( struct access_rights_handler_args );
-int ca_replace_access_rights_event ( chid CHAN, pCallBack PFUNC );</code></pre>
+int ca_replace ( chid CHAN, pCallBack PFUNC );</code></pre>
 
 <h4>Description</h4>
 
-<p>Install or replace the access rights state change call back handler for
-the specified channel.</p>
+<p>Install or replace the access rights state change callback handler for the
+specified channel.</p>
 
-<p>The call back handler is called in the following situations.</p>
+<p>The callback handler is called in the following situations.</p>
 <ul>
   <li>whenever CA connects the channel immediately before the channel's
     connection handler is called</li>
@@ -1988,7 +2024,19 @@ the specified channel.</p>
 <dl>
   <dt><code>PFUNC</code></dt>
     <dd>Address of user supplied call back function. A nil pointer uninstalls
-      the current handler.</dd>
+      the current handler. The following arguments atre passed <em>by
+      value</em> to the supplied callback handler.
+      <pre><code>typedef struct ca_access_rights {
+    unsigned    read_access:1;
+    unsigned    write_access:1;
+} caar;
+
+/* arguments passed to user access rights handlers */
+struct  access_rights_handler_args {
+    chanId  chid;   /* channel id */
+    caar    ar;     /* new access rights state */
+};</code></pre>
+    </dd>
 </dl>
 
 <h4>Returns</h4>

@@ -34,6 +34,7 @@
 
 #include <vxWorks.h>
 #include <types.h>
+#if 0 /* COMMENTED OUT SOME INCLUDES */
 #include <iosLib.h>
 #include <taskLib.h>
 #include <memLib.h>
@@ -42,6 +43,8 @@
 #include <wdLib.h>
 #include <tickLib.h>
 #include <vme.h>
+#endif /* COMMENTED OUT SOME INCLUDES */
+
 
 #include <alarm.h>
 #include <cvtTable.h>
@@ -55,7 +58,7 @@
 #include <callback.h>
 #include <fast_lock.h>
 
-#include <dbCommon.h>
+#include <rec/dbCommon.h>
 #include <rec/aoRecord.h>
 #include <rec/aiRecord.h>
 #include <rec/biRecord.h>

@@ -10,6 +10,7 @@ vxDb_SRCS += drvTS.c
 vxDb_SRCS += devLib.c
 vxDb_SRCS += devLibVxWorks.c
 vxDb_SRCS += tsSubr.c
+vxDb_SRCS += date.c
 
 LIBRARY_vxWorks = vxDb
 

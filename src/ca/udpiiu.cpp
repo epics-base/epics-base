@@ -295,7 +295,7 @@ void udpiiu::recvMsg ( callbackMutex & cbMutex )
             if ( errnoCpy == SOCK_ECONNRESET ) {
                 return;
             }
-            this->printf ( "Unexpected UDP recv error was \"%s\"\n", 
+            this->printf ( "CAC: UDP recv error was \"%s\"\n", 
                 SOCKERRSTR (errnoCpy) );
         }
         else if ( status > 0 ) {

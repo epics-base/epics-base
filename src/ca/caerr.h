@@ -208,7 +208,7 @@ READONLY char   *ca_message_text[]
 "Read access denied",
 "Write access denied",
 "Sorry, that anachronistic feature of CA is no longer supported",
-"The search/beacon request address list was empty after initialization",
+"The PV search request address list was empty after initialization",
 
 "Data conversion between client's type and the server's type failed",
 "Invalid channel identifier",

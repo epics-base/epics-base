@@ -45,6 +45,13 @@ int main(int argc,char **argv)
     static char *subSep = ",";
 
     /*Look for options*/
+    if(argc<2) {
+	fprintf(stderr,
+	    "usage: dbExpand -Idir -Idir "
+		"-S substitutions -S substitutions"
+		" file1.dbd file2.dbd ...\n");
+	exit(0);
+    }
     while((strncmp(argv[1],"-I",2)==0)||(strncmp(argv[1],"-S",2)==0)) {
 	if(strncmp(argv[1],"-I",2)==0) {
 	    pstr = &path;

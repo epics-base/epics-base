@@ -36,6 +36,7 @@
  * .05  02-28-92        jba     ANSI C changes
  * .06  04-17-92        rcz     removed dbPvd for mrk
  * .07  05-19-92        mrk	Mods for changes to internal database structures
+ * .07  07-21-92        jba	ansi c changes
  */
 
 /* Global Database Test Routines - All can be invoked via vxWorks shell
@@ -636,10 +637,9 @@ long dbior(pdrvName,type)
 long dblls(lockset)	/* list lock set for specified record type*/
 	int	lockset;
 {
-    int			rectype,beg,end,recnum;
+    int			rectype,beg,end;
     struct recLoc	*precLoc;
     struct dbCommon	*precord;
-    char		*pstr;
     char		name[PVNAME_SZ+1];
     struct recType      *precType;
     struct recHeader    *precHeader;
@@ -737,7 +737,6 @@ static void printBuffer(status, dbr_type, pbuffer, reqOptions,
     unsigned long   nano_seconds;
     unsigned long   no_strs;
     short           svalue;
-    unsigned short  usarr[6];
     unsigned short  usvalue;
     char           *pmsg;
     int             i,

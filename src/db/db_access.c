@@ -33,6 +33,7 @@
  * .03	08-13-91 mrk	Add pfl argument to dbGetField calls
  * .04  02-05-92 jba	Changed function arguments from paddr to precord 
  * .05  02-28-92 jba    ANSI C changes
+ * .06  07-21-92 jba    ANSI C changes
  */
 
 
@@ -52,6 +53,7 @@
 #include        <dbAccess.h>
 #include        <dbCommon.h>
 #include        <errMdef.h>
+#include        <recSup.h>
 
 #include	<alarm.h>
 
@@ -483,7 +485,7 @@ struct dbr_ctrl_double{
  *
  * process database records
  */
-db_process(pdb_addr)
+void db_process(pdb_addr)
 register struct db_addr *pdb_addr;
 {
         long    status;
@@ -493,11 +495,11 @@ register struct db_addr *pdb_addr;
         return;
 }
 
-new_alarm(){
+void new_alarm(){
         return;
 }
 /*  FILL  fill a buffer with the designated character */
- fill(pbuffer,size,fillchar)
+void fill(pbuffer,size,fillchar)
  register char  *pbuffer;
  register short size;
  register char  fillchar;
@@ -556,7 +558,7 @@ new_alarm(){
  */
 static short mapNewToOld[]={0,4,4,1,2,5,6,2,6,3};
 
-db_name_to_addr(pname,paddr)
+short db_name_to_addr(pname,paddr)
   char           *pname;
   struct dbAddr *paddr;
 {
@@ -579,7 +581,7 @@ db_name_to_addr(pname,paddr)
 
 typedef char DBSTRING[MAX_STRING_SIZE];
 
-db_get_field(paddr,buffer_type,pbuffer,no_elements,pfl)
+short db_get_field(paddr,buffer_type,pbuffer,no_elements,pfl)
 struct dbAddr	*paddr;
 short		buffer_type;
 char		*pbuffer;
@@ -589,8 +591,6 @@ void		*pfl;
     long status;
     long options;
     long nRequest;
-    long precision;
-    short severity;
     long i;
 
 
@@ -1371,7 +1371,7 @@ void		*pfl;
 
 /* DB_PUT_FIELD put a field and convert it to the desired type */
 
-db_put_field(paddr,src_type,psrc,no_elements)
+short db_put_field(paddr,src_type,psrc,no_elements)
 struct dbAddr	*paddr;		/* where to put it */
 short		src_type,no_elements;
 char			*psrc;		/* where to get it from */

@@ -1704,7 +1704,7 @@ void arrayWriteNotify ( struct event_handler_args args )
     arrayWriteNotifyComplete = 1;
 }
 
-void arrayTest ( chid chan )
+void arrayTest ( const char *pName, chid chan, unsigned maxArrayBytes )
 {
     dbr_double_t *pRF, *pWF;
     unsigned i;
@@ -1756,15 +1756,22 @@ void arrayTest ( chid chan )
      */
     {
         char *pRS;
+        unsigned size = ca_element_count (chan) * MAX_STRING_SIZE;
 
-        pRS = malloc ( ca_element_count (chan) * MAX_STRING_SIZE );
-        assert ( pRS );
-        status = ca_array_get ( DBR_STRING, 
-            ca_element_count (chan), chan, pRS ); 
-        SEVCHK  ( status, "array read request failed" );
-        status = ca_pend_io ( 30.0 );
-        SEVCHK ( status, "array read failed" );
-        free ( pRS );
+        if ( size <= maxArrayBytes ) {
+
+            pRS = malloc ( ca_element_count (chan) * MAX_STRING_SIZE );
+            assert ( pRS );
+            status = ca_array_get ( DBR_STRING, 
+                ca_element_count (chan), chan, pRS ); 
+            SEVCHK  ( status, "array read request failed" );
+            status = ca_pend_io ( 30.0 );
+            SEVCHK ( status, "array read failed" );
+            free ( pRS );
+        }
+        else {
+            printf ( "skipping the fetch array in string data type test - does not fit\n" );
+        }
     }
 
     /*
@@ -1832,6 +1839,38 @@ void arrayTest ( chid chan )
         }
         status = ca_add_exception_event ( 0, 0 );
         SEVCHK ( status, "exception notify install failed" );
+    }
+
+    // verify that unequal send/recv buffer sizes work
+    // (a bug related to this test was detected in early R3.14)
+    {
+        chid newChan;
+
+        status = ca_create_channel ( pName, 0, 0, 0, &newChan );
+        assert ( status == ECA_NORMAL );
+        status = ca_pend_io ( 100.0 );
+        assert ( status == ECA_NORMAL );
+        assert ( ca_element_count ( newChan ) == ca_element_count ( chan ) );
+        status = ca_array_get ( DBR_DOUBLE, ca_element_count ( newChan ), 
+                    newChan, pRF ); 
+        status = ca_pend_io ( 100.0 );
+        assert ( status == ECA_NORMAL );
+        status = ca_clear_channel ( newChan );
+        assert ( status == ECA_NORMAL );
+
+        status = ca_create_channel ( pName, 0, 0, 0, &newChan );
+        assert ( status == ECA_NORMAL );
+        status = ca_pend_io ( 100.0 );
+        assert ( status == ECA_NORMAL );
+        assert ( ca_element_count ( newChan ) == ca_element_count ( chan ) );
+        status = ca_array_put ( DBR_DOUBLE, ca_element_count ( newChan ), 
+                    newChan, pWF ); 
+        status = ca_array_get ( DBR_DOUBLE, 1, 
+                    newChan, pRF ); 
+        status = ca_pend_io ( 100.0 );
+        assert ( status == ECA_NORMAL );
+        status = ca_clear_channel ( newChan );
+        assert ( status == ECA_NORMAL );
     }
 
     free ( pRF );
@@ -2244,13 +2283,19 @@ int acctst ( char *pName, unsigned channelCount,
     unsigned i;
     appChan *pChans;
     unsigned connections;
+    unsigned maxArrayBytes = 10000000;
 
-    printf ( "CA Client V%s, channel name \"%s\"\n", ca_version (), pName );
+    printf ( "CA Client V%s, channel name \"%s\"\n", 
+        ca_version (), pName );
     if ( select == ca_enable_preemptive_callback ) {
         printf ( "Preemptive call back is enabled.\n" );
     }
 
-    epicsEnvSet ( "EPICS_CA_MAX_ARRAY_BYTES", "10000000" ); 
+    {
+        char tmpString[32];
+        sprintf ( tmpString, "%u", maxArrayBytes );
+        epicsEnvSet ( "EPICS_CA_MAX_ARRAY_BYTES", tmpString ); 
+    }
 
     verifyImmediateTearDown ();
 
@@ -2268,6 +2313,10 @@ int acctst ( char *pName, unsigned channelCount,
     status = ca_pend_io ( 100.0 );
     SEVCHK ( status, NULL );
 
+    printf ( "native type was %s, native count was %u\n",
+        dbf_type_to_text ( ca_field_type ( chan ) ), 
+        ca_element_count ( chan ) );
+
     connections = ca_get_ioc_connection_count ();
     assert ( connections == 1u || connections == 0u );
     if ( connections == 0u ) {
@@ -2278,7 +2327,7 @@ int acctst ( char *pName, unsigned channelCount,
     verifyTimeStamps ( chan );
     verifyOldPend ();
     exceptionTest ( chan );
-    arrayTest ( chan ); 
+    arrayTest ( pName, chan, maxArrayBytes ); 
     verifyMonitorSubscriptionFlushIO ( chan );
     monitorSubscriptionFirstUpdateTest ( pName, chan );
     performGrEnumTest ( chan );

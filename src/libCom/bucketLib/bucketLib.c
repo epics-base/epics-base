@@ -74,8 +74,8 @@ LOCAL bucketHash      bucketPointerHash;
 LOCAL bucketHash      bucketStringHash;
 
 typedef struct {
-        bucketHash      *pHash;
-        bucketCompare   *pCompare;
+	bucketHash      *pHash;
+	bucketCompare   *pCompare;
 	buckTypeOfId	type;
 }bucketSET;
 

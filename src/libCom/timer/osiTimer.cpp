@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.4  1996/08/05 21:51:11  jhill
+ * fixed delete this confusion
+ *
  * Revision 1.3  1996/07/24 23:01:53  jhill
  * use iter.remove()
  *
@@ -232,9 +235,8 @@ osiTime osiTimerQueue::delayToFirstExpire()
 void osiTimerQueue::process()
 {
 	tsDLIter<osiTimer> pendIter (this->pending);
-	tsDLIter<osiTimer> expirIter (this->expired);
-	osiTimer *pTmr;
 	osiTime cur(osiTime::getCurrent());
+	osiTimer *pTmr;
 
 	// no recursion
 	if (this->inProcess) {

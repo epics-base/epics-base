@@ -69,8 +69,8 @@ print "extern \"C\" {\n";
 #definitions for recordtype
 if($numberRecordType>0) {
     for ($i=0; $i<$numberRecordType; $i++) {
-        print "epicsShareExtern rset *p$recordType[$i]RSET;\n";
-        print "epicsShareExtern int (*p$recordType[$i]RecordSizeOffset)(dbRecordType *pdbRecordType);\n"
+        print "epicsShareExtern rset *pvar_rset_$recordType[$i]RSET;\n";
+        print "epicsShareExtern int (*pvar_func_$recordType[$i]RecordSizeOffset)(dbRecordType *pdbRecordType);\n"
     }
     print "\nstatic const char * const recordTypeNames[$numberRecordType] = {\n";
     for ($i=0; $i<$numberRecordType; $i++) {
@@ -82,7 +82,7 @@ if($numberRecordType>0) {
 
     print "static const recordTypeLocation rtl[$i] = {\n";
     for ($i=0; $i<$numberRecordType; $i++) {
-        print "    {p$recordType[$i]RSET, p$recordType[$i]RecordSizeOffset}";
+        print "    {pvar_rset_$recordType[$i]RSET, pvar_func_$recordType[$i]RecordSizeOffset}";
         if($i < $numberRecordType-1) { print ",";}
         print "\n";
     }
@@ -92,7 +92,7 @@ if($numberRecordType>0) {
 #definitions for device
 if($numberDeviceSupport>0) {
     for ($i=0; $i<$numberDeviceSupport; $i++) {
-        print "epicsShareExtern dset *p$deviceSupport[$i];\n";
+        print "epicsShareExtern dset *pvar_dset_$deviceSupport[$i];\n";
     }
     print "\nstatic const char * const deviceSupportNames[$numberDeviceSupport] = {\n";
     for ($i=0; $i<$numberDeviceSupport; $i++) {
@@ -104,7 +104,7 @@ if($numberDeviceSupport>0) {
 
     print "static const dset * const devsl[$i] = {\n";
     for ($i=0; $i<$numberDeviceSupport; $i++) {
-        print "    p$deviceSupport[$i]";
+        print "    pvar_dset_$deviceSupport[$i]";
         if($i < $numberDeviceSupport-1) { print ",";}
         print "\n";
     }
@@ -114,7 +114,7 @@ if($numberDeviceSupport>0) {
 #definitions for driver
 if($numberDriverSupport>0) {
     for ($i=0; $i<$numberDriverSupport; $i++) {
-        print "epicsShareExtern drvet *p$driverSupport[$i];\n";
+        print "epicsShareExtern drvet *pvar_drvet_$driverSupport[$i];\n";
     }
     print "\nstatic const char *driverSupportNames[$numberDriverSupport] = {\n";
     for ($i=0; $i<$numberDriverSupport; $i++) {
@@ -126,7 +126,7 @@ if($numberDriverSupport>0) {
     
     print "static struct drvet *drvsl[$i] = {\n";
     for ($i=0; $i<$numberDriverSupport; $i++) {
-        print "    p$driverSupport[$i]";
+        print "    pvar_drvet_$driverSupport[$i]";
         if($i < $numberDriverSupport-1) { print ",";}
         print "\n";
     }
@@ -136,14 +136,14 @@ if($numberDriverSupport>0) {
 #definitions registrar
 if($numberRegistrar>0) {
     for ($i=0; $i<$numberRegistrar; $i++) {
-	print "epicsShareExtern void (*p$registrar[$i])(void);\n";
+	print "epicsShareExtern void (*pvar_func_$registrar[$i])(void);\n";
     }
     print "\n";
 }
 
 if (@variables) {
     foreach $var (@variables) {
-        print "epicsShareExtern $varType{$var} *p$var;\n";
+        print "epicsShareExtern $varType{$var} *pvar_$varType{$var}_$var;\n";
     }
     %iocshTypes = (
         'int' => 'iocshArgInt',
@@ -154,7 +154,7 @@ if (@variables) {
         $argType = $iocshTypes{$varType{$var}};
         die "Unknown variable type $varType{$var} for variable $var"
             unless $argType;
-        print "\t{\"$var\", $argType, (void *)p$var},\n";
+        print "\t{\"$var\", $argType, (void * const)pvar_$varType{$var}_$var},\n";
     }
     print "\t{NULL, iocshArgInt, NULL}\n};\n\n";
 }
@@ -219,7 +219,7 @@ END
 }
 if($numberRegistrar>0) {
     for($i=0; $i< $numberRegistrar;  $i++ ) {
-        print "    (*p$registrar[$i])();\n";
+        print "    (*pvar_func_$registrar[$i])();\n";
     }
 }
 

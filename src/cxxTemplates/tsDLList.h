@@ -31,6 +31,9 @@
  *
  * History
  * $Log$
+ * Revision 1.15  1999/02/01 21:49:04  jhill
+ * removed redundant API
+ *
  * Revision 1.14  1998/10/23 00:20:41  jhill
  * attempted to clean up HP-UX warnings
  *
@@ -244,7 +247,17 @@ public:
 	tsDLIterBD (T *pInitialEntry) : 
 		pEntry(pInitialEntry) {}
 
-	tsDLIterBD (const class tsDLIterBD<T> &copyIn);
+	//
+	// This is apparently required by some compiler, causes 
+	// trouble with MS Visual C 6.0, but should not be 
+	// required by any compiler. I am assuming that the 
+	// other compiler is a past version of MS Visual C.
+	//	
+#	if defined(_MSC_VER) && _MSC_VER < 1200
+		template <class T>
+		tsDLIterBD (const class tsDLIterBD<T> &copyIn) :
+			pEntry(copyIn.pEntry) {}
+#	endif
 
 	tsDLIterBD<T> & operator = (T *pNewEntry)
 	{
@@ -325,7 +338,7 @@ public:
 private:
 	T *pEntry;
 };
-		
+
 //
 // tsDLIter<T>
 //
@@ -497,15 +510,6 @@ public:
 	//
 	void remove ();
 };
-
-//
-// MS Visual C 6.0 requires that this code is not provided in
-// the class definition because the class isnt fully defined yet
-//
-template <class T>
-inline tsDLIterBD<T>::tsDLIterBD(const class tsDLIterBD<T> &copyIn) :
-	pEntry(copyIn.pEntry) {}
-
 
 //
 // tsDLList<T>::remove ()

@@ -22,6 +22,8 @@ public:
 	T * const 	pNewSeg;
 };
 
+template <class T> class tsBTree;
+
 //
 // tsBTreeNode
 //
@@ -53,16 +55,18 @@ private:
 	T *pLeft;
 	T *pRight;
 
-	static void traverse(T &self, void (T::*pCB)()) 
+	//
+	// run callback for evey item in the B-Treee in sort order
+	//
+	static void traverse (T &item, void (T::*pCallBack)()) 
 	{
-		if (self.tsBTreeNode<T>::pLeft) {
-			tsBTreeNode<T>::traverse
-				(*self.tsBTreeNode<T>::pLeft, pCB);
+		tsBTreeNode<T> &node = item;
+		if (node.pLeft) {
+			tsBTreeNode<T>::traverse (*node.pLeft, pCallBack);
 		}
-		(self.*pCB)();
-		if (self.tsBTreeNode<T>::pRight) {
-			tsBTreeNode<T>::traverse
-				(*self.tsBTreeNode<T>::pRight, pCB);
+		(item.*pCallBack)();
+		if (node.pRight) {
+			tsBTreeNode<T>::traverse (*node.pRight, pCallBack);
 		}
 	}
 
@@ -73,23 +77,22 @@ private:
 	//
 	static void insert(T &self, T &item)
 	{
+		tsBTreeNode<T> &node = self;
 		btCmp result = item.tsBTreeCompare(self);
 		if (result==btLessOrEqual) {
-			if (self.tsBTreeNode<T>::pLeft) {
-				tsBTreeNode<T>::insert
-					(*self.tsBTreeNode<T>::pLeft, item);
+			if (node.pLeft) {
+				tsBTreeNode<T>::insert (*node.pLeft, item);
 			}
 			else {
-				self.tsBTreeNode<T>::pLeft = &item;
+				node.pLeft = &item;
 			}
 		}
 		else if(result==btGreater) {
-			if (self.tsBTreeNode<T>::pRight) {
-				tsBTreeNode<T>::insert
-					(*self.tsBTreeNode<T>::pRight, item);
+			if (node.pRight) {
+				tsBTreeNode<T>::insert (*node.pRight, item);
 			}
 			else {
-				self.tsBTreeNode<T>::pRight = &item;
+				node.pRight = &item;
 			}
 		}
 		else {
@@ -104,51 +107,50 @@ private:
 	//
 	static tsBTreeRMRet<T> remove(T &self, T &item)
 	{
+		tsBTreeNode<T> &node = self;
 		if (&self == &item) {
-			if (self.tsBTreeNode<T>::pLeft) {
-				if (self.tsBTreeNode<T>::pRight) {
-					T *pR = self.tsBTreeNode<T>::pLeft->tsBTreeNode<T>::pRight;
+			if (node.pLeft) {
+				if (node.pRight) {
+					tsBTreeNode<T> *pLeftNode = node.pLeft;
+					tsBTreeNode<T> *pRightNode = node.pRight;
+					T *pR = pLeftNode->pRight;
 					if (pR) {
-						tsBTreeNode<T>::insert
-							(*pR, *self.tsBTreeNode<T>::pRight);
+						tsBTreeNode<T>::insert (*pR, *node.pRight);
 					}
 					else {
-						self.tsBTreeNode<T>::pLeft->tsBTreeNode<T>::pRight =
-							self.tsBTreeNode<T>::pRight;
+						pLeftNode->pRight = node.pRight;
 					}
 				}
-				return tsBTreeRMRet<T>(tsbtrrFound, self.tsBTreeNode<T>::pLeft); // found it
+				return tsBTreeRMRet<T>(tsbtrrFound, node.pLeft); // found it
 			}
 			else {
-				return tsBTreeRMRet<T>(tsbtrrFound, self.tsBTreeNode<T>::pRight); // found it
+				return tsBTreeRMRet<T>(tsbtrrFound, node.pRight); // found it
 			}
 		}
 
 		btCmp result = item.tsBTreeCompare(self);
 		if (result==btLessOrEqual) {
-			if (self.tsBTreeNode<T>::pLeft) {
-				tsBTreeRMRet<T> ret = tsBTreeNode<T>::
-					remove(*self.tsBTreeNode<T>::pLeft, item);
+			if (node.pLeft) {
+				tsBTreeRMRet<T> ret = tsBTreeNode<T>::remove(*node.pLeft, item);
 				if (ret.foundIt==tsbtrrFound) {
-					self.tsBTreeNode<T>::pLeft= ret.pNewSeg;
-					return tsBTreeRMRet<T>(tsbtrrFound,&self); // TRUE - found it
+					node.pLeft= ret.pNewSeg;
+					return tsBTreeRMRet<T> (tsbtrrFound, &self); // TRUE - found it
 				}
 			}
 			return tsBTreeRMRet<T>(tsbtrrNotFound, 0u); // not found
 		}
 		else if(result==btGreater) {
-			if (self.tsBTreeNode<T>::pRight) {
-				tsBTreeRMRet<T> ret = tsBTreeNode<T>::
-					remove(*self.tsBTreeNode<T>::pRight, item);
+			if (node.pRight) {
+				tsBTreeRMRet<T> ret = tsBTreeNode<T>::remove(*node.pRight, item);
 				if (ret.foundIt==tsbtrrFound) {
-					self.tsBTreeNode<T>::pRight = ret.pNewSeg;
+					node.pRight = ret.pNewSeg;
 					return tsBTreeRMRet<T>(tsbtrrFound,&self); // TRUE - found it
 				}
 			}
 			return tsBTreeRMRet<T>(tsbtrrNotFound, 0u); // not found
 		}
 		else {
-			assert(0);
+			return tsBTreeRMRet<T>(tsbtrrNotFound, 0u); // not found
 		}
 	}
 	//
@@ -156,30 +158,30 @@ private:
 	//
 	static unsigned verify(const T &self, const T &item) 
 	{
+		const tsBTreeNode<T> &node = self;
+
 		if (&self == &item) {
 			return 1u; // TRUE -item is present
 		}
 		btCmp result = item.tsBTreeCompare(self);
 		if (result==btLessOrEqual) {
-			if (self.tsBTreeNode<T>::pLeft) {
-				return tsBTreeNode<T>::verify
-					(*self.tsBTreeNode<T>::pLeft, item);
+			if (node.pLeft) {
+				return tsBTreeNode<T>::verify (*node.pLeft, item);
 			}
 			else {
 				return 0u; // FALSE - not found
 			}
 		}
 		else if(result==btGreater) {
-			if (self.tsBTreeNode<T>::pRight) {
-				return tsBTreeNode<T>::verify
-					(*self.tsBTreeNode<T>::pRight, item);
+			if (node.pRight) {
+				return tsBTreeNode<T>::verify (*node.pRight, item);
 			}
 			else {
 				return 0u; // FALSE - not found
 			}
 		}
 		else {
-			assert(0);
+			return 0u; // FALSE - not found
 		}
 	}
 };

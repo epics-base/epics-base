@@ -28,6 +28,7 @@
  * Modification Log:
  * -----------------
  * .01  09-05-92	rcz	initial version
+ * .02  09-10-92	rcz	changed return from void to long
  *
  */
 
@@ -47,16 +48,21 @@ extern long setMasterTimeToSelf();
 
 /* If this function (initHooks) is loaded, iocInit calls this function
  * at certain defined points during IOC initialization */
-void initHooks(callNumber)
+long initHooks(callNumber)
 int	callNumber;
 {
+long status = 0;
 
 	switch (callNumber) {
 	case SETMASTERTIMETOSELF:
-		setMasterTimeToSelf();
+		status = setMasterTimeToSelf();
+	    break;
+	case DBUSEREXIT:
+		/* place holder */
+		status = 0; /* call user routine here */
 	    break;
 	default:
 	    break;
 	}
-	return;
+	return(status);
 }

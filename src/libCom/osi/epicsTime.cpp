@@ -108,8 +108,10 @@ epicsTimeLoadTimeInit::epicsTimeLoadTimeInit ()
         tmEpicsEpoch.tm_hour = 0;
         tmEpicsEpoch.tm_mday = epicsEpocDayOfTheMonth;
         tmEpicsEpoch.tm_mon = epicsEpocMonth;
-        tmEpicsEpoch.tm_year = epicsEpochYear-tmStructEpochYear;
-        tmEpicsEpoch.tm_isdst = -1; // dont know if its daylight savings time
+        tmEpicsEpoch.tm_year = epicsEpochYear - tmStructEpochYear;
+        // must not correct for DST because secWest does 
+        // not include a DST offset
+        tmEpicsEpoch.tm_isdst = 0; 
 
         epicsEpoch = mktime (&tmEpicsEpoch);
         assert (epicsEpoch!=(time_t)-1);
@@ -119,7 +121,8 @@ epicsTimeLoadTimeInit::epicsTimeLoadTimeInit ()
     if ( this->time_tSecPerTick == 1.0 && this->epicsEpochOffset <= ULONG_MAX &&
            this->epicsEpochOffset >= 0 ) {
         this->useDiffTimeOptimization = true;
-        this->epicsEpochOffsetAsAnUnsignedLong = static_cast < unsigned long > ( this->epicsEpochOffset );
+        this->epicsEpochOffsetAsAnUnsignedLong = 
+            static_cast < unsigned long > ( this->epicsEpochOffset );
     }
     else {
         this->useDiffTimeOptimization = false;
@@ -512,7 +515,7 @@ void epicsTime::show ( unsigned level ) const
 {
     char bigBuffer[256];
 
-    size_t numChar = strftime ( bigBuffer, sizeof ( bigBuffer ),
+    size_t numChar = this->strftime ( bigBuffer, sizeof ( bigBuffer ),
                     "%a %b %d %Y %H:%M:%S.%09f" );
     if ( numChar > 0 ) {
         printf ( "epicsTime: %s\n", bigBuffer );

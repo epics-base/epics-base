@@ -56,6 +56,7 @@
  *                              compu_sm_io_report() the ability to print out
  *                              contents of motor_data array if level > 1.	
  * .16	06-26-92	 bg	Combined drvOms.c with oms_driver.c
+ * .17  06-29-92	joh	took file pointer arg out of io report
  */
 
 /* data requests are made from the oms_task at
@@ -90,9 +91,8 @@ struct {
 	report,
 	init};
 
-static long report(fp,level)
-    FILE	*fp;
-    short int level;
+static long report(level)
+    int level;
 {
     oms_io_report(level);
 }
@@ -104,6 +104,8 @@ static long init()
 
     return(0);
 }
+
+/*
  * a rate of 10Hz when a motor is active    
  * post every .1 second or not moving
  * requests are sent at 10Hz in oms_task

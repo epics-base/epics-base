@@ -63,9 +63,6 @@
  * .21  12-02-91	jba	Added cmd control to io-interrupt processing
  * .22  12-12-91	jba	Initialized cmd to 1 in delete_from_scan_list
  *              	jba	Placed remove scan tasks before initialize all the fast locks
-   706
-   707          /* Initialize all the fast locks */
-
  */
 
 /*

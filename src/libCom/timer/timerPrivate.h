@@ -114,7 +114,7 @@ class timerQueueActive : public epicsTimerQueueActive,
     public timerQueueActiveMgrPrivate {
 public:
     timerQueueActive ( bool okToShare, unsigned priority );
-    ~timerQueueActive () = 0;
+    virtual ~timerQueueActive () = 0;
     epicsTimer & createTimer ();
     void show ( unsigned int level ) const;
     bool sharingOK () const;

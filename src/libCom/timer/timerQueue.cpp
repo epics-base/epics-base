@@ -151,6 +151,7 @@ double timerQueue::process ( const epicsTime & currentTime )
             return DBL_MAX;
         }
     }
+    return DBL_MAX;		// Never here; compiler happy
 }
 
 epicsTimer & timerQueue::createTimer ()

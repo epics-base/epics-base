@@ -135,9 +135,7 @@ inline double epicsTimer::getExpireDelay ()
         }
         return delay;
     }
-    else {
-        return - DBL_MAX;
-    }
+    return - DBL_MAX;
 }
 
 extern "C" {

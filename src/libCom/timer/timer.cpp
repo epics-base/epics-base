@@ -157,9 +157,7 @@ epicsTimer::expireInfo timer::getExpireInfo () const
     if ( this->curState == statePending || this->queue.pExpireTmr == this ) {
         return expireInfo ( true, this->exp );
     }
-    else {
-        return expireInfo ( false, epicsTime() );
-    }
+    return expireInfo ( false, epicsTime() );
 }
 
 void timer::show ( unsigned int level ) const

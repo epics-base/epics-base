@@ -101,8 +101,8 @@ private:
     mutable epicsMutex mutex;
     epicsEvent cancelBlockingEvent;
     tsDLList < timer > timerList;
-    epicsTimerQueueNotify &notify;
-    timer *pExpireTmr;
+    epicsTimerQueueNotify & notify;
+    timer * pExpireTmr;
     epicsThreadId processThread;
     bool cancelPending;
 	timerQueue ( const timerQueue & );

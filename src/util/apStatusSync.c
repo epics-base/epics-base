@@ -1,19 +1,24 @@
-#define DEBUG
-
 /*
- * apStatusSync.c
+ * APSTATUSSYNC.C
  *
- * Reports to status file:
+TODO	skip vw FATAL ERROR
+
+ * must be run from the top node of an application development node
+ *
+ * Reports to stdout:
  *        Regular files in this node that are out-for-edit.
+ *          These are errors if uid doesn't agree. 
+ *        Regular files in this node that should be links to the
+ *             application system area. 
+ *        Links that point to a dest. outside of this node and the final
+ *              dest. is not in the application system area
+
+*******************************************????????????
+ *        Other Directories containing Regular files not under sccs control.
+ *              These directories should be manually checked for private
+ *              Imakefiles/Makefiles ...
  *
- * Reports to removeScript file:
- *	Regular files in this node that exist in the system node
- *      and are not out-for-edit
  *
- *      Links that point to a dest. outside of this node and the final
- *      dest. is not in the application system area
- *
- * rcz
  */
 #include <stdio.h>
 #include <string.h>
@@ -29,22 +34,24 @@ int             processFile();
 int             getAppSysPath();
 int             checkLink();
 int             dirwalk();
-/* rz RMV verbose */
 int             verbose;
+extern int             errno;
 
 #define BSIZE 128
-#define MAXMSG 256
 #define TRUE 1
 #define FALSE 0
 #define SAME 0
 
 static char     pdot[] = "SCCS/p.";
 static char     sdot[] = "SCCS/s.";
-static char     msgbuff[MAXMSG];
-static void *  pEpics = NULL;
-static char *  pTop = NULL;
-static int             lenAppl;
-static int             lenTop;
+static char     msgbuff[MAXPATHLEN];
+static void    *pEpicsRelease = NULL;
+static void    *pAppSysTop = NULL;
+static void    *pDvlTop = NULL;
+static int      lenApplSys;
+static int      lenEpicsPath;
+static int      lenDvlTop;
+/*static int      isTopDirectory; */
 
 
 /****************************************************************************
@@ -54,17 +61,24 @@ main(argc, argv)
     int             argc;
     char          **argv;
 {
+    char          **pt;
+    char            name[20];
+    int             i;
     DIR *dirp;
     struct dirent  *dp;
     char *dir = ".";
 
-    if ((pTop = (char*)getcwd((char *)NULL, 128)) == NULL) {
-           fprintf(stderr, "getcwd failed errno=%d\n",errno);
+    if ((argc > 1) && ((strncmp(argv[1], "-v", 2)) == 0))
+    verbose = TRUE;
+    else
+    verbose = FALSE;
+    if (( pDvlTop = (void*)getcwd( (char *)NULL, 128)) == NULL) {
+           fprintf(stdout, "getcwd failed\n");
            return;
     }
-    lenTop = strlen(pTop);
+    lenDvlTop = strlen(pDvlTop);
     if ((getAppSysPath()) < 0 )
-        return;
+        return(-1);
     if ((dirp = opendir(dir)) == NULL)
     {
         fprintf(stderr, "apStatusSync - main: can't open directory %s\n", dir);
@@ -77,65 +91,86 @@ main(argc, argv)
 	procDirEntries(dp->d_name, dir);
     }
     closedir(dirp);
-    return;
+    return(0);
 }
-
+#if 1 /* DEBUG rewrite to getAppSysPath */
 /****************************************************************************
 GETAPPSYSPATH
     returns -1 - error, 0 - OK
-
-change this to contents of .applShadowOrgin
-
 ****************************************************************************/
 getAppSysPath()
 {
-    void *         pt2;
+    void *         pt;
     char resolved_path[MAXPATHLEN];
 
     FILE           *fp;
     char *app_path_file = ".applShadowOrgin";
-    char            app_path[BSIZE];/* contents of 1st line of p.dot */
+    char *epics_path_file = "current_rel";
+    char  app_path[BSIZE];
+    char  epics_path[BSIZE];
 
     if ((fp = fopen(app_path_file, "r")) == NULL) {
-        fprintf(stderr, "apStatusSync: can't fopen %s\n", app_path_file);
-        fprintf(stderr, "Probably not at root of application shadow node\n");
+        fprintf(stdout, "apStatusSync: can't fopen %s\n", app_path_file);
+        fprintf(stdout, "Probably not at root of application shadow node\n");
         return(-1);
     }
     if ((fgets(app_path, BSIZE, fp)) == NULL) {
-        fprintf(stderr, "apStatusSync: FATAL ERROR - reading %s\n", app_path_file);
+        fprintf(stdout, "apStatusSync: FATAL ERROR - reading %s\n", app_path_file);
         return(-1);
     }
     fclose(fp);
-    lenAppl = strlen(app_path);
-    if ( app_path[lenAppl-1] == '\n' ) {
-         app_path[lenAppl-1] = '\0';
+    lenApplSys = strlen(app_path);
+    if ( app_path[lenApplSys-1] == '\n' ) {
+         app_path[lenApplSys-1] = '\0';
     }
-    /* reset epics to real path if not on server */
-    if(( pt2 = (void *)realpath(app_path, resolved_path)) == NULL) {
-        fprintf(stderr, "FATAL ERROR - failed link component of %s=%s\n",
+    /* reset App SYS to real path if not on server */
+    if(( pt = (void *)realpath(app_path, resolved_path)) == NULL) {
+        fprintf(stdout, "FATAL ERROR - failed link component of %s=%s\n",
         app_path, resolved_path);
         return (-1);
     }
-    lenAppl = strlen(pt2);
-    pEpics = (void *)calloc(1,lenAppl+1);
-    strcpy(pEpics,pt2);
+    lenApplSys = strlen(pt);
+    pAppSysTop = (void *)calloc(1,lenApplSys+1);
+    strcpy(pAppSysTop,pt);
+    if ((fp = fopen(epics_path_file, "r")) == NULL) {
+        fprintf(stdout, "apStatusSync: can't fopen %s\n", epics_path_file);
+        fprintf(stdout, "Probably not at root of application shadow node\n");
+        return(-1);
+    }
+    if ((fgets(epics_path, BSIZE, fp)) == NULL) {
+        fprintf(stdout, "apStatusSync: FATAL ERROR - reading %s\n", epics_path_file);
+        return(-1);
+    }
+    fclose(fp);
+    lenEpicsPath = strlen(epics_path);
+    if ( epics_path[lenEpicsPath-1] == '\n' ) {
+         epics_path[lenEpicsPath-1] = '\0';
+    }
+    /* reset epics path to real path if not on server */
+    if(( pt = (void *)realpath(epics_path, resolved_path)) == NULL) {
+        fprintf(stdout, "FATAL ERROR - failed link component of %s=%s\n",
+        epics_path, resolved_path);
+        return (-1);
+    }
+    lenEpicsPath = strlen(pt);
+    pEpicsRelease = (void *)calloc(1,lenEpicsPath+1);
+    strcpy(pEpicsRelease,pt);
     return(0);
 }
+#endif /* DEBUG rewrite to getAppSysPath */
 /****************************************************************************
 PROCESSFILE
-
-if s.dot exist && p.dot exist - print (out-for-edit) by contents of p.dot.
-
-else if s.dot exist && p.dot !exist - print error
-
-else if file exists in system area - add to removal script
-
-
+    for each regular file:
+        if s.dot !exist - skip file (private file)
+        else if p.dot exist && s.dot !exist - print error
+        else if p.dot exist && s.dot exist
+           	print dir file and contents of p.dot
 ****************************************************************************/
 int
-processFile(name, dir)
+processFile(name, dir, pfirstTime)
     char           *name;   /* regular file */
     char           *dir;   /* current directory */
+    int            *pfirstTime; 
 {
     char            sccsDir[MAXNAMLEN];
     char            dotName[MAXNAMLEN];
@@ -144,18 +179,15 @@ processFile(name, dir)
     struct stat     stbuf;
     struct stat     lstbuf;
     FILE           *fp;
-
     char            ibuf[BSIZE];/* contents of 1st line of p.dot */
     int             hasSccsDir = FALSE;
 
     int             len,
                     j;
-printf("%s is S_ISREG dir=%s\n",name,dir);
-return;
     pbeg = name;
     len = strlen(name);
     if (len + 7 > MAXNAMLEN) {
-        fprintf(stderr, "processFile: pathname  %s too long\n", name);
+        fprintf(stdout, "processFile: pathname  %s too long\n", name);
         return (0);
     }
     /* search for last slash '/' in pathname */
@@ -167,37 +199,54 @@ return;
     /* determine if dir has an SCCS sub directory */
     strcpy(sccsDir, dir);
     strcat(sccsDir, "/SCCS");
+    if (lstat(sccsDir, &lstbuf) == -1) {
+        hasSccsDir = FALSE;
+    } else
+        hasSccsDir = TRUE;
 
-    /* if no sccs directory - return */
-    if (lstat(sccsDir, &lstbuf) == -1)
+    if (!hasSccsDir) {
+        if (!verbose) {
+            if (*pfirstTime) {
+                fprintf(stdout, "WARNING regular files in dir: %s\n", dir);
+                *pfirstTime = FALSE;
+            }
+        } else {
+            fprintf(stdout, "WARNING regular file %s\n", name);
+        }
         return;
+    }
     /* form p.dot name */
     strcpy(dotName, dir);
     strcat(dotName, "/");
     strcat(dotName, pdot);
     strcat(dotName, pend);
-    if (stat(dotName, &stbuf) == -1)
-    {    /* no p.dot file */
+    if (stat(dotName, &stbuf) == -1) {    /* no p.dot file */
         /* form s.dot name */
         strcpy(dotName, dir);
         strcat(dotName, "/");
         strcat(dotName, sdot);
         strcat(dotName, pend);
-        if (stat(dotName, &stbuf) == -1)     /* no s.dot file */
-            return;
+        if (stat(dotName, &stbuf) == -1) {    /* no s.dot file */
+            if (verbose) {
+                fprintf(stdout, "WARNING regular file %s\n", name);
+            }
+        } else { /* has an s.dot */
+            fprintf(stdout, "FATAL ERROR - file %s should be a link\n", name);
+        }
+        return;
     }
-    if ((fp = fopen(dotName, "r")) == NULL)
-    {
-        fprintf(stderr, "processFile: can't fopen %s\n", dotName);
+    if ((fp = fopen(dotName, "r")) == NULL) {
+        fprintf(stdout, "processFile: can't fopen %s\n", dotName);
         return;
     }
     if ((fgets(ibuf, BSIZE, fp)) != NULL) {
-        fprintf(stderr, "%-20s %-25s EDIT - %s", dir, pend, ibuf);
+        fprintf(stdout, "%-20s %-25s EDIT - %s", dir, pend, ibuf);
     } else
-        fprintf(stderr, "FATAL ERROR - reading %s%s\n", pdot, pend);
+        fprintf(stdout, "FATAL ERROR - reading %s%s\n", pdot, pend);
     fclose(fp);
     return;
 }
+
 /****************************************************************************
 PROCDIRENTRIES
     process directory entries
@@ -207,30 +256,30 @@ procDirEntries(name, dir)
     char           *name; /* entry name */
     char           *dir;  /* current directory */
 {
-    int            firstTime=1;  /* ptr to firstTime flag*/
     struct stat     stbuf;
+    int             firstTime;
 
     if (lstat(name, &stbuf) == -1) {
-        fprintf(stderr, "procDirEntries: can't access %s errno=%d\n", name, errno);
-        return;
+    fprintf(stdout, "procDirEntries: can't access %s\n", name);
+    return;
     }
-    if (S_ISLNK(stbuf.st_mode)) {
-	/* skip all links for now*/
-	return;
+    if ((stbuf.st_mode & S_IFMT) == S_IFLNK) {
+    checkLink(name);
+    return;
     }
-    if (S_ISREG(stbuf.st_mode)) {
-	processFile(name, dir );
-	return;
+    if ((stbuf.st_mode & S_IFMT) == S_IFREG) {
+    firstTime = TRUE;
+    processFile(name, dir, &firstTime);
+    return;
     }
-    if (S_ISDIR(stbuf.st_mode)) {
-/*	printf("name %s is S_ISDIR \n",name); */
+    if ((stbuf.st_mode & S_IFMT) == S_IFDIR) {
 	dirwalk(name, procDirEntries);
     }
     return;
 }
 /****************************************************************************
 CHECKLINK
-   checks valid symbolic link to application system area
+   checks valid symbolic link for EPICS
 ****************************************************************************/
 int
 checkLink(path)
@@ -244,18 +293,19 @@ checkLink(path)
 		return;
 	}
     if(( pt = (void *)realpath(path, resolved_path)) == NULL) {
-        fprintf(stderr, "FATAL ERROR - failed link component of %s=%s\n",
+        fprintf(stdout, "FATAL ERROR - failed link component of %s=%s\n",
         path, resolved_path);
         return;
     }
-    /* compare appl system path and local path with beg of dest */
+    /* compare $epics or beg of shadow with beg of dest */
     /* if neither present in dest - fail */
-    if (((strncmp(pEpics, resolved_path, lenAppl)) == SAME )
-       || ((strncmp(pTop,   resolved_path, lenTop)) == SAME )) {
+    if (((strncmp(pAppSysTop, resolved_path, lenApplSys)) == SAME )
+       || ((strncmp(pEpicsRelease,   resolved_path, lenEpicsPath)) == SAME )
+       || ((strncmp(pDvlTop,   resolved_path, lenDvlTop)) == SAME )) {
         return;
     } else {
-        fprintf(stderr,
-            "FATAL ERROR - link '%s' must point to application system area or shadow area\n\t dest='%s'\n",path,resolved_path);
+        fprintf(stdout,
+"FATAL ERROR - link '%s' must point to application system area or application shadow area or EPICS release\n\t dest='%s'\n",path,resolved_path);
     }
     return;
 }
@@ -269,22 +319,22 @@ dirwalk(dir, fcn)
 {
     char            name[MAXNAMLEN];
     struct dirent  *dp;
-    DIR            *dirp;
-    if ((dirp = opendir(dir)) == NULL) {
-        fprintf(stderr, "dirwalk: can't open %s\n", dir);
-        return;
+    DIR            *dfd;
+    if ((dfd = opendir(dir)) == NULL) {
+    fprintf(stdout, "dirwalk: can't open %s\n", dir);
+    return;
     }
-    while ((dp = readdir(dirp)) != NULL) {
+    while ((dp = readdir(dfd)) != NULL) {
     if (strcmp(dp->d_name, ".") == 0
         || strcmp(dp->d_name, "..") == 0)
         continue;        /* skip self and parent */
     if (strlen(dir) + strlen(dp->d_name) + 2 > sizeof(name))
-        fprintf(stderr, "dirwalk: name %s/%s too long\n",
+        fprintf(stdout, "dirwalk: name %s/%s too long\n",
             dir, dp->d_name);
     else {
         sprintf(name, "%s/%s", dir, dp->d_name);
-        (*fcn) (name, dir );
+        (*fcn) (name, dir);
     }
     }
-    closedir(dirp);
+    closedir(dfd);
 }

@@ -44,6 +44,7 @@ static semBinaryId callbackSem[NUM_CALLBACK_PRIORITIES];
 static ringId callbackQ[NUM_CALLBACK_PRIORITIES];
 static threadId callbackTaskId[NUM_CALLBACK_PRIORITIES];
 static int ringOverflow[NUM_CALLBACK_PRIORITIES];
+static void callbackInitPvt(void *);
 volatile int callbackRestart=FALSE;
 
 static int priorityValue[NUM_CALLBACK_PRIORITIES] = {0,1,2};
@@ -69,15 +70,21 @@ int epicsShareAPI callbackSetQueueSize(int size)
     return(0);
 }
 
-long epicsShareAPI callbackInit()
+static void callbackInitPvt(void *arg)
 {
     int i;
 
-    timerQueue = osiTimerQueueCreate(threadPriorityScanLow);
+    timerQueue = osiTimerQueueCreate(threadPriorityScanHigh);
     for(i=0; i<NUM_CALLBACK_PRIORITIES; i++) {
 	start(i);
     }
-    return(0);
+}
+
+void epicsShareAPI callbackInit()
+{
+    static threadOnceId callbackOnceFlag = OSITHREAD_ONCE_INIT;
+    void *arg = 0;
+    threadOnce(&callbackOnceFlag,callbackInitPvt,arg);
 }
 
 /* Routine which places requests into callback queue*/

@@ -34,6 +34,7 @@ INSTALL_CONFIG              = $(INSTALL_LOCATION)/config
 EPICS_BASE_INCLUDE      = $(EPICS_BASE)/include
 
 DIVIDER = .
+OBJ = .
 
 EPICS_BASE_HOST_BIN = $(EPICS_BASE)/bin/$(HOST_ARCH)
 

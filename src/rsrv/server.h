@@ -192,7 +192,7 @@ GLBLTYPE BUCKET            	*pCaBucket;
  * set true if max memory block drops below MAX_BLOCK_THRESHOLD
  */
 #define MAX_BLOCK_THRESHOLD 100000
-GLBLTYPE int			casDontAllowSearchReplies;
+GLBLTYPE int	casBelowMaxBlockThresh;
 
 #define SEND_LOCK(CLIENT)\
 {\
@@ -247,6 +247,9 @@ struct client   *pc
 );
 
 void write_notify_reply(void *pArg);
+
+void *casMalloc(size_t size);
+void *casCalloc(size_t count, size_t size);
 
 /*
  * !!KLUDGE!!

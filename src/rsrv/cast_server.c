@@ -388,7 +388,7 @@ struct client *create_udp_client(unsigned sock)
     	UNLOCK_CLIENTQ;
 
 	if(!client){
-      		client = (struct client *)malloc(sizeof(struct client));
+      		client = (struct client *)casMalloc(sizeof(struct client));
       		if(!client){
 			logMsg("CAS: no mem for new client\n",
 				NULL,
@@ -426,7 +426,7 @@ struct client *create_udp_client(unsigned sock)
 	/*
 	 * user name initially unknown
 	 */
-	client->pUserName = malloc(1); 
+	client->pUserName = casMalloc(1); 
 	if(!client->pUserName){
 		semDelete(client->blockSem);
 		free(client);
@@ -437,7 +437,7 @@ struct client *create_udp_client(unsigned sock)
 	/*
 	 * host name initially unknown
 	 */
-	client->pHostName = malloc(1); 
+	client->pHostName = casMalloc(1); 
 	if(!client->pHostName){
 		semDelete(client->blockSem);
 		free(client->pUserName);

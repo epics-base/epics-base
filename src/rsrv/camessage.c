@@ -439,7 +439,7 @@ struct client  	*client
 	/*
 	 * user name will not change if there isnt enough memory
 	 */
-	pMalloc = malloc(size);
+	pMalloc = casMalloc(size);
 	if(!pMalloc){
 		send_err(
 			mp,
@@ -498,7 +498,7 @@ struct client  	*client
 	/*
 	 * user name will not change if there isnt enough memory
 	 */
-	pMalloc = malloc(size);
+	pMalloc = casMalloc(size);
 	if(!pMalloc){
 		send_err(
 			mp,
@@ -896,7 +896,7 @@ struct client  *client
 	 */
 	if(!pciu->pPutNotify){
 		pciu->pPutNotify = 
-			(RSRVPUTNOTIFY *) calloc(1, sizeof(*pciu->pPutNotify)+size);
+			(RSRVPUTNOTIFY *) casCalloc(1, sizeof(*pciu->pPutNotify)+size);
 		if(!pciu->pPutNotify){
 			putNotifyErrorReply(client, mp, ECA_ALLOCMEM);
 			return;
@@ -1037,7 +1037,7 @@ struct client  *client
 		ellGet(&rsrv_free_eventq);
 	FASTUNLOCK(&rsrv_free_eventq_lck);
 	if (!pevext) {
-		pevext = (struct event_ext *) malloc(size);
+		pevext = (struct event_ext *) casMalloc(size);
 		if (!pevext) {
 			SEND_LOCK(client);
 			send_err(
@@ -1581,6 +1581,7 @@ struct client  *client
 	unsigned		sid;
 	unsigned long		count;
 	ca_uint16_t		type;
+	int			spaceAvailOnFreeList;
 
 	/* Exit quickly if channel not on this node */
 	status = db_name_to_addr(
@@ -1601,9 +1602,12 @@ struct client  *client
 	}
 
 	/*
-	 * set true if max memory block drops below MAX_BLOCK_THRESHOLD
+	 * stop further use of server if max block drops 
+	 * below MAX_BLOCK_THRESHOLD
 	 */
-	if(casDontAllowSearchReplies){
+	spaceAvailOnFreeList = ellCount(&rsrv_free_clientQ)>0 
+			&& ellCount(&rsrv_free_addrq)>0;
+	if (casBelowMaxBlockThresh && !spaceAvailOnFreeList) { 
 		SEND_LOCK(client);
 		send_err(mp, 
 			ECA_ALLOCMEM, 
@@ -1696,7 +1700,7 @@ unsigned	cid
 	FASTUNLOCK(&rsrv_free_addrq_lck);
 	if (!pchannel) {
 		pchannel = (struct channel_in_use *) 
-			malloc(sizeof(*pchannel));
+			casMalloc(sizeof(*pchannel));
 		if (!pchannel) {
 			return NULL;
 		}
@@ -1874,7 +1878,7 @@ char           *pformat,
 	case IOC_READ_SYNC:
 	case IOC_SNAPSHOT:
 	default:
-		reply->m_cid = NULL;
+		reply->m_cid = ~0L;
 		break;
 	}
 
@@ -2111,3 +2115,32 @@ LOCAL void access_rights_reply(struct channel_in_use *pciu)
         END_MSG(pclient);
 	SEND_UNLOCK(pclient);
 }
+
+
+/*
+ * casCalloc()
+ *
+ * (dont drop below some max block threshold)
+ */
+void *casCalloc(size_t count, size_t size)
+{
+	if (casBelowMaxBlockThresh) {
+		return NULL;
+	}
+	return calloc(count, size);
+}
+
+
+/*
+ * casMalloc()
+ *
+ * (dont drop below some max block threshold)
+ */
+void *casMalloc(size_t size)
+{
+	if (casBelowMaxBlockThresh) {
+		return NULL;
+	}
+	return malloc(size);
+}
+

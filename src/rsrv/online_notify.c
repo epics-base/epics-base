@@ -162,10 +162,10 @@ int rsrv_online_notify_task()
 		 */
 		maxBlock = memFindMax();
 		if(maxBlock<MAX_BLOCK_THRESHOLD){
-			casDontAllowSearchReplies = TRUE;
+			casBelowMaxBlockThresh = TRUE;
 		}
 		else{
-			casDontAllowSearchReplies = FALSE;
+			casBelowMaxBlockThresh = FALSE;
 		}
 
 		pNode = (caAddrNode *) beaconAddrList.node.next;

@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.6  1996/08/27 13:05:07  jbk
+// final repairs to string functions, put() functions, and error code printing
+//
 // Revision 1.5  1996/08/22 21:05:42  jbk
 // More fixes to make strings and fixed string work better.
 //
@@ -72,6 +75,7 @@ void gddApplicationTypeTable::GenerateTypes(void)
 	registerApplicationType(GDD_NAME_SEVERITY);
 	registerApplicationType(GDD_NAME_SECONDS);
 	registerApplicationType(GDD_NAME_NANOSECONDS);
+	registerApplicationType(GDD_NAME_PV_NAME);
 
 	// required attributes
 	int type_prec=registerApplicationType(GDD_NAME_PRECISION);

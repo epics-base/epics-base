@@ -73,8 +73,11 @@ CCC_DEP_CFLAGS=+DAportable
 
 # +DAportable causes portable object code to be created for execution
 # on different PA-Risc machines
+
+empty:=
+space:= $(empty) $(empty)
+
 ARCH_DEP_CFLAGS = -D_HPUX_SOURCE -DHP_UX 
 ARCH_DEP_CXXFLAGS = -D_HPUX_SOURCE -DHP_UX
 ARCH_DEP_LDLIBS =
-ARCH_DEP_LDFLAGS = -Wl,+b,$(DEFAULT_SHRLIB_SEARCH_PATH),+s
-
+ARCH_DEP_LDFLAGS = -Wl,+b,$(subst $(space),:,$(DEFAULT_SHRLIB_SEARCH_PATH)),+s

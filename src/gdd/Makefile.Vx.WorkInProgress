@@ -1,0 +1,52 @@
+#
+# Author: Jeff Hill 
+# Date: 8/96
+#
+# $Id$
+#
+# $Log$
+# Revision 1.1  1996/09/04 20:59:40  jhill
+# installed
+#
+
+VPATH=.:..
+
+TOP= ../../..
+
+include $(TOP)/config/CONFIG_BASE
+
+DEPENDS_RULE.cc = -$(COMPILE.cc) -xM $(SRCS.cc) >> .DEPENDS
+
+USR_LDFLAGS = -L$(EPICS_EXTENSIONS_LIB) -L.
+USR_CFLAGS = -L$(EPICS_EXTENSIONS_LIB) -L.
+
+SRCS.cc = ../aitGen.c ../aitTypes.c ../aitHelpers.cc \
+          ../gdd.cc ../gddAppDefs.cc ../gddAppTable.cc ../gddNewDel.cc \
+          ../gddTest.cc ../dbMapper.cc 
+
+LIBOBJS = gdd.o gddAppTable.o gddNewDel.o gddAppDefs.o \
+		  aitTypes.o aitConvert.o aitHelpers.o dbMapper.o
+
+LIBNAME = libgdd.o
+
+include $(TOP)/config/RULES.Vx
+
+# cannot generate dependencies for aitConvert automatically
+
+aitConvert.o: aitConvert.cc aitConvert.h aitConvertGenerated.cc aitTypes.h
+
+aitConvertGenerated.cc: ../O.$(HOST_ARCH)/aitGen aitTypes.h
+	../O.$(HOST_ARCH)/aitGen 
+
+# cannot generate dependencies for dbMapper.o automatically
+
+dbMapper.o: ../dbMapper.cc gdd.h gddAppTable.h dbMapper.h gddApps.h aitTypes.h
+	$(COMPILE.cc) $<
+
+gddApps.h: ../O.$(HOST_ARCH)/genApps
+	../O.$(HOST_ARCH)/genApps $@
+
+clean::
+	/bin/rm -f aitConvertGenerated.cc aitGen 
+
+

@@ -515,13 +515,9 @@ void nciu::disconnect ()
 {
     char hostNameBuf[64];
     this->hostName ( hostNameBuf, sizeof (hostNameBuf) );
+    bool wasConnected;
 
     this->lock ();
-
-    if ( ! this->f_connected ) {
-        this->unlock ();
-        return;
-    }
 
     this->retry = 0u;
     this->typeCode = USHRT_MAX;
@@ -529,17 +525,26 @@ void nciu::disconnect ()
     this->sid = UINT_MAX;
     this->ar.read_access = false;
     this->ar.write_access = false;
+
+    if ( this->f_connected ) {
+        wasConnected = true;
+    }
+    else {
+        wasConnected = false;
+    }
     this->f_connected = false;
 
     this->unlock ();
 
-    /*
-     * look for events that have an event cancel in progress
-     */
-    disconnectAllIO ( hostNameBuf );
 
-    this->disconnectNotify ();
-    this->accessRightsNotify ( this->ar );
+    if ( wasConnected ) {
+        /*
+         * look for events that have an event cancel in progress
+         */
+        disconnectAllIO ( hostNameBuf );
+        this->disconnectNotify ();
+        this->accessRightsNotify ( this->ar );
+    }
 
     this->cacCtx.installDisconnectedChannel ( *this );
 }
@@ -626,8 +631,8 @@ void nciu::attachChanToIIU ( netiiu &iiu )
 
     if ( this->piiu ) {
         this->piiu->mutex.lock ();
-        this->piiu->chidList.remove ( *this );
-        if ( this->piiu->chidList.count () == 0u ) {
+        this->piiu->channelList.remove ( *this );
+        if ( this->piiu->channelList.count () == 0u ) {
             this->piiu->lastChannelDetachNotify ();
         }
         this->piiu->mutex.unlock ();
@@ -637,7 +642,7 @@ void nciu::attachChanToIIU ( netiiu &iiu )
 
     // add to the front of the list so that
     // search requests for new channels will be sent first
-    iiu.chidList.push ( *this );
+    iiu.channelList.push ( *this );
     this->piiu = &iiu;
 
     iiu.mutex.unlock ();
@@ -650,8 +655,8 @@ void nciu::detachChanFromIIU ()
     this->lockPIIU ();
     if ( this->piiu ) {
         this->piiu->mutex.lock ();
-        this->piiu->chidList.remove ( *this );
-        if ( this->piiu->chidList.count () == 0u ) {
+        this->piiu->channelList.remove ( *this );
+        if ( this->piiu->channelList.count () == 0u ) {
             this->piiu->lastChannelDetachNotify ();
         }
         this->piiu->mutex.unlock ();
@@ -806,5 +811,39 @@ int nciu::subscribe ( unsigned type, unsigned long countIn,
     }
     else  {
         return ECA_ALLOCMEM;
+    }
+}
+
+void nciu::show ( unsigned level ) const
+{
+    if ( this->f_connected ) {
+        char hostNameTmp [256];
+        this->hostName ( hostNameTmp, sizeof ( hostNameTmp ) );
+        printf ( "Channel \"%s\", connected to server %s", 
+            this->pNameStr, hostNameTmp );
+        if ( level > 1u ) {
+            printf ( ", native type %s, native element count %u",
+                dbf_type_to_text ( this->typeCode ), this->count );
+            printf ( ", %sread access, %swrite access", 
+                this->ar.read_access ? "" : "no ", 
+                this->ar.write_access ? "" : "no ");
+        }
+        printf ( "\n" );
+    }
+    else if ( this->previousConn ) {
+        printf ( "Channel \"%s\" (previously connected to a server)\n", this->pNameStr, hostName );
+    }
+    else {
+        printf ( "Channel \"%s\" (unable to locate server)\n", this->pNameStr, hostName );
+    }
+
+    if ( level > 2u ) {
+        printf ( "\tnetwork IO pointer=%p, ptr lock count=%u, ptr unlock wait count=%u\n", 
+            this->piiu, this->ptrLockCount, this->ptrUnlockWaitCount );
+        printf ( "\tserver identifier %u\n", this->sid );
+        printf ( "\tsearch retry number=%u, search retry sequence number=%u\n", 
+            this->retry, this->retrySeqNo );
+        printf ( "\tname length=%u\n", this->nameLength );
+        printf ( "\tfully cunstructed boolean=%u\n", this->f_fullyConstructed );
     }
 }

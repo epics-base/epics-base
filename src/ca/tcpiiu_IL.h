@@ -62,17 +62,17 @@ inline void tcpiiu::flush ()
 
 inline bool tcpiiu::ca_v44_ok () const
 {
-    return CA_V44 ( CA_PROTOCOL_VERSION, this->minor_version_number );
+    return CA_V44 ( CA_PROTOCOL_VERSION, this->minorProtocolVersionNumber );
 }
 
 inline bool tcpiiu::ca_v42_ok () const
 {
-    return CA_V42 ( CA_PROTOCOL_VERSION, this->minor_version_number );
+    return CA_V42 ( CA_PROTOCOL_VERSION, this->minorProtocolVersionNumber );
 }
 
 inline bool tcpiiu::ca_v41_ok () const
 {
-    return CA_V41 ( CA_PROTOCOL_VERSION, this->minor_version_number );
+    return CA_V41 ( CA_PROTOCOL_VERSION, this->minorProtocolVersionNumber );
 }
 
 inline bool tcpiiu::alive () const

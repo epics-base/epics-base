@@ -32,3 +32,8 @@ int baseNMIU::subscriptionMsg ()
 {
     return ECA_NORMAL;
 }
+
+void baseNMIU::show ( unsigned /* level */ ) const
+{
+    printf ( "CA IO primitive at %p for channel %s\n", this, chan.pName () );
+}

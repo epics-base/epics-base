@@ -302,8 +302,14 @@ void verifyBlockingConnect ( appChan *pChans, unsigned chanCount, unsigned repet
                 assert ( VALID_DB_REQ ( ca_field_type ( pChans[j].channel ) ) == TRUE );
             }
             else {
-                assert ( INVALID_DB_REQ ( ca_field_type ( pChans[j].channel ) ) == TRUE );
-                assert ( ca_test_io () == ECA_IOINPROGRESS );
+                /*
+                 * its possible for the channel to connect while this test is going on
+                 */
+                unsigned ctr;
+                for ( ctr = 0u; ctr < 100u; ctr ++ ) {
+                    assert ( INVALID_DB_REQ ( ca_field_type ( pChans[j].channel ) ) == TRUE );
+                    assert ( ca_test_io () == ECA_IOINPROGRESS );
+                }
             }
             
             status = ca_replace_access_rights_event (

@@ -37,9 +37,9 @@ searchTimer::searchTimer (udpiiu &iiuIn, osiTimerQueue &queueIn) :
 }
 
 //
-// searchTimer::reset ()
+// searchTimer::resetPeriod ()
 //
-void searchTimer::reset ( double delayToNextTry )
+void searchTimer::resetPeriod ( double delayToNextTry )
 {
     bool reschedule;
 

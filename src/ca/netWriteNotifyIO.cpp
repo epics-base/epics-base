@@ -57,3 +57,11 @@ void netWriteNotifyIO::exceptionNotify ( int status, const char *pContext, unsig
 {
     this->cacNotifyIO::exceptionNotify (status, pContext, type, count);
 }
+
+void netWriteNotifyIO::show ( unsigned level ) const
+{
+    printf ( "read write notify IO at %p\n", this );
+    if ( level > 0u ) {
+        this->baseNMIU::show ( level - 1u );
+    }
+}

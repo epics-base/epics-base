@@ -70,3 +70,14 @@ void netReadCopyIO::exceptionNotify ( int status,
         "%s type=%d count=%ld\n", 
         pContextIn, typeIn, countIn);
 }
+
+void netReadCopyIO::show ( unsigned level ) const
+{
+    printf ( "read copy IO at %p, type %s, element count %u\n", 
+        this, this->type, this->count );
+    if ( level > 0u ) {
+        printf ( "\tsequence number %u, user's storage %p\n",
+            this->seqNumber, this->pValue );
+        this->baseNMIU::show ( level - 1u );
+    }
+}

@@ -115,3 +115,29 @@ void recvProcessThread::signalActivity ()
 {
     this->recvActivity.signal ();
 }
+
+void recvProcessThread::show ( unsigned level ) const
+{
+    this->mutex.lock ();
+    printf ( "CA receive processing thread at %p state=%s\n", 
+        this,  this->processing ? "busy" : "idle");
+    if ( level > 0u ) {
+        printf ( "enable count %u\n", this->enableRefCount );
+        printf ( "blocking for completion count %u\n", this->blockingForCompletion );
+    }
+    if ( level > 1u ) {
+        printf ( "\tCA client at %p\n", this->pcac );
+        printf ( "\tshutdown command boolean %u\n", this->shutDown );
+    }
+    if ( level > 2u ) {
+        printf ( "Receive activity event:\n" );
+        this->recvActivity.show ( level - 3u );
+        printf ( "exit event:\n" );
+        this->exit.show ( level - 3u );
+        printf ( "processing done event:\n" );
+        this->processingDone.show ( level - 3u );
+        printf ( "mutex:\n" );
+        this->mutex.show ( level - 3u );
+    }
+    this->mutex.unlock ();
+}

@@ -100,3 +100,16 @@ const char *tcpRecvWatchdog::name () const
     return "TCP Receive Watchdog";
 }
 
+void tcpRecvWatchdog::show ( unsigned level ) const
+{
+    printf ( "Receive virtual circuit watchdog at %p, period %s\n",
+        this, this->period );
+    if ( level > 0u ) {
+        printf ( "\tresponse pending boolean %u, beacon anomaly boolean %u\n",
+            this->responsePending, this->beaconAnomaly );
+    }
+    if ( level > 1u ) {
+        printf ( "\techo protocol accepted boolean %u\n",
+            this->echoProtocolAccepted );
+    }
+}

@@ -940,6 +940,7 @@ epicsShareFunc int epicsShareAPI ca_current_context (caClientCtx *pCurrentContex
 epicsShareFunc int epicsShareAPI ca_attach_context (caClientCtx context);
 
 epicsShareFunc int epicsShareAPI ca_channel_status (threadId tid);
+epicsShareFunc int epicsShareAPI ca_client_status (threadId tid, unsigned level);
 
 /*
  * deprecated
@@ -996,6 +997,7 @@ epicsShareFunc char * epicsShareAPI ca_version();
 epicsShareFunc int epicsShareAPI ca_import();
 epicsShareFunc int epicsShareAPI ca_import_cancel();
 epicsShareFunc int epicsShareAPI ca_channel_status ();
+epicsShareFunc int epicsShareAPI ca_client_status ();
 #define ca_build_channel(NAME,XXXXX,CHIDPTR,YYYYY)\
     ca_build_and_connect(NAME, XXXXX, 1, CHIDPTR, YYYYY, 0, 0)
 #define ca_array_build(NAME,XXXXX, ZZZZZZ, CHIDPTR,YYYYY)\

@@ -87,11 +87,6 @@ cac::cac ( bool enablePreemptiveCallbackIn ) :
     this->ca_exception_arg = NULL;
     this->readSeq = 0u;
 
-    this->ca_blockSem = semBinaryCreate(semEmpty);
-    if (!this->ca_blockSem) {
-        throwWithLocation ( caErrorCode (ECA_ALLOCMEM) );
-    }
-
     installSigPipeIgnore ();
 
     {
@@ -106,7 +101,6 @@ cac::cac ( bool enablePreemptiveCallbackIn ) :
         len = strlen ( tmp ) + 1;
         this->pUserName = new char [len];
         if ( ! this->pUserName ) {
-            semBinaryDestroy (this->ca_blockSem);
             throwWithLocation ( caErrorCode (ECA_ALLOCMEM) );
         }
         strncpy ( this->pUserName, tmp, len );
@@ -209,7 +203,6 @@ cac::~cac ()
     this->beaconTable.destroyAllEntries ();
     this->chanTable.destroyAllEntries ();
     this->ioTable.destroyAllEntries ();
-    semBinaryDestroy ( this->ca_blockSem );
 
     osiSockRelease ();
 
@@ -275,21 +268,89 @@ unsigned cac::connectionCount () const
     return this->iiuList.count ();
 }
 
-void cac::show (unsigned level) const
+void cac::show ( unsigned level ) const
 {
-    if ( this->pudpiiu ) {
-        this->pudpiiu->show (level);
+    ::printf ( "Channel Access Client Context at %p for user %s\n", 
+        this, this->pUserName );
+    if (level > 0u ) {
+        this->iiuListMutex.lock ();
+        tsDLIterConstBD < tcpiiu > piiu ( this->iiuList.first () );
+        while ( piiu.valid () ) {
+            piiu->show ( level - 1u );
+            piiu++;
+	    }
+        this->iiuListMutex.unlock ();
+
+        this->defaultMutex.lock ();
+        tsDLIterConstBD < cacLocalChannelIO > pChan ( this->localChanList.first () );
+        while ( pChan.valid () ) {
+            pChan->show ( level - 1u );
+            pChan++;
+	    }
+        this->defaultMutex.unlock ();
+
+        ::printf ( "\tconnection time out watchdog period %f\n", this->connTMO );
+        ::printf ( "\tthere are %u unsatisfied IO operations blocking ca_pend_io()\n",
+            this->pndrecvcnt );
+        ::printf ( "\tpreemptive calback is %s\n",
+            this->enablePreemptiveCallback ? "enabled" : "disabled" );
+        ::printf ( "list of installed services:\n" );
+        this->services.show ( level - 1u );
     }
 
-    this->iiuListMutex.lock ();
+    if ( level > 1u ) {
+        if ( this->pudpiiu ) {
+            this->pudpiiu->show ( level - 2u );
+        }
+        ::printf ( "\texception function %p, exception arg %p\n",
+                this->ca_exception_func, this->ca_exception_arg );
+        ::printf ( "\tCA printf function %p\n",
+                this->pVPrintfFunc);
+        ::printf ( "\tfile descriptor registration function %p, file descriptor registration arg %p\n",
+            this->fdRegFunc, this->fdRegArg );
+    }
 
-    tsDLIterConstBD <tcpiiu> piiu ( this->iiuList.first () );
-    while ( piiu.valid () ) {
-        piiu->show (level);
-        piiu++;
-	}
+    if ( level > 2u ) {
+        ::printf ( "Program begin time:\n");
+        ::printf ( "the current read sequence for ca_pend_io() is %u\n",
+            this->readSeq );
+        this->programBeginTime.show ( level - 3u );
+        ::printf ( "IO identifier hash table:\n" );
+        this->ioTable.show ( level - 3u );
+        ::printf ( "Channel identifier hash table:\n" );
+        this->chanTable.show ( level - 3u );
+        ::printf ( "Synchronous group identifier hash table:\n" );
+        this->sgTable.show ( level - 3u );
+        ::printf ( "Beacon source identifier hash table:\n" );
+        this->beaconTable.show ( level - 3u );
+        if ( this->pTimerQueue ) {
+            ::printf ( "Timer queue:\n" );
+            this->pTimerQueue->show ( level - 3u );
+        }
+        if ( this->pRecvProcThread ) {
+            ::printf ( "incoming messages processing thread:\n" );
+            this->pRecvProcThread->show ( level - 3u );
+        }
+        if ( this->pSearchTmr ) {
+            ::printf ( "search message timer:\n" );
+            this->pSearchTmr->show ( level - 3u );
+        }
+        if ( this->pRepeaterSubscribeTmr ) {
+            ::printf ( "repeater subscribee timer:\n" );
+            this->pRepeaterSubscribeTmr->show ( level - 3u );
+        }
+        ::printf ( "IP address to name conversion engine:\n" );
+        this->ipToAEngine.show ( level - 3u );
+    }
 
-    this->iiuListMutex.unlock ();
+    if ( level > 3u ) {
+        ::printf ( "IO done event:\n");
+        this->ioDone.show ( level - 4u );
+        ::printf ( "Default mutex:\n");
+        this->defaultMutex.show ( level - 4u );
+        ::printf ( "Virtual circuit list mutex:\n");
+        this->iiuListMutex.show ( level - 4u );
+    }
 }
 
 void cac::installIIU ( tcpiiu &iiu )
@@ -451,8 +512,8 @@ void cac::beaconNotify ( const inetAddrID &addr )
         delay /= MSEC_PER_SEC;
         delay += CA_RECAST_DELAY;
 
-        if ( this->pSearchTmr ) {
-            this->pSearchTmr->reset ( delay );
+        if ( this->pudpiiu->channelCount () > 0u  && this->pSearchTmr ) {
+            this->pSearchTmr->resetPeriod ( delay );
         }
     }
 
@@ -1054,7 +1115,7 @@ void cac::installDisconnectedChannel ( nciu &chan )
 
     chan.attachChanToIIU ( *this->pudpiiu );
     chan.resetRetryCount ();
-    this->pSearchTmr->reset ( CA_RECAST_DELAY );
+    this->pSearchTmr->resetPeriod ( CA_RECAST_DELAY );
 }
 
 void cac::notifySearchResponse ( unsigned short retrySeqNo )

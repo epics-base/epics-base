@@ -320,21 +320,23 @@ public:
     void ioInstall ( class baseNMIU & );
     void ioDestroy ( unsigned id );
 
+    void show ( unsigned level ) const;
+
 private:
-    caar ar;                 /* access rights                */
+    caar ar; // access rights
     unsigned count;
     char *pNameStr;
     netiiu *piiu;
-    unsigned sid;                /* server id                    */
-    unsigned retry;              /* search retry number          */
-    mutable unsigned short ptrLockCount;       /* number of times IIU pointer was locked */
-    mutable unsigned short ptrUnlockWaitCount; /* number of threads waiting for IIU pointer unlock */
-    unsigned short retrySeqNo;         /* search retry seq number      */
-    unsigned short nameLength;         /* channel name length          */
+    unsigned sid; // server id
+    unsigned retry; // search retry number
+    mutable unsigned short ptrLockCount; // number of times IIU pointer was locked
+    mutable unsigned short ptrUnlockWaitCount; // number of threads waiting for IIU pointer unlock
+    unsigned short retrySeqNo; // search retry seq number
+    unsigned short nameLength; // channel name length
     unsigned short typeCode;
     unsigned f_connected:1;
     unsigned f_fullyConstructed:1;
-    unsigned previousConn:1;     /* T if connected in the past   */
+    unsigned previousConn:1; // T if connected in the past
 
     static tsFreeList < class nciu, 1024 > freeList;
 
@@ -358,8 +360,9 @@ public:
     virtual void completionNotify ( unsigned type, unsigned long count, const void *pData ) = 0;
     virtual void exceptionNotify ( int status, const char *pContext ) = 0;
     virtual void exceptionNotify ( int status, const char *pContext, unsigned type, unsigned long count ) = 0;
-    virtual int subscriptionMsg ();
     virtual void disconnect ( const char *pHostName ) = 0;
+    virtual void show ( unsigned level ) const;
+    virtual int subscriptionMsg ();
     void destroy ();
 protected:
     virtual ~baseNMIU (); // must be allocated from pool
@@ -372,6 +375,7 @@ public:
     void disconnect ( const char *pHostName );
     static bool factory ( nciu &chan, chtype type, unsigned long count, 
         unsigned short mask, cacNotify &notify, unsigned &id );
+    void show ( unsigned level ) const;
 private:
     chtype type;
     unsigned long count;
@@ -396,6 +400,7 @@ public:
     void disconnect ( const char *pHostName );
     static bool factory ( nciu &chan, unsigned type, unsigned long count, 
                               void *pValue, unsigned seqNumber, ca_uint32_t &id );
+    void show ( unsigned level ) const;
 private:
     unsigned type;
     unsigned long count;
@@ -418,6 +423,7 @@ class netReadNotifyIO : public cacNotifyIO, private baseNMIU {
 public:
     void disconnect ( const char *pHostName );
     static bool factory ( nciu &chan, cacNotify &notify, ca_uint32_t &id );
+    void show ( unsigned level ) const;
 private:
     netReadNotifyIO ( nciu &chan, cacNotify &notify );
     ~netReadNotifyIO ();
@@ -435,6 +441,7 @@ class netWriteNotifyIO : public cacNotifyIO, private baseNMIU {
 public:
     void disconnect ( const char *pHostName );
     static bool factory ( nciu &chan, cacNotify &notify, ca_uint32_t &id );
+    void show ( unsigned level ) const;
 private:
     netWriteNotifyIO ( nciu &chan, cacNotify &notify );
     ~netWriteNotifyIO ();
@@ -529,7 +536,7 @@ protected:
     void lock () const;
     void unlock () const;
 private:
-    tsDLList < nciu > chidList;
+    tsDLList < nciu > channelList;
     class cac &cacRef;
     osiMutex mutex;
 
@@ -545,15 +552,14 @@ class searchTimer : private osiTimer, private osiMutex {
 public:
     searchTimer ( udpiiu &iiu, osiTimerQueue &queue );
     void notifySearchResponse ( unsigned short retrySeqNo );
-    void reset ( double delayToNextTry );
-
+    void resetPeriod ( double delayToNextTry );
+    void show ( unsigned level ) const;
 private:
-	virtual void expire ();
-	virtual void destroy ();
-	virtual bool again () const;
-	virtual double delay () const;
-	virtual void show (unsigned level) const;
-	virtual const char *name () const;
+	void expire ();
+	void destroy ();
+	bool again () const;
+	double delay () const;
+	const char *name () const;
 
     void setRetryInterval (unsigned retryNo);
 
@@ -573,14 +579,14 @@ class repeaterSubscribeTimer : private osiTimer {
 public:
     repeaterSubscribeTimer (udpiiu &iiu, osiTimerQueue &queue);
     void confirmNotify ();
+	void show (unsigned level) const;
 
 private:
-	virtual void expire ();
-	virtual void destroy ();
-	virtual bool again () const;
-	virtual double delay () const;
-	virtual void show (unsigned level) const;
-	virtual const char *name () const;
+	void expire ();
+	void destroy ();
+	bool again () const;
+	double delay () const;
+	const char *name () const;
 
     udpiiu &iiu;
     unsigned attempts;
@@ -602,12 +608,12 @@ public:
     void flush ();
     SOCKET getSock () const;
     bool repeaterInstalled ();
+    void show ( unsigned level ) const;
 
     // exceptions
     class noSocket {};
     class noMemory {};
 private:
-    osiTime recvTime;
     char xmitBuf [MAX_UDP_SEND];   
     char recvBuf [MAX_UDP_RECV];
     ELLLIST dest;
@@ -649,6 +655,7 @@ public:
     void beaconArrivalNotify ();
     void beaconAnomalyNotify ();
     void connectNotify ();
+    void show (unsigned level ) const;
 
 private:
     void expire ();
@@ -764,15 +771,8 @@ private:
     unsigned long curDataMax;
     class bhe &bhe;
     void *pCurData;
-    unsigned minor_version_number;
+    unsigned minorProtocolVersionNumber;
     iiu_conn_state state;
-
-    bool ca_v42_ok () const;
-    void postMsg ();
-    unsigned sendBytes ( const void *pBuf, unsigned nBytesInBuf );
-    unsigned recvBytes ( void *pBuf, unsigned nBytesInBuf );
-    bool flushToWirePermit ();
-
     claimsPendingIIU *pClaimsPendingIIU;
     semBinaryId sendThreadFlushSignal;
     semBinaryId recvThreadRingBufferSpaceAvailableSignal;
@@ -783,12 +783,16 @@ private:
     bool fullyConstructedFlag;
     bool busyStateDetected; // only modified by the recv thread
     bool flowControlActive; // only modified by the send process thread
-    bool flowControlStateChange;
     bool echoRequestPending; 
-    bool recvPending;
+    bool recvMessagePending;
     bool flushPending;
     bool msgHeaderAvailable;
-    static tsFreeList < class tcpiiu, 16 > freeList;
+
+    bool ca_v42_ok () const;
+    void postMsg ();
+    unsigned sendBytes ( const void *pBuf, unsigned nBytesInBuf );
+    unsigned recvBytes ( void *pBuf, unsigned nBytesInBuf );
+    bool flushToWirePermit ();
 
     friend void cacSendThreadTCP ( void *pParam );
     friend void cacRecvThreadTCP ( void *pParam );
@@ -812,6 +816,7 @@ private:
 
     typedef void ( tcpiiu::*pProtoStubTCP ) ();
     static const pProtoStubTCP tcpJumpTableCAC [];
+    static tsFreeList < class tcpiiu, 16 > freeList;
 };
 
 class inetAddrID {
@@ -825,13 +830,14 @@ private:
     struct sockaddr_in addr;
 };
 
-class bhe : public tsSLNode <bhe>, public inetAddrID {
+class bhe : public tsSLNode < bhe >, public inetAddrID {
 public:
     bhe ( class cac &cacIn, const osiTime &initialTimeStamp, const inetAddrID &addr );
     tcpiiu *getIIU () const;
     void bindToIIU ( tcpiiu & );
     void destroy ();
     bool updateBeaconPeriod ( osiTime programBeginTime );
+    void show ( unsigned level) const;
 
     static void * operator new ( size_t size );
     static void operator delete ( void *pCadaver, size_t size );
@@ -848,7 +854,7 @@ private:
 
 class caErrorCode { 
 public:
-    caErrorCode (int status) : code (status) {};
+    caErrorCode ( int status ) : code ( status ) {};
 private:
     int code;
 };
@@ -862,6 +868,7 @@ public:
     void enable ();
     void disable ();
     void signalActivity ();
+    void show ( unsigned level ) const;
 private:
     //
     // The additional complexity associated with
@@ -1052,7 +1059,6 @@ public:
 
 private:
     ipAddrToAsciiEngine     ipToAEngine;
-    char                    ca_new_err_code_msg_buf[128u];
     cacServiceList          services;
     tsDLList <tcpiiu>       iiuList;
     tsDLList 
@@ -1067,21 +1073,20 @@ private:
         < bhe, inetAddrID > beaconTable;
     osiTime                 programBeginTime;
     double                  connTMO;
+    osiEvent                ioDone;
+    osiMutex                defaultMutex;
+    osiMutex                iiuListMutex;
     osiTimerQueue           *pTimerQueue;
     caExceptionHandler      *ca_exception_func;
     void                    *ca_exception_arg;
     caPrintfFunc            *pVPrintfFunc;
     char                    *pUserName;
-    osiEvent                ioDone;
     recvProcessThread       *pRecvProcThread;
     CAFDHANDLER             *fdRegFunc;
     void                    *fdRegArg;
     udpiiu                  *pudpiiu;
     searchTimer             *pSearchTmr;
     repeaterSubscribeTimer  *pRepeaterSubscribeTmr;
-    semBinaryId             ca_blockSem;
-    osiMutex                defaultMutex;
-    osiMutex                iiuListMutex;
     unsigned                pndrecvcnt;
     unsigned                readSeq;
     bool                    enablePreemptiveCallback;

@@ -119,6 +119,8 @@ public:
     virtual void lockOutstandingIO () const = 0;
     virtual void unlockOutstandingIO () const = 0;
 
+    virtual void show ( unsigned level ) const = 0u;
+
 private:
     virtual int read ( unsigned type, unsigned long count, void *pValue) = 0;
     virtual int read ( unsigned type, unsigned long count, cacNotify &notify ) = 0;
@@ -144,15 +146,16 @@ private:
 };
 
 class cacLocalChannelIO : 
-    public cacChannelIO, public tsDLNode <cacLocalChannelIO> {
+    public cacChannelIO, public tsDLNode < cacLocalChannelIO > {
 public:
     epicsShareFunc cacLocalChannelIO ( cacChannel &chan );
     epicsShareFunc virtual ~cacLocalChannelIO () = 0;
 };
 
-struct cacServiceIO : public tsDLNode <cacServiceIO> {
+struct cacServiceIO : public tsDLNode < cacServiceIO > {
 public:
     epicsShareFunc virtual cacLocalChannelIO *createChannelIO ( cacChannel &chan, const char *pName ) = 0;
+    epicsShareFunc virtual void show ( unsigned level ) const = 0u;
 private:
 };
 
@@ -160,9 +163,10 @@ class cacServiceList : private osiMutex {
 public:
     epicsShareFunc cacServiceList ();
     epicsShareFunc void registerService ( cacServiceIO &service );
-    epicsShareFunc cacLocalChannelIO * createChannelIO (const char *pName, cacChannel &chan);
+    epicsShareFunc cacLocalChannelIO * createChannelIO ( const char *pName, cacChannel &chan );
+    epicsShareFunc void show ( unsigned level ) const;
 private:
-    tsDLList <cacServiceIO> services;
+    tsDLList < cacServiceIO > services;
 };
 
 epicsShareExtern cacServiceList cacGlobalServiceList;

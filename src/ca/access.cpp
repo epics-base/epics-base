@@ -790,19 +790,25 @@ unsigned epicsShareAPI ca_get_ioc_connection_count ()
     return pcac->connectionCount ();
 }
 
-epicsShareFunc int epicsShareAPI ca_channel_status (threadId /* tid */)
+epicsShareFunc int epicsShareAPI ca_channel_status ( threadId tid )
+{
+    printf ("new OSI API does not allow peeking at thread private storage of another thread\n");
+    printf ("please call \"ca_client_status ( unsigned level )\" from the subsystem specific diagnostic code.\n");
+	return ECA_ANACHRONISM;
+}
+
+epicsShareFunc int epicsShareAPI ca_client_status ( unsigned level )
 {
     cac *pcac;
     int caStatus;
 
-    caStatus = fetchClientContext (&pcac);
+    caStatus = fetchClientContext ( &pcac );
     if ( caStatus != ECA_NORMAL ) {
         return caStatus;
     }
 
-    pcac->show (10u);
-
-	return ECA_NORMAL;
+    pcac->show ( level );
+    return ECA_NORMAL;
 }
 
 /*
@@ -1079,7 +1085,7 @@ extern "C" epicsShareDef const unsigned short dbr_value_offset[LAST_BUFFER_TYPE+
 	0,					/* string			*/
 };
 
-extern "C" epicsShareDef const char *db_field_text[] = {
+extern "C" epicsShareDef const char *dbf_text[LAST_TYPE+1] = {
     "DBF_STRING",
     "DBF_SHORT",
     "DBF_FLOAT",

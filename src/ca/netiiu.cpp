@@ -18,46 +18,30 @@
 
 netiiu::~netiiu ()
 {
+    assert ( this->channelList.count () == 0u );
 }
 
-void netiiu::show ( unsigned /* level */ ) const
+void netiiu::show ( unsigned level ) const
 {
     this->lock ();
-
-    tsDLIterConstBD <nciu> pChan ( this->chidList.first () );
-	while ( pChan.valid () ) {
-        char hostName [256];
-		printf(	"%s native type=%d ", 
-			pChan->pName (), pChan->nativeType () );
-        pChan->hostName ( hostName, sizeof (hostName) );
-		printf(	"N elements=%lu server=%s state=", 
-			pChan->nativeElementCount (), hostName );
-		switch ( pChan->state () ) {
-		case cs_never_conn:
-			printf ( "never connected to an IOC" );
-			break;
-		case cs_prev_conn:
-			printf ( "disconnected from IOC" );
-			break;
-		case cs_conn:
-			printf ( "connected to an IOC" );
-			break;
-		case cs_closed:
-			printf ( "invalid channel" );
-			break;
-		default:
-			break;
-		}
-		printf ( "\n" );
-	}
-
+    printf ( "network IO base class\n" );
+    if ( level > 1 ) {
+        tsDLIterConstBD < nciu > pChan ( this->channelList.first () );
+	    while ( pChan.valid () ) {
+            pChan->show ( level - 1u );
+            pChan = pChan.itemAfter ();
+        }
+    }
+    if ( level > 2u ) {
+        printf ("\tcac pointer %p\n", &this->cacRef );
+        this->mutex.show ( level - 2u );
+    }
     this->unlock ();
-
 }
 
 unsigned netiiu::channelCount () const
 {
-    return this->chidList.count ();
+    return this->channelList.count ();
 }
 
 void netiiu::lock () const
@@ -73,7 +57,7 @@ void netiiu::unlock () const
 void netiiu::detachAllChan ()
 {
     this->lock ();
-    tsDLIterBD <nciu> chan ( this->chidList.first () );
+    tsDLIterBD <nciu> chan ( this->channelList.first () );
     while ( chan.valid () ) {
         tsDLIterBD <nciu> next = chan.itemAfter ();
         chan->detachChanFromIIU ();
@@ -85,7 +69,7 @@ void netiiu::detachAllChan ()
 void netiiu::disconnectAllChan ()
 {
     this->lock ();
-    tsDLIterBD <nciu> chan ( this->chidList.first () );
+    tsDLIterBD <nciu> chan ( this->channelList.first () );
     while ( chan.valid () ) {
         tsDLIterBD <nciu> next = chan.itemAfter ();
         chan->disconnect ();
@@ -97,7 +81,7 @@ void netiiu::disconnectAllChan ()
 void netiiu::connectTimeoutNotify ()
 {
     this->lock ();
-    tsDLIterBD <nciu> chan ( this->chidList.first () );
+    tsDLIterBD <nciu> chan ( this->channelList.first () );
     while ( chan.valid () ) {
         chan->connectTimeoutNotify ();
         chan++;
@@ -108,7 +92,7 @@ void netiiu::connectTimeoutNotify ()
 void netiiu::resetChannelRetryCounts ()
 {
     this->lock ();
-    tsDLIterBD <nciu> chan ( this->chidList.first () );
+    tsDLIterBD <nciu> chan ( this->channelList.first () );
     while ( chan.valid () ) {
         chan->resetRetryCount ();
         chan++;
@@ -122,12 +106,12 @@ bool netiiu::searchMsg ( unsigned short retrySeqNumber, unsigned &retryNoForThis
 
     this->lock ();
 
-    tsDLIterBD <nciu> chan = this->chidList.first ();
+    tsDLIterBD <nciu> chan = this->channelList.first ();
     if ( chan.valid () ) {
         status = chan->searchMsg ( retrySeqNumber, retryNoForThisChannel );
         if ( status ) {
-            this->chidList.remove ( *chan );
-            this->chidList.add ( *chan );
+            this->channelList.remove ( *chan );
+            this->channelList.add ( *chan );
         }
     }
     else {
@@ -149,7 +133,7 @@ void netiiu::sendPendingClaims ( tcpiiu &iiu, bool v42Ok, claimMsgCache &cache )
     while ( 1 ) {
         while (1) {
             this->lock ();
-            tsDLIterBD < nciu > chan ( this->chidList.last () );
+            tsDLIterBD < nciu > chan ( this->channelList.last () );
             if ( ! chan.valid () ) {
                 this->unlock ();
                 return;
@@ -172,7 +156,7 @@ void netiiu::sendPendingClaims ( tcpiiu &iiu, bool v42Ok, claimMsgCache &cache )
 
         this->lock ();
         // if the channel was not deleted while the lock was off
-        tsDLIterBD < nciu > chan ( this->chidList.last () );
+        tsDLIterBD < nciu > chan ( this->channelList.last () );
         if ( chan.valid () ) {
             if ( cache.channelMatches ( *chan ) ) {
                 if ( ! v42Ok ) {

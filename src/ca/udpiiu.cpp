@@ -822,4 +822,25 @@ SOCKET udpiiu::getSock () const
     return this->sock;
 }
 
+void udpiiu::show ( unsigned level ) const
+{
+    this->lock ();
+    printf ( "Datagram IO circuit (and disconnected channel repository)\n");
+    if ( level > 1u ) {
+        this->netiiu::show ( level - 1u );
+    }
+    if ( level > 2u ) {
+        printf ("\trepeater port %u\n", this->repeaterPort );
+        printf ("\tdefault server port %u\n", this->serverPort );
+        printChannelAccessAddressList ( &this->dest );
+    }
+    if ( level > 3u ) {
+        printf ("\tsocket identifier %d\n", this->sock );
+        printf ("\tbytes in xmit buffer %u\n", this->nBytesInXmitBuf );
+        printf ("\tshut down command bool %u\n", this->shutdownCmd );
+        printf ( "\trecv thread exit signal:\n" );
+        semBinaryShow ( this->recvThreadExitSignal, level-3u );
+    }
+    this->unlock ();
+}
 

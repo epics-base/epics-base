@@ -50,8 +50,7 @@ void caConnTest ( const char *pNameIn, unsigned channelCountIn, double delayIn )
 		status = ca_pend_io ( 60.0 * 10.0 );
 		SEVCHK ( status, "channels didnt connect" );
 
-		status = ca_pend_event ( delayIn );
-		SEVCHK ( status, "CA pend event failed" );
+		ca_pend_event ( delayIn );
 
 		status = ca_task_exit();
 		SEVCHK ( status, "task exit problems" );

@@ -48,3 +48,16 @@ cacLocalChannelIO * cacServiceList::createChannelIO (const char *pName, cacChann
     return pChanIO;
 }
 
+void cacServiceList::show ( unsigned level ) const
+{
+    cacLocalChannelIO *pChanIO = 0;
+
+    this->lock ();
+    tsDLIterConstBD < cacServiceIO > iter ( this->services.first () );
+    while ( iter.valid () ) {
+        iter->show ( level );
+        iter++;
+    }
+    this->unlock ();
+}
+

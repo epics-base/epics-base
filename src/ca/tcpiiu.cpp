@@ -132,7 +132,7 @@ void tcpiiu::connect ()
 extern "C" void cacSendThreadTCP ( void *pParam )
 {
     tcpiiu *piiu = ( tcpiiu * ) pParam;
-    claimMsgCache cache ( CA_V44 ( CA_PROTOCOL_VERSION, piiu->minor_version_number ) );
+    claimMsgCache cache ( CA_V44 ( CA_PROTOCOL_VERSION, piiu->minorProtocolVersionNumber ) );
 
     while ( true ) {
 
@@ -144,7 +144,7 @@ extern "C" void cacSendThreadTCP ( void *pParam )
 
         if ( piiu->pClaimsPendingIIU->channelCount () > 0u ) {
             piiu->pClaimsPendingIIU->sendPendingClaims ( *piiu,
-                CA_V42 ( CA_PROTOCOL_VERSION, piiu->minor_version_number ), cache );
+                CA_V42 ( CA_PROTOCOL_VERSION, piiu->minorProtocolVersionNumber ), cache );
             piiu->flushPending = true;
         }
 
@@ -281,10 +281,6 @@ unsigned tcpiiu::recvBytes ( void *pBuf, unsigned nBytesInBuf )
         this->contigRecvMsgCount = 0u;
         this->busyStateDetected = false;
     }
-
-    // care is taken not to post the busy/ready message to the send buffer
-    // here so that we avoid push/pull deadlocks
-    this->flowControlStateChange = this->busyStateDetected != this->flowControlActive;
     
     this->messageArrivalNotify (); // reschedule connection activity watchdog
 
@@ -319,7 +315,7 @@ extern "C" void cacRecvThreadTCP (void *pParam)
                 else {
                     unsigned nBytesIn = piiu->fillFromWire ();
                     if ( nBytesIn ) {
-                        piiu->recvPending = true;
+                        piiu->recvMessagePending = true;
                         piiu->clientCtx ().signalRecvActivity ();
                     }
                 }
@@ -351,8 +347,7 @@ tcpiiu::tcpiiu ( cac &cac, const osiSockAddr &addrIn,
     contigRecvMsgCount ( 0u ),
     busyStateDetected ( false ),
     flowControlActive ( false ),
-    flowControlStateChange ( false ),
-    recvPending ( false ),
+    recvMessagePending ( false ),
     flushPending ( false ),
     msgHeaderAvailable ( false )
 {
@@ -414,7 +409,7 @@ tcpiiu::tcpiiu ( cac &cac, const osiSockAddr &addrIn,
 #endif
 
     this->sock = newSocket;
-    this->minor_version_number = minorVersion;
+    this->minorProtocolVersionNumber = minorVersion;
     this->echoRequestPending = false;
     this->curDataMax = 0ul;
     memset ( (void *) &this->curMsg, '\0', sizeof (this->curMsg) );
@@ -524,7 +519,6 @@ void tcpiiu::cleanShutdown ()
         }
         semBinaryGive ( this->sendThreadFlushSignal );
         semBinaryGive ( this->recvThreadRingBufferSpaceAvailableSignal );
-        this->recvPending = true;
         this->clientCtx ().signalRecvActivity ();
     }
     this->unlock ();
@@ -545,7 +539,6 @@ void tcpiiu::forcedShutdown ()
         }
         semBinaryGive ( this->sendThreadFlushSignal );
         semBinaryGive ( this->recvThreadRingBufferSpaceAvailableSignal );
-        this->recvPending = true;
         this->clientCtx ().signalRecvActivity ();
     }
     this->unlock ();
@@ -563,8 +556,6 @@ tcpiiu::~tcpiiu ()
 
     this->fullyConstructedFlag = false;
 
-    this->cleanShutdown ();
-
     if ( this->channelCount () ) {
         char hostNameTmp[64];
         this->ipToA.hostName ( hostNameTmp, sizeof ( hostNameTmp ) );
@@ -573,13 +564,16 @@ tcpiiu::~tcpiiu ()
 
     this->disconnectAllChan ();
 
+    if ( this->pClaimsPendingIIU ) {
+        this->pClaimsPendingIIU->disconnectAllChan ();
+        delete this->pClaimsPendingIIU;
+    }
+
+    this->cleanShutdown ();
+
     // wait for send and recv threads to exit
     semBinaryMustTake ( this->sendThreadExitSignal );
     semBinaryMustTake ( this->recvThreadExitSignal );
-
-    if ( this->pClaimsPendingIIU ) {
-        delete this->pClaimsPendingIIU;
-    }
 
     semBinaryDestroy ( this->sendThreadExitSignal );
     semBinaryDestroy ( this->recvThreadExitSignal );
@@ -617,8 +611,44 @@ bool tcpiiu::connectionInProgress ( const char *pChannelName, const osiSockAddr 
     return true;
 }
 
-void tcpiiu::show ( unsigned /* level */ ) const
+void tcpiiu::show ( unsigned level ) const
 {
+    this->lock ();
+    char buf[256];
+    this->ipToA.hostName ( buf, sizeof ( buf ) );
+    printf ( "Virtual circuit to \"%s\" at version %u.%u state %u\n", 
+        buf, CA_PROTOCOL_VERSION, this->minorProtocolVersionNumber,
+        this->state );
+    if ( level > 1u ) {
+        this->netiiu::show ( level - 1u );
+    }
+    if ( level > 2u ) {
+        printf ( "\tcurrent data cache pointer = %p current data cache size = %u\n",
+            this->pCurData, this->curDataMax );
+        printf ( "\tcontiguous receive message count=%u, busy detect bool=%u, flow control bool=%u\n", 
+            this->contigRecvMsgCount, this->busyStateDetected, this->flowControlActive );
+    }
+    if ( level > 3u ) {
+        printf ( "\tvirtual circuit socket identifier %d\n", this->sock );
+        printf ( "\tsend thread flush signal:\n" );
+        semBinaryShow ( this->sendThreadFlushSignal, level-3u );
+        printf ( "\trecv thread buffer space available signal:\n" );
+        semBinaryShow ( this->recvThreadRingBufferSpaceAvailableSignal, level-3u );
+        printf ( "\tsend thread exit signal:\n" );
+        semBinaryShow ( this->sendThreadExitSignal, level-3u );
+        printf ( "\trecv thread exit signal:\n" );
+        semBinaryShow ( this->recvThreadExitSignal, level-3u );
+        printf ( "\tfully constructed bool %u\n", this->fullyConstructedFlag );
+        printf ("\techo pending bool = %u\n", this->echoRequestPending );
+        printf ("\treceive message pending bool = %u\n", this->recvMessagePending );
+        printf ("\tflush pending bool = %u\n", this->flushPending );
+        printf ("\treceive message header available bool = %u\n", this->msgHeaderAvailable );
+        if ( this->pClaimsPendingIIU ) {
+            this->pClaimsPendingIIU->show ( level - 3u );
+        }
+        this->bhe.show ( level - 3u );
+    }
+    this->unlock ();
 }
 
 void tcpiiu::echoRequest ()
@@ -632,7 +662,7 @@ void tcpiiu::echoRequest ()
  */
 void tcpiiu::echoRequestMsg ()
 {
-    if ( CA_V43 ( CA_PROTOCOL_VERSION, this->minor_version_number ) ) {
+    if ( CA_V43 ( CA_PROTOCOL_VERSION, this->minorProtocolVersionNumber ) ) {
         this->comQueSend::echoRequest ();
     }
     else {
@@ -671,7 +701,7 @@ void tcpiiu::disableFlowControlMsg ()
  */
 void tcpiiu::hostNameSetMsg ()
 {
-    if ( ! CA_V41 ( CA_PROTOCOL_VERSION, this->minor_version_number ) ) {
+    if ( ! CA_V41 ( CA_PROTOCOL_VERSION, this->minorProtocolVersionNumber ) ) {
         return;
     }
 
@@ -683,7 +713,7 @@ void tcpiiu::hostNameSetMsg ()
  */
 void tcpiiu::userNameSetMsg ()
 {
-    if ( ! CA_V41 ( CA_PROTOCOL_VERSION, this->minor_version_number ) ) {
+    if ( ! CA_V41 ( CA_PROTOCOL_VERSION, this->minorProtocolVersionNumber ) ) {
         return;
     }
 
@@ -736,7 +766,7 @@ void tcpiiu::readNotifyRespAction ()
      * read notify status starting
      * with CA V4.1
      */
-    v41 = CA_V41 ( CA_PROTOCOL_VERSION, this->minor_version_number );
+    v41 = CA_V41 ( CA_PROTOCOL_VERSION, this->minorProtocolVersionNumber );
     if (v41) {
         status = this->curMsg.m_cid;
     }
@@ -789,7 +819,7 @@ void tcpiiu::eventRespAction ()
      * read notify status starting
      * with CA V4.1
      */
-    v41 = CA_V41 ( CA_PROTOCOL_VERSION, this->minor_version_number );
+    v41 = CA_V41 ( CA_PROTOCOL_VERSION, this->minorProtocolVersionNumber );
     if (v41) {
         status = this->curMsg.m_cid;
     }
@@ -1065,8 +1095,8 @@ void tcpiiu::processIncomingAndDestroySelfIfDisconnected ()
     if ( this->state == iiu_disconnected ) {
         this->suicide ();
     }
-    else if ( this->recvPending ) {
-        this->recvPending = false;
+    else if ( this->recvMessagePending ) {
+        this->recvMessagePending = false;
         this->postMsg ();
     }
 }

@@ -139,3 +139,10 @@ bool bhe::updateBeaconPeriod (osiTime programBeginTime)
     return netChange;
 }
 
+void bhe::show ( unsigned level ) const
+{
+    printf ( "CA beacon hash entry at %p with average period %f\n", this, this->averagePeriod );
+    if ( level > 0u ) {
+        printf ( "network IO pointer %p, client pointer %p\n", this->piiu, &this->cac );
+    }
+}

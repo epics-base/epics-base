@@ -102,7 +102,7 @@ int epicsTimeTest (void)
         }
         if (!(end-begin==diff)) {
             printf ("#%3d: Failed end-begin==diff by %12.9f\n",
-                    iTimes, fabs(end-begin-diff));
+                    iTimes, fabs((end-begin)-diff));
             errors += 1;
         }
 

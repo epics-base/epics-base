@@ -37,31 +37,45 @@
  *
  * In the implementation file, however, you write:
  *
- *  #include <routines_imported.h>
- *  #include <routines_imported_from_other_dlls.h>
- *  #define epicsExportSharedSymbols
- *  ! no more includes specifying routines outside this DLLs from here on ! 
- *  #include <shareLib.h>
- *  #include <in_this_dll_but_not_implemented_in_this_file.h>
- *  #include <what_I_implement_in_this_file.h>
+ * #include <routines_imported.h>
+ * #include <routines_imported_from_other_dlls.h>
+ * #define epicsExportSharedSymbols
+ * ! no more includes specifying routines outside this DLLs from here on ! 
+ * #include <in_this_dll_but_not_implemented_in_this_file.h>
+ * #include <what_I_implement_in_this_file.h>
  *
- * The point is: define epicsExportSharedSymbols exactly and only
+ * The point is: define epicsExportSharedSymbols only
  * right before you include the prototypes for what you implement!
- * Then include shareLib.h again because this is where they get changed.
+ * You must include shareLib.h again because this is where they get changed,
+ * but this usually occurs as a side effect of including the header file.
  * This time the epicsShare... macros expand to
  *  "export this from the DLL that we are building". (again only on WIN32)
  *
- * NOTE:
- * If what_I_implement_in_this_file.h includes header files for routines that
- * are not implemented in the DLL, then you will need to force these
- * header files to be included before setting epicsExportSharedSymbols,
- * including shareLib.h, and including what_I_implement_in_this_file.h. Since
- * all well written header files have "ifdef" guards against multiple inclusion
- * this is only a matter of "preincluding" the headers for these DLL
- * imports before epicsExportSharedSymbols is defined. This
- * is admittedly a bit of a mess, but is fortunately only the concern of
- * persons who are adding routines to a library, and will have no impact
- * on persons using routines out of a library.
+ * Frequently a header file for a shareable library exported interface will
+ * have some preprocessor switches like this if this header file must also  
+ * include header files describing interfaces to other shareable libraries.
+ *
+ * #ifdef epicsExportSharedSymbols
+ * #   define interfacePDQ_epicsExportSharedSymbols
+ * #   undef epicsExportSharedSymbols
+ * #endif
+ *
+ * #include "epicsTypes.h"
+ * #include "epicsTime.h"
+ *
+ * #ifdef interfacePDQ_epicsExportSharedSymbols
+ * #   define epicsExportSharedSymbols
+ * #   include "shareLib.h"
+ * #endif
+ *
+ * Alternatively, you can force header files describing interfaces outside of your 
+ * library to be included before setting epicsExportSharedSymbols by including them
+ * before setting epicsExportSharedSymbols. Since all well written header files have 
+ * "ifdef" guards against multiple inclusion this will prevent these interfaces from 
+ * being included again after epicsExportSharedSymbols is set. 
+ *
+ * Fortunately, the above is only the concern of library authors and will have no 
+ * impact on persons using routines from a library.
  *
  * 8-22-96 -kuk-
  *

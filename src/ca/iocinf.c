@@ -757,7 +757,7 @@ LOCAL void cac_tcp_send_msg_piiu(struct ioc_in_use *piiu)
 
 		CAC_RING_BUFFER_READ_ADVANCE(&piiu->send, status);
 
-		if (status != sendCnt) {
+		if (((unsigned long)status) != sendCnt) {
 			UNLOCK;
 			return;
 		}
@@ -928,7 +928,7 @@ LOCAL void tcp_recv_msg(struct ioc_in_use *piiu)
 			break;
 		}
 
-		assert (status<=writeSpace);
+		assert (((unsigned long)status)<=writeSpace);
 
 		CAC_RING_BUFFER_WRITE_ADVANCE(&piiu->recv, status);
 
@@ -938,7 +938,7 @@ LOCAL void tcp_recv_msg(struct ioc_in_use *piiu)
 		 */
 		piiu->timeAtLastRecv = ca_static->currentTime;
 
-		if (status != writeSpace) {
+		if (((unsigned long)status) != writeSpace) {
 			break;
 		}
 	}
@@ -1211,70 +1211,18 @@ void close_ioc (struct ioc_in_use *piiu)
 		 */
 		chix = (chid) &piiu->chidlist.node.next;
 		while (chix = (chid) chix->node.next) {
-			chix->type = TYPENOTCONN;
-			chix->count = 0U;
 			chix->state = cs_prev_conn;
-			chix->id.sid = ~0U;
-			chix->ar.read_access = FALSE;
-			chix->ar.write_access = FALSE;
-			/*
-			 * try to reconnect
-			 */
-			chix->retry = 0U;
+		}
+
+		chix = (chid) &piiu->chidlist.node.next;
+		while (chix = (chid) chix->node.next) {
+			cacDisconnectChannel(chix, TRUE);
 		}
 
 		if (piiu->chidlist.count) {
 			ca_signal (ECA_DISCONN,piiu->host_name_str);
 		}
-
-		/*
-		 * clear outstanding get call backs 
-		 */
-		caIOBlockListFree (&pend_read_list, chix, TRUE, ECA_DISCONN);
-
-		/*
-		 * clear outstanding put call backs 
-		 */
-		caIOBlockListFree (&pend_write_list, chix, TRUE, ECA_DISCONN);
-
-		/*
-		 * call their connection handler as required
-		 */
-		chix = (chid) &piiu->chidlist.node.next;
-		while (chix = (chid) chix->node.next) {
-			LOCKEVENTS;
-			if (chix->pConnFunc) {
-				struct connection_handler_args 	args;
-
-				args.chid = chix;
-				args.op = CA_OP_CONN_DOWN;
-				(*chix->pConnFunc) (args);
-			}
-			if (chix->pAccessRightsFunc) {
-				struct access_rights_handler_args 	args;
-
-				args.chid = chix;
-				args.ar = chix->ar;
-				(*chix->pAccessRightsFunc) (args);
-			}
-			UNLOCKEVENTS;
-			chix->piiu = piiuCast;
-		}
-
-		/*
-		 * move all channels to the broadcast IIU
-		 *
-		 * if we loose the broadcast IIU its a severe error
-		 */
-		assert (piiuCast);
-		ellConcat (&piiuCast->chidlist, &piiu->chidlist);
-  		assert (piiu->chidlist.count==0);
 	}
-
-	/*
-	 * Try to reconnect
-	 */
-	ca_static->ca_search_retry = 0;
 
   	if (fd_register_func) {
 		LOCKEVENTS;
@@ -1303,6 +1251,71 @@ void close_ioc (struct ioc_in_use *piiu)
 	UNLOCK;
 }
 
+
+/*
+ * cacDisconnectChannel()
+ */
+void cacDisconnectChannel(chid chix, int fullDisconnect)
+{
+	struct ioc_in_use *piiu;
+
+	chix->type = TYPENOTCONN;
+	chix->count = 0U;
+	chix->id.sid = ~0U;
+	chix->ar.read_access = FALSE;
+	chix->ar.write_access = FALSE;
+
+	/*
+	 * try to reconnect
+	 */
+	chix->retry = 0U;
+
+	/*
+	 * call their connection handler as required
+	 */
+	if (fullDisconnect) {
+		chix->state = cs_prev_conn;
+
+		/*
+		 * clear outstanding get call backs 
+		 */
+		caIOBlockListFree (&pend_read_list, chix, 
+				TRUE, ECA_DISCONN);
+
+		/*
+		 * clear outstanding put call backs 
+		 */
+		caIOBlockListFree (&pend_write_list, chix, 
+				TRUE, ECA_DISCONN);
+
+		LOCKEVENTS;
+		if (chix->pConnFunc) {
+			struct connection_handler_args 	args;
+
+			args.chid = chix;
+			args.op = CA_OP_CONN_DOWN;
+			(*chix->pConnFunc) (args);
+		}
+		if (chix->pAccessRightsFunc) {
+			struct access_rights_handler_args 	args;
+
+			args.chid = chix;
+			args.ar = chix->ar;
+			(*chix->pAccessRightsFunc) (args);
+		}
+		UNLOCKEVENTS;
+	}
+	piiu = (struct ioc_in_use *)chix->piiu;
+	ellDelete(&piiu->chidlist, &chix->node);
+	assert (piiuCast);
+	chix->piiu = piiuCast;
+	ellAdd(&piiuCast->chidlist, &chix->node);
+
+	/*
+	 * Try to reconnect this channel
+	 */
+	ca_static->ca_search_retry = 0;
+}
 
 
 /*
@@ -1705,7 +1718,7 @@ void caPrintAddrList(ELLLIST *pList)
 /*
  * caFetchPortConfig()
  */
-int caFetchPortConfig(ENV_PARAM *pEnv, int defaultPort)
+unsigned short caFetchPortConfig(ENV_PARAM *pEnv, unsigned short defaultPort)
 {
 	long		longStatus;
 	long		epicsParam;
@@ -1713,29 +1726,29 @@ int caFetchPortConfig(ENV_PARAM *pEnv, int defaultPort)
 
 	longStatus = envGetLongConfigParam(pEnv, &epicsParam);
 	if (longStatus!=0) {
-		epicsParam = defaultPort;
+		epicsParam = (long) defaultPort;
 		ca_printf ("EPICS \"%s\" integer fetch failed\n", pEnv->name);
 		ca_printf ("setting \"%s\" = %ld\n", pEnv->name, epicsParam);
 	}
 
 	/*
-	 * This must be a server port that will fit in a signed
+	 * This must be a server port that will fit in an unsigned
 	 * short
 	 */
-	if (epicsParam<=IPPORT_USERRESERVED || epicsParam>SHRT_MAX) {
+	if (epicsParam<=IPPORT_USERRESERVED || epicsParam>USHRT_MAX) {
 		ca_printf ("EPICS \"%s\" out of range\n", pEnv->name);
 		/*
 		 * Quit if the port is wrong due CA coding error
 		 */
-		assert (epicsParam != defaultPort);
-		epicsParam = defaultPort;
+		assert (epicsParam != (long) defaultPort);
+		epicsParam = (long) defaultPort;
 		ca_printf ("Setting \"%s\" = %ld\n", pEnv->name, epicsParam);
 	}
 
 	/*
 	 * ok to clip to int here because we checked the range
 	 */
-	port = (int) epicsParam;
+	port = (unsigned short) epicsParam;
 
 	return port;
 }

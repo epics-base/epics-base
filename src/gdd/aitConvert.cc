@@ -5,6 +5,9 @@
 // $Id$
 //
 // $Log$
+// Revision 1.9  1999/10/28 23:33:41  jhill
+// use fully qualified namespace names for C++ RTL classes
+//
 // Revision 1.8  1999/10/28 00:28:41  jhill
 // special case enum to string conversion
 //
@@ -44,8 +47,6 @@
 #define AIT_CONVERT_SOURCE 1
 #include <stdio.h>
 #include <stdlib.h>
-#include <string>
-#include <vector>
 #define epicsExportSharedSymbols
 #include "aitConvert.h"
 

@@ -38,7 +38,7 @@
 #include "macLib.h"
 #include "dbmf.h"
 #include "epicsVersion.h"
-#ifdef WIN32
+#ifdef _WIN32
 #include "getopt.h"
 #endif
 

@@ -42,14 +42,14 @@
 #undef epicsShareAPI
 #undef READONLY
 
-#if defined(WIN32)
+#if defined(_WIN32)
 
 #	if defined(epicsExportSharedSymbols)
-#		define epicsShareExtern __declspec(dllexport) extern
+#		define epicsShareExtern extern __declspec(dllexport)
 #		define epicsShareClass  __declspec(dllexport) 
 #		define epicsShareFunc  __declspec(dllexport)
 #	else
-#		define epicsShareExtern __declspec(dllimport) extern
+#		define epicsShareExtern extern __declspec(dllimport)
 #		define epicsShareClass  __declspec(dllimport) 
 #		define epicsShareFunc  __declspec(dllimport)
 #	endif
@@ -60,7 +60,7 @@
 	 */
 #	define epicsShareAPI __stdcall
 #	define epicsShareDef __declspec(dllexport)
-#       define READONLY const
+#	define READONLY const
 
 #elif defined(VAXC)
 
@@ -76,7 +76,7 @@
 	 */
 #	define epicsShareExtern globalref 
 #	define epicsShareDef globaldef 
-#       define READONLY const
+#	define READONLY const
 #	define epicsShareClass
 #	define epicsShareFunc
 #	define epicsShareAPI
@@ -88,7 +88,8 @@
 #	define epicsShareExtern extern
 #	define epicsShareAPI
 #	define epicsShareClass
-#	define epicsShareDef 
+#	define epicsShareDef
+
 #	define epicsShareFunc
 #	if defined(__STDC__)
 #		define READONLY const

@@ -166,7 +166,7 @@ void tcpSendThread::run ()
     }
     catch ( ... ) {
         errlogPrintf (
-            "cac: tcp send thread received an unexpected exception ",
+            "cac: tcp send thread received an unexpected exception "
             "- disconnecting\n");
         // this should cause the server to disconnect from 
         // the client

@@ -273,7 +273,7 @@ void udpiiu::shutdown ()
 udpRecvThread::udpRecvThread ( 
     udpiiu & iiuIn, cacContextNotify & ctxNotifyIn, epicsMutex & cbMutexIn,
     const char * pName, unsigned stackSize, unsigned priority ) :
-        iiu ( iiuIn ), ctxNotify ( ctxNotifyIn ), cbMutex ( cbMutexIn ), 
+        iiu ( iiuIn ), cbMutex ( cbMutexIn ), ctxNotify ( ctxNotifyIn ), 
         thread ( *this, pName, stackSize, priority ) {}
 
 udpRecvThread::~udpRecvThread () 

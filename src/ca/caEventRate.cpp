@@ -31,6 +31,7 @@ extern "C" void eventCallBack ( struct event_handler_args args )
  */
 void caEventRate ( const char *pName, unsigned count )
 {
+    unsigned i;
     static const double initialSamplePeriod = 1.0;
     static const double maxSamplePeriod = 60.0 * 5.0;
 
@@ -40,7 +41,7 @@ void caEventRate ( const char *pName, unsigned count )
 
     chid * pChidTable = new chid [ count ];
     assert ( pChidTable );
-    for ( unsigned i = 0u; i < count; i++ ) {
+    for ( i = 0u; i < count; i++ ) {
         int status = ca_search ( pName,  & pChidTable[i] );
         SEVCHK ( status, NULL );
     }
@@ -57,7 +58,7 @@ void caEventRate ( const char *pName, unsigned count )
     fflush ( stdout );
 
     unsigned eventCount = 0u;
-    for ( unsigned i = 0u; i < count; i++ ) {
+    for ( i = 0u; i < count; i++ ) {
         status = ca_add_event ( DBR_FLOAT, 
             pChidTable[i], eventCallBack, &eventCount, NULL);
         SEVCHK ( status, __FILE__ );

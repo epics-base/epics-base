@@ -12,6 +12,7 @@ if( $ARGV[0] ) {
   if( $ARGV[0] =~ /^\./ )
   {
     $dir = abs_path("$ARGV[0]");
+	$dir =~ s/\/tmp_mnt//;     
     print "$dir\n";
   } else  {
     print "$ARGV[0]\n";

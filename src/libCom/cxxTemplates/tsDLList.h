@@ -867,6 +867,12 @@ inline tsDLIterBD<T> tsDLIterBD<T>::itemBefore ()
 	return tsDLIterBD<T> (node.pPrev);
 }
 
+template <class T>
+inline bool tsDLIterBD<T>::valid () const
+{
+    return this->pEntry ? true : false;
+}
+
 //
 // tsDLIterBD<T>::eol
 //

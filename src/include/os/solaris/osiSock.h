@@ -58,10 +58,10 @@ typedef int SOCKET;
 #define socket_ioctl(A,B,C) ioctl(A,B,C)
 typedef int osiSockIoctl_t;
 
-#if SOLARIS <= 6 
-    typedef int osiSocklen_t;
-#else 
+#if SOLARIS > 6 || defined ( _SOCKLEN_T )
     typedef uint32_t osiSocklen_t;
+#else 
+    typedef int osiSocklen_t;
 #endif
 
 #define FD_IN_FDSET(FD) ((FD)<FD_SETSIZE&&(FD)>=0)

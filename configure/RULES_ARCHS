@@ -30,7 +30,7 @@ archPart = $(word 2, $(subst $(DIVIDER), ,$@))
 actionArchTargets = $(foreach x, $(ACTIONS),\
 		$(foreach arch,$(BUILD_ARCHS), $(x)$(DIVIDER)$(arch)))
 
-cleanArchTargets = $(foreach arch,$(BUILD_ARCHS), clean$(DIVIDER)$(arch)))
+cleanArchTargets = $(foreach arch,$(BUILD_ARCHS), clean$(DIVIDER)$(arch))
 
 buildDirs = $(addprefix O.,$(BUILD_ARCHS))
 

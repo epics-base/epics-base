@@ -32,30 +32,19 @@
 #define epicsExportSharedSymbols
 #include "dbCAC.h"
 #include "dbChannelIOIL.h"
-#include "dbNotifyBlockerIL.h"
-
-#if defined ( _MSC_VER )
-#   pragma warning ( push )
-#   pragma warning ( disable: 4660 )
-#endif
-
-template class tsFreeList < dbPutNotifyBlocker, 1024, 0 >;
-
-#if defined ( _MSC_VER )
-#   pragma warning ( pop )
-#endif
+#include "dbPutNotifyBlocker.h"
 
 tsFreeList < dbPutNotifyBlocker, 1024, 0 > dbPutNotifyBlocker::freeList;
-epicsMutex dbPutNotifyBlocker::freeListMutex;
 
 dbPutNotifyBlocker::dbPutNotifyBlocker ( dbChannelIO &chanIn ) :
-    chan ( chanIn ), pNotify ( 0 )
+    pNotify ( 0 )
 {
     memset ( &this->pn, '\0', sizeof ( this->pn ) );
 }
 
 dbPutNotifyBlocker::~dbPutNotifyBlocker () 
 {
+    this->cancel ();
 }
 
 void dbPutNotifyBlocker::destroy ()
@@ -104,7 +93,7 @@ extern "C" void putNotifyCompletion ( putNotify *ppn )
     pBlocker->block.signal ();
 }
 
-void dbPutNotifyBlocker::initiatePutNotify ( epicsAutoMutex & locker, cacWriteNotify & notify, 
+void dbPutNotifyBlocker::initiatePutNotify ( epicsGuard < epicsMutex > & locker, cacWriteNotify & notify, 
         struct dbAddr & addr, unsigned type, unsigned long count, const void * pValue )
 {
     int status;
@@ -126,7 +115,7 @@ void dbPutNotifyBlocker::initiatePutNotify ( epicsAutoMutex & locker, cacWriteNo
             beginTimeInit = true;
         }
         {
-            epicsAutoMutexRelease autoRelease ( locker );
+            epicsGuardRelease < epicsMutex > autoRelease ( locker );
             this->block.wait ( 1.0 );
         }
     }
@@ -161,11 +150,7 @@ void dbPutNotifyBlocker::show ( unsigned level ) const
     printf ( "put notify blocker at %p\n", 
         static_cast <const void *> ( this ) );
     if ( level > 0u ) {
-        printf ( "\tdbChannelIO at %p\n", 
-            static_cast <void *> ( &this->chan ) );
-    }
-    if ( level > 1u ) {
-        this->block.show ( level - 2u );
+        this->block.show ( level - 1u );
     }
 }
 

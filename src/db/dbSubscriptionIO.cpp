@@ -30,19 +30,7 @@
 #include "dbChannelIOIL.h"
 #include "db_access_routines.h"
 
-#if defined ( _MSC_VER )
-#   pragma warning ( push )
-#   pragma warning ( disable: 4660 )
-#endif
-
-template class tsFreeList < dbSubscriptionIO >;
-
-#if defined ( _MSC_VER )
-#   pragma warning ( pop )
-#endif
-
 tsFreeList < dbSubscriptionIO > dbSubscriptionIO::freeList;
-epicsMutex dbSubscriptionIO::freeListMutex;
 
 dbSubscriptionIO::dbSubscriptionIO ( dbServiceIO &serviceIO, dbChannelIO &chanIO, 
     dbAddr &addr, cacStateNotify &notifyIn, 
@@ -91,13 +79,11 @@ void dbSubscriptionIO::channelDeleteException ()
 
 void * dbSubscriptionIO::operator new ( size_t size )
 {
-    epicsAutoMutex locker ( dbSubscriptionIO::freeListMutex );
     return dbSubscriptionIO::freeList.allocate ( size );
 }
 
 void dbSubscriptionIO::operator delete ( void *pCadaver, size_t size )
 {
-    epicsAutoMutex locker ( dbSubscriptionIO::freeListMutex );
     dbSubscriptionIO::freeList.release ( pCadaver, size );
 }
 

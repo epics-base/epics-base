@@ -34,7 +34,7 @@ void dbServiceIOReadNotifyCache::show ( unsigned level ) const
 void dbServiceIOReadNotifyCache::callReadNotify ( struct dbAddr &addr, 
 	unsigned type, unsigned long count, cacReadNotify &notify )
 {
-    epicsAutoMutex locker ( this->mutex );
+    epicsGuard < epicsMutex > locker ( this->mutex );
 
     unsigned long size = dbr_size_n ( type, count );
 

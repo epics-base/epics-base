@@ -25,25 +25,13 @@
 #include "caerr.h" // should be eliminated here in the future
 #include "epicsEvent.h"
 #include "epicsThread.h"
+#include "epicsSingleton.h"
 
 #define epicsExportSharedSymbols
 #include "db_access_routines.h"
 #include "dbCAC.h"
 #include "dbChannelIOIL.h"
-#include "dbNotifyBlockerIL.h"
-
-#if defined ( _MSC_VER )
-#   pragma warning ( push )
-#   pragma warning ( disable: 4660 )
-#endif
-
-template class chronIntIdResTable < dbBaseIO >;
-template class tsSLNode < dbBaseIO >;
-template class resTable < dbBaseIO, chronIntId >;
-
-#if defined ( _MSC_VER )
-#   pragma warning ( pop )
-#endif
+#include "dbPutNotifyBlocker.h"
 
 class dbServiceIOLoadTimeInit {
 public:
@@ -162,7 +150,7 @@ dbEventSubscription dbServiceIO::subscribe ( struct dbAddr & addr, dbChannelIO &
     int status;
 
     {
-        epicsAutoMutex locker ( this->mutex );
+        epicsGuard < epicsMutex > locker ( this->mutex );
         if ( ! this->ctx ) {
             this->ctx = db_init_events ();
             if ( ! this->ctx ) {
@@ -190,7 +178,7 @@ dbEventSubscription dbServiceIO::subscribe ( struct dbAddr & addr, dbChannelIO &
     es = db_add_event ( this->ctx, &addr,
         dbSubscriptionEventCallback, (void *) &subscr, mask );
     if ( ! es ) {
-        epicsAutoMutex locker ( this->mutex );
+        epicsGuard < epicsMutex > locker ( this->mutex );
         chan.dbServicePrivateListOfIO::eventq.remove ( subscr );
         this->ioTable.remove ( subscr );
     }
@@ -198,11 +186,12 @@ dbEventSubscription dbServiceIO::subscribe ( struct dbAddr & addr, dbChannelIO &
     return es;
 }
 
-void dbServiceIO::initiatePutNotify ( dbChannelIO &chan, struct dbAddr &addr, 
-    unsigned type, unsigned long count, const void *pValue, 
-    cacWriteNotify &notify, cacChannel::ioid *pId )
+void dbServiceIO::initiatePutNotify ( 
+    dbChannelIO & chan, struct dbAddr & addr, 
+    unsigned type, unsigned long count, const void * pValue, 
+    cacWriteNotify & notify, cacChannel::ioid * pId )
 {
-    epicsAutoMutex locker ( this->mutex );
+    epicsGuard < epicsMutex > locker ( this->mutex );
     if ( ! chan.dbServicePrivateListOfIO::pBlocker ) {
         chan.dbServicePrivateListOfIO::pBlocker = new dbPutNotifyBlocker ( chan );
         if ( ! chan.dbServicePrivateListOfIO::pBlocker ) {
@@ -222,7 +211,7 @@ void dbServiceIO::destroyAllIO ( dbChannelIO & chan )
     dbSubscriptionIO *pIO;
     tsDLList < dbSubscriptionIO > tmp;
     {
-        epicsAutoMutex locker ( this->mutex );
+        epicsGuard < epicsMutex > locker ( this->mutex );
         while ( ( pIO = chan.dbServicePrivateListOfIO::eventq.get() ) ) {
             this->ioTable.remove ( *pIO );
             tmp.add ( *pIO );
@@ -247,7 +236,7 @@ void dbServiceIO::destroyAllIO ( dbChannelIO & chan )
 
 void dbServiceIO::ioCancel ( dbChannelIO & chan, const cacChannel::ioid &id )
 {
-    epicsAutoMutex locker ( this->mutex );
+    epicsGuard < epicsMutex > locker ( this->mutex );
     dbBaseIO *pIO = this->ioTable.remove ( id );
     if ( pIO ) {
         dbSubscriptionIO *pSIO = pIO->isSubscription ();
@@ -266,7 +255,7 @@ void dbServiceIO::ioCancel ( dbChannelIO & chan, const cacChannel::ioid &id )
 
 void dbServiceIO::ioShow ( const cacChannel::ioid &id, unsigned level ) const
 {
-    epicsAutoMutex locker ( this->mutex );
+    epicsGuard < epicsMutex > locker ( this->mutex );
     const dbBaseIO *pIO = this->ioTable.lookup ( id );
     if ( pIO ) {
         pIO->show ( level );
@@ -275,7 +264,7 @@ void dbServiceIO::ioShow ( const cacChannel::ioid &id, unsigned level ) const
 
 void dbServiceIO::showAllIO ( const dbChannelIO &chan, unsigned level ) const
 {
-    epicsAutoMutex locker ( this->mutex );
+    epicsGuard < epicsMutex > locker ( this->mutex );
     tsDLIterConstBD < dbSubscriptionIO > pItem = 
         chan.dbServicePrivateListOfIO::eventq.firstIter ();
     while ( pItem.valid () ) {
@@ -289,7 +278,7 @@ void dbServiceIO::showAllIO ( const dbChannelIO &chan, unsigned level ) const
 
 void dbServiceIO::show ( unsigned level ) const
 {
-    epicsAutoMutex locker ( this->mutex );
+    epicsGuard < epicsMutex > locker ( this->mutex );
     printf ( "dbServiceIO at %p\n", 
         static_cast <const void *> ( this ) );
     if ( level > 0u ) {

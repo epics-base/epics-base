@@ -43,6 +43,7 @@
  *				args changed for: sydSampleSetPrint;
  *				sydSamplePrint; sydInputStoreInSet;
  * .07	11-02-91	rac	add sydSampleWriteSSF, sydSampleSetWriteSSF
+ * .08	12-08-91	rac	fix alignment for printing of channel names
  *
  * make options
  *	-DvxWorks	makes a version for VxWorks
@@ -200,9 +201,9 @@
 * EXAMPLE
 *
 * #include <genDefs.h>
+* #include <sydDefs.h>
 * #include <cadef.h>
 * #include <db_access.h>
-* #include <sydDefs.h>
 *
 * main()
 * {
@@ -210,11 +211,11 @@
 *    SYD_CHAN	*pSchanBase;	/* pointer to sync chan desc for POWER:BASE */
 *    SYD_CHAN	*pSchanLag;	/* pointer to sync chan desc for POWER:LAG30 */
 *    long	stat;		/* status return */
-*    int		i;
-*    int		moreFlag;	/* 1 if more samples waiting */
+*    int	i;
+*    int	moreFlag;	/* 1 if more samples waiting */
 *    float	sumBase, sumLag;/* sums for the two channels */
 *    char	timeText[28];	/* text for time stamp */
-*    int		chanStat;	/* input status for channel */
+*    int	chanStat;	/* input status for channel */
 *
 * /*---------------------------------------------------------------------------
 * *	open the synchronous sample set specification and add the channels
@@ -647,7 +648,7 @@ char	*chanName;	/* I channel name to find in synchronous set spec */
 *	Additional macros are described under sydInputGet.
 *
 * NOTES
-* 1.	For channels in AR sample set data files, SYD_SY_NONF if forced,
+* 1.	For channels in AR sample set data files, SYD_SY_NONF is forced,
 *	without comment.
 * 2.	DBF_ENUM channels are flagged as SYD_ST_STEP; all other channels
 *	are flagged as SYD_ST_SMOOTH.
@@ -2013,7 +2014,7 @@ int	samp;		/* I sample number in synchronous set */
 	if (maxLen < colWidth) {
 	    colNum = 0;
 	    for (pSChan=pSspec->pChanHead; pSChan!=NULL; pSChan=pSChan->pNext) {
-		(void)fprintf(out, " %*s", colWidth-1, pSChan->name);
+		(void)fprintf(out, "  %*s", colWidth-1, pSChan->name);
 		if (nCol > 0 && ++colNum >= nCol) {
 		    colNum = 0;
 		    (void)fprintf(out, "\n");

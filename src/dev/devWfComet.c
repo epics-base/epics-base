@@ -1,5 +1,5 @@
 /* devComet.c */
-/* share/src/dev $Id$ */
+/* share/src/dev @(#)devWfComet.c	1.3     3/8/93 */
 
 /*
  *      Original Author: Bob Dalesio
@@ -47,10 +47,12 @@
 #include	<link.h>
 #include	<module_types.h>
 #include	<waveformRecord.h>
+#include 	<dbScan.h>
 
 long init_record();
 long read_wf();
 long arm_wf();
+long get_ioint_info();
 
 
 struct {
@@ -65,29 +67,44 @@ struct {
 	NULL,
 	NULL,
 	init_record,
-	NULL,
+	get_ioint_info,
 	read_wf};
 
 
-static void myCallback(pwf,no_read,pdata)
+static void myCallback(pwf,pdata)
     struct waveformRecord   *pwf;
-    int             no_read;
     unsigned char   *pdata;
 {
 	struct rset     *prset=(struct rset *)(pwf->rset);
 	short ftvl = pwf->ftvl;
+        long i;
+        unsigned long no_read;
+        unsigned char *pdest=(unsigned char *)pwf->bptr;
 
+/*        printf("myCallback: BEGIN...\n"); */
+
+	pwf->pact = TRUE; 
 	if(!pwf->busy) return;
+
+ /* if record is disabled don't read the data from comet ram */
+        if (pwf->disa == pwf->disv) return;
+
         dbScanLock((struct dbCommon *)pwf);
 	pwf->busy = FALSE;
 	if(ftvl==DBF_SHORT || ftvl==DBF_USHORT) {
-       		memcpy(pwf->bptr,pdata,no_read*2);
+                no_read = pwf->nelm;
+#if 1
+                for(i=0; i<no_read*2; i++) {
+                        *pdest++ = *pdata++;
+                }
+#endif
        		pwf->nord = no_read;            /* number of values read */
 	} else {
 		recGblRecordError(S_db_badField,(void *)pwf,
 			"read_wf - illegal ftvl");
                 recGblSetSevr(pwf,READ_ALARM,INVALID_ALARM);
 	}
+/*        printf("myCallback: calling RS process\n"); */
 	(*prset->process)(pwf);
         dbScanUnlock((struct dbCommon *)pwf);
 }
@@ -112,13 +129,13 @@ static long read_wf(pwf)
     struct waveformRecord	*pwf;
 {
 	
+/*        printf("read_wf:  begin...\n"); */
 	/* determine if wave form is to be rearmed*/
 	/* If not active then request rearm */
 	if(!pwf->pact) arm_wf(pwf);
 	/* if already active then call is from myCallback. check rarm*/
 	else if(pwf->rarm) {
 		(void)arm_wf(pwf);
-		pwf->rarm = 0;
 	}
 	return(0);
 }
@@ -128,12 +145,27 @@ struct waveformRecord   *pwf;
 {
 	struct vmeio *pvmeio = (struct vmeio *)&(pwf->inp.value);
 
+/*        printf("arm_wf:  begin...\n"); */
+/*        printf("arm_wf:  pwf->nelm: %d \n",pwf->nelm); */
 	pwf->busy = TRUE;
-	if(comet_driver(pvmeio->card,pvmeio->signal,myCallback,pwf)<0) {
+	if(comet_driver(pvmeio->card,pvmeio->signal,myCallback,pwf,pwf->nelm)<0) {
                 recGblSetSevr(pwf,READ_ALARM,INVALID_ALARM);
 		pwf->busy = FALSE;
-		return(0);
-	}
+		return(0); }
+
+/* I, paul, added the following line */
 	pwf->pact=TRUE;
 	return(0);
 }
+
+static long get_ioint_info( cmd, pwf,ppvt)
+int  cmd;
+struct waveformRecord *pwf;
+IOSCANPVT *ppvt;
+{
+  	struct vmeio *pvmeio = (struct vmeio *)&(pwf->inp.value);
+
+	cometGetioscanpvt(pvmeio->card,ppvt);
+	return(0);
+}
+

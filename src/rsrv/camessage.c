@@ -1691,10 +1691,12 @@ LOCAL int event_add_action (caHdrLargeArray *mp, void *pPayload, struct client *
     db_post_single_event(pevext->pdbev);
 
     /*
-     * disable future labor if no read access
+     * enable future labor if we have read access
      */
-    if(!asCheckGet(pciu->asClientPVT)){
-        db_event_disable(pevext->pdbev);
+    if(asCheckGet(pciu->asClientPVT)){
+        db_event_enable(pevext->pdbev);
+    }
+    else {
         DLOG ( 3, ( "Disable event because cannot read\n" ) );
     }
 

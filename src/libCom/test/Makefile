@@ -63,6 +63,10 @@ epicsExceptionTestHost_SRCS += epicsExceptionTestMain.cpp epicsExceptionTest.cpp
 PROD_HOST += epicsExceptionTestHost
 OBJS_IOC += epicsExceptionTest
 
+epicsMessageQueueTestHost_SRCS += epicsMessageQueueTestMain.cpp epicsMessageQueueTest.cpp
+PROD_HOST += epicsMessageQueueTestHost
+OBJS_IOC += epicsMessageQueueTest
+
 #fdmgrTest_SRCS += fdmgrTest.c
 #PROD_HOST += fdmgrTest
 

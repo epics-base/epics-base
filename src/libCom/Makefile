@@ -28,10 +28,10 @@ SRC_DIRS += $(LIBCOM)/ring
 #following needed for locating epicsRingPointer.h and epicsRingBytes.h
 INC += epicsRingPointer.h
 INC += epicsRingBytes.h
-INC += epicsReadline.h
+INC += epicsMessageQueue.h
 SRCS += epicsRingPointer.cpp
 SRCS += epicsRingBytes.c
-SRCS += epicsReadline.c
+SRCS += epicsMessageQueue.cpp
 
 SRC_DIRS += $(LIBCOM)/calc
 #following needed for locating postfixPvt.h and sCalcPostfixPvt.h
@@ -165,6 +165,7 @@ INC += epicsSignal.h
 INC += osiProcess.h
 INC += osiUnistd.h
 INC += osiWireFormat.h
+INC += epicsReadline.h
 
 SRCS += epicsThread.cpp
 SRCS += epicsMutex.cpp
@@ -179,6 +180,8 @@ SRCS += osdInterrupt.c
 SRCS += osdPoolStatus.c
 SRCS += osdSignal.cpp
 SRCS += osdEnv.c
+SRCS += epicsReadline.c
+
 osdEnv_CFLAGS_WIN32= -U__STDC__
 
 SRCS += osdThread.c

@@ -1196,6 +1196,8 @@ void close_ioc (struct ioc_in_use *piiu)
 		piiuCast = NULL;
 	}
 	else {
+		chid	*pNext;
+
 		/*
 		 * remove IOC from the hash table
 		 */
@@ -1209,18 +1211,17 @@ void close_ioc (struct ioc_in_use *piiu)
 		 * handler tries to use a channel before
 		 * I mark it disconnected.
 		 */
-		chix = (chid) &piiu->chidlist.node.next;
-		while (chix = (chid) chix->node.next) {
+		chix = (chid) ellFirst(&piiu->chidlist);
+		while (chix) {
 			chix->state = cs_prev_conn;
+			chix = (chid) ellNext(&chix->node);
 		}
 
-		chix = (chid) &piiu->chidlist.node.next;
-		while (chix = (chid) chix->node.next) {
+		chix = (chid) ellFirst(&piiu->chidlist);
+		while (chix) {
+			pNext = (chid) ellNext(&chix->node);
 			cacDisconnectChannel(chix, TRUE);
-		}
-
-		if (piiu->chidlist.count) {
-			ca_signal (ECA_DISCONN,piiu->host_name_str);
+			chix = pNext;
 		}
 	}
 
@@ -1245,6 +1246,8 @@ void close_ioc (struct ioc_in_use *piiu)
   	piiu->sock_chan = INVALID_SOCKET;
 
 	ellFree (&piiu->destAddr);
+
+	ca_signal (ECA_DISCONN,piiu->host_name_str);
 
 	free (piiu);
 

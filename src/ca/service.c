@@ -721,7 +721,9 @@ const struct in_addr  	*pnet_addr
 		 * need to move the channel back to the cast IIU
 		 * (so we will be able to reconnect)
 		 */
+		LOCK;
 		cacDisconnectChannel(chan, FALSE);
+		UNLOCK;
 		break;
 	}
 	default:

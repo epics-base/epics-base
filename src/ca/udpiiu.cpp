@@ -841,6 +841,10 @@ void udpiiu::show ( unsigned level ) const
 
 void udpiiu::wakeupMsg ()
 {
+    if ( this->sockCloseCompleted ) {
+        return;
+    }
+
     caHdr msg;
     msg.m_cmmd = htons ( CA_PROTO_VERSION );
     msg.m_available = htonl ( 0u );

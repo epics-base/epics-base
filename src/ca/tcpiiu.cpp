@@ -183,7 +183,17 @@ void tcpSendThread::run ()
     this->iiu.sendDog.cancel ();
     this->iiu.recvDog.cancel ();
 
-    this->iiu.recvThread.exitWait ();
+    while ( ! this->iiu.recvThread.exitWait ( 30.0 ) ) {
+        // it is possible to get stuck here if the user calls 
+        // ca_context_destroy() when a circuit isnt known to
+        // be unresponsive, but is. That situation is probably
+        // rare, and the IP kernel might have a timeout for
+        // such situations, nevertheless we will attempt to deal 
+        // with it here after waiting a reasonable amount of time
+        // for a clean shutdown to finish.
+        epicsGuard < epicsMutex > guard ( this->iiu.mutex );
+        this->iiu.initiateAbortShutdown ( guard );
+    }
 
     // user threads blocking for send backlog to be reduced
     // will abort their attempt to get space if 
@@ -292,23 +302,10 @@ void tcpiiu::recvBytes (
                 return;
             }
 
-            // if the circuit was aborted then supress warning message about
-            // bad file descriptor
+            // if the circuit was locally aborted then supress 
+            // warning messages about bad file descriptor etc
             if ( this->state != iiucs_connected && 
                     this->state != iiucs_clean_shutdown ) {
-                // the replacable printf handler isnt called here
-                // because it reqires a callback lock which probably
-                // isnt appropriate here
-                char name[64];
-                this->hostNameCacheInstance.hostName ( 
-                    name, sizeof ( name ) );
-                char sockErrBuf[64];
-                epicsSocketConvertErrnoToString ( 
-                    sockErrBuf, sizeof ( sockErrBuf ) );
-                errlogPrintf (
-                    "Unexpected problem with CA circuit to"
-                    " server \"%s\" was \"%s\" - disconnecting\n", 
-                            name, sockErrBuf );
                 stat.bytesCopied = 0u;
                 stat.circuitState = swioLocalAbort;
                 return;
@@ -331,6 +328,20 @@ void tcpiiu::recvBytes (
                 epicsThreadSleep ( 15.0 );
                 continue;
             }
+
+            // the replacable printf handler isnt called here
+            // because it reqires a callback lock which probably
+            // isnt appropriate here
+            char name[64];
+            this->hostNameCacheInstance.hostName ( 
+                name, sizeof ( name ) );
+            char sockErrBuf[64];
+            epicsSocketConvertErrnoToString ( 
+                sockErrBuf, sizeof ( sockErrBuf ) );
+            errlogPrintf (
+                "Unexpected problem with CA circuit to"
+                " server \"%s\" was \"%s\" - disconnecting\n", 
+                        name, sockErrBuf );
             
             stat.bytesCopied = 0u;
             stat.circuitState = swioPeerAbort;
@@ -354,6 +365,11 @@ tcpRecvThread::~tcpRecvThread ()
 void tcpRecvThread::start ()
 {
     this->thread.start ();
+}
+
+bool tcpRecvThread::exitWait ( double delay )
+{
+    return this->thread.exitWait ( delay );
 }
 
 void tcpRecvThread::exitWait ()
@@ -411,9 +427,8 @@ void tcpRecvThread::run ()
                     this->iiu.disconnectNotify ();
                 }
                 else if ( stat.circuitState == swioLinkFailure ) {
-                    callbackManager mgr ( this->ctxNotify, this->cbMutex );
                     epicsGuard < epicsMutex > guard ( this->iiu.mutex );
-                    this->iiu.initiateAbortShutdown ( mgr, guard );
+                    this->iiu.initiateAbortShutdown ( guard );
                     break;
                 }
                 else if ( stat.circuitState == swioLocalAbort ) {
@@ -463,7 +478,7 @@ void tcpRecvThread::run ()
                 bool protocolOK = this->iiu.processIncoming ( currentTime, mgr );
                 if ( ! protocolOK ) {
                     epicsGuard < epicsMutex > guard ( this->iiu.mutex );
-                    this->iiu.initiateAbortShutdown ( mgr, guard );
+                    this->iiu.initiateAbortShutdown ( guard );
                     break;
                 }
 
@@ -479,7 +494,7 @@ void tcpRecvThread::run ()
                     }
                     else if ( stat.circuitState == swioLinkFailure ) {
                         epicsGuard < epicsMutex > guard ( this->iiu.mutex );
-                        this->iiu.initiateAbortShutdown ( mgr, guard );
+                        this->iiu.initiateAbortShutdown ( guard );
                     }
                     else if ( stat.circuitState == swioLocalAbort ) {
                         break;
@@ -744,9 +759,19 @@ void tcpiiu::initiateCleanShutdown (
 {
     guard.assertIdenticalMutex ( this->mutex );
     if ( this->state == iiucs_connected ) {
-        this->state = iiucs_clean_shutdown;
-        this->sendThreadFlushEvent.signal ();
-        this->flushBlockEvent.signal ();
+        if ( ! this->unresponsiveCircuit ) {
+            this->state = iiucs_clean_shutdown;
+            this->sendThreadFlushEvent.signal ();
+            this->flushBlockEvent.signal ();
+        }
+        else {
+            this->initiateAbortShutdown ( guard );
+        }
+    }
+    else if ( this->state == iiucs_clean_shutdown ) {
+        if ( this->unresponsiveCircuit ) {
+            this->initiateAbortShutdown ( guard );
+        }
     }
 }
 
@@ -835,10 +860,8 @@ void tcpiiu::unresponsiveCircuitNotify (
 }
 
 void tcpiiu::initiateAbortShutdown ( 
-    callbackManager & mgr,
     epicsGuard < epicsMutex > & guard )
 {
-    mgr.cbGuard.assertIdenticalMutex ( this->cbMutex );
     guard.assertIdenticalMutex ( this->mutex );
 
     if ( ! this->discardingPendingData ) {
@@ -902,29 +925,6 @@ void tcpiiu::initiateAbortShutdown (
         //
         this->sendThreadFlushEvent.signal ();
         this->flushBlockEvent.signal ();
-    }
-
-    // Disconnect all channels immediately from the timer thread
-    // because on certain OS such as HPUX it's difficult to 
-    // unblock a blocking send() call, and we need immediate 
-    // disconnect notification.
-    this->cacRef.disconnectAllChannels ( mgr.cbGuard, guard, *this );
-
-    char hostNameTmp[64];
-    bool exceptionNeeded = false;
-    int exception = ECA_DISCONN;
-
-    if ( this->channelCount( guard ) ) {
-        this->hostName ( guard, hostNameTmp, sizeof ( hostNameTmp ) );
-        if ( this->connecting ( guard ) ) {
-            exception = ECA_CONNSEQTMO;
-        }
-        exceptionNeeded = true;
-    }
-
-    if ( exceptionNeeded ) {
-        genLocalExcep ( mgr.cbGuard, guard, this->cacRef, 
-            exception, hostNameTmp );
     }
 }
 

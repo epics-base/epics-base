@@ -37,11 +37,6 @@ inline bhe::bhe ( class cac &cacIn, const osiTime &initialTimeStamp, const inetA
 #   endif
 }
 
-inline bhe::~bhe ()
-{
-    this->cac.removeBeaconInetAddr (*this);
-}
-
 inline void * bhe::operator new ( size_t size )
 { 
     return bhe::freeList.allocate ( size );
@@ -61,10 +56,5 @@ inline void bhe::bindToIIU ( tcpiiu &iiuIn )
 {
     assert ( this->piiu == 0 );
     this->piiu = &iiuIn;
-}
-
-inline void bhe::destroy ()
-{
-    delete this;
 }
 

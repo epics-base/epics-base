@@ -11,8 +11,14 @@
  */
 
 #include "iocinf.h"
+#include "bhe_IL.h"
 
 tsFreeList < class bhe, 1024 > bhe::freeList;
+
+bhe::~bhe ()
+{
+    this->cac.removeBeaconInetAddr (*this);
+}
 
 /*
  * update beacon period
@@ -146,3 +152,9 @@ void bhe::show ( unsigned level ) const
         printf ( "network IO pointer %p, client pointer %p\n", this->piiu, &this->cac );
     }
 }
+
+void bhe::destroy ()
+{
+    delete this;
+}
+

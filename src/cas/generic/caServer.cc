@@ -76,6 +76,7 @@ epicsShareFunc caServer::~caServer()
 {
 	if (this->pCAS) {
 		delete this->pCAS;
+        this->pCAS = NULL;
 	}
 }
 

@@ -27,6 +27,8 @@
 /*			(checking only when the socket blocks causes	*/
 /*			does not leave enough margin to fix the		*/
 /*			problem once it is detected)			*/
+/*	120991	joh	better quit when unable to broadcast		*/
+/*	022692	joh	better prefix on messages			*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -322,7 +324,7 @@ struct ioc_in_use		*piiu;
       			if(status < 0){
 				abort();
       			}
-			printf(	"linger was on:%d linger:%d\n", 
+			printf(	"CAC: linger was on:%d linger:%d\n", 
 				linger.l_onoff, 
 				linger.l_linger);
 		}
@@ -367,7 +369,7 @@ struct ioc_in_use		*piiu;
 				&piiu->sock_addr,
 				sizeof(piiu->sock_addr));
       		if(status < 0){
-			printf("no conn errno %d\n", MYERRNO);
+			printf("CAC: no conn errno %d\n", MYERRNO);
         		status = socket_close(sock);
 			if(status<0){
 				SEVCHK(ECA_INTERNAL,NULL);
@@ -409,7 +411,7 @@ struct ioc_in_use		*piiu;
 				&true,
 				sizeof(true));
       		if(status<0){
-        		printf("%d\n",MYERRNO);
+        		printf("CAC: sso (errno=%d)\n",MYERRNO);
         		status = socket_close(sock);
 			if(status < 0){
 				SEVCHK(ECA_INTERNAL,NULL);
@@ -429,7 +431,7 @@ struct ioc_in_use		*piiu;
 				(struct sockaddr *) &saddr, 
 				sizeof(saddr));
       		if(status<0){
-        		printf("%d\n",MYERRNO);
+        		printf("CAC: bind (errno=%d)\n",MYERRNO);
 			ca_signal(ECA_INTERNAL,"bind failed");
       		}
 
@@ -565,7 +567,7 @@ notify_ca_repeater()
        			&saddr, 
 			sizeof saddr);
       		if(status < 0){
-			printf("notify_ca_repeater: send to lcl addr failed\n");
+			printf("CAC: notify_ca_repeater: send to lcl addr failed\n");
 			abort();
 		}
 	}
@@ -691,19 +693,18 @@ register struct ioc_in_use 	*piiu;
   	unsigned 		cnt;
   	void			*pmsg;    
   	int			status;
+	struct ioc_in_use 	*piiu_socket;
 
 	cnt = piiu->send->stk;
 	pmsg = (void *) piiu->send->buf;	
 
 	while(TRUE){
-		int sock;
 
-		
 		if(piiu->conn_up){
 			/*
 			 * use TCP if connection exists
 			 */
-			sock = piiu->sock_chan;
+			piiu_socket = piiu;
 		}
 		else{
 			/* 
@@ -719,10 +720,10 @@ register struct ioc_in_use 	*piiu;
 			if(!iiu[BROADCAST_IIU].conn_up)
 				return ERROR;
 
-			sock = iiu[BROADCAST_IIU].sock_chan;
+			piiu_socket = &iiu[BROADCAST_IIU];
 		}
 		status = sendto(
-				sock,
+				piiu_socket->sock_chan,
 				pmsg,	
 				cnt,
 				0,
@@ -762,12 +763,14 @@ register struct ioc_in_use 	*piiu;
 		}
 #endif
 		else{
-			if(MYERRNO != EPIPE && MYERRNO != ECONNRESET){
+			if(	MYERRNO != EPIPE && 
+				MYERRNO != ECONNRESET &&
+				MYERRNO != ETIMEDOUT){
 				printf(	
-					"CA: error on socket send() %d\n",
+					"CAC: error on socket send() %d\n",
 					MYERRNO);
 			}
-			close_ioc(piiu);
+			close_ioc(piiu_socket);
 			return OK;
 		}
 
@@ -832,13 +835,13 @@ struct timeval 	*ptimeout;
     			if(MYERRNO == EINTR)
 				return;      
     			else if(MYERRNO == EWOULDBLOCK){
-				printf("CA: blocked at select ?\n");
+				printf("CAC: blocked at select ?\n");
 				return;
     			}                                           
     			else{                                                  					char text[255];                                         
      				sprintf(
 					text,
-					"unexpected select fail: %d",
+					"CAC: unexpected select fail: %d",
 					MYERRNO); 
       				ca_signal(ECA_INTERNAL,text);                       			}                                                         		}                                                         
 
@@ -880,7 +883,7 @@ struct ioc_in_use	*piiu;
     		break;
 
   	default:
-    		printf("cac_send_msg: ukn protocol\n");
+    		printf("CAC: cac_send_msg: ukn protocol\n");
     		abort();
   	}  
 
@@ -911,7 +914,6 @@ struct ioc_in_use	*piiu;
 			sizeof(rcvb->buf),
 			0);
 	if(status == 0){
-		printf("CA: recv of zero length?\n");
 		LOCK;
 		close_ioc(piiu);
 		UNLOCK;
@@ -924,10 +926,11 @@ struct ioc_in_use	*piiu;
 			return;
 		}
 
-       	 	if(MYERRNO != EPIPE && MYERRNO != ECONNRESET){
-	  		printf(	"unexpected recv error 1 = %d %d\n",
-				MYERRNO, 
-				status);
+       	 	if(	MYERRNO != EPIPE && 
+			MYERRNO != ECONNRESET &&
+			MYERRNO != ETIMEDOUT){
+	  		printf(	"CAC: unexpected recv error (errno=%d)\n",
+				MYERRNO);
 		}
 		LOCK;
 		close_ioc(piiu);
@@ -938,7 +941,7 @@ struct ioc_in_use	*piiu;
 
   	byte_cnt = (long) status;
   	if(byte_cnt>MAX_MSG_SIZE){
-    		printf(	"recv_msg(): message overflow %l\n",
+    		printf(	"CAC: recv_msg(): message overflow %l\n",
 			byte_cnt-MAX_MSG_SIZE);
 		LOCK;
 		close_ioc(piiu);
@@ -963,7 +966,7 @@ struct ioc_in_use	*piiu;
 			rcvb->buf + rcvb->stk - byte_cnt, 
 			byte_cnt);
 #ifdef DEBUG
-		printf(	"CA: realigned message of %d bytes\n", 
+		printf(	"CAC: realigned message of %d bytes\n", 
 			byte_cnt);
 #endif
 	}
@@ -1035,7 +1038,7 @@ struct ioc_in_use	*piiu;
 		rcvb->stk += status;
 		pmsglog->nbytes = (long) status;
 #ifdef DEBUG
-      		printf("recieved a udp reply of %d bytes\n",byte_cnt);
+      		printf("CAC: recieved a udp reply of %d bytes\n",byte_cnt);
 #endif
 		
 
@@ -1066,7 +1069,7 @@ struct ioc_in_use	*piiu;
 				&pmsglog->addr.sin_addr,
 				piiu);
 		if(msgcount != 0){
-			printf(	"CA: UDP alignment problem %d\n",
+			printf(	"CAC: UDP alignment problem %d\n",
 				msgcount);
 		}
 
@@ -1095,7 +1098,9 @@ int			moms_tid;
   	if(status == ERROR)                            
     		abort();                                     
 
-  	ca_static = (struct ca_static *) taskVarGet(moms_tid, &ca_static);
+ 	ca_static = (struct ca_static *) 
+			taskVarGet(moms_tid, &ca_static);
+
   	if(ca_static == (struct ca_static*)ERROR)
     		abort();
 
@@ -1188,6 +1193,10 @@ struct ioc_in_use	*piiu;
   	struct connection_handler_args	args;
 	int				status;
 
+	if(piiu == &iiu[BROADCAST_IIU]){
+		ca_signal(ECA_INTERNAL, "Unable to perform UDP broadcast\n");
+	}
+
   	if(!piiu->conn_up)
 		return;
 
@@ -1256,9 +1265,6 @@ struct ioc_in_use	*piiu;
 			ECA_DISCONN, 
 			host_from_addr(&piiu->sock_addr.sin_addr));
 
-	if(piiu == &iiu[BROADCAST_IIU]){
-		ca_signal(ECA_INTERNAL, "Unable to perform UDP broadcast\n");
-	}
 }
 
 

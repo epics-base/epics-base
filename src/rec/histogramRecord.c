@@ -77,13 +77,13 @@ static long cvt_dbaddr();
 static long get_array_info();
 #define  put_array_info NULL
 #define get_units NULL
-#define get_precision NULL
+static long get_precision(struct dbAddr *paddr,long *precision);
 #define get_enum_str NULL
 #define get_enum_strs NULL
 #define put_enum_str NULL
-#define get_graphic_double NULL
-#define get_control_double NULL
 #define get_alarm_double NULL
+static long get_graphic_double(struct dbAddr *paddr,struct dbr_grDouble *pgd);
+static long get_control_double(struct dbAddr *paddr,struct dbr_ctrlDouble *pcd);
 
 struct rset histogramRSET={
      RSETNUMBER,
@@ -133,7 +133,7 @@ static long clear_histogram();
 static void monitor();
 static long readValue();
 
-static void wdCallback(pcallback)
+static void wdogCallback(pcallback)
      struct callback *pcallback;
 {
      struct histogramRecord *phistogram=(struct histogramRecord *)(pcallback->dbAddr.precord);
@@ -143,7 +143,7 @@ static void wdCallback(pcallback)
      if(phistogram->mcnt>0){
           dbScanLock((struct dbCommon *)phistogram);
           recGblGetTimeStamp(phistogram);
-          db_post_events(phistogram,&phistogram->bptr,DBE_VALUE|DBE_LOG);
+          db_post_events(phistogram,phistogram->bptr,DBE_VALUE|DBE_LOG);
           phistogram->mcnt=0;
           dbScanUnlock((struct dbCommon *)phistogram);
      }
@@ -156,6 +156,36 @@ static void wdCallback(pcallback)
 
      return;
 }
+static long wdogInit(phistogram)
+    struct histogramRecord	*phistogram;
+{
+     struct callback *pcallback;
+     float wait_time;
+
+     if(phistogram->wdog==NULL && phistogram->sdel>0) {
+          /* initialize a watchdog timer */
+          pcallback = (struct callback *)(calloc(1,sizeof(struct callback)));
+          phistogram->wdog = (void *)pcallback;
+	  if(!pcallback) return -1;
+          pcallback->callback = wdogCallback;
+          pcallback->priority = priorityLow;
+          pcallback->wd_id = wdCreate();
+          dbNameToAddr(phistogram->name,&(pcallback->dbAddr));
+     }
+
+     if (!phistogram->wdog) return -1;
+     pcallback = (struct callback *)phistogram->wdog;
+     if(!pcallback) return -1;
+
+     wdCancel(pcallback->wd_id);
+  
+     if( phistogram->sdel>0) {
+         /* start new watchdog timer on monitor */
+         wait_time = (float)(phistogram->sdel * vxTicksPerSecond);
+         wdStart(pcallback->wd_id,wait_time,(FUNCPTR)callbackRequest,(int)pcallback);
+     }
+     return 0;
+}
 
 static long init_record(phistogram,pass)
     struct histogramRecord	*phistogram;
@@ -163,8 +193,6 @@ static long init_record(phistogram,pass)
 {
      struct histogramdset *pdset;
      long status;
-     struct callback *pcallback;
-     float         wait_time;
 
      if (pass==0){
 
@@ -180,22 +208,7 @@ static long init_record(phistogram,pass)
           return(0);
      }
 
-     if(phistogram->wdog==NULL && phistogram->sdel!=0) {
-          /* initialize a watchdog timer */
-          pcallback = (struct callback *)(calloc(1,sizeof(struct callback)));
-          phistogram->wdog = (void *)pcallback;
-          pcallback->callback = wdCallback;
-          pcallback->priority = priorityLow;
-          if(dbNameToAddr(phistogram->name,&(pcallback->dbAddr))) {
-               epicsPrintf("dbNameToAddr failed in init_record for recHistogram\n");
-               exit(1);
-          }
-          pcallback->wd_id = wdCreate();
-  
-          /* start new watchdog timer on monitor */
-          wait_time = (float)(phistogram->sdel * vxTicksPerSecond);
-          wdStart(pcallback->wd_id,wait_time,(FUNCPTR)callbackRequest,(int)pcallback);
-     }
+    wdogInit(phistogram);
 
     if (phistogram->siml.type == CONSTANT) {
 	recGblInitConstantLink(&phistogram->siml,DBF_USHORT,&phistogram->simm);
@@ -261,6 +274,8 @@ static long special(paddr,after)
 {
      struct histogramRecord   *phistogram = (struct histogramRecord *)(paddr->precord);
      int                special_type = paddr->special;
+     int                fieldIndex = dbGetFieldIndex(paddr);
+
 
      if(!after) return(0);
      switch(special_type) {
@@ -281,8 +296,12 @@ static long special(paddr,after)
           add_count(phistogram);
           return(0);
      case(SPC_RESET):
-          phistogram->wdth=(phistogram->ulim-phistogram->llim)/phistogram->nelm;
-          clear_histogram(phistogram);
+          if (fieldIndex == histogramRecordSDEL) {
+              wdogInit(phistogram);
+          } else {
+              phistogram->wdth=(phistogram->ulim-phistogram->llim)/phistogram->nelm;
+              clear_histogram(phistogram);
+          }
           return(0);
      default:
           recGblDbaddrError(S_db_badChoice,paddr,"histogram: special");
@@ -317,7 +336,7 @@ static long cvt_dbaddr(paddr)
     paddr->pfield = (void *)(phistogram->bptr);
     paddr->no_elements = phistogram->nelm;
     paddr->field_type = DBF_ULONG;
-    paddr->field_size = sizeof(long);
+    paddr->field_size = sizeof(unsigned long);
     paddr->dbr_field_type = DBF_ULONG;
     return(0);
 }
@@ -412,4 +431,43 @@ static long readValue(phistogram)
         recGblSetSevr(phistogram,SIMM_ALARM,phistogram->sims);
 
         return(status);
+}
+static long get_precision(struct dbAddr *paddr,long *precision)
+{
+    struct histogramRecord *phistogram=(struct histogramRecord *)paddr->precord;
+    int     fieldIndex = dbGetFieldIndex(paddr);
+
+    *precision = phistogram->prec;
+    if(fieldIndex == histogramRecordULIM
+    || fieldIndex == histogramRecordLLIM
+    || fieldIndex == histogramRecordSDEL
+    || fieldIndex == histogramRecordSGNL
+    || fieldIndex == histogramRecordSVAL
+    || fieldIndex == histogramRecordWDTH) {
+       *precision = phistogram->prec;
+    }
+    recGblGetPrec(paddr,precision);
+    return(0);
+}
+static long get_graphic_double(struct dbAddr *paddr,struct dbr_grDouble *pgd)
+{
+    struct histogramRecord *phistogram=(struct histogramRecord *)paddr->precord;
+    int     fieldIndex = dbGetFieldIndex(paddr);
+
+    if(fieldIndex == histogramRecordBPTR){
+        pgd->upper_disp_limit = phistogram->hopr;
+        pgd->lower_disp_limit = phistogram->lopr;
+    } else recGblGetGraphicDouble(paddr,pgd);
+    return(0);
+}
+static long get_control_double(struct dbAddr *paddr,struct dbr_ctrlDouble *pcd)
+{
+    struct histogramRecord *phistogram=(struct histogramRecord *)paddr->precord;
+    int     fieldIndex = dbGetFieldIndex(paddr);
+
+    if(fieldIndex == histogramRecordBPTR){
+        pcd->upper_ctrl_limit = phistogram->hopr;
+        pcd->lower_ctrl_limit = phistogram->lopr;
+    } else recGblGetControlDouble(paddr,pcd);
+    return(0);
 }

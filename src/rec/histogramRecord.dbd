@@ -3,7 +3,6 @@ menu(histogramCMD) {
 	choice(histogramCMD_Clear,"Clear")
 	choice(histogramCMD_Start,"Start")
 	choice(histogramCMD_Stop,"Stop")
-	choice(histogramCMD_Setup,"Setup")
 }
 recordtype(histogram) {
 	include "dbCommon.dbd" 
@@ -54,6 +53,11 @@ recordtype(histogram) {
 		prompt("Signal Value")
 		special(SPC_MOD)
 	}
+	field(PREC,DBF_SHORT) {
+		prompt("Display Precision")
+		promptgroup(GUI_DISPLAY)
+		interest(1)
+	}
 	field(SVL,DBF_INLINK) {
 		prompt("Signal Value Location")
 		promptgroup(GUI_INPUTS)
@@ -84,7 +88,7 @@ recordtype(histogram) {
 	field(SDEL,DBF_FLOAT) {
 		prompt("Monitor Seconds Dband")
 		promptgroup(GUI_HIST)
-		special(SPC_NOMOD)
+		special(SPC_RESET)
 		interest(1)
 	}
 	field(SIOL,DBF_INLINK) {
@@ -110,5 +114,15 @@ recordtype(histogram) {
 		promptgroup(GUI_INPUTS)
 		interest(2)
 		menu(menuAlarmSevr)
+	}
+	field(HOPR,DBF_ULONG) {
+		prompt("High Operating Range")
+		promptgroup(GUI_DISPLAY)
+		interest(1)
+	}
+	field(LOPR,DBF_ULONG) {
+		prompt("Low Operating Range")
+		promptgroup(GUI_DISPLAY)
+		interest(1)
 	}
 }

@@ -31,6 +31,7 @@ INC += tsDLList.h
 INC += tsSLList.h
 INC += tsMinMax.h
 INC += tsBTree.h
+INC += tsFreeList.h
 
 SRC_DIRS += $(LIBCOM)/dbmf
 INC += dbmf.h

@@ -273,11 +273,30 @@ bool bhe::updatePeriod (
     return netChange;
 }
 
-void bhe::show ( unsigned /* level */ ) const
+void bhe::show ( unsigned level ) const
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
-    ::printf ( "CA beacon hash entry at %p with average period %f\n", 
-        static_cast <const void *> ( this ), this->averagePeriod );
+    this->show ( guard, level );
+}
+
+void bhe::show ( epicsGuard < epicsMutex > &, unsigned level ) const
+{
+    char host [64];
+    this->name ( host, sizeof ( host ) );
+    if ( this->averagePeriod == -DBL_MAX ) {
+        ::printf ( "CA beacon hash entry for %s <no periofd estimate>\n", 
+            host, this->averagePeriod );
+    }
+    else {
+        ::printf ( "CA beacon hash entry for %s with period estimate %f\n", 
+            host, this->averagePeriod );
+    }
+    if ( level > 0u ) {
+        char date[64];
+        this->timeStamp.strftime ( date, sizeof ( date ), "%a %b %d %Y %H:%M:%S");
+        ::printf ( "\tbeacon number %u, on %s\n", 
+            this->lastBeaconNumber, date );
+    }
 }
 
 double bhe::period ( epicsGuard < epicsMutex > & guard ) const 
@@ -307,6 +326,7 @@ void bhe::unregisterIIU (
         this->pIIU = 0;
         this->timeStamp = epicsTime();
         this->averagePeriod = - DBL_MAX;
+        logBeacon ( "ui", this->averagePeriod, epicsTime::getCurrent () );
     }
 }
 

@@ -13,8 +13,8 @@ asIoc_SRCS += asCa.c
 LIBRARY_HOST = asHost
 LIBRARY_IOC = asIoc
 
-asHost_DLL_LIBS  = dbStaticHost Com
-asIoc_DLL_LIBS  = dbStaticIoc Com
+asHost_DLL_LIBS  = Com
+asIoc_DLL_LIBS  = dbStaticIoc ca Com
 
 asHost_DIR=.
 PROD_LIBS = asHost dbStaticHost Com

@@ -68,7 +68,8 @@ dbServiceIO::~dbServiceIO ()
 }
 
 cacChannel *dbServiceIO::createChannel (
-            const char *pName, cacChannelNotify &notify )
+            const char *pName, cacChannelNotify &notify, 
+            cacChannel::priLev )
 {
     struct dbAddr addr;
 

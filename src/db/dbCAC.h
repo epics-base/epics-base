@@ -145,7 +145,8 @@ class dbServiceIO : public cacService {
 public:
     dbServiceIO ();
     virtual ~dbServiceIO ();
-    cacChannel *createChannel ( const char *pName, cacChannelNotify & );
+    cacChannel * createChannel ( const char *pName, 
+                    cacChannelNotify &, cacChannel::priLev );
     void callReadNotify ( struct dbAddr &addr, unsigned type, unsigned long count, 
             cacReadNotify &notify );
     void callStateNotify ( struct dbAddr &addr, unsigned type, unsigned long count, 

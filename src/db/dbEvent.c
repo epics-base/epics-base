@@ -567,8 +567,8 @@ register struct event_block		*pevent;
 		 	* union copy of char in the db at an odd 
 		 	* address
 		 	*/
-			memcpy(	pevent->paddr->pfield,
-				&ev_que->valque[putix].field,
+			memcpy( &ev_que->valque[putix].field,
+				pevent->paddr->pfield,
 				dbr_size[pevent->paddr->field_type]);
 	
 		}
@@ -645,8 +645,8 @@ register unsigned int		select;
 				 	* union copy of char in the db at an odd 
 				 	* address
 				 	*/
-					memcpy(	pvalue,
-						&ev_que->valque[putix].field,
+					memcpy( &ev_que->valque[putix].field,
+						pvalue,
 						dbr_size[event->paddr->field_type]);
 
 				}

@@ -772,8 +772,8 @@ DbRecDes(fp, fflag)
 			&dbRecDes->papRecTypDes[i]->papFldDes[j]->interest,
 			dbRecDes->papRecTypDes[i]->papFldDes[j]->interest);
 		bufOut(fp, fflag);
-		memcpy((void *) & dbRecDes->papRecTypDes[i]->papFldDes[j]->initial,
-		      (void *) buff, 8);
+		memcpy((void *) buff,
+			(void *) & dbRecDes->papRecTypDes[i]->papFldDes[j]->initial, 8);
 		sprintf(buffer, "%8x[%8x][%8x]\tinitial",
 			&dbRecDes->papRecTypDes[i]->papFldDes[j]->initial,
 			buff[0], buff[1]);
@@ -782,8 +782,8 @@ DbRecDes(fp, fflag)
 		    &dbRecDes->papRecTypDes[i]->papFldDes[j]->range1.fldnum,
 		    dbRecDes->papRecTypDes[i]->papFldDes[j]->range1.fldnum);
 		bufOut(fp, fflag);
-		memcpy((void *) & dbRecDes->papRecTypDes[i]->papFldDes[j]->range1.value,
-		      (void *) buff, 8);
+		memcpy((void *) buff,
+			(void *) & dbRecDes->papRecTypDes[i]->papFldDes[j]->range1.value, 8);
 		sprintf(buffer, "%8x[%8x][%8x]\trange1.value",
 		     &dbRecDes->papRecTypDes[i]->papFldDes[j]->range1.value,
 			buff[0], buff[1]);
@@ -792,8 +792,8 @@ DbRecDes(fp, fflag)
 		    &dbRecDes->papRecTypDes[i]->papFldDes[j]->range2.fldnum,
 		    dbRecDes->papRecTypDes[i]->papFldDes[j]->range2.fldnum);
 		bufOut(fp, fflag);
-		memcpy((void *) & dbRecDes->papRecTypDes[i]->papFldDes[j]->range2.value,
-		      (void *) buff, 8);
+		memcpy((void *) buff,
+			(void *) & dbRecDes->papRecTypDes[i]->papFldDes[j]->range2.value, 8);
 		sprintf(buffer, "%8x[%8x][%8x]\trange2.value",
 		     &dbRecDes->papRecTypDes[i]->papFldDes[j]->range2.value,
 			buff[0], buff[1]);

@@ -78,7 +78,7 @@ $(DIRECTORY_TARGETS) :
 
 %: %.o
 	$(RM) $@
-	$(LINK.c) $@ $<
+	$(LINK.c) $@ $< $(LDLIBS)
 
 #$(PROD): $(OBJS)
 #	$(RM) $@
@@ -199,12 +199,12 @@ $(DBDNAME): ../$(DBDEXPAND)
 $(LIBNAME): $(LIBOBJS)
 	@echo Building library $@
 	@$(RM) $@
-	$(LINK.c) $@ $(LIBOBJS)
+	$(LINK.c) $@ $(LIBOBJS) $(LDLIBS)
 
 $(LIBNAME_CXX): $(LIBOBJS_CXX)
 	@echo Building CXX library $@
 	@$(RM) $@
-	$(LINK.cc) $@ $(LIBOBJS_CXX)
+	$(LINK.cc) $@ $(LIBOBJS_CXX) $(LDLIBS)
 
 $(INSTALL_BIN)/%: % 
 	@echo "Installing $@"

@@ -58,10 +58,6 @@
 static char *ppstring[2]={"NPP","PP"};
 static char *msstring[2]={"NMS","MS"};
 
-/* -------------- variable substitution ------------*/
-static int subst_total;
-static struct var_sub *subst;
-
 static int mapDBFtoDCT[DBF_NOACCESS+1] = {
 	DCT_STRING,
 	DCT_INTEGER,DCT_INTEGER,DCT_INTEGER,DCT_INTEGER,DCT_INTEGER,DCT_INTEGER,
@@ -133,162 +129,6 @@ static char **promptAddr[VXI_IO+1];
 static int formlines[VXI_IO+1];
 
 /* internal routines*/
-
-#ifdef vxWorks
-#ifdef __STDC__
-static char *strdup(char *p)
-#else
-static char *strdup(p)
-char *p;
-#endif /*__STDC__*/
-{ return strcpy((char*)malloc(strlen(p)+1),p); }
-#endif
-
-/* ------------------ variable substitution routines --------------*/
-#ifdef vxWorks
-#define SUBST_STATIC static
-#else
-#define SUBST_STATIC
-#endif
-
-#ifdef __STDC__
-SUBST_STATIC long dbDoSubst(char* replace, struct var_tree* par)
-#else
-SUBST_STATIC long dbDoSubst(replace,par)
-char* replace;
-struct var_tree* par;
-#endif /*__STDC__*/
-{
-    /* perform substitution */
-    char preal[PVNAME_STRINGSZ];
-    char pvar[PVNAME_STRINGSZ];
-    char *to,*from,*pp;
-    char *hold = NULL;
-    int i;
-    struct var_tree* test_var;
-    struct var_tree my_tree;
-
-    my_tree.parent = par;
-
-    for(to=preal,from=replace;from<=(replace+strlen(replace));from++)
-    {
-	switch(*from)
-	{
-	case VAR_LEFT_IND: /* start of a variable, put in preal */
-	    hold=to;
-	    to=pvar;
-	    break;
-	case VAR_RIGHT_IND: /* end of a variable, in preal */
-	    *to='\0';
-	    to=hold;
-	    for(i=0;i<subst_total&&strcmp(subst[i].var,pvar);i++);
-	    if(i<subst_total)
-	    {
-		/* found a substitution */
-		strcpy(pvar,subst[i].sub);
-
-		/* check for looping in substitution */
-		my_tree.me=i;
-		for(test_var=par;test_var;test_var=test_var->parent)
-		    if(test_var->me==i) return -1;
-
-		/* check for successful substitution */
-		if(dbDoSubst(pvar,&my_tree)<0) return -1;
-
-		/* copy substitution to output string */
-		for(hold=pvar;*to=*hold++;to++);
-	    }
-	    break;
-	default: *to++=*from; break;
-	}
-    }
-    strcpy(replace,preal);
-    return 0;
-}
-
-#ifdef __STDC__
-SUBST_STATIC long dbInitSubst(char* parm_pattern)
-#else
-SUBST_STATIC long dbInitSubst(parm_pattern)
-char* parm_pattern;
-#endif /*__STDC__*/
-{
-    char	    *pattern,*pp;
-    int		    rc,pi,pass;
-
-    /* --------- parse the pattern --------- */
-
-    rc=0;
-    if(parm_pattern && *parm_pattern)
-    {
-	pattern = strdup(parm_pattern);
-
-	/* count the number of variables in the pattern (use the = sign) */
-	for(subst_total=0,pp=pattern; pp=strchr(pp,'='); subst_total++,pp++);
- 
-	/* allocate the substitution table */
-	subst = (struct var_sub*)malloc( sizeof(struct var_sub)*subst_total );
- 
-	/* fill table from pattern */
-	for(pass=1,subst_total=0,pp=strtok(pattern," =,");
-		pp;
-		pp=strtok(NULL," =,"))
-	{
-	    if(pass) subst[subst_total].var = pp; /* variable part */
-	    else strcpy(subst[subst_total++].sub,pp); /* substitution part */
-	    pass=(pass==0?1:0);
-	}
-
-	/* resolve the multiple substitutions now */
-	for(pi=0;pi<subst_total;pi++)
-	{
- 	    if(dbDoSubst(subst[pi].sub,(struct var_tree*)NULL)<0)
-	    {
-		fprintf(stderr, "dbRead: failed to build variable substitution table (%s)\n",subst[pi].sub);
-		rc = -1;
-	    }
-	}
-    }
-    else
-    {
-	subst_total=0;
-	subst=(struct var_sub*)NULL;
-    }
-    return(rc);
-}
-
-#ifdef __STDC__
-static void field_subst(DBENTRY* dbEntry)
-#else
-static void field_subst(dbEntry)
-DBENTRY* dbEntry;
-#endif /*__STDC__*/
-{
-    DBENTRY* fe;
-    long status;
-    DBLINK* plink;
-
-    fe = dbCopyEntry(dbEntry);
-    for(status=dbFirstFielddes(fe,1);!status;status=dbNextFielddes(fe,1))
-    {
-	switch(dbGetFieldType(fe))
-	{
-	case DCT_INLINK:
-	case DCT_OUTLINK:
-	case DCT_FWDLINK:
-	    if(dbGetLinkType(fe)==DCT_LINK_PV)
-	    {
-		plink=(DBLINK*)fe->pfield;
-		dbDoSubst(plink->value.pv_link.pvname,(struct var_tree*)NULL);
-	    }
-	    break;
-	default: break;
-	}
-    }
-    dbFreeEntry(fe);
-}
-/* ------------------ variable substitution routines --------------*/
-
 #ifdef __STDC__
 static void initForms(void)
 #else
@@ -3303,22 +3143,17 @@ void *poff;
 }
 
 #ifdef __STDC__
-long dbRead(DBBASE *pdbbase,FILE *fp, char *parm_pattern)
+long dbRead(DBBASE *pdbbase,FILE *fp)
 #else
-long dbRead(pdbbase,fp,parm_pattern)
+long dbRead(pdbbase,fp)
 DBBASE *pdbbase;
 FILE *fp;
-char *parm_pattern;
 #endif /*__STDC__*/
 {
     int             job_type = 999;
     char           *ptmp = NULL;
     long	    status;
 
-    if(parm_pattern && *parm_pattern)
-    {
-	dbInitSubst(parm_pattern);
-    }
 
     initadj_fun(pdbbase);
     /* determine type of file to process */
@@ -3470,41 +3305,34 @@ adj_dbRecords(ptmp, pdbbase)
 	return (status);
     }
     dbInitEntry(pdbbase,&dbEntry);
-
     no_records = (sdrHeader.nbytes / precLoc->rec_size);
     for (i = 0; i < no_records; i++, precord += precLoc->rec_size) {
 	if (*precord == '\0')
 	    continue;
 	found = 0;
-
-	/* perform substitution of record name */
-	if(subst) dbDoSubst(precord,(struct var_tree*)NULL);
-
 	if ((dbFindRecord(&dbEntry,(char *) precord)) == 0) {
 	    found = 1;
 	}
 	/* record found - does type match */
 	if (found && (dbEntry.record_type != precLoc->record_type)) {
-	    sprintf(text,
-		"dbRead: adj_dbRecords: record (%s) skipped - wrong type ",
-		(char *) precord);
-	    errMessage(-1L, text);
+		sprintf(text,
+		 "dbRead: adj_dbRecords: record (%s) skipped - wrong type ",
+			 (char *) precord);
+		errMessage(-1L, text);
 	} else if (found && (dbEntry.record_type == precLoc->record_type)) {
 	    /* copy precord to dbEntry.precord */
 	    memcpy( (char *) dbEntry.precnode->precord, (char *) precord , precLoc->rec_size);
-	    if(subst) field_subst(&dbEntry);
-	    sprintf(text,
+		sprintf(text,
 		 "dbRead: adj_dbRecords: record (%s) overwritten ",
 			 (char *) precord);
-	    errMessage(-1L, text);
+		errMessage(-1L, text);
 	} else if (!found) {
 	    dbEntry.record_type = precLoc->record_type;
 	    if ((dbCreateRecord(&dbEntry,(char *) precord)) != 0) {
 		sprintf(text, "dbRead: adj_dbRecords: dbCreateRecord  failed");
 		errMessage(-1L, text);
 	    } else {
-	        memcpy((char*)dbEntry.precnode->precord, (char*)precord, precLoc->rec_size);
-		if(subst) field_subst(&dbEntry);
+	         memcpy((char*)dbEntry.precnode->precord, (char*)precord, precLoc->rec_size);
 	    }
 	}
     }

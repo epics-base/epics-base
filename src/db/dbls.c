@@ -166,7 +166,7 @@ main()
 /* load the default.dctsdr file */
     long status;
 
-    status=dbRead(&pdbBase, "default.dctsdr",NULL);
+    status=dbRead(&pdbBase, "default.dctsdr");
     if(status!=0) {
 	printf("dbls aborting because dbRead failed\n");
 	return(-1);

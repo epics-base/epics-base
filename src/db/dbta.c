@@ -73,7 +73,7 @@ char **argv;
     }
     pdbbase=dbAllocBase();
     pdbentry=dbAllocEntry(pdbbase);
-    status=dbRead(pdbbase,fp,NULL);
+    status=dbRead(pdbbase,fp);
     if(status) {
 	errMessage(status,"dbRead");
 	exit(-1);

@@ -956,69 +956,69 @@ void ca_process_input_queue()
  */
 LOCAL void tcp_recv_msg(struct ioc_in_use *piiu)
 {
-	unsigned long	writeSpace;
-  	int		status;
-
-	if(piiu->state!=iiu_connected){
-		return;
-	}
-
-	LOCK;
-
-        /*
-         * Check at least twice to see if there is ana space left
-         * in the ring buffer (in case the messages block
-         * isnt continuous). Always return if the send was
-         * less bytes than requested.
-         */
-        while (TRUE) {
-
-		writeSpace = cacRingBufferWriteSize(&piiu->recv, TRUE);
-		if(writeSpace == 0){
-			break;
-		}
-
-		assert (writeSpace<=INT_MAX);
-
-		status = recv(	piiu->sock_chan,
-				&piiu->recv.buf[piiu->recv.wtix],
-				(int) writeSpace,
-				0);
-		if(status == 0){
-			TAG_CONN_DOWN(piiu);
-			break;
-		}
-		else if(status <0){
+    unsigned long	writeSpace;
+    int		status;
+    
+    if(piiu->state!=iiu_connected){
+        return;
+    }
+    
+    LOCK;
+    
+    /*
+     * Check at least twice to see if there is ana space left
+     * in the ring buffer (in case the messages block
+     * isnt continuous). Always return if the send was
+     * less bytes than requested.
+     */
+    while (TRUE) {
+        
+        writeSpace = cacRingBufferWriteSize(&piiu->recv, TRUE);
+        if(writeSpace == 0){
+            break;
+        }
+        
+        assert (writeSpace<=INT_MAX);
+        
+        status = recv(	piiu->sock_chan,
+            &piiu->recv.buf[piiu->recv.wtix],
+            (int) writeSpace,
+            0);
+        if(status == 0){
+            TAG_CONN_DOWN(piiu);
+            break;
+        }
+        else if(status <0){
             int localErrno = SOCKERRNO;
-			/* try again on status of -1 and no luck this time */
-			if(localErrno == SOCK_EWOULDBLOCK || localErrno == SOCK_EINTR){
-				break;
-			}
-
-			if(	localErrno != SOCK_EPIPE && 
-				localErrno != SOCK_ECONNRESET &&
-				localErrno != SOCK_ETIMEDOUT){
-				ca_printf(	
-					"CAC: unexpected TCP recv error: %s\n",
-					SOCKERRSTR(localErrno));
-			}
-			TAG_CONN_DOWN(piiu);
-			break;
-		}
-
-		assert (((unsigned long)status)<=writeSpace);
-
-		CAC_RING_BUFFER_WRITE_ADVANCE(&piiu->recv, status);
-
-		/*
-		 * Record the time whenever we receive a message 
-		 * from this IOC
-		 */
-		piiu->timeAtLastRecv = ca_static->currentTime;
-	}
-
-	UNLOCK;
-	return;
+            /* try again on status of -1 and no luck this time */
+            if(localErrno == SOCK_EWOULDBLOCK || localErrno == SOCK_EINTR){
+                break;
+            }
+            
+            if(	localErrno != SOCK_EPIPE && 
+                localErrno != SOCK_ECONNRESET &&
+                localErrno != SOCK_ETIMEDOUT){
+                ca_printf(	
+                    "CAC: unexpected TCP recv error: %s\n",
+                    SOCKERRSTR(localErrno));
+            }
+            TAG_CONN_DOWN(piiu);
+            break;
+        }
+        
+        assert (((unsigned long)status)<=writeSpace);
+        
+        CAC_RING_BUFFER_WRITE_ADVANCE(&piiu->recv, status);
+        
+        /*
+         * Record the time whenever we receive a message 
+         * from this IOC
+         */
+        piiu->timeAtLastRecv = ca_static->currentTime;
+    }
+    
+    UNLOCK;
+    return;
 }
 
 /*

@@ -33,19 +33,6 @@
  */
 
 /******************************************************************************
- *
- * Possible states the receiver message handling system can be in.
- *
- ******************************************************************************/
-#define	BB_RXWAIT	0	/* waiting for a new message */
-#define BB_RXGOT1	1	/* receiving header bytes */
-#define	BB_RXREST	2	/* finished with header, reading message */
-#define	BB_RXIGN	3	/* unsolicited message???  ignoreing rest */
-#define	BB_RXGOTHEAD	4	/* got all of the the header */
-
-#define	XVME_IRQ_HANG_TIME 100	/* how long to spin while busy waiting */
-
-/******************************************************************************
  * Memory Map of XVME-402 BITBUS CARD
  *
  * This board is rather stupid in that it wastes a whole Kilo of space
@@ -67,11 +54,18 @@ struct xvmeRegs {
     unsigned char dmA[1014];       /* Board occupies 1024 bytes in memory*/
 };
 
+#define	RESET_POLL_TIME	10	/* time to sleep when waiting on a link abort */
+
 #define BB_SEND_CMD	0x0	/* command to initiate sending of msg */
 
 #define XVME_ENABLE_INT	0x08	/* Allow xvme interupts */
+
 #define XVME_TX_INT	0x20	/* int enable TX only */
+#define	XVME_TX_PEND	0x10	/* transmit interrupt currently pending */
+
 #define	XVME_RX_INT	0x80	/* int exable RX only */
+#define	XVME_RX_PEND	0x40	/* receive interrupt currently pending */
+
 #define	XVME_NO_INT	0	/* disable all interrupts */
 
 /******************************************************************************
@@ -112,18 +106,15 @@ struct xvmeRegs {
  ******************************************************************************/
 struct  xvmeLink {
   WDOG_ID       watchDogId;     /* watchdog for timeouts */
-  int           watchDogFlag;   /* set by the watch dog int handler */
+  SEM_ID        watchDogSem;	/* set by the watch dog int handler */
+
+  unsigned char	abortFlag;	/* set to 1 if link is being reset by the dog */
+  unsigned char	txAbortAck;	/* set to 1 by txTask to ack abort Sequence */
+  unsigned char	rxAbortAck;	/* set to 1 by rxTask to ack abort Sequence */
+
   struct        xvmeRegs *bbRegs;/* pointer to board registers */
 
-  int           rxStatus;       /* current state of the message receiver */
-  char          rxHead[5];      /* room for headder of current rx msg */
-  unsigned char *rxMsg;         /* where to place next byte (after header) */
-  int           rxTCount;	/* byte counter for data in rxHead */
-  struct dpvtBitBusHead *rxDpvtHead;  /* for message currently receiving */
+  SEM_ID	rxInt;		/* given when rx interrupts occur */
 
-  int           txCCount;       /* total number of bytes sent so far */
-  int		txTCount;	/* total number of bytes to xmit */
-  struct dpvtBitBusHead *txDpvtHead;  /* for message currently transmitting */
-  unsigned char *txMsg;         /* next byte to transmit in current msg */
+  struct bbLink	*pbbLink;
 };
-

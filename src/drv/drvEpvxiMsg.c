@@ -1245,6 +1245,7 @@ int		override_err;
 			}
 #else
 			taskDelay(VXIMSGSYNCDELAY);
+			timeout -= VXIMSGSYNCDELAY;
 #endif
 		}
 	}

@@ -34,8 +34,7 @@ INSTALL_INCLUDES += \
        -I$(EPICS_BASE_INCLUDE)
 
 # add epics/base dbd directory
-INSTALL_DBDFLAGS += \
-       -I$(EPICS_BASE)/dbd
+INSTALL_DBDFLAGS += -I$(EPICS_BASE)/dbd
 endif
 endif
 

@@ -35,8 +35,7 @@
 all: bld_errSym
 
 bld_errSym:
-	cd libUnix; 	sh blderrSymTbl
-	cd libvxWorks; 	sh blderrSymTbl VXLIST
+	cd libCom; 	sh blderrSymTbl
 
 
 

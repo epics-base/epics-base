@@ -361,7 +361,7 @@ void osiTime::show (unsigned) const
 //
 // rhs has units seconds
 //
-inline osiTime osiTime::operator + (const long double &rhs) const
+osiTime osiTime::operator + (const long double &rhs) const
 {
 	unsigned long newSec, newNSec, secOffset, nSecOffset;
 	long double fnsec;

@@ -73,27 +73,27 @@ void timerQueue::process ()
             return; 
         }
 
-        this->pExpireTmr = this->timerList.get ();
-        if ( ! this->pExpireTmr ) {
-            return;
-        }
-        if ( cur > this->pExpireTmr->exp ) {
-
-            //
-            // Tag current epired tmr so that we can detect if call back
-            // is in progress when canceling the timer.
-            //
-#           ifdef DEBUG
-                this->pExpireTmr->show ( 0u );
-#           endif 
-            this->pExpireTmr->curState = timer::stateLimbo;
-            this->processThread = epicsThreadGetIdSelf ();
+        this->pExpireTmr = this->timerList.first ();
+        if ( this->pExpireTmr ) {
+            if ( cur >= this->pExpireTmr->exp ) {
+                this->timerList.remove ( *this->pExpireTmr ); 
+                //
+                // Tag current epired tmr so that we can detect if call back
+                // is in progress when canceling the timer.
+                //
+                this->pExpireTmr->curState = timer::stateLimbo;
+                this->processThread = epicsThreadGetIdSelf ();
+#               ifdef DEBUG
+                    this->pExpireTmr->show ( 0u );
+#               endif 
+            }
+            else {
+                this->pExpireTmr = 0;
+                debugPrintf ( ( "no activity process %f to next\n", this->pExpireTmr->exp - cur ) );
+                return;
+            }
         }
         else {
-            // no activity
-            debugPrintf ( ( "no activity process\n" ) );
-            this->timerList.push ( *this->pExpireTmr );
-            this->pExpireTmr = 0;
             return;
         }
     }
@@ -117,30 +117,31 @@ void timerQueue::process ()
         // while the call back was running
         //
         if ( this->cancelPending ) {
-            // cancel () waits for this
+            // cancel() waits for this
             this->cancelPending = false;
             this->cancelBlockingEvent.signal ();
         }
         // restart as nec
-        else if ( expStat.restart () ) {
-            this->pExpireTmr->privateStart ( cur + expStat.expirationDelay () );
+        else if ( expStat.restart() ) {
+            this->pExpireTmr->privateStart ( cur + expStat.expirationDelay() );
         }
 
-        this->pExpireTmr = this->timerList.get ();
-        if ( ! this->pExpireTmr ) {
-            this->processThread = 0;
-            return;
-        }
-        if ( cur > this->pExpireTmr->exp ) {
-#           ifdef DEBUG
-                this->pExpireTmr->show ( 0u );
-#           endif 
-            this->pExpireTmr->curState = timer::stateLimbo;
+        this->pExpireTmr = this->timerList.first ();
+        if ( this->pExpireTmr ) {
+            if ( cur >= this->pExpireTmr->exp ) {
+                this->timerList.remove ( *this->pExpireTmr ); 
+                this->pExpireTmr->curState = timer::stateLimbo;
+#               ifdef DEBUG
+                    this->pExpireTmr->show ( 0u );
+#               endif 
+            }
+            else {
+                this->pExpireTmr = 0;
+                this->processThread = 0;
+                return;
+            }
         }
         else {
-            // no activity
-            this->timerList.push ( *this->pExpireTmr );
-            this->pExpireTmr = 0;
             this->processThread = 0;
             return;
         }

@@ -45,6 +45,15 @@
 /*			prior to connecting				*/
 /* 	111991	joh	selective activation of LOCK with CLRPENDRECV	*/
 /*			prevents double LOCK under vxWorks		*/
+/*	020392	joh	added calls to taskVarGetPatch to bypass	*/
+/*			v5 vxWorks bug.					*/
+/*	021392 	joh	dont zero ca_static in the exit handler under	*/
+/*			vxWorks since vxWorks may run the exit handler	*/
+/*			in the context of another task which has a	*/
+/*			valid ca_static of its own.			*/
+/*	022692	joh	Use channel state enum to determine if I need	*/
+/*			to send channel clear message to the IOC 	*/
+/*			instead of the IOC in use conn up flag		*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -411,13 +420,15 @@ check_for_fp()
  * 
  */
 #ifdef vxWorks
-ca_import(moms_tid)
-	int             moms_tid;
+ca_import(tid)
+	int             tid;
 {
 	int             status;
 	struct ca_static *pcas;
 
-	pcas = (struct ca_static *) taskVarGet(moms_tid, &ca_static);
+	pcas = (struct ca_static *) 
+		taskVarGet(tid, &ca_static);
+
 	if (pcas == (struct ca_static *) ERROR)
 		return ECA_NOCACTX;
 
@@ -583,7 +594,15 @@ ca_process_exit()
 #	endif
 
 #	if defined(vxWorks)
-		ca_temp = (struct ca_static *) taskVarGet(tid, &ca_static);
+
+#		ifdef V5_vxWorks
+			ca_temp = (struct ca_static *) 
+				taskVarGetPatch(tid, &ca_static);
+#		else
+			ca_temp = (struct ca_static *) 
+				taskVarGet(tid, &ca_static);
+#		endif
+
 		if (ca_temp == (struct ca_static *) ERROR){
 #			if DEBUG
 				printf("task variable lookup failed\n");
@@ -727,33 +746,46 @@ ca_process_exit()
 		UNLOCK;
 
 #		if defined(vxWorks)
-			if(FASTLOCKFREE(&client_lock) < 0)
+			if(FASTLOCKFREE(&ca_temp->ca_client_lock) < 0)
 				ca_signal(ECA_INTERNAL, "couldnt free memory");
-			if(FASTLOCKFREE(&event_lock) < 0)
+			if(FASTLOCKFREE(&ca_temp->ca_event_lock) < 0)
 				ca_signal(ECA_INTERNAL, "couldnt free memory");
+#			ifdef V5_vxWorks
+				status = semDelete(ca_temp->ca_io_done_sem);
+				if(status < 0){
+					ca_signal(
+						ECA_INTERNAL, 
+						"couldnt free sem");
+				}
+#			else
+				semDelete(ca_temp->ca_io_done_sem);
+#			endif
 #		endif
 		if (free((char *)ca_temp) < 0)
 			ca_signal(ECA_INTERNAL, "couldnt free memory");
 
 		/*
 		 * Only remove task variable if user is calling this from
-		 * ca_task_exit with the task id = 0
+		 * ca_task_exit and the task is not being deleted 
 		 * 
+		 * in this case the dest tid will match the current task id
+		 *
 		 * This is because if I delete the task variable from a vxWorks
 		 * exit handler it botches vxWorks task exit
 		 */
 #		ifdef vxWorks
 			if (tid == taskIdSelf()) {
 				int             status;
+
+				ca_static = (struct ca_static *) NULL;
+
 				status = taskVarDelete(tid, &ca_static);
 				if (status == ERROR)
 					ca_signal(
 						ECA_INTERNAL, 
 						"Unable to remove ca_static from task var list");
-		}
+			}
 #		endif
-
-		ca_static = (struct ca_static *) NULL;
 
 	}
 }
@@ -1967,23 +1999,22 @@ ca_clear_channel
 #endif
 
 		/*
-		 * dont send the message if the conn is down (just delete
-		 * from the queue and return)
+		 * dont send the message if not conn 
+		 * (just delete from the queue and return)
 		 * 
-		 * check for conn down while locked to avoid a race
+		 * check for conn state while locked to avoid a race
 		 */
-		if (!piiu->conn_up || chix->iocix == BROADCAST_IIU) {
+		if(chix->state != cs_conn){
 			lstConcat(&free_event_list, &chix->eventq);
 			lstDelete(&piiu->chidlist, chix);
 			if (free((char *) chix) < 0)
 				abort();
-			if (chix->iocix != BROADCAST_IIU && !piiu->chidlist.count)
+			if (chix->iocix != BROADCAST_IIU && 
+					!piiu->chidlist.count){
 				close_ioc(piiu);
+			}
+			break;	/* to unlock exit */
 		}
-		if (chix->iocix == BROADCAST_IIU)
-			break;	/* to unlock exit */
-		if (!iiu[chix->iocix].conn_up)
-			break;	/* to unlock exit */
 
 		/*
 		 * clear events and all other resources for this chid on the

@@ -490,6 +490,7 @@ void epicsShareAPI ca_repeater ()
          */
         if ( msr.errNumber == SOCK_EADDRINUSE ) {
             osiSockRelease ();
+            debugPrintf ( ( "CA Repeater: exiting because a repeater is already running\n" ) );
             exit (0);
         }
         ca_printf("%s: Unable to create repeater socket because %d=\"%s\" - fatal\n",

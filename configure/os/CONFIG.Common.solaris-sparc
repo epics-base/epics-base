@@ -29,6 +29,8 @@ OP_SYS_LDFLAGS +=  $(COMPILER_LDFLAGS)
 
 # Set runtime path for shared libraries
 RUNTIME_LDFLAGS = $(SHRLIB_SEARCH_FULLPATHDIRS:%=-R%)
+RUNTIME_LDFLAGS += $(RUNTIME_LDFLAGS_$(COMMANDLINE_LIBRARY))
+
 
 ifeq ($(BUILD_CLASS),CROSS)
    GNU_TARGET=sparc-sun-solaris2
@@ -44,7 +46,7 @@ OP_SYS_LDLIBS += $(OP_SYS_LDLIBS_$(SOLARIS_VERSION))
 #  Definitions used when COMMANDLINE_LIBRARY is READLINE
 GNU_DIR = /opt/gnu
 INCLUDES_READLINE = -I$(GNU_DIR)/include
-LDFLAGS_READLINE += -R$(GNU_DIR)/lib
+RUNTIME_LDFLAGS_READLINE += -R$(GNU_DIR)/lib
 LDFLAGS_READLINE += -L$(GNU_DIR)/lib
 LDLIBS_READLINE = -lreadline -lcurses
 # Use archive if there is a problem with the readline shared library

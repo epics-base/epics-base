@@ -323,14 +323,8 @@ $(OBJLIB_MUNCHNAME):%.munch : %_ctdt$(OBJ) %$(OBJ)
 	$(LDCMD)
 
 # Ext, app and module rules
-CONFIG_APP_INCLUDE: $(wildcard $(TOP)/configure/RELEASE*)
-	@$(RM) $@
-	@$(PERL) $(TOOLS)/makeConfigAppInclude.pl $(EPICS_HOST_ARCH) $(T_A) $@ $(TOP)
-
-RULES_INCLUDE: $(wildcard $(TOP)/configure/RELEASE*)
-	@$(RM) $@
-	@$(PERL) $(TOOLS)/makeRulesInclude.pl $(EPICS_HOST_ARCH) $(T_A) $@ $(TOP)
-
+RULES_INCLUDE CONFIG_APP_INCLUDE: $(wildcard $(TOP)/configure/RELEASE*)
+	$(PERL) $(TOOLS)/convertRelease.pl -h $(EPICS_HOST_ARCH) $@
 
 binInstalls:  $(BIN_INSTALLS)
 	@echo "Installing $(^F)"

@@ -25,6 +25,11 @@ CONFIG_TARGETS += CONFIG_APP_INCLUDE RULES_INCLUDE
 CONFIG_INSTALLS += ../RULES_BUILD
 
 #-------------------------------------------------------
+# Check configure/RELEASE file for consistency
+CHECK_RELEASE_YES = checkRelease
+CHECK_RELEASE_NO =
+
+#-------------------------------------------------------
 # Cross compile default, HOST or CROSS, CONFIG.crossCommon will override
 BUILD_CLASS = HOST
 

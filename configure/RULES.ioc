@@ -1,0 +1,24 @@
+#RULES.ioc
+include $(EPICS_BASE)/configure/RULES_DIRS
+
+all:    install
+
+buildInstall : build
+
+install: buildInstall
+
+rebuild: clean install
+
+ifeq ($(wildcard $(TOP)/config/RELEASE.$(ARCH)),$(TOP)/config/RELEASE.$(ARCH))
+cdCommands: $(TOP)/config/RELEASE.$(ARCH)
+endif
+
+cdCommands: Makefile $(TOP)/configure/RELEASE $(TOP)/configure/CONFIG
+ifeq ($(IOCS_APPL_TOP),)
+	$(PERL) $(TOOLS)/convertRelease.pl -a $(ARCH) $@
+else
+	$(PERL) $(TOOLS)/convertRelease.pl -a $(ARCH) -t $(IOCS_APPL_TOP) $@
+endif
+
+clean:
+	@$(RM) cdCommands

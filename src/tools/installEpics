@@ -44,16 +44,24 @@ do
 done
 
 if [ ! -d "${INSTALL_DIR}" ] ;then
-    if [ "${CREATE_DIR}" ] ;then
+    if [ ${CREATE_DIR} != "0" ] ;then
         OLDIFS=${IFS}
         IFS=/
         DIRNAME=
         for DIR in ${INSTALL_DIR}
         do
-		    DIRNAME=${DIRNAME}/${DIR}
-            if [ ! -d "${DIRNAME}" ] ;then
-                mkdir "${DIRNAME}"
-            fi
+	    if [ "${DIR}" = "." ] || [ "${DIR}" = ".." ] ;then
+	        if  [ "${DIRNAME}" = "" ] ;then
+ 	    	    DIRNAME=${DIR}
+		else
+ 	    	    DIRNAME=${DIRNAME}/${DIR}
+		fi
+	    else
+ 	    	DIRNAME=${DIRNAME}/${DIR}
+		if [ ! -d "${DIRNAME}" ] ;then
+		    mkdir "${DIRNAME}"
+		fi
+	    fi
         done
         IFS=${OLDIFS}
     else

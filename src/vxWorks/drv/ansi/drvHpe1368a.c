@@ -49,6 +49,8 @@ static char *sccsId = "@(#)drvHpe1368a.c	1.14\t9/9/93";
 #include <stdioLib.h>
 #include <vxLib.h>
 
+#include  "dbDefs.h"
+#include  "errlog.h"
 #include <module_types.h>
 #include <task_params.h>
 #include <fast_lock.h>

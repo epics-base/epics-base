@@ -79,16 +79,20 @@ static char rcsid[] =
  * 
  */
 
-#include "vxWorks.h"
-#include "taskLib.h"
-#include "types.h"
-#include "vme.h"
+#include <vxWorks.h>
+#include <taskLib.h>
+#include <types.h>
+#include <vme.h>
+
+#include  "dbDefs.h"
+#include  "errlog.h"
+#include  "errlog.h"
 #include "module_types.h"
 #include "task_params.h"
-#include <drvSup.h>
-#include <dbDefs.h>
-#include <dbScan.h>
-#include <taskwd.h>
+#include "drvSup.h"
+#include "dbDefs.h"
+#include "dbScan.h"
+#include "taskwd.h"
 
 #define VMIC_2534_ADDR0     (bi_addrs[VMIC_2534_BI])
 #define VMIC_2534_MAX_CARDS (bi_num_cards[VMIC_2534_BI])

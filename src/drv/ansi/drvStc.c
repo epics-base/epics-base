@@ -51,7 +51,8 @@
 #include	<vxLib.h>
 #include	<taskLib.h>
 
-#include	<dbDefs.h>
+#include  "dbDefs.h"
+#include  "errlog.h"
 #include	<drvSup.h>
 #include	<module_types.h>
 #include	<drvStc.h>

@@ -63,7 +63,8 @@
 #include 	<vme.h>
 #include	<iv.h>
 
-#include	<dbDefs.h>
+#include  "dbDefs.h"
+#include  "errlog.h"
 #include	<drvSup.h>
 #include	<module_types.h>
 #include 	<fast_lock.h>

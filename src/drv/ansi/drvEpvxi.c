@@ -157,6 +157,8 @@ static char *sccsId = "$Id$\t$Date$";
 #include <intLib.h>
 #include <tickLib.h>
 
+#include	"dbDefs.h"
+#include	"errlog.h"
 #include <devLib.h>
 #define SRCepvxiLib	/* allocate externals here */
 #include <drvEpvxi.h>

@@ -46,6 +46,8 @@
 #include <types.h>
 #include <stdioLib.h>
 
+#include  "dbDefs.h"
+#include  "errlog.h"
 #include <module_types.h>
 #include <task_params.h>
 #include <fast_lock.h>

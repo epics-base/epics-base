@@ -48,6 +48,8 @@ static char	*sccsId = "@(#)drvHp1404a.c	1.7\t8/27/93";
 #include <intLib.h>
 #include <rebootLib.h>
 
+#include  "dbDefs.h"
+#include  "errlog.h"
 #include <devLib.h>
 #include <drvEpvxi.h>
 #include <drvHp1404a.h>

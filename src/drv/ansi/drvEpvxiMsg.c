@@ -59,6 +59,8 @@ static char	*sccsId = "@(#)drvEpvxiMsg.c	1.15\t8/27/93";
 #include <sysLib.h>
 #include <vxLib.h>
 
+#include  "dbDefs.h"
+#include  "errlog.h"
 #include <fast_lock.h>
 #include <drvEpvxi.h>
 #include <drvHp1404a.h>

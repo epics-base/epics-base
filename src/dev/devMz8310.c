@@ -74,6 +74,8 @@
 #include	<choicePulseDelay.h>
 #include	<pulseTrainRecord.h>
 #include	<choicePulseTrain.h>
+#include	<epicsPrint.h>
+
 /* Create the dsets for devMz8310 */
 static long report();
 static long init();
@@ -303,7 +305,7 @@ static long init(after)
 
     if(after)return(0);
     if(sysBusToLocalAdrs(VME_AM_SUP_SHORT_IO, 0, (void *)&shortaddr)) {
-	logMsg("devMz8310: sysBusToLocalAdrs failed\n",0);
+	epicsPrintf ("devMz8310: sysBusToLocalAdrs failed\n",0);
 	exit(1);
     }
     memset((char *)&mz8310_info[0],0,MAXCARDS*sizeof(struct mz8310_info));
@@ -344,7 +346,7 @@ static long init(after)
     }
 
     if(rebootHookAdd(Mz8310_shutdown)<0)
-	logMsg("Mz8310_shutdown: reboot hook add failed\n");
+	epicsPrintf ("Mz8310_shutdown: reboot hook add failed\n");
 
     return(0);
 }

@@ -63,6 +63,8 @@
 static long read_timer();
 static long write_timer();
 
+static void localPostEvent (void *pParam);
+
 struct tmdset {
         long            number;
         DEVSUPFUN       dev_report;
@@ -83,22 +85,22 @@ static double constants[] = {1e3,1e6,1e9,1e12};
 
 static long read_timer(struct timerRecord *ptimer)
 {
-   struct vmeio    *pvmeio;
-   int             source;
-   int             ptst;
-   double          time_pulse[2];  /* delay and width */
-   double          constant;
+   struct vmeio    	*pvmeio;
+   unsigned		source;
+   unsigned		ptst;
+   double          	time_pulse[2];  /* delay and width */
+   double          	constant;
  
    /* only supports a one channel VME timer module !!!! */
    pvmeio = (struct vmeio *)(&ptimer->out.value);
  
    if (mz8310_one_shot_read(
-           &ptst,                          /* pre-trigger state */
-           &(time_pulse[0]),               /* offset of pulse */
-           &(time_pulse[1]),               /* width of pulse */
-           (int)pvmeio->card,              /* card number */
-           (int)pvmeio->signal,            /* signal number */
-           &source) != 0) {                /* trigger source */
+           &ptst,                     /* pre-trigger state */
+           &(time_pulse[0]),          /* offset of pulse */
+           &(time_pulse[1]),          /* width of pulse */
+           pvmeio->card,              /* card number */
+           pvmeio->signal,            /* signal number */
+           &source) != 0) {           /* trigger source */
        return 1;
    }
 
@@ -117,19 +119,36 @@ static long read_timer(struct timerRecord *ptimer)
 static long write_timer(struct timerRecord *ptimer)
 {
    struct vmeio    *pvmeio;
+   void		   (*pCB)(void *);
 
    /* put the value to the ao driver */
    pvmeio = (struct vmeio *)(&ptimer->out.value);
  
+   if (ptimer->tevt) {
+	pCB = localPostEvent;
+   }
+   else {
+	pCB = NULL;
+   }
+
    /* put the value to the ao driver */
    return mz8310_one_shot(
-         (int)ptimer->ptst,                    /* pre-trigger state */
-         ptimer->t1dl,                         /* pulse offset */
-         ptimer->t1wd,                         /* pulse width */
-         (int)pvmeio->card,                    /* card number */
-         (int)pvmeio->signal,                  /* signal number */
-         (int)ptimer->tsrc,                    /* trigger source */
-         ((ptimer->tevt == 0)?0:post_event),   /* addr of event post routine */
-         (int)ptimer->tevt);                   /* event to post on trigger */
+         ptimer->ptst,		/* pre-trigger state */
+         ptimer->t1dl, 		/* pulse offset */
+         ptimer->t1wd,		/* pulse width */
+         pvmeio->card,		/* card number */
+         pvmeio->signal,	/* signal number */
+         ptimer->tsrc,		/* trigger source */
+         pCB,   		/* addr of event post routine */
+         ptimer);		/* event to post on trigger */
+}
+
+static void localPostEvent (void *pParam)
+{
+	struct timerRecord *ptimer = pParam;
+
+	if (ptimer->tevt) {
+		post_event (ptimer->tevt);
+	}
 }
 

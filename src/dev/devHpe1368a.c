@@ -115,9 +115,9 @@ static long bi_ioinfo(
 
 static long read_bi(struct biRecord	*pbi)
 {
-	struct vmeio *pvmeio;
+	struct vmeio 	*pvmeio;
 	long		status;
-	long	    value;
+	unsigned	value;
 
 	
 	pvmeio = (struct vmeio *)&(pbi->inp.value);
@@ -198,7 +198,7 @@ static long read_mbbi(struct mbbiRecord	*pmbbi)
 {
 	struct vmeio	*pvmeio;
 	long		status;
-	unsigned long	value;
+	unsigned 	value;
 
 	
 	pvmeio = (struct vmeio *)&(pmbbi->inp.value);
@@ -213,9 +213,9 @@ static long read_mbbi(struct mbbiRecord	*pmbbi)
 
 static long init_mbbo(struct mbboRecord	*pmbbo)
 {
-    unsigned long value;
-    struct vmeio *pvmeio;
-    long	status = 0;
+    unsigned 		value;
+    struct vmeio 	*pvmeio;
+    long		status = 0;
 
     /* mbbo.out must be an VME_IO */
     switch (pmbbo->out.type) {
@@ -238,9 +238,9 @@ static long init_mbbo(struct mbboRecord	*pmbbo)
 
 static long write_mbbo(struct mbboRecord	*pmbbo)
 {
-	struct vmeio *pvmeio;
+	struct vmeio 	*pvmeio;
 	long		status;
-	unsigned long value;
+	unsigned 	value;
 
 	
 	pvmeio = &(pmbbo->out.value.vmeio);

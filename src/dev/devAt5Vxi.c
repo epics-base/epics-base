@@ -127,12 +127,14 @@ AT5VXIDSET_TM devTmAt5Vxi={6, NULL, NULL, NULL, NULL, read_timer, write_timer};
  * Values are converted to seconds.
  */
 static double constants[] = {1e3,1e6,1e9,1e12};
+
+static void localPostEvent (void *pParam);
  
 static long read_timer(struct timerRecord *ptimer)
 {
    struct vmeio    *pvmeio;
-   int             source;
-   int             ptst;
+   unsigned	   source;
+   unsigned	   ptst;
    double          time_pulse[2];  /* delay and width */
    double          constant;
  
@@ -164,22 +166,40 @@ static long read_timer(struct timerRecord *ptimer)
  
 static long write_timer(struct timerRecord *ptimer)
 {
-   struct vmeio    *pvmeio;
+   struct vmeio    	*pvmeio;
+   void		 	(*pCB)(void *);
  
    pvmeio = (struct vmeio *)(&ptimer->out.value);
  
+   if (ptimer->tevt) {
+	pCB = localPostEvent;
+   }
+   else {
+	pCB = NULL;
+   }
+
    /* put the value to the ao driver */
    return at5vxi_one_shot(
-         (int)ptimer->ptst,                    /* pre-trigger state */
-         ptimer->t1dl,                         /* pulse offset */
-         ptimer->t1wd,                         /* pulse width */
-         (int)pvmeio->card,                    /* card number */
-         (int)pvmeio->signal,                  /* signal number */
-         (int)ptimer->tsrc,                    /* trigger source */
-         ((ptimer->tevt == 0)?0:post_event),   /* addr of event post routine */
-         (int)ptimer->tevt);                   /* event to post on trigger */
+         ptimer->ptst,          /* pre-trigger state */
+         ptimer->t1dl,		/* pulse offset */
+         ptimer->t1wd,		/* pulse width */
+         pvmeio->card,          /* card number */
+         pvmeio->signal,        /* signal number */
+         ptimer->tsrc,          /* trigger source */
+         pCB,  			/* addr of event post routine */
+         ptimer);           	/* event to post on trigger */
 }
  
+
+static void localPostEvent (void *pParam)
+{
+	struct timerRecord 	*ptimer = pParam;
+
+	if (ptimer->tevt) {
+		post_event(ptimer->tevt);
+	}
+}
+
 
 static long init_ai( struct aiRecord	*pai)
 {
@@ -342,7 +362,7 @@ static long read_bi(struct biRecord	*pbi)
 {
 	struct vmeio 	*pvmeio;
 	long		status;
-	long	    	value;
+	unsigned long	value;
 
 	
 	pvmeio = (struct vmeio *)&(pbi->inp.value);
@@ -357,9 +377,9 @@ static long read_bi(struct biRecord	*pbi)
 
 static long init_bo(struct boRecord	*pbo)
 {
-    unsigned int value;
-    long	status=0;
-    struct vmeio *pvmeio;
+    unsigned long 	value;
+    long		status=0;
+    struct vmeio 	*pvmeio;
 
     /* bo.out must be an VME_IO */
     switch (pbo->out.type) {

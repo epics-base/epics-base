@@ -7,6 +7,9 @@
 # 	Experimental Physics and Industrial Control System (EPICS)
 # 
 # $Log$
+# Revision 1.8  1997/04/10 19:46:59  jhill
+# new env param decl
+#
 # Revision 1.7  1997/02/24 16:13:03  jba
 # Portability change /bin/pwd changed to pwd.
 #
@@ -101,13 +104,13 @@ do
 
 	# Add this definition to the header file
 #	echo ${ENV} = ${DEFAULT}
-	echo epicsShareDecl const ENV_PARAM ${ENV}'={"'${ENV}'","'${DEFAULT}'"};' >>${OBJ}
+	echo epicsShareDef const ENV_PARAM ${ENV}'={"'${ENV}'","'${DEFAULT}'"};' >>${OBJ}
 done
 
 # Now create an array pointing to all parameters
 cat >>${OBJ} <<!EOF
 
-epicsShareDecl const ENV_PARAM* env_param_list[EPICS_ENV_VARIABLE_COUNT+1] = {
+epicsShareDef const ENV_PARAM* env_param_list[EPICS_ENV_VARIABLE_COUNT+1] = {
 !EOF
 
 # Contents are the addresses of each parameter

@@ -22,13 +22,15 @@
 extern "C" {
 #endif
 
+#include "shareLib.h"
+
 /* For communication from `getopt' to the caller.
    When `getopt' finds an option that takes an argument,
    the argument value is returned here.
    Also, when `ordering' is RETURN_IN_ORDER,
    each non-option ARGV-element is returned here.  */
 
-extern char *optarg;
+epicsShareExtern char *optarg;
 
 /* Index in ARGV of the next element to be scanned.
    This is used for communication to and from the caller
@@ -42,16 +44,16 @@ extern char *optarg;
    Otherwise, `optind' communicates from one call to the next
    how much of ARGV has been scanned so far.  */
 
-extern int optind;
+epicsShareExtern int optind;
 
 /* Callers store zero here to inhibit the error message `getopt' prints
    for unrecognized options.  */
 
-extern int opterr;
+epicsShareExtern int opterr;
 
 /* Set to an option character which was unrecognized.  */
 
-extern int optopt;
+epicsShareExtern int optopt;
 
 /* Describe the long-named options requested by the application.
    The LONG_OPTIONS argument to getopt_long or getopt_long_only is a vector
@@ -99,13 +101,16 @@ struct option
 /* Many other libraries have conflicting prototypes for getopt, with
    differences in the consts, in stdlib.h.  To avoid compilation
    errors, only prototype getopt for the GNU C library.  */
-extern int getopt (int argc, char *const *argv, const char *shortopts);
+epicsShareFunc extern int epicsShareAPI 
+	getopt (int argc, char *const *argv, const char *shortopts);
 #else /* not __GNU_LIBRARY__ */
-extern int getopt ();
+epicsShareFunc extern int epicsShareAPI getopt ();
 #endif /* not __GNU_LIBRARY__ */
-extern int getopt_long (int argc, char *const *argv, const char *shortopts,
+epicsShareFunc extern int epicsShareAPI 
+	getopt_long (int argc, char *const *argv, const char *shortopts,
 		        const struct option *longopts, int *longind);
-extern int getopt_long_only (int argc, char *const *argv,
+epicsShareFunc extern int 
+	epicsShareAPI getopt_long_only (int argc, char *const *argv,
 			     const char *shortopts,
 		             const struct option *longopts, int *longind);
 
@@ -115,8 +120,8 @@ extern int _getopt_internal (int argc, char *const *argv,
 		             const struct option *longopts, int *longind,
 			     int long_only);
 #else /* not __STDC__ */
-extern int getopt ();
-extern int getopt_long ();
+epicsShareFunc extern int epicsShareAPI getopt ();
+epicsShareFunc extern int epicsShareAPI getopt_long ();
 extern int getopt_long_only ();
 
 extern int _getopt_internal ();

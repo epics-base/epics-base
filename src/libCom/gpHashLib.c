@@ -56,11 +56,12 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #include <vxWorks.h>
 #include <taskLib.h>
 #endif
-
-#include "dbDefs.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stddef.h>
+
+#define epicsExportSharedSymbols
+#include "dbDefs.h"
 #include "gpHash.h"
 #include "ellLib.h"
 #include "epicsPrint.h"
@@ -134,7 +135,7 @@ static int hash( char *pname,int nShift)
     return((ind1<<nShift) ^ ind0);
 }
 
-void gphInitPvt(void **ppvt,int size)
+void epicsShareAPI gphInitPvt(void **ppvt,int size)
 {
     gphPvt *pgphPvt;
     int	   i;
@@ -162,7 +163,7 @@ void gphInitPvt(void **ppvt,int size)
     return;
 }
 	
-GPHENTRY *gphFind(void *pvt,char *name,void *pvtid)
+GPHENTRY * epicsShareAPI gphFind(void *pvt,char *name,void *pvtid)
 {
     int		hashInd;
     gphPvt	*pgphPvt = (gphPvt *)pvt;
@@ -193,7 +194,7 @@ GPHENTRY *gphFind(void *pvt,char *name,void *pvtid)
     return(pgphNode);
 }
 
-GPHENTRY *gphAdd(void *pvt,char *name,void *pvtid)
+GPHENTRY * epicsShareAPI gphAdd(void *pvt,char *name,void *pvtid)
 {
     int		hashInd;
     gphPvt	*pgphPvt = (gphPvt *)pvt;
@@ -233,7 +234,7 @@ GPHENTRY *gphAdd(void *pvt,char *name,void *pvtid)
     return (pgphNode);
 }
 
-void gphDelete(void *pvt,char *name,void *pvtid)
+void epicsShareAPI gphDelete(void *pvt,char *name,void *pvtid)
 {
     int		hashInd;
     gphPvt	*pgphPvt = (gphPvt *)pvt;
@@ -268,7 +269,7 @@ void gphDelete(void *pvt,char *name,void *pvtid)
     return;
 }
 
-void gphFreeMem(void *pvt)
+void epicsShareAPI gphFreeMem(void *pvt)
 {
     int		hashInd;
     gphPvt	*pgphPvt = (gphPvt *)pvt;
@@ -296,7 +297,7 @@ void gphFreeMem(void *pvt)
     free((void *)pgphPvt);
 }
 
-void gphDump(void *pvt)
+void epicsShareAPI gphDump(void *pvt)
 {
     int		hashInd;
     gphPvt	*pgphPvt = (gphPvt *)pvt;

@@ -55,10 +55,13 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #ifndef INCfreeListh
 #define INCfreeListh
 
-void freeListInitPvt(void **ppvt,int size,int nmalloc);
-void *freeListCalloc(void *pvt);
-void *freeListMalloc(void *pvt);
-void freeListFree(void *pvt,void*pmem);
-void freeListCleanup(void *pvt);
-size_t freeListItemsAvail(void *pvt);
+#include "shareLib.h"
+
+epicsShareFunc void epicsShareAPI freeListInitPvt(void **ppvt,int size,int nmalloc);
+epicsShareFunc void * epicsShareAPI freeListCalloc(void *pvt);
+epicsShareFunc void * epicsShareAPI freeListMalloc(void *pvt);
+epicsShareFunc void epicsShareAPI freeListFree(void *pvt,void*pmem);
+epicsShareFunc void epicsShareAPI freeListCleanup(void *pvt);
+epicsShareFunc size_t epicsShareAPI freeListItemsAvail(void *pvt);
+
 #endif /*INCfreeListh*/

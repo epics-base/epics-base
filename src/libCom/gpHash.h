@@ -56,6 +56,8 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #ifndef INCgpHashh
 #define INCgpHashh 1
 
+#include "shareLib.h"
+
 #include "ellLib.h"
 #ifdef vxWorks
 #include "fast_lock.h"
@@ -69,10 +71,10 @@ typedef struct{
 } GPHENTRY;
 
 /*tableSize must be power of 2 in range 256 to 65536*/
-void	gphInitPvt(void **ppvt,int tableSize);
-GPHENTRY *gphFind(void *pvt,char *name,void *pvtid);
-GPHENTRY *gphAdd(void *pvt,char *name,void *pvtid);
-void gphDelete(void *pvt,char *name,void *pvtid);
-void gphFreeMem(void *pvt);
-void gphDump(void *pvt);
+epicsShareFunc void epicsShareAPI gphInitPvt(void **ppvt,int tableSize);
+epicsShareFunc GPHENTRY * epicsShareAPI gphFind(void *pvt,char *name,void *pvtid);
+epicsShareFunc GPHENTRY * epicsShareAPI gphAdd(void *pvt,char *name,void *pvtid);
+epicsShareFunc void epicsShareAPI gphDelete(void *pvt,char *name,void *pvtid);
+epicsShareFunc void epicsShareAPI gphFreeMem(void *pvt);
+epicsShareFunc void epicsShareAPI gphDump(void *pvt);
 #endif /*INCgpHashh*/

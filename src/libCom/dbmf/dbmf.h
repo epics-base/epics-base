@@ -14,6 +14,11 @@ void  dbmfFreeChunks(void);
 int   dbmfShow(int level);
 #include "shareLib.h"
 
+<<<<<<< dbmf.h
+epicsShareFunc void* epicsShareAPI dbmfInit(size_t size, size_t alignment, int init_num_free_list_items);
+epicsShareFunc void* epicsShareAPI dbmfMalloc(void* handle,size_t bytes);
+epicsShareFunc void  epicsShareAPI dbmfFree(void* handle,void* bytes);
+=======
 /* Rules:
  * 1) Size is always made a multiple of 8.
  * 2) if dbmfInit is not called before one of the other routines then it
@@ -22,5 +27,6 @@ int   dbmfShow(int level);
  *    shortly thereafter be freed. 
  * 4) dbmfFreeChunks can only free chunks that contain only free items
 */
+>>>>>>> 1.3
 
 #endif

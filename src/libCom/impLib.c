@@ -24,6 +24,8 @@ of this distribution.
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
+
+#define epicsExportSharedSymbols
 #include "ellLib.h"
 #include "epicsPrint.h"
 #include "impLib.h"
@@ -176,7 +178,7 @@ static char *getParameter(char *pfirst,char *token)
     return(prtn);
 }
 
-int impInit(IMP_HANDLE *phandle,int bufferSize)
+int epicsShareAPI impInit(IMP_HANDLE *phandle,int bufferSize)
 {
     impPvt *handle;
 
@@ -190,7 +192,7 @@ int impInit(IMP_HANDLE *phandle,int bufferSize)
     return(impSuccess);
 }
 
-void impFree(IMP_HANDLE imp)
+void epicsShareAPI impFree(IMP_HANDLE imp)
 {
     impPvt *handle = (impPvt *)imp;
     if(!handle) return;
@@ -206,7 +208,7 @@ void impFree(IMP_HANDLE imp)
     free((void *)handle);
 }
 
-int impSetIncludeToken(IMP_HANDLE imp,char *includeToken)
+int epicsShareAPI impSetIncludeToken(IMP_HANDLE imp,char *includeToken)
 {
     impPvt *handle = (impPvt *)imp;
 
@@ -219,7 +221,7 @@ int impSetIncludeToken(IMP_HANDLE imp,char *includeToken)
     return(impSuccess);
 }
 
-int impSetEnvName(IMP_HANDLE imp,char *envName)
+int epicsShareAPI impSetEnvName(IMP_HANDLE imp,char *envName)
 {
     impPvt *handle = (impPvt *)imp;
 
@@ -232,7 +234,7 @@ int impSetEnvName(IMP_HANDLE imp,char *envName)
     return(impSuccess);
 }
 
-MAC_HANDLE *impGetMacHandle(IMP_HANDLE imp)
+MAC_HANDLE * epicsShareAPI impGetMacHandle(IMP_HANDLE imp)
 {
     impPvt *handle = (impPvt *)imp;
 
@@ -240,7 +242,7 @@ MAC_HANDLE *impGetMacHandle(IMP_HANDLE imp)
     return(handle->macHandle);
 }
 
-int impSetMacHandle(IMP_HANDLE imp,MAC_HANDLE *mac)
+int epicsShareAPI impSetMacHandle(IMP_HANDLE imp,MAC_HANDLE *mac)
 {
     impPvt *handle = (impPvt *)imp;
 
@@ -250,7 +252,7 @@ int impSetMacHandle(IMP_HANDLE imp,MAC_HANDLE *mac)
     return(impSuccess);
 }
 
-void impMacFree(IMP_HANDLE imp)
+void epicsShareAPI impMacFree(IMP_HANDLE imp)
 {
     impPvt *handle = (impPvt *)imp;
 
@@ -262,7 +264,7 @@ void impMacFree(IMP_HANDLE imp)
     return;
 }
 
-int impMacAddSubstitutions(IMP_HANDLE imp,const char *substitutions)
+int epicsShareAPI impMacAddSubstitutions(IMP_HANDLE imp,const char *substitutions)
 {
     impPvt	*handle = (impPvt *)imp;
     char	**pairs;
@@ -281,7 +283,7 @@ int impMacAddSubstitutions(IMP_HANDLE imp,const char *substitutions)
     return(impSuccess);
 }
 
-int impMacAddNameValuePairs(IMP_HANDLE imp,const char *pairs[])
+int epicsShareAPI impMacAddNameValuePairs(IMP_HANDLE imp,const char *pairs[])
 {
     impPvt	*handle = (impPvt *)imp;
 
@@ -294,7 +296,7 @@ int impMacAddNameValuePairs(IMP_HANDLE imp,const char *pairs[])
     return(impSuccess);
 }
 
-int impSetPath(IMP_HANDLE imp,const char *path)
+int epicsShareAPI impSetPath(IMP_HANDLE imp,const char *path)
 {
     impPvt *handle = (impPvt *)imp;
 
@@ -303,7 +305,7 @@ int impSetPath(IMP_HANDLE imp,const char *path)
     return(impAddPath(handle,path));
 }
 
-int impAddPath(IMP_HANDLE imp,const char *path)
+int epicsShareAPI impAddPath(IMP_HANDLE imp,const char *path)
 {
     impPvt *handle = (impPvt *)imp;
 
@@ -332,7 +334,7 @@ int impAddPath(IMP_HANDLE imp,const char *path)
     return(impSuccess);
 }
 
-int impPrintInclude(IMP_HANDLE imp,FILE *fp)
+int epicsShareAPI impPrintInclude(IMP_HANDLE imp,FILE *fp)
 {
     impPvt      *handle = (impPvt *)imp;
     inputFile	*pinputFile;
@@ -359,7 +361,7 @@ int impPrintInclude(IMP_HANDLE imp,FILE *fp)
     return(impSuccess);
 }
 
-int impDumpPath(IMP_HANDLE imp)
+int epicsShareAPI impDumpPath(IMP_HANDLE imp)
 {
     impPvt	*handle = (impPvt *)imp;
     ELLLIST	*ppathList;
@@ -380,7 +382,7 @@ int impDumpPath(IMP_HANDLE imp)
     return(impSuccess);
 }
 
-int impOpenFile(IMP_HANDLE imp,char *filename)
+int epicsShareAPI impOpenFile(IMP_HANDLE imp,char *filename)
 {
     impPvt	*handle = (impPvt *)imp;
     inputFile	*pinputFile;
@@ -412,7 +414,7 @@ int impOpenFile(IMP_HANDLE imp,char *filename)
     return(impSuccess);
 }
 
-int impCloseFile(IMP_HANDLE imp)
+int epicsShareAPI impCloseFile(IMP_HANDLE imp)
 {
     impPvt	*handle = (impPvt *)imp;
 
@@ -421,7 +423,7 @@ int impCloseFile(IMP_HANDLE imp)
     return(impSuccess);
 }
 
-int impGetLine(IMP_HANDLE imp,char *buffer,int bufferSize)
+int epicsShareAPI impGetLine(IMP_HANDLE imp,char *buffer,int bufferSize)
 {
     impPvt	*handle = (impPvt *)imp;
     char	*fgetsRtn;

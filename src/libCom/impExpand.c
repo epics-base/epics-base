@@ -20,6 +20,7 @@ of this distribution.
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
+
 #include "impLib.h"
 
 #define MAX_SIZE	256

@@ -49,31 +49,47 @@ extern "C" {
 
 #include <string.h>
 
+#include "shareLib.h"
+
 #ifdef __STDC__
 
 /*
  * each of these functions return the number of characters "transmitted"
  *	(as in ANSI-C/POSIX.1/XPG3 sprintf() functions)
  */
-int cvtFloatToString(float value, char *pstring, unsigned short precision);
-int cvtDoubleToString(double value, char *pstring, unsigned short precision);
-int cvtFloatToExpString(float value, char *pstring, unsigned short precision);
-int cvtDoubleToExpString(double value, char *pstring, unsigned short precision);
-int cvtFloatToCompactString(float value, char *pstring, unsigned short precision);
-int cvtDoubleToCompactString(double value, char *pstring, unsigned short precision);
-int cvtCharToString(char value, char *pstring);
-int cvtUcharToString(unsigned char value, char *pstring);
-int cvtShortToString(short value, char *pstring);
-int cvtUshortToString(unsigned short value, char *pstring);
-int cvtLongToString(long value, char *pstring);
-int cvtUlongToString(unsigned long value, char *pstring);
-int cvtLongToHexString(long value, char *pstring);
-int cvtLongToOctalString(long value, char *pstring);
-unsigned long cvtBitsToUlong(
+epicsShareFunc int epicsShareAPI 
+	cvtFloatToString(float value, char *pstring, unsigned short precision);
+epicsShareFunc int epicsShareAPI 
+	cvtDoubleToString(double value, char *pstring, unsigned short precision);
+epicsShareFunc int epicsShareAPI 
+	cvtFloatToExpString(float value, char *pstring, unsigned short precision);
+epicsShareFunc int epicsShareAPI 
+	cvtDoubleToExpString(double value, char *pstring, unsigned short precision);
+epicsShareFunc int epicsShareAPI 
+	cvtFloatToCompactString(float value, char *pstring, unsigned short precision);
+epicsShareFunc int epicsShareAPI 
+	cvtDoubleToCompactString(double value, char *pstring, unsigned short precision);
+epicsShareFunc int epicsShareAPI 
+	cvtCharToString(char value, char *pstring);
+epicsShareFunc int epicsShareAPI 
+	cvtUcharToString(unsigned char value, char *pstring);
+epicsShareFunc int epicsShareAPI 
+	cvtShortToString(short value, char *pstring);
+epicsShareFunc int epicsShareAPI 
+	cvtUshortToString(unsigned short value, char *pstring);
+epicsShareFunc int epicsShareAPI 
+	cvtLongToString(long value, char *pstring);
+epicsShareFunc int epicsShareAPI 
+	cvtUlongToString(unsigned long value, char *pstring);
+epicsShareFunc int epicsShareAPI 
+	cvtLongToHexString(long value, char *pstring);
+epicsShareFunc int epicsShareAPI 
+	cvtLongToOctalString(long value, char *pstring);
+epicsShareFunc unsigned long epicsShareAPI cvtBitsToUlong(
 	unsigned long  src,
 	unsigned bitFieldOffset,
 	unsigned  bitFieldLength);
-unsigned long cvtUlongToBits(
+epicsShareFunc unsigned long epicsShareAPI cvtUlongToBits(
 	unsigned long src,
 	unsigned long dest,
 	unsigned      bitFieldOffset,
@@ -81,22 +97,22 @@ unsigned long cvtUlongToBits(
 
 #else /*__STDC__*/
 
-int cvtFloatToString();
-int cvtDoubleToString();
-int cvtFloatToExpString();
-int cvtDoubleToExpString();
-int cvtFloatToCompactString();
-int cvtDoubleToCompactString();
-int cvtCharToString();
-int cvtUcharToString();
-int cvtShortToString();
-int cvtUshortToString();
-int cvtLongToString();
-int cvtUlongToString();
-int cvtLongToHexString();
-int cvtLongToOctalString();
-unsigned long cvtBitsToUlong();
-unsigned long cvtUlongToBits();
+epicsShareFunc int epicsShareAPI cvtFloatToString();
+epicsShareFunc int epicsShareAPI cvtDoubleToString();
+epicsShareFunc int epicsShareAPI cvtFloatToExpString();
+epicsShareFunc int epicsShareAPI cvtDoubleToExpString();
+epicsShareFunc int epicsShareAPI cvtFloatToCompactString();
+epicsShareFunc int epicsShareAPI cvtDoubleToCompactString();
+epicsShareFunc int epicsShareAPI cvtCharToString();
+epicsShareFunc int epicsShareAPI cvtUcharToString();
+epicsShareFunc int epicsShareAPI cvtShortToString();
+epicsShareFunc int epicsShareAPI cvtUshortToString();
+epicsShareFunc int epicsShareAPI cvtLongToString();
+epicsShareFunc int epicsShareAPI cvtUlongToString();
+epicsShareFunc int epicsShareAPI cvtLongToHexString();
+epicsShareFunc int epicsShareAPI cvtLongToOctalString();
+epicsShareFunc unsigned long epicsShareAPI cvtBitsToUlong();
+epicsShareFunc unsigned long epicsShareAPI cvtUlongToBits();
 
 #endif /*__STDC__*/
 

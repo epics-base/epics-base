@@ -136,9 +136,8 @@
 #   include <sys/time.h>
 #endif
 
-#include "epicsAssert.h"
-
 #define epicsExportSharedSymbols
+#include "epicsAssert.h"
 #include "envDefs.h"
 #define TS_PRIVATE_DATA
 #include "tsDefs.h"

@@ -20,24 +20,41 @@ of this distribution.
 #define INCimpLibh
 
 #include "macLib.h"
+#include "shareLib.h"
 
 typedef void *IMP_HANDLE;
-int impInit(IMP_HANDLE *handle,int bufferSize);
-void impFree(IMP_HANDLE handle);
-int impSetIncludeToken(IMP_HANDLE handle,char *includeToken);
-int impSetEnvName(IMP_HANDLE handle,char *envName);
-MAC_HANDLE *impGetMacHandle(IMP_HANDLE handle);
-int impSetMacHandle(IMP_HANDLE imp,MAC_HANDLE *mac);
-void impMacFree(IMP_HANDLE imp);
-int impMacAddSubstitutions(IMP_HANDLE handle,const char *substitutions);
-int impMacAddNameValuePairs(IMP_HANDLE handle,const char *pairs[]);
-int impSetPath(IMP_HANDLE handle,const char *path);
-int impAddPath(IMP_HANDLE handle,const char *path);
-int impPrintInclude(IMP_HANDLE handle,FILE *fp);
-int impDumpPath(IMP_HANDLE handle);
-int impOpenFile(IMP_HANDLE handle,char *filename);
-int impCloseFile(IMP_HANDLE handle);
-int impGetLine(IMP_HANDLE handle,char *buffer,int bufferSize);
+epicsShareFunc int epicsShareAPI 
+	impInit(IMP_HANDLE *handle,int bufferSize);
+epicsShareFunc void epicsShareAPI 
+	impFree(IMP_HANDLE handle);
+epicsShareFunc int epicsShareAPI 
+	impSetIncludeToken(IMP_HANDLE handle,char *includeToken);
+epicsShareFunc int epicsShareAPI 
+	impSetEnvName(IMP_HANDLE handle,char *envName);
+epicsShareFunc MAC_HANDLE * 
+	epicsShareAPI impGetMacHandle(IMP_HANDLE handle);
+epicsShareFunc int epicsShareAPI 
+	impSetMacHandle(IMP_HANDLE imp,MAC_HANDLE *mac);
+epicsShareFunc void epicsShareAPI 
+	impMacFree(IMP_HANDLE imp);
+epicsShareFunc int epicsShareAPI 
+	impMacAddSubstitutions(IMP_HANDLE handle,const char *substitutions);
+epicsShareFunc int epicsShareAPI 
+	impMacAddNameValuePairs(IMP_HANDLE handle,const char *pairs[]);
+epicsShareFunc int epicsShareAPI 
+	impSetPath(IMP_HANDLE handle,const char *path);
+epicsShareFunc int epicsShareAPI 
+	impAddPath(IMP_HANDLE handle,const char *path);
+epicsShareFunc int epicsShareAPI 
+	impPrintInclude(IMP_HANDLE handle,FILE *fp);
+epicsShareFunc int epicsShareAPI 
+	impDumpPath(IMP_HANDLE handle);
+epicsShareFunc int epicsShareAPI 
+	impOpenFile(IMP_HANDLE handle,char *filename);
+epicsShareFunc int epicsShareAPI 
+	impCloseFile(IMP_HANDLE handle);
+epicsShareFunc int epicsShareAPI 
+	impGetLine(IMP_HANDLE handle,char *buffer,int bufferSize);
 
 /*status values*/
 typedef enum{impSuccess,impFailure} impStatus;

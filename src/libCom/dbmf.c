@@ -23,6 +23,7 @@
 #define SEM_FULL 0
 #endif
 
+#define epicsExportSharedSymbols
 #include "dbmf.h"
 
 /*Default values for dblfInit */
@@ -40,6 +41,11 @@ typedef struct itemHeader{
     chunkNode  *pchunkNode;
 }itemHeader;
 
+<<<<<<< dbmf.c
+/* returns handle to user */
+epicsShareFunc void* epicsShareAPI 
+	dbmfInit(size_t size, size_t alignment, int init_num_free_list_items)
+=======
 typedef struct dbmfPrivate {
     ELLLIST    chunkList;
     SEM_ID     sem;
@@ -57,6 +63,7 @@ static dbmfPrivate *pdbmfPvt = NULL;
 int dbmfDebug=0;
 
 int dbmfInit(size_t size, int chunkItems)
+>>>>>>> 1.3
 {
     if(pdbmfPvt) {
         printf("dbmfInit: Already initialized\n");
@@ -76,8 +83,14 @@ int dbmfInit(size_t size, int chunkItems)
     pdbmfPvt->freeList = NULL;
     return(0);
 }
+<<<<<<< dbmf.c
+
+epicsShareFunc void* epicsShareAPI 
+	dbmfMalloc(void* handle,size_t x)
+=======
 
 void* dbmfMalloc(size_t size)
+>>>>>>> 1.3
 {
     void      **pnextFree;
     void      **pfreeList;
@@ -129,8 +142,14 @@ void* dbmfMalloc(size_t size)
     semGive(pdbmfPvt->sem);
     return((void *)(pmem + sizeof(itemHeader)));
 }
+<<<<<<< dbmf.c
+
+epicsShareFunc void epicsShareAPI 
+	dbmfFree(void* handle,void* x)
+=======
 
 void dbmfFree(void* mem)
+>>>>>>> 1.3
 {
     char       *pmem = (char *)mem;
     chunkNode  *pchunkNode;

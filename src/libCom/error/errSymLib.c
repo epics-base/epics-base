@@ -70,6 +70,7 @@
 #include <errno.h>
 #include <stdlib.h>
 
+#define epicsExportSharedSymbols
 #include "ellLib.h"
 #include "dbDefs.h"
 #include "errMdef.h"
@@ -128,7 +129,7 @@ int errVerbose=0;
  * ell nodes that have a common hash number.
  *
  ***************************************************************/
-int errSymBld()
+int epicsShareAPI errSymBld()
 {
     ERRSYMBOL      *errArray = errSymTbl->symbols;
     ELLLIST        *perrnumlist = &errnumlist;
@@ -207,9 +208,9 @@ unsigned short errnum;
  * adds symbols to the master errnumlist as compiled from errSymTbl.c
  ***************************************************************/
 #ifdef __STDC__
-int errSymbolAdd (long errNum,char *name)
+int epicsShareAPI errSymbolAdd (long errNum,char *name)
 #else
-int errSymbolAdd (errNum,name)
+int epicsShareAPI errSymbolAdd (errNum,name)
 long errNum;
 char *name;
 #endif /* __STDC__ */
@@ -247,9 +248,9 @@ char *name;
 #if 0 
 #ifndef vxWorks
 #ifdef __STDC__
-int UnixSymFind(long status, char *pname, long *pvalue)
+int epicsShareAPI UnixSymFind(long status, char *pname, long *pvalue)
 #else
-int UnixSymFind(status, pname, pvalue)
+int epicsShareAPI UnixSymFind(status, pname, pvalue)
     long            status;
     char           *pname;
     long           *pvalue;
@@ -271,9 +272,9 @@ int UnixSymFind(status, pname, pvalue)
  * MODSYMFIND
  ***************************************************************/
 #ifdef __STDC__
-int ModSymFind(long status, char *pname, long *pvalue)
+int epicsShareAPI ModSymFind(long status, char *pname, long *pvalue)
 #else
-int ModSymFind(status, pname, pvalue)
+int epicsShareAPI ModSymFind(status, pname, pvalue)
     long            status;
     char           *pname;
     long           *pvalue;
@@ -310,10 +311,10 @@ int ModSymFind(status, pname, pvalue)
  * ERRSYMFIND
  ***************************************************************/
 #ifdef __STDC__
-int errSymFind(long status, char *name)
+int epicsShareAPI errSymFind(long status, char *name)
 #else
 /* errSymFind - Locate error symbol */
-int errSymFind(status, name)
+int epicsShareAPI errSymFind(status, name)
     long            status;
     char           *name;
 #endif /* __STDC__ */
@@ -356,9 +357,9 @@ int errSymFind(status, name)
  * errSymDump
  ***************************************************************/
 #ifdef __STDC__
-void errSymDump()
+void epicsShareAPI errSymDump()
 #else
-void errSymDump()
+void epicsShareAPI errSymDump()
 #endif /* __STDC__ */
 {
 ERRNUMNODE    **phashnode = NULL;
@@ -400,9 +401,9 @@ int firstTime;
  * errSymTestPrint
  ***************************************************************/
 #ifdef __STDC__
-void errSymTestPrint(long errNum)
+void epicsShareAPI errSymTestPrint(long errNum)
 #else
-void errSymTestPrint(errNum)
+void epicsShareAPI errSymTestPrint(errNum)
 long errNum;
 #endif /* __STDC__ */
 {
@@ -432,9 +433,9 @@ long errNum;
  * ERRSYMTEST
 ****************************************************************/
 #ifdef __STDC__
-void errSymTest(unsigned short modnum, unsigned short begErrNum, unsigned short endErrNum)
+void epicsShareAPI errSymTest(unsigned short modnum, unsigned short begErrNum, unsigned short endErrNum)
 #else
-void errSymTest(modnum, begErrNum, endErrNum)
+void epicsShareAPI errSymTest(modnum, begErrNum, endErrNum)
 unsigned short modnum;
 unsigned short begErrNum;
 unsigned short endErrNum;

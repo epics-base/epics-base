@@ -28,6 +28,9 @@
  * Modification Log:
  * -----------------
  * $Log$
+ * Revision 1.3  1997/04/10 20:00:40  jhill
+ * VMS changes
+ *
  * Revision 1.2  1996/06/20 16:27:33  jhill
  * eliminated sbufs
  *
@@ -143,7 +146,7 @@ typedef enum {
  * of type name strings.
  */
 #ifdef epicsTypesGLOBAL
-epicsShareDecl READONLY char *epicsTypeNames [lastEpicsType+1] = {
+epicsShareDef READONLY char *epicsTypeNames [lastEpicsType+1] = {
 		"epicsInt8",
 		"epicsUInt8",
 		"epicsInt16",
@@ -165,7 +168,7 @@ epicsShareExtern READONLY char *epicsTypeNames [lastEpicsType+1];
  * of type code name strings.
  */
 #ifdef epicsTypesGLOBAL
-epicsShareDecl READONLY char *epicsTypeCodeNames [lastEpicsType+1] = {
+epicsShareDef READONLY char *epicsTypeCodeNames [lastEpicsType+1] = {
 		"epicsInt8T",
 		"epicsUInt8T",
 		"epicsInt16T",
@@ -183,7 +186,7 @@ epicsShareExtern READONLY char *epicsTypeCodeNames [lastEpicsType+1];
 #endif /* epicsTypesGLOBAL */
 
 #ifdef epicsTypesGLOBAL
-epicsShareDecl READONLY unsigned epicsTypeSizes [lastEpicsType+1] = {
+epicsShareDef READONLY unsigned epicsTypeSizes [lastEpicsType+1] = {
 		sizeof (epicsInt8),
 		sizeof (epicsUInt8),
 		sizeof (epicsInt16),
@@ -212,7 +215,7 @@ typedef enum {
 	epicsStringC,
 	epicsOldStringC} epicsTypeClass;
 #ifdef epicsTypesGLOBAL
-epicsShareDecl READONLY epicsTypeClass epicsTypeClasses [lastEpicsType+1] = {
+epicsShareDef READONLY epicsTypeClass epicsTypeClasses [lastEpicsType+1] = {
 		epicsIntC,
 		epicsUIntC,
 		epicsIntC,
@@ -231,7 +234,7 @@ epicsShareExtern READONLY epicsTypeClass epicsTypeClasses [lastEpicsType+1];
 
 
 #ifdef epicsTypesGLOBAL
-epicsShareDecl READONLY char *epicsTypeAnyFieldName [lastEpicsType+1] = {
+epicsShareDef READONLY char *epicsTypeAnyFieldName [lastEpicsType+1] = {
 			"int8",
 			"uInt8",
 			"int16",

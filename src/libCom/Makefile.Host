@@ -31,6 +31,7 @@ INC += macLib.h
 INC += impLib.h
 INC += sigPipeIgnore.h
 INC += dbmf.h
+INC += ipAddrToA.h
 INC += epicsString.h
 
 #	For WIN32 we supply getopt as part of libCom:

@@ -1,10 +1,11 @@
 
+#define epicsExportSharedSymbols
 #include "sigPipeIgnore.h"
 
 /*
  * NOOP
  */
-void epicsShareAPI installSigPipeIgnore (void)
+epicsShareFunc void epicsShareAPI installSigPipeIgnore (void)
 {
 }
  

@@ -71,6 +71,9 @@
  *			we eliminate delete ambiguity (chance of the same
  *			being reused).
  * $Log$
+ * Revision 1.23  1997/04/10 19:45:25  jhill
+ * API changes and include with  not <>
+ *
  * Revision 1.22  1996/07/09 23:01:31  jhill
  * nill 2nd arg to gettimeofday()
  *
@@ -105,6 +108,7 @@ static char	*pSccsId = "@(#) $Id$";
 /*
  * Yuk
  */
+#if 0
 #if defined (MULTINET)
 #	define select_errno socket_errno
 #elif defined (WINTCP)
@@ -113,6 +117,7 @@ static char	*pSccsId = "@(#) $Id$";
 #else
 #	include <errno.h>
 #	define select_errno errno
+#endif
 #endif
 
 #ifdef vxWorks
@@ -125,9 +130,11 @@ static char	*pSccsId = "@(#) $Id$";
 #include <semLib.h>
 #endif
 
+#define epicsExportSharedSymbols
+#include "osiSock.h"
 #include "epicsAssert.h"
-#include "fdmgr.h"
 #include "epicsTypes.h"
+#include "fdmgr.h"
 
 #define NOBSDNETPROTO
 #include "bsdProto.h"
@@ -849,9 +856,9 @@ struct timeval 			*ptimeout
 		return labor_performed;
 	}
 	else if(status < 0){
-		if(select_errno == EINTR)
+		if(SOCKERRNO == EINTR)
 			;
-		else if(select_errno == EINVAL)
+		else if(SOCKERRNO == EINVAL)
 			fdmgrPrintf(	
 				"fdmgr: bad select args ? %d %d %d\n",
 				pfdctx->maxfd,
@@ -860,7 +867,7 @@ struct timeval 			*ptimeout
 		else
 			fdmgrPrintf(	
 				"fdmgr: error from select %s\n",
-				strerror(select_errno));
+				strerror(SOCKERRNO));
 
 		return labor_performed;
 	}

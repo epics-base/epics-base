@@ -33,6 +33,9 @@
  * 	.02 121693 joh	added bucketFree() 
  * 	.03 052395 joh	use std EPICS status 
  *	$Log$
+ *	Revision 1.4  1997/04/29 06:17:18  jhill
+ *	use free lists
+ *
  *	Revision 1.3  1997/04/10 19:45:35  jhill
  *	API changes and include with  not <>
  *
@@ -53,6 +56,7 @@ extern "C" {
 
 #include "errMdef.h"
 #include "epicsTypes.h"
+#include "shareLib.h"
 
 typedef	unsigned 	BUCKETID;
 
@@ -73,45 +77,28 @@ typedef struct bucket{
         unsigned        nInUse;
 }BUCKET;
 
-
-#if defined(__STDC__) || defined(__cplusplus)
-BUCKET	*bucketCreate (unsigned nHashTableEntries);
-int	bucketFree (BUCKET *prb);
-int	bucketShow (BUCKET *pb);
+epicsShareFunc BUCKET * epicsShareAPI bucketCreate (unsigned nHashTableEntries);
+epicsShareFunc int epicsShareAPI bucketFree (BUCKET *prb);
+epicsShareFunc int epicsShareAPI bucketShow (BUCKET *pb);
 
 /*
  * !! Identifier must exist (and remain constant) at the specified address until
  * the item is deleted from the bucket !!
  */
-int     bucketAddItemUnsignedId (BUCKET *prb, 
+epicsShareFunc int epicsShareAPI bucketAddItemUnsignedId (BUCKET *prb, 
 		READONLY unsigned *pId, READONLY void *pApp);
-int     bucketAddItemPointerId (BUCKET *prb, 
+epicsShareFunc int epicsShareAPI bucketAddItemPointerId (BUCKET *prb, 
 		void * READONLY *pId, READONLY void *pApp);
-int     bucketAddItemStringId (BUCKET *prb, 
+epicsShareFunc int epicsShareAPI bucketAddItemStringId (BUCKET *prb, 
 		READONLY char *pId, READONLY void *pApp);
 
-int     bucketRemoveItemUnsignedId (BUCKET *prb, READONLY unsigned *pId);
-int     bucketRemoveItemPointerId (BUCKET *prb, void * READONLY *pId);
-int     bucketRemoveItemStringId (BUCKET *prb, READONLY char *pId);
+epicsShareFunc int epicsShareAPI bucketRemoveItemUnsignedId (BUCKET *prb, READONLY unsigned *pId);
+epicsShareFunc int epicsShareAPI bucketRemoveItemPointerId (BUCKET *prb, void * READONLY *pId);
+epicsShareFunc int epicsShareAPI bucketRemoveItemStringId (BUCKET *prb, READONLY char *pId);
 
-void    *bucketLookupItemUnsignedId (BUCKET *prb, READONLY unsigned *pId);
-void    *bucketLookupItemPointerId (BUCKET *prb, void * READONLY *pId);
-void    *bucketLookupItemStringId (BUCKET *prb, READONLY char *pId);
-
-#else /*__STDC__*/
-BUCKET	*bucketCreate ();
-int	bucketFree ();
-int	bucketShow ();
-int     bucketAddItemUnsignedId ();
-int     bucketAddItemPointerId ();
-int     bucketAddItemStringId ();
-int     bucketRemoveItemUnsignedId ();
-int     bucketRemoveItemPointerId ();
-int     bucketRemoveItemStringId ();
-void    *bucketLookupItemUnsignedId ();
-void    *bucketLookupItemPointerId ();
-void    *bucketLookupItemStringId ();
-#endif /*__STDC__*/ 
+epicsShareFunc void * epicsShareAPI bucketLookupItemUnsignedId (BUCKET *prb, READONLY unsigned *pId);
+epicsShareFunc void * epicsShareAPI bucketLookupItemPointerId (BUCKET *prb, void * READONLY *pId);
+epicsShareFunc void * epicsShareAPI bucketLookupItemStringId (BUCKET *prb, READONLY char *pId);
 
 /*
  * Status returned by bucketLib functions

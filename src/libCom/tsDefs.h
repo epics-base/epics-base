@@ -185,7 +185,7 @@ struct tsDetail {
 #ifndef TS_PRIVATE_DATA
     epicsShareExtern char *glTsStatText[7];
 #else
-    epicsShareDecl char *glTsStatText[] = {
+    epicsShareDef char *glTsStatText[] = {
 	/* S_ts_OK                */ "success",
 	/* S_ts_sysTimeError      */ "error getting system time",
 	/* S_ts_badTextCode       */ "invalid TS_TEXT_xxx code",
@@ -287,76 +287,76 @@ struct tsDetail {
 
 #if defined(__STDC__) || defined(__cplusplus)
 
-int epicsShareAPI nextIntFieldAsInt(
+epicsShareFunc int epicsShareAPI nextIntFieldAsInt(
 char    **ppText,       /* I/O pointer to pointer to text to scan */
 int     *pIntVal,       /* O pointer to return field's value */
 char    *pDelim         /* O pointer to return field's delimiter */
 );
 
-int epicsShareAPI nextAlph1UCField(
+epicsShareFunc int epicsShareAPI nextAlph1UCField(
 char    **ppText,       /* I/O pointer to pointer to text to scan */
 char    **ppField,      /* O pointer to pointer to field */
 char    *pDelim         /* O pointer to return field's delimiter */
 );
 
-int epicsShareAPI nextIntFieldAsLong(
+epicsShareFunc int epicsShareAPI nextIntFieldAsLong(
 char    **ppText,       /* I/O pointer to pointer to text to scan */
 long    *pLongVal,      /* O pointer to return field's value */
 char    *pDelim        /* O pointer to return field's delimiter */
 );
 
-long epicsShareAPI tsLocalTime (TS_STAMP *pStamp);
+epicsShareFunc long epicsShareAPI tsLocalTime (TS_STAMP *pStamp);
 
-void epicsShareAPI tsAddDouble(
+epicsShareFunc void epicsShareAPI tsAddDouble(
 TS_STAMP *pSum,         /* O sum time stamp */
 TS_STAMP *pStamp,       /* I addend time stamp */
 double  dbl             /* I number of seconds to add */
 );
 
-int epicsShareAPI tsCmpStamps(
+epicsShareFunc int epicsShareAPI tsCmpStamps(
 TS_STAMP *pStamp1,      /* pointer to first stamp */
 TS_STAMP *pStamp2       /* pointer to second stamp */
 );
 
-long epicsShareAPI tsRoundDownLocal(
+epicsShareFunc long epicsShareAPI tsRoundDownLocal(
 TS_STAMP *pStamp,       /* IO pointer to time stamp buffer */
 unsigned long interval  /* I rounding interval, in seconds */
 );
 
-long epicsShareAPI tsRoundUpLocal(
+epicsShareFunc long epicsShareAPI tsRoundUpLocal(
 TS_STAMP *pStamp,       /* IO pointer to time stamp buffer */
 unsigned long interval  /* I rounding interval, in seconds */
 );
 
-char * epicsShareAPI tsStampToText(
+epicsShareFunc char * epicsShareAPI tsStampToText(
 TS_STAMP *pStamp,       /* I pointer to time stamp */
 enum tsTextType textType,/* I type of conversion desired; one of TS_TEXT_xxx */
 char    *textBuffer     /* O buffer to receive text */
 );
 
-long epicsShareAPI tsTextToStamp(
+epicsShareFunc long epicsShareAPI tsTextToStamp(
 TS_STAMP *pStamp,       /* O time stamp corresponding to text */
 char    **pText         /* IO ptr to ptr to string containing time and date */
 );
 
-long epicsShareAPI tsTimeTextToStamp(
+epicsShareFunc long epicsShareAPI tsTimeTextToStamp(
 TS_STAMP *pStamp,       /* O time stamp corresponding to text */
 char    **pText         /* IO ptr to ptr to string containing time and date */
 );
 
 #else /* !defined(__STDC__) && !defined(__cplusplus) */
 
-int epicsShareAPI nextIntFieldAsInt();
-int epicsShareAPI nextAlph1UCField();
-int epicsShareAPI nextIntFieldAsLong();
-long epicsShareAPI tsLocalTime ();
-void epicsShareAPI tsAddDouble();
-int epicsShareAPI tsCmpStamps();
-long epicsShareAPI tsRoundDownLocal();
-long epicsShareAPI tsRoundUpLocal();
-char * epicsShareAPI tsStampToText();
-long epicsShareAPI tsTextToStamp();
-long epicsShareAPI tsTimeTextToStamp();
+epicsShareFunc int epicsShareAPI nextIntFieldAsInt();
+epicsShareFunc int epicsShareAPI nextAlph1UCField();
+epicsShareFunc int epicsShareAPI nextIntFieldAsLong();
+epicsShareFunc long epicsShareAPI tsLocalTime ();
+epicsShareFunc void epicsShareAPI tsAddDouble();
+epicsShareFunc int epicsShareAPI tsCmpStamps();
+epicsShareFunc long epicsShareAPI tsRoundDownLocal();
+epicsShareFunc long epicsShareAPI tsRoundUpLocal();
+epicsShareFunc char * epicsShareAPI tsStampToText();
+epicsShareFunc long epicsShareAPI tsTextToStamp();
+epicsShareFunc long epicsShareAPI tsTimeTextToStamp();
 
 #endif
 

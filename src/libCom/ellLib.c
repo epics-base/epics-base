@@ -38,6 +38,7 @@
 
 #include <stdlib.h>
 
+#define epicsExportSharedSymbols
 #include "ellLib.h"
 
 #if     !defined(NULL) 
@@ -51,9 +52,9 @@
  *****************************************************************************/
 #ifndef DLLLIB_USE_MACROS
 #ifdef __STDC__
-void ellInit (ELLLIST *pList)
+void epicsShareAPI ellInit (ELLLIST *pList)
 #else
-void ellInit (plist)
+void epicsShareAPI ellInit (plist)
 ELLLIST	*plist;
 #endif
 {
@@ -69,9 +70,9 @@ ELLLIST	*plist;
  *
  *****************************************************************************/
 #ifdef __STDC__
-void ellAdd (ELLLIST *pList, ELLNODE *pNode)
+void epicsShareAPI ellAdd (ELLLIST *pList, ELLNODE *pNode)
 #else
-void ellAdd (pList, pNode)
+void epicsShareAPI ellAdd (pList, pNode)
 ELLLIST *pList;
 ELLNODE *pNode;
 #endif
@@ -97,9 +98,9 @@ ELLNODE *pNode;
  *
  *****************************************************************************/
 #ifdef __STDC__
-void ellConcat (ELLLIST *pDstList, ELLLIST *pAddList)
+void epicsShareAPI ellConcat (ELLLIST *pDstList, ELLLIST *pAddList)
 #else
-void ellConcat (pDstList, pAddList)
+void epicsShareAPI ellConcat (pDstList, pAddList)
 ELLLIST *pDstList;
 ELLLIST *pAddList;
 #endif
@@ -134,9 +135,9 @@ ELLLIST *pAddList;
  *****************************************************************************/
 #ifndef DLLLIB_USE_MACROS
 #ifdef __STDC__
-int  ellCount (ELLLIST *pList)
+int  epicsShareAPI ellCount (ELLLIST *pList)
 #else
-int  ellCount (pList)
+int  epicsShareAPI ellCount (pList)
 ELLLIST *pList;
 #endif
 {
@@ -149,9 +150,9 @@ ELLLIST *pList;
  *
  *****************************************************************************/
 #ifdef __STDC__
-void ellDelete (ELLLIST *pList, ELLNODE *pNode)
+void epicsShareAPI ellDelete (ELLLIST *pList, ELLNODE *pNode)
 #else
-void ellDelete (pList, pNode)
+void epicsShareAPI ellDelete (pList, pNode)
 ELLLIST *pList;
 ELLNODE *pNode;
 #endif
@@ -181,9 +182,9 @@ ELLNODE *pNode;
  *
  *****************************************************************************/
 #ifdef __STDC__
-void ellExtract (ELLLIST *pSrcList, ELLNODE *pStartNode, ELLNODE *pEndNode, ELLLIST *pDstList)
+void epicsShareAPI ellExtract (ELLLIST *pSrcList, ELLNODE *pStartNode, ELLNODE *pEndNode, ELLLIST *pDstList)
 #else
-void ellExtract (pSrcList, pStartNode, pEndNode, pDstList)
+void epicsShareAPI ellExtract (pSrcList, pStartNode, pEndNode, pDstList)
 ELLLIST *pSrcList;
 ELLNODE *pStartNode;
 ELLNODE *pEndNode;
@@ -237,9 +238,9 @@ ELLLIST *pDstList;
  *****************************************************************************/
 #ifndef DLLLIB_USE_MACROS
 #ifdef __STDC__
-ELLNODE *ellFirst (ELLLIST *pList)
+ELLNODE * epicsShareAPI ellFirst (ELLLIST *pList)
 #else
-ELLNODE *ellFirst (pList)
+ELLNODE * epicsShareAPI ellFirst (pList)
 ELLLIST *pList;
 #endif
 {
@@ -253,9 +254,9 @@ ELLLIST *pList;
  *
  *****************************************************************************/
 #ifdef __STDC__
-ELLNODE *ellGet (ELLLIST *pList)
+ELLNODE * epicsShareAPI ellGet (ELLLIST *pList)
 #else
-ELLNODE *ellGet (pList)
+ELLNODE * epicsShareAPI ellGet (pList)
 ELLLIST *pList;
 #endif
 {
@@ -274,9 +275,9 @@ ELLLIST *pList;
  *
  *****************************************************************************/
 #ifdef __STDC__
-void ellInsert (ELLLIST *plist, ELLNODE *pPrev, ELLNODE *pNode)
+void epicsShareAPI ellInsert (ELLLIST *plist, ELLNODE *pPrev, ELLNODE *pNode)
 #else
-void ellInsert (plist, pPrev, pNode)
+void epicsShareAPI ellInsert (plist, pPrev, pNode)
 ELLLIST *plist;
 ELLNODE *pPrev;
 ELLNODE *pNode;
@@ -311,9 +312,9 @@ ELLNODE *pNode;
  *****************************************************************************/
 #ifndef DLLLIB_USE_MACROS
 #ifdef __STDC__
-ELLNODE *ellLast (ELLLIST *pList)
+ELLNODE * epicsShareAPI ellLast (ELLLIST *pList)
 #else
-ELLNODE *ellLast (pList)
+ELLNODE * epicsShareAPI ellLast (pList)
 ELLLIST *pList;
 #endif
 {
@@ -328,9 +329,9 @@ ELLLIST *pList;
  *****************************************************************************/
 #ifndef DLLLIB_USE_MACROS
 #ifdef __STDC__
-ELLNODE *ellNext (ELLNODE *pNode)
+ELLNODE * epicsShareAPI ellNext (ELLNODE *pNode)
 #else
-ELLNODE *ellNext (pNode)
+ELLNODE * epicsShareAPI ellNext (pNode)
 ELLNODE *pNode;
 #endif
 {
@@ -344,9 +345,9 @@ ELLNODE *pNode;
  *
  *****************************************************************************/
 #ifdef __STDC__
-ELLNODE *ellNth (ELLLIST *pList, int nodeNum)
+ELLNODE * epicsShareAPI ellNth (ELLLIST *pList, int nodeNum)
 #else
-ELLNODE *ellNth (pList, nodeNum)
+ELLNODE * epicsShareAPI ellNth (pList, nodeNum)
 ELLLIST *pList;
 int nodeNum;
 #endif
@@ -385,9 +386,9 @@ int nodeNum;
  *****************************************************************************/
 #ifndef DLLLIB_USE_MACROS
 #ifdef __STDC__
-ELLNODE *ellPrevious (ELLNODE *pNode)
+ELLNODE * epicsShareAPI ellPrevious (ELLNODE *pNode)
 #else
-ELLNODE *ellPrevious (pNode)
+ELLNODE * epicsShareAPI ellPrevious (pNode)
 ELLNODE *pNode;
 #endif
 {
@@ -401,9 +402,9 @@ ELLNODE *pNode;
  *
  *****************************************************************************/
 #ifdef __STDC__
-ELLNODE *ellNStep (ELLNODE *pNode, int nStep)
+ELLNODE * epicsShareAPI ellNStep (ELLNODE *pNode, int nStep)
 #else
-ELLNODE *ellNStep (pNode, nStep)
+ELLNODE * epicsShareAPI ellNStep (pNode, nStep)
 ELLNODE *pNode;
 int nStep;
 #endif
@@ -433,9 +434,9 @@ int nStep;
  *
  *****************************************************************************/
 #ifdef __STDC__
-int  ellFind (ELLLIST *pList, ELLNODE *pNode)
+int epicsShareAPI ellFind (ELLLIST *pList, ELLNODE *pNode)
 #else
-int  ellFind (pList, pNode)
+int epicsShareAPI ellFind (pList, pNode)
 ELLLIST *pList;
 ELLNODE *pNode;
 #endif
@@ -465,9 +466,9 @@ ELLNODE *pNode;
  *
  *****************************************************************************/
 #ifdef __STDC__
-void ellFree (ELLLIST *pList)
+void epicsShareAPI ellFree (ELLLIST *pList)
 #else
-void ellFree (pList)
+void epicsShareAPI ellFree (pList)
 ELLLIST *pList;
 #endif
 {

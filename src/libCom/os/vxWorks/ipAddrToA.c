@@ -39,17 +39,19 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
-
-#include <osiSock.h>
-
 #include <inetLib.h>
+
+#include "osiSock.h"
+#define epicsExportSharedSymbols
+#include "ipAddrToA.h"
+
 
 #define maxPortDigits 16u
 
 /*
  * ipAddrToA ()
  */
-void ipAddrToA (const struct sockaddr_in *pInetAddr, 
+void epicsShareAPI ipAddrToA (const struct sockaddr_in *pInetAddr, 
 		char *pBuf, const unsigned bufSize)
 {
 	char		pName[INET_ADDR_LEN];

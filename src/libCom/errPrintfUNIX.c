@@ -41,6 +41,7 @@
 #include <string.h>
 #include <errno.h>
 
+#define epicsExportSharedSymbols
 #include "epicsAssert.h"
 #include "dbDefs.h"
 #include "errMdef.h"
@@ -52,7 +53,7 @@
  * ERRMESSAGE - now a macro to call errPrintf
  * ERRPRINTF  - print an error symbol message
  ***************************************************************/
-void errPrintf(long status, const char *pFileName, 
+void epicsShareAPI errPrintf(long status, const char *pFileName, 
 	int lineno, const char *pformat, ...)
 {
     va_list 	   pvar;

@@ -11,6 +11,7 @@
 #include <errno.h>
 #include <string.h>
 
+#define epicsExportSharedSymbols
 #include "sigPipeIgnore.h"
 
 typedef void (*pSigFunc) ();
@@ -37,7 +38,7 @@ static void ignoreSigPipe (int param)
 /*
  * installSigPipeIgnore ()
  */
-void epicsShareAPI installSigPipeIgnore (void)
+epicsShareFunc void epicsShareAPI installSigPipeIgnore (void)
 {
 	static int init;
 

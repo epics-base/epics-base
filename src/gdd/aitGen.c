@@ -5,6 +5,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.4  1996/11/02 01:24:41  jhill
+ * strcpy => styrcpy (shuts up purify)
+ *
  * Revision 1.3  1996/08/13 15:07:44  jbk
  * changes for better string manipulation and fixes for the units field
  *
@@ -31,6 +34,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define epicsExportSharedSymbols
 #include "aitTypes.h"
 
 /*

@@ -37,6 +37,8 @@
 extern "C" {
 #endif
 
+#include "shareLib.h"
+
 #undef assert
 
 #ifdef NDEBUG
@@ -45,12 +47,13 @@ extern "C" {
 
 #if defined(__STDC__) || defined(__cplusplus)
 
-	extern void epicsAssert (const char *pFile, const unsigned line, 
+epicsShareFunc extern void epicsShareAPI 
+	epicsAssert (const char *pFile, const unsigned line, 
 			const char *pMsg, const char *pAuthorName);
 
 #else /*__STDC__ or __cplusplus*/
 
-	extern void epicsAssert ();
+	epicsShareFunc extern void epicsShareAPI epicsAssert ();
 
 #endif /*__STDC__ or __cplusplus*/
 

@@ -28,6 +28,9 @@
  * -----------------
  * .01  02-16-95        mrk     Extracted from errSymLib.c
  * $Log$
+ * Revision 1.9  1997/04/10 19:45:23  jhill
+ * API changes and include with  not <>
+ *
  * Revision 1.8  1996/09/04 21:46:20  jhill
  * fixed gcc warning
  *
@@ -53,6 +56,7 @@
 #include <error.h>
 #include <logLib.h>
 
+#define epicsExportSharedSymbols
 #include "epicsAssert.h"
 #include "ellLib.h"
 #include "dbDefs.h"

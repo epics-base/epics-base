@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define epicsExportSharedSymbols
 #include "macLib.h"
 
 /*
@@ -22,7 +23,7 @@
  * Doesn't yet use handle (so uses default special characters)
  */
 long				/* #defns encountered; <0 = ERROR */
-macParseDefns(
+epicsShareAPI macParseDefns(
     MAC_HANDLE	*handle,	/* opaque handle; can be NULL if default */
 				/* special characters are to be used */
 
@@ -237,7 +238,7 @@ error:
  * one (preferably two) NULL pointers 
  */
 long				/* #macros defined; <0 = ERROR */
-macInstallMacros(
+epicsShareAPI macInstallMacros(
     MAC_HANDLE	*handle,	/* opaque handle */
 
     char	*pairs[] )	/* pointer to NULL-terminated array of */
@@ -269,6 +270,9 @@ macInstallMacros(
 }
 
 /* $Log$
+ * Revision 1.2  1996/09/16 21:07:11  jhill
+ * fixed warnings
+ *
  * Revision 1.1  1996/07/10 14:49:55  mrk
  * added macLib
  *

@@ -12,7 +12,7 @@ extern "C" {
 
 #include "shareLib.h"
 
-void epicsShareAPI installSigPipeIgnore (void);
+epicsShareFunc void epicsShareAPI installSigPipeIgnore (void);
 
 #ifdef __cplusplus
 }

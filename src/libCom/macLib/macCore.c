@@ -37,6 +37,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define epicsExportSharedSymbols
 #include "macLib.h"
 #include "dbmf.h"
 
@@ -77,7 +78,7 @@ static MAC_CHARS macDefaultChars = {
  * of macro definitions
  */
 long				/* 0 = OK; <0 = ERROR */
-macCreateHandle(
+epicsShareAPI macCreateHandle(
     MAC_HANDLE	**pHandle,	/* address of variable to receive pointer */
 				/* to new macro substitution context */
 
@@ -129,7 +130,7 @@ macCreateHandle(
  */
 long                            /* #chars copied, <0 if any macros are */
                                 /* undefined */
-macExpandString(
+epicsShareAPI macExpandString(
     MAC_HANDLE  *handle,        /* opaque handle */
 
     char        *src,           /* source string */
@@ -183,7 +184,7 @@ macExpandString(
  * already existed
  */
 long				/* length of value */
-macPutValue(
+epicsShareAPI macPutValue(
     MAC_HANDLE	*handle,	/* opaque handle */
 
     char	*name,		/* macro name */
@@ -238,7 +239,7 @@ macPutValue(
  * Return the value of a macro
  */
 long				/* #chars copied (<0 if undefined) */
-macGetValue(
+epicsShareAPI macGetValue(
     MAC_HANDLE	*handle,	/* opaque handle */
 
     char	*name,		/* macro name or reference */
@@ -298,7 +299,7 @@ macGetValue(
  * context
  */
 long				/* 0 = OK; <0 = ERROR */
-macDeleteHandle(
+epicsShareAPI macDeleteHandle(
     MAC_HANDLE	*handle )	/* opaque handle */
 {
     MAC_ENTRY *entry, *nextEntry;
@@ -330,7 +331,7 @@ macDeleteHandle(
  * Mark the start of a new scoping level
  */
 long				/* 0 = OK; <0 = ERROR */
-macPushScope(
+epicsShareAPI macPushScope(
     MAC_HANDLE	*handle )	/* opaque handle */
 {
     MAC_ENTRY *entry;
@@ -363,7 +364,7 @@ macPushScope(
  * Pop all macros defined since the last call to macPushScope()
  */
 long				/* 0 = OK; <0 = ERROR */
-macPopScope(
+epicsShareAPI macPopScope(
     MAC_HANDLE	*handle )	/* opaque handle */
 {
     MAC_ENTRY *entry, *nextEntry;
@@ -407,7 +408,7 @@ macPopScope(
  * Report macro details to standard output
  */
 long				/* 0 = OK; <0 = ERROR */
-macReportMacros(
+epicsShareAPI macReportMacros(
     MAC_HANDLE  *handle )	/* opaque handle */
 {
     char      *format = "%-1s %-16s %-16s %s\n";
@@ -744,6 +745,9 @@ char *Strdup( char *string )
 }
 
 /* $Log$
+ * Revision 1.4  1997/04/30 19:10:04  mrk
+ * Fix long memory free list problem
+ *
  * Revision 1.3  1996/11/02 02:05:24  jhill
  * %d => %ld
  *

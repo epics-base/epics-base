@@ -27,6 +27,9 @@
  * Modification Log: 
  * -----------------
  * $Log$
+ * Revision 1.8  1997/04/10 19:45:15  jhill
+ * API changes and include with  not <>
+ *
  * Revision 1.7  1997/01/22 22:06:49  jhill
  * doc
  *
@@ -49,6 +52,7 @@
 #include <string.h>
 #include <errno.h>
 
+#define epicsExportSharedSymbols
 #include "epicsAssert.h"
 #include "epicsPrint.h"
 #include "epicsVersion.h"
@@ -57,7 +61,8 @@
 /*
  * epicsAssert ()
  */
-void epicsAssert (const char *pFile, const unsigned line, const char *pMsg,
+epicsShareFunc void epicsShareAPI 
+	epicsAssert (const char *pFile, const unsigned line, const char *pMsg,
 	const char *pAuthorName)
 {
 	epicsPrintf (

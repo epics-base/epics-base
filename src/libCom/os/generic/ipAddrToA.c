@@ -37,13 +37,16 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <osiSock.h>
+#include "osiSock.h"
+
+#define epicsExportSharedSymbols
+#include "ipAddrToA.h"
 
 /*
  * ipAddrToA()
  * (convert IP address to ASCII host name)
  */
-void ipAddrToA (const struct sockaddr_in *pInetAddr, char *pBuf, 
+void epicsShareAPI ipAddrToA (const struct sockaddr_in *pInetAddr, char *pBuf, 
 		const unsigned bufSize)
 {
 	struct hostent  *ent;

@@ -140,6 +140,8 @@
 #   include <ctype.h>
 #   include <stdio.h>
 #endif
+
+#define epicsExportSharedSymbols
 #include "epicsAssert.h"
 #include "tsDefs.h"
 
@@ -190,7 +192,7 @@
     }
 
 int
-nextAlphField(ppText, ppField, pDelim)
+epicsShareAPI nextAlphField(ppText, ppField, pDelim)
 char	**ppText;	/* I/O pointer to pointer to text to scan */
 char	**ppField;	/* O pointer to pointer to field */
 char	*pDelim;	/* O pointer to return field's delimiter */
@@ -200,7 +202,7 @@ char	*pDelim;	/* O pointer to return field's delimiter */
 	    NEXT_POSTAMBLE
     return count;
 }
-int epicsShareAPI
+epicsShareFunc int epicsShareAPI
 nextAlph1UCField(ppText, ppField, pDelim)
 char	**ppText;	/* I/O pointer to pointer to text to scan */
 char	**ppField;	/* O pointer to pointer to field */
@@ -220,7 +222,7 @@ char	*pDelim;	/* O pointer to return field's delimiter */
     return count;
 }
 int
-nextANField(ppText, ppField, pDelim)
+epicsShareAPI nextANField(ppText, ppField, pDelim)
 char	**ppText;	/* I/O pointer to pointer to text to scan */
 char	**ppField;	/* O pointer to pointer to field */
 char	*pDelim;	/* O pointer to return field's delimiter */
@@ -231,7 +233,7 @@ char	*pDelim;	/* O pointer to return field's delimiter */
     return count;
 }
 int
-nextChanNameField(ppText, ppField, pDelim)
+epicsShareAPI nextChanNameField(ppText, ppField, pDelim)
 char	**ppText;	/* I/O pointer to pointer to text to scan */
 char	**ppField;	/* O pointer to pointer to field */
 char	*pDelim;	/* O pointer to return field's delimiter */
@@ -246,7 +248,7 @@ char	*pDelim;	/* O pointer to return field's delimiter */
     return count;
 }
 int
-nextFltField(ppText, ppField, pDelim)
+epicsShareAPI nextFltField(ppText, ppField, pDelim)
 char	**ppText;	/* I/O pointer to pointer to text to scan */
 char	**ppField;	/* O pointer to pointer to field */
 char	*pDelim;	/* O pointer to return field's delimiter */
@@ -257,7 +259,7 @@ char	*pDelim;	/* O pointer to return field's delimiter */
     return count;
 }
 int
-nextFltFieldAsDbl(ppText, pDblVal, pDelim)
+epicsShareAPI nextFltFieldAsDbl(ppText, pDblVal, pDelim)
 char	**ppText;	/* I/O pointer to pointer to text to scan */
 double	*pDblVal;	/* O pointer to return field's value */
 char	*pDelim;	/* O pointer to return field's delimiter */
@@ -276,7 +278,7 @@ char	*pDelim;	/* O pointer to return field's delimiter */
     return count;
 }
 int
-nextIntField(ppText, ppField, pDelim)
+epicsShareAPI nextIntField(ppText, ppField, pDelim)
 char	**ppText;	/* I/O pointer to pointer to text to scan */
 char	**ppField;	/* O pointer to pointer to field */
 char	*pDelim;	/* O pointer to return field's delimiter */
@@ -286,7 +288,7 @@ char	*pDelim;	/* O pointer to return field's delimiter */
 	NEXT_POSTAMBLE
     return count;
 }
-int epicsShareAPI 
+epicsShareFunc int epicsShareAPI 
 nextIntFieldAsInt(ppText, pIntVal, pDelim)
 char	**ppText;	/* I/O pointer to pointer to text to scan */
 int	*pIntVal;	/* O pointer to return field's value */
@@ -305,7 +307,7 @@ char	*pDelim;	/* O pointer to return field's delimiter */
 
     return count;
 }
-int epicsShareAPI
+epicsShareFunc int epicsShareAPI
 nextIntFieldAsLong(ppText, pLongVal, pDelim)
 char	**ppText;	/* I/O pointer to pointer to text to scan */
 long	*pLongVal;	/* O pointer to return field's value */
@@ -325,7 +327,7 @@ char	*pDelim;	/* O pointer to return field's delimiter */
     return count;
 }
 int
-nextNonSpace(ppText)
+epicsShareAPI nextNonSpace(ppText)
 char	**ppText;	/* I/O pointer to pointer to text to scan */
 {
     while (isspace(**ppText))
@@ -333,7 +335,7 @@ char	**ppText;	/* I/O pointer to pointer to text to scan */
     return 0;
 }
 int
-nextNonSpaceField(ppText, ppField, pDelim)
+epicsShareAPI nextNonSpaceField(ppText, ppField, pDelim)
 char	**ppText;	/* I/O pointer to pointer to text to scan */
 char	**ppField;	/* O pointer to pointer to field */
 char	*pDelim;	/* O pointer to return field's delimiter */

@@ -5,6 +5,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.2  1997/04/10 19:59:24  jhill
+ * api changes
+ *
  * Revision 1.1  1996/06/25 19:11:32  jbk
  * new in EPICS base
  *
@@ -15,9 +18,11 @@
 
 #define AIT_TYPES_SOURCE 1
 #include <sys/types.h>
+
+#define epicsExportSharedSymbols
 #include "aitTypes.h"
 
-epicsShareDecl const size_t aitSize[aitTotal] = {
+epicsShareDef const size_t aitSize[aitTotal] = {
 	0,
 	sizeof(aitInt8),
 	sizeof(aitUint8),
@@ -33,7 +38,7 @@ epicsShareDecl const size_t aitSize[aitTotal] = {
 	0
 };
 
-epicsShareDecl const char* aitName[aitTotal] = {
+epicsShareDef const char* aitName[aitTotal] = {
 	"aitInvalid",
 	"aitInt8",
 	"aitUint8",
@@ -49,7 +54,7 @@ epicsShareDecl const char* aitName[aitTotal] = {
 	"aitContainer"
 };
 
-epicsShareDecl const char* aitStringType[aitTotal] = {
+epicsShareDef const char* aitStringType[aitTotal] = {
 	"%8.8x",
 	"%2.2x",
 	"%2.2x",

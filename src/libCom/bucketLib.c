@@ -41,9 +41,10 @@
 #include <math.h>
 #include <time.h>
 
+#define epicsExportSharedSymbols
 #include "epicsAssert.h"
+#include "freeList.h"	/* bucketLib uses freeListLib inside the DLL */
 #include "bucketLib.h"
-#include "freeList.h"
 
 #ifndef TRUE
 #define TRUE 1
@@ -317,7 +318,7 @@ LOCAL BUCKETID bucketStringHash (BUCKET *pb, const void *pId)
 /*
  * bucketCreate()
  */
-BUCKET  *bucketCreate (unsigned nHashTableEntries)
+epicsShareFunc BUCKET * epicsShareAPI bucketCreate (unsigned nHashTableEntries)
 {
 	BUCKETID	mask;
 	unsigned	nbits;
@@ -378,12 +379,7 @@ BUCKET  *bucketCreate (unsigned nHashTableEntries)
 /*
  * bucketFree()
  */
-#ifdef __STDC__
-int	bucketFree (BUCKET *prb)
-#else
-int	bucketFree (prb)
-BUCKET	*prb;
-#endif
+epicsShareFunc int epicsShareAPI bucketFree (BUCKET *prb)
 {
 	/*
 	 * deleting a bucket with entries in use
@@ -405,15 +401,18 @@ BUCKET	*prb;
 /*
  * bucketAddItem()
  */
-int	bucketAddItemUnsignedId(BUCKET *prb, const unsigned *pId, const void *pApp)
+epicsShareFunc int epicsShareAPI 
+	bucketAddItemUnsignedId(BUCKET *prb, const unsigned *pId, const void *pApp)
 {
 	return bucketAddItem(prb, &BSET[bidtUnsigned], pId, pApp);
 }
-int	bucketAddItemPointerId(BUCKET *prb, void * const *pId, const void *pApp)
+epicsShareFunc int epicsShareAPI 
+	bucketAddItemPointerId(BUCKET *prb, void * const *pId, const void *pApp)
 {
 	return bucketAddItem(prb, &BSET[bidtPointer], pId, pApp);
 }
-int	bucketAddItemStringId(BUCKET *prb, const char *pId, const void *pApp)
+epicsShareFunc int epicsShareAPI 
+	bucketAddItemStringId(BUCKET *prb, const char *pId, const void *pApp)
 {
 	return bucketAddItem(prb, &BSET[bidtString], pId, pApp);
 }
@@ -462,15 +461,18 @@ LOCAL int bucketAddItem(BUCKET *prb, bucketSET *pBSET, const void *pId, const vo
 /*
  * bucketRemoveItem()
  */
-int	bucketRemoveItemUnsignedId (BUCKET *prb, const unsigned *pId)
+epicsShareFunc int epicsShareAPI 
+	bucketRemoveItemUnsignedId (BUCKET *prb, const unsigned *pId)
 {
 	return bucketRemoveItem(prb, &BSET[bidtUnsigned], pId);
 }
-int	bucketRemoveItemPointerId (BUCKET *prb, void * const *pId)
+epicsShareFunc int epicsShareAPI 
+	bucketRemoveItemPointerId (BUCKET *prb, void * const *pId)
 {
 	return bucketRemoveItem(prb, &BSET[bidtPointer], pId);
 }
-int	bucketRemoveItemStringId (BUCKET *prb, const char *pId)
+epicsShareFunc int epicsShareAPI 
+	bucketRemoveItemStringId (BUCKET *prb, const char *pId)
 {
 	return bucketRemoveItem(prb, &BSET[bidtString], pId);
 }
@@ -508,15 +510,18 @@ LOCAL int bucketRemoveItem (BUCKET *prb, bucketSET *pBSET, const void *pId)
 /*
  * bucketLookupItem()
  */
-void 	*bucketLookupItemUnsignedId (BUCKET *prb, const unsigned *pId)
+epicsShareFunc void * epicsShareAPI
+ 	bucketLookupItemUnsignedId (BUCKET *prb, const unsigned *pId)
 {
 	return bucketLookupItem(prb, &BSET[bidtUnsigned], pId);
 }
-void	*bucketLookupItemPointerId (BUCKET *prb, void * const *pId)
+epicsShareFunc void * epicsShareAPI
+	bucketLookupItemPointerId (BUCKET *prb, void * const *pId)
 {
 	return bucketLookupItem(prb, &BSET[bidtPointer], pId);
 }
-void	*bucketLookupItemStringId (BUCKET *prb, const char *pId)
+epicsShareFunc void * epicsShareAPI
+	bucketLookupItemStringId (BUCKET *prb, const char *pId)
 {
 	return bucketLookupItem(prb, &BSET[bidtString], pId);
 }
@@ -547,12 +552,7 @@ LOCAL void *bucketLookupItem (BUCKET *pb, bucketSET *pBSET, const void *pId)
 /*
  * bucketShow()
  */
-#ifdef __STDC__
-int	bucketShow(BUCKET *pb)
-#else
-int	bucketShow(pb)
-BUCKET *pb;
-#endif
+epicsShareFunc int epicsShareAPI bucketShow(BUCKET *pb)
 {
 	ITEM 		**ppi;
 	ITEM 		*pi;

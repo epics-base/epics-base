@@ -61,6 +61,8 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #include <string.h>
 #include <stdlib.h>
 #include <stddef.h>
+
+#define epicsExportSharedSymbols
 #include "freeList.h"
 
 typedef struct allocMem {
@@ -78,7 +80,8 @@ typedef struct {
 #endif
 }FREELISTPVT;
 
-void freeListInitPvt(void **ppvt,int size,int nmalloc)
+epicsShareFunc void epicsShareAPI 
+	freeListInitPvt(void **ppvt,int size,int nmalloc)
 {
     FREELISTPVT	*pfl;
     pfl = (void *)calloc((size_t)1,(size_t)sizeof(FREELISTPVT));
@@ -101,7 +104,7 @@ void freeListInitPvt(void **ppvt,int size,int nmalloc)
     return;
 }
 
-void *freeListCalloc(void *pvt)
+epicsShareFunc void * epicsShareAPI freeListCalloc(void *pvt)
 {
     FREELISTPVT *pfl = pvt;
     void	*ptemp;
@@ -111,7 +114,7 @@ void *freeListCalloc(void *pvt)
     return(ptemp);
 }
 
-void *freeListMalloc(void *pvt)
+epicsShareFunc void * epicsShareAPI freeListMalloc(void *pvt)
 {
     FREELISTPVT *pfl = pvt;
     void	*ptemp;
@@ -154,7 +157,7 @@ void *freeListMalloc(void *pvt)
     return(ptemp);
 }
 
-void freeListFree(void *pvt,void*pmem)
+epicsShareFunc void epicsShareAPI freeListFree(void *pvt,void*pmem)
 {
     FREELISTPVT	*pfl = pvt;
     void	**ppnext;
@@ -171,7 +174,7 @@ void freeListFree(void *pvt,void*pmem)
 #endif
 }
 
-void freeListCleanup(void *pvt)
+epicsShareFunc void epicsShareAPI freeListCleanup(void *pvt)
 {
     FREELISTPVT *pfl = pvt;
     allocMem	*phead;
@@ -187,7 +190,7 @@ void freeListCleanup(void *pvt)
     free(pvt);
 }
 
-size_t freeListItemsAvail(void *pvt)
+epicsShareFunc size_t epicsShareAPI freeListItemsAvail(void *pvt)
 {
     FREELISTPVT *pfl = pvt;
     return pfl->nBlocksAvailable;

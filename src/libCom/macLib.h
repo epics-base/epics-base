@@ -11,6 +11,7 @@
 #include "ellLib.h"
 #include "epicsPrint.h"
 #include "errMdef.h"
+#include "shareLib.h"
 
 /*
  * Standard FALSE and TRUE macros
@@ -98,8 +99,8 @@ typedef struct mac_entry {
 /*
  * Function prototypes (core library)
  */
-long				/* 0 = OK; <0 = ERROR */
-macCreateHandle(
+epicsShareFunc long		/* 0 = OK; <0 = ERROR */
+epicsShareAPI macCreateHandle(
     MAC_HANDLE	**handle,	/* address of variable to receive pointer */
 				/* to new macro substitution context */
 
@@ -109,9 +110,9 @@ macCreateHandle(
 				/* argument implies no macros */
 );
 
-long				/* #chars copied, <0 if any macros are */
+epicsShareFunc long		/* #chars copied, <0 if any macros are */
 				/* undefined */
-macExpandString(
+epicsShareAPI macExpandString(
     MAC_HANDLE	*handle,	/* opaque handle */
 
     char	*src,		/* source string */
@@ -122,8 +123,8 @@ macExpandString(
 				/* to destination string */
 );
 
-long				/* length of value */
-macPutValue(
+epicsShareFunc long		/* length of value */
+epicsShareAPI macPutValue(
     MAC_HANDLE	*handle,	/* opaque handle */
 
     char	*name,		/* macro name */
@@ -131,8 +132,8 @@ macPutValue(
     char	*value		/* macro value */
 );
 
-long				/* #chars copied (<0 if undefined) */
-macGetValue(
+epicsShareFunc long		/* #chars copied (<0 if undefined) */
+epicsShareAPI macGetValue(
     MAC_HANDLE	*handle,	/* opaque handle */
 
     char	*name,		/* macro name or reference */
@@ -144,31 +145,31 @@ macGetValue(
 				/* to value */
 );
 
-long				/* 0 = OK; <0 = ERROR */
-macDeleteHandle(
+epicsShareFunc long		/* 0 = OK; <0 = ERROR */
+epicsShareAPI macDeleteHandle(
     MAC_HANDLE	*handle		/* opaque handle */
 );
 
-long				/* 0 = OK; <0 = ERROR */
-macPushScope(
+epicsShareFunc long		/* 0 = OK; <0 = ERROR */
+epicsShareAPI macPushScope(
     MAC_HANDLE	*handle		/* opaque handle */
 );
 
-long				/* 0 = OK; <0 = ERROR */
-macPopScope(
+epicsShareFunc long		/* 0 = OK; <0 = ERROR */
+epicsShareAPI macPopScope(
     MAC_HANDLE	*handle		/* opaque handle */
 );
 
-long				/* 0 = OK; <0 = ERROR */
-macReportMacros(
+epicsShareFunc long		/* 0 = OK; <0 = ERROR */
+epicsShareAPI macReportMacros(
     MAC_HANDLE	*handle		/* opaque handle */
 );
 
 /*
  * Function prototypes (utility library)
  */
-long				/* #defns encountered; <0 = ERROR */
-macParseDefns(
+epicsShareFunc long		/* #defns encountered; <0 = ERROR */
+epicsShareAPI macParseDefns(
     MAC_HANDLE	*handle,	/* opaque handle; can be NULL if default */
 				/* special characters are to be used */
 
@@ -181,8 +182,8 @@ macParseDefns(
 				/* allocated contiguously */
 );
 
-long				/* #macros defined; <0 = ERROR */
-macInstallMacros(
+epicsShareFunc long		/* #macros defined; <0 = ERROR */
+epicsShareAPI macInstallMacros(
     MAC_HANDLE	*handle,	/* opaque handle */
 
     char	*pairs[]	/* pointer to NULL-terminated array of */
@@ -192,6 +193,9 @@ macInstallMacros(
 );
 
 /* $Log$
+ * Revision 1.2  1996/09/16 21:07:10  jhill
+ * fixed warnings
+ *
  * Revision 1.1  1996/07/10 14:49:51  mrk
  * added macLib
  *

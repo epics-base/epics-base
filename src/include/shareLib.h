@@ -11,9 +11,10 @@
  * In header files, declare variables, classes and functions
  * to be __exported__ like this:
  *
- *	epicsShareAPI     int a_func (int arg); reference function 
+ *	epicsShareFunc int epicsShareAPI 
+ *			a_func (int arg); 	function prototype
  *	epicsShareExtern  int a_var; 		reference variable 
- *	epicsShareDecl int a_var= 4; 		create variable instance 
+ *	epicsShareDef int a_var= 4; 		create variable instance 
  *	class epicsShareClass a_class; 		reference a class 
  *
  * Usually the epicsShare... macros expand to
@@ -35,8 +36,9 @@
  */
 
 #undef epicsShareExtern
-#undef epicsShareDecl
+#undef epicsShareDef
 #undef epicsShareClass
+#undef epicsShareFunc
 #undef epicsShareAPI
 #undef READONLY
 
@@ -45,15 +47,19 @@
 #	if defined(epicsExportSharedSymbols)
 #		define epicsShareExtern __declspec(dllexport) extern
 #		define epicsShareClass  __declspec(dllexport) 
+#		define epicsShareFunc  __declspec(dllexport)
 #	else
 #		define epicsShareExtern __declspec(dllimport) extern
 #		define epicsShareClass  __declspec(dllimport) 
+#		define epicsShareFunc  __declspec(dllimport)
 #	endif
 	/*
 	 * Subroutine removes arguments 
+	 * (Bill does not allow __stdcall to be next to
+	 * __declspec(xxxx))
 	 */
 #	define epicsShareAPI __stdcall
-#	define epicsShareDecl __declspec(dllexport)
+#	define epicsShareDef __declspec(dllexport)
 #       define READONLY const
 
 #elif defined(VAXC)
@@ -69,16 +75,21 @@
 	 * 	also does not have this problem.
 	 */
 #	define epicsShareExtern globalref 
-#	define epicsShareDecl globaldef 
+#	define epicsShareDef globaldef 
 #       define READONLY const
+#	define epicsShareClass
+#	define epicsShareFunc
+#	define epicsShareAPI
+
 #else
 
-/* no WIN32 -> no import/export specifiers */
+/* else => no import/export specifiers */
 
 #	define epicsShareExtern extern
 #	define epicsShareAPI
 #	define epicsShareClass
-#	define epicsShareDecl 
+#	define epicsShareDef 
+#	define epicsShareFunc
 #	if defined(__STDC__)
 #		define READONLY const
 #	else

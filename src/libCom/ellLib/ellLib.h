@@ -37,6 +37,8 @@
 extern "C" {
 #endif
 
+#include "shareLib.h"
+
 #define DLLLIB_USE_MACROS
 
 struct ELLNODE {
@@ -71,25 +73,25 @@ typedef struct ELLLIST ELLLIST;
 
 #else				/*DLLLIB_USE_MACROS*/
 
-void ellInit      (ELLLIST *pList);
-int  ellCount     (ELLLIST *pList);
-ELLNODE *ellFirst    (ELLLIST *pList);
-ELLNODE *ellLast     (ELLLIST *pList);
-ELLNODE *ellNext     (ELLNODE *pNode);
-ELLNODE *ellPrevious (ELLNODE *pNode);
+epicsShareFunc void epicsShareAPI ellInit (ELLLIST *pList);
+epicsShareFunc int epicsShareAPI ellCount (ELLLIST *pList);
+epicsShareFunc ELLNODE * epicsShareAPI ellFirst (ELLLIST *pList);
+epicsShareFunc ELLNODE * epicsShareAPI ellLast (ELLLIST *pList);
+epicsShareFunc ELLNODE * epicsShareAPI ellNext (ELLNODE *pNode);
+epicsShareFunc ELLNODE * epicsShareAPI ellPrevious (ELLNODE *pNode);
 
 #endif				/*DLLLIB_USE_MACROS*/
 
-void ellAdd       (ELLLIST *pList, ELLNODE *pNode);
-void ellConcat    (ELLLIST *pDstList, ELLLIST *pAddList);
-void ellDelete    (ELLLIST *pList, ELLNODE *pNode);
-void ellExtract   (ELLLIST *pSrcList, ELLNODE *pStartNode, ELLNODE *pEndNode, ELLLIST *pDstList);
-ELLNODE *ellGet      (ELLLIST *pList);
-void ellInsert    (ELLLIST *plist, ELLNODE *pPrev, ELLNODE *pNode);
-ELLNODE *ellNth      (ELLLIST *pList, int nodeNum);
-ELLNODE *ellNStep    (ELLNODE *pNode, int nStep);
-int  ellFind      (ELLLIST *pList, ELLNODE *pNode);
-void ellFree      (ELLLIST *pList);
+epicsShareFunc void epicsShareAPI ellAdd (ELLLIST *pList, ELLNODE *pNode);
+epicsShareFunc void epicsShareAPI ellConcat (ELLLIST *pDstList, ELLLIST *pAddList);
+epicsShareFunc void epicsShareAPI ellDelete (ELLLIST *pList, ELLNODE *pNode);
+epicsShareFunc void epicsShareAPI ellExtract (ELLLIST *pSrcList, ELLNODE *pStartNode, ELLNODE *pEndNode, ELLLIST *pDstList);
+epicsShareFunc ELLNODE * epicsShareAPI ellGet (ELLLIST *pList);
+epicsShareFunc void epicsShareAPI ellInsert (ELLLIST *plist, ELLNODE *pPrev, ELLNODE *pNode);
+epicsShareFunc ELLNODE * epicsShareAPI ellNth (ELLLIST *pList, int nodeNum);
+epicsShareFunc ELLNODE * epicsShareAPI ellNStep (ELLNODE *pNode, int nStep);
+epicsShareFunc int  epicsShareAPI ellFind (ELLLIST *pList, ELLNODE *pNode);
+epicsShareFunc void epicsShareAPI ellFree (ELLLIST *pList);
 
 #else				/*__STDC__*/
 
@@ -120,16 +122,16 @@ ELLNODE *ellPrevious ();
 
 #endif				/*DLLLIB_USE_MACROS*/
 
-void ellAdd ();
-void ellConcat ();
-void ellDelete ();
-void ellExtract ();
-ELLNODE *ellGet ();
-void ellInsert ();
-ELLNODE *ellNth ();
-ELLNODE *ellNStep ();
-int  ellFind ();
-void ellFree ();
+epicsShareFunc void epicsShareAPI ellAdd ();
+epicsShareFunc void epicsShareAPI ellConcat ();
+epicsShareFunc void epicsShareAPI ellDelete ();
+epicsShareFunc void epicsShareAPI ellExtract ();
+epicsShareFunc ELLNODE * epicsShareAPI ellGet ();
+epicsShareFunc void epicsShareAPI ellInsert ();
+epicsShareFunc ELLNODE * epicsShareAPI ellNth ();
+epicsShareFunc ELLNODE * epicsShareAPI ellNStep ();
+epicsShareFunc int epicsShareAPI ellFind ();
+epicsShareFunc void epicsShareAPI ellFree ();
 #endif				/*__STDC__*/
 
 #ifdef __cplusplus

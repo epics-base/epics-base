@@ -27,6 +27,9 @@
  * Modification Log: 
  * -----------------
  * $Log$
+ * Revision 1.7  1997/04/10 19:45:16  jhill
+ * API changes and include with  not <>
+ *
  * Revision 1.6  1997/01/22 22:07:22  jhill
  * doc
  *
@@ -50,6 +53,7 @@
 #include <vxWorks.h>
 #include <taskLib.h>
 
+#define epicsExportSharedSymbols
 #include "epicsAssert.h"
 #include "epicsPrint.h"
 #include "epicsVersion.h"

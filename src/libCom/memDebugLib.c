@@ -33,6 +33,7 @@
 #include <string.h>
 #include <time.h>
 
+#define  epicsExportSharedSymbols
 #include "epicsAssert.h"
 #include "ellLib.h"
 

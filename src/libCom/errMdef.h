@@ -59,6 +59,7 @@ extern "C" {
 #endif
 
 #include "ellLib.h"
+#include "shareLib.h"
 
 #define RTN_SUCCESS(STATUS) ((STATUS)==0)
 
@@ -95,31 +96,31 @@ extern "C" {
          errPrintf(S, __FILE__, __LINE__, PM)
 
 #ifdef errMDefUseProtoANSI
-int errSymFind(long status, char *name);
-int UnixSymFind(long status, char *name, long *value);
-int ModSymFind(long status, char *name, long *value);
-void errSymTest(unsigned short modnum, unsigned short begErrNum, unsigned short endErrNum);
-void errSymTestPrint(long errNum);
-int errSymBld();
-int errSymbolAdd (long errNum,char *name);
-void errPrintf(long status, const char *pFileName, 
+epicsShareFunc int epicsShareAPI errSymFind(long status, char *name);
+epicsShareFunc int epicsShareAPI UnixSymFind(long status, char *name, long *value);
+epicsShareFunc int epicsShareAPI ModSymFind(long status, char *name, long *value);
+epicsShareFunc void epicsShareAPI errSymTest(unsigned short modnum, unsigned short begErrNum, unsigned short endErrNum);
+epicsShareFunc void epicsShareAPI errSymTestPrint(long errNum);
+epicsShareFunc int epicsShareAPI errSymBld();
+epicsShareFunc int epicsShareAPI errSymbolAdd (long errNum,char *name);
+epicsShareFunc void epicsShareAPI errPrintf(long status, const char *pFileName, 
 	int lineno, const char *pformat, ...);
-void errSymDump();
-void tstErrSymFind();
-void errInit(void);
+epicsShareFunc void epicsShareAPI errSymDump();
+epicsShareFunc void epicsShareAPI tstErrSymFind();
+epicsShareFunc void epicsShareAPI errInit(void);
 
 #else /* errMDefUseProtoANSI */ 
 
-void errSymTest();
-int errSymFind();
-int UnixSymFind();
-int ModSymFind();
-void errSymTestPrint();
-int errSymBld();
-int errSymbolAdd();
-void errPrintf();
-void errSymDump();
-void tstErrSymFind();
+epicsShareFunc void epicsShareAPI errSymTest();
+epicsShareFunc int epicsShareAPI errSymFind();
+epicsShareFunc int epicsShareAPI UnixSymFind();
+epicsShareFunc int epicsShareAPI ModSymFind();
+epicsShareFunc void epicsShareAPI errSymTestPrint();
+epicsShareFunc int epicsShareAPI errSymBld();
+epicsShareFunc int epicsShareAPI errSymbolAdd();
+epicsShareFunc void epicsShareAPI errPrintf();
+epicsShareFunc void epicsShareAPI errSymDump();
+epicsShareFunc void epicsShareAPI tstErrSymFind();
 #endif /* errMDefUseProtoANSI */ 
 
 extern int errVerbose;

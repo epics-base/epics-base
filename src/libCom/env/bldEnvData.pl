@@ -124,14 +124,14 @@ foreach $var ( sort keys %need_var )
 		print "Cannot find value for $var\n";
 	}
 
-	printf OUT "epicsShareDecl const ENV_PARAM %s = { \"%s\", \"%s\" };\n",
+	printf OUT "epicsShareDef const ENV_PARAM %s = { \"%s\", \"%s\" };\n",
 		$var, $var, $default;
 }
 
 # Now create an array pointing to all parameters
 
 print OUT "\n";
-print OUT "epicsShareDecl const ENV_PARAM* env_param_list[EPICS_ENV_VARIABLE_COUNT+1] =\n";
+print OUT "epicsShareDef const ENV_PARAM* env_param_list[EPICS_ENV_VARIABLE_COUNT+1] =\n";
 print OUT "{\n";
 
 # Contents are the addresses of each parameter

@@ -98,6 +98,7 @@ char *alloca ();
    GNU application programs can use a third alternative mode in which
    they can distinguish the relative order of options and other arguments.  */
 
+#define epicsExportSharedSymbols
 #include "getopt.h"
 
 /* For communication from `getopt' to the caller.
@@ -106,7 +107,7 @@ char *alloca ();
    Also, when `ordering' is RETURN_IN_ORDER,
    each non-option ARGV-element is returned here.  */
 
-char *optarg = 0;
+epicsShareDef char *optarg = 0;
 
 /* Index in ARGV of the next element to be scanned.
    This is used for communication to and from the caller
@@ -121,7 +122,7 @@ char *optarg = 0;
    how much of ARGV has been scanned so far.  */
 
 /* XXX 1003.2 says this must be 1 before any call.  */
-int optind = 0;
+epicsShareDef int optind = 0;
 
 /* The next char to be scanned in the option-element
    in which the last option character we returned was found.
@@ -135,13 +136,13 @@ static char *nextchar;
 /* Callers store zero here to inhibit the error message
    for unrecognized options.  */
 
-int opterr = 1;
+epicsShareDef int opterr = 1;
 
 /* Set to an option character which was unrecognized.
    This must be initialized on some systems to avoid linking in the
    system's own getopt implementation.  */
 
-int optopt = '?';
+epicsShareDef int optopt = '?';
 
 /* Describe how to deal with options that follow non-option ARGV-elements.
 
@@ -648,7 +649,7 @@ _getopt_internal (argc, argv, optstring, longopts, longind, long_only)
   }
 }
 
-int
+int epicsShareAPI
 getopt (argc, argv, optstring)
      int argc;
      char *const *argv;

@@ -55,6 +55,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <limits.h>		/* XPG2/XPG3/POSIX.1/FIPS151-1/ANSI-C */
+#define epicsExportSharedSymbols
 #include "cvtFast.h"
 
 /*
@@ -64,7 +65,7 @@
 static long	frac_multiplier[] =
 	{1,10,100,1000,10000,100000,1000000,10000000,100000000};
 
-int cvtFloatToString(
+int epicsShareAPI cvtFloatToString(
 	float flt_value,
 	char  *pstr_value,
 	unsigned short precision)
@@ -138,7 +139,7 @@ int cvtFloatToString(
         return((int)(pstr_value - startAddr));
 }
 
-int cvtDoubleToString(
+int epicsShareAPI cvtDoubleToString(
 	double flt_value,
 	char  *pstr_value,
 	unsigned short precision)
@@ -223,7 +224,7 @@ int cvtDoubleToString(
  *
  * converts floating point numbers to E-format NULL terminated strings
  */
-int cvtFloatToExpString(
+int epicsShareAPI cvtFloatToExpString(
   float			f_value,
   char			*pstr_value,
   unsigned short	f_precision)
@@ -240,7 +241,7 @@ int cvtFloatToExpString(
  * resulting in the most "compact" expression of the value
  * ("f" notation if 10-4 < |value| < 10+4, otherwise "e" notation)
  */
-int cvtFloatToCompactString(
+int epicsShareAPI cvtFloatToCompactString(
   float			f_value,
   char			*pstr_value,
   unsigned short	f_precision )
@@ -262,7 +263,7 @@ int cvtFloatToCompactString(
  *	terminated strings
  */
 
-int cvtDoubleToExpString(
+int epicsShareAPI cvtDoubleToExpString(
   double		f_value,
   char			*pstr_value,
   unsigned short	f_precision )
@@ -280,7 +281,7 @@ int cvtDoubleToExpString(
  *	of the value ("f" notation if 10-4 < |value| < 10+4, otherwise
  *	"e" notation)
  */
-int cvtDoubleToCompactString(
+int epicsShareAPI cvtDoubleToCompactString(
   double		f_value,
   char			*pstr_value,
   unsigned short	f_precision )
@@ -297,7 +298,7 @@ int cvtDoubleToCompactString(
 
 static char digit_to_ascii[10]={'0','1','2','3','4','5','6','7','8','9'};
 
-int cvtCharToString(
+int epicsShareAPI cvtCharToString(
 	char source,
 	char *pdest)
 {
@@ -333,7 +334,7 @@ int cvtCharToString(
 }
 
 
-int cvtUcharToString(
+int epicsShareAPI cvtUcharToString(
     unsigned char source,
     char	  *pdest)
 {
@@ -361,7 +362,7 @@ int cvtUcharToString(
 }
 
 
-int cvtShortToString(
+int epicsShareAPI cvtShortToString(
     short source,
     char  *pdest)
 {
@@ -397,7 +398,7 @@ int cvtShortToString(
 }
 
 
-int cvtUshortToString(
+int epicsShareAPI cvtUshortToString(
     unsigned short source,
     char	  *pdest)
 {
@@ -425,7 +426,7 @@ int cvtUshortToString(
 }
 
 
-int cvtLongToString(
+int epicsShareAPI cvtLongToString(
     long source,
     char  *pdest)
 {
@@ -461,7 +462,7 @@ int cvtLongToString(
 }
 
 
-int cvtUlongToString(
+int epicsShareAPI cvtUlongToString(
     unsigned long source,
     char	  *pdest)
 {
@@ -495,7 +496,7 @@ static char hex_digit_to_ascii[16]={'0','1','2','3','4','5','6','7','8','9',
 		'a','b','c','d','e','f'};
 
 
-int cvtLongToHexString(
+int epicsShareAPI cvtLongToHexString(
     long source,
     char  *pdest)
 {
@@ -531,7 +532,7 @@ int cvtLongToHexString(
 }
 
 
-int cvtLongToOctalString(
+int epicsShareAPI cvtLongToOctalString(
     long source,
     char  *pdest)
 {
@@ -576,7 +577,7 @@ int cvtLongToOctalString(
  *
  * extract a bit field from the source unsigend long
  */
-unsigned long cvtBitsToUlong(
+unsigned long epicsShareAPI cvtBitsToUlong(
 unsigned long   src,
 unsigned        bitFieldOffset,
 unsigned        bitFieldLength)
@@ -601,7 +602,7 @@ unsigned        bitFieldLength)
  * insert a bit field from the source unsigend long
  * into the destination unsigned long
  */
-unsigned long cvtUlongToBits(
+unsigned long epicsShareAPI cvtUlongToBits(
 unsigned long   src,
 unsigned long   dest,
 unsigned        bitFieldOffset,

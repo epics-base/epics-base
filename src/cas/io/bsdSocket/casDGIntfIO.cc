@@ -387,9 +387,6 @@ casDGIntfIO::osdSend ( const char * pBufIn, bufSizeT size, // X aCC 361
 //
 // casDGIntfIO::incomingBytesPresent()
 //
-// ok to return a size of one here when a datagram is present, and
-// zero otherwise.
-//
 bufSizeT casDGIntfIO::incomingBytesPresent () const // X aCC 361
 {
 	int status;
@@ -398,15 +395,8 @@ bufSizeT casDGIntfIO::incomingBytesPresent () const // X aCC 361
 	status = socket_ioctl ( this->sock, FIONREAD, & nchars ); // X aCC 392
 	if ( status < 0 ) {
         int localError = SOCKERRNO;
-        if (
-            localError != SOCK_ECONNABORTED &&
-            localError != SOCK_ECONNRESET &&
-            localError != SOCK_EPIPE &&
-            localError != SOCK_ETIMEDOUT ) 
-        {
-		    errlogPrintf ( "CAS: FIONREAD failed because \"%s\"\n",
-			    SOCKERRSTR ( localError ) );
-        }
+		errlogPrintf ( "CAS: FIONREAD failed because \"%s\"\n",
+			SOCKERRSTR ( localError ) );
 		return 0u;
 	}
 	else if ( nchars < 0 ) {

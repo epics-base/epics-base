@@ -140,7 +140,8 @@ epicsShareDef CACVRTFUNC *cac_dbr_cvrt[]
 
 	cvrt_put_ackt,  
 	cvrt_put_ackt, /* DBR_PUT_ACKS identical to DBR_PUT_ACKT */
-	cvrt_stsack_string
+	cvrt_stsack_string,
+	cvrt_string
 	};
 
 

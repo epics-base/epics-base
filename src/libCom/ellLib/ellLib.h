@@ -54,19 +54,19 @@ typedef struct ELLLIST {
 
 #ifdef DLLLIB_USE_MACROS
 
-#define ellInit(PLIST)	{ ((ELLLIST *)(PLIST))->node.next = NULL;\
-			  ((ELLLIST *)(PLIST))->node.previous = NULL;\
-			  ((ELLLIST *)(PLIST))->count = 0; }
+#define ellInit(PLIST)	{ (PLIST)->node.next = NULL;\
+			  (PLIST)->node.previous = NULL;\
+			  (PLIST)->count = 0; }
 
-#define ellCount(PLIST)		(((ELLLIST *)(PLIST))->count)
+#define ellCount(PLIST)		((PLIST)->count)
 
-#define	ellFirst(PLIST)		(((ELLLIST *)(PLIST))->node.next)
+#define	ellFirst(PLIST)		((PLIST)->node.next)
 
-#define ellLast(PLIST)		(((ELLLIST *)(PLIST))->node.previous)
+#define ellLast(PLIST)		((PLIST)->node.previous)
 
-#define ellNext(PNODE)		(((ELLNODE *)(PNODE))->next)
+#define ellNext(PNODE)		((PNODE)->next)
 
-#define	ellPrevious(PNODE)	(((ELLNODE *)(PNODE))->previous)
+#define	ellPrevious(PNODE)	((PNODE)->previous)
 
 #else				/*DLLLIB_USE_MACROS*/
 

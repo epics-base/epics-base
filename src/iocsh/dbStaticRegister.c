@@ -148,12 +148,11 @@ static void dbPvdDumpCallFunc(const iocshArgBuf *args)
 
 /* dbReportDeviceConfig */
 static const iocshArg dbReportDeviceConfigArg0 = { "pdbbase",iocshArgPdbbase};
-static const iocshArg dbReportDeviceConfigArg1 = { "verbose",iocshArgInt};
-static const iocshArg * const dbReportDeviceConfigArgs[2] = {&dbReportDeviceConfigArg0,&dbReportDeviceConfigArg1};
-static const iocshFuncDef dbReportDeviceConfigFuncDef = {"dbReportDeviceConfig",2,dbReportDeviceConfigArgs};
+static const iocshArg * const dbReportDeviceConfigArgs[] = {&dbReportDeviceConfigArg0};
+static const iocshFuncDef dbReportDeviceConfigFuncDef = {"dbReportDeviceConfig",1,dbReportDeviceConfigArgs};
 static void dbReportDeviceConfigCallFunc(const iocshArgBuf *args)
 {
-    dbReportDeviceConfig(pdbbase,args[1].ival);
+    dbReportDeviceConfig(pdbbase,stdout);
 }
 
 void epicsShareAPI dbStaticRegister(void)

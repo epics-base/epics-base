@@ -1,0 +1,17 @@
+# $Id$
+#
+# Definitions for linux-x86 host - linux-mpc82xx target builds
+# Sites may override these definitions in CONFIG_SITE.linux-x86.linux-mpc82xx
+#-------------------------------------------------------
+
+# Include common gnu compiler definitions
+include $(CONFIG)/CONFIG.gnuCommon
+
+GNU_DIR = /opt/hardhat/devkit/ppc/82xx
+GNU_TARGET_INCLUDE_DIR = $(GNU_DIR)/target/usr/include/
+
+CC = $(GNU_BIN)/ppc_82xx-gcc
+CCC = $(GNU_BIN)/ppc_82xx-g++
+
+# Override the -nostdinc flag, needed here...
+CROSS_CPPFLAGS =

@@ -1,0 +1,13 @@
+# $Id$
+#
+# Definitions for linux-mpc82xx host - linux-mpc82xx target builds
+# Sites may override these definitions in CONFIG_SITE.linux-mpc82xx.linux-mpc82xx
+#-------------------------------------------------------
+
+# Include common gnu compiler definitions
+include $(CONFIG)/CONFIG.gnuCommon
+
+GNU_DIR = /usr
+
+CC = $(GNU_BIN)/gcc
+CCC = $(GNU_BIN)/g++

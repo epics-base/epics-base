@@ -98,6 +98,9 @@
 /************************************************************************/
 /*
  * $Log$
+ * Revision 1.73  1995/08/14  19:26:10  jhill
+ * epicsAPI => epicsShareAPI
+ *
  * Revision 1.72  1995/08/12  00:23:32  jhill
  * check for res id in use, epicsEntry, dont wait for itsy bitsy delay
  * in ca_pend_event(), better clean up when monitor is deleted and
@@ -1563,7 +1566,7 @@ void				*usrarg
 		}
 		status = dbPutNotify(&ppn->dbPutNotify);
 		UNLOCK;
-		if(status){
+		if(status && status != S_db_Pending){
 			if(status==S_db_Blocked){
 				return ECA_PUTCBINPROG;
 			}
@@ -2717,8 +2720,15 @@ int epicsShareAPI ca_pend (ca_real timeout, int early)
 		/*
 		 * If we are no longer waiting any significant
 		 * delay then return 
+		 * (dont wait forever for an itsy bitsy
+		 * delay which will no be updated if
+		 * select is called with no delay)
+		 *
+		 * current time is only updated by
+		 * cac_select_io() if we specify
+		 * at least 1 usec to wait
 		 */
-		if (remaining<=1.0e-6) {
+		if (remaining <= (1.0/USEC_PER_SEC)) {
 			if(early){
 				ca_pend_io_cleanup();
 				ca_flush_io();
@@ -2736,12 +2746,9 @@ int epicsShareAPI ca_pend (ca_real timeout, int early)
 		tmo.tv_usec = (long) ((remaining-tmo.tv_sec)*USEC_PER_SEC);
 		cac_block_for_io_completion (&tmo);
 
-		/*
-		 * the current time set within cac_block_for_io_completion ()
-		 * above.
-		 */
 		if (timeout != 0.0) {
-			delay = cac_time_diff (&ca_static->currentTime, &beg_time);
+			delay = cac_time_diff (&ca_static->currentTime, 
+							&beg_time);
 		}
 	}
 }

@@ -1098,14 +1098,27 @@ static int mapGraphicGddToEnum(void* v, aitIndex count, const gdd & dd, const gd
 	vdd.getStatSevr(db->status,db->severity);
 	db->no_str=menu.getDataSizeElements();
 
-	if(str && str!=f)
+	if(str && str!=f && menu.isAtomic() )
 	{
+	    db->no_str=menu.getDataSizeElements();
 		for(i=0;i<db->no_str;i++) {
 			strncpy(&(db->strs[i][0]),str[i].fixed_string, 
 				MAX_ENUM_STRING_SIZE);
 			db->strs[i][MAX_ENUM_STRING_SIZE-1u] = '\0';
 		}
 	}
+    else if (str && menu.isScalar()) {
+        db->no_str = 1;
+		strncpy(&(db->strs[0][0]),str->fixed_string, 
+			MAX_ENUM_STRING_SIZE);
+		db->strs[0][MAX_ENUM_STRING_SIZE-1u] = '\0';
+    }
+    else {
+        db->no_str = 0;
+    }
+	for(i=db->no_str;i<MAX_ENUM_STATES;i++) {
+		db->strs[i][0] = '\0';
+    }
 	return mapGddToEnum(&db->value, count, vdd, enumStringTable);
 }
 
@@ -1119,16 +1132,27 @@ static int mapControlGddToEnum(void* v, aitIndex count, const gdd & dd, const gd
 	int i;
 
 	vdd.getStatSevr(db->status,db->severity);
-	db->no_str=menu.getDataSizeElements();
-
-	if(str && str!=f)
+	if(str && str!=f && menu.isAtomic() )
 	{
+	    db->no_str=menu.getDataSizeElements();
 		for(i=0;i<db->no_str;i++) {
 			strncpy(&(db->strs[i][0]),str[i].fixed_string, 
 				MAX_ENUM_STRING_SIZE);
 			db->strs[i][MAX_ENUM_STRING_SIZE-1u] = '\0';
 		}
 	}
+    else if (str && menu.isScalar()) {
+        db->no_str = 1;
+		strncpy(&(db->strs[0][0]),str->fixed_string, 
+			MAX_ENUM_STRING_SIZE);
+		db->strs[0][MAX_ENUM_STRING_SIZE-1u] = '\0';
+    }
+    else {
+        db->no_str = 0;
+    }
+	for(i=db->no_str;i<MAX_ENUM_STATES;i++) {
+		db->strs[i][0] = '\0';
+    }
 	return mapGddToEnum(&db->value, count, vdd, enumStringTable);
 }
 

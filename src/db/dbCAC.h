@@ -59,7 +59,7 @@ class dbSubscriptionIO : public cacNotifyIO, public tsDLNode <dbSubscriptionIO> 
 public:
     dbSubscriptionIO ( dbChannelIO &chanIO, cacNotify &, unsigned type, unsigned long count );
     void cancel ();
-    int begin ( struct dbAddr &addr, unsigned mask );
+    int begin ( unsigned mask );
     //void destroy ();
     void show ( unsigned level ) const;
     cacChannelIO & channelIO () const;

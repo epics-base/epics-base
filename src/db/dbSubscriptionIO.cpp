@@ -80,7 +80,7 @@ extern "C" void dbSubscriptionEventCallback ( void *pPrivate, struct dbAddr *pad
     pIO->chan.subscriptionUpdate ( pIO->type, pIO->count, pfl, *pIO);
 }
 
-int dbSubscriptionIO::begin ( struct dbAddr &addr, unsigned mask )
+int dbSubscriptionIO::begin ( unsigned mask )
 {
     if ( this->type > INT_MAX ) {
         return ECA_BADCOUNT;

@@ -171,7 +171,7 @@ int dbChannelIO::subscribe ( unsigned type, unsigned long count,
         return ECA_ALLOCMEM;
     }
 
-    int status = pIO->begin ( this->addr, mask );
+    int status = pIO->begin ( mask );
     if ( status == ECA_NORMAL ) {
         pReturnIO = pIO;
     }

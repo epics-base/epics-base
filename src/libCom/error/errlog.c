@@ -54,6 +54,7 @@ LOCAL void *pvtCalloc(size_t count,size_t size);
 typedef struct listenerNode{
     ELLNODE	node;
     errlogListener listener;
+    void *pPrivate;
 }listenerNode;
 
 /*each message consists of a msgNode immediately followed by the message */
@@ -199,7 +200,7 @@ epicsShareFunc errlogSevEnum epicsShareAPI errlogGetSevToLog()
 }
 
 epicsShareFunc void epicsShareAPI errlogAddListener(
-    errlogListener listener)
+    errlogListener listener, void *pPrivate)
 {
     listenerNode *plistenerNode;
 
@@ -207,6 +208,7 @@ epicsShareFunc void epicsShareAPI errlogAddListener(
     plistenerNode = pvtCalloc(1,sizeof(listenerNode));
     semMutexTake(pvtData.listenerLock);
     plistenerNode->listener = listener;
+    plistenerNode->pPrivate = pPrivate;
     ellAdd(&pvtData.listenerList,&plistenerNode->node);
     semMutexGive(pvtData.listenerLock);
 }
@@ -310,6 +312,7 @@ epicsShareFunc int epicsShareAPI errlogInit(int bufsize)
         (THREADFUNC)errlogTask,0);
     /*For now make sure iocLogInit is called*/
     iocLogInit();
+
     return(0);
 }
 
@@ -326,7 +329,7 @@ LOCAL void errlogTask(void)
 	    if(pvtData.toConsole) printf("%s",pmessage);
 	    plistenerNode = (listenerNode *)ellFirst(&pvtData.listenerList);
 	    while(plistenerNode) {
-		(*plistenerNode->listener)(pmessage);
+		(*plistenerNode->listener)(plistenerNode->pPrivate, pmessage);
 		plistenerNode = (listenerNode *)ellNext(&plistenerNode->node);
 	    }
             semMutexGive(pvtData.listenerLock);

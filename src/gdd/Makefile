@@ -47,6 +47,8 @@ aitGen_SRCS = aitTypes.c aitGen.c
 PROD = aitGen genApps
 PROD_vxWorks = genApps
 
+gdd_RCS_WIN32 = gdd.rc
+
 include $(TOP)/configure/RULES
 
 # cannot generate these dependencies automatically

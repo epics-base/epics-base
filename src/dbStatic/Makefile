@@ -30,6 +30,9 @@ PROD_LIBS := dbStaticHost Com
 dbStaticHost_DIR=.
 PROD = dbReadTest dbExpand dbToMenuH dbToRecordtypeH
 
+dbStaticHost_RCS_WIN32 = dbStaticHost.rc
+dbStaticIoc_RCS_WIN32 = dbStaticIoc.rc
+
 include $(TOP)/configure/RULES
 
 # Extra rule since dbLexRoutines.c is included in dbYacc.c

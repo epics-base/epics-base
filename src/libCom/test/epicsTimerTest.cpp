@@ -29,8 +29,6 @@ static const double delayVerifyOffset = 1.0; // sec
 class delayVerify : public epicsTimerNotify {
 public:
     delayVerify ( double expectedDelay, epicsTimerQueue & );
-    void * operator new ( size_t size );
-    void operator delete ( void *pCadaver, size_t size );
     void start ( const epicsTime &expireTime );
     void setBegin ( const epicsTime & );
     double delay () const;
@@ -86,30 +84,6 @@ inline void delayVerify::start ( const epicsTime &expireTime )
     this->timer.start ( *this, expireTime );
 }
 
-#ifdef _MSC_VER
-#   pragma warning ( push )
-#   pragma warning ( disable:4660 )
-#endif
-
-template class tsFreeList < class delayVerify, 0x20 >;
-template class epicsSingleton < tsFreeList < class delayVerify, 0x20 > >;
-
-#ifdef _MSC_VER
-#   pragma warning ( pop )
-#endif
-
-epicsSingleton < tsFreeList < class delayVerify, 0x20 > > delayVerify::pFreeList;
-
-inline void * delayVerify::operator new ( size_t size )
-{
-    return delayVerify::pFreeList->allocate ( size );
-}
-
-inline void delayVerify::operator delete ( void *pCadaver, size_t size )
-{
-    delayVerify::pFreeList->release ( pCadaver, size );
-}
-
 epicsTimerNotify::expireStatus delayVerify::expire ( const epicsTime &currentTime )
 {
     this->expireStamp = currentTime;
@@ -153,8 +127,6 @@ void testAccuracy ()
 class cancelVerify : public epicsTimerNotify {
 public:
     cancelVerify ( epicsTimerQueue & );
-    void * operator new ( size_t size );
-    void operator delete ( void *pCadaver, size_t size );
     void start ( const epicsTime &expireTime );
     void cancel ();
 protected:
@@ -179,30 +151,6 @@ cancelVerify::~cancelVerify ()
 inline void cancelVerify::start ( const epicsTime &expireTime )
 {
     this->timer.start ( *this, expireTime );
-}
-
-#ifdef _MSC_VER
-#   pragma warning ( push )
-#   pragma warning ( disable:4660 )
-#endif
-
-template class tsFreeList < class cancelVerify, 0x20 >;
-template class epicsSingleton < tsFreeList < class cancelVerify, 0x20 > >;
-
-#ifdef _MSC_VER
-#   pragma warning ( pop )
-#endif
-
-epicsSingleton < tsFreeList < class cancelVerify, 0x20 > > cancelVerify::pFreeList;
-
-inline void * cancelVerify::operator new ( size_t size )
-{
-    return cancelVerify::pFreeList->allocate ( size );
-}
-
-inline void cancelVerify::operator delete ( void *pCadaver, size_t size )
-{
-    cancelVerify::pFreeList->release ( pCadaver, size );
 }
 
 inline void cancelVerify::cancel ()
@@ -252,8 +200,6 @@ void testCancel ()
 class expireDestroVerify : public epicsTimerNotify {
 public:
     expireDestroVerify ( epicsTimerQueue & );
-    void * operator new ( size_t size );
-    void operator delete ( void *pCadaver, size_t size );
     void start ( const epicsTime &expireTime );
 protected:
     virtual ~expireDestroVerify ();
@@ -276,30 +222,6 @@ expireDestroVerify::~expireDestroVerify ()
 inline void expireDestroVerify::start ( const epicsTime & expireTime )
 {
     this->timer.start ( *this, expireTime );
-}
-
-#ifdef _MSC_VER
-#   pragma warning ( push )
-#   pragma warning ( disable:4660 )
-#endif
-
-template class tsFreeList < class expireDestroVerify, 0x20 >;
-template class epicsSingleton < tsFreeList < class expireDestroVerify, 0x20 > >;
-
-#ifdef _MSC_VER
-#   pragma warning ( pop )
-#endif
-
-epicsSingleton < tsFreeList < class expireDestroVerify, 0x20 > > expireDestroVerify::pFreeList;
-
-inline void * expireDestroVerify::operator new ( size_t size )
-{
-    return expireDestroVerify::pFreeList->allocate ( size );
-}
-
-inline void expireDestroVerify::operator delete ( void *pCadaver, size_t size )
-{
-    expireDestroVerify::pFreeList->release ( pCadaver, size );
 }
 
 epicsTimerNotify::expireStatus expireDestroVerify::expire ( const epicsTime & )
@@ -336,8 +258,6 @@ void testExpireDestroy ()
 class periodicVerify : public epicsTimerNotify {
 public:
     periodicVerify ( epicsTimerQueue & );
-    void * operator new ( size_t size );
-    void operator delete ( void *pCadaver, size_t size );
     void start ( const epicsTime &expireTime );
     void cancel ();
     void verifyCount ();
@@ -365,30 +285,6 @@ periodicVerify::~periodicVerify ()
 inline void periodicVerify::start ( const epicsTime &expireTime )
 {
     this->timer.start ( *this, expireTime );
-}
-
-#ifdef _MSC_VER
-#   pragma warning ( push )
-#   pragma warning ( disable:4660 )
-#endif
-
-template class tsFreeList < class periodicVerify, 0x20 >;
-template class epicsSingleton < tsFreeList < class periodicVerify, 0x20 > >;
-
-#ifdef _MSC_VER
-#   pragma warning ( pop )
-#endif
-
-epicsSingleton < tsFreeList < class periodicVerify, 0x20 > > periodicVerify::pFreeList;
-
-inline void * periodicVerify::operator new ( size_t size )
-{
-    return periodicVerify::pFreeList->allocate ( size );
-}
-
-inline void periodicVerify::operator delete ( void *pCadaver, size_t size )
-{
-    periodicVerify::pFreeList->release ( pCadaver, size );
 }
 
 inline void periodicVerify::cancel ()

@@ -35,7 +35,7 @@ WINLINK = $(BORLAND_BIN)/ilink32 -q
 
 # -l specifies default language
 # -fo Renames the output .RES file
-RCCMD = $(BORLAND_BIN)/brcc32 -i. -i.. -i$(INSTALL_INCLUDE) -i$(EPICS_BASE_INCLUDE) -i$(BORLAND_INC) -l0x409  -fo$@ $<
+RCCMD = $(BORLAND_BIN)/brcc32 -i. -i.. -i$(INSTALL_INCLUDE) -i$(EPICS_BASE_INCLUDE) -i$(EPICS_BASE_INCLUDE)/os/$(OS_CLASS) -i$(BORLAND_INC) -l0x409  -fo$@ $<
 
 ARCMD = $(BORLAND_BIN)/tlib $@   $(foreach lib,$(LIBRARY_LD_OBJS),+$(lib))
 

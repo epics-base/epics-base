@@ -39,9 +39,13 @@
  * .02 102591 joh	Dont try to reopen the log file if a write fails
  * .03 110691 joh	Disconnect if sent a zero length message
  * .04 091092 joh	Print routine messages only when in debug mode	
+ * .05 091092 joh	now uses SO_REUSEADDR
+ * .06 091192 joh	now uses SO_KEEPALIVE
+ * .07 091192 joh	added SCCS ID
  *
  */
 
+static char	*pSCCSID = "$Id$\t$Date$";
 
 #include	<stdio.h>
 #include	<string.h>
@@ -55,7 +59,7 @@
 static long 		ioc_log_port;
 static struct in_addr 	ioc_log_addr;
 static long		ioc_log_file_limit;
-static long		ioc_log_file_name[64];
+static char		ioc_log_file_name[64];
 
 
 #ifndef TRUE
@@ -71,7 +75,7 @@ void	logTime();
 int	getConfig();
 int	openLogFile();
 void	handleLogFileError();
-void	failureNoptify();
+void	envFailureNotify();
 
 struct iocLogClient {
 	int			insock;
@@ -140,6 +144,16 @@ main()
 		abort();
 	}
 	
+        status = setsockopt(    pserver->sock,
+                                SOL_SOCKET,
+                                SO_REUSEADDR,
+                                NULL,
+                                0);
+        if(status<0){
+                ca_printf(      "%s: set socket option failed\n",
+                                __FILE__);
+        }
+
 	/* Zero the sock_addr structure */
 	memset(&serverAddr, 0, sizeof serverAddr);
 	serverAddr.sin_family = AF_INET;
@@ -166,11 +180,14 @@ main()
 		exit();
 	}
 
-	fdmgr_add_fd(
-		pserver->pfdctx, 
-		pserver->sock, 
-		acceptNewClient, 
-		pserver);
+	status = fdmgr_add_fd(
+			pserver->pfdctx, 
+			pserver->sock, 
+			acceptNewClient, 
+			pserver);
+	if(status<0){
+		abort();
+	}
 
 	while(TRUE){
 		timeout.tv_sec = 60; /* 1 min */
@@ -287,6 +304,24 @@ struct ioc_log_server	*pserver;
 		pclient->ascii_time);
 	if(status<0){
 		handleLogFileError();
+	}
+
+        /*
+         * turn on KEEPALIVE so if the client crashes
+         * this task will find out and exit
+         */
+	{
+		long	true = true;
+
+		status = setsockopt(
+				pclient->insock,
+				SOL_SOCKET,
+				SO_KEEPALIVE,
+				&true,
+				sizeof true);
+		if(status<0){
+			printf("Keepalive option set failed\n");
+		}
 	}
 
 	fdmgr_add_fd(
@@ -480,7 +515,7 @@ getConfig()
 			&EPICS_IOC_LOG_PORT, 
 			&ioc_log_port);
 	if(status<0){
-		failureNoptify(&EPICS_IOC_LOG_PORT);
+		envFailureNotify(&EPICS_IOC_LOG_PORT);
 		return ERROR;
 	}
 
@@ -489,7 +524,7 @@ getConfig()
 			&EPICS_IOC_LOG_INET, 
 			&ioc_log_addr);
 	if(status<0){
-		failureNoptify(&EPICS_IOC_LOG_INET);
+		envFailureNotify(&EPICS_IOC_LOG_INET);
 		return ERROR;
 	}
 #endif
@@ -498,7 +533,7 @@ getConfig()
 			&EPICS_IOC_LOG_FILE_LIMIT, 
 			&ioc_log_file_limit);
 	if(status<0){
-		failureNoptify(&EPICS_IOC_LOG_FILE_LIMIT);
+		envFailureNotify(&EPICS_IOC_LOG_FILE_LIMIT);
 		return ERROR;
 	}
 
@@ -507,7 +542,7 @@ getConfig()
 			sizeof ioc_log_file_name,
 			ioc_log_file_name);
 	if(pstring == NULL){
-		failureNoptify(&EPICS_IOC_LOG_FILE_NAME);
+		envFailureNotify(&EPICS_IOC_LOG_FILE_NAME);
 		return ERROR;
 	}
 	return OK;
@@ -522,7 +557,7 @@ getConfig()
  *
  */
 static void
-failureNoptify(pparam)
+envFailureNotify(pparam)
 ENV_PARAM       *pparam;
 {
 	printf(	"iocLogServer: EPICS environment variable `%s' undefined\n",

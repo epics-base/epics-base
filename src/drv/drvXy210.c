@@ -35,6 +35,7 @@
  * .04  03-09-92	 bg	added levels to xy210_io_report. Gave 
  *                              xy210_io_report the ability to read raw
  *                              values from card if level > 1  
+ * .05	08-10-92	joh	merged include file
  */
 
 /*
@@ -48,13 +49,25 @@
 #include <vxWorks.h>
 #include <vme.h>
 #include <module_types.h>
-#include <bi_driver.h>
-#include <drvsubs.h>
 
-static char SccsId[] = "@(#)xy210_driver.c	1.1\t9/22/88";
+static char SccsId[] = "$Id$\t$Date$";
+
+#define MAX_XY_BI_CARDS	(bi_num_cards[XY210]) 
+
+/* Xycom 210 binary input memory structure */
+/* Note: the high and low order words are switched from the io card */
+struct bi_xy210{
+        char    begin_pad[0xc0];        /* nothing until 0xc0 */
+/*      unsigned short  csr;    */      /* control status register */
+/*      char    pad[0xc0-0x82]; */      /* get to even 32 bit boundary */
+        unsigned short  low_value;      /* low order 16 bits value */
+        unsigned short  high_value;     /* high order 16 bits value */
+        char    end_pad[0x400-0xc0-4];  /* pad until next card */
+};
+
 
 /* pointers to the binary input cards */
-struct bi_xy210 *pbi_xy210s[MAX_XY_BI_CARDS];      /* Xycom 210s */
+struct bi_xy210 **pbi_xy210s;      /* Xycom 210s */
 
 /* test word for forcing bi_driver */
 int	bi_test;
@@ -71,8 +84,13 @@ xy210_driver_init(){
 	int bimode;
         int status;
         register short  i;
-        struct bi_xy210        *pbi_xy210;
+        struct bi_xy210  *pbi_xy210;
 
+	pbi_xy210s = (struct bi_xy210 **)
+		calloc(MAX_XY_BI_CARDS, sizeof(*pbi_xy210s));
+	if(!pbi_xy210s){
+		return ERROR;
+	}
 
         /* initialize the Xycom 210 binary input cards */
         /* base address of the xycom 210 binary input cards */

@@ -18,25 +18,35 @@ archPart = $(word 2, $(subst $(DIVIDER), ,$@))
 #
 # hostActionArchTargets
 #
-ifeq (Makefile.$(BUILD_TYPE), $(wildcard Makefile.$(BUILD_TYPE)))
 hostArchs = $(HOST_ARCH) $(filter-out $(HOST_ARCH),$(CROSS_COMPILER_HOST_ARCHS))
-hostDirs = $(addprefix O.,$(hostArchs))
 hostActionArchTargets = $(foreach x, $(ACTIONS),\
 		$(foreach arch,$(hostArchs), $(x)$(DIVIDER)$(arch)))
+ifeq (Makefile.$(BUILD_TYPE), $(wildcard Makefile.$(BUILD_TYPE)))
+hostDirs = $(addprefix O.,$(hostArchs))
 $(hostActionArchTargets) : $(hostDirs)
 	$(MAKE) -C O.$(archPart) -f ../Makefile.$(BUILD_TYPE) T_A=$(archPart) $(actionPart)
+$(hostArchs) : % : O.% 
+	$(MAKE) -C O.$@ -f ../Makefile.$(BUILD_TYPE) T_A=$@ 
+else
+$(hostActionArchTargets) :
+$(hostArchs) :
 endif
 
 #
 # crossActionArchTargets
 #
-ifeq (Makefile.Vx, $(wildcard Makefile.Vx))
 crossArchs = $(CROSS_COMPILER_TARGET_ARCHS)
-crossDirs = $(addprefix O.,$(crossArchs))
 crossActionArchTargets = $(foreach x, $(ACTIONS), \
 	$(foreach arch, $(CROSS_COMPILER_TARGET_ARCHS), $(x)$(DIVIDER)$(arch)))
+ifeq (Makefile.Vx, $(wildcard Makefile.Vx))
+crossDirs = $(addprefix O.,$(crossArchs))
 $(crossActionArchTargets) : $(crossDirs)
 	$(MAKE) -C O.$(archPart) -f ../Makefile.Vx T_A=$(archPart) $(actionPart)
+$(crossArchs) : % : O.%
+	$(MAKE) -C O.$@ -f ../Makefile.Vx T_A=$@
+else
+$(crossActionArchTargets) :
+$(crossArchs) : 
 endif
 
 $(hostDirs) : 
@@ -64,11 +74,6 @@ $(CrossActionTargets) : %$(DIVIDER)cross : $(addprefix %$(DIVIDER), $(crossArchs
 #
 host : $(hostArchs)
 cross : $(crossArchs)
-
-$(hostArchs) : % : O.% 
-	$(MAKE) -C O.$@ -f ../Makefile.$(BUILD_TYPE) T_A=$@ 
-$(crossArchs) : % : O.%
-	$(MAKE) -C O.$@ -f ../Makefile.Vx T_A=$@
 
 #
 # special clean rule

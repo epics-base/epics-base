@@ -108,7 +108,7 @@
 /************************************************************************/
 /*_end									*/
 
-static char *sccsId = "@(#)access.c	1.24\t2/19/93";
+static char *sccsId = "$Id$\t$Date$";
 
 /*
  * allocate error message string array 

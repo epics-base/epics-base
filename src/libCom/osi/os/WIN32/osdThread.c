@@ -61,6 +61,10 @@ typedef struct epicsThreadPrivateOSD {
     DWORD key;
 } epicsThreadPrivateOSD;
 
+#ifndef STACK_SIZE_PARAM_IS_A_RESERVATION
+#   define STACK_SIZE_PARAM_IS_A_RESERVATION 0x00010000
+#endif
+
 #define osdOrdinaryPriorityStateCount 5u
 static const int osdOrdinaryPriorityList [osdOrdinaryPriorityStateCount] = 
 {

@@ -133,13 +133,10 @@ public:
     virtual const char *pName () const = 0;
     virtual void show ( unsigned level ) const = 0;
     virtual void initiateConnect () = 0;
-    virtual void write ( unsigned type, arrayElementCount count, 
-        const void *pValue ) = 0;
-// we may need to include an optimization for read copy here if we want to enable
-// reasonable performance of the old API. Adding it here means that the outstanding IO
-// count must be visible :-(.
     virtual ioStatus read ( unsigned type, arrayElementCount count, 
         cacReadNotify &, ioid * = 0 ) = 0;
+    virtual void write ( unsigned type, arrayElementCount count, 
+        const void *pValue ) = 0;
     virtual ioStatus write ( unsigned type, arrayElementCount count, 
         const void *pValue, cacWriteNotify &, ioid * = 0 ) = 0;
     virtual void subscribe ( unsigned type, arrayElementCount count, 

@@ -78,8 +78,9 @@
 #include	<lstLib.h>
 #include	<string.h>
 
+#include "dbDefs.h"
+#include "epicsPrint.h"
 #include	<alarm.h>
-#include	<dbDefs.h>
 #include	<dbAccess.h>
 #include	<dbEvent.h>
 #include	<dbFldTypes.h>
@@ -197,7 +198,6 @@ static long special(paddr,after)
 	status=postfix(pcalc->calc,pcalc->rpcl,&error_number);
         if(status) recGblRecordError(S_db_badField,(void *)pcalc,
 			"calc: special: Illegal CALC field");
-	db_post_events(pcalc,pcalc->calc,DBE_VALUE|DBE_LOG);
 	return(0);
     default:
 	recGblDbaddrError(S_db_badChoice,paddr,"calc: special");

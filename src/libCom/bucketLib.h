@@ -33,18 +33,6 @@
  * 	.02 121693 joh	added bucketFree() 
  * 	.03 052395 joh	use std EPICS status 
  *	$Log$
- *	Revision 1.12  1995/12/19 19:44:25  jhill
- *	added C++ extern "C" {
- *
- * Revision 1.11  1995/09/29  21:34:32  jhill
- * added def for BUCKET_SUCCESS
- *
- * Revision 1.10  1995/09/26  20:40:40  mrk
- * include epicsTypes.h and also change const to READONLY (old style C)
- *
- * Revision 1.9  1995/08/11  23:46:13  jhill
- * EPICS style status
- *
  *
  *	NOTES:
  *	.01 Storage for identifier must persist until an item is deleted
@@ -67,7 +55,7 @@ typedef enum {bidtUnsigned, bidtPointer, bidtString} buckTypeOfId;
 typedef struct item{
 	struct item	*pItem;
 	READONLY void	*pId;
-	void    	*pApp;
+	READONLY void   *pApp;
 	buckTypeOfId	type;
 }ITEM;
 
@@ -80,7 +68,7 @@ typedef struct bucket{
 }BUCKET;
 
 
-#ifdef __STDC__
+#if defined(__STDC__) || defined(__cplusplus)
 BUCKET	*bucketCreate (unsigned nHashTableEntries);
 int	bucketFree (BUCKET *prb);
 int	bucketShow (BUCKET *pb);
@@ -89,9 +77,12 @@ int	bucketShow (BUCKET *pb);
  * !! Identifier must exist (and remain constant) at the specified address until
  * the item is deleted from the bucket !!
  */
-int     bucketAddItemUnsignedId (BUCKET *prb, READONLY unsigned *pId, void *pApp);
-int     bucketAddItemPointerId (BUCKET *prb, void * READONLY *pId, void *pApp);
-int     bucketAddItemStringId (BUCKET *prb, READONLY char *pId, void *pApp);
+int     bucketAddItemUnsignedId (BUCKET *prb, 
+		READONLY unsigned *pId, READONLY void *pApp);
+int     bucketAddItemPointerId (BUCKET *prb, 
+		void * READONLY *pId, READONLY void *pApp);
+int     bucketAddItemStringId (BUCKET *prb, 
+		READONLY char *pId, READONLY void *pApp);
 
 int     bucketRemoveItemUnsignedId (BUCKET *prb, READONLY unsigned *pId);
 int     bucketRemoveItemPointerId (BUCKET *prb, void * READONLY *pId);

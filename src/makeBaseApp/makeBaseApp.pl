@@ -15,7 +15,7 @@ $app_top  = cwd();
 @apps   = (TOP);
 
 &GetUser;		# Ensure we know who's in charge
-&readRelease("configure/RELEASE", \%release, \@apps);
+&readRelease("configure/RELEASE", \%release, \@apps) if (-r "configure/RELEASE");
 &get_commandline_opts;	# Check command-line options
 
 #
@@ -344,9 +344,7 @@ sub Cleanup { # (return-code [ messsage-line1, line 2, ... ])
     my ($rtncode, @message) = @_;
 
     if (@message) {
-	foreach $line ( @message ) {
-	    print "$line\n";
-	}
+	print join('\n', @message), '\n';
     } else {
 	&Usage;
     }
@@ -414,7 +412,7 @@ sub GetUser {
 
 # replace "\" by "/"  (for WINxx)
 sub UnixPath { # path
-    my($newpath) = $_[0];
+    my($newpath) = @_;
     $newpath =~ s|\\|/|go;
     return $newpath;
 }

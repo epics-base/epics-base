@@ -1,5 +1,14 @@
-#RELEASE Location of external products
-EPICS_BASE=_EPICS_BASE_
+# RELEASE - Location of external products
+#
+# (Architecture dependent declarations should go into RELEASE.<arch>)
+#
+# Note: This file will be scanned to automatically generate
+#       include path definitions etc.
+#       The order of the following declarations will be retained
+#       within those definitions.
+#
+# Add your declarations here
+
 TEMPLATE_TOP=_TEMPLATE_TOP_
 SHARE=_EPICS_BASE__shareR1.0
-#SHARE=
+EPICS_BASE=_EPICS_BASE_

@@ -87,7 +87,7 @@
 
 long	init_dev_sup(), report();
 int	srqHandler();
-struct  devGpibParmBlock devSupParms;
+static	struct  devGpibParmBlock devSupParms;
 
 /******************************************************************************
  *
@@ -170,18 +170,12 @@ extern int ibSrqDebug;		/* declared in the GPIB driver */
 /******************************************************************************
  *
  * Strings used by the init routines to fill in the znam, onam, ...
- * fields in BI, BO, MBBI, and MBBO record types.
+ * fields in BI and BO record types.
  *
  ******************************************************************************/
 
 static  char            *offOnList[] = { "Off", "On" };
 static  struct  devGpibNames   offOn = { 2, offOnList, NULL, 1 };
-
-static  char            *offOffList[] = { "Off", "Off" };
-static  struct  devGpibNames   offOff = { 2, offOffList, NULL, 1 };
-
-static  char            *onOnList[] = { "On", "On" };
-static  struct  devGpibNames   onOn = { 2, onOnList, NULL, 1 };
 
 static  char            *initNamesList[] = { "Init", "Init" };
 static  struct  devGpibNames   initNames = { 2, initNamesList, NULL, 1 };
@@ -203,6 +197,29 @@ static  struct  devGpibNames   fallingRising = { 2, fallingRisingList, NULL, 1 }
 
 static  char    *clearList[] = { "CLEAR", "CLEAR" };
 static  struct  devGpibNames   clear = { 2, clearList, NULL, 1 };
+
+/******************************************************************************
+ *
+ * Structures used by the init routines to fill in the onst, twst,... and the
+ * onvl, twvl,... fields in MBBI and MBBO record types.
+ *
+ * Note that the intExtSsBm and intExtSsBmStop structures use the same
+ * intExtSsBmStopList and intExtSsBmStopVal lists but have a different number
+ * of elements in them that they use... The intExtSsBm structure only represents
+ * 4 elements, while the intExtSsBmStop structure represents 5.
+ *
+ ******************************************************************************/
+
+static  char            *intExtSsBmStopList[] = { "INTERNAL", "EXTERNAL",
+				"SINGLE SHOT", "BURST MODE", "STOP" };
+
+static  unsigned long   intExtSsBmStopVal[] = { 0, 1, 2, 3, 2 };
+
+static  struct  devGpibNames    intExtSsBm = { 4, intExtSsBmStopList, 
+				intExtSsBmStopVal, 2 };
+
+static  struct  devGpibNames    intExtSsBmStop = { 5, intExtSsBmStopList,
+                                        intExtSsBmStopVal, 3 };
 
 /******************************************************************************
  *
@@ -268,7 +285,7 @@ static struct gpibCmd gpibCmds[] =
  * scanned"... not passive.
  *
  ******************************************************************************/
-struct  devGpibParmBlock devSupParms = {
+static struct  devGpibParmBlock devSupParms = {
   &SkeletonDebug,         /* debugging flag pointer */
   -1,                   /* device does not respond to writes */
   TIME_WINDOW,          /* # of clock ticks to skip after a device times out */

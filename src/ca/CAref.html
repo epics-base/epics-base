@@ -96,6 +96,8 @@ height="31" width="88"></a></p>
   <li><a href="#Connection">Connection Management</a></li>
   <li><a href="#Thread">Thread Safety and Preemptive Callback to User
   Code</a></li>
+  <li><a href="#Client2">CA Client Contexts and Application Specific
+    Auxillary Threads</a></li>
   <li><a href="#Polling">Polling the CA Client Library From Single Threaded
     Applications</a></li>
   <li><a href="#Avoid">Avoid Emulating Bad Practices that May Still be
@@ -1245,6 +1247,30 @@ initiating channel access thread is executing inside of the CA client
 library. When the CA client library invokes a user's&nbsp;call back function
 it will always wait for the current callback to complete prior to executing
 another call back function.</p>
+
+<h3><a name="Client2">CA Client Contexts and Application Specific Auxillary
+Threads</a></h3>
+
+<p>It may be necessary for several CA client side tools running in the same
+address space (process) to be independent of each other. For example, the
+database CA links and the sequencer are designed to not use the same CA
+client library threads, network circuits, and data structures. Each thread
+that calls <a href="#ca_context_create">ca_context_create()</a> for the first
+time either directly, or implicitly when calling a CA routine for the first
+time, creates a CA client library context. A CA client libray context
+contains all of the threads, network circuits, and data structures required
+to connect and communicate with the channels that a CA cllient application
+has created. The priority of auxillary threads spawned by the CA client
+library are at fixed offsets from the priority of the thread that called <a
+href="#ca_context_create">ca_context_create()</a>. An application specific
+auxillary thread can join a CA context by calling <a
+href="#ca_attach_context">ca_attach_context()</a> using the CA context
+identifier that was retuned from <a
+href="#ca_current_context">ca_current_context()</a> when it was called by the
+thread that called <a href="#ca_context_create">ca_context_create()</a>. A CA
+client library context can be shut down and cleaned up, after destroying any
+channels or application specific threads that are attached to it, by calling
+<a href="#ca_context_destroy">ca_context_destroy()</a>.</p>
 
 <h3><a name="Polling">Polling the CA Client Library From Single Threaded
 Applications</a></h3>

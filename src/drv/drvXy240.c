@@ -338,8 +338,8 @@ register unsigned int	val;
 	/* use structure to handle high and low short swap */
 	/* get current output */
 
-	work = (dio[card].dptr->port4_5 << 16)
-			 + dio[card].dptr->port6_7;
+	work = (dio[card].dptr->port6_7 << 16)
+			 + dio[card].dptr->port4_5;
 
 	work = (work & ~mask) | (val & mask);
 

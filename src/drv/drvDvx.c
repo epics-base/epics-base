@@ -102,6 +102,7 @@
  * JRW 01/18/92 Replaced init code to allow user to select the interrupt
  *              level value and to select the ports that are to be read.
  * MGB 08/04/93 Removed V5/V4 and EPICS_V2 conditionals
+ * FRL 11/17/93 Added gain parameter to dvx_program
  *
  *
  * NOTE (JRW 11-18-92):
@@ -202,6 +203,7 @@ struct dvx_rec
 	int	dmaSize;		/* samples to read before IRQ */
 	unsigned int numChan;		/* total number of ports to read */
 	unsigned long	pgmMask[8];	/* ports to be read by seq-program */
+	unsigned short	gain[8];	/* port gains */
 
 	IOSCANPVT *pioscanpvt;
 };
@@ -282,15 +284,19 @@ struct {
 
 static struct dvx_rec dvx[MAX_DVX_CARDS] = {
 { NULL, NULL, NULL, -1, -1, -1, -1, -1, 128, 0, {0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff}
+,{0, 0, 0, 0, 0, 0, 0, 0}
 , NULL
 },
 { NULL, NULL, NULL, -1, -1, -1, -1, -1, 128, 0, {0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff}
+,{0, 0, 0, 0, 0, 0, 0, 0}
 , NULL
 },
 { NULL, NULL, NULL, -1, -1, -1, -1, -1, 128, 0, {0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff}
+,{0, 0, 0, 0, 0, 0, 0, 0}
 , NULL
 },
 { NULL, NULL, NULL, -1, -1, -1, -1, -1, 128, 0, {0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff}
+,{0, 0, 0, 0, 0, 0, 0, 0}
 , NULL
 }
 };
@@ -643,9 +649,9 @@ LOCAL int muxtst(int card)
  * To program a DVX card (card 0) to read all ports from 2 S/H muxes (boards 2 
  * and 6) and 1 mux (board 1).  You may do the following.
  *
- * dvx_program(0, 2, 0x0000ffff, 0)	 -- 16 ports from board 2 
- * dvx_program(0, 6, 0x0000ffff, 0)	 -- 16 ports from board 6
- * dvx_program(0, 1, 0xffffffff, 64)	 -- 32 ports from board 1
+ * dvx_program(0, 2, 0x0000ffff, 0, 0)	 -- 16 ports from board 2  gain = 1
+ * dvx_program(0, 6, 0x0000ffff, 0, 2)	 -- 16 ports from board 6  gain = 4
+ * dvx_program(0, 1, 0xffffffff, 64, 3)	 -- 32 ports from board 1  gain = 8
  *
  * The 64 on the last line specified that we want to read 64 samples before the
  * DMA is considered complete.  The last dvx_program() value for the dma size 
@@ -662,7 +668,7 @@ LOCAL int muxtst(int card)
  * The ports are read from the lowest board number and lowest port number first.
  */
 int
-dvx_program(int card, int board, unsigned long mask, int dmaSize)
+dvx_program(int card, int board, unsigned long mask, int dmaSize, int gain)
 {
   int	i;
   unsigned long maskCheck;
@@ -684,6 +690,13 @@ dvx_program(int card, int board, unsigned long mask, int dmaSize)
     printf("dvx_program(%d, %d, 0x%08.8X): invalid board number specified\n", card, board, mask);
     return(2);
   }
+  if ((gain < 0) || (gain > 3))
+  {
+    errPrintf(-1, __FILE__, __LINE__, 
+	 "dvx_program(%d, %d, 0x%08.8X, %d, %d): invalid gain specified\n", card, board,
+				 mask, dmaSize, gain);
+    return(2);
+  }
   if (firstTime)
   { /* Clear out the default port numbers, this is the first dvx_program call */
     int i;
@@ -695,6 +708,7 @@ dvx_program(int card, int board, unsigned long mask, int dmaSize)
 
   dvx[card].pgmMask[board] = mask;
   dvx[card].dmaSize = dmaSize;
+  dvx[card].gain[board] = gain; 
 
   return(0);
 }
@@ -766,7 +780,7 @@ int sramld(int card)
 	}
 	else
 	{
-	  *ramptr++ = GAIN_CHANNEL | ((port >> 3) & 3);
+	  *ramptr++ = GAIN_CHANNEL | (dvx[card].gain[i] <<3)  | ((port >> 3) & 3);
 	  *ramptr++ = ADVANCE_HOLD | ((port & 0x07) << 3) | i;
 	  dvx[card].numChan++;
 	  if (dvxDebug)
@@ -778,7 +792,7 @@ int sramld(int card)
     }
     if (firstPort != -1)
     { /* Put the first port number to read on each board, last in scan list. */
-      *ramptr++ = GAIN_CHANNEL | ((firstPort >> 3) & 3);
+      *ramptr++ = GAIN_CHANNEL | (dvx[card].gain[i] << 3) | ((firstPort >> 3) & 3);
       *ramptr++ = ADVANCE_HOLD | ((firstPort & 0x07) << 3) | i;
       dvx[card].numChan++;
       if (dvxDebug)

@@ -1,4 +1,5 @@
 /************************************************************************/
+/* $Id$									*/
 /*									*/
 /*	        	      L O S  A L A M O S			*/
 /*		        Los Alamos National Laboratory			*/
@@ -45,6 +46,7 @@
 /*	021794	joh	turn on SO_REUSEADDR only after the test for	*/
 /*			address in use so that test works on UNIX	*/
 /*			kernels that support multicast			*/
+/* $Log$								*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -1044,6 +1046,16 @@ LOCAL void udp_recv_msg(struct ioc_in_use *piiu)
 			UNLOCK;
        			return;
 		}
+#               ifdef linux
+			/*
+			 * Avoid spurious ECONNREFUSED bug
+			 * in linux
+			 */
+			if (MYERRNO==ECONNREFUSED) {
+				UNLOCK;
+       				return;
+			}
+#               endif
 		ca_printf("Unexpected UDP failure %s\n", strerror(MYERRNO));
     	}
 	else if(status > 0){

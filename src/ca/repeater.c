@@ -1,4 +1,6 @@
 /*
+ * $Id$
+ *
  * REPEATER.C
  *
  * CA broadcast repeater
@@ -59,6 +61,8 @@
  *	.08 102993 joh	toggle set sock opt to set
  *	.09 070195 joh  discover client has vanished by connecting its
  *			datagram socket (and watching for ECONNREFUSED)
+ *
+ * $Log$
  */
 
 static char *sccsId = "@(#)$Id$";
@@ -149,6 +153,15 @@ void ca_repeater()
 				&from_size);
 
    	 	if(size < 0){
+#			ifdef linux
+				/*
+				 * Avoid spurious ECONNREFUSED bug
+				 * in linux
+				 */
+				if (MYERRNO==ECONNREFUSED) {
+					continue;
+				}
+#			endif
 			ca_printf("CA Repeater: recv err %s\n",
 				strerror(MYERRNO));
 			continue;

@@ -113,6 +113,7 @@ templ_head: DBFILE WORD
 	;
 
 subst: PATTERN pattern subs
+    | PATTERN pattern
     | var_subs
     ;
 

@@ -76,7 +76,6 @@ receiver(void *arg)
             epicsThreadSleep(0.001 * (randBelow(20)));
         }
         else {
-            printf("%s received %d '%.*s'\n", epicsThreadGetNameSelf(), len, len, cbuf);
             for (sender = 1 ; sender <= 4 ; sender++) {
                 if (expectmsg[sender-1] > 1)
                     printf("Sender %d -- %d messages\n", sender, expectmsg[sender-1]-1);
@@ -219,10 +218,20 @@ extern "C" void epicsMessageQueueTest()
     epicsThreadCreate("Receiver one", epicsThreadPriorityMedium, epicsThreadGetStackSize(epicsThreadStackMedium), receiver, q1);
     for (pass = 1 ; pass <= 3 ; pass++) {
         switch (pass) {
-        case 1: printf ("Should send/receive only 4 messages (sender priority > receiver priority).\n"); break;
-        case 2: printf ("Should send/receive 5 to 10 messages (depends on how host handles thread priorities).\n"); break;
-        case 3: printf ("Should send/receive 10 messages (sender pauses after sending).\n"); break;
+        case 1:
+            printf ("Systems with priority-based scheduler should send only\n"
+                    "4 or 5 messages (sender priority > receiver priority).\n");
+            break;
+        case 2:
+            printf ("Systems with priority-based scheduler should send 10\n"
+                    "messages (sender priority < receiver priority).\n");
+            break;
+        case 3:
+            printf ("All systems should send 10 messages (sender pauses\n"
+                    "after sending each message).\n");
+            break;
         }
+        epicsThreadSleep(1.0);
         for (i = 0 ; i < 10 ; i++) {
             if (q1->trySend((void *)msg1, i) < 0)
                 break;

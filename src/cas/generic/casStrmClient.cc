@@ -38,7 +38,6 @@
 #include "server.h"
 #include "caServerIIL.h"	// caServerI inline functions
 #include "casChannelIIL.h"	// casChannelI inline functions
-#include "casPVIIL.h"		// casPVI inline functions
 #include "casCtxIL.h"		// casCtx inline functions
 #include "casEventSysIL.h"	// casEventSys inline functions
 #include "inBufIL.h"		// inBuf inline functions

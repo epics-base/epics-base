@@ -32,8 +32,7 @@
 #include "dbMapper.h" // EPICS application type table
 
 #include "server.h"
-#include "casPVIIL.h" // casPVI inline func
-#include "caServerIIL.h" // caServerI inline func
+#include "casPVIIL.h" // caServerI inline func
 
 //
 // casPVI::casPVI()

@@ -34,6 +34,7 @@
 #define casPVIIL_h
 
 #include "dbMapper.h"
+#include "caServerIIL.h"
 
 //
 // casPVI::getPCAS() 

@@ -203,7 +203,7 @@ inline void * ipAddrToAsciiTransactionPrivate::operator new ( size_t size, tsFre
 inline void ipAddrToAsciiTransactionPrivate::operator delete ( void * pTrans, tsFreeList 
     < ipAddrToAsciiTransactionPrivate, 0x80, epicsMutexNOOP > &  freeList )
 {
-    return freeList.release ( pTrans );
+    freeList.release ( pTrans );
 }
 #endif
 

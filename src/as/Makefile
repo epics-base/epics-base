@@ -20,6 +20,9 @@ asHost_DIR=.
 PROD_LIBS = asHost dbStaticHost Com
 PROD = ascheck
 
+asHost_RCS_WIN32 = asHost.rc
+asIoc_RCS_WIN32 = asIoc.rc
+
 include $(TOP)/configure/RULES
 
 # Extra rule since asLib_lex.c is included in asLib.c

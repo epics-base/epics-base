@@ -87,6 +87,9 @@ of this distribution.
 #include "tsStamp.h"
 #include "ellLib.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define MAX_UNITS_SIZE		8	
 #define MAX_ENUM_STRING_SIZE	26
@@ -1091,6 +1094,10 @@ union db_access_val{
     };
     epicsShareDef READONLY char * dbr_text_invalid = "DBR_invalid";
     epicsShareDef READONLY short   dbr_text_dim = (sizeof dbr_text)/(sizeof (char *)) + 1;
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif /* INCLdb_accessh */

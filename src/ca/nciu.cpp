@@ -364,6 +364,13 @@ int nciu::subscriptionMsg ( netSubscription &subscr, bool userThread  )
     return status;
 }
 
+void nciu::unistallSubscription ( netSubscription &subscr )
+{
+    if ( this->f_connected ) {
+        this->piiu->unistallSubscription ( *this, subscr );
+    }
+}
+
 void nciu::incrementOutstandingIO ()
 {
     this->cacCtx.incrementOutstandingIO ();

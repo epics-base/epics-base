@@ -200,6 +200,10 @@ int netiiu::subscriptionCancelRequest ( netSubscription & )
     return ECA_DISCONNCHID;
 }
 
+void netiiu::unistallSubscription ( nciu &, netSubscription & )
+{
+}
+
 void netiiu::hostName ( char *pBuf, unsigned bufLength ) const
 {
     if ( bufLength ) {

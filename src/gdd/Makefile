@@ -53,11 +53,11 @@ dbMapper.o:	../gdd.h ../gddI.h ../gddContainer.h ../gddContainerI.h \
 
 # Rules for generated files
 #
-aitConvertGenerated.cc: ../O.$(HOST_ARCH)/aitGen$(HOSTEXE) ../aitTypes.h
-	../O.$(HOST_ARCH)/aitGen$(HOSTEXE)
+aitConvertGenerated.cc:  $(EPICS_BASE_HOST_BIN)/aitGen$(HOSTEXE) ../aitTypes.h
+	 $(EPICS_BASE_HOST_BIN)/aitGen$(HOSTEXE)
 
-gddApps.h : ../O.$(HOST_ARCH)/genApps$(HOSTEXE)
-	../O.$(HOST_ARCH)/genApps$(HOSTEXE) $@
+gddApps.h :  $(EPICS_BASE_HOST_BIN)/genApps$(HOSTEXE)
+	 $(EPICS_BASE_HOST_BIN)/genApps$(HOSTEXE) $@
 
 # unfortunately there is only one TESTPROD/TESTPROD_SRCS allowed
 # right now
@@ -69,15 +69,15 @@ gddApps.h : ../O.$(HOST_ARCH)/genApps$(HOSTEXE)
 # This rule, however, should be system-independent:
 ifeq ($(HOST_ARCH),$(T_A))
 
-aitGen$(EXE): aitGen$(OBJ) aitTypes$(OBJ)
+aitGen$(HOSTEXE): aitGen$(OBJ) aitTypes$(OBJ)
 	$(LINK.c) $^ 
 
-genApps$(EXE): genApps$(OBJ) $(addsuffix $(OBJ), $(basename $(AITGENSRCS)))
+genApps$(HOSTEXE): genApps$(OBJ) $(addsuffix $(OBJ), $(basename $(AITGENSRCS)))
 	$(LINK.cc) $^ 
 
 endif
 
 clean::
-	$(RM) aitConvertGenerated.cc aitGen$(EXE) genApps$(EXE)
+	$(RM) aitConvertGenerated.cc aitGen$(HOSTEXE) genApps$(HOSTEXE)
 
 #	EOF base/src/gdd/Makefile

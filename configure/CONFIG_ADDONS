@@ -23,6 +23,57 @@
 #		USR_CFLAGS_sun4 = -nil-
 #		USR_CFLAGS_DEFAULT = <defines for most systems, not sun4>
 #
+#    These rules apply to these Makefile-variables:
+#    USR_CFLAGS    C flags
+#    USR_CXXFLAGS  C++ flags
+#    USR_CPPFLAGS  c preprocesser flags
+#    INC           include-files to install
+#    SRCS          source files for building libraries and prods
+#    USR_SRCS      source files for building libraries and prods
+#    PROD_SRCS     source files for building prods
+#    LIB_SRCS      source files for building libraries
+#    LIBSRCS       source files for building libraries (deprecated)
+#    PROD_OBJS     object files for building prods
+#    LIB_OBJS      object files for building libraries
+#    USR_LIBS      libs needed by PROD and TESTPROD and LIBRARY
+#    PROD_LIBS     libs needed by PROD and TESTPROD
+#    LIB_LIBS      libs needed by shared LIBRARY
+#    SHRLIB_LIBS   libs needed by shared LIBRARY
+#    USR_OBJLIBS   R3.13 vxWorks object libs needed building libraries and prods
+#    PROD_OBJLIBS  R3.13 vxWorks object    libs needed for building prods
+#    LIB_OBJLIBS   R3.13 vxWorks object libs needed for building libraries
+#    USR_SYS_LIBS  system libs needed building libraries and prods
+#    PROD_SYS_LIBS system libs needed for building prods
+#    LIB_SYS_LIBS  system libs needed for building libraries
+#    USR_LDFLAGS   ld flags for building libraries and prods
+#    PROD_LDFLAGS  ld flags for building prods
+#    LIB_LDFLAGS   ld flags for building libraries
+#    PROD          products to build and install
+#    PROD_HOST     products to build and install
+#    PROD_IOC      products to build and install
+#    TESTPROD      products to build and install
+#    TESTPROD_HOST products to build and install
+#    TESTPROD_IOC  products to build and install
+#    LIBRARY       products to build and install
+#    LIBRARY_HOST  products to build and install
+#    LIBRARY_IOC   products to build and install
+#    SCRIPTS       scripts and install
+#    SCRIPTS_HOST  host system scripts to install
+#    SCRIPTS_IOC   ioc system scripts to install
+#    OBJS          object files to build and install
+#    OBJS_HOST     host system object files to build and install
+#    OBJS_IOC      ioc system object files to build and install
+#    USR_INCLUDES  include directories
+#    BIN_INSTALLS  binaries to install
+#    RCS           win32 resource files for building libraries and prods
+#    PROD_RCS      win32 resource files for building prods
+#    LIB_RCS       win32 resource files for building libraries
+#
+#	Remark:
+#	If you define INC, e.g. INC = getopt.h, the source
+#	(getopt.h) must be in the source directory (..) and/or
+#	in one or more ../os/<OS_CLASS> directories.
+#
 #	Additional target architecture, T_A, Rules for USR_CFLAGS, USR_CXXFLAGS,
 #	and USR_CPPFLAGS which are applied before the above os_class Rules:
 #	1) USR_CFLAGS_$(OS_CLASS) is used
@@ -36,29 +87,6 @@
 #		USR_CFLAGS_vxWorks-68040 = -nil-
 #		USR_CFLAGS_vxWorks_DEFAULT = <defines for most vxWorks systems, not 68040>
 #
-#	These rules apply to these Makefile-variables:
-#	USR_CFLAGS	C flags
-#	USR_CXXFLAGS	C++ flags
-#	USR_CPPFLAGS	c preprocesser flags
-#	INC		include-files to install
-#	USR_SRCS	source files for building library and prod
-#	LIBSRCS		source files for building library
-#	LIB_SRCS	source files for building library
-#	LIB_LIBS	libs needed by shared LIBRARY
-#	PROD_LIBS	libs needed by PROD and TESTPROD
-#	USR_LIBS	libs needed by PROD and TESTPROD and LIBRARY
-#	LIB_SYS_LIBS	system libs needed by LIBRARY
-#	PROD_SYS_LIBS	system libs needed by PROD and TESTPROD
-#	USR_LDFLAGS	ld flags
-#	PROD		products to build and install
-#	SCRIPTS		scripts to install
-#	USR_INCLUDES	include directories
-#
-#	Remark:
-#	If you define INC, e.g. INC = getopt.h, the source
-#	(getopt.h) must be in the source directory (..) and/or
-#	in one or more ../os/<OS_CLASS> directories.
-
 #
 
 ifneq ($(strip $(USR_CFLAGS_$(T_A))),)

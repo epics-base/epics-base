@@ -120,7 +120,7 @@ GLBLTYPE int			IOC_cast_sock;
 GLBLTYPE LIST			clientQ;	/* locked by clientQlock */
 GLBLTYPE LIST			rsrv_free_clientQ; /* locked by clientQlock */
 GLBLTYPE FAST_LOCK		clientQlock;
-GLBLTYPE int			MPDEBUG;
+GLBLTYPE int			CASDEBUG;
 GLBLTYPE LIST			rsrv_free_addrq;
 GLBLTYPE LIST			rsrv_free_eventq;
 GLBLTYPE FAST_LOCK		rsrv_free_addrq_lck;

@@ -1364,7 +1364,7 @@ LOCAL int claim_ciu_action ( caHdrLargeArray *mp,
  *
  * (called by the db call back thread)
  */
-LOCAL void write_notify_call_back(PUTNOTIFY *ppn)
+LOCAL void write_notify_call_back(putNotify *ppn)
 {
     struct client       *pclient;
     struct channel_in_use   *pciu;

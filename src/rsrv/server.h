@@ -115,7 +115,7 @@ typedef struct client {
  */
 typedef struct rsrv_put_notify {
     ELLNODE         node;
-    PUTNOTIFY       dbPutNotify;
+    putNotify       dbPutNotify;
     caHdrLargeArray msg;
     unsigned        valueSize; /* size of block pointed to by dbPutNotify */
     int             busy; /* put notify in progress */

@@ -196,7 +196,7 @@ LOCAL void fanOut (struct sockaddr_in *pFrom, const char *pMsg, unsigned msgSize
             continue;
         }
 
-        status = send ( pclient->sock, (char *)pMsg, msgSize, 0);
+        status = send ( pclient->sock, (char *)pMsg, msgSize, 0 );
         if ( status >= 0 ) {
 #ifdef DEBUG
             ca_printf ("Sent to %d\n", 
@@ -250,7 +250,7 @@ LOCAL void register_new_client (struct sockaddr_in  *pFrom)
         static int init;
         struct sockaddr_in ina;
 
-        if (!init) {
+        if ( ! init ) {
             msr = makeSocket (PORT_ANY, TRUE);
             if ( msr.sock == INVALID_SOCKET ) {
                 ca_printf("%s: Unable to create repeater bind test socket because %d=\"%s\"\n",
@@ -316,9 +316,11 @@ LOCAL void register_new_client (struct sockaddr_in  *pFrom)
                 sizeof ( *pFrom ) );
         if ( status < 0 ) {
             int errnoCpy = SOCKERRNO;
+
             ca_printf (
             "%s: unable to connect client sock because \"%s\"\n",
-                __FILE__, SOCKERRSTR(errnoCpy));
+                __FILE__, SOCKERRSTR (errnoCpy) );
+
             socket_close ( pclient->sock );
             free ( pclient );
             return;
@@ -363,7 +365,7 @@ LOCAL void register_new_client (struct sockaddr_in  *pFrom)
     confirm.m_cmmd = htons (CA_PROTO_NOOP);
     fanOut ( pFrom, (char *)&noop, sizeof (noop) );
 
-    if (newClient) {
+    if ( newClient ) {
         /*
          * on solaris we need to verify that the clients
          * have not gone away (because ICMP does not
@@ -422,22 +424,16 @@ void epicsShareAPI ca_repeater ()
     while (TRUE) {
         caHdr   *pMsg;
 
-        size = recvfrom(    
-            sock,
-            buf,
-            sizeof(buf),
-            0,
-            (struct sockaddr *)&from, 
-            &from_size);
-
-        if(size < 0){
+        size = recvfrom ( sock, buf, sizeof (buf), 0,
+                    (struct sockaddr *)&from, &from_size );
+        if ( size < 0 ) {
             int errnoCpy = SOCKERRNO;
 #           ifdef linux
                 /*
                  * Avoid spurious ECONNREFUSED bug
                  * in linux
                  */
-                if (errnoCpy==SOCK_ECONNREFUSED) {
+                if ( errnoCpy == SOCK_ECONNREFUSED ) {
                     continue;
                 }
 #           endif

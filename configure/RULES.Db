@@ -143,19 +143,19 @@ $(COMMON_DIR)/%.template: ../%.edf
 $(COMMON_DIR)/%Record.h: ../%Record.dbd
 	@$(RM) $@
 	$(DBTORECORDTYPEH) $(DBDFLAGS)  $< $@
- 
+
 $(COMMON_DIR)/menu%.h: ../menu%.dbd
 	@$(RM) $@
 	$(DBTOMENUH) $< $@
- 
+
 $(COMMON_DIR)/%Record.h: %Record.dbd
 	@$(RM) $@
 	$(DBTORECORDTYPEH) $(DBDFLAGS)  $< $@
- 
+
 $(COMMON_DIR)/menu%.h: menu%.dbd
 	@$(RM) $@
 	$(DBTOMENUH) $< $@
- 
+
 ##################################################### DBD files
 
 ifneq (,$(strip $(DBDDEPENDS_FILES)))
@@ -163,23 +163,23 @@ ifneq (,$(strip $(DBDDEPENDS_FILES)))
 endif
 
 $(COMMON_DIR)/bpt%.dbd: ../bpt%.data 
-	$(RM) $@
+	@$(RM) $@
 	$(MAKEBPT) $< $@
 
 $(COMMON_DIR)/bpt%.dbd: bpt%.data 
-	$(RM) $@
+	@$(RM) $@
 	$(MAKEBPT) $< $@
 
 $(COMMON_DIR)/%.dbd: ../%Include.dbd 
 	@$(MAKEDBDDEPENDS) $(DBDFLAGS) $(COMMON_DIR)/$*.dbd $< > $(COMMON_DIR)/$*$(DEP)
 	@echo "Expanding dbd"
-	$(RM) $@
+	@$(RM) $@
 	$(DBEXPAND) $(DBDFLAGS) $< > $@
 
 $(COMMON_DIR)/%.dbd: %Include.dbd 
 	@$(MAKEDBDDEPENDS) $(DBDFLAGS) $(COMMON_DIR)/$*.dbd $< > $(COMMON_DIR)/$*$(DEP)
 	@echo "Expanding dbd"
-	$(RM) $@
+	@$(RM) $@
 	$(DBEXPAND) $(DBDFLAGS) $< > $@
 
 $(INSTALL_DBD)/%: $(COMMON_DIR)/%
@@ -244,12 +244,14 @@ $(INSTALL_DB)/%: $(COMMON_DIR)/%
 ##################################################### register record,device,driver support
 
 %_registerRecordDeviceDriver.cpp: $(COMMON_DIR)/%.dbd 
-	$(RM) $@
+	@$(RM) $@
 	$(REGISTERRECORDDEVICEDRIVER) $< > $@
 
 %_registerRecordDeviceDriver.cpp: ../%.dbd 
-	$(RM) $@
+	@$(RM) $@
 	$(REGISTERRECORDDEVICEDRIVER) $< > $@
+
+.PRECIOUS: %_registerRecordDeviceDriver.cpp
 
 ##################################################### END OF FILE
 

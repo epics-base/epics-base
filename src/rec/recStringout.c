@@ -39,6 +39,7 @@
  * .08  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
  * .09  08-14-92        jba     Added simulation processing
  * .10  08-19-92        jba     Added code for invalid alarm output action
+ * .11  10-10-92        jba     replaced code for get of VAL from DOL with recGblGetLinkValue call
  */ 
 
 
@@ -180,28 +181,15 @@ static long process(pstringout)
 		recGblRecordError(S_dev_missingSup,(void *)pstringout,"write_stringout");
 		return(S_dev_missingSup);
 	}
-        if (!pstringout->pact) {
-		if((pstringout->dol.type == DB_LINK) && (pstringout->omsl == CLOSED_LOOP)){
-			long options=0;
-			long nRequest=1;
+        if (!pstringout->pact && pstringout->omsl == CLOSED_LOOP){
+		long options=0;
+		long nRequest=1;
 
-			pstringout->pact = TRUE;
-			status = dbGetLink(&pstringout->dol.value.db_link,
-				(struct dbCommon *)pstringout,
-				DBR_STRING,pstringout->val,&options,&nRequest);
-			pstringout->pact = FALSE;
-			if(!status==0){
-				recGblSetSevr(pstringout,LINK_ALARM,INVALID_ALARM);
-			} else pstringout->udf=FALSE;
-		}
-		if((pstringout->dol.type == CA_LINK) && (pstringout->omsl == CLOSED_LOOP)){
-			pstringout->pact = TRUE;
-			status = dbCaGetLink(&(pstringout->dol));
-			pstringout->pact = FALSE;
-			if(!status==0){
-				recGblSetSevr(pstringout,LINK_ALARM,INVALID_ALARM);
-			} else pstringout->udf=FALSE;
-		} /* endif */
+		pstringout->pact = TRUE;
+		status = recGblGetLinkValue(&(pstringout->dol),(void *)pstringout,
+			DBR_STRING,pstringout->val,&options,&nRequest);
+		pstringout->pact = FALSE;
+		if(RTN_SUCCESS(status)) pstringout->udf=FALSE;
 	}
 
         if(pstringout->udf == TRUE ){
@@ -227,7 +215,7 @@ static long process(pstringout)
                     default :
                         status=-1;
                         recGblRecordError(S_db_badField,(void *)pstringout,
-                                "ao:process Illegal IVOA field");
+                                "stringout:process Illegal IVOA field");
                 }
         }
 

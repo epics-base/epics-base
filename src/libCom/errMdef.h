@@ -78,8 +78,7 @@ extern "C" {
 #define M_cas		(523 <<16) /*CA server*/
 #define M_casApp	(524 <<16) /*CA server application*/
 #define M_bucket	(525 <<16) /*Bucket Hash*/
-#define M_sbuf		(526 <<16) /*Shared Buffer*/
-
+#define M_gddFuncTbl	(526 <<16) /*gdd jump table*/
 
 /*
  * redefine errMessage with a macro so we can print 

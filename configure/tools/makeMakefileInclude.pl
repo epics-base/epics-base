@@ -68,17 +68,19 @@ foreach $name ( @nameList ) {
 	print OUT "${name}_OBJS+=${name}\$(OBJ)\n";
 	print OUT "endif\n";
 	print OUT "${name}_RESS+=\$(addsuffix \$(RES),\$(basename \$(${name}_RCS)))\n";
+	print OUT "${name}_OBJSNAME+=\$(addsuffix \$(OBJ),\$(basename \$(${name}_OBJS)))\n";
 	print OUT "${name}_DEPLIBS=\$(foreach lib, \$(${name}_LIBS),\$(firstword \$(wildcard \\\n";
 	print OUT " \$(\$(lib)_DIR)/\$(LIB_PREFIX)\$(lib)\*)))\n";
-	print OUT "${name}\$(EXE): \$(${name}_OBJS) \$(${name}_RESS) \$(${name}_DEPLIBS)\n";
+	print OUT "${name}\$(EXE): \$(${name}_OBJSNAME) \$(${name}_RESS) \$(${name}_DEPLIBS)\n";
 	print OUT "endif\n";
 	print OUT "\n";
 	print OUT "ifeq (\$(filter ${name},\$(LIBRARY_HOST) \$(LIBRARY_IOC)),${name})\n";
 	print OUT "ifneq (,\$(strip \$(${name}_OBJS) \$(LIBRARY_OBJS)))\n";
 	print OUT "BUILD_LIBRARY += ${name}\n";
 	print OUT "endif\n";
-	print OUT "\$(LIB_PREFIX)${name}\$(LIB_SUFFIX):\$(${name}_OBJS)\n";
-	print OUT "\$(LIB_PREFIX)${name}\$(SHRLIB_SUFFIX):\$(${name}_OBJS)\n";
+	print OUT "${name}_OBJSNAME+=\$(addsuffix \$(OBJ),\$(basename \$(${name}_OBJS)))\n";
+	print OUT "\$(LIB_PREFIX)${name}\$(LIB_SUFFIX):\$(${name}_OBJSNAME)\n";
+	print OUT "\$(LIB_PREFIX)${name}\$(SHRLIB_SUFFIX):\$(${name}_OBJSNAME)\n";
 	print OUT "endif\n";
 	print OUT "\n";
 }

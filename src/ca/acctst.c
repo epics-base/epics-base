@@ -2417,11 +2417,13 @@ int acctst ( char *pName, unsigned interestLevel, unsigned channelCount,
 
     unequalServerBufferSizeTest ( pName, interestLevel );
 
+    showProgressBegin ( "connecting to test channel", interestLevel );
     status = ca_search ( pName, & chan );
     SEVCHK ( status, NULL );
     assert ( strcmp ( pName, ca_name ( chan ) ) == 0 );
     status = ca_pend_io ( 100.0 );
     SEVCHK ( status, NULL );
+    showProgressEnd ( interestLevel );
 
     printf ( "native type was %s, native count was %lu\n",
         dbf_type_to_text ( ca_field_type ( chan ) ), 

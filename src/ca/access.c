@@ -99,6 +99,9 @@
 /************************************************************************/
 /*
  * $Log$
+ * Revision 1.77  1995/09/01  14:31:32  mrk
+ * Fixed bug causing memory problem
+ *
  * Revision 1.76  1995/08/23  00:34:06  jhill
  * fixed vxWorks specific SPARC data alignment problem
  *
@@ -976,14 +979,14 @@ int epicsShareAPI ca_search_and_connect
 			 * also allocate enough for the channel name & paddr
 			 * block
 			 */
-			size = sizeof(*chix) + strcnt + sizeof(struct db_addr)
-				+CA_MESSAGE_ALIGN(1);
+			size = CA_MESSAGE_ALIGN(sizeof(*chix) + strcnt) +
+				 sizeof(struct db_addr);
 			*chixptr = chix = (chid) calloc(1,size);
 			if (!chix){
 				return ECA_ALLOCMEM;
 			}
 			chix->id.paddr = (struct db_addr *) 
-				CA_MESSAGE_ALIGN(strcnt+(char *)(chix+1));
+			(CA_MESSAGE_ALIGN(sizeof(*chix)+strcnt) + (char *)chix);
 			*chix->id.paddr = tmp_paddr;
 			chix->puser = puser;
 			chix->pConnFunc = conn_func;
@@ -1972,7 +1975,7 @@ void    (*pfunc)(struct access_rights_handler_args))
 	/*
 	 * make certain that it runs at least once
 	 */
-	if(chan->state == cs_conn){
+	if(chan->state == cs_conn && chan->pAccessRightsFunc){
 		args.chid = chan;
 		args.ar = chan->ar;
 		(*chan->pAccessRightsFunc)(args);
@@ -2531,6 +2534,8 @@ int epicsShareAPI ca_clear_channel (chid chix)
 	chix->type = TYPENOTINUSE;
 	old_chan_state = chix->state;
 	chix->state = cs_closed;
+	chix->pAccessRightsFunc = NULL;
+	chix->pConnFunc = NULL;
 
 	/* the while is only so I can break to the lock exit */
 	LOCK;

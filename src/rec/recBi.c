@@ -44,6 +44,7 @@
  * .10  03-21-90        lrd     add db_post_events for RVAL
  * .11  04-11-90        lrd     make local variables static
  * .12  10-10-90	mrk	Made changes for new record and device support
+ * .13  10-24-91	jba	Moved comment
  */
 
 #include	<vxWorks.h>
@@ -148,6 +149,7 @@ static long process(paddr)
 
 	status=(*pdset->read_bi)(pbi); /* read the new value */
 	pbi->pact = TRUE;
+	/* status is one if an asynchronous record is being processed*/
 	if (status==1) return(0);
 	tsLocalTime(&pbi->time);
 	if(status==0) { /* convert rval to val */
@@ -155,7 +157,6 @@ static long process(paddr)
 		else pbi->val = 1;
 		pbi->udf = FALSE;
 	}
-	/* status is one if an asynchronous record is being processed*/
 	else if(status==2) status=0;
 	/* check for alarms */
 	alarm(pbi);

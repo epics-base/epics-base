@@ -180,6 +180,7 @@ SRCS += timer.cpp
 SRCS += timerQueue.cpp
 SRCS += timerQueueThreaded.cpp
 SRCS += timerQueueThreadedMgr.cpp
+SRCS += timerQueueNonThreaded.cpp
 
 #tsDefs contains R3.13 compatibility tsStamp code
 SRC_DIRS += $(LIBCOM)/tsDefs

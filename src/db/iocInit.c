@@ -37,6 +37,7 @@
  * .08  10-10-91        rcz     changed getResources to accomodate EPICS_
  *                              parameters in a structure (first try)
  * .09  12-02-91        mrk     Added finishDevSup 
+ * .10  02-10-92        jba     Changed error messages
  *				
  */
 
@@ -568,7 +569,11 @@ static long getResources(fname) /* Resource Definition File interpreter */
     double          n_double;
      if (sdrSum) {
  	if ((fd2 = open("default.sdrSum", READ, 0x0)) < 0) {
- 	    errMessage(0L, "Can't open default.sdrSum file");
+ 	    errMessage(-1L, "WARNING WARNING WARNING WARNING WARNING WARNING WARNING");
+ 	    errMessage(-1L, "WARNING WARNING WARNING WARNING WARNING WARNING WARNING");
+ 	    errMessage(-1L, "Can't open default.sdrSum file.  Please invoke getrel");
+ 	    errMessage(-1L, "WARNING WARNING WARNING WARNING WARNING WARNING WARNING");
+ 	    errMessage(-1L, "WARNING WARNING WARNING WARNING WARNING WARNING WARNING");
  	    return (-1);
  	}
  	fioRdString(fd2, buff, MAX);
@@ -579,7 +584,7 @@ static long getResources(fname) /* Resource Definition File interpreter */
  	    errMessage(-1L, "WARNING WARNING WARNING WARNING WARNING WARNING WARNING");
  	    errMessage(-1L, "WARNING WARNING WARNING WARNING WARNING WARNING WARNING");
  	    errMessage(-1L, "WARNING WARNING WARNING WARNING WARNING WARNING WARNING");
- 	    errMessage(0L, "THIS DATABASE IS OUT_OF_DATE");
+ 	    errMessage(-1L, "THIS DATABASE IS OUT_OF_DATE");
  	    errMessage(-1L, "WARNING WARNING WARNING WARNING WARNING WARNING WARNING");
  	    errMessage(-1L, "WARNING WARNING WARNING WARNING WARNING WARNING WARNING");
  	    errMessage(-1L, "WARNING WARNING WARNING WARNING WARNING WARNING WARNING");
@@ -590,7 +595,7 @@ static long getResources(fname) /* Resource Definition File interpreter */
      }
     if (!fname) return (0);
     if ((fd = open(fname, READ, 0x0)) < 0) {
-	errMessage(0L, "getResources: No such Resource file");
+	errMessage(-1L, "getResources: No such Resource file");
 	return (-1);
     }
     while ((len = fioRdString(fd, buff, MAX)) != EOF) {
@@ -636,7 +641,7 @@ static long getResources(fname) /* Resource Definition File interpreter */
 	if (rtnval != OK || (type & N_TEXT == 0)) {
 	    sprintf(message,
 		  "getResources: Symbol name not found - line=%d", lineNum);
-	    errMessage(0L, message);
+	    errMessage(-1L, message);
 	    return (-1);
 	}
 	if ( (strncmp(s1,"EPICS_",6)) == SAME)
@@ -663,7 +668,7 @@ static long getResources(fname) /* Resource Definition File interpreter */
 	    if ((sscanf(s3, "%hd", &n_short)) != 1) {
 		sprintf(message,
 		      "getResources: conversion failed - line=%d", lineNum);
-		errMessage(0L, message);
+		errMessage(-1L, message);
 	        return (-1);
 	    }
             if ( epicsFlag ) {
@@ -680,7 +685,7 @@ static long getResources(fname) /* Resource Definition File interpreter */
 	    if ((sscanf(s3, "%ld", &n_long)) != 1) {
 		sprintf(message,
 		      "getResources: conversion failed - line=%d", lineNum);
-		errMessage(0L, message);
+		errMessage(-1L, message);
 	        return (-1);
 	    }
             if ( epicsFlag ) {
@@ -696,7 +701,7 @@ static long getResources(fname) /* Resource Definition File interpreter */
 	    if ((sscanf(s3, "%e", &n_float)) != 1) {
 		sprintf(message,
 		      "getResources: conversion failed - line=%d", lineNum);
-		errMessage(0L, message);
+		errMessage(-1L, message);
 	        return (-1);
 	    }
             if ( epicsFlag ) {
@@ -713,7 +718,7 @@ static long getResources(fname) /* Resource Definition File interpreter */
 	    if ((sscanf(s3, "%le", &n_double)) != 1) {
 		sprintf(message,
 		      "getResources: conversion failed - line=%d", lineNum);
-		errMessage(0L, message);
+		errMessage(-1L, message);
 	        return (-1);
 	    }
             if ( epicsFlag ) {

@@ -29,106 +29,14 @@
 #  Default environment settings
 
 # Channel Access:
-# EPICS_CA_ADDR_LIST 
-#   Augment beacon/search dest ip addr list
-#   from white space separated ip addresses in this
-#   environment variable. "Quote" if more than one addr.
-#
-# EPICS_CA_AUTO_ADDR_LIST 
-#   YES = augment beacon/search dest ip
-#   addr list from network interfaces found; NO = only use
-#   EPICS_CA_ADDR_LIST to create this list.
-#
-# EPICS_CA_CONN_TMO 
-#   after not seeing a server beacon for this number
-#   of seconds the clients will send an echo request over
-#   tcp/ip to verify the connection.
-#
-# EPICS_CA_REPEATER_PORT CA repeater port number.
-#
-# EPICS_CA_SERVER_PORT CA server port number.
-#
-# EPICS_CA_MAX_ARRAY_BYTES
-#   This parameter specifies the size (in bytes) of the largest array 
-#   that will transport through CA. It must be specified for both the 
-#   client and the server library. 
-#
-
+# Details are in the CA reference manual 
+# (see CAref.html in this distribution)
 EPICS_CA_ADDR_LIST=""
 EPICS_CA_AUTO_ADDR_LIST=YES
 EPICS_CA_CONN_TMO=30.0
 EPICS_CA_REPEATER_PORT=5065
 EPICS_CA_SERVER_PORT=5064
 EPICS_CA_MAX_ARRAY_BYTES=16384
-
-#
-# These parameters are only used by the CA server library
-#
-# EPICS_CA_BEACON_PERIOD 
-#   The quiescent sec between server beacons.
-#
-# EPICS_CAS_INTF_ADDR_LIST
-#   This specifies a list of IP addresses identifying
-#   a limited set of network interfaces for server communication. 
-#
-#   Specifically, this parameter specifies the interfaces from
-#   which the server will accept TCP/IP connections. It also 
-#   specifies that UDP search messages addressed to both
-#   the IP addresses in EPICS_CAS_INTF_ADDR_LIST and also to
-#   the broadcast addresses of corresponding LAN interfaces
-#   will be accepted by the server. If this parameter is empty 
-#   then all UDP search messages and TCP connection requests
-#   addressed to the host are accepted. 
-#
-#   If EPICS_CA_AUTO_ADDR_LIST is NO, then the beacon address list
-#   is not auto configured.
-#
-#   If EPICS_CA_AUTO_ADDR_LIST is YES and EPICS_CAS_INTF_ADDR_LIST
-#   has _not_ been specified then beacons are sent to the broadcast 
-#   addresses of all LAN interfaces and the destination addresses of 
-#   all point-to-point serial interfaces. 
-#
-#   If EPICS_CA_AUTO_ADDR_LIST is YES and EPICS_CAS_INTF_ADDR_LIST
-#   _has_ been specified then beacons are sent to the broadcast address 
-#   of each LAN interface corresponding to an IP address in 
-#   EPICS_CAS_INTF_ADDR_LIST or the destination address of 
-#   a point-to-point serial interfaces corresponding to an IP
-#   address in EPICS_CAS_INTF_ADDR_LIST. 
-#
-#   Beacons may be sent to additional hand configured addresses 
-#   (see the notes below under EPICS_CAS_BEACON_ADDR_LIST).
-#
-# EPICS_CAS_BEACON_ADDR_LIST
-#   If this parameter is specified, or if EPICS_CAS_INTF_ADDR_LIST 
-#   isnt empty, then this parameter is used by the server library to 
-#   augment the list of addresses beacons are sent to. Otherwise
-#   EPICS_CA_ADDR_LIST is used to augment the list of addresses 
-#   beacons are sent to.
-#
-# EPICS_CAS_SERVER_PORT
-#   If this parameter is specified then it
-#   and not EPICS_CA_SERVER_PORT is used to determine the server's
-#   port number. It is possible to have multiple servers on the
-#   same host on the same EPICS_CAS_SERVER_PORT port if the IP
-#   kernel is modern (if it has multicast enhancements). In this
-#   situation all servers will share the same user specified 
-#   UDP port number and will be assigned unique TCP port numbers. 
-#
-#   The fact that the servers may not be using the user specified
-#   port number for TCP will be nearly transparent to EPICS 
-#   3.13 or higher clients that will be locating the servers
-#   using the user specified UDP port number, but will be connecting 
-#   to the servers using whatever TCP port has been assigned.
-#   Unfortunately, a severe limitation exists in most IP
-#   kernels: if multiple servers are listening for search requests 
-#   addressed to the same UDP port then they will all receive a copy 
-#   of each UDP message received by the IP kernel that has a broadcast
-#   destination address. Unfortunately, in many IP kernel 
-#   implementations only one of the servers will receive UDP
-#   messages with a single host (unicast) destination address.
-#
-
-
 EPICS_CA_BEACON_PERIOD=15.0
 EPICS_CAS_BEACON_PERIOD=
 EPICS_CAS_BEACON_PORT=
@@ -136,6 +44,7 @@ EPICS_CAS_AUTO_BEACON_ADDR_LIST=""
 EPICS_CAS_BEACON_ADDR_LIST=""
 EPICS_CAS_SERVER_PORT=
 EPICS_CAS_INTF_ADDR_LIST=""
+EPICS_CAS_IGNORE_ADDR_LIST=""
 
 # Log Server:
 # EPICS_IOC_LOG_PORT Log server port number etc.

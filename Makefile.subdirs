@@ -12,7 +12,6 @@ MAKEOPT=${MFLAGS} -f Makefile.${BUILD_TYPE}
 all: build
 
 depends:
-	@echo "${T_A}: DEPENDS"
 	@(for DIR in ${DIRS};					\
 		do						\
 			TMP=$$PWD; echo "${T_A}: --$$DIR"; 	\
@@ -20,7 +19,6 @@ depends:
 		done)
 
 build_libs:
-	@echo "${T_A}: BUILD LIBS"
 	@(for DIR in ${DIRS};					\
 		do						\
 			TMP=$$PWD; echo "${T_A}: --$$DIR"; 	\
@@ -28,7 +26,6 @@ build_libs:
 		done)
 
 install_libs:
-	@echo "${T_A}: INSTALL LIBS"
 	@(for DIR in ${DIRS};					\
 		do						\
 			TMP=$$PWD; echo "${T_A}: --$$DIR"; 	\
@@ -36,7 +33,6 @@ install_libs:
 		done)
 
 build:
-	@echo "${T_A}: BUILDING"
 	@(for DIR in ${DIRS};					\
 		do						\
 			TMP=$$PWD; echo "${T_A}: --$$DIR"; 	\
@@ -44,7 +40,6 @@ build:
 		done)
 
 install:
-	@echo "${T_A}: INSTALLING"
 	@(for DIR in ${DIRS};					\
 		do						\
 			TMP=$$PWD; echo "${T_A}: --$$DIR"; 	\

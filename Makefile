@@ -17,38 +17,40 @@
 #         is complete.
 #
 
+include config.mk
+
 all: build
 
 depends:
-	@(for FILE in `/bin/ls config.*.mk 2> /dev/null `;		\
+	@(for FILE in ${BUILD_ARCHS};					\
 		do							\
 			TEMP=`echo $$FILE | cut -d. -f2`;		\
 			${MAKE} ${MFLAGS} $@.$$TEMP;			\
 		done)
 
 build_libs:
-	@(for FILE in `/bin/ls config.*.mk 2> /dev/null `;		\
+	@(for FILE in ${BUILD_ARCHS};					\
 		do							\
 			TEMP=`echo $$FILE | cut -d. -f2`;		\
 			${MAKE} ${MFLAGS} $@.$$TEMP;			\
 		done)
 
 install_libs:
-	@(for FILE in `/bin/ls config.*.mk 2> /dev/null `;		\
+	@(for FILE in ${BUILD_ARCHS};					\
 		do							\
 			TEMP=`echo $$FILE | cut -d. -f2`;		\
 			${MAKE} ${MFLAGS} $@.$$TEMP;			\
 		done)
 
 build:
-	@(for FILE in `/bin/ls config.*.mk 2> /dev/null `;		\
+	@(for FILE in ${BUILD_ARCHS};					\
 		do							\
 			TEMP=`echo $$FILE | cut -d. -f2`;		\
 			${MAKE} ${MFLAGS} $@.$$TEMP;			\
 		done)
 
 install:
-	@(for FILE in `/bin/ls config.*.mk 2> /dev/null `;		\
+	@(for FILE in ${BUILD_ARCHS};					\
 		do							\
 			TEMP=`echo $$FILE | cut -d. -f2`;		\
 			${MAKE} ${MFLAGS} $@.$$TEMP;			\

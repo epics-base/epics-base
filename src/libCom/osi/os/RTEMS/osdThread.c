@@ -529,7 +529,7 @@ showInternalTaskInfo (rtems_id tid)
     _Thread_Enable_dispatch();
     printf ("%4d", threadGetOsiPriorityValue(thread.current_priority));
     showBitmap (bitbuf, thread.current_state, taskState);
-    printf ("%12.12s", bitbuf);
+    printf ("%9.9s", bitbuf);
     if (thread.current_state & (STATES_WAITING_FOR_SEMAPHORE |
 				STATES_WAITING_FOR_MUTEX |
 				STATES_WAITING_FOR_MESSAGE))
@@ -540,14 +540,14 @@ showInternalTaskInfo (rtems_id tid)
 static void
 threadShowHeader (void)
 {
-    printf ("     NAME       ID    PRI    STATE      WAIT   \n");
-    printf ("+-----------+--------+---+-----------+--------+\n");
+    printf ("      NAME       ID    PRI   STATE    WAIT   \n");
+    printf ("+-------------+--------+---+--------+--------+\n");
 }
 
 static void
 threadShowInfo (struct taskVar *v, unsigned int level)
 {
-	printf ("%12.12s %8.8x", v->name, v->id);
+	printf ("%14.14s %8.8x", v->name, v->id);
 	showInternalTaskInfo (v->id);
 	printf ("\n");
 }

@@ -6,7 +6,7 @@
  *
  *	Author:	Bob Dalesio
  *	Date:	12-12-86
- *	postfix.c $Id$
+ *	$Id$
  *
  *	Control System Software for the GTA Project
  *

@@ -154,10 +154,10 @@ $(INSTALL_DBD)/bpt%.dbd: ../bpt%.data
 	$(MAKEBPT) $< $@
 
 ifdef DBDEXPAND
-$(INSTALL_DBD)/$(DBDNAME): ../$(DBDEXPAND)
+$(INSTALL_DBD)/$(DBDNAME): $(addprefix ../,$(DBDEXPAND))
 	@echo "Expanding dbd"
 	@$(RM) $@
-	$(DBEXPAND) $(USR_DBDFLAGS) $< > $@
+	$(DBEXPAND) $(USR_DBDFLAGS) $^ > $@
 endif
 
 ##################################################### Dependencies

@@ -300,10 +300,10 @@ $(INSTALL_DBD)/bpt%.dbd: ../bpt%.data
 	$(EPICS_BASE_HOST_BIN)/makeBpt$(HOSTEXE) $< $@
 
 ifdef DBDEXPAND
-$(INSTALL_DBD)/$(DBDNAME): ../$(DBDEXPAND)
+$(INSTALL_DBD)/$(DBDNAME): $(addprefix ../,$(DBDEXPAND))
 	@echo Expanding dbd
 	@$(RM) $@
-	$(EPICS_BASE_HOST_BIN)/dbExpand$(HOSTEXE) $(DBDFLAGS) $< > $@
+	$(EPICS_BASE_HOST_BIN)/dbExpand$(HOSTEXE) $(DBDFLAGS) $^ > $@
 endif
 
 # WIN95/NT source browser

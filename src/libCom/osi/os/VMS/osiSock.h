@@ -75,10 +75,8 @@ int socket (int domain, int type, int protocol);
 
 #endif /* defined(MULTINET) && defined(MULTINET_NO_PROTOTYPES) */
 
-void bzero (char *b, int length);
 #ifdef MULTINET
 #	include <arpa/inet.h>
-	int gettimeofday (struct timeval *tp, ...);
 #else
 	char * inet_ntoa (struct in_addr in);
 	unsigned long inet_addr (const char *);
@@ -102,6 +100,9 @@ struct hostent *gethostbyaddr(char *addr, int len, int type);
  
 typedef int                     SOCKET;
 #define INVALID_SOCKET		(-1)
+#define INADDR_LOOPBACK ((u_long)0x7f000001)
+
+
 /* 
  * (the VAXC runtime lib has its own close 
  */

@@ -504,11 +504,11 @@ $(INSTALL_DOC)/%: ../%
 
 $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)/%: ../%
 	@echo "Installing $@"
-	@$(INSTALL) -m 644 $< $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)
+	@$(INSTALL) -d -m 644 $< $(@D)
 
 $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)/%: %
 	@echo "Installing $@"
-	@$(INSTALL) -m 644 $< $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)
+	@$(INSTALL) -d -m 644 $< $(@D)
 
 .PRECIOUS: %.o %.c
 

@@ -315,7 +315,7 @@ static void monitor(psa)
         short           stat,sevr,nsta,nsev;
 
         /* get previous stat and sevr  and new stat and sevr*/
-        monitor_mask = recGblResetAlarms(psub);
+        monitor_mask = recGblResetAlarms(psa);
 
 	monitor_mask |= (DBE_LOG|DBE_VALUE);
         if(monitor_mask)

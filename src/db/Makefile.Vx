@@ -1,0 +1,26 @@
+EPICS = ../../..
+include $(EPICS)/config/CONFIG_vx
+
+SRCS = \
+	dbAccess.c dbBkpt.c dbFastLinkConv.c dbLink.c \
+	dbStaticLib.c iocInit.c drvTS.c dbScan.c \
+	dbEvent.c dbTest.c dbls.c db_access.c \
+	db_test.c recGbl.c callback.c taskwd.c \
+	dbCaLink.c dbCaDblink.c devLib.c initHooks.c
+
+OBJS = \
+	$(OBDIR)/dbAccess.o $(OBDIR)/dbBkpt.o $(OBDIR)/dbFastLinkConv.o \
+	$(OBDIR)/dbLink.o $(OBDIR)/dbStaticLib.o $(OBDIR)/iocInit.o \
+	$(OBDIR)/drvTS.o $(OBDIR)/dbScan.o $(OBDIR)/dbEvent.o \
+	$(OBDIR)/dbTest.o $(OBDIR)/dbls.o $(OBDIR)/db_access.o \
+	$(OBDIR)/db_test.o $(OBDIR)/recGbl.o $(OBDIR)/callback.o \
+	$(OBDIR)/taskwd.o $(OBDIR)/dbCaLink.o $(OBDIR)/dbCaDblink.o \
+	$(OBDIR)/devLib.o
+
+LIBOBJS =
+
+PROD = $(OBDIR)/dbLib
+
+TARGET = $(OBDIR)/initHooks.o
+
+include $(EPICS)/config/RULES.Vx

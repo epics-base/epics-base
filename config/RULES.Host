@@ -199,7 +199,7 @@ else
 #	On Unix: library "ca" is linked with "-lca"  etc.
 #	A library may be just newly build in the local dir: add "-L."
 PRODDEPLIBS=$(PROD_LIBS:%=lib%.a)
-USR_LDLIBS += $(PROD_LIBS:%=-l%) -L.
+USR_LDLIBS += -L. $(PROD_LIBS:%=-l%) 
 endif
 
 endif

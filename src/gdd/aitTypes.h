@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.7  1998/04/16 21:16:35  jhill
+ * removed redundant solaris test
+ *
  * Revision 1.6  1997/12/18 19:03:18  jba
  * Linux change.
  *
@@ -85,7 +88,7 @@ typedef	struct {
 #endif
 
 #ifndef vxWorks
-#if (_POSIX_C_SOURCE < 3) && !defined(SOLARIS) && !defined(HP_UX) && !defined(linux)
+#if (_POSIX_C_SOURCE < 3) && !defined(SOLARIS) && !defined(HP_UX) && !defined(linux) &&!defined(sgi)
 
 struct timespec
 {

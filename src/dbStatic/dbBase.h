@@ -111,7 +111,7 @@ typedef struct dbRecordNode {
 	ELLNODE		node;
 	void		*precord;
 	char		*recordname;
-	int			visible;
+	int		visible;
 }dbRecordNode;
 
 typedef struct dbRecordType {

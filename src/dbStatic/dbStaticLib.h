@@ -77,6 +77,7 @@ void dbFreeEntry(DBENTRY *pdbentry);
 void dbInitEntry(DBBASE *pdbbase,DBENTRY *pdbentry);
 void dbFinishEntry(DBENTRY *pdbentry);
 DBENTRY *dbCopyEntry(DBENTRY *pdbentry);
+void dbCopyEntryContents(DBENTRY *pfrom,DBENTRY *pto);
 
 long dbReadDatabase(DBBASE **ppdbbase,const char *filename,
 	const char *path,const char *substitutions);
@@ -161,6 +162,8 @@ char **dbGetMenuChoices(DBENTRY *pdbentry);
 int  dbGetMenuIndex(DBENTRY *pdbentry);
 long dbPutMenuIndex(DBENTRY *pdbentry,int index);
 int  dbGetNMenuChoices(DBENTRY *pdbentry);
+char *dbGetMenuStringFromIndex(DBENTRY *pdbentry, int index);
+int dbGetMenuIndexFromString(DBENTRY *pdbentry, char *choice);
 
 int  dbAllocForm(DBENTRY *pdbentry);
 long  dbFreeForm(DBENTRY *pdbentry);

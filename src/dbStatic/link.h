@@ -50,13 +50,14 @@
 #define	AB_IO		4
 #define GPIB_IO		5
 #define BITBUS_IO	6
+#define MACRO_LINK	7
 #define DB_LINK		10
 #define CA_LINK		11
 #define INST_IO		12		/* instrument */
 #define	BBGPIB_IO	13		/* bitbus -> gpib */
 #define RF_IO		14
 #define VXI_IO		15
-#define LINK_NTYPES 13
+#define LINK_NTYPES 14
 typedef struct maplinkType{
 	char	*strvalue;
 	int	value;
@@ -73,6 +74,7 @@ maplinkType pamaplinkType[LINK_NTYPES] = {
 	{"AB_IO",AB_IO},
 	{"GPIB_IO",GPIB_IO},
 	{"BITBUS_IO",BITBUS_IO},
+	{"MACRO_LINK",MACRO_LINK},
 	{"DB_LINK",DB_LINK},
 	{"CA_LINK",CA_LINK},
 	{"INST_IO",INST_IO},
@@ -99,6 +101,11 @@ maplinkType pamaplinkType[LINK_NTYPES] = {
 #define pvlOptOutString	0x200	/*Output as string*/
 
 typedef long (*LINKCVT)();
+
+struct macro_link {
+	char	*macroStr;
+};
+
 struct pv_link {
 	char	*pvname;	/*pvname to link to*/
 	void	*precord;	/*Address of record containing link*/
@@ -188,6 +195,7 @@ struct	vxiio{
 /* union of possible address structures */
 union value{
 	char		*constantStr;	/*constant string*/
+	struct macro_link macro_link;	/* link containing macro substitution*/
 	struct pv_link	pv_link;	/* link to process variable*/
 	struct vmeio	vmeio;		/* vme io point */
 	struct camacio	camacio;	/* camac io point */

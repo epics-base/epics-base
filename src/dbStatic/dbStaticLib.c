@@ -185,7 +185,6 @@ sizeof(promptRF_IO)/sizeof(char *),
 sizeof(promptVXI_IO)/sizeof(char *)};
 
 /*forward references for private routines*/
-static long checkDevChoice(DBENTRY *pcheck, long link_type);
 static long putParmString(char **pparm,char *pstring);
 static long mapLINKTtoFORMT(DBLINK *plink,dbFldDes *pflddes,int *ind);
 static void entryErrMessage(DBENTRY *pdbentry,long status,char *mess);
@@ -223,50 +222,74 @@ void dbDumpRecDes(DBBASE *pdbbase,char *recordTypeName)
 	{dbDumpRecordType(pdbbase,recordTypeName);}
 
 /* internal routines*/
-void copyEntry(DBENTRY *pfrom,DBENTRY *pto)
-{
-    *pto = *pfrom;
-    pto->message = NULL;
-    pto->formpvt = NULL;
-}
-
-/*checkDevChoice initializes INP or OUT field*/
 static char *pNullString = "";
-static long checkDevChoice(DBENTRY *pcheck, long link_type)
+long setLinkType(DBENTRY *pdbentry)
 {
     DBENTRY	dbEntry;
-    DBENTRY	*pdbentry= &dbEntry;
     dbFldDes	*pflddes;
+    dbRecordType *precordType;
+    devSup	*pdevSup;
     DBLINK	*plink;
     long	status=0;
+    int		link_type,ind,type;
+    int		isSoftLink;
 
-    copyEntry(pcheck,pdbentry);
-    status = dbFindField(pdbentry,"INP");
-    if(status) status = dbFindField(pdbentry,"OUT");
-    if(!status) {
-	pflddes = pdbentry->pflddes;
-	plink = (DBLINK *)(pdbentry->pfield);
-	if(plink->type == link_type) goto done;
-	if(link_type==CONSTANT && plink->type==PV_LINK)goto done;
-	if(link_type==PV_LINK && plink->type==CONSTANT)goto done;
-	dbFreeLinkContents(plink);
-	plink->type = link_type;
-	switch(plink->type) {
-	    case VME_IO: plink->value.vmeio.parm = pNullString; break;
-	    case CAMAC_IO: plink->value.camacio.parm = pNullString; break;
-	    case AB_IO: plink->value.abio.parm = pNullString; break;
-	    case GPIB_IO: plink->value.gpibio.parm = pNullString; break;
-	    case BITBUS_IO: plink->value.bitbusio.parm = pNullString; break;
-	    case INST_IO: plink->value.instio.string = pNullString; break;
-	    case BBGPIB_IO: plink->value.bbgpibio.parm = pNullString; break;
-	    case VXI_IO: plink->value.vxiio.parm = pNullString; break;
+    dbCopyEntryContents(pdbentry,&dbEntry);
+    status = dbFindField(&dbEntry,"DTYP");
+    if(status) {
+	epicsPrintf("field DTYP does not exist for recordtype %s\n",
+		dbGetRecordTypeName(&dbEntry));
+	status = S_dbLib_fieldNotFound;
+	goto done;
+    }
+    precordType = dbEntry.precordType;
+    if(!precordType) {
+	status = S_dbLib_badField;
+	goto done;
+    }
+    if(ellCount(&precordType->devList)==0) goto done;
+    ind = dbGetMenuIndex(&dbEntry);
+    if(ind==-1) {
+	char *pstring;
+
+	pstring = dbGetString(&dbEntry);
+	if(strstr(pstring,"$(") || strstr(pstring,"${")) {
+	    link_type = MACRO_LINK;
+	} else {
+	    status = S_dbLib_badField;
+	    goto done;
 	}
     } else {
-	if(link_type==CONSTANT) status = 0;
-	else status = S_dbLib_badField;
+	pdevSup = (devSup *)ellNth(&precordType->devList,ind+1);
+	if(!pdevSup) {
+	    status = S_dbLib_badField;
+	    goto done;
+	}
+	link_type = pdevSup->link_type;
+    }
+    pflddes = pdbentry->pflddes;
+    plink = (DBLINK *)(pdbentry->pfield);
+    if(plink->type == link_type) goto done;
+    type = plink->type;
+    if(type==CONSTANT || type==PV_LINK || type==DB_LINK || type==CA_LINK)
+	isSoftLink = TRUE;
+    else
+	isSoftLink = FALSE;
+    if(isSoftLink && (link_type==CONSTANT || link_type==PV_LINK)) goto done;
+    dbFreeLinkContents(plink);
+    plink->type = link_type;
+    switch(plink->type) {
+        case VME_IO: plink->value.vmeio.parm = pNullString; break;
+        case CAMAC_IO: plink->value.camacio.parm = pNullString; break;
+	case AB_IO: plink->value.abio.parm = pNullString; break;
+	case GPIB_IO: plink->value.gpibio.parm = pNullString; break;
+	case BITBUS_IO: plink->value.bitbusio.parm = pNullString; break;
+	case INST_IO: plink->value.instio.string = pNullString; break;
+	case BBGPIB_IO: plink->value.bbgpibio.parm = pNullString; break;
+	case VXI_IO: plink->value.vxiio.parm = pNullString; break;
     }
 done:
-    dbFinishEntry(pdbentry);
+    dbFinishEntry(&dbEntry);
     return(status);
 }
 
@@ -294,6 +317,7 @@ void dbFreeLinkContents(struct link *plink)
 
     switch(plink->type) {
 	case CONSTANT: free((void *)plink->value.constantStr); break;
+	case MACRO_LINK: free((void *)plink->value.macro_link.macroStr); break;
 	case PV_LINK: free((void *)plink->value.pv_link.pvname); break;
 	case VME_IO: parm = plink->value.vmeio.parm; break;
 	case CAMAC_IO: parm = plink->value.camacio.parm; break;
@@ -329,8 +353,7 @@ void dbFreePath(DBBASE *pdbbase)
 }
 
 #define INC_SIZE	256
-void dbCatString(char **string,int *stringLength,char *new,
-	char *separator)
+void dbCatString(char **string,int *stringLength,char *new,char *separator)
 {
     if((*string==NULL)
     || ((strlen(*string)+strlen(new)+2) > (size_t)*stringLength)) {
@@ -484,7 +507,14 @@ dbDeviceMenu *dbGetDeviceMenu(DBENTRY *pdbentry)
     if(!precordType) return(NULL);
     if(!pflddes) return(NULL);
     if(pflddes->field_type!=DBF_DEVICE) return(NULL);
-    if(pflddes->ftPvt) return((dbDeviceMenu *)pflddes->ftPvt);
+    if(pflddes->ftPvt){
+	pdbDeviceMenu = (dbDeviceMenu *)pflddes->ftPvt;
+	if(pdbDeviceMenu->nChoice == ellCount(&precordType->devList))
+	    return(pdbDeviceMenu);
+	free((void *)pdbDeviceMenu->papChoice);
+	free((void *)pdbDeviceMenu);
+	pflddes->ftPvt = NULL;
+    }
     nChoice = ellCount(&precordType->devList);
     if(nChoice <= 0) return(NULL);
     pdbDeviceMenu = dbCalloc(1,sizeof(dbDeviceMenu));
@@ -697,11 +727,20 @@ DBENTRY *dbCopyEntry(DBENTRY *pdbentry)
     pnew->formpvt = NULL;
     return(pnew);
 }
+
+void dbCopyEntryContents(DBENTRY *pfrom,DBENTRY *pto)
+{
+    *pto = *pfrom;
+    pto->message = NULL;
+    pto->formpvt = NULL;
+}
+
 
 long dbPath(DBBASE *pdbbase,const char *path)
 {
     if(!pdbbase) return(-1);
     dbFreePath(pdbbase);
+    if(!path || strlen(path)==0) return(dbAddPath(pdbbase,"."));
     return(dbAddPath(pdbbase,path));
 }
 
@@ -777,12 +816,12 @@ long dbWriteRecordFP(DBBASE *pdbbase,FILE *fp,char *precordTypename,int level)
     while(!status) {
 	status = dbFirstRecord(pdbentry);
 	while(!status) {
-		if(dbIsVisibleRecord(pdbentry))
+	    if(dbIsVisibleRecord(pdbentry))
 	    	fprintf(fp,"grecord(%s,\"%s\") {\n",
-				dbGetRecordTypeName(pdbentry),dbGetRecordName(pdbentry));
+		    dbGetRecordTypeName(pdbentry),dbGetRecordName(pdbentry));
 	    else
 	    	fprintf(fp,"record(%s,\"%s\") {\n",
-				dbGetRecordTypeName(pdbentry),dbGetRecordName(pdbentry));
+		    dbGetRecordTypeName(pdbentry),dbGetRecordName(pdbentry));
 	    status = dbFirstField(pdbentry,dctonly);
 	    while(!status) {
 		if(!dbIsDefaultValue(pdbentry) || level>0) {
@@ -1222,8 +1261,7 @@ long dbCreateRecord(DBENTRY *pdbentry,char *precordName)
     ELLLIST           	*preclist = NULL;
     dbRecordNode       	*precnode = NULL;
     dbRecordNode       	*pNewRecNode = NULL;
-    long		status;
-    devSup		*pdevSup;
+    long		status = 0;
 
     if(!precordType) return(S_dbLib_recordTypeNotFound);
     /*Get size of NAME field*/
@@ -1254,11 +1292,7 @@ long dbCreateRecord(DBENTRY *pdbentry,char *precordName)
     pdbentry->precnode = pNewRecNode;
     ppvd = dbPvdAdd(pdbentry->pdbbase,precordType,pNewRecNode);
     if(!ppvd) {errMessage(-1,"Logic Err: Could not add to PVD");return(-1);}
-    /*If any device support exists let checkDevChoice give default for INP/OUT*/
-    pdevSup = (devSup *)ellFirst(&precordType->devList);
-    if(!pdevSup) return(0);
-    status = checkDevChoice(pdbentry,pdevSup->link_type);
-    return (status);
+    return(status);
 }
 
 long dbDeleteRecord(DBENTRY *pdbentry)
@@ -1409,30 +1443,34 @@ long dbRenameRecord(DBENTRY *pdbentry,char *newName)
 	ellInsert(preclist,ellPrevious(&plistnode->node),&precnode->node);
     else
 	ellAdd(preclist,&precnode->node);
-    return(0);
+    /*Leave pdbentry pointing to newly renamed record*/
+    return(dbFindRecord(pdbentry,newName));
 }
 
 long dbVisibleRecord(DBENTRY *pdbentry)
 {
     dbRecordNode	*precnode = pdbentry->precnode;
+
     if(!precnode) return(S_dbLib_recNotFound);
-	precnode->visible=1;
-	return 0;
+    precnode->visible=1;
+    return 0;
 }
 
 long dbInvisibleRecord(DBENTRY *pdbentry)
 {
     dbRecordNode	*precnode = pdbentry->precnode;
+
     if(!precnode) return(S_dbLib_recNotFound);
-	precnode->visible=0;
-	return 0;
+    precnode->visible=0;
+    return 0;
 }
 
 int dbIsVisibleRecord(DBENTRY *pdbentry)
 {
     dbRecordNode	*precnode = pdbentry->precnode;
+
     if(!precnode) return 0;
-	return precnode->visible?1:0;
+    return(precnode->visible?1:0);
 }
 
 long dbCopyRecord(DBENTRY *pdbentry,char *newRecordName,int overWriteOK)
@@ -1478,7 +1516,8 @@ long dbCopyRecord(DBENTRY *pdbentry,char *newRecordName,int overWriteOK)
 	    exit(1);
 	}
     }
-    return(0);
+    /*Leave pdbentry pointing to newRecordName*/
+    return(dbFindRecord(pdbentry,newRecordName));
 }
 
 long dbFindField(DBENTRY *pdbentry,char *pname)
@@ -1491,10 +1530,9 @@ long dbFindField(DBENTRY *pdbentry,char *pname)
     char  		**papsortFldName;
     short          	*sortFldInd;
     long		status;
-    int			compare;
+    int			compare,ind;
     char		fieldName[MAX_FIELD_NAME_LENGTH];
     char		*pfieldName;
-    int			ind;
 
     if(!precordType) return(S_dbLib_recordTypeNotFound);
     if(!precnode) return(S_dbLib_recNotFound);
@@ -1545,9 +1583,7 @@ long dbFindField(DBENTRY *pdbentry,char *pname)
 }
 
 int dbFoundField(DBENTRY *pdbentry)
-{
-    return((pdbentry->pfield) ? TRUE : FALSE);
-}
+{ return((pdbentry->pfield) ? TRUE : FALSE); }
 
 char *dbGetString(DBENTRY *pdbentry)
 {
@@ -1555,6 +1591,7 @@ char *dbGetString(DBENTRY *pdbentry)
     void	*pfield = pdbentry->pfield;
     char	*message;
     unsigned char cvttype;
+    DBLINK 	*plink;
 
     message = getpMessage(pdbentry);
     *message = 0;
@@ -1574,44 +1611,24 @@ char *dbGetString(DBENTRY *pdbentry)
     case DBF_ULONG:
     case DBF_FLOAT:
     case DBF_DOUBLE:
+    case DBF_MENU:
+    case DBF_DEVICE:
 	return(dbGetStringNum(pdbentry));
-    case DBF_MENU: {
-	    dbMenu	*pdbMenu = (dbMenu *)pflddes->ftPvt;
-	    short	choice_ind;
-	    char	*pchoice;
-
-	    if(!pfield) {strcpy(message,"Field not found"); return(message);}
-	    choice_ind = *((short *) pdbentry->pfield);
-	    if(!pdbMenu || choice_ind<0 || choice_ind>=pdbMenu->nChoice)
-		return(NULL);
-	    pchoice = pdbMenu->papChoiceValue[choice_ind];
-	    strcpy(message, pchoice);
-	}
-	break;
-    case DBF_DEVICE: {
-	    dbDeviceMenu	*pdbDeviceMenu;
-	    char		*pchoice;
-	    short		choice_ind;
-
-	    if(!pfield) {strcpy(message,"Field not found"); return(message);}
-	    pdbDeviceMenu = dbGetDeviceMenu(pdbentry);
-	    if(!pdbDeviceMenu) return(NULL);
-	    choice_ind = *((short *) pdbentry->pfield);
-	    if(choice_ind<0 || choice_ind>=pdbDeviceMenu->nChoice)
-		return(NULL);
-	    pchoice = pdbDeviceMenu->papChoice[choice_ind];
-	    strcpy(message, pchoice);
-	}
-	break;
     case DBF_INLINK:
-    case DBF_OUTLINK: {
-	    DBLINK *plink=(DBLINK *)pfield;
-
-	    if(!pfield) {strcpy(message,"Field not found"); return(message);}
-	    switch(plink->type) {
+    case DBF_OUTLINK: 
+	if(!pfield) {strcpy(message,"Field not found"); return(message);}
+	plink = (DBLINK *)pfield;
+	switch(plink->type) {
 	    case CONSTANT:
 		if(plink->value.constantStr) {
 		    strcpy(message,plink->value.constantStr);
+		} else {
+		    strcpy(message,"");
+		}
+		break;
+	    case MACRO_LINK:
+		if(plink->value.macro_link.macroStr) {
+		    strcpy(message,plink->value.macro_link.macroStr);
 		} else {
 		    strcpy(message,"");
 		}
@@ -1693,7 +1710,6 @@ char *dbGetString(DBENTRY *pdbentry)
 		break;
 	    default :
 	        return(NULL);
-	    }
 	}
 	break;
     case DBF_FWDLINK: {
@@ -1703,6 +1719,13 @@ char *dbGetString(DBENTRY *pdbentry)
 	    switch(plink->type) {
 	    case CONSTANT:
 		strcpy(message,"0");
+		break;
+	    case MACRO_LINK:
+		if(plink->value.macro_link.macroStr) {
+		    strcpy(message,plink->value.macro_link.macroStr);
+		} else {
+		    strcpy(message,"");
+		}
 		break;
 	    case PV_LINK:
 	    case CA_LINK:
@@ -1739,8 +1762,17 @@ long dbPutString(DBENTRY *pdbentry,char *pstring)
     dbFldDes  	*pflddes = pdbentry->pflddes;
     void	*pfield = pdbentry->pfield;
     long	status=0;
+    int		macroIsOk;
+    int		stringHasMacro=FALSE;
 
     if(!pflddes) return(S_dbLib_flddesNotFound);
+    macroIsOk = dbIsMacroOk(pdbentry);
+    stringHasMacro = (strstr(pstring,"$(") || strstr(pstring,"${"))?TRUE:FALSE;
+    if(!macroIsOk && stringHasMacro) {
+	epicsPrintf("%s.%s Has unexpanded macro\n",
+		dbGetRecordName(pdbentry),dbGetFieldName(pdbentry));
+	return(S_dbLib_badField);
+    }
     switch (pflddes->field_type) {
     case DBF_STRING:
 	if(!pfield) return(S_dbLib_fieldNotFound);
@@ -1763,48 +1795,22 @@ long dbPutString(DBENTRY *pdbentry,char *pstring)
     case DBF_ENUM:
     case DBF_FLOAT:
     case DBF_DOUBLE:
+    case DBF_MENU:
 	return(dbPutStringNum(pdbentry,pstring));
-    case DBF_MENU: {
-	    dbMenu		*pdbMenu = (dbMenu *)pflddes->ftPvt;
-	    char		*pchoice;
-	    int			i;
-	    
-	    if(!pfield) return(S_dbLib_fieldNotFound);
-	    if(!pdbMenu) return(S_dbLib_menuNotFound);
-	    for (i = 0; i < pdbMenu->nChoice; i++) {
-		if(!(pchoice = pdbMenu->papChoiceValue[i])) continue;
-		if(strcmp(pchoice, pstring) == 0) {
-		    *(unsigned short *)pfield = i;
-		    return(0);
-		}
-	    }
-	}
-	return (S_dbLib_badField);
-    case DBF_DEVICE: {
-	    dbDeviceMenu	*pdbDeviceMenu;
-	    char		*pchoice;
-	    int			i;
+    case DBF_DEVICE:  {
+	    DBENTRY	dbEntry;
+	    char	*name;
 
-	    if(!pfield) return(S_dbLib_fieldNotFound);
-	    pdbDeviceMenu = dbGetDeviceMenu(pdbentry);
-	    if(!pdbDeviceMenu) return(S_dbLib_menuNotFound);
-	    for (i = 0; i < pdbDeviceMenu->nChoice; i++) {
-		if (!(pchoice = pdbDeviceMenu->papChoice[i]))
-		    continue;
-		if (strcmp(pchoice, pstring) == 0) {
-		    long 	link_type;
-		    devSup	*pdevSup;
-
-		    pdevSup = (devSup *)ellNth(&pdbentry->precordType->devList,i+1);
-		    link_type = pdevSup->link_type;
-		    /*If no INP or OUT OK */
-		    checkDevChoice(pdbentry,link_type);
-		    *(unsigned short *)pfield = i;
-		    return(0);
-		}
-	    }
+	    status = dbPutStringNum(pdbentry,pstring);
+	    if(status) return(status);
+	    name = dbGetRelatedField(pdbentry);
+	    if(!name) return(0);
+	    dbCopyEntryContents(pdbentry,&dbEntry);
+	    status = dbFindField(&dbEntry,name);
+	    if(!status) status = setLinkType(&dbEntry);
+	    dbFinishEntry(&dbEntry);
+	    return(status);
 	}
-	return(S_dbLib_badField);
     case DBF_INLINK:
     case DBF_OUTLINK:
     case DBF_FWDLINK: {
@@ -1814,6 +1820,23 @@ long dbPutString(DBENTRY *pdbentry,char *pstring)
 	    int		ind;
 
 	    if(!pfield) return(S_dbLib_fieldNotFound);
+	    plink = (DBLINK *)pfield;
+	    dbFreeLinkContents(plink);
+	    if(!stringHasMacro &&(strcmp(pflddes->name,"INP")==0 
+	    || strcmp(pflddes->name,"OUT")==0)){
+		status = setLinkType(pdbentry);
+		if(status) {
+		    errMessage(status,"in dbPutString from setLinkType");
+		    return(NULL);
+		}
+	    } 
+	    if(stringHasMacro) {
+		plink->type = MACRO_LINK;
+		plink->value.macro_link.macroStr = 
+		    dbCalloc(strlen(pstring)+1,sizeof(char));
+		strcpy(plink->value.macro_link.macroStr,pstring);
+		goto done;
+	    }
 	    if(strlen(pstring)>=sizeof(string)) {
 	        status = S_dbLib_badField;
 	        errMessage(status,"dbPutString received a LONG string");
@@ -1832,7 +1855,7 @@ long dbPutString(DBENTRY *pdbentry,char *pstring)
 		if(plink->type!=CONSTANT) return(S_dbLib_badField);
 		free((void *)plink->value.constantStr);
 		plink->value.constantStr = NULL;
-		return(0);
+		goto done;
 	    }
 	    switch(plink->type) {
 	    case CONSTANT: 
@@ -1856,7 +1879,7 @@ long dbPutString(DBENTRY *pdbentry,char *pstring)
 				dbCalloc(strlen(pstr)+1,sizeof(char));
 			}
 			strcpy(plink->value.constantStr,pstr);
-			return(0);
+			goto done;
 		    }
 		    if(plink->type==CONSTANT) dbCvtLinkToPvlink(pdbentry);
 	    	    end = strchr(pstr,' ');
@@ -1899,8 +1922,9 @@ long dbPutString(DBENTRY *pdbentry,char *pstring)
 			}
 		    }
 		    status = putPvLink(pdbentry,ppOpt|msOpt,pstr);
-		    return(0);
+		    goto done;
 		}
+		break;
 	    case VME_IO: {
 	    	    char	*end;
 
@@ -2088,6 +2112,16 @@ long dbPutString(DBENTRY *pdbentry,char *pstring)
     default:
 	return (S_dbLib_badField);
     }
+done:
+    if(!status && strcmp(pflddes->name,"VAL")==0) {
+	DBENTRY	dbentry;
+
+	dbCopyEntryContents(pdbentry,&dbentry);
+	if(!dbFindField(&dbentry,"UDF")) {
+	    dbPutString(&dbentry,"0");
+	}
+	dbFinishEntry(&dbentry);
+    }
     return(status);
 }
 
@@ -2099,6 +2133,7 @@ char *dbVerify(DBENTRY *pdbentry,char *pstring)
     message = getpMessage(pdbentry);
     *message = 0;
     if(!pflddes) {strcpy(message,"fldDes not found"); return(message);}
+    if(strstr(pstring,"$(") || strstr(pstring,"${")) return(NULL);
     switch (pflddes->field_type) {
     case DBF_STRING: {
 	    unsigned int length;
@@ -2315,54 +2350,6 @@ char   **dbGetMenuChoices(DBENTRY *pdbentry)
     }
 }
 
-int dbGetMenuIndex(DBENTRY *pdbentry)
-{
-    dbFldDes  	*pflddes = pdbentry->pflddes;
-    void	*pfield = pdbentry->pfield;
-
-    if(!pflddes) return(-1);
-    if(!pfield) return(-1);
-    switch (pflddes->field_type) {
-	case (DBF_MENU):
-	case (DBF_DEVICE):
-    	    return((int)(*(unsigned short *)pfield));
-	default:
-	    errPrintf(-1,__FILE__, __LINE__,"Logic Error\n");
-    }
-    return(-1);
-}
-
-long dbPutMenuIndex(DBENTRY *pdbentry,int index)
-{
-    dbFldDes  		*pflddes = pdbentry->pflddes;
-    unsigned short	*pfield = pdbentry->pfield;
-
-    if(!pflddes) return(S_dbLib_flddesNotFound);
-    if(!pfield) return(S_dbLib_fieldNotFound);
-    switch (pflddes->field_type) {
-    case DBF_MENU: {
-	    dbMenu	*pdbMenu = (dbMenu *)pflddes->ftPvt;
-
-	    if(!pdbMenu) return(S_dbLib_menuNotFound);
-	    if(index<0 | index>=pdbMenu->nChoice) return(S_dbLib_badField);
-	    *pfield = (unsigned short)index;
-	    return(0);
-	}
-    case DBF_DEVICE: {
-	    dbDeviceMenu *pdbDeviceMenu;
-
-	    pdbDeviceMenu = dbGetDeviceMenu(pdbentry);
-	    if(!pdbDeviceMenu) return(S_dbLib_menuNotFound);
-	    if(index<0 | index>=pdbDeviceMenu->nChoice)
-		return(S_dbLib_badField);
-	    return(dbPutString(pdbentry,pdbDeviceMenu->papChoice[index]));
-	}
-    default:
-	break;
-    }
-    return (S_dbLib_badField);
-}
-
 int dbGetNMenuChoices(DBENTRY *pdbentry)
 {
     dbFldDes  	*pflddes = pdbentry->pflddes;
@@ -2388,13 +2375,74 @@ int dbGetNMenuChoices(DBENTRY *pdbentry)
     return (-1);
 }
 
+char *dbGetMenuStringFromIndex(DBENTRY *pdbentry, int index)
+{
+    dbFldDes  	*pflddes = pdbentry->pflddes;
+
+    if(!pflddes) return(NULL);
+    switch (pflddes->field_type) {
+    case DBF_MENU: {
+	    dbMenu	*pdbMenu = (dbMenu *)pflddes->ftPvt;
+
+	    if(!pdbMenu) return(NULL);
+	    if(index<0 || index>=pdbMenu->nChoice) return(NULL);
+	    return(pdbMenu->papChoiceValue[index]);
+	}
+    case DBF_DEVICE: {
+	    dbDeviceMenu *pdbDeviceMenu;
+
+	    pdbDeviceMenu = dbGetDeviceMenu(pdbentry);
+	    if(!pdbDeviceMenu) return(NULL);
+	    if(index<0 || index>=pdbDeviceMenu->nChoice) return(NULL);
+	    return(pdbDeviceMenu->papChoice[index]);
+	}
+    default:
+	break;
+    }
+    return (NULL);
+}
+
+int dbGetMenuIndexFromString(DBENTRY *pdbentry, char *choice)
+{
+    dbFldDes  	*pflddes = pdbentry->pflddes;
+    int		ind;
+    int		nChoice = 0;
+    char	**papChoice = NULL;
+
+    if(!pflddes) return(-1);
+    switch (pflddes->field_type) {
+    case DBF_MENU: {
+	    dbMenu	*pdbMenu = (dbMenu *)pflddes->ftPvt;
+
+	    if(!pdbMenu) return(-1);
+	    papChoice = pdbMenu->papChoiceValue;
+	    nChoice = pdbMenu->nChoice;
+	    break;
+	}
+    case DBF_DEVICE: {
+	    dbDeviceMenu *pdbDeviceMenu;
+
+	    pdbDeviceMenu = dbGetDeviceMenu(pdbentry);
+	    if(!pdbDeviceMenu) return(-1);
+	    papChoice = pdbDeviceMenu->papChoice;
+	    nChoice = pdbDeviceMenu->nChoice;
+	    break;
+	}
+    default:
+	return(-1);
+    }
+    if(nChoice<=0 || !papChoice) return(-1);
+    for(ind=0; ind<nChoice; ind++) {
+	if(strcmp(choice,papChoice[ind])==0) return(ind);
+    }
+    return (-1);
+}
+
 int dbAllocForm(DBENTRY *psave)
 {
     DBENTRY	dbEntry;
     DBENTRY	*pdbentry= &dbEntry;
-    DBENTRY	*plinkentry;
     dbFldDes	*pflddes;
-    dbFldDes	*plinkflddes;
     DBLINK	*plink;
     int		nlines=0;
     char	*pstr;
@@ -2407,12 +2455,13 @@ int dbAllocForm(DBENTRY *psave)
 	epicsPrintf("dbAllocForm called but form already exists\n");
 	return(0);
     }
-    copyEntry(psave,pdbentry);
+    dbCopyEntryContents(psave,pdbentry);
     pflddes = pdbentry->pflddes;
     if(pflddes->field_type == DBF_DEVICE) {
         status = dbFindField(pdbentry,"INP");
         if(status) status = dbFindField(pdbentry,"OUT");
 	if(status) goto done;
+	pflddes = pdbentry->pflddes;
     } else {
 	if((pflddes->field_type!=DBF_INLINK)
 	&& (pflddes->field_type!=DBF_OUTLINK)
@@ -2421,10 +2470,14 @@ int dbAllocForm(DBENTRY *psave)
 	    goto done;
 	}
     }
-    plinkentry = pdbentry;
-    plinkflddes = plinkentry->pflddes;
-    plink = (DBLINK *)(plinkentry->pfield);
-    status = mapLINKTtoFORMT(plink,plinkflddes,&linkType);
+    status = setLinkType(pdbentry);
+    if(status) {
+	errMessage(status,"in dbAllocForm from setLinkType");
+	return(0);
+    }
+    plink = (DBLINK *)(pdbentry->pfield);
+    if(plink->type==MACRO_LINK) goto done;
+    status = mapLINKTtoFORMT(plink,pflddes,&linkType);
     if(status) goto done;
     nlines = formlines[linkType];
     /*Dont know how to handle string size. Just use messagesize*/
@@ -2693,7 +2746,7 @@ long  dbPutForm(DBENTRY *pdbentry,char **value)
 	    else if(strstr(*value,"NMS")) msOpt = 0;
 	    else if(strstr(*value,"MS")) msOpt = pvlOptMS;
 	    else strcpy(*verify,"Illegal. Chose a value");
-	    copyEntry(pdbentry,plinkentry);
+	    dbCopyEntryContents(pdbentry,plinkentry);
 	    if(pdbentry->pflddes->field_type == DBF_DEVICE) {
         	status = dbFindField(plinkentry,"INP");
 		if(status) {
@@ -2727,7 +2780,7 @@ long  dbPutForm(DBENTRY *pdbentry,char **value)
 	    else if(strstr(*value,"NMS")) msOpt = 0;
 	    else if(strstr(*value,"MS")) msOpt = pvlOptMS;
 	    else strcpy(*verify,"Illegal. Chose a value");
-	    copyEntry(pdbentry,plinkentry);
+	    dbCopyEntryContents(pdbentry,plinkentry);
 	    if(pdbentry->pflddes->field_type == DBF_DEVICE) {
         	status = dbFindField(plinkentry,"OUT");
 		if(status) {
@@ -3022,7 +3075,7 @@ char *dbGetRelatedField(DBENTRY *psave)
 
     pflddes = psave->pflddes;
     if(pflddes->field_type !=DBF_DEVICE) return(NULL);
-    copyEntry(psave,pdbentry);
+    dbCopyEntryContents(psave,pdbentry);
     pflddes = pdbentry->pflddes;
     status = dbFindField(pdbentry,"INP");
     if(status) status = dbFindField(pdbentry,"OUT");

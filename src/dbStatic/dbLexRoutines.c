@@ -186,7 +186,7 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
     
     if(*ppdbbase == 0) *ppdbbase = dbAllocBase();
     pdbbase = *ppdbbase;
-    if(path) {
+    if(path && strlen(path)>0) {
 	dbPath(pdbbase,path);
     } else {
 	penv = getenv("EPICS_DB_INCLUDE_PATH");

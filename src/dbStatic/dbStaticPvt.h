@@ -37,6 +37,7 @@ dbDeviceMenu *dbGetDeviceMenu(DBENTRY *pdbentry);
 void dbFreeLinkContents(struct link *plink);
 void dbFreePath(DBBASE *pdbbase);
 void dbCatString(char **string,int *stringLength,char *new,char *separator);
+int dbIsMacroOk(DBENTRY *pdbentry);
 
 /*The following routines have different versions for run-time no-run-time*/
 long dbAllocRecord(DBENTRY *pdbentry,char *precordName);

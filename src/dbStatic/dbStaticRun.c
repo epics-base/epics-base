@@ -149,7 +149,7 @@ static void doubleToString(double value,char *preturn)
 
 long dbAllocRecord(DBENTRY *pdbentry,char *precordName)
 {
-    dbRecordType		*pdbRecordType = pdbentry->precordType;
+    dbRecordType	*pdbRecordType = pdbentry->precordType;
     dbRecordNode	*precnode = pdbentry->precnode;
     dbFldDes		*pflddes;
     int			i;
@@ -222,6 +222,7 @@ long dbAllocRecord(DBENTRY *pdbentry,char *precordName)
 	case DBF_FWDLINK: {
 		DBLINK *plink = (DBLINK *)pfield;
 
+		plink->type = CONSTANT;
 		if(pflddes->initial) {
 		    plink->value.constantStr =
 			dbCalloc(strlen(pflddes->initial)+1,sizeof(char));
@@ -240,7 +241,7 @@ long dbAllocRecord(DBENTRY *pdbentry,char *precordName)
 
 long dbFreeRecord(DBENTRY *pdbentry)
 {
-    dbRecordType	*pdbRecordType = pdbentry->precordType;
+    dbRecordType *pdbRecordType = pdbentry->precordType;
     dbRecordNode *precnode = pdbentry->precnode;
 
     if(!pdbRecordType) return(S_dbLib_recordTypeNotFound);
@@ -253,7 +254,7 @@ long dbFreeRecord(DBENTRY *pdbentry)
 
 long dbGetFieldAddress(DBENTRY *pdbentry)
 {
-    dbRecordType	*pdbRecordType = pdbentry->precordType;
+    dbRecordType *pdbRecordType = pdbentry->precordType;
     dbRecordNode *precnode = pdbentry->precnode;
     dbFldDes	*pflddes = pdbentry->pflddes;
 
@@ -267,7 +268,7 @@ long dbGetFieldAddress(DBENTRY *pdbentry)
 
 char *dbRecordName(DBENTRY *pdbentry)
 {
-    dbRecordType	*pdbRecordType = pdbentry->precordType;
+    dbRecordType *pdbRecordType = pdbentry->precordType;
     dbRecordNode *precnode = pdbentry->precnode;
     dbFldDes	*pflddes;
     char	*precord;
@@ -280,6 +281,8 @@ char *dbRecordName(DBENTRY *pdbentry)
     if(!pflddes) return(NULL);
     return(precord + pflddes->offset);
 }
+
+int dbIsMacroOk(DBENTRY *pdbentry) { return(FALSE); }
 
 int  dbIsDefaultValue(DBENTRY *pdbentry)
 {
@@ -374,8 +377,7 @@ int  dbIsDefaultValue(DBENTRY *pdbentry)
 	    }
 	    return((field==0.0));
 	}
-	case DBF_ENUM:
-	case DBF_MENU: {
+	case DBF_ENUM: {
 	    unsigned short	field = *(unsigned short *)pfield;
 	    unsigned long	ltemp;
 
@@ -385,16 +387,31 @@ int  dbIsDefaultValue(DBENTRY *pdbentry)
 	    }
 	    return((field==0));
 	}
-	case DBF_DEVICE: {
-		dbRecordType	*pdbRecordType = pdbentry->precordType;
-		devSup		*pdevSup;
+	case DBF_MENU: {
+	    unsigned short	field = *(unsigned short *)pfield;
+	    long 		value;
+	    char 		*endp;
 
-		if(!pdbRecordType) {
+	    if(pflddes->initial) {
+		value = dbGetMenuIndexFromString(pdbentry,pflddes->initial);
+		if(value==-1) {
+		    value = strtol(pflddes->initial,&endp,0);
+		    if(*endp!='\0') return(FALSE);
+		}
+	    } else {
+		value = 0;
+	    }
+	    if((unsigned short)value == field) return(TRUE);
+	    return(FALSE);
+	}
+	case DBF_DEVICE: {
+		dbRecordType	*precordType = pdbentry->precordType;
+
+		if(!precordType) {
 		    epicsPrintf("dbIsDefaultValue: pdbRecordType is NULL??\n");
 		    return(FALSE);
 		}
-		pdevSup = (devSup *)ellFirst(&pdbRecordType->devList);
-		if(!pdevSup) return(TRUE);
+		if(ellCount(&precordType->devList)==0) return(TRUE);
 		return(FALSE);
 	}
 	case DBF_INLINK:
@@ -470,6 +487,34 @@ char *dbGetStringNum(DBENTRY *pdbentry)
     case DBF_DOUBLE:
 	doubleToString(*(double *)pfield,message);
 	break;
+    case DBF_MENU: {
+	    dbMenu	*pdbMenu = (dbMenu *)pflddes->ftPvt;
+	    short	choice_ind;
+	    char	*pchoice;
+
+	    if(!pfield) {strcpy(message,"Field not found"); return(message);}
+	    choice_ind = *((short *) pdbentry->pfield);
+	    if(!pdbMenu || choice_ind<0 || choice_ind>=pdbMenu->nChoice)
+		return(NULL);
+	    pchoice = pdbMenu->papChoiceValue[choice_ind];
+	    strcpy(message, pchoice);
+	}
+	break;
+    case DBF_DEVICE: {
+	    dbDeviceMenu	*pdbDeviceMenu;
+	    char		*pchoice;
+	    short		choice_ind;
+
+	    if(!pfield) {strcpy(message,"Field not found"); return(message);}
+	    pdbDeviceMenu = dbGetDeviceMenu(pdbentry);
+	    if(!pdbDeviceMenu) return(NULL);
+	    choice_ind = *((short *) pdbentry->pfield);
+	    if(choice_ind<0 || choice_ind>=pdbDeviceMenu->nChoice)
+		return(NULL);
+	    pchoice = pdbDeviceMenu->papChoice[choice_ind];
+	    strcpy(message, pchoice);
+	}
+	break;
     default:
 	return(NULL);
     }
@@ -482,6 +527,7 @@ long dbPutStringNum(DBENTRY *pdbentry,char *pstring)
     void	*pfield = pdbentry->pfield;
     long	status=0;
 
+    if(!pfield) return(S_dbLib_fieldNotFound);
     switch (pflddes->field_type) {
     case DBF_CHAR :
     case DBF_SHORT :
@@ -530,60 +576,77 @@ long dbPutStringNum(DBENTRY *pdbentry,char *pstring)
 		*(double *)pfield = value;
 	}
 	break;
-    case DBF_MENU: {
-	    dbMenu		*pdbMenu = (dbMenu *)pflddes->ftPvt;
-	    char		**papChoiceValue;
-	    char		*pchoice;
+    case DBF_MENU:
+    case DBF_DEVICE: {/*Must allow value that is choice or index*/
 	    unsigned short	*field= (unsigned short*)pfield;
-	    unsigned int	nChoice,ind;
-	    int			nargs,nchars;
+	    int			ind;
+	    long		value;
+	    char		*endp;
 
-	    if( pdbMenu  && (papChoiceValue = pdbMenu->papChoiceValue)) {
-		nChoice = pdbMenu->nChoice;
-		for(ind=0; ind<nChoice; ind++) {
-		    if(!(pchoice=papChoiceValue[ind])) continue;
-		    if(strcmp(pchoice,pstring)==0) {
-			*field = ind;
-			return(0);
-		    }
-		}
-		nargs = sscanf(pstring," %u %n",&ind,&nchars);
-		if(nargs==1 && nchars==strlen(pstring) && ind<nChoice) {
-		    *field = ind;
-		    return(0);
-		}
+	    ind = dbGetMenuIndexFromString(pdbentry,pstring);
+	    if(ind==-1) {
+		value = strtol(pstring,&endp,0);
+		if(*endp!='\0') return(S_dbLib_badField);
+		ind = value;
+		/*Check that ind is withing range*/
+		if(!dbGetMenuStringFromIndex(pdbentry,ind))
+		    return(S_dbLib_badField);
 	    }
+	    *field = (unsigned short)ind;
     	}
-	return (S_dbLib_badField);
-    case DBF_DEVICE: {
-	    dbDeviceMenu 	*pdbDeviceMenu=(dbDeviceMenu *)pflddes->ftPvt;
-	    char		**papChoice;
-	    char		*pchoice;
-	    unsigned short	*field= (unsigned short*)pfield;
-	    unsigned int	nChoice,ind;
-	    int			nargs,nchars;
-
-	    if( pdbDeviceMenu  && (papChoice = pdbDeviceMenu->papChoice)) {
-		nChoice = pdbDeviceMenu->nChoice;
-		for(ind=0; ind<nChoice; ind++) {
-		    if(!(pchoice=papChoice[ind])) continue;
-		    if(strcmp(pchoice,pstring)==0) {
-			*field = ind;
-			return(0);
-		    }
-		}
-		nargs = sscanf(pstring," %u %n",&ind,&nchars);
-		if(nargs==1 && nchars==strlen(pstring) && ind<nChoice) {
-		    *field = ind;
-		    return(0);
-		}
-	    }
-    	}
-	return (S_dbLib_badField);
+	return (0);
     default:
 	return (S_dbLib_badField);
     }
     return(status);
+}
+
+int dbGetMenuIndex(DBENTRY *pdbentry)
+{
+    dbFldDes  	*pflddes = pdbentry->pflddes;
+    void	*pfield = pdbentry->pfield;
+
+    if(!pflddes) return(-1);
+    if(!pfield) return(-1);
+    switch (pflddes->field_type) {
+	case (DBF_MENU):
+	case (DBF_DEVICE):
+    	    return((int)(*(unsigned short *)pfield));
+	default:
+	    errPrintf(-1,__FILE__, __LINE__,"Logic Error\n");
+    }
+    return(-1);
+}
+
+long dbPutMenuIndex(DBENTRY *pdbentry,int index)
+{
+    dbFldDes  		*pflddes = pdbentry->pflddes;
+    unsigned short	*pfield = pdbentry->pfield;
+
+    if(!pflddes) return(S_dbLib_flddesNotFound);
+    if(!pfield) return(S_dbLib_fieldNotFound);
+    switch (pflddes->field_type) {
+    case DBF_MENU: {
+	    dbMenu	*pdbMenu = (dbMenu *)pflddes->ftPvt;
+
+	    if(!pdbMenu) return(S_dbLib_menuNotFound);
+	    if(index<0 | index>=pdbMenu->nChoice) return(S_dbLib_badField);
+	    *pfield = (unsigned short)index;
+	    return(0);
+	}
+    case DBF_DEVICE: {
+	    dbDeviceMenu *pdbDeviceMenu;
+
+	    pdbDeviceMenu = dbGetDeviceMenu(pdbentry);
+	    if(!pdbDeviceMenu) return(S_dbLib_menuNotFound);
+	    if(index<0 | index>=pdbDeviceMenu->nChoice)
+		return(S_dbLib_badField);
+	    return(dbPutString(pdbentry,pdbDeviceMenu->papChoice[index]));
+	}
+    default:
+	break;
+    }
+    return (S_dbLib_badField);
 }
 
 void dbGetRecordtypeSizeOffset(dbRecordType *pdbRecordType)

@@ -8,7 +8,7 @@
  * @@@@@ not implemented @@@@@
  *
  */
-epicsShareFunc int epicsShareAPI osiSufficentSpaceInPool ()
+epicsShareFunc int epicsShareAPI osiSufficentSpaceInPool ( size_t contiguousBlockSize )
 {
     return 1;
 }

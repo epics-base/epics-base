@@ -6,7 +6,7 @@
 /*
  * osiSufficentSpaceInPool ()
  */
-epicsShareFunc int epicsShareAPI osiSufficentSpaceInPool ()
+epicsShareFunc int epicsShareAPI osiSufficentSpaceInPool ( size_t contiguousBlockSize )
 {
-    return (malloc_free_space() > 100000);
+    return (malloc_free_space() > 100000 + contiguousBlockSize);
 }

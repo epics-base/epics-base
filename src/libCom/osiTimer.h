@@ -26,30 +26,7 @@
  *              Advanced Photon Source
  *              Argonne National Laboratory
  *
- *
- * History
- * $Log$
- * Revision 1.5  1997/06/25 05:45:55  jhill
- * cleaned up pc port
- *
- * Revision 1.4  1997/04/10 19:45:42  jhill
- * API changes and include with  not <>
- *
- * Revision 1.3  1996/11/02 02:06:59  jhill
- * fixed several subtle problems
- *
- * Revision 1.2  1996/08/05 21:51:11  jhill
- * fixed delete this confusion
- *
- * Revision 1.1  1996/06/26 22:14:15  jhill
- * added new src files
- *
- * Revision 1.1.1.1  1996/06/20 22:15:55  jhill
- * installed  ca server templates
- *
- *
  */
-
 
 #ifndef osiTimerHInclude
 #define osiTimerHInclude
@@ -58,8 +35,9 @@
 #include "tsDLList.h"
 #include "osiTime.h"
 
-enum osiBool {osiFalse=0, osiTrue=1};
-enum osiTimerState {ositPending, ositExpired, ositLimbo};
+class osiTimerQueue;
+
+epicsShareExtern osiTimerQueue osiDefaultTimerQueue;
 
 //
 // osiTimer
@@ -67,55 +45,66 @@ enum osiTimerState {ositPending, ositExpired, ositLimbo};
 class osiTimer : public tsDLNode<osiTimer> {
 	friend class osiTimerQueue;
 public:
-	epicsShareFunc osiTimer (const osiTime &delay)
+    //
+    // exceptions
+    //
+    class noDelaySpecified {};
+
+	epicsShareFunc osiTimer (double delay, osiTimerQueue & queueIn = osiDefaultTimerQueue) :
+		queue (queueIn)
 	{
-		this->arm(&delay);
+		this->arm (&delay);
 	}
+
 	epicsShareFunc virtual ~osiTimer();
 
 	//
-	// called when the timer expires
+	// called when the osiTimer expires
 	//
 	epicsShareFunc virtual void expire()=0;
 
 	//
 	// called if 
 	// 1) osiTimer exists and the osiTimerQueue is deleted
-	// 2) when the timer expies and again() returs false
+	// 2) when the osiTimer expies and again() returs false
 	//
 	// osiTimer::destroy() does a "delete this"
 	//
 	epicsShareFunc virtual void destroy();
 
 	//
-	// osiTimer::again() returns false
-	// (run the timer once only)
 	// returning true indicates that the
-	// timer should be rearmed with delay
+	// osiTimer should be rearmed with delay
 	// "delay()" when it expires
+    //
+	// the defaut osiTimer::again() returns false
+	// (run the osiTimer once only)
 	//
-	epicsShareFunc virtual osiBool again() const;
+	epicsShareFunc virtual bool again() const;
 
 	//
 	// returns the delay prior to expire
 	// for subsequent iterations (if "again()"
 	// returns true)
 	//
-	// osiTimer::delay() returns 1 sec
+	// the default osiTimer::delay() throws the 
+    // exception type noDelaySpecified, but it will 
+    // not be called unless the again() virtual 
+    // function returns true.
 	//
-	epicsShareFunc virtual const osiTime delay() const;
+	epicsShareFunc virtual double delay() const;
 
 	//
 	// change the timers expiration to newDelay
 	// seconds after when reschedule() is called
 	//
-	epicsShareFunc void reschedule(const osiTime &newDelay);
+	epicsShareFunc void reschedule (double newDelay);
 
 	//
 	// return the number of seconds remaining before
-	// this timer will expire
+	// this osiTimer will expire
 	//
-	epicsShareFunc osiTime timeRemaining();
+	epicsShareFunc double timeRemaining();
 
 	epicsShareFunc virtual void show (unsigned level) const;
 
@@ -123,18 +112,20 @@ public:
 	// for diagnostics
 	//
 	epicsShareFunc virtual const char *name() const;
+
 private:
-	osiTime		exp;
-	osiTimerState 	state;
+	enum state {statePending, stateExpired, stateLimbo};
+
+	osiTime exp; // experation time
+	state state; // current state
+	osiTimerQueue &queue;
 
 	//
 	// arm()
-	// place timer in the pending queue
+	// place osiTimer in the pending queue
 	//
-	epicsShareFunc void arm (const osiTime * const pInitialDelay=0);
+	epicsShareFunc void arm (double *pInitialDelay=0);
 };
-
-
 
 //
 // osiTimerQueue
@@ -142,22 +133,19 @@ private:
 class osiTimerQueue {
 friend class osiTimer;
 public:
-	osiTimerQueue() : inProcess(osiFalse), pExpireTmr(0) {};
+	osiTimerQueue() : inProcess(false), pExpireTmr(0) {};
 	~osiTimerQueue();
-	osiTime delayToFirstExpire () const;
+	double delayToFirstExpire () const; // returns seconds
 	void process ();
 	void show (unsigned level) const;
 private:
-	tsDLList<osiTimer>	pending;	
-	tsDLList<osiTimer>	expired;	
-	osiBool			inProcess;
-	osiTimer		*pExpireTmr;
+	tsDLList<osiTimer> pending;	
+	tsDLList<osiTimer> expired;	
+	bool inProcess;
+	osiTimer *pExpireTmr;
 
-	void install (osiTimer &tmr, osiTime delay);
+	void install (osiTimer &tmr, double delay);
 };
-
-extern osiTimerQueue staticTimerQueue;
-
 
 #endif // osiTimerHInclude
 

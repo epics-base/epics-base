@@ -26,39 +26,6 @@
  *              Advanced Photon Source
  *              Argonne National Laboratory
  *
- *
- * History
- * $Log$
- * Revision 1.9  1997/08/05 00:37:06  jhill
- * removed warnings
- *
- * Revision 1.8  1997/06/25 05:45:54  jhill
- * cleaned up pc port
- *
- * Revision 1.7  1997/04/10 19:45:34  jhill
- * API changes and include with  not <>
- *
- * Revision 1.6  1996/11/02 02:06:58  jhill
- * fixed several subtle problems
- *
- * Revision 1.5  1996/09/16 21:19:25  jhill
- * removed unused variable
- *
- * Revision 1.4  1996/08/05 21:51:11  jhill
- * fixed delete this confusion
- *
- * Revision 1.3  1996/07/24 23:01:53  jhill
- * use iter.remove()
- *
- * Revision 1.2  1996/07/09 23:00:06  jhill
- * force timer into limbo state during delete
- *
- * Revision 1.1  1996/06/26 22:14:13  jhill
- * added new src files
- *
- * Revision 1.1.1.1  1996/06/20 00:28:15  jhill
- * ca server installation
- *
  */
 
 //
@@ -76,19 +43,17 @@
 #define epicsExportSharedSymbols
 #include "osiTimer.h"
 
-osiTimerQueue staticTimerQueue;
-static const tsDLIterBD<osiTimer> eol; // end of list
+osiTimerQueue osiDefaultTimerQueue;
 
 //
 // osiTimer::arm()
 //
-epicsShareFunc void osiTimer::arm (const osiTime * const pInitialDelay)
+epicsShareFunc void osiTimer::arm (double *pInitialDelay)
 {
-	tsDLIterBD<osiTimer> iter;
 #	ifdef DEBUG
-		unsigned preemptCount=0u;
+	unsigned preemptCount=0u;
 #	endif
-
+	
 	//
 	// calculate absolute expiration time
 	// (dont call base's delay() virtual func
@@ -100,8 +65,7 @@ epicsShareFunc void osiTimer::arm (const osiTime * const pInitialDelay)
 	else {
 		this->exp = osiTime::getCurrent() + this->delay();
 	}
-
-
+	
 	//
 	// insert into the pending queue
 	//
@@ -110,50 +74,50 @@ epicsShareFunc void osiTimer::arm (const osiTime * const pInitialDelay)
 	//
 	// **** this should use a binary tree ????
 	//
-	iter = staticTimerQueue.pending.last();
-        while (1) {
-		if (iter==eol) {
+	tsDLIterBD<osiTimer> iter = this->queue.pending.last();
+	while (1) {
+		if (iter==tsDLIterBD<osiTimer>::eol()) {
 			//
 			// add to the beginning of the list
 			//
-			staticTimerQueue.pending.push (*this);
+			this->queue.pending.push (*this);
 			break;
 		}
-                if (iter->exp <= this->exp) {
+		if (iter->exp <= this->exp) {
 			//
 			// add after the item found that expires earlier
 			//
-			staticTimerQueue.pending.insertAfter (*this, *iter);
-                        break;
-                }
+			this->queue.pending.insertAfter (*this, *iter);
+			break;
+		}
 #		ifdef DEBUG
-			preemptCount++;
+		preemptCount++;
 #		endif
 		--iter;
-        }
-	this->state = ositPending;
+	}
+	this->state = osiTimer::statePending;
 	
 #	ifdef DEBUG
-		staticTimerQueue.show(10u);
+	this->queue.show(10u);
 #	endif
-
+	
 #	ifdef DEBUG 
-		double theDelay;
-		if (pInitialDelay) {
-			theDelay = *pInitialDelay;
-		}
-		else {
-			theDelay = this->delay();
-		}
-		//
-		// name virtual function isnt always useful here because this is
-		// often called inside the constructor (unless we are
-		// rearming the same timer)
-		//
-		printf ("Arm of \"%s\" with delay %f at %lx preempting %u\n", 
-			this->name(), theDelay, (unsigned long)this, preemptCount);
+	double theDelay;
+	if (pInitialDelay) {
+		theDelay = *pInitialDelay;
+	}
+	else {
+		theDelay = this->delay();
+	}
+	//
+	// name virtual function isnt always useful here because this is
+	// often called inside the constructor (unless we are
+	// rearming the same timer)
+	//
+	printf ("Arm of \"%s\" with delay %f at %lx preempting %u\n", 
+		this->name(), theDelay, (unsigned long)this, preemptCount);
 #	endif
-
+	
 }
 
 //
@@ -166,33 +130,33 @@ epicsShareFunc osiTimer::~osiTimer()
 	// was deleted during its expire call
 	// back
 	//
-	if (this == staticTimerQueue.pExpireTmr) {
-		staticTimerQueue.pExpireTmr = 0;
+	if (this == this->queue.pExpireTmr) {
+		this->queue.pExpireTmr = 0;
 	}
 	switch (this->state) {
-	case ositPending:
-		staticTimerQueue.pending.remove(*this);
+	case osiTimer::statePending:
+		this->queue.pending.remove(*this);
 		break;
-	case ositExpired:
-		staticTimerQueue.expired.remove(*this);
+	case osiTimer::stateExpired:
+		this->queue.expired.remove(*this);
 		break;
-	case ositLimbo:
+	case osiTimer::stateLimbo:
 		break;
 	default:
 		assert(0);
 	}
-	this->state = ositLimbo;
+	this->state = osiTimer::stateLimbo;
 }
 
 //
 // osiTimer::again()
 //
-epicsShareFunc osiBool osiTimer::again() const
+epicsShareFunc bool osiTimer::again() const
 {
 	//
 	// default is to run the timer only once 
 	//
-	return osiFalse;
+	return false;
 }
 
 //
@@ -200,18 +164,15 @@ epicsShareFunc osiBool osiTimer::again() const
 //
 epicsShareFunc void osiTimer::destroy()
 {
-        delete this;
+	delete this;
 }
 
 //
 // osiTimer::delay()
 //
-epicsShareFunc const osiTime osiTimer::delay() const
+epicsShareFunc double osiTimer::delay() const
 {
-	//
-	// default to 1 sec
-	//
-	return osiTime (1.0);
+    throw noDelaySpecified();
 }
 
 epicsShareFunc void osiTimer::show (unsigned level) const
@@ -237,10 +198,10 @@ epicsShareFunc void osiTimer::show (unsigned level) const
 //
 // osiTimerQueue::delayToFirstExpire()
 //
-osiTime osiTimerQueue::delayToFirstExpire() const
+double osiTimerQueue::delayToFirstExpire() const
 {
 	osiTimer *pTmr;
-	osiTime delay;
+	double delay;
 
 	pTmr = this->pending.first();
 	if (pTmr) {
@@ -250,12 +211,12 @@ osiTime osiTimerQueue::delayToFirstExpire() const
 		//
 		// no timer in the queue - return a long delay - 30 min
 		//
-		delay = osiTime (30u * osiTime::secPerMin, 0u);
+		delay = 30u * osiTime::secPerMin;
 	}
 #ifdef DEBUG
-	printf("delay to first item on the queue %f\n", (double) delay);
+	printf ("delay to first item on the queue %f\n", (double) delay);
 #endif
-	return delay;
+	return delay; // seconds
 }
 
 //
@@ -263,49 +224,47 @@ osiTime osiTimerQueue::delayToFirstExpire() const
 //
 void osiTimerQueue::process()
 {
-	tsDLIterBD<osiTimer> iter;
-	tsDLIterBD<osiTimer> tmp;
 	osiTime cur(osiTime::getCurrent());
 	osiTimer *pTmr;
-
+	
 	// no recursion
 	if (this->inProcess) {
 		return;
 	}
-	this->inProcess = osiTrue;
-
-	iter = this->pending.first();
-	while ( iter!=eol ) {	
+	this->inProcess = true;
+	
+	tsDLIterBD<osiTimer> iter = this->pending.first();
+	while ( iter!=tsDLIterBD<osiTimer>::eol() ) {	
 		if (iter->exp >= cur) {
 			break;
 		}
-		tmp = iter;
+		tsDLIterBD<osiTimer> tmp = iter;
 		++tmp;
 		this->pending.remove(*iter);
-		iter->state = ositExpired;
+		iter->state = osiTimer::stateExpired;
 		this->expired.add(*iter);
 		iter = tmp;
 	}
-
+	
 	//
 	// I am careful to prevent problems if they access the
 	// above list while in an "expire()" call back
 	//
 	while ( (pTmr = this->expired.get()) ) {
-
-		pTmr->state = ositLimbo;
-
+		
+		pTmr->state = osiTimer::stateLimbo;
+		
 #ifdef DEBUG
 		double diff = cur-pTmr->exp;
 		printf ("expired %lx for \"%s\" with error %f\n", 
 			(unsigned long)pTmr, pTmr->name(), diff);
 #endif
-
-                //
-                // Tag current tmr so that we
-                // can detect if it was deleted
-                // during the expire call back
-                //
+		
+		//
+		// Tag current tmr so that we
+		// can detect if it was deleted
+		// during the expire call back
+		//
 		this->pExpireTmr = pTmr;
 		pTmr->expire();
 		if (this->pExpireTmr == pTmr) {
@@ -317,13 +276,13 @@ void osiTimerQueue::process()
 			}
 		}
 		else {
-                        //
-                        // no recursive calls  to process allowed
-                        //
-                        assert(this->pExpireTmr == 0);
+			//
+			// no recursive calls  to process allowed
+			//
+			assert(this->pExpireTmr == 0);
 		}
 	}
-	this->inProcess = osiFalse;
+	this->inProcess = false;
 }
 
 //
@@ -334,7 +293,7 @@ void osiTimerQueue::show(unsigned level) const
 	printf("osiTimerQueue with %u items pending and %u items expired\n",
 		this->pending.count(), this->expired.count());
 	tsDLIterBD<osiTimer> iter(this->pending.first());
-	while ( iter!=eol ) {	
+	while ( iter!=tsDLIterBD<osiTimer>::eol() ) {	
 		iter->show(level);
 		++iter;
 	}
@@ -351,7 +310,7 @@ osiTimerQueue::~osiTimerQueue()
 	// destroy any unexpired timers
 	//
 	while ( (pTmr = this->pending.get()) ) {	
-		pTmr->state = ositLimbo;
+		pTmr->state = osiTimer::stateLimbo;
 		pTmr->destroy();
 	}
 
@@ -359,7 +318,7 @@ osiTimerQueue::~osiTimerQueue()
 	// destroy any expired timers
 	//
 	while ( (pTmr = this->expired.get()) ) {	
-		pTmr->state = ositLimbo;
+		pTmr->state = osiTimer::stateLimbo;
 		pTmr->destroy();
 	}
 }
@@ -379,30 +338,30 @@ epicsShareFunc const char *osiTimer::name() const
 // pull this timer out of the queue ans reinstall
 // it with a new experation time
 //
-epicsShareFunc void osiTimer::reschedule(const osiTime &newDelay)
+epicsShareFunc void osiTimer::reschedule (double newDelay)
 {
 	//
 	// signal the timer queue if this
 	// occurrring during the expire call
 	// back
 	//
-	if (this == staticTimerQueue.pExpireTmr) {
-		staticTimerQueue.pExpireTmr = 0;
+	if (this == this->queue.pExpireTmr) {
+		this->queue.pExpireTmr = 0;
 	}
 	switch (this->state) {
-	case ositPending:
-		staticTimerQueue.pending.remove(*this);
+	case osiTimer::statePending:
+		this->queue.pending.remove(*this);
 		break;
-	case ositExpired:
-		staticTimerQueue.expired.remove(*this);
+	case osiTimer::stateExpired:
+		this->queue.expired.remove(*this);
 		break;
-	case ositLimbo:
+	case osiTimer::stateLimbo:
 		break;
 	default:
 		assert(0);
 	}
-	this->state = ositLimbo;
-	this->arm(&newDelay);
+	this->state = osiTimer::stateLimbo;
+	this->arm (&newDelay);
 }
 
 //
@@ -411,17 +370,13 @@ epicsShareFunc void osiTimer::reschedule(const osiTime &newDelay)
 // return the number of seconds remaining before
 // this timer will expire
 //
-epicsShareFunc osiTime osiTimer::timeRemaining()
+epicsShareFunc double osiTimer::timeRemaining ()
 {
-	osiTime cur = osiTime::getCurrent();
-	osiTime delay;
-
-	if (this->exp>cur) {
-		delay = this->exp - cur;
+	double remaining = this->exp - osiTime::getCurrent();
+	if (remaining>0.0) {
+		return remaining;
 	}
 	else {
-		delay = osiTime(0u,0u);
+		return 0.0;
 	}
-	return delay;
 }
-

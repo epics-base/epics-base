@@ -87,6 +87,7 @@
  * .29  07-15-92        jba     changed VALID_ALARM to INVALID alarm
  * .30  07-16-92        jba     added invalid alarm fwd link test and chngd fwd lnk to macro
  * .31  07-21-92        jba     changed alarm limits for non val related fields
+ * .32  10-10-92        jba     replaced code for get of VAL from DOL with recGblGetLinkValue
  */
 
 #include	<vxWorks.h>
@@ -705,6 +706,7 @@ struct steppermotorRecord	*psm;
 {
 	struct smdset   *pdset = (struct smdset *)(psm->dset);
         int             acceleration,velocity;
+	long 		status,options=0,nRequest=1;
 
 	
 	/* emergency stop */
@@ -748,22 +750,10 @@ struct steppermotorRecord	*psm;
 
 	/* fetch the desired value if there is a database link */
         if (psm->omsl == CLOSED_LOOP){
-	    if (psm->dol.type == DB_LINK){
-		long options=0;
-		long nRequest=1;
-
-		if(dbGetLink(&(psm->dol.value.db_link),(struct dbCommon *)psm,DBR_FLOAT,
-			&(psm->val),&options,&nRequest)){
-			recGblSetSevr(psm,LINK_ALARM,INVALID_ALARM);
-			return;
-		} else psm->udf = FALSE;
-	    }
-            if (psm->dol.type == CA_LINK){
-                if(dbCaGetLink(&(psm->dol))){
-                        recGblSetSevr(psm,LINK_ALARM,INVALID_ALARM);
-                        return;
-                } else psm->udf = FALSE;
-            }
+		status=recGblGetLinkValue(&(psm->dol),(void *)psm,DBR_FLOAT,
+			&(psm->val),&options,&nRequest);
+		if (!RTN_SUCCESS(status)) return;
+		psm->udf = FALSE;
 	}
 
         /* check drive limits */
@@ -814,28 +804,16 @@ struct steppermotorRecord	*psm;
 	struct smdset   *pdset = (struct smdset *)(psm->dset);
 	float	chng_vel;
 	int	acceleration,velocity;
+	long 	status,options=0,nRequest=1;
 
 	/* fetch the desired value if there is a database link */
         if (psm->omsl == CLOSED_LOOP){
-	    if (psm->dol.type == DB_LINK){
-		long options=0;
-		long nRequest=1;
-
-		if(dbGetLink(&(psm->dol.value.db_link),(struct dbCommon *)psm,DBR_FLOAT,
-			&(psm->val),&options,&nRequest)) {
-			recGblSetSevr(psm,LINK_ALARM,INVALID_ALARM);
-			return;
-		} else psm->udf=FALSE;
-	    }
-	    if (psm->dol.type == CA_LINK){
-		if(dbCaGetLink(&(psm->dol))){
-			recGblSetSevr(psm,LINK_ALARM,INVALID_ALARM);
-			return;
-		} else psm->udf=FALSE;
-	    }
+		status=recGblGetLinkValue(&(psm->dol),(void *)psm,DBR_FLOAT,
+			&(psm->val),&options,&nRequest);
+		if (!RTN_SUCCESS(status)) return;
+		psm->udf = FALSE;
 	}
 
-	
 	/* Motor not at desired velocity */
 	if ((psm->mlst == psm->val) && (psm->val != psm->rbv) && (psm->cvel)) {
 		alarm(psm);

@@ -16,9 +16,6 @@ ARCH_DEP_CXXFLAGS += -x 'c++'
 ARCH_DEP_CFLAGS += -fno-defer-pop -DRW_MULTI_THREAD -D_REENTRANT -nostdlib
 
 #
-# no dirvers on th simulator
+# no drivers on the Tornado II simulator
 #
-DIRS = $(subst drv,,$(DIRS))
-
-
-
+DIRS = $(filter-out drv dev devOpt, $(DIRS)) 

@@ -44,6 +44,7 @@
 #include <errMdef.h>
 #include <lstLib.h>
 #include <dbDefs.h>
+#include <link.h>
 #include <sdrHeader.h>
 #include <cvtFast.h>
 #include <dbStaticLib.h>

@@ -84,8 +84,8 @@ public:
 protected:
     class cacChannelIO *pChannelIO;
 
-    virtual void lock ();
-    virtual void unlock ();
+    void lock () const;
+    void unlock () const;
 
 private:
     virtual void ioAttachNotify ();
@@ -96,7 +96,6 @@ private:
     virtual void exceptionNotify ( int status, const char *pContext );
     virtual void connectTimeoutNotify ();
 
-    static osiMutex defaultMutex;
 
     friend class cacChannelIO;
 };
@@ -111,11 +110,12 @@ public:
     void disconnectNotify ();
     void connectTimeoutNotify ();
     void accessRightsNotify ( caar );
+    void ioReleaseNotify ();
 
     virtual const char *pName () const = 0;
 
-    void lock ();
-    void unlock ();
+    virtual void lock () const = 0;
+    virtual void unlock () const = 0;
 
 private:
     virtual int read ( unsigned type, unsigned long count, void *pValue) = 0;

@@ -32,11 +32,17 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.21  1996/08/05 19:20:29  jhill
+ * removed incorrect ver number
+ *
  * Revision 1.20  1995/12/19  19:36:20  jhill
  * function prototype changes
  *
  * Revision 1.19  1995/11/29  19:15:42  jhill
  * added $Log$
+ * added Revision 1.21  1996/08/05 19:20:29  jhill
+ * added removed incorrect ver number
+ * added
  * Revision 1.20  1995/12/19  19:36:20  jhill
  * function prototype changes
  * to the header
@@ -49,6 +55,7 @@
 #include <windows.h>
 #include <process.h>
 #include <mmsystem.h>
+#include <epicsVersion.h>
 
 #include "iocinf.h"
 
@@ -469,7 +476,7 @@ BOOL epicsShareAPI DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 						
 #if _DEBUG			  /* for gui applications, setup console for error messages */
 		if (AllocConsole())	{
-			SetConsoleTitle("Channel Access Status");
+			SetConsoleTitle(EPICS_VERSION_STRING);
     		freopen( "CONOUT$", "a", stderr );
 		}
 		fprintf(stderr, "Process attached to ca.dll\n");

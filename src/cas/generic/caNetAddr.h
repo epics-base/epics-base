@@ -53,6 +53,21 @@ public:
 	}
 
 	//
+	// This is specified so that compilers will not use one of 
+	// the following assignment operators after converting to a 
+	// sockaddr_in or a sockaddr first.
+	//
+	// caNetAddr caNetAddr::operator =(const struct sockaddr_in&)
+	// caNetAddr caNetAddr::operator =(const struct sockaddr&)
+	//
+	inline caNetAddr operator = (const caNetAddr &naIn)
+	{
+		this->addr = naIn.addr;
+		this->type = naIn.type;
+		return *this;
+	}	
+
+	//
 	// conditionally drag BSD socket headers into the server
 	// and server tool
 	//
@@ -77,7 +92,8 @@ public:
 		inline void setSock(const struct sockaddr &sock)
 		{
 			this->type = casnaSock;
-			struct sockaddr_in *psip = (struct sockaddr_in *) &sock;
+			const struct sockaddr_in *psip = 
+				(const struct sockaddr_in *) &sock;
 			assert(sizeof(sock)==sizeof(this->addr.sock));
 			this->addr.sock = *psip;
 		}	
@@ -140,11 +156,9 @@ private:
 		// see checkDummySize() above
 		//
 		unsigned char dummy[16];	
-	}addr;
+	} addr;
 
 	caNetAddrType type;
-
-	static verifyCANetAddr verify;
 };
 
 inline void verifyCANetAddr::checkSize()

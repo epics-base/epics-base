@@ -66,6 +66,7 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #include "asLib.h"
 #include "gpHash.h"
 #include "freeList.h"
+#include "postfix.h"
 
 /*Declare storage for Global Variables */
 ASBASE		*pasbase=NULL;

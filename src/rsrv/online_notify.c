@@ -163,9 +163,6 @@ int rsrv_online_notify_task()
                 else if (if_addr.sin_family==AF_INET) {
                     msg.m_available = if_addr.sin_addr.s_addr;
 
-ipAddrToA (&if_addr, buf, sizeof(buf));
-printf ("**** Setting local address to \"%s\" - this may not work correctly ****\n", buf);
-
                     status = send (sock, (char *)&msg, sizeof(msg), 0);
                     if (status < 0) {
                         ipAddrToA (&pNode->addr.ia, buf, sizeof(buf));

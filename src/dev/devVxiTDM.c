@@ -30,8 +30,7 @@
  * Modification Log:
  * -----------------
  * .01  08-20-92	jbk	Initial Implementation
- * .02	02-16-92	joh	vxi incl name change & cpu 
- *				independent int vector include
+ * .02  09-18-92	jbk	frame/slot addressing added
  *      ...
  */
 
@@ -83,7 +82,7 @@
 #include	<dbAccess.h>
 #include	<rec/dbCommon.h>
 #include	<fast_lock.h>
-#include        <recSup.h>
+#include    <recSup.h>
 #include	<devSup.h>
 #include	<dbScan.h>
 #include	<special.h>
@@ -98,6 +97,7 @@ static long init();
 static long init_pd();
 static long get_ioint_info();
 static long write_pd();
+static long get_enum();
 
 typedef struct {
 	long		number;
@@ -106,11 +106,12 @@ typedef struct {
 	DEVSUPFUN	init_record;
 	DEVSUPFUN	get_ioint_info;
 	DEVSUPFUN	write;
+	DEVSUPFUN	get_enum;
 } TDM_DSET;
 
 /*It doesnt matter who honors report or init thus let 1st devSup do it*/
 
-TDM_DSET devPdVxiTDM = { 5, report, init, init_pd, NULL, write_pd };
+TDM_DSET devPdVxiTDM = { 6, report, init, init_pd, NULL, write_pd, get_enum };
 
 volatile int VxiTDMDebug=0;
 
@@ -119,9 +120,6 @@ volatile int VxiTDMDebug=0;
 /* definitions related to fields of records*/
 /* defs for gtyp and ctyp fields */
 
-#define INTERNAL 0
-#define EXTERNAL 1
-#define SOFTWARE 1
 #define ACTIVE 1
 #define INACTIVE 0
 
@@ -135,15 +133,9 @@ volatile int VxiTDMDebug=0;
 #define TRGS3			0x0200
 #define TRGS4			0x0300
 
-/* vxi register offsets */
-#define ID_REG_OFFSET		0x0000
-#define DEV_TYPE_REG_OFFSET	0x0002
-#define STAT_CTRL_REG_OFFSET	0x0004
-#define OFFSET_REG_OFFSET	0x0006
-
 #define TRIG_ENABLE(reg)	(reg|0x0400)
 #define TRIG_DISABLE(reg)	(reg&(~0x400))
-#define TRIG_VALUE(reg)		(reg&0x0400)
+#define TRIG_VALUE(reg)		((reg&0x0400)?1:0)
 
 #define DELAY_CLEAR(reg)	(reg&0xff00)
 #define DELAY_SET(delay,reg)	(DELAY_CLEAR(reg)|delay)
@@ -151,24 +143,24 @@ volatile int VxiTDMDebug=0;
 
 #define TRIG_DETECT(reg)	(0x0800&reg)
 
-#define VXI_BASE		0xc000
-#define CARD_SIZE		0x0040
 #define REG_OFFSET		0x0020
-#define MAXCARDS		31
+/* EPICS_VXI_LA_COUNT is a global variable that must be present in the IOC */
+#define MAXCARDS		EPICS_VXI_LA_COUNT 
 #define MAXSIG			9
 #define MAX_NANOSEC		1275e1
 #define MAX_DELAY		255e1
 #define TIME_FACT		MAX_DELAY/MAX_NANOSEC
 #define TIME_FACT_TO		MAX_NANOSEC/MAX_DELAY
 
-#define CARD(la)		(char *)shortaddr+CARD_SIZE*la
-#define SIGNAL(la,signal)	CARD(la)+REG_OFFSET+signal*2
+#define VXI_MAKE_TDM		0xee4 /* official is 3812 */
+#define VXI_MODEL_TDM		0xf01 /* test one 0xf01 */
 
-#define VXI_MAKE_TDM		0xf00
-#define VXI_MODEL_TDM		0xf00
+unsigned long VxiTDM_make = VXI_MAKE_TDM;
+unsigned long VxiTDM_model = VXI_MODEL_TDM;
 
 static unsigned long tdmDriverID;
 
+/* config area for each card */
 /* for stat-> bit per channel 1=used/valid, 0=unused/invalid, bit-0=channel-0 */
 
 struct tdm_config {
@@ -187,6 +179,10 @@ static void tdm_stat();
 static void tdm_report();
 
 
+/***************************************************************/
+/*
+	report for device - just uses the vxi report
+*/
 
 static long report(int interest)
 {
@@ -198,18 +194,26 @@ epvxiDeviceSearchPattern	dsp;
 	printf("Report for Vxi Time Delay Module\n");
 
 	dsp.flags=VXI_DSP_make|VXI_DSP_model;
-	dsp.make=VXI_MAKE_TDM;
-	dsp.model=VXI_MODEL_TDM;
+	dsp.make=VxiTDM_make; /* VXI_MAKE_TDM; */
+	dsp.model=VxiTDM_model; /* VXI_MODEL_TDM; */
 
 	if( epvxiLookupLA(&dsp,tdm_report,(void *)&interest)<0 )
 		return ERROR;
-	return (OK);
+
+	return OK;
 }
 
 static void tdm_report(unsigned la,void *interest)
 {
 	tdm_stat(la,(int)*(int *)interest);
+
+	return;
 }
+
+/***************************************************************/
+/*
+	Initialize all the TDM cards
+*/
 
 static long init(int after)
 {
@@ -220,28 +224,38 @@ epvxiDeviceSearchPattern	dsp;
 	tdmDriverID=epvxiUniqueDriverID();
 
 	dsp.flags=VXI_DSP_make|VXI_DSP_model;
-	dsp.make=VXI_MAKE_TDM;
-	dsp.model=VXI_MODEL_TDM;
+	dsp.make=VxiTDM_make; /* VXI_MAKE_TDM; */
+	dsp.model=VxiTDM_model; /* VXI_MODEL_TDM; */
 
 	if( epvxiLookupLA(&dsp,tdmInitLA,(void *)NULL) <0)
+	{
+		logMsg("No ANL Time Delay Modules found\n");
 		return ERROR;
+	}
 
-	if(epvxiRegisterMakeName(VXI_MAKE_TDM,"ANL")<0)
+	if(epvxiRegisterMakeName(VxiTDM_make,"ANL")<0) /* VXI_MAKE_TDM */
 		logMsg("%s: unable to register MAKE\n",__FILE__);
 
-	if(epvxiRegisterModelName(VXI_MAKE_TDM,VXI_MODEL_TDM,
-	   "Time Delay Module")<0)
+	if(epvxiRegisterModelName(VxiTDM_make,VxiTDM_model,
+	   "Time Delay Module")<0) /* VXI_MAKE_TDM VXI_MODEL_TDM */
 		logMsg("%s: unable to register MODEL\n",__FILE__);
 
 	return OK;
 
 }
 
+/***************************************************************/
+/*
+	Initialize one TDM card
+*/
+
 static void tdmInitLA(unsigned la)
 {
 int	status;
 struct	vxi_csr	*pcsr;
 struct	tdm_config	*tc;
+
+	Debug("tdmInitLA() la=%d \n",la);
 
 	status=epvxiOpen(la,tdmDriverID,sizeof(struct tdm_config),tdm_stat);
 
@@ -269,12 +283,18 @@ struct	tdm_config	*tc;
 }
 
 
+/***************************************************************/
+/*
+	Initialize a pulse delay record channel (signal)
+*/
+
 static long init_pd(struct pulseDelayRecord *pd)
 {
 struct vxiio *pvxiio = (struct vxiio *)&(pd->out.value);
 int	dummy;
 short	la,signal;
 unsigned short	*channel_reg;
+static unsigned epvxiGetLa();
 struct vxi_csr	*pcsr;
 struct tdm_config *tc;
 
@@ -285,6 +305,7 @@ struct tdm_config *tc;
 	case (VXI_IO):
 		break;
 
+	default :
 		recGblRecordError(S_dev_badBus,(void *)pd,
 		    "devVxiTDM (init_record) Illegal OUT Bus Type");
 		return(S_dev_badBus);
@@ -292,7 +313,13 @@ struct tdm_config *tc;
 
 	/* initialize to null indicating no address found */
 
-	la = pvxiio->la;
+	if((la=epvxiGetLa(pvxiio))<0)
+	{
+		recGblRecordError(S_dev_badSignal,(void *)pd,
+			"devVxiTDM (init_record) Illegal frame/slot");
+		return(S_dev_badSignal);
+	}
+	Debug("got la = %d\n",la);
 
 	if(isdigit(pvxiio->parm[0]))
 		signal=pvxiio->parm[0]-'0';
@@ -310,7 +337,7 @@ struct tdm_config *tc;
 	Debug("signal = %d \n",signal);
 	Debug("parm = (%s) \n",pvxiio->parm);
 
-	if(la>MAXCARDS)
+	if(la>=MAXCARDS)
 	{
 		recGblRecordError(S_dev_badCard,(void *)pd,
 		    "devVxiTDM (init_record) exceeded maximum supported cards");
@@ -327,11 +354,20 @@ struct tdm_config *tc;
 	/* get the address of the register for this la and signal */
 
 	tc=epvxiPConfig(la,tdmDriverID,struct tdm_config *);
+
+	if(!tc)
+	{
+		recGblRecordError(S_dev_badSignal,(void *)pd,
+			"devVxiTDM (init_record) No card at address");
+		return(S_dev_badSignal);
+	}
+
 	pcsr=VXIBASE(la);
 
 	(char *)channel_reg=(char *)pcsr+REG_OFFSET;
 
 	Debug("channel_reg = %08.8X \n",channel_reg);
+	Debug("tc->stat = %x \n",tc->stat);
 
 	if( tc->stat&(1<<signal) )
 	{
@@ -378,6 +414,11 @@ struct tdm_config *tc;
 }
 
 
+/***************************************************************/
+/*
+	Set/read the values for a channel
+*/
+
 static long write_pd(struct pulseDelayRecord *pr)
 {
 unsigned short	*channel_reg;
@@ -419,7 +460,9 @@ struct tdm_config *tc;
 	/* set val to active if trigger detect on and a periodic scan
 	caused processing, special processing will set pfld */
 
-	if(!pr->pfld)
+	/* only lower 2 bytes used in pfld - kludge to be removed later */
+
+	if(!(pr->pfld&0x00ff))
 	{
 		channel_read=channel_reg[signal];
 
@@ -428,6 +471,7 @@ struct tdm_config *tc;
 		else
 			pr->val=INACTIVE;
 
+		pr->udf=FALSE;
 		pr->dly=(double)DELAY_VALUE(channel_read)*TIME_FACT_TO;
 		pr->hts=TRGS_VALUE(channel_read);
 		pr->gate=TRIG_VALUE(channel_read);
@@ -446,7 +490,14 @@ struct tdm_config *tc;
 		Debug("delay time = %d\n",delay_time);
 		Debug("units = %d \n",pr->unit);
 
-		if(delay_time > 255) delay_time=255;
+		if(delay_time > 255)
+		{
+			recGblSetSevr(pr,WRITE_ALARM,INVALID_ALARM);
+			recGblRecordError(S_db_badField,(void *)pr,
+			   "invalid delay value - set to max");
+
+			delay_time=255;
+		}
 
 		channel_value=DELAY_SET(delay_time,channel_value);
 
@@ -466,7 +517,8 @@ struct tdm_config *tc;
 		if(pr->hts > 3)
 		{
 			recGblSetSevr(pr,WRITE_ALARM,INVALID_ALARM);
-			recGblRecordError(S_db_badField,(void *)pr,"invalid trigger value");
+			recGblRecordError(S_db_badField,(void *)pr,
+			   "invalid trigger value");
 			return(0);
 		}
 
@@ -476,6 +528,7 @@ struct tdm_config *tc;
 		channel_reg[signal]=channel_value;
 
 		Debug("Ending channel value = %04.4X\n",channel_value);
+
 	}
 
 	FASTUNLOCK(&tc->lock);
@@ -483,6 +536,11 @@ struct tdm_config *tc;
 	return(0);
 
 }
+
+/***************************************************************/
+/*
+	report for vxi routines
+*/
 
 static void tdm_stat(unsigned la,int level)
 {
@@ -502,3 +560,83 @@ int	i;
 
 	printf("\n");
 }
+
+/***************************************************************/
+/*
+	Routines to fill vxiio stucture -
+		always returns la
+		calculates la from frame/slot or figures out frame/slot
+		from la
+*/
+
+#define MAX_VXI_SLOTS 12
+#define MAX_VXI_FRAMES 255
+
+static void epvxiGetLA_one(unsigned la,void *pvxiio)
+{
+struct vxiio *pvxi=(struct vxiio *)pvxiio;
+
+	Debug("epvxiGetLA_one() la = %x \n",la);
+	pvxi->la=(short)la;
+
+	return;
+}
+
+static unsigned epvxiGetLa(struct vxiio *pvxiio,unsigned long vxiDriverID)
+{
+epvxiDeviceSearchPattern	dsp;
+
+	if(pvxiio->flag==0) /* frame */
+	{
+		dsp.flags=VXI_DSP_slot|VXI_DSP_slot_zero_la;
+
+		if(pvxiio->slot > MAX_VXI_SLOTS || pvxiio->slot < 0 ||
+		   pvxiio->frame > MAX_VXI_FRAMES || pvxiio->frame < 0)
+			return ERROR;
+
+		dsp.slot=(unsigned char)pvxiio->slot;
+		dsp.slot_zero_la=(unsigned char)pvxiio->frame;
+
+		Debug("epvxiGetLa() dsp.slot=%d\n",dsp.slot);
+		Debug("epvxiGetLa() dsp.slotzero_la=%d\n",dsp.slot_zero_la);
+
+		if( epvxiLookupLA(&dsp,epvxiGetLA_one,(void *)pvxiio) <0)
+			return ERROR;
+	}
+	else /* SA - static address (la) */
+	{
+		pvxiio->frame=PVXIDI(pvxiio->la)->slot_zero_la;
+		pvxiio->slot=PVXIDI(pvxiio->la)->slot;
+	}
+
+	return(pvxiio->la);
+}
+
+#define LOW_HTS 0
+#define HIGH_HTS 3
+
+static long get_enum(struct dbAddr *paddr,struct dbr_enumStrs *p)
+{
+	struct pulseDelayRecord *ppd=(struct pulseDelayRecord *)paddr->precord;
+	int i,j;
+
+	Debug("Getting values for hts\n",0);
+		     
+	if(paddr->pfield==(void *)&ppd->hts)
+	{
+		for(j=0,i=LOW_HTS;i<=HIGH_HTS&&j<DB_MAX_CHOICES;i++,j++)
+		{
+			Debug("  strs=(%d)\n",i);
+			sprintf(p->strs[j],"%d",i);
+		}
+
+		p->no_str=j;
+	}
+	else
+	{
+		p->no_str=0;
+	}
+ 
+	return(0);
+}
+

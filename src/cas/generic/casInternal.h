@@ -47,7 +47,7 @@ class casChannelI;
 //
 class casEvent : public tsDLNode<casEvent> {
 public:
-    virtual ~casEvent();
+    epicsShareFunc virtual ~casEvent();
     virtual caStatus cbFunc (casEventSys &)=0;
 private:
 };
@@ -66,7 +66,7 @@ enum casResType {casChanT=1, casClientMonT, casPVT};
 class casRes : public chronIntIdRes<casRes>
 {
 public:
-	virtual ~casRes();
+	epicsShareFunc virtual ~casRes();
 	virtual casResType resourceType() const = 0;
 	virtual void show (unsigned level) const = 0;
 	virtual void destroy() = 0;
@@ -96,7 +96,7 @@ class ioBlockedList : private tsDLList<ioBlocked> {
 friend class ioBlocked;
 public:
 	ioBlockedList ();
-	virtual ~ioBlockedList ();
+	epicsShareFunc virtual ~ioBlockedList ();
 	void signal ();
 	void addItemToIOBLockedList (ioBlocked &item);
 };
@@ -228,7 +228,7 @@ class casAsyncPVAttachIO;
 class casAsyncIOI : public casEvent, public tsDLNode<casAsyncIOI> {
 public:
 	casAsyncIOI (casCoreClient &client);
-	virtual ~casAsyncIOI();
+	epicsShareFunc virtual ~casAsyncIOI();
 
 	void serverDestroyIfReadOP ();
     void serverDestroy ();
@@ -374,7 +374,7 @@ class casPVListChan : public casChannelI, public tsDLNode<casPVListChan>
 {
 public:
         casPVListChan (const casCtx &ctx);
-        virtual ~casPVListChan();
+        epicsShareFunc virtual ~casPVListChan();
 };
 
 class caServerI;
@@ -392,7 +392,7 @@ public ioBlockedList	// list of clients io blocked on this pv
 {
 public:
     casPVI ();
-    virtual ~casPVI (); 
+    epicsShareFunc virtual ~casPVI (); 
     
     //
     // for use by the server library

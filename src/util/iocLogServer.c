@@ -47,6 +47,9 @@
  * .09 050494 pg        HPUX port changes.
  * .10 021694 joh	ANSI C	
  * $Log$
+ * Revision 1.35  1999/11/19 00:26:12  jhill
+ * fixed string overwrite bug
+ *
  * Revision 1.34  1999/11/08 21:37:00  jhill
  * dont print too many messages if the host runs out of fd slots
  *
@@ -131,7 +134,7 @@ static char	*pSCCSID = "@(#)iocLogServer.c	1.9\t05/05/94";
 #include 	"envDefs.h"
 #include 	"osiSock.h"
 #include	"truncateFile.h"
-#include	"bsdSocketResource.h"
+#include	"osiSockResource.h"
 
 static unsigned short	ioc_log_port;
 static long		ioc_log_file_limit;

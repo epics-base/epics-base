@@ -1,6 +1,9 @@
 ----------------------------------------------------------------------------
 EPICS R3.12.2 Notes for Solaris
 	- By Andrew Johnson
+
+updated 12-16-96 by Jeff Hill
+
 ----------------------------------------------------------------------------
 
 Notes:
@@ -8,8 +11,10 @@ Notes:
 1. In order to build EPICS under Solaris 2, you must ensure that the
 solaris directory /usr/ccs/bin is in your search path.
 
-2. It is not possible to compile EPICS under Solaris 2 using only the
-GNU gcc compiler -- you must have the Sun SPARCworks ANSI C compiler.
+2. It is now possible to compile EPICS under Solaris 2 using either the
+GNU gcc compiler or the Sun SPARCworks ANSI C compiler. The g++/
+Sun SPARCworks ANSI C compiler combination has compiled and linked
+without errors but has not been extensively tested.
 
 3. EPICS under Solaris 2 no longer uses the UCB compatability libraries.
 In order to ensure that the /usr/ucblib files are not inherited, you

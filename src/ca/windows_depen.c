@@ -37,8 +37,6 @@
  */
 #include <process.h>
 
-#define  ENV_PRIVATE_DATA
-
 #include "iocinf.h"
 
 #ifndef _WINDOWS
@@ -198,8 +196,12 @@ char *localUserName()
     	int     length;
     	char    *pName;
     	char    *pTmp;
+	char    Uname[] = "";
 
     	pName = getenv("USERNAME");
+	if (!pName) {
+		pName = Uname;
+	}
     	length = strlen(pName)+1;
 
 	pTmp = malloc(length);

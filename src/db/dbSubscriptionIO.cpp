@@ -31,6 +31,9 @@
 #include "dbChannelIOIL.h"
 #include "db_access_routines.h"
 
+template tsFreeList < dbSubscriptionIO >;
+template class epicsSingleton < tsFreeList < dbSubscriptionIO > >;
+
 epicsSingleton < tsFreeList < dbSubscriptionIO > > dbSubscriptionIO::pFreeList;
 
 dbSubscriptionIO::dbSubscriptionIO ( dbServiceIO &serviceIO, dbChannelIO &chanIO, 

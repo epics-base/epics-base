@@ -21,6 +21,9 @@
 #include "oldAccess.h"
 #include "cac.h"
 
+template class tsFreeList < oldChannelNotify, 1024 >;
+template class epicsSingleton < tsFreeList < oldChannelNotify, 1024 > >;
+
 epicsSingleton < tsFreeList < struct oldChannelNotify, 1024 > > oldChannelNotify::pFreeList;
 
 extern "C" void cacNoopConnHandler ( struct connection_handler_args )

@@ -19,6 +19,9 @@
 #include "iocinf.h"
 #include "comBuf.h"
 
+template class tsFreeList < comBuf, 0x20 >;
+template class epicsSingleton < tsFreeList < comBuf, 0x20 > >;
+
 epicsSingleton < tsFreeList < class comBuf, 0x20 > > comBuf::pFreeList;
 
 bool comBuf::flushToWire ( wireSendAdapter &wire )

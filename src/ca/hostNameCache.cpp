@@ -21,6 +21,9 @@
 #include "iocinf.h"
 #include "hostNameCache.h"
 
+template class tsFreeList < hostNameCache, 16 >;
+template class epicsSingleton < tsFreeList < hostNameCache, 16 > >;
+
 epicsSingleton < tsFreeList < hostNameCache, 16 > > hostNameCache::pFreeList;
 
 hostNameCache::hostNameCache ( const osiSockAddr &addr, ipAddrToAsciiEngine &engine ) :

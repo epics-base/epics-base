@@ -33,6 +33,13 @@
 #include "epicsGuard.h"
 #include "timerPrivate.h"
 
+template class tsFreeList < epicsTimerForC, 0x20 >;
+template class tsFreeList < epicsTimerQueuePassiveForC, 0x10 >;
+template class tsFreeList < epicsTimerQueueActiveForC, 0x10 >;
+template class epicsSingleton < tsFreeList < epicsTimerForC, 0x20 > >;
+template class epicsSingleton < tsFreeList < epicsTimerQueuePassiveForC, 0x10 > >;
+template class epicsSingleton < tsFreeList < epicsTimerQueueActiveForC, 0x10 > >;
+
 epicsSingleton < tsFreeList < epicsTimerForC, 0x20 > > epicsTimerForC::pFreeList;
 epicsSingleton < tsFreeList < epicsTimerQueuePassiveForC, 0x10 > > epicsTimerQueuePassiveForC::pFreeList;
 epicsSingleton < tsFreeList < epicsTimerQueueActiveForC, 0x10 > > epicsTimerQueueActiveForC::pFreeList;

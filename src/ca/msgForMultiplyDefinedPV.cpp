@@ -25,6 +25,9 @@
 #include "caerr.h" // for ECA_DBLCHNL
 #undef epicsExportSharedSymbols
 
+template class tsFreeList < msgForMultiplyDefinedPV, 16 >;
+template class epicsSingleton < tsFreeList < msgForMultiplyDefinedPV, 16 > >;
+
 epicsSingleton < tsFreeList < class msgForMultiplyDefinedPV, 16 > >
 	msgForMultiplyDefinedPV::pFreeList;
 

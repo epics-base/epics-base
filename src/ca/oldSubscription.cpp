@@ -14,6 +14,9 @@
 #include "iocinf.h"
 #include "oldAccess.h"
 
+template class tsFreeList < oldSubscription, 1024 >;
+template class epicsSingleton < tsFreeList < oldSubscription, 1024 > >;
+
 epicsSingleton < tsFreeList < struct oldSubscription, 1024 > > oldSubscription::pFreeList;
 
 oldSubscription::~oldSubscription ()

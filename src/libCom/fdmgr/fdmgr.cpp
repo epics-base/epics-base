@@ -103,6 +103,8 @@ private:
 	oldFdmgr & operator = ( const oldFdmgr & );
 };
 
+template class chronIntIdResTable <timerForOldFdmgr>;
+
 epicsShareFunc fdRegForOldFdmgr::fdRegForOldFdmgr 
     (const SOCKET fdIn, const fdRegType typeIn, 
 	    const bool onceOnlyIn, fdManager &managerIn, 

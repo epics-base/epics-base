@@ -22,6 +22,9 @@
 #include "oldAccess.h"
 #include "cac.h"
 
+template class tsFreeList < getCopy, 1024 >;
+template class epicsSingleton < tsFreeList < getCopy, 1024 > >;
+
 epicsSingleton < tsFreeList < class getCopy, 1024 > > getCopy::pFreeList;
 
 getCopy::getCopy ( oldCAC &cacCtxIn, oldChannelNotify &chanIn, 

@@ -37,6 +37,18 @@
 #include "bhe.h"
 #include "net_convert.h"
 
+template class resTable < nciu, chronIntId >;
+template class chronIntIdResTable < nciu >;
+template class resTable < baseNMIU, chronIntId >;
+template class chronIntIdResTable < baseNMIU >;
+template class resTable < CASG, chronIntId >;
+template class chronIntIdResTable < CASG >;
+template class resTable < bhe, inetAddrID >;
+template class resTable < tcpiiu, caServerID >;
+template class tsFreeList < netReadNotifyIO, 1024, epicsMutexNOOP >;
+template class tsFreeList < netWriteNotifyIO, 1024, epicsMutexNOOP >;
+template class tsFreeList < netSubscription, 1024, epicsMutexNOOP >;
+
 // TCP response dispatch table
 const cac::pProtoStubTCP cac::tcpJumpTableCAC [] = 
 {

@@ -31,6 +31,8 @@
 #define epicsExportSharedSymbols
 #include "timerPrivate.h"
 
+template class epicsSingleton < timerQueueActiveMgr >;
+
 epicsSingleton < timerQueueActiveMgr > pTimerQueueMgrEPICS;
 
 epicsTimerQueueActive::~epicsTimerQueueActive () {}

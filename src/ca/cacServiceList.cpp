@@ -21,6 +21,8 @@
 #include "epicsGuard.h"
 #include "cacIO.h"
 
+template class epicsSingleton < cacServiceList >;
+
 epicsShareDef epicsSingleton < cacServiceList > pGlobalServiceListCAC;
 
 cacServiceList::cacServiceList ()

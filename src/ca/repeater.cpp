@@ -100,6 +100,9 @@ private:
  */
 static tsDLList < repeaterClient > client_list;
 
+template class tsFreeList < repeaterClient, 0x20 >;
+template class epicsSingleton < tsFreeList < repeaterClient, 0x20 > >;
+
 epicsSingleton < tsFreeList < repeaterClient, 0x20 > > repeaterClient::pFreeList;
 
 static char buf [MAX_UDP_RECV]; 

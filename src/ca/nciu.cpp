@@ -31,6 +31,9 @@
 #include "cadef.h"
 #include "db_access.h" // for INVALID_DB_REQ
 
+template class tsFreeList < class nciu, 1024 >;
+template class epicsSingleton < tsFreeList < class nciu, 1024 > >;
+
 epicsSingleton < tsFreeList < class nciu, 1024 > > nciu::pFreeList;
 
 nciu::nciu ( cac & cacIn, netiiu & iiuIn, cacChannelNotify & chanIn, 

@@ -56,6 +56,7 @@ INC += tsFreeList.h
 INC += epicsSingleton.h
 INC += epicsGuard.h
 INC += epicsOnce.h
+SRCS += resourceLib.cpp
 SRCS += epicsSingletonBase.cpp
 SRCS += epicsOnce.cpp
 

@@ -36,6 +36,11 @@
 #include "autoPtrDestroy.h"
 #include "cac.h"
 
+template class tsFreeList < CASG, 128 >;
+template class epicsSingleton < tsFreeList < struct CASG, 128 > >;
+template class tsFreeList < syncGroupReadNotify, 128, epicsMutexNOOP >;
+template class tsFreeList < syncGroupWriteNotify, 128, epicsMutexNOOP >;
+
 epicsSingleton < tsFreeList < struct CASG, 128 > > CASG::pFreeList;
 
 CASG::CASG ( oldCAC &cacIn ) :

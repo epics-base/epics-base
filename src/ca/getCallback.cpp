@@ -19,6 +19,9 @@
 #include "iocinf.h"
 #include "oldAccess.h"
 
+template class tsFreeList < getCallback, 1024 >;
+template class epicsSingleton < tsFreeList < getCallback, 1024 > >;
+
 epicsSingleton < tsFreeList < class getCallback, 1024 > > getCallback::pFreeList;
 
 getCallback::getCallback ( oldChannelNotify &chanIn, 

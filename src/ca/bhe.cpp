@@ -21,6 +21,9 @@
 #include "virtualCircuit.h"
 #include "bhe.h"
 
+template class tsFreeList < bhe, 1024 >;
+template class epicsSingleton < tsFreeList < bhe, 1024 > >;
+
 epicsSingleton < tsFreeList < class bhe, 1024 > > bhe::pFreeList;
 
 void * bhe::operator new ( size_t size )

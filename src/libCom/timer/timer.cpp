@@ -35,6 +35,9 @@
 #include "epicsGuard.h"
 #include "timerPrivate.h"
 
+template class tsFreeList < timer, 0x20 >;
+template class epicsSingleton < tsFreeList < timer, 0x20 > >;
+
 epicsSingleton < tsFreeList < timer, 0x20 > > timer::pFreeList;
 
 timer::timer ( timerQueue &queueIn ) :

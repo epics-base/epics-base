@@ -36,8 +36,11 @@ private:
     static epicsSingleton < tsFreeList < class epicsOnceImpl, 16 > > pFreeList;
 };
 
-epicsSingleton < epicsMutex > epicsOnceImpl::pMutex;
+template class epicsSingleton < epicsMutex >;
+template class tsFreeList < class epicsOnceImpl, 16 >;
+template class epicsSingleton < tsFreeList < class epicsOnceImpl, 16 > >;
 
+epicsSingleton < epicsMutex > epicsOnceImpl::pMutex;
 epicsSingleton < tsFreeList < class epicsOnceImpl, 16 > > epicsOnceImpl::pFreeList;
 
 inline void * epicsOnceImpl::operator new ( size_t size )

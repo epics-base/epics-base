@@ -33,6 +33,9 @@
 #include "dbChannelIOIL.h"
 #include "dbPutNotifyBlocker.h"
 
+template class resTable < dbBaseIO, chronIntId >;
+template class chronIntIdResTable < dbBaseIO >;
+
 class dbServiceIOLoadTimeInit {
 public:
     dbServiceIOLoadTimeInit ();

@@ -35,6 +35,9 @@
 #include "dbChannelIOIL.h"
 #include "dbPutNotifyBlocker.h"
 
+template class tsFreeList < dbPutNotifyBlocker, 1024 >;
+template class epicsSingleton < tsFreeList < dbPutNotifyBlocker, 1024 > >;
+
 epicsSingleton < tsFreeList < dbPutNotifyBlocker, 1024 > > dbPutNotifyBlocker::pFreeList;
 
 dbPutNotifyBlocker::dbPutNotifyBlocker ( dbChannelIO &chanIn ) :

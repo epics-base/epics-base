@@ -58,6 +58,7 @@
  * .17  06-29-92	joh	took file pointer arg out of io report
  * .18  08-11-92	joh	io report format cleanup	
  * .19  08-02-93	mrk	Added call to taskwdInsert
+ * .20  08-05-93	jbk	took out 200000 pulse limit
  */
 
 /* data requests are made from the oms_task at
@@ -497,11 +498,11 @@ int		arg2;
 		strcpy(oms_move_msg,"A?\nAF\nMR");
 		oms_move_msg[1] = oms_motor_specifier[channel];
 		if (arg1 < 0){
-			if (arg1 < -200000) arg1 = -0x0ffffff;
+			/* if (arg1 < -200000) arg1 = -0x0ffffff; */
 			oms_move_msg[8] = '-';
 			count = itob(&oms_move_msg[8+1],-arg1,10) + 1;
 		}else{
-			if (arg1 > 200000) arg1 = 0x0ffffff;
+			/* if (arg1 > 200000) arg1 = 0x0ffffff; */
 			count = itob(&oms_move_msg[8],arg1,10);
 		}
 		oms_move_msg[8+count] = 0;	/* terminate */

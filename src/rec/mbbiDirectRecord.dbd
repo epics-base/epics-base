@@ -77,7 +77,6 @@ recordtype(mbbiDirect) {
 	}
 	field(B0,DBF_UCHAR) {
 		prompt("Bit 0")
-		promptgroup(GUI_BITS1)
 		pp(TRUE)
 		interest(1)
 	}

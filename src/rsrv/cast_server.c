@@ -132,9 +132,7 @@ void cast_server(void *pParm)
     recv_addr_size = sizeof(new_recv_addr);
 
     if( IOC_cast_sock!=0 && IOC_cast_sock!=INVALID_SOCKET ) {
-        if( (status = socket_close(IOC_cast_sock)) < 0 ) {
-            epicsPrintf ("CAS: Unable to close master cast socket\n");
-        }
+        epicsSocketDestroy ( IOC_cast_sock );
     }
 
     /* 
@@ -142,7 +140,7 @@ void cast_server(void *pParm)
      *  Use ARPA Internet address format and datagram socket.
      */
 
-    if ( ( IOC_cast_sock = socket (AF_INET, SOCK_DGRAM, 0) ) == INVALID_SOCKET ) {
+    if ( ( IOC_cast_sock = epicsSocketCreate (AF_INET, SOCK_DGRAM, 0) ) == INVALID_SOCKET ) {
         epicsPrintf ("CAS: cast socket creation error\n");
         epicsThreadSuspendSelf ();
     }
@@ -198,7 +196,7 @@ void cast_server(void *pParm)
         epicsSocketConvertErrnoToString ( 
             sockErrBuf, sizeof ( sockErrBuf ) );
         epicsPrintf ("CAS: UDP server port bind error was \"%s\"\n", sockErrBuf );
-        socket_close (IOC_cast_sock);
+        epicsSocketDestroy ( IOC_cast_sock );
         epicsThreadSuspendSelf ();
     }
 

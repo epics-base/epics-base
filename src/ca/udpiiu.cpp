@@ -103,7 +103,7 @@ udpiiu::udpiiu ( epicsTimerQueueActive & timerQueue, callbackMutex & cbMutex, ca
         envGetInetPortConfigParam ( &EPICS_CA_SERVER_PORT,
                                     static_cast <unsigned short> (CA_SERVER_PORT) );
 
-    this->sock = socket ( AF_INET, SOCK_DGRAM, IPPROTO_UDP );
+    this->sock = epicsSocketCreate ( AF_INET, SOCK_DGRAM, IPPROTO_UDP );
     if ( this->sock == INVALID_SOCKET ) {
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString ( 
@@ -154,7 +154,7 @@ udpiiu::udpiiu ( epicsTimerQueueActive & timerQueue, callbackMutex & cbMutex, ca
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString ( 
             sockErrBuf, sizeof ( sockErrBuf ) );
-        socket_close (this->sock);
+        epicsSocketDestroy (this->sock);
         this->printf ( "CAC: unable to bind to an unconstrained address because = \"%s\"\n",
             sockErrBuf );
         throwWithLocation ( noSocket () );
@@ -168,12 +168,12 @@ udpiiu::udpiiu ( epicsTimerQueueActive & timerQueue, callbackMutex & cbMutex, ca
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString ( 
                 sockErrBuf, sizeof ( sockErrBuf ) );
-            socket_close ( this->sock );
+            epicsSocketDestroy ( this->sock );
             this->printf ( "CAC: getsockname () error was \"%s\"\n", sockErrBuf );
             throwWithLocation ( noSocket () );
         }
         if ( tmpAddr.sa.sa_family != AF_INET) {
-            socket_close ( this->sock );
+            epicsSocketDestroy ( this->sock );
             this->printf ( "CAC: UDP socket was not inet addr family\n" );
             throwWithLocation ( noSocket () );
         }
@@ -221,7 +221,7 @@ udpiiu::~udpiiu ()
         free ( pnode );
     }
     
-    socket_close ( this->sock );
+    epicsSocketDestroy ( this->sock );
 }
 
 void udpiiu::shutdown ()
@@ -483,7 +483,7 @@ void epicsShareAPI caStartRepeaterIfNotInstalled ( unsigned repeaterPort )
         return;
     }
 
-    tmpSock = socket ( AF_INET, SOCK_DGRAM, IPPROTO_UDP );
+    tmpSock = epicsSocketCreate ( AF_INET, SOCK_DGRAM, IPPROTO_UDP );
     if ( tmpSock != INVALID_SOCKET ) {
         ca_uint16_t port = static_cast < ca_uint16_t > ( repeaterPort );
         memset ( (char *) &bd, 0, sizeof ( bd ) );
@@ -512,7 +512,7 @@ void epicsShareAPI caStartRepeaterIfNotInstalled ( unsigned repeaterPort )
         fprintf ( stderr, "caStartRepeaterIfNotInstalled () : set socket option reuseaddr set failed\n" );
     }
 
-    socket_close ( tmpSock );
+     epicsSocketDestroy ( tmpSock );
 
     if ( ! installed ) {
         

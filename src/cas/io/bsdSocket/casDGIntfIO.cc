@@ -61,7 +61,7 @@ casDGIntfIO::casDGIntfIO ( caServerI & serverIn, clientBufMemoryManager & memMgr
 
     this->beaconSock = casDGIntfIO::makeSockDG();
     if (this->beaconSock==INVALID_SOCKET) {
-        socket_close (this->sock);
+        epicsSocketDestroy (this->sock);
         throw S_cas_internal;
     }
 
@@ -105,7 +105,7 @@ casDGIntfIO::casDGIntfIO ( caServerI & serverIn, clientBufMemoryManager & memMgr
 		removeDuplicateAddresses ( &BCastAddrList, &tmpList, 1 );
         if (ellCount(&BCastAddrList)<1) {
             errMessage (S_cas_noInterface, "- unable to continue");
-            socket_close (this->sock);
+            epicsSocketDestroy (this->sock);
             throw S_cas_noInterface;
         }
         pAddr = reinterpret_cast < osiSockAddrNode * > ( ellFirst ( &BCastAddrList ) );
@@ -129,7 +129,7 @@ casDGIntfIO::casDGIntfIO ( caServerI & serverIn, clientBufMemoryManager & memMgr
         epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
         errPrintf ( S_cas_bindFail, __FILE__, __LINE__, 
             "- bind UDP IP addr=%s failed because %s", buf, sockErrBuf );
-        socket_close (this->sock);
+        epicsSocketDestroy (this->sock);
         throw S_cas_bindFail;
     }
     
@@ -207,7 +207,7 @@ casDGIntfIO::casDGIntfIO ( caServerI & serverIn, clientBufMemoryManager & memMgr
 
         this->bcastRecvSock = casDGIntfIO::makeSockDG ();
         if (this->bcastRecvSock==INVALID_SOCKET) {
-            socket_close (this->sock);
+            epicsSocketDestroy (this->sock);
             throw S_cas_internal;
         }
 
@@ -221,8 +221,8 @@ casDGIntfIO::casDGIntfIO ( caServerI & serverIn, clientBufMemoryManager & memMgr
             errPrintf ( S_cas_bindFail, __FILE__, __LINE__,
                 "- bind UDP IP addr=%s failed because %s", 
                 buf, sockErrBuf );
-            socket_close ( this->sock );
-            socket_close ( this->bcastRecvSock );
+            epicsSocketDestroy ( this->sock );
+            epicsSocketDestroy ( this->bcastRecvSock );
             throw S_cas_bindFail;
         }
     }
@@ -240,15 +240,15 @@ casDGIntfIO::casDGIntfIO ( caServerI & serverIn, clientBufMemoryManager & memMgr
 casDGIntfIO::~casDGIntfIO()
 {
     if ( this->sock != INVALID_SOCKET ) {
-        socket_close ( this->sock );
+        epicsSocketDestroy ( this->sock );
     }
 
     if ( this->bcastRecvSock != INVALID_SOCKET ) {
-        socket_close ( this->bcastRecvSock );
+        epicsSocketDestroy ( this->bcastRecvSock );
     }
 
     if ( this->beaconSock != INVALID_SOCKET ) {
-        socket_close ( this->beaconSock );
+        epicsSocketDestroy ( this->beaconSock );
     }
     
     // avoid use of ellFree because problems on windows occur if the
@@ -515,7 +515,7 @@ SOCKET casDGIntfIO::makeSockDG ()
     int status;
     SOCKET newSock;
 
-    newSock = socket (AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    newSock = epicsSocketCreate (AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (newSock == INVALID_SOCKET) {
         errMessage(S_cas_noMemory, "CAS: unable to create cast socket\n");
         return INVALID_SOCKET;
@@ -528,7 +528,7 @@ SOCKET casDGIntfIO::makeSockDG ()
         (char *)&yes,
         sizeof(yes));
     if (status<0) {
-        socket_close (newSock);
+        epicsSocketDestroy (newSock);
         errMessage(S_cas_internal,
             "CAS: unable to set up cast socket\n");
         return INVALID_SOCKET;
@@ -558,7 +558,7 @@ SOCKET casDGIntfIO::makeSockDG ()
             (char *)&size,
             sizeof(size));
         if (status<0) {
-            socket_close (newSock);
+            epicsSocketDestroy (newSock);
             errMessage(S_cas_internal,
                 "CAS: unable to set cast socket size\n");
             return INVALID_SOCKET;
@@ -579,7 +579,7 @@ SOCKET casDGIntfIO::makeSockDG ()
         (char *) &yes,
         sizeof (yes));
     if (status<0) {
-        socket_close (newSock);
+        epicsSocketDestroy (newSock);
         errMessage(S_cas_internal,
             "CAS: unable to set SO_REUSEADDR on UDP socket?\n");
         return INVALID_SOCKET;

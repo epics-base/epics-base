@@ -457,7 +457,7 @@ tcpiiu::tcpiiu ( cac & cac, callbackMutex & cbMutex, double connectionTimeout,
     discardingPendingData ( false ),
     socketHasBeenClosed ( false )
 {
-    this->sock = socket ( AF_INET, SOCK_STREAM, IPPROTO_TCP );
+    this->sock = epicsSocketCreate ( AF_INET, SOCK_STREAM, IPPROTO_TCP );
     if ( this->sock == INVALID_SOCKET ) {
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString ( 
@@ -677,17 +677,8 @@ void tcpiiu::initiateAbortShutdown ( epicsGuard < callbackMutex > &,
             // some complexity because we must unregister the fd early
             //
             if ( ! this->socketHasBeenClosed ) {
-                int status = socket_close ( this->sock );
-                if ( status ) {
-                    char sockErrBuf[64];
-                    epicsSocketConvertErrnoToString ( 
-                        sockErrBuf, sizeof ( sockErrBuf ) );
-                    errlogPrintf ("CAC TCP socket close error was %s\n", 
-                        sockErrBuf );
-                }
-                else {
-                    this->socketHasBeenClosed = true;
-                }
+                epicsSocketDestroy ( this->sock );
+                this->socketHasBeenClosed = true;
             }
             break;
         case esscimqi_socketBothShutdownRequired:
@@ -727,14 +718,7 @@ tcpiiu::~tcpiiu ()
     this->recvThread.exitWait ();
 
     if ( ! this->socketHasBeenClosed ) {
-        int status = socket_close ( this->sock );
-        if ( status ) {
-            char sockErrBuf[64];
-            epicsSocketConvertErrnoToString ( 
-                sockErrBuf, sizeof ( sockErrBuf ) );
-            errlogPrintf ("CAC TCP socket close error was %s\n", 
-                sockErrBuf );
-        }
+        epicsSocketDestroy ( this->sock );
     }
 
     // free message body cache

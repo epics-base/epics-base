@@ -81,15 +81,15 @@ LOCAL void req_server (void *pParm)
             (unsigned short) CA_SERVER_PORT );
     }
 
-    if (IOC_sock != 0 && IOC_sock != INVALID_SOCKET)
-        if ((status = socket_close(IOC_sock)) < 0)
-            errlogPrintf( "CAS: Unable to close open master socket\n");
-
+    if (IOC_sock != 0 && IOC_sock != INVALID_SOCKET) {
+        epicsSocketDestroy ( IOC_sock );
+    }
+    
     /*
      * Open the socket. Use ARPA Internet address format and stream
      * sockets. Format described in <sys/socket.h>.
      */
-    if ( ( IOC_sock = socket(AF_INET, SOCK_STREAM, 0) ) == INVALID_SOCKET ) {
+    if ( ( IOC_sock = epicsSocketCreate (AF_INET, SOCK_STREAM, 0) ) == INVALID_SOCKET ) {
         errlogPrintf ("CAS: Socket creation error\n");
         epicsThreadSuspendSelf ();
     }
@@ -176,7 +176,7 @@ LOCAL void req_server (void *pParm)
     /* listen and accept new connections */
     if ( listen ( IOC_sock, 20 ) < 0 ) {
         errlogPrintf ("CAS: Listen error\n");
-        socket_close (IOC_sock);
+        epicsSocketDestroy (IOC_sock);
         epicsThreadSuspendSelf ();
     }
 
@@ -499,9 +499,7 @@ void destroy_client ( struct client *client )
 
 
     if ( client->sock != INVALID_SOCKET ) {
-        if ( socket_close (client->sock) < 0) {
-            errlogPrintf( "CAS: Unable to close socket\n" );
-        }
+        epicsSocketDestroy ( client->sock );
     }
 
     if ( client->proto == IPPROTO_TCP ) {

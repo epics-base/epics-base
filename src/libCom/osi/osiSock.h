@@ -19,6 +19,7 @@
 #define osiSockh
 
 #include "shareLib.h"
+#include "osdSock.h"
 #include "ellLib.h"
 
 #ifdef __cplusplus
@@ -28,6 +29,25 @@ extern "C" {
 struct sockaddr;
 struct sockaddr_in;
 struct in_addr;
+
+epicsShareFunc SOCKET epicsShareAPI epicsSocketCreate ( int domain, int type, int protocol );
+epicsShareFunc void epicsShareAPI epicsSocketDestroy ( SOCKET );
+
+/*
+ * Fortunately, on most systems the combination of a shutdown of both
+ * directions and or a signal is sufficent to interrupt a blocking send,
+ * receive, or connect call. For odd ball systems this is stubbed out in the
+ * osi area.
+ */
+enum epicsSocketSystemCallInterruptMechanismQueryInfo { 
+    esscimqi_socketCloseRequired, 
+    esscimqi_socketBothShutdownRequired,
+    esscimqi_socketSigAlarmRequired,
+    esscimqi_shuechanismImplemenedHerein
+};
+epicsShareFunc enum epicsSocketSystemCallInterruptMechanismQueryInfo 
+        epicsSocketSystemCallInterruptMechanismQuery ();
+
 
 /*
  * convert socket address to ASCII in this order
@@ -101,16 +121,6 @@ epicsShareFunc void epicsShareAPI osiSockRelease (void);
 epicsShareFunc void epicsSocketConvertErrnoToString ( 
         char * pBuf, unsigned bufSize );
 
-#ifdef __cplusplus
-}
-#endif
-
-#include "osdSock.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef union osiSockAddr {
     struct sockaddr_in  ia;
     struct sockaddr     sa;
@@ -166,21 +176,6 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
  * this osi interface can be eliminated.
  */
 epicsShareFunc osiSockAddr epicsShareAPI osiLocalAddr (SOCKET socket);
-
-/*
- * Fortunately, on most systems the combination of a shutdown of both
- * directions and or a signal is sufficent to interrupt a blocking send,
- * receive, or connect call. For odd ball systems this is stubbed out in the
- * osi area.
- */
-enum epicsSocketSystemCallInterruptMechanismQueryInfo { 
-    esscimqi_socketCloseRequired, 
-    esscimqi_socketBothShutdownRequired,
-    esscimqi_socketSigAlarmRequired,
-    esscimqi_shuechanismImplemenedHerein
-};
-epicsShareFunc enum epicsSocketSystemCallInterruptMechanismQueryInfo 
-        epicsSocketSystemCallInterruptMechanismQuery ();
 
 #ifdef __cplusplus
 }

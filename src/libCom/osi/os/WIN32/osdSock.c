@@ -116,6 +116,24 @@ epicsShareFunc void epicsShareAPI osiSockRelease()
 	}
 }
 
+epicsShareFunc SOCKET epicsShareAPI epicsSocketCreate ( 
+    int domain, int type, int protocol )
+{
+    return socket ( domain, type, protocol );
+}
+
+epicsShareFunc void epicsShareAPI epicsSocketDestroy ( SOCKET s )
+{
+    int status = closesocket ( s );
+    if ( status < 0 ) {
+        char buf [ 64 ];
+        epicsSocketConvertErrnoToString (  buf, sizeof ( buf ) );
+        errlogPrintf ( 
+            "epicsSocketDestroy: failed to "
+            "close a socket because \"%s\"\n", buf );
+    }
+}
+
 /*
  * ipAddrToHostName
  */

@@ -40,7 +40,6 @@ extern "C" {
 typedef int SOCKET;
 #define INVALID_SOCKET (-1)
 #define SOCKERRNO errno
-#define socket_close(S) close(S)
 
 #ifdef LYNXOS_RELEASE_2_4_0   /* only for LynxOS v2.4.0 */
 #	define socket_ioctl(A,B,C)     ioctl(A,B,(char *)C)

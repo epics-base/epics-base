@@ -100,7 +100,7 @@ int main ( int argc, char ** argv )
 
     caStartRepeaterIfNotInstalled ( repeaterPort );
 
-    sock = socket ( AF_INET, SOCK_DGRAM, IPPROTO_UDP );
+    sock = epicsSocketCreate ( AF_INET, SOCK_DGRAM, IPPROTO_UDP );
     if ( sock == INVALID_SOCKET ) {
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString ( 
@@ -119,7 +119,7 @@ int main ( int argc, char ** argv )
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString ( 
             sockErrBuf, sizeof ( sockErrBuf ) );
-        socket_close ( sock );
+        epicsSocketDestroy ( sock );
         errlogPrintf ( "casw: unable to bind to an unconstrained address because = \"%s\"\n",
             sockErrBuf );
         return -1;
@@ -131,7 +131,7 @@ int main ( int argc, char ** argv )
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString ( 
             sockErrBuf, sizeof ( sockErrBuf ) );
-        socket_close ( sock );
+        epicsSocketDestroy ( sock );
         errlogPrintf ( "casw: unable to set socket to nonblocking state because \"%s\"\n",
             sockErrBuf );
         return -1;
@@ -153,7 +153,7 @@ int main ( int argc, char ** argv )
 
         attemptNumber++;
         if ( attemptNumber > 100 ) {
-            socket_close ( sock );
+            epicsSocketDestroy ( sock );
             errlogPrintf ( "casw: unable to register with the CA repeater\n" );
             return -1;
         }
@@ -165,7 +165,7 @@ int main ( int argc, char ** argv )
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString ( 
             sockErrBuf, sizeof ( sockErrBuf ) );
-        socket_close ( sock );
+        epicsSocketDestroy ( sock );
         errlogPrintf ( "casw: unable to set socket to blocking state because \"%s\"\n",
             sockErrBuf );
         return -1;
@@ -181,7 +181,7 @@ int main ( int argc, char ** argv )
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString ( 
                 sockErrBuf, sizeof ( sockErrBuf ) );
-            socket_close ( sock );
+            epicsSocketDestroy ( sock );
             errlogPrintf ("casw: error from recv was = \"%s\"\n",
                 sockErrBuf );
             return -1;

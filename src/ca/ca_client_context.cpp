@@ -46,7 +46,7 @@ ca_client_context::ca_client_context ( bool enablePreemptiveCallback ) :
 {
     static const unsigned short PORT_ANY = 0u;
 
-    this->sock = socket ( AF_INET, SOCK_DGRAM, IPPROTO_UDP );
+    this->sock = epicsSocketCreate ( AF_INET, SOCK_DGRAM, IPPROTO_UDP );
     if ( this->sock == INVALID_SOCKET ) {
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
@@ -64,7 +64,7 @@ ca_client_context::ca_client_context ( bool enablePreemptiveCallback ) :
         if ( status < 0 ) {
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
-            socket_close ( this->sock );
+            epicsSocketDestroy ( this->sock );
             this->printf (
                 "%s: non blocking IO set fail because \"%s\"\n",
                             __FILE__, sockErrBuf );
@@ -84,7 +84,7 @@ ca_client_context::ca_client_context ( bool enablePreemptiveCallback ) :
         if ( status < 0 ) {
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
-            socket_close (this->sock);
+            epicsSocketDestroy (this->sock);
             this->printf (
                 "CAC: unable to bind to an unconstrained "
                 "address because = \"%s\"\n",
@@ -100,12 +100,12 @@ ca_client_context::ca_client_context ( bool enablePreemptiveCallback ) :
         if ( status < 0 ) {
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
-            socket_close ( this->sock );
+            epicsSocketDestroy ( this->sock );
             this->printf ( "CAC: getsockname () error was \"%s\"\n", sockErrBuf );
             throwWithLocation ( noSocket () );
         }
         if ( tmpAddr.sa.sa_family != AF_INET) {
-            socket_close ( this->sock );
+            epicsSocketDestroy ( this->sock );
             this->printf ( "CAC: UDP socket was not inet addr family\n" );
             throwWithLocation ( noSocket () );
         }
@@ -131,7 +131,7 @@ ca_client_context::~ca_client_context ()
         ( *this->fdRegFunc ) 
             ( this->fdRegArg, this->sock, false );
     }
-    socket_close ( this->sock );
+    epicsSocketDestroy ( this->sock );
 }
 
 void ca_client_context::destroyChannel ( oldChannelNotify & chan )

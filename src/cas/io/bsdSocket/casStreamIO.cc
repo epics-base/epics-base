@@ -97,7 +97,7 @@ casStreamIO::casStreamIO ( caServerI & cas, clientBufMemoryManager & bufMgr,
 casStreamIO::~casStreamIO()
 {
 	if ( ! this->sockHasBeenClosed ) {
-		socket_close ( this->sock );
+		epicsSocketDestroy ( this->sock );
 	}
 }
 
@@ -197,7 +197,7 @@ void casStreamIO::forceDisconnect ()
             errlogPrintf ("CAC TCP socket shutdown error was %s\n", 
                 sockErrBuf );
         }
-		socket_close ( this->sock );
+		epicsSocketDestroy ( this->sock );
         // other wakeup will be required here when we 
         // switch to a threaded implementation
 	}

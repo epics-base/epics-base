@@ -1090,7 +1090,7 @@ int TSgetBroadcastSocket(int port, struct sockaddr_in* sin)
     sin->sin_port=htons(port);
     sin->sin_family=AF_INET;
     sin->sin_addr.s_addr=htonl(INADDR_ANY);
-    if( (soc=socket(AF_INET,SOCK_DGRAM,0)) < 0 )
+    if( (soc=epicsSocketCreate(AF_INET,SOCK_DGRAM,0)) < 0 )
     { perror("socket create failed"); return -1; }
     
     setsockopt(soc,SOL_SOCKET,SO_BROADCAST,(char*)&on,sizeof(on));
@@ -1688,7 +1688,7 @@ static int TSgetSocket(int port, struct sockaddr_in* sin)
     sin->sin_port=htons(port);
     sin->sin_family=AF_INET;
     sin->sin_addr.s_addr=htonl(INADDR_ANY);
-    if( (soc=socket(AF_INET,SOCK_DGRAM,0)) < 0 )
+    if( (soc=epicsSocketCreate(AF_INET,SOCK_DGRAM,0)) < 0 )
     { perror("socket create failed"); return -1; }
     Debug(5,"sizeof sin = %d\n", (int) sizeof(struct sockaddr_in));
     if( bind(soc,(struct sockaddr*)sin,sizeof(struct sockaddr_in)) < 0 )

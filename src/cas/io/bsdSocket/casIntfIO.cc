@@ -49,7 +49,7 @@ casIntfIO::casIntfIO ( const caNetAddr & addrIn ) :
 	/*
 	 * Setup the server socket
 	 */
-	this->sock = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	this->sock = epicsSocketCreate ( AF_INET, SOCK_STREAM, IPPROTO_TCP );
 	if (this->sock==INVALID_SOCKET) {
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
@@ -77,7 +77,7 @@ casIntfIO::casIntfIO ( const caNetAddr & addrIn ) :
             epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
 		    errlogPrintf ( "CAS: server set SO_REUSEADDR failed? %s\n",
 			    sockErrBuf );
-            socket_close (this->sock);
+            epicsSocketDestroy (this->sock);
 		    throw S_cas_internal;
 	    }
 #   endif
@@ -107,7 +107,7 @@ casIntfIO::casIntfIO ( const caNetAddr & addrIn ) :
 				__FILE__, __LINE__,
 				"- bind TCP IP addr=%s failed because %s",
 				buf, sockErrBuf );
-            socket_close (this->sock);
+            epicsSocketDestroy (this->sock);
 			throw S_cas_bindFail;
 		}
         portChange = true;
@@ -126,7 +126,7 @@ casIntfIO::casIntfIO ( const caNetAddr & addrIn ) :
         epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
 		errlogPrintf ( "CAS: getsockname() error %s\n", 
 			sockErrBuf );
-        socket_close (this->sock);
+        epicsSocketDestroy (this->sock);
 		throw S_cas_internal;
 	}
 
@@ -150,7 +150,7 @@ casIntfIO::casIntfIO ( const caNetAddr & addrIn ) :
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
 		errlogPrintf ( "CAS: listen() error %s\n", sockErrBuf );
-        socket_close (this->sock);
+        epicsSocketDestroy (this->sock);
 		throw S_cas_internal;
     }
 }
@@ -161,7 +161,7 @@ casIntfIO::casIntfIO ( const caNetAddr & addrIn ) :
 casIntfIO::~casIntfIO()
 {
 	if (this->sock != INVALID_SOCKET) {
-		socket_close(this->sock);
+		epicsSocketDestroy (this->sock);
 	}
 
 	osiSockRelease ();
@@ -193,7 +193,7 @@ casStreamOS *casIntfIO::newStreamClient ( caServerI & cas,
         return NULL;
     }
     else if ( sizeof ( newAddr ) > (size_t) length ) {
-        socket_close ( newSock );
+        epicsSocketDestroy ( newSock );
         errlogPrintf ( "CAS: accept returned bad address len?\n" );
         return NULL;
     }
@@ -205,7 +205,7 @@ casStreamOS *casIntfIO::newStreamClient ( caServerI & cas,
     if ( ! pOS ) {
         errMessage ( S_cas_noMemory, 
             "unable to create data structures for a new client" );
-        socket_close ( newSock );
+        epicsSocketDestroy ( newSock );
     }
     else {
         if ( cas.getDebugLevel() > 0u ) {

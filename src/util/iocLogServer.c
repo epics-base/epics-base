@@ -128,7 +128,7 @@ int main()
 	 * Open the socket. Use ARPA Internet address format and stream
 	 * sockets. Format described in <sys/socket.h>.
 	 */
-	pserver->sock = socket(AF_INET, SOCK_STREAM, 0);
+	pserver->sock = epicsSocketCreate(AF_INET, SOCK_STREAM, 0);
 	if (pserver->sock==INVALID_SOCKET) {
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
@@ -477,7 +477,7 @@ static void acceptNewClient ( void *pParam )
         epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
 		fprintf(stderr, "%s:%d ioctl FBIO client er %s\n", 
 			__FILE__, __LINE__, sockErrBuf);
-		socket_close(pclient->insock);
+		epicsSocketDestroy ( pclient->insock );
 		free(pclient);
 		return;
 	}
@@ -525,7 +525,7 @@ static void acceptNewClient ( void *pParam )
         epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
 		fprintf (stderr, "%s:%d shutdown err %s\n", __FILE__, __LINE__,
 				sockErrBuf);
-        socket_close(pclient->insock);
+        epicsSocketDestroy ( pclient->insock );
 		free(pclient);
 
 		return;
@@ -538,7 +538,7 @@ static void acceptNewClient ( void *pParam )
 			readFromClient,
 			pclient);
 	if (status<0) {
-		socket_close(pclient->insock);
+		epicsSocketDestroy ( pclient->insock );
 		free(pclient);
 		fprintf(stderr, "%s:%d client fdmgr_add_callback() failed\n", 
 			__FILE__, __LINE__);
@@ -740,8 +740,7 @@ static void freeLogClient(struct iocLogClient     *pclient)
 			__FILE__, __LINE__);
 	}
 
-	if(socket_close(pclient->insock)<0)
-		abort();
+	epicsSocketDestroy ( pclient->insock );
 
 	free (pclient);
 

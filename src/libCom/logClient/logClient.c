@@ -143,7 +143,7 @@ LOCAL void logClientReset (logClient *pClient)
 #       ifdef vxWorks
             logFdDelete ( pClient->sock );
 #       endif
-        socket_close ( pClient->sock );
+        epicsSocketDestroy ( pClient->sock );
         pClient->sock = INVALID_SOCKET;
     }
 
@@ -368,7 +368,7 @@ LOCAL void logClientMakeSock (logClient *pClient)
     /* 
      * allocate a socket 
      */
-    pClient->sock = socket ( AF_INET, SOCK_STREAM, 0 );
+    pClient->sock = epicsSocketCreate ( AF_INET, SOCK_STREAM, 0 );
     if ( pClient->sock == INVALID_SOCKET ) {
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString ( 
@@ -387,9 +387,9 @@ LOCAL void logClientMakeSock (logClient *pClient)
             sockErrBuf, sizeof ( sockErrBuf ) );
         fprintf (stderr, "%s:%d ioctl FBIO client er %s\n", 
             __FILE__, __LINE__, sockErrBuf);
-        socket_close (pClient->sock);
+        epicsSocketDestroy ( pClient->sock );
         pClient->sock = INVALID_SOCKET;
-        epicsMutexUnlock (pClient->mutex);
+        epicsMutexUnlock ( pClient->mutex );
         return;
     }
     

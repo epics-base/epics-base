@@ -30,6 +30,29 @@ void osiSockRelease()
 {
 }
 
+epicsShareFunc SOCKET epicsShareAPI epicsSocketCreate ( 
+    int domain, int type, int protocol )
+{
+    SOCKET sock = socket ( domain, type, protocol );
+    if ( sock < 0 ) {
+        sock = INVALID_SOCKET;
+    }
+    return sock;
+}
+
+epicsShareFunc void epicsShareAPI epicsSocketDestroy ( SOCKET s )
+{
+    int status = close ( s );
+    if ( status < 0 ) {
+        char buf [ 64 ];
+        epicsSocketConvertErrnoToString (  buf, sizeof ( buf ) );
+        errlogPrintf ( 
+            "epicsSocketDestroy: failed to "
+            "close a socket because \"%s\"\n",
+            buf );
+    }
+}
+
 /*
  * ipAddrToHostName
  */

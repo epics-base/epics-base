@@ -115,7 +115,7 @@ static bool makeSocket ( unsigned short port, bool reuseAddr, SOCKET * pSock )
 	} bd;
     int flag;
 
-    SOCKET sock = socket ( AF_INET, SOCK_DGRAM, 0 );     
+    SOCKET sock = epicsSocketCreate ( AF_INET, SOCK_DGRAM, 0 );     
     if ( sock == INVALID_SOCKET ) {
         return false;
     }
@@ -131,7 +131,7 @@ static bool makeSocket ( unsigned short port, bool reuseAddr, SOCKET * pSock )
         bd.ia.sin_port = epicsHTON16 (port);  
         status = bind ( sock, &bd.sa, (int) sizeof(bd) );
         if ( status < 0 ) {
-            socket_close ( sock );
+            epicsSocketDestroy ( sock );
             return false;
         }
         if (reuseAddr) {
@@ -139,7 +139,7 @@ static bool makeSocket ( unsigned short port, bool reuseAddr, SOCKET * pSock )
             status = setsockopt ( sock,  SOL_SOCKET, SO_REUSEADDR,
                         (char *) &flag, sizeof (flag) );
             if ( status < 0 ) {
-                socket_close ( sock );
+                epicsSocketDestroy ( sock );
                 return false;
             }
         }
@@ -233,7 +233,7 @@ bool repeaterClient::sendMessage ( const void *pBuf, unsigned bufSize ) // X aCC
 repeaterClient::~repeaterClient ()
 {
     if ( this->sock != INVALID_SOCKET ) {
-        socket_close ( this->sock );
+        epicsSocketDestroy ( this->sock );
     }
     debugPrintf ( ( "Deleted client %u\n", epicsNTOH16 ( this->from.ia.sin_port ) ) );
 }
@@ -302,7 +302,7 @@ bool repeaterClient::verify ()  // X aCC 361
     SOCKET tmpSock;
     bool success = makeSocket ( this->port (), false, & tmpSock );
     if ( success ) {
-        socket_close ( tmpSock );
+        epicsSocketDestroy ( tmpSock );
     }
     else {
         if ( SOCKERRNO != SOCK_EADDRINUSE ) {

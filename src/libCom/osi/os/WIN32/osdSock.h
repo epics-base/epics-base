@@ -31,7 +31,6 @@ extern "C" {
 
 #define SOCKERRNO WSAGetLastError()
 
-#define socket_close(S)		closesocket(S)
 #define socket_ioctl(A,B,C)	ioctlsocket(A,B,C)
 typedef u_long FAR osiSockIoctl_t;
 typedef int osiSocklen_t;

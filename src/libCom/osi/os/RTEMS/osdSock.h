@@ -41,7 +41,6 @@ int select(int  n,  fd_set  *readfds,  fd_set  *writefds, fd_set *exceptfds, str
 typedef int                     SOCKET;
 #define INVALID_SOCKET          (-1)
 #define SOCKERRNO               errno
-#define socket_close(S)         close(S)
 #define socket_ioctl(A,B,C)     ioctl(A,B,C)
 typedef int osiSockIoctl_t;
 typedef int osiSocklen_t;

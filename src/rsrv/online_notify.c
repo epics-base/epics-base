@@ -102,7 +102,7 @@ void rsrv_online_notify_task(void *pParm)
      *  Use ARPA Internet address format and datagram socket.
      *  Format described in <sys/socket.h>.
      */
-    if ( (sock = socket (AF_INET, SOCK_DGRAM, 0)) == INVALID_SOCKET) {
+    if ( (sock = epicsSocketCreate (AF_INET, SOCK_DGRAM, 0)) == INVALID_SOCKET) {
         errlogPrintf ("CAS: online socket creation error\n");
         epicsThreadSuspendSelf ();
     }

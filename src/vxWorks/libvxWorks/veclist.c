@@ -41,7 +41,7 @@ static char *sccsID =
 static char *ignore_list[] = {"_excStub","_excIntStub"};
 
 int	veclist(int);
-static int	cISRTest(void (*)(), void (**)(), void **);
+int	cISRTest(void (*)(), void (**)(), void **);
 static void 	*fetch_pointer(unsigned char *);
 
 
@@ -121,7 +121,6 @@ veclist(int all)
  */
 #define ISR_PATTERN	0xaaaaaaaa
 #define PARAM_PATTERN	0x55555555 
-LOCAL
 int	cISRTest(void (*proutine)(), void (**ppisr)(), void **pparam)
 {
 	static FUNCPTR	handler = NULL;

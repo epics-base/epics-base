@@ -13,12 +13,13 @@
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
 #include "iocinf.h"
+#include "cac.h"
 #include "virtualCircuit.h"
 
 tcpSendWatchdog::tcpSendWatchdog 
-    ( tcpiiu &iiuIn, double periodIn, epicsTimerQueue & queueIn ) :
+    ( cac & cacIn, tcpiiu & iiuIn, double periodIn, epicsTimerQueue & queueIn ) :
     period ( periodIn ), timer ( queueIn.createTimer () ),
-    iiu ( iiuIn )
+    cacRef ( cacIn ), iiu ( iiuIn )
 {
 }
 
@@ -36,7 +37,7 @@ epicsTimerNotify::expireStatus tcpSendWatchdog::expire (
         debugPrintf ( ( "Request not accepted by CA server %s for %g sec. Disconnecting.\n", 
             hostName, this->period ) );
 #   endif
-    this->iiu.forcedShutdown ();
+    this->cacRef.initiateAbortShutdown ( this->iiu );
     return noRestart;
 }
 

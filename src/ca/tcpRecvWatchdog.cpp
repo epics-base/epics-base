@@ -13,15 +13,16 @@
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
 #include "iocinf.h"
+#include "cac.h"
 #include "virtualCircuit.h"
 
 //
 // the recv watchdog timer is active when this object is created
 //
 tcpRecvWatchdog::tcpRecvWatchdog 
-    ( tcpiiu & iiuIn, double periodIn, epicsTimerQueue & queueIn ) :
+    ( cac & cacIn, tcpiiu & iiuIn, double periodIn, epicsTimerQueue & queueIn ) :
         period ( periodIn ), timer ( queueIn.createTimer () ),
-        iiu ( iiuIn ), responsePending ( false ),
+        cacRef ( cacIn ), iiu ( iiuIn ), responsePending ( false ),
         beaconAnomaly ( true )
 {
 }
@@ -43,7 +44,7 @@ tcpRecvWatchdog::expire ( const epicsTime & /* currentTime */ ) // X aCC 361
                             "- disconnecting.\n", 
                 hostName, this->period ) );
 #       endif
-        this->iiu.forcedShutdown ();
+        this->cacRef.initiateAbortShutdown ( this->iiu );
         return noRestart;
     }
     else {

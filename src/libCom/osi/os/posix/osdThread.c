@@ -239,7 +239,7 @@ void threadSetPriority(threadId id,unsigned int priority)
     if(errVerbose) checkStatus(status,"pthread_setschedparam");
 #endif /* _POSIX_THREAD_PRIORITY_SCHEDULING */
 }
-
+
 int threadIsEqual(threadId id1, threadId id2)
 {
     threadInfo *p1 = (threadInfo *)id1;
@@ -249,7 +249,7 @@ int threadIsEqual(threadId id1, threadId id2)
 
 int threadIsReady(threadId id) {
     threadInfo *pthreadInfo = (threadInfo *)id;
-    return(pthreadInfo->isSuspended ? 1 : 0);
+    return(pthreadInfo->isSuspended ? 0 : 1);
 }
 
 int threadIsSuspended(threadId id) {

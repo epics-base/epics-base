@@ -139,7 +139,7 @@ unsigned    *pInlineIter
 {
     int status;
     unsigned i;
-
+        
     for (i=0u; i<iterations; i++) {
         status = ca_clear_channel (pItems[i].chix);
         SEVCHK (status, NULL);
@@ -364,34 +364,34 @@ LOCAL void measure_get_latency (ti *pItems, unsigned iterations)
     ti *pi;
     int status;
 
-    for (pi=pItems; pi<&pItems[iterations]; pi++) {
-        epicsTimeGetCurrent (&start_time);
-        status = ca_array_get (pi->type, pi->count, 
-                        pi->chix, &pi->val);
-        SEVCHK (status, NULL);
-        status = ca_pend_io (100.0);
-        SEVCHK (status, NULL);
+    for ( pi = pItems; pi < &pItems[iterations]; pi++ ) {
+        epicsTimeGetCurrent ( &start_time );
+        status = ca_array_get ( pi->type, pi->count, 
+                        pi->chix, &pi->val );
+        SEVCHK ( status, NULL );
+        status = ca_pend_io ( 100.0 );
+        SEVCHK ( status, NULL );
 
-        epicsTimeGetCurrent(&end_time);
+        epicsTimeGetCurrent ( &end_time );
 
-        delay = epicsTimeDiffInSeconds(&end_time,&start_time);
+        delay = epicsTimeDiffInSeconds ( &end_time,&start_time );
 
         X += delay;
         XX += delay*delay;
 
-        if (delay>max) {
+        if ( delay > max ) {
             max = delay;
         }
 
-        if (delay<min) {
+        if ( delay < min ) {
             min = delay;
         }
     }
 
     mean = X/iterations;
-    stdDev = sqrt (XX/iterations - mean*mean);
-    printf ("Round trip get delays - mean=%f sec, std dev=%f sec, min=%f sec max=%f sec\n",
-        mean, stdDev, min, max);
+    stdDev = sqrt ( XX/iterations - mean*mean );
+    printf ( "Round trip get delays - mean=%f sec, std dev=%f sec, min=%f sec max=%f sec\n",
+        mean, stdDev, min, max );
 }
 
 /*

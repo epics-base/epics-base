@@ -607,7 +607,7 @@ void dbCaTask()
     short	link_action;
     int		status;
 
-    SEVCHK(ca_task_initialize(),NULL);
+    SEVCHK(ca_task_initialize(),"dbCaTask calling ca_task_initialize");
     SEVCHK(ca_add_exception_event(exceptionCallback,NULL),
 	"ca_add_exception_event");
     /*Dont do anything until iocInit initializes database*/

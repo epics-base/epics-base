@@ -9,55 +9,60 @@ extern "C" {
 
 #include "shareLib.h"
 
-typedef void *semId;
+typedef void *semBinaryId;
 typedef enum {semTakeOK,semTakeTimeout,semTakeError} semTakeStatus;
 typedef enum {semEmpty,semFull} semInitialState;
 
-epicsShareFunc semId epicsShareAPI semBinaryCreate(int initialState);
-epicsShareFunc INLINE semId epicsShareAPI semBinaryMustCreate (int initialState);
-epicsShareFunc void epicsShareAPI semBinaryDestroy(semId id);
-epicsShareFunc void epicsShareAPI semBinaryGive(semId id);
-epicsShareFunc semTakeStatus epicsShareAPI semBinaryTake(semId id);
-epicsShareFunc INLINE void epicsShareAPI semBinaryMustTake (semId id);
-epicsShareFunc semTakeStatus epicsShareAPI semBinaryTakeTimeout(semId id, double timeOut);
-epicsShareFunc semTakeStatus epicsShareAPI semBinaryTakeNoWait(semId id);
-epicsShareFunc void epicsShareAPI semBinaryShow(semId id);
+epicsShareFunc semBinaryId epicsShareAPI semBinaryCreate(int initialState);
+epicsShareFunc INLINE semBinaryId epicsShareAPI semBinaryMustCreate (
+    int initialState);
+epicsShareFunc void epicsShareAPI semBinaryDestroy(semBinaryId id);
+epicsShareFunc void epicsShareAPI semBinaryGive(semBinaryId id);
+epicsShareFunc semTakeStatus epicsShareAPI semBinaryTake(semBinaryId id);
+epicsShareFunc INLINE void epicsShareAPI semBinaryMustTake (semBinaryId id);
+epicsShareFunc semTakeStatus epicsShareAPI semBinaryTakeTimeout(
+    semBinaryId id, double timeOut);
+epicsShareFunc semTakeStatus epicsShareAPI semBinaryTakeNoWait(semBinaryId id);
+epicsShareFunc void epicsShareAPI semBinaryShow(semBinaryId id);
 
-epicsShareFunc semId epicsShareAPI semMutexCreate(void);
-epicsShareFunc INLINE semId epicsShareAPI semMutexMustCreate (void);
-epicsShareFunc void epicsShareAPI semMutexDestroy(semId id);
-epicsShareFunc void epicsShareAPI semMutexGive(semId id);
-epicsShareFunc semTakeStatus epicsShareAPI semMutexTake(semId id);
-epicsShareFunc INLINE void epicsShareAPI semMutexMustTake(semId id);
-epicsShareFunc semTakeStatus epicsShareAPI semMutexTakeTimeout(semId id, double timeOut);
-epicsShareFunc semTakeStatus epicsShareAPI semMutexTakeNoWait(semId id);
-epicsShareFunc void epicsShareAPI semMutexShow(semId id);
+typedef void *semMutexId;
+epicsShareFunc semMutexId epicsShareAPI semMutexCreate(void);
+epicsShareFunc INLINE semMutexId epicsShareAPI semMutexMustCreate (void);
+epicsShareFunc void epicsShareAPI semMutexDestroy(semMutexId id);
+epicsShareFunc void epicsShareAPI semMutexGive(semMutexId id);
+epicsShareFunc semTakeStatus epicsShareAPI semMutexTake(semMutexId id);
+epicsShareFunc INLINE void epicsShareAPI semMutexMustTake(semMutexId id);
+epicsShareFunc semTakeStatus epicsShareAPI semMutexTakeTimeout(
+    semMutexId id, double timeOut);
+epicsShareFunc semTakeStatus epicsShareAPI semMutexTakeNoWait(semMutexId id);
+epicsShareFunc void epicsShareAPI semMutexShow(semMutexId id);
 
 /*NOTES:
     Mutex semaphores MUST implement recursive locking
     Mutex semaphores should implement priority inheritance and deletion safe
 */
 
-epicsShareFunc INLINE semId epicsShareAPI semBinaryMustCreate (int initialState)
+epicsShareFunc INLINE semBinaryId epicsShareAPI semBinaryMustCreate (
+    int initialState)
 {
-    semId id = semBinaryCreate (initialState);
+    semBinaryId id = semBinaryCreate (initialState);
     assert (id);
     return id;
 }
 
-epicsShareFunc INLINE void epicsShareAPI semBinaryMustTake (semId id)
+epicsShareFunc INLINE void epicsShareAPI semBinaryMustTake (semBinaryId id)
 {
     assert (semBinaryTake (id)==semTakeOK);
 }
 
-epicsShareFunc INLINE semId epicsShareAPI semMutexMustCreate (void)
+epicsShareFunc INLINE semMutexId epicsShareAPI semMutexMustCreate (void)
 {
-    semId id = semMutexCreate ();
+    semMutexId id = semMutexCreate ();
     assert (id);
     return id;
 }
 
-epicsShareFunc INLINE void epicsShareAPI semMutexMustTake(semId id)
+epicsShareFunc INLINE void epicsShareAPI semMutexMustTake(semMutexId id)
 {
     assert (semMutexTake (id)==semTakeOK);
 }

@@ -33,7 +33,7 @@ typedef struct threadInfo {
     struct sched_param schedParam;
     THREADFUNC	       createFunc;
     void	       *createArg;
-    semId              suspendSem;
+    semBinaryId        suspendSem;
     int		       isSuspended;
     int                maxPriority;
     int                minPriority;
@@ -109,6 +109,8 @@ threadId threadCreate(const char *name,
         pthread_key_create(&getpthreadInfo,0);
     }
     pthreadInfo = callocMustSucceed(1,sizeof(threadInfo),"threadCreate");
+    pthreadInfo->createFunc = funptr;
+    pthreadInfo->createArg = parm;
     status = pthread_attr_init(&pthreadInfo->attr);
     if(status) {
          errlogPrintf("pthread_attr_init failed: error %s\n",strerror(status));
@@ -126,8 +128,11 @@ threadId threadCreate(const char *name,
          errlogPrintf("pthread_attr_setstacksize failed: error %s\n",
              strerror(status));
     }
-    /* DO WE WANT TO setscope ???? */
-    /*pthread_attr_setscope(&pthreadInfo->attr,PTHREAD_SCOPE_SYSTEM);*/
+    status = pthread_attr_setscope(&pthreadInfo->attr,PTHREAD_SCOPE_PROCESS);
+    if(status) {
+         errlogPrintf("pthread_attr_setscope failed: error %s\n",
+             strerror(status));
+    }
     pthreadInfo->schedPolicy = SCHED_FIFO;
     pthreadInfo->maxPriority = sched_get_priority_max(pthreadInfo->schedPolicy);
     pthreadInfo->minPriority = sched_get_priority_min(pthreadInfo->schedPolicy);
@@ -137,7 +142,6 @@ threadId threadCreate(const char *name,
     if(status) {
          errlogPrintf("pthread_attr_setschedpolicy failed: error %s\n",
              strerror(status));
-         cantProceed("threadCreate");
     }
     pthreadInfo->schedParam.sched_priority = getOssPriorityValue(pthreadInfo);
     status = pthread_attr_setschedparam(
@@ -145,14 +149,15 @@ threadId threadCreate(const char *name,
     if(status) {
          errlogPrintf("pthread_attr_setschedparam failed: error %s\n",
              strerror(status));
-         cantProceed("threadCreate");
     }
     pthreadInfo->suspendSem = semBinaryMustCreate(semFull);
     status = pthread_create(&pthreadInfo->tid,
 	&pthreadInfo->attr,start_routine,pthreadInfo);
     if(status) {
          errlogPrintf("pthread_create failed: error %s\n",strerror(status));
+/*
          cantProceed("threadCreate");
+*/
     }
     return((threadId)pthreadInfo);
 }

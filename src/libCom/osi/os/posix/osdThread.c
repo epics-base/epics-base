@@ -57,8 +57,8 @@ typedef struct epicsThreadOSD {
 } epicsThreadOSD;
 
 static pthread_key_t getpthreadInfo;
-static epicsMutexId onceLock;
-static epicsMutexId listLock;
+static pthread_mutex_t onceLock;
+static pthread_mutex_t listLock;
 static ELLLIST pthreadList;
 static commonAttr *pcommonAttr = 0;
 static int epicsThreadInitCalled = 0;
@@ -95,13 +95,15 @@ static void myAtExit(void)
 {
     epicsThreadOSD *pthreadInfo;
     static int ntimes=0;
+    int status;
 
     ntimes++;
     if(ntimes>1) {
         fprintf(stderr,"osdThread myAtExit extered multiple times\n");
         return;
     }
-    epicsMutexMustLock(listLock);
+    status = pthread_mutex_lock(&listLock);
+    checkStatusQuit(status,"pthread_mutex_lock","myAtExit");
     pthreadInfo=(epicsThreadOSD *)ellFirst(&pthreadList);
     while(pthreadInfo) {
         if(pthreadInfo->createFunc){/* dont cancel main thread*/
@@ -109,11 +111,13 @@ static void myAtExit(void)
         }
         pthreadInfo=(epicsThreadOSD *)ellNext(&pthreadInfo->node);
     }
-    epicsMutexUnlock(listLock);
+    status = pthread_mutex_unlock(&listLock);
+    checkStatusQuit(status,"pthread_mutex_unlock","myAtExit");
+
     /* delete all resources created by once */
     free(pcommonAttr); pcommonAttr=0;
-    epicsMutexDestroy(listLock);
-    epicsMutexDestroy(onceLock);
+    pthread_mutex_destroy(&listLock);
+    pthread_mutex_destroy(&onceLock);
     pthread_key_delete(getpthreadInfo);
 }
 
@@ -182,9 +186,11 @@ static void free_threadInfo(epicsThreadOSD *pthreadInfo)
 {
     int status;
 
-    epicsMutexMustLock(listLock);
+    status = pthread_mutex_lock(&listLock);
+    checkStatusQuit(status,"pthread_mutex_lock","free_threadInfo");
     ellDelete(&pthreadList,&pthreadInfo->node);
-    epicsMutexUnlock(listLock);
+    status = pthread_mutex_unlock(&listLock);
+    checkStatusQuit(status,"pthread_mutex_unlock","free_threadInfo");
     epicsEventDestroy(pthreadInfo->suspendEvent);
     status = pthread_attr_destroy(&pthreadInfo->attr);
     checkStatusQuit(status,"pthread_attr_destroy","free_threadInfo");
@@ -198,8 +204,10 @@ static void once(void)
     int status;
 
     pthread_key_create(&getpthreadInfo,0);
-    onceLock = epicsMutexMustCreate();
-    listLock = epicsMutexMustCreate();
+    status = pthread_mutex_init(&onceLock,0);
+    checkStatusQuit(status,"pthread_mutex_init","epicsThreadInit");
+    status = pthread_mutex_init(&listLock,0);
+    checkStatusQuit(status,"pthread_mutex_init","epicsThreadInit");
     ellInit(&pthreadList);
     pcommonAttr = calloc(1,sizeof(commonAttr));
     if(!pcommonAttr) checkStatusOnceQuit(errno,"calloc","epicsThreadInit");
@@ -235,10 +243,11 @@ static void once(void)
     pthreadInfo = init_threadInfo("_main_",0,0,0,0);
     status = pthread_setspecific(getpthreadInfo,(void *)pthreadInfo);
     checkStatusOnceQuit(status,"pthread_setspecific","epicsThreadInit");
-    status = epicsMutexLock(listLock);
-    checkStatusOnceQuit(status,"epicsMutexLock","epicsThreadInit");
+    status = pthread_mutex_lock(&listLock);
+    checkStatusQuit(status,"pthread_mutex_lock","epicsThreadInit");
     ellAdd(&pthreadList,&pthreadInfo->node);
-    epicsMutexUnlock(listLock);
+    status = pthread_mutex_unlock(&listLock);
+    checkStatusQuit(status,"pthread_mutex_unlock","epicsThreadInit");
     status = atexit(myAtExit);
     checkStatusOnce(status,"atexit");
 }
@@ -253,9 +262,11 @@ static void * start_routine(void *arg)
     checkStatusQuit(status,"pthread_setspecific","start_routine");
     status = pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,&oldtype);
     checkStatusQuit(status,"pthread_setcanceltype","start_routine");
-    epicsMutexMustLock(listLock);
+    status = pthread_mutex_lock(&listLock);
+    checkStatusQuit(status,"pthread_mutex_lock","start_routine");
     ellAdd(&pthreadList,&pthreadInfo->node);
-    epicsMutexUnlock(listLock);
+    status = pthread_mutex_unlock(&listLock);
+    checkStatusQuit(status,"pthread_mutex_unlock","start_routine");
 
     (*pthreadInfo->createFunc)(pthreadInfo->createArg);
 
@@ -307,8 +318,10 @@ unsigned int epicsThreadGetStackSize (epicsThreadStackSizeClass stackSizeClass)
 /* epicsThreadOnce is a macro that calls epicsThreadOnceOsd */
 void epicsThreadOnceOsd(epicsThreadOnceId *id, void (*func)(void *), void *arg)
 {
+    int status;
     if(!epicsThreadInitCalled) epicsThreadInit();
-    if(epicsMutexLock(onceLock) != epicsMutexLockOK) {
+    status = pthread_mutex_lock(&onceLock);
+    if(status) {
         fprintf(stderr,"epicsThreadOnceOsd epicsMutexLock failed.\n");
         fprintf(stderr,"Did you call epicsThreadInit? Program exiting\n");
         exit(-1);
@@ -318,7 +331,8 @@ void epicsThreadOnceOsd(epicsThreadOnceId *id, void (*func)(void *), void *arg)
     	func(arg);
     	*id = +1;   /* +1 => func() done (see epicsThreadOnce() macro defn) */
     }
-    epicsMutexUnlock(onceLock);
+    status = pthread_mutex_unlock(&onceLock);
+    checkStatusQuit(status,"pthread_mutex_unlock","epicsThreadOnceOsd");
 }
 
 epicsThreadId epicsThreadCreate(const char *name,
@@ -476,14 +490,18 @@ pthread_t epicsThreadGetPosixThreadId ( epicsThreadId threadId )
 
 epicsThreadId epicsThreadGetId(const char *name) {
     epicsThreadOSD *pthreadInfo;
+    int status;
     if(!epicsThreadInitCalled) epicsThreadInit();
-    epicsMutexMustLock(listLock);
+    status = pthread_mutex_lock(&listLock);
+    checkStatusQuit(status,"pthread_mutex_lock","epicsThreadGetId");
     pthreadInfo=(epicsThreadOSD *)ellFirst(&pthreadList);
     while(pthreadInfo) {
 	if(strcmp(name,pthreadInfo->name) == 0) break;
         pthreadInfo=(epicsThreadOSD *)ellNext(&pthreadInfo->node);
     }
-    epicsMutexUnlock(listLock);
+    status = pthread_mutex_unlock(&listLock);
+    checkStatusQuit(status,"pthread_mutex_unlock","epicsThreadGetId");
+
     return(pthreadInfo);
 }
 
@@ -509,13 +527,15 @@ void epicsThreadShowAll(unsigned int level)
 
     if(!epicsThreadInitCalled) epicsThreadInit();
     epicsThreadShow(0,level);
-    epicsMutexMustLock(listLock);
+    status = pthread_mutex_lock(&listLock);
+    checkStatusQuit(status,"pthread_mutex_lock","epicsThreadShowAll");
     pthreadInfo=(epicsThreadOSD *)ellFirst(&pthreadList);
     while(pthreadInfo) {
 	epicsThreadShow(pthreadInfo,level);
         pthreadInfo=(epicsThreadOSD *)ellNext(&pthreadInfo->node);
     }
-    epicsMutexUnlock(listLock);
+    status = pthread_mutex_unlock(&listLock);
+    checkStatusQuit(status,"pthread_mutex_unlock","epicsThreadShowAll");
 }
 
 void epicsThreadShow(epicsThreadId pthreadInfo,unsigned int level)

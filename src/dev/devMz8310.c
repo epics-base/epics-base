@@ -761,6 +761,12 @@ static long write_pd(pr)
 	mode = 0x0042; /* MODE G Waveform */
     }
 
+    /* for a delay of zero */
+    if(pr->dly==0)
+    {
+	load=1;
+    }
+
     if(pr->cedg==FALLING_EDGE)
 	mode |= 0x1000; /*count on falling edge*/
 

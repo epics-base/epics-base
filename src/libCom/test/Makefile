@@ -8,7 +8,8 @@ USR_LIBS_hpux += cma
 
 #epicsListTest_SRCS += epicsListTest.cpp
 PROD_HOST += epicsListTest
-OBJS_IOC += epicsListTest
+#epicsListTest build fails for vxWorks-ppc604 on win32-x86 host 
+#OBJS_IOC += epicsListTest
 
 epicsAlgorithmTest_SRCS += epicsAlgorithmTest.cpp
 PROD_HOST += epicsAlgorithmTest

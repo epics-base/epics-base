@@ -39,6 +39,7 @@ typedef int                     SOCKET;
 #define SOCKERRSTR		  (strerror(errno))
 #define socket_close(S)         close(S)
 #define socket_ioctl(A,B,C)     ioctl(A,B,C)
+typedef int osiSockIoctl_t;
 
 #define FD_IN_FDSET(FD) ((FD)<FD_SETSIZE&&(FD)>=0)
 

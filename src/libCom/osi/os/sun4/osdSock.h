@@ -92,7 +92,7 @@ typedef int                     SOCKET;
 #define SOCKERRSTR		  (strerror(errno))
 #define socket_close(S)         close(S)
 #define socket_ioctl(A,B,C)     ioctl(A,B,C)
-
+typedef int osiSockIoctl_t;
 
 #ifndef MAXHOSTNAMELEN
 #define MAXHOSTNAMELEN 64

@@ -113,6 +113,7 @@ typedef int                     SOCKET;
 #	define socket_close(S) close(S)
 #	define socket_ioctl(A,B,C) ioctl(A,B,C)
 #endif
+typedef int osiSockIoctl_t;
 
 #if defined(WINTCP) /* Wallangong */
 	extern int uerrno;

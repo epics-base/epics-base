@@ -1,5 +1,7 @@
 # $Id$
 
+VPATH += .:..
+
 INSTALL_PROD=$(PROD:%=$(INSTALL_BIN)/%)
 INSTALL_LIBS=$(LIBNAME:%=$(INSTALL_LIB)/%)
 INSTALL_INC=$(INC:%=$(INSTALL_INCLUDE)/%)
@@ -19,19 +21,19 @@ INSTALL_TCLLIBS=$(TCLLIBNAME:%=$(INSTALL_TCLLIB)/%)
 INSTALL_TCLINDEX=$(TCLINDEX:%=$(INSTALL_TCLLIB)/%)
 INSTALL_CONFIGS=$(CONFIGS:%=$(INSTALL_CONFIG)/%)
 
-all: inc install
+all:: install
 
-pre_build:
+pre_build::
 
-build: pre_build $(LIBNAME) $(TARGETS) $(PROD)
+build:: pre_build $(LIBNAME) $(TARGETS) $(PROD)
 
-inc: $(INSTALL_BIN)/installEpics $(INSTALL_INC)
+inc:: $(INSTALL_INC)
 
-install: build $(INSTALL_LIBS) $(TARGETS) $(INSTALL_SCRIPTS) $(INSTALL_PROD) \
+install:: inc build $(INSTALL_LIBS) $(TARGETS) $(INSTALL_SCRIPTS) $(INSTALL_PROD) \
 	$(INSTALL_MANS) $(INSTALL_DOCS) $(INSTALL_TEMPLATE) \
 	$(INSTALL_TCLLIBS) $(INSTALL_TCLINDEX) $(INSTALL_CONFIGS)
 
-depends: $(SRCS.c) $(SRCS.cc)
+depends:: $(SRCS.c) $(SRCS.cc)
 ifdef SRCS
 	echo you have a SRCS in your Makefile
 	exit 2
@@ -65,19 +67,11 @@ $(TARGETS) $(PROD): $(DEPLIBS)
 	$(RM) $@
 	$(COMPILE.c) $<
 
-%.o: ../%.c
-	$(RM) $@
-	$(COMPILE.c) $<
-
 %.o: %.cc
 	$(RM) $@
 	$(COMPILE.cc) $<
 
-%.o: ../%.cc
-	$(RM) $@
-	$(COMPILE.cc) $<
-
-%.c: ../%.y
+%.c: %.y
 	$(RM) y.tab.c y.tab.h
 	$(YACC) $(YACCOPT) $<
 	@if [ -f y.tab.c ]; \
@@ -91,20 +85,27 @@ $(TARGETS) $(PROD): $(DEPLIBS)
 			/bin/mv y.tab.h $*.h; \
 	fi
 
-%.c: ../%.l
+%.c: %.l
 	$(RM) lex.yy.c
 	$(LEX) $(LEXOPT) $<
 	$(RM) $@
 	/bin/mv lex.yy.c $@
 
 #state notation language rule
-%.c: ../%.st
+%.c: %.st
 	@echo "preprocessing $*.st"
 	@$(RM) $*.i
 	$(CPP) $(CPPFLAGS) $< $*.i
 	@echo "converting $*.i"
 	@$(RM) $@
 	$(SNC) $(TARGET_SNCFLAGS) $(SNCFLAGS) $*.i
+
+%.1:%
+	$(RM) $(<F)
+	$(RM) $(<F).nr
+	ln -s $<
+	$(MANGEN) -s $(<F)
+	mv $(<F).nr $(<F).1
 
 $(LIBNAME): $(LIBOBJS)
 	@echo Building library $@
@@ -121,12 +122,6 @@ $(INSTALL_BIN)/%: %
 	@test -d $(INSTALL_BIN) || mkdir $(INSTALL_BIN)
 	@$(INSTALL_PRODUCT) -m 555 $< $(INSTALL_BIN)
 
-$(INSTALL_BIN)/%: ../%
-	@echo "Installing $@"
-	@test -d $(INSTALL_LOCATION_BIN) || mkdir $(INSTALL_LOCATION_BIN)
-	@test -d $(INSTALL_BIN) || mkdir $(INSTALL_BIN)
-	@$(INSTALL_PRODUCT) -m 555 $< $(INSTALL_BIN)
-
 $(INSTALL_LIB)/%.a: %.a
 	@echo "Installing library $@"
 	@test -d $(INSTALL_LOCATION_LIB) || mkdir $(INSTALL_LOCATION_LIB)
@@ -136,12 +131,12 @@ $(INSTALL_LIB)/%.a: %.a
 		$(RANLIB) $(RANLIBFLAGS) $@; \
 	fi
 
-$(INSTALL_CONFIG)/%: ../%
+$(INSTALL_CONFIG)/%: %
 	@echo "Installing $@"
 	@test -d $(INSTALL_CONFIG) || mkdir $(INSTALL_CONFIG)
 	@$(INSTALL) -m 644 $< $(INSTALL_CONFIG)
 
-$(INSTALL_TCLLIB)/%: ../%
+$(INSTALL_TCLLIB)/%: %
 	@echo "Installing Tcl library $@"
 	@test -d $(INSTALL_LOCATION_LIB) || mkdir $(INSTALL_LOCATION_LIB)
 	@test -d $(INSTALL_LIB) || mkdir $(INSTALL_LIB)
@@ -159,7 +154,7 @@ $(INSTALL_MAN)/man5/% \
 $(INSTALL_MAN)/man4/% \
 $(INSTALL_MAN)/man3/% \
 $(INSTALL_MAN)/man2/% \
-$(INSTALL_MAN)/man1/%: ../%
+$(INSTALL_MAN)/man1/%: %
 	@echo "Installing $@"
 	@test -d $(INSTALL_MAN) || mkdir $(INSTALL_MAN)
 	@test -d $(@D) || mkdir $(@D)
@@ -170,34 +165,18 @@ $(INSTALL_INCLUDE)/%: %
 	@test -d $(INSTALL_INCLUDE) || mkdir $(INSTALL_INCLUDE)
 	@$(INSTALL) -m 644 $< $(INSTALL_INCLUDE)
 
-$(INSTALL_INCLUDE)/%: ../%
-	@echo "Installing $@"
-	@test -d $(INSTALL_INCLUDE) || mkdir $(INSTALL_INCLUDE)
-	@$(INSTALL) -m 644 $< $(INSTALL_INCLUDE)
-
-$(INSTALL_DOC)/%: ../%
+$(INSTALL_DOC)/%: %
 	@echo "Installing $@"
 	@test -d $(INSTALL_DOC) || mkdir $(INSTALL_DOC)
 	@$(INSTALL) -m 644 $< $(INSTALL_DOC)
 
-$(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)/%: ../%
-	@echo "Installing $@"
-	@test -d $(INSTALL_TEMPLATES) || mkdir $(INSTALL_TEMPLATES)
-	@test -d $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR) || \
-		mkdir $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)
-	@$(INSTALL) -m 644 $< $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)
-
 $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)/%: %
 	@echo "Installing $@"
-	@test -d $(INSTALL_TEMPLATES) || mkdir $(INSTALL_TEMPLATES)
-	@test -d $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR) || \
-		mkdir $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)
-	@$(INSTALL) -m 644 $< $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)
+	@$(INSTALL) -d -m 644 $< $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)
 
 .PRECIOUS: %.o %.c
 
-#
-# "-include" ignores this request if .DEPENDS does not exist
-#
+.PHONY: all inc depends build install pre-build clean
+
 -include .DEPENDS
 

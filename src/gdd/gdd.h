@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.27  1999/05/10 23:42:25  jhill
+ * fixed many const releated problems
+ *
  * Revision 1.26  1999/04/30 15:24:53  jhill
  * fixed improper container index bug
  *
@@ -492,7 +495,7 @@ public:
 	operator aitUint8(void) const;
 	operator aitInt8(void) const;
 	operator aitString(void) const;
-	// gdd::operator aitFixedString(void); // not present
+	// operator aitFixedString(void); // not present
 
 	//
 	// added by JOH 4-23-99 so that the correct method
@@ -586,7 +589,7 @@ private:
 	aitUint16 ref_cnt;
 	aitUint8 flags;
 
-	const gdd* gdd::indexDD (aitIndex index) const;
+	const gdd* indexDD (aitIndex index) const;
 };
 
 

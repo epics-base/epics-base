@@ -109,9 +109,13 @@ int fsd;
     }
     
     if (paai->nelm<=0) paai->nelm=1;
-    if (paai->ftvl == 0) 
+    if (paai->ftvl == 0 || paai->ftvl > DBF_ENUM) {
 	paai->bptr = (char *)calloc(paai->nelm,MAX_STRING_SIZE);
-    paai->bptr = (char *)calloc(paai->nelm,sizeofTypes[paai->ftvl]);
+    }
+    else {
+        paai->bptr = (char *)calloc(paai->nelm,sizeofTypes[paai->ftvl]);
+    }
+
     return(0);
 }
 

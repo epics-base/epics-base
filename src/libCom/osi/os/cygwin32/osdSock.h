@@ -23,8 +23,8 @@ extern "C" {
 
 #include <sys/types.h>
 #include <sys/param.h> /* for MAXHOSTNAMELEN */
-#include <sys/time.h>
 #include <sys/ioctl.h>
+#include <sys/time.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <net/if.h>
@@ -43,30 +43,10 @@ typedef int                     SOCKET;
 #define socket_ioctl(A,B,C)     ioctl(A,B,C)
 typedef int osiSockIoctl_t;
 typedef int osiSocklen_t;
-
 #define FD_IN_FDSET(FD) ((FD)<FD_SETSIZE&&(FD)>=0)
-
-#define	IOC_OUT		0x40000000	/* copy out parameters */
-#define	IOC_IN		0x80000000	/* copy in parameters */
-#define	IOC_INOUT	(IOC_IN|IOC_OUT)
-
-#define _IOWR(x, y, t) \
-        (IOC_INOUT|((((int)sizeof (t))&IOCPARM_MASK)<<16)|(x<<8)|y)
- 
-/* Used by ca/if_depends.c */
-#define    SIOCGIFDSTADDR  _IOWR('i', 15, struct ifreq)    /* get p-p address */
-#define    SIOCGIFADDR     _IOWR('i', 13, struct ifreq)    /* get ifnet address */
-
-/* Used by ca/if_depends.c db/drvTS.c dbtools/BSlib.c */
-#define    SIOCGIFBRDADDR  _IOWR('i', 23, struct ifreq)    /* get broadcast addr */
-
-
-/* Used by ca/if_depends.c ca/ucx.h */
-#define    IFF_POINTOPOINT 0x10
-
-/* Used by ca/iocinf.c  */
-#define SO_SNDBUF          0x1001   /* send buffer size */
-#define SO_RCVBUF          0x1002   /* receive buffer size */
+#ifndef SHUT_RDWR
+#   define SHUT_RDWR 2
+#endif
 
 #define SOCK_EWOULDBLOCK EWOULDBLOCK
 #define SOCK_ENOBUFS ENOBUFS

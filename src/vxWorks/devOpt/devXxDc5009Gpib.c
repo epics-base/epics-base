@@ -1,5 +1,5 @@
 /* devXxDc5009Gpib.c */
-/* share/src/dev $Id$ */
+/* share/src/devOpt  $Id$ */
 /*
  *      Author: John Winans
  *      Date:   11-19-91
@@ -144,8 +144,12 @@ extern int ibSrqDebug;
  * Use the TIME_WINDOW defn to indicate how long commands should be ignored
  * for a given device after it times out.  The ignored commands will be
  * returned as errors to device support.
+ *
+ * Use the DMA_TIME to define how long you wish to wait for an I/O operation
+ * to complete once started.
  */
 #define TIME_WINDOW	600		/* 10 seconds on a getTick call */
+#define	DMA_TIME	60		/* 1 second on a watchdog time */
 
 /*
  * Strings used by the init routines to fill in the znam, onam, ...
@@ -185,8 +189,13 @@ static  struct  devGpibNames   clear = { 2, clearList, NULL, 1 };
 
 /******************************************************************************
  *
- * String arrays for EFAST operatioins.  Note that the last entry must be 
+ * String arrays for EFAST operations.  Note that the last entry must be 
  * NULL.
+ *
+ * On input operations, only as many bytes as are found in the string array
+ * elements are compared.  If there are more bytes than that in the input
+ * message, they are ignored.  The first matching string found (starting
+ * from the 0'th element) will be used as a match.
  *
  * NOTE: For the input operations, the strings are compared literally!  This
  * can cause problems if the instrument is returning things like \r and \n
@@ -254,10 +263,11 @@ struct  devGpibParmBlock devSupParms = {
   NULL,                 /* hwpvt list head */
   gpibCmds,             /* GPIB command array */
   NUMPARAMS,            /* number of supported parameters */
-  4,			/* magic SRQ param number */
+  4,			/* magic SRQ param number (-1 if none) */
   "devXxDc5009Gpib",	/* device support module type name */
+  DMA_TIME,		/* # of clock ticks to wait for DMA completions */
 
-  srqHandler,           /* pointer to SRQ handler function */
+  srqHandler,           /* pointer to SRQ handler function (NULL if none) */
 
   NULL			/* pointer to secondary conversion routine */
 };

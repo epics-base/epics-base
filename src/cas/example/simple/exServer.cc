@@ -47,7 +47,8 @@ pvInfo exServer::billy (-1.0, "billy", 10.0f, -10.0f, excasIoAsync, 1u);
 //
 // exServer::exServer()
 //
-exServer::exServer(const char * const pvPrefix, unsigned aliasCount, bool scanOnIn) : 
+exServer::exServer ( const char * const pvPrefix, 
+                    unsigned aliasCount, bool scanOnIn ) : 
 	caServer (pvListNElem+2u),
     stringResTbl (pvListNElem*(aliasCount+1u)+2u),
 	simultAsychIOCount (0u),
@@ -176,7 +177,7 @@ pvExistReturn exServer::pvExistTest
 		this->simultAsychIOCount++;
 
 		exAsyncExistIO	*pIO;
-		pIO = new exAsyncExistIO(pvi, ctxIn, *this);
+		pIO = new exAsyncExistIO ( pvi, ctxIn, *this );
 		if (pIO) {
 			return pverAsyncCompletion;
 		}
@@ -242,7 +243,7 @@ pvAttachReturn exServer::pvAttach
 //
 // pvInfo::createPV()
 //
-exPV *pvInfo::createPV (exServer &, bool preCreateFlag, bool scanOn)
+exPV *pvInfo::createPV ( exServer &cas, bool preCreateFlag, bool scanOn )
 {
 	if (this->pPV) {
 		return this->pPV;
@@ -258,10 +259,10 @@ exPV *pvInfo::createPV (exServer &, bool preCreateFlag, bool scanOn)
 	if (this->elementCount==1u) {
 		switch (this->ioType){
 		case excasIoSync:
-			pNewPV = new exScalarPV (*this, preCreateFlag, scanOn);
+			pNewPV = new exScalarPV ( *this, preCreateFlag, scanOn );
 			break;
 		case excasIoAsync:
-			pNewPV = new exAsyncPV (*this, preCreateFlag, scanOn);
+			pNewPV = new exAsyncPV ( *this, preCreateFlag, scanOn );
 			break;
 		default:
 			pNewPV = NULL;
@@ -269,8 +270,8 @@ exPV *pvInfo::createPV (exServer &, bool preCreateFlag, bool scanOn)
 		}
 	}
 	else {
-		if (this->ioType==excasIoSync) {
-			pNewPV = new exVectorPV (*this, preCreateFlag, scanOn);
+		if ( this->ioType == excasIoSync ) {
+			pNewPV = new exVectorPV ( *this, preCreateFlag, scanOn );
 		}
 		else {
 			pNewPV = NULL;
@@ -312,56 +313,75 @@ void exServer::show (unsigned level) const
 }
 
 //
-// this is a noop that postpones the timer expiration
-// destroy so the exAsyncIO class will hang around until the
-// casAsyncIO::destroy() is called
+// exAsyncExistIO::exAsyncExistIO()
 //
-void exOSITimer::destroy()
+exAsyncExistIO::exAsyncExistIO ( const pvInfo &pviIn, const casCtx &ctxIn,
+		exServer &casIn ) :
+	casAsyncPVExistIO ( ctxIn ), pvi ( pviIn ), 
+        timer ( casIn.timerQueue().createTimer ( *this ) ), cas ( casIn ) 
 {
+    this->timer.start ( 0.00001 );
+}
+
+//
+// exAsyncExistIO::~exAsyncExistIO()
+//
+exAsyncExistIO::~exAsyncExistIO()
+{
+	this->cas.removeIO();
+    delete & this->timer;
 }
 
 //
 // exAsyncExistIO::expire()
 // (a virtual function that runs when the base timer expires)
 //
-void exAsyncExistIO::expire()
+epicsTimerNotify::expireStatus exAsyncExistIO::expire ()
 {
-        //
-        // post IO completion
-        //
-        this->postIOCompletion (pvExistReturn(pverExistsHere));
+    //
+    // post IO completion
+    //
+    this->postIOCompletion ( pvExistReturn(pverExistsHere) );
+    return noRestart;
+}
+
+
+//
+// exAsyncCreateIO::exAsyncCreateIO()
+//
+exAsyncCreateIO::exAsyncCreateIO ( pvInfo &pviIn, exServer &casIn, 
+	const casCtx &ctxIn, bool scanOnIn ) :
+	casAsyncPVAttachIO ( ctxIn ), pvi ( pviIn ), 
+        timer ( casIn.timerQueue().createTimer ( *this ) ), 
+        cas ( casIn ), scanOn ( scanOnIn ) 
+{
+    this->timer.start ( 0.00001 );
 }
 
 //
-// exAsyncExistIO::name()
+// exAsyncCreateIO::~exAsyncCreateIO()
 //
-const char *exAsyncExistIO::name() const
+exAsyncCreateIO::~exAsyncCreateIO()
 {
-	return "exAsyncExistIO";
+	this->cas.removeIO ();
+    delete & this->timer;
 }
 
 //
 // exAsyncCreateIO::expire()
 // (a virtual function that runs when the base timer expires)
 //
-void exAsyncCreateIO::expire()
+epicsTimerNotify::expireStatus exAsyncCreateIO::expire ()
 {
 	exPV *pPV;
 
-	pPV = this->pvi.createPV(this->cas, false, this->scanOn);
-	if (pPV) {
-		this->postIOCompletion (pvAttachReturn(*pPV));
+	pPV = this->pvi.createPV ( this->cas, false, this->scanOn );
+	if ( pPV ) {
+		this->postIOCompletion ( pvAttachReturn ( *pPV ) );
 	}
 	else {
-		this->postIOCompletion (pvAttachReturn(S_casApp_noMemory));
+		this->postIOCompletion ( pvAttachReturn ( S_casApp_noMemory ) );
 	}
-}
-
-//
-// exAsyncCreateIO::name()
-//
-const char *exAsyncCreateIO::name() const
-{
-	return "exAsyncCreateIO";
+    return noRestart;
 }
 

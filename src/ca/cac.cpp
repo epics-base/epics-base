@@ -55,11 +55,6 @@ cac::cac ( bool enablePreemptiveCallbackIn ) :
         }
     }
 
-    this->pTimerQueue = new osiTimerQueue ( osiTimerQueue::mtsCreateManagerThread, abovePriority );
-    if ( ! this->pTimerQueue ) {
-        throwWithLocation ( caErrorCode (ECA_ALLOCMEM) );
-    }
-
     this->pVPrintfFunc = errlogVprintf;
     this->ca_exception_func = ca_default_exception_handler;
     this->ca_exception_arg = NULL;
@@ -92,6 +87,12 @@ cac::cac ( bool enablePreemptiveCallbackIn ) :
         ca_printf ( "Defaulting \"%s\" = %f\n", EPICS_CA_CONN_TMO.name, this->connTMO);
     }
 
+    this->pTimerQueue = & epicsTimerQueueActive::allocate ( false, abovePriority );
+    if ( ! this->pTimerQueue ) {
+        free ( this->pUserName );
+        throwWithLocation ( caErrorCode ( ECA_ALLOCMEM ) );
+    }
+
     //
     // unfortunately, this must be created here in the 
     // constructor, and not on demand (only when it is needed)
@@ -100,6 +101,8 @@ cac::cac ( bool enablePreemptiveCallbackIn ) :
     //
     this->pRecvProcThread = new recvProcessThread ( this );
     if ( ! this->pRecvProcThread ) {
+        this->pTimerQueue->release ();
+        free ( this->pUserName );
         throwWithLocation ( caErrorCode ( ECA_ALLOCMEM ) );
     }
     else if ( this->enablePreemptiveCallback ) {
@@ -107,7 +110,6 @@ cac::cac ( bool enablePreemptiveCallbackIn ) :
         this->enableCallbackPreemption ();
     }
 }
-
 
 cac::~cac ()
 {
@@ -192,7 +194,7 @@ cac::~cac ()
 
     osiSockRelease ();
 
-    delete this->pTimerQueue;
+    this->pTimerQueue->release ();
 }
 
 void cac::processRecvBacklog ()

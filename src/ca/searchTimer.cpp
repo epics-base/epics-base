@@ -18,8 +18,8 @@
 //
 // searchTimer::searchTimer ()
 //
-searchTimer::searchTimer ( udpiiu &iiuIn, osiTimerQueue &queueIn ) :
-    osiTimer ( queueIn ),
+searchTimer::searchTimer ( udpiiu &iiuIn, epicsTimerQueue &queueIn ) :
+    timer ( queueIn.createTimer ( *this ) ),
     iiu ( iiuIn ),
     framesPerTry ( INITIALTRIESPERFRAME ),
     framesPerTryCongestThresh ( UINT_MAX ),
@@ -31,6 +31,11 @@ searchTimer::searchTimer ( udpiiu &iiuIn, osiTimerQueue &queueIn ) :
     retrySeqAtPassBegin ( 0u ),
     period ( CA_RECAST_DELAY )
 {
+}
+
+searchTimer::~searchTimer ()
+{
+    delete & this->timer;
 }
 
 //
@@ -57,11 +62,11 @@ void searchTimer::resetPeriod ( double delayToNextTry )
     }
 
     if ( reschedule ) {
-        this->reschedule ( delayToNextTry );
+        this->timer.start ( delayToNextTry );
         debugPrintf ( ("rescheduled search timer for completion in %f sec\n", delayToNextTry) );
     }
     else {
-        this->activate ( delayToNextTry );
+        this->timer.start ( delayToNextTry );
         debugPrintf ( ("if inactive, search timer started to completion in %f sec\n", delayToNextTry) );
     }
 }
@@ -119,14 +124,14 @@ void searchTimer::notifySearchResponse ( unsigned short retrySeqNoIn )
     }
 
     if ( reschedualNeeded ) {
-        this->reschedule ( 0.0 );
+        this->timer.start ( 0.0 );
     }
 }
 
 //
 // searchTimer::expire ()
 //
-void searchTimer::expire ()
+epicsTimerNotify::expireStatus searchTimer::expire ()
 {
     unsigned nFrameSent = 0u;
     unsigned nChanSent = 0u;
@@ -135,7 +140,7 @@ void searchTimer::expire ()
      * check to see if there is nothing to do here 
      */
     if ( this->iiu.channelCount () == 0 ) {
-        return;
+        return noRestart;
     }   
     
     {
@@ -298,35 +303,19 @@ void searchTimer::expire ()
     this->iiu.flush ();
 
     debugPrintf ( ("sent %u delay sec=%f\n", nFrameSent, this->period) );
-}
 
-void searchTimer::destroy ()
-{
-}
-
-bool searchTimer::again () const
-{
     if ( this->iiu.channelCount () == 0 ) {
-        return false;
+        return noRestart;
     }
     else if ( this->retry < MAXCONNTRIES ) {
-        return true;
+        return expireStatus ( restart, this->period );
     }
     else {
-        return false;
+        return noRestart;
     }
-}
-
-double searchTimer::delay () const
-{
-    return this->period;
 }
 
 void searchTimer::show ( unsigned /* level */ ) const
 {
 }
 
-const char *searchTimer::name () const
-{
-    return "CAC Search Timer";
-}

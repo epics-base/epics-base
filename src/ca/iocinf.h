@@ -46,7 +46,7 @@
 #include "osiSock.h"
 #include "epicsEvent.h"
 #include "epicsThread.h"
-#include "osiTimer.h"
+#include "epicsTimer.h"
 #include "epicsMutex.h"
 #include "resourceLib.h"
 #include "localHostName.h"
@@ -273,6 +273,7 @@ public:
     unsigned long nativeElementCount () const;
     const char *pName () const;
     unsigned nameLen () const;
+    bool connected () const;
 protected:
     ~nciu (); // force pool allocation
 private:
@@ -309,7 +310,6 @@ private:
     caar accessRights () const;
     unsigned searchAttempts () const;
     double beaconPeriod () const;
-    bool connected () const;
     const char * pHostName () const; // deprecated - please do not use
     void notifyStateChangeFirstConnectInCountOfOutstandingIO ();
     static tsFreeList < class nciu, 1024 > freeList;
@@ -458,7 +458,7 @@ public:
     void resetChannelRetryCounts ();
     void attachChannel ( nciu &chan );
     void detachChannel ( nciu &chan );
-    int installSubscription ( netSubscription &subscr );
+    void installSubscription ( netSubscription &subscr );
     virtual void hostName (char *pBuf, unsigned bufLength) const;
     virtual const char * pHostName () const; // deprecated - please do not use
     virtual bool isVirtaulCircuit ( const char *pChannelName, const osiSockAddr &addr ) const;
@@ -483,7 +483,7 @@ private:
     tsDLList < nciu > channelList;
     class cac *pClientCtx;
     virtual void lastChannelDetachNotify ();
-    virtual int subscriptionRequest ( netSubscription &subscr, bool userThread );
+    virtual void subscriptionRequest ( netSubscription &subscr, bool userThread );
 };
 
 class limboiiu : public netiiu {
@@ -495,13 +495,15 @@ extern limboiiu limboIIU;
 
 class udpiiu;
 
-class searchTimer : private osiTimer {
+class searchTimer : private epicsTimerNotify {
 public:
-    searchTimer ( udpiiu &iiu, osiTimerQueue &queue );
+    searchTimer ( udpiiu &iiu, epicsTimerQueue &queue );
+    ~searchTimer ();
     void notifySearchResponse ( unsigned short retrySeqNo );
     void resetPeriod ( double delayToNextTry );
     void show ( unsigned level ) const;
 private:
+    epicsTimer &timer;
     epicsMutex mutex;
     udpiiu &iiu;
     unsigned framesPerTry; /* # of UDP frames per search try */
@@ -513,31 +515,24 @@ private:
     unsigned short retrySeqNo; /* search retry seq number */
     unsigned short retrySeqAtPassBegin; /* search retry seq number at beg of pass through list */
     double period; /* period between tries */
-	void expire ();
-	void destroy ();
-	bool again () const;
-	double delay () const;
-	const char *name () const;
+    expireStatus expire ();
     void setRetryInterval (unsigned retryNo);
 };
 
-class repeaterSubscribeTimer : private osiTimer {
+class repeaterSubscribeTimer : private epicsTimerNotify {
 public:
-    repeaterSubscribeTimer (udpiiu &iiu, osiTimerQueue &queue);
+    repeaterSubscribeTimer (udpiiu &iiu, epicsTimerQueue &queue);
+    ~repeaterSubscribeTimer ();
     void confirmNotify ();
 	void show (unsigned level) const;
 
 private:
-	void expire ();
-	void destroy ();
-	bool again () const;
-	double delay () const;
-	const char *name () const;
-
+    epicsTimer &timer;
     udpiiu &iiu;
     unsigned attempts;
     bool registered;
     bool once;
+	expireStatus expire ();
 };
 
 extern "C" void cacRecvThreadUDP (void *pParam);
@@ -595,9 +590,9 @@ private:
     bool repeaterAckAction ( const caHdr &msg, const osiSockAddr &net_addr );
 };
 
-class tcpRecvWatchdog : private osiTimer {
+class tcpRecvWatchdog : private epicsTimerNotify {
 public:
-    tcpRecvWatchdog ( tcpiiu &, double periodIn, osiTimerQueue & queueIn );
+    tcpRecvWatchdog ( tcpiiu &, double periodIn, epicsTimerQueue & queueIn );
     ~tcpRecvWatchdog ();
     void rescheduleRecvTimer ();
     void messageArrivalNotify ();
@@ -608,33 +603,25 @@ public:
     void show ( unsigned level ) const;
 
 private:
-    void expire ();
-	void destroy ();
-	bool again () const;
-	double delay () const;
-	const char *name () const;
-
     const double period;
+    epicsTimer &timer;
     tcpiiu &iiu;
     bool responsePending;
     bool beaconAnomaly;
+    expireStatus expire ();
 };
 
-class tcpSendWatchdog : private osiTimer {
+class tcpSendWatchdog : private epicsTimerNotify {
 public:
-    tcpSendWatchdog ( tcpiiu &, double periodIn, osiTimerQueue & queueIn );
+    tcpSendWatchdog ( tcpiiu &, double periodIn, epicsTimerQueue & queueIn );
     ~tcpSendWatchdog ();
     void start ();
     void cancel ();
 private:
-    void expire ();
-	void destroy ();
-	bool again () const;
-	double delay () const;
-	const char *name () const;
-
     const double period;
+    epicsTimer &timer;
     tcpiiu &iiu;
+    expireStatus expire ();
 };
 
 class msgForMultiplyDefinedPV : public ipAddrToAsciiAsynchronous {
@@ -679,7 +666,7 @@ class tcpiiu :
         public netiiu, public tsDLNode < tcpiiu >,
         private wireSendAdapter, private wireRecvAdapter {
 public:
-    tcpiiu ( cac &cac, double connectionTimeout, osiTimerQueue &timerQueue );
+    tcpiiu ( cac &cac, double connectionTimeout, epicsTimerQueue &timerQueue );
     ~tcpiiu ();
     bool initiateConnect ( const osiSockAddr &addrIn, unsigned minorVersion, 
         class bhe &bhe, ipAddrToAsciiEngine &engineIn );
@@ -793,7 +780,7 @@ private:
     bool uninstallIO ( baseNMIU & );
     bool destroyAllIO ( nciu &chan );
 
-    int subscriptionRequest ( netSubscription &subscr, bool userThread );
+    void subscriptionRequest ( netSubscription &subscr, bool userThread );
     void subscriptionCancelRequest ( netSubscription &subscr, bool userThread );
 
     typedef bool ( tcpiiu::*pProtoStubTCP ) ();
@@ -1069,7 +1056,7 @@ private:
     mutable epicsMutex      defaultMutex; 
     // iiuListMutex must not be applied if defaultMutex is already applied
     mutable epicsMutex      iiuListMutex;
-    osiTimerQueue           *pTimerQueue;
+    epicsTimerQueueActive   *pTimerQueue;
     caExceptionHandler      *ca_exception_func;
     void                    *ca_exception_arg;
     caPrintfFunc            *pVPrintfFunc;

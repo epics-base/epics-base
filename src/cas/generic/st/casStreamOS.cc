@@ -107,23 +107,25 @@ inline casStreamWriteReg::~casStreamWriteReg ()
 //
 // class casStreamEvWakeup
 //
-class casStreamEvWakeup : public osiTimer {
+class casStreamEvWakeup : public epicsTimerNotify {
 public:
-
-	casStreamEvWakeup(casStreamOS &osIn) : 
-		osiTimer(0.0), os(osIn) {}
-
-	~casStreamEvWakeup();
-
-	void expire();
-
-	void show(unsigned level) const;
-
-	const char *name() const;
-
+	casStreamEvWakeup(casStreamOS &osIn);
+	~casStreamEvWakeup ();
+	void show ( unsigned level ) const;
 private:
+    epicsTimer &timer;
 	casStreamOS	&os;
+	expireStatus expire ();
 };
+
+//
+// casStreamEvWakeup()
+//
+casStreamEvWakeup::casStreamEvWakeup ( casStreamOS &osIn ) : 
+		timer ( fileDescriptorManager.timerQueueRef().createTimer(*this) ), os(osIn) 
+{
+    this->timer.start ( 0.0 );
+}
 
 //
 // casStreamEvWakeup::~casStreamEvWakeup()
@@ -131,14 +133,7 @@ private:
 casStreamEvWakeup::~casStreamEvWakeup()
 {
 	this->os.pEvWk = NULL;
-}
-
-//
-// casStreamEvWakeup::name()
-//
-const char *casStreamEvWakeup::name() const
-{
-	return "casStreamEvWakeup";
+    delete & this->timer;
 }
 
 //
@@ -148,14 +143,14 @@ void casStreamEvWakeup::show(unsigned level) const
 {
 	printf ( "casStreamEvWakeup at %p {\n", 
         static_cast <const void *> ( this ) );
-	this->osiTimer::show(level);
-	printf ("}\n");
+	this->timer.show ( level );
+	printf ( "}\n" );
 }
 
 //
 // casStreamEvWakeup::expire()
 //
-void casStreamEvWakeup::expire()
+epicsTimerNotify::expireStatus casStreamEvWakeup::expire()
 {
 	casProcCond cond;
 	cond = this->os.casEventSys::process();
@@ -174,27 +169,32 @@ void casStreamEvWakeup::expire()
 		// must not touch the "this" pointer
 		// from this point on however
 		//
-		return;
 	}
+    return noRestart;
 }
 
 //
 // class casStreamIOWakeup
 //
-class casStreamIOWakeup : public osiTimer {
+class casStreamIOWakeup : public epicsTimerNotify {
 public:
-	casStreamIOWakeup(casStreamOS &osIn) : 
-		osiTimer (0.0), os(osIn) {}
+	casStreamIOWakeup(casStreamOS &osIn);
 	~casStreamIOWakeup();
-
-	void expire();
-
-	void show(unsigned level) const;
-
-	const char *name() const;
+	void show ( unsigned level ) const;
 private:
+    epicsTimer &timer;
 	casStreamOS	&os;
+	expireStatus expire ();
 };
+
+//
+// casStreamIOWakeup::casStreamIOWakeup()
+//
+casStreamIOWakeup::casStreamIOWakeup ( casStreamOS &osIn ) : 
+	timer ( fileDescriptorManager.timerQueueRef().createTimer(*this) ), os(osIn) 
+{
+    this->timer.start ( 0.0 );
+}
 
 //
 // casStreamIOWakeup::~casStreamIOWakeup()
@@ -202,14 +202,7 @@ private:
 casStreamIOWakeup::~casStreamIOWakeup()
 {
 	this->os.pIOWk = NULL;
-}
-
-//
-// casStreamIOWakeup::name()
-//
-const char *casStreamIOWakeup::name() const
-{
-	return "casStreamIOWakeup";
+    delete & this->timer;
 }
 
 //
@@ -219,8 +212,8 @@ void casStreamIOWakeup::show(unsigned level) const
 {
 	printf ( "casStreamIOWakeup at %p {\n", 
         static_cast <const void *> ( this ) );
-	this->osiTimer::show(level);
-	printf ("}\n");
+	this->timer.show ( level );
+	printf ( "}\n" );
 }
 
 //
@@ -246,7 +239,7 @@ inline void casStreamOS::armRecv()
 // guarantees that we will not call processInput()
 // recursively
 //
-void casStreamIOWakeup::expire()
+epicsTimerNotify::expireStatus casStreamIOWakeup::expire ()
 {
 	//
 	// in case there is something in the input buffer
@@ -258,6 +251,7 @@ void casStreamIOWakeup::expire()
 	// be something to read from TCP this works
 	//
 	this->os.processInput();
+    return noRestart;
 }
 
 //

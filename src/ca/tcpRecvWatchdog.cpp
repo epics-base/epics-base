@@ -16,18 +16,19 @@
 // the recv watchdog timer is active when this object is created
 //
 tcpRecvWatchdog::tcpRecvWatchdog 
-    ( tcpiiu &iiuIn, double periodIn, osiTimerQueue & queueIn ) :
-        osiTimer ( queueIn ),
-    period ( periodIn ), iiu ( iiuIn ), responsePending ( false ),
+    ( tcpiiu &iiuIn, double periodIn, epicsTimerQueue & queueIn ) :
+        period ( periodIn ), timer ( queueIn.createTimer ( *this ) ),
+        iiu ( iiuIn ), responsePending ( false ),
         beaconAnomaly ( true )
 {
 }
 
 tcpRecvWatchdog::~tcpRecvWatchdog ()
 {
+    delete & this->timer;
 }
 
-void tcpRecvWatchdog::expire ()
+epicsTimerNotify::expireStatus tcpRecvWatchdog::expire ()
 {
     if ( this->responsePending ) {
         this->cancel ();
@@ -36,37 +37,19 @@ void tcpRecvWatchdog::expire ()
         ca_printf ( "CA server \"%s\" unresponsive after %g inactive sec - disconnecting.\n", 
             hostName, this->period );
         this->iiu.forcedShutdown ();
+        return noRestart;
     }
     else {
         this->responsePending = this->iiu.setEchoRequestPending ();
         debugPrintf ( ("TCP connection timed out - sending echo request\n") );
-    }
-}
-
-void tcpRecvWatchdog::destroy ()
-{
-    // ignore timer destroy requests
-}
-
-bool tcpRecvWatchdog::again () const
-{
-    return true;
-}
-
-double tcpRecvWatchdog::delay () const
-{
-    if ( this->responsePending ) {
-        return CA_ECHO_TIMEOUT;
-    }
-    else {
-        return this->period;
+        return expireStatus ( restart, CA_ECHO_TIMEOUT );
     }
 }
 
 void tcpRecvWatchdog::beaconArrivalNotify ()
 {
     if ( ! this->beaconAnomaly && ! this->responsePending ) {
-        this->reschedule ( this->period );
+        this->timer.start ( this->period );
         debugPrintf ( ("Saw a normal beacon - reseting TCP recv watchdog\n") );
     }
 }
@@ -88,24 +71,19 @@ void tcpRecvWatchdog::messageArrivalNotify ()
 {
     this->beaconAnomaly = false;
     this->responsePending = false;
-    this->reschedule ( this->period );
+    this->timer.start ( this->period );
     debugPrintf ( ("received a message - reseting TCP recv watchdog\n") );
 }
 
 void tcpRecvWatchdog::connectNotify ()
 {
-    this->reschedule ( this->period );
+    this->timer.start ( this->period );
     debugPrintf ( ("connected to the server - reseting TCP recv watchdog\n") );
-}
-
-const char *tcpRecvWatchdog::name () const
-{
-    return "TCP Receive Watchdog";
 }
 
 void tcpRecvWatchdog::cancel ()
 {
-    this->osiTimer::cancel ();
+    this->timer.cancel ();
     debugPrintf ( ("canceling TCP recv watchdog\n") );
 }
 

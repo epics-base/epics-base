@@ -51,14 +51,14 @@ extern int main (int argc, const char **argv)
         scanOn = false;
     }
 
-	pCAS = new exServer (pvPrefix, aliasCount, scanOn);
-	if (!pCAS) {
+	pCAS = new exServer ( pvPrefix, aliasCount, scanOn );
+	if ( ! pCAS ) {
 		return (-1);
 	}
 
 	pCAS->setDebugLevel(debugLevel);
 
-	if (forever) {
+	if ( forever ) {
 		//
 		// loop here forever
 		//
@@ -72,8 +72,8 @@ extern int main (int argc, const char **argv)
 		// loop here untill the specified execution time
 		// expires
 		//
-		while (delay < executionTime) {
-			fileDescriptorManager.process(delay);
+		while ( delay < executionTime ) {
+			fileDescriptorManager.process ( delay );
 			delay = epicsTime::getCurrent() - begin;
 		}
 	}

@@ -11,21 +11,31 @@
 // CA server
 // 
 #include "server.h"
+#include "fdManager.h"
 
 //
 // casBeaconTimer
 //
-class casBeaconTimer : public osiTimer {
+class casBeaconTimer : public epicsTimerNotify {
 public:
-    casBeaconTimer (double delay, caServerOS &osIn) :
-        osiTimer(delay), os (osIn) {}
-    void expire();
-    double delay() const;
-    bool again() const;
-    const char *name() const;
+    casBeaconTimer ( double delay, caServerOS &osIn );
+    ~casBeaconTimer ();
 private:
-    caServerOS      &os;
+    epicsTimer  &timer;
+    caServerOS  &os;
+    expireStatus expire ();
 };
+
+casBeaconTimer::casBeaconTimer ( double delay, caServerOS &osIn ) :
+    timer ( fileDescriptorManager.timerQueueRef().createTimer(*this) ), os ( osIn ) 
+{
+    this->timer.start ( delay );
+}
+
+casBeaconTimer::~casBeaconTimer ()
+{
+    delete & this->timer;
+}
 
 //
 // caServerOS::caServerOS()
@@ -43,7 +53,7 @@ caServerOS::caServerOS ()
 //
 caServerOS::~caServerOS()
 {
-	if (this->pBTmr) {
+	if ( this->pBTmr ) {
 		delete this->pBTmr;
 	}
 }
@@ -51,32 +61,9 @@ caServerOS::~caServerOS()
 //
 // casBeaconTimer::expire()
 //
-void casBeaconTimer::expire()	
+epicsTimerNotify::expireStatus casBeaconTimer::expire()	
 {
 	os.sendBeacon ();
-}
-
-//
-// casBeaconTimer::again()
-//
-bool casBeaconTimer::again()	const
-{
-	return true; 
-}
-
-//
-// casBeaconTimer::delay()
-//
-double casBeaconTimer::delay() const
-{
-	return os.getBeaconPeriod();
-}
-
-//
-// casBeaconTimer::name()
-//
-const char *casBeaconTimer::name() const
-{
-	return "casBeaconTimer";
+    return expireStatus ( restart, os.getBeaconPeriod() );
 }
 

@@ -21,11 +21,12 @@ class exFixedStringDestructor: public gddDestructor {
 //
 // exPV::exPV()
 //
-exPV::exPV (pvInfo &setup, bool preCreateFlag, bool scanOnIn) : 
-	info (setup),
-	interest (false),
-	preCreate (preCreateFlag),
-	scanOn (scanOnIn)
+exPV::exPV ( pvInfo &setup, bool preCreateFlag, bool scanOnIn ) : 
+    timer ( this->getCAS()->timerQueue().createTimer(*this) ),
+	info ( setup ),
+	interest ( false ),
+	preCreate ( preCreateFlag ),
+	scanOn ( scanOnIn )
 {
 	//
 	// no dataless PV allowed
@@ -38,12 +39,8 @@ exPV::exPV (pvInfo &setup, bool preCreateFlag, bool scanOnIn) :
 	// someone is watching the PV)
 	//
 	if ( this->scanOn && this->info.getScanPeriod () > 0.0 ) {
-		this->pScanTimer = 
-			new exScanTimer (this->getScanPeriod(), *this);
+        this->timer.start ( this->getScanPeriod() );
 	}
-    else {
-        this->pScanTimer = 0;
-    }
 }
 
 //
@@ -51,10 +48,7 @@ exPV::exPV (pvInfo &setup, bool preCreateFlag, bool scanOnIn) :
 //
 exPV::~exPV() 
 {
-	if (this->pScanTimer) {
-		delete this->pScanTimer;
-		this->pScanTimer = NULL;
-	}
+    delete & this->timer;
 	this->info.unlinkPV();
 }
 
@@ -66,7 +60,7 @@ exPV::~exPV()
 //
 void exPV::destroy()
 {
-	if (!this->preCreate) {
+	if ( ! this->preCreate ) {
 		delete this;
 	}
 }
@@ -101,43 +95,17 @@ caStatus exPV::update(smartConstGDDPointer pValueIn)
 }
 
 //
-// exScanTimer::~exScanTimer ()
-//
-exScanTimer::~exScanTimer ()
-{
-	pv.pScanTimer = NULL;
-}
-
-//
 // exScanTimer::expire ()
 //
-void exScanTimer::expire ()
+epicsTimerNotify::expireStatus exPV::expire ()
 {
-	pv.scan();
-}
-
-//
-// exScanTimer::again()
-//
-bool exScanTimer::again() const
-{
-	return true;
-}
-
-//
-// exScanTimer::delay()
-//
-double exScanTimer::delay() const
-{
-	return pv.getScanPeriod();
-}
-
-//
-// exScanTimer::name()
-//
-const char *exScanTimer::name() const
-{
-	return "exScanTimer";
+	this->scan();
+    if ( this->scanOn ) {
+        return expireStatus ( restart, this->getScanPeriod() );
+    }
+    else {
+        return noRestart;
+    }
 }
 
 //
@@ -153,34 +121,16 @@ aitEnum exPV::bestExternalType() const
 //
 caStatus exPV::interestRegister()
 {
-	caServer	*pCAS = this->getCAS();
+	caServer *pCAS = this->getCAS();
 
-	if (!pCAS) {
+	if ( ! pCAS ) {
 		return S_casApp_success;
 	}
 
 	this->interest = true;
 
-	if (!this->scanOn) {
-		return S_casApp_success;
-	}
-
-	//
-	// If a slow scan is pending then reschedule it
-	// with the specified scan period.
-	//
-	if (this->pScanTimer) {
-		this->pScanTimer->reschedule(this->getScanPeriod());
-	}
-	else if ( this->getScanPeriod () > 0.0 ) {
-		this->pScanTimer = new exScanTimer
-				(this->getScanPeriod(), *this);
-		if (!this->pScanTimer) {
-			errPrintf (S_cas_noMemory, __FILE__, __LINE__,
-				"Scan init for %s failed\n", 
-				this->info.getName());
-			return S_cas_noMemory;
-		}
+	if ( this->scanOn && this->getScanPeriod() < this->timer.getExpireDelay() ) {
+		this->timer.start ( this->getScanPeriod() );
 	}
 
 	return S_casApp_success;
@@ -192,15 +142,12 @@ caStatus exPV::interestRegister()
 void exPV::interestDelete()
 {
 	this->interest = false;
-	if (this->pScanTimer && this->scanOn) {
-		this->pScanTimer->reschedule(this->getScanPeriod());
-	}
 }
 
 //
 // exPV::show()
 //
-void exPV::show(unsigned level) const
+void exPV::show ( unsigned level ) const
 {
 	if (level>1u) {
 		if ( this->pValue.valid () ) {
@@ -209,8 +156,7 @@ void exPV::show(unsigned level) const
 			printf ( "exPV: value=%f\n", static_cast < double > ( * this->pValue ) );
 		}
 		printf ( "exPV: interest=%d\n", this->interest );
-		printf ( "exPV: pScanTimer=%p\n", 
-            static_cast < const void * > ( this->pScanTimer ) );
+        this->timer.show ( level - 1u );
 	}
 }
 
@@ -219,7 +165,7 @@ void exPV::show(unsigned level) const
 //
 void exPV::initFT()
 {
-	if (exPV::hasBeenInitialized) {
+	if ( exPV::hasBeenInitialized ) {
 			return;
 	}
 

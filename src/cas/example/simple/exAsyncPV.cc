@@ -20,7 +20,7 @@ caStatus exAsyncPV::read (const casCtx &ctx, gdd &valueIn)
 
 	this->simultAsychIOCount++;
 
-	pIO = new exAsyncReadIO(ctx, *this, valueIn);
+	pIO = new exAsyncReadIO ( ctx, *this, valueIn );
 	if (!pIO) {
 		return S_casApp_noMemory;
 	}
@@ -32,18 +32,18 @@ caStatus exAsyncPV::read (const casCtx &ctx, gdd &valueIn)
 // exAsyncPV::write()
 // (virtual replacement for the default)
 //
-caStatus exAsyncPV::write (const casCtx &ctx, const gdd &valueIn)
+caStatus exAsyncPV::write ( const casCtx &ctx, const gdd &valueIn )
 {
-	exAsyncWriteIO	*pIO;
+	exAsyncWriteIO *pIO;
 	
-	if (this->simultAsychIOCount>=maxSimultAsyncIO) {
+	if ( this->simultAsychIOCount >= maxSimultAsyncIO ) {
 		return S_casApp_postponeAsyncIO;
 	}
 
 	this->simultAsychIOCount++;
 
-	pIO = new exAsyncWriteIO(ctx, *this, valueIn);
-	if (!pIO) {
+	pIO = new exAsyncWriteIO ( ctx, *this, valueIn );
+	if ( ! pIO ) {
 		return S_casApp_noMemory;
 	}
 
@@ -51,29 +51,63 @@ caStatus exAsyncPV::write (const casCtx &ctx, const gdd &valueIn)
 }
 
 //
-// exAsyncWriteIO::expire()
-// (a virtual function that runs when the base timer expires)
+// exAsyncWriteIO::exAsyncWriteIO()
 //
-void exAsyncWriteIO::expire() 
+exAsyncWriteIO::exAsyncWriteIO ( const casCtx &ctxIn, exAsyncPV &pvIn, 
+    const gdd &valueIn ) :
+	casAsyncWriteIO ( ctxIn ), pv ( pvIn ), 
+        timer ( pvIn.getCAS()->timerQueue().createTimer ( *this ) ), pValue(valueIn)
 {
-	caStatus status;
-	status = this->pv.update(this->pValue);
-	this->postIOCompletion (status);
+    this->timer.start ( 0.1 );
 }
 
 //
-// exAsyncWriteIO::name()
+// exAsyncWriteIO::~exAsyncWriteIO()
 //
-const char *exAsyncWriteIO::name() const
+exAsyncWriteIO::~exAsyncWriteIO()
 {
-	return "exAsyncWriteIO";
+	this->pv.removeIO();
+    delete & this->timer;
 }
+
+//
+// exAsyncWriteIO::expire()
+// (a virtual function that runs when the base timer expires)
+//
+epicsTimerNotify::expireStatus exAsyncWriteIO::expire () 
+{
+	caStatus status;
+	status = this->pv.update ( this->pValue );
+	this->postIOCompletion ( status );
+    return noRestart;
+}
+
+//
+// exAsyncReadIO::exAsyncReadIO()
+//
+exAsyncReadIO::exAsyncReadIO ( const casCtx &ctxIn, exAsyncPV &pvIn, 
+    gdd &protoIn ) :
+	casAsyncReadIO ( ctxIn ), pv ( pvIn ), 
+        timer ( pvIn.getCAS()->timerQueue().createTimer(*this) ), pProto ( protoIn )
+{
+    this->timer.start ( 0.1 );
+}
+
+//
+// exAsyncReadIO::~exAsyncReadIO()
+//
+exAsyncReadIO::~exAsyncReadIO()
+{
+	this->pv.removeIO ();
+    delete & this->timer;
+}
+
 
 //
 // exAsyncReadIO::expire()
 // (a virtual function that runs when the base timer expires)
 //
-void exAsyncReadIO::expire ()
+epicsTimerNotify::expireStatus exAsyncReadIO::expire ()
 {
 	caStatus status;
 
@@ -81,19 +115,13 @@ void exAsyncReadIO::expire ()
 	// map between the prototype in and the
 	// current value
 	//
-	status = this->pv.exPV::readNoCtx (this->pProto);
+	status = this->pv.exPV::readNoCtx ( this->pProto );
 
 	//
 	// post IO completion
 	//
-	this->postIOCompletion (status, *this->pProto );
-}
+	this->postIOCompletion ( status, *this->pProto );
 
-//
-// exAsyncReadIO::name()
-//
-const char *exAsyncReadIO::name() const
-{
-	return "exAsyncReadIO";
+    return noRestart;
 }
 

@@ -14,12 +14,19 @@
 
 #include "iocinf.h"
 
-repeaterSubscribeTimer::repeaterSubscribeTimer ( udpiiu &iiuIn, osiTimerQueue &queueIn ) :
-    osiTimer ( 10.0, queueIn ), iiu ( iiuIn ), attempts ( 0 ), registered ( false ), once (false)
+repeaterSubscribeTimer::repeaterSubscribeTimer ( udpiiu &iiuIn, epicsTimerQueue &queueIn ) :
+    timer ( queueIn.createTimer ( *this ) ), iiu ( iiuIn ), 
+        attempts ( 0 ), registered ( false ), once ( false )
 {
+    this->timer.start ( 10.0 );
 }
 
-void repeaterSubscribeTimer::expire ()
+repeaterSubscribeTimer::~repeaterSubscribeTimer ()
+{
+    delete & this->timer;
+}
+
+epicsTimerNotify::expireStatus repeaterSubscribeTimer::expire ()
 {
     static const unsigned nTriesToMsg = 50;
     if ( this->attempts > nTriesToMsg && ! this->once ) {
@@ -32,29 +39,17 @@ void repeaterSubscribeTimer::expire ()
 
     this->iiu.repeaterRegistrationMessage ( this->attempts );
     this->attempts++;
+
+    if ( this->registered ) {
+        return noRestart;
+    }
+    else {
+        return expireStatus ( restart, 1.0 );
+    }
 }
 
-void repeaterSubscribeTimer::destroy ()
+void repeaterSubscribeTimer::show ( unsigned /* level */ ) const
 {
-}
-
-bool repeaterSubscribeTimer::again () const
-{
-    return ( ! this->registered );
-}
-
-double repeaterSubscribeTimer::delay () const
-{
-    return 1.0;
-}
-
-void repeaterSubscribeTimer::show (unsigned /* level */ ) const
-{
-}
-
-const char *repeaterSubscribeTimer::name () const
-{
-    return "repeaterSubscribeTimer";
 }
 
 void repeaterSubscribeTimer::confirmNotify ()

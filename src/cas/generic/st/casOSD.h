@@ -10,7 +10,6 @@
 #define includeCASOSDH 
 
 #undef epicsExportSharedSymbols
-#include "osiTimer.h"
 #include "fdManager.h"
 
 #define epicsExportSharedSymbols

@@ -29,10 +29,10 @@
 //
 // EPICS
 //
+#include "epicsTimer.h"
 #include "casdef.h"
 #include "epicsAssert.h"
 #include "gddAppFuncTable.h"
-#include "osiTimer.h"
 #include "resourceLib.h"
 #include "tsMinMax.h"
 
@@ -130,35 +130,16 @@ private:
 	exServer &cas;
 };
 
-//
-// exScanTimer
-//
-class exScanTimer : public osiTimer {
-public:
-	exScanTimer (double delayIn, exPV &pvIn) : 
-		osiTimer(delayIn), pv(pvIn) {}
-	~exScanTimer();
-	void expire ();
-	bool again() const;
-	double delay() const;
-	const char *name() const;
-private:
-	exPV	&pv;
-};
-
-
 
 //
 // exPV
 //
-class exPV : public casPV, public tsSLNode<exPV> {
-	// allow the exScanTimer destructor to set dangling pScanTimer pointer to NULL
-	friend exScanTimer::~exScanTimer(); 
+class exPV : public casPV, public epicsTimerNotify, public tsSLNode<exPV> {
 public:
-	exPV (pvInfo &setup, bool preCreateFlag, bool scanOn);
+	exPV ( pvInfo &setup, bool preCreateFlag, bool scanOn );
 	virtual ~exPV();
 
-	void show(unsigned level) const;
+	void show ( unsigned level ) const;
 
 	//
 	// Called by the server libary each time that it wishes to
@@ -204,8 +185,8 @@ public:
 	{
 		double curPeriod;
 
-		curPeriod = this->info.getScanPeriod();
-		if (!this->interest) {
+		curPeriod = this->info.getScanPeriod ();
+		if ( ! this->interest ) {
 			curPeriod *= 10.0L;
 		}
 		return curPeriod;
@@ -242,7 +223,7 @@ public:
 
 protected:
 	smartConstGDDPointer    pValue;
-	exScanTimer             *pScanTimer;
+	epicsTimer              &timer;
 	pvInfo &                info; 
 	bool                    interest;
 	bool                    preCreate;
@@ -252,6 +233,12 @@ protected:
 	virtual caStatus updateValue (smartConstGDDPointer pValue) = 0;
 
 private:
+
+    //
+    // scan timer expire
+    //
+    expireStatus expire ();
+
 	//
 	// Std PV Attribute fetch support
 	//
@@ -274,8 +261,8 @@ private:
 //
 class exScalarPV : public exPV {
 public:
-	exScalarPV (pvInfo &setup, bool preCreateFlag, bool scanOnIn) :
-			exPV (setup, preCreateFlag, scanOnIn) {}
+	exScalarPV ( pvInfo &setup, bool preCreateFlag, bool scanOnIn ) :
+			exPV ( setup, preCreateFlag, scanOnIn) {}
 	void scan();
 private:
 	caStatus updateValue (smartConstGDDPointer pValue);
@@ -286,8 +273,8 @@ private:
 //
 class exVectorPV : public exPV {
 public:
-	exVectorPV (pvInfo &setup, bool preCreateFlag, bool scanOnIn) :
-			exPV (setup, preCreateFlag, scanOnIn) {}
+	exVectorPV ( pvInfo &setup, bool preCreateFlag, bool scanOnIn ) :
+			exPV ( setup, preCreateFlag, scanOnIn) {}
 	void scan();
 
 	unsigned maxDimension() const;
@@ -302,7 +289,8 @@ private:
 //
 class exServer : public caServer {
 public:
-	exServer(const char * const pvPrefix, unsigned aliasCount, bool scanOn);
+	exServer ( const char * const pvPrefix, 
+        unsigned aliasCount, bool scanOn );
 	~exServer();
 
 	void show (unsigned level) const;
@@ -352,9 +340,9 @@ public:
 	//
 	// exAsyncPV()
 	//
-	exAsyncPV (pvInfo &setup, bool preCreateFlag, bool scanOnIn) :
-		exScalarPV (setup, preCreateFlag, scanOnIn),
-		simultAsychIOCount(0u) {}
+	exAsyncPV ( pvInfo &setup, bool preCreateFlag, bool scanOnIn ) :
+		exScalarPV ( setup, preCreateFlag, scanOnIn ),
+		simultAsychIOCount ( 0u ) {}
 
 	//
 	// read
@@ -399,119 +387,47 @@ private:
 };
 
 //
-// exOSITimer
-//
-// a special version of osiTimer which is only to be used 
-// within an exAsyncIO. The destroy() method is replaced 
-// so that the timer destroy() will not destroy the
-// exAsyncIO until the casAsyncIO has completed
-//
-class exOSITimer : public osiTimer {
-public:
-	exOSITimer (double delay) : osiTimer(delay) {}
-
-	//
-	// this is a noop that postpones the timer expiration
-	// destroy so this object will hang around until the
-	// casAsyncIO::destroy() is called
-	//
-	void destroy();
-};
-
-
-//
 // exAsyncWriteIO
 //
-class exAsyncWriteIO : public casAsyncWriteIO, public exOSITimer {
+class exAsyncWriteIO : public casAsyncWriteIO, public epicsTimerNotify {
 public:
-	//
-	// exAsyncWriteIO() 
-	//
-	exAsyncWriteIO (const casCtx &ctxIn, exAsyncPV &pvIn, const gdd &valueIn) :
-		casAsyncWriteIO(ctxIn), exOSITimer(0.1), pv(pvIn), pValue(valueIn)
-	{
-	}
-
-	~exAsyncWriteIO()
-	{
-		this->pv.removeIO();
-    }
-
-	//
-	// expire()
-	// (a virtual function that runs when the base timer expires)
-	// see exAsyncPV.cc
-	//
-	void expire();
-
-	const char *name() const;
-
+	exAsyncWriteIO ( const casCtx &ctxIn, exAsyncPV &pvIn, const gdd &valueIn );
+	~exAsyncWriteIO ();
 private:
-	exAsyncPV               &pv;
-    smartConstGDDPointer    pValue;
+	exAsyncPV &pv;
+    epicsTimer &timer;
+    smartConstGDDPointer pValue;
+	expireStatus expire ();
 };
 
 //
 // exAsyncReadIO
 //
-class exAsyncReadIO : public casAsyncReadIO, public exOSITimer {
+class exAsyncReadIO : public casAsyncReadIO, public epicsTimerNotify {
 public:
-	//
-	// exAsyncReadIO()
-	//
-	exAsyncReadIO(const casCtx &ctxIn, exAsyncPV &pvIn, gdd &protoIn) :
-		casAsyncReadIO(ctxIn), exOSITimer(0.1), pv(pvIn), pProto(protoIn)
-	{
-	}
-
-	~exAsyncReadIO()
-	{
-		this->pv.removeIO();
-	}
-
-	//
-	// expire()
-	// (a virtual function that runs when the base timer expires)
-	// see exAsyncPV.cc
-	//
-	void expire();
-
-	const char *name() const;
-
+	exAsyncReadIO ( const casCtx &ctxIn, exAsyncPV &pvIn, gdd &protoIn );
+	~exAsyncReadIO ();
 private:
-	exAsyncPV	        &pv;
-    smartGDDPointer     pProto;
+	exAsyncPV &pv;
+    epicsTimer &timer;
+    smartGDDPointer pProto;
+	expireStatus expire ();
 };
 
 //
 // exAsyncExistIO
 // (PV exist async IO)
 //
-class exAsyncExistIO : public casAsyncPVExistIO, public exOSITimer {
+class exAsyncExistIO : public casAsyncPVExistIO, public epicsTimerNotify {
 public:
-	//
-	// exAsyncExistIO()
-	//
-	exAsyncExistIO(const pvInfo &pviIn, const casCtx &ctxIn,
-			exServer &casIn) :
-		casAsyncPVExistIO(ctxIn), exOSITimer(0.00001), pvi(pviIn), cas(casIn) {}
-
-	~exAsyncExistIO()
-	{
-		this->cas.removeIO();
-	}
-
-	//
-	// expire()
-	// (a virtual function that runs when the base timer expires)
-	// see exServer.cc
-	//
-	void expire();
-
-	const char *name() const;
+	exAsyncExistIO ( const pvInfo &pviIn, const casCtx &ctxIn,
+			exServer &casIn );
+	~exAsyncExistIO ();
 private:
-	const pvInfo	&pvi;
-	exServer	    &cas;
+	const pvInfo &pvi;
+    epicsTimer &timer;
+	exServer &cas;
+	expireStatus expire ();
 };
 
  
@@ -519,43 +435,27 @@ private:
 // exAsyncCreateIO
 // (PV create async IO)
 //
-class exAsyncCreateIO : public casAsyncPVAttachIO, public exOSITimer {
+class exAsyncCreateIO : public casAsyncPVAttachIO, public epicsTimerNotify {
 public:
-	//
-	// exAsyncCreateIO()
-	//
-	exAsyncCreateIO(pvInfo &pviIn, exServer &casIn, 
-		const casCtx &ctxIn, bool scanOnIn) :
-		casAsyncPVAttachIO(ctxIn), exOSITimer(0.00001), 
-			pvi(pviIn), cas(casIn), scanOn(scanOnIn) {}
-
-	~exAsyncCreateIO()
-	{
-		this->cas.removeIO();
-	}
-
-	//
-	// expire()
-	// (a virtual function that runs when the base timer expires)
-	// see exServer.cc
-	//
-	void expire();
-
-	const char *name() const;
+	exAsyncCreateIO ( pvInfo &pviIn, exServer &casIn, 
+		const casCtx &ctxIn, bool scanOnIn );
+	~exAsyncCreateIO ();
 private:
 	pvInfo	    &pvi;
+    epicsTimer  &timer;
 	exServer	&cas;
 	bool	    scanOn;
+	expireStatus expire ();
 };
 
 //
 // exServer::removeAliasName()
 //
-inline void exServer::removeAliasName(pvEntry &entry)
+inline void exServer::removeAliasName ( pvEntry &entry )
 {
         pvEntry *pE;
-        pE = this->stringResTbl.remove(entry);
-        assert(pE = &entry);
+        pE = this->stringResTbl.remove ( entry );
+        assert ( pE == &entry );
 }
 
 //
@@ -563,7 +463,7 @@ inline void exServer::removeAliasName(pvEntry &entry)
 //
 inline pvEntry::~pvEntry()
 {
-    this->cas.removeAliasName(*this);
+    this->cas.removeAliasName ( *this );
 }
 
 //
@@ -571,28 +471,20 @@ inline pvEntry::~pvEntry()
 //
 inline void pvEntry::destroy ()
 {
-	//
-	// always created with new (in this example)
-	//
 	delete this;
 }
 
 inline pvInfo::~pvInfo ()
 {
-	//
-	// dont leak pre created PVs when we exit
-	//
-	if (this->pPV!=NULL) {
-		//
-		// always created with new (in this example)
-		//
+	if ( this->pPV != NULL ) {
 		delete this->pPV;
 	}
 }
 
 inline void pvInfo::deletePV ()
 {
-	if (this->pPV!=NULL) {
+	if ( this->pPV != NULL ) {
 		delete this->pPV;
 	}
 }
+

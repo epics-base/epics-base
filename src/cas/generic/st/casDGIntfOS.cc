@@ -66,40 +66,29 @@ private:
 //
 // class casDGEvWakeup
 //
-class casDGEvWakeup : public osiTimer {
+class casDGEvWakeup : public epicsTimerNotify {
 public:
-
-	casDGEvWakeup(casDGIntfOS &osIn) : 
-		osiTimer(0.0), os(osIn) {}
-
+	casDGEvWakeup ( casDGIntfOS &osIn );
 	~casDGEvWakeup();
-
-	void expire();
-
-	void show(unsigned level) const;
-
-	const char *name() const;
-
+	void show ( unsigned level ) const;
 private:
+    epicsTimer &timer;
 	casDGIntfOS	&os;
+	expireStatus expire();
 };
 
 //
 // class casDGIOWakeup
 //
-class casDGIOWakeup : public osiTimer {
+class casDGIOWakeup : public epicsTimerNotify {
 public:
-	casDGIOWakeup (casDGIntfOS &osIn) : 
-		osiTimer (0.0), os(osIn) {}
+	casDGIOWakeup ( casDGIntfOS &osIn );
 	~casDGIOWakeup ();
-
-	void expire();
-
-	void show(unsigned level) const;
-
-	const char *name() const;
+	void show ( unsigned level ) const;
 private:
+    epicsTimer &timer;
 	casDGIntfOS	&os;
+	expireStatus expire();
 };
 
 //
@@ -137,6 +126,14 @@ casDGIntfOS::~casDGIntfOS()
 	}
 }
 
+//
+// casDGEvWakeup::casDGEvWakeup()
+//
+casDGEvWakeup::casDGEvWakeup ( casDGIntfOS &osIn ) : 
+		timer ( fileDescriptorManager.timerQueueRef().createTimer(*this) ), os ( osIn ) 
+{
+    this->timer.start ( 0.0 );
+}
 
 //
 // casDGEvWakeup::~casDGEvWakeup()
@@ -144,33 +141,36 @@ casDGIntfOS::~casDGIntfOS()
 casDGEvWakeup::~casDGEvWakeup()
 {
 	this->os.pEvWk = NULL;
-}
-
-//
-// casDGEvWakeup::name()
-//
-const char *casDGEvWakeup::name() const
-{
-	return "casDGEvWakeup";
+    delete & this->timer;
 }
 
 //
 // casDGEvWakeup::show()
 //
-void casDGEvWakeup::show(unsigned level) const
+void casDGEvWakeup::show ( unsigned level ) const
 {
 	printf ( "casDGEvWakeup at %p {\n", 
         static_cast <const void *> ( this ) );
-	this->osiTimer::show(level);
+	this->timer.show ( level );
 	printf ("}\n");
 }
 
 //
 // casDGEvWakeup::expire()
 //
-void casDGEvWakeup::expire()
+epicsTimerNotify::expireStatus casDGEvWakeup::expire()
 {
 	this->os.casEventSys::process();
+    return noRestart;
+}
+
+//
+// casDGIOWakeup::casDGIOWakeup()
+//
+casDGIOWakeup::casDGIOWakeup ( casDGIntfOS &osIn ) : 
+	timer ( fileDescriptorManager.timerQueueRef().createTimer(*this) ), os ( osIn ) 
+{
+    this->timer.start ( 0.0 );
 }
 
 //
@@ -179,6 +179,7 @@ void casDGEvWakeup::expire()
 casDGIOWakeup::~casDGIOWakeup()
 {
 	this->os.pIOWk = NULL;
+    delete & this->timer;
 }
 
 //
@@ -188,7 +189,7 @@ casDGIOWakeup::~casDGIOWakeup()
 // guarantees that we will not call processInput()
 // recursively
 //
-void casDGIOWakeup::expire()
+epicsTimerNotify::expireStatus casDGIOWakeup::expire()
 {
 	//
 	// in case there is something in the input buffer
@@ -200,14 +201,7 @@ void casDGIOWakeup::expire()
 	// be something to read from TCP this works
 	//
 	this->os.processInput ();
-}
-
-//
-// casDGIOWakeup::name()
-//
-const char *casDGIOWakeup::name() const
-{
-	return "casDGIOWakeup";
+    return noRestart;
 }
 
 //
@@ -217,8 +211,8 @@ void casDGIOWakeup::show(unsigned level) const
 {
 	printf ( "casDGIOWakeup at %p {\n", 
         static_cast <const void *> ( this ) );
-	this->osiTimer::show(level);
-	printf ("}\n");
+	this->timer.show ( level );
+	printf ( "}\n" );
 }
 
 //

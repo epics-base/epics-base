@@ -84,7 +84,7 @@ epicsShareFunc int epicsShareAPI
 	struct in_addr ina;
 
 	/*
-	 * traditional dotted ip addres
+	 * dotted ip addresses
 	 */
 	status = sscanf (pAddrString, " %hu.%hu.%hu.%hu:%hu", 
 			addr, addr+1u, addr+2u, addr+3u, &port);

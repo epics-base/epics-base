@@ -62,7 +62,7 @@
  * joh  21	080393 	added task watch dog	
  */
 
-#include	<assert.h>
+#include	<epicsAssert.h>
 
 #include	<vxWorks.h>
 #include	<types.h>

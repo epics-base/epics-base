@@ -19,3 +19,4 @@ ARCH_CLASS = ppc
 ARCH_DEP_CPPFLAGS = -DCPU=PPC603  
 ARCH_DEP_CFLAGS = -mcpu=603 -mstrict-align -mlongcall
 
+GNU_TARGET = powerpc-wrs-vxworks

@@ -18,3 +18,5 @@ ARCH_CLASS = 68k
 # Architecture specific build flags
 ARCH_DEP_CPPFLAGS = -DCPU=MC68LC040
 ARCH_DEP_CFLAGS = -m68040 -msoft-float
+
+GNU_TARGET = m68k-wrs-vxworks

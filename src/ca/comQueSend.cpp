@@ -120,32 +120,38 @@ void comQueSend::clearUncommitted () epicsThrows (())
     }
 }
 
-void comQueSend::copy_dbr_string ( const void *pValue, unsigned nElem ) epicsThrows (())
+void comQueSend::copy_dbr_string ( const void *pValue, unsigned nElem ) 
+    epicsThrows (( std::bad_alloc ))
 {
     this->push ( static_cast <const dbr_string_t *> ( pValue ), nElem );
 }
 
-void comQueSend::copy_dbr_short ( const void *pValue, unsigned nElem ) epicsThrows (())
+void comQueSend::copy_dbr_short ( const void *pValue, unsigned nElem ) 
+    epicsThrows (( std::bad_alloc ))
 {
     this->push ( static_cast <const dbr_short_t *> ( pValue ), nElem );
 }
 
-void comQueSend::copy_dbr_float ( const void *pValue, unsigned nElem ) epicsThrows (())
+void comQueSend::copy_dbr_float ( const void *pValue, unsigned nElem ) 
+    epicsThrows (( std::bad_alloc ))
 {
     this->push ( static_cast <const dbr_float_t *> ( pValue ), nElem );
 }
 
-void comQueSend::copy_dbr_char ( const void *pValue, unsigned nElem ) epicsThrows (())
+void comQueSend::copy_dbr_char ( const void *pValue, unsigned nElem ) 
+    epicsThrows (( std::bad_alloc ))
 {
     this->push ( static_cast <const dbr_char_t *> ( pValue ), nElem );
 }
 
-void comQueSend::copy_dbr_long ( const void *pValue, unsigned nElem ) epicsThrows (())
+void comQueSend::copy_dbr_long ( const void *pValue, unsigned nElem ) 
+    epicsThrows (( std::bad_alloc ))
 {
     this->push ( static_cast <const dbr_long_t *> ( pValue ), nElem );
 }
 
-void comQueSend::copy_dbr_double ( const void *pValue, unsigned nElem ) epicsThrows (())
+void comQueSend::copy_dbr_double ( const void *pValue, unsigned nElem ) 
+    epicsThrows (( std::bad_alloc ))
 {
     this->push ( static_cast <const dbr_double_t *> ( pValue ), nElem );
 }
@@ -192,7 +198,8 @@ const comQueSend::copyFunc_t comQueSend::dbrCopyVector [39] = {
     0  // DBR_CLASS_NAME
 };
 
-comBuf * comQueSend::popNextComBufToSend () epicsThrows (())
+comBuf * comQueSend::popNextComBufToSend () 
+    epicsThrows (( std::bad_alloc ))
 {
     comBuf *pBuf = this->bufs.get ();
     if ( pBuf ) {
@@ -216,7 +223,7 @@ void comQueSend::insertRequestHeader (
     ca_uint16_t request, ca_uint32_t payloadSize, 
     ca_uint16_t dataType, ca_uint32_t nElem, ca_uint32_t cid, 
     ca_uint32_t requestDependent, bool v49Ok ) 
-        epicsThrows (( cacChannel::outOfBounds ))
+    epicsThrows (( cacChannel::outOfBounds, std::bad_alloc ))
 {
     this->beginMsg ();
     if ( payloadSize < 0xffff && nElem < 0xffff ) {
@@ -245,7 +252,9 @@ void comQueSend::insertRequestHeader (
 void comQueSend::insertRequestWithPayLoad (
     ca_uint16_t request, unsigned dataType, ca_uint32_t nElem, 
     ca_uint32_t cid, ca_uint32_t requestDependent, const void * pPayload,
-    bool v49Ok ) epicsThrows (( cacChannel::outOfBounds, cacChannel::badType ))
+    bool v49Ok ) 
+    epicsThrows (( cacChannel::outOfBounds, 
+        cacChannel::badType, std::bad_alloc ))
 {
     if ( ! this->dbr_type_ok ( dataType ) ) {
         throw cacChannel::badType();
@@ -283,7 +292,7 @@ void comQueSend::insertRequestWithPayLoad (
         this->pushString ( static_cast < const char * > ( pPayload ), size );  
     }
     else {
-        this->push_dbr_type ( dataType, pPayload, nElem );  
+        ( this->*dbrCopyVector [dataType] ) ( pPayload, nElem );
     }
     // set pad bytes to nill
     this->pushString ( cacNillBytes, payloadSize - size );

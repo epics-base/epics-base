@@ -370,9 +370,12 @@ gddStatus gdd::copyStuff(const gdd* dd,int ctype)
 
 	clear();
 
+	setApplType(dd->appl_type);
+    setPrimType(aitEnumContainer);
+	setStatSevr(dd->getStat(),dd->getSevr());
+
 	if(dd->isContainer())
 	{
-    	init (dd->appl_type, aitEnumContainer, 1);	  
 		cdd=(gddContainer*)dd;
 		gddCursor cur=cdd->getCursor();
 		for(ndd=cur.first();ndd;ndd=cur.next())
@@ -385,68 +388,59 @@ gddStatus gdd::copyStuff(const gdd* dd,int ctype)
 			pdd->copyStuff(ndd,ctype);
 		}
 	}
-	else
-	{
-		//
-		// ok to use init here because the clear() above set the
-		// scalar prim type to invalid and frees the old scalar strings
-		//
-		init(dd->applicationType(),dd->primitiveType(),dd->dimension());
-
-		if(dd->isScalar()) {
-			if (dd->primitiveType()==aitEnumString) {
-				aitString* pStrDest =(aitString*)&data;
-				aitString* pStrSrc =(aitString*)&dd->data;
-				*pStrDest = *pStrSrc;
-			}
-			else if (dd->primitiveType()==aitEnumFixedString) {
-				aitFixedString* pStrDest =(aitFixedString*)data.Pointer;
-				aitFixedString* pStrSrc =(aitFixedString*)dd->data.Pointer;
-				memcpy (pStrDest, pStrSrc, sizeof(aitFixedString));
-			}
-			else {
-				data=dd->data;
-			}
+	else if(dd->isScalar()) {
+		if (dd->primitiveType()==aitEnumString) {
+			aitString* pStrDest =(aitString*)&data;
+			aitString* pStrSrc =(aitString*)&dd->data;
+			*pStrDest = *pStrSrc;
 		}
-		else // atomic
+		else if (dd->primitiveType()==aitEnumFixedString) {
+			aitFixedString* pStrDest =(aitFixedString*)data.Pointer;
+			aitFixedString* pStrSrc =(aitFixedString*)dd->data.Pointer;
+			memcpy (pStrDest, pStrSrc, sizeof(aitFixedString));
+		}
+		else {
+			data=dd->data;
+		}
+	}
+	else // atomic
+	{
+		const gddBounds* bnds = dd->getBounds();
+		for(unsigned i=0;i<dd->dimension();i++) bounds[i]=bnds[i];
+
+		switch(ctype)
 		{
-			const gddBounds* bnds = dd->getBounds();
-			for(unsigned i=0;i<dd->dimension();i++) bounds[i]=bnds[i];
-	
-			switch(ctype)
+		case 1: // copy()
+			aitUint8* array;
+			size_t a_size;
+			a_size=dd->getDataSizeBytes();
+			if( (array=new aitUint8[a_size]) )
 			{
-			case 1: // copy()
-				aitUint8* array;
-				size_t a_size;
-				a_size=dd->getDataSizeBytes();
-				if( (array=new aitUint8[a_size]) )
-				{
-					destruct=new gddAitUint8Destructor;
-					if (destruct!=NULL) {
-						destruct->reference();
-						memcpy(array,dd->dataPointer(),a_size);
-						setData(array);
-					}
-					else {
-						free (array);
-						gddAutoPrint("gdd::copyStuff()",gddErrorNewFailed);
-						rc=gddErrorNewFailed;
-					}
+				destruct=new gddAitUint8Destructor;
+				if (destruct!=NULL) {
+					destruct->reference();
+					memcpy(array,dd->dataPointer(),a_size);
+					setData(array);
 				}
-				else
-				{
+				else {
+					free (array);
 					gddAutoPrint("gdd::copyStuff()",gddErrorNewFailed);
 					rc=gddErrorNewFailed;
 				}
-				break;
-			case 2: // Dup()
-				data=dd->getData(); // copy the data reference
-				destruct=dd->destruct;
-				if(destruct) destruct->reference();
-				break;
-			case 0: // copyInfo()
-			default: break;
 			}
+			else
+			{
+				gddAutoPrint("gdd::copyStuff()",gddErrorNewFailed);
+				rc=gddErrorNewFailed;
+			}
+			break;
+		case 2: // Dup()
+			data=dd->getData(); // copy the data reference
+			destruct=dd->destruct;
+			if(destruct) destruct->reference();
+			break;
+		case 0: // copyInfo()
+		default: break;
 		}
 	}
 	return rc;
@@ -1050,11 +1044,8 @@ gddStatus gdd::reset(aitEnum prim, int dimen, aitIndex* cnt)
 
 	if((rc=clear())==0)
 	{
-		//
-		// ok to use init here because the clear above frees
-		// all allocated resources
-		//
-		init(app,prim,dimen);
+        setPrimType(prim);
+        setDimension(dimen);
 		for(i=0;i<dimen;i++)
 			setBound(i,0,cnt[i]);
 	}
@@ -1453,7 +1444,6 @@ size_t gdd::inHeader(void* buf)
 	{
 		app[1]=*(b++); app[0]=*(b++);
 		init(inapp,(aitEnum)inprim,indim);
-
 		i=sizeof(status)-1u; do { stat[i]=*(b++); } while(i-->0u);
 		i=sizeof(time_stamp.tv_sec)-1u; do { ts_sec[i]=*(b++); } while(i-->0u);
 		i=sizeof(time_stamp.tv_nsec)-1u; do { ts_nsec[i]=*(b++); } while(i-->0u);

@@ -245,7 +245,7 @@ LOCAL void register_new_client (struct sockaddr_in  *pFrom)
     /*
      * the repeater and its clients must be on the same host
      */
-    if (htonl(INADDR_LOOPBACK) != pFrom->sin_addr.s_addr) {
+    if ( htonl(INADDR_LOOPBACK) != pFrom->sin_addr.s_addr ) {
         static SOCKET testSock = INVALID_SOCKET;
         static int init;
         struct sockaddr_in ina;

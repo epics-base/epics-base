@@ -234,6 +234,10 @@ comet_init()
 		pcomet_cr->gdcrh = 0;
 		pcomet_cr->gdcrl = 1;
 		pcomet_cr->cdr = 0;
+
+		/* run it once */
+                pcomet_cr->csrl |= SOFTWARE_TRIGGER;
+                taskDelay(1);
 	}
 
 

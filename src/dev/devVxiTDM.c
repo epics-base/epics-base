@@ -30,6 +30,8 @@
  * Modification Log:
  * -----------------
  * .01  08-20-92	jbk	Initial Implementation
+ * .02	02-16-92	joh	vxi incl name change & cpu 
+ *				independent int vector include
  *      ...
  */
 
@@ -72,8 +74,8 @@
 #include	<ctype.h>
 #include	<stdioLib.h>
 #include	<string.h>
-#include	<68k/iv.h>
-#include	<epvxiLib.h>
+#include	<iv.h>
+#include	<drvEpvxi.h>
 
 #include	<alarm.h>
 #include	<dbRecType.h>

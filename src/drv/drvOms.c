@@ -642,7 +642,7 @@ i = 0;
 					 * A taskDelay makes a 68040 
 					 * wait frequently
 					 */
-#					ifdef 0
+#					if 0
 						taskDelay(1);
 #					endif
 				}
@@ -657,7 +657,7 @@ i = 0;
 					 * A taskDelay makes a 68040 
 					 * wait frequently
 					 */
-#					ifdef 0
+#					if 0
 						taskDelay(1);
 #					endif
 				}

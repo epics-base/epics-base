@@ -38,10 +38,9 @@
  *
  */
 
-static char *sccsId = "$Id$\t$Date$"
+static char *sccsId = "$Id$\t$Date$";
 
 #include <vxWorks.h>
-#include <dbDefs.h>
 #ifdef V5_vxWorks
 #       include <iv.h>
 #else

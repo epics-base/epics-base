@@ -119,8 +119,8 @@ unsigned long		blockSize
 		if(piiu->curMsgBytes < sizeof(piiu->curMsg)){
 			char  *pHdr;
 
-			size = sizeof(piiu->curMsg) - piiu->curMsgBytes;
-			size = min(size, blockSize);
+			size = sizeof (piiu->curMsg) - piiu->curMsgBytes;
+			size = min (size, blockSize);
 			
 			pHdr = (char *) &piiu->curMsg;
 			memcpy(	pHdr + piiu->curMsgBytes, 
@@ -129,7 +129,7 @@ unsigned long		blockSize
 			
 			piiu->curMsgBytes += size;
 			if(piiu->curMsgBytes < sizeof(piiu->curMsg)){
-#if 0
+#if 0 
 				printf ("waiting for %d msg hdr bytes\n", 
 					sizeof(piiu->curMsg)-piiu->curMsgBytes);
 #endif
@@ -174,7 +174,7 @@ unsigned long		blockSize
 		/*
 		 * make sure we have a large enough message body cache
 		 */
-		if(piiu->curMsg.m_postsize>piiu->curDataMax){
+		if (piiu->curMsg.m_postsize>piiu->curDataMax) {
 			if(piiu->pCurData){
 				free(piiu->pCurData);
 			}
@@ -192,6 +192,8 @@ unsigned long		blockSize
 
 		/*
  		 * Fetch a complete message body
+		 * (allows for arrays larger than than the
+		 * ring buffer size)
 		 */
 		if(piiu->curMsg.m_postsize>piiu->curDataBytes){
 			char *pBdy;

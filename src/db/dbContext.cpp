@@ -354,6 +354,7 @@ void dbContext::showAllIO ( const dbChannelIO & chan, unsigned level ) const
 void dbContext::show ( unsigned level ) const
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
+    this->show ( guard, level );
 }
 
 void dbContext::show ( 
@@ -370,17 +371,30 @@ void dbContext::show (
     if ( level > 1u ) {
         this->mutex.show ( level - 2u );
     }
+    if ( this->pNetContext.get() ) {
+        this->pNetContext.get()->show ( guard, level );
+    }
 }
 
 void dbContext::flush ( 
-    epicsGuard < epicsMutex > & )
+    epicsGuard < epicsMutex > & guard )
 {
+    guard.assertIdenticalMutex ( this->mutex );
+    if ( this->pNetContext.get() ) {
+        this->pNetContext.get()->flush ( guard );
+    }
 }
 
 unsigned dbContext::circuitCount (
-    epicsGuard < epicsMutex > & ) const
+    epicsGuard < epicsMutex > & guard ) const
 {
-    return 0u;
+    guard.assertIdenticalMutex ( this->mutex );
+    if ( this->pNetContext.get() ) {
+        this->pNetContext.get()->circuitCount ( guard );
+    }
+    else {
+        return 0u;
+    }
 }
 
 void dbContext::selfTest (
@@ -388,12 +402,22 @@ void dbContext::selfTest (
 {
     guard.assertIdenticalMutex ( this->mutex );
     this->ioTable.verify ();
+
+    if ( this->pNetContext.get() ) {
+        this->pNetContext.get()->selfTest ( guard );
+    }
 }
 
 unsigned dbContext::beaconAnomaliesSinceProgramStart (
-    epicsGuard < epicsMutex > & ) const
+    epicsGuard < epicsMutex > & guard ) const
 {
-    return 0u;
+    guard.assertIdenticalMutex ( this->mutex );
+    if ( this->pNetContext.get() ) {
+        this->pNetContext.get()->beaconAnomaliesSinceProgramStart ( guard );
+    }
+    else {
+        return 0u;
+    }
 }
 
 

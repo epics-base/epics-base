@@ -65,6 +65,10 @@
  * This driver currently needs work on error message generation.
  *
  * $Log$
+ * Revision 1.36  1994/12/16  16:11:26  winans
+ * Added debug flag guards to ALL printing.  The default debug level is set
+ * to 1 -- this provides the same output as the old version.
+ *
  * Revision 1.35  1994/12/12  16:02:57  winans
  * Rewrote the init code so that it always returns a zero (don't kill the
  * startup.cmd file.)  It is possible that this could cause some confusion
@@ -2459,10 +2463,13 @@ STATIC int pepTxTask(int link)
 	  
 	  /* Send the message in polled mode */
 	  txTCount = pnode->txMsg.length;
+
+	  /* BUG -- would be nice if we verify the length >6 here */
+
 	  txCCount = 0;
 	  txMsg = &(pnode->txMsg.length);
 
-	  while ((txCCount < txTCount) && (pBBLink[link]->abortFlag == 0)) {
+	  while ((txCCount < txTCount -1) && (pBBLink[link]->abortFlag == 0)) {
 
 	    stuck = 1000;
 	    while (((pBBLink[link]->l.PepLink.bbRegs->stat_ctl & PEP_BB_TFNF) 
@@ -2487,12 +2494,13 @@ STATIC int pepTxTask(int link)
 	      if (bbDebug>30)
 		printf("pepTxTask(%d): outputting %2.2X\n",link,0x00);
 	      pBBLink[link]->l.PepLink.bbRegs->data = 0x00;
-	    }
-	    else if (txCCount == (txTCount -1)) { /* last byte of package */
+#if 0
+	    } else if (txCCount == (txTCount -1)) { /* last byte of package */
 	      pBBLink[link]->l.PepLink.bbRegs->stat_ctl = *txMsg;
 	      if (bbDebug>30)
 		printf("pepTxTask(%d): outputting last byte %2.2X\n",
 		       link,*txMsg);
+#endif
 	    } else {                 /* regular ol' message byte */
 	      pBBLink[link]->l.PepLink.bbRegs->data = *txMsg;
 	      if (bbDebug>30)
@@ -2536,6 +2544,11 @@ STATIC int pepTxTask(int link)
 	    {
 	      /* Lock the busy list */
 	      semTake(pBBLink[link]->busyList.sem, WAIT_FOREVER);
+
+	      pBBLink[link]->l.PepLink.bbRegs->stat_ctl = *txMsg;
+	      if (bbDebug>30)
+		printf("pepTxTask(%d): outputting last byte %2.2X\n",
+		       link,*txMsg);
 	      
 	      /* set the retire time */
 	      pnode->retire = tickGet();

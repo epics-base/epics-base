@@ -466,7 +466,7 @@ long devUnregisterAddress(
     devInsertAddress (&addrFree[addrType], pRange);
     s = devCombineAdjacentBlocks (&addrFree[addrType], pRange);
     if(s){
-        errMessage (s, NULL);
+        errMessage (s, "devCombineAdjacentBlocks error");
         return s;
     }
 

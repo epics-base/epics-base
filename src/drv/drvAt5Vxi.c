@@ -51,6 +51,7 @@
  *	.13 joh 042492	removed support for (ifdefs for) the old
  *			style register map
  *	.14 joh 071792	added model name registration
+ *	.15 joh 072992	print more raw values in io report
  *
  *	Notes:
  *	------
@@ -316,8 +317,8 @@ struct at5vxi_setup{
 #define AT5VXI_BUSY_PERIOD 2
 
 struct bo_val{
-	unsigned int	val;
-	unsigned int	mask;
+	unsigned long	val;
+	unsigned long	mask;
 };
 
 struct ao_val{
@@ -953,6 +954,7 @@ unsigned	card;
 int		level;
 {
 	struct vxi_csr			*pcsr; 
+	register struct at5vxi_dd	*pdd;
 	struct at5vxi_status		status;
 	unsigned			channel;
 	int				r0;
@@ -974,6 +976,7 @@ int		level;
 	pconfig = AT5VXI_PCONFIG(card);
 
 	pcsr = VXIBASE(card);
+	pdd = pconfig->pdd;
 
   	r0 = vxMemProbe(	&pcsr->dir.r.status,
 				READ,
@@ -1006,15 +1009,38 @@ int		level;
 
 	if(pconfig){
 		if(pconfig->mdt){
-			printf("\toutputs are pending for interrupt\n");
+			printf("\toutput update is pending for interrupt\n");
 		}
 	}
  
 	if(level <= 1)
 		return;
 
-	for(channel=0; channel<tm_num_channels[VXI_AT5_TIME]; channel++)
-	  	at5vxi_report_timing(card, channel);
+	for(channel=0; channel<NELEMENTS(pdd->ai); channel++){
+		printf(
+			"\tAI:  channel %d value %x\n",
+			channel,
+			pdd->ai[channel]);
+	}
+
+	for(channel=0; channel<NELEMENTS(pdd->ao); channel++){
+		printf(
+			"\tAO:  channel %d value %x\n",
+			channel,
+			pdd->ao[channel]);
+	}
+
+	{
+		long work;
+
+		work = ((long)pdd->bio[1]) << (sizeof(short)*NBBY);	
+		work |= pdd->bio[0];
+		printf("\tBIO: value %x\n", work);
+	}
+
+	for(channel=0; channel<NELEMENTS(pconfig->tv); channel++){
+		at5vxi_report_timing(card, channel);
+	}
 
 	return;
 }
@@ -1037,6 +1063,7 @@ unsigned channel;
   double 	edge1_delay;
   int 		int_source;
   int 		status;
+  char		*clk_src[] = {"external-clk", "internal-clk"};
 
   status = 
     at5vxi_one_shot_read(	
@@ -1047,12 +1074,13 @@ unsigned channel;
 			channel,
 			&int_source);
   if(status == OK)
-    printf(	"\tchannel %d preset %d delay %lf width %lf internal-clk %d\n",
+    printf(
+	"\tTI:  channel %d preset %d delay %lf width %lf %s\n",
 		channel,
 		preset,
 		edge0_delay,
 		edge1_delay, 
-		int_source);
+		clk_src[int_source?1:0]);
 		
   return status;
 }
@@ -1183,10 +1211,10 @@ unsigned short 		*pval;
  */
 at5vxi_bi_driver(card, mask, prval)
 register unsigned short card;
-unsigned int            mask;
-register unsigned int	*prval;
+unsigned long		mask;
+register unsigned long	*prval;
 {
-	register unsigned int 		work;
+	register unsigned long		work;
 	register struct at5vxi_dd	*pdd;
   	register struct vxi_csr		*pcsr;
 	register struct at5vxi_config 	*pconfig;
@@ -1219,11 +1247,11 @@ register unsigned int	*prval;
  */
 at5vxi_bo_driver(card,val,mask)
 register unsigned short	card;
-register unsigned int	val;
-unsigned int		mask;
+register unsigned long	val;
+unsigned long		mask;
 {
 #ifdef CONTINUOUS_OPERATION
-	register unsigned int 	work;
+	register unsigned long		work;
 #endif
   	register struct vxi_csr		*pcsr;
 	register struct at5vxi_config 	*pconfig;

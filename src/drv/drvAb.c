@@ -1025,7 +1025,6 @@ abDoneTask(){
 			    /* data */
 			    *pab_table = pmsg->data[i];
 			    if(pmsg->pol_stat & (sign_bit << 8)) *pab_table = -*pab_table;
-			    *pab_table += 10000;
 			}
 			pab_sts++;
 			pab_table++;

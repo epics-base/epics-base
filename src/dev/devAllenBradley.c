@@ -32,6 +32,7 @@
  * -----------------
  * .01  08-27-92	mrk	Combined all Allen Bradley devive support
  * .02  02-08-94	mrk	Issue Hardware Errors BUT prevent Error Message Storms
+ * .02  04-13-94	mrk	Fixed IXE problems
  * 	...
  */
 
@@ -457,7 +458,7 @@ static long linconv_1771Il(struct aiRecord *pai, int after)
 
 static long init_1771Ixe(struct aiRecord *pai)
 {
-    unsigned short value;
+    short value;
     struct abio *pabio;
     short linr;
 
@@ -519,7 +520,7 @@ static long read_1771Ixe(struct aiRecord *pai)
 		status = 0;
 	}
 	if(status==0) {
-		if(linr<=1)pai->rval = value;
+		if(linr<=1)pai->rval = value + 10000;
 		else {
 			pai->val = value;
 			pai->udf = FALSE;
@@ -544,7 +545,7 @@ static long linconv_1771Ixe(struct aiRecord *pai, int after)
     }
     if(!after) return(0);
     /* set linear conversion slope*/
-    pai->eslo = (pai->eguf -pai->egul)/4095.0;
+    pai->eslo = (pai->eguf -pai->egul)/20000.0;
     return(0);
 }
 

@@ -928,18 +928,20 @@ long dbPutField(DBADDR *paddr,short dbrType,void *pbuffer,long  nRequest)
 		/*End kludge for old db_access MAX_STRING_SIZE*/
 		dbLockSetGblLock();
 		dbLockSetRecordLock(precord);
-		if(plink->type == DB_LINK) {
+		if((plink->type == DB_LINK)||(plink->type == CA_LINK)) {
+		    if(plink->type == DB_LINK) {
 			free(plink->value.pv_link.pvt);
 			plink->value.pv_link.pvt = 0;
 			plink->type = PV_LINK;
 			dbLockSetSplit(precord);
-		} else if(plink->type == CA_LINK) {
+		    } else if(plink->type == CA_LINK) {
 			dbCaRemoveLink(plink);
+		    }
+		    plink->value.pv_link.getCvt = 0;
+		    plink->value.pv_link.pvlMask = 0;
+		    plink->value.pv_link.lastGetdbrType = 0;
+		    plink->type = PV_LINK;
 		}
-		plink->value.pv_link.getCvt = 0;
-		plink->value.pv_link.pvlMask = 0;
-		plink->value.pv_link.lastGetdbrType = 0;
-		plink->type = PV_LINK;
 		dbInitEntry(pdbbase,&dbEntry);
 		if(status=dbFindRecord(&dbEntry,precord->name)) goto done;
 		if(status=dbFindField(&dbEntry,pfldDes->name))  goto done;

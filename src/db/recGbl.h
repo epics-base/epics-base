@@ -32,6 +32,11 @@ extern "C" {
 
 
 /* Global Record Support Routines*/
+struct link;
+struct dbAddr;
+struct dbr_alDouble;
+struct dbr_ctrlDouble;
+struct dbr_grDouble;
 epicsShareFunc void epicsShareAPI recGblDbaddrError(
     long status, struct dbAddr *paddr, char *pcaller_name);
 epicsShareFunc void epicsShareAPI recGblRecordError(

@@ -149,9 +149,7 @@ epicsTimerNotify::expireStatus timerForOldFdmgr::expire ( const epicsTime & )
     return noRestart;
 }
 
-oldFdmgr::oldFdmgr () : resTbl (1024)
-{
-}
+oldFdmgr::oldFdmgr () {}
 
 extern "C" epicsShareFunc fdctx * epicsShareAPI fdmgr_init (void)
 {

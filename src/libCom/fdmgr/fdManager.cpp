@@ -80,18 +80,17 @@ epicsShareDef fdManager fileDescriptorManager;
 //
 inline const unsigned fdRegId::minIndexBitWidth () 
 {
-    return hashTableIndexBits;
+    return fdManagerHashTableMinIndexBits;
 }
 inline const unsigned fdRegId::maxIndexBitWidth () 
 {
-    return sizeof(SOCKET)*CHAR_BIT;
+    return fdManagerHashTableMaxIndexBits;
 }
 
 //
 // fdManager::fdManager()
 //
-epicsShareFunc fdManager::fdManager () :
-    fdTbl ( 1<<hashTableIndexBits ), pTimerQueue ( 0 )
+epicsShareFunc fdManager::fdManager () : pTimerQueue ( 0 )
 {
     size_t i;
     int status;

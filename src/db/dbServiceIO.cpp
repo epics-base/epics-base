@@ -52,7 +52,7 @@ dbServiceIOLoadTimeInit::dbServiceIOLoadTimeInit ()
 }
 
 dbServiceIO::dbServiceIO () :
-    ioTable ( 1024 ), eventCallbackCacheSize ( 0ul ),
+    eventCallbackCacheSize ( 0ul ),
         ctx ( 0 ), pEventCallbackCache ( 0 ) 
 {
 }

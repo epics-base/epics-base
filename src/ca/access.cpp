@@ -88,11 +88,10 @@ int fetchClientContext ( oldCAC **ppcac )
  */
 extern "C" int epicsShareAPI ca_task_initialize ( void )
 {
-    return ca_context_create ( false, 32768 );
+    return ca_context_create ( false );
 }
 
-extern "C" int epicsShareAPI ca_context_create ( 
-                  int preemptiveCallBackEnable, unsigned maxNumberOfChannels )
+extern "C" int epicsShareAPI ca_context_create ( int preemptiveCallBackEnable )
 {
     oldCAC *pcac;
 
@@ -102,12 +101,12 @@ extern "C" int epicsShareAPI ca_context_create (
         return ECA_ALLOCMEM;
     }
 
-    pcac = (oldCAC *) epicsThreadPrivateGet ( caClientContextId );
+    pcac = ( oldCAC * ) epicsThreadPrivateGet ( caClientContextId );
 	if ( pcac ) {
 		return ECA_NORMAL;
 	}
 
-    pcac = new oldCAC ( preemptiveCallBackEnable ? true : false, maxNumberOfChannels );
+    pcac = new oldCAC ( preemptiveCallBackEnable ? true : false );
 	if ( ! pcac ) {
 		return ECA_ALLOCMEM;
 	}

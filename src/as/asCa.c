@@ -175,7 +175,7 @@ LOCAL void asCaTask(void)
     int		status;
 
     taskwdInsert(epicsThreadGetIdSelf(),NULL,NULL);
-    SEVCHK(ca_context_create(enablePreemption,1024),
+    SEVCHK(ca_context_create(enablePreemption),
         "asCaTask calling ca_context_create");
     SEVCHK(ca_add_exception_event(exceptionCallback,NULL),
         "ca_add_exception_event");

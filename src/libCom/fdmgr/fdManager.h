@@ -43,8 +43,6 @@
 #include "osiSock.h"
 #include "epicsTimer.h"
 
-static const unsigned hashTableIndexBits = 8;
-
 enum fdRegType {fdrRead, fdrWrite, fdrException, fdrNEnums};
 
 //
@@ -74,7 +72,7 @@ public:
         return this->fd == idIn.fd && this->type==idIn.type;
     }
 
-    resTableIndex hash (unsigned nBitsId) const;
+    resTableIndex hash () const;
 
     static const unsigned minIndexBitWidth ();
     static const unsigned maxIndexBitWidth ();
@@ -175,15 +173,18 @@ private:
     fdManager &manager;
 };
 
+static const unsigned fdManagerHashTableMinIndexBits = 8;
+static const unsigned fdManagerHashTableMaxIndexBits = sizeof(SOCKET)*CHAR_BIT;
+
 //
 // fdRegId::hash()
 //
-inline resTableIndex fdRegId::hash (unsigned) const
+inline resTableIndex fdRegId::hash () const
 {
     resTableIndex hashid;
         
-    hashid = intId<SOCKET, hashTableIndexBits, sizeof(SOCKET)*CHAR_BIT>
-        ::hashEngine(this->fd);
+    hashid = integerHash < fdManagerHashTableMinIndexBits, 
+        fdManagerHashTableMaxIndexBits > ( this->fd );
  
     //
     // also evenly distribute based on the type of fdRegType

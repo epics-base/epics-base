@@ -161,10 +161,8 @@ void recGblGetPrec(struct dbAddr *paddr,long *precision)
          *precision = 0;
          break;
     case(DBF_FLOAT):
-         *precision = 6;
-         break;
     case(DBF_DOUBLE):
-         *precision = 15;
+	 if(*precision<0 || *precision>15) *precision=15;
          break;
     default:
          break;

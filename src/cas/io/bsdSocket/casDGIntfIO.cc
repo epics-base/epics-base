@@ -242,7 +242,7 @@ void casDGIntfIO::xSetNonBlocking()
 //
 // casDGIntfIO::osdRecv()
 //
-inBuf::fillCondition casDGIntfIO::osdRecv(char *pBuf, bufSizeT size, 
+inBuf::fillCondition casDGIntfIO::osdRecv(char *pBufIn, bufSizeT size, 
 	fillParameter parm, bufSizeT &actualSize, caNetAddr &fromOut)
 {
 	int status;
@@ -258,7 +258,7 @@ inBuf::fillCondition casDGIntfIO::osdRecv(char *pBuf, bufSizeT size,
     }
 
 	addrSize = sizeof (addr);
-	status = recvfrom (this->sock, pBuf, size, 0,
+	status = recvfrom (this->sock, pBufIn, size, 0,
 					&addr, &addrSize);
 	if (status<=0) {
         if (status<0) {
@@ -280,7 +280,7 @@ inBuf::fillCondition casDGIntfIO::osdRecv(char *pBuf, bufSizeT size,
 //
 // casDGIntfIO::osdSend()
 //
-outBuf::flushCondition casDGIntfIO::osdSend (const char *pBuf, bufSizeT size, 
+outBuf::flushCondition casDGIntfIO::osdSend (const char *pBufIn, bufSizeT size, 
 				const caNetAddr &to)
 {
 	int		status;
@@ -289,7 +289,7 @@ outBuf::flushCondition casDGIntfIO::osdSend (const char *pBuf, bufSizeT size,
 	// (char *) cast below is for brain dead wrs prototype
 	//
 	struct sockaddr dest = to;
-	status = sendto (this->sock, (char *) pBuf, size, 0,
+	status = sendto (this->sock, (char *) pBufIn, size, 0,
                         &dest, sizeof(dest));
 	if (status>=0) {
         assert ( size == (unsigned) status );

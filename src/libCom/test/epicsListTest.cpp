@@ -4,8 +4,10 @@
 
 // Test code for the epics::List class
 
-#include "epicsList.h"
 #include <iostream>
+#include <stdio.h>
+
+#include "epicsList.h"
 
 using std::cout;
 using std::endl;

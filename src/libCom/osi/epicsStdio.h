@@ -15,13 +15,14 @@
 #include <stdarg.h>
 
 #include "shareLib.h"
+#include "compilerDefs.h"
 
 #ifdef  __cplusplus
 extern "C" {
 #endif
 
 epicsShareFunc int epicsShareAPI epicsSnprintf(
-    char *str, size_t size, const char *format, ...);
+    char *str, size_t size, const char *format, ...) EPICS_PRINTF_STYLE(3,4);
 epicsShareFunc int epicsShareAPI epicsVsnprintf(
     char *str, size_t size, const char *format, va_list ap);
 epicsShareFunc FILE * epicsShareAPI epicsTempFile ( void );

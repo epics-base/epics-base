@@ -15,6 +15,7 @@
 #include <stdarg.h>
 
 #include "shareLib.h"
+#include "compilerDefs.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -39,11 +40,11 @@ epicsShareExtern char * errlogSevEnumString[];
 #endif
 
 epicsShareFunc int errlogPrintf(
-    const char *pformat, ...);
+    const char *pformat, ...) EPICS_PRINTF_STYLE(1,2);
 epicsShareFunc int errlogVprintf(
     const char *pformat,va_list pvar);
 epicsShareFunc int errlogSevPrintf(
-    const errlogSevEnum severity,const char *pformat, ...);
+    const errlogSevEnum severity,const char *pformat, ...) EPICS_PRINTF_STYLE(2,3);
 epicsShareFunc int errlogSevVprintf(
     const errlogSevEnum severity,const char *pformat,va_list pvar);
 epicsShareFunc int epicsShareAPI errlogMessage(
@@ -66,7 +67,7 @@ epicsShareFunc void epicsShareAPI errlogFlush(void);
 
 /*other routines that write to log file*/
 epicsShareFunc void errPrintf(long status, const char *pFileName,
-    int lineno, const char *pformat, ...);
+    int lineno, const char *pformat, ...) EPICS_PRINTF_STYLE(4,5);
 
 epicsShareExtern int errVerbose;
 
@@ -74,7 +75,7 @@ epicsShareExtern int errVerbose;
  * the message to appear twice on the console
  */
 epicsShareFunc int errlogPrintfNoConsole(
-    const char *pformat, ...);
+    const char *pformat, ...) EPICS_PRINTF_STYLE(1,2);
 epicsShareFunc int errlogVprintfNoConsole(
     const char *pformat,va_list pvar);
 

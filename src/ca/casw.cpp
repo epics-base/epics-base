@@ -15,6 +15,7 @@
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
 #include "envDefs.h" 
+#include "errlog.h"
 
 #include "bhe.h"
 #include "udpiiu.h"
@@ -43,7 +44,7 @@ int main ( int, char ** )
 
     sock = socket ( AF_INET, SOCK_DGRAM, IPPROTO_UDP );
     if ( sock == INVALID_SOCKET ) {
-        printf ("casw: unable to create datagram socket because = \"%s\"\n",
+        errlogPrintf ("casw: unable to create datagram socket because = \"%s\"\n",
             SOCKERRSTR (SOCKERRNO));
         return -1;
     }
@@ -55,7 +56,7 @@ int main ( int, char ** )
     status = bind ( sock, &addr.sa, sizeof (addr) );
     if ( status < 0 ) {
         socket_close ( sock );
-        printf ("casw: unable to bind to an unconstrained address because = \"%s\"\n",
+        errlogPrintf ("casw: unable to bind to an unconstrained address because = \"%s\"\n",
             SOCKERRSTR (SOCKERRNO));
         return -1;
     }
@@ -64,7 +65,7 @@ int main ( int, char ** )
     status = socket_ioctl ( sock, FIONBIO, &yes );
     if ( status < 0 ) {
         socket_close ( sock );
-        printf ("casw: unable to set socket to nonblocking state because \"%s\"\n",
+        errlogPrintf ("casw: unable to set socket to nonblocking state because \"%s\"\n",
             SOCKERRSTR (SOCKERRNO));
         return -1;
     }
@@ -86,7 +87,7 @@ int main ( int, char ** )
         attemptNumber++;
         if ( attemptNumber > 100 ) {
             socket_close ( sock );
-            printf ( "casw: unable to register with the CA repeater\n" );
+            errlogPrintf ( "casw: unable to register with the CA repeater\n" );
             return -1;
         }
     }
@@ -95,7 +96,7 @@ int main ( int, char ** )
     status = socket_ioctl ( sock, FIONBIO, &no );
     if ( status < 0 ) {
         socket_close ( sock );
-        printf ("casw: unable to set socket to blocking state because \"%s\"\n",
+        errlogPrintf ("casw: unable to set socket to blocking state because \"%s\"\n",
             SOCKERRSTR (SOCKERRNO));
         return -1;
     }
@@ -108,7 +109,7 @@ int main ( int, char ** )
                             &addr.sa, &addrSize );
         if ( status <= 0 ) {
             socket_close ( sock );
-            printf ("casw: error from recv was = \"%s\"\n",
+            errlogPrintf ("casw: error from recv was = \"%s\"\n",
                 SOCKERRSTR (SOCKERRNO));
             return -1;
         }
@@ -182,7 +183,7 @@ int main ( int, char ** )
                     currentTime.strftime ( date, sizeof ( date ), "%a %b %d %Y %H:%M:%S");
                     char host[64];
                     ipAddrToA ( &ina, host, sizeof ( host ) );
-                    printf ("CA server beacon anomaly: %s %s\n", date, host );
+                    errlogPrintf ("CA server beacon anomaly: %s %s\n", date, host );
                 }
             }
             pCurBuf += sizeof ( *pCurMsg ) + ntohl ( pCurMsg->m_postsize );

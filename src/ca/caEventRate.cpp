@@ -5,6 +5,7 @@
 #include "cadef.h"
 #include "dbDefs.h"
 #include "epicsTime.h"
+#include "errlog.h"
 
 /*
  * event_handler()
@@ -17,12 +18,12 @@ extern "C" void eventCallBack ( struct event_handler_args args )
 
 
 /*
- * cam ()
+ * caEventRate ()
  */
 void caEventRate ( const char *pName )
 {
     static const double initialSamplePeriod = 1.0;
-    static const double maxSamplePeriod = 60.0;
+    static const double maxSamplePeriod = 60.0 * 60.0;
 
     chid chan;
     int status = ca_search ( pName,  &chan );
@@ -34,7 +35,7 @@ void caEventRate ( const char *pName )
 
     status = ca_pend_io ( 10.0 );
     if ( status != ECA_NORMAL ) {
-        printf ( "%s not found\n", pName );
+        errlogPrintf ( "caEventRate: %s not found\n", pName );
         return;
     }
 
@@ -64,7 +65,7 @@ void caEventRate ( const char *pName )
             nEvents = ( UINT_MAX - lastEventCount ) + curEventCount +1u;
         }
 
-        printf ( "CA Channel \"%s\" is producing %g subscription update events per second.\n", 
+        errlogPrintf ( "CA Channel \"%s\" is producing %g subscription update events per second.\n", 
             pName, nEvents / samplePeriod );
 
         if ( samplePeriod < maxSamplePeriod ) {

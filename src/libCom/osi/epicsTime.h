@@ -152,13 +152,6 @@ public:
     // dump current state to standard out
     void show ( unsigned interestLevel ) const;
 
-    // useful public constants
-    static const unsigned secPerMin;
-    static const unsigned mSecPerSec;
-    static const unsigned uSecPerSec;
-    static const unsigned nSecPerSec;
-    static const unsigned nSecPerUSec;
-
 private:
     // private because:
     // a) application does not break when EPICS epoch is changed

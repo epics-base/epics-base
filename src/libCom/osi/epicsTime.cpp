@@ -29,11 +29,11 @@ static const char *id = "@(#) " EPICS_VERSION_STRING ", Common Utilities Library
 //
 // useful public constants
 //
-const unsigned epicsTime::mSecPerSec = 1000u;
-const unsigned epicsTime::uSecPerSec = 1000u*epicsTime::mSecPerSec;
-const unsigned epicsTime::nSecPerSec = 1000u*epicsTime::uSecPerSec;
-const unsigned epicsTime::nSecPerUSec = 1000u;
-const unsigned epicsTime::secPerMin = 60u;
+static const unsigned mSecPerSec = 1000u;
+static const unsigned uSecPerSec = 1000u * mSecPerSec;
+static const unsigned nSecPerSec = 1000u * uSecPerSec;
+static const unsigned nSecPerUSec = 1000u;
+static const unsigned secPerMin = 60u;
 
 //
 // force this module to include code that can convert
@@ -385,8 +385,8 @@ epicsTime::epicsTime (const aitTimeStamp &ts)
     ansiTimeTicks.ts = ts.tv_sec;
     *this = epicsTime (ansiTimeTicks);
 
-    unsigned long secAdj = ts.tv_nsec / epicsTime::nSecPerSec;
-    unsigned long nSecAdj = ts.tv_nsec % epicsTime::nSecPerSec;
+    unsigned long secAdj = ts.tv_nsec / nSecPerSec;
+    unsigned long nSecAdj = ts.tv_nsec % nSecPerSec;
     *this = epicsTime (this->secPastEpoch+secAdj, this->nSec+nSecAdj);
 }
 

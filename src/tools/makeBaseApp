@@ -145,7 +145,6 @@ do
 		record(xxx, "$(user):xxxExample")
 		{
 		 	field(DESC, "xxx record")
-		 	field(FLNK, "mrkc0a1.VAL ")
 		 	field(EGU, "Counts")
 		 	field(HOPR, "10")
 		 	field(HIHI, "8")
@@ -181,6 +180,7 @@ do
 		USER_DBDFLAGS += -I .. -I $(EPICS_BASE)/dbd
 		DBDEXPAND = APPNAMEInclude.dbd
 		DBDNAME = APPNAME.dbd
+		SRCS.c += $(RECTYPES:%.h=../%.c)
 
 		include ../baseLIBOBJS
 		LIBOBJS += xxxRecord.o
@@ -211,7 +211,7 @@ do
 		#  ADD RULES AFTER THIS LINE
 		
 		$(LIBNAME): ../baseLIBOBJS
-		$(DBDNAME): ../base.dbd ../APPNAMEInclude.dbd
+		$(DBDNAME): ../base.dbd $(RECTYPES:%.h=../%.dbd)
 
 	END
 	cat > src/Makefile.Unix <<-\END

@@ -113,15 +113,15 @@ typedef ca_uint32_t	caResId;
 #define DONTREPLY	5
 
 /* size of object in bytes rounded up to nearest oct word */
-#define	OCT_ROUND(A)	((((unsigned long)A)+7)>>3)
+#define	OCT_ROUND(A)	((((unsigned long)(A))+7)>>3)
 #define	OCT_SIZEOF(A)	(OCT_ROUND(sizeof(A)))
 
 /* size of object in bytes rounded up to nearest long word */
-#define	QUAD_ROUND(A)	(((unsigned long)A)+3)>>2)
+#define	QUAD_ROUND(A)	(((unsigned long)(A))+3)>>2)
 #define	QUAD_SIZEOF(A)	(QUAD_ROUND(sizeof(A)))
 
 /* size of object in bytes rounded up to nearest short word */
-#define	BI_ROUND(A)	((((unsigned long)A)+1)>>1)
+#define	BI_ROUND(A)	((((unsigned long)(A))+1)>>1)
 #define	BI_SIZEOF(A)	(BI_ROUND(sizeof(A)))
 
 /*

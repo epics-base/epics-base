@@ -101,7 +101,6 @@
 #define MODULE_TYPES_INIT 1
 #include        <module_types.h>
 
-#define LOCAL
 
 LOCAL int initialized=FALSE;
 

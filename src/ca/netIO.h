@@ -32,10 +32,10 @@
 // SUN PRO generates multiply defined symbols if the baseNMIU
 // destructor is virtual (therefore it is protected). 
 // I assume that SUNPRO will fix this in future versions.
-// Otherwise, with other compilers we get warnings (and 
+// With other compilers we get warnings (and 
 // potential problems) if we dont make the baseNMIU
 // destructor virtual.
-#if defined ( __SUNPRO_CC ) && ( __SUNPRO_CC <= 0x530 )
+#if defined ( __SUNPRO_CC ) && ( __SUNPRO_CC <= 0x540 )
 #   define NETIO_VIRTUAL_DESTRUCTOR
 #else
 #   define NETIO_VIRTUAL_DESTRUCTOR virtual

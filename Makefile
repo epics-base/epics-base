@@ -18,6 +18,8 @@ include $(TOP)/config/CONFIG_BASE
 
 DIRS = src config
 
+INSTALL_BIN = $(INSTALL_LOCATION)/bin/$(HOST_ARCH)
+
 #
 # this bootstraps in makeMakefile.pl (and others) so that it can
 # be used to create the first O.xxxx/Makefile
@@ -38,3 +40,4 @@ built_release:
 
 $(INSTALL_BIN)/%.pl: $(TOP)/src/tools/%.pl
 	$(PERL) $(TOP)/src/tools/installEpics.pl -d -m 555 $< $(INSTALL_BIN)
+

@@ -1087,19 +1087,19 @@ cac::subscriptionRequest ( nciu & chan, unsigned type, // X aCC 361
 }
 
 bool cac::versionAction ( epicsGuard < callbackMutex > &, tcpiiu &, 
-    const epicsTime & currentTime, const caHdrLargeArray &, void * /* pMsgBdy */ )
+    const epicsTime &, const caHdrLargeArray &, void * )
 {
     return true;
 }
  
 bool cac::echoRespAction ( epicsGuard < callbackMutex > &, tcpiiu &, 
-    const epicsTime & currentTime, const caHdrLargeArray &, void * /* pMsgBdy */ )
+    const epicsTime &, const caHdrLargeArray &, void * )
 {
     return true;
 }
 
 bool cac::writeNotifyRespAction ( epicsGuard < callbackMutex > &, tcpiiu &, 
-    const epicsTime & currentTime, const caHdrLargeArray &hdr, void * /* pMsgBdy */ )
+    const epicsTime &, const caHdrLargeArray &hdr, void * )
 {
     int caStatus = hdr.m_cid;
     if ( caStatus == ECA_NORMAL ) {
@@ -1113,7 +1113,7 @@ bool cac::writeNotifyRespAction ( epicsGuard < callbackMutex > &, tcpiiu &,
 }
 
 bool cac::readNotifyRespAction ( epicsGuard < callbackMutex > &, tcpiiu &iiu, 
-    const epicsTime & currentTime, const caHdrLargeArray &hdr, void *pMsgBdy )
+    const epicsTime &, const caHdrLargeArray & hdr, void * pMsgBdy )
 {
     /*
      * the channel id field is abused for
@@ -1153,7 +1153,7 @@ bool cac::readNotifyRespAction ( epicsGuard < callbackMutex > &, tcpiiu &iiu,
 }
 
 bool cac::eventRespAction (epicsGuard < callbackMutex > &, tcpiiu &iiu, 
-    const epicsTime & currentTime, const caHdrLargeArray &hdr, void *pMsgBdy )
+    const epicsTime &, const caHdrLargeArray & hdr, void * pMsgBdy )
 {   
     int caStatus;
 
@@ -1202,7 +1202,7 @@ bool cac::eventRespAction (epicsGuard < callbackMutex > &, tcpiiu &iiu,
 }
 
 bool cac::readRespAction ( epicsGuard < callbackMutex > &, tcpiiu &, 
-    const epicsTime & currentTime, const caHdrLargeArray &hdr, void *pMsgBdy )
+    const epicsTime &, const caHdrLargeArray & hdr, void * pMsgBdy )
 {
     this->ioCompletionNotifyAndDestroy ( hdr.m_available,
         hdr.m_dataType, hdr.m_count, pMsgBdy );
@@ -1210,7 +1210,7 @@ bool cac::readRespAction ( epicsGuard < callbackMutex > &, tcpiiu &,
 }
 
 bool cac::clearChannelRespAction ( epicsGuard < callbackMutex > &, tcpiiu &, 
-    const epicsTime & currentTime, const caHdrLargeArray &, void * /* pMsgBdy */ )
+    const epicsTime &, const caHdrLargeArray &, void * /* pMsgBdy */ )
 {
     return true; // currently a noop
 }
@@ -1277,7 +1277,7 @@ bool cac::writeNotifyExcep ( epicsGuard < callbackMutex > &, tcpiiu &,
 }
 
 bool cac::exceptionRespAction ( epicsGuard < callbackMutex > & cbMutexIn, tcpiiu & iiu, 
-    const epicsTime & currentTime, const caHdrLargeArray & hdr, void * pMsgBdy )
+    const epicsTime &, const caHdrLargeArray & hdr, void * pMsgBdy )
 {
     const caHdr * pReq = reinterpret_cast < const caHdr * > ( pMsgBdy );
     unsigned bytesSoFar = sizeof ( *pReq );
@@ -1318,7 +1318,7 @@ bool cac::exceptionRespAction ( epicsGuard < callbackMutex > & cbMutexIn, tcpiiu
 
 bool cac::accessRightsRespAction (
     epicsGuard < callbackMutex > & cbGuard, tcpiiu &, // X aCC 431
-    const epicsTime & currentTime, const caHdrLargeArray &hdr, void * /* pMsgBdy */ )
+    const epicsTime &, const caHdrLargeArray & hdr, void * /* pMsgBdy */ )
 {
     nciu * pChan;
     {
@@ -1347,7 +1347,7 @@ bool cac::accessRightsRespAction (
 
 bool cac::claimCIURespAction (
     epicsGuard < callbackMutex > &cbGuard, tcpiiu & iiu, // X aCC 431
-    const epicsTime & currentTime, const caHdrLargeArray & hdr, void * /* pMsgBdy */ )
+    const epicsTime &, const caHdrLargeArray & hdr, void * /* pMsgBdy */ )
 {
     nciu * pChan;
 
@@ -1408,7 +1408,7 @@ void cac::disconnectChannel (
 }
 
 bool cac::badTCPRespAction ( epicsGuard < callbackMutex > &, tcpiiu & iiu, 
-    const epicsTime & currentTime, const caHdrLargeArray & hdr, void * /* pMsgBdy */ )
+    const epicsTime &, const caHdrLargeArray & hdr, void * /* pMsgBdy */ )
 {
     char hostName[64];
     iiu.hostName ( hostName, sizeof ( hostName ) );

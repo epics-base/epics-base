@@ -56,6 +56,7 @@ struct event_block{
         unsigned long           npend;  /* n times this event is on the que */
         unsigned char           select;
         char                    valque;
+		char					callBackInProgress;
 };
 
 typedef void			EVENTFUNC(

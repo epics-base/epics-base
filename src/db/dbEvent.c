@@ -340,6 +340,7 @@ struct event_block	*pevent /* ptr to event blk (not required) */
   	pevent->paddr = 	paddr;
   	pevent->select = 	select;
 	pevent->pLastLog = 	NULL; /* not yet in the queue */
+	pevent->callBackInProgress = FALSE;
 
   	ev_que->quota += 	EVENTENTRIES;
   	pevent->ev_que = 	ev_que;
@@ -457,32 +458,32 @@ int	db_cancel_event(struct event_block	*pevent)
 	 * used to lower priority below the event thread to accomplish the
 	 * flush without polling.
 	 */
-  	if(pevent->npend){
-    		struct event_block	flush_event;
+  	if(pevent->npend || pevent->callBackInProgress){
+		struct event_block	flush_event;
 
 		pevu = pevent->ev_que->evUser;
 
-    		flush_event = *pevent;
-    		flush_event.user_sub = wake_cancel;
-    		flush_event.user_arg = &pevu->pflush_sem;
-    		flush_event.npend = 0ul;
-    		if(db_post_single_event_private(&flush_event)==OK){
+		flush_event = *pevent;
+		flush_event.user_sub = wake_cancel;
+		flush_event.user_arg = &pevu->pflush_sem;
+		flush_event.npend = 0ul;
+		if(db_post_single_event_private(&flush_event)==OK){
 			/*
 			 * insure that the event is 
 			 * removed from the queue
 			 */
-    			while(flush_event.npend){
+			while(flush_event.npend){
 				semTake(
 					pevu->pflush_sem,
 					sysClkRateGet());
 			}
 		}
 
-    		/* 
+		/* 
 		 * in case the event could not be queued 
 		 */
-    		while(pevent->npend){
-      			taskDelay(sysClkRateGet());
+		while(pevent->npend||pevent->callBackInProgress){
+			taskDelay(sysClkRateGet());
 		}
   	}
 
@@ -986,13 +987,12 @@ LOCAL int event_read (struct event_que *ev_que)
      		(event) != EVENTQEMPTY;
      		ev_que->getix = nextgetix, event = ev_que->evque[nextgetix]){
 
-		db_field_log	*pqfl=&ev_que->valque[ev_que->getix];
+		db_field_log fl = ev_que->valque[ev_que->getix];
 
 		/*
 		 * So I can tell em if more are comming
 		 */
-
-    		nextgetix = RNGINC(ev_que->getix);
+		nextgetix = RNGINC(ev_que->getix);
 
 
 		/*
@@ -1001,31 +1001,14 @@ LOCAL int event_read (struct event_que *ev_que)
 		 * to be there upon wakeup)
 		 */
 		if (event->valque) {
-			pfl = pqfl;
+			pfl = &fl;
 		}
 		else {
 			pfl = NULL;
 		}
 
-		/*
-		 * Next event pointer can be used by event tasks to determine
-		 * if more events are waiting in the queue
-		 *
-		 * Must remove the lock here so that we dont deadlock if
-		 * this calls dbGetField() and blocks on the record lock, 
-		 * dbPutField() is in progress in another task, it has the 
-		 * record lock, and it is calling db_post_events() waiting 
-		 * for the event queue lock (which this thread now has).
-		 */
-      		UNLOCKEVQUE(ev_que)
-    		(*event->user_sub)(
-				event->user_arg, 
-				event->paddr,
-				ev_que->evque[nextgetix]?TRUE:FALSE,
-				pfl);
-      		LOCKEVQUE(ev_que)
+    	ev_que->evque[ev_que->getix] = EVENTQEMPTY;
 
-    		ev_que->evque[ev_que->getix] = EVENTQEMPTY;
 		/*
 		 * remove event from the queue
 		 */
@@ -1037,10 +1020,38 @@ LOCAL int event_read (struct event_que *ev_que)
 			assert (ev_que->evUser->nDuplicates>=1u);
 			ev_que->evUser->nDuplicates--;
 		}
-    		event->npend--;
+    	event->npend--;
+
+		/*
+		 * this provides a way to test to see if an event is in use
+		 * despite the fact that the event queue does not point to this event
+		 */
+		event->callBackInProgress = TRUE;
+
+		/*
+		 * Next event pointer can be used by event tasks to determine
+		 * if more events are waiting in the queue
+		 *
+		 * Must remove the lock here so that we dont deadlock if
+		 * this calls dbGetField() and blocks on the record lock, 
+		 * dbPutField() is in progress in another task, it has the 
+		 * record lock, and it is calling db_post_events() waiting 
+		 * for the event queue lock (which this thread now has).
+		 */
+
+		UNLOCKEVQUE(ev_que)
+		(*event->user_sub) (event->user_arg, event->paddr,
+			ev_que->evque[nextgetix]?TRUE:FALSE, pfl);
+		LOCKEVQUE(ev_que)
+
+		/*
+		 * this provides a way to test to see if an event is in use
+		 * despite the fact that the event queue does not point to this event
+		 */
+		event->callBackInProgress = FALSE;
   	}
 
-      	UNLOCKEVQUE(ev_que)
+	UNLOCKEVQUE(ev_que)
 
   	return OK;
 }

@@ -1,6 +1,6 @@
 /*
  *
- *	share/src/libCom/%W%	%G%	
+ *	share/src/libCom/$Id$	
  *
  *	A file descriptor manager for use with the UNIX system call select
  *
@@ -89,7 +89,7 @@
  *
  */
 
-static char	*pSccsId = "%W%\t%G%";
+static char	*pSccsId = "@(#) $Id$";
 
 /*
  * ANSI

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.8  1998/04/14 00:49:26  jhill
+ * cosmetic
+ *
  * Revision 1.7  1997/08/05 00:47:00  jhill
  * fixed warnings
  *
@@ -145,7 +148,7 @@ epicsShareFunc caStatus casAsyncIOI::cbFunc(class casEventSys &)
 	//
 	// Use the client's lock here (which is the same as the
 	// asynch IO's lock) here because we need to leave the lock
-	// applied arround the destroy() call here.
+	// applied around the destroy() call here.
 	//
 	theClient.osiLock();
 

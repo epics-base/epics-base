@@ -9,8 +9,13 @@
 #         their own dependency lists; they are instead handled by
 #         the build.%, clean.%, etc. dependencies.
 #
-#    However, the release dependency DOES require the build
-#         dependency because the release.% syntax is illegal.
+#    However, the release dependencies DOES require a complete
+#         install because the release.% syntax is illegal.
+#
+#    If TOUCH=Y is included on the make command line, flags will
+#         be touched to indicate that a certain portion of the build
+#         is complete.
+#
 
 all: build
 
@@ -50,7 +55,7 @@ install:
 		done)
 
 release: install
-	@echo TOP: Building Release...
+	@echo TOP: Creating Release...
 	@tools/MakeRelease
 
 built_release: install
@@ -58,6 +63,7 @@ built_release: install
 	@tools/MakeRelease -b
 
 clean_flags:
+	@echo "TOP: Cleaning Flags"
 	@rm -f dirs.* depends.* build_libs.* \
 		install_libs.* build.* install.*
 
@@ -75,7 +81,7 @@ clean: clean_flags
 #    an old architecture.
 
 # DIRS RULE  syntax:  make depends.arch
-#               e.g.:    make depends.mv167
+#              e.g.:  make depends.mv167
 #
 #  Create dependencies for an architecture.  We MUST
 #     do this separately for each architecture because
@@ -98,7 +104,7 @@ dirs.%:
 
 depends.%: dirs.%
 	@echo $*: Performing Make Depends
-	@${MAKE} ${MFLAGS} T_ARCH=$* -f Makefile.subdirs depends
+	@${MAKE} ${MFLAGS} T_A=$* -f Makefile.subdirs depends
 	@tools/TouchFlag $@ ${TOUCH}
 
 # Build_libs RULE  syntax:  make build_libs.arch
@@ -108,7 +114,7 @@ depends.%: dirs.%
 
 build_libs.%: depends.%
 	@echo $*: Building Libraries
-	@${MAKE} ${MFLAGS} T_ARCH=$* -f Makefile.subdirs build_libs
+	@${MAKE} ${MFLAGS} T_A=$* -f Makefile.subdirs build_libs
 	@tools/TouchFlag $@ ${TOUCH}
 
 # Install_libs RULE  syntax:  make install_libs.arch
@@ -121,7 +127,7 @@ build_libs.%: depends.%
 
 install_libs.%: build_libs.%
 	@echo $*: Installing Libraries
-	@${MAKE} ${MFLAGS} T_ARCH=$* -f Makefile.subdirs install_libs
+	@${MAKE} ${MFLAGS} T_A=$* -f Makefile.subdirs install_libs
 	@tools/TouchFlag $@ ${TOUCH}
 
 # Build RULE  syntax:  make build.arch
@@ -135,7 +141,7 @@ install_libs.%: build_libs.%
 
 build.%: install_libs.% 
 	@echo $*: Building
-	@${MAKE} ${MFLAGS} T_ARCH=$* -f Makefile.subdirs
+	@${MAKE} ${MFLAGS} T_A=$* -f Makefile.subdirs
 	@tools/TouchFlag $@ ${TOUCH}
 
 # Install RULE  syntax:  make install.arch
@@ -149,7 +155,7 @@ build.%: install_libs.%
 
 install.%: build.%
 	@echo $*: Installing
-	@${MAKE}	${MFLAGS} T_ARCH=$* -f Makefile.subdirs install
+	@${MAKE} ${MFLAGS} T_A=$* -f Makefile.subdirs install
 	@tools/TouchFlag $@ ${TOUCH}
 
 # Illegal Syntax
@@ -167,9 +173,12 @@ release.%:
 #   Erase all build flags
 #
 
-clean.%:
-	@echo "$*: Cleaning"
-	@tools/Clean $*
+clean_flags.%:
+	@echo "$*: Cleaning Flags"
 	@rm -f dirs.$* depends.$* build_libs.$* \
 		install_libs.$* build.$* install.$*
+
+clean.%: clean_flags.%
+	@echo "$*: Cleaning"
+	@tools/Clean $*
 

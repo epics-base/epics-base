@@ -5,47 +5,49 @@
 #    by Matthew Needes and Mike Bordua
 #
 
-include config.${T_ARCH}.mk
+include config.${T_A}.mk
+
+MAKEOPT=${MFLAGS} -f Makefile.${BUILD_TYPE}
 
 all: build
 
 depends:
-	@echo "${T_ARCH}: DEPENDS"
+	@echo "${T_A}: DEPENDS"
 	@(for DIR in ${DIRS};					\
 		do						\
-			(echo "${T_ARCH}: --$$DIR"; cd $$DIR;	\
-			${MAKE} ${MFLAGS} $@);			\
+			TMP=$$PWD; echo "${T_A}: --$$DIR"; 	\
+			cd $$DIR; ${MAKE} ${MAKEOPT} $@; cd $$TMP;\
 		done)
 
 build_libs:
-	@echo "${T_ARCH}: BUILD LIBS"
+	@echo "${T_A}: BUILD LIBS"
 	@(for DIR in ${DIRS};					\
 		do						\
-			(echo "${T_ARCH}: --$$DIR"; cd $$DIR;	\
-			${MAKE} ${MFLAGS} $@);			\
+			TMP=$$PWD; echo "${T_A}: --$$DIR"; 	\
+			cd $$DIR; ${MAKE} ${MAKEOPT} $@; cd $$TMP;\
 		done)
 
 install_libs:
-	@echo "${T_ARCH}: INSTALL LIBS"
+	@echo "${T_A}: INSTALL LIBS"
 	@(for DIR in ${DIRS};					\
 		do						\
-			(echo "${T_ARCH}: --$$DIR"; cd $$DIR;	\
-			${MAKE} ${MFLAGS} $@);			\
+			TMP=$$PWD; echo "${T_A}: --$$DIR"; 	\
+			cd $$DIR; ${MAKE} ${MAKEOPT} $@; cd $$TMP;\
 		done)
 
 build:
-	@echo "${T_ARCH}: BUILDING"
+	@echo "${T_A}: BUILDING"
 	@(for DIR in ${DIRS};					\
 		do						\
-			(echo "${T_ARCH}: --$$DIR"; cd $$DIR;	\
-			${MAKE} ${MFLAGS} $@);			\
+			TMP=$$PWD; echo "${T_A}: --$$DIR"; 	\
+			cd $$DIR; ${MAKE} ${MAKEOPT} $@; cd $$TMP;\
 		done)
 
 install:
-	@echo "${T_ARCH}: INSTALLING"
+	@echo "${T_A}: INSTALLING"
 	@(for DIR in ${DIRS};					\
 		do						\
-			(echo "${T_ARCH}: --$$DIR"; cd $$DIR;	\
-			${MAKE} ${MFLAGS} $@);			\
+			TMP=$$PWD; echo "${T_A}: --$$DIR"; 	\
+			cd $$DIR; ${MAKE} ${MAKEOPT} $@; cd $$TMP;\
 		done)
 

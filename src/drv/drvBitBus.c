@@ -647,10 +647,12 @@ int	link;
             printf("xvmeRxTask(%d): invoking the callbackRequest\n", link);
           callbackRequest(rxDpvtHead); /* schedule completion processing */
         }
-
-        /* If there is a semaphore for synchronous I/O, unlock it */
-        if (rxDpvtHead->psyncSem != NULL)
-          semGive(*(rxDpvtHead->psyncSem));
+	else
+	{
+          /* If there is a semaphore for synchronous I/O, unlock it */
+          if (rxDpvtHead->psyncSem != NULL)
+            semGive(*(rxDpvtHead->psyncSem));
+	}
       }
       /* Reset the state of the RxTask to expect a new message */
       rxMsg = (unsigned char *) NULL;
@@ -726,12 +728,15 @@ int	link;
   unsigned      long    now;
   SEM_ID		syncSem;
 
+#ifdef DO_RESET_AND_OFFLINE
   struct dpvtBitBusHead resetNode;
   unsigned char         resetNodeData;  /* 1-byte data field for RAC_OFFLINE */
+#endif
 
   /* init the SEM used when sending the reset message */
   syncSem = semBCreate(SEM_EMPTY, SEM_Q_PRIORITY);
 
+#ifdef DO_RESET_AND_OFFLINE
   /*
    * Hand-craft a RAC_OFFLINE  message to use when a message times out.
    * NOTE that having only one copy is OK provided that the dog waits for
@@ -749,6 +754,7 @@ int	link;
   resetNode.txMsg.tasks = 0x0;
   resetNode.txMsg.cmd = RAC_OFFLINE;
   resetNode.txMsg.data = &resetNodeData;
+#endif
 
   plink = pXvmeLink[link]->pbbLink;
 
@@ -806,17 +812,24 @@ int	link;
         (plink->deviceStatus[pnode->txMsg.node])--; /* fix device status */
 	pnode->status = BB_TIMEOUT;
 
+#ifdef DO_RESET_AND_OFFLINE
 	/* Do now in case we need it later */
 	resetNodeData = pnode->txMsg.node;  /* mark the node number */
+#endif
 
 	/* Make the callbackRequest if one was spec'd */
 	if(pnode->finishProc != NULL)
+	{
 	  callbackRequest(pnode);     /* schedule completion processing */
+	}
+	else
+	{
+	  /* Release a completion lock if one was spec'd */
+	  if (pnode->psyncSem != NULL)
+	    semGive(*(pnode->psyncSem));
+	}
 
-	/* Release a completion lock if one was spec'd */
-	if (pnode->psyncSem != NULL)
-	  semGive(*(pnode->psyncSem));
-
+#ifdef DO_RESET_AND_OFFLINE
         /* If we are not going to reboot the link... */
         if (plink->nukeEm == 0)
 	{ /* Send out a RAC_NODE_OFFLINE to the controller */
@@ -848,6 +861,9 @@ printf("issuing a node offline for link %d node %d\n", link, resetNodeData);
 	  semTake(plink->busyList.sem, WAIT_FOREVER);
           npnode = plink->busyList.head;
 	}
+#else
+	semGive(plink->linkEventSem);
+#endif
       }
       pnode = npnode;
     }
@@ -1063,11 +1079,13 @@ int	link;
 	      
       	        callbackRequest(pnode); /* schedule completion processing */
     	      }
-  
-    	      /* If there is a semaphore for synchronous I/O, unlock it */
-    	      if (pnode->psyncSem != NULL)
-      	        semGive(*(pnode->psyncSem));
-  
+  	      else
+	      {
+    	        /* If there is a semaphore for synchronous I/O, unlock it */
+    	        if (pnode->psyncSem != NULL)
+      	          semGive(*(pnode->psyncSem));
+  	      }
+
               /* Wait for last NODE_OFFLINE to finish (if still pending) */
               semTake(resetNodeSem, WAIT_FOREVER);
   

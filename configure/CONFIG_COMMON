@@ -31,7 +31,7 @@ RES = .
 
 #-------------------------------------------------------
 # Default for perl if it's on the PATH,
-# otherwise override this in os/CONFIG_SITE.Host.<host_arch>
+# otherwise override this in os/CONFIG_SITE.<host_arch>.Common
 PERL=perl
 
 #-------------------------------------------------------

@@ -52,6 +52,7 @@
 
 #include <drvMsg.h>
 #include <drvRs232.h>
+#include <drvTy232.h>
 #include <drvBB232.h>
 
 static long		BBinit(), BBreport(), VXinit(), VXreport();
@@ -131,7 +132,6 @@ static msgStrParm wrParms[] = {
   { "123456789012", -1 },
   { "1234567890123", -1 },
   { "12345678901234", -1},
-  { "RD\r", -1 },		/* MP command solitation string */
 };
 
 static msgFoParm foParms[] = {
@@ -144,35 +144,28 @@ static msgFiParm fiParms[] = {
   { "%s %lf", 0, 50 },
   { "%lf", 0, 50 },
   { "%ld", 0, 50 },
-  { "%lf", 0, 10 },		/* Get the voltage from the 'RD' response */
 };
-
-static msgSBIParm sbiParms[] = {
-  { "H", 13, 1 },		/* Check for 'H' in position 13 */
-};
-
 
 static msgCmd cmds[] = {
-  { &drvMsgAi, 0, {MSG_OP_WRITE, &wrParms[0]}, {MSG_OP_FAI, &fiParms[0]}, NULL, -1 },
-  { &drvMsgAo, 0, {MSG_OP_FAO, &foParms[0]}, {MSG_OP_NOP, NULL}, NULL, -1 },
-  { &drvMsgAi, 0, {MSG_OP_WRITE, &wrParms[1]}, {MSG_OP_FAI, &fiParms[1]}, NULL, -1 },
-  { &drvMsgAo, 0, {MSG_OP_FAO, &foParms[1]}, {MSG_OP_NOP, NULL}, NULL, -1 },
-  { &drvMsgLi, 0, {MSG_OP_WRITE, &wrParms[1]}, {MSG_OP_FLI, &fiParms[2]}, NULL, -1 },
-  { &drvMsgLo, 0, {MSG_OP_FLO, &foParms[2]}, {MSG_OP_NOP, NULL}, NULL, -1 },
-  /* 6 */
-  { &drvMsgBo, 0, {MSG_OP_WRITE, &wrParms[2]}, {MSG_OP_NOP, NULL}, NULL, -1 },
-  { &drvMsgBo, 0, {MSG_OP_WRITE, &wrParms[3]}, {MSG_OP_NOP, NULL}, NULL, -1 },
-  { &drvMsgBo, 0, {MSG_OP_WRITE, &wrParms[4]}, {MSG_OP_NOP, NULL}, NULL, -1 },
+{&drvMsgAi, READ_NDLY, {MSG_OP_WRITE, &wrParms[0]}, {MSG_OP_FAI, &fiParms[0]}, NULL, -1},
+{&drvMsgAo, READ_NDLY, {MSG_OP_FAO, &foParms[0]}, {MSG_OP_NOP, NULL}, NULL, -1},
+{&drvMsgAi, READ_NDLY, {MSG_OP_WRITE, &wrParms[1]}, {MSG_OP_FAI, &fiParms[1]}, NULL, -1},
+{&drvMsgAo, READ_NDLY, {MSG_OP_FAO, &foParms[1]}, {MSG_OP_NOP, NULL}, NULL, -1},
+{&drvMsgLi, READ_NDLY, {MSG_OP_WRITE, &wrParms[1]}, {MSG_OP_FLI, &fiParms[2]}, NULL, -1},
+{&drvMsgLo, READ_NDLY, {MSG_OP_FLO, &foParms[2]}, {MSG_OP_NOP, NULL}, NULL, -1},
+{&drvMsgBo, READ_NDLY, {MSG_OP_WRITE, &wrParms[2]}, {MSG_OP_NOP, NULL}, NULL, -1},
+{&drvMsgBo, READ_NDLY, {MSG_OP_WRITE, &wrParms[3]}, {MSG_OP_NOP, NULL}, NULL, -1},
+{&drvMsgBo, READ_NDLY, {MSG_OP_WRITE, &wrParms[4]}, {MSG_OP_NOP, NULL}, NULL, -1},
 };
 
 /******************************************************************************
  *
- * The dev232ParmBlock contains driver specific extensions to the msgParmBlock
- * structure.
+ * The devTy232ParmBlock contains vxWorks tty-driver specific extensions to 
+ * the msgParmBlock structure.
  *
  ******************************************************************************/
 /* For vxWorks tty ports */
-static dev232ParmBlock parm232extension = {
+static devTy232ParmBlock parm232extension = {
   0,		/* Time window */
   60,		/* DMA time limit */
   KILL_CRLF,	/* loose the CRs and LFs */
@@ -181,7 +174,12 @@ static dev232ParmBlock parm232extension = {
   OPT_7_BIT	/* 7-bit transfers */
 };
 
-/* For Bitbus -> 232 */
+/******************************************************************************
+ *
+ * The drvBB232ParmBlock contains the bitbus->RS232 specific extensions to the
+ * msgParmBlock structure.
+ *
+ ******************************************************************************/
 static drvBB232ParmBlock parmBB232extension = {
   0,
   9600
@@ -192,7 +190,10 @@ static drvBB232ParmBlock parmBB232extension = {
  * the driverBlock.
  *
  ******************************************************************************/
-static msgParmBlock BBParmBlock = { /* for records requesting Bitbus->232 */
+
+/* For records requesting Bitbus->232 */
+
+static msgParmBlock BBParmBlock = {
   &softMsgDebug,
   NULL,
   cmds,
@@ -203,7 +204,9 @@ static msgParmBlock BBParmBlock = { /* for records requesting Bitbus->232 */
   &parmBB232extension
 };
 
-static msgParmBlock VXParmBlock = { /* for records requesting vxWorks tty */
+/* For records requesting vxWorks tty */
+
+static msgParmBlock VXParmBlock = {
   &softMsgDebug,
   NULL,
   cmds,
@@ -219,6 +222,9 @@ static msgParmBlock VXParmBlock = { /* for records requesting vxWorks tty */
  * These are used to add parameters to calls made to the init routines.
  *
  ******************************************************************************/
+
+/* For records requesting Bitbus->232 */
+
 static long
 BBinit(parm)
 int	parm;
@@ -231,7 +237,7 @@ BBreport()
   return(drvMsg_reportMsg(&devBBAiSoftMsg));
 }
 
-
+/* For records requesting vxWorks tty */
 
 static long
 VXinit(parm)

@@ -1,4 +1,4 @@
-/************************************************************************/
+ /************************************************************************/
 /*									*/
 /*	        	      L O S  A L A M O S			*/
 /*		        Los Alamos National Laboratory			*/
@@ -17,6 +17,7 @@
 /*	060691	joh	removed 4 byte count from the beginning of	*/
 /*			each message					*/
 /*	071291	joh	no longer sends id at TCP connect		*/
+/*	082791	joh	split send_msg() into two subroutines		*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -44,26 +45,40 @@
 
 /*	Allocate storage for global variables in this module		*/
 #define			CA_GLBLSOURCE
-#ifdef VMS
-#include		<iodef.h>
-#include		<inetiodef.h>
-#include		<stsdef.h>
-#else
+
+#if defined(VMS)
+#	include		<iodef.h>
+#	include		<inetiodef.h>
+#	include		<stsdef.h>
+#	include		<types.h>
+#	include		<errno.h>
+#	include		<socket.h>
+#	include		<in.h>
+#	include		<tcp.h>
+#	include		<ioctl.h>
+#elif defined(UNIX)
+#	include		<types.h>
+#	include		<errno.h>
+#	include		<socket.h>
+#	include		<in.h>
+#	include		<tcp.h>
+#	include		<ioctl.h>
+#elif defined(vxWorks)
+#	include		<vxWorks.h>
+#	ifdef V5_vxWorks
+#		include		<systime.h>
+#	else
+#		include		<utime.h>
+#	endif
+#	include		<ioLib.h>
+#	include		<errno.h>
+#	include		<socket.h>
+#	include		<in.h>
+#	include		<tcp.h>
+#	include		<ioctl.h>
+#	include		<task_params.h>
 #endif
 
-#include		<errno.h>
-#include		<vxWorks.h>
-
-#ifdef vxWorks
-#include		<ioLib.h>
-#include		<task_params.h>
-#endif
-
-#include		<types.h>
-#include		<socket.h>
-#include		<in.h>
-#include		<tcp.h>
-#include		<ioctl.h>
 #include		<cadef.h>
 #include		<net_convert.h>
 #include		<iocmsg.h>
@@ -74,6 +89,10 @@ static struct timeval notimeout = {0,0};
 void 	close_ioc();
 void	tcp_recv_msg();
 void	udp_recv_msg();
+int	cac_send_msg_piiu();
+#ifdef VMS
+void   	vms_recv_msg_ast();
+#endif
 
 
 /*
@@ -114,9 +133,6 @@ typedef	struct fd_set {
 }
 #endif
 
-#ifdef VMS
-void   vms_recv_msg_ast();
-#endif
 
 
 
@@ -216,10 +232,7 @@ struct ioc_in_use		*piiu;
   	struct sockaddr_in	saddr;
   	int			i;
 
-  	struct sockaddr_in 	*local_addr();
-
- 
-  	/* 	set socket domain 	*/
+   	/* 	set socket domain 	*/
   	piiu->sock_addr.sin_family = AF_INET;
 
   	/*	set the port 	*/
@@ -520,153 +533,250 @@ struct ioc_in_use		*piiu;
  *	NOTES:
  *	1)	local communication only (no LAN traffic)
  *
- * LOCK should be on while in this routine
- * (MULTINET TCP/IP routines are not reentrant)
+ * 	LOCK should be on while in this routine
+ * 	(MULTINET TCP/IP routines are not reentrant)
  */
 notify_ca_repeater()
 {
 	struct sockaddr_in	saddr;
 	int			status;
-  	struct sockaddr_in 	*local_addr();
 
 	if(!iiu[BROADCAST_IIU].conn_up)
 		return;
 
-     	saddr = *( local_addr(iiu[BROADCAST_IIU].sock_chan) );
-      	saddr.sin_port = htons(CA_CLIENT_PORT);	
-      	status = sendto(
-		iiu[BROADCAST_IIU].sock_chan,
-        	NULL,
-        	0, /* zero length message */
-        	0,
-       		&saddr, 
-		sizeof saddr);
-      	if(status < 0)
-		abort();
+     	status = local_addr(iiu[BROADCAST_IIU].sock_chan, &saddr);
+	if(status == OK){
+      		saddr.sin_port = htons(CA_CLIENT_PORT);	
+      		status = sendto(
+			iiu[BROADCAST_IIU].sock_chan,
+        		NULL,
+        		0, /* zero length message */
+        		0,
+       			&saddr, 
+			sizeof saddr);
+      		if(status < 0){
+			printf("notify_ca_repeater: send to lcl addr failed\n");
+			abort();
+		}
+	}
 }
 
 
 
 /*
- * SEND_MSG()
+ * CAC_SEND_MSG()
  * 
  * 
  * LOCK should be on while in this routine
  */
 void cac_send_msg()
 {
-  	unsigned 			cnt;
-  	void				*pmsg;    
-  	int				status;
   	register struct ioc_in_use 	*piiu;
+	int				done;
+	int				status;
+	int 				retry_count;
+#	define				RETRY_INIT 100
+
+	retry_count = RETRY_INIT;
 
   	if(!ca_static->ca_repeater_contacted)
 		notify_ca_repeater();
 
-  	for(piiu=iiu;piiu<&iiu[nxtiiu];piiu++)
-    		if(piiu->send->stk){
-      			int retry_count;
+	/*
+	 * dont call it recursively
+	 */
+	if(send_msg_active){
+		return;
+	}
 
+	send_msg_active++;
 
-      			cnt = piiu->send->stk;
-      			pmsg = (void *) piiu->send->buf;	
+	/*
+	 * Dont exit until all connections are flushed
+ 	 *
+	 */
+	while(TRUE){
+		done = TRUE;
+  		for(piiu=iiu;piiu<&iiu[nxtiiu];piiu++){
 
-      			retry_count =500;
-      			while(TRUE){
+    			if(!piiu->send->stk)
+				continue;
 
-			if(piiu->conn_up){
-	  			/* 
-				 * send UDP or TCP message depending
-				 * on whether this channel has a TCP
-				 * connection yet
-				 *
-				 */
-          			status = sendto(
-						piiu->sock_chan,
-						pmsg,	
-			  			cnt,
-						0,
-						&piiu->sock_addr,
-						sizeof(piiu->sock_addr));
-        		}
-        		else{
-	  			/* 
-				 * send UDP message  
-				 *
-				 * NOTE: this does not use a broadcast
-				 * if the location of the channel is
-				 * known from a previous connection.
-				 *
-				 * (piiu->sock_addr points to the
-				 *	known address)
-				 */
-          			status = sendto(
-						iiu[BROADCAST_IIU].sock_chan,
-						pmsg,	
-			  			cnt,
-						0,
-						&piiu->sock_addr,
-						sizeof(piiu->sock_addr));
+			status = cac_send_msg_piiu(piiu);
+			if(status<0){
+				done = FALSE;
 			}
-        		if(status == cnt)
-	  			break;
+    		}
 
-			if(status>=0){
-	  			if(status>cnt)
-	    				ca_signal(
-						ECA_INTERNAL,
-						"more sent than requested");
-	  			cnt = cnt-status;
-	  			pmsg = (void *) (status+(char *)pmsg);
-			}
-#ifdef UNIX
-        		else if(MYERRNO == EWOULDBLOCK){
-				/*
-				 * Ensure we do not accumulate extra recv
-				 * messages (for TCP)
-				 */
-				/*
-				 * free up push pull deadlock only
-				 * if recv not allready in progress
-				 */
-				if(post_msg_active==0)
-        				recv_msg_select(&notimeout);
-			}
-#endif
-        		else{
-	  			if(MYERRNO != EPIPE && MYERRNO != ECONNRESET)
-            			printf(	"CA: error on socket send() %d\n",
-					MYERRNO);
-	  			close_ioc(piiu);
-	  			break;
-			}
 
-			if(retry_count-- <= 0){
-				char *iocname;
-				struct in_addr *inaddr;
-				
-				inaddr = &piiu->sock_addr.sin_addr;
-				iocname = host_from_addr(inaddr);
-
-				ca_signal(ECA_DLCKREST, iocname);
-				
-	  			close_ioc(piiu);
-	  			break;
+#ifndef UNIX
+		break;
+#else
+		if(done){
+			/*
+			 * allways double check that we
+			 * are finished incase somthing was added 
+			 * to a send buffer and a recursive 
+			 * ca_send_msg() call was refused above
+			 */
+  			for(piiu=iiu;piiu<&iiu[nxtiiu];piiu++){
+    				if(piiu->send->stk){
+					done = FALSE;
+				}
 			}
-			TCPDELAY;
-      		}
-
-      		/* reset send stack */
-      		piiu->send->stk = 0;
+			if(done)
+				break;
+		}
 
 		/*
-		 * reset the delay to the next keepalive
+		 * Ensure we do not accumulate extra recv
+		 * messages (for TCP)
 		 */
-    		if(piiu != &iiu[BROADCAST_IIU] && piiu->conn_up){
-			piiu->next_retry = time(NULL) + CA_RETRY_PERIOD;
-		}
-    	}
+		/*
+		 * free up push pull deadlock only
+		 * if recv not already in progress
+		 */
+		if(post_msg_active==0)
+			recv_msg_select(&notimeout);
 
+		if(retry_count-- <= 0){
+			char *iocname;
+			struct in_addr *inaddr;
+  			for(piiu=iiu; piiu<&iiu[nxtiiu]; piiu++){
+    				if(piiu->send->stk){
+					inaddr = &piiu->sock_addr.sin_addr;
+					iocname = host_from_addr(inaddr);
+#ifdef CLOSE_ON_EXPIRED			
+			
+					ca_signal(ECA_DLCKREST, iocname);
+					close_ioc(piiu);
+#else
+					ca_signal(ECA_SERVBEHIND, iocname);
+#endif
+				}
+			}
+#ifndef CLOSE_ON_EXPIRED			
+			retry_count = RETRY_INIT;
+#endif
+		}
+		TCPDELAY;
+#endif
+	}
+
+	send_msg_active--;
+}
+
+
+
+/*
+ *	CAC_SEND_MSG_PIIU()
+ *
+ * 
+ */
+static int
+cac_send_msg_piiu(piiu)
+register struct ioc_in_use 	*piiu;
+{
+  	unsigned 		cnt;
+  	void			*pmsg;    
+  	int			status;
+
+	cnt = piiu->send->stk;
+	pmsg = (void *) piiu->send->buf;	
+
+	while(TRUE){
+		if(piiu->conn_up){
+			/* 
+			 * send UDP or TCP message depending
+			 * on whether this channel has a TCP
+			 * connection yet
+			 *
+			 */
+			 status = sendto(
+					piiu->sock_chan,
+					pmsg,	
+					cnt,
+					0,
+					&piiu->sock_addr,
+					sizeof(piiu->sock_addr));
+		}
+		else{
+			/* 
+			 * send UDP message  
+			 *
+			 * NOTE: this does not use a broadcast
+			 * if the location of the channel is
+			 * known from a previous connection.
+			 *
+			 * (piiu->sock_addr points to the
+			 *	known address)
+			 */
+			 status = sendto(
+					iiu[BROADCAST_IIU].sock_chan,
+					pmsg,	
+					cnt,
+					0,
+					&piiu->sock_addr,
+					sizeof(piiu->sock_addr));
+		}
+
+		/*
+		 * normal fast exit
+		 */
+		if(status == cnt)
+			break;
+
+		if(status>=0){
+			if(status>cnt){
+				ca_signal(
+					ECA_INTERNAL,
+					"more sent than requested");
+			}
+
+			cnt = cnt-status;
+			pmsg = (void *) (status+(char *)pmsg);
+		}
+#ifdef UNIX
+		else if(MYERRNO == EWOULDBLOCK){
+			if(pmsg !=  piiu->send->buf){
+				/*
+				 * realign the message if this
+				 * was a partial send
+				 */
+				memcpy(	piiu->send->buf,
+					pmsg,
+					cnt);
+				piiu->send->stk = cnt;
+			}
+			return ERROR;
+		}
+#endif
+		else{
+			if(MYERRNO != EPIPE && MYERRNO != ECONNRESET)
+			printf(	
+				"CA: error on socket send() %d\n",
+				MYERRNO);
+			close_ioc(piiu);
+			return OK;
+		}
+
+		if(status == 0){
+			TCPDELAY;
+		}
+
+	}
+
+      	/* reset send stack */
+      	piiu->send->stk = 0;
+
+	/*
+	 * reset the delay to the next keepalive
+	 */
+    	if(piiu != &iiu[BROADCAST_IIU] && piiu->conn_up){
+		piiu->next_retry = time(NULL) + CA_RETRY_PERIOD;
+	}
+
+	return OK;
 }
 
 
@@ -800,7 +910,7 @@ struct ioc_in_use	*piiu;
     	else if(status <0){
     		/* try again on status of -1 and EWOULDBLOCK */
       		if(MYERRNO == EWOULDBLOCK){
-    			TCPDELAY;
+   			TCPDELAY;
 			return;
 		}
 

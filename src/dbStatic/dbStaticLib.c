@@ -31,26 +31,25 @@ of this distribution.
 #define GUIGROUPS_GBLSOURCE
 #define SPECIAL_GBLSOURCE
 #include "dbDefs.h"
-#define LINK_GBLSOURCE
-#include "link.h"
-#undef LINK_GBLSOURCE
 #include "dbFldTypes.h"
 #include "epicsPrint.h"
 #include "errlog.h"
 #include "ellLib.h"
 #include "cvtFast.h"
-#include "devSup.h"
-#include "drvSup.h"
-#include "special.h"
 #include "gpHash.h"
-#include "guigroup.h"
-#include "special.h"
 #include "dbmf.h"
 #include "postfix.h"
 #include "sCalcPostfix.h"
 #include "osiFileName.h"
 
 #define epicsExportSharedSymbols
+#define LINK_GBLSOURCE
+#include "link.h"
+#undef LINK_GBLSOURCE
+#include "devSup.h"
+#include "drvSup.h"
+#include "special.h"
+#include "guigroup.h"
 #include "dbStaticLib.h"
 #include "dbStaticPvt.h"
 

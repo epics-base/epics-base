@@ -27,12 +27,10 @@
 
 #include "vxWorks.h"
 #include "a_out.h"
-#if defined(V4_vxWorks)
-#	include "iv68k.h"
-#elif defined(V5_vxWorks)
-#	include "iv.h"
+#ifdef	V5_vxWorks
+#include "iv.h"
 #else
-#	include "iv68k.h"
+#include "iv68k.h"
 #endif
 #include "ctype.h"
 #include "sysSymTbl.h"

@@ -17,6 +17,12 @@ REM    need grep from here NOT from cvs directory
 REM    some tools may need a tmp directory
 set PATH=%PATH%;c:\cygwin\bin
 
+REM    --------------- vim (use cygwin vim ) ----------------
+REM HOME needed by vim to write .viminfo file.
+set HOME=c:/users/%USERNAME%
+REM VIM needed by vim to find _vimrc file.
+set VIM=c:\cygwin
+
 REM    --------------- perl (use cygwin perl) ------------
 set PERLLIB=/C//cygwin/lib/perl5/5.6.1
 

@@ -579,13 +579,13 @@ void udpiiu::searchRespAction ( const caHdr &msg, const osiSockAddr &addr )
 
     if ( CA_V42 ( CA_PROTOCOL_VERSION, minorVersion ) ) {
         this->pCAC ()->lookupChannelAndTransferToTCP 
-            ( msg.m_available, msg.m_cid, USHRT_MAX, 0, 
-            minorVersion, serverAddr );
+            ( msg.m_available, msg.m_cid, USHRT_MAX, 
+                0, minorVersion, serverAddr );
     }
     else {
         this->pCAC ()->lookupChannelAndTransferToTCP 
             ( msg.m_available, msg.m_cid, msg.m_dataType, 
-                minorVersion, msg.m_count, serverAddr );
+                msg.m_count, minorVersion, serverAddr );
     }
 }
 

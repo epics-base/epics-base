@@ -9,9 +9,8 @@ include $(TOP)/configure/CONFIG
 # build an ioc application
 
 PROD_IOC = _APPNAME_
-# <name>.dbd will be created from <name>Include.dbd
-DBD += _APPNAME_.dbd
 
+DBD += _APPNAME_.dbd
 # _APPNAME_.dbd will be made up from these files:
 _APPNAME__DBD += base.dbd
 #include definitions for any other support applications needed

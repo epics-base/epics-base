@@ -13,19 +13,6 @@ part of base. The following steps must be accomplished:
     configure/RELEASE and define the link to the location
     where the sequencer was installed.
 
-  - Uncomment the following lines in src/Makefile
-      vlinac_SRCS += beamTrajectory.st
-      vlinac_SRCS += autoControl.st
-      vlinac_LIBS += seq pv
-
-  - Uncomment the following lines in src/vlinacInclude.dbd
-      registrar(beamTrajectoryRegistrar)
-      registrar(autoControlRegistrar)
-
-  - Uncomment the following lines in iocBoot/iocvlinac/st.cmd
-      seq &beamTrajectory, "user=xxx"
-      seq &autoControl, "user=xxx"
-
   - Rebuild the entire application and start (reboot) the ioc
 
 This directory (misc) contains additional files to compliment

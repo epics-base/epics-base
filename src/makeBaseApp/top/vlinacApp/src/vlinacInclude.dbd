@@ -1,4 +1,0 @@
-include "base.dbd"
-#registrar(beamTrajectoryRegistrar)
-#registrar(autoControlRegistrar)
-#registrar(stabilizerRegistrar)

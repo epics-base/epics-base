@@ -19,7 +19,7 @@ cd ${TOP}/iocBoot/${IOC}
 iocInit()
 
 ## Start any sequence programs
-#seq &beamTrajectory, "user=_USER_"
-#seq &autoControl, "user=_USER_"
-#seq &stabilizer, "user=_USER_"
+seq &beamTrajectory, "user=_USER_"
+seq &autoControl, "user=_USER_"
+seq &stabilizer, "user=_USER_"
 

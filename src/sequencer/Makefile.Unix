@@ -12,7 +12,6 @@ YACCOPT = -d -v
 INC += seq.h
 INC += seqCom.h
 INC += seqU.h
-INC += seq_taskLib.h
 
 SRCS.c =  ../snc_main.c ../parse.c ../phase2.c ../gen_ss_code.c \
 	../gen_tables.c sncVersion.c snc.c

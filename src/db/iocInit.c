@@ -772,9 +772,10 @@ static long initDatabase(void)
                             *    Severity/No Maximize Severity(MS/NMS), and output NMS
                             *    links ... The following code checks for this.
                             */
-                            if (plink->value.db_link.process_passive
+                            if (errVerbose &&
+				(plink->value.db_link.process_passive
                                 || (pfldDes->field_type == DBF_OUTLINK
-                                    && plink->value.db_link.maximize_sevr))
+                                    && plink->value.db_link.maximize_sevr)))
                             {
                                /*
                                 * Link PP and/or Outlink MS ...
@@ -789,7 +790,7 @@ static long initDatabase(void)
                                 strcat(message," PP and/or MS illegal");
                                 status = S_db_badField;
                                 errMessage(status,message);
-                                if(rtnval==OK) rtnval=status;
+				status = 0;
                             }
 			}
 		    }

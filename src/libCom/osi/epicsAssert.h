@@ -68,6 +68,9 @@ epicsShareFunc extern void epicsShareAPI epicsAssert ();
 
 #else /*__STDC__ or __cplusplus*/
 
+#define assert(exp) \
+{if (!(exp)) epicsAssert (__FILE__, __LINE__, "", epicsAssertAuthor);}
+
 #endif /* (__STDC__ or __cplusplus) and not VAXC */
 
 #endif  /* NDEBUG */

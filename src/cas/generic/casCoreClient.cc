@@ -38,6 +38,9 @@
  *
  * History
  * $Log$
+ * Revision 1.10.2.1  2002/07/12 22:16:34  jba
+ * Updated license comments.
+ *
  * Revision 1.10  1998/10/28 23:51:00  jhill
  * server nolonger throws exception when a poorly formed get/put call back
  * request arrives. Instead a get/put call back response is sent which includes
@@ -139,6 +142,13 @@ casCoreClient::~casCoreClient()
 void casCoreClient::destroy()
 {
 	delete this;
+}
+
+// this is a pure virtual function, but we nevertheless need a noop 
+// to be called if they post events when a channel is being 
+// destroyed when we are in the casStrmClient destructor
+void casCoreClient::eventSignal()
+{
 }
 
 //

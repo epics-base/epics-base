@@ -7,6 +7,9 @@
 # 	Experimental Physics and Industrial Control System (EPICS)
 # 
 # $Log$
+# Revision 1.9  1997/05/01 19:57:10  jhill
+# updated dll keywords
+#
 # Revision 1.8  1997/04/10 19:46:59  jhill
 # new env param decl
 #
@@ -58,7 +61,7 @@ TOOL=`basename $0`
 
 # Start by creating a list of the ENV_PARAM declarations
 PARAMS=`sed -n -e 's/;//' \
-	-e 's/^[	 ]*epicsShareExtern[     ][      ]*const[	 ][	 ]*ENV_PARAM[	 ][	 ]*//p' \
+	-e 's/^[	 ]*epicsShareExtern[     ][      ]*READONLY[	 ][	 ]*ENV_PARAM[	 ][	 ]*//p' \
 	${SRC}` 
 
 # Create a new header file
@@ -104,13 +107,13 @@ do
 
 	# Add this definition to the header file
 #	echo ${ENV} = ${DEFAULT}
-	echo epicsShareDef const ENV_PARAM ${ENV}'={"'${ENV}'","'${DEFAULT}'"};' >>${OBJ}
+	echo epicsShareDef READONLY ENV_PARAM ${ENV}'={"'${ENV}'","'${DEFAULT}'"};' >>${OBJ}
 done
 
 # Now create an array pointing to all parameters
 cat >>${OBJ} <<!EOF
 
-epicsShareDef const ENV_PARAM* env_param_list[EPICS_ENV_VARIABLE_COUNT+1] = {
+epicsShareDef READONLY ENV_PARAM* env_param_list[EPICS_ENV_VARIABLE_COUNT+1] = {
 !EOF
 
 # Contents are the addresses of each parameter

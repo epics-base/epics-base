@@ -73,26 +73,26 @@ typedef struct envParam {
 } ENV_PARAM;
 
 /*
- * bldEnvData looks for "epicsShareExtern const ENV_PARAM"
+ * bldEnvData looks for "epicsShareExtern READONLY ENV_PARAM"
  */
-epicsShareExtern const ENV_PARAM EPICS_CA_ADDR_LIST; 
-epicsShareExtern const ENV_PARAM EPICS_CA_CONN_TMO; 
-epicsShareExtern const ENV_PARAM EPICS_CA_BEACON_PERIOD; 
-epicsShareExtern const ENV_PARAM EPICS_CA_AUTO_ADDR_LIST;
-epicsShareExtern const ENV_PARAM EPICS_CA_REPEATER_PORT;
-epicsShareExtern const ENV_PARAM EPICS_CA_SERVER_PORT;
-epicsShareExtern const ENV_PARAM EPICS_CAS_INTF_ADDR_LIST;
-epicsShareExtern const ENV_PARAM EPICS_CAS_BEACON_ADDR_LIST; 
-epicsShareExtern const ENV_PARAM EPICS_CAS_SERVER_PORT;
-epicsShareExtern const ENV_PARAM EPICS_TS_MIN_WEST;
-epicsShareExtern const ENV_PARAM EPICS_TS_NTP_INET;
-epicsShareExtern const ENV_PARAM EPICS_IOC_LOG_PORT;
-epicsShareExtern const ENV_PARAM EPICS_IOC_LOG_INET;
-epicsShareExtern const ENV_PARAM EPICS_IOC_LOG_FILE_LIMIT;
-epicsShareExtern const ENV_PARAM EPICS_IOC_LOG_FILE_NAME;
-epicsShareExtern const ENV_PARAM EPICS_IOC_LOG_FILE_COMMAND;
-epicsShareExtern const ENV_PARAM EPICS_CMD_PROTO_PORT;
-epicsShareExtern const ENV_PARAM EPICS_AR_PORT;
+epicsShareExtern READONLY ENV_PARAM EPICS_CA_ADDR_LIST; 
+epicsShareExtern READONLY ENV_PARAM EPICS_CA_CONN_TMO; 
+epicsShareExtern READONLY ENV_PARAM EPICS_CA_BEACON_PERIOD; 
+epicsShareExtern READONLY ENV_PARAM EPICS_CA_AUTO_ADDR_LIST;
+epicsShareExtern READONLY ENV_PARAM EPICS_CA_REPEATER_PORT;
+epicsShareExtern READONLY ENV_PARAM EPICS_CA_SERVER_PORT;
+epicsShareExtern READONLY ENV_PARAM EPICS_CAS_INTF_ADDR_LIST;
+epicsShareExtern READONLY ENV_PARAM EPICS_CAS_BEACON_ADDR_LIST; 
+epicsShareExtern READONLY ENV_PARAM EPICS_CAS_SERVER_PORT;
+epicsShareExtern READONLY ENV_PARAM EPICS_TS_MIN_WEST;
+epicsShareExtern READONLY ENV_PARAM EPICS_TS_NTP_INET;
+epicsShareExtern READONLY ENV_PARAM EPICS_IOC_LOG_PORT;
+epicsShareExtern READONLY ENV_PARAM EPICS_IOC_LOG_INET;
+epicsShareExtern READONLY ENV_PARAM EPICS_IOC_LOG_FILE_LIMIT;
+epicsShareExtern READONLY ENV_PARAM EPICS_IOC_LOG_FILE_NAME;
+epicsShareExtern READONLY ENV_PARAM EPICS_IOC_LOG_FILE_COMMAND;
+epicsShareExtern READONLY ENV_PARAM EPICS_CMD_PROTO_PORT;
+epicsShareExtern READONLY ENV_PARAM EPICS_AR_PORT;
 #define EPICS_ENV_VARIABLE_COUNT 18
 
 /*
@@ -102,7 +102,7 @@ epicsShareExtern const ENV_PARAM EPICS_AR_PORT;
  * bldEnvData looks for "epicsShareExtern ENV_PARAM" so
  * this always needs to be divided into two lines
  */
-epicsShareExtern const ENV_PARAM
+epicsShareExtern READONLY ENV_PARAM
 	*env_param_list[EPICS_ENV_VARIABLE_COUNT+1];
 
 #if defined(__STDC__) || defined(__cplusplus)

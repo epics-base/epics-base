@@ -40,7 +40,7 @@ $tool=~ s'.*/'';
 open SRC or die "Cannot open $SRC";
 while (<SRC>)
 {
-	if (m'epicsShareExtern[ \t]+const[ \t]+ENV_PARAM[ \t]+([A-Za-z_]+)[ \t;]*')
+	if (m'epicsShareExtern[ \t]+READONLY[ \t]+ENV_PARAM[ \t]+([A-Za-z_]+)[ \t;]*')
 	{
 		$need_var{$1} = 1;
 	}
@@ -123,14 +123,14 @@ foreach $var ( sort keys %need_var )
 		print "Cannot find value for $var\n";
 	}
 
-	printf OUT "epicsShareDef const ENV_PARAM %s = { \"%s\", \"%s\" };\n",
+	printf OUT "epicsShareDef READONLY ENV_PARAM %s = { \"%s\", \"%s\" };\n",
 		$var, $var, $default;
 }
 
 # Now create an array pointing to all parameters
 
 print OUT "\n";
-print OUT "epicsShareDef const ENV_PARAM* env_param_list[EPICS_ENV_VARIABLE_COUNT+1] =\n";
+print OUT "epicsShareDef READONLY ENV_PARAM* env_param_list[EPICS_ENV_VARIABLE_COUNT+1] =\n";
 print OUT "{\n";
 
 # Contents are the addresses of each parameter

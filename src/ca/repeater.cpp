@@ -77,8 +77,6 @@ static tsDLList < repeaterClient > client_list;
 
 epicsSingleton < tsFreeList < repeaterClient, 0x20 > > repeaterClient::pFreeList;
 
-static char buf [MAX_UDP_RECV]; 
-
 static const unsigned short PORT_ANY = 0u;
 
 typedef struct {
@@ -463,6 +461,9 @@ void ca_repeater ()
     osiSockAddr from;
     unsigned short port;
     makeSocketReturn msr;
+    char * pBuf; 
+
+    pBuf = new char [MAX_UDP_RECV];
 
     assert ( osiSockAttach() );
 
@@ -482,16 +483,17 @@ void ca_repeater ()
         fprintf ( stderr, "%s: Unable to create repeater socket because %d=\"%s\" - fatal\n",
             __FILE__, msr.errNumber, msr.pErrStr);
         osiSockRelease ();
+        delete [] pBuf;
         exit(0);
     }
 
     sock = msr.sock;
 
-   debugPrintf ( ( "CA Repeater: Attached and initialized\n" ) );
+    debugPrintf ( ( "CA Repeater: Attached and initialized\n" ) );
 
-   while ( true ) {
+    while ( true ) {
         osiSocklen_t from_size = sizeof ( from );
-        size = recvfrom ( sock, buf, sizeof (buf), 0,
+        size = recvfrom ( sock, pBuf, MAX_UDP_RECV, 0,
                     &from.sa, &from_size );
         if ( size < 0 ) {
             int errnoCpy = SOCKERRNO;
@@ -509,7 +511,7 @@ void ca_repeater ()
             continue;
         }
 
-        caHdr *pMsg = (caHdr *) buf;
+        caHdr * pMsg = ( caHdr * ) pBuf;
 
         /*
          * both zero length message and a registration message

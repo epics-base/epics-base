@@ -5,69 +5,192 @@ include $(EPICS)/config/CONFIG_BASE
 USR_INCLUDES = -I../../drv
 
 SRCS.c = \
-	../devAiDvx2502.c ../devAiSoft.c ../devAiSoftRaw.c \
-	../devAiSymb.c ../devAiTestAsyn.c ../devAiXy566Di.c \
-	../devAiXy566DiL.c ../devAiXy566Se.c ../devAoSoft.c \
-	../devApsEg.c ../devApsEr.c\
-	../devAoSoftRaw.c ../devAoSymb.c ../devAoTestAsyn.c \
-	../devAoVmiVme4100.c ../devBiMpv910.c ../devBiSoft.c \
-	../devBiSoftRaw.c ../devBiTestAsyn.c ../devBiXVme210.c \
-	../devBoMpv902.c ../devBoSoft.c ../devBoSoftRaw.c \
-	../devBoTestAsyn.c ../devBoXVme220.c ../devCommonGpib.c \
-	../devEventSoft.c ../devEventTestIoEvent.c ../devHistogramSoft.c \
-	../devHistogramTestAsyn.c ../devLiSoft.c ../devLiSymb.c \
-	../devLoSoft.c ../devLoSymb.c ../devMbbiMpv910.c \
-	../devMbbiSoft.c ../devMbbiSoftRaw.c ../devMbbiTestAsyn.c \
-	../devMbbiXVme210.c ../devMbboMpv902.c ../devMbboSoft.c \
-	../devMbboSoftRaw.c ../devMbboTestAsyn.c ../devMbboXVme220.c \
-	../devMbbiDirectMpv910.c ../devMbbiDirectSoft.c \
-	../devMbbiDirectSoftRaw.c ../devMbbiDirectXVme210.c \
-	../devMbboDirectMpv902.c ../devMbboDirectSoft.c \
-	../devMbboDirectSoftRaw.c ../devMbboDirectXVme220.c \
-	../devPtSoft.c ../devSmCompumotor1830.c ../devSmOms6Axis.c \
-	../devSiSoft.c ../devSiSymb.c  ../devSiTestAsyn.c ../devSoSoft.c \
-        ../devSASoft.c ../devSoSymb.c \
-	../devSoTestAsyn.c ../devWfSoft.c ../devWfTestAsyn.c \
-	../devWfXy566Sc.c ../devAllenBradley.c ../devAt5Vxi.c \
-	../devMz8310.c ../devTimerMz8310.c \
-	../devVxiTDM.c ../devAiKscV215.c ../devXy240.c \
-	../devHpe1368a.c ../devAt8Fp.c ../devWfComet.c \
-	../devWfDvx2502.c ../devWfJoergerVtr1.c \
-	../devAvme9440.c \
+	../devAiDvx2502.c\
+	../devAiSoft.c\
+	../devAiSoftRaw.c\
+	../devAiSymb.c\
+	../devAiTestAsyn.c\
+	../devAiXy566Di.c\
+	../devAiXy566DiL.c\
+	../devAiXy566Se.c\
+	../devAoSoft.c\
+	../devApsEg.c\
+	../devApsEr.c\
+	../devAoSoftRaw.c\
+	../devAoSymb.c\
+	../devAoTestAsyn.c\
+	../devAoVmiVme4100.c\
+	../devBiMpv910.c\
+	../devBiSoft.c\
+	../devBiSoftRaw.c\
+	../devBiTestAsyn.c\
+	../devBiXVme210.c\
+	../devBoMpv902.c\
+	../devBoSoft.c\
+	../devBoSoftRaw.c\
+	../devBoTestAsyn.c\
+	../devBoXVme220.c\
+	../devCommonGpib.c\
+	../devEventSoft.c\
+	../devEventTestIoEvent.c\
+	../devHistogramSoft.c\
+	../devHistogramTestAsyn.c\
+	../devLiSoft.c\
+	../devLiSymb.c\
+	../devLoSoft.c\
+	../devLoSymb.c\
+	../devMbbiMpv910.c\
+	../devMbbiSoft.c\
+	../devMbbiSoftRaw.c\
+	../devMbbiTestAsyn.c\
+	../devMbbiXVme210.c\
+	../devMbboMpv902.c\
+	../devMbboSoft.c\
+	../devMbboSoftRaw.c\
+	../devMbboTestAsyn.c\
+	../devMbboXVme220.c\
+	../devMbbiDirectMpv910.c\
+	../devMbbiDirectSoft.c\
+	../devMbbiDirectSoftRaw.c\
+	../devMbbiDirectXVme210.c\
+	../devMbboDirectMpv902.c\
+	../devMbboDirectSoft.c\
+	../devMbboDirectSoftRaw.c\
+	../devMbboDirectXVme220.c\
+	../devPtSoft.c\
+	../devSmCompumotor1830.c\
+	../devSmOms6Axis.c\
+	../devSiSoft.c\
+	../devSiSymb.c\
+	../devSiTestAsyn.c\
+	../devSoSoft.c\
+	../devSASoft.c\
+	../devSoSymb.c\
+	../devSoTestAsyn.c\
+	../devWfSoft.c\
+	../devWfTestAsyn.c\
+	../devWfXy566Sc.c\
+	../devAllenBradley.c\
+	../devAt5Vxi.c\
+	../devMz8310.c\
+	../devTimerMz8310.c\
+	../devVxiTDM.c\
+	../devAiKscV215.c\
+	../devXy240.c\
+	../devHpe1368a.c\
+	../devAt8Fp.c\
+	../devWfComet.c\
+	../devWfDvx2502.c\
+	../devWfJoergerVtr1.c\
+	../devAvme9440.c\
 	../devSysmon.c
-#	../devAiCamac.c ../devAaiCamac.c ../devBiCamac.c ../devLiCamac.c \
-#	../devMbbiCamac.c ../devMbbiDirectCamac.c ../devWfCamac.c \
-#	../devAoCamac.c ../devAaoCamac.c ../devBoCamac.c ../devLoCamac.c \
-#	../devMbboCamac.c ../devMbboDirectCamac.c 
+#	../devAiCamac.c\
+#	../devAaiCamac.c\
+#	../devBiCamac.c\
+#	../devLiCamac.c\
+#	../devMbbiCamac.c\
+#	../devMbbiDirectCamac.c\
+#	../devWfCamac.c\
+#	../devAoCamac.c\
+#	../devAaoCamac.c\
+#	../devBoCamac.c\
+#	../devLoCamac.c\
+#	../devMbboCamac.c\
+#	../devMbboDirectCamac.c 
 
 OBJS = \
-	devAiDvx2502.o devAiSoft.o devAiSoftRaw.o devAiSymb.o \
-	devAiTestAsyn.o devAiXy566Di.o devAiXy566DiL.o devAiXy566Se.o \
-	devAoSoft.o devAoSoftRaw.o devAoSymb.o devAoTestAsyn.o \
-	devAoVmiVme4100.o devBiMpv910.o devApsEg.o devApsEr.o \
-	devBiSoft.o devBiSoftRaw.o \
-	devBiTestAsyn.o devBiXVme210.o devBoMpv902.o devBoSoft.o \
-	devBoSoftRaw.o devBoTestAsyn.o devBoXVme220.o devCommonGpib.o \
-	devEventSoft.o devEventTestIoEvent.o devHistogramSoft.o \
-	devHistogramTestAsyn.o devLiSoft.o devLiSymb.o \
-	devLoSoft.o devLoSymb.o devMbbiMpv910.o devMbbiSoft.o \
-	devMbbiSoftRaw.o devMbbiTestAsyn.o devMbbiXVme210.o devMbboMpv902.o \
-	devMbboSoft.o devMbboSoftRaw.o devMbboTestAsyn.o devMbboXVme220.o \
-	devMbbiDirectMpv910.o devMbbiDirectSoft.o devMbbiDirectSoftRaw.o \
-	devMbbiDirectXVme210.o devMbboDirectMpv902.o devMbboDirectSoft.o \
-	devMbboDirectSoftRaw.o devMbboDirectXVme220.o devPtSoft.o \
-	devSmCompumotor1830.o devSmOms6Axis.o devSASoft.o devSiSoft.o \
-	devSiSymb.o devSiTestAsyn.o devSoSoft.o devSoSymb.o devSoTestAsyn.o \
-	devWfSoft.o devWfTestAsyn.o devWfXy566Sc.o devAllenBradley.o \
-	devAt5Vxi.o devMz8310.o devTimerMz8310.o devVxiTDM.o devAiKscV215.o \
-	devXy240.o devHpe1368a.o devAt8Fp.o devWfComet.o \
-	devWfDvx2502.o devWfJoergerVtr1.o \
-	devAvme9440.o \
+	devAiDvx2502.o\
+	devAiSoft.o\
+	devAiSoftRaw.o\
+	devAiSymb.o\
+	devAiTestAsyn.o\
+	devAiXy566Di.o\
+	devAiXy566DiL.o\
+	devAiXy566Se.o\
+	devAoSoft.o\
+	devAoSoftRaw.o\
+	devAoSymb.o\
+	devAoTestAsyn.o\
+	devAoVmiVme4100.o\
+	devBiMpv910.o\
+	devApsEg.o\
+	devApsEr.o\
+	devBiSoft.o\
+	devBiSoftRaw.o\
+	devBiTestAsyn.o\
+	devBiXVme210.o\
+	devBoMpv902.o\
+	devBoSoft.o\
+	devBoSoftRaw.o\
+	devBoTestAsyn.o\
+	devBoXVme220.o\
+	devCommonGpib.o\
+	devEventSoft.o\
+	devEventTestIoEvent.o\
+	devHistogramSoft.o\
+	devHistogramTestAsyn.o\
+	devLiSoft.o\
+	devLiSymb.o\
+	devLoSoft.o\
+	devLoSymb.o\
+	devMbbiMpv910.o\
+	devMbbiSoft.o\
+	devMbbiSoftRaw.o\
+	devMbbiTestAsyn.o\
+	devMbbiXVme210.o\
+	devMbboMpv902.o\
+	devMbboSoft.o\
+	devMbboSoftRaw.o\
+	devMbboTestAsyn.o\
+	devMbboXVme220.o\
+	devMbbiDirectMpv910.o\
+	devMbbiDirectSoft.o\
+	devMbbiDirectSoftRaw.o\
+	devMbbiDirectXVme210.o\
+	devMbboDirectMpv902.o\
+	devMbboDirectSoft.o\
+	devMbboDirectSoftRaw.o\
+	devMbboDirectXVme220.o\
+	devPtSoft.o\
+	devSmCompumotor1830.o\
+	devSmOms6Axis.o\
+	devSASoft.o\
+	devSiSoft.o\
+	devSiSymb.o\
+	devSiTestAsyn.o\
+	devSoSoft.o\
+	devSoSymb.o\
+	devSoTestAsyn.o\
+	devWfSoft.o\
+	devWfTestAsyn.o\
+	devWfXy566Sc.o\
+	devAllenBradley.o\
+	devAt5Vxi.o\
+	devMz8310.o\
+	devTimerMz8310.o\
+	devVxiTDM.o\
+	devAiKscV215.o\
+	devXy240.o\
+	devHpe1368a.o\
+	devAt8Fp.o\
+	devWfComet.o\
+	devWfDvx2502.o\
+	devWfJoergerVtr1.o\
+	devAvme9440.o\
 	devSysmon.o
-#	devAiCamac.o devAaiCamac.o devBiCamac.o devLiCamac.o \
-#	devMbbiCamac.o devMbbiDirectCamac.o devWfCamac.o \
-#	devAoCamac.o devAaoCamac.o devBoCamac.o devLoCamac.o \
-#	devMbboCamac.o devMbboDirectCamac.o 
+#	devAiCamac.o\
+#	devAaiCamac.o\
+#	devBiCamac.o\
+#	devLiCamac.o\
+#	devMbbiCamac.o\
+#	devMbbiDirectCamac.o\
+#	devWfCamac.o\
+#	devAoCamac.o\
+#	devAaoCamac.o\
+#	devBoCamac.o\
+#	devLoCamac.o\
+#	devMbboCamac.o\
+#	devMbboDirectCamac.o
 
 PROD = devSup
 

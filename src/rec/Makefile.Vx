@@ -5,28 +5,96 @@ include $(EPICS)/config/CONFIG_BASE
 USR_INCLUDES = -I../../drv
 
 SRCS.c = \
-	../recAi.c ../recGsub.c ../recPulseDelay.c ../recAo.c \
-	../recHistogram.c ../recPulseTrain.c ../recBi.c ../recLongin.c \
-	../recSel.c ../recBo.c ../recLongout.c ../recSeq.c \
-	../recCalc.c ../recMbbi.c ../recState.c ../recCompress.c \
-	../recMbbiDirect.c ../recSteppermotor.c ../recEg.c ../recMbbo.c \
-	../recStringin.c ../recEgevent.c ../recMbboDirect.c ../recStringout.c \
-	../recEr.c ../recPal.c ../recSub.c ../recErevent.c \
-	../recPermissive.c ../recSwitch.c ../recEvent.c ../recPid.c \
-	../recTimer.c ../recFanout.c ../recPulseCounter.c ../recWaveform.c \
-	../recSubArray.c ../recWait.c ../caMonitor.c ../recScan.c \
-	../recAai.c ../recAao.c ../recDfanout.c ../recMbbiDirect.c ../recMbboDirect.c
+	../recAi.c\
+	../recAo.c\
+	../recBi.c\
+	../recBo.c\
+	../recCalc.c\
+	../recCompress.c\
+	../recDfanout.c\
+	../recEg.c\
+	../recEgevent.c\
+	../recEr.c\
+	../recErevent.c\
+	../recEvent.c\
+	../recFanout.c\
+	../recHistogram.c\
+	../recLongin.c\
+	../recLongout.c\
+	../recMbbi.c\
+	../recMbbiDirect.c\
+	../recMbbo.c\
+	../recMbboDirect.c\
+	../recPal.c\
+	../recPermissive.c\
+	../recPid.c\
+	../recPulseCounter.c\
+	../recPulseDelay.c\
+	../recPulseTrain.c\
+	../recScan.c\
+	../recSel.c\
+	../recSeq.c\
+	../recState.c\
+	../recSteppermotor.c\
+	../recStringin.c\
+	../recStringout.c\
+	../recSub.c\
+	../recSubArray.c\
+	../recSwitch.c\
+	../recTimer.c\
+	../recWaveform.c\
+	../recWait.c\
+	../caMonitor.c
+#	../recGsub.c\
+#	../recAai.c\
+#	../recAao.c
 
 OBJS = \
-	recAi.o recGsub.o recPulseDelay.o recAo.o recHistogram.o \
-	recPulseTrain.o recBi.o recLongin.o recSel.o recBo.o \
-	recLongout.o recSeq.o recCalc.o recMbbi.o recState.o recCompress.o \
-	recMbbiDirect.o recSteppermotor.o recEg.o recMbbo.o \
-	recStringin.o recEgevent.o recMbboDirect.o recStringout.o \
-	recEr.o recPal.o recSub.o recErevent.o recPermissive.o recSwitch.o \
-	recEvent.o recPid.o recTimer.o recFanout.o recPulseCounter.o \
-	recWaveform.o recSubArray.o recWait.o caMonitor.o recScan.o \
-	recAai.o recAao.o recDfanout.o recMbbiDirect.o recMbboDirect.o
+	recAi.o\
+	recPulseDelay.o\
+	recAo.o\
+	recHistogram.o\
+	recPulseTrain.o\
+	recBi.o\
+	recLongin.o\
+	recSel.o\
+	recBo.o\
+	recLongout.o\
+	recSeq.o\
+	recCalc.o\
+	recMbbi.o\
+	recState.o\
+	recCompress.o\
+	recMbbiDirect.o\
+	recSteppermotor.o\
+	recEg.o\
+	recMbbo.o\
+	recStringin.o\
+	recEgevent.o\
+	recMbboDirect.o\
+	recStringout.o\
+	recEr.o\
+	recPal.o\
+	recSub.o\
+	recErevent.o\
+	recPermissive.o\
+	recSwitch.o\
+	recEvent.o\
+	recPid.o\
+	recTimer.o\
+	recFanout.o\
+	recPulseCounter.o\
+	recWaveform.o\
+	recSubArray.o\
+	recWait.o\
+	recScan.o\
+	recDfanout.o\
+	recMbbiDirect.o\
+	recMbboDirect.o\
+	caMonitor.o
+#	recGsub.o\
+#	recAai.o\
+#	recAao.o\
 	
 
 PROD = recSup

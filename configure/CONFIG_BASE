@@ -19,6 +19,7 @@ EPICS_BASE_HOST_BIN = $(EPICS_BASE)/bin/$(EPICS_HOST_ARCH)
 EPICS_BASE_HOST_LIB = $(EPICS_BASE)/lib/$(EPICS_HOST_ARCH)
 ifdef T_A
 EPICS_BASE_LIB      = $(EPICS_BASE)/lib/$(T_A)
+EPICS_BASE_BIN      = $(EPICS_BASE)/bin/$(T_A)
 endif
 
 #---------------------------------------------------------------
@@ -54,17 +55,24 @@ OSITHREAD_DEFAULT_STACK_FLAGS_NO =
 BASE_CPPFLAGS += $(OSITHREAD_DEFAULT_STACK_FLAGS_$(OSITHREAD_USE_DEFAULT_STACK))
 
 #---------------------------------------------------------------
+# Where to find the installed build tools
+
+EPICS_BASE_TOOLS_BIN_HOST = $(EPICS_BASE_BIN)
+EPICS_BASE_TOOLS_BIN_CROSS = $(EPICS_BASE_HOST_BIN)
+EPICS_BASE_TOOLS_BIN = $(EPICS_BASE_TOOLS_BIN_$(BUILD_CLASS))
+
+#---------------------------------------------------------------
 # Epics base build tools and tool flags
 
-MAKEBPT                    = $(call PATH_FILTER, $(EPICS_BASE_HOST_BIN)/makeBpt$(HOSTEXE))
-DBEXPAND                   = $(call PATH_FILTER, $(EPICS_BASE_HOST_BIN)/dbExpand$(HOSTEXE))
-DBTORECORDTYPEH            = $(call PATH_FILTER, $(EPICS_BASE_HOST_BIN)/dbToRecordtypeH$(HOSTEXE))
-DBTOMENUH                  = $(call PATH_FILTER, $(EPICS_BASE_HOST_BIN)/dbToMenuH$(HOSTEXE))
-REGISTERRECORDDEVICEDRIVER = $(PERL) $(EPICS_BASE_HOST_BIN)/registerRecordDeviceDriver.pl
+MAKEBPT                    = $(call PATH_FILTER, $(EPICS_BASE_TOOLS_BIN)/makeBpt$(HOSTEXE))
+DBEXPAND                   = $(call PATH_FILTER, $(EPICS_BASE_TOOLS_BIN)/dbExpand$(HOSTEXE))
+DBTORECORDTYPEH            = $(call PATH_FILTER, $(EPICS_BASE_TOOLS_BIN)/dbToRecordtypeH$(HOSTEXE))
+DBTOMENUH                  = $(call PATH_FILTER, $(EPICS_BASE_TOOLS_BIN)/dbToMenuH$(HOSTEXE))
+REGISTERRECORDDEVICEDRIVER = $(PERL) $(EPICS_BASE_TOOLS_BIN)/registerRecordDeviceDriver.pl
 
 # private versions of lex/yacc from EPICS
-EYACC = $(call PATH_FILTER, $(EPICS_BASE_HOST_BIN)/antelope$(HOSTEXE))
-ELEX = $(call PATH_FILTER, $(EPICS_BASE_HOST_BIN)/e_flex$(HOSTEXE)) -S$(EPICS_BASE)/include/flex.skel.static
+EYACC = $(call PATH_FILTER, $(EPICS_BASE_TOOLS_BIN)/antelope$(HOSTEXE))
+ELEX = $(call PATH_FILTER, $(EPICS_BASE_TOOLS_BIN)/e_flex$(HOSTEXE)) -S$(EPICS_BASE)/include/flex.skel.static
 
 YACC  = $(EYACC)
 LEX   = $(ELEX)

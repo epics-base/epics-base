@@ -103,7 +103,7 @@ rtems_set_directory (void)
     l = strlen (path);
     if (gethostname (&path[l], pathsize - l - 2) || (path[l] == '\0'))
         LogFatal ("Can't get host name");
-    strcat (path, "/bin/scripts/");
+    strcat (path, "/");
     if (chdir (path) < 0)
         LogFatal ("Can't set initial TFTP directory");
 }

@@ -63,9 +63,10 @@
 #  	endif
 #endif
 
-#ifndef MIT_FLOAT
-#define htond(IEEEhost, IEEEnet) (*(IEEEnet) = *(IEEEhost))
-#define ntohd(IEEEnet, IEEEhost) (*(IEEEhost) = *(IEEEnet))
-#define htonf(IEEEhost, IEEEnet) (*(IEEEnet) = *(IEEEhost))
-#define ntohf(IEEEnet, IEEEhost) (*(IEEEhost) = *(IEEEnet))
+#if !defined(MIT_FLOAT) && !defined(CA_LITTLE_ENDIAN)
+#define htond(IEEEhost, IEEEnet) (*(double *)(IEEEnet) = *(double *)(IEEEhost))
+#define ntohd(IEEEnet, IEEEhost) (*(double *)(IEEEhost) = *(double *)(IEEEnet))
+#define htonf(IEEEhost, IEEEnet) (*(float *)(IEEEnet) = *(float *)(IEEEhost))
+#define ntohf(IEEEnet, IEEEhost) (*(float *)(IEEEhost) = *(float *)(IEEEnet))
 #endif
+

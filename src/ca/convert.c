@@ -1556,7 +1556,7 @@ void htonf(float *pHost, float *pNet)
     	pIEEE->mant   = mant;
     	pIEEE->exp    = exp;
     	pIEEE->sign   = sign;
-    	*(ca_uint32_t *)pIEEE = ntohl(*(ca_uint32_t *)pIEEE);
+    	*(ca_uint32_t *)pIEEE = htonl(*(ca_uint32_t *)pIEEE);
 }
 
 
@@ -1570,7 +1570,7 @@ void ntohf(float *pNet, float *pHost)
 	struct ieeeflt	*pIEEE = pNet;
   	long  		exp,mant2,mant1,sign;
 
-    	*(ca_uint32_t *)pIEEE = htonl(*(ca_uint32_t *)pIEEE);
+    	*(ca_uint32_t *)pIEEE = ntohl(*(ca_uint32_t *)pIEEE);
     	if( (short) pIEEE->exp > EXPMAXMIT + IEEE_SB){
 		sign      = pIEEE->sign;
 		exp       = EXPMAXMIT + MIT_SB;
@@ -1600,24 +1600,68 @@ void ntohf(float *pNet, float *pHost)
 
 #ifndef CA_FLOAT_MIT
 
-void htond(double *IEEEhost, double *IEEEnet)
+/*
+ * htond ()
+ * performs only byte swapping
+ */
+void htond (double *IEEEhost, double *IEEEnet)
 {
-	*IEEEnet = *IEEEhost;	
+    	ca_uint32_t	*pHost = (ca_uint32_t *) IEEEhost;
+    	ca_uint32_t	*pNet = (ca_uint32_t *) IEEEnet;
+	ca_uint32_t	tmp;
+
+    	/*
+    	 * byte swap to net order
+	 * (assume that src and dest ptrs
+	 * may be identical)
+     	 */
+	tmp = pHost[0];
+	pNet[0] = htonl (pHost[1]);
+	pNet[1] = htonl (tmp);	
 }
 
-void ntohd(double *IEEEnet, double *IEEEhost)
+/*
+ * ntohd ()
+ * performs only byte swapping
+ */
+void ntohd (double *IEEEnet, double *IEEEhost)
 {
-	*IEEEhost = *IEEEnet;	
+    	ca_uint32_t	*pHost = (ca_uint32_t *) IEEEhost;
+    	ca_uint32_t	*pNet = (ca_uint32_t *) IEEEnet;
+	ca_uint32_t	tmp;
+
+    	/*
+    	 * byte swap to net order
+	 * (assume that src and dest ptrs
+	 * may be identical)
+     	 */
+	tmp = pNet[0];
+	pHost[0] = ntohl (pNet[1]);
+	pHost[1] = htonl (tmp);	
 }
 
-void ntohf(float *IEEEnet, float *IEEEhost)
+/*
+ * ntohf ()
+ * performs only byte swapping
+ */
+void ntohf (float *IEEEnet, float *IEEEhost)
 {
-	*IEEEhost = *IEEEnet;	
+    	ca_uint32_t	*pHost = (ca_uint32_t *) IEEEhost;
+    	ca_uint32_t	*pNet = (ca_uint32_t *) IEEEnet;
+
+    	*pHost = ntohl (*pNet);
 }
 
-void htonf(float *IEEEhost, float *IEEEnet)
+/*
+ * htonf ()
+ * performs only byte swapping
+ */
+void htonf (float *IEEEhost, float *IEEEnet)
 {
-	*IEEEnet = *IEEEhost;	
+    	ca_uint32_t	*pHost = (ca_uint32_t *) IEEEhost;
+    	ca_uint32_t	*pNet = (ca_uint32_t *) IEEEnet;
+
+    	*pNet = htonl (*pHost);
 }
 
 #endif /* not CA_MIT_FLOAT*/

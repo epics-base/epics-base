@@ -46,7 +46,6 @@ DBDINC += stringoutRecord
 DBDINC += subRecord
 DBDINC += subArrayRecord
 DBDINC += waveformRecord
-DBDINC += spectrumRecord
 
 LIBSRCS += aaiRecord.c
 LIBSRCS += aaoRecord.c
@@ -80,7 +79,6 @@ LIBSRCS += stringoutRecord.c
 LIBSRCS += subRecord.c
 LIBSRCS += subArrayRecord.c
 LIBSRCS += waveformRecord.c
-LIBSRCS += spectrumRecord.c
 
 LIBRARY_IOC += recIoc
 

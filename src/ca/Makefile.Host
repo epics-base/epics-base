@@ -48,7 +48,7 @@ PROD := caRepeater
 PROD_LIBS := ca Com
 SYS_PROD_LIBS_WIN32 := ws2_32 user32 advapi32
 
-TESTPROD := catime acctst connTest
+TESTPROD := catime acctst 
 
 include $(TOP)/config/RULES.Host
 

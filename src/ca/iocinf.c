@@ -41,6 +41,7 @@
 /*      120992	GeG	support  VMS/UCX		                */
 /*	091493	joh	init send retry count when each recv and at	*/
 /*			at connect					*/
+/*	102993	joh	toggle set sock opt to set			*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -1463,6 +1464,7 @@ int repeater_installed()
   	int				status;
   	int 				sock;
   	struct sockaddr_in		bd;
+	int				true = 1;
 
 	int 				installed = FALSE;
 
@@ -1477,8 +1479,8 @@ int repeater_installed()
 	status = setsockopt(	sock,
 				SOL_SOCKET,
 				SO_REUSEADDR,
-				NULL,
-				0);
+				(char *)&true,
+				sizeof true);
 	if(status<0){
 		ca_printf(      "CAC: set socket option reuseaddr failed\n");
 	}

@@ -56,6 +56,7 @@
  *			in .04
  *	.06 120492 joh	removed unnecessary includes
  *	.07 120992 joh	now uses dll list routines
+ *	.08 102993 joh	toggle set sock opt to set
  *
  */
 
@@ -180,6 +181,7 @@ LOCAL int ca_repeater()
   	int				status;
   	int				size;
   	int 				sock;
+	int				true = 1;
 	struct sockaddr_in		from;
   	struct sockaddr_in		bd;
   	struct sockaddr_in		local;
@@ -199,8 +201,8 @@ LOCAL int ca_repeater()
 	status = setsockopt(	sock,	
 				SOL_SOCKET,
 				SO_REUSEADDR,
-				NULL,
-				0);
+				(char *)&true,
+				sizeof true);
 	if(status<0){
 		ca_printf(	"%s: set socket option failed\n", 
 				__FILE__);

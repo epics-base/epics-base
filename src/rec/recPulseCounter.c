@@ -70,8 +70,8 @@ static long get_value();
 #define get_enum_str NULL
 #define get_enum_strs NULL
 #define put_enum_str NULL
-long get_graphic_double();
-long get_control_double();
+static long get_graphic_double();
+static long get_control_double();
 #define get_alarm_double NULL
 
 struct rset pulseCounterRSET={

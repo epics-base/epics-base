@@ -2407,10 +2407,49 @@ void verifyChannelPriorities ( const char *pName, unsigned interestLevel )
     showProgressEnd ( interestLevel );
 }
 
-void verifyImmediateTearDown ()
+void verifyImmediateTearDown ( const char * pName, unsigned interestLevel )
 {
+    unsigned i;
+    double value;
+    int status;
+    chid chan;
+
+    showProgressBegin ( "verifyImmediateTearDown", interestLevel );
+
+    for ( i = 0u; i < 1000; i++ ) {
+        ca_task_initialize ();
+        status = ca_create_channel ( pName, 0, 0, 0, & chan );
+        SEVCHK ( status, "immediate tear down channel create failed" );
+        status = ca_pend_io ( timeoutToPendIO );
+        SEVCHK ( status, "immediate tear down channel connect failed" );
+        assert ( status == ECA_NORMAL );
+        value = i;
+        status = ca_put ( DBR_DOUBLE, chan, & value );
+        SEVCHK ( status, "immediate tear down channel put failed" );
+        ca_task_exit ();
+        if ( i % 100 == 0 ) {
+            showProgress ( interestLevel );
+        }
+    }
+
+    /* 
+     * verify that puts pending when we call ca_task_exit() 
+     * get flushed out
+     */
     ca_task_initialize ();
+    status = ca_create_channel ( pName, 0, 0, 0, & chan );
+    SEVCHK ( status, "immediate tear down channel create failed" );
+    status = ca_pend_io ( timeoutToPendIO );
+    SEVCHK ( status, "immediate tear down channel connect failed" );
+    assert ( status == ECA_NORMAL );
+    status = ca_get ( DBR_DOUBLE, chan, & value );
+    SEVCHK ( status, "immediate tear down channel get failed" );
+    status = ca_pend_io ( timeoutToPendIO );
+    SEVCHK ( status, "immediate tear down channel get failed" );
+    assert ( value == i - 1u );
     ca_task_exit ();
+
+    showProgressEnd ( interestLevel );
 }
 
 /*
@@ -2592,7 +2631,7 @@ int acctst ( char *pName, unsigned interestLevel, unsigned channelCount,
         epicsEnvSet ( "EPICS_CA_MAX_ARRAY_BYTES", tmpString ); 
     }
 
-    verifyImmediateTearDown ();
+    verifyImmediateTearDown ( pName, interestLevel );
 
 	status = ca_context_create ( select );
     SEVCHK ( status, NULL );

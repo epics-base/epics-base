@@ -443,7 +443,7 @@ epvxiResman(void)
 		status = symFindByName(
 				sysSymTbl,
 				"_EPICS_VXI_LA_COUNT",	
-				pEPICS_VXI_LA_COUNT,
+				&pEPICS_VXI_LA_COUNT,
 				&type);
 		if(status == OK){
 			EPICS_VXI_LA_COUNT = *pEPICS_VXI_LA_COUNT;
@@ -1351,7 +1351,7 @@ VXIE	*pvxie
 )
 {
 	int		i;
-	int		status = -1;
+	int		status = ERROR;
 	short		model;
 	UINT8		type;
 	

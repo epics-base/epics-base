@@ -42,7 +42,7 @@ vpath %.h $(USER_VPATH) $(SRC_DIRS) .. .
 
 #---------------------------------------------------------------
 
-include $(TOP)/configure/CONFIG_ADDONS
+include $(CONFIG)/CONFIG_ADDONS
 
 #---------------------------------------------------------------
 # Set opt and warn

@@ -59,11 +59,6 @@ recordtype(aao) {
 		size(4)
 		extra("void *		bptr")
 	}
-	field(SIOL,DBF_INLINK) {
-		prompt("Sim Input Specifctn")
-		promptgroup(GUI_DISPLAY)
-		interest(1)
-	}
 	field(SIML,DBF_INLINK) {
 		prompt("Sim Mode Location")
 		promptgroup(GUI_HIST)

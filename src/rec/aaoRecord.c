@@ -126,30 +126,8 @@ static long init_record(paao,pass)
     }
 
     /* aao.siml must be a CONSTANT or a PV_LINK or a DB_LINK */
-    switch (paao->siml.type) {
-    case (CONSTANT) :
+    if (paao->siml.type == CONSTANT) {
 	recGblInitConstantLink(&paao->siml,DBF_USHORT,&paao->simm);
-        break;
-    case (PV_LINK) :
-    case (DB_LINK) :
-        break;
-    default :
-        recGblRecordError(S_db_badField,(void *)paao,
-                "aao: init_record Illegal SIML field");
-        return(S_db_badField);
-    }
-
-    /* aao.siol must be a CONSTANT or a PV_LINK or a DB_LINK */
-    switch (paao->siol.type) {
-    case (CONSTANT) :
-        break;
-    case (PV_LINK) :
-    case (DB_LINK) :
-        break;
-    default :
-        recGblRecordError(S_db_badField,(void *)paao,
-                "aao: init_record Illegal SIOL field");
-        return(S_db_badField);
     }
 
     /* must have dset defined */

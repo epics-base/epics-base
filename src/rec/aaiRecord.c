@@ -126,30 +126,8 @@ static long init_record(paai,pass)
     }
 
     /* aai.siml must be a CONSTANT or a PV_LINK or a DB_LINK */
-    switch (paai->siml.type) {
-    case (CONSTANT) :
+    if (paai->siml.type == CONSTANT) {
 	recGblInitConstantLink(&paai->siml,DBF_USHORT,&paai->simm);
-        break;
-    case (PV_LINK) :
-    case (DB_LINK) :
-        break;
-    default :
-        recGblRecordError(S_db_badField,(void *)paai,
-                "aai: init_record Illegal SIML field");
-        return(S_db_badField);
-    }
-
-    /* aai.siol must be a CONSTANT or a PV_LINK or a DB_LINK */
-    switch (paai->siol.type) {
-    case (CONSTANT) :
-        break;
-    case (PV_LINK) :
-    case (DB_LINK) :
-        break;
-    default :
-        recGblRecordError(S_db_badField,(void *)paai,
-                "aai: init_record Illegal SIOL field");
-        return(S_db_badField);
     }
 
     /* must have dset defined */

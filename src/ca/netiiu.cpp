@@ -37,6 +37,11 @@ bool netiiu::ca_v42_ok () const
     return false;
 }
 
+bool netiiu::ca_v41_ok () const
+{
+    return false;
+}
+
 void netiiu::writeRequest ( epicsGuard < cacMutex > &, nciu &, 
                            unsigned, unsigned, const void * )
 {

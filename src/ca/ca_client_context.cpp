@@ -481,6 +481,7 @@ void ca_client_context::blockForEventAndEnableCallbacks (
 
 void ca_client_context::callbackLock ()
 {
+
     // if preemptive callback is enabled then this is a noop
     if ( this->pCallbackGuard.get() ) {
         bool sendNeeded = false;

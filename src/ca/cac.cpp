@@ -534,15 +534,13 @@ bool cac::transferChanToVirtCircuit (
         return false;
     }
 
-    bool v41Ok, v42Ok;
-    nciu *pChan;
     {
         epicsGuard < cacMutex > guard ( this->mutex );
 
         /*
          * ignore search replies for deleted channels
          */
-        pChan = this->chanTable.lookup ( cid );
+        nciu * pChan = this->chanTable.lookup ( cid );
         if ( ! pChan ) {
             return false;
         }
@@ -607,36 +605,9 @@ bool cac::transferChanToVirtCircuit (
         this->pudpiiu->uninstallChan ( guard, *pChan );
         piiu->installChannel ( guard, *pChan, sid, typeCode, count );
 
-        v41Ok = piiu->ca_v41_ok ();
-        v42Ok = piiu->ca_v42_ok ();
-
-        if ( ! v42Ok ) {
+        if ( ! piiu->ca_v42_ok () ) {
             // connect to old server with lock applied
-            pChan->connect ();
-            // resubscribe for monitors from this channel 
-            this->connectAllIO ( guard, *pChan );
-        }
-    }
-
-    if ( ! v42Ok ) {
-        // channel uninstal routine grabs the callback lock so
-        // a channel will not be deleted while a call back is 
-        // in progress
-        //
-        // the callback lock is also taken when a channel 
-        // disconnects to prevent a race condition with the 
-        // code below - ie we hold the callback lock here
-        // so a chanel cant be destroyed out from under us.
-        pChan->connectStateNotify ( cbGuard );
-
-        /*
-         * if less than v4.1 then the server will never
-         * send access rights and we know that there
-         * will always be access and also need to call 
-         * their call back here
-         */
-        if ( ! v41Ok ) {
-            pChan->accessRightsNotify ( cbGuard );
+            pChan->connect ( cbGuard, guard );
         }
     }
 
@@ -1027,7 +998,7 @@ void cac::connectAllIO ( epicsGuard < cacMutex > & guard, nciu & chan )
     while ( pNetIO.valid () ) {
         tsDLIter < baseNMIU > next = pNetIO;
         next++;
-        class netSubscription *pSubscr = pNetIO->isSubscription ();
+        class netSubscription * pSubscr = pNetIO->isSubscription ();
         // disconnected channels should have only subscription IO attached
         assert ( pSubscr );
         try {
@@ -1337,26 +1308,14 @@ bool cac::accessRightsRespAction (
     epicsGuard < callbackMutex > & cbGuard, tcpiiu &, // X aCC 431
     const epicsTime &, const caHdrLargeArray & hdr, void * /* pMsgBdy */ )
 {
-    nciu * pChan;
-    {
-        epicsGuard < cacMutex > guard ( this->mutex );
-        pChan = this->chanTable.lookup ( hdr.m_cid );
-        if ( pChan ) {
-            unsigned ar = hdr.m_available;
-            caAccessRights accessRights ( 
-                ( ar & CA_PROTO_ACCESS_RIGHT_READ ) ? true : false, 
-                ( ar & CA_PROTO_ACCESS_RIGHT_WRITE ) ? true : false); 
-            pChan->accessRightsStateChange ( accessRights );
-        }
-    }
-
-    //
-    // the channel delete routine takes the call back lock so
-    // that this will not be called when the channel is being
-    // deleted.
-    //       
+    epicsGuard < cacMutex > guard ( this->mutex );
+    nciu * pChan = this->chanTable.lookup ( hdr.m_cid );
     if ( pChan ) {
-        pChan->accessRightsNotify ( cbGuard );
+        unsigned ar = hdr.m_available;
+        caAccessRights accessRights ( 
+            ( ar & CA_PROTO_ACCESS_RIGHT_READ ) ? true : false, 
+            ( ar & CA_PROTO_ACCESS_RIGHT_WRITE ) ? true : false); 
+        pChan->accessRightsStateChange ( accessRights, cbGuard, guard );
     }
 
     return true;
@@ -1366,33 +1325,28 @@ bool cac::claimCIURespAction (
     epicsGuard < callbackMutex > &cbGuard, tcpiiu & iiu, // X aCC 431
     const epicsTime &, const caHdrLargeArray & hdr, void * /* pMsgBdy */ )
 {
-    nciu * pChan;
-
-    {
-        epicsGuard < cacMutex > guard ( this->mutex );
-        pChan = this->chanTable.lookup ( hdr.m_cid );
-        if ( pChan ) {
-            unsigned sidTmp;
-            if ( iiu.ca_v44_ok() ) {
-                sidTmp = hdr.m_available;
-            }
-            else {
-                sidTmp = pChan->getSID ();
-            }
-            pChan->connect ( hdr.m_dataType, hdr.m_count, sidTmp, iiu.ca_v41_ok() );
-            this->connectAllIO ( guard, *pChan );
-        }
-        else if ( iiu.ca_v44_ok() ) {
-            // this indicates a claim response for a resource that does
-            // not exist in the client - so just remove it from the server
-            iiu.clearChannelRequest ( guard, hdr.m_available, hdr.m_cid );
-        }
-    }
-    // the callback lock is taken when a channel is unistalled or when
-    // is disconnected to prevent race conditions here
+    epicsGuard < cacMutex > guard ( this->mutex );
+    nciu * pChan = this->chanTable.lookup ( hdr.m_cid );
     if ( pChan ) {
-        pChan->connectStateNotify ( cbGuard );
+        unsigned sidTmp;
+        if ( iiu.ca_v44_ok() ) {
+            sidTmp = hdr.m_available;
+        }
+        else {
+            sidTmp = pChan->getSID ();
+        }
+
+        // the callback lock is taken when a channel is unistalled or when
+        // is disconnected to prevent race conditions here
+        pChan->connect ( hdr.m_dataType, hdr.m_count, sidTmp, 
+            cbGuard, guard );
     }
+    else if ( iiu.ca_v44_ok() ) {
+        // this indicates a claim response for a resource that does
+        // not exist in the client - so just remove it from the server
+        iiu.clearChannelRequest ( guard, hdr.m_available, hdr.m_cid );
+    }
+
     return true; 
 }
 
@@ -1417,11 +1371,8 @@ void cac::disconnectChannel (
     assert ( this->pudpiiu );
     this->disconnectAllIO ( guard, chan, true );
     chan.getPIIU()->uninstallChan ( guard, chan );
-    chan.disconnect ( *this->pudpiiu );
+    chan.disconnect ( *this->pudpiiu, cbGuard, guard );
     this->pudpiiu->installDisconnectedChannel ( currentTime, chan );
-    epicsGuardRelease < cacMutex > autoMutexRelease ( guard );
-    chan.connectStateNotify ( cbGuard );
-    chan.accessRightsNotify ( cbGuard );
 }
 
 bool cac::badTCPRespAction ( epicsGuard < callbackMutex > &, tcpiiu & iiu, 
@@ -1508,6 +1459,7 @@ void cac::vSignal ( int ca_status, const char *pfilenm,
 
 void cac::selfTest () const
 {
+    epicsGuard < cacMutex > guard ( this->mutex );
     this->chanTable.verify ();
     this->ioTable.verify ();
     this->sgTable.verify ();
@@ -1522,21 +1474,34 @@ void cac::disconnectNotify ( tcpiiu & iiu )
 
 void cac::initiateAbortShutdown ( tcpiiu & iiu )
 {
+    int exception = ECA_DISCONN;
+    char hostNameTmp[64];
+    bool exceptionNeeded = false;
     epicsGuard < callbackMutex > cbGuard ( this->cbMutex );
-    epicsGuard < cacMutex > guard ( this->mutex );
 
-    iiu.initiateAbortShutdown ( cbGuard, guard );
+    {
+        epicsGuard < cacMutex > guard ( this->mutex );
 
-    // Disconnect all channels immediately from the timer thread
-    // because on certain OS such as HPUX it's difficult to 
-    // unblock a blocking send() call, and we need immediate 
-    // disconnect notification.
-    if ( iiu.channelCount() ) {
-        char hostNameTmp[64];
-        iiu.hostName ( hostNameTmp, sizeof ( hostNameTmp ) );
-        genLocalExcep ( cbGuard, *this, ECA_DISCONN, hostNameTmp );
+        if ( iiu.channelCount() ) {
+            iiu.hostName ( hostNameTmp, sizeof ( hostNameTmp ) );
+            if ( iiu.connecting () ) {
+                exception = ECA_CONNSEQTMO;
+            }
+            exceptionNeeded = true;
+        }
+
+        iiu.initiateAbortShutdown ( cbGuard, guard );
+
+        // Disconnect all channels immediately from the timer thread
+        // because on certain OS such as HPUX it's difficult to 
+        // unblock a blocking send() call, and we need immediate 
+        // disconnect notification.
+        iiu.removeAllChannels ( cbGuard, guard, *this );
     }
-    iiu.removeAllChannels ( cbGuard, guard, *this );
+
+    if ( exceptionNeeded ) {
+        genLocalExcep ( cbGuard, *this, exception, hostNameTmp );
+    }
 }
 
 void cac::destroyIIU ( tcpiiu & iiu )

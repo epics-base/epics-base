@@ -44,6 +44,7 @@ public:
     virtual ~netiiu ();
     virtual void hostName ( char *pBuf, unsigned bufLength ) const = 0;
     virtual const char * pHostName () const = 0; // deprecated - please do not use
+    virtual bool ca_v41_ok () const = 0;
     virtual bool ca_v42_ok () const = 0;
     virtual void writeRequest ( epicsGuard < cacMutex > &, nciu &, 
                     unsigned type, unsigned nElem, const void *pValue ) = 0;

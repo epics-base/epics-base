@@ -638,7 +638,7 @@ void tcpiiu::disconnectNotify ( epicsGuard < cacMutex > & )
 }
 
 void tcpiiu::initiateAbortShutdown ( epicsGuard < callbackMutex > &,
-                                     epicsGuard < cacMutex > & )
+                                     epicsGuard < cacMutex > & guard )
 {
     if ( ! this->discardingPendingData ) {
         // force abortive shutdown sequence 
@@ -1306,7 +1306,7 @@ void tcpiiu::installChannel ( epicsGuard < cacMutex > & guard,
     ca_uint16_t typeIn, arrayElementCount countIn )
 {
     this->channelList.add ( chan );
-    chan.searchReplySetUp ( *this, sidIn, typeIn, countIn );
+    chan.searchReplySetUp ( *this, sidIn, typeIn, countIn, guard );
     chan.createChannelRequest ( *this, guard );
     this->flushRequest ();
 }

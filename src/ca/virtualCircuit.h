@@ -124,6 +124,7 @@ public:
 
     void hostName ( char *pBuf, unsigned bufLength ) const;
     bool alive () const;
+    bool connecting () const;
     osiSockAddr getNetworkAddress () const;
     int printf ( const char *pformat, ... );
     unsigned channelCount ();
@@ -249,6 +250,11 @@ inline bool tcpiiu::alive () const // X aCC 361
 {
     return ( this->state == iiucs_connecting || 
         this->state == iiucs_connected );
+}
+
+inline bool tcpiiu::connecting () const
+{
+    return ( this->state == iiucs_connecting );
 }
 
 inline void tcpiiu::beaconAnomalyNotify ()

@@ -55,6 +55,7 @@
 
 #include "tsDLList.h"
 #include "epicsMutex.h"
+#include "epicsSingleton.h"
 
 #ifdef cacIOh_restore_epicsExportSharedSymbols
 #   define epicsExportSharedSymbols
@@ -250,6 +251,7 @@ private:
 };
 
 template < class T > class epicsSingleton;
+
 epicsShareExtern epicsSingleton < cacServiceList > globalServiceListCAC;
 
 epicsShareFunc int epicsShareAPI ca_register_service ( cacService *pService );

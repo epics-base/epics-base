@@ -476,7 +476,6 @@ void epicsShareAPI caStartRepeaterIfNotInstalled ( unsigned repeaterPort )
         struct sockaddr_in ia; 
         struct sockaddr sa;
     } bd;
-    int flag;
 
     if ( repeaterPort > 0xffff ) {
         fprintf ( stderr, "caStartRepeaterIfNotInstalled () : strange repeater port specified\n" );
@@ -1092,6 +1091,11 @@ const char * udpiiu::pHostName () const
 bool udpiiu::ca_v42_ok () const
 {
     return netiiu::ca_v42_ok ();
+}
+
+bool udpiiu::ca_v41_ok () const
+{
+    return netiiu::ca_v41_ok ();
 }
 
 void udpiiu::writeRequest ( epicsGuard < cacMutex > & guard, nciu & chan, unsigned type, 

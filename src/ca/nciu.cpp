@@ -109,7 +109,9 @@ void nciu::initiateConnect ()
 }
 
 void nciu::connect ( unsigned nativeType, 
-	unsigned nativeCount, unsigned sidIn, bool v41Ok )
+	unsigned nativeCount, unsigned sidIn, 
+    epicsGuard < callbackMutex > & cbGuard, 
+    epicsGuard < cacMutex > & guard )
 {
     if ( ! this->f_claimSent ) {
         this->cacCtx.printf (
@@ -141,14 +143,46 @@ void nciu::connect ( unsigned nativeType,
      * if less than v4.1 then the server will never
      * send access rights and there will always be access 
      */
+    bool v41Ok = this->piiu->ca_v41_ok ();
     if ( ! v41Ok ) {
         this->accessRightState.setReadPermit();
         this->accessRightState.setWritePermit();
     }
+
+    // this installs any subscriptions that 
+    // might still be attached
+    this->cacCtx.connectAllIO ( guard, *this );
+
+    {
+        epicsGuardRelease < cacMutex > unguard ( guard );
+
+        // channel uninstal routine grabs the callback lock so
+        // a channel will not be deleted while a call back is 
+        // in progress
+        //
+        // the callback lock is also taken when a channel 
+        // disconnects to prevent a race condition with the 
+        // code below - ie we hold the callback lock here
+        // so a chanel cant be destroyed out from under us.
+        this->notify().connectNotify ();
+
+        /*
+         * if less than v4.1 then the server will never
+         * send access rights and we know that there
+         * will always be access and also need to call 
+         * their call back here
+         */
+        if ( ! v41Ok ) {
+            this->notify().accessRightsNotify ( this->accessRightState );
+        }
+    }
 }
 
-void nciu::disconnect ( netiiu & newiiu )
+void nciu::disconnect ( 
+    netiiu & newiiu, epicsGuard < callbackMutex > & cbGuard, 
+    epicsGuard < cacMutex > & guard )
 {
+    bool currentlyConnected = this->f_connected;
     this->piiu = & newiiu;
     this->retry = disconnectRetrySetpoint;
     this->typeCode = USHRT_MAX;
@@ -158,6 +192,26 @@ void nciu::disconnect ( netiiu & newiiu )
     this->accessRightState.clrWritePermit();
     this->f_claimSent = false;
     this->f_connected = false;
+    if ( currentlyConnected ) { 
+        epicsGuardRelease < cacMutex > autoMutexRelease ( guard );
+        this->notify().disconnectNotify ();
+        this->notify().accessRightsNotify ( this->accessRightState );
+    }
+}
+
+void nciu::accessRightsStateChange ( 
+    const caAccessRights & arIn, epicsGuard < callbackMutex > &, 
+    epicsGuard < cacMutex > & guard )
+{
+    this->accessRightState = arIn;
+
+    //
+    // the channel delete routine takes the call back lock so
+    // that this will not be called when the channel is being
+    // deleted.
+    //       
+    epicsGuardRelease < cacMutex > unguard ( guard );
+    this->notify().accessRightsNotify ( this->accessRightState );
 }
 
 /*

@@ -72,18 +72,6 @@ struct caHdrLargeArray;
 
 extern epicsThreadPrivateId caClientCallbackThreadId;
 
-class callbackMutex {
-public:
-    callbackMutex ( cacNotify & );
-    ~callbackMutex ();
-    void lock ();
-    void unlock ();
-private:
-    cacNotify & notify;
-    callbackMutex ( callbackMutex & );
-    callbackMutex & operator = ( callbackMutex & );
-};
-
 class cacMutex {
 public:
     void lock ();
@@ -110,6 +98,18 @@ public:
         epicsGuard < cacMutex > &, nciu & chan ) = 0;
 };
 
+class callbackMutex {
+public:
+    callbackMutex ( cacNotify & );
+    ~callbackMutex ();
+    void lock ();
+    void unlock ();
+private:
+    cacNotify & notify;
+    callbackMutex ( callbackMutex & );
+    callbackMutex & operator = ( callbackMutex & );
+};
+
 class cac : private cacRecycle, private cacDisconnectChannelPrivate,
     private callbackForMultiplyDefinedPV
 {
@@ -134,7 +134,7 @@ public:
             unsigned cid, unsigned sid, 
             ca_uint16_t typeCode, arrayElementCount count, 
             unsigned minorVersionNumber, const osiSockAddr & );
-
+    void connectAllIO ( epicsGuard < cacMutex > &, nciu & chan );
     void destroyChannel ( nciu & );
     cacChannel & createChannel ( const char *name_str, 
         cacChannelNotify &chan, cacChannel::priLev pri );
@@ -255,7 +255,6 @@ private:
     unsigned beaconAnomalyCount;
 
     void run ();
-    void connectAllIO ( epicsGuard < cacMutex > &, nciu &chan );
     void disconnectAllIO ( epicsGuard < cacMutex > & locker, nciu & chan, bool enableCallbacks );
     void flushIfRequired ( epicsGuard < cacMutex > &, netiiu & ); 
     void recycleReadNotifyIO ( netReadNotifyIO &io );

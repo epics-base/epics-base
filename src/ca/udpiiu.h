@@ -163,6 +163,7 @@ private:
     void hostName ( char *pBuf, unsigned bufLength ) const;
     const char * pHostName () const; // deprecated - please do not use
     bool ca_v42_ok () const;
+    bool ca_v41_ok () const;
     void writeRequest ( epicsGuard < cacMutex > &, nciu &, unsigned type, 
                     unsigned nElem, const void *pValue );
     void writeNotifyRequest ( epicsGuard < cacMutex > &, nciu &, netWriteNotifyIO &, 

@@ -70,17 +70,19 @@ public:
     ~nciu ();
     void destroy ();
     void connect ( unsigned nativeType, 
-        unsigned nativeCount, unsigned sid, bool v41Ok );
-    void connect ();
-    void connectStateNotify ( epicsGuard < callbackMutex > &  ) const;
-    void accessRightsNotify ( epicsGuard < callbackMutex > & ) const;
-    void disconnect ( netiiu & newiiu );
+        unsigned nativeCount, unsigned sid, 
+        epicsGuard < callbackMutex > & cbGuard, 
+        epicsGuard < cacMutex > & guard );
+    void connect ( epicsGuard < callbackMutex > & cbGuard, 
+                epicsGuard < cacMutex > & guard );
+    void disconnect ( netiiu & newiiu, epicsGuard < callbackMutex > & cbGuard, 
+                epicsGuard < cacMutex > & guard );
     bool searchMsg ( class udpiiu & iiu, unsigned & retryNoForThisChannel );
     void createChannelRequest ( class tcpiiu & iiu, epicsGuard < cacMutex > & );
-    bool identifierEquivelence ( unsigned idToMatch );
     void beaconAnomalyNotify ();
     void serviceShutdownNotify ();
-    void accessRightsStateChange ( const caAccessRights & );
+    void accessRightsStateChange ( const caAccessRights &, 
+        epicsGuard < callbackMutex > &, epicsGuard < cacMutex > & );
     ca_uint32_t getSID () const;
     ca_uint32_t getCID () const;
     netiiu * getPIIU ();
@@ -88,7 +90,8 @@ public:
     cac & getClient ();
     int printf ( const char *pFormat, ... );
     void searchReplySetUp ( netiiu &iiu, unsigned sidIn, 
-        ca_uint16_t typeIn, arrayElementCount countIn );
+        ca_uint16_t typeIn, arrayElementCount countIn,
+        epicsGuard < cacMutex > & );
     void show ( unsigned level ) const;
     const char *pName () const;
     unsigned nameLen () const;
@@ -152,16 +155,6 @@ inline void nciu::operator delete ( void * pCadaver,
 }
 #endif
 
-inline bool nciu::identifierEquivelence ( unsigned idToMatch )
-{
-    return idToMatch == this->id;
-}
-
-inline void nciu::accessRightsStateChange ( const caAccessRights & arIn )
-{
-    this->accessRightState = arIn;
-}
-
 inline ca_uint32_t nciu::getSID () const
 {
     return this->sid;
@@ -173,15 +166,18 @@ inline ca_uint32_t nciu::getCID () const
 }
 
 // this is to only be used by early protocol revisions
-inline void nciu::connect ()
+inline void nciu::connect ( epicsGuard < callbackMutex > & cbGuard, 
+                epicsGuard < cacMutex > & guard )
 {
-    this->connect ( this->typeCode, this->count, this->sid, false );
+    this->connect ( this->typeCode, this->count, 
+        this->sid, cbGuard, guard );
 }
 
 inline void nciu::searchReplySetUp ( netiiu &iiu, unsigned sidIn, 
-    ca_uint16_t typeIn, arrayElementCount countIn )
+    ca_uint16_t typeIn, arrayElementCount countIn,
+    epicsGuard < cacMutex > & )
 {
-    this->piiu = &iiu;
+    this->piiu = & iiu;
     this->typeCode = typeIn;      
     this->count = countIn;
     this->sid = sidIn;
@@ -201,21 +197,6 @@ inline void nciu::writeException ( epicsGuard < callbackMutex > &, int status,
     const char *pContext, unsigned typeIn, arrayElementCount countIn )
 {
     this->notify().writeException ( status, pContext, typeIn, countIn );
-}
-
-inline void nciu::accessRightsNotify ( epicsGuard < callbackMutex > & ) const
-{
-    this->notify().accessRightsNotify ( this->accessRightState );
-}
-
-inline void nciu::connectStateNotify ( epicsGuard < callbackMutex > & ) const
-{
-    if ( this->f_connected ) {
-        this->notify().connectNotify ();
-    }
-    else {
-        this->notify().disconnectNotify ();
-    }
 }
 
 inline const netiiu * nciu::getConstPIIU () const

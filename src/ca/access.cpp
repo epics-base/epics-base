@@ -3158,6 +3158,15 @@ epicsShareFunc void epicsShareAPI ca_set_puser (chid pChanIn, void *puser)
 }
 
 /*
+ * ca_get_puser ()
+ */
+epicsShareFunc void * epicsShareAPI ca_puser (chid pChanIn)
+{
+    baseCIU *pChan = (baseCIU *) pChanIn;
+    return pChan->puser;
+}
+
+/*
  * ca_read_access ()
  */
 epicsShareFunc unsigned epicsShareAPI ca_read_access (chid pChanIn)

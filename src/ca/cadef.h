@@ -161,6 +161,7 @@ epicsShareFunc short epicsShareAPI ca_field_type (chid chan);
 epicsShareFunc unsigned long epicsShareAPI ca_element_count (chid chan);
 epicsShareFunc const char * epicsShareAPI ca_name (chid chan);
 epicsShareFunc void epicsShareAPI ca_set_puser (chid chan, void *puser);
+epicsShareFunc void * epicsShareAPI ca_puser (chid chan);
 epicsShareFunc unsigned epicsShareAPI ca_read_access (chid chan);
 epicsShareFunc unsigned epicsShareAPI ca_write_access (chid chan);
 
@@ -972,6 +973,7 @@ epicsShareFunc unsigned long epicsShareAPI ca_element_count ();
 epicsShareFunc char * epicsShareAPI ca_name (chid chan);
 epicsShareFunc enum channel_state epicsShareAPI ca_state ();
 epicsShareFunc void epicsShareAPI ca_set_puser ();
+epicsShareFunc void epicsShareAPI ca_get_puser ();
 epicsShareFunc unsigned epicsShareAPI ca_read_access ();
 epicsShareFunc unsigned epicsShareAPI ca_write_access ();
 epicsShareFunc int epicsShareAPI ca_task_initialize ();

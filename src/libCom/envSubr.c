@@ -138,7 +138,7 @@ char	*pBuf;		/* I pointer to parameter buffer  */
 
     if (pEnv == NULL)
 	pEnv = pParam->dflt;
-    if (strlen(pEnv) <= 0)
+    if (strlen(pEnv) == 0)
 	return NULL;
     if ((i = strlen(pEnv)) < bufDim)
 	strcpy(pBuf, pEnv);

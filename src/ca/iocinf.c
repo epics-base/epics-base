@@ -48,6 +48,12 @@
 /*			kernels that support multicast			*/
 /*
  * $Log$
+ * Revision 1.85  1999/07/15 20:15:30  jhill
+ * fixed infinite loop when ENOBUFS returned by sendto()
+ *
+ * Revision 1.84  1998/11/10 21:57:20  jhill
+ * reduced socket buf sizes
+ *
  * Revision 1.83  1998/10/07 14:32:51  jba
  * Modified log message.
  *
@@ -872,7 +878,7 @@ void notify_ca_repeater()
 						0, (struct sockaddr *)&saddr, sizeof(saddr));
 	if (status < 0) {
 		if(	SOCKERRNO != SOCK_EINTR && 
-			SOCKERRNO != SOCK_ENOBUFS && 
+			/* SOCKERRNO != SOCK_ENOBUFS && */
 			SOCKERRNO != SOCK_EWOULDBLOCK &&
 			/*
 			 * This is returned from Linux when
@@ -881,7 +887,7 @@ void notify_ca_repeater()
 			SOCKERRNO != SOCK_ECONNREFUSED 
 			) {
 			ca_printf(
-				"CAC: error sending to repeater is \"%s\"\n", 
+				"CAC: error sending to repeater was \"%s\"\n", 
 				SOCKERRSTR);
 		}
 	}
@@ -924,7 +930,7 @@ LOCAL void cac_udp_send_msg_piiu(struct ioc_in_use *piiu)
 	}
 
 	pNode = (caAddrNode *) piiu->destAddr.node.next;
-	while(pNode){
+	while (pNode) {
 		unsigned long	actualSendCnt;
 
 		status = sendto(
@@ -937,7 +943,6 @@ LOCAL void cac_udp_send_msg_piiu(struct ioc_in_use *piiu)
 		if(status>=0){
 			actualSendCnt = (unsigned long) status;
 			assert (actualSendCnt == sendCnt);
-			pNode = (caAddrNode *) pNode->node.next;
 		}
 		else {
 			int	localErrno;
@@ -945,13 +950,18 @@ LOCAL void cac_udp_send_msg_piiu(struct ioc_in_use *piiu)
 			localErrno = SOCKERRNO;
 
 			if(	localErrno != SOCK_EWOULDBLOCK && 
-				localErrno != SOCK_ENOBUFS && 
+				/* localErrno != SOCK_ENOBUFS && */
 				localErrno != SOCK_EINTR){
+                char buf[64];
+
+                ipAddrToA (&pNode->destAddr.in, buf, sizeof(buf));
+
 				ca_printf(
-					"CAC: UDP send error = \"%s\"\n",
-					SOCKERRSTR);
+					"CAC: error = \"%s\" sending UDP msg to %s\n",
+					SOCKERRSTR, buf);
 			}
 		}
+		pNode = (caAddrNode *) pNode->node.next;
 	}
 
 	/*
@@ -1040,7 +1050,6 @@ LOCAL void cac_tcp_send_msg_piiu(struct ioc_in_use *piiu)
 	localError = SOCKERRNO;
 
 	if(	localError == SOCK_EWOULDBLOCK ||
-		/* localError == SOCK_ENOBUFS || */
 		localError == SOCK_EINTR){
 			UNLOCK;
 			return;
@@ -2018,7 +2027,7 @@ unsigned short epicsShareAPI caFetchPortConfig
 /*
  *      CAC_MUX_IO()
  */
-void cac_mux_io(struct timeval  *ptimeout)
+void cac_mux_io(struct timeval  *ptimeout, unsigned iocCloseAllowed)
 {
 	int                     count;
 	struct timeval          timeout;
@@ -2100,7 +2109,7 @@ void cac_mux_io(struct timeval  *ptimeout)
 
     }
 
-	checkConnWatchdogs();
+	checkConnWatchdogs(iocCloseAllowed);
 }
 
 

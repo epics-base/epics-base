@@ -238,7 +238,8 @@ private:
 	cacServiceList & operator = ( const cacServiceList & );
 };
 
-epicsShareExtern cacServiceList cacGlobalServiceList;
+template < class T > class epicsSingleton;
+epicsShareExtern epicsSingleton < cacServiceList > pGlobalServiceListCAC;
 
 epicsShareFunc int epicsShareAPI ca_register_service ( cacService *pService );
 

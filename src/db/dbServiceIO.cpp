@@ -52,7 +52,7 @@ dbBaseIO::dbBaseIO () {}
 
 dbServiceIOLoadTimeInit::dbServiceIOLoadTimeInit ()
 {
-    cacGlobalServiceList.registerService ( this->dbio );
+    pGlobalServiceListCAC->registerService ( this->dbio );
 }
 
 dbServiceIO::dbServiceIO () :

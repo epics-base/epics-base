@@ -664,7 +664,7 @@ cacChannel & cac::createChannel ( const char * pName,
 
     pIO = this->services.createChannel ( pName, chan, pri );
     if ( ! pIO ) {
-        pIO = cacGlobalServiceList.createChannel ( pName, chan, pri );
+        pIO = pGlobalServiceListCAC->createChannel ( pName, chan, pri );
         if ( ! pIO ) {
             if ( ! this->pudpiiu || ! this->pSearchTmr ) {
                 if ( ! this->setupUDP () ) {

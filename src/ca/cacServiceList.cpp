@@ -14,14 +14,14 @@
  *	505 665 1831
  */
 
-#include "iocinf.h"
-#include "epicsGuard.h"
+#include "epicsSingleton.h"
 
 #define epicsExportSharedSymbols
+#include "iocinf.h"
+#include "epicsGuard.h"
 #include "cacIO.h"
-#undef epicsExportSharedSymbols
 
-epicsShareDef cacServiceList cacGlobalServiceList;
+epicsShareDef epicsSingleton < cacServiceList > pGlobalServiceListCAC;
 
 cacServiceList::cacServiceList ()
 {

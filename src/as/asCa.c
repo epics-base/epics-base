@@ -65,7 +65,9 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #include <cadef.h>
 #include <caerr.h>
 #include <caeventmask.h>
+#if 0
 #include <calink.h>
+#endif
 #include <task_params.h>
 #include <alarm.h>
 

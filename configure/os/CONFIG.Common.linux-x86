@@ -30,8 +30,7 @@ ARCH_DEP_CPPFLAGS += -D_X86_
 ARCH_DEP_CFLAGS += -mcpu=pentium
 
 # Set runtime path for shared libraries
-SHRLIB_LDFLAGS += $(sort $(SHRLIB_SEARCH_DIRS:%=-Wl,-rpath,%))
-DIR_LDFLAGS_YES += $(sort $(SHRLIB_SEARCH_DIRS:%=-Wl,-rpath,%))
+DIR_LDFLAGS_YES = $(sort $(SHRLIB_SEARCH_DIRS:%=-Wl,-rpath,%))
 DIR_LDFLAGS += $(DIR_LDFLAGS_$(SHARED_LIBRARIES))
 
 ifdef CROSS

@@ -33,8 +33,7 @@ OP_SYS_CPPFLAGS += -DSOLARIS=$(SOLARIS_VERSION)
 OP_SYS_LDLIBS += -lsocket -lnsl
 
 # Set runtime path for shared libraries
-SHRLIB_LDFLAGS += $(sort $(SHRLIB_SEARCH_DIRS:%=-R%))
-DIR_LDFLAGS_YES += $(sort $(SHRLIB_SEARCH_DIRS:%=-R%))
+DIR_LDFLAGS_YES = $(sort $(SHRLIB_SEARCH_DIRS:%=-R%))
 DIR_LDFLAGS += $(DIR_LDFLAGS_$(SHARED_LIBRARIES))
 
 ifdef CROSS

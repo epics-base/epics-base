@@ -123,8 +123,14 @@ static void osdTimeInit ()
             return;
         }
 
+#if 1
+        /* not arch neutral, but at least supported by w95 and borland */
+        if ( InterlockedExchange ( (LPLONG) &osdTimeMutex, (LONG) osdTimeMutexTmp ) ) {
+#else
+
         /* not supported on W95, but the alternative requires assuming that pointer and integer are the same */
         if (InterlockedCompareExchange ( (PVOID *) &osdTimeMutex, (PVOID) osdTimeMutexTmp, (PVOID)0 ) != 0) {
+#endif
             CloseHandle (osdTimeMutexTmp);
             /* wait for init to complete */
             status = WaitForSingleObject (osdTimeMutex, INFINITE);

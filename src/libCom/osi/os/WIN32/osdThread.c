@@ -109,8 +109,13 @@ epicsShareFunc void epicsShareAPI threadInit (void)
             return;
         }
 
+#if 1
+        /* not arch neutral, but at least supported by w95 and borland */
+        if ( InterlockedExchange ( (LPLONG) &win32ThreadGlobalMutex, (LONG) win32ThreadGlobalMutexTmp ) ) {
+#else
         /* not supported on W95, but the alternative requires assuming that pointer and integer are the same */
         if (InterlockedCompareExchange ( (PVOID *) &win32ThreadGlobalMutex, (PVOID) win32ThreadGlobalMutexTmp, (PVOID)0 ) != 0) {
+#endif
             CloseHandle (win32ThreadGlobalMutexTmp);
             /* wait for init to complete */
             status = WaitForSingleObject (win32ThreadGlobalMutex, INFINITE);
@@ -278,7 +283,7 @@ epicsShareFunc unsigned int epicsShareAPI threadGetStackSize (threadStackSizeCla
 /*
  * epicsWin32ThreadEntry()
  */
-static int WINAPI epicsWin32ThreadEntry (LPVOID lpParameter)
+static unsigned WINAPI epicsWin32ThreadEntry (LPVOID lpParameter)
 {
     win32ThreadParam *pParm = (win32ThreadParam *) lpParameter;
     BOOL stat;
@@ -294,7 +299,7 @@ static int WINAPI epicsWin32ThreadEntry (LPVOID lpParameter)
      */
     free ( pParm );
 
-    return ( stat ); /* this indirectly closes the thread handle */
+    return ( (unsigned) stat ); /* this indirectly closes the thread handle */
 }
 
 /*

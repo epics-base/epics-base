@@ -87,14 +87,13 @@ epicsShareFunc osiSpawnDetachedProcessReturn epicsShareAPI osiSpawnDetachedProce
 		);
 
 		if ( W32status ) {
-			char *pFmtArgs[] = {
-					"Failed to start executable -",
-					(char *) pBaseExecutableName, 
-					errStrMsgBuf,
-					"Changes may be required in your \"path\" environment variable.",
-					"PATH = ",
-					getenv ("path")};
-
+			char *pFmtArgs[6];
+            pFmtArgs[0] = "Failed to start executable -";
+            pFmtArgs[1] = (char *) pBaseExecutableName;
+            pFmtArgs[2] = errStrMsgBuf;
+            pFmtArgs[3] = "Changes may be required in your \"path\" environment variable.";
+            pFmtArgs[4] = "PATH = ";
+            pFmtArgs[5] = getenv ("path");
 			if ( pFmtArgs[5] == NULL ) {
 				pFmtArgs[5] = "<empty string>";
 			}

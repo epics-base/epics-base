@@ -36,6 +36,7 @@
  * .06  08-07-92        jba     Added recGblGetLinkValue, recGblPutLinkValue
  * .07  08-07-92        jba     Added RTN_SUCCESS check for status
  * .08  09-15-92        jba     changed error parm in recGblRecordError calls
+ * .09  09-17-92        jba     ANSI C changes
  */
 
 #include	<vxWorks.h>
@@ -117,10 +118,11 @@ static void getMaxRangeValues();
 
 
 
-void recGblDbaddrError(status,paddr,pcaller_name)
-long		status;
-struct dbAddr	*paddr;	
-char		*pcaller_name;	/* calling routine name*/
+void recGblDbaddrError(
+	long	status,
+	struct dbAddr	*paddr,	
+	char	*pcaller_name	/* calling routine name*/
+)
 {
 	char		buffer[200];
 	struct dbCommon *precord;
@@ -146,10 +148,11 @@ char		*pcaller_name;	/* calling routine name*/
 	return;
 }
 
-void recGblRecordError(status,precord,pcaller_name)
-long		status;
-struct dbCommon *precord;	
-char		*pcaller_name;	/* calling routine name*/
+void recGblRecordError(
+long		status,
+struct dbCommon *precord,	
+char		*pcaller_name 	/* calling routine name*/
+)
 {
 	char buffer[200];
 	int i,n;
@@ -170,11 +173,12 @@ char		*pcaller_name;	/* calling routine name*/
 	return;
 }
 
-void recGblRecSupError(status,paddr,pcaller_name,psupport_name)
-long		status;
-struct dbAddr	*paddr;
-char		*pcaller_name;
-char		*psupport_name;
+void recGblRecSupError(
+long		status,
+struct dbAddr	*paddr,
+char		*pcaller_name,
+char		*psupport_name 
+)
 {
 	char buffer[200];
 	char *pstr;
@@ -211,9 +215,10 @@ char		*psupport_name;
 	return;
 }
 
-void recGblGetPrec(paddr,precision)
-    struct dbAddr *paddr;
-    long           *precision;
+void recGblGetPrec(
+    struct dbAddr *paddr,
+    long           *precision
+)
 {
     struct fldDes               *pfldDes=(struct fldDes *)(paddr->pfldDes);
 
@@ -240,9 +245,10 @@ void recGblGetPrec(paddr,precision)
     return;
 }
 
-void recGblGetGraphicDouble(paddr,pgd)
-    struct dbAddr *paddr;
-    struct dbr_grDouble *pgd;
+void recGblGetGraphicDouble(
+    struct dbAddr *paddr,
+    struct dbr_grDouble *pgd
+)
 {
     struct fldDes               *pfldDes=(struct fldDes *)(paddr->pfldDes);
 
@@ -260,9 +266,10 @@ void recGblGetGraphicDouble(paddr,pgd)
     return;
 }
 
-void recGblGetAlarmDouble(paddr,pad)
-    struct dbAddr *paddr;
-    struct dbr_alDouble *pad;
+void recGblGetAlarmDouble(
+    struct dbAddr *paddr,
+    struct dbr_alDouble *pad
+)
 {
     pad->upper_alarm_limit = 0;
     pad->upper_alarm_limit = 0;
@@ -272,9 +279,10 @@ void recGblGetAlarmDouble(paddr,pad)
     return;
 }
 
-void recGblGetControlDouble(paddr,pcd)
-    struct dbAddr *paddr;
-    struct dbr_ctrlDouble *pcd;
+void recGblGetControlDouble(
+    struct dbAddr *paddr,
+    struct dbr_ctrlDouble *pcd
+)
 {
     struct fldDes               *pfldDes=(struct fldDes *)(paddr->pfldDes);
 
@@ -302,7 +310,10 @@ long recGblGetLinkValue(
 )
 {
 	long		status=0;
+	unsigned char   pact;
 
+	pact = precord->pact;
+	precord->pact = TRUE;
 	switch (plink->type){
 		case(CONSTANT):
 			break;
@@ -321,6 +332,7 @@ long recGblGetLinkValue(
 			status=-1;
 			recGblSetSevr(precord,SOFT_ALARM,INVALID_ALARM);
 	}
+	precord->pact = pact;
 	return(status);
 }
 

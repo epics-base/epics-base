@@ -3,6 +3,8 @@ TOP=../..
 
 include $(TOP)/configure/CONFIG
 
+HTMLS += CAref.html
+
 #
 #	includes to install from this subproject
 #

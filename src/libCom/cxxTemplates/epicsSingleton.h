@@ -57,8 +57,8 @@ public:
 
         const TYPE * operator -> () const throw ()
         {
-            epicsSingleton<TYPE>::reference & ref = 
-                const_cast < epicsSingleton<TYPE>::reference & > ( *this );
+            typename epicsSingleton<TYPE>::reference & ref = 
+                const_cast < typename epicsSingleton<TYPE>::reference & > ( *this );
             return ref.operator -> ();
         }
 
@@ -102,7 +102,7 @@ inline epicsSingleton<TYPE>::~epicsSingleton ()
 epicsShareFunc epicsMutex & epicsSingletonPrivateMutex ();
 
 template < class TYPE >
-epicsSingleton<TYPE>::operator epicsSingleton<TYPE>::reference ()
+epicsSingleton<TYPE>::operator typename epicsSingleton<TYPE>::reference ()
 {
     epicsGuard < epicsMutex > guard ( epicsSingletonPrivateMutex() );
     if ( ! this->pSingleton ) {
@@ -112,7 +112,7 @@ epicsSingleton<TYPE>::operator epicsSingleton<TYPE>::reference ()
 }
 
 template < class TYPE >
-epicsSingleton<TYPE>::operator const epicsSingleton<TYPE>::reference () const
+epicsSingleton<TYPE>::operator const typename epicsSingleton<TYPE>::reference () const
 {
     epicsSingleton < TYPE > * pConstCastAway = 
         const_cast < epicsSingleton < TYPE > * > ( this );

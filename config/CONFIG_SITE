@@ -60,11 +60,17 @@ CROSS_COMPILER_TARGET_ARCHS=mv167
 #VX_DIR=/usr/local/vw/vxV51.mm
 #VX_DIR=/usr/local/vw/vxV52/vw
 #VX_DIR=c:/Tornado/target
-VX_DIR=/usr/local/vw/vxV52p1/vw
 
-#  Gnu directory for gcc crosscompiler
-#VX_GNU = $(VX_GNU)
+ifdef VX_IS_TORNADO
+VX_DIR = /usr/local/vw/tornado101
+VX_GNU = $(VX_DIR)/host/$(WIND_HOST_TYPE)
+WIND_BASE = $(VX_DIR)
+WIND_HOST_TYPE = sun4-solaris2
+else
+VX_DIR=/usr/local/vw/vxV52p1/vw
 VX_GNU = $(VX_DIR)/../vxgccV2.2.3.1
+endif
+
 
 #  Gnu directory for g++ crosscompiler
 #GNU_DIR = $(LOCAL_GNU)

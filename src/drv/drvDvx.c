@@ -313,6 +313,7 @@ static struct dvx_rec dvx[MAX_DVX_CARDS] = {
 static int DVX_INTLEV=5;		/* allow this to be user setable */
 static int dvxOnline = 0;		/* 1 after init invoked */
 
+#ifdef __STDC__
 int	lclToA24(void *pLocal, void **ppA24);
 void	dvx_reset(void);
 void  	dvx_int(struct dvx_rec *dvxptr);
@@ -326,6 +327,24 @@ int 	dvx_fempty(int card);
 int	dvx_dma_init(struct dvx_rec *ptr);
 int	dvx_dma_reset(struct dvx_rec *ptr);
 int 	dvx_dma_stat(int card, int chan);
+#else /* __STDC__ */
+
+int	lclToA24();
+void	dvx_reset();
+void  	dvx_int();
+int 	muxtst();
+int 	sramld();
+int 	dvx_driver();
+int	dvx_dread();
+int 	dvx_dump();
+int 	dvx_chan_print();
+int 	dvx_fempty();
+int	dvx_dma_init();
+int	dvx_dma_reset();
+int 	dvx_dma_stat();
+
+
+#endif /* __STDC__ */
 
 
 int	dvxDebug = 0;

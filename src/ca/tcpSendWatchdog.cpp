@@ -21,7 +21,7 @@ tcpSendWatchdog::tcpSendWatchdog
 
 void tcpSendWatchdog::expire ()
 {
-    ca_printf ("Unable to deliver message for %f sec. Disconnecting from CA server\n", this->period);
+    ca_printf ( "Request was pending for %f sec. Disconnecting from CA server.\n", this->period);
     this->shutdown ();
 }
 

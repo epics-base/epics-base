@@ -220,7 +220,11 @@ private:
 // efficently. Hash indexes are produced more efficiently 
 // when (MAX_ID_WIDTH - MIN_INDEX_WIDTH) is minimized.
 //
-template <class T, unsigned MIN_INDEX_WIDTH = 4, unsigned MAX_ID_WIDTH = sizeof(T)*CHAR_BIT>
+#if defined(__GNUC__) && ( __GNUC__<2 || (__GNUC__==2 && __GNUC__<8) )
+template <class T, unsigned MIN_INDEX_WIDTH, unsigned MAX_ID_WIDTH>
+#else
+template <class T, unsigned MIN_INDEX_WIDTH=4, unsigned MAX_ID_WIDTH = sizeof(T)*CHAR_BIT>
+#endif
 class intId {
 public:
 	intId (const T &idIn);
@@ -243,7 +247,11 @@ protected:
 // 
 // NOTE: ITEM must public inherit from chronIntIdRes <ITEM>
 //
+#if defined(__GNUC__) && ( __GNUC__<2 || (__GNUC__==2 && __GNUC__<8) )
+typedef intId<unsigned, 8, sizeof(unsigned)*CHAR_BIT> chronIntId;
+#else
 typedef intId<unsigned, 8> chronIntId;
+#endif
 template <class ITEM>
 class chronIntIdResTable : public resTable<ITEM, chronIntId> {
 public:

@@ -11,10 +11,16 @@
 
 void empty();
 
-class albert : public intId<unsigned,8>, public tsSLNode<albert> {
+#if defined(__GNUC__) && ( __GNUC__<2 || (__GNUC__==2 && __GNUC__<8) )
+typedef intId<unsigned,8,16> testIntId;
+#else
+typedef intId<unsigned,8> testIntId;
+#endif
+
+class albert : public testIntId, public tsSLNode<albert> {
 public:
-	albert (resTable< albert, intId<unsigned,8> > &atIn, unsigned idIn) : 
-		intId<unsigned,8>(idIn), at(atIn) 
+	albert (resTable< albert, testIntId > &atIn, unsigned idIn) : 
+		testIntId(idIn), at(atIn) 
     {
         assert (at.add (*this)==0);
     }
@@ -27,13 +33,13 @@ public:
 		delete this;
 	}
 private:
-	resTable< albert, intId<unsigned,8> > &at;
+	resTable< albert, testIntId > &at;
 };
 
-class fred : public intId<unsigned,8>, public tsSLNode<fred> {
+class fred : public testIntId, public tsSLNode<fred> {
 public:
 	fred (const char *pNameIn, unsigned idIn) : 
-			intId<unsigned,8>(idIn), pName(pNameIn) {}
+			testIntId(idIn), pName(pNameIn) {}
 	void show (unsigned) 
 	{
 		printf("fred %s\n", pName);
@@ -78,7 +84,7 @@ void jane::testTraverse()
         // This explicitly instantiates the template class's member
         // functions into "templInst.o"
         //
-	template class resTable<fred,intId<unsigned,8> >;	
+	template class resTable<fred,testIntId >;	
 	template class resTable<jane,stringId>;	
 #endif
 
@@ -88,7 +94,7 @@ int main()
 	clock_t start, finish;
 	double duration;
 	const unsigned LOOPS = 50000;
-	resTable<fred, intId<unsigned,8> > intTbl (8);	
+	resTable<fred, testIntId > intTbl (8);	
 	resTable<jane, stringId> strTbl (8);	
 	fred fred0("fred0",0);
 	fred fred1("fred1",0x1000a432);
@@ -104,16 +110,16 @@ int main()
 	jane jane2("rrrrrrrrrrrrrrrrrrrrrrrrrr2");
 	fred *pFred;
 	jane *pJane;
-	intId<unsigned,8> intId0 (0);
-	intId<unsigned,8> intId1 (0x1000a432);
-	intId<unsigned,8> intId2 (0x0000a432);
-	intId<unsigned,8> intId3 (1);
-	intId<unsigned,8> intId4 (2);
-	intId<unsigned,8> intId5 (3);
-	intId<unsigned,8> intId6 (4);
-	intId<unsigned,8> intId7 (5);
-	intId<unsigned,8> intId8 (6);
-	intId<unsigned,8> intId9 (7);
+	testIntId intId0 (0);
+	testIntId intId1 (0x1000a432);
+	testIntId intId2 (0x0000a432);
+	testIntId intId3 (1);
+	testIntId intId4 (2);
+	testIntId intId5 (3);
+	testIntId intId6 (4);
+	testIntId intId7 (5);
+	testIntId intId8 (6);
+	testIntId intId9 (7);
 
 	stringId strId1("rrrrrrrrrrrrrrrrrrrrrrrrrr1");
 	stringId strId2("rrrrrrrrrrrrrrrrrrrrrrrrrr2");
@@ -235,7 +241,7 @@ int main()
 	// hash distribution test
 	//
     static const unsigned tableSize = 0x1000;
-	resTable< albert, intId<unsigned,8> > alTbl (tableSize);	
+	resTable< albert, testIntId > alTbl (tableSize);	
 
 	for (i=0; i<tableSize*8; i++) {
 		albert *pa = new albert (alTbl, i);
@@ -243,7 +249,7 @@ int main()
 	}
 	alTbl.show(1u);
 
-    resTableIter< albert, intId<unsigned,8> > alTblIter (alTbl);
+    resTableIter< albert, testIntId > alTblIter (alTbl);
     albert *pa;
     i=0;
     while ( (pa = alTblIter.next()) ) {

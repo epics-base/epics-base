@@ -13,6 +13,9 @@
 #         install because the release.% syntax is illegal.
 #
 # $Log$
+# Revision 1.17  1994/10/05  18:45:57  jba
+# Modified syntax of makefile usage
+#
 # Revision 1.16  1994/09/09  17:32:27  jba
 # Cleanup of files
 #
@@ -44,18 +47,21 @@ all: install
 build:
 	@(for ARCH in ${BUILD_ARCHS};					\
 		do							\
+			ARCH_TYPE=$$ARCH				\
 			${MAKE} ${MFLAGS} $@.$$ARCH;			\
 		done)
 
 install:
 	@(for ARCH in ${BUILD_ARCHS};					\
 		do							\
+			ARCH_TYPE=$$ARCH				\
 			${MAKE} ${MFLAGS} $@.$$ARCH;			\
 		done)
 
 depends:
 	@(for ARCH in ${BUILD_ARCHS};					\
 		do							\
+			ARCH_TYPE=$$ARCH				\
 			${MAKE} ${MFLAGS} $@.$$ARCH;			\
 		done)
 
@@ -93,25 +99,25 @@ uninstall:
 #     basis.
 
 dirs.%:
-	@tools/CheckArch $*
-	@echo $*: Creating Directories
-	@tools/MakeDirs $*
+	@tools/CheckArch $(ARCH_TYPE)
+	@echo $(ARCH_TYPE): Creating Directories
+	@tools/MakeDirs $(ARCH_TYPE)
 
 build.%: dirs.% 
-	@echo $*: Building
-	@${MAKE} ${MFLAGS} T_A=$* -f Makefile.subdirs build
+	@echo $(ARCH_TYPE): Building
+	@${MAKE} ${MFLAGS} T_A=$(ARCH_TYPE) -f Makefile.subdirs build
 
 install.%: dirs.%
-	@echo $*: Installing
-	@${MAKE} ${MFLAGS} T_A=$* -f Makefile.subdirs install
+	@echo $(ARCH_TYPE): Installing
+	@${MAKE} ${MFLAGS} T_A=$(ARCH_TYPE) -f Makefile.subdirs install
 
 depends.%: dirs.%
-	@echo $*: Performing Make Depends
-	@${MAKE} ${MFLAGS} T_A=$* -f Makefile.subdirs depends
+	@echo $(ARCH_TYPE): Performing Make Depends
+	@${MAKE} ${MFLAGS} T_A=$(ARCH_TYPE) -f Makefile.subdirs depends
 
 clean.%: dirs.%
-	@echo $*: Cleaning
-	@${MAKE} ${MFLAGS} T_A=$* -f Makefile.subdirs clean
+	@echo $(ARCH_TYPE): Cleaning
+	@${MAKE} ${MFLAGS} T_A=$(ARCH_TYPE) -f Makefile.subdirs clean
 
 # Illegal Syntax
 
@@ -134,6 +140,6 @@ uninstall.%:
 #
 
 clean.%:
-	@echo "$*: Cleaning"
-	@tools/Clean $*
+	@echo "$(ARCH_TYPE): Cleaning"
+	@tools/Clean $(ARCH_TYPE)
 

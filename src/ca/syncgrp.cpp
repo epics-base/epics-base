@@ -40,9 +40,9 @@
  */
 extern "C" int epicsShareAPI ca_sg_create ( CA_SYNC_GID *pgid )
 {
+    oldCAC *pcac;
     int caStatus;
     CASG *pcasg;
-    oldCAC *pcac;
 
     caStatus = fetchClientContext ( &pcac );
     if ( caStatus != ECA_NORMAL ) {
@@ -64,9 +64,9 @@ extern "C" int epicsShareAPI ca_sg_create ( CA_SYNC_GID *pgid )
  */
 extern "C" int epicsShareAPI ca_sg_delete ( const CA_SYNC_GID gid )
 {
+    oldCAC *pcac;
     int caStatus;
     CASG *pcasg;
-    oldCAC *pcac;
 
     caStatus = fetchClientContext ( &pcac );
     if ( caStatus != ECA_NORMAL ) {
@@ -88,8 +88,8 @@ extern "C" int epicsShareAPI ca_sg_delete ( const CA_SYNC_GID gid )
  */
 extern "C" int epicsShareAPI ca_sg_block ( const CA_SYNC_GID gid, ca_real timeout )
 {
-    CASG *pcasg;
     oldCAC *pcac;
+    CASG *pcasg;
     int status;
 
     status = fetchClientContext (&pcac);
@@ -113,8 +113,8 @@ extern "C" int epicsShareAPI ca_sg_block ( const CA_SYNC_GID gid, ca_real timeou
  */
 extern "C" int epicsShareAPI ca_sg_reset ( const CA_SYNC_GID gid )
 {
-    CASG *pcasg;
     oldCAC *pcac;
+    CASG *pcasg;
     int caStatus;
 
     caStatus = fetchClientContext (&pcac);
@@ -139,8 +139,8 @@ extern "C" int epicsShareAPI ca_sg_reset ( const CA_SYNC_GID gid )
  */
 extern "C" int epicsShareAPI ca_sg_stat ( const CA_SYNC_GID gid )
 {
-    CASG *pcasg;
     oldCAC *pcac;
+    CASG *pcasg;
 
     int caStatus = fetchClientContext (&pcac);
     if ( caStatus != ECA_NORMAL ) {
@@ -163,8 +163,8 @@ extern "C" int epicsShareAPI ca_sg_stat ( const CA_SYNC_GID gid )
  */
 extern "C" int epicsShareAPI ca_sg_test ( const CA_SYNC_GID gid )
 {
-    CASG *pcasg;
     oldCAC *pcac;
+    CASG *pcasg;
     int caStatus;
 
     caStatus = fetchClientContext (&pcac);
@@ -191,8 +191,8 @@ extern "C" int epicsShareAPI ca_sg_test ( const CA_SYNC_GID gid )
 extern "C" int epicsShareAPI ca_sg_array_put ( const CA_SYNC_GID gid, chtype type,
     arrayElementCount count, chid pChan, const void *pValue )
 {
-    CASG *pcasg;
     oldCAC *pcac;
+    CASG *pcasg;
     int caStatus;
     
     caStatus = fetchClientContext ( &pcac );
@@ -215,8 +215,8 @@ extern "C" int epicsShareAPI ca_sg_array_put ( const CA_SYNC_GID gid, chtype typ
 extern "C" int epicsShareAPI ca_sg_array_get ( const CA_SYNC_GID gid, chtype type,
     arrayElementCount count, chid pChan, void *pValue )
 {
-    CASG *pcasg;
     oldCAC *pcac;
+    CASG *pcasg;
     int caStatus;
 
     caStatus = fetchClientContext ( &pcac );

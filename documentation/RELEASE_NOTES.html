@@ -16,6 +16,19 @@
 <h2>Changes since 3.14.4</h2>
 </center>
 
+<h4>Stringin record time-stamp soft device support</h4>
+Add simple device support for converting time to nicely-formatted string using
+INP field as epicsTimeToStrftime format string:
+<pre>
+record(stringin, "$(user):now")
+{
+    field(DESC, "Current time and date")
+    field(DTYP, "Soft Timestamp")
+    field(INP, "@%Y-%m-%d %H:%M:%S.%03f")
+}
+</pre>
+
+
 <h4>Channel Access Portable Server</h4>
 
 <p>Fixed failure occurring if client disconnected while asynchronous PV

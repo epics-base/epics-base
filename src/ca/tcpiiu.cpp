@@ -533,7 +533,7 @@ void tcpiiu::cleanShutdown ()
 {
     epicsAutoMutex autoMutex ( this->pCAC()->mutexRef() );
 
-    if ( this->state == iiu_connected ) {
+    if ( this->state == iiu_connected || this->state == iiu_connecting ) {
         int status = ::shutdown ( this->sock, SD_BOTH );
         if ( status ) {
             errlogPrintf ("CAC TCP socket shutdown error was %s\n", 
@@ -552,17 +552,6 @@ void tcpiiu::cleanShutdown ()
             this->state = iiu_disconnected;
         }
     }
-    else if ( this->state == iiu_connecting ) {
-        int status = socket_close ( this->sock );
-        if ( status ) {
-            errlogPrintf ( "CAC TCP socket close error was %s\n", 
-                SOCKERRSTR (SOCKERRNO) );
-        }
-        else {
-            this->sockCloseCompleted = true;
-            this->state = iiu_disconnected;
-        }
-    }
     this->sendThreadFlushEvent.signal ();
 }
 
@@ -573,9 +562,9 @@ void tcpiiu::forcedShutdown ()
 {
     epicsAutoMutex autoMutex ( this->pCAC()->mutexRef() );
 
-    if ( this->state != iiu_disconnected ) {
+    if ( this->state != iiu_disconnected || this->state == iiu_connecting ) {
         // force abortive shutdown sequence (discard outstanding sends
-        // and receives
+        // and receives)
         struct linger tmpLinger;
         tmpLinger.l_onoff = true;
         tmpLinger.l_linger = 0u;
@@ -588,8 +577,8 @@ void tcpiiu::forcedShutdown ()
 
         status = ::shutdown ( this->sock, SD_BOTH );
         if ( status ) {
-	    errlogPrintf ("CAC TCP socket shutdown error was %s\n", 
-	        SOCKERRSTR (SOCKERRNO) );
+            errlogPrintf ("CAC TCP socket shutdown error was %s\n", 
+                SOCKERRSTR (SOCKERRNO) );
             status = socket_close ( this->sock );
             if ( status ) {
                 errlogPrintf ("CAC TCP socket close error was %s\n", 
@@ -599,7 +588,7 @@ void tcpiiu::forcedShutdown ()
                 this->state = iiu_disconnected;
                 this->sockCloseCompleted = true;
             }
-	}
+        }
         else { 
             this->state = iiu_disconnected;
         }

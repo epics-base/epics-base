@@ -200,9 +200,10 @@ unsigned nciu::nameLen () const
     return this->nameLength;
 }
 
-void nciu::createChannelRequest ( tcpiiu & iiu )
+void nciu::createChannelRequest ( 
+    tcpiiu & iiu, epicsGuard < cacMutex > & guard )
 {
-    iiu.createChannelRequest ( *this );
+    iiu.createChannelRequest ( *this, guard );
     this->f_claimSent = true;
 }
 

@@ -42,7 +42,6 @@ static void **papTSD = 0;
 static int nthreadPrivate = 0;
 
 static SEM_ID threadOnceMutex = 0;
-static SEM_ID threadPrivateMutex = 0;
 
 /* Just map osi 0 to 99 into vx 100 to 199 */
 /* remember that for vxWorks lower number means higher priority */
@@ -80,16 +79,11 @@ void threadInit(void)
 {
     static int lock = 0;
 
-    while(!vxTas(&lock));
+    while(!vxTas(&lock)) taskDelay(1);
     if(threadOnceMutex==0) {
         threadOnceMutex = semMCreate(
                 SEM_DELETE_SAFE|SEM_INVERSION_SAFE|SEM_Q_PRIORITY);
         assert(threadOnceMutex);
-    }
-    if(threadPrivateMutex==0) {
-        threadPrivateMutex = semMCreate(
-                SEM_DELETE_SAFE|SEM_INVERSION_SAFE|SEM_Q_PRIORITY);
-        assert(threadPrivateMutex);
     }
     lock = 0;
 }
@@ -249,9 +243,7 @@ threadPrivateId threadPrivateCreate()
 {
     threadPrivateId id;
     threadInit();
-    assert(semTake(threadPrivateMutex,WAIT_FOREVER)==OK);
     id = (threadPrivateId)++nthreadPrivate;
-    semGive(threadPrivateMutex);
     return(id);
 }
 
@@ -269,7 +261,6 @@ void threadPrivateSet (threadPrivateId id, void *pvt)
 {
     int indpthreadPrivate = (int)id;
 
-    assert(semTake(threadPrivateMutex,WAIT_FOREVER)==OK);
     if(!papTSD) {
         papTSD = callocMustSucceed(indpthreadPrivate + 1,sizeof(void *),
             "threadPrivateSet");
@@ -285,16 +276,13 @@ void threadPrivateSet (threadPrivateId id, void *pvt)
         }
     }
     papTSD[indpthreadPrivate] = pvt;
-    semGive(threadPrivateMutex);
 }
 
 void *threadPrivateGet(threadPrivateId id)
 {
     void *data;
-    assert(semTake(threadPrivateMutex,WAIT_FOREVER)==OK);
     assert(papTSD);
     assert((int)id <= (int)papTSD[0]);
     data = papTSD[(int)id];
-    semGive(threadPrivateMutex);
     return(data);
 }

@@ -157,11 +157,10 @@ int PepLink0Delay = 450;
 int PepLink1Delay = 450;
 int PepLink2Delay = 450;
 int PepLink3Delay = 450;
-int PepLink0ConsecutiveDelay = 0;
-int PepLink1ConsecutiveDelay = 0;
-int PepLink2ConsecutiveDelay = 0;
-int PepLink3ConsecutiveDelay = 0;
 int PepLink0PulseNode = 1;
+
+short  PepTMOs[4][60];
+short  Pep91s[4][60];
 
 /*****************************************************************************
  *
@@ -1975,6 +1974,10 @@ pepRxTask(int link)
 		    if (rxHead[4] == PepLink0PulseNode) 
 		      pulseSysMon();
 		  }
+
+                  if(rxHead[4] < 60) {
+                      Pep91s[link][rxHead[4]]++;
+                  }
 		  /* end of saunders patch */
 
 		  if (bbDebug)
@@ -2256,6 +2259,10 @@ STATIC int pepWdTask(int link)
 	  printf("pepWdTask(%d): TIMEOUT on bitbus message:\n", link);
 	  drvBitBusDumpMsg(&pnode->txMsg);
 	}
+
+        if(pnode->txMsg.node < 60) {
+            PepTMOs[link][pnode->txMsg.node]++;
+        }
 	
 	/* BUG -- do this here or defer until RX gets a response? */
         (pBBLink[link]->deviceStatus[pnode->txMsg.node])--; /* fix device status */
@@ -2478,7 +2485,6 @@ STATIC int pepTxTask(int link)
 		    == 0x0) && --stuck)
 	      for(x=0;x<100;x++);   	    
 	  }
-	  PepLink0ConsecutiveDelay++;
 	  break;
 	case 1:
 	  if (PepLink1Delay >= 0) {
@@ -2489,7 +2495,6 @@ STATIC int pepTxTask(int link)
 		    == 0x0) && --stuck)
 	      for(x=0;x<100;x++);   	    
 	  }
-	  PepLink1ConsecutiveDelay++;
 	  break;
 	case 2:
 	  if (PepLink2Delay >= 0) {
@@ -2500,7 +2505,6 @@ STATIC int pepTxTask(int link)
 		    == 0x0) && --stuck)
 	      for(x=0;x<100;x++);   	    
 	  }
-	  PepLink2ConsecutiveDelay++;
 	  break;
 	case 3:
 	  if (PepLink3Delay >= 0) {
@@ -2511,7 +2515,6 @@ STATIC int pepTxTask(int link)
 		    == 0x0) && --stuck)
 	      for(x=0;x<100;x++);   	    
 	  }
-	  PepLink3ConsecutiveDelay++;
 	  break;
 	default:
 	  break;
@@ -2719,6 +2722,7 @@ long pulseSysMon() {
   volatile SysmonStruct *SysmonBase;
   volatile unsigned short *pReg;
   int i;
+  unsigned short probeVal;
   volatile int j = 0;
 
   if (sysBusToLocalAdrs(VME_AM_SUP_SHORT_IO, (char *)0x8b80, 
@@ -2728,12 +2732,35 @@ long pulseSysMon() {
   }
   pReg = &(SysmonBase->SysmonDio);
   
-  *pReg = 0xffff;
+  probeVal = 0xffff;
+  vxMemProbe((char*) pReg, WRITE, 2, (char*)&probeVal);
   for (i=0 ; i < bitbusTriggerWidth ; i++) {
     j++;
     j--;
     }
-  *pReg = 0x0000;
+  probeVal = 0x0000;
+  vxMemProbe((char*) pReg, WRITE, 2, (char*)&probeVal);
 
   return(0);
 }
+
+
+long pepDump() {
+   int i,j;
+
+   for (j=0; j<4 ; j++) { 
+       printf("Link %d\n", j);
+       for (i=1;i<60; i++) {
+           /* print error tally if non-zero */
+           if(PepTMOs[j][i] || Pep91s[j][i]) {
+               printf("    Node %d  - TMO %d  91s %d\n",i,PepTMOs[j][i],
+                   Pep91s[j][i]);
+           }
+       }
+   }
+
+   return(0);
+}
+
+
+

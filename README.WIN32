@@ -2,7 +2,7 @@
 Compiling EPICS and Building IOC Applications on WIN32 (Windows95/NT) 
 ---------------------------------------------------------------------
 
-Original port of EPICS base to WIN32 (Windows95/NT)
+Original port of EPICS base build system to WIN32 (Windows95/NT)
 was done by Kay-Uwe Kasemir 11/96
 
 please mail questions, comments, corrections, additional examples, etc 

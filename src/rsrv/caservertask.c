@@ -86,11 +86,11 @@ LOCAL unsigned long delay_in_ticks(unsigned long prev);
  */
 int req_server(void)
 {
-	struct sockaddr_in 	serverAddr;	/* server's address */
-	int        		status;
-	int			i;
+	struct sockaddr_in serverAddr;	/* server's address */
+	int status;
+	int i;
 
-        taskwdInsert((int)taskIdCurrent,NULL,NULL);
+	taskwdInsert((int)taskIdCurrent,NULL,NULL);
 
 	ca_server_port = caFetchPortConfig(&EPICS_CA_SERVER_PORT, CA_SERVER_PORT);
 

@@ -3,28 +3,22 @@ include Target.include
 include $(EPICS)/config/CONFIG_BASE
 
 SRCS.c = \
-	../calcPerform.c ../cmdSubr.c ../cvtBpt.c ../cvtFast.c \
-	../cvtNumbers.c ../gpHashLib.c ../freeListLib.c ../ellLib.c \
-	../envSubr.c ../errSymLib.c ../ezsSockSubr.c ../genSubr.c \
-	../genTaskSubr.c ../helpSubr.c ../nextFieldSubr.c ../postfix.c \
-	../sydSubr.c ../sydSubrCA.c ../sydSubrCF.c ../sydSubrSSF.c \
+	../calcPerform.c ../cvtBpt.c ../cvtFast.c \
+	../gpHashLib.c ../freeListLib.c ../ellLib.c \
+	../envSubr.c ../errSymLib.c \
+	../nextFieldSubr.c ../postfix.c \
 	../bucketLib.c ../memDebugLib.c ../tsSubr.c ../pal.c \
 	../paldef.c ../mprintf.c errSymTbl.c
 
 
 OBJS = \
-        calcPerform.o cvtBpt.o cvtFast.o ellLib.o envSubr.o errSymLib.o \
-	errSymTbl.o genSubr.o genTaskSubr.o nextFieldSubr.o postfix.o \
+	calcPerform.o cvtBpt.o cvtFast.o ellLib.o envSubr.o errSymLib.o \
+	errSymTbl.o nextFieldSubr.o postfix.o \
 	bucketLib.o tsSubr.o gpHashLib.o freeListLib.o pal.o paldef.o \
 	mprintf.o
 
-OBJS1 = \
-	cmdSubr.o cvtNumbers.o cvtFast.o ezsSockSubr.o helpSubr.o
 
-OBJS2 = \
-	sydSubr.o sydSubrCA.o sydSubrCF.o sydSubrSSF.o
-
-PROD = libCom libCom1 libCom2
+PROD = libCom
 
 include $(EPICS)/config/RULES.Vx
 
@@ -44,10 +38,3 @@ libCom: $(OBJS)
 	$(RM) $@
 	$(LINK.c) $@ $(OBJS) $(LDLIBS)
 
-libCom1: $(OBJS1)
-	$(RM) $@
-	$(LINK.c) $@ $(OBJS1) $(LDLIBS)
-
-libCom2: $(OBJS2)
-	$(RM) $@
-	$(LINK.c) $@ $(OBJS2) $(LDLIBS)

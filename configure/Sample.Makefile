@@ -72,7 +72,7 @@ INC         = file.h
 #	defining a library
 # --------------------------------------------------------------------
 #
-#	Contents of a library are specified via SRCS, LIBSRCS, or .._SRCS.
+#	Contents of a library are specified via SRCS, LIB_SRCS, or .._SRCS.
 #	From this the platform specific object names (.o, .obj, ...)
 #	are derived automatically.
 #
@@ -86,7 +86,7 @@ INC         = file.h
 #	./os/OS_CLASS
 #	./os/generic
 #	.
-#	So usually only LIBSRCS should be sufficient!
+#	So usually only LIB_SRCS should be sufficient!
 
 #   SRCS files will be used for both LIBRARY and PROD
 SRCS            = file_for_lib.c another_file.cpp

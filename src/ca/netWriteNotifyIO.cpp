@@ -30,12 +30,6 @@ void netWriteNotifyIO::destroy ()
     this->baseNMIU::destroy ();
 }
 
-void netWriteNotifyIO::disconnect ( const char *pHostName )
-{
-    this->exceptionNotify (ECA_DISCONN, pHostName);
-    this->baseNMIU::destroy ();
-}
-
 void netWriteNotifyIO::completionNotify ()
 {
     this->cacNotifyIO::completionNotify ();

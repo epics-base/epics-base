@@ -30,12 +30,6 @@ void netReadNotifyIO::destroy ()
     this->baseNMIU::destroy ();
 }
 
-void netReadNotifyIO::disconnect ( const char *pHostName )
-{
-    this->cacNotifyIO::exceptionNotify ( ECA_DISCONN, pHostName );
-    this->baseNMIU::destroy ();
-}
-
 void netReadNotifyIO::completionNotify ()
 {
     this->cacNotifyIO::exceptionNotify ( ECA_INTERNAL, "no data returned ?" );

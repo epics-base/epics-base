@@ -29,12 +29,6 @@ netReadCopyIO::~netReadCopyIO ()
 
 }
 
-void netReadCopyIO::disconnect ( const char *pHostName )
-{
-    this->exceptionNotify ( ECA_DISCONN, pHostName );
-    this->baseNMIU::destroy ();
-}
-
 void netReadCopyIO::completionNotify ()
 {
     this->exceptionNotify ( ECA_INTERNAL, "get completion callback with no data?" );
@@ -46,7 +40,7 @@ void netReadCopyIO::completionNotify ( unsigned typeIn,
     if ( typeIn <= (unsigned) LAST_BUFFER_TYPE ) {
 #       ifdef CONVERSION_REQUIRED 
             (*cac_dbr_cvrt[type]) ( pDataIn, this->pValue, 
-			FALSE, countIn );
+			    FALSE, countIn );
 #       else
             memcpy ( this->pValue, pDataIn, 
                  dbr_size_n ( typeIn, countIn ) );

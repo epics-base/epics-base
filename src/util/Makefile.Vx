@@ -1,0 +1,15 @@
+EPICS = ../../..
+include $(EPICS)/config/CONFIG_vx
+
+USR_CFLAGS =
+
+SRCS = \
+	ca_test.c calcTest.c recordTest.c
+
+OBJS =
+
+LIBOBJS =
+
+TARGETS = $(OBDIR)/ca_test $(OBDIR)/calcTest $(OBDIR)/recordTest
+
+include $(EPICS)/config/RULES.Vx

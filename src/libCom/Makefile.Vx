@@ -1,0 +1,63 @@
+EPICS = ../../..
+include $(EPICS)/config/CONFIG_vx
+
+USR_CFLAGS = -ansi
+
+SRCS = \
+	calcPerform.c cmdSubr.c cvtBpt.c cvtFast.c cvtNumbers.c \
+	gpHashLib.c freeListLib.c ellLib.c envSubr.c errSymLib.c \
+	ezsSockSubr.c genSubr.c genTaskSubr.c helpSubr.c \
+	nextFieldSubr.c postfix.c sydSubr.c sydSubrCA.c \
+	sydSubrCF.c sydSubrSSF.c bucketLib.c memDebugLib.c tsSubr.c \
+	$(OBDIR)/errSymTbl.c
+
+OBJS =
+
+LIBOBJS = \
+        $(OBDIR)/calcPerform.o $(OBDIR)/cvtBpt.o $(OBDIR)/cvtFast.o \
+	$(OBDIR)/ellLib.o $(OBDIR)/envSubr.o $(OBDIR)/errSymLib.o \
+	$(OBDIR)/errSymTbl.o $(OBDIR)/genSubr.o $(OBDIR)/genTaskSubr.o \
+        $(OBDIR)/nextFieldSubr.o $(OBDIR)/postfix.o $(OBDIR)/bucketLib.o \
+	$(OBDIR)/tsSubr.o
+
+LIBOBJS1 = \
+	$(OBDIR)/cmdSubr.o $(OBDIR)/cvtNumbers.o $(OBDIR)/cvtFast.o \
+	$(OBDIR)/ezsSockSubr.o $(OBDIR)/helpSubr.o
+
+LIBOBJS2 = \
+	$(OBDIR)/sydSubr.o $(OBDIR)/sydSubrCA.o \
+	$(OBDIR)/sydSubrCF.o $(OBDIR)/sydSubrSSF.o
+
+LIBNAME = libCom.o
+
+LIBNAME1 = libCom1.o
+
+LIBNAME2 = libCom2.o
+
+build_libs:: $(OBDIR)/$(LIBNAME1) $(OBDIR)/$(LIBNAME2)
+
+$(OBDIR)/$(LIBNAME1): $(LIBOBJS1)
+	$(LD) $(LDFLAGS) $@ $?
+
+$(OBDIR)/$(LIBNAME2): $(LIBOBJS2)
+	$(LD) $(LDFLAGS) $@ $?
+
+install_libs:: $(EPICS_BASE_LIB)/$(T_A)/$(LIBNAME1) \
+	       $(EPICS_BASE_LIB)/$(T_A)/$(LIBNAME2)
+
+$(EPICS_BASE_LIB)/$(T_A)/$(LIBNAME1): $(OBDIR)/$(LIBNAME1)
+	install -m 644 $? $@
+
+$(EPICS_BASE_LIB)/$(T_A)/$(LIBNAME2): $(OBDIR)/$(LIBNAME2)
+	install -m 644 $? $@
+
+depends: bld_errSym
+
+bld_errSym: $(OBDIR)/errSymTbl.c $(OBDIR)/errInc.o
+
+$(OBDIR)/errSymTbl.c $(OBDIR)/errInc.o:
+	@/bin/rm -f errInc.o
+	@$(EPICS_BASE)/tools/blderrSymTbl
+	@/bin/mv errSymTbl.c errInc.o $(OBDIR)
+
+include $(EPICS)/config/RULES.Vx

@@ -1,0 +1,16 @@
+EPICS = ../../..
+include $(EPICS)/config/CONFIG_vx
+
+USR_CFLAGS =
+
+SRCS = \
+	iocLogClient.c veclist.c
+
+OBJS = \
+	$(OBDIR)/veclist.o $(OBDIR)/iocLogClient.o
+
+LIBOBJS = \
+
+PROD = $(OBDIR)/vxComLib
+
+include $(EPICS)/config/RULES.Vx

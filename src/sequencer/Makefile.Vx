@@ -1,0 +1,27 @@
+EPICS = ../../..
+include $(EPICS)/config/CONFIG_vx
+
+USR_CFLAGS =
+
+SRCS = \
+	seq_main.c seq_ca.c seq_qry.c seq_task.c \
+	seq_mac.c seq_prog.c $(OBDIR)/seqVersion.c
+
+OBJS = \
+	$(OBDIR)/seq_main.o $(OBDIR)/seq_ca.o \
+	$(OBDIR)/seq_qry.o $(OBDIR)/seq_task.o \
+	$(OBDIR)/seq_mac.o $(OBDIR)/seq_prog.o \
+	$(OBDIR)/seqVersion.o
+
+LIBOBJS =
+
+PROD = $(OBDIR)/seq
+
+depends: $(OBDIR)/seqVersion.c
+
+$(OBDIR)/seqVersion.c: Version
+	/bin/rm -f $(OBDIR)/seqVersion.c
+	sh makeSeqVersion Version > seqVersion.c
+	/bin/mv seqVersion.c $(OBDIR)/seqVersion.c
+
+include $(EPICS)/config/RULES.Vx

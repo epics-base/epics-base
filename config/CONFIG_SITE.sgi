@@ -22,6 +22,6 @@ CXXCMPLR=NORMAL
 #CXXCMPLR=STRICT
 
 # Special C library requirements
-SPECIAL_LANG = /usr/lang/SC2.0.1patch
+SPECIAL_LANG = 
 
 

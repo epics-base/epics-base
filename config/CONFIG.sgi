@@ -4,37 +4,42 @@
 #  This file is maintained by the EPICS community.
 
 # BUILD_TYPE
-#   Currently either Vx or Unix
-BUILD_TYPE = Unix
+#   Currently either Vx or Host
+BUILD_TYPE = Host
  
+ARCH_CLASS = sgi
+
 # Compiler and utility invocation (supply path to compiler here)
 #   (with warning flags built in)
 #  Paths to compilers
 GCC = cc
 ACC = cc
-KRCC = cc -cckr
+
 AR = ar 
 ARCMD = $(AR) $(ARFLAGS)
 ARFLAGS = r
-RANLIB = ls
-RANLIBFLAGS =
+
+RANLIB =
 YACC = $(EYACC)
 LEX = $(ELEX)
 G++ = g++
 CCC = CC
+
+CP=cp
 MV = mv
+RM=rm -f
 RMDIR = rm -rf
 MKDIR = mkdir
 CHMOD = "/bin/chmod"
+EXE=
+OBJ=.o
 
 ACC_ANSI_INVOKE_W_NO = $(ACC) -xansi -w
 ACC_ANSI_INVOKE_W_YES = $(ACC) -xansi
-ACC_TRAD_INVOKE_W_NO = $(ACC) -Xs -xansi -w
-ACC_TRAD_INVOKE_W_YES = $(ACC) -Xs -xansi
-KRCC_TRAD_INVOKE_W_NO = $(KRCC) -w
-KRCC_TRAD_INVOKE_W_YES = $(KRCC)
-ACC_STRICT_INVOKE_W_NO = $(ACC) -ansi -w
-ACC_STRICT_INVOKE_W_YES = $(ACC) -ansi
+ACC_STRICT_INVOKE_W_NO = $(ACC) -xansi -w
+ACC_STRICT_INVOKE_W_YES = $(ACC) -xansi
+ACC_TRAD_INVOKE_W_NO = $(ACC) -cckr -Xs -w
+ACC_TRAD_INVOKE_W_YES = $(ACC) -cckr -Xs
 GCC_ANSI_INVOKE_W_NO = $(GCC) -ansi -w
 GCC_ANSI_INVOKE_W_YES = $(GCC) -ansi
 GCC_STRICT_INVOKE_W_NO = $(GCC) -ansi -pedantic
@@ -96,6 +101,7 @@ UNIX_LDLIBS = -lm
  
 ARCH_DEP_CFLAGS = -DSGI
 ARCH_DEP_CXXFLAGS = $(ARCH_DEP_CFLAGS)
+
 UNIX_CFLAGS = $(UNIX_SFLAGS) $(UNIX_INCLUDES) $(OP_SYS_FLAGS)
  
 UNIX_CXXFLAGS = $(UNIX_CFLAGS)
@@ -118,9 +124,9 @@ LDLIBS = $(TARGET_LDLIBS) $(USR_LDLIBS) $(ARCH_DEP_LDLIBS) $(UNIX_LDLIBS)
 # Override defaults
 COMPILE.c = $(CC) $(CFLAGS) $(CPPFLAGS) -c
 COMPILE.cc = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -c
-LINK.c = $(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
-LINK.cc = $(CXX) $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS)
-LOAD.c = ld -shared $(LDFLAGS)
+# Unlike the 'Unix' makesystem, output flags -o .. are now part of LINK.c[c]
+LINK.c = $(CC) -o $@ $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
+LINK.cc = $(CXX) -o $@ $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS)
 
 DEPENDS_RULE.c = -$(COMPILE.c) -M $(SRCS.c) > .DEPENDS
 DEPENDS_RULE.cc = @echo no DEPENDS_RULE.cc defined in CONFIG.sgi

@@ -117,11 +117,7 @@ casDGIntfIO::casDGIntfIO (caServerI &serverIn, const caNetAddr &addr,
         else {
             // avoid use of ellFree because problems on windows occur if the
             // free is in a different DLL than the malloc
-            ELLNODE * nnode = BCastAddrList.node.next;
-            while ( nnode )
-            {
-                ELLNODE * pnode = nnode;
-                nnode = nnode->next;
+            while ( ELLNODE * pnode = ellGet ( & BCastAddrList ) ) {
                 free ( pnode );
             }
         }

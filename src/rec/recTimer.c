@@ -56,6 +56,7 @@
 #include	<errMdef.h>
 #include	<link.h>
 #include	<recSup.h>
+#include	<module_types.h>
 #include	<timerRecord.h>
 
 /* Create RSET - Record Support Entry Table*/
@@ -98,9 +99,28 @@ struct rset timerRSET={
 	get_alarm_double };
 
 /* because the driver does all the work just declare device support here*/
-struct dset devTmMizar8310={4,NULL,NULL,NULL,NULL};
-struct dset devTmDg535={4,NULL,NULL,NULL,NULL};
-struct dset devTmVxiAt5={4,NULL,NULL,NULL,NULL};
+long get_ioint_info();
+struct dset devTmMizar8310={4,NULL,NULL,NULL,get_ioint_info};
+struct dset devTmDg535={4,NULL,NULL,NULL,get_ioint_info};
+struct dset devTmVxiAt5={4,NULL,NULL,NULL,get_ioint_info};
+static long get_ioint_info(ptimer,io_type,card_type,card_number)
+    struct timerRecord     *ptimer;
+    short               *io_type;
+    short               *card_type;
+    short               *card_number;
+{
+    if(ptimer->out.type != VME_IO) return(S_dev_badInpType);
+    *io_type = IO_TIMER;
+    if(ptimer->dtyp==0)
+	*card_type = MZ8310;
+    else if(ptimer->dtyp==3)
+	*card_type = VXI_AT5_TIME;
+    else
+	return(1);
+    *card_number = ptimer->out.value.vmeio.card;
+    return(0);
+}
+
 
 extern int	post_event();
 

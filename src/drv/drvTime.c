@@ -37,5 +37,6 @@ static long init()
 {
     int status;
 
+    time_driver_init();
     return(0);
 }

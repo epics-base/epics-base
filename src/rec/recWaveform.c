@@ -174,6 +174,7 @@ static long process(paddr)
         if (pwf->scan == E_IO_INTERRUPT){
                 if ((pwf->evnt != 0)  && (gts_trigger_counter != 0)){
                         if ((gts_trigger_counter % pwf->evnt) != 0){
+        			status=(*pdset->read_wf)(pwf);
                                 return(0);
                         }
                 }

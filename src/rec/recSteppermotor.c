@@ -138,6 +138,8 @@ void positional_sm();
 void velocity_sm();
 void sm_get_position();
 
+static not_init_record=FALSE;
+
 
 static long init_record(psm)
     struct steppermotorRecord	*psm;
@@ -155,6 +157,7 @@ static long process(paddr)
 
 	/* intialize the stepper motor record when the init bit is 0 */
 	/* the init is set when the readback returns */
+	not_init_record=TRUE;
 	if (psm->init == 0){
 		init_sm(psm);
 		tsLocalTime(&psm->time);
@@ -358,13 +361,29 @@ struct steppermotorRecord	*psm;
 {
     short           stat,sevr,nsta,nsev;
    
-    dbScanLock(psm);
-    if(psm->pact) {
-	dbScanUnlock(psm);
-	return;
-    }
-    psm->pact = TRUE;
-    tsLocalTime(&psm->time);
+/*
+printf("smcb_callback\n");
+printf("%d %d %d %d %d %d %d %d %d\n",
+psm_data->cw_limit,
+psm_data->ccw_limit,
+psm_data->moving,
+psm_data->direction,
+psm_data->constant_velocity,
+psm_data->velocity,
+psm_data->encoder_position,
+psm_data->motor_position,
+psm_data->accel
+);
+*/
+    if(not_init_record) {
+	dbScanLock(psm);
+	if(psm->pact) {
+	    dbScanUnlock(psm);
+	    return;
+	}
+	psm->pact = TRUE;
+	tsLocalTime(&psm->time);
+    } else psm->mlis.count=0;
     if (psm->cmod == VELOCITY){
 	/* check velocity */
 	if (psm->rrbv != psm_data->velocity){
@@ -378,7 +397,7 @@ struct steppermotorRecord	*psm;
 
 	/* direction */
 	if (psm->dir != psm_data->direction){
-		psm->dir == psm_data->direction;
+		psm->dir = psm_data->direction;
 		if (psm->mlis.count)
 			db_post_events(psm,&psm->dir,DBE_VALUE);
 	}
@@ -399,7 +418,7 @@ struct steppermotorRecord	*psm;
 
 	/* direction */
 	if (psm->dir != psm_data->direction){
-		psm->dir == psm_data->direction;
+		psm->dir = psm_data->direction;
 		if (psm->mlis.count)
 			db_post_events(psm,&psm->dir,DBE_VALUE);
 	}
@@ -409,7 +428,7 @@ struct steppermotorRecord	*psm;
 	/* use the quardrature encoding technique - if we use an encoder      */
 	/* that does not, then we need to make quadrature encoder a database  */
 	/* field and use the 4 on that condition !!!!!                        */
-	if (psm->epos != psm_data->encoder_position){
+	if (psm->epos){
 		psm->epos = (psm_data->encoder_position * psm->dist * psm->mres)
 		  / (psm->eres * 4);
 		if (psm->mlis.count)
@@ -445,8 +464,6 @@ struct steppermotorRecord	*psm;
 		}
 	}
 
-	/* get the read back value */
-	sm_get_position(psm,psm_data->moving);
 
         /* get previous stat and sevr  and new stat and sevr*/
         stat=psm->stat;
@@ -461,14 +478,13 @@ struct steppermotorRecord	*psm;
 
         /* anyone waiting for an event on this record */
         if (psm->mlis.count!=0  && (stat!=nsta || sevr!=nsev) ){
-		db_post_events(psm,&psm->ccw,DBE_VALUE);
-		db_post_events(psm,&psm->cw,DBE_VALUE);
 		db_post_events(psm,&psm->val,DBE_VALUE|DBE_ALARM);
-		db_post_events(psm,&psm->rbv,DBE_VALUE|DBE_ALARM);
 		db_post_events(psm,&psm->stat,DBE_VALUE);
 		db_post_events(psm,&psm->sevr,DBE_VALUE);
    	 }
 
+	/* get the read back value */
+	sm_get_position(psm,psm_data->moving);
 
 	/* needs to follow get position to prevent moves with old readback */
 	/* moving */
@@ -495,8 +511,10 @@ struct steppermotorRecord	*psm;
                 }
         }
     }
-    psm->pact = FALSE;
-    dbScanUnlock(psm);
+    if(not_init_record) {
+	psm->pact = FALSE;
+	dbScanUnlock(psm);
+    }
     return;
 }
 
@@ -549,7 +567,7 @@ struct steppermotorRecord      *psm;
 	sm_driver(psm->dtyp,card,channel,SM_CALLBACK,smcb_callback,psm);
 
 	/* initialize the limit values */
-	psm->cw = psm->ccw = -1;
+	psm->mcw = psm->mccw = -1;
 
 	/*  set initial position */
 	if (psm->mode == POSITION){
@@ -559,6 +577,7 @@ struct steppermotorRecord      *psm;
 			}else if (psm->ialg == NEGATIVE_LIMIT){
 				status = sm_driver(psm->dtyp,card,channel,SM_MOVE,-0x0fffffff,0);
 			}
+			psm->sthm = 1;
 		/* force a read of the position and status */
 		}else{
 			status = sm_driver(psm->dtyp,card,channel,SM_READ,0,0);
@@ -665,10 +684,11 @@ struct steppermotorRecord	*psm;
 	if (psm->lval != psm->val){
 		psm->rcnt = 0;
 		psm->lval = psm->val;
-                psm->movn = 0;          /* start moving to desired location */
+                psm->dmov = 0;          /* start moving to desired location */
 		if (psm->mlis.count){
 			db_post_events(psm,&psm->rcnt,DBE_VALUE|DBE_LOG);
 			db_post_events(psm,&psm->lval,DBE_VALUE|DBE_LOG);
+			db_post_events(psm,&psm->dmov,DBE_VALUE|DBE_LOG);
 		}
 	}
 
@@ -717,10 +737,10 @@ struct steppermotorRecord	*psm;
                 done_move = 1;
         }
         /* there was a move in progress and now it is complete */
-        if (done_move && (psm->movn == 0)){
-                psm->movn = 1;
+        if (done_move && (psm->dmov == 0)){
+                psm->dmov = 1;
                 if (psm->mlis.count)
-                        db_post_events(psm,&psm->movn,DBE_VALUE|DBE_LOG);
+                        db_post_events(psm,&psm->dmov,DBE_VALUE|DBE_LOG);
 
                 /* check for deviation from desired value */
                 alarm(psm);

@@ -49,6 +49,7 @@
 #include	<waveformRecord.h>
 
 long init_record();
+long get_ioint_info();
 long read_wf();
 long arm_wf();
 
@@ -65,7 +66,7 @@ struct {
 	NULL,
 	NULL,
 	init_record,
-	NULL,
+	get_ioint_info,
 	read_wf};
 /* control block for callback */
 struct callback{
@@ -73,20 +74,11 @@ struct callback{
         void (*process)();
 };
 
-/*
- * Macro to access the Joerger memory using word addressing.
- * Returns either byte of a short using only short word addressing
- * this is necessary to avoid bus errors
- */
-#define get_a_byte(a)   (((long)a & 0x01)? \
-        (*(unsigned short *)(a-1) & 0xff) : (*(unsigned short *)(a) >> 8))
-
-
 
 static void myCallback(pcallback,no_read,pdata)
     struct callback *pcallback;
     int		    no_read;
-    unsigned char   *pdata;
+    unsigned short   *pdata;
 {
         struct waveformRecord   *pwf=
 		(struct waveformRecord *)(pcallback->dbAddr.precord);
@@ -96,22 +88,19 @@ static void myCallback(pcallback,no_read,pdata)
 	if(!pwf->busy) return;
         dbScanLock(pwf);
 	pwf->busy = FALSE;
+	if(no_read>pwf->nelm)no_read = pwf->nelm;
 	if(ftvl==DBF_CHAR || ftvl==DBF_UCHAR) {
-		unsigned char source;
 		unsigned char *pdest=(unsigned char *)pwf->bptr;
 
 		for(i=0; i<no_read; i++) {
-			source = get_a_byte(pdata);
-			*pdest++ = source;
+			*pdest++ = *pdata++;
 		}
        		pwf->nord = no_read;            /* number of values read */
 	} else if(ftvl==DBF_SHORT || ftvl==DBF_USHORT) {
-		unsigned char source;
 		unsigned short *pdest=(unsigned short *)pwf->bptr;
 
 		for(i=0; i<no_read; i++) {
-			source = get_a_byte(pdata);
-			*pdest++ = source;
+			*pdest++ = *pdata++;
 		}
        		pwf->nord = no_read;            /* number of values read */
 	} else {
@@ -126,6 +115,20 @@ static void myCallback(pcallback,no_read,pdata)
 	(pcallback->process)(&pcallback->dbAddr);
         dbScanUnlock(pwf);
 }
+
+static long get_ioint_info(pwf,io_type,card_type,card_number)
+    struct waveformRecord     *pwf;
+    short               *io_type;
+    short               *card_type;
+    short               *card_number;
+{
+    if(pwf->inp.type != VME_IO) return(S_dev_badInpType);
+    *io_type = IO_WF;
+    *card_type = JGVTR1;
+    *card_number = pwf->inp.value.vmeio.card;
+    return(0);
+}
+
 
 static long init_record(pwf,process)
     struct waveformRecord	*pwf;
@@ -182,7 +185,6 @@ struct waveformRecord   *pwf;
 {
 	struct vmeio *pvmeio = (struct vmeio *)&(pwf->inp.value);
 
-	pwf->busy = TRUE;
 	if(wf_driver(JGVTR1,pvmeio->card,myCallback,pwf->dpvt)<0){
 		if(pwf->nsev<VALID_ALARM ) {
                 	pwf->nsta = READ_ALARM;
@@ -192,5 +194,6 @@ struct waveformRecord   *pwf;
 		pwf->busy = FALSE;
 		return(0);
 	}
+	pwf->busy = TRUE;
 	return(1);
 }

@@ -668,7 +668,10 @@ void dbCaTask()
         epicsEventMustWait(caWakeupSem);
         while(TRUE) { /* process all requests in caList*/
             epicsMutexMustLock(caListSem);
-            if((pca = (caLink *)ellFirst(&caList))){/*Take off list head*/
+            if(!(pca = (caLink *)ellFirst(&caList))){/*Take off list head*/
+                epicsMutexUnlock(caListSem);
+                break; /*caList is empty*/
+            }
             ellDelete(&caList,&pca->node);
             link_action = pca->link_action;
             pca->link_action = 0;
@@ -744,10 +747,6 @@ void dbCaTask()
                 if(status!=ECA_NORMAL)
                     errlogPrintf("dbCaTask ca_add_array_event %s\n",
                     ca_message(status));
-            }
-            } else { /* caList was empty */
-            epicsMutexUnlock(caListSem);
-            break; /*caList is empty*/
             }
         }
         SEVCHK(ca_flush_io(),"dbCaTask");

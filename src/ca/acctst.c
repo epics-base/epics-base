@@ -813,40 +813,39 @@ void verifyBlockInPendIO ( chid chan, unsigned interestLevel  )
 {
     int status;
 
-
     if ( ca_read_access (chan) ) {
-        dbr_float_t req;
-        dbr_float_t resp;
+        dbr_long_t req;
+        dbr_long_t resp;
 
         showProgressBegin ( "verifyBlockInPendIO", interestLevel );
-        req = 56.57f;
-        resp = -99.99f;
-        SEVCHK ( ca_put (DBR_FLOAT, chan, &req), NULL );
-        SEVCHK ( ca_get (DBR_FLOAT, chan, &resp), NULL );
+        req = 0;
+        resp = -100;
+        SEVCHK ( ca_put (DBR_LONG, chan, &req), NULL );
+        SEVCHK ( ca_get (DBR_LONG, chan, &resp), NULL );
         status = ca_pend_io (1.0e-12);
         if ( status == ECA_NORMAL ) {
             if ( resp != req ) {
                 printf (
-    "get block test failed - val written %f\n", req );
+    "get block test failed - val written %d\n", req );
                 printf (
-    "get block test failed - val read %f\n", resp );
+    "get block test failed - val read %d\n", resp );
                 assert ( 0 );
             }
         }
-        else if ( resp != -99.99f ) {
+        else if ( resp != -100 ) {
             printf ( "CA didnt block for get to return?\n" );
         }
             
-        req = 33.44f;
-        resp = -99.99f;
-        SEVCHK ( ca_put (DBR_FLOAT, chan, &req), NULL );
-        SEVCHK ( ca_get (DBR_FLOAT, chan, &resp), NULL );
+        req = 1;
+        resp = -100;
+        SEVCHK ( ca_put (DBR_LONG, chan, &req), NULL );
+        SEVCHK ( ca_get (DBR_LONG, chan, &resp), NULL );
         SEVCHK ( ca_pend_io (timeoutToPendIO) , NULL );
         if ( resp != req ) {
             printf (
-    "get block test failed - val written %f\n", req);
+    "get block test failed - val written %d\n", req);
             printf (
-    "get block test failed - val read %f\n", resp);
+    "get block test failed - val read %d\n", resp);
             assert(0);
         }
         showProgressEnd ( interestLevel );
@@ -934,8 +933,7 @@ void verifyAnalogIO ( chid chan, int dataType, double min, double max,
         return;
     }
 
-    if ( ca_field_type ( chan ) != DBR_FLOAT && 
-        ca_field_type ( chan ) != DBR_DOUBLE ) {
+    if ( dbr_value_class[ca_field_type ( chan )] != dbr_class_float ) {
         printf ("skipped analog test - not an analog type\n");
         return;
     }
@@ -2079,7 +2077,13 @@ void monitorUpdateTest ( chid chan, unsigned interestLevel )
     unsigned        prevPassCount;
     unsigned        tries;
 
-    if ( ! ca_read_access ( chan ) ) {
+    if ( ! ca_write_access ( chan ) ) {
+        printf ("skipped monitorUpdateTest test - no write access\n");
+        return;
+    }
+
+    if ( dbr_value_class[ca_field_type ( chan )] != dbr_class_float ) {
+        printf ("skipped monitorUpdateTest test - not an analog type\n");
         return;
     }
     
@@ -2088,7 +2092,7 @@ void monitorUpdateTest ( chid chan, unsigned interestLevel )
     /*
      * set channel to known value
      */
-    temp = 1.0;
+    temp = 1;
     SEVCHK ( ca_put ( DBR_FLOAT, chan, &temp ), NULL );
 
     for ( i = 0; i < NELEMENTS(test); i++ ) {
@@ -2416,7 +2420,7 @@ void verifyImmediateTearDown ( const char * pName, unsigned interestLevel )
     for ( i = 0u; i < 1000; i++ ) {
         chid chan;
         int status;
-        double value = i;
+        dbr_long_t value = i % 2;
         ca_task_initialize ();
         status = ca_create_channel ( pName, 0, 0, 0, & chan );
         SEVCHK ( status, "immediate tear down channel create failed" );
@@ -2428,14 +2432,14 @@ void verifyImmediateTearDown ( const char * pName, unsigned interestLevel )
          * get flushed out
          */
         if ( i > 0 ) {
-            double currentValue = 0.0;
-            status = ca_get ( DBR_DOUBLE, chan, & currentValue );
+            dbr_long_t currentValue = value;
+            status = ca_get ( DBR_LONG, chan, & currentValue );
             SEVCHK ( status, "immediate tear down channel get failed" );
             status = ca_pend_io ( timeoutToPendIO );
             SEVCHK ( status, "immediate tear down channel get failed" );
-            assert ( currentValue == i - 1 );
+            assert ( currentValue == ( (i + 1) % 2 ) );
         }
-        status = ca_put ( DBR_DOUBLE, chan, & value );
+        status = ca_put ( DBR_LONG, chan, & value );
         SEVCHK ( status, "immediate tear down channel put failed" );
         ca_task_exit ();
         epicsThreadSleep ( 1e-15 );

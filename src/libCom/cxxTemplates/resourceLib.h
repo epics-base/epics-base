@@ -222,7 +222,7 @@ private:
 // when (MAX_ID_WIDTH - MIN_INDEX_WIDTH) is minimized.
 //
 template <class T, unsigned MIN_INDEX_WIDTH = 4, unsigned MAX_ID_WIDTH = sizeof(T)*CHAR_BIT>
-class epicsShareClass intId {
+class intId {
 public:
 	intId (const T &idIn);
 	bool operator == (const intId &idIn) const;

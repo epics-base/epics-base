@@ -6,19 +6,19 @@ and therefore care should be taken when emulating what is found here.
 
 The example server exports the process variables (PVs) in the table below.
 
-ScanPeriod	Name	HOPR	LOPR	Type		Asynchronous	Elements
+ScanPeriod  Name    HOPR    LOPR    Type        Asynchronous    Elements
 
-.1			"jane"	10.0	 0.0	DBR_DOUBLE	No				1
-2.0			"fred"	10.0	-10.0	DBR_DOUBLE	No				1
-.1			"janet"	10.0	 0.0	DBR_DOUBLE	Yes				1
-2.0			"freddy"10.0	-10.0	DBR_DOUBLE	Yes				1
-2.0			"alan"	10.0	-10.0	DBR_DOUBLE	No				100
-20.0		"albert"10.0	-10.0	DBR_DOUBLE	No				1000
--1.0		"boot"	10.0	-10.0	DBR_ENUM	No				1
--1.0		"booty"	10.0	-10.0	DBR_ENUM	Yes				1
--1.0		"bill"	10.0	-10.0	DBR_DOUBLE	No				1
--1.0		"billy"	10.0	-10.0	DBR_DOUBLE	Yes				1
--1.0		"bloaty"10.0	-10.0	DBR_DOUBLE	No				100000
+.1          "jane"  10.0     0.0    DBR_DOUBLE  No              1
+2.0         "fred"  10.0    -10.0   DBR_DOUBLE  No              1
+.1          "janet" 10.0     0.0    DBR_DOUBLE  Yes             1
+2.0         "freddy"10.0    -10.0   DBR_DOUBLE  Yes             1
+2.0         "alan"  10.0    -10.0   DBR_DOUBLE  No              100
+20.0        "albert"10.0    -10.0   DBR_DOUBLE  No              1000
+-1.0        "boot"  10.0    -10.0   DBR_ENUM    No              1
+-1.0        "booty" 10.0    -10.0   DBR_ENUM    Yes             1
+-1.0        "bill"  10.0    -10.0   DBR_DOUBLE  No              1
+-1.0        "billy" 10.0    -10.0   DBR_DOUBLE  Yes             1
+-1.0        "bloaty"10.0    -10.0   DBR_DOUBLE  No              100000
 
 Many ca servers will find that synchronous variables will meet 
 their needs and will not require the increased complexity 

@@ -105,30 +105,9 @@ struct rset timerRSET={
 	get_alarm_double };
 
 /* because the driver does all the work just declare device support here*/
-static long get_ioint_info();
-struct dset devTmMizar8310={4,NULL,NULL,NULL,get_ioint_info};
-struct dset devTmDg535={4,NULL,NULL,NULL,get_ioint_info};
-struct dset devTmVxiAt5={4,NULL,NULL,NULL,get_ioint_info};
-static long get_ioint_info(cmd,ptimer,io_type,card_type,card_number)
-    short               *cmd;
-    struct timerRecord     *ptimer;
-    short               *io_type;
-    short               *card_type;
-    short               *card_number;
-{
-    *cmd=-1;
-    if(ptimer->out.type != VME_IO) return(S_dev_badInpType);
-    *io_type = IO_TIMER;
-    if(ptimer->dtyp==0)
-	*card_type = MZ8310;
-    else if(ptimer->dtyp==3)
-	*card_type = VXI_AT5_TIME;
-    else
-	return(1);
-    *card_number = ptimer->out.value.vmeio.card;
-    return(0);
-}
-
+struct dset devTmMizar8310={4,NULL,NULL,NULL,NULL};
+struct dset devTmDg535={4,NULL,NULL,NULL,NULL};
+struct dset devTmAt5Vxi={4,NULL,NULL,NULL,NULL};
 
 extern int	post_event();
 

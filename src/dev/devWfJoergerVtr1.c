@@ -52,12 +52,12 @@
 #include	<dbAccess.h>
 #include        <recSup.h>
 #include	<devSup.h>
+#include	<dbScan.h>
 #include	<link.h>
 #include	<module_types.h>
 #include	<waveformRecord.h>
 
 long init_record();
-long get_ioint_info();
 long read_wf();
 long arm_wf();
 
@@ -74,7 +74,7 @@ struct {
 	NULL,
 	NULL,
 	init_record,
-	get_ioint_info,
+	NULL,
 	read_wf};
 
 
@@ -113,22 +113,6 @@ static void myCallback(pwf,no_read,pdata)
 	(*prset->process)(pwf);
         dbScanUnlock((struct dbCommon *)pwf);
 }
-
-static long get_ioint_info(cmd,pwf,io_type,card_type,card_number)
-    short               *cmd;
-    struct waveformRecord     *pwf;
-    short               *io_type;
-    short               *card_type;
-    short               *card_number;
-{
-    *cmd=-1;
-    if(pwf->inp.type != VME_IO) return(S_dev_badInpType);
-    *io_type = IO_WF;
-    *card_type = JGVTR1;
-    *card_number = pwf->inp.value.vmeio.card;
-    return(0);
-}
-
 
 static long init_record(pwf)
     struct waveformRecord	*pwf;

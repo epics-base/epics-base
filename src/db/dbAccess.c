@@ -65,7 +65,6 @@ of this distribution.
 #include "recSup.h"
 #include "recGbl.h"
 #include "special.h"
-#include "asLib.h"
 
 extern long lset_stack_not_empty;
 struct dbBase *pdbbase=NULL;
@@ -84,7 +83,15 @@ static short mapDBFToDBR[DBF_NTYPES] = {
  *    that flag becomes unset.
  */
 #define MAX_LOCK 10
+
+/* The following is to handle SPC_AS */
+static SPC_ASCALLBACK spcAsCallback = 0;
 
+void dbSpcAsRegisterCallback(SPC_ASCALLBACK func)
+{
+    spcAsCallback = func;
+}
+
 static long putSpecial(DBADDR *paddr,int pass)
 {
     long int	(*pspecial)()=NULL;
@@ -105,7 +112,7 @@ static long putSpecial(DBADDR *paddr,int pass)
 	    else
 		scanAdd(precord);
 	}else if((special==SPC_AS) && (pass==1)) {
-	    asChangeGroup((ASMEMBERPVT *)&precord->asp,precord->asg);
+            if(spcAsCallback) (*spcAsCallback)(precord);
 	}
     }else {
 	if( prset && (pspecial = (prset->special))) {

@@ -75,7 +75,6 @@ of this distribution.
 #include "envDefs.h"
 #include "dbStaticLib.h"
 #include "initHooks.h"
-#include "asLib.h"
 extern struct dbBase *pdbbase;
 
 LOCAL int initialized=FALSE;

@@ -245,6 +245,9 @@ void dbNotifyAdd(struct dbCommon *pfrom,struct dbCommon *pto);
 void dbNotifyCancel(PUTNOTIFY *pputnotify);
 /*dbNotifyCompletion called by recGblFwdLink */
 void dbNotifyCompletion(struct dbCommon *precord);
+typedef void(*SPC_ASCALLBACK)(struct dbCommon *);
+/*dbSpcAsRegisterCallback called by access security */
+void dbSpcAsRegisterCallback(SPC_ASCALLBACK func);
 long dbBufferSize(short dbrType,long options,long nRequest);
 long dbValueSize(short dbrType);
 

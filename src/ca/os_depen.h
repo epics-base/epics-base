@@ -14,6 +14,7 @@
  *	.03 joh	090391	Updated for V5 vxWorks
  *	.04 joh 092491	changed order of ops on LOCALTICKS
  *	.05 joh	092691	added NELEMENTS()
+ *	.06 joh 111991	added EVENTLOCKTEST
  *
  */
 
@@ -79,16 +80,20 @@
     		if(astenblwas == SS$_WASSET)sys$setast(TRUE);}
 #  	define	LOCKEVENTS
 #  	define	UNLOCKEVENTS
+#	define	EVENTLOCKTEST	(post_msg_active!=0)
 #elif defined(vxWorks)
+#	define	VXTASKIDNONE	0
 #  	define	LOCK 		FASTLOCK(&client_lock);
 #  	define	UNLOCK  	FASTUNLOCK(&client_lock);
-#  	define	LOCKEVENTS 	FASTLOCK(&event_lock);
-#  	define	UNLOCKEVENTS	FASTUNLOCK(&event_lock);
+#  	define	LOCKEVENTS 	{FASTLOCK(&event_lock); event_tid=(int)taskIdCurrent;}
+#  	define	UNLOCKEVENTS	{event_tid=VXTASKIDNONE; FASTUNLOCK(&event_lock);}
+#	define	EVENTLOCKTEST	(FASTLOCKTEST(&event_lock)&&taskIdCurrent==event_tid)
 #elif defined(UNIX)
 #  	define	LOCK
 #  	define	UNLOCK  
 #  	define	LOCKEVENTS
 #  	define	UNLOCKEVENTS
+#	define	EVENTLOCKTEST	(post_msg_active!=0)
 #else
 	@@@@ dont compile in this case @@@@
 #endif

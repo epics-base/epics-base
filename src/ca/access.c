@@ -38,6 +38,13 @@
 /*			monitors					*/
 /*	090991	joh	converted to v5 vxWorks				*/
 /*	092691	joh	check for connection down when inserting msg	*/
+/*	111891	joh	better test for ca_pend during an event routine	*/
+/*			under vxWorks					*/
+/*	111991	joh	dont decr the pend recv count if connected 	*/
+/*			before and they are adding a connection handler */
+/*			prior to connecting				*/
+/* 	111991	joh	selective activation of LOCK with CLRPENDRECV	*/
+/*			prevents double LOCK under vxWorks		*/
 /*									*/
 /*_begin								*/
 /************************************************************************/
@@ -224,8 +231,8 @@ ca_task_initialize
 		}
 #ifdef vxWorks
 		check_for_fp();
-		if (ca_add_task_variable() == ERROR)
-			abort();
+		if (ca_add_task_variable()<0)
+			return ECA_ALLOCMEM;
 #endif
 
 		ca_static = (struct ca_static *) calloc(1, sizeof(*ca_static));
@@ -441,21 +448,47 @@ ca_add_task_variable()
 	static char     ca_installed;
 	int             status;
 
-	status = taskVarAdd(VXTHISTASKID, &ca_static);
-	if (status == ERROR)
-		abort();
+#	if DEBUG
+		printf("adding task variable\n");
+#	endif
 
 	/*
 	 * only one delete hook for all CA tasks
 	 */
 	if (vxTas(&ca_installed)) {
+		/*
+		 *
+		 * This guarantees that vxWorks's task
+		 * variable delete (at task exit) handler runs
+		 * after the CA task exit handler. This ensures 
+		 * that CA's task variable will still exist 
+		 * when it's exit handler runs.
+		 *
+		 * That is taskVarInit() must run prior to your
+		 * taskDeleteHookAdd() if you use a task variable
+		 * in a task exit handler.
+		 */
+#		if DEBUG
+			printf("adding the CA delete hook\n");
+#		endif
+
+#		ifdef V5_vxWorks
+			status = taskVarInit();
+			if (status != OK)
+				return ERROR;
+#		endif
 		status = taskDeleteHookAdd(ca_task_exit_tcb);
-		if (status == ERROR) {
+		if (status != OK) {
 			logMsg("ca_init_task: could not add CA delete routine\n");
-			abort();
+			return ERROR;
 		}
 	}
-	return ECA_NORMAL;
+
+	status = taskVarAdd(VXTHISTASKID, &ca_static);
+	if (status != OK)
+		return ERROR;
+
+	return OK;
 }
 #endif
 
@@ -495,6 +528,10 @@ static void
 ca_task_exit_tcb(ptcb)
 WIND_TCB 	*ptcb;
 {
+#	if DEBUG
+		printf("entering the exit handler %x\n", ptcb);
+#	endif
+
 	/*
 	 * NOTE: vxWorks provides no method at this time 
 	 * to get the task id from the ptcb so I am
@@ -523,8 +560,9 @@ TCBX 	*ptcbx;
  *	NOTE: on vxWorks if a CA task is deleted or crashes while a 
  *	lock is set then a deadlock will occur when this routine is called.
  *
+static 
  */
-static void
+void
 #ifdef vxWorks
 ca_task_exit_tid(tid)
 	int             tid;
@@ -532,37 +570,48 @@ ca_task_exit_tid(tid)
 ca_process_exit()
 #endif
 {
-	int             i;
-	chid            chix;
-	struct ca_static *ca_temp;
-	evid            monix;
+	int             	i;
+	chid            	chix;
+	struct ca_static 	*ca_temp;
+	evid            	monix;
 #ifdef vxWorks
-	int             status;
+	int             	status;
 #endif
 
-#ifdef vxWorks
-	ca_temp = (struct ca_static *) taskVarGet(tid, &ca_static);
-	if (ca_temp == (struct ca_static *) ERROR)
-		return;
+#	ifdef DEBUG
+		printf("entering the exit handler 2 %x\n", tid);
+#	endif
 
-#else
-	ca_temp = ca_static;
-#endif
+#	if defined(vxWorks)
+		ca_temp = (struct ca_static *) taskVarGet(tid, &ca_static);
+		if (ca_temp == (struct ca_static *) ERROR){
+#			if DEBUG
+				printf("task variable lookup failed\n");
+#			endif
+			return;
+		}
+#		if DEBUG
+			printf(	"exit handler with ca_static = %x\n", 
+				ca_static);
+#		endif
+#	else
+		ca_temp = ca_static;
+#	endif
 
 	/* if allready in the exit state just NOOP */
-#ifdef vxWorks
-	if (!vxTas(&ca_temp->ca_exit_in_progress))
-		return;
-#else
-	if (ca_temp->ca_exit_in_progress)
-		return;
-	ca_temp->ca_exit_in_progress = TRUE;
-#endif
+#	ifdef vxWorks
+		if (!vxTas(&ca_temp->ca_exit_in_progress))
+			return;
+#	else
+		if (ca_temp->ca_exit_in_progress)
+			return;
+		ca_temp->ca_exit_in_progress = TRUE;
+#	endif
 
 	if (ca_temp) {
-#ifdef vxWorks
-		logMsg("ca_task_exit: Removing task %x from CA\n", tid);
-#endif
+#		ifdef vxWorks
+			logMsg("ca_task_exit: Removing task %x from CA\n", tid);
+#		endif
 
 		LOCK;
 		/*
@@ -577,49 +626,49 @@ ca_process_exit()
 		/*
 		 * stop socket recv tasks
 		 */
-#ifdef vxWorks
-		for (i = 0; i < ca_temp->ca_nxtiiu; i++) {
-			/*
-			 * dont do a task delete if the exit handler is
-			 * running for this task - it botches vxWorks -
-			 */
-			if (tid != ca_temp->ca_iiu[i].recv_tid)
-				taskDelete(ca_temp->ca_iiu[i].recv_tid);
-		}
-#endif
+#		ifdef vxWorks
+			for (i = 0; i < ca_temp->ca_nxtiiu; i++) {
+				/*
+				 * dont do a task delete if the exit handler is
+				 * running for this task - it botches vxWorks -
+				 */
+				if (tid != ca_temp->ca_iiu[i].recv_tid)
+					taskDelete(ca_temp->ca_iiu[i].recv_tid);
+			}
+#		endif
 
 		/*
 		 * Cancel all local events
 		 */
-#ifdef vxWorks
-		chix = (chid) & ca_temp->ca_local_chidlist;
-		while (chix = (chid) chix->node.next)
-			while (monix = (evid) lstGet(&chix->eventq)) {
-				status = db_cancel_event(monix + 1);
-				if (status == ERROR)
-					abort();
-				if (free(monix) < 0)
-					ca_signal(
-						ECA_INTERNAL, 
-						"Corrupt conn evid list");
+#		ifdef vxWorks
+			chix = (chid) & ca_temp->ca_local_chidlist;
+			while (chix = (chid) chix->node.next)
+				while (monix = (evid) lstGet(&chix->eventq)) {
+					status = db_cancel_event(monix + 1);
+					if (status == ERROR)
+						abort();
+					if (free(monix) < 0)
+						ca_signal(
+							ECA_INTERNAL, 
+							"Corrupt conn evid list");
 			}
-#endif
+#		endif
 
 		/*
 		 * All local events must be canceled prior to closing the
 		 * local event facility
 		 */
-#ifdef vxWorks
-		{
-			status = db_close_events(ca_temp->ca_evuser);
-			if (status == ERROR)
-				ca_signal(
-					ECA_INTERNAL, 
-					"could not close event facility by id");
-		}
+#		ifdef vxWorks
+			{
+				status = db_close_events(ca_temp->ca_evuser);
+				if (status == ERROR)
+					ca_signal(
+						ECA_INTERNAL, 
+						"could not close event facility by id");
+			}
 
-		lstFree(&ca_temp->ca_lcl_buff_list);
-#endif
+			lstFree(&ca_temp->ca_lcl_buff_list);
+#		endif
 
 		/*
 		 * after activity eliminated:
@@ -661,12 +710,14 @@ ca_process_exit()
 		/*
 		 * remove local chid blocks, paddr blocks, waiting ev blocks
 		 */
-#ifdef vxWorks
-		while (chix = (chid) lstGet(&ca_temp->ca_local_chidlist))
-			if (free((char *)chix) < 0)
-				ca_signal(ECA_INTERNAL, "Corrupt connected chid list");
-		lstFree(&ca_temp->ca_dbfree_ev_list);
-#endif
+#		ifdef vxWorks
+			while (chix = (chid) lstGet(&ca_temp->ca_local_chidlist))
+				if (free((char *)chix) < 0)
+					ca_signal(
+						ECA_INTERNAL, 
+						"Corrupt connected chid list");
+			lstFree(&ca_temp->ca_dbfree_ev_list);
+#		endif
 
 		/* remove remote waiting ev blocks */
 		lstFree(&ca_temp->ca_free_event_list);
@@ -675,12 +726,12 @@ ca_process_exit()
 
 		UNLOCK;
 
-#if defined(vxWorks)
-		if(FASTLOCKFREE(&client_lock) < 0)
-			ca_signal(ECA_INTERNAL, "couldnt free memory");
-		if(FASTLOCKFREE(&event_lock) < 0)
-			ca_signal(ECA_INTERNAL, "couldnt free memory");
-#endif
+#		if defined(vxWorks)
+			if(FASTLOCKFREE(&client_lock) < 0)
+				ca_signal(ECA_INTERNAL, "couldnt free memory");
+			if(FASTLOCKFREE(&event_lock) < 0)
+				ca_signal(ECA_INTERNAL, "couldnt free memory");
+#		endif
 		if (free((char *)ca_temp) < 0)
 			ca_signal(ECA_INTERNAL, "couldnt free memory");
 
@@ -691,14 +742,16 @@ ca_process_exit()
 		 * This is because if I delete the task variable from a vxWorks
 		 * exit handler it botches vxWorks task exit
 		 */
-#ifdef vxWorks
-		if (tid == taskIdSelf()) {
-			int             status;
-			status = taskVarDelete(tid, &ca_static);
-			if (status == ERROR)
-				ca_signal(ECA_INTERNAL, "Unable to remove ca_static from task var list");
+#		ifdef vxWorks
+			if (tid == taskIdSelf()) {
+				int             status;
+				status = taskVarDelete(tid, &ca_static);
+				if (status == ERROR)
+					ca_signal(
+						ECA_INTERNAL, 
+						"Unable to remove ca_static from task var list");
 		}
-#endif
+#		endif
 
 		ca_static = (struct ca_static *) NULL;
 
@@ -1311,10 +1364,10 @@ void		(*pfunc)();
 
   	LOCK;
   	if(chix->type == TYPENOTCONN){
-		if(!chix->connection_func){
-    			CLRPENDRECV;
+		if(!chix->connection_func && chix->state==cs_never_conn){
+    			CLRPENDRECV(FALSE);
     			if(VALID_BUILD(chix)) 
-    				CLRPENDRECV;
+    				CLRPENDRECV(FALSE);
 		}
 		if(!pfunc){
     			SETPENDRECV;
@@ -2005,9 +2058,9 @@ int			early;
 
   	INITCHK;
 
-  	if(post_msg_active)
+	if(EVENTLOCKTEST){
     		return ECA_EVDISALLOW;
-
+	}
 
   	/*	Flush the send buffers	*/
   	LOCK;

@@ -1232,10 +1232,6 @@ bool tcpiiu::flush ()
             pBuf = this->sendQue.popNextComBufToSend ();
             if ( pBuf ) {
                 this->unacknowledgedSendBytes += pBuf->occupiedBytes ();
-                if ( this->unacknowledgedSendBytes > 
-                    this->socketLibrarySendBufferSize ) {
-                    this->recvDog.sendBacklogProgressNotify ();
-                }
             }
             else {
                 if ( this->blockingForFlush ) {
@@ -1244,6 +1240,17 @@ bool tcpiiu::flush ()
                 this->earlyFlush = false;
                 return true;
             }
+        }
+
+        //
+        // we avoid calling this with the lock applied because
+        // it restarts the recv wd timer, this might block
+        // until a recv wd timer expire callback completes, and 
+        // this callback takes the lock
+        //
+        if ( this->unacknowledgedSendBytes > 
+            this->socketLibrarySendBufferSize ) {
+            this->recvDog.sendBacklogProgressNotify ();
         }
 
         bool success = pBuf->flushToWire ( *this );

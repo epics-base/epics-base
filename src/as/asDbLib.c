@@ -38,8 +38,6 @@ of this distribution.
 #include "dbCommon.h"
 #include "recSup.h"
 
-extern struct dbBase *pdbbase;
-
 static char	*pacf=NULL;
 static char	*psubstitutions=NULL;
 static threadId	asInitTheadId=0;

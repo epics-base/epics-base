@@ -40,7 +40,6 @@ static semMutexId asLock;
 #define UNLOCK semMutexGive(asLock)
 
 #define epicsExportSharedSymbols
-#include "shareLib.h"
 #include "asLib.h"
 
 static int          asLockInit=TRUE;

@@ -35,11 +35,13 @@
 #ifndef INCcvtTableh
 #define INCcvtTableh	1
 
-/* Global Routines*/
-epicsShareFunc long epicsShareAPI cvtEngToRawBpt(double *pval,short linr,short init,
-     void **ppbrk,short *plbrk);
+#include "shareLib.h"
 
-epicsShareFunc long epicsShareAPI cvtRawToEngBpt(double *pval,short linr,short init,
-     void **ppbrk, short *plbrk);
+/* Global Routines*/
+epicsShareFunc long epicsShareAPI cvtEngToRawBpt(
+    double *pval,short linr,short init,void **ppbrk,short *plbrk);
+
+epicsShareFunc long epicsShareAPI cvtRawToEngBpt(
+    double *pval,short linr,short init,void **ppbrk, short *plbrk);
 
 #endif

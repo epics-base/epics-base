@@ -39,7 +39,7 @@ of this distribution.
 #define epicsExportSharedSymbols
 
 int asCaDebug = 0;
-epicsShareExtern ASBASE volatile *pasbase;
+epicsShareDef ASBASE volatile *pasbase;
 LOCAL int firstTime = TRUE;
 LOCAL threadId threadid=0;
 LOCAL int caInitializing=FALSE;

@@ -14,6 +14,9 @@ of this distribution.
 /* Modification Log:
  * -----------------
  *  $Log$
+ *  Revision 1.16  2000/02/25 22:01:24  mrk
+ *  changes for creating DLLs
+ *
  *  Revision 1.15  2000/02/08 20:14:59  norume
  *  Remove task argument to threadSuspend().
  *
@@ -87,9 +90,12 @@ of this distribution.
 #include "errlog.h"
 #include "alarm.h"
 #include "dbBase.h"
+#include "dbFldTypes.h"
+#include "link.h"
+#include "dbAddr.h"
 #include "dbAccess.h"
-#include "dbScan.h"
 #include "dbCommon.h"
+#include "dbScan.h"
 #include "dbLock.h"
 #include "dbFldTypes.h"
 #include "db_field_log.h"

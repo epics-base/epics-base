@@ -11,7 +11,7 @@
 <center>
 <h1>EPICS Release base 3.14.2</h1>
 
-<h1>April 12 2003</h1>
+<h1>May 21 2003</h1>
 </center>
 
 <center>
@@ -81,8 +81,12 @@ of a database record. If the index is not associated with a periodic
 scan rate, the value 0.0 is returned.</p>
 
 <p><strong>New epicsString.h function</strong></p>
-A new function epicsStrCaseCmp has been added. It is like strcmp
+<p>A new function epicsStrCaseCmp has been added. It is like strcmp
 except that it ignores case.</p>
+
+<p><strong>macLib</strong></p>
+<p>macParseDefns did not check for handle==NULL.
+The documentation for macParseDefns was not correct.</p>
 
 <center>
 <h2>Changes since beta2</h2>

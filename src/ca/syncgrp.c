@@ -97,7 +97,7 @@ void ca_sg_shutdown(struct ca_static *ca_temp)
 /*
  * ca_sg_create()
  */
-int APIENTRY ca_sg_create(CA_SYNC_GID *pgid)
+int epicsAPI ca_sg_create(CA_SYNC_GID *pgid)
 {
 	int	status;
 	CASG 	*pcasg;
@@ -130,29 +130,38 @@ int APIENTRY ca_sg_create(CA_SYNC_GID *pgid)
 	 */
 	memset((char *)pcasg,0,sizeof(*pcasg));
 	pcasg->magic = CASG_MAGIC;
-	pcasg->id = CLIENT_SLOW_ID_ALLOC; 
 	pcasg->opPendCount = 0;
 	pcasg->seqNo = 0;
 
 	os_specific_sg_create(pcasg);
 
-	status = bucketAddItemUnsignedId(pSlowBucket, &pcasg->id, pcasg);
-	if(status == BUCKET_SUCCESS){
+	do {
+		pcasg->id = CLIENT_SLOW_ID_ALLOC; 
+		status = bucketAddItemUnsignedId (pSlowBucket, 
+						&pcasg->id, pcasg);
+	} while (status == S_bucket_idInUse);
+
+	if (status == S_bucket_success) {
 		/*
-	  	 * place it on the active sync group list
-	 	 */
-		ellAdd(&ca_static->activeCASG, &pcasg->node);
+		 * place it on the active sync group list
+		 */
+		ellAdd (&ca_static->activeCASG, &pcasg->node);
 	}
-	else{
+	else {
 		/*
 	  	 * place it back on the free sync group list
 	 	 */
-		ellAdd(&ca_static->freeCASG, &pcasg->node);
+		ellAdd (&ca_static->freeCASG, &pcasg->node);
+		UNLOCK;
+		if (status == S_bucket_noMemory) {
+			return ECA_ALLOCMEM;
+		}
+		else {
+			return ECA_INTERNAL;
+		}
 	}
+
 	UNLOCK;
-	if(status != BUCKET_SUCCESS){
-		return ECA_ALLOCMEM;
-	}
 
 	*(WRITEABLE_CA_SYNC_GID *)pgid = pcasg->id;
 	return ECA_NORMAL;
@@ -162,7 +171,7 @@ int APIENTRY ca_sg_create(CA_SYNC_GID *pgid)
 /*
  * ca_sg_delete()
  */
-int APIENTRY ca_sg_delete(CA_SYNC_GID gid)
+int epicsAPI ca_sg_delete(CA_SYNC_GID gid)
 {
 	int	status;
 	CASG 	*pcasg;
@@ -183,7 +192,7 @@ int APIENTRY ca_sg_delete(CA_SYNC_GID gid)
 	}
 
 	status = bucketRemoveItemUnsignedId(pSlowBucket, &gid);
-	assert(status == BUCKET_SUCCESS);
+	assert (status == S_bucket_success);
 
 	os_specific_sg_delete(pcasg);
 
@@ -200,7 +209,7 @@ int APIENTRY ca_sg_delete(CA_SYNC_GID gid)
 /*
  * ca_sg_block()
  */
-int APIENTRY ca_sg_block(CA_SYNC_GID gid, ca_real timeout)
+int epicsAPI ca_sg_block(CA_SYNC_GID gid, ca_real timeout)
 {
 	struct timeval	beg_time;
 	ca_real		delay;
@@ -237,16 +246,11 @@ int APIENTRY ca_sg_block(CA_SYNC_GID gid, ca_real timeout)
 	UNLOCK;
 
 	/*
-	 * always flush and take care
-	 * of connection management
-	 * at least once.
+	 * always flush at least once.
 	 */
 	ca_flush_io();
 
-        /*
-         * the current time set within ca_flush_io()
-         * above.
-         */
+	cac_gettimeval (&ca_static->currentTime);
         beg_time = ca_static->currentTime;
         delay = 0.0;
 
@@ -260,6 +264,13 @@ int APIENTRY ca_sg_block(CA_SYNC_GID gid, ca_real timeout)
 		 */
 		remaining = timeout-delay;
 		if (remaining<=0.0) {
+			/*
+			 * Make sure that we take care of
+			 * recv backlog at least once
+			 */
+			tmo.tv_sec = 0L;
+			tmo.tv_usec = 0L;
+			cac_mux_io (&tmo);
 			status = ECA_TIMEOUT;
 			break;
 		}
@@ -291,7 +302,7 @@ int APIENTRY ca_sg_block(CA_SYNC_GID gid, ca_real timeout)
 /*
  * ca_sg_reset
  */
-int APIENTRY ca_sg_reset(CA_SYNC_GID gid)
+int epicsAPI ca_sg_reset(CA_SYNC_GID gid)
 {
 	CASG 	*pcasg;
 
@@ -313,7 +324,7 @@ int APIENTRY ca_sg_reset(CA_SYNC_GID gid)
 /*
  * ca_sg_test
  */
-int APIENTRY ca_sg_test(CA_SYNC_GID gid)
+int epicsAPI ca_sg_test(CA_SYNC_GID gid)
 {
 	CASG 	*pcasg;
 
@@ -339,7 +350,7 @@ int APIENTRY ca_sg_test(CA_SYNC_GID gid)
 /*
  * ca_sg_array_put()
  */
-int APIENTRY ca_sg_array_put(
+int epicsAPI ca_sg_array_put(
 CA_SYNC_GID 	gid, 
 chtype		type,
 unsigned long 	count, 
@@ -404,7 +415,7 @@ void 		*pvalue)
 /*
  * ca_sg_array_get()
  */
-int APIENTRY ca_sg_array_get(
+int epicsAPI ca_sg_array_get(
 CA_SYNC_GID 	gid, 
 chtype		type,
 unsigned long 	count, 

@@ -123,10 +123,10 @@ casDGIntfIO::casDGIntfIO ( caServerI & serverIn, clientBufMemoryManager & memMgr
     
     status = bind ( this->sock, &serverAddr.sa, sizeof (serverAddr) );
     if ( status < 0 ) {
-        char buf[64];
-        ipAddrToA ( &serverAddr.ia, buf, sizeof ( buf ) );
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+        char buf[64];
+        ipAddrToA ( &serverAddr.ia, buf, sizeof ( buf ) );
         errPrintf ( S_cas_bindFail, __FILE__, __LINE__, 
             "- bind UDP IP addr=%s failed because %s", buf, sockErrBuf );
         epicsSocketDestroy (this->sock);
@@ -214,10 +214,10 @@ casDGIntfIO::casDGIntfIO ( caServerI & serverIn, clientBufMemoryManager & memMgr
         status = bind ( this->bcastRecvSock, &serverBCastAddr.sa,
                         sizeof (serverBCastAddr.sa) );
         if (status<0) {
-            char buf[64];
-            ipAddrToA ( & serverBCastAddr.ia, buf, sizeof ( buf ) );
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+            char buf[64];
+            ipAddrToA ( & serverBCastAddr.ia, buf, sizeof ( buf ) );
             errPrintf ( S_cas_bindFail, __FILE__, __LINE__,
                 "- bind UDP IP addr=%s failed because %s", 
                 buf, sockErrBuf );
@@ -358,10 +358,10 @@ casDGIntfIO::osdSend ( const char * pBufIn, bufSizeT size, // X aCC 361
     }
     else {
         if ( SOCKERRNO != SOCK_EWOULDBLOCK ) {
-            char buf[64];
-            sockAddrToA ( & dest, buf, sizeof ( buf ) );
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+            char buf[64];
+            sockAddrToA ( & dest, buf, sizeof ( buf ) );
             errlogPrintf (
                 "CAS: UDP socket send to \"%s\" failed because \"%s\"\n",
                 buf, sockErrBuf );
@@ -406,9 +406,9 @@ void casDGIntfIO::sendBeaconIO ( char & msg, unsigned length,
          pAddr; pAddr = reinterpret_cast <osiSockAddrNode *> ( ellNext ( & pAddr->node ) ) ) {
         status = connect ( this->beaconSock, &pAddr->addr.sa, sizeof ( pAddr->addr.sa ) );
         if (status<0) {
-            ipAddrToDottedIP ( & pAddr->addr.ia, buf, sizeof ( buf ) );
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+            ipAddrToDottedIP ( & pAddr->addr.ia, buf, sizeof ( buf ) );
             errlogPrintf ( "%s: CA beacon routing (connect to \"%s\") error was \"%s\"\n",
                 __FILE__, buf, sockErrBuf );
         }
@@ -427,9 +427,9 @@ void casDGIntfIO::sendBeaconIO ( char & msg, unsigned length,
 
                 status = send ( this->beaconSock, &msg, length, 0 );
                 if ( status < 0 ) {
-                    ipAddrToA ( &pAddr->addr.ia, buf, sizeof(buf) );
                     char sockErrBuf[64];
                     epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+                    ipAddrToA ( &pAddr->addr.ia, buf, sizeof(buf) );
                     errlogPrintf ( "%s: CA beacon (send to \"%s\") error was \"%s\"\n",
                         __FILE__, buf, sockErrBuf );
                 }

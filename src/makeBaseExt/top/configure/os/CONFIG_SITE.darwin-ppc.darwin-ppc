@@ -11,15 +11,71 @@
 
 -include $(TOP)/configure/os/CONFIG_SITE.Common.Common
 
-X11_LIB=/usr/X11R6/lib
-X11_INC=/usr/X11R6/include
-MOTIF_LIB=/usr/X11R6/lib
-MOTIF_INC=/usr/X11R6/Xm/include
-
-TK_TCL = /sw/lib
-
 PYTHON_DIR=/usr/lib/python2.2
 PYTHON_INCLUDE=/usr/include/python2.2
 
-JAVA_DIR=/System/Library/Frameworks/JavaVM.framework/Home
+# Following 3 for SDDS
+#USE_GD_LIBRARY=1
+#USE_RUNCONTROL=1
+#USE_LOGDAEMON=1
 
+# Where to find utilities/libraries
+#	If you do not have a certain product,
+#	leave the line empty.
+#
+
+#
+# XDarwin
+#
+X11_LIB=/usr/X11R6/lib
+X11_INC=/usr/X11R6/include
+XPM_INC=/usr/X11R6/include
+XPM_LIB=/usr/X11R6/lib
+
+#
+# Fink-installed OpenMotif
+#
+MOTIF_LIB=/sw/lib
+MOTIF_INC=/sw/include
+
+#
+# Interviews
+#
+IV_INC=
+IV-2_6_INC=
+IV_BIN=
+IV_LIB=
+
+OPENWIN = 
+WINGZ_INC =
+WINGZ_LIB =
+MATHEMATICA = 
+
+# Define XRTGRAPH_EXTENSIONS = YES only if using XRT/graph 3.x
+#   and you want the extensions for MEDM
+#XRTGRAPH_EXTENSIONS = YES
+#XRTGRAPH = /opt/local/xrtgraph
+
+SCIPLOT = YES
+QUESTWIN = 
+
+TK_LIB = /sw/lib
+TK_INC = /sw/include
+TCL_LIB = /sw/lib
+TCL_INC = /sw/include
+DP_LIB = /sw/lib
+DP_INC = /sw/include
+BLT_LIB = /sw/lib
+BLT_INC = /sw/include
+
+#
+# Preliminary JAVA support
+#
+JAVA_DIR=/System/Library/Frameworks/JavaVM.framework/Home
+JAVA_INC=/System/Library/Frameworks/JavaVM.framework/Headers
+JAVA_INCLUDES = -I$(JAVA_INC)
+
+#
+# Temporary definition to get things to at least compile
+#
+USR_CFLAGS+=-DFLDNAME_SZ=4

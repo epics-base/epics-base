@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.5  1998/10/23 00:28:20  jhill
+ * fixed HP-UX warnings
+ *
  * Revision 1.4  1998/06/16 02:27:53  jhill
  * use smart gdd ptr
  *
@@ -73,7 +76,10 @@ inline casMonEvent::casMonEvent (const casMonEvent &initValue) :
 //
 inline void casMonEvent::operator = (const class casMonEvent &monEventIn)
 {
-	this->pValue = monEventIn.pValue;
+	//
+	// this cast is a workaround for defects in early versions of GNU g++
+	//
+	this->pValue = (gdd *) monEventIn.pValue;
 	this->id = monEventIn.id;
 }
 

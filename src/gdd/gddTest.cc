@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.2  1996/07/26 02:23:18  jbk
+// Fixed the spelling error with Scalar.
+//
 // Revision 1.1  1996/06/25 19:11:48  jbk
 // new in EPICS base
 //
@@ -21,9 +24,6 @@
 
 // -----------------------test routines------------------------
 
-#ifdef NO_DUMP_TEST
-void gdd::dump(void) { }
-#else
 void gdd::dump(void)
 {
 	gddScalar* sdd;
@@ -49,26 +49,186 @@ void gdd::dump(void)
 		return;
 	}
 }
-#endif
 
-#ifdef NO_DUMP_TEST
-void gdd::dumpInfo(void) { }
-#else
 void gdd::dumpInfo(void)
 {
 	unsigned i;
 	aitIndex f,c;
 	long sz_tot,sz_data,sz_elem;
+	const aitIndex max=5;
+	aitIndex prt_tot;
 
 	sz_tot = getTotalSizeBytes();
 	sz_data = getDataSizeBytes();
 	sz_elem = getDataSizeElements();
 
+	prt_tot=sz_elem>max?max:sz_elem;
+
 	fprintf(stderr,"----------dump This=%8.8x---------\n",(unsigned int)this);
-	fprintf(stderr," app=%d, prim=%d",applicationType(),primitiveType());
-	fprintf(stderr," dim=%d\n",dimension());
-	fprintf(stderr," tot=%ld, data=%ld, elem=%ld ",sz_tot,sz_data,sz_elem);
-	fprintf(stderr," ref count=%d\n",ref_cnt);
+	fprintf(stderr," dimension=%d ",(int)dimension());
+	fprintf(stderr,"app-type=%d ",(int)applicationType());
+
+	if(isScalar()) fprintf(stderr,"Scalar\n");
+	if(isAtomic()) fprintf(stderr,"Atomic\n");
+	if(isContainer()) fprintf(stderr,"Container\n");
+
+	fprintf(stderr," prim-type=%d",(int)primitiveType());
+	switch(primitiveType())
+	{
+	case aitEnumInvalid:
+		fprintf(stderr,"(aitEnumInvalid)");
+		break;
+	case aitEnumInt8:
+		fprintf(stderr,"(aitEnumInt8)");
+		if(isScalar()) fprintf(stderr," value=0x%2.2x ",data.Int8);
+		if(isAtomic()&&dataPointer())
+		{
+			fprintf(stderr,"\n %d values=<\n",(int)prt_tot);
+			aitInt8* i8=(aitInt8*)dataPointer();
+			for(i=0;i<prt_tot;i++) fprintf(stderr,"0x%2.2x ",i8[i]);
+			fprintf(stderr,">\n");
+		}
+		break;
+	case aitEnumInt16:
+		fprintf(stderr,"(aitEnumInt16)");
+		if(isScalar()) fprintf(stderr," value=%hd ",data.Int16);
+		if(isAtomic()&&dataPointer())
+		{
+			fprintf(stderr,"\n %d values=<\n",(int)prt_tot);
+			aitInt16* i16=(aitInt16*)dataPointer();
+			for(i=0;i<prt_tot;i++) fprintf(stderr,"%hd ",i16[i]);
+			fprintf(stderr,">\n");
+		}
+		break;
+	case aitEnumInt32:
+		fprintf(stderr,"(aitEnumInt32)");
+		if(isScalar()) fprintf(stderr," value=%d ",data.Int32);
+		if(isAtomic()&&dataPointer())
+		{
+			fprintf(stderr,"\n %d values=<\n",(int)prt_tot);
+			aitInt32* i32=(aitInt32*)dataPointer();
+			for(i=0;i<prt_tot;i++) fprintf(stderr,"%d ",i32[i]);
+			fprintf(stderr,">\n");
+		}
+		break;
+	case aitEnumUint8:
+		fprintf(stderr,"(aitEnumUint8)");
+		if(isScalar()) fprintf(stderr," value=0x%2.2x ",data.Uint8);
+		if(isAtomic()&&dataPointer())
+		{
+			fprintf(stderr,"\n %d values=<\n",(int)prt_tot);
+			aitUint8* ui8=(aitUint8*)dataPointer();
+			for(i=0;i<prt_tot;i++) fprintf(stderr,"0x%2.2x ",ui8[i]);
+			fprintf(stderr,">\n");
+		}
+		break;
+	case aitEnumUint16:
+		fprintf(stderr,"(aitEnumUint16)");
+		if(isScalar()) fprintf(stderr," value=%hu ",data.Uint16);
+		if(isAtomic()&&dataPointer())
+		{
+			fprintf(stderr,"\n %d values=<\n",(int)prt_tot);
+			aitUint16* ui16=(aitUint16*)dataPointer();
+			for(i=0;i<prt_tot;i++) fprintf(stderr,"%hu ",ui16[i]);
+			fprintf(stderr,">\n");
+		}
+		break;
+	case aitEnumEnum16:
+		fprintf(stderr,"(aitEnumEnum16)");
+		if(isScalar()) fprintf(stderr," value=%hu ",data.Enum16);
+		if(isAtomic()&&dataPointer())
+		{
+			fprintf(stderr,"\n %d values=<\n",(int)prt_tot);
+			aitEnum16* e16=(aitEnum16*)dataPointer();
+			for(i=0;i<prt_tot;i++) fprintf(stderr,"%hu ",e16[i]);
+			fprintf(stderr,">\n");
+		}
+		break;
+	case aitEnumUint32:
+		fprintf(stderr,"(aitEnumUint32)"); 
+		if(isScalar()) fprintf(stderr," value=%u ",data.Uint32);
+		if(isAtomic()&&dataPointer())
+		{
+			fprintf(stderr,"\n %d values=<\n",(int)prt_tot);
+			aitUint32* ui32=(aitUint32*)dataPointer();
+			for(i=0;i<prt_tot;i++) fprintf(stderr,"%u ",ui32[i]);
+			fprintf(stderr,">\n");
+		}
+		break;
+	case aitEnumFloat32:
+		fprintf(stderr,"(aitEnumFloat32)"); 
+		if(isScalar()) fprintf(stderr," value=%f ",data.Float32);
+		if(isAtomic()&&dataPointer())
+		{
+			fprintf(stderr,"\n %d values=<\n",(int)prt_tot);
+			aitFloat32* f32=(aitFloat32*)dataPointer();
+			for(i=0;i<prt_tot;i++) fprintf(stderr,"%f ",f32[i]);
+			fprintf(stderr,">\n");
+		}
+		break;
+	case aitEnumFloat64:
+		fprintf(stderr,"(aitEnumFloat64)"); 
+		if(isScalar()) fprintf(stderr," value=%lf ",data.Float64);
+		if(isAtomic()&&dataPointer())
+		{
+			fprintf(stderr,"\n %d values=<\n",(int)prt_tot);
+			aitFloat64* f64=(aitFloat64*)dataPointer();
+			for(i=0;i<prt_tot;i++) fprintf(stderr,"%lf ",f64[i]);
+			fprintf(stderr,">\n");
+		}
+		break;
+	case aitEnumFixedString:
+		fprintf(stderr,"(aitEnumFixedString)"); 
+		if(isScalar())
+		{
+			if(data.FString)
+				fprintf(stderr," value=<%s>\n",data.FString);
+			else
+				fprintf(stderr," value=<NULL>\n");
+		}
+		if(isAtomic()&&dataPointer())
+		{
+			fprintf(stderr,"\n %d values=<\n",(int)prt_tot);
+			aitFixedString* fs=(aitFixedString*)dataPointer();
+			for(i=0;i<prt_tot;i++) fprintf(stderr,"<%s> ",fs[i].fixed_string);
+			fprintf(stderr,">\n");
+		}
+		break;
+	case aitEnumString:
+		fprintf(stderr,"(aitEnumString)"); 
+		if(isScalar())
+		{
+			aitString* str = (aitString*)dataAddress();
+			fprintf(stderr,"\n");
+			str->dump();
+		}
+		if(isAtomic()&&dataPointer())
+		{
+			fprintf(stderr,"\n %d values=<\n",(int)prt_tot);
+			aitString* ss=(aitString*)dataPointer();
+			for(i=0;i<prt_tot;i++)
+				if(ss[i].string()) fprintf(stderr,"<%s> ",ss[i].string());
+			fprintf(stderr,">\n");
+		}
+		break;
+	case aitEnumContainer:
+		fprintf(stderr,"(aitEnumContainer)"); 
+		break;
+	default: break;
+	}
+
+	fprintf(stderr," ref-count=%d\n",ref_cnt);
+	fprintf(stderr," total-bytes=%ld,",sz_tot);
+	fprintf(stderr," data-size=%ld,",sz_data);
+	fprintf(stderr," element-count=%ld\n",sz_elem);
+
+	if(!isScalar())
+	{
+		if(destruct)
+			fprintf(stderr," destructor=%8.8x\n",(int)destruct);
+		else
+			fprintf(stderr," destructor=NULL\n",(int)destruct);
+	}
 
 	for(i=0;i<dimension();i++)
 	{
@@ -76,139 +236,50 @@ void gdd::dumpInfo(void)
 		fprintf(stderr," (%d) %8.8x first=%d count=%d\n",i,&bounds[i],f,c);
 	}
 
-	if(isScalar()) fprintf(stderr," Is a Scalar\n");
-	if(isAtomic()) fprintf(stderr," Is a Atomic\n");
-	if(isContainer()) fprintf(stderr," Is a Container\n");
+	if(isManaged())				fprintf(stderr," Managed");
+	if(isFlat())				fprintf(stderr," Flat");
+	if(isNetworkByteOrder())	fprintf(stderr," NetworkByteOrder");
+	if(isConstant())			fprintf(stderr," Constant");
+	if(isNoRef())				fprintf(stderr," NoReferencing");
+	fprintf(stderr,"\n");
 
 	if(!isContainer() && !isScalar() && !isAtomic())
 		 fprintf(stderr,"--------------------------------------\n");
 }
-#endif
 
-#ifdef NO_DUMP_TEST
-void gddAtomic::dump(void) { }
-#else
-void gddAtomic::dump(void)
-{
-	aitFloat64* f64;	aitFloat32* f32;
-	aitUint32* ui32;	aitInt32* i32;
-	aitUint16* ui16;	aitInt16* i16;
-	aitUint8* ui8;		aitInt8* i8;
-	char* str;
-
-	gdd::dumpInfo();
-
-	switch(primitiveType())
-	{
-	case aitEnumFloat64:
-		getRef(f64);
-		if(f64) fprintf(stderr," Convert: float64 %8.8x %lf ",f64,f64[0]);
-		f64=*this;
-		if(f64) fprintf(stderr," Normal: float64 %8.8x %lf\n",f64,f64[0]);
-		break;
-	case aitEnumFloat32:
-		getRef(f32);
-		if(f32) fprintf(stderr," Convert: float32 %8.8x %f ",f32,f32[0]);
-		f32=*this;
-		if(f32) fprintf(stderr," Normal: float32 %8.8x %f\n",f32,f32[0]);
-		break;
-	case aitEnumUint32:
-		getRef(ui32);
-		if(ui32) fprintf(stderr," Convert: uint32 %8.8x %d ",ui32,ui32[0]);
-		ui32=*this;
-		if(ui32) fprintf(stderr," Normal: uint32 %8.8x %d\n",ui32,ui32[0]);
-		break;
-	case aitEnumInt32:
-		getRef(i32);
-		if(i32) fprintf(stderr," Convert: int32 %8.8x %d ",i32,i32[0]);
-		i32=*this;
-		if(i32) fprintf(stderr," Normal: int32 %8.8x %d\n",i32,i32[0]);
-		break;
-	case aitEnumUint16:
-		getRef(ui16);
-		if(ui16) fprintf(stderr," Convert: uint16 %8.8x %hu ",ui16,ui16[0]);
-		ui16=*this;
-		if(ui16) fprintf(stderr," Normal: uint16 %8.8x %hu\n",ui16,ui16[0]);
-		break;
-	case aitEnumInt16:
-		getRef(i16);
-		if(i16) fprintf(stderr," Convert: int16 %8.8x %hd ",i16,i16[0]);
-		i16=*this;
-		if(i16) fprintf(stderr," Normal: int16 %8.8x %hd\n",i16,i16[0]);
-		break;
-	case aitEnumUint8:
-		getRef(ui8);
-		if(ui8) fprintf(stderr," Convert: uint8 %8.8x %d ",ui8,ui8[0]);
-		ui8=*this;
-		if(ui8) fprintf(stderr," Normal: uint8 %8.8x %d\n",ui8,ui8[0]);
-		break;
-	case aitEnumInt8:
-		getRef(i8);
-		if(i8) fprintf(stderr," Convert: int8 %8.8x %d ",i8,i8[0]);
-		i8=*this;
-		if(i8) fprintf(stderr," Normal: int8 %8.8x %d\n",i8,i8[0]);
-		break;
-	case aitEnumString:
-		getRef(str);
-		if(str) fprintf(stderr," <%s>\n",str);
-		break;
-	default:
-		fprintf(stderr," unknown primitive type\n"); break;
-	}
-	fprintf(stderr,"-------------------------------------\n");
-}
-#endif
-
-#ifdef NO_DUMP_TEST
-void gddScalar::dump(void) { }
-#else
 void gddScalar::dump(void)
 {
-	aitFloat64 f64;	aitFloat32 f32;	aitUint32 ui32;	aitInt32 i32;
-	aitUint16 ui16;	aitInt16 i16;		aitUint8 ui8;		aitInt8 i8;
-
 	gdd::dumpInfo();
-
-	switch(primitiveType())
-	{
-	case aitEnumFloat64:
-		get(f64); if(f64) fprintf(stderr," Convert: float64 %lf ",f64);
-		f64=*this; if(f64) fprintf(stderr," Normal: float64 %lf\n",f64);
-		break;
-	case aitEnumFloat32:
-		get(f32); if(f32) fprintf(stderr," Convert: float32 %f ",f32);
-		f32=*this; if(f32) fprintf(stderr," Normal: float32 %f\n",f32);
-		break;
-	case aitEnumUint32:
-		get(ui32); if(ui32) fprintf(stderr," Convert: uint32 %d ",ui32);
-		ui32=*this; if(ui32) fprintf(stderr," Normal: uint32 %d\n",ui32);
-		break;
-	case aitEnumInt32:
-		get(i32); if(i32) fprintf(stderr," Convert: int32 %d ",i32);
-		i32=*this; if(i32) fprintf(stderr," Normal: int32 %d\n",i32);
-		break;
-	case aitEnumUint16:
-		get(ui16); if(ui16) fprintf(stderr," Convert: uint16 %hu ",ui16);
-		ui16=*this; if(ui16) fprintf(stderr," Normal: uint16 %hu\n",ui16);
-		break;
-	case aitEnumInt16:
-		get(i16); if(i16) fprintf(stderr," Convert: int16 %hd ",i16);
-		i16=*this; if(i16) fprintf(stderr," Normal: int16 %hd\n",i16);
-		break;
-	case aitEnumUint8:
-		get(ui8); if(ui8) fprintf(stderr," Convert: uint8 %2.2x ",ui8);
-		ui8=*this; if(ui8) fprintf(stderr," Normal: uint8 %2.2x\n",ui8);
-		break;
-	case aitEnumInt8:
-		get(i8); if(i8) fprintf(stderr," Convert: int8 %d ",i8);
-		i8=*this; if(i8) fprintf(stderr," Normal: int8 %d\n",i8);
-		break;
-	default:
-		fprintf(stderr," unknown primitive type\n"); break;
-	}
 	fprintf(stderr,"--------------------------------------\n");
 }
-#endif
+
+void gddAtomic::dump(void)
+{
+	gdd::dumpInfo();
+	fprintf(stderr,"-------------------------------------\n");
+}
+
+void gddContainer::dump(void)
+{
+	int i;
+	gdd* dd;
+	gddAtomic* add;
+	gddScalar* sdd;
+	gddContainer* cdd;
+
+	fprintf(stderr,"----------dumping container:\n");
+	gdd::dumpInfo();
+	fprintf(stderr," total in container = %d\n",total());
+
+	// should use a cursor
+
+	for(i=0;dd=getDD(i);i++)
+	{
+		if(dd->isAtomic())		{ add=(gddAtomic*)dd; add->dump(); }
+		if(dd->isScalar())		{ sdd=(gddScalar*)dd; sdd->dump(); }
+		if(dd->isContainer())	{ cdd=(gddContainer*)dd; cdd->dump(); }
+	}
+}
 
 #ifdef NO_DUMP_TEST
 void gdd::test() { }
@@ -391,32 +462,6 @@ void gddScalar::test(void)
 	{
 		setPrimType((aitEnum)i);
 		put(ui32); get(uia32); dump(); *this=ui32; uia32=*this; dump();
-	}
-}
-#endif
-
-#ifdef NO_DUMP_TEST
-void gddContainer::dump(void) { }
-#else
-void gddContainer::dump(void)
-{
-	int i;
-	gdd* dd;
-	gddAtomic* add;
-	gddScalar* sdd;
-	gddContainer* cdd;
-
-	fprintf(stderr,"----------dumping container:\n");
-	gdd::dumpInfo();
-	fprintf(stderr," total in container = %d\n",total());
-
-	// should use a cursor
-
-	for(i=0;dd=getDD(i);i++)
-	{
-		if(dd->isAtomic())		{ add=(gddAtomic*)dd; add->dump(); }
-		if(dd->isScalar())		{ sdd=(gddScalar*)dd; sdd->dump(); }
-		if(dd->isContainer())	{ cdd=(gddContainer*)dd; cdd->dump(); }
 	}
 }
 #endif

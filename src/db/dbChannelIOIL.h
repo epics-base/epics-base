@@ -32,13 +32,11 @@ inline void dbChannelIO::destroy ()
 
 inline void * dbChannelIO::operator new ( size_t size )
 {
-    epicsAutoMutex locker ( dbChannelIO::freeListMutex );
     return dbChannelIO::freeList.allocate ( size );
 }
 
 inline void dbChannelIO::operator delete ( void *pCadaver, size_t size )
 {
-    epicsAutoMutex locker ( dbChannelIO::freeListMutex );
     dbChannelIO::freeList.release ( pCadaver, size );
 }
 

@@ -2,6 +2,10 @@ TOP = ../../..
 include $(TOP)/config/CONFIG_BASE
 USR_CFLAGS += -Wall -pedantic
 
+USR_INCLUDES = -I$(TOP)/src/include/os/vxWorks
+
+VPATH = ../os/vxWorks
+
 SRCS.c += ../calcPerform.c
 SRCS.c += ../cvtFast.c
 SRCS.c += ../gpHashLib.c
@@ -22,6 +26,9 @@ SRCS.c += ../errPrintfVX.c
 SRCS.c += ../assertVX.c
 SRCS.c += ../macCore.c
 SRCS.c += ../macUtil.c
+#SRCS.c += ../osiTimer.cc
+#SRCS.c += ../os/vxWorks/osdTime.cc
+SRCS.c += ../os/vxWorks/ipAddrToA.c
 SRCS.c += ../impLib.c
 
 LIBOBJS += calcPerform.o
@@ -43,6 +50,9 @@ LIBOBJS += errPrintfVX.o
 LIBOBJS += assertVX.o
 LIBOBJS += macCore.o
 LIBOBJS += macUtil.o
+#LIBOBJS += osiTimer.o
+#LIBOBJS += osdTime.o
+LIBOBJS += ipAddrToA.o
 LIBOBJS += impLib.o
 
 LIBNAME = libCom
@@ -73,7 +83,7 @@ clean::
 #	should work on all archs, but I decided to
 #	keep the "originals" for now.  -kuk-
 ifeq ($(HOST_ARCH),WIN32)
-TOOLDIR=../WIN32
+TOOLDIR=../os/WIN32
 else
 TOOLDIR=..
 endif
@@ -86,6 +96,6 @@ errSymTbl.o: errSymTbl.c
 	$(COMPILE.c) -o $@ $<
 
 errSymTbl.c: $(ERR_S_FILES)
-	@$(RM) errSymTbl.c ;\
+	$(RM) errSymTbl.c ;\
 	$(TOOLDIR)/makeStatTbl  $(ERR_S_FILES) >errSymTbl.c
 

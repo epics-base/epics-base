@@ -3,10 +3,13 @@ include $(TOP)/config/CONFIG_BASE
 CMPLR = STRICT
 
 USR_CFLAGS = -D_NO_PROTO
+USR_INCLUDES = -I$(TOP)/src/include/os/$(T_A)
 USR_LDLIBS += -lCom
 USR_LDFLAGS += -L.
 #USR_CFLAGS = -v -g
 #CC = $(PURIFYHOME)/purify $(C_$(CMPLR))
+
+VPATH = ../os/generic
 
 DEPLIBS_BASE = $(INSTALL_LIB)
 DEPLIBS += $(DEPLIBS_BASE)/libCom.a
@@ -52,9 +55,10 @@ SRCS.c += ../tsSubr.c
 SRCS.c += ../assertUNIX.c
 #SRCS.c += ../fdManager.cc
 #SRCS.c += ../osiTimer.cc
-#SRCS.c += ../osiTimeOSD.cc
 SRCS.c += ../macCore.c
 SRCS.c += ../macUtil.c
+SRCS.c += ../os/generic/ipAddrToA.c
+SRCS.c += ../os/generic/osdTime.cc
 SRCS.c += ../impLib.c
 SRCS.c += ../impExpand.c
 
@@ -79,9 +83,10 @@ LIBOBJS += tsSubr.o
 LIBOBJS += assertUNIX.o
 #LIBOBJS += fdManager.o
 #LIBOBJS += osiTimer.o
-#LIBOBJS += osiTimeOSD.o
 LIBOBJS += macCore.o
 LIBOBJS += macUtil.o
+LIBOBJS += ipAddrToA.o
+LIBOBJS += osdTime.o
 LIBOBJS += impLib.o
 LIBOBJS += impExpand.o
 

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.2  1996/06/21 02:30:53  jhill
+ * solaris port
+ *
  * Revision 1.1.1.1  1996/06/20 00:28:15  jhill
  * ca server installation
  *
@@ -152,7 +155,7 @@ void casPV::destroy()
 //
 void casPV::postEvent (const casEventMask &select, gdd &event)
 {
-	(*this)->postEvent (select, event);
+	this->casPVI::postEvent (select, event);
 }
 
 //
@@ -166,6 +169,6 @@ void casPV::postEvent (const casEventMask &select, gdd &event)
 //
 caServer *casPV::getCAS()
 {
-	return (*this)->getExtServer();
+	return this->casPVI::getExtServer();
 }
 

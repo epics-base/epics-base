@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.3  1996/06/26 21:18:59  jhill
+ * now matches gdd api revisions
+ *
  * Revision 1.2  1996/06/21 02:30:57  jhill
  * solaris port
  *
@@ -85,13 +88,13 @@ inline caStatus casStrmClient::verifyRequest (casChannelI *&pChan)
         // then we will need to wait until later to initiate this
         // request.
         //
-        if (pChan->getIOOPSInProgress() >=
-                pChan->getPVI()->maxSimultAsyncOps()) {
+	if (pChan->getPVI().okToBeginNewIO()!=aitTrue) {
 		this->ioBlocked::setBlocked (pChan->getPVI());
                 return S_cas_ioBlocked;
+	}
+	else {
+        	return S_cas_validRequest;
         }
- 
-        return S_cas_validRequest;
 }
 
 
@@ -1663,7 +1666,6 @@ caStatus casStrmClient::createChanResponse(casChannelI *,
 //
 casPVI *caServerI::createPV (gdd &name)
 {
-	aitString	*pAITStr;
         casPVI          *pPVI;
         caStatus        status;
 
@@ -1675,15 +1677,23 @@ casPVI *caServerI::createPV (gdd &name)
 		return NULL;
 	}
 
-	name.getRef (pAITStr);
-	stringId id (pAITStr->string());
+	//
+	// this assumes that they did a put() 
+	// and not a putRef() 
+	//
+	// if this assumption is wrong (and there is no
+	// way currently to test) it will prove fatal
+	// to the server
+	//
+	aitString aitStr(name);
+	stringId id (aitStr.string());
 
         this->lock ();
 
         pPVI = this->stringResTbl.lookup (id);
 	if (!pPVI) {
         	casPV	*pPV;
-		pPV = (*this)->createPV (this->ctx, pAITStr->string());
+		pPV = (*this)->createPV (this->ctx, aitStr.string());
 		if (pPV) {
 			pPVI = (casPVI *) pPV;
 		}

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.2  1996/06/26 21:18:57  jhill
+ * now matches gdd api revisions
+ *
  * Revision 1.1.1.1  1996/06/20 00:28:15  jhill
  * ca server installation
  *
@@ -181,4 +184,5 @@ caServer *casPVI::getExtServer()
 {
 	return this->cas.getAdapter();
 }
+
 

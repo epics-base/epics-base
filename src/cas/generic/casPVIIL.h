@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.3  1996/06/26 21:18:58  jhill
+ * now matches gdd api revisions
+ *
  * Revision 1.2  1996/06/21 02:30:55  jhill
  * solaris port
  *
@@ -81,12 +84,26 @@ inline void casPVI::removeChannel(casPVListChan &chan)
 }
 
 //
+// okToBeginNewIO()
+//
+inline aitBool casPVI::okToBeginNewIO() const
+{
+	if (this->nIOAttached >= (*this)->maxSimultAsyncOps()) 
+	{               
+		return aitFalse;
+	}
+	else {
+		return aitTrue;
+	}
+}
+
+//
 // casPVI::registerIO()
 //
 inline void casPVI::registerIO()
 {
 	this->lock();
-	casVerify (this->nIOAttached <= (*this)->maxSimultAsyncOps());
+	casVerify (this->nIOAttached < (*this)->maxSimultAsyncOps());
 	this->nIOAttached++;
 	this->unlock();
 }
@@ -160,6 +177,7 @@ inline void casPVI::postEvent (const casEventMask &select, gdd &event)
                 pChan->postEvent(select, event);
         }
 }
+
 
 #endif // casPVIIL_h
 

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.4  1996/06/26 23:32:17  jhill
+ * changed where caProto.h comes from (again)
+ *
  * Revision 1.3  1996/06/26 21:18:54  jhill
  * now matches gdd api revisions
  *
@@ -443,8 +446,6 @@ public:
 	//
 	inline casMonitor *findMonitor(const caResId clientIdIn);
 
-        inline unsigned getIOOPSInProgress() const;
-
         casPVI &getPVI() const 
 	{
 		return this->pv;
@@ -504,7 +505,6 @@ class casPVI :
 	public ioBlockedList	// list of clients io blocked on this pv
 {
 public:
-
         //
         // The PV name here must be the canonical and unique name
         // for the PV in this system
@@ -538,14 +538,6 @@ public:
 	inline void unregisterIO();
 
 	//
-	// how many async IOs are outstanding?
-	//
-	unsigned ioInProgress() const
-	{
-		return this->nIOAttached;
-	}
-
-	//
 	// only for use by casChannelI
 	//
 	inline void installChannel(casPVListChan &chan);
@@ -564,7 +556,7 @@ public:
 
 	inline void postEvent (const casEventMask &select, gdd &event);
 
-	casPV *intefaceObjectPointer()
+	casPV *intefaceObjectPointer() const
 	{
 		return (casPV *) this;
 	}
@@ -573,17 +565,20 @@ public:
 	// casPVI must always be a base for casPV
 	// (the constructor assert fails if this isnt the case)
 	//
-	casPV * operator -> ()
+	casPV * operator -> () const
 	{
 		return  intefaceObjectPointer();
 	}
 
 	caServer *getExtServer();
 
+
 	//
 	// bestDBRType()
 	//
-	inline caStatus  bestDBRType (unsigned &dbrType);
+	inline caStatus bestDBRType (unsigned &dbrType);
+
+	inline aitBool okToBeginNewIO() const;
 
 	inline void lock();
 	inline void unlock();

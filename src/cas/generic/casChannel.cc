@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.1.1.1  1996/06/20 00:28:14  jhill
+ * ca server installation
+ *
  *
  */
 
@@ -54,7 +57,7 @@ casChannel::~casChannel()
 
 casPV *casChannel::getPV()
 {
-	casPVI &pvi((*this)->getPVI());
+	casPVI &pvi(this->casChannelI::getPVI());
 
 	if (&pvi!=NULL) {
 		return pvi.intefaceObjectPointer();
@@ -69,7 +72,7 @@ casPV *casChannel::getPV()
 //
 void casChannel::postEvent (const casEventMask &select, gdd &event)
 {
-	(*this)->postEvent(select, event);
+	this->casChannelI::postEvent(select, event);
 }
 
 //

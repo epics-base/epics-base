@@ -30,6 +30,9 @@
  * 	Modification Log:
  * 	-----------------
  * 	$Log$
+ * 	Revision 1.3  1996/06/26 23:08:55  jhill
+ * 	took path out of casInternal.h include
+ *
  * 	Revision 1.2  1996/06/20 18:09:43  jhill
  * 	changed where casInternal comes from
  *
@@ -209,7 +212,7 @@ public:
 	//
 	caStatus postIOCompletion(caStatus completionStatusIn, gdd *pValue=0)
 	{
-		return (*this)->postIOCompletion(completionStatusIn, pValue);
+		return this->casAsyncIOI::postIOCompletion(completionStatusIn, pValue);
 	}
 
 	//
@@ -221,7 +224,7 @@ public:
 	//
 	caServer *getCAS()
 	{
-		return (*this)->getCAS();
+		return this->casAsyncIOI::getCAS();
 	}
 
 	//
@@ -231,7 +234,7 @@ public:
 	//
 	gdd *getValuePtr ()
 	{
-		return (*this)->getValuePtr();
+		return this->casAsyncIOI::getValuePtr();
 	}
 
 	//
@@ -242,12 +245,7 @@ public:
 	//
 	void clrValue()
 	{
-		(*this)->clrValue();
-	}
-private:
-	casAsyncIOI * operator -> ()
-	{
-		return (casAsyncIOI *) this;
+		this->casAsyncIOI::clrValue();
 	}
 };
 
@@ -257,8 +255,12 @@ private:
 class caServer {
 private:
 	//
-	// private reference here inorder to avoid os
-	// dependent -I during server tool compile
+	// this private data member appears first so that
+	// initialization of the constant event masks below
+	// uses this member only after it has been intialized
+	//
+	// We do not use private inheritance here in order
+	// to avoid os/io dependent -I during server tool compile
 	//
 	caServerI  *pCAS;
 public:
@@ -277,13 +279,6 @@ public:
         unsigned getDebugLevel ();
 
 	casEventMask registerEvent (const char *pName);
-
-	//
-	// for use when mapping between an event id and an event
-	// name. Event ids are used to select events.
-	//
-	//caEventId eventId (const char *pEventName, const gdd &prototype);
-	//const char *eventName (const caEventId &id);
 
         //
 	// show()
@@ -345,10 +340,6 @@ class casPV : private casPVI {
 public:
 	casPV (const casCtx &ctx, const char * const pPVName);
         virtual ~casPV ();
-
-	//
-	// Need VF that returns pointer to derived type ?
-	//
 
 	//
 	// This is called for each PV in the server if
@@ -463,12 +454,6 @@ public:
 	// ***************
 	//
 	caServer *getCAS();
-
-private:
-	casPVI * operator -> ()
-	{
-		return (casPVI *) this;
-	}
 };
 
 //
@@ -548,11 +533,6 @@ public:
 	// ***************
 	//
 	casPV *getPV();
-private:
-	casChannelI * operator -> ()
-	{
-		return (casChannelI *) this;
-	}
 };
 
 #endif /* ifdef includecasdefh (this must be the last line in this file) */

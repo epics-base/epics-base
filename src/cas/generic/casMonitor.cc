@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.2  1996/06/26 21:18:56  jhill
+ * now matches gdd api revisions
+ *
  * Revision 1.1.1.1  1996/06/20 00:28:16  jhill
  * ca server installation
  *
@@ -66,7 +69,7 @@ casMonitor::casMonitor(caResId clientIdIn, casChannelI &chan,
  
         this->ciu.addMonitor(*this);
  
-        this->enable();
+       	this->enable();
 }
 
 //
@@ -77,6 +80,9 @@ casMonitor::~casMonitor()
         casCoreClient &client = this->ciu.getClient();
  
         this->mutex.lock();
+
+	this->disable();
+
         //
         // remove from the event system
         //

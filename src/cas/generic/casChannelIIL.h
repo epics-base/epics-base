@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.1.1.1  1996/06/20 00:28:16  jhill
+ * ca server installation
+ *
  *
  */
 
@@ -122,10 +125,10 @@ inline void casChannelI::clientDestroy()
 	(*this)->destroy();
 }
 
-#include <casPVIIL.h> // casPVI inline func (for getIOOPSInProgress() )
+#include <casPVIIL.h>
 
 //
-// functions that use below here casPVIIL.h
+// functions that use casPVIIL.h below here 
 //
 
 //
@@ -148,14 +151,6 @@ inline void casChannelI::removeAsyncIO(casAsyncIOI &io)
         this->ioInProgList.remove(io);
         this->pv.unregisterIO();
         this->unlock();
-}
-
-//
-// casChannelI::getIOOPSInProgress()
-//
-inline unsigned casChannelI::getIOOPSInProgress() const
-{
-	return this->pv.ioInProgress();
 }
 
 //

@@ -1,11 +1,16 @@
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #include <envDefs.h>
 
 void caSetupAddrList(
         ELLLIST *pList,
         SOCKET socket);
 
-void caPrintAddrList();
+void caPrintAddrList(ELLLIST *pList);
 
 void caDiscoverInterfaces(
         ELLLIST *pList,
@@ -21,15 +26,18 @@ void caAddConfiguredAddr(
 int local_addr(SOCKET socket, struct sockaddr_in *plcladdr);
 unsigned short caFetchPortConfig(ENV_PARAM *pEnv, unsigned short defaultPort);
 
-union caAddr{
-        struct sockaddr_in      inetAddr;
-        struct sockaddr         sockAddr;
-};
+typedef union ca_addr {
+        struct sockaddr_in      in;
+        struct sockaddr         sa;
+}caAddr;
 
 typedef struct {
-        ELLNODE                 node;
-        union caAddr            srcAddr;
-        union caAddr            destAddr;
+        ELLNODE		node;
+        caAddr		srcAddr;
+        caAddr		destAddr;
 }caAddrNode;
 
+#ifdef __cplusplus
+}
+#endif
 

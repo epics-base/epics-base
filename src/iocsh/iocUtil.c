@@ -82,7 +82,7 @@ static void showCallFunc(const iocshArgBuf *args)
     }
     for ( ; i < argc ; i++) {
         cp = argv[i];
-        ltmp = strtoul (cp, &endp, 16);
+        ltmp = strtoul (cp, &endp, 0);
         if (*endp) {
             tid = epicsThreadGetId (cp);
             if (!tid) {

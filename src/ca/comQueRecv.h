@@ -40,6 +40,8 @@ public:
 private:
     tsDLList < comBuf > bufs;
     unsigned nBytesPending;
+	comQueRecv ( const comQueRecv & );
+	comQueRecv & operator = ( const comQueRecv & );
 };
 
 inline unsigned comQueRecv::occupiedBytes () const

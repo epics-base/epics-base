@@ -39,6 +39,9 @@ public:
     virtual dbSubscriptionIO * isSubscription () = 0;
     virtual void destroy () = 0;
     virtual void show ( unsigned level ) const = 0;
+	dbBaseIO ();
+	dbBaseIO ( const dbBaseIO & );
+	dbBaseIO & operator = ( const dbBaseIO & );
 };
 
 class dbPutNotifyBlocker : public dbBaseIO {
@@ -62,6 +65,8 @@ private:
     static tsFreeList < dbPutNotifyBlocker > freeList;
     static epicsMutex freeListMutex;
     friend void putNotifyCompletion ( putNotify *ppn );
+	dbPutNotifyBlocker ( const dbPutNotifyBlocker & );
+	dbPutNotifyBlocker & operator = ( const dbPutNotifyBlocker & );
 };
 
 extern "C" void dbSubscriptionEventCallback ( void *pPrivate, struct dbAddr *paddr,
@@ -91,6 +96,8 @@ private:
     static epicsMutex freeListMutex;
     friend void dbSubscriptionEventCallback ( void *pPrivate, struct dbAddr *paddr,
 	    int eventsRemaining, struct db_field_log *pfl );
+	dbSubscriptionIO ( const dbSubscriptionIO & );
+	dbSubscriptionIO & operator = ( const dbSubscriptionIO & );
 };
 
 class dbServiceIO;
@@ -102,6 +109,8 @@ private:
     tsDLList < dbSubscriptionIO > eventq;
     dbPutNotifyBlocker *pBlocker;
     friend class dbServiceIO;
+	dbServicePrivateListOfIO ( const dbServicePrivateListOfIO & );
+	dbServicePrivateListOfIO & operator = ( const dbServicePrivateListOfIO & );
 };
 
 class dbChannelIO : public cacChannel, public dbServicePrivateListOfIO {
@@ -138,6 +147,8 @@ private:
     static tsFreeList < dbChannelIO > freeList;
     static epicsMutex freeListMutex;
     static unsigned nextIdForIO;
+	dbChannelIO ( const dbChannelIO & );
+	dbChannelIO & operator = ( const dbChannelIO & );
 };
 
 class dbServiceIO : public cacService {
@@ -166,6 +177,8 @@ private:
     dbEventCtx ctx;
     char *pEventCallbackCache;
     mutable epicsMutex mutex;
+	dbServiceIO ( const dbServiceIO & );
+	dbServiceIO & operator = ( const dbServiceIO & );
 };
 
 inline dbServicePrivateListOfIO::dbServicePrivateListOfIO () :

@@ -35,6 +35,8 @@ private:
     bool registered;
     bool once;
 	expireStatus expire ( const epicsTime & currentTime );
+	repeaterSubscribeTimer ( const repeaterSubscribeTimer & );
+	repeaterSubscribeTimer & operator = ( const repeaterSubscribeTimer & );
 };
 
 #endif // ifdef repeaterSubscribeTimerh

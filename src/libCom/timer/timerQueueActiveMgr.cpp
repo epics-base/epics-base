@@ -33,6 +33,10 @@
 #define epicsExportSharedSymbols
 #include "timerPrivate.h"
 
+timerQueueActiveMgr::timerQueueActiveMgr ()
+{
+}
+
 timerQueueActiveMgr::~timerQueueActiveMgr ()
 {
     epicsAutoMutex locker ( this->mutex );

@@ -114,6 +114,8 @@ private:
         }
         return;
     }
+	comQueSend ( const comQueSend & );
+	comQueSend & operator = ( const comQueSend & );
 };
 
 inline bool comQueSend::dbr_type_ok ( unsigned type )

@@ -41,6 +41,8 @@ private:
     bool responsePending;
     bool beaconAnomaly;
     expireStatus expire ( const epicsTime & currentTime );
+	tcpRecvWatchdog ( const tcpRecvWatchdog & );
+	tcpRecvWatchdog & operator = ( const tcpRecvWatchdog & );
 };
 
 #endif // #ifndef tcpRecvWatchdogh

@@ -139,6 +139,9 @@ private:
 
     friend void cacSendThreadTCP ( void *pParam );
     friend void cacRecvThreadTCP ( void *pParam );
+
+	tcpiiu ( const tcpiiu & );
+	tcpiiu & operator = ( const tcpiiu & );
 };
 
 inline void tcpiiu::flushRequest ()

@@ -58,6 +58,8 @@ private:
     void beaconAnomalyNotify ();
     static tsFreeList < class bhe, 1024 > freeList;
     static epicsMutex freeListMutex;
+	bhe ( const bhe & );
+	bhe & operator = ( const bhe & );
 };
 
 /*

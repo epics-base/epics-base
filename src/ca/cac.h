@@ -259,6 +259,9 @@ private:
     static const pExcepProtoStubTCP tcpExcepJumpTableCAC [];
 
     friend class callbackAutoMutex;
+
+	cac ( const cac & );
+	cac & operator = ( const cac & );
 };
 
 class callbackAutoMutex {
@@ -267,6 +270,8 @@ public:
     ~callbackAutoMutex ();
 private:
     cac & ctx;
+	callbackAutoMutex ( const callbackAutoMutex & );
+	callbackAutoMutex & operator = ( const callbackAutoMutex & );
 };
 
 inline const char * cac::userNamePointer () const

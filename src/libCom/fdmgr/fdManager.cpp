@@ -68,20 +68,6 @@ template class resTable < fdReg, fdRegId >;
 epicsShareDef fdManager fileDescriptorManager;
 
 //
-// this must allow at least enough bits for all states 
-// in type "fdRegType". The actual size of the table
-// is used because it improves performance.
-//
-inline const unsigned fdRegId::minIndexBitWidth () 
-{
-    return fdManagerHashTableMinIndexBits;
-}
-inline const unsigned fdRegId::maxIndexBitWidth () 
-{
-    return fdManagerHashTableMaxIndexBits;
-}
-
-//
 // fdManager::fdManager()
 //
 epicsShareFunc fdManager::fdManager () : pTimerQueue ( 0 )

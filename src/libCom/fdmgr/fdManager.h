@@ -74,13 +74,10 @@ public:
 
     resTableIndex hash () const;
 
-    static const unsigned minIndexBitWidth ();
-    static const unsigned maxIndexBitWidth ();
-
     virtual void show (unsigned level) const;
 private:
-    const SOCKET fd;
-    const fdRegType type;
+    SOCKET fd;
+    fdRegType type;
 };
 
 //
@@ -121,6 +118,8 @@ private:
     epicsShareFunc void installReg (fdReg &reg);
     epicsShareFunc void removeReg (fdReg &reg);
     void lazyInitTimerQueue ();
+	fdManager ( const fdManager & );
+	fdManager & operator = ( const fdManager & );
     friend class fdReg;
 };
 
@@ -171,6 +170,9 @@ private:
     unsigned char state; // state enums go here
     unsigned char onceOnly;
     fdManager &manager;
+
+	fdReg ( const fdReg & );
+	fdReg & operator = ( const fdReg & );
 };
 
 static const unsigned fdManagerHashTableMinIndexBits = 8;

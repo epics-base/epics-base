@@ -89,6 +89,8 @@ private:
     bool includeFirstConnectInCountOfOutstandingIO () const;
     static tsFreeList < struct oldChannelNotify, 1024 > freeList;
     static epicsMutex freeListMutex;
+	oldChannelNotify ( const oldChannelNotify & );
+	oldChannelNotify & operator = ( const oldChannelNotify & );
 };
 
 class getCopy : public cacReadNotify {
@@ -115,6 +117,8 @@ private:
         const char *pContext, unsigned type, arrayElementCount count );
     static tsFreeList < class getCopy, 1024 > freeList;
     static epicsMutex freeListMutex;
+	getCopy ( const getCopy & );
+	getCopy & operator = ( const getCopy & );
 };
 
 class getCallback : public cacReadNotify {
@@ -136,6 +140,8 @@ private:
         const char *pContext, unsigned type, arrayElementCount count );
     static tsFreeList < class getCallback, 1024 > freeList;
     static epicsMutex freeListMutex;
+	getCallback ( const getCallback & );
+	getCallback & operator = ( const getCallback & );
 };
 
 class putCallback : public cacWriteNotify {
@@ -156,6 +162,8 @@ private:
         unsigned type, arrayElementCount count );
     static tsFreeList < class putCallback, 1024 > freeList;
     static epicsMutex freeListMutex;
+	putCallback ( const putCallback & );
+	putCallback & operator = ( const putCallback & );
 };
 
 struct oldSubscription : public cacStateNotify {
@@ -181,6 +189,8 @@ private:
         const char *pContext, unsigned type, arrayElementCount count );
     static tsFreeList < struct oldSubscription, 1024 > freeList;
     static epicsMutex freeListMutex;
+	oldSubscription ( const oldSubscription & );
+	oldSubscription & operator = ( const oldSubscription & );
 };
 
 struct oldCAC : public cacNotify
@@ -231,6 +241,8 @@ private:
     void fdWasCreated ( int fd );
     void fdWasDestroyed ( int fd );
     void attachToClientCtx ();
+	oldCAC ( const oldCAC & );
+	oldCAC & operator = ( const oldCAC & );
 };
 
 int fetchClientContext ( oldCAC **ppcac );

@@ -44,6 +44,9 @@ protected:
 // notify 
 //
     nciu & chan;
+private:
+	baseNMIU ( const baseNMIU & );
+	baseNMIU & operator = ( const baseNMIU & );
 };
 
 class netSubscription : public baseNMIU  {
@@ -81,6 +84,8 @@ private:
     void operator delete ( void *, size_t, 
         tsFreeList < class netSubscription, 1024 > & );
 #   endif
+	netSubscription ( const netSubscription & );
+	netSubscription & operator = ( const netSubscription & );
 };
 
 class netReadNotifyIO : public baseNMIU {
@@ -107,6 +112,8 @@ private:
     void operator delete ( void *, size_t, 
         tsFreeList < class netReadNotifyIO, 1024 > & );
 #   endif
+	netReadNotifyIO ( const netReadNotifyIO & );
+	netReadNotifyIO & operator = ( const netReadNotifyIO & );
 };
 
 class netWriteNotifyIO : public baseNMIU {
@@ -133,6 +140,8 @@ private:
     void operator delete ( void *, size_t, 
         tsFreeList < class netWriteNotifyIO, 1024 > & );
 #   endif
+	netWriteNotifyIO ( const netWriteNotifyIO & );
+	netWriteNotifyIO & operator = ( const netWriteNotifyIO & );
 };
 
 inline ca_uint32_t baseNMIU::getID () const

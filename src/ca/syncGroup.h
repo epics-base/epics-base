@@ -50,7 +50,9 @@ protected:
     const unsigned magic;
     cacChannel::ioid id;
     bool idIsValid;
-    virtual ~syncGroupNotify ();  
+    virtual ~syncGroupNotify (); 
+	syncGroupNotify ( const syncGroupNotify & );
+	syncGroupNotify & operator = ( const syncGroupNotify & );
 };
 
 class syncGroupReadNotify : public syncGroupNotify, public cacReadNotify {
@@ -76,6 +78,8 @@ private:
         unsigned type, arrayElementCount count, const void *pData );
     void exception (
         int status, const char *pContext, unsigned type, arrayElementCount count );
+	syncGroupReadNotify ( const syncGroupReadNotify & );
+	syncGroupReadNotify & operator = ( const syncGroupReadNotify & );
 };
 
 class syncGroupWriteNotify : public syncGroupNotify, public cacWriteNotify {
@@ -99,7 +103,10 @@ private:
         tsFreeList < class syncGroupWriteNotify, 128 > & );
 #   endif
     void completion ();
-    void exception ( int status, const char *pContext, unsigned type, arrayElementCount count );
+    void exception ( int status, const char *pContext, 
+		unsigned type, arrayElementCount count );
+	syncGroupWriteNotify ( const syncGroupWriteNotify & );
+	syncGroupWriteNotify & operator = ( const syncGroupWriteNotify & );
 };
 
 struct oldCAC;
@@ -143,6 +150,9 @@ private:
     void destroyPendingIO ( syncGroupNotify * );
     void destroyCompletedIO ();
     void destroyPendingIO ();
+
+	CASG ( const CASG & );
+	CASG & operator = ( const CASG & );
 };
 
 inline bool syncGroupNotify::ioInitiated () const

@@ -33,6 +33,8 @@ private:
     cacRecycle &r;
     tsDLList < class baseNMIU > &eventq;
     chronIntIdResTable < baseNMIU > &ioTable;
+	autoPtrRecycle ( const autoPtrRecycle & );
+	autoPtrRecycle & operator = ( const autoPtrRecycle & );
 };
 
 template < class T >

@@ -179,6 +179,8 @@ public:
 
 private:
     cacChannelNotify & callback;
+	cacChannel ( const cacChannel & );
+	cacChannel & operator = ( const cacChannel & );
 };
 
 class cacNotify { // X aCC 655
@@ -205,6 +207,7 @@ public:
 
 class cacServiceList {
 public:
+	cacServiceList ();
     epicsShareFunc void registerService ( cacService &service );
     epicsShareFunc cacChannel * createChannel ( 
         const char *pName, cacChannelNotify &, 
@@ -213,11 +216,13 @@ public:
 private:
     tsDLList < cacService > services;
     mutable epicsMutex mutex;
+	cacServiceList ( const cacServiceList & );
+	cacServiceList & operator = ( const cacServiceList & );
 };
 
 epicsShareExtern cacServiceList cacGlobalServiceList;
 
-epicsShareFunc int epicsShareAPI ca_register_service ( struct cacService *pService );
+epicsShareFunc int epicsShareAPI ca_register_service ( cacService *pService );
 
 inline cacChannel::cacChannel ( cacChannelNotify & notify ) :
     callback ( notify )

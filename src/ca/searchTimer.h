@@ -51,6 +51,8 @@ private:
     bool noDelay;
     expireStatus expire ( const epicsTime & currentTime );
     void setRetryInterval ( unsigned retryNo );
+	searchTimer ( const searchTimer & );
+	searchTimer & operator = ( const searchTimer & );
 };
 
 #endif // ifdef searchTimerh

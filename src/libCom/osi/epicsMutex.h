@@ -50,7 +50,7 @@ public:
     ~epicsAutoMutexRelease ();
 private:
     epicsAutoMutexRelease ( const epicsAutoMutex & );
-    epicsAutoMutexRelease & operator = ( const epicsAutoMutex & );
+    epicsAutoMutexRelease & operator = ( const epicsAutoMutexRelease & );
     epicsMutex & rMutex;
 };
 
@@ -114,8 +114,7 @@ inline epicsMutex ::~epicsMutex ()
 
 inline void epicsMutex :: lock ()
 {
-    epicsMutexLockStatus status;
-    status = epicsMutexLock ( this->id );
+    epicsMutexLockStatus status = epicsMutexLock ( this->id );
     if ( status != epicsMutexLockOK ) {
         throwWithLocation ( invalidSemaphore () );
     }
@@ -123,8 +122,7 @@ inline void epicsMutex :: lock ()
 
 inline bool epicsMutex :: lock ( double timeOut )
 {
-    epicsMutexLockStatus status;
-    status = epicsMutexLockWithTimeout ( this->id, timeOut );
+    epicsMutexLockStatus status = epicsMutexLockWithTimeout ( this->id, timeOut );
     if (status==epicsMutexLockOK) {
         return true;
     } else if (status==epicsMutexLockTimeout) {
@@ -137,8 +135,7 @@ inline bool epicsMutex :: lock ( double timeOut )
 
 inline bool epicsMutex :: tryLock ()
 {
-    epicsMutexLockStatus status;
-    status = epicsMutexTryLock ( this->id );
+    epicsMutexLockStatus status = epicsMutexTryLock ( this->id );
     if ( status == epicsMutexLockOK ) {
         return true;
     } else if ( status == epicsMutexLockTimeout ) {

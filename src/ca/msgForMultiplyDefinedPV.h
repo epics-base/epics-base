@@ -39,6 +39,8 @@ private:
     cac &cacRef;
     static tsFreeList < class msgForMultiplyDefinedPV, 16 > freeList;
     static epicsMutex freeListMutex;
+	msgForMultiplyDefinedPV ( const msgForMultiplyDefinedPV & );
+	msgForMultiplyDefinedPV & operator = ( const msgForMultiplyDefinedPV & );
 };
 
 inline void * msgForMultiplyDefinedPV::operator new ( size_t size )

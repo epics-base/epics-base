@@ -99,6 +99,9 @@ private:
         const osiSockAddr &net_addr, const epicsTime & );
 
     friend void cacRecvThreadUDP ( void *pParam );
+
+	udpiiu ( const udpiiu & );
+	udpiiu & operator = ( const udpiiu & );
 };
 
 inline bool udpiiu::isCurrentThread () const

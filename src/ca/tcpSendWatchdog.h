@@ -31,6 +31,8 @@ private:
     epicsTimer & timer;
     tcpiiu & iiu;
     expireStatus expire ( const epicsTime & currentTime );
+	tcpSendWatchdog ( const tcpSendWatchdog & );
+	tcpSendWatchdog & operator = ( const tcpSendWatchdog & );
 };
 
 #endif // #ifndef tcpSendWatchdog

@@ -50,6 +50,8 @@ public:
     dbServiceIOLoadTimeInit ();
 private:
     dbServiceIO dbio;
+	dbServiceIOLoadTimeInit ( const dbServiceIOLoadTimeInit & );
+	dbServiceIOLoadTimeInit & operator = ( const dbServiceIOLoadTimeInit & );
 };
 
 // The following is just to force lti to be constructed
@@ -57,6 +59,8 @@ extern "C" void dbServiceIOInit()
 {
     static dbServiceIOLoadTimeInit lti;
 }
+
+dbBaseIO::dbBaseIO () {}
 
 dbServiceIOLoadTimeInit::dbServiceIOLoadTimeInit ()
 {

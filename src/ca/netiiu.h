@@ -65,11 +65,16 @@ private:
     tsDLList < nciu > channelList;
     cac *pClientCtx;
     virtual void lastChannelDetachNotify ();
+	netiiu ( const netiiu & );
+	netiiu & operator = ( const netiiu & );
 };
 
 class limboiiu : public netiiu { // X aCC 655
 public:
     limboiiu ();
+private:
+	limboiiu ( const limboiiu & );
+	limboiiu & operator = ( const limboiiu & );
 };
 
 extern limboiiu limboIIU;

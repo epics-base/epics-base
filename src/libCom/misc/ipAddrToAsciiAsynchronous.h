@@ -48,6 +48,8 @@ private:
     bool callbackInProgress;
     bool waitingForCancelPendCompletion;
     static epicsMutex mutex;
+	ipAddrToAsciiEngine ( const ipAddrToAsciiEngine & );
+	ipAddrToAsciiEngine & operator = ( const ipAddrToAsciiEngine & );
     friend class ipAddrToAsciiAsynchronous;
 };
 

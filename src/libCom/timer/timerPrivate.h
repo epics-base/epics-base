@@ -61,6 +61,7 @@ private:
     timerQueue &queue;
     void privateStart ( epicsTimerNotify & notify, const epicsTime & );
     void privateCancel ();
+    timer & operator = ( const timer & );
     friend class timerQueue;
 };
 
@@ -74,6 +75,7 @@ private:
     epicsTimerCallback pCallBack;
     void * pPrivate;
     expireStatus expire ( const epicsTime & currentTime );
+    epicsTimerForC & operator = ( const epicsTimerForC & );
     friend class timerQueue;
 };
 
@@ -96,6 +98,8 @@ private:
     timer *pExpireTmr;
     epicsThreadId processThread;
     bool cancelPending;
+	timerQueue ( const timerQueue & );
+    timerQueue & operator = ( const timerQueue & );
     friend class timer;
 };
 
@@ -132,6 +136,8 @@ private:
     void run ();
     void reschedule ();
     epicsTimerQueue & getEpicsTimerQueue ();
+	timerQueueActive ( const timerQueueActive & );
+    timerQueueActive & operator = ( const timerQueueActive & );
 };
 
 struct epicsTimerQueueActiveForC : public timerQueueActive, 
@@ -146,10 +152,13 @@ protected:
 private:
     static tsFreeList < epicsTimerQueueActiveForC > freeList;
     static epicsMutex freeListMutex;
+	epicsTimerQueueActiveForC ( const epicsTimerQueueActiveForC & );
+    epicsTimerQueueActiveForC & operator = ( const epicsTimerQueueActiveForC & );
 };
 
 class timerQueueActiveMgr {
 public:
+	timerQueueActiveMgr ();
     ~timerQueueActiveMgr ();
     epicsTimerQueueActiveForC & allocate ( bool okToShare, 
         unsigned threadPriority = epicsThreadPriorityMin + 10 );
@@ -157,6 +166,8 @@ public:
 private:
     epicsMutex mutex;
     tsDLList < epicsTimerQueueActiveForC > sharedQueueList;
+	timerQueueActiveMgr ( const timerQueueActiveMgr & );
+    timerQueueActiveMgr & operator = ( const timerQueueActiveMgr & );
 };
 
 extern timerQueueActiveMgr queueMgr;
@@ -173,6 +184,8 @@ protected:
     timerQueue queue;
     ~timerQueuePassive ();
     epicsTimerQueue & getEpicsTimerQueue ();
+	timerQueuePassive ( const timerQueuePassive & );
+    timerQueuePassive & operator = ( const timerQueuePassive & );
 };
 
 inline epicsTimerForC & timerQueue::createTimerForC 

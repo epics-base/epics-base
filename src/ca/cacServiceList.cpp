@@ -22,6 +22,10 @@
 
 epicsShareDef cacServiceList cacGlobalServiceList;
 
+cacServiceList::cacServiceList ()
+{
+}
+
 void cacServiceList::registerService ( cacService &service )
 {
     epicsAutoMutex locker ( this->mutex );

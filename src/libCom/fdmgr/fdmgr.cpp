@@ -60,6 +60,8 @@ private:
     pCallBackFDMgr pFunc;
     void *pParam;
 	epicsShareFunc virtual void callBack ();
+	fdRegForOldFdmgr ( const fdRegForOldFdmgr & );
+	fdRegForOldFdmgr & operator = ( const fdRegForOldFdmgr & );
 };
 
 class oldFdmgr;
@@ -84,6 +86,8 @@ private:
     void *pParam;
     unsigned id;
     epicsShareFunc expireStatus expire ( const epicsTime & currentTime );
+	timerForOldFdmgr ( const timerForOldFdmgr & );
+	timerForOldFdmgr & operator = ( const timerForOldFdmgr & );
 };
 
 class oldFdmgr : public fdManager {
@@ -95,6 +99,8 @@ public:
 
 private:
     chronIntIdResTable <timerForOldFdmgr> resTbl;
+	oldFdmgr ( const oldFdmgr & );
+	oldFdmgr & operator = ( const oldFdmgr & );
 };
 
 #if defined ( _MSC_VER )
@@ -181,7 +187,7 @@ extern "C" epicsShareFunc fdmgrAlarmId epicsShareAPI fdmgr_add_timeout (
     double delay = ptimeout->tv_sec + ptimeout->tv_usec / static_cast <const double> (epicsTime::uSecPerSec);
     oldFdmgr *pfdm = static_cast <oldFdmgr *> (pfdctx);
     timerForOldFdmgr *pTimer;
-    unsigned id;
+    unsigned id = fdmgrNoAlarm;
 
     if (!pfdm) {
         return fdmgrNoAlarm;
@@ -206,7 +212,6 @@ extern "C" epicsShareFunc fdmgrAlarmId epicsShareAPI fdmgr_add_timeout (
             }
         }
         else {
-            id = fdmgrNoAlarm;
             break;
         }
     }

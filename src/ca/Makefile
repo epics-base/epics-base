@@ -49,7 +49,7 @@ LIBSRCS += putCallback.cpp
 LIBSRCS += syncgrp.cpp
 LIBSRCS += CASG.cpp
 LIBSRCS += syncGroupNotify.cpp
-
+LIBSRCS += localHostName.cpp
 
 LIBRARY=ca
 

@@ -668,10 +668,15 @@ iocshBody (const char *pathname, const char *commandLine)
         argv[argc] = NULL;
 
         /*
-         * Prepare for redirection
+         * Special case -- Redirected input but no command
+         * Treat as if 'iocsh filename'.
          */
         if ((argc == 0) && (redirects[0].name != NULL)) {
-            iocshBody(redirects[0].name, NULL);
+            const char *commandFile = redirects[0].name;
+            redirects[0].name = NULL;
+            if (openRedirect(filename, lineno, redirects) < 0)
+                continue;
+            iocshBody(commandFile, NULL);
             continue;
         }
         if (openRedirect(filename, lineno, redirects) < 0)

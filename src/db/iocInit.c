@@ -148,13 +148,7 @@ int iocInit(char * pResourceFilename)
 	return(-1);
     }
 
-   /*
-    *  Build the data structure for error reporting
-    */
-    if ((errSymBld()) != 0) {
-	logMsg("iocInit aborting because errSymBld failed to initialize \n",0,0,0,0,0,0);
-	return(-1);
-    }
+    errInit(); /*Initialize errPrintf task*/
 
    /*
     *  Setup initialization hooks, but only if an initHooks routine has been defined.

@@ -2,7 +2,7 @@
 #ifndef epicsMathh
 #define epicsMathh
 
-#include "math.h"
+#include <math.h>
 
 #define epicsIsNAN(D) isnan(D)
 

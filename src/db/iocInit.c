@@ -50,6 +50,7 @@
  * .20	08-27-92	mrk	removed wakeup_init (For old I/O Event scanning)
  * .21	09-05-92	rcz	changed dbUserExit to initHooks
  * .22	09-10-92	rcz	added many initHooks - INITHOOK*<place> argument
+ * .23	09-10-92	rcz	changed funcptr pinitHooks from ret long to void 
  *
  */
 
@@ -120,7 +121,7 @@ char * pResourceFilename;
     long hookrtn=0;
     char name[40];
     long rtnval;
-    long (*pinitHooks)() = NULL;
+    void (*pinitHooks)() = NULL;
     SYM_TYPE type;
 
     if(initialized) {
@@ -858,7 +859,6 @@ void setMasterTimeToSelf()
     int             len = 0;
     int             i = 0;
     char            *ptr = 0;
-
     pnext = bootStringToStruct(sysBootLine, &bp);
     if (*pnext != EOS) {
 	sprintf(message,

@@ -88,7 +88,7 @@ epicsThread::~epicsThread ()
             this->getName ( nameBuf, sizeof ( nameBuf ) );
             fprintf ( stderr, 
                 "epicsThread::~epicsThread(): "
-                "blocking for thread \"%s\" to exit", 
+                "blocking for thread \"%s\" to exit\n", 
                 nameBuf );
             fprintf ( stderr, 
                 "was epicsThread object destroyed before thread exit ?\n");

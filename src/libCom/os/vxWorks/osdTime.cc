@@ -15,9 +15,9 @@ void osiTime::synchronize()
 }
 
 //
-// osiTime::getCurrent ()
+// osiTime::osdGetCurrent ()
 //
-osiTime osiTime::getCurrent ()
+osiTime osiTime::osdGetCurrent ()
 {
 	ULONG	ticks;
 	ULONG	sec;

@@ -601,12 +601,10 @@ int cac::pendEvent ( const double &timeout )
             else if ( timeout >= CAC_SIGNIFICANT_DELAY ) {
                 epicsThreadSleep ( timeout );
             }
-            else {
+            while ( this->recvProcessPending ) {
                 // give up the processor while 
                 // there is recv processing to be done
-                while ( this->recvProcessPending ) {
-                    epicsThreadSleep ( CAC_SIGNIFICANT_DELAY );
-                }
+                epicsThreadSleep ( 0.1 );
             }
         }
 

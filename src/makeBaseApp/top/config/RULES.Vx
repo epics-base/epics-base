@@ -10,5 +10,5 @@ inc:: $(INSTALL_INCREC)
 
 
 # Library should be rebuilt because LIBOBJS may have changed.
-$(LIBNAME): ../Makefile
+$(LIBNAME): ../Makefile.Vx
 

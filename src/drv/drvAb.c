@@ -465,6 +465,9 @@ unsigned short	ab_btq_cnt[AB_MAX_LINKS][AB_MAX_ADAPTERS][AB_MAX_CARDS];
 #ifndef EPICS_V2
 #include <dbScan.h>
 static IOSCANPVT ioscanpvt[AB_MAX_LINKS][AB_MAX_ADAPTERS][AB_MAX_CARDS];
+#else
+extern short	wakeup_init;	/* flags that the database scan initialization is complete */
+#define interruptAccept wakeup_init
 #endif
 
 /*
@@ -1122,7 +1125,6 @@ abDoneTask(){
  *
  * simulate a change of state interrupt from the Allen-Bradley
  */
-extern short	wakeup_init;	/* flags that the database scan initialization is complete */
 unsigned char		ab_old_binary_ins[AB_MAX_LINKS*AB_MAX_ADAPTERS*AB_MAX_CARDS];
 ab_bi_cos_simulator()
 {
@@ -1136,7 +1138,7 @@ ab_bi_cos_simulator()
 	first_scan_complete = first_scan = 0;
 	for(;;){
 		/* flag first scan */
-		if (wakeup_init && !first_scan_complete) first_scan = 1;
+		if (interruptAccept && !first_scan_complete) first_scan = 1;
 
 		/* check each link */
 		link = 0;

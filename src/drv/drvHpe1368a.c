@@ -31,6 +31,7 @@
  *      -----------------
  *	.01 071792 joh	Added model name registration
  *	.02 081992 joh	vxiUniqueDriverID -> epvxiUniqueDriverID	
+ *	.03 082692 mrk	Added support for new I/O event scanning
  *
  */
 
@@ -46,6 +47,9 @@
 #include <task_params.h>
 #include <fast_lock.h>
 #include <epvxiLib.h>
+#ifndef EPICS_V2
+#include <dbScan.h>
+#endif
 
 
 #define VXI_MODEL_HPE1368A 	(0xf28)
@@ -63,6 +67,9 @@ struct hpe1368a_config{
 	unsigned short	pending;	/* switch position pending int */
 	unsigned short	shadow;		/* shadow of actual switch pos */
 	int		busy;		/* relays active */
+#ifndef EPICS_V2
+        IOSCANPVT ioscanpvt;
+#endif
 };
 
 #define HPE1368A_INT_LEVEL	1	
@@ -152,6 +159,9 @@ unsigned la;
 	ChannelEnable(pcsr) = ALL_SWITCHES_OPEN;
 
 	FASTLOCKINIT(&pc->lock);
+#ifndef EPICS_V2
+        scanIoInit(&pc->ioscanpvt);
+#endif
 
         r0 = intConnect(
 		(unsigned char) INUM_TO_IVEC(la),
@@ -209,7 +219,11 @@ unsigned	la;
 	/*
 	 * tell them that the switches have settled
 	 */
+#ifdef EPICS_V2
 	io_scanner_wakeup(IO_BI, HPE1368A_BI, la);
+#else
+        scanIoRequest(pc->ioscanpvt);
+#endif
 }
 
 
@@ -242,6 +256,21 @@ int		level;
 	}
 }
 
+
+
+
+#ifndef EPICS_V2
+hpe1368a_getioscanpvt(la,scanpvt)
+unsigned short la;
+IOSCANPVT *scanpvt;
+{
+        struct hpe1368a_config	*pc;
+
+        pc = HPE1368A_PCONFIG(la);
+        if(pc != NULL) *scanpvt = pc->ioscanpvt;
+	return(0);
+}
+#endif
 
 
 /*

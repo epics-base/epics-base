@@ -83,6 +83,7 @@
  * JH 08/03/92 	moved interrupt vector base to module_types.h	
  * JH 08/05/92	dvx driver init is called from drvDvx now	
  * JH 08/10/92	merged dvx private include file into this source
+ * MRK 08/26/92 Added support for new I/O event scanning
  */
 
 static char *SccsId = "$Id$\t$Date$";
@@ -93,6 +94,9 @@ static char *SccsId = "$Id$\t$Date$";
 #include	<dbDefs.h>
 #include	<drvSup.h>
 #include	<module_types.h>
+#ifndef EPICS_V2
+#include <dbScan.h>
+#endif
 
 /* general constants */
 #define DVX_ID		0xCFF5		/* analogic ID code */
@@ -167,6 +171,9 @@ struct dvx_rec
 	 int int_vector;		/* interrupt vector */
 	 int intcnt;			/* interrupt count # */
 	 int cnum;			/* card number */
+#ifndef EPICS_V2
+        IOSCANPVT ioscanpvt;
+#endif
 	};
 
 /* dma chain table size */
@@ -294,7 +301,11 @@ dvx_int(dvxptr)
   cptr->dma_point = DMA_CSR;
   cptr->dma_data = CMR_SC | M_CIE | M_CH2;	/* enable int channel #2 */
   cptr->dma_data = CMR_START | M_CH2;		/* start channel #2 */
+#ifdef EPICS_V2
   io_scanner_wakeup(IO_AI,DVX2502,dvxptr->cnum);	 /*update database records */
+#else
+  scanIoRequest(dvxptr->ioscanpvt);
+#endif
   break;
  }
  cptr->csr = dvxptr->csr_shadow;
@@ -405,6 +416,9 @@ long dvx_driver_init()
      dvx[i].csr_shadow |= CSR_M_ESTART;	/* enable ext start (shadow csr) */
      ptr->csr = dvx[i].csr_shadow;	/* enable external start */
      dvx[i].mode = RUN_MODE;		/* ready to aquire data */
+#ifndef EPICS_V2
+        scanIoInit(&dvx[i].ioscanpvt);
+#endif
      }
     else
      dvx[i].pdvx2502 = 0;
@@ -571,7 +585,20 @@ dvx_dump(card,firstchan,lastchan)
   }
  printf("end of list\n");
 }
-
+
+#ifndef EPICS_V2
+dvx_getioscanpvt(card,scanpvt)
+short	card;
+IOSCANPVT *scanpvt;
+{
+ if ((card >= ai_num_cards[DVX2502]) || (card < 0))	/* make sure hardware exists */
+  return(0);
+ else if (dvx[card].pdvx2502 == 0)
+  return(0);
+ *scanpvt = dvx[card].ioscanpvt;
+ return(0);
+}
+#endif
 
 /*
  *

@@ -37,6 +37,7 @@
  * .04  08-11-92	joh	now allows for runtime reconfiguration of
  *				the addr map
  * .05	08-25-92        mrk     added DSET; made masks a macro
+ * .06	08-26-92        mrk     support epics I/O event scan
  */
 
 #include "vxWorks.h"
@@ -44,6 +45,15 @@
 #include "vme.h"
 #include "module_types.h"
 #include <drvSup.h>
+#ifndef EPICS_V2
+#include <dbDefs.h>
+#include <dbScan.h>
+#else
+extern short    wakeup_init;    /* flags that the database scan initialization i
+s complete */
+#define interruptAccept wakeup_init
+#endif
+
 
 static long report();
 static long init();
@@ -98,6 +108,9 @@ struct dio_rec
         short mode;                             /*operating mode*/
         unsigned short sport0_1;                /*saved inputs*/
         unsigned short sport2_3;                /*saved inputs*/
+#ifndef EPICS_V2
+	IOSCANPVT ioscanpvt;
+#endif
         /*short dio_vec;*/                      /*interrupt vector*/
         /*unsigned int intr_num;*/              /*interrupt count*/
         };
@@ -129,7 +142,6 @@ dio_int(ptr)
  *task to check for change of state
  *
  */
- extern int	wakeup_init;
 dio_scan()
  
 {	
@@ -139,7 +151,7 @@ dio_scan()
  first_scan = first_scan_complete = 0;
  for (;;) 
  {
-   if (wakeup_init & !first_scan_complete) first_scan = 1;
+   if (interruptAccept & !first_scan_complete) first_scan = 1;
 
    for (i = 0; i < XY240_MAX_CARDS; i++)
     {
@@ -149,7 +161,11 @@ dio_scan()
 		|| first_scan)
       {
 	 /* printf("io_scanner_wakeup for card no %d\n",i); */
+#ifdef EPICS_V2
 	  io_scanner_wakeup(IO_BI,XY240_BI,i);	  
+#else
+	  scanIoRequest(dio[i].ioscanpvt);
+#endif
 	  dio[i].sport0_1 = dio[i].dptr->port0_1;
 	  dio[i].sport2_3 = dio[i].dptr->port2_3;	  
 	  }
@@ -203,6 +219,9 @@ register initialization
 		pdio_xy240->flg_dir = 0xf0;					/*ports 0-3,input;ports 4-7,output*/
 		dio[i].sport2_3 = pdio_xy240->port2_3;		/*read and save high values*/
                 dio[i].dptr = pdio_xy240;
+#ifndef EPICS_V2
+		scanIoInit(&dio[i].ioscanpvt);
+#endif
 							
 		}
 	else{
@@ -220,6 +239,17 @@ register initialization
   return(0);
 } 	
 
+#ifndef EPICS_V2
+xy240_bi_getioscanpvt(card,scanpvt)
+unsigned short card;
+IOSCANPVT *scanpvt;
+{
+	if ((card >= XY240_MAX_CARDS) || (!dio[card].dptr)) return(0);
+	*scanpvt = dio[card].ioscanpvt;
+	return(0);
+}
+#endif
+
 /*
  * XY240_BI_DRIVER
  *

@@ -1,3 +1,5 @@
+/* drvKscV215.c*/
+/* share/src/drv @(#) $Id$ */
 /*
  *      KscV215_driver.c
  *
@@ -31,6 +33,7 @@
  *      -----------------
  *	.01 071792 joh	Added model name registration
  *	.02 081992 joh	vxiUniqueDriverID -> epvxiUniqueDriverID	
+ *	.03 082692 mrk	Added support for new I/O event scanning
  *
  */
 
@@ -46,6 +49,9 @@
 #include <task_params.h>
 #include <fast_lock.h>
 #include <epvxiLib.h>
+#ifndef EPICS_V2
+#include <dbScan.h>
+#endif
 
 #define VXI_MODEL_KSCV215 	(0x215)
 
@@ -61,6 +67,9 @@ epvxiPConfig((LA), KscV215DriverId, struct KscV215_config *)
 
 struct KscV215_config{
 	FAST_LOCK	lock;		/* mutual exclusion */
+#ifndef EPICS_V2
+        IOSCANPVT ioscanpvt;
+#endif
 };
 
 #define KSCV215_INT_LEVEL	1	
@@ -216,6 +225,9 @@ unsigned la;
 	}
 
 	FASTLOCKINIT(&pc->lock);
+#ifndef EPICS_V2
+        scanIoInit(&pc->ioscanpvt);
+#endif
 
 #ifdef INTERRUPTS
         status = intConnect(
@@ -304,7 +316,11 @@ unsigned	la;
 	/*
 	 * tell them that the switches have settled
 	 */
+#ifdef EPICS_V2
 	io_scanner_wakeup(IO_AI, KSCV215_BI, la);
+#else
+        scanIoRequest(pc->ioscanpvt);
+#endif
 }
 #endif
 
@@ -419,3 +435,16 @@ register unsigned short *prval;
 	
 	return ERROR;
 }
+
+#ifndef EPICS_V2
+KscV215_at5vxi_getioscanpvt(la,scanpvt)
+unsigned short	la;
+IOSCANPVT *scanpvt;
+{
+        struct KscV215_config	*pc;
+
+        pc = KSCV215_PCONFIG(la);
+        if(pc != NULL) *scanpvt = pc->ioscanpvt;
+	return(0);
+}
+#endif

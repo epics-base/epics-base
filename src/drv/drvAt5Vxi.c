@@ -1,4 +1,4 @@
-/* at5vxi_driver.c */
+/* drvVxiAt5.c */
 /* share/src/drv @(#) $Id$ */
 
 /*
@@ -54,6 +54,7 @@
  *	.15 joh 072992	print more raw values in io report
  *	.16 joh 081092	merged at5vxi_models.h into this source
  *	.17 joh 081992	function name change	
+ *	.17 mrk	082692	Added support for new I/O event scanning
  *
  *	Notes:
  *	------
@@ -111,6 +112,9 @@
 #include <task_params.h>
 #include <fast_lock.h>
 #include <epvxiLib.h>
+#ifndef EPICS_V2
+#include <dbScan.h>
+#endif
 
 static char SccsId[] = "$Id$\t$Date$";
 
@@ -341,6 +345,9 @@ struct at5vxi_config{
 	char			mdt;		/* modified data tag	*/
 	struct vxi_csr		*pcsr;		/* vxi device hdr ptr 	*/
 	struct at5vxi_dd	*pdd;		/* at5 device dep ptr	*/
+#ifndef EPICS_V2
+	IOSCANPVT ioscanpvt;
+#endif
 };
 
 LOCAL unsigned long at5vxiDriverID;
@@ -515,6 +522,9 @@ unsigned addr;
 	pc->pdd = (struct at5vxi_dd *) &pc->pcsr->dir.r.dd;
 
 	FASTLOCKINIT(&pc->lock);
+#ifndef EPICS_V2
+	scanIoInit(&pc->ioscanpvt);
+#endif
 
 	/*
 	 * revert to power up control 
@@ -679,8 +689,12 @@ int addr;
 	 * wake up the I/O event scanner
 	 */
 	{
+#ifdef EPICS_V2
 		io_scanner_wakeup(IO_AI, VXI_AT5_AI, addr);
 		io_scanner_wakeup(IO_BI, VXI_AT5_BI, addr);
+#else
+		scanIoRequest(pconfig->ioscanpvt);
+#endif
 	}
 
 	/*
@@ -1282,7 +1296,19 @@ register unsigned long	*prval;
 
 	return OK;
 }
+
+#ifndef EPICS_V2
+at5vxi_getioscanpvt(card,scanpvt)
+unsigned short card;
+IOSCANPVT *scanpvt;
+{
+	register struct at5vxi_config 	*pconfig;
 
+	pconfig = AT5VXI_PCONFIG(card);
+	if(pconfig) *scanpvt = pconfig->ioscanpvt;
+	return(0);
+}
+#endif
 
 /*
  *

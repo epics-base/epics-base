@@ -76,7 +76,7 @@ OS_CLASS = RTEMS
 # Operating system flags
 OP_SYS_CPPFLAGS = -Dfopen=rtems_fopen -Dmain=rtems_main
 OP_SYS_LDLIBS = -lreadline -lcurses -lm
-OP_SYS_LDFLAGS = $(CPU_CFLAGS) -u Init -lCom \
+OP_SYS_LDFLAGS = $(CPU_CFLAGS) -u Init \
                  $(PROJECT_RELEASE)/lib/no-dpmem.rel \
                  $(PROJECT_RELEASE)/lib/no-mp.rel \
                  $(PROJECT_RELEASE)/lib/no-part.rel \

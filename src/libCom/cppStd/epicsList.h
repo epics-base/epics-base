@@ -7,7 +7,6 @@
 
 #include "epicsListBase.h"
 #include "epicsExcept.h"
-#include "epicsCppStd.h"
 #include <stdexcept>
 
 // epicsList
@@ -200,28 +199,28 @@ inline epicsList<T>::size_type epicsList<T>::size() const {
 template <class T>
 inline T epicsList<T>::front() {
     if (empty())
-	throw STD_ logic_error("epicsList::front: list empty");
+	throw std::logic_error("epicsList::front: list empty");
     return static_cast<T>(_head.next()->payload);
 }
 
 template <class T>
 inline const T epicsList<T>::front() const {
     if (empty())
-	throw STD_ logic_error("epicsList::front: list empty");
+	throw std::logic_error("epicsList::front: list empty");
     return static_cast<const T>(_head.next()->payload);
 }
 
 template <class T>
 inline T epicsList<T>::back() {
     if (empty())
-	throw STD_ logic_error("epicsList::back: list empty");
+	throw std::logic_error("epicsList::back: list empty");
     return static_cast<T>(_head.prev()->payload);
 }
 
 template <class T>
 inline const T epicsList<T>::back() const {
     if (empty())
-	throw STD_ logic_error("epicsList::back: list empty");
+	throw std::logic_error("epicsList::back: list empty");
     return static_cast<const T>(_head.prev()->payload);
 }
 
@@ -236,7 +235,7 @@ inline void epicsList<T>::push_front(const T x) {
 template <class T>
 inline void epicsList<T>::pop_front() {
     if (empty())
-	throw STD_ logic_error("epicsList::pop_front: list empty");
+	throw std::logic_error("epicsList::pop_front: list empty");
     epicsListNode* node = _head.next();
     node->unlink();
     _count--;
@@ -254,7 +253,7 @@ inline void epicsList<T>::push_back(const T x) {
 template <class T>
 inline void epicsList<T>::pop_back() {
     if (empty())
-	throw STD_ logic_error("epicsList::pop_back: list empty");
+	throw std::logic_error("epicsList::pop_back: list empty");
     epicsListNode* node = _head.prev();
     node->unlink();
     _count--;

@@ -5,10 +5,6 @@
 #ifndef __EPICS_EXCEPT_H__
 #define __EPICS_EXCEPT_H__
 
-// Don't use epicsThrow, it's no longer needed and will disappear soon
-#define epicsThrow(exc, msg) \
-    throw exc(msg)
-
 #define epicsThrowHere(exc, msg) \
     throw locationException<exc>(msg, __FILE__, __LINE__)
 
@@ -33,7 +29,7 @@ public:
 
 
 /* Examples:
- *	if (status) epicsThrowHere(STD_ logic_error, "failed!");
+ *	if (status) epicsThrowHere(std::logic_error, "failed!");
  *	try { ... } catch(sourceLocation& where) { ... }
  */
 

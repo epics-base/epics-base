@@ -11,4 +11,4 @@ CROSS_COMPILER_TARGET_ARCHS=
 VX_DIR = D:/tornado
 #INSTALL_LOCATION = G:\\testBaseNew
 
-BORLAND = c:/Borland/Bcc55
+BORLAND = c:\\Borland\\Bcc55

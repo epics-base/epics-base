@@ -17,5 +17,36 @@
 occur on pentium vxWorks iocs. See ansiTime in the vxWorks reference manual
 for details about TIMEZONE.</p>
 
+<h2>GNU make version</h2>
+
+<p>GNU make version 3.78.1 or later is required for builds. The README.html
+file specifies version 3.70 but this version does not support the call function.
+
+
+<h2>Borland build</h2>
+
+<p>The borland-x86 build of base fails in src/ca because the Borland compiler v5.5
+does not support C++ placement delete. A fix is to add the following code after the
+#include lines in ca/netIO.h and ca/syncGroup.h. </p>
+
+<blockquote>
+// does the local compiler support placement delete <br>
+#if defined (_MSC_VER)  <br>
+#   if _MSC_VER >= 1200 <br>
+#       define NETIO_PLACEMENT_DELETE <br>
+#   endif <br>
+#elif defined ( __HP_aCC ) <br>
+#   if _HP_aCC > 033300 <br>
+#       define NETIO_PLACEMENT_DELETE <br>
+#   endif <br>
+#elif defined ( __BORLANDC__ ) <br>
+#   if __BORLANDC__ > 0x550 <br>
+#       define NETIO_PLACEMENT_DELETE <br>
+#   endif <br>
+#else <br>
+#   define NETIO_PLACEMENT_DELETE <br>
+#endif <br>
+</blockquote>
+
 </body>
 </html>

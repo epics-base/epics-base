@@ -8,13 +8,23 @@
 <body>
 
 <center>
-<h2>
-Converting an EPICS R3.14.0 beta1 application to beta2</h2></center>
+<h2> Converting an EPICS R3.14.0 beta1 application to beta2</h2></center>
 
 <p><br>This document describes how to convert a R3.14.0beta1 application
 so that it builds with release R3.14.0beta2.
-<h3>
-No changes necessary</h3>
 
-</body>
+<h3>Update Unix  LD_LIBRARY_PATH</h3>
+
+If you build EPICS base shared libraries instead of archive
+libraries on Unix systems you will need to update your
+LD_LIBRARY_PATH environment variable to include fullpathname
+to the NEW base $(INSTALL_LOCATION)/lib/$(EPICS_HOST_ARCH).
+
+<h3>Update Win32 PATH</h3>
+
+On WIN32 systems, building shared libraries is the default
+setting so, unless SHARED_LIBRARIES was changed to NO, you will
+need to update your path to include fullpathname to the NEW
+base $(INSTALL_LOCATION)/bin/$(EPICS_HOST_ARCH).
+
 </html>

@@ -3,13 +3,9 @@
 // Author: Jeff Hill
 // This file implements a IO blocked list NOOP for multi-threaded systems
 //
-// $Log$
-// Revision 1.1  1996/11/02 01:01:24  jhill
-// installed
-//
-//
 
 #include <stdio.h>
+
 #include "casdef.h"
 
 
@@ -29,11 +25,17 @@ ioBlocked::~ioBlocked()
 }
 
 //
-// ioBlocked::ioBlockedSignal()
+// ioBlocked::ioBlockedSignal ()
 //
-void ioBlocked::ioBlockedSignal()
+void ioBlocked::ioBlockedSignal ()
 {
-	printf("in virtual base ioBlocked::ioBlockedSignal() ?\n");
+    //
+    // this must _not_ be pure virtual because
+    // there are situations where this is called
+    // inbetween the derived class's and this base 
+    // class's destructors, and therefore a
+    // NOOP is required
+    //
 }
 
 //
@@ -59,14 +61,6 @@ void ioBlockedList::signal()
 {
 }
 
-//
-// ioBlockedList::removeItemFromIOBLockedList()
-// (NOOP on MT system)
-//
-void ioBlockedList::removeItemFromIOBLockedList(ioBlocked &)
-{
-}
- 
 //
 // ioBlockedList::addItemToIOBLockedList()
 // (NOOP on MT system)

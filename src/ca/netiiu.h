@@ -53,11 +53,11 @@ public:
     virtual bool flushBlockThreshold ( epicsGuard < cacMutex > & ) const = 0;
     virtual void flushRequestIfAboveEarlyThreshold ( epicsGuard < cacMutex > & ) = 0;
     virtual void blockUntilSendBacklogIsReasonable 
-        ( epicsGuard < callbackMutex > *, epicsGuard < cacMutex > & ) = 0;
+        ( cacNotify &, epicsGuard < cacMutex > & ) = 0;
     virtual void requestRecvProcessPostponedFlush () = 0;
     virtual osiSockAddr getNetworkAddress () const = 0;
-    virtual void uninstallChannel ( epicsGuard < callbackMutex > &,
-        epicsGuard < cacMutex > &, nciu & ) = 0;
+    virtual class tcpiiu * uninstallChanAndReturnDestroyPtr 
+                        ( epicsGuard < cacMutex > &, nciu & ) = 0;
 };
 
 class limboiiu : public netiiu { // X aCC 655
@@ -83,11 +83,11 @@ private:
     bool flushBlockThreshold ( epicsGuard < cacMutex > & ) const;
     void flushRequestIfAboveEarlyThreshold ( epicsGuard < cacMutex > & );
     void blockUntilSendBacklogIsReasonable 
-        ( epicsGuard < callbackMutex > *, epicsGuard < cacMutex > & );
+        ( cacNotify &, epicsGuard < cacMutex > & );
     void requestRecvProcessPostponedFlush ();
     osiSockAddr getNetworkAddress () const;
-    void uninstallChannel ( epicsGuard < callbackMutex > &,
-        epicsGuard < cacMutex > &, nciu & );
+    class tcpiiu * uninstallChanAndReturnDestroyPtr 
+                    ( epicsGuard < cacMutex > &, nciu & );
 	limboiiu ( const limboiiu & );
 	limboiiu & operator = ( const limboiiu & );
 };

@@ -17,4 +17,17 @@ LIBOBJS = \
 
 LIBNAME = dbgLib
 
+LIBNAME1 = rsrvLib
+
+build_libs: $(OBDIR)/$(LIBNAME) $(OBDIR)/$(LIBNAME1)
+
+$(OBDIR)/$(LIBNAME1): $(LIBOBJS) $(OBDIR)/globalsource.o
+	$(RM) $@
+	$(LINK.c) $@ $?
+
+install: $(EPICS_BASE_LIB)/$(T_A)/$(LIBNAME1)
+
+$(EPICS_BASE_LIB)/$(T_A)/$(LIBNAME1): $(OBDIR)/$(LIBNAME1)
+	$(INSTALL) $? $@
+
 include $(EPICS)/config/RULES.Vx

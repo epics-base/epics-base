@@ -174,6 +174,12 @@ SRCS += taskwd.c
 SRC_DIRS += $(LIBCOM)/timer
 INC += osiTimer.h
 SRCS += osiTimer.cpp
+INC += epicsTimer.h
+SRCS += epicsTimer.cpp
+SRCS += timer.cpp
+SRCS += timerQueue.cpp
+SRCS += timerQueueThreaded.cpp
+SRCS += timerQueueThreadedMgr.cpp
 
 #tsDefs contains R3.13 compatibility tsStamp code
 SRC_DIRS += $(LIBCOM)/tsDefs

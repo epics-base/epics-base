@@ -251,7 +251,7 @@ inline void gdd::set(aitEnum t,const void* v,aitDataFormat)
 		aitConvertFromNet(primitiveType(),dataVoid(),t,v,1);
 	else
 #endif
-		aitConvert(primitiveType(),dataVoid(),t,v,1);
+	aitConvert(primitiveType(),dataVoid(),t,v,1);
 
 	markLocalDataFormat();
 }

@@ -35,16 +35,16 @@
  */
 #define CONFIGURE_RTEMS_INIT_TASKS_TABLE
 
-#define CONFIGURE_EXECUTIVE_RAM_SIZE        (700*1024)
-#define CONFIGURE_MAXIMUM_TASKS                80
-#define CONFIGURE_MAXIMUM_SEMAPHORES        220
-#define CONFIGURE_MAXIMUM_TIMERS            50
-#define CONFIGURE_MAXIMUM_MESSAGE_QUEUES    30
+#define CONFIGURE_EXECUTIVE_RAM_SIZE        (2048*1024)
+#define CONFIGURE_MAXIMUM_TASKS             rtems_resource_unlimited(30)
+#define CONFIGURE_MAXIMUM_SEMAPHORES        rtems_resource_unlimited(500)
+#define CONFIGURE_MAXIMUM_TIMERS            rtems_resource_unlimited(20)
+#define CONFIGURE_MAXIMUM_MESSAGE_QUEUES    rtems_resource_unlimited(5)
 
 #define CONFIGURE_MICROSECONDS_PER_TICK     20000
 
 #define CONFIGURE_INIT_TASK_PRIORITY    220
-#define NETWORK_TASK_PRIORITY           120
+#define NETWORK_TASK_PRIORITY            90
 
 #define CONFIGURE_INIT
 #define CONFIGURE_INIT_TASK_INITIAL_MODES (RTEMS_PREEMPT | \
@@ -84,8 +84,8 @@ struct rtems_bsdnet_config rtems_bsdnet_config = {
     &netdriver_config,        /* Network interface */
     rtems_bsdnet_do_bootp,    /* Use BOOTP to get network configuration */
     NETWORK_TASK_PRIORITY,    /* Network task priority */
-    150*1024,                 /* MBUF space */
-    300*1024,                 /* MBUF cluster space */
+    180*1024,                 /* MBUF space */
+    350*1024,                 /* MBUF cluster space */
 };
 
 /*
@@ -211,7 +211,7 @@ rtems_netstat (unsigned int level)
 }
 
 static void 
-rtems_semstat (void)
+rtems_semstat (int level)
 {
     Semaphore_Control *sem;
     int i;
@@ -221,32 +221,37 @@ rtems_semstat (void)
     for (i = 0 ; i < _Semaphore_Information.maximum ; i++) {
         sem =  (Semaphore_Control *)_Semaphore_Information.local_table[i];
         if (sem) {
-            char *cp = sem->Object.name;
-            char cbuf[4];
-            int j;
-
-            for (j = 0 ; j < 4 ; j++) {
-                unsigned char c = cp[j];
-                if (isprint (c))
-                    cbuf[j] = c;
-                else
-                    cbuf[j] = ' ';
+            if (level == 0) {
+                n++;
             }
-            printf ("%4.4s%9x%5x%5d", cbuf, sem->Object.id,
-                                sem->attribute_set,
-                                sem->attribute_set & RTEMS_BINARY_SEMAPHORE ?
-                                    sem->Core_control.mutex.lock :
-                                    sem->Core_control.semaphore.count);
-            n++;
-            if ((n % 3) == 0)
-                printf ("\n");
-            else
-                printf ("   ");
+            else {
+                char *cp = sem->Object.name;
+                char cbuf[4];
+                int j;
+    
+                for (j = 0 ; j < 4 ; j++) {
+                    unsigned char c = cp[j];
+                    if (isprint (c))
+                        cbuf[j] = c;
+                    else
+                        cbuf[j] = ' ';
+                }
+                printf ("%4.4s%9x%5x%5d", cbuf, sem->Object.id,
+                                    sem->attribute_set,
+                                    sem->attribute_set & RTEMS_BINARY_SEMAPHORE ?
+                                        sem->Core_control.mutex.lock :
+                                        sem->Core_control.semaphore.count);
+                n++;
+                if ((n % 3) == 0)
+                    printf ("\n");
+                else
+                    printf ("   ");
+            }
         }
     }
-    if ((n % 3) != 0)
+    if (level && ((n % 3) != 0))
         printf ("\n");
-    printf ("%d/%d\n", n, _Semaphore_Information.maximum);
+    printf ("%d of %d semaphores used.\n", n, _Semaphore_Information.maximum);
 }
 
 static ioccrfArg netStatArg0 = { "level",ioccrfArgInt,0};
@@ -256,10 +261,12 @@ static void netStatCallFunc(ioccrfArg **args)
 {
     rtems_netstat(*(int *)args[0]->value);
 }
-static ioccrfFuncDef semStatFuncDef = {"semstat",0,NULL};
+static ioccrfArg semStatArg0 = { "level",ioccrfArgInt,0};
+static ioccrfArg *semStatArgs[1] = {&semStatArg0};
+static ioccrfFuncDef semStatFuncDef = {"semstat",1,semStatArgs};
 static void semStatCallFunc(ioccrfArg **args)
 {
-    rtems_semstat();
+    rtems_semstat(*(int *)args[0]->value);
 }
 static void ioccrfRegisterRTEMS (void)
 {

@@ -297,8 +297,6 @@ long dbProcess(struct dbCommon *precord)
 	static char 	trace=0;
 	static int	trace_lset=0;
 	int		set_trace=FALSE;
-	long		options=0;
-	long		nRequest=1;
 
         /*
          *  Note that it is likely that if any changes are made
@@ -377,7 +375,7 @@ long dbProcess(struct dbCommon *precord)
 		/*take care of caching and notifyCompletion*/
 		precord->rpro = FALSE;
 		if (precord->ppn)
-                    dbNotifyCompletion(precord->ppn);
+                    dbNotifyCompletion(precord);
 
 		/* raise disable alarm */
 		if (precord->stat==DISABLE_ALARM)

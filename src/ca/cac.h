@@ -220,6 +220,7 @@ private:
     chronIntIdResTable < CASG > sgTable;
     resTable < bhe, inetAddrID > beaconTable;
     resTable < tcpiiu, caServerID > serverTable;
+    tsDLList < tcpiiu > serverList;
     tsFreeList 
         < class netReadNotifyIO, 1024, epicsMutexNOOP > 
             freeListReadNotifyIO;

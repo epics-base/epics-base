@@ -79,9 +79,9 @@ COMMONS = $(DBD) $(DB)
 
 all:    install
 
-buildInstall : build
-
 install: buildInstall
+
+buildInstall : build
 
 rebuild: clean install
 

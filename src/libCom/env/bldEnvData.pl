@@ -106,7 +106,6 @@ print OUT " */\n";
 print OUT "\n";
 print OUT "#define epicsExportSharedSymbols\n";
 print OUT "#include \"envDefs.h\"\n";
-print OUT "#include \"shareLib.h\"\n";
 print OUT "\n";
 
 

@@ -1,4 +1,3 @@
-#define DEBUG
 /*
  * routines for the VXI device support and resource management
  *
@@ -144,7 +143,6 @@ static char *sccsId = "$Id$\t$Date$";
 #include <epvxiLib.h>
 
 #define NICPU030
-#define LOCAL
 
 /*
  * EPICS driver entry point table

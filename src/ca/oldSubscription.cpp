@@ -31,7 +31,7 @@ void oldSubscription::current (
     args.count = count;
     args.status = ECA_NORMAL;
     args.dbr = pData;
-    ( *this->pFunc ) (args);
+    ( *this->pFunc ) ( args );
 }
     
 void oldSubscription::exception (

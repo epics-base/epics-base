@@ -18,7 +18,9 @@
 #include "epicsSignal.h"
 #include "errlog.h"
 
+extern "C" {
 typedef void ( *pSigFunc ) ( int );
+}
 
 static pSigFunc pReplacedSigPipeFunc = 0;
 static pSigFunc pReplacedSigUrgFunc = 0;
@@ -62,11 +64,13 @@ static void localInstallSigHandler ( int signalIn, pSigFunc pNewFunc,
  *
  * install NOOP SIGPIPE handler
  */
+extern "C" {
 static void ignoreSigPipe ( int signal )
 {
     if ( pReplacedSigPipeFunc ) {
         ( *pReplacedSigPipeFunc ) ( signal );
     }
+}
 }
 
 /*
@@ -74,11 +78,13 @@ static void ignoreSigPipe ( int signal )
  *
  * install NOOP SIGURG handler
  */
+extern "C" {
 static void ignoreSigUrg ( int signal )
 {
     if ( pReplacedSigUrgFunc ) {
         ( *pReplacedSigUrgFunc ) ( signal );
     }
+}
 }
 
 /*

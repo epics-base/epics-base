@@ -104,14 +104,15 @@ public:
     directoryServer ( const char * const pvPrefix, unsigned aliasCount );
     ~directoryServer();
     void show ( unsigned level ) const;
-    pvExistReturn pvExistTest ( const casCtx&, 
-        const caNetAddr &, const char *pPVName );
 
     void installAliasName ( const pvInfo &info, const char *pAliasName );
-    inline void removeAliasName ( pvEntry &entry );
+    void removeAliasName ( pvEntry &entry );
 
 private:
     resTable < pvEntry, stringId > stringResTbl;
+
+    pvExistReturn pvExistTest ( const casCtx&, 
+        const caNetAddr &, const char *pPVName );
 };
 
 

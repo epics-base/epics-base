@@ -34,10 +34,11 @@
 #	win32-x86              (MS Visual C++ compiler used for host builds)
 #	win32-x86-borland      (Borland C++ compiler used for host builds)
 #	lynxos-x86
-#
+#	darwin-ppc
+#	linux-mpc82xx
+
 #  EPICS_HOST_ARCH is an environment variable
 #  EPICS_HOST_ARCH=$(shell /usr/local/epics/startup/EpicsHostArch)
-
 
 #  The cross-compiler architectures to build EPICS for
 #

@@ -326,7 +326,6 @@ caStatus casDGClient::searchResponse ( const caHdrLargeArray & msg,
         sizeof ( *pMinorVersion ), serverPort, 0, 
         serverAddr, msg.m_available, 
         reinterpret_cast <void **> ( &pMinorVersion ) );
-
     //
     // Starting with CA V4.1 the minor version number
     // is appended to the end of each search reply.

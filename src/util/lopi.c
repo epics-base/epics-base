@@ -30,7 +30,10 @@
  * .02	07-03-91	rac	changed to use "lopi" rather than "bw"
  * .02	08-14-91	 bg	Added error message for no file available
                                 for a display. 
- * .03	mm-dd-yy	iii	Comment
+ * .03	08-26-91	 bg	Fixed cursor so it will not try to move
+                                with arrow keys if a screen has no controls.
+ * .04	09-12-91	 bg	Added semDelete for both keyboard and monitor
+                                semaphores.
  * 	...
  */
 
@@ -331,6 +334,8 @@ static VOID lopi_init(screen,que_num,pdata_flg,k_buff,val_in)
     semGive(mon_sem);
     taskDelay(100);
     free_mem(wind_array,d_menu,n_lines);  
+    semDelete(mon_sem);
+    semDelete(key_sem);
     close(lopi_fd); 
    
    }  /* End lopi. */
@@ -1552,9 +1557,9 @@ static display_file(disp_array,selected,screen_up,data_num,pdata_flg,k_buff,val_
            init = ON;
            if ((m_ptr != NULL) || (c_ptr != NULL))
              {
-              semTake(mon_sem);
+              semTake(mon_sem); 
               display_monitors(disp_array,selected,screen_up,pdata_flg,&init,&cur_mv,except_ptr);
-              semGive(mon_sem);
+              semGive(mon_sem); 
              }
            init = OFF;
     
@@ -1600,48 +1605,54 @@ static display_file(disp_array,selected,screen_up,data_num,pdata_flg,k_buff,val_
                put_value(c_ptr,val_in); 
                break;
              case U_ARROW:
-               if ( (c_ptr!= NULL) && (c_ptr->prev->l_crn_row != LIST_END))
-                 { 
-                  c_ptr = c_ptr->prev;
-                  krow = c_ptr->l_crn_row;
-                  kcol = c_ptr->l_crn_col;
-                  mv_cursor(&krow,&kcol,NO_CMD);
-                 }
-               else
+               if (c_ptr != NULL)
                  {
-                  c_ptr = c_ptr->prev->prev;
-                  krow = c_ptr->l_crn_row;
-                  kcol = c_ptr->l_crn_col;
-                  mv_cursor(&krow,&kcol,NO_CMD);
+                  if (c_ptr->prev->l_crn_row != LIST_END)
+                   { 
+                    c_ptr = c_ptr->prev;
+                    krow = c_ptr->l_crn_row;
+                    kcol = c_ptr->l_crn_col;
+                    mv_cursor(&krow,&kcol,NO_CMD);
+                   }
+                  else
+                   {
+                    c_ptr = c_ptr->prev->prev;
+                    krow = c_ptr->l_crn_row;
+                    kcol = c_ptr->l_crn_col;
+                    mv_cursor(&krow,&kcol,NO_CMD);
+                   }
+                  w_ptr++;
+                  semTake(key_sem);
+                  (*data_num)--;
+                  if ((*w_ptr) == NULL)
+                     w_ptr = k_buff; 
+                  semGive(key_sem);
                  }
-               w_ptr++;
-               semTake(key_sem);
-               (*data_num)--;
-               if ((*w_ptr) == NULL)
-                  w_ptr = k_buff; 
-               semGive(key_sem);
                break;
              case D_ARROW:
-               if ((c_ptr != NULL)&&(c_ptr->next->l_crn_row != LIST_END))
-                 { 
-                  c_ptr = c_ptr->next;
-                  krow = c_ptr->l_crn_row;
-                  kcol = c_ptr->l_crn_col;
-                  mv_cursor(&krow,&kcol,NO_CMD);
-                 }
-               else
+               if (c_ptr != NULL)
                  {
-                  c_ptr = c_ptr->next->next;
-                  krow = c_ptr->l_crn_row;
-                  kcol = c_ptr->l_crn_col;
-                  mv_cursor(&krow,&kcol,NO_CMD);
+                  if (c_ptr->next->l_crn_row != LIST_END)
+                    { 
+                     c_ptr = c_ptr->next;
+                     krow = c_ptr->l_crn_row;
+                     kcol = c_ptr->l_crn_col;
+                     mv_cursor(&krow,&kcol,NO_CMD);
+                    }
+                  else
+                   {
+                    c_ptr = c_ptr->next->next;
+                    krow = c_ptr->l_crn_row;
+                    kcol = c_ptr->l_crn_col;
+                    mv_cursor(&krow,&kcol,NO_CMD);
+                   }
+                  semTake(key_sem);
+                  w_ptr++;
+                  (*data_num)--;
+                  if ((*w_ptr) == NULL)
+                    w_ptr = k_buff; 
+                  semGive(key_sem);
                  }
-               semTake(key_sem);
-               w_ptr++;
-               (*data_num)--;
-               if ((*w_ptr) == NULL)
-                  w_ptr = k_buff; 
-               semGive(key_sem);
                break;
              case RETURN:
                semTake(key_sem);
@@ -1663,9 +1674,9 @@ static display_file(disp_array,selected,screen_up,data_num,pdata_flg,k_buff,val_
     
       if (*pdata_flg)
         {
-         semTake(mon_sem);
+         semTake(mon_sem); 
          display_monitors(disp_array,selected,screen_up,pdata_flg,&init,&cur_mv,except_ptr); 
-         semGive(mon_sem);
+         semGive(mon_sem); 
          mv_cursor(&krow,&kcol,NO_CMD);
         } 
 
@@ -1739,6 +1750,7 @@ static VOID display_monitors(disp_array,m_select,screen,pdata_flg,init,cur_mv,ex
            ctl_ptr = ctl_ptr->next;
           }
         }
+
 
         while (mon_ptr != NULL)
           { 
@@ -1880,7 +1892,7 @@ static VOID display_monitors(disp_array,m_select,screen,pdata_flg,init,cur_mv,ex
             } /* End while ctl_ptr not equal to LIST END*/    
 
        } /* End if ctl_ptr != NULL etc. */
-    
+
          status = ca_flush_io(); 
          SEVCHK(status,NULL);
     
@@ -1898,7 +1910,6 @@ static VOID display_monitors(disp_array,m_select,screen,pdata_flg,init,cur_mv,ex
     else
        {
         mon_ptr =  disp_array[m_select]->m_head;
- 
         while (mon_ptr != NULL) 
           { 
            if ((mon_ptr->ev_ptr->data_flg) && (mon_ptr->conn_flg == CA_OP_CONN_UP))
@@ -1932,6 +1943,8 @@ static VOID display_monitors(disp_array,m_select,screen,pdata_flg,init,cur_mv,ex
              mon_ptr = mon_ptr->next;
     
           } 
+
+
 
         if ((ctl_ptr != NULL) && (disp_array[m_select]->c_head->next->l_crn_row != LIST_END))
           {

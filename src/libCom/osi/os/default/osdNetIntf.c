@@ -180,14 +180,6 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
             }
             pNewNode->addr.sa = pifreq->ifr_broadaddr;
             ifDepenDebugPrintf ( ( "found broadcast addr = %x\n", ntohl ( pNewNode->addr.ia.sin_addr.s_addr ) ) );
-            status = socket_ioctl (socket, SIOCGIFNETMASK, pifreq);
-            if ( status ) {
-                errlogPrintf ( "osiSockDiscoverBroadcastAddresses(): net intf \"%s\": net mask fetch fail\n", pifreq->ifr_name );
-                free ( pNewNode );
-                continue;
-            }
-            pNewNode->netMask.sa = pifreq->ifr_addr;
-            ifDepenDebugPrintf ( ( "found net mask = %x\n", ntohl ( pNewNode->netMask.ia.sin_addr.s_addr ) ) );
         }
 #if defined (IFF_POINTOPOINT)
         else if ( pifreq->ifr_flags & IFF_POINTOPOINT ) {
@@ -198,7 +190,6 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
                 continue;
             }
             pNewNode->addr.sa = pifreq->ifr_dstaddr;
-            memset ( &pNewNode->netMask, '\0', sizeof ( pNewNode->netMask ) );
         }
 #endif
         else {

@@ -227,13 +227,9 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
             pNewNode->addr.ia.sin_family = AF_INET;
             pNewNode->addr.ia.sin_addr.s_addr = result;
             pNewNode->addr.ia.sin_port = 0u;
-            pNewNode->netMask.ia.sin_family = AF_INET;
-            pNewNode->netMask.ia.sin_addr.s_addr = mask;
-            pNewNode->netMask.ia.sin_port = 0u;
         } 
         else {
             pNewNode->addr.sa = pIfinfo->iiBroadcastAddress.Address;
-            memset ( &pNewNode->netMask, '\0', sizeof ( pNewNode->netMask ) );
         }
 
 		/*

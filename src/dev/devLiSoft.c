@@ -75,8 +75,8 @@ static long init_record(plongin)
     /* longin.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
     switch (plongin->inp.type) {
     case (CONSTANT) :
-	recGblInitConstantLink(&plongin->inp,DBF_LONG,&plongin->val);
-	plongin->udf = FALSE;
+    if(recGblInitConstantLink(&plongin->inp,DBF_LONG,&plongin->val))
+		plongin->udf = FALSE;
 	break;
     case (PV_LINK) :
     case (DB_LINK) :
@@ -96,6 +96,6 @@ static long read_longin(plongin)
     long status;
 
     status = dbGetLink(&plongin->inp,DBR_LONG, &plongin->val,0,0);
-    if(RTN_SUCCESS(status)) plongin->udf=FALSE;
+    if(plongin->inp.type!=CONSTANT && RTN_SUCCESS(status)) plongin->udf=FALSE;
     return(status);
 }

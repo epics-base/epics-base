@@ -75,9 +75,9 @@ static long init_record(pstringin)
     /* stringin.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
     switch (pstringin->inp.type) {
     case (CONSTANT) :
-	recGblInitConstantLink(&pstringin->inp,DBF_STRING,pstringin->val);
-	pstringin->udf = FALSE;
-        break;
+       if(recGblInitConstantLink(&pstringin->inp,DBF_STRING,pstringin->val))
+           pstringin->udf = FALSE;
+       break;
     case (PV_LINK) :
     case (DB_LINK) :
     case (CA_LINK) :
@@ -96,6 +96,6 @@ static long read_stringin(pstringin)
     long status;
 
     status = dbGetLink(&pstringin->inp,DBR_STRING,pstringin->val,0,0);
-    if(RTN_SUCCESS(status)) pstringin->udf=FALSE;
+    if(pstringin->inp.type!=CONSTANT && RTN_SUCCESS(status)) pstringin->udf=FALSE;
     return(status);
 }

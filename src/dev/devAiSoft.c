@@ -81,8 +81,8 @@ static long init_record(pai)
     /* ai.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
     switch (pai->inp.type) {
     case (CONSTANT) :
-	recGblInitConstantLink(&pai->inp,DBF_DOUBLE,&pai->val);
-	pai->udf = FALSE;
+    if(recGblInitConstantLink(&pai->inp,DBF_DOUBLE,&pai->val))
+        pai->udf = FALSE;
 	break;
     case (PV_LINK) :
     case (DB_LINK) :
@@ -106,7 +106,7 @@ static long read_ai(pai)
 
     status = dbGetLink(&(pai->inp),DBR_DOUBLE, &(pai->val),0,0);
 
-    if (RTN_SUCCESS(status))
+    if (pai->inp.type!=CONSTANT && RTN_SUCCESS(status))
        pai->udf = FALSE;
 
     return(2); /*don't convert*/

@@ -76,8 +76,8 @@ static long init_record(pevent)
     /* event.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
     switch (pevent->inp.type) {
     case (CONSTANT) :
-	recGblInitConstantLink(&pevent->inp,DBF_USHORT,&pevent->val);
-	pevent->udf = FALSE;
+    if(recGblInitConstantLink(&pevent->inp,DBF_USHORT,&pevent->val))
+        pevent->udf = FALSE;
         break;
     case (PV_LINK) :
     case (DB_LINK) :
@@ -97,6 +97,6 @@ static long read_event(pevent)
     long status,options=0,nRequest=1;
 
     status = dbGetLink(&pevent->inp,DBR_USHORT,&pevent->val,0,0);
-    if(RTN_SUCCESS(status)) pevent->udf=FALSE;
+    if(pevent->inp.type!=CONSTANT && RTN_SUCCESS(status)) pevent->udf=FALSE;
     return(status);
 }

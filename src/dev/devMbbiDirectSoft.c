@@ -76,8 +76,8 @@ static long init_record(pmbbi)
     /* mbbi.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
     switch (pmbbi->inp.type) {
     case (CONSTANT) :
-	recGblInitConstantLink(&pmbbi->inp,DBF_ENUM,&pmbbi->val);
-	pmbbi->udf = FALSE;
+    if(recGblInitConstantLink(&pmbbi->inp,DBF_ENUM,&pmbbi->val))
+		pmbbi->udf = FALSE;
         break;
     case (DB_LINK) :
     case (PV_LINK) :
@@ -97,6 +97,6 @@ static long read_mbbi(pmbbi)
     long status;
 
     status = dbGetLink(&pmbbi->inp,DBR_USHORT,&pmbbi->val,0,0);
-    if (RTN_SUCCESS(status)) pmbbi->udf=FALSE;
+    if (pmbbi->inp.type!=CONSTANT && RTN_SUCCESS(status)) pmbbi->udf=FALSE;
     return(2);
 }

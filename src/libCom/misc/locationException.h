@@ -15,59 +15,43 @@
 #include "cantProceed.h"
 
 template <class T>
-class locationAndType : public T {
+class sourceFileLocation : public T {
 public:
-    locationAndType (T &, const char *fileName, unsigned lineNumber);
-    unsigned lineNumber () const;
+    sourceFileLocation (T &parm, const char *fileName, unsigned lineNumber);
     const char *fileName () const;
-    const type_info & typeInfo () const;
-    void show (unsigned level) const;
+    unsigned lineNumber () const;
 private:
-    unsigned lineNumberCopy;
     const char *pFileName;
+    unsigned lineNumberCopy;
 };
 
 template <class T>
-inline locationAndType<T>::locationAndType (T &tIn, const char *fileName, unsigned lineNumber) :
-    T (tIn) , lineNumberCopy(lineNumber), pFileName (fileName) {}
+inline sourceFileLocation<T>::sourceFileLocation (const T &parm, const char *fileName, unsigned lineNumber) :
+    T (parm), pFileName (fileName) , lineNumberCopy(lineNumber) {}
 
 template <class T>
-inline unsigned locationAndType<T>::lineNumber () const
+inline unsigned sourceFileLocation<T>::lineNumber () const
 {
     return this->lineNumberCopy;
 }
 
 template <class T>
-inline const char * locationAndType<T>::fileName () const
+inline const char * sourceFileLocation<T>::fileName () const
 {
     return this->pFileName;
 }
 
-template <class T>
-inline const type_info & locationAndType<T>::typeInfo () const
-{
-    return typeid (T);
-}
-
-template <class T>
-inline void locationAndType<T>::show (unsigned level) const
-{
-    cerr    << "C++ exception=" << typeid(T).name()
-            << " in file=" << this->pFileName
-            << " at line=" << this->lineNumberCopy;
-}
-
 #define throwWithLocation(parm) throwExceptionWithLocation (parm, __FILE__, __LINE__);
 
-template <class T>
 inline void throwExceptionWithLocation (T &parm, const char *pFileName, unsigned lineNo)
 {
-    locationAndType<T> lat (parm, pFileName, lineNo);
 #   ifdef noExceptionsFromCXX
-        lat.show (UINT_MAX);
+        cerr << "C++ exception in file=" << pFileName
+            << " at line=" << lineNo
+            << " - cant continue";
         cantProceed ("No compiler support for C++ exception");
-#   else            
-        throw lat;
+#   else
+        throw sourceFileLocation<T> (parm, pFileName, lineNo);
 #   endif
 }
 

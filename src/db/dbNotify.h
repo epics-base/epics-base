@@ -15,6 +15,7 @@ of this distribution.
 #define INCdbNotifyh
 
 #include "shareLib.h"
+#include "ellLib.h"
 
 #ifdef __cplusplus
 	//

@@ -13,7 +13,7 @@ OS_CLASS = vxWorks
 # can be overridden for specific host architectures
 # by creating a CONFIG_SITE.Vx.<host_arch> file with
 # the override definitions.
- 
+
 # Tornado directory definitions
 VX_CONFIG_DIR_YES = $(VX_DIR)/target/config
 VX_INCLUDE_YES = $(VX_DIR)/target/h
@@ -26,7 +26,7 @@ VX_CONFIG_DIR_NO = $(VX_DIR)/config
 VX_INCLUDE_NO = $(VX_DIR)/h
 VX_GNU_BIN_NO = $(VX_GNU)/$(HOST_ARCH).$(ARCH_CLASS)/bin
 VX_GNU_LIB_NO = $(VX_GNU)/$(HOST_ARCH).$(ARCH_CLASS)/lib
- 
+
 # directory definitions
 VX_DIR = $(VX_DIR_$(TORNADO))
 VX_CONFIG_DIR = $(VX_CONFIG_DIR_$(TORNADO))
@@ -91,6 +91,12 @@ OP_SYS_INCLUDES = -I$(VX_INCLUDE)
 OP_SYS_CFLAGS = -DvxWorks -DV5_vxWorks -fno-builtin 
 OP_SYS_LDFLAGS =
 OP_SYS_LDLIBS =
+
+# Fix for vxWorks headers using macros defined in
+# vxWorks.h but not including vxWorks.h
+ifeq ($(TORNADO), YES)
+	OP_SYS_CFLAGS += -include $(VX_INCLUDE)/vxWorks.h
+endif
 
 #--------------------------------------------------
 # Optimization flag overrides

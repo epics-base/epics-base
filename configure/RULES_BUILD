@@ -203,7 +203,7 @@ ifeq ($(HDEPENDS),YES)
 	@$(HDEPENDS_TARGETS_CMD)  $*$(DEP)
 endif
 	@$(RM) $@
-	$(COMPILE.c)  $<
+	$(COMPILE.c) $(call PATH_FILTER,$<)
 
 %$(OBJ): %.cc
 ifeq ($(HDEPENDS),YES)
@@ -212,7 +212,7 @@ ifeq ($(HDEPENDS),YES)
 	@$(HDEPENDS_TARGETS_CMD)  $*$(DEP)
 endif
 	@$(RM) $@
-	$(COMPILE.cpp) $< $(COMPILE_FILTER.cpp)
+	$(COMPILE.cpp) $(call PATH_FILTER,$<) $(COMPILE_FILTER.cpp)
 
 %$(OBJ): %.cpp
 ifeq ($(HDEPENDS),YES)
@@ -221,7 +221,7 @@ ifeq ($(HDEPENDS),YES)
 	@$(HDEPENDS_TARGETS_CMD)  $*$(DEP)
 endif
 	@$(RM) $@
-	$(COMPILE.cpp) $< $(COMPILE_FILTER.cpp)
+	$(COMPILE.cpp) $(call PATH_FILTER,$<) $(COMPILE_FILTER.cpp)
 
 %$(OBJ): %.C
 ifeq ($(HDEPENDS),YES)
@@ -230,7 +230,7 @@ ifeq ($(HDEPENDS),YES)
 	@$(HDEPENDS_TARGETS_CMD)  $*$(DEP)
 endif
 	@$(RM) $@
-	$(COMPILE.cpp) $< $(COMPILE_FILTER.cpp)
+	$(COMPILE.cpp) $(call PATH_FILTER,$<) $(COMPILE_FILTER.cpp)
 
 # WIN95/NT resource compiler
 %$(RES): %.rc

@@ -263,8 +263,9 @@ LDCMD = $(LD) -o $@ $^
 #--------------------------------------------------
 # Build compile line here
 
-COMPILE.c = $(CC) -c $(CPPFLAGS) $(CFLAGS) $(INCLUDES) $(SOURCE_FLAG)
-COMPILE.cpp = $(CCC) -c $(CPPFLAGS) $(CXXFLAGS) $(INCLUDES) $(SOURCE_CXXFLAG)
+PATH_FILTER = $(1)
+COMPILE.c = $(CC) -c $(CPPFLAGS) $(CFLAGS) $(call PATH_FILTER,$(INCLUDES)) $(SOURCE_FLAG)
+COMPILE.cpp = $(CCC) -c $(CPPFLAGS) $(CXXFLAGS) $(call PATH_FILTER,$(INCLUDES)) $(SOURCE_CXXFLAG)
 
 #--------------------------------------------------
 # Build depends command here

@@ -37,7 +37,6 @@ static const double maxSearchPeriod = 5.0; // seconds
 searchTimer::searchTimer ( udpiiu &iiuIn, epicsTimerQueue &queueIn, epicsMutex &mutexIn ) :
     period ( initialRoundTripEstimate * 2.0 ),
     roundTripDelayEstimate ( initialRoundTripEstimate ),
-    queue ( queueIn ),
     timer ( queueIn.createTimer () ),
     mutex ( mutexIn ),
     iiu ( iiuIn ),
@@ -58,7 +57,7 @@ searchTimer::searchTimer ( udpiiu &iiuIn, epicsTimerQueue &queueIn, epicsMutex &
 
 searchTimer::~searchTimer ()
 {
-    this->queue.destroyTimer ( this->timer );
+    this->timer.getQueue().destroyTimer ( this->timer );
 }
 
 //

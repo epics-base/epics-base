@@ -29,7 +29,6 @@ public:
     void confirmNotify ();
 	void show ( unsigned level ) const;
 private:
-    epicsTimerQueue &queue;
     epicsTimer &timer;
     udpiiu &iiu;
     unsigned attempts;

@@ -49,7 +49,6 @@ public:
 protected:
     virtual ~delayVerify ();
 private:
-    epicsTimerQueue &queue;
     epicsTimer &timer;
     epicsTime beginStamp;
     epicsTime expireStamp;
@@ -63,14 +62,13 @@ static unsigned expireCount;
 static epicsEvent expireEvent;
 
 delayVerify::delayVerify ( double expectedDelayIn, epicsTimerQueue &queueIn ) :
-    queue ( queueIn ), timer ( queueIn.createTimer() ), 
-        expectedDelay ( expectedDelayIn )
+    timer ( queueIn.createTimer() ), expectedDelay ( expectedDelayIn )
 {
 }
 
 delayVerify::~delayVerify ()
 {
-    this->queue.destroyTimer ( this->timer );
+    this->timer.getQueue().destroyTimer ( this->timer );
 }
 
 inline void delayVerify::setBegin ( const epicsTime &beginIn )
@@ -165,7 +163,6 @@ public:
 protected:
     virtual ~cancelVerify ();
 private:
-    epicsTimerQueue &queue;
     epicsTimer &timer;
     bool failOutIfExpireIsCalled;
     expireStatus expire ( const epicsTime & );
@@ -174,14 +171,13 @@ private:
 };
 
 cancelVerify::cancelVerify ( epicsTimerQueue &queueIn ) :
-    queue ( queueIn ), timer ( queueIn.createTimer () ), 
-        failOutIfExpireIsCalled ( false )
+    timer ( queueIn.createTimer () ), failOutIfExpireIsCalled ( false )
 {
 }
 
 cancelVerify::~cancelVerify ()
 {
-    this->queue.destroyTimer ( this->timer );
+    this->timer.getQueue().destroyTimer ( this->timer );
 }
 
 inline void cancelVerify::start ( const epicsTime &expireTime )
@@ -259,7 +255,6 @@ public:
 protected:
     virtual ~periodicVerify ();
 private:
-    epicsTimerQueue &queue;
     epicsTimer &timer;
     unsigned nExpire;
     bool failOutIfExpireIsCalled;
@@ -269,14 +264,14 @@ private:
 };
 
 periodicVerify::periodicVerify ( epicsTimerQueue & queueIn ) :
-    queue ( queueIn ), timer ( queueIn.createTimer () ), 
-        nExpire ( 0u ), failOutIfExpireIsCalled ( false )
+    timer ( queueIn.createTimer () ), nExpire ( 0u ), 
+        failOutIfExpireIsCalled ( false )
 {
 }
 
 periodicVerify::~periodicVerify ()
 {
-    this->queue.destroyTimer ( this->timer );
+    this->timer.getQueue().destroyTimer ( this->timer );
 }
 
 inline void periodicVerify::start ( const epicsTime &expireTime )

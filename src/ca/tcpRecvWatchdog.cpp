@@ -20,7 +20,7 @@
 //
 tcpRecvWatchdog::tcpRecvWatchdog 
     ( tcpiiu &iiuIn, double periodIn, epicsTimerQueue & queueIn ) :
-        period ( periodIn ), queue ( queueIn ), timer ( queueIn.createTimer () ),
+        period ( periodIn ), timer ( queueIn.createTimer () ),
         iiu ( iiuIn ), responsePending ( false ),
         beaconAnomaly ( true )
 {
@@ -28,7 +28,7 @@ tcpRecvWatchdog::tcpRecvWatchdog
 
 tcpRecvWatchdog::~tcpRecvWatchdog ()
 {
-    this->queue.destroyTimer ( this->timer );
+    this->timer.getQueue().destroyTimer ( this->timer );
 }
 
 epicsTimerNotify::expireStatus tcpRecvWatchdog::expire ( const epicsTime & /* currentTime */ )

@@ -159,7 +159,6 @@ public:
     void show ( unsigned level ) const;
 private:
     const double period;
-    epicsTimerQueue & queue;
     epicsTimer & timer;
     tcpiiu &iiu;
     bool responsePending;
@@ -175,7 +174,6 @@ public:
     void cancel ();
 private:
     const double period;
-    epicsTimerQueue & queue;
     epicsTimer & timer;
     tcpiiu & iiu;
     expireStatus expire ( const epicsTime & currentTime );

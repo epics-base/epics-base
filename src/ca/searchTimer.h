@@ -34,7 +34,6 @@ private:
     epicsTime timeAtLastRetry;
     double period; /* period between tries */
     double roundTripDelayEstimate;
-    epicsTimerQueue &queue;
     epicsTimer &timer;
     epicsMutex &mutex;
     udpiiu &iiu;

@@ -17,14 +17,14 @@
 
 tcpSendWatchdog::tcpSendWatchdog 
     ( tcpiiu &iiuIn, double periodIn, epicsTimerQueue & queueIn ) :
-    period ( periodIn ), queue ( queueIn ), timer ( queueIn.createTimer () ),
+    period ( periodIn ), timer ( queueIn.createTimer () ),
     iiu ( iiuIn )
 {
 }
 
 tcpSendWatchdog::~tcpSendWatchdog ()
 {
-    this->queue.destroyTimer ( this->timer );
+    this->timer.getQueue().destroyTimer ( this->timer );
 }
 
 epicsTimerNotify::expireStatus tcpSendWatchdog::expire ( const epicsTime & currentTime )

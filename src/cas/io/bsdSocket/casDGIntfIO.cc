@@ -251,7 +251,7 @@ inBuf::fillCondition casDGIntfIO::osdRecv(char *pBufIn, bufSizeT size,
 	fillParameter parm, bufSizeT &actualSize, caNetAddr &fromOut)
 {
 	int status;
-	int addrSize;
+	osiSocklen_t addrSize;
     sockaddr addr;
     SOCKET sockThisTime;
 
@@ -262,7 +262,7 @@ inBuf::fillCondition casDGIntfIO::osdRecv(char *pBufIn, bufSizeT size,
         sockThisTime = this->sock;
     }
 
-	addrSize = sizeof (addr);
+	addrSize = ( osiSocklen_t ) sizeof (addr);
 	status = recvfrom (this->sock, pBufIn, size, 0,
 					&addr, &addrSize);
 	if (status<=0) {

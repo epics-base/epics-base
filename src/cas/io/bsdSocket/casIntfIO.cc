@@ -24,7 +24,7 @@ casIntfIO::casIntfIO (const caNetAddr &addrIn) :
 {
 	int yes = TRUE;
 	int status;
-	int addrSize;
+	osiSocklen_t addrSize;
     bool portChange;
 
 	if ( ! osiSockAttach () ) {
@@ -97,7 +97,7 @@ casIntfIO::casIntfIO (const caNetAddr &addrIn) :
         portChange = false;
     }
 
-	addrSize = sizeof (this->addr);
+	addrSize = ( osiSocklen_t ) sizeof (this->addr);
 	status = getsockname (this->sock, 
 			(struct sockaddr *)&this->addr, &addrSize);
 	if (status) {
@@ -148,10 +148,10 @@ casStreamOS *casIntfIO::newStreamClient(caServerI &cas) const
 {
     struct sockaddr	newAddr;
     SOCKET          newSock;
-    int             length;
+    osiSocklen_t    length;
     casStreamOS	*pOS;
     
-    length = sizeof(newAddr);
+    length = ( osiSocklen_t ) sizeof(newAddr);
     newSock = accept(this->sock, &newAddr, &length);
     if (newSock==INVALID_SOCKET) {
         int errnoCpy = SOCKERRNO;
@@ -161,7 +161,7 @@ casStreamOS *casIntfIO::newStreamClient(caServerI &cas) const
         }
         return NULL;
     }
-    else if (sizeof(newAddr)>(size_t)length) {
+    else if ( sizeof (newAddr) > (size_t) length ) {
         socket_close(newSock);
         errlogPrintf("CAS: accept returned bad address len?\n");
         return NULL;

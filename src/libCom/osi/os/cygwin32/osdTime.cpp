@@ -100,11 +100,3 @@ extern "C" epicsShareFunc void epicsShareAPI
     }
 }
 
-#if 0
-#include "epicsThread.h"
-
-double epicsShareAPI epicsThreadSleepQuantum ()
-{
-    return 0.0;
-}
-#endif

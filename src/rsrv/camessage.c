@@ -1582,19 +1582,6 @@ struct client  *client
 	unsigned long		count;
 	int			type;
 
-	/*
-	 * set true if max memory block drops below MAX_BLOCK_THRESHOLD
-	 */
-	if(casDontAllowSearchReplies){
-		SEND_LOCK(client);
-		send_err(mp, 
-			ECA_ALLOCMEM, 
-			client, 
-			"Server memory exhausted");
-		SEND_UNLOCK(client);
-		return;
-	}
-
 	/* Exit quickly if channel not on this node */
 	status = db_name_to_addr(
 			mp + 1, 
@@ -1610,6 +1597,19 @@ struct client  *client
 				NULL);
 		if (mp->m_type == DOREPLY)
 			search_fail_reply(mp, client);
+		return;
+	}
+
+	/*
+	 * set true if max memory block drops below MAX_BLOCK_THRESHOLD
+	 */
+	if(casDontAllowSearchReplies){
+		SEND_LOCK(client);
+		send_err(mp, 
+			ECA_ALLOCMEM, 
+			client, 
+			"Server memory exhausted");
+		SEND_UNLOCK(client);
 		return;
 	}
 

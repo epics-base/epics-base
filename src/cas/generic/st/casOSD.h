@@ -41,8 +41,36 @@ private:
 class casDGReadReg;
 class casDGBCastReadReg;
 class casDGWriteReg;
-class casDGEvWakeup;
-class casDGIOWakeup;
+
+//
+// class casDGEvWakeup
+//
+class casDGEvWakeup : public epicsTimerNotify {
+public:
+	casDGEvWakeup ();
+	virtual ~casDGEvWakeup();
+	void show ( unsigned level ) const;
+    void start ( class casDGIntfOS &osIn );
+private:
+    epicsTimer &timer;
+	class casDGIntfOS *pOS;
+	expireStatus expire( const epicsTime & currentTime );
+};
+
+//
+// class casDGIOWakeup
+//
+class casDGIOWakeup : public epicsTimerNotify {
+public:
+	casDGIOWakeup ();
+	virtual ~casDGIOWakeup ();
+	void show ( unsigned level ) const;
+    void start ( class casDGIntfOS &osIn );
+private:
+    epicsTimer &timer;
+	class casDGIntfOS *pOS;
+	expireStatus expire( const epicsTime & currentTime );
+};
 
 //
 // casDGIntfOS
@@ -51,10 +79,7 @@ class casDGIntfOS : public casDGIntfIO {
     friend class casDGReadReg;
     friend class casDGBCastReadReg;
     friend class casDGWriteReg;
-    friend class casDGEvWakeup;
-    friend class casDGIOWakeup;
 public:
-
     casDGIntfOS (caServerI &serverIn, const caNetAddr &addr, 
         bool autoBeaconAddr=TRUE, bool addConfigBeaconAddr=FALSE);
 
@@ -62,13 +87,15 @@ public:
 
 	virtual void show (unsigned level) const;
 
+    void processInput();
+
 private:
+    casDGIOWakeup       ioWk;
+    casDGEvWakeup       evWk;
 	casDGReadReg        *pRdReg;
 	casDGBCastReadReg   *pBCastRdReg; // fix for solaris bug
 	casDGWriteReg       *pWtReg;
-	casDGEvWakeup       *pEvWk;
-	casDGIOWakeup       *pIOWk;
-	unsigned char		sendBlocked;
+	bool		        sendBlocked;
 
     void armRecv ();
     void armSend ();
@@ -86,7 +113,6 @@ private:
 	void eventSignal ();
 	void eventFlush ();
 
-    void processInput();
 };
 
 //
@@ -95,7 +121,6 @@ private:
 class casIntfOS : public casIntfIO, public tsDLNode<casIntfOS>, 
     public casDGIntfOS
 {
-	friend class casDGEvWakeup;
 	friend class casServerReg;
 public:
 	casIntfOS (caServerI &casIn, const caNetAddr &addr, 
@@ -113,8 +138,36 @@ private:
 
 class casStreamWriteReg;
 class casStreamReadReg;
-class casStreamEvWakeup;
-class casStreamIOWakeup;
+
+//
+// class casStreamIOWakeup
+//
+class casStreamIOWakeup : public epicsTimerNotify {
+public:
+	casStreamIOWakeup ();
+	virtual ~casStreamIOWakeup ();
+	void show ( unsigned level ) const;
+    void start ( casStreamOS &osIn );
+private:
+    epicsTimer &timer;
+	casStreamOS	*pOS;
+	expireStatus expire ( const epicsTime & currentTime );
+};
+
+//
+// class casStreamEvWakeup
+//
+class casStreamEvWakeup : public epicsTimerNotify {
+public:
+	casStreamEvWakeup ();
+	virtual ~casStreamEvWakeup ();
+	void show ( unsigned level ) const;
+    void start ( casStreamOS &osIn );
+private:
+    epicsTimer &timer;
+	casStreamOS	*pOS;
+	expireStatus expire ( const epicsTime & currentTime );
+};
 
 //
 // casStreamOS
@@ -122,19 +175,20 @@ class casStreamIOWakeup;
 class casStreamOS : public casStreamIO {
     friend class casStreamWriteReg;
     friend class casStreamReadReg;
-	friend class casStreamEvWakeup;
-	friend class casStreamIOWakeup;
 public:
 	casStreamOS (caServerI &, const ioArgsToNewStreamIO &ioArgs);
 	~casStreamOS ();
 
 	void show (unsigned level) const;
+
+	casProcCond processInput ();
+
 private:
+	casStreamEvWakeup	evWk;
+	casStreamIOWakeup	ioWk;
 	casStreamWriteReg	*pWtReg;
 	casStreamReadReg	*pRdReg;
-	casStreamEvWakeup	*pEvWk;
-	casStreamIOWakeup	*pIOWk;
-	unsigned char		sendBlocked;
+	bool		        sendBlocked;
 	//
 	//
 	//
@@ -142,11 +196,6 @@ private:
 	inline void armRecv ();
 	inline void disarmSend();
 	inline void disarmRecv();
-
-	//
-	// process any incomming messages
-	//
-	casProcCond processInput ();
 
 	void recvCB ();
 	void sendCB ();

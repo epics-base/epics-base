@@ -64,44 +64,14 @@ private:
 };
 
 //
-// class casDGEvWakeup
-//
-class casDGEvWakeup : public epicsTimerNotify {
-public:
-	casDGEvWakeup ( casDGIntfOS &osIn );
-	virtual ~casDGEvWakeup();
-	void show ( unsigned level ) const;
-private:
-    epicsTimer &timer;
-	casDGIntfOS	&os;
-	expireStatus expire( const epicsTime & currentTime );
-};
-
-//
-// class casDGIOWakeup
-//
-class casDGIOWakeup : public epicsTimerNotify {
-public:
-	casDGIOWakeup ( casDGIntfOS &osIn );
-	virtual ~casDGIOWakeup ();
-	void show ( unsigned level ) const;
-private:
-    epicsTimer &timer;
-	casDGIntfOS	&os;
-	expireStatus expire( const epicsTime & currentTime );
-};
-
-//
 // casDGIntfOS::casDGIntfOS()
 //
 casDGIntfOS::casDGIntfOS (caServerI &serverIn, const caNetAddr &addr, 
-    bool autoBeaconAddr, bool addConfigBeaconAddr) : 
+        bool autoBeaconAddr, bool addConfigBeaconAddr) : 
 	casDGIntfIO (serverIn, addr, autoBeaconAddr, addConfigBeaconAddr),
-	pRdReg (NULL),
-    pBCastRdReg (NULL),
-    pWtReg (NULL),
-    pEvWk (NULL),
-    pIOWk (NULL),
+	pRdReg ( 0 ),
+    pBCastRdReg ( 0 ),
+    pWtReg ( 0 ),
     sendBlocked (false)
 {
 	this->xSetNonBlocking();
@@ -114,25 +84,15 @@ casDGIntfOS::casDGIntfOS (caServerI &serverIn, const caNetAddr &addr,
 casDGIntfOS::~casDGIntfOS()
 {
 	this->disarmSend();
-
 	this->disarmRecv();
-
-	if (this->pEvWk) {
-		delete this->pEvWk;
-	}
-
-	if (this->pIOWk) {
-		delete this->pIOWk;
-	}
 }
 
 //
 // casDGEvWakeup::casDGEvWakeup()
 //
-casDGEvWakeup::casDGEvWakeup ( casDGIntfOS &osIn ) : 
-		timer ( fileDescriptorManager.createTimer() ), os ( osIn ) 
+casDGEvWakeup::casDGEvWakeup () : 
+		timer ( fileDescriptorManager.createTimer() ), pOS ( 0 ) 
 {
-    this->timer.start ( *this, 0.0 );
 }
 
 //
@@ -140,8 +100,18 @@ casDGEvWakeup::casDGEvWakeup ( casDGIntfOS &osIn ) :
 //
 casDGEvWakeup::~casDGEvWakeup()
 {
-	this->os.pEvWk = NULL;
     delete & this->timer;
+}
+
+void casDGEvWakeup::start ( casDGIntfOS &os )
+{
+    if ( this->pOS ) {
+        assert ( this->pOS == &os );
+    }
+    else {
+        this->pOS = &os;
+        this->timer.start ( *this, 0.0 );
+    }
 }
 
 //
@@ -158,19 +128,19 @@ void casDGEvWakeup::show ( unsigned level ) const
 //
 // casDGEvWakeup::expire()
 //
-epicsTimerNotify::expireStatus casDGEvWakeup::expire( const epicsTime & currentTime )
+epicsTimerNotify::expireStatus casDGEvWakeup::expire ( const epicsTime & currentTime )
 {
-	this->os.casEventSys::process();
+	this->pOS->casEventSys::process();
+    this->pOS = 0;
     return noRestart;
 }
 
 //
 // casDGIOWakeup::casDGIOWakeup()
 //
-casDGIOWakeup::casDGIOWakeup ( casDGIntfOS &osIn ) : 
-	timer ( fileDescriptorManager.createTimer() ), os ( osIn ) 
+casDGIOWakeup::casDGIOWakeup () : 
+	timer ( fileDescriptorManager.createTimer() ), pOS ( 0 ) 
 {
-    this->timer.start ( *this, 0.0 );
 }
 
 //
@@ -178,7 +148,6 @@ casDGIOWakeup::casDGIOWakeup ( casDGIntfOS &osIn ) :
 //
 casDGIOWakeup::~casDGIOWakeup()
 {
-	this->os.pIOWk = NULL;
     delete & this->timer;
 }
 
@@ -200,8 +169,23 @@ epicsTimerNotify::expireStatus casDGIOWakeup::expire( const epicsTime & currentT
 	// the input buffer, and there eventually will
 	// be something to read from TCP this works
 	//
-	this->os.processInput ();
+	this->pOS->processInput ();
+    this->pOS = 0;
     return noRestart;
+}
+
+//
+// casDGIOWakeup::show()
+//
+void casDGIOWakeup::start ( casDGIntfOS &os ) 
+{
+    if ( this->pOS ) {
+        assert ( this->pOS == &os );
+    }
+    else {
+        this->pOS = &os;
+        this->timer.start ( *this, 0.0 );
+    }
 }
 
 //
@@ -284,14 +268,7 @@ void casDGIntfOS::disarmSend ()
 //
 void casDGIntfOS::ioBlockedSignal()
 {
-	if (!this->pIOWk) {
-		this->pIOWk = new casDGIOWakeup(*this);
-		if (!this->pIOWk) {
-			errMessage (S_cas_noMemory,
-				"casDGIntfOS::ioBlockedSignal()");
-            throw S_cas_noMemory;
-		}			
-	}
+    this->ioWk.start ( *this );
 }
 
 //
@@ -299,14 +276,7 @@ void casDGIntfOS::ioBlockedSignal()
 //
 void casDGIntfOS::eventSignal()
 {
-	if (!this->pEvWk) {
-		this->pEvWk = new casDGEvWakeup (*this);
-		if (!this->pEvWk) {
-			errMessage (S_cas_noMemory, 
-				"casDGIntfOS::eventSignal ()");
-            throw S_cas_noMemory;
-		}
-	}
+    this->evWk.start ( *this );
 }
 
 //
@@ -339,12 +309,8 @@ void casDGIntfOS::show(unsigned level) const
     if (this->pBCastRdReg) {
 		this->pBCastRdReg->show (level);
     }
-    if (this->pEvWk) {
-		this->pEvWk->show (level);
-    }
-    if (this->pIOWk) {
-		this->pIOWk->show (level);
-    }
+	this->evWk.show (level);
+	this->ioWk.show (level);
     this->casDGIntfIO::show (level);
 }
 
@@ -436,7 +402,7 @@ void casDGWriteReg::show(unsigned level) const
 //
 void casDGIntfOS::sendBlockSignal()
 {
-	this->sendBlocked=TRUE;
+	this->sendBlocked = true;
 	this->armSend();
 }
 
@@ -453,7 +419,7 @@ void casDGIntfOS::sendCB()
 	flushCond = this->flush();
 	if (flushCond==flushProgress) {
 		if (this->sendBlocked) {
-			this->sendBlocked = FALSE;
+			this->sendBlocked = false;
 		}
         //
         // this reenables receipt of incoming frames once

@@ -105,26 +105,11 @@ inline casStreamWriteReg::~casStreamWriteReg ()
 }
 
 //
-// class casStreamEvWakeup
-//
-class casStreamEvWakeup : public epicsTimerNotify {
-public:
-	casStreamEvWakeup(casStreamOS &osIn);
-	virtual ~casStreamEvWakeup ();
-	void show ( unsigned level ) const;
-private:
-    epicsTimer &timer;
-	casStreamOS	&os;
-	expireStatus expire ( const epicsTime & currentTime );
-};
-
-//
 // casStreamEvWakeup()
 //
-casStreamEvWakeup::casStreamEvWakeup ( casStreamOS &osIn ) : 
-		timer ( fileDescriptorManager.createTimer() ), os(osIn) 
+casStreamEvWakeup::casStreamEvWakeup () : 
+		timer ( fileDescriptorManager.createTimer() ), pOS ( 0 ) 
 {
-    this->timer.start ( *this, 0.0 );
 }
 
 //
@@ -132,7 +117,6 @@ casStreamEvWakeup::casStreamEvWakeup ( casStreamOS &osIn ) :
 //
 casStreamEvWakeup::~casStreamEvWakeup()
 {
-	this->os.pEvWk = NULL;
     delete & this->timer;
 }
 
@@ -152,9 +136,10 @@ void casStreamEvWakeup::show(unsigned level) const
 //
 epicsTimerNotify::expireStatus casStreamEvWakeup::expire( const epicsTime & currentTime )
 {
-	casProcCond cond;
-	cond = this->os.casEventSys::process();
-	if (cond != casProcOk) {
+    casStreamOS &os = *this->pOS;
+    this->pOS = 0;
+	casProcCond cond = os.casEventSys::process();
+	if ( cond != casProcOk ) {
 		//
 		// ok to delete the client here
 		// because casStreamEvWakeup::expire()
@@ -163,7 +148,7 @@ epicsTimerNotify::expireStatus casStreamEvWakeup::expire( const epicsTime & curr
 		// called from a client member function
 		// higher up on the stack
 		//
-		this->os.destroy();	
+		os.destroy();	
 
 		//
 		// must not touch the "this" pointer
@@ -174,26 +159,25 @@ epicsTimerNotify::expireStatus casStreamEvWakeup::expire( const epicsTime & curr
 }
 
 //
-// class casStreamIOWakeup
+// casStreamEvWakeup::start()
 //
-class casStreamIOWakeup : public epicsTimerNotify {
-public:
-	casStreamIOWakeup(casStreamOS &osIn);
-	virtual ~casStreamIOWakeup();
-	void show ( unsigned level ) const;
-private:
-    epicsTimer &timer;
-	casStreamOS	&os;
-	expireStatus expire ( const epicsTime & currentTime );
-};
+void casStreamEvWakeup::start( casStreamOS &os )
+{    
+    if ( this->pOS ) {
+        assert ( this->pOS == &os );
+    }
+    else {
+        this->pOS = &os;
+        this->timer.start ( *this, 0.0 );
+    }
+}
 
 //
 // casStreamIOWakeup::casStreamIOWakeup()
 //
-casStreamIOWakeup::casStreamIOWakeup ( casStreamOS &osIn ) : 
-	timer ( fileDescriptorManager.createTimer() ), os(osIn) 
+casStreamIOWakeup::casStreamIOWakeup () : 
+	timer ( fileDescriptorManager.createTimer() ), pOS ( 0 )
 {
-    this->timer.start ( *this, 0.0 );
 }
 
 //
@@ -201,7 +185,6 @@ casStreamIOWakeup::casStreamIOWakeup ( casStreamOS &osIn ) :
 //
 casStreamIOWakeup::~casStreamIOWakeup()
 {
-	this->os.pIOWk = NULL;
     delete & this->timer;
 }
 
@@ -214,22 +197,6 @@ void casStreamIOWakeup::show(unsigned level) const
         static_cast <const void *> ( this ) );
 	this->timer.show ( level );
 	printf ( "}\n" );
-}
-
-//
-// casStreamOS::armRecv ()
-//
-inline void casStreamOS::armRecv()
-{
-	if (!this->pRdReg) {
-		if (!this->inBuf::full()) {
-			this->pRdReg = new casStreamReadReg(*this);
-			if (!this->pRdReg) {
-				errMessage(S_cas_noMemory, "armRecv()");
-                throw S_cas_noMemory;
-			}
-		}
-	}
 }
 
 //
@@ -250,8 +217,39 @@ epicsTimerNotify::expireStatus casStreamIOWakeup::expire ( const epicsTime & cur
 	// the input buffer, and there eventually will
 	// be something to read from TCP this works
 	//
-	this->os.processInput();
+	this->pOS->processInput();
+    this->pOS = 0;
     return noRestart;
+}
+
+//
+// casStreamIOWakeup::start()
+//
+void casStreamIOWakeup::start ( casStreamOS &os  )
+{
+    if ( this->pOS ) {
+        assert ( this->pOS == &os );
+    }
+    else {
+        this->pOS = &os;
+        this->timer.start ( *this, 0.0 );
+    }
+}
+
+//
+// casStreamOS::armRecv ()
+//
+inline void casStreamOS::armRecv()
+{
+	if (!this->pRdReg) {
+		if (!this->inBuf::full()) {
+			this->pRdReg = new casStreamReadReg(*this);
+			if (!this->pRdReg) {
+				errMessage(S_cas_noMemory, "armRecv()");
+                throw S_cas_noMemory;
+			}
+		}
+	}
 }
 
 //
@@ -297,14 +295,7 @@ inline void casStreamOS::disarmSend ()
 //
 void casStreamOS::ioBlockedSignal()
 {
-	if (!this->pIOWk) {
-		this->pIOWk = new casStreamIOWakeup(*this);
-		if (!this->pIOWk) {
-			errMessage(S_cas_noMemory,
-				"casStreamOS::ioBlockedSignal()");
-            throw S_cas_noMemory;
-		}			
-	}
+    this->ioWk.start ( *this );
 }
 
 //
@@ -312,14 +303,7 @@ void casStreamOS::ioBlockedSignal()
 //
 void casStreamOS::eventSignal()
 {
-	if (!this->pEvWk) {
-		this->pEvWk = new casStreamEvWakeup(*this);
-		if (!this->pEvWk) {
-			errMessage(S_cas_noMemory, 
-				"casStreamOS::eventSignal()");
-            throw S_cas_noMemory;
-		}
-	}
+    this->evWk.start ( *this );
 }
 
 //
@@ -343,8 +327,6 @@ casStreamOS::casStreamOS(caServerI &cas, const ioArgsToNewStreamIO &ioArgs) :
 	casStreamIO (cas, ioArgs),
 	pWtReg (NULL),
 	pRdReg (NULL),
-	pEvWk (NULL),
-	pIOWk (NULL),
 	sendBlocked (FALSE)
 {
 	this->xSetNonBlocking();
@@ -363,14 +345,6 @@ casStreamOS::~casStreamOS()
 
 	this->disarmSend();
 	this->disarmRecv();
-
-	if (this->pEvWk) {
-		delete this->pEvWk;
-	}
-
-	if (this->pIOWk) {
-		delete this->pIOWk;
-	}
 }
 
 //
@@ -388,12 +362,8 @@ void casStreamOS::show(unsigned level) const
 	if (this->pRdReg) {
 		this->pRdReg->show(level);
 	}
-	if (this->pEvWk) {
-		this->pEvWk->show(level);
-	}
-	if (this->pIOWk) {
-		this->pIOWk->show(level);
-	}
+	this->evWk.show ( level );
+	this->ioWk.show ( level );
 }
 
 //

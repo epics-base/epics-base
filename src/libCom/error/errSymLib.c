@@ -505,8 +505,7 @@ int errSymFind(status, name)
     unsigned short  modnum;
 
     if (!initialized) {
-	printf("\nerrSymFind: Aborting because errSymBld didn't initialize\n");
-	return (-1);
+	errSymBld();
     }
 
     modnum = (status >> 16);

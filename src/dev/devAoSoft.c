@@ -68,16 +68,15 @@ static long write_ao(pao)
     struct aoRecord	*pao;
 {
     char message[100];
-    long status,nRequest;
+    long status;
 
     /* ao.out must be a CONSTANT or a DB_LINK or a CA_LINK*/
     switch (pao->out.type) {
     case (CONSTANT) :
 	break;
     case (DB_LINK) :
-	nRequest=1;
-	(void)dbPutLink(&(pao->out.value.db_link),pao,DBR_FLOAT,
-		&(pao->val),&nRequest);
+	(void)dbPutLink(&pao->out.value.db_link,pao,DBR_FLOAT,
+		&pao->val,1L);
 	break;
     case (CA_LINK) :
 	break;

@@ -71,7 +71,7 @@ static long write_bo(pbo)
     case (CONSTANT) :
         break;
     case (DB_LINK) :
-        (void)dbPutLink(&(pbo->out.value.db_link),pbo,DBR_SHORT,pbo->val,1L);
+        (void)dbPutLink(&pbo->out.value.db_link,pbo,DBR_SHORT,&pbo->val,1L);
         break;
     case (CA_LINK) :
         break;

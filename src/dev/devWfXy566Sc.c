@@ -80,7 +80,7 @@ static long init_record(pwf,process)
     /* wf.inp must be an VME_IO */
     switch (pwf->inp.type) {
     case (VME_IO) :
-        pcallback = (struct callback *)(calloc(1,sizeof(struct callback *)));
+        pcallback = (struct callback *)(calloc(1,sizeof(struct callback)));
         pwf->dpvt = (caddr_t)pcallback;
         if(dbNameToAddr(pwf->name,&(pcallback->dbAddr))) {
                 logMsg("dbNameToAddr failed in init_record for devWfXy566Sc\n");

@@ -8,6 +8,9 @@
 #< ../nfsCommands
 
 cd topbin
+# You may have to change _APPNAME_ to something else
+# everywhere it appears in this file
+
 ld < _APPNAME_.munch
 
 #The following uses drvTS for vxWorks. May be needed for hardware event systems

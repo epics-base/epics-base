@@ -1,3 +1,7 @@
+# Simple startup script
+
+# You may have to change _APPNAME_ to something else
+# everywhere it appears in this file
 dbLoadDatabase("dbd/_APPNAME_.dbd",0,0)
 registerRecordDeviceDriver(pdbbase) 
 dbLoadRecords("db/dbExample1.db","user=_USER_")

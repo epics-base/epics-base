@@ -7,10 +7,17 @@
 #< ../nfsCommands
 
 cd topbin
+# You may have to change _APPNAME_ to something else
+# everywhere it appears in this file
+
 #ld < _APPNAME_Lib
 
 cd startup
-#dbLoadDatabase("../../dbd/_APPNAME_.dbd")
+# create all record/device/driver/registrar support
+dbLoadDatabase("../../dbd/_APPNAME_.dbd")
+registerRecordDeviceDriver(pdbbase)
+
+#load record instances
 #dbLoadRecords("../../db/_APPNAME_.db")
 #dbLoadTemplate("../../db/_APPNAME_.substitutions")
 

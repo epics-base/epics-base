@@ -1,8 +1,0 @@
-TOP = ../..
-include $(TOP)/configure/CONFIG
-ARCH = _ARCH_
-
-# vxWorks architecture needs a cdCommands file
-buildInstall: cdCommands
-
-include $(TOP)/configure/RULES.ioc

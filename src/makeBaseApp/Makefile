@@ -15,6 +15,18 @@ TEMPLATES += top/configure/RULES.iocBoot
 TEMPLATES += top/configure/RULES_DIRS
 TEMPLATES += top/configure/RULES_TOP
 
+TEMPLATES += top/supportApp/Makefile
+TEMPLATES += top/supportApp/Db/Makefile
+TEMPLATES += top/supportApp/src/Makefile
+TEMPLATES += top/supportApp/src/_APPNAME_.dbd
+
+TEMPLATES += top/iocApp/Makefile
+TEMPLATES += top/iocApp/Db/Makefile
+TEMPLATES += top/iocApp/src/Makefile
+TEMPLATES += top/iocApp/src/_APPNAME_Main.cpp
+TEMPLATES += top/iocApp/src/_APPNAME_Include.dbd
+TEMPLATES += top/iocApp/src/sncExample.stt
+
 TEMPLATES += top/exampleApp/Makefile
 TEMPLATES += top/exampleApp/Db/Makefile
 TEMPLATES += top/exampleApp/Db/dbExample1.db
@@ -23,6 +35,7 @@ TEMPLATES += top/exampleApp/Db/dbSubExample.db
 TEMPLATES += top/exampleApp/src/Makefile
 TEMPLATES += top/exampleApp/src/devXxxSoft.c
 TEMPLATES += top/exampleApp/src/xxxRecord.c
+TEMPLATES += top/exampleApp/src/_APPNAME_Support.dbd
 TEMPLATES += top/exampleApp/src/_APPNAME_Include.dbd
 TEMPLATES += top/exampleApp/src/sncExample.stt
 TEMPLATES += top/exampleApp/src/xxxRecord.dbd
@@ -56,20 +69,13 @@ TEMPLATES += top/caServerApp/main.cc
 TEMPLATES += top/caServerApp/test.adl
 TEMPLATES += top/caServerApp/vxEntry.cc
 
-TEMPLATES += top/simpleApp/Makefile
-TEMPLATES += top/simpleApp/Db/Makefile
-TEMPLATES += top/simpleApp/src/Makefile
-TEMPLATES += top/simpleApp/src/Makefile
-TEMPLATES += top/simpleApp/src/_APPNAME_Include.dbd
-TEMPLATES += top/simpleApp/src/_APPNAME_Main.cpp
-
-TEMPLATES += top/simpleBoot/Makefile
-TEMPLATES += top/simpleBoot/nfsCommands@vxWorks
-TEMPLATES += top/simpleBoot/ioc/Makefile@Common
-TEMPLATES += top/simpleBoot/ioc/Makefile@vxWorks
-TEMPLATES += top/simpleBoot/ioc/st.cmd@Common
-TEMPLATES += top/simpleBoot/ioc/st.cmd@vxWorks
-TEMPLATES += top/simpleBoot/ioc/st.cmd@RTEMS
+TEMPLATES += top/iocBoot/Makefile
+TEMPLATES += top/iocBoot/nfsCommands@vxWorks
+TEMPLATES += top/iocBoot/ioc/Makefile@Common
+TEMPLATES += top/iocBoot/ioc/Makefile@vxWorks
+TEMPLATES += top/iocBoot/ioc/st.cmd@Common
+TEMPLATES += top/iocBoot/ioc/st.cmd@vxWorks
+TEMPLATES += top/iocBoot/ioc/st.cmd@RTEMS
 
 SCRIPTS_HOST += makeBaseApp.pl
 

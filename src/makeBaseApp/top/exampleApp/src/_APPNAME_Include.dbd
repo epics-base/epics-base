@@ -1,4 +1,2 @@
 include "base.dbd"
-include "xxxRecord.dbd"
-device(xxx,CONSTANT,devXxxSoft,"SoftChannel")
-registrar("mySub")
+include "_APPNAME_Support.dbd"

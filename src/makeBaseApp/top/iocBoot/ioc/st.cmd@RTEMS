@@ -1,6 +1,12 @@
 # Simple startup script
+
+# You may have to change _APPNAME_ to something else
+# everywhere it appears in this file
+
+# create and register all record/device/driver/registrar support
 dbLoadDatabase("../../dbd/_APPNAME_.dbd",0,0)
 registerRecordDeviceDriver(pdbbase) 
+
 dbLoadRecords("../../db/_APPNAME_.db","user=_USER_")
 iocInit()
 #seq snc_APPNAME_,"user=_USER_"

@@ -45,7 +45,7 @@ WARN_CXXFLAGS_NO =
 OPT_CXXFLAGS_YES = +O3
 OPT_CXXFLAGS_NO = -g
 
-STATIC_LDFLAGS_YES= -Wl,-a,archive -l:libc.sl +A
+STATIC_LDFLAGS_YES= -Wl,-a,archive -l:libc.sl
 # shared libs will be found by searching environment variable SHLIB_PATH,
 # then by searching the specified path (see below)
 STATIC_LDFLAGS_NO = -Wl,+b$(DEFAULT_SHRLIB_SEARCH_PATH),+s

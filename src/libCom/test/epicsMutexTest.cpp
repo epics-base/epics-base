@@ -35,7 +35,7 @@ typedef struct info {
     int        quit;
 }info;
 
-static void mutexThread(void *arg)
+static void mutexThread ( void * arg )
 {
     info *pinfo = (info *)arg;
     time_t tp;
@@ -60,13 +60,13 @@ static void mutexThread(void *arg)
     }
 }
 
-inline void lockPair ( epicsMutex &mutex )
+inline void lockPair ( epicsMutex & mutex )
 {
     mutex.lock ();
     mutex.unlock ();
 }
 
-inline void tenLockPairs ( epicsMutex &mutex )
+inline void tenLockPairs ( epicsMutex & mutex )
 {
     lockPair ( mutex );
     lockPair ( mutex );
@@ -80,7 +80,7 @@ inline void tenLockPairs ( epicsMutex &mutex )
     lockPair ( mutex );
 }
 
-inline void tenLockPairsSquared ( epicsMutex &mutex )
+inline void tenLockPairsSquared ( epicsMutex & mutex )
 {
     tenLockPairs ( mutex );
     tenLockPairs ( mutex );
@@ -92,12 +92,89 @@ inline void tenLockPairsSquared ( epicsMutex &mutex )
     tenLockPairs ( mutex );
     tenLockPairs ( mutex );
     tenLockPairs ( mutex );
+}
+
+inline void doubleRecursiveLockPair ( epicsMutex & mutex )
+{
+    mutex.lock ();
+    mutex.lock ();
+    mutex.unlock ();
+    mutex.unlock ();
+}
+
+inline void tenDoubleRecursiveLockPairs ( epicsMutex & mutex )
+{
+    doubleRecursiveLockPair ( mutex );
+    doubleRecursiveLockPair ( mutex );
+    doubleRecursiveLockPair ( mutex );
+    doubleRecursiveLockPair ( mutex );
+    doubleRecursiveLockPair ( mutex );
+    doubleRecursiveLockPair ( mutex );
+    doubleRecursiveLockPair ( mutex );
+    doubleRecursiveLockPair ( mutex );
+    doubleRecursiveLockPair ( mutex );
+    doubleRecursiveLockPair ( mutex );
+}
+
+inline void tenDoubleRecursiveLockPairsSquared ( epicsMutex & mutex )
+{
+    tenDoubleRecursiveLockPairs ( mutex );
+    tenDoubleRecursiveLockPairs ( mutex );
+    tenDoubleRecursiveLockPairs ( mutex );
+    tenDoubleRecursiveLockPairs ( mutex );
+    tenDoubleRecursiveLockPairs ( mutex );
+    tenDoubleRecursiveLockPairs ( mutex );
+    tenDoubleRecursiveLockPairs ( mutex );
+    tenDoubleRecursiveLockPairs ( mutex );
+    tenDoubleRecursiveLockPairs ( mutex );
+    tenDoubleRecursiveLockPairs ( mutex );
+}
+
+inline void quadRecursiveLockPair ( epicsMutex & mutex )
+{
+    mutex.lock ();
+    mutex.lock ();
+    mutex.lock ();
+    mutex.lock ();
+    mutex.unlock ();
+    mutex.unlock ();
+    mutex.unlock ();
+    mutex.unlock ();
+}
+
+inline void tenQuadRecursiveLockPairs ( epicsMutex & mutex )
+{
+    quadRecursiveLockPair ( mutex );
+    quadRecursiveLockPair ( mutex );
+    quadRecursiveLockPair ( mutex );
+    quadRecursiveLockPair ( mutex );
+    quadRecursiveLockPair ( mutex );
+    quadRecursiveLockPair ( mutex );
+    quadRecursiveLockPair ( mutex );
+    quadRecursiveLockPair ( mutex );
+    quadRecursiveLockPair ( mutex );
+    quadRecursiveLockPair ( mutex );
+}
+
+inline void tenQuadRecursiveLockPairsSquared ( epicsMutex & mutex )
+{
+    tenQuadRecursiveLockPairs ( mutex );
+    tenQuadRecursiveLockPairs ( mutex );
+    tenQuadRecursiveLockPairs ( mutex );
+    tenQuadRecursiveLockPairs ( mutex );
+    tenQuadRecursiveLockPairs ( mutex );
+    tenQuadRecursiveLockPairs ( mutex );
+    tenQuadRecursiveLockPairs ( mutex );
+    tenQuadRecursiveLockPairs ( mutex );
+    tenQuadRecursiveLockPairs ( mutex );
+    tenQuadRecursiveLockPairs ( mutex );
 }
 
 void epicsMutexPerformance ()
 {
     epicsMutex mutex;
 
+    // test a single lock pair
     epicsTime begin = epicsTime::getCurrent ();
     static const unsigned N = 1000;
     for ( unsigned i = 0; i < N; i++ ) {
@@ -107,6 +184,26 @@ void epicsMutexPerformance ()
     delay /= N * 100u; // convert to delay per lock pair
     delay *= 1e6; // convert to micro seconds
     printf ( "One lock pair completes in %f micro sec\n", delay );
+
+    // test a two times recursive lock pair
+    begin = epicsTime::getCurrent ();
+    for ( unsigned i = 0; i < N; i++ ) {
+        tenDoubleRecursiveLockPairsSquared ( mutex );
+    }
+    delay = epicsTime::getCurrent () -  begin;
+    delay /= N * 100u; // convert to delay per lock pair
+    delay *= 1e6; // convert to micro seconds
+    printf ( "One double recursive lock pair completes in %f micro sec\n", delay );
+
+    // test a four times recursive lock pair
+    begin = epicsTime::getCurrent ();
+    for ( unsigned i = 0; i < N; i++ ) {
+        tenQuadRecursiveLockPairsSquared ( mutex );
+    }
+    delay = epicsTime::getCurrent () -  begin;
+    delay /= N * 100u; // convert to delay per lock pair
+    delay *= 1e6; // convert to micro seconds
+    printf ( "One quad recursive lock pair completes in %f micro sec\n", delay );
 }
 
 struct verifyTryLock {

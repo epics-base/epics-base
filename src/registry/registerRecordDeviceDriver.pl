@@ -76,7 +76,7 @@ if($numberRecordType>0) {
 #definitions for device
 if($numberDeviceSupport>0) {
     for ($i=0; $i<$numberDeviceSupport; $i++) {
-        print "extern struct dset $deviceSupport[$i];\n";
+        print "extern \"C\" struct dset $deviceSupport[$i];\n";
     }
     print "\nstatic const char * const deviceSupportNames[$numberDeviceSupport] = {\n";
     for ($i=0; $i<$numberDeviceSupport; $i++) {
@@ -98,7 +98,7 @@ if($numberDeviceSupport>0) {
 #definitions for driver
 if($numberDriverSupport>0) {
     for ($i=0; $i<$numberDriverSupport; $i++) {
-        print "extern struct drvet $driverSupport[$i];\n";
+        print "extern \"C\" struct drvet $driverSupport[$i];\n";
     }
     print "\nstatic char *driverSupportNames[$numberDriverSupport] = {\n";
     for ($i=0; $i<$numberDriverSupport; $i++) {

@@ -15,7 +15,11 @@
 
 #-------------------------------------------------------
 # Where to find RTEMS
-RTEMS_BASE=/usr/local/RTEMS
+RTEMS_BASE=/opt/rtems
+
+#-------------------------------------------------------
+# RTEMS tools are similar to UNIX tools
+-include $(CONFIG)/os/CONFIG.Common.UnixCommon
 
 #-------------------------------------------------------
 # Pick up the RTEMS tool/path definitions from the RTEMS BSP directory.
@@ -28,6 +32,8 @@ include $(CONFIG.CC)
 CC = $(CC_FOR_TARGET) $(GCCSPECS) -fasm
 CCC = $(CC)
 AR = $(AR_FOR_TARGET)
+RTEMS_LDFLAGS := $(LDFLAGS)
+LINK.cpp = $(CCC) -o $@ $(RTEMS_LDFLAGS) $(LDFLAGS) $(LINK_OBJS) $(PROD_LD_OBJS) $(PROD_LD_RESS) $(LDLIBS)
 
 #-------------------------------------------------------
 # Build types
@@ -55,14 +61,10 @@ CPPFLAGS += $(CROSS_CPPFLAGS) $(POSIX_CPPFLAGS) $(EPICS_BASE_CPPFLAGS)\
  $(TARGET_CPPFLAGS) $(USR_CPPFLAGS) $(ARCH_DEP_CPPFLAGS)\
  $(OP_SYS_CPPFLAGS) $(CODE_CPPFLAGS)
 
-#-------------------------------------------------------
-# RTEMS prefix and suffix definitions
-EXE =
-OBJ = .o
-
 #--------------------------------------------------
 # Although RTEMS uses gcc, it wants to use gcc its own way
 CROSS_CPPFLAGS =
+CROSS_LDFLAGS =
 
 #--------------------------------------------------
 # operating system class (include/os/<os_class>)
@@ -71,7 +73,7 @@ OS_CLASS = RTEMS
 #--------------------------------------------------
 # Operating system flags
 OP_SYS_CPPFLAGS = -Dfopen=rtems_fopen -Dmain=rtems_main
-OP_SYS_LDLIBS = -lreadline -lcurses
+OP_SYS_LDLIBS = -lreadline -lcurses -lm
 OP_SYS_LDFLAGS = $(CPU_CFLAGS) -u Init -lCom \
                  $(PROJECT_RELEASE)/lib/no-dpmem.rel \
                  $(PROJECT_RELEASE)/lib/no-mp.rel \

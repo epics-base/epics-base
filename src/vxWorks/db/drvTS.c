@@ -13,6 +13,9 @@
 
 /*
  * $Log$
+ * Revision 1.37  2000/06/28 20:46:52  mrk
+ * use new osi code to retrieve broadcast addr
+ *
  * Revision 1.36  2000/06/20 19:54:40  mrk
  * drvTS is now optional for vxWorks
  *
@@ -410,9 +413,9 @@ long TSreport()
     TSprintf("Total events supported = %d\n",TSdata.total_events);
     TSprintf("Request Time Out = %lu milliseconds\n",TSdata.time_out);
     
-    ipAddrToA ((struct sockaddr_in*)&TSdata.hunt, buf, sizeof(buf));
+    ipAddrToDottedIP ((struct sockaddr_in*)&TSdata.hunt, buf, sizeof(buf));
     TSprintf("Broadcast address: %s\n", buf);
-    ipAddrToA ((struct sockaddr_in*)&TSdata.master, buf, sizeof(buf));
+    ipAddrToDottedIP ((struct sockaddr_in*)&TSdata.master, buf, sizeof(buf));
     TSprintf("Master address: %s\n", buf);
     
     if(TSdata.UserRequestedType)

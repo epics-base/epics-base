@@ -35,6 +35,8 @@
 #include "epicsAssert.h"
 #include "tsFreeList.h"
 
+static const double delayVerifyOffset = 1.0; // sec 
+
 class delayVerify : public epicsTimerNotify {
 public:
     delayVerify ( double expectedDelay, epicsTimerQueue & );
@@ -76,16 +78,16 @@ inline void delayVerify::setBegin ( const epicsTime &beginIn )
 
 inline double delayVerify::delay () const
 {
-    return this->expectedDelay;
+    return delayVerifyOffset + this->expectedDelay;
 }
 
 void delayVerify::checkError () const
 {
     double actualDelay =  this->expireStamp - this->beginStamp;
-    double measuredError = actualDelay - this->expectedDelay;
+    double measuredError = actualDelay - delayVerifyOffset - this->expectedDelay;
     double percentError = measuredError / this->expectedDelay;
     percentError *= 100.0;
-    if ( percentError > 1.0 ) {
+    if ( percentError > 0.5 ) {
         printf ( "TEST FAILED timer delay = %g sec, error = %g mSec (%f %%)\n", 
             this->expectedDelay, measuredError * 1000.0, percentError );
     }

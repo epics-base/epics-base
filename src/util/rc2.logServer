@@ -3,6 +3,9 @@
 # Solaris rc2 script for EPICS IOC Log Server process.
 #
 # $Log$
+# Revision 1.1  1995/03/30 23:17:59  jba
+# Added solaris scripts for starting caRepeater and iocLogServer - anj
+#
 #
 
 INSTALL_BIN=:INSTALL_BIN:
@@ -11,12 +14,9 @@ EPICS=:EPICS:
 # To change the default values for the EPICS Environment parameters,
 # uncomment and modify the relevant lines below.
 
-# export EPICS_IOC_LOG_PORT 
-# export EPICS_IOC_LOG_FILE_NAME
-# export EPICS_IOC_LOG_FILE_LIMIT
-# EPICS_IOC_LOG_PORT="6500"
-# EPICS_IOC_LOG_FILE_NAME="$EPICS/logs/iocLog"
-# EPICS_IOC_LOG_FILE_LIMIT="1000000"
+# EPICS_IOC_LOG_PORT="6500"; export EPICS_IOC_LOG_PORT 
+# EPICS_IOC_LOG_FILE_NAME="$EPICS/logs/iocLog"; export EPICS_IOC_LOG_FILE_NAME
+# EPICS_IOC_LOG_FILE_LIMIT="1000000"; export EPICS_IOC_LOG_FILE_LIMIT
 
 if [ $1 = "start" ]; then
         if [ -x $INSTALL_BIN/iocLogServer ]; then

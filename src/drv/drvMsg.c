@@ -72,6 +72,10 @@
 
 int	msgDebug = 0;
 
+#ifndef INVALID_ALARM
+#define INVALID_ALARM VALID_ALARM
+#endif
+
 static	long	 drvMsg_write(), drvMsg_AiFmt();
 static	long	drvMsg_AoFmt(), drvMsg_proc();
 static	long	drvMsg_BiFmt(), drvMsg_BoFmt(), drvMsg_MiFmt(), drvMsg_MoFmt();
@@ -128,31 +132,6 @@ msgRecEnum drvMsgWf = { "Waveform" };
  *
  ******************************************************************************/
 struct drvet drvMsg = { 2, drvMsg_reportMsg, drvMsg_initMsg };
-
-
-#if FALSE
-mb(address)
-unsigned char   *address;
-{
-  unsigned char	c;
-  unsigned int	val;
-  unsigned char	s[100];
-
-  c = *address;
-
-  printf("%08.8X: %02.2X \n", address, c);
-  while (gets(s) != NULL)
-  {
-    if (sscanf(s, "%x", &val) == 1)
-    {
-      c = val;
-      *address = c;
-      return(c);
-    }
-  }
-  return(-1);
-}
-#endif
 
 /******************************************************************************
  *
@@ -269,12 +248,6 @@ struct dbCommon	*prec;
   msgXact 		*pmsgXact;
   msgDrvGenXParm	genXactParm;
   char			message[200];
-#if MULTI_PARM
-  int			mpHead;
-  int			mpTail;
-  msgMPBuf		*pmsgMPBuf;
-  msgMPParm		*pmsgMPParm;
-#endif
 
   /* allocate and fill in msg specific part */
   if ((pmsgXact = malloc(sizeof (msgXact))) == NULL)
@@ -313,106 +286,6 @@ struct dbCommon	*prec;
     errMessage(S_db_badField, message);
     return(NULL);
   }
-
-#if MULTI_PARM
-  /****************************************************************************
-   *
-   * Deal with the multi-parm chain buffers if necessary 
-   *
-   ****************************************************************************/
-
-  if (pparmBlock->pcmds[pmsgXact->parm].flags & (MP_HEAD|MP_TAIL))
-  { /* The Head and Tail parms are not valid for use by database records. */
-    sprintf(message, "(Message driver) %s parm number %d is an MP marker\n", prec->name, pmsgXact->parm);
-    errMessage(S_db_badField, message);
-    return(NULL);
-  }
-
-  if (pparmBlock->pcmds[pmsgXact->parm].flags & MP_MEMBER)
-  { /* parm represents a multi-parm chain member, deal with buffer alloc */
-printf("%s is an MP member\n", prec->name);
-
-    /* Figure out the command number of the MP header */
-    mpHead = pmsgXact->parm - 1;
-    while ((mpHead >= 0) && ((pparmBlock->pcmds[mpHead].flags & MP_HEAD) == 0)
-			&& (pparmBlock->pcmds[mpHead].flags & MP_MEMBER))
-    {
-      mpHead--;
-    }
-    if ((mpHead == -1) || !(pparmBlock->pcmds[mpHead].flags & MP_HEAD))
-    {
-      sprintf(message, "(Message driver) %s parm number %d is an MP parm that has no header\n", prec->name, pmsgXact->parm);
-      errMessage(S_db_badField, message);
-      return(NULL);
-    }
-
-    /* Figure out the command number of the MP tail */
-    mpTail = pmsgXact->parm + 1;
-    while ((mpTail < pparmBlock->numCmds)
-		&& ((pparmBlock->pcmds[mpTail].flags & MP_TAIL) == 0)
-		&& (pparmBlock->pcmds[mpTail].flags & MP_MEMBER))
-    {
-      mpTail++;
-    }
-    if ((mpTail == pparmBlock->numCmds) || !(pparmBlock->pcmds[mpTail].flags & MP_TAIL))
-    {
-      sprintf(message, "(Message driver) %s parm number %d is an MP parm that has no tail\n", prec->name, pmsgXact->parm);
-      errMessage(S_db_badField, message);
-      return(NULL);
-    }
-
-    pmsgMPParm = (struct msgMPParm *) (pparmBlock->pcmds[mpHead].writeOp.p);
-    if (pmsgMPParm == NULL)
-    {
-      sprintf(message, "(Message driver) %s message header %d has no parms\n", prec->name, mpHead);
-      errMessage(S_db_badField, message);
-      return(NULL);
-    }
-
-    /* We have a MP list member with valid-looking header and tail entries */
-    /* Create the msgMPXact to hold the attributes for this xact */
-
-    pmsgXact->pmp = (msgMPXact *) malloc(sizeof(msgMPXact));
-
-    /* See if a buffer was already created for this MP group */
-    pmsgXact->pmp->pmpb = pmsgXact->phwpvt->pmpbHead;
-    while (pmsgXact->pmp->pmpb != NULL)
-    {
-      if (pmsgXact->pmp->pmpb->head == mpHead)
-      { /* I got what I am looking for... stop the while loop */
-printf("got MP member for existing chain (head %d, tail %d)\n", mpHead, mpTail);
-        break;
-      }
-      pmsgXact->pmp->pmpb = pmsgXact->pmp->pmpb->next;
-    }
-
-    if (pmsgXact->pmp->pmpb == NULL)
-    { /* No buffer for this MP group, create a new one */
-printf("got a new MP chain, allocating MP buffer structure");
-      pmsgMPBuf = (msgMPBuf *) malloc(sizeof(msgMPBuf));
-      pmsgMPBuf->status = MSG_MP_BUF_DIRTY|MSG_MP_BUF_NO_IO;
-      pmsgMPBuf->pxactHead = NULL;
-      pmsgMPBuf->head = mpHead;
-      pmsgMPBuf->tail = mpTail;
-      pmsgMPBuf->lastXact = -1;
-      pmsgMPBuf->cpos = 0;
-      pmsgMPBuf->len = 0;
-      pmsgMPBuf->time = 0;
-      pmsgMPBuf->pbuf = (unsigned char *) malloc(pmsgMPParm->size);
-
-      pmsgMPBuf->next = pmsgXact->phwpvt->pmpbHead;
-      pmsgXact->phwpvt->pmpbHead = pmsgMPBuf;
-    }
-
-    /* Put xact's msgMPXact structure into the chain */
-    pmsgXact->pmp->next = pmsgXact->pmp->pmpb->pxactHead;
-    pmsgXact->pmp->pmpb->pxactHead = pmsgXact;
-  }
-  else
-    pmsgXact->pmp = NULL;
-
-#endif /* MULTI_PARM */
-
   return(pmsgXact);
 }
 
@@ -445,9 +318,6 @@ struct link     *plink;         /* I/O link structure from record */
 
   pmsgHwpvt->tmoVal = 0;
   pmsgHwpvt->tmoCount = 0;
-#if MULTI_PARM
-  pmsgHwpvt->pmpbHead = NULL;
-#endif
 
   genHParms.pparmBlock = pparmBlock;
   genHParms.plink = plink;
@@ -744,119 +614,7 @@ drvMsg_drvWrite(pxact, pparm)
 msgXact		*pxact;
 msgStrParm	*pparm;
 {
-#if MULTI_PARM
-
-  msgMPParm	*pmsgMPParm;
-  msgMPBuf	*pmsgMPBuf;
-
-  int		mpIOFlag = 0;
-
-  if (pxact->pmp == NULL)
-  { /* Not a Multi-Parm list member */
-    return(pxact->pparmBlock->pdrvBlock->drvWrite(pxact, pparm));
-  }
-  /* xact is an MP list member... might not have to do any I/O */
-
-  pmsgMPParm = (msgMPParm *)(pxact->pparmBlock->pcmds[pxact->pmp->pmpb->head].writeOp.p);
-  pmsgMPBuf = pxact->pmp->pmpb;
-
-printf("drvMsg_drvWrite: MP %d (flags 0x%04.4X) xact 0x%08.8X\n", pxact->parm, pmsgMPParm->flags, pxact);
-
-  if (pmsgMPParm->flags & MSG_MP_READ_CACHE)
-  { /* Init the MP buffer for a new refill (This is a solitation command) */
-
-    if (!(pmsgMPParm->flags & MSG_MP_NO_CHECK_ORDER))
-    { /* Check to see if parm # is valid */
-      if (pmsgMPBuf->head == pxact->parm - 1)
-      { /* This is the header operation */
-	if ((pmsgMPBuf->status & MSG_MP_BUF_DIRTY) 
-		|| (pmsgMPBuf->lastXact + 1 == pmsgMPBuf->tail))
-        { /* the order looks OK */
-	  pmsgMPBuf->lastXact = pxact->parm;
-
-          /* Check to see if time to refill the read-cache */
-          if ((pmsgMPParm->ttl == 0) || (pmsgMPBuf->time <= tickGet()))
-          { /* Read cache time-to-live has expired... reset the MP buffer */
-printf("drvMsg_drvWrite: MP %d processing\n", pxact->parm);
-            mpIOFlag = 1;
-            pmsgMPParm->flags &= ~MSG_MP_BUF_NO_IO;
-          }
-	  else
-	  {
-printf("drvMsg_drvWrite: MP %d not time to process\n", pxact->parm);
-	    pmsgMPParm->flags |= MSG_MP_BUF_NO_IO;
-	  }
-        }
-	else
-	{ /* we are not in order */
-	  printf("(message driver) drvMsg_drvWrite: processing %s: parm %d out of order, expecting parm %d\n", pxact->prec->name, pxact->parm, pmsgMPBuf->lastXact + 1);
-	  pmsgMPBuf->status |= MSG_MP_BUF_ORDER|MSG_MP_BUF_DIRTY;
-	  pxact->status = XACT_IOERR;
-	  return(XACT_IOERR);
-	}
-      }
-      else
-      { /* Not the header */
-        if (pmsgMPBuf->lastXact == pxact->parm - 1)
-	{ /* non-header order looks OK */
-	  pmsgMPBuf->lastXact = pxact->parm;
-
-	  /* Only do the I/O if the header was fired out */
-	  if (!(pmsgMPParm->flags & MSG_MP_BUF_NO_IO))
-	  {
-printf("drvMsg_drvWrite: MP %d processing\n", pxact->parm);
-	    mpIOFlag = 1;
-	  }
-	  else
-	  {
-printf("drvMsg_drvWrite: MP %d not time to process (MSG_MP_BUF_NO_IO is set)\n", pxact->parm);
-	  }
-	}
-	else
-	{
-	  printf("(message driver) drvMsg_drvWrite: processing %s: parm %d out of order\n", pxact->prec->name, pxact->parm);
-	  pmsgMPBuf->status |= MSG_MP_BUF_ORDER|MSG_MP_BUF_DIRTY;
-	  pxact->status = XACT_IOERR;
-	  return(XACT_IOERR);
-	}
-      }
-    }
-    else
-    { /* Order is not to be checked */
-
-      /* Check to see if time to refill the read-cache */
-      if ((pmsgMPParm->ttl == 0) || (pmsgMPBuf->time <= tickGet()))
-      { /* Read cache time-to-live has expired... reset the MP buffer */
-printf("drvMsg_drvWrite: MP %d processing\n", pxact->parm);
-        mpIOFlag = 1;
-      }
-    }
-  }
-  else
-  { /* Working with an MP list that is write-cached */
-    printf("MP write cacheing is currently non-supported!\n");
-    pmsgMPBuf->status |= MSG_MP_BUF_DIRTY;
-    pxact->status = XACT_IOERR;
-    return(XACT_IOERR);
-  }
-
-  /* All checking is complete, if mpIOFlag is set, do the I/O */
-  if (mpIOFlag)
-  {
-#endif /* MULTI_PARM */
-
-    return(pxact->pparmBlock->pdrvBlock->drvWrite(pxact, pparm));
-
-#if MULTI_PARM
-  }
-  else
-  {
-printf("skipping drvMsg_drvWrite operation\n");
-    return(pxact->status);
-  }
-#endif /* MULTI_PARM */
-
-  /* We never get here */
+  return(pxact->pparmBlock->pdrvBlock->drvWrite(pxact, pparm));
 }
 
 /******************************************************************************
@@ -867,97 +625,6 @@ drvMsg_drvRead(pxact, pparm)
 msgXact		*pxact;
 msgStrParm	*pparm;
 {
-#if MULTI_PARM
-
-  msgMPParm     *pmsgMPParm;
-  msgMPBuf      *pmsgMPBuf;
-  msgStrParm	localStrParm;
-  int		j;
-
-  if (pxact->pmp == NULL)
-  {
-    return((*(pxact->pparmBlock->pdrvBlock->drvRead))(pxact, pparm));
-  }
-printf("drvMsg_drvRead: MP %d xact 0x%08.8X\n", pxact->parm, pxact);
-
-  pmsgMPParm = (msgMPParm *)(pxact->pparmBlock->pcmds[pxact->pmp->pmpb->head].writeOp.p);
-  pmsgMPBuf = pxact->pmp->pmpb;
-
-  if (pmsgMPParm->flags & MSG_MP_READ_CACHE)
-  { /* We ALWAYS read from the MP buffer w/o respect to the ttl value */
- 
-    if ((pmsgMPBuf->status & MSG_MP_BUF_READ_STATUS) != MSG_MP_BUF_OK)
-    {
-      printf("drvMsg_drvRead: entered with MPbuf status = 0x%2.2X\n", pmsgMPBuf->status);
-      pxact->status = XACT_IOERR;
-      return(XACT_IOERR);
-    }
-
-    /* Make sure the parm number is OK */
-    if (!(pmsgMPParm->flags & MSG_MP_NO_CHECK_ORDER))
-    { /* We are doing the header, or just finished parm-1 */
-      if (((pmsgMPBuf->head + 1 == pxact->parm)
-		&& (pmsgMPBuf->lastXact == pxact->parm))
-                || (pmsgMPBuf->lastXact + 1 == pxact->parm))
-      {
-printf("drvMsg_drvRead: ordered MP read ok\n");
-	pmsgMPBuf->lastXact = pxact->parm;
-      }
-      else
-      {
-printf("drvMsg_drvRead: read operation is out of order\n");
-	pmsgMPBuf->status = MSG_MP_BUF_ORDER|MSG_MP_BUF_DIRTY;	/* kill other processing too */
-        pxact->status = XACT_IOERR;
-	return(XACT_IOERR);
-      }
-    }
-
-    if (pmsgMPBuf->lastXact == pxact->parm)
-    { /* This is the first read in the read chain of the MP list, do the I/O */
-      localStrParm.len = pmsgMPParm->size;
-      localStrParm.buf = pmsgMPBuf->pbuf;
-      if ((*(pxact->pparmBlock->pdrvBlock->drvRead))(pxact, &localStrParm) != XACT_OK)
-      {
-printf("drvMsg_drvRead died while processing read after the header finished\n");
-	pmsgMPBuf->status = MSG_MP_BUF_DIRTY;
-	return(XACT_IOERR);
-      }
-      pmsgMPBuf->cpos = 0;
-      pmsgMPBuf->len = ?/?/?/?/?;
-      pmsgMPBuf->time = tickGet();
-    }
-
-    /* Everything looks ok, do the read from the buffer cache */
-    if (pmsgMPParm->flags & MSG_MP_PROC_FIFO)
-    { /* use buffer as a silo & read from the end */
-printf("reading from cache in FIFO operation\n");
-      j = 0;
-      while ((j < pparm->len) && (pmsgMPBuf->len))
-      {
-	pparm->buf[j] = pmsgMPBuf->pbuf[pmsgMPBuf->cpos];
-	pmsgMPBuf->cpos++;
-	pmsgMPBuf->len--;
-	j++;
-      }
-      pparm->buf[j] = '\0';
-    }
-    else
-    { /* do the read operation from the head of the buffer */
-printf("reading from begining of cache\n");
-      j = 0;
-      while ((j < pparm->len) && (j < pmsgMPBuf->len))
-      {
-	pparm->buf[j] = pmsgMPBuf->pbuf[j];
-	j++;
-      }
-      pparm->buf[j] = '\0';
-    }
-    return(pxact->status);
-  }
-
-  /* MP buffer is a write cache.  Do the read operation now */
-#endif /* MULTI_PARM */
-
   return((*(pxact->pparmBlock->pdrvBlock->drvRead))(pxact, pparm));
 }
 
@@ -1000,7 +667,7 @@ msgStrParm	*pparm;
  *
  * Read a string and see if it contains the substring provided in the
  * msgAkParm structure.  This is useful to check the ack string from a
- * device because it will cause the record to go into a VALID alarm
+ * device because it will cause the record to go into a INVALID alarm
  * state if the ACK does not match the provided string.
  *
  * If the provided substring is a zero-length string, it will match
@@ -1744,7 +1411,7 @@ int		ret;	/* If all goes well, return this value */
       if (msgDebug)
         printf("Setting an alarm on record %s\n", prec->name);
 
-      recGblSetSevr(prec, READ_ALARM, VALID_ALARM);
+      recGblSetSevr(prec, READ_ALARM, INVALID_ALARM);
     }
     else
       if (ret == 2)

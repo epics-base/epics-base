@@ -34,6 +34,7 @@ VX_INCLUDE = $(VX_INCLUDE_$(TORNADO))
 VX_GNU = $(VX_GNU_$(TORNADO))
 GNU_BIN = $(VX_GNU_BIN_$(TORNADO))
 GNU_LIB = $(VX_GNU_LIB_$(TORNADO))
+export GCC_EXEC_PREFIX = $(GNU_LIB)/gcc-lib/
 
 #--------------------------------------------------
 # VxWorks command definitions

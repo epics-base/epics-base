@@ -389,7 +389,7 @@ static void alarm(pao)
     struct aoRecord	*pao;
 {
 	double		val;
-	float		hyst, lalm, hihi, high, low, lolo;
+	double		hyst, lalm, hihi, high, low, lolo;
 	unsigned short	hhsv, llsv, hsv, lsv;
 
 	if(pao->udf == TRUE ){
@@ -472,7 +472,7 @@ static void convert(pao,value)
 	/* now set value equal to desired output value */
         /* apply the output rate of change */
         if ( (pao->oroc) != 0.0 ){/*must be defined and >0*/
-		float		diff;
+		double		diff;
 
                 diff = value - pao->oval;
                 if (diff < 0){

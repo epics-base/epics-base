@@ -218,7 +218,6 @@ long dbProcess(paddr)
 	/* check for trace processing*/
 	if(tpro) {
 		if(vxTas(&trace)) {
-			trace = TRUE;
 			trace_lset = lset;
 			set_trace = TRUE;
 		}

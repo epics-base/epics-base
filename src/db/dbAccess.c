@@ -117,12 +117,10 @@ long dbCommonInit();
 
 /*
  *  The lock structure for each database lock set.  A lockset is the
- *    connected graph of all adjacent nodes to a record.  A record
- *    is considered adjacent if the link connecting it to the lock
- *    set causes that record to process.  In other words, a record
- *    is considered part of the lock set if the action of getting
- *    or putting a value to that record (with a link) causes that
- *    record to process.
+ *    connected graph of all adjacent nodes to a record (with one
+ *    exception, single-valued NPP NMS gets), where adjacent is defined
+ *    as a record connected by a get, put, or forward link to the current
+ *    record.
  */
 struct scanLock {
 	FAST_LOCK	lock;

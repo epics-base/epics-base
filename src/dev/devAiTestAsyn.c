@@ -32,7 +32,8 @@
  * -----------------
  * .01  01-08-92        jba     Added cast in call to wdStart to avoid compile warning msg
  * .02  02-05-92	jba	Changed function arguments from paddr to precord 
- * .02	03-13-92	jba	ANSI C changes
+ * .03	03-13-92	jba	ANSI C changes
+ * .04  04-10-92        jba     pact now used to test for asyn processing, not return value
  *      ...
  */
 
@@ -92,8 +93,6 @@ static void myCallback(pcallback)
     (*prset->process)(precord);
     dbScanUnlock(precord);
 }
-    
-    
 
 static long init_record(pai)
     struct aiRecord	*pai;
@@ -140,7 +139,8 @@ static long read_ai(pai)
 		callbackSetPriority(pai->prio,pcallback);
 		printf("%s Starting asynchronous processing\n",pai->name);
 		wdStart(pcallback->wd_id,wait_time,callbackRequest,(int)pcallback);
-		return(1);
+		pai->pact=TRUE;
+    		return(0);
 	}
     default :
         if(recGblSetSevr(pai,SOFT_ALARM,VALID_ALARM)){

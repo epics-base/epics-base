@@ -34,6 +34,7 @@
  * .02  01-08-92        jba     Added cast in call to wdStart to avoid compile warning msg
  * .03  02-05-92	jba	Changed function arguments from paddr to precord 
  * .04	03-13-92	jba	ANSI C changes
+ * .05  04-10-92        jba     pact now used to test for asyn processing, not return value
  *      ...
  */
 
@@ -132,14 +133,15 @@ static long write_mbbo(pmbbo)
     case (CONSTANT) :
 	if(pmbbo->pact) {
 		printf("%s Completed\n",pmbbo->name);
-		return(0); /* don`t convert*/
+		return(0);
 	} else {
 		wait_time = (int)(pmbbo->disv * vxTicksPerSecond);
 		if(wait_time<=0) return(0);
 		callbackSetPriority(pmbbo->prio,pcallback);
 		printf("%s Starting asynchronous processing\n",pmbbo->name);
 		wdStart(pcallback->wd_id,wait_time,callbackRequest,(int)pcallback);
-		return(1);
+		pmbbo->pact=TRUE;
+		return(0);
 	}
     default :
         if(recGblSetSevr(pmbbo,SOFT_ALARM,VALID_ALARM)){

@@ -33,6 +33,7 @@
  * .02  01-08-92        jba     Added cast in call to wdStart to avoid compile warning msg
  * .03  02-05-92	jba	Changed function arguments from paddr to precord 
  * .04	03-13-92	jba	ANSI C changes
+ * .05  04-10-92        jba     pact now used to test for asyn processing, not return value
  *      ...
  */
 
@@ -137,7 +138,8 @@ static long write_stringout(pstringout)
 		callbackSetPriority(pstringout->prio,pcallback);
 		printf("%s Starting asynchronous processing\n",pstringout->name);
 		wdStart(pcallback->wd_id,wait_time,callbackRequest,(int)pcallback);
-		return(1);
+		pstringout->pact=TRUE;
+		return(0);
 	}
     default :
         if(recGblSetSevr(pstringout,SOFT_ALARM,VALID_ALARM)){

@@ -52,6 +52,7 @@
 #include 	<vxLib.h>
 #include 	<tickLib.h>
 #include 	<sysLib.h>
+#include 	<intLib.h>
 
 #include	<dbDefs.h>
 #include	<epicsPrint.h>

@@ -176,7 +176,7 @@ initialize_local_filesystem(const char **argv)
     argv[0] = rtems_bsdnet_bootp_boot_file_name;
 
 #if defined(__mcf528x__)
-    extern char _DownloadLocation[], _edata[], _FlashBase[];
+    extern char _DownloadLocation[], _edata[], _FlashBase[], _FlashSize[];
     unsigned long flashIndex = _edata - _DownloadLocation;
     char *header;
 
@@ -184,7 +184,7 @@ initialize_local_filesystem(const char **argv)
     if (memcmp(header + 257, "ustar  ", 8) == 0) {
         int fd;
         printf ("***** Unpack in-memory file system (IMFS) *****\n");
-        if (rtems_tarfs_load("/", header, 2000000) != 0) {
+        if (rtems_tarfs_load("/", header, (unsigned long)_FlashSize - flashIndex) != 0) {
             printf("Can't unpack tar filesystem\n");
             return -1;
         }

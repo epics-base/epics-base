@@ -324,7 +324,7 @@ unsigned int	ab_debug=0;
 LOCAL char *statusMessage[] = {
 	"Success","New Card","Card Conflict","No Card",
 	"Card not initialized","block transfer queued",
-	"Card Busy","Timeout","Link Down","Failure"};
+	"Card Busy","Timeout","Adapter Down","Failure"};
 char **abStatusMessage = statusMessage;
 
 LOCAL char *numBitsMessage[] = {
@@ -616,7 +616,7 @@ LOCAL abStatus  bt_queue(unsigned short command,ab_card *pcard,
 	unsigned short	*pmb_msg = &pmb->msg[0];
 	int		status;
 
-	if(!padapter->adapter_online) return(abLinkDown);
+	if(!padapter->adapter_online) return(abAdapterDown);
 	pbtInfo->cmd = command;
 	pbtInfo->pmsg = pmsg;
 	pbtInfo->msg_len = msg_len;
@@ -1482,26 +1482,30 @@ LOCAL abStatus registerCard(
 
 
     if(link>=max_ab_6008s) {
-	printf("abDrv(registerCard) bad link %hu\n",link);
-	return(abFailure);
+	if(ab_debug>0)
+	    printf("abDrv(registerCard) bad link %hu\n",link);
+	return(abNoCard);
     }
     if(adapter>=MAX_AB_ADAPTERS) {
-	printf("abDrv(registerCard) bad adapter %hu\n",adapter);
-	return(abFailure);
+	if(ab_debug>0)
+	    printf("abDrv(registerCard) bad adapter %hu\n",adapter);
+	return(abNoCard);
     }
     if(card>=MAX_CARDS_PER_ADAPTER) {
-	printf("abDrv(registerCard) bad card %hu\n",card);
-	return(abFailure);
+	if(ab_debug>0)
+	    printf("abDrv(registerCard) bad card %hu\n",card);
+	return(abNoCard);
     }
     plink = pab_links[link];
     if(!plink || !plink->initialized) {
-	printf("abDrv(registerCard) link %hu not initialized\n",link);
-	return(abFailure);
+	if(ab_debug>0)
+	    printf("abDrv(registerCard) link %hu not initialized\n",link);
+	return(abNoCard);
     }
     padapter = plink->papadapter[adapter];
     if(padapter) pcard = padapter->papcard[card];
     if(pcard) {
-	if(strcmp(pcard->card_name,card_name)!=0) return(abFailure);
+	if(strcmp(pcard->card_name,card_name)!=0) return(abCardConflict);
 	if(pcard->type==type) {
 	    *ppcard = pcard;
 	    return(abSuccess);
@@ -1518,7 +1522,7 @@ LOCAL abStatus registerCard(
 		return(abSuccess);
 	    }
 	}
-	return(abFailure);
+	return(abCardConflict);
     }
     /*New Card*/
     pcard = abCalloc(1,sizeof(ab_card));
@@ -1598,7 +1602,7 @@ LOCAL abStatus getStatus(void *drvPvt)
     unsigned short	adapter = pcard->adapter;
     ab_adapter		*padapter = pab_links[link]->papadapter[adapter];
 
-    if(!padapter->adapter_online) return(abLinkDown);
+    if(!padapter->adapter_online) return(abAdapterDown);
     return(pcard->status);
 }
 
@@ -1687,9 +1691,43 @@ LOCAL abStatus btWrite(void *drvPvt,unsigned short *pwrite_msg, unsigned short w
     return(btStatus);
 }
 
+LOCAL abStatus adapterStatus(unsigned short link,unsigned short adapter)
+{
+    ab_adapter	*padapter;
+    ab_link	*plink;
+
+    if(link>=max_ab_6008s) return(abFailure);
+    if(adapter>=MAX_AB_ADAPTERS) return(abFailure);
+    plink = pab_links[link];
+    if(!plink || !plink->initialized) return(abFailure);
+    padapter = plink->papadapter[adapter];
+    if(!padapter->adapter_online) return(abAdapterDown);
+    return(abSuccess);
+}
+    
+LOCAL abStatus cardStatus(
+    unsigned short link,unsigned short adapter,unsigned short card)
+{
+    ab_adapter	*padapter;
+    ab_link	*plink;
+    ab_card	*pcard;
+
+    if(link>=max_ab_6008s) return(abFailure);
+    if(adapter>=MAX_AB_ADAPTERS) return(abFailure);
+    if(card>=MAX_CARDS_PER_ADAPTER) return(abFailure);
+    plink = pab_links[link];
+    if(!plink || !plink->initialized) return(abFailure);
+    padapter = plink->papadapter[adapter];
+    pcard = padapter->papcard[card];
+    if(!pcard) return(abNoCard);
+    if(!padapter->adapter_online) return(abAdapterDown);
+    return(pcard->status);
+}
+
 LOCAL abDrv abDrvTable= {
 	registerCard,getLocation,setNbits,setUserPvt,getUserPvt,
-	getStatus,startScan,updateAo,updateBo,readBo,readBi,btRead,btWrite
+	getStatus,startScan,updateAo,updateBo,readBo,readBi,btRead,btWrite,
+	adapterStatus,cardStatus
 };
 abDrv *pabDrv = &abDrvTable;
 

@@ -41,7 +41,7 @@ typedef enum {typeNotAssigned,typeBi,typeBo,typeBiBo,typeAi,typeAo,typeBt}
 	cardType;
 /* status values*/
 typedef enum{abSuccess,abNewCard,abCardConflict,abNoCard,abNotInitialized,
-	abBtqueued,abBusy,abTimeout,abLinkDown,abFailure} abStatus;
+	abBtqueued,abBusy,abTimeout,abAdapterDown,abFailure} abStatus;
 extern char **abStatusMessage;
 
 typedef enum{abBitNotdefined,abBit8,abBit16,abBit32} abNumBits;
@@ -73,6 +73,10 @@ typedef struct {
 	unsigned short read_msg_len);
     abStatus(*btWrite)(void *drvPvt,unsigned short *pwrite_msg,
 	unsigned short write_msg_len);
+    abStatus (*adapterStatus)
+	(unsigned short link,unsigned short adapter);
+    abStatus (*cardStatus)
+	(unsigned short link,unsigned short adapter, unsigned short card);
 }abDrv; 
 
 extern abDrv *pabDrv;

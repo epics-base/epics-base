@@ -9,9 +9,9 @@ LEXOPT = -L
 
 SRCS.c = ../dbVarSub.c dbLoadTemplate_lex.c dbLoadTemplate.c \
 		dbLoadRecords_lex.c dbLoadRecords.c
-OBJS = dbVarSub.o dbLoadTemplate.o dbLoadRecords.o
+LIBOBJS = dbVarSub.o dbLoadTemplate.o dbLoadRecords.o
 
-PROD = dbSubs
+LIBNAME = dbSubs
 
 include $(EPICS)/config/RULES.Vx
 
@@ -29,7 +29,4 @@ clean::
 	@$(RM) dbLoadTemplate_lex.c dbLoadTemplate.c dbLoadRecords_lex.c \
 			dbLoadRecords.c
 
-dbSubs: $(OBJS)
-	$(RM) $@
-	$(LINK.c) $@ $(OBJS) $(LDLIBS)
 

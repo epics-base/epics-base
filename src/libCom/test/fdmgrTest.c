@@ -4,7 +4,6 @@
 
 #include "fdmgr.h"
 #include "tsStamp.h"
-#include "cadef.h"
 #include "epicsAssert.h"
 
 static const unsigned uSecPerSec = 1000000;

@@ -569,7 +569,8 @@ static long init_mbbi_record(struct mbbiRecord *pmbbi)
 
     if (!strcmp(table[3].parm_name, pvmeio->parm))
     {
-	printf("devSysmon: mbbi record is Temperature\n");
+    	if (devSysmonDebug >= 10)
+		printf("devSysmon: mbbi record is Temperature\n");
 
 	pmbbi->nobt = 0x08; /* make sure 8 bits wide */
 

@@ -1,19 +1,7 @@
 /*
  *	apCreateShadow.c
- * - todo
- * complete rework ??? to EPICS area tools - templates etc.
- *
- *
- *		maybe add a complete history file
- *
- * rcz
- * changes
- *		use appList as the filter for the top directories.
  *
  */
-
-
-
 
 #include <stdio.h>
 #include <string.h>
@@ -24,7 +12,6 @@
 #include <dirent.h>
 #include <errno.h>
 
-#define BUFLEN 256
 #define SAME 0
 
 static void            Usage();
@@ -38,14 +25,14 @@ static void            init_setup();
 
 int             errno;
 static struct stat     stbuf;
-static char            buffer[BUFLEN];
-static char            dest_base[80];	/* dest base (root of shadow  node) */
-static char            src_base[80];	/* current source descend root node */
-static char            dpath[80];	/* dest/subdir... */
-static char            spath[80];	/* src/subdir... */
+static char            buffer[MAXPATHLEN];
+static char            dest_base[MAXPATHLEN];	/* dest base (root of shadow  node) */
+static char            src_base[MAXPATHLEN];	/* current source descend root node */
+static char            dpath[MAXPATHLEN];	/* dest/subdir... */
+static char            spath[MAXPATHLEN];	/* src/subdir... */
 static char            progName[30];	/* program name */
-static char            sys_top[80];	/* root node */
-static char            topAppl[80];/* pathname of master appLoc file */
+static char            sys_top[MAXPATHLEN];	/* root node */
+static char            topAppl[MAXPATHLEN];/* pathname of master appLoc file */
 
 
 /****************************************************************************
@@ -60,13 +47,6 @@ main(argc, argv)
     int             argc;
     char          **argv;
 {
-#if 0
-    char           *ptr;
-    char            top_node[30];
-    FILE           *appLoc_fp;	/* user version of appLoc file */
-    char            comLocName[80];	/* refs to all application common
-					 * nodes */
-#endif
 /*
  * intial setup
  */
@@ -76,9 +56,6 @@ main(argc, argv)
         fprintf(stderr, "%s: Can't chdir\n", progName);
         exit(1);
     }
-/* TODO */
-/*fprintf(stderr,"%s: Creating a shadow node attached to %s",progName, xxx);*/
-/* TODO */
     startFromHere();
 
     fprintf(stderr, "apCreateShadow  %s\n", "completed");
@@ -96,11 +73,6 @@ procLink(name)
     char            buff[MAXPATHLEN];
     int             num_chars;
 
-    /* always skip appLoc */
-    if ((strcmp("./appLoc", name)) == SAME) {
-printf("procLink: compare ./appLoc and %s\n",name);
-        exit(1);
-    }
     if ((num_chars = readlink(name, buff, MAXPATHLEN)) < 0) {
 	fprintf(stderr, "procLink: FATAL ERROR - errno=%d name=%s\n", errno, name);
 	exit(1);
@@ -289,33 +261,8 @@ fprintf(stderr, "%s: FATAL ERROR - Illegal invocation\n", progName);
 		exit(1);
 	    }
 	}
-#if 0 /* DEBUG */
-	fprintf(stderr, "%s: WARNING - This is NOT the first run!\n",progName );
-#endif
     }
     fclose(origin_fp);
-
-
-#if 0 /* RZ COMMENT OUT */
-/*********************** create a marker *******************/
-    /* if appLoc doesn't exist - provide one */
-    if ((stat("./appLoc", &stbuf)) != 0) {
-	/* make a copy of topAppl */
-	sprintf(command, "cp %s %s\n", topAppl, "appLoc");
-	status = system(command);
-	fprintf(stderr, "####################################################\n");
-	fprintf(stderr, "I am providing you with a copy of the appLoc file\n");
-	fprintf(stderr, "The appLoc file determines how many shadow applications\n");
-	fprintf(stderr, "will be created in your shadow node\n");
-	fprintf(stderr, "You may/should edit your copy of the appLoc file\n");
-	fprintf(stderr, "\n");
-	fprintf(stderr, "Once you are satisfied with the contents of your appLoc file,\n");
-	fprintf(stderr, "Please invoke this program again:\n");
-	fprintf(stderr, "   %%\n %s/bin/%s\n", sys_top, progName);
-	fprintf(stderr, "####################################################\n");
-	exit(1);
-    }
-#endif /* ENDIF RZ COMMENT OUT */
 }
 
 /*********************************************/

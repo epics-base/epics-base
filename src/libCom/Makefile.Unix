@@ -4,6 +4,25 @@ include $(EPICS)/config/CONFIG_BASE
 
 USR_CFLAGS = -D_NO_PROTO
 
+<<<<<<< Makefile.Unix
+SRCS.c = \
+	../bucketLib.c ../calcPerform.c ../cvtFast.c \
+	../ellLib.c ../envSubr.c ../errMtst.c ../errSymLib.c \
+	../fdmgr.c  ../freeListLib.c \
+	../gpHashLib.c ../memDebugLib.c \
+	../nextFieldSubr.c ../postfix.c \
+	../tsSubr.c errSymTbl.c ../errInc.c \
+	../realpath.c  ../errPrintfUNIX.c \
+	../assertUNIX.c
+
+LIBOBJS = \
+	tsSubr.o bucketLib.o calcPerform.o\
+	cvtFast.o ellLib.o\
+	envSubr.o errMtst.o errSymLib.o errSymTbl.o fdmgr.o \
+	freeListLib.o gpHashLib.o \
+	memDebugLib.o  nextFieldSubr.o postfix.o \
+	realpath.o  errPrintfUNIX.o assertUNIX.o
+=======
 SRCS.c += ../bucketLib.c
 SRCS.c += ../calcPerform.c
 SRCS.c += ../cvtFast.c
@@ -40,6 +59,7 @@ LIBOBJS += nextFieldSubr.o
 LIBOBJS += postfix.o
 LIBOBJS += realpath.o
 LIBOBJS += tsSubr.o
+>>>>>>> 1.22
 
 LIBNAME = libCom.a
 

@@ -748,7 +748,7 @@ const struct in_addr	*pnet_addr
 )
 {
 	int		v42;
-	int		port;
+	unsigned short	port;
 	char		rej[64];
       	chid		chan;
 	int		status;

@@ -2,19 +2,19 @@ TOP=../../..
 
 include $(TOP)/configure/CONFIG
 
-SRCS += devAiTestAsyn.c
-SRCS += devAoTestAsyn.c
-SRCS += devBiTestAsyn.c
-SRCS += devBoTestAsyn.c
-SRCS += devEventTestIoEvent.c
-SRCS += devHistogramTestAsyn.c
-SRCS += devMbbiTestAsyn.c
-SRCS += devMbboTestAsyn.c
-SRCS += devSiTestAsyn.c
-SRCS += devSoTestAsyn.c
-SRCS += devWfTestAsyn.c
+MYSRCS += devAiTestAsyn.c
+MYSRCS += devAoTestAsyn.c
+MYSRCS += devBiTestAsyn.c
+MYSRCS += devBoTestAsyn.c
+MYSRCS += devEventTestIoEvent.c
+MYSRCS += devHistogramTestAsyn.c
+MYSRCS += devMbbiTestAsyn.c
+MYSRCS += devMbboTestAsyn.c
+MYSRCS += devSiTestAsyn.c
+MYSRCS += devSoTestAsyn.c
+MYSRCS += devWfTestAsyn.c
 
-IOC_PROD_vxWorks = $(SRCS:%.c=%.o)
+PROD_vxWorks = $(MYSRCS:%.c=%.o)
 
 include $(TOP)/configure/RULES_BUILD
 

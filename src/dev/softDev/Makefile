@@ -2,33 +2,33 @@ TOP=../../..
 
 include $(TOP)/configure/CONFIG
 
-SRCS += devAiSoft.c
-SRCS += devAiSoftRaw.c
-SRCS += devAoSoft.c
-SRCS += devAoSoftRaw.c
-SRCS += devBiSoft.c
-SRCS += devBiSoftRaw.c
-SRCS += devBoSoft.c
-SRCS += devBoSoftRaw.c
-SRCS += devEventSoft.c
-SRCS += devHistogramSoft.c
-SRCS += devLiSoft.c
-SRCS += devLoSoft.c
-SRCS += devMbbiDirectSoft.c
-SRCS += devMbbiDirectSoftRaw.c
-SRCS += devMbbiSoft.c
-SRCS += devMbbiSoftRaw.c
-SRCS += devMbboDirectSoft.c
-SRCS += devMbboDirectSoftRaw.c
-SRCS += devMbboSoft.c
-SRCS += devMbboSoftRaw.c
-SRCS += devPtSoft.c
-SRCS += devSASoft.c
-SRCS += devSiSoft.c
-SRCS += devSoSoft.c
-SRCS += devWfSoft.c
+MYMYSRCSS += devAiSoft.c
+MYMYSRCSS += devAiSoftRaw.c
+MYMYSRCSS += devAoSoft.c
+MYMYSRCSS += devAoSoftRaw.c
+MYMYSRCSS += devBiSoft.c
+MYMYSRCSS += devBiSoftRaw.c
+MYMYSRCSS += devBoSoft.c
+MYMYSRCSS += devBoSoftRaw.c
+MYMYSRCSS += devEventSoft.c
+MYMYSRCSS += devHistogramSoft.c
+MYMYSRCSS += devLiSoft.c
+MYMYSRCSS += devLoSoft.c
+MYMYSRCSS += devMbbiDirectSoft.c
+MYMYSRCSS += devMbbiDirectSoftRaw.c
+MYMYSRCSS += devMbbiSoft.c
+MYMYSRCSS += devMbbiSoftRaw.c
+MYMYSRCSS += devMbboDirectSoft.c
+MYMYSRCSS += devMbboDirectSoftRaw.c
+MYMYSRCSS += devMbboSoft.c
+MYMYSRCSS += devMbboSoftRaw.c
+MYMYSRCSS += devPtSoft.c
+MYMYSRCSS += devSASoft.c
+MYMYSRCSS += devSiSoft.c
+MYMYSRCSS += devSoSoft.c
+MYMYSRCSS += devWfSoft.c
 
-IOC_PROD_vxWorks = $(SRCS:%.c=%.o)
+PROD_vxWorks = $(MYMYSRCSS:%.c=%.o)
 
 include $(TOP)/configure/RULES_BUILD
 

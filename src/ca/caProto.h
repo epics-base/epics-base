@@ -133,7 +133,7 @@ typedef ca_uint32_t     caResId;
 #define CA_PROTO_CLAIM_CIU_FAILED 26u   /* unable to create chan resource in server */
 #define CA_PROTO_SERVER_DISCONN 27u /* server deletes PV (or channel) */
 
-#define CA_PROTO_LAST_CMMD CA_PROTO_CLAIM_CIU_FAILED
+#define CA_PROTO_LAST_CMMD CA_PROTO_SERVER_DISCONN
 
 /*
  * for use with search and not_found (if search fails and

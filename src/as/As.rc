@@ -19,7 +19,7 @@ BEGIN
         BLOCK "040904b0"
         BEGIN
             VALUE "Comments","Access Security Library for EPICS\0"
-            VALUE "CompanyName", "Argonne National Laboratory\0"
+            VALUE "CompanyName", "The EPICS collaboration\0"
             VALUE "FileDescription", "Access Security Library\0"
             VALUE "FileVersion", BASE_VERSION_STRING "\0"
             VALUE "InternalName", "as\0"

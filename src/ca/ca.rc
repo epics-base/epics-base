@@ -19,7 +19,7 @@ BEGIN
         BLOCK "040904b0"
         BEGIN
             VALUE "Comments","Channel Access Library for EPICS\0"
-            VALUE "CompanyName", "Argonne National Laboratory\0"
+            VALUE "CompanyName", "The EPICS collaboration\0"
             VALUE "FileDescription", "Channel Access Library\0"
             VALUE "FileVersion", BASE_VERSION_STRING "\0"
             VALUE "InternalName", "ca\0"

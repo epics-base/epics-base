@@ -32,7 +32,7 @@
 #  	...
 #
 
-all: bld_errSym dlsource eddsource seqsource  devtestsource camathsource
+all: bld_errSym dlsource eddsource 
 
 bld_errSym:
 	cd libUnix; 	sh blderrSymTbl

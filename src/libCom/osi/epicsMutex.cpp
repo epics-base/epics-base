@@ -235,4 +235,56 @@ void epicsMutex :: show ( unsigned level ) const
     epicsMutexShow ( this->id, level );
 }
 
+static epicsThreadPrivate < epicsDeadlockDetectMutex >  
+    currentMutexLevel;
+
+epicsDeadlockDetectMutex::
+    epicsDeadlockDetectMutex ( hierarchyLevel_t level ) : 
+    hierarchyLevel ( level ), pPreviousLevel ( 0 )
+{
+}
+
+epicsDeadlockDetectMutex::~epicsDeadlockDetectMutex ()
+{
+}
+
+void epicsDeadlockDetectMutex::show ( unsigned level ) const
+{
+    this->mutex.show ( level );
+}
+
+void epicsDeadlockDetectMutex::lock ()
+{
+    epicsDeadlockDetectMutex * pPrev = currentMutexLevel.get();
+    if ( pPrev && pPrev != this ) {
+        if ( pPrev->hierarchyLevel >= this->hierarchyLevel ) {
+            errlogPrintf ( "!!!! Deadlock Vulnerability Detected !!!! "
+                "at level %u and moving to level %u\n",
+                pPrev->hierarchyLevel,
+                this->hierarchyLevel );
+        }
+    }
+    this->mutex.lock ();
+    if ( pPrev && pPrev != this ) {
+        currentMutexLevel.set ( this );
+        this->pPreviousLevel = pPrev;
+    }
+}
+
+void epicsDeadlockDetectMutex::unlock ()
+{
+    currentMutexLevel.set ( this->pPreviousLevel );
+    this->mutex.unlock ();
+}
+
+bool epicsDeadlockDetectMutex::tryLock ()
+{
+    bool success = this->mutex.tryLock ();
+    if ( success ) {
+        this->pPreviousLevel = currentMutexLevel.get();
+        currentMutexLevel.set ( this );
+    }
+    return success;
+}
+
 

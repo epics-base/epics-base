@@ -25,8 +25,8 @@ typedef enum {
 
 class epicsShareClass epicsMutex {
 public:
-    class mutexCreateFailed {}; // exception
-    class invalidMutex {}; // exception
+    class mutexCreateFailed {}; /* exception */
+    class invalidMutex {}; /* exception */
     epicsMutex ();
     ~epicsMutex ();
     void show ( unsigned level ) const;
@@ -37,6 +37,23 @@ private:
     epicsMutexId id;
     epicsMutex ( const epicsMutex & );
     epicsMutex & operator = ( const epicsMutex & );
+};
+
+class epicsShareClass epicsDeadlockDetectMutex {
+public:
+    typedef unsigned hierarchyLevel_t;
+    epicsDeadlockDetectMutex ( unsigned hierarchyLevel_t );
+    ~epicsDeadlockDetectMutex ();
+    void show ( unsigned level ) const;
+    void lock (); /* blocks until success */
+    void unlock ();
+    bool tryLock (); /* true if successful */
+private:
+    epicsMutex mutex;
+    const hierarchyLevel_t hierarchyLevel;
+    class epicsDeadlockDetectMutex * pPreviousLevel;
+    epicsDeadlockDetectMutex ( const epicsDeadlockDetectMutex & );
+    epicsDeadlockDetectMutex & operator = ( const epicsDeadlockDetectMutex & );
 };
 
 #endif /*__cplusplus*/

@@ -54,7 +54,7 @@
 //
 // info about all pv in this server
 //
-enum excasIoType {excasIoSync, excasIoAsync};
+enum excasIoType { excasIoSync, excasIoAsync };
 
 class exPV;
 class exServer;
@@ -64,49 +64,33 @@ class exServer;
 //
 class pvInfo {
 public:
-    pvInfo (double scanPeriodIn, const char *pNameIn, 
-            aitFloat32 hoprIn, aitFloat32 loprIn, 
-            excasIoType ioTypeIn, unsigned countIn) :
-            scanPeriod(scanPeriodIn), pName(pNameIn), 
-            hopr(hoprIn), lopr(loprIn), ioType(ioTypeIn), 
-            elementCount(countIn), pPV(0)
-    {
-    }
-
+    pvInfo ( double scanPeriodIn, const char *pNameIn, 
+            aitFloat32 hoprIn, aitFloat32 loprIn,
+            aitEnum typeIn, excasIoType ioTypeIn, 
+            unsigned countIn );
+    pvInfo ( const pvInfo & copyIn );
     ~pvInfo ();
-
-    //
-    // for use when MSVC++ will not build a default copy constructor 
-    // for this class
-    //
-    pvInfo (const pvInfo &copyIn) :
-        scanPeriod(copyIn.scanPeriod), pName(copyIn.pName), 
-        hopr(copyIn.hopr), lopr(copyIn.lopr), 
-        ioType(copyIn.ioType), elementCount(copyIn.elementCount),
-        pPV(copyIn.pPV)
-    {
-    }
-
-    const double getScanPeriod () const { return this->scanPeriod; }
-    const char *getName () const { return this->pName; }
-    const double getHopr () const { return this->hopr; }
-    const double getLopr () const { return this->lopr; }
-    const excasIoType getIOType () const { return this->ioType; }
-    const unsigned getElementCount() const 
-        { return this->elementCount; }
-    void unlinkPV() { this->pPV=NULL; }
-
-    exPV *createPV (exServer &exCAS, bool preCreateFlag, bool scanOn);
+    double getScanPeriod () const;
+    const char *getName () const;
+    double getHopr () const;
+    double getLopr () const;
+    aitEnum getType () const;
+    excasIoType getIOType () const;
+    unsigned getElementCount () const;
+    void unlinkPV ();
+    exPV *createPV ( exServer & exCAS, 
+        bool preCreateFlag, bool scanOn );
     void deletePV ();
 
 private:
-    const double    scanPeriod;
-    const char      *pName;
-    const double    hopr;
-    const double    lopr;
-    const excasIoType   ioType;
-    const unsigned  elementCount;
-    exPV            *pPV;
+    const double scanPeriod;
+    const char * pName;
+    const double hopr;
+    const double lopr;
+    aitEnum type;
+    const excasIoType ioType;
+    const unsigned elementCount;
+    exPV * pPV;
 };
 
 //
@@ -120,33 +104,27 @@ private:
 // from pvInfo)
 //
 class pvEntry // X aCC 655
-    : public stringId, public tsSLNode<pvEntry> {
+    : public stringId, public tsSLNode < pvEntry > {
 public:
-    pvEntry (pvInfo  &infoIn, exServer &casIn, 
-            const char *pAliasName) : 
-        stringId(pAliasName), info(infoIn), cas(casIn) 
-    {
-        assert(this->stringId::resourceName()!=NULL);
-    }
-
-    inline ~pvEntry();
-
-    pvInfo &getInfo() const { return this->info; }
-    
-    inline void destroy ();
+    pvEntry ( pvInfo  &infoIn, exServer & casIn, 
+            const char * pAliasName );
+    ~pvEntry();
+    pvInfo & getInfo() const { return this->info; }
+    void destroy ();
 
 private:
-    pvInfo &info;
-    exServer &cas;
+    pvInfo & info;
+    exServer & cas;
 };
 
 
 //
 // exPV
 //
-class exPV : public casPV, public epicsTimerNotify, public tsSLNode<exPV> {
+class exPV : public casPV, public epicsTimerNotify, 
+    public tsSLNode < exPV > {
 public:
-    exPV ( pvInfo &setup, bool preCreateFlag, bool scanOn );
+    exPV ( pvInfo & setup, bool preCreateFlag, bool scanOn );
     virtual ~exPV();
 
     void show ( unsigned level ) const;
@@ -155,16 +133,16 @@ public:
     // Called by the server libary each time that it wishes to
     // subscribe for PV the server tool via postEvent() below.
     //
-    caStatus interestRegister();
+    caStatus interestRegister ();
 
     //
     // called by the server library each time that it wishes to
     // remove its subscription for PV value change events
     // from the server tool via caServerPostEvents()
     //
-    void interestDelete();
+    void interestDelete ();
 
-    aitEnum bestExternalType() const;
+    aitEnum bestExternalType () const;
 
     //
     // chCreate() is called each time that a PV is attached to
@@ -180,67 +158,47 @@ public:
     //
     // This gets called when the pv gets a new value
     //
-    caStatus update (smartConstGDDPointer pValue);
+    caStatus update ( smartConstGDDPointer pValue );
 
     //
     // Gets called when we add noise to the current value
     //
-    virtual void scan() = 0;
+    virtual void scan () = 0;
     
     //
     // If no one is watching scan the PV with 10.0
     // times the specified period
     //
-    const double getScanPeriod()
-    {
-        double curPeriod;
+    double getScanPeriod ();
 
-        curPeriod = this->info.getScanPeriod ();
-        if ( ! this->interest ) {
-            curPeriod *= 10.0L;
-        }
-        return curPeriod;
-    }
+    caStatus read ( const casCtx &, gdd & protoIn );
 
-    caStatus read (const casCtx &, gdd &protoIn);
+    caStatus readNoCtx ( smartGDDPointer pProtoIn );
 
-    caStatus readNoCtx (smartGDDPointer pProtoIn)
-    {
-        return this->ft.read (*this, *pProtoIn);
-    }
+    caStatus write ( const casCtx &, const gdd & value );
 
-    caStatus write (const casCtx &, const gdd &value);
+    void destroy ();
 
-    void destroy();
+    const pvInfo & getPVInfo ();
 
-    const pvInfo &getPVInfo()
-    {
-        return this->info;
-    }
-
-    const char *getName() const
-    {
-        return this->info.getName();
-    }
+    const char * getName() const;
 
     static void initFT();
 
-    //
-    // for access control - optional
-    //
-    casChannel *createChannel (const casCtx &ctx,
-        const char * const pUserName, const char * const pHostName);
+    casChannel * createChannel ( const casCtx &ctx,
+        const char * const pUserName, 
+        const char * const pHostName );
 
 protected:
-    smartConstGDDPointer    pValue;
-    epicsTimer              &timer;
-    pvInfo &                info; 
-    bool                    interest;
-    bool                    preCreate;
-    bool                    scanOn;
-    static epicsTime        currentTime;
+    smartConstGDDPointer pValue;
+    epicsTimer & timer;
+    pvInfo & info; 
+    bool interest;
+    bool preCreate;
+    bool scanOn;
+    static epicsTime currentTime;
 
-    virtual caStatus updateValue (smartConstGDDPointer pValue) = 0;
+    virtual caStatus updateValue ( smartConstGDDPointer pValue ) = 0;
 
 private:
 
@@ -301,30 +259,15 @@ class exServer : public caServer {
 public:
     exServer ( const char * const pvPrefix, 
         unsigned aliasCount, bool scanOn );
-    ~exServer();
-
-    void show (unsigned level) const;
-    pvExistReturn pvExistTest (const casCtx&, const char *pPVName);
-    pvAttachReturn pvAttach (const casCtx &ctx, const char *pPVName);
-
-    void installAliasName(pvInfo &info, const char *pAliasName);
-    inline void removeAliasName(pvEntry &entry);
-
-    //
-    // removeIO
-    //
-    void removeIO()
-    {
-        if (this->simultAsychIOCount>0u) {
-            this->simultAsychIOCount--;
-        }
-        else {
-            fprintf(stderr, 
-            "simultAsychIOCount underflow?\n");
-        }
-    }
+    ~exServer ();
+    void show ( unsigned level ) const;
+    pvExistReturn pvExistTest ( const casCtx &, const char * pPVName );
+    pvAttachReturn pvAttach ( const casCtx &, const char * pPVName );
+    void installAliasName ( pvInfo & info, const char * pAliasName );
+    inline void removeAliasName ( pvEntry & entry );
+    void removeIO();
 private:
-    resTable<pvEntry,stringId> stringResTbl;
+    resTable < pvEntry, stringId > stringResTbl;
     unsigned simultAsychIOCount;
     bool scanOn;
 
@@ -334,13 +277,14 @@ private:
     static pvInfo pvList[];
     static const unsigned pvListNElem;
 
-
     //
     // on-the-fly PVs 
     //
     static pvInfo bill;
     static pvInfo billy;
     static pvInfo bloaty;
+    static pvInfo boot;
+    static pvInfo booty;
 };
 
 //
@@ -348,35 +292,10 @@ private:
 //
 class exAsyncPV : public exScalarPV {
 public:
-    //
-    // exAsyncPV()
-    //
-    exAsyncPV ( pvInfo &setup, bool preCreateFlag, bool scanOnIn ) :
-        exScalarPV ( setup, preCreateFlag, scanOnIn ),
-        simultAsychIOCount ( 0u ) {}
-
-    //
-    // read
-    //
-    caStatus read (const casCtx &ctxIn, gdd &protoIn);
-
-    //
-    // write
-    //
-    caStatus write (const casCtx &ctxIn, const gdd &value);
-
-    //
-    // removeIO
-    //
-    void removeIO()
-    {
-        if (this->simultAsychIOCount>0u) {
-            this->simultAsychIOCount--;
-        }
-        else {
-            fprintf(stderr, "inconsistent simultAsychIOCount?\n");
-        }
-    }
+    exAsyncPV ( pvInfo &setup, bool preCreateFlag, bool scanOnIn );
+    caStatus read ( const casCtx & ctxIn, gdd & protoIn );
+    caStatus write ( const casCtx & ctxIn, const gdd & value );
+    void removeIO();
 private:
     unsigned simultAsychIOCount;
 };
@@ -386,14 +305,11 @@ private:
 //
 class exChannel : public casChannel{
 public:
-    exChannel(const casCtx &ctxIn) : casChannel(ctxIn) {}
-
-    virtual void setOwner(const char * const pUserName, 
-        const char * const pHostName);
-
-    virtual bool readAccess () const;
-    virtual bool writeAccess () const;
-
+    exChannel ( const casCtx & ctxIn );
+    void setOwner ( const char * const pUserName, 
+        const char * const pHostName );
+    bool readAccess () const;
+    bool writeAccess () const;
 private:
 };
 
@@ -402,11 +318,11 @@ private:
 //
 class exAsyncWriteIO : public casAsyncWriteIO, public epicsTimerNotify {
 public:
-    exAsyncWriteIO ( const casCtx &ctxIn, exAsyncPV &pvIn, const gdd &valueIn );
-    virtual ~exAsyncWriteIO ();
+    exAsyncWriteIO ( const casCtx & ctxIn, exAsyncPV & pvIn, const gdd & valueIn );
+    ~exAsyncWriteIO ();
 private:
-    exAsyncPV &pv;
-    epicsTimer &timer;
+    exAsyncPV & pv;
+    epicsTimer & timer;
     smartConstGDDPointer pValue;
     expireStatus expire ( const epicsTime & currentTime );
 };
@@ -416,11 +332,11 @@ private:
 //
 class exAsyncReadIO : public casAsyncReadIO, public epicsTimerNotify {
 public:
-    exAsyncReadIO ( const casCtx &ctxIn, exAsyncPV &pvIn, gdd &protoIn );
+    exAsyncReadIO ( const casCtx & ctxIn, exAsyncPV & pvIn, gdd & protoIn );
     virtual ~exAsyncReadIO ();
 private:
-    exAsyncPV &pv;
-    epicsTimer &timer;
+    exAsyncPV & pv;
+    epicsTimer & timer;
     smartGDDPointer pProto;
     expireStatus expire ( const epicsTime & currentTime );
 };
@@ -431,13 +347,13 @@ private:
 //
 class exAsyncExistIO : public casAsyncPVExistIO, public epicsTimerNotify {
 public:
-    exAsyncExistIO ( const pvInfo &pviIn, const casCtx &ctxIn,
-            exServer &casIn );
+    exAsyncExistIO ( const pvInfo & pviIn, const casCtx & ctxIn,
+            exServer & casIn );
     virtual ~exAsyncExistIO ();
 private:
-    const pvInfo &pvi;
-    epicsTimer &timer;
-    exServer &cas;
+    const pvInfo & pvi;
+    epicsTimer & timer;
+    exServer & cas;
     expireStatus expire ( const epicsTime & currentTime );
 };
 
@@ -448,41 +364,40 @@ private:
 //
 class exAsyncCreateIO : public casAsyncPVAttachIO, public epicsTimerNotify {
 public:
-    exAsyncCreateIO ( pvInfo &pviIn, exServer &casIn, 
-        const casCtx &ctxIn, bool scanOnIn );
+    exAsyncCreateIO ( pvInfo & pviIn, exServer & casIn, 
+        const casCtx & ctxIn, bool scanOnIn );
     virtual ~exAsyncCreateIO ();
 private:
-    pvInfo      &pvi;
-    epicsTimer  &timer;
-    exServer    &cas;
-    bool        scanOn;
+    pvInfo & pvi;
+    epicsTimer & timer;
+    exServer & cas;
+    bool scanOn;
     expireStatus expire ( const epicsTime & currentTime );
 };
 
-//
-// exServer::removeAliasName()
-//
-inline void exServer::removeAliasName ( pvEntry &entry )
+inline pvInfo::pvInfo ( double scanPeriodIn, const char *pNameIn, 
+    aitFloat32 hoprIn, aitFloat32 loprIn,
+    aitEnum typeIn, excasIoType ioTypeIn, 
+    unsigned countIn ) :
+
+    scanPeriod ( scanPeriodIn ), pName ( pNameIn ), 
+    hopr ( hoprIn ), lopr ( loprIn ), type ( typeIn ),
+    ioType ( ioTypeIn ), elementCount ( countIn ), 
+    pPV ( 0 )
 {
-        pvEntry *pE;
-        pE = this->stringResTbl.remove ( entry );
-        assert ( pE == &entry );
 }
 
 //
-// pvEntry::~pvEntry()
+// for use when MSVC++ will not build a default copy constructor 
+// for this class
 //
-inline pvEntry::~pvEntry()
-{
-    this->cas.removeAliasName ( *this );
-}
+inline pvInfo::pvInfo ( const pvInfo & copyIn ) :
 
-//
-// pvEntry:: destroy()
-//
-inline void pvEntry::destroy ()
+    scanPeriod ( copyIn.scanPeriod ), pName ( copyIn.pName ), 
+    hopr ( copyIn.hopr ), lopr ( copyIn.lopr ), type ( copyIn.type ),
+    ioType ( copyIn.ioType ), elementCount ( copyIn.elementCount ),
+    pPV ( copyIn.pPV )
 {
-    delete this;
 }
 
 inline pvInfo::~pvInfo ()
@@ -503,5 +418,126 @@ inline void pvInfo::deletePV ()
     if ( this->pPV != NULL ) {
         delete this->pPV;
     }
+}
+
+inline double pvInfo::getScanPeriod () const 
+{ 
+    return this->scanPeriod; 
+}
+
+inline const char *pvInfo::getName () const 
+{ 
+    return this->pName; 
+}
+
+inline double pvInfo::getHopr () const 
+{ 
+    return this->hopr; 
+}
+
+inline double pvInfo::getLopr () const 
+{ 
+    return this->lopr; 
+}
+
+inline aitEnum pvInfo::getType () const 
+{ 
+    return this->type;
+}
+
+inline excasIoType pvInfo::getIOType () const 
+{ 
+    return this->ioType; 
+}
+
+inline unsigned pvInfo::getElementCount () const 
+{ 
+    return this->elementCount; 
+}
+
+inline void pvInfo::unlinkPV () 
+{ 
+    this->pPV = NULL; 
+}
+
+inline pvEntry::pvEntry ( pvInfo  & infoIn, exServer & casIn, 
+        const char * pAliasName ) : 
+    stringId ( pAliasName ), info ( infoIn ), cas ( casIn ) 
+{
+    assert ( this->stringId::resourceName() != NULL );
+}
+
+inline pvEntry::~pvEntry ()
+{
+    this->cas.removeAliasName ( *this );
+}
+
+inline void pvEntry::destroy ()
+{
+    delete this;
+}
+
+inline void exServer::removeAliasName ( pvEntry & entry )
+{
+    pvEntry * pE;
+    pE = this->stringResTbl.remove ( entry );
+    assert ( pE == &entry );
+}
+
+inline double exPV::getScanPeriod ()
+{
+    double curPeriod = this->info.getScanPeriod ();
+    if ( ! this->interest ) {
+        curPeriod *= 10.0L;
+    }
+    return curPeriod;
+}
+
+inline caStatus exPV::readNoCtx ( smartGDDPointer pProtoIn )
+{
+    return this->ft.read ( *this, *pProtoIn );
+}
+
+inline const pvInfo & exPV::getPVInfo ()
+{
+    return this->info;
+}
+
+inline const char * exPV::getName () const
+{
+    return this->info.getName();
+}
+
+inline void exServer::removeIO()
+{
+    if ( this->simultAsychIOCount > 0u ) {
+        this->simultAsychIOCount--;
+    }
+    else {
+        fprintf ( stderr, 
+        "simultAsychIOCount underflow?\n" );
+    }
+}
+
+inline exAsyncPV::exAsyncPV ( pvInfo & setup, bool preCreateFlag, 
+        bool scanOnIn ) :
+    exScalarPV ( setup, preCreateFlag, scanOnIn ),
+    simultAsychIOCount ( 0u ) 
+{
+}
+
+inline void exAsyncPV::removeIO ()
+{
+    if ( this->simultAsychIOCount > 0u ) {
+        this->simultAsychIOCount--;
+    }
+    else {
+        fprintf ( stderr, "inconsistent simultAsychIOCount?\n" );
+    }
+}
+
+inline exChannel::exChannel ( const casCtx & ctxIn ) : 
+    casChannel(ctxIn) 
+{
 }
 

@@ -228,7 +228,7 @@ epicsShareFunc epicsMutexLockStatus epicsShareAPI epicsMutexTryLock ( epicsMutex
  */
 epicsShareFunc void epicsShareAPI epicsMutexShow ( epicsMutexId pSem, unsigned level ) 
 { 
-    printf ("epicsMutex: recursion=%u, waiting=%d, threadid=%x %s\n",
+    printf ("epicsMutex: recursion=%u, waiting=%d, threadid=%d %s\n",
         pSem->recursionCount, pSem->waitingCount, pSem->threadId,
         pSem->threadId==GetCurrentThreadId()?
             "owned by this thread":"" );

@@ -15,9 +15,20 @@
 #define osdTimeh
 
 /*
- * Linux needs this dummy include file since the POSIX version
+ * Linux needs this include file since the POSIX version
  * causes `struct timespec' to be defined in more than one place.
  */
+
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
+epicsShareFunc void epicsShareAPI
+    convertDoubleToWakeTime(double timeout,struct timespec *wakeTime);
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 #endif /* ifndef osdTimeh */
 

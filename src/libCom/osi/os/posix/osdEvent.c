@@ -25,7 +25,6 @@
 #include "epicsTime.h"
 #include "errlog.h"
 #include "epicsAssert.h"
-#include "osdTime.h"
 
 /* Until these can be demonstrated to work leave them undefined*/
 #undef _POSIX_THREAD_PROCESS_SHARED

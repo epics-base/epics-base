@@ -2,7 +2,6 @@ TOP = ../../..
 include $(TOP)/config/CONFIG_BASE
 
 INC += resourceLib.h
-INC += resourceLib.cc
 INC += tsDLList.h
 INC += tsSLList.h
 INC += tsBTree.h

@@ -4,9 +4,8 @@
 #include <time.h>
 #include <stdio.h>
 
-#include "resourceLib.h"
 #define INSTANCIATE_RES_LIB_STATIC
-#include "resourceLib.cc"
+#include "resourceLib.h"
 
 #ifdef SUNOS4
 #ifndef CLOCKS_PER_SEC

@@ -12,17 +12,14 @@ AR = ar -rc
 ARCMD = $(AR) $@
 RANLIB = ranlib -t
 
+#OP_SYS_FLAGS = -D_BSD_SOURCE -D_POSIX_SOURCE
+
 # Configure OS vendor C compiler
 ACC = acc
 #ACC_ANSI = $(ACC)
 ACC_ANSI = $(ACC) -ansi -D_SVID_SOURCE
 #ACC_STRICT = $(ACC) -Xc
 ACC_STRICT = $(ACC)  -ansi -pedantic -D_SVID_SOURCE
-
-
-OP_SYS_FLAGS = -D_BSD_SOURCE -D_POSIX_SOURCE
-
-
 ACC_TRAD = $(ACC)
 ACC_WARN_YES = 
 ACC_WARN_NO =  -w
@@ -52,7 +49,14 @@ CCC_SLIBS_YES =
 CCC_SLIBS_NO=
 CCC_DEPENDS_FLAG = -MM
 
+# added smh 6/5/98 : when building fdmgr - seems to use this not ACC
+# in effect this overides orig def in CONFIG_COMMON :
+# which is GCC_STRICT = $(GCC) -ansi -pedantic
+GCC_STRICT = $(GCC) 
+G++_STRICT = $(G++)  -Wtraditional
 
+
+ARCH_DEP_CFLAGS = -D_X86_ -Dlinux -D_USE_BSD
 ARCH_DEP_CFLAGS = -D_X86_ -Dlinux
 ARCH_DEP_LDFLAGS =
 

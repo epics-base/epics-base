@@ -51,6 +51,9 @@
  *				to 60 sec
  * .17	03-18-94	mcn	added entries for breakpoint tasks
  * $Log$
+ * Revision 1.2  1998/01/20 21:49:54  mrk
+ * added the arch_stack_factor for 64 bit architectures; changes for errlog
+ *
  * Revision 1.1  1996/11/22 20:49:43  jhill
  * installed
  *
@@ -68,6 +71,9 @@
  *
  * Revision 1.27  1995/11/29 19:27:59  jhill
  * added $Log$
+ * added Revision 1.2  1998/01/20 21:49:54  mrk
+ * added added the arch_stack_factor for 64 bit architectures; changes for errlog
+ * added
  * added Revision 1.1  1996/11/22 20:49:43  jhill
  * added installed
  * added
@@ -147,10 +153,10 @@
 #define	GPIBLINK_PRI	47	/* GPIB link task */
 #define MOMENTARY_PRI   48      /* Momentary output - posted from watchdog */
 #define WFDONE_PRI      49      /* Waveform Task - Base Rate of .1 second */
-#define PERIODSCAN_PRI  59      /* Periodic Scanners - Slowest rate		*/
+#define PERIODSCAN_PRI  58      /* Periodic Scanners - Slowest rate	*/
+#define DB_CA_PRI       68	/*database to channel access*/
 #define	SEQUENCER_PRI	70
 #define XY240_PRI       111     /* xy 240 dio scanner */
-#define DB_CA_PRI       100
 #define	SCANNER_PRI	150	
 #define	REQ_SRVR_PRI	181	/* Channel Access TCP request server*/
 #define CA_CLIENT_PRI	180	/* Channel Access clients */

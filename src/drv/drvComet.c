@@ -46,6 +46,7 @@
  *			and cometDoneTask to allow an external routine
  *			to control hardware scan mode. Added variable
  *			scan_control to flag operating mode.
+ *	.09 mrk 082692	added DSET
  */
 
 static char *sccsID = "$Id$\t$Date$";
@@ -71,13 +72,39 @@ static char *sccsID = "$Id$\t$Date$";
 #include <task_params.h>
 #include <fast_lock.h>
 #include <vme.h>
+#include <drvSup.h>
+
+static long report();
+static long init();
 
+struct {
+        long    number;
+        DRVSUPFUN       report;
+        DRVSUPFUN       init;
+} drvComet={
+        2,
+        report,
+        init};
+
+static long report(level)
+    int level;
+{
+    comet_io_report(level);
+    return(0);
+}
+
+static long init()
+{
+
+    comet_init();
+    return(0);
+}
+
 #define COMET_NCHAN			4
 #define COMET_CHANNEL_MEM_SIZE		0x20000	/* bytes */
 #define COMET_DATA_MEM_SIZE		(COMET_CHANNEL_MEM_SIZE*COMET_NCHAN)
 static char	*shortaddr;
 static short	scan_control;	/* scan type/rate (if >0 normal, <=0 external control) */
-  
 /* comet conrtol register map */ 
 struct comet_cr{ 
 	unsigned char	csrh;	/* control and status register - high byte */ 
@@ -305,7 +332,7 @@ register unsigned short	card;
 register unsigned int	*pcbroutine;
 register unsigned int	*parg;	/* number of values read */
 {
-	register struct comet_cr			*pcomet_csr;
+	register struct comet_cr			*pcomet_csr=0;
 	register unsigned short				*pcomet_data;
 
 	/* check for valid card number */

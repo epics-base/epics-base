@@ -36,12 +36,41 @@
  *				should have been used
  * .04  08-11-92	joh	now allows for runtime reconfiguration of
  *				the addr map
+ * .05	08-25-92        mrk     added DSET; made masks a macro
  */
 
 #include "vxWorks.h"
 #include "taskLib.h"
 #include "vme.h"
 #include "module_types.h"
+#include <drvSup.h>
+
+static long report();
+static long init();
+
+struct {
+        long    number;
+        DRVSUPFUN       report;
+        DRVSUPFUN       init;
+} drvXy240={
+        2,
+        report,
+        init};
+static long report(level)
+    int level;
+{
+    xy240_io_report(level);
+    return(0);
+}
+
+static long init()
+{
+
+    xy240_init();
+    return(0);
+}
+
+
 
 #define XY240_ADDR0	(bi_addrs[XY240_BI])
 #define XY240_MAX_CARDS	(bi_num_cards[XY240_BI])
@@ -188,11 +217,7 @@ register initialization
    if (taskSpawn(name,111,VX_SUPERVISOR_MODE|VX_STDIO,1000,dio_scan) == ERROR)
   printf("Unable to create scan task\n");
   }
-
-
-
-
-
+  return(0);
 } 	
 
 /*
@@ -265,6 +290,7 @@ xy240_bo_driver(card,val,mask)
 
 		dio[card].dptr->port6_7 = (unsigned short)(work >> 16);
 		dio[card].dptr->port4_5 = (unsigned short)work;
+		return(0);
  }
 
 
@@ -312,7 +338,7 @@ else if (port == 7)
   dio[card].dptr->port6_7 = val;
   return -7;
   }
-
+  return(0);
 }
  
 /*XY240_WRITE
@@ -326,10 +352,8 @@ xy240_write(card,val)
  {
   return xy240_bo_driver(card,val,0xffffffff);
  }
- 
-
-
-
+
+#define masks(K) ((1<<K))
 xy240_io_report(level)
 short int level;
 {
@@ -350,7 +374,6 @@ short int level;
 
                           
 xy240_bi_io_report(){
-        extern masks[];
         short int num_chans,i,j,k,l,m,status;
         int ival,jval,kval,lval,mval;
         unsigned int   *prval;
@@ -372,25 +395,25 @@ xy240_bi_io_report(){
                          
 
 				if(j < num_chans){
-					xy240_bi_driver(i,masks[j],&jval);
+					xy240_bi_driver(i,masks(j),&jval);
 					if (jval != 0) 
 						jval = 1;
 					printf("Chan %d = %x\t ",j,jval);
 				}
 				if(k < num_chans){
-					xy240_bi_driver(i,masks[k],&kval);
+					xy240_bi_driver(i,masks(k),&kval);
 					if (kval != 0) 
 						kval = 1;
 					printf("Chan %d = %x\t ",k,kval);
 				}
 				if(l < num_chans){
-					xy240_bi_driver(i,masks[l],&lval);
+					xy240_bi_driver(i,masks(l),&lval);
 					if (lval != 0) 
 						lval = 1;
 					printf("Chan %d = %x \t",l,lval);
 				}
 				if(m < num_chans){
-					xy240_bi_driver(i,masks[m],&mval);
+					xy240_bi_driver(i,masks(m),&mval);
 					if (mval != 0) 
 						mval = 1;
 	                               printf("Chan %d = %x \n",m,mval);
@@ -402,7 +425,6 @@ xy240_bi_io_report(){
 
 }
 xy240_bo_io_report(){
-        extern masks[];
         short int num_chans,i,j,k,l,m,status;
         int ival,jval,kval,lval,mval;
         unsigned int   *prval;
@@ -423,25 +445,25 @@ xy240_bo_io_report(){
 			m += IOR_MAX_COLS){
 
 			if(j < num_chans){
-				xy240_bo_read(i,masks[j],&jval);
+				xy240_bo_read(i,masks(j),&jval);
 				if (jval != 0) 
 					jval = 1; 
                                 printf("Chan %d = %x\t ",j,jval);
                                }
                                if(k < num_chans){
-				xy240_bo_read(i,masks[k],&kval);
+				xy240_bo_read(i,masks(k),&kval);
 				if (kval != 0) 
 					kval = 1; 
  				printf("Chan %d = %x\t ",k,kval);
 				}
                                if(l < num_chans){
-                                       xy240_bo_read(i,masks[l],&lval);
+                                       xy240_bo_read(i,masks(l),&lval);
                                        if (lval != 0) 
                                                lval = 1; 
                                        printf("Chan %d = %x \t",l,lval);
                                }
                                if(m < num_chans){
-                                       xy240_bo_read(i,masks[m],&mval);
+                                       xy240_bo_read(i,masks(m),&mval);
                                        if (mval != 0) 
                                                mval = 1; 
 	                               printf("Chan %d = %x \n",m,mval);

@@ -151,7 +151,8 @@ int cvtDoubleToString(
 	/* can this routine handle this conversion */
 	if (precision > 8 || flt_value > 10000000.0 || flt_value < -10000000.0) {
 		if (precision > 8 || flt_value > 1e16 || flt_value < -1e16) {
-		    sprintf(pstr_value,"%12.5e\0",flt_value);
+		    sprintf(pstr_value,"%*.*e\0",precision+7,precision,
+			flt_value);
 		} else {
 		    sprintf(pstr_value,"%.0f\0",flt_value);
 		}

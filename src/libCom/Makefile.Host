@@ -92,7 +92,7 @@ LIBSRCS += $(patsubst %,fdManager.cc,$(strip $(CPLUSPLUS)))
 
 #	WIN32 has no getopt, we add it to the Com lib,
 #	special initialisation is done in winmain.c
-LIBSRCS_WIN32 := getopt.c getLastWSAErrorAsString.c
+LIBSRCS_WIN32 := getopt.c
 LIBSRCS_WIN32 += $(patsubst %,dllmain.cc,$(strip $(CPLUSPLUS))) 
 
 #       Library to build:

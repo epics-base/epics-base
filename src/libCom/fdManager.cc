@@ -47,7 +47,7 @@
 
 #define instantiateRecourceLib
 #define epicsExportSharedSymbols
-#include <epicsAssert.h>
+#include "epicsAssert.h"
 #include "osiTimer.h"
 #include "osiSleep.h"
 #include "tsMinMax.h"
@@ -193,10 +193,11 @@ epicsShareFunc void fdManager::process (double delay)
 		return;
 	}
 	else if (status<0) {
-		if (SOCKERRNO != SOCK_EINTR) {
+        int errnoCpy = SOCKERRNO;
+		if (errnoCpy != SOCK_EINTR) {
 			fprintf(stderr, 
-			"fdManager: select failed because errno=%d=\"%s\"\n",
-				SOCKERRNO, SOCKERRSTR);
+			"fdManager: select failed because \"%s\"\n",
+				SOCKERRSTR(errnoCpy));
 		}
 		this->processInProg = 0;
 		return;	

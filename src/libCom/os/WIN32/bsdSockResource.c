@@ -40,10 +40,20 @@
 #error This source is specific to WIN32 
 #endif
 
+/*
+ * ANSI C
+ */
 #include <stdio.h>
 
-#include "epicsVersion.h"
+/*
+ * WIN32 specific
+ */
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <process.h>
+
 #define epicsExportSharedSymbols
+#include "epicsVersion.h"
 #include "bsdSocketResource.h"
 
 static unsigned nAttached = 0;
@@ -171,5 +181,40 @@ epicsShareFunc int epicsShareAPI hostToIPAddr
 	 * return indicating an error
 	 */
 	return -1;
+}
+
+/*
+ * convertSocketErrorToString()
+ */
+epicsShareFunc const char * epicsShareAPI convertSocketErrorToString (int errnoIn)
+{
+	static char errString[128];
+	static int init = 0;
+
+	/*
+	 * unfortunately, this does not work ...
+	 * and there is no obvious replacement ...
+	 */
+#if 0
+	DWORD W32status;
+
+	W32status = FormatMessage( 
+		FORMAT_MESSAGE_FROM_SYSTEM,
+		NULL,
+		errnoIn,
+		MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT), /* Default language */
+		errString,
+		sizeof(errString)/sizeof(errString[0]),
+		NULL 
+	);
+
+	if (W32status==0) {
+		sprintf (errString, "WIN32 Socket Library Error %d", errnoIn);
+	}
+	return errString;
+#else
+	sprintf (errString, "WIN32 Socket Library Error %d", errnoIn);
+	return errString;
+#endif
 }
 

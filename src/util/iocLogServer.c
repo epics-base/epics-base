@@ -47,6 +47,9 @@
  * .09 050494 pg        HPUX port changes.
  * .10 021694 joh	ANSI C	
  * $Log$
+ * Revision 1.32  1999/08/31 15:51:00  jhill
+ * move to proper date in file if open old log
+ *
  * Revision 1.31  1999/08/11 00:24:11  jhill
  * dont increment file pos on error
  *
@@ -219,7 +222,7 @@ int main()
 	 */
 	pserver->sock = socket(AF_INET, SOCK_STREAM, 0);
 	if (pserver->sock==INVALID_SOCKET) {
-		fprintf(stderr, "iocLogServer: %d=%s\n", SOCKERRNO, SOCKERRSTR);
+		fprintf(stderr, "iocLogServer: sock create err: %s\n", SOCKERRSTR(SOCKERRNO));
 		return IOCLS_ERROR;
 	}
 	
@@ -230,7 +233,7 @@ int main()
 							(char *) &optval,
 							sizeof(optval));
 	if(status<0){
-		fprintf(stderr, "iocLogServer: %d=%s\n", SOCKERRNO, SOCKERRSTR);
+		fprintf(stderr, "iocLogServer: setsockopt err %s\n", SOCKERRSTR(SOCKERRNO));
 		return IOCLS_ERROR;
 	}
 
@@ -244,17 +247,17 @@ int main()
 			(struct sockaddr *)&serverAddr, 
 			sizeof (serverAddr) );
 	if (status<0) {
-		fprintf(stderr,
+		fprintf(stderr, "iocLogServer: bind err: %s\n", SOCKERRSTR(SOCKERRNO) );
+		fprintf (stderr,
 			"iocLogServer: a server is already installed on port %u?\n", 
 			(unsigned)ioc_log_port);
-		fprintf(stderr, "iocLogServer: %d=%s\n", SOCKERRNO, SOCKERRSTR);
 		return IOCLS_ERROR;
 	}
 
 	/* listen and accept new connections */
 	status = listen(pserver->sock, 10);
 	if (status<0) {
-		fprintf(stderr, "iocLogServer: %d=%s\n", SOCKERRNO, SOCKERRSTR);
+		fprintf(stderr, "iocLogServer: listen err %s\n", SOCKERRSTR(SOCKERRNO));
 		return IOCLS_ERROR;
 	}
 
@@ -268,7 +271,7 @@ int main()
 					FIONBIO,
 					&optval);
 	if(status<0){
-		fprintf(stderr, "iocLogServer: %d=%s\n", SOCKERRNO, SOCKERRSTR);
+		fprintf(stderr, "iocLogServer: ioctl FIONBIO err %s\n", SOCKERRSTR(SOCKERRNO));
 		return IOCLS_ERROR;
 	}
 
@@ -532,10 +535,10 @@ static void acceptNewClient(void *pParam)
 					FIONBIO,
 					&optval);
 	if(status<0){
+		fprintf(stderr, "%s:%d ioctl FBIO client er %s\n", 
+			__FILE__, __LINE__, SOCKERRSTR(SOCKERRNO));
 		socket_close(pclient->insock);
 		free(pclient);
-		fprintf(stderr, "%s:%d %s\n", 
-			__FILE__, __LINE__, SOCKERRSTR);
 		return;
 	}
 
@@ -578,10 +581,11 @@ static void acceptNewClient(void *pParam)
 #	define SOCKET_SHUTDOWN_WRITE_SIDE 1
 	status = shutdown(pclient->insock, SOCKET_SHUTDOWN_WRITE_SIDE);
 	if(status<0){
-		socket_close(pclient->insock);
+		fprintf (stderr, "%s:%d shutdown err %s\n", __FILE__, __LINE__,
+				SOCKERRSTR(SOCKERRNO));
+        socket_close(pclient->insock);
 		free(pclient);
-		printf("%s:%d %s\n", __FILE__, __LINE__,
-				SOCKERRSTR);
+
 		return;
 	}
 
@@ -623,18 +627,19 @@ static void readFromClient(void *pParam)
 		      0);
 	if (recvLength <= 0) {
 		if (recvLength<0) {
-			if (SOCKERRNO==SOCK_EWOULDBLOCK || SOCKERRNO==SOCK_EINTR) {
+            int errnoCpy = SOCKERRNO;
+			if (errnoCpy==SOCK_EWOULDBLOCK || errnoCpy==SOCK_EINTR) {
 				return;
 			}
-			if (	SOCKERRNO != SOCK_ECONNRESET &&
-				SOCKERRNO != SOCK_ECONNABORTED &&
-				SOCKERRNO != SOCK_EPIPE &&
-				SOCKERRNO != SOCK_ETIMEDOUT
+			if (errnoCpy != SOCK_ECONNRESET &&
+				errnoCpy != SOCK_ECONNABORTED &&
+				errnoCpy != SOCK_EPIPE &&
+				errnoCpy != SOCK_ETIMEDOUT
 				) {
 				fprintf(stderr, 
-		"%s:%d socket=%d size=%d read error=%s errno=%d\n",
+		"%s:%d socket=%d size=%d read error=%s\n",
 					__FILE__, __LINE__, pclient->insock, 
-					size, SOCKERRSTR, SOCKERRNO);
+					size, SOCKERRSTR(errnoCpy));
 			}
 		}
 		/*

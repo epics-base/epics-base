@@ -21,6 +21,6 @@ epicsShareFunc void epicsShareAPI osiSleep (unsigned sec, unsigned uSec)
 	status = select (0, NULL, NULL, NULL, &tval);
 	if (status<0) {
 		fprintf (stderr, "error from select in osiDelayMicroSec() was %s\n",
-			SOCKERRSTR);
+			SOCKERRSTR(SOCKERRNO));
 	}
 }

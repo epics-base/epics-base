@@ -92,8 +92,12 @@ epicsShareFunc int epicsShareAPI bsdSockAttach(); /* returns T if success, else 
  */
 epicsShareFunc void epicsShareAPI bsdSockRelease();
 
+/*
+ * convert socket error number to a string
+ */
+epicsShareFunc const char * epicsShareAPI convertSocketErrorToString (int errnoIn);
+
 #ifdef _WIN32
-epicsShareFunc const char * epicsShareAPI getLastWSAErrorAsString();
 epicsShareFunc unsigned epicsShareAPI wsaMajorVersion();
 #endif
 

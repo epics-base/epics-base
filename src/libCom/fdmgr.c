@@ -71,6 +71,9 @@
  *			we eliminate delete ambiguity (chance of the same
  *			being reused).
  * $Log$
+ * Revision 1.30  1998/06/16 02:03:22  jhill
+ * recover from winsock select differences
+ *
  * Revision 1.29  1998/02/27 01:34:12  jhill
  * cleaned up the DLL symbol export
  *
@@ -890,18 +893,21 @@ struct timeval 			*ptimeout
 		return labor_performed;
 	}
 	else if(status < 0){
-		if(SOCKERRNO == SOCK_EINTR)
-			;
-		else if(SOCKERRNO == SOCK_EINVAL)
-			fdmgrPrintf(	
-				"fdmgr: bad select args ? %d %d %d\n",
-				pfdctx->maxfd,
-				ptimeout->tv_sec,
-				ptimeout->tv_usec);
-		else
-			fdmgrPrintf(	
-				"fdmgr: error from select %d=%s\n",
-				SOCKERRNO, SOCKERRSTR);
+        int errnoCpy = SOCKERRNO;
+        if (errnoCpy != SOCK_EINTR) {
+            if(errnoCpy == SOCK_EINVAL) {
+			    fdmgrPrintf(	
+				    "fdmgr: bad select args ? %d %d %d\n",
+				    pfdctx->maxfd,
+				    ptimeout->tv_sec,
+				    ptimeout->tv_usec);
+            }
+            else {
+			    fdmgrPrintf(	
+				    "fdmgr: error from select %s\n",
+				    SOCKERRSTR(errnoCpy));
+            }
+        }
 
 		return labor_performed;
 	}

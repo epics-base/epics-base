@@ -90,7 +90,8 @@ endif # PROD, TESTPROD, or LIBRARY defined
 #   Libraries 
 #
 
-LIBTARGETS += $(LIBNAME) $(MUNCHNAME)
+LIBTARGETS += $(LIBNAME)
+LIBTARGETS += $(MUNCHNAME) $(LIBRARY_CTDT_SRCS) $(LIBRARY_CTDT_OBJS) $(LIBRARY_NM)
 ifneq (,$(strip $(LIBTARGETS)))
 LIBTARGETS += $(INSTALL_LIBS) $(INSTALL_MUNCHS)
 ifeq ($(strip $(SHARED_LIBRARIES)),YES)
@@ -134,7 +135,7 @@ clean::
 	*.out MakefileInclude \
 	$(COMMON_INC)
 ifdef MUNCHNAME
-	@$(RM) $(MUNCHNAME) ctdt.c ctdt.o nm.out
+	@$(RM) $(MUNCHNAME) $(LIBRARY_CTDT_SRCS) $(LIBRARY_CTDT_OBJS) $(LIBRARY_NM)
 endif
 ifdef BAF
 	@$(RM) $(PROD_BAF) $(LIB_BAF) *$(BOF)
@@ -168,12 +169,16 @@ depends: inc $(SRC_FILES)
 	@$(RM) DEPENDS
 	@touch DEPENDS
 ifneq (,$(strip $(SRC_FILES)))
-	$(DEPENDS_RULE)
+	$(DEPENDS_CMD.cpp)
 endif
 
 $(TESTPRODNAME) $(PRODNAME):%$(EXE): $(PROD_OBJS) $(PROD_RESS) $(PROD_DEPLIBS)
 	@$(RM) $@
 	$(LINK.cpp)
+
+%_ctdt$(OBJ) : %_ctdt.c
+	@$(RM) $@
+	$(COMPILE.c) -traditional $<
 
 %$(OBJ): %.c
 	@$(RM) $@
@@ -284,13 +289,18 @@ $(SHRLIBNAME):$(LIB_PREFIX)%$(SHRLIB_SUFFIX): $(LIBRARY_OBJS) $(LIBRARY_RESS)
 	$(LINK.shrlib)
 
 # C++ munching for VxWorks
+%.nm : %$(OBJ)
+	@$(RM) $@
+	$(NM) $<  > $@
 
-$(MUNCHNAME):%.munch : %.o
-	@ $(RM) ctct.o ctdt.c nm.out
-	$(NM) $<  > nm.out
-	$(PERL) $(TOOLS)/munch.pl < nm.out > ctdt.c
-	$(COMPILE.c) -traditional ctdt.c
-	$(LD) -o $@ $(LDFLAGS) $< ctdt.o
+%_ctdt.c : %.nm
+	@$(RM) $@
+	$(PERL) $(TOOLS)/munch.pl <  $< > $@
+
+$(MUNCHNAME):%.munch : %_ctdt$(OBJ)
+	@$(RM) $@
+	$(LD) -o $@ $(LDFLAGS) $<
+
 
 binInstalls:  $(BIN_INSTALLS)
 	@echo "Installing $(^F)"
@@ -381,7 +391,7 @@ $(INSTALL_TEMPLATES)/$(TEMPLATES_DIR)/%: %
 	@echo "Installing $@"
 	@$(INSTALL) -d -m 644 $< $(@D)
 
-.PRECIOUS: %.o %.c
+.PRECIOUS: %.o %.c  %.nm %_ctdt.c
 .PRECIOUS: $(COMMON_INC)
 
 -include $(CONFIG)/RULES.Db

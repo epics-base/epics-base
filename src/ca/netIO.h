@@ -27,17 +27,7 @@
 #define netIOh
 
 #include "nciu.h"
-
-// does the compiler support placement delete
-#if defined (_MSC_VER) && ( _MSC_VER >= 1200 )
-#   define NETIO_PLACEMENT_DELETE
-#elif defined ( __HP_aCC ) && ( _HP_aCC > 033300 )
-#   define NETIO_PLACEMENT_DELETE
-#elif defined ( __BORLANDC__ ) && ( __BORLANDC__ > 0x550 )
-#   define NETIO_PLACEMENT_DELETE
-#else
-#   define NETIO_PLACEMENT_DELETE
-#endif
+#include "cxxCompilerDepPlacementDelete.h"
 
 // SUN PRO generates multiply defined symbols if the baseNMIU
 // destructor is virtual (therefore it is protected). 
@@ -96,7 +86,7 @@ private:
     void operator delete ( void * );
     void * operator new ( size_t, 
         tsFreeList < class netSubscription, 1024, epicsMutexNOOP > & );
-#   if defined ( NETIO_PLACEMENT_DELETE )
+#   if defined ( CXX_PLACEMENT_DELETE )
     void operator delete ( void *, 
         tsFreeList < class netSubscription, 1024, epicsMutexNOOP > & );
 #   endif
@@ -129,7 +119,7 @@ private:
     void operator delete ( void * );
     void * operator new ( size_t, 
         tsFreeList < class netReadNotifyIO, 1024, epicsMutexNOOP > & );
-#   if defined ( NETIO_PLACEMENT_DELETE )
+#   if defined ( CXX_PLACEMENT_DELETE )
     void operator delete ( void *, 
         tsFreeList < class netReadNotifyIO, 1024, epicsMutexNOOP > & );
 #   endif
@@ -161,7 +151,7 @@ private:
     void operator delete ( void * );
     void * operator new ( size_t, 
         tsFreeList < class netWriteNotifyIO, 1024, epicsMutexNOOP > & );
-#   if defined ( NETIO_PLACEMENT_DELETE )
+#   if defined ( CXX_PLACEMENT_DELETE )
     void operator delete ( void *,
         tsFreeList < class netWriteNotifyIO, 1024, epicsMutexNOOP > & );
 #   endif
@@ -185,23 +175,13 @@ inline void * netSubscription::operator new ( size_t size,
     return freeList.allocate ( size );
 }
 
-#if defined ( NETIO_PLACEMENT_DELETE )
+#if defined ( CXX_PLACEMENT_DELETE )
     inline void netSubscription::operator delete ( void *pCadaver, 
         tsFreeList < class netSubscription, 1024, epicsMutexNOOP > &freeList )
     {
-        freeList.release ( pCadaver, sizeof ( netSubscription ) );
+        freeList.release ( pCadaver );
     }
 #endif
-
-inline void * netSubscription::operator new ( size_t sizeIn )
-{
-    return ::operator new ( sizeIn );
-}
-
-inline void netSubscription::operator delete ( void * p )
-{
-    ::operator delete ( p );
-}
 
 inline netSubscription * netSubscription::factory ( 
     tsFreeList < class netSubscription, 1024, epicsMutexNOOP > &freeList, 
@@ -246,23 +226,13 @@ inline void * netReadNotifyIO::operator new ( size_t size,
     return freeList.allocate ( size );
 }
 
-#if defined ( NETIO_PLACEMENT_DELETE )
+#if defined ( CXX_PLACEMENT_DELETE )
     inline void netReadNotifyIO::operator delete ( void *pCadaver, 
         tsFreeList < class netReadNotifyIO, 1024, epicsMutexNOOP > &freeList )
     {
-        freeList.release ( pCadaver, sizeof ( netWriteNotifyIO ) );
+        freeList.release ( pCadaver );
     }
 #endif
-
-inline void * netReadNotifyIO::operator new ( size_t sizeIn )
-{
-    return ::operator new ( sizeIn );
-}
-
-inline void netReadNotifyIO::operator delete ( void * p )
-{
-    ::operator delete ( p );
-}
 
 inline netWriteNotifyIO * netWriteNotifyIO::factory ( 
     tsFreeList < class netWriteNotifyIO, 1024, epicsMutexNOOP > &freeList, 
@@ -277,22 +247,12 @@ inline void * netWriteNotifyIO::operator new ( size_t size,
     return freeList.allocate ( size );
 }
 
-#if defined ( NETIO_PLACEMENT_DELETE )
+#if defined ( CXX_PLACEMENT_DELETE )
     inline void netWriteNotifyIO::operator delete ( void *pCadaver, 
         tsFreeList < class netWriteNotifyIO, 1024, epicsMutexNOOP > &freeList )
     {
-        freeList.release ( pCadaver, sizeof ( netWriteNotifyIO ) );
+        freeList.release ( pCadaver );
     }
 #endif
-
-inline void * netWriteNotifyIO::operator new ( size_t sizeIn )
-{
-    return ::operator new ( sizeIn );
-}
-
-inline void netWriteNotifyIO::operator delete ( void * p )
-{
-    ::operator delete ( p );
-}
 
 #endif // ifdef netIOh

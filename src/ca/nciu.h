@@ -35,7 +35,7 @@
 #include "tsDLList.h"
 #include "tsFreeList.h"
 #include "epicsMutex.h"
-#include "epicsSingleton.h"
+#include "cxxCompilerDepPlacementDelete.h"
 
 #ifdef nciuh_restore_epicsExportSharedSymbols
 #   define epicsExportSharedSymbols
@@ -66,7 +66,8 @@ class nciu : public cacChannel, public tsDLNode < nciu >,
 public:
     nciu ( cac &, netiiu &, cacChannelNotify &, 
         const char *pNameIn, cacChannel::priLev );
-    ~nciu (); // force pool allocation
+    ~nciu ();
+    void destroy ();
     void connect ( unsigned nativeType, 
         unsigned nativeCount, unsigned sid, bool v41Ok );
     void connect ();
@@ -76,8 +77,6 @@ public:
     bool searchMsg ( class udpiiu & iiu, unsigned & retryNoForThisChannel );
     void createChannelRequest ( class tcpiiu & iiu );
     bool identifierEquivelence ( unsigned idToMatch );
-    void * operator new ( size_t size );
-    void operator delete ( void *pCadaver, size_t size );
     void beaconAnomalyNotify ();
     void serviceShutdownNotify ();
     void accessRightsStateChange ( const caAccessRights & );
@@ -98,6 +97,10 @@ public:
     void writeException ( epicsGuard < callbackMutex > &,
         int status, const char *pContext, unsigned type, arrayElementCount count );
     cacChannel::priLev getPriority () const;
+    void * operator new ( size_t size, tsFreeList < class nciu, 1024 > & );
+#   ifdef CXX_PLACEMENT_DELETE
+    void operator delete ( void *, tsFreeList < class nciu, 1024 > & );
+#   endif
 private:
     caAccessRights accessRightState;
     cac & cacCtx;
@@ -129,20 +132,27 @@ private:
     bool ca_v42_ok () const;
     void hostName ( char *pBuf, unsigned bufLength ) const;
     static void stringVerify ( const char *pStr, const unsigned count );
-    static epicsSingleton < tsFreeList < class nciu, 1024 > > pFreeList;
 	nciu ( const nciu & );
 	nciu & operator = ( const nciu & );
+    void * operator new ( size_t );
+    void operator delete ( void * );
+    void * operator new [] ( size_t );
+    void operator delete [] ( void * );
 };
 
-inline void * nciu::operator new ( size_t size )
+inline void * nciu::operator new ( size_t size, 
+    tsFreeList < class nciu, 1024 > & freeList )
 { 
-    return nciu::pFreeList->allocate ( size );
+    return freeList.allocate ( size );
 }
 
-inline void nciu::operator delete ( void *pCadaver, size_t size )
+#ifdef CXX_PLACEMENT_DELETE
+inline void nciu::operator delete ( void * pCadaver,
+    tsFreeList < class nciu, 1024 > & freeList )
 { 
-    nciu::pFreeList->release ( pCadaver, size );
+    freeList.release ( pCadaver, sizeof ( nciu ) );
 }
+#endif
 
 inline bool nciu::identifierEquivelence ( unsigned idToMatch )
 {

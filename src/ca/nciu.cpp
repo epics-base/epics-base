@@ -29,6 +29,7 @@
  */
 
 #include <new>
+#include <stdexcept>
 
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
@@ -40,8 +41,6 @@
 #include "virtualCircuit.h"
 #include "cadef.h"
 #include "db_access.h" // for INVALID_DB_REQ
-
-epicsSingleton < tsFreeList < class nciu, 1024 > > nciu::pFreeList;
 
 nciu::nciu ( cac & cacIn, netiiu & iiuIn, cacChannelNotify & chanIn, 
             const char *pNameIn, cacChannel::priLev pri ) :
@@ -76,10 +75,19 @@ nciu::nciu ( cac & cacIn, netiiu & iiuIn, cacChannelNotify & chanIn,
 
 nciu::~nciu ()
 {
-    // care is taken so that a lock is not applied during this phase
-    this->cacCtx.uninstallChannel ( *this );
-
     delete [] this->pNameStr;
+}
+
+void nciu::destroy ()
+{
+    // care is taken so that a lock is not applied during this phase
+    this->cacCtx.destroyChannel ( *this );
+}
+
+void nciu::operator delete ( void * pCadaver )
+{ 
+    throw std::logic_error 
+        ( "compiler is confused about placement delete" );
 }
 
 void nciu::initiateConnect ()

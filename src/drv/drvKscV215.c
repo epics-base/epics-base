@@ -51,7 +51,6 @@
 #include <task_params.h>
 #include <fast_lock.h>
 #include <drvEpvxi.h>
-#include <dbDefs.h>
 #include <drvSup.h>
 #ifndef EPICS_V2
 #include <dbScan.h>

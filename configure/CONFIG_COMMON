@@ -199,7 +199,7 @@ INSTALL_DBDFLAGS = -I $(INSTALL_LOCATION)/dbd
 #--------------------------------------------------
 # POSIX flags
 #####POSIX = YES
-#####POSIX_FLAGS_YES = -D_POSIX_C_SOURCE
+#####POSIX_FLAGS_YES = -D=_POSIX_C_SOURCE=199506L
 #####POSIX_FLAGS_NO = 
 #####POSIX_FLAGS = $(POSIX_FLAGS_$(POSIX))
 

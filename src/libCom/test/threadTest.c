@@ -29,7 +29,7 @@ static void threadFunc(void *arg)
     errlogPrintf("threadFunc %d stopping\n",argvalue);
 }
 
-void threadTest(int ntasks)
+void threadTest(int ntasks,int verbose)
 {
     unsigned int stackSize;
     threadId *id;
@@ -37,7 +37,9 @@ void threadTest(int ntasks)
     char **name;
     void **arg;
     int startPriority,minPriority,maxPriority;
+    int errVerboseSave = errVerbose;
 
+    errVerbose = verbose;
     id = calloc(ntasks,sizeof(threadId *));
     name = calloc(ntasks,sizeof(char **));
     arg = calloc(ntasks,sizeof(void *));
@@ -65,4 +67,6 @@ void threadTest(int ntasks)
     }
     
     threadSleep(5.0);
+    errlogPrintf("threadTest terminating\n");
+    errVerbose = errVerboseSave;
 }

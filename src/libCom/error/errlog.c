@@ -44,6 +44,9 @@ of this distribution.
 #define TRUNCATE_SIZE 80
 #define MAX_ALIGNMENT 8
 
+/*Declare storage for errVerbose */
+int errVerbose=0;
+
 LOCAL void errlogTask(void);
 
 LOCAL char *msgbufGetFree(void);

@@ -70,7 +70,7 @@ static void once(void)
          printf("pthread_attr_setscope failed: error %s\n",
              strerror(status));
     }
-#if defined (_POSIX_THREAD_PRIORITY_SCHEDULING) && !defined (SOLARIS)
+#if defined (_POSIX_THREAD_PRIORITY_SCHEDULING) 
     status = pthread_attr_getschedpolicy(
         &pcommonAttr->attr,&pcommonAttr->schedPolicy);
     if(status) {
@@ -173,35 +173,35 @@ threadId threadCreate(const char *name,
     }
     status = pthread_attr_setdetachstate(
         &pthreadInfo->attr, PTHREAD_CREATE_DETACHED);
-    if(status) {
+    if(status && errVerbose) {
          errlogPrintf("pthread_attr_setdetachstate1 failed: error %s\n",
              strerror(status));
     }
 #if defined (_POSIX_THREAD_ATTR_STACKSIZE)
     status = pthread_attr_setstacksize(
         &pthreadInfo->attr, (size_t)stackSize);
-    if(status) {
+    if(status && errVerbose) {
          errlogPrintf("pthread_attr_setstacksize failed: error %s\n",
              strerror(status));
     }
 #endif
     status = pthread_attr_setscope(&pthreadInfo->attr,PTHREAD_SCOPE_PROCESS);
-    if(status) {
+    if(status && errVerbose) {
          errlogPrintf("pthread_attr_setscope failed: error %s\n",
              strerror(status));
     }
     pthreadInfo->osiPriority = priority;
-#if defined (_POSIX_THREAD_PRIORITY_SCHEDULING) && !defined (SOLARIS)
+#if defined (_POSIX_THREAD_PRIORITY_SCHEDULING) 
     status = pthread_attr_getschedparam(
         &pthreadInfo->attr,&pthreadInfo->schedParam);
-    if(status) {
+    if(status && errVerbose) {
          errlogPrintf("pthread_attr_getschedparam failed %s\n",
              strerror(status));
     }
     pthreadInfo->schedParam.sched_priority = getOssPriorityValue(pthreadInfo);
     status = pthread_attr_setschedparam(
         &pthreadInfo->attr,&pthreadInfo->schedParam);
-    if(status) {
+    if(status && errVerbose) {
          errlogPrintf("threadCreate: pthread_attr_setschedparam failed %s",
              strerror(status));
          errlogPrintf(" sched_priority %d\n",
@@ -209,7 +209,7 @@ threadId threadCreate(const char *name,
     }
     status = pthread_attr_setinheritsched(
         &pthreadInfo->attr,PTHREAD_EXPLICIT_SCHED);
-    if(status) {
+    if(status && errVerbose) {
          errlogPrintf("threadCreate: pthread_attr_setinheritsched failed %s\n",
              strerror(status));
     }
@@ -252,17 +252,17 @@ void threadSetPriority(threadId id,unsigned int priority)
     int status;
 
     pthreadInfo->osiPriority = priority;
-#if defined (_POSIX_THREAD_PRIORITY_SCHEDULING) && !defined (SOLARIS)
+#if defined (_POSIX_THREAD_PRIORITY_SCHEDULING) 
     pthreadInfo->schedParam.sched_priority = getOssPriorityValue(pthreadInfo);
     status = pthread_attr_setschedparam(
         &pthreadInfo->attr,&pthreadInfo->schedParam);
-    if(status) {
-         errlogPrintf("threadSetPriority: pthread_attr_setschedparam failed %s\n",
-             strerror(status));
+    if(status && errVerbose) {
+         errlogPrintf("threadSetPriority: pthread_attr_setschedparam "
+             "failed %s\n", strerror(status));
     }
     status = pthread_setschedparam(
         pthreadInfo->tid,pcommonAttr->schedPolicy,&pthreadInfo->schedParam);
-    if(status) {
+    if(status && errVerbose) {
          errlogPrintf("threadSetPriority: pthread_setschedparam failed %s\n",
              strerror(status));
     }

@@ -16,22 +16,31 @@ of this distribution.
 #include <ctype.h>
 
 #include "osiThread.h"
-void semMutexTest(int nthreads);
+void semMutexTest(int nthreads,int errVerbose);
 
 
 int main(int argc,char *argv[])
 {
     int nthreads = 2;
+    int errVerbose = 0;
 
     if(argc>1) {
         if(isdigit(*argv[1])) {
             sscanf(argv[1],"%d",&nthreads);
             printf("nthreads %d\n",nthreads);
         } else {
-            printf("Illegal argument %s\n",argv[0]);
+            printf("Illegal argument %s\n",argv[1]);
         }
     }
-    semMutexTest(nthreads);
+    if(argc>2) {
+        if(isdigit(*argv[2])) {
+            sscanf(argv[2],"%d",&errVerbose);
+            printf("errVerbose %d\n",errVerbose);
+        } else {
+            printf("Illegal argument %s\n",argv[1]);
+        }
+    }
+    semMutexTest(nthreads,errVerbose);
     printf("main terminating\n");
     return(0);
 }

@@ -53,7 +53,7 @@ static void binaryThread(void *arg)
     }
 }
 
-void semBinaryTest(int nthreads)
+void semBinaryTest(int nthreads,int verbose)
 {
     unsigned int stackSize;
     threadId *id;
@@ -64,7 +64,9 @@ void semBinaryTest(int nthreads)
     semBinaryId binary;
     int status;
     time_t tp;
+    int errVerboseSave = errVerbose;
 
+    errVerbose = verbose;
     binary = semBinaryMustCreate(semEmpty);
     printf("calling semBinaryTakeTimeout(binary,2.0) time %d\n",time(&tp));
     status = semBinaryTakeTimeout(binary,2.0);
@@ -83,7 +85,10 @@ void semBinaryTest(int nthreads)
     status = semBinaryTakeNoWait(binary);
     if(status) printf("status %d\n",status);
 
-    if(nthreads<=0) return;
+    if(nthreads<=0) {
+        errVerbose = errVerboseSave;
+        return;
+    }
     id = calloc(nthreads,sizeof(threadId));
     name = calloc(nthreads,sizeof(char *));
     arg = calloc(nthreads,sizeof(void *));
@@ -110,4 +115,5 @@ void semBinaryTest(int nthreads)
     }
     semBinaryGive(binary);
     threadSleep(2.0);
+    errVerbose = errVerboseSave;
 }

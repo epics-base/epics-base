@@ -94,12 +94,6 @@ static ELLLIST errnumlist;
 static ERRNUMNODE **hashtable;
 static int initialized = FALSE;
 extern ERRSYMTAB_ID errSymTbl;
-
-
-/*Declare storage for errVerbose( defined in errMdef.h)*/
-int errVerbose=0;
-
-
 
 /****************************************************************
  * ERRSYMBLD

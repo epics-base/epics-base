@@ -116,8 +116,6 @@ epicsShareFunc void epicsShareAPI errSymDump();
 epicsShareFunc void epicsShareAPI tstErrSymFind();
 #endif /* errMDefUseProtoANSI */ 
 
-extern int errVerbose;
-
 #ifdef __cplusplus
 }
 #endif

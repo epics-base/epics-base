@@ -55,17 +55,12 @@ semBinaryId semBinaryCreate(int initialState)
 #if defined _POSIX_THREAD_PRIO_PROTECT
     status = pthread_mutexattr_setprotocol(
         &pbinary->attr,PTHREAD_PROCESS_PRIVATE);
-    if(status) {
+    if(status && errVerbose) {
          errlogPrintf("semBinaryCreate pthread_mutexattr_setprotocal "
              "failed: error %s\n",
              strerror(status));
     }
 #endif
-    status = pthread_mutex_init(&pbinary->mutex,&pbinary->attr);
-    if(status) {
-         errlogPrintf("pthread_mutex_init failed: error %s\n",
-             strerror(status));
-    }
     status = pthread_mutex_init(&pbinary->mutex,&pbinary->attr);
     if(status) {
          errlogPrintf("pthread_mutex_init failed: error %s\n",
@@ -76,24 +71,25 @@ semBinaryId semBinaryCreate(int initialState)
     return((semBinaryId)pbinary);
 }
 
+semBinaryId semBinaryMustCreate(int initialState)
+{
+    semBinaryId id = semBinaryCreate (initialState);
+    assert (id);
+    return id;
+}
+
 void semBinaryDestroy(semBinaryId id)
 {
     binary *pbinary = (binary *)id;
     int   status;
 
     status = pthread_mutex_destroy(&pbinary->mutex);
-    if(status) errlogPrintf("pthread_mutex_destroy error %s\n",strerror(status));
+    if(status)
+        errlogPrintf("pthread_mutex_destroy error %s\n",strerror(status));
     status = pthread_mutexattr_destroy(&pbinary->attr);
-    if(status) errlogPrintf("pthread_mutexattr_destroy error %s\n",
-        strerror(status));
+    if(status)
+        errlogPrintf("pthread_mutexattr_destroy error %s\n", strerror(status));
     free(pbinary);
-}
-
-semBinaryId semBinaryMustCreate(int initialState)
-{
-    semBinaryId id = semBinaryCreate (initialState);
-    assert (id);
-    return id;
 }
 
 void semBinaryGive(semBinaryId id)
@@ -102,7 +98,8 @@ void semBinaryGive(semBinaryId id)
     int   status;
 
     status = pthread_mutex_unlock(&pbinary->mutex);
-    if(status) errlogPrintf("pthread_mutex_unlock error %s\n",strerror(status));
+    if(status)
+        errlogPrintf("pthread_mutex_unlock error %s\n",strerror(status));
 }
 
 semTakeStatus semBinaryTake(semBinaryId id)
@@ -148,7 +145,7 @@ semTakeStatus semBinaryTakeNoWait(semBinaryId id)
     return(semTakeError);
 }
 
-void semBinaryShow(semBinaryId id,int level)
+void semBinaryShow(semBinaryId id, int level)
 {
 }
 
@@ -165,7 +162,7 @@ semMutexId semMutexCreate(void) {
     }
 #ifdef _POSIX_THREAD_PRIO_INHERIT
     status = pthread_mutexattr_setprotocol(&pmutex->attr,PTHREAD_PRIO_INHERIT);
-    if(status) {
+    if(status && errVerbose) {
          errlogPrintf("pthread_mutexattr_setprotocal failed: error %s\n",
              strerror(status));
     }
@@ -198,11 +195,14 @@ void semMutexDestroy(semMutexId id)
     int   status;
 
     status = pthread_mutex_destroy(&pmutex->lock);
-    if(status) errlogPrintf("pthread_mutex_destroy error %s\n",strerror(status));
+    if(status)
+        errlogPrintf("pthread_mutex_destroy error %s\n",strerror(status));
     status = pthread_cond_destroy(&pmutex->waitToBeOwner);
-    if(status) errlogPrintf("pthread_cond_destroy error %s\n",strerror(status));
+    if(status)
+        errlogPrintf("pthread_cond_destroy error %s\n",strerror(status));
     status = pthread_mutexattr_destroy(&pmutex->attr);
-    if(status) errlogPrintf("pthread_mutexattr_destroy error %s\n",strerror(status));
+    if(status)
+        errlogPrintf("pthread_mutexattr_destroy error %s\n",strerror(status));
     free(pmutex);
 }
 
@@ -284,7 +284,7 @@ semTakeStatus semMutexTakeNoWait(semMutexId id)
     return(status);
 }
 
-void semMutexShow(semMutexId id,int level)
+void semMutexShow(semMutexId id, int level)
 {
     mutex *pmutex = (mutex *)id;
     printf("ownerTid %p count %d owned %d\n",

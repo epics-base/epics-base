@@ -53,7 +53,7 @@ static void mutexThread(void *arg)
     }
 }
 
-void semMutexTest(int nthreads)
+void semMutexTest(int nthreads,int verbose)
 {
     unsigned int stackSize;
     threadId *id;
@@ -64,7 +64,9 @@ void semMutexTest(int nthreads)
     semMutexId mutex;
     int status;
     time_t tp;
+    int errVerboseSave = errVerbose;
 
+    errVerbose = verbose;
     mutex = semMutexMustCreate();
     printf("calling semMutexTake(mutex) time %d\n",time(&tp));
     status = semMutexTake(mutex);
@@ -84,7 +86,10 @@ void semMutexTest(int nthreads)
     semMutexGive(mutex);
     semMutexShow(mutex,1);
 
-    if(nthreads<=0) return;
+    if(nthreads<=0) {
+        errVerbose = errVerboseSave;
+        return;
+    }
     id = calloc(nthreads,sizeof(threadId));
     name = calloc(nthreads,sizeof(char *));
     arg = calloc(nthreads,sizeof(void *));
@@ -111,4 +116,5 @@ void semMutexTest(int nthreads)
     }
     semMutexGive(mutex);
     threadSleep(2.0);
+    errVerbose = errVerboseSave;
 }

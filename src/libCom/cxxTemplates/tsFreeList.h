@@ -69,18 +69,9 @@
 #   pragma warning ( disable : 4291 )  
 #endif
 
-template < class T, unsigned DEBUG_LEVEL >
-union tsFreeListItem {
-public:
-    char pad[ sizeof ( T ) ];
-    tsFreeListItem < T, DEBUG_LEVEL > *pNext;
-};
-
+template < class T, unsigned DEBUG_LEVEL > union tsFreeListItem;
 template < class T, unsigned N = 0x400, unsigned DEBUG_LEVEL = 0u >
-struct tsFreeListChunk {
-    tsFreeListItem < T, DEBUG_LEVEL > items [N];
-    tsFreeListChunk < T, N, DEBUG_LEVEL > *pNext;
-};
+    struct tsFreeListChunk;
 
 template < class T, unsigned N = 0x400, unsigned DEBUG_LEVEL = 0u >
 class tsFreeList {
@@ -93,6 +84,19 @@ private:
     tsFreeListItem < T, DEBUG_LEVEL > *pFreeList;
     tsFreeListChunk < T, N, DEBUG_LEVEL > *pChunkList;
     tsFreeListItem < T, DEBUG_LEVEL > * allocateFromNewChunk ();
+};
+
+template < class T, unsigned DEBUG_LEVEL >
+union tsFreeListItem {
+public:
+    char pad[ sizeof ( T ) ];
+    tsFreeListItem < T, DEBUG_LEVEL > *pNext;
+};
+
+template < class T, unsigned N = 0x400, unsigned DEBUG_LEVEL = 0u >
+struct tsFreeListChunk {
+    tsFreeListItem < T, DEBUG_LEVEL > items [N];
+    tsFreeListChunk < T, N, DEBUG_LEVEL > *pNext;
 };
 
 template < class T, unsigned N, unsigned DEBUG_LEVEL >

@@ -36,6 +36,8 @@ LIBSRCS += repeater.c
 #
 LIBRARY := ca
 
+ca_RCS_WIN32 = ca.rc
+
 #	build LIBRARY as a DLL on WIN32, other systems may ignore this
 LIBTYPE := SHARED
 

@@ -37,7 +37,7 @@
  *              		Fixed bug in special processing of SPC_MOD (100) 
  * .07  12-02-91	jba	Writing to PROC will always force record process
  * .08  02-05-92	jba	Changed function arguments from paddr to precord 
- * .09  03-02-92	jba	Added function dbrValueSize to replace db_value_size
+ * .09  03-02-92	jba	Added function dbValueSize to replace db_value_size
  */
 
 /* This is a major revision of the original implementation of database access.*/
@@ -100,7 +100,7 @@
  *	long	no_elements;
  * returns: number of bytes as a long
  *
- * dbrValueSize(dbr_type)
+ * dbValueSize(dbr_type)
  *      short     dbr_type;
  * returns: sizeof DBR request type as a long
  */
@@ -446,7 +446,7 @@ long dbPutField(
 	return(status);
 }
 
-long dbrValueSize(
+long dbValueSize(
 	short     dbr_type
 )
 {
@@ -474,7 +474,7 @@ long dbBufferSize(
 {
     long nbytes=0;
 
-    nbytes += dbrValueSize(dbr_type) * no_elements;
+    nbytes += dbValueSize(dbr_type) * no_elements;
     if(options & DBR_STATUS)	nbytes += dbr_status_size;
     if(options & DBR_UNITS)	nbytes += dbr_units_size;
     if(options & DBR_PRECISION) nbytes += dbr_precision_size;

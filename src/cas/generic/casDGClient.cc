@@ -342,14 +342,15 @@ void casDGClient::sendBeacon ()
 	//
 	// create the message
 	//
-	memset (&buf, 0, sizeof(msg));
+	memset ( &buf, 0, sizeof (msg) );
+    msg.m_cmmd = htons (CA_PROTO_RSRV_IS_UP);
 
 	//
 	// send it to all addresses on the beacon list,
     // but let the IO specific code set the address
     // field and the port field
 	//
-	this->sendBeaconIO (buf, sizeof(msg), msg.m_cmmd, msg.m_available);
+	this->sendBeaconIO ( buf, sizeof (msg), msg.m_count, msg.m_available );
 }
 
 //

@@ -18,6 +18,8 @@ LIBSRCS := dbStaticLib.c dbYacc.c dbPvdLib.c dbStaticNoRun.c
 #
 LIBRARY := Db
 
+Db_RCS_WIN32 = Db.rc
+
 #       Products to build:
 #
 PROD := dbReadTest dbExpand dbToMenuH dbToRecordtypeH

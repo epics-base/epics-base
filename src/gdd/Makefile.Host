@@ -37,6 +37,8 @@ LIBRARY := gdd
 
 LIBTYPE := SHARED
 
+gdd_RCS_WIN32 = gdd.rc
+
 include $(TOP)/config/RULES.Host
 
 # cannot generate these dependencies automatically

@@ -65,6 +65,8 @@ LIBTYPE := SHARED
 PROD_LIBS := cas ca gdd Com 
 SYS_PROD_LIBS_WIN32 := ws2_32
 
+cas_RCS_WIN32 = cas.rc
+
 include $(TOP)/config/RULES.Host
 
 clean::

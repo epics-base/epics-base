@@ -75,5 +75,9 @@ ARCH_DEP_LDLIBS += -lsocket -lnsl
 ARCH_DEP_LDLIBS += -lposix4 -lpthread
 
 #Allows R3.13 built extensions to load R3.14 shared libs
-SYS_DLL_LIBS_solaris += posix4 pthread Crun
+SYS_DLL_LIBS_solaris += posix4 pthread
+ifeq ($(subst 5.,,$(shell uname -r)),8)
+SYS_DLL_LIBS_solaris += Crun
+endif
+
 

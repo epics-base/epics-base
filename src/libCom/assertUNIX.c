@@ -27,6 +27,9 @@
  * Modification Log: 
  * -----------------
  * $Log$
+ * Revision 1.11  1998/02/27 01:34:07  jhill
+ * cleaned up the DLL symbol export
+ *
  * Revision 1.10  1998/01/20 21:36:51  mrk
  * add dbDefs.h
  *
@@ -66,14 +69,25 @@
 
 
 /*
- * epicsAssert ()
+ * epicsAssertPrintf ()
  */
 epicsShareFunc void epicsShareAPI 
-	epicsAssert (const char *pFile, const unsigned line, const char *pMsg,
-	const char *pAuthorName)
+	epicsAssertPrintf (const char *pFile, const unsigned line, 
+    const char *pExp, const char *pAuthorName, const char *pFormat, ...
+	)
 {
+    va_list	pvar;
+
+    va_start (pvar, pFormat);
+
 	epicsPrintf (
-"\n\n\nA call to \"assert (%s)\" failed in %s line %d.\n", pMsg, pFile, line);
+"\n\n\nA call to \"assert (%s)\" failed in %s line %d.\n", pExp, pFile, line);
+
+    if (pFormat) {
+        epicsPrintf ("When: ");
+        epicsVprintf (pFormat, pvar);
+        epicsPrintf ("\n");
+    }
 
 	epicsPrintf (
 "The file \"core\" will be created in the current working directory.\n");
@@ -103,6 +117,8 @@ epicsShareFunc void epicsShareAPI
 
 	}
 	epicsPrintf ("This problem occurred in \"%s\"\n", epicsReleaseVersion);
+
+    va_end (pvar);
 
 	abort ();
 }

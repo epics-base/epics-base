@@ -27,6 +27,9 @@
  * Modification Log: 
  * -----------------
  * $Log$
+ * Revision 1.10  1998/02/27 01:34:07  jhill
+ * cleaned up the DLL symbol export
+ *
  * Revision 1.9  1998/02/20 21:45:08  evans
  * Made a large number of changes to epicsShareThings in libCom routines
  * to get imports and exports straight on WIN32.  Not everything is fixed
@@ -69,23 +72,33 @@
 
 
 /*
- * epicsAssert ()
+ * epicsAssertPrintf ()
  *
  * This forces assert failures into the log file and then
  * calls taskSuspend() instead of exit() so that we can debug
  * the problem.
  */
-void epicsAssert (const char *pFile, const unsigned line, const char *pMsg,
-	const char *pAuthorName)
+void epicsAssertPrintf (const char *pFile, const unsigned line, const char *pExp,
+	const char *pAuthorName, const char *pFormat, ...)
 {
 	int	taskId = taskIdSelf();
+    va_list	pvar;
 
-        epicsPrintf (	
+    va_start (pvar, pFormat);
+
+
+    epicsPrintf (	
 "\n\n\n%s: A call to \"assert (%s)\" failed in %s at %d\n", 
 		taskName (taskId),
-		pMsg, 
+		pExp, 
 		pFile, 
 		line);
+
+    if (pFormat) {
+        epicsPrintf ("When: ");
+        epicsVprintf (pFormat, pvar);
+        epicsPrintf ("\n");
+    }
 
 	if (pAuthorName) {
 
@@ -110,6 +123,8 @@ void epicsAssert (const char *pFile, const unsigned line, const char *pMsg,
 	}
 	epicsPrintf ("This problem occurred in \"%s\"\n", epicsReleaseVersion);
 
-        taskSuspend (taskId);
+    va_end (pvar);
+
+    taskSuspend (taskId);
 }
 

@@ -63,7 +63,7 @@ public:
 	epicsShareFunc osiTimer ();
 
 	//
-	// change the timer's expiration to newDelay
+	// change the timers expiration to newDelay
 	// seconds after when reschedule() is called
 	//	
     epicsShareFunc void reschedule (double newDelay, osiTimerQueue & queueIn = osiDefaultTimerQueue);

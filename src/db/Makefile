@@ -63,7 +63,6 @@ LIBSRCS += dbChannelIO.cpp
 LIBSRCS += dbPutNotifyIO.cpp 
 LIBSRCS += dbSubscriptionIO.cpp 
 
-OBJS_IOC += iocInit
 
 LIBRARY_IOC = dbIoc
 DLL_LIBS = dbStaticIoc ca Com 

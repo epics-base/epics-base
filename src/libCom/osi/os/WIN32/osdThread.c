@@ -64,9 +64,9 @@ static void threadCleanupWIN32 (void)
 }
 
 /*
- * threadInitWin32 ()
+ * threadInit ()
  */
-static void threadInitWin32 () 
+epicsShareFunc void epicsShareAPI threadInit (void)
 {
     HANDLE win32ThreadGlobalMutexTmp;
     DWORD status;
@@ -252,7 +252,7 @@ epicsShareFunc threadId epicsShareAPI threadCreate (const char *pName,
     BOOL bstat;
 
     if (!win32ThreadInitOK) {
-        threadInitWin32 ();
+        threadInit ();
         if (!win32ThreadInitOK) {
             return NULL;
         }
@@ -455,20 +455,23 @@ epicsShareFunc void epicsShareAPI threadGetName (threadId id, char *pName, size_
 }
 
 /*
+ * threadShowAll ()
+ */
+epicsShareFunc void epicsShareAPI threadShowAll (unsigned level)
+{
+    printf ("sorry, threadShowAll() not implemented on WIN32\n");
+}
+
+/*
  * threadShow ()
  */
-epicsShareFunc void epicsShareAPI threadShow (void)
+epicsShareFunc void epicsShareAPI threadShow (threadId id, unsigned level)
 {
-    win32ThreadParam *pParm = (win32ThreadParam *) TlsGetValue (tlsIndexWIN32);
+    win32ThreadParam *pParm = (win32ThreadParam *) id;
 
-    if (pParm) {
-        printf ("thread \"%s\" HANDLE=%p func=%p parm=%p %s %d\n",
-            pParm->pName, pParm->handle, pParm->funptr, pParm->parm,
-            pParm->isSuspended?"suspended":"running", pParm->id);
-    }
-    else {
-        printf ("thread was not created by threadCreate()\n");
-    }
+    printf ("thread \"%s\" HANDLE=%p func=%p parm=%p %s %d\n",
+        pParm->pName, pParm->handle, pParm->funptr, pParm->parm,
+        pParm->isSuspended?"suspended":"running", pParm->id);
 }
 
 /*

@@ -144,7 +144,7 @@ void casMonitor::show ( unsigned level ) const
 {
     if ( level > 1u ) {
         printf (
-"\tmonitor type=%u count=%lu client id=%u OVF=%u nPend=%u\n",
+"\tmonitor type=%u count=%u client id=%u OVF=%u nPend=%u\n",
                     dbrType, nElem, clientId, ovf, nPend );
 		this->mask.show ( level );
     }

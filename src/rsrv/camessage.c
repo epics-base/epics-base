@@ -274,12 +274,6 @@ struct message_buffer *recv
 			read_sync_reply(mp, client);
 			break;
 		case IOC_CLAIM_CIU:
-			/*
-			 * remove channel in use block from
-			 * the UDP client where it could time
-			 * out and place it on the client
-			 * who is claiming it
-			 */
 
 			/*
 			 * clients which dont claim their 
@@ -287,27 +281,50 @@ struct message_buffer *recv
 			 * timeout must reconnect
 			 */
 			pciu = MPTOPCIU(mp);
-			if(pciu?pciu->client!=prsrv_cast_client:TRUE){
-       				free_client(client);
-				logMsg("CAS: client timeout disconnect\n",
-					NULL,
+			if(!pciu){
+				logMsg("CAS: client timeout disconnect id=%d\n",
+					mp->m_cid,
 					NULL,
 					NULL,
 					NULL,
 					NULL,
 					NULL);
+       				free_client(client);
 				exit(0);
 			}
 
-			LOCK_CLIENT(prsrv_cast_client);
-			ellDelete(
-				&prsrv_cast_client->addrq, 
-				&pciu->node);
-			UNLOCK_CLIENT(prsrv_cast_client);
-			pciu->client = client;
-			LOCK_CLIENT(client);
-			ellAdd(&client->addrq, &pciu->node);
-			UNLOCK_CLIENT(client);
+			/*
+			 * remove channel in use block from
+			 * the UDP client where it could time
+			 * out and place it on the client
+			 * who is claiming it
+			 */
+			if(pciu->client==prsrv_cast_client){
+				LOCK_CLIENT(prsrv_cast_client);
+				ellDelete(
+					&prsrv_cast_client->addrq, 
+					&pciu->node);
+				UNLOCK_CLIENT(prsrv_cast_client);
+				pciu->client = client;
+				LOCK_CLIENT(client);
+				ellAdd(&client->addrq, &pciu->node);
+				UNLOCK_CLIENT(client);
+			}
+			/* 
+			 * Any other client attachment is a severe error
+			 */
+			else if(pciu->client!=client){
+				logMsg("CAS: bad channel claim disconnect %d %x %x\n",
+					mp->m_cid,
+					(int)pciu,
+					(int)pciu->client,
+					NULL,
+					NULL,
+					NULL);
+       				free_client(client);
+				exit(0);
+			}
+
 			break;
 
 		default:

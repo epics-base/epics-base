@@ -313,7 +313,7 @@ clean_addrq(struct client *pclient)
 {
 	struct channel_in_use	*pciu;
 	struct channel_in_use	*pnextciu;
-	FAST unsigned long 	current = tickGet();
+	unsigned long 		current;
 	unsigned long   	delay;
 	unsigned long   	maxdelay = 0;
 	unsigned		ndelete=0;
@@ -322,6 +322,7 @@ clean_addrq(struct client *pclient)
 
 	current = tickGet();
 
+	LOCK_CLIENT(prsrv_cast_client);
 	pnextciu = (struct channel_in_use *) 
 			pclient->addrq.node.next;
 
@@ -355,9 +356,10 @@ clean_addrq(struct client *pclient)
 			maxdelay = max(delay, maxdelay);
 		}
 	}
+	UNLOCK_CLIENT(prsrv_cast_client);
 
+#	ifdef DEBUG
 	if(ndelete){
-#ifdef DEBUG
 		logMsg(	"CAS: %d CA channels have expired after %d sec\n",
 			ndelete,
 			maxdelay / sysClkRateGet(),
@@ -365,8 +367,9 @@ clean_addrq(struct client *pclient)
 			NULL,
 			NULL,
 			NULL);
-#endif
 	}
+#	endif
+
 }
 
 

@@ -20,8 +20,8 @@ extern "C" {
 #endif
 
 typedef struct asTrapWriteMessage {
-    char *userid;
-    char *hostid;
+    const char *userid;
+    const char *hostid;
     void *serverSpecific;
     void *userPvt;
 } asTrapWriteMessage;

@@ -111,7 +111,7 @@ void epicsShareAPI asTrapWriteUnregisterListener(asTrapWriteId id)
 }
 
 void * epicsShareAPI asTrapWriteBeforeWrite(
-    char *userid,char *hostid,void *addr)
+    const char *userid,const char *hostid,void *addr)
 {
     writeMessage *pwriteMessage;
     listener *plistener;

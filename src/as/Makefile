@@ -20,7 +20,6 @@ LIB_SRCS += asTrapWrite.c
 
 asIoc_SRCS += asDbLib.c
 asIoc_SRCS += asCa.c
-asIoc_SRCS += asTrapWrite.c
 
 LIBRARY_HOST = asHost
 LIBRARY_IOC = asIoc

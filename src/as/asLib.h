@@ -81,7 +81,7 @@ epicsShareFunc int epicsShareAPI asDumpMem(char *asgname,void (*memcallback)(ASM
 epicsShareFunc int epicsShareAPI asDumpHash(void);
 
 epicsShareFunc void * epicsShareAPI asTrapWriteBeforeWrite(
-    char *userid,char *hostid,void *addr);
+    const char *userid,const char *hostid,void *addr);
 
 epicsShareFunc void epicsShareAPI asTrapWriteAfterWrite(void *pvt);
 

@@ -29,6 +29,9 @@
  *
  * History
  * $Log$
+ * Revision 1.13  1996/12/06 22:36:30  jhill
+ * use destroyInProgress flag now functional nativeCount()
+ *
  * Revision 1.12  1996/11/02 00:54:31  jhill
  * many improvements
  *
@@ -312,7 +315,7 @@ public:
 
 	inline int hasAddress() const;
 
-	inline const caAddr getSender() const;
+	caAddr getSender() const;
 
         xRecvStatus xRecv (char *pBufIn, bufSizeT nBytesToRecv,
 			bufSizeT &nByesRecv);
@@ -762,16 +765,36 @@ private:
 	bufSizeT incommingBytesPresent() const;
 };
 
+//
+// casEventMaskEntry
+//
+class casEventMaskEntry : public tsSLNode<casEventMaskEntry>,
+        public casEventMask, public stringId {
+public:
+        casEventMaskEntry (casEventRegistry &regIn,
+                casEventMask maskIn, const char *pName);
+        virtual ~casEventMaskEntry();
+        void show (unsigned level);
+private:
+        casEventRegistry        &reg;
+};
+
+//
+// casEventRegistry
+//
 class casEventRegistry : private resTable <casEventMaskEntry, stringId> {
+	friend casEventMaskEntry;
 public:
         casEventRegistry(osiMutex &mutexIn) : 
 		mutex(mutexIn), allocator(0), hasBeenInitialized(0) {}
 
 	int init();
+
         ~casEventRegistry()
         {
                 this->destroyAllEntries();
         }
+
         casEventMask registerEvent (const char *pName);
  
         void show (unsigned level);

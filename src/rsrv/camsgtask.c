@@ -160,3 +160,37 @@ void camsgtask ( void *pParm )
 
     destroy_tcp_client ( client );
 }
+
+
+void rsrvHostNameOnBehalf ( char * pBuf, unsigned bufSize )
+{
+    if ( bufSize ) {
+        const char * pHostName = "";
+        {
+            struct client * pClient = ( struct client * ) 
+                epicsThreadPrivateGet ( rsrvCurrentClient );
+            if ( pClient ) {
+                pHostName = pClient->pHostName;
+            }
+        }
+        strncpy ( pBuf, pHostName, bufSize );
+        pBuf [ bufSize - 1u ] = '\0';
+    }
+}
+
+void rsrvUserNameOnBehalf ( char * pBuf, unsigned bufSize )
+{
+    if ( bufSize ) {
+        const char * pUserName = "";
+        {
+            struct client * pClient = ( struct client * ) 
+                epicsThreadPrivateGet ( rsrvCurrentClient );
+            if ( pClient ) {
+                pUserName = pClient->pUserName;
+            }
+        }
+        strncpy ( pBuf, pUserName, bufSize );
+        pBuf [ bufSize - 1u ] = '\0';
+    }
+}
+

@@ -287,15 +287,18 @@ static void notifyCancel(PUTNOTIFY *ppn)
 	ellDelete(&ppn->waitList,&ppnnode->node);
     }
     /*If on restartList remove it*/
-    if(ppn->restartNode.ppnrestartList) 
+    if(ppn->restartNode.ppnrestartList) {
 	ellDelete(&ppn->restartNode.ppnrestartList->restartList,
 		&ppn->restartNode.node);
+    }
     /*If this ppn has a restartList move it */
     if((pfirst = (PNRESTARTNODE *)ellFirst(&ppn->restartList))) {
 	PNRESTARTNODE	*pnext;
 	PUTNOTIFY	*pfirstppn;
 
 	pfirstppn = pfirst->ppn;
+        ellDelete(&pfirstppn->restartNode.ppnrestartList->restartList,
+            &pfirstppn->restartNode.node);
 	ellConcat(&pfirstppn->restartList,&ppn->restartList);
 	pnext = (PNRESTARTNODE *)ellFirst(&pfirstppn->restartList);
 	while(pnext) {

@@ -1,4 +1,5 @@
 
+#include <assert.h>
 
 //
 // tsBTreeRMRet
@@ -99,7 +100,11 @@ private:
 			}
 		}
 		else {
-			throw invalid_btCmp ();
+#           ifdef noExceptionsFromCXX
+                assert (0);
+#           else            
+                throw invalid_btCmp ();
+#           endif
 		}
 	}
 

@@ -30,6 +30,8 @@
  *
  */
 
+#include <assert.h>
+
 //
 // the hp compiler complains about parameterized friend
 // class that has not been declared without this?
@@ -49,7 +51,7 @@ friend class tsSLIter<T>;
 friend class tsSLIterRm<T>;
 public:
 
-	tsSLNode();
+	tsSLNode ();
 
 	void operator = (const tsSLNode<T> &) const;
 
@@ -97,7 +99,7 @@ public:
 
 private:
 	T *pCurrent;
-	const tsSLList<T> &list;
+	const tsSLList<T> *pList; // ptr allows cpy op
 };
 
 //
@@ -124,7 +126,7 @@ public:
 private:
 	T *pPrevious;
 	T *pCurrent;
-	tsSLList<T> &list;
+	tsSLList<T> *pList; // ptr allows cpy op
 };
 
 //////////////////////////////////////////
@@ -241,7 +243,7 @@ inline void tsSLList<T>::push(T &item)
 //
 template <class T>
 inline tsSLIter<T>::tsSLIter (const tsSLList<T> &listIn) :
-  pCurrent (0), list (listIn) {}
+  pCurrent (0), pList (&listIn) {}
 
 //
 // tsSLIter<T>::next () 
@@ -260,7 +262,7 @@ T * tsSLIter<T>::next ()
 		this->pCurrent = pCurNode->pNext;
 	}
 	else {
-		const tsSLNode<T> &first = this->list;
+		const tsSLNode<T> &first = *this->pList;
 		//
 		// assume that we are starting (or restarting) at the 
 		// beginning of the list
@@ -304,7 +306,7 @@ inline T * tsSLIter<T>::operator () ()
 //
 template <class T>
 inline tsSLIterRm<T>::tsSLIterRm (tsSLList<T> &listIn) :
-  pPrevious (0), pCurrent (0), list (listIn) {}
+  pPrevious (0), pCurrent (0), pList (&listIn) {}
 
 
 //
@@ -325,7 +327,7 @@ T * tsSLIterRm<T>::next ()
 		this->pCurrent = pCurNode->pNext;
 	}
 	else {
-		const tsSLNode<T> &first = this->list;
+		const tsSLNode<T> &first = *this->pList;
 		//
 		// assume that we are starting (or restarting) at the 
 		// beginning of the list
@@ -363,20 +365,28 @@ template <class T>
 void tsSLIterRm<T>::remove ()
 {
 	if (this->pCurrent==0) {
-		throw noCurrentItemInIterator ();
+#       ifdef noExceptionsFromCXX
+            assert (0);
+#       else            
+            throw noCurrentItemInIterator ();
+#       endif
 	}
 
 	tsSLNode<T> *pPrevNode;
 	tsSLNode<T> *pCurNode = this->pCurrent;
 
 	if (this->pPrevious==0) {
-		pPrevNode = &this->list;
+		pPrevNode = this->pList;
 		//
 		// fail if it is an attempt to 
 		// delete twice without moving the iterator
 		//
 		if (pPrevNode->pNext != this->pCurrent) {
-			throw noCurrentItemInIterator ();
+#           ifdef noExceptionsFromCXX
+                assert (0);
+#           else            
+                throw noCurrentItemInIterator ();
+#           endif
 		}
 	}
 	else {

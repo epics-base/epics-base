@@ -50,12 +50,15 @@
 #include <limits.h>
 #include <string.h>
 #include <math.h>
+#include <assert.h>
 
 #include "tsSLList.h"
 #include "shareLib.h"
 
 typedef size_t resTableIndex;
 static const unsigned indexWidth = sizeof(resTableIndex)*CHAR_BIT;
+
+template <class T, class ID> class resTableIter;
 
 //
 // class resTable <T, ID>
@@ -103,7 +106,15 @@ static const unsigned indexWidth = sizeof(resTableIndex)*CHAR_BIT;
 //
 template <class T, class ID>
 class resTable {
+    friend class resTableIter<T,ID>;
 public:
+
+    //
+    // exceptions thrown
+    //
+    class epicsShareClass dynamicMemoryAllocationFailed {};
+    class epicsShareClass entryDidntRespondToDestroyVirtualFunction {};
+    class epicsShareClass sizeExceedsMaxIndexWidth {};
 
 	resTable (unsigned nHashTableEntries);
 
@@ -160,7 +171,7 @@ private:
     unsigned        hashIdNBits;
     unsigned        nInUse;
 
-	resTableIndex hash(const ID & idIn) const;
+	resTableIndex hash (const ID & idIn) const;
 
 	T *find (tsSLList<T> &list, const ID &idIn) const;
 
@@ -170,6 +181,23 @@ private:
 //
 // Some ID classes that work with the above template
 //
+
+//
+// class resTableIter
+//
+// an iterator for the resource table class
+//
+template <class T, class ID>
+class resTableIter {
+public:
+    resTableIter (const resTable<T,ID> &tableIn);
+	T * next ();
+	T * operator () ();
+private:
+    tsSLIter<T>             iter;
+    unsigned                index;
+	const resTable<T,ID>    *pTable;
+};
 
 //
 // class intId
@@ -250,6 +278,10 @@ private:
 class epicsShareClass stringId {
 public:
 
+    //
+    // exceptions
+    //
+    class epicsShareClass dynamicMemoryAllocationFailed {};
 
     enum allocationType {copyString, refString};
 
@@ -273,33 +305,6 @@ private:
 	const char * pStr;
 	const allocationType allocType;
 	static const unsigned char fastHashPermutedIndexSpace[256];
-};
-
-//
-// exceptions thrown by this library
-//
-class epicsShareClass resLib_resourceWithThatNameIsAlreadyInstalled 
-{
-public:
-    resLib_resourceWithThatNameIsAlreadyInstalled ();
-};
-
-class epicsShareClass resLib_dynamicMemoryAllocationFailed 
-{
-public:
-    resLib_dynamicMemoryAllocationFailed ();
-};
-
-class epicsShareClass resLib_entryDidntRespondToDestroyVirtualFunction 
-{
-public:
-    resLib_entryDidntRespondToDestroyVirtualFunction ();
-};
-
-class epicsShareClass resLib_sizeExceedsMaxIndexWidth 
-{
-public:
-    resLib_sizeExceedsMaxIndexWidth ();
 };
 
 /////////////////////////////////////////////////
@@ -326,7 +331,11 @@ resTable<T,ID>::resTable (unsigned nHashTableEntries) :
 	}
 
     if ( nbits > ID::maxIndexBitWidth ) {
-        throw resLib_sizeExceedsMaxIndexWidth ();
+#       ifdef noExceptionsFromCXX
+            assert (0);
+#       else            
+            throw sizeExceedsMaxIndexWidth ();
+#       endif
     }
 
     //
@@ -343,7 +352,11 @@ resTable<T,ID>::resTable (unsigned nHashTableEntries) :
 	this->nInUse = 0u;
 	this->pTable = new tsSLList<T> [1<<nbits];
 	if (this->pTable==0) {
-		throw resLib_dynamicMemoryAllocationFailed ();
+#       ifdef noExceptionsFromCXX
+            assert (0);
+#       else            
+            throw dynamicMemoryAllocationFailed ();
+#       endif
 	}
 }
 
@@ -377,8 +390,7 @@ inline T * resTable<T,ID>::lookup (const ID &idIn) const
 template <class T, class ID>
 inline resTableIndex resTable<T,ID>::hash (const ID & idIn) const
 {
-	return idIn.hash(this->hashIdNBits) 
-			& this->hashIdMask;
+	return idIn.hash (this->hashIdNBits) & this->hashIdMask;
 }
 
 //
@@ -579,10 +591,52 @@ resTable<T,ID>::~resTable()
 	if (this->pTable) {
 		this->destroyAllEntries();
 		if (this->nInUse != 0u) {
-			throw resLib_entryDidntRespondToDestroyVirtualFunction ();
+#           ifdef noExceptionsFromCXX
+                assert (0);
+#           else            
+                throw entryDidntRespondToDestroyVirtualFunction ();
+#           endif
 		}
 		delete [] this->pTable;
 	}
+}
+
+//////////////////////////////////////////////
+// resTableIter<T,ID> member functions
+//////////////////////////////////////////////
+
+//
+// resTableIter<T,ID>::resTableIter ()
+//
+template <class T, class ID>
+inline resTableIter<T,ID>::resTableIter (const resTable<T,ID> &tableIn) : 
+    iter (tableIn.pTable[0]), index (1), pTable (&tableIn) {} 
+
+//
+// resTableIter<T,ID>::next ()
+//
+template <class T, class ID>
+inline T * resTableIter<T,ID>::next ()
+{
+    T *pNext = this->iter.next();
+    if (pNext) {
+        return pNext;
+    }
+    if ( this->index >= (1u<<this->table.hashIdNBits) ) {
+        return 0;
+    }
+    ;
+    this->iter = tsSLIter<T> (this->pTable->pTable[this->index++]);
+    return this->iter.next ();
+}
+
+//
+// resTableIter<T,ID>::operator () ()
+//
+template <class T, class ID>
+inline T * resTableIter<T,ID>::operator () ()
+{
+    return this->next ();
 }
 
 //////////////////////////////////////////////
@@ -771,7 +825,11 @@ stringId::stringId (const char * idIn, allocationType typeIn) :
 			memcpy ((void *)this->pStr, idIn, nChars);
 		}
 		else {
-			throw resLib_dynamicMemoryAllocationFailed ();
+#           ifdef noExceptionsFromCXX
+                assert (0);
+#           else            
+                throw dynamicMemoryAllocationFailed ();
+#           endif
 		}
 	}
 	else {
@@ -903,21 +961,6 @@ const unsigned char stringId::fastHashPermutedIndexSpace[256] = {
 111,141,191,103, 74,245,223, 20,161,235,122, 63, 89,149, 73,238,
 134, 68, 93,183,241, 81,196, 49,192, 65,212, 94,203, 10,200, 47
 };
-
-//
-// instantiate exceptions
-//
-resLib_resourceWithThatNameIsAlreadyInstalled::
-    resLib_resourceWithThatNameIsAlreadyInstalled () {}
-
-resLib_dynamicMemoryAllocationFailed::
-    resLib_dynamicMemoryAllocationFailed () {}
-
-resLib_entryDidntRespondToDestroyVirtualFunction::
-    resLib_entryDidntRespondToDestroyVirtualFunction () {}
-
-resLib_sizeExceedsMaxIndexWidth::
-    resLib_sizeExceedsMaxIndexWidth () {}
 
 #endif // if instantiateRecourceLib is defined
 

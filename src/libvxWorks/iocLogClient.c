@@ -33,6 +33,9 @@
  * .01 joh 081591	Added epics env config
  * .02 joh 011995	Allow stdio also	
  * $Log$
+ * Revision 1.16  1997/06/25 06:12:49  jhill
+ * added diagnostic
+ *
  * Revision 1.15  1997/04/11 20:24:13  jhill
  * added const to failureNotify()
  *
@@ -44,9 +47,11 @@
  *
  */
 
+#include <vxWorks.h>
+#include <stdlib.h>
+#include <stddef.h>
 #include <string.h>
 #include <stdio.h>
-#include <errno.h>
 #include <assert.h>
 
 #include <socket.h>
@@ -61,14 +66,22 @@
 #include <semLib.h>
 #include <rebootLib.h>
 
-#include "epicsPrint.h"
+#define epicsExportSharedSymbols
+#include "epicsAssert.h"
+#include "errlog.h"
 #include "envDefs.h"
 #include "task_params.h"
+
+#ifndef LOCAL
+#define LOCAL static
+#endif /* LOCAL */
 
 /*
  * for use by the vxWorks shell
  */
 int 		iocLogDisable = 0;
+
+void iocLogMessage(const char *message);
 
 LOCAL FILE		*iocLogFile = NULL;
 LOCAL int 		iocLogFD = ERROR;
@@ -140,6 +153,7 @@ int iocLogInit(void)
 	if (status==ERROR) {
 		printf("Unable to start log server connection watch dog\n");
 	}
+	errlogAddListener(iocLogMessage);
 
 	return attachStatus;
 }
@@ -460,29 +474,13 @@ LOCAL void failureNotify(const ENV_PARAM *pparam)
 }
 
 
-/*
- * iocLogPrintf()
- */
-int iocLogPrintf(const char *pFormat, ...)
-{
-	va_list		pvar;
-
-	va_start (pvar, pFormat);
-
-	return iocLogVPrintf (pFormat, pvar);
-}
-
-
-/*
- * iocLogVPrintf()
- */
-int iocLogVPrintf(const char *pFormat, va_list pvar)
+void iocLogMessage(const char *message)
 {
 	int status;
 	int semStatus;
 
-	if (!pFormat || iocLogDisable) {
-		return 0;
+	if (iocLogDisable || !message || *message==0) {
+		return;
 	}
 
 	/*
@@ -491,7 +489,7 @@ int iocLogVPrintf(const char *pFormat, va_list pvar)
 	if (!iocLogMutex) {
 		status = iocLogInit();
 		if (status) {
-			return 0;
+			return;
 		}
 	}
 
@@ -502,7 +500,7 @@ int iocLogVPrintf(const char *pFormat, va_list pvar)
 	assert(semStatus==OK);
 
 	if (iocLogFile) {
-		status = vfprintf(iocLogFile, pFormat, pvar);
+		status = fprintf(iocLogFile, "%s", message);
 		if (status>0) {
 			status = fflush(iocLogFile);
 		}
@@ -527,6 +525,6 @@ int iocLogVPrintf(const char *pFormat, va_list pvar)
 	semStatus = semGive(iocLogMutex);
 	assert(semStatus==OK);
 
-	return status;
+	return;
 }
 

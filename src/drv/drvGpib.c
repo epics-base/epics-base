@@ -64,6 +64,7 @@
 #include <wdLib.h>
 #include <rngLib.h>
 
+#include <devLib.h>
 #include <ellLib.h>
 #include <task_params.h>
 #include <module_types.h>
@@ -108,11 +109,20 @@ int	ibSrqLock = 0;		/* set to 1 to stop ALL srq checking & polling */
 
 #define	STD_ADDRESS_MODE D_SUP|D_S24	/* mode to use when DMAC accesses RAM */
 
+/*
+ * The bounce buffer is where the DMA IO operation(s) take place.  If it
+ * is not large enough, it will be reallocated at that time.  However,
+ * It should be made large enough such this need not happen.
+ */
+#define DEFAULT_BOUNCE_BUFFER_SIZE	10*1024
+
 STATIC	int	defaultTimeout;		/* in 60ths, for GPIB timeouts */
 
 STATIC	char	init_called = 0;	/* To insure that init is done first */
 STATIC	char	*short_base;		/* Base of short address space */
+#ifdef USE_OLD_XLATION
 STATIC	char	*ram_base;		/* Base of the ram on the CPU board */
+#endif
 
 STATIC int timeoutSquelch = 0;	/* Used to quiet timeout msgs during polling */
 
@@ -154,10 +164,10 @@ extern struct {
  ******************************************************************************/
 struct    cc_ary
 {
-    caddr_t         cc_ccb;
-    short           cc_ONE;
-    caddr_t         cc_n_1addr;
-    short           cc_TWO;
+    void	*cc_ccb;
+    short	cc_ONE;
+    void	*cc_n_1addr;
+    short	cc_TWO;
 };
 
 /******************************************************************************
@@ -183,6 +193,9 @@ struct	niLink {
 
   unsigned long	cmdSpins;	/* total taskDelays while in niGpibCmd() */
   unsigned long	maxSpins;	/* most taskDelays in one call to niGpibCmd() */
+
+  char		*A24BounceBuffer;	/* Where to DMA to */
+  unsigned long	A24BounceSize;
 };
 
 STATIC	struct	niLink	*pNiLink[NIGPIB_NUM_LINKS];	/* NULL if link not present */
@@ -249,23 +262,23 @@ reportGpib(void)
 STATIC void rebootFunc(void)
 {
   int 		i;
-  int		probeValue;
-  struct ibregs *pibregs;
 
   if (ibDebug)
     printf("NI-GPIB driver resetting\n");
 
-  probeValue = D_LMR | D_SFL;
-  pibregs = (struct ibregs *)((unsigned int)short_base + NIGPIB_SHORT_OFF);
-
   for (i=0;i<NIGPIB_NUM_LINKS;i++)
   {
     if (pNiLink[i] != NULL)
-      vxMemProbe(&(pibregs->cfg2), WRITE, 1, &probeValue);
+    {
+      pNiLink[i]->ibregs->ch1.ccr = 0;		/* stop all channel operation */
+      pNiLink[i]->ibregs->ch0.ccr = 0;		/* stop all channel operation */
+      taskDelay(1);				/* Let it settle */
 
-    pibregs++;
+      pNiLink[i]->ibregs->cfg2 = 0;
+      pNiLink[i]->ibregs->cfg2 = D_LMR;
+    }
   }
-  taskDelay(10);
+  taskDelay(2);
   return;
 }
 /******************************************************************************
@@ -301,15 +314,19 @@ initGpib(void)
   /* figure out where the short address space is */
   sysBusToLocalAdrs(VME_AM_SUP_SHORT_IO , 0, &short_base);
 
+#ifdef USE_OLD_XLATION
   /* figure out where the CPU memory is (when viewed from the backplane) */
   sysLocalToBusAdrs(VME_AM_STD_SUP_DATA, &ram_base, &ram_base);
   ram_base = (char *)((ram_base - (char *)&ram_base) & 0x00FFFFFF);
+#endif
 
   if (ibDebug)
   {
     printf("Gpib driver package initializing\n");
     printf("short_base            0x%08.8X\n", short_base);
+#ifdef USE_OLD_XLATION
     printf("ram_base              0x%08.8X\n", ram_base);
+#endif
     printf("NIGPIB_SHORT_OFF        0x%08.8X\n", NIGPIB_SHORT_OFF);
     printf("NIGPIB_NUM_LINKS        0x%08.8X\n", NIGPIB_NUM_LINKS);
   }
@@ -336,7 +353,7 @@ initGpib(void)
       if (ibDebug)
 	printf("GPIB card found at address 0x%08.8X\n", pibregs);
 
-      if ((pNiLink[i] = (struct niLink *) malloc(sizeof(struct niLink))) == NULL)
+      if ((pNiLink[i] = (struct niLink *) devLibA24Malloc(sizeof(struct niLink))) == NULL)
       { /* This better never happen! */
         /* errMsg( BUG -- figure out how to use this thing ); */
 	printf("Can't malloc memory for NI-link data structures!\n");
@@ -347,6 +364,12 @@ initGpib(void)
       pNiLink[i]->ibLink.linkType = GPIB_IO;	/* spec'd in link.h */
       pNiLink[i]->ibLink.linkId = i;		/* link number */
       pNiLink[i]->ibLink.bug = -1;		/* this is not a bug link */
+
+      /* Clear out the bouncer */
+      pNiLink[i]->A24BounceBuffer = NULL;
+      pNiLink[i]->A24BounceSize = 0;
+
+      taskDelay(1);		/* Wait at least 10 msec before continuing */
 
       ibLinkInit(&(pNiLink[i]->ibLink));	/* allocate the sems etc... */
 
@@ -860,6 +883,7 @@ caddr_t	p;
  * depending on if the transfer succeeds or not.
  *
  ******************************************************************************/
+
 STATIC int
 niPhysIo(dir, link, buffer, length, time)
 int	dir;		/* direction (READ or WRITE) */
@@ -875,6 +899,34 @@ int	time;		/* time to wait on the DMA operation */
   int	temp_addr;
   int	tmoTmp;
 
+  if (pNiLink[link]->A24BounceBuffer == NULL)
+  {
+    if ((pNiLink[link]->A24BounceBuffer = devLibA24Malloc(DEFAULT_BOUNCE_BUFFER_SIZE)) == NULL)
+    {
+      errMessage(S_IB_A24 ,"niPhysIo ran out of A24 memory!");
+      return(ERROR);
+    }
+    pNiLink[link]->A24BounceSize = DEFAULT_BOUNCE_BUFFER_SIZE;
+    if(ibDebug > 5)
+      printf("Got a bouncer at 0x%8.8X\n", pNiLink[link]->A24BounceBuffer);
+  }
+
+  if (pNiLink[link]->A24BounceSize < length)
+  { /* Reallocate a larger bounce buffer */
+
+    devLibA24Free(pNiLink[link]->A24BounceBuffer);	/* Loose the old one */
+
+    if ((pNiLink[link]->A24BounceBuffer = devLibA24Malloc(length)) == NULL)
+    {
+      errMessage(S_IB_A24 ,"niPhysIo ran out of A24 memory!");
+      pNiLink[link]->A24BounceSize = 0;
+      pNiLink[link]->A24BounceBuffer = NULL;
+      return(ERROR);
+    }
+    pNiLink[link]->A24BounceSize = length;
+    if(ibDebug > 5)
+      printf("Got a new bouncer at 0x%8.8X\n", pNiLink[link]->A24BounceBuffer);
+  }
 
   b = pNiLink[link]->ibregs;
   cnt = length;
@@ -912,8 +964,11 @@ int	time;		/* time to wait on the DMA operation */
     b->imr1 = HR_ENDIE;
     w_imr2 = HR_DMAI;
   }
-  else
+  else /* (dir == READ) */
   {
+    /* We will be writing, copy data into the bounce buffer */
+    memcpy(pNiLink[link]->A24BounceBuffer, buffer, length);
+
     if (cnt != 1)
       pNiLink[link]->cc_byte = AUX_SEOI;	/* send EOI with last byte */
     else
@@ -927,18 +982,52 @@ int	time;		/* time to wait on the DMA operation */
     /* enable interrupts and dma */
     b->imr1 = 0;
     w_imr2 = HR_DMAO;
-  }
+  } /* dir == READ) */
+
   /* setup channel 1 (carry cycle) */
+
+  if(ibDebug > 5)
+    printf("PhysIO: readying to xlate cc pointers at %8.8X and %8.8X\n", &(pNiLink[link]->cc_byte), &pNiLink[link]->A24BounceBuffer[cnt - 1]);
+
+#ifdef USE_OLD_XLATION
   pNiLink[link]->cc_array.cc_ccb = &(pNiLink[link]->cc_byte) + (long) ram_base;
-  pNiLink[link]->cc_array.cc_n_1addr = &buffer[cnt - 1] + (long)ram_base;
+  pNiLink[link]->cc_array.cc_n_1addr = &(pNiLink[link]->A24BounceBuffer[cnt - 1]) + (long)ram_base;
+#else
+
+  if (sysLocalToBusAdrs(VME_AM_STD_SUP_DATA, &(pNiLink[link]->cc_byte), &(pNiLink[link]->cc_array.cc_ccb)) == ERROR)
+    return(ERROR);
+
+  if (sysLocalToBusAdrs(VME_AM_STD_SUP_DATA, &(pNiLink[link]->A24BounceBuffer[cnt - 1]), &(pNiLink[link]->cc_array.cc_n_1addr)) == ERROR)
+    return(ERROR);
+
+#endif
+  if(ibDebug > 5)
+    printf("PhysIO: &cc_byte=%8.8X, &pNiLink[link]->A24BounceBuffer[cnt-1]=%8.8X, ", pNiLink[link]->cc_array.cc_ccb, pNiLink[link]->cc_array.cc_n_1addr);
+
   cnt--;
+#ifdef USE_OLD_XLATION
   temp_addr = (long) (&(pNiLink[link]->cc_array)) + (long)ram_base;
+#else
+  if (sysLocalToBusAdrs(VME_AM_STD_SUP_DATA, &(pNiLink[link]->cc_array), &temp_addr) == ERROR)
+    return(ERROR);
+#endif
+  if(ibDebug > 5)
+    printf("&cc_array=%8.8X, ", temp_addr);
+
   niWrLong(&b->ch1.bar, temp_addr);
   b->ch1.btc = 2;
 
   /* setup channel 0 (main transfer) */
   b->ch0.mtc = cnt ? cnt : 1;
-  temp_addr = (long) (buffer) + (long) ram_base;
+#ifdef USE_OLD_XLATION
+  temp_addr = (long) (pNiLink[link]->A24BounceBuffer) + (long) ram_base;
+#else
+  if (sysLocalToBusAdrs(VME_AM_STD_SUP_DATA, pNiLink[link]->A24BounceBuffer, &temp_addr) == ERROR)
+    return(ERROR);
+#endif
+  if(ibDebug > 5)
+    printf("pNiLink[link]->A24BounceBuffer=%8.8X\n", temp_addr);
+
   niWrLong(&b->ch0.mar, temp_addr);
 
   /* setup GPIB response timeout handler */
@@ -1027,6 +1116,11 @@ int	time;		/* time to wait on the DMA operation */
   b->imr2 = 0;
   /* make sure I only alter the 1014D port-specific fields here! */
   b->cfg1 = (NIGPIB_IRQ_LEVEL << 5) | D_BRG3 | D_DBM;
+
+  if (dir == READ)
+  { /* Copy data from the bounce buffer to the user's buffer */
+    memcpy(buffer, pNiLink[link]->A24BounceBuffer, length);
+  }
 
   return (status);
 }
@@ -1203,8 +1297,8 @@ STATIC int
 ibLinkStart(plink)
 struct	ibLink *plink;
 {
-  int	j;
-  int   taskId;
+  int		j;
+  int   	taskId;
 
   if (ibDebug || bbibDebug)
     printf("ibLinkStart(%08.8X): entered for linkType %d, link %d\n", plink, plink->linkType, plink->linkId);
@@ -1266,6 +1360,7 @@ struct  ibLink	*plink; 	/* a reference to the link structures covered */
   int			pollAddress;
   int			pollActive;
   int			working;
+  
 
   if (ibDebug)
     printf("ibLinkTask started for link type %d, link %d\n", plink->linkType, plink->linkId);
@@ -1441,10 +1536,11 @@ int		verbose;	/* set to 1 if should log any errors */
 int		time;
 {
   char  pollCmd[4];
-  unsigned char  pollResult[3];
   int	status;
   int	tsSave;
+  unsigned char	pollResult[3];
 
+  
   if(verbose && (ibDebug || ibSrqDebug))
     printf("pollIb(0x%08.8X, %d, %d, %d)\n", plink, gpibAddr, verbose, time);
 

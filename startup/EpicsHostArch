@@ -3,6 +3,13 @@
 # base/bin/tools/EpicsHostArch - returns the Epics host architecture suitable
 #                           for assigning to the EPICS_HOST_ARCH variable
 
+if [ "x${1}" != "x" ]
+then
+    suffix="-"${1}
+else
+    suffix=""
+fi
+
 sysname=`uname`
 
 case $sysname in
@@ -13,7 +20,7 @@ case $sysname in
             cpu=x86
 			;;
 		esac
-		echo ${os}-${cpu}
+		echo ${os}-${cpu}${suffix}
         ;;
     HP-UX )
         os=hpux
@@ -22,12 +29,12 @@ case $sysname in
             cpu=m68k
 			;;
 		esac
-		echo ${os}-${cpu}
+		echo ${os}-${cpu}${suffix}
         ;;
     OSF1 )
         os=osf
 		cpu=`uname -m`
-		echo ${os}-${cpu}
+		echo ${os}-${cpu}${suffix}
         ;;
     SunOS )
         version=`uname -r | sed '1s/^\([0-9]*\).*$/\1/'`
@@ -45,7 +52,7 @@ case $sysname in
             cpu=x86
 			;;
 		esac
-		echo ${os}-${cpu}
+		echo ${os}-${cpu}${suffix}
         ;;
     * )
         echo unsupported

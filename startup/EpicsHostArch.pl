@@ -7,8 +7,11 @@ eval 'exec perl -S $0 ${1+"$@"}'  # -*- Mode: perl -*-
 
 use Config;
 
+$suffix="";
+$suffix="-".$ARGV[0] if ($ARGV[0] ne "");
+
 $EpicsHostArch = GetEpicsHostArch();
-print "$EpicsHostArch";
+print "$EpicsHostArch$suffix";
 
 sub GetEpicsHostArch { # no args
     $arch=$Config{'archname'};

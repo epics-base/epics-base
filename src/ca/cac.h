@@ -200,7 +200,7 @@ public:
     static unsigned highestPriorityLevelBelow ( unsigned priority );
     void initiateAbortShutdown ( tcpiiu & );
     void disconnectNotify ( tcpiiu & );
-    void uninstallIIU ( tcpiiu & ); 
+    void uninstallIIU ( epicsGuard < callbackMutex > &, tcpiiu & iiu ); 
 
 private:
     localHostName hostNameCache;
@@ -264,7 +264,6 @@ private:
     unsigned beaconAnomalyCount;
     bool preemptiveCallbackEnabled;
 
-    void privateUninstallIIU ( epicsGuard < callbackMutex > &, tcpiiu &iiu ); 
     void run ();
     void connectAllIO ( epicsGuard < cacMutex > &, nciu &chan );
     void disconnectAllIO ( epicsGuard < cacMutex > & locker, nciu & chan, bool enableCallbacks );

@@ -1152,7 +1152,7 @@ bool cac::readNotifyRespAction ( epicsGuard < callbackMutex > &, tcpiiu &iiu,
     return true;
 }
 
-bool cac::eventRespAction (epicsGuard < callbackMutex > &, tcpiiu &iiu, 
+bool cac::eventRespAction ( epicsGuard < callbackMutex > &, tcpiiu &iiu, 
     const epicsTime &, const caHdrLargeArray & hdr, void * pMsgBdy )
 {   
     int caStatus;
@@ -1505,13 +1505,7 @@ void cac::disconnectNotify ( tcpiiu & iiu )
 
 void cac::initiateAbortShutdown ( tcpiiu & iiu )
 {
-    // generate some NOOP UDP traffic so that ca_pend_event()
-    // will get called in preemptive callback disabled 
-    // applications, and therefore the callback lock below
-    // will not block
-    if ( this->pudpiiu ) {
-        this->pudpiiu->wakeupMsg ();
-    }
+    cacMessageProcessingMinder msgProcMinder ( *this );
     {
         epicsGuard < callbackMutex > cbGuard ( this->cbMutex );
         epicsGuard < cacMutex > guard ( this->mutex );
@@ -1519,13 +1513,7 @@ void cac::initiateAbortShutdown ( tcpiiu & iiu )
     }
 }
 
-void cac::uninstallIIU ( tcpiiu & iiu )
-{
-    epicsGuard < callbackMutex > cbGuard ( this->cbMutex );
-    this->privateUninstallIIU ( cbGuard, iiu );
-}
-
-void cac::privateUninstallIIU ( epicsGuard < callbackMutex > & cbGuard, tcpiiu & iiu )
+void cac::uninstallIIU ( epicsGuard < callbackMutex > & cbGuard, tcpiiu & iiu )
 {
     epicsGuard < cacMutex > guard ( this->mutex );
     if ( iiu.channelCount() ) {
@@ -1593,8 +1581,11 @@ void cac::pvMultiplyDefinedNotify ( msgForMultiplyDefinedPV & mfmdpv,
     sprintf ( buf, "Channel: \"%.64s\", Connecting to: %.64s, Ignored: %.64s",
             pChannelName, pAcc, pRej );
     {
-        epicsGuard < callbackMutex > cbGuard ( this->cbMutex );
-        this->exception ( cbGuard, ECA_DBLCHNL, buf, __FILE__, __LINE__ );
+        cacMessageProcessingMinder msgProcMinder ( *this );
+        {
+            epicsGuard < callbackMutex > cbGuard ( this->cbMutex );
+            this->exception ( cbGuard, ECA_DBLCHNL, buf, __FILE__, __LINE__ );
+        }
     }
     mfmdpv.~msgForMultiplyDefinedPV ();
     this->mdpvFreeList.release ( & mfmdpv );

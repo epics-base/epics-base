@@ -310,12 +310,12 @@ void udpRecvThread::run ()
 {
     epicsThreadPrivateSet ( caClientCallbackThreadId, &this->iiu );
 
-    {
-        epicsGuard < callbackMutex > cbGuard ( this->cbMutex );
-        if ( ellCount ( & this->iiu.dest ) == 0 ) { // X aCC 392
+    if ( ellCount ( & this->iiu.dest ) == 0 ) { // X aCC 392
+        cacMessageProcessingMinder msgProcMinder ( this->iiu.cacRef );
+        {
+            epicsGuard < callbackMutex > cbGuard ( this->cbMutex );
             genLocalExcep ( cbGuard, this->iiu.cacRef, ECA_NOSEARCHADDR, NULL );
         }
-
     }
 
     do {

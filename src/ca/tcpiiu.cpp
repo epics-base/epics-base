@@ -138,7 +138,16 @@ void tcpSendThread::run ()
 
     this->thread.exitWaitRelease ();
 
-    this->iiu.cacRef.uninstallIIU ( this->iiu );
+    {
+        // only one recv thread at a time may call callbacks
+        // - pendEvent() blocks until threads waiting for
+        // this lock get a chance to run
+        cacMessageProcessingMinder msgProcMinder ( this->iiu.cacRef );
+        {
+            epicsGuard < callbackMutex > guard ( this->cbMutex );
+            this->iiu.cacRef.uninstallIIU ( guard, this->iiu );
+        }
+    }
 
     delete & this->iiu;
 }

@@ -34,3 +34,8 @@ SHARED_LIBRARIES_Darwin = NO
 SHRLIB_SUFFIX = .dylib$(SHARED_LIBRARIES)
 GCC_SHRLIB_LDFLAGS_YES += -dynamiclib -flat_namespace
 G++_SHRLIB_LDFLAGS_YES += -dynamiclib -flat_namespace
+
+#
+# Java
+#
+JAVA_DIR=/usr/

@@ -226,6 +226,14 @@ unsigned tcpiiu::sendBytes ( const void *pBuf,
                 continue;
             }
 
+            if ( localError == SOCK_ENOBUFS ) {
+                errlogPrintf ( 
+                    "CAC: system low on network buffers "
+                    "- send retry in 15 seconds\n" );
+                epicsThreadSleep ( 15.0 );
+                continue;
+            }
+
             if ( 
                     localError != SOCK_EPIPE && 
                     localError != SOCK_ECONNRESET &&
@@ -292,6 +300,14 @@ void tcpiiu::recvBytes (
             }
 
             if ( localErrno == SOCK_EINTR ) {
+                continue;
+            }
+
+            if ( localErrno == SOCK_ENOBUFS ) {
+                errlogPrintf ( 
+                    "CAC: system low on network buffers "
+                    "- receive retry in 15 seconds\n" );
+                epicsThreadSleep ( 15.0 );
                 continue;
             }
             

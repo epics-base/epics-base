@@ -96,3 +96,7 @@ E2DB_FLAGS =
 #dbst 
 DBST = $(EPICS_EXTENSIONS_HOST_BIN)/dbst
 
+#msi
+MSI  = $(EPICS_EXTENSIONS_HOST_BIN)/msi$(EXE)
+
+

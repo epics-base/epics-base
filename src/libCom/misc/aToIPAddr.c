@@ -77,22 +77,27 @@ epicsShareFunc int epicsShareAPI
 	/*
 	 * traditional dotted ip addres
 	 */
-	status = sscanf (pAddrString, "%hu.%hu.%hu.%hu:%hu", 
+	status = sscanf (pAddrString, " %hu.%hu.%hu.%hu:%hu", 
 			addr, addr+1u, addr+2u, addr+3u, &port);
-	if (status>=4) {
-		if ( addrArrayToUL ( addr, NELEMENTS ( addr ), &ina ) < 0 ) {
-			return -1;
-		}
-		if (status==4) {
-			port = defaultPort;
-		}
-		return initIPAddr (ina, port, pIP);
-	}
+	if (status>0) {
+	    if (status>=4) {
+		    if ( addrArrayToUL ( addr, NELEMENTS ( addr ), &ina ) < 0 ) {
+			    return -1;
+		    }
+		    if (status==4) {
+			    port = defaultPort;
+		    }
+		    return initIPAddr (ina, port, pIP);
+	    }
+        else {
+            return -1;
+        }
+    }
 	
 	/*
 	 * IP address as a raw number
 	 */
-	status = sscanf ( pAddrString, "%lu:%hu", &rawAddr, &port );
+	status = sscanf ( pAddrString, " %lu:%hu", &rawAddr, &port );
 	if (status>=1) {
 		if ( rawAddr > 0xffffffff ) {
 			return -1;
@@ -107,19 +112,34 @@ epicsShareFunc int epicsShareAPI
 	/*
 	 * check for a valid host name before giving up
 	 */
-	status = sscanf (pAddrString, "%511s:%hu", hostName, &port);
-	if (status>=1) {
-		if (status==1) {
-			port = defaultPort;
-		}
-		status = hostToIPAddr (hostName, &ina);
-		if (status==0) {
-			return initIPAddr (ina, port, pIP);
-		}
+	status = sscanf (pAddrString, " %511[^:]:%hu", hostName, &port);
+	if (status>0) {
+	    if (status==2) {
+		    status = hostToIPAddr (hostName, &ina);
+		    if (status==0) {
+			    return initIPAddr (ina, port, pIP);
+		    }
+            else {
+                return -1;
+            }
+        }
+        else {
+            return-1;
+        }
 	}
-
-	/*
-	 * none of the above - return indicating failure
-	 */
-	return -1;
+    else {
+	    status = sscanf (pAddrString, " %511s", hostName, &port);
+	    if (status==1) {
+		    status = hostToIPAddr (hostName, &ina);
+		    if (status==0) {
+			    return initIPAddr (ina, defaultPort, pIP);
+		    }
+            else {
+                return -1;
+            }
+	    }
+        else {
+            return -1;
+        }
+    }
 }

@@ -74,7 +74,8 @@ CXXCMPLR=STRICT
 #  Build shared libraries?
 #  (archive libraries will also be built)
 #        must be either YES or NO
-#     NOTE: CONFIG_SITE.Host.$(HOST_ARCH) files may override
+#     NOTE: os/CONFIG.$(EPICS_HOST_ARCH).$(EPICS_HOST_ARCH) files and
+#     os/CONFIG_SITE.$(EPICS_HOST_ARCH).$(EPICS_HOST_ARCH) files may override
 #
 #     NOTE WIN32: YES results in a DLL. CONFIG_SITE.Host.WIN32
 #                 distribution file contains YES override
@@ -102,6 +103,9 @@ HDEPENDS=YES
 # CMPLR Note: On solaris and WIN32 hosts, gnu compilers gcc and g++
 #             are used to generate dependancy files for host builds,
 #             and they must be in your path. 
+# WIN32 Note: CONFIG.win32-x86.win32-x86 distribution file contains 
+#             HOST_HDEPENDS_CMD=MKMF override
+#
 HOST_HDEPENDS_CMD=CMPLR
 
 #  Host build optimization

@@ -242,7 +242,7 @@ LOCAL void logClientSendMessageInternal (logClientId id, const char *message)
         if (status<0) {
             char name[64];
 
-            ipAddrToA (&pClient->addr, name, sizeof(name));
+            ipAddrToDottedIP (&pClient->addr, name, sizeof(name));
             fprintf (stderr, "log client: lost contact with log server at \"%s\"\n", name);
 
             logClientReset (pClient);
@@ -354,7 +354,7 @@ LOCAL void logClientConnect (logClient *pClient)
 		    else {
                 char name[64];
             
-                ipAddrToA (&pClient->addr, name, sizeof(name));
+                ipAddrToDottedIP (&pClient->addr, name, sizeof(name));
 
                 if (pClient->connectReset==0) {
 			        fprintf (stderr,
@@ -423,7 +423,7 @@ LOCAL void logClientConnect (logClient *pClient)
     {
         char name[64];
     
-        ipAddrToA (&pClient->addr, name, sizeof(name));
+        ipAddrToDottedIP (&pClient->addr, name, sizeof(name));
 
 		fprintf (stderr, "log client: connected to error message log server at \"%s\"\n", name);
     }
@@ -471,7 +471,7 @@ LOCAL void logRestart (void *pPrivate)
                     if (pClient->connectTries>LOG_MAX_CONNECT_RETRIES) {
                         char name[64];
 
-                        ipAddrToA (&pClient->addr, name, sizeof(name));
+                        ipAddrToDottedIP (&pClient->addr, name, sizeof(name));
                         fprintf (stderr, "log client: timed out attempting to connect to %s\n", name);
                         logClientReset (pClient);
                     }
@@ -480,7 +480,7 @@ LOCAL void logRestart (void *pPrivate)
             else if ( fflush (pClient->file)<0 ) {
                 char name[64];
 
-                ipAddrToA (&pClient->addr, name, sizeof(name));
+                ipAddrToDottedIP (&pClient->addr, name, sizeof(name));
                 fprintf (stderr, "log client: lost contact with error message log server at \"%s\"\n", name);
                 logClientReset (pClient);
             }
@@ -597,7 +597,7 @@ epicsShareFunc logClientId epicsShareAPI logClientInit ()
             char name[64];
         
             semMutexMustTake (logClientGlobalMutex);
-            ipAddrToA (&pClient->addr, name, sizeof(name));
+            ipAddrToDottedIP (&pClient->addr, name, sizeof(name));
             semMutexGive (logClientGlobalMutex);
 
             break;
@@ -646,7 +646,7 @@ epicsShareFunc void epicsShareAPI logClientShow (logClientId id, unsigned level)
     logClient *pClient = (logClient *) id;
     char name[64];
 
-    ipAddrToA (&pClient->addr, name, sizeof(name));
+    ipAddrToDottedIP (&pClient->addr, name, sizeof(name));
 
     if (pClient->file) {
         printf ("iocLogClient: connected to error message log server at \"%s\"\n", name);

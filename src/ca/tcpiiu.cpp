@@ -275,7 +275,7 @@ extern "C" void cacRecvThreadTCP ( void *pParam )
         // only one recv thread at a time may call callbacks
         callbackAutoMutex autoMutex ( *piiu->pCAC() );
 
-        osiSockIoctl_t bytesPending;
+        osiSockIoctl_t bytesPending = 0;
         do {
             if ( nBytesIn == 0u ) {
                 nBytesIn = pComBuf->fillFromWire ( *piiu );

@@ -241,9 +241,14 @@ void threadShow(threadId id,unsigned int level)
  */
 threadPrivateId threadPrivateCreate()
 {
+    static int lock = 0;
     threadPrivateId id;
+
     threadInit();
+    /*lock is necessary because ++nthreadPrivate may not be indivisible*/
+    while(!vxTas(&lock)) taskDelay(1);
     id = (threadPrivateId)++nthreadPrivate;
+    lock = 0;
     return(id);
 }
 

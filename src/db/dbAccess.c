@@ -220,25 +220,21 @@ long dbProcess(struct dbCommon *precord)
 	if(precord->pact) {
 	        struct rset     *prset;
 		struct valueDes valueDes;
+		unsigned short	monitor_mask;
 
 		if(trace && trace_lset==lset)
 			printf("active:    %s\n",precord->name);
 		/* raise scan alarm after MAX_LOCK times */
 		if(precord->stat==SCAN_ALARM) goto all_done;
 		if(precord->lcnt++ !=MAX_LOCK) goto all_done;
-		if(precord->sevr>=MAJOR_ALARM) goto all_done;
-		precord->sevr = MAJOR_ALARM;
-		precord->stat = SCAN_ALARM;
-		precord->nsev = 0;
-		precord->nsta = 0;
-		/* anyone waiting for an event on this record?*/
-		if(precord->mlis.count==0) goto all_done;
-		db_post_events(precord,&precord->stat,DBE_VALUE);
-		db_post_events(precord,&precord->sevr,DBE_VALUE);
+		if(precord->sevr>=INVALID_ALARM) goto all_done;
+		recGblSetSevr(precord,SCAN_ALARM,INVALID_ALARM);
+		monitor_mask = recGblResetAlarms(precord);
+		monitor_mask |= DBE_VALUE;
 	        prset=(struct rset *)precord->rset;
 		if( prset && prset->get_value ){
 			(*prset->get_value)(precord,&valueDes);
-			db_post_events(precord,valueDes.pvalue,DBE_VALUE|DBE_ALARM);
+			db_post_events(precord,valueDes.pvalue,monitor_mask);
 		}
 		goto all_done;
 	} else precord->lcnt=0;

@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.11  2000/06/27 22:32:22  jhill
+ * backed out over-zelous use of smart pointers
+ *
  * Revision 1.10  2000/04/28 01:40:08  jhill
  * many changes
  *
@@ -44,13 +47,13 @@
  *
  */
 
-#include "db_access.h"
-#include "cadef.h"
-
 #include "shareLib.h"
 #include "aitTypes.h"
 #include "gdd.h"
 #include "smartGDDPointer.h"
+
+#include "db_access.h"
+#include "cadef.h"
 
 class gddApplicationTypeTable;
 

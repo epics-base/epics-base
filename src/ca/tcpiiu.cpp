@@ -726,7 +726,7 @@ bool tcpiiu::setEchoRequestPending () // X aCC 361
         epicsGuard < cacMutex > locker ( this->cacRef.mutexRef() );
         this->echoRequestPending = true;
     }
-    this->flushRequest ();
+    this->sendThreadFlushEvent.signal ();
     if ( CA_V43 ( this->minorProtocolVersion ) ) {
         // we send an echo
         return true;
@@ -1425,6 +1425,12 @@ bool tcpiiu::bytesArePendingInOS () const
     return false;
 #endif
 }
+
+double tcpiiu::receiveWatchdogDelay () const
+{
+    return this->recvDog.delay ();
+}
+
 
 
 

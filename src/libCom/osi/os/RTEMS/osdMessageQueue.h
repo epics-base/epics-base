@@ -20,6 +20,12 @@
  */
 #include <rtems.h>
 
-#define epicsMessageQueueDestroy(q) (rtems_message_queue_delete((rtems_id)(q)))
+struct epicsMessageQueueOSD {
+    rtems_id     id;
+    unsigned int maxSize;
+    void        *localBuf;
 
-#define epicsMessageQueueTrySend(q,m,l) (rtems_message_queue_send((rtems_id)(q), (m), (l)) == RTEMS_SUCCESSFUL ? 0 : -1)
+};
+#define epicsMessageQueueDestroy(q) (rtems_message_queue_delete((q)->id))
+
+#define epicsMessageQueueTrySend(q,m,l) (rtems_message_queue_send((q)->id, (m), (l)) == RTEMS_SUCCESSFUL ? 0 : -1)

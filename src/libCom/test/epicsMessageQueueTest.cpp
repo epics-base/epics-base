@@ -42,14 +42,15 @@ randBelow(int n)
 }
 
 extern "C" void
-receiver0(void *arg)
+badReceiver(void *arg)
 {
     epicsMessageQueue *q = (epicsMessageQueue *)arg;
     char cbuf[80];
 
-    assert(q->receive(cbuf) == 5);
-    assert(q->receive(cbuf) == 0);
-    delete q;
+    cbuf[0] = '\0';
+    assert((q->receive(cbuf, 1) == -1) && (cbuf[0] == '\0'));
+    epicsThreadSleep(5.0);
+    assert((q->receive(cbuf, 1) == -1) && (cbuf[0] == '\0'));
 }
 
 extern "C" void
@@ -65,7 +66,7 @@ receiver(void *arg)
         expectmsg[sender-1] = 1;
     for (;;) {
         cbuf[0] = '\0';
-        len = q->receive(cbuf);
+        len = q->receive(cbuf, sizeof cbuf);
         if ((sscanf(cbuf, "Sender %d -- %d", &sender, &msgNum) == 2)
          && (sender >= 1)
          && (sender <= 4)) {
@@ -124,20 +125,20 @@ extern "C" void epicsMessageQueueTest()
     assert(q1->pending() == 4);
 
     want = 0;
-    len = q1->receive(cbuf);
+    len = q1->receive(cbuf, sizeof cbuf);
     assert(q1->pending() == 3);
     if ((len != want) || (strncmp(msg1, cbuf, len) != 0))
         printf("wanted:%d '%.*s'   got:%d '%.*s'\n", want, want, msg1, len, len, cbuf);
 
     want++;
-    len = q1->receive(cbuf);
+    len = q1->receive(cbuf, sizeof cbuf);
     assert(q1->pending() == 2);
     if ((len != want) || (strncmp(msg1, cbuf, len) != 0))
         printf("wanted:%d '%.*s'   got:%d '%.*s'\n", want, want, msg1, len, len, cbuf);
     q1->trySend((void *)msg1, i++);
 
     want++;
-    len = q1->receive(cbuf);
+    len = q1->receive(cbuf, sizeof cbuf);
     assert(q1->pending() == 2);
     if ((len != want) || (strncmp(msg1, cbuf, len) != 0))
         printf("wanted:%d '%.*s'   got:%d '%.*s'\n", want, want, msg1, len, len, cbuf);
@@ -145,7 +146,7 @@ extern "C" void epicsMessageQueueTest()
     assert(q1->pending() == 3);
 
     i = 3;
-    while ((len = q1->receive(cbuf, 1.0)) >= 0) {
+    while ((len = q1->receive(cbuf, sizeof cbuf, 1.0)) >= 0) {
         assert(q1->pending() == --i);
         want++;
         if ((len != want) || (strncmp(msg1, cbuf, len) != 0))
@@ -166,20 +167,20 @@ extern "C" void epicsMessageQueueTest()
     assert(q1->pending() == 4);
 
     want = 0;
-    len = q1->receive(cbuf);
+    len = q1->receive(cbuf, sizeof cbuf);
     assert(q1->pending() == 3);
     if ((len != want) || (strncmp(msg1, cbuf, len) != 0))
         printf("wanted:%d '%.*s'   got:%d '%.*s'\n", want, want, msg1, len, len, cbuf);
 
     want++;
-    len = q1->receive(cbuf);
+    len = q1->receive(cbuf, sizeof cbuf);
     assert(q1->pending() == 2);
     if ((len != want) || (strncmp(msg1, cbuf, len) != 0))
         printf("wanted:%d '%.*s'   got:%d '%.*s'\n", want, want, msg1, len, len, cbuf);
     q1->send((void *)msg1, i++, 1.0);
 
     want++;
-    len = q1->receive(cbuf);
+    len = q1->receive(cbuf, sizeof cbuf);
     assert(q1->pending() == 2);
     if ((len != want) || (strncmp(msg1, cbuf, len) != 0))
         printf("wanted:%d '%.*s'   got:%d '%.*s'\n", want, want, msg1, len, len, cbuf);
@@ -187,7 +188,7 @@ extern "C" void epicsMessageQueueTest()
     assert(q1->pending() == 3);
 
     i = 3;
-    while ((len = q1->receive(cbuf, 1.0)) >= 0) {
+    while ((len = q1->receive(cbuf, sizeof cbuf, 1.0)) >= 0) {
         assert(q1->pending() == --i);
         want++;
         if ((len != want) || (strncmp(msg1, cbuf, len) != 0))
@@ -200,10 +201,18 @@ extern "C" void epicsMessageQueueTest()
         assert (q1->send((void *)msg1, i, 1.0) == 0);
     assert(q1->pending() == 4);
     for (i = 0 ; i < 4 ; i++)
-        assert (q1->receive((void *)cbuf, 1.0) == (int)i);
+        assert (q1->receive((void *)cbuf, sizeof cbuf, 1.0) == (int)i);
     assert(q1->pending() == 0);
-    assert (q1->receive((void *)cbuf, 1.0) < 0);
+    assert (q1->receive((void *)cbuf, sizeof cbuf, 1.0) < 0);
     assert(q1->pending() == 0);
+
+    printf("Single receiver with invalid size, single sender tests.\n");
+    epicsThreadCreate("Bad Receiver", epicsThreadPriorityMedium, epicsThreadGetStackSize(epicsThreadStackMedium), badReceiver, q1);
+    epicsThreadSleep(5.0);
+    assert (q1->send((void *)msg1, 10) == 0); /* Send with waiting receiver */
+    epicsThreadSleep(2.0);
+    assert (q1->send((void *)msg1, 10) == 0); /* Send with no receiver */
+    epicsThreadSleep(10.0);
 
     printf("Single receiver, single sender tests.\n");
     epicsThreadSetPriority(epicsThreadGetIdSelf(), epicsThreadPriorityHigh);
@@ -229,8 +238,7 @@ extern "C" void epicsMessageQueueTest()
      * Single receiver, multiple sender tests
      */
     printf("Single receiver, multiple sender tests.\n");
-    printf("This test takes 5 minutes to run.\n");
-    printf("Test has succeeded if nothing appears between here....\n");
+    printf("The following test takes 5 minutes to run and has succeeded\nif nothing appears between here....\n");
     epicsThreadCreate("Sender 1", epicsThreadPriorityLow, epicsThreadGetStackSize(epicsThreadStackMedium), sender, q1);
     epicsThreadCreate("Sender 2", epicsThreadPriorityMedium, epicsThreadGetStackSize(epicsThreadStackMedium), sender, q1);
     epicsThreadCreate("Sender 3", epicsThreadPriorityHigh, epicsThreadGetStackSize(epicsThreadStackMedium), sender, q1);

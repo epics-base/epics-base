@@ -27,6 +27,7 @@
 #include <string.h>
 #include <rtems.h>
 #include <rtems/error.h>
+#include <cantProceed.h>
 #include "epicsMessageQueue.h"
 #include "errlog.h"
 
@@ -34,7 +35,7 @@ epicsShareFunc epicsMessageQueueId epicsShareAPI
 epicsMessageQueueCreate(unsigned int capacity, unsigned int maximumMessageSize)
 {
     rtems_status_code sc;
-    rtems_id qid;
+    epicsMessageQueueId id = (epicsMessageQueueId)callocMustSucceed(1, sizeof(*id), "epicsMessageQueueCreate");
     rtems_interrupt_level level;
     static char c1 = 'a';
     static char c2 = 'a';
@@ -44,11 +45,13 @@ epicsMessageQueueCreate(unsigned int capacity, unsigned int maximumMessageSize)
         capacity,
         maximumMessageSize,
         RTEMS_FIFO|RTEMS_LOCAL,
-        &qid);
+        &id->id);
     if (sc != RTEMS_SUCCESSFUL) {
         errlogPrintf ("Can't create message queue: %s\n", rtems_status_text (sc));
         return NULL;
     }
+    id->maxSize = maximumMessageSize;
+    id->localBuf = NULL;
     rtems_interrupt_disable (level);
     if (c1 == 'z') {
         if (c2 == 'z') {
@@ -69,10 +72,10 @@ epicsMessageQueueCreate(unsigned int capacity, unsigned int maximumMessageSize)
         c1++;
     }
     rtems_interrupt_enable (level);
-    return (epicsMessageQueueId)qid;
+    return id;
 }
 
-rtems_status_code rtems_message_queue_send_timeout(
+static rtems_status_code rtems_message_queue_send_timeout(
     rtems_id id,
     void *buffer,
     rtems_unsigned32 size,
@@ -123,7 +126,7 @@ epicsShareFunc int epicsShareAPI epicsMessageQueueSend(
     void *message,
     unsigned int messageSize)
 {
-    if (rtems_message_queue_send_timeout((rtems_id)id, message, messageSize, RTEMS_NO_TIMEOUT) == RTEMS_SUCCESSFUL)
+    if (rtems_message_queue_send_timeout(id->id, message, messageSize, RTEMS_NO_TIMEOUT) == RTEMS_SUCCESSFUL)
         return 0;
     else
         return -1;
@@ -136,7 +139,6 @@ epicsShareFunc int epicsShareAPI epicsMessageQueueSendWithTimeout(
     double timeout)
 {
     rtems_interval delay;
-    rtems_unsigned32 wait;
     extern double rtemsTicksPerSecond_double;
     
     /*
@@ -144,47 +146,67 @@ epicsShareFunc int epicsShareAPI epicsMessageQueueSendWithTimeout(
      */
     if (timeout <= 0.0)
         return epicsMessageQueueTrySend(id, message, messageSize);
-    wait = RTEMS_WAIT;
     delay = (int)(timeout * rtemsTicksPerSecond_double);
     if (delay == 0)
         delay++;
-    if (rtems_message_queue_send_timeout((rtems_id)id, message, messageSize, delay) == RTEMS_SUCCESSFUL)
+    if (rtems_message_queue_send_timeout(id->id, message, messageSize, delay) == RTEMS_SUCCESSFUL)
         return 0;
     else
         return -1;
 }
 
+static int receiveMessage(
+    epicsMessageQueueId id,
+    void *buffer,
+    rtems_unsigned32 size,
+    rtems_unsigned32 wait,
+    rtems_interval delay)
+{
+    rtems_unsigned32 rsize;
+    rtems_status_code sc;
+    
+    if (size < id->maxSize) {
+        if (id->localBuf == NULL) {
+            id->localBuf = malloc(id->maxSize);
+            if (id->localBuf == NULL)
+                return -1;
+        }
+        rsize = receiveMessage(id, id->localBuf, id->maxSize, wait, delay);
+        if ((rsize < 0) || (rsize > size))
+            return -1;
+        memcpy(buffer, id->localBuf, rsize);
+    }
+    else {
+        sc = rtems_message_queue_receive(id->id, buffer, &rsize, wait, delay);
+        if (sc != RTEMS_SUCCESSFUL)
+            return -1;
+    }
+    return rsize;
+}
+
 epicsShareFunc int epicsShareAPI epicsMessageQueueTryReceive(
     epicsMessageQueueId id,
-    void *message)
+    void *message,
+    unsigned int size)
 {
-    rtems_unsigned32 size;
-    
-    if (rtems_message_queue_receive((rtems_id)id, message, &size, RTEMS_NO_WAIT, 0) == RTEMS_SUCCESSFUL)
-        return size;
-    else
-        return -1;
+    return receiveMesssage(id, message, size, RTEMS_NO_WAIT, 0);
 }
 
 epicsShareFunc int epicsShareAPI epicsMessageQueueReceive(
     epicsMessageQueueId id,
-    void *message)
+    void *message,
+    unsigned int size)
 {
-    rtems_unsigned32 size;
-    
-    if (rtems_message_queue_receive((rtems_id)id, message, &size, RTEMS_WAIT, RTEMS_NO_TIMEOUT) == RTEMS_SUCCESSFUL)
-        return size;
-    else
-        return -1;
+    return receiveMesssage(id, message, size, RTEMS_WAIT, RTEMS_NO_TIMEOUT);
 }
 
 epicsShareFunc int epicsShareAPI epicsMessageQueueReceiveWithTimeout(
     epicsMessageQueueId id,
     void *message,
+    unsigned int size,
     double timeout)
 {
     rtems_interval delay;
-    rtems_unsigned32 size;
     rtems_unsigned32 wait;
     extern double rtemsTicksPerSecond_double;
     
@@ -201,10 +223,7 @@ epicsShareFunc int epicsShareAPI epicsMessageQueueReceiveWithTimeout(
         if (delay == 0)
             delay++;
     }
-    if (rtems_message_queue_receive((rtems_id)id, message, &size, wait, delay) == RTEMS_SUCCESSFUL)
-        return size;
-    else
-        return -1;
+    return receiveMesssage(id, message, size, wait, delay);
 }
 
 epicsShareFunc int epicsShareAPI epicsMessageQueuePending(

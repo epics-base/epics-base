@@ -38,9 +38,9 @@ public:
     int trySend ( void *message, unsigned int messageSize );
     int send ( void *message, unsigned int messageSize);
     int send ( void *message, unsigned int messageSize, double timeout );
-    int tryReceive ( void *message );
-    int receive ( void *message );
-    int receive ( void *message, double timeout );
+    int tryReceive ( void *message, unsigned int size );
+    int receive ( void *message, unsigned int size );
+    int receive ( void *message, unsigned int size, double timeout );
     void show ( unsigned int level = 0 );
     unsigned int pending ();
 
@@ -76,13 +76,16 @@ epicsShareFunc int epicsShareAPI epicsMessageQueueSendWithTimeout(
     double timeout);
 epicsShareFunc int epicsShareAPI epicsMessageQueueTryReceive(
     epicsMessageQueueId id,
-    void *message);
+    void *message,
+    unsigned int size);
 epicsShareFunc int epicsShareAPI epicsMessageQueueReceive(
     epicsMessageQueueId id,
-    void *message);
+    void *message,
+    unsigned int size);
 epicsShareFunc int epicsShareAPI epicsMessageQueueReceiveWithTimeout(
     epicsMessageQueueId id,
     void *message,
+    unsigned int size,
     double timeout);
 epicsShareFunc int epicsShareAPI epicsMessageQueuePending(
     epicsMessageQueueId id);

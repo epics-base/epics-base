@@ -21,16 +21,14 @@
 #include <msgQLib.h>
 #include <limits.h>
 
-struct epicsMessageQueueOSD {
-    MSG_Q_ID     msgq;
-    unsigned int nBytes;
-};
+#define epicsMessageQueueCreate(c,s) ((epicsMessageQueueId)msgQCreate((c),(s),MSG_Q_FIFO))
+#define epicsMessageQueueDestroy(q) (msgQDestroy((MSG_Q_ID)(q)))
 
-#define epicsMessageQueueTrySend(q,m,l) (msgQSend((q)->msgq, (char*)(m), (l), NO_WAIT, MSG_PRI_NORMAL))
-#define epicsMessageQueueSend(q,m,l) (msgQSend((q)->msgq, (char*)(m), (l), WAIT_FOREVER, MSG_PRI_NORMAL))
+#define epicsMessageQueueTrySend(q,m,l) (msgQSend((MSG_Q_ID)(q), (char*)(m), (l), NO_WAIT, MSG_PRI_NORMAL))
+#define epicsMessageQueueSend(q,m,l) (msgQSend((MSG_Q_ID)(q), (char*)(m), (l), WAIT_FOREVER, MSG_PRI_NORMAL))
 
-#define epicsMessageQueueTryReceive(q,m) (msgQReceive((q)->msgq, (char*)(m), (q)->nBytes, NO_WAIT))
-#define epicsMessageQueueReceive(q,m) (msgQReceive((q)->msgq, (char*)(m), (q)->nBytes, WAIT_FOREVER))
+#define epicsMessageQueueTryReceive(q,m,s) (msgQReceive((MSG_Q_ID)(q), (char*)(m), (s), NO_WAIT))
+#define epicsMessageQueueReceive(q,m,s) (msgQReceive((MSG_Q_ID)(q), (char*)(m), (s), WAIT_FOREVER))
 
-#define epicsMessageQueuePending(q) (msgQNumMsgs((q)->msgq))
-#define epicsMessageQueueShow(q,l) (msgQShow((q)->msgq,(l)))
+#define epicsMessageQueuePending(q) (msgQNumMsgs((MSG_Q_ID)(q)))
+#define epicsMessageQueueShow(q,l) (msgQShow((MSG_Q_ID)(q),(l)))

@@ -172,7 +172,8 @@ mySend(epicsMessageQueueId pmsg, void *message, unsigned int size, bool wait, bo
      */
     if ((pthr = reinterpret_cast < struct threadNode * >
          ( ellGet(&pmsg->receiveQueue) ) ) != NULL) {
-        memcpy(pthr->buf, message, size);
+        if(size <= pthr->size)
+            memcpy(pthr->buf, message, size);
         pthr->size = size;
         pthr->eventSent = true;
         epicsEventSignal(pthr->evp->event);
@@ -216,7 +217,7 @@ epicsMessageQueueSendWithTimeout(epicsMessageQueueId pmsg, void *message, unsign
 }
 
 static int
-myReceive(epicsMessageQueueId pmsg, void *message, bool wait, bool haveTimeout, double timeout)
+myReceive(epicsMessageQueueId pmsg, void *message, unsigned int size, bool wait, bool haveTimeout, double timeout)
 {
     char *myOutPtr;
     unsigned long l;
@@ -228,8 +229,15 @@ myReceive(epicsMessageQueueId pmsg, void *message, bool wait, bool haveTimeout, 
     epicsMutexLock(pmsg->mutex);
     myOutPtr = (char *)pmsg->outPtr;
     if ((myOutPtr != pmsg->inPtr) || pmsg->full) {
+        int ret;
         l = *(unsigned long *)myOutPtr;
-        memcpy(message, (unsigned long *)myOutPtr + 1, l);
+        if (l <= size) {
+            memcpy(message, (unsigned long *)myOutPtr + 1, l);
+            ret = l;
+        }
+        else {
+            ret = -1;
+        }
         if (myOutPtr == pmsg->lastMessageSlot)
             pmsg->outPtr = pmsg->firstMessageSlot;
         else
@@ -245,7 +253,7 @@ myReceive(epicsMessageQueueId pmsg, void *message, bool wait, bool haveTimeout, 
             epicsEventSignal(pthr->evp->event);
         }
         epicsMutexUnlock(pmsg->mutex);
-        return l;
+        return ret;
     }
 
     /*
@@ -271,6 +279,7 @@ myReceive(epicsMessageQueueId pmsg, void *message, bool wait, bool haveTimeout, 
     struct threadNode threadNode;
     threadNode.evp = getEventNode(pmsg);
     threadNode.buf = message;
+    threadNode.size = size;
     threadNode.eventSent = false;
     ellAdd(&pmsg->receiveQueue, &threadNode.link);
     epicsMutexUnlock(pmsg->mutex);
@@ -283,27 +292,27 @@ myReceive(epicsMessageQueueId pmsg, void *message, bool wait, bool haveTimeout, 
         ellDelete(&pmsg->receiveQueue, &threadNode.link);
     ellAdd(&pmsg->eventFreeList, &threadNode.evp->link);
     epicsMutexUnlock(pmsg->mutex);
-    if(threadNode.eventSent)
+    if(threadNode.eventSent && (threadNode.size <= size))
         return threadNode.size;
     return -1;
 }
 
 epicsShareFunc int epicsShareAPI
-epicsMessageQueueTryReceive(epicsMessageQueueId pmsg, void *message)
+epicsMessageQueueTryReceive(epicsMessageQueueId pmsg, void *message, unsigned int size)
 {
-    return myReceive(pmsg, message, false, false, 0.0);
+    return myReceive(pmsg, message, size, false, false, 0.0);
 }
 
 epicsShareFunc int epicsShareAPI
-epicsMessageQueueReceive(epicsMessageQueueId pmsg, void *message)
+epicsMessageQueueReceive(epicsMessageQueueId pmsg, void *message, unsigned int size)
 {
-    return myReceive(pmsg, message, true, false, 0.0);
+    return myReceive(pmsg, message, size, true, false, 0.0);
 }
 
 epicsShareFunc int epicsShareAPI
-epicsMessageQueueReceiveWithTimeout(epicsMessageQueueId pmsg, void *message, double timeout)
+epicsMessageQueueReceiveWithTimeout(epicsMessageQueueId pmsg, void *message, unsigned int size, double timeout)
 {
-    return myReceive(pmsg, message, true, true, timeout);
+    return myReceive(pmsg, message, size, true, true, timeout);
 }
 
 epicsShareFunc int epicsShareAPI

@@ -52,21 +52,21 @@ epicsMessageQueue::send(void *message, unsigned int size, double timeout)
 }
 
 int
-epicsMessageQueue::tryReceive(void *message )
+epicsMessageQueue::tryReceive(void *message, unsigned int size )
 {
-    return epicsMessageQueueTryReceive(id, message);
+    return epicsMessageQueueTryReceive(id, message, size);
 }
 
 int
-epicsMessageQueue::receive(void *message )
+epicsMessageQueue::receive(void *message, unsigned int size )
 {
-    return epicsMessageQueueReceive(id, message);
+    return epicsMessageQueueReceive(id, message, size);
 }
 
 int
-epicsMessageQueue::receive(void *message, double timeout)
+epicsMessageQueue::receive(void *message, unsigned int size, double timeout)
 {
-    return epicsMessageQueueReceiveWithTimeout(id, message, timeout);
+    return epicsMessageQueueReceiveWithTimeout(id, message, size, timeout);
 }
 
 unsigned int

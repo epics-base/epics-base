@@ -478,7 +478,7 @@ void epicsShareAPI db_cancel_event (dbEventSubscription es)
     precord = ( struct dbCommon * ) pevent->paddr->precord;
 
     LOCKREC ( precord );
-    ellDelete ( ( ELLLIST* ) & precord->mlis, &pevent->node );
+    ellDelete ( ( ELLLIST* ) &precord->mlis, &pevent->node );
     UNLOCKREC ( precord );
 
     /*
@@ -510,17 +510,17 @@ void epicsShareAPI db_cancel_event (dbEventSubscription es)
     }
     assert ( pevent->npend == 0u );
 
-    while ( pevent->callBackInProgress && 
-        pevent->ev_que->evUser->taskid != epicsThreadGetIdSelf() ) {
-        UNLOCKEVQUE ( pevent->ev_que )
-        epicsEventMustWait ( pevent->ev_que->evUser->pflush_sem );
-        LOCKEVQUE ( pevent->ev_que )
+    if ( pevent->ev_que->evUser->taskid != epicsThreadGetIdSelf() ) {
+        while ( pevent->callBackInProgress ) {
+            UNLOCKEVQUE ( pevent->ev_que )
+            epicsEventMustWait ( pevent->ev_que->evUser->pflush_sem );
+            LOCKEVQUE ( pevent->ev_que )
+        }
     }
 
     pevent->ev_que->quota -= EVENTENTRIES;
 
     UNLOCKEVQUE ( pevent->ev_que )
-
     freeListFree ( dbevEventBlockFreeList, pevent );
 
     return;
@@ -840,18 +840,21 @@ LOCAL int event_read ( struct event_que *ev_que )
             ( *user_sub ) ( event->user_arg, event->paddr, 
                 ev_que->evque[ev_que->getix] != EVENTQEMPTY, pfl );
             LOCKEVQUE ( ev_que )
-            event->callBackInProgress = FALSE;
-        }
 
-        /*
-         * check to see if this event has been canceled each
-         * time that the callBackInProgress flag is set to false
-         * while we have the event queue lock, and post the flush
-         * complete sem if there are no longer any events on the
-         * queue
-         */
-        if ( event->user_sub==NULL && event->npend==0u ) {
-            epicsEventSignal ( ev_que->evUser->pflush_sem );
+            /*
+             * check to see if this event has been canceled each
+             * time that the callBackInProgress flag is set to false
+             * while we have the event queue lock, and post the flush
+             * complete sem if there are no longer any events on the
+             * queue
+             */
+            if ( event->user_sub==NULL && event->npend==0u ) {
+                event->callBackInProgress = FALSE;
+                epicsEventSignal ( ev_que->evUser->pflush_sem );
+            }
+            else {
+                event->callBackInProgress = FALSE;
+            }
         }
     }
 

@@ -2370,6 +2370,7 @@ int acctst ( char *pName, unsigned channelCount,
         printf ( "testing with a local channel\n" );
     }
 
+    test_sync_groups ( chan );
     verifyChannelPriorities ( pName );
     verifyTimeStamps ( chan );
     verifyOldPend ();
@@ -2395,7 +2396,6 @@ int acctst ( char *pName, unsigned channelCount,
     verifyHighThroughputReadCallback ( chan );
     verifyHighThroughputWriteCallback ( chan );
     verifyBadString ( chan );
-    test_sync_groups ( chan );
 
     /*
      * CA pend event delay accuracy test

@@ -357,10 +357,8 @@ extern "C" void cacRecvThreadTCP ( void *pParam )
         pComBuf->destroy ();
     }
 
-    {
-        callbackAutoMutex autoMutex ( *piiu->pCAC() );
-        piiu->pCAC()->uninstallIIU ( *piiu );
-    }
+    piiu->pCAC()->uninstallIIU ( *piiu );
+
     piiu->destroy ();
 }
 

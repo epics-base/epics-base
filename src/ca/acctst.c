@@ -93,12 +93,15 @@ void monitorSubscriptionFirstUpdateTest ( const char *pName, chid chan )
      */
     status = ca_add_event ( DBR_FLOAT, 
                 chan, nUpdatesTester, &eventCount, &id );
-    SEVCHK (status, 0);
-    ca_pend_event ( 0.1 );
+    SEVCHK ( status, 0 );
+    ca_flush_io ();
+    epicsThreadSleep ( 0.1 );
+    ca_poll (); // emulate typical GUI
     while ( eventCount < 1 && waitCount++ < 100 ) {
         printf ( "e" );
         fflush ( stdout );
-        ca_pend_event ( 0.1 );
+        epicsThreadSleep ( 0.1 );
+        ca_poll (); // emulate typical GUI
     }
     assert ( eventCount > 0 );
 
@@ -122,11 +125,14 @@ void monitorSubscriptionFirstUpdateTest ( const char *pName, chid chan )
     }
     status = ca_put ( DBR_DOUBLE, chan, &currentVal.value );
     SEVCHK ( status, NULL );
-    ca_pend_event ( 0.1 );
+    ca_flush_io ();
+    epicsThreadSleep ( 0.1 );
+    ca_poll (); // emulate typical GUI
     while ( eventCount < 1 && waitCount++ < 100 ) {
         printf ( "p" );
         fflush ( stdout );
-        ca_pend_event ( 0.1 );
+        epicsThreadSleep ( 0.1 );
+        ca_poll (); // emulate typical GUI
     }
     assert ( eventCount > 0 );
 
@@ -146,11 +152,13 @@ void monitorSubscriptionFirstUpdateTest ( const char *pName, chid chan )
     SEVCHK ( status, 0 );
     status = ca_pend_io ( 20.0 );
     SEVCHK (status, 0);
-    ca_pend_event ( 0.1 );
+    epicsThreadSleep ( 0.1 );
+    ca_poll ();
     while ( eventCount < 1 && waitCount++ < 100 ) {
         printf ( "w" );
         fflush ( stdout );
-        ca_pend_event ( 0.1 );
+        epicsThreadSleep ( 0.1 );
+        ca_poll (); // emulate typical GUI
     }
     assert ( eventCount > 0 );
 
@@ -174,11 +182,14 @@ void monitorSubscriptionFirstUpdateTest ( const char *pName, chid chan )
     }
     status = ca_put ( DBR_DOUBLE, chan2, &currentVal.value );
     SEVCHK ( status, NULL );
-    ca_pend_event ( 0.1 );
+    ca_flush_io ();
+    epicsThreadSleep ( 0.1 );
+    ca_poll ();
     while ( eventCount < 1 && waitCount++ < 100 ) {
         printf ( "t" );
         fflush ( stdout );
-        ca_pend_event ( 0.1 );
+        epicsThreadSleep ( 0.1 );
+        ca_poll (); // emulate typical GUI
     }
     assert ( eventCount > 0 );
 
@@ -225,11 +236,14 @@ void verifyMonitorSubscriptionFlushIO ( chid chan )
     status = ca_add_event ( DBR_FLOAT, 
                 chan, nUpdatesTester, &eventCount, &id );
     SEVCHK (status, 0);
-    ca_pend_event ( 0.1 );
+    ca_flush_io ();
+    epicsThreadSleep ( 0.1 );
+    ca_poll ();
     while ( eventCount < 1 && waitCount++ < 100 ) {
         printf ( "-" );
         fflush ( stdout );
-        ca_pend_event ( 0.1 );
+        epicsThreadSleep ( 0.1 );
+        ca_poll (); // emulate typical GUI
     }
     assert ( eventCount > 0 );
     status = ca_clear_event ( id );
@@ -372,11 +386,14 @@ void verifyConnectionHandlerConnect ( appChan *pChans, unsigned chanCount, unsig
             assert ( ca_test_io () == ECA_IODONE );
         }
 
+        ca_flush_io ();
+
         showProgress ();
 
         while ( connectionUpdateCount < chanCount || 
             getCallbackCount < chanCount ) {
-            ca_pend_event ( 1.0 );
+            epicsThreadSleep ( 0.1 );
+            ca_poll (); // emulate typical GUI
         }
 
         for ( j = 0u; j < chanCount; j++ ) {
@@ -520,6 +537,8 @@ void verifyBlockingConnect ( appChan *pChans, unsigned chanCount, unsigned repet
 
         ca_self_test ();
 
+        ca_flush_io ();
+
         showProgress ();
 
         /*
@@ -527,12 +546,13 @@ void verifyBlockingConnect ( appChan *pChans, unsigned chanCount, unsigned repet
          * not in use are dropped
          */
         if ( ca_get_ioc_connection_count () != backgroundConnCount ) {
-            ca_pend_event ( 1.0 );
+            epicsThreadSleep ( 0.1 );
+            ca_poll ();
             j=0;
             while ( ca_get_ioc_connection_count () != backgroundConnCount ) {
-                ca_pend_event ( 1.0 );
+                epicsThreadSleep ( 0.1 );
+                ca_poll (); // emulate typical GUI
                 assert ( ++j < 100 );
-                fflush ( stdout );
             }
         }
         showProgress ();
@@ -564,10 +584,12 @@ void verifyBlockingConnect ( appChan *pChans, unsigned chanCount, unsigned repet
             /*
              * we end up here if the channel isnt on the same host
              */
-            ca_pend_event ( 0.1 );
+            epicsThreadSleep ( 0.1 );
+            ca_poll ();
             if ( ca_state( pChans[0].channel ) != cs_conn ) {
                 while ( ca_state ( pChans[0].channel ) != cs_conn ) {
-                    ca_pend_event ( 0.1 );
+                    epicsThreadSleep ( 0.1 );
+                    ca_poll (); // emulate typical GUI
                 }
             }
 
@@ -1087,7 +1109,8 @@ void verifyHighThroughputReadCallback ( chid chan )
         }
         SEVCHK ( ca_flush_io (), NULL );
         while ( count < 10000u ) {
-            ca_pend_event ( 0.1 );
+            epicsThreadSleep ( 0.1 );
+            ca_poll (); // emulate typical GUI
         }
         showProgressEnd ();
     }
@@ -1117,7 +1140,8 @@ void verifyHighThroughputWriteCallback ( chid chan )
         }
         SEVCHK ( ca_flush_io (), NULL );
         while ( count < 10000u ) {
-            ca_pend_event ( 0.1 );
+            epicsThreadSleep ( 0.1 );
+            ca_poll (); // emulate typical GUI
         }
         showProgressEnd ();
     }
@@ -1395,11 +1419,13 @@ void exceptionTest ( chid chan )
             ca_element_count (chan), chan, pRS ); 
         SEVCHK  ( status, "array read request failed" );
         ca_pend_io ( 1e-5 );
-        ca_pend_event ( 0.1 );
+        epicsThreadSleep ( 0.1 );
+        ca_poll ();
         while ( acctstExceptionCount < 1u ) {
             printf ( "G" );
             fflush ( stdout );
-            ca_pend_event ( 0.5 );
+            epicsThreadSleep ( 0.1 );
+            ca_poll (); // emulate typical gui
         }
         status = ca_add_exception_event ( 0, 0 );
         SEVCHK ( status, "exception notify install failed" );
@@ -1414,11 +1440,14 @@ void exceptionTest ( chid chan )
         status = ca_array_get_callback ( DBR_PUT_ACKT, 
             ca_element_count (chan), chan, arrayEventExceptionNotify, 0 ); 
         SEVCHK  ( status, "array read request failed" );
-        ca_pend_event ( 0.1 );
+        ca_flush_io ();
+        epicsThreadSleep ( 0.1 );
+        ca_poll ();
         while ( ! arrayEventExceptionNotifyComplete ) {
             printf ( "GCB" );
             fflush ( stdout );
-            ca_pend_event ( 0.5 );
+            epicsThreadSleep ( 0.1 );
+            ca_poll (); // emulate typical GUI
         }
     }
 
@@ -1432,12 +1461,14 @@ void exceptionTest ( chid chan )
         status = ca_add_array_event ( DBR_PUT_ACKT, ca_element_count ( chan ), 
                         chan, arrayEventExceptionNotify, 0, 0.0, 0.0, 0.0, &id ); 
         SEVCHK ( status, "array subscription notify install failed" );
-
-        ca_pend_event ( 0.1 );
+        ca_flush_io ();
+        epicsThreadSleep ( 0.1 );
+        ca_poll ();
         while ( ! arrayEventExceptionNotifyComplete ) {
             printf ( "S" );
             fflush ( stdout );
-            ca_pend_event ( 0.5 );
+            epicsThreadSleep ( 0.1 );
+            ca_poll (); // emulate typical GUI
         }
         status = ca_clear_event ( id );
         SEVCHK ( status, "subscription clear failed" );
@@ -1462,12 +1493,14 @@ void exceptionTest ( chid chan )
         status = ca_array_put ( DBR_STRING, 
             ca_element_count (chan), chan, pWS ); 
         SEVCHK  ( status, "array put request failed" );
-
-        ca_pend_event ( 0.1 );
+        ca_flush_io ();
+        epicsThreadSleep ( 0.1 );
+        ca_poll ();
         while ( acctstExceptionCount < 1u ) {
             printf ( "P" );
             fflush ( stdout );
-            ca_pend_event ( 0.5 );
+            epicsThreadSleep ( 0.1 );
+            ca_poll (); // emulate typical GUI
         }
         status = ca_add_exception_event ( 0, 0 );
         SEVCHK ( status, "exception notify install failed" );
@@ -1491,12 +1524,14 @@ void exceptionTest ( chid chan )
             ca_element_count (chan), chan, pWS,
             arrayEventExceptionNotify, 0); 
         SEVCHK  ( status, "array put callback request failed" );
-
-        ca_pend_event ( 0.1 );
+        ca_flush_io ();
+        epicsThreadSleep ( 0.1 );
+        ca_poll ();
         while ( ! arrayEventExceptionNotifyComplete ) {
             printf ( "PCB" );
             fflush ( stdout );
-            ca_pend_event ( 0.5 );
+            epicsThreadSleep ( 0.1 );
+            ca_poll (); // emulate typical GUI
         }
         free ( pWS );
     }
@@ -1604,9 +1639,10 @@ void arrayTest ( chid chan )
     status = ca_array_get_callback ( DBR_DOUBLE, ca_element_count (chan), 
                     chan, arrayReadNotify, pWF ); 
     SEVCHK  ( status, "array read notify request failed" );
-
+    ca_flush_io ();
     while ( ! arrayWriteNotifyComplete || ! arrayReadNotifyComplete ) {
-        ca_pend_event ( 0.1 );
+        epicsThreadSleep ( 0.1 );
+        ca_poll (); // emulate typical GUI
     }
 
     /*
@@ -1623,8 +1659,10 @@ void arrayTest ( chid chan )
     status = ca_add_array_event ( DBR_DOUBLE, ca_element_count ( chan ), 
                     chan, arrayReadNotify, pWF, 0.0, 0.0, 0.0, &id ); 
     SEVCHK ( status, "array subscription request failed" );
+    ca_flush_io ();
     while ( ! arrayReadNotifyComplete ) {
-        ca_pend_event ( 0.1 );
+        epicsThreadSleep ( 0.1 );
+        ca_poll (); // emulate typical GUI
     }
     status = ca_clear_event ( id );
     SEVCHK ( status, "clear event request failed" );
@@ -1648,7 +1686,7 @@ void arrayTest ( chid chan )
 /*
  * pend_event_delay_test()
  */
-void pend_event_delay_test(dbr_double_t request)
+void pend_event_delay_test ( dbr_double_t request )
 {
     int     status;
     epicsTimeStamp    end_time;
@@ -1656,17 +1694,17 @@ void pend_event_delay_test(dbr_double_t request)
     dbr_double_t    delay;
     dbr_double_t    accuracy;
 
-    epicsTimeGetCurrent(&start_time);
-    status = ca_pend_event(request);
+    epicsTimeGetCurrent ( &start_time );
+    status = ca_pend_event ( request );
     if (status != ECA_TIMEOUT) {
         SEVCHK(status, NULL);
     }
     epicsTimeGetCurrent(&end_time);
-    delay = epicsTimeDiffInSeconds(&end_time,&start_time);
+    delay = epicsTimeDiffInSeconds ( &end_time, &start_time );
     accuracy = 100.0*(delay-request)/request;
-    printf("CA pend event delay = %f sec results in error = %f %%\n",
-        request, accuracy);
-    assert (fabs(accuracy) < 10.0);
+    printf ( "CA pend event delay = %f sec results in error = %f %%\n",
+        request, accuracy );
+    assert ( fabs(accuracy) < 10.0 );
 }
 
 void caTaskExistTest ()
@@ -1791,7 +1829,8 @@ void performMonitorUpdateTest ( chid chan )
     tries = 0;
     while ( 1 ) {
         unsigned nComplete = 0u;
-        ca_pend_event ( 0.5 );
+        epicsThreadSleep ( 0.1 );
+        ca_poll (); // emulate typical GUI
         for ( i = 0; i < NELEMENTS ( test ); i++ ) {
             if ( test[i].count > 0 ) {
                 if ( test[i].lastValue == temp ) {
@@ -1844,12 +1883,13 @@ void performMonitorUpdateTest ( chid chan )
         while (1) {
             unsigned passCount = 0;
             unsigned tmpFlowCtrlCount = 0u;
-            ca_pend_event ( 0.1 );
+            epicsThreadSleep ( 0.1 );
+            ca_poll (); // emulate typical GUI
             for ( j = 0; j < NELEMENTS ( test ); j++ ) {
-		/*
+		        /*
                  * we shouldnt see old monitors because 
                  * we resubscribed
-		 */
+		         */
                 assert ( test[j].count <= i + 2 );
                 if ( test[j].lastValue == temp ) {
                     if ( test[j].count < i + 1 ) {
@@ -2077,25 +2117,6 @@ int acctst ( char *pName, unsigned channelCount, unsigned repetitionCount )
         SEVCHK ( ca_put ( DBR_PUT_ACKS, chan, &acksIn ), NULL );
         SEVCHK ( ca_get ( DBR_STSACK_STRING, chan, &stsackOut ), NULL );
         SEVCHK ( ca_pend_io ( 2000.0 ), NULL );
-    }
-
-    {
-        epicsTimeStamp    end_time;
-        epicsTimeStamp    start_time;
-        dbr_double_t    delay;
-        dbr_double_t    request = 15.0;
-        dbr_double_t    accuracy;
-
-        epicsTimeGetCurrent(&start_time);
-        printf ("waiting for events for %f sec\n", request);
-        status = ca_pend_event (request);
-        if ( status != ECA_TIMEOUT ) {
-            SEVCHK ( status, NULL );
-        }
-        epicsTimeGetCurrent ( &end_time );
-        delay = epicsTimeDiffInSeconds ( &end_time, &start_time );
-        accuracy = 100.0 * ( delay - request ) / request;
-        printf ( "CA pend event delay accuracy = %f %%\n", accuracy );
     }
 #endif
 

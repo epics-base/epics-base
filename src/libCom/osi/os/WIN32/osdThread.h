@@ -2,7 +2,7 @@
 #ifndef osdThreadh
 #define osdThreadh
 
-#include <assert.h>
+#include <epicsAssert.h>
 
 #ifndef VC_EXTRALEAN
 #   define VC_EXTRALEAN
@@ -13,31 +13,30 @@
 /* including less than this causes conflicts with winsock2.h :-( */
 #include <winsock2.h>
 
-struct osdThreadPrivate 
+typedef struct osdThreadPrivate 
 {
-#ifdef __cpluplus
-    osdThreadPrivate ();
-    ~osdThreadPrivate ();
-#endif
     DWORD key;
-};
+} osdThreadPrivate;
 
-#ifdef __cpluplus
-
-template <class T>
-inline T *osiThreadPrivate<T>::get ()
+epicsShareFunc INLINE threadVarId epicsShareAPI threadPrivateCreate ()
 {
-    return static_cast<T *> (TlsGetValue (this->key));
+    osdThreadPrivate *p = (osdThreadPrivate *) malloc (sizeof (*p));
+    if (p) {
+        p->key = TlsAlloc ();
+        if (p->key==0xFFFFFFFF) {
+            free (p);
+            p = 0;
+        }
+    }
+    return (threadVarId) p;
 }
 
-template <class T>
-inline void osiThreadPrivate<T>::set (T *pIn)
+epicsShareFunc INLINE void epicsShareAPI threadPrivateDelete (threadVarId id)
 {
-    BOOL stat = TlsSetValue (this->key, static_cast<void *> (pIn) );
+    osdThreadPrivate *p = (osdThreadPrivate *) id;
+    BOOL stat = TlsFree (p->key);
     assert (stat);
 }
-
-#else /* ifdef __cplusplus */
 
 epicsShareFunc INLINE void epicsShareAPI threadPrivateSet (threadVarId id, void *pVal)
 {
@@ -51,7 +50,5 @@ epicsShareFunc INLINE void * epicsShareAPI threadPrivateGet (threadVarId id)
     struct osdThreadPrivate *pPvt = (struct osdThreadPrivate *) id;
     return (void *) TlsGetValue (pPvt->key);
 }
-
-#endif /* ifdef/else __cplusplus */
 
 #endif /* osdThreadh */

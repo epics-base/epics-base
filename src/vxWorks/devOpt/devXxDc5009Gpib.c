@@ -55,6 +55,8 @@
 #define	DSET_SI		devSiDc5009Gpib
 #define	DSET_SO		devSoDc5009Gpib
 
+#define	STATIC	static
+
 #include	<vxWorks.h>
 #include	<taskLib.h>
 #include	<rngLib.h>
@@ -85,10 +87,9 @@
 #include	<drvGpibInterface.h>
 #include	<devCommonGpib.h>
 
-long	init_dev_sup(), report();
-int	srqHandler();
-int	aiGpibSrq(), liGpibSrq(), biGpibSrq(), mbbiGpibSrq(), stringinGpibSrq();
-static	struct  devGpibParmBlock devSupParms;
+STATIC long	init_dev_sup(), report();
+STATIC int	srqHandler();
+STATIC	struct  devGpibParmBlock devSupParms;
 
 /******************************************************************************
  *
@@ -280,7 +281,7 @@ static struct gpibCmd gpibCmds[] =
  * scanned"... not passive.
  *
  ******************************************************************************/
-static struct  devGpibParmBlock devSupParms = {
+STATIC struct  devGpibParmBlock devSupParms = {
   &Dc5009Debug,         /* debugging flag pointer */
   -1,                   /* device does not respond to writes */
   TIME_WINDOW,          /* # of clock ticks to skip after a device times out */
@@ -304,9 +305,8 @@ static struct  devGpibParmBlock devSupParms = {
  * with a param value of 1.
  *
  ******************************************************************************/
-static long 
-init_dev_sup(parm)
-int	parm;
+STATIC long 
+init_dev_sup(int parm)
 {
   return(devGpibLib_initDevSup(parm,&DSET_AI));
 }
@@ -317,8 +317,8 @@ int	parm;
  * module.
  *
  ******************************************************************************/
-static long
-report()
+STATIC long
+report(void)
 {
   return(devGpibLib_report(&DSET_AI));
 }
@@ -351,9 +351,7 @@ report()
 #define DC5009_OPC	66	/* operation just completed */
 #define	DC5009_USER	67	/* user requested SRQ */
 
-static int srqHandler(phwpvt, srqStatus)
-struct hwpvt	*phwpvt;
-int		srqStatus;	/* The poll response from the device */
+STATIC int srqHandler(struct hwpvt *phwpvt, int srqStatus)
 {
   int	status = IDLE;		/* assume device will be idle when finished */
 
@@ -393,9 +391,9 @@ int		srqStatus;	/* The poll response from the device */
         printf("dc5009 srqHandler: Unsolicited SRQ being handled from link %d, device %d, status = 0x%02.2X\n",
           phwpvt->link, phwpvt->device, srqStatus);
 
-      ((struct gpibDpvt*)(phwpvt->unsolicitedDpvt))->head.header.callback.finishProc = ((struct gpibDpvt *)(phwpvt->unsolicitedDpvt))->process;
+      ((struct gpibDpvt*)(phwpvt->unsolicitedDpvt))->head.header.callback.callback = ((struct gpibDpvt *)(phwpvt->unsolicitedDpvt))->process;
       ((struct gpibDpvt *)(phwpvt->unsolicitedDpvt))->head.header.callback.priority = ((struct gpibDpvt *)(phwpvt->unsolicitedDpvt))->processPri;
-      callbackRequest(phwpvt->unsolicitedDpvt);
+      callbackRequest((CALLBACK*)phwpvt->unsolicitedDpvt);
     }
     else
     {

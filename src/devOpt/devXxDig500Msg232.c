@@ -72,11 +72,12 @@
 
 #define DSET_BP devBpdig500Msg232
 
+#define STATIC static
 
 int	dig500MsgDebug = 0;
 
-static long	init(), report();
-static msgParmBlock	parmBlock;
+STATIC long	init(), report();
+STATIC msgParmBlock	parmBlock;
 
 /*****************************************************************************
  *
@@ -85,9 +86,8 @@ static msgParmBlock	parmBlock;
  ******************************************************************************/
 static msgRecEnum local_bp = { "PE dig500" };
 
-static long
-local_initBp(pbp)
-struct brownpileRecord	*pbp;
+STATIC long
+local_initBp(struct brownpileRecord *pbp)
 {
   char message[100];
   long status;
@@ -111,9 +111,8 @@ struct brownpileRecord	*pbp;
 }
 
 /*****************************************************************************/
-static long
-local_procBp(pbp)
-struct brownpileRecord	*pbp;
+STATIC long
+local_procBp(struct brownpileRecord *pbp)
 {
   if (dig500MsgDebug > 10)
     printf("local_procBp entered\n");
@@ -210,10 +209,8 @@ static msgCmd cmds[] = {
 #define REC_BP_CHOICE_PUMP_220  3       /* 220 Liter/sec */
 
 
-static long
-local_xactWork(pxact, pop)
-msgXact         *pxact;
-msgCmdOp        *pop;
+STATIC long
+local_xactWork(msgXact *pxact, msgCmdOp *pop)
 {
   char		msg[100];	/* A place to format error messages */
   char		buf[100];	/* A place to build & parse strings */
@@ -684,14 +681,13 @@ static msgParmBlock     parmBlock = {
   local_xactWork,
   &parmBB232extension
 };
-static long
-init(parm)
-int	parm;
+STATIC long
+init(int parm)
 {
   return(drvMsg_initMsg(parm, &devAidig500Msg232));
 }
-static long
-report()
+STATIC long
+report(void)
 {
   return(drvMsg_reportMsg(&devAidig500Msg232));
 }

@@ -85,8 +85,10 @@
 #include	<drvGpibInterface.h>
 #include	<devCommonGpib.h>
 
-long	init_dev_sup(), report();
-int	srqHandler();
+#define STATIC static
+
+STATIC long	init_dev_sup(), report();
+STATIC int	srqHandler();
 static	struct  devGpibParmBlock devSupParms;
 
 /******************************************************************************
@@ -307,9 +309,8 @@ static struct  devGpibParmBlock devSupParms = {
  * with a param value of 1.
  *
  ******************************************************************************/
-static long 
-init_dev_sup(parm)
-int	parm;
+STATIC long 
+init_dev_sup(int parm)
 {
   return(devGpibLib_initDevSup(parm,&DSET_AI));
 }
@@ -322,12 +323,11 @@ int	parm;
  * This function will no longer be required after epics 3.3 is released
  *
  ******************************************************************************/
-static long
-report()
+STATIC long
+report(void)
 {
   return(devGpibLib_report(&DSET_AI));
 }
-
 /******************************************************************************
  *
  * A sample SRQ handler.  This one is taken from the DC5009 gpib device support
@@ -358,50 +358,59 @@ report()
  *
  ******************************************************************************/
 
-#define	DC5009_GOODBITS	0xef	/* I only care about these bits from the poll*/
+#define	DC5009_GOODBITS	0xef	/* I only care about these bits */
 
 #define	DC5009_PON	65	/* power just turned on */
 #define DC5009_OPC	66	/* operation just completed */
+#define	DC5009_USER	67	/* user requested SRQ */
 
-static int srqHandler(phwpvt, srqStatus)
-struct hwpvt	*phwpvt;
-int		srqStatus;	/* The poll response from the device */
+STATIC int srqHandler(struct hwpvt *phwpvt, int srqStatus)
 {
   int	status = IDLE;		/* assume device will be idle when finished */
 
-  if (SkeletonDebug || ibSrqDebug)
-    logMsg("srqHandler(0x%08.8X, 0x%02.2X): called\n", phwpvt, srqStatus);
+  if (Dc5009Debug || ibSrqDebug)
+    printf("dc5009 srqHandler(0x%08.8X, 0x%02.2X): called\n", phwpvt, srqStatus);
 
   switch (srqStatus & DC5009_GOODBITS) {
   case DC5009_OPC:
 
-    /* Invoke the command-type specific SRQ handler (in the library code) */
+    /* Invoke the command-type specific SRQ handler */
     if (phwpvt->srqCallback != NULL)
       status = ((*(phwpvt->srqCallback))(phwpvt->parm, srqStatus));
     else
-      logMsg("Unsolicited operation complete from DC5009 device support!\n");
+      printf("dc5009 srqHandler: Unsolicited operation complete from DC5009 device support!\n");
     break;
+/* BUG - I have to clear out the error status by doing an err? read operation */
+
+  case DC5009_USER:
+
+    /* user requested srq event is specific to the Dc5009 */
+      printf("dc5009 srqHandler: Dc5009 User requested srq event link %d, device %d\n", phwpvt->link, phwpvt->device);
+      break;
+/* BUG - I have to clear out the error status by doing an err? read operation */
 
   case DC5009_PON:
 
-    logMsg("Power cycled on DC5009\n");
+    printf("dc5009 srqHandler: Power cycled on DC5009\n");
     break;
+/* BUG - I have to clear out the error status by doing an err? read operation */
 
-  default:			/* unsolicited SRQ */
+  default:
+
 
     if (phwpvt->unsolicitedDpvt != NULL)
-    { /* If a record spec'd the magic parm number, process it. */
-      if(SkeletonDebug || ibSrqDebug)
-        logMsg("Unsolicited SRQ being handled from link %d, device %d, status = 0x%02.2X\n",
+    {
+      if(Dc5009Debug || ibSrqDebug)
+        printf("dc5009 srqHandler: Unsolicited SRQ being handled from link %d, device %d, status = 0x%02.2X\n",
           phwpvt->link, phwpvt->device, srqStatus);
 
-      ((struct gpibDpvt*)(phwpvt->unsolicitedDpvt))->head.header.callback.finishProc = ((struct gpibDpvt *)(phwpvt->unsolicitedDpvt))->process;
+      ((struct gpibDpvt*)(phwpvt->unsolicitedDpvt))->head.header.callback.callback = ((struct gpibDpvt *)(phwpvt->unsolicitedDpvt))->process;
       ((struct gpibDpvt *)(phwpvt->unsolicitedDpvt))->head.header.callback.priority = ((struct gpibDpvt *)(phwpvt->unsolicitedDpvt))->processPri;
       callbackRequest(phwpvt->unsolicitedDpvt);
     }
     else
     {
-      logMsg("Unsolicited SRQ ignored from link %d, device %d, status = 0x%02.2X\n",
+      printf("dc5009 srqHandler: Unsolicited SRQ ignored from link %d, device %d, status = 0x%02.2X\n",
           phwpvt->link, phwpvt->device, srqStatus);
     }
   }

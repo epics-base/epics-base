@@ -77,9 +77,10 @@
 #include	<drvGpibInterface.h>
 #include	<devCommonGpib.h>
 
-long	init_dev_sup(), report();
-int	srqHandler();
-int	aiGpibSrq(), liGpibSrq(), biGpibSrq(), mbbiGpibSrq(), stringinGpibSrq();
+#define STATIC static
+
+STATIC long	init_dev_sup(), report();
+STATIC int	srqHandler();
 static	struct  devGpibParmBlock devSupParms;
 
 /******************************************************************************
@@ -258,9 +259,7 @@ static struct  devGpibParmBlock devSupParms = {
 #define SR620_MAV	0x10
 #define	SR630_ESB	0x20
 
-static int srqHandler(phwpvt, srqStatus)
-struct hwpvt	*phwpvt;
-int		srqStatus;	/* The poll response from the device */
+STATIC int srqHandler(struct hwpvt *phwpvt, int srqStatus)
 {
   int	status = IDLE;		/* assume device will be idle when finished */
 
@@ -283,9 +282,9 @@ int		srqStatus;	/* The poll response from the device */
       logMsg("Unsolicited SRQ being handled from link %d, device %d, status = 0x%02.2X\n",
           phwpvt->link, phwpvt->device, srqStatus);
   
-      ((struct gpibDpvt*)(phwpvt->unsolicitedDpvt))->head.header.callback.finishProc = ((struct gpibDpvt *)(phwpvt->unsolicitedDpvt))->process;
+      ((struct gpibDpvt*)(phwpvt->unsolicitedDpvt))->head.header.callback.callback = ((struct gpibDpvt *)(phwpvt->unsolicitedDpvt))->process;
       ((struct gpibDpvt *)(phwpvt->unsolicitedDpvt))->head.header.callback.priority = ((struct gpibDpvt *)(phwpvt->unsolicitedDpvt))->processPri;
-      callbackRequest(phwpvt->unsolicitedDpvt);
+      callbackRequest((CALLBACK*)phwpvt->unsolicitedDpvt);
     }
     else
     {
@@ -305,9 +304,8 @@ int		srqStatus;	/* The poll response from the device */
  * with a param value of 1.
  *
  ******************************************************************************/
-static long 
-init_dev_sup(parm)
-int	parm;
+STATIC long 
+init_dev_sup(int parm)
 {
   return(devGpibLib_initDevSup(parm, &DSET_AI));
 }
@@ -318,8 +316,8 @@ int	parm;
  * module.
  *
  ******************************************************************************/
-static long
-report()
+STATIC long
+report(void)
 {
   return(devGpibLib_report(&DSET_AI));
 }

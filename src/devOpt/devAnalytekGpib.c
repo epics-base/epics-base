@@ -42,21 +42,18 @@
 #include        <drvGpibInterface.h>
 #include        <devCommonGpib.h>
 
-#ifndef VALID_ALARM
-#define VALID_ALARM INVALID_ALARM
-#endif
- 
+#define	STATIC	static
+
 long	devGpibLib_initWf();
 long	devGpibLib_readWf();
 int	devGpibLib_wfGpibWork();
 
-long    init_dev_sup(), report();
-int     aiGpibSrq(), liGpibSrq(), biGpibSrq(), mbbiGpibSrq(), stringinGpibSrq();
-static  struct  devGpibParmBlock devSupParms;
+STATIC long    init_dev_sup(), report();
+STATIC  struct  devGpibParmBlock devSupParms;
 
-int     getamprange();          /* used to get signal amplitude range */
-int     getrange();             /* used to get signal range */
-int     getoffset();            /* used to get signal offset */
+STATIC int     getamprange();          /* used to get signal amplitude range */
+STATIC int     getrange();             /* used to get signal range */
+STATIC int     getoffset();            /* used to get signal offset */
 
 int	convertWave();		/* parses waveform data from analytek digitizer */
 
@@ -593,9 +590,8 @@ static struct  devGpibParmBlock devSupParms = {
  * This function will no longer be required after epics 3.3 is released
  *
  ******************************************************************************/
-static long
-init_dev_sup(parm)
-int     parm;
+STATIC long
+init_dev_sup(int parm)
 {
   return(devGpibLib_initDevSup(parm, &DSET_AI));
 }
@@ -608,17 +604,13 @@ int     parm;
  * This function will no longer be required after epics 3.3 is released
  * 
  ******************************************************************************/
-static long
-report()
+STATIC long
+report(void)
 {  
   return(devGpibLib_report(&DSET_AI));
 }  
 
-static int getamprange(pdpvt, p1, p2, p3)
-struct gpibDpvt *pdpvt;
-int     p1;
-int     p2;
-char    **p3;
+STATIC int getamprange(struct gpibDpvt *pdpvt, int p1, int p2, char **p3)
 {
 	int		amprange;
 	int		i;
@@ -657,9 +649,9 @@ char    **p3;
 		}
 	else
 		{
-		if (pai->nsev < VALID_ALARM)
+		if (pai->nsev < INVALID_ALARM)
 			{
-			pai->nsev = VALID_ALARM;
+			pai->nsev = INVALID_ALARM;
 			pai->nsta = READ_ALARM;
 			}
 		}
@@ -670,11 +662,7 @@ char    **p3;
 
 /* conversion routine */
 
-static int getrange(pdpvt, p1, p2, p3)
-struct gpibDpvt *pdpvt;
-int     p1;
-int     p2;
-char    **p3;
+STATIC int getrange(struct gpibDpvt *pdpvt, int p1, int p2, char **p3)
 {
 	int		range;
 	int		i;
@@ -709,9 +697,9 @@ char    **p3;
 		}
 	else
 		{
-		if (pai->nsev < VALID_ALARM)
+		if (pai->nsev < INVALID_ALARM)
 			{
-			pai->nsev = VALID_ALARM;
+			pai->nsev = INVALID_ALARM;
 			pai->nsta = READ_ALARM;
 			}
 		}
@@ -721,11 +709,7 @@ char    **p3;
 
 /* conversion routine */
 
-static int getoffset(pdpvt, p1, p2, p3)
-struct gpibDpvt *pdpvt;
-int     p1;
-int     p2;
-char    **p3;
+STATIC int getoffset(struct gpibDpvt *pdpvt, int p1, int p2, char **p3)
 {
 	float		offset;
 	int		i;
@@ -760,9 +744,9 @@ char    **p3;
 		}
 	else
 		{
-		if (pai->nsev < VALID_ALARM)
+		if (pai->nsev < INVALID_ALARM)
 			{
-			pai->nsev = VALID_ALARM;
+			pai->nsev = INVALID_ALARM;
 			pai->nsta = READ_ALARM;
 			}
 		}
@@ -770,11 +754,7 @@ char    **p3;
 	return(OK);
 }
 
-convertWave(pdpvt, p1, p2, p3)
-struct gpibDpvt *pdpvt;
-int     p1;
-int     p2;
-char    **p3;
+STATIC convertWave(struct gpibDpvt *pdpvt, int p1, int p2, char **p3)
 {
 	struct	waveformRecord	*pwf = (struct waveformRecord *) (pdpvt->precord);
 	short			*raw;
@@ -793,7 +773,7 @@ char    **p3;
 	craw = pdpvt->msg;
 	if (*craw != '#')
 	{ /* don't have a valid analytek waveform */
-		devGpibLib_setPvSevr(pwf,READ_ALARM,VALID_ALARM);
+		devGpibLib_setPvSevr(pwf,READ_ALARM,INVALID_ALARM);
 
 		printf("Got an invalid waveform back!\n");
 		return(ERROR);
@@ -812,7 +792,7 @@ char    **p3;
 
 	if (sscanf (asciiLen, "%d", &numElem) != 1)
 	{
-		devGpibLib_setPvSevr(pwf,READ_ALARM,VALID_ALARM);
+		devGpibLib_setPvSevr(pwf,READ_ALARM,INVALID_ALARM);
 
 		printf("Got an invalid waveform back!!\n");
 		return(ERROR);

@@ -78,7 +78,7 @@
 #include	<drvGpibInterface.h>
 #include	<devCommonGpib.h>
 
-long	init_dev_sup(), report();
+static	long	init_dev_sup(), report();
 static	struct  devGpibParmBlock devSupParms;
 
 /******************************************************************************
@@ -149,82 +149,13 @@ int K263Debug = 0;		/* debugging flags */
 #define TIME_WINDOW	600		/* 10 seconds on a getTick call */
 #define	DMA_TIME	30		/* 1/2 second on a watchdog time */
 
-/*
- * Strings used by the init routines to fill in the znam, onam, ...
- * fields in BI, BO, MBBI, and MBBO record types.
- */
 
-static	char		*offOnList[] = { "Off", "On" };
-static	struct	devGpibNames	offOn = { 2, offOnList, NULL, 1 };
-
-static	char	*disableEnableList[] = { "Disable", "Enable" };
-static	struct	devGpibNames	disableEnable = { 2, disableEnableList, NULL, 1 };
-
-static	char	*resetList[] = { "Reset", "Reset" };
-static	struct	devGpibNames	reset = { 2, resetList, NULL, 1 };
-
-static	char	*lozHizList[] = { "50 OHM", "IB_Q_HIGH Z" };
-static	struct	devGpibNames	lozHiz = {2, lozHizList, NULL, 1};
-
-static	char	*invertNormList[] = { "INVERT", "NORM" };
-static	struct	devGpibNames	invertNorm = { 2, invertNormList, NULL, 1 };
-
-static	char	*fallingRisingList[] = { "FALLING", "RISING" };
-static	struct	devGpibNames fallingRising = { 2, fallingRisingList, NULL, 1 };
-
-static	char	*singleShotList[] = { "SINGLE", "SHOT" };
-static	struct	devGpibNames	singleShot = { 2, singleShotList, NULL, 1 };
-
-static	char	*clearList[] = { "CLEAR", "CLEAR" };
-static	struct	devGpibNames	clear = { 2, clearList, NULL, 1 };
-
-static	char		*tABCDList[] = { "T", "A", "B", "C", "D" };
-static	unsigned long	tABCDVal[] = { 1, 2, 3, 5, 6 };
-static	struct	devGpibNames	tABCD = { 5, tABCDList, tABCDVal, 3 };
-
-static	char		*ttlNimEclVarList[] = { "TTL", "NIM", "ECL", "VAR" };
-static	unsigned long	ttlNimEclVarVal[] = { 0, 1, 2, 3 };
-static	struct	devGpibNames	ttlNimEclVar = { 4, ttlNimEclVarList, 
-					ttlNimEclVarVal, 2 };
-
-static	char		*intExtSsBmStopList[] = { "INTERNAL", "EXTERNAL", 
-					"SINGLE SHOT", "BURST MODE", "STOP" };
-static	unsigned long	intExtSsBmStopVal[] = { 0, 1, 2, 3, 2 };
-static	struct	devGpibNames	intExtSsBm = { 4, intExtSsBmStopList, 
-					intExtSsBmStopVal, 2 };
-static	struct	devGpibNames	intExtSsBmStop = { 5, intExtSsBmStopList, 
-					intExtSsBmStopVal, 3 };
-
-
-/******************************************************************************
- *
- * String arrays for EFAST operations.  Note that the last entry must be 
- * NULL.
- *
- * On input operations, only as many bytes as are found in the string array
- * elements are compared.  If there are more bytes than that in the input
- * message, they are ignored.  The first matching string found (starting
- * from the 0'th element) will be used as a match.
- *
- * NOTE: For the input operations, the strings are compared literally!  This
- * can cause problems if the instrument is returning things like \r and \n
- * characters.  You must take care when defining input strings so you include
- * them as well.
- *
- ******************************************************************************/
-
-static char	*(userOffOn[]) = {"USER OFF;", "USER ON;", NULL};
-
 /******************************************************************************
  *
  * Array of structures that define all GPIB messages
  * supported for this type of instrument.
  *
  ******************************************************************************/
-
-/* forward declarations of some custom convert routines */
-int setDelay();
-int rdDelay();
 
 static struct gpibCmd gpibCmds[] = 
 {
@@ -283,8 +214,7 @@ static struct  devGpibParmBlock devSupParms = {
  *
  ******************************************************************************/
 static long 
-init_dev_sup(parm)
-int	parm;
+init_dev_sup(int parm)
 {
   return(devGpibLib_initDevSup(parm, &DSET_AI));
 }
@@ -298,7 +228,7 @@ int	parm;
  *
  ******************************************************************************/
 static long
-report()
+report(void)
 {
   return(devGpibLib_report(&DSET_AI));
 }

@@ -90,14 +90,17 @@ int	bbMsgDly = 0;
 extern int bbDebug;
 static int	replyIsBack;
 
-int	sendMsg();
-int	bbWork();
-int	configMsg();
-int	getInt();
-int	getChar();
-int	getString();
-int	showBbMsg();
-int	timingStudy();
+static int	sendMsg();
+static int	bbWork();
+static int	configMsg();
+static int	getInt();
+static int	getChar();
+static int	getString();
+static int	showBbMsg();
+static int	timingStudy();
+static int	pingEm();
+static int	downLoadCode();
+static int	hex2bin();
 
 static int firstTime = 1;
 static FAST_LOCK msgReply;
@@ -309,7 +312,7 @@ timingStudy()
  */
 
 static int
-sendMsg()
+sendMsg(void)
 {
   int             msgNum;         /* index to array of messages */
 
@@ -543,7 +546,7 @@ downLoadCode()
 
   /* read the file 1 line at a time & send the code to the bug */
   msgBytes=0;
-  while (fgets(hexBuf, sizeof(hexBuf), fp) > 0)
+  while (fgets(hexBuf, sizeof(hexBuf), fp) != NULL)
   {
     /* parse the headers in the hex record */
     if (hexBuf[0] != ':' || (hex2bin(&(hexBuf[7]) ,&recType) == ERROR))

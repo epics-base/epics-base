@@ -33,8 +33,6 @@
  *
  * Modification Log:
  * -----------------
- * .01  05-30-91        jrw     Initial Release
- * .02  01-06-92        nda     dg535 support under EPICS 3.3
  */
 
 #define	DSET_AI		devAiK196Gpib
@@ -78,7 +76,7 @@
 #include	<drvGpibInterface.h>
 #include	<devCommonGpib.h>
 
-long	init_dev_sup(), report();
+static long	init_dev_sup(), report();
 static	struct  devGpibParmBlock devSupParms;
 
 /******************************************************************************
@@ -222,10 +220,6 @@ static char	*(userOffOn[]) = {"USER OFF;", "USER ON;", NULL};
  *
  ******************************************************************************/
 
-/* forward declarations of some custom convert routines */
-int setDelay();
-int rdDelay();
-
 static struct gpibCmd gpibCmds[] = 
 {
   /* Param 0, (model)   */
@@ -284,8 +278,7 @@ static struct  devGpibParmBlock devSupParms = {
  *
  ******************************************************************************/
 static long 
-init_dev_sup(parm)
-int	parm;
+init_dev_sup(int parm)
 {
   return(devGpibLib_initDevSup(parm, &DSET_AI));
 }
@@ -299,7 +292,7 @@ int	parm;
  *
  ******************************************************************************/
 static long
-report()
+report(void)
 {
   return(devGpibLib_report(&DSET_AI));
 }

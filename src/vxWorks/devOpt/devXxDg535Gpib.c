@@ -78,13 +78,16 @@
 #include	<drvGpibInterface.h>
 #include	<devCommonGpib.h>
 
-#ifndef VALID_ALARM
-#define VALID_ALARM INVALID_ALARM
-#endif
-long	init_dev_sup(), report();
-int	srqHandler();
-int	aiGpibSrq(), liGpibSrq(), biGpibSrq(), mbbiGpibSrq(), stringinGpibSrq();
-static	struct  devGpibParmBlock devSupParms;
+#define STATIC static
+
+STATIC long	init_dev_sup(), report();
+STATIC int	srqHandler();
+STATIC 	struct  devGpibParmBlock devSupParms;
+
+/* forward declarations of some custom convert routines */
+STATIC int setDelay();
+STATIC int rdDelay();
+
 
 /******************************************************************************
  *
@@ -231,9 +234,6 @@ static char	*(userOffOn[]) = {"USER OFF;", "USER ON;", NULL};
  *
  ******************************************************************************/
 
-/* forward declarations of some custom convert routines */
-int setDelay();
-int rdDelay();
 
 static struct gpibCmd gpibCmds[] = 
 {
@@ -700,9 +700,8 @@ static struct  devGpibParmBlock devSupParms = {
  * with a param value of 1.
  *
  ******************************************************************************/
-static long 
-init_dev_sup(parm)
-int	parm;
+STATIC long 
+init_dev_sup(int parm)
 {
   return(devGpibLib_initDevSup(parm, &DSET_AI));
 }
@@ -713,8 +712,8 @@ int	parm;
  * module.
  *
  ******************************************************************************/
-static long
-report()
+STATIC long
+report(void)
 {
   return(devGpibLib_report(&DSET_AI));
 }
@@ -739,11 +738,7 @@ report()
  * in the val field of the SI record. (ex:  T + .000000500000)
  *****************************************************************************/
 
-static int rdDelay(pdpvt, p1, p2, p3)
-struct gpibDpvt *pdpvt;
-int	p1;
-int	p2;
-char	**p3;
+STATIC int rdDelay(struct gpibDpvt *pdpvt, int p1, int p2, char **p3)
 {
   int         status;
   double      delay;
@@ -783,9 +778,9 @@ char	**p3;
     }
     else
     {
-      if (prec->si.nsev < VALID_ALARM)
+      if (prec->si.nsev < INVALID_ALARM)
       {
-        prec->si.nsev = VALID_ALARM;
+        prec->si.nsev = INVALID_ALARM;
         prec->si.nsta = READ_ALARM;
       }
     }
@@ -802,9 +797,9 @@ char	**p3;
     }
     else
     {
-      if (prec->ai.nsev < VALID_ALARM)
+      if (prec->ai.nsev < INVALID_ALARM)
       {
-        prec->ai.nsev = VALID_ALARM;
+        prec->ai.nsev = INVALID_ALARM;
         prec->ai.nsta = READ_ALARM;
       }
     }
@@ -820,9 +815,9 @@ char	**p3;
     }
     else
     {
-      if (prec->mbbi.nsev < VALID_ALARM)
+      if (prec->mbbi.nsev < INVALID_ALARM)
       {
-        prec->mbbi.nsev = VALID_ALARM;
+        prec->mbbi.nsev = INVALID_ALARM;
         prec->mbbi.nsta = READ_ALARM;
       }
     }
@@ -843,11 +838,7 @@ char	**p3;
  *
  *************************************************************************/
 
-static int setDelay(pdpvt, p1, p2, p3)
-struct gpibDpvt *pdpvt;
-int	p1;
-int	p2;
-char	**p3;
+STATIC int setDelay(struct gpibDpvt *pdpvt, int p1, int p2, char **p3)
 {
   int         status;
   char        curChan;

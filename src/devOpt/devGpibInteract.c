@@ -48,16 +48,21 @@
  */
 
 #include        <vxWorks.h>
-#if 0 /* COMMENTED OUT */
+#include	<rngLib.h>
+#include        <semLib.h>
+/*
 #include        <sysLib.h>
 #include        <iosLib.h>
 #include        <types.h>
 #include        <stdioLib.h>
-#include        <strLib.h>
-#include        <semLib.h>
 #include        <taskLib.h>
-#endif  /* COMMENTED OUT */
-#include        <rngLib.h>
+*/
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <limits.h>
+#include <string.h>
+#include <math.h>
 
 #include        <alarm.h>
 #include        <cvtTable.h>
@@ -80,7 +85,7 @@
 int	GITime = 60;	/* shell-setable DMA timeout value */
 
 extern struct drvGpibSet drvGpib;       /* entry points to driver functions */
-int	gpibWork();
+static int	gpibWork();
 
 struct gpibIntCmd {
   struct dpvtGpibHead head;
@@ -106,14 +111,16 @@ BOOL            replyIsBack;    /* reset by sender, set by replyReceived() */
 extern	int	ibDebug;
 int		GIDebug = 0;
 
- int	sendMsg();
- int	gpibWork();
- int	configMsg();
- int	getInt();
- int	getChar();
- int	getString();
- int	showGpibMsg();
- int	timingStudy();
+static int	sendMsg();
+static int	gpibWork();
+static int	configMsg();
+static int	getInt();
+static int	getChar();
+static int	getString();
+static int	showGpibMsg();
+static int	timingStudy();
+
+static void hexDump(unsigned char *string, int indent);
 
 static int firstTime = 1;
 static int hexmode = 1;
@@ -128,7 +135,7 @@ GI()
   if(firstTime)
   {
     firstTime = 0;
-    msgReply = semCreate();
+    msgReply = semBCreate(SEM_Q_FIFO, SEM_EMPTY);
 
    for (cnt=0; cnt < LIST_SIZE; cnt++)
    {   /* init the elements of the command table */
@@ -138,7 +145,7 @@ GI()
 	gpibIntCmds[cnt].head.workStart = gpibWork;
 	gpibIntCmds[cnt].head.link = 0;
 	gpibIntCmds[cnt].head.device = 0;
-	gpibIntCmds[cnt].head.bitBusDpvt= NULL;	/* not supported yet */
+	gpibIntCmds[cnt].head.bitBusDpvt= NULL;
 
 	gpibIntCmds[cnt].type = 'R';
 	gpibIntCmds[cnt].cmd[0] = '\0';
@@ -254,9 +261,9 @@ timingStudy()
 
   printf("Enter the number of messages to send > ");
   if (!getInt(&inInt))
-    return;             /* if no entry, return to main menu */
+    return(0);             /* if no entry, return to main menu */
   if(inInt < 0)
-    return;
+    return(0);
   reps = inInt;
   Reps = reps;
 
@@ -296,7 +303,7 @@ timingStudy()
       else
 	i = LIST_SIZE;		/* force an exit from the loop */
     }
-    semTake(msgReply);
+    semTake(msgReply, WAIT_FOREVER);
   }
 
   endTime = tickGet();
@@ -315,7 +322,7 @@ timingStudy()
     else
       i = LIST_SIZE;
   }
-  return(OK);
+  return(0);
 }
 
 /* sendMsg() ***************************************************
@@ -434,9 +441,9 @@ configMsg()
 
   printf("\nEnter Message # to Configure (1 thru 5) > ");
   if (!getInt(&inInt))
-    return;             /* if no entry, return to main menu */
+    return(0);             /* if no entry, return to main menu */
   if((inInt >= LIST_SIZE) || (inInt < 0))
-    return;
+    return(0);
 
   msgNum = inInt;
   pCmd = &gpibIntCmds[msgNum];    /* assign pointer to desired entry */
@@ -628,9 +635,7 @@ char    *pString;
 }
 
 /* utility fuinction to print a hex dump */
-static void hexDump(string, indent)
-unsigned char *string;
-int	indent;
+static void hexDump(unsigned char *string, int indent)
 {
   char ascBuf[17];		/* for the ascii xlation part of the dump */
   int	strLength;

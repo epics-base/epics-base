@@ -12,9 +12,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <math.h>
+#include <float.h>
 
-#include <epicsAssert.h>
-#include <cadef.h>
+#include "epicsAssert.h"
+#include "cadef.h"
 
 #ifndef LOCAL
 #define LOCAL static
@@ -36,7 +38,7 @@
 #define NELEMENTS(A) (sizeof (A) / sizeof ((A) [0]))
 #endif
 
-#define ITERATION_COUNT 1000
+#define ITERATION_COUNT 10000
 
 #define WAIT_FOR_ACK
 
@@ -50,7 +52,9 @@ typedef struct testItem {
 
 ti itemList[ITERATION_COUNT];
 
-int catime (char *channelName);
+enum appendNumberFlag {appendNumber, dontAppendNumber};
+
+int catime (char *channelName, enum appendNumberFlag appNF);
 
 typedef void tf (ti *pItems, unsigned iterations, unsigned *pInlineIter);
 
@@ -59,8 +63,11 @@ LOCAL void test (
 	unsigned	iterations
 );
 
+LOCAL void printSearchStat(unsigned iterations);
+
 LOCAL tf 	test_pend;
 LOCAL tf 	test_search;
+LOCAL tf	test_sync_search;
 LOCAL tf	test_free;
 LOCAL tf	test_wait;
 LOCAL tf	test_put;
@@ -78,13 +85,19 @@ int main(int argc, char **argv)
 {
 	char	*pname;
 
-	if(argc == 2){
-		pname = argv[1];	
-		catime(pname);
+	if(argc <= 1 || argc>3){
+printf("usage: %s <channel name> [<if 2nd arg present append number to pv name>]\n", 
+	argv[0]);
+		return -1;
 	}
 	else{
-		printf("usage: %s <channel name>\n", argv[0]);
-		return -1;
+		pname = argv[1];	
+		if (argc==3) {
+			catime(pname, appendNumber);
+		}
+		else {
+			catime(pname, dontAppendNumber);
+		}
 	}
 	return 0;
 }
@@ -94,25 +107,54 @@ int main(int argc, char **argv)
 /*
  * catime ()
  */
-int catime (char *channelName)
+int catime (char *channelName, enum appendNumberFlag appNF)
 {
   	long		i;
 	unsigned 	strsize;
 
   	SEVCHK (ca_task_initialize(),"Unable to initialize");
 
+	if (appNF==appendNumber) {
+		printf("Testing with %u channels named %snnn\n", 
+			NELEMENTS(itemList), channelName);
+	}
+	else {
+		printf("Testing with %u channels named %s\n", 
+			 NELEMENTS(itemList), channelName);
+	}
+
 	strsize = sizeof(itemList[i].name)-1;
 	for (i=0; i<NELEMENTS(itemList); i++) {
-		strncpy (
-			itemList[i].name, 
-			channelName, 
-			strsize);
+		if (appNF==appendNumber) {
+			sprintf(itemList[i].name,"%.*s%lu",
+				(int) (strsize - 15u), channelName, i);
+		}
+		else {
+			strncpy (
+				itemList[i].name, 
+				channelName, 
+				strsize);
+		}
 		itemList[i].name[strsize]= '\0';
 		itemList[i].count = 1;
 	}
 
+	printf ("sync search test\n");
+	assert (100u<=NELEMENTS(itemList));
+	timeIt (test_sync_search, itemList, 100u);
+	printSearchStat(100u);
+
+  	printf ("free test\n");
+	timeIt (test_free, itemList, 100u);
+
+  	printf ("waiting for the server to reply...");
+	fflush (stdout);
+	ca_pend_event(1.0);
+  	printf ("hopefully done\n");
+
 	printf ("search test\n");
 	timeIt (test_search, itemList, NELEMENTS(itemList));
+	printSearchStat(NELEMENTS(itemList));
 
   	printf (
 		"channel name=%s, native type=%d, native count=%d\n",
@@ -152,6 +194,36 @@ int catime (char *channelName)
   	return OK;
 }
 
+/*
+ * printSearchStat()
+ */
+LOCAL void printSearchStat(unsigned iterations)
+{
+	ti	*pi;
+	double 	X = 0u;
+	double 	XX = 0u; 
+	double 	max = DBL_MIN; 
+	double 	min = DBL_MAX; 
+	double 	mean;
+	double 	stdDev;
+
+	for (pi=itemList; pi<&itemList[iterations]; pi++) {
+		double retry = pi->chix->retry;
+		X += retry;
+		XX += retry*retry;
+		if (retry>max) {
+			max = retry;
+		}
+		if (retry<min) {
+			min = retry;
+		}
+	}
+
+	mean = X/iterations;
+	stdDev = sqrt(XX/iterations - mean*mean);
+	printf ("Search tries per chan - mean=%f std dev=%f min=%f max=%f\n",
+		mean, stdDev, min, max);
+}
 
 
 /*
@@ -196,14 +268,20 @@ void timeIt(
 	assert (status == S_ts_OK);
 #endif
 	TsDiffAsDouble(&delay,&end_time,&start_time);
-	printf ("Elapsed Per Item = %12.8f sec (%10.1f Items per sec)\n", 
-		delay/(iterations*inlineIter),
-		(iterations*inlineIter)/delay);
+	if (delay>0.0) {
+		printf ("Elapsed Per Item = %12.8f sec (%10.1f Items per sec)\n", 
+			delay/(iterations*inlineIter),
+			(iterations*inlineIter)/delay);
+	}
+	else {
+		printf ("Elapsed Per Item = %12.8f sec\n", 
+			delay/(iterations*inlineIter));
+	}
 }
 
 
 /*
- * test_search ()
+ * test_pend()
  */
 LOCAL void test_pend(
 ti		*pItems,
@@ -260,6 +338,31 @@ unsigned	*pInlineIter
   	}
 	status = ca_pend_io(0.0);
     	SEVCHK (status, NULL);
+
+	*pInlineIter = 1;
+}
+
+
+/*
+ * test_sync_search()
+ */
+LOCAL void test_sync_search(
+ti		*pItems,
+unsigned	iterations,
+unsigned	*pInlineIter
+)
+{
+	ti	*pi;
+	int	status;
+
+	for (pi=pItems; pi<&pItems[iterations]; pi++) {
+		status = ca_search (
+				pi->name, 
+				&pi->chix);
+		SEVCHK (status, NULL);
+		status = ca_pend_io(0.0);
+		SEVCHK (status, NULL);
+  	}
 
 	*pInlineIter = 1;
 }

@@ -56,8 +56,8 @@ static char *os_depenhSccsId = "$Id$";
 #	include <taskLib.h>
 #	include <vxLib.h>
 
-#	include <task_params.h>
-#	include <taskwd.h>
+#	include "task_params.h"
+#	include "taskwd.h"
 
 #	define CA_OS_CONFIGURED
 #endif

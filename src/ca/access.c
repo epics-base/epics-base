@@ -99,6 +99,9 @@
 /************************************************************************/
 /*
  * $Log$
+ * Revision 1.90  1997/01/22 21:06:30  jhill
+ * use genLocalExcepWFL for generateLocalExceptionWithFileAndLine
+ *
  * Revision 1.89  1997/01/10 21:02:10  jhill
  * host/user name set is now a NOOP
  *
@@ -202,8 +205,8 @@ static char *sccsId = "@(#) $Id$";
 
 #include 	"iocinf.h"
 #include	"net_convert.h"
-#include	<epicsPrint.h>
-#include	<stdarg.h> 
+#include	"epicsPrint.h"
+#include	"sigPipeIgnore.h"
 
 
 /****************************************************************/
@@ -246,13 +249,6 @@ static caHdr	nullmsg;
 /*
  * local functions
  */
-#if 0
-LOCAL int cac_alloc_msg(
-struct ioc_in_use 	*piiu,
-unsigned		extsize,
-caHdr		**ppMsg
-);
-#endif
 
 LOCAL int cac_alloc_msg_no_flush(
 struct ioc_in_use 	*piiu,
@@ -291,6 +287,12 @@ caHdr			*pmsg,
 const void		*pext
 );
 
+LOCAL int cac_push_msg_no_block(
+struct ioc_in_use 	*piiu,
+caHdr			*pmsg,
+const void		*pext
+);
+
 LOCAL void cac_add_msg (IIU *piiu);
 
 #ifdef CONVERSION_REQUIRED 
@@ -307,9 +309,6 @@ LOCAL int check_a_dbr_string(const char *pStr, const unsigned count);
  *
  * 	cac_push_msg()
  *
- *	return a pointer to reserved message buffer space or
- *	nill if the message will not fit
- *
  */ 
 LOCAL int cac_push_msg(
 struct ioc_in_use 	*piiu,
@@ -317,7 +316,151 @@ caHdr			*pmsg,
 const void		*pext
 )
 {
-	caHdr	msg;
+	int		contig = piiu->sock_proto != IPPROTO_TCP;
+	caHdr		msg;
+	unsigned 	bytesAvailable;
+	unsigned 	actualextsize;
+	unsigned 	extsize;
+	unsigned	msgsize;
+	unsigned 	bytesSent;
+
+	msg = *pmsg;
+	actualextsize = pmsg->m_postsize;
+	extsize = CA_MESSAGE_ALIGN(pmsg->m_postsize);
+	msg.m_postsize = htons((ca_uint16_t)extsize);
+	msgsize = extsize+sizeof(msg);
+
+
+	LOCK;
+
+	/*
+	 * 	Force contiguous header and body 
+	 *
+	 * o	Forces hdr and bdy into the same frame if UDP
+	 *
+	 * o	Does not allow interleaved messages
+	 *	caused by removing recv backlog during 
+	 *	send under UNIX.
+	 *
+	 * o	Does not allow for messages larger than the
+	 *	ring buffer size.
+	 */
+	if (msgsize>piiu->send.max_msg) {
+		return ECA_TOLARGE;
+	}
+
+	bytesAvailable = cacRingBufferWriteSize(&piiu->send, contig);
+
+	if (bytesAvailable<msgsize) {
+		/*
+		 * try to send first so that we avoid the
+		 * overhead of select() in high throughput
+		 * situations
+		 */
+		if (piiu->state==iiu_connected) {
+			(*piiu->sendBytes)(piiu);
+		}
+		bytesAvailable = 
+			cacRingBufferWriteSize(&piiu->send, contig);
+
+		while(TRUE){
+			struct timeval	itimeout;
+
+			/*
+			 * record the time if we end up blocking so that
+			 * we can time out
+			 */
+			if (bytesAvailable>=msgsize){
+				piiu->sendPending = FALSE;
+				break;
+			}
+			else {
+				if (!piiu->sendPending) {
+					piiu->timeAtSendBlock = 
+						ca_static->currentTime;
+					piiu->sendPending = TRUE;
+				}
+			}
+
+			UNLOCK;
+
+			/*
+			 * if connection drops request
+			 * cant be completed
+			 */
+			if (piiu->state!=iiu_connected) {
+				return ECA_BADCHID;
+			}
+
+			LD_CA_TIME (SELECT_POLL, &itimeout);
+			cac_mux_io (&itimeout);
+
+			LOCK;
+
+			bytesAvailable = cacRingBufferWriteSize(
+						&piiu->send, contig);
+		}
+	}
+
+
+	/*
+	 * push the header onto the ring 
+	 */
+	bytesSent = cacRingBufferWrite(
+				&piiu->send, 
+				&msg, 
+				sizeof(msg));
+	assert(bytesSent == sizeof(msg));
+
+	/*
+	 * push message body onto the ring
+	 *
+	 * (optionally encode in netrwork format as we send)
+	 */
+	if (extsize>0u) {
+		bytesSent = cacRingBufferWrite(
+					&piiu->send, 
+					pext, 
+					actualextsize);
+		assert(bytesSent == actualextsize);
+		/*
+		 * force pad bytes at the end of the message to nill
+		 * if present (this avoids messages from purify)
+		 */
+		{
+			static 		nullBuff[32];
+			unsigned	n;
+
+			n = extsize-actualextsize;
+			if (n) {
+				assert(n<=sizeof(nullBuff));
+				bytesSent = cacRingBufferWrite(
+						&piiu->send, 
+						nullBuff, 
+						n);
+				assert(bytesSent == n);
+			}
+		}
+	}
+
+	UNLOCK;
+
+	return ECA_NORMAL;
+}
+
+
+/*
+ *
+ * 	cac_push_msg_no_block()
+ *
+ */ 
+LOCAL int cac_push_msg_no_block(
+struct ioc_in_use 	*piiu,
+caHdr			*pmsg,
+const void		*pext)
+{
+	int		contig = piiu->sock_proto != IPPROTO_TCP;
+	caHdr		msg;
 	unsigned 	bytesAvailable;
 	unsigned 	actualextsize;
 	unsigned 	extsize;
@@ -349,59 +492,12 @@ const void		*pext
 		return ECA_TOLARGE;
 	}
 
-	bytesAvailable = cacRingBufferWriteSize(&piiu->send, FALSE);
+	bytesAvailable = cacRingBufferWriteSize(&piiu->send, contig);
 
 	if (bytesAvailable<msgsize) {
-		/*
-		 * try to send first so that we avoid the
-		 * overhead of select() in high throughput
-		 * situations
-		 */
-		(*piiu->sendBytes)(piiu);
-		bytesAvailable = 
-			cacRingBufferWriteSize(&piiu->send, FALSE);
-
-		while(TRUE){
-			struct timeval	itimeout;
-
-			/*
-			 * record the time if we end up blocking so that
-			 * we can time out
-			 */
-			if (bytesAvailable>=msgsize){
-				piiu->sendPending = FALSE;
-				break;
-			}
-			else {
-				if (!piiu->sendPending) {
-					piiu->timeAtSendBlock = 
-						ca_static->currentTime;
-					piiu->sendPending = TRUE;
-				}
-			}
-
-			/*
-			 * if connection drops request
-			 * cant be completed
-			 */
-			if(!piiu->conn_up){
-				UNLOCK;
-				return ECA_BADCHID;
-			}
-
-			UNLOCK;
-
-			LD_CA_TIME (SELECT_POLL, &itimeout);
-			cac_mux_io (&itimeout);
-
-			LOCK;
-
-			bytesAvailable = cacRingBufferWriteSize(
-						&piiu->send, 
-						FALSE);
-		}
+		UNLOCK;
+		return ECA_SERVBEHIND;
 	}
-
 
 	/*
 	 * push the header onto the ring 
@@ -417,27 +513,29 @@ const void		*pext
 	 *
 	 * (optionally encode in netrwork format as we send)
 	 */
-	bytesSent = cacRingBufferWrite(
-				&piiu->send, 
-				pext, 
-				actualextsize);
-	assert(bytesSent == actualextsize);
-	/*
-	 * force pad bytes at the end of the message to nill
-	 * if present
-	 */
-	{
-		static 		nullBuff[32];
-		unsigned	n;
-
-		n = extsize-actualextsize;
-		if(n){
-			assert(n<=sizeof(nullBuff));
-			bytesSent = cacRingBufferWrite(
+	if (extsize>0u) {
+		bytesSent = cacRingBufferWrite(
 					&piiu->send, 
-					nullBuff, 
-					n);
-			assert(bytesSent == n);
+					pext, 
+					actualextsize);
+		assert(bytesSent == actualextsize);
+		/*
+		 * force pad bytes at the end of the message to nill
+		 * if present (this avoids messages from purify)
+		 */
+		{
+			static 		nullBuff[32];
+			unsigned	n;
+
+			n = extsize-actualextsize;
+			if (n) {
+				assert(n<=sizeof(nullBuff));
+				bytesSent = cacRingBufferWrite(
+						&piiu->send, 
+						nullBuff, 
+						n);
+				assert(bytesSent == n);
+			}
 		}
 	}
 
@@ -462,12 +560,18 @@ const void		*pext
 LOCAL int cac_alloc_msg_no_flush(
 struct ioc_in_use 	*piiu,
 unsigned		extsize,
-caHdr		**ppMsg
+caHdr			**ppMsg
 )
 {
 	unsigned 	msgsize;
 	unsigned long	bytesAvailable;
-	caHdr	*pmsg;
+	caHdr		*pmsg;
+
+	/*
+	 * 	This only works with UDP (because TCP must be allowed
+	 * 	to wrap around from the end to the beg of the buffer)
+	 */
+	assert (piiu->sock_proto == IPPROTO_UDP);
 
 	msgsize = sizeof(caHdr)+extsize;
 
@@ -540,8 +644,9 @@ int epicsShareAPI ca_task_initialize(void)
  */
 int ca_os_independent_init (void)
 {
-	unsigned	sec;
 	long		status;
+
+	installSigPipeIgnore();
 
 	ca_static->ca_exception_func = ca_default_exception_handler;
 	ca_static->ca_exception_arg = NULL;
@@ -564,20 +669,16 @@ int ca_os_independent_init (void)
 	}
 
 	cac_gettimeval (&ca_static->currentTime);
+	ca_static->programBeginTime = ca_static->currentTime;
 
 	/* init sync group facility */
 	ca_sg_init();
 
 	/*
 	 * init broadcasted search counters
+	 * (current time must be initialized before calling this)
 	 */
-	ca_static->ca_search_retry = 0;
-	ca_static->ca_search_responses = 0;
-	ca_static->ca_conn_next_retry = CA_CURRENT_TIME;
-	sec = (unsigned) CA_RECAST_DELAY;
-	ca_static->ca_conn_retry_delay.tv_sec = sec;
-	ca_static->ca_conn_retry_delay.tv_usec = 
-		(long) ((CA_RECAST_DELAY-sec)*USEC_PER_SEC);
+	cacClrSearchCounters();
 
 	ellInit(&ca_static->ca_iiuList);
 	ellInit(&ca_static->ca_ioeventlist);
@@ -622,6 +723,7 @@ int ca_os_independent_init (void)
 	}
 
 	ca_static->ca_flush_pending = FALSE;
+	ca_static->ca_min_retry = UINT_MAX;
 
 	return ECA_NORMAL;
 }
@@ -679,7 +781,7 @@ LOCAL void create_udp_fd()
 					0,
 					0,
 					0);
-		if (status<0) {
+		if (status==ERROR) {
 			genLocalExcep (ECA_INTERNAL,NULL);
 		}
 
@@ -907,7 +1009,6 @@ int epicsShareAPI ca_search_and_connect
 	long    status;
 	ciu	chix;
 	int     strcnt;
-	int 	sec;
 
 	/*
 	 * make sure that chix is NULL on fail
@@ -1018,7 +1119,7 @@ int epicsShareAPI ca_search_and_connect
 		return ECA_INTERNAL;
 	}
 
-	chix->puser = puser;
+	chix->puser = (void *) puser;
 	chix->pConnFunc = conn_func;
 	chix->type = TYPENOTCONN; /* invalid initial type 	 */
 	chix->count = 0; 	/* invalid initial count	 */
@@ -1032,18 +1133,12 @@ int epicsShareAPI ca_search_and_connect
 	/* Save this channels name for retry if required */
 	strncpy((char *)(chix + 1), name_str, strcnt);
 
-	chix->piiu = piiuCast;
-	ellAdd(&piiuCast->chidlist, &chix->node);
+	addToChanList(chix, piiuCast);
 
 	/*
 	 * reset broadcasted search counters
 	 */
-	ca_static->ca_search_retry = 0;
-	ca_static->ca_conn_next_retry = CA_CURRENT_TIME;
-	sec = (int) CA_RECAST_DELAY;
-	ca_static->ca_conn_retry_delay.tv_sec = sec;
-	ca_static->ca_conn_retry_delay.tv_usec = 
-		(long) ((CA_RECAST_DELAY-sec)*USEC_PER_SEC);
+	cacClrSearchCounters();
 
 	UNLOCK;
 
@@ -1051,7 +1146,6 @@ int epicsShareAPI ca_search_and_connect
 	 * Connection Management takes care 
 	 * of sending the the search requests
 	 */
-
 	if (!chix->pConnFunc) {
 		SETPENDRECV;
 	}
@@ -1060,13 +1154,9 @@ int epicsShareAPI ca_search_and_connect
 
 }
 
-
 
 /*
  * SEARCH_MSG()
- * 
- * NOTE:	*** lock must be applied while in this routine ***
- * 
  */
 int search_msg(
 ciu	chix,
@@ -1075,23 +1165,25 @@ int	reply_type
 {
 	int			status;
 	int    			size;
-	int    			cmd;
 	caHdr			*mptr;
 	struct ioc_in_use	*piiu;
 
 	piiu = chix->piiu;
 
+	if (piiu!=piiuCast) {
+		return ECA_INTERNAL;
+	}
+
 	size = strlen((char *)(chix+1))+1;
-	cmd = CA_PROTO_SEARCH;
 
 	LOCK;
 	status = cac_alloc_msg_no_flush (piiu, size, &mptr);
-	if(status != ECA_NORMAL){
+	if (status != ECA_NORMAL) {
 		UNLOCK;
 		return status;
 	}
 
-	mptr->m_cmmd = htons (cmd);
+	mptr->m_cmmd = htons (CA_PROTO_SEARCH);
 	mptr->m_available = chix->cid;
 	mptr->m_type = reply_type;
 	mptr->m_count = htons (CA_MINOR_VERSION);
@@ -1113,6 +1205,16 @@ int	reply_type
 	if (chix->retry<MAXCONNTRIES) {
 		chix->retry++;
 	}
+	if (ca_static->ca_search_tries<ULONG_MAX) {
+		ca_static->ca_search_tries++;
+	}
+
+	/*
+	 * move the channel to the end of the list so
+	 * that all channels get a equal chance 
+	 */
+	ellDelete(&piiu->chidlist, &chix->node);
+	ellAdd(&piiu->chidlist, &chix->node);
 
 	UNLOCK;
 
@@ -1264,7 +1366,7 @@ const void *arg
 
 		monix->chan = chix;
 		monix->usr_func = pfunc;
-		monix->usr_arg = arg;
+		monix->usr_arg = (void *) arg;
 		monix->type = type;
 		monix->count = count;
 
@@ -1584,7 +1686,7 @@ const void			*usrarg
 
 	monix->chan = chix;
 	monix->usr_func = pfunc;
-	monix->usr_arg = usrarg;
+	monix->usr_arg = (void *) usrarg;
 	monix->type = type;
 	monix->count = count;
 
@@ -1933,8 +2035,8 @@ void 		(*pfunc)(struct connection_handler_args)
   		return ECA_NORMAL;
 
   	LOCK;
-  	if(pChan->type == TYPENOTCONN){
-		if(!pChan->pConnFunc && pChan->state==cs_never_conn){
+	if (pChan->state==cs_never_conn) {
+		if(!pChan->pConnFunc){
     			CLRPENDRECV;
 		}
 		if(!pfunc){
@@ -2001,46 +2103,6 @@ int epicsShareAPI ca_add_exception_event
 
   	return ECA_NORMAL;
 }
-
-
-/*
- * Specify an event subroutine to be run once pending IO completes
- * 
- * 1) event sub runs right away if no IO pending 
- * 2) otherwise event sub runs when pending IO completes
- * 
- * Undocumented entry for the VAX OPI which may vanish in the future.
- *
- */
-#if 0
-int epicsShareAPI ca_add_io_event
-(
-void 		(*ast)(),
-void 		*astarg
-)
-{
-  register struct pending_io_event	*pioe;
-
-  INITCHK;
-
-  if(pndrecvcnt<1)
-    (*ast)(astarg);
-  else{
-    pioe = (struct pending_io_event *) malloc(sizeof(*pioe));
-    if(!pioe)
-      return ECA_ALLOCMEM;
-    memset((char *)pioe,0,sizeof(*pioe));
-    pioe->io_done_arg = astarg;
-    pioe->io_done_sub = ast;
-    LOCK;
-    ellAdd(&ioeventlist, &pioe->node);
-    UNLOCK;
-  }
-
-  return ECA_NORMAL;
-}
-#endif
-
 
 
 /*
@@ -2128,7 +2190,7 @@ long		mask
 
   	monix->chan	= chix;
   	monix->usr_func	= ast;
-  	monix->usr_arg	= astarg;
+  	monix->usr_arg	= (void *) astarg;
   	monix->type	= type;
   	monix->count	= count;
   	monix->p_delta	= p_delta;
@@ -2525,6 +2587,7 @@ int epicsShareAPI ca_clear_channel (chid chix)
 	int			status;
 	struct ioc_in_use 	*piiu = chix->piiu;
 	caHdr 			hdr;
+	caCh			*pold_ch;
 	enum channel_state	old_chan_state;
 
 	LOOSECHIXCHK(pChan);
@@ -2534,6 +2597,7 @@ int epicsShareAPI ca_clear_channel (chid chix)
 	old_chan_state = pChan->state;
 	pChan->state = cs_closed;
 	pChan->pAccessRightsFunc = NULL;
+	pold_ch = pChan->pConnFunc;
 	pChan->pConnFunc = NULL;
 
 	/* the while is only so I can break to the lock exit */
@@ -2597,7 +2661,7 @@ int epicsShareAPI ca_clear_channel (chid chix)
 	 * and it has not connected for the first time then clear the
 	 * outstanding IO count
 	 */
-	if (old_chan_state == cs_never_conn && !chix->pConnFunc) {
+	if (old_chan_state == cs_never_conn && !pold_ch) {
 		CLRPENDRECV;
 	}
 
@@ -2625,7 +2689,7 @@ int epicsShareAPI ca_clear_channel (chid chix)
 	hdr.m_type = htons(0);
 	hdr.m_count = htons(0);
 	hdr.m_postsize = 0;
-	
+
 	status = cac_push_msg(piiu, &hdr, NULL);
 
 	/*
@@ -2679,14 +2743,14 @@ void clearChannelResources(unsigned id)
 	 */
 	caIOBlockListFree (&chix->eventq, NULL, FALSE, ECA_INTERNAL);
 
-	ellDelete (&piiu->chidlist, &chix->node);
 	status = bucketRemoveItemUnsignedId (
 			ca_static->ca_pSlowBucket, &chix->cid);
 	assert (status == S_bucket_success);
 	free (chix);
-	if (piiu!=piiuCast && !piiu->chidlist.count){
+	if (piiu!=piiuCast && ellCount(&piiu->chidlist.count)==0){
 		TAG_CONN_DOWN(piiu);
 	}
+	removeFromChanList(chix);
 
 	UNLOCK;
 }
@@ -2723,7 +2787,7 @@ int epicsShareAPI ca_pend (ca_real timeout, int early)
 	 */
 	ca_static->ca_flush_pending = TRUE;
 
-    	if(pndrecvcnt<1 && early){
+    	if(pndrecvcnt==0u && early){
 		/*
 		 * force the flush
 		 */
@@ -2746,7 +2810,7 @@ int epicsShareAPI ca_pend (ca_real timeout, int early)
   	while(TRUE){
 		ca_real 	remaining;
 
-    		if (pndrecvcnt<1 && early) {
+    		if (pndrecvcnt==0 && early) {
 			/*
 			 * force the flush
 			 */
@@ -2864,7 +2928,17 @@ ca_time cac_time_sum (ca_time *pTVA, ca_time *pTVB)
 	return sum;
 }
 
-
+/*
+ * noopConnHandler()
+ * This is installed into channels which dont have
+ * a connection handler when ca_pend_io() times
+ * out so that we will not decrement the pending
+ * recv count in the future.
+ */
+LOCAL void noopConnHandler(struct  connection_handler_args args)
+{
+}
+
 /*
  *
  * set pending IO count back to zero and
@@ -2872,18 +2946,26 @@ ca_time cac_time_sum (ca_time *pTVA, ca_time *pTVB)
  * count reads until we recv the sync
  *
  */
-LOCAL	void ca_pend_io_cleanup()
+LOCAL void ca_pend_io_cleanup()
 {
-	struct ioc_in_use       *piiu;
+	struct ioc_in_use *piiu;
+	ciu pchan;
 
 	LOCK;
+	pchan = (ciu) ellFirst (&piiuCast->chidlist);
+	while (pchan) {
+		if (!pchan->pConnFunc) {
+			pchan->pConnFunc = noopConnHandler;
+		}
+		pchan = (ciu) ellNext (&pchan->node);
+	}
 	for(	piiu = (IIU *) iiuList.node.next;
 		piiu;
 		piiu = (IIU *) piiu->node.next){
 
 		caHdr hdr;
 
-		if(piiu == piiuCast || !piiu->conn_up){
+		if (piiu->state!=iiu_connected || piiu==piiuCast) {
 			continue;
 		}
 
@@ -2894,9 +2976,8 @@ LOCAL	void ca_pend_io_cleanup()
 		cac_push_msg(piiu, &hdr, NULL);
 	}
 	UNLOCK;
-	pndrecvcnt = 0;
+	pndrecvcnt = 0u;
 }
-
 
 
 
@@ -2910,11 +2991,6 @@ int epicsShareAPI ca_flush_io()
 	struct timeval  	timeout;
 
   	INITCHK;
-
-	/*
-	 * force early transmission of the first few search frames
-	 */
-	manage_conn(TRUE);
 
 	/*
 	 * Wait for all send buffers to be flushed
@@ -2934,7 +3010,7 @@ int epicsShareAPI ca_flush_io()
  */
 int epicsShareAPI ca_test_io()
 {
-    	if(pndrecvcnt<1){
+    	if(pndrecvcnt==0u){
         	return ECA_IODONE;
 	}
 	else{
@@ -3078,26 +3154,30 @@ int		lineno)
  *	CA_BUSY_MSG()
  *
  */
-void ca_busy_message(struct ioc_in_use *piiu)
+int ca_busy_message(struct ioc_in_use *piiu)
 {
-	caHdr  	hdr;
+	caHdr hdr;
+	int status;
 
 	if(!piiu){
-		return;
+		return ECA_INTERNAL;
 	}
 
   	/* 
 	 * dont broadcast
 	 */
-    	if(piiu == piiuCast)
-		return;
+    	if(piiu == piiuCast){
+		return ECA_INTERNAL;
+	}
 
 	hdr = nullmsg;
 	hdr.m_cmmd = htons(CA_PROTO_EVENTS_OFF);
 	
-	cac_push_msg(piiu, &hdr, NULL);
-
-	piiu->send_needed = TRUE;
+	status = cac_push_msg_no_block(piiu, &hdr, NULL);
+	if (status == ECA_NORMAL) {
+		piiu->send_needed = TRUE;
+	}
+	return status;
 }
 
 
@@ -3105,27 +3185,30 @@ void ca_busy_message(struct ioc_in_use *piiu)
  * CA_READY_MSG()
  * 
  */
-void ca_ready_message(struct ioc_in_use *piiu)
+int ca_ready_message(struct ioc_in_use *piiu)
 {
-	caHdr  	hdr;
+	caHdr hdr;
+	int status;
 
 	if(!piiu){
-		return;
+		return ECA_INTERNAL;
 	}
 
   	/* 
 	 * dont broadcast
 	 */
     	if(piiu == piiuCast){
-		return;
+		return ECA_INTERNAL;
 	}
 
 	hdr = nullmsg;
 	hdr.m_cmmd = htons(CA_PROTO_EVENTS_ON);
 	
-	cac_push_msg(piiu, &hdr, NULL);
-
-	piiu->send_needed = TRUE;
+	status = cac_push_msg_no_block(piiu, &hdr, NULL);
+	if (status == ECA_NORMAL) {
+		piiu->send_needed = TRUE;
+	}
+	return status;
 }
 
 
@@ -3136,28 +3219,30 @@ void ca_ready_message(struct ioc_in_use *piiu)
  */
 int echo_request(struct ioc_in_use *piiu, ca_time *pCurrentTime)
 {
-	int		status;
-	caHdr  	*phdr;
+	caHdr  		hdr;
+	int 		status;
 
-	status = cac_alloc_msg_no_flush (piiu, sizeof(*phdr), &phdr);
-	if (status != ECA_NORMAL) {
-		return status;
+	hdr.m_cmmd = htons(CA_PROTO_ECHO);
+	hdr.m_type = htons(0);
+	hdr.m_count = htons(0);
+	hdr.m_cid = htons(0);
+	hdr.m_available = htons(0);
+	hdr.m_postsize = 0u;
+
+	/*
+	 * If we are out of buffer space then postpone this
+	 * operation until later. This avoids any possibility
+	 * of a push pull deadlock (since this can be sent when 
+	 * parsing the UDP input buffer).
+	 */
+	status = cac_push_msg_no_block(piiu, &hdr, NULL);
+	if (status == ECA_NORMAL) {
+		piiu->echoPending = TRUE;
+		piiu->send_needed = TRUE;
+		piiu->timeAtEchoRequest = *pCurrentTime;
 	}
 
-	phdr->m_cmmd = htons(CA_PROTO_ECHO);
-	phdr->m_type = htons(0);
-	phdr->m_count = htons(0);
-	phdr->m_cid = htons(0);
-	phdr->m_available = htons(0);
-	phdr->m_postsize = 0;
-
-	cac_add_msg(piiu);
-	
-	piiu->echoPending = TRUE;
-	piiu->send_needed = TRUE;
-	piiu->timeAtEchoRequest = *pCurrentTime;
-
-	return ECA_NORMAL;
+	return status;
 }
 
 
@@ -3169,6 +3254,7 @@ int echo_request(struct ioc_in_use *piiu, ca_time *pCurrentTime)
 void noop_msg(struct ioc_in_use *piiu)
 {
 	caHdr  	hdr;
+	int 	status;
 
 	hdr.m_cmmd = htons(CA_PROTO_NOOP);
 	hdr.m_type = htons(0);
@@ -3177,9 +3263,10 @@ void noop_msg(struct ioc_in_use *piiu)
 	hdr.m_available = htons(0);
 	hdr.m_postsize = 0;
 	
-	cac_push_msg(piiu, &hdr, NULL);
-
-	piiu->send_needed = TRUE;
+	cac_push_msg_no_block(piiu, &hdr, NULL);
+	if (status == ECA_NORMAL) {
+		piiu->send_needed = TRUE;
+	}
 }
 
 
@@ -3279,53 +3366,103 @@ void issue_identify_client(struct ioc_in_use *piiu)
 
 
 /*
- * ISSUE_CLAIM_CHANNEL (lock must be on)
- * 
+ * ISSUE_CLAIM_CHANNEL 
+ *
+ * lock must _not_ be on
  */
-void issue_claim_channel(struct ioc_in_use *piiu, chid pchan)
+int issue_claim_channel (chid pchan)
 {
+	IIU		*piiu = (IIU *) pchan->piiu;
 	caHdr  		hdr;
 	unsigned	size;
-	const char	*pName;
+	const char 	*pStr;
+	int		status;
 
-	if(!piiu){
-		return;
+	LOCK;
+
+	if (!piiu) {
+		ca_printf("CAC: nill piiu claim attempted?\n");
+		UNLOCK;
+		return ECA_INTERNAL;
 	}
 
   	/* 
 	 * dont broadcast
 	 */
-    	if(piiu == piiuCast)
-		return;
+    	if (piiu == piiuCast) {
+		ca_printf("CAC: UDP claim attempted?\n");
+		UNLOCK;
+		return ECA_INTERNAL;
+	}
+
+	if (!pchan->claimPending) {
+		ca_printf("CAC: duplicate claim attempted (while disconnected)?\n");
+		UNLOCK;
+		return ECA_INTERNAL;
+	}
+
+	if (pchan->state==cs_conn) {
+		ca_printf("CAC: duplicate claim attempted (while connected)?\n");
+		UNLOCK;
+		return ECA_INTERNAL;
+	}
 
 	hdr = nullmsg;
 	hdr.m_cmmd = htons(CA_PROTO_CLAIM_CIU);
 
-	if(CA_V44(CA_PROTOCOL_VERSION, piiu->minor_version_number)){
+	if (CA_V44(CA_PROTOCOL_VERSION, piiu->minor_version_number)) {
 		hdr.m_cid = pchan->cid;
-		pName = ca_name(pchan);
-		size = strlen(pName)+1;
+		pStr = ca_name(pchan);
+		size = strlen(ca_name(pchan))+1u;
 	}
 	else {
 		hdr.m_cid = pchan->id.sid;
-		pName = NULL;
-		size = 0;
+		pStr = NULL;
+		size = 0u;
 	}
 
 	hdr.m_postsize = size;
 
 	/*
 	 * The available field is used (abused)
-	 * here to communicate the miner version number
+	 * here to communicate the minor version number
 	 * starting with CA 4.1.
 	 */
 	hdr.m_available = htonl(CA_MINOR_VERSION);
 
-	cac_push_msg(piiu, &hdr, pName);
+	/*
+	 * If we are out of buffer space then postpone this
+	 * operation until later. This avoids any possibility
+	 * of a push pull deadlock (since this is sent when 
+	 * parsing the UDP input buffer).
+	 */
+	status = cac_push_msg_no_block(piiu, &hdr, pStr); 
+	
+	UNLOCK;
+	
+	if (status == ECA_NORMAL) {
+		piiu->send_needed = TRUE;
 
-	piiu->send_needed = TRUE;
+		/*
+		 * move to the end of the list once the claim has been sent
+		 */
+		pchan->claimPending = FALSE;
+		ellDelete (&piiu->chidlist, &pchan->node);
+		ellAdd (&piiu->chidlist, &pchan->node);
+
+		if (!CA_V42(CA_PROTOCOL_VERSION, piiu->minor_version_number)) {
+			/* 
+ 			 * lock must _not_ be applied when calling this
+			 */
+			cac_reconnect_channel(pchan);
+		}
+	}
+	else {
+		piiu->claimsPending = TRUE;
+	}
+
+	return status;
 }
-
 
 
 /*

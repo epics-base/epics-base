@@ -47,8 +47,8 @@
 #ifndef INCLcaerrh
 #define INCLcaerrh
 
-#include <shareLib.h>
-#include <epicsTypes.h>
+#include "shareLib.h"
+#include "epicsTypes.h"
 
 #ifndef HDRVERSIONID
 #       define HDRVERSIONID(NAME,VERS)

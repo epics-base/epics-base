@@ -19,7 +19,7 @@
  *
  */
 
-#include <iocinf.h>
+#include "iocinf.h"
 
 int main()
 {

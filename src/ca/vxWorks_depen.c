@@ -29,6 +29,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.27  1996/11/02 00:51:10  jhill
+ * many pc port, const in API, and other changes
+ *
  * Revision 1.26  1996/09/16 16:39:20  jhill
  * local except => except handler
  *
@@ -53,7 +56,7 @@
  *
  */
 
-#include <callback.h>
+#include "callback.h"
 #include "iocinf.h"
 #include "remLib.h"
 
@@ -776,7 +779,7 @@ void ca_spawn_repeater()
                            0,
                            0,
                            0);
-	if (status < 0){
+	if (status==ERROR){
        		SEVCHK(ECA_NOREPEATER, NULL);
         }
 }
@@ -901,7 +904,7 @@ void cac_recv_task(int  tid)
                 timeout.tv_sec = 0;
 		count = cac_select_io(&timeout, CA_DO_RECVS);
 		ca_process_input_queue();
-        	manage_conn(TRUE);
+        	manage_conn();
 #endif
         }
 }

@@ -30,6 +30,9 @@
 /*			(dont send all chans in a block)		*/
 /*									*/
 /* $Log$
+ * Revision 1.37  1996/11/02 00:50:46  jhill
+ * many pc port, const in API, and other changes
+ *
  * Revision 1.36  1996/09/16 16:35:22  jhill
  * local exceptions => exception handler
  *
@@ -63,22 +66,23 @@ LOCAL void logRetryInterval(char *pFN, unsigned lineno);
 #define LOGRETRYINTERVAL 
 #endif
 
-LOCAL void retrySearchRequest(int silent);
+LOCAL void retrySearchRequest();
 
 
 /*
  *
  *	MANAGE_CONN
  *
- *	retry disconnected channels
+ * 	manages
+ *	o retry of disconnected channels
+ *	o connection heart beats
  *
  *
  */
-void manage_conn(int silent)
+void manage_conn()
 {
 	IIU		*piiu;
 	ca_real		delay;
-	long		idelay;
 
 	/*
 	 * prevent recursion
@@ -98,7 +102,7 @@ void manage_conn(int silent)
                 piiu;
                 piiu = (IIU *) piiu->node.next){
 
-                if (piiu == piiuCast || !piiu->conn_up) {
+                if (piiu==piiuCast || piiu->state!=iiu_connected) {
                         continue;
                 }
 
@@ -178,7 +182,7 @@ void manage_conn(int silent)
 	/*
 	 * Stop here if there are not any disconnected channels
 	 */
-	if(!piiuCast) {
+	if (!piiuCast) {
 		ca_static->ca_manage_conn_active = FALSE;
 		return;
 	}
@@ -187,36 +191,224 @@ void manage_conn(int silent)
 		return;
 	}
 
-	if(ca_static->ca_conn_next_retry.tv_sec == CA_CURRENT_TIME.tv_sec &&
-	   ca_static->ca_conn_next_retry.tv_usec == CA_CURRENT_TIME.tv_usec){
-		ca_static->ca_conn_next_retry = ca_static->currentTime;
-		LOGRETRYINTERVAL 
-	}
-
 	delay = cac_time_diff (
 			&ca_static->ca_conn_next_retry,
 			&ca_static->currentTime);
 
-	if (delay > 0.0) {
-		ca_static->ca_manage_conn_active = FALSE;
+	/*
+	 * the retry sequence number if we have tried a reasonable 
+	 * number of times and if the retry delay has expired
+	 *
+	 * (search_retry increments once all channels have received this
+	 * number of tries)
+	 */
+	if (delay <= 0.0 && ca_static->ca_search_retry < MAXCONNTRIES) {
+		retrySearchRequest ();
+	}
+
+	ca_static->ca_manage_conn_active = FALSE;
+}
+
+
+/*
+ * retrySearchRequest ()
+ */
+LOCAL void retrySearchRequest ()
+{
+	ciu		chan;
+	ciu		firstChan;
+	int		status;
+	unsigned	nSent=0u;
+
+	if (!piiuCast) {
 		return;
 	}
 
 	/*
-	 * the retry sequence number
-	 * (increments once all channels have received this
-	 * number of tries)
+	 * check to see if there is nothing to do here 
 	 */
-    	if (ca_static->ca_search_retry >= MAXCONNTRIES) {
-		ca_static->ca_manage_conn_active = FALSE;
-      		return;
+	if (ellCount(&piiuCast->chidlist)==0) {
+		return;
 	}
 
-	retrySearchRequest (silent);
+	LOCK;
+
+	/*
+	 * dynamically adjust the number of UDP frames per 
+	 * try depending how many search requests are not 
+	 * replied to
+	 *
+	 * This determines how many search request can be 
+	 * sent together (at the same instant in time).
+	 *
+	 * The variable ca_static->ca_frames_per_try
+	 * determines the number of UDP frames to be sent
+	 * each time that retrySearchRequest() is called.
+	 * If this value is too high we will waste some
+	 * network bandwidth. If it is too low we will
+	 * use very little of the incoming UDP message
+	 * buffer associated with the server's port and
+	 * will therefore take longer to connect. We 
+	 * initialize ca_static->ca_frames_per_try
+	 * to a prime number so that it is less likely that the
+	 * same channel is in the last UDP frame
+	 * sent every time that this is called (and
+	 * potentially discarded by a CA server with
+	 * a small UDP input queue). 
+	 */
+
+	/*
+	 * increase rapidly if we see better than a 75% success rate 
+	 */
+	if (ca_static->ca_search_responses > 
+		(ca_static->ca_search_tries-(ca_static->ca_search_tries/4u)) ) {
+		/*
+		 * double UDP frames per try if we have a good score
+		 */
+		if (ca_static->ca_frames_per_try < (UINT_MAX/2u) ) {
+			ca_static->ca_frames_per_try += ca_static->ca_frames_per_try;
+#ifdef DEBUG
+			printf ("Increasing frame count to %u t=%u r=%u\n", 
+				ca_static->ca_frames_per_try, ca_static->ca_search_tries, 
+				ca_static->ca_search_responses);
+#endif
+		}
+	}
+	/*
+	 * if we have less than a 50% success rate then reduce the count gradually
+	 */
+	else if (ca_static->ca_search_responses < (ca_static->ca_search_tries/2u) ) {
+		if (ca_static->ca_frames_per_try>1u) {
+			ca_static->ca_frames_per_try--;
+#ifdef DEBUG
+			printf ("Decreasing frame count to %u t=%u r=%u\n", 
+				ca_static->ca_frames_per_try, ca_static->ca_search_tries, 
+				ca_static->ca_search_responses);
+#endif
+		}
+	}
+
+	/*
+	 * a successful search_msg() sends channel to
+	 * the end of the list
+	 */
+	firstChan = chan = (ciu) ellFirst (&piiuCast->chidlist);
+	while (chan) {
+
+		ca_static->ca_min_retry = 
+			min(ca_static->ca_min_retry, chan->retry);
+
+		/*
+		 * clear counter when we reach the end of the list
+		 *
+		 * if we are making some progress then
+		 * dont increase the delay between search
+		 * requests
+		 */
+		if (ca_static->ca_pEndOfBCastList == chan) {
+			if (ca_static->ca_search_responses==0u) {
+				cacSetRetryInterval(ca_static->ca_min_retry+1u);
+			}
+			else {
+				ca_static->ca_search_responses=0u;
+			}
+			ca_static->ca_search_tries = 0u;
+			ca_static->ca_min_retry = UINT_MAX;
+		}
+
+		/*
+ 		 * this moves the channel to the end of the
+		 * list (if successful)
+		 */
+		status = search_msg (chan, DONTREPLY);
+		if (status != ECA_NORMAL) {
+			nSent++;
+
+			/*
+			 * flush out the search request buffer
+			 */
+			(*piiuCast->sendBytes)(piiuCast);
+
+			/*
+			 * try again
+			 */
+			status = search_msg (chan, DONTREPLY);
+			if (status != ECA_NORMAL) {
+				break;
+			}
+		}
+
+		if (nSent>=ca_static->ca_frames_per_try) {
+			break;
+		}
+
+		chan = (ciu) ellFirst (&piiuCast->chidlist);
+
+		/*
+		 * dont send any of the channels twice within one try
+		 */
+		if (chan==firstChan) {
+			/*
+			 * add one to nSent because there may be 
+			 * one more partial frame to be sent
+			 */
+			nSent++;
+
+			/* 
+			 * cap ca_static->ca_frames_per_try to
+			 * the number of frames required for all of 
+			 * the unresolved channels
+			 */
+			if (ca_static->ca_frames_per_try>nSent) {
+				ca_static->ca_frames_per_try = nSent;
+			}
+
+			break;
+		}
+    	}
+
+ 	UNLOCK; 	
+
+	ca_static->ca_conn_next_retry = 
+		cac_time_sum (
+			&ca_static->currentTime,
+			&ca_static->ca_conn_retry_delay);
+	LOGRETRYINTERVAL 
+}
+
+/* 
+ * cacClrSearchCounters()
+ * (reset broadcasted search counters)
+ */
+void cacClrSearchCounters()
+{
+        ca_static->ca_search_responses = 0u;
+        ca_static->ca_search_tries = 0;
+        ca_static->ca_frames_per_try = TRIESPERFRAME;
+        ca_static->ca_conn_next_retry = ca_static->currentTime;
+        cacSetRetryInterval(0u);
+}
+
+/* 
+ * cacSetRetryInterval()
+ * (sets the interval between search tries)
+ */
+void cacSetRetryInterval(unsigned retryNo)
+{
+	long	idelay;
+	ca_real	delay;
+
+	/*
+	 * NOOP if no change
+	 */
+	if (ca_static->ca_search_retry == retryNo) {
+		return;
+	}
 
 	/*
 	 * set the retry interval
 	 */
+	ca_static->ca_search_retry = retryNo;
 	assert(ca_static->ca_search_retry < CHAR_BIT*sizeof(idelay));
 	idelay = 1;
 	idelay = idelay << ca_static->ca_search_retry;
@@ -226,104 +418,6 @@ void manage_conn(int silent)
 	ca_static->ca_conn_retry_delay.tv_sec = idelay;
 	ca_static->ca_conn_retry_delay.tv_usec = 
 		(long) ((delay-idelay)*USEC_PER_SEC);
-	ca_static->ca_conn_next_retry = 
-		cac_time_sum (
-			&ca_static->currentTime,
-			&ca_static->ca_conn_retry_delay);
-	LOGRETRYINTERVAL 
-
-	ca_static->ca_manage_conn_active = FALSE;
-}
-
-
-/*
- * retrySearchRequest ()
- */
-LOCAL void retrySearchRequest (int silent)
-{
-	ELLLIST		channelsSent;
-	ciu		chix;
-	unsigned	min_retry_num;
-	unsigned	retry_cnt = 0;
-  	unsigned 	retry_cnt_no_handler = 0;
-	int		status;
-
-	if (!piiuCast) {
-		return;
-	}
-
-	ellInit (&channelsSent);
-
-	LOCK;
-	min_retry_num = MAXCONNTRIES;
-	while ( (chix = (ciu) ellGet (&piiuCast->chidlist)) ) {
-
-		ellAdd (&channelsSent, &chix->node);
-
-		min_retry_num = min (min_retry_num, chix->retry);
-
-		if (chix->retry <= ca_static->ca_search_retry) {
-
-			status = search_msg (chix, DONTREPLY);
-			if (status == ECA_NORMAL) {
-				retry_cnt++;
-				if (!(silent || chix->pConnFunc)) {
-					genLocalExcep (
-						ECA_CHIDNOTFND, 
-						(char *)(chix+1));
-					retry_cnt_no_handler++;
-				}
-			}
-			else {
-				break;
-			}
-		}
-    	}
-
-	/*
-	 * if we saw the entire list  
-	 */
-	if (chix==NULL) {
-		/*
-		 * increment the retry sequence number
-		 * (only if we get no responses during a sequence)
-		 */
-		if (ca_static->ca_search_retry<MAXCONNTRIES 
-			&& ca_static->ca_search_responses==0) {
-			ca_static->ca_search_retry++;
-		}
-
-		/*
-		 * jump to the minimum retry number
-		 */
-		if (ca_static->ca_search_retry<min_retry_num) {
-			ca_static->ca_search_retry = min_retry_num;
-			ca_static->ca_search_responses = 0;
-		}
-	}
-
-	/*
-	 * return channels sent to main cast IIU's 
-	 * channel prior to removing the lock
-	 *
-	 * This reorders the list so that each channel
-	 * get a fair chance to connect
-	 */
-	ellConcat (&piiuCast->chidlist, &channelsSent);
-
-	/*
-	 * LOCK around use of the sprintf buffer
-	 */
-  	if (retry_cnt) {
-    		if (!silent && retry_cnt_no_handler) {
-      			sprintf (
-				sprintf_buf, 
-				"%d channels outstanding", 
-				retry_cnt);
-      			genLocalExcep (ECA_CHIDRETRY, sprintf_buf);
-    		}
-  	}
- 	UNLOCK; 	
 }
 
 
@@ -368,12 +462,6 @@ void mark_server_available(const struct in_addr *pnet_addr)
 	unsigned	port;	
 	int 		netChange = FALSE;
 
-	/*
-	 * if timers have expired take care of them
-	 * before they are reset
-	 */
-	manage_conn(TRUE);
-
 	if(!piiuCast){
 		return;
 	}
@@ -383,70 +471,131 @@ void mark_server_available(const struct in_addr *pnet_addr)
 	 * look for it in the hash table
 	 */
 	pBHE = lookupBeaconInetAddr(pnet_addr);
-	if(pBHE){
-
+	if(!pBHE){
 		/*
-		 * if we have seen the beacon before ignore it
-		 * (unless there is an unusual change in its period)
+		 * wait until 2nd beacon is seen before deciding
+		 * if it is a new server (or just the first
+		 * time that we have seen a server's beacon
+		 * shortly after the program started up)
 		 */
+		createBeaconHashEntry(pnet_addr, TRUE);
+		UNLOCK;
+		return;
+	}
 
-		/*
-		 * update time stamp and average period
+	/*
+	 * if we have seen the beacon before ignore it
+	 * (unless there is an unusual change in its period)
+	 */
+
+	/*
+	 * compute the beacon period (if we have seen at least two beacons)
+	 */
+	if (pBHE->timeStamp.tv_sec==0 && pBHE->timeStamp.tv_usec==0) {
+		/* 
+		 * this is the 1st beacon seen
+		 * (nothing to do but set the beacon time stamp)
 		 */
+		pBHE->timeStamp = ca_static->currentTime;
+		UNLOCK;
+		return;
+	}
+	else {
 		currentPeriod = cac_time_diff (
 					&ca_static->currentTime, 
 					&pBHE->timeStamp); 
-		/*
-		 * update the average
-		 */
-		pBHE->averagePeriod += currentPeriod;
-		pBHE->averagePeriod /= 2.0;
-		pBHE->timeStamp = ca_static->currentTime;
-	
-		if ((currentPeriod/4.0)>=pBHE->averagePeriod) {
+		if (pBHE->averagePeriod<0.0) {
+			ca_real totRunningTime;
+			/* 
+			 * this is the 2nd beacon seen
+			 * (init the average period)
+			 */
+			totRunningTime = cac_time_diff (
+						&pBHE->timeStamp, 
+						&ca_static->programBeginTime); 
+			pBHE->averagePeriod = currentPeriod;
+			if (currentPeriod<=totRunningTime) {
+				/*
+				 * this is a beacon seen for the first 
+				 * time because the host was reinitialized 
+				 * or because a network link was restored
+				 *
+				 * this is not a beacon seen for the first 
+				 * time just after program init
+				 */
+				netChange = TRUE;
 #ifdef 	DEBUG
-			ca_printf(	
-				"net resume seen %x cur=%d avg=%d\n", 
-				pnet_addr->s_addr,
-				currentPeriod, 
-				pBHE->averagePeriod);
+				ca_printf(	
+					"new server at %x cur=%f avg=%f\n", 
+					pnet_addr->s_addr,
+					currentPeriod, 
+					pBHE->averagePeriod);
 #endif
-			netChange = TRUE;
+			}
+		}
+		else {
+			/*
+			 * this is any other beacon
+			 * (update a running average)
+			 */
+			pBHE->averagePeriod += currentPeriod;
+			pBHE->averagePeriod /= 2.0;
+
+			/*
+			 * is this an IOC seen because of a restored
+			 * network segment
+			 */
+			if ((currentPeriod/4.0)>=pBHE->averagePeriod) {
+#ifdef 	DEBUG
+				ca_printf(	
+					"net resume seen %x cur=%f avg=%f\n", 
+					pnet_addr->s_addr,
+					currentPeriod, 
+					pBHE->averagePeriod);
+#endif
+				netChange = TRUE;
+			}
+
+			/*
+			 * is this an IOC seen because of an IOC reboot
+			 */
+			if ((pBHE->averagePeriod/2.0)>=currentPeriod) {
+#ifdef DEBUG
+				ca_printf(
+					"reboot seen %x cur=%f avg=%f\n", 
+					pnet_addr->s_addr,
+					currentPeriod, 
+					pBHE->averagePeriod);
+#endif
+				netChange = TRUE;
+			}
 		}
 
-		if ((pBHE->averagePeriod/2.0)>=currentPeriod) {
-#ifdef DEBUG
-			ca_printf(
-				"reboot seen %x cur=%d avg=%d\n", 
-				pnet_addr->s_addr,
-				currentPeriod, 
-				pBHE->averagePeriod);
-#endif
-			netChange = TRUE;
-		}
-		if(pBHE->piiu){
-			pBHE->piiu->timeAtLastRecv = ca_static->currentTime;
-		}
-		if(!netChange){
-			UNLOCK;
-			return;
-		}
+		/*
+		 * update beacon time stamp 
+		 */
+		pBHE->timeStamp = ca_static->currentTime;
 	}
-	else{
-		pBHE = createBeaconHashEntry(pnet_addr);
-		if(!pBHE){
-			UNLOCK;
-			return;
-		}
-	}
-	
 
 	/*
-	 * This part is essential since many machines
-	 * might have channels in a disconnected state which
+	 * update state of health for active virtual circuits 
+	 */
+	if(pBHE->piiu){
+		pBHE->piiu->timeAtLastRecv = ca_static->currentTime;
+	}
+
+	if(!netChange){
+		UNLOCK;
+		return;
+	}
+
+	/*
+	 * This part is needed when many machines
+	 * have channels in a disconnected state that 
 	 * dont exist anywhere on the network. This insures
 	 * that we dont have many CA clients synchronously
-	 * flooding the network with broadcasts.
+	 * flooding the network with broadcasts (and swamping
+	 * out requests for valid channels).
 	 *
 	 * I fetch the local port number and use the low order bits
 	 * as a pseudo random delay to prevent every one 
@@ -487,20 +636,16 @@ void mark_server_available(const struct in_addr *pnet_addr)
 			ca_static->ca_conn_next_retry = next;
 			LOGRETRYINTERVAL 
 		}
-		idelay = (long) CA_RECAST_DELAY;
-		ca_static->ca_conn_retry_delay.tv_sec = idelay;
-		ca_static->ca_conn_retry_delay.tv_usec = 
-			(long) ((CA_RECAST_DELAY-idelay) * USEC_PER_SEC);
-		ca_static->ca_search_retry = 0;
 	}
 
 	/*
 	 * set retry count of all disconnected channels
 	 * to zero
 	 */
+	cacSetRetryInterval(0u);
 	chan = (ciu) ellFirst(&piiuCast->chidlist);
 	while (chan) {
-		chan->retry = 0;
+		chan->retry = 0u;
 		chan = (ciu) ellNext (&chan->node);
 	}
 
@@ -513,7 +658,7 @@ void mark_server_available(const struct in_addr *pnet_addr)
  *
  * LOCK must be applied
  */
-bhe *createBeaconHashEntry(const struct in_addr *pnet_addr)
+bhe *createBeaconHashEntry(const struct in_addr *pnet_addr, unsigned sawBeacon)
 {
 	bhe		*pBHE;
 	unsigned	index;
@@ -534,7 +679,7 @@ bhe *createBeaconHashEntry(const struct in_addr *pnet_addr)
 	}
 
 #ifdef DEBUG
-	ca_printf("new IOC %x\n", pnet_addr->s_addr);
+	ca_printf("new beacon at %x\n", pnet_addr->s_addr);
 #endif
 
 	/*
@@ -543,10 +688,29 @@ bhe *createBeaconHashEntry(const struct in_addr *pnet_addr)
 	pBHE->inetAddr = *pnet_addr;
 
 	/*
-	 * start the average at zero
+	 * set average to -1.0 so that when the next beacon
+	 * occurs we can distinguish between:
+	 * o new server
+	 * o existing server's beacon we are seeing
+	 * 	for the first time shortly after program
+	 *	start up
 	 */
-	pBHE->averagePeriod = 0.0;
-	pBHE->timeStamp = ca_static->currentTime;
+	pBHE->averagePeriod = -1.0;
+
+	/*
+	 * if creating this in response to a search reply
+	 * and not in response to a beacon then sawBeacon
+	 * is false and we set the beacon time stamp to
+	 * zero (so we can correctly compute the period
+	 beacon at * between the 1st and 2nd beacons)
+	 */
+	if (sawBeacon) {
+		pBHE->timeStamp = ca_static->currentTime;
+	}
+	else {
+		pBHE->timeStamp.tv_sec = 0;
+		pBHE->timeStamp.tv_usec = 0;
+	}
 
 	/*
 	 * install in the hash table
@@ -641,5 +805,91 @@ void freeBeaconHash(struct ca_static *ca_temp)
 			free(pOld);
 		}
 	}
+}
+
+/*
+ * retryPendingClaims()
+ *
+ * This assumes that all channels with claims pending are at the 
+ * front of the list (and that the channel is moved to the end of
+ * the list when a claim message has been sent for it)
+ *
+ * We send claim messages here until the outgoing message buffer 
+ * will not accept any more messages
+ */
+void retryPendingClaims(IIU *piiu)
+{
+	chid chan;
+	int status;
+
+	while ( (chan= (ciu) ellFirst (&piiu->chidlist)) ) {
+		if (!chan->claimPending) {
+			piiu->claimsPending = FALSE;
+			return;
+		}
+		status = issue_claim_channel(chan);
+		if (status!=ECA_NORMAL) {
+			return;
+		}
+	}
+}
+
+/*
+ * Add chan to IIU and guarantee that
+ * one chan on the B cast IIU list is pointed to by
+ * ca_pEndOfBCastList 
+ */
+void addToChanList(ciu chan, IIU *piiu)
+{
+	if (piiu==piiuCast) {
+		/*
+		 * add to the beginning of the list so that search requests for
+		 * this channel will be sent first (since the retry count is zero)
+		 */
+		if (ellCount(&piiu->chidlist)==0) {
+			ca_static->ca_pEndOfBCastList = chan;
+		}
+		/*
+		 * add to the front of the list so that
+		 * search requests for new channels will be sent first
+		 */
+		chan->retry = 0u;
+		ellInsert(&piiu->chidlist, NULL, &chan->node);
+	}
+	else {
+		/*
+		 * add to the beginning of the list until we
+		 * have sent the claim message (after which we
+		 * move it to the end of the list)
+		 */
+		chan->claimPending = TRUE;
+		ellInsert(&piiu->chidlist, NULL, &chan->node);
+	}
+	chan->piiu = piiu;
+}
+
+/*
+ * Remove chan from B-cast IIU and guarantee that
+ * one chan on the list is pointed to by
+ * ca_pEndOfBCastList 
+ */
+void removeFromChanList(ciu chan)
+{
+	IIU *piiu = (IIU *) chan->piiu;
+
+	if (piiu==piiuCast) {
+		if (ca_static->ca_pEndOfBCastList == chan) {
+			if (ellPrevious(&chan->node)) {
+				ca_static->ca_pEndOfBCastList = (ciu)
+					ellPrevious(&chan->node);
+			}
+			else {
+				ca_static->ca_pEndOfBCastList = (ciu)
+					ellLast(&piiu->chidlist);
+			}
+		}
+	}
+	ellDelete(&piiu->chidlist, &chan->node);
+	chan->piiu=NULL;
 }
 

@@ -32,6 +32,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.24  1997/01/09 22:14:26  jhill
+ * installed changes on hostBuild branch
+ *
  * Revision 1.23.2.1  1996/11/25 16:29:18  jhill
  * stuct=>struct and added debug msg
  *
@@ -49,6 +52,9 @@
  *
  * Revision 1.19  1995/11/29  19:15:42  jhill
  * added $Log$
+ * added Revision 1.24  1997/01/09 22:14:26  jhill
+ * added installed changes on hostBuild branch
+ * added
  * added Revision 1.23.2.1  1996/11/25 16:29:18  jhill
  * added stuct=>struct and added debug msg
  * added
@@ -74,7 +80,7 @@
 #include <process.h>
 #include <mmsystem.h>
 
-#include <epicsVersion.h>
+#include "epicsVersion.h"
 
 #include "iocinf.h"
 
@@ -161,16 +167,6 @@ int cac_os_depen_init(struct ca_static *pcas)
     int status;
 
 	ca_static = pcas;
-
-	/*
-	 * dont allow disconnect to terminate process
-	 * when running in UNIX enviroment
-	 *
-	 * allow error to be returned to sendto()
-	 * instead of handling disconnect at interrupt
-	 */
-
-	/* signal(SIGPIPE,SIG_IGN); */
 
 	/* DllMain does most OS dependent init & cleanup */
 
@@ -508,7 +504,8 @@ BOOL epicsShareAPI DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 #endif
 #endif
 		/* init. winsock */
-		if ((status = WSAStartup(MAKEWORD(1,1), &WsaData)) != 0) {
+		if ((status = WSAStartup(MAKEWORD(2,0), &WsaData)) != 0) {
+			WSACleanup();
 			fprintf(stderr,"Cant init winsock \n");
 			return FALSE;
 		}

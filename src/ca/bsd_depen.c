@@ -74,7 +74,7 @@ int cac_select_io(struct timeval *ptimeout, int flags)
 		piiu;
 		piiu = (IIU *) piiu->node.next) {
 
-		if (!piiu->conn_up) {
+		if (piiu->state==iiu_disconnected) {
 			continue;
 		}
 
@@ -106,20 +106,33 @@ int cac_select_io(struct timeval *ptimeout, int flags)
 
                 /*
                  * Dont bother receiving if we have insufficient
-                 * space for the maximum UDP message
+                 * space for the maximum UDP message, or space
+		 * for one TCP byte.
                  */
                 if (flags&CA_DO_RECVS) {
                         freespace = cacRingBufferWriteSize (&piiu->recv, TRUE);
                         if (freespace>=piiu->minfreespace) {
 				maxfd = max (maxfd,piiu->sock_chan);
                                 FD_SET (piiu->sock_chan, &pfdi->readMask);
+				piiu->recvPending = TRUE;
                         }
+			else {
+				piiu->recvPending = FALSE;
+			}
                 }
+		else {
+			piiu->recvPending = FALSE;
+		}
 
                 if (flags&CA_DO_SENDS) {
-			if (cacRingBufferReadSize(&piiu->send, FALSE)>0) {
-				maxfd = max (maxfd,piiu->sock_chan);
+			if (piiu->state==iiu_connecting) {
 				FD_SET (piiu->sock_chan, &pfdi->writeMask);
+			}
+			else {
+				if (cacRingBufferReadSize(&piiu->send, FALSE)>0) {
+					maxfd = max (maxfd,piiu->sock_chan);
+					FD_SET (piiu->sock_chan, &pfdi->writeMask);
+				}
 			}
                 }
         }
@@ -170,13 +183,29 @@ int cac_select_io(struct timeval *ptimeout, int flags)
                         piiu;
                         piiu = (IIU *) piiu->node.next) {
 
-                        if (!piiu->conn_up) {
+                        if (piiu->state==iiu_disconnected) {
                                 continue;
                         }
 
                         if (FD_ISSET(piiu->sock_chan,&pfdi->readMask)) {
                                 (*piiu->recvBytes)(piiu);
+				/*
+				 * if we were not waiting and there is a 
+				 * message present then start to suspect that
+				 * we are getting behind
+				 */
+				if (ptimeout->tv_sec==0 || ptimeout->tv_usec==0) {
+					flow_control_on(piiu);
+				}
                         }
+			else if (piiu->recvPending) {
+				/*
+				 * if we are looking for incoming messages
+				 * and there are none then we are certain that
+				 * we are not getting behind 
+				 */
+				flow_control_off(piiu);
+			}
 
 			if (FD_ISSET(piiu->sock_chan,&pfdi->writeMask)) {
 				(*piiu->sendBytes)(piiu);

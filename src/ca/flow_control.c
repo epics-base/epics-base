@@ -47,48 +47,49 @@ static char	*sccsId = "@(#) $Id$";
  * suppress monitors if we are behind
  * (an update is sent when we catch up)
  */
-void flow_control(struct ioc_in_use *piiu)
+
+void flow_control_on(struct ioc_in_use *piiu)
 {
-	unsigned        nbytes;
+	int status;
+
+	LOCK;
+
+	/*	
+	 * I prefer to avoid going into flow control 
+	 * as this impacts the performance of batched fetches
+	 */
+	if (piiu->contiguous_msg_count >= MAX_CONTIGUOUS_MSG_COUNT) {
+		if (!piiu->client_busy) {
+			status = ca_busy_message(piiu);
+			if (status==ECA_NORMAL) {
+				piiu->client_busy = TRUE;
+			}
+#			if defined(DEBUG) 
+				printf("fc on\n");
+#			endif
+		}
+	}
+	else {
+		piiu->contiguous_msg_count++;
+	}
+
+	UNLOCK;
+	return;
+}
+
+void flow_control_off(struct ioc_in_use *piiu)
+{
 	int    		status;
 
 	LOCK;
 
-	/*
-	 * use of the additional system call here does not
-	 * seem to slow things down appreciably
-	 */
-	status = socket_ioctl(piiu->sock_chan,
-			      FIONREAD,
-			      &nbytes);
-	if (status < 0) {
-		TAG_CONN_DOWN(piiu);
-		UNLOCK;
-		return;
-	}
-
-	/*	
-	 * I wish to avoid going into flow control however 
-	 * as this impacts the performance of batched fetches
-	 */
-	if (nbytes) {
-		piiu->contiguous_msg_count++;
-		if (!piiu->client_busy)
-			if (piiu->contiguous_msg_count >
-			    MAX_CONTIGUOUS_MSG_COUNT) {
-				piiu->client_busy = TRUE;
-				ca_busy_message(piiu);
-#				if defined(DEBUG) 
-					printf("fc on\n");
-#				endif
-			}
-	} else {
-		piiu->contiguous_msg_count = 0;
-		if (piiu->client_busy) {
-#			if defined(DEBUG) 
-				printf("fc off\n");
-#			endif
-			ca_ready_message(piiu);
+	piiu->contiguous_msg_count = 0;
+	if (piiu->client_busy) {
+#		if defined(DEBUG) 
+			printf("fc off\n");
+#		endif
+		status = ca_ready_message(piiu);
+		if (status==ECA_NORMAL) {
 			piiu->client_busy = FALSE;
 		}
 	}

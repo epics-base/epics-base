@@ -91,6 +91,9 @@ LOCAL CACVRTFUNC	cvrt_ctrl_char;
 LOCAL CACVRTFUNC	cvrt_ctrl_long;
 LOCAL CACVRTFUNC	cvrt_ctrl_double;
 
+LOCAL CACVRTFUNC	cvrt_put_ackt;
+LOCAL CACVRTFUNC	cvrt_stsack_string;
+
 /*  cvrt is (array of) (pointer to) (function returning) int */
 CACVRTFUNC *cac_dbr_cvrt[]
 	=
@@ -133,7 +136,11 @@ CACVRTFUNC *cac_dbr_cvrt[]
 	cvrt_ctrl_enum,
 	cvrt_ctrl_char,
 	cvrt_ctrl_long,
-	cvrt_ctrl_double
+	cvrt_ctrl_double,
+
+	cvrt_put_ackt,  
+	cvrt_put_ackt, /* DBR_PUT_ACKS identical to DBR_PUT_ACKT */
+	cvrt_stsack_string
 	};
 
 
@@ -1382,6 +1389,76 @@ unsigned long	num			/* number of values		*/
 }
 
 
+/*
+ *	cvrt_put_ackt()
+ *
+ *
+ *
+ *
+ */
+LOCAL void cvrt_put_ackt(
+void		*s,			/* source			*/
+void		*d,			/* destination			*/
+int 		encode,			/* cvrt HOST to NET if T	*/
+unsigned long	num			/* number of values		*/
+)
+{
+	dbr_put_ackt_t	*pSrc = s;
+	dbr_put_ackt_t	*pDest = d;
+      	unsigned long	i;
+
+      	for(i=0; i<num; i++){
+      	  	*pDest = dbr_ntohs( *pSrc );
+		/*
+		 * dont increment these inside the MACRO 
+		 */
+		pDest++;
+		pSrc++;
+	}
+}
+
+
+/****************************************************************************
+**	cvrt_stsack_string(s,d)
+**		struct dbr_stsack_string *s  	pointer to source struct
+**		struct dbr_stsack_string *d	pointer to destination struct
+**		int  encode;			boolean, if true vax to ieee
+**							 else ieee to vax
+**	      
+**	converts fields of struct in HOST format to NET format
+**	   or 
+**	converts fields of struct in NET format to fields with HOST 
+**		format;
+****************************************************************************/
+
+LOCAL void cvrt_stsack_string(
+void		*s,			/* source			*/
+void		*d,			/* destination			*/
+int 		encode,			/* cvrt HOST to NET if T	*/
+unsigned long	num			/* number of values		*/
+)
+{
+	struct dbr_stsack_string	*pSrc = s;
+	struct dbr_stsack_string 	*pDest = d;
+			
+    	/* convert ieee to vax format or vax to ieee */
+    	pDest->status 		= dbr_ntohs(pSrc->status);
+    	pDest->severity		= dbr_ntohs(pSrc->severity);
+    	pDest->ackt		= dbr_ntohs(pSrc->ackt);
+    	pDest->acks		= dbr_ntohs(pSrc->acks);
+
+	/* convert "in place" -> nothing else to do */
+	if (s == d)
+		return;
+
+    	if (num == 1)	/* if single value */
+		strcpy(pDest->value, pSrc->value);
+    	else
+		memcpy(pDest->value, pSrc->value, (MAX_STRING_SIZE * num));
+
+}
+
+
 #if defined(CA_FLOAT_MIT) 
 /************************************************************************/
 /*      double convert 				                        */
@@ -1673,7 +1750,7 @@ void dbr_ntohd (dbr_double_t *IEEEnet, dbr_double_t *IEEEhost)
      	 */
 	tmp = pNet[0];
 	pHost[0] = dbr_ntohl (pNet[1]);
-	pHost[1] = dbr_htonl (tmp);	
+	pHost[1] = dbr_ntohl (tmp);	
 #else
 	*IEEEhost = *IEEEnet;
 #endif

@@ -3,7 +3,7 @@
 extern "C" {
 #endif
 
-#include <envDefs.h>  
+#include "envDefs.h"  
 
 void caSetupAddrList(
         ELLLIST *pList,
@@ -19,12 +19,13 @@ void caDiscoverInterfaces(
 
 void caAddConfiguredAddr(
         ELLLIST *pList,
-        ENV_PARAM *pEnv,
+        const ENV_PARAM *pEnv,
         SOCKET socket,
         int port);
 
 int local_addr(SOCKET socket, struct sockaddr_in *plcladdr);
-unsigned short caFetchPortConfig(ENV_PARAM *pEnv, unsigned short defaultPort);
+unsigned short caFetchPortConfig(const ENV_PARAM *pEnv, 
+	unsigned short defaultPort);
 
 typedef union ca_addr {
         struct sockaddr_in      in;

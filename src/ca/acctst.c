@@ -7,6 +7,9 @@ static char *sccsId = "@(#) $Id$";
 
 /*
  * $Log$
+ * Revision 1.43  1997/01/22 21:07:27  jhill
+ * fixed array test
+ *
  * Revision 1.42  1996/12/12 18:51:41  jhill
  * doc
  *
@@ -61,7 +64,7 @@ static char *sccsId = "@(#) $Id$";
 /*
  * CA 
  */
-#include 	<cadef.h>
+#include 	"cadef.h"
 
 #define EVENT_ROUTINE	null_event
 #define CONN_ROUTINE	conn
@@ -332,7 +335,7 @@ int doacctst(char *pname)
 	assert (INVALID_DB_REQ(chix4->type) == FALSE);
 
 	/*
-	 * verify connection handlers are working
+	 * clear chans before starting another test 
 	 */
 	status = ca_clear_channel(chix1);
 	SEVCHK(status, NULL);
@@ -343,6 +346,47 @@ int doacctst(char *pname)
 	status = ca_clear_channel(chix4);
 	SEVCHK(status, NULL);
 
+	/*
+	 * verify ca_pend_io() does not see old search requests
+	 * (that did not specify a connection handler)
+	 */
+	status = ca_search_and_connect(pname, &chix1, NULL, NULL);
+	SEVCHK(status, NULL);
+	status = ca_pend_io(1e-16);
+	if (status==ECA_TIMEOUT) {
+		assert(ca_state(chix1)==cs_never_conn);
+
+		printf("waiting on pend io verify connect...");
+		fflush(stdout);
+		while (ca_state(chix1)!=cs_conn) {
+			ca_pend_event(0.1);
+		}
+		printf("done\n");
+
+		/*
+		 * we end up here if the channel isnt on the same host
+		 */
+		status = ca_search_and_connect(pname, &chix2, NULL, NULL);
+		SEVCHK(status, NULL);
+		status = ca_pend_io(1e-16);
+		if (status==ECA_TIMEOUT) {
+			assert(ca_state(chix2)==cs_never_conn);
+		}
+		else {
+			assert(ca_state(chix2)==cs_conn);
+		}
+		status = ca_clear_channel(chix2);
+		SEVCHK(status, NULL);
+	}
+	else {
+		assert(ca_state(chix1)==cs_conn);
+	}
+	status = ca_clear_channel(chix1);
+	SEVCHK(status, NULL);
+
+	/*
+	 * verify connection handlers are working
+	 */
 	status = ca_search_and_connect(pname, &chix1, conn, NULL);
 	SEVCHK(status, NULL);
 	status = ca_search_and_connect(pname, &chix2, conn, NULL);
@@ -352,12 +396,12 @@ int doacctst(char *pname)
 	status = ca_search_and_connect(pname, &chix4, conn, NULL);
 	SEVCHK(status, NULL);
 
-	ca_pend_event(1.0);
-	while (conn_cb_count != 4){
-		ca_pend_event(1.0);
-		printf("waiting on connect...");
-		fflush(stdout);
+	printf("waiting on conn handler call back connect...");
+	fflush(stdout);
+	while (conn_cb_count != 4) {
+		ca_pend_event(0.1);
 	}
+	printf("done\n");
 
 	printf("Read Access=%d Write Access=%d\n", 
 		ca_read_access(chix1),
@@ -407,6 +451,23 @@ int doacctst(char *pname)
 	}
 
 	/*
+	 * Verify that we can do IO with the new types for ALH
+	 */
+#if 0
+	if(ca_read_access(chix4)&&ca_write_access(chix4)){
+	{
+		dbr_put_ackt_t acktIn=1u;
+		dbr_put_acks_t acksIn=1u;
+		struct dbr_stsack_string stsackOut;
+
+		SEVCHK (ca_put(DBR_PUT_ACKT, chix4, &acktIn),NULL);
+		SEVCHK (ca_put(DBR_PUT_ACKS, chix4, &acksIn),NULL);
+		SEVCHK (ca_get(DBR_STSACK_STRING, chix4, &stsackOut),NULL);
+		SEVCHK (ca_pend_io(2000.0),NULL);
+	}
+#endif
+
+	/*
 	 * Verify that we can write and then read back
 	 * the same analog value (DBR_FLOAT)
 	 */
@@ -426,22 +487,34 @@ int doacctst(char *pname)
 		base = FLT_MIN;
 		for (i=FLT_MIN_EXP; i<FLT_MAX_EXP; i+=FLT_MAX_EXP/10) {
 			incr = (dbr_float_t) ldexp (0.5F,i);
-			iter = (unsigned long) (FLT_MAX/fabs(incr));
-			iter = min (iter,10);
+			if (fabs(incr)>FLT_MAX/10.0) {
+				iter = (unsigned long) (FLT_MAX/fabs(incr));
+			}
+			else {
+				iter = 10.0;
+			}
 			floatTest(chix1, base, incr, epsil, iter);
 		}
 		base = FLT_MAX;
 		for (i=FLT_MIN_EXP; i<FLT_MAX_EXP; i+=FLT_MAX_EXP/10) {
 			incr =  (dbr_float_t) - ldexp (0.5F,i);
-			iter = (unsigned long) (FLT_MAX/fabs(incr));
-			iter = min (iter,10);
+			if (fabs(incr)>FLT_MAX/10.0) {
+				iter = (unsigned long) (FLT_MAX/fabs(incr));
+			}
+			else {
+				iter = 10.0;
+			}
 			floatTest(chix1, base, incr, epsil, iter);
 		}
 		base = - FLT_MAX;
 		for (i=FLT_MIN_EXP; i<FLT_MAX_EXP; i+=FLT_MAX_EXP/10) {
 			incr = (dbr_float_t) ldexp (0.5F,i);
-			iter = (unsigned long) (FLT_MAX/fabs(incr));
-			iter = min (iter,10);
+			if (fabs(incr)>FLT_MAX/10.0) {
+				iter = (unsigned long) (FLT_MAX/fabs(incr));
+			}
+			else {
+				iter = 10.0;
+			}
 			floatTest(chix1, base, incr, epsil, iter);
 		}
 		printf ("done\n");
@@ -466,22 +539,34 @@ int doacctst(char *pname)
 		base = DBL_MIN;
 		for (i=DBL_MIN_EXP; i<DBL_MAX_EXP; i+=DBL_MAX_EXP/10) {
 			incr = ldexp (0.5,i);
-			iter = (unsigned long) (DBL_MAX/fabs(incr));
-			iter = min (iter,10);
+			if (fabs(incr)>DBL_MAX/10.0) {
+				iter = (unsigned long) (DBL_MAX/fabs(incr));
+			}
+			else {
+				iter = 10.0;
+			}
 			doubleTest(chix1, base, incr, epsil, iter);
 		}
 		base = DBL_MAX;
 		for (i=DBL_MIN_EXP; i<DBL_MAX_EXP; i+=DBL_MAX_EXP/10) {
 			incr =  - ldexp (0.5,i);
-			iter = (unsigned long) (DBL_MAX/fabs(incr));
-			iter = min (iter,10);
+			if (fabs(incr)>DBL_MAX/10.0) {
+				iter = (unsigned long) (DBL_MAX/fabs(incr));
+			}
+			else {
+				iter = 10.0;
+			}
 			doubleTest(chix1, base, incr, epsil, iter);
 		}
 		base = - DBL_MAX;
 		for (i=DBL_MIN_EXP; i<DBL_MAX_EXP; i+=DBL_MAX_EXP/10) {
 			incr = ldexp (0.5,i);
-			iter = (unsigned long) (DBL_MAX/fabs(incr));
-			iter = min (iter,10);
+			if (fabs(incr)>DBL_MAX/10.0) {
+				iter = (unsigned long) (DBL_MAX/fabs(incr));
+			}
+			else {
+				iter = 10.0;
+			}
 			doubleTest(chix1, base, incr, epsil, iter);
 		}
 		printf ("done\n");

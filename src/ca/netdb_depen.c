@@ -39,7 +39,7 @@ static char	*sccsId = "@(#) $Id$";
 #include <string.h>
 
 #ifdef WIN32
-#	include <winsock.h>
+#	include <windows.h>
 #else
 #	include <sys/types.h>
 #	include <sys/socket.h>
@@ -48,7 +48,7 @@ static char	*sccsId = "@(#) $Id$";
 #	include <netdb.h>
 #endif
 
-#include <epicsAssert.h>
+#include "epicsAssert.h"
 
 
 /*

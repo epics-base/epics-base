@@ -73,12 +73,6 @@ static char *sccsId = "@(#) $Id$";
 #include 	"iocinf.h"
 #include 	"net_convert.h"
 
-
-LOCAL void reconnect_channel(
-IIU			*piiu,
-ciu			chan
-);
-
 LOCAL int cacMsg(
 struct ioc_in_use 	*piiu,
 const struct in_addr  	*pnet_addr
@@ -338,13 +332,18 @@ const struct in_addr  	*pnet_addr
 			 * format to host format
 			 *
 			 */
-#			ifdef CONVERSION_REQUIRED 
-				(*cac_dbr_cvrt[piiu->curMsg.m_type])(
-					piiu->pCurData, 
-					piiu->pCurData, 
-					FALSE,
-					piiu->curMsg.m_count);
-#			endif
+#                     	ifdef CONVERSION_REQUIRED 
+                               if (piiu->curMsg.m_type<NELEMENTS(cac_dbr_cvrt)) {
+                                       (*cac_dbr_cvrt[piiu->curMsg.m_type])(
+                                               piiu->pCurData, 
+                                               piiu->pCurData, 
+                                               FALSE,
+                                               piiu->curMsg.m_count);
+                               }
+                               else {
+                                       piiu->curMsg.m_cid = htonl(ECA_BADTYPE);
+                               }
+#                     	endif
 
 			args.usr = (void *) monix->usr_arg;
 			args.chid = monix->chan;
@@ -416,12 +415,17 @@ const struct in_addr  	*pnet_addr
 		 * convert the data buffer from net
 		 * format to host format
 		 */
-#		ifdef CONVERSION_REQUIRED 
-			(*cac_dbr_cvrt[piiu->curMsg.m_type])(
-				piiu->pCurData, 
-				piiu->pCurData, 
-				FALSE,
-				piiu->curMsg.m_count);
+#               ifdef CONVERSION_REQUIRED 
+                       if (piiu->curMsg.m_type<NELEMENTS(cac_dbr_cvrt)) {
+                               (*cac_dbr_cvrt[piiu->curMsg.m_type])(
+                                       piiu->pCurData, 
+                                       piiu->pCurData, 
+                                       FALSE,
+                                       piiu->curMsg.m_count);
+                       }
+                       else {
+                               piiu->curMsg.m_cid = htonl(ECA_BADTYPE);
+                       }
 #		endif
 
 		/*
@@ -483,33 +487,34 @@ const struct in_addr  	*pnet_addr
 			 * convert the data buffer from net
 			 * format to host format
 			 */
-#			ifdef CONVERSION_REQUIRED 
-				(*cac_dbr_cvrt[piiu->curMsg.m_type])(
-					piiu->pCurData, 
-					(void *) pIOBlock->usr_arg, 
-					FALSE,
-					piiu->curMsg.m_count);
-#			else
-				if (piiu->curMsg.m_type == DBR_STRING &&
-					piiu->curMsg.m_count == 1u) {
-					strcpy ((char *)pIOBlock->usr_arg,
-						piiu->pCurData);
-				}
-				else {
-					memcpy(
-						(char *)pIOBlock->usr_arg,
-						piiu->pCurData,
-						dbr_size_n (
-							piiu->curMsg.m_type, 
-							piiu->curMsg.m_count)
-						);
-				}
-#			endif
-
-			/*
-			 * decrement the outstanding IO count
-			 */
-			CLRPENDRECV;
+                       	if (piiu->curMsg.m_type <= (unsigned) LAST_BUFFER_TYPE) {
+#				ifdef CONVERSION_REQUIRED 
+                                       (*cac_dbr_cvrt[piiu->curMsg.m_type])(
+                                               piiu->pCurData, 
+                                               (void *) pIOBlock->usr_arg, 
+                                               FALSE,
+                                               piiu->curMsg.m_count);
+#				else
+                                       if (piiu->curMsg.m_type == DBR_STRING &&
+                                               piiu->curMsg.m_count == 1u) {
+                                               strcpy ((char *)pIOBlock->usr_arg,
+                                                       piiu->pCurData);
+                                       }
+                                       else {
+                                               memcpy(
+                                                       (char *)pIOBlock->usr_arg,
+                                                       piiu->pCurData,
+                                                       dbr_size_n (
+                                                               piiu->curMsg.m_type, 
+                                                               piiu->curMsg.m_count)
+                                                       );
+                                       }
+#				endif
+				/*
+				 * decrement the outstanding IO count
+				 */
+				CLRPENDRECV;
+			}
 		}
 		LOCK;
 		ellDelete(&pend_read_list, &pIOBlock->node);
@@ -728,7 +733,7 @@ const struct in_addr  	*pnet_addr
 		if (CA_V44(CA_PROTOCOL_VERSION,piiu->minor_version_number)) {
         		chan->id.sid = piiu->curMsg.m_available;
 		}
-		reconnect_channel(piiu, chan);
+		cac_reconnect_channel(chan);
 		break;
 	}
 	case CA_PROTO_CLAIM_CIU_FAILED:
@@ -783,15 +788,17 @@ IIU			*piiu,
 const struct in_addr	*pnet_addr
 )
 {
-	int		v42;
 	unsigned short	port;
 	char		rej[64];
       	ciu		chan;
 	int		status;
 	IIU		*allocpiiu;
-	IIU		*chpiiu;
 	unsigned short	*pMinorVersion;
 	unsigned	minorVersion;
+
+	if (piiu!=piiuCast) {
+		return;
+	}
 
 	/*
 	 * ignore broadcast replies for deleted channels
@@ -807,8 +814,7 @@ const struct in_addr	*pnet_addr
 		return;
 	}
 
-	chpiiu = chan->piiu;
-	if(!chpiiu){
+	if(!chan->piiu){
 		ca_printf("cast reply to local channel??\n");
 		UNLOCK;
 		return;
@@ -825,20 +831,19 @@ const struct in_addr	*pnet_addr
 	/*
 	 * Ignore duplicate search replies
 	 */
-	if (chpiiu != piiuCast) {
+	if (piiuCast != (IIU *) chan->piiu) {
 		caAddrNode	*pNode;
+		IIU		*tcpPIIU = (IIU *) chan->piiu;
 
-		pNode = (caAddrNode *) chpiiu->destAddr.node.next;
+		pNode = (caAddrNode *) ellFirst(&tcpPIIU->destAddr);
 		assert(pNode);
-		if (pNode->destAddr.in.sin_addr.s_addr != 
-				pnet_addr->s_addr) {
-
+		if (pNode->destAddr.in.sin_addr.s_addr != pnet_addr->s_addr) {
 			caHostFromInetAddr(pnet_addr,rej,sizeof(rej));
 			sprintf(
 				sprintf_buf,
 		"Channel: %s Accepted: %s Rejected: %s ",
 				(char *)(chan + 1),
-				chpiiu->host_name_str,
+				tcpPIIU->host_name_str,
 				rej);
 			genLocalExcep (ECA_DBLCHNL, sprintf_buf);
 		}
@@ -897,30 +902,38 @@ const struct in_addr	*pnet_addr
 
 	allocpiiu->minor_version_number = minorVersion;
 
-        ellDelete (&chpiiu->chidlist, &chan->node);
-	chan->piiu = allocpiiu;
-        ellAdd (&allocpiiu->chidlist, &chan->node);
-	ca_static->ca_search_responses++;
-
 	/*
 	 * If this is the first channel to be
 	 * added to this IIU then communicate
 	 * the client's name to the server. 
 	 * (CA V4.1 or higher)
 	 */
-	if (ellCount(&allocpiiu->chidlist)==1) {
+	if (ellCount(&allocpiiu->chidlist)==0) {
 		issue_identify_client(allocpiiu);
 		issue_client_host_name(allocpiiu);
 	}
 
-	/*
-	 * claim the resource in the IOC
-	 * over TCP so problems with duplicate UDP port
-	 * after reboot go away
-	 */
-        chan->id.sid = piiu->curMsg.m_cid;
-	issue_claim_channel(allocpiiu, chan);
+	if (ca_static->ca_search_responses<ULONG_MAX) {
+		ca_static->ca_search_responses++;
+	}
 
+	/*
+	 * remove it from the broadcast IIU
+	 */
+	removeFromChanList(chan);
+
+	/*
+	 * chan->piiu must be correctly set prior to issuing the
+	 * claim request
+	 *
+	 * add to the beginning of the list until we
+	 * have sent the claim message (after which we
+	 * move it to the end of the list)
+	 *
+	 * claim pending flag is set here
+	 */
+	addToChanList(chan, allocpiiu);
+	
 	/*
 	 * Assume that we have access once connected briefly
 	 * until the server is able to tell us the correct
@@ -933,40 +946,54 @@ const struct in_addr	*pnet_addr
 	chan->ar.read_access = TRUE;
 	chan->ar.write_access = TRUE;
 
-	UNLOCK;
+	/*
+	 * Reset the delay to the next search request if we get
+	 * at least one response. This may result in an over 
+	 * run of the UDP input queue of the server in some 
+	 * cases (and therefore in redundant search requests) 
+	 * but it does significantly reduce the connect delays 
+	 * when 1000's of channels must be connected.
+	 */
+	ca_static->ca_conn_next_retry = ca_static->currentTime;
 
-	v42 = CA_V42(
-		CA_PROTOCOL_VERSION, 
-		allocpiiu->minor_version_number);
-	if (!v42) {
-		reconnect_channel(piiu, chan);
-	}
+	/*
+	 * claim the resource in the IOC
+	 * over TCP so problems with duplicate UDP port
+	 * after reboot go away
+	 *
+	 * if we cant immediately get buffer space then we
+	 * attempt to flush once and then try again.
+	 * If this fails then we will wait for the
+	 * next search response.
+	 */
+        chan->id.sid = piiu->curMsg.m_cid;
+	UNLOCK
+	issue_claim_channel(chan);
 }
 
 
 /*
- * reconnect_channel()
+ * cac_reconnect_channel()
+ *
+ * LOCK must _not_ be applied
  */
-LOCAL void reconnect_channel(
-IIU	*piiu,
-ciu	chan
-)
+void cac_reconnect_channel(ciu chan)
 {
+	IIU			*piiu = (IIU *) chan->piiu;
       	evid			pevent;
 	enum channel_state	prev_cs;
 	int			v41;
 
 	prev_cs = chan->state;
 	if (prev_cs == cs_conn) {
-		ca_printf("Ignored connect response to connected channel\n");
+		ca_printf("CAC: Ignored conn resp to conn chan CID=%u SID=%u?\n",
+			chan->cid, chan->id.sid);
 		return;
 	}
 
 	LOCK;
 
-	v41 = CA_V41(
-			CA_PROTOCOL_VERSION, 
-			((IIU *)chan->piiu)->minor_version_number);
+	v41 = CA_V41(CA_PROTOCOL_VERSION, piiu->minor_version_number);
 
         /*	Update rmt chid fields from caHdr fields	*/
         chan->type  = piiu->curMsg.m_type;      
@@ -1031,7 +1058,9 @@ ciu	chan
 		UNLOCKEVENTS;
 	}
 	else if(prev_cs==cs_never_conn){
-          	/* decrement the outstanding IO count */
+          	/*  
+		 * decrement the outstanding IO count 
+		 */
           	CLRPENDRECV;
 	}
 }

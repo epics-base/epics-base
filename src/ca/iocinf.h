@@ -32,6 +32,9 @@
 /************************************************************************/
 
 /* $Log$
+ * Revision 1.59  1997/01/22 21:10:26  jhill
+ * smaller external sym name for VAXC
+ *
  * Revision 1.58  1996/11/02 00:50:56  jhill
  * many pc port, const in API, and other changes
  *
@@ -215,8 +218,8 @@ if(!ca_static){ \
 /* throw out requests prior to last ECA_TIMEOUT from ca_pend */
 #define	VALID_MSG(PIIU) (piiu->read_seq == piiu->cur_read_seq)
 
-#define SETPENDRECV		{pndrecvcnt++;}
-#define CLRPENDRECV		{if(--pndrecvcnt<1){POST_IO_EV;}}
+#define SETPENDRECV {pndrecvcnt++;}
+#define CLRPENDRECV {if(--pndrecvcnt<1u){POST_IO_EV;}}
 
 struct udpmsglog{
 	long                    nbytes;
@@ -243,21 +246,17 @@ typedef struct timeval ca_time;
 (PCATIME)->tv_usec = (long) ( ((FLOAT_TIME)-(PCATIME)->tv_sec)*USEC_PER_SEC ))
 
 /*
- * dont adjust
- */
-#ifdef CA_GLBLSOURCE
-const ca_time CA_CURRENT_TIME = {0,0};
-#else /*CA_GLBLSOURCE*/
-extern const ca_time CA_CURRENT_TIME;
-#endif /*CA_GLBLSOURCE*/
-
-/*
  * these control the duration and period of name resolution
  * broadcasts
  *
  * MAXCONNTRIES must be less than the number of bits in type long
  */
 #define MAXCONNTRIES 		30	/* N conn retries on unchanged net */
+
+/*
+ * A prime number works best here (see comment in retrySearchRequest()
+ */
+#define TRIESPERFRAME 		5u	/* N UDP frames per search try */
 
 /*
  * NOTE: These must be larger than one vxWorks tick or we will end up
@@ -301,7 +300,16 @@ typedef struct caclient_put_notify{
 }CACLIENTPUTNOTIFY;
 #endif /*vxWorks*/
 
-#define MAX_CONTIGUOUS_MSG_COUNT 2
+/*
+ * this determines the number of messages received
+ * without a delay in between before we go into 
+ * monitor flow control
+ *
+ * turning this down effect maximum throughput
+ * because we dont get an optimal number of bytes 
+ * per network frame 
+ */
+#define MAX_CONTIGUOUS_MSG_COUNT 5 
 
 /*
  * ! lock needs to be applied when an id is allocated !
@@ -318,10 +326,6 @@ typedef struct caclient_put_notify{
 #define iiuList 	(ca_static->ca_iiuList)
 #define piiuCast 	(ca_static->ca_piiuCast)
 #define pndrecvcnt	(ca_static->ca_pndrecvcnt)
-#define chidlist_pend	(ca_static->ca_chidlist_pend)
-#define chidlist_conn	(ca_static->ca_chidlist_conn)
-#define chidlist_noreply\
-			(ca_static->ca_chidlist_noreply)
 #define ioeventlist	(ca_static->ca_ioeventlist)
 #define nxtiiu		(ca_static->ca_nxtiiu)
 #define free_event_list	(ca_static->ca_free_event_list)
@@ -392,8 +396,10 @@ struct ca_buffer{
 #define TAG_CONN_DOWN(PIIU) \
 ( \
 /* ca_printf("Tagging connection down at %d in %s\n", __LINE__, __FILE__), */ \
-(PIIU)->conn_up = FALSE \
+(PIIU)->state = iiu_disconnected\
 )
+
+enum iiu_conn_state{iiu_connecting, iiu_connected, iiu_disconnected};
 
 /*
  * One per IOC
@@ -424,6 +430,7 @@ typedef struct ioc_in_use{
 	unsigned 		cur_read_seq;
 	unsigned		minfreespace;
 	char			host_name_str[32];
+	unsigned char		state;   /* for use with iiu_conn_state enum */
 
 	/*
 	 * bit fields placed together for better packing density
@@ -431,8 +438,9 @@ typedef struct ioc_in_use{
 	unsigned		client_busy:1;
 	unsigned		echoPending:1; 
 	unsigned		send_needed:1;	/* CA needs a send */
-	unsigned		conn_up:1;   /* boolean: T-conn /F-disconn */
 	unsigned		sendPending:1;
+	unsigned 		claimsPending:1; 
+	unsigned		recvPending:1;
 }IIU;
 
 /*
@@ -475,9 +483,7 @@ struct  ca_static{
 	ca_time		ca_conn_retry_delay;
 	ca_time		ca_last_repeater_try;
 	ca_real		ca_connectTMO;
-	long		ca_pndrecvcnt;
-	unsigned long	ca_nextSlowBucketId;
-	unsigned long	ca_nextFastBucketId;
+	ca_time		programBeginTime;
 	IIU		*ca_piiuCast;
 	void		(*ca_exception_func)
 				(struct exception_handler_args);
@@ -491,9 +497,16 @@ struct  ca_static{
 	BUCKET		*ca_pSlowBucket;
 	BUCKET		*ca_pFastBucket;
 	bhe		*ca_beaconHash[BHT_INET_ADDR_MASK+1];
-	unsigned	ca_repeater_tries;
+	ciu		ca_pEndOfBCastList;
+	unsigned long	ca_search_responses; /* num valid search resp within seq # */
+	unsigned long	ca_search_tries; /* num search tries within seq # */
 	unsigned	ca_search_retry; /* search retry seq number */
-	unsigned	ca_search_responses; /* num search resp within seq # */
+	unsigned	ca_min_retry; /* min retry no so far */
+	unsigned	ca_frames_per_try; /* # of UDP frames per search try */
+	unsigned 	ca_pndrecvcnt;
+	unsigned 	ca_nextSlowBucketId;
+	unsigned 	ca_nextFastBucketId;
+	unsigned	ca_repeater_tries;
 	unsigned short	ca_server_port;
 	unsigned short	ca_repeater_port;
 	char		ca_sprintf_buf[256];
@@ -572,18 +585,19 @@ void 	cac_mux_io(struct timeval *ptimeout);
 int	repeater_installed(void);
 int	search_msg(ciu chix, int reply_type);
 int	ca_request_event(evid monix);
-void 	ca_busy_message(struct ioc_in_use *piiu);
-void	ca_ready_message(struct ioc_in_use *piiu);
+int	ca_busy_message(struct ioc_in_use *piiu);
+int	ca_ready_message(struct ioc_in_use *piiu);
 void	noop_msg(struct ioc_in_use *piiu);
 int 	echo_request(struct ioc_in_use *piiu, ca_time *pCurrentTime);
-void 	issue_claim_channel(struct ioc_in_use *piiu, chid pchan);
+int	issue_claim_channel(chid pchan);
 void 	issue_identify_client(struct ioc_in_use *piiu);
 void 	issue_client_host_name(struct ioc_in_use *piiu);
 int	ca_defunct(void);
 int 	ca_printf(char *pformat, ...);
-void 	manage_conn(int silent);
+void 	manage_conn();
 void 	mark_server_available(const struct in_addr *pnet_addr);
-void	flow_control(struct ioc_in_use *piiu);
+void	flow_control_on(struct ioc_in_use *piiu);
+void	flow_control_off(struct ioc_in_use *piiu);
 int	broadcast_addr(struct in_addr *pcastaddr);
 void	ca_repeater(void);
 void 	cac_recv_task(int tid);
@@ -648,12 +662,11 @@ int ca_os_independent_init (void);
 void freeBeaconHash(struct ca_static *ca_temp);
 void removeBeaconInetAddr(const struct in_addr *pnet_addr);
 bhe *lookupBeaconInetAddr(const struct in_addr *pnet_addr);
-bhe *createBeaconHashEntry(const struct in_addr *pnet_addr);
+bhe *createBeaconHashEntry(const struct in_addr *pnet_addr, unsigned sawBeacon);
 void notify_ca_repeater(void);
 void cac_clean_iiu_list(void);
 
 void ca_process_input_queue(void);
-void cac_flush_internal(void);
 void cac_block_for_io_completion(struct timeval *pTV);
 void cac_block_for_sg_completion(CASG *pcasg, struct timeval *pTV);
 void os_specific_sg_create(CASG *pcasg);
@@ -677,6 +690,12 @@ void genLocalExcepWFL(long stat, char *ctx,
 	char *pFile, unsigned line);
 #define genLocalExcep(STAT, PCTX) \
 genLocalExcepWFL (STAT, PCTX, __FILE__, __LINE__)
+void cac_reconnect_channel(ciu chan);
+void retryPendingClaims(IIU *piiu);
+void cacClrSearchCounters();
+void cacSetRetryInterval(unsigned retryNo);
+void addToChanList(ciu chan, IIU *piiu);
+void removeFromChanList(ciu chan);
 
 /*
  * !!KLUDGE!!

@@ -47,6 +47,9 @@
 /*			address in use so that test works on UNIX	*/
 /*			kernels that support multicast			*/
 /* $Log$
+ * Revision 1.67  1997/01/08 22:48:42  jhill
+ * improved message
+ *
  * Revision 1.66  1996/11/02 00:50:53  jhill
  * many pc port, const in API, and other changes
  *
@@ -100,13 +103,17 @@ static char *sccsId = "@(#) $Id$";
 #include	"net_convert.h"
 
 LOCAL void 	tcp_recv_msg(struct ioc_in_use *piiu);
+LOCAL void 	cac_connect_iiu(struct ioc_in_use *piiu);
+LOCAL void 	cac_set_iiu_non_blocking (struct ioc_in_use *piiu);
 LOCAL void 	cac_tcp_send_msg_piiu(struct ioc_in_use *piiu);
 LOCAL void 	cac_udp_send_msg_piiu(struct ioc_in_use *piiu);
 LOCAL void 	udp_recv_msg(struct ioc_in_use *piiu);
-LOCAL void 	ca_process_tcp(struct ioc_in_use *piiu);
-LOCAL void 	ca_process_udp(struct ioc_in_use *piiu);
-LOCAL void 	cacRingBufferInit(struct ca_buffer *pBuf, unsigned long size);
-LOCAL char	*getToken(char **ppString);
+LOCAL void	ca_process_tcp(struct ioc_in_use *piiu);
+LOCAL void	ca_process_udp(struct ioc_in_use *piiu);
+LOCAL void 	cacRingBufferInit(struct ca_buffer *pBuf, 
+				unsigned long size);
+LOCAL char 	*getToken(const char **ppString, char *pBuf, 
+				unsigned bufSize);
 LOCAL void 	close_ioc (IIU *piiu);
 
 
@@ -134,7 +141,7 @@ struct ioc_in_use	**ppiiu
 	LOCK;
 	pBHE = lookupBeaconInetAddr(pnet_addr);
 	if(!pBHE){
-		pBHE = createBeaconHashEntry(pnet_addr);
+		pBHE = createBeaconHashEntry(pnet_addr, FALSE);
 		if(!pBHE){
 			UNLOCK;
 			return ECA_ALLOCMEM;
@@ -142,11 +149,11 @@ struct ioc_in_use	**ppiiu
 	}
 
 	if(pBHE->piiu){
-		if(pBHE->piiu->conn_up){
+		if (pBHE->piiu->state!=iiu_disconnected) {
 			*ppiiu = pBHE->piiu;
 			status = ECA_NORMAL;
 		}
-		else{
+		else {
 			status = ECA_DISCONN;
 		}
 	}
@@ -182,9 +189,6 @@ int			net_proto
   	int			status;
   	SOCKET			sock;
   	int			true = TRUE;
-#if 0
-  	struct sockaddr_in	saddr;
-#endif
 	caAddrNode		*pNode;
 
 	LOCK;
@@ -207,6 +211,13 @@ int			net_proto
 	 */
 	piiu->minor_version_number = CA_UKN_MINOR_VERSION;
 
+	/*
+	 * initially there are no claim messages pending
+	 */
+	piiu->claimsPending = FALSE;
+
+	piiu->recvPending = FALSE;
+
   	switch(piiu->sock_proto)
   	{
     		case	IPPROTO_TCP:
@@ -214,7 +225,7 @@ int			net_proto
 		assert(pnet_addr);
 		pNode = (caAddrNode *)calloc(1,sizeof(*pNode));
 		if(!pNode){
-			free(pNode);
+			free(piiu);
 			UNLOCK;
 			return ECA_ALLOCMEM;
 		}
@@ -224,7 +235,7 @@ int			net_proto
   		pNode->destAddr.in.sin_port = htons (port);
 		ellAdd(&piiu->destAddr, &pNode->node);
 		piiu->recvBytes = tcp_recv_msg; 
-		piiu->sendBytes = cac_tcp_send_msg_piiu; 
+		piiu->sendBytes = cac_connect_iiu; 
 		piiu->procInput = ca_process_tcp; 
 		piiu->minfreespace = 1;	
 
@@ -233,6 +244,7 @@ int			net_proto
 				SOCK_STREAM,	/* type		*/
 				0);		/* deflt proto	*/
       		if(sock == INVALID_SOCKET){
+			free(pNode);
 			free(piiu);
 			UNLOCK;
         		return ECA_SOCK;
@@ -251,6 +263,7 @@ int			net_proto
 				(char *)&true,
 				sizeof(true));
       		if(status < 0){
+			free(pNode);
 			free(piiu);
         		status = socket_close(sock);
 			if(status<0){
@@ -273,6 +286,7 @@ int			net_proto
 				(char *)&true,
 				sizeof true);
       		if(status < 0){
+			free(pNode);
 			free(piiu);
         		status = socket_close(sock);
 			if(status<0){
@@ -313,6 +327,7 @@ int			net_proto
 					&i,
 					sizeof(i));
 			if(status < 0){
+				free(pNode);
 				free(piiu);
 				socket_close(sock);
 				UNLOCK;
@@ -326,6 +341,7 @@ int			net_proto
 					&i,
 					sizeof(i));
 			if(status < 0){
+				free(pNode);
 				free(piiu);
 				socket_close(sock);
 				UNLOCK;
@@ -341,6 +357,7 @@ int			net_proto
 					(char *)&size,
 					&i);
 			if(status < 0 || i != sizeof(size)){
+				free(pNode);
 				free(piiu);
 				socket_close(sock);
 				UNLOCK;
@@ -349,35 +366,32 @@ int			net_proto
 		}
 #endif
 
-      		/* connect */
-      		status = connect(	
-				sock,
-				&pNode->destAddr.sa,
-				sizeof(pNode->destAddr.sa));
-      		if(status < 0){
-			ca_printf("CAC: no conn err=\"%s\"\n", strerror(SOCKERRNO));
-        		status = socket_close(sock);
-			if(status<0){
-				SEVCHK(ECA_INTERNAL,NULL);
-			}
-			free(piiu);
-			UNLOCK;
-        		return ECA_CONN;
-      		}
-
 		cacRingBufferInit(&piiu->recv, sizeof(piiu->send.buf));
 		cacRingBufferInit(&piiu->send, sizeof(piiu->send.buf));
+
+		cac_gettimeval (&piiu->timeAtLastRecv);
 
 		/*
 		 * Save the Host name for efficient access in the
 		 * future.
 		 */
 		caHostFromInetAddr(
-			pnet_addr,
+			&pNode->destAddr.in.sin_addr, 
 			piiu->host_name_str,
 			sizeof(piiu->host_name_str));
 
-		cac_gettimeval (&piiu->timeAtLastRecv);
+		/*
+		 * TCP starts out in the connecting state and later transitions
+		 * to the connected state 
+		 */
+		piiu->state = iiu_connecting;
+
+		cac_set_iiu_non_blocking (piiu);
+
+		/*
+		 * initiate connect sequence
+		 */
+		cac_connect_iiu (piiu);
 
       		break;
 
@@ -422,6 +436,30 @@ int			net_proto
         		return ECA_CONN;
       		}
 
+		/*
+		 * bump up the UDP recv buffer
+		 */
+		{
+			/*
+			 *
+			 * this allows for faster connects by queuing
+			 * additional incomming UDP search response frames
+			 *
+			 * this allocates a 32k buffer
+			 * (uses a power of two)
+			 */
+			int size = 1u<<15u;
+			status = setsockopt(
+					sock,
+					SOL_SOCKET,
+					SO_RCVBUF,
+					(char *)&size,
+					sizeof(size));
+			if (status<0) {
+        			ca_printf("CAC: setsockopt SO_RCVBUF (err=%s)\n",
+					strerror(SOCKERRNO));
+			}
+		}
 #if 0
       		memset((char *)&saddr,0,sizeof(saddr));
       		saddr.sin_family = AF_INET;
@@ -454,10 +492,19 @@ int			net_proto
 		cacRingBufferInit(&piiu->send, min(MAX_UDP, 
 			sizeof(piiu->send.buf)));
 
+		/*
+		 * UDP isnt connection oriented so we tag the piiu
+		 * as up immediately
+		 */
+		piiu->state = iiu_connected;
+
 		strncpy(
 			piiu->host_name_str, 
 			"<<unknown host>>", 
 			sizeof(piiu->host_name_str)-1);
+
+		cac_set_iiu_non_blocking (piiu);
+
       		break;
 
 	default:
@@ -470,21 +517,8 @@ int			net_proto
 		return ECA_INTERNAL;
   	}
 
-	/*	
-	 * Set non blocking IO  
-	 * to prevent dead locks	
-	 */
-	status = socket_ioctl(
-			piiu->sock_chan,
-			FIONBIO,
-			&true);
-	if(status<0){
-		ca_printf(
-			"Error setting non-blocking io: %s\n",
-			strerror(SOCKERRNO));
-	}
 
-  	if(fd_register_func){
+  	if (fd_register_func) {
 		LOCKEVENTS;
 		(*fd_register_func)((void *)fd_register_arg, sock, TRUE);
 		UNLOCKEVENTS;
@@ -495,12 +529,125 @@ int			net_proto
 	 */
 	ellAdd(&iiuList, &piiu->node);
 
-	piiu->conn_up = TRUE;
 	*ppiiu = piiu;
 
 	UNLOCK;
 
   	return ECA_NORMAL;
+}
+
+/*
+ * cac_set_iiu_non_blocking()
+ */
+LOCAL void cac_set_iiu_non_blocking (struct ioc_in_use *piiu)
+{
+  	int	true = TRUE;
+	int	status;
+
+	/*	
+	 * Set non blocking IO  
+	 * to prevent dead locks	
+	 */
+	status = socket_ioctl(
+			piiu->sock_chan,
+			FIONBIO,
+			&true);
+	if(status<0){
+		ca_printf(
+			"CAC: failed to set non-blocking because \"%s\"\n",
+			strerror(SOCKERRNO));
+	}
+}
+
+/*
+ * cac_connect_iiu()
+ */
+LOCAL void cac_connect_iiu (struct ioc_in_use *piiu)
+{
+	caAddrNode *pNode;
+	int status;
+
+	if (piiu->state==iiu_connected) {
+		ca_printf("CAC: redundant connect() attempt?\n");
+		return;
+	}
+
+	if (piiu->state==iiu_disconnected) {
+		ca_printf("CAC: connecting when disconnected?\n");
+		return;
+	}
+		
+	assert(ellCount(&piiu->destAddr)==1u);
+	pNode = (caAddrNode *) ellFirst(&piiu->destAddr);
+
+	/* 
+	 * attempt to connect to a CA server
+	 */
+	while (1) {
+		status = connect(	
+				piiu->sock_chan,
+				&pNode->destAddr.sa,
+				sizeof(pNode->destAddr.sa));
+		if(status == 0){
+			break;
+		}
+
+		if (SOCKERRNO==EINPROGRESS) {
+			/*
+			 * The  socket  is   non-blocking   and   a
+			 * connection attempt has been initiated,
+			 * but not completed.
+			 */
+			return;
+		}
+		else if (SOCKERRNO==EISCONN) {
+			/*
+			 * called connect after we are already connected 
+			 * (this appears to be how they provide connect completion
+			 * notification)
+			 */
+			break;
+		}
+		else if (SOCKERRNO==EALREADY) {
+			/*
+			 * The  socket  is   non-blocking   and   
+			 * we have issued a duplicate connect
+			 * request.
+			 */
+			ca_printf("CAC: duplicate call to connect()???\n");
+			return;
+		}
+		else if (SOCKERRNO==EINTR) {
+			/*
+			 * restart the system call if interrupted
+			 */
+			continue;
+		}
+		else {	
+			ca_printf("CAC: Unable to connect port %d on \"%s\" because \"%s\"\n", 
+				pNode->destAddr.in.sin_port, piiu->host_name_str, strerror(SOCKERRNO));
+			TAG_CONN_DOWN(piiu);
+			return;
+		}
+	}
+
+	/*
+	 * put the iiu into the connected state
+	 */
+	piiu->state = iiu_connected;
+
+	piiu->sendBytes = cac_tcp_send_msg_piiu; 
+
+	cac_gettimeval (&piiu->timeAtLastRecv);
+
+	/* 
+	 * When we are done connecting and there are
+	 * IOC_CLAIM_CHANNEL requests outstanding
+	 * then add them to the outgoing message buffer
+	 */
+	if (piiu->claimsPending) {
+		retryPendingClaims(piiu);
+	}
 }
 
 
@@ -510,7 +657,7 @@ int			net_proto
 void caSetupBCastAddrList (ELLLIST *pList, SOCKET sock, unsigned port)
 {
 	char			*pstr;
-	ENV_PARAM		yesno;
+	char			yesno[32u];
 	int			yes;
 
 	/*
@@ -526,8 +673,8 @@ void caSetupBCastAddrList (ELLLIST *pList, SOCKET sock, unsigned port)
 	yes = TRUE;
 	pstr = envGetConfigParam (
 			&EPICS_CA_AUTO_ADDR_LIST,		
-			sizeof(yesno.dflt),
-			yesno.dflt);
+			sizeof(yesno),
+			yesno);
 	if (pstr) {
 			if (strstr(pstr,"no")||strstr(pstr,"NO")) {
 			yes = FALSE;
@@ -584,7 +731,7 @@ void notify_ca_repeater()
 		return;
 	}
 
-	if (!piiuCast->conn_up) {
+	if (piiuCast->state!=iiu_connected) {
 		return;
 	}
 
@@ -676,7 +823,7 @@ LOCAL void cac_udp_send_msg_piiu(struct ioc_in_use *piiu)
 	/*
 	 * check for shutdown in progress
 	 */
-	if(!piiu->conn_up){
+	if(piiu->state!=iiu_connected){
 		return;
 	}
 
@@ -753,12 +900,11 @@ LOCAL void cac_tcp_send_msg_piiu(struct ioc_in_use *piiu)
 	/*
 	 * check for shutdown in progress
 	 */
-	if(!piiu->conn_up){
+	if(piiu->state!=iiu_connected){
 		return;
 	}
 
 	LOCK;
-
 
 	/*
 	 * Check at least twice to see if there is anything
@@ -777,6 +923,15 @@ LOCAL void cac_tcp_send_msg_piiu(struct ioc_in_use *piiu)
 			piiu->sendPending = FALSE;
 			piiu->send_needed = FALSE;
 			UNLOCK;
+
+			/* 
+			 * If we cleared out some send backlog and there are
+			 * IOC_CLAIM_CHANNEL requests outstanding
+			 * then add them to the outgoing message buffer
+			 */
+			if (piiu->claimsPending) {
+				retryPendingClaims(piiu);
+			}
 			return;
 		}
 
@@ -792,6 +947,7 @@ LOCAL void cac_tcp_send_msg_piiu(struct ioc_in_use *piiu)
 		}
 
 		CAC_RING_BUFFER_READ_ADVANCE(&piiu->send, status);
+
 	}
 
 	if (status==0) {
@@ -824,34 +980,6 @@ LOCAL void cac_tcp_send_msg_piiu(struct ioc_in_use *piiu)
 
 
 /*
- *
- * cac_flush_internal()
- *
- * Flush the output - but dont block
- *
- */
-void cac_flush_internal()
-{
-	register struct ioc_in_use      *piiu;
-
-	LOCK;
-	for(	piiu = (IIU *)iiuList.node.next; 
-		piiu; 
-		piiu = (IIU *)piiu->node.next){
-
-		if(!piiu->conn_up){
-			continue;
-		}
-		if(!piiu->send_needed){
-			continue;
-		}
-		piiu->sendBytes(piiu);
-	}
-	UNLOCK;
-}
-
-
-/*
  * cac_clean_iiu_list()
  */
 void cac_clean_iiu_list()
@@ -862,7 +990,7 @@ void cac_clean_iiu_list()
 
 	piiu=(IIU *)iiuList.node.next;
 	while(piiu){
-		if(!piiu->conn_up){
+		if (piiu->state==iiu_disconnected) {
 			IIU *pnextiiu;
 
 			pnextiiu = (IIU *)piiu->node.next;
@@ -898,7 +1026,7 @@ void ca_process_input_queue()
 		piiu;
 		piiu=(IIU *)piiu->node.next){
 
-		if(!piiu->conn_up){
+		if(piiu->state!=iiu_connected){
 			continue;
 		}
 
@@ -906,8 +1034,6 @@ void ca_process_input_queue()
 	}
 
 	UNLOCK;
-
-	cac_flush_internal();
 }
 
 
@@ -921,7 +1047,7 @@ LOCAL void tcp_recv_msg(struct ioc_in_use *piiu)
 	unsigned long	writeSpace;
   	int		status;
 
-	if(!piiu->conn_up){
+	if(piiu->state!=iiu_connected){
 		return;
 	}
 
@@ -1033,8 +1159,6 @@ LOCAL void ca_process_tcp(struct ioc_in_use *piiu)
 	post_msg_active = FALSE;
 	UNLOCK;
 
-    	flow_control(piiu);
-
  	return;
 }
 
@@ -1051,7 +1175,7 @@ LOCAL void udp_recv_msg(struct ioc_in_use *piiu)
 	struct udpmsglog	*pmsglog;
 	unsigned long		bytesAvailable;
 	
-	if(!piiu->conn_up){
+	if(piiu->state!=iiu_connected){
 		return;
 	}
 
@@ -1168,6 +1292,7 @@ LOCAL void ca_process_udp(struct ioc_in_use *piiu)
 
   			/* post message to the user */
 			if(pmsglog->valid){
+
   				status = post_msg(
 					piiu,
 					&pmsglog->addr.sin_addr,
@@ -1311,18 +1436,12 @@ LOCAL void close_ioc (IIU *piiu)
  */
 void cacDisconnectChannel(ciu chix, enum channel_state state)
 {
-	struct ioc_in_use *piiu;
 
 	chix->type = TYPENOTCONN;
-	chix->count = 0U;
-	chix->id.sid = ~0U;
+	chix->count = 0u;
+	chix->id.sid = ~0u;
 	chix->ar.read_access = FALSE;
 	chix->ar.write_access = FALSE;
-
-	/*
-	 * try to reconnect
-	 */
-	chix->retry = 0U;
 
 	/*
 	 * call their connection handler as required
@@ -1359,16 +1478,13 @@ void cacDisconnectChannel(ciu chix, enum channel_state state)
 		}
 		UNLOCKEVENTS;
 	}
-	piiu = (struct ioc_in_use *)chix->piiu;
-	ellDelete(&piiu->chidlist, &chix->node);
-	assert (piiuCast);
-	chix->piiu = piiuCast;
-	ellAdd(&piiuCast->chidlist, &chix->node);
-
+	removeFromChanList(chix);
 	/*
-	 * Try to reconnect this channel
+	 * try to reconnect
 	 */
-	ca_static->ca_search_retry = 0;
+	assert (piiuCast);
+	addToChanList(chix, piiuCast);
+	cacSetRetryInterval(0u);
 }
 
 
@@ -1468,11 +1584,11 @@ unsigned long		nBytes)
 	unsigned long	actualBytes;
 	char		*pCharBuf;
 
-	actualBytes = 0;
+	actualBytes = 0u;
 	pCharBuf = pBuf;
 	while(TRUE){
 		potentialBytes = cacRingBufferReadSize(pRing, TRUE);
-		if(potentialBytes == 0){
+		if(potentialBytes == 0u){
 			return actualBytes;
 		}
 		potentialBytes = min(potentialBytes, nBytes-actualBytes);
@@ -1502,11 +1618,11 @@ unsigned long		nBytes)
 	unsigned long	actualBytes;
 	const char	*pCharBuf;
 
-	actualBytes = 0;
+	actualBytes = 0u;
 	pCharBuf = pBuf;
 	while(TRUE){
 		potentialBytes = cacRingBufferWriteSize(pRing, TRUE);
-		if(potentialBytes == 0){
+		if(potentialBytes == 0u){
 			return actualBytes;
 		}
 		potentialBytes = min(potentialBytes, nBytes-actualBytes);
@@ -1530,8 +1646,8 @@ LOCAL void cacRingBufferInit(struct ca_buffer *pBuf, unsigned long size)
 {
 	assert(size<=sizeof(pBuf->buf));
 	pBuf->max_msg = size;
-	pBuf->rdix = 0;
-	pBuf->wtix = 0;
+	pBuf->rdix = 0u;
+	pBuf->wtix = 0u;
 	pBuf->readLast = TRUE;
 }
 
@@ -1556,7 +1672,7 @@ unsigned long cacRingBufferReadSize(struct ca_buffer *pBuf, int contiguous)
 		count = pBuf->wtix - pBuf->rdix;
 	}
 	else if(pBuf->readLast){
-		count = 0;
+		count = 0u;
 	}
 	else{
 		if(contiguous){
@@ -1603,7 +1719,7 @@ unsigned long cacRingBufferWriteSize(struct ca_buffer *pBuf, int contiguous)
 		}
 	}
 	else{
-		count = 0;
+		count = 0u;
 	}
 
 	return count;
@@ -1653,21 +1769,18 @@ char *localHostName()
 /*
  * caAddConfiguredAddr()
  */
-void caAddConfiguredAddr(ELLLIST *pList, ENV_PARAM *pEnv, 
+void caAddConfiguredAddr(ELLLIST *pList, const ENV_PARAM *pEnv, 
 	SOCKET socket, int port)
 {
         caAddrNode      *pNode;
-        ENV_PARAM       list;
-        char            *pStr;
-        char            *pToken;
+        const char      *pStr;
+        const char      *pToken;
 	caAddr		addr;
 	caAddr		localAddr;
+	char		buf[32u]; /* large enough to hold an IP address */
 	int		status;
 
-        pStr = envGetConfigParam(
-                        pEnv,
-                        sizeof(list.dflt),
-                        list.dflt);
+        pStr = envGetConfigParamPtr(pEnv);
         if(!pStr){
                 return;
         }
@@ -1680,7 +1793,7 @@ void caAddConfiguredAddr(ELLLIST *pList, ENV_PARAM *pEnv,
 		return;
 	}
 
-        while( (pToken = getToken(&pStr)) ){
+        while( (pToken = getToken(&pStr, buf, sizeof(buf))) ){
       		memset((char *)&addr,0,sizeof(addr));
 		addr.in.sin_family = AF_INET;
   		addr.in.sin_port = htons(port);
@@ -1712,32 +1825,28 @@ void caAddConfiguredAddr(ELLLIST *pList, ENV_PARAM *pEnv,
 /*
  * getToken()
  */
-LOCAL char *getToken(char **ppString)
+LOCAL char *getToken(const char **ppString, char *pBuf, unsigned bufSIze)
 {
-        char *pToken;
-        char *pStr;
+        const char *pToken;
+	unsigned i;
 
         pToken = *ppString;
         while(isspace(*pToken)&&*pToken){
                 pToken++;
         }
 
-        pStr = pToken;
-        while(!isspace(*pStr)&&*pStr){
-                pStr++;
+	for (i=0u; i<bufSIze; i++) {
+		if (isspace(pToken[i]) || pToken[i]=='\0') {
+			pBuf[i] = '\0';
+			break;
+		}
+		pBuf[i] = pToken[i];
         }
 
-        if(isspace(*pStr)){
-                *pStr = '\0';
-                *ppString = pStr+1;
-        }
-        else{
-                *ppString = pStr;
-                assert(*pStr == '\0');
-        }
+        *ppString = &pToken[i];
 
         if(*pToken){
-                return pToken;
+                return pBuf;
         }
         else{
                 return NULL;
@@ -1770,7 +1879,7 @@ void caPrintAddrList(ELLLIST *pList)
 /*
  * caFetchPortConfig()
  */
-unsigned short caFetchPortConfig(ENV_PARAM *pEnv, unsigned short defaultPort)
+unsigned short caFetchPortConfig(const ENV_PARAM *pEnv, unsigned short defaultPort)
 {
 	long		longStatus;
 	long		epicsParam;
@@ -1819,8 +1928,24 @@ void cac_mux_io(struct timeval  *ptimeout)
         /*
          * manage search timers and detect disconnects
          */
-        manage_conn(TRUE);
+        manage_conn();
 
+	/*
+	 * first check for pending recv's with a zero time out so that
+	 * 1) flow control works correctly (and)
+	 * 2) we queue up sends resulting from recvs properly
+	 */
+        while (TRUE) {
+		LD_CA_TIME (0.0, &timeout);
+                count = cac_select_io(&timeout, CA_DO_RECVS);
+		if (count<=0) {
+			break;
+		}
+		ca_process_input_queue();
+        }
+	/*
+	 * next check for pending writes's with the specified time out 
+	 */
         timeout = *ptimeout;
         while (TRUE) {
                 count = cac_select_io(&timeout, CA_DO_RECVS|CA_DO_SENDS);
@@ -1874,14 +1999,16 @@ int caSendMsgPending()
                 piiu;
                 piiu = (IIU *) ellNext(&piiu->node)){
 
-                if(piiu == piiuCast || piiu->conn_up == FALSE){
+                if(piiu == piiuCast){
                         continue;
                 }
 
-                bytesPending = cacRingBufferReadSize(&piiu->send, FALSE);
-                if(bytesPending > 0U){
-                        pending = TRUE;
-                }
+		if (piiu->state == iiu_connected) {
+			bytesPending = cacRingBufferReadSize(&piiu->send, FALSE);
+			if(bytesPending > 0u){
+				pending = TRUE;
+			}
+		}
         }
         UNLOCK;
 

@@ -29,6 +29,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.20  1996/11/02 00:51:02  jhill
+ * many pc port, const in API, and other changes
+ *
  * Revision 1.19  1996/07/09 22:41:02  jhill
  * pass nill 2nd arg to gettimeofday()
  *
@@ -51,9 +54,6 @@
 #include <pwd.h>
 
 #include "iocinf.h"
-
-#define _POSIX_C_SOURCE 3 /* for solaris and "cc -Xc" */
-#include <signal.h>
 
 
 /*
@@ -123,36 +123,8 @@ int cac_add_task_variable(struct ca_static *ca_temp)
 int cac_os_depen_init(struct ca_static *pcas)
 {
         int 			status;
-	struct sigaction	sa;
 
 	ca_static = pcas;
-
-	/*
-	 * dont allow disconnect to terminate process
-	 * when running in UNIX environment
-	 *
-	 * allow error to be returned to sendto()
-	 * instead of handling disconnect at interrupt
-	 */
-	status = sigaction(SIGPIPE, NULL, &sa);
-	if (status==0) {
-		if (sa.sa_handler == SIG_DFL) {
-			sa.sa_handler = SIG_IGN;
-			status = sigaction(SIGPIPE, &sa, NULL);
-			if (status) {
-				ca_printf(
-				"%s: Error from signal replace was \"%s\"\n",
-				__FILE__,
-				strerror(errno));
-			}
-		}
-	}
-	else {
-		ca_printf(
-		"%s: Error from signal query was \"%s\"\n",
-		__FILE__,
-		strerror(errno));
-	}
 
 	status = ca_os_independent_init ();
 

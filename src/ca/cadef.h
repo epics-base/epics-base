@@ -86,7 +86,7 @@ extern "C" {
 #define CAC_ANSI_FUNC_PROTO
 #endif
 
-#include <shareLib.h>
+#include "shareLib.h"
 
 
 #ifndef HDRVERSIONID
@@ -109,19 +109,19 @@ HDRVERSIONID(cadefh, "@(#) $Id$")
 #endif
 
 #ifndef INCLdb_accessh
-#include <db_access.h>
+#include "db_access.h"
 #endif /* INCLdb_accessh */
 
 #ifndef INCLcaerrh
-#include <caerr.h>
+#include "caerr.h"
 #endif /* INCLcaerrh */
 
 #ifndef INCLcaeventmaskh
-#include <caeventmask.h>
+#include "caeventmask.h"
 #endif /* INCLcaeventmaskh */
 
 #ifndef INCLellLibh
-#include <ellLib.h>
+#include "ellLib.h"
 #endif /* INCLellLibh */
 
 /*
@@ -143,8 +143,7 @@ HDRVERSIONID(cadefh, "@(#) $Id$")
  * here is the preferred way to load the puser ptr associated with 
  * channel (the cast removes const)
  */
-#define ca_set_puser(CHID,PUSER) \
-(((struct channel_in_use *)CHID)->puser=(PUSER))
+#define ca_set_puser(CHID,PUSER) 	((CHID)->puser=(const void *)(PUSER))
 #define ca_host_name(CHID)           	ca_host_name_function(CHID)
 #define ca_read_access(CHID)		((CHID)->ar.read_access)
 #define ca_write_access(CHID)		((CHID)->ar.write_access)
@@ -169,8 +168,7 @@ typedef struct ca_access_rights{
 /* Format for the arguments to user connection handlers 		*/
 struct channel_in_use;
 struct	connection_handler_args{
-	READONLY struct channel_in_use	
-				*chid;	/* Channel id	 		*/
+	struct channel_in_use	*chid;	/* Channel id	 		*/
 	long			op;	/* External codes for CA op	*/
 };
 
@@ -182,8 +180,7 @@ typedef void caCh();
 
 /* Format for the arguments to user access rights handlers 		*/
 struct	access_rights_handler_args{
-	READONLY struct channel_in_use 	
-				*chid;	/* Channel id	 		*/
+	struct channel_in_use 	*chid;	/* Channel id	 		*/
 	caar			ar;	/* New access rights state	*/
 };
 
@@ -202,7 +199,7 @@ struct channel_in_use{
 	  unsigned 		sid;	/* server id			*/
 	  struct dbAddr		*paddr;	/* database address		*/
 	}			id;
-	READONLY void		*puser;	/* user available area		*/
+	const void		*puser;	/* user available area		*/
 	enum channel_state	state;	/* connected/ disconnected etc	*/
 	caar			ar;	/* access rights		*/
 
@@ -218,15 +215,16 @@ struct channel_in_use{
 #ifdef vxWorks
 	void			*ppn;  /* ptr to optional put notify blk */
 #endif /* vxWorks */
+	unsigned		claimPending:1; /* claim msg was sent if T */
 	/*
 	 * channel name stored directly after this structure in a 
 	 * null terminated string.
 	 */
 };
 
-typedef	READONLY struct channel_in_use	*chid;
+typedef	struct channel_in_use		*chid;
 typedef long				chtype;
-typedef	READONLY struct pending_event	*evid;
+typedef	struct pending_event		*evid;
 typedef double				ca_real;
 
 /*	The conversion routine to call for each type	*/
@@ -236,7 +234,7 @@ typedef double				ca_real;
 /* argument passed to event handlers and callback handlers		*/
 struct	event_handler_args{
 	void		*usr;	/* User argument supplied when event added 	*/
-	READONLY struct channel_in_use
+	struct channel_in_use
 			*chid;	/* Channel id					*/
 	long		type;	/* the type of the value returned		*/ 
 	long		count;	/* the element count of the item returned	*/
@@ -251,7 +249,7 @@ struct pending_event{
 #else /*CAC_ANSI_FUNC_PROTO*/
   	void		(*usr_func)();
 #endif /*CAC_ANSI_FUNC_PROTO*/
-  	READONLY void	*usr_arg;
+  	void		*usr_arg;
   	chid		chan;
   	chtype		type;	/* requested type for local CA	*/
   	unsigned long	count;	/* requested count for local CA */
@@ -276,15 +274,15 @@ void epicsShareAPI ca_test_event
 /* Format for the arguments to user exception handlers 			*/
 struct	exception_handler_args{
 	void		*usr;	/* User argument supplied when event added 	*/
-	READONLY struct channel_in_use
+	struct channel_in_use
 			*chid;	/* Channel id			 		*/
 	long 		type;	/* Requested type for the operation		*/
 	long 		count;	/* Requested count for the operation		*/
 	void 		*addr;	/* User's address to write results of CA_OP_GET	*/
 	long		stat;	/* Channel access std status code 		*/
 	long		op;	/* External codes for channel access operations	*/
-	const char	*ctx;	/* A character string containing context info	*/
-	const char	*pFile; /* source file name (may be NULL) */
+	READONLY char	*ctx;	/* A character string containing context info	*/
+	READONLY char	*pFile; /* source file name (may be NULL) */
 	unsigned	lineNo; /* source file line number */
 };
 

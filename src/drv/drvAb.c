@@ -297,7 +297,7 @@
 #include	<dbDefs.h>
 #include	<drvSup.h>
 #include	<module_types.h>
-#include	<ab_driver.h>
+#include	<drvAb.h>
 
 
 		/* AllenBradley serial link and ai,ao,bi and bo cards */

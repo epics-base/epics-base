@@ -1248,7 +1248,7 @@ library. When the CA client library invokes a user's&nbsp;call back function
 it will always wait for the current callback to complete prior to executing
 another call back function.</p>
 
-<h3><a name="Client2">CA Client Contexts and Application Specific Auxillary
+<h3><a name="Client2">CA Client Contexts and Application Specific Auxiliary
 Threads</a></h3>
 
 <p>It may be necessary for several CA client side tools running in the same
@@ -1257,15 +1257,15 @@ database CA links and the sequencer are designed to not use the same CA
 client library threads, network circuits, and data structures. Each thread
 that calls <a href="#ca_context_create">ca_context_create()</a> for the first
 time either directly, or implicitly when calling a CA routine for the first
-time, creates a CA client library context. A CA client libray context
+time, creates a CA client library context. A CA client library context
 contains all of the threads, network circuits, and data structures required
-to connect and communicate with the channels that a CA cllient application
-has created. The priority of auxillary threads spawned by the CA client
-library are at fixed offsets from the priority of the thread that called <a
+to connect and communicate with the channels that a CA client application has
+created. The priority of auxiliary threads spawned by the CA client library
+are at fixed offsets from the priority of the thread that called <a
 href="#ca_context_create">ca_context_create()</a>. An application specific
-auxillary thread can join a CA context by calling <a
+auxiliary thread can join a CA context by calling <a
 href="#ca_attach_context">ca_attach_context()</a> using the CA context
-identifier that was retuned from <a
+identifier that was returned from <a
 href="#ca_current_context">ca_current_context()</a> when it was called by the
 thread that called <a href="#ca_context_create">ca_context_create()</a>. A CA
 client library context can be shut down and cleaned up, after destroying any

@@ -87,12 +87,17 @@ int	silent;
 
 		/*
 		 * remain backwards compatible with old servers
+		 * ( this isnt an echo request ) 
 		 */
 		if(!CA_V43(CA_PROTOCOL_VERSION, piiu->minor_version_number)){
+			int	stmo;
 			int	rtmo;
 
+			stmo = (current-piiu->timeAtEchoRequest)
+					> CA_RETRY_PERIOD;
 			rtmo = (current-piiu->timeAtLastRecv)>CA_RETRY_PERIOD;
-			if(rtmo && !sendBytesPending){
+			if(stmo && rtmo && !sendBytesPending){
+				piiu->timeAtEchoRequest = current;
 				noop_msg(piiu);
 			}
 			continue;

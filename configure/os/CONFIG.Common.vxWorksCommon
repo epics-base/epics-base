@@ -120,6 +120,11 @@ OSITHREAD_USE_DEFAULT_STACK = NO
 LINK.cpp = $(LD) -o $@ $(STATIC_LDFLAGS) $(LDFLAGS) $(PROD_LD_OBJS) $(PROD_LD_RESS) $(LDLIBS)
 
 #--------------------------------------------------
+# Definitions for compile of *_ctdt.c file
+CFLAGS_ctdt = $(filter-out -pedantic,$(CFLAGS)) -fdollars-in-identifiers
+COMPILE.ctdt = $(CC) -c $(CPPFLAGS) $(CFLAGS_ctdt) $(call PATH_FILTER,$(INCLUDES)) $(SOURCE_FLAG)
+
+#--------------------------------------------------
 # Allow site overrides
 -include $(CONFIG)/os/CONFIG_SITE.Common.vxWorksCommon
 -include $(CONFIG)/os/CONFIG_SITE.$(EPICS_HOST_ARCH).vxWorksCommon

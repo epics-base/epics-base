@@ -10,7 +10,6 @@ INC += drvHpe1368a.h
 INC += drvKscV215.h
 INC += drvMz8310.h
 INC += drvStc.h
-INC += drvTip810.h
 INC += epvxi.h
 
 SRCS.c += ../drvAt5Vxi.c

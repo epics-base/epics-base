@@ -33,8 +33,10 @@ SRCS.c += ../dbmf.c
 SRCS.c += ../epicsString.c
 SRCS.c += ../aToIPAddr.c
 SRCS.c += ../adjustment.c
+SRCS.c += ../bsdSockResCom.c
 SRCS.c += ../os/vxWorks/bsdSockResource.c
 SRCS.c += ../os/vxWorks/osiSleep.c
+
 
 LIBOBJS += cvtFast.o
 LIBOBJS += ellLib.o
@@ -63,6 +65,7 @@ LIBOBJS += dbmf.o
 LIBOBJS += epicsString.o
 LIBOBJS += aToIPAddr.o
 LIBOBJS += adjustment.o
+LIBOBJS += bsdSockResCom.o
 LIBOBJS += bsdSockResource.o
 LIBOBJS += osiSleep.o
 

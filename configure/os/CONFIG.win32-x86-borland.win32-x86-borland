@@ -61,7 +61,6 @@ CONFORM_CFLAGS_ANSI = -D__STDC__=0
 CONFORM_CFLAGS_STRICT = -D__STDC__=0
 endif
 CONFORM_CFLAGS_TRAD =
-TEMPL_INST_CXXFLAG =
 
 # -w display warnings on
 # -g0 no limit to warning messages

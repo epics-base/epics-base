@@ -37,7 +37,6 @@ CONFORM_CXXFLAGS_STRICT = +p
 # +DAportable causes portable object code to be created for execution
 # on different PA-Risc machines
 CODE_CXXFLAGS = +DAportable
-TEMPL_INST_CXXFLAG =
 WARN_CXXFLAGS_YES = +w
 WARN_CXXFLAGS_NO =
 OPT_CXXFLAGS_YES = -O

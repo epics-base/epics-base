@@ -25,9 +25,6 @@ WARN_CFLAGS_NO = -w
 OPT_CFLAGS_YES = -O3
 OPT_CFLAGS_NO = -g
 
-# Template instantiation c++ flags
-TEMPL_INST_CXXFLAG = -DEXPL_TEMPL
-
 CODE_CXXFLAGS = -fPIC
 CONFORM_CXXFLAGS_NORMAL = -ansi -pedantic
 CONFORM_CXXFLAGS_STRICT = -ansi -pedantic

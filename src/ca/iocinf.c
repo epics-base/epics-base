@@ -197,13 +197,13 @@ unsigned short			*iocix;
  *	iocix field in the chid block not used here because
  *	I dont trust the chid ptr yet.
  */
-STATUS 
+int 
 client_channel_exists(chan)
 	chid            chan;
 {
   	register struct ioc_in_use 	*piiu;
   	register struct ioc_in_use 	*pnext_iiu = &iiu[nxtiiu];
-	STATUS				status;
+	int				status;
 
 	for (piiu = iiu; piiu < pnext_iiu; piiu++) {
 		/*

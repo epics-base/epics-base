@@ -47,6 +47,7 @@ typedef struct appChan {
     chid channel;
     evid subscription;
     unsigned char connected;
+    unsigned char accessRightsHandlerInstalled;
     unsigned subscriptionUpdateCount;
     unsigned accessUpdateCount;
     unsigned connectionUpdateCount;
@@ -195,7 +196,9 @@ void connectionStateChange ( struct connection_handler_args args )
     assert ( pChan->channel == args.chid );
 
     if ( args.op == CA_OP_CONN_UP ) {
-        assert ( pChan->accessUpdateCount > 0u );
+        if ( pChan->accessRightsHandlerInstalled ) {
+            assert ( pChan->accessUpdateCount > 0u );
+        }
         assert ( ! pChan->connected );
         pChan->connected = 1;
         status = ca_get_callback ( DBR_GR_STRING, args.chid, getCallbackStateChange, pChan );
@@ -274,6 +277,7 @@ void verifyConnectionHandlerConnect ( appChan *pChans, unsigned chanCount, unsig
 
             pChans[j].subscriptionUpdateCount = 0u;
             pChans[j].accessUpdateCount = 0u;
+            pChans[j].accessRightsHandlerInstalled = 0;
             pChans[j].connectionUpdateCount = 0u;
             pChans[j].getCallbackCount = 0u;
             pChans[j].connected = 0u;
@@ -285,6 +289,7 @@ void verifyConnectionHandlerConnect ( appChan *pChans, unsigned chanCount, unsig
             status = ca_replace_access_rights_event (
                     pChans[j].channel, accessRightsStateChange );
             SEVCHK ( status, NULL );
+            pChans[j].accessRightsHandlerInstalled = 1;
 
             status = ca_add_event ( DBR_GR_STRING, pChans[j].channel,
                     subscriptionStateChange, &pChans[j], &pChans[j].subscription );
@@ -360,18 +365,18 @@ void verifyBlockingConnect ( appChan *pChans, unsigned chanCount, unsigned repet
     int status;
     unsigned i, j;
     unsigned connections;
-    const unsigned backgroundConnCount = 1u;
+    unsigned backgroundConnCount = ca_get_ioc_connection_count ();
 
     showProgressBegin ();
 
-    connections = ca_get_ioc_connection_count ();
-    assert ( connections == backgroundConnCount );
+    assert ( backgroundConnCount == 1u || backgroundConnCount == 0u );
 
     for ( i = 0; i < repetitionCount; i++ ) {
 
         for ( j = 0u; j < chanCount; j++ ) {
             pChans[j].subscriptionUpdateCount = 0u;
             pChans[j].accessUpdateCount = 0u;
+            pChans[j].accessRightsHandlerInstalled = 0;
             pChans[j].connectionUpdateCount = 0u;
             pChans[j].getCallbackCount = 0u;
             pChans[j].connected = 0u;
@@ -390,6 +395,7 @@ void verifyBlockingConnect ( appChan *pChans, unsigned chanCount, unsigned repet
             status = ca_replace_access_rights_event (
                     pChans[j].channel, accessRightsStateChange );
             SEVCHK ( status, NULL );
+            pChans[j].accessRightsHandlerInstalled = 1;
         }
 
         showProgress ();
@@ -527,7 +533,7 @@ void verifyClear ( appChan *pChans )
 
     SEVCHK ( status, NULL );
     status = ca_add_event ( DBR_GR_DOUBLE, 
-            pChans[0].channel, subscriptionStateChange, NULL, NULL );
+            pChans[0].channel, noopSubscriptionStateChange, NULL, NULL );
     SEVCHK ( status, NULL );
 
     status = ca_clear_channel ( pChans[0].channel );
@@ -1466,7 +1472,7 @@ void performMonitorUpdateTest ( chid chan )
     tries = 0;
     while ( 1 ) {
         unsigned nComplete = 0u;
-        ca_pend_event ( 0.1 );
+        ca_pend_event ( 0.5 );
         for ( i = 0; i < NELEMENTS ( test ); i++ ) {
             if ( test[i].count > 0 ) {
                 if ( test[i].lastValue == temp ) {
@@ -1562,24 +1568,28 @@ void performMonitorUpdateTest ( chid chan )
 
 void verifyReasonableBeaconPeriod ( chid chan )
 {
-    double beaconPeriod, expectedBeaconPeriod, error;
+    if ( ca_get_ioc_connection_count () > 0 ) {
+        double beaconPeriod, expectedBeaconPeriod, error;
 
-    long status = envGetDoubleConfigParam ( &EPICS_CA_BEACON_PERIOD, &expectedBeaconPeriod );
-    assert ( status >=0 );
+        long status = envGetDoubleConfigParam ( 
+            &EPICS_CA_BEACON_PERIOD, &expectedBeaconPeriod );
+        assert ( status >=0 );
     
-    /* 
-     * 1) wait (hopefully) for a few beacons to arrive
-     * 2) watch inactive circuit for awhile to see if it prematurely disconnects
-     */
-    printf ( "Verifying beacon period - this takes %g sec. ", 
-        expectedBeaconPeriod * 2 );
-    fflush ( stdout );
-    epicsThreadSleep ( expectedBeaconPeriod * 2 );
-    beaconPeriod = ca_beacon_period ( chan );
-    error = fabs ( beaconPeriod - expectedBeaconPeriod );
-    /* expect less than a 10% error */
-    assert ( error / expectedBeaconPeriod < 0.1 ); 
-    printf ( "done\n" );
+        /* 
+         * 1) wait (hopefully) for a few beacons to arrive
+         * 2) watch inactive circuit for awhile to see if it 
+         *        prematurely disconnects
+         */
+        printf ( "Verifying beacon period - this takes %g sec. ", 
+            expectedBeaconPeriod * 2 );
+        fflush ( stdout );
+        epicsThreadSleep ( expectedBeaconPeriod * 2 );
+        beaconPeriod = ca_beacon_period ( chan );
+        error = fabs ( beaconPeriod - expectedBeaconPeriod );
+        /* expect less than a 10% error */
+        assert ( error / expectedBeaconPeriod < 0.1 ); 
+        printf ( "done\n" );
+    }
 }
 
 int acctst ( char *pName, unsigned channelCount, unsigned repetitionCount )
@@ -1604,7 +1614,10 @@ int acctst ( char *pName, unsigned channelCount, unsigned repetitionCount )
     SEVCHK ( status, NULL );
 
     connections = ca_get_ioc_connection_count ();
-    assert ( connections == 1u );
+    assert ( connections == 1u || connections == 0u );
+    if ( connections == 0u ) {
+        printf ( "testing with a local channel\n" );
+    }
 
     verifyMonitorSubscriptionFlushIO ( chan );
     monitorSubscriptionFirstUpdateTest ( chan );

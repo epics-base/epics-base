@@ -15,6 +15,7 @@ INC += dbNotify.h
 INC += dbScan.h
 INC += dbTest.h
 INC += db_access.h
+INC += db_test.h
 INC += db_field_log.h
 INC += initHooks.h
 INC += recGbl.h

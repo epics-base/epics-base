@@ -40,6 +40,7 @@
 
 #include        "dbDefs.h"
 #include        "errlog.h"
+#define epicsExportSharedSymbols
 #include        "db_access.h"
 #include        "dbNotify.h"
 
@@ -49,7 +50,7 @@ static void print_returned();
 
 
 #define		MAX_ELEMS	10
-int gft(char *pname)
+int epicsShareAPI gft(char *pname)
 {
 	char		tgf_buffer[MAX_ELEMS*MAX_STRING_SIZE+sizeof(struct dbr_ctrl_double)];
 	struct  dbAddr	addr;
@@ -97,7 +98,7 @@ int gft(char *pname)
  * TPF
  * Test put field
  */
-int pft(char *pname,char *pvalue)
+int epicsShareAPI pft(char *pname,char *pvalue)
 {
 	struct dbAddr		addr;
 	struct dbAddr		*paddr = &addr;
@@ -668,7 +669,7 @@ static void tpnCallback(PUTNOTIFY *ppn)
     free(ppn);
 }
 
-long tpn(char	*pname,char *pvalue)
+int epicsShareAPI tpn(char	*pname,char *pvalue)
 {
     long		status;
     struct dbAddr	*pdbaddr=NULL;

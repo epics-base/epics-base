@@ -18,6 +18,9 @@
 #define epicsExportSharedSymbols
 #include "epicsStdlib.h"
 
+#ifdef epicsStrtod
+# undef epicsStrtod
+#endif
 
 epicsShareFunc double epicsShareAPI epicsStrtod( 
     const char *str, char **endp)

@@ -80,9 +80,13 @@ LOCAL struct {
 	int		oldtaskid;
 	int		printfStatus;
 }pvtData;
+
+LOCAL int errInitFirstTime=TRUE;
 
 void errInit(void)
 {
+    if(!errInitFirstTime) return;
+    errInitFirstTime = FALSE;
     pvtData.oldtaskid = 0;
     if((clientWaitForTask=semBCreate(SEM_Q_FIFO,SEM_EMPTY))==NULL)
 	logMsg("semBcreate failed in errInit",0,0,0,0,0,0);

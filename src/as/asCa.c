@@ -32,6 +32,7 @@ of this distribution.
 #include "errlog.h"
 #include "taskwd.h"
 #include "callback.h"
+#include "db_access.h"
 #include "cadef.h"
 #include "caerr.h"
 #include "caeventmask.h"

@@ -59,7 +59,7 @@ TEMPLATE2=$(patsubst %0,%,$(patsubst %1,%,$(patsubst %2,%,$(patsubst %3,%,$(pats
           $(patsubst %5,%,$(patsubst %6,%,$(patsubst %7,%,$(patsubst %8,%,$(patsubst %9,%, \
           $(TEMPLATE1)))))))))))
 TEMPLATE3=$(addsuffix .template,$(addprefix ../,$(TEMPLATE2)))
-TEMPLATE_FILENAME=$(firstword $(wildcard ../$*.template) $(TEMPLATE3))
+TEMPLATE_FILENAME=$(firstword $(wildcard ../$*.template $(TEMPLATE3) ../$(DB_TEMPLATE)) $(TEMPLATE3))
 
 # dbst based database optimization
 ifeq '$(DB_OPT)' 'YES'
@@ -116,12 +116,12 @@ inc : $(COMMON_INC) $(INSTALL_INC)
 
 build : $(COMMON_DBDS) $(COMMON_DBS) \
 	$(INSTALL_DBDS) $(INSTALL_DBS) \
-	$(DBDDEPENDS_FILES) $(INDDBFROMTEMPLATE) $(TARGETS)
+	$(DBDDEPENDS_FILES) $(TARGETS)
 
 clean:: 
 	@$(RM) $(COMMONS) $(DBDDEPENDS_FILES)
 	@$(RM) *_registerRecordDeviceDriver.cpp
-	@$(RM) $(INDDBFROMTEMPLATE) $(TARGETS)
+	@$(RM) $(TARGETS)
 
 ##################################################### "Foreign" templates
 
@@ -216,6 +216,7 @@ $(COMMON_DIR)/%.db$(RAW): $(COMMON_DIR)/%.edf
 	@$(REPLACEVAR) < $@.VAR > $@
 	@$(RM) $@.VAR
 
+# dbst based database optimization
 $(COMMON_DIR)/%.db$(RAW): %.substitutions
 	@$(RM) $@$(DEP)
 	@$(DBDDEPENDS_CMD)

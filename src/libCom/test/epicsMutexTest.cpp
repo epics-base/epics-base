@@ -100,7 +100,7 @@ void epicsMutexPerformance ()
         tenLockPairsSquared ( mutex );
     }
     double delay = epicsTime::getCurrent () -  begin;
-    delay /= N * 100u; // convert to timer per lock pair
+    delay /= N * 100u; // convert to delay per lock pair
     delay *= 1e6; // convert to micro seconds
     printf ( "One lock pair completes in %f micro sec\n", delay );
 }

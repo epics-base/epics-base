@@ -13,7 +13,10 @@ include $(CONFIG)/os/CONFIG.Common.UnixCommon
 OS_CLASS = solaris
 ARCH_CLASS = x86
 
-CODE_CPPFLAGS = -D__EXTENSIONS__ -mt
+CODE_CPPFLAGS = -D__EXTENSIONS__
+
+COMPILER_CPPFLAGS += -mt
+COMPILER_LDFLAGS += -mt
 
 SOLARIS_VERSION = $(subst 5.,,$(shell uname -r))
 
@@ -23,9 +26,10 @@ POSIX_CPPFLAGS_YES_6 += -D_REENTRANT
 POSIX_CPPFLAGS_YES += -D_POSIX_C_SOURCE=199506L $(POSIX_CPPFLAGS_YES_$(SOLARIS_VERSION))
 POSIX_CPPFLAGS_YES += -D_XOPEN_SOURCE=500
 POSIX_LDLIBS_YES_6 += -lthread
-POSIX_LDLIBS_YES += -mt -lposix4 -lpthread $(POSIX_LDLIBS_YES_$(SOLARIS_VERSION))
+POSIX_LDLIBS_YES += -lposix4 -lpthread $(POSIX_LDLIBS_YES_$(SOLARIS_VERSION))
 
-OP_SYS_CPPFLAGS += -DSOLARIS=$(SOLARIS_VERSION)
+OP_SYS_CPPFLAGS += -DSOLARIS=$(SOLARIS_VERSION) $(COMPILER_CPPFLAGS)
+OP_SYS_LDFLAGS +=  $(COMPILER_LDFLAGS)
 ARCH_DEP_CPPFLAGS = -D_X86_
 
 # Set runtime path for shared libraries
@@ -41,3 +45,13 @@ OP_SYS_LDLIBS += -lsocket -lnsl
 OP_SYS_LDLIBS_8 += -lCrun -lc -lCstd
 OP_SYS_LDLIBS_9 += -lCrun -lc -lCstd
 OP_SYS_LDLIBS += $(OP_SYS_LDLIBS_$(SOLARIS_VERSION))
+
+#  Definitions used when COMMANDLINE_LIBRARY is READLINE
+GNU_DIR = /opt/gnu
+INCLUDES_READLINE = -I$(GNU_DIR)/include
+LDFLAGS_READLINE += -R$(GNU_DIR)/lib
+LDFLAGS_READLINE += -L$(GNU_DIR)/lib
+LDLIBS_READLINE = -lreadline -lcurses
+# Use archive if there is a problem with the readline shared library
+#LDLIBS_READLINE = -Bstatic -lreadline -Bdynamic -lcurses
+

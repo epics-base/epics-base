@@ -32,6 +32,7 @@
  * .01  09-30-91        jrw     Completely redesigned and rewritten
  * .02	12-02-91	jrw	Changed priority info to arrays
  * .03	12-16-91	jrw	Made the data portion of the message a pointer
+ * .04	01-21-91	jrw	moved the task parameters into task_params.h
  *
  * NOTES:
  * This driver currently needs work on error message generation.
@@ -48,6 +49,7 @@
 #define BB_IVEC_BASE	0x90	/* vectored interrupts (2 used for each link) */
 #define BB_IRQ_LEVEL	3	/* IRQ level */
 /**************** end of stuff that does not belong here **********************/
+
 
 #include <vxWorks.h>
 #include <types.h>
@@ -255,7 +257,7 @@ initBB()
       intConnect((BB_IVEC_BASE + 3 + (i*4)) * 4, xvmeIrqRdav, i);
 
       /* start a task to manage the link */
-      if (taskSpawn("bbLink", 46, VX_FP_TASK|VX_STDIO, 2000, xvmeLinkTask, i) == ERROR)
+      if (taskSpawn(BBLINK_NAME, BBLINK_PRI, BBLINK_OPT, BBLINK_STACK, xvmeLinkTask, i) == ERROR)
       {
         printf("initBB: failed to start link task for link %d\n", i);
       }
@@ -719,7 +721,9 @@ int	link;
       /* Restore interrupt mask for the link */
       pXvmeLink[link]->bbRegs->stat_ctl = intMask;
 
+      /**************************************************************/
       /* If it looks like the XVME is going to get stuck... kick it */
+      /**************************************************************/
 
       if (pXvmeLink[link]->bbRegs->stat_ctl & XVME_RX_INT)
       {

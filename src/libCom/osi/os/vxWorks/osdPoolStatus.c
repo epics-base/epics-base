@@ -1,14 +1,18 @@
 
+#include <memLib.h>
+
 #define epicsExportSharedSymbols
 #include "osiPoolStatus.h"
 
 /*
  * osiSufficentSpaceInPool ()
- *
- * @@@@@ not implemented @@@@@
- *
  */
 epicsShareFunc int epicsShareAPI osiSufficentSpaceInPool ()
 {
-    return 1;
+    if (memFindMax () > 100000) {
+        return 1;
+    }
+    else {
+        return 0;
+    }
 }

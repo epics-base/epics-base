@@ -27,3 +27,4 @@ inline void netWriteNotifyIO::operator delete (void *pCadaver, size_t size)
 { 
     netWriteNotifyIO::freeList.release (pCadaver,size);
 }
+

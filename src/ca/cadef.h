@@ -16,17 +16,6 @@
 #ifndef INCLcadefh
 #define INCLcadefh
 
-#include "shareLib.h"
-
-/* 
- * auto include of all stuff that cadef.h uses 
- */
-
-#include "caerr.h"
-#include "db_access.h"
-#include "caeventmask.h"
-#include "ellLib.h"
-#include "osiThread.h"
 
 /*
  * done in two ifdef steps so that we will remain compatible with
@@ -46,6 +35,13 @@ extern "C" {
 #include <stdarg.h>
 #endif
 #endif
+
+#include "ellLib.h"
+#include "osiThread.h"
+#include "shareLib.h"
+#include "caerr.h"
+#include "db_access.h"
+#include "caeventmask.h"
 
 typedef void    *chid;
 typedef chid    chanId; /* for when the structures field name is "chid" */

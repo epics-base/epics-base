@@ -87,10 +87,10 @@ epicsMutexOsdCreate(void)
       the_semaphore = _Semaphore_Get( sid, &location );
       _Thread_Enable_dispatch();  
 
-      return (epicsMutexId)the_semaphore;
+      return (struct epicsMutexOSD *)the_semaphore;
     }
 #endif
-    return (epicsMutexId)sid;
+    return (struct epicsMutexOSD *)sid;
 }
 
 void epicsMutexOsdDestroy(struct epicsMutexOSD * id)
@@ -109,7 +109,7 @@ void epicsMutexOsdDestroy(struct epicsMutexOSD * id)
         sc = rtems_semaphore_delete (sid);
     }
     if (sc != RTEMS_SUCCESSFUL)
-        errlogPrintf ("Can't destroy semaphore: %s\n", rtems_status_text (sc));
+        errlogPrintf ("Can't destroy semaphore %p (%lx): %s\n", id, sid, rtems_status_text (sc));
 }
 
 void epicsMutexOsdUnlock(struct epicsMutexOSD * id)
@@ -190,7 +190,7 @@ epicsShareFunc void epicsMutexOsdShow(struct epicsMutexOSD * id,unsigned int lev
 {
 #ifdef RTEMS_FAST_MUTEX
     Semaphore_Control *the_semaphore = (Semaphore_Control *)id;
-    id = (epicsMutexId)the_semaphore->Object.id;
+    id = (struct epicsMutexOSD *)the_semaphore->Object.id;
 #endif
 	epicsEventShow ((epicsEventId)id,level);
 }

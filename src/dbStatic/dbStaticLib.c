@@ -777,7 +777,7 @@ long epicsShareAPI dbAddPath(DBBASE *pdbbase,const char *path)
 	int len;
 		
 	/* preceding white space is removed */
-	if (isspace(*path)) {
+	if (isspace((int)*path)) {
 	    path++;
 	    continue;
 	}
@@ -795,7 +795,7 @@ long epicsShareAPI dbAddPath(DBBASE *pdbbase,const char *path)
 	    expectingPath = FALSE;
 	}
 	/* trailing white space is removed */
-	while (isspace(*plast)) {
+	while (isspace((int)*plast)) {
 		plast--;
 	}
 

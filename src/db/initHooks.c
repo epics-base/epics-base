@@ -29,7 +29,7 @@ typedef struct initHookLink {
 	initHookFunction func;
 } initHookLink;
 
-static functionListInited = FALSE;
+static int functionListInited = FALSE;
 static ELLLIST functionList;
 
 static void initFunctionList(void)

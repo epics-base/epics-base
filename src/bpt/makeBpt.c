@@ -62,7 +62,7 @@ static int getNumber(char **pbeg, double *value)
 {
     int	 nchars=0;
 
-    while(isspace(**pbeg) && **pbeg!= '\0') (*pbeg)++;
+    while(isspace((int)**pbeg) && **pbeg!= '\0') (*pbeg)++;
     if(**pbeg == '!' || **pbeg == '\0') return(-1);
     if(sscanf(*pbeg,"%lf%n",value,&nchars)!=1) return(-1);
     *pbeg += nchars;
@@ -130,7 +130,7 @@ int main(argc, argv)
 	linenum++;
 	inbuf[strlen(inbuf)] = '\0'; /* remove newline*/
 	pbeg = inbuf;
-	while(isspace(*pbeg) && *pbeg!= '\0') pbeg++;
+	while(isspace((int)*pbeg) && *pbeg!= '\0') pbeg++;
 	if(*pbeg == '!' || *pbeg == '\0') continue;
 	while(*pbeg!='"' && *pbeg!= '\0') pbeg++;
 	if(*pbeg!='"' ) errExit("Illegal Header");

@@ -460,15 +460,17 @@ void epicsShareAPI casr (unsigned level)
         bytes_reserved += rsrvSizeOfPutNotify ( 0 ) * 
                     freeListItemsAvail ( rsrvPutNotifyFreeList );
         printf( "There are currently %u bytes on the server's free list\n",
-            bytes_reserved);
+            (unsigned int) bytes_reserved);
         printf( "%u client(s), %u channel(s), %u event(s) (monitors) %u putNotify(s)\n",
-            freeListItemsAvail (rsrvClientFreeList),
-            freeListItemsAvail (rsrvChanFreeList),
-            freeListItemsAvail (rsrvEventFreeList),
-            freeListItemsAvail ( rsrvPutNotifyFreeList ));
+            (unsigned int) freeListItemsAvail ( rsrvClientFreeList ),
+            (unsigned int) freeListItemsAvail ( rsrvChanFreeList ),
+            (unsigned int) freeListItemsAvail ( rsrvEventFreeList ),
+            (unsigned int) freeListItemsAvail ( rsrvPutNotifyFreeList ));
         printf( "%u small buffers (%u bytes ea), and %u jumbo buffers (%u bytes ea)\n",
-            freeListItemsAvail ( rsrvSmallBufFreeListTCP ), MAX_TCP,
-            freeListItemsAvail ( rsrvLargeBufFreeListTCP ), rsrvSizeofLargeBufTCP );
+            (unsigned int) freeListItemsAvail ( rsrvSmallBufFreeListTCP ),
+            MAX_TCP,
+            (unsigned int) freeListItemsAvail ( rsrvLargeBufFreeListTCP ),
+            rsrvSizeofLargeBufTCP );
         if(pCaBucket){
             printf( "The server's resource id conversion table:\n");
             LOCK_CLIENTQ;

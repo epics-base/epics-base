@@ -1,7 +1,7 @@
 #!/bin/sh
 #
-# base/bin/tools/EpicsHostArch - returns the Epics host architecture suitable
-#                           for assigning to the EPICS_HOST_ARCH variable
+# EpicsHostArch - returns the Epics host architecture suitable
+#                 for assigning to the EPICS_HOST_ARCH variable
 
 if [ "x${1}" != "x" ]
 then

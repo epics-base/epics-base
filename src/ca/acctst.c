@@ -1190,7 +1190,7 @@ void performDeleteTest ( chid chan )
     showProgress ();
 
     /*
-     * without pausing begin deleting the event suvbscriptions 
+     * without pausing begin deleting the event subscriptions 
      * while the queue is full
      */
     for ( i=0; i < NELEMENTS (mid); i++ ) {

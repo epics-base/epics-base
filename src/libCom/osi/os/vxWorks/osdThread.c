@@ -358,10 +358,21 @@ void *epicsThreadPrivateGet(epicsThreadPrivateId id)
     return(data);
 }
 
+/* Tornado compilers for 68k have an optimizer bug at -O1 and above; the
+ * code generated for epicsThreadSleepQuantum() is incorrect.  This routine
+ * tests for that bug.  This routine must appear above the code it calls or
+ * or the optimizer may inline epicsThreadSleepQuantum() */
+int vxWorksBrokenCompilerTest()
+{
+    double q = epicsThreadSleepQuantum();
+    double one = q * sysClkRateGet();
+    int ok = (one > 0.999) && (one < 1.001);
+    printf("%s: epicsThreadSleepQuantum() = %f\n", ok  ? "Ok" : "BROKEN", q);
+    return ok;
+}
+
 double epicsThreadSleepQuantum ()
 {
-    /* If HZ is a double, under -O3 optimization the Tornado 2.x
-     * compilers generate bad code. Using a float works. */
-    float HZ = sysClkRateGet();
+    double HZ = sysClkRateGet ();
     return 1.0 / HZ;
 }

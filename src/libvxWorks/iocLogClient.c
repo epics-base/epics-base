@@ -33,6 +33,9 @@
  * .01 joh 081591	Added epics env config
  * .02 joh 011995	Allow stdio also	
  * $Log$
+ * Revision 1.8  1995/12/19  19:49:20  jhill
+ * Use connectWithTimeout() instead of connect()
+ *
  * Revision 1.7  1995/11/29  19:34:59  jhill
  * doc updated
  *
@@ -184,10 +187,14 @@ LOCAL int iocLogAttach(void)
 			 sizeof(addr));
 #endif
 	if (status < 0) {
-		char name[INET_ADDR_LEN];
+		/*
+		 * only print a message if it is the first try and
+		 * we havent got a valid connection already
+		 */
+		if (iocLogTries==0U && iocLogFD==ERROR) {
+			char name[INET_ADDR_LEN];
 
-		inet_ntoa_b(addr.sin_addr, name);
-		if (iocLogTries==0U) {
+			inet_ntoa_b(addr.sin_addr, name);
 			epicsPrintf(
 	"iocLogClient: unable to connect to %s port %d because \"%s\"\n", 
 				name,

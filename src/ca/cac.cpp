@@ -260,7 +260,7 @@ cac::~cac ()
     //
     {
         epicsAutoMutex autoMutex ( this->mutex );
-        this->serverTable.traverse ( tcpiiu::cleanShutdown );
+        this->serverTable.traverse ( & tcpiiu::cleanShutdown );
     }
 
     //
@@ -320,7 +320,7 @@ void cac::flushRequest ()
 // lock must be applied
 void cac::flushRequestPrivate ()
 {
-    this->serverTable.traverse ( tcpiiu::flushRequest );
+    this->serverTable.traverse ( & tcpiiu::flushRequest );
 }
 
 unsigned cac::connectionCount () const

@@ -1423,9 +1423,6 @@ caStatus casStrmClient::eventCancelAction ()
 	    this->out.commitMsg ();
 	    pMon->destroy ();
 	}	
-    else {
-        printf ( "no room for subscription destroy response message\n" );
-    }
 	
 	return status;
 }

@@ -24,6 +24,7 @@ Advantages:
 
 Disadvantage:
 * You have to get Perl, look e.g. at http://www.perl.com
+* Perl version 5.003_02 works, we don't know about earlier versions.
 
 
 Compile Perl:

@@ -29,6 +29,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.33  1997/08/04 23:37:19  jhill
+ * added beacon anomaly flag init/allow ip 255.255.255.255
+ *
  * Revision 1.31  1997/06/13 09:14:28  jhill
  * connect/search proto changes
  *
@@ -382,14 +385,14 @@ int cac_os_depen_init(struct CA_STATIC *pcas)
 		db_sizeof_event_block()+sizeof(struct pending_event),256);
 
 	pcas->ca_tid = taskIdSelf();
-	pcas->ca_client_lock = semMCreate(SEM_DELETE_SAFE);
-	assert(pcas->ca_client_lock);
-	pcas->ca_putNotifyLock = semMCreate(SEM_DELETE_SAFE);
-	assert(pcas->ca_putNotifyLock);
+	pcas->ca_client_lock = semMCreate(SEM_DELETE_SAFE|SEM_INVERSION_SAFE|SEM_Q_PRIORITY);
+	assert (pcas->ca_client_lock);
+	pcas->ca_putNotifyLock = semMCreate(SEM_DELETE_SAFE|SEM_INVERSION_SAFE|SEM_Q_PRIORITY);
+	assert (pcas->ca_putNotifyLock);
 	pcas->ca_io_done_sem = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
-	assert(pcas->ca_io_done_sem);
+	assert (pcas->ca_io_done_sem);
 	pcas->ca_blockSem = semBCreate(SEM_Q_PRIORITY, SEM_EMPTY);
-	assert(pcas->ca_blockSem);
+	assert (pcas->ca_blockSem);
 
 	status = cac_add_task_variable (pcas);
 	if (status != ECA_NORMAL) {
@@ -400,7 +403,6 @@ int cac_os_depen_init(struct CA_STATIC *pcas)
 	if (status != ECA_NORMAL){
 		return status;
 	}
-
 
 	evuser = (void *) db_init_events();
 	assert(evuser);
@@ -423,7 +425,7 @@ int cac_os_depen_init(struct CA_STATIC *pcas)
 			-1); /* higher priority */
 	assert(status == OK);
 
-        return ECA_NORMAL;
+	return ECA_NORMAL;
 }
 
 
@@ -665,52 +667,52 @@ LOCAL int event_import(int tid)
  *
  *
  */
-int ca_import(int tid)
+int ca_import (int tid)
 {
-        int             status;
-        struct CA_STATIC *pcas;
-        TVIU            *ptviu;
+	int status;
+	struct CA_STATIC *pcas;
+	TVIU *ptviu;
 
-        ca_check_for_fp();
+	ca_check_for_fp();
 
 	/*
 	 * just return success if they have already done
 	 * a ca import for this task
 	 */
-        pcas = (struct CA_STATIC *)
-                taskVarGet(taskIdSelf(), (int *)&ca_static);
-        if (pcas != (struct CA_STATIC *) ERROR){
-                return ECA_NORMAL;
-        }
+	pcas = (struct CA_STATIC *)
+			taskVarGet (taskIdSelf(), (int *)&ca_static);
+	if (pcas != (struct CA_STATIC *) ERROR) {
+		return ECA_NORMAL;
+	}
 
-        ptviu = (TVIU *) calloc(1, sizeof(*ptviu));
-        if(!ptviu){
-                return ECA_ALLOCMEM;
-        }
+	pcas = (struct CA_STATIC *)
+			taskVarGet (tid, (int *)&ca_static);
+	if (pcas == (struct CA_STATIC *) ERROR) {
+		ca_static = NULL;
+		return ECA_NOCACTX;
+	}
 
-        pcas = (struct CA_STATIC *)
-                taskVarGet(tid, (int *)&ca_static);
-        if (pcas == (struct CA_STATIC *) ERROR){
-                free(ptviu);
-                return ECA_NOCACTX;
-        }
+	ptviu = (TVIU *) calloc (1, sizeof(*ptviu));
+	if(!ptviu){
+		ca_static = NULL;
+		return ECA_ALLOCMEM;
+	}
 
-        ca_static = NULL;
+	ca_static = pcas;
 
-        status = taskVarAdd(VXTHISTASKID, (int *)&ca_static);
-        if (status == ERROR){
-                free(ptviu);
-                return ECA_ALLOCMEM;
-        }
+	status = taskVarAdd (VXTHISTASKID, (int *)&ca_static);
+	if (status == ERROR){
+		ca_static = NULL;
+		free (ptviu);
+		return ECA_ALLOCMEM;
+	}
 
-        ca_static = pcas;
+	ptviu->tid = taskIdSelf();
+	LOCK;
+	ellAdd(&ca_static->ca_taskVarList, &ptviu->node);
+	UNLOCK;
 
-        ptviu->tid = taskIdSelf();
-        LOCK;
-        ellAdd(&ca_static->ca_taskVarList, &ptviu->node);
-        UNLOCK;
-
-        return ECA_NORMAL;
+	return ECA_NORMAL;
 }
 
 
@@ -719,9 +721,9 @@ int ca_import(int tid)
  */
 int ca_import_cancel(int tid)
 {
-        int 			status;
-        TVIU    		*ptviu;
-        struct CA_STATIC 	*pcas;
+	int 			status;
+	TVIU    		*ptviu;
+	struct CA_STATIC 	*pcas;
 
 	if (tid == taskIdSelf()) {
 		pcas = NULL;
@@ -740,31 +742,31 @@ int ca_import_cancel(int tid)
 		return ECA_NOCACTX;
 	}
 
-        LOCK;
-        ptviu = (TVIU *) ellFirst(&ca_static->ca_taskVarList);
-        while (ptviu) {
-                if(ptviu->tid == tid){
-                        break;
-                }
-        	ptviu = (TVIU *) ellNext(&ptviu->node);
-        }
+	LOCK;
+	ptviu = (TVIU *) ellFirst(&ca_static->ca_taskVarList);
+	while (ptviu) {
+		if(ptviu->tid == tid){
+				break;
+		}
+		ptviu = (TVIU *) ellNext(&ptviu->node);
+	}
 
-        if(!ptviu){
+	if(!ptviu){
 		ca_static = pcas;
-        	UNLOCK;
-                return ECA_NOCACTX;
-        }
+		UNLOCK;
+		return ECA_NOCACTX;
+	}
 
-        ellDelete(&ca_static->ca_taskVarList, &ptviu->node);
+	ellDelete(&ca_static->ca_taskVarList, &ptviu->node);
 	free(ptviu);
-        UNLOCK;
+	UNLOCK;
 
-        status = taskVarDelete(tid, (void *)&ca_static);
-        assert (status == OK);
+	status = taskVarDelete(tid, (void *)&ca_static);
+	assert (status == OK);
 
 	ca_static = pcas;
 
-        return ECA_NORMAL;
+	return ECA_NORMAL;
 }
 
 

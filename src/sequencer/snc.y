@@ -4,7 +4,7 @@
 	Copyright, 1990, The Regents of the University of California.
 		         Los Alamos National Laboratory
 
-	@(#)snc.y	1.1	10/16/90
+	@(#)snc.y	1.2	4/17/91
 	ENVIRONMENT: UNIX
 ***************************************************************************/
 /*	SNC - State Notation Compiler.
@@ -31,9 +31,6 @@
 #include	<ctype.h>
 #include	"parse.h"
 
-Expr	*expression();
-Expr	*parameter();
-
 extern	int line_num; /* input file line no. */
 %}
 
@@ -44,27 +41,33 @@ extern	int line_num; /* input file line no. */
 	int	ival;
 	char	*pchar;
 	void	*pval;
-	Expr	*expr;
+	Expr	*pexpr;
 }
 %token	<pchar>	STATE STATE_SET
-%token	<pchar>	NUMBER NAME DBNAME
+%token	<pchar>	NUMBER NAME
 %token	<pchar>	DEBUG_PRINT
-%token	PROGRAM DEFINE
+%token	PROGRAM EXIT
 %token	R_SQ_BRACKET L_SQ_BRACKET
 %token	BAD_CHAR L_BRACKET R_BRACKET
 %token	COLON SEMI_COLON EQUAL
 %token	L_PAREN R_PAREN PERIOD COMMA OR AND
-%token	MONITOR ASSIGN TO WHEN INT FLOAT DOUBLE SHORT CHAR STRING_DECL
+%token	MONITOR ASSIGN TO WHEN CHAR SHORT INT LONG FLOAT DOUBLE STRING_DECL
 %token	EVFLAG SYNC
 %token	ASTERISK AMPERSAND
-%token	PLUS MINUS SLASH GT GE EQ LE LT NE NOT
+%token	PLUS MINUS SLASH GT GE EQ LE LT NE NOT BIT_OR BIT_AND
+%token	L_SHIFT R_SHIFT COMPLEMENT MODULO
 %token	PLUS_EQUAL MINUS_EQUAL MULT_EQUAL DIV_EQUAL AND_EQUAL OR_EQUAL
+%token	MODULO_EQUAL LEFT_EQUAL RIGHT_EQUAL CMPL_EQUAL
 %token	<pchar>	STRING
 %token	<pchar>	C_STMT
+%token	IF ELSE WHILE
+%token	PP_SYMBOL CR
 %type	<ival>	type
-%type	<pchar>	subscript
-%type	<expr> parameter function expression
-/* precidence rules for expression evaluation */
+%type	<pchar>	subscript binop asgnop unop
+%type	<pexpr> state_set_list state_set state_list state transition_list transition
+%type	<pexpr> parameter expr
+%type	<pexpr> statement stmt_list compound_stmt if_stmt else_stmt while_stmt
+/* precidence rules for expr evaluation */
 %left	OR AND
 %left	GT GE EQ NE LE LT
 %left	PLUS MINUS
@@ -75,9 +78,11 @@ extern	int line_num; /* input file line no. */
 %%	/* Begin rules */
 
 state_program 	/* define a state program */
-:	program_name definitions program_body		{ program(""); }
-|	program_name definitions program_body C_STMT	{ program($4); }
-|	error { snc_err("state program", line_num, 12); }
+:	program_name definitions state_set_list			{ program($3); }
+|	program_name definitions state_set_list global_c	{ program($3); }
+|	pp_code program_name definitions state_set_list		{ program($4); }
+|	pp_code program_name definitions state_set_list global_c{ program($4); }
+|	error { snc_err("state program"); }
 ;
 
 program_name 	/* program name */
@@ -97,21 +102,17 @@ defn_stmt	/* individual definitions for SNL (preceeds state sets) */
 |	debug_stmt
 |	sync_stmt
 |	C_STMT			{ defn_c_stmt($1); }
-|	error { snc_err("definitions", line_num, 1); }
+|	pp_code
+|	error { snc_err("definitions/declarations"); }
 ;
 
-assign_stmt	/* 'assign <var name>[<lower lim>,<upper lim>] to <db name>;' */
-		/* subscript range is optional */
-:	ASSIGN NAME TO STRING SEMI_COLON	{ assign_stmt($2, (char *)0, (char *)0, $4); }
-|	ASSIGN NAME L_SQ_BRACKET NUMBER R_SQ_BRACKET TO STRING SEMI_COLON
-						{ assign_stmt($2, $4, (char *)0, $7); }
-|	ASSIGN NAME L_SQ_BRACKET NUMBER COMMA NUMBER R_SQ_BRACKET TO STRING SEMI_COLON
-						{ assign_stmt($2, $4, $6, $9); }
+assign_stmt	/* 'assign <var name> to <db name>;' */
+:	ASSIGN NAME TO STRING SEMI_COLON { assign_stmt($2, $4); }
 ;
 
-monitor_stmt	/* variable to be monitored; subscript & delta are optional */
-:	MONITOR NAME subscript SEMI_COLON		{ monitor_stmt($2, $3, "0"); }
-|	MONITOR NAME subscript  COMMA NUMBER SEMI_COLON	{ monitor_stmt($2, $3,  $5); }
+monitor_stmt	/* variable to be monitored; delta is optional */
+:	MONITOR NAME SEMI_COLON		{ monitor_stmt($2, "0"); }
+|	MONITOR NAME COMMA NUMBER SEMI_COLON	{ monitor_stmt($2, $4); }
 ;
 
 subscript	/* e.g. [10] */
@@ -130,110 +131,164 @@ decl_stmt	/* variable declarations (e.g. float x[20];) */
 ;
 
 type		/* types for variables defined in SNL */
-:	FLOAT		{ $$ = V_FLOAT; }
-|	DOUBLE		{ $$ = V_DOUBLE; }
-|	INT		{ $$ = V_INT; }
+:	CHAR		{ $$ = V_CHAR; }
 |	SHORT		{ $$ = V_SHORT; }
-|	CHAR		{ $$ = V_CHAR; }
+|	INT		{ $$ = V_INT; }
+|	LONG		{ $$ = V_LONG; }
+|	FLOAT		{ $$ = V_FLOAT; }
+|	DOUBLE		{ $$ = V_DOUBLE; }
 |	STRING_DECL	{ $$ = V_STRING; }
 |	EVFLAG		{ $$ = V_EVFLAG; }
 ;
 
 sync_stmt	/* sync <variable> <event flag> */
-:	SYNC NAME subscript NAME SEMI_COLON	{ sync_stmt($2, $3, $4); }
-|	SYNC NAME subscript TO NAME SEMI_COLON	{ sync_stmt($2, $3, $5); }
+:	SYNC NAME TO NAME SEMI_COLON	{ sync_stmt($2, $4); }
+|	SYNC NAME NAME SEMI_COLON	{ sync_stmt($2, $3); /* archaic syntax */ }
 ;
 
-program_body 	/* a program body is one or more state sets */
-:	state_set
-|	program_body state_set
+state_set_list 	/* a program body is one or more state sets */
+:	state_set			{ $$ = $1; }
+|	state_set_list state_set	{ $$ = link_expr($1, $2); }
 ;
 
 state_set 	/* define a state set */
-:	STATE_SET NAME L_BRACKET state_set_body R_BRACKET	{ state_set($2); }
-|	error { snc_err("state set", line_num, 3); }
+:	STATE_SET NAME L_BRACKET state_list R_BRACKET
+				{ $$ = expression(E_SS, $2, $4, 0); }
+|	EXIT L_BRACKET stmt_list R_BRACKET
+				{ exit_code($3); $$ = 0; }
+
+|	error { snc_err("state set"); }
 ;
 
-state_set_body /* define a state set body (one or more state blocks) */
-:	state_block
-|	state_set_body state_block
-|	error { snc_err("state set body", line_num, 4); }
+state_list /* define a state set body (one or more states) */
+:	state				{ $$ = $1; }
+|	state_list state		{ $$ = link_expr($1, $2); }
+|	error { snc_err("state set"); }
 ;
 
-state_block	/* a block that defines a single state */
-:	STATE NAME L_BRACKET trans_list R_BRACKET
-			{ state_block($2); }
-|	error { snc_err("state block", line_num, 11); }
+state	/* a block that defines a single state */
+:	STATE NAME L_BRACKET transition_list R_BRACKET
+				{ $$ = expression(E_STATE, $2, $4, 0); }
+|	error { snc_err("state block"); }
 ;
 
-trans_list	/* all transitions for one state */
-:	transition
-|	trans_list transition
-|	error { snc_err("transition", line_num, 5); }
+transition_list	/* all transitions for one state */
+:	transition			{ $$ = $1; }
+|	transition_list transition	{ $$ = link_expr($1, $2); }
+|	error { snc_err("transition"); }
 ;
 
-transition	/* define a transition (e.g. "when (abc(x) | def(y, z)) state 2;" ) */
-:	WHEN L_PAREN expression R_PAREN L_BRACKET action R_BRACKET STATE NAME
-			{ transition($9, $3); }
+transition	/* define a transition ("when" statment ) */
+:	WHEN L_PAREN expr R_PAREN L_BRACKET stmt_list R_BRACKET STATE NAME
+			{ $$ = expression(E_WHEN, $9, $3, $6); }
 ;
 
-expression	/* general expression: e.g. (-b+2*a/(c+d)) != 0 || (func1(x,y) < 5.0) */
-		/* Expr *expression(int type, char *value, Expr *left, Expr *right) */
-:	NUMBER				{ $$ = expression(E_CONST, $1, (Expr *)0, (Expr *)0); }
-|	STRING				{ $$ = expression(E_STRING, $1, (Expr *)0, (Expr *)0); }
-|	NAME				{ $$ = expression(E_VAR, $1, (Expr *)0, (Expr *)0); }
-|	function			{ $$ = $1; }
-|	expression PLUS expression 	{ $$ = expression(E_BINOP, "+", $1, $3); }
-|	expression MINUS expression 	{ $$ = expression(E_BINOP, "-", $1, $3); }
-|	expression ASTERISK expression 	{ $$ = expression(E_BINOP, "*", $1, $3); }
-|	expression SLASH expression 	{ $$ = expression(E_BINOP, "/", $1, $3); }
-|	expression GT expression 	{ $$ = expression(E_BINOP, ">", $1, $3); }
-|	expression GE expression 	{ $$ = expression(E_BINOP, ">=", $1, $3); }
-|	expression EQ expression 	{ $$ = expression(E_BINOP, "==", $1, $3); }
-|	expression NE expression 	{ $$ = expression(E_BINOP, "!=", $1, $3); }
-|	expression LE expression 	{ $$ = expression(E_BINOP, "<=", $1, $3); }
-|	expression LT expression 	{ $$ = expression(E_BINOP, "<", $1, $3); }
-|	expression OR expression 	{ $$ = expression(E_BINOP, "||", $1, $3); }
-|	expression AND expression 	{ $$ = expression(E_BINOP, "&&", $1, $3); }
-|	expression EQUAL expression	{ $$ = expression(E_BINOP, "=", $1, $3); }
-|	expression PLUS_EQUAL expression	{ $$ = expression(E_BINOP, "+=", $1, $3); }
-|	expression MINUS_EQUAL expression	{ $$ = expression(E_BINOP, "-=", $1, $3); }
-|	expression AND_EQUAL expression	{ $$ = expression(E_BINOP, "&=", $1, $3); }
-|	expression OR_EQUAL expression	{ $$ = expression(E_BINOP, "|=", $1, $3); }
-|	expression DIV_EQUAL expression	{ $$ = expression(E_BINOP, "/=", $1, $3); }
-|	expression MULT_EQUAL expression	{ $$ = expression(E_BINOP, "*=", $1, $3); }
-|	L_PAREN expression R_PAREN	{ $$ = expression(E_PAREN, "", (Expr *)0, $2); }
-|	PLUS expression  %prec UOP	{ $$ = expression(E_UNOP, "+", (Expr *)0, $2); }
-|	MINUS expression %prec UOP	{ $$ = expression(E_UNOP, "-", (Expr *)0, $2); }
-|	NOT expression			{ $$ = expression(E_UNOP, "!", (Expr *)0, $2); }
-|	ASTERISK expression %prec UOP	{ $$ = expression(E_UNOP, "*", (Expr *)0, $2); }
-|	AMPERSAND expression %prec UOP	{ $$ = expression(E_UNOP, "&", (Expr *)0, $2); }
-|	expression L_SQ_BRACKET expression R_SQ_BRACKET %prec SUBSCRIPT
+expr	/* general expr: e.g. (-b+2*a/(c+d)) != 0 || (func1(x,y) < 5.0) */
+	/* Expr *expression(int type, char *value, Expr *left, Expr *right) */
+:	expr binop expr 		{ $$ = expression(E_BINOP, $2, $1, $3); }
+|	expr asgnop expr		{ $$ = expression(E_ASGNOP, $2, $1, $3); }
+|	unop expr  %prec UOP		{ $$ = expression(E_UNOP, $1, $2, 0); }
+|	NUMBER				{ $$ = expression(E_CONST, $1, 0, 0); }
+|	STRING				{ $$ = expression(E_STRING, $1, 0, 0); }
+|	NAME				{ $$ = expression(E_VAR, $1, 0, 0); }
+|	NAME L_PAREN parameter R_PAREN	{ $$ = expression(E_FUNC, $1, $3, 0); }
+|	EXIT L_PAREN parameter R_PAREN	{ $$ = expression(E_FUNC, "exit", $3, 0); }
+|	L_PAREN expr R_PAREN		{ $$ = expression(E_PAREN, "", $2, 0); }
+|	expr L_SQ_BRACKET expr R_SQ_BRACKET %prec SUBSCRIPT
 					{ $$ = expression(E_SUBSCR, "", $1, $3); }
-|	/* empty */			{ $$ = expression(E_EMPTY, ""); }
+|	/* empty */			{ $$ = expression(E_EMPTY, "", 0, 0); }
 ;
 
-function	/* function */
-:	NAME L_PAREN parameter R_PAREN	{ $$ = expression(E_FUNC, $1, (Expr *)0, $3); }
+unop	/* Unary operators */
+:	PLUS		{ $$ = "+"; }
+|	MINUS		{ $$ = "-"; }
+|	ASTERISK	{ $$ = "*"; }
+|	AMPERSAND	{ $$ = "&"; }
+|	NOT		{ $$ = "!"; }
+;
+
+binop	/* Binary operators */
+:	MINUS		{ $$ = "-"; }
+|	PLUS		{ $$ = "+"; }
+|	ASTERISK	{ $$ = "*"; }
+|	SLASH 		{ $$ = "/"; }
+|	GT		{ $$ = ">"; }
+|	GE		{ $$ = ">="; }
+|	EQ		{ $$ = "=="; }
+|	NE		{ $$ = "!="; }
+|	LE		{ $$ = "<="; }
+|	LT		{ $$ = "<"; }
+|	OR		{ $$ = "||"; }
+|	AND		{ $$ = "&&"; }
+|	L_SHIFT		{ $$ = "<<"; }
+|	R_SHIFT		{ $$ = ">>"; }
+|	BIT_OR		{ $$ = "|"; }
+|	BIT_AND		{ $$ = "&"; }
+|	COMPLEMENT	{ $$ = "^"; }
+|	MODULO		{ $$ = "%"; }
+;
+
+asgnop	/* Assignment operators */
+:	EQUAL		{ $$ = "="; }
+|	PLUS_EQUAL	{ $$ = "+="; }
+|	MINUS_EQUAL	{ $$ = "-="; }
+|	AND_EQUAL	{ $$ = "&="; }
+|	OR_EQUAL	{ $$ = "|="; }
+|	DIV_EQUAL	{ $$ = "/="; }
+|	MULT_EQUAL	{ $$ = "*="; }
+|	MODULO_EQUAL	{ $$ = "%="; }
+|	LEFT_EQUAL	{ $$ = "<<="; }
+|	RIGHT_EQUAL	{ $$ = ">>="; }
+|	CMPL_EQUAL	{ $$ = "^="; }
 ;
 
 parameter	/* expr, expr, .... */
-:	expression			{ $$ = parameter($1, 0); }
-|	parameter COMMA expression	{ $$ = parameter($3, $1); }
-|	/* empty */			{ $$ = 0; }
+:	expr			{ $$ = $1; }
+|	parameter COMMA expr	{ $$ = link_expr($1, $3); }
+|	/* empty */		{ $$ = 0; }
 ;
 
-action 		/* action block for a single state */
-:	/* Empty */
-|	action_item
-|	action action_item
-|	error { snc_err("action", line_num, 8); }
+compound_stmt		/* compound statement e.g. { ...; ...; ...; } */
+:	L_BRACKET stmt_list R_BRACKET { $$ = expression(E_CMPND, "",$2, 0); }
+|	error { snc_err("action statements"); }	
 ;
 
-action_item	/* define an action */
-:	expression SEMI_COLON	{ action_stmt($1); }
-|	C_STMT			{ action_c_stmt($1); }
-|	error 			{ snc_err("action statement", line_num, 9); }
+stmt_list
+:	statement		{ $$ = $1; }
+|	stmt_list statement	{ $$ = link_expr($1, $2); }
+|	/* empty */		{ $$ = 0; }
 ;
 
+statement
+:	compound_stmt			{ $$ = $1; }
+|	expr SEMI_COLON			{ $$ = expression(E_STMT, "",$1, 0); }
+|	if_stmt				{ $$ = $1; }
+|	else_stmt			{ $$ = $1; }
+|	while_stmt			{ $$ = $1; }
+|	C_STMT				{ $$ = expression(E_TEXT, "", $1, 0); }
+|	pp_code				{ $$ = 0; }
+|	error 				{ snc_err("action statement"); }
+;
+
+if_stmt
+:	IF L_PAREN expr R_PAREN statement { $$ = expression(E_IF, "", $3, $5); }
+;
+
+else_stmt
+:	ELSE statement			{ $$ = expression(E_ELSE, "", $2, 0); }
+;
+
+while_stmt
+:	WHILE L_PAREN expr R_PAREN statement { $$ = expression(E_WHILE, "", $3, $5); }
+;
+
+pp_code		/* pre-processor code (e.g. # 1 "test.st") */
+:	PP_SYMBOL NUMBER STRING CR		{ pp_code($2, $3, ""); }
+|	PP_SYMBOL NUMBER STRING NUMBER CR	{ pp_code($2, $3, $4); }
+;
+
+global_c
+:	C_STMT		{ global_c_stmt($1); }
+;
 %%
+

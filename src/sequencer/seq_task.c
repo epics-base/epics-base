@@ -3,7 +3,7 @@
 	Copyright, 1990, The Regents of the University of California.
 		         Los Alamos National Laboratory
 
-	@(#)seq_task.c	1.4	2/1/91
+	@(#)seq_task.c	1.7	4/23/91
 	DESCRIPTION: Seq_tasks.c: Task creation and control for sequencer
 	state sets.
 
@@ -14,50 +14,63 @@
 #include	"vxWorks.h"
 #include	"taskLib.h"
 
-
-LOCAL ss_task_init();
-LOCAL ULONG get_timeout();
-LOCAL VOID semTake();
-
-
-extern TASK *task_area_ptr;
-
-/* Create state set tasks.  Set task variable for each task */
-#define	TASK_NAME_SIZE	25
-create_ss_tasks(sp_ptr, stack_size)
-SPROG	*sp_ptr;
-int	stack_size;
+#define		TASK_NAME_SIZE 10
+/* Sequencer main task entry point */
+sequencer(sp_ptr, stack_size, ptask_name)
+SPROG		*sp_ptr;	/* ptr to original (global) state program table */
+int		stack_size;	/* stack size */
+char		*ptask_name;	/* Parent task name */
 {
-	SSCB	*ss_ptr;
-	int	nss;
-	char	task_name[2*TASK_NAME_SIZE+2];
-	extern	TASK *task_area_ptr;
-	extern	ss_entry();
+	extern SPROG	*seq_task_ptr;
+	SSCB		*ss_ptr;
+	STATE		*st_ptr;
+	int		nss, task_id;
+	char		task_name[TASK_NAME_SIZE+10];
+	extern		ss_entry();
 
+	sp_ptr->task_id = taskIdSelf(); /* my task id */
+
+	/* Make "seq_task_ptr" a task variable */
+	if (taskVarAdd(sp_ptr->task_id, &seq_task_ptr) != OK)
+	{
+		seqLog(sp_ptr, "%s: taskVarAdd failed\n", sp_ptr->name);
+		return -1;
+	}
+	seq_task_ptr = sp_ptr;
+
+	/* Initilaize state set to first task, and set event mask */
 	ss_ptr = sp_ptr->sscb;
-	task_name[0] = 0;
-	strncat(task_name, sp_ptr->name, TASK_NAME_SIZE);
-	strcat(task_name, "_");
-	
 	for (nss = 0; nss < sp_ptr->nss; nss++, ss_ptr++)
 	{
-		if (nss != 0)
-		{	/* Spawn the ss task */
-			/* Form task name from program name + state set name */
-			strncat(task_name, ss_ptr->name, TASK_NAME_SIZE);
-
-			ss_ptr->task_id = taskSpawn(task_name,
-			 SPAWN_PRIORITY+ss_ptr->task_priority,
-			 SPAWN_OPTIONS, stack_size, ss_entry, sp_ptr, ss_ptr);
-#ifdef	DEBUG
-			printf("task %d: %s\n", ss_ptr->task_id, task_name);
-#endif	DEBUG
-		}
+		st_ptr = ss_ptr->states;
+		ss_ptr->current_state = 0;
+		ss_ptr->pMask = (st_ptr->eventMask);
 	}
+
+	/* Connect to database channels & initiate monitor requests.
+	   Returns here immediately if "connect" switch is not set */
+	connect_db_channels(sp_ptr);
+
+	/* Create the state set tasks */
+	if (strlen(ptask_name) > TASK_NAME_SIZE);
+		ptask_name[TASK_NAME_SIZE] = 0;
+
+	ss_ptr = sp_ptr->sscb + 1;
+	for (nss = 1; nss < sp_ptr->nss; nss++, ss_ptr++)
+	{
+		/* Form task name from program name + state set number */
+		sprintf(task_name, "%s_%d", ptask_name, nss);
+
+		/* Spawn the task */
+		task_id = taskSpawn(task_name,
+		 SPAWN_PRIORITY+ss_ptr->task_priority,
+		 SPAWN_OPTIONS, stack_size, ss_entry, sp_ptr, ss_ptr);
+
+		seqLog(sp_ptr, "Spawning task %d: \"%s\"\n", task_id, task_name);
+	}
+
 	/* Main task handles first state set */
-	ss_ptr = sp_ptr->sscb;
-	ss_ptr->task_id = sp_ptr->task_id;
-	ss_entry(sp_ptr, ss_ptr);
+	ss_entry(sp_ptr, sp_ptr->sscb);
 }
 /* Task entry point for state sets */
 /* Provides main loop for state set processing (common, re-entrant code) */
@@ -65,32 +78,28 @@ ss_entry(sp_ptr, ss_ptr)
 SPROG	*sp_ptr;
 SSCB	*ss_ptr;
 {
-	BOOL	ev_trig;
-	STATE	*st_ptr;
-	ULONG	delay, get_timeout();
+	BOOL		ev_trig;
+	STATE		*st_ptr, *st_pNext;
+	ULONG		delay, get_timeout();
+	int		i;
+	char		*var_ptr;
 
 	/* Initialize all tasks except the main task */
+	ss_ptr->task_id = taskIdSelf();
 	if (ss_ptr->task_id != sp_ptr->task_id)
 		ss_task_init(sp_ptr, ss_ptr);
 
-	/* Start in first state */
-	st_ptr = ss_ptr->current_state;
-
-	/* Initialize for event flag processing */
-	ss_ptr->ev_flag_mask = st_ptr->event_flag_mask;
-	ss_ptr->ev_flag = 0;
+	var_ptr = sp_ptr->user_area;
+	st_ptr = ss_ptr->states;
 
 	/* Main loop */
 	while (1)
 	{
-#ifdef	DEBUG
-		printf("State set %s, state %s\n", ss_ptr->name, st_ptr->name);
-#endif	DEBUG
 		ss_ptr->time = tickGet(); /* record time we entered this state */
 
 		/* Call delay function to set up delays */
 		ss_ptr->ndelay = 0;
-		st_ptr->delay_func(sp_ptr, ss_ptr);
+		st_ptr->delay_func(sp_ptr, ss_ptr, var_ptr);
 
 		/* On 1-st pass fall thru w/o wake up */
 		semGive(ss_ptr->sem_id);
@@ -100,23 +109,45 @@ SSCB	*ss_ptr;
 			/* Wake up on CA event, event flag, or expired time delay */
 			semTake(ss_ptr->sem_id, get_timeout(ss_ptr, st_ptr));
 #ifdef	DEBUG
-			printf("%s: semTake returned\n", ss_ptr->name);
+			printf("%s: semTake returned, events[0]=0x%x\n",
+			 ss_ptr->name, ss_ptr->events[0]);
 #endif	DEBUG
 			ss_ptr->time = tickGet();
-			/* Call event function to check for event trigger */
-			ev_trig = st_ptr->event_func(sp_ptr, ss_ptr);
-		} while (!ev_trig);
 
-		/* Event triggered, execute the corresponding action */
+			/* Apply resource lock: any new events coming in will
+			   be deferred until next state is entered */
+			semTake(sp_ptr->sem_id, 0);
+
+			/* Call event function to check for event trigger */
+			ev_trig = st_ptr->event_func(sp_ptr, ss_ptr, var_ptr);
+
+			if (!ev_trig)
+				semGive(sp_ptr->sem_id); /* Unlock resource */
+		} while (!ev_trig);
+		/* Event triggered */
+
+		/* Change event mask ptr for next state */
+		st_pNext = ss_ptr->states + ss_ptr->next_state;
+		ss_ptr->pMask = (st_pNext->eventMask);
+
+		/* Clear event bits */
+		for (i = 0; i < NWRDS; i++)
+			ss_ptr->events[i] = 0;
+
+		/* Unlock resource */
+		semGive(sp_ptr->sem_id);
+
+		/* Execute the action for this event */
 		ss_ptr->action_complete = FALSE;
-		st_ptr->action_func(sp_ptr, ss_ptr);
+		st_ptr->action_func(sp_ptr, ss_ptr, var_ptr);
+
+		/* Flush any outstanding DB requests */
+		ca_flush_io();
 
 		/* Change to next state */
+		ss_ptr->prev_state = ss_ptr->current_state;
 		ss_ptr->current_state = ss_ptr->next_state;
-		ss_ptr->next_state = NULL;
-		st_ptr = ss_ptr->current_state;
-		ss_ptr->ev_flag_mask = st_ptr->event_flag_mask;
-		ss_ptr->ev_flag = 0;
+		st_ptr = ss_ptr->states + ss_ptr->current_state;
 		ss_ptr->action_complete = TRUE;
 	}
 }
@@ -125,9 +156,12 @@ LOCAL ss_task_init(sp_ptr, ss_ptr)
 SPROG	*sp_ptr;
 SSCB	*ss_ptr;
 {
+	extern SPROG	*seq_task_ptr;
+
+
 	/* Import task variable context from main task */
-	taskVarAdd(ss_ptr->task_id, &task_area_ptr);
-	taskVarGet(sp_ptr->task_id, &task_area_ptr); /* main task's id */
+	taskVarAdd(ss_ptr->task_id, &seq_task_ptr);
+	seq_task_ptr = sp_ptr;
 
 	/* Import Channel Access context from main task */
 	ca_import(sp_ptr->task_id);
@@ -168,7 +202,12 @@ SSCB	*ss_ptr;
 int	delay_id;		/* delay id */
 float	delay;
 {
-	ss_ptr->timeout[delay_id] = ss_ptr->time + delay*60.0;
+	int		td_tics;
+
+	/* Note: the following 2 lines could be combined, but doing so produces
+	 * the undefined symbol "Mund", which is not in VxWorks library */
+	td_tics = delay*60.0;
+	ss_ptr->timeout[delay_id] = ss_ptr->time + td_tics;
 	delay_id += 1;
 	if (delay_id > ss_ptr->ndelay)
 		ss_ptr->ndelay = delay_id;
@@ -187,49 +226,79 @@ int	delay_id;
 sprog_delete(pTcbX)
 TCBX	*pTcbX;	/* ptr to TCB of task to be deleted */
 {
-	int	tid, nss, val, tid_ss;
-	SPROG	*sp_ptr;
-	SSCB	*ss_ptr;
-	extern	TASK *task_area_ptr;
-	TASK	*ta_ptr;
+	int		tid, nss, val, tid_ss;
+	SPROG		*sp_ptr;
+	SSCB		*ss_ptr;
+	extern SPROG	*seq_task_ptr;
 
 	tid = pTcbX->taskId;
-	/* Note: task_area_ptr is a task variable */
-	val = taskVarGet(tid, &task_area_ptr);
+	/* Note: seq_task_ptr is a task variable */
+	val = taskVarGet(tid, &seq_task_ptr);
 	if (val == ERROR)
 		return 0; /* not one of our tasks */
-	ta_ptr = (TASK *)val;
-	printf("  ta_ptr=0x%x, tid=%d=0x%x\n", ta_ptr, tid, tid);
-	sp_ptr = ta_ptr->sp_ptr;
+	sp_ptr = (SPROG *)val;
+	logMsg("Delete %s: sp_ptr=%d=0x%x, tid=%d\n",
+	 sp_ptr->name, sp_ptr, sp_ptr, tid);
 
 	/* Is this a real sequencer task? */
 	if (sp_ptr->magic != MAGIC)
 	{
-		printf("  Not main state program task\n");
+		logMsg("  Not main state program task\n");
 		return -1;
 	}
 
-	/* Delete state set tasks */
+	/* Suspend state set tasks */
 	ss_ptr = sp_ptr->sscb;
 	for (nss = 0; nss < sp_ptr->nss; nss++, ss_ptr++)
 	{
 		tid_ss = ss_ptr->task_id;
 		if ( tid_ss > 0)
 		{
-			/* Don't delete self yet */
+			/* Don't suspend self */
 			if (tid != tid_ss)
 			{
-				printf("   delete ss task: tid=%d=0x%x\n",
-				 tid_ss, tid_ss);
-				taskVarSet(tid_ss, &task_area_ptr, ERROR);
-				taskDelete(tid_ss);
+				logMsg("   suspend ss task: tid=%d\n", tid_ss);
+				taskVarSet(tid_ss, &seq_task_ptr, ERROR);
+				taskSuspend(tid_ss);
 			}
 		}
 	}
 
-	printf("free ta_ptr=0x%x\n", ta_ptr);
-	taskDelay(60);
-	free(ta_ptr);
+	/* Call user exit routine */
+	sp_ptr->exit_func(sp_ptr, sp_ptr->user_area);
+
+	/* Close the log file */
+	if (sp_ptr->logFd > 0 && sp_ptr->logFd != ioGlobalStdGet(1))
+	{
+		logMsg("Closing log fd=%d\n", sp_ptr->logFd);
+		close(sp_ptr->logFd);
+		sp_ptr->logFd = ioGlobalStdGet(1);
+	}
+
+	/* Delete state set tasks & delete semaphores */
+	ss_ptr = sp_ptr->sscb;
+	for (nss = 0; nss < sp_ptr->nss; nss++, ss_ptr++)
+	{
+		tid_ss = ss_ptr->task_id;
+		if ( tid_ss > 0)
+		{
+			/* Don't delete self */
+			if (tid != tid_ss)
+			{
+				logMsg("   delete ss task: tid=%d\n", tid_ss);
+				taskVarSet(tid_ss, &seq_task_ptr, ERROR);
+				taskDelete(tid_ss);
+			}
+			semDelete(ss_ptr->sem_id);
+		}
+	}
+
+	/* Delete semaphores & free the task area */
+	semDelete(sp_ptr->sem_id);
+	semDelete(sp_ptr->logSemId);
+	logMsg("free sp_ptr->dyn_ptr=0x%x\n", sp_ptr->dyn_ptr);
+	taskDelay(5);
+	free(sp_ptr->dyn_ptr);
 	
 	return 0;
 }

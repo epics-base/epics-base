@@ -3,21 +3,26 @@
 	Copyright, 1990, The Regents of the University of California.
 		         Los Alamos National Laboratory
 
-	@(#)seq.c	1.8	2/1/91
+	@(#)seq_main.c	1.2	4/23/91
 	DESCRIPTION: Seq() initiates a sequence as a group of cooperating
 	tasks.  An optional string parameter specifies the values for
 	macros.
 
 	ENVIRONMENT: VxWorks
+
+	HISTORY:
+	23apr91,ajk Fixed problem with state program invoking the sequencer.
 ***************************************************************************/
 
-/*	#define	DEBUG	1	*/
+/*#define	DEBUG	1*/
 
 #include	"seq.h"
 #include	"vxWorks.h"
 #include	"taskLib.h"
 
 #define	SCRATCH_SIZE	(MAX_MACROS*(MAX_STRING_SIZE+1)*12)
+
+/*#define		DEBUG*/
 
 /*	The following variable points to the area allocated for the
 	parent state program and its corresponding state sets.
@@ -26,94 +31,52 @@
 	It is also used as a flag to indicate that the "taskDeleteHookAdd()"
 	routine has been called (we only want to do that once after VxWorks boots).
 */
-
-
-LOCAL TASK *alloc_task_area();
-LOCAL count_states();
-LOCAL copy_sprog();
-LOCAL init_sprog();
-LOCAL init_sscb();
-
-
-
-TASK	*task_area_ptr = NULL;
+SPROG	*seq_task_ptr = NULL;
 
 /* User entry routine to initiate a state program */
-seq(sp_ptr, macro_def, stack_size)
-SPROG	*sp_ptr;	/* ptr to state program table */
-char	*macro_def;	/* macro def'n string */
-int	stack_size;	/* stack size */
+seq(sp_ptr_orig, macro_def, stack_size)
+SPROG		*sp_ptr_orig;	/* ptr to original state program table */
+char		*macro_def;	/* macro def'n string */
+int		stack_size;	/* stack size */
 {
-	int	status;
-	extern	sequencer(), sprog_delete();
-	extern	char *seqVersion;
+	int		status;
+	extern		sequencer(), sprog_delete();
+	extern char	*seqVersion;
+	SPROG		*sp_ptr, *alloc_task_area();
+	extern SPROG	*seq_task_ptr;
+	char		*seqMacValGet(), *pname, *pvalue, *ptask_name;
 
 	/* If no parameters specified, print version info. */
-	if (sp_ptr == 0)
+	if (sp_ptr_orig == 0)
 	{
 		printf("%s\n", seqVersion);
 		return 0;
 	}
 
 	/* Check for correct state program format */
-	if (sp_ptr->magic != MAGIC)
+	if (sp_ptr_orig->magic != MAGIC)
 	{	/* Oops */
-		printf("Illegal magic number in state program\n");
+		logMsg("Illegal magic number in state program\n");
 		return -1;
 	}
 
-	/* Specify a routine to run at task delete */
-	if (task_area_ptr == NULL)
-	{
-		taskDeleteHookAdd(sprog_delete);
-		task_area_ptr = (TASK *)ERROR;
-	}
-
-	/* Specify stack size */
-	if (stack_size < SPAWN_STACK_SIZE)
-		stack_size = SPAWN_STACK_SIZE;
-
-	/* Spawn the sequencer main task */
-	printf("Spawning state program \"%s\"\n", sp_ptr->name);
-	status = taskSpawn(sp_ptr->name, SPAWN_PRIORITY,
-	 SPAWN_OPTIONS, stack_size,
-	 sequencer, sp_ptr, macro_def, stack_size);
-	return status;
-}
-/* Sequencer main task entry point */
-sequencer(sp_ptr_orig, macro_def, stack_size)
-SPROG	*sp_ptr_orig;	/* ptr to original (global) state program table */
-char	*macro_def;	/* macro def'n string */
-int	stack_size;	/* stack size */
-{
-	int	tid, nmac, nss, nstates, nchannels, user_size;
-	TASK	*alloc_task_area();
-	extern	TASK *task_area_ptr;
-	SPROG	*sp_ptr;
-	MACRO	*mac_ptr;
-	char	macroTmp[100]; /* for macro names & values */
-
-	tid = taskIdSelf(); /* my task id */
-
-	/* Allocate a contiguous space for all task structures */
-	task_area_ptr = alloc_task_area(sp_ptr_orig);
 #ifdef	DEBUG
-	printf("task_area_ptr=%d, *task_area_ptr=%d\n", task_area_ptr, *task_area_ptr);
+	print_sp_info(sp_ptr_orig);
 #endif	DEBUG
 
-	/* Make "task_area_ptr" a task variable */
-	if (taskVarAdd(tid, &task_area_ptr) != OK)
+	/* Specify a routine to run at task delete */
+	if (seq_task_ptr == NULL)
 	{
-		printf("taskVarAdd failed\n");
-		return -1;
+		taskDeleteHookAdd(sprog_delete);
+		seq_task_ptr = (SPROG *)ERROR;
 	}
-	
-	sp_ptr_orig->task_id = tid;
-	sp_ptr = task_area_ptr->sp_ptr;
-	mac_ptr = task_area_ptr->mac_ptr;
+
+	/* Allocate a contiguous space for all dynamic structures */
+	sp_ptr = alloc_task_area(sp_ptr_orig);
 
 	/* Make a private copy of original structures (but change pointers!) */
-	copy_sprog(sp_ptr_orig, task_area_ptr);
+	if (sp_ptr_orig->reent_flag)
+		copy_sprog(sp_ptr_orig, sp_ptr);
 
 	/* Initialize state program block */
 	init_sprog(sp_ptr);
@@ -122,132 +85,204 @@ int	stack_size;	/* stack size */
 	init_sscb(sp_ptr);
 
 	/* Initialize the macro definition table */
-	macTblInit(mac_ptr);	/* Init macro table */
+	seqMacTblInit(sp_ptr->mac_ptr);	/* Init macro table */
 
-	/* Parse the macro definitions */
-	macParse(macro_def, mac_ptr);
+	/* Parse the macro definitions from the "program" statement */
+	seqMacParse(sp_ptr->params, sp_ptr);
 
-	/* Connect to DB channels */
-	connect_db_channels(sp_ptr, mac_ptr);
-
-	/* Issue monitor requests */
-	issue_monitor_requests(sp_ptr);
-
-	/* Create the state set tasks */
-	create_ss_tasks(sp_ptr, stack_size);
-
-	/* Note: No return from task */
-}
-/* Allocate the task area.  This area will hold all state program structures:
-	|***************|
-	| TASK		|---|
-	|***************|   |
-	| SPROG		|   |
-	|***************|   V Ptrs to start of SPROG, SSCB[0], STATE[0],
-	| SSCB	 [0]	|	USER AREA, and SCRATCH AREA
-	|***************|
-	| SSCB	 [1]	|
-	|***************|
-	| .....  [n]	|
-	|***************|
-	| STATE  [0]	|
-	|***************|
-	| STATE  [1]	|
-	|***************|
-	| .....  [n]	|
-	|***************|
-	| USER AREA	| - user variables (a structure)
-	|***************|
-	| MACRO TBL	|
-	|***************|
-	| SCRATCH AREA	| - for parsing channel names
-	|***************|
-
-
-  The pointer to the allocated area is saved for task delete hook routine.
-*/
-LOCAL TASK *alloc_task_area(sp_ptr_orig)
-SPROG	*sp_ptr_orig;	/* original state program area */
-{
-	int	size, nss, nstates, nchannels, user_size, mac_size, scr_size;
-	TASK	*ta_ptr;	/* ptr to task area */
-
-	/* Calc. size of task area */
-	nss = sp_ptr_orig->nss;
-	nstates = count_states(sp_ptr_orig);
-	nchannels = sp_ptr_orig->nchan;
-	user_size = sp_ptr_orig->user_size;
-	mac_size = MAX_MACROS*sizeof(MACRO);
-	scr_size = SCRATCH_SIZE;
-	size = sizeof(TASK) + sizeof(SPROG) + nss*sizeof(SSCB) +
-	 nstates*sizeof(STATE) + nchannels*sizeof(CHAN) + user_size +
-	 mac_size + scr_size;
+	/* Parse the macro definitions from the command line */
+	seqMacParse(macro_def, sp_ptr);
 #ifdef	DEBUG
-	printf("nss=%d, nstates=%d, nchannels=%d, user_size=%d, scr_size=%d\n",
-	 nss, nstates, nchannels, user_size, scr_size);
-	printf("sizes: SPROG=%d, SSCB=%d, STATE=%d, CHAN=%d\n",
-	 sizeof(SPROG), sizeof(SSCB), sizeof(STATE), sizeof(CHAN));
-#endif	DEBUG
-	/* Alloc the task area & set up pointers */
-	ta_ptr = (TASK *)malloc(size);
-	ta_ptr->task_area_size = size;
-	ta_ptr->sp_ptr = (SPROG *)(ta_ptr + 1);
-	ta_ptr->ss_ptr = (SSCB *)(ta_ptr->sp_ptr+1);
-	ta_ptr->st_ptr = (STATE *)(ta_ptr->ss_ptr + nss);
-	ta_ptr->db_ptr = (CHAN *)(ta_ptr->st_ptr + nstates);
-	ta_ptr->user_ptr = (char *)(ta_ptr->db_ptr + nchannels);
-	ta_ptr->mac_ptr = (MACRO *)ta_ptr->user_ptr + user_size;
-	ta_ptr->scr_ptr = (char *)ta_ptr->mac_ptr + mac_size;
-	ta_ptr->scr_nleft = scr_size;
-#ifdef	DEBUG
-	printf("ta_ptr=%d, size=%d\n", ta_ptr, size);
-	printf("sp_ptr=%d, ss_ptr=%d, st_ptr=%d, db_ptr=%d, user_ptr=%d\n",
-	 ta_ptr->sp_ptr, ta_ptr->ss_ptr, ta_ptr->st_ptr, ta_ptr->db_ptr, ta_ptr->user_ptr);
-	printf("scr_ptr=%d, scr_nleft=%d\n", ta_ptr->scr_ptr, ta_ptr->nleft);
+	print_macro_defs(sp_ptr->mac_ptr);
 #endif	DEBUG
 
-	return ta_ptr;
+	/* Initialize sequencer logging */
+	seqLogInit(sp_ptr);
+
+	/* Specify stack size */
+	pname = "stack";
+	pvalue = seqMacValGet(pname, strlen(pname), sp_ptr->mac_ptr);
+	if (pvalue != NULL && strlen(pvalue) > 0)
+	{
+		sscanf(pvalue, "%d", &stack_size);
+	}
+	if (stack_size < SPAWN_STACK_SIZE)
+		stack_size = SPAWN_STACK_SIZE;
+
+	/* Specify task name */
+	pname = "name";
+	pvalue = seqMacValGet(pname, strlen(pname), sp_ptr->mac_ptr);
+	if (pvalue != NULL && strlen(pvalue) > 0)
+		ptask_name = pvalue;
+	else
+		ptask_name = sp_ptr->name;
+
+	/* Spawn the sequencer main task */
+	seqLog(sp_ptr, "Spawning state program \"%s\", task name = \"%s\"\n",
+	 sp_ptr->name, ptask_name);
+
+	status = taskSpawn(ptask_name, SPAWN_PRIORITY, SPAWN_OPTIONS,
+	 stack_size, sequencer, sp_ptr, stack_size, ptask_name);
+	seqLog(sp_ptr, "  Task id = %d = 0x%x\n", status, status);
+
+	return status;
 }
 
-/* Count the total number of states in ALL state sets */
-LOCAL count_states(sp_ptr)
-SPROG	*sp_ptr;
+#ifdef	DEBUG
+print_macro_defs(mac_ptr)
+MACRO		*mac_ptr;
 {
-	SSCB	*ss_ptr;
-	int	nss, nstates;
+	int		i;
 
-	nstates = 0;
+	printf("Macro definitions:\n");
+
+	for (i = 0; i < MAX_MACROS; i++, mac_ptr++)
+	{
+		if (mac_ptr->name != NULL)
+		{
+			printf("  %s = %s\n", mac_ptr->name, mac_ptr->value);
+		}
+	}
+}
+
+print_sp_info(sp_ptr)
+SPROG		*sp_ptr;
+{
+	int		nss, nstates;
+	STATE		*st_ptr;
+	SSCB		*ss_ptr;
+
+	printf("State Program: \"%s\"\n", sp_ptr->name);
+	printf("  sp_ptr=%d=0x%x\n", sp_ptr, sp_ptr);
+	printf("  sp_ptr=%d=0x%x\n", sp_ptr, sp_ptr);
+	printf("  task id=%d=0x%x\n", sp_ptr->task_id, sp_ptr->task_id);
+	printf("  task pri=%d\n", sp_ptr->task_priority);
+	printf("  number of state sets=%d\n", sp_ptr->nss);
+	printf("  number of channels=%d\n", sp_ptr->nchan);
+	printf("  async flag=%d, debug flag=%d, reent flag=%d\n",
+	 sp_ptr->async_flag, sp_ptr->debug_flag, sp_ptr->reent_flag);
+
 	ss_ptr = sp_ptr->sscb;
 	for (nss = 0; nss < sp_ptr->nss; nss++, ss_ptr++)
 	{
-		nstates += ss_ptr->num_states;
+		printf("  State Set: \"%s\"\n", ss_ptr->name);
+		printf("  Num states=\"%d\"\n", ss_ptr->num_states);
+		printf("  State names:\n");
+		st_ptr = ss_ptr->states;
+		for (nstates = 0; nstates < ss_ptr->num_states; nstates++)
+		{
+			printf("    \"%s\"\n", st_ptr->name);
+			st_ptr++;
+		}
 	}
-	return nstates;
+	return 0;
 }
-/* Copy the SPROG, SSCB, STATE, and CHAN structures into this task.
-Note: we have to change the pointers in the SPROG struct and all SSCB structs */
-LOCAL copy_sprog(sp_ptr_orig, ta_ptr)
-TASK	*ta_ptr;
-SPROG	*sp_ptr_orig;
+#endif	DEBUG
+/* Allocate a single block for all dynamic structures.  The size allocated
+   will depend on whether or not the reentrant flag is set.
+  The pointer to the allocated area is saved for task delete hook routine.
+*/
+LOCAL SPROG *alloc_task_area(sp_ptr_orig)
+SPROG	*sp_ptr_orig;	/* original state program structure */
 {
-	SPROG	*sp_ptr;
-	SSCB	*ss_ptr, *ss_ptr_orig;
-	STATE	*st_ptr, *st_ptr_orig;
-	CHAN	*db_ptr, *db_ptr_orig;
-	int	nss, nstates, nchan;
+	int		size, nss, nstates, nchannels, user_size,
+			prog_size, ss_size, state_size, chan_size, mac_size, scr_size;
+	SPROG		*sp_ptr_new;	/* ptr to new state program struct */
+	char		*dyn_ptr, *dyn_ptr_start; /* ptr to allocated area */
 
-	sp_ptr = ta_ptr->sp_ptr;
+	nss = sp_ptr_orig->nss;
+	nstates = sp_ptr_orig->nstates;
+	nchannels = sp_ptr_orig->nchan;
 
-	/* Copy the entire SPROG struct */
-	*sp_ptr = *sp_ptr_orig;
+	/* Calc. # of bytes to allocate for all structures */
+	prog_size = sizeof(SPROG);
+	ss_size = nss*sizeof(SSCB);
+	state_size = nstates*sizeof(STATE);
+	chan_size = nchannels*sizeof(CHAN);
+	user_size = sp_ptr_orig->user_size;
+	mac_size = MAX_MACROS*sizeof(MACRO);
+	scr_size = SCRATCH_SIZE;
+
+	/* Total # bytes to allocate */
+	if (sp_ptr_orig->reent_flag)
+	{
+		size = prog_size + ss_size + state_size +
+		 chan_size + user_size + mac_size + scr_size;
+	}
+	else
+	{
+		size = mac_size + scr_size;
+	}
+
+	/* Alloc the task area */
+	dyn_ptr = dyn_ptr_start = (char *)calloc(size, 1);
+
+#ifdef	DEBUG
+	printf("Allocate task area:\n");
+	printf("  nss=%d, nstates=%d, nchannels=%d\n", nss, nstates, nchannels);
+	printf("  prog_size=%d, ss_size=%d, state_size=%d\n",
+	 prog_size, ss_size, state_size);
+	printf("  user_size=%d, mac_size=%d, scr_size=%d\n",
+	 user_size, mac_size, scr_size);
+	printf("  size=%d=0x%x\n", size, size);
+	printf("  dyn_ptr=%d=0x%x\n", dyn_ptr, dyn_ptr);
+#endif	DEBUG
+
+	/* Set ptrs in the PROG structure */
+	if (sp_ptr_orig->reent_flag)
+	{	/* Reentry flag set: create a new structures */
+		sp_ptr_new = (SPROG *)dyn_ptr;
+
+		/* Copy the SPROG struct contents */
+		*sp_ptr_new = *sp_ptr_orig;
+
+		/* Allocate space for the other structures */
+		dyn_ptr += prog_size;
+		sp_ptr_new->sscb = (SSCB *)dyn_ptr;
+		dyn_ptr += ss_size;
+		sp_ptr_new->states = (STATE *)dyn_ptr;
+		dyn_ptr += state_size;
+		sp_ptr_new->channels = (CHAN *)dyn_ptr;
+		dyn_ptr += chan_size;
+		sp_ptr_new->user_area = (char *)dyn_ptr;
+		dyn_ptr += user_size;
+	}
+	else
+	{	/* Reentry flag not set: keep original structures */
+		sp_ptr_new = sp_ptr_orig;
+	}
+	/* Create dynamic structures for macros and scratch area */
+	sp_ptr_new->mac_ptr = (MACRO *)dyn_ptr;
+	dyn_ptr += mac_size;
+	sp_ptr_new->scr_ptr = (char *)dyn_ptr;
+	sp_ptr_new->scr_nleft = scr_size;
+
+	/* Save ptr to allocated area so we can free it at task delete */
+	sp_ptr_new->dyn_ptr = dyn_ptr_start;
+
+	return sp_ptr_new;
+}
+/* Copy the SSCB, STATE, and CHAN structures into this task.
+Note: we have to change the pointers in the SPROG struct, user variables,
+ and all SSCB structs */
+LOCAL copy_sprog(sp_ptr_orig, sp_ptr)
+SPROG		*sp_ptr_orig;	/* original ptr to program struct */
+SPROG		*sp_ptr;	/* new ptr */
+{
+	SSCB		*ss_ptr, *ss_ptr_orig;
+	STATE		*st_ptr, *st_ptr_orig;
+	CHAN		*db_ptr, *db_ptr_orig;
+	int		nss, nstates, nchan;
+	char		*var_ptr;
+
 	/* Ptr to 1-st SSCB in original SPROG */
 	ss_ptr_orig = sp_ptr_orig->sscb;
+
 	/* Ptr to 1-st SSCB in new SPROG */
-	ss_ptr = ta_ptr->ss_ptr;
-	sp_ptr->sscb = ss_ptr;		/* Fix ptr to 1-st SSCB */
-	st_ptr = ta_ptr->st_ptr;
+	ss_ptr = sp_ptr->sscb;
 
 	/* Copy structures for each state set */
+	st_ptr = sp_ptr->states;
 	for (nss = 0; nss < sp_ptr->nss; nss++)
 	{
 		*ss_ptr = *ss_ptr_orig;	/* copy SSCB */
@@ -255,23 +290,33 @@ SPROG	*sp_ptr_orig;
 		st_ptr_orig = ss_ptr_orig->states;
 		for (nstates = 0; nstates < ss_ptr->num_states; nstates++)
 		{
-			*st_ptr++ = *st_ptr_orig++; /* copy STATE struct */
+			*st_ptr = *st_ptr_orig; /* copy STATE struct */
+			st_ptr++;
+			st_ptr_orig++;
 		}
 		ss_ptr++;
 		ss_ptr_orig++;
 	}
 
 	/* Copy database channel structures */
-	db_ptr = ta_ptr->db_ptr;
-	sp_ptr->channels = db_ptr;
+	db_ptr = sp_ptr->channels;
 	db_ptr_orig = sp_ptr_orig->channels;
+	var_ptr = sp_ptr->user_area;
 	for (nchan = 0; nchan < sp_ptr->nchan; nchan++)
 	{
 		*db_ptr = *db_ptr_orig;
+
+		/* Reset ptr to SPROG structure */
 		db_ptr->sprog = sp_ptr;
+
+		/* Convert offset to address of the user variable */
+		db_ptr->var += (int)var_ptr;
+
 		db_ptr++;
 		db_ptr_orig++;
 	}
+
+	/* Note:  user area is not copied; it should be all zeros */
 
 	return 0;
 }
@@ -279,9 +324,13 @@ SPROG	*sp_ptr_orig;
 LOCAL init_sprog(sp_ptr)
 SPROG	*sp_ptr;
 {
+	/* Semaphore for resource locking on events */
 	sp_ptr->sem_id = semCreate();
 	semInit(sp_ptr->sem_id);
+	semGive(sp_ptr->sem_id);
+
 	sp_ptr->task_is_deleted = FALSE;
+	sp_ptr->logFd = 0;
 
 	return;
 }
@@ -291,130 +340,105 @@ LOCAL init_sscb(sp_ptr)
 SPROG	*sp_ptr;
 {
 	SSCB	*ss_ptr;
-	STATE	*st_ptr;
-	int	nss;
-	char	task_name[20];
+	int	nss, i;
 
 	ss_ptr = sp_ptr->sscb;
 	for (nss = 0; nss < sp_ptr->nss; nss++, ss_ptr++)
 	{
-		st_ptr = ss_ptr->states; /* 1-st state */
 		ss_ptr->task_id = 0;
 		ss_ptr->sem_id = semCreate();
 		semInit(ss_ptr->sem_id);
 		semGive(ss_ptr->sem_id);
-		ss_ptr->ev_flag = 0;
-		ss_ptr->ev_flag_mask = st_ptr->event_flag_mask;
-		ss_ptr->current_state = st_ptr; /* initial state */
-		ss_ptr->next_state = NULL;
+		ss_ptr->current_state = 0; /* initial state */
+		ss_ptr->next_state = 0;
 		ss_ptr->action_complete = TRUE;
+		for (i = 0; i < NWRDS; i++)
+			ss_ptr->events[i] = 0;		/* clear events */
 	}
 	return 0;
-}
-/* Get DB value (uses channel access) */
-seq_pvGet(sp_ptr, ss_ptr, db_ptr)
-SPROG	*sp_ptr;	/* ptr to state program */
-SSCB	*ss_ptr;	/* ptr to current state set */
-CHAN	*db_ptr;	/* ptr to channel struct */
-{
-	int	status;
-
-	ca_array_get(db_ptr->dbr_type, db_ptr->count, db_ptr->chid, db_ptr->var);
-	/********** In this version we wait for each db_get() **********/
-	status = ca_pend_io(10.0);
-	if (status != ECA_NORMAL)
-	{
-		printf("time-out: db_get() on %s\n", db_ptr->db_name);
-		return -1;
-	}
-	/**********  We should have an event handler for this call ************/
-	/**********  Then we could use event flags on "db_get" calls **********/
-	return 0;
-}
-
-/* Put DB value (uses channel access) */
-seq_pvPut(sp_ptr, ss_ptr, db_ptr)
-SPROG	*sp_ptr;	/* ptr to state program */
-SSCB	*ss_ptr;	/* ptr to current state set */
-CHAN	*db_ptr;	/* ptr to channel struct */
-{
-	int	status;
-
-	status = ca_array_put(db_ptr->dbr_type, db_ptr->count,
-	 db_ptr->chid, db_ptr->var);
-	if (status != ECA_NORMAL)
-	{
-		SEVCHK(status, "ca_array_put");
-		return -1;
-	}
-	ca_flush_io();
-}
-/* Set event flag bits for each state set */
-seq_efSet(sp_ptr, ss_ptr, ev_flag)
-SPROG	*sp_ptr;	/* state program where ev flags are to be set */
-SSCB	*ss_ptr;	/* not currently used */
-int	ev_flag;	/* bits to set */
-{
-	int	nss;
-	SSCB	*ssp;
-	EVFLAG	ev_flag_chk;
-	
-#ifdef	DEBUG
-	char	*name;
-	name = "?";
-	if (ss_ptr != NULL)
-		name = ss_ptr->name;
-	printf("seq_efSet: bits 0x%x from ss %s\n", ev_flag, name);
-#endif
-
-	ssp = sp_ptr->sscb; /* 1-st state set */
-	for (nss = 0; nss < sp_ptr->nss; nss++, ssp++)
-	{	/********** need some resource locking here ***************/
-		/* Set event flag only if "action" is complete */
-		if (ssp->action_complete)
-		{	/* Only set ev flag if contained in mask & bit(s) get set */
-			ev_flag_chk = (ev_flag & ssp->ev_flag_mask) | ssp->ev_flag;
-			if (ev_flag_chk != ssp->ev_flag) /* did bit get set? */
-			{	/* set the bit(s) & wake up the ss task */
-				ssp->ev_flag = ev_flag_chk;
-				semGive(ssp->sem_id);
-			}
-		}
-	}
-	return;
-}
-
-/* Test event flag for matching bits */
-seq_efTest(sp_ptr, ss_ptr, ev_flag)
-SPROG	*sp_ptr;
-SSCB	*ss_ptr;
-int	ev_flag;	/* bit(s) to test */
-{
-	int	nss;
-	SSCB	*ssp;
-
-	if ( (ss_ptr->ev_flag & ev_flag) != 0 )
-		return TRUE;
-	return FALSE;
 }
 
 /* Allocate memory from scratch area (always round up to even no. bytes) */
-char *seqAlloc(nChar)
+char *seqAlloc(sp_ptr, nChar)
+SPROG		*sp_ptr;
 int		nChar;
 {
 	char	*pStr;
-	extern	TASK *task_area_ptr;
 
-	pStr = task_area_ptr->scr_ptr;
+	pStr = sp_ptr->scr_ptr;
 	/* round to even no. bytes */
 	if ((nChar & 1) != 0)
 		nChar++;
-	if (task_area_ptr->scr_nleft >= nChar)
+	if (sp_ptr->scr_nleft >= nChar)
 	{
-		task_area_ptr->scr_ptr += nChar;
-		task_area_ptr->scr_nleft -= nChar;
+		sp_ptr->scr_ptr += nChar;
+		sp_ptr->scr_nleft -= nChar;
 		return pStr;
 	}
 	else
 		return NULL;
+}
+/* Initialize logging */
+seqLogInit(sp_ptr)
+SPROG		*sp_ptr;
+{
+	char		*pname, *pvalue, *seqMacValGet();
+	int		fd;
+
+	/* Create a resource locking semaphore */
+	sp_ptr->logSemId = semCreate();
+	semInit(sp_ptr->logSemId);
+	semGive(sp_ptr->logSemId);
+
+	sp_ptr->logFd = ioGlobalStdGet(1); /* default fd is std out */
+
+	/* Check for logfile spec. */
+	pname = "logfile";
+	pvalue = seqMacValGet(pname, strlen(pname), sp_ptr->mac_ptr);
+	if (pvalue != NULL && strlen(pvalue) > 0)
+	{	/* Create & open file for write only */
+		fd = open(pvalue, O_CREAT | O_WRONLY, 0664);
+		if (fd != ERROR)
+			sp_ptr->logFd = fd;
+		printf("logfile=%s, fd=%d\n", pvalue, fd);
+	}
+}
+
+/* Log a message to the console or a file with time of day and task id */
+#include	"tsDefs.h"
+seqLog(sp_ptr, fmt, arg1, arg2, arg3, arg4, arg5, arg6)
+SPROG		*sp_ptr;
+char		*fmt;		/* format string */
+int		arg1, arg2, arg3, arg4, arg5, arg6; /* arguments */
+{
+	int		fd;
+	TS_STAMP	timeStamp;
+	char		timeBfr[28];
+
+	/* Get time of day */
+	tsLocalTime(&timeStamp);	/* time stamp format */
+
+	/* Convert to mm/dd/yy hh:mm:ss.nano-sec */
+	tsStampToText(&timeStamp, TS_TEXT_MMDDYY, timeBfr);
+	/* Truncate the .nano-secs part */
+	timeBfr[17] = 0;
+
+	/* Lock seqLog resource */
+	semTake(sp_ptr->logSemId, 0);
+
+	/* Print the message: e.g. "10:23:28 T13: ...." */
+	fd = sp_ptr->logFd;
+	fdprintf(fd, "%s %s: ", taskName(taskIdSelf()), &timeBfr[9]);
+	fdprintf(fd, fmt, arg1, arg2, arg3, arg4, arg5, arg6);
+
+	/* Unlock the resource */
+	semGive(sp_ptr->logSemId);
+
+	/* If NSF file then flush the buffer */
+	if (fd != ioGlobalStdGet(1) )
+	{
+		ioctl(fd, FIOSYNC);
+	}
+
+	return 0;
 }

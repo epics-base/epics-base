@@ -1,10 +1,10 @@
-/* #define	DEBUG	1 */
+/*#define	DEBUG	1*/
 /**************************************************************************
 			GTA PROJECT   AT division
 	Copyright, 1990, The Regents of the University of California.
 		         Los Alamos National Laboratory
 
-	@(#)parse.c	1.1	10/16/90
+	@(#)parse.c	1.3	5/1/91
 	DESCRIPTION: Parsing support routines for state notation compiler.
 	 The 'yacc' parser calls these routines to build the tables
 	 and linked lists, which are then passed on to the phase 2 routines.
@@ -26,27 +26,21 @@
 
 int	debug_print_flag = 0;	/* Debug level (set by source file) */
 
-int	line_num;		/* Current line number */
-
 char	*prog_name;		/* ptr to program name (string) */
 
 char	*prog_param;		/* parameter string for program stmt */
 
-LIST	defn_c_list;		/* definition C code */
+Expr	*defn_c_list;		/* definition C code list */
 
-LIST	ss_list;		/* start of state-set list */
+Expr	*ss_list;		/* Start of state set list */
+
+Expr	*exit_code_list;		/* Start of exit code list */
 
 LIST	var_list;		/* start of variable list */
 
 LIST	chan_list;		/* start of DB channel list */
 
-LIST	state_list;		/* temporary state list */
-
-LIST	action_list;		/* temporary action list */
-
-LIST	trans_list;		/* temporary transition list */
-
-char	*global_c_code;		/* global C code following state program */
+Expr	*global_c_list;		/* global C code following state program */
 /*+************************************************************************
 *  NAME: snc_init
 *
@@ -60,13 +54,11 @@ char	*global_c_code;		/* global C code following state program */
 *-*************************************************************************/
 init_snc()
 {
-	lstInit(&defn_c_list);
-	lstInit(&ss_list);
+	extern char		in_file[], *src_file;
+
 	lstInit(&var_list);
 	lstInit(&chan_list);
-	lstInit(&state_list);
-	lstInit(&action_list);
-	lstInit(&trans_list);
+	src_file = &in_file[0];
 	return;
 }
 /*+************************************************************************
@@ -90,7 +82,7 @@ char	*pname, *pparam;
 	prog_name = pname;
 	prog_param = pparam;
 #ifdef	DEBUG
-	printf("program name = %s\n", prog_name);
+	fprintf(stderr, "program name = %s\n", prog_name);
 #endif
 	return;
 }
@@ -102,13 +94,14 @@ char	*name;		/* ptr to variable name */
 char	*s_length;	/* array lth (NULL=single element) */
 char	*value;		/* initial value or NULL */
 {
-	Var	*vp;
-	int	length;
+	Var		*vp;
+	int		length;
+	extern int	line_num;
 
 	if (s_length == 0)
 		length = 0;
 	else if (type == V_STRING)
-		length = MAX_STRING_SIZE;
+		length = 0;
 	else
 	{
 		length = atoi(s_length);
@@ -116,7 +109,7 @@ char	*value;		/* initial value or NULL */
 			length = 0;
 	}
 #ifdef	DEBUG
-	printf("variable decl: type=%d, name=%s, length=%d\n", type, name, length);
+	fprintf(stderr, "variable decl: type=%d, name=%s, length=%d\n", type, name, length);
 #endif
 	/* See if variable already declared */
 	vp = (Var *)find_var(name);
@@ -138,15 +131,13 @@ char	*value;		/* initial value or NULL */
 
 /* "Assign" statement: assign a variable to a DB channel.
 	elem_num is ignored in this version) */
-assign_stmt(name, lower_lim, upper_lim, db_name)
+assign_stmt(name, db_name)
 char	*name;		/* ptr to variable name */
-char	*lower_lim;	/* ptr to lower array limit */
-char	*upper_lim;	/* ptr to upper array limit */
 char	*db_name;	/* ptr to db name */
 {
-	Chan	*cp;
-	Var	*vp;
-	int	range_low, range_high, length;
+	Chan		*cp;
+	Var		*vp;
+	extern int	line_num;
 
 	/* Find the variable */
 	vp = (Var *)find_var(name);
@@ -163,53 +154,27 @@ char	*db_name;	/* ptr to db name */
 	cp->var = vp;		/* make connection to variable */
 	vp->chan = cp;		/* reverse ptr */
 	cp->db_name = db_name;	/* DB name */
+	cp->count = vp->length;	/* default count is variable length */
 
-	/* convert specified range REMOVED********* */
-	length = vp->length;
-	if (length == 0)
-		length = 1; /* not an array */
-	if (vp->type == V_STRING)
-		length = 1; /* db treats strings as length 1 */
-	cp->length = length;
-	cp->offset = 0;
 	cp->mon_flag = FALSE;	/* assume no monitor */
 	cp->ef_var = NULL;	/* assume no sync event flag */
 	return;
 }
-	
-/* Build the range string, e.g. "0", and "9" into "0,9" */
-char *
-range(low, high)
-char	*low, *high;
-{
-	static	char range_str[30];
-	sprintf(range_str, "%s,%s", low, high);
-	return range_str;
-}
-
 
 /* Parsing a "monitor" statement */
-monitor_stmt(name, offset, delta)
+monitor_stmt(name, delta)
 char	*name;		/* variable name (should be assigned) */
-char	*offset;	/* array offset */
 char	*delta;		/* monitor delta */
 {
 	Chan	*cp;
-	int	offs;
+	extern int	line_num;
 
-	/* Pick up array offset */
-	if (offset == 0)
-		offs = 0;
-	else
-		offs = atoi(offset);
-	if (offs < 0)
-		offs = 0;
 	/* Find a channel assigned to this variable */
-	cp = (Chan *)find_chan(name, offs);
+	cp = (Chan *)find_chan(name);
 	if (cp == 0)
 	{
-		fprintf(stderr, "monitor: variable %s[%s] not assigned, line %d\n",
-		 name, offset, line_num);
+		fprintf(stderr, "monitor: variable %s not assigned, line %d\n",
+		 name, line_num);
 		return;
 	}
 
@@ -220,29 +185,22 @@ char	*delta;		/* monitor delta */
 }
 	
 /* Parsing "sync" statement */
-sync_stmt(name, offset, ef_name)
+sync_stmt(name, ef_name)
 char	*name;
-char	*offset;
 char	*ef_name;
 {
-	Chan	*cp;
-	Var	*vp;
-	int	offs;
+	Chan		*cp;
+	Var		*vp;
+	extern int	line_num;
 
-	/* Find the variable */
-	if (offset == 0)
-		offs = 0;
-	else
-		offs = atoi(offset);
-	if (offs < 0)
-		offs = 0;
-	cp = (Chan *)find_chan(name, offs);
+	cp = (Chan *)find_chan(name);
 	if (cp == 0)
 	{
-		fprintf(stderr, "sync: variable %s[%s] not assigned, line %d\n",
-		 name, offset, line_num);
+		fprintf(stderr, "sync: variable %s not assigned, line %d\n",
+		 name, line_num);
 		return;
 	}
+
 	/* Find the event flag varible */
 	vp = (Var *)find_var(ef_name);
 	if (vp == 0 || vp->type != V_EVFLAG)
@@ -251,141 +209,40 @@ char	*ef_name;
 		 ef_name, line_num);
 		return;
 	}
+
+	/* Insert pointers between Var & Chan structures */
 	cp->ef_var = vp;
+	vp->chan = cp;
 
 	return;
 }
 	
 /* Definition C code */
 defn_c_stmt(c_str)
-char	*c_str;
+char		*c_str; /* ptr to C code string */
 {
-	Action	*ap;
+	Expr		*ep;
+
 #ifdef	DEBUG
-	printf("defn_c_stmt\n");
+	fprintf(stderr, "defn_c_stmt\n");
 #endif
-	ap = allocAction();
-	lstAdd(&defn_c_list, (NODE *)ap);
-	ap->type = A_CCODE;
-	ap->stmt.c_code = c_str;
-	ap->line_num = line_num;
+	ep = expression(E_TEXT, "", c_str, 0);
+	if (defn_c_list == 0)
+		defn_c_list = ep;
+	else
+		link_expr(defn_c_list, ep);	
 	
 	return;
 }
 
-/* Parsing "ss" statement */
-state_set(ss_name)
-char	*ss_name;
+/* Global C code (follows state program) */
+global_c_stmt(c_str)
+char		*c_str; /* ptr to C code */
 {
-	StateSet	*ssp;
-
-# ifdef	DEBUG
-	printf("state_set: ss_name=%s\n", ss_name);
-#endif
-	/* Is this state set already declared ? */
-	if (find_state_set(ss_name) != NULL)
-	{
-		fprintf(stderr, "Duplicate state set name: %s, line %d\n",
-		 ss_name, line_num);
-		return;
-	}
-
-	/* create and fill in state-set block */
-	ssp = allocSS();
-	lstAdd(&ss_list, (NODE *)ssp);
-	ssp->ss_name = ss_name;
-	/* move temporary state list into this node */
-#ifdef	DEBUG
-	printf("  # states = %d\n", lstCount(&state_list));
-#endif	DEBUG
-	ssp->S_list = state_list;
-	lstInit(&state_list);
+	global_c_list = expression(E_TEXT, "", c_str, 0);
 
 	return;
 }
-
-
-state_block(state_name)
-char	*state_name;
-{
-	State	*sp;
-
-#ifdef	DEBUG
-	printf("state_block: state_name=%s\n", state_name);
-#endif
-	sp = firstState(&state_list);
-	if (find_state(state_name, sp) != NULL)
-	{
-		fprintf(stderr, "Duplicate state name: %s, line %d\n",
-		 state_name, line_num);
-		return;
-	}
-
-	sp = allocState();
-	lstAdd(&state_list, (NODE *)sp);
-	sp->state_name = state_name;
-	/* move tmp transition list into this node */
-	sp->T_list = trans_list;
-	lstInit(&trans_list);
-	return;
-}
-
-/* Parsing transition part of "when" clause */
-transition(new_state_name, event_expr)
-char	*new_state_name;
-Expr	*event_expr;	/* event expression */
-{
-	Trans	*tp;
-
-#ifdef	DEBUG
-	printf("transition: new_state_name=%s\n", new_state_name);
-#endif
-	tp = allocTrans();
-	lstAdd(&trans_list, (NODE *)tp);
-	tp->new_state_name = new_state_name;
-	tp->line_num = line_num;
-	/* move tmp action list into this node */
-	tp->A_list = action_list;
-	tp->event_expr = event_expr;
-	lstInit(&action_list);
-
-	return;
-}
-
-/* Action statement (lvalue = expression;) or (function())*/
-action_stmt(ep)
-Expr	*ep; 	/* ptr to expression */
-{
-	Action	*ap;
-#ifdef	DEBUG
-	printf("action_function\n");
-#endif
-	ap = allocAction();
-	lstAdd(&action_list, (NODE *)ap);
-	ap->type = A_STMT;
-	ap->stmt.expr = ep;
-	ap->line_num = line_num;
-
-	return;
-}
-
-/* Action statement: in-line C code */
-action_c_stmt(c_str)
-char	*c_str;
-{
-	Action	*ap;
-#ifdef	DEBUG
-	printf("action_c_stmt\n");
-#endif
-	ap = allocAction();
-	lstAdd(&action_list, (NODE *)ap);
-	ap->type = A_CCODE;
-	ap->stmt.c_code = c_str;
-	ap->line_num = line_num;
-	
-	return;
-}
-
 
 /* Find a variable by name;  returns a pointer to the Var struct;
 	returns 0 if the variable is not found. */
@@ -395,7 +252,7 @@ char	*name;
 	Var	*vp;
 
 #ifdef	DEBUG
-	printf("find_var, name=%s: ", name);
+	fprintf(stderr, "find_var, name=%s: ", name);
 #endif
 	vp = firstVar(&var_list);
 	while (vp != NULL)
@@ -403,71 +260,36 @@ char	*name;
 		if (strcmp(vp->name, name) == 0)
 		{
 #ifdef	DEBUG
-			printf("found\n");
+			fprintf(stderr, "found\n");
 #endif
 			return (int)vp;
 		}
 		vp = nextVar(vp);
 	}
 #ifdef	DEBUG
-	printf("not found\n");
+	fprintf(stderr, "not found\n");
 #endif
 	return 0;
 }
 
 /* Find channel with same variable name and same offset */
-find_chan(name, offset)
+find_chan(name)
 char	*name;	/* variable name */
-int	offset;/* array offset */
 {
 	Chan	*cp;
 	Var	*vp;
-	int	chan_offs;
 
-	if (offset < 0)
-		offset = 0;
 	for (cp = firstChan(&chan_list); cp != NULL; cp = nextChan(cp))
 	{
 		vp = cp->var;
 		if (vp == 0)
 			continue;
-		chan_offs = cp->offset;
-		if (chan_offs < 0)
-			chan_offs = 0;
-		if (strcmp(vp->name, name) == 0 && chan_offs == offset)
+		if (strcmp(vp->name, name) == 0)
 		{
 			return (int)cp;
 		}
 	}
 	return 0;
-}
-
-/* Given the name of a state, find ptr to the state struct */
-find_state(state_name, sp)
-char	*state_name;	/* state name we're looking for */
-State	*sp;		/* start of state list */
-{
-	for (; sp != NULL; sp = nextState(sp))
-	{
-		if (strcmp(sp->state_name, state_name) == 0)
-			return (int)sp;
-	}
-	return NULL;	/* not found */
-}
-
-/* Given the name of a state set, find ptr to state set struc */
-find_state_set(ss_name)
-char	*ss_name;	/* state set name we're looking for */
-{
-	StateSet *ssp;
-	extern	LIST ss_list;
-
-	for (ssp = firstSS(&ss_list); ssp != NULL; ssp = nextSS(ssp))
-	{
-		if (strcmp(ssp->ss_name, ss_name) == 0)
-			return (int)ssp;
-	}
-	return NULL;	/* not found */
 }
 
 /* Set debug print flag */
@@ -478,117 +300,114 @@ char	*flag;
 }
 
 /* Parsing "program" statement */
-program(c_code)
-char	*c_code;
+program(prog_list)
+Expr		*prog_list;
 {
-	global_c_code = c_code;
-	phase2();
+	ss_list = prog_list;
+#ifdef	DEBUG
+	print_struct(ss_list);
+#endif
+	phase2(ss_list);
 
 	exit(0);
 }
 
-/* Build an expression list (hierarchical) */
-Expr *expression(type, value, left, right)
-int	type;
-char	*value;
-Expr	*left, *right;
+/* Exit code */
+exit_code(ep)
+Expr		*ep;
 {
-	Expr	*ep;
+	exit_code_list = ep;
+	return 0;
+}
 
-	/* alloc a block for this item or expression */
+/* Build an expression list (hierarchical):
+	Builds a node on a binary tree for each expression primitive.
+ */
+Expr *expression(type, value, left, right)
+int		type;		/* E_BINOP, E_ASGNOP, etc */
+char		*value;		/* "==", "+=", var name, contstant, etc. */	
+Expr		*left;		/* LH side */
+Expr		*right;		/* RH side */
+{
+	Expr		*ep;
+	extern int	line_num, c_line_num;
+	extern char	*src_file;
 #ifdef	DEBUG
-	fprintf(stderr, "expression: type=%d, value=%s, left=%d, right=%d\n",
-	 type, value, left, right);
+	extern char	*stype[];
 #endif
+	/* Allocate a structure for this item or expression */
 	ep = allocExpr();
+#ifdef	DEBUG
+	fprintf(stderr, "expression: ep=%d, type=%s, value=\"%s\", left=%d, right=%d\n",
+	 ep, stype[type], value, left, right);
+#endif
+	/* Fill in the structure */
+	ep->next = (Expr *)0;
+	ep->last = ep;
 	ep->type = type;
-	ep->value.const = value;
+	ep->value = value;
 	ep->left = left;
 	ep->right = right;
-	ep->line_num = line_num;
-
-	switch (type)
-	{
-	case E_VAR: /* variable or pre-defined constant */
-		if (pre_defined_const(ep))
-		{
-			ep->type = E_CONST;
-			break; /* defined constant */
-		}
-		/* find the variable */
-		ep->value.var = (Var *)find_var(value);
-		if (ep->value.var == 0)
-		{
-			fprintf(stderr, "variable \"%s\" not declared, line no. %d\n",
-			 value, ep->line_num);
-		}
-		break;
-
-	case E_CONST: /* number const */
-		break;
-
-	case E_STRING: /* string const */
-		break;
-
-	case E_BINOP: /* binary op. ( left_expr OP rt_expr ) */
-		break;
-
-	case E_UNOP: /* unary op. */
-		break;
-
-	case E_PAREN: /* parenthetical expr. */
-		break;
-
-	case E_FUNC:
-		break;
-
-	case E_EMPTY: /* empty */
-		break;
-
-	case E_SUBSCR: /* subscript */
-		break;
-
-	default: /* any other */
-		fprintf(stderr, "? %d: %s, line no. %d\n", type, value, line_num);
-		break;
-	}
+	if (type == E_TEXT)
+		ep->line_num = c_line_num;
+	else
+		ep->line_num = line_num;
+	ep->src_file = src_file;
 
 	return ep;
 }
 
-/* Check for defined constant */
-pre_defined_const(ep)
-Expr	*ep;
+/* Link two expression structures and/or lists.  Returns ptr to combined list.
+   Note:  ->last ptrs are correct only for 1-st and last structures in the list */
+Expr *link_expr(ep1, ep2)
+Expr		*ep1;	/* beginning of 1-st structure or list */
+Expr		*ep2;	/* beginning 2-nd (append it to 1-st) */
 {
-	if ( (strcmp(ep->value.const, "TRUE") == 0)
-	  || (strcmp(ep->value.const, "FALSE") == 0) )
-		return TRUE;
-	else
-		return FALSE;
-}		
+	Expr		*ep;
 
-/* Add a parameter (expression) to end of list */
-Expr *parameter(ep, p_list)
-Expr	*ep;
-Expr	*p_list; /* current list */
-{
-	Expr	*ep1;
+	if (ep1 == 0)
+		return ep2; /* shouldn't happen */
+	else if (ep2 == 0)
+		return ep1;
 
-	ep->next = 0;
-	if (p_list == 0)
-		return ep;
-
-	ep1 = p_list;
-	while (ep1->next != 0)
-		ep1 = ep1->next;
-	ep1->next = ep;
-	return p_list;
+	(ep1->last)->next = ep2;
+	ep1->last = ep2->last;
+#ifdef	DEBUG
+	fprintf(stderr, "link_expr(");
+	for (ep = ep1; ; ep = ep->next)
+	{
+		fprintf(stderr, "%d, ", ep);
+		if (ep == ep1->last)
+			break;
+	}
+	fprintf(stderr, ")\n");	
+#endif	DEBUG
+	return ep1;
 }
 
-/*#define	PHASE2*/
+/* Interpret pre-processor code */
+pp_code(line, fname)
+char		*line;
+char		*fname;
+{
+	extern int		line_num;
+
+	line_num = atoi(line);
+	src_file = fname;
+}
+
+char	*stype[] = {
+	"E_EMPTY", "E_CONST", "E_VAR", "E_FUNC", "E_STRING", "E_UNOP", "E_BINOP",
+	"E_ASGNOP", "E_PAREN", "E_SUBSCR", "E_TEXT", "E_STMT", "E_CMPND",
+	"E_IF", "E_ELSE", "E_WHILE", "E_SS", "E_STATE", "E_WHEN" };
+
+/* #define	PHASE2*/
 #ifdef	PHASE2
-phase2()
+phase2(ss_list)
+Expr		*ss_list;
 {
 	fprintf(stderr, "phase2() - dummy\07\n");
+	/* Print structures */
+	print_struct(ss_list);
 }
 #endif	PHASE2

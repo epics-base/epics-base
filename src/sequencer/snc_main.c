@@ -3,7 +3,7 @@
 	Copyright, 1990, The Regents of the University of California.
 		         Los Alamos National Laboratory
 
-	@(#)snc_main.c	1.1	10/16/90
+	@(#)snc_main.c	1.2	4/17/91
 	DESCRIPTION: Main program and miscellaneous routines for
 	State Notation Compiler.
 
@@ -13,10 +13,24 @@ extern	char *sncVersion;
 
 #include	<stdio.h>
 
+#ifndef	TRUE
+#define	TRUE 1
+#define	FALSE 0
+#endif
+
 /* SNC Globals: */
-int	line_no = 1;	/* input line number */
-char	in_file[200];	/* input file name */
-char	out_file[200];	/* output file name */
+char		in_file[200];	/* input file name */
+char		out_file[200];	/* output file name */
+char		*src_file;	/* ptr to (effective) source file name */
+int		line_num;	/* current src file line number */
+int		c_line_num;	/* line number for beginning of C code */
+/* Flags: */
+int		async_flag = FALSE;	/* do pvGet() asynchronously */
+int		conn_flag = TRUE;	/* wait for all connections to complete */
+int		debug_flag = FALSE;	/* run-time debug */
+int		line_flag = TRUE;	/* line numbering */
+int		reent_flag = FALSE;	/* reentrant at run-time */
+int		warn_flag = TRUE;	/* compiler warnings */
 
 /*+************************************************************************
 *  NAME: main
@@ -44,11 +58,9 @@ char	*argv[];
 	FILE	*infp, *outfp, *freopen();
 	extern	char in_file[], out_file[];
 
-	/* Use line buffered output */
-	setlinebuf(stdout);
-	
 	/* Get command arguments */
 	get_args(argc, argv);
+
 	/* Redirect input stream from specified file */
 	infp = freopen(in_file, "r", stdin);
 	if (infp == NULL)
@@ -67,8 +79,15 @@ char	*argv[];
 		exit(1);
 	}
 #endif	REDIRECT
-	printf(
-	 "/* %s: %s */\n\n", sncVersion, in_file);
+
+	/* src_file is used to mark the output file for snc & cc errors */
+	src_file = in_file;
+
+	/* Use line buffered output */
+	setlinebuf(stdout);
+	setlinebuf(stderr);
+	
+	printf("/* %s: %s */\n\n", sncVersion, in_file);
 
 	/* Initialize parser */
 	init_snc();
@@ -96,17 +115,79 @@ get_args(argc, argv)
 int	argc;
 char	*argv[];
 {
-	extern	char in_file[], out_file[];
-	int	ls;
 	char	*s;
 
 	if (argc < 2)
 	{
 		fprintf(stderr, "%s\n", sncVersion);
-		fprintf(stderr, "Usage: snc infile\n");
+		fprintf(stderr, "Usage: snc +/-flags infile\n");
+		fprintf(stderr, "  +a - do async. pvGet\n");
+		fprintf(stderr, "  -c - don't wait for all connects\n");
+		fprintf(stderr, "  +d - turn on debug run-time option\n");
+		fprintf(stderr, "  -l - supress line numbering\n");
+		fprintf(stderr, "  +r - make reentrant at run-time\n");
+		fprintf(stderr, "  -w - supress compiler warnings\n");
 		exit(1);
 	}
-	s = argv[1];
+
+	for (argc--, argv++; argc > 0; argc--, argv++)
+	{
+		s = *argv;
+		if (*s == '+' || *s == '-')
+			get_flag(s);
+		else
+			get_in_file(s);
+	}
+}
+
+get_flag(s)
+char		*s;
+{
+	int		flag_val;
+	extern int	debug_flag, line_flag, reent_flag, warn_flag;
+
+	if (*s == '+')
+		flag_val = TRUE;
+	else
+		flag_val = FALSE;
+
+	switch (s[1])
+	{
+	case 'a':
+		async_flag = flag_val;
+		break;
+
+	case 'c':
+		conn_flag = flag_val;
+		break;
+
+	case 'd':
+		debug_flag = flag_val;
+		break;
+
+	case 'l':
+		line_flag = flag_val;
+		break;
+
+	case 'r':
+		reent_flag = flag_val;
+		break;
+
+	case 'w':
+		warn_flag = flag_val;
+		break;
+
+	default:
+		fprintf(stderr, "Unknown flag: \"%s\"\n", s);
+		break;
+	}
+}
+
+get_in_file(s)
+char		*s;
+{				
+	extern char	in_file[], out_file[];
+	int		ls;
 
 	ls = strlen(s);
 	bcopy(s, in_file, ls);
@@ -115,15 +196,18 @@ char	*argv[];
 	if ( strcmp(&in_file[ls-3], ".st") == 0 )
 	{
 		out_file[ls-2] = 'c';
-		out_file[ls-1] = '\0';
+		out_file[ls-1] = 0;
+	}
+	else if (in_file[ls-2] == '.')
+	{	/* change suffix to 'c' */
+		out_file[ls -1] = 'c';
 	}
 	else
-	{
+	{	/* append ".c" */
 		out_file[ls] = '.';
 		out_file[ls+1] = 'c';
-		ls += 2;
+		out_file[ls+2] = 0;
 	}
-	out_file[ls] = 0;
 	return;
 }
 /*+************************************************************************
@@ -142,13 +226,11 @@ char	*argv[];
 *
 *  NOTES:
 *-*************************************************************************/
-snc_err(err_txt, line, code)
+snc_err(err_txt)
 char	*err_txt;
-int	line, code;
 {
-	fprintf(stderr, "Syntax error %d (%s) at line %d\n",
-	 code, err_txt, line);
-	exit(code);
+	fprintf(stderr, "     %s\n", err_txt);
+	exit(1);
 }
 /*+************************************************************************
 *  NAME: yyerror
@@ -167,7 +249,10 @@ int	line, code;
 yyerror(err)
 char	*err;
 {
-	fprintf(stderr, "%s: line no. %d\n", err, line_no);
+	extern char	*src_file;
+	extern int	line_num;
+
+	fprintf(stderr, "%s: line no. %d (%s)\n", err, line_num, src_file);
 	return;
 }
 
@@ -178,6 +263,7 @@ char	*err;
 *	type		argument	I/O	description
 *	---------------------------------------------------
 *	int		line_num	I	current line number
+ *	char		src_file	I	effective source file
 *
 *  RETURNS: n/a
 *
@@ -186,9 +272,13 @@ char	*err;
 *
 *  NOTES:
 *-*************************************************************************/
-print_line_num(line_num)
-int	line_num;
+print_line_num(line_num, src_file)
+int		line_num;
+char		*src_file;
 {
-	printf("# line %d \"%s\"\n", line_num, in_file);
+	extern int	line_flag;
+
+	if (line_flag)
+		printf("# line %d \"%s\"\n", line_num, src_file);
 	return;
 }

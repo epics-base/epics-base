@@ -3,7 +3,7 @@
 	Copyright, 1989, The Regents of the University of California.
 		         Los Alamos National Laboratory
 
-	@(#)parse.h	1.1	10/16/90
+	@(#)parse.h	1.2	4/17/91
 	DESCRIPTION: Structures for parsing the state notation language.
 	ENVIRONMENT: UNIX
 ***************************************************************************/
@@ -15,62 +15,18 @@
 
 #include	"lstLib.h" /* VxWorks "list" routines & definitions */
 
-struct	state_set			/* state-set block */
-{
-	NODE	SS_link;		/* link to next state set block */
-	char	*ss_name;		/* state set name */
-	LIST	S_list;			/* link to first state block */
-	int	ndelay;			/* Max # delay calls in state set */
-};
-typedef	struct	state_set StateSet;
-
-struct	state				/* State block */
-{
-	NODE	S_link;			/* link to next state in this SS */
-	char	*state_name;		/* state name */
-	int	event_flag_mask;	/* event flag mask for this state */
-	int	ndelay;			/* # delay calls */
-	LIST	T_list;			/* start of transition list */
-};
-typedef	struct	state State;
-
-struct	trans			/* Transition Block */
-{
-	NODE	T_link;			/* link to next transition block */
-	int	trans_num;		/* transition number */
-	int	line_num;
-	char	*new_state_name;	/* new state name */
-	struct	expression *event_expr;	/* event expression */
-	LIST	A_list;			/* start of action list */
-};
-typedef	struct	trans Trans;
-
 struct	expression			/* Expression block */
 {
 	struct	expression *next;	/* link to next expression */
+	struct	expression *last;	/* link to last in list */
 	struct	expression *left;	/* ptr to left expression */
 	struct	expression *right;	/* ptr to right expression */
-	int	type;			/* operator or expression type */
-	union { /* for variables, functions, & constants */
-		struct var *var;	/* ptr to variable definition */
-		char	*name;		/* ptr to function name */
-		char	*const;		/* ptr to constant */
-	} value;
+	int	type;			/* expression type (E_*) */
+	char	*value;			/* operator or value string */
 	int	line_num;		/* line number */
+	char	*src_file;		/* effective source file */
 };
 typedef	struct	expression Expr;
-
-struct	action				/* Action block */
-{
-	NODE	A_link;			/* link to next action (or NULL) */
-	int	line_num;		/* line number of statement */
-	int	type;			/* A_CCODE, A_FUNC, A_STMT */
-	union	stmt {
-		Expr	*expr;		/* ptr to expression (A_STMT) */
-		char	*c_code;	/* ptr to imbedded C code (A_CCODE) */
-	} stmt;
-};
-typedef	struct	action Action;
 
 struct	var				/* Variable or function definition */
 {
@@ -87,62 +43,63 @@ typedef	struct	var Var;
 struct	db_chan			/* DB channel */
 {
 	NODE	D_link;			/* next db chan in list */
-	char	*db_name;		/* db name if assigned */
+	char	*db_name;		/* database name */
 	int	index;			/* channel array index */
 	Var	*var;			/* ptr to variable definition */
-	int	offset;			/* array offset (normally 0) */
-	int	length;			/* sub-array length */
+	Var	*ef_var;		/* ptr to event flag variable for sync */
+	int	count;			/* count for db access */
 	int	mon_flag;		/* TRUE if channel is "monitored" */
 	float	delta;			/* monitor dead-band */
-	float	timeout;		/* monitor timeout (seconds) */
-	Var	*ef_var;		/* ptr to event flag variable for sync */
+	float	timeout;		/* monitor timeout */
 };
 typedef	struct	db_chan Chan;
 
+Expr		*expression(), *link_expr();
+
 /* Linked list definitions to get rid of yucky in-line code */
-#define	nextSS(node)		(StateSet *)lstNext( (NODE *)node )
-#define	firstSS(head)		(StateSet *)lstFirst( (LIST *)head )
-#define	allocSS()		(StateSet *)malloc(sizeof(StateSet));
-#define	nextState(node)		(State *)lstNext( (NODE *)node )
-#define	firstState(head)	(State *)lstFirst( (LIST *)head )
-#define	allocState()		(State *)malloc(sizeof(State));
-#define	nextTrans(node)		(Trans *)lstNext( (NODE *)node )
-#define	firstTrans(head)	(Trans *)lstFirst( (LIST *)head )
-#define	allocTrans()		(Trans *)malloc(sizeof(Trans));
 #define	allocExpr()		(Expr *)malloc(sizeof(Expr));
-#define	nextAction(node)	(Action *)lstNext( (NODE *)node )
-#define	firstAction(head)	(Action *)lstFirst( (LIST *)head )
-#define	allocAction()		(Action *)malloc(sizeof(Action));
-#define	nextVar(node)		(Var *)lstNext( (NODE *)node )
+
 #define	allocVar()		(Var *)malloc(sizeof(Var));
+#define	nextVar(node)		(Var *)lstNext( (NODE *)node )
 #define	firstVar(head)		(Var *)lstFirst( (LIST *)head )
+
+#define	allocChan()		(Chan *)malloc(sizeof(Chan));
 #define	nextChan(node)		(Chan *)lstNext( (NODE *)node )
 #define	firstChan(head)		(Chan *)lstFirst( (LIST *)head )
-#define	allocChan()		(Chan *)malloc(sizeof(Chan));
 
 /* Variable types */
 #define	V_NONE		0		/* not defined */
-#define	V_FLOAT		1		/* float */
-#define	V_INT		2		/* int */
-#define	V_SHORT		3		/* short */
-#define	V_CHAR		4		/* char */
-#define	V_DOUBLE	5		/* double */
-#define	V_STRING	6		/* strings (array of char) */
-#define	V_EVFLAG	7		/* event flag */
-#define	V_FUNC		8		/* function (not a variable) */
+#define	V_CHAR		1		/* char */
+#define	V_SHORT		2		/* short */
+#define	V_INT		3		/* int (but converted to long) */
+#define	V_LONG		4		/* long */
+#define	V_FLOAT		5		/* float */
+#define	V_DOUBLE	6		/* double */
+#define	V_STRING	7		/* strings (array of char) */
+#define	V_EVFLAG	8		/* event flag */
+#define	V_FUNC		9		/* function (not a variable) */
+#define	V_UCHAR		11		/* unsigned char */
+#define	V_USHORT	12		/* unsigned short */
+#define	V_UINT		13		/* unsigned int (converted to unsigned long) */
+#define	V_ULONG		14		/* unsigned long */
 
-/* Expression type */
+/* Expression types */
+#define	E_EMPTY		0		/* empty expression */
 #define	E_CONST		1		/* numeric constant */
 #define	E_VAR		2		/* variable */
 #define	E_FUNC		3		/* function */
-#define	E_STR		4		/* ptr to string consatant */
+#define	E_STRING	4		/* ptr to string consatant */
 #define	E_UNOP		5		/* unary operator: OP expr (-, +, or !) */
 #define	E_BINOP		6		/* binary operator: expr OP expr */
-#define	E_PAREN		7		/* parenthesis around expression */
-#define	E_SUBSCR	8		/* subscript */
-#define	E_STRING	9		/* string const */
-#define	E_EMPTY		0		/* empty expression */
-
-/* Action types */
-#define	A_CCODE		1		/* imbedded C code: %% or %{...}% */
-#define	A_STMT		2		/* lvalue = expression; or function();*/
+#define	E_ASGNOP	7		/* assign operatro:  (=, +=, *=, etc.) */
+#define	E_PAREN		8		/* parenthesis around an expression */
+#define	E_SUBSCR	9	/* subscript */
+#define	E_TEXT		10		/* C code or other text to be inserted */
+#define	E_STMT		11		/* simple statement */
+#define	E_CMPND		12		/* begin compound statement: {...} */
+#define	E_IF		13		/* if statement */
+#define	E_ELSE		14		/* if statement */
+#define	E_WHILE		15		/* while statement */
+#define	E_SS		16		/* state set statement */
+#define	E_STATE		17		/* state statement */
+#define	E_WHEN		18		/* when statement */

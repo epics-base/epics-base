@@ -3,7 +3,7 @@
 	Copyright, 1990, The Regents of the University of California.
 		         Los Alamos National Laboratory
 
-	@(#)seq_mac.c	1.1	11/9/90
+	@(#)seq_mac.c	1.3	4/23/91
 	DESCRIPTION: Macro routines for Sequencer.
 
 	ENVIRONMENT: VxWorks
@@ -13,17 +13,10 @@
 #include	"vxWorks.h"
 #include	"seq.h"
 
-LOCAL int macNameLth();
-LOCAL int macParseName();
-LOCAL int macParseValue();
-LOCAL char *skipBlanks();
+/*#define	DEBUG*/
 
-
-
-/*	#define	DEBUG	*/
-
-/* macTblInit - initialize macro table */
-macTblInit(mac_ptr)
+/* seqMacTblInit - initialize macro table */
+seqMacTblInit(mac_ptr)
 MACRO	*mac_ptr;
 {
 	int	i;
@@ -35,17 +28,17 @@ MACRO	*mac_ptr;
 	}
 }	
 
-/* macEval - substitute macro value into a string */
-macEval(pInStr, pOutStr, maxChar, macTbl)
+/* seqMacEval - substitute macro value into a string */
+seqMacEval(pInStr, pOutStr, maxChar, macTbl)
 char	*pInStr;
 char	*pOutStr;
 MACRO	*macTbl;
 {
-	char	*pMacVal, *pTmp;
-	int	nameLth, valLth;
+	char		*pMacVal, *pTmp;
+	int		nameLth, valLth;
 
 #ifdef	DEBUG
-	printf("macEval: InStr=%s\n", pInStr);
+	printf("seqMacEval: InStr=%s\n", pInStr);
 #endif
 	pTmp = pOutStr;
 	while (*pInStr != 0 && maxChar > 0)
@@ -58,7 +51,7 @@ MACRO	*macTbl;
 			printf("Name=%s[%d]\n", pInStr, nameLth);
 #endif
 			/* Find macro value from macro name */
-			pMacVal = macValGet(pInStr, nameLth, macTbl);
+			pMacVal = seqMacValGet(pInStr, nameLth, macTbl);
 			if (pMacVal != NULL)
 			{	/* Substitute macro value */
 				valLth = strlen(pMacVal);
@@ -89,8 +82,8 @@ MACRO	*macTbl;
 	*pOutStr == 0;
 }
 
-/* macValGet - given macro name, return pointer to its value */
-char	*macValGet(macName, macNameLth, macTbl)
+/* seqMacValGet - given macro name, return pointer to its value */
+char	*seqMacValGet(macName, macNameLth, macTbl)
 char	*macName;
 int	macNameLth;
 MACRO	*macTbl;
@@ -125,20 +118,22 @@ char	*pstr;
 	}
 	return nchar;
 }
-/* macParse - parse the macro definition string and build
+/* seqMacParse - parse the macro definition string and build
 the macro table (name/value pairs). Returns number of macros parsed.
 Assumes the table may already contain entries (values may be changed).
 String for name and value are allocated dynamically from pool.
 */
-int macParse(pMacStr, macTbl)
-char	*pMacStr;	/* macro definition string */
-MACRO	*macTbl;	/* macro table */
+int seqMacParse(pMacStr, sp_ptr)
+char		*pMacStr;	/* macro definition string */
+SPROG		*sp_ptr;
 {
 	int		nMac, nChar;
 	char		*skipBlanks();
-	MACRO		*pMacTbl;
+	MACRO		*macTbl;	/* macro table */
+	MACRO		*pMacTbl;	/* macro tbl entry */
 	char		*name, *value;
 
+	macTbl = sp_ptr->mac_ptr;
 	for ( ;; )
 	{
 		/* Skip blanks */
@@ -146,10 +141,10 @@ MACRO	*macTbl;	/* macro table */
 
 		/* Parse the macro name */
 
-		nChar = macParseName(pMacStr);
+		nChar = seqMacParseName(pMacStr);
 		if (nChar == 0)
 			break; /* finished or error */
-		name = seqAlloc(nChar+1);
+		name = seqAlloc(sp_ptr, nChar+1);
 		if (name == NULL)
 			break;
 		bcopy(pMacStr, name, nChar);
@@ -160,7 +155,7 @@ MACRO	*macTbl;	/* macro table */
 		pMacStr += nChar;
 
 		/* Find a slot in the table */
-		pMacTbl = macTblGet(name, macTbl);
+		pMacTbl = seqMacTblGet(name, macTbl);
 		if (pMacTbl == NULL)
 			break; /* table is full */
 		if (pMacTbl->name == NULL)
@@ -180,10 +175,10 @@ MACRO	*macTbl;	/* macro table */
 		pMacStr = skipBlanks(pMacStr);
 
 		/* Parse the value */
-		nChar = macParseValue(pMacStr);
+		nChar = seqMacParseValue(pMacStr);
 		if (nChar == 0)
 			break;
-		value = seqAlloc(nChar+1);
+		value = seqAlloc(sp_ptr, nChar+1);
 		if (value == NULL)
 			break;
 		bcopy(pMacStr, value, nChar);
@@ -208,7 +203,7 @@ MACRO	*macTbl;	/* macro table */
 }
 
 
-LOCAL int macParseName(pStr)
+LOCAL int seqMacParseName(pStr)
 char	*pStr;
 {
 	int	nChar;
@@ -228,7 +223,7 @@ char	*pStr;
 	return nChar;
 }
 
-LOCAL int macParseValue(pStr)
+LOCAL int seqMacParseValue(pStr)
 char	*pStr;
 {
 	int	nChar;
@@ -251,9 +246,9 @@ char	*pChar;
 	return	pChar;
 }
 
-/* macTblGet - find a match for the specified name, otherwise
+/* seqMacTblGet - find a match for the specified name, otherwise
 return an empty slot in macro table */
-LOCAL MACRO *macTblGet(name, macTbl)
+LOCAL MACRO *seqMacTblGet(name, macTbl)
 char	*name;	/* macro name */
 MACRO	*macTbl;
 {
@@ -261,7 +256,7 @@ MACRO	*macTbl;
 	MACRO		*pMacTbl;
 
 #ifdef	DEBUG
-	printf("macTblGet: name=%s\n", name);
+	printf("seqMacTblGet: name=%s\n", name);
 #endif
 	for (i = 0, pMacTbl = macTbl; i < MAX_MACROS; i++, pMacTbl++)
 	{

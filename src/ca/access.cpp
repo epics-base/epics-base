@@ -1308,37 +1308,37 @@ epicsShareDef const unsigned short dbr_value_offset[LAST_BUFFER_TYPE+1] = {
 	0,					/* character			*/
 	0,					/* long				*/
 	0,					/* IEEE double			*/
-	offsetof(dbr_sts_string,value[0]),/* string field	with status	*/
-	offsetof(dbr_sts_short,value),	/* short field with status	*/
-	offsetof(dbr_sts_float,value),	/* float field with status	*/
-	offsetof(dbr_sts_enum,value),	/* item number with status	*/
-	offsetof(dbr_sts_char,value),	/* char field with status	*/
-	offsetof(dbr_sts_long,value),	/* long field with status	*/
-	offsetof(dbr_sts_double,value),	/* double field with time	*/
-	offsetof(dbr_time_string,value[0]),/* string field with time	*/
-	offsetof(dbr_time_short,value),	/* short field with time	*/
-	offsetof(dbr_time_float,value),	/* float field with time	*/
-	offsetof(dbr_time_enum,value),	/* item number with time	*/
-	offsetof(dbr_time_char,value),	/* char field with time		*/
-	offsetof(dbr_time_long,value),	/* long field with time		*/
-	offsetof(dbr_time_double,value),	/* double field with time	*/
-	offsetof(dbr_sts_string,value[0]),/* graphic string info		*/
-	offsetof(dbr_gr_short,value),	/* graphic short info		*/
-	offsetof(dbr_gr_float,value),	/* graphic float info		*/
-	offsetof(dbr_gr_enum,value),	/* graphic item info		*/
-	offsetof(dbr_gr_char,value),	/* graphic char info		*/
-	offsetof(dbr_gr_long,value),	/* graphic long info		*/
-	offsetof(dbr_gr_double,value),	/* graphic double info		*/
-	offsetof(dbr_sts_string,value[0]),/* control string info		*/
-	offsetof(dbr_ctrl_short,value),	/* control short info		*/
-	offsetof(dbr_ctrl_float,value),	/* control float info		*/
-	offsetof(dbr_ctrl_enum,value),	/* control item info		*/
-	offsetof(dbr_ctrl_char,value),	/* control char info		*/
-	offsetof(dbr_ctrl_long,value),	/* control long info		*/
-	offsetof(dbr_ctrl_double,value),	/* control double info		*/
+	(unsigned short) offsetof(dbr_sts_string,value[0]),/* string field	with status	*/
+	(unsigned short) offsetof(dbr_sts_short,value),	/* short field with status	*/
+	(unsigned short) offsetof(dbr_sts_float,value),	/* float field with status	*/
+	(unsigned short) offsetof(dbr_sts_enum,value),	/* item number with status	*/
+	(unsigned short) offsetof(dbr_sts_char,value),	/* char field with status	*/
+	(unsigned short) offsetof(dbr_sts_long,value),	/* long field with status	*/
+	(unsigned short) offsetof(dbr_sts_double,value),	/* double field with time	*/
+	(unsigned short) offsetof(dbr_time_string,value[0] ),/* string field with time	*/
+	(unsigned short) offsetof(dbr_time_short,value),	/* short field with time	*/
+	(unsigned short) offsetof(dbr_time_float,value),	/* float field with time	*/
+	(unsigned short) offsetof(dbr_time_enum,value),	/* item number with time	*/
+	(unsigned short) offsetof(dbr_time_char,value),	/* char field with time		*/
+	(unsigned short) offsetof(dbr_time_long,value),	/* long field with time		*/
+	(unsigned short) offsetof(dbr_time_double,value),	/* double field with time	*/
+	(unsigned short) offsetof(dbr_sts_string,value[0]),/* graphic string info		*/
+	(unsigned short) offsetof(dbr_gr_short,value),	/* graphic short info		*/
+	(unsigned short) offsetof(dbr_gr_float,value),	/* graphic float info		*/
+	(unsigned short) offsetof(dbr_gr_enum,value),	/* graphic item info		*/
+	(unsigned short) offsetof(dbr_gr_char,value),	/* graphic char info		*/
+	(unsigned short) offsetof(dbr_gr_long,value),	/* graphic long info		*/
+	(unsigned short) offsetof(dbr_gr_double,value),	/* graphic double info		*/
+	(unsigned short) offsetof(dbr_sts_string,value[0]),/* control string info		*/
+	(unsigned short) offsetof(dbr_ctrl_short,value),	/* control short info		*/
+	(unsigned short) offsetof(dbr_ctrl_float,value),	/* control float info		*/
+	(unsigned short) offsetof(dbr_ctrl_enum,value),	/* control item info		*/
+	(unsigned short) offsetof(dbr_ctrl_char,value),	/* control char info		*/
+	(unsigned short) offsetof(dbr_ctrl_long,value),	/* control long info		*/
+	(unsigned short) offsetof(dbr_ctrl_double,value),	/* control double info		*/
 	0,					/* put ackt			*/
 	0,					/* put acks			*/
-	offsetof(dbr_stsack_string,value[0]),/* string field	with status	*/
+	(unsigned short) offsetof(dbr_stsack_string,value[0]),/* string field	with status	*/
 	0,					/* string			*/
 };
 

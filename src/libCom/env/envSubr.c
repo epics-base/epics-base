@@ -73,6 +73,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 
 #include "shareLib.h"
 
@@ -420,7 +421,6 @@ epicsShareFunc unsigned short epicsShareAPI envGetInetPortConfigParam
 {
     long        longStatus;
     long        epicsParam;
-    int         port;
 
     longStatus = envGetLongConfigParam (pEnv, &epicsParam);
     if (longStatus!=0) {
@@ -429,7 +429,7 @@ epicsShareFunc unsigned short epicsShareAPI envGetInetPortConfigParam
         errlogPrintf ("setting \"%s\" = %ld\n", pEnv->name, epicsParam);
     }
 
-    if (epicsParam<=IPPORT_USERRESERVED || epicsParam>0xffff) {
+    if (epicsParam<=IPPORT_USERRESERVED || epicsParam>USHRT_MAX) {
         errlogPrintf ("EPICS Environment \"%s\" out of range\n", pEnv->name);
         /*
          * Quit if the port is wrong due coding error
@@ -442,8 +442,6 @@ epicsShareFunc unsigned short epicsShareAPI envGetInetPortConfigParam
     /*
      * ok to clip to unsigned short here because we checked the range
      */
-    port = (unsigned short) epicsParam;
-
-    return port;
+    return (unsigned short) epicsParam;
 }
 

@@ -216,6 +216,7 @@ extern "C" void epicsShareAPI configureChannelAccessAddressList
 		ellInit ( &bcastList ); // X aCC 392
         addr.ia.sin_family = AF_UNSPEC;
         osiSockDiscoverBroadcastAddresses ( &bcastList, sock, &addr );
+        forcePort ( &bcastList, port );
 		removeDuplicateAddresses ( &tmpList, &bcastList, 1 );
         if ( ellCount ( &tmpList ) == 0 ) { // X aCC 392
             osiSockAddrNode *pNewNode;
@@ -233,9 +234,6 @@ extern "C" void epicsShareAPI configureChannelAccessAddressList
             else {
                 errlogPrintf ( "configureChannelAccessAddressList(): no memory available for configuration\n" );
             }
-        }
-        else {
-            forcePort ( &tmpList, port );
         }
     }
     addAddrToChannelAccessAddressList ( &tmpList, &EPICS_CA_ADDR_LIST, port );

@@ -1551,40 +1551,35 @@ in the server.</p>
 
 <h3><a name="Connection">Connection Management</a></h3>
 
-<p>Application programs should assume that CA server may be restarted, and
-that network connectivity is transient. When you create a CA channel it's
+<p>Application programs should assume that CA servers may be restarted, and
+that network connectivity is transient. When you create a CA channel its
 initial connection state will most commonly be disconnected. If the Process
 Variable's server is available the library will immediately initiate the
 necessary actions to make a connection with it. Otherwise, the client library
-will monitor the state of servers on the network and immediately connect or
-reconnect with the process variable's server when it becomes available.</p>
+will monitor the state of servers on the network and connect or reconnect
+with the process variable's server as it becomes available. After the channel
+connects the application program can freely perform IO operations through the
+channel, but should expect that the channel might disconnect at any time due
+to network connectivity disruptions or server restarts.</p>
 
-<p>Two methods may be used to determine if a channel has connected: the
-application program can block in <code><a
-href="#ca_pend_io">ca_pend_io</a></code>, or the application program can
+<p>Three methods can be used to determine if a channel is connected: the
+application program might call <a href="#ca_state"><code>ca_state</code></a>
+to obtain the current connection state, block in <code><a
+href="#ca_pend_io">ca_pend_io</a></code> until the channel connects, or
 install a connection callback handler when it calls <code><a
 href="#ca_create_channel">ca_create_channel</a></code>. The <code><a
 href="#ca_pend_io">ca_pend_io</a></code> approach is best suited to simple
-command line programs with a short runtime duration, and the connection
-callback method is best suited to toolkit components with a long runtime
-duration. If a connection state change call back function is <em>not</em>
-installed when <code>ca_create_channel </code>is called (if a nil function
-pointer is supplied) then the application program <em>must </em>wait for
-successful status from <code><a href="#ca_pend_io">ca_pend_io</a></code>
-prior to using the channel for the first time.  Otherwise, if a connection
-state change call back function <em>is</em> supplied, then one of the
-arguments to this function distinguishes between connect and disconnect
-events, and <code><a href="#ca_pend_io">ca_pend_io</a></code> will <em>not
-</em>block for the channel to connect. The user's connection state change
-function will be run immediately from within <code><a
+command line programs with short runtime duration, and the connection
+callback method is best suited to toolkit components with long runtime
+duration. Use of <code><a href="#ca_state">ca_state</a> </code>is appropriate
+only in programs that prefer to poll for connection state changes instead of
+opting for asynchronous notification. The <code>ca_pend_io</code> function
+blocks only for channels created specifying a nill connection handler
+callback function. The user's connection state change function will be run
+immediately from within <code><a
 href="#ca_create_channel">ca_create_channel</a> </code>if the CA client and
-the server are both hosted within the same address space (within the same
+CA server are both hosted within the same address space (within the same
 process).</p>
-
-<p>Once the channel connects the application program can freely perform IO
-operations through the channel, but it should expect that the channel might
-disconnect at any time due to network connectivity disruptions or server
-restarts.</p>
 
 <h3><a name="Thread">Thread Safety and Preemptive Callback to User
 Code</a></h3>

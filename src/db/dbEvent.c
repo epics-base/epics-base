@@ -1020,13 +1020,18 @@ LOCAL int event_read (struct event_que *ev_que)
 			assert (ev_que->evUser->nDuplicates>=1u);
 			ev_que->evUser->nDuplicates--;
 		}
-    	event->npend--;
-
+ 
 		/*
 		 * this provides a way to test to see if an event is in use
 		 * despite the fact that the event queue does not point to this event
 		 */
 		event->callBackInProgress = TRUE;
+
+		/*
+		 * it is essential that the npend count is not lowered
+		 * before the callBackInProgress flag is set
+		 */
+   		event->npend--;
 
 		/*
 		 * Next event pointer can be used by event tasks to determine

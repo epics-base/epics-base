@@ -24,6 +24,7 @@ SRCS.c = \
 	../dbCa.c\
 	../dbcar.c\
 	../devLib.c\
+	../devLibVxWorks.c\
 	../initHooks.c
 
 LIBOBJS = \
@@ -45,7 +46,8 @@ LIBOBJS = \
 	taskwd.o\
 	dbCa.o \
 	dbcar.o \
-	devLib.o
+	devLib.o \
+	devLibVxWorks.o
 
 PROD += initHooks.o
 

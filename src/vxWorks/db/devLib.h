@@ -52,13 +52,8 @@
  * .02  06-14-93        joh     needs devAllocInterruptVector() routine
  */
 
-
 #ifndef INCdevLibh
 #define INCdevLibh 1
-
-#if defined(devLibGlobal) && !defined(INCvmeh)
-#include "vme.h"
-#endif
 
 #include <dbDefs.h>
 
@@ -73,90 +68,155 @@ typedef enum {
 		atISA,	/* memory mapped ISA access (until now only on PC) */
 		atLast	/* atLast must be the last enum in this list */
 		} epicsAddressType;
-	
-#ifdef devLibGlobal
-char	*epicsAddressTypeName[]
-		= {
-		"VME A16",
-		"VME A24",
-		"VME A32",
-		"ISA"
-	};
-#endif
 
 /*
- * we use a translation between an EPICS encoding
- * and a vxWorks encoding here
- * to reduce dependency of drivers on vxWorks
- *
- * we assume that the BSP are configured to use these
- * address modes by default
+ * pointer to an array of strings for each of
+ * the above address types
  */
-#define EPICSAddrTypeNoConvert        -1
-#ifdef devLibGlobal
-int EPICStovxWorksAddrType[] 
-                = {
-                VME_AM_SUP_SHORT_IO,
-                VME_AM_STD_SUP_DATA,
-                VME_AM_EXT_SUP_DATA,
-                EPICSAddrTypeNoConvert
-	        };
-#endif
+extern const char *epicsAddressTypeName[];
 
 long	devAddressMap(void); /* print an address map */
 
+/*
+ * devReadProbe()
+ *
+ * a bus error safe "wordSize" read at the specified address which returns 
+ * unsuccessful status if the device isnt present
+ */
+long	devReadProbe (unsigned wordSize, volatile const void *ptr, void *pValueRead);
+
+/*
+ * devWriteProbe
+ *
+ * a bus error safe "wordSize" write at the specified address which returns 
+ * unsuccessful status if the device isnt present
+ */
+long	devWriteProbe (unsigned wordSize, volatile void *ptr, const void *pValueWritten);
+
 long	devRegisterAddress(
-		const char		*pOwnerName,
-                epicsAddressType        addrType,
-                void                    *baseAddress,
-                unsigned long		size, /* bytes */
-		void                    **pLocalAddress);
+			const char *pOwnerName,
+			epicsAddressType addrType,
+			size_t logicalBaseAddress,
+			size_t size, /* bytes */
+			volatile void **pPhysicalAddress);
 
 long    devUnregisterAddress(
-                epicsAddressType        addrType,
-                void                    *baseAddress,
-		const char		*pOwnerName);
+			epicsAddressType addrType,
+			size_t logicalBaseAddress,
+			const char *pOwnerName);
 
 /*
  * allocate and register an unoccupied address block
  */
 long    devAllocAddress(
-		const char              *pOwnerName,
-		epicsAddressType        addrType,
-		unsigned long           size,
-		unsigned		alignment, /*n ls bits zero in addr*/
-		void                    **pLocalAddress);
+			const char *pOwnerName,
+			epicsAddressType addrType,
+			size_t size,
+			unsigned alignment, /*n ls bits zero in addr*/
+			volatile void **pLocalAddress);
 
 /*
- * some CPU`s will maintain these in independent spaces
+ * connect ISR to a VME interrupt vector
  */
-typedef enum {intCPU, intVME, intVXI} epicsInterruptType;
-long    devConnectInterrupt(
-                epicsInterruptType      intType,
-                unsigned                vectorNumber,
-                void                    (*pFunction)(),
-                void                    *parameter);
- 
- 
+long    devConnectInterruptVME(
+			unsigned vectorNumber,
+			void (*pFunction)(void *),
+			void  *parameter);
+
 /*
+ * connect ISR to an ISA interrupt level
+ * (not implemented)
+ * (API should be reviewed)
+ */
+long    devConnectInterruptISA(
+			unsigned interruptLevel,
+			void (*pFunction)(void *),
+			void  *parameter);
+
+/*
+ * connect ISR to a PCI interrupt
+ * (not implemented)
+ * (API should be reviewed)
+ */
+long    devConnectInterruptPCI(
+			unsigned bus,
+			unsigned device,
+			unsigned function,
+			void (*pFunction)(void *),
+			void  *parameter);
+
+/*
+ * disconnect ISR from a VME interrupt vector
  *
  * The parameter pFunction should be set to the C function pointer that 
  * was connected. It is used as a key to prevent a driver from inadvertently
  * removing an interrupt handler that it didn't install 
  */
-long    devDisconnectInterrupt(
-                epicsInterruptType      intType,
-                unsigned                vectorNumber,
-		void			(*pFunction)()); 
+long    devDisconnectInterruptVME(
+			unsigned vectorNumber,
+			void (*pFunction)(void *));
+
+/*
+ * disconnect ISR from an ISA interrupt level
+ * (not implemented)
+ * (API should be reviewed)
+ *
+ * The parameter pFunction should be set to the C function pointer that 
+ * was connected. It is used as a key to prevent a driver from inadvertently
+ * removing an interrupt handler that it didn't install 
+ */
+long    devDisconnectInterruptISA(
+			unsigned interruptLevel,
+			void (*pFunction)(void *));
+
+/*
+ * disconnect ISR from a PCI interrupt
+ * (not implemented)
+ * (API should be reviewed)
+ *
+ * The parameter pFunction should be set to the C function pointer that 
+ * was connected. It is used as a key to prevent a driver from inadvertently
+ * removing an interrupt handler that it didn't install 
+ */
+long    devDisconnectInterruptPCI(
+			unsigned bus,
+			unsigned device,
+			unsigned function,
+			void (*pFunction)(void *));
+
+/*
+ * determine if a VME interrupt vector is in use
+ *
+ * returns boolean
+ */
+int devInterruptInUseVME (unsigned vectorNumber);
+
+/*
+ * determine if an ISA interrupt level is in use
+ * (not implemented)
+ *
+ * returns boolean
+ */
+int devInterruptLevelInUseISA (unsigned interruptLevel);
+
+/*
+ * determine if a PCI interrupt is in use
+ * (not implemented)
+ *
+ * returns boolean
+ */
+int devInterruptInUsePCI (unsigned bus, unsigned device, 
+							  unsigned function);
+
+typedef enum {intVME, intVXI, intISA} epicsInterruptType;
 
 long    devEnableInterruptLevel(
-                epicsInterruptType      intType,
-                unsigned                level);
+			epicsInterruptType      intType,
+			unsigned                level);
  
 long    devDisableInterruptLevel(
-                epicsInterruptType      intType,
-                unsigned                level);
-
+			epicsInterruptType      intType,
+			unsigned                level);
 
 /*
  * Routines to allocate and free memory in the A24 memory region.
@@ -199,10 +259,49 @@ void devLibA24Free(void *pBlock);
 #define devPtrAlignTest(PTR) (!(devCreateAlignmentMask(*PTR)&(long)(PTR)))
 
 /*
+ * virtual OS layer for devLib.c
+ */
+struct devLibVirtualOS {
+	/*
+	 * maps logical address to physical address, but does not detect
+	 * two device drivers that are using the same address range
+	 */
+	long (*pDevMapAddr) (epicsAddressType addrType, unsigned options,
+			size_t logicalAddress, size_t size, volatile void **ppPhysicalAddress);
+
+	/*
+	 * a bus error safe "wordSize" read at the specified address which returns 
+	 * unsuccessful status if the device isnt present
+	 */
+	long (*pDevReadProbe) (unsigned wordSize, volatile const void *ptr, void *pValueRead);
+
+	/*
+	 * a bus error safe "wordSize" write at the specified address which returns 
+	 * unsuccessful status if the device isnt present
+	 */
+	long (*pDevWriteProbe) (unsigned wordSize, volatile void *ptr, const void *pValueWritten);
+
+	/*
+	 * connect ISR to a VME interrupt vector
+	 * (required for backwards compatibility)
+	 */
+	long (*pDevConnectInterruptVME) (unsigned vectorNumber, 
+						void (*pFunction)(), void  *parameter);
+
+	/*
+	 * disconnect ISR from a VME interrupt vector
+	 * (required for backwards compatibility)
+	 */
+	long (*pDevDisconnectInterruptVME) (unsigned vectorNumber,
+						void (*pFunction)(void *));
+};
+
+/*
  * error codes (and messages) associated with devLib.c
  */
-#define S_dev_vectorInUse (M_devLib| 1) /*Interrupt vector in use*/
-#define S_dev_vxWorksVecInstlFail (M_devLib| 2) /*vxWorks interrupt vector install failed*/
+#define S_dev_success 0
+#define S_dev_vectorInUse (M_devLib| 1) /*interrupt vector in use*/
+#define S_dev_vecInstlFail (M_devLib| 2) /*interrupt vector install failed*/
 #define S_dev_uknIntType (M_devLib| 3) /*Unrecognized interrupt type*/ 
 #define S_dev_vectorNotInUse (M_devLib| 4) /*Interrupt vector not in use by caller*/
 #define S_dev_badA16 (M_devLib| 5) /*Invalid VME A16 address*/
@@ -211,11 +310,11 @@ void devLibA24Free(void *pBlock);
 #define S_dev_uknAddrType (M_devLib| 8) /*Unrecognized address space type*/
 #define S_dev_addressOverlap (M_devLib| 9) /*Specified device address overlaps another device*/ 
 #define S_dev_identifyOverlap (M_devLib| 10) /*This device already owns the address range*/ 
-#define S_dev_vxWorksAddrMapFail (M_devLib| 11) /*vxWorks refused address map*/ 
+#define S_dev_addrMapFail (M_devLib| 11) /*unable to map address*/ 
 #define S_dev_intDisconnect (M_devLib| 12) /*Interrupt at vector disconnected from an EPICS device*/ 
 #define S_dev_internal (M_devLib| 13) /*Internal failure*/ 
-#define S_dev_vxWorksIntEnFail (M_devLib| 14) /*vxWorks interrupt enable failure*/ 
-#define S_dev_vxWorksIntDissFail (M_devLib| 15) /*vxWorks interrupt disable failure*/ 
+#define S_dev_intEnFail (M_devLib| 14) /*unable to enable interrupt level*/ 
+#define S_dev_intDissFail (M_devLib| 15) /*unable to disable interrupt level*/ 
 #define S_dev_noMemory (M_devLib| 16) /*Memory allocation failed*/ 
 #define S_dev_addressNotFound (M_devLib| 17) /*Specified device address unregistered*/ 
 #define S_dev_noDevice (M_devLib| 18) /*No device at specified address*/
@@ -231,4 +330,34 @@ void devLibA24Free(void *pBlock);
 #define S_dev_hdwLimit (M_devLib| 28) /*Input exceeds Hardware Limit*/
 #define S_dev_deviceDoesNotFit (M_devLib| 29) /*Unable to locate address space for device*/
 #define S_dev_deviceTMO (M_devLib| 30) /*device timed out*/
+#define S_dev_badFunction (M_devLib| 31) /*bad function pointer*/
+#define S_dev_badVector (M_devLib| 32) /*bad interrupt vector*/
+#define S_dev_badArgument (M_devLib| 33) /*bad function argument*/
+
+/*
+ * NOTE: this routine has been depricated. It exits
+ * for backwards compatibility purposes only.
+ *
+ * Please use one of devConnectInterruptVME, devConnectInterruptPCI,
+ * devConnectInterruptISA etc.
+ */
+long    devConnectInterrupt(
+			epicsInterruptType intType,
+			unsigned vectorNumber,
+			void (*pFunction)(),
+			void  *parameter);
+
+/*
+ * NOTE: this routine has been depricated. It exits
+ * for backwards compatibility purposes only.
+ *
+ * Please use one of devDisconnectInterruptVME, devDisconnectInterruptPCI,
+ * devDisconnectInterruptISA etc.
+ */
+long    devDisconnectInterrupt(
+			epicsInterruptType      intType,
+			unsigned                vectorNumber,
+			void			(*pFunction)());
+
+
 #endif  /* devLib.h*/

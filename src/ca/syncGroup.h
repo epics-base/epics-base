@@ -101,10 +101,10 @@ private:
         int status, const char *pContext, unsigned type, arrayElementCount count );
 	syncGroupReadNotify ( const syncGroupReadNotify & );
 	syncGroupReadNotify & operator = ( const syncGroupReadNotify & );
-#   if defined (_MSC_VER) && _MSC_VER == 1300
+#   if defined (_MSC_VER) && _MSC_VER <= 1300
         void operator delete ( void * ); // avoid visual c++ 7 bug
 #   endif
-#   if __GNUC__==2 && __GNUC_MINOR_<96 
+#   if __GNUC__==2 && __GNUC_MINOR_<=96 
         void operator delete ( void *, size_t ); // avoid gnu g++ bug
 #   endif
 };
@@ -134,10 +134,10 @@ private:
 		unsigned type, arrayElementCount count );
 	syncGroupWriteNotify ( const syncGroupWriteNotify & );
 	syncGroupWriteNotify & operator = ( const syncGroupWriteNotify & );
-#   if defined (_MSC_VER) && _MSC_VER == 1300
+#   if defined (_MSC_VER) && _MSC_VER <= 1300
         void operator delete ( void * ); // avoid visual c++ 7 bug
 #   endif
-#   if __GNUC__==2 && __GNUC_MINOR_<96 
+#   if __GNUC__==2 && __GNUC_MINOR_<=96 
         void operator delete ( void *, size_t ); // avoid gnu g++ bug
 #   endif
 };

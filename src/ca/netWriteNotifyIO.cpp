@@ -78,7 +78,7 @@ void netWriteNotifyIO::completion ( unsigned /* type */,
     }
 #endif
 
-#   if defined (_MSC_VER) && _MSC_VER == 1300
+#   if defined (_MSC_VER) && _MSC_VER <= 1300
     void netWriteNotifyIO::operator delete ( void * ) // avoid visual c++ 7 bug
     {
         throw std::logic_error ( "_MSC_VER == 1300 bogus stub called?" );

@@ -98,10 +98,10 @@ private:
     netSubscription ( const netSubscription & );
     netSubscription & operator = ( const netSubscription & );
     ~netSubscription ();
-#   if defined (_MSC_VER) && _MSC_VER == 1300 
+#   if defined (_MSC_VER) && _MSC_VER <= 1300 
         void operator delete ( void * ); // avoid visual c++ 7 bug
 #   endif
-#   if __GNUC__==2 && __GNUC_MINOR_<96 
+#   if __GNUC__==2 && __GNUC_MINOR_<=96 
         void operator delete ( void *, size_t ); // avoid gnu g++ bug
 #   endif
 };
@@ -131,10 +131,10 @@ private:
     ~netReadNotifyIO ();
     netReadNotifyIO ( const netReadNotifyIO & );
     netReadNotifyIO & operator = ( const netReadNotifyIO & );
-#   if defined (_MSC_VER) && _MSC_VER == 1300
+#   if defined (_MSC_VER) && _MSC_VER <= 1300
         void operator delete ( void * ); // avoid visual c++ 7 bug
 #   endif
-#   if __GNUC__==2 && __GNUC_MINOR_<96 
+#   if __GNUC__==2 && __GNUC_MINOR_<=96 
         void operator delete ( void *, size_t ); // avoid gnu g++ bug
 #   endif
 };
@@ -164,10 +164,10 @@ private:
     netWriteNotifyIO ( const netWriteNotifyIO & );
     netWriteNotifyIO & operator = ( const netWriteNotifyIO & );
     ~netWriteNotifyIO ();
-#   if defined (_MSC_VER) && _MSC_VER == 1300
+#   if defined (_MSC_VER) && _MSC_VER <= 1300
         void operator delete ( void * ); // avoid visual c++ 7 bug
 #   endif
-#   if __GNUC__==2 && __GNUC_MINOR_<96 
+#   if __GNUC__==2 && __GNUC_MINOR_<=96 
         void operator delete ( void *, size_t ); // avoid gnu g++ bug
 #   endif
 };

@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.7  1997/01/12 20:32:48  jbk
+// many errors fixed
+//
 // Revision 1.5  1996/10/17 12:41:48  jbk
 // took out strdup function - replaced with strDup
 //
@@ -28,6 +31,7 @@
 // *Revision 1.1  1996/05/31 13:15:27  jbk
 // *add new stuff
 
+#define epicsExportSharedSymbols
 #include "gddAppTable.h"
 
 // -----------------general destructor for managed gdds--------------------

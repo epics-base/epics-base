@@ -32,6 +32,10 @@ LIBSRCS := gdd.cc gddTest.cc gddAppTable.cc gddNewDel.cc \
 
 LIBRARY := gdd
 
+LIBTYPE := SHARED
+
+DLL_LIBS := Com
+
 # build locally:
 TESTPROD:=genApps
 TESTPROD_SRCS:=genApps.cc gdd.cc gddArray.cc gddContainer.cc \

@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.20  1997/03/21 01:56:01  jbk
+// *** empty log message ***
+//
 // Revision 1.19  1997/03/17 17:14:46  jbk
 // fixed a problem with gddDestructor and reference counting
 //
@@ -75,6 +78,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+
+#define epicsExportSharedSymbols
 #include "gdd.h"
 
 gdd_NEWDEL_NEW(gdd)

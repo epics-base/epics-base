@@ -4,11 +4,15 @@
 //
 // $Id$
 // $Log$
+// Revision 1.1  1997/03/21 01:56:11  jbk
+// *** empty log message ***
+//
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
 
+#define epicsExportSharedSymbols
 #include "gddNewDel.h"
 #include "gddUtils.h"
 

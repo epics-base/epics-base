@@ -7,14 +7,19 @@
  *
  * $Id$
  * $Log$
+ * Revision 1.1  1997/03/21 01:56:09  jbk
+ * *** empty log message ***
+ *
  *
  */
+
+#include "shareLib.h"
 
 // ------------------------------------------------------------------------
 // Add handling of the special case where the data is a scaler - the
 // dimension is zero
 
-class gddScalar : public gdd
+class epicsShareClass gddScalar : public gdd
 {
 public:
 	gddScalar(void) { }

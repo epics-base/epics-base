@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.7  1996/09/04 20:55:02  jhill
+// add GDD_NAME_PV_NAME
+//
 // Revision 1.6  1996/08/27 13:05:07  jbk
 // final repairs to string functions, put() functions, and error code printing
 //
@@ -34,6 +37,7 @@
 // *Revision 1.1  1996/05/31 13:15:26  jbk
 // *add new stuff
 
+#define epicsExportSharedSymbols
 #include "gddAppTable.h"
 
 static char* thing = "12345678";

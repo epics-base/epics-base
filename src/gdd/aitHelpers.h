@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.12  1997/04/10 19:59:23  jhill
+ * api changes
+ *
  * Revision 1.11  1997/03/21 01:56:00  jbk
  * *** empty log message ***
  *
@@ -54,6 +57,8 @@
 #include <assert.h> 
 #endif
 
+#include "shareLib.h"
+
 #define NSecPerSec 1000000000u
 #define NSecPerUSec 1000u
 #define SecPerMin 60u
@@ -65,7 +70,7 @@ inline char* strDup(const char* x)
 	return y;
 }
 
-class aitTimeStamp {
+class epicsShareClass aitTimeStamp {
 	friend inline aitTimeStamp operator+ (const aitTimeStamp &lhs, const aitTimeStamp &rhs);
 	friend inline aitTimeStamp operator- (const aitTimeStamp &lhs, const aitTimeStamp &rhs);
 	friend inline int operator>= (const aitTimeStamp &lhs, const aitTimeStamp &rhs);
@@ -168,7 +173,7 @@ inline int operator>= (const aitTimeStamp &lhs, const aitTimeStamp &rhs)
 // very simple class for string storage (for now)
 //
 //
-class aitString
+class epicsShareClass aitString
 {
 public:
 	aitString(char* p);				// copy the user's string

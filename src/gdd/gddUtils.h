@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.2  1997/03/21 01:56:11  jbk
+ * *** empty log message ***
+ *
  * Revision 1.1  1996/06/25 19:11:50  jbk
  * new in EPICS base
  *
@@ -29,12 +32,13 @@
 #include "aitTypes.h"
 #include "gddErrorCodes.h"
 #include "gddNewDel.h"
+#include "shareLib.h"
 
 // ---------------------------------------------------------------------
 // Describe the bounds of a single dimension in terms of the first
 // element and the number of elements in the dimension.
 
-class gddBounds
+class epicsShareClass gddBounds
 {
 public:
 	// I found a weird memory management quirk with SunOS when constructors
@@ -81,7 +85,7 @@ private:
 // the thing will go away when unreferenced - which is what you will
 // have if you only reference the destructor once after it is created.
 
-class gddDestructor
+class epicsShareClass gddDestructor
 {
 public:
 	gddDestructor(void);
@@ -109,7 +113,7 @@ private:
 // the dimension of the data, we will manage the normal cases using 
 // free lists.
 
-class gddBounds1D
+class epicsShareClass gddBounds1D
 {
 public:
 	gddBounds1D(void) { }
@@ -121,7 +125,7 @@ private:
 };
 inline gddBounds* gddBounds1D::boundArray(void) { return (gddBounds*)b; }
 
-class gddBounds2D
+class epicsShareClass gddBounds2D
 {
 public:
 	gddBounds2D(void) { }
@@ -133,7 +137,7 @@ private:
 };
 inline gddBounds* gddBounds2D::boundArray(void) { return (gddBounds*)b; }
 
-class gddBounds3D
+class epicsShareClass gddBounds3D
 {
 public:
 	gddBounds3D(void) { }

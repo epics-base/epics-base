@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.2  1997/04/10 19:59:25  jhill
+ * api changes
+ *
  * Revision 1.1  1996/06/25 19:11:36  jbk
  * new in EPICS base
  *
@@ -56,8 +59,8 @@ typedef struct gddDbrToAitTable gddDbrToAitTable;
 epicsShareExtern gddDbrToAitTable gddDbrToAit[];
 epicsShareExtern const chtype gddAitToDbr[];
 epicsShareExtern gddDbrMapFuncTable gddMapDbr[];
-void gddMakeMapDBR(gddApplicationTypeTable& tt);
-void gddMakeMapDBR(gddApplicationTypeTable* tt);
+epicsShareExtern void gddMakeMapDBR(gddApplicationTypeTable& tt);
+epicsShareExtern void gddMakeMapDBR(gddApplicationTypeTable* tt);
 
 #endif
 

@@ -7,14 +7,19 @@
  *
  * $Id$
  * $Log$
+ * Revision 1.1  1997/03/21 01:56:06  jbk
+ * *** empty log message ***
+ *
  *
  */
+
+#include "shareLib.h"
 
 class gddCursor;
 
 /* this class needs to be able to register a destructor for the container */
 
-class gddContainer : public gdd
+class epicsShareClass gddContainer : public gdd
 {
 public:
 	gddContainer(void);
@@ -60,7 +65,7 @@ private:
 	friend class gddCursor;
 };
 
-class gddCursor
+class epicsShareClass gddCursor
 {
 public:
 	gddCursor(void);

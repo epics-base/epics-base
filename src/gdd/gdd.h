@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.22  1997/03/21 01:56:03  jbk
+ * *** empty log message ***
+ *
  * Revision 1.21  1997/03/17 17:14:48  jbk
  * fixed a problem with gddDestructor and reference counting
  *
@@ -161,7 +164,7 @@ class gddScalar;
 // ---------------------------------------------------------------------
 // This is the main Data Descriptor (DD).
 
-class gdd
+class epicsShareClass gdd
 {
 public:
 	gdd(void);

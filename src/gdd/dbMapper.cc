@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.16  1996/12/20 13:09:49  jbk
+// Working version, intermediate, still has problems
+//
 // Revision 1.15  1996/11/02 01:24:44  jhill
 // strcpy => styrcpy (shuts up purify)
 //
@@ -71,6 +74,7 @@
 #define DB_MAPPER_SOURCE 1
 #include <stdio.h>
 
+#define epicsExportSharedSymbols
 #include "gddApps.h"
 #include "gddAppTable.h"
 #include "dbMapper.h"

@@ -7,15 +7,20 @@
  *
  * $Id$
  * $Log$
+ * Revision 1.1  1997/03/21 01:56:05  jbk
+ * *** empty log message ***
+ *
  *
  * ***********************************************************************
  * Adds ability to put array data into a DD, get it out, and adjust it
  * ***********************************************************************
  */
 
+#include "shareLib.h"
+
 #define gddAtomic gddArray
 
-class gddArray : public gdd
+class epicsShareClass gddArray : public gdd
 {
 public:
 	gddArray(void) { }

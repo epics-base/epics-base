@@ -5,6 +5,9 @@
 // $Id$
 //
 // $Log$
+// Revision 1.5  1996/08/23 20:29:34  jbk
+// completed fixes for the aitString and fixed string management
+//
 // Revision 1.4  1996/08/22 21:05:38  jbk
 // More fixes to make strings and fixed string work better.
 //
@@ -19,7 +22,7 @@
 // new in EPICS base
 //
 //
-
+#define epicsExportSharedSymbols
 #include "aitTypes.h"
 #include "aitHelpers.h"
 

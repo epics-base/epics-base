@@ -4,6 +4,9 @@
 // $Id$
 // 
 // $Log$
+// Revision 1.6  1996/12/20 13:11:42  jbk
+// More strings yet printed now
+//
 // Revision 1.4  1996/10/17 12:40:06  jbk
 // adjusted the network byte ordering dump
 //
@@ -26,6 +29,7 @@
 // *add new stuff
 
 #include <stdio.h>
+#define epicsExportSharedSymbols
 #include "gdd.h"
 
 // -----------------------test routines------------------------

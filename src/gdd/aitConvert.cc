@@ -5,6 +5,9 @@
 // $Id$
 //
 // $Log$
+// Revision 1.4  1996/11/02 01:24:39  jhill
+// strcpy => styrcpy (shuts up purify)
+//
 // Revision 1.3  1996/08/22 21:05:37  jbk
 // More fixes to make strings and fixed string work better.
 //
@@ -29,6 +32,7 @@
 #define AIT_CONVERT_SOURCE 1
 #include <stdio.h>
 #include <stdlib.h>
+#define epicsExportSharedSymbols
 #include "aitConvert.h"
 
 extern "C" {

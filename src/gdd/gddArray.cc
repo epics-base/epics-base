@@ -7,7 +7,10 @@
 //
 // $Id$
 // $Log$
-
+// Revision 1.1  1997/03/21 01:56:04  jbk
+// *** empty log message ***
+//
+#define epicsExportSharedSymbols
 #include "gdd.h"
 
 // ----------------------The gddAtomic functions-------------------------

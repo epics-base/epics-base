@@ -8,6 +8,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.4  1997/01/12 20:32:49  jbk
+ * many errors fixed
+ *
  * Revision 1.3  1996/09/04 20:58:55  jhill
  * added GDD_NAME_PV_NAME
  *
@@ -98,7 +101,7 @@ public:
 // associated with it.  The gddApplicationTypeDestructor allows the DD to be
 // returned to the free list for the DD app in the app table.
 
-class gddApplicationTypeTable
+class epicsShareClass gddApplicationTypeTable
 {
 public:
 	gddApplicationTypeTable(aitUint32 total_number_of_apps=(1<<9));

@@ -389,8 +389,21 @@ long dbpf(char	*pname,char *pvalue)
          errMessage(status,"dbNameToAddr error");
          return(1);
     }
-    status=dbPutField(&addr,DBR_STRING,pvalue,1L);
-    if(status) return(1);
+    /* For enumerated types must allow for ENUM rather than string*/
+    /* If entire field is digits then use DBR_ENUM else DBR_STRING*/
+    if((addr.dbr_field_type==DBR_ENUM) && (*pvalue!=0)
+    &&  (strspn(pvalue,"0123456789")==strlen(pvalue))) {
+	    short value;
+
+	    sscanf(pvalue,"%hu",&value);
+	    status=dbPutField(&addr,DBR_ENUM,&value,1L);
+    } else {
+	status=dbPutField(&addr,DBR_STRING,pvalue,1L);
+    }
+    if(status) {
+         errMessage(status,"dbPutField error");
+         return(1);
+    }
     status=dbgf(pname);
     return(status);
 }

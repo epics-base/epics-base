@@ -92,6 +92,7 @@ STATIC notifyGlobal *pnotifyGlobal = 0;
 STATIC void putNotifyInit(putNotify *ppn);
 STATIC void putNotifyCleanup(putNotify *ppn);
 STATIC void restartCheck(putNotifyRecord *ppnr);
+STATIC void callUser(dbCommon *precord,putNotify *ppn);
 STATIC void notifyCallback(CALLBACK *pcallback);
 STATIC void putNotifyCommon(putNotify *ppn,dbCommon *precord);
 
@@ -123,6 +124,14 @@ STATIC void putNotifyInit(putNotify *ppn)
         pputNotifyPvt->magic = MAGIC;
         pputNotifyPvt->state = putNotifyNotActive;
     }
+    pputNotifyPvt->state = putNotifyNotActive;
+    callbackSetCallback(notifyCallback,&pputNotifyPvt->callback);
+    callbackSetUser(ppn,&pputNotifyPvt->callback);
+    callbackSetPriority(priorityLow,&pputNotifyPvt->callback);
+    ellInit(&pputNotifyPvt->waitList);
+    ppn->status = 0;
+    pputNotifyPvt->state = putNotifyNotActive;
+    pputNotifyPvt->cancelWait = pputNotifyPvt->userCallbackWait = 0;
     ppn->pputNotifyPvt = pputNotifyPvt;
 }
 
@@ -130,10 +139,11 @@ STATIC void putNotifyCleanup(putNotify *ppn)
 {
     putNotifyPvt *pputNotifyPvt = (putNotifyPvt *)ppn->pputNotifyPvt;
 
+    pputNotifyPvt->state = putNotifyNotActive;
     ellAdd(&pnotifyGlobal->freeList,&pputNotifyPvt->node);
     ppn->pputNotifyPvt = 0;
 }
-
+
 STATIC void restartCheck(putNotifyRecord *ppnr)
 {
     dbCommon *precord = ppnr->precord;
@@ -155,6 +165,35 @@ STATIC void restartCheck(putNotifyRecord *ppnr)
     /* request callback for pfirst */
     pputNotifyPvt->state = putNotifyRestartCallbackRequested;
     callbackRequest(&pputNotifyPvt->callback);
+}
+
+STATIC void callUser(dbCommon *precord,putNotify *ppn)
+{
+    putNotifyPvt *pputNotifyPvt = (putNotifyPvt *)ppn->pputNotifyPvt;
+
+    epicsMutexUnlock(pnotifyGlobal->lock);
+    dbScanUnlock(precord);
+    (*ppn->userCallback)(ppn);
+    epicsMutexMustLock(pnotifyGlobal->lock);
+    if(pputNotifyPvt->cancelWait && pputNotifyPvt->userCallbackWait) {
+        errlogPrintf("%s putNotify: both cancelWait and userCallbackWait true."
+               "This is illegal\n",precord->name);
+        pputNotifyPvt->cancelWait = pputNotifyPvt->userCallbackWait = 0;
+    }
+    if(!pputNotifyPvt->cancelWait && !pputNotifyPvt->userCallbackWait) {
+        putNotifyCleanup(ppn);
+        epicsMutexUnlock(pnotifyGlobal->lock); 
+        return;
+    }
+    if(pputNotifyPvt->cancelWait) {
+        pputNotifyPvt->cancelWait = 0;
+        epicsEventSignal(pputNotifyPvt->cancelEvent);
+        return;
+    }
+    assert(pputNotifyPvt->userCallbackWait);
+    pputNotifyPvt->userCallbackWait = 0;
+    epicsEventSignal(pputNotifyPvt->userCallbackEvent);
+    return;
 }
 
 STATIC void putNotifyCommon(putNotify *ppn,dbCommon *precord)
@@ -201,22 +240,7 @@ STATIC void putNotifyCommon(putNotify *ppn,dbCommon *precord)
     }
     pputNotifyPvt->state = putNotifyUserCallbackActive;
     assert(precord->ppn!=ppn);
-    epicsMutexUnlock(pnotifyGlobal->lock);
-    dbScanUnlock(precord);
-    (*ppn->userCallback)(ppn);
-    epicsMutexMustLock(pnotifyGlobal->lock);
-    if(pputNotifyPvt->cancelWait) {
-        pputNotifyPvt->cancelWait = 0;
-        epicsEventSignal(pputNotifyPvt->cancelEvent);
-    }
-    if(pputNotifyPvt->userCallbackWait) {
-        pputNotifyPvt->userCallbackWait = 0;
-        epicsEventSignal(pputNotifyPvt->userCallbackEvent);
-    }
-    pputNotifyPvt->state = putNotifyNotActive;
-    putNotifyCleanup(ppn);
-    epicsMutexUnlock(pnotifyGlobal->lock); 
-    return;
+    callUser(precord,ppn);
 }
 
 STATIC void notifyCallback(CALLBACK *pcallback)
@@ -235,13 +259,10 @@ STATIC void notifyCallback(CALLBACK *pcallback)
           || pputNotifyPvt->state==putNotifyUserCallbackRequested);
     assert(ellCount(&pputNotifyPvt->waitList)==0);
     if(pputNotifyPvt->cancelWait) {
-        ppn->status = putNotifyCanceled;
         if(pputNotifyPvt->state==putNotifyRestartCallbackRequested) {
             restartCheck(precord->ppnr);
         }
-        pputNotifyPvt->state = putNotifyNotActive;
         epicsEventSignal(pputNotifyPvt->cancelEvent);
-        putNotifyCleanup(ppn);
         epicsMutexUnlock(pnotifyGlobal->lock);
         dbScanUnlock(precord);
         return;
@@ -253,23 +274,9 @@ STATIC void notifyCallback(CALLBACK *pcallback)
     /* All done. Clean up and call userCallback */
     pputNotifyPvt->state = putNotifyUserCallbackActive;
     assert(precord->ppn!=ppn);
-    epicsMutexUnlock(pnotifyGlobal->lock);
-    dbScanUnlock(precord);
-    (*ppn->userCallback)(ppn);
-    epicsMutexMustLock(pnotifyGlobal->lock);
-    if(pputNotifyPvt->cancelWait) {
-        pputNotifyPvt->cancelWait = 0;
-        epicsEventSignal(pputNotifyPvt->cancelEvent);
-    }
-    if(pputNotifyPvt->userCallbackWait) {
-        pputNotifyPvt->userCallbackWait = 0;
-        epicsEventSignal(pputNotifyPvt->userCallbackEvent);
-    }
-    pputNotifyPvt->state = putNotifyNotActive;
-    putNotifyCleanup(ppn);
-    epicsMutexUnlock(pnotifyGlobal->lock); 
+    callUser(precord,ppn);
 }
-
+
 void epicsShareAPI dbPutNotifyInit(void)
 {
     if(pnotifyGlobal) return;
@@ -319,19 +326,12 @@ void epicsShareAPI dbPutNotify(putNotify *ppn)
         epicsEventWait(pputNotifyPvt->userCallbackEvent);
         dbScanLock(precord);
         epicsMutexMustLock(pnotifyGlobal->lock);
+        putNotifyCleanup(ppn);
     }
     pputNotifyPvt = (putNotifyPvt *)ppn->pputNotifyPvt;
     assert(!pputNotifyPvt);
     putNotifyInit(ppn);
     pputNotifyPvt = (putNotifyPvt *)ppn->pputNotifyPvt;
-    pputNotifyPvt->state = putNotifyNotActive;
-    callbackSetCallback(notifyCallback,&pputNotifyPvt->callback);
-    callbackSetUser(ppn,&pputNotifyPvt->callback);
-    callbackSetPriority(priorityLow,&pputNotifyPvt->callback);
-    ellInit(&pputNotifyPvt->waitList);
-    ppn->status = 0;
-    pputNotifyPvt->state = putNotifyNotActive;
-    pputNotifyPvt->cancelWait = pputNotifyPvt->userCallbackWait = 0;
     if(!precord->ppnr) {/* make sure record has a putNotifyRecord*/
         precord->ppnr = dbCalloc(1,sizeof(putNotifyRecord));
         precord->ppnr->precord = precord;
@@ -364,6 +364,9 @@ void epicsShareAPI dbNotifyCancel(putNotify *ppn)
         epicsMutexUnlock(pnotifyGlobal->lock);
         dbScanUnlock(precord);
         epicsEventWait(pputNotifyPvt->cancelEvent);
+        epicsMutexMustLock(pnotifyGlobal->lock);
+        putNotifyCleanup(ppn);
+        epicsMutexUnlock(pnotifyGlobal->lock);
         return;
     }
     switch(state) {

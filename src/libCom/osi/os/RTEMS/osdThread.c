@@ -38,9 +38,8 @@ struct taskVar {
     rtems_id		id;
     THREADFUNC          funptr;
     void                *parm;
-    int                 threadVariableCapacity;
+    unsigned int        threadVariableCapacity;
     void                **threadVariables;
-    int			threadVariablesAdded;
 };
 static semMutexId taskVarMutex;
 static struct taskVar *taskVarHead;
@@ -191,7 +190,6 @@ threadCreate (const char *name,
     v->parm = parm;
     v->threadVariableCapacity = 0;
     v->threadVariables = NULL;
-    v->threadVariablesAdded = 0;
     note = (rtems_unsigned32)v;
     rtems_task_set_note (RTEMS_SELF, RTEMS_NOTEPAD_TASKVAR, note);
     taskVarLock ();
@@ -378,12 +376,16 @@ void threadOnceOsd(threadOnceId *id, void(*func)(void *), void *arg)
  * Thread private storage implementation based on the vxWorks
  * implementation by Andrew Johnson APS/ASD.
  */
-static void *taskVarPointer = NULL;    /* RTEMS task-private variable */
-static int threadVariableCount = 0;
-
 threadPrivateId threadPrivateCreate ()
 {
-    return (void *)++threadVariableCount;
+    unsigned int taskVarIndex;
+    static volatile unsigned int threadVariableCount = 0;
+
+    threadInit ();
+    taskVarLock ();
+    taskVarIndex = ++threadVariableCount;
+    taskVarUnlock ();
+    return (threadPrivateId)taskVarIndex;
 }
 
 void threadPrivateDelete (threadPrivateId id)
@@ -393,22 +395,12 @@ void threadPrivateDelete (threadPrivateId id)
 
 void threadPrivateSet (threadPrivateId id, void *pvt)
 {
-    int varIndex = (int)id;
+    unsigned int varIndex = (unsigned int)id;
     rtems_unsigned32 note;
     struct taskVar *v;
 
-    /*
-     * See if task variable has been set up
-     * Task variables cost context switch time, so we don't add the
-     * task variable until it's needed
-     */
     rtems_task_get_note (RTEMS_SELF, RTEMS_NOTEPAD_TASKVAR, &note);
     v = (struct taskVar *)note;
-    if (!v->threadVariablesAdded) {
-        rtems_task_variable_add (RTEMS_SELF, &taskVarPointer, NULL);
-	taskVarPointer = v;
-	v->threadVariablesAdded = 1;
-    }
     if (varIndex >= v->threadVariableCapacity) {
         v->threadVariables = realloc (v->threadVariables, (varIndex + 1) * sizeof (void *));
         if (v->threadVariables == NULL)
@@ -420,8 +412,14 @@ void threadPrivateSet (threadPrivateId id, void *pvt)
 
 void * threadPrivateGet (threadPrivateId id)
 {
-    assert (taskVarPointer);
-    return ((struct taskVar *)taskVarPointer)->threadVariables[(int)id];
+    unsigned int varIndex = (unsigned int)id;
+    rtems_unsigned32 note;
+    struct taskVar *v;
+
+    rtems_task_get_note (RTEMS_SELF, RTEMS_NOTEPAD_TASKVAR, &note);
+    v = (struct taskVar *)note;
+    assert (varIndex < v->threadVariableCapacity);
+    return v->threadVariables[varIndex];
 }
 
 /*

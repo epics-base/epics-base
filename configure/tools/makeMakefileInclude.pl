@@ -101,6 +101,19 @@ foreach $name ( @nameList ) {
 	print OUT "\$(LIB_PREFIX)${name}\$(LIB_SUFFIX):\$(${name}_OBJSNAME) \$(${name}_RESS)\n";
 	print OUT "\$(LIB_PREFIX)${name}\$(SHRLIB_SUFFIX):\$(${name}_OBJSNAME) \$(${name}_RESS)\n";
 	print OUT "endif\n";
+	print OUT "ifneq (\$(strip \$(DBDEXPAND_\$(OS_CLASS))),)\n";
+	print OUT "DBDEXPAND+=\$(subst -nil-,,\$(DBDEXPAND_\$(OS_CLASS)))\n";
+	print OUT "else\n";
+	print OUT "ifdef DBDEXPAND_DEFAULT\n";
+	print OUT "DBDEXPAND+=\$(DBDEXPAND_DEFAULT)\n";
+	print OUT "endif\n";
+	print OUT "endif\n";
+	print OUT "ifneq (\$(strip \$(DBDNAME_\$(OS_CLASS))),)\n";
+	print OUT "DBDNAME+=\$(subst -nil-,,\$(DBDNAME_\$(OS_CLASS)))\n";
+	print OUT "else\n";
+	print OUT "ifdef DBDNAME_DEFAULT\n";
+	print OUT "DBDNAME+=\$(DBDNAME_DEFAULT)\n";
+	print OUT "endif\n";
 	print OUT "\n";
 }
 close OUT or die "Cannot close $outfile: $!";

@@ -40,6 +40,7 @@
 #include	<semLib.h>
 #include 	<rngLib.h>
 #include 	<lstLib.h>
+#include 	<string.h>
 
 #include	<dbDefs.h>
 #include	<dbAccess.h>

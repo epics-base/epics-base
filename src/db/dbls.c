@@ -38,6 +38,7 @@
 #include <vxWorks.h>
 #include <stdioLib.h>
 #include <types.h>
+#include <string.h>
 #include <dbRecType.h>
 #include <choice.h>
 #include <cvtTable.h>

@@ -60,6 +60,7 @@
 #include	<wdLib.h>
 #include	<lstLib.h>
 #include	<semLib.h>
+#include	<string.h>
 
 #include 	<tsDefs.h>
 #include	<dbDefs.h>

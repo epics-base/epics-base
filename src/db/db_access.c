@@ -47,7 +47,7 @@
 
 #include        <stdarg.h>
 #include        <fioLib.h>
-#include        <strLib.h>
+#include        <string.h>
 #include        <dbDefs.h>
 #include        <dbAccess.h>
 #include        <dbCommon.h>

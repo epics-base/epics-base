@@ -24,6 +24,8 @@
 #define epicsExportSharedSymbols
 #include "aitTypes.h"
 
+void initMinMaxAIT ( void );
+
 /*
  * maximum value for each type - joh
  */

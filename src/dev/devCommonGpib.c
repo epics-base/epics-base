@@ -202,6 +202,7 @@ void		(*process)();
 
   if (parmBlock->gpibCmds[((struct gpibDpvt *)pai->dpvt)->parm].type != GPIBREAD &&
       parmBlock->gpibCmds[((struct gpibDpvt *)pai->dpvt)->parm].type != GPIBSOFT &&
+      parmBlock->gpibCmds[((struct gpibDpvt *)pai->dpvt)->parm].type != GPIBRAWREAD &&
       parmBlock->gpibCmds[((struct gpibDpvt *)pai->dpvt)->parm].type != GPIBREADW)
   {
     sprintf(message, "%s: devGpibLib_initAi: invalid command type for an AI record in param %d\n", pai->name, ((struct gpibDpvt *)pai->dpvt)->parm);
@@ -276,6 +277,7 @@ void            (*process)();
 
   if (parmBlock->gpibCmds[((struct gpibDpvt *)pli->dpvt)->parm].type != GPIBREAD &&
       parmBlock->gpibCmds[((struct gpibDpvt *)pli->dpvt)->parm].type != GPIBSOFT &&
+      parmBlock->gpibCmds[((struct gpibDpvt *)pli->dpvt)->parm].type != GPIBRAWREAD &&
       parmBlock->gpibCmds[((struct gpibDpvt *)pli->dpvt)->parm].type != GPIBREADW)
   {
     sprintf(message, "%s: devGpibLib_initLi: invalid command type for an LI record in param %d\n", pli->name, ((struct gpibDpvt *)pli->dpvt)->parm);
@@ -351,6 +353,7 @@ void (*process)();
       parmBlock->gpibCmds[((struct gpibDpvt *)pbi->dpvt)->parm].type != GPIBSOFT &&
       parmBlock->gpibCmds[((struct gpibDpvt *)pbi->dpvt)->parm].type != GPIBEFASTI &&
       parmBlock->gpibCmds[((struct gpibDpvt *)pbi->dpvt)->parm].type != GPIBEFASTIW &&
+      parmBlock->gpibCmds[((struct gpibDpvt *)pbi->dpvt)->parm].type != GPIBRAWREAD &&
       parmBlock->gpibCmds[((struct gpibDpvt *)pbi->dpvt)->parm].type != GPIBREADW)
   {
     sprintf(message, "%s: devGpibLib_initLi: invalid command type for an BI record in param %d\n", pbi->name, ((struct gpibDpvt *)pbi->dpvt)->parm);
@@ -457,6 +460,7 @@ void 			(*process)();
       parmBlock->gpibCmds[((struct gpibDpvt *)pmbbi->dpvt)->parm].type != GPIBSOFT &&
       parmBlock->gpibCmds[((struct gpibDpvt *)pmbbi->dpvt)->parm].type != GPIBEFASTI &&
       parmBlock->gpibCmds[((struct gpibDpvt *)pmbbi->dpvt)->parm].type != GPIBEFASTIW &&
+      parmBlock->gpibCmds[((struct gpibDpvt *)pmbbi->dpvt)->parm].type != GPIBRAWREAD &&
       parmBlock->gpibCmds[((struct gpibDpvt *)pmbbi->dpvt)->parm].type != GPIBREADW)
   {
     sprintf(message, "%s: devGpibLib_initLi: invalid command type for an MBBI record in param %d\n", pmbbi->name, ((struct gpibDpvt *)pmbbi->dpvt)->parm);
@@ -602,6 +606,7 @@ void 			(*process)();
 
   if (parmBlock->gpibCmds[((struct gpibDpvt *)psi->dpvt)->parm].type != GPIBREAD &&
       parmBlock->gpibCmds[((struct gpibDpvt *)psi->dpvt)->parm].type != GPIBSOFT &&
+      parmBlock->gpibCmds[((struct gpibDpvt *)psi->dpvt)->parm].type != GPIBRAWREAD &&
       parmBlock->gpibCmds[((struct gpibDpvt *)psi->dpvt)->parm].type != GPIBREADW)
   {
     sprintf(message, "%s: devGpibLib_initLi: invalid command type for an SI record in param %d\n", psi->name, ((struct gpibDpvt *)psi->dpvt)->parm);

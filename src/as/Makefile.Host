@@ -1,7 +1,7 @@
 TOP = ../../..
 include $(TOP)/config/CONFIG_BASE
 
-USR_CFLAGS = -D_NO_PROTO
+USR_CFLAGS += -D_NO_PROTO
 
 INC := asDbLib.h asLib.h
 

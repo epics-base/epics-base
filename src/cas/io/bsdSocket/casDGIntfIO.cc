@@ -38,6 +38,30 @@
 #include "bsdSocketResource.h"
 #include "addrList.h"
 
+/****************************************************************************
+ *
+ * The rumor is that windows croaks if the malloc and free are not in the 
+ * same dll.
+ *
+ *****************************************************************************/
+static void ellFreeCAS (ELLLIST *pList)
+{
+  ELLNODE *nnode = pList->node.next;
+  ELLNODE *pnode;
+
+  while (nnode != NULL)
+  {
+    pnode = nnode;
+    nnode = nnode->next;
+    free(pnode);
+  }
+  pList->node.next = NULL;
+  pList->node.previous = NULL;
+  pList->count = 0;
+
+  return;
+}
+
 //
 // casDGIntfIO::casDGIntfIO()
 //
@@ -179,7 +203,7 @@ caStatus casDGIntfIO::init(const caNetAddr &addr, unsigned connectWithThisPortIn
 			ellConcat(&this->beaconAddrList, &BCastAddrList);
 		}
 		else {
-			ellFree(&BCastAddrList);
+			ellFreeCAS(&BCastAddrList);
 		}
 	}
 
@@ -239,7 +263,7 @@ casDGIntfIO::~casDGIntfIO()
             socket_close(this->sock);
     }
 
-	ellFree(&this->beaconAddrList);
+	ellFreeCAS(&this->beaconAddrList);
 
 	bsdSockRelease();
 }
@@ -529,4 +553,6 @@ void casDGIntfIO::processDG()
         //
         this->client.processDG(*this,*this->pAltOutIO);
 }
+
+
 

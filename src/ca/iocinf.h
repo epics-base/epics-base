@@ -33,6 +33,9 @@
 
 /*
  * $Log$
+ * Revision 1.74.4.4  2002/03/14 01:13:57  jhill
+ * fixed put notify shutdown during channel delete
+ *
  * Revision 1.74.4.3  2000/11/30 22:07:51  jhill
  * changes from Ken Evans
  *
@@ -777,6 +780,7 @@ void cac_create_udp_fd(void);
 double cac_fetch_poll_period(void);
 int caSockAddrFromHost(const char *pName, struct sockaddr *paddr);
 void cac_close_ioc (IIU *piiu);
+void ellFreeCA (ELLLIST *pList);
 
 /*
  * !!KLUDGE!!

@@ -29,6 +29,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.39.4.6  2002/03/14 01:13:58  jhill
+ * fixed put notify shutdown during channel delete
+ *
  * Revision 1.39.4.5  2002/03/13 22:07:58  jhill
  * improved put notify cleanup when client terminates
  *
@@ -641,12 +644,12 @@ LOCAL int cac_os_depen_exit_tid (struct CA_STATIC *pcas, int tid)
 	status = db_close_events(pcas->ca_evuser);
 	assert(status == OK);
 
-	ellFree(&pcas->ca_lcl_buff_list);
+	ellFreeCA(&pcas->ca_lcl_buff_list);
 
 	/*
 	 * remove local chid blocks, paddr blocks, waiting ev blocks
 	 */
-	ellFree(&pcas->ca_local_chidlist);
+	ellFreeCA(&pcas->ca_local_chidlist);
 	freeListCleanup(pcas->ca_dbMonixFreeList);
 
 	/*

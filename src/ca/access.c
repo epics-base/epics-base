@@ -99,6 +99,9 @@
 /************************************************************************/
 /*
  * $Log$
+ * Revision 1.107.2.9  2002/03/14 01:13:57  jhill
+ * fixed put notify shutdown during channel delete
+ *
  * Revision 1.107.2.8  2002/03/08 00:25:08  jhill
  * fixed bug where the db_put_field in the local event callback stub was supplied
  * with a destination that was the database field. In situations where the dbAccess
@@ -967,7 +970,7 @@ void ca_process_exit()
 		/*
 		 * free address list
 		 */
-		ellFree(&piiu->destAddr);
+		ellFreeCA(&piiu->destAddr);
 
 		piiu = (struct ioc_in_use *) piiu->node.next;
 	}
@@ -979,10 +982,10 @@ void ca_process_exit()
 	caIOBlockListFree (&ca_static->ca_pend_write_list, NULL, FALSE, ECA_INTERNAL);
 
 	/* remove any pending io event blocks */
-	ellFree(&ca_static->ca_ioeventlist);
+	ellFreeCA(&ca_static->ca_ioeventlist);
 
 	/* remove put convert block free list */
-	ellFree(&ca_static->putCvrtBuf);
+	ellFreeCA(&ca_static->putCvrtBuf);
 
 	/* reclaim sync group resources */
 	ca_sg_shutdown(ca_static);
@@ -991,13 +994,13 @@ void ca_process_exit()
 	freeListCleanup(ca_static->ca_ioBlockFreeListPVT);
 
 	/* free select context lists */
-	ellFree(&ca_static->fdInfoFreeList);
-	ellFree(&ca_static->fdInfoList);
+	ellFreeCA(&ca_static->fdInfoFreeList);
+	ellFreeCA(&ca_static->fdInfoList);
 
 	/*
 	 * remove IOCs in use
 	 */
-	ellFree(&ca_static->ca_iiuList);
+	ellFreeCA(&ca_static->ca_iiuList);
 
 	/*
 	 * free user name string

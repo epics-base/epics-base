@@ -48,6 +48,9 @@
 /*			kernels that support multicast			*/
 /*
  * $Log$
+ * Revision 1.84.4.3  2002/02/07 18:49:16  jhill
+ * workaround for CONNRESET error from disconnected socket on windows
+ *
  * Revision 1.84.4.2  2001/03/06 00:32:45  jhill
  * fixed R3.13 for Linux's new socklen_t
  *
@@ -1495,7 +1498,7 @@ void cac_close_ioc (IIU *piiu)
 
   	piiu->sock_chan = INVALID_SOCKET;
 
-	ellFree (&piiu->destAddr);
+	ellFreeCA (&piiu->destAddr);
 
 	if (chanDisconnectCount) {
 		genLocalExcep (ECA_DISCONN, piiu->host_name_str);
@@ -2156,5 +2159,29 @@ int caSendMsgPending()
 	UNLOCK;
 	
 	return pending;
+}
+
+/****************************************************************************
+ *
+ * The rumor is that windows croaks if the malloc and free are not in the 
+ * same dll.
+ *
+ *****************************************************************************/
+void ellFreeCA (ELLLIST *pList)
+{
+  ELLNODE *nnode = pList->node.next;
+  ELLNODE *pnode;
+
+  while (nnode != NULL)
+  {
+    pnode = nnode;
+    nnode = nnode->next;
+    free(pnode);
+  }
+  pList->node.next = NULL;
+  pList->node.previous = NULL;
+  pList->count = 0;
+
+  return;
 }
 

@@ -29,6 +29,9 @@
  *      Modification Log:
  *      -----------------
  * $Log$
+ * Revision 1.26.6.1  1999/07/15 21:02:25  jhill
+ * fixed bug where client disconnects while waiting to send TCP
+ *
  * Revision 1.26  1997/08/04 23:37:18  jhill
  * added beacon anomaly flag init/allow ip 255.255.255.255
  *
@@ -117,7 +120,7 @@ void ca_sg_shutdown(struct CA_STATIC *ca_temp)
 	/*
 	 * per sync group op
 	 */
-	ellFree (&ca_temp->activeCASGOP);
+	ellFreeCA (&ca_temp->activeCASGOP);
 	freeListCleanup(ca_temp->ca_sgopFreeListPVT);
 
 	UNLOCK;

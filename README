@@ -16,11 +16,9 @@ Notes:
    V3.70) of gnumake is available.
 
 3. You must have perl installed. See the README.Perl in this directory. The
-   config files specify the perl full pathname  as /usr/local/bin/perl for
+   config files specify the perl full pathname  as /usr/bin/perl for
    unix builds and C:\Perl\bin\perl for WIN95/NT builds. You can override
-   these specifications with a CONFIG_SITE_HOST_ARCH.<host_arch> file. (The
-   config files contain an override file CONFIG_SITE_HOST_ARCH.solaris
-   with PERL set to /opt/local/bin/perl.)
+   these specifications with a CONFIG_SITE_HOST_ARCH.<host_arch> file. 
 
 4. You may need vendors C and C++ compilers in your search path. (Check
    the definitions of ACC and CCC in CONFIG.Host.<host_arch> or gnu GCC

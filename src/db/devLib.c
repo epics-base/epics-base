@@ -242,6 +242,10 @@ void			(*pFunction)()
 	void	(*psub)();
 	int	status;
 
+#   if CPU_FAMILY == PPC
+        return S_dev_vxWorksVecInstlFail;
+#   endif
+
 	/*
 	 * If pFunction not connected to this vector
 	 * then they are probably disconnecting from the wrong vector
@@ -991,7 +995,7 @@ LOCAL myISR *isrFetch(unsigned vectorNumber)
 	/*
 	 * fetch the handler or C stub attached at this vector
 	 */
-        psub = (myISR *) intVecGet((FUNCPTR *)INUM_TO_IVEC(vectorNumber));
+    psub = (myISR *) intVecGet((FUNCPTR *)INUM_TO_IVEC(vectorNumber));
 
 	/*
 	 * from libvxWorks/veclist.c
@@ -1000,10 +1004,12 @@ LOCAL myISR *isrFetch(unsigned vectorNumber)
 	 * and if so finds the function pointer and
 	 * the parameter passed
 	 */
-	s = cISRTest(psub, &pCISR, &pParam);
-	if(!s){
-		psub = pCISR;
-	}
+    if ( psub ) {
+	    s = cISRTest(psub, &pCISR, &pParam);
+	    if(!s){
+		    psub = pCISR;
+	    }
+    }
 
 	return psub;
 }
@@ -1021,8 +1027,12 @@ unsigned       vectorNumber
 )
 {
 	static int	init;
-        int     	i;
-        myISR		*psub;
+    int     	i;
+    myISR		*psub;
+
+#   if CPU_FAMILY == PPC
+        return FALSE;
+#   endif
 
 	if(!init){
 		initHandlerAddrList();
@@ -1034,13 +1044,13 @@ unsigned       vectorNumber
 	/*
 	 * its a C routine. Does it match a default handler?
 	 */
-        for(i=0; i<NELEMENTS(defaultHandlerAddr); i++){
-                if(defaultHandlerAddr[i] == psub){
+    for(i=0; i<NELEMENTS(defaultHandlerAddr); i++){
+        if(defaultHandlerAddr[i] == psub){
 			return FALSE;
 		}
 	}
 
-        return TRUE;
+    return TRUE;
 }
 
 

@@ -11,17 +11,17 @@
  * In header files, declare variables, classes and functions
  * to be __exported__ like this:
  *
- *	epicsShareFunc int epicsShareAPI 
- *			a_func (int arg); 	function prototype
+ *  epicsShareFunc int epicsShareAPI 
+ *          a_func (int arg);   function prototype
  * or
- *	epicsShareFunc int epicsShareAPIV 
- *			a_func (int arg, ...); 	variable args function prototype
+ *  epicsShareFunc int epicsShareAPIV 
+ *          a_func (int arg, ...);  variable args function prototype
  *                                                (using either ... or va_list)
- *	epicsShareExtern  int a_var; 		reference variable
+ *  epicsShareExtern  int a_var;        reference variable
  *                                                (reference declaration)
- *	epicsShareDef int a_var= 4; 		create variable instance
+ *  epicsShareDef int a_var= 4;         create variable instance
  *                                                (definition declaration)
- *	class epicsShareClass a_class; 		reference a class 
+ *  class epicsShareClass a_class;      reference a class 
  *
  * Usually the epicsShare... macros expand to
  *  "import this from a DLL"  (on WIN32, on Unix it's a NOOP)
@@ -54,9 +54,16 @@
  * persons who are adding routines to a library, and will have no impact
  * on persons using routines out of a library.
  *
- *	8-22-96 -kuk-
+ * 8-22-96 -kuk-
+ *
+ * NOTE:
+ * When we phase out support for VAXC C (and only support the ansi compliant
+ * DEC C) then we can remove all epicsShareDef instances from base.
+ * 
+ * 1-17-02 -joh-
  */
 
+#undef epicsShareSym
 #undef epicsShareExtern
 #undef epicsShareDef
 #undef epicsShareClass
@@ -76,94 +83,85 @@
  */
 #if defined(_WIN32) && !defined(__GNUC__) 
 
-#	if defined(epicsExportSharedSymbols)
-#		if defined(EPICS_DLL_NO) /* this indicates that we are not building a DLL */
-#			define epicsShareExtern extern 
-#			define epicsShareClass 
-#			define epicsShareFunc
-#		else
-#			define epicsShareExtern __declspec(dllexport) extern 
-#			define epicsShareClass  __declspec(dllexport) 
-#			define epicsShareFunc  __declspec(dllexport)
-#		endif
-#	else
-#		if defined(_DLL) /* this indicates that we are being compiled to call a DLL */
-#			define epicsShareExtern __declspec(dllimport) extern 
-#			define epicsShareClass  __declspec(dllimport) 
-#			define epicsShareFunc  __declspec(dllimport)
-#		else
-#			define epicsShareExtern extern
-#			define epicsShareClass
-#			define epicsShareFunc
-#		endif
-#	endif
-	/*
-	 * Subroutine removes arguments 
-	 * (Bill does not allow __stdcall to be next to
-	 * __declspec(xxxx))
-	 */
-#	define epicsShareAPI __stdcall
-	/*
-	 * Variable args functions cannot be __stdcall
-	 * Use this for variable args functions
-	 * (Those using either ... or va_list arguments)
-	 */
-#	define epicsShareAPIV __cdecl
-    /* 
-     * visual C++ appears to require extern even
-     * in the variable/objects definition? This
-     * does not match their documentation.
+#   if defined(epicsExportSharedSymbols)
+#       if defined(EPICS_DLL_NO) /* this indicates that we are not building a DLL */
+#           define epicsShareExtern extern 
+#           define epicsShareClass 
+#           define epicsShareFunc
+#           define epicsShareSym extern
+#       else
+#           define epicsShareExtern __declspec(dllexport) extern 
+#           define epicsShareClass  __declspec(dllexport) 
+#           define epicsShareFunc  __declspec(dllexport)
+#           define epicsShareSym __declspec(dllexport) extern
+#       endif
+#   else
+#       if defined(_DLL) /* this indicates that we are being compiled to call a DLL */
+#           define epicsShareExtern __declspec(dllimport) extern 
+#           define epicsShareClass  __declspec(dllimport) 
+#           define epicsShareFunc  __declspec(dllimport)
+#           define epicsShareSym __declspec(dllimport) extern
+#       else
+#           define epicsShareExtern extern
+#           define epicsShareClass
+#           define epicsShareFunc
+#           define epicsShareSym extern
+#       endif
+#   endif
+    /*
+     * Subroutine removes arguments 
+     * (Bill does not allow __stdcall to be next to
+     * __declspec(xxxx))
      */
-#	if defined(EPICS_DLL_NO) /* this indicates that we are not building a DLL */
-#		define epicsShareDef 
-#	else
-        /*
-         * strange mysteries arrise when using this __declspec(dllexport):
-         * sometimes we must use extern in front of this and other times not.
-         * This varies with different declarations.
-         */
-#		define epicsShareDef __declspec(dllexport)
-#	endif
-#	define READONLY const
+#   define epicsShareAPI __stdcall
+    /*
+     * Variable args functions cannot be __stdcall
+     * Use this for variable args functions
+     * (Those using either ... or va_list arguments)
+     */
+#   define epicsShareAPIV __cdecl
+
+#   define epicsShareDef 
+#   define READONLY const
 /*
  * if its the old VAX C Compiler (not DEC C)
  */
 #elif defined(VAXC)
 
-	/* 
-	 * VAXC creates FORTRAN common blocks when
-	 * we use "extern int fred"/"int fred=4". Therefore,
-	 * the initialization is not loaded unless we
-	 * call a function in that object module.
-	 *
-	 * DEC CXX does not have this problem.
-	 * We suspect (but do not know) that DEC C 
-	 * 	also does not have this problem.
-	 */
-#	define epicsShareExtern globalref 
-#	define epicsShareDef globaldef 
-#	define READONLY const
-#	define epicsShareClass
-#	define epicsShareFunc
-#	define epicsShareAPI
-#	define epicsShareAPIV
+    /* 
+     * VAXC creates FORTRAN common blocks when
+     * we use "extern int fred"/"int fred=4". Therefore,
+     * the initialization is not loaded unless we
+     * call a function in that object module.
+     *
+     * DEC CXX does not have this problem.
+     * We suspect (but do not know) that DEC C 
+     *  also does not have this problem.
+     */
+#   define epicsShareExtern globalref 
+#   define epicsShareDef globaldef 
+#   define READONLY const
+#   define epicsShareClass
+#   define epicsShareFunc
+#   define epicsShareAPI
+#   define epicsShareAPIV
 
 #else
 
 /* else => no import/export specifiers */
 
-#	define epicsShareExtern extern
-#	define epicsShareAPI
-#	define epicsShareAPIV
-#	define epicsShareClass
-#	define epicsShareDef
+#   define epicsShareExtern extern
+#   define epicsShareAPI
+#   define epicsShareAPIV
+#   define epicsShareClass
+#   define epicsShareDef
 
-#	define epicsShareFunc
-#	if defined(__STDC__) || defined (__cplusplus)
-#		define READONLY const
-#	else
-#		define READONLY
-#	endif
+#   define epicsShareFunc
+#   if defined(__STDC__) || defined (__cplusplus)
+#       define READONLY const
+#   else
+#       define READONLY
+#   endif
 
 #endif
 
@@ -171,14 +169,14 @@
 #define INLINE_defs_EPICS
 #   ifndef __cplusplus
 #       if defined (__GNUC__)
-#	        define INLINE static __inline__
+#           define INLINE static __inline__
 #       elif defined (_MSC_VER)
-#	        define INLINE __inline
+#           define INLINE __inline
 #       elif defined (_SUNPRO_C)
 #           pragma error_messages (off, E_EXTERN_PRIOR_REDECL_STATIC)
 #           define INLINE static
 #       else
-#	        define INLINE static
+#           define INLINE static
 #       endif
 #   endif /* ifndef __cplusplus */
 #endif /* ifdef INLINE_defs_EPICS */

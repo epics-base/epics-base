@@ -62,6 +62,15 @@ height="31" width="88"></a></p>
   <li><a href="#Configurin2">Configuring a CA server</a></li>
 </ul>
 
+<h3><a href="#Building">Building an Application</a></h3>
+<ul>
+  <li><a href="#Required1">Required Header (.h) Files</a></li>
+  <li><a href="#Required">Required Libraries</a></li>
+  <li><p><a name="Compiler1" id="Compiler1" href="#Compiler">Compiler and
+    System Specific Build Options</a></p>
+  </li>
+</ul>
+
 <h3><a href="#CommandUtils">Command Line Utilities</a></h3>
 <ul>
   <li><a href="#acctst">acctst - CA client library regression test</a></li>
@@ -785,6 +794,121 @@ implemet this feature.</em></p>
 
 <p>See also <a href="#Routing">Routing Restrictions on vxWorks
 Systems</a>.</p>
+
+<h2><a name="Building" id="Building">Building an Application</a></h2>
+
+<h3><a name="Required1" id="Required1">Required Header (.h) Files</a></h3>
+
+<p>An application that uses the CA client library functions described in this
+document will need to include the cadef.h header files as follows.</p>
+
+<p><code>#include "cadef.h"</code></p>
+
+<p>This header file is located at "&lt;EPICS base&gt;/include/". It includes
+many other header files (operating system specific and otherwise), and
+therefore the application must also specify "&lt;EPICS
+base&gt;/include/os/&lt;arch&gt;" in its header file search path.</p>
+
+<h3><a name="Required" id="Required">Required Libraries</a></h3>
+
+<p>An application that uses the CA client library functions described in this
+document will need to link with the EPICS CA Client Library and also the
+EPICS Common Library. The EPICS CA Client Library calls the EPICS Common
+Library. The following table shows the names of these libraries on UNIX and
+Windows systems.</p>
+
+<table border="1">
+  <caption></caption>
+  <tbody>
+    <tr>
+      <th>
+        <div style="text-align: left">
+        </div>
+      </th>
+      <th>UNIX Object</th>
+      <th>UNIX Shareable</th>
+      <th>Windows Object</th>
+      <th>Windows Shareable</th>
+    </tr>
+    <tr>
+      <th style="text-align: left">EPICS CA Client Library</th>
+      <td>libca.a</td>
+      <td>libca.so</td>
+      <td>ca.lib</td>
+      <td>ca.dll</td>
+    </tr>
+    <tr>
+      <th>
+        <div style="text-align: left">
+        EPICS Common Library</div>
+      </th>
+      <td>libCom.a</td>
+      <td>libCom.so</td>
+      <td>Com.lib</td>
+      <td>Com.dll</td>
+    </tr>
+  </tbody>
+</table>
+
+<p></p>
+
+<p>The above libraries are located in "&lt;EPICS
+base&gt;/lib/&lt;architechture&gt;". </p>
+
+<h3><a name="Compiler" id="Compiler">Compiler and System Specific Build
+Options</a></h3>
+
+<p>If you do not use the EPICS build environemnt (layered make files) then it
+may be helpful to run one of the EPICS make files and watch the compile/link
+lines. This may be the simplest way to capture the latest system and compiler
+specific options required by your build environment. I have included some
+snapshots of typical build lines below, but expect some risk of this
+information becoming dated.</p>
+
+<h4>Typical Linux Build Options</h4>
+
+<p><code>/usr/bin/gcc -c -D_POSIX_C_SOURCE=199506L -D_POSIX_THREADS
+-D_XOPEN_SOURCE=500 -DOSITHREAD_USE_DEFAULT_STACK -D_X86_ -DUNIX
+-D_BSD_SOURCE -Dlinux -D_REENTRANT -ansi -O3 -Wall -I. -I..
+-I../../../include/os/Linux -I../../../include ../acctst.c</code></p>
+
+<p><code>/usr/bin/g++ -o acctst
+-L/home/user/epicsR3.14/epics/base/lib/linux-x86/
+-Wl,-rpath,/mnt/bogart_home/hill/epicsR3.14/epics/base/lib/linux-x86
+acctstMain.o acctst.o -lca -lCom</code></p>
+
+<h4>Typical Solaris Build Options</h4>
+
+<p><code>/opt/SUNWspro/bin/cc -c -D_POSIX_C_SOURCE=199506L
+-D_XOPEN_SOURCE=500 -DOSITHREAD_USE_DEFAULT_STACK -DUNIX -DSOLARIS=9 -mt
+-D__EXTENSIONS__ -Xc -v -xO4 -I. -I.. -I./../../../include/os/solaris
+-I./../../../include ../acctst.c</code></p>
+
+<p><code>/opt/SUNWspro/bin/CC -o acctst
+-L/home/phoebus1/JHILL/epics/base/lib/solaris-sparc/ -mt -z ignore -z
+combreloc -z lazyload -R/home/disk1/user/epics/base/lib/solaris-sparc
+acctstMain.o acctst.o -lca -lCom</code></p>
+
+<h4>Typical Windows Build Options</h4>
+
+<p><code>cl -c /nologo /D__STDC__=0 /Ox /GL /W3 /w44355 /MD -I. -I..
+-I..\\..\\..\\include\\os\\WIN32 -I..\\..\\..\\include ..\\acctst.c</code></p>
+
+<p><code>link -nologo /LTCG /incremental:no /opt:ref /release /version:3.14
+-out:acctst.exe acctstMain.obj acctst.obj
+d:/user/R3.14.clean/epics/base/lib/WIN32-x86/ca.lib
+d:/user/R3.14.clean/epics/base/lib/WIN32-x86/</code></p>
+
+<h4>Typical vxWorks Build Options</h4>
+
+<p><code>/usr/local/xcomp/ppc/bin/ccppc -c -D_POSIX_SOURCE -DCPU=PPC603
+-DvxWorks -include /home/vx/tornado20/target/h/vxWorks.h -ansi -O3 -Wall
+-mcpu=603 -mstrict-align -fno-builtin -I. -I.. -I../../../include/os/vxWorks
+-I../../../include -I/home/vx/tornado20/target/h ../acctst.c </code></p>
+
+<h4>Other Systems and Compilers</h4>
+
+<p>Contributions gratefully accepted.</p>
 
 <h2><a name="CommandUtils">Command Line Utilities</a></h2>
 

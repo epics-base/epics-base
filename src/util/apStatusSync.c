@@ -1,42 +1,35 @@
-/* is HERE this out-for-edit by the owner ??? */
 
-/*
-
-
-TODO - change the whole tool
-
-	from the shadow point of view
-	dirwalk from ../. (shadow directory)
-
-	if regular file - do
-		if SCCS file and out for edit
-			(report as EDIT)
-		else if SCCS file and Not out for edit 
-			1. (report as illegal file - should be a link)
-			2. place on the remove list
-		else 
-			1. place on the remove list
-	if link - do
-		if a relative link (starts with ../ or ./ )
-			should agree with the appl system area (relative)
-		else if it doesn't terminate (no access)
-			1. (report as link component failure)
-			2. place on the remove list
-		else if it terminates in the wrong place
-			1. (report as illegal link)
-			2. place on the remove list
-
-	if dir - do
-		if name == SCCS
-			1. (report as illegal SCCS directory)
-			2. place on the remove list
-		else if NOT in the system area
-			1. place on the remove list
-
-
-
-
-
+/* APSTATUSSYNC.C
+ *****************************************************************
+ * TODO - change the whole tool => almost DONE
+ *	from the shadow point of view
+ *	dirwalk from ../. (shadow directory)
+ *
+ *	if regular file - do
+ *		if SCCS file and out for edit
+ *			(report as EDIT)
+ *		else if SCCS file and Not out for edit 
+ *			1. (report as illegal file - should be a link)
+ *			2. place on the remove list
+ *		else 
+ *			1. place on the remove list
+ *	if link - do
+ *		if a relative link (starts with ../ or ./ )
+ *			should agree with the appl system area (relative)
+ *		else if it doesn't terminate (no access)
+ *			1. (report as link component failure)
+ *			2. place on the remove list
+ *		else if it terminates in the wrong place
+ *			1. (report as illegal link)
+ *			2. place on the remove list
+ *
+ *	if dir - do
+ *		if name == SCCS
+ *			1. (report as illegal SCCS directory)
+ *			2. place on the remove list
+ *		else if NOT in the system area
+ *			1. place on the remove list
+*****************************************************************
  * APSTATUSSYNC.C
  *
  * must be run from the top node of an application development node
@@ -137,7 +130,7 @@ getAppSysPath()
     }
     /* reset App SYS to real path if not on server */
     if ((pt = (void *) realpath(app_path, resolved_path)) == NULL) {
-	fprintf(stdout, "\tFATAL ERROR - failed link component of %s=%s\n",
+	fprintf(stdout, "FATAL ERROR - failed link component of %s=%s\n",
 		app_path, resolved_path);
 	return (-1);
     }
@@ -160,7 +153,7 @@ getAppSysPath()
     }
     /* reset epics path to real path if not on server */
     if ((pt = (void *) realpath(epics_path, resolved_path)) == NULL) {
-	fprintf(stdout, "\tFATAL ERROR - failed link component of %s=%s\n",
+	fprintf(stdout, "FATAL ERROR - failed link component of %s\n\t= %s\n",
 		epics_path, resolved_path);
 	return (-1);
     }
@@ -269,7 +262,7 @@ processFile(name, dir)
 	    /* else print status */
 	    fprintf(stdout, "%-20s %-25s EDIT - %s", dir, pend, ibuf);
 	} else {
-	    fprintf(stdout, "\tFATAL ERROR - reading %s%s\n", pdot, pend);
+	    fprintf(stdout, "FATAL ERROR - reading %s%s\n", pdot, pend);
 	}
 	fclose(fp);
     } else if (hasPdot && !hasSdot) {
@@ -279,7 +272,7 @@ processFile(name, dir)
 	if ((appendToScriptFile(buffer)) < 0)
 	    return (-1);	/* should not happen */
     } else if (!hasPdot && hasSdot) {
-	fprintf(stdout, "\tFATAL ERROR - file %s should be a link\n", name);
+	fprintf(stdout, "FATAL ERROR - file ./%s should be a link\n", name);
 	sprintf(buffer, "#/bin/rm -f  ./%s\n", name);
 	if ((appendToScriptFile(buffer)) < 0)
 	    return (-1);
@@ -301,17 +294,18 @@ procDirEntries(name, dir)
     char           *dir;	/* current directory */
 {
     struct stat     stbuf;
+
     if (lstat(name, &stbuf) == -1) {
 	fprintf(stdout, "procDirEntries: can't access %s\n", name);
 	return;
     }
+
     if ((stbuf.st_mode & S_IFMT) == S_IFLNK) {
 	procLinkEntries(name);
 	return;
     }
     if ((stbuf.st_mode & S_IFMT) == S_IFREG) {
 	processFile(name, dir);
-/* DEBUG DONE */
 	return;
     }
     if ((stbuf.st_mode & S_IFMT) == S_IFDIR) {
@@ -338,9 +332,12 @@ procLinkEntries(path)
     int             nchars;
     resolved_path[0] = '\0';
     if ((pt = (void *) realpath(path, resolved_path)) == NULL) {
-	fprintf(stdout, "\tFATAL ERROR - failed link component of %s=%s\n",
+	fprintf(stdout, "FATAL ERROR - failed link component of %s\n\t= %s\n",
 		path, resolved_path);
-	return;
+	sprintf(buffer, "#/bin/rm -f  ./%s\n", path);
+	if ((appendToScriptFile(buffer)) < 0)
+	    return (-1);	/* should not happen */
+	return(-1);
     }
     /* skip any link path with "/templates/" in it */
     if ((strstr(resolved_path, "/templates/")) != NULL)
@@ -388,7 +385,7 @@ procLinkEntries(path)
 	return;
     } else {
 	fprintf(stdout,
-		"\tFATAL ERROR - link '%s' must point to the application system area, \n\t application shadow area or an EPICS release\n\t\tdest='%s'\n", path, resolved_path);
+		"FATAL ERROR - link '%s' must point to the application system area\n\tor the application shadow area or an EPICS release area\n\tdest='%s'\n", path, resolved_path);
     }
     return;
 }

@@ -76,7 +76,7 @@ class gddAitStringDestructor: public gddDestructor {
 
 // --------------------------The gdd functions-------------------------
 
-static void gddStaticInit ( void * p )
+extern "C" void gddStaticInit ( void * p )
 {
     epicsMutex * * pMutex = static_cast < epicsMutex * * > ( p );
     *pMutex = new epicsMutex ();

@@ -58,6 +58,9 @@
  * .17  10-24-90	mrk	replaced momentary task by general purpose callback task
  * .18  08-30-91	joh	updated for V5 vxWorks
  * .19  09-30-91	mrk	added intLock to callbackRequest
+ * .20  11-26-91	jba	prevented multiple error messages for ioEventTask
+ *                              initialized status in add_to_scan_list
+ * .21  12-02-91	jba	Added cmd control to io-interrupt processing
  */
 
 /*
@@ -479,6 +482,7 @@ ioEventTask()
 			/* event occurs                                     */
 			pio_event_list = &io_events_undefined[0];
 			found = FALSE;
+                        event_index=0;
 			while ((event_index < MAX_IO_EVENTS) && (!found) && (pio_event_list->defined)){
 				if ((pio_event_list->io_type == pintr_event->io_type)
 				  && (pio_event_list->card_type == pintr_event->card_type)
@@ -947,7 +951,7 @@ register short		lists;
 	short		scan_type;
 	short		phase;
 	short		event;
-	long		status;
+	long		status=0;
 
 	/* get the list on which this record belongs */
 	scan_type = precord->scan;
@@ -998,16 +1002,17 @@ register short		lists;
 			short		io_type;
 			short		card_type;
 			short		card_number;
+			short		cmd=0;
 
-			status=get_io_info(paddr,&io_type,
+			status=get_io_info(&cmd,paddr,&io_type,
 				&card_type,&card_number);
 			if(status!=0) {
 			    recGblDbaddrError(status,paddr,
 				"dbScan(get_io_info)");
 			    return;
 			}
-			status = add_to_io_event_list(paddr,phase,
-				io_type,card_type,card_number);
+			if(cmd==0) status = add_to_io_event_list(paddr,phase,
+						io_type,card_type,card_number);
 		} else return;
 		break;
 	case (E_EXTERNAL):
@@ -1336,16 +1341,18 @@ register struct	dbAddr *paddr;
 		short		io_type;
 		short		card_type;
 		short		card_number;
+		short		cmd;
 
-		status=get_io_info(paddr,&io_type,
+		status=get_io_info(&cmd,paddr,&io_type,
 			&card_type,&card_number);
 		if(status!=0) {
 		    recGblDbaddrError(status,paddr,
 			"dbScan(get_io_info)");
 		    return;
 		}
-		return(delete_from_io_event_list(paddr,phase,io_type,
-			card_type,card_number));
+		if(cmd==0) status=delete_from_io_event_list(paddr,phase,io_type,
+					card_type,card_number);
+		return(status);
 	    }
 	case (E_EXTERNAL):
 		return(delete_from_event_list(paddr,phase,event));
@@ -1365,7 +1372,7 @@ short			list_index;
 {
 	register short			set,index,found;
 	register struct scan_element	*pelement;
-	register struct scan_element	*pnext_element;
+	register struct scan_element	*pnext_element=NULL;
 	short				end_of_list;
 
 	/* lock the list during modification */
@@ -1605,7 +1612,8 @@ short			event;
  *
  * get the io_type,card_type, and card_number
  */
-static long get_io_info(paddr,pio_type,pcard_type,pcard_number)
+static long get_io_info(cmd,paddr,pio_type,pcard_type,pcard_number)
+short		*cmd;
 struct dbAddr	*paddr;
 short		*pio_type;
 short		*pcard_type;
@@ -1617,7 +1625,7 @@ short		*pcard_number;
 	if((precord->dset == NULL) ||(precord->dset->get_ioint_info == NULL ))
 		return(S_dev_noDevSup);
 	status=(*precord->dset->get_ioint_info)
-		(precord,pio_type,pcard_type,pcard_number);
+		(cmd,precord,pio_type,pcard_type,pcard_number);
 	return(status);
 }
 

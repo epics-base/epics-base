@@ -3,6 +3,7 @@
 #	UNIX-cp in Perl
 
 use File::Copy;
+use File::Basename;
 
 sub Usage
 {
@@ -26,7 +27,8 @@ if (-d $target)
 {
 	foreach $file ( @sources )
 	{
-		copy ($file, "$target/$file");
+		$base=basename($file);
+		copy ($file, "$target/$base");
 	}
 }
 else

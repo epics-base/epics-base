@@ -31,6 +31,9 @@
  *
  * History
  * $Log$
+ * Revision 1.3  1996/07/25 18:01:41  jhill
+ * use pointer (not ref) for list in iter class
+ *
  * Revision 1.2  1996/07/24 22:12:03  jhill
  * added remove() to iter class + made node's prev/next private
  *
@@ -259,6 +262,11 @@ public:
 	//
 	int find(T &item);
 
+	T *first(void) const { return pFirst; }
+
+protected:
+	T		*getFirst(void) const { return pFirst; }
+	T		*getLast(void) const { return pLast; }
 private:
 	T		*pFirst;
 	T		*pLast;
@@ -279,6 +287,10 @@ public:
 	// do _not_ change the node pointers
 	//
 	void operator = (tsDLNode<T> &) {}
+
+protected:
+	T	*getNext(void) { return pNext; }
+	T	*getPrev(void) { return pPrev; }
 private:
 	T	*pNext;
 	T	*pPrev;
@@ -340,6 +352,18 @@ public:
 		return pCur;
 	}
 
+	T * first()
+	{
+		this->pCurrent = this->pList->pFirst;
+		return this->pCurrent;
+	}
+
+	T * last()
+	{
+		this->pCurrent = this->pList->pLast;
+		return this->pCurrent;
+	}
+
 	T * operator () () 
 	{
 		return this->next();
@@ -365,6 +389,8 @@ public:
 			this->pList->remove(*pCur);
 		}
 	}
+protected:
+	tsDLList<T> *getList() { return pList; }
 private:
 	tsDLList<T>	*pList;
 	T      		*pCurrent;

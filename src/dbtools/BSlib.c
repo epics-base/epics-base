@@ -108,7 +108,7 @@ int BSmakeServer(char** argv)
 			perror("Cannot fork");
 			return -1;
         case 0: /* child */
-#if defined linux || defined SOLARIS
+#if defined linux || defined SOLARIS || defined SGI
 			setpgrp();
 #else
             setpgrp(0,0);

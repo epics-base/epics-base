@@ -71,7 +71,7 @@ rtems_driver_address_table Device_drivers[] = {
 extern void rtems_bsdnet_loopattach();
 static struct rtems_bsdnet_ifconfig loopback_config = {
     "lo0",                          /* name */
-    rtems_bsdnet_loopattach,        /* attach function */
+    (int (*)(struct rtems_bsdnet_ifconfig *))rtems_bsdnet_loopattach, /* attach function */
     NULL,                           /* link to next interface */
     "127.0.0.1",                    /* IP address */
     "255.0.0.0",                    /* IP net mask */
@@ -195,8 +195,8 @@ rtems_tftp_path (const char *name)
 /*
  * RTEMS status
  */
-long
-rtems_showStats (unsigned int level)
+static void
+rtems_netstat (unsigned int level)
 {
     rtems_bsdnet_show_if_stats ();
     rtems_bsdnet_show_mbuf_stats ();
@@ -209,11 +209,10 @@ rtems_showStats (unsigned int level)
         rtems_bsdnet_show_udp_stats ();
         rtems_bsdnet_show_tcp_stats ();
     }
-    return 0;
 }
 
-long 
-rtems_showSem (void)
+static void 
+rtems_semstat (void)
 {
     Semaphore_Control *sem;
     int i;
@@ -249,7 +248,24 @@ rtems_showSem (void)
     if ((n % 3) != 0)
         printf ("\n");
     printf ("%d/%d\n", n, _Semaphore_Information.maximum);
-    return 0;
+}
+
+static ioccrfArg netStatArg0 = { "level",ioccrfArgInt,0};
+static ioccrfArg *netStatArgs[1] = {&netStatArg0};
+static ioccrfFuncDef netStatFuncDef = {"netstat",1,netStatArgs};
+static void netStatCallFunc(ioccrfArg **args)
+{
+    rtems_netstat(*(int *)args[0]->value);
+}
+static ioccrfFuncDef semStatFuncDef = {"semstat",0,NULL};
+static void semStatCallFunc(ioccrfArg **args)
+{
+    rtems_semstat();
+}
+static void ioccrfRegisterRTEMS (void)
+{
+    ioccrfRegister(&netStatFuncDef, netStatCallFunc);
+    ioccrfRegister(&semStatFuncDef, semStatCallFunc);
 }
 
 /*
@@ -339,6 +355,7 @@ Init (rtems_task_argument ignored)
      */
     printf ("***** Executing EPICS startup script *****\n");
     ioccrfRegisterCommon ();
+    ioccrfRegisterRTEMS ();
     registerRecordDeviceDriverRegister ();
     runScriptRTEMS ("st.cmd");
 

@@ -15,12 +15,9 @@ SKELETON_FILE=include/flex.skel.static
 #	ARCH_CLASS hp700 needs special flags,
 #	everything else uses default:
 #
-USR_CFLAGS_DEFAULT := -DUSG
-USR_CFLAGS_hp700 := -DSCO_UNIX
-
-#	This applies to all arch.classes:
-#
-USR_CFLAGS = -DDEFAULT_SKELETON_FILE=\"$(SKELETON_FILE)\"
+USR_CFLAGS_DEFAULT := -DUSG -DDEFAULT_SKELETON_FILE=\"$(SKELETON_FILE)\"
+USR_CFLAGS_Borland := -DUSG
+USR_CFLAGS_hp700 := -DSCO_UNIX -DDEFAULT_SKELETON_FILE=\"$(SKELETON_FILE)\"
 
 INC += flex.skel.static
 

@@ -367,15 +367,6 @@ epicsShareFunc int epicsShareAPI rsrv_init (void)
 }
 
 /*
- *  client_stat()
- */
-int client_stat(unsigned level)
-{
-    printf ("\"client_stat\" has been replaced by \"casr\"\n");
-    return ellCount(&clientQ);
-}
-
-/*
  *  log_one_client ()
  */
 LOCAL void log_one_client (struct client *client, unsigned level)
@@ -480,7 +471,7 @@ LOCAL void log_one_client (struct client *client, unsigned level)
 /*
  *  casr()
  */
-void casr (unsigned level)
+void casr epicsShareAPI (unsigned level)
 {
     size_t bytes_reserved;
     struct client   *client;

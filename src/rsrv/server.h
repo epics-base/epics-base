@@ -215,9 +215,6 @@ GLBLTYPE int casSufficentSpaceInPool;
 #define LOCK_CLIENTQ    semMutexMustTake (clientQlock);
 #define UNLOCK_CLIENTQ  semMutexGive (clientQlock);
 
-int client_stat (unsigned level);
-void casr (unsigned level);
-
 void camsgtask (struct client *client);
 void cas_send_msg (struct client *pclient, int lock_needed);
 caHdr *cas_alloc_msg (struct client *pclient, unsigned extsize);

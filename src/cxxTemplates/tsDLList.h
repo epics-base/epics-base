@@ -31,6 +31,9 @@
  *
  * History
  * $Log$
+ * Revision 1.5  1996/11/02 01:07:19  jhill
+ * many improvements
+ *
  * Revision 1.4  1996/08/14 12:32:09  jbk
  * added first() to list class, added first()/last() to iterator.
  *
@@ -48,6 +51,31 @@
 
 #ifndef tsDLListH_include
 #define tsDLListH_include
+
+//
+// tsDLNode<T>
+//
+template <class T>
+class tsDLNode {
+friend class tsDLList<T>;
+friend class tsDLIter<T>;
+friend class tsDLFwdIter<T>;
+friend class tsDLBwdIter<T>;
+public:
+	tsDLNode() : pNext(0), pPrev(0) {}
+	//
+	// when someone copies in a class deriving from this
+	// do _not_ change the node pointers
+	//
+	void operator = (tsDLNode<T> &) {}
+
+protected:
+	T	*getNext(void) { return pNext; }
+	T	*getPrev(void) { return pPrev; }
+private:
+	T	*pNext;
+	T	*pPrev;
+};
 
 //
 // tsDLList<T>
@@ -279,31 +307,6 @@ private:
 };
 
 //
-// tsDLNode<T>
-//
-template <class T>
-class tsDLNode {
-friend class tsDLList<T>;
-friend class tsDLIter<T>;
-friend class tsDLFwdIter<T>;
-friend class tsDLBwdIter<T>;
-public:
-	tsDLNode() : pNext(0), pPrev(0) {}
-	//
-	// when someone copies in a class deriving from this
-	// do _not_ change the node pointers
-	//
-	void operator = (tsDLNode<T> &) {}
-
-protected:
-	T	*getNext(void) { return pNext; }
-	T	*getPrev(void) { return pPrev; }
-private:
-	T	*pNext;
-	T	*pPrev;
-};
-
-//
 // tsDLIter<T>
 //
 // Notes:
@@ -482,7 +485,7 @@ template <class T>
 class tsDLBwdIter : private tsDLIter<T> {
 public:
 	tsDLBwdIter(tsDLList<T> &listIn) : 
-		tsDLIter<T>(&listIn) {}
+		tsDLIter<T>(listIn) {}
 
 	void reset ()
 	{

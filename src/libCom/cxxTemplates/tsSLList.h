@@ -31,6 +31,9 @@
  *
  * History
  * $Log$
+ * Revision 1.5  1996/11/02 01:07:20  jhill
+ * many improvements
+ *
  * Revision 1.4  1996/09/04 19:57:07  jhill
  * string id resource now copies id
  *
@@ -49,6 +52,27 @@
 #ifndef assert // allows epicsAssert.h 
 #include <assert.h>
 #endif
+
+//
+// tsSLNode<>
+//
+template <class T>
+class tsSLNode {
+friend class tsSLList<T>;
+friend class tsSLIter<T>;
+public:
+	tsSLNode() : pNext(0) {}
+
+	//
+	// when someone copies into a class deriving from this
+	// do _not_ change the node pointers
+	//
+	void operator = (tsSLNode<T> &) {}
+
+private:
+	T	*pNext;
+};
+
 
 //
 // tsSLList<>
@@ -112,27 +136,7 @@ public:
 };
 
 //
-// tsSLNode<>
-//
-template <class T>
-class tsSLNode {
-friend class tsSLList<T>;
-friend class tsSLIter<T>;
-public:
-	tsSLNode() : pNext(0) {}
-
-	//
-	// when someone copies into a class deriving from this
-	// do _not_ change the node pointers
-	//
-	void operator = (tsSLNode<T> &) {}
-
-private:
-	T	*pNext;
-};
-
-//
-// tsDLFwdIter<T>
+// tsSLIter<T>
 //
 // Notes:
 // 1) No direct access to pCurrent is provided since

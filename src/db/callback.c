@@ -20,7 +20,7 @@ of this distribution.
 #include "dbDefs.h"
 #include "epicsEvent.h"
 #include "epicsThread.h"
-#include "osiInterrupt.h"
+#include "epicsInterrupt.h"
 #include "osiTimer.h"
 #include "epicsRingPointer.h"
 #include "tsStamp.h"
@@ -100,9 +100,9 @@ void epicsShareAPI callbackRequest(CALLBACK *pcallback)
 	return;
     }
     if(ringOverflow[priority]) return;
-    lockKey = interruptLock();
+    lockKey = epicsInterruptLock();
     pushOK = epicsRingPointerPush(callbackQ[priority],(void *)pcallback);
-    interruptUnlock(lockKey);
+    epicsInterruptUnlock(lockKey);
     if(!pushOK) {
 	epicsPrintf("callbackRequest ring buffer full\n");
 	ringOverflow[priority] = TRUE;

@@ -54,7 +54,7 @@
 #include "taskwd.h"
 #include "epicsMutex.h"
 #include "epicsEvent.h"
-#include "osiInterrupt.h"
+#include "epicsInterrupt.h"
 #include "epicsThread.h"
 #include "tsStamp.h"
 #include "cantProceed.h"
@@ -445,9 +445,9 @@ void epicsShareAPI scanOnce(void *precord)
     int lockKey;
     int pushOK;
 
-    lockKey = interruptLock();
+    lockKey = epicsInterruptLock();
     pushOK = epicsRingPointerPush(onceQ,precord);
-    interruptUnlock(lockKey);
+    epicsInterruptUnlock(lockKey);
     if(!pushOK) {
 	if(newOverflow)errMessage(0,"rngBufPut overflow in scanOnce");
 	newOverflow = FALSE;

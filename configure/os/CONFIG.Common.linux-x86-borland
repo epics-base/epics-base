@@ -21,7 +21,6 @@ OP_SYS_CPPFLAGS += -Dlinux
 OP_SYS_LDLIBS = libc.so libm.so libdl.so librt.so
 
 ARCH_DEP_CPPFLAGS += -D_X86_
-ARCH_DEP_CFLAGS += -mcpu=pentium
 
 RUNTIME_LDFLAGS += $(RUNTIME_LDFLAGS_$(SHARED_LIBRARIES))
 

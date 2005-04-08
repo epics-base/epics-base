@@ -41,6 +41,8 @@ TEMPLATES += top/exampleApp/src/sncExample.dbd
 TEMPLATES += top/exampleApp/src/dbSubExample.c
 TEMPLATES += top/exampleApp/src/dbSubExample.dbd
 TEMPLATES += top/exampleApp/src/_APPNAME_Main.cpp
+TEMPLATES += top/exampleApp/src/_APPNAME_Hello.c
+TEMPLATES += top/exampleApp/src/_APPNAME_Hello.dbd
 
 TEMPLATES += top/exampleBoot/Makefile
 TEMPLATES += top/exampleBoot/nfsCommands@vxWorks

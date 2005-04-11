@@ -262,8 +262,10 @@ private:
     arrayElementCount nativeElementCount (
         epicsGuard < epicsMutex > & ) const;
     static void stringVerify ( const char *pStr, const unsigned count );
-    virtual void ioCompletionNotify ( 
+    void ioCompletionNotify ( 
         epicsGuard < epicsMutex > &, class baseNMIU & );
+    const char * pHostName (
+        epicsGuard < epicsMutex > & guard ) const throw ();
 	nciu ( const nciu & );
 	nciu & operator = ( const nciu & );
     void * operator new ( size_t );

@@ -42,7 +42,7 @@ public:
         epicsGuard < epicsMutex > &, char * pBuf, 
         unsigned bufLength ) const throw () = 0;
     virtual const char * pHostName (
-        epicsGuard < epicsMutex > & ) const = 0;
+        epicsGuard < epicsMutex > & ) const throw () = 0;
     virtual bool ca_v41_ok (
         epicsGuard < epicsMutex > & ) const = 0;
     virtual bool ca_v42_ok (

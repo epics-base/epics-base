@@ -110,7 +110,7 @@ unsigned netiiu::getHostName (
 }
 
 const char * netiiu::pHostName (
-    epicsGuard < epicsMutex > & ) const
+    epicsGuard < epicsMutex > & ) const throw ()
 {
     return pHostNameNetIIU;
 }

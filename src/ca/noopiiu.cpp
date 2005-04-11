@@ -41,7 +41,7 @@ unsigned noopiiu::getHostName (
 }
 
 const char * noopiiu::pHostName (
-    epicsGuard < epicsMutex > & cacGuard ) const
+    epicsGuard < epicsMutex > & cacGuard ) const throw ()
 {
     return netiiu::pHostName ( cacGuard );
 }

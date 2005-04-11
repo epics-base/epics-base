@@ -413,6 +413,12 @@ unsigned nciu::getHostName (
         guard, pBuf, bufLength );
 }
 
+const char * nciu::pHostName (
+    epicsGuard < epicsMutex > & guard ) const throw ()
+{
+    return this->piiu->pHostName ( guard );
+}
+
 bool nciu::ca_v42_ok (
     epicsGuard < epicsMutex > & guard ) const
 {

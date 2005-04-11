@@ -1708,7 +1708,7 @@ unsigned tcpiiu::getHostName (
 }
 
 const char * tcpiiu::pHostName (
-    epicsGuard < epicsMutex > & guard ) const
+    epicsGuard < epicsMutex > & guard ) const throw ()
 {
     guard.assertIdenticalMutex ( this->mutex );
     return this->hostNameCacheInstance.pointer ();

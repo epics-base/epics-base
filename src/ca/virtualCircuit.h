@@ -242,7 +242,7 @@ private:
     void recvBytes ( 
         void * pBuf, unsigned nBytesInBuf, statusWireIO & );
     const char * pHostName (
-        epicsGuard < epicsMutex > & ) const;
+        epicsGuard < epicsMutex > & ) const throw ();
     double receiveWatchdogDelay (
         epicsGuard < epicsMutex > & ) const;
     void unresponsiveCircuitNotify ( 

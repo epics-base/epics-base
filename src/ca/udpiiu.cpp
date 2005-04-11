@@ -1135,7 +1135,7 @@ unsigned udpiiu::getHostName (
 }
 
 const char * udpiiu::pHostName (
-    epicsGuard < epicsMutex > & cacGuard ) const
+    epicsGuard < epicsMutex > & cacGuard ) const throw ()
 {
     return netiiu::pHostName ( cacGuard );
 }

@@ -281,15 +281,25 @@ void casDGIntfIO::show (unsigned level) const
 
 void casDGIntfIO::xSetNonBlocking() 
 {
-    int status;
     osiSockIoctl_t yes = true;
     
-    status = socket_ioctl(this->sock, FIONBIO, &yes); // X aCC 392
-    if (status<0) {
+    int status = socket_ioctl ( this->sock, FIONBIO, &yes ); // X aCC 392
+    if ( status < 0 ) {
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
         errlogPrintf ( "%s:CAS: UDP non blocking IO set fail because \"%s\"\n",
             __FILE__, sockErrBuf );
+    }
+
+    if ( this->bcastRecvSock != INVALID_SOCKET ) {
+        yes = true;
+        int status = socket_ioctl ( this->bcastRecvSock, FIONBIO, &yes ); // X aCC 392
+        if ( status < 0 ) {
+            char sockErrBuf[64];
+            epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+            errlogPrintf ( "%s:CAS: Broadcast receive UDP non blocking IO set failed because \"%s\"\n",
+                __FILE__, sockErrBuf );
+        }
     }
 }
 

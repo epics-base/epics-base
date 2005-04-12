@@ -126,20 +126,34 @@ private:
 	dbContextPrivateListOfIO & operator = ( const dbContextPrivateListOfIO & );
 };
 
-// allow only one thread at a time to use the cache, but do not hold
-// lock when calling the callback
+class dbContextReadNotifyCacheAllocator  {
+public:
+    dbContextReadNotifyCacheAllocator ();
+    ~dbContextReadNotifyCacheAllocator ();
+    char * alloc ( unsigned long size );
+    void free ( char * pFree );
+    void show ( unsigned level ) const;
+private:
+    struct cacheElem_t {
+        struct cacheElem_t * pNext;
+    };
+    unsigned long _readNotifyCacheSize;
+    cacheElem_t * _pReadNotifyCache;
+    void reclaimAllCacheEntries ();
+	dbContextReadNotifyCacheAllocator ( const dbContextReadNotifyCacheAllocator & );
+	dbContextReadNotifyCacheAllocator & operator = ( const dbContextReadNotifyCacheAllocator & );
+};
+
 class dbContextReadNotifyCache  {
 public:
     dbContextReadNotifyCache ( epicsMutex & );
-    ~dbContextReadNotifyCache ();
     void callReadNotify ( epicsGuard < epicsMutex > &, 
         struct dbAddr & addr, unsigned type, unsigned long count, 
             cacReadNotify & notify );
     void show ( epicsGuard < epicsMutex > &, unsigned level ) const;
 private:
-    unsigned long readNotifyCacheSize;
-    epicsMutex & mutex;
-    char * pReadNotifyCache;
+    dbContextReadNotifyCacheAllocator _allocator;
+    epicsMutex & _mutex;
 	dbContextReadNotifyCache ( const dbContextReadNotifyCache & );
 	dbContextReadNotifyCache & operator = ( const dbContextReadNotifyCache & );
 };

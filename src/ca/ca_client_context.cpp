@@ -27,6 +27,7 @@
 #endif
 
 #include <stdexcept>
+#include <string> // vxWorks 6.0 requires this include 
 #include <stdio.h>
 
 #include "epicsExit.h"

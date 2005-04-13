@@ -22,6 +22,7 @@
 
 #include <new>
 #include <stdexcept>
+#include <string> // vxWorks 6.0 requires this include 
 
 #include "epicsGuard.h"
 #include "epicsVersion.h"

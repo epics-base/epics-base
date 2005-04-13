@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <limits.h>
+#include <string> // vxWorks 6.0 requires this include 
 
 #define epicsExportSharedSymbols
 #include "epicsStdioRedirect.h"
@@ -87,7 +88,7 @@ epicsTimeLoadTimeInit::epicsTimeLoadTimeInit ()
     {
         time_t current = time ( NULL );
         time_t error;
-        tm date;
+        struct tm date; // vxWorks 6.0 requires "struct" here 
 
         int status = epicsTime_gmtime ( &current, &date );
         assert ( status == epicsTimeOK );

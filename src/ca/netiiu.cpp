@@ -20,6 +20,7 @@
  */
 
 #include <stdexcept>
+#include <string> // vxWorks 6.0 requires this include 
 
 #include <limits.h>
 #include <float.h>
